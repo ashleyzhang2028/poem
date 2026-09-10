@@ -5,29 +5,28 @@ main:
   push:
     - name: test
       docker:
-        image: node:20
+        build: image/Dockerfile
       stages:
         - name: install-deps
           script: |
             set -e
             npm i jsdom --no-save --no-fund --no-audit
-            # puppeteer 用于真实浏览器跑 PWA / iOS 兼容测试
-            npm i puppeteer --no-save --no-fund --no-audit || echo "puppeteer 安装失败，将跳过 PWA 测试"
+            npm i puppeteer --no-save --no-fund --no-audit
         - name: run-tests
-          script: ./test/run.sh
+          script: bash test/run.sh
 
   pull_request:
     - name: pr-test
       docker:
-        image: node:20
+        build: image/Dockerfile
       stages:
         - name: install-deps
           script: |
             set -e
             npm i jsdom --no-save --no-fund --no-audit
-            npm i puppeteer --no-save --no-fund --no-audit || echo "puppeteer 安装失败，将跳过 PWA 测试"
+            npm i puppeteer --no-save --no-fund --no-audit
         - name: run-tests
-          script: ./test/run.sh
+          script: bash test/run.sh
 
 $:
   web_trigger:
