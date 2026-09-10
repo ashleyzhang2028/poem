@@ -69,7 +69,7 @@ function check(name, cond, extra) {
     check('iPhone: apple-mobile-web-app-capable=yes',
       await page.$eval('meta[name="apple-mobile-web-app-capable"]', el => el.content) === 'yes');
     check('iPhone: apple-mobile-web-app-title',
-      (await page.$eval('meta[name="apple-mobile-web-app-title"]', el => el.content)) === '古诗词背诵');
+      (await page.$eval('meta[name="apple-mobile-web-app-title"]', el => el.content)) === 'Ashley 背古诗词');
     check('iPhone: status-bar-style',
       !!(await page.$eval('meta[name="apple-mobile-web-app-status-bar-style"]', el => el.content)));
 

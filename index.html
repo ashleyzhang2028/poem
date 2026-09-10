@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#4a7c59" />
-  <title>Ashley 背古诗词 · 艾宾浩斯记忆曲线</title>
+  <title>Ashley古诗词背诵 · 艾宾浩斯记忆曲线</title>
   <meta name="description" content="一年级至高三古诗词背诵，按艾宾浩斯遗忘曲线安排复习。支持手机、平板、电脑，苹果手机可添加到主屏幕当 App 使用。" />
   <meta name="format-detection" content="telephone=no" />
 
@@ -14,12 +14,12 @@
   <!-- 状态栏样式：default 为白底黑字 -->
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <!-- 添加到主屏幕后的应用名 -->
-  <meta name="apple-mobile-web-app-title" content="Ashley 背古诗词" />
+  <meta name="apple-mobile-web-app-title" content="Ashley古诗词背诵" />
   <!-- 兼容旧版 iOS -->
   <meta name="mobile-web-app-capable" content="yes" />
 
   <!-- PWA 清单 -->
-  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="manifest" id="app-manifest" href="./manifest.webmanifest" />
   <link rel="icon" href="./icons/icon.svg" type="image/svg+xml" />
 
   <!-- 主屏幕图标：覆盖 iPhone / iPad / iPad Pro 各代尺寸，缺尺寸会显示模糊截图 -->
@@ -38,7 +38,7 @@
       <div class="brand">
         <span class="brand-icon">📖</span>
         <div class="brand-text">
-          <h1>Ashley 背古诗词</h1>
+          <h1 id="brand-name">Ashley古诗词背诵</h1>
           <p>一年级至高三 · 艾宾浩斯记忆曲线</p>
         </div>
       </div>
@@ -77,7 +77,7 @@
     </section>
 
     <footer class="foot">
-      <span>&copy; 2026 Ashley &amp; Stephanie</span>
+      <span>&copy;2026 积跬步, 至千里</span>
     </footer>
   </div>
 
@@ -111,6 +111,12 @@
     <div class="modal-box small" role="dialog" aria-modal="true">
       <button class="modal-close" data-close="1" aria-label="关闭">✕</button>
       <div class="modal-head"><h2>设置</h2></div>
+      <div class="settings-item">
+        <label for="input-username">用户名</label>
+        <input id="input-username" class="settings-input" type="text" maxlength="12"
+               placeholder="Ashley" autocomplete="off" enterkeyhint="done" />
+        <div class="settings-hint">留空则显示默认名称「Ashley」</div>
+      </div>
       <div class="settings-item">
         <label>学段</label>
         <div class="seg small" id="seg-stage">
@@ -179,6 +185,7 @@
   <script src="js/storage.js"></script>
   <script src="js/scheduler.js"></script>
   <script src="js/app.js"></script>
+  <script src="js/manifest-loader.js"></script>
   <script src="js/pwa.js"></script>
 </body>
 </html>
