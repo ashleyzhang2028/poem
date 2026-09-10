@@ -409,6 +409,23 @@ html, body {
   margin-bottom: 8px;
   font-weight: 500;
 }
+.settings-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 9px 12px;
+  border: 1px solid #e2e6e0;
+  border-radius: 10px;
+  background: #fbfcfa;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+  transition: border-color .15s, background .15s;
+}
+.settings-input:focus { border-color: var(--green); background: #fff; }
+.settings-input::placeholder { color: #b3beb6; }
+.settings-hint { font-size: 11.5px; color: #9aa8a0; margin-top: 6px; }
+
 .settings-btns { display: flex; gap: 8px; flex-wrap: wrap; }
 .ghost-btn { flex: 1; min-width: 90px; padding: 9px; font-size: 13.5px; }
 .danger-btn { flex: 1; min-width: 90px; padding: 9px; font-size: 13.5px; color: var(--red); border-color: #f0d7d4; background: #fdf5f4; }
