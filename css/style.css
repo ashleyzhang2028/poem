@@ -251,6 +251,7 @@ html, body {
 }
 
 /* 全部诗词折叠 */
+.all-section { margin-top: 14px; }
 .collapse-head {
   width: 100%;
   border: none;
@@ -398,6 +399,8 @@ html, body {
 .hint { font-size: 12px; color: var(--ink-2); margin-top: 12px; text-align: center; }
 
 .settings-item { margin: 14px 0; }
+.settings-item .chips { flex-wrap: wrap; }
+.settings-item .seg { flex-wrap: wrap; overflow: visible; }
 .settings-item label {
   display: block;
   font-size: 13.5px;

@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#4a7c59" />
-  <title>古诗词背诵 · 艾宾浩斯记忆曲线</title>
+  <title>Ashley 背古诗词 · 艾宾浩斯记忆曲线</title>
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
@@ -14,35 +14,12 @@
       <div class="brand">
         <span class="brand-icon">📖</span>
         <div class="brand-text">
-          <h1>古诗词背诵</h1>
+          <h1>Ashley 背古诗词</h1>
           <p>一年级至高三 · 艾宾浩斯记忆曲线</p>
         </div>
       </div>
       <button id="btn-settings" class="icon-btn" title="设置" aria-label="设置">⚙️</button>
     </header>
-
-    <!-- 年级/学期选择 -->
-    <section class="selector card">
-      <div class="selector-row">
-        <span class="selector-label">学段</span>
-        <div class="seg" id="seg-stage">
-          <button data-stage="primary" class="active">小学</button>
-          <button data-stage="middle">初中</button>
-          <button data-stage="high">高中</button>
-        </div>
-      </div>
-      <div class="selector-row">
-        <span class="selector-label">年级</span>
-        <div class="chips" id="grade-chips"></div>
-      </div>
-      <div class="selector-row">
-        <span class="selector-label">学期</span>
-        <div class="seg" id="seg-term">
-          <button data-term="1" class="active">上学期</button>
-          <button data-term="2">下学期</button>
-        </div>
-      </div>
-    </section>
 
     <!-- 今日进度 -->
     <section class="card today-bar">
@@ -76,7 +53,7 @@
     </section>
 
     <footer class="foot">
-      <span>数据仅保存在本机浏览器 · 无需联网</span>
+      <span>&copy; 2026 Ashley &amp; Stephanie</span>
     </footer>
   </div>
 
@@ -110,6 +87,25 @@
     <div class="modal-box small" role="dialog" aria-modal="true">
       <button class="modal-close" data-close="1" aria-label="关闭">✕</button>
       <div class="modal-head"><h2>设置</h2></div>
+      <div class="settings-item">
+        <label>学段</label>
+        <div class="seg small" id="seg-stage">
+          <button data-stage="primary" class="active">小学</button>
+          <button data-stage="middle">初中</button>
+          <button data-stage="high">高中</button>
+        </div>
+      </div>
+      <div class="settings-item">
+        <label>年级</label>
+        <div class="chips" id="grade-chips"></div>
+      </div>
+      <div class="settings-item">
+        <label>学期</label>
+        <div class="seg small" id="seg-term">
+          <button data-term="1" class="active">上学期</button>
+          <button data-term="2">下学期</button>
+        </div>
+      </div>
       <div class="settings-item">
         <label>每日背诵数量</label>
         <div class="seg small" id="seg-count">

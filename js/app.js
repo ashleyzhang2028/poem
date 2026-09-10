@@ -1,5 +1,5 @@
 /**
- * 古诗词背诵 App 主逻辑
+ * Ashley 背古诗词 App 主逻辑
  */
 (function () {
   "use strict";
@@ -354,6 +354,7 @@
     });
 
     $("#btn-settings").addEventListener("click", function () {
+      renderGradeChips();
       $("#settings-modal").hidden = false;
       document.body.style.overflow = "hidden";
     });
@@ -400,7 +401,7 @@
       const blob = new Blob([Storage.exportJSON()], { type: "application/json" });
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
-      a.download = "古诗词背诵进度-" + todayKeyStr() + ".json";
+      a.download = "Ashley背古诗词进度-" + todayKeyStr() + ".json";
       a.click();
       URL.revokeObjectURL(a.href);
       showToast("备份已导出");
