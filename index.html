@@ -2,9 +2,33 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#4a7c59" />
   <title>古诗词背诵 · 艾宾浩斯记忆曲线</title>
+  <meta name="description" content="一年级至高三古诗词背诵，按艾宾浩斯遗忘曲线安排复习。支持手机、平板、电脑，苹果手机可添加到主屏幕当 App 使用。" />
+  <meta name="format-detection" content="telephone=no" />
+
+  <!-- ===== iOS（苹果手机 / iPad）支持 ===== -->
+  <!-- 全屏运行：从主屏幕启动时不显示 Safari 地址栏 -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <!-- 状态栏样式：default 为白底黑字 -->
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <!-- 添加到主屏幕后的应用名 -->
+  <meta name="apple-mobile-web-app-title" content="古诗词背诵" />
+  <!-- 兼容旧版 iOS -->
+  <meta name="mobile-web-app-capable" content="yes" />
+
+  <!-- PWA 清单 -->
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" href="./icons/icon.svg" type="image/svg+xml" />
+
+  <!-- 主屏幕图标：覆盖 iPhone / iPad / iPad Pro 各代尺寸，缺尺寸会显示模糊截图 -->
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+  <link rel="apple-touch-icon" sizes="120x120" href="./icons/icon-120.png" />
+  <link rel="apple-touch-icon" sizes="152x152" href="./icons/icon-152.png" />
+  <link rel="apple-touch-icon" sizes="167x167" href="./icons/icon-167.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="./icons/icon-180.png" />
+
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
@@ -136,6 +160,13 @@
   <input type="file" id="file-import" accept="application/json" hidden />
   <div class="toast" id="toast" hidden></div>
 
+  <!-- iOS「添加到主屏幕」引导条：仅 iPhone/iPad 且未安装时出现 -->
+  <div class="ios-install-tip" id="ios-install-tip" hidden>
+    <span class="ios-tip-icon" aria-hidden="true">📲</span>
+    <span class="ios-tip-text">想看桌面图标？点底部「分享」，选「添加到主屏幕」</span>
+    <button type="button" id="ios-install-close" class="ios-tip-close" aria-label="关闭提示">知道了</button>
+  </div>
+
   <script src="data/poems-1.js"></script>
   <script src="data/poems-2.js"></script>
   <script src="data/poems-3.js"></script>
@@ -152,5 +183,6 @@
   <script src="js/storage.js"></script>
   <script src="js/scheduler.js"></script>
   <script src="js/app.js"></script>
+  <script src="js/pwa.js"></script>
 </body>
 </html>
