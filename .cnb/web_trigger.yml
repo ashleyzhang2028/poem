@@ -1,0 +1,6 @@
+# 分支详情页自定义按钮：一键把当前代码推送到 GitHub
+branch:
+  - buttons:
+      - name: 推送到 GitHub
+        description: 推送到 github.com/ashleyzhang2028/poem
+        event: web_trigger_push_github
