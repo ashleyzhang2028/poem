@@ -2,47 +2,48 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#4a7c59" />
-  <title>古诗词背诵 · 艾宾浩斯记忆曲线</title>
+  <title>Ashley古诗词背诵 · 艾宾浩斯记忆曲线</title>
+  <meta name="description" content="一年级至高三古诗词背诵，按艾宾浩斯遗忘曲线安排复习。支持手机、平板、电脑，苹果手机可添加到主屏幕当 App 使用。" />
+  <meta name="format-detection" content="telephone=no" />
+
+  <!-- ===== iOS（苹果手机 / iPad）支持 ===== -->
+  <!-- 全屏运行：从主屏幕启动时不显示 Safari 地址栏 -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <!-- 状态栏样式：default 为白底黑字 -->
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <!-- 添加到主屏幕后的应用名 -->
+  <meta name="apple-mobile-web-app-title" content="Ashley古诗词背诵" />
+  <!-- 兼容旧版 iOS -->
+  <meta name="mobile-web-app-capable" content="yes" />
+
+  <!-- PWA 清单 -->
+  <link rel="manifest" id="app-manifest" href="./manifest.webmanifest" />
+  <link rel="icon" href="./icons/icon.svg" type="image/svg+xml" />
+
+  <!-- 主屏幕图标：覆盖 iPhone / iPad / iPad Pro 各代尺寸，缺尺寸会显示模糊截图 -->
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+  <link rel="apple-touch-icon" sizes="120x120" href="./icons/icon-120.png" />
+  <link rel="apple-touch-icon" sizes="152x152" href="./icons/icon-152.png" />
+  <link rel="apple-touch-icon" sizes="167x167" href="./icons/icon-167.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="./icons/icon-180.png" />
+
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
-  <div class="app">
+  <div class="app" id="app">
     <!-- 顶部栏 -->
     <header class="topbar">
       <div class="brand">
         <span class="brand-icon">📖</span>
         <div class="brand-text">
-          <h1>古诗词背诵</h1>
+          <h1 id="brand-name">Ashley古诗词背诵</h1>
           <p>一年级至高三 · 艾宾浩斯记忆曲线</p>
         </div>
       </div>
       <button id="btn-settings" class="icon-btn" title="设置" aria-label="设置">⚙️</button>
     </header>
-
-    <!-- 年级/学期选择 -->
-    <section class="selector card">
-      <div class="selector-row">
-        <span class="selector-label">学段</span>
-        <div class="seg" id="seg-stage">
-          <button data-stage="primary" class="active">小学</button>
-          <button data-stage="middle">初中</button>
-          <button data-stage="high">高中</button>
-        </div>
-      </div>
-      <div class="selector-row">
-        <span class="selector-label">年级</span>
-        <div class="chips" id="grade-chips"></div>
-      </div>
-      <div class="selector-row">
-        <span class="selector-label">学期</span>
-        <div class="seg" id="seg-term">
-          <button data-term="1" class="active">上学期</button>
-          <button data-term="2">下学期</button>
-        </div>
-      </div>
-    </section>
 
     <!-- 今日进度 -->
     <section class="card today-bar">
@@ -76,7 +77,7 @@
     </section>
 
     <footer class="foot">
-      <span>数据仅保存在本机浏览器 · 无需联网</span>
+      <span>&copy;2026 积跬步, 至千里</span>
     </footer>
   </div>
 
@@ -111,6 +112,31 @@
       <button class="modal-close" data-close="1" aria-label="关闭">✕</button>
       <div class="modal-head"><h2>设置</h2></div>
       <div class="settings-item">
+        <label for="input-username">用户名</label>
+        <input id="input-username" class="settings-input" type="text" maxlength="12"
+               placeholder="Ashley" autocomplete="off" enterkeyhint="done" />
+        <div class="settings-hint">留空则显示默认名称「Ashley」</div>
+      </div>
+      <div class="settings-item">
+        <label>学段</label>
+        <div class="seg small" id="seg-stage">
+          <button data-stage="primary" class="active">小学</button>
+          <button data-stage="middle">初中</button>
+          <button data-stage="high">高中</button>
+        </div>
+      </div>
+      <div class="settings-item">
+        <label>年级</label>
+        <div class="chips" id="grade-chips"></div>
+      </div>
+      <div class="settings-item">
+        <label>学期</label>
+        <div class="seg small" id="seg-term">
+          <button data-term="1" class="active">上学期</button>
+          <button data-term="2">下学期</button>
+        </div>
+      </div>
+      <div class="settings-item">
         <label>每日背诵数量</label>
         <div class="seg small" id="seg-count">
           <button data-count="3">3 首</button>
@@ -136,6 +162,13 @@
   <input type="file" id="file-import" accept="application/json" hidden />
   <div class="toast" id="toast" hidden></div>
 
+  <!-- iOS「添加到主屏幕」引导条：仅 iPhone/iPad 且未安装时出现 -->
+  <div class="ios-install-tip" id="ios-install-tip" hidden>
+    <span class="ios-tip-icon" aria-hidden="true">📲</span>
+    <span class="ios-tip-text">想看桌面图标？点底部「分享」，选「添加到主屏幕」</span>
+    <button type="button" id="ios-install-close" class="ios-tip-close" aria-label="关闭提示">知道了</button>
+  </div>
+
   <script src="data/poems-1.js"></script>
   <script src="data/poems-2.js"></script>
   <script src="data/poems-3.js"></script>
@@ -152,5 +185,7 @@
   <script src="js/storage.js"></script>
   <script src="js/scheduler.js"></script>
   <script src="js/app.js"></script>
+  <script src="js/manifest-loader.js"></script>
+  <script src="js/pwa.js"></script>
 </body>
 </html>

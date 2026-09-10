@@ -1,0 +1,28 @@
+{
+  "name": "Ashley古诗词背诵 · 艾宾浩斯记忆曲线",
+  "short_name": "Ashley古诗词背诵",
+  "description": "一年级至高三古诗词背诵，按艾宾浩斯遗忘曲线安排复习。手机、平板、电脑均可使用，苹果手机可添加到主屏幕当 App 用。用户名可在设置中修改。",
+  "start_url": "./index.html",
+  "scope": "./",
+  "id": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait-primary",
+  "background_color": "#f6f7f4",
+  "theme_color": "#4a7c59",
+  "lang": "zh-CN",
+  "dir": "ltr",
+  "categories": ["education", "kids"],
+  "icons": [
+    { "src": "./icons/icon-120.png", "sizes": "120x120", "type": "image/png" },
+    { "src": "./icons/icon-152.png", "sizes": "152x152", "type": "image/png" },
+    { "src": "./icons/icon-167.png", "sizes": "167x167", "type": "image/png" },
+    { "src": "./icons/icon-180.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "./icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "./icons/icon-256.png", "sizes": "256x256", "type": "image/png" },
+    { "src": "./icons/icon-384.png", "sizes": "384x384", "type": "image/png" },
+    { "src": "./icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "./icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "./icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

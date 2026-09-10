@@ -17,6 +17,9 @@
     high: { name: "高中", grades: [10, 11, 12] }
   };
 
+  // 默认用户名：未填写时使用
+  const DEFAULT_USERNAME = "Ashley";
+
   let settings = Storage.getSettings();
   let todayPlan = [];
   let currentPoem = null;
@@ -26,6 +29,48 @@
   function todayKeyStr() {
     const d = new Date();
     return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate();
+  }
+
+  /** 当前用户名，去空格；为空则退回默认名 */
+  function userName() {
+    const n = String(settings.username == null ? "" : settings.username).trim();
+    return n || DEFAULT_USERNAME;
+  }
+
+  /** 页面主标题文案 */
+  function appTitle() {
+    return userName() + "古诗词背诵";
+  }
+
+  /** 把用户名同步到页面标题、品牌标题、iOS 桌面名与 PWA 清单 */
+  function applyUserName() {
+    const title = appTitle();
+    document.title = title + " · 艾宾浩斯记忆曲线";
+    const h1 = $("#brand-name");
+    if (h1) h1.textContent = title;
+
+    $$('meta[name="apple-mobile-web-app-title"]').forEach(function (m) {
+      m.setAttribute("content", title);
+    });
+
+    // 安卓/桌面安装后的应用名也跟随用户名
+    const link = $('link[rel="manifest"]');
+    if (link && window.Blob && window.URL && URL.createObjectURL) {
+      try {
+        const manifest = JSON.parse(JSON.stringify(window.__manifest || {}));
+        if (manifest.name) {
+          manifest.name = title;
+          manifest.short_name = title;
+          const blob = new Blob([JSON.stringify(manifest)], { type: "application/manifest+json" });
+          const url = URL.createObjectURL(blob);
+          if (link.dataset.blobUrl) URL.revokeObjectURL(link.dataset.blobUrl);
+          link.dataset.blobUrl = url;
+          link.href = url;
+        }
+      } catch (e) {
+        /* 清单更新失败不影响主流程 */
+      }
+    }
   }
 
   function stageOf(grade) {
@@ -141,6 +186,8 @@
     $$("#seg-term button").forEach(function (b) {
       b.classList.toggle("active", Number(b.dataset.term) === settings.term);
     });
+    const uInput = $("#input-username");
+    if (uInput) uInput.value = String(settings.username == null ? "" : settings.username);
     const sc = $("#seg-count");
     if (sc) {
       $$("button", sc).forEach(function (b) {
@@ -353,7 +400,30 @@
       });
     });
 
+    // 用户名输入：即时生效，失焦/回车时兜底保存
+    const uInput = $("#input-username");
+    if (uInput) {
+      uInput.addEventListener("input", function () {
+        settings.username = uInput.value.trim().slice(0, 12);
+        Storage.saveSettings(settings);
+        applyUserName();
+      });
+      uInput.addEventListener("change", function () {
+        settings.username = uInput.value.trim().slice(0, 12);
+        uInput.value = settings.username;
+        Storage.saveSettings(settings);
+        applyUserName();
+      });
+      uInput.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          uInput.blur();
+        }
+      });
+    }
+
     $("#btn-settings").addEventListener("click", function () {
+      renderGradeChips();
       $("#settings-modal").hidden = false;
       document.body.style.overflow = "hidden";
     });
@@ -400,7 +470,7 @@
       const blob = new Blob([Storage.exportJSON()], { type: "application/json" });
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
-      a.download = "古诗词背诵进度-" + todayKeyStr() + ".json";
+      a.download = userName() + "古诗词背诵进度-" + todayKeyStr() + ".json";
       a.click();
       URL.revokeObjectURL(a.href);
       showToast("备份已导出");
@@ -419,6 +489,7 @@
           Storage.importJSON(reader.result);
           settings = Storage.getSettings();
           invalidatePlan();
+          applyUserName();
           renderGradeChips();
           rebuildToday();
           renderAll();
@@ -448,6 +519,7 @@
       }
     }, 60 * 1000);
 
+    applyUserName();
     renderGradeChips();
     rebuildToday();
     renderAll();
