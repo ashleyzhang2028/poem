@@ -1,4 +1,7 @@
 node_modules/
-dist/
 .DS_Store
 *.log
+
+# 测试产物（PWA 测试失败时输出的截图）
+pwa-*.png
+.cache/

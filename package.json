@@ -1,0 +1,12 @@
+{
+  "name": "poem-recitation",
+  "version": "1.0.0",
+  "private": true,
+  "description": "古诗词背诵 · 艾宾浩斯记忆曲线：一年级至高三，手机/平板/电脑通用，苹果手机可添加到主屏幕当 App 使用",
+  "scripts": {
+    "start": "node scripts/serve.js",
+    "test": "bash test/run.sh",
+    "test:pwa": "node test/pwa.test.js"
+  },
+  "engines": { "node": ">=18" }
+}

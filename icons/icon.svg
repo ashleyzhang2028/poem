@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#5c8f6c"/>
+      <stop offset="1" stop-color="#3d6b4c"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <circle cx="256" cy="256" r="150" fill="#f7faf6"/>
+
+  <!-- 「诗」字：矢量绘制，不依赖系统字体，任何设备渲染一致 -->
+  <g fill="#3d6b4c" stroke="#3d6b4c" stroke-linecap="round" stroke-linejoin="round">
+    <!-- 讠：点 + 横折提 -->
+    <circle cx="150" cy="168" r="13" stroke="none"/>
+    <path d="M143 214 h44 M187 214 v26 l-52 30" fill="none" stroke-width="19"/>
+    <!-- 寺上部 土 -->
+    <path d="M212 172 h120" fill="none" stroke-width="20"/>
+    <path d="M272 140 v96" fill="none" stroke-width="20"/>
+    <path d="M226 236 h122" fill="none" stroke-width="20"/>
+    <!-- 寺下部 寸 -->
+    <path d="M212 292 h138" fill="none" stroke-width="20"/>
+    <path d="M300 262 v96 q0 40 -40 50" fill="none" stroke-width="20"/>
+    <circle cx="196" cy="318" r="16" stroke="none"/>
+  </g>
+</svg>
