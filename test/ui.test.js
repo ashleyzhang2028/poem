@@ -20,6 +20,17 @@ setTimeout(() => {
   let fails = 0;
   const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else console.log('✓ ' + m); };
 
+  chk(d.title === 'Ashley 背古诗词 · 艾宾浩斯记忆曲线', '页面标题为 Ashley 背古诗词');
+  chk(d.querySelector('.brand-text h1').textContent === 'Ashley 背古诗词', '品牌标题为 Ashley 背古诗词');
+  chk(d.querySelector('.foot').textContent.includes('© 2026 Ashley & Stephanie'), '页脚版权为 © 2026 Ashley & Stephanie');
+  chk(!d.querySelector('.selector.card'), '年级/学期选择不再常驻首页');
+  chk(!!d.querySelector('#settings-modal #seg-stage'), '学段选择已移入设置');
+  chk(!!d.querySelector('#settings-modal #seg-term'), '学期选择已移入设置');
+  chk(!!d.querySelector('#settings-modal #grade-chips'), '年级选择已移入设置');
+
+  // 先打开设置才能操作年级/学期
+  d.querySelector('#btn-settings').dispatchEvent(new window.Event('click', { bubbles: true }));
+  chk(d.querySelector('#settings-modal').hidden === false, '首页即可打开设置');
   chk(d.querySelectorAll('#grade-chips button').length === 6, '小学显示 6 个年级按钮');
   chk(d.querySelectorAll('#today-list .item').length === 5, '今日列表渲染 5 首（实际 ' + d.querySelectorAll('#today-list .item').length + '）');
   chk(d.querySelector('#ring-text').textContent === '0/5', '环形进度 0/5');
@@ -75,8 +86,10 @@ setTimeout(() => {
   chk(d.querySelectorAll('#stats-row .stat').length === 4, '统计条渲染 4 项');
 
   // 设置
+  d.querySelector('#settings-modal').hidden = true;
   d.querySelector('#btn-settings').dispatchEvent(new window.Event('click', { bubbles: true }));
   chk(d.querySelector('#settings-modal').hidden === false, '设置弹层打开');
+  chk(d.querySelector('#settings-modal #seg-stage').querySelector('button.active').dataset.stage === 'high', '设置中回显当前学段高中');
   const c8 = [...d.querySelectorAll('#seg-count button')].find(b => b.dataset.count === '8');
   c8.dispatchEvent(new window.Event('click', { bubbles: true }));
   chk(d.querySelector('#today-sub').textContent.includes('共 8 首'), '改为每日 8 首生效: ' + d.querySelector('#today-sub').textContent);
