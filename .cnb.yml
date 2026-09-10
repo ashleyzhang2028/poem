@@ -1,26 +1,32 @@
-# 古诗词背诵 · 静态站点
-# push 到 main / PR 时自动跑测试
+# 古诗词背诵 · 静态站点（PWA）
+# push 到 main / PR 时自动跑测试；web_trigger 可起预览服务
 
 main:
   push:
     - name: test
       docker:
-        image: node:20
+        build: image/Dockerfile
       stages:
         - name: install-deps
-          script: npm i jsdom --no-save --no-fund --no-audit
+          script: |
+            set -e
+            npm i jsdom --no-save --no-fund --no-audit
+            npm i puppeteer --no-save --no-fund --no-audit
         - name: run-tests
-          script: ./test/run.sh
+          script: bash test/run.sh
 
   pull_request:
     - name: pr-test
       docker:
-        image: node:20
+        build: image/Dockerfile
       stages:
         - name: install-deps
-          script: npm i jsdom --no-save --no-fund --no-audit
+          script: |
+            set -e
+            npm i jsdom --no-save --no-fund --no-audit
+            npm i puppeteer --no-save --no-fund --no-audit
         - name: run-tests
-          script: ./test/run.sh
+          script: bash test/run.sh
 
 $:
   web_trigger:
@@ -29,4 +35,4 @@ $:
         image: node:20
       stages:
         - name: serve
-          script: npx --yes http-server . -p 8080 -c-1
+          script: node scripts/serve.js

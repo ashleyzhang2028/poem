@@ -26,7 +26,7 @@ html, body {
   line-height: 1.6;
 }
 
-.app {
+.app, #app {
   max-width: 720px;
   margin: 0 auto;
   padding: 0 14px 40px;
@@ -37,7 +37,8 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 18px 2px 12px;
+  /* 加上刘海/灵动岛高度，避免标题被状态栏压住 */
+  padding: calc(18px + var(--safe-top)) 2px 12px;
 }
 .brand { display: flex; align-items: center; gap: 10px; }
 .brand-icon { font-size: 28px; }
@@ -444,3 +445,123 @@ html, body {
 @keyframes fade { from { opacity: 0 } to { opacity: 1 } }
 @keyframes slideUp { from { transform: translateY(30px); opacity: .4 } to { transform: none; opacity: 1 } }
 @keyframes pop { from { transform: scale(.94); opacity: .4 } to { transform: none; opacity: 1 } }
+
+/* ==========================================================================
+   iOS / PWA 适配
+   ========================================================================== */
+
+:root {
+  /* 安全区：iPhone 刘海屏、灵动岛、底部横条。
+     非 iOS 设备上 env() 为 0，不影响原有布局。 */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  /* 由 js/pwa.js 在 iOS 上写入，修正地址栏收起/展开导致的 100vh 抖动 */
+  --app-vh: 1vh;
+}
+
+/* 让左右内容避开横屏时的圆角/刘海 */
+.app {
+  padding-left: calc(14px + var(--safe-left));
+  padding-right: calc(14px + var(--safe-right));
+}
+
+/* 底部留出横条高度，否则最后一项会被 Home Indicator 压住 */
+.app {
+  padding-bottom: calc(40px + var(--safe-bottom));
+}
+
+/* 底部弹层避开 Home Indicator */
+.modal-box {
+  padding-bottom: calc(26px + var(--safe-bottom));
+}
+
+/* 中间弹出的弹层（设置）也留安全边距 */
+.modal-box.small {
+  max-height: calc(86 * var(--app-vh));
+  margin-bottom: calc(12px + var(--safe-bottom));
+}
+
+/* 吐司提示上移，避免被横条遮挡 */
+.toast {
+  bottom: calc(76px + var(--safe-bottom));
+}
+
+/* iOS 输入控件：字号小于 16px 时，聚焦会自动放大页面 */
+@media screen and (max-width: 700px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
+/* 防止 iOS 上长按选中文字/弹出放大镜，影响小朋友点击 */
+button,
+.seg,
+.chips {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* 允许正文可复制（家长可能想复制诗句） */
+.poem-text,
+.modal-head h2 {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* ---------- 「添加到主屏幕」引导条 ---------- */
+.ios-install-tip {
+  position: fixed;
+  left: calc(12px + var(--safe-left));
+  right: calc(12px + var(--safe-right));
+  bottom: calc(12px + var(--safe-bottom));
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #fffdf2;
+  border: 1px solid #eadfb8;
+  border-radius: 14px;
+  padding: 11px 12px;
+  box-shadow: 0 6px 22px rgba(35, 48, 42, .16);
+  font-size: 13px;
+  line-height: 1.45;
+  animation: slideUp .28s cubic-bezier(.2, .8, .3, 1);
+}
+.ios-install-tip[hidden] { display: none; }
+
+.ios-tip-icon { font-size: 18px; flex: none; }
+.ios-tip-text { flex: 1; color: #5f5330; }
+
+.ios-tip-close {
+  flex: none;
+  border: none;
+  background: var(--green);
+  color: #fff;
+  border-radius: 9px;
+  padding: 7px 11px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ios-tip-close:active { opacity: .82; }
+
+/* 已安装到桌面后（standalone）隐藏引导，由 JS 保证，这里兜底 */
+@media (display-mode: standalone) {
+  .ios-install-tip { display: none !important; }
+}
+
+/* 横屏小高度时压缩顶部留白，让内容更早出现 */
+@media (max-height: 480px) and (orientation: landscape) {
+  .topbar { padding-top: calc(8px + var(--safe-top)); }
+}
+
+/* 引导条不能盖住弹层里的操作按钮：
+   弹层 z-index 为 50，引导条需低于它，否则「忘记/模糊/记住」会被挡住点不到 */
+.ios-install-tip {
+  z-index: 40;
+}
