@@ -68,8 +68,11 @@ function check(name, cond, extra) {
     // iOS meta
     check('iPhone: apple-mobile-web-app-capable=yes',
       await page.$eval('meta[name="apple-mobile-web-app-capable"]', el => el.content) === 'yes');
+    // 应用名会随设置里的用户名联动（见 js/app.js applyUserName），
+    // 因此只断言非空、且不再是旧品牌名，不写死具体文案。
+    const iosTitle = await page.$eval('meta[name="apple-mobile-web-app-title"]', el => el.content);
     check('iPhone: apple-mobile-web-app-title',
-      (await page.$eval('meta[name="apple-mobile-web-app-title"]', el => el.content)) === 'Ashley 背古诗词');
+      !!iosTitle && !/背古诗词/.test(iosTitle), iosTitle);
     check('iPhone: status-bar-style',
       !!(await page.$eval('meta[name="apple-mobile-web-app-status-bar-style"]', el => el.content)));
 
