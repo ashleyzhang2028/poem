@@ -39,7 +39,7 @@
 
   /** 页面主标题文案 */
   function appTitle() {
-    return userName() + "背古诗词";
+    return userName() + "古诗词背诵";
   }
 
   /** 把用户名同步到页面标题、品牌标题、iOS 桌面名与 PWA 清单 */
@@ -470,7 +470,7 @@
       const blob = new Blob([Storage.exportJSON()], { type: "application/json" });
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
-      a.download = userName() + "背古诗词进度-" + todayKeyStr() + ".json";
+      a.download = userName() + "古诗词背诵进度-" + todayKeyStr() + ".json";
       a.click();
       URL.revokeObjectURL(a.href);
       showToast("备份已导出");

@@ -1,6 +1,6 @@
 {
-  "name": "Ashley 背古诗词",
-  "short_name": "Ashley 背古诗词",
+  "name": "Ashley古诗词背诵 · 艾宾浩斯记忆曲线",
+  "short_name": "Ashley古诗词背诵",
   "description": "一年级至高三古诗词背诵，按艾宾浩斯遗忘曲线安排复习。手机、平板、电脑均可使用，苹果手机可添加到主屏幕当 App 用。用户名可在设置中修改。",
   "start_url": "./index.html",
   "scope": "./",
