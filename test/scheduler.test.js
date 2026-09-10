@@ -36,7 +36,16 @@ assert(JSON.stringify(Scheduler.INTERVALS) === JSON.stringify([0,1,2,4,7,15,30,6
 let rec = Scheduler.createRecord();
 for (let i = 0; i < 3; i++) rec = Scheduler.review(rec, 'good');
 assert(rec.level === 3, '连续记住 3 次 → level=3（实际 ' + rec.level + '）');
-assert(rec.nextReviewAt > Date.now() + 3.5*86400000, '下次复习约 4 天后');
+// 第 3 阶段间隔 4 天，nextReviewAt 落在第 4 天的 09:00。
+// 注意：从当前时刻算起会随运行时刻浮动（21:00 之后恰好不足 3.5 天），
+// 这里改判应落在的目标日期，避免边界时刻抖动导致误报。
+const DAY = 86400000;
+const targetDay = (function () {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d.getTime() + 4 * DAY + 9 * 60 * 60 * 1000;
+})();
+assert(Math.abs(rec.nextReviewAt - targetDay) < 1000, '下次复习约 4 天后');
 
 // 4. fuzzy 保持阶段
 let r2 = Scheduler.createRecord();
