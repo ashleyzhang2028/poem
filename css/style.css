@@ -41,7 +41,9 @@ html, body {
   padding: calc(18px + var(--safe-top)) 2px 12px;
 }
 .brand { display: flex; align-items: center; gap: 10px; }
-.brand-icon { font-size: 28px; }
+/* 图标统一用内联 SVG，颜色跟随文字色，缩放不失真 */
+.brand-icon { display: inline-flex; color: var(--green); }
+.brand-icon svg { width: 26px; height: 26px; }
 .brand-text h1 {
   font-size: 19px;
   margin: 0;
@@ -59,10 +61,14 @@ html, body {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  font-size: 18px;
+  color: var(--ink-2);
   cursor: pointer;
   box-shadow: var(--shadow);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
+.icon-btn svg { width: 21px; height: 21px; }
 
 /* 卡片 */
 .card {
@@ -266,6 +272,8 @@ html, body {
   cursor: pointer;
   padding: 2px 0;
 }
+.collapse-head .collapse-icon { display: inline-flex; color: var(--green); }
+.collapse-head .collapse-icon svg { width: 20px; height: 20px; }
 .collapse-head .badge {
   background: var(--green-light);
   color: var(--green);

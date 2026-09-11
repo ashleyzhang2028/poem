@@ -1,9 +1,9 @@
 /**
- * 艾宾浩斯遗忘曲线复习调度器
+ * 遗忘曲线复习调度器
  * ---------------------------------------------------
  * 设计说明：
  * 1. 每首诗拥有独立记忆档案：level（记忆阶段）、nextReviewAt（下次复习时间）、history（复习历史）。
- * 2. 采用经典艾宾浩斯复习间隔序列（天）：
+ * 2. 采用经典遗忘曲线复习间隔序列（天）：
  *    0（当天学习）→ 1 → 2 → 4 → 7 → 15 → 30 → 60 → 120 → 240
  *    间隔逐级翻倍，符合遗忘"先快后慢"的规律。
  * 3. 每次复习后按掌握程度调整：
@@ -12,13 +12,14 @@
  *    - 忘记（bad）   ：降级回上一阶段（最低回到第 0 阶段），重新走曲线
  * 4. 每日计划生成（generateDailyPlan）：
  *    - 优先挑选"到期需要复习"的诗（nextReviewAt <= 今天）
- *    - 不足 dailyCount 时，从当前年级/学期中顺序补充"从未学过"的新诗
- *    - 都取完仍不足则从其他年级补，保证每天稳定 5 首
+ *    - 不足 dailyCount 时，从「背诵范围」（scope，见 SCOPES）中补充"从未学过"的新诗：
+ *      本册 / 本册及之前 / 小学随机 / 初中随机 / 小学+初中随机 / 高中随机 / 全部随机
+ *    - 仍不足则从其他年级补，保证每天稳定 5 首
  */
 (function () {
   const DAY = 24 * 60 * 60 * 1000;
 
-  // 艾宾浩斯复习间隔（天）
+  // 遗忘曲线复习间隔（天）
   const INTERVALS = [0, 1, 2, 4, 7, 15, 30, 60, 120, 240];
   // 模糊（fuzzy）时的短间隔（小时）
   const FUZZY_HOURS = 12;
@@ -114,11 +115,103 @@
   }
 
   /**
+   * 背诵范围选项（设置里的「背诵范围」）
+   *   term          本年级本学期（默认）
+   *   upto          本年级本学期及之前学过的全部内容
+   *   primary       小学阶段随机
+   *   middle        初中阶段随机
+   *   primary_middle 小学 + 初中随机
+   *   high          高中阶段随机
+   *   all           全部阶段随机
+   */
+  const SCOPES = {
+    term: { label: "本册", scopeName: "本年级本学期", terms: false, random: false, stages: ["current"] },
+    upto: { label: "本册及之前", scopeName: "本年级本学期及之前", terms: false, random: false, stages: ["upto"] },
+    primary: { label: "小学随机", scopeName: "小学阶段", terms: true, random: true, stages: ["primary"] },
+    middle: { label: "初中随机", scopeName: "初中阶段", terms: true, random: true, stages: ["middle"] },
+    primary_middle: { label: "小学+初中随机", scopeName: "小学及初中阶段", terms: true, random: true, stages: ["primary", "middle"] },
+    high: { label: "高中随机", scopeName: "高中阶段", terms: true, random: true, stages: ["high"] },
+    all: { label: "全部随机", scopeName: "全部阶段", terms: true, random: true, stages: ["primary", "middle", "high"] }
+  };
+
+  const DEFAULT_SCOPE = "term";
+
+  function scopeOf(key) {
+    return SCOPES[key] || SCOPES[DEFAULT_SCOPE];
+  }
+
+  function stageGrades(stage) {
+    if (stage === "primary") return window.PRIMARY_GRADES || [1, 2, 3, 4, 5, 6];
+    if (stage === "middle") return window.MIDDLE_GRADES || [7, 8, 9];
+    return window.HIGH_GRADES || [10, 11, 12];
+  }
+
+  /**
+   * 按背诵范围取出候选诗词
+   * @returns {Array} 候选诗词（顺序：term/upto 为教材顺序，随机范围为随机顺序）
+   */
+  function poolForScope(opt) {
+    const grade = Number(opt.grade);
+    const term = Number(opt.term);
+    const key = opt.scope || DEFAULT_SCOPE;
+    const scope = scopeOf(key);
+    const allPoems = (opt.allPoems || window.POEMS_ALL || []).slice();
+    let pool;
+
+    if (key === "term") {
+      pool = allPoems.filter(function (p) {
+        return p.grade === grade && p.term === term;
+      });
+    } else if (key === "upto") {
+      pool = allPoems.filter(function (p) {
+        return p.grade < grade || (p.grade === grade && p.term <= term);
+      });
+    } else {
+      let inStage = [];
+      scope.stages.forEach(function (st) {
+        stageGrades(st).forEach(function (g) {
+          inStage = inStage.concat(allPoems.filter(function (p) {
+            return p.grade === g;
+          }));
+        });
+      });
+      if (inStage.length) pool = inStage;
+      else pool = allPoems.filter(function (p) {
+        return p.grade === grade && p.term === term;
+      });
+    }
+
+    if (scope.terms) {
+      pool.sort(function (a, b) {
+        return (a.grade - b.grade) || (a.term - b.term);
+      });
+    }
+    return pool;
+  }
+
+  function shuffle(list) {
+    const arr = list.slice();
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const t = arr[i];
+      arr[i] = arr[j];
+      arr[j] = t;
+    }
+    return arr;
+  }
+
+  /** 由外向内扩散的年级距离（用于「本册及之前」优先取最近学期） */
+  function gradeDistance(g, grade) {
+    return Math.abs(g - grade);
+  }
+
+  /**
    * 生成每日背诵计划
    * @param {Object} opt
    *   opt.grade      当前年级（1-12）
    *   opt.term       当前学期（1/2）
    *   opt.count      每日数量，默认 5
+   *   opt.scope      背诵范围（见 SCOPES），默认本年级本学期
    *   opt.provider   函数 (grade, term) => 诗词数组
    *   opt.getRecord  函数 (id) => 进度记录
    */
@@ -126,25 +219,48 @@
     const grade = Number(opt.grade);
     const term = Number(opt.term);
     const count = opt.count || 5;
-    const provider = opt.provider;
     const getRecord = opt.getRecord;
     const now = Date.now();
-    const current = provider(grade, term) || [];
+    const current = (opt.provider ? opt.provider(grade, term) : []) || [];
+    const allPoems = window.POEMS_ALL || current;
+    const scope = scopeOf(opt.scope);
+
+    // 候选池：
+    // - 固定范围（本册 / 本册及之前）：教材顺序，优先本册，再按年级、学期由近到远
+    // - 随机范围（各学段）：随机打乱后取前 N 首
+    let pool = poolForScope({ grade: grade, term: term, scope: opt.scope, allPoems: allPoems });
+    // 数据缺省时兜底到本册
+    if (!pool.length) pool = current.slice();
+    if (scope.random) {
+      pool = shuffle(pool);
+    } else {
+      pool.sort(function (a, b) {
+        const aCur = a.grade === grade && a.term === term ? 0 : 1;
+        const bCur = b.grade === grade && b.term === term ? 0 : 1;
+        if (aCur !== bCur) return aCur - bCur;
+        const ag = gradeDistance(a.grade, grade);
+        const bg = gradeDistance(b.grade, grade);
+        if (ag !== bg) return ag - bg;
+        return (a.term - b.term) || 0;
+      });
+    }
 
     const plan = [];
     const used = {};
 
-    // 1) 到期的复习诗：全库范围内查找（跨年级复习），优先当前年级学期
-    const allPoems = window.POEMS_ALL || current;
+    // 1) 到期的复习诗（范围之外已学过的诗也应复习，避免遗忘）
     const dueAll = allPoems.filter(function (p) {
-      const rec = getRecord(p.id);
-      return isDue(rec, now);
+      return isDue(getRecord(p.id), now);
     });
-    // 当前年级学期到期的排前面
+    // 范围内的排前面，其次按到期时间先后
+    const inPool = {};
+    pool.forEach(function (p) {
+      inPool[p.id] = true;
+    });
     dueAll.sort(function (a, b) {
-      const aCur = a.grade === grade && a.term === term ? 0 : 1;
-      const bCur = b.grade === grade && b.term === term ? 0 : 1;
-      if (aCur !== bCur) return aCur - bCur;
+      const aIn = inPool[a.id] ? 0 : 1;
+      const bIn = inPool[b.id] ? 0 : 1;
+      if (aIn !== bIn) return aIn - bIn;
       const ra = getRecord(a.id);
       const rb = getRecord(b.id);
       return (ra ? ra.nextReviewAt : 0) - (rb ? rb.nextReviewAt : 0);
@@ -162,7 +278,7 @@
       }
     });
 
-    // 2) 补充未学过的新诗（当前年级学期优先）
+    // 2) 补充未学过的新诗（范围优先，其次相邻学期）
     function fillFrom(list, reason) {
       list.forEach(function (p) {
         if (plan.length >= count || used[p.id]) return;
@@ -173,12 +289,12 @@
       });
     }
 
-    fillFrom(current, "new");
+    fillFrom(pool, "new");
 
     // 3) 仍然不足：从相邻年级/学期补
     if (plan.length < count) {
       const others = allPoems.filter(function (p) {
-        return !(p.grade === grade && p.term === term);
+        return !used[p.id] && !(p.grade === grade && p.term === term);
       });
       others.sort(function (a, b) {
         const da = Math.abs(a.grade - grade) * 10 + Math.abs(a.term - term);
@@ -190,7 +306,7 @@
 
     // 4) 极端情况：全部学过且未到期，仍补满（每日巩固）
     if (plan.length < count) {
-      const remain = current.filter(function (p) {
+      const remain = (scope.random ? shuffle(pool) : pool.concat(current)).filter(function (p) {
         return !used[p.id];
       });
       remain.forEach(function (p) {
@@ -235,6 +351,10 @@
     mastery: mastery,
     levelName: levelName,
     generateDailyPlan: generateDailyPlan,
+    SCOPES: SCOPES,
+    DEFAULT_SCOPE: DEFAULT_SCOPE,
+    scopeOf: scopeOf,
+    poolForScope: poolForScope,
     stats: stats,
     nextTimeForLevel: nextTimeForLevel,
     daysBetween: daysBetween

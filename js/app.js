@@ -39,13 +39,13 @@
 
   /** 页面主标题文案 */
   function appTitle() {
-    return userName() + "古诗词背诵";
+    return userName() + "古诗词";
   }
 
   /** 把用户名同步到页面标题、品牌标题、iOS 桌面名与 PWA 清单 */
   function applyUserName() {
     const title = appTitle();
-    document.title = title + " · 艾宾浩斯记忆曲线";
+    document.title = title + " · 遗忘曲线记忆法";
     const h1 = $("#brand-name");
     if (h1) h1.textContent = title;
 
@@ -91,6 +91,27 @@
     return window.getPoemsByGradeTerm(grade, term);
   }
 
+  /** 当前背诵范围配置（见 js/scheduler.js 的 SCOPES） */
+  function scopeKey() {
+    return Scheduler.SCOPES[settings.scope] ? settings.scope : Scheduler.DEFAULT_SCOPE;
+  }
+
+  function scopeInfo() {
+    return Scheduler.scopeOf(scopeKey());
+  }
+
+  /** 「全部诗词」面板当前展示的诗词（跟随背诵范围） */
+  function currentScopePoems() {
+    const scope = scopeInfo();
+    if (scope.random) {
+      const pool = Scheduler.poolForScope({ grade: settings.grade, term: settings.term, scope: scopeKey() });
+      return pool.slice().sort(function (a, b) {
+        return (a.grade - b.grade) || (a.term - b.term);
+      });
+    }
+    return provider(settings.grade, settings.term);
+  }
+
   function getRecord(id) {
     return Storage.get(id);
   }
@@ -107,7 +128,10 @@
 
   /* ---------------- 今日任务缓存 ---------------- */
   function planCacheKey() {
-    return "poem_plan_" + todayKeyStr() + "_" + settings.grade + "_" + settings.term + "_" + settings.dailyCount;
+    return (
+      "poem_plan_" + todayKeyStr() + "_" + settings.grade + "_" + settings.term + "_" +
+      scopeKey() + "_" + settings.dailyCount
+    );
   }
 
   function buildTodayPlan() {
@@ -138,6 +162,7 @@
       grade: settings.grade,
       term: settings.term,
       count: settings.dailyCount,
+      scope: scopeKey(),
       provider: provider,
       getRecord: getRecord
     });
@@ -194,6 +219,14 @@
         b.classList.toggle("active", Number(b.dataset.count) === settings.dailyCount);
       });
     }
+    const ssc = $("#seg-scope");
+    if (ssc) {
+      $$("button", ssc).forEach(function (b) {
+        b.classList.toggle("active", b.dataset.scope === scopeKey());
+      });
+    }
+    const hint = $("#scope-hint");
+    if (hint) hint.textContent = "当前：" + scopeInfo().scopeName;
   }
 
   /* ---------------- 渲染：今日列表 ---------------- */
@@ -202,7 +235,7 @@
     list.innerHTML = "";
 
     if (!todayPlan.length) {
-      list.innerHTML = '<div class="card empty">本年级本学期暂无诗词数据</div>';
+      list.innerHTML = '<div class="card empty">' + esc(scopeInfo().scopeName) + '暂无诗词数据</div>';
       return;
     }
 
@@ -263,12 +296,16 @@
 
   /* ---------------- 渲染：全部诗词 ---------------- */
   function renderAll() {
-    const poems = provider(settings.grade, settings.term);
+    const scope = scopeInfo();
+    const poems = currentScopePoems();
     $("#all-count").textContent = poems.length;
+
+    const label = $("#all-label");
+    if (label) label.textContent = scope.random ? scope.scopeName + "全部诗词" : "本年级本学期全部诗词";
 
     const st = Scheduler.stats(poems, getRecord);
     $("#stats-row").innerHTML =
-      '<div class="stat"><b>' + st.total + "</b><span>本学期诗词</span></div>" +
+      '<div class="stat"><b>' + st.total + "</b><span>诗词总数</span></div>" +
       '<div class="stat"><b>' + st.learned + "</b><span>已学</span></div>" +
       '<div class="stat"><b>' + st.mastered + "</b><span>较牢固</span></div>" +
       '<div class="stat review"><b>' + st.dueToday + "</b><span>待复习</span></div>";
@@ -288,6 +325,7 @@
         '<div class="item-main">' +
         '<h3 class="item-title">' + esc(p.title) + "</h3>" +
         '<div class="item-meta"><span>' + esc(p.dynasty) + "</span><span>·</span><span>" + esc(p.author) + "</span>" +
+        (scope.random ? "<span>·</span><span>" + esc(gradeName(p.grade) + termName(p.term)) + "</span>" : "") +
         (rec && rec.learned
           ? '<span>·</span><span>' + Scheduler.levelName(rec.level) + "</span>"
           : '<span>·</span><span>未学过</span>') +
@@ -446,6 +484,14 @@
       const body = $("#all-body");
       body.hidden = !body.hidden;
       this.classList.toggle("open", !body.hidden);
+    });
+
+    $$("#seg-scope button").forEach(function (b) {
+      b.addEventListener("click", function () {
+        settings.scope = b.dataset.scope;
+        saveAndRefresh(true);
+        showToast("背诵范围：" + scopeInfo().scopeName);
+      });
     });
 
     $$("#seg-count button").forEach(function (b) {
