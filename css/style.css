@@ -684,20 +684,6 @@ body.has-install-tip #app {
   margin-top: 2px;
 }
 
-/* 弹层底部的「小古文库」入口 */
-.modal-extra {
-  display: block;
-  margin-top: 14px;
-  text-align: center;
-  font-size: 13px;
-  color: var(--green);
-  text-decoration: none;
-  padding: 9px;
-  border-radius: 12px;
-  background: var(--green-light);
-  font-weight: 600;
-}
-
 /* 设置里的多行说明 */
 .settings-tip p { margin: 0; }
 .settings-tip p + p { margin-top: 6px; }
