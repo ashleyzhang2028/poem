@@ -22,7 +22,12 @@ setTimeout(() => {
 
   chk(d.title === 'Ashley古诗词 · 遗忘曲线记忆法', '页面标题为 Ashley古诗词（实际 ' + d.title + '）');
   chk(d.querySelector('.brand-text h1').textContent === 'Ashley古诗词', '品牌标题为 Ashley古诗词');
-  chk(d.querySelector('.foot').textContent.replace(/\s+/g, ' ').trim() === '©2026 kuibu.app 积跬步, 至千里', '页脚版权为 ©2026 kuibu.app 积跬步, 至千里（实际 ' + d.querySelector('.foot').textContent.trim() + '）');
+  const foot = d.querySelector('.foot');
+  chk(foot.querySelector('.foot-copy').textContent.trim() === '©2026 kuibu.app 积跬步, 至千里', '页脚版权为 ©2026 kuibu.app 积跬步, 至千里（实际 ' + foot.querySelector('.foot-copy').textContent.trim() + '）');
+  // 页脚需常驻两个法务入口：用户协议 / 隐私条款
+  const footLinks = [...foot.querySelectorAll('.foot-links a')];
+  chk(footLinks.map(a => a.textContent.trim()).join('/') === '用户协议/隐私条款', '页脚含「用户协议」「隐私条款」链接');
+  chk(footLinks.map(a => a.getAttribute('href')).join('/') === './terms.html/./privacy.html', '页脚两个链接指向 terms.html 与 privacy.html');
   chk(d.querySelector('.brand-text p').textContent === '一年级至高三 · 遗忘曲线记忆法', '副标题为「一年级至高三 · 遗忘曲线记忆法」');
   chk(d.querySelector('#all-label').textContent === '本年级本学期全部诗词', '全部诗词标题精确为「本年级本学期全部诗词」');
   // 除 😵🤔😄 外，页面图标应为内联 SVG
