@@ -33,6 +33,12 @@ setTimeout(() => {
   chk(!!d.querySelector('#settings-modal #seg-stage'), '学段选择已移入设置');
   chk(!!d.querySelector('#settings-modal #seg-term'), '学期选择已移入设置');
   chk(!!d.querySelector('#settings-modal #grade-chips'), '年级选择已移入设置');
+  // 课外必背小古文入口：独立页面，不进每日计划
+  const entry = d.querySelector('#classic-entry');
+  chk(!!entry, '首页有「课外必背小古文」入口');
+  chk(entry.getAttribute('href') === './classic.html', '入口指向 classic.html');
+  chk(/34 篇/.test(entry.textContent), '入口标明 34 篇：' + entry.textContent.replace(/\s+/g, ' ').trim());
+  chk(d.querySelector('#all-count').textContent === '5', '小古文不会混进古诗词列表（仍为 5 首）');
 
   // 先打开设置才能操作年级/学期
   d.querySelector('#btn-settings').dispatchEvent(new window.Event('click', { bubbles: true }));
