@@ -103,21 +103,43 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
   chk(d.querySelector('#modal').hidden === true, '点朗读按钮不会误开诗词弹层');
 
   // ---- 阅读辅助开关的可见差别 ----
-  d.querySelector('#btn-settings').dispatchEvent(new w.Event('click', { bubbles: true }));
-  const helperOff = [...d.querySelectorAll('#seg-helper button')].find(b => b.dataset.helper === 'off');
-  helperOff.dispatchEvent(new w.Event('click', { bubbles: true }));
-  await sleep(20);
-  d.querySelector('#settings-modal').hidden = true;
+  // 开启（默认「只标生字」）→ 打开诗词自动注音；关闭 → 纯文本，需要时手动切档位
+  const clickHelper = (v) => {
+    d.querySelector('#btn-settings').dispatchEvent(new w.Event('click', { bubbles: true }));
+    [...d.querySelectorAll('#seg-helper button')].find(b => b.dataset.helper === v)
+      .dispatchEvent(new w.Event('click', { bubbles: true }));
+    d.querySelector('#settings-modal').hidden = true;
+  };
+  /** 打开一首确有生字的诗（「只标生字」下才有 ruby 可数） */
+  const openWithRare = () => {
+    for (const item of d.querySelectorAll('#today-list .item')) {
+      item.dispatchEvent(new w.Event('click', { bubbles: true }));
+      if (d.querySelectorAll('#m-text ruby').length > 0) return true;
+      d.querySelector('#modal').hidden = true;
+    }
+    return false;
+  };
+  const setMode = (m) => {
+    d.querySelector('#m-pinyin-seg button[data-mode="' + m + '"]')
+      .dispatchEvent(new w.Event('click', { bubbles: true }));
+  };
+
+  clickHelper('off');
   d.querySelector('#today-list .item').dispatchEvent(new w.Event('click', { bubbles: true }));
   chk(d.querySelectorAll('#m-text ruby').length === 0, '阅读辅助关闭 → 打开诗词是纯文本');
   d.querySelector('#modal').hidden = true;
-  d.querySelector('#btn-settings').dispatchEvent(new w.Event('click', { bubbles: true }));
-  const helperOn = [...d.querySelectorAll('#seg-helper button')].find(b => b.dataset.helper === 'on');
-  helperOn.dispatchEvent(new w.Event('click', { bubbles: true }));
-  await sleep(20);
-  d.querySelector('#settings-modal').hidden = true;
-  d.querySelector('#today-list .item').dispatchEvent(new w.Event('click', { bubbles: true }));
-  chk(d.querySelectorAll('#m-text ruby').length > 5, '阅读辅助开启 → 打开诗词自动注音（开关差别可见）');
+
+  clickHelper('on');
+  chk(openWithRare(), '阅读辅助开启 → 打开诗词自动注音（开关差别可见）');
+  const rareN = d.querySelectorAll('#m-text ruby').length;
+
+  // 手动切「全文注音」，差别进一步可见
+  setMode('all');
+  const allN = d.querySelectorAll('#m-text ruby').length;
+  chk(allN > rareN, '弹层可手动切「全文注音」（' + allN + ' > ' + rareN + '）');
+  setMode('off');
+  chk(d.querySelectorAll('#m-text ruby').length === 0, '弹层可手动关掉注音，恢复纯文本');
+  d.querySelector('#modal').hidden = true;
 
   // ---- 小古文：随机连读 / 上一篇下一篇 / 译文朗读 ----
   const w2 = boot('classic.html', null, true);

@@ -1,15 +1,20 @@
 /**
  * 生字注音
  * ---------------------------------------------------
- * 目标：给每一首诗、每一篇小古文的正文逐字标注拼音，
- *       小朋友遇到「曰、媪、杵、鹄」这类字不用停下来问大人。
+ * 目标：小朋友遇到「媪、杵、鹄、巍」这类字不用停下来问大人。
+ *
+ * 两档模式（由调用方传入 mode）：
+ * 1. "rare"（默认）—— 只标生字。常见字不注音，页面清爽，
+ *    真正陌生的字才有拼音，符合「生僻字只标生字」的诉求。
+ * 2. "all" —— 全文逐字注音。给刚识字、需要全量辅助的小朋友。
  *
  * 设计取舍：
  * 1. 不引入任何运行时第三方库。拼音表 data/pinyin-table.js 是构建期
- *    用 pinyin-pro 离线生成的，覆盖课内 242 首 + 课外 100 篇里的全部汉字。
- * 2. 逐字注音会让长诗看起来很密，所以默认关闭，在设置里手动开启；
- *    打开后全文注音，不做「只标生僻字」二档，避免孩子看到半注音半不注音
- *    的排版产生困惑。
+ *    用 pinyin-pro 离线生成的，覆盖课内 242 首 + 课外 100 篇里的全部汉字；
+ *    常用字表 data/common-chars.js 是构建期用 jieba 字频表导出的前 2500 字，
+ *    表外即视为生字。两份表都是只读数据，运行时不联网、不依赖 CDN。
+ * 2. 两档都是「要么全标、要么只标生字」，不做逐字随机掺半，
+ *    避免孩子看到半注音半不注音的排版产生困惑。
  * 3. 多音字按上下文判定：
  *    - 先取该字在词语里的读音（内置一份常用词的读音表）
  *    - 其次看它在句中的位置与邻居（如「不」在去声前读 bú）
@@ -19,6 +24,8 @@
   "use strict";
 
   const TABLE = window.PINYIN_TABLE || {};
+  // 常用字表：命中即「小朋友已认识」，只标生字模式下跳过注音
+  const COMMON = window.COMMON_CHARS || {};
 
   // 去声声调符号（à 等）用于「不」「一」的变调判断
   const TONE4 = /[àèìòùǜ]/;
@@ -214,33 +221,63 @@
     return "";
   }
 
+  /** 是否为常见字（常用字表 2500 字内） */
+  function isCommon(ch) {
+    return !!COMMON[ch];
+  }
+
   /**
-   * 给一段文本逐字注音，返回 HTML 片段。
-   * 非汉字字符原样输出，换行用 <br> 保留。
+   * 该字在「只标生字」模式下是否需要注音。
+   * 生字 = 有拼音可查 且 不在常用字表内。
    */
-  function annotateHtml(text) {
+  function needAnnotate(ch) {
+    return readings(ch).length > 0 && !isCommon(ch);
+  }
+
+  /**
+   * 逐字注音，返回 HTML 片段。
+   * 非汉字字符原样输出，换行用 <br> 保留。
+   *
+   * @param {string} text 正文
+   * @param {string} [mode] "rare" 只标生字（默认）｜"all" 全文注音
+   */
+  function annotateHtml(text, mode) {
+    const rare = (mode || "rare") !== "all";
     const src = String(text == null ? "" : text);
     const chars = Array.from(src);
     let out = "";
-    let buf = "";
     chars.forEach(function (ch, i) {
       if (!isHan(ch)) {
-        if (buf) { out += wrap(buf); buf = ""; }
         out += ch === "\n" ? "<br>" : escapeHtml(ch);
+        return;
+      }
+      if (rare && isCommon(ch)) {
+        out += escapeHtml(ch);
         return;
       }
       const p = readOf(ch, chars, i);
       if (!p) {
-        if (buf) { out += wrap(buf); buf = ""; }
         out += escapeHtml(ch);
         return;
       }
-      buf += "<ruby>" + escapeHtml(ch) + "<rt>" + escapeHtml(p) + "</rt></ruby>";
+      out += "<ruby>" + escapeHtml(ch) + "<rt>" + escapeHtml(p) + "</rt></ruby>";
     });
-    if (buf) out += wrap(buf);
     return out;
+  }
 
-    function wrap(s) { return s; }
+  /**
+   * 只给出需要注音的字（去重），按出现顺序。
+   * 供测试校验与「本篇生字」速览使用。
+   */
+  function rareChars(text) {
+    const seen = Object.create(null);
+    const list = [];
+    Array.from(String(text == null ? "" : text)).forEach(function (ch) {
+      if (!isHan(ch) || seen[ch] || !needAnnotate(ch)) return;
+      seen[ch] = 1;
+      list.push(ch);
+    });
+    return list;
   }
 
   function escapeHtml(s) {
@@ -249,11 +286,15 @@
     });
   }
 
-  /** 纯文本形式：逐字给出读音，便于测试与朗读 */
-  function annotateText(text) {
-    return Array.from(String(text == null ? "" : text)).map(function (ch) {
+  /** 纯文本形式：给出读音，便于测试与朗读。默认只标生字，传 "all" 则全文 */
+  function annotateText(text, mode) {
+    const rare = (mode || "rare") !== "all";
+    const src = String(text == null ? "" : text);
+    const chars = Array.from(src);
+    return chars.map(function (ch, i) {
       if (!isHan(ch)) return ch;
-      return ch + "(" + (readOf(ch, Array.from(String(text)), Array.from(String(text)).indexOf(ch)) || "") + ")";
+      if (rare && isCommon(ch)) return ch;
+      return ch + "(" + (readOf(ch, chars, i) || "") + ")";
     });
   }
 
@@ -265,10 +306,15 @@
 
   window.Pinyin = {
     annotateHtml: annotateHtml,
+    annotateText: annotateText,
+    rareChars: rareChars,
+    isCommon: isCommon,
+    needAnnotate: needAnnotate,
     readOf: function (ch, text, i) { return readOf(ch, text || ch, i || 0); },
     read: read,
     has: function (ch) { return !!TABLE[ch]; },
     size: function () { return Object.keys(TABLE).length; },
+    commonSize: function () { return Object.keys(COMMON).length; },
     isHan: isHan
   };
 })();

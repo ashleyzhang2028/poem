@@ -18,6 +18,7 @@ const sb = { window: {}, console };
 sb.window = sb;
 vm.createContext(sb);
 vm.runInContext(fs.readFileSync(ROOT + "data/pinyin-table.js", "utf8"), sb, { filename: "pinyin-table.js" });
+vm.runInContext(fs.readFileSync(ROOT + "data/common-chars.js", "utf8"), sb, { filename: "common-chars.js" });
 vm.runInContext(fs.readFileSync(ROOT + "js/pinyin.js", "utf8"), sb, { filename: "pinyin.js" });
 const P = sb.Pinyin;
 const TABLE = sb.PINYIN_TABLE;
@@ -40,12 +41,38 @@ chk(P.readOf("不", "不能", 0) === "bù", "「不」在非去声前读 bù");
 chk(P.readOf("行", "一行白鹭上青天", 1) === "háng", "「一行」读 háng");
 chk(P.readOf("乐", "知者乐水，仁者乐山", 2) === "yào", "「乐山乐水」读 yào");
 
-// 注音渲染
-const html = P.annotateHtml("曲项向天歌");
-chk(/<ruby>曲<rt>qū<\/rt><\/ruby>/.test(html), "注音输出 ruby 标签且读音正确");
-chk(P.annotateHtml("白日依山尽，").indexOf("，") > -1, "标点原样保留，不会被注音");
-chk(P.annotateHtml("鹅\n鹅").indexOf("<br>") > -1, "换行转换为 <br>，保持原诗分行");
-chk(P.annotateHtml("<b>").indexOf("&lt;b&gt;") > -1, "注音输出做了 HTML 转义，无注入风险");
+// 注音渲染 —— 全文注音（all）
+const html = P.annotateHtml("曲项向天歌", "all");
+chk(/<ruby>曲<rt>qū<\/rt><\/ruby>/.test(html), "全文注音输出 ruby 标签且读音正确");
+chk(P.annotateHtml("白日依山尽，", "all").indexOf("，") > -1, "标点原样保留，不会被注音");
+chk(P.annotateHtml("鹅\n鹅", "all").indexOf("<br>") > -1, "换行转换为 <br>，保持原诗分行");
+chk(P.annotateHtml("<b>", "all").indexOf("&lt;b&gt;") > -1, "注音输出做了 HTML 转义，无注入风险");
+
+// 注音渲染 —— 只标生字（默认档）
+chk(Object.keys(sb.COMMON_CHARS).length === 2500, "常用字表收录 2500 字");
+chk(P.isCommon("鹅") && !P.isCommon("巍"), "「鹅」是常用字、「巍」是生字");
+chk(P.needAnnotate("巍") && !P.needAnnotate("鹅"), "生字需要注音、常用字不需要");
+
+const rareHtml = P.annotateHtml("峨眉山月半轮秋，影入平羌江水流。");
+chk(rareHtml.indexOf("<ruby>峨<") > -1, "只标生字：生僻的「峨」被注音");
+chk(rareHtml.indexOf("<ruby>月<") === -1, "只标生字：常见的「月」不注音");
+chk(rareHtml.indexOf("<ruby>水<") === -1, "只标生字：常见的「水」不注音");
+
+const allHtml = P.annotateHtml("峨眉山月半轮秋", "all");
+chk(allHtml.indexOf("<ruby>月<") > -1, "全文注音：常见的「月」也注音");
+
+// rare 模式不注音的字数应远少于 all 模式
+const poem = "千山鸟飞绝，万径人踪灭。孤舟蓑笠翁，独钓寒江雪。";
+const rareN = (P.annotateHtml(poem, "rare").match(/<ruby>/g) || []).length;
+const allN = (P.annotateHtml(poem, "all").match(/<ruby>/g) || []).length;
+chk(rareN < allN, "只标生字的注音量(" + rareN + ")少于全文注音(" + allN + ")");
+chk(rareN > 0, "只标生字仍能标出该诗的生字（" + rareN + " 个）");
+
+// rareChars：列出本篇生字，去重且保持顺序
+const rc = P.rareChars("蓑笠翁，蓑衣");
+chk(rc.indexOf("蓑") > -1 && rc.indexOf("笠") > -1, "能列出本篇生字（蓑、笠）");
+chk(rc.filter(c => c === "蓑").length === 1, "生字列表按字去重");
+chk(P.rareChars("春眠不觉晓").indexOf("春") === -1, "常见字不算生字");
 
 // 数据完整性：课内 + 小古文所有汉字都在表里
 const d = { window: {}, console };
@@ -119,7 +146,10 @@ setTimeout(async () => {
   await phase1();
   const doc = w.document;
 
-  chk(!!doc.querySelector("#m-pinyin-toggle"), "诗词弹层有「标注拼音」按钮");
+  const seg = doc.querySelector("#m-pinyin-seg");
+  chk(!!seg, "诗词弹层有注音档位按钮组");
+  chk(seg.querySelectorAll("button").length === 3, "注音有 3 档：不注音 / 只标生字 / 全文注音");
+  chk(!!seg.querySelector('button[data-mode="rare"]'), "默认档「只标生字」按钮存在");
   chk(!!doc.querySelector("#m-read-btn"), "诗词弹层有「朗读」按钮");
   chk(!!doc.querySelector("#seg-helper"), "设置里有「阅读辅助」开关");
 
@@ -128,17 +158,49 @@ setTimeout(async () => {
   const first = doc.querySelector("#today-list .item");
   first.dispatchEvent(new w.Event("click", { bubbles: true }));
   const raw = doc.querySelector("#m-text").textContent;
-  chk(raw.length > 0, "打开弹层后正文正常渲染");
-  const rubies = doc.querySelectorAll("#m-text ruby");
-  chk(rubies.length > 4, "阅读辅助开启时打开诗词自动逐字注音（" + rubies.length + " 个 ruby）");
-  chk(doc.querySelector("#m-pinyin-toggle").dataset.on === "1", "按钮状态为开启");
+  chk(raw.length > 0, "打开弹层后正文正常渲染（默认不注音）");
+  chk(doc.querySelector("#m-text").querySelector("ruby") === null, "默认不注音，正文是纯文本");
 
-  doc.querySelector("#m-pinyin-toggle").dispatchEvent(new w.Event("click", { bubbles: true }));
-  chk(doc.querySelectorAll("#m-text ruby").length === 0, "点一次可关闭注音，恢复纯文本");
-  chk(w.localStorage.getItem("poem_helper_pinyin_v1") === "0", "注音开关状态已持久化");
+  const clickMode = (m) => doc.querySelector('#m-pinyin-seg button[data-mode="' + m + '"]')
+    .dispatchEvent(new w.Event("click", { bubbles: true }));
 
-  doc.querySelector("#m-pinyin-toggle").dispatchEvent(new w.Event("click", { bubbles: true }));
-  chk(doc.querySelectorAll("#m-text ruby").length > 4, "再点一次恢复注音");
+  // 只标生字：只给生字标音，常见字保持干净
+  clickMode("rare");
+  const rareN = doc.querySelectorAll("#m-text ruby").length;
+  const rawHan = doc.querySelector("#m-text").textContent.replace(/\s/g, "").length;
+  chk(rareN < rawHan, "只标生字不会把每个字都注上（" + rareN + " < " + rawHan + "）");
+
+  // 换一首确有生字的诗，确认生字确实被标了出来
+  // （首篇若全是常见字，标注数为 0 是正确行为）
+  let target = null;
+  for (const item of doc.querySelectorAll("#today-list .item")) {
+    item.dispatchEvent(new w.Event("click", { bubbles: true }));
+    clickMode("rare");
+    const n = doc.querySelectorAll("#m-text ruby").length;
+    if (n > 0) { target = { item, n }; break; }
+  }
+  if (target) {
+    chk(target.n > 0, "换个有生字的诗，「只标生字」能标出生字（" + target.n + " 个 ruby）");
+    const rareTxt = doc.querySelector("#m-text").textContent;
+    chk(!doc.querySelector("#m-text").querySelector("ruby").textContent.includes("的"),
+      "只标生字时常见字（如「的」）不被注音");
+  } else {
+    chk(false, "今日任务里应至少有一首含生字的诗");
+  }
+  chk(doc.querySelector('#m-pinyin-seg button[data-mode="rare"]').classList.contains("active"),
+    "「只标生字」按钮切到选中态");
+  chk(w.localStorage.getItem("poem_helper_pinyin_v1") === "rare", "注音档位已持久化为 rare");
+
+  // 全文注音：注音量明显多于只标生字
+  clickMode("all");
+  const allN = doc.querySelectorAll("#m-text ruby").length;
+  chk(allN > rareN, "「全文注音」比「只标生字」注得多（" + allN + " > " + rareN + "）");
+  chk(w.localStorage.getItem("poem_helper_pinyin_v1") === "all", "档位切换为 all 已持久化");
+
+  // 关闭注音：恢复纯文本
+  clickMode("off");
+  chk(doc.querySelectorAll("#m-text ruby").length === 0, "选「不注音」后恢复纯文本");
+  chk(w.localStorage.getItem("poem_helper_pinyin_v1") === "off", "档位切换为 off 已持久化");
 
   // 朗读：jsdom 没有 SpeechSynthesis，必须优雅降级
   const readBtn = doc.querySelector("#m-read-btn");

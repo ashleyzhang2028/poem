@@ -147,7 +147,11 @@
         </div>
       </div>
       <div class="modal-tools">
-        <button class="mini-btn" id="m-pinyin-toggle" data-on="0" aria-pressed="false">标注拼音</button>
+        <div class="seg mini" id="m-pinyin-seg" data-on="0" role="group" aria-label="注音方式">
+          <button data-mode="off" aria-pressed="false">不注音</button>
+          <button data-mode="rare" class="active" aria-pressed="true">只标生字</button>
+          <button data-mode="all" aria-pressed="false">全文注音</button>
+        </div>
         <button class="mini-btn" id="m-read-btn" data-on="0" aria-pressed="false">
           <span class="btn-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
@@ -303,6 +307,7 @@
   <script src="data/poems-12.js"></script>
   <script src="data/index.js"></script>
   <script src="data/pinyin-table.js"></script>
+  <script src="data/common-chars.js"></script>
   <script src="js/pinyin.js"></script>
   <script src="js/speech.js"></script>
   <script src="js/reader.js"></script>

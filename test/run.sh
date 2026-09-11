@@ -11,6 +11,7 @@
 #   7. 主题专项测试      —— 纯 Node，文案 / Web Font / 传统色 / favicon
 #   8. 自动朗读测试      —— jsdom + 假语音引擎：朗读全部 / 单首 / 随机连读 / 暂停停止
 #   9. PWA / iOS 兼容测试 —— 真实浏览器（puppeteer），缺少依赖则跳过
+#   8. PWA / iOS 兼容测试 —— 真实浏览器（puppeteer），缺少依赖则跳过
 set -e
 cd "$(dirname "$0")/.."
 

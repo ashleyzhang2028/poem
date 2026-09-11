@@ -22,7 +22,6 @@ const html = read('index.html');
 const classicHtml = read('classic.html');
 // 法务页也纳入文案/配色检查，避免新页面漏挂主题
 const legalHtml = read('terms.html') + read('privacy.html');
-const manifest = read('manifest.webmanifest');
 const allSrc = app + html + classicHtml + legalHtml + read('js/classic.js') + read('js/pwa.js');
 
 chk(app.indexOf('这首歌按遗忘曲线到期了') === -1, '不再出现「这首歌按遗忘曲线到期了」');

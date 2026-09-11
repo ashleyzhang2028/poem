@@ -157,6 +157,13 @@ html, body {
   box-shadow: 0 1px 4px rgba(0, 0, 0, .08);
 }
 .seg.small button { font-size: 13px; padding: 6px 8px; }
+/* 弹层内的注音档位：小尺寸，三档并排不抢正文空间 */
+.seg.mini {
+  flex: 0 0 auto;
+  border: 1px solid var(--line);
+  background: var(--card);
+}
+.seg.mini button { font-size: 12.5px; padding: 5px 9px; }
 
 .chips {
   display: flex;
