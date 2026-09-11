@@ -184,6 +184,80 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
   chk(c.querySelector('#gw-random-read').dataset.on === '0', '停止后随机连读按钮复位');
   chk(c.querySelector('#gw-random-read-text').textContent === '随机连读', '按钮文案回到「随机连读」');
 
+  /* ---- 回归：阅读辅助总开关必须是「权威」，两处状态不得打架 ---- */
+  // 场景 1：总开关开启 + 档位残留 off → 仍应注音（修复前 0 个 ruby，开关看似失效）
+  const w3 = boot('index.html', {
+    poem_recite_settings_v1: JSON.stringify({ grade: 1, term: 1, dailyCount: 5, scope: 'term', helper: 'off' })
+  });
+  await sleep(300);
+  const d3 = w3.document;
+  const openPoemIn = (dd, i) => dd.querySelectorAll('#today-list .item')[i]
+    .dispatchEvent(new w3.Event('click', { bubbles: true }));
+  openPoemIn(d3, 3); // 悯农，含生字
+  await sleep(40);
+  chk(d3.querySelectorAll('#m-text ruby').length === 0,
+    '阅读辅助=关闭 → 打开诗词为纯文本（总开关权威）');
+  d3.querySelector('#modal').hidden = true;
+  // 在弹层里手动点「生字」→ 应自动把总开关打开，两处状态一致
+  openPoemIn(d3, 3);
+  await sleep(20);
+  d3.querySelector('#m-pinyin-seg button[data-mode="rare"]')
+    .dispatchEvent(new w3.Event('click', { bubbles: true }));
+  await sleep(20);
+  chk(d3.querySelectorAll('#m-text ruby').length > 0, '手动选「生字」后立刻出现拼音');
+  chk(JSON.parse(w3.localStorage.getItem('poem_recite_settings_v1')).helper === 'on',
+    '手动选「生字」会同步把「阅读辅助」打开（两处状态一致）');
+  chk(d3.querySelector('#seg-helper button[data-helper="on"]').classList.contains('active'),
+    '设置面板里的开关 UI 同步为「开启」');
+  d3.querySelector('#modal').hidden = true;
+  // 反向：设置里关掉 → 弹层应为纯文本
+  d3.querySelector('#btn-settings').dispatchEvent(new w3.Event('click', { bubbles: true }));
+  [...d3.querySelectorAll('#seg-helper button')].find(b => b.dataset.helper === 'off')
+    .dispatchEvent(new w3.Event('click', { bubbles: true }));
+  d3.querySelector('#settings-modal').hidden = true;
+  openPoemIn(d3, 3);
+  await sleep(40);
+  chk(d3.querySelectorAll('#m-text ruby').length === 0, '设置里关掉后打开诗词恢复纯文本');
+  d3.querySelector('#modal').hidden = true;
+
+  // 场景 2：小古文页的注音也要受总开关约束（修复前 init 只看一次 PinyinKey 是否为 null）
+  const w4 = boot('classic.html', {
+    poem_recite_settings_v1: JSON.stringify({ grade: 1, term: 1, dailyCount: 5, scope: 'term', helper: 'off' }),
+    poem_helper_pinyin_v1: 'all' // 残留「全文注音」，但总开关是关闭
+  });
+  await sleep(300);
+  const c4 = w4.document;
+  c4.querySelector('#gw-list .item').dispatchEvent(new w4.Event('click', { bubbles: true }));
+  await sleep(40);
+  chk(c4.querySelectorAll('#rd-text ruby').length === 0,
+    '总开关关闭时，小古文即使残留「全文注音」档位也不注音（总开关权威）');
+  // 打开总开关 → 立即生效
+  w4.localStorage.setItem('poem_recite_settings_v1',
+    JSON.stringify({ grade: 1, term: 1, dailyCount: 5, scope: 'term', helper: 'on' }));
+  w4.dispatchEvent(new w4.StorageEvent('storage', { key: 'poem_recite_settings_v1' }));
+  await sleep(40);
+  chk(c4.querySelectorAll('#rd-text ruby').length > 0, '总开关打开后小古文立即出现注音');
+  // 在阅读器里选「不注音」→ 应同步关闭总开关
+  c4.querySelector('#rd-pinyin-seg button[data-mode="off"]')
+    .dispatchEvent(new w4.Event('click', { bubbles: true }));
+  await sleep(30);
+  chk(JSON.parse(w4.localStorage.getItem('poem_recite_settings_v1')).helper === 'off',
+    '阅读器里选「不注音」会同步关掉「阅读辅助」（两处状态一致）');
+
+  // 场景 3：一年级诗在默认档位下也必须有注音（修复前 6/12 首为 0）
+  const w5 = boot('index.html', null);
+  await sleep(300);
+  const d5 = w5.document;
+  let grade1WithRuby = 0, total1 = 0;
+  for (const item of d5.querySelectorAll('#today-list .item')) {
+    item.dispatchEvent(new w5.Event('click', { bubbles: true }));
+    total1++;
+    if (d5.querySelectorAll('#m-text ruby').length > 0) grade1WithRuby++;
+    d5.querySelector('#modal').hidden = true;
+  }
+  chk(grade1WithRuby === total1,
+    '一年级今日任务 ' + total1 + ' 首全部有注音（实际 ' + grade1WithRuby + ' 首）');
+
   console.log(fails ? '\n❌ ' + fails + ' 项失败' : '\n🎉 自动朗读 / 阅读辅助测试全部通过');
   process.exit(fails ? 1 : 0);
 })();
