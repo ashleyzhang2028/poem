@@ -14,7 +14,7 @@ vm.createContext(sandbox);
 vm.runInContext(fs.readFileSync(path + 'data/poems-classic.js', 'utf8'), sandbox, { filename: 'poems-classic.js' });
 
 const CLS = sandbox.POEMS_CLASSIC;
-chk(Array.isArray(CLS) && CLS.length === 34, '小古文共 34 篇（实际 ' + (CLS ? CLS.length : 'undefined') + '）');
+chk(Array.isArray(CLS) && CLS.length === 100, '小古文共 100 篇（实际 ' + (CLS ? CLS.length : 'undefined') + '）');
 const ids = new Set();
 CLS.forEach(p => {
   if (ids.has(p.id)) throw new Error('重复 id ' + p.id);
@@ -36,8 +36,8 @@ chk(missing.length === 0, '需求清单篇目齐备（缺 ' + missing.join('/') 
 // 不能污染古诗词主库与每日计划
 chk(sandbox.POEMS_ALL === undefined, '小古文不写入 POEMS_ALL，不影响每日计划');
 const groups = sandbox.getClassicGroups();
-chk(groups.length >= 2, '按分组聚合出 ' + groups.length + ' 组');
-chk(groups.reduce((n, g) => n + g.items.length, 0) === 34, '分组内篇目合计 34');
+chk(groups.length >= 6, '按主题分组聚合出 ' + groups.length + ' 组');
+chk(groups.reduce((n, g) => n + g.items.length, 0) === 100, '分组内篇目合计 100');
 
 /* ---------- 二、页面层（jsdom） ---------- */
 const html = fs.readFileSync(path + 'classic.html', 'utf8');
@@ -54,9 +54,9 @@ scriptOrder.forEach(f => {
 setTimeout(() => {
   const d = window.document;
 
-  chk(d.querySelectorAll('#gw-list .item').length === 34, '列表渲染 34 篇（实际 ' + d.querySelectorAll('#gw-list .item').length + '）');
-  chk(d.querySelector('#gw-count').textContent === '0 / 34 篇', '顶部显示 0 / 34 篇：' + d.querySelector('#gw-count').textContent);
-  chk(d.querySelectorAll('#gw-list .group-head').length === 3, '按分组显示 3 个标题');
+  chk(d.querySelectorAll('#gw-list .item').length === 100, '列表渲染 100 篇（实际 ' + d.querySelectorAll('#gw-list .item').length + '）');
+  chk(d.querySelector('#gw-count').textContent === '0 / 100 篇', '顶部显示 0 / 100 篇：' + d.querySelector('#gw-count').textContent);
+  chk(d.querySelectorAll('#gw-list .group-head').length >= 6, '按主题显示分组标题（' + d.querySelectorAll('#gw-list .group-head').length + ' 个）');
   chk(/已读|标记/.test(d.querySelector('#gw-done-text').textContent), '阅读器内有「标记已读」按钮');
   const notice = d.querySelector('.notice').textContent;
   chk(notice.includes('不必按遗忘曲线一天几篇'), '页面明确说明不按遗忘曲线排期（文案：' + notice.slice(0, 30) + '…）');
@@ -69,7 +69,7 @@ setTimeout(() => {
   chk(d.querySelectorAll('#gw-list .item').length === 1, '搜索「三字经」命中 1 篇（实际 ' + d.querySelectorAll('#gw-list .item').length + '）');
   search.value = '';
   search.dispatchEvent(new window.Event('input', { bubbles: true }));
-  chk(d.querySelectorAll('#gw-list .item').length === 34, '清空搜索恢复 34 篇');
+  chk(d.querySelectorAll('#gw-list .item').length === 100, '清空搜索恢复 100 篇');
 
   // 打开阅读器（长文整页阅读，而不是卡片弹窗）
   const longItem = [...d.querySelectorAll('#gw-list .item')].find(el => el.textContent.includes('盘古开天地'));
@@ -100,7 +100,7 @@ setTimeout(() => {
   const store = JSON.parse(window.localStorage.getItem('poem_classic_read_v1'));
   chk(store['gw-17'] && store['gw-17'].read === true, '已读状态写入 localStorage（独立于古诗词进度）');
   chk(!window.localStorage.getItem('poem_recite_progress_v1'), '不会写古诗词进度 key，两边互不干扰');
-  chk(d.querySelector('#gw-count').textContent === '1 / 34 篇', '顶部进度更新为 1 / 34 篇');
+  chk(d.querySelector('#gw-count').textContent === '1 / 100 篇', '顶部进度更新为 1 / 100 篇');
 
   // 返回列表
   d.querySelector('#gw-back').dispatchEvent(new window.Event('click', { bubbles: true }));
@@ -109,9 +109,23 @@ setTimeout(() => {
 
   // 未读筛选
   d.querySelector('#gw-filter-unread').dispatchEvent(new window.Event('click', { bubbles: true }));
-  chk(d.querySelectorAll('#gw-list .item').length === 33, '「未读」筛选剩 33 篇（实际 ' + d.querySelectorAll('#gw-list .item').length + '）');
+  chk(d.querySelectorAll('#gw-list .item').length === 99, '「未读」筛选剩 99 篇（实际 ' + d.querySelectorAll('#gw-list .item').length + '）');
   d.querySelector('#gw-filter').dispatchEvent(new window.Event('click', { bubbles: true }));
-  chk(d.querySelectorAll('#gw-list .item').length === 34, '切回「全部」恢复 34 篇');
+  chk(d.querySelectorAll('#gw-list .item').length === 100, '切回「全部」恢复 100 篇');
+
+  // 注音与朗读（阅读辅助）
+  d.querySelector('#gw-list .item').dispatchEvent(new window.Event('click', { bubbles: true }));
+  chk(!!d.querySelector('#rd-pinyin-toggle'), '阅读器有「标注拼音」按钮');
+  chk(!!d.querySelector('#rd-read-btn'), '阅读器有「朗读全文」按钮');
+  chk(d.querySelectorAll('#rd-text ruby').length === 0, '默认不注音，正文是纯文本');
+
+  d.querySelector('#rd-pinyin-toggle').dispatchEvent(new window.Event('click', { bubbles: true }));
+  chk(d.querySelectorAll('#rd-text ruby').length > 5,
+    '点击后逐字注音（' + d.querySelectorAll('#rd-text ruby').length + ' 个 ruby）');
+  chk(/qū|qǔ/.test(d.querySelector('#rd-text').textContent) === false, '拼音走 rt 标签，不混进正文');
+  d.querySelector('#rd-pinyin-toggle').dispatchEvent(new window.Event('click', { bubbles: true }));
+  chk(d.querySelectorAll('#rd-text ruby').length === 0, '再点一次关闭注音');
+  d.querySelector('#gw-back').dispatchEvent(new window.Event('click', { bubbles: true }));
 
   // 取消已读
   const doneItem = d.querySelector('#gw-list .item.done');

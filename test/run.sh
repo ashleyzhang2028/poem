@@ -4,9 +4,10 @@
 # 分五层，逐层递进：
 #   1. 调度算法单元测试  —— 纯 Node，无外部依赖
 #   2. UI 集成测试       —— jsdom，缺少则临时安装
-#   3. 小古文学习库测试  —— jsdom，34 篇数据 + 阅读器 + 已读标记
+#   3. 小古文学习库测试  —— jsdom，100 篇数据 + 阅读器 + 已读标记
 #   4. 用户名设置测试    —— jsdom，带初始 localStorage 重启应用
-#   5. PWA / iOS 兼容测试 —— 真实浏览器（puppeteer），缺少依赖则跳过
+#   5. 注音与朗读测试    —— 拼音表/多音字（纯 Node）+ 注音渲染与朗读降级（jsdom）
+#   6. PWA / iOS 兼容测试 —— 真实浏览器（puppeteer），缺少依赖则跳过
 set -e
 cd "$(dirname "$0")/.."
 
@@ -42,6 +43,16 @@ else
   TMP=$(mktemp -d)
   (cd "$TMP" && npm i jsdom --silent --no-fund --no-audit >/dev/null 2>&1) || { echo "跳过用户名测试（无法安装 jsdom）"; exit 0; }
   NODE_PATH="$TMP/node_modules" node test/username.test.js
+fi
+
+echo ""
+echo "=== 注音与朗读测试 ==="
+if node -e "require.resolve('jsdom')" 2>/dev/null; then
+  node test/helper.test.js
+else
+  TMP=$(mktemp -d)
+  (cd "$TMP" && npm i jsdom --silent --no-fund --no-audit >/dev/null 2>&1) || { echo "跳过注音朗读测试（无法安装 jsdom）"; exit 0; }
+  NODE_PATH="$TMP/node_modules" node test/helper.test.js
 fi
 
 echo ""

@@ -20,6 +20,7 @@
   };
   const STORE_KEY = "poem_classic_read_v1";
   const FONT_KEY = "poem_classic_font_v1";
+  const PINYIN_KEY = "poem_helper_pinyin_v1";
   const FONT_SIZES = [17, 19, 21, 23, 26];
 
   const MATCH_GROUP = "课外必背";
@@ -27,6 +28,7 @@
   let current = null;
   let keyword = "";
   let filter = "all";
+  let pinyinOn = localStorage.getItem(PINYIN_KEY) === "1";
 
   /* ---------------- 进度存储（与古诗词进度相互独立） ---------------- */
   function readMap() {
@@ -136,20 +138,87 @@
       '<span class="tag">' + esc(p.source) + "</span>" +
       (p.dynasty ? '<span class="tag ghost">' + esc(p.dynasty) + "</span>" : "") +
       (p.author ? '<span class="tag ghost">' + esc(p.author) + "</span>" : "");
-    $("#rd-text").textContent = p.text;
+    renderReaderText();
     $("#rd-trans-text").textContent = p.translation || "（暂未收录译文）";
     $("#gw-progress").textContent = "第 " + (idx + 1) + " / " + allItems().length + " 篇";
     $("#rd-trans").hidden = true;
     $("#rd-trans-toggle").dataset.on = "0";
     $("#rd-trans-toggle").textContent = "显示译文";
     applyFont();
+    syncPinyinButton();
+    syncReadButton();
     syncDoneButton();
     $("#gw-reader").hidden = false;
     document.body.classList.add("reader-open");
     window.scrollTo(0, 0);
   }
 
+  /* ---------------- 正文渲染：生字注音 ---------------- */
+
+  /** 按当前注音开关渲染正文。关闭时纯文本，打开时逐字标拼音 */
+  function renderReaderText() {
+    if (!current) return;
+    const box = $("#rd-text");
+    if (pinyinOn && window.Pinyin) {
+      box.innerHTML = window.Pinyin.annotateHtml(current.text);
+      box.classList.add("with-pinyin");
+    } else {
+      box.textContent = current.text;
+      box.classList.remove("with-pinyin");
+    }
+  }
+
+  function syncPinyinButton() {
+    const btn = $("#rd-pinyin-toggle");
+    btn.dataset.on = pinyinOn ? "1" : "0";
+    btn.setAttribute("aria-pressed", pinyinOn ? "true" : "false");
+    btn.textContent = pinyinOn ? "隐藏拼音" : "标注拼音";
+  }
+
+  function togglePinyin() {
+    pinyinOn = !pinyinOn;
+    localStorage.setItem(PINYIN_KEY, pinyinOn ? "1" : "0");
+    renderReaderText();
+    syncPinyinButton();
+    showToast(pinyinOn ? "已标注拼音" : "已隐藏拼音");
+  }
+
+  /* ---------------- 正文朗读 ---------------- */
+
+  function syncReadButton() {
+    const btn = $("#rd-read-btn");
+    const ok = !!(window.Speech && window.Speech.supported());
+    btn.disabled = !ok;
+    btn.title = ok ? "用手机语音朗读这篇古文" : "当前浏览器不支持语音朗读";
+    if (!ok) {
+      $("#rd-read-text").textContent = "不支持朗读";
+      btn.dataset.on = "0";
+      return;
+    }
+    const on = window.Speech.speaking();
+    btn.dataset.on = on ? "1" : "0";
+    btn.setAttribute("aria-pressed", on ? "true" : "false");
+    $("#rd-read-text").textContent = on ? "停止朗读" : "朗读全文";
+  }
+
+  function toggleRead() {
+    if (!window.Speech || !window.Speech.supported() || !current) return;
+    if (window.Speech.speaking()) {
+      window.Speech.stop();
+      showToast("已停止朗读");
+    } else {
+      // 朗读时把标题与出处也读进去，孩子能听清「这是哪一篇」
+      const head = [current.title, current.dynasty, current.author].filter(Boolean).join("，");
+      const ok = window.Speech.speak(head + "。" + current.text);
+      showToast(ok ? "开始朗读" : "朗读启动失败，请重试");
+    }
+    syncReadButton();
+    setTimeout(syncReadButton, 60);
+    setTimeout(syncReadButton, 300);
+  }
+
   function closeReader() {
+    if (window.Speech) window.Speech.stop();
     $("#gw-reader").hidden = true;
     document.body.classList.remove("reader-open");
     current = null;
@@ -228,6 +297,15 @@
     $("#rd-font-up").addEventListener("click", function () { changeFont(1); });
     $("#rd-font-down").addEventListener("click", function () { changeFont(-1); });
 
+    $("#rd-pinyin-toggle").addEventListener("click", togglePinyin);
+    $("#rd-read-btn").addEventListener("click", toggleRead);
+
+    // 语音朗读结束（自然播完）后同步按钮状态
+    if (window.Speech && window.Speech.supported() && window.speechSynthesis) {
+      window.speechSynthesis.addEventListener("end", syncReadButton);
+      window.speechSynthesis.addEventListener("cancel", syncReadButton);
+    }
+
     document.addEventListener("keydown", function (e) {
       if (e.key === "Escape" && current) closeReader();
     });
@@ -253,5 +331,9 @@
     init();
   }
 
-  window.ClassicProse = { isRead: isRead, total: function () { return allItems().length; } };
+  window.ClassicProse = {
+    isRead: isRead,
+    total: function () { return allItems().length; },
+    annotate: function () { return window.Pinyin ? window.Pinyin.annotateHtml(current ? current.text : "") : ""; }
+  };
 })();

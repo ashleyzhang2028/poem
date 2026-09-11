@@ -69,7 +69,8 @@ function check(name, cond, extra) {
     check('iPhone: apple-mobile-web-app-capable=yes',
       await page.$eval('meta[name="apple-mobile-web-app-capable"]', el => el.content) === 'yes');
     // 应用名会随设置里的用户名联动（见 js/app.js applyUserName），
-    // 因此只断言非空、且不再是旧品牌名，不写死具体文案。
+    // 因此只断言非空、且不再是旧品牌名，不写死具体文案
+    // （写死文案曾在 PR #5 改名后导致 CI 失败，这里按 82b9d1f 的方式回落）。
     const iosTitle = await page.$eval('meta[name="apple-mobile-web-app-title"]', el => el.content);
     check('iPhone: apple-mobile-web-app-title',
       !!iosTitle && !/背古诗词/.test(iosTitle), iosTitle);
@@ -169,7 +170,7 @@ function check(name, cond, extra) {
         textLen: document.getElementById('rd-text').textContent.length
       };
     });
-    check('iPhone: 断网也能打开小古文页', gwOffline.items === 34, JSON.stringify(gwOffline));
+    check('iPhone: 断网也能打开小古文页', gwOffline.items === 100, JSON.stringify(gwOffline));
     check('iPhone: 断网也能打开整页阅读器',
       gwOffline.readerOpen && gwOffline.textLen > 50, JSON.stringify(gwOffline));
     await page.setOfflineMode(false);

@@ -37,7 +37,7 @@ setTimeout(() => {
   const entry = d.querySelector('#classic-entry');
   chk(!!entry, '首页有「课外必背小古文」入口');
   chk(entry.getAttribute('href') === './classic.html', '入口指向 classic.html');
-  chk(/34 篇/.test(entry.textContent), '入口标明 34 篇：' + entry.textContent.replace(/\s+/g, ' ').trim());
+  chk(/100 篇/.test(entry.textContent), '入口标明 100 篇：' + entry.textContent.replace(/\s+/g, ' ').trim());
   chk(d.querySelector('#all-count').textContent === '5', '小古文不会混进古诗词列表（仍为 5 首）');
 
   // 先打开设置才能操作年级/学期

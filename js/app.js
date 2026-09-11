@@ -25,10 +25,27 @@
   // 目前课内 242 首（含长文言文）与课外 34 篇无一重名，故留空。
   const CLASSIC_LINKS = {};
 
+  const PINYIN_KEY = "poem_helper_pinyin_v1";
+
   let settings = Storage.getSettings();
   let todayPlan = [];
   let currentPoem = null;
   let todayKey = "";
+
+  /* ---------------- 阅读辅助：注音 / 朗读 ---------------- */
+  // 设置里的「阅读辅助」是总开关（settings.helper），诗词弹层里的按钮是本次用法。
+  // 总开关关闭时，按钮仍然可用，只是不默认打开，避免孩子误触。
+  function helperEnabled() {
+    return settings.helper !== "off";
+  }
+
+  function pinyinOn() {
+    return localStorage.getItem(PINYIN_KEY) === "1";
+  }
+
+  function setPinyinOn(on) {
+    localStorage.setItem(PINYIN_KEY, on ? "1" : "0");
+  }
 
   /* ---------------- 工具 ---------------- */
   function todayKeyStr() {
@@ -232,6 +249,12 @@
     }
     const hint = $("#scope-hint");
     if (hint) hint.textContent = "当前：" + scopeInfo().scopeName;
+    const sh = $("#seg-helper");
+    if (sh) {
+      $$("button", sh).forEach(function (b) {
+        b.classList.toggle("active", (b.dataset.helper === "on") === helperEnabled());
+      });
+    }
   }
 
   /* ---------------- 渲染：今日列表 ---------------- */
@@ -353,7 +376,9 @@
     $("#m-dynasty").textContent = "〔" + p.dynasty + "〕";
     $("#m-author").textContent = p.author;
     $("#m-grade").textContent = gradeName(p.grade) + " " + termName(p.term);
-    $("#m-text").textContent = p.text;
+    renderPoemText(p);
+    syncPinyinBtn();
+    syncReadBtn();
 
     const info = [];
     if (rec && rec.learned) {
@@ -393,7 +418,65 @@
     document.body.style.overflow = "hidden";
   }
 
+  /** 弹层正文：按注音开关渲染。关闭时为纯文本，保证原有测试与排版不变 */
+  function renderPoemText(p) {
+    const box = $("#m-text");
+    if (pinyinOn() && window.Pinyin) {
+      box.innerHTML = window.Pinyin.annotateHtml(p.text);
+      box.classList.add("with-pinyin");
+    } else {
+      box.textContent = p.text;
+      box.classList.remove("with-pinyin");
+    }
+  }
+
+  function syncPinyinBtn() {
+    const btn = $("#m-pinyin-toggle");
+    if (!btn) return;
+    const on = pinyinOn();
+    btn.dataset.on = on ? "1" : "0";
+    btn.setAttribute("aria-pressed", on ? "true" : "false");
+    btn.textContent = on ? "隐藏拼音" : "标注拼音";
+  }
+
+  function togglePinyin() {
+    const next = !pinyinOn();
+    setPinyinOn(next);
+    if (currentPoem) renderPoemText(currentPoem);
+    syncPinyinBtn();
+    showToast(next ? "已标注拼音" : "已隐藏拼音");
+  }
+
+  function syncReadBtn() {
+    const btn = $("#m-read-btn");
+    if (!btn) return;
+    const ok = !!(window.Speech && window.Speech.supported());
+    btn.disabled = !ok;
+    btn.title = ok ? "用手机语音朗读这首诗" : "当前浏览器不支持语音朗读";
+    const on = ok && window.Speech.speaking();
+    $("#m-read-text").textContent = ok ? (on ? "停止朗读" : "朗读") : "不支持朗读";
+    btn.dataset.on = on ? "1" : "0";
+    btn.setAttribute("aria-pressed", on ? "true" : "false");
+  }
+
+  function toggleRead() {
+    if (!currentPoem || !window.Speech || !window.Speech.supported()) return;
+    if (window.Speech.speaking()) {
+      window.Speech.stop();
+      showToast("已停止朗读");
+    } else {
+      const head = [currentPoem.title, currentPoem.dynasty, currentPoem.author].filter(Boolean).join("，");
+      const ok = window.Speech.speak(head + "。" + currentPoem.text);
+      showToast(ok ? "开始朗读" : "朗读启动失败，请重试");
+    }
+    // 立即同步一次（不等语音回调），并用定时器兜底处理引擎延迟
+    syncReadBtn();
+    setTimeout(syncReadBtn, 60);
+    setTimeout(syncReadBtn, 300);
+  }
+
   function closeModal() {
+    if (window.Speech) window.Speech.stop();
     $("#modal").hidden = true;
     $("#settings-modal").hidden = true;
     document.body.style.overflow = "";
@@ -495,6 +578,24 @@
     $$(".actions .btn").forEach(function (b) {
       b.addEventListener("click", function () {
         handleResult(b.dataset.result);
+      });
+    });
+
+    const pinyinBtn = $("#m-pinyin-toggle");
+    if (pinyinBtn) pinyinBtn.addEventListener("click", togglePinyin);
+    const readBtn = $("#m-read-btn");
+    if (readBtn) readBtn.addEventListener("click", toggleRead);
+    if (window.speechSynthesis && window.speechSynthesis.addEventListener) {
+      window.speechSynthesis.addEventListener("end", syncReadBtn);
+      window.speechSynthesis.addEventListener("cancel", syncReadBtn);
+    }
+
+    $$("#seg-helper button").forEach(function (b) {
+      b.addEventListener("click", function () {
+        settings.helper = b.dataset.helper === "on" ? "on" : "off";
+        Storage.saveSettings(settings);
+        renderGradeChips();
+        showToast(helperEnabled() ? "已开启注音与朗读" : "已关闭阅读辅助");
       });
     });
 
