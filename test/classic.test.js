@@ -58,6 +58,8 @@ setTimeout(() => {
   chk(d.querySelector('#gw-count').textContent === '0 / 100 篇', '顶部显示 0 / 100 篇：' + d.querySelector('#gw-count').textContent);
   chk(d.querySelectorAll('#gw-list .group-head').length >= 6, '按主题显示分组标题（' + d.querySelectorAll('#gw-list .group-head').length + ' 个）');
   chk(/已读|标记/.test(d.querySelector('#gw-done-text').textContent), '阅读器内有「标记已读」按钮');
+  chk(d.querySelector('.brand-text h1').textContent === '小古文', '小古文页主标题为「小古文」（实际 ' + d.querySelector('.brand-text h1').textContent + '）');
+  chk(d.title === '小古文 · 学习库', '小古文页标题为「小古文 · 学习库」（实际 ' + d.title + '）');
   const notice = d.querySelector('.notice').textContent;
   chk(notice.includes('不必按遗忘曲线一天几篇'), '页面明确说明不按遗忘曲线排期（文案：' + notice.slice(0, 30) + '…）');
   chk(d.querySelectorAll('#gw-list .item .item-reason.review').length === 0, '列表里没有「复习」标签，不做复习排期');
