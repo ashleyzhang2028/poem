@@ -132,6 +132,9 @@ function check(name, cond, extra) {
     check('iPhone: 已预缓存中文字体',
       cached.some(p => /NotoSerifSC-400\.woff2$/.test(p)) && cached.some(p => /NotoSansSC-400\.woff2$/.test(p)),
       cached.length + ' 项');
+    check('iPhone: 已预缓存用户协议与隐私条款',
+      cached.some(p => /terms\.html$/.test(p)) && cached.some(p => /privacy\.html$/.test(p)),
+      cached.length + ' 项');
 
     // 引导条应出现（iOS + 非 standalone）
     check('iPhone: 显示「添加到主屏幕」引导', await page.$eval('#ios-install-tip', el => !el.hidden));
@@ -216,6 +219,29 @@ function check(name, cond, extra) {
     check('iPhone: 断网后中文字体仍然可用',
       offlineFont.length === 4 && offlineFont.every(x => /:loaded$/.test(x)),
       offlineFont.join(' '));
+
+    // 用户协议 / 隐私条款：断网也要能打开，邮箱仍可还原（隐私合规不能靠联网）
+    await page.goto(base + 'terms.html', { waitUntil: 'domcontentloaded' });
+    await new Promise(r => setTimeout(r, 500));
+    const termsOffline = await page.evaluate(() => {
+      const link = document.querySelector('[data-mail-slot]');
+      return {
+        title: document.title,
+        hasChapter: /学生与未成年人保护/.test(document.body.textContent),
+        hasDisclaimer: /免责声明/.test(document.body.textContent),
+        mail: link ? link.getAttribute('href') : null
+      };
+    });
+    check('iPhone: 断网也能打开用户协议', /用户协议/.test(termsOffline.title) && termsOffline.hasChapter,
+      termsOffline.title);
+    check('iPhone: 断网也能打开隐私条款并还原邮箱',
+      termsOffline.hasDisclaimer && /^mailto:/.test(termsOffline.mail || ''),
+      String(termsOffline.mail));
+
+    await page.goto(base + 'privacy.html', { waitUntil: 'domcontentloaded' });
+    await new Promise(r => setTimeout(r, 500));
+    check('iPhone: 断网也能打开隐私条款',
+      /隐私条款/.test(await page.title()));
     await page.setOfflineMode(false);
 
     check('iPhone: 无未捕获 JS 异常', errs.length === 0, errs.slice(0, 2).join(' | '));

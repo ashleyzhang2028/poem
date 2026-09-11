@@ -20,7 +20,9 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
 const app = read('js/app.js');
 const html = read('index.html');
 const classicHtml = read('classic.html');
-const allSrc = app + html + classicHtml + read('js/classic.js') + read('js/pwa.js');
+// 法务页也纳入文案/配色检查，避免新页面漏挂主题
+const legalHtml = read('terms.html') + read('privacy.html');
+const allSrc = app + html + classicHtml + legalHtml + read('js/classic.js') + read('js/pwa.js');
 
 chk(app.indexOf('这首歌按遗忘曲线到期了') === -1, '不再出现「这首歌按遗忘曲线到期了」');
 chk(app.indexOf('这首诗按遗忘曲线到期了') !== -1, '到期提示改为「这首诗按遗忘曲线到期了」');
@@ -62,6 +64,7 @@ const sw = read('sw.js');
 chk(sw.indexOf('./fonts/NotoSerifSC-400.woff2') !== -1, 'Service Worker 预缓存宋体字库');
 chk(sw.indexOf('./fonts/NotoSansSC-400.woff2') !== -1, 'Service Worker 预缓存黑体字库');
 chk(!/fonts\.googleapis|fonts\.gstatic/.test(css + html + classicHtml), '不请求任何第三方字体 CDN');
+chk(!/fonts\.googleapis|fonts\.gstatic/.test(legalHtml), '法务页同样不请求第三方字体 CDN');
 
 /* ---------------- 3. 传统色（宋代） ---------------- */
 chk(/宋代/.test(css), '配色注释标明宋代取色');
@@ -75,6 +78,7 @@ chk(/--card:\s*#fdfaf2/.test(css), '卡片为宣纸白 #fdfaf2');
 // 不应残留旧绿色
 chk(!/#4a7c59/.test(css), '不再使用旧品牌绿 #4a7c59');
 chk(!/#4a7c59/.test(html + classicHtml), '页面 theme-color 不再使用旧品牌绿');
+chk(!/#4a7c59/.test(legalHtml), '用户协议 / 隐私条款页 theme-color 也不再使用旧品牌绿');
 chk(!/#4a7c59/.test(read('manifest.webmanifest')), 'PWA 清单不再使用旧品牌绿');
 chk(/"theme_color":\s*"#4d7d74"/.test(read('manifest.webmanifest')), 'PWA 清单主题色为天青');
 chk(/"background_color":\s*"#efe7d7"/.test(read('manifest.webmanifest')), 'PWA 清单背景色为素绢');
