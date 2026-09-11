@@ -350,7 +350,7 @@ html, body {
   margin: 0 0 8px;
   font-size: 23px;
   letter-spacing: 1px;
-  font-family: "Songti SC", "STSong", "SimSun", serif;
+  font-family: "Songti SC", "STSong", "SimSun", "PingFang SC", "Microsoft YaHei", serif;
 }
 .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
 .tag {
@@ -364,7 +364,7 @@ html, body {
 .tag.ghost { background: var(--bg); color: var(--ink-2); }
 
 .poem-text {
-  font-family: "Songti SC", "STSong", "SimSun", serif;
+  font-family: "Songti SC", "STSong", "SimSun", "PingFang SC", "Microsoft YaHei", serif;
   font-size: 19px;
   line-height: 2.1;
   white-space: pre-wrap;
@@ -593,3 +593,49 @@ button,
 .ios-install-tip {
   z-index: 40;
 }
+
+/* ==========================================================================
+   课外必背小古文入口（首页）
+   ========================================================================== */
+.classic-entry {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: inherit;
+  border-left: 4px solid var(--blue);
+  transition: transform .15s, box-shadow .15s;
+}
+.classic-entry:active { transform: scale(.985); }
+.classic-icon { display: inline-flex; color: var(--blue); flex: none; }
+.classic-icon svg { width: 24px; height: 24px; }
+.classic-main { flex: 1; min-width: 0; }
+.classic-title {
+  display: block;
+  font-size: 16px;
+  font-weight: 600;
+}
+.classic-sub {
+  display: block;
+  font-size: 12.5px;
+  color: var(--ink-2);
+  margin-top: 2px;
+}
+
+/* 弹层底部的「小古文库」入口 */
+.modal-extra {
+  display: block;
+  margin-top: 14px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--green);
+  text-decoration: none;
+  padding: 9px;
+  border-radius: 12px;
+  background: var(--green-light);
+  font-weight: 600;
+}
+
+/* 设置里的多行说明 */
+.settings-tip p { margin: 0; }
+.settings-tip p + p { margin-top: 6px; }

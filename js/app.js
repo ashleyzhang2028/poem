@@ -20,6 +20,11 @@
   // 默认用户名：未填写时使用
   const DEFAULT_USERNAME = "Ashley";
 
+  // 若以后课外小古文库收录了与课内同名/同篇的内容，在这里登记：
+  // "课内诗题": "gw-xx"，详情弹层就会出现「阅读本篇」入口。
+  // 目前课内 242 首（含长文言文）与课外 34 篇无一重名，故留空。
+  const CLASSIC_LINKS = {};
+
   let settings = Storage.getSettings();
   let todayPlan = [];
   let currentPoem = null;
@@ -370,6 +375,19 @@
         ? "这首歌按遗忘曲线到期了，复习后请如实选择掌握程度"
         : "新学的诗，今天先记一遍"
       : "背诵后点击按钮，系统会安排下次复习时间";
+
+    // 若这篇文言文在「课外必背小古文」库里有对应篇目，给一个去读全文的入口
+    const extra = $("#m-classic-link");
+    const gwId = CLASSIC_LINKS[p.title];
+    if (extra) {
+      if (gwId) {
+        extra.hidden = false;
+        extra.href = "./classic.html#" + gwId;
+        extra.textContent = "在「课外必背小古文」中阅读本篇 ›";
+      } else {
+        extra.hidden = true;
+      }
+    }
 
     $("#modal").hidden = false;
     document.body.style.overflow = "hidden";

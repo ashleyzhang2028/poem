@@ -125,6 +125,9 @@ function check(name, cond, extra) {
     check('iPhone: 已预缓存诗词数据', cached.some(p => /poems-1\.js$/.test(p)), cached.length + ' 项');
     check('iPhone: 已预缓存样式与脚本',
       cached.some(p => /style\.css$/.test(p)) && cached.some(p => /app\.js$/.test(p)));
+    check('iPhone: 已预缓存小古文页与数据',
+      cached.some(p => /classic\.html$/.test(p)) && cached.some(p => /poems-classic\.js$/.test(p)),
+      cached.length + ' 项');
 
     // 引导条应出现（iOS + 非 standalone）
     check('iPhone: 显示「添加到主屏幕」引导', await page.$eval('#ios-install-tip', el => !el.hidden));
@@ -152,6 +155,23 @@ function check(name, cond, extra) {
     await new Promise(r => setTimeout(r, 1200));
     const offlineOk = await page.evaluate(() => !!document.querySelector('.app'));
     check('iPhone: 断网后仍能打开', offlineOk);
+
+    // 课外必背小古文：断网状态下也能进入并打开整页阅读器
+    await page.goto(base + 'classic.html', { waitUntil: 'domcontentloaded' });
+    await new Promise(r => setTimeout(r, 800));
+    const gwOffline = await page.evaluate(() => {
+      const items = document.querySelectorAll('#gw-list .item');
+      if (!items.length) return { items: 0 };
+      items[16].click();
+      return {
+        items: items.length,
+        readerOpen: !document.getElementById('gw-reader').hidden,
+        textLen: document.getElementById('rd-text').textContent.length
+      };
+    });
+    check('iPhone: 断网也能打开小古文页', gwOffline.items === 34, JSON.stringify(gwOffline));
+    check('iPhone: 断网也能打开整页阅读器',
+      gwOffline.readerOpen && gwOffline.textLen > 50, JSON.stringify(gwOffline));
     await page.setOfflineMode(false);
 
     check('iPhone: 无未捕获 JS 异常', errs.length === 0, errs.slice(0, 2).join(' | '));
