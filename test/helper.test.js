@@ -148,7 +148,10 @@ setTimeout(async () => {
 
   const seg = doc.querySelector("#m-pinyin-seg");
   chk(!!seg, "诗词弹层有注音档位按钮组");
-  chk(seg.querySelectorAll("button").length === 3, "注音有 3 档：不注音 / 只标生字 / 全文注音");
+  chk(seg.querySelectorAll("button").length === 3, "注音有 3 档：不注音 / 生字 / 全文");
+  chk(
+    [...seg.querySelectorAll("button")].map((b) => b.textContent.trim()).join("/") === "不注音/生字/全文",
+    "注音档位文案精简为 不注音/生字/全文");
   chk(!!seg.querySelector('button[data-mode="rare"]'), "默认档「只标生字」按钮存在");
   chk(!!doc.querySelector("#m-read-btn"), "诗词弹层有「朗读」按钮");
   chk(!!doc.querySelector("#seg-helper"), "设置里有「阅读辅助」开关");

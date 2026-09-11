@@ -72,7 +72,13 @@ setTimeout(() => {
     chk(d.querySelectorAll('.legal-toc a').length >= 4, '目录锚点齐全（' + d.querySelectorAll('.legal-toc a').length + ' 项）');
     // 需求 2：协议要保持精简，不再长篇大论
     chk(t.length < 1400, '用户协议精简到一屏可读完（' + t.length + ' 字）');
-    chk(/一句话版本/.test(d.querySelector('.legal-summary').textContent), '顶部有一句话版本速览');
+    // 需求：删掉顶部「一句话版本」速览块
+    chk(d.querySelector('.legal-summary') === null, '顶部已移除「一句话版本」速览块');
+    // 需求：删掉「相关文件：…」行（含与邮箱之间的间隔线）
+    chk(d.querySelector('.legal-foot') === null, '用户协议页已移除「相关文件」行');
+    // 需求：删掉「或权利主张」表述
+    chk(!/或权利主张/.test(t), '用户协议页不再出现「或权利主张」');
+    chk(/疑问、纠错，欢迎发邮件/.test(t), '保留「疑问、纠错，欢迎发邮件」');
   }
 
   /* --- 隐私条款 --- */
@@ -85,7 +91,9 @@ setTimeout(() => {
     chk(/儿童隐私/.test(t), '含儿童隐私专章');
     chk(/Service Worker|离线缓存/.test(t), '说明离线缓存与托管平台日志的边界');
     chk(/导出备份/.test(t) && /清空进度/.test(t), '给出导出与删除数据的路径');
-    chk(!!d.querySelector('.legal-summary'), '顶部有「一句话版本」速览');
+    chk(d.querySelector('.legal-summary') === null, '顶部已移除「一句话版本」速览块');
+    chk(d.querySelector('.legal-foot') === null, '隐私条款页已移除「相关文件」行');
+    chk(!/相关文件/.test(t), '隐私条款页正文不再出现「相关文件」');
     chk(t.length < 1300, '隐私条款精简到一屏可读完（' + t.length + ' 字）');
   }
 

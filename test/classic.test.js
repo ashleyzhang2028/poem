@@ -69,6 +69,13 @@ setTimeout(() => {
     '顶部副标题精简（实际 ' + d.querySelector('.brand-text p').textContent + '）');
   chk(d.querySelectorAll('#gw-list .item .item-reason.review').length === 0, '列表里没有「复习」标签，不做复习排期');
 
+  // 需求 6：「随机连读」与「全部 / 未读」同款样式（同一 class + 内联居中）
+  const randomBtn = d.querySelector('#gw-random-read');
+  const filterBtn = d.querySelector('#gw-filter');
+  chk(randomBtn.classList.contains('seg-toggle'), '「随机连读」使用与「全部」相同的 seg-toggle 样式');
+  chk(filterBtn.classList.contains('seg-toggle'), '「全部」也是 seg-toggle 样式');
+  chk(!randomBtn.classList.contains('toolbar-read'), '不再使用旧的 toolbar-read 专属样式');
+
   // 搜索
   const search = d.querySelector('#gw-search');
   search.value = '三字经';
@@ -88,6 +95,12 @@ setTimeout(() => {
   chk(d.querySelector('#rd-text').textContent.length > 100, '长文完整渲染（' + d.querySelector('#rd-text').textContent.length + ' 字）');
   // 需求 10：默认字号降一级（19 → 17）
   chk(d.querySelector('#rd-text').style.fontSize === '17px', '默认字号降一级为 17px（实际 ' + d.querySelector('#rd-text').style.fontSize + '）');
+  // 需求 7：小古文正文行距降一档（2.2 → 2.0）—— jsdom 不计算继承行高，改从 CSS 源码校验
+  const classicCss = fs.readFileSync(path + 'css/classic.css', 'utf8');
+  const rdBlock = /(^|\n)\.reader-text \{([\s\S]*?)\}/.exec(classicCss);
+  chk(!!rdBlock && /line-height:\s*2\.0;/.test(rdBlock[2]), '小古文正文行距降一档为 2.0');
+  const pyBlock = /(^|\n)\.reader-text\.with-pinyin \{([\s\S]*?)\}/.exec(classicCss);
+  chk(!!pyBlock && /line-height:\s*2\.7;/.test(pyBlock[2]), '注音档行距同步降一档为 2.7');
   chk(d.querySelector('#rd-trans').hidden === true, '译文默认折叠');
 
   // 字号调节：五档 15/17/19/21/23
@@ -131,7 +144,14 @@ setTimeout(() => {
   const rdSeg = d.querySelector('#rd-pinyin-seg');
   chk(!!rdSeg, '阅读器有注音档位按钮组');
   chk(rdSeg.querySelectorAll('button').length === 3, '阅读器注音有 3 档');
-  chk(!!d.querySelector('#rd-read-btn'), '阅读器有「朗读全文」按钮');
+  chk(!!d.querySelector('#rd-read-btn'), '阅读器有「朗读」按钮');
+  // 此环境无语音引擎，按钮运行时会显示「不支持朗读」，故校验静态 HTML 文案
+  const clsHtml = fs.readFileSync(path + 'classic.html', 'utf8');
+  chk(/<span id="rd-read-text">朗读<\/span>/.test(clsHtml), '朗读按钮文案精简为「朗读」');
+  chk(!/>\s*朗读全文\s*</.test(clsHtml), '不再出现「朗读全文」文案');
+  // 需求：注音档位文案精简为 不注音 / 生字 / 全文
+  const segLabels = [...d.querySelectorAll('#rd-pinyin-seg button')].map(b => b.textContent.trim());
+  chk(segLabels.join('/') === '不注音/生字/全文', '注音档位文案精简为 不注音/生字/全文（' + segLabels.join('/') + '）');
   // 阅读辅助默认开启 → 打开古文即自动注音（需求 5：开关要有可见差别）
   chk(d.querySelectorAll('#rd-text ruby').length > 5,
     '阅读辅助开启时打开古文自动注音（' + d.querySelectorAll('#rd-text ruby').length + ' 个 ruby）');
