@@ -71,7 +71,7 @@ chk(/宋代/.test(css), '配色注释标明宋代取色');
 // 天青主色
 chk(/--green:\s*#4d7d74/.test(css), '主色为雨过天青 #4d7d74');
 // 宣纸底
-chk(/--bg:\s*#efe7d7/.test(css), '底色为素绢米灰 #efe7d7');
+chk(/--bg:\s*#f3eee2/.test(css), '底色为素绢米灰 #f3eee2（比初版 #efe7d7 淡一档）');
 chk(/--card:\s*#fdfaf2/.test(css), '卡片为宣纸白 #fdfaf2');
 // 传统色名
 ['天青', '宣纸', '琥珀', '朱砂', '缃色', '秋香'].forEach(n => chk(css.indexOf(n) !== -1, '出现传统色名「' + n + '」'));
@@ -81,7 +81,7 @@ chk(!/#4a7c59/.test(html + classicHtml), '页面 theme-color 不再使用旧品�
 chk(!/#4a7c59/.test(legalHtml), '用户协议 / 隐私条款页 theme-color 也不再使用旧品牌绿');
 chk(!/#4a7c59/.test(read('manifest.webmanifest')), 'PWA 清单不再使用旧品牌绿');
 chk(/"theme_color":\s*"#4d7d74"/.test(read('manifest.webmanifest')), 'PWA 清单主题色为天青');
-chk(/"background_color":\s*"#efe7d7"/.test(read('manifest.webmanifest')), 'PWA 清单背景色为素绢');
+chk(/"background_color":\s*"#f3eee2"/.test(read('manifest.webmanifest')), 'PWA 清单背景色为素绢（与 --bg 同步变淡）');
 
 /* ---------------- 4. favicon ---------------- */
 const icon = read('icons/icon.svg');
