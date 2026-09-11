@@ -21,6 +21,8 @@
   const STORE_KEY = "poem_classic_read_v1";
   const FONT_KEY = "poem_classic_font_v1";
   const PINYIN_KEY = "poem_helper_pinyin_v1";
+  // 注音档位：off 关闭 ｜ rare 只标生字（默认）｜ all 全文注音
+  const PINYIN_MODES = ["off", "rare", "all"];
   const FONT_SIZES = [17, 19, 21, 23, 26];
 
   const MATCH_GROUP = "课外必背";
@@ -28,7 +30,19 @@
   let current = null;
   let keyword = "";
   let filter = "all";
-  let pinyinOn = localStorage.getItem(PINYIN_KEY) === "1";
+  /**
+   * 当前注音档位。兼容旧版布尔值：
+   * 旧 "1" ⇒ 只标生字，"0" ⇒ 关闭。
+   */
+  function pinyinMode() {
+    const v = localStorage.getItem(PINYIN_KEY);
+    if (PINYIN_MODES.indexOf(v) > -1) return v;
+    return v === "1" ? "rare" : "off";
+  }
+
+  function setPinyinMode(mode) {
+    localStorage.setItem(PINYIN_KEY, PINYIN_MODES.indexOf(mode) > -1 ? mode : "off");
+  }
 
   /* ---------------- 进度存储（与古诗词进度相互独立） ---------------- */
   function readMap() {
@@ -155,12 +169,13 @@
 
   /* ---------------- 正文渲染：生字注音 ---------------- */
 
-  /** 按当前注音开关渲染正文。关闭时纯文本，打开时逐字标拼音 */
+  /** 按当前注音档位渲染正文。关闭时纯文本，开启时按要求标注拼音 */
   function renderReaderText() {
     if (!current) return;
     const box = $("#rd-text");
-    if (pinyinOn && window.Pinyin) {
-      box.innerHTML = window.Pinyin.annotateHtml(current.text);
+    const mode = pinyinMode();
+    if (mode !== "off" && window.Pinyin) {
+      box.innerHTML = window.Pinyin.annotateHtml(current.text, mode === "all" ? "all" : "rare");
       box.classList.add("with-pinyin");
     } else {
       box.textContent = current.text;
@@ -169,18 +184,22 @@
   }
 
   function syncPinyinButton() {
-    const btn = $("#rd-pinyin-toggle");
-    btn.dataset.on = pinyinOn ? "1" : "0";
-    btn.setAttribute("aria-pressed", pinyinOn ? "true" : "false");
-    btn.textContent = pinyinOn ? "隐藏拼音" : "标注拼音";
+    const seg = $("#rd-pinyin-seg");
+    if (!seg) return;
+    const mode = pinyinMode();
+    $$("button", seg).forEach(function (b) {
+      const on = b.dataset.mode === mode;
+      b.classList.toggle("active", on);
+      b.setAttribute("aria-pressed", on ? "true" : "false");
+    });
+    seg.dataset.on = mode === "off" ? "0" : "1";
   }
 
-  function togglePinyin() {
-    pinyinOn = !pinyinOn;
-    localStorage.setItem(PINYIN_KEY, pinyinOn ? "1" : "0");
+  function setPinyinModeFromUI(mode) {
+    setPinyinMode(mode);
     renderReaderText();
     syncPinyinButton();
-    showToast(pinyinOn ? "已标注拼音" : "已隐藏拼音");
+    showToast(mode === "off" ? "已隐藏拼音" : mode === "all" ? "已全文注音" : "只标生字");
   }
 
   /* ---------------- 正文朗读 ---------------- */
@@ -297,7 +316,11 @@
     $("#rd-font-up").addEventListener("click", function () { changeFont(1); });
     $("#rd-font-down").addEventListener("click", function () { changeFont(-1); });
 
-    $("#rd-pinyin-toggle").addEventListener("click", togglePinyin);
+    $$("#rd-pinyin-seg button").forEach(function (b) {
+      b.addEventListener("click", function () {
+        setPinyinModeFromUI(b.dataset.mode);
+      });
+    });
     $("#rd-read-btn").addEventListener("click", toggleRead);
 
     // 语音朗读结束（自然播完）后同步按钮状态

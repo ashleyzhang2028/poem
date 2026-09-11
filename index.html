@@ -134,7 +134,11 @@
         </div>
       </div>
       <div class="modal-tools">
-        <button class="mini-btn" id="m-pinyin-toggle" data-on="0" aria-pressed="false">标注拼音</button>
+        <div class="seg mini" id="m-pinyin-seg" data-on="0" role="group" aria-label="注音方式">
+          <button data-mode="off" aria-pressed="false">不注音</button>
+          <button data-mode="rare" class="active" aria-pressed="true">只标生字</button>
+          <button data-mode="all" aria-pressed="false">全文注音</button>
+        </div>
         <button class="mini-btn" id="m-read-btn" data-on="0" aria-pressed="false">
           <span class="btn-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
@@ -229,7 +233,7 @@
           <button data-helper="off" class="active">关闭</button>
           <button data-helper="on">开启注音与朗读</button>
         </div>
-        <div class="settings-hint" id="helper-hint">开启后，诗词详情和小古文阅读页都可以逐字注音、语音朗读</div>
+        <div class="settings-hint" id="helper-hint">开启后，诗词详情和小古文阅读页都可注音、朗读；注音分「只标生字」和「全文注音」两档，默认只标生字</div>
       </div>
       <div class="settings-item">
         <label>每日背诵数量</label>
@@ -250,7 +254,7 @@
       </div>
       <div class="settings-tip">
         <p>复习间隔：当天 → 1 天 → 2 天 → 4 天 → 7 天 → 15 天 → 30 天 → 60 天 → 120 天 → 240 天</p>
-        <p>课外必背小古文（《三字经》《世说新语》等 100 篇）篇幅长、以读懂为主，不走遗忘曲线排期，在首页「课外必背小古文」里点击学习，可逐字注音、语音朗读。</p>
+        <p>课外必背小古文（《三字经》《世说新语》等 100 篇）篇幅长、以读懂为主，不走遗忘曲线排期，在首页「课外必背小古文」里点击学习，可注音、朗读。</p>
       </div>
     </div>
   </div>
@@ -285,6 +289,7 @@
   <script src="data/poems-12.js"></script>
   <script src="data/index.js"></script>
   <script src="data/pinyin-table.js"></script>
+  <script src="data/common-chars.js"></script>
   <script src="js/pinyin.js"></script>
   <script src="js/speech.js"></script>
   <script src="js/storage.js"></script>

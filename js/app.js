@@ -25,7 +25,9 @@
   // 目前课内 242 首（含长文言文）与课外 34 篇无一重名，故留空。
   const CLASSIC_LINKS = {};
 
+  // 注音档位：off 关闭 ｜ rare 只标生字（默认）｜ all 全文注音
   const PINYIN_KEY = "poem_helper_pinyin_v1";
+  const PINYIN_MODES = ["off", "rare", "all"];
 
   let settings = Storage.getSettings();
   let todayPlan = [];
@@ -39,12 +41,28 @@
     return settings.helper !== "off";
   }
 
-  function pinyinOn() {
-    return localStorage.getItem(PINYIN_KEY) === "1";
+  /**
+   * 当前注音档位。
+   * 兼容旧版布尔开关：旧值 "1" ⇒ 只标生字（新版默认，不再全文注音），"0" ⇒ 关闭。
+   */
+  function pinyinMode() {
+    const v = localStorage.getItem(PINYIN_KEY);
+    if (PINYIN_MODES.indexOf(v) > -1) return v;
+    return v === "1" ? "rare" : "off";
   }
 
-  function setPinyinOn(on) {
-    localStorage.setItem(PINYIN_KEY, on ? "1" : "0");
+  function setPinyinMode(mode) {
+    localStorage.setItem(PINYIN_KEY, PINYIN_MODES.indexOf(mode) > -1 ? mode : "off");
+  }
+
+  /** 是否处于注音状态（rare / all 都算开启） */
+  function pinyinOn() {
+    return pinyinMode() !== "off";
+  }
+
+  /** 传给 Pinyin.annotateHtml 的模式："all" 或 "rare" */
+  function pinyinRenderMode() {
+    return pinyinMode() === "all" ? "all" : "rare";
   }
 
   /* ---------------- 工具 ---------------- */
@@ -418,11 +436,11 @@
     document.body.style.overflow = "hidden";
   }
 
-  /** 弹层正文：按注音开关渲染。关闭时为纯文本，保证原有测试与排版不变 */
+  /** 弹层正文：按注音档位渲染。关闭时为纯文本，保证原有测试与排版不变 */
   function renderPoemText(p) {
     const box = $("#m-text");
     if (pinyinOn() && window.Pinyin) {
-      box.innerHTML = window.Pinyin.annotateHtml(p.text);
+      box.innerHTML = window.Pinyin.annotateHtml(p.text, pinyinRenderMode());
       box.classList.add("with-pinyin");
     } else {
       box.textContent = p.text;
@@ -430,21 +448,27 @@
     }
   }
 
+  /** 同步弹层的注音档位按钮（关闭 / 只标生字 / 全文注音） */
   function syncPinyinBtn() {
-    const btn = $("#m-pinyin-toggle");
-    if (!btn) return;
-    const on = pinyinOn();
-    btn.dataset.on = on ? "1" : "0";
-    btn.setAttribute("aria-pressed", on ? "true" : "false");
-    btn.textContent = on ? "隐藏拼音" : "标注拼音";
+    const seg = $("#m-pinyin-seg");
+    if (!seg) return;
+    const mode = pinyinMode();
+    Array.prototype.forEach.call(seg.querySelectorAll("button"), function (b) {
+      const on = b.dataset.mode === mode;
+      b.classList.toggle("active", on);
+      b.setAttribute("aria-pressed", on ? "true" : "false");
+    });
+    // 兼容性：保留一个可读状态，供旧测试与无障碍读取
+    seg.dataset.on = mode === "off" ? "0" : "1";
   }
 
-  function togglePinyin() {
-    const next = !pinyinOn();
-    setPinyinOn(next);
+  function setPinyinModeFromUI(mode) {
+    setPinyinMode(mode);
     if (currentPoem) renderPoemText(currentPoem);
     syncPinyinBtn();
-    showToast(next ? "已标注拼音" : "已隐藏拼音");
+    showToast(
+      mode === "off" ? "已隐藏拼音" : mode === "all" ? "已全文注音" : "只标生字"
+    );
   }
 
   function syncReadBtn() {
@@ -581,8 +605,11 @@
       });
     });
 
-    const pinyinBtn = $("#m-pinyin-toggle");
-    if (pinyinBtn) pinyinBtn.addEventListener("click", togglePinyin);
+    $$("#m-pinyin-seg button").forEach(function (b) {
+      b.addEventListener("click", function () {
+        setPinyinModeFromUI(b.dataset.mode);
+      });
+    });
     const readBtn = $("#m-read-btn");
     if (readBtn) readBtn.addEventListener("click", toggleRead);
     if (window.speechSynthesis && window.speechSynthesis.addEventListener) {
