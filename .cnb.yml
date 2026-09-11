@@ -1,6 +1,28 @@
 # 古诗词背诵 · 静态站点（PWA）
-# push 到 main / PR 时自动跑测试
-# 手动触发：web_trigger 起预览服务；web_trigger_push_github 推送到 GitHub 仓库 ashleyzhang2028/poem
+# main 分支 push / 合并后：跑测试 → 自动同步到 GitHub 仓库 ashleyzhang2028/poem
+# 手动触发：web_trigger 起预览服务；web_trigger_push_github 手动推送到 GitHub
+
+# GitHub 推送脚本（多处复用）
+.push-to-github: &push-to-github
+  imports:
+    - https://cnb.cool/npu-gpu-cpu/ashleyzhang2028-poem/-/blob/main/github.yml
+  stages:
+    - name: push
+      script: |
+        set -e
+        : "${GITHUB_TOKEN:?GITHUB_TOKEN 未注入，请检查密钥仓库 github.yml}"
+        USER="${GITHUB_USER:-ashleyzhang2028}"
+        REPO="${GITHUB_REPO:-ashleyzhang2028/poem}"
+        BRANCH="${GITHUB_BRANCH:-main}"
+
+        git config --global user.name  "${USER}"
+        git config --global user.email "${USER}@users.noreply.github.com"
+        git remote remove github 2>/dev/null || true
+        git remote add github "https://${USER}:${GITHUB_TOKEN}@github.com/${REPO}.git"
+
+        echo "推送 $(git rev-parse --short HEAD) 到 github.com/${REPO} 分支 ${BRANCH} ..."
+        git push --force github "HEAD:${BRANCH}"
+        echo "推送完成 ✅  https://github.com/${REPO}"
 
 main:
   push:
@@ -16,6 +38,12 @@ main:
         - name: run-tests
           script: bash test/run.sh
 
+    # 合并进 main 后自动同步 GitHub，无需再手动点按钮
+    - name: sync-to-github
+      docker:
+        image: node:20
+      <<: *push-to-github
+
   pull_request:
     - name: pr-test
       docker:
@@ -30,56 +58,12 @@ main:
           script: bash test/run.sh
 
 $:
-  # API 触发：同步当前分支到 GitHub（用于无人值守自动同步）
-  api_trigger_push_github:
-    - name: push-to-github
-      docker:
-        image: node:20
-      imports:
-        - https://cnb.cool/npu-gpu-cpu/ashleyzhang2028-poem/-/blob/main/github.yml
-      stages:
-        - name: push
-          script: |
-            set -e
-            : "${GITHUB_TOKEN:?GITHUB_TOKEN 未注入，请检查密钥仓库 github.yml}"
-            USER="${GITHUB_USER:-ashleyzhang2028}"
-            REPO="${GITHUB_REPO:-ashleyzhang2028/poem}"
-            BRANCH="${GITHUB_BRANCH:-main}"
-
-            git config --global user.name  "${USER}"
-            git config --global user.email "${USER}@users.noreply.github.com"
-            git remote remove github 2>/dev/null || true
-            git remote add github "https://${USER}:${GITHUB_TOKEN}@github.com/${REPO}.git"
-
-            echo "推送 $(git rev-parse --short HEAD) 到 github.com/${REPO} 分支 ${BRANCH} ..."
-            git push --force github "HEAD:${BRANCH}"
-            echo "推送完成 ✅  https://github.com/${REPO}"
-
   # 手动触发：推送到 GitHub
-  # 凭据来自密钥仓库，见下方 imports
   web_trigger_push_github:
     - name: push-to-github
       docker:
         image: node:20
-      imports:
-        - https://cnb.cool/npu-gpu-cpu/ashleyzhang2028-poem/-/blob/main/github.yml
-      stages:
-        - name: push
-          script: |
-            set -e
-            : "${GITHUB_TOKEN:?GITHUB_TOKEN 未注入，请检查密钥仓库 github.yml}"
-            USER="${GITHUB_USER:-ashleyzhang2028}"
-            REPO="${GITHUB_REPO:-ashleyzhang2028/poem}"
-            BRANCH="${GITHUB_BRANCH:-main}"
-
-            git config --global user.name  "${USER}"
-            git config --global user.email "${USER}@users.noreply.github.com"
-            git remote remove github 2>/dev/null || true
-            git remote add github "https://${USER}:${GITHUB_TOKEN}@github.com/${REPO}.git"
-
-            echo "推送到 github.com/${REPO} 分支 ${BRANCH} ..."
-            git push --force github "HEAD:${BRANCH}"
-            echo "推送完成 ✅  https://github.com/${REPO}"
+      <<: *push-to-github
 
   web_trigger:
     - name: preview
