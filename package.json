@@ -1,12 +1,14 @@
 {
-  "name": "poem-recitation",
+  "name": "kuibu-poem",
   "version": "1.0.0",
   "private": true,
-  "description": "古诗词 · 遗忘曲线记忆法：一年级至高三，手机/平板/电脑通用，苹果手机可添加到主屏幕当 App 使用",
+  "description": "跬步：一年级至高三古诗词按遗忘曲线复习，小古文 100 篇可阅读、注音与自动朗读",
   "scripts": {
     "start": "node scripts/serve.js",
     "test": "bash test/run.sh",
     "test:pwa": "node test/pwa.test.js"
   },
-  "engines": { "node": ">=18" }
+  "engines": {
+    "node": ">=18"
+  }
 }

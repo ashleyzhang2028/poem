@@ -20,15 +20,17 @@ setTimeout(() => {
   let fails = 0;
   const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else console.log('✓ ' + m); };
 
-  chk(d.title === 'Ashley古诗词 · 遗忘曲线记忆法', '页面标题为 Ashley古诗词（实际 ' + d.title + '）');
-  chk(d.querySelector('.brand-text h1').textContent === 'Ashley古诗词', '品牌标题为 Ashley古诗词');
+  // 需求 9：应用正式名称为「跬步」，不随用户名变化
+  chk(d.title === '跬步 · 古诗词背诵', '页面标题为「跬步 · 古诗词背诵」（实际 ' + d.title + '）');
+  chk(d.querySelector('.brand-text h1').textContent === '跬步', '品牌标题为「跬步」');
+  chk(!/积跬步古诗词/.test(d.documentElement.outerHTML), '页面不出现「积跬步古诗词」旧名');
   const foot = d.querySelector('.foot');
   chk(foot.querySelector('.foot-copy').textContent.trim() === '©2026 kuibu.app 积跬步, 至千里', '页脚版权为 ©2026 kuibu.app 积跬步, 至千里（实际 ' + foot.querySelector('.foot-copy').textContent.trim() + '）');
   // 页脚需常驻两个法务入口：用户协议 / 隐私条款
   const footLinks = [...foot.querySelectorAll('.foot-links a')];
   chk(footLinks.map(a => a.textContent.trim()).join('/') === '用户协议/隐私条款', '页脚含「用户协议」「隐私条款」链接');
   chk(footLinks.map(a => a.getAttribute('href')).join('/') === './terms.html/./privacy.html', '页脚两个链接指向 terms.html 与 privacy.html');
-  chk(d.querySelector('.brand-text p').textContent === '一年级至高三 · 遗忘曲线记忆法', '副标题为「一年级至高三 · 遗忘曲线记忆法」');
+  chk(d.querySelector('.brand-text p').textContent === '一年级至高三 · 按遗忘曲线复习', '副标题简洁明了（实际 ' + d.querySelector('.brand-text p').textContent + '）');
   chk(d.querySelector('#all-label').textContent === '本年级本学期全部诗词', '全部诗词标题精确为「本年级本学期全部诗词」');
   // 除 😵🤔😄 外，页面图标应为内联 SVG
   chk(d.querySelectorAll('.brand-icon svg, #btn-settings svg, .collapse-icon svg').length === 3, '顶部/设置/全部诗词图标均为 SVG');
@@ -38,12 +40,20 @@ setTimeout(() => {
   chk(!!d.querySelector('#settings-modal #seg-stage'), '学段选择已移入设置');
   chk(!!d.querySelector('#settings-modal #seg-term'), '学期选择已移入设置');
   chk(!!d.querySelector('#settings-modal #grade-chips'), '年级选择已移入设置');
-  // 课外必背小古文入口：独立页面，不进每日计划
+  // 小古文入口：独立页面，不进每日计划，位置在「本年级本学期全部诗词」之后
   const entry = d.querySelector('#classic-entry');
-  chk(!!entry, '首页有「课外必背小古文」入口');
+  chk(!!entry, '首页有「小古文」入口');
   chk(entry.getAttribute('href') === './classic.html', '入口指向 classic.html');
+  chk(d.querySelector('.classic-title').textContent === '小古文', '入口主标题为「小古文」');
+  chk(!/课外必背/.test(entry.textContent), '入口不再出现「课外必背」字样');
   chk(/100 篇/.test(entry.textContent), '入口标明 100 篇：' + entry.textContent.replace(/\s+/g, ' ').trim());
+  // 需求 3：入口不再出现「《三字经》《世说新语》等 100 篇 · 可注音朗读，不排复习」这类解释性长文案
+  chk(!/三字经|世说新语|不排复习|注音朗读/.test(entry.textContent), '入口文案精简，不再罗列书名与说明');
   chk(d.querySelector('#all-count').textContent === '5', '小古文不会混进古诗词列表（仍为 5 首）');
+  // 位置：全部诗词面板（.all-section）在前，小古文入口紧跟其后
+  const allSection = d.querySelector('.all-section');
+  chk(!!allSection && allSection.compareDocumentPosition(entry) & window.Node.DOCUMENT_POSITION_FOLLOWING,
+    '小古文入口位于「本年级本学期全部诗词」面板下方');
 
   // 先打开设置才能操作年级/学期
   d.querySelector('#btn-settings').dispatchEvent(new window.Event('click', { bubbles: true }));
@@ -130,15 +140,15 @@ setTimeout(() => {
   chk(uInput.value === '', '用户名初始为空（使用默认名）');
   uInput.value = '小明';
   uInput.dispatchEvent(new window.Event('input', { bubbles: true }));
-  chk(d.title === '小明古诗词 · 遗忘曲线记忆法', '页面标题随用户名变化: ' + d.title);
-  chk(d.querySelector('.brand-text h1').textContent === '小明古诗词', '品牌标题随用户名变化');
-  chk(d.querySelector('meta[name="apple-mobile-web-app-title"]').getAttribute('content') === '小明古诗词',
+  chk(d.title === '跬步 · 小明的古诗词 · 古诗词背诵', '填了用户名后标题为「跬步 · 小明的古诗词」（实际 ' + d.title + '）');
+  chk(d.querySelector('.brand-text h1').textContent === '跬步 · 小明的古诗词', '品牌标题跟随用户名，前缀固定为跬步');
+  chk(d.querySelector('meta[name="apple-mobile-web-app-title"]').getAttribute('content') === '跬步 · 小明的古诗词',
     'iOS 桌面名随用户名变化');
   chk(JSON.parse(window.localStorage.getItem('poem_recite_settings_v1')).username === '小明', '用户名已持久化');
 
   uInput.value = '   ';
   uInput.dispatchEvent(new window.Event('input', { bubbles: true }));
-  chk(d.title === 'Ashley古诗词 · 遗忘曲线记忆法', '留空回退默认名 Ashley（实际 ' + d.title + '）');
+  chk(d.title === '跬步 · 古诗词背诵', '用户名留空时标题回到「跬步 · 古诗词背诵」（实际 ' + d.title + '）');
   const c8 = [...d.querySelectorAll('#seg-count button')].find(b => b.dataset.count === '8');
   c8.dispatchEvent(new window.Event('click', { bubbles: true }));
   chk(d.querySelector('#today-sub').textContent.includes('共 8 首'), '改为每日 8 首生效: ' + d.querySelector('#today-sub').textContent);

@@ -154,6 +154,7 @@ setTimeout(async () => {
   chk(!!doc.querySelector("#seg-helper"), "设置里有「阅读辅助」开关");
 
   // 打开第一首诗
+  // 需求 5：阅读辅助默认开启 —— 打开诗词即自动注音
   const first = doc.querySelector("#today-list .item");
   first.dispatchEvent(new w.Event("click", { bubbles: true }));
   const raw = doc.querySelector("#m-text").textContent;

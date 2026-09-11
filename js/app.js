@@ -17,17 +17,13 @@
     high: { name: "高中", grades: [10, 11, 12] }
   };
 
-  // 默认用户名：未填写时使用
-  const DEFAULT_USERNAME = "Ashley";
-
-  // 若以后课外小古文库收录了与课内同名/同篇的内容，在这里登记：
-  // "课内诗题": "gw-xx"，详情弹层就会出现「阅读本篇」入口。
-  // 目前课内 242 首（含长文言文）与课外 34 篇无一重名，故留空。
-  const CLASSIC_LINKS = {};
+  // 应用正式名称（固定，不随用户名变化）
+  const APP_NAME = "跬步";
 
   // 注音档位：off 关闭 ｜ rare 只标生字（默认）｜ all 全文注音
   const PINYIN_KEY = "poem_helper_pinyin_v1";
   const PINYIN_MODES = ["off", "rare", "all"];
+  const DEFAULT_PINYIN_MODE = "rare"; // 新版默认「只标生字」
 
   let settings = Storage.getSettings();
   let todayPlan = [];
@@ -35,10 +31,19 @@
   let todayKey = "";
 
   /* ---------------- 阅读辅助：注音 / 朗读 ---------------- */
-  // 设置里的「阅读辅助」是总开关（settings.helper），诗词弹层里的按钮是本次用法。
-  // 总开关关闭时，按钮仍然可用，只是不默认打开，避免孩子误触。
+  /**
+   * 「阅读辅助」是全局开关，开启与关闭有**可见差别**：
+   *   开启 —— 打开任意一首诗，正文自动逐字注音（可随时手动关掉）
+   *   关闭 —— 打开诗词是纯文本，需要时才手动点「标注拼音」
+   * 朗读按钮两种状态下都可用（它需要用户手势，本就不做自动播放）。
+   */
   function helperEnabled() {
     return settings.helper !== "off";
+  }
+
+  /** 旧版设置没有 classicEntry 字段，默认显示入口 */
+  function classicEntryVisible() {
+    return settings.classicEntry !== "hide";
   }
 
   /**
@@ -65,27 +70,36 @@
     return pinyinMode() === "all" ? "all" : "rare";
   }
 
+  /**
+   * 切换「阅读辅助」全局开关后，让差别当场可见：
+   *   开启 —— 回到默认档位「只标生字」；关闭 —— 回到「不注音」。
+   * 手动选过的档位不跨开关保留，避免开关看起来没反应。
+   */
+  function resetPinyinMode() {
+    localStorage.setItem(PINYIN_KEY, helperEnabled() ? DEFAULT_PINYIN_MODE : "off");
+    if (currentPoem) renderPoemText(currentPoem);
+    syncPinyinBtn();
+  }
+
   /* ---------------- 工具 ---------------- */
   function todayKeyStr() {
     const d = new Date();
     return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate();
   }
 
-  /** 当前用户名，去空格；为空则退回默认名 */
-  function userName() {
-    const n = String(settings.username == null ? "" : settings.username).trim();
-    return n || DEFAULT_USERNAME;
-  }
-
-  /** 页面主标题文案 */
+  /**
+   * 页面主标题：应用正式名固定为「跬步」，填了用户名时展示为「跬步 · 小明的古诗词」
+   * （应用名不因用户名而变，避免出现「XX古诗词」这种花名）
+   */
   function appTitle() {
-    return userName() + "古诗词";
+    const n = String(settings.username == null ? "" : settings.username).trim();
+    return n ? APP_NAME + " · " + n + "的古诗词" : APP_NAME;
   }
 
-  /** 把用户名同步到页面标题、品牌标题、iOS 桌面名与 PWA 清单 */
-  function applyUserName() {
+  /** 把应用名同步到页面标题、品牌标题、iOS 桌面名与 PWA 清单 */
+  function applyAppName() {
     const title = appTitle();
-    document.title = title + " · 遗忘曲线记忆法";
+    document.title = title + " · 古诗词背诵";
     const h1 = $("#brand-name");
     if (h1) h1.textContent = title;
 
@@ -93,14 +107,14 @@
       m.setAttribute("content", title);
     });
 
-    // 安卓/桌面安装后的应用名也跟随用户名
+    // 安卓/桌面安装后的应用名同步为「跬步」
     const link = $('link[rel="manifest"]');
     if (link && window.Blob && window.URL && URL.createObjectURL) {
       try {
         const manifest = JSON.parse(JSON.stringify(window.__manifest || {}));
         if (manifest.name) {
           manifest.name = title;
-          manifest.short_name = title;
+          manifest.short_name = APP_NAME;
           const blob = new Blob([JSON.stringify(manifest)], { type: "application/manifest+json" });
           const url = URL.createObjectURL(blob);
           if (link.dataset.blobUrl) URL.revokeObjectURL(link.dataset.blobUrl);
@@ -273,6 +287,19 @@
         b.classList.toggle("active", (b.dataset.helper === "on") === helperEnabled());
       });
     }
+    const se = $("#seg-classic-entry");
+    if (se) {
+      const hidden = settings.classicEntry === "hide";
+      $$("button", se).forEach(function (b) {
+        b.classList.toggle("active", (b.dataset.entry === "hide") === hidden);
+      });
+    }
+  }
+
+  /** 首页「小古文」入口的显示 / 隐藏（页面里仍可直达 classic.html） */
+  function applyClassicEntry() {
+    const entry = $("#classic-entry");
+    if (entry) entry.hidden = !classicEntryVisible();
   }
 
   /* ---------------- 渲染：今日列表 ---------------- */
@@ -291,6 +318,7 @@
       const done = !!(rec && rec.learned && Scheduler.isDue(rec) === false && rec.lastReviewAt && sameDay(rec.lastReviewAt, Date.now()));
       const el = document.createElement("div");
       el.className = "item " + (item.reason === "review" ? "review" : "new") + (done ? " done" : "");
+      el.dataset.id = p.id;
       el.innerHTML =
         '<div class="item-index">' + (idx + 1) + "</div>" +
         '<div class="item-main">' +
@@ -304,9 +332,16 @@
           ? '<div class="mbar"><i style="width:' + Scheduler.mastery(rec) + '%"></i></div>'
           : "") +
         "</div>" +
+        '<button type="button" class="item-read" title="朗读这一首" aria-label="朗读 ' + esc(p.title) + '">' +
+        readGlyph() + "</button>" +
         '<div class="item-arrow">›</div>';
       el.addEventListener("click", function () {
         openPoem(p, item);
+      });
+      const readBtn = el.querySelector(".item-read");
+      readBtn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        readOne(p, readBtn);
       });
       list.appendChild(el);
     });
@@ -324,6 +359,18 @@
     }).length;
     $("#today-sub").textContent =
       "共 " + todayPlan.length + " 首 · 待复习 " + reviewN + " 首 · 新学 " + (todayPlan.length - reviewN) + " 首";
+
+    syncTodayReadBtn();
+  }
+
+  /** 朗读按钮图标（内联 SVG，跨设备一致） */
+  function readGlyph() {
+    return (
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">' +
+      '<path d="M4 9.5v5h3l4.2 3.4V6.1L7 9.5H4Z" />' +
+      '<path d="M15.2 9.2a4 4 0 0 1 0 5.6" />' +
+      "</svg>"
+    );
   }
 
   function sameDay(a, b) {
@@ -419,19 +466,6 @@
         : "新学的诗，今天先记一遍"
       : "背诵后点击按钮，系统会安排下次复习时间";
 
-    // 若这篇文言文在「课外必背小古文」库里有对应篇目，给一个去读全文的入口
-    const extra = $("#m-classic-link");
-    const gwId = CLASSIC_LINKS[p.title];
-    if (extra) {
-      if (gwId) {
-        extra.hidden = false;
-        extra.href = "./classic.html#" + gwId;
-        extra.textContent = "在「课外必背小古文」中阅读本篇 ›";
-      } else {
-        extra.hidden = true;
-      }
-    }
-
     $("#modal").hidden = false;
     document.body.style.overflow = "hidden";
   }
@@ -469,6 +503,110 @@
     showToast(
       mode === "off" ? "已隐藏拼音" : mode === "all" ? "已全文注音" : "只标生字"
     );
+  }
+
+  /* ---------------- 自动朗读（不看手机也能听） ---------------- */
+
+  function speechOk() {
+    return !!(window.Speech && window.Speech.supported());
+  }
+
+  /** 一首诗的朗读文本：标题 + 朝代 + 作者 + 正文 */
+  function speechText(p) {
+    const head = [p.title, p.dynasty, p.author].filter(Boolean).join("，");
+    return head + "。" + p.text;
+  }
+
+  /** 朗读当天全部：依次读标题、朝代、作者与正文 */
+  function readTodayAll() {
+    if (!speechOk()) {
+      showToast("当前浏览器不支持语音朗读");
+      return;
+    }
+    if (!todayPlan.length) return;
+
+    // 从控制条 / 弹层停止朗读时，也要把「正在朗诵」的高亮与按钮状态复位
+    if (window.ReaderPlayer && window.ReaderPlayer.onStop) {
+      window.ReaderPlayer.onStop(function () {
+        clearHighlight();
+        syncItemReadBtns();
+        syncTodayReadBtn();
+      });
+    }
+    const items = todayPlan.map(function (it) {
+      return {
+        title: it.poem.title,
+        text: speechText(it.poem),
+        onStart: function () { highlightItem(it.poem.id); }
+      };
+    });
+
+    window.ReaderPlayer.player({
+      title: "今日 " + todayPlan.length + " 首",
+      items: items,
+      onIndex: function (i) {
+        const it = todayPlan[i];
+        if (it) highlightItem(it.poem.id);
+      },
+      onEnd: function () {
+        clearHighlight();
+        syncTodayReadBtn();
+        syncReadBtn();
+        syncItemReadBtns();
+      }
+    });
+    syncTodayReadBtn();
+    setTimeout(syncTodayReadBtn, 80);
+  }
+
+  /** 朗读单首：再点一次停止 */
+  function readOne(p, btn) {
+    if (!speechOk()) {
+      showToast("当前浏览器不支持语音朗读");
+      return;
+    }
+    if (window.Speech.speaking()) {
+      window.Speech.stop();
+      showToast("已停止朗读");
+    } else {
+      const ok = window.Speech.speak(speechText(p));
+      showToast(ok ? "开始朗读《" + p.title + "》" : "朗读启动失败，请重试");
+    }
+    syncTodayReadBtn();
+    syncItemReadBtns();
+    setTimeout(function () {
+      syncTodayReadBtn();
+      syncItemReadBtns();
+    }, 80);
+  }
+
+  function syncTodayReadBtn() {
+    const btn = $("#today-read");
+    if (!btn) return;
+    const ok = speechOk();
+    btn.disabled = !ok;
+    const on = ok && window.Speech.speaking() && !(window.ReaderPlayer && window.ReaderPlayer.isOpen());
+    btn.dataset.on = on ? "1" : "0";
+    $("#today-read-text").textContent = on ? "停止" : "朗读";
+  }
+
+  /** 高亮 / 取消高亮列表里的朗诵条 */
+  function highlightItem(id) {
+    $$("#today-list .item").forEach(function (el) {
+      el.classList.toggle("reading", el.dataset.id === id);
+    });
+  }
+
+  /** 取消高亮：顺便把「标记已读后整行半透明」的 .done 类清理干净 */
+  function clearHighlight() {
+    $$("#today-list .item").forEach(function (el) { el.classList.remove("reading"); });
+  }
+
+  function syncItemReadBtns() {
+    const speaking = speechOk() && window.Speech.speaking();
+    $$("#today-list .item-read").forEach(function (b) {
+      b.dataset.on = speaking ? "1" : "0";
+    });
   }
 
   function syncReadBtn() {
@@ -569,13 +707,13 @@
       uInput.addEventListener("input", function () {
         settings.username = uInput.value.trim().slice(0, 12);
         Storage.saveSettings(settings);
-        applyUserName();
+        applyAppName();
       });
       uInput.addEventListener("change", function () {
         settings.username = uInput.value.trim().slice(0, 12);
         uInput.value = settings.username;
         Storage.saveSettings(settings);
-        applyUserName();
+        applyAppName();
       });
       uInput.addEventListener("keydown", function (e) {
         if (e.key === "Enter") {
@@ -622,8 +760,39 @@
         settings.helper = b.dataset.helper === "on" ? "on" : "off";
         Storage.saveSettings(settings);
         renderGradeChips();
-        showToast(helperEnabled() ? "已开启注音与朗读" : "已关闭阅读辅助");
+        // 让开关立刻体现差别：重新渲染当前打开的诗
+        resetPinyinMode();
+        showToast(helperEnabled() ? "阅读辅助已开启：打开诗词自动注音" : "阅读辅助已关闭：打开诗词为纯文本");
       });
+    });
+
+    $$("#seg-classic-entry button").forEach(function (b) {
+      b.addEventListener("click", function () {
+        settings.classicEntry = b.dataset.entry === "hide" ? "hide" : "show";
+        Storage.saveSettings(settings);
+        applyClassicEntry();
+        renderGradeChips();
+        showToast(settings.classicEntry === "hide" ? "已隐藏首页小古文入口" : "已显示首页小古文入口");
+      });
+    });
+
+    const todayRead = $("#today-read");
+    if (todayRead) todayRead.addEventListener("click", function () {
+      if (window.Speech && window.Speech.speaking()) {
+        window.Speech.stop();
+        if (window.ReaderPlayer) window.ReaderPlayer.close();
+        clearHighlight();
+        syncItemReadBtns();
+        const t = $("#toast");
+        t.textContent = "已停止朗读";
+        t.hidden = false;
+        clearTimeout(showToast._t);
+        showToast._t = setTimeout(function () { t.hidden = true; }, 1800);
+      } else {
+        readTodayAll();
+      }
+      syncTodayReadBtn();
+      setTimeout(syncTodayReadBtn, 60);
     });
 
     $("#btn-all").addEventListener("click", function () {
@@ -662,7 +831,7 @@
       const blob = new Blob([Storage.exportJSON()], { type: "application/json" });
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
-      a.download = userName() + "古诗词背诵进度-" + todayKeyStr() + ".json";
+      a.download = "跬步背诵进度-" + todayKeyStr() + ".json";
       a.click();
       URL.revokeObjectURL(a.href);
       showToast("备份已导出");
@@ -681,7 +850,7 @@
           Storage.importJSON(reader.result);
           settings = Storage.getSettings();
           invalidatePlan();
-          applyUserName();
+          applyAppName();
           renderGradeChips();
           rebuildToday();
           renderAll();
@@ -711,7 +880,8 @@
       }
     }, 60 * 1000);
 
-    applyUserName();
+    applyAppName();
+    applyClassicEntry();
     renderGradeChips();
     rebuildToday();
     renderAll();

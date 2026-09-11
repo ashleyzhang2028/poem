@@ -25,6 +25,10 @@ const legalHtml = read('terms.html') + read('privacy.html');
 const allSrc = app + html + classicHtml + legalHtml + read('js/classic.js') + read('js/pwa.js');
 
 chk(app.indexOf('这首歌按遗忘曲线到期了') === -1, '不再出现「这首歌按遗忘曲线到期了」');
+chk(/APP_NAME\s*=\s*"跬步"/.test(app), '应用正式名称为「跬步」');
+chk(html.indexOf('<title>跬步 · 古诗词背诵</title>') !== -1, '首页标题为「跬步 · 古诗词背诵」');
+chk(!/积跬步古诗词/.test(html + legalHtml), '页面不再出现「积跬步古诗词」旧名');
+chk(/"name":\s*"跬步/.test(read('manifest.webmanifest')), 'PWA 清单名称为跬步');
 chk(app.indexOf('这首诗按遗忘曲线到期了') !== -1, '到期提示改为「这首诗按遗忘曲线到期了」');
 chk(!/这首歌/.test(allSrc), '全站不再出现把诗词称作「歌」的措辞');
 
@@ -69,10 +73,14 @@ chk(!/fonts\.googleapis|fonts\.gstatic/.test(legalHtml), '法务页同样不请�
 /* ---------------- 3. 传统色（宋代） ---------------- */
 chk(/宋代/.test(css), '配色注释标明宋代取色');
 // 天青主色
-chk(/--green:\s*#4d7d74/.test(css), '主色为雨过天青 #4d7d74');
+// 主色：雨过天青压深到 #2f6055（提升对比度，白底文字过 WCAG AA）
+chk(/--green:\s*#2f6055/.test(css), '主色为加深后的雨过天青 #2f6055');
+chk(!/--green:\s*#4d7d74/.test(css), '不再使用对比度不足的旧天青 #4d7d74');
 // 宣纸底
-chk(/--bg:\s*#efe7d7/.test(css), '底色为素绢米灰 #efe7d7');
-chk(/--card:\s*#fdfaf2/.test(css), '卡片为宣纸白 #fdfaf2');
+chk(/--bg:\s*#f6f1e3/.test(css), '底色为素绢米灰 #f6f1e3');
+chk(/--card:\s*#fffefa/.test(css), '卡片为宣纸白 #fffefa');
+chk(/--ink:\s*#241d18/.test(css), '正文墨色加深到 #241d18（提升对比度）');
+chk(/--ink-2:\s*#6b5c4d/.test(css), '次要文字淡墨加深到 #6b5c4d');
 // 传统色名
 ['天青', '宣纸', '琥珀', '朱砂', '缃色', '秋香'].forEach(n => chk(css.indexOf(n) !== -1, '出现传统色名「' + n + '」'));
 // 不应残留旧绿色
@@ -80,8 +88,8 @@ chk(!/#4a7c59/.test(css), '不再使用旧品牌绿 #4a7c59');
 chk(!/#4a7c59/.test(html + classicHtml), '页面 theme-color 不再使用旧品牌绿');
 chk(!/#4a7c59/.test(legalHtml), '用户协议 / 隐私条款页 theme-color 也不再使用旧品牌绿');
 chk(!/#4a7c59/.test(read('manifest.webmanifest')), 'PWA 清单不再使用旧品牌绿');
-chk(/"theme_color":\s*"#4d7d74"/.test(read('manifest.webmanifest')), 'PWA 清单主题色为天青');
-chk(/"background_color":\s*"#efe7d7"/.test(read('manifest.webmanifest')), 'PWA 清单背景色为素绢');
+chk(/"theme_color":\s*"#2f6055"/.test(read('manifest.webmanifest')), 'PWA 清单主题色为加深后的天青');
+chk(/"background_color":\s*"#f6f1e3"/.test(read('manifest.webmanifest')), 'PWA 清单背景色为素绢（与 --bg 同步）');
 
 /* ---------------- 4. favicon ---------------- */
 const icon = read('icons/icon.svg');
