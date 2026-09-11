@@ -721,8 +721,23 @@ body.has-install-tip #app {
   cursor: pointer;
 }
 .modal-tools .mini-btn[data-on="1"] { background: var(--green); border-color: var(--green); color: #fdfaf2; }
-.modal-tools .mini-btn .btn-icon { display: inline-flex; margin-right: 5px; vertical-align: -3px; }
-.modal-tools .mini-btn .btn-icon svg { width: 15px; height: 15px; }
+.modal-tools .mini-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.modal-tools .mini-btn .btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 5px;
+}
+.modal-tools .mini-btn .btn-icon svg {
+  display: block;
+  width: 15px;
+  height: 15px;
+  margin: auto;
+}
 .modal-tools .mini-btn[data-on="1"] .wave1 { opacity: 1; animation: wavePulse2 1.1s ease-in-out .18s infinite; }
 .modal-tools .mini-btn[data-on="1"] .wave2 { opacity: 1; animation: wavePulse2 1.1s ease-in-out infinite; }
 .modal-tools .mini-btn[data-on="0"] .wave1,
@@ -923,7 +938,12 @@ body.has-audio-player #app {
 }
 .today-read:active { opacity: .84; }
 .today-read[data-on="1"] { background: var(--gold); border-color: var(--gold); color: #33291a; }
-.today-read svg { width: 15px; height: 15px; }
+.today-read svg {
+  display: block;
+  width: 15px;
+  height: 15px;
+  margin: auto;
+}
 .today-read:disabled { opacity: .5; cursor: not-allowed; }
 
 /* 列表项右侧的「朗读这一首」按钮 */
@@ -940,7 +960,13 @@ body.has-audio-player #app {
   justify-content: center;
   cursor: pointer;
 }
-.item-read svg { width: 17px; height: 17px; }
+/* 喇叭图标：block 化去掉行内基线留白，flex 里才算真正居中 */
+.item-read svg {
+  display: block;
+  width: 17px;
+  height: 17px;
+  margin: auto;
+}
 .item-read:active { transform: scale(.94); }
 .item-read[data-on="1"] { background: var(--green); border-color: var(--green); color: #fffdf8; }
 

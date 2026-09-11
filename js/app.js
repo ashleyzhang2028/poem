@@ -358,7 +358,7 @@
       return it.reason === "review";
     }).length;
     $("#today-sub").textContent =
-      "共 " + todayPlan.length + " 首 · 待复习 " + reviewN + " 首 · 新学 " + (todayPlan.length - reviewN) + " 首";
+      "共 " + todayPlan.length + " 首 · 待复习 " + reviewN + " · 新学 " + (todayPlan.length - reviewN);
 
     syncTodayReadBtn();
   }
@@ -501,7 +501,7 @@
     if (currentPoem) renderPoemText(currentPoem);
     syncPinyinBtn();
     showToast(
-      mode === "off" ? "已隐藏拼音" : mode === "all" ? "已全文注音" : "只标生字"
+      mode === "off" ? "已隐藏拼音" : mode === "all" ? "已全文注音" : "已只标生字"
     );
   }
 

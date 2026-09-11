@@ -152,6 +152,10 @@ setTimeout(() => {
   const c8 = [...d.querySelectorAll('#seg-count button')].find(b => b.dataset.count === '8');
   c8.dispatchEvent(new window.Event('click', { bubbles: true }));
   chk(d.querySelector('#today-sub').textContent.includes('共 8 首'), '改为每日 8 首生效: ' + d.querySelector('#today-sub').textContent);
+  // 需求 4：统计文案去掉「首」后缀，避免换行 →「共 N 首 · 待复习 N · 新学 N」
+  chk(/^共 \d+ 首 · 待复习 \d+ · 新学 \d+$/.test(d.querySelector('#today-sub').textContent),
+    '今日统计精简为「共 N 首 · 待复习 N · 新学 N」（实际 ' + d.querySelector('#today-sub').textContent + '）');
+  chk(!/待复习 \d+ 首/.test(d.querySelector('#today-sub').textContent), '待复习数字后不再带「首」');
   chk(d.querySelectorAll('#today-list .item').length === 8, '今日列表变为 8 首');
 
   // 持久化

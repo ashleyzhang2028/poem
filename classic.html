@@ -51,7 +51,7 @@
       </div>
       <button class="seg-toggle" id="gw-filter" data-filter="all">全部</button>
       <button class="seg-toggle" id="gw-filter-unread" data-filter="unread">未读</button>
-      <button class="toolbar-read" id="gw-random-read" data-on="0" title="随机连读，读完自动跳下一篇">
+      <button class="seg-toggle" id="gw-random-read" data-on="0" title="随机连读，读完自动跳下一篇">
         <span aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
             <path d="M4 9.5v5h3l4.2 3.4V6.1L7 9.5H4Z" />
@@ -100,8 +100,8 @@
       <div class="reader-actions">
         <div class="seg mini" id="rd-pinyin-seg" data-on="0" role="group" aria-label="注音方式">
           <button data-mode="off" aria-pressed="false">不注音</button>
-          <button data-mode="rare" class="active" aria-pressed="true">只标生字</button>
-          <button data-mode="all" aria-pressed="false">全文注音</button>
+          <button data-mode="rare" class="active" aria-pressed="true">生字</button>
+          <button data-mode="all" aria-pressed="false">全文</button>
         </div>
         <button class="mini-btn" id="rd-read-btn" data-on="0" aria-pressed="false">
           <span class="btn-icon" aria-hidden="true">
@@ -111,7 +111,7 @@
               <path class="wave2" d="M17.8 6.6a7.6 7.6 0 0 1 0 10.8" />
             </svg>
           </span>
-          <span id="rd-read-text">朗读全文</span>
+          <span id="rd-read-text">朗读</span>
         </button>
         <button class="mini-btn" id="rd-trans-toggle" data-on="0">显示译文</button>
         <button class="mini-btn ghost" id="rd-font-down" aria-label="缩小字号">A－</button>

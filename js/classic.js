@@ -7,7 +7,7 @@
  * 3. 阅读用**整页阅读器**（reader），而不是卡片弹窗：长文可整屏滚动。
  * 4. 进度只有 localStorage 里的「已读」标记（poem_classic_read_v1）。
  * 5. 朗读三处入口：
- *    · 阅读器「朗读全文」——读标题 + 朝代 + 作者 + 正文
+ *    · 阅读器「朗读」——读标题 + 朝代 + 作者 + 正文
  *    · 译文「朗读」——只读白话译文
  *    · 索引页 / 分组「随机连读」——随机抽一篇开读，读完自动跳下一篇（可暂停 / 停止）
  *    自动连读时会同步滚动并高亮当前篇，用户随时能接管。
@@ -281,7 +281,7 @@
     setPinyinMode(mode);
     renderReaderText();
     syncPinyinButton();
-    showToast(mode === "off" ? "已隐藏拼音" : mode === "all" ? "已全文注音" : "只标生字");
+    showToast(mode === "off" ? "已隐藏拼音" : mode === "all" ? "已全文注音" : "已只标生字");
   }
 
   /* ---------------- 朗读 ---------------- */
@@ -310,7 +310,7 @@
     const on = !autoReading && !!window.Speech.speaking();
     btn.dataset.on = on ? "1" : "0";
     btn.setAttribute("aria-pressed", on ? "true" : "false");
-    $("#rd-read-text").textContent = on ? "停止朗读" : "朗读全文";
+    $("#rd-read-text").textContent = on ? "停止" : "朗读";
   }
 
   function toggleRead() {

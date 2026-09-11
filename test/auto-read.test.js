@@ -149,7 +149,7 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
   chk(!!c.querySelector('#rd-prev') && !!c.querySelector('#rd-next'), '阅读器有上一篇/下一篇');
   c.querySelector('#gw-list .item').dispatchEvent(new w2.Event('click', { bubbles: true }));
   await sleep(20);
-  chk(c.querySelector('#rd-read-btn').disabled === false, '有语音环境时「朗读全文」可用');
+  chk(c.querySelector('#rd-read-btn').disabled === false, '有语音环境时「朗读」可用');
   chk(c.querySelector('#rd-trans-read').disabled === false, '译文朗读按钮可用');
   c.querySelector('#rd-next').dispatchEvent(new w2.Event('click', { bubbles: true }));
   await sleep(20);
