@@ -124,20 +124,21 @@ setTimeout(async () => {
   chk(!!doc.querySelector("#seg-helper"), "设置里有「阅读辅助」开关");
 
   // 打开第一首诗
+  // 需求 5：阅读辅助默认开启 —— 打开诗词即自动注音
   const first = doc.querySelector("#today-list .item");
   first.dispatchEvent(new w.Event("click", { bubbles: true }));
   const raw = doc.querySelector("#m-text").textContent;
-  chk(raw.length > 0, "打开弹层后正文正常渲染（默认不注音）");
-  chk(doc.querySelector("#m-text").querySelector("ruby") === null, "默认不注音，正文是纯文本");
-
-  doc.querySelector("#m-pinyin-toggle").dispatchEvent(new w.Event("click", { bubbles: true }));
+  chk(raw.length > 0, "打开弹层后正文正常渲染");
   const rubies = doc.querySelectorAll("#m-text ruby");
-  chk(rubies.length > 4, "点击后逐字注音（" + rubies.length + " 个 ruby）");
-  chk(doc.querySelector("#m-pinyin-toggle").dataset.on === "1", "按钮状态切到开启");
-  chk(w.localStorage.getItem("poem_helper_pinyin_v1") === "1", "注音开关已持久化");
+  chk(rubies.length > 4, "阅读辅助开启时打开诗词自动逐字注音（" + rubies.length + " 个 ruby）");
+  chk(doc.querySelector("#m-pinyin-toggle").dataset.on === "1", "按钮状态为开启");
 
   doc.querySelector("#m-pinyin-toggle").dispatchEvent(new w.Event("click", { bubbles: true }));
-  chk(doc.querySelectorAll("#m-text ruby").length === 0, "再点一次可关闭注音，恢复纯文本");
+  chk(doc.querySelectorAll("#m-text ruby").length === 0, "点一次可关闭注音，恢复纯文本");
+  chk(w.localStorage.getItem("poem_helper_pinyin_v1") === "0", "注音开关状态已持久化");
+
+  doc.querySelector("#m-pinyin-toggle").dispatchEvent(new w.Event("click", { bubbles: true }));
+  chk(doc.querySelectorAll("#m-text ruby").length > 4, "再点一次恢复注音");
 
   // 朗读：jsdom 没有 SpeechSynthesis，必须优雅降级
   const readBtn = doc.querySelector("#m-read-btn");

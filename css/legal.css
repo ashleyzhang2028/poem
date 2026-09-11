@@ -19,7 +19,7 @@
 }
 .legal-nav-link:hover { background: var(--green-light); filter: brightness(.97); }
 
-/* 顶部速览（仅隐私页） */
+/* 顶部「一句话版本」（协议 / 隐私页共用） */
 .legal-summary {
   background: var(--green-light);
   border: 1px solid var(--line);
@@ -116,7 +116,7 @@
 .legal-dim {
   font-family: var(--font-ui);
   font-size: 12px;
-  color: #9c8d7b;
+  color: var(--ink-3);
   margin: 6px 0 0;
 }
 .legal-foot {
@@ -127,3 +127,33 @@
   font-size: 12.5px;
   color: var(--ink-2);
 }
+
+/* ==========================================================================
+   法务页精简版：只讲关键信息
+   --------------------------------------------------------------------------
+   协议与隐私各自压到一屏可读完，重复内容合并、去掉婆婆妈妈的免责长句。
+   ========================================================================== */
+.legal-lead {
+  border-left: 3px solid var(--green);
+}
+.legal-mini {
+  list-style: none;
+  padding-left: 0 !important;
+  margin: 0;
+}
+.legal-mini li {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  padding: 7px 0;
+  border-bottom: 1px dashed var(--line);
+  margin: 0 !important;
+}
+.legal-mini li:last-child { border-bottom: none; }
+.legal-mini .mini-k {
+  flex: none;
+  width: 5.6em;
+  color: var(--green-dark);
+  font-weight: 600;
+}
+.legal-mini .mini-v { flex: 1; color: var(--ink); }

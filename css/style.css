@@ -4,33 +4,37 @@
      命名方式：传统色名 + 用途
      ========================================================================== */
 
-  /* 底色：宣德纸 / 素绢，暖白不刺眼，长时间读诗不累 */
-  --bg: #f8f4ea;            /* 米灰底（素绢）：已进一步调淡，接近宣纸本色 */
-  --bg-soft: #fdfbf5;       /* 浅一层（生宣） */
-  --card: #fffdf8;          /* 卡片：宣纸 */
-  --card-2: #faf5e9;        /* 次级卡片 */
+  /* 底色：宣德纸 / 素绢。刻意用「暖白」而非纯白：
+     宋版书用纸偏暖，长时间读诗不刺眼，也有别于现代 UI 的冷白。 */
+  --bg: #f6f1e3;            /* 米灰底（素绢） */
+  --bg-soft: #fcfaf3;       /* 浅一层（生宣） */
+  --card: #fffefa;          /* 卡片：宣纸高光面（与底色拉开明度差） */
+  --card-2: #f7f1e1;        /* 次级卡片 */
 
-  /* 主色：雨过天青（汝窑），宋代美学的代表色 */
-  --green: #4d7d74;         /* 天青（主色，沿用变量名以兼容既有样式） */
-  --green-dark: #3a6159;    /* 深天青 */
-  --green-light: #e2ece7;   /* 淡天青（浅底） */
-  --celadon: #6f9188;       /* 汝窑青 */
+  /* 主色：雨过天青（汝窑）。原色 #4d7d74 在米底上对比度不足，
+     这里压深到 #2f6055，白字/浅底都过 WCAG AA。 */
+  --green: #2f6055;         /* 天青（主色，沿用变量名以兼容既有样式） */
+  --green-dark: #234b42;    /* 深天青 */
+  --green-light: #dbe9e2;   /* 淡天青（浅底） */
+  --celadon: #4f7a6e;       /* 汝窑青 */
 
-  /* 点缀：琥珀 / 秋香 / 朱砂 / 藤黄，均为宋代常用色 */
-  --amber: #c07a3a;         /* 琥珀（复习） */
-  --amber-light: #f7ecdc;
-  --autumn: #b39a55;        /* 秋香色 */
-  --red: #b8473d;           /* 朱砂（忘记） */
-  --red-light: #f8ece9;
-  --blue: #5c7f96;          /* 天水碧（小古文） */
-  --blue-light: #e7eef1;
-  --gold: #d9b566;          /* 缃色（进度环） */
+  /* 点缀：琥珀 / 秋香 / 朱砂 / 缃色，均为宋代常用色（同样加深过） */
+  --amber: #a55c19;         /* 琥珀（复习） */
+  --amber-light: #f7e6d0;
+  --autumn: #8a7327;        /* 秋香色 */
+  --red: #a83b32;           /* 朱砂（忘记） */
+  --red-light: #f7e5e1;
+  --blue: #3d6379;          /* 天水碧（小古文） */
+  --blue-light: #dee9ef;
+  --gold: #f0cd7c;          /* 缃色（进度环，压在深天青上） */
 
-  --ink: #322a24;           /* 墨（正文） */
-  --ink-2: #7b6d5e;         /* 淡墨（次要文字） */
-  --line: #e3d8c2;          /* 界行（描金细线） */
+  --ink: #241d18;           /* 墨（正文） */
+  --ink-2: #6b5c4d;         /* 淡墨（次要文字）：原 #7b6d5e 偏浅 */
+  --ink-3: #8a7a68;         /* 更淡的辅助文字（说明 / 页脚） */
+  --line: #d6c8ad;          /* 界行（描金细线） */
   --radius: 16px;
-  --shadow: 0 2px 14px rgba(74, 58, 38, 0.08);
+  --shadow: 0 2px 14px rgba(74, 58, 38, 0.10);
+  --shadow-up: 0 -2px 16px rgba(74, 58, 38, 0.12);
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -50,8 +54,8 @@ html, body {
   background: var(--bg);
   /* 宋代绢本：暖白底 + 极淡的天青/琥珀晕染，像摊开的一页宣纸 */
   background-image:
-    radial-gradient(1100px 520px at 12% -8%, rgba(77, 125, 116, .06), transparent 62%),
-    radial-gradient(900px 460px at 92% 4%, rgba(192, 122, 58, .05), transparent 60%);
+    radial-gradient(1100px 520px at 12% -8%, rgba(47, 96, 85, .07), transparent 62%),
+    radial-gradient(900px 460px at 92% 4%, rgba(165, 92, 25, .06), transparent 60%);
   background-attachment: fixed;
   color: var(--ink);
   font-family: var(--font-ui);
@@ -187,9 +191,9 @@ html, body {
   align-items: center;
   justify-content: space-between;
   /* 雨过天青：汝窑主色渐变 */
-  background: linear-gradient(135deg, #3f6f67 0%, #4d7d74 46%, #6f9188 100%);
-  color: #fdfaf2;
-  box-shadow: 0 3px 18px rgba(58, 97, 89, .26);
+  background: linear-gradient(135deg, #1f443c 0%, #2f6055 50%, #4f7a6e 100%);
+  color: #fffdf8;
+  box-shadow: 0 3px 18px rgba(35, 75, 66, .30);
   position: relative;
   overflow: hidden;
 }
@@ -274,7 +278,7 @@ html, body {
   font-weight: 500;
 }
 .item-reason.review { background: var(--amber-light); color: var(--amber); }
-.item-arrow { color: #c5cfc8; font-size: 18px; }
+.item-arrow { color: #9db3a9; font-size: 18px; }
 
 /* 进度条小 */
 .mbar {
@@ -294,6 +298,7 @@ html, body {
 
 /* 全部诗词折叠 */
 .all-section { margin-top: 14px; }
+.classic-entry { margin-top: 14px; }
 .collapse-head {
   width: 100%;
   border: none;
@@ -403,7 +408,7 @@ html, body {
   white-space: pre-wrap;
   word-break: break-word;
   margin: 16px 0;
-  color: #2c3830;
+  color: #22302a;
   letter-spacing: 1.5px;
 }
 
@@ -472,8 +477,8 @@ html, body {
   transition: border-color .15s, background .15s;
 }
 .settings-input:focus { border-color: var(--green); background: #fffdf6; }
-.settings-input::placeholder { color: #b8ab97; }
-.settings-hint { font-size: 11.5px; color: #9c8d7b; margin-top: 6px; }
+.settings-input::placeholder { color: #9c8d7b; }
+.settings-hint { font-size: 11.5px; color: var(--ink-3); margin-top: 6px; }
 
 .settings-btns { display: flex; gap: 8px; flex-wrap: wrap; }
 .ghost-btn { flex: 1; min-width: 90px; padding: 9px; font-size: 13.5px; }
@@ -488,11 +493,11 @@ html, body {
   margin-top: 16px;
 }
 
-.foot { text-align: center; font-size: 11.5px; color: #9c8d7b; padding: 10px 0 0; }
+.foot { text-align: center; font-size: 11.5px; color: var(--ink-3); padding: 10px 0 0; }
 /* 版权 + 用户协议 / 隐私条款链接：两行居中，窄屏不挤在一起 */
 .foot-copy { display: block; }
 .foot-links { display: inline-flex; gap: 6px; margin-top: 6px; }
-.foot-links a { color: #9c8d7b; text-decoration: none; }
+.foot-links a { color: var(--ink-3); text-decoration: none; }
 .foot-links a:hover { color: var(--green); text-decoration: underline; }
 .foot-sep { color: #c8bcaa; }
 
@@ -617,7 +622,7 @@ button,
   color: var(--green);
 }
 .ios-tip-icon svg { width: 19px; height: 19px; }
-.ios-tip-text { flex: 1; color: #6b5a35; }
+.ios-tip-text { flex: 1; color: #5a4a24; }
 
 .ios-tip-close {
   flex: none;
@@ -728,7 +733,7 @@ body.has-install-tip #app {
   font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", Arial, sans-serif;
   font-size: .52em;
   font-weight: 400;
-  color: #9c8d7b;
+  color: var(--ink-3);
   letter-spacing: 0;
   line-height: 1.05;
 }
@@ -818,4 +823,132 @@ body.has-install-tip #app {
 .group-name {
   font-family: var(--font-poem);
   letter-spacing: .6px;
+}
+
+/* ==========================================================================
+   自动朗读控制条（首页 / 小古文页共用）
+   --------------------------------------------------------------------------
+   交互取向：用户「不看手机也能听」，所以控制条是常驻底部的一条，
+   而不是需要重新找到入口的弹层；暂停后原地出现「继续」，全程可一键停止。
+   ========================================================================== */
+.reader-player {
+  position: fixed;
+  left: calc(10px + var(--safe-left));
+  right: calc(10px + var(--safe-right));
+  bottom: calc(10px + var(--safe-bottom));
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 10px;
+  border-radius: 14px;
+  background: var(--green-dark);
+  color: #fffdf8;
+  box-shadow: 0 8px 26px rgba(24, 46, 41, .34);
+  animation: slideUp .24s cubic-bezier(.2, .8, .3, 1);
+}
+.reader-player[hidden] { display: none; }
+
+.rp-icon { flex: none; display: inline-flex; color: var(--gold); }
+.rp-icon svg { width: 19px; height: 19px; }
+.rp-w1, .rp-w2 { opacity: .4; }
+.reader-player:not([data-paused="1"]) .rp-w1 { opacity: 1; animation: wavePulse 1.1s ease-in-out .18s infinite; }
+.reader-player:not([data-paused="1"]) .rp-w2 { opacity: 1; animation: wavePulse 1.1s ease-in-out infinite; }
+
+.rp-label {
+  flex: 1;
+  min-width: 0;
+  font-size: 12.5px;
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  color: #eef5f1;
+}
+.rp-btn {
+  flex: none;
+  border: 1px solid rgba(255, 253, 248, .38);
+  background: rgba(255, 253, 248, .1);
+  color: #fffdf8;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.rp-btn:active { opacity: .82; }
+.rp-btn[data-paused="1"] {
+  background: var(--gold);
+  border-color: var(--gold);
+  color: #33291a;
+}
+.rp-stop { padding: 6px 10px; }
+
+/* 有控制条时，页面底部补留白，避免遮挡页脚与最后一首诗 */
+body.has-audio-player .app,
+body.has-audio-player #app {
+  padding-bottom: calc(96px + var(--safe-bottom));
+}
+
+/* 今日任务条里的「朗读全部」按钮 */
+.today-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+}
+.today-read {
+  border: 1px solid rgba(255, 253, 248, .5);
+  background: rgba(255, 253, 248, .14);
+  color: #fffdf8;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+.today-read:active { opacity: .84; }
+.today-read[data-on="1"] { background: var(--gold); border-color: var(--gold); color: #33291a; }
+.today-read svg { width: 15px; height: 15px; }
+.today-read:disabled { opacity: .5; cursor: not-allowed; }
+
+/* 列表项右侧的「朗读这一首」按钮 */
+.item-read {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--green);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.item-read svg { width: 17px; height: 17px; }
+.item-read:active { transform: scale(.94); }
+.item-read[data-on="1"] { background: var(--green); border-color: var(--green); color: #fffdf8; }
+
+/* 首页「小古文」入口：设置里可隐藏 */
+.classic-entry[hidden] { display: none; }
+
+/* 隐私 / 协议页的「极简速览」 */
+.legal-mini {
+  margin: 0;
+  padding-left: 1.1em;
+}
+.legal-mini li { margin-bottom: 4px; }
+
+/* 自动朗读时高亮当前这首 */
+#today-list .item.reading {
+  border-left-color: var(--green);
+  box-shadow: 0 0 0 2px var(--green-light), var(--shadow);
 }

@@ -1,13 +1,16 @@
 /**
- * 课外必背小古文 · 学习库
+ * 小古文 · 学习库
  * ---------------------------------------------------
  * 设计说明：
- * 1. 小古文篇幅长、以「读懂」为主，不适合按遗忘曲线一天排几篇，
- *    因此本页只做「列出 + 点击学习」：不生成每日任务、不做复习排期。
+ * 1. 小古文篇幅长、以「读懂」为主，不做每日排期：本页只做「列出 + 点击学习」。
  * 2. 搜索 + 「全部 / 未读」筛选，快速找到想读的一篇。
- * 3. 阅读用**整页阅读器**（reader），而不是卡片弹窗：
- *    长文可整屏滚动，配上字号调节，手机上读着不憋屈。
- * 4. 唯一的进度记录：localStorage 里的「已读」标记（poem_classic_read_v1）。
+ * 3. 阅读用**整页阅读器**（reader），而不是卡片弹窗：长文可整屏滚动。
+ * 4. 进度只有 localStorage 里的「已读」标记（poem_classic_read_v1）。
+ * 5. 朗读三处入口：
+ *    · 阅读器「朗读全文」——读标题 + 朝代 + 作者 + 正文
+ *    · 译文「朗读」——只读白话译文
+ *    · 索引页 / 分组「随机连读」——随机抽一篇开读，读完自动跳下一篇（可暂停 / 停止）
+ *    自动连读时会同步滚动并高亮当前篇，用户随时能接管。
  */
 (function () {
   "use strict";
@@ -21,7 +24,19 @@
   const STORE_KEY = "poem_classic_read_v1";
   const FONT_KEY = "poem_classic_font_v1";
   const PINYIN_KEY = "poem_helper_pinyin_v1";
-  const FONT_SIZES = [17, 19, 21, 23, 26];
+
+  /* 字号五档：A- 可以一路降到 15px，照顾低龄与弱视用户 */
+  const FONT_SIZES = [15, 17, 19, 21, 23];
+  const DEFAULT_FONT = 17; // 默认字号降一级（原默认 19）
+
+  /* 阅读辅助总开关：开启时打开阅读器即自动注音 */
+  function helperOn() {
+    try {
+      return JSON.parse(localStorage.getItem("poem_recite_settings_v1") || "{}").helper !== "off";
+    } catch (e) {
+      return true;
+    }
+  }
 
   const MATCH_GROUP = "课外必背";
 
@@ -29,6 +44,7 @@
   let keyword = "";
   let filter = "all";
   let pinyinOn = localStorage.getItem(PINYIN_KEY) === "1";
+  let autoReading = false;
 
   /* ---------------- 进度存储（与古诗词进度相互独立） ---------------- */
   function readMap() {
@@ -55,9 +71,21 @@
     localStorage.setItem(STORE_KEY, JSON.stringify(map));
   }
 
-  /* ---------------- 列表 ---------------- */
+  /* ---------------- 数据 ---------------- */
   function allItems() {
     return (window.CLASSIC_ALL || []).slice();
+  }
+
+  function byId(id) {
+    const list = allItems();
+    for (let i = 0; i < list.length; i++) if (list[i].id === id) return list[i];
+    return null;
+  }
+
+  function idIndex(p) {
+    const list = allItems();
+    for (let i = 0; i < list.length; i++) if (list[i].id === p.id) return i;
+    return -1;
   }
 
   function visibleItems() {
@@ -75,6 +103,17 @@
     });
   }
 
+  function speakGlyph(cls) {
+    return (
+      '<span class="' + (cls || "") + '" aria-hidden="true">' +
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">' +
+      '<path d="M4 9.5v5h3l4.2 3.4V6.1L7 9.5H4Z" />' +
+      '<path d="M15.2 9.2a4 4 0 0 1 0 5.6" />' +
+      "</svg></span>"
+    );
+  }
+
+  /* ---------------- 列表 ---------------- */
   function renderList() {
     const box = $("#gw-list");
     const items = visibleItems();
@@ -97,14 +136,18 @@
         lastGroup = p.gradeGroup;
         const head = document.createElement("div");
         head.className = "group-head";
-        head.innerHTML = '<span class="group-name">' + esc(p.gradeGroup) + "</span>" +
-          '<span class="group-count">' + items.filter(function (x) { return x.gradeGroup === lastGroup; }).length + " 篇</span>";
+        head.innerHTML =
+          '<span class="group-name">' + esc(p.gradeGroup) + "</span>" +
+          '<span class="group-count">' + items.filter(function (x) { return x.gradeGroup === lastGroup; }).length + " 篇</span>" +
+          '<button type="button" class="group-random" data-random-group="' + esc(p.gradeGroup) + '">' +
+          speakGlyph() + "随机连读</button>";
         box.appendChild(head);
       }
 
       const read = isRead(p.id);
       const el = document.createElement("div");
       el.className = "item" + (read ? " done" : "") + (p.gradeGroup === MATCH_GROUP ? "" : " in-book");
+      el.dataset.id = p.id;
       el.innerHTML =
         '<div class="item-index">' + index + "</div>" +
         '<div class="item-main">' +
@@ -112,9 +155,9 @@
         (read ? '<span class="item-reason read">已读</span>' : "") +
         "</h3>" +
         '<div class="item-meta"><span>' + esc(p.source) + "</span>" +
-        (p.dynasty ? '<span>·</span><span>' + esc(p.dynasty) + "</span>" : "") +
-        (p.author ? '<span>·</span><span>' + esc(p.author) + "</span>" : "") +
-        '<span>·</span><span>' + esc(p.text.replace(/\n/g, "").slice(0, 16)) + "…</span>" +
+        (p.dynasty ? "<span>·</span><span>" + esc(p.dynasty) + "</span>" : "") +
+        (p.author ? "<span>·</span><span>" + esc(p.author) + "</span>" : "") +
+        "<span>·</span><span>" + esc(p.text.replace(/\n/g, "").slice(0, 16)) + "…</span>" +
         "</div>" +
         "</div>" +
         '<div class="item-arrow">›</div>';
@@ -123,13 +166,23 @@
     });
   }
 
-  /* ---------------- 阅读器 ---------------- */
-  function idIndex(p) {
-    const list = allItems();
-    for (let i = 0; i < list.length; i++) if (list[i].id === p.id) return i;
-    return -1;
+  /** 当前正在朗读的篇目：列表滚动到可见位置并高亮 */
+  function highlightItem(id) {
+    const el = $("#gw-list .item[data-id='" + id + "']");
+    if (!el) return;
+    el.classList.add("reading");
+    if (typeof el.scrollIntoView === "function") {
+      try {
+        el.scrollIntoView({ block: "center", behavior: "smooth" });
+      } catch (e) { /* 旧内核不支持参数对象 */ }
+    }
   }
 
+  function clearHighlight() {
+    $$("#gw-list .item.reading").forEach(function (el) { el.classList.remove("reading"); });
+  }
+
+  /* ---------------- 阅读器 ---------------- */
   function openReader(p) {
     current = p;
     const idx = idIndex(p);
@@ -144,18 +197,45 @@
     $("#rd-trans").hidden = true;
     $("#rd-trans-toggle").dataset.on = "0";
     $("#rd-trans-toggle").textContent = "显示译文";
+    renderNav();
     applyFont();
     syncPinyinButton();
     syncReadButton();
+    syncTransReadButton();
     syncDoneButton();
     $("#gw-reader").hidden = false;
     document.body.classList.add("reader-open");
     window.scrollTo(0, 0);
   }
 
+  /** 上一篇 / 下一篇按钮：显示目标篇名，到头则禁用 */
+  function renderNav() {
+    if (!current) return;
+    const list = allItems();
+    const i = idIndex(current);
+    const prev = i > 0 ? list[i - 1] : null;
+    const next = i >= 0 && i < list.length - 1 ? list[i + 1] : null;
+    const prevBtn = $("#rd-prev");
+    const nextBtn = $("#rd-next");
+    $("#rd-prev-title").textContent = prev ? prev.title : "已是第一篇";
+    $("#rd-next-title").textContent = next ? next.title : "已是最后一篇";
+    prevBtn.disabled = !prev;
+    nextBtn.disabled = !next;
+    prevBtn.dataset.target = prev ? prev.id : "";
+    nextBtn.dataset.target = next ? next.id : "";
+  }
+
+  function goSibling(dir) {
+    if (!current) return;
+    const list = allItems();
+    const i = idIndex(current) + dir;
+    if (i < 0 || i >= list.length) return;
+    if (window.Speech) window.Speech.stop();
+    openReader(list[i]);
+  }
+
   /* ---------------- 正文渲染：生字注音 ---------------- */
 
-  /** 按当前注音开关渲染正文。关闭时纯文本，打开时逐字标拼音 */
   function renderReaderText() {
     if (!current) return;
     const box = $("#rd-text");
@@ -183,11 +263,21 @@
     showToast(pinyinOn ? "已标注拼音" : "已隐藏拼音");
   }
 
-  /* ---------------- 正文朗读 ---------------- */
+  /* ---------------- 朗读 ---------------- */
+
+  /** 朗读用文本：标题 + 朝代 + 作者 + 正文 */
+  function speechText(p) {
+    const head = [p.title, p.dynasty, p.author].filter(Boolean).join("，");
+    return head + "。" + p.text;
+  }
+
+  function speechSupported() {
+    return !!(window.Speech && window.Speech.supported());
+  }
 
   function syncReadButton() {
     const btn = $("#rd-read-btn");
-    const ok = !!(window.Speech && window.Speech.supported());
+    const ok = speechSupported();
     btn.disabled = !ok;
     btn.title = ok ? "用手机语音朗读这篇古文" : "当前浏览器不支持语音朗读";
     if (!ok) {
@@ -195,21 +285,21 @@
       btn.dataset.on = "0";
       return;
     }
-    const on = window.Speech.speaking();
+    // 自动连读时不算「本篇朗读中」，避免按钮状态来回跳
+    const on = !autoReading && !!window.Speech.speaking();
     btn.dataset.on = on ? "1" : "0";
     btn.setAttribute("aria-pressed", on ? "true" : "false");
     $("#rd-read-text").textContent = on ? "停止朗读" : "朗读全文";
   }
 
   function toggleRead() {
-    if (!window.Speech || !window.Speech.supported() || !current) return;
+    if (!speechSupported() || !current) return;
     if (window.Speech.speaking()) {
+      autoReading = false;
       window.Speech.stop();
       showToast("已停止朗读");
     } else {
-      // 朗读时把标题与出处也读进去，孩子能听清「这是哪一篇」
-      const head = [current.title, current.dynasty, current.author].filter(Boolean).join("，");
-      const ok = window.Speech.speak(head + "。" + current.text);
+      const ok = window.Speech.speak(speechText(current));
       showToast(ok ? "开始朗读" : "朗读启动失败，请重试");
     }
     syncReadButton();
@@ -217,12 +307,48 @@
     setTimeout(syncReadButton, 300);
   }
 
+  function syncTransReadButton() {
+    const btn = $("#rd-trans-read");
+    if (!btn) return;
+    const ok = speechSupported();
+    btn.disabled = !ok;
+    if (!ok) {
+      $("#rd-trans-read-text").textContent = "不支持";
+      btn.dataset.on = "0";
+      return;
+    }
+    const on = !autoReading && !!window.Speech.speaking();
+    btn.dataset.on = on ? "1" : "0";
+    $("#rd-trans-read-text").textContent = on ? "停止" : "朗读";
+  }
+
+  /** 白话译文朗读：只读译文，不读原文 */
+  function toggleTransRead() {
+    if (!speechSupported() || !current) return;
+    if (window.Speech.speaking()) {
+      window.Speech.stop();
+      showToast("已停止朗读");
+    } else {
+      const t = current.translation || "";
+      if (!t) {
+        showToast("本篇暂无译文");
+        return;
+      }
+      const ok = window.Speech.speak(t);
+      showToast(ok ? "开始朗读译文" : "朗读启动失败，请重试");
+    }
+    syncTransReadButton();
+    setTimeout(syncTransReadButton, 60);
+  }
+
   function closeReader() {
     if (window.Speech) window.Speech.stop();
+    autoReading = false;
     $("#gw-reader").hidden = true;
     document.body.classList.remove("reader-open");
     current = null;
     renderList();
+    syncRandomReadButton();
   }
 
   function syncDoneButton() {
@@ -234,10 +360,93 @@
     btn.setAttribute("aria-pressed", read ? "true" : "false");
   }
 
+  /* ---------------- 随机连读 ---------------- */
+
+  function syncRandomReadButton() {
+    const btn = $("#gw-random-read");
+    if (!btn) return;
+    const ok = speechSupported();
+    btn.disabled = !ok;
+    // 只有「连读队列真的还在跑」才算进行中：用户中途点「停止」时按钮要立刻复位
+    const running = autoReading && !!window.Speech && window.Speech.speaking();
+    btn.dataset.on = running ? "1" : "0";
+    $("#gw-random-read-text").textContent = running ? "连读中" : "随机连读";
+  }
+
+  function shuffle(list) {
+    const arr = list.slice();
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const t = arr[i];
+      arr[i] = arr[j];
+      arr[j] = t;
+    }
+    return arr;
+  }
+
+  /**
+   * 随机连读
+   * @param {Array} pool 候选篇目；缺省为当前列表（全部 / 未读）里的篇目
+   */
+  function startRandomRead(pool) {
+    if (!speechSupported()) {
+      showToast("当前浏览器不支持语音朗读");
+      return;
+    }
+    // 再点一次 = 停止连读
+    if (autoReading && window.Speech.speaking()) {
+      window.Speech.stop();
+      window.ReaderPlayer.close();
+      autoReading = false;
+      clearHighlight();
+      syncRandomReadButton();
+      syncReadButton();
+      syncTransReadButton();
+      showToast("已停止连读");
+      return;
+    }
+    const list = shuffle((pool && pool.length ? pool : visibleItems()));
+    if (!list.length) {
+      showToast("没有可朗读的篇目");
+      return;
+    }
+
+    autoReading = true;
+    syncRandomReadButton();
+
+    window.ReaderPlayer.player({
+      title: list.length + " 篇随机连读",
+      items: list.map(function (p) {
+        return {
+          title: p.title,
+          text: speechText(p),
+          // 每篇读完自动翻到下一篇（阅读器打开的自动翻篇由 onIndex 完成）
+          onStart: function () {
+            if (!current || current.id !== p.id) openReader(p);
+            highlightItem(p.id);
+          }
+        };
+      }),
+      onIndex: function (i) {
+        const p = list[i];
+        if (!p) return;
+        if (!current || current.id !== p.id) openReader(p);
+      },
+      onEnd: function () {
+        autoReading = false;
+        clearHighlight();
+        syncRandomReadButton();
+        syncReadButton();
+        syncTransReadButton();
+      }
+    });
+  }
+
   /* ---------------- 字号 ---------------- */
   function fontIdx() {
     const v = Number(localStorage.getItem(FONT_KEY));
-    return FONT_SIZES.indexOf(v) === -1 ? 1 : FONT_SIZES.indexOf(v);
+    const i = FONT_SIZES.indexOf(v);
+    return i === -1 ? FONT_SIZES.indexOf(DEFAULT_FONT) : i;
   }
 
   function applyFont() {
@@ -249,6 +458,7 @@
     i = Math.max(0, Math.min(FONT_SIZES.length - 1, i));
     localStorage.setItem(FONT_KEY, String(FONT_SIZES[i]));
     applyFont();
+    showToast("字号 " + FONT_SIZES[i] + "px");
   }
 
   function showToast(msg) {
@@ -275,7 +485,21 @@
       });
     });
 
+    // 分组「随机连读」：在组内随机，读完自动跳下一篇
+    $("#gw-list").addEventListener("click", function (e) {
+      const btn = e.target && e.target.closest ? e.target.closest("[data-random-group]") : null;
+      if (!btn) return;
+      e.stopPropagation();
+      const group = btn.dataset.randomGroup;
+      startRandomRead(allItems().filter(function (p) { return p.gradeGroup === group; }));
+    });
+
+    const randomBtn = $("#gw-random-read");
+    if (randomBtn) randomBtn.addEventListener("click", function () { startRandomRead(null); });
+
     $("#gw-back").addEventListener("click", closeReader);
+    $("#rd-prev").addEventListener("click", function () { goSibling(-1); });
+    $("#rd-next").addEventListener("click", function () { goSibling(1); });
 
     $("#gw-done").addEventListener("click", function () {
       if (!current) return;
@@ -292,6 +516,7 @@
       this.dataset.on = on ? "0" : "1";
       this.textContent = on ? "显示译文" : "隐藏译文";
       $("#rd-trans").hidden = on;
+      if (on) syncTransReadButton();
     });
 
     $("#rd-font-up").addEventListener("click", function () { changeFont(1); });
@@ -299,11 +524,19 @@
 
     $("#rd-pinyin-toggle").addEventListener("click", togglePinyin);
     $("#rd-read-btn").addEventListener("click", toggleRead);
+    const transReadBtn = $("#rd-trans-read");
+    if (transReadBtn) transReadBtn.addEventListener("click", toggleTransRead);
 
-    // 语音朗读结束（自然播完）后同步按钮状态
-    if (window.Speech && window.Speech.supported() && window.speechSynthesis) {
-      window.speechSynthesis.addEventListener("end", syncReadButton);
-      window.speechSynthesis.addEventListener("cancel", syncReadButton);
+    // 语音朗读结束 / 被中止后同步按钮状态（含连读按钮的复位）
+    if (window.speechSynthesis && window.speechSynthesis.addEventListener) {
+      const syncAll = function () {
+        if (!window.Speech.speaking()) autoReading = false;
+        syncReadButton();
+        syncTransReadButton();
+        syncRandomReadButton();
+      };
+      window.speechSynthesis.addEventListener("end", syncAll);
+      window.speechSynthesis.addEventListener("cancel", syncAll);
     }
 
     document.addEventListener("keydown", function (e) {
@@ -321,8 +554,11 @@
       $("#gw-list").innerHTML = '<div class="empty">小古文数据加载失败</div>';
       return;
     }
+    // 设置里「阅读辅助」开启时，首次进阅读器默认注音
+    if (helperOn()) pinyinOn = true;
     bindEvents();
     renderList();
+    syncRandomReadButton();
   }
 
   if (document.readyState === "loading") {

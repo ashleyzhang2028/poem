@@ -61,14 +61,18 @@ setTimeout(() => {
     const d = terms.doc;
     chk(/用户协议/.test(d.title), '用户协议页标题正确（' + d.title + '）');
     const t = d.querySelector('.legal').textContent;
-    chk(/学生与未成年人保护/.test(t), '含「学生与未成年人保护」章节');
+    chk(/学生与未成年人/.test(t), '含「学生与未成年人」章节');
     chk(/不收集儿童个人信息/.test(t), '明确声明不收集儿童个人信息');
-    chk(/免责声明/.test(t), '含「免责声明」章节');
+    chk(/免责与变更/.test(t), '含「免责与变更」章节');
     chk(/按?「?现状」?提供|现状提供/.test(t), '服务按现状提供');
     chk(/不承担责任|不承担任何责任/.test(t), '写明所有者不承担责任的边界');
     chk(!/本站对.{0,10}承担全部责任/.test(t), '没有把责任无限兜给本站的表述');
-    chk(/信息准确性|仍可能存在疏漏/.test(t), '说明了内容/拼音可能出错，以教材为准');
-    chk(d.querySelectorAll('.legal-toc a').length >= 8, '目录锚点齐全（' + d.querySelectorAll('.legal-toc a').length + ' 项）');
+    chk(/仍可能有疏漏|仍可能存在疏漏/.test(t) && /以孩子学校所用教材/.test(t),
+      '说明了内容/拼音可能出错，以教材为准');
+    chk(d.querySelectorAll('.legal-toc a').length >= 4, '目录锚点齐全（' + d.querySelectorAll('.legal-toc a').length + ' 项）');
+    // 需求 2：协议要保持精简，不再长篇大论
+    chk(t.length < 1400, '用户协议精简到一屏可读完（' + t.length + ' 字）');
+    chk(/一句话版本/.test(d.querySelector('.legal-summary').textContent), '顶部有一句话版本速览');
   }
 
   /* --- 隐私条款 --- */
@@ -82,6 +86,7 @@ setTimeout(() => {
     chk(/Service Worker|离线缓存/.test(t), '说明离线缓存与托管平台日志的边界');
     chk(/导出备份/.test(t) && /清空进度/.test(t), '给出导出与删除数据的路径');
     chk(!!d.querySelector('.legal-summary'), '顶部有「一句话版本」速览');
+    chk(t.length < 1300, '隐私条款精简到一屏可读完（' + t.length + ' 字）');
   }
 
   /* --- 邮箱：运行时才出现，且点击可复制 --- */

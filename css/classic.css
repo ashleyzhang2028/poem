@@ -48,7 +48,7 @@
   position: absolute;
   left: 11px;
   display: inline-flex;
-  color: #9c8d7b;
+  color: var(--ink-3);
   pointer-events: none;
 }
 .search-icon svg { width: 17px; height: 17px; }
@@ -89,6 +89,41 @@
 }
 .group-name { font-size: 14px; font-weight: 700; color: var(--ink); }
 .group-count { font-size: 11.5px; color: var(--ink-2); }
+.group-random {
+  margin-left: auto;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--blue);
+  border-radius: 999px;
+  padding: 4px 11px;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+.group-random svg { width: 12px; height: 12px; }
+.group-random:active { background: var(--blue-light); }
+
+/* 索引页顶部的「随机朗读」 */
+.toolbar-read {
+  border: 1px solid var(--blue);
+  background: var(--blue-light);
+  color: var(--blue);
+  border-radius: 12px;
+  padding: 9px 13px;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.toolbar-read svg { width: 15px; height: 15px; }
+.toolbar-read[data-on="1"] { background: var(--blue); border-color: var(--blue); color: #fffdf8; }
 
 /* 列表项：古文条目左侧用蓝色区分于古诗词 */
 #gw-list .item { border-left-color: var(--blue); }
@@ -98,6 +133,11 @@
 #gw-list .item-index { background: var(--blue-light); color: var(--blue); }
 #gw-list .item.in-book .item-index { background: var(--green-light); color: var(--green); }
 #gw-list .item-reason.read { background: var(--green-light); color: var(--green); }
+/* 随机连读时高亮当前篇，用户随时能接管 */
+#gw-list .item.reading {
+  border-left-color: var(--blue);
+  box-shadow: 0 0 0 2px var(--blue-light), var(--shadow);
+}
 #gw-list .item-meta span:last-child {
   max-width: 100%;
   overflow: hidden;
@@ -204,7 +244,7 @@ body.reader-open { overflow: hidden; }
 .reader-text {
   /* 正文字体由 --font-poem 统一指定（思源宋体，缺字回退系统宋体） */
   font-family: var(--font-poem);
-  font-size: 21px;   /* 由 JS 按用户字号覆盖 */
+  font-size: 19px;   /* 由 JS 按用户字号覆盖；默认档见 js/classic.js 的 DEFAULT_FONT */
   line-height: 2.2;
   margin: 18px 0 22px;
   letter-spacing: 1.4px;
@@ -233,8 +273,73 @@ body.reader-open { overflow: hidden; }
   margin-top: 24px;
   text-align: center;
   font-size: 12px;
-  color: #9aa8a0;
+  color: var(--ink-3);
 }
+
+/* 上一篇 / 下一篇：读完直接翻，不必退回索引页 */
+.reader-nav {
+  display: flex;
+  gap: 10px;
+  margin: 26px 0 4px;
+}
+.reader-nav button {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--green);
+  border-radius: 12px;
+  padding: 11px 12px;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-align: left;
+}
+.reader-nav button.next { justify-content: flex-end; text-align: right; }
+.reader-nav button:disabled { opacity: .42; cursor: not-allowed; }
+.reader-nav .nav-label {
+  font-size: 11px;
+  color: var(--ink-3);
+  font-weight: 400;
+  display: block;
+}
+.reader-nav .nav-title {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+/* 译文朗读按钮：贴在译文标题右侧 */
+.trans-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.trans-head h3 { margin: 0; }
+.trans-read {
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--green);
+  border-radius: 999px;
+  padding: 5px 11px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+.trans-read svg { width: 13px; height: 13px; }
+.trans-read[data-on="1"] { background: var(--green); border-color: var(--green); color: #fffdf8; }
+.trans-read:disabled { opacity: .5; cursor: not-allowed; }
 
 @media (min-width: 700px) {
   .reader-body { padding-top: 28px; }
@@ -259,7 +364,7 @@ body.reader-open { overflow: hidden; }
   font-family: var(--font-ui);
   font-size: .52em;
   font-weight: 400;
-  color: #9c8d7b;
+  color: var(--ink-3);
   letter-spacing: 0;
   /* rt 默认会撑高行距，这里压一下，保证与未注音版本视觉密度接近 */
   line-height: 1.05;

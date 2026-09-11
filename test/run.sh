@@ -9,7 +9,8 @@
 #   5. 用户协议/隐私条款  —— jsdom + 源码扫描：页脚入口、学生保护、邮箱防爬
 #   6. 注音与朗读测试    —— 拼音表/多音字（纯 Node）+ 注音渲染与朗读降级（jsdom）
 #   7. 主题专项测试      —— 纯 Node，文案 / Web Font / 传统色 / favicon
-#   8. PWA / iOS 兼容测试 —— 真实浏览器（puppeteer），缺少依赖则跳过
+#   8. 自动朗读测试      —— jsdom + 假语音引擎：朗读全部 / 单首 / 随机连读 / 暂停停止
+#   9. PWA / iOS 兼容测试 —— 真实浏览器（puppeteer），缺少依赖则跳过
 set -e
 cd "$(dirname "$0")/.."
 
@@ -70,6 +71,16 @@ fi
 echo ""
 echo "=== 主题专项测试（文案 / 字体 / 配色 / 图标）==="
 node test/theme.test.js
+
+echo ""
+echo "=== 自动朗读 / 阅读辅助测试 ==="
+if node -e "require.resolve('jsdom')" 2>/dev/null; then
+  node test/auto-read.test.js
+else
+  TMP=$(mktemp -d)
+  (cd "$TMP" && npm i jsdom --silent --no-fund --no-audit >/dev/null 2>&1) || { echo "跳过自动朗读测试（无法安装 jsdom）"; exit 0; }
+  NODE_PATH="$TMP/node_modules" node test/auto-read.test.js
+fi
 
 echo ""
 echo "=== PWA / iOS 兼容测试 ==="

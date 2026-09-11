@@ -59,9 +59,14 @@ setTimeout(() => {
   chk(d.querySelectorAll('#gw-list .group-head').length >= 6, '按主题显示分组标题（' + d.querySelectorAll('#gw-list .group-head').length + ' 个）');
   chk(/已读|标记/.test(d.querySelector('#gw-done-text').textContent), '阅读器内有「标记已读」按钮');
   chk(d.querySelector('.brand-text h1').textContent === '小古文', '小古文页主标题为「小古文」（实际 ' + d.querySelector('.brand-text h1').textContent + '）');
-  chk(d.title === '小古文 · 学习库', '小古文页标题为「小古文 · 学习库」（实际 ' + d.title + '）');
+  chk(d.title === '小古文 · 跬步', '小古文页标题为「小古文 · 跬步」（实际 ' + d.title + '）');
+  // 需求 7/8：顶部说明精简为一行，不再出现「点击即可学习 ·」「小古文和古诗词不一样…」这类婆婆妈妈的段落
   const notice = d.querySelector('.notice').textContent;
-  chk(notice.includes('不必按遗忘曲线一天几篇'), '页面明确说明不按遗忘曲线排期（文案：' + notice.slice(0, 30) + '…）');
+  chk(notice.includes('不排复习日期') && notice.length < 40,
+    '页面说明精简为一行（实际 ' + notice.trim() + '）');
+  chk(!/点击即可学习/.test(notice), '顶部不再出现「点击即可学习 ·」');
+  chk(d.querySelector('.brand-text p').textContent === '100 篇 · 想读哪篇点哪篇',
+    '顶部副标题精简（实际 ' + d.querySelector('.brand-text p').textContent + '）');
   chk(d.querySelectorAll('#gw-list .item .item-reason.review').length === 0, '列表里没有「复习」标签，不做复习排期');
 
   // 搜索
@@ -81,15 +86,21 @@ setTimeout(() => {
   chk(d.querySelector('#rd-title').textContent === '盘古开天地', '阅读器标题正确');
   chk(d.querySelector('#rd-meta').textContent.includes('太平御览'), '阅读器显示出处');
   chk(d.querySelector('#rd-text').textContent.length > 100, '长文完整渲染（' + d.querySelector('#rd-text').textContent.length + ' 字）');
-  chk(d.querySelector('#rd-text').style.fontSize === '19px', '默认字号 19px');
+  // 需求 10：默认字号降一级（19 → 17）
+  chk(d.querySelector('#rd-text').style.fontSize === '17px', '默认字号降一级为 17px（实际 ' + d.querySelector('#rd-text').style.fontSize + '）');
   chk(d.querySelector('#rd-trans').hidden === true, '译文默认折叠');
 
-  // 字号调节
+  // 字号调节：五档 15/17/19/21/23
   d.querySelector('#rd-font-up').dispatchEvent(new window.Event('click', { bubbles: true }));
-  chk(d.querySelector('#rd-text').style.fontSize === '21px', '放大字号生效（' + d.querySelector('#rd-text').style.fontSize + '）');
+  chk(d.querySelector('#rd-text').style.fontSize === '19px', '放大字号生效（' + d.querySelector('#rd-text').style.fontSize + '）');
   d.querySelector('#rd-font-down').dispatchEvent(new window.Event('click', { bubbles: true }));
-  chk(d.querySelector('#rd-text').style.fontSize === '19px', '缩小字号生效');
-  chk(window.localStorage.getItem('poem_classic_font_v1') === '19', '字号记忆持久化');
+  chk(d.querySelector('#rd-text').style.fontSize === '17px', '缩小字号生效');
+  chk(window.localStorage.getItem('poem_classic_font_v1') === '17', '字号记忆持久化');
+  // 需求 10：A- 可以再减两级（17 → 15）
+  d.querySelector('#rd-font-down').dispatchEvent(new window.Event('click', { bubbles: true }));
+  d.querySelector('#rd-font-down').dispatchEvent(new window.Event('click', { bubbles: true }));
+  chk(d.querySelector('#rd-text').style.fontSize === '15px',
+    '连续点 A－ 可再降两级到 15px（实际 ' + d.querySelector('#rd-text').style.fontSize + '）');
 
   // 译文展开
   d.querySelector('#rd-trans-toggle').dispatchEvent(new window.Event('click', { bubbles: true }));
@@ -119,14 +130,14 @@ setTimeout(() => {
   d.querySelector('#gw-list .item').dispatchEvent(new window.Event('click', { bubbles: true }));
   chk(!!d.querySelector('#rd-pinyin-toggle'), '阅读器有「标注拼音」按钮');
   chk(!!d.querySelector('#rd-read-btn'), '阅读器有「朗读全文」按钮');
-  chk(d.querySelectorAll('#rd-text ruby').length === 0, '默认不注音，正文是纯文本');
+  // 阅读辅助默认开启 → 打开古文即自动注音（需求 5：开关要有可见差别）
+  chk(d.querySelectorAll('#rd-text ruby').length > 5,
+    '阅读辅助开启时打开古文自动注音（' + d.querySelectorAll('#rd-text ruby').length + ' 个 ruby）');
+  chk(/qū|qǔ/.test(d.querySelector('#rd-text').textContent) === false, '拼音走 rt 标签，不混进正文');
 
   d.querySelector('#rd-pinyin-toggle').dispatchEvent(new window.Event('click', { bubbles: true }));
-  chk(d.querySelectorAll('#rd-text ruby').length > 5,
-    '点击后逐字注音（' + d.querySelectorAll('#rd-text ruby').length + ' 个 ruby）');
-  chk(/qū|qǔ/.test(d.querySelector('#rd-text').textContent) === false, '拼音走 rt 标签，不混进正文');
-  d.querySelector('#rd-pinyin-toggle').dispatchEvent(new window.Event('click', { bubbles: true }));
-  chk(d.querySelectorAll('#rd-text ruby').length === 0, '再点一次关闭注音');
+  chk(d.querySelectorAll('#rd-text ruby').length === 0, '点一次可关闭注音，恢复纯文本');
+  chk(window.localStorage.getItem('poem_helper_pinyin_v1') === '0', '手动关闭状态已持久化');
   d.querySelector('#gw-back').dispatchEvent(new window.Event('click', { bubbles: true }));
 
   // 取消已读
