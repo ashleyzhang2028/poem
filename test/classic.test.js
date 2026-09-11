@@ -115,16 +115,32 @@ setTimeout(() => {
 
   // 注音与朗读（阅读辅助）
   d.querySelector('#gw-list .item').dispatchEvent(new window.Event('click', { bubbles: true }));
-  chk(!!d.querySelector('#rd-pinyin-toggle'), '阅读器有「标注拼音」按钮');
+  const rdSeg = d.querySelector('#rd-pinyin-seg');
+  chk(!!rdSeg, '阅读器有注音档位按钮组');
+  chk(rdSeg.querySelectorAll('button').length === 3, '阅读器注音有 3 档');
   chk(!!d.querySelector('#rd-read-btn'), '阅读器有「朗读全文」按钮');
   chk(d.querySelectorAll('#rd-text ruby').length === 0, '默认不注音，正文是纯文本');
 
-  d.querySelector('#rd-pinyin-toggle').dispatchEvent(new window.Event('click', { bubbles: true }));
-  chk(d.querySelectorAll('#rd-text ruby').length > 5,
-    '点击后逐字注音（' + d.querySelectorAll('#rd-text ruby').length + ' 个 ruby）');
+  const rdClick = (m) => d.querySelector('#rd-pinyin-seg button[data-mode="' + m + '"]')
+    .dispatchEvent(new window.Event('click', { bubbles: true }));
+
+  // 只标生字：注音量少于全文，且不注音的常见字保留为纯文本
+  rdClick('rare');
+  const rdRare = d.querySelectorAll('#rd-text ruby').length;
+  const rdTotal = d.querySelector('#rd-text').textContent.replace(/\s/g, '').length;
+  chk(rdRare > 0, '「只标生字」能标出生字（' + rdRare + ' 个 ruby）');
+  chk(rdRare < rdTotal, '「只标生字」不会把整篇都注上（' + rdRare + ' < ' + rdTotal + '）');
   chk(/qū|qǔ/.test(d.querySelector('#rd-text').textContent) === false, '拼音走 rt 标签，不混进正文');
-  d.querySelector('#rd-pinyin-toggle').dispatchEvent(new window.Event('click', { bubbles: true }));
-  chk(d.querySelectorAll('#rd-text ruby').length === 0, '再点一次关闭注音');
+  chk(window.localStorage.getItem('poem_helper_pinyin_v1') === 'rare', '注音档位持久化为 rare');
+
+  // 全文注音
+  rdClick('all');
+  chk(d.querySelectorAll('#rd-text ruby').length > rdRare,
+    '「全文注音」比「只标生字」注得多（' + d.querySelectorAll('#rd-text ruby').length + ' > ' + rdRare + '）');
+
+  // 关闭
+  rdClick('off');
+  chk(d.querySelectorAll('#rd-text ruby').length === 0, '选「不注音」关闭注音');
   d.querySelector('#gw-back').dispatchEvent(new window.Event('click', { bubbles: true }));
 
   // 取消已读

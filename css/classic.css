@@ -278,3 +278,6 @@ body.reader-open { overflow: hidden; }
 .mini-btn[data-on="1"] .wave1 { animation: wavePulse 1.1s ease-in-out .18s infinite; }
 @keyframes wavePulse { 0%, 100% { opacity: .3 } 50% { opacity: 1 } }
 .mini-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+/* 阅读器内的注音档位：复用全局 .seg.mini，这里只压一下字号便于窄屏并排 */
+.reader-actions .seg.mini button { font-size: 12.5px; padding: 5px 8px; }
