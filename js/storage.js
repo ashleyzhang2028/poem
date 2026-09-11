@@ -75,7 +75,9 @@
       return safeParse(localStorage.getItem(SETTINGS_KEY) || "null", null) || {
         grade: 1,
         term: 1,
-        dailyCount: 5
+        dailyCount: 5,
+        // 背诵范围，见 js/scheduler.js 的 SCOPES
+        scope: "term"
       };
     },
 

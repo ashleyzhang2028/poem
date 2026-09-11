@@ -4,8 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#4a7c59" />
-  <title>Ashley古诗词背诵 · 艾宾浩斯记忆曲线</title>
-  <meta name="description" content="一年级至高三古诗词背诵，按艾宾浩斯遗忘曲线安排复习。支持手机、平板、电脑，苹果手机可添加到主屏幕当 App 使用。" />
+  <title>Ashley古诗词 · 遗忘曲线记忆法</title>
+  <meta name="description" content="一年级至高三古诗词，按遗忘曲线记忆法安排复习。支持手机、平板、电脑，苹果手机可添加到主屏幕当 App 使用。" />
   <meta name="format-detection" content="telephone=no" />
 
   <!-- ===== iOS（苹果手机 / iPad）支持 ===== -->
@@ -14,7 +14,7 @@
   <!-- 状态栏样式：default 为白底黑字 -->
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <!-- 添加到主屏幕后的应用名 -->
-  <meta name="apple-mobile-web-app-title" content="Ashley古诗词背诵" />
+  <meta name="apple-mobile-web-app-title" content="Ashley古诗词" />
   <!-- 兼容旧版 iOS -->
   <meta name="mobile-web-app-capable" content="yes" />
 
@@ -36,13 +36,23 @@
     <!-- 顶部栏 -->
     <header class="topbar">
       <div class="brand">
-        <span class="brand-icon">📖</span>
+        <span class="brand-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 6.2C10.2 4.8 7.9 4.2 5 4.2v13.6c2.9 0 5.2.6 7 2 1.8-1.4 4.1-2 7-2V4.2c-2.9 0-5.2.6-7 2Z" />
+            <path d="M12 6.2v13.6" />
+          </svg>
+        </span>
         <div class="brand-text">
-          <h1 id="brand-name">Ashley古诗词背诵</h1>
-          <p>一年级至高三 · 艾宾浩斯记忆曲线</p>
+          <h1 id="brand-name">Ashley古诗词</h1>
+          <p>一年级至高三 · 遗忘曲线记忆法</p>
         </div>
       </div>
-      <button id="btn-settings" class="icon-btn" title="设置" aria-label="设置">⚙️</button>
+      <button id="btn-settings" class="icon-btn" title="设置" aria-label="设置">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="3.2" />
+          <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-2.87 1.2 2 2 0 1 1-4 0 1.7 1.7 0 0 0-2.87-1.2l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a2 2 0 1 1 0-4 1.7 1.7 0 0 0 1.2-2.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 11 4.1a2 2 0 1 1 4 0 1.7 1.7 0 0 0 2.87 1.2l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 11a2 2 0 1 1 0 4Z" />
+        </svg>
+      </button>
     </header>
 
     <!-- 今日进度 -->
@@ -66,7 +76,14 @@
     <!-- 全部诗词（可折叠） -->
     <section class="card all-section">
       <button class="collapse-head" id="btn-all">
-        <span>📚 本年级全部诗词</span>
+        <span class="collapse-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 5.2A1.2 1.2 0 0 1 5.2 4H10v16H5.2A1.2 1.2 0 0 1 4 18.8Z" />
+            <path d="M10 4h4.8A1.2 1.2 0 0 1 16 5.2V20h-6Z" />
+            <path d="M16 8h2.8A1.2 1.2 0 0 1 20 9.2V20h-4" />
+          </svg>
+        </span>
+        <span id="all-label">本年级本学期全部诗词</span>
         <span id="all-count" class="badge">0</span>
         <span class="arrow">▾</span>
       </button>
@@ -77,7 +94,7 @@
     </section>
 
     <footer class="foot">
-      <span>&copy;2026 积跬步, 至千里</span>
+      <span>&copy;2026 kuibu.app 积跬步, 至千里</span>
     </footer>
   </div>
 
@@ -135,6 +152,19 @@
           <button data-term="1" class="active">上学期</button>
           <button data-term="2">下学期</button>
         </div>
+      </div>
+      <div class="settings-item">
+        <label>背诵范围</label>
+        <div class="seg small" id="seg-scope">
+          <button data-scope="term" class="active">本册</button>
+          <button data-scope="upto">本册及之前</button>
+          <button data-scope="primary">小学随机</button>
+          <button data-scope="middle">初中随机</button>
+          <button data-scope="primary_middle">小学+初中随机</button>
+          <button data-scope="high">高中随机</button>
+          <button data-scope="all">全部随机</button>
+        </div>
+        <div class="settings-hint" id="scope-hint"></div>
       </div>
       <div class="settings-item">
         <label>每日背诵数量</label>
