@@ -48,16 +48,33 @@
 
   /**
    * 当前注音档位。
-   * 兼容旧版布尔开关：旧值 "1" ⇒ 只标生字（新版默认，不再全文注音），"0" ⇒ 关闭。
+   *
+   * 关键：总开关是「权威」。
+   *   关闭 —— 无论此前存过什么档位，一律返回 off，
+   *           否则会出现「阅读辅助 = 关闭」却仍然满屏拼音，开关形同失效；
+   *   开启 —— 用用户手动选过的档位，没选过就用出厂档位「只标生字」。
+   *
+   * 兼容旧版布尔开关：旧值 "1" ⇒ 只标生字（新版默认），"0" ⇒ 视为未选。
    */
   function pinyinMode() {
+    // 总开关关闭 → 一律不注音（权威）
+    if (!helperEnabled()) return "off";
     const v = localStorage.getItem(PINYIN_KEY);
+    // 手动选过的档位优先（「不注音」会同步把总开关关掉，不会走到这里）
     if (PINYIN_MODES.indexOf(v) > -1) return v;
-    return v === "1" ? "rare" : "off";
+    return DEFAULT_PINYIN_MODE;
   }
 
   function setPinyinMode(mode) {
-    localStorage.setItem(PINYIN_KEY, PINYIN_MODES.indexOf(mode) > -1 ? mode : "off");
+    const m = PINYIN_MODES.indexOf(mode) > -1 ? mode : "off";
+    localStorage.setItem(PINYIN_KEY, m);
+    // 两处状态必须一致：选「不注音」= 关掉阅读辅助；选「生字/全文」= 打开阅读辅助
+    const want = m !== "off";
+    if (helperEnabled() !== want) {
+      settings.helper = want ? "on" : "off";
+      Storage.saveSettings(settings);
+      renderGradeChips();
+    }
   }
 
   /** 是否处于注音状态（rare / all 都算开启） */
@@ -80,6 +97,7 @@
     if (currentPoem) renderPoemText(currentPoem);
     syncPinyinBtn();
   }
+
 
   /* ---------------- 工具 ---------------- */
   function todayKeyStr() {

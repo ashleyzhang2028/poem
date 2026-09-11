@@ -42,6 +42,21 @@
     }
   }
 
+  /**
+   * 当前应当使用的注音档位。
+   *
+   * 关键：总开关是「权威」。关闭时无论此前存过什么档位都返回 off，
+   * 否则用户会看到「阅读辅助 = 关闭」却仍然满屏拼音（开关形同失效）。
+   * 开启时优先用用户手动选过的档位，没选过才用出厂档位「只标生字」。
+   */
+  function effectivePinyinMode() {
+    if (!helperOn()) return "off";
+    const v = localStorage.getItem(PINYIN_KEY);
+    // 用户在阅读器里手动选过的档位优先（含「不注音」，此时总开关会被同步关掉）
+    if (PINYIN_MODES.indexOf(v) > -1) return v;
+    return DEFAULT_PINYIN_MODE;
+  }
+
   const MATCH_GROUP = "课外必背";
 
   let current = null;
@@ -53,13 +68,27 @@
    * 旧 "1" ⇒ 只标生字，"0" ⇒ 关闭。
    */
   function pinyinMode() {
-    const v = localStorage.getItem(PINYIN_KEY);
-    if (PINYIN_MODES.indexOf(v) > -1) return v;
-    return v === "1" ? "rare" : "off";
+    return effectivePinyinMode();
   }
 
   function setPinyinMode(mode) {
-    localStorage.setItem(PINYIN_KEY, PINYIN_MODES.indexOf(mode) > -1 ? mode : "off");
+    const m = PINYIN_MODES.indexOf(mode) > -1 ? mode : "off";
+    localStorage.setItem(PINYIN_KEY, m);
+    // 两处状态必须一致：选「不注音」= 关掉阅读辅助；选「生字/全文」= 打开阅读辅助
+    setHelperOn(m !== "off");
+  }
+
+  /** 写入「阅读辅助」总开关（与首页设置共用同一份 settings） */
+  function setHelperOn(on) {
+    let cfg = {};
+    try {
+      cfg = JSON.parse(localStorage.getItem("poem_recite_settings_v1") || "{}") || {};
+    } catch (e) {
+      cfg = {};
+    }
+    if (!cfg || typeof cfg !== "object") cfg = {};
+    cfg.helper = on ? "on" : "off";
+    localStorage.setItem("poem_recite_settings_v1", JSON.stringify(cfg));
   }
 
   /* ---------------- 进度存储（与古诗词进度相互独立） ---------------- */
@@ -579,13 +608,23 @@
       $("#gw-list").innerHTML = '<div class="empty">小古文数据加载失败</div>';
       return;
     }
-    // 设置里「阅读辅助」开启时，首次进阅读器按默认档位自动注音（可手动切换）
-    if (helperOn() && localStorage.getItem(PINYIN_KEY) === null) {
-      localStorage.setItem(PINYIN_KEY, DEFAULT_PINYIN_MODE);
-    }
+    // 注音档位由总开关统一裁决（effectivePinyinMode），这里无需预写，
+    // 保证「设置里关掉阅读辅助」在任何时候进阅读器都是纯文本。
     bindEvents();
     renderList();
     syncRandomReadButton();
+    // 设置页改「阅读辅助」后（另一个标签页 / 返回本页）立刻同步，不再需要刷新
+    window.addEventListener("storage", function (e) {
+      if (e.key !== "poem_recite_settings_v1" && e.key !== PINYIN_KEY) return;
+      renderReaderText();
+      syncPinyinButton();
+    });
+    // 从首页返回（bfcache）时也重新判定一次档位
+    window.addEventListener("pageshow", function () {
+      if (!current) return;
+      renderReaderText();
+      syncPinyinButton();
+    });
   }
 
   if (document.readyState === "loading") {
