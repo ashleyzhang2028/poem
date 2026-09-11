@@ -397,7 +397,7 @@
 
     $("#m-hint").textContent = planItem
       ? planItem.reason === "review"
-        ? "这首歌按遗忘曲线到期了，复习后请如实选择掌握程度"
+        ? "这首诗按遗忘曲线到期了，复习后请如实选择掌握程度"
         : "新学的诗，今天先记一遍"
       : "背诵后点击按钮，系统会安排下次复习时间";
 
@@ -491,9 +491,9 @@
     Storage.set(currentPoem.id, next);
 
     const msgMap = {
-      good: "👍 记住了！下次复习：" + new Date(next.nextReviewAt).toLocaleDateString("zh-CN"),
-      fuzzy: "🤔 12 小时后再复习一次",
-      bad: "😵 30 分钟后再复习一次，加油！"
+      good: "记住了！下次复习：" + new Date(next.nextReviewAt).toLocaleDateString("zh-CN"),
+      fuzzy: "有点模糊，12 小时后再复习一次",
+      bad: "没关系，30 分钟后再复习一次"
     };
     showToast(msgMap[result]);
 

@@ -19,13 +19,13 @@
 
 /* 顶部说明 */
 .notice {
-  background: #fffdf2;
-  border: 1px solid #eadfb8;
+  background: var(--bg-soft);
+  border: 1px solid #e5d7b4;
   border-radius: var(--radius);
   padding: 12px 14px;
   font-size: 13px;
   line-height: 1.7;
-  color: #5f5330;
+  color: #6b5a35;
   margin-bottom: 14px;
 }
 .notice p { margin: 0; }
@@ -48,13 +48,11 @@
   position: absolute;
   left: 11px;
   display: inline-flex;
-  color: #9aa8a0;
+  color: #9c8d7b;
   pointer-events: none;
 }
 .search-icon svg { width: 17px; height: 17px; }
 .search-input {
-  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB",
-    "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
   width: 100%;
   box-sizing: border-box;
   padding: 9px 12px 9px 34px;
@@ -80,7 +78,7 @@
   cursor: pointer;
   white-space: nowrap;
 }
-.seg-toggle.active { background: var(--green); border-color: var(--green); color: #fff; }
+.seg-toggle.active { background: var(--green); border-color: var(--green); color: #fdfaf2; }
 
 /* 分组标题 */
 .group-head {
@@ -97,7 +95,7 @@
 #gw-list .item.in-book { border-left-color: var(--green); }
 #gw-list .item.done { opacity: .62; }
 #gw-list .item.done .item-title { text-decoration: none; }
-#gw-list .item-index { background: #eaf0f7; color: var(--blue); }
+#gw-list .item-index { background: var(--blue-light); color: var(--blue); }
 #gw-list .item.in-book .item-index { background: var(--green-light); color: var(--green); }
 #gw-list .item-reason.read { background: var(--green-light); color: var(--green); }
 #gw-list .item-meta span:last-child {
@@ -114,7 +112,7 @@ body.reader-open { overflow: hidden; }
   position: fixed;
   inset: 0;
   z-index: 60;
-  background: #fffdf8;
+  background: var(--bg-soft);
   display: flex;
   flex-direction: column;
   animation: readerIn .22s cubic-bezier(.2, .8, .3, 1);
@@ -128,7 +126,7 @@ body.reader-open { overflow: hidden; }
   align-items: center;
   gap: 10px;
   padding: calc(12px + var(--safe-top)) calc(14px + var(--safe-right)) 12px calc(14px + var(--safe-left));
-  background: #fffdf8;
+  background: var(--bg-soft);
   border-bottom: 1px solid var(--line);
 }
 .reader-back,
@@ -157,14 +155,14 @@ body.reader-open { overflow: hidden; }
   border: 1px solid var(--line);
   border-radius: 999px;
   padding: 7px 12px;
-  background: #fff;
+  background: var(--card);
 }
 .reader-done .done-icon { display: inline-flex; }
 .reader-done .done-icon svg { width: 16px; height: 16px; }
 .reader-done.is-done {
-  color: #fff;
   background: var(--green);
   border-color: var(--green);
+  color: #fdfaf2;
 }
 
 .reader-body {
@@ -179,9 +177,10 @@ body.reader-open { overflow: hidden; }
 
 .reader-body h2 {
   margin: 0 0 10px;
+  font-family: var(--font-poem);
   font-size: 25px;
-  letter-spacing: 1px;
-  font-family: "Songti SC", "STSong", "SimSun", "PingFang SC", "Microsoft YaHei", serif;
+  font-weight: 600;
+  letter-spacing: 1.5px;
 }
 .reader-actions {
   display: flex;
@@ -191,7 +190,7 @@ body.reader-open { overflow: hidden; }
 }
 .mini-btn {
   border: 1px solid var(--line);
-  background: #fff;
+  background: var(--card);
   color: var(--green);
   border-radius: 999px;
   padding: 7px 14px;
@@ -200,11 +199,11 @@ body.reader-open { overflow: hidden; }
   cursor: pointer;
 }
 .mini-btn.ghost { color: var(--ink-2); padding: 7px 12px; }
-.mini-btn[data-on="1"] { background: var(--green); border-color: var(--green); color: #fff; }
+.mini-btn[data-on="1"] { background: var(--green); border-color: var(--green); color: #fdfaf2; }
 
 .reader-text {
-  /* 正文优先宋体，缺字时退回系统字体，避免出现空心方块 */
-  font-family: "Songti SC", "STSong", "SimSun", "PingFang SC", "Microsoft YaHei", sans-serif;
+  /* 正文字体由 --font-poem 统一指定（思源宋体，缺字回退系统宋体） */
+  font-family: var(--font-poem);
   font-size: 21px;   /* 由 JS 按用户字号覆盖 */
   line-height: 2.2;
   margin: 18px 0 22px;
@@ -257,10 +256,10 @@ body.reader-open { overflow: hidden; }
 }
 .reader-text rt,
 .poem-text rt {
-  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+  font-family: var(--font-ui);
   font-size: .52em;
   font-weight: 400;
-  color: #8a9a8f;
+  color: #9c8d7b;
   letter-spacing: 0;
   /* rt 默认会撑高行距，这里压一下，保证与未注音版本视觉密度接近 */
   line-height: 1.05;

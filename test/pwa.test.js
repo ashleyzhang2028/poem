@@ -129,6 +129,9 @@ function check(name, cond, extra) {
     check('iPhone: 已预缓存小古文页与数据',
       cached.some(p => /classic\.html$/.test(p)) && cached.some(p => /poems-classic\.js$/.test(p)),
       cached.length + ' 项');
+    check('iPhone: 已预缓存中文字体',
+      cached.some(p => /NotoSerifSC-400\.woff2$/.test(p)) && cached.some(p => /NotoSansSC-400\.woff2$/.test(p)),
+      cached.length + ' 项');
 
     // 引导条应出现（iOS + 非 standalone）
     check('iPhone: 显示「添加到主屏幕」引导', await page.$eval('#ios-install-tip', el => !el.hidden));
@@ -149,6 +152,37 @@ function check(name, cond, extra) {
     // 功能没被破坏：今日列表 + 详情 + 进度
     const cards = await page.$$eval('#today-list .poem-card, #today-list .item, #today-list > *', els => els.length);
     check('iPhone: 今日列表有内容', cards > 0, cards + ' 项');
+
+    // 中文 Web Font：自托管宋体必须在真实浏览器里加载成功，
+    // 并且诗词标题的计算样式确实指向它（否则回退系统字体会露馅）。
+    const fontInfo = await page.evaluate(async () => {
+      await document.fonts.ready;
+      const item = document.querySelector('#today-list .item-title');
+      const loaded = [...document.fonts].map(f => f.family + ':' + f.status);
+      return {
+        serif: loaded.filter(x => /Poem Serif SC:/.test(x)),
+        sans: loaded.filter(x => /Poem Sans SC:/.test(x)),
+        titleFont: item ? getComputedStyle(item).fontFamily : ''
+      };
+    });
+    check('iPhone: 自托管宋体已加载',
+      fontInfo.serif.length === 2 && fontInfo.serif.every(x => /:loaded$/.test(x)),
+      fontInfo.serif.join(' '));
+    check('iPhone: 自托管黑体已加载',
+      fontInfo.sans.length === 2 && fontInfo.sans.every(x => /:loaded$/.test(x)),
+      fontInfo.sans.join(' '));
+    check('iPhone: 诗题计算样式为 Poem Serif SC',
+      /Poem Serif SC/.test(fontInfo.titleFont), fontInfo.titleFont.slice(0, 40));
+
+    // 界面 / 正文不应出现横向溢出
+    const overflow = await page.evaluate(() => {
+      const bad = [];
+      document.querySelectorAll('.item-title, .item-meta, .today-title, .brand-text h1').forEach(el => {
+        if (el.scrollWidth > el.clientWidth + 2) bad.push(el.className + ':' + el.scrollWidth + '>' + el.clientWidth);
+      });
+      return bad.slice(0, 3);
+    });
+    check('iPhone: 诗词文字无横向溢出', overflow.length === 0, overflow.join(' | '));
 
     // 离线可用
     await page.setOfflineMode(true);
@@ -173,6 +207,15 @@ function check(name, cond, extra) {
     check('iPhone: 断网也能打开小古文页', gwOffline.items === 100, JSON.stringify(gwOffline));
     check('iPhone: 断网也能打开整页阅读器',
       gwOffline.readerOpen && gwOffline.textLen > 50, JSON.stringify(gwOffline));
+
+    // 离线也必须能拿到宋体，否则回到刺眼的系统字体
+    const offlineFont = await page.evaluate(async () => {
+      await document.fonts.ready;
+      return [...document.fonts].filter(f => /Poem (Serif|Sans) SC/.test(f.family)).map(f => f.family + ':' + f.status);
+    });
+    check('iPhone: 断网后中文字体仍然可用',
+      offlineFont.length === 4 && offlineFont.every(x => /:loaded$/.test(x)),
+      offlineFont.join(' '));
     await page.setOfflineMode(false);
 
     check('iPhone: 无未捕获 JS 异常', errs.length === 0, errs.slice(0, 2).join(' | '));

@@ -7,7 +7,8 @@
 #   3. 小古文学习库测试  —— jsdom，100 篇数据 + 阅读器 + 已读标记
 #   4. 用户名设置测试    —— jsdom，带初始 localStorage 重启应用
 #   5. 注音与朗读测试    —— 拼音表/多音字（纯 Node）+ 注音渲染与朗读降级（jsdom）
-#   6. PWA / iOS 兼容测试 —— 真实浏览器（puppeteer），缺少依赖则跳过
+#   6. 主题专项测试      —— 纯 Node，文案 / Web Font / 传统色 / favicon
+#   7. PWA / iOS 兼容测试 —— 真实浏览器（puppeteer），缺少依赖则跳过
 set -e
 cd "$(dirname "$0")/.."
 
@@ -54,6 +55,10 @@ else
   (cd "$TMP" && npm i jsdom --silent --no-fund --no-audit >/dev/null 2>&1) || { echo "跳过注音朗读测试（无法安装 jsdom）"; exit 0; }
   NODE_PATH="$TMP/node_modules" node test/helper.test.js
 fi
+
+echo ""
+echo "=== 主题专项测试（文案 / 字体 / 配色 / 图标）==="
+node test/theme.test.js
 
 echo ""
 echo "=== PWA / iOS 兼容测试 ==="
