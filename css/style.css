@@ -5,10 +5,10 @@
      ========================================================================== */
 
   /* 底色：宣德纸 / 素绢，暖白不刺眼，长时间读诗不累 */
-  --bg: #f3eee2;            /* 米灰底（素绢）：比初版更淡一档，久看不腻 */
-  --bg-soft: #f9f6ee;       /* 浅一层（宣纸） */
-  --card: #fdfaf2;          /* 卡片：宣纸 */
-  --card-2: #f6efe0;        /* 次级卡片 */
+  --bg: #f8f4ea;            /* 米灰底（素绢）：已进一步调淡，接近宣纸本色 */
+  --bg-soft: #fdfbf5;       /* 浅一层（生宣） */
+  --card: #fffdf8;          /* 卡片：宣纸 */
+  --card-2: #faf5e9;        /* 次级卡片 */
 
   /* 主色：雨过天青（汝窑），宋代美学的代表色 */
   --green: #4d7d74;         /* 天青（主色，沿用变量名以兼容既有样式） */
@@ -50,8 +50,8 @@ html, body {
   background: var(--bg);
   /* 宋代绢本：暖白底 + 极淡的天青/琥珀晕染，像摊开的一页宣纸 */
   background-image:
-    radial-gradient(1100px 520px at 12% -8%, rgba(77, 125, 116, .10), transparent 62%),
-    radial-gradient(900px 460px at 92% 4%, rgba(192, 122, 58, .08), transparent 60%);
+    radial-gradient(1100px 520px at 12% -8%, rgba(77, 125, 116, .06), transparent 62%),
+    radial-gradient(900px 460px at 92% 4%, rgba(192, 122, 58, .05), transparent 60%);
   background-attachment: fixed;
   color: var(--ink);
   font-family: var(--font-ui);
