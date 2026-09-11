@@ -227,21 +227,32 @@ function check(name, cond, extra) {
       const link = document.querySelector('[data-mail-slot]');
       return {
         title: document.title,
-        hasChapter: /学生与未成年人保护/.test(document.body.textContent),
-        hasDisclaimer: /免责声明/.test(document.body.textContent),
+        // 精简后章节标题为「学生与未成年人」「四、免责与变更」，
+        // 断言具体小节名而不是旧的长标题，避免文案瘦身后误判
+        hasChapter: /学生与未成年人/.test(document.body.textContent),
+        hasDisclaimer: /免责与变更/.test(document.body.textContent),
         mail: link ? link.getAttribute('href') : null
       };
     });
     check('iPhone: 断网也能打开用户协议', /用户协议/.test(termsOffline.title) && termsOffline.hasChapter,
       termsOffline.title);
-    check('iPhone: 断网也能打开隐私条款并还原邮箱',
-      termsOffline.hasDisclaimer && /^mailto:/.test(termsOffline.mail || ''),
+    check('iPhone: 断网也能还原邮箱（用户协议页）', /^mailto:/.test(termsOffline.mail || ''),
       String(termsOffline.mail));
 
     await page.goto(base + 'privacy.html', { waitUntil: 'domcontentloaded' });
     await new Promise(r => setTimeout(r, 500));
+    const privacyOffline = await page.evaluate(() => {
+      const link = document.querySelector('[data-mail-slot]');
+      return {
+        title: document.title,
+        hasKids: /儿童隐私/.test(document.body.textContent),
+        mail: link ? link.getAttribute('href') : null
+      };
+    });
     check('iPhone: 断网也能打开隐私条款',
-      /隐私条款/.test(await page.title()));
+      /隐私条款/.test(privacyOffline.title) && privacyOffline.hasKids, privacyOffline.title);
+    check('iPhone: 断网也能还原邮箱（隐私条款页）', /^mailto:/.test(privacyOffline.mail || ''),
+      String(privacyOffline.mail));
     await page.setOfflineMode(false);
 
     check('iPhone: 无未捕获 JS 异常', errs.length === 0, errs.slice(0, 2).join(' | '));
