@@ -4,7 +4,7 @@
  * 苹果手机说明：iOS Safari 不弹安装横幅，靠「分享 → 添加到主屏幕」安装；
  * 添加到主屏幕后本 SW 的缓存生效，断网也能正常背诵。
  */
-const CACHE_NAME = "poem-app-v2";
+const CACHE_NAME = "poem-app-v5";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [
@@ -12,9 +12,19 @@ const PRECACHE = [
   "./index.html",
   "./manifest.webmanifest",
   "./css/style.css",
+  "./css/classic.css",
+  "./fonts/NotoSerifSC-400.woff2",
+  "./fonts/NotoSerifSC-600.woff2",
+  "./fonts/NotoSansSC-400.woff2",
+  "./fonts/NotoSansSC-600.woff2",
+  "./classic.html",
+  "./data/pinyin-table.js",
+  "./js/pinyin.js",
+  "./js/speech.js",
   "./js/storage.js",
   "./js/scheduler.js",
   "./js/app.js",
+  "./js/classic.js",
   "./js/manifest-loader.js",
   "./data/poems-1.js",
   "./data/poems-2.js",
@@ -29,6 +39,7 @@ const PRECACHE = [
   "./data/poems-11.js",
   "./data/poems-12.js",
   "./data/index.js",
+  "./data/poems-classic.js",
   "./icons/icon-120.png",
   "./icons/icon-152.png",
   "./icons/icon-167.png",

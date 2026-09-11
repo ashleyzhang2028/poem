@@ -30,7 +30,7 @@ sandbox.POEMS_ALL.forEach(p => { if (ids.has(p.id)) throw new Error('重复 id '
 assert(true, '诗词 id 无重复');
 
 // 2. 间隔序列
-assert(JSON.stringify(Scheduler.INTERVALS) === JSON.stringify([0,1,2,4,7,15,30,60,120,240]), '艾宾浩斯间隔序列正确');
+assert(JSON.stringify(Scheduler.INTERVALS) === JSON.stringify([0,1,2,4,7,15,30,60,120,240]), '遗忘曲线间隔序列正确');
 
 // 3. 复习升级：good
 let rec = Scheduler.createRecord();
@@ -118,7 +118,49 @@ Storage.set(crossPoem.id, rc);
 const planHigh = Scheduler.generateDailyPlan({ grade: 12, term: 2, count: 5, provider: sandbox.getPoemsByGradeTerm, getRecord: id => Storage.get(id) });
 assert(planHigh.some(x => x.poem.id === crossPoem.id), '跨年级到期诗会进入今日复习');
 
-// 12. 持久化
+// 12. 背诵范围：7 种范围都能生成计划，且内容符合范围定义
+const scopeCases = [
+  { scope: 'term', label: '本册', ok: p => p.grade === 1 && p.term === 1 },
+  { scope: 'upto', label: '本册及之前', ok: p => p.grade === 1 && p.term === 1 },
+  { scope: 'primary', label: '小学随机', ok: p => p.grade <= 6 },
+  { scope: 'middle', label: '初中随机', ok: p => p.grade >= 7 && p.grade <= 9 },
+  { scope: 'primary_middle', label: '小学+初中随机', ok: p => p.grade <= 9 },
+  { scope: 'high', label: '高中随机', ok: p => p.grade >= 10 },
+  { scope: 'all', label: '全部随机', ok: () => true }
+];
+assert(Object.keys(Scheduler.SCOPES).length === 7, '背诵范围共 7 个选项');
+Storage.clear();
+scopeCases.forEach(c => {
+  const pl = Scheduler.generateDailyPlan({
+    grade: 1, term: 1, count: 5, scope: c.scope,
+    provider: sandbox.getPoemsByGradeTerm, getRecord: id => Storage.get(id)
+  });
+  assert(pl.length === 5 && pl.every(x => c.ok(x.poem)), c.label + ' 范围生成 5 首且内容在范围内');
+});
+
+// 「本册及之前」：高三下学期应覆盖全部 242 首中的任意学段
+const uptoHigh = Scheduler.poolForScope({ grade: 12, term: 2, scope: 'upto' });
+assert(uptoHigh.length === 242, '本册及之前（高三下）= 全部 242 首（实际 ' + uptoHigh.length + '）');
+
+// 随机范围确实覆盖了整个学段（多跑几次能看到多个年级）
+let seenGrades = new Set();
+for (let i = 0; i < 30; i++) {
+  Scheduler.generateDailyPlan({
+    grade: 1, term: 1, count: 8, scope: 'primary',
+    provider: sandbox.getPoemsByGradeTerm, getRecord: () => null
+  }).forEach(x => seenGrades.add(x.poem.grade));
+}
+assert(seenGrades.size > 1, '小学随机范围会跨年级抽取（出现 ' + seenGrades.size + ' 个年级）');
+
+// 未指定 scope 时默认「本年级本学期」，行为与旧版一致
+Storage.clear();
+const legacyPlan = Scheduler.generateDailyPlan({
+  grade: 3, term: 2, count: 5,
+  provider: sandbox.getPoemsByGradeTerm, getRecord: id => Storage.get(id)
+});
+assert(legacyPlan.every(x => x.poem.grade === 3 && x.poem.term === 2), '不传 scope 默认本年级本学期');
+
+// 13. 持久化
 Storage.clear();
 Storage.set('x', Scheduler.createRecord());
 assert(!!Storage.get('x'), 'localStorage 读写正常');

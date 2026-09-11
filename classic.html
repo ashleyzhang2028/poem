@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#4d7d74" />
+  <title>课外必背小古文 · 学习库</title>
+  <meta name="description" content="课外必背小古文 100 篇，含原文、生字注音、朗读与白话译文，点击即可阅读学习，不强制背诵排期。" />
+  <meta name="format-detection" content="telephone=no" />
+
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="小古文" />
+  <meta name="mobile-web-app-capable" content="yes" />
+
+  <link rel="icon" href="./icons/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/classic.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <a class="brand-icon back-icon" href="./index.html" title="返回古诗词" aria-label="返回古诗词">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14.5 5 8 12l6.5 7" />
+          </svg>
+        </a>
+        <div class="brand-text">
+          <h1>课外必背小古文</h1>
+          <p>点击即可学习 · 不做遗忘曲线排期</p>
+        </div>
+      </div>
+      <span class="count-badge" id="gw-count">0 篇</span>
+    </header>
+
+    <section class="notice">
+      <p><b>小古文和古诗词不一样</b>：篇幅长、以读懂为主，不必按遗忘曲线一天几篇。</p>
+      <p>这里把 100 篇都列出来，想读哪篇点哪篇，读完标记「已读」即可。</p>
+    </section>
+
+    <div class="toolbar">
+      <div class="search-wrap">
+        <span class="search-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="6.4" />
+            <path d="M15.8 15.8 20 20" />
+          </svg>
+        </span>
+        <input id="gw-search" class="search-input" type="search" placeholder="搜索篇名 / 出处 / 作者" autocomplete="off" />
+      </div>
+      <button class="seg-toggle" id="gw-filter" data-filter="all">全部</button>
+      <button class="seg-toggle" id="gw-filter-unread" data-filter="unread">未读</button>
+    </div>
+
+    <div class="list" id="gw-list"></div>
+
+    <footer class="foot">
+      <span>&copy;2026 kuibu.app 积跬步, 至千里</span>
+    </footer>
+  </div>
+
+  <!-- 古文详情：整页阅读（长文可滚动，不再是卡片弹窗） -->
+  <div class="reader" id="gw-reader" hidden>
+    <header class="reader-bar">
+      <button class="reader-back" id="gw-back" aria-label="返回列表">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14.5 5 8 12l6.5 7" />
+        </svg>
+        <span>小古文</span>
+      </button>
+      <div class="reader-progress" id="gw-progress"></div>
+      <button class="reader-done" id="gw-done">
+        <span class="done-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 12.5 10 17.5 19.5 7" />
+          </svg>
+        </span>
+        <span id="gw-done-text">标记已读</span>
+      </button>
+    </header>
+    <div class="reader-body">
+      <h2 id="rd-title"></h2>
+      <div class="meta" id="rd-meta"></div>
+      <div class="reader-actions">
+        <button class="mini-btn" id="rd-pinyin-toggle" data-on="0" aria-pressed="false">标注拼音</button>
+        <button class="mini-btn" id="rd-read-btn" data-on="0" aria-pressed="false">
+          <span class="btn-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 9.5v5h3l4.2 3.4V6.1L7 9.5H4Z" />
+              <path class="wave1" d="M15.2 9.2a4 4 0 0 1 0 5.6" />
+              <path class="wave2" d="M17.8 6.6a7.6 7.6 0 0 1 0 10.8" />
+            </svg>
+          </span>
+          <span id="rd-read-text">朗读全文</span>
+        </button>
+        <button class="mini-btn" id="rd-trans-toggle" data-on="0">显示译文</button>
+        <button class="mini-btn ghost" id="rd-font-down" aria-label="缩小字号">A－</button>
+        <button class="mini-btn ghost" id="rd-font-up" aria-label="放大字号">A＋</button>
+      </div>
+      <pre class="poem-text reader-text" id="rd-text"></pre>
+      <section class="trans-box" id="rd-trans" hidden>
+        <h3>白话译文</h3>
+        <p id="rd-trans-text"></p>
+      </section>
+      <div class="reader-tip">读完点右上角「标记已读」，下一篇接着读。朗读用的是手机自带语音，不需要联网。</div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+
+  <script src="data/poems-classic.js"></script>
+  <script src="data/pinyin-table.js"></script>
+  <script src="js/pinyin.js"></script>
+  <script src="js/speech.js"></script>
+  <script src="js/classic.js"></script>
+</body>
+</html>

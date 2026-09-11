@@ -20,10 +20,32 @@
   // 默认用户名：未填写时使用
   const DEFAULT_USERNAME = "Ashley";
 
+  // 若以后课外小古文库收录了与课内同名/同篇的内容，在这里登记：
+  // "课内诗题": "gw-xx"，详情弹层就会出现「阅读本篇」入口。
+  // 目前课内 242 首（含长文言文）与课外 34 篇无一重名，故留空。
+  const CLASSIC_LINKS = {};
+
+  const PINYIN_KEY = "poem_helper_pinyin_v1";
+
   let settings = Storage.getSettings();
   let todayPlan = [];
   let currentPoem = null;
   let todayKey = "";
+
+  /* ---------------- 阅读辅助：注音 / 朗读 ---------------- */
+  // 设置里的「阅读辅助」是总开关（settings.helper），诗词弹层里的按钮是本次用法。
+  // 总开关关闭时，按钮仍然可用，只是不默认打开，避免孩子误触。
+  function helperEnabled() {
+    return settings.helper !== "off";
+  }
+
+  function pinyinOn() {
+    return localStorage.getItem(PINYIN_KEY) === "1";
+  }
+
+  function setPinyinOn(on) {
+    localStorage.setItem(PINYIN_KEY, on ? "1" : "0");
+  }
 
   /* ---------------- 工具 ---------------- */
   function todayKeyStr() {
@@ -39,13 +61,13 @@
 
   /** 页面主标题文案 */
   function appTitle() {
-    return userName() + "古诗词背诵";
+    return userName() + "古诗词";
   }
 
   /** 把用户名同步到页面标题、品牌标题、iOS 桌面名与 PWA 清单 */
   function applyUserName() {
     const title = appTitle();
-    document.title = title + " · 艾宾浩斯记忆曲线";
+    document.title = title + " · 遗忘曲线记忆法";
     const h1 = $("#brand-name");
     if (h1) h1.textContent = title;
 
@@ -91,6 +113,27 @@
     return window.getPoemsByGradeTerm(grade, term);
   }
 
+  /** 当前背诵范围配置（见 js/scheduler.js 的 SCOPES） */
+  function scopeKey() {
+    return Scheduler.SCOPES[settings.scope] ? settings.scope : Scheduler.DEFAULT_SCOPE;
+  }
+
+  function scopeInfo() {
+    return Scheduler.scopeOf(scopeKey());
+  }
+
+  /** 「全部诗词」面板当前展示的诗词（跟随背诵范围） */
+  function currentScopePoems() {
+    const scope = scopeInfo();
+    if (scope.random) {
+      const pool = Scheduler.poolForScope({ grade: settings.grade, term: settings.term, scope: scopeKey() });
+      return pool.slice().sort(function (a, b) {
+        return (a.grade - b.grade) || (a.term - b.term);
+      });
+    }
+    return provider(settings.grade, settings.term);
+  }
+
   function getRecord(id) {
     return Storage.get(id);
   }
@@ -107,7 +150,10 @@
 
   /* ---------------- 今日任务缓存 ---------------- */
   function planCacheKey() {
-    return "poem_plan_" + todayKeyStr() + "_" + settings.grade + "_" + settings.term + "_" + settings.dailyCount;
+    return (
+      "poem_plan_" + todayKeyStr() + "_" + settings.grade + "_" + settings.term + "_" +
+      scopeKey() + "_" + settings.dailyCount
+    );
   }
 
   function buildTodayPlan() {
@@ -138,6 +184,7 @@
       grade: settings.grade,
       term: settings.term,
       count: settings.dailyCount,
+      scope: scopeKey(),
       provider: provider,
       getRecord: getRecord
     });
@@ -194,6 +241,20 @@
         b.classList.toggle("active", Number(b.dataset.count) === settings.dailyCount);
       });
     }
+    const ssc = $("#seg-scope");
+    if (ssc) {
+      $$("button", ssc).forEach(function (b) {
+        b.classList.toggle("active", b.dataset.scope === scopeKey());
+      });
+    }
+    const hint = $("#scope-hint");
+    if (hint) hint.textContent = "当前：" + scopeInfo().scopeName;
+    const sh = $("#seg-helper");
+    if (sh) {
+      $$("button", sh).forEach(function (b) {
+        b.classList.toggle("active", (b.dataset.helper === "on") === helperEnabled());
+      });
+    }
   }
 
   /* ---------------- 渲染：今日列表 ---------------- */
@@ -202,7 +263,7 @@
     list.innerHTML = "";
 
     if (!todayPlan.length) {
-      list.innerHTML = '<div class="card empty">本年级本学期暂无诗词数据</div>';
+      list.innerHTML = '<div class="card empty">' + esc(scopeInfo().scopeName) + '暂无诗词数据</div>';
       return;
     }
 
@@ -263,12 +324,16 @@
 
   /* ---------------- 渲染：全部诗词 ---------------- */
   function renderAll() {
-    const poems = provider(settings.grade, settings.term);
+    const scope = scopeInfo();
+    const poems = currentScopePoems();
     $("#all-count").textContent = poems.length;
+
+    const label = $("#all-label");
+    if (label) label.textContent = scope.random ? scope.scopeName + "全部诗词" : "本年级本学期全部诗词";
 
     const st = Scheduler.stats(poems, getRecord);
     $("#stats-row").innerHTML =
-      '<div class="stat"><b>' + st.total + "</b><span>本学期诗词</span></div>" +
+      '<div class="stat"><b>' + st.total + "</b><span>诗词总数</span></div>" +
       '<div class="stat"><b>' + st.learned + "</b><span>已学</span></div>" +
       '<div class="stat"><b>' + st.mastered + "</b><span>较牢固</span></div>" +
       '<div class="stat review"><b>' + st.dueToday + "</b><span>待复习</span></div>";
@@ -288,6 +353,7 @@
         '<div class="item-main">' +
         '<h3 class="item-title">' + esc(p.title) + "</h3>" +
         '<div class="item-meta"><span>' + esc(p.dynasty) + "</span><span>·</span><span>" + esc(p.author) + "</span>" +
+        (scope.random ? "<span>·</span><span>" + esc(gradeName(p.grade) + termName(p.term)) + "</span>" : "") +
         (rec && rec.learned
           ? '<span>·</span><span>' + Scheduler.levelName(rec.level) + "</span>"
           : '<span>·</span><span>未学过</span>') +
@@ -310,7 +376,9 @@
     $("#m-dynasty").textContent = "〔" + p.dynasty + "〕";
     $("#m-author").textContent = p.author;
     $("#m-grade").textContent = gradeName(p.grade) + " " + termName(p.term);
-    $("#m-text").textContent = p.text;
+    renderPoemText(p);
+    syncPinyinBtn();
+    syncReadBtn();
 
     const info = [];
     if (rec && rec.learned) {
@@ -329,15 +397,86 @@
 
     $("#m-hint").textContent = planItem
       ? planItem.reason === "review"
-        ? "这首歌按遗忘曲线到期了，复习后请如实选择掌握程度"
+        ? "这首诗按遗忘曲线到期了，复习后请如实选择掌握程度"
         : "新学的诗，今天先记一遍"
       : "背诵后点击按钮，系统会安排下次复习时间";
+
+    // 若这篇文言文在「课外必背小古文」库里有对应篇目，给一个去读全文的入口
+    const extra = $("#m-classic-link");
+    const gwId = CLASSIC_LINKS[p.title];
+    if (extra) {
+      if (gwId) {
+        extra.hidden = false;
+        extra.href = "./classic.html#" + gwId;
+        extra.textContent = "在「课外必背小古文」中阅读本篇 ›";
+      } else {
+        extra.hidden = true;
+      }
+    }
 
     $("#modal").hidden = false;
     document.body.style.overflow = "hidden";
   }
 
+  /** 弹层正文：按注音开关渲染。关闭时为纯文本，保证原有测试与排版不变 */
+  function renderPoemText(p) {
+    const box = $("#m-text");
+    if (pinyinOn() && window.Pinyin) {
+      box.innerHTML = window.Pinyin.annotateHtml(p.text);
+      box.classList.add("with-pinyin");
+    } else {
+      box.textContent = p.text;
+      box.classList.remove("with-pinyin");
+    }
+  }
+
+  function syncPinyinBtn() {
+    const btn = $("#m-pinyin-toggle");
+    if (!btn) return;
+    const on = pinyinOn();
+    btn.dataset.on = on ? "1" : "0";
+    btn.setAttribute("aria-pressed", on ? "true" : "false");
+    btn.textContent = on ? "隐藏拼音" : "标注拼音";
+  }
+
+  function togglePinyin() {
+    const next = !pinyinOn();
+    setPinyinOn(next);
+    if (currentPoem) renderPoemText(currentPoem);
+    syncPinyinBtn();
+    showToast(next ? "已标注拼音" : "已隐藏拼音");
+  }
+
+  function syncReadBtn() {
+    const btn = $("#m-read-btn");
+    if (!btn) return;
+    const ok = !!(window.Speech && window.Speech.supported());
+    btn.disabled = !ok;
+    btn.title = ok ? "用手机语音朗读这首诗" : "当前浏览器不支持语音朗读";
+    const on = ok && window.Speech.speaking();
+    $("#m-read-text").textContent = ok ? (on ? "停止朗读" : "朗读") : "不支持朗读";
+    btn.dataset.on = on ? "1" : "0";
+    btn.setAttribute("aria-pressed", on ? "true" : "false");
+  }
+
+  function toggleRead() {
+    if (!currentPoem || !window.Speech || !window.Speech.supported()) return;
+    if (window.Speech.speaking()) {
+      window.Speech.stop();
+      showToast("已停止朗读");
+    } else {
+      const head = [currentPoem.title, currentPoem.dynasty, currentPoem.author].filter(Boolean).join("，");
+      const ok = window.Speech.speak(head + "。" + currentPoem.text);
+      showToast(ok ? "开始朗读" : "朗读启动失败，请重试");
+    }
+    // 立即同步一次（不等语音回调），并用定时器兜底处理引擎延迟
+    syncReadBtn();
+    setTimeout(syncReadBtn, 60);
+    setTimeout(syncReadBtn, 300);
+  }
+
   function closeModal() {
+    if (window.Speech) window.Speech.stop();
     $("#modal").hidden = true;
     $("#settings-modal").hidden = true;
     document.body.style.overflow = "";
@@ -352,9 +491,9 @@
     Storage.set(currentPoem.id, next);
 
     const msgMap = {
-      good: "👍 记住了！下次复习：" + new Date(next.nextReviewAt).toLocaleDateString("zh-CN"),
-      fuzzy: "🤔 12 小时后再复习一次",
-      bad: "😵 30 分钟后再复习一次，加油！"
+      good: "记住了！下次复习：" + new Date(next.nextReviewAt).toLocaleDateString("zh-CN"),
+      fuzzy: "有点模糊，12 小时后再复习一次",
+      bad: "没关系，30 分钟后再复习一次"
     };
     showToast(msgMap[result]);
 
@@ -442,10 +581,36 @@
       });
     });
 
+    const pinyinBtn = $("#m-pinyin-toggle");
+    if (pinyinBtn) pinyinBtn.addEventListener("click", togglePinyin);
+    const readBtn = $("#m-read-btn");
+    if (readBtn) readBtn.addEventListener("click", toggleRead);
+    if (window.speechSynthesis && window.speechSynthesis.addEventListener) {
+      window.speechSynthesis.addEventListener("end", syncReadBtn);
+      window.speechSynthesis.addEventListener("cancel", syncReadBtn);
+    }
+
+    $$("#seg-helper button").forEach(function (b) {
+      b.addEventListener("click", function () {
+        settings.helper = b.dataset.helper === "on" ? "on" : "off";
+        Storage.saveSettings(settings);
+        renderGradeChips();
+        showToast(helperEnabled() ? "已开启注音与朗读" : "已关闭阅读辅助");
+      });
+    });
+
     $("#btn-all").addEventListener("click", function () {
       const body = $("#all-body");
       body.hidden = !body.hidden;
       this.classList.toggle("open", !body.hidden);
+    });
+
+    $$("#seg-scope button").forEach(function (b) {
+      b.addEventListener("click", function () {
+        settings.scope = b.dataset.scope;
+        saveAndRefresh(true);
+        showToast("背诵范围：" + scopeInfo().scopeName);
+      });
     });
 
     $$("#seg-count button").forEach(function (b) {
