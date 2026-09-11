@@ -489,6 +489,12 @@ html, body {
 }
 
 .foot { text-align: center; font-size: 11.5px; color: #9c8d7b; padding: 10px 0 0; }
+/* 版权 + 用户协议 / 隐私条款链接：两行居中，窄屏不挤在一起 */
+.foot-copy { display: block; }
+.foot-links { display: inline-flex; gap: 6px; margin-top: 6px; }
+.foot-links a { color: #9c8d7b; text-decoration: none; }
+.foot-links a:hover { color: var(--green); text-decoration: underline; }
+.foot-sep { color: #c8bcaa; }
 
 .empty {
   text-align: center;
@@ -640,6 +646,14 @@ button,
    弹层 z-index 为 50，引导条需低于它，否则「忘记/模糊/记住」会被挡住点不到 */
 .ios-install-tip {
   z-index: 40;
+}
+
+/* 引导条是 fixed 的，会盖住页脚最后一行（版权 + 用户协议 / 隐私条款）。
+   出现时补一段底部留白（约 100px 的条 + 12px 底距 + 一点余量），
+   保证两个法务链接不会被压住、始终可点。 */
+body.has-install-tip .app,
+body.has-install-tip #app {
+  padding-bottom: calc(100px + 12px + 24px);
 }
 
 /* ==========================================================================

@@ -92,6 +92,7 @@
       btn.onclick = function () { location.reload(); };
     }
     tip.hidden = false;
+    document.body.classList.add("has-install-tip");
   }
 
   /* ---------- 2. iOS 添加到主屏幕引导 ---------- */
@@ -104,10 +105,20 @@
     btn.textContent = btnLabel;
     // 用 onclick 覆盖，避免多次绑定导致行为串台
     btn.onclick = function () {
-      tip.hidden = true;
+      hideInstallTip(tip);
       if (onBtn) onBtn();
     };
     tip.hidden = false;
+    // 引导条是 fixed 的，会压住页脚里的用户协议 / 隐私条款链接，
+    // 用 body 上的 class 给页面补出安全距离（见 css/style.css）
+    document.body.classList.add("has-install-tip");
+  }
+
+  /* 隐藏引导条并撤掉底部留白 */
+  function hideInstallTip(tip) {
+    if (!tip) tip = document.getElementById("ios-install-tip");
+    if (tip) tip.hidden = true;
+    document.body.classList.remove("has-install-tip");
   }
 
   function setupIOSTip() {
@@ -156,8 +167,7 @@
 
     window.addEventListener("appinstalled", function () {
       deferredPrompt = null;
-      var tip = document.getElementById("ios-install-tip");
-      if (tip) tip.hidden = true;
+      hideInstallTip();
     });
   }
 
@@ -189,6 +199,8 @@
         tip.hidden = false;
         delete tip.dataset.wasVisible;
       }
+      // 留白跟着引导条的实际显隐走
+      document.body.classList.toggle("has-install-tip", !tip.hidden);
     }
 
     // 弹层通过 hidden 属性切换，用 MutationObserver 监听最可靠
