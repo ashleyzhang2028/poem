@@ -240,3 +240,42 @@ body.reader-open { overflow: hidden; }
 @media (min-width: 700px) {
   .reader-body { padding-top: 28px; }
 }
+
+/* ==========================================================================
+   阅读辅助：生字注音 + 朗读
+   ========================================================================== */
+
+/* 注音正文：ruby 让拼音压在汉字上方，行高留足避免遮挡 */
+.reader-text.with-pinyin {
+  line-height: 2.9;
+  letter-spacing: 1.8px;
+}
+.reader-text ruby,
+.poem-text ruby {
+  ruby-align: center;
+  ruby-position: over;
+}
+.reader-text rt,
+.poem-text rt {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+  font-size: .52em;
+  font-weight: 400;
+  color: #8a9a8f;
+  letter-spacing: 0;
+  /* rt 默认会撑高行距，这里压一下，保证与未注音版本视觉密度接近 */
+  line-height: 1.05;
+}
+
+/* 朗读按钮：图标 + 文字，播放中高亮 */
+.mini-btn .btn-icon { display: inline-flex; margin-right: 5px; vertical-align: -3px; }
+.mini-btn .btn-icon svg { width: 15px; height: 15px; }
+.mini-btn[data-on="1"] .wave1 { opacity: 1; }
+.mini-btn[data-on="0"] .wave1,
+.mini-btn[data-on="0"] .wave2 { opacity: .38; }
+.mini-btn[data-on="1"] .wave2 {
+  opacity: 1;
+  animation: wavePulse 1.1s ease-in-out infinite;
+}
+.mini-btn[data-on="1"] .wave1 { animation: wavePulse 1.1s ease-in-out .18s infinite; }
+@keyframes wavePulse { 0%, 100% { opacity: .3 } 50% { opacity: 1 } }
+.mini-btn:disabled { opacity: .5; cursor: not-allowed; }
