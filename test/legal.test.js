@@ -1,11 +1,13 @@
 /**
  * 用户协议 / 隐私条款 页面测试
  *
- * 三件事必须成立：
+ * 必须成立的事：
  *   1. 两个页面真实存在，首页与小古文页页脚常驻入口（不漏挂、不缺链）；
  *   2. 文案覆盖「学生保护」与「网站所有者免责」两类必要条款；
  *   3. 邮箱 kuibuapp@163.com 不出现在 HTML / JS 静态源码里，
- *      只能由 js/contact.js 在运行时拼装出来（防搜索引擎抓取）。
+ *      只能由 js/contact.js 在运行时拼装出来（防搜索引擎抓取）；
+ *   4. 更新时间精确到「年月日」，且与 <time datetime> 一致；
+ *   5. 新增匿名访问统计后，两份条款都要同步披露（不能偷偷统计）。
  */
 const { JSDOM } = require('jsdom');
 const fs = require('fs');
@@ -18,7 +20,7 @@ const read = f => fs.readFileSync(path + f, 'utf8');
 const MAIL = 'kuibuapp@163.com';
 
 /* ---------- 一、静态源码里不能有明文邮箱 ---------- */
-['index.html', 'classic.html', 'terms.html', 'privacy.html', 'js/contact.js', 'sw.js']
+['index.html', 'classic.html', 'admin.html', 'terms.html', 'privacy.html', 'js/contact.js', 'js/stats.js', 'js/admin.js', 'sw.js']
   .forEach(f => {
     const src = read(f);
     chk(!src.includes(MAIL), f + ' 源码不含明文邮箱');
@@ -79,6 +81,21 @@ setTimeout(() => {
     // 需求：删掉「或权利主张」表述
     chk(!/或权利主张/.test(t), '用户协议页不再出现「或权利主张」');
     chk(/疑问、纠错，欢迎发邮件/.test(t), '保留「疑问、纠错，欢迎发邮件」');
+
+    // 需求 6：更新时间精确到年月日（不能再只写年份）
+    const up = d.querySelector('#terms-updated');
+    chk(!!up, '用户协议页有更新时间元素');
+    chk(/^2026 年 \d{1,2} 月 \d{1,2} 日$/.test(up.textContent.trim()),
+      '更新时间精确到月日：' + up.textContent.trim());
+    chk(/^\d{4}-\d{2}-\d{2}$/.test(up.getAttribute('datetime')),
+      '<time datetime> 为机器可读的完整日期：' + up.getAttribute('datetime'));
+    chk(!/更新于 2026 年$/.test(d.querySelector('.brand-text p').textContent),
+      '页首不再只写「更新于 2026 年」');
+
+    // 需求 7：新增匿名访问统计后，协议必须披露
+    chk(/访问统计/.test(t), '用户协议披露了「访问统计」');
+    chk(/匿名访问/.test(t), '明确说明记录的是「匿名访问」');
+    chk(/详见《隐私条款》|隐私条款/.test(t), '访问统计指向隐私条款细看');
   }
 
   /* --- 隐私条款 --- */
@@ -94,7 +111,22 @@ setTimeout(() => {
     chk(d.querySelector('.legal-summary') === null, '顶部已移除「一句话版本」速览块');
     chk(d.querySelector('.legal-foot') === null, '隐私条款页已移除「相关文件」行');
     chk(!/相关文件/.test(t), '隐私条款页正文不再出现「相关文件」');
-    chk(t.length < 1300, '隐私条款精简到一屏可读完（' + t.length + ' 字）');
+    chk(t.length < 1700, '隐私条款精简到一屏可读完（' + t.length + ' 字）');
+
+    // 需求 6：更新时间精确到月日
+    const up = d.querySelector('#privacy-updated');
+    chk(!!up && /^2026 年 \d{1,2} 月 \d{1,2} 日$/.test(up.textContent.trim()),
+      '隐私条款更新精确到月日：' + (up ? up.textContent.trim() : '缺失'));
+    chk(!!up && /^\d{4}-\d{2}-\d{2}$/.test(up.getAttribute('datetime')),
+      '隐私条款 <time datetime> 完整');
+
+    // 需求 7：访问统计的口径与边界必须写清楚
+    chk(/匿名访问数|匿名访问/.test(t), '隐私条款写明「匿名访问数」');
+    chk(/随机生成的匿名编号|匿名编号/.test(t), '说明只用一个随机匿名编号去重');
+    chk(/不记录 IP/.test(t), '明确不记录 IP');
+    chk(!/无统计 SDK、无用户画像、无广告联盟/.test(t) || /匿名访问/.test(t),
+      '「无统计 SDK」的表述与匿名访问统计不再自相矛盾');
+    chk(/统计存放|公开数据文件/.test(t), '说明统计结果的存放位置');
   }
 
   /* --- 邮箱：运行时才出现，且点击可复制 --- */
@@ -124,6 +156,23 @@ setTimeout(() => {
     '小古文页页脚同样挂了两个法务链接');
   chk(/terms\.html/.test(read('sw.js')) && /privacy\.html/.test(read('sw.js')),
     'Service Worker 预缓存了两个法务页（断网也能打开）');
+
+  /* --- 管理页：只有知道路径的人能进，且不对外索引 --- */
+  {
+    const admin = load('admin.html');
+    setTimeout(() => {
+      const d = admin.doc;
+      chk(/访问统计/.test(d.title), '管理页标题正确（' + d.title + '）');
+      chk(d.querySelector('meta[name="robots"]').getAttribute('content').includes('noindex'),
+        '管理页声明 noindex，不会被搜索引擎收录');
+      chk(!!d.querySelector('#ad-token'), '管理页可配置仓库令牌（可选）');
+      chk(!!d.querySelector('#ad-pending'), '管理页能看到本机待同步条数');
+      const hrefs = [...d.querySelectorAll('a')].map(a => a.getAttribute('href'));
+      chk(!hrefs.some(h => h && /admin\.html/.test(h)), '没有任何页面主动链接到管理页');
+      chk(read('index.html').indexOf('admin.html') === -1 &&
+          read('classic.html').indexOf('admin.html') === -1, '首页与小古文页都不暴露管理页路径');
+    }, 0);
+  }
 
   console.log(fails === 0 ? '\n🎉 用户协议 / 隐私条款测试全部通过' : '\n❌ ' + fails + ' 项失败');
   process.exit(fails ? 1 : 0);

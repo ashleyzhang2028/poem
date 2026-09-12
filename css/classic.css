@@ -24,6 +24,12 @@
   align-items: center;
   margin-bottom: 14px;
 }
+/* 「全部 / 未读」组合按钮：与「不注音 / 生字 / 全文」共用一套外观 */
+.filter-seg {
+  flex: 0 0 auto;
+  border-radius: 12px;
+}
+.filter-seg button { font-size: 13.5px; font-weight: 600; padding: 8px 13px; }
 .search-wrap {
   flex: 1;
   position: relative;
@@ -207,27 +213,53 @@ body.reader-open { overflow: hidden; }
   font-weight: 600;
   letter-spacing: 1.5px;
 }
+/* 阅读辅助工具条：注音 / 朗读 / 译文 / 字号 四组按钮统一外观，尽量排成一行 */
 .reader-actions {
   display: flex;
   gap: 8px;
   margin: 14px 0 4px;
   flex-wrap: wrap;
+  align-items: center;
 }
-.mini-btn {
+.mini-btn,
+.reader-actions .seg.mini {
+  /* 统一高度与圆角，四组按钮排在一起像同一条工具条 */
+  min-height: 34px;
   border: 1px solid var(--line);
   background: var(--card);
   color: var(--green);
-  border-radius: 999px;
-  padding: 7px 14px;
+  border-radius: 10px;
+  padding: 6px 12px;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  box-sizing: border-box;
 }
-.mini-btn.ghost { color: var(--ink-2); padding: 7px 12px; }
+.mini-btn.ghost { color: var(--ink-2); }
 .mini-btn[data-on="1"] { background: var(--green); border-color: var(--green); color: #fdfaf2; }
+/* 纯图标按钮（朗读 / 译文）：方形，图标居中 */
+#rd-read-btn,
+#rd-trans-toggle { padding: 6px 10px; }
+#rd-read-btn svg,
+#rd-trans-toggle svg { width: 17px; height: 17px; }
+/* 播放中显示 ⏸，停止 / 未播放显示 ▶，一个按钮说清状态 */
+#rd-read-btn .pause-glyph,
+#rd-trans-toggle .pause-glyph { display: none; }
+#rd-read-btn[data-on="1"] .play-glyph,
+#rd-trans-toggle[data-on="1"] .play-glyph { display: none; }
+#rd-read-btn[data-on="1"] .pause-glyph,
+#rd-trans-toggle[data-on="1"] .pause-glyph { display: inline-flex; }
+/* 字号组合按钮：A－ / A＋ 同宽，与注音档位同款 */
+.font-seg button {
+  font-size: 12.5px;
+  font-weight: 700;
+  padding: 5px 9px;
+  min-width: 0;
+}
+.font-seg button + button { border-left: 1px solid var(--line); }
 
 .reader-text {
   /* 正文字体由 --font-poem 统一指定（思源宋体，缺字回退系统宋体） */
@@ -316,17 +348,18 @@ body.reader-open { overflow: hidden; }
   border: 1px solid var(--line);
   background: var(--card);
   color: var(--green);
-  border-radius: 999px;
-  padding: 5px 11px;
-  font-size: 12px;
-  font-weight: 600;
+  border-radius: 10px;
+  padding: 5px 9px;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  justify-content: center;
   white-space: nowrap;
 }
-.trans-read svg { width: 13px; height: 13px; }
+.trans-read svg { width: 16px; height: 16px; display: block; }
+.trans-read .pause-glyph { display: none; }
+.trans-read[data-on="1"] .play-glyph { display: none; }
+.trans-read[data-on="1"] .pause-glyph { display: inline-flex; }
 .trans-read[data-on="1"] { background: var(--green); border-color: var(--green); color: #fffdf8; }
 .trans-read:disabled { opacity: .5; cursor: not-allowed; }
 
@@ -386,4 +419,15 @@ body.reader-open { overflow: hidden; }
 .mini-btn:disabled { opacity: .5; cursor: not-allowed; }
 
 /* 阅读器内的注音档位：复用全局 .seg.mini，这里只压一下字号便于窄屏并排 */
-.reader-actions .seg.mini button { font-size: 12.5px; padding: 5px 8px; }
+.reader-actions .seg.mini { padding: 2px; }
+.reader-actions .seg.mini button {
+  font-size: 12.5px;
+  padding: 5px 9px;
+  border-radius: 8px;
+}
+/* 窄屏（iPhone SE 一类）：字号再收一点，四组按钮仍然排成一行 */
+@media (max-width: 380px) {
+  .reader-actions { gap: 6px; }
+  .reader-actions .seg.mini button { padding: 5px 7px; font-size: 12px; }
+  .mini-btn { padding: 6px 10px; font-size: 12.5px; }
+}

@@ -29,7 +29,7 @@
         </a>
         <div class="brand-text">
           <h1>隐私条款</h1>
-          <p>跬步 · 更新于 2026 年</p>
+          <p>跬步 · 更新于 <time id="privacy-updated" datetime="2026-09-12">2026 年 9 月 12 日</time></p>
         </div>
       </div>
       <div class="legal-nav">
@@ -49,8 +49,9 @@
       <section id="p1">
         <h2>一、收集什么</h2>
         <ul class="legal-mini">
-          <li><span class="mini-k">不收集</span><span class="mini-v">不需要注册，不收集手机号、邮箱、姓名、位置等信息。</span></li>
-          <li><span class="mini-k">无埋点</span><span class="mini-v">无统计 SDK、无用户画像、无广告联盟、无社交与上传功能。</span></li>
+          <li><span class="mini-k">不收集</span><span class="mini-v">不需要注册，不收集手机号、邮箱、姓名、学校、位置等信息。</span></li>
+          <li><span class="mini-k">匿名访问数</span><span class="mini-v">仅记录「有一次访问」：一个随机生成的匿名编号（存在本机，用于去重）、日期、页面路径与来源站点，用于统计使用人数。不记录 IP、不做设备指纹、不关联任何个人身份。</span></li>
+          <li><span class="mini-k">无埋点</span><span class="mini-v">无统计 SDK、无用户画像、无广告联盟、无社交与上传功能；不记录你在背哪首诗、点了哪个按钮。</span></li>
           <li><span class="mini-k">无权限</span><span class="mini-v">不读取通讯录、相册、麦克风与位置。</span></li>
         </ul>
       </section>
@@ -87,8 +88,9 @@
         <ul class="legal-mini">
           <li><span class="mini-k">朗读</span><span class="mini-v">使用设备系统自带的语音合成，本应用不接收也不存储语音数据；个别系统的语音引擎可能需联网，以设备厂商说明为准。</span></li>
           <li><span class="mini-k">离线缓存</span><span class="mini-v">通过 Service Worker 把页面与诗词数据缓存在本机以便断网使用，可随时清除。</span></li>
-          <li><span class="mini-k">托管日志</span><span class="mini-v">静态站点由第三方托管平台提供文件，平台会生成常规访问日志（IP、时间、UA），本应用不主动分析、不用于商业用途。</span></li>
-          <li><span class="mini-k">条款更新</span><span class="mini-v">若今后新增联网功能，本条款会同步更新并在本页公布；当前版本没有联网收集行为。</span></li>
+          <li><span class="mini-k">托管日志</span><span class="mini-v">静态站点由第三方托管平台提供文件，平台会生成常规访问日志（IP、时间、UA），本应用不读取、不分析这些日志。</span></li>
+          <li><span class="mini-k">统计存放</span><span class="mini-v">匿名访问计数存放在托管平台的公开数据文件中，只保留「有多少次访问 / 多少个匿名编号 / 每天访问量与来源」，不存放任何可识别个人的信息。</span></li>
+          <li><span class="mini-k">条款更新</span><span class="mini-v">功能调整时本条款同步更新，页首日期即为最新版本日期；本次更新是因新增「匿名访问统计」，已在《用户协议》与《隐私条款》中同步说明。</span></li>
         </ul>
         <p>隐私相关问题或儿童信息保护诉求，请发邮件：</p>
         <p class="mail-line"><a class="mail-link" href="#" data-mail-slot="1" rel="nofollow">显示邮箱地址</a></p>
@@ -105,6 +107,7 @@
     </footer>
   </div>
 
+  <script src="js/stats.js"></script>
   <script src="js/contact.js"></script>
 </body>
 </html>
