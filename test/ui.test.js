@@ -45,8 +45,12 @@ setTimeout(() => {
   chk(!!entry, '首页有「小古文」入口');
   chk(entry.getAttribute('href') === './classic.html', '入口指向 classic.html');
   chk(d.querySelector('.classic-title').textContent === '小古文', '入口主标题为「小古文」');
+  // 需求：入口副标题（含「· 小古文」及其后文字）整段删掉，只留标题
+  chk(d.querySelector('.classic-sub') === null, '入口不再有副标题一行');
+  chk(entry.textContent.replace(/\s+/g, '').trim() === '小古文›',
+    '入口只剩「小古文 >」：' + entry.textContent.replace(/\s+/g, '').trim());
   chk(!/课外必背/.test(entry.textContent), '入口不再出现「课外必背」字样');
-  chk(/100 篇/.test(entry.textContent), '入口标明 100 篇：' + entry.textContent.replace(/\s+/g, ' ').trim());
+  chk(!/100 篇/.test(entry.textContent), '入口不再标「100 篇」');
   // 需求 3：入口不再出现「《三字经》《世说新语》等 100 篇 · 可注音朗读，不排复习」这类解释性长文案
   chk(!/三字经|世说新语|不排复习|注音朗读/.test(entry.textContent), '入口文案精简，不再罗列书名与说明');
   chk(d.querySelector('#all-count').textContent === '5', '小古文不会混进古诗词列表（仍为 5 首）');

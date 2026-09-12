@@ -58,15 +58,17 @@ setTimeout(() => {
   chk(d.querySelector('#gw-count').textContent === '0 / 100 篇', '顶部显示 0 / 100 篇：' + d.querySelector('#gw-count').textContent);
   chk(d.querySelectorAll('#gw-list .group-head').length >= 6, '按主题显示分组标题（' + d.querySelectorAll('#gw-list .group-head').length + ' 个）');
   chk(/已读|标记/.test(d.querySelector('#gw-done-text').textContent), '阅读器内有「标记已读」按钮');
-  chk(d.querySelector('.brand-text h1').textContent === '小古文', '小古文页主标题为「小古文」（实际 ' + d.querySelector('.brand-text h1').textContent + '）');
-  chk(d.title === '小古文 · 跬步', '小古文页标题为「小古文 · 跬步」（实际 ' + d.title + '）');
+  // 需求：小古文页标题改成「跬步 · 小古文」，并在下面补一句副标题
+  chk(d.querySelector('.brand-text h1').textContent === '跬步 · 小古文',
+    '小古文页主标题为「跬步 · 小古文」（实际 ' + d.querySelector('.brand-text h1').textContent + '）');
+  chk(d.title === '跬步 · 小古文', '小古文页标题为「跬步 · 小古文」（实际 ' + d.title + '）');
+  chk(d.querySelector('.brand-text p').textContent === '小古文 · 想读哪篇点哪篇',
+    '小古文页有副标题（实际 ' + d.querySelector('.brand-text p').textContent + '）');
   // 需求 2：顶部说明整段删掉，太啰嗦
   chk(d.querySelector('.notice') === null, '顶部说明段落已整段删除（不再有 .notice）');
   const htmlSrc = fs.readFileSync(path + 'classic.html', 'utf8');
   chk(!/不排复习日期/.test(htmlSrc), '页面里不再出现「不排复习日期」这类说明');
   chk(!/想读哪篇点哪篇[。．]/.test(htmlSrc.replace(/<p>.*?<\/p>/, '')), '不再有婆婆妈妈的说明段落');
-  chk(d.querySelector('.brand-text p').textContent === '100 篇 · 想读哪篇点哪篇',
-    '顶部副标题精简（实际 ' + d.querySelector('.brand-text p').textContent + '）');
   chk(d.querySelectorAll('#gw-list .item .item-reason.review').length === 0, '列表里没有「复习」标签，不做复习排期');
 
   // 需求 3：按主题分类聚合，不再按原书目录顺序

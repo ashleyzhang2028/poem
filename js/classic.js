@@ -46,6 +46,9 @@
 
   const MATCH_GROUP = "课外必背";
 
+  /** 应用名固定为「跬步」 */
+  const APP_NAME = "跬步";
+
   let current = null;
   let keyword = "";
   let filter = "all";
@@ -62,6 +65,26 @@
 
   function setPinyinMode(mode) {
     localStorage.setItem(PINYIN_KEY, PINYIN_MODES.indexOf(mode) > -1 ? mode : "off");
+  }
+
+  /**
+   * 标题与副标题：「跬步 · 小古文」+ 想读哪篇点哪篇。
+   * 与首页一致，填过用户名时带上（跬步 · 小明的古诗词 · 小古文）。
+   */
+  function applyAppName() {
+    let username = "";
+    try {
+      username = String((JSON.parse(localStorage.getItem("poem_recite_settings_v1") || "{}") || {}).username || "").trim();
+    } catch (e) {
+      username = "";
+    }
+    const title = username ? APP_NAME + " · " + username + "的古诗词 · 小古文" : APP_NAME + " · 小古文";
+    document.title = title;
+    const h1 = $(".brand-text h1");
+    if (h1) h1.textContent = title;
+    $$('meta[name="apple-mobile-web-app-title"]').forEach(function (m) {
+      m.setAttribute("content", title);
+    });
   }
 
   /* ---------------- 进度存储（与古诗词进度相互独立） ---------------- */
@@ -172,7 +195,7 @@
 
   /** 列表里高亮所有「正在播放」的条目 */
   function syncItemPlayBtns() {
-    const playing = speechSupported() && !!window.Speech.speaking();
+    const playing = readingActive();
     $$("#gw-list .item-read").forEach(function (b) {
       b.dataset.on = playing ? "1" : "0";
     });
@@ -184,7 +207,8 @@
       showToast("当前浏览器不支持语音朗读");
       return;
     }
-    if (window.Speech.speaking()) {
+    // 再点一次 = 停止当前朗读（含已暂停的情况）
+    if (readingActive()) {
       autoReading = false;
       window.Speech.stop();
       if (window.ReaderPlayer) window.ReaderPlayer.close();
@@ -193,11 +217,8 @@
       const ok = window.Speech.speak(speechText(p));
       showToast(ok ? "开始朗读《" + p.title + "》" : "朗读启动失败，请重试");
     }
-    syncItemPlayBtns();
-    syncReadButton();
-    syncTransReadButton();
-    syncRandomReadButton();
-    setTimeout(syncItemPlayBtns, 80);
+    syncAllReadState();
+    setTimeout(syncAllReadState, 80);
   }
 
   function speakGlyph(cls) {
@@ -387,6 +408,34 @@
     return !!(window.Speech && window.Speech.supported());
   }
 
+  /**
+   * 当前是否有朗读任务在跑（**含暂停中**）。
+   * 只看 speaking() 会漏掉「已暂停」：那时 speaking 可能是 false，
+   * 但队列还在，点按钮应当继续/停止，而不是又开一遍。
+   */
+  function readingActive() {
+    return !!(window.Speech && ((window.Speech.active && window.Speech.active()) || window.Speech.speaking()));
+  }
+
+  /**
+   * 外部（测试 / 宿主页面）主动停止朗读后的兜底复位：
+   * 语音引擎的 cancel 事件并不保证一定回调，所以提供一个显式入口。
+   */
+  function handleSpeechStopped() {
+    if (window.Speech && window.Speech.active && window.Speech.active()) return;
+    autoReading = false;
+    clearHighlight();
+    syncAllReadState();
+  }
+
+  /** 一次同步所有朗读相关按钮（避免各处只同步一半） */
+  function syncAllReadState() {
+    syncReadButton();
+    syncTransReadButton();
+    syncRandomReadButton();
+    syncItemPlayBtns();
+  }
+
   function syncReadButton() {
     const btn = $("#rd-read-btn");
     const ok = speechSupported();
@@ -397,8 +446,8 @@
       btn.dataset.on = "0";
       return;
     }
-    // 自动连读时不算「本篇朗读中」，避免按钮状态来回跳
-    const on = !autoReading && !!window.Speech.speaking();
+    // 自动连读时不算「本篇朗读中」，避免按钮状态来回跳；暂停中仍算「朗读中」（点它即停止）
+    const on = !autoReading && readingActive();
     btn.dataset.on = on ? "1" : "0";
     btn.setAttribute("aria-pressed", on ? "true" : "false");
     $("#rd-read-text").textContent = on ? "停止" : "朗读";
@@ -406,7 +455,8 @@
 
   function toggleRead() {
     if (!speechSupported() || !current) return;
-    if (window.Speech.speaking()) {
+    // 再点一次 = 停止（暂停中同样能停），而不是叠一层新的朗读
+    if (readingActive()) {
       autoReading = false;
       window.Speech.stop();
       showToast("已停止朗读");
@@ -414,9 +464,9 @@
       const ok = window.Speech.speak(speechText(current));
       showToast(ok ? "开始朗读" : "朗读启动失败，请重试");
     }
-    syncReadButton();
-    setTimeout(syncReadButton, 60);
-    setTimeout(syncReadButton, 300);
+    syncAllReadState();
+    setTimeout(syncAllReadState, 60);
+    setTimeout(syncAllReadState, 300);
   }
 
   function syncTransReadButton() {
@@ -429,7 +479,7 @@
       btn.dataset.on = "0";
       return;
     }
-    const on = !autoReading && !!window.Speech.speaking();
+    const on = !autoReading && readingActive();
     btn.dataset.on = on ? "1" : "0";
     $("#rd-trans-read-text").textContent = on ? "停止" : "朗读";
   }
@@ -437,7 +487,7 @@
   /** 白话译文朗读：只读译文，不读原文 */
   function toggleTransRead() {
     if (!speechSupported() || !current) return;
-    if (window.Speech.speaking()) {
+    if (readingActive()) {
       window.Speech.stop();
       showToast("已停止朗读");
     } else {
@@ -449,8 +499,9 @@
       const ok = window.Speech.speak(t);
       showToast(ok ? "开始朗读译文" : "朗读启动失败，请重试");
     }
-    syncTransReadButton();
-    setTimeout(syncTransReadButton, 60);
+    syncAllReadState();
+    setTimeout(syncAllReadState, 60);
+    setTimeout(syncAllReadState, 300);
   }
 
   function closeReader() {
@@ -479,8 +530,10 @@
     if (!btn) return;
     const ok = speechSupported();
     btn.disabled = !ok;
-    // 只有「连读队列真的还在跑」才算进行中：用户中途点「停止」时按钮要立刻复位
-    const running = autoReading && !!window.Speech && window.Speech.speaking();
+    // 只有「连读队列真的还在跑」才算进行中：用户中途点「停止」时按钮要立刻复位。
+    // 这里认 active()（含暂停中），不能只看 speaking()：部分设备暂停后 speaking 会变 false，
+    // 那样按钮会误判成「没在连读」，再点一下就会重新开一轮而不是停下来。
+    const running = autoReading && !!(window.Speech && window.Speech.active && window.Speech.active());
     btn.dataset.on = running ? "1" : "0";
     $("#gw-random-read-text").textContent = running ? "连读中" : "随机连读";
   }
@@ -506,7 +559,7 @@
       return;
     }
     // 再点一次 = 停止连读
-    if (autoReading && window.Speech.speaking()) {
+    if (autoReading && readingActive()) {
       window.Speech.stop();
       window.ReaderPlayer.close();
       autoReading = false;
@@ -544,6 +597,7 @@
         const p = list[i];
         if (!p) return;
         if (!current || current.id !== p.id) openReader(p);
+        syncRandomReadButton();
       },
       onEnd: function () {
         autoReading = false;
@@ -645,15 +699,12 @@
     const transReadBtn = $("#rd-trans-read");
     if (transReadBtn) transReadBtn.addEventListener("click", toggleTransRead);
 
+    // 播放栏上的「停止」按钮：用户主动停止连读后立刻复位
+    if (window.ReaderPlayer && window.ReaderPlayer.onStop) window.ReaderPlayer.onStop(handleSpeechStopped);
+
     // 语音朗读结束 / 被中止后同步按钮状态（含连读按钮的复位）
     if (window.speechSynthesis && window.speechSynthesis.addEventListener) {
-      const syncAll = function () {
-        if (!window.Speech.speaking()) autoReading = false;
-        syncReadButton();
-        syncTransReadButton();
-        syncRandomReadButton();
-        syncItemPlayBtns();
-      };
+      const syncAll = function () { handleSpeechStopped(); };
       window.speechSynthesis.addEventListener("end", syncAll);
       window.speechSynthesis.addEventListener("cancel", syncAll);
     }
@@ -677,6 +728,7 @@
     if (helperOn() && localStorage.getItem(PINYIN_KEY) === null) {
       localStorage.setItem(PINYIN_KEY, DEFAULT_PINYIN_MODE);
     }
+    applyAppName();
     bindEvents();
     renderList();
     syncRandomReadButton();
@@ -691,6 +743,8 @@
   window.ClassicProse = {
     isRead: isRead,
     total: function () { return allItems().length; },
-    annotate: function () { return window.Pinyin ? window.Pinyin.annotateHtml(current ? current.text : "") : ""; }
+    annotate: function () { return window.Pinyin ? window.Pinyin.annotateHtml(current ? current.text : "") : ""; },
+    // 朗读被外部停止（例如系统打断、播放栏停止）后的兜底复位
+    onSpeechStopped: handleSpeechStopped
   };
 })();

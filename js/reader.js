@@ -170,13 +170,13 @@
   function prevItem() {
     if (!window.Speech || !window.Speech.active || !window.Speech.active()) return false;
     if (queueInfo.index <= 0) return false;
-    // Speech 只支持向后跳，这里连跳两次序号回到上一条
+    // Speech 只支持向后跳，这里连跳到「上一条」的位置（一次不够就再跳一次）
     const target = queueInfo.index - 1;
-    let ok = true;
-    while (queueInfo.index > target && ok) {
-      ok = !!window.Speech.next();
+    let guard = (queueInfo.total || 0) + 2;
+    while (queueInfo.index > target && guard-- > 0) {
+      if (!window.Speech.next()) break;
     }
-    return ok;
+    return queueInfo.index <= target;
   }
 
   /** 注册「用户主动停止朗读」的回调（页面用来复位高亮 / 按钮状态） */
