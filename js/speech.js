@@ -302,6 +302,15 @@
     active: function () { return !!queue; }
   };
 
+  /**
+   * 是否有「朗读任务」在跑（含暂停中）。
+   * 与 speaking() 的区别：队列已建好但语音引擎刚被 cancel 的一瞬间，
+   * speaking 可能已经是 false，而队列还在 —— 界面靠 active() 判断「点它能继续」。
+   */
+  function active() {
+    return !!queue;
+  }
+
   window.Speech = {
     supported: supported,
     speak: speak,
@@ -313,6 +322,7 @@
     index: index,
     speaking: speaking,
     paused: paused,
+    active: active,
     currentText: currentText,
     onVoicesReady: onVoicesReady
   };

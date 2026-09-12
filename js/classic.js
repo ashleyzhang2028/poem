@@ -3,10 +3,12 @@
  * ---------------------------------------------------
  * 设计说明：
  * 1. 小古文篇幅长、以「读懂」为主，不做每日排期：本页只做「列出 + 点击学习」。
- * 2. 搜索 + 「全部 / 未读」筛选，快速找到想读的一篇。
- * 3. 阅读用**整页阅读器**（reader），而不是卡片弹窗：长文可整屏滚动。
- * 4. 进度只有 localStorage 里的「已读」标记（poem_classic_read_v1）。
- * 5. 朗读三处入口：
+ * 2. 列表**按主题分类聚合**，不按原书目录顺序：
+ *    同一类的篇目无论出自哪本书都排在一起，「蒙学经典」有几篇就显示几篇。
+ * 3. 搜索 + 「全部 / 未读」筛选，快速找到想读的一篇。
+ * 4. 阅读用**整页阅读器**（reader），而不是卡片弹窗：长文可整屏滚动。
+ * 5. 进度只有 localStorage 里的「已读」标记（poem_classic_read_v1）。
+ * 6. 朗读三处入口：
  *    · 阅读器「朗读」——读标题 + 朝代 + 作者 + 正文
  *    · 译文「朗读」——只读白话译文
  *    · 索引页 / 分组「随机连读」——随机抽一篇开读，读完自动跳下一篇（可暂停 / 停止）
@@ -88,8 +90,45 @@
   }
 
   /* ---------------- 数据 ---------------- */
+
+  /**
+   * 分类顺序：按「先蒙学识字 → 再故事寓言 → 再神话 → 再写人记事 → 再诸子论道」的
+   * 认知顺序排，而不是照抄某一本教材的目录。
+   */
+  const GROUP_ORDER = [
+    "蒙学经典",
+    "寓言故事",
+    "神话传说",
+    "人物故事",
+    "志人逸事",
+    "治学勤读",
+    "山水游记",
+    "诸子论道"
+  ];
+
+  /**
+   * 全部篇目，**按分类重排**。
+   * 数据文件里保留原书目录顺序（便于比对教材），这里在展示层聚合：
+   * 同类相邻、跨书合并，序号 1…N 连续，「蒙学经典」有几篇就列出几篇。
+   */
   function allItems() {
-    return (window.CLASSIC_ALL || []).slice();
+    const list = (window.CLASSIC_ALL || []).slice();
+    return list.sort(function (a, b) {
+      const ia = GROUP_ORDER.indexOf(a.gradeGroup);
+      const ib = GROUP_ORDER.indexOf(b.gradeGroup);
+      const ra = ia === -1 ? GROUP_ORDER.length : ia;
+      const rb = ib === -1 ? GROUP_ORDER.length : ib;
+      if (ra !== rb) return ra - rb;
+      // 同类内保持原书目录的相对次序
+      return listIndexOf(a) - listIndexOf(b);
+    });
+  }
+
+  /** 原始目录中的位置，用于分类内稳定排序 */
+  function listIndexOf(p) {
+    const list = window.CLASSIC_ALL || [];
+    for (let i = 0; i < list.length; i++) if (list[i].id === p.id) return i;
+    return 0;
   }
 
   function byId(id) {
@@ -117,6 +156,48 @@
     return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
     });
+  }
+
+  /** 列表项右侧的播放键：播放中换成「暂停」两竖条 */
+  function playGlyph() {
+    return (
+      '<span class="play-glyph" aria-hidden="true">' +
+      '<svg viewBox="0 0 24 24"><path d="M7.2 4.6 19.4 12 7.2 19.4Z" fill="currentColor" stroke="none" /></svg>' +
+      "</span>" +
+      '<span class="pause-glyph" aria-hidden="true">' +
+      '<svg viewBox="0 0 24 24"><path d="M8.2 5h2.9v14H8.2Z M12.9 5h2.9v14h-2.9Z" fill="currentColor" stroke="none" /></svg>' +
+      "</span>"
+    );
+  }
+
+  /** 列表里高亮所有「正在播放」的条目 */
+  function syncItemPlayBtns() {
+    const playing = speechSupported() && !!window.Speech.speaking();
+    $$("#gw-list .item-read").forEach(function (b) {
+      b.dataset.on = playing ? "1" : "0";
+    });
+  }
+
+  /** 单篇播放 / 暂停：再点一次停止 */
+  function readOne(p, btn) {
+    if (!speechSupported()) {
+      showToast("当前浏览器不支持语音朗读");
+      return;
+    }
+    if (window.Speech.speaking()) {
+      autoReading = false;
+      window.Speech.stop();
+      if (window.ReaderPlayer) window.ReaderPlayer.close();
+      showToast("已停止朗读");
+    } else {
+      const ok = window.Speech.speak(speechText(p));
+      showToast(ok ? "开始朗读《" + p.title + "》" : "朗读启动失败，请重试");
+    }
+    syncItemPlayBtns();
+    syncReadButton();
+    syncTransReadButton();
+    syncRandomReadButton();
+    setTimeout(syncItemPlayBtns, 80);
   }
 
   function speakGlyph(cls) {
@@ -154,7 +235,7 @@
         head.className = "group-head";
         head.innerHTML =
           '<span class="group-name">' + esc(p.gradeGroup) + "</span>" +
-          '<span class="group-count">' + items.filter(function (x) { return x.gradeGroup === lastGroup; }).length + " 篇</span>" +
+          '<span class="group-count">' + allItems().filter(function (x) { return x.gradeGroup === lastGroup; }).length + " 篇</span>" +
           '<button type="button" class="group-random" data-random-group="' + esc(p.gradeGroup) + '">' +
           speakGlyph() + "随机连读</button>";
         box.appendChild(head);
@@ -176,10 +257,20 @@
         "<span>·</span><span>" + esc(p.text.replace(/\n/g, "").slice(0, 16)) + "…</span>" +
         "</div>" +
         "</div>" +
+        '<button type="button" class="item-read" title="播放这一篇" aria-label="播放 ' + esc(p.title) + '">' +
+        playGlyph() + "</button>" +
         '<div class="item-arrow">›</div>';
       el.addEventListener("click", function () { openReader(p); });
+      const playBtn = el.querySelector(".item-read");
+      playBtn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        readOne(p, playBtn);
+      });
       box.appendChild(el);
     });
+
+    // 列表里已有条目正在播放时，进入本页也要显示「暂停」态
+    syncItemPlayBtns();
   }
 
   /** 当前正在朗读的篇目：列表滚动到可见位置并高亮 */
@@ -424,6 +515,7 @@
       syncReadButton();
       syncTransReadButton();
       showToast("已停止连读");
+      syncItemPlayBtns();
       return;
     }
     const list = shuffle((pool && pool.length ? pool : visibleItems()));
@@ -459,6 +551,7 @@
         syncRandomReadButton();
         syncReadButton();
         syncTransReadButton();
+        syncItemPlayBtns();
       }
     });
   }
@@ -559,6 +652,7 @@
         syncReadButton();
         syncTransReadButton();
         syncRandomReadButton();
+        syncItemPlayBtns();
       };
       window.speechSynthesis.addEventListener("end", syncAll);
       window.speechSynthesis.addEventListener("cancel", syncAll);

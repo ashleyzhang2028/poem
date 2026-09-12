@@ -2,11 +2,19 @@
  * 自动朗读 / 阅读辅助 / 小古文导航 专项测试
  *
  * 覆盖 Issue #1 的需求：
- *   5. 「阅读辅助」开关必须有可见差别（开启 → 打开诗词自动注音）
+ *   1. 首页任务条标题为「今日背诵」
+ *   4. 底部播放栏：贴底占满整宽、无圆角、高度加大、宋式配色；
+ *      不出现「正在朗读 / 暂停 / 继续 / 下一篇 / 停止」文字，全部用 SVG 图标；
+ *      不显示「今日 5 首」；当前一首大字 + 下一首小字
+ *   5. 今日「朗读」按钮改为圆形播放键，与右侧 0/5 圆环成对
+ *   6. 列表单项右侧的小喇叭换成播放键
+ *   7. 详情页「小喇叭 + 朗读」保持不变
+ *   8. 播放时有声音，暂停 / 停止后声音消失
+ *   5/10. 「阅读辅助」开关必须有可见差别（开启 → 打开诗词自动注音）
  *   10. 小古文默认字号降一级，A－ 可再降两级
  *   12. 小古文详情页有上一篇 / 下一篇，无需回索引页
  *   13. 白话译文可单独朗读
- *   15. 今日任务可「朗读全部」（标题 + 朝代 + 作者 + 正文），单首也可朗读，
+ *   15. 今日任务可连读（标题 + 朝代 + 作者 + 正文），单首也可朗读，
  *       小古文索引页可随机连读、读完自动跳下一篇，全程可暂停 / 停止
  *
  * 运行：node test/auto-read.test.js
@@ -63,38 +71,113 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
   chk(!!d.querySelector('#today-read'), '今日任务条有「朗读（全部）」按钮');
   chk(d.querySelectorAll('#today-list .item-read').length === 5, '今日每首右侧都有朗读按钮');
   const btn = d.querySelector('#today-read');
+  chk(!!d.querySelector('#today-read .play-glyph'), '今日朗读按钮是圆形播放键（▶ 图标，不再有「朗读」文字）');
+  chk(d.querySelector('#today-read-text').classList.contains('sr-only'),
+    '播放键文字只留给读屏软件（视觉上不显示）');
   btn.dispatchEvent(new w.Event('click', { bubbles: true }));
   await sleep(50);
   const spoken = w.speechSynthesis._spoken;
   chk(!!spoken, '点朗读全部后发出语音');
   chk(/咏鹅|江南|画/.test(spoken.text) && spoken.text.includes('。'), '第一条朗读内容含诗题与正文');
-  chk(d.querySelector('#reader-player').hidden === false, '弹出自动朗读控制条');
-  chk(/正在朗读/.test(d.querySelector('#rp-label').textContent), '控制条显示正在朗读：' + d.querySelector('#rp-label').textContent);
+  const bar = d.querySelector('#reader-player');
+  chk(bar.hidden === false, '底部弹出播放栏');
+  chk(bar.classList.contains('player-bar'), '播放栏使用新版 .player-bar 结构');
+  // 需求 4：不再显示「正在朗读」这类文字，状态全部交给图标
+  chk(!/正在朗读|已暂停/.test(bar.textContent), '播放栏不出现「正在朗读 / 已暂停」文字');
+  chk(!/今日 5 首/.test(bar.textContent), '播放栏不再显示「今日 5 首」');
+  const nowTitle = d.querySelector('#rp-now').textContent;
+  chk(nowTitle.length > 0 && !/朗读/.test(nowTitle), '播放栏主信息是当前这一首：' + nowTitle);
+  const nextTitle = d.querySelector('#rp-next-title');
+  chk(nextTitle.hidden === false && /下一首/.test(nextTitle.textContent), '下方小字提示下一首：' + nextTitle.textContent);
+  chk(nextTitle.textContent !== nowTitle, '下一首与当前一首不是同一首');
   chk(d.querySelectorAll('#today-list .item.reading').length === 1, '当前朗诵的诗被高亮');
+  chk(btn.dataset.on === '1', '播放中，今日圆形播放键切换为暂停态');
+  chk(d.querySelector('#today-read .pause-glyph') !== null, '暂停态用 ⏸ 图标表达');
+
+  // 需求 4：暂停 / 继续 / 下一篇 / 停止 全部是 SVG 图标按钮
+  const toggle = d.querySelector('#rp-toggle');
+  ['#rp-prev', '#rp-toggle', '#rp-next', '#rp-stop'].forEach(sel => {
+    const b = d.querySelector(sel);
+    chk(!!b && !!b.querySelector('svg'), '播放栏 ' + sel + ' 用 SVG 图标');
+    chk(!!b && b.textContent.trim() === '', '播放栏 ' + sel + ' 不含文字');
+  });
+  chk(w.Speech.supported() === true, '语音引擎在跑');
   // 暂停
-  d.querySelector('#rp-toggle').dispatchEvent(new w.Event('click', { bubbles: true }));
+  toggle.dispatchEvent(new w.Event('click', { bubbles: true }));
   await sleep(30);
   chk(w.Speech.paused() === true, '可以暂停');
-  chk(d.querySelector('#rp-toggle').textContent === '继续', '暂停后按钮变「继续」');
-  chk(/已暂停/.test(d.querySelector('#rp-label').textContent), '控制条显示已暂停');
-  d.querySelector('#rp-toggle').dispatchEvent(new w.Event('click', { bubbles: true }));
+  chk(!!d.querySelector('#rp-toggle .pb-play'), '暂停后主按钮换成 ▶ 播放图标（一眼看出能继续）');
+  chk(bar.dataset.paused === '1', '播放栏标记为暂停态');
+  toggle.dispatchEvent(new w.Event('click', { bubbles: true }));
   await sleep(30);
   chk(w.Speech.paused() === false, '可以继续');
   // 下一篇
   d.querySelector('#rp-next').dispatchEvent(new w.Event('click', { bubbles: true }));
   await sleep(30);
   chk(w.Speech.index() === 1, '「下一篇」跳到第 2 首（index=' + w.Speech.index() + '）');
+  chk(d.querySelector('#rp-now').textContent !== nowTitle, '播放栏主信息跟着换成第 2 首');
   // 停止
   d.querySelector('#rp-stop').dispatchEvent(new w.Event('click', { bubbles: true }));
   await sleep(30);
-  chk(d.querySelector('#reader-player').hidden === true, '停止后控制条收起');
+  chk(bar.hidden === true, '停止后播放栏收起');
+  chk(w.speechSynthesis.speaking === false, '停止后语音引擎真的停了（不再有声音）');
+  chk(d.querySelector('#today-read').dataset.on === '0', '停止后圆形播放键复位为 ▶');
   chk(d.querySelectorAll('#today-list .item.reading').length === 0, '停止后取消高亮');
+
+  // ---- 需求 8：播放有声音，暂停 / 停止后没有声音 ----
+  {
+    const w3 = boot('index.html', null, true);
+    await sleep(400);
+    const d3 = w3.document;
+    const synth = w3.speechSynthesis;
+    d3.querySelector('#today-read').dispatchEvent(new w3.Event('click', { bubbles: true }));
+    await sleep(40);
+    chk(synth.speaking === true, '播放时语音引擎处于发声状态');
+    d3.querySelector('#rp-toggle').dispatchEvent(new w3.Event('click', { bubbles: true }));
+    await sleep(30);
+    chk(w3.Speech.paused() === true && synth.paused === true, '暂停时语音引擎真的被暂停（不出声）');
+    d3.querySelector('#rp-toggle').dispatchEvent(new w3.Event('click', { bubbles: true }));
+    await sleep(30);
+    chk(w3.Speech.paused() === false && synth.paused === false, '继续后恢复发声');
+    d3.querySelector('#rp-stop').dispatchEvent(new w3.Event('click', { bubbles: true }));
+    await sleep(30);
+    chk(synth.speaking === false, '停止后语音引擎被 cancel，声音立即消失');
+    chk(w3.Speech.active() === false, '停止后朗读队列清空');
+    // 单首朗读同样要能停干净
+    const itemRead = d3.querySelector('#today-list .item-read');
+    itemRead.dispatchEvent(new w3.Event('click', { bubbles: true }));
+    await sleep(30);
+    chk(synth.speaking === true, '单首播放时发声');
+    itemRead.dispatchEvent(new w3.Event('click', { bubbles: true }));
+    await sleep(30);
+    chk(synth.speaking === false, '单首再点一次停止，声音消失');
+  }
+
+  // ---- 需求 7：诗词详情页的「小喇叭 + 朗读」保持不变 ----
+  {
+    const w4 = boot('index.html', null, true);
+    await sleep(400);
+    const d4 = w4.document;
+    const readBtn = d4.querySelector('#m-read-btn');
+    chk(!!readBtn.querySelector('svg'), '详情页朗读按钮仍是「小喇叭」图标');
+    chk(d4.querySelector('#m-read-text').textContent === '朗读', '详情页朗读按钮仍带「朗读」文字');
+    d4.querySelector('#today-list .item').dispatchEvent(new w4.Event('click', { bubbles: true }));
+    readBtn.dispatchEvent(new w4.Event('click', { bubbles: true }));
+    await sleep(30);
+    chk(w4.speechSynthesis.speaking === true, '详情页朗读按钮照常发声');
+    chk(d4.querySelector('#m-read-text').textContent === '停止朗读', '朗读中按钮文案为「停止朗读」');
+    readBtn.dispatchEvent(new w4.Event('click', { bubbles: true }));
+    await sleep(30);
+    chk(d4.querySelector('#m-read-text').textContent === '朗读', '再点一次停止并恢复「朗读」');
+  }
 
   // 单首朗读
   const one = d.querySelector('#today-list .item-read');
+  chk(!!one.querySelector('.play-glyph'), '列表单项右侧是 ▶ 播放键图标');
   one.dispatchEvent(new w.Event('click', { bubbles: true }));
   await sleep(30);
   chk(/咏鹅/.test(w.speechSynthesis._spoken.text), '点单首朗读会读这一首');
+  chk(!!one.querySelector('.pause-glyph'), '播放中单首按钮显示 ⏸');
   chk(d.querySelectorAll('#today-list .item-read[data-on="1"]').length === 5, '朗读中列表朗读按钮高亮');
   one.dispatchEvent(new w.Event('click', { bubbles: true }));
   await sleep(30);
@@ -172,7 +255,8 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
   // 随机连读
   c.querySelector('#gw-random-read').dispatchEvent(new w2.Event('click', { bubbles: true }));
   await sleep(60);
-  chk(c.querySelector('#reader-player').hidden === false, '随机连读弹出控制条');
+  chk(c.querySelector('#reader-player').hidden === false, '随机连读弹出播放栏');
+  chk(c.querySelector('#rp-now').textContent.length > 0, '播放栏显示当前连读的篇名：' + c.querySelector('#rp-now').textContent);
   chk(c.querySelector('#gw-reader').hidden === false, '随机连读会自动打开阅读器');
   const firstId = c.querySelector('#rd-title').textContent;
   // 等第一条读完 → 自动跳下一篇

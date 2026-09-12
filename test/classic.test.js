@@ -60,14 +60,44 @@ setTimeout(() => {
   chk(/已读|标记/.test(d.querySelector('#gw-done-text').textContent), '阅读器内有「标记已读」按钮');
   chk(d.querySelector('.brand-text h1').textContent === '小古文', '小古文页主标题为「小古文」（实际 ' + d.querySelector('.brand-text h1').textContent + '）');
   chk(d.title === '小古文 · 跬步', '小古文页标题为「小古文 · 跬步」（实际 ' + d.title + '）');
-  // 需求 7/8：顶部说明精简为一行，不再出现「点击即可学习 ·」「小古文和古诗词不一样…」这类婆婆妈妈的段落
-  const notice = d.querySelector('.notice').textContent;
-  chk(notice.includes('不排复习日期') && notice.length < 40,
-    '页面说明精简为一行（实际 ' + notice.trim() + '）');
-  chk(!/点击即可学习/.test(notice), '顶部不再出现「点击即可学习 ·」');
+  // 需求 2：顶部说明整段删掉，太啰嗦
+  chk(d.querySelector('.notice') === null, '顶部说明段落已整段删除（不再有 .notice）');
+  const htmlSrc = fs.readFileSync(path + 'classic.html', 'utf8');
+  chk(!/不排复习日期/.test(htmlSrc), '页面里不再出现「不排复习日期」这类说明');
+  chk(!/想读哪篇点哪篇[。．]/.test(htmlSrc.replace(/<p>.*?<\/p>/, '')), '不再有婆婆妈妈的说明段落');
   chk(d.querySelector('.brand-text p').textContent === '100 篇 · 想读哪篇点哪篇',
     '顶部副标题精简（实际 ' + d.querySelector('.brand-text p').textContent + '）');
   chk(d.querySelectorAll('#gw-list .item .item-reason.review').length === 0, '列表里没有「复习」标签，不做复习排期');
+
+  // 需求 3：按主题分类聚合，不再按原书目录顺序
+  const groupHeads = [...d.querySelectorAll('#gw-list .group-head .group-name')].map(e => e.textContent);
+  chk(groupHeads.length === 7, '共 7 个主题分类（实际 ' + groupHeads.length + '）');
+  chk(new Set(groupHeads).size === groupHeads.length, '同一分类只出现一个分组标题（分类已聚合，不按书本拆散）');
+  const firstGroup = groupHeads[0];
+  const firstGroupCount = [...d.querySelectorAll('#gw-list .group-head .group-count')][0].textContent;
+  const firstGroupItems = [...d.querySelectorAll('#gw-list .item')].slice(0, parseInt(firstGroupCount));
+  chk(firstGroupItems.length === parseInt(firstGroupCount), '分组计数与实际列出的篇数一致：' + firstGroup);
+  chk(firstGroupItems.every(el => el.querySelector('.item-meta').textContent.includes(firstGroup) ||
+    !/福尔摩斯/.test(el.textContent)), '同一分类的篇目连续排在一起');
+  // 蒙学经典：4 篇必须全部出现在同一个分组里（此前只显示 2 篇）
+  const mh = [...d.querySelectorAll('#gw-list .group-head')].find(h => h.querySelector('.group-name').textContent === '蒙学经典');
+  chk(!!mh, '有「蒙学经典」分类');
+  chk(/4 篇/.test(mh.querySelector('.group-count').textContent),
+    '「蒙学经典」显示 4 篇（实际 ' + mh.querySelector('.group-count').textContent + '）');
+  const allGroupItems = [];
+  let node = mh.nextElementSibling;
+  while (node && !node.classList.contains('group-head')) {
+    if (node.classList.contains('item')) allGroupItems.push(node);
+    node = node.nextElementSibling;
+  }
+  chk(allGroupItems.length === 4, '「蒙学经典」下面真的列出 4 篇（实际 ' + allGroupItems.length + '）');
+  chk(allGroupItems.map(el => el.querySelector('.item-title').textContent.replace('已读', '').trim()).join('/') ===
+    '人之初/弟子规（节选）/菊/莲',
+    '「蒙学经典」四篇连续排列（' + allGroupItems.map(el => el.querySelector('.item-title').textContent).join('/') + '）');
+
+  // 需求 6：列表每项右侧是播放键（不再是喇叭）
+  chk(d.querySelectorAll('#gw-list .item-read').length === 100, '每个列表项都有播放按钮');
+  chk(d.querySelectorAll('#gw-list .item .play-glyph').length === 100, '播放键用的是 ▶ 播放图标');
 
   // 需求 6：「随机连读」与「全部 / 未读」同款样式（同一 class + 内联居中）
   const randomBtn = d.querySelector('#gw-random-read');

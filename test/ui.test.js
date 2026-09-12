@@ -61,6 +61,23 @@ setTimeout(() => {
   chk(d.querySelectorAll('#grade-chips button').length === 6, '小学显示 6 个年级按钮');
   chk(d.querySelectorAll('#today-list .item').length === 5, '今日列表渲染 5 首（实际 ' + d.querySelectorAll('#today-list .item').length + '）');
   chk(d.querySelector('#ring-text').textContent === '0/5', '环形进度 0/5');
+  // 需求 1：任务条标题改为「今日背诵」
+  chk(d.querySelector('.today-title').textContent === '今日背诵',
+    '任务条标题为「今日背诵」（实际 ' + d.querySelector('.today-title').textContent + '）');
+  // 需求 5：朗读按钮是圆形播放键，不再有「朗读」文字
+  chk(d.querySelector('#today-read .play-glyph') !== null, '今日朗读按钮是 ▶ 圆形播放键');
+  chk(!/朗读/.test(d.querySelector('#today-read').textContent.replace(/\s/g, '')),
+    '今日朗读按钮不再显示「朗读」文字');
+  // 需求 4：底部播放栏是贴底整宽、无圆角的播放器
+  const pbCss = fs.readFileSync(path + 'css/style.css', 'utf8');
+  const pb = /(\.player-bar \{[\s\S]*?\n\})/.exec(pbCss);
+  chk(!!pb && /left:\s*0;/.test(pb[1]) && /right:\s*0;/.test(pb[1]) && /bottom:\s*0;/.test(pb[1]),
+    '播放栏贴底占满整宽');
+  chk(!!pb && !/border-radius/.test(pb[1]), '播放栏不再有圆角');
+  chk(/\.player-bar \{[\s\S]*?padding: 14px/.test(pbCss), '播放栏高度加大');
+  // 需求 6：列表单项右侧是播放键
+  chk(d.querySelectorAll('#today-list .item-read .play-glyph').length === 5,
+    '今日每首右侧都是 ▶ 播放键');
   chk(d.querySelector('#all-count').textContent === '5', '本学期诗词数 5');
 
   // 年级切换

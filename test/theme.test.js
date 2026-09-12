@@ -31,10 +31,29 @@ chk(!/积跬步古诗词/.test(html + legalHtml), '页面不再出现「积跬�
 chk(/"name":\s*"跬步/.test(read('manifest.webmanifest')), 'PWA 清单名称为跬步');
 chk(app.indexOf('这首诗按遗忘曲线到期了') !== -1, '到期提示改为「这首诗按遗忘曲线到期了」');
 chk(!/这首歌/.test(allSrc), '全站不再出现把诗词称作「歌」的措辞');
+// 需求 1：首页任务条标题精简为「今日背诵」
+chk(html.indexOf('>今日背诵<') !== -1 && html.indexOf('今日背诵任务') === -1,
+  '首页标题为「今日背诵」，不再写「今日背诵任务」');
+// 需求 4：播放栏不再有「正在朗读 / 暂停 / 继续 / 下一篇 / 停止」这些文字
+const reader = read('js/reader.js');
+// 只看可见文案（HTML 文本节点），aria-label / title 是给读屏软件的，允许保留
+const visibleText = (reader.match(/>[^<>{}]*</g) || []).join('');
+chk(!/暂停|继续|下一篇|停止|正在朗读|播放/.test(visibleText),
+  '播放栏可见文案里不再出现「暂停 / 继续 / 下一篇 / 停止 / 正在朗读」');
+chk(/iconPlay|iconPause|iconStop|iconPrev|iconNext/.test(reader), '播放栏改用 SVG 图标表达状态');
+const appSrc = read('js/app.js');
+chk(!/"今日 " \+ todayPlan\.length \+ " 首"/.test(appSrc), '播放栏不再显示「今日 N 首」');
 
 /* ---------------- 2. Web Font ---------------- */
 const css = read('css/style.css');
 const classicCss = read('css/classic.css');
+
+// 需求 5：今日朗读按钮是圆形播放键（与 0/5 圆环成对）
+chk(/\.today-read\s*\{[^}]*border-radius:\s*50%/.test(css), '今日朗读按钮是圆形（与 0/5 圆环成对）');
+// 需求 6：列表单项右侧按钮是圆形播放键
+chk(/\.item-read\s*\{[^}]*border-radius:\s*50%/.test(css), '列表单项右侧按钮是圆形播放键');
+// 需求 7：详情页仍是「小喇叭 + 朗读」文字按钮，没有被改成纯图标
+chk(/\.mini-btn \.btn-icon/.test(classicCss), '详情页朗读按钮保持「小喇叭 + 朗读」文字形态');
 
 chk(/@font-face/.test(css), '样式里声明了 @font-face 自托管字体');
 chk(/font-family:\s*"Poem Serif SC"/.test(css), '声明了宋体族 Poem Serif SC');
@@ -90,6 +109,24 @@ chk(!/#4a7c59/.test(legalHtml), '用户协议 / 隐私条款页 theme-color 也�
 chk(!/#4a7c59/.test(read('manifest.webmanifest')), 'PWA 清单不再使用旧品牌绿');
 chk(/"theme_color":\s*"#2f6055"/.test(read('manifest.webmanifest')), 'PWA 清单主题色为加深后的天青');
 chk(/"background_color":\s*"#f6f1e3"/.test(read('manifest.webmanifest')), 'PWA 清单背景色为素绢（与 --bg 同步）');
+
+/* ---------------- 3b. 底部播放栏（宋式美学播放器） ---------------- */
+const pbBlock = /(\.player-bar \{[\s\S]*?\n\})/.exec(css);
+chk(!!pbBlock, '样式里有 .player-bar（底部播放栏）');
+const pb = pbBlock ? pbBlock[1] : '';
+chk(/position:\s*fixed/.test(pb), '播放栏固定定位');
+chk(/left:\s*0;/.test(pb) && /right:\s*0;/.test(pb), '播放栏左右贴边占满整个底部宽度');
+chk(/bottom:\s*0;/.test(pb), '播放栏贴住屏幕底部（不再是 margin 浮起）');
+chk(!/border-radius/.test(pb), '播放栏不再有圆角，是整块弹出的播放器');
+chk(/linear-gradient/.test(pb), '播放栏用宋式深天青渐变，明暗有层次');
+chk(/border-top:\s*1px solid rgba\(240, 205, 124/.test(pb), '顶边一支描金细线（缃色）');
+// 高度加大：上下 padding 合计大于旧版 20px
+const padNum = (pb.match(/padding:[^;]+;/) || [''])[0].match(/(\d+)px/g) || [];
+chk(padNum.length >= 2 && parseInt(padNum[0]) >= 14, '播放栏高度加大（padding ' + padNum.join(' ') + '）');
+chk(/\.pb-now\s*\{[^}]*font-size:\s*18px/.test(css), '当前一首用大字号（18px）');
+chk(/\.pb-next\s*\{[^}]*font-size:\s*11\.5px/.test(css), '下一首用小字号（11.5px）');
+chk(/\.pb-toggle\s*\{[^}]*46px/.test(css), '播放 / 暂停主按钮更大（46px）');
+chk(/\.pb-toggle\s*\{[^}]*var\(--gold\)/.test(css), '主按钮用缃色（与进度环同色）');
 
 /* ---------------- 4. favicon ---------------- */
 const icon = read('icons/icon.svg');

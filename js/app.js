@@ -333,7 +333,7 @@
           : "") +
         "</div>" +
         '<button type="button" class="item-read" title="朗读这一首" aria-label="朗读 ' + esc(p.title) + '">' +
-        readGlyph() + "</button>" +
+        playGlyph() + "</button>" +
         '<div class="item-arrow">›</div>';
       el.addEventListener("click", function () {
         openPoem(p, item);
@@ -363,13 +363,18 @@
     syncTodayReadBtn();
   }
 
-  /** 朗读按钮图标（内联 SVG，跨设备一致） */
-  function readGlyph() {
+  /**
+   * 列表项右侧的播放键图标（内联 SVG，跨设备一致）
+   * 播放中换成「暂停」两竖条：一眼就能看出点它可以停
+   */
+  function playGlyph() {
     return (
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">' +
-      '<path d="M4 9.5v5h3l4.2 3.4V6.1L7 9.5H4Z" />' +
-      '<path d="M15.2 9.2a4 4 0 0 1 0 5.6" />' +
-      "</svg>"
+      '<span class="play-glyph" aria-hidden="true">' +
+      '<svg viewBox="0 0 24 24"><path d="M7.2 4.6 19.4 12 7.2 19.4Z" fill="currentColor" stroke="none" /></svg>' +
+      "</span>" +
+      '<span class="pause-glyph" aria-hidden="true">' +
+      '<svg viewBox="0 0 24 24"><path d="M8.2 5h2.9v14H8.2Z M12.9 5h2.9v14h-2.9Z" fill="currentColor" stroke="none" /></svg>' +
+      "</span>"
     );
   }
 
@@ -542,7 +547,7 @@
     });
 
     window.ReaderPlayer.player({
-      title: "今日 " + todayPlan.length + " 首",
+      title: todayPlan.length + " 首连读",
       items: items,
       onIndex: function (i) {
         const it = todayPlan[i];
@@ -585,9 +590,13 @@
     if (!btn) return;
     const ok = speechOk();
     btn.disabled = !ok;
-    const on = ok && window.Speech.speaking() && !(window.ReaderPlayer && window.ReaderPlayer.isOpen());
+    // 「今日 5 首」不再显示，播放栏会直接报出当前这一首，
+    // 所以这里只区分「是否有队列在跑」，用来切换圆形播放键的 ▶ / ⏸
+    const on = ok && !!(window.ReaderPlayer && window.ReaderPlayer.isRunning && window.ReaderPlayer.isRunning());
     btn.dataset.on = on ? "1" : "0";
-    $("#today-read-text").textContent = on ? "停止" : "朗读";
+    btn.setAttribute("aria-label", on ? "停止朗读" : "依次朗读今天要背的每一首");
+    const text = $("#today-read-text");
+    if (text) text.textContent = on ? "播放中" : "播放";
   }
 
   /** 高亮 / 取消高亮列表里的朗诵条 */
