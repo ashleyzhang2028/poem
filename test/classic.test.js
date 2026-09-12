@@ -54,6 +54,18 @@ scriptOrder.forEach(f => {
 setTimeout(() => {
   const d = window.document;
 
+  // 回归防线：页面里不允许出现重复 id —— 曾因 #rd-trans-text 同时用在
+  // 译文开关的读屏文案与可见译文段落上，导致译文被写进隐藏标签、正文空白
+  ['index.html', 'classic.html'].forEach(f => {
+    const doc = new JSDOM(fs.readFileSync(path + f, 'utf8')).window.document;
+    const seen = {};
+    const dups = [];
+    doc.querySelectorAll('[id]').forEach(el => {
+      if (seen[el.id]) { if (dups.indexOf(el.id) < 0) dups.push(el.id); } else seen[el.id] = 1;
+    });
+    chk(dups.length === 0, f + ' 无重复 id（重复：' + dups.join(', ') + '）');
+  });
+
   chk(d.querySelectorAll('#gw-list .item').length === 100, '列表渲染 100 篇（实际 ' + d.querySelectorAll('#gw-list .item').length + '）');
   chk(d.querySelector('#gw-count').textContent === '0 / 100 篇', '顶部显示 0 / 100 篇：' + d.querySelector('#gw-count').textContent);
   chk(d.querySelectorAll('#gw-list .group-head').length >= 6, '按主题显示分组标题（' + d.querySelectorAll('#gw-list .group-head').length + ' 个）');
@@ -162,8 +174,11 @@ setTimeout(() => {
   d.querySelector('#rd-trans-toggle').dispatchEvent(new window.Event('click', { bubbles: true }));
   chk(d.querySelector('#rd-trans').hidden === false, '点译文图标展开译文');
   chk(d.querySelector('#rd-trans-toggle').dataset.on === '1', '译文按钮进入选中态（配色统一高亮）');
-  chk(d.querySelector('#rd-trans-text').textContent === '隐藏译文', '读屏文案同步为「隐藏译文」');
-  chk(d.querySelector('#rd-trans-text').textContent.length > 2, '译文有内容');
+  // 回归：译文开关按钮的读屏文案写在 #rd-trans-toggle-text，
+  // 不能与可见译文段落 #rd-trans-text 共用同一个 id（曾因重复 id 导致译文空白）
+  chk(d.querySelectorAll('[id="rd-trans-text"]').length === 1, 'id rd-trans-text 唯一，不与按钮读屏文案冲突');
+  chk(d.querySelector('#rd-trans-toggle-text').textContent === '隐藏译文', '读屏文案同步为「隐藏译文」');
+  chk(d.querySelector('#rd-trans-text').textContent.length > 20, '白话译文段落有内容（不空白）');
 
   // 标记已读
   d.querySelector('#gw-done').dispatchEvent(new window.Event('click', { bubbles: true }));

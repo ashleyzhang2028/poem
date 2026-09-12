@@ -478,7 +478,7 @@
     btn.dataset.on = on ? "1" : "0";
     btn.setAttribute("aria-pressed", on ? "true" : "false");
     btn.title = on ? "隐藏译文" : "显示译文";
-    $("#rd-trans-text").textContent = on ? "隐藏译文" : "显示译文";
+    $("#rd-trans-toggle-text").textContent = on ? "隐藏译文" : "显示译文";
   }
 
   /** 白话译文朗读：只读译文，不读原文 */
