@@ -17,20 +17,6 @@
   white-space: nowrap;
 }
 
-/* 顶部说明 */
-.notice {
-  background: var(--bg-soft);
-  border: 1px solid #e5d7b4;
-  border-radius: var(--radius);
-  padding: 12px 14px;
-  font-size: 13px;
-  line-height: 1.7;
-  color: #6b5a35;
-  margin-bottom: 14px;
-}
-.notice p { margin: 0; }
-.notice p + p { margin-top: 4px; }
-
 /* 搜索 + 筛选 */
 .toolbar {
   display: flex;
@@ -128,6 +114,10 @@
 #gw-list .item-index { background: var(--blue-light); color: var(--blue); }
 #gw-list .item.in-book .item-index { background: var(--green-light); color: var(--green); }
 #gw-list .item-reason.read { background: var(--green-light); color: var(--green); }
+/* 列表项右侧播放键：与首页同款圆形播放器按钮，配色走天水碧（小古文主色） */
+#gw-list .item-read { color: var(--blue); }
+#gw-list .item-read[data-on="1"] { background: var(--blue); border-color: var(--blue); color: #fffdf8; }
+
 /* 随机连读时高亮当前篇，用户随时能接管 */
 #gw-list .item.reading {
   border-left-color: var(--blue);

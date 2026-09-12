@@ -59,20 +59,23 @@
     <!-- 今日进度 -->
     <section class="card today-bar">
       <div class="today-left">
-        <div class="today-title">今日背诵任务</div>
+        <div class="today-title">今日背诵</div>
         <div class="today-sub" id="today-sub">共 5 首</div>
       </div>
       <div class="today-actions">
         <!-- 朗读全部：把当天几首的标题、朝代、作者与正文依次读出来，不看屏幕也能听 -->
-        <button class="today-read" id="today-read" data-on="0" title="依次朗读今天要背的每一首">
-          <span aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M4 9.5v5h3l4.2 3.4V6.1L7 9.5H4Z" />
-              <path d="M15.2 9.2a4 4 0 0 1 0 5.6" />
-              <path d="M17.8 6.6a7.6 7.6 0 0 1 0 10.8" />
+        <button class="today-read" id="today-read" data-on="0" aria-label="依次朗读今天要背的每一首" title="依次朗读今天要背的每一首">
+          <span class="play-glyph" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M7.2 4.6 19.4 12 7.2 19.4Z" fill="currentColor" stroke="none" />
             </svg>
           </span>
-          <span id="today-read-text">朗读</span>
+          <span class="pause-glyph" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M8.2 5h2.9v14H8.2Z M12.9 5h2.9v14h-2.9Z" fill="currentColor" stroke="none" />
+            </svg>
+          </span>
+          <span id="today-read-text" class="sr-only">播放</span>
         </button>
         <div class="ring" id="today-ring">
           <svg viewBox="0 0 36 36">
