@@ -158,18 +158,23 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
     const w4 = boot('index.html', null, true);
     await sleep(400);
     const d4 = w4.document;
-    // 需求：古诗词详情页与小古文详情页统一成「原文 / 译文」组合键
+    // 需求：详情页的播放与暂停不再并排 —— 同一颗键上 ▶ / ⏸ 互斥切换；
+    // 译文那颗朗读键挪进白话译文框，展开才出现，不与正文键并排
     const readBtn = d4.querySelector('#m-read-btn');
     chk(!!readBtn.querySelector('svg'), '详情页朗读按钮是 SVG 播放图标');
-    chk(d4.querySelector('#m-read-text').textContent === '原文', '组合键左段文案为「原文」');
-    chk(d4.querySelectorAll('#m-read-combo .combo-seg').length === 2,
-      '组合键正好两段：原文 / 译文');
+    chk(!!readBtn.querySelector('.play-glyph') && !!readBtn.querySelector('.pause-glyph'),
+      '播放与暂停是同一颗键的两种状态，不并排');
+    chk(d4.querySelector('#m-read-combo') === null, '不再有「原文 / 译文」组合键');
+    chk(!!d4.querySelector('#m-actions-icons #m-read-btn') &&
+      d4.querySelectorAll('#m-actions-icons #m-trans-read').length === 0,
+      '第一排只有一个播放键，译文键不在这一排');
+    chk(d4.querySelector('#m-trans #m-trans-read') !== null, '译文朗读键在译文框里（展开才可见）');
     d4.querySelector('#today-list .item').dispatchEvent(new w4.Event('click', { bubbles: true }));
     readBtn.dispatchEvent(new w4.Event('click', { bubbles: true }));
     await sleep(30);
     chk(w4.speechSynthesis.speaking === true, '详情页朗读按钮照常发声');
-    chk(readBtn.dataset.on === '1', '朗读中左段点亮（⏸）');
-    chk(d4.querySelector('#m-read-combo').dataset.on === '1', '组合键整体进入朗读态');
+    chk(readBtn.dataset.on === '1', '朗读中同一颗键变成 ⏸（播放态）');
+    chk(readBtn.querySelector('.play-glyph').style.display !== 'inline-flex', '播放中不再显示 ▶');
     readBtn.dispatchEvent(new w4.Event('click', { bubbles: true }));
     await sleep(30);
     chk(readBtn.dataset.on === '0', '再点一次停止并复位按钮');
@@ -279,12 +284,15 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
   chk(!!c.querySelector('#rd-font-down') && !!c.querySelector('#rd-font-up'),
     'A－ / A＋ 字号按钮还在（此前被合并丢掉）');
   chk(!!c.querySelector('#rd-align-seg'), '正文对齐组合按钮在');
-  chk(!!rowIcons && rowIcons.children.length === 3, '下一行：朗读组合键 / 译文开关 / 标记已读 三组都在（实际 ' + (rowIcons ? rowIcons.children.length : 0) + '）');
-  chk(!!c.querySelector('#rd-read-combo'), '原文与译文朗读合并成一个组合键（不再两个独立播放键）');
-  chk(c.querySelectorAll('#rd-read-combo .combo-seg').length === 2,
-    '组合键正好两段：原文 / 译文');
-  chk(!!c.querySelector('#rd-trans-read') && !c.querySelector('#rd-trans-read').disabled,
-    '组合键右段「译文」在有语音环境时可用');
+  chk(!!rowIcons && rowIcons.children.length === 3, '下一行：正文朗读键 / 译文开关 / 标记已读 三组都在（实际 ' + (rowIcons ? rowIcons.children.length : 0) + '）');
+  // 需求：播放与暂停不再并排；译文朗读键也不再与正文键并排
+  chk(c.querySelector('#rd-read-combo') === null, '不再有「原文 / 译文」并排的组合键');
+  chk(c.querySelectorAll('#rd-actions-icons #rd-read-btn').length === 1 &&
+    c.querySelectorAll('#rd-actions-icons #rd-trans-read').length === 0,
+    '工具条上只有正文一颗播放键');
+  chk(!!c.querySelector('#rd-read-btn .play-glyph') && !!c.querySelector('#rd-read-btn .pause-glyph'),
+    '▶ 与 ⏸ 在同一颗键上互斥切换');
+  chk(!!c.querySelector('#rd-trans #rd-trans-read'), '译文朗读键在译文框里（展开才出现）');
   // 固定打开第一篇（人之初），避免受「随机连读」停留位置影响
   w2.Speech.stop();
   c.querySelector('#gw-back').dispatchEvent(new w2.Event('click', { bubbles: true }));
@@ -292,23 +300,27 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
   c.querySelector('#gw-list .item').dispatchEvent(new w2.Event('click', { bubbles: true }));
   await sleep(30);
   chk(c.querySelector('#rd-title').textContent === '人之初', '回到第一篇「人之初」再验证组合键');
-  // 点右段应只读译文，并把译文框自动展开
+  // 展开译文 → 译文框里那颗朗读键才出现；点它应只读译文
+  c.querySelector('#rd-trans-toggle').dispatchEvent(new w2.Event('click', { bubbles: true }));
+  await sleep(20);
+  chk(!!c.querySelector('#rd-trans #rd-trans-read'), '展开译文后译文朗读键出现');
   c.querySelector('#rd-trans-read').dispatchEvent(new w2.Event('click', { bubbles: true }));
   await sleep(30);
   chk(!/人之初/.test(w2.speechSynthesis._spoken.text), '点「译文」只读译文，不读原文');
   chk(c.querySelector('#rd-trans').hidden === false, '点「译文」会自动展开译文框');
   chk(c.querySelector('#rd-trans-read').dataset.on === '1' && c.querySelector('#rd-read-btn').dataset.on === '0',
-    '正在读译文 → 只有右段点亮');
+    '正在读译文 → 只有译文那颗键点亮');
   w2.Speech.stop();
   await sleep(30);
   c.querySelector('#rd-read-btn').dispatchEvent(new w2.Event('click', { bubbles: true }));
   await sleep(30);
   chk(/人之初/.test(w2.speechSynthesis._spoken.text), '点「原文」读的是原文');
   chk(c.querySelector('#rd-read-btn').dataset.on === '1' && c.querySelector('#rd-trans-read').dataset.on === '0',
-    '正在读原文 → 只有左段点亮');
+    '正在读原文 → 只有正文那颗键点亮');
   w2.Speech.stop();
   await sleep(30);
-  chk(!c.querySelector('#rd-trans .trans-read'), '译文区里不再重复放朗读按钮');
+  chk(c.querySelectorAll('#rd-trans .trans-read').length === 1,
+    '译文区只有一颗朗读键（不重复、也不与正文键并排）');
   chk(!!c.querySelector('#gw-done.sr-only') === false && !!c.querySelector('#rd-actions-icons #gw-done'),
     '「标记已读」并到工具条里（SVG 勾选图标）');
   // 对齐功能可点、可持久化

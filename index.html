@@ -31,7 +31,7 @@
 
   <link rel="stylesheet" href="css/style.css" />
 </head>
-<body data-nav="home" data-page="的古诗词">
+<body data-nav="home" data-page="的古诗词" data-sub="按遗忘曲线安排复习 · 小古文想读哪篇点哪篇">
   <div class="app" id="app">
     <!-- 顶部栏：由 js/chrome.js 统一渲染（logo + 跬步 + 页面名 + 动作位） -->
     <header class="topbar"></header>
@@ -82,7 +82,14 @@
         </span>
         <span id="all-label">本年级本学期全部诗词</span>
         <span id="all-count" class="badge">0</span>
-        <span class="arrow">▾</span>
+        <!-- 折叠箭头：空心描边三角（与列表右侧「›」同一套描边语言）。
+             收起时朝下、展开时朝上，由 .collapse-head.open 只旋转不换图，
+             笔画粗细和「›」一致，不再是实心 ▾ 那种另一套风格。 -->
+        <span class="arrow" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6.6 9.8 12 15.2l5.4-5.4" />
+          </svg>
+        </span>
       </button>
       <div class="collapse-body" id="all-body" hidden>
         <div class="stats-row" id="stats-row"></div>
@@ -144,28 +151,21 @@
           <button data-mode="all" aria-pressed="false">全文</button>
         </div>
       </div>
-      <!-- 阅读辅助工具条（第二行）：一个「播放」组合键（原文 / 译文）+ 译文开关 -->
+      <!-- 阅读辅助工具条（第二行）：原文一个播放键 + 译文开关。
+           不用再并排放「原文 / 译文」两个朗读键 —— 译文展开后，
+           译文标题旁会出现它自己的那颗朗读键，一篇文章同时只看到一个播放信号。 -->
       <div class="reader-actions icon-row" id="m-actions-icons">
-        <div class="combo-read" id="m-read-combo" role="group" aria-label="朗读">
-          <button type="button" class="mini-btn combo-seg" id="m-read-btn" data-on="0" aria-pressed="false" title="朗读原文：标题、朝代、作者与正文">
-            <span class="btn-icon play-glyph" aria-hidden="true">
-              <svg viewBox="0 0 24 24"><path d="M7.2 4.6 19.4 12 7.2 19.4Z" fill="currentColor" stroke="none" /></svg>
-            </span>
-            <span class="btn-icon pause-glyph" aria-hidden="true">
-              <svg viewBox="0 0 24 24"><path d="M8.2 5h2.9v14H8.2Z M12.9 5h2.9v14h-2.9Z" fill="currentColor" stroke="none" /></svg>
-            </span>
-            <span class="combo-label" id="m-read-text">原文</span>
-          </button>
-          <button type="button" class="mini-btn combo-seg" id="m-trans-read" data-on="0" aria-pressed="false" disabled title="朗读白话译文">
-            <span class="btn-icon play-glyph" aria-hidden="true">
-              <svg viewBox="0 0 24 24"><path d="M7.2 4.6 19.4 12 7.2 19.4Z" fill="currentColor" stroke="none" /></svg>
-            </span>
-            <span class="btn-icon pause-glyph" aria-hidden="true">
-              <svg viewBox="0 0 24 24"><path d="M8.2 5h2.9v14H8.2Z M12.9 5h2.9v14h-2.9Z" fill="currentColor" stroke="none" /></svg>
-            </span>
-            <span class="combo-label" id="m-trans-read-text">译文</span>
-          </button>
-        </div>
+        <!-- 原文：▶ 与 ⏸ 是同一个按钮的两种状态（播放中原地换成暂停），
+             绝不同时并排出现两个图标 -->
+        <button type="button" class="mini-btn" id="m-read-btn" data-on="0" aria-pressed="false" title="朗读原文：标题、朝代、作者与正文">
+          <span class="btn-icon play-glyph" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M7.2 4.6 19.4 12 7.2 19.4Z" fill="currentColor" stroke="none" /></svg>
+          </span>
+          <span class="btn-icon pause-glyph" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M8.2 5h2.9v14H8.2Z M12.9 5h2.9v14h-2.9Z" fill="currentColor" stroke="none" /></svg>
+          </span>
+          <span class="sr-only" id="m-read-text">朗读原文</span>
+        </button>
         <button type="button" class="mini-btn" id="m-trans-toggle" data-on="0" aria-pressed="false" title="显示译文">
           <span class="btn-icon play-glyph" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -188,7 +188,19 @@
       <pre class="poem-text" id="m-text"></pre>
       <!-- 白话译文：与小古文详情页同一套译文框 -->
       <section class="trans-box" id="m-trans" hidden>
-        <div class="trans-head"><h3>白话译文</h3></div>
+        <div class="trans-head">
+          <h3>白话译文</h3>
+          <!-- 译文朗读键：译文展开后才出现，只在译文标题这一处，不与原文键并排 -->
+          <button type="button" class="trans-read" id="m-trans-read" data-on="0" aria-pressed="false" disabled title="朗读白话译文">
+            <span class="btn-icon play-glyph" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M7.2 4.6 19.4 12 7.2 19.4Z" fill="currentColor" stroke="none" /></svg>
+            </span>
+            <span class="btn-icon pause-glyph" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M8.2 5h2.9v14H8.2Z M12.9 5h2.9v14h-2.9Z" fill="currentColor" stroke="none" /></svg>
+            </span>
+            <span id="m-trans-read-text">朗读</span>
+          </button>
+        </div>
         <p id="m-trans-text"></p>
       </section>
       <div class="modal-progress" id="m-progress"></div>

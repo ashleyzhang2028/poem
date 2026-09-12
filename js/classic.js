@@ -437,35 +437,29 @@
   }
 
   /**
-   * 同步「原文 / 译文」组合播放键。
-   * 两段共用同一个播放状态：点左段读原文、点右段读译文；
-   * 正在读的那一段点亮（高亮 + ⏸），再点一次即停止，所以两段都可点。
+   * 同步正文那颗播放键：▶ 与 ⏸ 是**同一个按钮的两种状态**，
+   * 播放中原地换成暂停，停下换回播放 —— 绝不同时并排出现两个图标。
+   * 译文框里那颗键由 syncTransReadButton() 管，只在译文展开时可见。
    */
   function syncReadButtons() {
     const ok = speechSupported();
     const playing = ok && !autoReading && !!window.Speech.speaking();
 
-    const segs = [
-      { btn: "#rd-read-btn", text: "#rd-read-text", key: "原文", title: "朗读原文：标题、朝代、作者与正文" },
-      { btn: "#rd-trans-read", text: "#rd-trans-read-text", key: "译文", title: "朗读白话译文" }
-    ];
-    segs.forEach(function (cfg) {
-      const btn = $(cfg.btn);
-      if (!btn) return;
+    const btn = $("#rd-read-btn");
+    if (btn) {
       btn.disabled = !ok;
-      btn.title = ok ? cfg.title : "当前浏览器不支持语音朗读";
-      const on = playing && speakingTarget === cfg.key;
+      btn.title = ok ? "朗读原文：标题、朝代、作者与正文" : "当前浏览器不支持语音朗读";
+      const on = playing && speakingTarget === "原文";
       btn.dataset.on = on ? "1" : "0";
       btn.setAttribute("aria-pressed", on ? "true" : "false");
-      const label = $(cfg.text);
-      if (label) label.textContent = cfg.key;
-    });
+    }
 
-    const combo = $("#rd-read-combo");
-    if (combo) combo.dataset.on = playing ? "1" : "0";
+    // #rd-read-text 是给读屏软件的固定文案（.sr-only），不随能力 / 播放态替换文字，
+    // 状态一律由 data-on 切换 ▶ / ⏸ 与 aria-pressed 表达
+    syncTransReadButton();
   }
 
-  /** 组合键左段：朗读原文（标题 + 朝代 + 作者 + 正文） */
+  /** 正文播放键：朗读原文（标题 + 朝代 + 作者 + 正文） */
   function toggleRead() {
     if (!speechSupported() || !current) return;
     if (window.Speech.speaking()) {
@@ -476,15 +470,15 @@
       const ok = window.Speech.speak(speechText(current));
       showToast(ok ? "开始朗读" : "朗读启动失败，请重试");
     }
-    // 点组合键即接管朗读：无论开始还是停止，都退出「随机连读」状态，
-    // 否则 autoReading 残留会让组合键一直显示不出播放态
+    // 点播放键即接管朗读：无论开始还是停止，都退出「随机连读」状态，
+    // 否则 autoReading 残留会让播放键一直显示不出播放态
     autoReading = false;
     syncReadButtons();
     setTimeout(syncReadButtons, 60);
     setTimeout(syncReadButtons, 300);
   }
 
-  /** 组合键右段：只读白话译文，不读原文；译文没展开时顺手展开，省一次点击 */
+  /** 译文播放键：只读白话译文，不读原文；译文没展开时顺手展开，省一次点击 */
   function toggleTransRead() {
     if (!speechSupported() || !current) return;
     if (window.Speech.speaking()) {
@@ -524,6 +518,28 @@
       const t = $("#rd-trans-toggle-text");
       if (t) t.textContent = on ? "收起译文" : "显示译文";
     }
+    // 译文框一开一合，译文那颗播放键跟着出现 / 消失；
+    // 收起时把朗读目标收回正文，并同步两颗键的状态
+    if (!show && speakingTarget === "译文") speakingTarget = "原文";
+    syncTransReadButton();
+  }
+
+  /**
+   * 译文标题右侧那颗播放键：只在译文框展开时出现，
+   * 状态同样靠 data-on 原地切换 ▶ / ⏸，与正文那颗不同时显示两个播放信号。
+   */
+  function syncTransReadButton() {
+    const btn = $("#rd-trans-read");
+    if (!btn) return;
+    const ok = speechSupported();
+    const boxOpen = !$("#rd-trans").hidden;
+    btn.disabled = !ok;
+    btn.title = ok ? "朗读白话译文" : "当前浏览器不支持语音朗读";
+    const on = ok && boxOpen && !autoReading && speakingTarget === "译文" && !!window.Speech.speaking();
+    btn.dataset.on = on ? "1" : "0";
+    btn.setAttribute("aria-pressed", on ? "true" : "false");
+    const label = $("#rd-trans-read-text");
+    if (label) label.textContent = on ? "停止朗读" : "朗读译文";
   }
 
   function closeReader() {

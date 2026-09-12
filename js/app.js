@@ -596,6 +596,10 @@
       const t = $("#m-trans-toggle-text");
       if (t) t.textContent = show ? "隐藏译文" : "显示译文";
     }
+    // 译文框一开一合，译文那颗播放键跟着出现 / 消失，
+    // 顺带把它的上一态清掉，避免收起再展开时残留「正在播放」
+    if (!show) speakingTarget = speakingTarget === "译文" ? "原文" : speakingTarget;
+    syncReadBtn();
   }
 
   function hasTranslation(p) {
@@ -734,17 +738,21 @@
   }
 
   /**
-   * 同步「原文 / 译文」组合播放键。
-   * 状态机与小古文详情页一致：点哪段读哪段，正在读的那一段点亮（⏸），再点即停。
+   * 同步两颗播放键（原文 / 译文）。
+   *
+   * 两颗键各自只占一个位置，靠 data-on 在同一处切换 ▶ / ⏸：
+   * 播放中显示暂停，停下回到播放，不会同时并排出现两个图标。
+   * 「译文」那颗跟着译文框走 —— 译文框收着的时候它根本不在页面上，
+   * 所以一篇诗里任何时候只看得到一个播放信号。
    */
   function syncReadBtn() {
     const ok = speechOk();
     const playing = ok && !!window.Speech.speaking();
-    const segs = [
-      { btn: "#m-read-btn", text: "#m-read-text", key: "原文", title: "朗读原文：标题、朝代、作者与正文" },
-      { btn: "#m-trans-read", text: "#m-trans-read-text", key: "译文", title: "朗读白话译文" }
+    const keys = [
+      { btn: "#m-read-btn", key: "原文", title: "朗读原文：标题、朝代、作者与正文" },
+      { btn: "#m-trans-read", key: "译文", title: "朗读白话译文" }
     ];
-    segs.forEach(function (cfg) {
+    keys.forEach(function (cfg) {
       const btn = $(cfg.btn);
       if (!btn) return;
       const usable = ok && (cfg.key === "原文" || hasTranslation(currentPoem));
@@ -758,11 +766,15 @@
       btn.dataset.on = on ? "1" : "0";
       btn.setAttribute("aria-pressed", on ? "true" : "false");
     });
-    const combo = $("#m-read-combo");
-    if (combo) combo.dataset.on = playing ? "1" : "0";
+    // #m-read-text 是给读屏软件的固定文案（.sr-only），不随能力/播放态替换文字，
+    // 状态一律由 data-on 切换 ▶ / ⏸ 与 aria-pressed 表达
+    const tLabel = $("#m-trans-read-text");
+    if (tLabel) {
+      tLabel.textContent = playing && speakingTarget === "译文" ? "停止朗读" : "朗读译文";
+    }
   }
 
-  /** 组合键左段：朗读原文（标题 + 朝代 + 作者 + 正文） */
+  /** 原文键：朗读原文（标题 + 朝代 + 作者 + 正文） */
   function toggleRead() {
     if (!currentPoem || !speechOk()) return;
     if (window.Speech.speaking()) {
@@ -778,7 +790,7 @@
     setTimeout(syncReadBtn, 300);
   }
 
-  /** 组合键右段：只读白话译文，不读原文；译文框没展开时顺手展开 */
+  /** 译文键：只读白话译文，不读原文；译文框没展开时顺手展开 */
   function toggleTransRead() {
     if (!currentPoem || !speechOk()) return;
     if (window.Speech.speaking()) {

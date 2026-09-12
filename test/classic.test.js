@@ -97,6 +97,14 @@ setTimeout(() => {
     '页面名就是「小古文」，由 CSS 的 ::before 生成分隔符（不再写死标点）');
   chk(d.querySelectorAll('#gw-list .item .item-reason.review').length === 0, '列表里没有「复习」标签，不做复习排期');
 
+  // 需求：阅读器顶栏的返回键与其他页面用同一颗按钮、同一套风格，
+  // 且按钮里不再叠「小 古 文」三个字
+  const backBtn = d.querySelector('#gw-back');
+  chk(backBtn.classList.contains('top-act'), '返回键复用全站顶栏的 .top-act（与其他页面同一颗按钮）');
+  chk(backBtn.querySelectorAll('svg').length === 1, '返回键只有一个箭头图标');
+  chk(backBtn.textContent.trim() === '', '返回键里不再出现「小古文」等文字');
+  chk(/返回小古文列表/.test(backBtn.getAttribute('aria-label')), '返回键的无障碍名称仍说明去处');
+
   // 需求 3：按主题分类聚合，不再按原书目录顺序
   const groupHeads = [...d.querySelectorAll('#gw-list .group-head .group-name')].map(e => e.textContent);
   chk(groupHeads.length === 7, '共 7 个主题分类（实际 ' + groupHeads.length + '）');
@@ -238,17 +246,22 @@ setTimeout(() => {
   chk(rdSeg.querySelectorAll('button').length === 3, '阅读器注音有 3 档');
   chk(!!d.querySelector('#rd-read-btn'), '阅读器有朗读按钮');
 
-  // 需求：原文 / 译文朗读合并为一个「组合键」，不再有两个各自独立的播放键
+  // 需求：播放与暂停不再并排显示 —— 同一颗键上 ▶ / ⏸ 互斥切换；
+  // 白话译文的朗读键也不再和正文键并排（挪进译文框，展开才出现）
   const clsHtml = fs.readFileSync(path + 'classic.html', 'utf8');
-  const combo = d.querySelector('#rd-read-combo');
-  chk(!!combo, '朗读是一个组合键（#rd-read-combo）');
-  chk(!!combo.querySelector('#rd-read-btn') && !!combo.querySelector('#rd-trans-read'),
-    '组合键含「原文」「译文」两段');
-  chk(combo.querySelectorAll('.combo-seg').length === 2, '组合键只有两段，不再多出一个播放键');
-  chk([...combo.querySelectorAll('.combo-label')].map(x => x.textContent).join('/') === '原文/译文',
-    '两段文案为「原文 / 译文」：' + [...combo.querySelectorAll('.combo-label')].map(x => x.textContent).join('/'));
-  chk(!!d.querySelector('#rd-read-btn .play-glyph svg'), '组合键用 ▶ 播放图标');
-  chk(!!d.querySelector('#rd-read-btn .pause-glyph svg'), '播放中切换为 ⏸ 暂停图标');
+  chk(d.querySelector('#rd-read-combo') === null, '不再有「原文 / 译文」并排的组合键');
+  const readBtn = d.querySelector('#rd-read-btn');
+  chk(!!readBtn, '阅读器有正文朗读键');
+  chk(!!readBtn.querySelector('.play-glyph svg') && !!readBtn.querySelector('.pause-glyph svg'),
+    '正文键同时带 ▶ 与 ⏸ 两套图标（同键两态，不是两个按钮）');
+  chk(readBtn.classList.contains('mini-btn') && !readBtn.querySelector('.play-glyph').classList.contains('btn-icon') === false,
+    '正文键与译文开关同款样式');
+  const transReadBtn = d.querySelector('#rd-trans-read');
+  chk(!!transReadBtn, '译文有独立朗读键');
+  chk(transReadBtn.closest('#rd-actions-icons') === null, '译文朗读键不在第一排工具条里（不与正文键并排）');
+  chk(transReadBtn.closest('.trans-box') !== null, '译文朗读键在译文框里，展开译文才出现');
+  chk(d.querySelectorAll('.reader-actions #rd-read-btn, .reader-actions #rd-trans-read').length === 1,
+    '工具条上只有一个播放信号');
   chk(!/>\s*朗读全文\s*</.test(clsHtml), '不再出现「朗读全文」文案');
 
   // 译文开关仍是纯图标按钮，文案只给读屏
@@ -268,16 +281,16 @@ setTimeout(() => {
   chk(row1.children.length === 3 &&
     row1.querySelector('#rd-align-seg') && row1.querySelector('#rd-font-seg') && row1.querySelector('#rd-pinyin-seg'),
     '上一行依次是 对齐 / 字号 / 注音 三组按钮');
-  // 需求 1：朗读组合键 / 译文开关 / 标记已读 在下行
+  // 需求 1：正文朗读键 / 译文开关 / 标记已读 在下行
   chk(row2.children.length === 3 &&
-    row2.querySelector('#rd-read-combo') && row2.querySelector('#rd-trans-toggle') &&
+    row2.querySelector('#rd-read-btn') && row2.querySelector('#rd-trans-toggle') &&
     row2.querySelector('#gw-done'),
-    '下一行依次是 朗读组合键 / 译文开关 / 标记已读 三组（实际 ' + row2.children.length + '）');
+    '下一行依次是 正文朗读键 / 译文开关 / 标记已读 三组（实际 ' + row2.children.length + '）');
   chk(row2.querySelectorAll('button > svg, button > span > svg').length >= 3, '图标行的按钮全部是 SVG 图标');
-  chk(row2.querySelectorAll(':scope > button .sr-only').length === 2,
-    '「译文开关 / 标记已读」的文案只留给读屏软件（.sr-only）');
-  chk(d.querySelectorAll('.reader-actions .mini-btn, .reader-actions .seg.mini').length === 7,
-    '工具条按钮共用同一套样式类：第二排的「原文 / 译文」是组合键里的两段（实际 ' +
+  chk(row2.querySelectorAll(':scope > button .sr-only').length === 3,
+    '「正文朗读 / 译文开关 / 标记已读」的文案只留给读屏软件（.sr-only）');
+  chk(d.querySelectorAll('.reader-actions .mini-btn, .reader-actions .seg.mini').length === 6,
+    '工具条按钮共用同一套样式类（实际 ' +
     d.querySelectorAll('.reader-actions .mini-btn, .reader-actions .seg.mini').length + '）');
   const actionsCss = fs.readFileSync(path + 'css/classic.css', 'utf8');
   const actBlock = /(^|\n)\.reader-actions \{([\s\S]*?)\}/.exec(actionsCss);
@@ -291,8 +304,8 @@ setTimeout(() => {
   // 需求：两排按钮都整行居中（与小古文正文、古诗正文共用同一条中轴）
   const actionsRow = /(^|\n)\.reader-actions \{([\s\S]*?)\}/.exec(actionsCss);
   chk(!!actionsRow && /justify-content:\s*center;/.test(actionsRow[2]), '工具条两行都整行水平居中');
-  chk(/(^|\n)\.icon-row \.combo-seg \+ \.combo-seg \{[^}]*border-left/.test(actionsCss),
-    '组合键两段之间用界行细线分隔（不是两个独立按钮）');
+  chk(/\.trans-read\[data-on="1"\] \.play-glyph \{ display: none; \}/.test(actionsCss),
+    '译文键的 ▶ / ⏸ 互斥显示，同一位置切换');
   chk(/\.done-btn\.is-done/.test(actionsCss), '「标记已读」按钮有已读高亮态');
   // 需求：上一篇 / 下一篇必须避开底部播放栏 / 页签，否则被压掉约三成、点不着
   const navBlock = /(^|\n)\.reader-nav \{([\s\S]*?)\}/.exec(actionsCss);

@@ -24,6 +24,12 @@ setTimeout(() => {
   chk(d.title === '跬步 · Ashley的古诗词 · 古诗词背诵',
     '用户名留空时标题用默认名 Ashley（实际 ' + d.title + '）');
   chk(d.querySelector('.brand-text h1').textContent === '跬步', '品牌标题为「跬步」');
+  // 需求：主标题下面的描述文字还原回来，但不再写「一年级到高中」的年级字样
+  const sub = d.querySelector('#brand-sub');
+  chk(!!sub && /遗忘曲线/.test(sub.textContent),
+    '主标题下的描述文字已还原（实际「' + (sub ? sub.textContent : '') + '」）');
+  chk(!/年级|至高三|小学|初中|高中/.test(sub.textContent),
+    '描述文字里不带一年级到高中这类年级字样');
   // 需求：顶栏第一行是「跬步 · XX的古诗词」，页面名与「跬步」同一行、同字体
   const brandPage = d.querySelector('#brand-page');
   chk(!!brandPage && /Ashley的古诗词/.test(brandPage.textContent),
@@ -71,6 +77,11 @@ setTimeout(() => {
   chk(d.querySelector('.topbar .back-icon') === null, '顶栏不再有各页自造的返回箭头');
   chk(!!dock.querySelector('[data-nav-go="settings"]'), '「设置」是页签之一，不再只藏在右上角');
   chk(!/📖|⚙|📚/.test(d.querySelector('.app').innerHTML), '页面不再使用 📖 ⚙️ 📚 emoji 图标');
+  // 需求：折叠箭头与列表右侧「›」风格一致 —— 空心描边三角，且能上下切换
+  const arrow = d.querySelector('#btn-all .arrow');
+  chk(!!arrow && !!arrow.querySelector('svg'), '「全部诗词」折叠键用内联 SVG 三角（不再是实心 ▾）');
+  chk(arrow.querySelector('svg').getAttribute('fill') === 'none', '三角是空心的（fill: none + 描边）');
+  chk(!/▾|▴/.test(d.querySelector('#btn-all').textContent), '不再用实心 ▾ / ▴ 字符');
   chk(!!d.querySelector('#settings-modal #input-username'), '设置内含用户名输入框');
   chk(!d.querySelector('.selector.card'), '年级/学期选择不再常驻首页');
   chk(!!d.querySelector('#settings-modal #seg-stage'), '学段选择已移入设置');
@@ -210,12 +221,21 @@ setTimeout(() => {
   // 全部诗词折叠
   d.querySelector('#btn-all').dispatchEvent(new window.Event('click', { bubbles: true }));
   chk(d.querySelector('#all-body').hidden === false, '展开全部诗词');
+  // 需求：展开后箭头朝上（只旋转同一枚空心三角，不换图）
+  chk(d.querySelector('#btn-all').classList.contains('open'), '展开后折叠键进入 open 态（箭头靠 CSS 旋转朝上）');
   chk(d.querySelectorAll('#all-list .item').length === 14, '高三下 14 条全部列出');
   chk(d.querySelectorAll('#stats-row .stat').length === 4, '统计条渲染 4 项');
   // 需求：详情页工具条与小古文对齐一致；标签行、按钮整行居中，底部不被页签压住
   chk(d.querySelectorAll('#m-actions-main > *').length === 3, '详情页第一行：对齐 / 字号 / 注音 三组');
-  chk(d.querySelectorAll('#m-actions-icons > *').length === 2, '详情页第二行：播放组合键 + 译文开关');
-  chk(d.querySelectorAll('#m-read-combo .combo-seg').length === 2, '朗读是「原文 / 译文」组合键');
+  chk(d.querySelectorAll('#m-actions-icons > *').length === 2, '详情页第二行：正文播放键 + 译文开关');
+  // 需求：不再并排「原文 / 译文」两个朗读键 ——
+  // 正文那颗 ▶ / ⏸ 在同一位置切换，译文的朗读键挪到译文框里，展开才出现
+  chk(d.querySelectorAll('#m-actions-icons #m-read-btn').length === 1, '正文只有一个播放键');
+  chk(d.querySelector('#m-read-combo') === null, '不再有两个朗读键组成的「组合键」');
+  chk(d.querySelectorAll('#m-trans-read').length === 1 && d.querySelector('#m-trans #m-trans-read') !== null,
+    '译文朗读键只出现在白话译文框里（展开才可见）');
+  chk(d.querySelector('#m-read-btn .play-glyph') !== null && d.querySelector('#m-read-btn .pause-glyph') !== null,
+    '正文播放键的 ▶ / ⏸ 是同键两态，不是两个按钮');
   chk(d.querySelector('#m-trans') !== null && d.querySelector('#m-trans-text') !== null,
     '详情页有白话译文区');
 
