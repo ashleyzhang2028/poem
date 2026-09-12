@@ -8,8 +8,8 @@
      宋版书用纸偏暖，长时间读诗不刺眼，也有别于现代 UI 的冷白。 */
   --bg: #f6f1e3;            /* 米灰底（素绢） */
   --bg-soft: #fcfaf3;       /* 浅一层（生宣） */
-  /* 卡片：宣纸高光面。90% 不透明，与素绢底之间留一点透气感，
-     既有纸的厚度，又不显得是一块死白。 */
+  /* 卡片：宣纸高光面。90% 不透明，既有纸的厚度，
+     又不至于把底下的素绢底色压成死白。 */
   --card: rgba(255, 254, 250, .90);
   --card-2: #f7f1e1;        /* 次级卡片 */
 
@@ -54,8 +54,7 @@ html, body {
   margin: 0;
   padding: 0;
   background: var(--bg);
-  /* 底色即素绢一色（--bg），不再铺任何图案：页面只有一层米灰纸色，
-     没有祥云、没有暗花。纹样只保留在卡片角隅 / 今日条两处点缀里。 */
+  /* 底色：素绢米灰纯色平铺。页面背景不用任何图案，只留纸色本身 */
   color: var(--ink);
   font-family: var(--font-ui);
   line-height: 1.6;
@@ -346,7 +345,7 @@ html, body {
 }
 .modal-box {
   position: relative;
-  /* 弹层也是一张「卡片」：与全站卡片同为 90% 不透明，底部祥云纹隐隐透出 */
+  /* 弹层也是一张「卡片」：与全站卡片同为 90% 不透明 */
   background: rgba(252, 250, 243, .90);
   width: 100%;
   max-width: 640px;
@@ -926,77 +925,14 @@ body:not(.no-dock) .ios-install-tip { bottom: calc(12px + var(--nav-h)); }
    页面留白同样交给 --nav-h —— 它已经取了播放栏与页签中较高的那个 */
 body.has-audio-player .dock { border-top-color: rgba(240, 205, 124, .28); }
 
-/* ---------- 宋式纹样（只做点缀） ----------
-   页面底不再铺图案：满铺的祥云纹 —— 无论多淡 —— 都会在长文里叠出暗花，
-   诗句该有一张干净的纸。原先那三层满铺的祥云大纹样连同 html, body 上的
-   平铺声明一起移除，对应的三个纹样变量也已删掉，不留「留着不用」的僵尸代码。
+/* 页面底：纯净的素绢米灰，不铺任何图案。
+   曾经铺过落花流水纹 / 球路纹 / 如意云头纹 / 祥云纹等底纹，
+   这几种底纹逐版调淡也仍有「花纸」感，与读诗需要的安静相冲，
+   故整段移除；底色只由变量 --bg 给出，全站统一。 */
 
-   纹样只剩一枚「云纹」（--pattern-cloud），并且只在两处、只露一角：
-   今日背诵条的浮雕与卡片的角隅。 */
-:root {
-  --pattern-cloud: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44' viewBox='0 0 44 44'%3E%3Cg fill='none' stroke='%232f6055' stroke-opacity='.08' stroke-width='1.1' stroke-linecap='round'%3E%3Cpath d='M8 30.5c0-2.6 2.1-4.7 4.7-4.7 1.3 0 2.4.5 3.2 1.3a5 5 0 0 1 8.6-1.6 4.4 4.4 0 0 1 6.1 4 4.3 4.3 0 0 1-.6 2.2'/%3E%3Cpath d='M11.5 35.2c0-1.6 1.3-2.9 2.9-2.9'/%3E%3C/g%3E%3C/svg%3E");
-}
-
-/* 页面底：只留素绢一色，不铺图案（见 :root 的 --bg）。
-   曾经满铺的宋「祥云纹 + 云纹团花」已整体去掉：底纹再淡也会在长文里
-   叠出暗花，诗句需要一个干净的纸面。 */
-html, body {
-  background-image: none;
-}
-
-/* ==========================================================================
-   宋式纹样的用法（点缀，不是贴满）
-   --------------------------------------------------------------------------
-   只保留两处点缀，都是「只在角落露一角」，页面底不再铺任何图案：
-     1. 今日背诵条：右上角一枚云纹（深底上做浮雕，Safari 不支持 mask 时自动不出）
-     2. 卡片：左上 / 右下各一枚角隅纹样，用 mask 让纹样只从角上「透」出来
-   纹样全部是内联 SVG data URI，不请求图片、断网也在。
-   ========================================================================== */
-
-/* 卡片：角隅点缀。默认不显示，只在带 .card-pat 的卡片上出现 */
+/* 卡片：只留纸的底色与投影，角落不叠加任何纹样装饰。
+   卡片需要定位上下文（弹层 / 折叠面板等子元素会用到），这一条保留。 */
 .card { position: relative; }
-.card-pat::before,
-.card-pat::after {
-  content: "";
-  position: absolute;
-  width: 62px;
-  height: 62px;
-  pointer-events: none;
-  opacity: .17;
-  background: var(--pattern-cloud) no-repeat;
-  background-size: 62px 62px;
-  -webkit-mask-image: linear-gradient(135deg, #000 0%, rgba(0, 0, 0, .30) 38%, transparent 68%);
-  mask-image: linear-gradient(135deg, #000 0%, rgba(0, 0, 0, .30) 38%, transparent 68%);
-}
-.card-pat::before { top: 8px; left: 8px; }
-.card-pat::after {
-  bottom: 8px;
-  right: 8px;
-  transform: rotate(180deg);
-}
-
-/* 今日背诵条：深色底上放一枚云纹浮雕（右下角，被圆角裁掉一角） */
-.today-bar::after {
-  content: "";
-  position: absolute;
-  right: -14px;
-  bottom: -18px;
-  width: 116px;
-  height: 116px;
-  pointer-events: none;
-  background-image: var(--pattern-cloud);
-  background-size: 58px 58px;
-  background-repeat: repeat;
-  opacity: .14;
-  filter: brightness(3) saturate(0);
-  -webkit-mask-image: radial-gradient(circle at 70% 70%, #000 0%, rgba(0, 0, 0, .45) 55%, transparent 78%);
-  mask-image: radial-gradient(circle at 70% 70%, #000 0%, rgba(0, 0, 0, .45) 55%, transparent 78%);
-}
-
-/* 折叠面板这类「大卡片」给一点角隅纹样 */
-/* 大卡片上的纹样再淡一档：它只是「纸上的一点暗花」，不该被看见 */
-.all-section.card-pat::before,
-.all-section.card-pat::after { opacity: .13; }
 
 /* ==========================================================================
    按钮分级（宋式：以「描金线 + 纸底」分主次，不靠大色块）
@@ -1071,13 +1007,6 @@ html, body {
 }
 .chips button.active {
   box-shadow: inset 0 0 0 1px rgba(240, 205, 124, .38), 0 2px 8px rgba(35, 75, 66, .18);
-}
-
-/* 顶栏 / 底部页签在深色背景上的对比兜底（浏览器不支持 mask 时纹样不出，不影响布局） */
-@supports not ((-webkit-mask-image: linear-gradient(#000, #000))) {
-  .card-pat::before,
-  .card-pat::after,
-  .today-bar::after { display: none; }
 }
 
 /* ==========================================================================
