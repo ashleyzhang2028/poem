@@ -893,24 +893,18 @@ body.has-install-tip #app {
 .dock-icon svg { width: 22px; height: 22px; display: block; }
 .dock-label { line-height: 1; }
 .dock-item:active { background: rgba(47, 96, 85, .07); }
-.dock-item.active { color: var(--green); }
-/* 选中态：页签顶部一弯缃色弧线（取宋器口沿的弧势），不做方块高亮 */
+
+/* 选中态只靠两样东西表达：图标与文字一起转为天青，图标轻微抬起。
+   （原先文字上方那弯 26×2 的缃色短线读起来像「设置」被加了条下划线，
+   已整段移除；页签自身用 position: relative，方便以后加别的定位元素） */
 .dock-item { position: relative; }
-.dock-item::before {
-  content: "";
-  position: absolute;
-  top: 1px;
-  left: 50%;
-  width: 26px;
-  height: 2px;
-  transform: translateX(-50%) scaleX(0);
-  transform-origin: 50% 50%;
-  border-radius: 2px;
-  background: linear-gradient(90deg, transparent, var(--amber), transparent);
-  opacity: 0;
-  transition: transform .22s cubic-bezier(.2, .8, .3, 1), opacity .22s;
+.dock-item.active { color: var(--green); }
+.dock-item.active .dock-icon { transform: translateY(-1px); }
+.dock-icon { transition: transform .22s cubic-bezier(.2, .8, .3, 1); }
+@media (prefers-reduced-motion: reduce) {
+  .dock-icon { transition: none; }
+  .dock-item.active .dock-icon { transform: none; }
 }
-.dock-item.active::before { transform: translateX(-50%) scaleX(1); opacity: 1; }
 
 /* 有底部页签时，给页面补出底部空间。
    高度不写死：--nav-h 由 js/pwa.js 实测（页签 / 播放栏取较高者 + 引导条），
