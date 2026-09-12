@@ -93,44 +93,31 @@ chk(!!listMetaBlock && /gap:\s*4px;/.test(listMetaBlock[2]), '列表副信息间
 const listMetaGaps = (css.match(/\.item-meta \{([\s\S]*?)\}/g) || []).filter(b => /gap:/.test(b));
 chk(listMetaGaps.every(b => !/gap:\s*8px;/.test(b)), '不再有残留的 8px 副信息间距');
 
-/* ---------------- 宋式纹样与按钮分级（本次重做导航 / 美化 / 换大背景纹样） ---------------- */
-/* 需求：大背景再次换宋式纹样 —— 曲水纹 → 球路纹 → 如意云头纹 → 宋「祥云纹」。
-   祥云纹的核心是「云卷」：一朵云头由三叠云肩 + 平云脚围出，
-   中心一枚螺旋云卷一路向内卷进去，正是宋人所说的「祥云」。 */
-chk(/--pattern-xiangyun:/.test(css), '定义了宋式纹样变量 --pattern-xiangyun（祥云）');
-chk(/--pattern-xiangyun-b:/.test(css), '定义了宋式纹样变量 --pattern-xiangyun-b（错半格的小云脚）');
-chk(/--pattern-yunhua:/.test(css), '定义了宋式纹样变量 --pattern-yunhua（云纹团花）');
-chk(/--pattern-cloud:/.test(css), '定义了宋式纹样变量 --pattern-cloud（云纹）');
-chk(/data:image\/svg\+xml/.test(css), '纹样用内联 SVG data URI，不请求外部图片');
-chk(/祥云纹/.test(css), '样式注释里写明宋「祥云纹」出处');
-// 只在说明「与前几版不同」的历史注释里允许提到旧纹样名，正文/变量里不应再有
-chk(!/--pattern[^:]*:[^;]*球路/.test(css) && !/--pattern[^:]*:[^;]*ivory/.test(css),
-  '纹样变量与说明里不再保留旧版「球路纹」「如意云头纹」的实现');
-chk(!/--pattern-luo:/.test(css) && !/--pattern-ivory:/.test(css),
-  '旧纹样变量 --pattern-luo / --pattern-ivory 已移除');
-// 页面底：三层纹样叠成一个循环大纹样，且必须有透明度，不能压过内容
-const ivoryBlocks = [...css.matchAll(/html, body \{[\s\S]*?\}/g)].map(m => m[0]).filter(b => /--pattern-xiangyun/.test(b));
-chk(ivoryBlocks.length > 0, '页面底铺宋式「祥云纹」');
-chk(ivoryBlocks.some(b => /background-attachment:\s*fixed/.test(b)), '底纹固定，滚动时不跟着内容跑');
-chk(ivoryBlocks.some(b => /background-size:\s*80px 80px/.test(b)), '祥云周期 80px，纹样够大、看得清');
-chk(ivoryBlocks.some(b => /var\(--pattern-yunhua\)/.test(b)), '云纹团花与两组祥云叠在一起铺满');
-// 祥云：由云头弧线 + 云卷螺旋组成，不再是如意云头 / 水波
-const decodedPatterns = [...css.matchAll(/--pattern-[a-z-]+: url\("data:image\/svg\+xml,([^"]+)"\)/g)]
-  .map(m => decodeURIComponent(m[1])).join("\n");
-chk(/<path/.test(decodedPatterns), '纹样用弧线路径画出祥云云头');
-chk(/A7\.2 7\.2 0 0 1/.test(decodedPatterns), '祥云中心用 A 弧命令画出「云卷」螺旋');
-chk(/translate\(160 150\) scale\(2\.6\)/.test(decodedPatterns), '团花由一朵近三倍大的祥云叠出');
-chk(/stroke-opacity='\.13'/.test(decodedPatterns), '祥云主笔画不透明度 13%，整体压得很淡');
-chk(/fill-opacity='\.09'/.test(decodedPatterns), '落花用琥珀色点出，不透明度 9%');
-chk(/stroke-opacity='\.08'/.test(decodedPatterns), '云纹不透明度 8%');
-/* 需求：卡片角隅 / 今日条的纹样同步调淡 */
-chk(/\.card-pat::before,[\s\S]{0,120}?opacity:\s*\.17;/.test(css), '卡片角隅纹样淡到 17%');
-chk(/\.today-bar::after \{[\s\S]{0,400}?opacity:\s*\.14;/.test(css), '今日条云纹淡到 14%');
-// 点缀：卡片角隅 + 今日条云纹，且默认不出现
-chk(/\.card-pat::before/.test(css) && /\.card-pat::after/.test(css), '卡片角隅纹样只在 .card-pat 上出现');
-chk(/mask-image:\s*linear-gradient/.test(css), '角隅纹样用遮罩从角上透出来，不是贴一张图');
-chk(/\.today-bar::after/.test(css), '今日背诵条有云纹点缀');
-chk(/@supports not/.test(css), '不支持 mask 的浏览器自动不出纹样（不影响布局）');
+/* ---------------- 主页面背景（无图案）与按钮分级（Issue #32） ---------------- */
+/* 需求：主页面背景删除祥云图案、不再使用图案背景。
+   页面底只留素绢米灰 --bg 纯色：不铺底纹、不留角隅点缀、不留云纹浮雕，
+   也不用再为纹样写浏览器遮罩兜底。 */
+chk(/html, body \{/.test(css), '样式里有 html, body 的页面底声明');
+chk(!/--pattern/.test(css) || !/background-image:\s*[^;]*var\(--pattern/.test(css),
+  '页面底不再引用任何纹样变量');
+chk(/html, body \{[^}]*background:\s*var\(--bg\)/.test(css), '页面底是素绢一色 --bg，没有图案背景');
+chk(!/html, body \{[^}]*background-image:\s*url/.test(css), '页面底没有任何图案 background-image 铺装');
+chk(!/background-attachment:\s*fixed/.test(css), '不再有平铺的固定底纹');
+chk(/--bg:\s*#f6f1e3/.test(css), '素绢底色 --bg 仍为 #f6f1e3');
+// 满铺大纹样（祥云 / 小云脚 / 云纹团花）连同变量一起移除，不留僵尸代码
+chk(!/--pattern-[a-z-]+:/.test(css), '样式里不再定义任何 --pattern-* 纹样变量');
+chk(!/--pattern-xiangyun/.test(css) && !/--pattern-yunhua/.test(css) && !/--pattern-cloud:/.test(css),
+  '祥云纹 / 云纹团花 / 云纹点缀变量均已删除');
+chk(!/card-pat/.test(css), '卡片角隅纹样类 .card-pat 已移除');
+chk(!/card-pat/.test(html), '页面里不再给卡片挂 card-pat（不显示角隅纹样）');
+chk(!/\.card-pat::before/.test(css) && !/\.card-pat::after/.test(css), '卡片角隅云纹已随之移除');
+chk(!/\.today-bar::after/.test(css), '今日背诵条不再叠云纹浮雕');
+chk(!/mask-image:\s*linear-gradient/.test(css), '不再有角隅纹样的遮罩规则');
+const decorated = [...css.matchAll(/background(-image)?:[^;]*var\(--pattern[^;]*;/g)].map(m => m[0]);
+chk(decorated.length === 0, '没有任何一处再引用纹样变量铺图案');
+chk(!/@supports not/.test(css), '纹样移除后不再需要 @supports not 的遮罩兜底');
+chk(!/祥云/.test(css.replace(/\/\*[\s\S]*?\*\//g, '')), '样式代码里不再残留「祥云」图案');
+chk(/祥云纹/.test(css), '注释里写明被移除的宋「祥云纹」底纹，避免被误加回来');
 // 按钮分级
 chk(/\.btn\.primary\s*\{[^}]*linear-gradient/.test(css), '一级按钮为实底渐变（主操作）');
 chk(/\.ghost-btn\s*\{[\s\S]{0,200}?border:\s*1px solid var\(--line\)/.test(css), '次级按钮为纸底描边');
@@ -232,6 +219,7 @@ chk(/\.reader-progress \{[\s\S]{0,120}?text-align:\s*center/.test(classicCss),
 chk(/\.reader-bar-count \{[\s\S]{0,80}?width:\s*40px/.test(classicCss),
   '右侧等宽占位，保证进度真的落在屏幕正中');
 
+
 /* ---------------- 3. 传统色（宋代） ---------------- */
 chk(/宋代/.test(css), '配色注释标明宋代取色');
 // 天青主色
@@ -240,7 +228,7 @@ chk(/--green:\s*#2f6055/.test(css), '主色为加深后的雨过天青 #2f6055')
 chk(!/--green:\s*#4d7d74/.test(css), '不再使用对比度不足的旧天青 #4d7d74');
 // 宣纸底
 chk(/--bg:\s*#f6f1e3/.test(css), '底色为素绢米灰 #f6f1e3');
-// 需求：页面各个卡片的背景色透明度调整为 90%（留 10% 让祥云纹隐隐透出）
+// 需求：页面各个卡片的背景色透明度保持 90%（不用图案后仍保留纸的层次）
 chk(/--card:\s*rgba\(255, 254, 250, \.90\)/.test(css),
   '卡片背景改为 90% 不透明的宣纸白 rgba(255,254,250,.90)');
 chk(/\.modal-box \{[\s\S]{0,300}?background:\s*rgba\(252, 250, 243, \.90\)/.test(css),
