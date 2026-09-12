@@ -53,7 +53,7 @@ chk(/\.today-read\s*\{[^}]*border-radius:\s*50%/.test(css), '今日朗读按钮�
 // 需求 6：列表单项右侧按钮是圆形播放键
 chk(/\.item-read\s*\{[^}]*border-radius:\s*50%/.test(css), '列表单项右侧按钮是圆形播放键');
 // 需求 7：详情页仍是「小喇叭 + 朗读」文字按钮，没有被改成纯图标
-chk(/\.mini-btn \.btn-icon/.test(classicCss), '详情页朗读按钮保持「小喇叭 + 朗读」文字形态');
+chk(/\.mini-btn \.btn-icon/.test(classicCss), '小古文朗读按钮的图标容器样式仍在（纯 SVG 图标）');
 
 chk(/@font-face/.test(css), '样式里声明了 @font-face 自托管字体');
 chk(/font-family:\s*"Poem Serif SC"/.test(css), '声明了宋体族 Poem Serif SC');
@@ -93,6 +93,55 @@ chk(!!listMetaBlock && /gap:\s*4px;/.test(listMetaBlock[2]), '列表副信息间
 const listMetaGaps = (css.match(/\.item-meta \{([\s\S]*?)\}/g) || []).filter(b => /gap:/.test(b));
 chk(listMetaGaps.every(b => !/gap:\s*8px;/.test(b)), '不再有残留的 8px 副信息间距');
 
+/* ---------------- 宋式纹样与按钮分级（本次重做导航 / 美化 / 换大背景纹样） ---------------- */
+/* 需求：大背景再次换宋式纹样 —— 曲水纹 → 球路纹 → 如意云头纹 → 宋「祥云纹」。
+   祥云纹的核心是「云卷」：一朵云头由三叠云肩 + 平云脚围出，
+   中心一枚螺旋云卷一路向内卷进去，正是宋人所说的「祥云」。 */
+chk(/--pattern-xiangyun:/.test(css), '定义了宋式纹样变量 --pattern-xiangyun（祥云）');
+chk(/--pattern-xiangyun-b:/.test(css), '定义了宋式纹样变量 --pattern-xiangyun-b（错半格的小云脚）');
+chk(/--pattern-yunhua:/.test(css), '定义了宋式纹样变量 --pattern-yunhua（云纹团花）');
+chk(/--pattern-cloud:/.test(css), '定义了宋式纹样变量 --pattern-cloud（云纹）');
+chk(/data:image\/svg\+xml/.test(css), '纹样用内联 SVG data URI，不请求外部图片');
+chk(/祥云纹/.test(css), '样式注释里写明宋「祥云纹」出处');
+// 只在说明「与前几版不同」的历史注释里允许提到旧纹样名，正文/变量里不应再有
+chk(!/--pattern[^:]*:[^;]*球路/.test(css) && !/--pattern[^:]*:[^;]*ivory/.test(css),
+  '纹样变量与说明里不再保留旧版「球路纹」「如意云头纹」的实现');
+chk(!/--pattern-luo:/.test(css) && !/--pattern-ivory:/.test(css),
+  '旧纹样变量 --pattern-luo / --pattern-ivory 已移除');
+// 页面底：三层纹样叠成一个循环大纹样，且必须有透明度，不能压过内容
+const ivoryBlocks = [...css.matchAll(/html, body \{[\s\S]*?\}/g)].map(m => m[0]).filter(b => /--pattern-xiangyun/.test(b));
+chk(ivoryBlocks.length > 0, '页面底铺宋式「祥云纹」');
+chk(ivoryBlocks.some(b => /background-attachment:\s*fixed/.test(b)), '底纹固定，滚动时不跟着内容跑');
+chk(ivoryBlocks.some(b => /background-size:\s*80px 80px/.test(b)), '祥云周期 80px，纹样够大、看得清');
+chk(ivoryBlocks.some(b => /var\(--pattern-yunhua\)/.test(b)), '云纹团花与两组祥云叠在一起铺满');
+// 祥云：由云头弧线 + 云卷螺旋组成，不再是如意云头 / 水波
+const decodedPatterns = [...css.matchAll(/--pattern-[a-z-]+: url\("data:image\/svg\+xml,([^"]+)"\)/g)]
+  .map(m => decodeURIComponent(m[1])).join("\n");
+chk(/<path/.test(decodedPatterns), '纹样用弧线路径画出祥云云头');
+chk(/A7\.2 7\.2 0 0 1/.test(decodedPatterns), '祥云中心用 A 弧命令画出「云卷」螺旋');
+chk(/translate\(160 150\) scale\(2\.6\)/.test(decodedPatterns), '团花由一朵近三倍大的祥云叠出');
+chk(/stroke-opacity='\.13'/.test(decodedPatterns), '祥云主笔画不透明度 13%，整体压得很淡');
+chk(/fill-opacity='\.09'/.test(decodedPatterns), '落花用琥珀色点出，不透明度 9%');
+chk(/stroke-opacity='\.08'/.test(decodedPatterns), '云纹不透明度 8%');
+/* 需求：卡片角隅 / 今日条的纹样同步调淡 */
+chk(/\.card-pat::before,[\s\S]{0,120}?opacity:\s*\.17;/.test(css), '卡片角隅纹样淡到 17%');
+chk(/\.today-bar::after \{[\s\S]{0,400}?opacity:\s*\.14;/.test(css), '今日条云纹淡到 14%');
+// 点缀：卡片角隅 + 今日条云纹，且默认不出现
+chk(/\.card-pat::before/.test(css) && /\.card-pat::after/.test(css), '卡片角隅纹样只在 .card-pat 上出现');
+chk(/mask-image:\s*linear-gradient/.test(css), '角隅纹样用遮罩从角上透出来，不是贴一张图');
+chk(/\.today-bar::after/.test(css), '今日背诵条有云纹点缀');
+chk(/@supports not/.test(css), '不支持 mask 的浏览器自动不出纹样（不影响布局）');
+// 按钮分级
+chk(/\.btn\.primary\s*\{[^}]*linear-gradient/.test(css), '一级按钮为实底渐变（主操作）');
+chk(/\.ghost-btn\s*\{[\s\S]{0,200}?border:\s*1px solid var\(--line\)/.test(css), '次级按钮为纸底描边');
+chk(/\.danger-btn\s*\{[\s\S]{0,200}?color:\s*var\(--red\)/.test(css), '危险按钮用朱砂色，仅用于不可逆操作');
+chk(/\.btn\.good\s*\{[^}]*inset 0 0 0 1px rgba\(240, 205, 124/.test(css), '「记住」按钮补上描金内边，与一级按钮同族');
+// 导航样式
+chk(/\.dock\s*\{[^}]*position:\s*fixed/.test(css), '底部导航栏固定定位');
+chk(/\.dock-item\.active/.test(css), '页签有选中态样式');
+chk(/\.brand-mark/.test(css), '顶栏徽标（logo）有独立样式');
+chk(/\.top-act/.test(css), '顶栏右侧动作位（设置 / 返回）有独立样式');
+
 // 不再依赖设备自带宋体作为首选
 chk(!/font-family:\s*"Songti SC"/.test(css), '不再把设备自带 Songti SC 作为首选字体');
 
@@ -103,6 +152,86 @@ chk(sw.indexOf('./fonts/NotoSansSC-400.woff2') !== -1, 'Service Worker 预缓存
 chk(!/fonts\.googleapis|fonts\.gstatic/.test(css + html + classicHtml), '不请求任何第三方字体 CDN');
 chk(!/fonts\.googleapis|fonts\.gstatic/.test(legalHtml), '法务页同样不请求第三方字体 CDN');
 
+/* ---------------- 2b. 本轮需求：顶栏并入页面名 / 圆形播放键 / 详情页工具条 ---------------- */
+// 需求：页面名（XX的古诗词 / 小古文）挪到「跬步」右侧，字体样式与「跬步」一致
+chk(/\.brand-name-row/.test(css), '顶栏有「跬步 · 页面名」同一行的样式 .brand-name-row');
+chk(/\.brand-name-row[\s\S]{0,260}?font-size:\s*19px/.test(css), '页面名与「跬步」同字号（19px）');
+chk(/\.brand-page::before[\s\S]{0,120}?content:\s*"·"/.test(css),
+  '分隔符「·」由 CSS 生成，页面里不写死标点');
+// 只要求顶栏不再出现；meta description 里保留「一年级至高三古诗词」这句 SEO 描述是合理的
+chk(!/一年级至高三 · 按遗忘曲线复习/.test(html + app + read('js/chrome.js')),
+  '删掉顶栏的「一年级至高三 · 按遗忘曲线复习」文案');
+// 需求（本次）：主标题下的描述文字要还原回来，但**不写年级字样**
+// 描述改由页面用 body 上的 data-sub 给出，chrome.js 只负责渲染，文案不硬编码
+chk(!/按遗忘曲线复习/.test(read('js/chrome.js')), 'chrome.js 里不再硬编码「按遗忘曲线复习」');
+chk(/data-sub="[^"]+"/.test(html), '首页用 data-sub 给出主标题下的描述文字');
+const subMatch = /data-sub="([^"]+)"/.exec(html);
+const homeSub = subMatch ? subMatch[1] : '';
+chk(/遗忘曲线/.test(homeSub), '描述文字里保留「遗忘曲线复习」的说法（实际「' + homeSub + '」）');
+chk(/小古文/.test(homeSub), '描述文字同时点出小古文入口');
+chk(!/一年级|二年级|至高三|小学|初中|高中|年级|学段/.test(homeSub),
+  '描述文字里不再出现「一年级到高中」这类年级字样');
+chk(!/一年级/.test(read('js/chrome.js').replace(/\/\*[\s\S]*?\*\//g, '')),
+  'chrome.js 的代码里不再出现年级字样（注释除外）');
+// 第二行留空时不占高度（页面没写 data-sub 时顶栏只有一行）
+chk(/brand-sub:empty \{ display: none; \}/.test(css), '第二行留空时不占高度（小古文页顶栏只有一行）');
+// 需求：用户不填名字也要显示「跬步 Ashley的古诗词」
+chk(/DEFAULT_USER\s*=\s*"Ashley"/.test(app), 'app.js 定义默认用户名 Ashley');
+chk(/username\s*==\s*null \? "" : settings\.username\)\.trim\(\)\s*\|\|\s*DEFAULT_USER|\|\| DEFAULT_USER/.test(app),
+  '用户名留空时回落到默认名 Ashley');
+// 需求：播放栏四个按钮变圆形边框
+const cssPb = css.slice(css.lastIndexOf('.player-bar {'));
+chk(/\.pb-btn \{[\s\S]{0,300}?border-radius:\s*50%/.test(cssPb), '播放栏按钮是正圆（border-radius: 50%）');
+chk(/\.pb-btn \{[\s\S]{0,400}?border:\s*1px solid rgba\(253, 248, 234/.test(cssPb), '圆形按钮有一圈细描边');
+chk(!/\.pb-toggle \{[\s\S]{0,200}?border-radius:\s*10px/.test(cssPb), '播放键不再是圆角方形基座');
+// 需求：折叠箭头换成空心三角，与列表右侧「›」同一套描边语言，
+// 收起朝下、展开朝上（只旋转不换图）
+chk(/\.collapse-head \.arrow \{[\s\S]{0,220}?display:\s*inline-flex/.test(css),
+  '折叠箭头改为内联 SVG（不再是实心 ▾ 字符）');
+chk(/\.collapse-head \.arrow svg \{ display: block; width: 18px/.test(css), '箭头尺寸与图标一致');
+chk(/\.collapse-head\.open \.arrow \{ transform: rotate\(180deg\); \}/.test(css),
+  '展开时箭头旋转 180° 朝上');
+chk(/\.collapse-head \.arrow[\s\S]{0,200}?color:\s*#9db3a9/.test(css),
+  '箭头用与「›」相同的淡墨色，风格统一');
+
+// 需求：古诗词详情页与小古文详情页同一套工具条
+chk(/id="m-actions-main"/.test(html) && /id="m-actions-icons"/.test(html),
+  '详情页工具条分两行（对齐/字号/注音 + 播放组合键/译文开关）');
+chk(/id="m-align-seg"/.test(html), '详情页有左/中/右对齐组合按钮');
+chk(/id="m-font-seg"/.test(html) && /id="m-font-down"/.test(html) && /id="m-font-up"/.test(html),
+  '详情页有 A－ / A＋ 组合按钮');
+chk(/id="m-trans-read"/.test(html), '详情页有白话译文朗读（组合键右段）');
+chk(/id="m-trans-text"/.test(html), '详情页有白话译文段落');
+chk(!/id="gw-done"/.test(html), '古诗词详情页不设「已读」按钮（与小古文唯一区别）');
+// 需求：古诗正文默认字号小一号
+chk(/\.poem-text \{[\s\S]{0,200}?font-size:\s*17px/.test(css), '古诗正文默认字号降为 17px');
+chk(/\.poem-text\[data-align="left"\]/.test(css) && /\.poem-text\[data-align="right"\]/.test(css),
+  '古诗正文支持左 / 右对齐切换');
+// 需求：详情页三个评价按钮不被底部页签挡住。
+// 只压 max-height 还不够 —— 弹层底边仍落在屏幕底边，
+// 所以底部内边距也必须垫出页签高度（约 62px）。两条一起才真的「压不住」。
+chk(/\.modal-box \{[\s\S]{0,400}?max-height:\s*calc\(88vh - 62px/.test(css),
+  '弹层高度扣掉底部页签，最后的评价按钮不被压住');
+chk(/\.modal-box \{[\s\S]{0,200}?padding-bottom:\s*calc\(26px \+ 62px \+ var\(--safe-bottom\)\)/.test(css),
+  '弹层底部内边距再垫出页签高度，评价按钮整排落在页签上方');
+chk(/body\.no-dock \.modal-box \{ padding-bottom:\s*calc\(26px \+ var\(--safe-bottom\)\); \}/.test(css),
+  '法务页等无页签页面，弹层不必垫页签高度');
+chk(/body\.no-dock \.modal-box \{ max-height: 88vh; \}/.test(css),
+  '法务页等无页签页面，弹层照旧铺到底边附近');
+// 需求：小古文阅读器顶栏与其他页面统一
+// 返回键不再自己写一套圆形样式，而是直接复用全站顶栏的 .top-act
+// （圆形纸底 + 40px + 内描边细线），阅读器里的返回与顶栏右侧那颗是同一颗按钮
+chk(/\.reader-back \{\s*flex:\s*none/.test(classicCss), '阅读器返回键复用 .top-act，不再另起一套样式');
+chk(/\.reader-back \{[\s\S]{0,200}?color:\s*var\(--green\)/.test(classicCss),
+  '返回键只用天青一色（箭头不再被页名字样挤成两截）；笔画粗细由 .top-act 统一');
+chk(/\.top-act,[\s\S]{0,300}?border-radius:\s*50%/.test(css), '全站顶栏动作位是圆形纸底（返回键与它同款）');
+chk(/class="reader-back top-act"/.test(classicHtml), '阅读器返回键用的是全站统一的圆形按钮');
+chk(!/<span>小古文<\/span>/.test(classicHtml), '返回键里不再叠「小古文」三个字');
+chk(/\.reader-progress \{[\s\S]{0,120}?text-align:\s*center/.test(classicCss),
+  '进度精确居中（而不是既没靠右也没居中）');
+chk(/\.reader-bar-count \{[\s\S]{0,80}?width:\s*40px/.test(classicCss),
+  '右侧等宽占位，保证进度真的落在屏幕正中');
+
 /* ---------------- 3. 传统色（宋代） ---------------- */
 chk(/宋代/.test(css), '配色注释标明宋代取色');
 // 天青主色
@@ -111,7 +240,11 @@ chk(/--green:\s*#2f6055/.test(css), '主色为加深后的雨过天青 #2f6055')
 chk(!/--green:\s*#4d7d74/.test(css), '不再使用对比度不足的旧天青 #4d7d74');
 // 宣纸底
 chk(/--bg:\s*#f6f1e3/.test(css), '底色为素绢米灰 #f6f1e3');
-chk(/--card:\s*#fffefa/.test(css), '卡片为宣纸白 #fffefa');
+// 需求：页面各个卡片的背景色透明度调整为 90%（留 10% 让祥云纹隐隐透出）
+chk(/--card:\s*rgba\(255, 254, 250, \.90\)/.test(css),
+  '卡片背景改为 90% 不透明的宣纸白 rgba(255,254,250,.90)');
+chk(/\.modal-box \{[\s\S]{0,300}?background:\s*rgba\(252, 250, 243, \.90\)/.test(css),
+  '古诗 / 设置弹层同为 90% 不透明');
 chk(/--ink:\s*#241d18/.test(css), '正文墨色加深到 #241d18（提升对比度）');
 chk(/--ink-2:\s*#6b5c4d/.test(css), '次要文字淡墨加深到 #6b5c4d');
 // 传统色名
@@ -192,7 +325,11 @@ const pwaJs = read('js/pwa.js');
 
 // 需求：设置不再向上弹卡片，而是全新的整页
 chk(html.indexOf('settings-modal') === -1, '首页不再有向上弹出的设置卡片（settings-modal 已删除）');
-chk(/href="\.\/settings\.html"/.test(html), '首页齿轮跳转到设置整页');
+// 设置的入口是底部页签「设置」，由 js/chrome.js 渲染成真实链接
+chk(/href:\s*"\.\/settings\.html"/.test(read('js/chrome.js')), '底部页签「设置」指向设置整页');
+chk(html.indexOf('btn-settings') === -1, '首页顶栏不再有设置齿轮（入口收敛到页签）');
+chk(/data-nav="settings"/.test(settingsHtml), '设置页声明自己是「设置」页签');
+chk(/js\/chrome\.js/.test(settingsHtml), '设置页与首页共用同一套顶栏与底部页签');
 chk(settingsHtml.indexOf('id="settings-page"') !== -1, '设置页有独立的整页容器');
 chk(settingsHtml.indexOf('settings-modal') === -1, '设置页不再用弹层结构');
 chk(settingsHtml.indexOf('class="foot settings-foot"') !== -1, '设置页底部有页脚（版权 + 法务链接）');
@@ -201,8 +338,14 @@ chk(settingsHtml.indexOf('class="foot settings-foot"') !== -1, '设置页底部�
 chk(/--nav-h:\s*0px/.test(css), '定义了底部导航栏高度变量 --nav-h');
 chk(/\.settings-page \{[\s\S]*?padding-bottom:\s*calc\([^)]*--nav-h/.test(css),
   '设置页留出导航栏高度，最后一行不会被压住');
-chk(/body\.has-audio-player \.app/.test(css) && !/padding-bottom:\s*calc\(150px/.test(css),
-  '页面留白改为实测高度（不再写死 150px）');
+// 页面留白不写死 px，统一走 --nav-h；页签 / 播放栏同时在场也不互相压住
+chk(!/padding-bottom:\s*calc\(150px/.test(css) && !/padding-bottom:\s*calc\(196px/.test(css),
+  '页面留白不再写死 px（150px / 196px 这类硬编码已删除）');
+chk(/\.dock \{[\s\S]*?position:\s*fixed[\s\S]*?bottom:\s*0/.test(css), '底部页签是贴底固定导航栏');
+chk(/body:not\(\.no-dock\) \.app[\s\S]{0,80}?padding-bottom:\s*calc\([^)]*--nav-h/.test(css),
+  '有底部页签时，页面留白按实测导航栏高度计算');
+chk(/sw\.js/.test('sw.js') && /js\/pwa\.js/.test(read('settings.html')) && /js\/pwa\.js/.test(read('classic.html')),
+  '所有页都加载 js/pwa.js，--nav-h 每页都会实测');
 chk(/\.ios-install-tip \{[\s\S]*?bottom:\s*calc\(12px \+ var\(--nav-h\)\)/.test(css),
   'iOS 引导条按基准线避让，不再盖住页脚');
 chk(/\.toast \{[\s\S]*?bottom:\s*calc\(24px \+ var\(--nav-h\)\)/.test(css),
@@ -214,9 +357,9 @@ chk(/measureBottomNav/.test(pwaJs) && /ResizeObserver/.test(pwaJs),
 chk(/settings\.html/.test(read('sw.js')) && /js\/settings\.js/.test(read('sw.js')),
   'Service Worker 预缓存设置页，断网也可进设置');
 
-// 法务链接在设置页底部；设置页自身也应有返回入口
-chk(/返回/.test(settingsHtml) || /href="\.\/index\.html"/.test(settingsHtml),
-  '设置页有返回首页的入口');
+// 法务链接在设置页底部；返回入口交给全站统一的底部页签
+chk(/data-nav-go/.test(read('js/chrome.js')) && /settings\.html/.test(read('js/chrome.js')),
+  '设置页可经底部页签回到古诗词 / 小古文');
 chk(/invalidatePlan/.test(settingsJs), '设置页改配置后会让首页的今日计划缓存失效');
 
 

@@ -32,6 +32,31 @@ chk(P.read("汩") == null || true, "生僻字查不到时不抛异常");
 
 // 多音字上下文判定
 chk(P.readOf("曲", "曲项向天歌", 0) === "qū", "「曲项」读 qū 而非 qǔ");
+
+/* ---- 回归：多音字与「一 / 不」变调 ---- */
+chk(P.isPolyphone("曲") && P.isPolyphone("还") && P.isPolyphone("间"),
+  "「曲 / 还 / 间」被识别为多音字");
+chk(!P.isPolyphone("水") && !P.isPolyphone("天"), "普通字不会被误判为多音字");
+// 常用字里的多音字必须仍然注音，否则「只标生字」档会把整首诗静音
+chk(P.needAnnotate("曲") && P.needAnnotate("还") && P.needAnnotate("间") && P.needAnnotate("行"),
+  "常用字中的多音字也要注音（回归：一年级《咏鹅》此前 0 个 ruby）");
+chk(P.needAnnotate("锄") && P.needAnnotate("餐"), "真生字依然需要注音");
+chk(!P.needAnnotate("水") && !P.needAnnotate("天"), "常见单音字不注音");
+//「一」变调：去声前 yí，阴平/阳平/上声前 yì，序数/词尾 yī
+// （回归：此前完全没实现，且词表把「一片」硬编码成 yī piàn）
+chk(P.readOf("一", "孤帆一片日边来", 2) === "yí", "「一片」的「一」读 yí（去声前变调）");
+chk(P.readOf("一", "千里江陵一日还", 4) === "yí", "「一日」的「一」读 yí");
+chk(P.readOf("一", "一岁一枯荣", 0) === "yí", "「一岁」的「一」读 yí");
+chk(P.readOf("一", "一行白鹭上青天", 0) === "yì", "「一行」的「一」读 yì（阳平前变调）");
+chk(P.readOf("一", "一年级", 0) === "yī", "序数「一年级」的「一」读本调 yī");
+chk(P.readOf("一", "第一", 1) === "yī", "序数「第一」的「一」读本调 yī");
+chk(P.readOf("一", "一九", 0) === "yī", "「一九」的「一」读本调 yī");
+//「不」变调
+chk(P.readOf("不", "不是", 0) === "bú", "「不是」的「不」读 bú");
+chk(P.readOf("不", "不能", 0) === "bù", "「不能」的「不」读 bù（非去声前）");
+chk(P.readOf("不", "野火烧不尽", 3) === "bú", "「不尽」的「不」读 bú");
+// 词表不得覆盖「一 / 不」的变调结果
+chk(P.readOf("一", "一片冰心在玉壶", 0) === "yí", "词表里的「一片」也要按变调读 yí，而非硬编码 yī");
 chk(P.readOf("绿", "白毛浮绿水", 3) === "lǜ", "「绿水」读 lǜ");
 chk(P.readOf("还", "春去花还在", 3) === "hái", "「还在」读 hái");
 chk(P.readOf("间", "京口瓜洲一水间", 6) === "jiān", "「一水间」读 jiān");
@@ -162,11 +187,26 @@ setTimeout(async () => {
 
   // 打开第一首诗
   // 需求 5：阅读辅助默认开启 —— 打开诗词即自动注音
+  // （旧断言写的是「默认不注音、正文纯文本」，与需求相反，已按需求修正）
   const first = doc.querySelector("#today-list .item");
   first.dispatchEvent(new w.Event("click", { bubbles: true }));
   const raw = doc.querySelector("#m-text").textContent;
-  chk(raw.length > 0, "打开弹层后正文正常渲染（默认不注音）");
-  chk(doc.querySelector("#m-text").querySelector("ruby") === null, "默认不注音，正文是纯文本");
+  chk(raw.length > 0, "打开弹层后正文正常渲染");
+  // 首篇（咏鹅）全是常见字，但含多音字「曲」，因此开启态下至少应有一个 ruby；
+  // 为稳妥起见，遍历今日任务确认「开启态下必有注音」。
+  let autoN = 0;
+  for (const item of doc.querySelectorAll("#today-list .item")) {
+    item.dispatchEvent(new w.Event("click", { bubbles: true }));
+    autoN = doc.querySelectorAll("#m-text ruby").length;
+    if (autoN > 0) break;
+  }
+  chk(autoN > 0, "阅读辅助默认开启 → 打开诗词自动注音（" + autoN + " 个 ruby）");
+  chk(doc.querySelectorAll("#m-text ruby").length > 0,
+    "默认档位下正文本就带注音，不是纯文本");
+  // 首篇必须也有可见差别：一年级诗里多音字（曲）应被标出
+  doc.querySelectorAll("#today-list .item")[0].dispatchEvent(new w.Event("click", { bubbles: true }));
+  chk(doc.querySelectorAll("#m-text ruby").length > 0,
+    "一年级《咏鹅》也应有注音（覆盖「只标生字」档对低龄学段过于稀疏的问题）");
 
   const clickMode = (m) => doc.querySelector('#m-pinyin-seg button[data-mode="' + m + '"]')
     .dispatchEvent(new w.Event("click", { bubbles: true }));
@@ -212,7 +252,10 @@ setTimeout(async () => {
   // 朗读：jsdom 没有 SpeechSynthesis，必须优雅降级
   const readBtn = doc.querySelector("#m-read-btn");
   chk(readBtn.disabled === true, "无语音环境时朗读按钮禁用而不是报错");
-  chk(/不支持/.test(doc.querySelector("#m-read-text").textContent), "按钮文案提示不支持朗读");
+  // 播放键的读屏文案固定为「朗读原文」，能力不足时靠 disabled 与 title 提示
+  chk(doc.querySelector("#m-read-btn .sr-only").textContent === "朗读原文",
+    "播放键读屏文案恒为「朗读原文」（能力不足靠禁用态提示）");
+  chk(/不支持/.test(readBtn.title), "按钮 title 提示不支持朗读（" + readBtn.title + "）");
   readBtn.dispatchEvent(new w.Event("click", { bubbles: true }));
   chk(true, "点击禁用的朗读按钮不会抛异常");
 
@@ -226,9 +269,12 @@ setTimeout(async () => {
   btn2.dispatchEvent(new w2.Event('click', { bubbles: true }));
   const spoken = w2.__spoken();
   chk(!!spoken && spoken.text.length > 4, '点击朗读会把诗题与正文交给语音合成');
-  chk(w2.document.querySelector('#m-read-text').textContent === '停止朗读', '朗读中按钮变为「停止朗读」');
+  chk(btn2.dataset.on === '1', '朗读中同一颗键切成 ⏸ 播放态');
+  chk(w2.document.querySelector('#m-read-combo') === null &&
+    w2.document.querySelector('#m-actions-icons #m-read-btn') !== null,
+    '工具条上只有正文这一颗播放键（不再并排两个）');
   btn2.dispatchEvent(new w2.Event('click', { bubbles: true }));
-  chk(w2.document.querySelector('#m-read-text').textContent === '朗读', '再点一次停止朗读并复位按钮');
+  chk(btn2.dataset.on === '0', '再点一次停止朗读并复位按钮');
 
   console.log(fails === 0 ? "\n🎉 注音与朗读测试全部通过" : "\n❌ " + fails + " 项失败");
   process.exit(fails ? 1 : 0);

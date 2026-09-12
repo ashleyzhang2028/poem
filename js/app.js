@@ -20,6 +20,16 @@
   // 应用正式名称（固定，不随用户名变化）
   const APP_NAME = "跬步";
 
+  /* 字号五档：古诗词默认比小古文再小一号（19 → 17），长诗一屏能多读两行 */
+  const FONT_KEY = "poem_font_v1";
+  const FONT_SIZES = [15, 17, 19, 21, 23];
+  const DEFAULT_FONT = 17;
+
+  /* 正文对齐三档：left / center / right，默认居中（与小古文详情页一致） */
+  const ALIGN_KEY = "poem_align_v1";
+  const ALIGNS = ["left", "center", "right"];
+  const DEFAULT_ALIGN = "center";
+
   // 注音档位：off 关闭 ｜ rare 只标生字（默认）｜ all 全文注音
   const PINYIN_KEY = "poem_helper_pinyin_v1";
   const PINYIN_MODES = ["off", "rare", "all"];
@@ -29,6 +39,8 @@
   let todayPlan = [];
   let currentPoem = null;
   let todayKey = "";
+  /** 组合播放键当前读的是哪一段：「原文」/「译文」 */
+  let speakingTarget = "原文";
 
   /* ---------------- 阅读辅助：注音 / 朗读 ---------------- */
   /**
@@ -41,23 +53,35 @@
     return settings.helper !== "off";
   }
 
-  /** 旧版设置没有 classicEntry 字段，默认显示入口 */
-  function classicEntryVisible() {
-    return settings.classicEntry !== "hide";
-  }
-
   /**
    * 当前注音档位。
-   * 兼容旧版布尔开关：旧值 "1" ⇒ 只标生字（新版默认，不再全文注音），"0" ⇒ 关闭。
+   *
+   * 关键：总开关是「权威」。
+   *   关闭 —— 无论此前存过什么档位，一律返回 off，
+   *           否则会出现「阅读辅助 = 关闭」却仍然满屏拼音，开关形同失效；
+   *   开启 —— 用用户手动选过的档位，没选过就用出厂档位「只标生字」。
+   *
+   * 兼容旧版布尔开关：旧值 "1" ⇒ 只标生字（新版默认），"0" ⇒ 视为未选。
    */
   function pinyinMode() {
+    // 总开关关闭 → 一律不注音（权威）
+    if (!helperEnabled()) return "off";
     const v = localStorage.getItem(PINYIN_KEY);
+    // 手动选过的档位优先（「不注音」会同步把总开关关掉，不会走到这里）
     if (PINYIN_MODES.indexOf(v) > -1) return v;
-    return v === "1" ? "rare" : "off";
+    return DEFAULT_PINYIN_MODE;
   }
 
   function setPinyinMode(mode) {
-    localStorage.setItem(PINYIN_KEY, PINYIN_MODES.indexOf(mode) > -1 ? mode : "off");
+    const m = PINYIN_MODES.indexOf(mode) > -1 ? mode : "off";
+    localStorage.setItem(PINYIN_KEY, m);
+    // 两处状态必须一致：选「不注音」= 关掉阅读辅助；选「生字/全文」= 打开阅读辅助
+    const want = m !== "off";
+    if (helperEnabled() !== want) {
+      settings.helper = want ? "on" : "off";
+      Storage.saveSettings(settings);
+      renderGradeChips();
+    }
   }
 
   /** 是否处于注音状态（rare / all 都算开启） */
@@ -81,27 +105,43 @@
     syncPinyinBtn();
   }
 
+
   /* ---------------- 工具 ---------------- */
   function todayKeyStr() {
     const d = new Date();
     return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate();
   }
 
-  /**
-   * 页面主标题：应用正式名固定为「跬步」，填了用户名时展示为「跬步 · 小明的古诗词」
-   * （应用名不因用户名而变，避免出现「XX古诗词」这种花名）
-   */
-  function appTitle() {
+  /** 用户名：留空时用默认名称「Ashley」，顶栏与标题都按它显示 */
+  const DEFAULT_USER = "Ashley";
+
+  function userName() {
     const n = String(settings.username == null ? "" : settings.username).trim();
-    return n ? APP_NAME + " · " + n + "的古诗词" : APP_NAME;
+    return n || DEFAULT_USER;
   }
 
-  /** 把应用名同步到页面标题、品牌标题、iOS 桌面名与 PWA 清单 */
+  /**
+   * 页面主标题：应用正式名固定为「跬步」，用户名永远显示
+   * → 「跬步 · Ashley的古诗词」（用户没填名字时用默认名，不留一段空白）
+   */
+  function appTitle() {
+    return APP_NAME + " · " + userName() + "的古诗词";
+  }
+
+  /**
+   * 把应用名同步到页面标题、顶栏「跬步 · XX的古诗词」、iOS 桌面名与 PWA 清单。
+   *
+   * 顶栏第一行是「跬步 · 当前页名」：首页写「XX的古诗词」，
+   * 小古文页与法务页由各页自己给页名（见 js/chrome.js 的 data-page）。
+   * 用户名留空时用默认名 Ashley，不留空档。
+   */
   function applyAppName() {
     const title = appTitle();
     document.title = title + " · 古诗词背诵";
     const h1 = $("#brand-name");
-    if (h1) h1.textContent = title;
+    if (h1) h1.textContent = APP_NAME;
+    // 第一行页面名：首页是「XX的古诗词」，与「跬步」同字体、同一行
+    syncBrandPage();
 
     $$('meta[name="apple-mobile-web-app-title"]').forEach(function (m) {
       m.setAttribute("content", title);
@@ -125,6 +165,21 @@
         /* 清单更新失败不影响主流程 */
       }
     }
+  }
+
+  /**
+   * 顶栏第一行的页面名：首页写「XX的古诗词」，排在「跬步」右侧。
+   * js/chrome.js 渲染完顶栏会派发 chrome:ready，收到后再写一次，
+   * 否则刷新页面时 app.js 先跑、DOM 里还没有 #brand-page-text，用户名就丢了。
+   */
+  function syncBrandPage() {
+    const el = $("#brand-page-text");
+    const page = $("#brand-page");
+    if (!el) return;
+    el.textContent = userName() + "的古诗词";
+    if (page) page.hidden = false;
+    // 默认名 Ashley 与用户自己的名字在视觉上要做区分：默认名走淡墨
+    el.classList.toggle("is-default", !String(settings.username || "").trim());
   }
 
   function stageOf(grade) {
@@ -286,19 +341,6 @@
         b.classList.toggle("active", (b.dataset.helper === "on") === helperEnabled());
       });
     }
-    const se = $("#seg-classic-entry");
-    if (se) {
-      const hidden = settings.classicEntry === "hide";
-      $$("button", se).forEach(function (b) {
-        b.classList.toggle("active", (b.dataset.entry === "hide") === hidden);
-      });
-    }
-  }
-
-  /** 首页「小古文」入口的显示 / 隐藏（页面里仍可直达 classic.html） */
-  function applyClassicEntry() {
-    const entry = $("#classic-entry");
-    if (entry) entry.hidden = !classicEntryVisible();
   }
 
   /* ---------------- 渲染：今日列表 ---------------- */
@@ -445,8 +487,14 @@
     $("#m-dynasty").textContent = "〔" + p.dynasty + "〕";
     $("#m-author").textContent = p.author;
     $("#m-grade").textContent = gradeName(p.grade) + " " + termName(p.term);
+    $("#m-trans-text").textContent = hasTranslation(p) ? p.translation : "（暂未收录译文）";
     renderPoemText(p);
+    applyFont();
+    applyAlign();
+    syncAlignButtons();
     syncPinyinBtn();
+    showTransBox(false);
+    speakingTarget = "原文";
     syncReadBtn();
 
     const info = [];
@@ -485,6 +533,77 @@
       box.textContent = p.text;
       box.classList.remove("with-pinyin");
     }
+  }
+
+  /* ---------------- 正文字号 / 对齐（与小古文详情页同一套） ---------------- */
+
+  function fontIdx() {
+    const v = Number(localStorage.getItem(FONT_KEY));
+    const i = FONT_SIZES.indexOf(v);
+    return i === -1 ? FONT_SIZES.indexOf(DEFAULT_FONT) : i;
+  }
+
+  function applyFont() {
+    const box = $("#m-text");
+    if (box) box.style.fontSize = FONT_SIZES[fontIdx()] + "px";
+  }
+
+  function changeFont(step) {
+    let i = fontIdx() + step;
+    i = Math.max(0, Math.min(FONT_SIZES.length - 1, i));
+    localStorage.setItem(FONT_KEY, String(FONT_SIZES[i]));
+    applyFont();
+    showToast("字号 " + FONT_SIZES[i] + "px");
+  }
+
+  function alignMode() {
+    const v = localStorage.getItem(ALIGN_KEY);
+    return ALIGNS.indexOf(v) > -1 ? v : DEFAULT_ALIGN;
+  }
+
+  /** data-align 交给 CSS 决定 text-align；块本身的居中由 fit-content + margin auto 保证 */
+  function applyAlign() {
+    const box = $("#m-text");
+    if (box) box.dataset.align = alignMode();
+  }
+
+  function syncAlignButtons() {
+    const mode = alignMode();
+    $$("#m-align-seg button").forEach(function (b) {
+      const on = b.dataset.align === mode;
+      b.classList.toggle("active", on);
+      b.setAttribute("aria-pressed", on ? "true" : "false");
+    });
+  }
+
+  function setAlign(mode) {
+    localStorage.setItem(ALIGN_KEY, ALIGNS.indexOf(mode) > -1 ? mode : DEFAULT_ALIGN);
+    applyAlign();
+    syncAlignButtons();
+    showToast(mode === "left" ? "正文左对齐" : mode === "right" ? "正文右对齐" : "正文居中对齐");
+  }
+
+  /* ---------------- 白话译文 ---------------- */
+  function showTransBox(show) {
+    const btn = $("#m-trans-toggle");
+    const box = $("#m-trans");
+    if (!box) return;
+    box.hidden = !show;
+    if (btn) {
+      btn.dataset.on = show ? "1" : "0";
+      btn.setAttribute("aria-pressed", show ? "true" : "false");
+      btn.title = show ? "隐藏译文" : "显示译文";
+      const t = $("#m-trans-toggle-text");
+      if (t) t.textContent = show ? "隐藏译文" : "显示译文";
+    }
+    // 译文框一开一合，译文那颗播放键跟着出现 / 消失，
+    // 顺带把它的上一态清掉，避免收起再展开时残留「正在播放」
+    if (!show) speakingTarget = speakingTarget === "译文" ? "原文" : speakingTarget;
+    syncReadBtn();
+  }
+
+  function hasTranslation(p) {
+    return !!(p && p.translation && String(p.translation).trim());
   }
 
   /** 同步弹层的注音档位按钮（关闭 / 只标生字 / 全文注音） */
@@ -618,36 +737,82 @@
     });
   }
 
+  /**
+   * 同步两颗播放键（原文 / 译文）。
+   *
+   * 两颗键各自只占一个位置，靠 data-on 在同一处切换 ▶ / ⏸：
+   * 播放中显示暂停，停下回到播放，不会同时并排出现两个图标。
+   * 「译文」那颗跟着译文框走 —— 译文框收着的时候它根本不在页面上，
+   * 所以一篇诗里任何时候只看得到一个播放信号。
+   */
   function syncReadBtn() {
-    const btn = $("#m-read-btn");
-    if (!btn) return;
-    const ok = !!(window.Speech && window.Speech.supported());
-    btn.disabled = !ok;
-    btn.title = ok ? "用手机语音朗读这首诗" : "当前浏览器不支持语音朗读";
-    const on = ok && window.Speech.speaking();
-    $("#m-read-text").textContent = ok ? (on ? "停止朗读" : "朗读") : "不支持朗读";
-    btn.dataset.on = on ? "1" : "0";
-    btn.setAttribute("aria-pressed", on ? "true" : "false");
+    const ok = speechOk();
+    const playing = ok && !!window.Speech.speaking();
+    const keys = [
+      { btn: "#m-read-btn", key: "原文", title: "朗读原文：标题、朝代、作者与正文" },
+      { btn: "#m-trans-read", key: "译文", title: "朗读白话译文" }
+    ];
+    keys.forEach(function (cfg) {
+      const btn = $(cfg.btn);
+      if (!btn) return;
+      const usable = ok && (cfg.key === "原文" || hasTranslation(currentPoem));
+      btn.disabled = !usable;
+      btn.title = !ok
+        ? "当前浏览器不支持语音朗读"
+        : cfg.key === "译文" && !hasTranslation(currentPoem)
+          ? "本篇暂无译文"
+          : cfg.title;
+      const on = playing && speakingTarget === cfg.key;
+      btn.dataset.on = on ? "1" : "0";
+      btn.setAttribute("aria-pressed", on ? "true" : "false");
+    });
+    // #m-read-text 是给读屏软件的固定文案（.sr-only），不随能力/播放态替换文字，
+    // 状态一律由 data-on 切换 ▶ / ⏸ 与 aria-pressed 表达
+    const tLabel = $("#m-trans-read-text");
+    if (tLabel) {
+      tLabel.textContent = playing && speakingTarget === "译文" ? "停止朗读" : "朗读译文";
+    }
   }
 
+  /** 原文键：朗读原文（标题 + 朝代 + 作者 + 正文） */
   function toggleRead() {
-    if (!currentPoem || !window.Speech || !window.Speech.supported()) return;
+    if (!currentPoem || !speechOk()) return;
     if (window.Speech.speaking()) {
       window.Speech.stop();
       showToast("已停止朗读");
     } else {
-      const head = [currentPoem.title, currentPoem.dynasty, currentPoem.author].filter(Boolean).join("，");
-      const ok = window.Speech.speak(head + "。" + currentPoem.text);
+      speakingTarget = "原文";
+      const ok = window.Speech.speak(speechText(currentPoem));
       showToast(ok ? "开始朗读" : "朗读启动失败，请重试");
     }
-    // 立即同步一次（不等语音回调），并用定时器兜底处理引擎延迟
     syncReadBtn();
     setTimeout(syncReadBtn, 60);
     setTimeout(syncReadBtn, 300);
   }
 
+  /** 译文键：只读白话译文，不读原文；译文框没展开时顺手展开 */
+  function toggleTransRead() {
+    if (!currentPoem || !speechOk()) return;
+    if (window.Speech.speaking()) {
+      window.Speech.stop();
+      showToast("已停止朗读");
+    } else {
+      if (!hasTranslation(currentPoem)) {
+        showToast("本篇暂无译文");
+        return;
+      }
+      if ($("#m-trans").hidden) showTransBox(true);
+      speakingTarget = "译文";
+      const ok = window.Speech.speak(currentPoem.translation);
+      showToast(ok ? "开始朗读译文" : "朗读启动失败，请重试");
+    }
+    syncReadBtn();
+    setTimeout(syncReadBtn, 60);
+  }
+
   function closeModal() {
     if (window.Speech) window.Speech.stop();
+    speakingTarget = "原文";
     $("#modal").hidden = true;
     document.body.style.overflow = "";
     currentPoem = null;
@@ -769,6 +934,19 @@
     });
     const readBtn = $("#m-read-btn");
     if (readBtn) readBtn.addEventListener("click", toggleRead);
+    const transReadBtn = $("#m-trans-read");
+    if (transReadBtn) transReadBtn.addEventListener("click", toggleTransRead);
+    const transToggle = $("#m-trans-toggle");
+    if (transToggle) transToggle.addEventListener("click", function () {
+      showTransBox(this.dataset.on !== "1");
+    });
+    const fontUp = $("#m-font-up");
+    if (fontUp) fontUp.addEventListener("click", function () { changeFont(1); });
+    const fontDown = $("#m-font-down");
+    if (fontDown) fontDown.addEventListener("click", function () { changeFont(-1); });
+    $$("#m-align-seg button").forEach(function (b) {
+      b.addEventListener("click", function () { setAlign(b.dataset.align); });
+    });
     if (window.speechSynthesis && window.speechSynthesis.addEventListener) {
       window.speechSynthesis.addEventListener("end", syncReadBtn);
       window.speechSynthesis.addEventListener("cancel", syncReadBtn);
@@ -782,16 +960,6 @@
         // 让开关立刻体现差别：重新渲染当前打开的诗
         resetPinyinMode();
         showToast(helperEnabled() ? "阅读辅助已开启：打开诗词自动注音" : "阅读辅助已关闭：打开诗词为纯文本");
-      });
-    });
-
-    $$("#seg-classic-entry button").forEach(function (b) {
-      b.addEventListener("click", function () {
-        settings.classicEntry = b.dataset.entry === "hide" ? "hide" : "show";
-        Storage.saveSettings(settings);
-        applyClassicEntry();
-        renderGradeChips();
-        showToast(settings.classicEntry === "hide" ? "已隐藏首页小古文入口" : "已显示首页小古文入口");
       });
     });
 
@@ -898,7 +1066,6 @@
     reloadSettings: function () {
       settings = Storage.getSettings();
       applyAppName();
-      applyClassicEntry();
       renderGradeChips();
       // 阅读辅助开关变了要立刻体现：开启回「只标生字」，关闭回「不注音」
       resetPinyinMode();
@@ -926,7 +1093,10 @@
     }, 60 * 1000);
 
     applyAppName();
-    applyClassicEntry();
+    // 顶栏由 js/chrome.js 渲染，渲染完成后要再同步一次第二行
+    document.addEventListener("chrome:ready", function () {
+      applyAppName();
+    });
     renderGradeChips();
     rebuildToday();
     renderAll();

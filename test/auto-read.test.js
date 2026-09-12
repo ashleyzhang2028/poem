@@ -16,6 +16,10 @@
  *   13. 白话译文可单独朗读
  *   15. 今日任务可连读（标题 + 朝代 + 作者 + 正文），单首也可朗读，
  *       小古文索引页可随机连读、读完自动跳下一篇，全程可暂停 / 停止
+ *   16. 详情页（诗词弹层 / 小古文阅读器）暂停后状态不错乱：
+ *       ▶ / ⏸ 是同一颗键的两态，暂停中仍是 ⏸（点它即停），
+ *       再点一次是停止而不是又叠一层朗读
+ *       （部分设备 pause 后 speaking 变 false，靠 Speech.active() 兜底）
  *
  * 运行：node test/auto-read.test.js
  */
@@ -158,17 +162,26 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
     const w4 = boot('index.html', null, true);
     await sleep(400);
     const d4 = w4.document;
+    // 需求：详情页的播放与暂停不再并排 —— 同一颗键上 ▶ / ⏸ 互斥切换；
+    // 译文那颗朗读键挪进白话译文框，展开才出现，不与正文键并排
     const readBtn = d4.querySelector('#m-read-btn');
-    chk(!!readBtn.querySelector('svg'), '详情页朗读按钮仍是「小喇叭」图标');
-    chk(d4.querySelector('#m-read-text').textContent === '朗读', '详情页朗读按钮仍带「朗读」文字');
+    chk(!!readBtn.querySelector('svg'), '详情页朗读按钮是 SVG 播放图标');
+    chk(!!readBtn.querySelector('.play-glyph') && !!readBtn.querySelector('.pause-glyph'),
+      '播放与暂停是同一颗键的两种状态，不并排');
+    chk(d4.querySelector('#m-read-combo') === null, '不再有「原文 / 译文」组合键');
+    chk(!!d4.querySelector('#m-actions-icons #m-read-btn') &&
+      d4.querySelectorAll('#m-actions-icons #m-trans-read').length === 0,
+      '第一排只有一个播放键，译文键不在这一排');
+    chk(d4.querySelector('#m-trans #m-trans-read') !== null, '译文朗读键在译文框里（展开才可见）');
     d4.querySelector('#today-list .item').dispatchEvent(new w4.Event('click', { bubbles: true }));
     readBtn.dispatchEvent(new w4.Event('click', { bubbles: true }));
     await sleep(30);
     chk(w4.speechSynthesis.speaking === true, '详情页朗读按钮照常发声');
-    chk(d4.querySelector('#m-read-text').textContent === '停止朗读', '朗读中按钮文案为「停止朗读」');
+    chk(readBtn.dataset.on === '1', '朗读中同一颗键变成 ⏸（播放态）');
+    chk(readBtn.querySelector('.play-glyph').style.display !== 'inline-flex', '播放中不再显示 ▶');
     readBtn.dispatchEvent(new w4.Event('click', { bubbles: true }));
     await sleep(30);
-    chk(d4.querySelector('#m-read-text').textContent === '朗读', '再点一次停止并恢复「朗读」');
+    chk(readBtn.dataset.on === '0', '再点一次停止并复位按钮');
   }
 
   // 单首朗读
@@ -235,7 +248,7 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
   const w2 = boot('classic.html', null, true);
   await sleep(400);
   const c = w2.document;
-  chk(!!c.querySelector('#gw-random-read'), '索引页有「随机连读」');
+  chk(!!c.querySelector('#gw-random-read'), '索引页有「连读」按钮');
   chk(!!c.querySelector('#rd-prev') && !!c.querySelector('#rd-next'), '阅读器有上一篇/下一篇');
   c.querySelector('#gw-list .item').dispatchEvent(new w2.Event('click', { bubbles: true }));
   await sleep(20);
@@ -271,9 +284,213 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
   await sleep(60);
   chk(c.querySelector('#rd-title').textContent !== firstId, '读完自动跳到下一篇（' + firstId + ' → ' + c.querySelector('#rd-title').textContent + '）');
   w2.Speech.stop();
+  w2.ClassicProse.onSpeechStopped();   // 语音引擎的 cancel 事件不保证回调，手动同步界面
   await sleep(80);
   chk(c.querySelector('#gw-random-read').dataset.on === '0', '停止后随机连读按钮复位');
-  chk(c.querySelector('#gw-random-read-text').textContent === '随机连读', '按钮文案回到「随机连读」');
+  chk(c.querySelector('#gw-random-read-text').textContent === '连读', '按钮文案回到「连读」');
+
+  /* ---- 回归：阅读辅助工具条不得再丢（曾因合并把整条工具条丢了）---- */
+  const rowMain = c.querySelector('#rd-actions-main');
+  const rowIcons = c.querySelector('#rd-actions-icons');
+  chk(!!rowMain && rowMain.children.length === 3, '上一行：对齐 / 字号 / 注音 三组按钮都在');
+  chk(!!c.querySelector('#rd-font-down') && !!c.querySelector('#rd-font-up'),
+    'A－ / A＋ 字号按钮还在（此前被合并丢掉）');
+  chk(!!c.querySelector('#rd-align-seg'), '正文对齐组合按钮在');
+  chk(!!rowIcons && rowIcons.children.length === 3, '下一行：正文朗读键 / 译文开关 / 标记已读 三组都在（实际 ' + (rowIcons ? rowIcons.children.length : 0) + '）');
+  // 需求：播放与暂停不再并排；译文朗读键也不再与正文键并排
+  chk(c.querySelector('#rd-read-combo') === null, '不再有「原文 / 译文」并排的组合键');
+  chk(c.querySelectorAll('#rd-actions-icons #rd-read-btn').length === 1 &&
+    c.querySelectorAll('#rd-actions-icons #rd-trans-read').length === 0,
+    '工具条上只有正文一颗播放键');
+  chk(!!c.querySelector('#rd-read-btn .play-glyph') && !!c.querySelector('#rd-read-btn .pause-glyph'),
+    '▶ 与 ⏸ 在同一颗键上互斥切换');
+  chk(!!c.querySelector('#rd-trans #rd-trans-read'), '译文朗读键在译文框里（展开才出现）');
+  // 固定打开第一篇（人之初），避免受「随机连读」停留位置影响
+  w2.Speech.stop();
+  c.querySelector('#gw-back').dispatchEvent(new w2.Event('click', { bubbles: true }));
+  await sleep(20);
+  c.querySelector('#gw-list .item').dispatchEvent(new w2.Event('click', { bubbles: true }));
+  await sleep(30);
+  chk(c.querySelector('#rd-title').textContent === '人之初', '回到第一篇「人之初」再验证组合键');
+  // 展开译文 → 译文框里那颗朗读键才出现；点它应只读译文
+  c.querySelector('#rd-trans-toggle').dispatchEvent(new w2.Event('click', { bubbles: true }));
+  await sleep(20);
+  chk(!!c.querySelector('#rd-trans #rd-trans-read'), '展开译文后译文朗读键出现');
+  c.querySelector('#rd-trans-read').dispatchEvent(new w2.Event('click', { bubbles: true }));
+  await sleep(30);
+  chk(!/人之初/.test(w2.speechSynthesis._spoken.text), '点「译文」只读译文，不读原文');
+  chk(c.querySelector('#rd-trans').hidden === false, '点「译文」会自动展开译文框');
+  chk(c.querySelector('#rd-trans-read').dataset.on === '1' && c.querySelector('#rd-read-btn').dataset.on === '0',
+    '正在读译文 → 只有译文那颗键点亮');
+  w2.Speech.stop();
+  await sleep(30);
+  c.querySelector('#rd-read-btn').dispatchEvent(new w2.Event('click', { bubbles: true }));
+  await sleep(30);
+  chk(/人之初/.test(w2.speechSynthesis._spoken.text), '点「原文」读的是原文');
+  chk(c.querySelector('#rd-read-btn').dataset.on === '1' && c.querySelector('#rd-trans-read').dataset.on === '0',
+    '正在读原文 → 只有正文那颗键点亮');
+  w2.Speech.stop();
+  await sleep(30);
+  chk(c.querySelectorAll('#rd-trans .trans-read').length === 1,
+    '译文区只有一颗朗读键（不重复、也不与正文键并排）');
+  chk(!!c.querySelector('#gw-done.sr-only') === false && !!c.querySelector('#rd-actions-icons #gw-done'),
+    '「标记已读」并到工具条里（SVG 勾选图标）');
+  // 对齐功能可点、可持久化
+  c.querySelector('#rd-align-seg button[data-align="left"]').dispatchEvent(new w2.Event('click', { bubbles: true }));
+  await sleep(20);
+  chk(c.querySelector('#rd-text').dataset.align === 'left', '点左对齐生效');
+  c.querySelector('#rd-align-seg button[data-align="center"]').dispatchEvent(new w2.Event('click', { bubbles: true }));
+  await sleep(20);
+  chk(c.querySelector('#rd-text').dataset.align === 'center', '点居中对齐生效');
+
+  /* ---- 回归：阅读辅助总开关必须是「权威」，两处状态不得打架 ---- */
+  // 场景 1：总开关开启 + 档位残留 off → 仍应注音（修复前 0 个 ruby，开关看似失效）
+  const w3 = boot('index.html', {
+    poem_recite_settings_v1: JSON.stringify({ grade: 1, term: 1, dailyCount: 5, scope: 'term', helper: 'off' })
+  });
+  await sleep(300);
+  const d3 = w3.document;
+  const openPoemIn = (dd, i) => dd.querySelectorAll('#today-list .item')[i]
+    .dispatchEvent(new w3.Event('click', { bubbles: true }));
+  openPoemIn(d3, 3); // 悯农，含生字
+  await sleep(40);
+  chk(d3.querySelectorAll('#m-text ruby').length === 0,
+    '阅读辅助=关闭 → 打开诗词为纯文本（总开关权威）');
+  d3.querySelector('#modal').hidden = true;
+  // 在弹层里手动点「生字」→ 应自动把总开关打开，两处状态一致
+  openPoemIn(d3, 3);
+  await sleep(20);
+  d3.querySelector('#m-pinyin-seg button[data-mode="rare"]')
+    .dispatchEvent(new w3.Event('click', { bubbles: true }));
+  await sleep(20);
+  chk(d3.querySelectorAll('#m-text ruby').length > 0, '手动选「生字」后立刻出现拼音');
+  chk(JSON.parse(w3.localStorage.getItem('poem_recite_settings_v1')).helper === 'on',
+    '手动选「生字」会同步把「阅读辅助」打开（两处状态一致）');
+  // 设置页上的开关 UI 同步为「开启」（设置已是独立整页 settings.html）
+  const helperPage3 = boot('settings.html', {
+    poem_recite_settings_v1: w3.localStorage.getItem('poem_recite_settings_v1')
+  });
+  helperPage3.document.dispatchEvent(new helperPage3.Event('DOMContentLoaded', { bubbles: true }));
+  await sleep(60);
+  chk(helperPage3.document.querySelector('#seg-helper button[data-helper="on"]').classList.contains('active'),
+    '设置页里的开关 UI 同步为「开启」');
+  d3.querySelector('#modal').hidden = true;
+  // 反向：设置里关掉 → 弹层应为纯文本
+  [...helperPage3.document.querySelectorAll('#seg-helper button')].find(b => b.dataset.helper === 'off')
+    .dispatchEvent(new helperPage3.Event('click', { bubbles: true }));
+  w3.localStorage.setItem('poem_recite_settings_v1', helperPage3.localStorage.getItem('poem_recite_settings_v1'));
+  w3.PoemApp.reloadSettings();
+  openPoemIn(d3, 3);
+  await sleep(40);
+  chk(d3.querySelectorAll('#m-text ruby').length === 0, '设置里关掉后打开诗词恢复纯文本');
+  d3.querySelector('#modal').hidden = true;
+
+  // 场景 2：小古文页的注音也要受总开关约束（修复前 init 只看一次 PinyinKey 是否为 null）
+  const w4 = boot('classic.html', {
+    poem_recite_settings_v1: JSON.stringify({ grade: 1, term: 1, dailyCount: 5, scope: 'term', helper: 'off' }),
+    poem_helper_pinyin_v1: 'all' // 残留「全文注音」，但总开关是关闭
+  });
+  await sleep(300);
+  const c4 = w4.document;
+  c4.querySelector('#gw-list .item').dispatchEvent(new w4.Event('click', { bubbles: true }));
+  await sleep(40);
+  chk(c4.querySelectorAll('#rd-text ruby').length === 0,
+    '总开关关闭时，小古文即使残留「全文注音」档位也不注音（总开关权威）');
+  // 打开总开关 → 立即生效
+  w4.localStorage.setItem('poem_recite_settings_v1',
+    JSON.stringify({ grade: 1, term: 1, dailyCount: 5, scope: 'term', helper: 'on' }));
+  w4.dispatchEvent(new w4.StorageEvent('storage', { key: 'poem_recite_settings_v1' }));
+  await sleep(40);
+  chk(c4.querySelectorAll('#rd-text ruby').length > 0, '总开关打开后小古文立即出现注音');
+  // 在阅读器里选「不注音」→ 应同步关闭总开关
+  c4.querySelector('#rd-pinyin-seg button[data-mode="off"]')
+    .dispatchEvent(new w4.Event('click', { bubbles: true }));
+  await sleep(30);
+  chk(JSON.parse(w4.localStorage.getItem('poem_recite_settings_v1')).helper === 'off',
+    '阅读器里选「不注音」会同步关掉「阅读辅助」（两处状态一致）');
+
+  // 场景 3：一年级诗在默认档位下也必须有注音（修复前 6/12 首为 0）
+  const w5 = boot('index.html', null);
+  await sleep(300);
+  const d5 = w5.document;
+  let grade1WithRuby = 0, total1 = 0;
+  for (const item of d5.querySelectorAll('#today-list .item')) {
+    item.dispatchEvent(new w5.Event('click', { bubbles: true }));
+    total1++;
+    if (d5.querySelectorAll('#m-text ruby').length > 0) grade1WithRuby++;
+    d5.querySelector('#modal').hidden = true;
+  }
+  chk(grade1WithRuby === total1,
+    '一年级今日任务 ' + total1 + ' 首全部有注音（实际 ' + grade1WithRuby + ' 首）');
+
+  // ---- 详情页朗读 / 暂停 / 译文朗读：暂停后按钮状态不错乱、不叠一层朗读 ----
+  {
+    const w5 = boot('classic.html', null, true);
+    await sleep(400);
+    const d5 = w5.document;
+    d5.querySelector('#gw-list .item').dispatchEvent(new w5.Event('click', { bubbles: true }));
+    await sleep(20);
+    const readBtn = d5.querySelector('#rd-read-btn');
+
+    readBtn.dispatchEvent(new w5.Event('click', { bubbles: true }));
+    await sleep(20);
+    chk(w5.speechSynthesis._spoken !== null, '阅读器「朗读」能发起语音');
+    chk(readBtn.dataset.on === '1', '朗读中正文键进入播放态（原地换 ⏸）');
+
+    // 模拟部分设备：暂停后引擎把 speaking 置为 false
+    w5.Speech.pause();
+    w5.speechSynthesis.speaking = false;
+    chk(w5.Speech.paused() === true, '暂停后 Speech.paused() 为 true');
+    chk(w5.Speech.active() === true, '暂停中 Speech.active() 仍为 true（队列/单条都算在跑）');
+    chk(readBtn.dataset.on === '1', '暂停中按钮仍是 ⏸（暂停中再点就是停下来）');
+
+    const log = (w5.speechSynthesis._log = w5.speechSynthesis._log || []);
+    log.length = 0;
+    readBtn.dispatchEvent(new w5.Event('click', { bubbles: true }));
+    await sleep(20);
+    chk(log.length === 0, '暂停中再点「朗读」= 停止，不会再叠一层朗读（新语音 ' + log.length + ' 条）');
+    chk(readBtn.dataset.on === '0', '停止后按钮复位为 ▶');
+    chk(w5.Speech.active() === false, '停止后朗读状态清空');
+
+    // 译文朗读同样：暂停中再点 = 停止
+    d5.querySelector('#rd-trans-toggle').dispatchEvent(new w5.Event('click', { bubbles: true }));
+    await sleep(20);
+    const transBtn = d5.querySelector('#rd-trans-read');
+    transBtn.dispatchEvent(new w5.Event('click', { bubbles: true }));
+    await sleep(20);
+    w5.Speech.pause();
+    w5.speechSynthesis.speaking = false;
+    chk(transBtn.dataset.on === '1', '译文朗读暂停中按钮仍是 ⏸');
+    log.length = 0;
+    transBtn.dispatchEvent(new w5.Event('click', { bubbles: true }));
+    await sleep(20);
+    chk(log.length === 0, '译文朗读暂停中再点 = 停止，不会重读');
+    chk(transBtn.dataset.on === '0', '译文朗读按钮复位为 ▶');
+
+    // 列表单篇播放键同样：暂停中再点 = 停止
+    const itemBtn = d5.querySelector('#gw-list .item-read');
+    itemBtn.dispatchEvent(new w5.Event('click', { bubbles: true }));
+    await sleep(20);
+    w5.Speech.pause();
+    w5.speechSynthesis.speaking = false;
+    log.length = 0;
+    itemBtn.dispatchEvent(new w5.Event('click', { bubbles: true }));
+    await sleep(20);
+    chk(log.length === 0 && w5.Speech.active() === false, '列表播放键在暂停中再点 = 停止');
+
+    // 正在读译文时点「正文」键：切换到读正文，不是「停掉译文就完事」
+    d5.querySelector('#rd-read-btn').dispatchEvent(new w5.Event('click', { bubbles: true }));
+    await sleep(30);
+    let spoken = String(w5.speechSynthesis._spoken.text);
+    chk(spoken.indexOf('人之初') === 0, '正在读译文时点正文键会切去读正文（实际 ' + spoken.slice(0, 12) + '…）');
+    chk(d5.querySelector('#rd-read-btn').dataset.on === '1' && transBtn.dataset.on === '0',
+      '切到正文后只有正文键是 ⏸，译文键复位');
+    // 再点一次正文键 = 停下（不会再叠一层）
+    log.length = 0;
+    d5.querySelector('#rd-read-btn').dispatchEvent(new w5.Event('click', { bubbles: true }));
+    await sleep(30);
+    chk(log.length === 0, '再点正文键 = 停下，不叠一层朗读');
+  }
 
   console.log(fails ? '\n❌ ' + fails + ' 项失败' : '\n🎉 自动朗读 / 阅读辅助测试全部通过');
   process.exit(fails ? 1 : 0);

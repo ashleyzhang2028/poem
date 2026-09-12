@@ -196,41 +196,45 @@
    */
   function measureBottomNav() {
     var bar = document.querySelector(".player-bar");
+    var dock = document.getElementById("site-dock");
     var tip = document.getElementById("ios-install-tip");
-    var keepBar = [];
-    var keepTip = [];
+    var keep = {};
 
     // 先记住当前显隐状态，量完原样恢复（测量过程不该有视觉副作用）
-    if (bar) {
-      keepBar = [bar.hidden, bar.classList.contains("is-hidden"), bar.style.display];
-      bar.hidden = false;
-      bar.classList.remove("is-hidden");
-      bar.style.display = "flex";
+    function show(el, key, display) {
+      if (!el) return;
+      keep[key] = [el.hidden, el.style.display];
+      el.hidden = false;
+      if (display) el.style.display = display;
     }
-    if (tip) {
-      keepTip = [tip.hidden, tip.style.display];
-      tip.hidden = false;
-      tip.style.display = "flex";
-    }
-
-    var navH = 0;
-    if (bar && bar.getBoundingClientRect().height > 0) {
-      navH += bar.getBoundingClientRect().height;
-    }
-    // 引导条叠在播放栏之上，只有它可见时才占高度
-    if (tip && !keepTip[0] && tip.getBoundingClientRect().height > 0) {
-      navH += tip.getBoundingClientRect().height + 8;
+    function restore(el, key) {
+      if (!el || !keep[key]) return;
+      el.hidden = keep[key][0];
+      el.style.display = keep[key][1];
     }
 
-    if (bar) {
-      bar.hidden = keepBar[0];
-      bar.classList.toggle("is-hidden", keepBar[1]);
-      bar.style.display = keepBar[2];
+    show(bar, "bar", "flex");
+    show(dock, "dock", "flex");
+    show(tip, "tip", "flex");
+
+    function h(el) {
+      if (!el) return 0;
+      var r = el.getBoundingClientRect();
+      return r.height > 0 ? r.height : 0;
     }
-    if (tip) {
-      tip.hidden = keepTip[0];
-      tip.style.display = keepTip[1];
+
+    // 底部导航 = 最大的一层（播放栏会盖住页签）+ 叠在上面的引导条。
+    // 页签（dock）与播放栏（player-bar）都是 fixed 贴底，同时出现时取两者较高的那个，
+    // 这样页面留白一定够「最上面那条导航栏」用。
+    var navH = Math.max(h(bar), h(dock));
+    // 引导条叠在导航栏之上，只有它本来就可见时才占高度
+    if (tip && keep.tip && !keep.tip[0]) {
+      navH += h(tip) + 8;
     }
+
+    restore(bar, "bar");
+    restore(dock, "dock");
+    restore(tip, "tip");
 
     return navH;
   }

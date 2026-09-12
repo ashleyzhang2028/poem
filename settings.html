@@ -18,21 +18,10 @@
   <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
   <link rel="stylesheet" href="css/style.css" />
 </head>
-<body>
+<body data-nav="settings" data-page="设置" data-sub="用户名 · 学段年级 · 背诵范围 · 数据">
   <div class="app">
-    <header class="topbar">
-      <div class="brand">
-        <a class="brand-icon back-icon" href="./index.html" title="返回今日背诵" aria-label="返回今日背诵">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M14.5 5 8 12l6.5 7" />
-          </svg>
-        </a>
-        <div class="brand-text">
-          <h1 id="brand-name">设置</h1>
-          <p>用户名 · 学段年级 · 背诵范围 · 数据</p>
-        </div>
-      </div>
-    </header>
+    <!-- 顶部栏：由 js/chrome.js 统一渲染（全站同一套 logo + 跬步 + 页面名） -->
+    <header class="topbar"></header>
 
     <main class="settings-page" id="settings-page">
       <div class="settings-item">
@@ -82,13 +71,6 @@
         <div class="settings-hint" id="helper-hint">开启后，打开诗或古文即自动注音；朗读按钮始终可用</div>
       </div>
       <div class="settings-item">
-        <label>首页小古文入口</label>
-        <div class="seg small" id="seg-classic-entry">
-          <button data-entry="show" class="active">显示</button>
-          <button data-entry="hide">隐藏</button>
-        </div>
-      </div>
-      <div class="settings-item">
         <label>每日背诵数量</label>
         <div class="seg small" id="seg-count">
           <button data-count="3">3 首</button>
@@ -127,5 +109,7 @@
   <script src="js/storage.js"></script>
   <script src="js/manifest-loader.js"></script>
   <script src="js/settings.js"></script>
+  <script src="js/chrome.js"></script>
+  <script src="js/pwa.js"></script>
 </body>
 </html>

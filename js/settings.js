@@ -38,7 +38,6 @@
     term: 1,
     scope: DEFAULT_SCOPE,
     helper: "off",
-    classicEntry: "show",
     dailyCount: 5
   };
 
@@ -97,17 +96,20 @@
     }, 1800);
   }
 
-  /** 页面主标题与品牌标题：与首页同一条规则（跬步 · 小明的古诗词） */
+  /** 页面标题：与首页同一条命名规则（跬步 · 设置） */
   function appTitle() {
-    const n = String(settings.username == null ? "" : settings.username).trim();
-    return n ? APP_NAME + " · " + n + "的古诗词" : APP_NAME;
+    return APP_NAME + " · 设置";
   }
 
+  /**
+   * 顶栏由 js/chrome.js 统一渲染（第一行固定「跬步」，右侧是页面名）。
+   * 这里只负责页面标题与 iOS 桌面名，顶栏文字交给 chrome.js，
+   * 用户名改动后同步刷新一次顶栏右侧的页面名（若是首页语义则跟随用户名）。
+   */
   function applyAppName() {
-    const h1 = $("#brand-name");
-    if (h1) h1.textContent = appTitle();
+    document.title = appTitle() + " · 古诗词背诵";
     const meta = $('meta[name="apple-mobile-web-app-title"]');
-    if (meta) meta.setAttribute("content", "设置 · " + appTitle());
+    if (meta) meta.setAttribute("content", appTitle());
   }
 
   /** 改了配置就让首页的「今日计划」重新生成，否则回到首页仍是旧计划 */
@@ -151,7 +153,6 @@
     mark("#seg-scope", "scope", settings.scope);
     mark("#seg-count", "count", settings.dailyCount);
     mark("#seg-helper", "helper", settings.helper === "on" ? "on" : "off");
-    mark("#seg-classic-entry", "entry", settings.classicEntry === "hide" ? "hide" : "show");
 
     const uInput = $("#input-username");
     if (uInput) uInput.value = String(settings.username == null ? "" : settings.username);
@@ -221,15 +222,6 @@
         saveSettings();
         renderControls();
         showToast(settings.helper === "on" ? "阅读辅助已开启：打开诗词自动注音" : "阅读辅助已关闭：打开诗词为纯文本");
-      });
-    });
-
-    $$("#seg-classic-entry button").forEach(function (b) {
-      b.addEventListener("click", function () {
-        settings.classicEntry = b.dataset.entry === "hide" ? "hide" : "show";
-        saveSettings();
-        renderControls();
-        showToast(settings.classicEntry === "hide" ? "已隐藏首页小古文入口" : "已显示首页小古文入口");
       });
     });
 

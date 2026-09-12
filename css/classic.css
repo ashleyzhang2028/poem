@@ -7,6 +7,12 @@
 .back-icon { text-decoration: none; }
 .back-icon svg { width: 26px; height: 26px; }
 
+/* 已读进度：顶栏下方右对齐的小牌，不占内容宽度 */
+.list-head {
+  display: flex;
+  justify-content: flex-end;
+  margin: -4px 0 10px;
+}
 .count-badge {
   background: var(--green-light);
   color: var(--green);
@@ -24,6 +30,12 @@
   align-items: center;
   margin-bottom: 14px;
 }
+/* 「全部 / 未读」组合按钮：与「不注音 / 生字 / 全文」共用一套外观 */
+.filter-seg {
+  flex: 0 0 auto;
+  border-radius: 12px;
+}
+.filter-seg button { font-size: 13.5px; font-weight: 600; padding: 8px 13px; }
 .search-wrap {
   flex: 1;
   position: relative;
@@ -79,6 +91,10 @@
 }
 .seg-toggle svg { display: block; width: 15px; height: 15px; margin: auto; }
 
+/* 工具栏：搜索框可伸缩，「全部 / 未读」「连读」不压缩，三样排成一行 */
+.seg-toggle { flex: 0 0 auto; }
+.filter-seg { flex: 0 0 auto; }
+
 /* 分组标题 */
 .group-head {
   display: flex;
@@ -132,11 +148,17 @@
 
 /* ---------------- 整页阅读器 ---------------- */
 body.reader-open { overflow: hidden; }
+/* 阅读器打开时收起底部页签：页签与「上一篇 / 下一篇」抢同一块底部空间，
+   留着只会把导航压住。阅读器自己有返回键，不愁回不去。 */
+body.reader-open .dock { display: none; }
+
 
 .reader {
   position: fixed;
   inset: 0;
-  z-index: 60;
+  /* 必须高于底部页签（z-index 65）：否则阅读器打开时页签会浮在正文与
+     「上一篇 / 下一篇」上方，把导航压掉一截、点不着 */
+  z-index: 66;
   background: var(--bg-soft);
   display: flex;
   flex-direction: column;
@@ -154,20 +176,16 @@ body.reader-open { overflow: hidden; }
   background: var(--bg-soft);
   border-bottom: 1px solid var(--line);
 }
-.reader-back,
-.reader-done {
-  border: none;
-  background: transparent;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  padding: 6px 4px;
+/* 返回键：直接复用全站顶栏的 .top-act（圆形纸底 + 40px + 内描边细线），
+   阅读器里的返回与顶栏右侧那颗是同一个组件、同一套样式，
+   只是位置从右侧挪到了左侧；内部只有一个箭头，不放页名文字。 */
+.reader-back {
+  flex: none;
+  padding: 0;
+  color: var(--green);
 }
-.reader-back { color: var(--green); }
-.reader-back svg { width: 20px; height: 20px; }
+.reader-back svg { display: block; width: 20px; height: 20px; margin: auto; }
+/* 进度：左中右三等分，绝对居中对齐，不再是「既没靠右也没居中」 */
 .reader-progress {
   flex: 1;
   text-align: center;
@@ -175,20 +193,17 @@ body.reader-open { overflow: hidden; }
   color: var(--ink-2);
   white-space: nowrap;
 }
-.reader-done {
-  color: var(--ink-2);
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  padding: 7px 12px;
-  background: var(--card);
+/* 右侧与返回键等宽的占位，保证「第 N / 100 篇」真的落在屏幕正中 */
+.reader-bar-count {
+  width: 40px;
+  flex: none;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-3);
+  white-space: nowrap;
 }
-.reader-done .done-icon { display: inline-flex; }
-.reader-done .done-icon svg { width: 16px; height: 16px; }
-.reader-done.is-done {
-  background: var(--green);
-  border-color: var(--green);
-  color: #fdfaf2;
-}
+.reader-bar-count.is-done { color: var(--green); }
 
 .reader-body {
   flex: 1;
@@ -211,27 +226,105 @@ body.reader-open { overflow: hidden; }
 }
 /* 出处 / 朝代 / 作者标签跟着正文居中 */
 .reader-body .meta { justify-content: center; }
+/* 阅读辅助工具条：两行，每行都排成一行不换行，且两行都整行居中
+   （与居中的诗题、正文共用同一条中轴）
+   ＝ 第一行：正文对齐（左/中/右 SVG）· A－/A＋ 组合 · 不注音/生字/全文
+   ＝ 第二行：朗读组合键（原文 / 译文）+ 译文开关 + 标记已读，纯 SVG 图标，文案走屏幕阅读器
+   尺寸与古诗词详情页完全一致，用户在两个页面不用重新学一遍。 */
 .reader-actions {
   display: flex;
   gap: 8px;
-  margin: 14px 0 4px;
-  flex-wrap: wrap;
+  margin: 14px 0 0;
+  flex-wrap: nowrap;
+  align-items: center;
+  /* 两行工具条都整行居中：与居中的诗题、正文共用同一条中轴 */
+  justify-content: center;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
 }
-.mini-btn {
+.reader-actions::-webkit-scrollbar { display: none; }
+.reader-actions.icon-row {
+  margin-top: 8px;
+  margin-bottom: 4px;
+  overflow: visible;
+}
+.mini-btn,
+.reader-actions .seg.mini {
+  /* 统一高度与圆角，四组按钮排在一起像同一条工具条 */
+  min-height: 34px;
   border: 1px solid var(--line);
   background: var(--card);
   color: var(--green);
-  border-radius: 999px;
-  padding: 7px 14px;
+  border-radius: 10px;
+  padding: 6px 12px;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  box-sizing: border-box;
 }
-.mini-btn.ghost { color: var(--ink-2); padding: 7px 12px; }
+.mini-btn.ghost { color: var(--ink-2); }
 .mini-btn[data-on="1"] { background: var(--green); border-color: var(--green); color: #fdfaf2; }
+/* 译文开关 / 标记已读：圆形纯图标键，与播放栏的圆形环同一语言。
+   这里同时用了「flex 居中 + line-height: 0」，因为 SVG 默认是行内元素，
+   行盒的基线留白会把图标顶偏 —— 这正是此前三个图标看着不居中的原因。 */
+.icon-row > .mini-btn {
+  padding: 0;
+  width: 38px;
+  min-height: 38px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+  line-height: 0;
+}
+.icon-row > .mini-btn svg,
+.icon-row > .mini-btn .btn-icon {
+  display: block;
+  width: 17px;
+  height: 17px;
+  margin: 0 auto;
+}
+/* 状态全靠图标表达：▶ 未开始 / 朗读中、⏸ 播放中、译文开关「划掉文档」= 收起译文。
+   同一颗键上 ▶ 与 ⏸ 是互斥的两种状态，永远只显示其中一个。 */
+#rd-read-btn .pause-glyph,
+#rd-trans-toggle .pause-glyph { display: none; }
+#rd-read-btn[data-on="1"] .play-glyph,
+#rd-trans-toggle[data-on="1"] .play-glyph { display: none; }
+#rd-read-btn[data-on="1"] .pause-glyph,
+#rd-trans-toggle[data-on="1"] .pause-glyph { display: inline-flex; }
+
+/* --------------------------------------------------------------------------
+   朗读按钮：一篇文章只有一个播放信号
+   --------------------------------------------------------------------------
+   原先「原文」「译文」并排并进一颗胶囊，看着仍像两个按钮；
+   译文本身又带一个朗读键，页面上一度出现三个播放信号。
+   现在：
+     · 工具条上只有正文这一颗 ▶ / ⏸（data-on 原地切换，不并排）；
+     · 译文那颗挪到译文标题右侧，跟着译文框一起出现 / 消失。
+   两颗键的图标族、圆角、字号完全一致，位置不同、形态相同。
+   -------------------------------------------------------------------------- */
+/* 「标记已读」：点亮前是描边勾，已读后整颗高亮 */
+.done-btn { color: var(--ink-2); }
+.done-btn.is-done { background: var(--green); border-color: var(--green); color: #fdfaf2; }
+/* 对齐组合按钮：三个 SVG 图标（左 / 中 / 右），选中态与注音档位一致 */
+.icon-seg button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 9px;
+}
+.icon-seg button svg { display: block; width: 16px; height: 16px; }
+
+/* 字号组合按钮：A－ / A＋ 同宽，与注音档位同款 */
+.font-seg button {
+  font-size: 12.5px;
+  font-weight: 700;
+  padding: 5px 9px;
+  min-width: 0;
+}
+.font-seg button + button { border-left: 1px solid var(--line); }
 
 .reader-text {
   /* 正文字体由 --font-poem 统一指定（思源宋体，缺字回退系统宋体） */
@@ -246,6 +339,11 @@ body.reader-open { overflow: hidden; }
   text-align: center;
   letter-spacing: 1.4px;
 }
+/* 对齐方式交给用户选（工具条上的三个 SVG 图标）：
+   古诗居中好看；《少年中国说》一类长古文左对齐更好读。
+   右对齐时文字也靠右，整块仍保持居中不越界。 */
+.reader-body .reader-text[data-align="left"] { text-align: left; }
+.reader-body .reader-text[data-align="right"] { text-align: right; }
 
 .trans-box {
   background: var(--bg);
@@ -273,11 +371,13 @@ body.reader-open { overflow: hidden; }
   color: var(--ink-3);
 }
 
-/* 上一篇 / 下一篇：读完直接翻，不必退回索引页 */
+/* 上一篇 / 下一篇：读完直接翻，不必退回索引页。
+   阅读器是整屏 fixed 的滚动区，底部播放栏（约 84px）与底部页签会浮在内容之上，
+   导航若不留白就会被压掉三成、点不着，所以底部留足 118px。 */
 .reader-nav {
   display: flex;
   gap: 10px;
-  margin: 26px 0 4px;
+  margin: 26px 0 calc(118px + var(--safe-bottom));
 }
 .reader-nav button {
   flex: 1;
@@ -320,24 +420,29 @@ body.reader-open { overflow: hidden; }
   margin-bottom: 8px;
 }
 .trans-head h3 { margin: 0; }
+/* 译文朗读键：贴在译文标题右侧。它是**纯文字 + ▶ / ⏸**（同一位置切换），
+   不是组合键，也没有第二颗并排；展开译文才出现，收起即消失。 */
 .trans-read {
   border: 1px solid var(--line);
   background: var(--card);
   color: var(--green);
   border-radius: 999px;
-  padding: 5px 11px;
+  padding: 5px 12px;
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   white-space: nowrap;
 }
-.trans-read svg { width: 13px; height: 13px; }
+.trans-read .btn-icon { display: inline-flex; align-items: center; justify-content: center; flex: none; }
+.trans-read .btn-icon svg { display: block; width: 13px; height: 13px; margin: 0; }
+.trans-read .pause-glyph { display: none; }
+.trans-read[data-on="1"] .play-glyph { display: none; }
+.trans-read[data-on="1"] .pause-glyph { display: inline-flex; }
 .trans-read[data-on="1"] { background: var(--green); border-color: var(--green); color: #fffdf8; }
 .trans-read:disabled { opacity: .5; cursor: not-allowed; }
-
 @media (min-width: 700px) {
   .reader-body { padding-top: 28px; }
 }
@@ -396,4 +501,19 @@ body.reader-open { overflow: hidden; }
 .mini-btn:disabled { opacity: .5; cursor: not-allowed; }
 
 /* 阅读器内的注音档位：复用全局 .seg.mini，这里只压一下字号便于窄屏并排 */
-.reader-actions .seg.mini button { font-size: 12.5px; padding: 5px 8px; }
+.reader-actions .seg.mini { padding: 2px; }
+.reader-actions .seg.mini button {
+  font-size: 12.5px;
+  padding: 5px 9px;
+  border-radius: 8px;
+}
+/* 窄屏（iPhone SE 一类 320~380px）：两组控件要挤进同一行，
+   字号与内边距各收一档，必要时整行横向滑动，绝不换行错位。 */
+@media (max-width: 380px) {
+  .reader-actions { gap: 5px; }
+  .reader-actions .seg.mini { padding: 2px; }
+  .reader-actions .seg.mini button { padding: 5px 7px; font-size: 11.5px; }
+  .icon-seg button svg { width: 15px; height: 15px; }
+  .icon-row > .mini-btn { width: 36px; min-height: 36px; }
+  .mini-btn { font-size: 12.5px; }
+}

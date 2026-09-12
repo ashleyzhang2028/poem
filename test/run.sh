@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # 运行全部测试
 #
-# 分八层，逐层递进：
+# 分九层，逐层递进：
 #   1. 调度算法单元测试  —— 纯 Node，无外部依赖
 #   2. UI 集成测试       —— jsdom，缺少则临时安装
 #   3. 小古文学习库测试  —— jsdom，100 篇数据 + 阅读器 + 已读标记
@@ -11,7 +11,6 @@
 #   7. 主题专项测试      —— 纯 Node，文案 / Web Font / 传统色 / favicon
 #   8. 自动朗读测试      —— jsdom + 假语音引擎：朗读全部 / 单首 / 随机连读 / 暂停停止
 #   9. PWA / iOS 兼容测试 —— 真实浏览器（puppeteer），缺少依赖则跳过
-#   8. PWA / iOS 兼容测试 —— 真实浏览器（puppeteer），缺少依赖则跳过
 set -e
 cd "$(dirname "$0")/.."
 
@@ -68,6 +67,7 @@ else
   (cd "$TMP" && npm i jsdom --silent --no-fund --no-audit >/dev/null 2>&1) || { echo "跳过注音朗读测试（无法安装 jsdom）"; exit 0; }
   NODE_PATH="$TMP/node_modules" node test/helper.test.js
 fi
+
 
 echo ""
 echo "=== 主题专项测试（文案 / 字体 / 配色 / 图标）==="

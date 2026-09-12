@@ -8,7 +8,9 @@
      宋版书用纸偏暖，长时间读诗不刺眼，也有别于现代 UI 的冷白。 */
   --bg: #f6f1e3;            /* 米灰底（素绢） */
   --bg-soft: #fcfaf3;       /* 浅一层（生宣） */
-  --card: #fffefa;          /* 卡片：宣纸高光面（与底色拉开明度差） */
+  /* 卡片：宣纸高光面。90% 不透明（留 10% 让底部祥云纹隐隐透出），
+     既有纸的厚度，又不把新纹样完全盖死。 */
+  --card: rgba(255, 254, 250, .90);
   --card-2: #f7f1e1;        /* 次级卡片 */
 
   /* 主色：雨过天青（汝窑）。原色 #4d7d74 在米底上对比度不足，
@@ -52,11 +54,8 @@ html, body {
   margin: 0;
   padding: 0;
   background: var(--bg);
-  /* 宋代绢本：暖白底 + 极淡的天青/琥珀晕染，像摊开的一页宣纸 */
-  background-image:
-    radial-gradient(1100px 520px at 12% -8%, rgba(47, 96, 85, .07), transparent 62%),
-    radial-gradient(900px 460px at 92% 4%, rgba(165, 92, 25, .06), transparent 60%);
-  background-attachment: fixed;
+  /* 底色见文件末尾「宋式纹样」一节：
+     素绢底 + 宋「祥云纹」平铺，晕染由 body::before 单独铺一层 */
   color: var(--ink);
   font-family: var(--font-ui);
   line-height: 1.6;
@@ -68,28 +67,6 @@ html, body {
   padding: 0 14px 40px;
 }
 
-/* 顶部 */
-.topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  /* 加上刘海/灵动岛高度，避免标题被状态栏压住 */
-  padding: calc(18px + var(--safe-top)) 2px 12px;
-}
-.brand { display: flex; align-items: center; gap: 10px; }
-/* 图标统一用内联 SVG，颜色跟随文字色，缩放不失真 */
-.brand-icon { display: inline-flex; color: var(--green); }
-.brand-icon svg { width: 26px; height: 26px; }
-.brand-text h1 {
-  font-size: 19px;
-  margin: 0;
-  font-weight: 600;
-}
-.brand-text p {
-  margin: 0;
-  font-size: 12px;
-  color: var(--ink-2);
-}
 .icon-btn {
   border: none;
   background: var(--card);
@@ -305,7 +282,6 @@ html, body {
 
 /* 全部诗词折叠 */
 .all-section { margin-top: 14px; }
-.classic-entry { margin-top: 14px; }
 .collapse-head {
   width: 100%;
   border: none;
@@ -329,12 +305,17 @@ html, body {
   border-radius: 999px;
   font-weight: 600;
 }
+/* 折叠箭头：空心描边三角，与列表右侧「›」同色同笔画；
+   收起朝下、展开朝上（只旋转，不换图，动作连续不跳） */
 .collapse-head .arrow {
   margin-left: auto;
-  color: var(--ink-2);
+  display: inline-flex;
+  color: #9db3a9;
   transition: transform .2s;
 }
+.collapse-head .arrow svg { display: block; width: 18px; height: 18px; }
 .collapse-head.open .arrow { transform: rotate(180deg); }
+.collapse-head:hover .arrow { color: var(--green); }
 .collapse-body { padding-top: 12px; }
 
 .stats-row {
@@ -365,10 +346,14 @@ html, body {
 }
 .modal-box {
   position: relative;
-  background: var(--bg-soft);
+  /* 弹层也是一张「卡片」：与全站卡片同为 90% 不透明，底部祥云纹隐隐透出 */
+  background: rgba(252, 250, 243, .90);
   width: 100%;
   max-width: 640px;
-  max-height: 88vh;
+  /* 底部三页签是浮层（约 62px），弹层若铺到屏幕底边，最下面的
+     「忘记 / 模糊 / 记住」会被页签压掉一截。这里把弹层整体上收：
+     高度扣掉页签与安全区，底边正好落在页签上方。 */
+  max-height: calc(88vh - 62px - var(--safe-bottom));
   overflow-y: auto;
   border-radius: 22px 22px 0 0;
   padding: 22px 20px 26px;
@@ -376,9 +361,18 @@ html, body {
   box-shadow: 0 -6px 30px rgba(0, 0, 0, .18);
 }
 .modal-box.small { border-radius: 22px; max-width: 420px; margin: auto; animation: pop .2s; }
+/* 但设置面板走的是「内容自适应高度 + 超出滚动」，
+   不需要底部那 62px 的页签垫高（垫了会把面板顶得过高、上下都不好按）。
+   对齐上面那条 `body.no-dock .modal-box`：小弹层只避开 iPhone 底部横条。 */
+.modal-box.small { padding-bottom: calc(26px + var(--safe-bottom)); }
 @media (min-width: 700px) {
   .modal { align-items: center; }
-  .modal-box { border-radius: 22px; max-height: 86vh; }
+  .modal-box { border-radius: 22px; max-height: calc(86vh - 62px - var(--safe-bottom)); }
+}
+/* 法务页等深页没有页签，弹层照旧铺到接近底边 */
+body.no-dock .modal-box { max-height: 88vh; }
+@media (min-width: 700px) {
+  body.no-dock .modal-box { max-height: 86vh; }
 }
 .modal-close {
   position: absolute;
@@ -414,18 +408,22 @@ html, body {
 .tag.ghost { background: var(--bg); color: var(--ink-2); }
 
 .poem-text {
-  font-size: 19px;
+  /* 默认字号比小古文再小一号（19 → 17），由 JS 按用户字号覆盖 */
+  font-size: 17px;
   line-height: 1.5;
   white-space: pre-wrap;
   word-break: break-word;
   /* 正文块自身居中：pre 默认盒宽会吃满容器，max-width: fit-content + margin auto 后整块居中 */
   max-width: fit-content;
   margin: 16px auto;
-  /* 行内文字也居中：诗句不满一行（如绝句的起承转合）时按最长句对齐 */
+  /* 行内文字也居中：诗句不满一行（如绝句的起承转合）时按最长句对齐；
+     用户可在工具条上改成左 / 右对齐（data-align 覆盖） */
   text-align: center;
   color: #22302a;
   letter-spacing: 1.5px;
 }
+.poem-text[data-align="left"] { text-align: left; }
+.poem-text[data-align="right"] { text-align: right; }
 
 .modal-progress {
   background: var(--bg);
@@ -570,14 +568,22 @@ html, body {
   padding-bottom: calc(40px + var(--safe-bottom));
 }
 
-/* 底部弹层避开 Home Indicator */
+/* 底部弹层避开 iPhone 底部横条 + 底部页签。
+   `.modal-box` 这条规则与上面的 `.modal-box { padding: ... }` 是同一优先级、
+   晚出现，所以它说了算：底部内边距 = 页签高度（约 62px）+ 一段呼吸留白。
+   这样一来，弹层最下面的「忘记 / 模糊 / 记住」不再被底部页签压掉一截，
+   页签也不会浮在按钮上挡住点击。 */
 .modal-box {
-  padding-bottom: calc(26px + var(--safe-bottom));
+  padding-bottom: calc(26px + 62px + var(--safe-bottom));
 }
+body.no-dock .modal-box { padding-bottom: calc(26px + var(--safe-bottom)); }
 
-/* 中间弹出的弹层（设置）也留安全边距 */
+/* 中间弹出的弹层（设置）也留安全边距。
+   它有自适应的 max-height，内容永远滚得上来，所以不必像底部弹层那样
+   再垫一层页签高度，只避开 iPhone 底部横条即可（否则弹层会被顶得偏高）。 */
 .modal-box.small {
   max-height: calc(86 * var(--app-vh));
+  padding-bottom: calc(26px + var(--safe-bottom));
   margin-bottom: calc(12px + var(--safe-bottom));
 }
 
@@ -682,16 +688,17 @@ body.has-install-tip #app {
    设置整页（settings.html）
    --------------------------------------------------------------------------
    设置不再是「从底部向上弹出的卡片」，而是一个独立页面：
-     · 结构 / 手势 / 返回逻辑与首页一致，不会出现弹层与列表叠在一起
-     · 页面主体撑满可视高度（flex），页脚（版权 + 法务链接）压在最底部
-     · 底部留白统一由 --nav-h 决定，任何底部导航栏都压不到最后一行
+     · 与首页共用同一套顶栏 / 底部页签（js/chrome.js），只是当前页签不同
+     · 页面主体撑满可视高度，内容不足时页脚（版权 + 法务链接）压在最底部
+     · 底部留白统一由 --nav-h 决定，底部导航栏压不到最后一行
    ========================================================================== */
 .settings-page {
   /* 顶部栏之外的可视区域：内容不足时由页脚占住最底部 */
-  min-height: calc(100vh - 150px);
-  min-height: calc(100 * var(--app-vh) - 150px);
-  /* 依次留出底部安全区与导航栏高度 */
-  padding-bottom: calc(24px + var(--safe-bottom) + var(--nav-h));
+  min-height: calc(100vh - 200px);
+  min-height: calc(100 * var(--app-vh) - 200px);
+  /* 底部导航栏（页签 / 播放栏）的实测高度已含 iPhone 横条安全区，
+     这里一次留够即可，页脚不会被压住也不会多出一条空白 */
+  padding-bottom: calc(24px + var(--nav-h));
 }
 .settings-page .settings-item:first-child { margin-top: 4px; }
 
@@ -704,38 +711,6 @@ body.has-install-tip #app {
 .settings-foot .foot-copy,
 .settings-foot .foot-links { font-size: 12px; }
 
-/* 设置页顶部栏：与首页同款，只把左侧图标换成返回箭头 */
-.back-icon { text-decoration: none; }
-.back-icon svg { width: 22px; height: 22px; }
-
-/* ==========================================================================
-   课外必背小古文入口（首页）
-   ========================================================================== */
-.classic-entry {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  text-decoration: none;
-  color: inherit;
-  border-left: 4px solid var(--blue);
-  transition: transform .15s, box-shadow .15s;
-}
-.classic-entry:active { transform: scale(.985); }
-.classic-icon { display: inline-flex; color: var(--blue); flex: none; }
-.classic-icon svg { width: 24px; height: 24px; }
-.classic-main { flex: 1; min-width: 0; }
-.classic-title {
-  display: block;
-  font-size: 16px;
-  font-weight: 600;
-}
-.classic-sub {
-  display: block;
-  font-size: 12.5px;
-  color: var(--ink-2);
-  margin-top: 2px;
-}
-
 /* 设置里的多行说明 */
 .settings-tip p { margin: 0; }
 .settings-tip p + p { margin-top: 6px; }
@@ -744,46 +719,7 @@ body.has-install-tip #app {
    弹层正文的阅读辅助：注音 / 朗读
    ========================================================================== */
 
-.modal-tools {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin: 10px 0 2px;
-}
-.modal-tools .mini-btn {
-  border: 1px solid var(--line);
-  background: var(--card);
-  color: var(--green);
-  border-radius: 999px;
-  padding: 7px 14px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-}
-.modal-tools .mini-btn[data-on="1"] { background: var(--green); border-color: var(--green); color: #fdfaf2; }
-.modal-tools .mini-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-.modal-tools .mini-btn .btn-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 5px;
-}
-.modal-tools .mini-btn .btn-icon svg {
-  display: block;
-  width: 15px;
-  height: 15px;
-  margin: auto;
-}
-.modal-tools .mini-btn[data-on="1"] .wave1 { opacity: 1; animation: wavePulse2 1.1s ease-in-out .18s infinite; }
-.modal-tools .mini-btn[data-on="1"] .wave2 { opacity: 1; animation: wavePulse2 1.1s ease-in-out infinite; }
-.modal-tools .mini-btn[data-on="0"] .wave1,
-.modal-tools .mini-btn[data-on="0"] .wave2 { opacity: .38; }
-.modal-tools .mini-btn:disabled { opacity: .5; cursor: not-allowed; }
-@keyframes wavePulse2 { 0%, 100% { opacity: .3 } 50% { opacity: 1 } }
+/* 详情页的工具条样式见文件末尾「古诗词详情页的阅读辅助工具条」一节 */
 
 /* 注音正文 */
 .poem-text.with-pinyin {
@@ -852,13 +788,16 @@ body.has-install-tip #app {
     "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
 }
 
-/* 页面标题 */
-.brand-text h1 {
+/* 页面标题 / 列表诗题 / 朝代作者 / 正文：统一走宋体（--font-poem） */
+.brand-name-row,
+.modal-head h2,
+.poem-text,
+.reader-body h2,
+.reader-text,
+.tag {
   font-family: var(--font-poem);
-  font-weight: 600;
-  letter-spacing: 2px;
 }
-
+.brand-name-row { font-weight: 600; }
 /* 列表里的诗题 / 朝代 / 作者 */
 .item-title {
   font-family: var(--font-poem);
@@ -870,24 +809,393 @@ body.has-install-tip #app {
   letter-spacing: .4px;
 }
 
-/* 详情弹层：诗题 + 朝代/作者标签 + 正文 */
-.modal-head h2,
-.poem-text,
-.reader-body h2,
-.reader-text {
-  font-family: var(--font-poem);
-}
-.tag {
-  font-family: var(--font-poem);
-}
-
 /* 「本年级本学期全部诗词」等折叠标题也保持宋体，风格统一 */
 .collapse-head,
-.classic-title,
 .group-name {
   font-family: var(--font-poem);
   letter-spacing: .6px;
 }
+
+/* 顶栏右侧动作：圆形纸底按钮，与徽标同族 */
+.top-act,
+.icon-btn {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border-radius: 50%;
+  border: none;
+  background: var(--card);
+  color: var(--ink-2);
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1px rgba(214, 200, 173, .7), var(--shadow);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  transition: transform .15s, color .18s, box-shadow .18s;
+}
+/* 首页右侧占位：右上角不再放设置齿轮（底部页签已有「设置」），
+   留一个不可见占位，顶栏的左右两栏对齐关系不变 */
+.top-act-spacer { width: 40px; height: 40px; flex: none; }
+.top-act .top-act-icon { display: inline-flex; }
+.top-act svg, .icon-btn svg { width: 20px; height: 20px; display: block; }
+.top-act:hover, .icon-btn:hover { color: var(--green); }
+.top-act:active, .icon-btn:active { transform: scale(.94); }
+
+/* ---------- 底部三页签 ---------- */
+.dock {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 65;
+  display: flex;
+  align-items: stretch;
+  padding: 6px calc(6px + var(--safe-right)) calc(6px + var(--safe-bottom)) calc(6px + var(--safe-left));
+  background: linear-gradient(180deg, rgba(252, 250, 243, .96) 0%, rgba(247, 241, 227, .99) 100%);
+  backdrop-filter: blur(8px);
+  border-top: 1px solid rgba(165, 92, 25, .18);
+  box-shadow: 0 -6px 22px rgba(74, 58, 38, .10);
+  animation: dockIn .26s cubic-bezier(.2, .8, .3, 1);
+}
+@keyframes dockIn { from { transform: translateY(12px); opacity: .4 } to { transform: none; opacity: 1 } }
+/* 顶边描金细线，与底部播放栏同一语言 */
+.dock::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(240, 205, 124, .7), transparent);
+}
+.dock-item {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 7px 4px 6px;
+  border-radius: 12px;
+  color: var(--ink-3);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: .6px;
+  cursor: pointer;
+  transition: color .18s, background .18s;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.dock-icon { display: inline-flex; }
+.dock-icon svg { width: 22px; height: 22px; display: block; }
+.dock-label { line-height: 1; }
+.dock-item:active { background: rgba(47, 96, 85, .07); }
+.dock-item.active { color: var(--green); }
+/* 选中态：页签顶部一弯缃色弧线（取宋器口沿的弧势），不做方块高亮 */
+.dock-item { position: relative; }
+.dock-item::before {
+  content: "";
+  position: absolute;
+  top: 1px;
+  left: 50%;
+  width: 26px;
+  height: 2px;
+  transform: translateX(-50%) scaleX(0);
+  transform-origin: 50% 50%;
+  border-radius: 2px;
+  background: linear-gradient(90deg, transparent, var(--amber), transparent);
+  opacity: 0;
+  transition: transform .22s cubic-bezier(.2, .8, .3, 1), opacity .22s;
+}
+.dock-item.active::before { transform: translateX(-50%) scaleX(1); opacity: 1; }
+
+/* 有底部页签时，给页面补出底部空间。
+   高度不写死：--nav-h 由 js/pwa.js 实测（页签 / 播放栏取较高者 + 引导条），
+   窄屏、大字号、iPhone 横条都不会差几像素把最后一行压住。 */
+body:not(.no-dock) .app,
+body:not(.no-dock) #app {
+  padding-bottom: calc(24px + var(--nav-h));
+}
+body:not(.no-dock) .foot { padding-bottom: 4px; }
+body:not(.no-dock) .toast { bottom: calc(24px + var(--nav-h)); }
+body:not(.no-dock) .ios-install-tip { bottom: calc(12px + var(--nav-h)); }
+/* 底部播放栏出现时，页签让路（播放栏 z-index 更高）；
+   页面留白同样交给 --nav-h —— 它已经取了播放栏与页签中较高的那个 */
+body.has-audio-player .dock { border-top-color: rgba(240, 205, 124, .28); }
+
+/* ---------- 宋式纹样 ----------
+   大背景 = 宋「祥云纹」（祥云 / 云卷）：
+   一朵祥云由云头（三叠云肩 + 平云脚）与中心一枚「云卷」螺旋组成 ——
+   云卷是祥云纹区别于其他云纹的关键：外圈顺着向内一路卷进去，
+   正是宋人织锦、漆器与《营造法式》彩画上「祥云朵朵」的写法，
+   取「祥云瑞气、从容不迫」之意。
+   与前几版（落花流水纹 / 球路纹 / 如意云头纹）刻意不同：这一版的核心是
+   「螺旋云卷 + 三叠云肩」，退远看只剩一层淡淡的墨气。
+
+   三层叠成一个循环大纹样（周期 320px）：
+     1) 祥云（一）  80×80   正心一朵祥云 + 云卷
+     2) 祥云（二）  80×80   错开半格的两朵小云脚，与上组相衔成满铺
+     3) 云纹团花    320×320 一朵近三倍大的祥云 + 气圈 + 三点落花
+   描边不透明度 4%~13%：静看是一张有暗花的宋锦，
+   退开一臂远则只剩纸的温度，不影响正文可读性。 */
+:root {
+  --pattern-xiangyun: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='80'%20height='80'%20viewBox='0%200%2080%2080'%3E%3Cg%20fill='none'%20stroke='%232f6055'%20stroke-width='1.5'%20stroke-linecap='round'%20stroke-linejoin='round'%20stroke-opacity='.13'%3E%3Cpath%20d='M11%2055%20C10.7%2053.6%208.4%2047.6%209%2045%20C9.6%2042.4%2013.1%2038.7%2015%2037%20C16.9%2035.3%2020.4%2032.7%2022%2033%20C23.6%2033.3%2024.9%2039.6%2026%2039%20C27.1%2038.4%2028.3%2031%2030%2029%20C31.7%2027%2035.9%2025.9%2038%2025%20C40.1%2024.1%2043%2023.1%2045%2023%20C47%2022.9%2050.3%2022.7%2052%2024%20C53.7%2025.3%2055.6%2031.6%2057%2032%20C58.4%2032.4%2060.3%2027.4%2062%2027%20C63.7%2026.6%2067.1%2028%2069%2029%20C70.9%2030%2073.6%2032%2075%2034%20C76.4%2036%2078.7%2040.3%2079%2043%20C79.3%2045.7%2079.4%2050.9%2077%2053%20C74.6%2055.1%2067.3%2057.1%2062%2058%20C56.7%2058.9%2045.7%2058.9%2040%2059%20C34.3%2059.1%2026.1%2059.6%2022%2059%20C17.9%2058.4%2012.6%2055.6%2011%2055'/%3E%3Cpath%20d='M40%2030.5%20A7.2%207.2%200%200%201%2040%2049.2%20A4.5%204.5%200%200%201%2040%2037.5%20A2.9%202.9%200%200%201%2040%2044.9%20A1.8%201.8%200%200%201%2040%2040.2'/%3E%3C/g%3E%3C/svg%3E");
+  /* 祥云（二）：与上组错开半格的两朵小云脚，铺满空当，成「云气相逐」 */
+  --pattern-xiangyun-b: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='80'%20height='80'%20viewBox='0%200%2080%2080'%3E%3Cg%20fill='none'%20stroke='%232f6055'%20stroke-width='1.3'%20stroke-linecap='round'%20stroke-linejoin='round'%20stroke-opacity='.09'%3E%3Cg%20transform='translate(40%2014)%20scale(.62)%20translate(-25%20-41)'%3E%3Cpath%20d='M16%2046%20C15.8%2045%2013.4%2039.6%2014%2038%20C14.6%2036.4%2019%2033.6%2021%2033%20C23%2032.4%2028.1%2032.4%2030%2033%20C31.9%2033.6%2035.5%2036.4%2036%2038%20C36.5%2039.6%2035.4%2044.6%2034%2046%20C32.6%2047.4%2027.2%2049%2025%2049%20C22.8%2049%2017.1%2046.4%2016%2046'/%3E%3C/g%3E%3Cg%20transform='translate(40%2078)%20scale(.62)%20translate(-25%20-41)'%3E%3Cpath%20d='M16%2046%20C15.8%2045%2013.4%2039.6%2014%2038%20C14.6%2036.4%2019%2033.6%2021%2033%20C23%2032.4%2028.1%2032.4%2030%2033%20C31.9%2033.6%2035.5%2036.4%2036%2038%20C36.5%2039.6%2035.4%2044.6%2034%2046%20C32.6%2047.4%2027.2%2049%2025%2049%20C22.8%2049%2017.1%2046.4%2016%2046'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  /* 云纹团花：一朵近三倍大的祥云 + 云脚 + 气圈，落在四方连续的中心 */
+  --pattern-yunhua: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='320'%20height='320'%20viewBox='0%200%20320%20320'%3E%3Cg%20fill='none'%20stroke='%232f6055'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Cg%20transform='translate(160%20150)%20scale(2.6)%20translate(-40%20-42)'%20stroke-opacity='.07'%20stroke-width='.58'%3E%3Cpath%20d='M11%2055%20C10.7%2053.6%208.4%2047.6%209%2045%20C9.6%2042.4%2013.1%2038.7%2015%2037%20C16.9%2035.3%2020.4%2032.7%2022%2033%20C23.6%2033.3%2024.9%2039.6%2026%2039%20C27.1%2038.4%2028.3%2031%2030%2029%20C31.7%2027%2035.9%2025.9%2038%2025%20C40.1%2024.1%2043%2023.1%2045%2023%20C47%2022.9%2050.3%2022.7%2052%2024%20C53.7%2025.3%2055.6%2031.6%2057%2032%20C58.4%2032.4%2060.3%2027.4%2062%2027%20C63.7%2026.6%2067.1%2028%2069%2029%20C70.9%2030%2073.6%2032%2075%2034%20C76.4%2036%2078.7%2040.3%2079%2043%20C79.3%2045.7%2079.4%2050.9%2077%2053%20C74.6%2055.1%2067.3%2057.1%2062%2058%20C56.7%2058.9%2045.7%2058.9%2040%2059%20C34.3%2059.1%2026.1%2059.6%2022%2059%20C17.9%2058.4%2012.6%2055.6%2011%2055'/%3E%3Cpath%20d='M40%2030.5%20A7.2%207.2%200%200%201%2040%2049.2%20A4.5%204.5%200%200%201%2040%2037.5%20A2.9%202.9%200%200%201%2040%2044.9%20A1.8%201.8%200%200%201%2040%2040.2'/%3E%3C/g%3E%3Cpath%20d='M160%20236%20V272'%20stroke-opacity='.06'%20stroke-width='1.4'/%3E%3Cpath%20d='M130%20254h60'%20stroke-opacity='.06'%20stroke-width='1.4'/%3E%3Ccircle%20cx='160'%20cy='156'%20r='84'%20stroke-opacity='.04'%20stroke-width='1.2'/%3E%3C/g%3E%3Cg%20fill='%23a55c19'%20fill-opacity='.09'%3E%3Ccircle%20cx='160'%20cy='96'%20r='2.2'/%3E%3Ccircle%20cx='142'%20cy='210'%20r='2.2'/%3E%3Ccircle%20cx='178'%20cy='210'%20r='2.2'/%3E%3C/g%3E%3C/svg%3E");
+  --pattern-cloud: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44' viewBox='0 0 44 44'%3E%3Cg fill='none' stroke='%232f6055' stroke-opacity='.08' stroke-width='1.1' stroke-linecap='round'%3E%3Cpath d='M8 30.5c0-2.6 2.1-4.7 4.7-4.7 1.3 0 2.4.5 3.2 1.3a5 5 0 0 1 8.6-1.6 4.4 4.4 0 0 1 6.1 4 4.3 4.3 0 0 1-.6 2.2'/%3E%3Cpath d='M11.5 35.2c0-1.6 1.3-2.9 2.9-2.9'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+/* 页面底：素绢底 + 宋「祥云纹」满铺 */
+html, body {
+  background-image: var(--pattern-xiangyun), var(--pattern-xiangyun-b), var(--pattern-yunhua);
+  background-repeat: repeat, repeat, repeat;
+  background-attachment: fixed, fixed, fixed;
+  background-size: 80px 80px, 80px 80px, 320px 320px;
+  background-position: 0 0, 40px 40px, 0 0;
+}
+
+/* ==========================================================================
+   宋式纹样的用法（点缀，不是贴满）
+   --------------------------------------------------------------------------
+   三处出现，都是「只在角落露一角」：
+     1. 页面底：宋「祥云纹 + 云纹团花」满铺（见文件开头的 --pattern-*）
+     2. 今日背诵条：右上角一枚云纹（深底上做浮雕，Safari 不支持 mask 时自动不出）
+     3. 卡片：左上 / 右下各一枚角隅纹样，用 mask 让纹样只从角上「透」出来
+   纹样全部是内联 SVG data URI，不请求图片、断网也在。
+   ========================================================================== */
+
+/* 卡片：角隅点缀。默认不显示，只在带 .card-pat 的卡片上出现 */
+.card { position: relative; }
+.card-pat::before,
+.card-pat::after {
+  content: "";
+  position: absolute;
+  width: 62px;
+  height: 62px;
+  pointer-events: none;
+  opacity: .17;
+  background: var(--pattern-cloud) no-repeat;
+  background-size: 62px 62px;
+  -webkit-mask-image: linear-gradient(135deg, #000 0%, rgba(0, 0, 0, .30) 38%, transparent 68%);
+  mask-image: linear-gradient(135deg, #000 0%, rgba(0, 0, 0, .30) 38%, transparent 68%);
+}
+.card-pat::before { top: 8px; left: 8px; }
+.card-pat::after {
+  bottom: 8px;
+  right: 8px;
+  transform: rotate(180deg);
+}
+
+/* 今日背诵条：深色底上放一枚云纹浮雕（右下角，被圆角裁掉一角） */
+.today-bar::after {
+  content: "";
+  position: absolute;
+  right: -14px;
+  bottom: -18px;
+  width: 116px;
+  height: 116px;
+  pointer-events: none;
+  background-image: var(--pattern-cloud);
+  background-size: 58px 58px;
+  background-repeat: repeat;
+  opacity: .14;
+  filter: brightness(3) saturate(0);
+  -webkit-mask-image: radial-gradient(circle at 70% 70%, #000 0%, rgba(0, 0, 0, .45) 55%, transparent 78%);
+  mask-image: radial-gradient(circle at 70% 70%, #000 0%, rgba(0, 0, 0, .45) 55%, transparent 78%);
+}
+
+/* 折叠面板这类「大卡片」给一点角隅纹样 */
+/* 大卡片上的纹样再淡一档：它只是「纸上的一点暗花」，不该被看见 */
+.all-section.card-pat::before,
+.all-section.card-pat::after { opacity: .13; }
+
+/* ==========================================================================
+   按钮分级（宋式：以「描金线 + 纸底」分主次，不靠大色块）
+   --------------------------------------------------------------------------
+   一级 .btn.primary　　 天青实底，描金细边 —— 一次只该出现一个
+   二级 .btn.secondary　 宣纸底 + 天青描边 —— 常规操作
+   三级 .btn.ghost-btn　 只留一条界行细线 —— 次要操作（导出 / 导入）
+   危险 .btn.danger-btn　 朱砂，仅用于「清空进度」这类不可逆操作
+   ========================================================================== */
+
+/* 通用：所有按钮共用一套过渡与按下反馈，手感一致 */
+.btn,
+.mini-btn,
+.seg-toggle,
+.group-random,
+.reader-nav button,
+.settings-input {
+  transition: transform .14s, box-shadow .18s, background .18s, border-color .18s, color .18s;
+}
+.btn:active,
+.mini-btn:active,
+.seg-toggle:active,
+.reader-nav button:active { transform: scale(.97); }
+
+/* 一级按钮：实底 + 描金内边，主操作一眼可见 */
+.btn.primary {
+  color: #fdfaf2;
+  background: linear-gradient(180deg, var(--celadon) 0%, var(--green) 55%, var(--green-dark) 100%);
+  border-color: var(--green-dark);
+  box-shadow: inset 0 0 0 1px rgba(240, 205, 124, .32), 0 2px 10px rgba(35, 75, 66, .22);
+}
+.btn.primary:active { box-shadow: inset 0 0 0 1px rgba(240, 205, 124, .32); }
+/* 记住 / 忘记 / 模糊：三档评价沿用旧配色，但补上「描金内边 + 顶部高光」的质感 */
+.btn.good {
+  background: linear-gradient(180deg, var(--celadon) 0%, var(--green) 60%, var(--green-dark) 100%);
+  border-color: var(--green-dark);
+  box-shadow: inset 0 0 0 1px rgba(240, 205, 124, .3), 0 2px 10px rgba(35, 75, 66, .20);
+}
+.btn.fuzzy {
+  background: linear-gradient(180deg, #fbeedb 0%, var(--amber-light) 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .7);
+}
+.btn.bad {
+  background: linear-gradient(180deg, #fbeae7 0%, var(--red-light) 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .7);
+}
+/* 二 / 三级按钮：纸底描边，按下去的反馈比主按钮轻一档 */
+.ghost-btn {
+  background: var(--card);
+  border: 1px solid var(--line);
+  color: var(--green);
+  border-radius: 10px;
+  font-weight: 600;
+}
+.ghost-btn:hover { border-color: var(--green); }
+.danger-btn {
+  background: linear-gradient(180deg, #fbeae7 0%, var(--red-light) 100%);
+  border: 1px solid #ecd2cd;
+  color: var(--red);
+  border-radius: 10px;
+  font-weight: 600;
+}
+/* 圆形图标按钮（列表里的播放键）：按下时天青实底，与播放栏同一语言 */
+.item-read,
+.today-read,
+.toolbar .seg-toggle { will-change: transform; }
+.item-read:active { box-shadow: inset 0 0 0 1px rgba(47, 96, 85, .25); }
+
+/* 设置里的组合按钮（学段 / 学期 / 范围 / 数量）：选中态加一层描金，层次更清楚 */
+.seg button.active {
+  box-shadow: inset 0 0 0 1px rgba(165, 92, 25, .18), 0 1px 4px rgba(0, 0, 0, .06);
+}
+.chips button.active {
+  box-shadow: inset 0 0 0 1px rgba(240, 205, 124, .38), 0 2px 8px rgba(35, 75, 66, .18);
+}
+
+/* 顶栏 / 底部页签在深色背景上的对比兜底（浏览器不支持 mask 时纹样不出，不影响布局） */
+@supports not ((-webkit-mask-image: linear-gradient(#000, #000))) {
+  .card-pat::before,
+  .card-pat::after,
+  .today-bar::after { display: none; }
+}
+
+/* ==========================================================================
+   全站导航：两行式顶栏
+   --------------------------------------------------------------------------
+   原先三页各写一份顶栏，标题 / 返回键 / 右侧按钮都不一样，用户容易迷路。
+   现在统一成同一套：
+     第一行  〔徽标〕 跬步 · 小古文        ← logo + 「跬步 · 当前页名」同一行、同一字体
+     第二行  （留白时的补充说明，可空）
+   右侧一个动作位（内页是回首页 / 阅读器打开时是关闭），与徽标等高居中；
+   页面之间的跳转交给底部三页签（古诗词 / 小古文 / 设置）。
+   ========================================================================== */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  /* 加上刘海 / 灵动岛高度，左右两栏共用同一条中轴 */
+  padding: calc(14px + var(--safe-top)) 2px 12px;
+}
+.brand { display: flex; align-items: center; gap: 11px; min-width: 0; }
+
+/* 徽标：篆意「步」字印，压在描金细圈的圆形「瓷盘」上 */
+.brand-mark,
+.brand-icon {
+  width: 42px;
+  height: 42px;
+  flex: none;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--green);
+  background: radial-gradient(circle at 32% 26%, #ffffff 0%, var(--card-2) 62%, #f1e7cf 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, .9),
+    inset 0 0 0 2.5px rgba(165, 92, 25, .16),
+    var(--shadow);
+  text-decoration: none;
+}
+.brand-icon svg { width: 27px; height: 27px; }
+
+/* 品牌区：logo +「跬步 · 页面名」排在同一行基线上。
+   页面名与「跬步」同字号、同字重、同字距（不再是小一号的副标题），
+   分隔符「·」由 ::before 生成，字号小一号、颜色淡一档。
+   只有「跬步」两个字时，整行自然收敛到左侧，不再留一段突兀的空档。 */
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+.brand-name-row {
+  display: flex;
+  align-items: baseline;
+  min-width: 0;
+  font-family: var(--font-poem);
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  line-height: 1.3;
+}
+.brand-text h1 {
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+  line-height: inherit;
+  margin: 0;
+  white-space: nowrap;
+}
+.brand-page {
+  display: inline-flex;
+  align-items: baseline;
+  min-width: 0;
+}
+.brand-page::before {
+  content: "·";
+  margin: 0 6px;
+  font-size: .82em;
+  color: var(--ink-3);
+}
+.brand-page[hidden] { display: none; }
+.brand-page-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 46vw;
+}
+/* 第二行：留白时不占高度（顶栏永远只有一行，除非页面自己填了说明） */
+.brand-text p,
+.brand-sub {
+  margin: 0;
+  font-size: 11.5px;
+  letter-spacing: 1.2px;
+  color: var(--ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 52vw;
+}
+.brand-sub:empty { display: none; }
 
 /* ==========================================================================
    底部播放栏（首页 / 小古文页共用）
@@ -895,8 +1203,10 @@ body.has-install-tip #app {
    视觉取向：宋式美学的「音乐播放器」
     · 贴底占满整宽（不再用 margin 浮起、不再有圆角），像底部弹出的播放器
     · 配色沿用汝窑天青 + 缃色（进度环同色），深色底 + 极细描金分隔线
-    · 不用「正在朗读 / 暂停 / 继续 / 下一篇 / 停止」文字，
-      播放状态全部交给图标；主信息是当前这一首，下一首降一级显示
+    · 四个控制键统一为**圆形环**，与列表播放键、今日播放键同一语言
+      （主键缃色实底，其余细环描边），不再是圆角方形基座
+    · 不用「正在朗读 / 暂停 / 继续 / 下一篇 / 停止」文字，状态全交给图标：
+      主信息是当前这一首，下一首降一级显示
    ========================================================================== */
 .player-bar {
   position: fixed;
@@ -906,7 +1216,7 @@ body.has-install-tip #app {
   z-index: 70;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   /* 高度加大：底栏更从容，手指也好按；底部垫上 iPhone 横条安全区 */
   padding: 14px calc(18px + var(--safe-left)) calc(16px + var(--safe-bottom)) calc(18px + var(--safe-right));
   background: linear-gradient(180deg, #26514a 0%, #1c3f38 100%);
@@ -946,49 +1256,48 @@ body.has-install-tip #app {
 }
 .pb-next[hidden] { display: none; }
 
-.pb-controls {
-  flex: none;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-/* 图标按钮：圆角方形基座，主按钮描金填色，其余为描边式，层级分明 */
+/* 四个控制键与页面其它播放键同一语言：正圆 + 一圈细环 */
 .pb-btn {
-  border: none;
-  background: transparent;
-  color: #f6f1e3;
+  flex: none;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid rgba(253, 248, 234, .38);
+  background: rgba(253, 248, 234, .07);
+  color: rgba(246, 241, 227, .92);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  border-radius: 10px;
-  transition: transform .14s, background .18s, color .18s;
+  transition: transform .14s, background .18s, color .18s, border-color .18s;
 }
-.pb-btn svg { display: block; width: 20px; height: 20px; }
+.pb-btn svg { display: block; width: 17px; height: 17px; margin: auto; }
 .pb-glyph { display: inline-flex; align-items: center; justify-content: center; }
 .pb-btn:active { transform: scale(.92); }
 .pb-btn:disabled { opacity: .3; cursor: not-allowed; }
+.pb-btn:disabled:active { transform: none; }
 
-/* 上一首 / 下一首 / 停止：低一级的描边按钮 */
-.pb-side {
-  width: 38px;
-  height: 38px;
-  background: rgba(253, 248, 234, .07);
-  box-shadow: inset 0 0 0 1px rgba(253, 248, 234, .22);
-  color: rgba(246, 241, 227, .9);
-}
-.pb-side svg { width: 17px; height: 17px; }
-
-/* 播放 / 暂停：主按钮，缃色（播放器上的「高光」） */
+/* 播放 / 暂停：主按钮，缃色实底圆环，一眼看出「按这里」 */
 .pb-toggle {
   width: 46px;
   height: 46px;
+  border-color: var(--gold);
   background: var(--gold);
   color: #234b42;
-  box-shadow: 0 3px 12px rgba(240, 205, 124, .28);
+  box-shadow: 0 3px 12px rgba(240, 205, 124, .26);
 }
-.pb-toggle svg { width: 22px; height: 22px; }
-.pb-toggle[data-paused="1"] { background: #f6f1e3; }
+.pb-toggle svg { width: 21px; height: 21px; }
+/* 暂停态：换成宣纸底色，仍是一圈缃色环 */
+.pb-toggle[data-paused="1"] {
+  background: #f6f1e3;
+  color: #234b42;
+  border-color: #f6f1e3;
+}
+/* 停止键：朱砂细环，这是「终止」应有的分量 */
+.pb-stop {
+  border-color: rgba(232, 141, 128, .55);
+  color: #f4d9d4;
+}
 
 /* 播放中：当前一首左侧亮起一缕缃色游标 */
 .player-bar:not([data-paused="1"]) .pb-now::before {
@@ -1004,17 +1313,7 @@ body.has-install-tip #app {
 }
 @keyframes pbPulse { 0%, 100% { opacity: .35 } 50% { opacity: 1 } }
 
-/* 底部导航栏存在时的统一避让：--nav-h = 播放栏高 + 引导条高 + 安全区。
-   页面主体补出这段留白，页脚与最后一行内容就不会被压住；
-   没有底部导航栏时 --nav-h 为 0，不留空白条。 */
-body.has-audio-player .app,
-body.has-audio-player #app,
-body.no-player .app,
-body.no-player #app {
-  padding-bottom: calc(24px + var(--nav-h));
-}
-/* 吸底元素统一贴着「导航栏基准线」往上排 */
-.ios-install-tip { bottom: calc(12px + var(--nav-h)); }
+/* 吸底元素统一贴着「导航栏基准线」往上排（见文件上方 .dock 一节） */
 
 /* 今日任务条里的「朗读（全部）」按钮：圆形播放键，与右侧 0/5 圆环同族 */
 .today-actions {
@@ -1042,22 +1341,13 @@ body.no-player #app {
   align-items: center;
   justify-content: center;
 }
-.today-read svg {
-  display: block;
-  width: 19px;
-  height: 19px;
-  margin: auto;
-}
+.today-read svg { display: block; width: 19px; height: 19px; margin: auto; }
 /* 未播放显示 ▶，播放中显示 ⏸：一个圆形播放键说清全部状态，不再配文字 */
 .today-read .pause-glyph { display: none; }
 .today-read[data-on="1"] .play-glyph { display: none; }
 .today-read[data-on="1"] .pause-glyph { display: inline-flex; }
 .today-read:active { transform: scale(.94); }
-.today-read[data-on="1"] {
-  background: var(--gold);
-  border-color: var(--gold);
-  color: #234b42;
-}
+.today-read[data-on="1"] { background: var(--gold); border-color: var(--gold); color: #234b42; }
 .today-read:disabled { opacity: .5; cursor: not-allowed; }
 
 /* 无障碍：只给读屏软件的文字，视觉上不可见 */
@@ -1089,37 +1379,113 @@ body.no-player #app {
   transition: transform .14s, background .18s, color .18s;
 }
 /* 图标 block 化去掉行内基线留白，flex 里才算真正居中 */
-.item-read svg {
-  display: block;
-  width: 16px;
-  height: 16px;
-  margin: auto;
-}
-/* 未播放显示 ▶，播放中显示 ⏸ */
+.item-read svg { display: block; width: 16px; height: 16px; margin: auto; }
 .item-read .play-glyph,
-.item-read .pause-glyph {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
+.item-read .pause-glyph { display: inline-flex; align-items: center; justify-content: center; }
 .item-read .pause-glyph { display: none; }
 .item-read[data-on="1"] .play-glyph { display: none; }
 .item-read[data-on="1"] .pause-glyph { display: inline-flex; }
 .item-read:active { transform: scale(.94); }
 .item-read[data-on="1"] { background: var(--green); border-color: var(--green); color: #fffdf8; }
 
-/* 首页「小古文」入口：设置里可隐藏 */
-.classic-entry[hidden] { display: none; }
-
 /* 隐私 / 协议页的「极简速览」 */
-.legal-mini {
-  margin: 0;
-  padding-left: 1.1em;
-}
+.legal-mini { margin: 0; padding-left: 1.1em; }
 .legal-mini li { margin-bottom: 4px; }
 
 /* 自动朗读时高亮当前这首 */
 #today-list .item.reading {
   border-left-color: var(--green);
   box-shadow: 0 0 0 2px var(--green-light), var(--shadow);
+}
+
+/* 顶栏页面名用默认名（Ashley）时走淡墨，与用户自己填的名字区分开 */
+.brand-page-text.is-default { color: var(--ink-2); }
+
+/* ==========================================================================
+   古诗词详情页的阅读辅助工具条
+   --------------------------------------------------------------------------
+   与小古文详情页同一套控件、同一顺序、同一尺寸；只把边距按弹层收紧一点。
+   ＝ 第一行：正文对齐（左/中/右 SVG）· A－/A＋ 组合 · 不注音/生字/全文
+   ＝ 第二行：朗读组合键（原文 / 译文）+ 译文开关
+   ========================================================================== */
+.modal-box .reader-actions {
+  display: flex;
+  gap: 8px;
+  margin: 10px 0 0;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: center;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.modal-box .reader-actions::-webkit-scrollbar { display: none; }
+.modal-box .reader-actions.icon-row { margin: 8px 0 4px; overflow: visible; }
+
+.modal-box .reader-actions .seg.mini,
+.modal-box .reader-actions .mini-btn {
+  min-height: 38px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--green);
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  flex: 0 0 auto;
+}
+.modal-box .reader-actions .seg.mini { padding: 3px; }
+.modal-box .reader-actions .seg.mini button { font-size: 12.5px; padding: 6px 10px; border-radius: 8px; }
+/* 对齐 / 字号：图标与字母都居中，两段之间一条界行细线 */
+.modal-box .reader-actions .icon-seg button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+}
+.modal-box .reader-actions .icon-seg button svg { display: block; width: 16px; height: 16px; }
+.modal-box .reader-actions .font-seg button {
+  font-size: 12.5px;
+  font-weight: 700;
+  padding: 6px 10px;
+  min-width: 0;
+}
+.modal-box .reader-actions .font-seg button + button { border-left: 1px solid var(--line); }
+/* 纯图标键（译文开关）：圆形环，与播放栏的圆键同一语言 */
+.modal-box .reader-actions.icon-row > .mini-btn {
+  padding: 0;
+  width: 38px;
+  border-radius: 50%;
+  line-height: 0;
+}
+.modal-box .reader-actions.icon-row > .mini-btn svg,
+.modal-box .reader-actions.icon-row > .mini-btn .btn-icon {
+  display: block;
+  width: 17px;
+  height: 17px;
+  margin: 0 auto;
+}
+/* 工具条上只有正文这一颗播放键（原来并排的「原文 / 译文」组合键已拆掉），
+   译文那颗挪去译文标题右侧。两段朗读不再并排，一篇文章只有一个播放信号。 */
+/* 状态全靠图标：▶ 未朗读、⏸ 朗读中；译文开关「划掉文档」= 收起译文。
+   同一颗键上 ▶ / ⏸ 互斥，永远只显示一个。 */
+.modal-box .reader-actions .pause-glyph { display: none; }
+.modal-box .reader-actions [data-on="1"] .play-glyph { display: none; }
+.modal-box .reader-actions [data-on="1"] .pause-glyph { display: inline-flex; }
+.modal-box .reader-actions .mini-btn[data-on="1"] { background: var(--green); border-color: var(--green); color: #fdfaf2; }
+.modal-box .reader-actions .mini-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+/* 窄屏（iPhone SE 一类 320~380px）：两组控件要挤进同一行，
+   字号与内边距各收一档，必要时允许整行横向滑动，绝不换行错位。 */
+@media (max-width: 380px) {
+  .modal-box .reader-actions { gap: 5px; margin-left: -2px; margin-right: -2px; }
+  .modal-box .reader-actions .seg.mini { padding: 2px; }
+  .modal-box .reader-actions .seg.mini button,
+  .modal-box .reader-actions .icon-seg button,
+  .modal-box .reader-actions .font-seg button { padding: 6px 6px; font-size: 11.5px; }
+  .modal-box .reader-actions .icon-seg button svg { width: 15px; height: 15px; }
+  .modal-box .reader-actions.icon-row > .mini-btn { width: 36px; }
 }

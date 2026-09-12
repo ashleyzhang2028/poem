@@ -31,6 +31,12 @@
   /** 队列状态 */
   let queue = null;
 
+  /** 单条朗读的暂停标记（部分设备 pause 后 speaking 会变 false，只能自己记） */
+  let singlePaused = false;
+  /** 单条朗读的结束时间：读完 / 停止后一小段时间内仍算「朗读任务」，按钮才不会跳来跳去 */
+  let singleEndedAt = 0;
+  const SINGLE_TAIL_MS = 600;
+
   /* ---------------- 基础能力 ---------------- */
 
   function supported() {
@@ -69,6 +75,7 @@
   /** 是否正在朗读（含暂停） */
   function speaking() {
     if (queue) return true;
+    if (singlePaused) return true;
     if (!synth) return false;
     try {
       return !!synth.speaking;
@@ -80,6 +87,7 @@
   /** 是否处于暂停 */
   function paused() {
     if (queue) return !!queue.paused;
+    if (singlePaused) return true;
     if (!synth) return false;
     try {
       return !!synth.paused;
@@ -91,6 +99,8 @@
   /** 硬停止：连队列一起清空 */
   function stop() {
     queue = null;
+    singlePaused = false;
+    singleEndedAt = 0;
     if (!synth) return;
     try {
       synth.cancel();
@@ -112,8 +122,10 @@
     if (!u) return false;
 
     stop();
-    u.onend = function () { current = null; };
-    u.onerror = function () { current = null; };
+    singlePaused = false;
+    singleEndedAt = 0;
+    u.onend = function () { current = null; singleEndedAt = Date.now(); };
+    u.onerror = function () { current = null; singleEndedAt = Date.now(); };
     current = u;
     try {
       synth.speak(u);
@@ -219,7 +231,16 @@
 
   /** 暂停 / 继续：优先走原生暂停，个别设备不支持时用「停止后记住位置」兜底 */
   function pause() {
-    if (!queue || !synth) return false;
+    if (!synth) return false;
+    if (!queue) {
+      // 单条朗读（阅读器「朗读」/「译文朗读」）也要能暂停
+      if (!synth.speaking) return false;
+      singlePaused = true;
+      try {
+        synth.pause();
+      } catch (e) { /* ignore */ }
+      return true;
+    }
     queue.paused = true;
     try {
       synth.pause();
@@ -240,7 +261,15 @@
   }
 
   function resume() {
-    if (!queue || !synth) return false;
+    if (!synth) return false;
+    if (!queue) {
+      if (!singlePaused) return false;
+      singlePaused = false;
+      try {
+        synth.resume();
+      } catch (e) { /* ignore */ }
+      return true;
+    }
     queue.paused = false;
     try {
       synth.resume();
@@ -292,24 +321,38 @@
     return "";
   }
 
+  /**
+   * 是否有「朗读任务」在跑（含暂停中，**含「暂停后引擎把 speaking 置为 false」的设备**）。
+   * 与 speaking() 的区别：队列建好但音频还没开始、或引擎刚被 cancel 的一瞬间，
+   * speaking 可能已经是 false，而队列还在 —— 界面靠 active() 判断「点它能继续 / 能停」。
+   *
+   * 曾经的坑：这个函数被写在 `window.Speech` **之后**，
+   * 但它的函数声明会被提升到 IIFE 顶部 —— 结果 `window.Speech.active`
+   * 指向这份「真正的」实现，而 IIFE 提前暴露的旧名字（指向同一实现）反而不生效。
+   * 更早的写法还在 IIFE 中部留了一份同名旧实现 `active: function(){ return !!queue; }`，
+   * 两份实现让 `Speech.active()` 的状态判断彻底错乱，
+   * 于是「朗读 ↔ 停止」按钮状态不对、暂停后点朗读会重新叠一层。
+   */
+  function active() {
+    if (queue) return true;
+    if (singlePaused) return true;
+    if (singleEndedAt && Date.now() - singleEndedAt < SINGLE_TAIL_MS) return true;
+    try {
+      return !!(synth && synth.speaking);
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /** 队列控制器（播放栏 / 页面用它暂停、继续、跳下一首） */
   const controller = {
     pause: pause,
     resume: resume,
     next: next,
     stop: stop,
     index: index,
-    paused: function () { return !!(queue && queue.paused); },
-    active: function () { return !!queue; }
+    paused: function () { return !!(queue && queue.paused); }
   };
-
-  /**
-   * 是否有「朗读任务」在跑（含暂停中）。
-   * 与 speaking() 的区别：队列已建好但语音引擎刚被 cancel 的一瞬间，
-   * speaking 可能已经是 false，而队列还在 —— 界面靠 active() 判断「点它能继续」。
-   */
-  function active() {
-    return !!queue;
-  }
 
   window.Speech = {
     supported: supported,
