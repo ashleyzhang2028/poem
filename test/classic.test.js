@@ -311,8 +311,30 @@ setTimeout(() => {
   // 需求：两排按钮都整行居中（与小古文正文、古诗正文共用同一条中轴）
   const actionsRow = /(^|\n)\.reader-actions \{([\s\S]*?)\}/.exec(actionsCss);
   chk(!!actionsRow && /justify-content:\s*center;/.test(actionsRow[2]), '工具条两行都整行水平居中');
-  chk(/\.trans-read\[data-on="1"\] \.play-glyph \{ display: none; \}/.test(actionsCss),
-    '译文键的 ▶ / ⏸ 互斥显示，同一位置切换');
+  // 需求：译文键的 ▶ / ⏸ 是同一颗键的两态。
+  // 光断言「有这两条规则」不够 —— 还要保证它们真正生效：
+  //   `.trans-read .btn-icon { display: inline-flex }` 是 0-2-0，
+  //   若互斥规则只有 0-2-0（`.trans-read .pause-glyph`），后者会被前者
+  //   按「同特异性、后写胜出」压回去，▶ 与 ⏸ 就并排同时显示。
+  //   所以互斥规则必须带上 `.btn-icon` 把特异性抬到 0-3-0。
+  chk(/\.trans-read \.btn-icon\.pause-glyph \{ display: none; \}/.test(actionsCss),
+    '译文键的 ▶ / ⏸ 互斥显示（互斥规则的 specificity 高于 .btn-icon 的 display）');
+  chk(/\.trans-read\[data-on="1"\] \.btn-icon\.play-glyph \{ display: none; \}/.test(actionsCss),
+    '译文键播放中原地换成 ⏸，不再显示 ▶');
+  chk(/\.trans-read\[data-on="1"\] \.btn-icon\.pause-glyph \{ display: inline-flex; \}/.test(actionsCss),
+    '译文键暂停态用同一颗键的 ⏸ 表达');
+  // 「首页诗词详情页」用的是同一套译文键，但它只引 style.css。
+  // 组件样式必须住在两页都会加载的 style.css 里，否则首页那颗键完全没样式，
+  // 且互斥规则不生效 —— 两个图标并排显示。
+  const styleCss = fs.readFileSync(path + 'css/style.css', 'utf8');
+  const indexHtml = fs.readFileSync(path + 'index.html', 'utf8');
+  const indexUsesClassic = /classic\.css/.test(indexHtml);
+  const cssForStyle = indexUsesClassic ? styleCss + actionsCss : styleCss;
+  chk(/\.trans-box \{/.test(cssForStyle), '首页详情页的译文框有样式（不是裸元素）');
+  chk(/\.trans-read \{/.test(cssForStyle), '首页详情页的译文朗读键有样式（不是浏览器默认按钮）');
+  chk(/\.trans-read \.btn-icon\.pause-glyph \{ display: none; \}/.test(cssForStyle),
+    '首页详情页的译文键 ▶ / ⏸ 同样互斥，不同时并排');
+  chk(/\.trans-head \{/.test(cssForStyle), '译文标题与译文键排成一行（标题左、键右）');
   chk(/\.done-btn\.is-done/.test(actionsCss), '「标记已读」按钮有已读高亮态');
   // 需求：上一篇 / 下一篇必须避开底部播放栏 / 页签，否则被压掉约三成、点不着
   const navBlock = /(^|\n)\.reader-nav \{([\s\S]*?)\}/.exec(actionsCss);

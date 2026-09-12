@@ -438,9 +438,12 @@ body.reader-open .dock { display: none; }
 }
 .trans-read .btn-icon { display: inline-flex; align-items: center; justify-content: center; flex: none; }
 .trans-read .btn-icon svg { display: block; width: 13px; height: 13px; margin: 0; }
-.trans-read .pause-glyph { display: none; }
-.trans-read[data-on="1"] .play-glyph { display: none; }
-.trans-read[data-on="1"] .pause-glyph { display: inline-flex; }
+/* ▶ / ⏸ 互斥。选择器要多带一个 `.btn-icon`（0-3-0），
+   否则会被上面那条 `.trans-read .btn-icon { display: inline-flex }`（0-2-0）
+   按「同特异性、后写胜出」压回去 —— 表现就是两个图标并排同时显示。 */
+.trans-read .btn-icon.pause-glyph { display: none; }
+.trans-read[data-on="1"] .btn-icon.play-glyph { display: none; }
+.trans-read[data-on="1"] .btn-icon.pause-glyph { display: inline-flex; }
 .trans-read[data-on="1"] { background: var(--green); border-color: var(--green); color: #fffdf8; }
 .trans-read:disabled { opacity: .5; cursor: not-allowed; }
 @media (min-width: 700px) {
