@@ -144,12 +144,17 @@ setTimeout(() => {
   chk(d.querySelector('#rd-text').textContent.length > 100, '长文完整渲染（' + d.querySelector('#rd-text').textContent.length + ' 字）');
   // 需求 10：默认字号降一级（19 → 17）
   chk(d.querySelector('#rd-text').style.fontSize === '17px', '默认字号降一级为 17px（实际 ' + d.querySelector('#rd-text').style.fontSize + '）');
-  // 需求 7：小古文正文行距降一档（2.2 → 2.0）—— jsdom 不计算继承行高，改从 CSS 源码校验
+  // 需求 7：小古文正文行距继续压紧（2.2 → 2.0 → 1.8）—— jsdom 不计算继承行高，改从 CSS 源码校验
   const classicCss = fs.readFileSync(path + 'css/classic.css', 'utf8');
   const rdBlock = /(^|\n)\.reader-text \{([\s\S]*?)\}/.exec(classicCss);
-  chk(!!rdBlock && /line-height:\s*2\.0;/.test(rdBlock[2]), '小古文正文行距降一档为 2.0');
+  chk(!!rdBlock && /line-height:\s*1\.8;/.test(rdBlock[2]), '小古文正文行距压紧为 1.8');
   const pyBlock = /(^|\n)\.reader-text\.with-pinyin \{([\s\S]*?)\}/.exec(classicCss);
-  chk(!!pyBlock && /line-height:\s*2\.7;/.test(pyBlock[2]), '注音档行距同步降一档为 2.7');
+  chk(!!pyBlock && /line-height:\s*2\.5;/.test(pyBlock[2]), '注音档行距同步压紧为 2.5');
+  // 正文与标题居中：text-align 管行内居中，fit-content + margin auto 管整块居中
+  chk(!!rdBlock && /text-align:\s*center;/.test(rdBlock[2]), '小古文正文文字居中');
+  chk(!!rdBlock && /max-width:\s*fit-content;/.test(rdBlock[2]) && /margin:\s*[^;]*\bauto\b/.test(rdBlock[2]),
+    '小古文正文块左右居中（fit-content + margin auto）');
+  chk(!!pyBlock && /white-space:\s*normal;/.test(pyBlock[2]), '注音档改回 normal，居中时不被保留空白挤歪');
   chk(d.querySelector('#rd-trans').hidden === true, '译文默认折叠');
 
   // 字号调节：五档 15/17/19/21/23
