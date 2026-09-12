@@ -93,24 +93,31 @@ chk(!!listMetaBlock && /gap:\s*4px;/.test(listMetaBlock[2]), '列表副信息间
 const listMetaGaps = (css.match(/\.item-meta \{([\s\S]*?)\}/g) || []).filter(b => /gap:/.test(b));
 chk(listMetaGaps.every(b => !/gap:\s*8px;/.test(b)), '不再有残留的 8px 副信息间距');
 
-/* ---------------- 主页面背景（无图案）与按钮分级 ---------------- */
-/* 需求（Issue #32）：主页面背景删除祥云图案，不再使用图案背景。
+/* ---------------- 主页面背景（无图案）与按钮分级（Issue #32） ---------------- */
+/* 需求：主页面背景删除祥云图案、不再使用图案背景。
    页面底只留素绢米灰 --bg 纯色：不铺底纹、不留角隅点缀、不留云纹浮雕，
    也不用再为纹样写浏览器遮罩兜底。 */
-chk(!/--pattern-/.test(css), '样式里不再定义任何 --pattern-* 背景图案变量');
-chk(!/--pattern-xiangyun/.test(css) && !/--pattern-yunhua/.test(css), '祥云纹变量已删除');
-chk(!/card-pat/.test(css), '卡片角隅纹样类 .card-pat 已移除');
-chk(!/card-pat/.test(html), '页面里不再给卡片挂 card-pat（不显示角隅纹样）');
-chk(!/祥云/.test(css.replace(/\/\*[\s\S]*?\*\//g, '')), '样式代码里不再残留「祥云」图案');
-chk(!/\.today-bar::after/.test(css), '今日背诵条不再叠云纹浮雕');
-chk(!/@supports not/.test(css), '纹样移除后不再需要 @supports not 的遮罩兜底');
-// 页面底：素绢纯色，没有任何 background-image
-const bodyBlocks = [...css.matchAll(/html, body \{[\s\S]*?\}/g)].map(m => m[0]);
-chk(bodyBlocks.length > 0, '页面底样式仍保留 html, body 规则');
-chk(bodyBlocks.every(b => !/background-image:\s*url/.test(b)), '页面底不铺任何背景图案（无图案 url）');
-chk(bodyBlocks.some(b => /background:\s*var\(--bg\)/.test(b)), '页面底只铺素绢米灰 --bg 纯色');
+chk(/html, body \{/.test(css), '样式里有 html, body 的页面底声明');
+chk(!/--pattern/.test(css) || !/background-image:\s*[^;]*var\(--pattern/.test(css),
+  '页面底不再引用任何纹样变量');
+chk(/html, body \{[^}]*background:\s*var\(--bg\)/.test(css), '页面底是素绢一色 --bg，没有图案背景');
+chk(!/html, body \{[^}]*background-image:\s*url/.test(css), '页面底没有任何图案 background-image 铺装');
 chk(!/background-attachment:\s*fixed/.test(css), '不再有平铺的固定底纹');
 chk(/--bg:\s*#f6f1e3/.test(css), '素绢底色 --bg 仍为 #f6f1e3');
+// 满铺大纹样（祥云 / 小云脚 / 云纹团花）连同变量一起移除，不留僵尸代码
+chk(!/--pattern-[a-z-]+:/.test(css), '样式里不再定义任何 --pattern-* 纹样变量');
+chk(!/--pattern-xiangyun/.test(css) && !/--pattern-yunhua/.test(css) && !/--pattern-cloud:/.test(css),
+  '祥云纹 / 云纹团花 / 云纹点缀变量均已删除');
+chk(!/card-pat/.test(css), '卡片角隅纹样类 .card-pat 已移除');
+chk(!/card-pat/.test(html), '页面里不再给卡片挂 card-pat（不显示角隅纹样）');
+chk(!/\.card-pat::before/.test(css) && !/\.card-pat::after/.test(css), '卡片角隅云纹已随之移除');
+chk(!/\.today-bar::after/.test(css), '今日背诵条不再叠云纹浮雕');
+chk(!/mask-image:\s*linear-gradient/.test(css), '不再有角隅纹样的遮罩规则');
+const decorated = [...css.matchAll(/background(-image)?:[^;]*var\(--pattern[^;]*;/g)].map(m => m[0]);
+chk(decorated.length === 0, '没有任何一处再引用纹样变量铺图案');
+chk(!/@supports not/.test(css), '纹样移除后不再需要 @supports not 的遮罩兜底');
+chk(!/祥云/.test(css.replace(/\/\*[\s\S]*?\*\//g, '')), '样式代码里不再残留「祥云」图案');
+chk(/祥云纹/.test(css), '注释里写明被移除的宋「祥云纹」底纹，避免被误加回来');
 // 按钮分级
 chk(/\.btn\.primary\s*\{[^}]*linear-gradient/.test(css), '一级按钮为实底渐变（主操作）');
 chk(/\.ghost-btn\s*\{[\s\S]{0,200}?border:\s*1px solid var\(--line\)/.test(css), '次级按钮为纸底描边');
@@ -212,11 +219,6 @@ chk(/\.reader-progress \{[\s\S]{0,120}?text-align:\s*center/.test(classicCss),
 chk(/\.reader-bar-count \{[\s\S]{0,80}?width:\s*40px/.test(classicCss),
   '右侧等宽占位，保证进度真的落在屏幕正中');
 
-chk(/祥云纹/.test(css), '注释里写明被移除的宋「祥云纹」底纹，避免被误加回来');
-/* 需求：底纹整体移除后，也不再有「只留一角」的云纹点缀 */
-chk(!/\.card-pat::before/.test(css) && !/\.card-pat::after/.test(css), '卡片角隅云纹已随之移除');
-chk(!/mask-image:\s*linear-gradient/.test(css), '不再有角隅纹样的遮罩规则');
-chk(!/--pattern-cloud:/.test(css), '点缀用的云纹变量 --pattern-cloud 也一并删除');
 
 /* ---------------- 3. 传统色（宋代） ---------------- */
 chk(/宋代/.test(css), '配色注释标明宋代取色');

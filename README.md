@@ -65,7 +65,7 @@
   - 历史上先后铺过落花流水纹 → 球路纹 → 如意云头纹 → 祥云纹，
     逐版调淡后仍有「花纸」感，与读诗的安静相冲，**已整段移除**：
     `--pattern-xiangyun` / `--pattern-xiangyun-b` / `--pattern-yunhua` / `--pattern-cloud`
-    等变量、`html, body` 的 `background-image` 铺装、`.card-pat` 角隅纹样、
+    等纹样变量、`html, body` 的 `background-image` 铺装、`.card-pat` 角隅纹样、
     `.today-bar::after` 云纹浮雕，以及随纹样出现的 `@supports not (mask)` 兜底规则。
   - 底色改由 `--bg` 单点控制，改主题只要动一个变量。
   - 界面自身的图标（徽标 / 书本 / 古卷 / 设置 / 播放键）仍是内联 SVG，不依赖系统 emoji 字体。
