@@ -20,9 +20,27 @@ setTimeout(() => {
   let fails = 0;
   const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else console.log('✓ ' + m); };
 
-  // 需求 9：应用正式名称为「跬步」，不随用户名变化
-  chk(d.title === '跬步 · 古诗词背诵', '页面标题为「跬步 · 古诗词背诵」（实际 ' + d.title + '）');
+  // 需求 9：应用正式名称为「跬步」；用户名留空时用默认名 Ashley
+  chk(d.title === '跬步 · Ashley的古诗词 · 古诗词背诵',
+    '用户名留空时标题用默认名 Ashley（实际 ' + d.title + '）');
   chk(d.querySelector('.brand-text h1').textContent === '跬步', '品牌标题为「跬步」');
+  // 需求：主标题下面的描述文字还原回来，但不再写「一年级到高中」的年级字样
+  const sub = d.querySelector('#brand-sub');
+  chk(!!sub && /遗忘曲线/.test(sub.textContent),
+    '主标题下的描述文字已还原（实际「' + (sub ? sub.textContent : '') + '」）');
+  chk(!/年级|至高三|小学|初中|高中/.test(sub.textContent),
+    '描述文字里不带一年级到高中这类年级字样');
+  // 需求：顶栏第一行是「跬步 · XX的古诗词」，页面名与「跬步」同一行、同字体
+  const brandPage = d.querySelector('#brand-page');
+  chk(!!brandPage && /Ashley的古诗词/.test(brandPage.textContent),
+    '页面名排在「跬步」右侧：' + (brandPage ? brandPage.textContent : '缺失'));
+  chk(brandPage.querySelector('.brand-page-text').classList.contains('is-default'),
+    '默认名 Ashley 走淡墨，与用户自己填的名字区分');
+  const brandRowCss = fs.readFileSync(path + 'css/style.css', 'utf8');
+  chk(/\.brand-name-row \{[\s\S]{0,200}?font-family:\s*var\(--font-poem\)/.test(brandRowCss) ||
+      /--font-poem[\s\S]{0,120}?brand-name-row/.test(brandRowCss) ||
+      /\.brand-name-row[\s\S]{0,80}?font-size: 19px/.test(brandRowCss),
+    '页面名与「跬步」共用同一套字体样式（.brand-name-row）');
   chk(!/积跬步古诗词/.test(d.documentElement.outerHTML), '页面不出现「积跬步古诗词」旧名');
   const foot = d.querySelector('.foot');
   chk(foot.querySelector('.foot-copy').textContent.trim() === '©2026 kuibu.app 积跬步, 至千里', '页脚版权为 ©2026 kuibu.app 积跬步, 至千里（实际 ' + foot.querySelector('.foot-copy').textContent.trim() + '）');
@@ -30,38 +48,62 @@ setTimeout(() => {
   const footLinks = [...foot.querySelectorAll('.foot-links a')];
   chk(footLinks.map(a => a.textContent.trim()).join('/') === '用户协议/隐私条款', '页脚含「用户协议」「隐私条款」链接');
   chk(footLinks.map(a => a.getAttribute('href')).join('/') === './terms.html/./privacy.html', '页脚两个链接指向 terms.html 与 privacy.html');
-  chk(d.querySelector('.brand-text p').textContent === '一年级至高三 · 按遗忘曲线复习', '副标题简洁明了（实际 ' + d.querySelector('.brand-text p').textContent + '）');
+  // 需求：删掉「一年级至高三 · 按遗忘曲线复...」这行文案
+  chk(!/一年级至高三/.test(d.querySelector('.topbar').textContent),
+    '顶栏第一行不再出现「一年级至高三 · 」，只有「跬步 · XX的古诗词」');
+  chk(!/按遗忘曲线复习/.test(d.querySelector('.topbar').textContent),
+    '顶栏不再出现「按遗忘曲线复习」长文案');
   chk(d.querySelector('#all-label').textContent === '本年级本学期全部诗词', '全部诗词标题精确为「本年级本学期全部诗词」');
-  // 除 😵🤔😄 外，页面图标应为内联 SVG
-  chk(d.querySelectorAll('.brand-icon svg, #btn-settings svg, .collapse-icon svg').length === 3, '顶部/设置/全部诗词图标均为 SVG');
+  // 顶栏图标：徽标 + 全部诗词折叠图标，全部是内联 SVG
+  chk(d.querySelectorAll('.brand-icon svg, .collapse-icon svg').length === 2, '顶栏徽标与全部诗词图标均为 SVG');
+  // 需求：首页右上角的「设置」齿轮删除（底部第三个页签就是设置，两个入口重复）
+  chk(d.querySelector('.topbar #btn-settings') === null, '首页右上角不再有设置齿轮（交给底部页签）');
+  chk(d.querySelector('.topbar .icon-btn') === null, '顶栏不再有圆形图标按钮（设置入口已删）');
+
+  /* ---------- 导航：顶栏 + 底部三页签（本次重做） ---------- */
+  chk(!!d.querySelector('.topbar .brand-icon svg'), '顶栏有 logo（内联 SVG 徽标）');
+  chk(d.querySelector('#brand-name').textContent === '跬步', '顶栏第一行固定为「跬步」，不随页面变化');
+  const dock = d.querySelector('#site-dock');
+  chk(!!dock, '首页有底部导航栏');
+  const dockItems = [...dock.querySelectorAll('.dock-item')];
+  chk(dockItems.length === 3, '底部导航为三个页签（实际 ' + dockItems.length + '）');
+  chk(dockItems.map(b => b.querySelector('.dock-label').textContent).join('/') === '古诗词/小古文/设置',
+    '页签名称为 古诗词 / 小古文 / 设置');
+  chk(dockItems.map(b => b.dataset.navGo).join('/') === 'home/classic/settings', '页签跳转目标正确');
+  chk(dockItems[0].classList.contains('active') && dockItems[0].getAttribute('aria-current') === 'page',
+    '当前页（古诗词）页签为选中态');
+  chk(dockItems.every(b => b.querySelector('.dock-icon svg')), '三个页签图标均为内联 SVG');
+  // 页面切换统一走底部页签，顶栏不再各页一套返回键
+  chk(d.querySelector('.topbar .back-icon') === null, '顶栏不再有各页自造的返回箭头');
+  chk(!!dock.querySelector('[data-nav-go="settings"]'), '「设置」是页签之一，不再只藏在右上角');
   chk(!/📖|⚙|📚/.test(d.querySelector('.app').innerHTML), '页面不再使用 📖 ⚙️ 📚 emoji 图标');
+  // 需求：折叠箭头与列表右侧「›」风格一致 —— 空心描边三角，且能上下切换
+  const arrow = d.querySelector('#btn-all .arrow');
+  chk(!!arrow && !!arrow.querySelector('svg'), '「全部诗词」折叠键用内联 SVG 三角（不再是实心 ▾）');
+  chk(arrow.querySelector('svg').getAttribute('fill') === 'none', '三角是空心的（fill: none + 描边）');
+  chk(!/▾|▴/.test(d.querySelector('#btn-all').textContent), '不再用实心 ▾ / ▴ 字符');
   chk(!!d.querySelector('#settings-modal #input-username'), '设置内含用户名输入框');
   chk(!d.querySelector('.selector.card'), '年级/学期选择不再常驻首页');
   chk(!!d.querySelector('#settings-modal #seg-stage'), '学段选择已移入设置');
   chk(!!d.querySelector('#settings-modal #seg-term'), '学期选择已移入设置');
   chk(!!d.querySelector('#settings-modal #grade-chips'), '年级选择已移入设置');
-  // 小古文入口：独立页面，不进每日计划，位置在「本年级本学期全部诗词」之后
-  const entry = d.querySelector('#classic-entry');
-  chk(!!entry, '首页有「小古文」入口');
-  chk(entry.getAttribute('href') === './classic.html', '入口指向 classic.html');
-  chk(d.querySelector('.classic-title').textContent === '小古文', '入口主标题为「小古文」');
-  // 需求：入口副标题（含「· 小古文」及其后文字）整段删掉，只留标题
-  chk(d.querySelector('.classic-sub') === null, '入口不再有副标题一行');
-  chk(entry.textContent.replace(/\s+/g, '').trim() === '小古文›',
-    '入口只剩「小古文 >」：' + entry.textContent.replace(/\s+/g, '').trim());
-  chk(!/课外必背/.test(entry.textContent), '入口不再出现「课外必背」字样');
-  chk(!/100 篇/.test(entry.textContent), '入口不再标「100 篇」');
-  // 需求 3：入口不再出现「《三字经》《世说新语》等 100 篇 · 可注音朗读，不排复习」这类解释性长文案
-  chk(!/三字经|世说新语|不排复习|注音朗读/.test(entry.textContent), '入口文案精简，不再罗列书名与说明');
+  // 需求：首页下方的「小古文」入口卡片删除（底部页签已承担入口，卡片重复）
+  chk(d.querySelector('#classic-entry') === null, '首页不再有小古文入口卡片');
+  chk(d.querySelector('.classic-entry') === null, '首页不再有小古文入口卡片（classic-entry 已删）');
+  chk(d.querySelector('#classic-title') === null && d.querySelector('.classic-title') === null,
+    '不再渲染小古文入口标题');
+  chk(d.querySelector('#seg-classic-entry') === null, '设置里不再有「首页小古文入口」选项（入口已删）');
+  chk(!/首页小古文入口/.test(d.querySelector('#settings-modal').textContent),
+    '设置面板文案里不再出现「首页小古文入口」');
   chk(d.querySelector('#all-count').textContent === '5', '小古文不会混进古诗词列表（仍为 5 首）');
-  // 位置：全部诗词面板（.all-section）在前，小古文入口紧跟其后
-  const allSection = d.querySelector('.all-section');
-  chk(!!allSection && allSection.compareDocumentPosition(entry) & window.Node.DOCUMENT_POSITION_FOLLOWING,
-    '小古文入口位于「本年级本学期全部诗词」面板下方');
+  // 底部页签的「小古文」仍是唯一入口，指向独立页面
+  const dockClassicCount = [...dock.querySelectorAll('.dock-item')].filter(b => b.dataset.navGo === 'classic').length;
+  chk(dockClassicCount === 1, '小古文入口只剩底部页签一处');
 
-  // 先打开设置才能操作年级/学期
-  d.querySelector('#btn-settings').dispatchEvent(new window.Event('click', { bubbles: true }));
-  chk(d.querySelector('#settings-modal').hidden === false, '首页即可打开设置');
+  // 先打开设置才能操作年级/学期；入口只剩底部页签的「设置」
+  d.querySelector('.dock-item[data-nav-go="settings"]').dispatchEvent(new window.Event('click', { bubbles: true }));
+  chk(d.querySelector('#settings-modal').hidden === false, '底部页签「设置」能打开设置面板');
+  d.querySelector('[data-close]').dispatchEvent(new window.Event('click', { bubbles: true }));
   chk(d.querySelectorAll('#grade-chips button').length === 6, '小学显示 6 个年级按钮');
   chk(d.querySelectorAll('#today-list .item').length === 5, '今日列表渲染 5 首（实际 ' + d.querySelectorAll('#today-list .item').length + '）');
   chk(d.querySelector('#ring-text').textContent === '0/5', '环形进度 0/5');
@@ -103,6 +145,55 @@ setTimeout(() => {
   g3b.dispatchEvent(new window.Event('click', { bubbles: true }));
   chk(d.querySelector('#all-count').textContent === '14', '高三下学期 → 14 首（实际 ' + d.querySelector('#all-count').textContent + '）');
 
+  /* 需求：古诗词详情页与小古文详情页功能对齐（对齐 / 字号 / 译文 / 播放组合键）。
+     先单独验一遍，验完把页面状态恢复成「高三下」，不干扰后面的断言。 */
+  {
+    const gradeChip = g => [...d.querySelectorAll('#grade-chips button')].find(b => b.textContent === g);
+    const openSettings = () => d.querySelector('.dock-item[data-nav-go="settings"]')
+      .dispatchEvent(new window.Event('click', { bubbles: true }));
+    const toGrade = (grade) => {
+      openSettings();
+      gradeChip(grade).dispatchEvent(new window.Event('click', { bubbles: true }));
+      d.querySelector('#settings-modal').hidden = true;
+    };
+    // 二年级属于小学学段，先把学段切回小学再选年级
+    d.querySelector('.dock-item[data-nav-go="settings"]').dispatchEvent(new window.Event('click', { bubbles: true }));
+    [...d.querySelectorAll('#seg-stage button')].find(b => b.dataset.stage === 'primary')
+      .dispatchEvent(new window.Event('click', { bubbles: true }));
+    d.querySelector('#settings-modal').hidden = true;
+    toGrade('二年级'); // 二年级诗篇有白话译文
+
+    d.querySelector('#today-list .item').dispatchEvent(new window.Event('click', { bubbles: true }));
+    chk(d.querySelectorAll('#m-actions-main > *').length === 3, '详情页第一行：对齐 / 字号 / 注音 三组');
+    chk(d.querySelectorAll('#m-actions-icons > *').length === 2, '详情页第二行：播放组合键 + 译文开关');
+    chk(!/暂未收录/.test(d.querySelector('#m-trans-text').textContent),
+      '带译文的诗篇显示白话译文：' + d.querySelector('#m-trans-text').textContent.slice(0, 12) + '…');
+    d.querySelector('#m-trans-toggle').dispatchEvent(new window.Event('click', { bubbles: true }));
+    chk(d.querySelector('#m-trans').hidden === false, '点译文图标展开白话译文');
+    chk(d.querySelectorAll('[id="m-trans-text"]').length === 1, '译文段落 id 唯一（不重蹈重复 id 的覆辙）');
+    chk(d.querySelector('#m-trans-text').textContent.length > 10, '译文内容非空');
+
+    chk(d.querySelector('#m-text').style.fontSize === '17px',
+      '古诗正文默认字号小一号 17px（实际 ' + d.querySelector('#m-text').style.fontSize + '）');
+    d.querySelector('#m-font-up').dispatchEvent(new window.Event('click', { bubbles: true }));
+    chk(d.querySelector('#m-text').style.fontSize === '19px', 'A＋ 放大一级');
+    d.querySelector('#m-font-down').dispatchEvent(new window.Event('click', { bubbles: true }));
+    chk(d.querySelector('#m-text').style.fontSize === '17px', 'A－ 收小一级');
+
+    d.querySelector('#m-align-seg button[data-align="left"]').dispatchEvent(new window.Event('click', { bubbles: true }));
+    chk(d.querySelector('#m-text').dataset.align === 'left', '切到左对齐生效');
+    chk(window.localStorage.getItem('poem_align_v1') === 'left', '对齐方式已持久化');
+    d.querySelector('#m-align-seg button[data-align="center"]').dispatchEvent(new window.Event('click', { bubbles: true }));
+    chk(d.querySelector('#m-text').dataset.align === 'center', '切回居中对齐');
+    d.querySelector('[data-close]').dispatchEvent(new window.Event('click', { bubbles: true }));
+
+    d.querySelector('.dock-item[data-nav-go="settings"]').dispatchEvent(new window.Event('click', { bubbles: true }));
+    [...d.querySelectorAll('#seg-stage button')].find(b => b.dataset.stage === 'high')
+      .dispatchEvent(new window.Event('click', { bubbles: true }));
+    d.querySelector('#settings-modal').hidden = true;
+    toGrade('高三');
+  }
+
   // 点击条目打开弹层
   const item = d.querySelector('#today-list .item');
   const title = item.querySelector('.item-title').textContent.replace(/新学|复习.*|巩固/g, '').trim();
@@ -130,12 +221,27 @@ setTimeout(() => {
   // 全部诗词折叠
   d.querySelector('#btn-all').dispatchEvent(new window.Event('click', { bubbles: true }));
   chk(d.querySelector('#all-body').hidden === false, '展开全部诗词');
+  // 需求：展开后箭头朝上（只旋转同一枚空心三角，不换图）
+  chk(d.querySelector('#btn-all').classList.contains('open'), '展开后折叠键进入 open 态（箭头靠 CSS 旋转朝上）');
   chk(d.querySelectorAll('#all-list .item').length === 14, '高三下 14 条全部列出');
   chk(d.querySelectorAll('#stats-row .stat').length === 4, '统计条渲染 4 项');
+  // 需求：详情页工具条与小古文对齐一致；标签行、按钮整行居中，底部不被页签压住
+  chk(d.querySelectorAll('#m-actions-main > *').length === 3, '详情页第一行：对齐 / 字号 / 注音 三组');
+  chk(d.querySelectorAll('#m-actions-icons > *').length === 2, '详情页第二行：正文播放键 + 译文开关');
+  // 需求：不再并排「原文 / 译文」两个朗读键 ——
+  // 正文那颗 ▶ / ⏸ 在同一位置切换，译文的朗读键挪到译文框里，展开才出现
+  chk(d.querySelectorAll('#m-actions-icons #m-read-btn').length === 1, '正文只有一个播放键');
+  chk(d.querySelector('#m-read-combo') === null, '不再有两个朗读键组成的「组合键」');
+  chk(d.querySelectorAll('#m-trans-read').length === 1 && d.querySelector('#m-trans #m-trans-read') !== null,
+    '译文朗读键只出现在白话译文框里（展开才可见）');
+  chk(d.querySelector('#m-read-btn .play-glyph') !== null && d.querySelector('#m-read-btn .pause-glyph') !== null,
+    '正文播放键的 ▶ / ⏸ 是同键两态，不是两个按钮');
+  chk(d.querySelector('#m-trans') !== null && d.querySelector('#m-trans-text') !== null,
+    '详情页有白话译文区');
 
   // 设置
   d.querySelector('#settings-modal').hidden = true;
-  d.querySelector('#btn-settings').dispatchEvent(new window.Event('click', { bubbles: true }));
+  d.querySelector('.dock-item[data-nav-go="settings"]').dispatchEvent(new window.Event('click', { bubbles: true }));
   chk(d.querySelector('#settings-modal').hidden === false, '设置弹层打开');
   chk(d.querySelector('#settings-modal #seg-stage').querySelector('button.active').dataset.stage === 'high', '设置中回显当前学段高中');
 
@@ -162,14 +268,21 @@ setTimeout(() => {
   uInput.value = '小明';
   uInput.dispatchEvent(new window.Event('input', { bubbles: true }));
   chk(d.title === '跬步 · 小明的古诗词 · 古诗词背诵', '填了用户名后标题为「跬步 · 小明的古诗词」（实际 ' + d.title + '）');
-  chk(d.querySelector('.brand-text h1').textContent === '跬步 · 小明的古诗词', '品牌标题跟随用户名，前缀固定为跬步');
+  // 顶栏第一行固定为应用名（不随用户名变），用户名只出现在页面标题与第二行里，
+  // 否则进了小古文 / 法务页顶栏也跟着改名，用户认不出自己在哪一页
+  chk(d.querySelector('.brand-text h1').textContent === '跬步', '顶栏第一行固定为「跬步」，不随用户名变化');
+  chk(/小明/.test(d.querySelector('#brand-page').textContent),
+    '页面名跟着用户名走：' + d.querySelector('#brand-page').textContent);
+  chk(!d.querySelector('#brand-page-text').classList.contains('is-default'),
+    '填了用户名后不再走淡墨（是自己填的名字）');
   chk(d.querySelector('meta[name="apple-mobile-web-app-title"]').getAttribute('content') === '跬步 · 小明的古诗词',
     'iOS 桌面名随用户名变化');
   chk(JSON.parse(window.localStorage.getItem('poem_recite_settings_v1')).username === '小明', '用户名已持久化');
 
   uInput.value = '   ';
   uInput.dispatchEvent(new window.Event('input', { bubbles: true }));
-  chk(d.title === '跬步 · 古诗词背诵', '用户名留空时标题回到「跬步 · 古诗词背诵」（实际 ' + d.title + '）');
+  chk(d.title === '跬步 · Ashley的古诗词 · 古诗词背诵',
+    '用户名留空时回到默认名 Ashley（实际 ' + d.title + '）');
   const c8 = [...d.querySelectorAll('#seg-count button')].find(b => b.dataset.count === '8');
   c8.dispatchEvent(new window.Event('click', { bubbles: true }));
   chk(d.querySelector('#today-sub').textContent.includes('共 8 首'), '改为每日 8 首生效: ' + d.querySelector('#today-sub').textContent);

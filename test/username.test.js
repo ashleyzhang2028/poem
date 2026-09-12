@@ -30,12 +30,13 @@ function boot(seed) {
 
   // 1. 全新用户（无 settings）
   let r = await boot(null);
-  chk(r.d.title === '跬步 · 古诗词背诵', '全新用户标题为「跬步 · 古诗词背诵」');
+  chk(r.d.title === '跬步 · Ashley的古诗词 · 古诗词背诵',
+    '全新用户标题用默认名 Ashley（实际 ' + r.d.title + '）');
   chk(r.d.querySelector('#all-count').textContent === '5', '全新用户计划正常');
 
   // 2. 老版本设置（无 username 字段，兼容性）
   r = await boot({ poem_recite_settings_v1: JSON.stringify({ grade: 2, term: 2, dailyCount: 3 }) });
-  chk(r.d.title === '跬步 · 古诗词背诵', '旧版设置无 username 时不报错，标题回落「跬步」');
+  chk(r.d.title === '跬步 · Ashley的古诗词 · 古诗词背诵', '旧版设置无 username 时不报错，用默认名 Ashley');
   chk(r.d.querySelector('#today-sub').textContent.includes('共 3 首'), '旧版设置 grade/term/count 仍生效: ' + r.d.querySelector('#today-sub').textContent);
   chk(r.d.querySelector('#input-username').value === '', '旧版设置无 username 时输入框为空（代表用默认名）');
 
@@ -44,25 +45,28 @@ function boot(seed) {
     poem_recite_settings_v1: JSON.stringify({ grade: 1, term: 1, dailyCount: 5, username: '玥玥' })
   });
   chk(r.d.title === '跬步 · 玥玥的古诗词 · 古诗词背诵', '刷新后标题保持（实际 ' + r.d.title + '）');
-  chk(r.d.querySelector('#brand-name').textContent === '跬步 · 玥玥的古诗词', '刷新后品牌标题保持，应用名固定为跬步');
+  // 顶栏第一行固定应用名，用户名写在第二行（用户名里可能带 < > 等字符，只做纯文本）
+  chk(r.d.querySelector('#brand-name').textContent === '跬步', '刷新后品牌名保持为「跬步」，应用名不随用户名变');
+  chk(/玥玥/.test(r.d.querySelector('#brand-page-text').textContent), '刷新后用户名仍写在「跬步」右侧');
   chk(r.d.querySelector('#input-username').value === '玥玥', '刷新后输入框回填 玥玥');
 
   // 4. XSS 防护：用户名写入应作为纯文本
   r = await boot({
     poem_recite_settings_v1: JSON.stringify({ grade: 1, term: 1, dailyCount: 5, username: '<b>坏</b>' })
   });
-  const brand = r.d.querySelector('#brand-name');
+  const brand = r.d.querySelector('#brand-page-text');
   chk(brand.querySelectorAll('b').length === 0, '用户名不会注入 HTML（未生成 b 元素）');
   chk(r.d.title.indexOf('古诗词') > -1, '页面未崩溃且标题正常');
   // 用户名原样文本渲染，不被当成 HTML 解析执行
-  chk(brand.textContent.indexOf('跬步 · ') === 0 && brand.textContent.indexOf('<b>坏</b>') > 0,
-    '用户名按纯文本渲染（textContent 保留原始字符）');
+  chk(brand.textContent === '<b>坏</b>的古诗词', '用户名按纯文本渲染（textContent 保留原始字符）');
 
-  // 5. 需求 14：首页小古文入口可隐藏，且刷新后保持
+  // 5. 需求：首页小古文入口卡片已删除，旧的 classicEntry 设置也不再影响页面
   r = await boot({ poem_recite_settings_v1: JSON.stringify({ grade: 1, term: 1, dailyCount: 5, classicEntry: 'hide' }) });
-  chk(r.d.querySelector('#classic-entry').hidden === true, '设置 classicEntry=hide 时首页隐藏小古文入口');
+  chk(r.d.querySelector('#classic-entry') === null, '首页已无小古文入口卡片（旧设置不再需要）');
+  chk(!!r.d.querySelector('.dock-item[data-nav-go="classic"]'), '小古文入口仍在底部页签上，可正常进入');
   r = await boot({ poem_recite_settings_v1: JSON.stringify({ grade: 1, term: 1, dailyCount: 5 }) });
-  chk(r.d.querySelector('#classic-entry').hidden === false, '旧版设置无 classicEntry 时默认显示入口');
+  chk(r.d.querySelector('#classic-entry') === null, '旧版设置（无 classicEntry）下首页同样没有入口卡片');
+  chk(r.d.querySelector('#today-list').querySelectorAll('.item').length === 5, '页面其余部分照常渲染');
 
   console.log(fails === 0 ? '\n🎉 刷新/兼容测试全部通过' : '\n❌ ' + fails + ' 项失败');
   process.exit(fails ? 1 : 0);

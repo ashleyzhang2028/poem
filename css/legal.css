@@ -7,6 +7,14 @@
 .back-icon { text-decoration: none; }
 .back-icon svg { width: 26px; height: 26px; }
 
+/* 更新日期：原先进顶栏副标题，顶栏统一后单独一行，仍然精确到年月日 */
+.legal-updated {
+  margin: -2px 0 12px;
+  font-size: 12px;
+  letter-spacing: .6px;
+  color: var(--ink-3);
+}
+
 .legal-nav { display: flex; align-items: center; }
 .legal-nav-link {
   font-size: 12.5px;

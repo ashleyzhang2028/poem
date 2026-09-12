@@ -18,23 +18,12 @@
   <link rel="stylesheet" href="css/style.css" />
   <link rel="stylesheet" href="css/classic.css" />
 </head>
-<body>
+<body data-nav="classic" data-page="小古文">
   <div class="app">
-    <header class="topbar">
-      <div class="brand">
-        <a class="brand-icon back-icon" href="./index.html" title="返回古诗词" aria-label="返回古诗词">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M14.5 5 8 12l6.5 7" />
-          </svg>
-        </a>
-        <div class="brand-text">
-          <h1>跬步</h1>
-          <p>小古文 · 想读哪篇点哪篇</p>
-        </div>
-      </div>
-      <span class="count-badge" id="gw-count">0 篇</span>
-    </header>
-
+    <!-- 顶部栏：由 js/chrome.js 统一渲染（全站同一套 logo + 跬步 + 页面名） -->
+    <header class="topbar"></header>
+    <!-- 小古文进度：已读 / 总数（顶栏与底部页签由 js/chrome.js 渲染） -->
+    <div class="list-head"><span class="count-badge" id="gw-count">0 篇</span></div>
     <div class="toolbar">
       <div class="search-wrap">
         <span class="search-icon" aria-hidden="true">
@@ -45,17 +34,19 @@
         </span>
         <input id="gw-search" class="search-input" type="search" placeholder="搜索篇名 / 出处 / 作者" autocomplete="off" />
       </div>
-      <button class="seg-toggle" id="gw-filter" data-filter="all">全部</button>
-      <button class="seg-toggle" id="gw-filter-unread" data-filter="unread">未读</button>
+      <div class="seg mini filter-seg" id="gw-filter-seg" role="group" aria-label="筛选">
+        <button type="button" data-filter="all" class="active" aria-pressed="true">全部</button>
+        <button type="button" data-filter="unread" aria-pressed="false">未读</button>
+      </div>
       <button class="seg-toggle" id="gw-random-read" data-on="0" title="随机连读，读完自动跳下一篇">
         <span aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 9.5v5h3l4.2 3.4V6.1L7 9.5H4Z" />
-            <path d="M15.2 9.2a4 4 0 0 1 0 5.6" />
-            <path d="M17.8 6.6a7.6 7.6 0 0 1 0 10.8" />
+            <path d="M4 9.6v4.8h2.8l4 3.2V6.4l-4 3.2H4Z" />
+            <path d="M14.8 9.2a4 4 0 0 1 0 5.6" />
+            <path d="M17.4 6.6a7.6 7.6 0 0 1 0 10.8" />
           </svg>
         </span>
-        <span id="gw-random-read-text">随机连读</span>
+        <span id="gw-random-read-text">连读</span>
       </button>
     </div>
 
@@ -74,55 +65,106 @@
   <!-- 古文详情：整页阅读（长文可滚动，不再是卡片弹窗） -->
   <div class="reader" id="gw-reader" hidden>
     <header class="reader-bar">
-      <button class="reader-back" id="gw-back" aria-label="返回列表">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M14.5 5 8 12l6.5 7" />
-        </svg>
-        <span>小古文</span>
-      </button>
-      <div class="reader-progress" id="gw-progress"></div>
-      <button class="reader-done" id="gw-done">
-        <span class="done-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M5 12.5 10 17.5 19.5 7" />
+      <!-- 返回键：与全站顶栏右侧的圆形动作位同一颗按钮（同样 40px 圆环、
+           同一笔画粗细），只放一个箭头，不再在图标里叠「小 古 文」三个字。
+           当前是哪一篇，下面的正文与「第 N / 100 篇」已经说明，这里不必再报页名。 -->
+      <button class="reader-back top-act" id="gw-back" aria-label="返回小古文列表" title="返回列表">
+        <span class="top-act-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14.4 5.4 7.8 12l6.6 6.6" />
           </svg>
         </span>
-        <span id="gw-done-text">标记已读</span>
       </button>
+      <div class="reader-progress" id="gw-progress"></div>
+      <!-- 「标记已读」已并入阅读辅助工具条（SVG 图标），顶栏只留返回与进度，改完仍是一行 -->
+      <span class="reader-bar-count" id="rd-done-text" aria-hidden="true"></span>
     </header>
     <div class="reader-body">
       <h2 id="rd-title"></h2>
       <div class="meta" id="rd-meta"></div>
-      <div class="reader-actions">
+      <!-- 阅读辅助工具条（第一行）：对齐 / 字号 / 注音 —— 字号必须始终可见（曾因合并丢掉整条工具条） -->
+      <div class="reader-actions" id="rd-actions-main">
+        <div class="seg mini icon-seg" id="rd-align-seg" role="group" aria-label="正文对齐方式">
+          <button type="button" data-align="left" aria-pressed="false" title="左对齐" aria-label="左对齐">
+            <span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round">
+              <path d="M4 6.5h16M4 11h10.5M4 15.5h16M4 20h8" />
+            </svg></span>
+          </button>
+          <button type="button" data-align="center" class="active" aria-pressed="true" title="居中对齐" aria-label="居中对齐">
+            <span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round">
+              <path d="M4 6.5h16M6.8 11h10.4M4 15.5h16M8 20h8" />
+            </svg></span>
+          </button>
+          <button type="button" data-align="right" aria-pressed="false" title="右对齐" aria-label="右对齐">
+            <span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round">
+              <path d="M4 6.5h16M9.5 11H20M4 15.5h16M12 20h8" />
+            </svg></span>
+          </button>
+        </div>
+        <div class="seg mini font-seg" id="rd-font-seg" role="group" aria-label="正文字号">
+          <button type="button" id="rd-font-down" aria-label="缩小字号" title="缩小字号">A－</button>
+          <button type="button" id="rd-font-up" aria-label="放大字号" title="放大字号">A＋</button>
+        </div>
         <div class="seg mini" id="rd-pinyin-seg" data-on="0" role="group" aria-label="注音方式">
           <button data-mode="off" aria-pressed="false">不注音</button>
           <button data-mode="rare" class="active" aria-pressed="true">生字</button>
           <button data-mode="all" aria-pressed="false">全文</button>
         </div>
-        <button class="mini-btn" id="rd-read-btn" data-on="0" aria-pressed="false">
-          <span class="btn-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M4 9.5v5h3l4.2 3.4V6.1L7 9.5H4Z" />
-              <path class="wave1" d="M15.2 9.2a4 4 0 0 1 0 5.6" />
-              <path class="wave2" d="M17.8 6.6a7.6 7.6 0 0 1 0 10.8" />
+      </div>
+      <!-- 阅读辅助工具条（第二行）：原文一个播放键 + 译文开关 + 标记已读。
+           原先这一行并排两个播放键（原文一个、译文一个），一篇文章出现两个播放信号，
+           像多长了一个按钮；而译文本身还带一个朗读键，又叠了一层。
+           现在只留原文这一颗 ▶ / ⏸（同一位置切换，不并排），
+           译文的朗读键挪到译文标题旁，跟着译文框一起出现。 -->
+      <div class="reader-actions icon-row" id="rd-actions-icons">
+        <button type="button" class="mini-btn" id="rd-read-btn" data-on="0" aria-pressed="false" title="朗读原文：标题、朝代、作者与正文">
+          <span class="btn-icon play-glyph" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M7.2 4.6 19.4 12 7.2 19.4Z" fill="currentColor" stroke="none" /></svg>
+          </span>
+          <span class="btn-icon pause-glyph" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M8.2 5h2.9v14H8.2Z M12.9 5h2.9v14h-2.9Z" fill="currentColor" stroke="none" /></svg>
+          </span>
+          <span class="sr-only" id="rd-read-text">朗读原文</span>
+        </button>
+        <button type="button" class="mini-btn" id="rd-trans-toggle" data-on="0" aria-pressed="false" title="显示译文">
+          <span class="btn-icon play-glyph" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 5.6h9.2a1.4 1.4 0 0 1 1.4 1.4v9.4a1.4 1.4 0 0 1-1.4 1.4H4Z" />
+              <path d="M7 9.4h4.6M7 12.8h3.2" />
+              <path d="M15.4 9.2h3.2a1.4 1.4 0 0 1 1.4 1.4v6.2a1.4 1.4 0 0 1-1.4 1.4h-2.2l-1 1.6-.9-1.6h-.1" />
             </svg>
           </span>
-          <span id="rd-read-text">朗读</span>
+          <span class="btn-icon pause-glyph" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 5.6h9.2a1.4 1.4 0 0 1 1.4 1.4v9.4a1.4 1.4 0 0 1-1.4 1.4H4Z" />
+              <path d="M7 9.4h4.6M7 12.8h3.2" />
+              <path d="M15.4 9.2h3.2a1.4 1.4 0 0 1 1.4 1.4v6.2a1.4 1.4 0 0 1-1.4 1.4h-2.2l-1 1.6-.9-1.6h-.1" />
+              <path d="M20.6 4.2 15.6 20.2" />
+            </svg>
+          </span>
+          <span class="sr-only" id="rd-trans-toggle-text">显示译文</span>
         </button>
-        <button class="mini-btn" id="rd-trans-toggle" data-on="0">显示译文</button>
-        <button class="mini-btn ghost" id="rd-font-down" aria-label="缩小字号">A－</button>
-        <button class="mini-btn ghost" id="rd-font-up" aria-label="放大字号">A＋</button>
+        <button type="button" class="mini-btn done-btn" id="gw-done">
+          <span class="btn-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 12.5 10 17.5 19.5 7" />
+            </svg>
+          </span>
+          <span class="sr-only" id="gw-done-text">标记已读</span>
+        </button>
       </div>
       <pre class="poem-text reader-text" id="rd-text"></pre>
       <section class="trans-box" id="rd-trans" hidden>
         <div class="trans-head">
           <h3>白话译文</h3>
-          <button class="trans-read" id="rd-trans-read" data-on="0" disabled>
-            <span aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M4 9.5v5h3l4.2 3.4V6.1L7 9.5H4Z" />
-                <path d="M15.2 9.2a4 4 0 0 1 0 5.6" />
-              </svg>
+          <!-- 译文朗读键：跟着译文框一起出现，只在译文标题这一处，
+               与正文那颗朗读键不同时出现在同一行 -->
+          <button type="button" class="trans-read" id="rd-trans-read" data-on="0" aria-pressed="false" disabled title="朗读白话译文">
+            <span class="btn-icon play-glyph" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M7.2 4.6 19.4 12 7.2 19.4Z" fill="currentColor" stroke="none" /></svg>
+            </span>
+            <span class="btn-icon pause-glyph" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M8.2 5h2.9v14H8.2Z M12.9 5h2.9v14h-2.9Z" fill="currentColor" stroke="none" /></svg>
             </span>
             <span id="rd-trans-read-text">朗读</span>
           </button>
@@ -150,6 +192,33 @@
     </div>
   </div>
 
+
+  <!-- 设置弹层：与首页同一套选项（用户名 / 阅读辅助），顶栏与底部页签都能打开 -->
+  <div class="modal" id="settings-modal" hidden>
+    <div class="modal-mask" data-settings-close="1"></div>
+    <div class="modal-box small" role="dialog" aria-modal="true" aria-label="设置">
+      <button class="modal-close" data-settings-close="1" aria-label="关闭">✕</button>
+      <div class="modal-head"><h2>设置</h2></div>
+      <div class="settings-item">
+        <label for="input-username">用户名</label>
+        <input id="input-username" class="settings-input" type="text" maxlength="12"
+               placeholder="Ashley" autocomplete="off" enterkeyhint="done" />
+        <div class="settings-hint">留空则显示默认名称「Ashley」；首页与小古文页共用一份</div>
+      </div>
+      <div class="settings-item">
+        <label>阅读辅助</label>
+        <div class="seg small" id="seg-helper-c">
+          <button type="button" data-helper="off">关闭</button>
+          <button type="button" data-helper="on" class="active">开启</button>
+        </div>
+        <div class="settings-hint">开启后，打开古文即自动注音（默认「只标生字」）</div>
+      </div>
+      <div class="settings-tip">
+        <p>年级 / 学期 / 背诵范围 / 数据备份请在首页的「设置」里调整。</p>
+      </div>
+    </div>
+  </div>
+
   <div class="toast" id="toast" hidden></div>
 
   <script src="data/poems-classic.js"></script>
@@ -158,6 +227,7 @@
   <script src="js/pinyin.js"></script>
   <script src="js/speech.js"></script>
   <script src="js/reader.js"></script>
+  <script src="js/chrome.js"></script>
   <script src="js/classic.js"></script>
 </body>
 </html>

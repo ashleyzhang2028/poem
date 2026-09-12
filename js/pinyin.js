@@ -44,9 +44,7 @@
     "间关": ["jiān", "guān"],
     "中间": ["zhōng", "jiān"],
     "之间": ["zhī", "jiān"],
-    "京口瓜洲一水间": ["jīng", "kǒu", "guā", "zhōu", "yī", "shuǐ", "jiān"],
     "还家": ["huán", "jiā"],
-    "还不": ["hái", "bù"],
     "还有": ["hái", "yǒu"],
     "还是": ["hái", "shì"],
     "当午": ["dāng", "wǔ"],
@@ -90,10 +88,7 @@
     "燕子": ["yàn", "zi"],
     "种豆": ["zhòng", "dòu"],
     "种子": ["zhǒng", "zi"],
-    "一片": ["yī", "piàn"],
-    "一片冰心": ["yī", "piàn", "bīng", "xīn"],
     "一行": ["yī", "háng"],
-    "一种": ["yī", "zhǒng"],
     "挑促织": ["tiǎo", "cù", "zhī"],
     "挑灯": ["tiǎo", "dēng"],
     "好景": ["hǎo", "jǐng"],
@@ -142,7 +137,6 @@
     "遗民": ["yí", "mín"],
     "遗之": ["wèi", "zhī"],
     "缥缈": ["piāo", "miǎo"],
-    "一缥": ["yī", "piǎo"],
     "发了": ["fā", "le"],
     "白发": ["bái", "fà"],
     "头发": ["tóu", "fa"],
@@ -152,10 +146,8 @@
     "可汗": ["kè", "hán"],
     "但使": ["dàn", "shǐ"],
     "度日": ["dù", "rì"],
-    "不度": ["bù", "dù"],
     "扁舟": ["piān", "zhōu"],
     "小舟": ["xiǎo", "zhōu"],
-    "一行白鹭": ["yī", "háng", "bái", "lù"],
     "恰好": ["qià", "hǎo"]
   };
 
@@ -183,19 +175,74 @@
     if (list.length === 1) return list[0];
 
     // 1) 词语表命中
+    //    注意：「一」「不」的声调由变调规则统一裁决，词表命中也要再校正一次，
+    //    否则会把「一片」写成 yī piàn 这类错调。
     const hit = wordAt(text, i);
-    if (hit) return hit;
+    if (hit && ch !== "一" && ch !== "不") return hit;
 
-    // 2) 「不 / 一」的变调
+    // 2) 「不 / 一」的变调（邻字按实际读音判定声调，不能只看首读音）
     const next = text[i + 1];
     if (ch === "不") {
-      if (next && TONE4.test(list.join("/")) && false) return list[0];
-      if (next && TONE4.test((readOf(next, text, i + 1) || ""))) return list[1] || list[0];
-      return list[0];
+      // 「不」本调 bù，后面跟去声时变 bú
+      return next && isTone4(next, text, i + 1) ? pickTone(list, 2) : pickTone(list, 4);
+    }
+    if (ch === "一") {
+      // 「一」本调 yī：去声前读 yí，阴平/阳平/上声前读 yì，序数/词尾仍读 yī
+      if (!next || !isHan(next)) return pickTone(list, 1);
+      if (isOrdinal(text, i)) return pickTone(list, 1);
+      return isTone4(next, text, i + 1) ? pickTone(list, 2) : pickTone(list, 4);
     }
 
     // 3) 兜底：现代最常用读音（第一个）
     return list[0];
+  }
+
+  /** 声调符号表：按调号取拼音里的声调 */
+  const TONE_MARK = { 1: /[āēīōūǖ]/, 2: /[áéíóúǘ]/, 3: /[ǎěǐǒǔǚ]/, 4: /[àèìòùǜ]/ };
+
+  /**
+   * 邻字是否为去声。
+   * 取该字在本句中的**实际读音**判调，避免「一」+「行(háng)」这类被首读音误导。
+   */
+  function isTone4(ch, text, i) {
+    const p = readOf(ch, text, i);
+    if (!p) return false;
+    if (TONE_MARK[4].test(p)) return true;
+    // 多音候选里只要有一个去声读音，且当前读音也含轻声/无调号时，倾向判为去声
+    return false;
+  }
+
+  /** 从候选读音里按调号挑选，挑不到就退回首读音 */
+  function pickTone(list, tone) {
+    const re = TONE_MARK[tone];
+    if (re) {
+      for (let i = 0; i < list.length; i++) if (re.test(list[i])) return list[i];
+    }
+    return list[0];
+  }
+
+  /**
+   * 「一」是否读本调 yī（序数、概数开头、或「一」在词尾）。
+   * 覆盖：一年级 / 一更 / 第一 / 一九 / 一、二等序数用法。
+   */
+  function isOrdinal(text, i) {
+    const arr = Array.from(text);
+    const prev = arr[i - 1];
+    const next = arr[i + 1];
+    const nnext = arr[i + 2];
+    // 前接「第、初、十、百、千、万」等序数前缀 → 本调
+    if (prev && /[第初十百千万]/.test(prev)) return true;
+    // 后面跟数字（如「一二」「一九」「一二三」）→ 本调
+    if (next && /[二三四五六七八九十百千万零两]/.test(next)) return true;
+    // 「一 + 量词/名词」但整体为序数或计数单位（一年级、一九年、一小时）→ 本调
+    // 判定：后一个字本身是数词单位，或再往后仍是数字（如「一 年 级」中的「级」）
+    if (next && /[年月日班級级单元课课节册卷份号条只张本]/.test(next)) {
+      // 「一年好景」这类不表示序数，靠后字是否为量词性结尾进一步区分：
+      // 「一年级 / 一九年 / 一小时」后紧邻字为量词或数字时判本调
+      if (nnext && /[级級班单元课节册卷班]/.test(nnext)) return true;
+      if (nnext && /[二三四五六七八九十百千万零两]/.test(nnext)) return true;
+    }
+    return false;
   }
 
   /** 尝试在 i 处匹配词语表，返回当前字的读音 */
@@ -228,10 +275,20 @@
 
   /**
    * 该字在「只标生字」模式下是否需要注音。
-   * 生字 = 有拼音可查 且 不在常用字表内。
+   *
+   * 生字 = 有拼音可查，且满足下面任一条：
+   *   1. 不在常用字表内（真生字，如「锄、餐、瑶」）
+   *   2. 是多音字（如「曲、还、间、行、少」）—— 小朋友最容易读错，
+   *      在常用字表里也照样要标，否则「只标生字」档会把它们全静音
    */
   function needAnnotate(ch) {
-    return readings(ch).length > 0 && !isCommon(ch);
+    if (!readings(ch).length) return false;
+    return !isCommon(ch) || isPolyphone(ch);
+  }
+
+  /** 是否为多音字（拼音表里含 / 分隔的多个读音） */
+  function isPolyphone(ch) {
+    return readings(ch).length > 1;
   }
 
   /**
@@ -251,7 +308,8 @@
         out += ch === "\n" ? "<br>" : escapeHtml(ch);
         return;
       }
-      if (rare && isCommon(ch)) {
+      // 「只标生字」档统一走 needAnnotate：生字 + 多音字，避免整首静音
+      if (rare && !needAnnotate(ch)) {
         out += escapeHtml(ch);
         return;
       }
@@ -293,7 +351,7 @@
     const chars = Array.from(src);
     return chars.map(function (ch, i) {
       if (!isHan(ch)) return ch;
-      if (rare && isCommon(ch)) return ch;
+      if (rare && !needAnnotate(ch)) return ch;
       return ch + "(" + (readOf(ch, chars, i) || "") + ")";
     });
   }
@@ -310,6 +368,7 @@
     rareChars: rareChars,
     isCommon: isCommon,
     needAnnotate: needAnnotate,
+    isPolyphone: isPolyphone,
     readOf: function (ch, text, i) { return readOf(ch, text || ch, i || 0); },
     read: read,
     has: function (ch) { return !!TABLE[ch]; },

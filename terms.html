@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#2f6055" />
-  <title>用户协议 · 跬步</title>
+  <title>跬步 · 用户协议</title>
   <meta name="description" content="跬步的用户协议：使用规则、学生与未成年人保护、内容版权、信息准确性、免责说明。" />
   <meta name="format-detection" content="telephone=no" />
   <meta name="robots" content="index, follow" />
@@ -18,24 +18,11 @@
   <link rel="stylesheet" href="css/style.css" />
   <link rel="stylesheet" href="css/legal.css" />
 </head>
-<body>
+<body data-nav="legal" data-dock="off" data-page="用户协议">
   <div class="app">
-    <header class="topbar">
-      <div class="brand">
-        <a class="brand-icon back-icon" href="./index.html" title="返回跬步" aria-label="返回跬步">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M14.5 5 8 12l6.5 7" />
-          </svg>
-        </a>
-        <div class="brand-text">
-          <h1>用户协议</h1>
-          <p>跬步 · 更新于 2026 年</p>
-        </div>
-      </div>
-      <div class="legal-nav">
-        <a class="legal-nav-link" href="./privacy.html">隐私条款</a>
-      </div>
-    </header>
+    <!-- 顶栏：由 js/chrome.js 统一渲染（法务页从简：logo + 跬步 + 返回） -->
+    <header class="topbar"></header>
+    <p class="legal-updated">更新于 <time id="terms-updated" datetime="2026-09-12">2026 年 9 月 12 日</time></p>
 
     <nav class="legal-toc">
       <a href="#t1">一、服务与使用</a>
@@ -73,7 +60,8 @@
         <h2>三、内容与准确性</h2>
         <ul class="legal-mini">
           <li><span class="mini-k">版权</span><span class="mini-v">古诗文原文属公共领域；注释、译文、拼音标注、分组与界面代码由本应用整理编写，供个人学习与非商业教学免费使用，转载或商用请先联系。</span></li>
-          <li><span class="mini-k">朗读</span><span class="mini-v">朗读使用设备系统自带的语音合成，音色与断句由系统决定，不存储任何音频文件。</span></li>
+          <li><span class="mini-k">朗读</span><span class="mini-v">朗读由设备系统自带的语音合成完成，音色、语速与断句由系统决定，本应用不存储任何音频文件。</span></li>
+          <li><span class="mini-k">机器朗读</span><span class="mini-v">古诗词多音字、通假字与古音读法繁杂，机器朗读难免读错；朗读结果仅作参考，读音请以语文教材、老师所教与权威注本为准。</span></li>
           <li><span class="mini-k">准确性</span><span class="mini-v">诗词文本、拼音（含多音字）与译文均人工整理并尽力校对，仍可能有疏漏。</span></li>
           <li><span class="mini-k">以教材为准</span><span class="mini-v">年级与学期归属参照人教／统编版教材常见编排，各地版本与进度不完全一致，请以孩子学校所用教材与老师要求为准。</span></li>
           <li><span class="mini-k">纠错</span><span class="mini-v">发现错误欢迎反馈，我们会尽快修正；如本应用内容无意侵犯了您的权利，请联系我们删除。</span></li>
@@ -85,7 +73,7 @@
         <ul class="legal-mini">
           <li><span class="mini-k">按现状提供</span><span class="mini-v">本应用按「现状」免费提供，不承诺持续可用、无错误或长期维护。</span></li>
           <li><span class="mini-k">责任边界</span><span class="mini-v">在法律允许范围内，因使用或无法使用本应用产生的学习成绩、复习效果、数据丢失等后果，本应用不承担责任，请自行导出备份。</span></li>
-          <li><span class="mini-k">协议变更</span><span class="mini-v">协议可能随功能调整更新，更新后在本页公布；继续使用即视为接受。</span></li>
+          <li><span class="mini-k">协议变更</span><span class="mini-v">协议可能随功能调整更新，更新后在本页公布并同步更新页首日期；继续使用即视为接受。</span></li>
         </ul>
         <p>疑问、纠错，欢迎发邮件：</p>
         <p class="mail-line"><a class="mail-link" href="#" data-mail-slot="1" rel="nofollow">显示邮箱地址</a></p>
@@ -102,6 +90,7 @@
     </footer>
   </div>
 
+  <script src="js/chrome.js"></script>
   <script src="js/contact.js"></script>
 </body>
 </html>
