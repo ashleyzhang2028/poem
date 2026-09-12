@@ -8,8 +8,10 @@
  * 3. 搜索 + 「全部 / 未读」筛选，快速找到想读的一篇。
  * 4. 阅读用**整页阅读器**（reader），而不是卡片弹窗：长文可整屏滚动。
  * 5. 进度只有 localStorage 里的「已读」标记（poem_classic_read_v1）。
- * 6. 阅读辅助（注音 / 朗读 / 译文 / 字号）全部用同一套「组合按钮」样式，
- *    横向排成一行，图标统一 SVG，文案走屏幕阅读器（.sr-only）。
+ * 6. 阅读辅助工具条分两行排：
+ *    第一行 = 正文对齐（左 / 中 / 右 SVG 图标）+ 字号（A－ / A＋ 组合）+ 注音档位；
+ *    第二行 = 朗读 / 译文开关 / 播放译文 / 标记已读，全部纯 SVG 图标，文案走屏幕阅读器。
+ *    对齐方式可持久化：古诗居中好看，长古文左对齐更好读。
  * 7. 朗读三处入口：
  *    · 阅读器「朗读」——读标题 + 朝代 + 作者 + 正文
  *    · 译文「朗读」——只读白话译文
@@ -27,11 +29,18 @@
   };
   const STORE_KEY = "poem_classic_read_v1";
   const FONT_KEY = "poem_classic_font_v1";
+  const ALIGN_KEY = "poem_classic_align_v1";
   const PINYIN_KEY = "poem_helper_pinyin_v1";
 
   /* 字号五档：A- 可以一路降到 15px，照顾低龄与弱视用户 */
   const FONT_SIZES = [15, 17, 19, 21, 23];
   const DEFAULT_FONT = 17; // 默认字号降一级（原默认 19）
+
+  /* 正文对齐三档：left / center / right
+     古诗短句居中像碑帖，所以默认居中；《少年中国说》这类长古文左对齐更好读，
+     由用户在工具条上用图标自己选，选择记在本机。 */
+  const ALIGNS = ["left", "center", "right"];
+  const DEFAULT_ALIGN = "center";
 
   /* 注音档位：off 关闭 ｜ rare 只标生字 ｜ all 全文注音 */
   const PINYIN_MODES = ["off", "rare", "all"];
@@ -336,6 +345,7 @@
     syncTransButton();
     renderNav();
     applyFont();
+    applyAlign();
     syncPinyinButton();
     syncReadButton();
     syncTransReadButton();
@@ -515,8 +525,15 @@
     const read = isRead(current.id);
     const btn = $("#gw-done");
     btn.classList.toggle("is-done", read);
-    $("#gw-done-text").textContent = read ? "已读" : "标记已读";
+    // 「标记已读」现在是一个 SVG 勾选图标，可见文案只保留顶栏右侧的「已读」小字
+    btn.title = read ? "已读，再点一次取消" : "标记为已读";
     btn.setAttribute("aria-pressed", read ? "true" : "false");
+    $("#gw-done-text").textContent = read ? "已读，再点一次取消" : "标记为已读";
+    const tip = $("#rd-done-text");
+    if (tip) {
+      tip.textContent = read ? "已读" : "";
+      tip.classList.toggle("is-done", read);
+    }
   }
 
   /* ---------------- 随机连读 ---------------- */
@@ -529,7 +546,8 @@
     // 只有「连读队列真的还在跑」才算进行中：用户中途点「停止」时按钮要立刻复位
     const running = autoReading && !!window.Speech && window.Speech.speaking();
     btn.dataset.on = running ? "1" : "0";
-    $("#gw-random-read-text").textContent = running ? "连读中" : "随机连读";
+    // 工具栏一行排满，文案精简成「连读 / 连读中」（完整说明在 title 里）
+    $("#gw-random-read-text").textContent = running ? "连读中" : "连读";
   }
 
   function shuffle(list) {
@@ -622,6 +640,36 @@
     showToast("字号 " + FONT_SIZES[i] + "px");
   }
 
+  /* ---------------- 正文对齐 ---------------- */
+
+  function alignMode() {
+    const v = localStorage.getItem(ALIGN_KEY);
+    return ALIGNS.indexOf(v) > -1 ? v : DEFAULT_ALIGN;
+  }
+
+  /** data-align 交给 CSS 决定 text-align；块本身的居中由 fit-content + margin auto 保证 */
+  function applyAlign() {
+    const box = $("#rd-text");
+    if (!box) return;
+    box.dataset.align = alignMode();
+  }
+
+  function syncAlignButtons() {
+    const mode = alignMode();
+    $$("#rd-align-seg button").forEach(function (b) {
+      const on = b.dataset.align === mode;
+      b.classList.toggle("active", on);
+      b.setAttribute("aria-pressed", on ? "true" : "false");
+    });
+  }
+
+  function setAlign(mode) {
+    localStorage.setItem(ALIGN_KEY, ALIGNS.indexOf(mode) > -1 ? mode : DEFAULT_ALIGN);
+    applyAlign();
+    syncAlignButtons();
+    showToast(mode === "left" ? "正文左对齐" : mode === "right" ? "正文右对齐" : "正文居中对齐");
+  }
+
   function showToast(msg) {
     const t = $("#toast");
     t.textContent = msg;
@@ -688,6 +736,11 @@
     $("#rd-font-up").addEventListener("click", function () { changeFont(1); });
     $("#rd-font-down").addEventListener("click", function () { changeFont(-1); });
 
+    // 正文对齐：左 / 中 / 右 三个 SVG 图标，选中态持久化
+    $$("#rd-align-seg button").forEach(function (b) {
+      b.addEventListener("click", function () { setAlign(b.dataset.align); });
+    });
+
     $$("#rd-pinyin-seg button").forEach(function (b) {
       b.addEventListener("click", function () {
         setPinyinModeFromUI(b.dataset.mode);
@@ -729,6 +782,7 @@
     // 保证「设置里关掉阅读辅助」在任何时候进阅读器都是纯文本。
     bindEvents();
     renderList();
+    syncAlignButtons();
     syncRandomReadButton();
     // 设置页改「阅读辅助」后（另一个标签页 / 返回本页）立刻同步，不再需要刷新
     window.addEventListener("storage", function (e) {
@@ -752,6 +806,8 @@
 
   window.ClassicProse = {
     isRead: isRead,
+    align: alignMode,
+    setAlign: setAlign,
     total: function () { return allItems().length; },
     annotate: function () { return window.Pinyin ? window.Pinyin.annotateHtml(current ? current.text : "") : ""; }
   };

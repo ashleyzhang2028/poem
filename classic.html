@@ -57,7 +57,7 @@
             <path d="M17.4 6.6a7.6 7.6 0 0 1 0 10.8" />
           </svg>
         </span>
-        <span id="gw-random-read-text">随机连读</span>
+        <span id="gw-random-read-text">连读</span>
       </button>
     </div>
 
@@ -83,25 +83,43 @@
         <span>小古文</span>
       </button>
       <div class="reader-progress" id="gw-progress"></div>
-      <button class="reader-done" id="gw-done">
-        <span class="done-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M5 12.5 10 17.5 19.5 7" />
-          </svg>
-        </span>
-        <span id="gw-done-text">标记已读</span>
-      </button>
+      <!-- 「标记已读」已并入阅读辅助工具条（SVG 图标），顶栏只留返回与进度，改完仍是一行 -->
+      <span class="reader-bar-count" id="rd-done-text" aria-hidden="true"></span>
     </header>
     <div class="reader-body">
       <h2 id="rd-title"></h2>
       <div class="meta" id="rd-meta"></div>
-      <!-- 阅读辅助工具条：注音 / 朗读 / 译文 / 字号 四组按钮样式统一，窄屏也尽量同排 -->
-      <div class="reader-actions">
+      <!-- 阅读辅助工具条（第一行）：对齐 / 字号 / 注音 —— 字号必须始终可见（曾因合并丢掉整条工具条） -->
+      <div class="reader-actions" id="rd-actions-main">
+        <div class="seg mini icon-seg" id="rd-align-seg" role="group" aria-label="正文对齐方式">
+          <button type="button" data-align="left" aria-pressed="false" title="左对齐" aria-label="左对齐">
+            <span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round">
+              <path d="M4 6.5h16M4 11h10.5M4 15.5h16M4 20h8" />
+            </svg></span>
+          </button>
+          <button type="button" data-align="center" class="active" aria-pressed="true" title="居中对齐" aria-label="居中对齐">
+            <span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round">
+              <path d="M4 6.5h16M6.8 11h10.4M4 15.5h16M8 20h8" />
+            </svg></span>
+          </button>
+          <button type="button" data-align="right" aria-pressed="false" title="右对齐" aria-label="右对齐">
+            <span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round">
+              <path d="M4 6.5h16M9.5 11H20M4 15.5h16M12 20h8" />
+            </svg></span>
+          </button>
+        </div>
+        <div class="seg mini font-seg" id="rd-font-seg" role="group" aria-label="正文字号">
+          <button type="button" id="rd-font-down" aria-label="缩小字号" title="缩小字号">A－</button>
+          <button type="button" id="rd-font-up" aria-label="放大字号" title="放大字号">A＋</button>
+        </div>
         <div class="seg mini" id="rd-pinyin-seg" data-on="0" role="group" aria-label="注音方式">
           <button data-mode="off" aria-pressed="false">不注音</button>
           <button data-mode="rare" class="active" aria-pressed="true">生字</button>
           <button data-mode="all" aria-pressed="false">全文</button>
         </div>
+      </div>
+      <!-- 阅读辅助工具条（第二行）：朗读 / 译文 / 播放译文 / 标记已读，纯图标，文案只给读屏软件 -->
+      <div class="reader-actions icon-row" id="rd-actions-icons">
         <button type="button" class="mini-btn" id="rd-read-btn" data-on="0" aria-pressed="false" title="朗读本篇">
           <span class="btn-icon play-glyph" aria-hidden="true">
             <svg viewBox="0 0 24 24"><path d="M7.2 4.6 19.4 12 7.2 19.4Z" fill="currentColor" stroke="none" /></svg>
@@ -112,33 +130,46 @@
           <span class="sr-only" id="rd-read-text">朗读</span>
         </button>
         <button type="button" class="mini-btn" id="rd-trans-toggle" data-on="0" aria-pressed="false" title="显示译文">
-          <span class="btn-icon" aria-hidden="true">
+          <span class="btn-icon play-glyph" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
               <path d="M4 5.6h9.2a1.4 1.4 0 0 1 1.4 1.4v9.4a1.4 1.4 0 0 1-1.4 1.4H4Z" />
               <path d="M7 9.4h4.6M7 12.8h3.2" />
               <path d="M15.4 9.2h3.2a1.4 1.4 0 0 1 1.4 1.4v6.2a1.4 1.4 0 0 1-1.4 1.4h-2.2l-1 1.6-.9-1.6h-.1" />
             </svg>
           </span>
+          <span class="btn-icon pause-glyph" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 5.6h9.2a1.4 1.4 0 0 1 1.4 1.4v9.4a1.4 1.4 0 0 1-1.4 1.4H4Z" />
+              <path d="M7 9.4h4.6M7 12.8h3.2" />
+              <path d="M15.4 9.2h3.2a1.4 1.4 0 0 1 1.4 1.4v6.2a1.4 1.4 0 0 1-1.4 1.4h-2.2l-1 1.6-.9-1.6h-.1" />
+              <path d="M20.6 4.2 15.6 20.2" />
+            </svg>
+          </span>
           <span class="sr-only" id="rd-trans-toggle-text">显示译文</span>
         </button>
-        <div class="seg mini font-seg" id="rd-font-seg" role="group" aria-label="正文字号">
-          <button type="button" id="rd-font-down" aria-label="缩小字号" title="缩小字号">A－</button>
-          <button type="button" id="rd-font-up" aria-label="放大字号" title="放大字号">A＋</button>
-        </div>
+        <button type="button" class="mini-btn" id="rd-trans-read" data-on="0" disabled title="朗读译文">
+          <span class="btn-icon play-glyph" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M7.2 4.6 19.4 12 7.2 19.4Z" fill="currentColor" stroke="none" /></svg>
+          </span>
+          <span class="btn-icon pause-glyph" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M8.2 5h2.9v14H8.2Z M12.9 5h2.9v14h-2.9Z" fill="currentColor" stroke="none" /></svg>
+          </span>
+          <span class="sr-only" id="rd-trans-read-text">朗读译文</span>
+        </button>
+        <button type="button" class="mini-btn done-btn" id="gw-done">
+          <span class="btn-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 12.5 10 17.5 19.5 7" />
+            </svg>
+          </span>
+          <span class="sr-only" id="gw-done-text">标记已读</span>
+        </button>
       </div>
       <pre class="poem-text reader-text" id="rd-text"></pre>
       <section class="trans-box" id="rd-trans" hidden>
         <div class="trans-head">
           <h3>白话译文</h3>
-          <button type="button" class="trans-read" id="rd-trans-read" data-on="0" disabled title="朗读译文">
-            <span class="play-glyph" aria-hidden="true">
-              <svg viewBox="0 0 24 24"><path d="M7.2 4.6 19.4 12 7.2 19.4Z" fill="currentColor" stroke="none" /></svg>
-            </span>
-            <span class="pause-glyph" aria-hidden="true">
-              <svg viewBox="0 0 24 24"><path d="M8.2 5h2.9v14H8.2Z M12.9 5h2.9v14h-2.9Z" fill="currentColor" stroke="none" /></svg>
-            </span>
-            <span class="sr-only" id="rd-trans-read-text">朗读译文</span>
-          </button>
+          <!-- 朗读译文按钮已上移到阅读辅助工具条（纯图标一行），译文区只留内容 -->
         </div>
         <p id="rd-trans-text"></p>
       </section>

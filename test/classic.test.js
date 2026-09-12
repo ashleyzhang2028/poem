@@ -120,9 +120,17 @@ setTimeout(() => {
   chk([...d.querySelectorAll('#gw-filter-seg button')].map(b => b.textContent.trim()).join('/') === '全部/未读',
     '组合按钮文案为 全部 / 未读');
   chk(filterSeg.querySelector('button.active').dataset.filter === 'all', '默认选中「全部」');
-  // 需求 6：「随机连读」与工具栏其它按钮同款样式
+  // 需求 6：「连读」与工具栏其它按钮同款样式
   const randomBtn = d.querySelector('#gw-random-read');
-  chk(randomBtn.classList.contains('seg-toggle'), '「随机连读」仍是 seg-toggle 样式');
+  chk(randomBtn.classList.contains('seg-toggle'), '「连读」仍是 seg-toggle 样式');
+  // 需求 1：搜索框 + 「全部 / 未读」组合 + 「连读」三样都在同一行，且不压缩
+  const bar = d.querySelector('.toolbar');
+  chk(bar.children.length === 3, '工具栏是一行三样：搜索框 / 全部·未读组合 / 连读');
+  const barCss = fs.readFileSync(path + 'css/classic.css', 'utf8');
+  chk(/\.toolbar \{[^}]*display:\s*flex/.test(barCss) && !/\.toolbar \{[^}]*flex-wrap:\s*wrap/.test(barCss),
+    '工具栏不换行，三样始终同一行');
+  chk(/\.filter-seg \{[^}]*flex:\s*0 0 auto/.test(barCss) && /\.seg-toggle \{[^}]*flex:\s*0 0 auto/.test(barCss),
+    '筛选组合与「连读」不压缩（搜索框独占剩余宽度）');
   chk(!randomBtn.classList.contains('toolbar-read'), '不再使用旧的 toolbar-read 专属样式');
 
   // 搜索
@@ -187,7 +195,9 @@ setTimeout(() => {
 
   // 标记已读
   d.querySelector('#gw-done').dispatchEvent(new window.Event('click', { bubbles: true }));
-  chk(d.querySelector('#gw-done-text').textContent === '已读', '标记后按钮变为「已读」');
+  chk(/已读，再点一次取消/.test(d.querySelector('#gw-done-text').textContent), '标记后读屏文案变为「已读，再点一次取消」');
+  chk(d.querySelector('#gw-done').classList.contains('is-done'), '标记已读按钮进入高亮态');
+  chk(d.querySelector('#rd-done-text').textContent === '已读', '顶栏右侧显示「已读」小字');
   const store = JSON.parse(window.localStorage.getItem('poem_classic_read_v1'));
   chk(store['gw-17'] && store['gw-17'].read === true, '已读状态写入 localStorage（独立于古诗词进度）');
   chk(!window.localStorage.getItem('poem_recite_progress_v1'), '不会写古诗词进度 key，两边互不干扰');
@@ -226,16 +236,59 @@ setTimeout(() => {
   chk(true, '译文状态文案留给读屏软件（展开 / 收起时同步，见下文断言）');
   chk(d.querySelector('#rd-trans-toggle').classList.contains('mini-btn'), '译文按钮与朗读按钮同款样式');
 
-  // 需求 5：四组阅读辅助按钮同属一条工具条，字体 / 配色 / 样式统一
-  const act = d.querySelector('.reader-actions');
-  chk(!!act, '阅读器有统一的阅读辅助工具条');
-  chk(act.children.length === 4 &&
-    act.querySelector('#rd-pinyin-seg') && act.querySelector('#rd-read-btn') &&
-    act.querySelector('#rd-trans-toggle') && act.querySelector('#rd-font-seg'),
-    '工具条里依次是 注音 / 朗读 / 译文 / 字号 四组按钮');
-  chk(d.querySelectorAll('.reader-actions .mini-btn, .reader-actions .seg.mini').length === 4,
-    '四组按钮共用同一套样式类（.mini-btn / .seg.mini）');
-  chk(d.querySelectorAll('.reader-actions').length === 1, '只有一条工具条（A－/A＋ 已并入，不再单列）');
+  // 需求：阅读辅助工具条拆成两行，每行都排成一行（不再折成七八个换行）
+  const rows = [...d.querySelectorAll('.reader-actions')];
+  chk(rows.length === 2, '阅读辅助工具条是两行（实际 ' + rows.length + '）');
+  const row1 = d.querySelector('#rd-actions-main');
+  const row2 = d.querySelector('#rd-actions-icons');
+  chk(!!row1 && !!row2, '两行工具条各有独立容器（主行 / 图标行）');
+  // 需求 1：对齐 / 字号 / 注音 在上一行
+  chk(row1.children.length === 3 &&
+    row1.querySelector('#rd-align-seg') && row1.querySelector('#rd-font-seg') && row1.querySelector('#rd-pinyin-seg'),
+    '上一行依次是 对齐 / 字号 / 注音 三组按钮');
+  // 需求 1：朗读 / 译文 / 播放译文 / 标记已读 在下行，全部纯图标
+  chk(row2.children.length === 4 &&
+    row2.querySelector('#rd-read-btn') && row2.querySelector('#rd-trans-toggle') &&
+    row2.querySelector('#rd-trans-read') && row2.querySelector('#gw-done'),
+    '下一行依次是 朗读 / 译文 / 播放译文 / 标记已读 四个图标按钮');
+  chk(row2.querySelectorAll('button > svg, button > span > svg').length >= 4, '图标行的按钮全部是 SVG 图标');
+  chk(row2.querySelectorAll('button .sr-only').length === 4, '图标行的文案只留给读屏软件（.sr-only）');
+  chk(d.querySelectorAll('.reader-actions .mini-btn, .reader-actions .seg.mini').length === 7,
+    '两行共 7 组按钮（3 + 4）共用同一套样式类');
+  const actionsCss = fs.readFileSync(path + 'css/classic.css', 'utf8');
+  const actBlock = /(^|\n)\.reader-actions \{([\s\S]*?)\}/.exec(actionsCss);
+  chk(!!actBlock && /flex-wrap:\s*nowrap;/.test(actBlock[2]), '工具条不换行，每行都排成一行');
+  chk(/\.reader-actions\.icon-row/.test(actionsCss), '图标行有独立间距（第二行靠上、贴着第一行）');
+  chk(/\.icon-row \.mini-btn \{[^}]*width:\s*38px/.test(actionsCss), '图标行四个按钮等宽，排成一条');
+  chk(/\.done-btn\.is-done/.test(actionsCss), '「标记已读」按钮有已读高亮态');
+
+  // 需求 2：正文对齐三档，左 / 中 / 右 都是 SVG 图标，由用户自己选
+  const alignSeg = d.querySelector('#rd-align-seg');
+  chk(!!alignSeg, '工具条上有「正文对齐」组合按钮');
+  chk([...alignSeg.querySelectorAll('button')].map(b => b.dataset.align).join('/') === 'left/center/right',
+    '对齐三档为 左 / 中 / 右');
+  chk(alignSeg.querySelectorAll('button svg').length === 3, '三个对齐按钮都是 SVG 图标');
+  chk(alignSeg.querySelector('button[data-align="center"]').classList.contains('active'),
+    '默认选中「居中对齐」（古诗短句居中好看）');
+  chk(d.querySelector('#rd-text').dataset.align === 'center', '正文默认居中（data-align="center"）');
+  chk(new RegExp('\\.reader-body \\.reader-text\\[data-align="left"\\]').test(actionsCss),
+    'CSS 里有左对齐规则（长古文左对齐更好读）');
+  chk(new RegExp('\\.reader-body \\.reader-text\\[data-align="right"\\]').test(actionsCss),
+    'CSS 里有右对齐规则');
+  const alignBtn = k => d.querySelector('#rd-align-seg button[data-align="' + k + '"]');
+  alignBtn('left').dispatchEvent(new window.Event('click', { bubbles: true }));
+  chk(d.querySelector('#rd-text').dataset.align === 'left', '点左对齐立即生效（data-align="left"）');
+  chk(alignBtn('left').classList.contains('active') && !alignBtn('center').classList.contains('active'),
+    '对齐按钮选中态互斥（同一时刻只有一个是高亮）');
+  chk(window.localStorage.getItem('poem_classic_align_v1') === 'left', '对齐方式持久化到 localStorage');
+  alignBtn('right').dispatchEvent(new window.Event('click', { bubbles: true }));
+  chk(d.querySelector('#rd-text').dataset.align === 'right', '点右对齐立即生效');
+  // 重新打开阅读器（翻篇）后对齐设置还在
+  d.querySelector('#rd-next').dispatchEvent(new window.Event('click', { bubbles: true }));
+  chk(d.querySelector('#rd-text').dataset.align === 'right', '翻到下一篇后仍保持用户选的对齐方式');
+  chk(alignBtn('right').classList.contains('active'), '翻篇后对齐按钮高亮同步');
+  alignBtn('center').dispatchEvent(new window.Event('click', { bubbles: true }));
+  chk(d.querySelector('#rd-text').dataset.align === 'center', '切回居中对齐');
   // 需求：注音档位文案精简为 不注音 / 生字 / 全文
   const segLabels = [...d.querySelectorAll('#rd-pinyin-seg button')].map(b => b.textContent.trim());
   chk(segLabels.join('/') === '不注音/生字/全文', '注音档位文案精简为 不注音/生字/全文（' + segLabels.join('/') + '）');
@@ -270,7 +323,9 @@ setTimeout(() => {
   const doneItem = d.querySelector('#gw-list .item.done');
   doneItem.dispatchEvent(new window.Event('click', { bubbles: true }));
   d.querySelector('#gw-done').dispatchEvent(new window.Event('click', { bubbles: true }));
-  chk(d.querySelector('#gw-done-text').textContent === '标记已读', '再点一次可取消已读');
+  chk(d.querySelector('#gw-done-text').textContent === '标记为已读', '再点一次可取消已读');
+  chk(d.querySelector('#gw-done').classList.contains('is-done') === false, '取消后按钮恢复常态');
+  chk(d.querySelector('#rd-done-text').textContent === '', '取消后顶栏「已读」小字消失');
   chk(!JSON.parse(window.localStorage.getItem('poem_classic_read_v1'))['gw-17'], '取消后从存储中移除');
 
   console.log(fails === 0 ? '\n🎉 小古文测试全部通过' : '\n❌ ' + fails + ' 项失败');
