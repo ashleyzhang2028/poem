@@ -53,7 +53,7 @@ chk(/\.today-read\s*\{[^}]*border-radius:\s*50%/.test(css), '今日朗读按钮�
 // 需求 6：列表单项右侧按钮是圆形播放键
 chk(/\.item-read\s*\{[^}]*border-radius:\s*50%/.test(css), '列表单项右侧按钮是圆形播放键');
 // 需求 7：详情页仍是「小喇叭 + 朗读」文字按钮，没有被改成纯图标
-chk(/\.mini-btn \.btn-icon/.test(classicCss), '详情页朗读按钮保持「小喇叭 + 朗读」文字形态');
+chk(/\.mini-btn \.btn-icon/.test(classicCss), '小古文朗读按钮的图标容器样式仍在（纯 SVG 图标）');
 
 chk(/@font-face/.test(css), '样式里声明了 @font-face 自托管字体');
 chk(/font-family:\s*"Poem Serif SC"/.test(css), '声明了宋体族 Poem Serif SC');

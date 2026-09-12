@@ -85,6 +85,10 @@
 }
 .seg-toggle svg { display: block; width: 15px; height: 15px; margin: auto; }
 
+/* 工具栏：搜索框可伸缩，「全部 / 未读」「连读」不压缩，三样排成一行 */
+.seg-toggle { flex: 0 0 auto; }
+.filter-seg { flex: 0 0 auto; }
+
 /* 分组标题 */
 .group-head {
   display: flex;
@@ -196,6 +200,15 @@ body.reader-open { overflow: hidden; }
   color: #fdfaf2;
 }
 
+/* 顶栏右侧的「已读」小字：真正的开关是工具条里的 SVG 勾选按钮 */
+.reader-bar-count {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+.reader-bar-count.is-done { color: var(--green); }
+
 .reader-body {
   flex: 1;
   overflow-y: auto;
@@ -215,15 +228,24 @@ body.reader-open { overflow: hidden; }
   /* 与正文同一条中轴 */
   text-align: center;
 }
-/* 阅读辅助工具条：注音 / 朗读 / 译文 / 字号 四组按钮统一外观，尽量排成一行 */
 /* 出处 / 朝代 / 作者标签跟着正文居中 */
 .reader-body .meta { justify-content: center; }
+/* 阅读辅助工具条：拆成两行，每行都排成一行不换行
+   一行 = 对齐 / 字号 / 注音（有档位文字），一行 = 朗读 / 译文 / 播放译文 / 标记已读（纯图标） */
 .reader-actions {
   display: flex;
   gap: 8px;
-  margin: 14px 0 4px;
-  flex-wrap: wrap;
+  margin: 14px 0 0;
+  flex-wrap: nowrap;
   align-items: center;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.reader-actions::-webkit-scrollbar { display: none; }
+.reader-actions.icon-row {
+  margin-top: 8px;
+  margin-bottom: 4px;
 }
 .mini-btn,
 .reader-actions .seg.mini {
@@ -244,18 +266,31 @@ body.reader-open { overflow: hidden; }
 }
 .mini-btn.ghost { color: var(--ink-2); }
 .mini-btn[data-on="1"] { background: var(--green); border-color: var(--green); color: #fdfaf2; }
-/* 纯图标按钮（朗读 / 译文）：方形，图标居中 */
-#rd-read-btn,
-#rd-trans-toggle { padding: 6px 10px; }
-#rd-read-btn svg,
-#rd-trans-toggle svg { width: 17px; height: 17px; }
-/* 播放中显示 ⏸，停止 / 未播放显示 ▶，一个按钮说清状态 */
+/* 纯图标按钮（朗读 / 译文 / 播放译文 / 标记已读）：方形，图标居中，图标行等宽 */
+.icon-row .mini-btn { padding: 0; width: 38px; min-height: 34px; flex: 0 0 auto; }
+.icon-row .mini-btn svg { width: 17px; height: 17px; }
+/* 状态全靠图标表达：▶ 未开始 / 朗读中、⏸ 播放中、译文开关「划掉文档」= 收起译文 */
 #rd-read-btn .pause-glyph,
-#rd-trans-toggle .pause-glyph { display: none; }
+#rd-trans-toggle .pause-glyph,
+#rd-trans-read .pause-glyph { display: none; }
 #rd-read-btn[data-on="1"] .play-glyph,
-#rd-trans-toggle[data-on="1"] .play-glyph { display: none; }
+#rd-trans-toggle[data-on="1"] .play-glyph,
+#rd-trans-read[data-on="1"] .play-glyph { display: none; }
 #rd-read-btn[data-on="1"] .pause-glyph,
-#rd-trans-toggle[data-on="1"] .pause-glyph { display: inline-flex; }
+#rd-trans-toggle[data-on="1"] .pause-glyph,
+#rd-trans-read[data-on="1"] .pause-glyph { display: inline-flex; }
+/* 「标记已读」：点亮前是描边勾，已读后整颗高亮 */
+.done-btn { color: var(--ink-2); }
+.done-btn.is-done { background: var(--green); border-color: var(--green); color: #fdfaf2; }
+/* 对齐组合按钮：三个 SVG 图标（左 / 中 / 右），选中态与注音档位一致 */
+.icon-seg button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 9px;
+}
+.icon-seg button svg { display: block; width: 16px; height: 16px; }
+
 /* 字号组合按钮：A－ / A＋ 同宽，与注音档位同款 */
 .font-seg button {
   font-size: 12.5px;
@@ -278,6 +313,11 @@ body.reader-open { overflow: hidden; }
   text-align: center;
   letter-spacing: 1.4px;
 }
+/* 对齐方式交给用户选（工具条上的三个 SVG 图标）：
+   古诗居中好看；《少年中国说》一类长古文左对齐更好读。
+   右对齐时文字也靠右，整块仍保持居中不越界。 */
+.reader-body .reader-text[data-align="left"] { text-align: left; }
+.reader-body .reader-text[data-align="right"] { text-align: right; }
 
 .trans-box {
   background: var(--bg);
@@ -435,9 +475,10 @@ body.reader-open { overflow: hidden; }
   padding: 5px 9px;
   border-radius: 8px;
 }
-/* 窄屏（iPhone SE 一类）：字号再收一点，四组按钮仍然排成一行 */
+/* 窄屏（iPhone SE 一类）：档位按钮再收一点，两行工具条仍然各自排成一行 */
 @media (max-width: 380px) {
   .reader-actions { gap: 6px; }
   .reader-actions .seg.mini button { padding: 5px 7px; font-size: 12px; }
-  .mini-btn { padding: 6px 10px; font-size: 12.5px; }
+  .icon-row .mini-btn { width: 34px; min-height: 32px; }
+  .mini-btn { font-size: 12.5px; }
 }

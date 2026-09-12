@@ -228,7 +228,7 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
   const w2 = boot('classic.html', null, true);
   await sleep(400);
   const c = w2.document;
-  chk(!!c.querySelector('#gw-random-read'), '索引页有「随机连读」');
+  chk(!!c.querySelector('#gw-random-read'), '索引页有「连读」按钮');
   chk(!!c.querySelector('#rd-prev') && !!c.querySelector('#rd-next'), '阅读器有上一篇/下一篇');
   c.querySelector('#gw-list .item').dispatchEvent(new w2.Event('click', { bubbles: true }));
   await sleep(20);
@@ -266,7 +266,28 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
   w2.Speech.stop();
   await sleep(80);
   chk(c.querySelector('#gw-random-read').dataset.on === '0', '停止后随机连读按钮复位');
-  chk(c.querySelector('#gw-random-read-text').textContent === '随机连读', '按钮文案回到「随机连读」');
+  chk(c.querySelector('#gw-random-read-text').textContent === '连读', '按钮文案回到「连读」');
+
+  /* ---- 回归：阅读辅助工具条不得再丢（曾因合并把整条工具条丢了）---- */
+  const rowMain = c.querySelector('#rd-actions-main');
+  const rowIcons = c.querySelector('#rd-actions-icons');
+  chk(!!rowMain && rowMain.children.length === 3, '上一行：对齐 / 字号 / 注音 三组按钮都在');
+  chk(!!c.querySelector('#rd-font-down') && !!c.querySelector('#rd-font-up'),
+    'A－ / A＋ 字号按钮还在（此前被合并丢掉）');
+  chk(!!c.querySelector('#rd-align-seg'), '正文对齐组合按钮在');
+  chk(!!rowIcons && rowIcons.children.length === 4, '下一行：朗读 / 译文 / 播放译文 / 标记已读 四个图标按钮都在');
+  chk(!!c.querySelector('#rd-trans-read') && !c.querySelector('#rd-trans-read').disabled,
+    '「播放译文」按钮已并到工具条，且有语音环境时可用（译文区不再单放一个）');
+  chk(!c.querySelector('#rd-trans .trans-read'), '译文区里不再重复放朗读按钮');
+  chk(!!c.querySelector('#gw-done.sr-only') === false && !!c.querySelector('#rd-actions-icons #gw-done'),
+    '「标记已读」并到工具条里（SVG 勾选图标）');
+  // 对齐功能可点、可持久化
+  c.querySelector('#rd-align-seg button[data-align="left"]').dispatchEvent(new w2.Event('click', { bubbles: true }));
+  await sleep(20);
+  chk(c.querySelector('#rd-text').dataset.align === 'left', '点左对齐生效');
+  c.querySelector('#rd-align-seg button[data-align="center"]').dispatchEvent(new w2.Event('click', { bubbles: true }));
+  await sleep(20);
+  chk(c.querySelector('#rd-text').dataset.align === 'center', '点居中对齐生效');
 
   /* ---- 回归：阅读辅助总开关必须是「权威」，两处状态不得打架 ---- */
   // 场景 1：总开关开启 + 档位残留 off → 仍应注音（修复前 0 个 ruby，开关看似失效）
