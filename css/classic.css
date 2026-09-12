@@ -206,7 +206,11 @@ body.reader-open { overflow: hidden; }
   font-size: 25px;
   font-weight: 600;
   letter-spacing: 1.5px;
+  /* 与正文同一条中轴 */
+  text-align: center;
 }
+/* 出处 / 朝代 / 作者标签跟着正文居中 */
+.reader-body .meta { justify-content: center; }
 .reader-actions {
   display: flex;
   gap: 8px;
@@ -233,9 +237,13 @@ body.reader-open { overflow: hidden; }
   /* 正文字体由 --font-poem 统一指定（思源宋体，缺字回退系统宋体） */
   font-family: var(--font-poem);
   font-size: 19px;   /* 由 JS 按用户字号覆盖；默认档见 js/classic.js 的 DEFAULT_FONT */
-  /* 古文正文行距降一档：2.2 → 2.0，段落更紧凑、一屏多读几行 */
-  line-height: 2.0;
-  margin: 18px 0 22px;
+  /* 古文正文行距降一档：2.2 → 2.0 → 1.8，段落更紧凑、一屏多读几行 */
+  line-height: 1.8;
+  /* 正文块自身居中：max-width: fit-content + margin auto，短文不会贴着左边缘 */
+  max-width: fit-content;
+  margin: 18px auto 22px;
+  /* 行内文字也居中：小古文多为短句，逐句居中更像碑帖 */
+  text-align: center;
   letter-spacing: 1.4px;
 }
 
@@ -340,9 +348,11 @@ body.reader-open { overflow: hidden; }
 
 /* 注音正文：ruby 让拼音压在汉字上方，行高留足避免遮挡 */
 .reader-text.with-pinyin {
-  /* 注音档同步降一档：2.9 → 2.7，仍留足空间不压到拼音 */
-  line-height: 2.7;
+  /* 注音档同步降一档：2.9 → 2.7 → 2.5，仍留足空间不压到拼音 */
+  line-height: 2.5;
   letter-spacing: 1.8px;
+  /* 注音渲染成 ruby + <br>，改成 normal 才不会因为保留空白把居中挤歪 */
+  white-space: normal;
 }
 .reader-text ruby,
 .poem-text ruby {

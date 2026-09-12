@@ -272,7 +272,7 @@ html, body {
   color: var(--ink-2);
   margin-top: 3px;
   display: flex;
-  gap: 8px;
+  gap: 4px;
   align-items: center;
   flex-wrap: wrap;
 }
@@ -397,7 +397,11 @@ html, body {
   margin: 0 0 8px;
   font-size: 23px;
   letter-spacing: 1px;
+  /* 与正文同一条中轴 */
+  text-align: center;
 }
+/* 朝代 / 作者标签跟着正文居中（正文居中后标题行再左对齐会显得歪） */
+.modal-head .meta { justify-content: center; }
 .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
 .tag {
   font-size: 12px;
@@ -411,10 +415,14 @@ html, body {
 
 .poem-text {
   font-size: 19px;
-  line-height: 2.1;
+  line-height: 1.5;
   white-space: pre-wrap;
   word-break: break-word;
-  margin: 16px 0;
+  /* 正文块自身居中：pre 默认盒宽会吃满容器，max-width: fit-content + margin auto 后整块居中 */
+  max-width: fit-content;
+  margin: 16px auto;
+  /* 行内文字也居中：诗句不满一行（如绝句的起承转合）时按最长句对齐 */
+  text-align: center;
   color: #22302a;
   letter-spacing: 1.5px;
 }
@@ -747,8 +755,10 @@ body.has-install-tip #app {
 
 /* 注音正文 */
 .poem-text.with-pinyin {
-  line-height: 2.8;
+  line-height: 2.3;
   letter-spacing: 1.6px;
+  /* 注音渲染成 ruby + <br>，改成 normal 才不会因为保留空白把居中挤歪 */
+  white-space: normal;
 }
 .poem-text ruby { ruby-align: center; }
 .poem-text rt {
