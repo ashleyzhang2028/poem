@@ -110,27 +110,40 @@
   }
 
   /**
-   * 标题与副标题：「跬步 · 小古文」+ 想读哪篇点哪篇。
-   * 与首页一致，填过用户名时带上（跬步 · 小明的古诗词 · 小古文）。
+   * 页面标题与副标题。
+   *
+   * 顶栏第一行固定是「跬步 · 页面名」（页面名由 chrome.js 按 data-page=小古文 渲染），
+   * 所以第二行只补「这一页是干什么的」= 想读哪篇点哪篇，**不再重复「小古文」**。
+   * <title> 与全站一致：主标题在后、页面名在前 —— 「小古文 · 跬步」；
+   * 填过用户名时带上首页那层（「小明 · 小古文 · 跬步」）。
    */
-  function applyAppName() {
-    let username = "";
+  function currentUsername() {
     try {
-      username = String((JSON.parse(localStorage.getItem("poem_recite_settings_v1") || "{}") || {}).username || "").trim();
+      var cfg = JSON.parse(localStorage.getItem("poem_recite_settings_v1") || "{}") || {};
+      return String(cfg.username == null ? "" : cfg.username).trim();
     } catch (e) {
-      username = "";
+      return "";
     }
-    const title = username ? APP_NAME + " · " + username + "的古诗词 · 小古文" : APP_NAME + " · 小古文";
-    document.title = title;
-    // 顶栏第一行固定为应用名「跬步」，页面名（小古文）紧随其右、
-    // 样式上以「·」相连，视觉上就是「跬步 · 小古文」——不把页面名塞进 h1，
-    // 否则进小古文页顶栏会变成「跬步 · 小古文 · 小古文」。
+  }
+
+  function applyAppName() {
+    const name = currentUsername();
+    // 与顶栏同一口径：用户名只作为限定词前置，不改变「跬步」是应用名这件事
+    document.title = name ? name + " · 小古文 · " + APP_NAME : "小古文 · " + APP_NAME;
     $$('meta[name="apple-mobile-web-app-title"]').forEach(function (m) {
-      m.setAttribute("content", title);
+      m.setAttribute("content", name ? name + " · 小古文" : APP_NAME);
     });
-    // 标题行下面是副标题：小古文 · 想读哪篇点哪篇
-    const sub = $("#brand-sub");
-    if (sub) sub.textContent = "小古文 · 想读哪篇点哪篇";
+    // 顶栏第二行：页面名已经在第一行（「跬步 · 小古文」），这里只补一句「这一页是干什么的」，
+    // 所以**不再重复「小古文」**（早先写成「小古文 · 想读哪篇点哪篇」，
+    // 与第一行连起来看就是「小古文 小古文 · 想读哪篇点哪篇」）。
+    // chrome.js 渲染完顶栏会派发 chrome:ready，所以这里写在事件里，
+    // 否则会被它随后重建的顶栏覆盖。
+    const setSub = function () {
+      const sub = $("#brand-sub");
+      if (sub) sub.textContent = "想读哪篇点哪篇";
+    };
+    setSub();
+    document.addEventListener("chrome:ready", setSub);
   }
 
   /* ---------------- 进度存储（与古诗词进度相互独立） ---------------- */
@@ -482,9 +495,10 @@
     syncAllReadState();
   }
 
-  /** 一次同步所有朗读相关按钮（避免各处只同步一半） */
+  /** 一次同步所有朗读相关按钮（译文键也归这里管，避免只同步一半） */
   function syncAllReadState() {
     syncReadButtons();
+    syncTransReadButton();
     syncRandomReadButton();
     syncItemPlayBtns();
   }
@@ -516,9 +530,13 @@
   /** 正文播放键：朗读原文（标题 + 朝代 + 作者 + 正文） */
   function toggleRead() {
     if (!speechSupported() || !current) return;
-    // 再点一次 = 停止（暂停中同样能停），而不是叠一层新的朗读
-    if (readingActive()) {
-      autoReading = false;
+    // 点播放键即接管朗读：无论开始还是停止，都退出「随机连读」状态，
+    // 否则 autoReading 残留会让播放键一直显示不出播放态
+    autoReading = false;
+    // 「再点一次 = 停止」只针对**正在读正文**这件事：
+    //   · 暂停中也算（部分设备 pause 后 speaking 会变 false，认 readingActive()）
+    //   · 正在读译文时点正文键 = 切换到读正文，不能把它当成「停止译文后什么都不做」
+    if (readingActive() && speakingTarget === "原文") {
       window.Speech.stop();
       showToast("已停止朗读");
     } else {
@@ -526,19 +544,19 @@
       const ok = window.Speech.speak(speechText(current));
       showToast(ok ? "开始朗读" : "朗读启动失败，请重试");
     }
-    // 点播放键即接管朗读：无论开始还是停止，都退出「随机连读」状态，
-    // 否则 autoReading 残留会让播放键一直显示不出播放态
-    autoReading = false;
     syncAllReadState();
     setTimeout(syncAllReadState, 60);
     setTimeout(syncAllReadState, 300);
   }
 
-  /* 译文那颗 ▶ / ⏸ 由 syncTransReadButton() 统管，只读白话译文，
-     不读原文；译文没展开时点它会顺手展开，省一次点击 */
+  /** 译文播放键：只读白话译文，不读原文；译文没展开时顺手展开，省一次点击 */
   function toggleTransRead() {
     if (!speechSupported() || !current) return;
-    if (readingActive()) {
+    autoReading = false;
+    // 暂停中同样能停：认 readingActive()（含暂停中），不认 speaking() ——
+    // 部分设备 pause 之后 speaking 会变 false，此时点它应当是停下来，
+    // 而不是又发起一层译文朗读。
+    if (readingActive() && speakingTarget === "译文") {
       window.Speech.stop();
       showToast("已停止朗读");
     } else {
@@ -555,10 +573,6 @@
     syncAllReadState();
     setTimeout(syncAllReadState, 60);
     setTimeout(syncAllReadState, 300);
-
-    autoReading = false;
-    syncReadButtons();
-    setTimeout(syncReadButtons, 60);
   }
 
   /**
@@ -579,8 +593,10 @@
       const t = $("#rd-trans-toggle-text");
       if (t) t.textContent = on ? "收起译文" : "显示译文";
     }
-    // 译文框一开一合，译文那颗播放键跟着出现 / 消失；
-    // 收起时把朗读目标收回正文，并同步两颗键的状态
+    // 译文框一开一合，译文那颗播放键跟着出现 / 消失。
+    // 这里**只切界面状态，不动朗读**：连读自动翻篇也会走到这里（openReader → 收起译文），
+    // 若在这里 cancel 会把整个「随机连读」队列一起杀掉、播放栏卡在原篇。
+    // 用户主动收起译文时要停下正在读的译文，交给收起按钮的处理函数。
     if (!show && speakingTarget === "译文") speakingTarget = "原文";
     syncTransReadButton();
   }
@@ -915,7 +931,13 @@
     });
 
     $("#rd-trans-toggle").addEventListener("click", function () {
-      showTransBox(this.dataset.on !== "1");
+      const show = this.dataset.on !== "1";
+      // 用户主动收起译文框时，若正在读译文，先把这一条停下来
+      // （openReader 翻篇时的自动收起走 showTransBox(false)，那里不停朗读 ——
+      //   否则会把正在跑的「随机连读」队列一起 cancel 掉）
+      if (!show && speakingTarget === "译文" && readingActive()) window.Speech.stop();
+      showTransBox(show);
+      syncAllReadState();
     });
 
     $("#rd-font-up").addEventListener("click", function () { changeFont(1); });

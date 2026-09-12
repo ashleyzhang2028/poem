@@ -70,12 +70,18 @@ setTimeout(() => {
   chk(d.querySelector('#gw-count').textContent === '0 / 100 篇', '顶部显示 0 / 100 篇：' + d.querySelector('#gw-count').textContent);
   chk(d.querySelectorAll('#gw-list .group-head').length >= 6, '按主题显示分组标题（' + d.querySelectorAll('#gw-list .group-head').length + ' 个）');
   chk(/已读|标记/.test(d.querySelector('#gw-done-text').textContent), '阅读器内有「标记已读」按钮');
-/* ---------- 导航：与首页同一套顶栏 + 底部页签 ---------- */
+  /* ---------- 导航：与首页同一套顶栏 + 底部页签 ---------- */
   chk(d.querySelector('.brand-text h1').textContent === '跬步', '小古文页顶栏第一行同样是「跬步」（全站一致）');
   // 需求：页面名紧随「跬步」，显示为「跬步 · 小古文」
   chk(d.querySelector('#brand-page-text').textContent === '小古文',
     '页面名紧随「跬步」右侧：' + d.querySelector('#brand-page-text').textContent);
-  chk(d.title === '跬步 · 小古文', '小古文页标题为「跬步 · 小古文」（实际 ' + d.title + '）');
+  chk(d.title === '小古文 · 跬步', '小古文页标题为「小古文 · 跬步」（实际 ' + d.title + '）');
+  // 需求：下面补一句副标题，且不重复页面名（「小古文 · 小古文」是重复）
+  const sub = d.querySelector('#brand-sub').textContent;
+  chk(sub === '想读哪篇点哪篇', '小古文页副标题为「想读哪篇点哪篇」（实际 ' + JSON.stringify(sub) + '）');
+  chk(!/小古文/.test(sub) && !/跬步/.test(sub), '副标题不与第一行重复页面名 / 应用名');
+  chk(!/小古文[^。]{0,40}小古文/.test(d.querySelector('.topbar').textContent.replace(/\s+/g, '')),
+    '顶栏整行不出现连着两个「小古文」');
   const dock = d.querySelector('#site-dock');
   chk(!!dock, '小古文页有底部导航栏');
   const dockItems = [...dock.querySelectorAll('.dock-item')];
@@ -91,9 +97,9 @@ setTimeout(() => {
   const htmlSrc = fs.readFileSync(path + 'classic.html', 'utf8');
   chk(!/不排复习日期/.test(htmlSrc), '页面里不再出现「不排复习日期」这类说明');
   chk(!/想读哪篇点哪篇[。．]/.test(htmlSrc.replace(/<p>.*?<\/p>/, '')), '不再有婆婆妈妈的说明段落');
-  // 需求：标题行下面是「小古文 · 想读哪篇点哪篇」这句副标题
-  chk(d.querySelector('#brand-sub').textContent === '小古文 · 想读哪篇点哪篇',
-    '小古文页有副标题（实际 ' + JSON.stringify(d.querySelector('#brand-sub').textContent) + '）');
+  // 需求：标题行下面补一句副标题（页面名已在第一行，这里不再重复「小古文」）
+  chk(d.querySelector('#brand-sub').textContent === '想读哪篇点哪篇',
+    '小古文页有副标题「想读哪篇点哪篇」（实际 ' + JSON.stringify(d.querySelector('#brand-sub').textContent) + '）');
   chk(d.querySelector('#brand-page-text').textContent === '小古文',
     '页面名就是「小古文」，由 CSS 的 ::before 生成分隔符（不再写死标点）');
   chk(d.querySelectorAll('#gw-list .item .item-reason.review').length === 0, '列表里没有「复习」标签，不做复习排期');
