@@ -53,7 +53,7 @@ html, body {
   padding: 0;
   background: var(--bg);
   /* 底色见文件末尾「宋式纹样」一节：
-     素绢底 + 龟背纹平铺，晕染由 body::before 单独铺一层 */
+     素绢底 + 宋「曲水纹」（落花流水纹）平铺，晕染由 body::before 单独铺一层 */
   color: var(--ink);
   font-family: var(--font-ui);
   line-height: 1.6;
@@ -302,7 +302,6 @@ html, body {
 
 /* 全部诗词折叠 */
 .all-section { margin-top: 14px; }
-.classic-entry { margin-top: 14px; }
 .collapse-head {
   width: 100%;
   border: none;
@@ -673,34 +672,6 @@ body.has-install-tip #app {
   padding-bottom: calc(100px + 12px + 24px);
 }
 
-/* ==========================================================================
-   课外必背小古文入口（首页）
-   ========================================================================== */
-.classic-entry {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  text-decoration: none;
-  color: inherit;
-  border-left: 4px solid var(--blue);
-  transition: transform .15s, box-shadow .15s;
-}
-.classic-entry:active { transform: scale(.985); }
-.classic-icon { display: inline-flex; color: var(--blue); flex: none; }
-.classic-icon svg { width: 24px; height: 24px; }
-.classic-main { flex: 1; min-width: 0; }
-.classic-title {
-  display: block;
-  font-size: 16px;
-  font-weight: 600;
-}
-.classic-sub {
-  display: block;
-  font-size: 12.5px;
-  color: var(--ink-2);
-  margin-top: 2px;
-}
-
 /* 设置里的多行说明 */
 .settings-tip p { margin: 0; }
 .settings-tip p + p { margin-top: 6px; }
@@ -848,7 +819,6 @@ body.has-install-tip #app {
 
 /* 「本年级本学期全部诗词」等折叠标题也保持宋体，风格统一 */
 .collapse-head,
-.classic-title,
 .group-name {
   font-family: var(--font-poem);
   letter-spacing: .6px;
@@ -1069,9 +1039,6 @@ body.has-audio-player .ios-install-tip { bottom: calc(112px + var(--safe-bottom)
 .item-read:active { transform: scale(.94); }
 .item-read[data-on="1"] { background: var(--green); border-color: var(--green); color: #fffdf8; }
 
-/* 首页「小古文」入口：设置里可隐藏 */
-.classic-entry[hidden] { display: none; }
-
 /* 隐私 / 协议页的「极简速览」 */
 .legal-mini {
   margin: 0;
@@ -1097,19 +1064,32 @@ body.has-audio-player .ios-install-tip { bottom: calc(112px + var(--safe-bottom)
    ========================================================================== */
 
 /* ---------- 宋式纹样 ----------
-   龟背纹（六角龟甲 + 内嵌菱花）平铺成底纹，只在极淡处出现；
-   云纹点缀在卡片角落。两枚纹样都是内联 SVG data URI，不请求外部资源。 */
+   大背景 = 宋「曲水纹」（又叫落花流水纹 / 醉太平纹）：
+   南宋蜀锦「落花流水锦」与宋瓷刻花上最常见的水波团花，
+   水脉（曲水）连绵不断，团花（落花）随波点落，取「流水不腐、生生不息」之意。
+   卡片角落另缀一枚云纹。全部是内联 SVG data URI，不请求任何外部资源。 */
 :root {
-  --pattern-ivory: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='72' viewBox='0 0 96 72'%3E%3Cg fill='none' stroke='%235b4a2b' stroke-opacity='.05' stroke-width='1' stroke-linejoin='round'%3E%3Cpath d='M0 -6.2 10.4 0 0 6.2-10.4 0ZM0 6.2 10.4 12 0 18.2-10.4 12ZM0 18.2 10.4 24 0 30.2-10.4 24ZM0 30.2 10.4 36 0 42.2-10.4 36ZM0 42.2 10.4 48 0 54.2-10.4 48ZM0 54.2 10.4 60 0 66.2-10.4 60ZM0 66.2 10.4 72 0 78.2-10.4 72ZM48-6.2 58.4 0 48 6.2 37.6 0ZM48 6.2 58.4 12 48 18.2 37.6 12ZM48 18.2 58.4 24 48 30.2 37.6 24ZM48 30.2 58.4 36 48 42.2 37.6 36ZM48 42.2 58.4 48 48 54.2 37.6 48ZM48 54.2 58.4 60 48 66.2 37.6 60ZM48 66.2 58.4 72 48 78.2 37.6 72ZM96-6.2 106.4 0 96 6.2 85.6 0ZM96 6.2 106.4 12 96 18.2 85.6 12ZM96 18.2 106.4 24 96 30.2 85.6 24ZM96 30.2 106.4 36 96 42.2 85.6 36ZM96 42.2 106.4 48 96 54.2 85.6 48ZM96 54.2 106.4 60 96 66.2 85.6 60ZM96 66.2 106.4 72 96 78.2 85.6 72Z'/%3E%3Cpath d='M48 24l10.4 6v12L48 48l-10.4-6V30Z' stroke-opacity='.035'/%3E%3Cpath d='M0 36l10.4 6v12L0 60l-10.4-6V42Z' stroke-opacity='.035'/%3E%3Cpath d='M96 36l10.4 6v12L96 60l-10.4-6V42Z' stroke-opacity='.035'/%3E%3C/g%3E%3C/svg%3E");
+  --pattern-ivory: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%2780%27%20height%3D%2780%27%20viewBox%3D%270%200%2080%2080%27%3E%3Cg%20fill%3D%27none%27%20stroke%3D%27%232f6055%27%20stroke-linecap%3D%27round%27%20stroke-width%3D%271.6%27%3E%3Cpath%20d%3D%27M-10%2028%20C6%2010%2026%2010%2042%2028%20C58%2046%2078%2046%2094%2028%27%20stroke-opacity%3D%27.26%27%2F%3E%3Cpath%20d%3D%27M-10%2068%20C6%2050%2026%2050%2042%2068%20C58%2086%2078%2086%2094%2068%27%20stroke-opacity%3D%27.15%27%2F%3E%3C%2Fg%3E%3Cg%20fill%3D%27%23a55c19%27%20fill-opacity%3D%27.20%27%3E%3Ccircle%20cx%3D%2742%27%20cy%3D%2712%27%20r%3D%272.4%27%2F%3E%3Ccircle%20cx%3D%270%27%20cy%3D%2752%27%20r%3D%272.4%27%2F%3E%3Ccircle%20cx%3D%2784%27%20cy%3D%2752%27%20r%3D%272.4%27%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E");
+  /* 曲水（二）：与上组错开半格，两组叠起来才是连绵不断的波浪 */
+  --pattern-ivory-b: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%2780%27%20height%3D%2780%27%20viewBox%3D%270%200%2080%2080%27%3E%3Cpath%20d%3D%27M-10%2048%20C6%2030%2026%2030%2042%2048%20C58%2066%2078%2066%2094%2048%27%20fill%3D%27none%27%20stroke%3D%27%232f6055%27%20stroke-opacity%3D%27.10%27%20stroke-linecap%3D%27round%27%20stroke-width%3D%271.4%27%2F%3E%3C%2Fsvg%3E");
+  /* 落花：四点菱花团花，压在曲水的交叉处 */
+  --pattern-luo: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%27320%27%20height%3D%27320%27%20viewBox%3D%270%200%20320%20320%27%3E%3Cg%20fill%3D%27%23a55c19%27%20fill-opacity%3D%27.20%27%3E%3Ccircle%20cx%3D%27160%27%20cy%3D%27140%27%20r%3D%273.2%27%2F%3E%3Ccircle%20cx%3D%27180%27%20cy%3D%27160%27%20r%3D%273.2%27%2F%3E%3Ccircle%20cx%3D%27160%27%20cy%3D%27180%27%20r%3D%273.2%27%2F%3E%3Ccircle%20cx%3D%27140%27%20cy%3D%27160%27%20r%3D%273.2%27%2F%3E%3Ccircle%20cx%3D%27160%27%20cy%3D%27160%27%20r%3D%272%27%2F%3E%3C%2Fg%3E%3Ccircle%20cx%3D%27160%27%20cy%3D%27160%27%20r%3D%2717%27%20fill%3D%27none%27%20stroke%3D%27%232f6055%27%20stroke-opacity%3D%27.14%27%20stroke-width%3D%271.5%27%2F%3E%3Ccircle%20cx%3D%27160%27%20cy%3D%27160%27%20r%3D%2725%27%20fill%3D%27none%27%20stroke%3D%27%232f6055%27%20stroke-opacity%3D%27.07%27%20stroke-width%3D%271.2%27%2F%3E%3C%2Fsvg%3E");
   --pattern-cloud: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44' viewBox='0 0 44 44'%3E%3Cg fill='none' stroke='%232f6055' stroke-opacity='.16' stroke-width='1.1' stroke-linecap='round'%3E%3Cpath d='M8 30.5c0-2.6 2.1-4.7 4.7-4.7 1.3 0 2.4.5 3.2 1.3a5 5 0 0 1 8.6-1.6 4.4 4.4 0 0 1 6.1 4 4.3 4.3 0 0 1-.6 2.2'/%3E%3Cpath d='M11.5 35.2c0-1.6 1.3-2.9 2.9-2.9'/%3E%3C/g%3E%3C/svg%3E");
 }
 
-/* 页面底：素绢底 + 龟背纹（纹样本身只有 8% 描边不透明度，远看是纸的肌理） */
+/* 页面底：素绢底 + 宋「落花流水纹」满铺
+   三层叠成一个循环大纹样（周期 320px）：
+     1) 水脉（一）  80×80   一条连绵的正弦水波，另缀三颗落花
+     2) 水脉（二）  80×80   错半波，两波相衔即「曲水」不断之势
+     3) 落花团花    320×320 四点菱花 + 同心圆，落在水波交叠处
+   描边不透明度 7%~26%：静看是一张有暗花的宋锦，
+   退开一臂远则只剩纸的温度，不影响正文可读性。 */
 html, body {
-  background-image: var(--pattern-ivory);
-  background-repeat: repeat;
-  background-attachment: fixed;
-  background-size: 168px 126px;
+  background-image: var(--pattern-ivory), var(--pattern-ivory-b), var(--pattern-luo);
+  background-repeat: repeat, repeat, repeat;
+  background-attachment: fixed, fixed, fixed;
+  background-size: 80px 80px, 80px 80px, 320px 320px;
+  background-position: 0 0, 0 0, 0 0;
 }
 /* 晕染单独铺一层，保证纹样始终在颜料之下，不被渐变冲淡 */
 body::before {
@@ -1200,6 +1180,9 @@ body::before {
   text-decoration: none;
   transition: transform .15s, color .18s, box-shadow .18s;
 }
+/* 首页右侧占位：右上角不再放设置齿轮（底部页签已有「设置」），
+   留一个不可见占位，顶栏的左右两栏对齐关系不变 */
+.top-act-spacer { width: 40px; height: 40px; flex: none; }
 .top-act .top-act-icon { display: inline-flex; }
 .top-act svg, .icon-btn svg { width: 20px; height: 20px; display: block; }
 .top-act:hover, .icon-btn:hover { color: var(--green); }
@@ -1294,7 +1277,7 @@ body.has-audio-player .dock { border-top-color: rgba(240, 205, 124, .28); }
    宋式纹样的用法（点缀，不是贴满）
    --------------------------------------------------------------------------
    三处出现，都是「只在角落露一角」：
-     1. 页面底：龟背纹平铺，最淡（见文件开头的 --pattern-ivory）
+     1. 页面底：宋「曲水纹 + 落花流水纹」满铺（见文件开头的 --pattern-*）
      2. 今日背诵条：右上角一枚云纹（深底上做浮雕，Safari 不支持 mask 时自动不出）
      3. 卡片：左上 / 右下各一枚角隅纹样，用 mask 让纹样只从角上「透」出来
    纹样全部是内联 SVG data URI，不请求图片、断网也在。
@@ -1341,12 +1324,10 @@ body.has-audio-player .dock { border-top-color: rgba(240, 205, 124, .28); }
   mask-image: radial-gradient(circle at 70% 70%, #000 0%, rgba(0, 0, 0, .45) 55%, transparent 78%);
 }
 
-/* 折叠面板 / 小古文入口这类「大卡片」给一点角隅纹样 */
+/* 折叠面板这类「大卡片」给一点角隅纹样 */
 /* 大卡片上的纹样再淡一档：它只是「纸上的一点暗花」，不该被看见 */
 .all-section.card-pat::before,
-.all-section.card-pat::after,
-.classic-entry.card-pat::before,
-.classic-entry.card-pat::after { opacity: .26; }
+.all-section.card-pat::after { opacity: .26; }
 
 /* ==========================================================================
    按钮分级（宋式：以「描金线 + 纸底」分主次，不靠大色块）
@@ -1363,7 +1344,6 @@ body.has-audio-player .dock { border-top-color: rgba(240, 205, 124, .28); }
 .seg-toggle,
 .group-random,
 .reader-nav button,
-.trans-read,
 .settings-input {
   transition: transform .14s, box-shadow .18s, background .18s, border-color .18s, color .18s;
 }

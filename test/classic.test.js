@@ -233,20 +233,25 @@ setTimeout(() => {
   chk(rdSeg.querySelectorAll('button').length === 3, '阅读器注音有 3 档');
   chk(!!d.querySelector('#rd-read-btn'), '阅读器有朗读按钮');
 
-  // 需求 3：朗读按钮用播放图标（▶ 未播放 / ⏸ 播放中），不再画小喇叭
+  // 需求：原文 / 译文朗读合并为一个「组合键」，不再有两个各自独立的播放键
   const clsHtml = fs.readFileSync(path + 'classic.html', 'utf8');
-  chk(!!d.querySelector('#rd-read-btn .play-glyph svg'), '朗读按钮用 ▶ 播放图标');
+  const combo = d.querySelector('#rd-read-combo');
+  chk(!!combo, '朗读是一个组合键（#rd-read-combo）');
+  chk(!!combo.querySelector('#rd-read-btn') && !!combo.querySelector('#rd-trans-read'),
+    '组合键含「原文」「译文」两段');
+  chk(combo.querySelectorAll('.combo-seg').length === 2, '组合键只有两段，不再多出一个播放键');
+  chk([...combo.querySelectorAll('.combo-label')].map(x => x.textContent).join('/') === '原文/译文',
+    '两段文案为「原文 / 译文」：' + [...combo.querySelectorAll('.combo-label')].map(x => x.textContent).join('/'));
+  chk(!!d.querySelector('#rd-read-btn .play-glyph svg'), '组合键用 ▶ 播放图标');
   chk(!!d.querySelector('#rd-read-btn .pause-glyph svg'), '播放中切换为 ⏸ 暂停图标');
-  chk(!/>\s*<span id="rd-read-text"/.test(clsHtml) || true, '朗读按钮结构已改为图标 + 读屏文案');
-  chk(/<span class="sr-only" id="rd-read-text">朗读<\/span>/.test(clsHtml), '朗读文案只留给读屏软件');
   chk(!/>\s*朗读全文\s*</.test(clsHtml), '不再出现「朗读全文」文案');
 
-  // 需求 4：译文开关用 SVG 图标，文案只给读屏
+  // 译文开关仍是纯图标按钮，文案只给读屏
   const transBtn = d.querySelector('#rd-trans-toggle');
-  chk(!!transBtn.querySelector('svg'), '「显示译文」按钮改为 SVG 图标');
-  chk(!/显示译文/.test(transBtn.textContent.trim()), '译文按钮不再直接显示「显示译文」文字');
-  chk(true, '译文状态文案留给读屏软件（展开 / 收起时同步，见下文断言）');
-  chk(d.querySelector('#rd-trans-toggle').classList.contains('mini-btn'), '译文按钮与朗读按钮同款样式');
+  chk(!!transBtn.querySelector('svg'), '「显示译文」按钮是 SVG 图标');
+  chk(!/显示译文/.test(transBtn.cloneNode(true).querySelector('.sr-only') ? transBtn.textContent.replace(transBtn.querySelector('.sr-only').textContent, '') : transBtn.textContent),
+    '译文按钮可见文字里不出现「显示译文」（只留在 .sr-only 给读屏软件）');
+  chk(d.querySelector('#rd-trans-toggle').classList.contains('mini-btn'), '译文按钮与组合键同款样式');
 
   // 需求：阅读辅助工具条拆成两行，每行都排成一行（不再折成七八个换行）
   const rows = [...d.querySelectorAll('.reader-actions')];
@@ -258,21 +263,41 @@ setTimeout(() => {
   chk(row1.children.length === 3 &&
     row1.querySelector('#rd-align-seg') && row1.querySelector('#rd-font-seg') && row1.querySelector('#rd-pinyin-seg'),
     '上一行依次是 对齐 / 字号 / 注音 三组按钮');
-  // 需求 1：朗读 / 译文 / 播放译文 / 标记已读 在下行，全部纯图标
-  chk(row2.children.length === 4 &&
-    row2.querySelector('#rd-read-btn') && row2.querySelector('#rd-trans-toggle') &&
-    row2.querySelector('#rd-trans-read') && row2.querySelector('#gw-done'),
-    '下一行依次是 朗读 / 译文 / 播放译文 / 标记已读 四个图标按钮');
-  chk(row2.querySelectorAll('button > svg, button > span > svg').length >= 4, '图标行的按钮全部是 SVG 图标');
-  chk(row2.querySelectorAll('button .sr-only').length === 4, '图标行的文案只留给读屏软件（.sr-only）');
+  // 需求 1：朗读组合键 / 译文开关 / 标记已读 在下行
+  chk(row2.children.length === 3 &&
+    row2.querySelector('#rd-read-combo') && row2.querySelector('#rd-trans-toggle') &&
+    row2.querySelector('#gw-done'),
+    '下一行依次是 朗读组合键 / 译文开关 / 标记已读 三组（实际 ' + row2.children.length + '）');
+  chk(row2.querySelectorAll('button > svg, button > span > svg').length >= 3, '图标行的按钮全部是 SVG 图标');
+  chk(row2.querySelectorAll(':scope > button .sr-only').length === 2,
+    '「译文开关 / 标记已读」的文案只留给读屏软件（.sr-only）');
   chk(d.querySelectorAll('.reader-actions .mini-btn, .reader-actions .seg.mini').length === 7,
-    '两行共 7 组按钮（3 + 4）共用同一套样式类');
+    '工具条按钮共用同一套样式类：第二排的「原文 / 译文」是组合键里的两段（实际 ' +
+    d.querySelectorAll('.reader-actions .mini-btn, .reader-actions .seg.mini').length + '）');
   const actionsCss = fs.readFileSync(path + 'css/classic.css', 'utf8');
   const actBlock = /(^|\n)\.reader-actions \{([\s\S]*?)\}/.exec(actionsCss);
   chk(!!actBlock && /flex-wrap:\s*nowrap;/.test(actBlock[2]), '工具条不换行，每行都排成一行');
   chk(/\.reader-actions\.icon-row/.test(actionsCss), '图标行有独立间距（第二行靠上、贴着第一行）');
-  chk(/\.icon-row \.mini-btn \{[^}]*width:\s*38px/.test(actionsCss), '图标行四个按钮等宽，排成一条');
+  chk(/\.icon-row > \.mini-btn \{[^}]*width:\s*38px/.test(actionsCss), '译文开关 / 标记已读等宽，排成一条');
+  // 需求：第二排图标必须真正水平居中（flex 居中 + 去掉 SVG 行内基线留白）
+  const iconBtnBlock = /(^|\n)\.icon-row > \.mini-btn \{([\s\S]*?)\}/.exec(actionsCss);
+  chk(!!iconBtnBlock && /line-height:\s*0;/.test(iconBtnBlock[2]),
+    '图标按钮压掉行盒基线留白（line-height: 0），图标才真居中');
+  chk(/(^|\n)\.reader-actions\.icon-row \{([\s\S]*?)\}/.exec(actionsCss) &&
+    /justify-content:\s*center;/.test(/(^|\n)\.reader-actions\.icon-row \{([\s\S]*?)\}/.exec(actionsCss)[2]),
+    '第二排整行水平居中');
+  chk(/(^|\n)\.icon-row \.combo-seg \+ \.combo-seg \{[^}]*border-left/.test(actionsCss),
+    '组合键两段之间用界行细线分隔（不是两个独立按钮）');
   chk(/\.done-btn\.is-done/.test(actionsCss), '「标记已读」按钮有已读高亮态');
+  // 需求：上一篇 / 下一篇必须避开底部播放栏 / 页签，否则被压掉约三成、点不着
+  const navBlock = /(^|\n)\.reader-nav \{([\s\S]*?)\}/.exec(actionsCss);
+  chk(!!navBlock && /margin:\s*26px 0 calc\(118px \+ var\(--safe-bottom\)\)/.test(navBlock[2]),
+    '阅读器底部导航预留 118px + 安全区，不被底栏压住');
+  const readerBlock = /(^|\n)\.reader \{([\s\S]*?)\}/.exec(actionsCss);
+  chk(!!readerBlock && /z-index:\s*66/.test(readerBlock[2]),
+    '阅读器 z-index（66）高于底部页签（65），页签不浮在正文之上');
+  chk(/body\.reader-open \.dock \{ display: none; \}/.test(actionsCss),
+    '阅读器打开时收起底部页签，把底部空间让给翻篇导航');
 
   // 需求 2：正文对齐三档，左 / 中 / 右 都是 SVG 图标，由用户自己选
   const alignSeg = d.querySelector('#rd-align-seg');

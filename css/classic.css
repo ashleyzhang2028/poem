@@ -148,11 +148,17 @@
 
 /* ---------------- 整页阅读器 ---------------- */
 body.reader-open { overflow: hidden; }
+/* 阅读器打开时收起底部页签：页签与「上一篇 / 下一篇」抢同一块底部空间，
+   留着只会把导航压住。阅读器自己有返回键，不愁回不去。 */
+body.reader-open .dock { display: none; }
+
 
 .reader {
   position: fixed;
   inset: 0;
-  z-index: 60;
+  /* 必须高于底部页签（z-index 65）：否则阅读器打开时页签会浮在正文与
+     「上一篇 / 下一篇」上方，把导航压掉一截、点不着 */
+  z-index: 66;
   background: var(--bg-soft);
   display: flex;
   flex-direction: column;
@@ -252,6 +258,10 @@ body.reader-open { overflow: hidden; }
 .reader-actions.icon-row {
   margin-top: 8px;
   margin-bottom: 4px;
+  /* 第二排只有三个控件，整行居中摆放，不再贴左留一大段空白 */
+  justify-content: center;
+  /* 居中之后不需要横向滚动，避免出现莫名其妙的滑动条 */
+  overflow: visible;
 }
 .mini-btn,
 .reader-actions .seg.mini {
@@ -272,9 +282,23 @@ body.reader-open { overflow: hidden; }
 }
 .mini-btn.ghost { color: var(--ink-2); }
 .mini-btn[data-on="1"] { background: var(--green); border-color: var(--green); color: #fdfaf2; }
-/* 纯图标按钮（朗读 / 译文 / 播放译文 / 标记已读）：方形，图标居中，图标行等宽 */
-.icon-row .mini-btn { padding: 0; width: 38px; min-height: 34px; flex: 0 0 auto; }
-.icon-row .mini-btn svg { width: 17px; height: 17px; }
+/* 译文开关 / 标记已读：方形纯图标按钮，图标必须真正水平 + 垂直居中。
+   这里同时用了「flex 居中 + line-height: 0」，因为 SVG 默认是行内元素，
+   行盒的基线留白会把图标顶偏 —— 这正是此前三个图标看着不居中的原因。 */
+.icon-row > .mini-btn {
+  padding: 0;
+  width: 38px;
+  min-height: 34px;
+  flex: 0 0 auto;
+  line-height: 0;
+}
+.icon-row > .mini-btn svg,
+.icon-row > .mini-btn .btn-icon {
+  display: block;
+  width: 17px;
+  height: 17px;
+  margin: 0 auto;
+}
 /* 状态全靠图标表达：▶ 未开始 / 朗读中、⏸ 播放中、译文开关「划掉文档」= 收起译文 */
 #rd-read-btn .pause-glyph,
 #rd-trans-toggle .pause-glyph,
@@ -285,6 +309,61 @@ body.reader-open { overflow: hidden; }
 #rd-read-btn[data-on="1"] .pause-glyph,
 #rd-trans-toggle[data-on="1"] .pause-glyph,
 #rd-trans-read[data-on="1"] .pause-glyph { display: inline-flex; }
+
+/* --------------------------------------------------------------------------
+   朗读「组合键」：原文 + 译文并进同一颗胶囊
+   --------------------------------------------------------------------------
+   以前原文一个播放键、译文又一个播放键，同一篇文章出现两个播放信号，
+   看上去像多出来一个、也分不清该点哪个。现在两段共享一个外框与图标族：
+     ┌──────────┬──────────┐
+     │ ▶ 原文   │ ▶ 译文   │   ← 正在读哪一段，哪一段点亮
+     └──────────┴──────────┘
+   两段之间一条界行细线，像宋器上的「子母口」，不是两个独立按钮。
+   -------------------------------------------------------------------------- */
+.icon-row .combo-read {
+  display: inline-flex;
+  align-items: stretch;
+  flex: 0 0 auto;
+  min-height: 34px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  border-radius: 10px;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+/* 组合键里的每一段：图标 + 两字文案，水平居中对齐 */
+.icon-row .combo-seg {
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: var(--green);
+  padding: 0 12px;
+  min-height: 32px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  width: auto;
+}
+.icon-row .combo-seg + .combo-seg { border-left: 1px solid var(--line); }
+.icon-row .combo-seg .btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 15px;
+  height: 15px;
+}
+.icon-row .combo-seg .btn-icon svg { display: block; width: 15px; height: 15px; margin: 0; }
+.icon-row .combo-seg .combo-label { line-height: 1; }
+.icon-row .combo-seg[data-on="1"] { background: var(--green); color: #fdfaf2; }
+.icon-row .combo-seg:disabled { opacity: .5; cursor: not-allowed; }
+/* 组合键里两段的播放状态波圈同步动画 */
+.icon-row .combo-seg[data-on="1"] .wave1 { animation: wavePulse 1.1s ease-in-out .18s infinite; }
+.icon-row .combo-seg[data-on="1"] .wave2 { animation: wavePulse 1.1s ease-in-out infinite; }
 /* 「标记已读」：点亮前是描边勾，已读后整颗高亮 */
 .done-btn { color: var(--ink-2); }
 .done-btn.is-done { background: var(--green); border-color: var(--green); color: #fdfaf2; }
@@ -351,11 +430,13 @@ body.reader-open { overflow: hidden; }
   color: var(--ink-3);
 }
 
-/* 上一篇 / 下一篇：读完直接翻，不必退回索引页 */
+/* 上一篇 / 下一篇：读完直接翻，不必退回索引页。
+   阅读器是整屏 fixed 的滚动区，底部播放栏（约 84px）与底部页签会浮在内容之上，
+   导航若不留白就会被压掉三成、点不着，所以底部留足 118px。 */
 .reader-nav {
   display: flex;
   gap: 10px;
-  margin: 26px 0 4px;
+  margin: 26px 0 calc(118px + var(--safe-bottom));
 }
 .reader-nav button {
   flex: 1;
@@ -398,25 +479,6 @@ body.reader-open { overflow: hidden; }
   margin-bottom: 8px;
 }
 .trans-head h3 { margin: 0; }
-.trans-read {
-  border: 1px solid var(--line);
-  background: var(--card);
-  color: var(--green);
-  border-radius: 10px;
-  padding: 5px 9px;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  white-space: nowrap;
-}
-.trans-read svg { width: 16px; height: 16px; display: block; }
-.trans-read .pause-glyph { display: none; }
-.trans-read[data-on="1"] .play-glyph { display: none; }
-.trans-read[data-on="1"] .pause-glyph { display: inline-flex; }
-.trans-read[data-on="1"] { background: var(--green); border-color: var(--green); color: #fffdf8; }
-.trans-read:disabled { opacity: .5; cursor: not-allowed; }
-
 @media (min-width: 700px) {
   .reader-body { padding-top: 28px; }
 }

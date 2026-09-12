@@ -41,11 +41,6 @@
     return settings.helper !== "off";
   }
 
-  /** 旧版设置没有 classicEntry 字段，默认显示入口 */
-  function classicEntryVisible() {
-    return settings.classicEntry !== "hide";
-  }
-
   /**
    * 当前注音档位。
    *
@@ -325,19 +320,6 @@
         b.classList.toggle("active", (b.dataset.helper === "on") === helperEnabled());
       });
     }
-    const se = $("#seg-classic-entry");
-    if (se) {
-      const hidden = settings.classicEntry === "hide";
-      $$("button", se).forEach(function (b) {
-        b.classList.toggle("active", (b.dataset.entry === "hide") === hidden);
-      });
-    }
-  }
-
-  /** 首页「小古文」入口的显示 / 隐藏（页面里仍可直达 classic.html） */
-  function applyClassicEntry() {
-    const entry = $("#classic-entry");
-    if (entry) entry.hidden = !classicEntryVisible();
   }
 
   /* ---------------- 渲染：今日列表 ---------------- */
@@ -777,8 +759,6 @@
       document.body.style.overflow = "hidden";
     }
     document.addEventListener("settings:open", openSettings);
-    var settingsBtn = $("#btn-settings");
-    if (settingsBtn) settingsBtn.addEventListener("click", openSettings);
 
     $$("[data-close]").forEach(function (el) {
       el.addEventListener("click", closeModal);
@@ -814,16 +794,6 @@
         // 让开关立刻体现差别：重新渲染当前打开的诗
         resetPinyinMode();
         showToast(helperEnabled() ? "阅读辅助已开启：打开诗词自动注音" : "阅读辅助已关闭：打开诗词为纯文本");
-      });
-    });
-
-    $$("#seg-classic-entry button").forEach(function (b) {
-      b.addEventListener("click", function () {
-        settings.classicEntry = b.dataset.entry === "hide" ? "hide" : "show";
-        Storage.saveSettings(settings);
-        applyClassicEntry();
-        renderGradeChips();
-        showToast(settings.classicEntry === "hide" ? "已隐藏首页小古文入口" : "已显示首页小古文入口");
       });
     });
 
@@ -936,7 +906,6 @@
     document.addEventListener("chrome:ready", function () {
       applyAppName();
     });
-    applyClassicEntry();
     renderGradeChips();
     rebuildToday();
     renderAll();

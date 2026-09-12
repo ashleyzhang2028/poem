@@ -18,7 +18,7 @@
  * 设计取向（宋式美学）：
  *   · 徽标 = 双鱼纹（宋瓷、宋锦上最常见的「鱼」谐音「余」，也呼应「跬步」的耐心）
  *   · 分隔 = 描金细线 + 器物口沿的「子母口」双线，不做投影式的现代卡片感
- *   · 点缀 = 极淡的龟背纹浮雕，只在角落出现，不抢内容
+ *   · 点缀 = 极淡的云纹浮雕，只在角落出现，不抢内容
  *
  * 关键：所有标记用 data- 属性驱动，样式在 css/style.css 里，逻辑只做渲染。
  */
@@ -26,8 +26,8 @@
   "use strict";
 
   /* ---------------- 宋式纹样（内联 SVG，不请求任何外部资源） ----------------
-     1) 龟背纹　宋代器物与织锦最典型的地纹，这里拆成一枚「六角龟甲」单元，
-                 配上内嵌的小菱花，平铺即成底纹。
+     1) 曲水纹　宋代蜀锦「落花流水锦」的水波底纹（见 css/style.css 的
+                 --pattern-ivory / --pattern-luo），这里不作重复实现。
      2) 双鱼纹　两条同向游鱼首尾相衔，围成一个圆；用作徽标。
      3) 云雷纹　回字回旋，用作按钮 / 分隔处的一缕装饰。
   ------------------------------------------------------------------------- */
@@ -128,9 +128,9 @@
         '<span class="top-act-icon" aria-hidden="true">' + action.icon + "</span>" +
         '<span class="sr-only">' + action.label + "</span></button>";
     } else if (key === "home") {
-      right =
-        '<button type="button" class="top-act" id="btn-settings" title="设置" aria-label="打开设置">' +
-        '<span class="top-act-icon" aria-hidden="true">' + GLYPHS.tabGear + "</span></button>";
+      // 首页右上角不再放设置齿轮：底部第三个页签就是「设置」，
+      // 两个入口指向同一面板，右上角那个纯属重复。
+      right = '<span class="top-act-spacer" aria-hidden="true"></span>';
     } else {
       right =
         '<a class="top-act" id="top-back" href="./index.html" title="回到首页" aria-label="回到首页">' +
@@ -224,24 +224,9 @@
   }
 
   function bindHeader() {
-    var settingsBtn = document.getElementById("btn-settings");
-    if (!settingsBtn) return;
-    settingsBtn.addEventListener("click", function () {
-      // 优先让页面自己的设置面板接管（首页 / 小古文页都有）
-      var opener = document.getElementById("open-settings");
-      if (opener) {
-        opener.click();
-        return;
-      }
-      var modal = document.getElementById("settings-modal");
-      if (modal) {
-        modal.hidden = false;
-        document.body.style.overflow = "hidden";
-        var ev = document.createEvent("Event");
-        ev.initEvent("settings:open", true, true);
-        document.dispatchEvent(ev);
-      }
-    });
+    // 顶栏动作位现在是「返回」或自定义动作（阅读器 → 关闭）；
+    // 首页不再放设置齿轮（底部页签已承担），因此这里无需绑定设置按钮。
+    // 保留空函数是为了 mount() 的调用结构稳定，后续加顶栏动作位时从这里接手。
   }
 
   function bindDock(dock) {

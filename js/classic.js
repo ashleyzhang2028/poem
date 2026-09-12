@@ -76,6 +76,8 @@
   let keyword = "";
   let filter = "all";
   let autoReading = false;
+  /** 组合播放键当前朗读的是哪一段：「原文」/「译文」 */
+  let speakingTarget = "原文";
   /**
    * 当前注音档位。兼容旧版布尔值：
    * 旧 "1" ⇒ 只标生字，"0" ⇒ 关闭。
@@ -234,8 +236,7 @@
       showToast(ok ? "开始朗读《" + p.title + "》" : "朗读启动失败，请重试");
     }
     syncItemPlayBtns();
-    syncReadButton();
-    syncTransReadButton();
+    syncReadButtons();
     syncRandomReadButton();
     setTimeout(syncItemPlayBtns, 80);
   }
@@ -342,14 +343,13 @@
     renderReaderText();
     $("#rd-trans-text").textContent = p.translation || "（暂未收录译文）";
     $("#gw-progress").textContent = "第 " + (idx + 1) + " / " + allItems().length + " 篇";
-    $("#rd-trans").hidden = true;
-    syncTransButton();
+    showTransBox(false);
+    speakingTarget = "原文";
     renderNav();
     applyFont();
     applyAlign();
     syncPinyinButton();
-    syncReadButton();
-    syncTransReadButton();
+    syncReadButtons();
     syncDoneButton();
     $("#gw-reader").hidden = false;
     document.body.classList.add("reader-open");
@@ -436,71 +436,55 @@
     return !!(window.Speech && window.Speech.supported());
   }
 
-  function syncReadButton() {
-    const btn = $("#rd-read-btn");
-    if (!btn) return;
+  /**
+   * 同步「原文 / 译文」组合播放键。
+   * 两段共用同一个播放状态：点左段读原文、点右段读译文；
+   * 正在读的那一段点亮（高亮 + ⏸），再点一次即停止，所以两段都可点。
+   */
+  function syncReadButtons() {
     const ok = speechSupported();
-    btn.disabled = !ok;
-    btn.title = ok ? "朗读本篇" : "当前浏览器不支持语音朗读";
-    if (!ok) {
-      btn.dataset.on = "0";
-      $("#rd-read-text").textContent = "当前浏览器不支持语音朗读";
-      return;
-    }
-    // 自动连读时不算「本篇朗读中」，避免按钮状态来回跳
-    const on = !autoReading && !!window.Speech.speaking();
-    btn.dataset.on = on ? "1" : "0";
-    btn.setAttribute("aria-pressed", on ? "true" : "false");
-    $("#rd-read-text").textContent = on ? "停止朗读" : "朗读本篇";
+    const playing = ok && !autoReading && !!window.Speech.speaking();
+
+    const segs = [
+      { btn: "#rd-read-btn", text: "#rd-read-text", key: "原文", title: "朗读原文：标题、朝代、作者与正文" },
+      { btn: "#rd-trans-read", text: "#rd-trans-read-text", key: "译文", title: "朗读白话译文" }
+    ];
+    segs.forEach(function (cfg) {
+      const btn = $(cfg.btn);
+      if (!btn) return;
+      btn.disabled = !ok;
+      btn.title = ok ? cfg.title : "当前浏览器不支持语音朗读";
+      const on = playing && speakingTarget === cfg.key;
+      btn.dataset.on = on ? "1" : "0";
+      btn.setAttribute("aria-pressed", on ? "true" : "false");
+      const label = $(cfg.text);
+      if (label) label.textContent = cfg.key;
+    });
+
+    const combo = $("#rd-read-combo");
+    if (combo) combo.dataset.on = playing ? "1" : "0";
   }
 
+  /** 组合键左段：朗读原文（标题 + 朝代 + 作者 + 正文） */
   function toggleRead() {
     if (!speechSupported() || !current) return;
     if (window.Speech.speaking()) {
-      autoReading = false;
       window.Speech.stop();
       showToast("已停止朗读");
     } else {
+      speakingTarget = "原文";
       const ok = window.Speech.speak(speechText(current));
       showToast(ok ? "开始朗读" : "朗读启动失败，请重试");
     }
-    syncReadButton();
-    setTimeout(syncReadButton, 60);
-    setTimeout(syncReadButton, 300);
+    // 点组合键即接管朗读：无论开始还是停止，都退出「随机连读」状态，
+    // 否则 autoReading 残留会让组合键一直显示不出播放态
+    autoReading = false;
+    syncReadButtons();
+    setTimeout(syncReadButtons, 60);
+    setTimeout(syncReadButtons, 300);
   }
 
-  function syncTransReadButton() {
-    const btn = $("#rd-trans-read");
-    if (!btn) return;
-    const ok = speechSupported();
-    btn.disabled = !ok;
-    btn.title = ok ? "朗读译文" : "当前浏览器不支持语音朗读";
-    if (!ok) {
-      btn.dataset.on = "0";
-      $("#rd-trans-read-text").textContent = "当前浏览器不支持语音朗读";
-      return;
-    }
-    const on = !autoReading && !!window.Speech.speaking();
-    btn.dataset.on = on ? "1" : "0";
-    btn.setAttribute("aria-pressed", on ? "true" : "false");
-    $("#rd-trans-read-text").textContent = on ? "停止朗读译文" : "朗读译文";
-  }
-
-  /**
-   * 译文开关按钮：只换图标与配色，可见文案由图标表达，
-   * 文字信息给读屏软件（「显示译文 / 隐藏译文」）。
-   */
-  function syncTransButton() {
-    const btn = $("#rd-trans-toggle");
-    if (!btn) return;
-    const on = btn.dataset.on === "1";
-    btn.dataset.on = on ? "1" : "0";
-    btn.setAttribute("aria-pressed", on ? "true" : "false");
-    btn.title = on ? "隐藏译文" : "显示译文";
-    $("#rd-trans-toggle-text").textContent = on ? "隐藏译文" : "显示译文";
-  }
-
-  /** 白话译文朗读：只读译文，不读原文 */
+  /** 组合键右段：只读白话译文，不读原文；译文没展开时顺手展开，省一次点击 */
   function toggleTransRead() {
     if (!speechSupported() || !current) return;
     if (window.Speech.speaking()) {
@@ -512,16 +496,35 @@
         showToast("本篇暂无译文");
         return;
       }
+      if ($("#rd-trans").hidden) showTransBox(true);
+      speakingTarget = "译文";
       const ok = window.Speech.speak(t);
       showToast(ok ? "开始朗读译文" : "朗读启动失败，请重试");
     }
-    syncTransReadButton();
-    setTimeout(syncTransReadButton, 60);
+    autoReading = false;
+    syncReadButtons();
+    setTimeout(syncReadButtons, 60);
+  }
+
+  /** 展开 / 收起白话译文 */
+  function showTransBox(show) {
+    const btn = $("#rd-trans-toggle");
+    const box = $("#rd-trans");
+    if (!box) return;
+    box.hidden = !show;
+    if (btn) {
+      btn.dataset.on = show ? "1" : "0";
+      btn.setAttribute("aria-pressed", show ? "true" : "false");
+      btn.title = show ? "隐藏译文" : "显示译文";
+      const t = $("#rd-trans-toggle-text");
+      if (t) t.textContent = show ? "隐藏译文" : "显示译文";
+    }
   }
 
   function closeReader() {
     if (window.Speech) window.Speech.stop();
     autoReading = false;
+    speakingTarget = "原文";
     $("#gw-reader").hidden = true;
     document.body.classList.remove("reader-open");
     // 顶栏动作位还原为「回首页」
@@ -588,8 +591,7 @@
       autoReading = false;
       clearHighlight();
       syncRandomReadButton();
-      syncReadButton();
-      syncTransReadButton();
+      syncReadButtons();
       showToast("已停止连读");
       syncItemPlayBtns();
       return;
@@ -625,8 +627,7 @@
         autoReading = false;
         clearHighlight();
         syncRandomReadButton();
-        syncReadButton();
-        syncTransReadButton();
+        syncReadButtons();
         syncItemPlayBtns();
       }
     });
@@ -825,11 +826,7 @@
     });
 
     $("#rd-trans-toggle").addEventListener("click", function () {
-      const on = this.dataset.on === "1";
-      this.dataset.on = on ? "0" : "1";
-      syncTransButton();
-      $("#rd-trans").hidden = on;
-      if (on) syncTransReadButton();
+      showTransBox(this.dataset.on !== "1");
     });
 
     $("#rd-font-up").addEventListener("click", function () { changeFont(1); });
@@ -853,8 +850,7 @@
     if (window.speechSynthesis && window.speechSynthesis.addEventListener) {
       const syncAll = function () {
         if (!window.Speech.speaking()) autoReading = false;
-        syncReadButton();
-        syncTransReadButton();
+        syncReadButtons();
         syncRandomReadButton();
         syncItemPlayBtns();
       };

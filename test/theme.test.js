@@ -93,17 +93,29 @@ chk(!!listMetaBlock && /gap:\s*4px;/.test(listMetaBlock[2]), '列表副信息间
 const listMetaGaps = (css.match(/\.item-meta \{([\s\S]*?)\}/g) || []).filter(b => /gap:/.test(b));
 chk(listMetaGaps.every(b => !/gap:\s*8px;/.test(b)), '不再有残留的 8px 副信息间距');
 
-/* ---------------- 宋式纹样与按钮分级（本次重做导航 / 美化） ---------------- */
-chk(/--pattern-ivory:/.test(css), '定义了宋式纹样变量 --pattern-ivory（龟背纹）');
+/* ---------------- 宋式纹样与按钮分级（本次重做导航 / 美化 / 换大背景纹样） ---------------- */
+/* 需求：原来的「龟背纹」看不出来是龟背，换成宋「曲水纹」（落花流水纹） */
+chk(/--pattern-ivory:/.test(css), '定义了宋式纹样变量 --pattern-ivory（曲水 / 水脉）');
+chk(/--pattern-ivory-b:/.test(css), '定义了宋式纹样变量 --pattern-ivory-b（第二重水脉，错半波）');
+chk(/--pattern-luo:/.test(css), '定义了宋式纹样变量 --pattern-luo（落花团花）');
 chk(/--pattern-cloud:/.test(css), '定义了宋式纹样变量 --pattern-cloud（云纹）');
 chk(/data:image\/svg\+xml/.test(css), '纹样用内联 SVG data URI，不请求外部图片');
-chk(/龟背纹/.test(css) && /云纹/.test(css), '样式注释里写明纹样名称');
-// 页面底：龟背纹平铺，且必须有透明度，不能压过内容
-// 底纹可能分两处声明（基础排版一处、纹样一处），只看「有声明且同一条规则里带 fixed」
+chk(/曲水纹/.test(css) && /落花流水/.test(css), '样式注释里写明宋「曲水纹 / 落花流水纹」出处');
+chk(!/龟背纹/.test(css), '不再出现「龟背纹」字样（已整体换掉）');
+// 页面底：三层纹样叠成一个循环大纹样，且必须有透明度，不能压过内容
 const ivoryBlocks = [...css.matchAll(/html, body \{[\s\S]*?\}/g)].map(m => m[0]).filter(b => /--pattern-ivory/.test(b));
-chk(ivoryBlocks.length > 0, '页面底铺龟背纹');
+chk(ivoryBlocks.length > 0, '页面底铺宋式「落花流水纹」');
 chk(ivoryBlocks.some(b => /background-attachment:\s*fixed/.test(b)), '底纹固定，滚动时不跟着内容跑');
-chk(/stroke-opacity='\.05'/.test(css), '龟背纹描边不透明度压到 5%（只是纸的肌理）');
+chk(ivoryBlocks.some(b => /background-size:\s*80px 80px/.test(b)), '水脉周期 80px，纹样够大、看得清');
+chk(ivoryBlocks.some(b => /var\(--pattern-luo\)/.test(b)), '落花团花与两重水脉叠在一起铺满');
+// 水脉用正弦曲线（不再是直角折线的方格感），落花是四点菱花
+// 底纹写在 data URI 里，先解码再断言笔画形状与不透明度
+const decodedPatterns = [...css.matchAll(/--pattern-[a-z-]+: url\("data:image\/svg\+xml,([^"]+)"\)/g)]
+  .map(m => decodeURIComponent(m[1])).join("\n");
+chk(/ C-?\d+ -?\d+ -?\d+ -?\d+ -?\d+ -?\d+/.test(decodedPatterns),
+  '水脉用贝塞尔曲线画出连绵水波（不再是直角折线的方格感）');
+chk(/stroke-opacity='\.26'/.test(decodedPatterns), '水脉主笔画不透明度 26%（静看有暗花，退开只剩纸的温度）');
+chk((decodedPatterns.match(/fill-opacity='\.20'/g) || []).length >= 2, '落花团花用琥珀色、不透明度 20%');
 // 点缀：卡片角隅 + 今日条云纹，且默认不出现
 chk(/\.card-pat::before/.test(css) && /\.card-pat::after/.test(css), '卡片角隅纹样只在 .card-pat 上出现');
 chk(/mask-image:\s*linear-gradient/.test(css), '角隅纹样用遮罩从角上透出来，不是贴一张图');
