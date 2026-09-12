@@ -126,6 +126,11 @@ chk(/\.btn\.good\s*\{[^}]*inset 0 0 0 1px rgba\(240, 205, 124/.test(css), '「�
 // 导航样式
 chk(/\.dock\s*\{[^}]*position:\s*fixed/.test(css), '底部导航栏固定定位');
 chk(/\.dock-item\.active/.test(css), '页签有选中态样式');
+// 需求（本次）：页签选中态去掉「下划线」，只留描色 + 图标微抬
+chk(!/\.dock-item::before/.test(css) && !/\.dock-item\.active::before/.test(css),
+  '页签选中态不再用 ::before 画「下划线」');
+chk(/\.dock-item\.active \.dock-icon \{[^}]*translateY/.test(css), '选中态改由图标轻微抬起表达');
+chk(/prefers-reduced-motion[\s\S]{0,160}?\.dock-icon/.test(css), '减少动态偏好下不再位移（无障碍兜底）');
 chk(/\.brand-mark/.test(css), '顶栏徽标（logo）有独立样式');
 chk(/\.top-act/.test(css), '顶栏右侧动作位（设置 / 返回）有独立样式');
 
@@ -148,14 +153,17 @@ chk(/\.brand-page::before[\s\S]{0,120}?content:\s*"·"/.test(css),
 // 只要求顶栏不再出现；meta description 里保留「一年级至高三古诗词」这句 SEO 描述是合理的
 chk(!/一年级至高三 · 按遗忘曲线复习/.test(html + app + read('js/chrome.js')),
   '删掉顶栏的「一年级至高三 · 按遗忘曲线复习」文案');
-// 需求（本次）：主标题下的描述文字要还原回来，但**不写年级字样**
-// 描述改由页面用 body 上的 data-sub 给出，chrome.js 只负责渲染，文案不硬编码
-chk(!/按遗忘曲线复习/.test(read('js/chrome.js')), 'chrome.js 里不再硬编码「按遗忘曲线复习」');
+// 需求（本次）：主标题下的描述文字收敛成一句「按遗忘曲线复习」，
+// 且**不写年级字样**；小古文入口已由底部页签承担，描述里不再重复提。
+// 描述由页面用 body 上的 data-sub 给出，chrome.js 只负责渲染，文案不硬编码
+// 去掉注释再查：chrome.js 的代码里不出现这句文案（注释里说明文案由页面给，是允许的）
+chk(!/按遗忘曲线复习/.test(read('js/chrome.js').replace(/\/\*[\s\S]*?\*\//g, '')),
+  'chrome.js 里不再硬编码「按遗忘曲线复习」');
 chk(/data-sub="[^"]+"/.test(html), '首页用 data-sub 给出主标题下的描述文字');
 const subMatch = /data-sub="([^"]+)"/.exec(html);
 const homeSub = subMatch ? subMatch[1] : '';
-chk(/遗忘曲线/.test(homeSub), '描述文字里保留「遗忘曲线复习」的说法（实际「' + homeSub + '」）');
-chk(/小古文/.test(homeSub), '描述文字同时点出小古文入口');
+chk(homeSub === '按遗忘曲线复习',
+  '描述文字精简为「按遗忘曲线复习」（实际「' + homeSub + '」）');
 chk(!/一年级|二年级|至高三|小学|初中|高中|年级|学段/.test(homeSub),
   '描述文字里不再出现「一年级到高中」这类年级字样');
 chk(!/一年级/.test(read('js/chrome.js').replace(/\/\*[\s\S]*?\*\//g, '')),

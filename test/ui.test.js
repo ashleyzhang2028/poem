@@ -77,8 +77,12 @@ setTimeout(() => {
   // 需求：删掉「一年级至高三 · 按遗忘曲线复...」这行文案
   chk(!/一年级至高三/.test(d.querySelector('.topbar').textContent),
     '顶栏第一行不再出现「一年级至高三 · 」，只有「跬步 · XX的古诗词」');
-  chk(!/按遗忘曲线复习/.test(d.querySelector('.topbar').textContent),
-    '顶栏不再出现「按遗忘曲线复习」长文案');
+  // 需求（本次）：顶栏第二行收敛成一句「按遗忘曲线复习」，
+  // 不再带「安排复习 · 小古文想读哪篇点哪篇」那截长尾巴
+  chk(d.querySelector('#brand-sub').textContent === '按遗忘曲线复习',
+    '顶栏第二行精简为「按遗忘曲线复习」（实际「' + d.querySelector('#brand-sub').textContent + '」）');
+  chk(!/小古文想读哪篇点哪篇/.test(d.querySelector('.topbar').textContent),
+    '顶栏不再出现「小古文想读哪篇点哪篇」');
   chk(d.querySelector('#all-label').textContent === '本年级本学期全部诗词', '全部诗词标题精确为「本年级本学期全部诗词」');
   // 顶栏图标：徽标 + 全部诗词折叠图标，全部是内联 SVG
   chk(d.querySelectorAll('.brand-icon svg, .collapse-icon svg').length === 2, '顶栏徽标与全部诗词图标均为 SVG');
@@ -99,6 +103,24 @@ setTimeout(() => {
   chk(dockItems[0].classList.contains('active') && dockItems[0].getAttribute('aria-current') === 'page',
     '当前页（古诗词）页签为选中态');
   chk(dockItems.every(b => b.querySelector('.dock-icon svg')), '三个页签图标均为内联 SVG');
+  // 需求（本次）：页签选中态不再用「一条短线」，那读起来像「设置」被加了条下划线。
+  // 选中只靠天青描色 + 图标微抬表达；对应的 ::before 指示条整段删掉，不留僵尸代码。
+  chk(!/\.dock-item::before/.test(fs.readFileSync(path + 'css/style.css', 'utf8')),
+    '页签选中态的「下划线」已移除（.dock-item::before 不再存在）');
+  chk(dockItems.every(b => b.querySelectorAll(':scope > *').length === 2),
+    '每个页签只有图标 + 文字两个子元素，没有额外的划线装饰');
+  // 需求（本次）：设置齿轮原先手工描线、齿距不匀看着「歪」，换成按几何生成的 8 齿对称齿轮
+  const gear = d.querySelector('.dock-item[data-nav-go="settings"] .dock-icon svg');
+  chk(!!gear, '设置页签有齿轮图标');
+  const gearD = gear.querySelector('path').getAttribute('d');
+  const gearPts = gearD.match(/-?\d+\.\d+ -?\d+\.\d+/g).map(x => x.split(' ').map(Number));
+  const xs = gearPts.map(p => p[0]), ys = gearPts.map(p => p[1]);
+  chk(Math.abs(Math.min(...xs) + Math.max(...xs) - 24) < 0.05 &&
+      Math.abs(Math.min(...ys) + Math.max(...ys) - 24) < 0.05,
+    '齿轮左右 / 上下都关于圆心 (12,12) 对称（不偏不歪）');
+  chk(Math.abs(Math.min(...xs) - 2.68) < 0.02 && Math.abs(Math.max(...xs) - 21.32) < 0.02,
+    '齿轮首齿正对 12 点钟方向，齿顶圆半径一致（齿距均分）');
+  chk(gear.querySelector('circle').getAttribute('r') === '3.2', '齿轮轴孔为整圆 r3.2，居中不动');
   // 页面切换统一走底部页签，顶栏不再各页一套返回键
   chk(d.querySelector('.topbar .back-icon') === null, '顶栏不再有各页自造的返回箭头');
   chk(!!dock.querySelector('[data-nav-go="settings"]'), '「设置」是页签之一，不再只藏在右上角');
