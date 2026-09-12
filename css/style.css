@@ -1391,10 +1391,15 @@ html, body {
 /* 工具条上只有正文这一颗播放键（原来并排的「原文 / 译文」组合键已拆掉），
    译文那颗挪去译文标题右侧。两段朗读不再并排，一篇文章只有一个播放信号。 */
 /* 状态全靠图标：▶ 未朗读、⏸ 朗读中；译文开关「划掉文档」= 收起译文。
-   同一颗键上 ▶ / ⏸ 互斥，永远只显示一个。 */
-.modal-box .reader-actions .pause-glyph { display: none; }
-.modal-box .reader-actions [data-on="1"] .play-glyph { display: none; }
-.modal-box .reader-actions [data-on="1"] .pause-glyph { display: inline-flex; }
+   同一颗键上 ▶ / ⏸ 互斥，永远只显示一个。
+
+   ⚠️ 这里的选择器必须带上 `.icon-row > .mini-btn`，把特异度压到 0-5-0 以上。
+   上面那条 `... > .mini-btn .btn-icon { display: block }` 是 0-5-0，
+   早先这里只写 `.modal-box .reader-actions .pause-glyph`（0-3-0），
+   被它盖掉 —— 于是 ▶ 与 ⏸ **两个图标同时显示**。别再改回去。 */
+.modal-box .reader-actions.icon-row > .mini-btn .btn-icon.pause-glyph { display: none; }
+.modal-box .reader-actions.icon-row > .mini-btn[data-on="1"] .btn-icon.play-glyph { display: none; }
+.modal-box .reader-actions.icon-row > .mini-btn[data-on="1"] .btn-icon.pause-glyph { display: inline-flex; }
 .modal-box .reader-actions .mini-btn[data-on="1"] { background: var(--green); border-color: var(--green); color: #fdfaf2; }
 .modal-box .reader-actions .mini-btn:disabled { opacity: .5; cursor: not-allowed; }
 
@@ -1409,3 +1414,67 @@ html, body {
   .modal-box .reader-actions .icon-seg button svg { width: 15px; height: 15px; }
   .modal-box .reader-actions.icon-row > .mini-btn { width: 36px; }
 }
+
+/* ==========================================================================
+   白话译文框（诗词详情页 + 小古文阅读器共用）
+   --------------------------------------------------------------------------
+   这一块原先只写在 css/classic.css 里，而首页 index.html 只引 style.css、
+   不引 classic.css —— 于是首页诗词详情页的译文框与「朗读译文」键**完全没有样式**：
+   译文键退回浏览器默认按钮，▶ 与 ⏸ 两个图标还并排同时显示
+   （.trans-read[data-on] 那套互斥规则在首页根本没加载）。
+   译文是两页共用的组件，样式就该在两页都会加载的 style.css 里，
+   这里补齐，并与 classic.css 保持同一套数值。
+   ========================================================================== */
+.trans-box {
+  background: var(--bg);
+  border-radius: 14px;
+  padding: 14px 16px;
+}
+.trans-box[hidden] { display: none; }
+.trans-box h3 {
+  margin: 0 0 8px;
+  font-size: 13.5px;
+  color: var(--green);
+  font-weight: 700;
+}
+.trans-box p {
+  margin: 0;
+  font-size: 14.5px;
+  line-height: 1.9;
+  color: var(--ink-2);
+}
+
+/* 译文朗读键：贴在译文标题右侧，纯文字 + ▶ / ⏸（同一位置切换），
+   没有第二颗并排；展开译文才出现，收起即消失。 */
+.trans-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.trans-head h3 { margin: 0; }
+.trans-read {
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--green);
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+.trans-read .btn-icon { display: inline-flex; align-items: center; justify-content: center; flex: none; }
+.trans-read .btn-icon svg { display: block; width: 13px; height: 13px; margin: 0; }
+/* ▶ / ⏸ 互斥。选择器要多带一个 `.btn-icon`（0-3-0），否则会被上面那条
+   `.trans-read .btn-icon { display: inline-flex }`（0-2-0）
+   按「同特异性、后写胜出」压回去 —— 表现就是两个图标并排同时显示。 */
+.trans-read .btn-icon.pause-glyph { display: none; }
+.trans-read[data-on="1"] .btn-icon.play-glyph { display: none; }
+.trans-read[data-on="1"] .btn-icon.pause-glyph { display: inline-flex; }
+.trans-read[data-on="1"] { background: var(--green); border-color: var(--green); color: #fffdf8; }
+.trans-read:disabled { opacity: .5; cursor: not-allowed; }

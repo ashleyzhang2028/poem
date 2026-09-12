@@ -368,6 +368,82 @@ function check(name, cond, extra) {
       String(privacyOffline.mail));
     await page.setOfflineMode(false);
 
+    // ---- Issue #32 需求：详情页播放 / 暂停、译文按钮都不许并排 ----
+    // 只在 DOM 里断言「有两个图标」是不够的：▶ / ⏸ 是同一颗键的两态，
+    // 由 CSS 的 [data-on] 规则切换。曾经因为选择器特异性不足被
+    // `.icon-row > .mini-btn .btn-icon { display: block }` 压掉，
+    // 两个图标就并排同时显示 —— 这里在真实浏览器里量计算样式，防止复发。
+    await page.goto(base + 'index.html', { waitUntil: 'load' });
+    await new Promise(r => setTimeout(r, 600));
+    const glyphState = await page.evaluate(async () => {
+      const shown = btn => [...btn.querySelectorAll('.btn-icon')]
+        .filter(e => getComputedStyle(e).display !== 'none')
+        .map(e => e.className.split(' ').pop());
+      window.localStorage.clear();
+      document.querySelector('#today-list .item').click();
+      await new Promise(r => setTimeout(r, 400));
+      const readBtn = document.querySelector('#m-read-btn');
+      const firstRow = [...document.querySelectorAll('#m-actions-icons button')].map(b => b.id);
+      const wasOff = readBtn.dataset.on;
+      readBtn.dataset.on = '0';
+      const readOff = shown(readBtn);
+      readBtn.dataset.on = '1';
+      const readOn = shown(readBtn);
+      readBtn.dataset.on = wasOff;
+      // 展开译文，量译文那颗键
+      document.querySelector('#m-trans-toggle').click();
+      await new Promise(r => setTimeout(r, 300));
+      const tBtn = document.querySelector('#m-trans-read');
+      const tCount = document.querySelectorAll('#m-trans-read').length;
+      tBtn.dataset.on = '0';
+      const transOff = shown(tBtn);
+      tBtn.dataset.on = '1';
+      const transOn = shown(tBtn);
+      return {
+        firstRow, readOff, readOn, transOff, transOn, tCount,
+        transInFirstRow: !!document.querySelector('#m-actions-icons #m-trans-read'),
+        transStyled: getComputedStyle(tBtn).borderRadius
+      };
+    });
+    check('iPhone: 详情页第一排只有原文播放键，译文键不在这一排',
+      glyphState.firstRow.join(',') === 'm-read-btn,m-trans-toggle' && !glyphState.transInFirstRow,
+      glyphState.firstRow.join(','));
+    check('iPhone: 详情页原文键 ▶ / ⏸ 互斥，一次只显示一个',
+      glyphState.readOff.length === 1 && glyphState.readOff[0] === 'play-glyph' &&
+      glyphState.readOn.length === 1 && glyphState.readOn[0] === 'pause-glyph',
+      JSON.stringify([glyphState.readOff, glyphState.readOn]));
+    check('iPhone: 全页只有一颗译文朗读键',
+      glyphState.tCount === 1, String(glyphState.tCount));
+    check('iPhone: 详情页译文键 ▶ / ⏸ 互斥，一次只显示一个',
+      glyphState.transOff.length === 1 && glyphState.transOff[0] === 'play-glyph' &&
+      glyphState.transOn.length === 1 && glyphState.transOn[0] === 'pause-glyph',
+      JSON.stringify([glyphState.transOff, glyphState.transOn]));
+    check('iPhone: 详情页译文键在首页也有样式（不是浏览器默认按钮）',
+      parseFloat(glyphState.transStyled) > 100, glyphState.transStyled);
+
+    // ---- Issue #32 需求：大背景不用任何图案 ----
+    await page.goto(base + 'index.html', { waitUntil: 'load' });
+    await new Promise(r => setTimeout(r, 400));
+    const bgState = await page.evaluate(() => {
+      const patternEls = [...document.querySelectorAll('*')].filter(el => {
+        const v = getComputedStyle(el).backgroundImage;
+        return v && v !== 'none' && /url\(/.test(v);
+      });
+      const html = getComputedStyle(document.documentElement);
+      const body = getComputedStyle(document.body);
+      return {
+        htmlBg: html.backgroundImage, bodyBg: body.backgroundImage,
+        bodyColor: body.backgroundColor, patternEls: patternEls.length,
+        sample: patternEls.slice(0, 3).map(e => e.tagName + '.' + e.className)
+      };
+    });
+    check('iPhone: 页面底不铺任何图案（html / body 无 background-image）',
+      bgState.htmlBg === 'none' && bgState.bodyBg === 'none',
+      JSON.stringify([bgState.htmlBg, bgState.bodyBg]));
+    check('iPhone: 页面底为素绢纯色', /^rgb\(246, 241, 227\)$/.test(bgState.bodyColor), bgState.bodyColor);
+    check('iPhone: 全页没有任何元素再用图片 / 纹样铺背景',
+      bgState.patternEls === 0, bgState.sample.join(' | '));
+
     check('iPhone: 无未捕获 JS 异常', errs.length === 0, errs.slice(0, 2).join(' | '));
     await page.screenshot({ path: 'pwa-iphone.png', fullPage: true });
     await page.close();
