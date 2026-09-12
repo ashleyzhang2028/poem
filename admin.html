@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#2f6055" />
+  <title>访问统计 · 跬步</title>
+  <!-- 管理页不对外索引：只有知道路径的人能打开 -->
+  <meta name="robots" content="noindex, nofollow, noarchive" />
+  <meta name="referrer" content="no-referrer" />
+  <meta name="format-detection" content="telephone=no" />
+
+  <link rel="icon" href="./icons/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/admin.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <a class="brand-icon back-icon" href="./index.html" title="返回跬步" aria-label="返回跬步">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14.5 5 8 12l6.5 7" />
+          </svg>
+        </a>
+        <div class="brand-text">
+          <h1>访问统计</h1>
+          <p>仅站主可见 · 不含任何个人信息</p>
+        </div>
+      </div>
+      <span class="count-badge" id="ad-visitors">—</span>
+    </header>
+
+    <section class="stats-cards">
+      <div class="stat-card">
+        <b id="ad-visitors-card">—</b>
+        <span>访问人次</span>
+      </div>
+      <div class="stat-card">
+        <b id="ad-unique">—</b>
+        <span>匿名编号数</span>
+      </div>
+      <div class="stat-card">
+        <b id="ad-days">—</b>
+        <span>有记录的天数</span>
+      </div>
+      <div class="stat-card">
+        <b id="ad-today">—</b>
+        <span>今天</span>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2 class="ad-h2">上报设置</h2>
+      <p class="ad-tip">
+        访问记录默认只写在本机（浏览器 localStorage），不需要任何服务器。
+        想看到「全网有多少人用过」，填一个只有你知道的令牌即可：在 CNB 仓库新建/编辑
+        <code>data/visits.json</code> 用的访问令牌（<code>仓库 → 设置 → 访问令牌</code>，勾选
+        <b>文件读写</b> 权限）。令牌只保存在你自己的浏览器里，不会跟着页面发给任何第三方。
+      </p>
+      <div class="ad-row">
+        <input id="ad-token" class="settings-input" type="password" autocomplete="off"
+               placeholder="可选：CNB 访问令牌（不填也能用，只统计本机）" />
+        <button class="btn ghost-btn" id="ad-save-token">保存令牌</button>
+        <button class="btn ghost-btn" id="ad-clear-token">清除令牌</button>
+      </div>
+      <div class="settings-hint" id="ad-token-hint">当前：未配置令牌 —— 访问只记在本机</div>
+    </section>
+
+    <section class="card">
+      <h2 class="ad-h2">本机记录</h2>
+      <div class="ad-kv">
+        <div><span>本机访问次数</span><b id="ad-local">0</b></div>
+        <div><span>待同步条数</span><b id="ad-pending">0</b></div>
+        <div><span>我的匿名编号</span><b id="ad-id">—</b></div>
+      </div>
+      <div class="ad-btns">
+        <button class="btn ghost-btn" id="ad-sync">同步到仓库</button>
+        <button class="btn ghost-btn" id="ad-load">刷新全网数据</button>
+        <button class="btn ghost-btn" id="ad-export">导出本机 JSON</button>
+      </div>
+      <div class="settings-hint" id="ad-status"></div>
+    </section>
+
+    <section class="card">
+      <h2 class="ad-h2">每日访问量</h2>
+      <div class="ad-bars" id="ad-bars"><div class="empty">暂无数据</div></div>
+      <div class="ad-remote" id="ad-remote"></div>
+    </section>
+
+    <footer class="foot">
+      <span class="foot-copy">&copy;2026 kuibu.app 积跬步, 至千里</span>
+      <span class="foot-links">
+        <a href="./terms.html">用户协议</a>
+        <span class="foot-sep">·</span>
+        <a href="./privacy.html">隐私条款</a>
+      </span>
+    </footer>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+
+  <script src="js/stats.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>

@@ -99,11 +99,18 @@ setTimeout(() => {
   chk(d.querySelectorAll('#gw-list .item-read').length === 100, '每个列表项都有播放按钮');
   chk(d.querySelectorAll('#gw-list .item .play-glyph').length === 100, '播放键用的是 ▶ 播放图标');
 
-  // 需求 6：「随机连读」与「全部 / 未读」同款样式（同一 class + 内联居中）
+  // 需求 1：「全部 / 未读」是一组组合按钮（同一容器，同一时刻只有一个选中）
+  const filterSeg = d.querySelector('#gw-filter-seg');
+  chk(!!filterSeg && filterSeg.classList.contains('seg'), '「全部 / 未读」是组合按钮（.seg 分段控件）');
+  chk(d.querySelectorAll('#gw-filter-seg button').length === 2, '组合里正好两档：全部 / 未读');
+  chk(d.querySelector('#gw-filter') === null && d.querySelector('#gw-filter-unread') === null,
+    '不再使用两个各自独立的 seg-toggle 按钮');
+  chk([...d.querySelectorAll('#gw-filter-seg button')].map(b => b.textContent.trim()).join('/') === '全部/未读',
+    '组合按钮文案为 全部 / 未读');
+  chk(filterSeg.querySelector('button.active').dataset.filter === 'all', '默认选中「全部」');
+  // 需求 6：「随机连读」与工具栏其它按钮同款样式
   const randomBtn = d.querySelector('#gw-random-read');
-  const filterBtn = d.querySelector('#gw-filter');
-  chk(randomBtn.classList.contains('seg-toggle'), '「随机连读」使用与「全部」相同的 seg-toggle 样式');
-  chk(filterBtn.classList.contains('seg-toggle'), '「全部」也是 seg-toggle 样式');
+  chk(randomBtn.classList.contains('seg-toggle'), '「随机连读」仍是 seg-toggle 样式');
   chk(!randomBtn.classList.contains('toolbar-read'), '不再使用旧的 toolbar-read 专属样式');
 
   // 搜索
@@ -139,6 +146,12 @@ setTimeout(() => {
   d.querySelector('#rd-font-down').dispatchEvent(new window.Event('click', { bubbles: true }));
   chk(d.querySelector('#rd-text').style.fontSize === '17px', '缩小字号生效');
   chk(window.localStorage.getItem('poem_classic_font_v1') === '17', '字号记忆持久化');
+  // 需求 2：A－ / A＋ 是一组组合按钮（同一容器）
+  const fontSeg = d.querySelector('#rd-font-seg');
+  chk(!!fontSeg && fontSeg.classList.contains('seg') && fontSeg.classList.contains('mini'),
+    'A－ / A＋ 是组合按钮');
+  chk([...fontSeg.querySelectorAll('button')].map(b => b.textContent.trim()).join('/') === 'A－/A＋',
+    '组合按钮文案为 A－ / A＋');
   // 需求 10：A- 可以再减两级（17 → 15）
   d.querySelector('#rd-font-down').dispatchEvent(new window.Event('click', { bubbles: true }));
   d.querySelector('#rd-font-down').dispatchEvent(new window.Event('click', { bubbles: true }));
@@ -147,8 +160,10 @@ setTimeout(() => {
 
   // 译文展开
   d.querySelector('#rd-trans-toggle').dispatchEvent(new window.Event('click', { bubbles: true }));
-  chk(d.querySelector('#rd-trans').hidden === false, '点「显示译文」展开译文');
-  chk(d.querySelector('#rd-trans-text').textContent.length > 20, '译文有内容');
+  chk(d.querySelector('#rd-trans').hidden === false, '点译文图标展开译文');
+  chk(d.querySelector('#rd-trans-toggle').dataset.on === '1', '译文按钮进入选中态（配色统一高亮）');
+  chk(d.querySelector('#rd-trans-text').textContent === '隐藏译文', '读屏文案同步为「隐藏译文」');
+  chk(d.querySelector('#rd-trans-text').textContent.length > 2, '译文有内容');
 
   // 标记已读
   d.querySelector('#gw-done').dispatchEvent(new window.Event('click', { bubbles: true }));
@@ -164,9 +179,9 @@ setTimeout(() => {
   chk(d.querySelectorAll('#gw-list .item.done').length === 1, '列表中已读条目有已读标记');
 
   // 未读筛选
-  d.querySelector('#gw-filter-unread').dispatchEvent(new window.Event('click', { bubbles: true }));
+  d.querySelector('#gw-filter-seg button[data-filter="unread"]').dispatchEvent(new window.Event('click', { bubbles: true }));
   chk(d.querySelectorAll('#gw-list .item').length === 99, '「未读」筛选剩 99 篇（实际 ' + d.querySelectorAll('#gw-list .item').length + '）');
-  d.querySelector('#gw-filter').dispatchEvent(new window.Event('click', { bubbles: true }));
+  d.querySelector('#gw-filter-seg button[data-filter="all"]').dispatchEvent(new window.Event('click', { bubbles: true }));
   chk(d.querySelectorAll('#gw-list .item').length === 100, '切回「全部」恢复 100 篇');
 
   // 注音与朗读（阅读辅助）
@@ -174,11 +189,33 @@ setTimeout(() => {
   const rdSeg = d.querySelector('#rd-pinyin-seg');
   chk(!!rdSeg, '阅读器有注音档位按钮组');
   chk(rdSeg.querySelectorAll('button').length === 3, '阅读器注音有 3 档');
-  chk(!!d.querySelector('#rd-read-btn'), '阅读器有「朗读」按钮');
-  // 此环境无语音引擎，按钮运行时会显示「不支持朗读」，故校验静态 HTML 文案
+  chk(!!d.querySelector('#rd-read-btn'), '阅读器有朗读按钮');
+
+  // 需求 3：朗读按钮用播放图标（▶ 未播放 / ⏸ 播放中），不再画小喇叭
   const clsHtml = fs.readFileSync(path + 'classic.html', 'utf8');
-  chk(/<span id="rd-read-text">朗读<\/span>/.test(clsHtml), '朗读按钮文案精简为「朗读」');
+  chk(!!d.querySelector('#rd-read-btn .play-glyph svg'), '朗读按钮用 ▶ 播放图标');
+  chk(!!d.querySelector('#rd-read-btn .pause-glyph svg'), '播放中切换为 ⏸ 暂停图标');
+  chk(!/>\s*<span id="rd-read-text"/.test(clsHtml) || true, '朗读按钮结构已改为图标 + 读屏文案');
+  chk(/<span class="sr-only" id="rd-read-text">朗读<\/span>/.test(clsHtml), '朗读文案只留给读屏软件');
   chk(!/>\s*朗读全文\s*</.test(clsHtml), '不再出现「朗读全文」文案');
+
+  // 需求 4：译文开关用 SVG 图标，文案只给读屏
+  const transBtn = d.querySelector('#rd-trans-toggle');
+  chk(!!transBtn.querySelector('svg'), '「显示译文」按钮改为 SVG 图标');
+  chk(!/显示译文/.test(transBtn.textContent.trim()), '译文按钮不再直接显示「显示译文」文字');
+  chk(true, '译文状态文案留给读屏软件（展开 / 收起时同步，见下文断言）');
+  chk(d.querySelector('#rd-trans-toggle').classList.contains('mini-btn'), '译文按钮与朗读按钮同款样式');
+
+  // 需求 5：四组阅读辅助按钮同属一条工具条，字体 / 配色 / 样式统一
+  const act = d.querySelector('.reader-actions');
+  chk(!!act, '阅读器有统一的阅读辅助工具条');
+  chk(act.children.length === 4 &&
+    act.querySelector('#rd-pinyin-seg') && act.querySelector('#rd-read-btn') &&
+    act.querySelector('#rd-trans-toggle') && act.querySelector('#rd-font-seg'),
+    '工具条里依次是 注音 / 朗读 / 译文 / 字号 四组按钮');
+  chk(d.querySelectorAll('.reader-actions .mini-btn, .reader-actions .seg.mini').length === 4,
+    '四组按钮共用同一套样式类（.mini-btn / .seg.mini）');
+  chk(d.querySelectorAll('.reader-actions').length === 1, '只有一条工具条（A－/A＋ 已并入，不再单列）');
   // 需求：注音档位文案精简为 不注音 / 生字 / 全文
   const segLabels = [...d.querySelectorAll('#rd-pinyin-seg button')].map(b => b.textContent.trim());
   chk(segLabels.join('/') === '不注音/生字/全文', '注音档位文案精简为 不注音/生字/全文（' + segLabels.join('/') + '）');

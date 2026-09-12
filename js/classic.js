@@ -8,7 +8,9 @@
  * 3. 搜索 + 「全部 / 未读」筛选，快速找到想读的一篇。
  * 4. 阅读用**整页阅读器**（reader），而不是卡片弹窗：长文可整屏滚动。
  * 5. 进度只有 localStorage 里的「已读」标记（poem_classic_read_v1）。
- * 6. 朗读三处入口：
+ * 6. 阅读辅助（注音 / 朗读 / 译文 / 字号）全部用同一套「组合按钮」样式，
+ *    横向排成一行，图标统一 SVG，文案走屏幕阅读器（.sr-only）。
+ * 7. 朗读三处入口：
  *    · 阅读器「朗读」——读标题 + 朝代 + 作者 + 正文
  *    · 译文「朗读」——只读白话译文
  *    · 索引页 / 分组「随机连读」——随机抽一篇开读，读完自动跳下一篇（可暂停 / 停止）
@@ -331,8 +333,7 @@
     $("#rd-trans-text").textContent = p.translation || "（暂未收录译文）";
     $("#gw-progress").textContent = "第 " + (idx + 1) + " / " + allItems().length + " 篇";
     $("#rd-trans").hidden = true;
-    $("#rd-trans-toggle").dataset.on = "0";
-    $("#rd-trans-toggle").textContent = "显示译文";
+    syncTransButton();
     renderNav();
     applyFont();
     syncPinyinButton();
@@ -418,19 +419,20 @@
 
   function syncReadButton() {
     const btn = $("#rd-read-btn");
+    if (!btn) return;
     const ok = speechSupported();
     btn.disabled = !ok;
-    btn.title = ok ? "用手机语音朗读这篇古文" : "当前浏览器不支持语音朗读";
+    btn.title = ok ? "朗读本篇" : "当前浏览器不支持语音朗读";
     if (!ok) {
-      $("#rd-read-text").textContent = "不支持朗读";
       btn.dataset.on = "0";
+      $("#rd-read-text").textContent = "当前浏览器不支持语音朗读";
       return;
     }
     // 自动连读时不算「本篇朗读中」，避免按钮状态来回跳
     const on = !autoReading && !!window.Speech.speaking();
     btn.dataset.on = on ? "1" : "0";
     btn.setAttribute("aria-pressed", on ? "true" : "false");
-    $("#rd-read-text").textContent = on ? "停止" : "朗读";
+    $("#rd-read-text").textContent = on ? "停止朗读" : "朗读本篇";
   }
 
   function toggleRead() {
@@ -453,14 +455,30 @@
     if (!btn) return;
     const ok = speechSupported();
     btn.disabled = !ok;
+    btn.title = ok ? "朗读译文" : "当前浏览器不支持语音朗读";
     if (!ok) {
-      $("#rd-trans-read-text").textContent = "不支持";
       btn.dataset.on = "0";
+      $("#rd-trans-read-text").textContent = "当前浏览器不支持语音朗读";
       return;
     }
     const on = !autoReading && !!window.Speech.speaking();
     btn.dataset.on = on ? "1" : "0";
-    $("#rd-trans-read-text").textContent = on ? "停止" : "朗读";
+    btn.setAttribute("aria-pressed", on ? "true" : "false");
+    $("#rd-trans-read-text").textContent = on ? "停止朗读译文" : "朗读译文";
+  }
+
+  /**
+   * 译文开关按钮：只换图标与配色，可见文案由图标表达，
+   * 文字信息给读屏软件（「显示译文 / 隐藏译文」）。
+   */
+  function syncTransButton() {
+    const btn = $("#rd-trans-toggle");
+    if (!btn) return;
+    const on = btn.dataset.on === "1";
+    btn.dataset.on = on ? "1" : "0";
+    btn.setAttribute("aria-pressed", on ? "true" : "false");
+    btn.title = on ? "隐藏译文" : "显示译文";
+    $("#rd-trans-text").textContent = on ? "隐藏译文" : "显示译文";
   }
 
   /** 白话译文朗读：只读译文，不读原文 */
@@ -620,10 +638,15 @@
       renderList();
     });
 
+    // 「全部 / 未读」是一组组合按钮：同一时刻只有一个是选中态
     $$("[data-filter]").forEach(function (b) {
       b.addEventListener("click", function () {
         filter = b.dataset.filter;
-        $$("[data-filter]").forEach(function (x) { x.classList.toggle("active", x === b); });
+        $$("[data-filter]").forEach(function (x) {
+          const on = x === b;
+          x.classList.toggle("active", on);
+          x.setAttribute("aria-pressed", on ? "true" : "false");
+        });
         renderList();
       });
     });
@@ -657,7 +680,7 @@
     $("#rd-trans-toggle").addEventListener("click", function () {
       const on = this.dataset.on === "1";
       this.dataset.on = on ? "0" : "1";
-      this.textContent = on ? "显示译文" : "隐藏译文";
+      syncTransButton();
       $("#rd-trans").hidden = on;
       if (on) syncTransReadButton();
     });
