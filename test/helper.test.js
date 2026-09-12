@@ -154,7 +154,11 @@ setTimeout(async () => {
     "注音档位文案精简为 不注音/生字/全文");
   chk(!!seg.querySelector('button[data-mode="rare"]'), "默认档「只标生字」按钮存在");
   chk(!!doc.querySelector("#m-read-btn"), "诗词弹层有「朗读」按钮");
-  chk(!!doc.querySelector("#seg-helper"), "设置里有「阅读辅助」开关");
+  // 设置已改成独立整页（settings.html），开关住在那一页
+  const settingsWin = bootPage("settings.html");
+  settingsWin.document.dispatchEvent(new settingsWin.Event("DOMContentLoaded", { bubbles: true }));
+  chk(!!settingsWin.document.querySelector("#seg-helper"), "设置页里有「阅读辅助」开关");
+  chk(!doc.querySelector("#seg-helper"), "首页不再有设置弹层里的阅读辅助开关");
 
   // 打开第一首诗
   // 需求 5：阅读辅助默认开启 —— 打开诗词即自动注音

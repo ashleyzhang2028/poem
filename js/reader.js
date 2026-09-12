@@ -190,6 +190,11 @@
     });
   }
 
+  /** 底部留白（--nav-h）统一由 js/pwa.js 测量，播放栏开合后通知它重算 */
+  function syncBottomGap() {
+    if (window.PWA && window.PWA.syncBottomGap) window.PWA.syncBottomGap();
+  }
+
   /** 收起播放栏 */
   function close() {
     if (!bar) return;
@@ -197,6 +202,7 @@
     bar.hidden = true;
     queueInfo = { current: "", next: "", index: 0, total: 0, hasNext: false };
     document.body.classList.remove("has-audio-player");
+    syncBottomGap();
   }
 
   /** 显示播放栏 */
@@ -206,6 +212,7 @@
     bar.hidden = false;
     document.body.classList.add("has-audio-player");
     sync();
+    syncBottomGap();
   }
 
   /**

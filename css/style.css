@@ -554,6 +554,9 @@ html, body {
   --safe-right: env(safe-area-inset-right, 0px);
   /* 由 js/pwa.js 在 iOS 上写入，修正地址栏收起/展开导致的 100vh 抖动 */
   --app-vh: 1vh;
+  /* 底部导航栏（播放栏 + iOS 引导条）的实测高度，由 js/pwa.js 的 syncBottomGap()
+     写入。页面留白与所有贴底固定元素都按这一条基准线避让，杜绝「被导航栏压住一点」 */
+  --nav-h: 0px;
 }
 
 /* 让左右内容避开横屏时的圆角/刘海 */
@@ -668,13 +671,42 @@ button,
   z-index: 40;
 }
 
-/* 引导条是 fixed 的，会盖住页脚最后一行（版权 + 用户协议 / 隐私条款）。
-   出现时补一段底部留白（约 100px 的条 + 12px 底距 + 一点余量），
-   保证两个法务链接不会被压住、始终可点。 */
+/* 引导条是 fixed 的，会盖住页面最后一行（版权 + 用户协议 / 隐私条款）。
+   出现时按实测高度补留白，保证两个法务链接不会被压住、始终可点。 */
 body.has-install-tip .app,
 body.has-install-tip #app {
-  padding-bottom: calc(100px + 12px + 24px);
+  padding-bottom: calc(24px + var(--nav-h));
 }
+
+/* ==========================================================================
+   设置整页（settings.html）
+   --------------------------------------------------------------------------
+   设置不再是「从底部向上弹出的卡片」，而是一个独立页面：
+     · 结构 / 手势 / 返回逻辑与首页一致，不会出现弹层与列表叠在一起
+     · 页面主体撑满可视高度（flex），页脚（版权 + 法务链接）压在最底部
+     · 底部留白统一由 --nav-h 决定，任何底部导航栏都压不到最后一行
+   ========================================================================== */
+.settings-page {
+  /* 顶部栏之外的可视区域：内容不足时由页脚占住最底部 */
+  min-height: calc(100vh - 150px);
+  min-height: calc(100 * var(--app-vh) - 150px);
+  /* 依次留出底部安全区与导航栏高度 */
+  padding-bottom: calc(24px + var(--safe-bottom) + var(--nav-h));
+}
+.settings-page .settings-item:first-child { margin-top: 4px; }
+
+/* 页脚：推到页面最底，且与正文之间留一段呼吸间距 */
+.settings-foot {
+  margin-top: 26px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.settings-foot .foot-copy,
+.settings-foot .foot-links { font-size: 12px; }
+
+/* 设置页顶部栏：与首页同款，只把左侧图标换成返回箭头 */
+.back-icon { text-decoration: none; }
+.back-icon svg { width: 22px; height: 22px; }
 
 /* ==========================================================================
    课外必背小古文入口（首页）
@@ -972,13 +1004,17 @@ body.has-install-tip #app {
 }
 @keyframes pbPulse { 0%, 100% { opacity: .35 } 50% { opacity: 1 } }
 
-/* 有播放栏时，页面底部补留白，避免遮挡页脚与最后一首诗 */
+/* 底部导航栏存在时的统一避让：--nav-h = 播放栏高 + 引导条高 + 安全区。
+   页面主体补出这段留白，页脚与最后一行内容就不会被压住；
+   没有底部导航栏时 --nav-h 为 0，不留空白条。 */
 body.has-audio-player .app,
-body.has-audio-player #app {
-  padding-bottom: calc(150px + var(--safe-bottom));
+body.has-audio-player #app,
+body.no-player .app,
+body.no-player #app {
+  padding-bottom: calc(24px + var(--nav-h));
 }
-body.has-audio-player .toast { bottom: calc(140px + var(--safe-bottom)); }
-body.has-audio-player .ios-install-tip { bottom: calc(112px + var(--safe-bottom)); }
+/* 吸底元素统一贴着「导航栏基准线」往上排 */
+.ios-install-tip { bottom: calc(12px + var(--nav-h)); }
 
 /* 今日任务条里的「朗读（全部）」按钮：圆形播放键，与右侧 0/5 圆环同族 */
 .today-actions {

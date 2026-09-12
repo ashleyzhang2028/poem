@@ -8,14 +8,16 @@ const { JSDOM } = require('jsdom');
 const fs = require('fs');
 const path = __dirname + '/../';
 const html = fs.readFileSync(path + 'index.html', 'utf8');
+// 设置从「首页弹层」改成了独立整页，用户名输入框现在住在 settings.html
+const settingsHtml = fs.readFileSync(path + 'settings.html', 'utf8');
 
-function boot(seed) {
-  const dom = new JSDOM(html, { runScripts: 'dangerously', url: 'https://local.test/' });
+function bootIn(pageHtml, file, seed) {
+  const dom = new JSDOM(pageHtml, { runScripts: 'dangerously', url: 'https://local.test/' + file });
   const { window } = dom;
   if (seed) {
     for (const k in seed) window.localStorage.setItem(k, seed[k]);
   }
-  const order = html.match(/<script src="([^"]+)"><\/script>/g).map(s => s.match(/src="([^"]+)"/)[1]);
+  const order = pageHtml.match(/<script src="([^"]+)"><\/script>/g).map(s => s.match(/src="([^"]+)"/)[1]);
   order.forEach(f => {
     const el = window.document.createElement('script');
     el.textContent = fs.readFileSync(path + f, 'utf8');
@@ -23,6 +25,11 @@ function boot(seed) {
   });
   return new Promise(r => setTimeout(() => r({ window, d: window.document }), 400));
 }
+
+/** 首页：应用名联动 / 计划生效 / 入口显隐 */
+const boot = seed => bootIn(html, '', seed);
+/** 设置页：用户名输入框回填与输入 */
+const bootSettings = seed => bootIn(settingsHtml, 'settings.html', seed);
 
 (async () => {
   let fails = 0;
@@ -37,7 +44,10 @@ function boot(seed) {
   r = await boot({ poem_recite_settings_v1: JSON.stringify({ grade: 2, term: 2, dailyCount: 3 }) });
   chk(r.d.title === '跬步 · 古诗词背诵', '旧版设置无 username 时不报错，标题回落「跬步」');
   chk(r.d.querySelector('#today-sub').textContent.includes('共 3 首'), '旧版设置 grade/term/count 仍生效: ' + r.d.querySelector('#today-sub').textContent);
-  chk(r.d.querySelector('#input-username').value === '', '旧版设置无 username 时输入框为空（代表用默认名）');
+  let s1 = await bootSettings({ poem_recite_settings_v1: JSON.stringify({ grade: 2, term: 2, dailyCount: 3 }) });
+  chk(s1.d.querySelector('#input-username').value === '', '旧版设置无 username 时设置页输入框为空（代表用默认名）');
+  chk(s1.d.querySelector('#seg-count button.active').dataset.count === '3', '设置页回显旧版每日 3 首');
+  chk(s1.d.querySelector('#brand-name').textContent === '跬步', '设置页无用户名时显示固定应用名「跬步」');
 
   // 3. 已有用户名 → 刷新后保持
   r = await boot({
@@ -45,7 +55,9 @@ function boot(seed) {
   });
   chk(r.d.title === '跬步 · 玥玥的古诗词 · 古诗词背诵', '刷新后标题保持（实际 ' + r.d.title + '）');
   chk(r.d.querySelector('#brand-name').textContent === '跬步 · 玥玥的古诗词', '刷新后品牌标题保持，应用名固定为跬步');
-  chk(r.d.querySelector('#input-username').value === '玥玥', '刷新后输入框回填 玥玥');
+  s1 = await bootSettings({ poem_recite_settings_v1: JSON.stringify({ grade: 1, term: 1, dailyCount: 5, username: '玥玥' }) });
+  chk(s1.d.querySelector('#input-username').value === '玥玥', '刷新后设置页输入框回填 玥玥');
+  chk(s1.d.querySelector('#brand-name').textContent === '跬步 · 玥玥的古诗词', '设置页品牌标题跟随用户名');
 
   // 4. XSS 防护：用户名写入应作为纯文本
   r = await boot({

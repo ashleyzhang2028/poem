@@ -182,6 +182,72 @@
     window.addEventListener("resize", setVH);
   }
 
+  /**
+   * ---------- 底部导航栏留白（播放栏 / 引导条 / 吐司共用一条基准线） ----------
+   *
+   * 底部导航栏不是固定高度：播放栏（.player-bar）会随「上一首 / 停止 / 下一首」
+   * 等按钮的行高、以及 iPhone 底部安全区变化。页面自己拍脑袋写死 padding
+   * （曾经是 150px）就会在窄屏上差几像素，导致「忘记 / 模糊 / 记住」和页脚的
+   * 法务链接被压住一点。
+   *
+   * 这里统一测量真实高度，写进 --nav-h（CSS 变量），让所有贴底元素与页面留白
+   * 都按同一条基准线排布：
+   *   --nav-h = 播放栏高度（贴底）+ 引导条高度（叠在播放栏之上）+ 安全区 + 余量
+   */
+  function measureBottomNav() {
+    var bar = document.querySelector(".player-bar");
+    var tip = document.getElementById("ios-install-tip");
+    var keepBar = [];
+    var keepTip = [];
+
+    // 先记住当前显隐状态，量完原样恢复（测量过程不该有视觉副作用）
+    if (bar) {
+      keepBar = [bar.hidden, bar.classList.contains("is-hidden"), bar.style.display];
+      bar.hidden = false;
+      bar.classList.remove("is-hidden");
+      bar.style.display = "flex";
+    }
+    if (tip) {
+      keepTip = [tip.hidden, tip.style.display];
+      tip.hidden = false;
+      tip.style.display = "flex";
+    }
+
+    var navH = 0;
+    if (bar && bar.getBoundingClientRect().height > 0) {
+      navH += bar.getBoundingClientRect().height;
+    }
+    // 引导条叠在播放栏之上，只有它可见时才占高度
+    if (tip && !keepTip[0] && tip.getBoundingClientRect().height > 0) {
+      navH += tip.getBoundingClientRect().height + 8;
+    }
+
+    if (bar) {
+      bar.hidden = keepBar[0];
+      bar.classList.toggle("is-hidden", keepBar[1]);
+      bar.style.display = keepBar[2];
+    }
+    if (tip) {
+      tip.hidden = keepTip[0];
+      tip.style.display = keepTip[1];
+    }
+
+    return navH;
+  }
+
+  /** 同步 --nav-h 与 has-install-tip，页面与固定元素都跟着这条基准线走 */
+  function syncBottomGap() {
+    var tip = document.getElementById("ios-install-tip");
+    var tipVisible = !!(tip && !tip.hidden);
+    document.body.classList.toggle("has-install-tip", tipVisible);
+    var navH = measureBottomNav();
+    var root = document.documentElement;
+    root.style.setProperty("--nav-h", navH + "px");
+    // 兼容：仍读旧变量的样式也能拿到正确的导航栏高度
+    root.style.setProperty("--player-bar-h", navH + "px");
+    return navH;
+  }
+
   /* ---------- 5. 弹层打开时隐藏引导条，避免遮挡操作按钮 ---------- */
   function hideTipWhileModalOpen() {
     var tip = document.getElementById("ios-install-tip");
@@ -200,7 +266,7 @@
         delete tip.dataset.wasVisible;
       }
       // 留白跟着引导条的实际显隐走
-      document.body.classList.toggle("has-install-tip", !tip.hidden);
+      syncBottomGap();
     }
 
     // 弹层通过 hidden 属性切换，用 MutationObserver 监听最可靠
@@ -216,7 +282,22 @@
     setupInstallPrompt();
     fixIOSViewportHeight();
     hideTipWhileModalOpen();
+    syncBottomGap();
+    window.addEventListener("resize", syncBottomGap);
+    window.addEventListener("orientationchange", function () {
+      setTimeout(syncBottomGap, 320);
+    });
+    // 播放栏里的信息文字会换行，高度随之变化，用观察器实时跟随
+    if (window.ResizeObserver) {
+      var bar = document.querySelector(".player-bar");
+      if (bar) new ResizeObserver(function () { syncBottomGap(); }).observe(bar);
+    }
   }
+
+  /* 对外暴露：任何显示 / 隐藏底部固定元素的模块都调用它刷新留白 */
+  window.PWA = window.PWA || {};
+  window.PWA.syncBottomGap = syncBottomGap;
+  window.PWA.measureBottomNav = measureBottomNav;
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", init);
