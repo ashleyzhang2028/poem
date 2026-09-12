@@ -464,6 +464,19 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
     itemBtn.dispatchEvent(new w5.Event('click', { bubbles: true }));
     await sleep(20);
     chk(log.length === 0 && w5.Speech.active() === false, '列表播放键在暂停中再点 = 停止');
+
+    // 正在读译文时点「正文」键：切换到读正文，不是「停掉译文就完事」
+    d5.querySelector('#rd-read-btn').dispatchEvent(new w5.Event('click', { bubbles: true }));
+    await sleep(30);
+    let spoken = String(w5.speechSynthesis._spoken.text);
+    chk(spoken.indexOf('人之初') === 0, '正在读译文时点正文键会切去读正文（实际 ' + spoken.slice(0, 12) + '…）');
+    chk(d5.querySelector('#rd-read-btn').dataset.on === '1' && transBtn.dataset.on === '0',
+      '切到正文后只有正文键是 ⏸，译文键复位');
+    // 再点一次正文键 = 停下（不会再叠一层）
+    log.length = 0;
+    d5.querySelector('#rd-read-btn').dispatchEvent(new w5.Event('click', { bubbles: true }));
+    await sleep(30);
+    chk(log.length === 0, '再点正文键 = 停下，不叠一层朗读');
   }
 
   console.log(fails ? '\n❌ ' + fails + ' 项失败' : '\n🎉 自动朗读 / 阅读辅助测试全部通过');

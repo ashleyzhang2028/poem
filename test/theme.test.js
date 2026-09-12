@@ -173,7 +173,7 @@ chk(!/一年级|二年级|至高三|小学|初中|高中|年级|学段/.test(hom
   '描述文字里不再出现「一年级到高中」这类年级字样');
 chk(!/一年级/.test(read('js/chrome.js').replace(/\/\*[\s\S]*?\*\//g, '')),
   'chrome.js 的代码里不再出现年级字样（注释除外）');
-// 小古文页的说明写在第一行（「跬步 · 小古文」），第二行留空即自动不占高度
+// 第二行留空时不占高度（页面没写 data-sub 时顶栏只有一行）
 chk(/brand-sub:empty \{ display: none; \}/.test(css), '第二行留空时不占高度（小古文页顶栏只有一行）');
 // 需求：用户不填名字也要显示「跬步 Ashley的古诗词」
 chk(/DEFAULT_USER\s*=\s*"Ashley"/.test(app), 'app.js 定义默认用户名 Ashley');
