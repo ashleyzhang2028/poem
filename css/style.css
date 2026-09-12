@@ -53,7 +53,7 @@ html, body {
   padding: 0;
   background: var(--bg);
   /* 底色见文件末尾「宋式纹样」一节：
-     素绢底 + 宋「球路纹」平铺，晕染由 body::before 单独铺一层 */
+     素绢底 + 宋「如意云头纹」平铺，晕染由 body::before 单独铺一层 */
   color: var(--ink);
   font-family: var(--font-ui);
   line-height: 1.6;
@@ -303,12 +303,17 @@ html, body {
   border-radius: 999px;
   font-weight: 600;
 }
+/* 折叠箭头：空心描边三角，与列表右侧「›」同色同笔画；
+   收起朝下、展开朝上（只旋转，不换图，动作连续不跳） */
 .collapse-head .arrow {
   margin-left: auto;
-  color: var(--ink-2);
+  display: inline-flex;
+  color: #9db3a9;
   transition: transform .2s;
 }
+.collapse-head .arrow svg { display: block; width: 18px; height: 18px; }
 .collapse-head.open .arrow { transform: rotate(180deg); }
+.collapse-head:hover .arrow { color: var(--green); }
 .collapse-body { padding-top: 12px; }
 
 .stats-row {
@@ -353,6 +358,10 @@ html, body {
   box-shadow: 0 -6px 30px rgba(0, 0, 0, .18);
 }
 .modal-box.small { border-radius: 22px; max-width: 420px; margin: auto; animation: pop .2s; }
+/* 但设置面板走的是「内容自适应高度 + 超出滚动」，
+   不需要底部那 62px 的页签垫高（垫了会把面板顶得过高、上下都不好按）。
+   对齐上面那条 `body.no-dock .modal-box`：小弹层只避开 iPhone 底部横条。 */
+.modal-box.small { padding-bottom: calc(26px + var(--safe-bottom)); }
 @media (min-width: 700px) {
   .modal { align-items: center; }
   .modal-box { border-radius: 22px; max-height: calc(86vh - 62px - var(--safe-bottom)); }
@@ -553,14 +562,22 @@ body.no-dock .modal-box { max-height: 88vh; }
   padding-bottom: calc(40px + var(--safe-bottom));
 }
 
-/* 底部弹层避开 Home Indicator */
+/* 底部弹层避开 iPhone 底部横条 + 底部页签。
+   `.modal-box` 这条规则与上面的 `.modal-box { padding: ... }` 是同一优先级、
+   晚出现，所以它说了算：底部内边距 = 页签高度（约 62px）+ 一段呼吸留白。
+   这样一来，弹层最下面的「忘记 / 模糊 / 记住」不再被底部页签压掉一截，
+   页签也不会浮在按钮上挡住点击。 */
 .modal-box {
-  padding-bottom: calc(26px + var(--safe-bottom));
+  padding-bottom: calc(26px + 62px + var(--safe-bottom));
 }
+body.no-dock .modal-box { padding-bottom: calc(26px + var(--safe-bottom)); }
 
-/* 中间弹出的弹层（设置）也留安全边距 */
+/* 中间弹出的弹层（设置）也留安全边距。
+   它有自适应的 max-height，内容永远滚得上来，所以不必像底部弹层那样
+   再垫一层页签高度，只避开 iPhone 底部横条即可（否则弹层会被顶得偏高）。 */
 .modal-box.small {
   max-height: calc(86 * var(--app-vh));
+  padding-bottom: calc(26px + var(--safe-bottom));
   margin-bottom: calc(12px + var(--safe-bottom));
 }
 
@@ -879,39 +896,42 @@ body.has-audio-player:not(.no-dock) #app {
 body.has-audio-player .dock { border-top-color: rgba(240, 205, 124, .28); }
 
 /* ---------- 宋式纹样 ----------
-   大背景 = 宋「球路纹」（又称「盘球纹」）：
-   一个个小圆环以四方连续套叠相扣，是宋代织锦、漆器与瓷器上最常见的几何纹，
-   比水波纹更清晰、也不会看成一团乱线。环内落一朵四点菱花，取自宋瓷刻花的团花。
-   纹样整体比上一版淡一半（描边 5%~12%），退开一臂远只剩纸的温度。 */
+   大背景 = 宋「如意云头纹」（如意云 / 云头纹）：
+   一朵如意云头两肩卷曲、中央收成一个小尖，是宋代织锦、瓷枕、漆器与
+   《营造法式》彩画上最常见的云纹；把云头横向排成一行、竖向层层相叠，
+   铺开就是「朵云相逐」的连续底纹，取「行云流水、从容不迫」之意。
+   与前两版（曲水纹、球路纹）刻意不同：这一版没有水波、也没有闭环圆环，
+   通篇只用「两肩 + 一尖」这一笔云头，退远看只剩一层淡淡的墨气。
+
+   三层叠成一个循环大纹样（周期 320px）：
+     1) 云头（一）  80×80   正心一朵大如意头 + 云脚
+     2) 云头（二）  80×80   错开半格的两小朵，与上组相衔成满铺
+     3) 云纹团花    320×320 一朵近三倍大的如意 + 气圈 + 三点落花
+   描边不透明度 4%~13%：静看是一张有暗花的宋锦，
+   退开一臂远则只剩纸的温度，不影响正文可读性。 */
 :root {
-  --pattern-ivory: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%2780%27%20height%3D%2780%27%20viewBox%3D%270%200%2080%2080%27%3E%3Cg%20fill%3D%27none%27%20stroke%3D%27%232f6055%27%20stroke-width%3D%271.5%27%3E%3Ccircle%20cx%3D%2740%27%20cy%3D%2740%27%20r%3D%2727%27%20stroke-opacity%3D%27.12%27%2F%3E%3Ccircle%20cx%3D%2740%27%20cy%3D%2740%27%20r%3D%2719%27%20stroke-opacity%3D%27.08%27%2F%3E%3C%2Fg%3E%3Cg%20fill%3D%27%23a55c19%27%20fill-opacity%3D%27.10%27%3E%3Ccircle%20cx%3D%2740%27%20cy%3D%2722%27%20r%3D%272.2%27%2F%3E%3Ccircle%20cx%3D%2756%27%20cy%3D%2740%27%20r%3D%272.2%27%2F%3E%3Ccircle%20cx%3D%2740%27%20cy%3D%2758%27%20r%3D%272.2%27%2F%3E%3Ccircle%20cx%3D%2724%27%20cy%3D%2740%27%20r%3D%272.2%27%2F%3E%3Ccircle%20cx%3D%2740%27%20cy%3D%2740%27%20r%3D%271.5%27%2F%3E%3C%2Fg%3E%3C/svg%3E");
-  /* 球路（二）：同样形状错半格，与上组相切后即成「盘球」四方连续的套叠感 */
-  --pattern-ivory-b: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%2780%27%20height%3D%2780%27%20viewBox%3D%270%200%2080%2080%27%3E%3Cg%20fill%3D%27none%27%20stroke%3D%27%232f6055%27%20stroke-width%3D%271.3%27%3E%3Ccircle%20cx%3D%2740%27%20cy%3D%2740%27%20r%3D%2732%27%20stroke-opacity%3D%27.06%27%2F%3E%3C/g%3E%3C/svg%3E");
-  /* 团花：四点菱花 + 同心圆，落在圆环的交叉处 */
-  --pattern-luo: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%27320%27%20height%3D%27320%27%20viewBox%3D%270%200%20320%20320%27%3E%3Cg%20fill%3D%27%23a55c19%27%20fill-opacity%3D%27.09%27%3E%3Ccircle%20cx%3D%27160%27%20cy%3D%27140%27%20r%3D%273.2%27%2F%3E%3Ccircle%20cx%3D%27180%27%20cy%3D%27160%27%20r%3D%273.2%27%2F%3E%3Ccircle%20cx%3D%27160%27%20cy%3D%27180%27%20r%3D%273.2%27%2F%3E%3Ccircle%20cx%3D%27140%27%20cy%3D%27160%27%20r%3D%273.2%27%2F%3E%3Ccircle%20cx%3D%27160%27%20cy%3D%27160%27%20r%3D%272%27%2F%3E%3C%2Fg%3E%3Ccircle%20cx%3D%27160%27%20cy%3D%27160%27%20r%3D%2717%27%20fill%3D%27none%27%20stroke%3D%27%232f6055%27%20stroke-opacity%3D%27.07%27%20stroke-width%3D%271.5%27%2F%3E%3Ccircle%20cx%3D%27160%27%20cy%3D%27160%27%20r%3D%2725%27%20fill%3D%27none%27%20stroke%3D%27%232f6055%27%20stroke-opacity%3D%27.05%27%20stroke-width%3D%271.2%27%2F%3E%3C/svg%3E");
+  --pattern-ivory: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='80'%20height='80'%20viewBox='0%200%2080%2080'%3E%3Cg%20fill='none'%20stroke='%232f6055'%20stroke-width='1.5'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Cpath%20d='M40%2032%20C40%2022%2050%2014%2060%2016%20C70%2018%2074%2030%2068%2037%20C62%2044%2050%2042%2045%2034%20C43%2031%2041%2030%2040%2032%20C39%2030%2037%2031%2035%2034%20C30%2042%2018%2044%2012%2037%20C6%2030%2010%2018%2020%2016%20C30%2014%2040%2022%2040%2032%20Z'%20stroke-opacity='.13'/%3E%3Cpath%20d='M40%2045%20V57%20M31%2051h18'%20stroke-opacity='.13'/%3E%3C/g%3E%3Cg%20fill='%23a55c19'%20fill-opacity='.11'%3E%3Ccircle%20cx='40'%20cy='22'%20r='1.6'/%3E%3C/g%3E%3C/svg%3E");
+  /* 云头（二）：与上组错开半格的两朵小云，铺满空当，成「朵云相逐」 */
+  --pattern-ivory-b: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='80'%20height='80'%20viewBox='0%200%2080%2080'%3E%3Cg%20fill='none'%20stroke='%232f6055'%20stroke-width='1.3'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Cg%20transform='translate(40%2012)%20scale(0.62)%20translate(-40%20-32)'%3E%3Cpath%20d='M40%2032%20C40%2022%2050%2014%2060%2016%20C70%2018%2074%2030%2068%2037%20C62%2044%2050%2042%2045%2034%20C43%2031%2041%2030%2040%2032%20C39%2030%2037%2031%2035%2034%20C30%2042%2018%2044%2012%2037%20C6%2030%2010%2018%2020%2016%20C30%2014%2040%2022%2040%2032%20Z'%20stroke-opacity='.09'/%3E%3C/g%3E%3Cg%20transform='translate(40%2076)%20scale(0.62)%20translate(-40%20-32)'%3E%3Cpath%20d='M40%2032%20C40%2022%2050%2014%2060%2016%20C70%2018%2074%2030%2068%2037%20C62%2044%2050%2042%2045%2034%20C43%2031%2041%2030%2040%2032%20C39%2030%2037%2031%2035%2034%20C30%2042%2018%2044%2012%2037%20C6%2030%2010%2018%2020%2016%20C30%2014%2040%2022%2040%2032%20Z'%20stroke-opacity='.07'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  /* 云纹团花：一朵近三倍大的如意云头 + 云脚 + 气圈，落在四方连续的中心 */
+  --pattern-luo: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='320'%20height='320'%20viewBox='0%200%20320%20320'%3E%3Cg%20fill='none'%20stroke='%232f6055'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Cg%20transform='translate(160%20140)%20scale(2.9)%20translate(-40%20-32)'%3E%3Cpath%20d='M40%2032%20C40%2022%2050%2014%2060%2016%20C70%2018%2074%2030%2068%2037%20C62%2044%2050%2042%2045%2034%20C43%2031%2041%2030%2040%2032%20C39%2030%2037%2031%2035%2034%20C30%2042%2018%2044%2012%2037%20C6%2030%2010%2018%2020%2016%20C30%2014%2040%2022%2040%2032%20Z'%20stroke-opacity='.07'%20stroke-width='.52'/%3E%3C/g%3E%3Cpath%20d='M160%20222%20V268'%20stroke-opacity='.06'%20stroke-width='1.4'/%3E%3Cpath%20d='M130%20246h60'%20stroke-opacity='.06'%20stroke-width='1.4'/%3E%3Ccircle%20cx='160'%20cy='146'%20r='82'%20stroke-opacity='.04'%20stroke-width='1.2'/%3E%3C/g%3E%3Cg%20fill='%23a55c19'%20fill-opacity='.09'%3E%3Ccircle%20cx='160'%20cy='92'%20r='2.2'/%3E%3Ccircle%20cx='142'%20cy='206'%20r='2.2'/%3E%3Ccircle%20cx='178'%20cy='206'%20r='2.2'/%3E%3C/g%3E%3C/svg%3E");
   --pattern-cloud: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44' viewBox='0 0 44 44'%3E%3Cg fill='none' stroke='%232f6055' stroke-opacity='.08' stroke-width='1.1' stroke-linecap='round'%3E%3Cpath d='M8 30.5c0-2.6 2.1-4.7 4.7-4.7 1.3 0 2.4.5 3.2 1.3a5 5 0 0 1 8.6-1.6 4.4 4.4 0 0 1 6.1 4 4.3 4.3 0 0 1-.6 2.2'/%3E%3Cpath d='M11.5 35.2c0-1.6 1.3-2.9 2.9-2.9'/%3E%3C/g%3E%3C/svg%3E");
 }
 
-/* 页面底：素绢底 + 宋「球路纹」满铺
-   三层叠成一个循环大纹样（周期 320px）：
-     1) 圆环（一）  80×80   每格一个圆环，环内四点菱花
-     2) 圆环（二）  80×80   更大一圈，错开相切后形成「盘球」套叠
-     3) 团花        320×320 四点菱花 + 同心圆，落在圆环交叠处
-   描边不透明度 5%~12%：静看是一张有暗花的宋锦，
-   退开一臂远则只剩纸的温度，不影响正文可读性。 */
+/* 页面底：素绢底 + 宋「如意云头纹」满铺 */
 html, body {
   background-image: var(--pattern-ivory), var(--pattern-ivory-b), var(--pattern-luo);
   background-repeat: repeat, repeat, repeat;
   background-attachment: fixed, fixed, fixed;
   background-size: 80px 80px, 80px 80px, 320px 320px;
-  background-position: 0 0, 0 0, 0 0;
+  background-position: 0 0, 40px 40px, 0 0;
 }
 
 /* ==========================================================================
    宋式纹样的用法（点缀，不是贴满）
    --------------------------------------------------------------------------
    三处出现，都是「只在角落露一角」：
-     1. 页面底：宋「球路纹 + 团花」满铺（见文件开头的 --pattern-*）
+     1. 页面底：宋「如意云头纹 + 云纹团花」满铺（见文件开头的 --pattern-*）
      2. 今日背诵条：右上角一枚云纹（深底上做浮雕，Safari 不支持 mask 时自动不出）
      3. 卡片：左上 / 右下各一枚角隅纹样，用 mask 让纹样只从角上「透」出来
    纹样全部是内联 SVG data URI，不请求图片、断网也在。
@@ -1376,8 +1396,7 @@ body.has-audio-player .ios-install-tip { bottom: calc(112px + var(--safe-bottom)
 .modal-box .reader-actions.icon-row { margin: 8px 0 4px; overflow: visible; }
 
 .modal-box .reader-actions .seg.mini,
-.modal-box .reader-actions .mini-btn,
-.modal-box .reader-actions .combo-read {
+.modal-box .reader-actions .mini-btn {
   min-height: 38px;
   border: 1px solid var(--line);
   background: var(--card);
@@ -1423,49 +1442,17 @@ body.has-audio-player .ios-install-tip { bottom: calc(112px + var(--safe-bottom)
   height: 17px;
   margin: 0 auto;
 }
-/* 朗读组合键：原文 + 译文共享一颗胶囊，中间一条界行细线 */
-.modal-box .reader-actions .combo-read {
-  padding: 0;
-  align-items: stretch;
-  overflow: hidden;
-}
-.modal-box .reader-actions .combo-seg {
-  border: none;
-  border-radius: 0;
-  background: transparent;
-  color: var(--green);
-  /* 「▶ 原文 / ▶ 译文」两段要排得开：留足内边距，窄屏也不挤成一团 */
-  padding: 0 18px;
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-}
-.modal-box .reader-actions .combo-seg + .combo-seg { border-left: 1px solid var(--line); }
-.modal-box .reader-actions .combo-seg .btn-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: none;
-  width: 15px;
-  height: 15px;
-  margin: 0;
-}
-.modal-box .reader-actions .combo-seg .btn-icon svg { display: block; width: 15px; height: 15px; margin: 0; }
-.modal-box .reader-actions .combo-seg .combo-label { line-height: 1; }
-.modal-box .reader-actions .combo-seg[data-on="1"] { background: var(--green); color: #fdfaf2; }
-.modal-box .reader-actions .combo-seg:disabled { opacity: .5; cursor: not-allowed; }
-/* 状态全靠图标：▶ 未朗读、⏸ 朗读中；译文开关「划掉文档」= 收起译文 */
+/* 工具条上只有正文这一颗播放键（原来并排的「原文 / 译文」组合键已拆掉），
+   译文那颗挪去译文标题右侧。两段朗读不再并排，一篇文章只有一个播放信号。 */
+/* 状态全靠图标：▶ 未朗读、⏸ 朗读中；译文开关「划掉文档」= 收起译文。
+   同一颗键上 ▶ / ⏸ 互斥，永远只显示一个。 */
 .modal-box .reader-actions .pause-glyph { display: none; }
 .modal-box .reader-actions [data-on="1"] .play-glyph { display: none; }
 .modal-box .reader-actions [data-on="1"] .pause-glyph { display: inline-flex; }
 .modal-box .reader-actions .mini-btn[data-on="1"] { background: var(--green); border-color: var(--green); color: #fdfaf2; }
 .modal-box .reader-actions .mini-btn:disabled { opacity: .5; cursor: not-allowed; }
 
-/* 窄屏（iPhone SE 一类 320~380px）：三组控件要挤进同一行，
+/* 窄屏（iPhone SE 一类 320~380px）：两组控件要挤进同一行，
    字号与内边距各收一档，必要时允许整行横向滑动，绝不换行错位。 */
 @media (max-width: 380px) {
   .modal-box .reader-actions { gap: 5px; margin-left: -2px; margin-right: -2px; }
@@ -1474,6 +1461,5 @@ body.has-audio-player .ios-install-tip { bottom: calc(112px + var(--safe-bottom)
   .modal-box .reader-actions .icon-seg button,
   .modal-box .reader-actions .font-seg button { padding: 6px 6px; font-size: 11.5px; }
   .modal-box .reader-actions .icon-seg button svg { width: 15px; height: 15px; }
-  .modal-box .reader-actions .combo-seg { padding: 0 12px; font-size: 12px; }
   .modal-box .reader-actions.icon-row > .mini-btn { width: 36px; }
 }

@@ -176,26 +176,15 @@ body.reader-open .dock { display: none; }
   background: var(--bg-soft);
   border-bottom: 1px solid var(--line);
 }
-/* 返回键：与全站顶栏的圆形动作位同一形状（圆形纸底 + 同样 40px），
-   在列表页顶栏和阅读器里长得一样，只是位置从右侧挪到了左侧。 */
+/* 返回键：直接复用全站顶栏的 .top-act（圆形纸底 + 40px + 内描边细线），
+   阅读器里的返回与顶栏右侧那颗是同一个组件、同一套样式，
+   只是位置从右侧挪到了左侧；内部只有一个箭头，不放页名文字。 */
 .reader-back {
-  width: 40px;
-  height: 40px;
   flex: none;
   padding: 0;
-  border-radius: 50%;
-  border: 1px solid var(--line);
-  background: var(--card);
   color: var(--green);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  box-shadow: inset 0 0 0 1px rgba(214, 200, 173, .5), var(--shadow);
-  transition: transform .15s, color .18s;
 }
 .reader-back svg { display: block; width: 20px; height: 20px; margin: auto; }
-.reader-back:active { transform: scale(.94); }
 /* 进度：左中右三等分，绝对居中对齐，不再是「既没靠右也没居中」 */
 .reader-progress {
   flex: 1;
@@ -297,72 +286,25 @@ body.reader-open .dock { display: none; }
   height: 17px;
   margin: 0 auto;
 }
-/* 状态全靠图标表达：▶ 未开始 / 朗读中、⏸ 播放中、译文开关「划掉文档」= 收起译文 */
+/* 状态全靠图标表达：▶ 未开始 / 朗读中、⏸ 播放中、译文开关「划掉文档」= 收起译文。
+   同一颗键上 ▶ 与 ⏸ 是互斥的两种状态，永远只显示其中一个。 */
 #rd-read-btn .pause-glyph,
-#rd-trans-toggle .pause-glyph,
-#rd-trans-read .pause-glyph { display: none; }
+#rd-trans-toggle .pause-glyph { display: none; }
 #rd-read-btn[data-on="1"] .play-glyph,
-#rd-trans-toggle[data-on="1"] .play-glyph,
-#rd-trans-read[data-on="1"] .play-glyph { display: none; }
+#rd-trans-toggle[data-on="1"] .play-glyph { display: none; }
 #rd-read-btn[data-on="1"] .pause-glyph,
-#rd-trans-toggle[data-on="1"] .pause-glyph,
-#rd-trans-read[data-on="1"] .pause-glyph { display: inline-flex; }
+#rd-trans-toggle[data-on="1"] .pause-glyph { display: inline-flex; }
 
 /* --------------------------------------------------------------------------
-   朗读「组合键」：原文 + 译文并进同一颗胶囊
+   朗读按钮：一篇文章只有一个播放信号
    --------------------------------------------------------------------------
-   以前原文一个播放键、译文又一个播放键，同一篇文章出现两个播放信号，
-   看上去像多出来一个、也分不清该点哪个。现在两段共享一个外框与图标族：
-     ┌──────────┬──────────┐
-     │ ▶ 原文   │ ▶ 译文   │   ← 正在读哪一段，哪一段点亮
-     └──────────┴──────────┘
-   两段之间一条界行细线，像宋器上的「子母口」，不是两个独立按钮。
+   原先「原文」「译文」并排并进一颗胶囊，看着仍像两个按钮；
+   译文本身又带一个朗读键，页面上一度出现三个播放信号。
+   现在：
+     · 工具条上只有正文这一颗 ▶ / ⏸（data-on 原地切换，不并排）；
+     · 译文那颗挪到译文标题右侧，跟着译文框一起出现 / 消失。
+   两颗键的图标族、圆角、字号完全一致，位置不同、形态相同。
    -------------------------------------------------------------------------- */
-.icon-row .combo-read {
-  display: inline-flex;
-  align-items: stretch;
-  flex: 0 0 auto;
-  min-height: 38px;
-  border: 1px solid var(--line);
-  background: var(--card);
-  border-radius: 10px;
-  overflow: hidden;
-  box-sizing: border-box;
-}
-/* 组合键里的每一段：图标 + 两字文案，水平居中对齐 */
-.icon-row .combo-seg {
-  border: none;
-  border-radius: 0;
-  background: transparent;
-  color: var(--green);
-  /* 两段文案（原文 / 译文）+ 图标要排得开：留够内边距，窄屏也不挤成一团 */
-  padding: 0 18px;
-  min-height: 36px;
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  width: auto;
-}
-.icon-row .combo-seg + .combo-seg { border-left: 1px solid var(--line); }
-.icon-row .combo-seg .btn-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: none;
-  width: 15px;
-  height: 15px;
-}
-.icon-row .combo-seg .btn-icon svg { display: block; width: 15px; height: 15px; margin: 0; }
-.icon-row .combo-seg .combo-label { line-height: 1; }
-.icon-row .combo-seg[data-on="1"] { background: var(--green); color: #fdfaf2; }
-.icon-row .combo-seg:disabled { opacity: .5; cursor: not-allowed; }
-/* 组合键里两段的播放状态波圈同步动画 */
-.icon-row .combo-seg[data-on="1"] .wave1 { animation: wavePulse 1.1s ease-in-out .18s infinite; }
-.icon-row .combo-seg[data-on="1"] .wave2 { animation: wavePulse 1.1s ease-in-out infinite; }
 /* 「标记已读」：点亮前是描边勾，已读后整颗高亮 */
 .done-btn { color: var(--ink-2); }
 .done-btn.is-done { background: var(--green); border-color: var(--green); color: #fdfaf2; }
@@ -478,6 +420,29 @@ body.reader-open .dock { display: none; }
   margin-bottom: 8px;
 }
 .trans-head h3 { margin: 0; }
+/* 译文朗读键：贴在译文标题右侧。它是**纯文字 + ▶ / ⏸**（同一位置切换），
+   不是组合键，也没有第二颗并排；展开译文才出现，收起即消失。 */
+.trans-read {
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--green);
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+.trans-read .btn-icon { display: inline-flex; align-items: center; justify-content: center; flex: none; }
+.trans-read .btn-icon svg { display: block; width: 13px; height: 13px; margin: 0; }
+.trans-read .pause-glyph { display: none; }
+.trans-read[data-on="1"] .play-glyph { display: none; }
+.trans-read[data-on="1"] .pause-glyph { display: inline-flex; }
+.trans-read[data-on="1"] { background: var(--green); border-color: var(--green); color: #fffdf8; }
+.trans-read:disabled { opacity: .5; cursor: not-allowed; }
 @media (min-width: 700px) {
   .reader-body { padding-top: 28px; }
 }
@@ -542,7 +507,7 @@ body.reader-open .dock { display: none; }
   padding: 5px 9px;
   border-radius: 8px;
 }
-/* 窄屏（iPhone SE 一类 320~380px）：三组控件要挤进同一行，
+/* 窄屏（iPhone SE 一类 320~380px）：两组控件要挤进同一行，
    字号与内边距各收一档，必要时整行横向滑动，绝不换行错位。 */
 @media (max-width: 380px) {
   .reader-actions { gap: 5px; }
@@ -550,6 +515,5 @@ body.reader-open .dock { display: none; }
   .reader-actions .seg.mini button { padding: 5px 7px; font-size: 11.5px; }
   .icon-seg button svg { width: 15px; height: 15px; }
   .icon-row > .mini-btn { width: 36px; min-height: 36px; }
-  .icon-row .combo-seg { padding: 0 13px; font-size: 12px; }
   .mini-btn { font-size: 12.5px; }
 }

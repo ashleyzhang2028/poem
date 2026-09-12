@@ -248,8 +248,9 @@ setTimeout(async () => {
   // 朗读：jsdom 没有 SpeechSynthesis，必须优雅降级
   const readBtn = doc.querySelector("#m-read-btn");
   chk(readBtn.disabled === true, "无语音环境时朗读按钮禁用而不是报错");
-  // 组合键的文案固定是「原文 / 译文」，能力不足时靠 disabled 与 title 提示，不再替换成文字
-  chk(doc.querySelector("#m-read-text").textContent === "原文", "组合键左段文案恒为「原文」（能力不足靠禁用态提示）");
+  // 播放键的读屏文案固定为「朗读原文」，能力不足时靠 disabled 与 title 提示
+  chk(doc.querySelector("#m-read-btn .sr-only").textContent === "朗读原文",
+    "播放键读屏文案恒为「朗读原文」（能力不足靠禁用态提示）");
   chk(/不支持/.test(readBtn.title), "按钮 title 提示不支持朗读（" + readBtn.title + "）");
   readBtn.dispatchEvent(new w.Event("click", { bubbles: true }));
   chk(true, "点击禁用的朗读按钮不会抛异常");
@@ -264,8 +265,10 @@ setTimeout(async () => {
   btn2.dispatchEvent(new w2.Event('click', { bubbles: true }));
   const spoken = w2.__spoken();
   chk(!!spoken && spoken.text.length > 4, '点击朗读会把诗题与正文交给语音合成');
-  chk(btn2.dataset.on === '1', '朗读中组合键左段点亮（⏸ 播放态）');
-  chk(w2.document.querySelector('#m-read-combo').dataset.on === '1', '组合键整体进入朗读态');
+  chk(btn2.dataset.on === '1', '朗读中同一颗键切成 ⏸ 播放态');
+  chk(w2.document.querySelector('#m-read-combo') === null &&
+    w2.document.querySelector('#m-actions-icons #m-read-btn') !== null,
+    '工具条上只有正文这一颗播放键（不再并排两个）');
   btn2.dispatchEvent(new w2.Event('click', { bubbles: true }));
   chk(btn2.dataset.on === '0', '再点一次停止朗读并复位按钮');
 
