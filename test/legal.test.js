@@ -150,7 +150,7 @@ setTimeout(() => {
       name + '页正文默认不出现邮箱文本');
   });
 
-  /* --- 页脚入口：设置页（版权 + 法务链接的新家）/ 小古文页 / 法务页互链 --- */
+  /* --- 页脚入口：设置页（版权 + 法务链接的新家）/ 法务页互链 --- */
   const footCases = [
     ['设置页', settings.doc, './terms.html', './privacy.html'],
     ['用户协议页', terms.doc, './terms.html', './privacy.html']
@@ -167,8 +167,10 @@ setTimeout(() => {
   chk(/terms\.html/.test(read('settings.html')) && /privacy\.html/.test(read('settings.html')),
     '设置页挂了两个法务链接');
   chk(/settings\.html/.test(read('index.html')), '首页齿轮指向设置整页');
-  chk(/terms\.html/.test(read('classic.html')) && /privacy\.html/.test(read('classic.html')),
-    '小古文页页脚同样挂了两个法务链接');
+  // 需求：小古文页底不再挂版权与法务链接（用户要求删除），法务入口只在设置整页底部
+  chk(!/class="foot/.test(read('classic.html')), '小古文页已移除页底页脚（版权 + 法务链接）');
+  chk(/terms\.html/.test(read('settings.html')) && /privacy\.html/.test(read('settings.html')),
+    '法务入口仍保留在设置整页底部');
   chk(/terms\.html/.test(read('sw.js')) && /privacy\.html/.test(read('sw.js')),
     'Service Worker 预缓存了两个法务页（断网也能打开）');
   chk(/settings\.html/.test(read('sw.js')) && /js\/settings\.js/.test(read('sw.js')),
