@@ -552,6 +552,9 @@ body.no-dock .modal-box { max-height: 88vh; }
   --safe-right: env(safe-area-inset-right, 0px);
   /* 由 js/pwa.js 在 iOS 上写入，修正地址栏收起/展开导致的 100vh 抖动 */
   --app-vh: 1vh;
+  /* 底部导航栏（播放栏 + iOS 引导条）的实测高度，由 js/pwa.js 的 syncBottomGap()
+     写入。页面留白与所有贴底固定元素都按这一条基准线避让，杜绝「被导航栏压住一点」 */
+  --nav-h: 0px;
 }
 
 /* 让左右内容避开横屏时的圆角/刘海 */
@@ -674,13 +677,39 @@ button,
   z-index: 40;
 }
 
-/* 引导条是 fixed 的，会盖住页脚最后一行（版权 + 用户协议 / 隐私条款）。
-   出现时补一段底部留白（约 100px 的条 + 12px 底距 + 一点余量），
-   保证两个法务链接不会被压住、始终可点。 */
+/* 引导条是 fixed 的，会盖住页面最后一行（版权 + 用户协议 / 隐私条款）。
+   出现时按实测高度补留白，保证两个法务链接不会被压住、始终可点。 */
 body.has-install-tip .app,
 body.has-install-tip #app {
-  padding-bottom: calc(100px + 12px + 24px);
+  padding-bottom: calc(24px + var(--nav-h));
 }
+
+/* ==========================================================================
+   设置整页（settings.html）
+   --------------------------------------------------------------------------
+   设置不再是「从底部向上弹出的卡片」，而是一个独立页面：
+     · 与首页共用同一套顶栏 / 底部页签（js/chrome.js），只是当前页签不同
+     · 页面主体撑满可视高度，内容不足时页脚（版权 + 法务链接）压在最底部
+     · 底部留白统一由 --nav-h 决定，底部导航栏压不到最后一行
+   ========================================================================== */
+.settings-page {
+  /* 顶部栏之外的可视区域：内容不足时由页脚占住最底部 */
+  min-height: calc(100vh - 200px);
+  min-height: calc(100 * var(--app-vh) - 200px);
+  /* 底部导航栏（页签 / 播放栏）的实测高度已含 iPhone 横条安全区，
+     这里一次留够即可，页脚不会被压住也不会多出一条空白 */
+  padding-bottom: calc(24px + var(--nav-h));
+}
+.settings-page .settings-item:first-child { margin-top: 4px; }
+
+/* 页脚：推到页面最底，且与正文之间留一段呼吸间距 */
+.settings-foot {
+  margin-top: 26px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.settings-foot .foot-copy,
+.settings-foot .foot-links { font-size: 12px; }
 
 /* 设置里的多行说明 */
 .settings-tip p { margin: 0; }
@@ -883,19 +912,18 @@ body.has-install-tip #app {
 }
 .dock-item.active::before { transform: translateX(-50%) scaleX(1); opacity: 1; }
 
-/* 有底部页签时，给页面补出底部空间 */
+/* 有底部页签时，给页面补出底部空间。
+   高度不写死：--nav-h 由 js/pwa.js 实测（页签 / 播放栏取较高者 + 引导条），
+   窄屏、大字号、iPhone 横条都不会差几像素把最后一行压住。 */
 body:not(.no-dock) .app,
 body:not(.no-dock) #app {
-  padding-bottom: calc(96px + var(--safe-bottom));
+  padding-bottom: calc(24px + var(--nav-h));
 }
 body:not(.no-dock) .foot { padding-bottom: 4px; }
-body:not(.no-dock) .toast { bottom: calc(116px + var(--safe-bottom)); }
-body:not(.no-dock) .ios-install-tip { bottom: calc(88px + var(--safe-bottom)); }
-/* 底部播放栏优先：它出现时页签让路（播放栏 z-index 更高，页面留白取两者较大值） */
-body.has-audio-player:not(.no-dock) .app,
-body.has-audio-player:not(.no-dock) #app {
-  padding-bottom: calc(196px + var(--safe-bottom));
-}
+body:not(.no-dock) .toast { bottom: calc(24px + var(--nav-h)); }
+body:not(.no-dock) .ios-install-tip { bottom: calc(12px + var(--nav-h)); }
+/* 底部播放栏出现时，页签让路（播放栏 z-index 更高）；
+   页面留白同样交给 --nav-h —— 它已经取了播放栏与页签中较高的那个 */
 body.has-audio-player .dock { border-top-color: rgba(240, 205, 124, .28); }
 
 /* ---------- 宋式纹样 ----------
@@ -1285,13 +1313,7 @@ html, body {
 }
 @keyframes pbPulse { 0%, 100% { opacity: .35 } 50% { opacity: 1 } }
 
-/* 有播放栏时，页面底部补留白，避免遮挡页脚与最后一首诗 */
-body.has-audio-player .app,
-body.has-audio-player #app {
-  padding-bottom: calc(150px + var(--safe-bottom));
-}
-body.has-audio-player .toast { bottom: calc(140px + var(--safe-bottom)); }
-body.has-audio-player .ios-install-tip { bottom: calc(112px + var(--safe-bottom)); }
+/* 吸底元素统一贴着「导航栏基准线」往上排（见文件上方 .dock 一节） */
 
 /* 今日任务条里的「朗读（全部）」按钮：圆形播放键，与右侧 0/5 圆环同族 */
 .today-actions {

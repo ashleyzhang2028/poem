@@ -4,7 +4,7 @@
  * 苹果手机说明：iOS Safari 不弹安装横幅，靠「分享 → 添加到主屏幕」安装；
  * 添加到主屏幕后本 SW 的缓存生效，断网也能正常背诵。
  */
-const CACHE_NAME = "poem-app-v14";
+const CACHE_NAME = "poem-app-v15";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [
@@ -18,6 +18,8 @@ const PRECACHE = [
   "./fonts/NotoSansSC-400.woff2",
   "./fonts/NotoSansSC-600.woff2",
   "./classic.html",
+  "./settings.html",
+  "./js/settings.js",
   "./terms.html",
   "./privacy.html",
   "./css/legal.css",
@@ -91,16 +93,23 @@ self.addEventListener("fetch", function (event) {
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
 
-  // 页面导航：网络优先，离线时回退到缓存的首页
+  // 页面导航：网络优先（顺手更新该页缓存）；离线时先回退到「同一页面」的缓存，
+  // 再回退到首页 —— 直接回退首页会让断网下的设置页、法务页莫名回到列表页
   if (req.mode === "navigate") {
+    const pageUrl = req.url.split("#")[0].split("?")[0];
     event.respondWith(
       fetch(req).then(function (res) {
-        const copy = res.clone();
-        caches.open(CACHE_NAME).then(function (c) { c.put("./index.html", copy); });
+        if (res && res.status === 200 && res.type === "basic") {
+          const copy = res.clone();
+          caches.open(CACHE_NAME).then(function (c) { c.put(pageUrl, copy); });
+        }
         return res;
       }).catch(function () {
-        return caches.match("./index.html").then(function (hit) {
-          return hit || caches.match("./");
+        return caches.match(pageUrl).then(function (hit) {
+          if (hit) return hit;
+          return caches.match("./index.html").then(function (home) {
+            return home || caches.match("./");
+          });
         });
       })
     );

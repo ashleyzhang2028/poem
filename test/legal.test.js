@@ -20,7 +20,7 @@ const read = f => fs.readFileSync(path + f, 'utf8');
 const MAIL = 'kuibuapp@163.com';
 
 /* ---------- 一、静态源码里不能有明文邮箱 ---------- */
-['index.html', 'classic.html', 'terms.html', 'privacy.html', 'js/contact.js', 'js/chrome.js', 'sw.js']
+['index.html', 'classic.html', 'settings.html', 'terms.html', 'privacy.html', 'js/contact.js', 'js/chrome.js', 'js/settings.js', 'sw.js']
   .forEach(f => {
     const src = read(f);
     chk(!src.includes(MAIL), f + ' 源码不含明文邮箱');
@@ -56,6 +56,7 @@ function load(file) {
 const terms = load('terms.html');
 const privacy = load('privacy.html');
 const index = load('index.html');
+const settings = load('settings.html');
 
 setTimeout(() => {
   /* --- 用户协议 --- */
@@ -149,9 +150,9 @@ setTimeout(() => {
       name + '页正文默认不出现邮箱文本');
   });
 
-  /* --- 页脚入口：首页 / 小古文页 / 两个法务页互链 --- */
+  /* --- 页脚入口：设置页（版权 + 法务链接的新家）/ 小古文页 / 法务页互链 --- */
   const footCases = [
-    ['首页', index.doc, './terms.html', './privacy.html'],
+    ['设置页', settings.doc, './terms.html', './privacy.html'],
     ['用户协议页', terms.doc, './terms.html', './privacy.html']
   ];
   footCases.forEach(([name, d, termsHref, privacyHref]) => {
@@ -160,10 +161,18 @@ setTimeout(() => {
     chk(hrefs.includes(termsHref) && hrefs.includes(privacyHref),
       name + '页脚同时含用户协议与隐私条款链接（' + hrefs.join(', ') + '）');
   });
+  // 需求：版权与两个法务入口从首页挪到设置页底部
+  chk(!index.doc.querySelector('.foot'), '首页不再挂页脚（版权与法务链接已挪到设置页底部）');
+  chk(/©2026 kuibu\.app/.test(settings.doc.querySelector('.foot').textContent), '设置页底部保留版权文案');
+  chk(/terms\.html/.test(read('settings.html')) && /privacy\.html/.test(read('settings.html')),
+    '设置页挂了两个法务链接');
+  chk(/settings\.html/.test(read('index.html')), '首页齿轮指向设置整页');
   chk(/terms\.html/.test(read('classic.html')) && /privacy\.html/.test(read('classic.html')),
     '小古文页页脚同样挂了两个法务链接');
   chk(/terms\.html/.test(read('sw.js')) && /privacy\.html/.test(read('sw.js')),
     'Service Worker 预缓存了两个法务页（断网也能打开）');
+  chk(/settings\.html/.test(read('sw.js')) && /js\/settings\.js/.test(read('sw.js')),
+    'Service Worker 也预缓存了设置整页（断网也能改设置）');
 
   /* --- 访问统计：整体删除，不留残骸 --- */
   {

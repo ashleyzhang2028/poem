@@ -3,6 +3,26 @@ const fs = require('fs');
 const path = __dirname + '/../';
 
 const html = fs.readFileSync(path + 'index.html', 'utf8');
+// 设置已从「底部弹出的卡片」改为独立整页（settings.html），页脚也搬到了这一页
+const settingsHtml = fs.readFileSync(path + 'settings.html', 'utf8');
+
+/** 起一个设置整页实例（供读取设置项回显 / 改写配置） */
+function bootSettingsPage(seed) {
+  const sdom = new JSDOM(settingsHtml, { runScripts: 'dangerously', url: 'https://local.test/settings.html' });
+  const sw = sdom.window;
+  if (seed) for (const k in seed) sw.localStorage.setItem(k, seed[k]);
+  settingsHtml.match(/<script src="([^"]+)"><\/script>/g)
+    .map(x => x.match(/src="([^"]+)"/)[1])
+    .forEach(f => {
+      const el = sw.document.createElement('script');
+      el.textContent = fs.readFileSync(path + f, 'utf8');
+      sw.document.body.appendChild(el);
+    });
+  // jsdom 解析完 HTML 后 DOMContentLoaded 已触发过，注入脚本后手动补一次
+  sw.document.dispatchEvent(new sw.Event('DOMContentLoaded', { bubbles: true }));
+  return { window: sw, doc: sw.document };
+}
+
 const dom = new JSDOM(html, { runScripts: 'dangerously', resources: undefined, url: 'https://local.test/' });
 
 // 手动注入脚本（jsdom 不加载外部资源）
@@ -42,12 +62,18 @@ setTimeout(() => {
       /\.brand-name-row[\s\S]{0,80}?font-size: 19px/.test(brandRowCss),
     '页面名与「跬步」共用同一套字体样式（.brand-name-row）');
   chk(!/积跬步古诗词/.test(d.documentElement.outerHTML), '页面不出现「积跬步古诗词」旧名');
-  const foot = d.querySelector('.foot');
+  // 需求：版权 + 用户协议 / 隐私条款 从首页挪到设置整页底部
+  chk(d.querySelector('.app > .foot') === null, '首页不再挂页脚（法务链接已挪到设置页底部）');
+  const spEarly = bootSettingsPage(null);
+  const foot = spEarly.doc.querySelector('.settings-foot');
+  chk(!!foot, '设置页底部有页脚');
   chk(foot.querySelector('.foot-copy').textContent.trim() === '©2026 kuibu.app 积跬步, 至千里', '页脚版权为 ©2026 kuibu.app 积跬步, 至千里（实际 ' + foot.querySelector('.foot-copy').textContent.trim() + '）');
   // 页脚需常驻两个法务入口：用户协议 / 隐私条款
   const footLinks = [...foot.querySelectorAll('.foot-links a')];
   chk(footLinks.map(a => a.textContent.trim()).join('/') === '用户协议/隐私条款', '页脚含「用户协议」「隐私条款」链接');
   chk(footLinks.map(a => a.getAttribute('href')).join('/') === './terms.html/./privacy.html', '页脚两个链接指向 terms.html 与 privacy.html');
+  chk(!!(spEarly.doc.querySelector('.settings-page').compareDocumentPosition(foot) & window.Node.DOCUMENT_POSITION_FOLLOWING),
+    '页脚排在设置项下方（页面最底部）');
   // 需求：删掉「一年级至高三 · 按遗忘曲线复...」这行文案
   chk(!/一年级至高三/.test(d.querySelector('.topbar').textContent),
     '顶栏第一行不再出现「一年级至高三 · 」，只有「跬步 · XX的古诗词」');
@@ -82,29 +108,33 @@ setTimeout(() => {
   chk(!!arrow && !!arrow.querySelector('svg'), '「全部诗词」折叠键用内联 SVG 三角（不再是实心 ▾）');
   chk(arrow.querySelector('svg').getAttribute('fill') === 'none', '三角是空心的（fill: none + 描边）');
   chk(!/▾|▴/.test(d.querySelector('#btn-all').textContent), '不再用实心 ▾ / ▴ 字符');
-  chk(!!d.querySelector('#settings-modal #input-username'), '设置内含用户名输入框');
   chk(!d.querySelector('.selector.card'), '年级/学期选择不再常驻首页');
-  chk(!!d.querySelector('#settings-modal #seg-stage'), '学段选择已移入设置');
-  chk(!!d.querySelector('#settings-modal #seg-term'), '学期选择已移入设置');
-  chk(!!d.querySelector('#settings-modal #grade-chips'), '年级选择已移入设置');
+  // 设置是独立整页（不是弹层）：相关内容在 settings.html 里校验
+  chk(d.querySelector('#settings-modal') === null, '首页不再有「向上弹出的设置卡片」');
+  const sp = bootSettingsPage(null);
+  const sd = sp.doc;
+  chk(!!sd.querySelector('#input-username'), '设置页含用户名输入框');
+  chk(!!sd.querySelector('#seg-stage'), '学段选择已移入设置');
+  chk(!!sd.querySelector('#seg-term'), '学期选择已移入设置');
+  chk(!!sd.querySelector('#grade-chips'), '年级选择已移入设置');
+  chk(sd.querySelectorAll('#grade-chips button').length === 6, '设置页默认小学显示 6 个年级按钮');
+  chk(!!sd.querySelector('#settings-page'), '设置页是独立的整页容器');
   // 需求：首页下方的「小古文」入口卡片删除（底部页签已承担入口，卡片重复）
   chk(d.querySelector('#classic-entry') === null, '首页不再有小古文入口卡片');
   chk(d.querySelector('.classic-entry') === null, '首页不再有小古文入口卡片（classic-entry 已删）');
   chk(d.querySelector('#classic-title') === null && d.querySelector('.classic-title') === null,
     '不再渲染小古文入口标题');
-  chk(d.querySelector('#seg-classic-entry') === null, '设置里不再有「首页小古文入口」选项（入口已删）');
-  chk(!/首页小古文入口/.test(d.querySelector('#settings-modal').textContent),
-    '设置面板文案里不再出现「首页小古文入口」');
+  chk(sd.querySelector('#seg-classic-entry') === null, '设置里不再有「首页小古文入口」选项（入口已删）');
+  chk(!/首页小古文入口/.test(sd.body.textContent), '设置页文案里不再出现「首页小古文入口」');
   chk(d.querySelector('#all-count').textContent === '5', '小古文不会混进古诗词列表（仍为 5 首）');
   // 底部页签的「小古文」仍是唯一入口，指向独立页面
   const dockClassicCount = [...dock.querySelectorAll('.dock-item')].filter(b => b.dataset.navGo === 'classic').length;
   chk(dockClassicCount === 1, '小古文入口只剩底部页签一处');
 
-  // 先打开设置才能操作年级/学期；入口只剩底部页签的「设置」
-  d.querySelector('.dock-item[data-nav-go="settings"]').dispatchEvent(new window.Event('click', { bubbles: true }));
-  chk(d.querySelector('#settings-modal').hidden === false, '底部页签「设置」能打开设置面板');
-  d.querySelector('[data-close]').dispatchEvent(new window.Event('click', { bubbles: true }));
-  chk(d.querySelectorAll('#grade-chips button').length === 6, '小学显示 6 个年级按钮');
+  // 底部页签「设置」是通往设置整页的链接（不再是打开弹层）
+  const dockSettings = d.querySelector('.dock-item[data-nav-go="settings"]');
+  chk(dockSettings.tagName === 'A' && dockSettings.getAttribute('href') === './settings.html',
+    '底部页签「设置」指向设置整页（实际 ' + dockSettings.tagName + ' ' + dockSettings.getAttribute('href') + '）');
   chk(d.querySelectorAll('#today-list .item').length === 5, '今日列表渲染 5 首（实际 ' + d.querySelectorAll('#today-list .item').length + '）');
   chk(d.querySelector('#ring-text').textContent === '0/5', '环形进度 0/5');
   // 需求 1：任务条标题改为「今日背诵」
@@ -126,42 +156,39 @@ setTimeout(() => {
     '今日每首右侧都是 ▶ 播放键');
   chk(d.querySelector('#all-count').textContent === '5', '本学期诗词数 5');
 
-  // 年级切换
-  const g2 = [...d.querySelectorAll('#grade-chips button')].find(b => b.textContent === '二年级');
-  g2.dispatchEvent(new window.Event('click', { bubbles: true }));
+  /* 年级 / 学期 / 学段 / 范围 / 数量的切换现在都发生在设置整页：
+     设置页写的是同一份 localStorage，改完让首页重读一次设置即可生效 */
+  const setOn = (key, val, sel, attr) => {
+    const b = [...sd.querySelectorAll(sel)].find(x => String(x.dataset[attr]) === String(val));
+    b.dispatchEvent(new sp.window.Event('click', { bubbles: true }));
+    window.localStorage.setItem('poem_recite_settings_v1', sp.window.localStorage.getItem('poem_recite_settings_v1'));
+    window.PoemApp.reloadSettings();
+  };
+
+  // 年级切换（一年级 → 二年级）
+  setOn('grade', 2, '#grade-chips button', 'grade');
+  chk(String(sd.querySelector('#grade-chips button.active').dataset.grade) === '2', '设置页年级高亮切到二年级（实际 ' + (sd.querySelector('#grade-chips button.active') ? sd.querySelector('#grade-chips button.active').textContent : '无') + '）');
   chk(d.querySelector('#all-count').textContent === '7', '切到二年级上学期 → 7 首');
   chk(d.querySelectorAll('#today-list .item').length === 5, '切换后仍是 5 首计划');
 
   // 学期切换
-  const t2 = [...d.querySelectorAll('#seg-term button')].find(b => b.dataset.term === '2');
-  t2.dispatchEvent(new window.Event('click', { bubbles: true }));
+  setOn('term', 2, '#seg-term button', 'term');
   chk(d.querySelector('#all-count').textContent === '7', '二年级下学期 → 7 首');
 
-  // 学段切换
-  const high = [...d.querySelectorAll('#seg-stage button')].find(b => b.dataset.stage === 'high');
-  high.dispatchEvent(new window.Event('click', { bubbles: true }));
-  chk(d.querySelectorAll('#grade-chips button').length === 3, '高中显示 3 个年级');
-  const g3b = [...d.querySelectorAll('#grade-chips button')].find(b => b.textContent === '高三');
-  g3b.dispatchEvent(new window.Event('click', { bubbles: true }));
+  // 学段切换：年级必须落在新学段内
+  setOn('stage', 'high', '#seg-stage button', 'stage');
+  chk(sd.querySelectorAll('#grade-chips button').length === 3, '设置页切高中后显示 3 个年级');
+  chk(['10', '11', '12'].indexOf(String(sd.querySelector('#grade-chips button.active').dataset.grade)) > -1,
+    '换学段后年级落在新学段内');
+  setOn('grade', 12, '#grade-chips button', 'grade');
   chk(d.querySelector('#all-count').textContent === '14', '高三下学期 → 14 首（实际 ' + d.querySelector('#all-count').textContent + '）');
 
   /* 需求：古诗词详情页与小古文详情页功能对齐（对齐 / 字号 / 译文 / 播放组合键）。
      先单独验一遍，验完把页面状态恢复成「高三下」，不干扰后面的断言。 */
   {
-    const gradeChip = g => [...d.querySelectorAll('#grade-chips button')].find(b => b.textContent === g);
-    const openSettings = () => d.querySelector('.dock-item[data-nav-go="settings"]')
-      .dispatchEvent(new window.Event('click', { bubbles: true }));
-    const toGrade = (grade) => {
-      openSettings();
-      gradeChip(grade).dispatchEvent(new window.Event('click', { bubbles: true }));
-      d.querySelector('#settings-modal').hidden = true;
-    };
-    // 二年级属于小学学段，先把学段切回小学再选年级
-    d.querySelector('.dock-item[data-nav-go="settings"]').dispatchEvent(new window.Event('click', { bubbles: true }));
-    [...d.querySelectorAll('#seg-stage button')].find(b => b.dataset.stage === 'primary')
-      .dispatchEvent(new window.Event('click', { bubbles: true }));
-    d.querySelector('#settings-modal').hidden = true;
-    toGrade('二年级'); // 二年级诗篇有白话译文
+    // 二年级属于小学学段，先把学段切回小学再选年级；二年级诗篇有白话译文
+    setOn('stage', 'primary', '#seg-stage button', 'stage');
+    setOn('grade', 2, '#grade-chips button', 'grade');
 
     d.querySelector('#today-list .item').dispatchEvent(new window.Event('click', { bubbles: true }));
     chk(d.querySelectorAll('#m-actions-main > *').length === 3, '详情页第一行：对齐 / 字号 / 注音 三组');
@@ -185,13 +212,11 @@ setTimeout(() => {
     chk(window.localStorage.getItem('poem_align_v1') === 'left', '对齐方式已持久化');
     d.querySelector('#m-align-seg button[data-align="center"]').dispatchEvent(new window.Event('click', { bubbles: true }));
     chk(d.querySelector('#m-text').dataset.align === 'center', '切回居中对齐');
-    d.querySelector('[data-close]').dispatchEvent(new window.Event('click', { bubbles: true }));
+    d.querySelector('#modal [data-close]').dispatchEvent(new window.Event('click', { bubbles: true }));
 
-    d.querySelector('.dock-item[data-nav-go="settings"]').dispatchEvent(new window.Event('click', { bubbles: true }));
-    [...d.querySelectorAll('#seg-stage button')].find(b => b.dataset.stage === 'high')
-      .dispatchEvent(new window.Event('click', { bubbles: true }));
-    d.querySelector('#settings-modal').hidden = true;
-    toGrade('高三');
+    // 恢复成「高三下」，不干扰后面的断言
+    setOn('stage', 'high', '#seg-stage button', 'stage');
+    setOn('grade', 12, '#grade-chips button', 'grade');
   }
 
   // 点击条目打开弹层
@@ -239,34 +264,34 @@ setTimeout(() => {
   chk(d.querySelector('#m-trans') !== null && d.querySelector('#m-trans-text') !== null,
     '详情页有白话译文区');
 
-  // 设置
-  d.querySelector('#settings-modal').hidden = true;
-  d.querySelector('.dock-item[data-nav-go="settings"]').dispatchEvent(new window.Event('click', { bubbles: true }));
-  chk(d.querySelector('#settings-modal').hidden === false, '设置弹层打开');
-  chk(d.querySelector('#settings-modal #seg-stage').querySelector('button.active').dataset.stage === 'high', '设置中回显当前学段高中');
+  // 设置整页：回显当前配置
+  chk(sd.querySelector('#seg-stage button.active').dataset.stage === 'high', '设置页回显当前学段高中');
+  chk(sd.querySelector('#seg-term button.active').dataset.term === '2', '设置页回显当前学期下学期');
+  chk(sd.querySelector('#grade-chips button.active').dataset.grade === '12', '设置页回显当前年级高三');
 
   // 背诵范围：7 个选项，切换后计划与「全部诗词」跟随
-  chk(d.querySelectorAll('#seg-scope button').length === 7, '设置内含 7 个背诵范围选项');
-  chk(d.querySelector('#seg-scope button.active').dataset.scope === 'term', '默认选中「本册」');
-  const scopeBtn = k => [...d.querySelectorAll('#seg-scope button')].find(b => b.dataset.scope === k);
-  scopeBtn('primary').dispatchEvent(new window.Event('click', { bubbles: true }));
-  chk(d.querySelector('#seg-scope button.active').dataset.scope === 'primary', '切换后按钮高亮跟随');
+  chk(sd.querySelectorAll('#seg-scope button').length === 7, '设置页含 7 个背诵范围选项');
+  chk(sd.querySelector('#seg-scope button.active').dataset.scope === 'term', '默认选中「本册」');
+  setOn('scope', 'primary', '#seg-scope button', 'scope');
+  chk(sd.querySelector('#seg-scope button.active').dataset.scope === 'primary', '切换后按钮高亮跟随');
   chk(d.querySelector('#all-count').textContent === '91', '小学随机范围 → 小学 91 首（实际 ' + d.querySelector('#all-count').textContent + '）');
   chk(d.querySelector('#all-label').textContent === '小学阶段全部诗词', '面板标题跟随范围: ' + d.querySelector('#all-label').textContent);
   chk(d.querySelectorAll('#today-list .item').length === 5, '随机范围下仍按每日数量出计划');
   chk(d.querySelector('#all-list .item .item-meta').textContent.includes('年级') === false ||
     /[一二三四五六]年级/.test(d.querySelector('#all-list .item .item-meta').textContent), '随机范围下列表项标注所属年级学期');
-  chk(JSON.parse(window.localStorage.getItem('poem_recite_settings_v1')).scope === 'primary', '背诵范围已持久化');
-  scopeBtn('high').dispatchEvent(new window.Event('click', { bubbles: true }));
+  chk(JSON.parse(sp.window.localStorage.getItem('poem_recite_settings_v1')).scope === 'primary', '背诵范围已持久化');
+  setOn('scope', 'high', '#seg-scope button', 'scope');
   chk(d.querySelector('#all-count').textContent === '69', '高中随机范围 → 高中 69 首（实际 ' + d.querySelector('#all-count').textContent + '）');
-  scopeBtn('term').dispatchEvent(new window.Event('click', { bubbles: true }));
+  setOn('scope', 'term', '#seg-scope button', 'scope');
   chk(d.querySelector('#all-count').textContent === '14', '切回「本册」→ 高三下 14 首');
 
-  // 用户名：输入后页面标题与品牌标题同步变化
-  const uInput = d.querySelector('#input-username');
-  chk(uInput.value === '', '用户名初始为空（使用默认名）');
+  // 用户名：在设置整页输入后，首页标题与品牌名同步变化
+  const uInput = sd.querySelector('#input-username');
+  chk(uInput.value === '', '用户名初始为空（使用默认名 Ashley）');
   uInput.value = '小明';
-  uInput.dispatchEvent(new window.Event('input', { bubbles: true }));
+  uInput.dispatchEvent(new sp.window.Event('input', { bubbles: true }));
+  window.localStorage.setItem('poem_recite_settings_v1', sp.window.localStorage.getItem('poem_recite_settings_v1'));
+  window.PoemApp.reloadSettings();
   chk(d.title === '跬步 · 小明的古诗词 · 古诗词背诵', '填了用户名后标题为「跬步 · 小明的古诗词」（实际 ' + d.title + '）');
   // 顶栏第一行固定为应用名（不随用户名变），用户名只出现在页面标题与第二行里，
   // 否则进了小古文 / 法务页顶栏也跟着改名，用户认不出自己在哪一页
@@ -277,14 +302,16 @@ setTimeout(() => {
     '填了用户名后不再走淡墨（是自己填的名字）');
   chk(d.querySelector('meta[name="apple-mobile-web-app-title"]').getAttribute('content') === '跬步 · 小明的古诗词',
     'iOS 桌面名随用户名变化');
-  chk(JSON.parse(window.localStorage.getItem('poem_recite_settings_v1')).username === '小明', '用户名已持久化');
+  chk(JSON.parse(sp.window.localStorage.getItem('poem_recite_settings_v1')).username === '小明', '用户名已持久化');
 
   uInput.value = '   ';
-  uInput.dispatchEvent(new window.Event('input', { bubbles: true }));
+  uInput.dispatchEvent(new sp.window.Event('input', { bubbles: true }));
+  window.localStorage.setItem('poem_recite_settings_v1', sp.window.localStorage.getItem('poem_recite_settings_v1'));
+  window.PoemApp.reloadSettings();
   chk(d.title === '跬步 · Ashley的古诗词 · 古诗词背诵',
     '用户名留空时回到默认名 Ashley（实际 ' + d.title + '）');
-  const c8 = [...d.querySelectorAll('#seg-count button')].find(b => b.dataset.count === '8');
-  c8.dispatchEvent(new window.Event('click', { bubbles: true }));
+
+  setOn('count', 8, '#seg-count button', 'count');
   chk(d.querySelector('#today-sub').textContent.includes('共 8 首'), '改为每日 8 首生效: ' + d.querySelector('#today-sub').textContent);
   // 需求 4：统计文案去掉「首」后缀，避免换行 →「共 N 首 · 待复习 N · 新学 N」
   chk(/^共 \d+ 首 · 待复习 \d+ · 新学 \d+$/.test(d.querySelector('#today-sub').textContent),
@@ -292,9 +319,9 @@ setTimeout(() => {
   chk(!/待复习 \d+ 首/.test(d.querySelector('#today-sub').textContent), '待复习数字后不再带「首」');
   chk(d.querySelectorAll('#today-list .item').length === 8, '今日列表变为 8 首');
 
-  // 持久化
+  // 持久化：进度写在首页实例，设置写在设置页实例
   chk(!!window.localStorage.getItem('poem_recite_progress_v1'), '进度已写入 localStorage');
-  chk(!!window.localStorage.getItem('poem_recite_settings_v1'), '设置已写入 localStorage');
+  chk(!!sp.window.localStorage.getItem('poem_recite_settings_v1'), '设置已写入 localStorage');
 
   console.log(fails === 0 ? '\n🎉 UI 测试全部通过' : '\n❌ ' + fails + ' 项失败');
   process.exit(fails ? 1 : 0);

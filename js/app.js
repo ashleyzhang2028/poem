@@ -302,6 +302,7 @@
     const stage = stageOf(settings.grade);
     const grades = STAGES[stage].grades;
     const box = $("#grade-chips");
+    if (!box) return;
     box.innerHTML = "";
     grades.forEach(function (g) {
       const b = document.createElement("button");
@@ -320,8 +321,6 @@
     $$("#seg-term button").forEach(function (b) {
       b.classList.toggle("active", Number(b.dataset.term) === settings.term);
     });
-    const uInput = $("#input-username");
-    if (uInput) uInput.value = String(settings.username == null ? "" : settings.username);
     const sc = $("#seg-count");
     if (sc) {
       $$("button", sc).forEach(function (b) {
@@ -521,6 +520,7 @@
 
     $("#modal").hidden = false;
     document.body.style.overflow = "hidden";
+    syncBottomGap();
   }
 
   /** 弹层正文：按注音档位渲染。关闭时为纯文本，保证原有测试与排版不变 */
@@ -814,9 +814,23 @@
     if (window.Speech) window.Speech.stop();
     speakingTarget = "原文";
     $("#modal").hidden = true;
-    $("#settings-modal").hidden = true;
     document.body.style.overflow = "";
     currentPoem = null;
+    // 关闭弹层后重新量一次底部留白（播放栏可能刚结束）
+    syncBottomGap();
+  }
+
+  /* ---------------- 底部留白：不被底部导航栏遮挡 ---------------- */
+  /**
+   * 把「一条底部导航栏的高度」写进 --nav-h（CSS 变量），
+   * 所有「fixed 贴底」的元素（播放栏、iOS 引导条、吐司）都按它算避让距离，
+   * 页面主体则按它补底部留白 —— 于是：
+   *   · 有播放栏时，正文最后一行与 copyright / 法务链接不会被压住
+   *   · 没有播放栏时，留白回到 0，页脚贴底且不留空白条
+   * 数值由 js/pwa.js 的 syncBottomGap() 统一测量与同步。
+   */
+  function syncBottomGap() {
+    if (window.PWA && window.PWA.syncBottomGap) window.PWA.syncBottomGap();
   }
 
   /* ---------------- 复习结果处理 ---------------- */
@@ -859,6 +873,8 @@
 
   /* ---------------- 事件绑定 ---------------- */
   function bindEvents() {
+    // 学段 / 年级 / 学期 / 数量 / 范围 / 阅读辅助 / 小古文入口都住在设置整页
+    // （settings.html + js/settings.js）；首页保留同款监听只为向后兼容，取不到就跳过
     $$("#seg-stage button").forEach(function (b) {
       b.addEventListener("click", function () {
         const stage = b.dataset.stage;
@@ -897,15 +913,7 @@
       });
     }
 
-    // 顶栏「设置」按钮由 js/chrome.js 渲染，这里统一监听它派发的开关事件
-    function openSettings() {
-      renderGradeChips();
-      $("#settings-modal").hidden = false;
-      document.body.style.overflow = "hidden";
-    }
-    document.addEventListener("settings:open", openSettings);
-
-    $$("[data-close]").forEach(function (el) {
+    $$("#modal [data-close]").forEach(function (el) {
       el.addEventListener("click", closeModal);
     });
 
@@ -974,7 +982,8 @@
       setTimeout(syncTodayReadBtn, 60);
     });
 
-    $("#btn-all").addEventListener("click", function () {
+    const btnAll = $("#btn-all");
+    if (btnAll) btnAll.addEventListener("click", function () {
       const body = $("#all-body");
       body.hidden = !body.hidden;
       this.classList.toggle("open", !body.hidden);
@@ -996,7 +1005,8 @@
       });
     });
 
-    $("#btn-reset").addEventListener("click", function () {
+    const btnReset = $("#btn-reset");
+    if (btnReset) btnReset.addEventListener("click", function () {
       if (confirm("确定要清空全部背诵进度吗？此操作不可恢复。")) {
         Storage.clear();
         invalidatePlan();
@@ -1006,7 +1016,8 @@
       }
     });
 
-    $("#btn-export").addEventListener("click", function () {
+    const btnExport = $("#btn-export");
+    if (btnExport) btnExport.addEventListener("click", function () {
       const blob = new Blob([Storage.exportJSON()], { type: "application/json" });
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
@@ -1016,11 +1027,14 @@
       showToast("备份已导出");
     });
 
-    $("#btn-import").addEventListener("click", function () {
-      $("#file-import").click();
+    const btnImport = $("#btn-import");
+    if (btnImport) btnImport.addEventListener("click", function () {
+      const fi = $("#file-import");
+      if (fi) fi.click();
     });
 
-    $("#file-import").addEventListener("change", function (e) {
+    const fileImport = $("#file-import");
+    if (fileImport) fileImport.addEventListener("change", function (e) {
       const f = e.target.files[0];
       if (!f) return;
       const reader = new FileReader();
@@ -1042,6 +1056,25 @@
       e.target.value = "";
     });
   }
+
+  /**
+   * 供设置整页（settings.html）等外部页面调用：
+   * 设置写在 localStorage 里，同窗口内的其他脚本可以据此重新读一次并刷新界面
+   * （同一浏览器标签里做「改完设置立刻生效」用得到；跨页面跳转时本就是重新启动）
+   */
+  window.PoemApp = {
+    reloadSettings: function () {
+      settings = Storage.getSettings();
+      applyAppName();
+      renderGradeChips();
+      // 阅读辅助开关变了要立刻体现：开启回「只标生字」，关闭回「不注音」
+      resetPinyinMode();
+      invalidatePlan();
+      rebuildToday();
+      renderAll();
+      return settings;
+    }
+  };
 
   /* ---------------- 启动 ---------------- */
   function init() {
@@ -1068,6 +1101,9 @@
     rebuildToday();
     renderAll();
     bindEvents();
+    syncBottomGap();
+    window.addEventListener("resize", syncBottomGap);
+    window.addEventListener("orientationchange", syncBottomGap);
   }
 
   if (document.readyState === "loading") {

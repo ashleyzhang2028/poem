@@ -97,14 +97,7 @@
       </div>
     </section>
 
-    <footer class="foot">
-      <span class="foot-copy">&copy;2026 kuibu.app 积跬步, 至千里</span>
-      <span class="foot-links">
-        <a href="./terms.html">用户协议</a>
-        <span class="foot-sep">·</span>
-        <a href="./privacy.html">隐私条款</a>
-      </span>
-    </footer>
+    <!-- 版权 + 用户协议 / 隐私条款已挪到设置整页（settings.html）底部 -->
   </div>
 
   <!-- 诗词详情弹层 -->
@@ -231,81 +224,6 @@
           </span>记住</button>
       </div>
       <div class="hint" id="m-hint"></div>
-    </div>
-  </div>
-
-  <!-- 设置弹层 -->
-  <div class="modal" id="settings-modal" hidden>
-    <div class="modal-mask" data-close="1"></div>
-    <div class="modal-box small" role="dialog" aria-modal="true">
-      <button class="modal-close" data-close="1" aria-label="关闭">✕</button>
-      <div class="modal-head"><h2>设置</h2></div>
-      <div class="settings-item">
-        <label for="input-username">用户名</label>
-        <input id="input-username" class="settings-input" type="text" maxlength="12"
-               placeholder="Ashley" autocomplete="off" enterkeyhint="done" />
-        <div class="settings-hint">留空则显示默认名称「Ashley」</div>
-      </div>
-      <div class="settings-item">
-        <label>学段</label>
-        <div class="seg small" id="seg-stage">
-          <button data-stage="primary" class="active">小学</button>
-          <button data-stage="middle">初中</button>
-          <button data-stage="high">高中</button>
-        </div>
-      </div>
-      <div class="settings-item">
-        <label>年级</label>
-        <div class="chips" id="grade-chips"></div>
-      </div>
-      <div class="settings-item">
-        <label>学期</label>
-        <div class="seg small" id="seg-term">
-          <button data-term="1" class="active">上学期</button>
-          <button data-term="2">下学期</button>
-        </div>
-      </div>
-      <div class="settings-item">
-        <label>背诵范围</label>
-        <div class="seg small" id="seg-scope">
-          <button data-scope="term" class="active">本册</button>
-          <button data-scope="upto">本册及之前</button>
-          <button data-scope="primary">小学随机</button>
-          <button data-scope="middle">初中随机</button>
-          <button data-scope="primary_middle">小学+初中随机</button>
-          <button data-scope="high">高中随机</button>
-          <button data-scope="all">全部随机</button>
-        </div>
-        <div class="settings-hint" id="scope-hint"></div>
-      </div>
-      <div class="settings-item">
-        <label>阅读辅助</label>
-        <div class="seg small" id="seg-helper">
-          <button data-helper="off" class="active">关闭</button>
-          <button data-helper="on">开启</button>
-        </div>
-        <div class="settings-hint" id="helper-hint">开启后，打开诗或古文即自动注音（默认「只标生字」）；关闭则为纯文本。朗读按钮始终可用</div>
-      </div>
-      <div class="settings-item">
-        <label>每日背诵数量</label>
-        <div class="seg small" id="seg-count">
-          <button data-count="3">3 首</button>
-          <button data-count="5" class="active">5 首</button>
-          <button data-count="8">8 首</button>
-          <button data-count="10">10 首</button>
-        </div>
-      </div>
-      <div class="settings-item">
-        <label>数据管理</label>
-        <div class="settings-btns">
-          <button class="btn ghost-btn" id="btn-export">导出备份</button>
-          <button class="btn ghost-btn" id="btn-import">导入备份</button>
-          <button class="btn danger-btn" id="btn-reset">清空进度</button>
-        </div>
-      </div>
-      <div class="settings-tip">
-        <p>复习间隔：当天 → 1 → 2 → 4 → 7 → 15 → 30 → 60 → 120 → 240 天</p>
-      </div>
     </div>
   </div>
 

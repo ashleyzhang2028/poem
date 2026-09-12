@@ -220,6 +220,119 @@ function check(name, cond, extra) {
       offlineFont.length === 4 && offlineFont.every(x => /:loaded$/.test(x)),
       offlineFont.join(' '));
 
+
+    /* ---- 设置整页：底部导航栏不得遮挡页面最后一行（真实浏览器几何验证）---- */
+    await page.goto(base + 'settings.html', { waitUntil: 'networkidle0' });
+    await new Promise(r => setTimeout(r, 900));
+
+    const gap = await page.evaluate(() => ({
+      navH: getComputedStyle(document.documentElement).getPropertyValue('--nav-h').trim(),
+      pageBottomPad: getComputedStyle(document.querySelector('.settings-page')).paddingBottom,
+      appBottomPad: getComputedStyle(document.querySelector('.app')).paddingBottom
+    }));
+    // 没有底部导航栏时 --nav-h 为 0，页面只留基础呼吸间距；
+    // 出现播放栏时留白必须 ≥ 播放栏高度（下面那条几何断言就查这个）
+    check('iPhone: 设置页初始化了导航栏高度基准线',
+      /^\d+(\.\d+)?px$/.test(gap.navH) && parseFloat(gap.appBottomPad) >= 0, JSON.stringify(gap));
+
+    /** 模拟底部播放栏出现（最长的“上一首 / 停止 / 下一首”三键布局） */
+    const playAndMeasure = await page.evaluate(async () => {
+      const app = document.querySelector('.app');
+      const foot = document.querySelector('.settings-foot');
+      function covered() {
+        const r = foot.getBoundingClientRect();
+        const hit = document.elementFromPoint(Math.round(r.left + r.width / 2), Math.round(r.top + r.height / 2));
+        return !!(hit && !foot.contains(hit));
+      }
+      // 注入一条与真实播放栏同结构的导航栏
+      const bar = document.createElement('div');
+      bar.className = 'player-bar';
+      bar.innerHTML = '<div class="pb-info"><div class="pb-now">静夜思</div><div class="pb-next">下一首：春晓</div></div>' +
+        '<div class="pb-controls"><button class="pb-btn pb-side"></button>' +
+        '<button class="pb-btn pb-toggle"></button><button class="pb-btn pb-side"></button></div>';
+      document.body.appendChild(bar);
+      document.body.classList.add('has-audio-player');
+      let measured = 0;
+      for (let i = 0; i < 5; i++) {
+        const r = bar.getBoundingClientRect();
+        measured = Math.round(r.height);
+        document.documentElement.style.setProperty('--nav-h', measured + 'px');
+        await new Promise(r2 => requestAnimationFrame(r2));
+      }
+      window.scrollTo(0, document.body.scrollHeight);
+      await new Promise(r2 => setTimeout(r2, 120));
+      const footRect = foot.getBoundingClientRect();
+      return {
+        barHeight: measured,
+        appPad: parseFloat(getComputedStyle(app).paddingBottom),
+        footBottom: Math.round(footRect.bottom),
+        covered: covered()
+      };
+    });
+    check('iPhone: 播放栏出现后设置页底部留白随之增大',
+      playAndMeasure.appPad >= playAndMeasure.barHeight,
+      '播放栏 ' + playAndMeasure.barHeight + 'px，留白 ' + playAndMeasure.appPad + 'px');
+    check('iPhone: 播放栏不遮挡设置页底部的法务链接', !playAndMeasure.covered,
+      JSON.stringify(playAndMeasure));
+
+    /* ---- 底部页签（全站导航栏）同样不得压住页面最后一行 ---- */
+    await page.goto(base + 'settings.html', { waitUntil: 'networkidle0' });
+    await new Promise(r => setTimeout(r, 900));
+    const dockGeom = await page.evaluate(() => {
+      const dock = document.getElementById('site-dock');
+      const foot = document.querySelector('.settings-foot');
+      window.scrollTo(0, document.body.scrollHeight);
+      return new Promise(res => requestAnimationFrame(() => {
+        const dr = dock.getBoundingClientRect();
+        const fr = foot.getBoundingClientRect();
+        const hit = document.elementFromPoint(
+          Math.round(fr.left + fr.width / 2), Math.round(fr.top + fr.height / 2));
+        res({
+          navH: getComputedStyle(document.documentElement).getPropertyValue('--nav-h').trim(),
+          dockH: Math.round(dr.height),
+          dockTop: Math.round(dr.top),
+          footBottom: Math.round(fr.bottom),
+          // 页脚最后一行必须整体在页签之上，且中心点可点
+          covered: fr.bottom > dr.top || !(hit && foot.contains(hit)),
+          hitCls: hit ? (hit.className || hit.tagName) : null
+        });
+      }));
+    });
+    // getBoundingClientRect 的小数被 round 成整数，允许 1px 的取整差
+    check('iPhone: 设置页底部留白 ≥ 页签高度',
+      parseFloat(dockGeom.navH) >= dockGeom.dockH - 1, JSON.stringify(dockGeom));
+    check('iPhone: 底部页签不遮挡设置页底部的法务链接', !dockGeom.covered, JSON.stringify(dockGeom));
+
+    // 首页与小古文页的页签同样不能压住内容
+    for (const file of ['index.html', 'classic.html']) {
+      await page.goto(base + file, { waitUntil: 'networkidle0' });
+      await new Promise(r => setTimeout(r, 700));
+      const g = await page.evaluate(() => {
+        const dock = document.getElementById('site-dock');
+        const app = document.querySelector('.app');
+        return {
+          dockH: Math.round(dock.getBoundingClientRect().height),
+          navH: getComputedStyle(document.documentElement).getPropertyValue('--nav-h').trim(),
+          appPad: parseFloat(getComputedStyle(app).paddingBottom)
+        };
+      });
+      check('iPhone: ' + file + ' 页面留白 ≥ 页签高度',
+        g.appPad >= g.dockH - 1, JSON.stringify(g));
+    }
+
+    // 断网也能进设置页（法务链接与设置项都必须可达）
+    await page.setOfflineMode(true);
+    await page.goto(base + 'settings.html', { waitUntil: 'domcontentloaded' });
+    await new Promise(r => setTimeout(r, 900));
+    const settingsOffline = await page.evaluate(() => ({
+      hasPage: !!document.querySelector('#settings-page'),
+      hasFoot: !!document.querySelector('.settings-foot a[href*="terms.html"]'),
+      hasHelper: !!document.querySelector('#seg-helper')
+    }));
+    check('iPhone: 断网也能打开设置整页', settingsOffline.hasPage && settingsOffline.hasHelper && settingsOffline.hasFoot,
+      JSON.stringify(settingsOffline));
+    await page.setOfflineMode(false);
+
     // 用户协议 / 隐私条款：断网也要能打开，邮箱仍可还原（隐私合规不能靠联网）
     await page.goto(base + 'terms.html', { waitUntil: 'domcontentloaded' });
     await new Promise(r => setTimeout(r, 500));

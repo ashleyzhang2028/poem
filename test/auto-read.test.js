@@ -199,12 +199,19 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
   chk(d.querySelector('#modal').hidden === true, '点朗读按钮不会误开诗词弹层');
 
   // ---- 阅读辅助开关的可见差别 ----
-  // 开启（默认「只标生字」）→ 打开诗词自动注音；关闭 → 纯文本，需要时手动切档位
+  // 开启（默认「只标生字」）→ 打开诗词自动注音；关闭 → 纯文本，需要时手动切档位。
+  // 设置已改成独立整页（settings.html），开关住在那一页：这里在设置页点开关，
+  // 再把结果搬进首页实例的 localStorage（两个 JSDOM 实例的存储各自独立）。
+  const helperPage = boot('settings.html', null, false);
+  // boot() 是同步注入脚本的，DOMContentLoaded 早已触发过，手动补一次让设置页初始化
+  helperPage.document.dispatchEvent(new helperPage.Event('DOMContentLoaded', { bubbles: true }));
   const clickHelper = (v) => {
-    d.querySelector('.dock-item[data-nav-go="settings"]').dispatchEvent(new w.Event('click', { bubbles: true }));
-    [...d.querySelectorAll('#seg-helper button')].find(b => b.dataset.helper === v)
+    [...helperPage.document.querySelectorAll('#seg-helper button')]
+      .find(b => b.dataset.helper === v)
       .dispatchEvent(new w.Event('click', { bubbles: true }));
-    d.querySelector('#settings-modal').hidden = true;
+    w.localStorage.setItem('poem_recite_settings_v1', helperPage.localStorage.getItem('poem_recite_settings_v1'));
+    // 首页用的是启动时读到的快照，让它重新读一次并刷新界面
+    w.PoemApp.reloadSettings();
   };
   /** 打开一首确有生字的诗（「只标生字」下才有 ruby 可数） */
   const openWithRare = () => {
@@ -359,14 +366,20 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
   chk(d3.querySelectorAll('#m-text ruby').length > 0, '手动选「生字」后立刻出现拼音');
   chk(JSON.parse(w3.localStorage.getItem('poem_recite_settings_v1')).helper === 'on',
     '手动选「生字」会同步把「阅读辅助」打开（两处状态一致）');
-  chk(d3.querySelector('#seg-helper button[data-helper="on"]').classList.contains('active'),
-    '设置面板里的开关 UI 同步为「开启」');
+  // 设置页上的开关 UI 同步为「开启」（设置已是独立整页 settings.html）
+  const helperPage3 = boot('settings.html', {
+    poem_recite_settings_v1: w3.localStorage.getItem('poem_recite_settings_v1')
+  });
+  helperPage3.document.dispatchEvent(new helperPage3.Event('DOMContentLoaded', { bubbles: true }));
+  await sleep(60);
+  chk(helperPage3.document.querySelector('#seg-helper button[data-helper="on"]').classList.contains('active'),
+    '设置页里的开关 UI 同步为「开启」');
   d3.querySelector('#modal').hidden = true;
   // 反向：设置里关掉 → 弹层应为纯文本
-  d3.querySelector('.dock-item[data-nav-go="settings"]').dispatchEvent(new w3.Event('click', { bubbles: true }));
-  [...d3.querySelectorAll('#seg-helper button')].find(b => b.dataset.helper === 'off')
-    .dispatchEvent(new w3.Event('click', { bubbles: true }));
-  d3.querySelector('#settings-modal').hidden = true;
+  [...helperPage3.document.querySelectorAll('#seg-helper button')].find(b => b.dataset.helper === 'off')
+    .dispatchEvent(new helperPage3.Event('click', { bubbles: true }));
+  w3.localStorage.setItem('poem_recite_settings_v1', helperPage3.localStorage.getItem('poem_recite_settings_v1'));
+  w3.PoemApp.reloadSettings();
   openPoemIn(d3, 3);
   await sleep(40);
   chk(d3.querySelectorAll('#m-text ruby').length === 0, '设置里关掉后打开诗词恢复纯文本');

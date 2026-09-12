@@ -317,5 +317,84 @@ const norm = fs.readFileSync(path + 'icons/icon-maskable-512.png');
 const any = fs.readFileSync(path + 'icons/icon-512.png');
 chk(Buffer.compare(norm, any) !== 0, 'maskable 图标与普通图标是两份不同的图');
 
+
+/* ---------------- 7. 设置整页 + 底部导航栏不遮挡 ---------------- */
+const settingsHtml = read('settings.html');
+const settingsJs = read('js/settings.js');
+const pwaJs = read('js/pwa.js');
+
+// 需求：设置不再向上弹卡片，而是全新的整页
+chk(html.indexOf('settings-modal') === -1, '首页不再有向上弹出的设置卡片（settings-modal 已删除）');
+// 设置的入口是底部页签「设置」，由 js/chrome.js 渲染成真实链接
+chk(/href:\s*"\.\/settings\.html"/.test(read('js/chrome.js')), '底部页签「设置」指向设置整页');
+chk(html.indexOf('btn-settings') === -1, '首页顶栏不再有设置齿轮（入口收敛到页签）');
+chk(/data-nav="settings"/.test(settingsHtml), '设置页声明自己是「设置」页签');
+chk(/js\/chrome\.js/.test(settingsHtml), '设置页与首页共用同一套顶栏与底部页签');
+chk(settingsHtml.indexOf('id="settings-page"') !== -1, '设置页有独立的整页容器');
+chk(settingsHtml.indexOf('settings-modal') === -1, '设置页不再用弹层结构');
+chk(settingsHtml.indexOf('class="foot settings-foot"') !== -1, '设置页底部有页脚（版权 + 法务链接）');
+
+// 需求：设置页底部不被底部导航栏遮挡 —— 统一由 --nav-h 这条基准线决定
+chk(/--nav-h:\s*0px/.test(css), '定义了底部导航栏高度变量 --nav-h');
+chk(/\.settings-page \{[\s\S]*?padding-bottom:\s*calc\([^)]*--nav-h/.test(css),
+  '设置页留出导航栏高度，最后一行不会被压住');
+// 页面留白不写死 px，统一走 --nav-h；页签 / 播放栏同时在场也不互相压住
+chk(!/padding-bottom:\s*calc\(150px/.test(css) && !/padding-bottom:\s*calc\(196px/.test(css),
+  '页面留白不再写死 px（150px / 196px 这类硬编码已删除）');
+chk(/\.dock \{[\s\S]*?position:\s*fixed[\s\S]*?bottom:\s*0/.test(css), '底部页签是贴底固定导航栏');
+chk(/body:not\(\.no-dock\) \.app[\s\S]{0,80}?padding-bottom:\s*calc\([^)]*--nav-h/.test(css),
+  '有底部页签时，页面留白按实测导航栏高度计算');
+chk(/sw\.js/.test('sw.js') && /js\/pwa\.js/.test(read('settings.html')) && /js\/pwa\.js/.test(read('classic.html')),
+  '所有页都加载 js/pwa.js，--nav-h 每页都会实测');
+chk(/\.ios-install-tip \{[\s\S]*?bottom:\s*calc\(12px \+ var\(--nav-h\)\)/.test(css),
+  'iOS 引导条按基准线避让，不再盖住页脚');
+chk(/\.toast \{[\s\S]*?bottom:\s*calc\(24px \+ var\(--nav-h\)\)/.test(css),
+  '吐司提示按基准线避让');
+chk(/window\.PWA\.syncBottomGap = syncBottomGap/.test(pwaJs),
+  'js/pwa.js 暴露 syncBottomGap 供各页统一刷新留白');
+chk(/measureBottomNav/.test(pwaJs) && /ResizeObserver/.test(pwaJs),
+  '播放栏高度变化时会重新测量底部留白');
+chk(/settings\.html/.test(read('sw.js')) && /js\/settings\.js/.test(read('sw.js')),
+  'Service Worker 预缓存设置页，断网也可进设置');
+
+// 法务链接在设置页底部；返回入口交给全站统一的底部页签
+chk(/data-nav-go/.test(read('js/chrome.js')) && /settings\.html/.test(read('js/chrome.js')),
+  '设置页可经底部页签回到古诗词 / 小古文');
+chk(/invalidatePlan/.test(settingsJs), '设置页改配置后会让首页的今日计划缓存失效');
+
+
+/* ---------------- 4b. 字体子集必须覆盖站点实际用到的字 ---------------- */
+/**
+ * 自托管字体是「按站点用字子集化」的，一旦子集做旧了，页面上的字就会
+ * 悄悄缺笔画（曾经「用户协议 / 隐私条款」被渲染成「用户 / 隐私条」）。
+ * 这里用 fontTools 直接读 cmap 做覆盖校验：CI 装了 fonttools 才校验，
+ * 没装则跳过（本地可 pip install fonttools brotli）。
+ */
+let subsetChecked = false;
+try {
+  const { execFileSync } = require('child_process');
+  execFileSync('python3', ['-c', 'import fontTools'], { stdio: 'ignore' });
+  const fontsDir = path + 'fonts/';
+  const need = ['用户协议', '隐私条款', '跬步', '设置', '朗读', '拼音', '诗词', '©'];
+  const script = `
+import sys, json
+from fontTools.ttLib import TTFont
+chars = sys.argv[1]
+out = {}
+for name in ['NotoSansSC-400','NotoSansSC-600','NotoSerifSC-400','NotoSerifSC-600']:
+    cmap = TTFont('${fontsDir}%s.woff2' % name).getBestCmap()
+    out[name] = [c for c in chars if ord(c) not in cmap]
+print(json.dumps(out, ensure_ascii=False))
+`;
+  const res = JSON.parse(execFileSync('python3', ['-c', script, need.join('')], { encoding: 'utf8' }));
+  Object.keys(res).forEach(name => {
+    chk(res[name].length === 0,
+      name + ' 覆盖站会用字（缺失：' + (res[name].join('') || '无') + '）');
+  });
+  subsetChecked = true;
+} catch (e) {
+  console.log('(未安装 fonttools，跳过字体子集覆盖检查：pip install fonttools brotli)');
+}
+
 console.log(fails === 0 ? '\n🎉 主题测试全部通过' : '\n❌ ' + fails + ' 项失败');
 process.exit(fails ? 1 : 0);

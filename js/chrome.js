@@ -102,7 +102,10 @@
   function pageKey() {
     var v = bodyData("nav");
     if (v) return v;
-    return /classic\.html$/.test(location.pathname) ? "classic" : "home";
+    var f = currentFile();
+    if (/^classic\.html$/.test(f)) return "classic";
+    if (/^settings\.html$/.test(f)) return "settings";
+    return "home";
   }
 
   /** 当前页副标题：由页面在 body 上给出，避免把各页文案硬编码在这里 */
@@ -182,16 +185,16 @@
     var items = [
       { key: "home", href: "./index.html", icon: GLYPHS.tabPoem, label: "古诗词", desc: "今日背诵与全部诗词" },
       { key: "classic", href: "./classic.html", icon: GLYPHS.tabClassic, label: "小古文", desc: "100 篇文言短文" },
-      { key: "settings", href: "#settings", icon: GLYPHS.tabGear, label: "设置", desc: "用户名 / 年级 / 音量" }
+      { key: "settings", href: "./settings.html", icon: GLYPHS.tabGear, label: "设置", desc: "用户名 / 年级 / 音量" }
     ];
     var html = '<nav class="dock" id="site-dock" aria-label="主导航">';
     items.forEach(function (it) {
       var on = key === it.key;
-      var tag = it.key === "settings" && key !== "classic" ? "button" : "a";
-      // 小古文页上的「设置」也在本页弹出，因此统一用按钮承载 data-nav-go
-      tag = "button";
+      // 每个页签都指向真实页面：设置也是独立整页（settings.html），不再是弹层卡片
+      var tag = it.key === "settings" ? "a" : "button";
       html +=
-        "<" + tag + ' type="button" class="dock-item' + (on ? " active" : "") + '"' +
+        "<" + tag + ' ' + (tag === "a" ? 'href="' + it.href + '"' : 'type="button"') +
+        ' class="dock-item' + (on ? " active" : "") + '"' +
         ' data-nav-go="' + it.key + '" data-href="' + it.href + '"' +
         (on ? ' aria-current="page"' : "") +
         ' title="' + it.desc + '">' +
@@ -255,13 +258,10 @@
       if (!btn) return;
       e.preventDefault();
       var dest = btn.getAttribute("data-nav-go");
-      if (dest === "settings") {
-        openSettings();
-        return;
-      }
-      var file = /classic\.html/.test(location.pathname) ? "classic.html" : "index.html";
-      var want = dest === "classic" ? "classic.html" : "index.html";
-      if (file === want) {
+      var here = currentFile();
+      var want = dest === "classic" ? "classic.html" : dest === "settings" ? "settings.html" : "index.html";
+      // 已经在这一页：回到顶部，不再重复导航
+      if (here === want) {
         window.scrollTo({ top: 0, behavior: "smooth" });
         return;
       }
@@ -269,20 +269,15 @@
     });
   }
 
-  /** 打开设置面板：三个页面各自的实现不同，这里做统一入口 */
+  /** 当前页面文件名（用于判断「已在本页」） */
+  function currentFile() {
+    var m = /([^/]+)$/.exec(location.pathname);
+    return (m && m[1]) || "index.html";
+  }
+
+  /** 打开设置整页（保留给页面内其他入口调用：直接跳转，不再弹卡片） */
   function openSettings() {
-    var ev = document.createEvent("CustomEvent");
-    ev.initCustomEvent("app:open-settings", true, true, {});
-    var handled = !document.dispatchEvent(ev);
-    if (handled) return;
-    var modal = document.getElementById("settings-modal");
-    if (modal) {
-      modal.hidden = false;
-      document.body.style.overflow = "hidden";
-      var e2 = document.createEvent("Event");
-      e2.initEvent("settings:open", true, true);
-      document.dispatchEvent(e2);
-    }
+    location.href = "./settings.html";
   }
 
   /* ---------------- 页面可调用的接口 ---------------- */
