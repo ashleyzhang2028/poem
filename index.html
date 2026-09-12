@@ -31,7 +31,7 @@
 
   <link rel="stylesheet" href="css/style.css" />
 </head>
-<body data-nav="home" data-sub="一年级至高三 · 按遗忘曲线复习">
+<body data-nav="home" data-page="的古诗词">
   <div class="app" id="app">
     <!-- 顶部栏：由 js/chrome.js 统一渲染（logo + 跬步 + 页面名 + 动作位） -->
     <header class="topbar"></header>
@@ -113,24 +113,84 @@
           <span id="m-grade" class="tag ghost"></span>
         </div>
       </div>
-      <div class="modal-tools">
+      <!-- 阅读辅助工具条（第一行）：对齐 / 字号 / 注音
+           与小古文详情页同一套控件、同一顺序，用户在两个页面不用重新学一遍。
+           「已读」是小古文专有的进度标记，古诗词这边由「忘记 / 模糊 / 记住」承担，故不设。 -->
+      <div class="reader-actions" id="m-actions-main">
+        <div class="seg mini icon-seg" id="m-align-seg" role="group" aria-label="正文对齐方式">
+          <button type="button" data-align="left" aria-pressed="false" title="左对齐" aria-label="左对齐">
+            <span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round">
+              <path d="M4 6.5h16M4 11h10.5M4 15.5h16M4 20h8" />
+            </svg></span>
+          </button>
+          <button type="button" data-align="center" class="active" aria-pressed="true" title="居中对齐" aria-label="居中对齐">
+            <span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round">
+              <path d="M4 6.5h16M6.8 11h10.4M4 15.5h16M8 20h8" />
+            </svg></span>
+          </button>
+          <button type="button" data-align="right" aria-pressed="false" title="右对齐" aria-label="右对齐">
+            <span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round">
+              <path d="M4 6.5h16M9.5 11H20M4 15.5h16M12 20h8" />
+            </svg></span>
+          </button>
+        </div>
+        <div class="seg mini font-seg" id="m-font-seg" role="group" aria-label="正文字号">
+          <button type="button" id="m-font-down" aria-label="缩小字号" title="缩小字号">A－</button>
+          <button type="button" id="m-font-up" aria-label="放大字号" title="放大字号">A＋</button>
+        </div>
         <div class="seg mini" id="m-pinyin-seg" data-on="0" role="group" aria-label="注音方式">
           <button data-mode="off" aria-pressed="false">不注音</button>
           <button data-mode="rare" class="active" aria-pressed="true">生字</button>
           <button data-mode="all" aria-pressed="false">全文</button>
         </div>
-        <button class="mini-btn" id="m-read-btn" data-on="0" aria-pressed="false">
-          <span class="btn-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M4 9.5v5h3l4.2 3.4V6.1L7 9.5H4Z" />
-              <path class="wave1" d="M15.2 9.2a4 4 0 0 1 0 5.6" />
-              <path class="wave2" d="M17.8 6.6a7.6 7.6 0 0 1 0 10.8" />
+      </div>
+      <!-- 阅读辅助工具条（第二行）：一个「播放」组合键（原文 / 译文）+ 译文开关 -->
+      <div class="reader-actions icon-row" id="m-actions-icons">
+        <div class="combo-read" id="m-read-combo" role="group" aria-label="朗读">
+          <button type="button" class="mini-btn combo-seg" id="m-read-btn" data-on="0" aria-pressed="false" title="朗读原文：标题、朝代、作者与正文">
+            <span class="btn-icon play-glyph" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M7.2 4.6 19.4 12 7.2 19.4Z" fill="currentColor" stroke="none" /></svg>
+            </span>
+            <span class="btn-icon pause-glyph" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M8.2 5h2.9v14H8.2Z M12.9 5h2.9v14h-2.9Z" fill="currentColor" stroke="none" /></svg>
+            </span>
+            <span class="combo-label" id="m-read-text">原文</span>
+          </button>
+          <button type="button" class="mini-btn combo-seg" id="m-trans-read" data-on="0" aria-pressed="false" disabled title="朗读白话译文">
+            <span class="btn-icon play-glyph" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M7.2 4.6 19.4 12 7.2 19.4Z" fill="currentColor" stroke="none" /></svg>
+            </span>
+            <span class="btn-icon pause-glyph" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M8.2 5h2.9v14H8.2Z M12.9 5h2.9v14h-2.9Z" fill="currentColor" stroke="none" /></svg>
+            </span>
+            <span class="combo-label" id="m-trans-read-text">译文</span>
+          </button>
+        </div>
+        <button type="button" class="mini-btn" id="m-trans-toggle" data-on="0" aria-pressed="false" title="显示译文">
+          <span class="btn-icon play-glyph" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 5.6h9.2a1.4 1.4 0 0 1 1.4 1.4v9.4a1.4 1.4 0 0 1-1.4 1.4H4Z" />
+              <path d="M7 9.4h4.6M7 12.8h3.2" />
+              <path d="M15.4 9.2h3.2a1.4 1.4 0 0 1 1.4 1.4v6.2a1.4 1.4 0 0 1-1.4 1.4h-2.2l-1 1.6-.9-1.6h-.1" />
             </svg>
           </span>
-          <span id="m-read-text">朗读</span>
+          <span class="btn-icon pause-glyph" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 5.6h9.2a1.4 1.4 0 0 1 1.4 1.4v9.4a1.4 1.4 0 0 1-1.4 1.4H4Z" />
+              <path d="M7 9.4h4.6M7 12.8h3.2" />
+              <path d="M15.4 9.2h3.2a1.4 1.4 0 0 1 1.4 1.4v6.2a1.4 1.4 0 0 1-1.4 1.4h-2.2l-1 1.6-.9-1.6h-.1" />
+              <path d="M20.6 4.2 15.6 20.2" />
+            </svg>
+          </span>
+          <span class="sr-only" id="m-trans-toggle-text">显示译文</span>
         </button>
       </div>
       <pre class="poem-text" id="m-text"></pre>
+      <!-- 白话译文：与小古文详情页同一套译文框 -->
+      <section class="trans-box" id="m-trans" hidden>
+        <div class="trans-head"><h3>白话译文</h3></div>
+        <p id="m-trans-text"></p>
+      </section>
       <div class="modal-progress" id="m-progress"></div>
       <div class="actions">
         <button class="btn bad" data-result="bad">
@@ -276,7 +336,6 @@
   <script src="js/app.js"></script>
   <script src="js/manifest-loader.js"></script>
   <script src="js/chrome.js"></script>
-  <script src="js/stats.js"></script>
   <script src="js/pwa.js"></script>
 </body>
 </html>

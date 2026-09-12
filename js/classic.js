@@ -506,18 +506,23 @@
     setTimeout(syncReadButtons, 60);
   }
 
-  /** 展开 / 收起白话译文 */
+  /**
+   * 展开 / 收起白话译文。
+   * 只切 box.hidden 与按钮状态，**不再往任何元素写按钮文案** ——
+   * 早先这里同时写了按钮文字，正好和译文段落抢过 id，导致译文一片空白。
+   */
   function showTransBox(show) {
     const btn = $("#rd-trans-toggle");
     const box = $("#rd-trans");
     if (!box) return;
     box.hidden = !show;
     if (btn) {
-      btn.dataset.on = show ? "1" : "0";
-      btn.setAttribute("aria-pressed", show ? "true" : "false");
-      btn.title = show ? "隐藏译文" : "显示译文";
+      const on = !!show;
+      btn.dataset.on = on ? "1" : "0";
+      btn.setAttribute("aria-pressed", on ? "true" : "false");
+      btn.title = on ? "收起译文" : "显示译文";
       const t = $("#rd-trans-toggle-text");
-      if (t) t.textContent = show ? "隐藏译文" : "显示译文";
+      if (t) t.textContent = on ? "收起译文" : "显示译文";
     }
   }
 
@@ -543,9 +548,12 @@
     btn.title = read ? "已读，再点一次取消" : "标记为已读";
     btn.setAttribute("aria-pressed", read ? "true" : "false");
     $("#gw-done-text").textContent = read ? "已读，再点一次取消" : "标记为已读";
+    // 顶栏右侧那一格只是「与返回键等宽的占位」，让进度真正居中；
+    // 已读时点亮一个小小的勾，不做成第二个按钮。
     const tip = $("#rd-done-text");
     if (tip) {
-      tip.textContent = read ? "已读" : "";
+      tip.textContent = read ? "✓" : "";
+      tip.setAttribute("aria-hidden", "true");
       tip.classList.toggle("is-done", read);
     }
   }
@@ -738,9 +746,9 @@
     if (!cfg || typeof cfg !== "object") cfg = {};
     cfg.username = String(name || "").slice(0, 12);
     localStorage.setItem("poem_recite_settings_v1", JSON.stringify(cfg));
+    // 小古文页的页面名固定是「小古文」（顶栏第一行「跬步 · 小古文」），
+    // 用户名只影响页面标题，不改页面名 —— 否则用户会认不出自己在哪一页。
     var n = cfg.username.trim();
-    var sub = document.getElementById("brand-sub");
-    if (sub) sub.textContent = n ? "100 篇 · 想读哪篇点哪篇" : "小古文 · 100 篇想读哪篇点哪篇";
     document.title = n ? n + "的小古文 · 跬步" : "小古文 · 跬步";
   }
 

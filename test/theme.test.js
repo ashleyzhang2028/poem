@@ -94,28 +94,30 @@ const listMetaGaps = (css.match(/\.item-meta \{([\s\S]*?)\}/g) || []).filter(b =
 chk(listMetaGaps.every(b => !/gap:\s*8px;/.test(b)), '不再有残留的 8px 副信息间距');
 
 /* ---------------- 宋式纹样与按钮分级（本次重做导航 / 美化 / 换大背景纹样） ---------------- */
-/* 需求：原来的「龟背纹」看不出来是龟背，换成宋「曲水纹」（落花流水纹） */
-chk(/--pattern-ivory:/.test(css), '定义了宋式纹样变量 --pattern-ivory（曲水 / 水脉）');
-chk(/--pattern-ivory-b:/.test(css), '定义了宋式纹样变量 --pattern-ivory-b（第二重水脉，错半波）');
-chk(/--pattern-luo:/.test(css), '定义了宋式纹样变量 --pattern-luo（落花团花）');
+/* 需求：原来那种纹样看不出来，改宋「球路纹」，并把整体浓度调淡一半 */
+chk(/--pattern-ivory:/.test(css), '定义了宋式纹样变量 --pattern-ivory（球路纹圆环）');
+chk(/--pattern-ivory-b:/.test(css), '定义了宋式纹样变量 --pattern-ivory-b（第二重圆环，错半格相切）');
+chk(/--pattern-luo:/.test(css), '定义了宋式纹样变量 --pattern-luo（团花）');
 chk(/--pattern-cloud:/.test(css), '定义了宋式纹样变量 --pattern-cloud（云纹）');
 chk(/data:image\/svg\+xml/.test(css), '纹样用内联 SVG data URI，不请求外部图片');
-chk(/曲水纹/.test(css) && /落花流水/.test(css), '样式注释里写明宋「曲水纹 / 落花流水纹」出处');
+chk(/球路纹/.test(css), '样式注释里写明宋「球路纹」出处');
 chk(!/龟背纹/.test(css), '不再出现「龟背纹」字样（已整体换掉）');
 // 页面底：三层纹样叠成一个循环大纹样，且必须有透明度，不能压过内容
 const ivoryBlocks = [...css.matchAll(/html, body \{[\s\S]*?\}/g)].map(m => m[0]).filter(b => /--pattern-ivory/.test(b));
-chk(ivoryBlocks.length > 0, '页面底铺宋式「落花流水纹」');
+chk(ivoryBlocks.length > 0, '页面底铺宋式「球路纹」');
 chk(ivoryBlocks.some(b => /background-attachment:\s*fixed/.test(b)), '底纹固定，滚动时不跟着内容跑');
-chk(ivoryBlocks.some(b => /background-size:\s*80px 80px/.test(b)), '水脉周期 80px，纹样够大、看得清');
-chk(ivoryBlocks.some(b => /var\(--pattern-luo\)/.test(b)), '落花团花与两重水脉叠在一起铺满');
-// 水脉用正弦曲线（不再是直角折线的方格感），落花是四点菱花
-// 底纹写在 data URI 里，先解码再断言笔画形状与不透明度
+chk(ivoryBlocks.some(b => /background-size:\s*80px 80px/.test(b)), '圆环周期 80px，纹样够大、看得清');
+chk(ivoryBlocks.some(b => /var\(--pattern-luo\)/.test(b)), '团花与两重圆环叠在一起铺满');
+// 圆环是正圆（不再是水波纹），且整体浓度必须是「淡的一半」
 const decodedPatterns = [...css.matchAll(/--pattern-[a-z-]+: url\("data:image\/svg\+xml,([^"]+)"\)/g)]
   .map(m => decodeURIComponent(m[1])).join("\n");
-chk(/ C-?\d+ -?\d+ -?\d+ -?\d+ -?\d+ -?\d+/.test(decodedPatterns),
-  '水脉用贝塞尔曲线画出连绵水波（不再是直角折线的方格感）');
-chk(/stroke-opacity='\.26'/.test(decodedPatterns), '水脉主笔画不透明度 26%（静看有暗花，退开只剩纸的温度）');
-chk((decodedPatterns.match(/fill-opacity='\.20'/g) || []).length >= 2, '落花团花用琥珀色、不透明度 20%');
+chk(/<circle/.test(decodedPatterns), '纹样用正圆环画出「球路」四方连续');
+chk(/stroke-opacity='\.12'/.test(decodedPatterns), '圆环主笔画不透明度 12%（比上一版 26% 淡了一半）');
+chk((decodedPatterns.match(/fill-opacity='\.10'/g) || []).length >= 1, '团花用琥珀色、不透明度 10%');
+chk(/stroke-opacity='\.08'/.test(decodedPatterns), '云纹不透明度降到 8%');
+/* 需求：卡片角隅 / 今日条的纹样同步调淡 */
+chk(/\.card-pat::before,[\s\S]{0,120}?opacity:\s*\.17;/.test(css), '卡片角隅纹样淡到 17%');
+chk(/\.today-bar::after \{[\s\S]{0,400}?opacity:\s*\.14;/.test(css), '今日条云纹淡到 14%');
 // 点缀：卡片角隅 + 今日条云纹，且默认不出现
 chk(/\.card-pat::before/.test(css) && /\.card-pat::after/.test(css), '卡片角隅纹样只在 .card-pat 上出现');
 chk(/mask-image:\s*linear-gradient/.test(css), '角隅纹样用遮罩从角上透出来，不是贴一张图');
@@ -141,6 +143,52 @@ chk(sw.indexOf('./fonts/NotoSerifSC-400.woff2') !== -1, 'Service Worker 预缓�
 chk(sw.indexOf('./fonts/NotoSansSC-400.woff2') !== -1, 'Service Worker 预缓存黑体字库');
 chk(!/fonts\.googleapis|fonts\.gstatic/.test(css + html + classicHtml), '不请求任何第三方字体 CDN');
 chk(!/fonts\.googleapis|fonts\.gstatic/.test(legalHtml), '法务页同样不请求第三方字体 CDN');
+
+/* ---------------- 2b. 本轮需求：顶栏并入页面名 / 圆形播放键 / 详情页工具条 ---------------- */
+// 需求：页面名（XX的古诗词 / 小古文）挪到「跬步」右侧，字体样式与「跬步」一致
+chk(/\.brand-name-row/.test(css), '顶栏有「跬步 · 页面名」同一行的样式 .brand-name-row');
+chk(/\.brand-name-row[\s\S]{0,260}?font-size:\s*19px/.test(css), '页面名与「跬步」同字号（19px）');
+chk(/\.brand-page::before[\s\S]{0,120}?content:\s*"·"/.test(css),
+  '分隔符「·」由 CSS 生成，页面里不写死标点');
+// 只要求顶栏不再出现；meta description 里保留「一年级至高三古诗词」这句 SEO 描述是合理的
+chk(!/一年级至高三 · 按遗忘曲线复习/.test(html + app + read('js/chrome.js')),
+  '删掉顶栏的「一年级至高三 · 按遗忘曲线复习」文案');
+// 需求：首页副标题不再重复抄一遍「按遗忘曲线复习」
+chk(!/按遗忘曲线复习/.test(read('js/chrome.js')), 'chrome.js 里不再硬编码「按遗忘曲线复习」');
+// 需求：用户不填名字也要显示「跬步 Ashley的古诗词」
+chk(/DEFAULT_USER\s*=\s*"Ashley"/.test(app), 'app.js 定义默认用户名 Ashley');
+chk(/username\s*==\s*null \? "" : settings\.username\)\.trim\(\)\s*\|\|\s*DEFAULT_USER|\|\| DEFAULT_USER/.test(app),
+  '用户名留空时回落到默认名 Ashley');
+// 需求：播放栏四个按钮变圆形边框
+const cssPb = css.slice(css.lastIndexOf('.player-bar {'));
+chk(/\.pb-btn \{[\s\S]{0,300}?border-radius:\s*50%/.test(cssPb), '播放栏按钮是正圆（border-radius: 50%）');
+chk(/\.pb-btn \{[\s\S]{0,400}?border:\s*1px solid rgba\(253, 248, 234/.test(cssPb), '圆形按钮有一圈细描边');
+chk(!/\.pb-toggle \{[\s\S]{0,200}?border-radius:\s*10px/.test(cssPb), '播放键不再是圆角方形基座');
+// 需求：古诗词详情页与小古文详情页同一套工具条
+chk(/id="m-actions-main"/.test(html) && /id="m-actions-icons"/.test(html),
+  '详情页工具条分两行（对齐/字号/注音 + 播放组合键/译文开关）');
+chk(/id="m-align-seg"/.test(html), '详情页有左/中/右对齐组合按钮');
+chk(/id="m-font-seg"/.test(html) && /id="m-font-down"/.test(html) && /id="m-font-up"/.test(html),
+  '详情页有 A－ / A＋ 组合按钮');
+chk(/id="m-trans-read"/.test(html), '详情页有白话译文朗读（组合键右段）');
+chk(/id="m-trans-text"/.test(html), '详情页有白话译文段落');
+chk(!/id="gw-done"/.test(html), '古诗词详情页不设「已读」按钮（与小古文唯一区别）');
+// 需求：古诗正文默认字号小一号
+chk(/\.poem-text \{[\s\S]{0,200}?font-size:\s*17px/.test(css), '古诗正文默认字号降为 17px');
+chk(/\.poem-text\[data-align="left"\]/.test(css) && /\.poem-text\[data-align="right"\]/.test(css),
+  '古诗正文支持左 / 右对齐切换');
+// 需求：详情页三个评价按钮不被底部页签挡住
+chk(/\.modal-box \{[\s\S]{0,400}?max-height:\s*calc\(88vh - 62px/.test(css),
+  '弹层高度扣掉底部页签，最后的评价按钮不被压住');
+chk(/body\.no-dock \.modal-box \{ max-height: 88vh; \}/.test(css),
+  '法务页等无页签页面，弹层照旧铺到底边附近');
+// 需求：小古文阅读器顶栏与其他页面统一
+chk(/\.reader-back \{[\s\S]{0,400}?border-radius:\s*50%/.test(classicCss),
+  '阅读器返回键改成与全站一致的圆形动作位');
+chk(/\.reader-progress \{[\s\S]{0,120}?text-align:\s*center/.test(classicCss),
+  '进度精确居中（而不是既没靠右也没居中）');
+chk(/\.reader-bar-count \{[\s\S]{0,80}?width:\s*40px/.test(classicCss),
+  '右侧等宽占位，保证进度真的落在屏幕正中');
 
 /* ---------------- 3. 传统色（宋代） ---------------- */
 chk(/宋代/.test(css), '配色注释标明宋代取色');

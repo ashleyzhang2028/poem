@@ -72,7 +72,8 @@ setTimeout(() => {
   chk(/已读|标记/.test(d.querySelector('#gw-done-text').textContent), '阅读器内有「标记已读」按钮');
   /* ---------- 导航：与首页同一套顶栏 + 底部页签（本次重做） ---------- */
   chk(d.querySelector('.brand-text h1').textContent === '跬步', '小古文页顶栏第一行同样是「跬步」（全站一致）');
-  chk(/小古文/.test(d.querySelector('#brand-sub').textContent), '第二行标明当前页是小古文：' + d.querySelector('#brand-sub').textContent);
+  chk(d.querySelector('#brand-page-text').textContent === '小古文',
+    '页面名紧随「跬步」右侧：' + d.querySelector('#brand-page-text').textContent);
   chk(d.title === '小古文 · 跬步', '小古文页标题为「小古文 · 跬步」（实际 ' + d.title + '）');
   const dock = d.querySelector('#site-dock');
   chk(!!dock, '小古文页有底部导航栏');
@@ -89,8 +90,11 @@ setTimeout(() => {
   const htmlSrc = fs.readFileSync(path + 'classic.html', 'utf8');
   chk(!/不排复习日期/.test(htmlSrc), '页面里不再出现「不排复习日期」这类说明');
   chk(!/想读哪篇点哪篇[。．]/.test(htmlSrc.replace(/<p>.*?<\/p>/, '')), '不再有婆婆妈妈的说明段落');
-  chk(d.querySelector('.brand-text p').textContent === '小古文 · 100 篇想读哪篇点哪篇',
-    '顶部副标题精简，且点明当前页面（实际 ' + d.querySelector('.brand-text p').textContent + '）');
+  // 需求：「小古文 · 」挪到「跬步」右侧，且不再重复「·」这层标点
+  chk(d.querySelector('#brand-sub').textContent === '',
+    '顶栏第二行不再重复页面说明（实际 ' + JSON.stringify(d.querySelector('#brand-sub').textContent) + '）');
+  chk(d.querySelector('#brand-page-text').textContent === '小古文',
+    '页面名就是「小古文」，由 CSS 的 ::before 生成分隔符（不再写死标点）');
   chk(d.querySelectorAll('#gw-list .item .item-reason.review').length === 0, '列表里没有「复习」标签，不做复习排期');
 
   // 需求 3：按主题分类聚合，不再按原书目录顺序
@@ -202,14 +206,15 @@ setTimeout(() => {
   // 回归：译文开关按钮的读屏文案写在 #rd-trans-toggle-text，
   // 不能与可见译文段落 #rd-trans-text 共用同一个 id（曾因重复 id 导致译文空白）
   chk(d.querySelectorAll('[id="rd-trans-text"]').length === 1, 'id rd-trans-text 唯一，不与按钮读屏文案冲突');
-  chk(d.querySelector('#rd-trans-toggle-text').textContent === '隐藏译文', '读屏文案同步为「隐藏译文」');
+  chk(d.querySelector('#rd-trans-toggle-text').textContent === '收起译文', '读屏文案同步为「收起译文」');
   chk(d.querySelector('#rd-trans-text').textContent.length > 20, '白话译文段落有内容（不空白）');
 
   // 标记已读
   d.querySelector('#gw-done').dispatchEvent(new window.Event('click', { bubbles: true }));
   chk(/已读，再点一次取消/.test(d.querySelector('#gw-done-text').textContent), '标记后读屏文案变为「已读，再点一次取消」');
   chk(d.querySelector('#gw-done').classList.contains('is-done'), '标记已读按钮进入高亮态');
-  chk(d.querySelector('#rd-done-text').textContent === '已读', '顶栏右侧显示「已读」小字');
+  chk(d.querySelector('#rd-done-text').textContent === '✓',
+    '顶栏右侧是等宽占位，已读时点一个小勾（让进度精确居中）');
   const store = JSON.parse(window.localStorage.getItem('poem_classic_read_v1'));
   chk(store['gw-17'] && store['gw-17'].read === true, '已读状态写入 localStorage（独立于古诗词进度）');
   chk(!window.localStorage.getItem('poem_recite_progress_v1'), '不会写古诗词进度 key，两边互不干扰');
@@ -283,9 +288,9 @@ setTimeout(() => {
   const iconBtnBlock = /(^|\n)\.icon-row > \.mini-btn \{([\s\S]*?)\}/.exec(actionsCss);
   chk(!!iconBtnBlock && /line-height:\s*0;/.test(iconBtnBlock[2]),
     '图标按钮压掉行盒基线留白（line-height: 0），图标才真居中');
-  chk(/(^|\n)\.reader-actions\.icon-row \{([\s\S]*?)\}/.exec(actionsCss) &&
-    /justify-content:\s*center;/.test(/(^|\n)\.reader-actions\.icon-row \{([\s\S]*?)\}/.exec(actionsCss)[2]),
-    '第二排整行水平居中');
+  // 需求：两排按钮都整行居中（与小古文正文、古诗正文共用同一条中轴）
+  const actionsRow = /(^|\n)\.reader-actions \{([\s\S]*?)\}/.exec(actionsCss);
+  chk(!!actionsRow && /justify-content:\s*center;/.test(actionsRow[2]), '工具条两行都整行水平居中');
   chk(/(^|\n)\.icon-row \.combo-seg \+ \.combo-seg \{[^}]*border-left/.test(actionsCss),
     '组合键两段之间用界行细线分隔（不是两个独立按钮）');
   chk(/\.done-btn\.is-done/.test(actionsCss), '「标记已读」按钮有已读高亮态');

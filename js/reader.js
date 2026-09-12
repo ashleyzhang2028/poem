@@ -65,12 +65,10 @@
       '<div class="pb-now" id="rp-now"></div>' +
       '<div class="pb-next" id="rp-next-title"></div>' +
       "</div>" +
-      '<div class="pb-controls">' +
       '<button type="button" class="pb-btn pb-side" id="rp-prev" aria-label="上一首" title="上一首">' + iconPrev() + "</button>" +
       '<button type="button" class="pb-btn pb-toggle" id="rp-toggle" aria-label="暂停" title="暂停">' + iconPause() + "</button>" +
       '<button type="button" class="pb-btn pb-side" id="rp-next" aria-label="下一首" title="下一首">' + iconNext() + "</button>" +
-      '<button type="button" class="pb-btn pb-side pb-stop" id="rp-stop" aria-label="停止朗读" title="停止">' + iconStop() + "</button>" +
-      "</div>";
+      '<button type="button" class="pb-btn pb-side pb-stop" id="rp-stop" aria-label="停止朗读" title="停止">' + iconStop() + "</button>";
     document.body.appendChild(el);
 
     elNow = $("#rp-now");

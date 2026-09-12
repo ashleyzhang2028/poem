@@ -6,14 +6,13 @@
  *   各不一样，用户「不知道自己站在哪、下一层能去哪」。这里把三页的
  *   导航收敛成同一套：
  *
- *   ┌──────────────────────────────┐
- *   │  〔徽标〕 跬步                │  ← 第一行：logo + 应用名（全站一致）
- *   │          小古文              │     第二行：当前页面名（从小窗进入该页）
- *   ├──────────────────────────────┤
- *   │  …页面内容…                  │
- *   ├──────────────────────────────┤
- *   │  古诗词   小古文   设置      │  ← 底部三页签：页面身份的锚点
- *   └──────────────────────────────┘
+ *   ┌──────────────────────────────────┐
+ *   │  〔徽标〕 跬步 · 小古文       [↩] │  ← 同一行、同一字体：应用名 · 当前页名
+ *   ├──────────────────────────────────┤
+ *   │  …页面内容…                      │
+ *   ├──────────────────────────────────┤
+ *   │  古诗词    小古文    设置        │  ← 底部三页签：页面身份的锚点
+ *   └──────────────────────────────────┘
  *
  * 设计取向（宋式美学）：
  *   · 徽标 = 双鱼纹（宋瓷、宋锦上最常见的「鱼」谐音「余」，也呼应「跬步」的耐心）
@@ -84,7 +83,9 @@
 
   /* ---------------- 页面身份 ---------------- */
   var APP_NAME = "跬步";
-  var DEFAULT_SUB = "一年级至高三 · 按遗忘曲线复习";
+  /* 首页第一行已经写明「跬步 · 「用户名」的古诗词」，第二行不再重复抄一遍，
+     只有页面自己用 data-sub 额外给了说明时才显示。 */
+  var DEFAULT_SUB = "";
 
   function bodyData(key) {
     var el = document.body;
@@ -137,16 +138,30 @@
         '<span class="top-act-icon" aria-hidden="true">' + GLYPHS.back + "</span></a>";
     }
 
-    // 品牌：徽标 + 「跬步」；当前页名另起一行，不再和副标题挤在一起
+    // 品牌：徽标 + 「跬步 · 当前页名」——同一行、同一字体，读起来是一句话
+    // 页面名由页面用 data-page 给出（首页由 app.js 写成「XX的古诗词」）
+    var page = pageTitle();
+    var pageHtml =
+      '<span class="brand-page" id="brand-page">' +
+      '<span class="brand-page-text" id="brand-page-text">' + escapeHtml(page) + "</span>" +
+      "</span>";
+
     return (
       '<div class="brand">' +
       '<span class="brand-icon brand-mark" aria-hidden="true">' + markSvg() + "</span>" +
       '<span class="brand-text">' +
-      '<span class="brand-name-row"><h1 id="brand-name">' + APP_NAME + "</h1></span>" +
+      '<span class="brand-name-row"><h1 id="brand-name">' + APP_NAME + "</h1>" + pageHtml + "</span>" +
       '<p class="brand-sub" id="brand-sub">' + escapeHtml(sub) + "</p>" +
       "</span>" +
       "</div>" + right
     );
+  }
+
+  /** 第一行里的页面名：首页是「「用户名」的古诗词」，其余页用 data-page */
+  function pageTitle() {
+    var v = bodyData("page");
+    if (v != null) return v;
+    return pageKey() === "classic" ? "小古文" : "";
   }
 
   function escapeHtml(s) {
@@ -155,7 +170,6 @@
     });
   }
 
-  /** 页面名（小古文 / 用户协议 …）显示在 logo 右侧 */
   /* ---------------- 渲染：底部三页签 ---------------- */
   function dockHtml() {
     var key = pageKey();

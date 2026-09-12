@@ -158,17 +158,21 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
     const w4 = boot('index.html', null, true);
     await sleep(400);
     const d4 = w4.document;
+    // 需求：古诗词详情页与小古文详情页统一成「原文 / 译文」组合键
     const readBtn = d4.querySelector('#m-read-btn');
-    chk(!!readBtn.querySelector('svg'), '详情页朗读按钮仍是「小喇叭」图标');
-    chk(d4.querySelector('#m-read-text').textContent === '朗读', '详情页朗读按钮仍带「朗读」文字');
+    chk(!!readBtn.querySelector('svg'), '详情页朗读按钮是 SVG 播放图标');
+    chk(d4.querySelector('#m-read-text').textContent === '原文', '组合键左段文案为「原文」');
+    chk(d4.querySelectorAll('#m-read-combo .combo-seg').length === 2,
+      '组合键正好两段：原文 / 译文');
     d4.querySelector('#today-list .item').dispatchEvent(new w4.Event('click', { bubbles: true }));
     readBtn.dispatchEvent(new w4.Event('click', { bubbles: true }));
     await sleep(30);
     chk(w4.speechSynthesis.speaking === true, '详情页朗读按钮照常发声');
-    chk(d4.querySelector('#m-read-text').textContent === '停止朗读', '朗读中按钮文案为「停止朗读」');
+    chk(readBtn.dataset.on === '1', '朗读中左段点亮（⏸）');
+    chk(d4.querySelector('#m-read-combo').dataset.on === '1', '组合键整体进入朗读态');
     readBtn.dispatchEvent(new w4.Event('click', { bubbles: true }));
     await sleep(30);
-    chk(d4.querySelector('#m-read-text').textContent === '朗读', '再点一次停止并恢复「朗读」');
+    chk(readBtn.dataset.on === '0', '再点一次停止并复位按钮');
   }
 
   // 单首朗读

@@ -7,7 +7,7 @@
  *   3. 邮箱 kuibuapp@163.com 不出现在 HTML / JS 静态源码里，
  *      只能由 js/contact.js 在运行时拼装出来（防搜索引擎抓取）；
  *   4. 更新时间精确到「年月日」，且与 <time datetime> 一致；
- *   5. 新增匿名访问统计后，两份条款都要同步披露（不能偷偷统计）。
+ *   5. **不**存在访问统计：admin 页与统计脚本已删除，条款里也不得再提（不能偷偷统计）。
  */
 const { JSDOM } = require('jsdom');
 const fs = require('fs');
@@ -20,7 +20,7 @@ const read = f => fs.readFileSync(path + f, 'utf8');
 const MAIL = 'kuibuapp@163.com';
 
 /* ---------- 一、静态源码里不能有明文邮箱 ---------- */
-['index.html', 'classic.html', 'admin.html', 'terms.html', 'privacy.html', 'js/contact.js', 'js/stats.js', 'js/admin.js', 'sw.js']
+['index.html', 'classic.html', 'terms.html', 'privacy.html', 'js/contact.js', 'js/chrome.js', 'sw.js']
   .forEach(f => {
     const src = read(f);
     chk(!src.includes(MAIL), f + ' 源码不含明文邮箱');
@@ -92,10 +92,9 @@ setTimeout(() => {
     chk(!/更新于 2026 年$/.test(d.querySelector('.brand-sub').textContent),
       '页首不再只写「更新于 2026 年」');
 
-    // 需求 7：新增匿名访问统计后，协议必须披露
-    chk(/访问统计/.test(t), '用户协议披露了「访问统计」');
-    chk(/匿名访问/.test(t), '明确说明记录的是「匿名访问」');
-    chk(/详见《隐私条款》|隐私条款/.test(t), '访问统计指向隐私条款细看');
+    // 需求：访问统计已整体删除，协议里不得再出现相关描述
+    chk(!/访问统计|匿名访问|匿名编号/.test(t), '用户协议不再出现访问统计相关描述');
+    chk(d.title === '跬步 · 用户协议', '用户协议页标题为「跬步 · 用户协议」（实际 ' + d.title + '）');
   }
 
   /* --- 隐私条款 --- */
@@ -120,13 +119,10 @@ setTimeout(() => {
     chk(!!up && /^\d{4}-\d{2}-\d{2}$/.test(up.getAttribute('datetime')),
       '隐私条款 <time datetime> 完整');
 
-    // 需求 7：访问统计的口径与边界必须写清楚
-    chk(/匿名访问数|匿名访问/.test(t), '隐私条款写明「匿名访问数」');
-    chk(/随机生成的匿名编号|匿名编号/.test(t), '说明只用一个随机匿名编号去重');
-    chk(/不记录 IP/.test(t), '明确不记录 IP');
-    chk(!/无统计 SDK、无用户画像、无广告联盟/.test(t) || /匿名访问/.test(t),
-      '「无统计 SDK」的表述与匿名访问统计不再自相矛盾');
-    chk(/统计存放|公开数据文件/.test(t), '说明统计结果的存放位置');
+    // 需求：访问统计相关条款整段删除，且前后表述不再自相矛盾
+    chk(!/访问统计|匿名访问|匿名编号|统计存放/.test(t), '隐私条款不再出现访问统计相关描述');
+    chk(/无统计脚本/.test(t), '明确声明无统计脚本');
+    chk(d.title === '跬步 · 隐私条款', '隐私条款页标题为「跬步 · 隐私条款」（实际 ' + d.title + '）');
   }
 
   /* --- 邮箱：运行时才出现，且点击可复制 --- */
@@ -157,21 +153,13 @@ setTimeout(() => {
   chk(/terms\.html/.test(read('sw.js')) && /privacy\.html/.test(read('sw.js')),
     'Service Worker 预缓存了两个法务页（断网也能打开）');
 
-  /* --- 管理页：只有知道路径的人能进，且不对外索引 --- */
+  /* --- 访问统计：整体删除，不留残骸 --- */
   {
-    const admin = load('admin.html');
-    setTimeout(() => {
-      const d = admin.doc;
-      chk(/访问统计/.test(d.title), '管理页标题正确（' + d.title + '）');
-      chk(d.querySelector('meta[name="robots"]').getAttribute('content').includes('noindex'),
-        '管理页声明 noindex，不会被搜索引擎收录');
-      chk(!!d.querySelector('#ad-token'), '管理页可配置仓库令牌（可选）');
-      chk(!!d.querySelector('#ad-pending'), '管理页能看到本机待同步条数');
-      const hrefs = [...d.querySelectorAll('a')].map(a => a.getAttribute('href'));
-      chk(!hrefs.some(h => h && /admin\.html/.test(h)), '没有任何页面主动链接到管理页');
-      chk(read('index.html').indexOf('admin.html') === -1 &&
-          read('classic.html').indexOf('admin.html') === -1, '首页与小古文页都不暴露管理页路径');
-    }, 0);
+    ['admin.html', 'js/admin.js', 'js/stats.js', 'css/admin.css', 'data/visits.json']
+      .forEach(f => chk(!fs.existsSync(path + f), '访问统计相关文件已删除：' + f));
+    ['index.html', 'classic.html', 'terms.html', 'privacy.html', 'sw.js'].forEach(f => {
+      chk(!/stats\.js|admin\.html|visits\.json/.test(read(f)), f + ' 不再引用被删除的统计文件');
+    });
   }
 
   console.log(fails === 0 ? '\n🎉 用户协议 / 隐私条款测试全部通过' : '\n❌ ' + fails + ' 项失败');
