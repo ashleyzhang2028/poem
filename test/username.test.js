@@ -59,11 +59,13 @@ function boot(seed) {
   // 用户名原样文本渲染，不被当成 HTML 解析执行
   chk(brand.textContent.indexOf('<b>坏</b>') > 0, '用户名按纯文本渲染（textContent 保留原始字符）');
 
-  // 5. 需求 14：首页小古文入口可隐藏，且刷新后保持
+  // 5. 需求：首页小古文入口卡片已删除，旧的 classicEntry 设置也不再影响页面
   r = await boot({ poem_recite_settings_v1: JSON.stringify({ grade: 1, term: 1, dailyCount: 5, classicEntry: 'hide' }) });
-  chk(r.d.querySelector('#classic-entry').hidden === true, '设置 classicEntry=hide 时首页隐藏小古文入口');
+  chk(r.d.querySelector('#classic-entry') === null, '首页已无小古文入口卡片（旧设置不再需要）');
+  chk(!!r.d.querySelector('.dock-item[data-nav-go="classic"]'), '小古文入口仍在底部页签上，可正常进入');
   r = await boot({ poem_recite_settings_v1: JSON.stringify({ grade: 1, term: 1, dailyCount: 5 }) });
-  chk(r.d.querySelector('#classic-entry').hidden === false, '旧版设置无 classicEntry 时默认显示入口');
+  chk(r.d.querySelector('#classic-entry') === null, '旧版设置（无 classicEntry）下首页同样没有入口卡片');
+  chk(r.d.querySelector('#today-list').querySelectorAll('.item').length === 5, '页面其余部分照常渲染');
 
   console.log(fails === 0 ? '\n🎉 刷新/兼容测试全部通过' : '\n❌ ' + fails + ' 项失败');
   process.exit(fails ? 1 : 0);

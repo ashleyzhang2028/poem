@@ -33,8 +33,11 @@ setTimeout(() => {
   chk(/按遗忘曲线复习/.test(d.querySelector('#brand-sub').textContent),
     '顶栏第二行写明复习方式（实际 ' + d.querySelector('#brand-sub').textContent + '）');
   chk(d.querySelector('#all-label').textContent === '本年级本学期全部诗词', '全部诗词标题精确为「本年级本学期全部诗词」');
-  // 顶栏图标：徽标 + 设置 + 全部诗词，全部是内联 SVG
-  chk(d.querySelectorAll('.brand-icon svg, #btn-settings svg, .collapse-icon svg').length === 3, '顶部/设置/全部诗词图标均为 SVG');
+  // 顶栏图标：徽标 + 全部诗词折叠图标，全部是内联 SVG
+  chk(d.querySelectorAll('.brand-icon svg, .collapse-icon svg').length === 2, '顶栏徽标与全部诗词图标均为 SVG');
+  // 需求：首页右上角的「设置」齿轮删除（底部第三个页签就是设置，两个入口重复）
+  chk(d.querySelector('.topbar #btn-settings') === null, '首页右上角不再有设置齿轮（交给底部页签）');
+  chk(d.querySelector('.topbar .icon-btn') === null, '顶栏不再有圆形图标按钮（设置入口已删）');
 
   /* ---------- 导航：顶栏 + 底部三页签（本次重做） ---------- */
   chk(!!d.querySelector('.topbar .brand-icon svg'), '顶栏有 logo（内联 SVG 徽标）');
@@ -58,28 +61,22 @@ setTimeout(() => {
   chk(!!d.querySelector('#settings-modal #seg-stage'), '学段选择已移入设置');
   chk(!!d.querySelector('#settings-modal #seg-term'), '学期选择已移入设置');
   chk(!!d.querySelector('#settings-modal #grade-chips'), '年级选择已移入设置');
-  // 小古文入口：独立页面，不进每日计划，位置在「本年级本学期全部诗词」之后
-  const entry = d.querySelector('#classic-entry');
-  chk(!!entry, '首页有「小古文」入口');
-  chk(entry.getAttribute('href') === './classic.html', '入口指向 classic.html');
-  chk(d.querySelector('.classic-title').textContent === '小古文', '入口主标题为「小古文」');
-  chk(!/课外必背/.test(entry.textContent), '入口不再出现「课外必背」字样');
-  chk(/100 篇/.test(entry.textContent), '入口标明 100 篇：' + entry.textContent.replace(/\s+/g, ' ').trim());
-  // 需求 3：入口不再出现「《三字经》《世说新语》等 100 篇 · 可注音朗读，不排复习」这类解释性长文案
-  chk(!/三字经|世说新语|不排复习|注音朗读/.test(entry.textContent), '入口文案精简，不再罗列书名与说明');
+  // 需求：首页下方的「小古文」入口卡片删除（底部页签已承担入口，卡片重复）
+  chk(d.querySelector('#classic-entry') === null, '首页不再有小古文入口卡片');
+  chk(d.querySelector('.classic-entry') === null, '首页不再有小古文入口卡片（classic-entry 已删）');
+  chk(d.querySelector('#classic-title') === null && d.querySelector('.classic-title') === null,
+    '不再渲染小古文入口标题');
+  chk(d.querySelector('#seg-classic-entry') === null, '设置里不再有「首页小古文入口」选项（入口已删）');
+  chk(!/首页小古文入口/.test(d.querySelector('#settings-modal').textContent),
+    '设置面板文案里不再出现「首页小古文入口」');
   chk(d.querySelector('#all-count').textContent === '5', '小古文不会混进古诗词列表（仍为 5 首）');
-  // 位置：全部诗词面板（.all-section）在前，小古文入口紧跟其后
-  const allSection = d.querySelector('.all-section');
-  chk(!!allSection && allSection.compareDocumentPosition(entry) & window.Node.DOCUMENT_POSITION_FOLLOWING,
-    '小古文入口位于「本年级本学期全部诗词」面板下方');
+  // 底部页签的「小古文」仍是唯一入口，指向独立页面
+  const dockClassicCount = [...dock.querySelectorAll('.dock-item')].filter(b => b.dataset.navGo === 'classic').length;
+  chk(dockClassicCount === 1, '小古文入口只剩底部页签一处');
 
-  // 先打开设置才能操作年级/学期
-  d.querySelector('#btn-settings').dispatchEvent(new window.Event('click', { bubbles: true }));
-  chk(d.querySelector('#settings-modal').hidden === false, '首页即可打开设置');
-  d.querySelector('[data-close]').dispatchEvent(new window.Event('click', { bubbles: true }));
-  // 底部页签的「设置」也能打开同一个面板
+  // 先打开设置才能操作年级/学期；入口只剩底部页签的「设置」
   d.querySelector('.dock-item[data-nav-go="settings"]').dispatchEvent(new window.Event('click', { bubbles: true }));
-  chk(d.querySelector('#settings-modal').hidden === false, '底部页签「设置」也能打开设置面板');
+  chk(d.querySelector('#settings-modal').hidden === false, '底部页签「设置」能打开设置面板');
   d.querySelector('[data-close]').dispatchEvent(new window.Event('click', { bubbles: true }));
   chk(d.querySelectorAll('#grade-chips button').length === 6, '小学显示 6 个年级按钮');
   chk(d.querySelectorAll('#today-list .item').length === 5, '今日列表渲染 5 首（实际 ' + d.querySelectorAll('#today-list .item').length + '）');
@@ -154,7 +151,7 @@ setTimeout(() => {
 
   // 设置
   d.querySelector('#settings-modal').hidden = true;
-  d.querySelector('#btn-settings').dispatchEvent(new window.Event('click', { bubbles: true }));
+  d.querySelector('.dock-item[data-nav-go="settings"]').dispatchEvent(new window.Event('click', { bubbles: true }));
   chk(d.querySelector('#settings-modal').hidden === false, '设置弹层打开');
   chk(d.querySelector('#settings-modal #seg-stage').querySelector('button.active').dataset.stage === 'high', '设置中回显当前学段高中');
 

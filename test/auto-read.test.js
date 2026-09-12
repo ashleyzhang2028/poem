@@ -188,7 +188,7 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
   // ---- 阅读辅助开关的可见差别 ----
   // 开启（默认「只标生字」）→ 打开诗词自动注音；关闭 → 纯文本，需要时手动切档位
   const clickHelper = (v) => {
-    d.querySelector('#btn-settings').dispatchEvent(new w.Event('click', { bubbles: true }));
+    d.querySelector('.dock-item[data-nav-go="settings"]').dispatchEvent(new w.Event('click', { bubbles: true }));
     [...d.querySelectorAll('#seg-helper button')].find(b => b.dataset.helper === v)
       .dispatchEvent(new w.Event('click', { bubbles: true }));
     d.querySelector('#settings-modal').hidden = true;
@@ -275,9 +275,35 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
   chk(!!c.querySelector('#rd-font-down') && !!c.querySelector('#rd-font-up'),
     'A－ / A＋ 字号按钮还在（此前被合并丢掉）');
   chk(!!c.querySelector('#rd-align-seg'), '正文对齐组合按钮在');
-  chk(!!rowIcons && rowIcons.children.length === 4, '下一行：朗读 / 译文 / 播放译文 / 标记已读 四个图标按钮都在');
+  chk(!!rowIcons && rowIcons.children.length === 3, '下一行：朗读组合键 / 译文开关 / 标记已读 三组都在（实际 ' + (rowIcons ? rowIcons.children.length : 0) + '）');
+  chk(!!c.querySelector('#rd-read-combo'), '原文与译文朗读合并成一个组合键（不再两个独立播放键）');
+  chk(c.querySelectorAll('#rd-read-combo .combo-seg').length === 2,
+    '组合键正好两段：原文 / 译文');
   chk(!!c.querySelector('#rd-trans-read') && !c.querySelector('#rd-trans-read').disabled,
-    '「播放译文」按钮已并到工具条，且有语音环境时可用（译文区不再单放一个）');
+    '组合键右段「译文」在有语音环境时可用');
+  // 固定打开第一篇（人之初），避免受「随机连读」停留位置影响
+  w2.Speech.stop();
+  c.querySelector('#gw-back').dispatchEvent(new w2.Event('click', { bubbles: true }));
+  await sleep(20);
+  c.querySelector('#gw-list .item').dispatchEvent(new w2.Event('click', { bubbles: true }));
+  await sleep(30);
+  chk(c.querySelector('#rd-title').textContent === '人之初', '回到第一篇「人之初」再验证组合键');
+  // 点右段应只读译文，并把译文框自动展开
+  c.querySelector('#rd-trans-read').dispatchEvent(new w2.Event('click', { bubbles: true }));
+  await sleep(30);
+  chk(!/人之初/.test(w2.speechSynthesis._spoken.text), '点「译文」只读译文，不读原文');
+  chk(c.querySelector('#rd-trans').hidden === false, '点「译文」会自动展开译文框');
+  chk(c.querySelector('#rd-trans-read').dataset.on === '1' && c.querySelector('#rd-read-btn').dataset.on === '0',
+    '正在读译文 → 只有右段点亮');
+  w2.Speech.stop();
+  await sleep(30);
+  c.querySelector('#rd-read-btn').dispatchEvent(new w2.Event('click', { bubbles: true }));
+  await sleep(30);
+  chk(/人之初/.test(w2.speechSynthesis._spoken.text), '点「原文」读的是原文');
+  chk(c.querySelector('#rd-read-btn').dataset.on === '1' && c.querySelector('#rd-trans-read').dataset.on === '0',
+    '正在读原文 → 只有左段点亮');
+  w2.Speech.stop();
+  await sleep(30);
   chk(!c.querySelector('#rd-trans .trans-read'), '译文区里不再重复放朗读按钮');
   chk(!!c.querySelector('#gw-done.sr-only') === false && !!c.querySelector('#rd-actions-icons #gw-done'),
     '「标记已读」并到工具条里（SVG 勾选图标）');
@@ -316,7 +342,7 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
     '设置面板里的开关 UI 同步为「开启」');
   d3.querySelector('#modal').hidden = true;
   // 反向：设置里关掉 → 弹层应为纯文本
-  d3.querySelector('#btn-settings').dispatchEvent(new w3.Event('click', { bubbles: true }));
+  d3.querySelector('.dock-item[data-nav-go="settings"]').dispatchEvent(new w3.Event('click', { bubbles: true }));
   [...d3.querySelectorAll('#seg-helper button')].find(b => b.dataset.helper === 'off')
     .dispatchEvent(new w3.Event('click', { bubbles: true }));
   d3.querySelector('#settings-modal').hidden = true;
