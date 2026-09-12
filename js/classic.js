@@ -72,6 +72,9 @@
 
   const MATCH_GROUP = "课外必背";
 
+  /** 应用名固定为「跬步」 */
+  const APP_NAME = "跬步";
+
   let current = null;
   let keyword = "";
   let filter = "all";
@@ -104,6 +107,30 @@
     if (!cfg || typeof cfg !== "object") cfg = {};
     cfg.helper = on ? "on" : "off";
     localStorage.setItem("poem_recite_settings_v1", JSON.stringify(cfg));
+  }
+
+  /**
+   * 标题与副标题：「跬步 · 小古文」+ 想读哪篇点哪篇。
+   * 与首页一致，填过用户名时带上（跬步 · 小明的古诗词 · 小古文）。
+   */
+  function applyAppName() {
+    let username = "";
+    try {
+      username = String((JSON.parse(localStorage.getItem("poem_recite_settings_v1") || "{}") || {}).username || "").trim();
+    } catch (e) {
+      username = "";
+    }
+    const title = username ? APP_NAME + " · " + username + "的古诗词 · 小古文" : APP_NAME + " · 小古文";
+    document.title = title;
+    // 顶栏第一行固定为应用名「跬步」，页面名（小古文）紧随其右、
+    // 样式上以「·」相连，视觉上就是「跬步 · 小古文」——不把页面名塞进 h1，
+    // 否则进小古文页顶栏会变成「跬步 · 小古文 · 小古文」。
+    $$('meta[name="apple-mobile-web-app-title"]').forEach(function (m) {
+      m.setAttribute("content", title);
+    });
+    // 标题行下面是副标题：小古文 · 想读哪篇点哪篇
+    const sub = $("#brand-sub");
+    if (sub) sub.textContent = "小古文 · 想读哪篇点哪篇";
   }
 
   /* ---------------- 进度存储（与古诗词进度相互独立） ---------------- */
@@ -214,7 +241,7 @@
 
   /** 列表里高亮所有「正在播放」的条目 */
   function syncItemPlayBtns() {
-    const playing = speechSupported() && !!window.Speech.speaking();
+    const playing = readingActive();
     $$("#gw-list .item-read").forEach(function (b) {
       b.dataset.on = playing ? "1" : "0";
     });
@@ -226,7 +253,8 @@
       showToast("当前浏览器不支持语音朗读");
       return;
     }
-    if (window.Speech.speaking()) {
+    // 再点一次 = 停止当前朗读（含已暂停的情况）
+    if (readingActive()) {
       autoReading = false;
       window.Speech.stop();
       if (window.ReaderPlayer) window.ReaderPlayer.close();
@@ -235,10 +263,8 @@
       const ok = window.Speech.speak(speechText(p));
       showToast(ok ? "开始朗读《" + p.title + "》" : "朗读启动失败，请重试");
     }
-    syncItemPlayBtns();
-    syncReadButtons();
-    syncRandomReadButton();
-    setTimeout(syncItemPlayBtns, 80);
+    syncAllReadState();
+    setTimeout(syncAllReadState, 80);
   }
 
   function speakGlyph(cls) {
@@ -437,13 +463,41 @@
   }
 
   /**
+   * 当前是否有「朗读任务」在跑（**含暂停中**）。
+   * 只看 speaking() 会漏掉「已暂停」：部分设备 pause() 之后 speaking 会变成
+   * false，但队列 / 单条朗读还在，点按钮应当继续或停止，而不是又开一遍。
+   */
+  function readingActive() {
+    return !!(window.Speech && window.Speech.active && window.Speech.active());
+  }
+
+  /**
+   * 外部（测试 / 宿主页面 / 播放栏停止键）主动停止朗读后的兜底复位：
+   * 语音引擎的 cancel 事件并不保证一定回调，所以提供一个显式入口。
+   */
+  function handleSpeechStopped() {
+    if (window.Speech && window.Speech.active && window.Speech.active()) return;
+    autoReading = false;
+    clearHighlight();
+    syncAllReadState();
+  }
+
+  /** 一次同步所有朗读相关按钮（避免各处只同步一半） */
+  function syncAllReadState() {
+    syncReadButtons();
+    syncRandomReadButton();
+    syncItemPlayBtns();
+  }
+
+  /**
    * 同步正文那颗播放键：▶ 与 ⏸ 是**同一个按钮的两种状态**，
    * 播放中原地换成暂停，停下换回播放 —— 绝不同时并排出现两个图标。
    * 译文框里那颗键由 syncTransReadButton() 管，只在译文展开时可见。
    */
   function syncReadButtons() {
     const ok = speechSupported();
-    const playing = ok && !autoReading && !!window.Speech.speaking();
+    // 自动连读中不算「本篇朗读中」（避免按钮来回跳）；暂停中仍算朗读中，点它即停止
+    const playing = ok && !autoReading && readingActive();
 
     const btn = $("#rd-read-btn");
     if (btn) {
@@ -462,7 +516,9 @@
   /** 正文播放键：朗读原文（标题 + 朝代 + 作者 + 正文） */
   function toggleRead() {
     if (!speechSupported() || !current) return;
-    if (window.Speech.speaking()) {
+    // 再点一次 = 停止（暂停中同样能停），而不是叠一层新的朗读
+    if (readingActive()) {
+      autoReading = false;
       window.Speech.stop();
       showToast("已停止朗读");
     } else {
@@ -473,15 +529,16 @@
     // 点播放键即接管朗读：无论开始还是停止，都退出「随机连读」状态，
     // 否则 autoReading 残留会让播放键一直显示不出播放态
     autoReading = false;
-    syncReadButtons();
-    setTimeout(syncReadButtons, 60);
-    setTimeout(syncReadButtons, 300);
+    syncAllReadState();
+    setTimeout(syncAllReadState, 60);
+    setTimeout(syncAllReadState, 300);
   }
 
-  /** 译文播放键：只读白话译文，不读原文；译文没展开时顺手展开，省一次点击 */
+  /* 译文那颗 ▶ / ⏸ 由 syncTransReadButton() 统管，只读白话译文，
+     不读原文；译文没展开时点它会顺手展开，省一次点击 */
   function toggleTransRead() {
     if (!speechSupported() || !current) return;
-    if (window.Speech.speaking()) {
+    if (readingActive()) {
       window.Speech.stop();
       showToast("已停止朗读");
     } else {
@@ -495,6 +552,10 @@
       const ok = window.Speech.speak(t);
       showToast(ok ? "开始朗读译文" : "朗读启动失败，请重试");
     }
+    syncAllReadState();
+    setTimeout(syncAllReadState, 60);
+    setTimeout(syncAllReadState, 300);
+
     autoReading = false;
     syncReadButtons();
     setTimeout(syncReadButtons, 60);
@@ -535,7 +596,8 @@
     const boxOpen = !$("#rd-trans").hidden;
     btn.disabled = !ok;
     btn.title = ok ? "朗读白话译文" : "当前浏览器不支持语音朗读";
-    const on = ok && boxOpen && !autoReading && speakingTarget === "译文" && !!window.Speech.speaking();
+    // 暂停中仍是「在读译文」：按钮点下去就是停下来，不会再重读一遍
+    const on = ok && boxOpen && !autoReading && speakingTarget === "译文" && readingActive();
     btn.dataset.on = on ? "1" : "0";
     btn.setAttribute("aria-pressed", on ? "true" : "false");
     const label = $("#rd-trans-read-text");
@@ -581,8 +643,10 @@
     if (!btn) return;
     const ok = speechSupported();
     btn.disabled = !ok;
-    // 只有「连读队列真的还在跑」才算进行中：用户中途点「停止」时按钮要立刻复位
-    const running = autoReading && !!window.Speech && window.Speech.speaking();
+    // 只有「连读队列真的还在跑」才算进行中：用户中途点「停止」时按钮要立刻复位。
+    // 这里认 active()（含暂停中），不能只看 speaking()：部分设备暂停后 speaking 会变 false，
+    // 那样按钮会误判成「没在连读」，再点一下就会重新开一轮而不是停下来。
+    const running = autoReading && !!(window.Speech && window.Speech.active && window.Speech.active());
     btn.dataset.on = running ? "1" : "0";
     // 工具栏一行排满，文案精简成「连读 / 连读中」（完整说明在 title 里）
     $("#gw-random-read-text").textContent = running ? "连读中" : "连读";
@@ -609,7 +673,7 @@
       return;
     }
     // 再点一次 = 停止连读
-    if (autoReading && window.Speech.speaking()) {
+    if (autoReading && readingActive()) {
       window.Speech.stop();
       window.ReaderPlayer.close();
       autoReading = false;
@@ -646,6 +710,7 @@
         const p = list[i];
         if (!p) return;
         if (!current || current.id !== p.id) openReader(p);
+        syncRandomReadButton();
       },
       onEnd: function () {
         autoReading = false;
@@ -870,14 +935,12 @@
     const transReadBtn = $("#rd-trans-read");
     if (transReadBtn) transReadBtn.addEventListener("click", toggleTransRead);
 
+    // 播放栏上的「停止」按钮：用户主动停止连读后立刻复位
+    if (window.ReaderPlayer && window.ReaderPlayer.onStop) window.ReaderPlayer.onStop(handleSpeechStopped);
+
     // 语音朗读结束 / 被中止后同步按钮状态（含连读按钮的复位）
     if (window.speechSynthesis && window.speechSynthesis.addEventListener) {
-      const syncAll = function () {
-        if (!window.Speech.speaking()) autoReading = false;
-        syncReadButtons();
-        syncRandomReadButton();
-        syncItemPlayBtns();
-      };
+      const syncAll = function () { handleSpeechStopped(); };
       window.speechSynthesis.addEventListener("end", syncAll);
       window.speechSynthesis.addEventListener("cancel", syncAll);
     }
@@ -899,6 +962,7 @@
     }
     // 注音档位由总开关统一裁决（effectivePinyinMode），这里无需预写，
     // 保证「设置里关掉阅读辅助」在任何时候进阅读器都是纯文本。
+    applyAppName();
     bindEvents();
     bindSettings();
     renderList();
@@ -929,6 +993,8 @@
     align: alignMode,
     setAlign: setAlign,
     total: function () { return allItems().length; },
-    annotate: function () { return window.Pinyin ? window.Pinyin.annotateHtml(current ? current.text : "") : ""; }
+    annotate: function () { return window.Pinyin ? window.Pinyin.annotateHtml(current ? current.text : "") : ""; },
+    // 朗读被外部停止（例如系统打断、播放栏停止）后的兜底复位
+    onSpeechStopped: handleSpeechStopped
   };
 })();

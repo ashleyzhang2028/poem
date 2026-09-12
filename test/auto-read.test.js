@@ -16,6 +16,10 @@
  *   13. 白话译文可单独朗读
  *   15. 今日任务可连读（标题 + 朝代 + 作者 + 正文），单首也可朗读，
  *       小古文索引页可随机连读、读完自动跳下一篇，全程可暂停 / 停止
+ *   16. 详情页（诗词弹层 / 小古文阅读器）暂停后状态不错乱：
+ *       ▶ / ⏸ 是同一颗键的两态，暂停中仍是 ⏸（点它即停），
+ *       再点一次是停止而不是又叠一层朗读
+ *       （部分设备 pause 后 speaking 变 false，靠 Speech.active() 兜底）
  *
  * 运行：node test/auto-read.test.js
  */
@@ -273,6 +277,7 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
   await sleep(60);
   chk(c.querySelector('#rd-title').textContent !== firstId, '读完自动跳到下一篇（' + firstId + ' → ' + c.querySelector('#rd-title').textContent + '）');
   w2.Speech.stop();
+  w2.ClassicProse.onSpeechStopped();   // 语音引擎的 cancel 事件不保证回调，手动同步界面
   await sleep(80);
   chk(c.querySelector('#gw-random-read').dataset.on === '0', '停止后随机连读按钮复位');
   chk(c.querySelector('#gw-random-read-text').textContent === '连读', '按钮文案回到「连读」');
@@ -404,6 +409,62 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
   }
   chk(grade1WithRuby === total1,
     '一年级今日任务 ' + total1 + ' 首全部有注音（实际 ' + grade1WithRuby + ' 首）');
+
+  // ---- 详情页朗读 / 暂停 / 译文朗读：暂停后按钮状态不错乱、不叠一层朗读 ----
+  {
+    const w5 = boot('classic.html', null, true);
+    await sleep(400);
+    const d5 = w5.document;
+    d5.querySelector('#gw-list .item').dispatchEvent(new w5.Event('click', { bubbles: true }));
+    await sleep(20);
+    const readBtn = d5.querySelector('#rd-read-btn');
+
+    readBtn.dispatchEvent(new w5.Event('click', { bubbles: true }));
+    await sleep(20);
+    chk(w5.speechSynthesis._spoken !== null, '阅读器「朗读」能发起语音');
+    chk(readBtn.dataset.on === '1', '朗读中正文键进入播放态（原地换 ⏸）');
+
+    // 模拟部分设备：暂停后引擎把 speaking 置为 false
+    w5.Speech.pause();
+    w5.speechSynthesis.speaking = false;
+    chk(w5.Speech.paused() === true, '暂停后 Speech.paused() 为 true');
+    chk(w5.Speech.active() === true, '暂停中 Speech.active() 仍为 true（队列/单条都算在跑）');
+    chk(readBtn.dataset.on === '1', '暂停中按钮仍是 ⏸（暂停中再点就是停下来）');
+
+    const log = (w5.speechSynthesis._log = w5.speechSynthesis._log || []);
+    log.length = 0;
+    readBtn.dispatchEvent(new w5.Event('click', { bubbles: true }));
+    await sleep(20);
+    chk(log.length === 0, '暂停中再点「朗读」= 停止，不会再叠一层朗读（新语音 ' + log.length + ' 条）');
+    chk(readBtn.dataset.on === '0', '停止后按钮复位为 ▶');
+    chk(w5.Speech.active() === false, '停止后朗读状态清空');
+
+    // 译文朗读同样：暂停中再点 = 停止
+    d5.querySelector('#rd-trans-toggle').dispatchEvent(new w5.Event('click', { bubbles: true }));
+    await sleep(20);
+    const transBtn = d5.querySelector('#rd-trans-read');
+    transBtn.dispatchEvent(new w5.Event('click', { bubbles: true }));
+    await sleep(20);
+    w5.Speech.pause();
+    w5.speechSynthesis.speaking = false;
+    chk(transBtn.dataset.on === '1', '译文朗读暂停中按钮仍是 ⏸');
+    log.length = 0;
+    transBtn.dispatchEvent(new w5.Event('click', { bubbles: true }));
+    await sleep(20);
+    chk(log.length === 0, '译文朗读暂停中再点 = 停止，不会重读');
+    chk(transBtn.dataset.on === '0', '译文朗读按钮复位为 ▶');
+
+    // 列表单篇播放键同样：暂停中再点 = 停止
+    const itemBtn = d5.querySelector('#gw-list .item-read');
+    itemBtn.dispatchEvent(new w5.Event('click', { bubbles: true }));
+    await sleep(20);
+    w5.Speech.pause();
+    w5.speechSynthesis.speaking = false;
+    log.length = 0;
+    itemBtn.dispatchEvent(new w5.Event('click', { bubbles: true }));
+    await sleep(20);
+    chk(log.length === 0 && w5.Speech.active() === false, '列表播放键在暂停中再点 = 停止');
+  }
 
   console.log(fails ? '\n❌ ' + fails + ' 项失败' : '\n🎉 自动朗读 / 阅读辅助测试全部通过');
   process.exit(fails ? 1 : 0);
