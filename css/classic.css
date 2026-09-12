@@ -7,6 +7,12 @@
 .back-icon { text-decoration: none; }
 .back-icon svg { width: 26px; height: 26px; }
 
+/* 已读进度：顶栏下方右对齐的小牌，不占内容宽度 */
+.list-head {
+  display: flex;
+  justify-content: flex-end;
+  margin: -4px 0 10px;
+}
 .count-badge {
   background: var(--green-light);
   color: var(--green);

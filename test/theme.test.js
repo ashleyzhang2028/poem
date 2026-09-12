@@ -93,6 +93,33 @@ chk(!!listMetaBlock && /gap:\s*4px;/.test(listMetaBlock[2]), '列表副信息间
 const listMetaGaps = (css.match(/\.item-meta \{([\s\S]*?)\}/g) || []).filter(b => /gap:/.test(b));
 chk(listMetaGaps.every(b => !/gap:\s*8px;/.test(b)), '不再有残留的 8px 副信息间距');
 
+/* ---------------- 宋式纹样与按钮分级（本次重做导航 / 美化） ---------------- */
+chk(/--pattern-ivory:/.test(css), '定义了宋式纹样变量 --pattern-ivory（龟背纹）');
+chk(/--pattern-cloud:/.test(css), '定义了宋式纹样变量 --pattern-cloud（云纹）');
+chk(/data:image\/svg\+xml/.test(css), '纹样用内联 SVG data URI，不请求外部图片');
+chk(/龟背纹/.test(css) && /云纹/.test(css), '样式注释里写明纹样名称');
+// 页面底：龟背纹平铺，且必须有透明度，不能压过内容
+// 底纹可能分两处声明（基础排版一处、纹样一处），只看「有声明且同一条规则里带 fixed」
+const ivoryBlocks = [...css.matchAll(/html, body \{[\s\S]*?\}/g)].map(m => m[0]).filter(b => /--pattern-ivory/.test(b));
+chk(ivoryBlocks.length > 0, '页面底铺龟背纹');
+chk(ivoryBlocks.some(b => /background-attachment:\s*fixed/.test(b)), '底纹固定，滚动时不跟着内容跑');
+chk(/stroke-opacity='\.05'/.test(css), '龟背纹描边不透明度压到 5%（只是纸的肌理）');
+// 点缀：卡片角隅 + 今日条云纹，且默认不出现
+chk(/\.card-pat::before/.test(css) && /\.card-pat::after/.test(css), '卡片角隅纹样只在 .card-pat 上出现');
+chk(/mask-image:\s*linear-gradient/.test(css), '角隅纹样用遮罩从角上透出来，不是贴一张图');
+chk(/\.today-bar::after/.test(css), '今日背诵条有云纹点缀');
+chk(/@supports not/.test(css), '不支持 mask 的浏览器自动不出纹样（不影响布局）');
+// 按钮分级
+chk(/\.btn\.primary\s*\{[^}]*linear-gradient/.test(css), '一级按钮为实底渐变（主操作）');
+chk(/\.ghost-btn\s*\{[\s\S]{0,200}?border:\s*1px solid var\(--line\)/.test(css), '次级按钮为纸底描边');
+chk(/\.danger-btn\s*\{[\s\S]{0,200}?color:\s*var\(--red\)/.test(css), '危险按钮用朱砂色，仅用于不可逆操作');
+chk(/\.btn\.good\s*\{[^}]*inset 0 0 0 1px rgba\(240, 205, 124/.test(css), '「记住」按钮补上描金内边，与一级按钮同族');
+// 导航样式
+chk(/\.dock\s*\{[^}]*position:\s*fixed/.test(css), '底部导航栏固定定位');
+chk(/\.dock-item\.active/.test(css), '页签有选中态样式');
+chk(/\.brand-mark/.test(css), '顶栏徽标（logo）有独立样式');
+chk(/\.top-act/.test(css), '顶栏右侧动作位（设置 / 返回）有独立样式');
+
 // 不再依赖设备自带宋体作为首选
 chk(!/font-family:\s*"Songti SC"/.test(css), '不再把设备自带 Songti SC 作为首选字体');
 

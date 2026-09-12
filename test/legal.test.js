@@ -89,7 +89,7 @@ setTimeout(() => {
       '更新时间精确到月日：' + up.textContent.trim());
     chk(/^\d{4}-\d{2}-\d{2}$/.test(up.getAttribute('datetime')),
       '<time datetime> 为机器可读的完整日期：' + up.getAttribute('datetime'));
-    chk(!/更新于 2026 年$/.test(d.querySelector('.brand-text p').textContent),
+    chk(!/更新于 2026 年$/.test(d.querySelector('.brand-sub').textContent),
       '页首不再只写「更新于 2026 年」');
 
     // 需求 7：新增匿名访问统计后，协议必须披露

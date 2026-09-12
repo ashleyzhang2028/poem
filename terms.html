@@ -18,24 +18,11 @@
   <link rel="stylesheet" href="css/style.css" />
   <link rel="stylesheet" href="css/legal.css" />
 </head>
-<body>
+<body data-nav="legal" data-dock="off" data-sub="跬步 · 法务说明">
   <div class="app">
-    <header class="topbar">
-      <div class="brand">
-        <a class="brand-icon back-icon" href="./index.html" title="返回跬步" aria-label="返回跬步">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M14.5 5 8 12l6.5 7" />
-          </svg>
-        </a>
-        <div class="brand-text">
-          <h1>用户协议</h1>
-          <p>跬步 · 更新于 <time id="terms-updated" datetime="2026-09-12">2026 年 9 月 12 日</time></p>
-        </div>
-      </div>
-      <div class="legal-nav">
-        <a class="legal-nav-link" href="./privacy.html">隐私条款</a>
-      </div>
-    </header>
+    <!-- 顶栏：由 js/chrome.js 统一渲染（法务页从简：logo + 跬步 + 返回） -->
+    <header class="topbar"></header>
+    <p class="legal-updated">跬步 · 更新于 <time id="terms-updated" datetime="2026-09-12">2026 年 9 月 12 日</time></p>
 
     <nav class="legal-toc">
       <a href="#t1">一、服务与使用</a>
@@ -104,6 +91,7 @@
   </div>
 
   <script src="js/stats.js"></script>
+  <script src="js/chrome.js"></script>
   <script src="js/contact.js"></script>
 </body>
 </html>

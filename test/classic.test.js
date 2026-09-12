@@ -70,15 +70,27 @@ setTimeout(() => {
   chk(d.querySelector('#gw-count').textContent === '0 / 100 篇', '顶部显示 0 / 100 篇：' + d.querySelector('#gw-count').textContent);
   chk(d.querySelectorAll('#gw-list .group-head').length >= 6, '按主题显示分组标题（' + d.querySelectorAll('#gw-list .group-head').length + ' 个）');
   chk(/已读|标记/.test(d.querySelector('#gw-done-text').textContent), '阅读器内有「标记已读」按钮');
-  chk(d.querySelector('.brand-text h1').textContent === '小古文', '小古文页主标题为「小古文」（实际 ' + d.querySelector('.brand-text h1').textContent + '）');
+  /* ---------- 导航：与首页同一套顶栏 + 底部页签（本次重做） ---------- */
+  chk(d.querySelector('.brand-text h1').textContent === '跬步', '小古文页顶栏第一行同样是「跬步」（全站一致）');
+  chk(/小古文/.test(d.querySelector('#brand-sub').textContent), '第二行标明当前页是小古文：' + d.querySelector('#brand-sub').textContent);
   chk(d.title === '小古文 · 跬步', '小古文页标题为「小古文 · 跬步」（实际 ' + d.title + '）');
+  const dock = d.querySelector('#site-dock');
+  chk(!!dock, '小古文页有底部导航栏');
+  const dockItems = [...dock.querySelectorAll('.dock-item')];
+  chk(dockItems.map(b => b.querySelector('.dock-label').textContent).join('/') === '古诗词/小古文/设置',
+    '底部页签与首页一致（古诗词/小古文/设置）');
+  chk(dockItems[1].classList.contains('active') && dockItems[1].getAttribute('aria-current') === 'page',
+    '小古文页签为选中态');
+  chk(d.querySelector('#classic-entry') === null, '本页不再自造「返回古诗词」入口（回首页交给页签）');
+  chk(!!d.querySelector('#settings-modal'), '小古文页也能打开设置（含用户名与阅读辅助）');
+  chk(!!d.querySelector('#settings-modal #input-username'), '小古文页设置里有用户名输入框');
   // 需求 2：顶部说明整段删掉，太啰嗦
   chk(d.querySelector('.notice') === null, '顶部说明段落已整段删除（不再有 .notice）');
   const htmlSrc = fs.readFileSync(path + 'classic.html', 'utf8');
   chk(!/不排复习日期/.test(htmlSrc), '页面里不再出现「不排复习日期」这类说明');
   chk(!/想读哪篇点哪篇[。．]/.test(htmlSrc.replace(/<p>.*?<\/p>/, '')), '不再有婆婆妈妈的说明段落');
-  chk(d.querySelector('.brand-text p').textContent === '100 篇 · 想读哪篇点哪篇',
-    '顶部副标题精简（实际 ' + d.querySelector('.brand-text p').textContent + '）');
+  chk(d.querySelector('.brand-text p').textContent === '小古文 · 100 篇想读哪篇点哪篇',
+    '顶部副标题精简，且点明当前页面（实际 ' + d.querySelector('.brand-text p').textContent + '）');
   chk(d.querySelectorAll('#gw-list .item .item-reason.review').length === 0, '列表里没有「复习」标签，不做复习排期');
 
   // 需求 3：按主题分类聚合，不再按原书目录顺序

@@ -30,10 +30,28 @@ setTimeout(() => {
   const footLinks = [...foot.querySelectorAll('.foot-links a')];
   chk(footLinks.map(a => a.textContent.trim()).join('/') === '用户协议/隐私条款', '页脚含「用户协议」「隐私条款」链接');
   chk(footLinks.map(a => a.getAttribute('href')).join('/') === './terms.html/./privacy.html', '页脚两个链接指向 terms.html 与 privacy.html');
-  chk(d.querySelector('.brand-text p').textContent === '一年级至高三 · 按遗忘曲线复习', '副标题简洁明了（实际 ' + d.querySelector('.brand-text p').textContent + '）');
+  chk(/按遗忘曲线复习/.test(d.querySelector('#brand-sub').textContent),
+    '顶栏第二行写明复习方式（实际 ' + d.querySelector('#brand-sub').textContent + '）');
   chk(d.querySelector('#all-label').textContent === '本年级本学期全部诗词', '全部诗词标题精确为「本年级本学期全部诗词」');
-  // 除 😵🤔😄 外，页面图标应为内联 SVG
+  // 顶栏图标：徽标 + 设置 + 全部诗词，全部是内联 SVG
   chk(d.querySelectorAll('.brand-icon svg, #btn-settings svg, .collapse-icon svg').length === 3, '顶部/设置/全部诗词图标均为 SVG');
+
+  /* ---------- 导航：顶栏 + 底部三页签（本次重做） ---------- */
+  chk(!!d.querySelector('.topbar .brand-icon svg'), '顶栏有 logo（内联 SVG 徽标）');
+  chk(d.querySelector('#brand-name').textContent === '跬步', '顶栏第一行固定为「跬步」，不随页面变化');
+  const dock = d.querySelector('#site-dock');
+  chk(!!dock, '首页有底部导航栏');
+  const dockItems = [...dock.querySelectorAll('.dock-item')];
+  chk(dockItems.length === 3, '底部导航为三个页签（实际 ' + dockItems.length + '）');
+  chk(dockItems.map(b => b.querySelector('.dock-label').textContent).join('/') === '古诗词/小古文/设置',
+    '页签名称为 古诗词 / 小古文 / 设置');
+  chk(dockItems.map(b => b.dataset.navGo).join('/') === 'home/classic/settings', '页签跳转目标正确');
+  chk(dockItems[0].classList.contains('active') && dockItems[0].getAttribute('aria-current') === 'page',
+    '当前页（古诗词）页签为选中态');
+  chk(dockItems.every(b => b.querySelector('.dock-icon svg')), '三个页签图标均为内联 SVG');
+  // 页面切换统一走底部页签，顶栏不再各页一套返回键
+  chk(d.querySelector('.topbar .back-icon') === null, '顶栏不再有各页自造的返回箭头');
+  chk(!!dock.querySelector('[data-nav-go="settings"]'), '「设置」是页签之一，不再只藏在右上角');
   chk(!/📖|⚙|📚/.test(d.querySelector('.app').innerHTML), '页面不再使用 📖 ⚙️ 📚 emoji 图标');
   chk(!!d.querySelector('#settings-modal #input-username'), '设置内含用户名输入框');
   chk(!d.querySelector('.selector.card'), '年级/学期选择不再常驻首页');
@@ -58,6 +76,11 @@ setTimeout(() => {
   // 先打开设置才能操作年级/学期
   d.querySelector('#btn-settings').dispatchEvent(new window.Event('click', { bubbles: true }));
   chk(d.querySelector('#settings-modal').hidden === false, '首页即可打开设置');
+  d.querySelector('[data-close]').dispatchEvent(new window.Event('click', { bubbles: true }));
+  // 底部页签的「设置」也能打开同一个面板
+  d.querySelector('.dock-item[data-nav-go="settings"]').dispatchEvent(new window.Event('click', { bubbles: true }));
+  chk(d.querySelector('#settings-modal').hidden === false, '底部页签「设置」也能打开设置面板');
+  d.querySelector('[data-close]').dispatchEvent(new window.Event('click', { bubbles: true }));
   chk(d.querySelectorAll('#grade-chips button').length === 6, '小学显示 6 个年级按钮');
   chk(d.querySelectorAll('#today-list .item').length === 5, '今日列表渲染 5 首（实际 ' + d.querySelectorAll('#today-list .item').length + '）');
   chk(d.querySelector('#ring-text').textContent === '0/5', '环形进度 0/5');
@@ -158,7 +181,10 @@ setTimeout(() => {
   uInput.value = '小明';
   uInput.dispatchEvent(new window.Event('input', { bubbles: true }));
   chk(d.title === '跬步 · 小明的古诗词 · 古诗词背诵', '填了用户名后标题为「跬步 · 小明的古诗词」（实际 ' + d.title + '）');
-  chk(d.querySelector('.brand-text h1').textContent === '跬步 · 小明的古诗词', '品牌标题跟随用户名，前缀固定为跬步');
+  // 顶栏第一行固定为应用名（不随用户名变），用户名只出现在页面标题与第二行里，
+  // 否则进了小古文 / 法务页顶栏也跟着改名，用户认不出自己在哪一页
+  chk(d.querySelector('.brand-text h1').textContent === '跬步', '顶栏第一行固定为「跬步」，不随用户名变化');
+  chk(/小明/.test(d.querySelector('#brand-sub').textContent), '顶栏第二行写明这是谁的书单：' + d.querySelector('#brand-sub').textContent);
   chk(d.querySelector('meta[name="apple-mobile-web-app-title"]').getAttribute('content') === '跬步 · 小明的古诗词',
     'iOS 桌面名随用户名变化');
   chk(JSON.parse(window.localStorage.getItem('poem_recite_settings_v1')).username === '小明', '用户名已持久化');

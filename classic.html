@@ -18,23 +18,12 @@
   <link rel="stylesheet" href="css/style.css" />
   <link rel="stylesheet" href="css/classic.css" />
 </head>
-<body>
+<body data-nav="classic" data-sub="小古文 · 100 篇想读哪篇点哪篇">
   <div class="app">
-    <header class="topbar">
-      <div class="brand">
-        <a class="brand-icon back-icon" href="./index.html" title="返回古诗词" aria-label="返回古诗词">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M14.5 5 8 12l6.5 7" />
-          </svg>
-        </a>
-        <div class="brand-text">
-          <h1>小古文</h1>
-          <p>100 篇 · 想读哪篇点哪篇</p>
-        </div>
-      </div>
-      <span class="count-badge" id="gw-count">0 篇</span>
-    </header>
-
+    <!-- 顶部栏：由 js/chrome.js 统一渲染（全站同一套 logo + 跬步 + 页面名） -->
+    <header class="topbar"></header>
+    <!-- 小古文进度：已读 / 总数（顶栏与底部页签由 js/chrome.js 渲染） -->
+    <div class="list-head"><span class="count-badge" id="gw-count">0 篇</span></div>
     <div class="toolbar">
       <div class="search-wrap">
         <span class="search-icon" aria-hidden="true">
@@ -194,6 +183,33 @@
     </div>
   </div>
 
+
+  <!-- 设置弹层：与首页同一套选项（用户名 / 阅读辅助），顶栏与底部页签都能打开 -->
+  <div class="modal" id="settings-modal" hidden>
+    <div class="modal-mask" data-settings-close="1"></div>
+    <div class="modal-box small" role="dialog" aria-modal="true" aria-label="设置">
+      <button class="modal-close" data-settings-close="1" aria-label="关闭">✕</button>
+      <div class="modal-head"><h2>设置</h2></div>
+      <div class="settings-item">
+        <label for="input-username">用户名</label>
+        <input id="input-username" class="settings-input" type="text" maxlength="12"
+               placeholder="Ashley" autocomplete="off" enterkeyhint="done" />
+        <div class="settings-hint">留空则显示默认名称「Ashley」；首页与小古文页共用一份</div>
+      </div>
+      <div class="settings-item">
+        <label>阅读辅助</label>
+        <div class="seg small" id="seg-helper-c">
+          <button type="button" data-helper="off">关闭</button>
+          <button type="button" data-helper="on" class="active">开启</button>
+        </div>
+        <div class="settings-hint">开启后，打开古文即自动注音（默认「只标生字」）</div>
+      </div>
+      <div class="settings-tip">
+        <p>年级 / 学期 / 背诵范围 / 数据备份请在首页的「设置」里调整。</p>
+      </div>
+    </div>
+  </div>
+
   <div class="toast" id="toast" hidden></div>
 
   <script src="data/poems-classic.js"></script>
@@ -202,6 +218,7 @@
   <script src="js/pinyin.js"></script>
   <script src="js/speech.js"></script>
   <script src="js/reader.js"></script>
+  <script src="js/chrome.js"></script>
   <script src="js/stats.js"></script>
   <script src="js/classic.js"></script>
 </body>

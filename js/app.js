@@ -114,12 +114,20 @@
     return n ? APP_NAME + " · " + n + "的古诗词" : APP_NAME;
   }
 
-  /** 把应用名同步到页面标题、品牌标题、iOS 桌面名与 PWA 清单 */
+  /**
+   * 把应用名同步到页面标题、品牌标题、iOS 桌面名与 PWA 清单。
+   *
+   * 顶栏自 2026-09 起全站统一：第一行固定「跬步」（不随用户名变），
+   * 第二行显示当前页面名（首页为「XX的古诗词」）；用户名只出现在页面标题里，
+   * 否则一进小古文 / 法务页顶栏就会跟着变，用户反而认不出自己在哪。
+   */
   function applyAppName() {
     const title = appTitle();
     document.title = title + " · 古诗词背诵";
     const h1 = $("#brand-name");
-    if (h1) h1.textContent = title;
+    if (h1) h1.textContent = APP_NAME;
+    // 第二行：首页显示「XX的古诗词」，让家长一眼看到这是谁的书单
+    syncBrandSub();
 
     $$('meta[name="apple-mobile-web-app-title"]').forEach(function (m) {
       m.setAttribute("content", title);
@@ -143,6 +151,18 @@
         /* 清单更新失败不影响主流程 */
       }
     }
+  }
+
+  /**
+   * 顶栏第二行：首页显示「XX的古诗词」。
+   * js/chrome.js 渲染完顶栏会派发 chrome:ready，收到后再写一次，
+   * 否则刷新页面时 app.js 先跑、DOM 里还没有 #brand-sub，用户名就丢了。
+   */
+  function syncBrandSub() {
+    const sub = $("#brand-sub");
+    if (!sub) return;
+    const n = String(settings.username == null ? "" : settings.username).trim();
+    sub.textContent = n ? "「" + n + "」的古诗词 · 按遗忘曲线复习" : "一年级至高三 · 按遗忘曲线复习";
   }
 
   function stageOf(grade) {
@@ -750,11 +770,15 @@
       });
     }
 
-    $("#btn-settings").addEventListener("click", function () {
+    // 顶栏「设置」按钮由 js/chrome.js 渲染，这里统一监听它派发的开关事件
+    function openSettings() {
       renderGradeChips();
       $("#settings-modal").hidden = false;
       document.body.style.overflow = "hidden";
-    });
+    }
+    document.addEventListener("settings:open", openSettings);
+    var settingsBtn = $("#btn-settings");
+    if (settingsBtn) settingsBtn.addEventListener("click", openSettings);
 
     $$("[data-close]").forEach(function (el) {
       el.addEventListener("click", closeModal);
@@ -908,6 +932,10 @@
     }, 60 * 1000);
 
     applyAppName();
+    // 顶栏由 js/chrome.js 渲染，渲染完成后要再同步一次第二行
+    document.addEventListener("chrome:ready", function () {
+      applyAppName();
+    });
     applyClassicEntry();
     renderGradeChips();
     rebuildToday();
