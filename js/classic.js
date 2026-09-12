@@ -257,7 +257,8 @@
     const total = allItems().length;
     const readCount = allItems().filter(function (p) { return isRead(p.id); }).length;
 
-    $("#gw-count").textContent = readCount + " / " + total + " 篇";
+    var countEl = $("#gw-count");
+    if (countEl) countEl.textContent = readCount + " / " + total + " 篇";
 
     box.innerHTML = "";
     if (!items.length) {
@@ -352,6 +353,14 @@
     syncDoneButton();
     $("#gw-reader").hidden = false;
     document.body.classList.add("reader-open");
+    // 顶栏动作位换成「关闭」：阅读器是全屏层，此时「回首页」不如「合上」直接
+    if (window.SiteChrome) {
+      window.SiteChrome.setHeaderAction({
+        icon: window.SiteChrome.glyph("close"),
+        label: "关闭阅读器",
+        onclick: closeReader
+      });
+    }
     window.scrollTo(0, 0);
   }
 
@@ -515,6 +524,8 @@
     autoReading = false;
     $("#gw-reader").hidden = true;
     document.body.classList.remove("reader-open");
+    // 顶栏动作位还原为「回首页」
+    if (window.SiteChrome) window.SiteChrome.setHeaderAction(null);
     current = null;
     renderList();
     syncRandomReadButton();
@@ -678,6 +689,94 @@
     showToast._t = setTimeout(function () { t.hidden = true; }, 1600);
   }
 
+  /* ---------------- 设置面板（顶栏 / 底部页签统一入口） ----------------
+     小古文页也要能改用户名、年级、阅读辅助，否则用户必须退回首页。
+     为不让本页背上首页那套调度逻辑，这里只放与本页相关的几项。 */
+  function openSettings() {
+    var modal = document.getElementById("settings-modal");
+    if (!modal) return;
+    syncSettingsUI();
+    modal.hidden = false;
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeSettings() {
+    var modal = document.getElementById("settings-modal");
+    if (!modal) return;
+    modal.hidden = true;
+    document.body.style.overflow = "";
+  }
+
+  /** 用户名：与首页共用同一份设置，改完本页顶栏与标题立刻跟着变 */
+  function syncSettingsUI() {
+    var input = document.getElementById("input-username");
+    if (input) input.value = currentUsername();
+    $$("#seg-helper-c button").forEach(function (b) {
+      var on = (b.dataset.helper === "on") === helperOn();
+      b.classList.toggle("active", on);
+      b.setAttribute("aria-pressed", on ? "true" : "false");
+    });
+  }
+
+  function currentUsername() {
+    try {
+      var cfg = JSON.parse(localStorage.getItem("poem_recite_settings_v1") || "{}") || {};
+      return String(cfg.username == null ? "" : cfg.username);
+    } catch (e) {
+      return "";
+    }
+  }
+
+  function saveUsername(name) {
+    var cfg = {};
+    try {
+      cfg = JSON.parse(localStorage.getItem("poem_recite_settings_v1") || "{}") || {};
+    } catch (e) {
+      cfg = {};
+    }
+    if (!cfg || typeof cfg !== "object") cfg = {};
+    cfg.username = String(name || "").slice(0, 12);
+    localStorage.setItem("poem_recite_settings_v1", JSON.stringify(cfg));
+    var n = cfg.username.trim();
+    var sub = document.getElementById("brand-sub");
+    if (sub) sub.textContent = n ? "100 篇 · 想读哪篇点哪篇" : "小古文 · 100 篇想读哪篇点哪篇";
+    document.title = n ? n + "的小古文 · 跬步" : "小古文 · 跬步";
+  }
+
+  function bindSettings() {
+    document.addEventListener("settings:open", openSettings);
+    var modal = document.getElementById("settings-modal");
+    if (!modal) return;
+    $$("[data-settings-close]", modal).forEach(function (el) {
+      el.addEventListener("click", closeSettings);
+    });
+    var input = document.getElementById("input-username");
+    if (input) {
+      input.addEventListener("input", function () { saveUsername(input.value); });
+      input.addEventListener("change", function () {
+        input.value = String(currentUsername()).trim().slice(0, 12);
+        saveUsername(input.value);
+      });
+      input.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") { e.preventDefault(); input.blur(); }
+      });
+    }
+    $$("#seg-helper-c button").forEach(function (b) {
+      b.addEventListener("click", function () {
+        setHelperOn(b.dataset.helper === "on");
+        // 总开关口径与首页一致：关闭时无论此前存过什么档位都不注音
+        localStorage.setItem(PINYIN_KEY, helperOn() ? DEFAULT_PINYIN_MODE : "off");
+        renderReaderText();
+        syncPinyinButton();
+        syncSettingsUI();
+        showToast(helperOn() ? "阅读辅助已开启：打开古文自动注音" : "阅读辅助已关闭：打开古文为纯文本");
+      });
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !modal.hidden) closeSettings();
+    });
+  }
+
   /* ---------------- 事件 ---------------- */
   function bindEvents() {
     const search = $("#gw-search");
@@ -781,6 +880,7 @@
     // 注音档位由总开关统一裁决（effectivePinyinMode），这里无需预写，
     // 保证「设置里关掉阅读辅助」在任何时候进阅读器都是纯文本。
     bindEvents();
+    bindSettings();
     renderList();
     syncAlignButtons();
     syncRandomReadButton();

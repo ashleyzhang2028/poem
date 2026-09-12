@@ -44,19 +44,20 @@ function boot(seed) {
     poem_recite_settings_v1: JSON.stringify({ grade: 1, term: 1, dailyCount: 5, username: '玥玥' })
   });
   chk(r.d.title === '跬步 · 玥玥的古诗词 · 古诗词背诵', '刷新后标题保持（实际 ' + r.d.title + '）');
-  chk(r.d.querySelector('#brand-name').textContent === '跬步 · 玥玥的古诗词', '刷新后品牌标题保持，应用名固定为跬步');
+  // 顶栏第一行固定应用名，用户名写在第二行（用户名里可能带 < > 等字符，只做纯文本）
+  chk(r.d.querySelector('#brand-name').textContent === '跬步', '刷新后品牌名保持为「跬步」，应用名不随用户名变');
+  chk(/玥玥/.test(r.d.querySelector('#brand-sub').textContent), '刷新后用户名显示在顶栏第二行');
   chk(r.d.querySelector('#input-username').value === '玥玥', '刷新后输入框回填 玥玥');
 
   // 4. XSS 防护：用户名写入应作为纯文本
   r = await boot({
     poem_recite_settings_v1: JSON.stringify({ grade: 1, term: 1, dailyCount: 5, username: '<b>坏</b>' })
   });
-  const brand = r.d.querySelector('#brand-name');
+  const brand = r.d.querySelector('#brand-sub');
   chk(brand.querySelectorAll('b').length === 0, '用户名不会注入 HTML（未生成 b 元素）');
   chk(r.d.title.indexOf('古诗词') > -1, '页面未崩溃且标题正常');
   // 用户名原样文本渲染，不被当成 HTML 解析执行
-  chk(brand.textContent.indexOf('跬步 · ') === 0 && brand.textContent.indexOf('<b>坏</b>') > 0,
-    '用户名按纯文本渲染（textContent 保留原始字符）');
+  chk(brand.textContent.indexOf('<b>坏</b>') > 0, '用户名按纯文本渲染（textContent 保留原始字符）');
 
   // 5. 需求 14：首页小古文入口可隐藏，且刷新后保持
   r = await boot({ poem_recite_settings_v1: JSON.stringify({ grade: 1, term: 1, dailyCount: 5, classicEntry: 'hide' }) });
