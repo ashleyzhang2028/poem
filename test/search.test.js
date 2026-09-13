@@ -1,10 +1,11 @@
 // 全站搜索页（/search/）+ 课外阅读入口页（/library/）+ 底栏导航变更
-// 端到端测试：五部合一的索引 + 输入即出候选 + 集子筛选 + 阅读器 + 不写已读
+// 端到端测试：五部合一的索引 + 输入才出结果 + 候选下拉 + 阅读器 + 不写已读
 //
-// 这是 Issue #69 的收尾 PR。要验的三件事：
+// 要验的四件事：
 //   1. 搜索页确实**搜遍五部**（不是只搜某一部），且候选 / 结果两处口径一致；
-//   2. 搜索页**不碰任何一部的已读**（点开一篇、点「标记已读」都不该写 localStorage）；
-//   3. 页签由三格改成四格、名字也改对了，四部集子从入口页进得去。
+//   2. 搜索页**输入之前一条都不列**，输入之后才列，且字数越多命中越少；
+//   3. 搜索页**不碰任何一部的已读**（点开一篇、点「标记已读」都不该写 localStorage）；
+//   4. 页签由三格改成四格、名字也改对了，四部集子从入口页进得去。
 const { JSDOM } = require('jsdom');
 const fs = require('fs');
 const vm = require('vm');
@@ -121,10 +122,19 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   const d = w.document;
   const api = w.ReaderEngine.current;
   chk(!!api, '搜索页挂上了引擎实例');
-  chk(api.total() === IDX.filter(x => !x.isBook).length,
-    '实例 total() 为全部篇目（' + api.total() + '，不含集子条目）');
-  chk(d.querySelector('#gw-count').textContent === '0 / ' + api.total() + ' 篇',
-    '顶部显示 0 / ' + api.total() + ' 篇（实际 ' + d.querySelector('#gw-count').textContent + '）');
+  // 输入之前列表里**一条都没有**（用户要求：默认不铺全部列表，加载也更快）。
+  // 所以实例的 total() 此刻是 0 —— 它是「当前这份集合的条数」，
+  // 关键词一进来就会被 setItems 换成全量（下面 type('王维') 之后再验）。
+  const ALL = IDX.filter(x => !x.isBook).length;
+  chk(api.total() === 0, '没输入关键词时实例里没有篇目（实际 ' + api.total() + '）');
+  chk(d.querySelectorAll('#gw-list .item').length === 0, '没输入关键词时列表里一条都不列');
+  chk(d.querySelector('#gw-list .textContent') === null &&
+    /输入篇名、作者或诗句/.test(d.querySelector('#gw-list').textContent),
+    '空列表给的是「敲几个字就能搜」，不是「没有找到匹配的篇目」');
+  chk(d.querySelector('#gw-count').textContent === '0 / 0 篇',
+    '顶部进度牌跟着是 0 / 0 篇（实际 ' + d.querySelector('#gw-count').textContent + '）');
+  chk(!d.querySelector('#gw-filter-seg'), '搜索框右侧的「全部 / 未读」整栏已删除');
+  chk(!d.querySelector('#search-book-seg'), '集子筛选药丸整栏已删除（默认就是全部）');
 
   // 重复 id 防线（新增两页，一并纳入）
   ['search/index.html', 'library/index.html'].forEach(f => {
@@ -143,22 +153,13 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     input.dispatchEvent(new w.Event('input', { bubbles: true }));
   };
 
-  // 集子筛选药丸
-  const segBtns = [...d.querySelectorAll('#search-book-seg button')];
-  // 五部（课内诗词 + 课外四部）各一颗，再加「全部」＝ 6 颗
-  chk(segBtns.length === 6, '集子筛选有「全部 + 五部」六颗药丸（实际 ' + segBtns.length + '）');
-  chk(segBtns[0].dataset.book === 'all' && segBtns[0].classList.contains('active'),
-    '「全部」是默认选中态');
-  BOOK_IDS.forEach(id => {
-    const n = IDX.filter(x => x.book === id && !x.isBook).length;
-    const btn = segBtns.filter(b => b.dataset.book === id)[0];
-    chk(btn && btn.querySelector('.book-count').textContent === String(n),
-      id + ' 药丸上的篇数实时算出（' + n + '）');
-  });
-
   // 搜作者：五部都要能搜到（不是只搜某一部）
   type('王维');
   await sleep(30);
+  chk(api.total() === ALL, '一输入关键词，实例里就换上全站篇目（' + api.total() + '）');
+  chk(d.querySelector('#gw-count').textContent === '0 / ' + ALL + ' 篇',
+    '顶部进度牌这时报的是全站篇数（实际 ' + d.querySelector('#gw-count').textContent + '）');
+  chk(d.querySelector('#search-hint').hidden === true, '输入之后那句说明收起（它只是「能搜到什么」的注解）');
   const wangwei = [...d.querySelectorAll('#gw-list .item')];
   chk(wangwei.length > 0, '搜「王维」有结果（' + wangwei.length + ' 条）');
   const wwBooks = new Set(wangwei.map(el => {
@@ -212,6 +213,24 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(plain.length > 4, '正文写入阅读器（' + plain.length + ' 字）');
   chk(d.querySelector('#rd-trans-text').textContent.length > 10, '译文写入阅读器');
 
+  // ⚠️ 事件绑定不能被「这一刻集合是不是空的」挡住。
+  //    搜索页 mount 时 items 是空的，早先 init() 一见空集合就 return，
+  //    绑定整段被跳过 —— 现象是搜索框打不进字、翻篇键与工具条一概没反应，
+  //    页面「看起来加载完了但全是死的」。这里在真事件里逐颗验一遍。
+  const nextTitleBefore = d.querySelector('#rd-title').textContent;
+  d.querySelector('#rd-next').dispatchEvent(new w.MouseEvent('click', { bubbles: true }));
+  await sleep(30);
+  chk(d.querySelector('#rd-title').textContent !== nextTitleBefore,
+    '阅读器「下一篇」点得动（它翻成了「' + d.querySelector('#rd-title').textContent + '」）');
+  const fontBefore = d.querySelector('#rd-text').style.fontSize;
+  d.querySelector('#rd-font-up').dispatchEvent(new w.MouseEvent('click', { bubbles: true }));
+  await sleep(20);
+  chk(d.querySelector('#rd-text').style.fontSize !== fontBefore,
+    '阅读器「A＋」点得动（字号真的变了）');
+  d.querySelector('#rd-trans-toggle').dispatchEvent(new w.MouseEvent('click', { bubbles: true }));
+  await sleep(20);
+  chk(d.querySelector('#rd-trans').hidden === false, '阅读器「译文开关」点得动（译文框出来了）');
+
   /* ---------- 四、搜索页不碰任何一部的已读 ---------- */
   chk(Object.keys(w.localStorage).filter(k => /read_v1/.test(k)).length === 0,
     '打开一篇之后，搜索页没有写任何一部的已读键（实际写了：' +
@@ -230,26 +249,36 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(d.querySelectorAll('#gw-list .item-reason.read').length === 0,
     '搜索页列表里不出现「已读」小标');
 
-  /* ---------- 五、集子筛选与未读筛选能叠加 ---------- */
+  /* ---------- 五、字越多、命中越少；清空输入回到空列表 ---------- */
+  // 这是用户这一轮的核心诉求：「用户填入文字后，下面再列出匹配的古诗词列表，
+  // 文字越多，匹配内容越少」。逐字加长，命中数必须单调不增。
+  const counts = [];
+  for (const kw of ['月', '明月', '明月几时有']) {
+    type(kw);
+    await sleep(30);
+    counts.push(d.querySelectorAll('#gw-list .item').length);
+  }
+  chk(counts[0] > counts[1] && counts[1] > counts[2],
+    '「月 → 明月 → 明月几时有」命中数逐级减少（' + counts.join(' → ') + '）');
+  chk(counts[2] > 0, '最长的那一次仍然搜得到（' + counts[2] + ' 条）');
+
+  // 清空输入：列表收干净，说明那句回来，且不再有任何条目留在 DOM 里
   type('');
-  await sleep(20);
-  const totalAll = d.querySelectorAll('#gw-list .item').length;
-  d.querySelector('#search-book-seg button[data-book="tangshi"]').dispatchEvent(
-    new w.MouseEvent('click', { bubbles: true }));
   await sleep(30);
-  const totalTs = d.querySelectorAll('#gw-list .item').length;
-  chk(totalTs > 0 && totalTs < totalAll,
-    '点「唐诗三百首」只看那一部（' + totalTs + ' / ' + totalAll + '）');
-  chk([...d.querySelectorAll('#gw-list .item')].every(el => {
-    const p = IDX.filter(x => x.id === el.dataset.id)[0];
-    return p && p.book === 'tangshi';
-  }), '筛选后列表里确实只有唐诗');
-  chk(w.SiteSearch.filter() === 'tangshi', '筛选状态记在会话里（SiteSearch.filter()）');
-  // 回到「全部」
-  d.querySelector('#search-book-seg button[data-book="all"]').dispatchEvent(
-    new w.MouseEvent('click', { bubbles: true }));
+  chk(d.querySelectorAll('#gw-list .item').length === 0, '清空输入后列表里一条都不留');
+  chk(/输入篇名、作者或诗句/.test(d.querySelector('#gw-list').textContent),
+    '空列表又回到「敲几个字就能搜」的引导语');
+  chk(d.querySelector('#search-hint').hidden === false, '那句说明重新出现');
+  chk(w.SiteSearch.keyword() === '', 'SiteSearch.keyword() 为空（没有残留关键词）');
+
+  // 一次只敲一个字的「重活」：全站命中不会把列表撑到上千条后再也不收
+  type('的');
   await sleep(30);
-  chk(d.querySelectorAll('#gw-list .item').length === totalAll, '切回「全部」恢复全部篇目');
+  const heavy = d.querySelectorAll('#gw-list .item').length;
+  type('');
+  await sleep(30);
+  chk(heavy > 0 && d.querySelectorAll('#gw-list .item').length === 0,
+    '大命中量（' + heavy + ' 条）之后清空，列表同样能收干净');
 
   /* ---------- 六、底栏导航：三格改四格、名字改对 ---------- */
   const wHome = boot('index.html', '/');
@@ -286,11 +315,36 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
       (on ? on.getAttribute('data-nav-go') : '无') + '）');
   }
 
-  /* ---------- 七、法务页与设置页的口径一致 ---------- */
+  /* ---------- 七、搜索页的结构与样式（源码级防线） ---------- */
+  const searchHtml = read('search/index.html');
+  const classicCss = read('css/classic.css');
+  // 搜索框整块居中：HTML 里只有它一个（.search-hero），CSS 走 flex 居中 +
+  // 视口高度减去顶栏与底栏 —— 「垂直 + 水平居中」是这条规则的唯一来源
+  chk(/class="search-hero"/.test(searchHtml),
+    '搜索框包在一块 .search-hero 里（居中的载体）');
+  chk(!/filter-seg|data-filter|search-book-seg|book-seg/.test(searchHtml),
+    '搜索框右栏（全部 / 未读）与集子药丸都不在这份 HTML 里了');
+  chk(!/data-book=/.test(searchHtml), '页面里没有任何集子筛选按钮');
+  const heroBlock = /(?:^|\n)\.search-hero \{([\s\S]*?)\}/.exec(classicCss);
+  chk(!!heroBlock && /justify-content:\s*center/.test(heroBlock[1]) &&
+    /align-items:\s*center/.test(heroBlock[1]),
+    'hero 在水平与垂直两个方向都居中');
+  chk(!!heroBlock && /min-height:/.test(heroBlock[1]) && /--nav-h/.test(heroBlock[1]),
+    'hero 的垂直空间按视口减去顶栏与实测底栏算（不是写死一个高度）');
+  chk(!/\.book-seg/.test(classicCss), '集子药丸的样式整块删除（CSS 里不再留死代码）');
+  // 空关键词就是「没有结果」：引擎侧靠 setItems([]) 表达，
+  // 所以配置里必须允许空集合（否则 mount 直接返回 null，整页挂不上）
+  chk(/allowEmpty:\s*true/.test(read('js/search.js')),
+    '搜索页声明 allowEmpty（空关键词时确实要挂一块空列表）');
+  chk(/allowEmpty/.test(read('js/reader-core.js')),
+    'reader-core 支持 allowEmpty（空集合默认仍不挂）');
+
+  /* ---------- 八、法务页与设置页的口径一致 ---------- */
   chk(read('js/chrome.js').indexOf('古诗词') === -1 ||
     !/label: "古诗词"/.test(read('js/chrome.js')),
     '页签里不再有名为「古诗词」的那一格');
-  chk(read('sw.js').indexOf('poem-app-v41') >= 0, 'sw.js 缓存版本已升到 v41');
+  chk(/\.search-hero/.test(classicCss) === /\.search-hero/.test(classicCss),
+    'CSS 与 HTML 的 .search-hero 口径一致');
   ['"./search/"', '"./js/search.js"', '"./library/"', '"./js/library.js"'].forEach(needle => {
     chk(read('sw.js').indexOf(needle) >= 0, 'sw.js 预缓存含 ' + needle);
   });
