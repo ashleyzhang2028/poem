@@ -62,6 +62,10 @@
           author: p.author || "",
           dynasty: p.dynasty || "",
           source: p.source || "",
+          // selection：这一篇「从哪本选里读到」（如《古文观止》）。
+          // 与 source（真实出处：《左传》《震川先生集》等）分开带出去，
+          // 否则搜索结果里会把「选集名」当成「出处」标错（Issue #69 收尾）。
+          selection: p.selection || "",
           grade: p.grade,
           term: p.term,
           gradeGroup: p.gradeGroup || "",
