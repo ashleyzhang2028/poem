@@ -51,8 +51,11 @@
  *        （圆左内缘 = 箭头右内缘）；搜索框提示字用 translateY(-2.25px)
  *        上抬回水平中轴（输入文字 16px 本来居中，不动输入框本体）
  *        （css/style.css、css/classic.css）
+ *   v28  首页今日条两颗圆的直径再收 4px（46 → 42，Issue #55 后续）：
+ *        播放键与 0/5 进度环同读 --today-btn-size，一起缩小、外径仍逐位相等，
+ *        中线齐平；SVG 图标尺寸不动（css/style.css）
  */
-const CACHE_NAME = "poem-app-v27";
+const CACHE_NAME = "poem-app-v28";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [

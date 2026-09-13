@@ -63,6 +63,22 @@ chk(/\.today-read\s*\{[^}]*border-radius:\s*50%/.test(css), '今日朗读按钮�
    宽高不再相等 → 圆环变椭圆。 */
 const todaySize = (css.match(/\.today-actions \{([^}]*)\}/) || [, ''])[1].match(/--today-btn-size:\s*(\d+)px/);
 chk(!!todaySize, '今日条声明两颗圆的统一直径 --today-btn-size（' + (todaySize && todaySize[1]) + 'px）');
+/* 需求（本轮）：把今日条这颗播放键的直径在原 46px 基础上再减少 4px（→ 42px）。
+   尺寸只有一个来源（--today-btn-size），所以收 4px 就是改这一个数：
+   左侧播放键跟着小、右侧进度环同源跟着小，两颗圆的外径仍然逐位相等。
+   ⚠️ 别在 .today-read / .ring 里另写一个数值 —— 那样两颗圆又会走散（前两轮的坑）。 */
+chk(todaySize && todaySize[1] === '42', '播放键直径在原 46px 基础上减少 4px，现为 42px');
+chk(!/\.today-read \{[^}]*?(width|height):\s*\d+px/.test(css) &&
+  !/\.ring \{[^}]*?(width|height):\s*\d+px/.test(css),
+  '播放键与进度环都不另写死尺寸，只读 --today-btn-size（改一处即可整体收放）');
+/* 只查今日条那两块（.today-actions / .today-read / .ring）的作用域，
+   别误伤吸底播放栏 .pb-toggle —— 那颗主按钮本来就有自己的 46px。 */
+const todayScope = [
+  (css.match(/\.today-actions \{([^}]*)\}/) || [, ''])[1],
+  (css.match(/\.today-read \{([^}]*)\}/) || [, ''])[1],
+  (css.match(/\.ring \{([^}]*)\}/) || [, ''])[1]
+].join('\n');
+chk(!/46px/.test(todayScope), '今日条不再残留上一轮的 46px（播放键 / 进度环都跟着收 4px）');
 const readCss = (css.match(/\.today-read \{([^}]*)\}/) || [, ''])[1];
 chk(/width:\s*var\(--today-btn-size\)/.test(readCss) && /height:\s*var\(--today-btn-size\)/.test(readCss),
   '左侧朗读圆键的宽高都取 --today-btn-size');

@@ -203,8 +203,8 @@ html, body {
      那样宽高不再相等，圆环会被压成椭圆（与 .icon-row 那枚圆键同一条教训）。 */
   position: relative;
   flex: none;
-  width: var(--today-btn-size, 46px);
-  height: var(--today-btn-size, 46px);
+  width: var(--today-btn-size, 42px);
+  height: var(--today-btn-size, 42px);
   min-height: 0;
 }
 .ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
@@ -1441,8 +1441,10 @@ html, body {
   flex: none;
   /* 这一行两颗圆的统一尺寸（Issue #55）：
      左侧播放键与右侧进度环直径必须一致，所以尺寸只在这里声明一次，
-     两边都读同一个变量 —— 想再调整时只改这一处，不会再走散。 */
-  --today-btn-size: 46px;
+     两边都读同一个变量 —— 想再调整时只改这一处，不会再走散。
+     本轮（Issue #55 后续）：按需求把直径再收 4px（46 → 42），
+     左侧播放键与右侧进度环一起缩小，两颗圆的外径仍然逐位相等。 */
+  --today-btn-size: 42px;
 }
 .today-read {
   width: var(--today-btn-size);
