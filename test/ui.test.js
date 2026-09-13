@@ -41,7 +41,7 @@ setTimeout(() => {
   const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else console.log('✓ ' + m); };
 
   // 需求 9：应用正式名称为「跬步」；用户名留空时用默认名 Ashley
-  chk(d.title === '跬步 · Ashley的古诗词 · 古诗词背诵',
+  chk(d.title === '跬步 · Ashley的背诵 · 跬步',
     '用户名留空时标题用默认名 Ashley（实际 ' + d.title + '）');
   chk(d.querySelector('.brand-text h1').textContent === '跬步', '品牌标题为「跬步」');
   // 需求：主标题下面的描述文字还原回来，但不再写「一年级到高中」的年级字样
@@ -50,9 +50,9 @@ setTimeout(() => {
     '主标题下的描述文字已还原（实际「' + (sub ? sub.textContent : '') + '」）');
   chk(!/年级|至高三|小学|初中|高中/.test(sub.textContent),
     '描述文字里不带一年级到高中这类年级字样');
-  // 需求：顶栏第一行是「跬步 · XX的古诗词」，页面名与「跬步」同一行、同字体
+  // 需求：顶栏第一行是「跬步 · XX的背诵」，页面名与「跬步」同一行、同字体
   const brandPage = d.querySelector('#brand-page');
-  chk(!!brandPage && /Ashley的古诗词/.test(brandPage.textContent),
+  chk(!!brandPage && /Ashley的背诵/.test(brandPage.textContent),
     '页面名排在「跬步」右侧：' + (brandPage ? brandPage.textContent : '缺失'));
   chk(brandPage.querySelector('.brand-page-text').classList.contains('is-default'),
     '默认名 Ashley 走淡墨，与用户自己填的名字区分');
@@ -77,7 +77,7 @@ setTimeout(() => {
     '页脚排在设置项下方（页面最底部）');
   // 需求：删掉「一年级至高三 · 按遗忘曲线复...」这行文案
   chk(!/一年级至高三/.test(d.querySelector('.topbar').textContent),
-    '顶栏第一行不再出现「一年级至高三 · 」，只有「跬步 · XX的古诗词」');
+    '顶栏第一行不再出现「一年级至高三 · 」，只有「跬步 · XX的背诵」');
   // 需求（本次）：顶栏第二行收敛成一句「按遗忘曲线复习」，
   // 不再带「安排复习 · 小古文想读哪篇点哪篇」那截长尾巴
   chk(d.querySelector('#brand-sub').textContent === '按遗忘曲线复习',
@@ -87,23 +87,23 @@ setTimeout(() => {
   chk(d.querySelector('#all-label').textContent === '本年级本学期全部诗词', '全部诗词标题精确为「本年级本学期全部诗词」');
   // 顶栏图标：徽标 + 全部诗词折叠图标，全部是内联 SVG
   chk(d.querySelectorAll('.brand-icon svg, .collapse-icon svg').length === 2, '顶栏徽标与全部诗词图标均为 SVG');
-  // 需求：首页右上角的「设置」齿轮删除（底部第三个页签就是设置，两个入口重复）
+  // 需求：首页右上角的「设置」齿轮删除（底部页签本身就有设置，两个入口重复）
   chk(d.querySelector('.topbar #btn-settings') === null, '首页右上角不再有设置齿轮（交给底部页签）');
   chk(d.querySelector('.topbar .icon-btn') === null, '顶栏不再有圆形图标按钮（设置入口已删）');
 
-  /* ---------- 导航：顶栏 + 底部三页签（本次重做） ---------- */
+  /* ---------- 导航：顶栏 + 底部页签 ---------- */
   chk(!!d.querySelector('.topbar .brand-icon svg'), '顶栏有 logo（内联 SVG 徽标）');
   chk(d.querySelector('#brand-name').textContent === '跬步', '顶栏第一行固定为「跬步」，不随页面变化');
   const dock = d.querySelector('#site-dock');
   chk(!!dock, '首页有底部导航栏');
   const dockItems = [...dock.querySelectorAll('.dock-item')];
-  chk(dockItems.length === 3, '底部导航为三个页签（实际 ' + dockItems.length + '）');
-  chk(dockItems.map(b => b.querySelector('.dock-label').textContent).join('/') === '古诗词/小古文/设置',
-    '页签名称为 古诗词 / 小古文 / 设置');
-  chk(dockItems.map(b => b.dataset.navGo).join('/') === 'home/classic/settings', '页签跳转目标正确');
+  chk(dockItems.length === 4, '底部导航为四个页签（实际 ' + dockItems.length + '）');
+  chk(dockItems.map(b => b.querySelector('.dock-label').textContent).join('/') === '背诵/课外/搜索/设置',
+    '页签名称为 背诵 / 课外 / 搜索 / 设置');
+  chk(dockItems.map(b => b.dataset.navGo).join('/') === 'home/library/search/settings', '页签跳转目标正确');
   chk(dockItems[0].classList.contains('active') && dockItems[0].getAttribute('aria-current') === 'page',
-    '当前页（古诗词）页签为选中态');
-  chk(dockItems.every(b => b.querySelector('.dock-icon svg')), '三个页签图标均为内联 SVG');
+    '当前页（背诵）页签为选中态');
+  chk(dockItems.every(b => b.querySelector('.dock-icon svg')), '四个页签图标均为内联 SVG');
   // 需求（本次）：页签选中态不再用「一条短线」，那读起来像「设置」被加了条下划线。
   // 选中只靠天青描色 + 图标微抬表达；对应的 ::before 指示条整段删掉，不留僵尸代码。
   chk(!/\.dock-item::before/.test(fs.readFileSync(path + 'css/style.css', 'utf8')),
@@ -112,7 +112,7 @@ setTimeout(() => {
     '每个页签只有图标 + 文字两个子元素，没有额外的划线装饰');
   // 需求（本次）：「设置」页签是 <a>，浏览器默认给链接文字加下划线 ——
   // 用户看到的那条线并不是设计里的装饰，而是这条默认样式漏了出来。
-  // 显式 text-decoration: none 之后三个页签外观才一致（样式断言见 theme.test.js，
+  // 显式 text-decoration: none 之后四个页签外观才一致（样式断言见 theme.test.js，
   // 这里补一条结构断言：设置页签确实是 <a>，所以这条样式不是可有可无的）。
   const settingsItem = dock.querySelector('.dock-item[data-nav-go="settings"]');
   chk(settingsItem.tagName === 'A', '「设置」页签是 <a>（因此必须显式去掉链接默认下划线）');
@@ -200,9 +200,11 @@ setTimeout(() => {
   chk(sd.querySelector('#seg-classic-entry') === null, '设置里不再有「首页小古文入口」选项（入口已删）');
   chk(!/首页小古文入口/.test(sd.body.textContent), '设置页文案里不再出现「首页小古文入口」');
   chk(d.querySelector('#all-count').textContent === '5', '小古文不会混进古诗词列表（仍为 5 首）');
-  // 底部页签的「小古文」仍是唯一入口，指向独立页面
-  const dockClassicCount = [...dock.querySelectorAll('.dock-item')].filter(b => b.dataset.navGo === 'classic').length;
-  chk(dockClassicCount === 1, '小古文入口只剩底部页签一处');
+  // 底部页签的「课外」是四部集子的统一入口，指向入口页（不再是某一部直连）
+  const dockLibraryCount = [...dock.querySelectorAll('.dock-item')].filter(b => b.dataset.navGo === 'library').length;
+  chk(dockLibraryCount === 1, '四部集子的入口只剩底部页签「课外」一处');
+  chk(d.querySelector('.dock-item[data-nav-go="library"]').getAttribute('data-href') === '/library/',
+    '「课外」页签指向 /library/ 入口页');
 
   // 底部页签「设置」是通往设置整页的链接（不再是打开弹层）
   const dockSettings = d.querySelector('.dock-item[data-nav-go="settings"]');
@@ -387,7 +389,7 @@ setTimeout(() => {
   uInput.dispatchEvent(new sp.window.Event('input', { bubbles: true }));
   window.localStorage.setItem('poem_recite_settings_v1', sp.window.localStorage.getItem('poem_recite_settings_v1'));
   window.PoemApp.reloadSettings();
-  chk(d.title === '跬步 · 小明的古诗词 · 古诗词背诵', '填了用户名后标题为「跬步 · 小明的古诗词」（实际 ' + d.title + '）');
+  chk(d.title === '跬步 · 小明的背诵 · 跬步', '填了用户名后标题为「小明的背诵 · 跬步」（实际 ' + d.title + '）');
   // 顶栏第一行固定为应用名（不随用户名变），用户名只出现在页面标题与第二行里，
   // 否则进了小古文 / 法务页顶栏也跟着改名，用户认不出自己在哪一页
   chk(d.querySelector('.brand-text h1').textContent === '跬步', '顶栏第一行固定为「跬步」，不随用户名变化');
@@ -395,7 +397,7 @@ setTimeout(() => {
     '页面名跟着用户名走：' + d.querySelector('#brand-page').textContent);
   chk(!d.querySelector('#brand-page-text').classList.contains('is-default'),
     '填了用户名后不再走淡墨（是自己填的名字）');
-  chk(d.querySelector('meta[name="apple-mobile-web-app-title"]').getAttribute('content') === '跬步 · 小明的古诗词',
+  chk(d.querySelector('meta[name="apple-mobile-web-app-title"]').getAttribute('content') === '跬步 · 小明的背诵',
     'iOS 桌面名随用户名变化');
   chk(JSON.parse(sp.window.localStorage.getItem('poem_recite_settings_v1')).username === '小明', '用户名已持久化');
 
@@ -403,7 +405,7 @@ setTimeout(() => {
   uInput.dispatchEvent(new sp.window.Event('input', { bubbles: true }));
   window.localStorage.setItem('poem_recite_settings_v1', sp.window.localStorage.getItem('poem_recite_settings_v1'));
   window.PoemApp.reloadSettings();
-  chk(d.title === '跬步 · Ashley的古诗词 · 古诗词背诵',
+  chk(d.title === '跬步 · Ashley的背诵 · 跬步',
     '用户名留空时回到默认名 Ashley（实际 ' + d.title + '）');
 
   setOn('count', 8, '#seg-count button', 'count');

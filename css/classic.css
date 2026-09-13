@@ -870,3 +870,201 @@ body.reader-open .dock { display: none; }
 @media screen and (max-width: 700px) {
   .search-input { font-size: var(--input-font-narrow); }
 }
+
+/* ==========================================================================
+   全站搜索页（/search/）与课外阅读入口页（/library/）
+   --------------------------------------------------------------------------
+   两页都沿用本文件已有的工具栏 / 卡片语言，只补三样它没有的：
+     · 候选下拉（.suggest）—— 输入框下方浮出的一层
+     · 集子筛选药丸（.book-seg）—— 排在搜索框下面那一栏
+     · 入口页的四张卡片（.library-card）
+   配色与圆角一律走既有变量，不新开一套。
+   ========================================================================== */
+
+/* ---------------- 搜索页 ---------------- */
+/* 搜索框与候选下拉必须同属一个定位上下文（.search-wrap 已是 position: relative），
+   否则下拉会相对整页定位、跑到别处去。 */
+.search-wrap { position: relative; }
+
+/* 集子筛选那一栏：与工具栏同一条左基准线，独占一行 */
+.book-seg {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 14px;
+}
+/* 药丸要能换行：一部书名就是四个字（「课外必背小古文」六个），
+   与小古文页那两个「全部 / 未读」不同，这里塞不进一行。 */
+.book-seg button {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 0 12px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  /* 篇数紧跟在书名后：8px 的间距足够，不加分隔符（·、| 之类会让一行更碎） */
+  gap: 6px;
+}
+.book-seg .book-count {
+  font-size: 11.5px;
+  font-weight: 400;
+  color: var(--ink-3);
+  /* 篇数是**次要信息**：选中态里跟着换成半透明浅色，不跟书名抢 */
+}
+.book-seg button.active .book-count { color: rgba(255, 253, 248, .78); }
+
+/* 搜索说明：只在没输入关键词时出现的一行小字 */
+.search-hint {
+  margin: 0 0 14px;
+  font-size: 12.5px;
+  line-height: 1.8;
+  color: var(--ink-3);
+}
+.search-hint[hidden] { display: none; }
+
+/* 命中上下文：正文 / 译文里命中关键词时，在元信息行后补一句摘出的上下文。
+   用最淡的墨色 —— 它是「为什么会搜到这一条」的说明，不是内容本身。 */
+#gw-list .item-hit {
+  color: var(--ink-3);
+  font-style: normal;
+}
+
+/* 候选下拉
+   --------------------------------------------------------------------------
+   绝对定位在输入框正下方、与输入框同宽（left/right: 0）。
+   背景与描边沿用卡片那一套；不用投影式的现代浮层感，
+   只加一圈淡描边 + 极轻的一层阴影，够把它与列表区分开即可。
+
+   ⚠️ z-index 要压过列表（列表没有 z-index，同一层流里后来者在上），
+      但要低于底部页签（65）与阅读器（.reader fixed）。
+      30 这个值落在两者之间：候选不会跑到页签上面，也不会被列表盖住。 */
+.suggest {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 30;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 8px 20px rgba(74, 58, 38, .10);
+  overflow: hidden;
+  max-height: 320px;
+  overflow-y: auto;
+}
+.suggest[hidden] { display: none; }
+.suggest-item {
+  width: 100%;
+  box-sizing: border-box;
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 12px;
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+  /* 相邻候选之间一条淡分隔线，最后一条不画（读起来才收得住） */
+  border-bottom: 1px solid var(--line-2);
+}
+.suggest-item:last-child { border-bottom: none; }
+/* 键盘上下键与鼠标悬停共用同一个高亮态：用户在键盘 / 鼠标之间切换时，
+   高亮不会「跳」到另一套样式上。 */
+.suggest-item.active,
+.suggest-item:hover { background: var(--green-light); }
+.suggest-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  /* 篇名很长时（「自河南经乱关内阻饥兄弟离散…」）截断，不把候选撑成两行 */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+.suggest-meta {
+  flex: none;
+  font-size: 11.5px;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+/* 候选右侧那行里，集子名用 <em> 标出来（「唐 · 李白 · 唐诗三百首」）——
+   与朝代、作者区分开：前两者是作品本身的属性，最后那个是「收在哪一部里」。
+   em 默认是斜体，中文斜体不好看，这里只靠颜色与字重区分。 */
+.suggest-meta em {
+  font-style: normal;
+  color: var(--green);
+  font-weight: 600;
+}
+
+/* ---------------- 课外阅读入口页 ---------------- */
+.library-hint {
+  margin: 4px 0 16px;
+  font-size: 13px;
+  line-height: 1.9;
+  color: var(--ink-3);
+}
+.library-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+/* 一张卡 = 一部集子。整张卡是一个 <a>，点哪儿都进得去（不是只有标题能点），
+   所以卡片本身要有 active / focus 反馈，不能只在标题上下 300ms 的功夫。 */
+.library-card {
+  position: relative;
+  display: block;
+  box-sizing: border-box;
+  padding: 16px 40px 16px 16px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  /* 左侧短竖条：与列表里的条目同一套语言，颜色按部走（与各集子索引页一致） */
+  border-left: 3px solid var(--green);
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  color: inherit;
+  transition: background .18s, border-color .18s;
+}
+.library-card[data-book="tangshi"] { border-left-color: var(--gold); }
+.library-card[data-book="songci"] { border-left-color: var(--blue); }
+.library-card[data-book="guwen"] { border-left-color: var(--ink-3); }
+.library-card:hover { background: var(--green-light); }
+.library-card:active { transform: scale(.995); }
+.library-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.library-card-name {
+  font-family: var(--font-poem);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: .5px;
+}
+/* 篇数：与搜索页的药丸同口径 —— 次要信息，跟着标题右边对齐 */
+.library-card-count {
+  flex: none;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.library-card-desc {
+  display: block;
+  margin-top: 6px;
+  font-size: 12.5px;
+  line-height: 1.8;
+  color: var(--ink-3);
+}
+/* 右侧箭头：与列表条目那颗同一枚描边三角（不用字符「›」） */
+.library-card-go {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  color: var(--ink-3);
+}
+.library-card-go svg { width: 16px; height: 16px; display: block; }

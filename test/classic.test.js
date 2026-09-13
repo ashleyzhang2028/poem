@@ -131,8 +131,8 @@ setTimeout(() => {
   chk([...rBar.children].map(e => e.className.split(' ')[0]).join('/') === 'brand/count-badge/top-act',
     '阅读器顶栏与列表页同序：品牌区 · 篇号牌 · 返回键（实际 ' +
     [...rBar.children].map(e => e.className).join('/') + '）');
-  chk(rBar.querySelector('.brand-page-text').textContent === '小古文',
-    '阅读器里的页名同样是「小古文」，与列表页一致');
+  chk(rBar.querySelector('.brand-page-text').textContent === '课外必背小古文',
+    '阅读器里的页名同样是「课外必背小古文」，与列表页一致');
   // 回归防线：整个页面里 #top-act 只能有一枚 —— 只有阅读器那条顶栏才是动作位。
   // 曾经 setHeaderAction 把 headerAction 挂在**所有**顶栏上，页面那条也跟着渲染成
   // id="top-act"：同一页面出现两枚同名 id（HTML 不合法），并且
@@ -224,9 +224,9 @@ setTimeout(() => {
   /* ---------- 导航：与首页同一套顶栏 + 底部页签 ---------- */
   chk(d.querySelector('.brand-text h1').textContent === '跬步', '小古文页顶栏第一行同样是「跬步」（全站一致）');
   // 需求：页面名紧随「跬步」，显示为「跬步 · 小古文」
-  chk(d.querySelector('#brand-page-text').textContent === '小古文',
+  chk(d.querySelector('#brand-page-text').textContent === '课外必背小古文',
     '页面名紧随「跬步」右侧：' + d.querySelector('#brand-page-text').textContent);
-  chk(d.title === '小古文 · 跬步', '小古文页标题为「小古文 · 跬步」（实际 ' + d.title + '）');
+  chk(d.title === '课外必背小古文 · 跬步', '集子页标题为「课外必背小古文 · 跬步」（实际 ' + d.title + '）');
   // 需求：下面补一句副标题，且不重复页面名（「小古文 · 小古文」是重复）
   const sub = d.querySelector('.app > .topbar #brand-sub').textContent;
   chk(sub === '想读哪篇点哪篇', '小古文页副标题为「想读哪篇点哪篇」（实际 ' + JSON.stringify(sub) + '）');
@@ -238,8 +238,8 @@ setTimeout(() => {
   const dock = d.querySelector('#site-dock');
   chk(!!dock, '小古文页有底部导航栏');
   const dockItems = [...dock.querySelectorAll('.dock-item')];
-  chk(dockItems.map(b => b.querySelector('.dock-label').textContent).join('/') === '古诗词/小古文/设置',
-    '底部页签与首页一致（古诗词/小古文/设置）');
+  chk(dockItems.map(b => b.querySelector('.dock-label').textContent).join('/') === '背诵/课外/搜索/设置',
+    '底部页签与首页一致（背诵/课外/搜索/设置）');
   chk(dockItems[1].classList.contains('active') && dockItems[1].getAttribute('aria-current') === 'page',
     '小古文页签为选中态');
   chk(d.querySelector('#classic-entry') === null, '本页不再自造「返回古诗词」入口（回首页交给页签）');
@@ -253,8 +253,8 @@ setTimeout(() => {
   // 需求：标题行下面补一句副标题（页面名已在第一行，这里不再重复「小古文」）
   chk(d.querySelector('.app > .topbar #brand-sub').textContent === '想读哪篇点哪篇',
     '小古文页有副标题「想读哪篇点哪篇」（实际 ' + JSON.stringify(d.querySelector('.app > .topbar #brand-sub').textContent) + '）');
-  chk(d.querySelector('#brand-page-text').textContent === '小古文',
-    '页面名就是「小古文」，由 CSS 的 ::before 生成分隔符（不再写死标点）');
+  chk(d.querySelector('#brand-page-text').textContent === '课外必背小古文',
+    '页面名与 chrome.js 的 data-page 一致，由 CSS 的 ::before 生成分隔符（不再写死标点）');
   chk(d.querySelectorAll('#gw-list .item .item-reason.review').length === 0, '列表里没有「复习」标签，不做复习排期');
 
   // 需求：阅读器顶栏不再自制一套 —— 直接复用全站 .topbar（徽标 + 跬步 · 小古文 +

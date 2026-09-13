@@ -108,8 +108,22 @@
  *        （data/poems-songci.js、js/songci.js、songci/index.html、
  *          data/poems-guwen.js、js/guwen.js、data/site-index.js、
  *          js/reader-core.js、js/chrome.js、sw.js）
+ *   v41  《古文观止》十二卷 155 篇补齐 + 搜索页 + 导航栏变更（Issue #69 收尾）：
+ *        ① 古文观止其余 134 篇的原文与白话译文全部补上（本集已无「待补」条目）；
+ *        ② 新增 /search/ 全站搜索页：一次搜遍五部集子的篇名 / 作者 /
+ *           朝代 / 出处 / 正文与译文，输入即出候选（键盘上下键 + 回车进结果）；
+ *           集子筛选药丸实时算篇数；搜索页**不写任何一部的已读键**；
+ *        ③ 底部页签由三格改成四格并改名：背诵（原「古诗词」，它只管课内背诵）/
+ *           课外（新增，四部集子的入口页 /library/）/ 搜索 / 设置 ——
+ *           此前唐诗、宋词、古文观止做完却没有入口，只能手敲地址；
+ *        ④ 页面标题措辞调整：「XX的古诗词」→「XX的背诵」，
+ *           <title> 统一成「页面名 · 跬步」（原先同一句里会出现两次「背诵」）
+ *        （data/poems-guwen.js、search/、js/search.js、library/、
+ *          js/library.js、js/chrome.js、js/reader-core.js、js/app.js、
+ *          js/settings.js、css/style.css、css/classic.css、fonts/、
+ *          index.html、manifest.webmanifest、sw.js）
  */
-const CACHE_NAME = "poem-app-v40";
+const CACHE_NAME = "poem-app-v41";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [
@@ -168,6 +182,11 @@ const PRECACHE = [
   "./guwen/",
   "./data/poems-guwen.js",
   "./js/guwen.js",
+  // 课外阅读入口页 + 全站搜索页（搜索页 + 导航栏变更 PR，Issue #69）
+  "./library/",
+  "./js/library.js",
+  "./search/",
+  "./js/search.js",
   "./icons/icon-120.png",
   "./icons/icon-152.png",
   "./icons/icon-167.png",

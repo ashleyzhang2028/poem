@@ -26,7 +26,7 @@ const allSrc = app + html + classicHtml + legalHtml + read('js/classic.js') + re
 
 chk(app.indexOf('这首歌按遗忘曲线到期了') === -1, '不再出现「这首歌按遗忘曲线到期了」');
 chk(/APP_NAME\s*=\s*"跬步"/.test(app), '应用正式名称为「跬步」');
-chk(html.indexOf('<title>跬步 · 古诗词背诵</title>') !== -1, '首页标题为「跬步 · 古诗词背诵」');
+chk(html.indexOf('<title>跬步 · 课内背诵</title>') !== -1, '首页标题为「跬步 · 课内背诵」');
 chk(!/积跬步古诗词/.test(html + legalHtml), '页面不再出现「积跬步古诗词」旧名');
 chk(/"name":\s*"跬步/.test(read('manifest.webmanifest')), 'PWA 清单名称为跬步');
 chk(app.indexOf('这首诗按遗忘曲线到期了') !== -1, '到期提示改为「这首诗按遗忘曲线到期了」');
@@ -270,7 +270,7 @@ chk(!/fonts\.googleapis|fonts\.gstatic/.test(css + html + classicHtml), '不请�
 chk(!/fonts\.googleapis|fonts\.gstatic/.test(legalHtml), '法务页同样不请求第三方字体 CDN');
 
 /* ---------------- 2b. 本轮需求：顶栏并入页面名 / 圆形播放键 / 详情页工具条 ---------------- */
-// 需求：页面名（XX的古诗词 / 小古文）挪到「跬步」右侧，字体样式与「跬步」一致
+// 需求：页面名（XX的背诵 / 小古文）挪到「跬步」右侧，字体样式与「跬步」一致
 chk(/\.brand-name-row/.test(css), '顶栏有「跬步 · 页面名」同一行的样式 .brand-name-row');
 chk(/\.brand-name-row[\s\S]{0,260}?font-size:\s*19px/.test(css), '页面名与「跬步」同字号（19px）');
 chk(/\.brand-page::before[\s\S]{0,120}?content:\s*"·"/.test(css),
@@ -295,7 +295,7 @@ chk(!/一年级/.test(read('js/chrome.js').replace(/\/\*[\s\S]*?\*\//g, '')),
   'chrome.js 的代码里不再出现年级字样（注释除外）');
 // 第二行留空时不占高度（页面没写 data-sub 时顶栏只有一行）
 chk(/brand-sub:empty \{ display: none; \}/.test(css), '第二行留空时不占高度（小古文页顶栏只有一行）');
-// 需求：用户不填名字也要显示「跬步 Ashley的古诗词」
+// 需求：用户不填名字也要显示「跬步 Ashley的背诵」
 chk(/DEFAULT_USER\s*=\s*"Ashley"/.test(app), 'app.js 定义默认用户名 Ashley');
 chk(/username\s*==\s*null \? "" : settings\.username\)\.trim\(\)\s*\|\|\s*DEFAULT_USER|\|\| DEFAULT_USER/.test(app),
   '用户名留空时回落到默认名 Ashley');
@@ -895,13 +895,18 @@ print(json.dumps(out, ensure_ascii=False))
   const res = JSON.parse(execFileSync('python3', ['-c', py, path], { encoding: 'utf8' }));
   chk(res._total > 3000, '站点用字扫描出 ' + res._total + ' 个字符（含全部诗词译文）');
   // 覆盖面从「零缺字」放宽为「缺字不增长」：
-  // Noto CJK 本身就没有几十个极生僻字（「剺、媕、岧、鶗」这类，
-  // 只出现在《唐诗三百首》《宋词三百首》的个别句子与作者名里），
+  // Noto CJK（全部 13686 字的源字形）本身就缺一批极生僻字 ——
+  // 礼器名（鞛 鞳 鞶 韝）、拟声词（吰 鏦 豗）、古地名（鄏 郏鄏 鯈）、
+  // 古人名与书名（歜 薳 碏 罃 眘 荎 鉧）、以及「剺 媕 岧 鶗」这类生僻字，
   // 源字体里没有字形可取，补不进去。它们会回落到系统字体显示，
   // 是真·缺字而不是子集做旧 —— 后者才是这条断言本来要拦的事。
-  // 所以这里锁住**缺字总数不得超过 60**：新增语料若又带来一批没补的字，
+  //
+  // 这批字本轮由《古文观止》155 篇全收一次性带齐（原文用字本就极杂），
+  // 已逐个核对过「源字体确实没有」，且多半是人名 / 地名 / 礼器名，
+  // 换成常用字反而会改动原文，故保留。
+  // 上限因此定在**缺字总数不得超过 90**：新增语料若又带来一批没补的字，
   // 一定会突破这个上限并报红（补字脚本见 scripts/supplement-fonts.py）。
-  const MAX_MISSING = 60;
+  const MAX_MISSING = 90;
   Object.keys(res).filter(k => k.indexOf('Noto') === 0).forEach(name => {
     const miss = res[name] || '';
     chk(miss.length <= MAX_MISSING,
