@@ -78,8 +78,16 @@
  *        两条左基准线仍严格对齐）—— 卡头的 +4px 就是相对上一轮的 8px 而言。
  *        另删掉 .group-card 里那条会静默覆盖左内边距的 `padding-left: 0`
  *        （css/classic.css）
+ *   v36  古籍阅读库（基础架构变更，Issue #69）：
+ *        索引页 + 详情页从 js/classic.js 里整体提成可挂载的引擎
+ *        js/reader-core.js（ReaderEngine.mount），小古文只是它的第一个挂载点；
+ *        页面改用 data-gw-* 标记对接，js/classic.js 收成「这一部是什么」的配置；
+ *        新增站点篇目总索引 data/site-index.js（供全站搜索用，
+ *        window.SITE_INDEX / window.buildSiteIndex）
+ *        （js/reader-core.js、js/classic.js、classic/index.html、
+ *          data/site-index.js、sw.js）
  */
-const CACHE_NAME = "poem-app-v35";
+const CACHE_NAME = "poem-app-v36";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [
@@ -108,6 +116,9 @@ const PRECACHE = [
   "./js/app.js",
   "./js/chrome.js",
   "./js/classic.js",
+  // 古籍阅读库：索引页 + 详情页的引擎（小古文 / 唐诗 / 宋词 / 古文观止 共用）
+  "./js/reader-core.js",
+  "./data/site-index.js",
   "./js/manifest-loader.js",
   "./data/poems-1.js",
   "./data/poems-2.js",

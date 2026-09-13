@@ -22,7 +22,7 @@ const html = read('index.html');
 const classicHtml = read('classic/index.html');
 // 法务页也纳入文案/配色检查，避免新页面漏挂主题
 const legalHtml = read('terms/index.html') + read('privacy/index.html');
-const allSrc = app + html + classicHtml + legalHtml + read('js/classic.js') + read('js/pwa.js');
+const allSrc = app + html + classicHtml + legalHtml + read('js/classic.js') + read('js/reader-core.js') + read('js/pwa.js');
 
 chk(app.indexOf('这首歌按遗忘曲线到期了') === -1, '不再出现「这首歌按遗忘曲线到期了」');
 chk(/APP_NAME\s*=\s*"跬步"/.test(app), '应用正式名称为「跬步」');
@@ -324,10 +324,10 @@ chk(arrowSvgBlocks.length >= 2 &&
   '列表箭头与折叠箭头同为 18×18（' + arrowSvgBlocks.length + ' 处）');
 // 首页与小古文页三处箭头都改用同一枚 SVG：页面源码里不再留文本字符「›」
 chk(!/<div class="item-arrow">›<\/div>/.test(read('js/app.js')) &&
-  !/<div class="item-arrow">›<\/div>/.test(read('js/classic.js')),
+  !/<div class="item-arrow">›<\/div>/.test(read('js/reader-core.js')),
   '列表箭头改由 arrowGlyph() 输出内联 SVG（不再写死「›」字符）');
-chk(/function arrowGlyph\(\)/.test(read('js/app.js')) && /function arrowGlyph\(\)/.test(read('js/classic.js')),
-  '首页与小古文各自用同一枚 arrowGlyph() 画箭头');
+chk(/function arrowGlyph\(\)/.test(read('js/app.js')) && /function arrowGlyph\(\)/.test(read('js/reader-core.js')),
+  '首页与古籍页各自用同一枚 arrowGlyph() 画箭头');
 // 折叠箭头的笔画宽度与列表箭头一致（同为 1.8）
 chk(/class="arrow"[\s\S]{0,260}?stroke-width="1\.8"/.test(html),
   '首页折叠箭头笔画宽度 1.8（与列表箭头同一套描边）');
@@ -476,11 +476,16 @@ chk(/\.pb-toggle\s*\{[^}]*var\(--gold\)/.test(css), '主按钮用缃色（与进
    三角的 stroke 与圆环的 border-color 都取宿主元素的 `color`
    （currentColor），于是必然同色；下面同时断言这条链路还在
    —— 谁把三角的 stroke 换成写死的色值，这里就红。 */
+/* 播放三角的来源文件。
+   ⚠️ js/classic.js 已不再是「小古文那一大坨」：列表项与分组小键的三角
+   现在统一由 js/reader-core.js 的 playGlyph() / playSmGlyph() 画出来
+   （小古文 / 唐诗 / 宋词 / 古文观止 / 搜索页共用同一份引擎）。
+   所以这一档指着 reader-core.js 核，而不是指着薄薄的挂载文件 js/classic.js。 */
 const playSrcs = {
   'index.html': html,
   'classic/index.html': classicHtml,
   'js/app.js': app,
-  'js/classic.js': read('js/classic.js'),
+  'js/reader-core.js': read('js/reader-core.js'),
   'js/reader.js': read('js/reader.js')
 };
 // ▶ 三角的路径特征（内收后的空心轮廓）；暂停 ⏸ 是两竖条，不在此列
@@ -491,9 +496,9 @@ Object.keys(playSrcs).forEach(function (f) {
     f + ' 里的播放三角不再是实心填充');
   chk(HOLLOW.test(src), f + ' 里的播放三角改成空心描边（fill="none" + stroke="currentColor"）');
 });
-chk(HOLLOW.test(read('js/classic.js')) && /M9\.4 6\.6 18 12 9\.4 17\.4Z" fill="none" stroke="currentColor"/.test(read('js/classic.js')),
+chk(HOLLOW.test(read('js/reader-core.js')) && /M9\.4 6\.6 18 12 9\.4 17\.4Z" fill="none" stroke="currentColor"/.test(read('js/reader-core.js')),
   '分组小号圆键的三角同样是空心描边（单独一枚、略大一号）');
-chk(!/M8\.2 5\.4 18\.6 12 8\.2 18\.6Z/.test(read('js/classic.js')),
+chk(!/M8\.2 5\.4 18\.6 12 8\.2 18\.6Z/.test(read('js/reader-core.js')),
   '分组小号圆键不再用旧的那枚实心三角路径');
 // 底部播放栏：▶ / 上一首 / 下一首 三枚三角都空心
 // 注意变量名不要与上面那处播放栏文案检查重名（同一作用域下重名会直接语法报错）
@@ -522,7 +527,7 @@ const boxOf = {
   'index.html': [17],                   // 今日条 .today-read（--today-btn-inner）
   'classic/index.html': [17, 17],       // 工具栏连读键 17px / 详情页阅读器 17px
   'js/app.js': [16],                    // 列表项 .item-read
-  'js/classic.js': [16],                // 列表中篇目同上
+  'js/reader-core.js': [16],            // 古籍列表中的篇目（小古文 / 唐诗 / 宋词 / 古文观止 共用）
   'js/reader.js': [17, 17, 17]          // 播放栏 ▶ / 上一首 / 下一首（主键是 ⏸，不在此列）
 };
 const topInner = (css.match(/\.today-actions \{([^}]*)\}/) || [, ''])[1].match(/--today-btn-inner:\s*([\d.]+)px/);
@@ -539,12 +544,12 @@ Object.keys(playSrcs).forEach(function (f) {
 // 「1px」这一档也直接盯住用户最常看到的三处：首页今日条、列表项、小古文列表
 chk(/stroke-width="1\.5"[^>]*\/>/.test(html.indexOf('today-read') > -1 ? html.slice(0, html.indexOf('today-read') + 900) : ''),
   '首页今日条那颗三角的描边值是 1.5（17px 图标框 → 约 1.06px）');
-['js/app.js', 'js/classic.js'].forEach(function (f) {
+['js/app.js', 'js/reader-core.js'].forEach(function (f) {
   chk(/stroke-width="1\.5"/.test(read(f)), f + ' 里列表项那颗三角的描边值是 1.5（16px 框 → 1px）');
 });
-chk(/stroke-width="2"[^>]*\/>/.test(read('js/classic.js')),
+chk(/stroke-width="2"[^>]*\/>/.test(read('js/reader-core.js')),
   '分组小号圆键那颗三角的描边值是 2（12px 框 → 1px）');
-chk(!/stroke-width="2\.4"/.test(html + classicHtml + app + read('js/classic.js') + read('js/reader.js')),
+chk(!/stroke-width="2\.4"/.test(html + classicHtml + app + read('js/reader-core.js') + read('js/reader.js')),
   '全站不再有旧的 2.4 描边（三角边框这一轮统一收细）');
 
 // 同色链路：圆环描边与三角描边同取 currentColor
