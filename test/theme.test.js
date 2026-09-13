@@ -197,6 +197,51 @@ chk(/id="m-font-seg"/.test(html) && /id="m-font-down"/.test(html) && /id="m-font
   '详情页有 A－ / A＋ 组合按钮');
 chk(/id="m-trans-read"/.test(html), '详情页有白话译文朗读（组合键右段）');
 chk(/id="m-trans-text"/.test(html), '详情页有白话译文段落');
+// 译文来源口径：界面要照实说明，不能含糊宣称「以教师用书为准」——
+// 教材本身不给白话译文，这类声明不可验证，反而会误导拿去对作业的家长
+chk(/id="m-trans-src"/.test(html) && /class="trans-src"/.test(html),
+  '详情页译文框有来源注脚 #m-trans-src');
+chk(/id="rd-trans-src"/.test(read('classic.html')), '小古文阅读器也有同一套来源注脚');
+chk(/TRANSLATION_SOURCES/.test(read('data/index.js')), '来源口径文案集中在 data/index.js 一处');
+chk(/translationSourceText/.test(read('data/index.js')), 'data/index.js 提供取文案的函数');
+chk(/data\/index\.js/.test(read('classic.html')),
+  '小古文页加载了 data/index.js（否则来源文案取不到，注脚会是空白）');
+chk(/\.trans-src/.test(css) && /\.trans-src/.test(read('css/classic.css')),
+  'style.css 与 classic.css 都有 .trans-src 样式（两页共用同一套数值）');
+// 特异性：注脚选择器必须比 `.trans-box p`（0-1-1）更具体，否则会被正文样式压回去，
+// 注脚会渲染成 14.5px 正文大小、看着像译文的一部分（同 .trans-read 那次的坑）。
+['css/style.css', 'css/classic.css'].forEach(f => {
+  const c = read(f);
+  chk(/\.trans-box p\.trans-src\s*\{/.test(c),
+    f + ' 注脚用 .trans-box p.trans-src（0-2-1），压得住 .trans-box p（0-1-1）');
+  chk(!/(^|\})\s*\.trans-src\s*\{/m.test(c),
+    f + ' 不再留一条低特异性的裸 .trans-src 规则');
+  // 两页同一套数值：字号 / 行高 / 颜色三样都得对得上
+  const m = c.match(/\.trans-box p\.trans-src\s*\{([\s\S]{0,200}?)\}/);
+  chk(m && /font-size:\s*11\.5px/.test(m[1]) && /line-height:\s*1\.7/.test(m[1]) &&
+    /color:\s*var\(--ink-3\)/.test(m[1]),
+    f + ' 注脚数值与另一页一致（11.5px / 1.7 / --ink-3）');
+});
+// 反向防线：全站文案里不得再出现「译文以教师用书为准」这类不可验证的权威声明。
+// 注意只打「声明」本身 —— 表格里说明口径来源、测试清单里描述这条防线，
+// 都是正当提及，不能一并算违规（否则防线会拦自己）。
+const CLAIMS_AUTHORITY = [
+  /译文[^。；\n]{0,30}(?:以|与|按)[^。；\n]{0,30}(?:教师用书|教参)[^。；\n]{0,10}为准/,
+  /(?:教师用书|教参)[^。；\n]{0,6}与课后[^。；\n]{0,10}释义[^。；\n]{0,6}为准/,
+  /译文[^。；\n]{0,20}来源[^。；\n]{0,6}以统编版/
+];
+['README.md', 'index.html', 'classic.html', 'terms.html', 'privacy.html'].forEach(f => {
+  // 先剥掉「引用式提及」：反引号代码、加粗的引号短语、以及「宣称「…」」这类
+  // 把声明本身当宾语来说的句子 —— 防线要打的是声明，不是对声明的描述。
+  const txt = read(f)
+    .replace(/`[^`]*`/g, '')
+    .replace(/「[^」]*」/g, '「」');
+  const hit = CLAIMS_AUTHORITY.filter(re => re.test(txt)).map(re => re.source);
+  chk(hit.length === 0, f + ' 不再宣称「译文以教师用书为准」' + (hit.length ? '（命中 ' + hit.join(' / ') + '）' : ''));
+});
+chk(/自拟|自行整理|本项目整理/.test(read('README.md')),
+  'README 明确说明译文是自拟直译');
+chk(/自拟|自行编写/.test(read('terms.html')), '用户协议里也如实说明译文为自行编写');
 chk(!/id="gw-done"/.test(html), '古诗词详情页不设「已读」按钮（与小古文唯一区别）');
 // 需求：古诗正文默认字号小一号
 chk(/\.poem-text \{[\s\S]{0,200}?font-size:\s*17px/.test(css), '古诗正文默认字号降为 17px');

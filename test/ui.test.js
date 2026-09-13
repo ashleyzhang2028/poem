@@ -221,6 +221,13 @@ setTimeout(() => {
     chk(d.querySelector('#m-trans').hidden === false, '点译文图标展开白话译文');
     chk(d.querySelectorAll('[id="m-trans-text"]').length === 1, '译文段落 id 唯一（不重蹈重复 id 的覆辙）');
     chk(d.querySelector('#m-trans-text').textContent.length > 10, '译文内容非空');
+    // 译文来源注脚：白话译诗没有法定教科书版本，界面必须照实说明口径
+    const srcEl = d.querySelector('#m-trans-src');
+    chk(!!srcEl, '详情页译文框有来源注脚元素 #m-trans-src');
+    chk(srcEl && srcEl.textContent.length > 10,
+      '详情页照实显示译文来源：' + (srcEl ? srcEl.textContent : ''));
+    chk(srcEl && /本项目|本应用/.test(srcEl.textContent),
+      '来源文案点明译文是自行整理的，不含糊宣称「以某版本为准」');
 
     chk(d.querySelector('#m-text').style.fontSize === '17px',
       '古诗正文默认字号小一号 17px（实际 ' + d.querySelector('#m-text').style.fontSize + '）');

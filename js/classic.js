@@ -382,6 +382,12 @@
       (p.author ? '<span class="tag ghost">' + esc(p.author) + "</span>" : "");
     renderReaderText();
     $("#rd-trans-text").textContent = p.translation || "（暂未收录译文）";
+    // 译文来源注脚：与首页详情页同一套文案（data/index.js 的 TRANSLATION_SOURCES）
+    const srcEl = $("#rd-trans-src");
+    if (srcEl) {
+      srcEl.textContent = p.translation && window.translationSourceText
+        ? window.translationSourceText(p) : "";
+    }
     $("#gw-progress").textContent = "第 " + (idx + 1) + " / " + allItems().length + " 篇";
     showTransBox(false);
     speakingTarget = "原文";

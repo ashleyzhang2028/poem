@@ -488,6 +488,12 @@
     $("#m-author").textContent = p.author;
     $("#m-grade").textContent = gradeName(p.grade) + " " + termName(p.term);
     $("#m-trans-text").textContent = hasTranslation(p) ? p.translation : "（暂未收录译文）";
+    // 译文来源注脚：与译文正文同进同退，没标注就留空（.trans-src:empty 不占位）
+    const srcEl = $("#m-trans-src");
+    if (srcEl) {
+      srcEl.textContent = hasTranslation(p) && window.translationSourceText
+        ? window.translationSourceText(p) : "";
+    }
     renderPoemText(p);
     applyFont();
     applyAlign();

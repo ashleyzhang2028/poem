@@ -364,6 +364,19 @@ body.reader-open .dock { display: none; }
   color: var(--ink-2);
 }
 
+/* 译文来源注脚：贴在译文正文下方的一行小字。
+   不抢正文视线，只回答「这段译文是怎么来的」。
+   选择器写 `.trans-box p.trans-src`（0-2-1）而不是光 `.trans-src`（0-1-0）——
+   否则会被上面那条 `.trans-box p { … }`（0-1-1）按「同特异性、后写胜出」压回
+   14.5px 正文样式，注脚会跟译文正文一样大，看着像正文的一部分。 */
+.trans-box p.trans-src {
+  margin: 8px 0 0;
+  font-size: 11.5px;
+  line-height: 1.7;
+  color: var(--ink-3);
+}
+.trans-box p.trans-src:empty { display: none; }
+
 .reader-tip {
   margin-top: 24px;
   text-align: center;
