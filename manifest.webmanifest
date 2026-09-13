@@ -2,7 +2,7 @@
   "name": "跬步 · 古诗词背诵",
   "short_name": "跬步",
   "description": "跬步：一年级至高三古诗词，按遗忘曲线安排复习；小古文 100 篇可点击阅读或随机连读。手机、平板、电脑都能用，可添加到主屏幕当 App。",
-  "start_url": "./index.html",
+  "start_url": "./",
   "scope": "./",
   "id": "./",
   "display": "standalone",

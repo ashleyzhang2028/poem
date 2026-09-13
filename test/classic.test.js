@@ -1,4 +1,4 @@
-// 课外必背小古文（classic.html）端到端测试：数据完整性 + 列表/搜索/筛选 + 阅读器
+// 课外必背小古文（/classic/ 页）端到端测试：数据完整性 + 列表/搜索/筛选 + 阅读器
 const { JSDOM } = require('jsdom');
 const fs = require('fs');
 const path = __dirname + '/../';
@@ -45,8 +45,9 @@ chk(groups.length >= 6, '按主题分组聚合出 ' + groups.length + ' 组');
 chk(groups.reduce((n, g) => n + g.items.length, 0) === 100, '分组内篇目合计 100');
 
 /* ---------- 二、页面层（jsdom） ---------- */
-const html = fs.readFileSync(path + 'classic.html', 'utf8');
-const dom = new JSDOM(html, { runScripts: 'dangerously', url: 'https://local.test/classic.html' });
+/* 目录化 URL：页面真实文件在 classic/index.html，访问地址是 /classic/ */
+const html = fs.readFileSync(path + 'classic/index.html', 'utf8');
+const dom = new JSDOM(html, { runScripts: 'dangerously', url: 'https://local.test/classic/', base: 'https://local.test/classic/' });
 const { window } = dom;
 const scriptOrder = html.match(/<script src="([^"]+)"><\/script>/g).map(s => s.match(/src="([^"]+)"/)[1]);
 chk(scriptOrder.indexOf('data/poems-classic.js') >= 0, '页面引用了小古文数据');
@@ -61,7 +62,7 @@ setTimeout(() => {
 
   // 回归防线：页面里不允许出现重复 id —— 曾因 #rd-trans-text 同时用在
   // 译文开关的读屏文案与可见译文段落上，导致译文被写进隐藏标签、正文空白
-  ['index.html', 'classic.html'].forEach(f => {
+  ['index.html', 'classic/index.html'].forEach(f => {
     const doc = new JSDOM(fs.readFileSync(path + f, 'utf8')).window.document;
     const seen = {};
     const dups = [];
@@ -99,7 +100,7 @@ setTimeout(() => {
   chk(!!d.querySelector('#settings-modal #input-username'), '小古文页设置里有用户名输入框');
   // 需求 2：顶部说明整段删掉，太啰嗦
   chk(d.querySelector('.notice') === null, '顶部说明段落已整段删除（不再有 .notice）');
-  const htmlSrc = fs.readFileSync(path + 'classic.html', 'utf8');
+  const htmlSrc = fs.readFileSync(path + 'classic/index.html', 'utf8');
   chk(!/不排复习日期/.test(htmlSrc), '页面里不再出现「不排复习日期」这类说明');
   chk(!/想读哪篇点哪篇[。．]/.test(htmlSrc.replace(/<p>.*?<\/p>/, '')), '不再有婆婆妈妈的说明段落');
   // 需求：标题行下面补一句副标题（页面名已在第一行，这里不再重复「小古文」）
@@ -286,7 +287,7 @@ setTimeout(() => {
 
   // 需求：播放与暂停不再并排显示 —— 同一颗键上 ▶ / ⏸ 互斥切换；
   // 白话译文的朗读键也不再和正文键并排（挪进译文框，展开才出现）
-  const clsHtml = fs.readFileSync(path + 'classic.html', 'utf8');
+  const clsHtml = fs.readFileSync(path + 'classic/index.html', 'utf8');
   chk(d.querySelector('#rd-read-combo') === null, '不再有「原文 / 译文」并排的组合键');
   const readBtn = d.querySelector('#rd-read-btn');
   chk(!!readBtn, '阅读器有正文朗读键');

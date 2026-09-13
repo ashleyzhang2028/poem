@@ -19,9 +19,9 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
 /* ---------------- 1. 文案 ---------------- */
 const app = read('js/app.js');
 const html = read('index.html');
-const classicHtml = read('classic.html');
+const classicHtml = read('classic/index.html');
 // 法务页也纳入文案/配色检查，避免新页面漏挂主题
-const legalHtml = read('terms.html') + read('privacy.html');
+const legalHtml = read('terms/index.html') + read('privacy/index.html');
 const allSrc = app + html + classicHtml + legalHtml + read('js/classic.js') + read('js/pwa.js');
 
 chk(app.indexOf('这首歌按遗忘曲线到期了') === -1, '不再出现「这首歌按遗忘曲线到期了」');
@@ -209,10 +209,10 @@ chk(/id="m-trans-text"/.test(html), '详情页有白话译文段落');
 // 教材本身不给白话译文，这类声明不可验证，反而会误导拿去对作业的家长
 chk(/id="m-trans-src"/.test(html) && /class="trans-src"/.test(html),
   '详情页译文框有来源注脚 #m-trans-src');
-chk(/id="rd-trans-src"/.test(read('classic.html')), '小古文阅读器也有同一套来源注脚');
+chk(/id="rd-trans-src"/.test(read('classic/index.html')), '小古文阅读器也有同一套来源注脚');
 chk(/TRANSLATION_SOURCES/.test(read('data/index.js')), '来源口径文案集中在 data/index.js 一处');
 chk(/translationSourceText/.test(read('data/index.js')), 'data/index.js 提供取文案的函数');
-chk(/data\/index\.js/.test(read('classic.html')),
+chk(/data\/index\.js/.test(read('classic/index.html')),
   '小古文页加载了 data/index.js（否则来源文案取不到，注脚会是空白）');
 chk(/\.trans-src/.test(css) && /\.trans-src/.test(read('css/classic.css')),
   'style.css 与 classic.css 都有 .trans-src 样式（两页共用同一套数值）');
@@ -238,7 +238,7 @@ const CLAIMS_AUTHORITY = [
   /(?:教师用书|教参)[^。；\n]{0,6}与课后[^。；\n]{0,10}释义[^。；\n]{0,6}为准/,
   /译文[^。；\n]{0,20}来源[^。；\n]{0,6}以统编版/
 ];
-['README.md', 'index.html', 'classic.html', 'terms.html', 'privacy.html'].forEach(f => {
+['README.md', 'index.html', 'classic/index.html', 'terms/index.html', 'privacy/index.html'].forEach(f => {
   // 先剥掉「引用式提及」：反引号代码、加粗的引号短语、以及「宣称「…」」这类
   // 把声明本身当宾语来说的句子 —— 防线要打的是声明，不是对声明的描述。
   const txt = read(f)
@@ -249,7 +249,7 @@ const CLAIMS_AUTHORITY = [
 });
 chk(/自拟|自行整理|本项目整理/.test(read('README.md')),
   'README 明确说明译文是自拟直译');
-chk(/自拟|自行编写/.test(read('terms.html')), '用户协议里也如实说明译文为自行编写');
+chk(/自拟|自行编写/.test(read('terms/index.html')), '用户协议里也如实说明译文为自行编写');
 chk(!/id="gw-done"/.test(html), '古诗词详情页不设「已读」按钮（与小古文唯一区别）');
 // 需求：古诗正文默认字号小一号
 chk(/\.poem-text \{[\s\S]{0,200}?font-size:\s*17px/.test(css), '古诗正文默认字号降为 17px');
@@ -368,14 +368,14 @@ chk(Buffer.compare(norm, any) !== 0, 'maskable 图标与普通图标是两份不
 
 
 /* ---------------- 7. 设置整页 + 底部导航栏不遮挡 ---------------- */
-const settingsHtml = read('settings.html');
+const settingsHtml = read('settings/index.html');
 const settingsJs = read('js/settings.js');
 const pwaJs = read('js/pwa.js');
 
 // 需求：设置不再向上弹卡片，而是全新的整页
 chk(html.indexOf('settings-modal') === -1, '首页不再有向上弹出的设置卡片（settings-modal 已删除）');
 // 设置的入口是底部页签「设置」，由 js/chrome.js 渲染成真实链接
-chk(/href:\s*"\.\/settings\.html"/.test(read('js/chrome.js')), '底部页签「设置」指向设置整页');
+chk(/href:\s*"\/settings\/"/.test(read('js/chrome.js')), '底部页签「设置」指向设置整页（目录化路径）');
 chk(html.indexOf('btn-settings') === -1, '首页顶栏不再有设置齿轮（入口收敛到页签）');
 chk(/data-nav="settings"/.test(settingsHtml), '设置页声明自己是「设置」页签');
 chk(/js\/chrome\.js/.test(settingsHtml), '设置页与首页共用同一套顶栏与底部页签');
@@ -393,7 +393,7 @@ chk(!/padding-bottom:\s*calc\(150px/.test(css) && !/padding-bottom:\s*calc\(196p
 chk(/\.dock \{[\s\S]*?position:\s*fixed[\s\S]*?bottom:\s*0/.test(css), '底部页签是贴底固定导航栏');
 chk(/body:not\(\.no-dock\) \.app[\s\S]{0,80}?padding-bottom:\s*calc\([^)]*--nav-h/.test(css),
   '有底部页签时，页面留白按实测导航栏高度计算');
-chk(/sw\.js/.test('sw.js') && /js\/pwa\.js/.test(read('settings.html')) && /js\/pwa\.js/.test(read('classic.html')),
+chk(/sw\.js/.test('sw.js') && /js\/pwa\.js/.test(read('settings/index.html')) && /js\/pwa\.js/.test(read('classic/index.html')),
   '所有页都加载 js/pwa.js，--nav-h 每页都会实测');
 chk(/\.ios-install-tip \{[\s\S]*?bottom:\s*calc\(12px \+ var\(--nav-h\)\)/.test(css),
   'iOS 引导条按基准线避让，不再盖住页脚');
@@ -403,12 +403,38 @@ chk(/window\.PWA\.syncBottomGap = syncBottomGap/.test(pwaJs),
   'js/pwa.js 暴露 syncBottomGap 供各页统一刷新留白');
 chk(/measureBottomNav/.test(pwaJs) && /ResizeObserver/.test(pwaJs),
   '播放栏高度变化时会重新测量底部留白');
-chk(/settings\.html/.test(read('sw.js')) && /js\/settings\.js/.test(read('sw.js')),
+chk(/\/settings\//.test(read('sw.js')) && /js\/settings\.js/.test(read('sw.js')),
   'Service Worker 预缓存设置页，断网也可进设置');
 
 // 法务链接在设置页底部；返回入口交给全站统一的底部页签
-chk(/data-nav-go/.test(read('js/chrome.js')) && /settings\.html/.test(read('js/chrome.js')),
+chk(/data-nav-go/.test(read('js/chrome.js')) && /\/settings\//.test(read('js/chrome.js')),
   '设置页可经底部页签回到古诗词 / 小古文');
+
+/* ---------------- 7c. 目录化 URL（URL 里不出现 .html） ----------------
+   页面从 /classic.html 搬到 /classic/index.html 之后，有两个坑必须钉死：
+   1) 页面里的资源引用：住在子目录的页面若用相对路径，会去 /settings/css/... 找；
+   2) Service Worker 的注册路径：相对的 "./sw.js" 会解析成 /settings/sw.js（404），
+      整站离线能力静默失效 —— 这两条各自由下面断言守住。 */
+{
+  const subPages = ['classic/index.html', 'settings/index.html', 'terms/index.html', 'privacy/index.html'];
+  subPages.forEach(f => {
+    const src = read(f);
+    const rel = (src.match(/(?:src|href)="(\.\.?\/[^"]*)"/g) || [])
+      .filter(x => !/^href="\.\/#/.test(x)); // 页内锚点（./#p1）不算
+    // 子目录页面要么用绝对路径（/css/...），要么显式声明 <base href="/">，
+    // 否则相对路径会基于子目录解析而 404
+    const hasBase = /<base href="\/"\s*\/>/.test(src);
+    chk(hasBase || rel.length === 0,
+      f + ' 资源引用不会因目录化而 404（绝对路径或 <base href="/">，实际 ' + rel.join(', ') + '）');
+  });
+  // Service Worker 必须从站点根注册，否则子目录页面注册不上（scope 也覆盖不到全站）
+  chk(/navigator\.serviceWorker\.register\("\/sw\.js"\)/.test(read('js/pwa.js')),
+    'Service Worker 从站点根注册（/sw.js），子目录页面同样能注册');
+  chk(!/register\("\.\/sw\.js"\)/.test(read('js/pwa.js')),
+    '不再用相对的 ./sw.js 注册（目录化后会解析成 /settings/sw.js 而 404）');
+  // 缓存名必须随 URL 结构变化升级，否则老用户拿到的是旧副本
+  chk(/poem-app-v19/.test(sw), 'Service Worker 缓存版本已升级（v19），老缓存会被清掉');
+}
 chk(/invalidatePlan/.test(settingsJs), '设置页改配置后会让首页的今日计划缓存失效');
 
 /* ---------------- 7b. 设置页选中态统一（本次改动） ----------------

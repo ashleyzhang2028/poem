@@ -27,12 +27,24 @@ const { JSDOM } = require('jsdom');
 const fs = require('fs');
 const ROOT = __dirname + '/../';
 
+/**
+ * 页面文件 → 目录化地址。URL 里不再出现 .html：
+ *   index.html → /            classic/index.html → /classic/
+ *   settings/index.html → /settings/   …
+ */
+const URL_OF = {
+  'index.html': '/',
+  'classic/index.html': '/classic/',
+  'settings/index.html': '/settings/'
+};
+
 /** 启动一个页面（可选注入假 SpeechSynthesis / 初始 localStorage） */
 function boot(file, seed, withSpeech) {
   const html = fs.readFileSync(ROOT + file, 'utf8');
+  const pageUrl = 'https://local.test' + (URL_OF[file] || '/' + file);
   const dom = new JSDOM(html, {
     runScripts: 'dangerously',
-    url: 'https://local.test/' + file,
+    url: pageUrl,
     beforeParse(win) {
       // jsdom 没有 window.scrollTo，补一个空实现避免噪音日志
       win.scrollTo = function () {};
@@ -200,9 +212,9 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
 
   // ---- 阅读辅助开关的可见差别 ----
   // 开启（默认「只标生字」）→ 打开诗词自动注音；关闭 → 纯文本，需要时手动切档位。
-  // 设置已改成独立整页（settings.html），开关住在那一页：这里在设置页点开关，
+  // 设置已改成独立整页（/settings/），开关住在那一页：这里在设置页点开关，
   // 再把结果搬进首页实例的 localStorage（两个 JSDOM 实例的存储各自独立）。
-  const helperPage = boot('settings.html', null, false);
+  const helperPage = boot('settings/index.html', null, false);
   // boot() 是同步注入脚本的，DOMContentLoaded 早已触发过，手动补一次让设置页初始化
   helperPage.document.dispatchEvent(new helperPage.Event('DOMContentLoaded', { bubbles: true }));
   const clickHelper = (v) => {
@@ -245,7 +257,7 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
   d.querySelector('#modal').hidden = true;
 
   // ---- 小古文：随机连读 / 上一篇下一篇 / 译文朗读 ----
-  const w2 = boot('classic.html', null, true);
+  const w2 = boot('classic/index.html', null, true);
   await sleep(400);
   const c = w2.document;
   chk(!!c.querySelector('#gw-random-read'), '索引页有「连读」按钮');
@@ -366,8 +378,8 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
   chk(d3.querySelectorAll('#m-text ruby').length > 0, '手动选「生字」后立刻出现拼音');
   chk(JSON.parse(w3.localStorage.getItem('poem_recite_settings_v1')).helper === 'on',
     '手动选「生字」会同步把「阅读辅助」打开（两处状态一致）');
-  // 设置页上的开关 UI 同步为「开启」（设置已是独立整页 settings.html）
-  const helperPage3 = boot('settings.html', {
+  // 设置页上的开关 UI 同步为「开启」（设置已是独立整页 /settings/）
+  const helperPage3 = boot('settings/index.html', {
     poem_recite_settings_v1: w3.localStorage.getItem('poem_recite_settings_v1')
   });
   helperPage3.document.dispatchEvent(new helperPage3.Event('DOMContentLoaded', { bubbles: true }));
@@ -386,7 +398,7 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
   d3.querySelector('#modal').hidden = true;
 
   // 场景 2：小古文页的注音也要受总开关约束（修复前 init 只看一次 PinyinKey 是否为 null）
-  const w4 = boot('classic.html', {
+  const w4 = boot('classic/index.html', {
     poem_recite_settings_v1: JSON.stringify({ grade: 1, term: 1, dailyCount: 5, scope: 'term', helper: 'off' }),
     poem_helper_pinyin_v1: 'all' // 残留「全文注音」，但总开关是关闭
   });
@@ -425,7 +437,7 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
 
   // ---- 详情页朗读 / 暂停 / 译文朗读：暂停后按钮状态不错乱、不叠一层朗读 ----
   {
-    const w5 = boot('classic.html', null, true);
+    const w5 = boot('classic/index.html', null, true);
     await sleep(400);
     const d5 = w5.document;
     d5.querySelector('#gw-list .item').dispatchEvent(new w5.Event('click', { bubbles: true }));

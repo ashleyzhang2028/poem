@@ -87,7 +87,7 @@
   var APP_NAME = "跬步";
   /* 顶栏第二行 = 页面自己的说明（页面用 body 上的 data-sub 给）。
      应用名与页面名已经在第一行，这里只放「这个页面是干什么的」：
-       · 首页 —— 「按遗忘曲线复习」（文案在 index.html 的 data-sub 上，此处只做说明）
+       · 首页 —— 「按遗忘曲线复习」（文案在首页的 data-sub 上，此处只做说明）
        · 小古文页 —— 「100 篇 · 想读哪篇点哪篇」
      刻意不再写「一年级至高三」这类学段字样：首页能选年级学期，
      固定写死一个学段反而让非该学段的用户觉得不是给自己用的。
@@ -99,13 +99,13 @@
     return el ? el.getAttribute("data-" + key) : null;
   }
 
-  /** 当前页页签：body 上的 data-nav 说了算（缺省按文件名猜） */
+  /** 当前页页签：body 上的 data-nav 说了算（缺省按路径猜） */
   function pageKey() {
     var v = bodyData("nav");
     if (v) return v;
-    var f = currentFile();
-    if (/^classic\.html$/.test(f)) return "classic";
-    if (/^settings\.html$/.test(f)) return "settings";
+    var p = currentPath();
+    if (/^\/classic\/?$/.test(p) || /^\/classic\/index\.html$/.test(p)) return "classic";
+    if (/^\/settings\/?$/.test(p) || /^\/settings\/index\.html$/.test(p)) return "settings";
     return "home";
   }
 
@@ -144,7 +144,7 @@
       right = '<span class="top-act-spacer" aria-hidden="true"></span>';
     } else {
       right =
-        '<a class="top-act" id="top-back" href="./index.html" title="回到首页" aria-label="回到首页">' +
+        '<a class="top-act" id="top-back" href="/" title="回到首页" aria-label="回到首页">' +
         '<span class="top-act-icon" aria-hidden="true">' + GLYPHS.back + "</span></a>";
     }
 
@@ -184,14 +184,15 @@
   function dockHtml() {
     var key = pageKey();
     var items = [
-      { key: "home", href: "./index.html", icon: GLYPHS.tabPoem, label: "古诗词", desc: "今日背诵与全部诗词" },
-      { key: "classic", href: "./classic.html", icon: GLYPHS.tabClassic, label: "小古文", desc: "100 篇文言短文" },
-      { key: "settings", href: "./settings.html", icon: GLYPHS.tabGear, label: "设置", desc: "用户名 / 年级 / 音量" }
+      { key: "home", href: "/", icon: GLYPHS.tabPoem, label: "古诗词", desc: "今日背诵与全部诗词" },
+      { key: "classic", href: "/classic/", icon: GLYPHS.tabClassic, label: "小古文", desc: "100 篇文言短文" },
+      { key: "settings", href: "/settings/", icon: GLYPHS.tabGear, label: "设置", desc: "用户名 / 年级 / 音量" }
     ];
     var html = '<nav class="dock" id="site-dock" aria-label="主导航">';
     items.forEach(function (it) {
       var on = key === it.key;
-      // 每个页签都指向真实页面：设置也是独立整页（settings.html），不再是弹层卡片
+      // 每个页签都指向真实页面：设置也是独立整页（/settings/），不再是弹层卡片
+      // 地址统一走目录化路由，不带 .html
       var tag = it.key === "settings" ? "a" : "button";
       html +=
         "<" + tag + ' ' + (tag === "a" ? 'href="' + it.href + '"' : 'type="button"') +
@@ -259,26 +260,67 @@
       if (!btn) return;
       e.preventDefault();
       var dest = btn.getAttribute("data-nav-go");
-      var here = currentFile();
-      var want = dest === "classic" ? "classic.html" : dest === "settings" ? "settings.html" : "index.html";
+      var want = routeHref(dest);
       // 已经在这一页：回到顶部，不再重复导航
-      if (here === want) {
+      if (currentRoute() === dest) {
         window.scrollTo({ top: 0, behavior: "smooth" });
         return;
       }
-      location.href = "./" + want;
+      location.href = want;
     });
   }
 
-  /** 当前页面文件名（用于判断「已在本页」） */
-  function currentFile() {
-    var m = /([^/]+)$/.exec(location.pathname);
-    return (m && m[1]) || "index.html";
+  /**
+   * 页面路由表 —— 全站唯一的一份「页面住哪」。
+   *
+   * URL 一律目录化，不带 .html：
+   *   /            首页（古诗词）
+   *   /classic/    小古文
+   *   /settings/   设置
+   *   /terms/      用户协议
+   *   /privacy/    隐私条款
+   *
+   * 各页面真实文件都是该目录下的 index.html。
+   * 这里也兼容直接访问 /classic/index.html 的情形（等价于 /classic/）。
+   */
+  var ROUTES = {
+    home: "/",
+    classic: "/classic/",
+    settings: "/settings/",
+    terms: "/terms/",
+    privacy: "/privacy/"
+  };
+
+  /** 路由 → 跳转地址 */
+  function routeHref(key) {
+    return ROUTES[key] || ROUTES.home;
+  }
+
+  /** 当前路径（去掉结尾多余的 /，统一成不含末尾斜杠的形式；根路径归一成 "/"） */
+  function currentPath() {
+    var p = location.pathname.replace(/\/index\.html$/, "/");
+    p = p.replace(/\/+$/, "");
+    return p || "/";
+  }
+
+  /** 当前页所在路由 key：用于判断「已在本页」（同时容忍 /classic 与 /classic/ 两种写法） */
+  function currentRoute() {
+    var p = currentPath();
+    for (var key in ROUTES) {
+      if (currentPathOf(routeHref(key)) === p) return key;
+    }
+    return "home";
+  }
+
+  function currentPathOf(href) {
+    var v = String(href).split("#")[0].split("?")[0];
+    v = v.replace(/\/index\.html$/, "/").replace(/\/+$/, "");
+    return v || "/";
   }
 
   /** 打开设置整页（保留给页面内其他入口调用：直接跳转，不再弹卡片） */
   function openSettings() {
-    location.href = "./settings.html";
+    location.href = "/settings/";
   }
 
   /* ---------------- 页面可调用的接口 ---------------- */

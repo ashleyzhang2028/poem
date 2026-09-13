@@ -3,12 +3,12 @@ const fs = require('fs');
 const path = __dirname + '/../';
 
 const html = fs.readFileSync(path + 'index.html', 'utf8');
-// 设置已从「底部弹出的卡片」改为独立整页（settings.html），页脚也搬到了这一页
-const settingsHtml = fs.readFileSync(path + 'settings.html', 'utf8');
+// 设置已从「底部弹出的卡片」改为独立整页（/settings/），页脚也搬到了这一页
+const settingsHtml = fs.readFileSync(path + 'settings/index.html', 'utf8');
 
 /** 起一个设置整页实例（供读取设置项回显 / 改写配置） */
 function bootSettingsPage(seed) {
-  const sdom = new JSDOM(settingsHtml, { runScripts: 'dangerously', url: 'https://local.test/settings.html' });
+  const sdom = new JSDOM(settingsHtml, { runScripts: 'dangerously', url: 'https://local.test/settings/', base: 'https://local.test/settings/' });
   const sw = sdom.window;
   if (seed) for (const k in seed) sw.localStorage.setItem(k, seed[k]);
   settingsHtml.match(/<script src="([^"]+)"><\/script>/g)
@@ -71,7 +71,8 @@ setTimeout(() => {
   // 页脚需常驻两个法务入口：用户协议 / 隐私条款
   const footLinks = [...foot.querySelectorAll('.foot-links a')];
   chk(footLinks.map(a => a.textContent.trim()).join('/') === '用户协议/隐私条款', '页脚含「用户协议」「隐私条款」链接');
-  chk(footLinks.map(a => a.getAttribute('href')).join('/') === './terms.html/./privacy.html', '页脚两个链接指向 terms.html 与 privacy.html');
+  chk(footLinks.map(a => a.getAttribute('href')).join(' ') === '/terms/ /privacy/',
+    '页脚两个链接指向目录化的 /terms/ 与 /privacy/（实际 ' + footLinks.map(a => a.getAttribute('href')).join(' ') + '）');
   chk(!!(spEarly.doc.querySelector('.settings-page').compareDocumentPosition(foot) & window.Node.DOCUMENT_POSITION_FOLLOWING),
     '页脚排在设置项下方（页面最底部）');
   // 需求：删掉「一年级至高三 · 按遗忘曲线复...」这行文案
@@ -172,7 +173,7 @@ setTimeout(() => {
 
   // 底部页签「设置」是通往设置整页的链接（不再是打开弹层）
   const dockSettings = d.querySelector('.dock-item[data-nav-go="settings"]');
-  chk(dockSettings.tagName === 'A' && dockSettings.getAttribute('href') === './settings.html',
+  chk(dockSettings.tagName === 'A' && dockSettings.getAttribute('href') === '/settings/',
     '底部页签「设置」指向设置整页（实际 ' + dockSettings.tagName + ' ' + dockSettings.getAttribute('href') + '）');
   chk(d.querySelectorAll('#today-list .item').length === 5, '今日列表渲染 5 首（实际 ' + d.querySelectorAll('#today-list .item').length + '）');
   chk(d.querySelector('#ring-text').textContent === '0/5', '环形进度 0/5');

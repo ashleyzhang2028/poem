@@ -63,7 +63,10 @@
     if (location.protocol !== "http:" && location.protocol !== "https:") return;
 
     window.addEventListener("load", function () {
-      navigator.serviceWorker.register("./sw.js").then(function (reg) {
+      // 必须用站点根路径：URL 目录化之后设置页住在 /settings/、法务页住在 /terms/，
+      // 相对的 "./sw.js" 会解析成 /settings/sw.js（404），SW 根本注册不上、离线失效。
+      // sw.js 的作用域需要覆盖全站，也只有根路径注册才拿得到根作用域。
+      navigator.serviceWorker.register("/sw.js").then(function (reg) {
         // 有新版本时静默更新，下次进入即为新版
         reg.addEventListener("updatefound", function () {
           var sw = reg.installing;
