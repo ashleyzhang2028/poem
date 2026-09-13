@@ -41,7 +41,14 @@ main:
             # 之后 test/run.sh 发现 require.resolve('jsdom') 失败，转入「临时安装」分支，
             # 在另一处目录里再装一份 jsdom，依赖解析于是变得不确定
             # （小古文层曾因此在 CI 上抛出 TypeError 而整层炸掉）。
-            npm i jsdom puppeteer --no-save --no-fund --no-audit
+            #
+            # jsdom 固定大版本：本镜像的 Node 是 20，而 jsdom 30 起把 engines
+            # 提到了 ^22.22.2 || ^24.15.0 || >=26.0.0 —— 在 Node 20 上属于「未支持」，
+            # 装到会上但 DOM 行为漂移（jsdom 27~29 的 element.querySelector('#dup-id')
+            # 只认文书里第一枚 id，恰好把「页面顶栏与阅读器顶栏都渲染出 id="top-act"」
+            # 这个真 bug 暴露成整层 ✗；上层若只跟着升 jsdom 就会让红绿随版本跳）。
+            # 这里锁 ^26（engines: >=18），要升 Node 时同步放开。
+            npm i jsdom@^26 puppeteer --no-save --no-fund --no-audit
         - name: run-tests
           script: bash test/run.sh
 
@@ -67,7 +74,14 @@ main:
             # 之后 test/run.sh 发现 require.resolve('jsdom') 失败，转入「临时安装」分支，
             # 在另一处目录里再装一份 jsdom，依赖解析于是变得不确定
             # （小古文层曾因此在 CI 上抛出 TypeError 而整层炸掉）。
-            npm i jsdom puppeteer --no-save --no-fund --no-audit
+            #
+            # jsdom 固定大版本：本镜像的 Node 是 20，而 jsdom 30 起把 engines
+            # 提到了 ^22.22.2 || ^24.15.0 || >=26.0.0 —— 在 Node 20 上属于「未支持」，
+            # 装到会上但 DOM 行为漂移（jsdom 27~29 的 element.querySelector('#dup-id')
+            # 只认文书里第一枚 id，恰好把「页面顶栏与阅读器顶栏都渲染出 id="top-act"」
+            # 这个真 bug 暴露成整层 ✗；上层若只跟着升 jsdom 就会让红绿随版本跳）。
+            # 这里锁 ^26（engines: >=18），要升 Node 时同步放开。
+            npm i jsdom@^26 puppeteer --no-save --no-fund --no-audit
         - name: run-tests
           script: bash test/run.sh
 
