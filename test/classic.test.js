@@ -328,8 +328,15 @@ setTimeout(() => {
   // 与卡头分组名已经把这件事说清楚了，竖条既重复、又在视觉上多出一道压在
   // 序号圆左侧的竖线。这里从 CSS 源码锁住「不再渲染 ::before 竖条」。
   const classicCssText = fs.readFileSync(path + 'css/classic.css', 'utf8');
-  chk(!!cardCss && /padding:\s*0 0 10px;/.test(cardCss[2]),
-    '卡片左右不留白（4px 会在条目内容外侧造出一道更高的「大竖条」）');
+  // 需求（Issue #55 后续，本轮）：卡头「蒙学经典 4 篇」那一行与左侧边框的间距
+  // 再加 2px。加在卡片这层（.group-card 的左内边距 0 → 2px），而不是卡头自己的
+  // padding —— 卡头与卡内条目共用同一条左缘，只动 .group-head 会让组名比下面的
+  // 篇目多缩进 2px、卡头看着歪出半格。写在卡片上则卡头 / 条目 / 分隔线一起右移，
+  // 卡内「条目左 10px / 右 8px」的相对关系一点不变。
+  // 原先左内边距是 0（旧版 4px 是给「整条左色条」的，合并成卡片后只剩一道空白，
+  // 与条目自己的装饰重复 —— 已收掉）；本轮只加回用户要的 2px，右侧仍是 0。
+  chk(!!cardCss && /padding:\s*0 0 10px 2px;/.test(cardCss[2]),
+    '卡片左内边距 2px（卡头与左侧边框的间距 +2px）、右内边距仍为 0');
   chk(!/\.group-card \.item::before\s*\{/.test(classicCssText),
     '条目短竖条（::before）整体去掉，不再出现第二道竖线');
   chk(!/background:\s*var\(--blue\);\s*\}/.test(classicCssText) ||
