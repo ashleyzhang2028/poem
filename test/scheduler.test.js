@@ -29,6 +29,33 @@ const ids = new Set();
 sandbox.POEMS_ALL.forEach(p => { if (ids.has(p.id)) throw new Error('重复 id ' + p.id); ids.add(p.id); });
 assert(true, '诗词 id 无重复');
 
+// 1.0 白话译文：全库 273 首必须首首有译文，且不能敷衍
+//     （回归：#44 反馈「很多古诗词缺白话译文」，此前初高中几乎全缺）
+const plain = s => String(s || '').replace(/\s/g, '');
+const noTrans = sandbox.POEMS_ALL.filter(p => !plain(p.translation));
+assert(noTrans.length === 0,
+  '全库译文齐全（缺 ' + noTrans.length + ' 首：' + noTrans.map(p => p.id).join(',') + '）');
+// 短诗译文不该比原文还短；长词与文言文留 0.7 的余量
+const thinTrans = sandbox.POEMS_ALL.filter(p => {
+  const tl = plain(p.translation).length, xl = plain(p.text).length;
+  const need = xl <= 40 ? 0.9 : xl <= 120 ? 0.85 : 0.7;
+  return tl < 20 || tl < xl * need;
+});
+assert(thinTrans.length === 0,
+  '没有译文过短的篇目（可疑 ' + thinTrans.length + ' 首：' + thinTrans.map(p => p.id).join(',') + '）');
+// 译文不能直接抄原文
+const copyTrans = sandbox.POEMS_ALL.filter(p => plain(p.translation) === plain(p.text));
+assert(copyTrans.length === 0, '译文中没有与原文完全相同的（' + copyTrans.map(p => p.id).join(',') + '）');
+// 抽样核对几首新补的译文内容，防止填错位置
+const trOf = t => sandbox.POEMS_ALL.filter(p => p.title === t).map(p => p.translation);
+assert(trOf('题西林壁').length && trOf('题西林壁').every(t => t.includes('庐山')),
+  '《题西林壁》译文点出「庐山」');
+assert(trOf('岳阳楼记').every(t => t.includes('先天下之忧而忧') || t.includes('天下人忧愁')),
+  '《岳阳楼记》译文含「先天下之忧而忧」的名句意译');
+assert(trOf('琵琶行').every(t => t.includes('天涯')), '《琵琶行》译文含「同是天涯沦落人」');
+assert(trOf('琵琶行并序').length === 0 || trOf('琵琶行并序').every(t => t.includes('浔阳江')),
+  '《琵琶行并序》译文含「浔阳江」');
+
 // 1.1 小学篇目：按 2025 比对清单补齐的 31 首，必须落在标注的年级学期上
 const gradeCount = g => sandbox.POEMS_ALL.filter(p => p.grade === g).length;
 assert([1,2,3,4,5,6].map(gradeCount).reduce((a,b)=>a+b,0) === 122,

@@ -371,21 +371,33 @@ try {
   const { execFileSync } = require('child_process');
   execFileSync('python3', ['-c', 'import fontTools'], { stdio: 'ignore' });
   const fontsDir = path + 'fonts/';
-  const need = ['用户协议', '隐私条款', '跬步', '设置', '朗读', '拼音', '诗词', '©'];
-  const script = `
-import sys, json
+  // 不再只抽查几个词：直接把「站点实际用到的全部字符」交给字体做覆盖校验。
+  // #44 补了 197 首译文，新增 116 个用字，靠固定清单是查不出来的。
+  const { execFileSync: _x } = require('child_process');
+  const py = `
+import sys, json, os, re
 from fontTools.ttLib import TTFont
-chars = sys.argv[1]
-out = {}
+root = sys.argv[1]
+chars = set()
+for dirpath, dirnames, filenames in os.walk(root):
+    if any(x in dirpath for x in ['.git', 'node_modules', 'fonts']):
+        continue
+    for fn in filenames:
+        if fn.endswith(('.js', '.html', '.css', '.json', '.webmanifest')):
+            with open(os.path.join(dirpath, fn), encoding='utf8') as fh:
+                chars |= set(re.findall(r'[\u4e00-\u9fff\u3000-\u303f\uff00-\uffef]', fh.read()))
+chars |= set('跬步·—…「」《》（）？！、。；：')
+out = {'_total': len(chars)}
 for name in ['NotoSansSC-400','NotoSansSC-600','NotoSerifSC-400','NotoSerifSC-600']:
     cmap = TTFont('${fontsDir}%s.woff2' % name).getBestCmap()
-    out[name] = [c for c in chars if ord(c) not in cmap]
+    out[name] = ''.join(sorted(c for c in chars if ord(c) not in cmap))
 print(json.dumps(out, ensure_ascii=False))
 `;
-  const res = JSON.parse(execFileSync('python3', ['-c', script, need.join('')], { encoding: 'utf8' }));
-  Object.keys(res).forEach(name => {
+  const res = JSON.parse(execFileSync('python3', ['-c', py, path], { encoding: 'utf8' }));
+  chk(res._total > 3000, '站点用字扫描出 ' + res._total + ' 个字符（含全部诗词译文）');
+  Object.keys(res).filter(k => k.indexOf('Noto') === 0).forEach(name => {
     chk(res[name].length === 0,
-      name + ' 覆盖站会用字（缺失：' + (res[name].join('') || '无') + '）');
+      name + ' 覆盖站会用字（缺失：' + (res[name] || '无') + '）');
   });
   subsetChecked = true;
 } catch (e) {
