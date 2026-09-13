@@ -98,8 +98,18 @@
  *        首篇收入韩愈《送孟东野序》（卷八 唐文），已读键 poem_guwen_read_v1
  *        （guwen/index.html、js/guwen.js、data/poems-guwen.js、
  *          js/chrome.js、sw.js）
+ *   v40  宋词三百首 + 古文观止（内容 PR，Issue #69）：
+ *        新增 /songci/ 索引页（255 首，按词牌分组），数据 data/poems-songci.js，
+ *        挂载脚本 js/songci.js，已读键 poem_songci_read_v1；
+ *        《古文观止》按十二卷补齐为 155 篇目录（本轮收入 21 篇有正文译文的
+ *        名篇，其余保留「待补」条目，点开有明确提示而不是白屏）；
+ *        列表里的正文摘句改为读数据自带的 p.excerpt（不再截正文前 16 字）——
+ *        宋词、古文篇幅长，截头几字认不出是哪一篇
+ *        （data/poems-songci.js、js/songci.js、songci/index.html、
+ *          data/poems-guwen.js、js/guwen.js、data/site-index.js、
+ *          js/reader-core.js、js/chrome.js、sw.js）
  */
-const CACHE_NAME = "poem-app-v39";
+const CACHE_NAME = "poem-app-v40";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [
@@ -150,6 +160,10 @@ const PRECACHE = [
   "./tangshi/",
   "./data/poems-tangshi.js",
   "./js/tangshi.js",
+  // 宋词三百首（内容 PR，Issue #69）：索引页 + 数据 + 挂载脚本
+  "./songci/",
+  "./data/poems-songci.js",
+  "./js/songci.js",
   // 古文观止（内容 PR，Issue #69）：索引页 + 数据 + 挂载脚本
   "./guwen/",
   "./data/poems-guwen.js",

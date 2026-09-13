@@ -74,7 +74,13 @@ chk(P.annotateHtml("鹅\n鹅", "all").indexOf("<br>") > -1, "换行转换为 <br
 chk(P.annotateHtml("<b>", "all").indexOf("&lt;b&gt;") > -1, "注音输出做了 HTML 转义，无注入风险");
 
 // 注音渲染 —— 只标生字（默认档）
-chk(Object.keys(sb.COMMON_CHARS).length === 2500, "常用字表收录 2500 字");
+// 常用字表 = jieba 字频表前 2500 字 + 站上典籍语料里高频出现的补充字
+// （宋词 / 古文观止入库后新增了 154 个），所以这里不写死 2500，
+// 只守住「量级仍在小学识字量这一档」这条底线 ——
+// 表太小会把整篇注上音（等于没有「只标生字」这一档），太大则等于关闭注音
+const COMMON_N = Object.keys(sb.COMMON_CHARS).length;
+chk(COMMON_N >= 2500 && COMMON_N <= 3000,
+  "常用字表仍在小学识字量的量级（2500~3000 字，实际 " + COMMON_N + "）");
 chk(P.isCommon("鹅") && !P.isCommon("巍"), "「鹅」是常用字、「巍」是生字");
 chk(P.needAnnotate("巍") && !P.needAnnotate("鹅"), "生字需要注音、常用字不需要");
 
