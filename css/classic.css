@@ -291,9 +291,10 @@
 #gw-list .item.in-book { border-left-color: var(--green); }
 #gw-list .item.done { opacity: .62; }
 #gw-list .item.done .item-title { text-decoration: none; }
-/* 序号圆（已挪进标题行）：小古文走天水碧，课外必背走天青 —— 与短竖条同色系 */
-#gw-list .item-num { background: var(--blue-light); color: var(--blue); }
-#gw-list .item.in-book .item-num { background: var(--green-light); color: var(--green); }
+/* 序号圆（已挪进标题行）：小古文走天水碧，课外必背走天青 —— 与短竖条同色系。
+   空心圆：不铺底色，1px 边框走 currentColor，所以只改 color 即可换圈线颜色 */
+#gw-list .item-num { color: var(--blue); }
+#gw-list .item.in-book .item-num { color: var(--green); }
 #gw-list .item-reason.read { background: var(--green-light); color: var(--green); }
 /* 列表项右侧播放键：与首页同款圆形播放器按钮，配色走天水碧（小古文主色） */
 #gw-list .item-read { color: var(--blue); }

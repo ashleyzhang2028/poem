@@ -38,8 +38,11 @@
  *        只压 ::placeholder 到 12.5px，输入的文字仍是 16px（iOS 聚焦不缩放），
  *        并把「输入框字号」这条写在 classic.css 自己末尾、不再只靠 style.css
  *        （css/classic.css）
+ *   v27  列表序号圆去掉淡绿底，改为与序号同色的 1px 圆形描边（空心圆），
+ *        数字水平 + 垂直居中；圆外径仍是 16.5px（border-box，描边不撑大圆），
+ *        全站三处列表同步（css/style.css、css/classic.css）
  */
-const CACHE_NAME = "poem-app-v26";
+const CACHE_NAME = "poem-app-v27";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [

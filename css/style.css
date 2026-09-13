@@ -258,33 +258,47 @@ html, body {
      当前几何（小古文列表）：条目左内边距 16px − 12px = 圆周左缘 4px，竖条右缘 3px。 */
   margin-left: -12px;
 }
-/* 列表项序号：一枚与首行字号同高的实心圆，排在标题**前面**（同一行）
+/* 列表项序号：一枚与首行字号同高的**空心**圆，排在标题**前面**（同一行）
    --------------------------------------------------------------------------
    原先序号是第一列的 30px 圆（.item-index），独占一列宽度，标题只能从第二列起排；
    圆形按固定 30px 走，与 16.5px 的标题也不同高，横竖两处都不齐。
+   此前圆是淡绿 / 淡青的**实心底**，一百条排下来就是一百块色斑，先看到色块再看篇名。
    现在：
      · 圆挪到标题行内，成为标题的兄弟节点 —— 标题行的起点就是圆的起点；
      · 圆的直径 = 标题字号（走同一个变量 --item-num: 16.5px，两处同源、永远相等）；
-     · 圆的字号单列一档 11px：圆是 16.5px 的实心块，装 16.5px 的数字会顶满圆边，
-       11px 才留得出四周留白，也照顾到两位数（第 10 篇起）不挤。
+     · **去掉底色，改 1px 圆形描边**：边框色走 currentColor，与圆里的数字同色，
+       换主题色只需改 color 一处；圆外径仍锁在 box-sizing: border-box 里，
+       描边不会把圆撑大到 18.5px；
+     · 圆的字号单列一档 11px：装 16.5px 的数字会顶满圆边，11px 才留得出四周留白，
+       也照顾到两位数（第 10 篇起）不挤。
    标题行因此只剩「圆 + 篇名 + 状态标签」三样，篇名可用的宽度多出 40 余像素。 */
 .item-num {
   --item-num: 16.5px;
   flex: none;
+  /* 圆描边占住盒子的内外：圆外径 = --item-num（16.5px），与标题字号同高。
+     不加 box-sizing 的话，1px 边框会落在 16.5px 之外，圆变成 18.5px，
+     与标题、与左边那枚短竖条就对不齐了（尺寸断言也会挂）。 */
+  box-sizing: border-box;
   width: var(--item-num);
   height: var(--item-num);
   border-radius: 50%;
-  background: var(--green-light);
+  /* 空心圆：不铺底色，只留 1px 同色描边；圈里的数字用同一个颜色 */
+  background: none;
+  border: 1px solid currentColor;
   color: var(--green);
+  /* 数字水平 + 垂直居中：圆是弹性盒子，横竖都用 center 对位。
+     行内弹性盒的基线不再参与行盒计算（line-height: 1 只是兜底），
+     padding 归零，圆心就是数字盒的中线。 */
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  padding: 0;
   font-size: 11px;
   line-height: 1;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
-.item.review .item-num { background: var(--amber-light); color: var(--amber); }
+.item.review .item-num { color: var(--amber); }
 .item-meta {
   font-size: 12.5px;
   color: var(--ink-2);
