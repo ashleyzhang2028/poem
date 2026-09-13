@@ -29,6 +29,12 @@
   border-radius: 999px;
   white-space: nowrap;
 }
+/* 阅读器里的那枚「第 N / 100 篇」与列表页顶部的「0 / 100 篇」是同一枚牌子：
+   位置一样（品牌区与返回键之间）、配色一样，只是内容换成当前篇号。
+   这里只补「已读到 / 已读过」两种状态的淡色区分，不另起一套形状。 */
+.reader-count { display: none; }
+.reader-count.is-ready { display: inline-block; }
+.reader-count.is-done { background: var(--green); color: #fdfaf2; }
 
 /* 搜索 + 筛选 */
 .toolbar {
@@ -47,7 +53,7 @@
    这里统一三样为同一个高度变量，工具栏一排按钮上下边缘齐平。 */
 .filter-seg {
   flex: 0 0 auto;
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   /* 先由外框定住总高，内层按钮再铺满它（stretch），
      避免任何一条更具体的按钮 padding 规则把组合再撑高 / 压矮 */
   height: var(--toolbar-h);
@@ -84,7 +90,8 @@
   height: var(--toolbar-h);
   padding: 0 12px 0 34px;
   border: 1px solid var(--line);
-  border-radius: 12px;
+  /* 与右侧「全部 / 未读」「连读」用同一个圆角变量：工具栏三样的弧度一致 */
+  border-radius: var(--radius-sm);
   background: var(--card);
   color: var(--ink);
   font-family: inherit;
@@ -98,7 +105,7 @@
   border: 1px solid var(--line);
   background: var(--card);
   color: var(--ink-2);
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   /* 与搜索框同一套高度基准 */
   height: var(--toolbar-h);
   box-sizing: border-box;
@@ -199,52 +206,37 @@ body.reader-open .dock { display: none; }
 .reader[hidden] { display: none; }
 @keyframes readerIn { from { opacity: .4; transform: translateY(14px) } to { opacity: 1; transform: none } }
 
-.reader-bar {
-  flex: none;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: calc(12px + var(--safe-top)) calc(14px + var(--safe-right)) 12px calc(14px + var(--safe-left));
+/* 阅读器顶栏直接复用全站 .topbar（结构由 js/chrome.js 渲染）：
+   原先这里有一套自制的 .reader-bar（返回键在左、进度居中、右侧等宽占位），
+   与列表页 / 设置页的顶栏结构完全不同，从列表点进正文时整行导航会「换一张脸」。
+   现在品牌区（徽标 + 跬步 · 小古文）与列表页逐像素对齐，返回键落在全站统一的
+   右侧动作位，「第 N / 100 篇」用列表页同款 .count-badge 挂在两者中间。
+   另补背景色：.reader 是整屏 fixed 的滚动区，顶栏若透明，正文会从它下面透出来。 */
+.reader > .topbar {
   background: var(--bg-soft);
   border-bottom: 1px solid var(--line);
 }
-/* 返回键：直接复用全站顶栏的 .top-act（圆形纸底 + 40px + 内描边细线），
-   阅读器里的返回与顶栏右侧那颗是同一个组件、同一套样式，
-   只是位置从右侧挪到了左侧；内部只有一个箭头，不放页名文字。 */
-.reader-back {
-  flex: none;
-  padding: 0;
-  color: var(--green);
-}
-.reader-back svg { display: block; width: 20px; height: 20px; margin: auto; }
-/* 进度：左中右三等分，绝对居中对齐，不再是「既没靠右也没居中」 */
-.reader-progress {
-  flex: 1;
-  text-align: center;
-  font-size: 12px;
-  color: var(--ink-2);
-  white-space: nowrap;
-}
-/* 右侧与返回键等宽的占位，保证「第 N / 100 篇」真的落在屏幕正中 */
-.reader-bar-count {
-  width: 40px;
-  flex: none;
-  text-align: center;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--ink-3);
-  white-space: nowrap;
-}
-.reader-bar-count.is-done { color: var(--green); }
 
 .reader-body {
-  flex: 1;
+  /* 高度：占满 .reader 的剩余空间并自己纵向滚动。
+     overflow 生效的前提是 min-height: 0 —— flex 项默认 min-height: auto
+     会被内容撑开，那样滚动条永远不会出现。 */
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   padding: 20px calc(18px + var(--safe-right)) calc(40px + var(--safe-bottom)) calc(18px + var(--safe-left));
-  max-width: 720px;
-  width: 100%;
+  /* 正文列宽固定 720px。
+     ⚠️ 这里用的是「定宽 + 自动外边距」，不是 max-width：在 flex 列容器里，
+     max-width + width: auto 会被解析成 flex-basis: auto → 内容尺寸，
+     于是容器一宽，盒子反而被压成一个窄条（大屏上正文挤在中间一小撮）。
+     定宽 + `margin: 0 auto` 才是我们要的：窄屏自动收成满宽（外边距变 0），
+     宽屏稳定 720px 居中，跟顶栏的 720px 内容区落在同一条竖线上。
+     box-sizing: border-box 让 720px 把左右内边距一起算进去，内容区就是 684px。 */
+  width: 720px;
+  max-width: calc(100% - var(--safe-left) - var(--safe-right));
   margin: 0 auto;
+  box-sizing: border-box;
 }
 
 .reader-body h2 {
@@ -283,12 +275,12 @@ body.reader-open .dock { display: none; }
 }
 .mini-btn,
 .reader-actions .seg.mini {
-  /* 统一高度与圆角，四组按钮排在一起像同一条工具条 */
+  /* 统一高度与圆角，四组按钮排在一起像同一条工具条（弧度走全站变量） */
   min-height: 34px;
   border: 1px solid var(--line);
   background: var(--card);
   color: var(--green);
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   padding: 6px 12px;
   font-size: 13px;
   font-weight: 600;
@@ -438,7 +430,7 @@ body.reader-open .dock { display: none; }
   border: 1px solid var(--line);
   background: var(--card);
   color: var(--green);
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   padding: 11px 12px;
   font-size: 13.5px;
   font-weight: 600;

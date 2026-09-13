@@ -267,18 +267,19 @@ chk(/body\.no-dock \.modal-box \{ padding-bottom:\s*calc\(26px \+ var\(--safe-bo
 chk(/body\.no-dock \.modal-box \{ max-height: 88vh; \}/.test(css),
   '法务页等无页签页面，弹层照旧铺到底边附近');
 // 需求：小古文阅读器顶栏与其他页面统一
-// 返回键不再自己写一套圆形样式，而是直接复用全站顶栏的 .top-act
-// （圆形纸底 + 40px + 内描边细线），阅读器里的返回与顶栏右侧那颗是同一颗按钮
-chk(/\.reader-back \{\s*flex:\s*none/.test(classicCss), '阅读器返回键复用 .top-act，不再另起一套样式');
-chk(/\.reader-back \{[\s\S]{0,200}?color:\s*var\(--green\)/.test(classicCss),
-  '返回键只用天青一色（箭头不再被页名字样挤成两截）；笔画粗细由 .top-act 统一');
+// 需求（本次）：阅读器顶栏不再自制一套，直接复用全站 .topbar ——
+// 从列表点进正文时，徽标 / 「跬步 · 小古文」/ 右侧圆形动作位都不变样。
+// 「第 N / 100 篇」用列表页同款 .count-badge，挂在品牌区与返回键之间。
+chk(/<header class="topbar topbar-with-count">/.test(classicHtml) &&
+  /id="gw-reader"[\s\S]*?<header class="topbar topbar-with-count">/.test(classicHtml),
+  '阅读器顶栏复用全站 .topbar（topbar-with-count）');
+chk(!/\.reader-bar \{/.test(classicCss) && !/reader-progress/.test(classicHtml),
+  '自制的 .reader-bar / .reader-progress 已整段删除（不再两套顶栏）');
+chk(/\.reader > \.topbar \{/.test(classicCss), '阅读器内的顶栏有独立背景，正文不会从它下面透出来');
+chk(/\.reader-count \.is-done|reader-count\.is-done/.test(classicCss),
+  '篇号牌有「已读」状态（与列表页进度牌同一枚牌子）');
 chk(/\.top-act,[\s\S]{0,300}?border-radius:\s*50%/.test(css), '全站顶栏动作位是圆形纸底（返回键与它同款）');
-chk(/class="reader-back top-act"/.test(classicHtml), '阅读器返回键用的是全站统一的圆形按钮');
-chk(!/<span>小古文<\/span>/.test(classicHtml), '返回键里不再叠「小古文」三个字');
-chk(/\.reader-progress \{[\s\S]{0,120}?text-align:\s*center/.test(classicCss),
-  '进度精确居中（而不是既没靠右也没居中）');
-chk(/\.reader-bar-count \{[\s\S]{0,80}?width:\s*40px/.test(classicCss),
-  '右侧等宽占位，保证进度真的落在屏幕正中');
+chk(!/<span>小古文<\/span>/.test(classicHtml), '顶栏里不再叠「小古文」三个字');
 
 
 /* ---------------- 3. 传统色（宋代） ---------------- */
@@ -443,6 +444,83 @@ chk(optFs >= 13 && titleFs < optFs,
   '分组标题（' + titleFs + 'px）小于组内选项文字（' + optFs + 'px）');
 chk(!/\.settings-group-desc/.test(css), '样式里不再保留二级描述 .settings-group-desc');
 chk(!/settings-group-desc/.test(settingsHtml), '设置页 HTML 里不再有二级描述节点');
+
+/* ---------------- 7d. 全站一致性（本次 UI review 的修复） ----------------
+   逐页看过之后收口的一致性问题，每条都对应一个真实可复现的现象，
+   断言写在这里防止回退。 */
+
+// (1) 详情页工具条在手机上溢出：三组控件在 390px 下合计约 393px，
+//     原先 nowrap + overflow-x: auto，结果「全文」按钮被裁掉一半、还看不到滚动条。
+//     现在允许换行、整行居中。
+{
+  const m = css.match(/\.modal-box \.reader-actions \{([\s\S]{0,500}?)\}/);
+  const block = m ? m[1] : '';
+  chk(/flex-wrap:\s*wrap/.test(block), '详情页工具条允许换行（窄屏不再把「全文」裁成半截）');
+  chk(!/overflow-x:\s*auto/.test(block), '详情页工具条不再横向滚动（改成换行后不必两层滚动）');
+  chk(/justify-content:\s*center/.test(block), '工具条整行居中，与居中的诗题 / 正文同一条中轴');
+}
+
+// (2) 播放栏出现时底部页签只是被盖住：看得见摸不着、读屏还能聚焦到被盖住的链接。
+//     现在页签彻底让路。
+chk(/body\.has-audio-player \.dock \{[\s\S]{0,140}?visibility:\s*hidden/.test(css),
+  '底部播放栏出现时页签彻底让路（不再「被盖住却还能聚焦」）');
+chk(/body\.has-audio-player \.dock \{[\s\S]{0,160}?pointer-events:\s*none/.test(css),
+  '让路时同时关掉命中测试，不会误接点击');
+chk(/body\.reader-open \.dock \{ display: none; \}/.test(classicCss),
+  '阅读器打开时页签同样是「让路」而不是被压住（两处口径一致）');
+
+// (3) 没有底部页签的法务页：页脚那行小字原先正好贴屏底（iPhone 上被横条压半行）
+chk(/body\.no-dock \.app,[\s\S]{0,120}?padding-bottom:\s*calc\([^)]*--safe-bottom/.test(css),
+  '无页签页面（法务页）底部留出安全区，页脚不再贴屏底');
+
+// (4) iOS 输入框防缩放此前是「死规则」：被 .settings-input 的 font-size 压回去了。
+//     现在按类名精确命中，并且整段挪到样式表末尾。
+{
+  const lastInputMedia = css.lastIndexOf('--input-font-narrow');
+  chk(/@media screen and \(max-width: 700px\) \{\s*input:not\(\[type="checkbox"\]\)/.test(css),
+    'iOS 输入框防缩放规则按类名精确命中（不再被组件自身 font-size 压回去）');
+  chk(/\.settings-input,\s*\n\s*\.search-input \{\s*\n\s*font-size:\s*var\(--input-font-narrow\)/.test(css),
+    '输入框字号走 --input-font-narrow 变量（只定义一次）');
+  const tail = css.slice(css.indexOf('@media screen and (max-width: 700px) {', lastInputMedia > 0 ? lastInputMedia - 200 : 0));
+  chk(tail.indexOf('--input-font-narrow') !== -1,
+    '这条媒体查询排在样式表末尾（否则会被后面同特异性的组件样式翻盘）');
+  chk(/--input-font-narrow:\s*16px/.test(css), '窄屏输入框字号为 16px（iOS 不缩放的阈值）');
+}
+
+// (5) 卡内小件的圆角原先有 10 / 12 / 16px 三种，现在收敛到一个变量
+chk(/--radius-sm:\s*12px/.test(css), '定义卡内小件圆角变量 --radius-sm');
+chk(!/border-radius:\s*10px/.test(css) && !/border-radius:\s*10px/.test(classicCss) &&
+  !/border-radius:\s*10px/.test(read('css/legal.css')),
+  '三张样式表里不再散落 10px 的圆角硬编码（统一走 --radius-sm）');
+
+// (6) 大屏上顶栏比正文宽出一大截、阅读器正文还会被切掉左半行：
+//     两者都按 720px 内容区居中
+chk(/\.topbar \{[\s\S]{0,600}?max-width:\s*720px/.test(css),
+  '顶栏宽度与 720px 内容区对齐（大屏不与正文错位）');
+chk(/\.reader-body \{[\s\S]{0,900}?width:\s*auto/.test(classicCss),
+  '阅读器正文不再写 width: 100%（那会让内边距溢出视口、正文贴左边缘被切）');
+chk(/\.reader-body \{[\s\S]{0,1200}?box-sizing:\s*border-box/.test(classicCss),
+  '阅读器正文显式 border-box，内边距算在 720px 之内');
+// 宽度必须用「定宽 + 自动外边距」，不能用 max-width：
+// .reader-body 是 flex 列容器的子项，max-width + width: auto 会被解析成
+// flex-basis: auto → 内容尺寸，容器一宽盒子反而被压成窄条（大屏上正文挤成一小撮）。
+chk(/\.reader-body \{[\s\S]{0,1200}?width:\s*720px/.test(classicCss),
+  '阅读器正文用定宽 720px（flex 子项上的 max-width 会退化成 flex-basis）');
+chk(/\.reader-body \{[\s\S]{0,1200}?max-width:\s*calc\(100%/.test(classicCss),
+  '窄屏由 max-width: calc(100% - 安全区) 收成满宽，宽屏稳定 720px');
+chk(/\.reader-body \{[\s\S]{0,400}?min-height:\s*0/.test(classicCss),
+  '阅读器正文 min-height: 0，否则 flex 项被内容撑开、滚动条永远不出现');
+
+// (8) Service Worker 版本必须比这次改动的资源新，否则老用户拿到旧样式
+chk(parseInt((read('sw.js').match(/poem-app-v(\d+)/) || [0, '0'])[1], 10) >= 22,
+  'Service Worker 缓存版本已升到 v22（本轮改了 css/js，不升版本老用户看到的是旧样式）');
+
+// (7) 顶栏右侧的动作位在阅读器里画的是「返回」箭头，不是 ✕：
+//     同一种行为在全站只能是同一个图标
+chk(/if \(action\) \{[\s\S]{0,700}?GLYPHS\.back/.test(read('js/chrome.js')),
+  '顶栏动作位统一用返回箭头（阅读器不再单独长出一个 ✕）');
+chk(!/glyph\("close"\)/.test(read('js/classic.js')),
+  '小古文页不再要求把动作位换成 ✕（形状交给 chrome.js 统一给）');
 
 // 需求：设置页底部不被底部导航栏遮挡 —— 统一由 --nav-h 这条基准线决定
 chk(/--nav-h:\s*0px/.test(css), '定义了底部导航栏高度变量 --nav-h');

@@ -18,8 +18,12 @@
  *   v19  全站 URL 目录化（/settings/ 等，不再带 .html）
  *   v20  （跳过）目录化之后又改了 css/style.css、css/classic.css、js/chrome.js
  *   v21  设置页分组标题降级为辅助标签（字号 / 字重 / 颜色三重降级）
+ *   v22  全站 UI 走查：阅读器顶栏并入全站顶栏、详情页工具条改换行、
+ *        播放栏出现时页签让路、法务页底部留白、iOS 输入框防缩放真正生效、
+ *        圆角与宽度收敛到变量（css/style.css、css/classic.css、
+ *        css/legal.css、js/chrome.js、js/classic.js、classic/index.html）
  */
-const CACHE_NAME = "poem-app-v21";
+const CACHE_NAME = "poem-app-v22";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [

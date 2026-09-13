@@ -127,6 +127,18 @@
     }
   }
 
+  /**
+   * 顶栏第二行：「想读哪篇点哪篇」。
+   *
+   * 顶栏有**两条**（页面顶部那条 + 阅读器里那条），而且每次开 / 关阅读器、
+   * 每次换顶栏动作位都会整体重绘，重绘后第二行是空的 ——
+   * 所以这里写的不是一个「初始化」函数，而是「重绘之后随时补一次」的函数。
+   * 少补一次，用户就会看到页名下面那句说明忽有忽无。
+   */
+  function paintSub() {
+    $$(".brand-sub").forEach(function (sub) { sub.textContent = "想读哪篇点哪篇"; });
+  }
+
   function applyAppName() {
     const name = currentUsername();
     // 与顶栏同一口径：用户名只作为限定词前置，不改变「跬步」是应用名这件事
@@ -137,19 +149,18 @@
     // 顶栏第二行：页面名已经在第一行（「跬步 · 小古文」），这里只补一句「这一页是干什么的」，
     // 所以**不再重复「小古文」**（早先写成「小古文 · 想读哪篇点哪篇」，
     // 与第一行连起来看就是「小古文 小古文 · 想读哪篇点哪篇」）。
-    // chrome.js 渲染完顶栏会派发 chrome:ready，所以这里写在事件里，
-    // 否则会被它随后重建的顶栏覆盖。
-    const setSub = function () {
-      const sub = $("#brand-sub");
-      if (sub) sub.textContent = "想读哪篇点哪篇";
-    };
-    setSub();
-    document.addEventListener("chrome:ready", setSub);
+    //
+    // ⚠️ 顶栏有**两条**（页面顶部那条 + 阅读器里那条，见 chrome.js 的 renderBar），
+    // 所以要一次写满所有 .brand-sub，不能只写 $("#brand-sub") ——
+    // 只写第一条时，阅读器一打开（顶栏被重建）第二行就会空掉，
+    // 「想读哪篇点哪篇」在正文页整行消失。
+    paintSub();
+    document.addEventListener("chrome:ready", paintSub);
 
     // 已读进度牌（0 / 100 篇）也在页顶那一行里，chrome.js 重建顶栏时会把它原样留着
     // （见 chrome.js 的 renderBar），所以这里只要在它渲染完之后补一次数字。
-    const onChrome = function () { setSub(); syncCount(); };
-    document.removeEventListener("chrome:ready", setSub);
+    const onChrome = function () { paintSub(); syncCount(); };
+    document.removeEventListener("chrome:ready", paintSub);
     document.addEventListener("chrome:ready", onChrome);
   }
 
@@ -404,7 +415,12 @@
       srcEl.textContent = p.translation && window.translationSourceText
         ? window.translationSourceText(p) : "";
     }
-    $("#gw-progress").textContent = "第 " + (idx + 1) + " / " + allItems().length + " 篇";
+    // 「第 N / 100 篇」挂在顶栏品牌区与返回键之间，与列表页顶部的「0 / 100 篇」
+    // 是同一枚 .count-badge：整行导航只换内容、不换结构。
+    const progEl = $("#gw-progress");
+    progEl.textContent = "第 " + (idx + 1) + " / " + allItems().length + " 篇";
+    progEl.classList.toggle("is-done", isRead(p.id));
+    progEl.classList.add("is-ready");
     showTransBox(false);
     speakingTarget = "原文";
     renderNav();
@@ -415,13 +431,14 @@
     syncDoneButton();
     $("#gw-reader").hidden = false;
     document.body.classList.add("reader-open");
-    // 顶栏动作位换成「关闭」：阅读器是全屏层，此时「回首页」不如「合上」直接
+    // 顶栏动作位换成「返回」：阅读器是全屏层，这一颗合上它、回到列表；
+    // 图标形状由 chrome.js 统一给（与其它页面的返回键同一个箭头），
+    // 这里只交代「点了干什么」。
     if (window.SiteChrome) {
-      window.SiteChrome.setHeaderAction({
-        icon: window.SiteChrome.glyph("close"),
-        label: "关闭阅读器",
-        onclick: closeReader
-      });
+      window.SiteChrome.setHeaderAction({ label: "返回小古文列表", onclick: closeReader });
+      // setHeaderAction 会按顺序重绘**所有**顶栏，重绘后顶栏是空的，
+      // 第二行的「想读哪篇点哪篇」要再补一次（chrome:ready 那套不会为它触发）。
+      paintSub();
     }
     window.scrollTo(0, 0);
   }
@@ -649,8 +666,10 @@
     speakingTarget = "原文";
     $("#gw-reader").hidden = true;
     document.body.classList.remove("reader-open");
-    // 顶栏动作位还原为「回首页」
+    // 顶栏动作位还原为「回首页」；这一次重绘同样会清掉第二行，要跟着补回来 ——
+    // 漏了这一句，读完一篇返回列表，页名下面那句「想读哪篇点哪篇」就整行消失了。
     if (window.SiteChrome) window.SiteChrome.setHeaderAction(null);
+    paintSub();
     current = null;
     renderList();
     syncRandomReadButton();
@@ -665,14 +684,10 @@
     btn.title = read ? "已读，再点一次取消" : "标记为已读";
     btn.setAttribute("aria-pressed", read ? "true" : "false");
     $("#gw-done-text").textContent = read ? "已读，再点一次取消" : "标记为已读";
-    // 顶栏右侧那一格只是「与返回键等宽的占位」，让进度真正居中；
-    // 已读时点亮一个小小的勾，不做成第二个按钮。
-    const tip = $("#rd-done-text");
-    if (tip) {
-      tip.textContent = read ? "✓" : "";
-      tip.setAttribute("aria-hidden", "true");
-      tip.classList.toggle("is-done", read);
-    }
+    // 顶栏的篇号牌同步「已读」状态：读过的那篇整枚牌子转成深绿实底，
+    // 与列表页里未读 / 已读的区分同一套语言（不再另加一颗小勾图标）。
+    const progEl = $("#gw-progress");
+    if (progEl) progEl.classList.toggle("is-done", read);
   }
 
   /* ---------------- 随机连读 ---------------- */
@@ -939,7 +954,7 @@
     const randomBtn = $("#gw-random-read");
     if (randomBtn) randomBtn.addEventListener("click", function () { startRandomRead(null); });
 
-    $("#gw-back").addEventListener("click", closeReader);
+
     $("#rd-prev").addEventListener("click", function () { goSibling(-1); });
     $("#rd-next").addEventListener("click", function () { goSibling(1); });
 

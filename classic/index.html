@@ -64,20 +64,13 @@
 
   <!-- 古文详情：整页阅读（长文可滚动，不再是卡片弹窗） -->
   <div class="reader" id="gw-reader" hidden>
-    <header class="reader-bar">
-      <!-- 返回键：与全站顶栏右侧的圆形动作位同一颗按钮（同样 40px 圆环、
-           同一笔画粗细），只放一个箭头，不再在图标里叠「小 古 文」三个字。
-           当前是哪一篇，下面的正文与「第 N / 100 篇」已经说明，这里不必再报页名。 -->
-      <button class="reader-back top-act" id="gw-back" aria-label="返回小古文列表" title="返回列表">
-        <span class="top-act-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M14.4 5.4 7.8 12l6.6 6.6" />
-          </svg>
-        </span>
-      </button>
-      <div class="reader-progress" id="gw-progress"></div>
-      <!-- 「标记已读」已并入阅读辅助工具条（SVG 图标），顶栏只留返回与进度，改完仍是一行 -->
-      <span class="reader-bar-count" id="rd-done-text" aria-hidden="true"></span>
+    <!-- 阅读器顶栏：不另造一套，直接复用全站顶栏的 .topbar（徽标 + 跬步 · 小古文 +
+         右侧 40px 圆形返回键）。原先这里是自制的 .reader-bar —— 左侧返回、中间居中进度，
+         比全站顶栏少一个徽标、页名位置也完全不同，从列表点进正文时整行导航会「换一张脸」。
+         现在品牌区与列表页完全对齐；「第 N / 100 篇」作为页面小件挂在品牌区与返回键之间，
+         与列表页顶部的「0 / 100 篇」进度牌同一位置。 -->
+    <header class="topbar topbar-with-count">
+      <span class="count-badge reader-count" id="gw-progress"></span>
     </header>
     <div class="reader-body">
       <h2 id="rd-title"></h2>

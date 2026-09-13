@@ -319,7 +319,7 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
   chk(!!c.querySelector('#rd-trans #rd-trans-read'), '译文朗读键在译文框里（展开才出现）');
   // 固定打开第一篇（人之初），避免受「随机连读」停留位置影响
   w2.Speech.stop();
-  c.querySelector('#gw-back').dispatchEvent(new w2.Event('click', { bubbles: true }));
+  c.querySelector('#gw-reader > .topbar #top-act').dispatchEvent(new w2.MouseEvent('click', { bubbles: true, cancelable: true }));
   await sleep(20);
   c.querySelector('#gw-list .item').dispatchEvent(new w2.Event('click', { bubbles: true }));
   await sleep(30);

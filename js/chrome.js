@@ -161,9 +161,13 @@
     var right;
 
     if (action) {
+      // 动作是「关闭阅读器」这类「合上 / 撤回上一层」的语义，一律画成返回箭头：
+      // 同一种行为在全站只能是同一个图标（顶栏右侧那颗与底部页签「回首页」各司其职）。
+      // 曾经这里换成 ✕，结果阅读器里同时出现「底部页签回首页」与「右上角 ✕」，
+      // 两个出口语义重叠，✕ 还比全站的箭头多长了一个形状。
       right =
         '<button type="button" class="top-act" id="top-act">' +
-        '<span class="top-act-icon" aria-hidden="true">' + action.icon + "</span>" +
+        '<span class="top-act-icon" aria-hidden="true">' + GLYPHS.back + "</span>" +
         '<span class="sr-only">' + action.label + "</span></button>";
     } else if (key === "home") {
       // 首页右上角不再放设置齿轮：底部第三个页签就是「设置」，
@@ -312,6 +316,35 @@
     // 保留空函数是为了 mount() 的调用结构稳定，后续加顶栏动作位时从这里接手。
   }
 
+  /**
+   * 全站所有的顶栏元素（通常两条：页面顶部那条 + 阅读器里那条）。
+   *
+   * 小古文阅读器是全屏 fixed 层，里面**也有**一条同样结构的顶栏 ——
+   * 从列表点进正文时，徽标、「跬步 · 小古文」、右侧圆形动作位都不该变样。
+   *
+   * ⚠️ 两条顶栏必须**一起**重绘：只重绘一条，另一条就会停在旧状态 ——
+   * 阅读器一打开，页面顶上那条仍挂着「返回首页」，而用户已经在正文里了。
+   *
+   * ⚠️ 顺序也有讲究：DOM 顺序是「页面那条前、阅读器那条后」。
+   * headerAction 是全局的，所以**最后一条**说了算；先渲染阅读器那条、
+   * 再渲染页面那条，页面那条就会把阅读器需要的「返回列表」覆盖回「返回首页」。
+   * 先算清动作、再按顺序渲染，两条才不会打架。
+   */
+  function readBars() {
+    var list = [];
+    var page = document.querySelector(".app > .topbar");
+    if (page) list.push(page);
+    document.querySelectorAll(".reader > .topbar").forEach(function (el) {
+      if (list.indexOf(el) === -1) list.push(el);
+    });
+    // 兜底：别的页面若把顶栏直接挂在 .app 外，也一并纳入
+    if (!list.length) {
+      var any = document.querySelector(".topbar");
+      if (any) list.push(any);
+    }
+    return list;
+  }
+
   function bindDock(dock) {
     dock.addEventListener("click", function (e) {
       var btn = e.target && e.target.closest ? e.target.closest("[data-nav-go]") : null;
@@ -360,16 +393,29 @@
     glyph: function (name) {
       return GLYPHS[name] || "";
     },
-    /** 顶栏右侧换成自定义动作（阅读器 → 关闭；法务页 → 返回） */
+    /**
+     * 顶栏右侧换成自定义动作（阅读器 → 关闭；法务页 → 返回）。
+     * 全站所有顶栏（页面那条 + 阅读器里那条）一起重绘：只换右侧动作位，
+     * 品牌区不动，所以「进正文」时页面顶部不会闪一下、也不会换一张脸。
+     */
     setHeaderAction: function (action) {
       headerAction = action || null;
-      var bar = document.querySelector(".topbar");
-      if (bar) {
+      var bars = readBars();
+      // handle 只挂一次：重复调用（每次翻篇都会调）不该把同一个监听器叠上好几层
+      var wired = false;
+      bars.forEach(function (bar, i) {
         renderBar(bar);
         bindHeader();
-        var btn = document.getElementById("top-act");
-        if (btn && action && action.onclick) btn.addEventListener("click", action.onclick);
-      }
+        var btn = bar.querySelector(".top-act, .top-act-spacer");
+        if (!btn || !action || !action.onclick) return;
+        btn.setAttribute("type", "button");
+        // 只给**最后一条**（阅读器那条）接上行为；页面顶部那条交给它的 href 兜底。
+        // 两条都挂的话，点一次会跑两遍 closeReader —— 第二次 current 已经为 null，
+        // 会去读 current.id 而报错。
+        if (wired || i !== bars.length - 1) return;
+        wired = true;
+        btn.addEventListener("click", action.onclick);
+      });
     },
     /** 打开设置（页签与顶栏按钮共用） */
     openSettings: openSettings,

@@ -34,7 +34,14 @@
   --ink-2: #6b5c4d;         /* 淡墨（次要文字）：原 #7b6d5e 偏浅 */
   --ink-3: #8a7a68;         /* 更淡的辅助文字（说明 / 页脚） */
   --line: #d6c8ad;          /* 界行（描金细线） */
-  --radius: 16px;
+  --radius: 16px;           /* 卡片圆角 */
+  --radius-sm: 12px;        /* 卡片内的小件（按钮组 / 输入框 / 次级面板）圆角 */
+  /* 输入框字号：窄屏取 16px —— iOS 上小于 16px 的输入框一聚焦就会把整页放大。
+     桌面 / 平板用 14px，与界面文字的层级一致。这个值只在这里定义一次。 */
+  --input-font: 14px;
+  --input-font-narrow: 16px;   /* ≤700px 时的输入框字号（iOS 防缩放阈值） */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
   --shadow: 0 2px 14px rgba(74, 58, 38, 0.10);
   --shadow-up: 0 -2px 16px rgba(74, 58, 38, 0.12);
 }
@@ -107,7 +114,7 @@ html, body {
 .seg {
   display: flex;
   background: var(--bg);
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   padding: 3px;
   gap: 2px;
   flex: 1;
@@ -326,7 +333,7 @@ html, body {
 .stat {
   flex: 1;
   background: var(--bg);
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   padding: 10px 6px;
   text-align: center;
 }
@@ -427,7 +434,7 @@ body.no-dock .modal-box { max-height: 88vh; }
 
 .modal-progress {
   background: var(--bg);
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   padding: 10px 12px;
   font-size: 12.5px;
   color: var(--ink-2);
@@ -451,7 +458,7 @@ body.no-dock .modal-box { max-height: 88vh; }
   flex: 1;
   border: 1px solid var(--line);
   background: var(--card);
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   padding: 12px 8px;
   font-size: 15px;
   font-weight: 600;
@@ -548,7 +555,9 @@ body.no-dock .modal-box { max-height: 88vh; }
   box-sizing: border-box;
   padding: 9px 12px;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  /* 与「导出备份 / 清空进度」那一排同级：设置页里的输入框与按钮用同一个圆角，
+     不再出现「输入框 10px、旁边按钮 10px、再过一行按钮 12px」的三种弧度 */
+  border-radius: var(--radius-sm);
   background: var(--card);
   color: var(--ink);
   font-family: inherit;
@@ -567,7 +576,7 @@ body.no-dock .modal-box { max-height: 88vh; }
   font-size: 12px;
   color: var(--ink-2);
   background: var(--bg);
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   padding: 10px;
   line-height: 1.7;
   margin-top: 16px;
@@ -657,15 +666,6 @@ body.no-dock .modal-box { padding-bottom: calc(26px + var(--safe-bottom)); }
 /* 吐司提示上移，避免被横条遮挡 */
 .toast {
   bottom: calc(76px + var(--safe-bottom));
-}
-
-/* iOS 输入控件：字号小于 16px 时，聚焦会自动放大页面 */
-@media screen and (max-width: 700px) {
-  input,
-  select,
-  textarea {
-    font-size: 16px;
-  }
 }
 
 /* 防止 iOS 上长按选中文字/弹出放大镜，影响小朋友点击 */
@@ -1026,9 +1026,32 @@ body:not(.no-dock) #app {
 body:not(.no-dock) .foot { padding-bottom: 4px; }
 body:not(.no-dock) .toast { bottom: calc(24px + var(--nav-h)); }
 body:not(.no-dock) .ios-install-tip { bottom: calc(12px + var(--nav-h)); }
-/* 底部播放栏出现时，页签让路（播放栏 z-index 更高）；
-   页面留白同样交给 --nav-h —— 它已经取了播放栏与页签中较高的那个 */
-body.has-audio-player .dock { border-top-color: rgba(240, 205, 124, .28); }
+
+/* 没有底部页签的页面（法务页等）也要留出底部呼吸空间。
+   页面留白本身是 40px，看着够；但页脚是一整行小字，末行「用户协议 · 隐私条款」
+   正好贴到屏幕底边（iPhone 上还会被 Home Indicator 的横条压住半行）。
+   这里按安全区再多留一截，两页的收尾在同一位置，翻到最底不用眯着眼找。 */
+body.no-dock .app,
+body.no-dock #app {
+  padding-bottom: calc(40px + var(--safe-bottom) + 8px);
+}
+body.no-dock .foot { padding-bottom: 4px; }
+body.no-dock .ios-install-tip { bottom: calc(12px + var(--safe-bottom)); }
+/* --------------------------------------------------------------------------
+   底部播放栏出现时，页签不只是「被盖住」，而是**彻底让路**
+   --------------------------------------------------------------------------
+   播放栏（z-index 70）比页签（65）高，会整条压在页签上面。原先只把页签的描金细线
+   调淡一点，页签本身仍在原地：视觉上看不见，点上去却会被播放栏接住 ——
+   用户以为「底部那排图标还能点」，实际点不动；对读屏 / 键盘用户更糟，
+   焦点还能落到被盖住的链接上。
+   这里直接把页签收起来：播放栏自己带「上一首 / 暂停 / 下一首 / 停止」，
+   小古文阅读器另有阅读器内的返回与翻页，不需要同时挂两套底部导航。
+   `visibility: hidden` 会让元素退出无障碍树与命中测试，正好是我们要的「让路」。
+   （与 `body.reader-open .dock { display: none }` 同一套思路，两处保持一致。） */
+body.has-audio-player .dock {
+  visibility: hidden;
+  pointer-events: none;
+}
 
 /* 页面底：只留素绢一色，不铺任何图案（底色见 :root 的 --bg）。
    曾经铺过落花流水纹 / 球路纹 / 如意云头纹 / 宋「祥云纹」，
@@ -1095,7 +1118,7 @@ html, body {
   background: var(--card);
   border: 1px solid var(--line);
   color: var(--green);
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   font-weight: 600;
 }
 .ghost-btn:hover { border-color: var(--green); }
@@ -1103,7 +1126,7 @@ html, body {
   background: linear-gradient(180deg, #fbeae7 0%, var(--red-light) 100%);
   border: 1px solid #ecd2cd;
   color: var(--red);
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   font-weight: 600;
 }
 /* 圆形图标按钮（列表里的播放键）：按下时天青实底，与播放栏同一语言 */
@@ -1137,8 +1160,12 @@ html, body {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  /* 加上刘海 / 灵动岛高度，左右两栏共用同一条中轴 */
+  /* 加上刘海 / 灵动岛高度，左右两栏共用同一条中轴；
+     宽度与 .app 的 720px 内容区对齐，大屏上不会比正文宽出一大截 */
   padding: calc(14px + var(--safe-top)) 2px 12px;
+  max-width: 720px;
+  margin: 0 auto;
+  box-sizing: border-box;
 }
 .brand { display: flex; align-items: center; gap: 11px; min-width: 0; }
 
@@ -1434,15 +1461,24 @@ html, body {
    ＝ 第一行：正文对齐（左/中/右 SVG）· A－/A＋ 组合 · 不注音/生字/全文
    ＝ 第二行：朗读组合键（原文 / 译文）+ 译文开关
    ========================================================================== */
+/* 工具条（第一行）：对齐 / 字号 / 注音
+   --------------------------------------------------------------------------
+   这里必须允许**换行**，不能只靠横向滚动。
+   三组控件在 390px 宽的手机上合计约 393px，比弹层内容区（350px）还宽一点点 ——
+   原先写的是 `flex-wrap: nowrap` + `overflow-x: auto`，于是：
+     · 超出的一小截（「全文」按钮的一半）被裁掉，看着就是个错位的半截按钮；
+     · 触屏上横向滚动条不可见，用户根本不知道右边还有东西。
+   现在改成 `flex-wrap: wrap` + 整行居中：排得下就是一条整齐的工具条，
+   排不下就自动折成两行（「对齐+字号」一行、「注音」一行），
+   每一行的按钮仍然居中、间距一致。overflow 交给外层弹层，不再出现两层滚动。 */
 .modal-box .reader-actions {
   display: flex;
   gap: 8px;
   margin: 10px 0 0;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  overflow-x: auto;
-  scrollbar-width: none;
+  overflow: visible;
 }
 .modal-box .reader-actions::-webkit-scrollbar { display: none; }
 .modal-box .reader-actions.icon-row { margin: 8px 0 4px; overflow: visible; }
@@ -1453,7 +1489,7 @@ html, body {
   border: 1px solid var(--line);
   background: var(--card);
   color: var(--green);
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -1521,7 +1557,7 @@ html, body {
 /* 窄屏（iPhone SE 一类 320~380px）：两组控件要挤进同一行，
    字号与内边距各收一档，必要时允许整行横向滑动，绝不换行错位。 */
 @media (max-width: 380px) {
-  .modal-box .reader-actions { gap: 5px; margin-left: -2px; margin-right: -2px; }
+  .modal-box .reader-actions { gap: 5px; }
   .modal-box .reader-actions .seg.mini { padding: 2px; }
   .modal-box .reader-actions .seg.mini button,
   .modal-box .reader-actions .icon-seg button,
@@ -1612,3 +1648,29 @@ html, body {
 .trans-read[data-on="1"] .btn-icon.pause-glyph { display: inline-flex; }
 .trans-read[data-on="1"] { background: var(--green); border-color: var(--green); color: #fffdf8; }
 .trans-read:disabled { opacity: .5; cursor: not-allowed; }
+
+/* ==========================================================================
+   iOS 输入控件防缩放（必须放在样式表最后）
+   --------------------------------------------------------------------------
+   早先这里写的是 `@media (max-width: 700px) { input, select, textarea { font-size: 16px } }`，
+   用来挡住 iOS 聚焦时自动放大页面。但它**从来没生效过**：论特异性，它比
+   `.settings-input { font-size: 14px }`（带类名，再加上一行后写的
+   `@media screen and (max-width: 700px) { input, select, textarea { font-size: 16px } }`）
+   低，被压回去了 —— 设置页 / 小古文设置弹层里的输入框量出来一直是 14px，
+   在 iPhone 上聚焦就会把整页放大。
+   现在：
+     · 字号抽成变量 --input-font-narrow（16px），只在这一处定义；
+     · 规则按类名精确命中，特异性压过组件自身的 `font-size`；
+     · **整段挪到样式表末尾** —— 组件样式散落在文件各处，只要有一条写在它后面，
+       同特异性下就会翻盘。
+   桌面 / 平板不受影响，仍是 14px，与界面文字的层级一致。
+   ========================================================================== */
+@media screen and (max-width: 700px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+  select,
+  textarea,
+  .settings-input,
+  .search-input {
+    font-size: var(--input-font-narrow);
+  }
+}

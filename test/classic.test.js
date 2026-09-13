@@ -99,6 +99,39 @@ setTimeout(() => {
     '返回键只有一个箭头图标（不放页名文字）');
   chk(countInTopbar.compareDocumentPosition(backBtn2) & window.Node.DOCUMENT_POSITION_FOLLOWING,
     '进度牌确实排在返回键左侧（DOM 顺序就是视觉顺序）');
+
+  // 阅读器顶栏与列表页逐项对齐：同一套 .topbar 结构、同一枚进度牌位置 ——
+  // 从列表点进正文时整行导航不「换脸」（原先阅读器自带一套 reader-bar，
+  // 返回键在左、页名只有一处居中进度，和列表页完全不在一根轴上）
+  const openReaderBar = function () {
+    d.querySelector('#gw-list .item').dispatchEvent(new window.Event('click', { bubbles: true }));
+    return d.querySelector('#gw-reader > .topbar');
+  };
+  const rBar = openReaderBar();
+  chk(!!rBar, '阅读器里有自己的 .topbar（同一套结构）');
+  chk([...rBar.children].map(e => e.className.split(' ')[0]).join('/') === 'brand/count-badge/top-act',
+    '阅读器顶栏与列表页同序：品牌区 · 篇号牌 · 返回键（实际 ' +
+    [...rBar.children].map(e => e.className).join('/') + '）');
+  chk(rBar.querySelector('.brand-page-text').textContent === '小古文',
+    '阅读器里的页名同样是「小古文」，与列表页一致');
+  const rBack = rBar.querySelector('#top-act');
+  chk(!!rBack && !!rBack.querySelector('svg'), '阅读器返回键走全站动作位（同一颗圆形按钮）');
+  chk(!/#top-act[^>]*>[\s\S]{0,200}?M6\.4 6\.4/.test(rBar.innerHTML),
+    '动作位画的是返回箭头，不是 ✕（同一种行为全站同一个图标）');
+  chk(rBar.querySelector('#gw-progress').textContent === '第 1 / 100 篇' &&
+    rBar.querySelector('#gw-progress').classList.contains('count-badge'),
+    '篇号牌用列表页同款 .count-badge，挂在品牌区与返回键之间');
+  // 收起来，后面的用例仍从列表页开始
+  rBar.querySelector('#top-act').dispatchEvent(new window.MouseEvent('click', { bubbles: true, cancelable: true }));
+  chk(d.querySelector('#gw-reader').hidden === true, '阅读器返回键能合上阅读器');
+
+  // 回归：顶栏第二行是「每次重绘后补一次」的，不是一次性的初始化 ——
+  // 开 / 关阅读器都会整体重绘顶栏，漏补一次，页名下面那句说明就会整行消失。
+  // （曾经就是这样：读完一篇返回列表，「想读哪篇点哪篇」不见了。）
+  const appSub = () => d.querySelector('.app > .topbar #brand-sub').textContent;
+  const readerSub = () => d.querySelector('#gw-reader > .topbar #brand-sub').textContent;
+  chk(readerSub() === '想读哪篇点哪篇', '阅读器顶栏的第二行也在（与列表页同一句）');
+  chk(appSub() === '想读哪篇点哪篇', '合上阅读器后，列表页顶栏的第二行还在（重绘后已补回）');
   chk(topbar.contains(d.querySelector('#brand-name')) && topbar.contains(d.querySelector('#brand-page-text')),
     '进度牌与「跬步 · 小古文」同处一行');
   // 需求（本次）：这一行所有元素垂直居中 —— 靠 .topbar 的 align-items: center，
@@ -122,7 +155,7 @@ setTimeout(() => {
     '页面名紧随「跬步」右侧：' + d.querySelector('#brand-page-text').textContent);
   chk(d.title === '小古文 · 跬步', '小古文页标题为「小古文 · 跬步」（实际 ' + d.title + '）');
   // 需求：下面补一句副标题，且不重复页面名（「小古文 · 小古文」是重复）
-  const sub = d.querySelector('#brand-sub').textContent;
+  const sub = d.querySelector('.app > .topbar #brand-sub').textContent;
   chk(sub === '想读哪篇点哪篇', '小古文页副标题为「想读哪篇点哪篇」（实际 ' + JSON.stringify(sub) + '）');
   chk(!/小古文/.test(sub) && !/跬步/.test(sub), '副标题不与第一行重复页面名 / 应用名');
   chk(!/小古文[^。]{0,40}小古文/.test(d.querySelector('.topbar').textContent.replace(/\s+/g, '')),
@@ -143,19 +176,18 @@ setTimeout(() => {
   chk(!/不排复习日期/.test(htmlSrc), '页面里不再出现「不排复习日期」这类说明');
   chk(!/想读哪篇点哪篇[。．]/.test(htmlSrc.replace(/<p>.*?<\/p>/, '')), '不再有婆婆妈妈的说明段落');
   // 需求：标题行下面补一句副标题（页面名已在第一行，这里不再重复「小古文」）
-  chk(d.querySelector('#brand-sub').textContent === '想读哪篇点哪篇',
-    '小古文页有副标题「想读哪篇点哪篇」（实际 ' + JSON.stringify(d.querySelector('#brand-sub').textContent) + '）');
+  chk(d.querySelector('.app > .topbar #brand-sub').textContent === '想读哪篇点哪篇',
+    '小古文页有副标题「想读哪篇点哪篇」（实际 ' + JSON.stringify(d.querySelector('.app > .topbar #brand-sub').textContent) + '）');
   chk(d.querySelector('#brand-page-text').textContent === '小古文',
     '页面名就是「小古文」，由 CSS 的 ::before 生成分隔符（不再写死标点）');
   chk(d.querySelectorAll('#gw-list .item .item-reason.review').length === 0, '列表里没有「复习」标签，不做复习排期');
 
-  // 需求：阅读器顶栏的返回键与其他页面用同一颗按钮、同一套风格，
-  // 且按钮里不再叠「小 古 文」三个字
-  const backBtn = d.querySelector('#gw-back');
-  chk(backBtn.classList.contains('top-act'), '返回键复用全站顶栏的 .top-act（与其他页面同一颗按钮）');
-  chk(backBtn.querySelectorAll('svg').length === 1, '返回键只有一个箭头图标');
-  chk(backBtn.textContent.trim() === '', '返回键里不再出现「小古文」等文字');
-  chk(/返回小古文列表/.test(backBtn.getAttribute('aria-label')), '返回键的无障碍名称仍说明去处');
+  // 需求：阅读器顶栏不再自制一套 —— 直接复用全站 .topbar（徽标 + 跬步 · 小古文 +
+  // 右侧动作位），从列表点进正文时整行导航不「换脸」
+  const readerBar = d.querySelector('#gw-reader > .topbar');
+  chk(!!readerBar, '阅读器顶栏复用全站 .topbar（不再是自制的 .reader-bar）');
+  chk(d.querySelector('.reader-bar') === null, '自制的 .reader-bar 已删除');
+  chk(!d.querySelector('#gw-back'), '不再自造一颗 #gw-back 返回键（交给全站顶栏的动作位）');
 
   // 需求 3：按主题分类聚合，不再按原书目录顺序
   const groupHeads = [...d.querySelectorAll('#gw-list .group-head .group-name')].map(e => e.textContent);
@@ -299,8 +331,8 @@ setTimeout(() => {
   d.querySelector('#gw-done').dispatchEvent(new window.Event('click', { bubbles: true }));
   chk(/已读，再点一次取消/.test(d.querySelector('#gw-done-text').textContent), '标记后读屏文案变为「已读，再点一次取消」');
   chk(d.querySelector('#gw-done').classList.contains('is-done'), '标记已读按钮进入高亮态');
-  chk(d.querySelector('#rd-done-text').textContent === '✓',
-    '顶栏右侧是等宽占位，已读时点一个小勾（让进度精确居中）');
+  chk(d.querySelector('#gw-progress').classList.contains('is-done'),
+    '已读后顶栏篇号牌转成深绿实底（与列表页未读 / 已读同一套语言）');
   const store = JSON.parse(window.localStorage.getItem('poem_classic_read_v1'));
   chk(store['gw-17'] && store['gw-17'].read === true, '已读状态写入 localStorage（独立于古诗词进度）');
   chk(!window.localStorage.getItem('poem_recite_progress_v1'), '不会写古诗词进度 key，两边互不干扰');
@@ -308,8 +340,8 @@ setTimeout(() => {
   chk(d.querySelector('.topbar #gw-count').textContent === '1 / 100 篇',
     '进度更新的是页顶那一行里的同一块牌子（不是另开一份）');
 
-  // 返回列表
-  d.querySelector('#gw-back').dispatchEvent(new window.Event('click', { bubbles: true }));
+  // 返回列表：阅读器顶栏的动作位由全站渲染，测试里直接调 closeReader 的入口（点击返回）
+  d.querySelector('#gw-reader > .topbar #top-act').dispatchEvent(new window.MouseEvent('click', { bubbles: true, cancelable: true }));
   chk(d.querySelector('#gw-reader').hidden === true, '返回后阅读器关闭');
   chk(d.querySelectorAll('#gw-list .item.done').length === 1, '列表中已读条目有已读标记');
 
@@ -498,7 +530,7 @@ setTimeout(() => {
   // 关闭
   rdClick('off');
   chk(d.querySelectorAll('#rd-text ruby').length === 0, '选「不注音」关闭注音');
-  d.querySelector('#gw-back').dispatchEvent(new window.Event('click', { bubbles: true }));
+  d.querySelector('#gw-reader > .topbar #top-act').dispatchEvent(new window.MouseEvent('click', { bubbles: true, cancelable: true }));
 
   // 取消已读
   const doneItem = d.querySelector('#gw-list .item.done');
@@ -506,7 +538,8 @@ setTimeout(() => {
   d.querySelector('#gw-done').dispatchEvent(new window.Event('click', { bubbles: true }));
   chk(d.querySelector('#gw-done-text').textContent === '标记为已读', '再点一次可取消已读');
   chk(d.querySelector('#gw-done').classList.contains('is-done') === false, '取消后按钮恢复常态');
-  chk(d.querySelector('#rd-done-text').textContent === '', '取消后顶栏「已读」小字消失');
+  chk(d.querySelector('#gw-progress').classList.contains('is-done') === false,
+    '取消已读后顶栏篇号牌恢复常态');
   chk(!JSON.parse(window.localStorage.getItem('poem_classic_read_v1'))['gw-17'], '取消后从存储中移除');
 
   console.log(fails === 0 ? '\n🎉 小古文测试全部通过' : '\n❌ ' + fails + ' 项失败');
