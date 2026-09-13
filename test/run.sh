@@ -40,7 +40,7 @@ if node -e "require.resolve('jsdom')" 2>/dev/null; then
 else
   echo "(未安装 jsdom，一次性临时安装...)"
   JS_TMP=$(mktemp -d)
-  (cd "$JS_TMP" && npm i jsdom --silent --no-fund --no-audit >/dev/null 2>&1) || {
+  (cd "$JS_TMP" && npm i "jsdom@^26" --silent --no-fund --no-audit >/dev/null 2>&1) || {
     echo "✗ 无法安装 jsdom，集成测试无法进行。"
     exit 1
   }
