@@ -242,6 +242,9 @@ setTimeout(() => {
   chk(!!mh, '有「蒙学经典」分类');
   chk(/4 篇/.test(mh.querySelector('.group-count').textContent),
     '「蒙学经典」显示 4 篇（实际 ' + mh.querySelector('.group-count').textContent + '）');
+  // 卡头一行：组名 / 篇数 / 圆键，三样都在同一行，且圆键是这一行的最后一个
+  chk(mh.children.length === 3 && mh.lastElementChild.classList.contains('gw-play-sm'),
+    '卡头一行三样：组名 / 篇数 / 随机连读圆键（圆键收在行尾）');
   const allGroupItems = [];
   let node = mh.nextElementSibling;
   while (node && !node.classList.contains('group-head')) {
@@ -249,8 +252,9 @@ setTimeout(() => {
     node = node.nextElementSibling;
   }
   chk(allGroupItems.length === 4, '「蒙学经典」下面真的列出 4 篇（实际 ' + allGroupItems.length + '）');
-  chk(allGroupItems.map(el => el.querySelector('.item-title').textContent.replace('已读', '').trim()).join('/') ===
-    '人之初/弟子规（节选）/菊/莲',
+  // 序号圆现在是标题行的一部分（.item-num），读文案要把序号剔掉再比
+  chk(allGroupItems.map(el => el.querySelector('.item-title').textContent.replace('已读', '').trim()
+    .replace(/^\d+/, '')).join('/') === '人之初/弟子规（节选）/菊/莲',
     '「蒙学经典」四篇连续排列（' + allGroupItems.map(el => el.querySelector('.item-title').textContent).join('/') + '）');
 
   // 需求（Issue #55）：同类别的文章合并进**同一张卡片**，不再每篇各占一张卡。
@@ -297,8 +301,8 @@ setTimeout(() => {
   chk(!!barBlock && /left:\s*2px;/.test(barBlock[2]),
     '短竖条落在 left:2px：与卡片左缘留 2px，与序号圆左缘之间留出间隙');
   const itemPadBlock = /(^|\n)\.group-card \.item \{([\s\S]*?)\}/.exec(classicCssText);
-  chk(!!itemPadBlock && /padding:\s*12px 8px 12px 14px;/.test(itemPadBlock[2]),
-    '条目左内边距 14px：序号圆整体右移，1px 线与序号圆之间留出可见间隙');
+  chk(!!itemPadBlock && /padding:\s*12px 8px 12px 16px;/.test(itemPadBlock[2]),
+    '条目左内边距 16px：圆周落在 4px，既不被卡片裁掉，也不压在竖条上');
 
   // 需求（Issue #55 后续）：左侧那道「大竖绿线」还在，必须整条去掉。
   // 根子不在 .group-card 的留白，而在全站 .item 遗留的 `border-left: 4px solid`：
@@ -313,13 +317,72 @@ setTimeout(() => {
   chk(!/border:\s*none;/.test(itemPadBlock[2]) || /border-left:\s*none;/.test(itemPadBlock[2]),
     '用 border-left 定向清零，而不是 border: none 一刀切');
 
-  // 间隙 = 序号圆左缘（内边距 14px）－ 短竖条右缘（left 2px + width 1px）= 11px。
-  // 直接按数值算一遍：只要有人把内边距压回 4px 或把线挪到圆边上，这条就会红。
+  // 需求（Issue #55 第三条）：序号圆挪进标题行、挂在篇名前面，圆的直径与字号同高。
+  // 间隙的算法也随之换了主人：条目左内边距让出「圆周左缘」这一段，
+  // 标题行自己负外边距左移 12px，圆与竖条之间的间隙由两者之和承担。
+  // 数值上验一遍：竖条右缘 3px，圆周左缘 = 内边距 16px − 12px = 4px ……
+  // 所以这里从**源码**锁住这几段数值，防止有人把任一段改回去。
+  const styleCssText = fs.readFileSync(path + 'css/style.css', 'utf8');
+  const titleBlock = /(^|\n)\.item-title \{([\s\S]*?)\}/.exec(styleCssText);
+  // ⚠️ 注释里也会出现 margin-left / font-size 之类的字样（本仓库注释写得长），
+  // 取数值前先把注释剥掉，否则命中的是注释里的那个数。
+  const titleDecls = titleBlock[2].replace(/\/\*[\s\S]*?\*\//g, ' ');
+  chk(!!titleBlock && /(^|\s)margin-left:\s*-12px;/.test(titleDecls),
+    '标题行负外边距 -12px：序号圆挂到正文基线左侧，正文宽度不受影响');
+  const numBlock = /(^|\n)\.item-num \{([\s\S]*?)\}/.exec(styleCssText);
+  // 同理先剥注释：.item-num 的注释里也提到过尺寸与字号
+  const numDecls = numBlock[2].replace(/\/\*[\s\S]*?\*\//g, ' ');
+  chk(!!numBlock && /--item-num:\s*16\.5px;/.test(numDecls),
+    '序号圆直径走 --item-num: 16.5px（与 .item-title 的字号同一个数）');
+  chk(!!numBlock && /width:\s*var\(--item-num\)/.test(numDecls) && /height:\s*var\(--item-num\)/.test(numDecls),
+    '序号圆的宽高同源（同一个变量），永远是正圆');
+  const titleFontSize = parseFloat((titleDecls.match(/font-size:\s*([\d.]+)px/) || [, '0'])[1]);
+  const numSize = parseFloat((numDecls.match(/--item-num:\s*([\d.]+)px/) || [, '0'])[1]);
+  chk(titleFontSize === numSize,
+    '圆的直径与标题字号相等（' + numSize + 'px = ' + titleFontSize + 'px）');
+  chk(!!numBlock && /font-size:\s*11px;/.test(numDecls),
+    '圆里的序号字号单列一档 11px（16.5px 会顶满圆边，两位数也挤）');
   const barLeft = parseInt((barBlock[2].match(/left:\s*(\d+)px/) || [, '0'])[1], 10);
   const barW = parseInt((barBlock[2].match(/width:\s*(\d+)px/) || [, '0'])[1], 10);
-  const itemPadLeft = parseInt((itemPadBlock[2].match(/padding:\s*\d+px \d+px \d+px (\d+)px/) || [, '0'])[1], 10);
-  chk(itemPadLeft - (barLeft + barW) >= 8,
-    '短竖条与序号圆之间至少留 8px 间隙（实际 ' + (itemPadLeft - (barLeft + barW)) + 'px）');
+  // 几何按数值算一遍：条目左内边距 + 标题行负外边距 = 圆周左缘（相对条目左缘）。
+  // 圆周左缘要落在竖条右缘（left 2px + 宽 1px = 3px）之后，且不超出卡片左缘（≥ 0）——
+  // 超出就会被卡片 overflow: hidden 裁掉，那是曾经踩过的坑。
+  // （真浏览器量过：条目左缘 14px 时圆周左缘落在 18px，相对条目左缘偏移 4px，
+  //   右侧与短竖条右缘 3px 之间留 1px）
+  const itemPadL = parseInt((itemPadBlock[2].match(/padding:\s*\d+px \d+px \d+px (\d+)px/) || [, '0'])[1], 10);
+  const titleNeg = parseInt((titleDecls.match(/margin-left:\s*(-?\d+)px/) || [, '0'])[1], 10);
+  const numLeftRel = itemPadL + titleNeg;
+  chk(numLeftRel >= barLeft + barW,
+    '圆周左缘（' + numLeftRel + 'px）不早于短竖条右缘（' + (barLeft + barW) + 'px）');
+  chk(numLeftRel >= 0,
+    '圆周左缘在卡片内（' + numLeftRel + 'px ≥ 0），不会被 overflow: hidden 裁掉');
+  // 上界：圆的左偏移不能小于 3px（否则被卡片裁掉），也不能大于圆的直径
+  // （否则圆离开竖条太远，与「贴在标题前」的初衷不符）
+  chk(numLeftRel >= 3 && numLeftRel <= 16,
+    '圆周左缘偏移落在 [3, 16] px 之间（实际 ' + numLeftRel + 'px）：既不裁切也不游离');
+
+  // 需求（Issue #55 第三条）：短竖条透明度降到 55% —— 1px 实色深青在纸底上仍是硬线，
+  // 竖排 100 条就是 100 道重描边，视线先落在线上而不是篇名上。
+  chk(!!barBlock && /opacity:\s*\.55;/.test(barBlock[2]),
+    '短竖条透明度 55%（用 opacity 而不是改浅颜色，主题换色仍自动跟随）');
+  chk(!!barBlock && /background:\s*var\(--blue\);/.test(barBlock[2]),
+    '透明度只降不透明度，颜色仍是 --blue（课内 / 课外两色由 .in-book 覆盖）');
+
+  // 需求（Issue #55 第三条）：序号圆从独占一列挪进标题行，排在篇名前面。
+  const numEls = [...d.querySelectorAll('#gw-list .item-num')];
+  chk(numEls.length === 100, '每一条都有序号圆（' + numEls.length + ' 个）');
+  chk(d.querySelectorAll('#gw-list .item-index').length === 0, '旧的独占一列的 .item-index 已全部移除');
+  chk(numEls.every(el => el.classList.contains('item-title') === false &&
+    el.parentElement.classList.contains('item-title')),
+    '序号圆就在标题那一行里（是 .item-title 的子元素，不再另起一列）');
+  chk(numEls.every(el => el.parentElement.firstElementChild === el),
+    '序号圆排在篇名**前面**（标题行的第一个孩子）');
+  chk(numEls[0].textContent === '1', '序号从 1 起（实际 ' + numEls[0].textContent + '）');
+  chk(/\.item-index/.test(classicCssText) === false,
+    'css/classic.css 里不再留 .item-index 僵尸规则');
+  chk(/\.item-num \{ background: var\(--blue-light\); color: var\(--blue\); \}/.test(classicCssText) &&
+    /#gw-list \.item\.in-book \.item-num \{ background: var\(--green-light\); color: var\(--green\); \}/.test(classicCssText),
+    '小古文的序号圆：课内走天水碧、课外走天青（与短竖条同色系）');
   // ⚠️ 只看 `border-left: none` 还会被「注释里写着 border-left: 4px」骗过去，
   // 所以先把注释剥掉再查：规则体里不能再出现任何 4px 的左边框。
   const itemRules = itemPadBlock[2].replace(/\/\*[\s\S]*?\*\//g, ' ');
@@ -388,14 +451,23 @@ setTimeout(() => {
   const headPad = (barCss.match(/\.group-head \{([^}]*)\}/) || [, ''])[1];
   chk(/\.toolbar \{[^}]*margin-bottom:\s*6px/.test(barCss),
     '工具栏下边距收到 6px（页首专属，原 14px：与标题上内边距相加 28px 太大）');
-  chk(/padding:\s*12px 8px 0/.test(headPad),
-    '分组标题上内边距 12px（与工具栏下边距合计 18px），下内边距交给卡内条目');
+  chk(/padding:\s*12px 8px 8px/.test(headPad),
+    '卡头上内边距 12px（与工具栏下边距合计 18px）、下内边距 8px：组名与圆键整体上抬');
   chk(!/\.group-head \{[^}]*padding[^;]*\b8px;/.test(headPad),
     '分组标题不再保留旧的 14px 上内边距留下的三段 padding');
   chk(!/margin-bottom:\s*14px/.test(barCss.match(/\.toolbar \{([^}]*)\}/)[1]),
     '工具栏不再保留旧的 14px 下边距');
   chk(!/padding:\s*14px 2px 8px/.test(headPad),
     '分组标题不再保留旧的 14px 上内边距');
+  // 需求（Issue #55 第三条）：卡头「蒙学经典 4 篇」与右侧圆键不再压在首条的分隔线上。
+  // 两件事一起做：卡头下内边距 0 → 8px；首条不画分隔线（留线会变成「卡头 → 线 → 首条」）。
+  chk(/padding:\s*12px 8px 8px/.test(headPad),
+    '卡头下内边距 8px：组名与圆键整体上抬，不再贴着下面那条线');
+  chk(/\.group-card \.item:first-of-type \{ border-top:\s*1px solid color-mix\(in srgb, var\(--line\) 55%, transparent\); \}/
+    .test(classicCssText),
+    '首条的分隔线改为 55% 淡线（卡头与首条之间不再是一道重线）');
+  chk(/\.group-card \.item \{[\s\S]*?border-top:\s*1px solid var\(--line\);/.test(classicCssText),
+    '其余条目之间的分隔线保持原色（卡内节奏不变）');
 
   // 需求：工具栏三样（搜索框 / 全部·未读组合 / 连读圆键）高度必须一致。
   // 组合的高度由「内层按钮 + 内边距 + 描边」叠出，曾因全局 .seg.mini button 的

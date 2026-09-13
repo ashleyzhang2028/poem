@@ -362,9 +362,10 @@
       el.className = "item " + (item.reason === "review" ? "review" : "new") + (done ? " done" : "");
       el.dataset.id = p.id;
       el.innerHTML =
-        '<div class="item-index">' + (idx + 1) + "</div>" +
         '<div class="item-main">' +
-        '<h3 class="item-title">' + esc(p.title) +
+        // 序号圆挪进标题行、排在篇名前面（不再是独占一列的 30px 圆）：
+        // 标题行的起点就是圆的起点，圆形与字号同高，一屏能多读几行字（Issue #55 第三条）
+        '<h3 class="item-title"><span class="item-num">' + (idx + 1) + "</span>" + esc(p.title) +
         '<span class="item-reason ' + (item.reason === "review" ? "review" : "") + '">' +
         (item.reason === "review" ? "复习 · 第" + (item.reviewRound || 1) + "轮" : item.reason === "extra" ? "巩固" : "新学") +
         "</span></h3>" +
@@ -478,9 +479,9 @@
       const el = document.createElement("div");
       el.className = "item";
       el.innerHTML =
-        '<div class="item-index">' + (i + 1) + "</div>" +
         '<div class="item-main">' +
-        '<h3 class="item-title">' + esc(p.title) + "</h3>" +
+        // 同上：序号圆在标题行内，排在篇名前面
+        '<h3 class="item-title"><span class="item-num">' + (i + 1) + "</span>" + esc(p.title) + "</h3>" +
         '<div class="item-meta"><span>' + esc(p.dynasty) + "</span><span>·</span><span>" + esc(p.author) + "</span>" +
         (scope.random ? "<span>·</span><span>" + esc(gradeName(p.grade) + termName(p.term)) + "</span>" : "") +
         (rec && rec.learned

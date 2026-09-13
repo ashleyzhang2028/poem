@@ -30,12 +30,16 @@
  *        A－ 在 15px 之下还能再多点一次（js/app.js、js/classic.js）；
  *        小古文页首收紧：搜索框与第一个分组标题之间的空档由 28px 收到 18px
  *        （.toolbar 的 margin-bottom 与 .group-head 的上内边距各让一点）
- *   v25  小古文搜索框提示字与「全部 / 未读」同字号（Issue #55）：
+ *   v25  小古文条目短竖条透明度降到 55%；卡头下内边距 8px、首条不再画分隔线
+ *        （卡头与圆键离开那条线）；序号圆挪进标题行、直径与字号同高（.item-num
+ *        取代 .item-index），列表每行文字多出 40 余像素
+ *        （css/style.css、css/classic.css、js/app.js、js/classic.js）
+ *   v26  小古文搜索框提示字与「全部 / 未读」同字号（Issue #55）：
  *        只压 ::placeholder 到 12.5px，输入的文字仍是 16px（iOS 聚焦不缩放），
  *        并把「输入框字号」这条写在 classic.css 自己末尾、不再只靠 style.css
  *        （css/classic.css）
  */
-const CACHE_NAME = "poem-app-v25";
+const CACHE_NAME = "poem-app-v26";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [
