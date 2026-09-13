@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#2f6055" />
+  <title>跬步 · 古文观止</title>
+  <meta name="description" content="跬步古文观止：原文、生字注音、语音朗读与白话译文，按卷次分组，想读哪篇点哪篇，可按篇随机连读。" />
+  <meta name="format-detection" content="telephone=no" />
+
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="古文观止" />
+  <meta name="mobile-web-app-capable" content="yes" />
+
+  <!-- 目录化 URL：页面住在 /guwen/ 里，但资源引用仍按站点根算（./css/... 就是 /css/...），
+       这样相对路径与搬家前完全一致，不必改成 ../ ，避免漏改一处就白屏 -->
+  <base href="/" />
+  <link rel="icon" href="./icons/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/classic.css" />
+</head>
+<body data-nav="guwen" data-page="古文观止">
+  <!-- 挂载点：一段 data-gw-root 对应一份「索引页 + 阅读器」实例，
+       数据由 js/guwen.js 交进来（见 js/reader-core.js 的 mount()）。
+       把整块内容包起来，是为了让「这一页的列表 / 搜索框 / 进度牌」
+       与「那一页的同名元素」在 JS 里天然分开 —— 各集子页共用一份引擎，
+       靠的就是这个边界，而不是从头到尾写出的五个不同 id。 -->
+  <div class="app" data-gw-root>
+    <!-- 页顶这一行：由 js/chrome.js 统一渲染（全站同一套 徽标 + 跬步 · 页面名 + 副标题 + 右侧动作位）。
+         顺序：徽标 · 跬步 · 古文观止 /「想读哪篇点哪篇」｜ 0 / 1 篇 ｜〔返回键〕
+         —— 已读进度牌挂在品牌区与返回键之间（js/chrome.js 的 renderBar 会保住它，
+         阅读器打开、右侧换成「关闭」键时也不会丢）。
+         这一行整行 align-items: center，徽标 / 两行文字 / 进度牌 / 40px 返回键共用同一条中轴。 -->
+    <header class="topbar topbar-with-count">
+      <span class="count-badge" data-gw="count" id="gw-count">0 / 1 篇</span>
+    </header>
+    <div class="toolbar">
+      <div class="search-wrap">
+        <span class="search-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="6.4" />
+            <path d="M15.8 15.8 20 20" />
+          </svg>
+        </span>
+        <input id="gw-search" data-gw="search" class="search-input" type="search" placeholder="搜索篇名 / 出处 / 作者" autocomplete="off" />
+      </div>
+      <div class="seg mini filter-seg" id="gw-filter-seg" role="group" aria-label="筛选">
+        <button type="button" data-filter="all" class="active" aria-pressed="true">全部</button>
+        <button type="button" data-filter="unread" aria-pressed="false">未读</button>
+      </div>
+      <!-- 工具栏「连读」= 一枚圆形播放键，与首页「今日背诵」右侧那颗同一个组件：
+           同一颗键上 ▶ / ⏸ 两态（播放中原地换成暂停），不配可见文字 ——
+           它管的是「整页随机连读」这件事，说明放在 title 与读屏文案里。
+           用 <button> 而非 <a>：读屏报「按钮」、Enter / 空格都能触发。
+           里面那颗 ▶ 的 stroke-width 由 2.4 改成 1（Issue #55 本轮）：
+           所有播放键的三角边框都收成「1px」，各档图标框对应的取值见
+           css/classic.css 顶部的换算表 —— 改一处前先看那张表。 -->
+      <button class="gw-play gw-play-main" id="gw-random-read" data-gw="random" type="button" data-on="0"
+        aria-pressed="false" title="随机连读：随机抽一篇开读，读完自动跳下一篇">
+        <span class="play-glyph" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M8.4 6.1 18.3 12 8.4 17.9Z" fill="none" stroke="currentColor" stroke-width="1" stroke-linejoin="round" stroke-linecap="round" /></svg>
+        </span>
+        <span class="pause-glyph" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M8.2 5h2.9v14H8.2Z M12.9 5h2.9v14h-2.9Z" fill="currentColor" stroke="none" /></svg>
+        </span>
+        <span class="sr-only" id="gw-random-read-text">随机连读</span>
+      </button>
+    </div>
+
+    <div class="list" id="gw-list" data-gw="list"></div>
+
+    <!-- 页底不再挂版权与法务链接：古文页只留列表，版权 + 用户协议 / 隐私条款只在设置整页底部 -->
+  </div>
+
+  <!-- 古文详情：整页阅读（长文可滚动，不再是卡片弹窗） -->
+  <div class="reader" id="gw-reader" data-gw="reader" hidden>
+    <!-- 阅读器顶栏：不另造一套，直接复用全站顶栏的 .topbar（徽标 + 跬步 · 古文观止 +
+         右侧 40px 圆形返回键）。原先这里是自制的 .reader-bar —— 左侧返回、中间居中进度，
+         比全站顶栏少一个徽标、页名位置也完全不同，从列表点进正文时整行导航会「换一张脸」。
+         现在品牌区与列表页完全对齐；「第 N / 100 篇」作为页面小件挂在品牌区与返回键之间，
+         与列表页顶部的「0 / 100 篇」进度牌同一位置。 -->
+    <header class="topbar topbar-with-count">
+      <span class="count-badge reader-count" data-gw="count-reader" id="gw-progress"></span>
+    </header>
+    <div class="reader-body">
+      <h2 class="rd-title" id="rd-title"></h2>
+      <div class="meta rd-meta" id="rd-meta"></div>
+      <!-- 阅读辅助工具条（第一行）：对齐 / 字号 / 注音 —— 字号必须始终可见（曾因合并丢掉整条工具条） -->
+      <div class="reader-actions" id="rd-actions-main">
+        <div class="seg mini icon-seg" id="rd-align-seg" data-gw="align-seg" role="group" aria-label="正文对齐方式">
+          <button type="button" data-gw="align" data-align="left" aria-pressed="false" title="左对齐" aria-label="左对齐">
+            <span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round">
+              <path d="M4 6.5h16M4 11h10.5M4 15.5h16M4 20h8" />
+            </svg></span>
+          </button>
+          <button type="button" data-gw="align" data-align="center" class="active" aria-pressed="true" title="居中对齐" aria-label="居中对齐">
+            <span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round">
+              <path d="M4 6.5h16M6.8 11h10.4M4 15.5h16M8 20h8" />
+            </svg></span>
+          </button>
+          <button type="button" data-gw="align" data-align="right" aria-pressed="false" title="右对齐" aria-label="右对齐">
+            <span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round">
+              <path d="M4 6.5h16M9.5 11H20M4 15.5h16M12 20h8" />
+            </svg></span>
+          </button>
+        </div>
+        <div class="seg mini font-seg" id="rd-font-seg" data-gw="font-seg" role="group" aria-label="正文字号">
+          <button type="button" id="rd-font-down" data-gw="font-down" aria-label="缩小字号" title="缩小字号">A－</button>
+          <button type="button" id="rd-font-up" data-gw="font-up" aria-label="放大字号" title="放大字号">A＋</button>
+        </div>
+        <div class="seg mini pinyin-seg" id="rd-pinyin-seg" data-gw="pinyin-seg" data-on="0" role="group" aria-label="注音方式">
+          <button type="button" data-gw="pinyin" data-mode="off" aria-pressed="false">不注音</button>
+          <button type="button" data-gw="pinyin" data-mode="rare" class="active" aria-pressed="true">生字</button>
+          <button type="button" data-gw="pinyin" data-mode="all" aria-pressed="false">全文</button>
+        </div>
+      </div>
+      <!-- 阅读辅助工具条（第二行）：原文一个播放键 + 译文开关 + 标记已读。
+           原先这一行并排两个播放键（原文一个、译文一个），一篇文章出现两个播放信号，
+           像多长了一个按钮；而译文本身还带一个朗读键，又叠了一层。
+           现在只留原文这一颗 ▶ / ⏸（同一位置切换，不并排），
+           译文的朗读键挪到译文标题旁，跟着译文框一起出现。 -->
+      <div class="reader-actions icon-row" id="rd-actions-icons">
+        <button type="button" class="mini-btn" id="rd-read-btn" data-gw="read" data-on="0" aria-pressed="false" title="朗读原文：标题、朝代、作者与正文">
+          <span class="btn-icon play-glyph" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M8.4 6.1 18.3 12 8.4 17.9Z" fill="none" stroke="currentColor" stroke-width="1" stroke-linejoin="round" stroke-linecap="round" /></svg>
+          </span>
+          <span class="btn-icon pause-glyph" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M8.2 5h2.9v14H8.2Z M12.9 5h2.9v14h-2.9Z" fill="currentColor" stroke="none" /></svg>
+          </span>
+          <span class="sr-only" id="rd-read-text">朗读原文</span>
+        </button>
+        <button type="button" class="mini-btn" id="rd-trans-toggle" data-gw="trans-toggle" data-on="0" aria-pressed="false" title="显示译文">
+          <span class="btn-icon play-glyph" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 5.6h9.2a1.4 1.4 0 0 1 1.4 1.4v9.4a1.4 1.4 0 0 1-1.4 1.4H4Z" />
+              <path d="M7 9.4h4.6M7 12.8h3.2" />
+              <path d="M15.4 9.2h3.2a1.4 1.4 0 0 1 1.4 1.4v6.2a1.4 1.4 0 0 1-1.4 1.4h-2.2l-1 1.6-.9-1.6h-.1" />
+            </svg>
+          </span>
+          <span class="btn-icon pause-glyph" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 5.6h9.2a1.4 1.4 0 0 1 1.4 1.4v9.4a1.4 1.4 0 0 1-1.4 1.4H4Z" />
+              <path d="M7 9.4h4.6M7 12.8h3.2" />
+              <path d="M15.4 9.2h3.2a1.4 1.4 0 0 1 1.4 1.4v6.2a1.4 1.4 0 0 1-1.4 1.4h-2.2l-1 1.6-.9-1.6h-.1" />
+              <path d="M20.6 4.2 15.6 20.2" />
+            </svg>
+          </span>
+          <span class="sr-only" id="rd-trans-toggle-text">显示译文</span>
+        </button>
+        <button type="button" class="mini-btn done-btn" id="gw-done" data-gw="done">
+          <span class="btn-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 12.5 10 17.5 19.5 7" />
+            </svg>
+          </span>
+          <span class="sr-only" id="gw-done-text">标记已读</span>
+        </button>
+      </div>
+      <pre class="poem-text reader-text" id="rd-text" data-gw="text"></pre>
+      <section class="trans-box" id="rd-trans" data-gw="trans" hidden>
+        <div class="trans-head">
+          <h3>白话译文</h3>
+          <!-- 译文朗读键：跟着译文框一起出现，只在译文标题这一处，
+               与正文那颗朗读键不同时出现在同一行 -->
+          <button type="button" class="trans-read" id="rd-trans-read" data-gw="trans-read" data-on="0" aria-pressed="false" disabled title="朗读白话译文">
+            <span class="btn-icon play-glyph" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M8.4 6.1 18.3 12 8.4 17.9Z" fill="none" stroke="currentColor" stroke-width="1" stroke-linejoin="round" stroke-linecap="round" /></svg>
+            </span>
+            <span class="btn-icon pause-glyph" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M8.2 5h2.9v14H8.2Z M12.9 5h2.9v14h-2.9Z" fill="currentColor" stroke="none" /></svg>
+            </span>
+            <span id="rd-trans-read-text" class="trans-read-label">朗读</span>
+          </button>
+        </div>
+        <p class="rd-trans-text" id="rd-trans-text"></p>
+        <!-- 译文来源注脚：与首页详情页同一套，见 data/index.js 的 TRANSLATION_SOURCES -->
+        <p class="trans-src rd-trans-src" id="rd-trans-src"></p>
+      </section>
+
+      <!-- 上一篇 / 下一篇：读完直接翻，不用退回索引页 -->
+      <nav class="reader-nav" id="rd-nav">
+        <button type="button" class="prev" id="rd-prev" data-gw="prev">
+          <span aria-hidden="true">‹</span>
+          <span>
+            <span class="nav-label">上一篇</span>
+            <span class="nav-title" id="rd-prev-title" data-gw="prev-title"></span>
+          </span>
+        </button>
+        <button type="button" class="next" id="rd-next" data-gw="next">
+          <span>
+            <span class="nav-label">下一篇</span>
+            <span class="nav-title" id="rd-next-title" data-gw="next-title"></span>
+          </span>
+          <span aria-hidden="true">›</span>
+        </button>
+      </nav>
+    </div>
+  </div>
+
+
+  <!-- 设置弹层：与首页同一套选项（用户名 / 阅读辅助），顶栏与底部页签都能打开 -->
+  <div class="modal" id="settings-modal" hidden>
+    <div class="modal-mask" data-settings-close="1"></div>
+    <div class="modal-box small" role="dialog" aria-modal="true" aria-label="设置">
+      <button class="modal-close" data-settings-close="1" aria-label="关闭">✕</button>
+      <div class="modal-head"><h2>设置</h2></div>
+      <div class="settings-item">
+        <label for="input-username">用户名</label>
+        <input id="input-username" class="settings-input" type="text" maxlength="12"
+               placeholder="Ashley" autocomplete="off" enterkeyhint="done" />
+        <div class="settings-hint">留空则显示默认名称「Ashley」；首页与本站各集子页共用一份</div>
+      </div>
+      <div class="settings-item">
+        <label>阅读辅助</label>
+        <div class="seg small" id="seg-helper-c">
+          <button type="button" data-helper="off">关闭</button>
+          <button type="button" data-helper="on" class="active">开启</button>
+        </div>
+        <div class="settings-hint">开启后，打开古文即自动注音（默认「只标生字」）</div>
+      </div>
+      <div class="settings-tip">
+        <p>年级 / 学期 / 背诵范围 / 数据备份在底部页签「设置」的「古诗词背诵」「通用」两组里调整。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+
+  <script src="data/poems-guwen.js"></script>
+  <!-- 译文来源口径文案（与首页同一套 TRANSLATION_SOURCES，不能另写一份） -->
+  <script src="data/index.js"></script>
+  <script src="data/pinyin-table.js"></script>
+  <script src="data/common-chars.js"></script>
+  <script src="js/pinyin.js"></script>
+  <script src="js/speech.js"></script>
+  <script src="js/reader.js"></script>
+  <!-- 古籍阅读库（索引页 + 详情页的引擎）：必须排在 js/guwen.js 之前 -->
+  <script src="js/reader-core.js"></script>
+  <script src="js/chrome.js"></script>
+  <script src="js/pwa.js"></script>
+  <script src="js/guwen.js"></script>
+</body>
+</html>
