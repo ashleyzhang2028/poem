@@ -109,6 +109,12 @@ setTimeout(() => {
     '页签选中态的「下划线」已移除（.dock-item::before 不再存在）');
   chk(dockItems.every(b => b.querySelectorAll(':scope > *').length === 2),
     '每个页签只有图标 + 文字两个子元素，没有额外的划线装饰');
+  // 需求（本次）：「设置」页签是 <a>，浏览器默认给链接文字加下划线 ——
+  // 用户看到的那条线并不是设计里的装饰，而是这条默认样式漏了出来。
+  // 显式 text-decoration: none 之后三个页签外观才一致（样式断言见 theme.test.js，
+  // 这里补一条结构断言：设置页签确实是 <a>，所以这条样式不是可有可无的）。
+  const settingsItem = dock.querySelector('.dock-item[data-nav-go="settings"]');
+  chk(settingsItem.tagName === 'A', '「设置」页签是 <a>（因此必须显式去掉链接默认下划线）');
   // 需求（本次）：设置齿轮原先手工描线、齿距不匀看着「歪」，换成按几何生成的 8 齿对称齿轮
   const gear = d.querySelector('.dock-item[data-nav-go="settings"] .dock-icon svg');
   chk(!!gear, '设置页签有齿轮图标');
@@ -140,6 +146,17 @@ setTimeout(() => {
   chk(!!sd.querySelector('#seg-term'), '学期选择已移入设置');
   chk(!!sd.querySelector('#grade-chips'), '年级选择已移入设置');
   chk(sd.querySelectorAll('#grade-chips button').length === 6, '设置页默认小学显示 6 个年级按钮');
+  // 需求（本次）：一页里五个组合（学段 / 学期 / 背诵范围 / 阅读辅助 / 每日数量）
+  // 与「年级」用同一套选中语言 —— 每行都恰好一个选中项，不再出现「这行选了、那行没选」的错觉。
+  const groups = ['#seg-stage', '#seg-term', '#seg-scope', '#seg-helper', '#seg-count', '#grade-chips'];
+  chk(groups.every(sel => {
+    const btns = [...sd.querySelectorAll(sel + ' button')];
+    return btns.length > 0 && btns.filter(b => b.classList.contains('active')).length === 1;
+  }), '设置页每个组合都恰好一个选中项（学段/学期/范围/辅助/数量/年级）');
+  // 选中态是同一套 class（.active），样式由 .settings-page 作用域统一接管，
+  // 因此不存在「年级用 .active、别的用另一套」这种分叉。
+  chk(groups.every(sel => sd.querySelector(sel + ' button.active')),
+    '六个组合的选中态都用同一个 .active 类名，样式可被整段统一');
   chk(!!sd.querySelector('#settings-page'), '设置页是独立的整页容器');
   // 需求：首页下方的「小古文」入口卡片删除（底部页签已承担入口，卡片重复）
   chk(d.querySelector('#classic-entry') === null, '首页不再有小古文入口卡片');

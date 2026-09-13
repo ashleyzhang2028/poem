@@ -476,6 +476,73 @@ body.no-dock .modal-box { max-height: 88vh; }
   margin-bottom: 8px;
   font-weight: 500;
 }
+/* --------------------------------------------------------------------------
+   设置页的选中态：全页统一成「深绿实底 + 米白字」，与「年级」那些深绿药丸同一套语言
+   --------------------------------------------------------------------------
+   原先同一个页面里有两套选中语言，读起来像两个控件库拼在一起：
+     · 学段 / 学期 / 背诵范围 / 每日数量（.seg.small）→ 白底 + 天青字 + 细投影
+     · 年级（.chips）                              → 深绿实底 + 米白字
+   用户明显更认后者：实底一眼能看出「现在选的是它」，白底那块在暖白纸面上
+   几乎与容器融成一片、要凑近才看得清。
+   现在五个组合（含阅读辅助）全部统一为深绿实底，做到：
+     · 选中 = 实底 + 米白字 + 描金内边（宋器口沿的金线，与主按钮同一手法）
+     · 未选中 = 纸底 + 细描边 + 淡墨字（不再「裸」在容器里，边界清楚）
+     · 同一行内所有按钮等高、间距一致，选中的那一颗不会比邻居胖一圈
+   注：这一块只作用于 settings.html（.settings-page 作用域），
+   阅读器 / 列表页的 .seg.mini 组合不受影响。
+   -------------------------------------------------------------------------- */
+.settings-page .seg,
+.settings-page .chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0;
+  background: transparent;
+  overflow: visible;
+}
+/* 一颗选项 = 纸底描边的药丸，宽度跟着文字走（不再被 flex 拉成等分的长条：
+   两个选项的那几行会被拉成两根几乎通栏的板子，与「年级」的药丸完全不像）；
+   行末剩余的第二个选项再自动补满一行，窄屏读起来仍然整齐。 */
+.settings-page .seg button,
+.settings-page .chips button {
+  flex: 0 1 auto;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--ink-2);
+  border-radius: 999px;
+  font-size: 13.5px;
+  font-weight: 500;
+  line-height: 1.2;
+  padding: 9px 18px;
+  box-shadow: none;
+}
+/* 选中态：深绿实底 + 米白字。描金内边沿用主按钮的手法，
+   但只留一层（不做外投影），在暖白纸面上干净、不糊边。 */
+.settings-page .seg button.active,
+.settings-page .chips button.active {
+  background: var(--green);
+  border-color: var(--green-dark);
+  color: #fdfaf2;
+  font-weight: 600;
+  box-shadow: inset 0 0 0 1px rgba(240, 205, 124, .42);
+}
+/* 触摸反馈：未选中的按下时先淡淡染一层天青，点起来有回应 */
+.settings-page .seg button:active,
+.settings-page .chips button:active { transform: scale(.97); }
+.settings-page .seg button:not(.active):active,
+.settings-page .chips button:not(.active):active {
+  background: var(--green-light);
+  border-color: var(--celadon);
+  color: var(--green);
+}
+/* 「每日背诵数量」的文字都短，让它们等分铺满，四档一眼看全 */
+.settings-page #seg-count button { flex: 1 1 0; }
+/* 窄屏：药丸再收一档内边距，7 个「背诵范围」才不会挤成两行以上 */
+@media (max-width: 400px) {
+  .settings-page .seg button,
+  .settings-page .chips button { padding: 9px 13px; font-size: 13px; }
+}
+
 .settings-input {
   width: 100%;
   box-sizing: border-box;
@@ -886,6 +953,10 @@ body.has-install-tip #app {
   letter-spacing: .6px;
   cursor: pointer;
   transition: color .18s, background .18s;
+  /* 「设置」页签是一个 <a>，浏览器默认会给链接文字加下划线 ——
+     页签文字下面那条线就是这么来的（不是设计的一部分）。
+     这里显式去掉，三个页签不论 <a> 还是 <button> 外观完全一致。 */
+  text-decoration: none;
   -webkit-user-select: none;
   user-select: none;
 }
@@ -898,7 +969,14 @@ body.has-install-tip #app {
    （原先文字上方那弯 26×2 的缃色短线读起来像「设置」被加了条下划线，
    已整段移除；页签自身用 position: relative，方便以后加别的定位元素） */
 .dock-item { position: relative; }
-.dock-item.active { color: var(--green); }
+/* 选中态：天青文字 + 极淡的天青药丸底 + 图标轻抬。
+   三层一起给，即便在弱视 / 强光下也能一眼看出「我在哪一页」，
+   比只把文字染色更稳（那条被误读成下划线的缃色短线已整段移除）。 */
+.dock-item.active {
+  color: var(--green);
+  background: rgba(47, 96, 85, .09);
+}
+.dock-item.active .dock-label { font-weight: 700; }
 .dock-item.active .dock-icon { transform: translateY(-1px); }
 .dock-icon { transition: transform .22s cubic-bezier(.2, .8, .3, 1); }
 @media (prefers-reduced-motion: reduce) {
@@ -1002,7 +1080,9 @@ html, body {
 .toolbar .seg-toggle { will-change: transform; }
 .item-read:active { box-shadow: inset 0 0 0 1px rgba(47, 96, 85, .25); }
 
-/* 设置里的组合按钮（学段 / 学期 / 范围 / 数量）：选中态加一层描金，层次更清楚 */
+/* 全局 .seg / .chips 的选中态只留最轻的一档层次；
+   设置页那一组由文件上方的 .settings-page 规则整段接管（深绿实底），
+   阅读器里的 .seg.mini 另有自己的配色。 */
 .seg button.active {
   box-shadow: inset 0 0 0 1px rgba(165, 92, 25, .18), 0 1px 4px rgba(0, 0, 0, .06);
 }

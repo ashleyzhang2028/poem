@@ -131,6 +131,14 @@ chk(!/\.dock-item::before/.test(css) && !/\.dock-item\.active::before/.test(css)
   '页签选中态不再用 ::before 画「下划线」');
 chk(/\.dock-item\.active \.dock-icon \{[^}]*translateY/.test(css), '选中态改由图标轻微抬起表达');
 chk(/prefers-reduced-motion[\s\S]{0,160}?\.dock-icon/.test(css), '减少动态偏好下不再位移（无障碍兜底）');
+// 需求（本次）：页签文字不再带下划线。
+// 「设置」页签是 <a>，浏览器默认给链接加下划线，那条线就是这么来的 ——
+// 必须在 .dock-item 上显式 text-decoration: none，且该规则要能盖住 <a> 的默认样式。
+chk(/\.dock-item \{[\s\S]*?text-decoration:\s*none/.test(css.split('.dock-item { position')[0]),
+  '页签显式去掉文字下划线（<a> 默认下划线不得漏出）');
+// 选中态不只靠颜色：加一层极淡的天青药丸底，弱视 / 强光下也能分辨当前位置
+chk(/\.dock-item\.active \{[\s\S]{0,200}?background:\s*rgba\(47,\s*96,\s*85/.test(css),
+  '页签选中态有天青药丸底，不只靠文字染色');
 chk(/\.brand-mark/.test(css), '顶栏徽标（logo）有独立样式');
 chk(/\.top-act/.test(css), '顶栏右侧动作位（设置 / 返回）有独立样式');
 
@@ -402,6 +410,24 @@ chk(/settings\.html/.test(read('sw.js')) && /js\/settings\.js/.test(read('sw.js'
 chk(/data-nav-go/.test(read('js/chrome.js')) && /settings\.html/.test(read('js/chrome.js')),
   '设置页可经底部页签回到古诗词 / 小古文');
 chk(/invalidatePlan/.test(settingsJs), '设置页改配置后会让首页的今日计划缓存失效');
+
+/* ---------------- 7b. 设置页选中态统一（本次改动） ----------------
+   原先一页两套语言：学段 / 学期 / 范围 / 数量是「白底 + 天青字」，
+   年级是「深绿实底」。用户明确表示更喜欢深绿那一套，这里把它们并成一套。 */
+chk(/\.settings-page \.seg button\.active,[\s\S]{0,80}?\.settings-page \.chips button\.active \{[\s\S]{0,200}?background:\s*var\(--green\)/.test(css),
+  '设置页五个组合（含年级）统一为深绿实底选中态');
+chk(/\.settings-page \.seg button\.active,[\s\S]{0,300}?color:\s*#fdfaf2/.test(css),
+  '设置页选中态用米白字，压在深绿上对比度充足');
+chk(/\.settings-page \.seg button,[\s\S]{0,400}?border:\s*1px solid var\(--line\)/.test(css),
+  '设置页未选中项有纸底描边，不再「裸」在容器里');
+chk(!/\.settings-page \.seg button\.active[\s\S]{0,200}?padding:/.test(css),
+  '选中态只换配色、不改内边距（选中不会把整行撑动）');
+chk(/\.settings-page \.seg,\s*\.settings-page \.chips \{[\s\S]{0,200}?background:\s*transparent/.test(css),
+  '设置页去掉旧的「灰底容器」外壳，药丸直接排布');
+// 只作用于设置页：阅读器 / 列表页的 .seg.mini 不受影响
+chk(!/\.seg button\.active \{[\s\S]{0,120}?background:\s*var\(--green\)/.test(css),
+  '全局 .seg 选中态未被改掉（阅读器 .seg.mini 仍是原样）');
+
 
 
 /* ---------------- 4b. 字体子集必须覆盖站点实际用到的字 ---------------- */
