@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#2f6055" />
   <title>跬步 · 课外阅读</title>
-  <meta name="description" content="跬步课外阅读：课外必背小古文 100 篇、唐诗三百首 301 首、宋词三百首 255 首、古文观止 155 篇 —— 每篇都有原文、生字注音、语音朗读与白话译文。" />
+  <meta name="description" content="跬步课外阅读：课外必背小古文 100 篇、唐诗三百首 301 首、宋词三百首 284 首、古文观止 166 篇 —— 每篇都有原文、生字注音、语音朗读与白话译文。" />
   <meta name="format-detection" content="telephone=no" />
 
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -19,17 +19,17 @@
   <link rel="stylesheet" href="css/style.css" />
   <link rel="stylesheet" href="css/classic.css" />
 </head>
-<body data-nav="library" data-page="课外阅读">
+<body data-nav="library" data-page="课外阅读" data-sub="课本之外的经典，按部就班读下去">
   <!-- 这一页是「四部集子的入口」：不再把某一部直接摆到页签上，
        而是先在这里看清有哪几部、各多少篇，再进去读。
        页签文字只有两三个字，装不下「唐诗三百首」这种书名，
-       所以页签写「课外」，这一页把四部的全名列清楚。 -->
+       所以页签写「课外」，这一页把四部的全名列清楚。
+       页面说明走 body 上的 data-sub，由 js/chrome.js 渲染进顶栏第二行；
+       原先这里另有一段同义的正文（「课本之外的经典……白话译文。」），
+       与顶栏那行重复，已删。 -->
+
   <div class="app">
     <header class="topbar"></header>
-
-    <p class="library-hint">
-      课本之外的经典，按部就班读下去 —— 每篇都有原文、生字注音、语音朗读与白话译文。
-    </p>
 
     <!-- 四部集子：卡片由 js/library.js 按 data/site-index.js 的清单渲染，
          篇数实时算，不写死 —— 哪一部日后增补了篇目，这里跟着变。 -->

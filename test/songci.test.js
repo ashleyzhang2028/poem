@@ -15,8 +15,8 @@ vm.createContext(sandbox);
   vm.runInContext(fs.readFileSync(path + f, 'utf8'), sandbox, { filename: f }));
 
 const SC = sandbox.POEMS_SONGCI;
-chk(Array.isArray(SC) && SC.length === 255,
-  '宋词三百首共 255 首（实际 ' + (SC ? SC.length : 'undefined') + '）');
+chk(Array.isArray(SC) && SC.length === 284,
+  '宋词三百首共 284 首（实际 ' + (SC ? SC.length : 'undefined') + '）');
 
 const ids = new Set();
 let dup = 0;
@@ -27,7 +27,7 @@ chk(SC.every(p => p.title && p.source && p.dynasty && p.author && p.text && p.tr
   '每首都有 标题/出处/朝代/作者/原文/译文');
 chk(SC.every(p => p.excerpt), '每首都给了列表用摘句（excerpt）');
 chk(SC.every(p => p.translationSource === 'public-domain'),
-  '255 首宋词都标了译文来源 public-domain（未标 ' + SC.filter(p => !p.translationSource).length + ' 首）');
+  '284 首宋词都标了译文来源 public-domain（未标 ' + SC.filter(p => !p.translationSource).length + ' 首）');
 chk(SC.every(p => p.source === '《宋词三百首》'), '出处统一为《宋词三百首》');
 chk(SC.every(p => p.dynasty === '宋'), '朝代统一为宋');
 chk(SC.some(p => p.text.length > 200), '含长篇（>200 字）宋词，验证长文场景');
@@ -38,7 +38,7 @@ chk(SC.every(p => /^词牌 · /.test(p.gradeGroup || '')),
 const groups = sandbox.getSongciGroups();
 const groupNames = groups.map(g => g.name);
 chk(new Set(groupNames).size === groupNames.length, '词牌分组名不重复');
-chk(groups.reduce((n, g) => n + g.items.length, 0) === 255, '各组篇目合计 255');
+chk(groups.reduce((n, g) => n + g.items.length, 0) === 284, '各组篇目合计 284');
 chk(groupNames.length >= 120 && groupNames.length <= 150,
   '按词牌聚合出 ' + groupNames.length + ' 组（同一词牌下的多首各自成条）');
 
@@ -61,7 +61,8 @@ SC.forEach(p => { (byTitle[p.title] = byTitle[p.title] || []).push(p); });
 const fixedCases = [
   ['高阳台', '韩疁'], ['汉宫春', '李邴'], ['临江仙', '陈与义'], ['卜算子·咏梅', '陆游'],
   ['钗头凤', '陆游'], ['扬州慢', '姜夔'], ['暗香', '姜夔'], ['疏影', '姜夔'],
-  ['声声慢', '李清照'], ['一剪梅', '李清照'], ['醉花阴', '李清照'], ['武陵春', '李清照']
+  ['声声慢', '李清照'], ['一剪梅', '李清照'], ['醉花阴', '李清照'],
+  ['武陵春·风住尘香花已尽', '李清照']
 ];
 const wrong = fixedCases.filter(([t, a]) => !(byTitle[t] || []).some(p => p.author === a));
 chk(wrong.length === 0,
@@ -77,7 +78,7 @@ chk(groupAsAuthor.length === 0,
 const need = ['宴山亭·北行见杏花', '苏幕遮', '渔家傲', '雨霖铃', '水调歌头', '念奴娇·赤壁怀古',
   '江城子·乙卯正月二十日夜记梦', '踏莎行', '满庭芳·其一', '青玉案', '西河·金陵怀古',
   '卜算子·咏梅', '钗头凤', '摸鱼儿', '永遇乐·京口北固亭怀古', '扬州慢', '暗香', '疏影',
-  '双双燕·咏燕', '莺啼序', '声声慢', '一剪梅', '醉花阴', '武陵春'];
+  '双双燕·咏燕', '莺啼序', '声声慢', '一剪梅', '醉花阴', '武陵春·风住尘香花已尽'];
 const titles = SC.map(p => p.title);
 const missing = need.filter(t => !titles.includes(t));
 chk(missing.length === 0, '需求清单里的名篇齐备（缺 ' + missing.join('/') + '）');
@@ -135,10 +136,10 @@ setTimeout(() => {
     chk(dups.length === 0, f + ' 无重复 id（重复：' + dups.join(', ') + '）');
   });
 
-  chk(d.querySelectorAll('#gw-list .item').length === 255,
-    '列表渲染 255 首（实际 ' + d.querySelectorAll('#gw-list .item').length + '）');
-  chk(d.querySelector('#gw-count').textContent === '0 / 255 首',
-    '顶部显示 0 / 255 首：' + d.querySelector('#gw-count').textContent);
+  chk(d.querySelectorAll('#gw-list .item').length === 284,
+    '列表渲染 284 首（实际 ' + d.querySelectorAll('#gw-list .item').length + '）');
+  chk(d.querySelector('#gw-count').textContent === '0 / 284 首',
+    '顶部显示 0 / 284 首：' + d.querySelector('#gw-count').textContent);
   // 分组卡：分组数与词牌数一致
   chk(d.querySelectorAll('#gw-list .group-card').length === groupNames.length,
     '按词牌渲染 ' + groupNames.length + ' 张分组卡');
@@ -146,7 +147,7 @@ setTimeout(() => {
   // 挂载点对外接口
   const api = w.ReaderEngine.current;
   chk(!!api, '引擎挂上了宋词实例');
-  chk(api.total() === 255, '实例 total() 为 255');
+  chk(api.total() === 284, '实例 total() 为 284');
 
   // 已读键：宋词与别的集子各存各的
   const ssrc2 = fs.readFileSync(path + 'js/songci.js', 'utf8');
@@ -167,7 +168,7 @@ setTimeout(() => {
   // 搜索：按作者筛，且只筛宋词这一部
   api.setKeyword('李清照');
   const nLi = d.querySelectorAll('#gw-list .item').length;
-  chk(nLi > 0 && nLi < 255, '按作者「李清照」搜索得到子集（' + nLi + ' 首）');
+  chk(nLi > 0 && nLi < 284, '按作者「李清照」搜索得到子集（' + nLi + ' 首）');
 
   console.log('');
   console.log(fails === 0 ? '🎉 宋词三百首测试全部通过' : '❌ 宋词三百首测试 ' + fails + ' 项失败');

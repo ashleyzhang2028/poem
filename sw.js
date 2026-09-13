@@ -122,6 +122,21 @@
  *          js/library.js、js/chrome.js、js/reader-core.js、js/app.js、
  *          js/settings.js、css/style.css、css/classic.css、fonts/、
  *          index.html、manifest.webmanifest、sw.js）
+ *   v43  课外阅读入口页副标题 + 详情页长标题 + 列表图标右侧对齐（Issue #69 后续）：
+ *        ① /library/ 的说明改走顶栏第二行（body 的 data-sub），
+ *           并删掉正文里那段与顶栏重复的「课本之外的经典……白话译文。」；
+ *        ② 详情页标题（.reader-body h2）允许逐字符断行 —— 《唐诗三百首》里
+ *           有一首题目长达 150 字，块级 h2 不折行就会溢出定宽正文列，
+ *           手机上表现为正文横向滚动、右端被裁（用户反馈「详情页把页面撑出去了」）；
+ *        ③ 列表条目的两颗图标钉在右缘：内容块改为按内容取宽之后，
+ *           播放键与箭头仍跟在内容块后面，于是停在条目中间、右端留白 ——
+ *           给 .item-arrow 加 margin-left: auto 把它顶到右缘；
+ *           同时把「内容块按内容取宽」那句的选择器由 `#gw-list .group-card .item-main`
+ *           放宽为 `#gw-list .item .item-main`（搜索页的条目不分卷次、不套卡片，
+ *           原选择器在那里命中不到，图标同样不贴右缘），
+ *           并把搜索页条目的右内边距收成与集子页同值的 8px
+ *        （library/index.html、css/classic.css、js/reader-core.js、
+ *          test/classic.test.js、test/tangshi.test.js、test/pwa.test.js、sw.js）
  *   v42  搜索页只留一个搜索框（Issue #69 后续）：
  *        ① 删掉「全部 / 未读」组合按钮与集子筛选药丸两栏 ——
  *           前者筛的是已读，而搜索页根本不写已读；后者默认就是「全部」，
@@ -140,6 +155,14 @@
  *        文字（连同只服务它的 #search-hint 显隐逻辑与 .search-hint 样式）：
  *        搜索页的取舍已经写在文件头与上方注释里，页面上不必再向用户解释一遍
  *        （css/classic.css、js/search.js、search/index.html）
+ *   v43  修回小古文 / 唐诗列表里丢掉的正文摘句：
+ *        摘句改成只认数据自带的 p.excerpt 时，忘了「小古文与唐诗的数据里
+ *        根本没有这个字段」—— 于是这两部的列表条目只剩「朝代 · 作者 · 出处」，
+ *        而卡内 .item-main 是按内容取宽的（flex: 0 1 auto），内容块随之从
+ *        283px 塌到 141px / 167px，条目右半边空出一大片（Issue #55 要消灭的
+ *        正是这种「文字没占满、右边空一截」）。现在没有 excerpt 的集子回落到
+ *        「原文前 16 字 + 省略号」，即这两部集子一直用的口径。
+ *        （js/reader-core.js、sw.js）
  *
  *   v42  集子「出处」修正（Issue #69 收尾）：
  *        《古文观止》155 篇的 source 原先一律写成选本名《古文观止》，
@@ -152,7 +175,20 @@
  *        （data/poems-guwen.js、data/site-index.js、js/reader-core.js、
  *          js/search.js、css/classic.css、sw.js）
  *
- *   v43  搜索页在机上的可用性（Issue #69）：
+ *   v43  《宋词三百首》《古文观止》篇目补齐（Issue #69 收尾）：
+ *        · 宋词三百首与通篇本目录逐条比对后补入 29 首，255 → 284 首；
+ *          并订正五处「篇名张冠李戴 + 正文重复」的错配
+ *          （sc-84 秦观《踏莎行》、sc-93 秦观《江城子》、
+ *           sc-134 贺铸《蝶恋花·改徐冠卿词》、sc-181 辛弃疾《贺新郎·赋琵琶》）；
+ *          同作者同词牌且无法用「其一 / 其二」分辨的两首，副题取首句。
+ *        · 古文观止补齐卷三漏收的 11 篇（公羊传 / 谷梁传 / 礼记 / 孟子），
+ *          155 → 166 篇，全十二卷收齐。
+ *        · 页顶进度牌、列表分组顺序（js/songci.js 的 GROUP_ORDER 增补六个词牌）
+ *          与 README 一并更新。
+ *        （data/poems-songci.js、data/poems-guwen.js、js/songci.js、
+ *          songci/index.html、guwen/index.html、library/index.html、
+ *          test/songci.test.js、test/guwen.test.js、README.md、sw.js）
+ *   v44  搜索页在机上的可用性（Issue #69）：
  *        用户在手机上反馈三件事，一起修：
  *        ① 键盘一弹，候选下拉就被键盘盖住 —— 软键盘是盖在页面上的浮层，
  *           不改窗口高度，而搜索框又在视口居中处。现在用 visualViewport
@@ -166,7 +202,7 @@
  *        候选行抬高到 44px（iOS 建议的最小可点面积）。
  *        （search/index.html、js/search.js、css/classic.css、sw.js）
  */
-const CACHE_NAME = "poem-app-v43";
+const CACHE_NAME = "poem-app-v44";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [
