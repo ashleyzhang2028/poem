@@ -38,8 +38,12 @@
  *        只压 ::placeholder 到 12.5px，输入的文字仍是 16px（iOS 聚焦不缩放），
  *        并把「输入框字号」这条写在 classic.css 自己末尾、不再只靠 style.css
  *        （css/classic.css）
+ *   v27  首页今日条两颗圆的直径真正对齐（Issue #55）：
+ *        圆环与左侧播放键同读 --today-btn-size（46px），真机量得 46×46 相等、
+ *        中线齐平；不给描边做补偿（svg overflow: hidden 会把描边裁进盒内，
+ *        盒子即最大外径）—— 见 css/style.css 里那条路标注释（css/style.css）
  */
-const CACHE_NAME = "poem-app-v26";
+const CACHE_NAME = "poem-app-v27";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [
