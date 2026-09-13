@@ -107,6 +107,15 @@ setTimeout(() => {
     d.querySelector('#gw-list .item').dispatchEvent(new window.Event('click', { bubbles: true }));
     return d.querySelector('#gw-reader > .topbar');
   };
+  // 点阅读器顶栏那颗「返回」。顶栏没渲染出 #top-act 时不要对 null 调用 ——
+  // 那会让整层测试以 TypeError 崩在无关的地方，把真正的病根埋掉。
+  // 兜底：拿不到按钮就把阅读器直接合上，保证后续用例仍从列表页开始。
+  const clickReaderBack = function () {
+    const btn = d.querySelector('#gw-reader > .topbar #top-act');
+    if (!btn) { d.querySelector('#gw-reader').hidden = true; return false; }
+    btn.dispatchEvent(new window.MouseEvent('click', { bubbles: true, cancelable: true }));
+    return true;
+  };
   const rBar = openReaderBar();
   chk(!!rBar, '阅读器里有自己的 .topbar（同一套结构）');
   // 回归：整个小古文页有**两条** .topbar（页面顶部那条 + 阅读器里那条），
@@ -126,14 +135,25 @@ setTimeout(() => {
     '阅读器里的页名同样是「小古文」，与列表页一致');
   const rBack = rBar.querySelector('#top-act');
   chk(!!rBack && !!rBack.querySelector('svg'), '阅读器返回键走全站动作位（同一颗圆形按钮）');
-  chk(!/#top-act[^>]*>[\s\S]{0,200}?M6\.4 6\.4/.test(rBar.innerHTML),
-    '动作位画的是返回箭头，不是 ✕（同一种行为全站同一个图标）');
-  chk(rBar.querySelector('#gw-progress').textContent === '第 1 / 100 篇' &&
-    rBar.querySelector('#gw-progress').classList.contains('count-badge'),
-    '篇号牌用列表页同款 .count-badge，挂在品牌区与返回键之间');
-  // 收起来，后面的用例仍从列表页开始
-  rBar.querySelector('#top-act').dispatchEvent(new window.MouseEvent('click', { bubbles: true, cancelable: true }));
-  chk(d.querySelector('#gw-reader').hidden === true, '阅读器返回键能合上阅读器');
+  // ⚠️ 后面要用这枚按钮做交互，先确认它真的在：曾经 top-act 选不到（当场为 null）时
+  // 直接往下跑，下一句对 null 调 dispatchEvent，整层测试以 TypeError 崩掉 ——
+  // 报错指向测试代码，真正的病根（顶栏没渲染出动作位）反而被埋掉了。
+  // 这里显式收口：拿不到就单独失败并跳过后续依赖它的断言。
+  if (!rBack) {
+    chk(false, '阅读器顶栏缺少 #top-act，跳过依赖它的后续校验');
+    chk(false, '阅读器返回键能合上阅读器（因 #top-act 缺失而跳过）');
+    // 把阅读器收回去，后面的用例仍从列表页开始
+    d.querySelector('#gw-reader').hidden = true;
+  } else {
+    chk(!/#top-act[^>]*>[\s\S]{0,200}?M6\.4 6\.4/.test(rBar.innerHTML),
+      '动作位画的是返回箭头，不是 ✕（同一种行为全站同一个图标）');
+    chk(rBar.querySelector('#gw-progress').textContent === '第 1 / 100 篇' &&
+      rBar.querySelector('#gw-progress').classList.contains('count-badge'),
+      '篇号牌用列表页同款 .count-badge，挂在品牌区与返回键之间');
+    // 收起来，后面的用例仍从列表页开始
+    rBack.dispatchEvent(new window.MouseEvent('click', { bubbles: true, cancelable: true }));
+    chk(d.querySelector('#gw-reader').hidden === true, '阅读器返回键能合上阅读器');
+  }
 
   // 回归：顶栏第二行是「每次重绘后补一次」的，不是一次性的初始化 ——
   // 开 / 关阅读器都会整体重绘顶栏，漏补一次，页名下面那句说明就会整行消失。
@@ -644,7 +664,7 @@ setTimeout(() => {
     '进度更新的是页顶那一行里的同一块牌子（不是另开一份）');
 
   // 返回列表：阅读器顶栏的动作位由全站渲染，测试里直接调 closeReader 的入口（点击返回）
-  d.querySelector('#gw-reader > .topbar #top-act').dispatchEvent(new window.MouseEvent('click', { bubbles: true, cancelable: true }));
+  clickReaderBack();
   chk(d.querySelector('#gw-reader').hidden === true, '返回后阅读器关闭');
   chk(d.querySelectorAll('#gw-list .item.done').length === 1, '列表中已读条目有已读标记');
 
@@ -833,7 +853,7 @@ setTimeout(() => {
   // 关闭
   rdClick('off');
   chk(d.querySelectorAll('#rd-text ruby').length === 0, '选「不注音」关闭注音');
-  d.querySelector('#gw-reader > .topbar #top-act').dispatchEvent(new window.MouseEvent('click', { bubbles: true, cancelable: true }));
+  clickReaderBack();
 
   // 取消已读
   const doneItem = d.querySelector('#gw-list .item.done');

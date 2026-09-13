@@ -576,6 +576,18 @@ bash test/run.sh      # 全部测试
 npm test              # 同上
 ```
 
+> **依赖装法**：`jsdom` 与 `puppeteer` 都用 `--no-save` 临时装（`package.json` 里不声明）。
+> 两条 `npm i` 分开写时，**后一条会清掉前一条**——因为这两个包没写进 `package.json`，
+> npm 把它们当「多余的包」回收（实测先装 jsdom、再装 puppeteer 会打印
+> `removed 39 packages`）。所以务必**一条命令一起装**：
+>
+> ```bash
+> npm i jsdom puppeteer --no-save --no-fund --no-audit
+> ```
+>
+> `test/run.sh` 在发现 jsdom 缺失时会自己临时装一次，并在装完先 `require` 验证能加载；
+> 加载不了会直接停下说清原因，不会一路跑到某个无关断言上以 `TypeError` 收场。
+
 包含九部分：
 
 | 测试 | 内容 |

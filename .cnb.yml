@@ -33,8 +33,15 @@ main:
         - name: install-deps
           script: |
             set -e
-            npm i jsdom --no-save --no-fund --no-audit
-            npm i puppeteer --no-save --no-fund --no-audit
+            # 必须**一条命令**同时装 jsdom 与 puppeteer。
+            # 分成两条 `npm i` 时，第二条会因为 package.json 里没有声明这两个包
+            # （只用 --no-save 临时装）而把第一条的成果当作「多余的包」清掉 ——
+            # 实测：先装 jsdom（39 个包），再装 puppeteer 会打印
+            # "added 98 packages, and removed 39 packages"，jsdom 被整个移除。
+            # 之后 test/run.sh 发现 require.resolve('jsdom') 失败，转入「临时安装」分支，
+            # 在另一处目录里再装一份 jsdom，依赖解析于是变得不确定
+            # （小古文层曾因此在 CI 上抛出 TypeError 而整层炸掉）。
+            npm i jsdom puppeteer --no-save --no-fund --no-audit
         - name: run-tests
           script: bash test/run.sh
 
@@ -52,8 +59,15 @@ main:
         - name: install-deps
           script: |
             set -e
-            npm i jsdom --no-save --no-fund --no-audit
-            npm i puppeteer --no-save --no-fund --no-audit
+            # 必须**一条命令**同时装 jsdom 与 puppeteer。
+            # 分成两条 `npm i` 时，第二条会因为 package.json 里没有声明这两个包
+            # （只用 --no-save 临时装）而把第一条的成果当作「多余的包」清掉 ——
+            # 实测：先装 jsdom（39 个包），再装 puppeteer 会打印
+            # "added 98 packages, and removed 39 packages"，jsdom 被整个移除。
+            # 之后 test/run.sh 发现 require.resolve('jsdom') 失败，转入「临时安装」分支，
+            # 在另一处目录里再装一份 jsdom，依赖解析于是变得不确定
+            # （小古文层曾因此在 CI 上抛出 TypeError 而整层炸掉）。
+            npm i jsdom puppeteer --no-save --no-fund --no-audit
         - name: run-tests
           script: bash test/run.sh
 
