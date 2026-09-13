@@ -82,6 +82,21 @@ chk(!/46px/.test(todayScope), '今日条不再残留上一轮的 46px（播放�
 const readCss = (css.match(/\.today-read \{([^}]*)\}/) || [, ''])[1];
 chk(/width:\s*var\(--today-btn-size\)/.test(readCss) && /height:\s*var\(--today-btn-size\)/.test(readCss),
   '左侧朗读圆键的宽高都取 --today-btn-size');
+/* 需求（本轮，Issue #55）：把这颗播放键的**内径**（▶ 图形本身）再收 4px。
+   上一轮收的是外径（46 → 42），本轮外径不动，只收里面的图标。
+   内径同样只有一个来源 —— .today-actions 上的 --today-btn-inner，
+   .today-read svg 读它画 ▶ / ⏸ 两态（同框，两态不会忽大忽小）。
+   ⚠️ 别再往 <svg> 或 <path> 上写 width / height / transform —— 那样内径就有了第二个数，
+   下一次「再收 4px」又得满文件找（外径那一轮已经踩过一次）。 */
+const todayInner = (css.match(/\.today-actions \{([^}]*)\}/) || [, ''])[1].match(/--today-btn-inner:\s*(\d+)px/);
+chk(!!todayInner, '今日条声明内径唯一来源 --today-btn-inner（' + (todayInner && todayInner[1]) + 'px）');
+chk(todayInner && todayInner[1] === '14', '播放键内径在原 19px 图标框基础上减少 4px，现为 14px');
+chk(/--today-btn-inner,\s*14px/.test(css), '内径变量有兜底值（变量缺失时不会回退成旧尺寸）');
+const todaySvgCss = (css.match(/\.today-read svg \{([^}]*)\}/) || [, ''])[1];
+chk(/width:\s*var\(--today-btn-inner/.test(todaySvgCss) && /height:\s*var\(--today-btn-inner/.test(todaySvgCss),
+  '▶ / ⏸ 两态的图标尺寸只读 --today-btn-inner（改一处即整体收放）');
+chk(!/width:\s*(19|15)px/.test(todaySvgCss) && !/transform/.test(todaySvgCss),
+  '内径不做二次缩放，也不许在 <svg> 上再写一个数值');
 const ringCss = (css.match(/\.ring \{([^}]*)\}/) || [, ''])[1];
 chk(/width:\s*var\(--today-btn-size/.test(ringCss) && /height:\s*var\(--today-btn-size/.test(ringCss),
   '右侧进度环的直径与左侧圆键同源（都是 --today-btn-size）');

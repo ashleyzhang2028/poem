@@ -65,8 +65,12 @@
  *        正文一个字都不会变长）；内容块由 flex: 1 1 0% 改成 flex: 0 1 auto，
  *        宽屏下按内容取宽、摘要在自身宽度用完处结束，正文一路排到播放键跟前；
  *        窄屏下圆键左缘与正文那一行的可用宽度分毫不动（css/classic.css）
+ *   v32  首页今日条播放键的「内径」收 4px（Issue #55 后续）：
+ *        外径 42px 不动，只把里面的 ▶ / ⏸ 图形从 19px 图标框收到 14px ——
+ *        内径另起一个唯一来源 --today-btn-inner（与 --today-btn-size 分开），
+ *        ▶ / ⏸ 同框，两态切换不会忽大忽小（css/style.css）
  */
-const CACHE_NAME = "poem-app-v31";
+const CACHE_NAME = "poem-app-v32";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [

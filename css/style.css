@@ -1443,8 +1443,13 @@ html, body {
      左侧播放键与右侧进度环直径必须一致，所以尺寸只在这里声明一次，
      两边都读同一个变量 —— 想再调整时只改这一处，不会再走散。
      本轮（Issue #55 后续）：按需求把直径再收 4px（46 → 42），
-     左侧播放键与右侧进度环一起缩小，两颗圆的外径仍然逐位相等。 */
+     左侧播放键与右侧进度环一起缩小，两颗圆的外径仍然逐位相等。
+     再下一轮（Issue #55 后续）：外径不再动，只把这颗键的**内径**收 4px ——
+     即 ▶ / ⏸ 图形本身（19 → 14px），见 --today-btn-inner。 */
   --today-btn-size: 42px;
+  /* 内径：▶ 三角形 / ⏸ 两竖条的外接圆。原先 19px 图标框里的图形偏大，
+     收紧 4px 后与外径 42px 的比例更从容（约 1/3），整颗键呼吸感更足。 */
+  --today-btn-inner: 14px;
 }
 .today-read {
   width: var(--today-btn-size);
@@ -1465,7 +1470,11 @@ html, body {
   align-items: center;
   justify-content: center;
 }
-.today-read svg { display: block; width: 19px; height: 19px; margin: auto; }
+/* 内径（Issue #55 本轮）：▶ / ⏸ 图形本身的大小，仍是上一条「尺寸只声明一次」的延续 ——
+   外径（--today-btn-size: 42px）与内径各有一个唯一来源，图中量哪一层都不会走散。
+   外径不动，只把 ▶ 三角形的外接圆（内径）在 19px 图标框的基准上收 4px：
+   19 → 14px，等比缩放，三角形仍居中、仍与外径同心；▶ / ⏸ 同框，两态不会忽大忽小。 */
+.today-read svg { display: block; width: var(--today-btn-inner, 14px); height: var(--today-btn-inner, 14px); margin: auto; }
 /* 未播放显示 ▶，播放中显示 ⏸：一个圆形播放键说清全部状态，不再配文字 */
 .today-read .pause-glyph { display: none; }
 .today-read[data-on="1"] .play-glyph { display: none; }
