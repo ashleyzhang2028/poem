@@ -282,6 +282,25 @@ setTimeout(() => {
   chk(/(^|\n)\.group-card \.item \{[\s\S]*?box-shadow:\s*none/.test(fs.readFileSync(path + 'css/classic.css', 'utf8')),
     '卡内条目去掉各自的阴影（合并进卡片后不再是 100 张独立卡片）');
 
+  // 需求（Issue #55）：左侧曾同时出现**两道竖条** —— 卡片左边缘那道「大竖条」
+  // （.group-card 左右 4px 留白把条目短竖条衬成了两块绿）与条目自己的短竖条
+  // 并排，看着完全重复。本次：
+  //   1) 去掉 .group-card 的左右 4px 留白（大竖条消失）；
+  //   2) 条目短竖条 3px → 1px；
+  //   3) 1px 线挪到 left:2px，与序号圆之间留出间隙。
+  // 这里从 CSS 源码锁住这三条，防止再被改回「两道竖条」。
+  const classicCssText = fs.readFileSync(path + 'css/classic.css', 'utf8');
+  chk(!!cardCss && /padding:\s*0 0 10px;/.test(cardCss[2]),
+    '卡片左右不再留白（左色条已由条目短竖条表达，4px 会造出第二道「大竖条」）');
+  const barBlock = /(^|\n)\.group-card \.item::before \{([\s\S]*?)\}/.exec(classicCssText);
+  chk(!!barBlock && /width:\s*1px;/.test(barBlock[2]),
+    '条目短竖条宽 1px（原 3px 像一道色块）');
+  chk(!!barBlock && /left:\s*2px;/.test(barBlock[2]),
+    '短竖条落在 left:2px：与卡片左缘留 2px，与序号圆左缘（内边距 4px）留出间隙');
+  const itemPadBlock = /(^|\n)\.group-card \.item \{([\s\S]*?)\}/.exec(classicCssText);
+  chk(!!itemPadBlock && /padding:\s*12px 8px 12px 4px;/.test(itemPadBlock[2]),
+    '条目左内边距 4px：内容起点与卡头文字仍对齐，1px 线在内容外侧');
+
   // 需求 6：列表每项右侧是播放键（不再是喇叭）
   chk(d.querySelectorAll('#gw-list .item-read').length === 100, '每个列表项都有播放按钮');
   chk(d.querySelectorAll('#gw-list .item .play-glyph').length === 100, '播放键用的是 ▶ 播放图标');
