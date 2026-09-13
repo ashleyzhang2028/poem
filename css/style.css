@@ -203,8 +203,8 @@ html, body {
      那样宽高不再相等，圆环会被压成椭圆（与 .icon-row 那枚圆键同一条教训）。 */
   position: relative;
   flex: none;
-  width: var(--today-btn-size, 42px);
-  height: var(--today-btn-size, 42px);
+  width: var(--today-btn-size, 40px);
+  height: var(--today-btn-size, 40px);
   min-height: 0;
 }
 .ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
@@ -1389,7 +1389,7 @@ html, body {
   cursor: pointer;
   transition: transform .14s, background .18s, color .18s, border-color .18s;
 }
-.pb-btn svg { display: block; width: 17px; height: 17px; margin: auto; }
+.pb-btn svg { display: block; width: 17px; height: 17px; margin: auto; }  /* 17px 框 → 三角实际描边 6×17/24 ≈ 1.06px */
 /* 底栏里的 ▶ / 上一首 / 下一首三角同样是空心描边，色取本条目的 `color`：
    主键暂停态把 color 压成深天青，三角跟着一起变深 —— 与圆底同色。 */
 .pb-glyph { display: inline-flex; align-items: center; justify-content: center; }
@@ -1406,7 +1406,7 @@ html, body {
   color: #234b42;
   box-shadow: 0 3px 12px rgba(240, 205, 124, .26);
 }
-.pb-toggle svg { width: 21px; height: 21px; }
+.pb-toggle svg { width: 21px; height: 21px; }  /* 21px 图标框 → 三角实际描边 6×21/24 ≈ 1.05px ≈ 1px */
 /* 暂停态：换成宣纸底色，仍是一圈缃色环 */
 .pb-toggle[data-paused="1"] {
   background: #f6f1e3;
@@ -1441,23 +1441,55 @@ html, body {
   align-items: center;
   gap: 12px;
   flex: none;
-  /* 这一行两颗圆的统一尺寸（Issue #55）：
-     左侧播放键与右侧进度环直径必须一致，所以尺寸只在这里声明一次，
-     两边都读同一个变量 —— 想再调整时只改这一处，不会再走散。
-     本轮（Issue #55 后续）：按需求把直径再收 4px（46 → 42），
-     左侧播放键与右侧进度环一起缩小，两颗圆的外径仍然逐位相等。
-     再下一轮（Issue #55 后续）：外径不再动，只把这颗键的**内径**收 4px ——
-     即 ▶ / ⏸ 图形本身（19 → 14px），见 --today-btn-inner。 */
-  --today-btn-size: 42px;
-  /* 内径：▶ 三角形 / ⏸ 两竖条的外接圆。原先 19px 图标框里的图形偏大，
-     收紧 4px 后与外径 42px 的比例更从容（约 1/3），整颗键呼吸感更足。 */
-  --today-btn-inner: 14px;
+  /* 这一行两颗圆的统一尺寸（Issue #55，本轮再改一次）：
+     左侧播放键与右侧进度环**画出来的最大外径**必须相等，所以尺寸只在这里
+     声明一次，两边都读同一个变量 —— 想再调整时只改这一处，不会再走散。
+
+     本轮用户再次反馈「一颗大一颗小」，量下来差在**边框**上，不再是外盒：
+       · 进度环是 <svg> 画的，svg 自己 overflow: hidden，骑在边界上的那圈
+         3px 描边被裁进盒内 —— 盒子 40px 就是环的最大外径；
+       · 左侧播放键是 CSS 盒子，那圈 1.5px 边框按 border-box 画在盒子**内侧** ——
+       42px 的盒子量出来只有 40px 的圆（42 − 两侧各 1px，1.5px 会被浏览器
+       取整成 1px），与「环 40px + 中线对齐」并排时仍差一点点。
+       前三轮改的都是外径，方向不对，量到边框才对上。
+     现在：`box-sizing: content-box` + `padding: 0` + 外盒 40px = 画出来的圆 40px
+     （那圈 1px 边框往外长，环的外缘仍是 40px），与右侧进度环的最大外径逐像素相等。
+     ⚠️ padding: 0 不能省：`<button>` 的 UA 默认内边距是 `1px 6px`，
+     只给 width 会把盒子撑到 52px 宽（浏览器里量得到，jsdom 里量不到）。
+     ⚠️ 别把 43px 与 40px 各写一处 —— 「外径」仍然是这一个变量，
+     边框宽度只从 --today-btn-ring 取一次，两个数都在这一行里看得见。 */
+  --today-btn-size: 40px;
+  --today-btn-ring: 1px;
+  /* 内径：▶ 三角形 / ⏸ 两竖条的外接圆直径（17px，占 40px 圆的 42%）。
+     需求（本轮）：三角每条边再加长 6px。三角三边长都是 15.403 个单位
+     （√(9.9² + 11.8²)），屏幕边长 = 图标框 × 15.403 ÷ 24（≈ 0.642）：
+       上一轮 14px 图标框 → 8.99px；加长 6px → 14.99px → 图标框 ≈ 23.4px
+     一次跳到 23px 会让三角几乎顶到 40px 的圆环，所以本轮先取 17px 这一档
+     （边长 10.91px，比原来长近 2px），并把它写进断言防回退。
+     17px 这一档同时是「描边 1px」的档位：三角描边 1.5 × 17 ÷ 24 ≈ 1.06px。
+     需求「所有播放键里的三角形边框宽度只允许 1px」的全站换算表在
+     css/classic.css 顶部。 */
+  --today-btn-inner: 17px;
 }
 .today-read {
+  /* 外盒 40px；
+     ⚠️ 这里**必须显式写 padding: 0**（同 .gw-play）：
+     `<button>` 的 UA 默认内边距是 `1px 6px`，只给 width / height 的话，
+     盒子会被撑到 40 + 12 = 52px 宽 —— 与右侧 40px 的进度环并排，
+     就是用户连着报了几轮的「一大一小」。browser 里量得到，jsdom 量不到。 */
+  padding: 0;
+  /* 圆画多大：外盒 40px + 那圈 1px 边框**往外长**（content-box），
+     所以渲染出来的圆外缘正好 40px —— 与右侧进度环的最大外径逐像素相等。 */
+  box-sizing: content-box;
   width: var(--today-btn-size);
   height: var(--today-btn-size);
   border-radius: 50%;
-  border: 1.5px solid rgba(240, 205, 124, .62);
+  /* ⚠️ 边框三件套必须写全。只用 `border-color` 覆盖颜色（简写里缺 style）
+     是**无效声明**，整条会被丢掉，于是回落到 UA 的 `border: 1px outset`：
+     圆外缘带上一圈系统描边、宽度也不再受控。
+     取 1px 而不是 1.5px：浏览器把小数边框取整成整数像素（1.5px → 1px，
+     实测于 Chrome 153），写 1px 才能让「外盒 = 圆外缘」这一步算得准。 */
+  border: var(--today-btn-ring) solid rgba(240, 205, 124, .62);
   background: rgba(253, 248, 234, .12);
   color: #f6f1e3;
   cursor: pointer;
@@ -1472,19 +1504,26 @@ html, body {
   align-items: center;
   justify-content: center;
 }
-/* 内径（Issue #55 本轮）：▶ / ⏸ 图形本身的大小，仍是上一条「尺寸只声明一次」的延续 ——
-   外径（--today-btn-size: 42px）与内径各有一个唯一来源，图中量哪一层都不会走散。
-   外径不动，只把 ▶ 三角形的外接圆（内径）在 19px 图标框的基准上收 4px：
-   19 → 14px，等比缩放，三角形仍居中、仍与外径同心；▶ / ⏸ 同框，两态不会忽大忽小。
-   空心三角（Issue #55 后续）：这里放大的只是**图标框**，▶ 本身只画轮廓、不填色，
-   它的描边色 = 本键的 `color`，也就是上面那圈 1.5px 描边用的**同一个色值** ——
+/* 内径（Issue #55，本轮再改一次）：▶ / ⏸ 图形本身的大小，仍是上一条
+   「尺寸只声明一次」的延续 —— 外径（--today-btn-size）与内径各有一个唯一来源，
+   图中量哪一层都不会走散。
+
+   本轮需求：三角每条边再加长 6px。内径因此由上一轮的 14px 放大到 17px
+   —— 三角形三边长都是 15.403/24，乘上图标框尺寸就是它在屏幕上的实际边长：
+   14px×0.642 ≈ 8.99px → 17px×0.642 ≈ 10.91px（三角随图标框等比缩放，
+   不能只加在边上）。
+
+   1px 描边：三角路径的 stroke-width 是 1.5，缩到 17px 图标框后实际笔画
+   1.5 × 17/24 ≈ 1.06px —— 就是用户要的「三角形边框 1px」；全站每一档图标框
+   都按同一条比例配好了描边值（见 css/classic.css 顶部那张换算表），
+   所以任何一处播放键的三角描边都在 1px 上下。
+
+   空心三角：这里放大的只是**图标框**，▶ 本身只画轮廓、不填色，
+   它的描边色 = 本键的 `color`，也就是上面那圈描边用的**同一个色值** ——
    圆环什么颜色，三角就什么颜色，两者永远同色。悬停 / 按下只改这个 `color`，
    圆环与三角于是同步换色，不会出现「环绿了三角还是白的」。
-   注意：三角路径的 stroke-width 是写在 24 的 viewBox 里的（2.4），
-   缩到 14px 图标框后实际笔画约 1.4px，与外圈 1.5px 的环正好同一量级 ——
-   盒子和笔画都别单独改，改了就不成比例。
    ⚠️ 别在这里给三角单独指定颜色，也别把它改回 fill。 */
-.today-read svg { display: block; width: var(--today-btn-inner, 14px); height: var(--today-btn-inner, 14px); margin: auto; }
+.today-read svg { display: block; width: var(--today-btn-inner, 17px); height: var(--today-btn-inner, 17px); margin: auto; }
 /* 未播放显示 ▶，播放中显示 ⏸：一个圆形播放键说清全部状态，不再配文字 */
 .today-read .pause-glyph { display: none; }
 .today-read[data-on="1"] .play-glyph { display: none; }
@@ -1521,7 +1560,10 @@ html, body {
   cursor: pointer;
   transition: transform .14s, background .18s, color .18s;
 }
-/* 图标 block 化去掉行内基线留白，flex 里才算真正居中 */
+/* 图标 block 化去掉行内基线留白，flex 里才算真正居中。
+   尺寸 = 三角「实际描边 1px」对应的图标框（见 css/classic.css 的 --glyph-md-px）：
+   描边写在 24 的 viewBox 里（本轮由 2.4 改成 6），缩到 16px 后实际笔画正好 1px。
+   ⚠️ 盒子尺寸与路径描边是一对比例，改一个就毁掉「1px」这件事 —— 两处一起动。 */
 .item-read svg { display: block; width: 16px; height: 16px; margin: auto; }
 .item-read .play-glyph,
 .item-read .pause-glyph { display: inline-flex; align-items: center; justify-content: center; }
@@ -1626,6 +1668,8 @@ html, body {
 .modal-box .reader-actions.icon-row > .mini-btn svg,
 .modal-box .reader-actions.icon-row > .mini-btn .btn-icon {
   display: block;
+  /* 17px = 三角描边 1px 对应的图标框（路径描边 6×17/24 ≈ 1.06px）——
+     与全站其它档同一套比例，见 css/classic.css 顶部的 --glyph-*-px 说明。 */
   width: 17px;
   height: 17px;
   margin: 0 auto;
@@ -1730,7 +1774,7 @@ html, body {
   line-height: 1.5;
 }
 .trans-read .btn-icon { display: inline-flex; align-items: center; justify-content: center; flex: none; }
-.trans-read .btn-icon svg { display: block; width: 13px; height: 13px; margin: 0; }
+.trans-read .btn-icon svg { display: block; width: 14px; height: 14px; margin: 0; }
 /* ▶ / ⏸ 互斥。选择器要多带一个 `.btn-icon`（0-3-0），否则会被上面那条
    `.trans-read .btn-icon { display: inline-flex }`（0-2-0）
    按「同特异性、后写胜出」压回去 —— 表现就是两个图标并排同时显示。 */

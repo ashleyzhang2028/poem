@@ -37,9 +37,13 @@
   /* 图标：全部纯笔画 SVG，颜色跟随文字色。
      ▶ 与「上一首 / 下一首」里的三角同样是**空心描边**（Issue #55 后续）：
      播放键与页面各处的圆键形态一致，笔画量级也与 18×18 箭头图标对齐。
-     底栏背景是深天青，空心以「淡色笔画」表达，不靠填色块压场。 */
+     底栏背景是深天青，空心以「淡色笔画」表达，不靠填色块压场。
+     描边宽 1（Issue #55 本轮，原 2.4 / 2）：底栏这几颗键的图标框是 17~21px，
+     用户要的口径就是「三角边框 1px」—— 写 1 个单位、缩到 0.7~0.9px，
+     与其余各档的 1px 同一量级（换算表见 css/classic.css 顶部）。
+     「上一首 / 下一首」的竖线一并收到 1，整枚图标笔画保持一致。 */
   function iconPlay() {
-    return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.4 6.1 18.3 12 8.4 17.9Z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/></svg>';
+    return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.4 6.1 18.3 12 8.4 17.9Z" fill="none" stroke="currentColor" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/></svg>';
   }
   function iconPause() {
     return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.2 5h2.9v14H8.2Z M12.9 5h2.9v14h-2.9Z" fill="currentColor" stroke="none"/></svg>';
@@ -48,10 +52,10 @@
     return '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.6" y="6.6" width="10.8" height="10.8" rx="1.6" fill="currentColor" stroke="none"/></svg>';
   }
   function iconPrev() {
-    return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.3 6.1 9.1 12l8.2 5.9Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M7.5 5.6v12.8" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>';
+    return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.3 6.1 9.1 12l8.2 5.9Z" fill="none" stroke="currentColor" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/><path d="M7.5 5.6v12.8" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg>';
   }
   function iconNext() {
-    return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.7 6.1l8.2 5.9-8.2 5.9Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M16.5 5.6v12.8" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>';
+    return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.7 6.1l8.2 5.9-8.2 5.9Z" fill="none" stroke="currentColor" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/><path d="M16.5 5.6v12.8" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg>';
   }
 
   /** 创建播放栏（只创建一次） */

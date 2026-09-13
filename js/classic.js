@@ -271,11 +271,13 @@
    * 列表项右侧的播放键：播放中换成「暂停」两竖条
    * ▶ 空心描边三角，描边色即外层圆键的 currentColor（Issue #55 后续），
    * 与 js/app.js 的 playGlyph 是同一枚三角。
+   * 描边宽 1.5（Issue #55 本轮，原 2.4）：这一档的图标框是 16px，
+   * 1.5 × 16 ÷ 24 = 1px —— 即用户要的「三角形边框 1px」。
    */
   function playGlyph() {
     return (
       '<span class="play-glyph" aria-hidden="true">' +
-      '<svg viewBox="0 0 24 24"><path d="M8.4 6.1 18.3 12 8.4 17.9Z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" /></svg>' +
+      '<svg viewBox="0 0 24 24"><path d="M8.4 6.1 18.3 12 8.4 17.9Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" /></svg>' +
       "</span>" +
       '<span class="pause-glyph" aria-hidden="true">' +
       '<svg viewBox="0 0 24 24"><path d="M8.2 5h2.9v14H8.2Z M12.9 5h2.9v14h-2.9Z" fill="currentColor" stroke="none" /></svg>' +
@@ -301,8 +303,9 @@
 
   /**
    * 分组右侧小号圆键里的图标：只有一个 ▶ 三角。
-   * 与其它档一样是**空心描边**（Issue #55 后续）；只有缩到 26px 的小号档
-   * 单独把三角略放大、笔画略加粗（2.6 / 24），补偿缩小后视觉重量的流失。
+   * 与其它档一样是**空心描边**（Issue #55 后续）。
+   * 描边宽 2（Issue #55 本轮，原 2.6）：这一档的图标框只有 12px，
+   * 2 × 12 ÷ 24 = 1px —— 与全站其余播放键的三角边框同宽（见 css/classic.css 顶部的换算表）。
    *
    * 它不需要 ⏸ —— 「现在读到哪一篇」由列表里的高亮 + 底部播放栏表达，
    * 分组键偏「从这里开始听」，做成一颗会翻状态的键反而多一层状态要管。
@@ -311,7 +314,7 @@
   function playSmGlyph() {
     return (
       '<span class="play-glyph-sm" aria-hidden="true">' +
-      '<svg viewBox="0 0 24 24"><path d="M9.4 6.6 18 12 9.4 17.4Z" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" />' +
+      '<svg viewBox="0 0 24 24"><path d="M9.4 6.6 18 12 9.4 17.4Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" />' +
       "</svg></span>"
     );
   }

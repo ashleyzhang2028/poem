@@ -78,8 +78,19 @@
  *        改动落在 index.html、classic/index.html、
  *        js/app.js（今日条 + 列表项）、js/classic.js（列表项 + 分组小键）、
  *        js/reader.js（底部播放栏 ▶ / 上一首 / 下一首三枚）
+ *   v34  播放键的两处尺寸/笔画（Issue #55 本轮）：
+ *        一、三角边框全站 1px —— 描边写在 24 的 viewBox 里会跟图标框一起缩放，
+ *            各档按「图标框 × 描边值 ÷ 24 ≈ 1px」重新配对（换算表在
+ *            css/classic.css 顶部）：分组小键 2 / 列表项 1.5 / 译文键 1 /
+ *            今日条 1.5 / 其余 1。
+ *        二、首页今日条修复「一大一小」—— 前几轮改的都是外径，差的是边框：
+ *            进度环的描边被 svg 裁在盒内（盒子 40px 即最大外径），而播放键
+ *            的 1.5px 边框按 border-box 画在盒内、把圆吃小成 39px。现在改
+ *            content-box + 外盒 40px（边框往外长），画出来的圆与环逐像素相等；
+ *            同一颗键的 ▶ 图标框由 14px 放大到 17px（三角边长 ~5.8 → ~7.0px），
+ *            边框仍是 1px 上下（css/style.css、index.html）
  */
-const CACHE_NAME = "poem-app-v33";
+const CACHE_NAME = "poem-app-v34";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [

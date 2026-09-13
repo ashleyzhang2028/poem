@@ -43,11 +43,18 @@
         <div class="today-sub" id="today-sub">共 5 首</div>
       </div>
       <div class="today-actions">
-        <!-- 朗读全部：把当天几首的标题、朝代、作者与正文依次读出来，不看屏幕也能听 -->
+        <!-- 朗读全部：把当天几首的标题、朝代、作者与正文依次读出来，不看屏幕也能听。
+             这一颗的 ▶ 与别处同一枚路径，只是两项数值随它这一档走（Issue #55 本轮）：
+               · stroke-width 1.5 —— 描在 24 的 viewBox 里、跟着一起缩放：
+                 1.5 × 17/24 ≈ 1.06px，就是屏幕上那 1px 的边框；
+               · 图标框 17px（css/style.css 的 --today-btn-inner）—— 三角每边比
+                 上一轮的 14px 框再加长一档。
+             这两项的换算过程都写在 css/classic.css 顶部那张表里，改前先看它。
+             别单独调这里的 path：三角的「1px 描边」是描边值与图标框的一对比例。 -->
         <button class="today-read" id="today-read" data-on="0" aria-label="依次朗读今天要背的每一首" title="依次朗读今天要背的每一首">
           <span class="play-glyph" aria-hidden="true">
             <svg viewBox="0 0 24 24">
-              <path d="M8.4 6.1 18.3 12 8.4 17.9Z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" />
+              <path d="M8.4 6.1 18.3 12 8.4 17.9Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" />
             </svg>
           </span>
           <span class="pause-glyph" aria-hidden="true">
@@ -152,7 +159,7 @@
              绝不同时并排出现两个图标 -->
         <button type="button" class="mini-btn" id="m-read-btn" data-on="0" aria-pressed="false" title="朗读原文：标题、朝代、作者与正文">
           <span class="btn-icon play-glyph" aria-hidden="true">
-            <svg viewBox="0 0 24 24"><path d="M8.4 6.1 18.3 12 8.4 17.9Z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" /></svg>
+            <svg viewBox="0 0 24 24"><path d="M8.4 6.1 18.3 12 8.4 17.9Z" fill="none" stroke="currentColor" stroke-width="1" stroke-linejoin="round" stroke-linecap="round" /></svg>
           </span>
           <span class="btn-icon pause-glyph" aria-hidden="true">
             <svg viewBox="0 0 24 24"><path d="M8.2 5h2.9v14H8.2Z M12.9 5h2.9v14h-2.9Z" fill="currentColor" stroke="none" /></svg>
@@ -186,7 +193,7 @@
           <!-- 译文朗读键：译文展开后才出现，只在译文标题这一处，不与原文键并排 -->
           <button type="button" class="trans-read" id="m-trans-read" data-on="0" aria-pressed="false" disabled title="朗读白话译文">
             <span class="btn-icon play-glyph" aria-hidden="true">
-              <svg viewBox="0 0 24 24"><path d="M8.4 6.1 18.3 12 8.4 17.9Z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" /></svg>
+              <svg viewBox="0 0 24 24"><path d="M8.4 6.1 18.3 12 8.4 17.9Z" fill="none" stroke="currentColor" stroke-width="1" stroke-linejoin="round" stroke-linecap="round" /></svg>
             </span>
             <span class="btn-icon pause-glyph" aria-hidden="true">
               <svg viewBox="0 0 24 24"><path d="M8.2 5h2.9v14H8.2Z M12.9 5h2.9v14h-2.9Z" fill="currentColor" stroke="none" /></svg>
