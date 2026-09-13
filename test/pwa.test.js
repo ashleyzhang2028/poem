@@ -446,6 +446,43 @@ function check(name, cond, extra) {
       roundState.trans.radius === '999px' || parseFloat(roundState.trans.radius) * 2 >= roundState.trans.h,
       roundState.trans.radius);
 
+    // ---- Issue #55：首页「今日背诵」两颗圆的直径必须一致 ----
+    // 用户连着报了三次（56px → 54px → 与播放键同径），说明光改 CSS 数值不够，
+    // 得看渲染结果。所以这里不看 CSS 写了多少，直接量真机上画出来的东西：
+    //   左侧播放键 → 外盒尺寸（它就是一颗实心圆键，盒子即直径）
+    //   右侧进度环 → 圆环的**最大直径**，两种量法取大者：
+    //                a) 外盒（svg overflow: hidden 会把骑在边界上的描边裁进盒内，
+    //                   正常情况下盒子就是最大外径）
+    //                b) 路径几何框 + 一圈描边（若将来放开 overflow，描边探出去也得算）
+    // 取大者，「最大直径」才不会被某一种实现蒙过去。
+    const todayRing = await page.evaluate(() => {
+      const read = document.querySelector('#today-read');
+      const ring = document.querySelector('#today-ring');
+      const outer = el => { const b = el.getBoundingClientRect(); return { w: +b.width.toFixed(2), h: +b.height.toFixed(2) }; };
+      const r = outer(ring);
+      const boxMax = Math.max(r.w, r.h);
+      // 路径几何框（getBBox / getBoundingClientRect 都不含描边），加上一圈描边
+      const path = ring.querySelector('.ring-bg');
+      const pb = path.getBoundingClientRect();
+      const stroke = parseFloat(getComputedStyle(path).strokeWidth) || 0;
+      const paintedMax = +Math.max(pb.width, pb.height, boxMax - stroke).toFixed(2);
+      return {
+        read: outer(read),
+        ring: r,
+        ringMax: +Math.max(boxMax, paintedMax + stroke).toFixed(2),
+        stroke: stroke
+      };
+    });
+    check('iPhone: 日期条左侧播放键是正圆（宽高相等）',
+      todayRing.read.w === todayRing.read.h, JSON.stringify(todayRing.read));
+    check('iPhone: 今日圆环的最大直径与左侧播放键一致',
+      todayRing.ringMax === todayRing.read.w && todayRing.ringMax === todayRing.read.h,
+      '圆环最大直径 ' + todayRing.ringMax + ' vs 播放键 ' + todayRing.read.w + '×' + todayRing.read.h);
+    check('iPhone: 今日圆环是正圆（没被 flex 行拉成椭圆）',
+      todayRing.ring.w === todayRing.ring.h, JSON.stringify(todayRing.ring));
+    check('iPhone: 今日圆环里那颗金色描边没被裁掉半圈（描边宽度仍是整数 3px）',
+      todayRing.stroke === 3, String(todayRing.stroke));
+
     // ---- 小古文页：工具栏「连读」与各分组右侧都改成了圆形播放键 ----
     // 形状必须在真浏览器里量：CSS 写着 50% 圆角，但若高度被 flex 拉高，
     // 渲染出来仍是椭圆（曾经列表项那颗就是这样）。所以量的是真实盒尺寸。

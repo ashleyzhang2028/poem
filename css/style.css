@@ -191,9 +191,13 @@ html, body {
 .today-title { font-size: 16px; font-weight: 600; }
 .today-sub { font-size: 12.5px; opacity: .88; }
 .ring {
-  /* 直径与左侧「朗读（全部）」圆形播放键一致（Issue #55）：
-     两颗圆并排在同一行，一大一小看着像没对齐。
-     尺寸不写死数值，直接读 .today-read 用同一个来源，避免再被单独改动。
+  /* 直径（渲染出来的最大外径）与左侧「朗读（全部）」圆形播放键完全相等 —— Issue #55。
+     尺寸只在 .today-actions 上声明一次，两颗圆都读 --today-btn-size，
+     谁也不能再各写一个数走散（前两轮 56 → 54 →「同径」改的就是这个数）。
+     ⚠️ 描边不要补偿：右上角这枚环的 stroke 由 <svg> 画，svg 自身会 overflow: hidden，
+     骑在边界上的描边会被**裁进盒子内**，所以盒子尺寸就是环的最大直径。
+     曾经想当然按「盒子 − 一圈描边」缩小，结果环真的比播放键小了一大圈
+     （真机量出 40 vs 46），这条注释就是留给下一个人的路标。
      ⚠️ min-height 归零：.today-bar 是 align-items: center 的 flex 行，
      「下限 + height」在 jsdom / 真实浏览器里都可能被内容或行高拉高，
      那样宽高不再相等，圆环会被压成椭圆（与 .icon-row 那枚圆键同一条教训）。 */
