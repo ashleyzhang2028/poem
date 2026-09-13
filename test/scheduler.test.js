@@ -24,10 +24,56 @@ let fails = 0;
 function assert(c, m) { if (!c) { console.log('✗ ' + m); fails++; } else console.log('✓ ' + m); }
 
 // 1. 数据完整性
-assert(sandbox.POEMS_ALL.length === 242, '诗词总数 242（实际 ' + sandbox.POEMS_ALL.length + '）');
+assert(sandbox.POEMS_ALL.length === 273, '诗词总数 273（实际 ' + sandbox.POEMS_ALL.length + '）');
 const ids = new Set();
 sandbox.POEMS_ALL.forEach(p => { if (ids.has(p.id)) throw new Error('重复 id ' + p.id); ids.add(p.id); });
 assert(true, '诗词 id 无重复');
+
+// 1.1 小学篇目：按 2025 比对清单补齐的 31 首，必须落在标注的年级学期上
+const gradeCount = g => sandbox.POEMS_ALL.filter(p => p.grade === g).length;
+assert([1,2,3,4,5,6].map(gradeCount).reduce((a,b)=>a+b,0) === 122,
+  '小学共 122 首（实际 ' + [1,2,3,4,5,6].map(gradeCount).reduce((a,b)=>a+b,0) + '）');
+assert(gradeCount(1) === 13 && gradeCount(2) === 14 && gradeCount(3) === 18 &&
+  gradeCount(4) === 24 && gradeCount(5) === 24 && gradeCount(6) === 29,
+  '各年级首数：一 13 / 二 14 / 三 18 / 四 24 / 五 24 / 六 29（实际 ' +
+  [1,2,3,4,5,6].map(gradeCount).join(' / ') + '）');
+
+// 新补篇目抽检：标题 + 年级学期 + 作者都要对
+const REQUIRED = [
+  ['画鸡', 1, 2, '唐寅'], ['汉江临泛', 4, 1, '王维'], ['鹿柴', 4, 1, '王维'],
+  // 回归：#44 反馈「秋夜将晓出篱门迎凉有感」归四下（原误落五下）
+  ['秋夜将晓出篱门迎凉有感', 4, 2, '陆游'],
+  ['嫦娥', 4, 1, '李商隐'], ['竹枝词', 4, 2, '刘禹锡'], ['芙蓉楼送辛渐', 4, 2, '王昌龄'],
+  ['黄鹤楼送孟浩然之广陵', 4, 2, '李白'], ['渔歌子', 5, 1, '张志和'], ['观书有感（其一）', 5, 1, '朱熹'],
+  ['长歌行', 5, 2, '汉乐府'], ['赴戍登程口占示家人', 5, 2, '林则徐'], ['送元二使安西', 5, 2, '王维'],
+  ['寒菊', 5, 2, '郑思肖'], ['乡村四月', 5, 2, '翁卷'], ['过故人庄', 6, 1, '孟浩然'],
+  ['七律·长征', 6, 1, '毛泽东'], ['春日', 6, 1, '朱熹'], ['天净沙·秋思', 6, 2, '马致远'],
+  ['过零丁洋', 6, 2, '文天祥'], ['马诗', 6, 2, '李贺'], ['采薇（节选）', 6, 2, '佚名'],
+  ['春夜喜雨', 6, 2, '杜甫'], ['江畔独步寻花（其一）', 6, 1, '杜甫'], ['早春呈水部张十八员外', 6, 2, '韩愈'],
+  ['江上渔者', 6, 2, '范仲淹'], ['泊船瓜洲', 6, 2, '王安石']
+];
+let reqOk = true;
+REQUIRED.forEach(function (r) {
+  const hit = sandbox.POEMS_ALL.find(function (p) { return p.title === r[0]; });
+  if (!hit) { reqOk = false; console.log('  缺篇目：' + r[0]); return; }
+  if (hit.grade !== r[1] || hit.term !== r[2]) {
+    reqOk = false; console.log('  ' + r[0] + ' 年级学期错：' + hit.grade + '-' + hit.term + '，期望 ' + r[1] + '-' + r[2]);
+  }
+  if (r[3] && hit.author !== r[3]) {
+    reqOk = false; console.log('  ' + r[0] + ' 作者错：' + hit.author + '，期望 ' + r[3]);
+  }
+});
+assert(reqOk, '按清单补齐的篇目都在标注的年级学期上');
+
+// 同一首古诗不得在同一学期重复收录
+const dupKey = {};
+let dupHit = [];
+sandbox.POEMS_ALL.forEach(function (p) {
+  const k = p.grade + '-' + p.term + '-' + p.title;
+  if (dupKey[k]) dupHit.push(k);
+  dupKey[k] = 1;
+});
+assert(dupHit.length === 0, '同一学期内无重复篇目（' + (dupHit.join('、') || '无') + '）');
 
 // 2. 间隔序列
 assert(JSON.stringify(Scheduler.INTERVALS) === JSON.stringify([0,1,2,4,7,15,30,60,120,240]), '遗忘曲线间隔序列正确');
@@ -138,9 +184,9 @@ scopeCases.forEach(c => {
   assert(pl.length === 5 && pl.every(x => c.ok(x.poem)), c.label + ' 范围生成 5 首且内容在范围内');
 });
 
-// 「本册及之前」：高三下学期应覆盖全部 242 首中的任意学段
+// 「本册及之前」：高三下学期应覆盖全部 273 首中的任意学段
 const uptoHigh = Scheduler.poolForScope({ grade: 12, term: 2, scope: 'upto' });
-assert(uptoHigh.length === 242, '本册及之前（高三下）= 全部 242 首（实际 ' + uptoHigh.length + '）');
+assert(uptoHigh.length === 273, '本册及之前（高三下）= 全部 273 首（实际 ' + uptoHigh.length + '）');
 
 // 随机范围确实覆盖了整个学段（多跑几次能看到多个年级）
 let seenGrades = new Set();
