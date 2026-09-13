@@ -22,8 +22,12 @@
  *        播放栏出现时页签让路、法务页底部留白、iOS 输入框防缩放真正生效、
  *        圆角与宽度收敛到变量（css/style.css、css/classic.css、
  *        css/legal.css、js/chrome.js、js/classic.js、classic/index.html）
+ *   v23  小古文连读改用圆形播放键：工具栏「连读」与各分组右侧的
+ *        「随机连读」都换成与首页今日条同款的圆键（一大一小两档），
+ *        ▶ / ⏸ 同键两态、不再有随状态改写的可见文字
+ *        （classic/index.html、css/classic.css、js/classic.js）
  */
-const CACHE_NAME = "poem-app-v22";
+const CACHE_NAME = "poem-app-v23";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [

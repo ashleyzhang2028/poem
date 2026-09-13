@@ -52,6 +52,27 @@ const classicCss = read('css/classic.css');
 chk(/\.today-read\s*\{[^}]*border-radius:\s*50%/.test(css), '今日朗读按钮是圆形（与 0/5 圆环成对）');
 // 需求 6：列表单项右侧按钮是圆形播放键
 chk(/\.item-read\s*\{[^}]*border-radius:\s*50%/.test(css), '列表单项右侧按钮是圆形播放键');
+/* 需求（本次）：凡「听」的动作全站都是一枚圆键 ——
+   首页今日条那颗（46px / 缃色）、列表单项那颗（36px / 天青）、小古文列表的
+   连读圆键（40px / 天水碧）与分组圆键（26px / 天水碧）共用同一副形状：
+   正圆 + 纸底 + 描金细线 + 同一套按下回弹；只有尺寸与主色随上下文走。
+   所以断言的是「形状同族」：border-radius: 50% + 宽高同源 + 同一套 transition。 */
+chk(!/\.gw-play-main\s*\{[^}]*padding:\s*[1-9]/.test(classicCss) &&
+  /\.gw-play \{[^}]*border-radius:\s*50%/.test(classicCss) &&
+  /\.gw-play-main\s*\{[\s\S]{0,200}?width:\s*var\(--toolbar-h\)/.test(classicCss) &&
+  /\.gw-play-main\s*\{[\s\S]{0,200}?height:\s*var\(--toolbar-h\)/.test(classicCss),
+  '小古文「连读」是正圆播放键（宽高同源，不是压扁的椭圆）');
+chk(/\.gw-play-sm\s*\{[\s\S]{0,200}?width:\s*26px/.test(classicCss) &&
+  /\.gw-play-sm\s*\{[\s\S]{0,220}?height:\s*26px/.test(classicCss),
+  '分组右侧是小一号的圆键（26×26，宽高一致）');
+chk(/\.gw-play \{[\s\S]{0,400}?transition:\s*transform \.14s/.test(classicCss),
+  '圆键与全站按钮共用同一套过渡（按下回弹手感一致）');
+chk(/\.pause-glyph \{ display: none; \}/.test(classicCss) &&
+  /\.gw-play\[data-on="1"\] \.play-glyph \{ display: none; \}/.test(classicCss) &&
+  /\.gw-play\[data-on="1"\] \.pause-glyph \{ display: inline-flex; \}/.test(classicCss),
+  '圆键上 ▶ / ⏸ 互斥显示（同一颗键原地换图标，不同时并排）');
+chk(!/\.seg-toggle/.test(classicCss) && !/gw-random-read-text/.test(classicHtml.replace(/[\s\S]*?<span class="sr-only" id="gw-random-read-text">随机连读<\/span>[\s\S]*/, 'X')),
+  '带「连读」二字的胶囊样式与文案已整段退场（连读中不再改写可见文案）');
 // 需求 7：详情页仍是「小喇叭 + 朗读」文字按钮，没有被改成纯图标
 chk(/\.mini-btn \.btn-icon/.test(classicCss), '小古文朗读按钮的图标容器样式仍在（纯 SVG 图标）');
 
@@ -512,8 +533,8 @@ chk(/\.reader-body \{[\s\S]{0,400}?min-height:\s*0/.test(classicCss),
   '阅读器正文 min-height: 0，否则 flex 项被内容撑开、滚动条永远不出现');
 
 // (8) Service Worker 版本必须比这次改动的资源新，否则老用户拿到旧样式
-chk(parseInt((read('sw.js').match(/poem-app-v(\d+)/) || [0, '0'])[1], 10) >= 22,
-  'Service Worker 缓存版本已升到 v22（本轮改了 css/js，不升版本老用户看到的是旧样式）');
+chk(parseInt((read('sw.js').match(/poem-app-v(\d+)/) || [0, '0'])[1], 10) >= 23,
+  'Service Worker 缓存版本已升到 v23（本轮改了 css/js/html，不升版本老用户看到的是旧样式）');
 
 // (7) 顶栏右侧的动作位在阅读器里画的是「返回」箭头，不是 ✕：
 //     同一种行为在全站只能是同一个图标

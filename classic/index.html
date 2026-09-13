@@ -45,15 +45,19 @@
         <button type="button" data-filter="all" class="active" aria-pressed="true">全部</button>
         <button type="button" data-filter="unread" aria-pressed="false">未读</button>
       </div>
-      <button class="seg-toggle" id="gw-random-read" data-on="0" title="随机连读，读完自动跳下一篇">
-        <span aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 9.6v4.8h2.8l4 3.2V6.4l-4 3.2H4Z" />
-            <path d="M14.8 9.2a4 4 0 0 1 0 5.6" />
-            <path d="M17.4 6.6a7.6 7.6 0 0 1 0 10.8" />
-          </svg>
+      <!-- 工具栏「连读」= 一枚圆形播放键，与首页「今日背诵」右侧那颗同一个组件：
+           同一颗键上 ▶ / ⏸ 两态（播放中原地换成暂停），不配可见文字 ——
+           它管的是「整页随机连读」这件事，说明放在 title 与读屏文案里。
+           用 <button> 而非 <a>：读屏报「按钮」、Enter / 空格都能触发。 -->
+      <button class="gw-play gw-play-main" id="gw-random-read" type="button" data-on="0"
+        aria-pressed="false" title="随机连读：随机抽一篇开读，读完自动跳下一篇">
+        <span class="play-glyph" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M7.2 4.6 19.4 12 7.2 19.4Z" fill="currentColor" stroke="none" /></svg>
         </span>
-        <span id="gw-random-read-text">连读</span>
+        <span class="pause-glyph" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M8.2 5h2.9v14H8.2Z M12.9 5h2.9v14h-2.9Z" fill="currentColor" stroke="none" /></svg>
+        </span>
+        <span class="sr-only" id="gw-random-read-text">随机连读</span>
       </button>
     </div>
 

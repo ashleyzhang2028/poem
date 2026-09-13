@@ -147,6 +147,34 @@ setTimeout(() => {
   chk(!!withCountBlock && /gap:\s*10px;/.test(withCountBlock[2]),
     '进度牌与品牌区之间留 10px（长页名 / 长用户名也不会贴在一起）');
   chk(d.querySelectorAll('#gw-list .group-head').length >= 6, '按主题显示分组标题（' + d.querySelectorAll('#gw-list .group-head').length + ' 个）');
+
+  // 需求（本次）：每个分组右侧的「随机连读」也是圆形播放键 —— 比工具栏那颗小一号。
+  // 原先是一枚带「随机连读」四字的胶囊，整行被它压向右边；现在是一颗 26px 的圆键。
+  const groupBtns = [...d.querySelectorAll('#gw-list .group-head .gw-play')];
+  chk(groupBtns.length === d.querySelectorAll('#gw-list .group-head').length,
+    '每个分组右侧都有一颗圆形播放键（' + groupBtns.length + ' 颗）');
+  chk(groupBtns.every(b => b.classList.contains('gw-play-sm')),
+    '分组圆键用「小号档」类名 .gw-play-sm（与工具栏那颗同族不同尺寸）');
+  chk(groupBtns.every(b => b.hasAttribute('data-random-group')), '分组圆键带着本组的分组名');
+  chk(groupBtns.every(b => !!b.querySelector('.play-glyph-sm svg')),
+    '分组圆键画一个 ▶ 三角（.play-glyph-sm）');
+  chk(groupBtns.every(b => !b.querySelector('.pause-glyph')),
+    '分组圆键不带 ⏸（进行中的状态由列表高亮 + 底部播放栏表达，圆键保持单一含义）');
+  chk(groupBtns.every(b => b.textContent.trim() === ''), '分组圆键没有可见文字');
+  chk(groupBtns.every(b => /随机连读/.test(b.getAttribute('title') || '') &&
+    /随机连读/.test(b.getAttribute('aria-label') || '')),
+    '分组圆键的读屏文案与 title 都说明是「随机连读」');
+  chk(groupBtns.every(b => b.parentElement.classList.contains('group-head')),
+    '分组圆键就在分组标题那一行里（不另起一行）');
+  // 样式：小号档比工具栏那颗小，且仍是正圆（宽高同源）
+  const gwSmCss = /(^|\n)\.gw-play-sm \{([\s\S]*?)\}/.exec(clsCss);
+  chk(!!gwSmCss && /margin-left:\s*auto/.test(gwSmCss[2]),
+    '分组圆键靠右（margin-left: auto，与组名各守一端）');
+  chk(!!gwSmCss && /width:\s*26px/.test(gwSmCss[2]) && /height:\s*26px/.test(gwSmCss[2]),
+    '分组圆键是 26×26（宽高相等，仍是正圆）');
+  const gwMainCss = /(^|\n)\.gw-play-main \{([\s\S]*?)\}/.exec(clsCss);
+  const mainSize = gwMainCss ? parseInt((gwMainCss[2].match(/height:\s*var\(--toolbar-h\)/) ? '40' : '0'), 10) : 0;
+  chk(mainSize > 26, '分组圆键确实比工具栏那颗小（26 < ' + mainSize + '）');
   chk(/已读|标记/.test(d.querySelector('#gw-done-text').textContent), '阅读器内有「标记已读」按钮');
   /* ---------- 导航：与首页同一套顶栏 + 底部页签 ---------- */
   chk(d.querySelector('.brand-text h1').textContent === '跬步', '小古文页顶栏第一行同样是「跬步」（全站一致）');
@@ -228,32 +256,62 @@ setTimeout(() => {
   chk([...d.querySelectorAll('#gw-filter-seg button')].map(b => b.textContent.trim()).join('/') === '全部/未读',
     '组合按钮文案为 全部 / 未读');
   chk(filterSeg.querySelector('button.active').dataset.filter === 'all', '默认选中「全部」');
-  // 需求 6：「连读」与工具栏其它按钮同款样式
+  // 需求（本次）：工具栏「连读」不再是带字的胶囊，改成**圆形播放键** ——
+  // 与首页「今日背诵」右侧那颗同一个组件：同一颗键上 ▶ / ⏸ 两态、无可见文字。
+  // 全站凡「听」的动作都是一枚圆键，工具栏这颗不该是唯一的方胶囊。
+  const readClsJs = fs.readFileSync(path + 'js/classic.js', 'utf8');
   const randomBtn = d.querySelector('#gw-random-read');
-  chk(randomBtn.classList.contains('seg-toggle'), '「连读」仍是 seg-toggle 样式');
-  // 需求 1：搜索框 + 「全部 / 未读」组合 + 「连读」三样都在同一行，且不压缩
+  chk(randomBtn.classList.contains('gw-play'), '「连读」是圆形播放键（.gw-play，与首页 today-read 同一套组件）');
+  chk(!randomBtn.classList.contains('seg-toggle'), '不再用 seg-toggle 那副「带字胶囊」的样子');
+  chk(!!randomBtn.querySelector('.play-glyph svg') && !!randomBtn.querySelector('.pause-glyph svg'),
+    '圆键同时带 ▶ 与 ⏸ 两套图标（同键两态，不是两个按钮）');
+  chk(randomBtn.querySelectorAll('svg').length === 2, '圆键里只有 ▶ / ⏸ 两个图标，没有别的图形');
+  chk(randomBtn.textContent.trim() === '随机连读' &&
+    randomBtn.querySelector('.sr-only').textContent === '随机连读',
+    '可见文字为空、说明只留给读屏软件（唯一的文本节点是 .sr-only「随机连读」）');
+  // 源码里连注释一起查会误伤（注释本来就在说明「连读中」这件事），先剥注释再查
+  const readClsCode = readClsJs
+    .replace(/\/\*[\s\S]*?\*\//g, ' ')
+    .split('\n').map(l => l.replace(/^\s*\/\/.*$/, ' ')).join('\n');
+  chk(!/连读中/.test(randomBtn.textContent) && !/连读中/.test(readClsCode) &&
+    !/gw-random-read-text/.test(readClsCode),
+    '不再有「连读 / 连读中」这类随状态改写的可见文案（状态交给 ▶ / ⏸ 表达）');
+  chk(/随机连读/.test(randomBtn.getAttribute('title')), '键义写在 title 里：' + randomBtn.getAttribute('title'));
+  chk(randomBtn.dataset.on === '0' && randomBtn.getAttribute('aria-pressed') === 'false',
+    '初始为「可播放」态（data-on=0 / aria-pressed=false）');
+  // 需求 1：搜索框 + 「全部 / 未读」组合 + 「连读」圆键三样都在同一行，且不压缩
   const bar = d.querySelector('.toolbar');
-  chk(bar.children.length === 3, '工具栏是一行三样：搜索框 / 全部·未读组合 / 连读');
+  chk(bar.children.length === 3, '工具栏是一行三样：搜索框 / 全部·未读组合 / 连读圆键');
   const barCss = fs.readFileSync(path + 'css/classic.css', 'utf8');
   chk(/\.toolbar \{[^}]*display:\s*flex/.test(barCss) && !/\.toolbar \{[^}]*flex-wrap:\s*wrap/.test(barCss),
     '工具栏不换行，三样始终同一行');
-  chk(/\.filter-seg \{[^}]*flex:\s*0 0 auto/.test(barCss) && /\.seg-toggle \{[^}]*flex:\s*0 0 auto/.test(barCss),
-    '筛选组合与「连读」不压缩（搜索框独占剩余宽度）');
+  chk(/\.filter-seg \{[^}]*flex:\s*0 0 auto/.test(barCss) && /\.gw-play-main \{[^}]*flex:\s*0 0 auto/.test(barCss),
+    '筛选组合与「连读」圆键不压缩（搜索框独占剩余宽度）');
   chk(!randomBtn.classList.contains('toolbar-read'), '不再使用旧的 toolbar-read 专属样式');
+  chk(!/\.seg-toggle/.test(barCss), '样式表里不再留 .seg-toggle 僵尸规则');
 
-  // 需求：工具栏三样（搜索框 / 全部·未读组合 / 连读）高度必须一致。
+  // 需求：工具栏三样（搜索框 / 全部·未读组合 / 连读圆键）高度必须一致。
   // 组合的高度由「内层按钮 + 内边距 + 描边」叠出，曾因全局 .seg.mini button 的
-  // 5px 垂直 padding 只有 37px，比搜索框与连读（40px）矮一截；
+  // 5px 垂直 padding 只有 37px，比搜索框与「连读」（40px）矮一截；
   // 现在三样统一读同一个高度变量，谁也不能再各算各的。
   const toolbarCss = barCss.match(/\.toolbar \{([^}]*)\}/)[1];
   const H = (toolbarCss.match(/--toolbar-h:\s*(\d+)px/) || [])[1];
   chk(!!H, '工具栏声明统一行高变量 --toolbar-h（' + H + 'px）');
-  ['\.search-input', '\.seg-toggle'].forEach(sel => {
+  ['\.search-input', '\.gw-play-main'].forEach(sel => {
     const css = barCss.match(new RegExp(sel + ' \\{([^}]*)\\}'))[1];
     chk(/height:\s*var\(--toolbar-h\)/.test(css) && /box-sizing:\s*border-box/.test(css),
       sel + ' 高度取自 --toolbar-h 且含描边（不高出工具栏）');
-    chk(/padding:\s*0\s/.test(css), sel + ' 垂直方向不额外撑高');
   });
+  // 圆键要真正「方圆」：宽度也取自同一个高度，宽高相等才是正圆（否则会压成椭圆）
+  const mainCss = barCss.match(/\.gw-play-main \{([^}]*)\}/)[1];
+  chk(/width:\s*var\(--toolbar-h\)/.test(mainCss),
+    '「连读」圆键宽度与高度同源（--toolbar-h），宽高相等才是正圆');
+  chk(/border-radius:\s*50%/.test(barCss.match(/\.gw-play \{([^}]*)\}/)[1]), '圆键 border-radius: 50%');
+  chk(/\.gw-play-main \{([^}]*)\}?/.test(barCss) && /padding:\s*0/.test(barCss.match(/\.gw-play \{([^}]*)\}/)[1]),
+    '圆键不做内边距（图标由 flex 居中，不靠 padding 撑）');
+  // 配色走天水碧（小古文主色），与首页那颗走缃色是同一个道理：主色随页面走
+  chk(/color:\s*var\(--blue\)/.test(barCss.match(/\.gw-play \{([^}]*)\}/)[1]),
+    '圆键用天水碧（--blue，小古文页主色）');
   const segCss = barCss.match(/\.filter-seg \{([^}]*)\}/)[1];
   chk(/height:\s*var\(--toolbar-h\)/.test(segCss) && /box-sizing:\s*border-box/.test(segCss)
     && /align-items:\s*stretch/.test(segCss),
@@ -261,6 +319,18 @@ setTimeout(() => {
   const filterBtnCss = barCss.match(/\.filter-seg button \{([^}]*)\}/)[1];
   chk(/padding:\s*0\s+13px/.test(filterBtnCss) && /align-items:\s*center/.test(filterBtnCss),
     '组合按钮垂直方向只由外框决定高度，压过 .seg.mini button 的 5px 垂直 padding');
+
+  // 分组圆键点了要真能连读本组：它是 <button> 不是摆设图标，而且点击不该冒泡到条目上。
+  // 这一份 jsdom 没装假语音引擎（Speech.supported() 为 false），所以点击后的
+  // 结果应当是「提示不支持语音」而不是「什么都没发生」—— 这刚好证明事件确实接到了按钮上。
+  const mhBtn = mh.querySelector('.gw-play-sm');
+  mhBtn.dispatchEvent(new window.Event('click', { bubbles: true }));
+  const toast = d.querySelector('.toast');
+  chk(!!toast && /语音朗读/.test(toast.textContent),
+    '点分组圆键确实触发了连读（无语音环境时提示「不支持语音朗读」：' +
+    (toast ? toast.textContent : '无提示') + '）');
+  chk(d.querySelector('#gw-reader') === null || d.querySelector('#gw-reader').hidden === true,
+    '分组圆键的点击没有冒泡到条目本身（不会顺手打开某篇阅读器）');
 
   // 搜索
   const search = d.querySelector('#gw-search');

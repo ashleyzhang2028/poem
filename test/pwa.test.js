@@ -446,6 +446,59 @@ function check(name, cond, extra) {
       roundState.trans.radius === '999px' || parseFloat(roundState.trans.radius) * 2 >= roundState.trans.h,
       roundState.trans.radius);
 
+    // ---- 小古文页：工具栏「连读」与各分组右侧都改成了圆形播放键 ----
+    // 形状必须在真浏览器里量：CSS 写着 50% 圆角，但若高度被 flex 拉高，
+    // 渲染出来仍是椭圆（曾经列表项那颗就是这样）。所以量的是真实盒尺寸。
+    await page.goto(base + 'classic/', { waitUntil: 'load' });
+    await new Promise(r => setTimeout(r, 600));
+    const gwState = await page.evaluate(() => {
+      const r = el => {
+        const b = el.getBoundingClientRect();
+        return {
+          w: +b.width.toFixed(1), h: +b.height.toFixed(1),
+          radius: getComputedStyle(el).borderRadius,
+          text: el.textContent.trim()
+        };
+      };
+      const main = document.querySelector('#gw-random-read');
+      const group = document.querySelector('#gw-list .group-head .gw-play-sm');
+      const toolbar = document.querySelector('.toolbar');
+      const search = document.querySelector('#gw-search');
+      const shown = el => [...el.querySelectorAll('.play-glyph, .pause-glyph, .play-glyph-sm')]
+        .filter(x => getComputedStyle(x).display !== 'none')
+        .map(x => x.className.split(' ')[0]);
+      const off = shown(main);
+      main.dataset.on = '1';
+      const on = shown(main);
+      main.dataset.on = '0';
+      return {
+        main: r(main), group: group ? r(group) : null,
+        searchH: +search.getBoundingClientRect().height.toFixed(1),
+        mainH: +main.getBoundingClientRect().height.toFixed(1),
+        groupCount: document.querySelectorAll('#gw-list .group-head .gw-play-sm').length,
+        headCount: document.querySelectorAll('#gw-list .group-head').length,
+        off, on
+      };
+    });
+    check('iPhone: 小古文工具栏「连读」是正圆播放键',
+      gwState.main.w === gwState.main.h && gwState.main.radius === '50%',
+      JSON.stringify(gwState.main));
+    check('iPhone: 工具栏圆键与搜索框同高（一排三样上下边缘齐平）',
+      Math.abs(gwState.mainH - gwState.searchH) <= 0.5,
+      '圆键 ' + gwState.mainH + ' / 搜索框 ' + gwState.searchH);
+    check('iPhone: 圆键的 ▶ / ⏸ 互斥，一次只显示一个',
+      gwState.off.join(',') === 'play-glyph' && gwState.on.join(',') === 'pause-glyph',
+      JSON.stringify([gwState.off, gwState.on]));
+    check('iPhone: 每个分组右侧都有一颗小号圆键（宽高相等）',
+      gwState.groupCount === gwState.headCount && gwState.group &&
+      gwState.group.w === gwState.group.h && gwState.group.radius === '50%',
+      JSON.stringify({ n: gwState.groupCount, box: gwState.group }));
+    check('iPhone: 分组圆键比工具栏那颗小',
+      gwState.group.w < gwState.main.w,
+      gwState.group.w + ' < ' + gwState.main.w);
+    check('iPhone: 分组圆键没有可见文字（图标表达状态）',
+      gwState.group.text === '', JSON.stringify(gwState.group.text));
+
     // ---- Issue #32 需求：大背景不用任何图案 ----
     await page.goto(base + '', { waitUntil: 'load' });
     await new Promise(r => setTimeout(r, 400));

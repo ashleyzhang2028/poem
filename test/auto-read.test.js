@@ -261,6 +261,12 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
   await sleep(400);
   const c = w2.document;
   chk(!!c.querySelector('#gw-random-read'), '索引页有「连读」按钮');
+  chk(c.querySelector('#gw-random-read').classList.contains('gw-play'),
+    '「连读」是圆形播放键（与首页今日条那颗同一套组件，不再是带字的胶囊）');
+  chk(!!c.querySelector('#gw-random-read .play-glyph') && !!c.querySelector('#gw-random-read .pause-glyph'),
+    '圆键上 ▶ / ⏸ 是同一颗键的两态');
+  chk(c.querySelectorAll('#gw-list .group-head .gw-play-sm').length >= 6,
+    '每个分组右侧也有一颗小号圆形播放键（' + c.querySelectorAll('#gw-list .group-head .gw-play-sm').length + ' 颗）');
   chk(!!c.querySelector('#rd-prev') && !!c.querySelector('#rd-next'), '阅读器有上一篇/下一篇');
   c.querySelector('#gw-list .item').dispatchEvent(new w2.Event('click', { bubbles: true }));
   await sleep(20);
@@ -298,8 +304,34 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
   w2.Speech.stop();
   w2.ClassicProse.onSpeechStopped();   // 语音引擎的 cancel 事件不保证回调，手动同步界面
   await sleep(80);
-  chk(c.querySelector('#gw-random-read').dataset.on === '0', '停止后随机连读按钮复位');
-  chk(c.querySelector('#gw-random-read-text').textContent === '连读', '按钮文案回到「连读」');
+  chk(c.querySelector('#gw-random-read').dataset.on === '0', '停止后随机连读圆键复位');
+  chk(c.querySelector('#gw-random-read').getAttribute('aria-pressed') === 'false',
+    '圆键的 aria-pressed 同步复位为 false');
+  // 连读中这颗键必须是 ⏸（与首页「今日播放中」同一套状态表达）
+  c.querySelector('#gw-random-read').dispatchEvent(new w2.Event('click', { bubbles: true }));
+  await sleep(60);
+  chk(c.querySelector('#gw-random-read').dataset.on === '1', '连读中圆键进入高亮态（data-on=1）');
+  chk(c.querySelector('#gw-random-read').getAttribute('aria-pressed') === 'true',
+    '连读中 aria-pressed 为 true（读屏也知道正在连读）');
+  w2.Speech.stop();
+  w2.ClassicProse.onSpeechStopped();
+  await sleep(80);
+  chk(c.querySelector('#gw-random-read').dataset.on === '0', '停止后圆键回到 ▶');
+  // 分组圆键：组内连读同样能跑起来
+  const gBtn = c.querySelector('#gw-list .group-head .gw-play-sm');
+  const gName = gBtn.dataset.randomGroup;
+  gBtn.dispatchEvent(new w2.Event('click', { bubbles: true }));
+  await sleep(60);
+  chk(c.querySelector('#reader-player').hidden === false,
+    '点分组圆键弹出播放栏（「' + gName + '」组内连读启动了）');
+  chk(c.querySelector('#rp-now').textContent.length > 0,
+    '播放栏显示当前连读的篇名：' + c.querySelector('#rp-now').textContent);
+  // 组内连读只在组里抽：第一篇一定属于该组
+  const inGroup = (c.querySelector('#rd-meta').textContent || '').length > 0;
+  chk(inGroup, '组内连读打开的是本组的一篇（' + c.querySelector('#rd-title').textContent + '）');
+  w2.Speech.stop();
+  w2.ClassicProse.onSpeechStopped();
+  await sleep(80);
 
   /* ---- 回归：阅读辅助工具条不得再丢（曾因合并把整条工具条丢了）---- */
   const rowMain = c.querySelector('#rd-actions-main');

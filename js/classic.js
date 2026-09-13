@@ -278,6 +278,21 @@
     );
   }
 
+  /**
+   * 分组右侧小号圆键里的图标：只有一个 ▶ 三角，笔画细一档。
+   *
+   * 它不需要 ⏸ —— 「现在读到哪一篇」由列表里的高亮 + 底部播放栏表达，
+   * 分组键偏「从这里开始听」，做成一颗会翻状态的键反而多一层状态要管。
+   * viewBox 略小、三角略内收，缩到 26px 时与 26px 的圆环留出一样的呼吸感。
+   */
+  function playSmGlyph() {
+    return (
+      '<span class="play-glyph-sm" aria-hidden="true">' +
+      '<svg viewBox="0 0 24 24"><path d="M8.2 5.4 18.6 12 8.2 18.6Z" fill="currentColor" stroke="none" />' +
+      "</svg></span>"
+    );
+  }
+
   /** 列表里高亮所有「正在播放」的条目 */
   function syncItemPlayBtns() {
     const playing = readingActive();
@@ -304,16 +319,6 @@
     }
     syncAllReadState();
     setTimeout(syncAllReadState, 80);
-  }
-
-  function speakGlyph(cls) {
-    return (
-      '<span class="' + (cls || "") + '" aria-hidden="true">' +
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">' +
-      '<path d="M4 9.5v5h3l4.2 3.4V6.1L7 9.5H4Z" />' +
-      '<path d="M15.2 9.2a4 4 0 0 1 0 5.6" />' +
-      "</svg></span>"
-    );
   }
 
   /* ---------------- 列表 ---------------- */
@@ -345,8 +350,12 @@
         head.innerHTML =
           '<span class="group-name">' + esc(p.gradeGroup) + "</span>" +
           '<span class="group-count">' + allItems().filter(function (x) { return x.gradeGroup === lastGroup; }).length + " 篇</span>" +
-          '<button type="button" class="group-random" data-random-group="' + esc(p.gradeGroup) + '">' +
-          speakGlyph() + "随机连读</button>";
+          // 分组右侧是「在组内随机连读」：与工具栏那颗同一套圆形播放键，只是小一号
+          // （不再带「随机连读」四个字：这一行已有组名与篇数，键义由 title / 读屏文案说明）
+          '<button type="button" class="gw-play gw-play-sm" data-random-group="' + esc(p.gradeGroup) + '"' +
+          ' title="随机连读「' + esc(p.gradeGroup) + '」：随机抽一篇开读，读完自动跳下一篇"' +
+          ' aria-label="随机连读' + esc(p.gradeGroup) + '">' +
+          playSmGlyph() + "</button>";
         box.appendChild(head);
       }
 
@@ -702,8 +711,9 @@
     // 那样按钮会误判成「没在连读」，再点一下就会重新开一轮而不是停下来。
     const running = autoReading && !!(window.Speech && window.Speech.active && window.Speech.active());
     btn.dataset.on = running ? "1" : "0";
-    // 工具栏一行排满，文案精简成「连读 / 连读中」（完整说明在 title 里）
-    $("#gw-random-read-text").textContent = running ? "连读中" : "连读";
+    // 与首页「今日背诵」那颗圆键同一套口径：状态只由 ▶ / ⏸ 与 aria-pressed 表达，
+    // 可见文案一个字都没有（读屏文案固定，不随播放态改写）。
+    btn.setAttribute("aria-pressed", running ? "true" : "false");
   }
 
   function shuffle(list) {

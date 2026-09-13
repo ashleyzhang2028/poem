@@ -38,7 +38,7 @@
 
 /* 搜索 + 筛选 */
 .toolbar {
-  /* 工具栏三样（搜索框 / 全部·未读 / 连读）统一行高，一排按钮上下边缘齐平 */
+  /* 工具栏三样（搜索框 / 全部·未读组合 / 连读圆键）统一行高，上下边缘齐平 */
   --toolbar-h: 40px;
   display: flex;
   gap: 8px;
@@ -49,7 +49,7 @@
    --------------------------------------------------------------------------
    行高对齐：组合的高度是「内层按钮 + 3px 内边距 + 1px 描边」叠出来的，
    而内层按钮的 padding 来自全局 .seg.mini button（5px 9px），
-   于是组合总高只有 37px，比左侧搜索框和右侧「连读」（都是 40px）矮一截。
+   于是组合总高只有 37px，比左侧搜索框和右侧那颗 40px 的「连读」圆键矮一截。
    这里统一三样为同一个高度变量，工具栏一排按钮上下边缘齐平。 */
 .filter-seg {
   flex: 0 0 auto;
@@ -101,37 +101,56 @@
 .search-input:focus { border-color: var(--green); }
 .search-input::-webkit-search-cancel-button { display: none; }
 
-.seg-toggle {
+/* 随机连读：圆形播放键（首页「今日背诵」右侧那颗的同款组件）
+   --------------------------------------------------------------------------
+   为什么不再用带「连读」二字的胶囊按钮：
+     · 全站凡「听」的动作都是一枚圆键 —— 首页今日条、各处列表项、播放栏
+       全是圆形；工具栏这颗做成方胶囊，等于同一件事两副面孔。
+     · 一排控件里唯一的文字按钮，视觉重量压过真正的操作对象（搜索与筛选）。
+   配色走天水碧（--blue，小古文页的主色，见下方列表项与分组），
+   与首页那颗走缃色（--gold，压在深天青今日条上）是同一个道理：
+   圆键的「纸底 / 描边 / 悬停 / 按下」四种状态全站同一套，只有主色随页面走。
+   ▶ / ⏸ 是**同一颗键的两种状态**（与首页 today-read 同款互斥规则）：
+   播放中原地换成暂停，绝不同时并排出现两个图标。 */
+.gw-play {
+  flex: none;
+  padding: 0;
+  border-radius: 50%;
   border: 1px solid var(--line);
   background: var(--card);
-  color: var(--ink-2);
-  border-radius: var(--radius-sm);
-  /* 与搜索框同一套高度基准 */
+  color: var(--blue);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* 过渡与全站按钮同一套：按下有回弹、悬停有颜色渐变 */
+  transition: transform .14s, background .18s, border-color .18s, color .18s, box-shadow .18s;
+}
+/* 图标 block 化去掉行内基线留白，flex 里才算真正居中 */
+.gw-play svg { display: block; margin: auto; }
+.gw-play .play-glyph,
+.gw-play .pause-glyph,
+.gw-play .play-glyph-sm { display: inline-flex; align-items: center; justify-content: center; }
+/* ▶ / ⏸ 互斥：默认只看得见 ▶ */
+.gw-play .pause-glyph { display: none; }
+.gw-play[data-on="1"] .play-glyph { display: none; }
+.gw-play[data-on="1"] .pause-glyph { display: inline-flex; }
+.gw-play:active { transform: scale(.94); }
+.gw-play[data-on="1"] { background: var(--blue); border-color: var(--blue); color: #fffdf8; }
+
+/* 工具栏那颗：与搜索框同高（--toolbar-h），一排三样上下边缘齐平 */
+.gw-play-main {
+  width: var(--toolbar-h);
   height: var(--toolbar-h);
   box-sizing: border-box;
-  padding: 0 13px;
-  font-size: 13.5px;
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
-  /* 「随机连读」带喇叭图标，与「全部 / 未读」同款样式也要能内联居中 */
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
+  box-shadow: 0 1px 4px rgba(74, 58, 38, .10);
+  flex: 0 0 auto;
 }
-.seg-toggle.active { background: var(--green); border-color: var(--green); color: #fdfaf2; }
-/* 随机连读开启时同样用高亮态，风格与「全部 / 未读」统一 */
-.seg-toggle[data-on="1"] { background: var(--green); border-color: var(--green); color: #fdfaf2; }
-.seg-toggle > span[aria-hidden="true"] {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-.seg-toggle svg { display: block; width: 15px; height: 15px; margin: auto; }
+.gw-play-main svg { width: 17px; height: 17px; }
+.gw-play-main:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-light); }
+.gw-play-main[data-on="1"]:hover { background: var(--blue); color: #fffdf8; }
 
-/* 工具栏：搜索框可伸缩，「全部 / 未读」「连读」不压缩，三样排成一行 */
-.seg-toggle { flex: 0 0 auto; }
+/* 工具栏：搜索框可伸缩，「全部 / 未读」与「连读」圆键不压缩，三样排成一行 */
 .filter-seg { flex: 0 0 auto; }
 
 /* 分组标题 */
@@ -143,23 +162,20 @@
 }
 .group-name { font-size: 14px; font-weight: 700; color: var(--ink); }
 .group-count { font-size: 11.5px; color: var(--ink-2); }
-.group-random {
+/* 分组右侧的「随机连读」：同一枚圆形播放键的小号档
+   --------------------------------------------------------------------------
+   26px —— 与组名（14px 粗体）同一行的视觉重量差不多，不再像原先那样
+   一颗带字的胶囊把整行压向右边。只画 ▶，不带文字（键义在 title / 读屏文案里），
+   所以中间那颗三角比 40px 档略小一号，圆环与箭头之间留白才匀。 */
+.gw-play-sm {
   margin-left: auto;
-  border: 1px solid var(--line);
-  background: var(--card);
-  color: var(--blue);
-  border-radius: 999px;
-  padding: 4px 11px;
-  font-size: 11.5px;
-  font-weight: 600;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  white-space: nowrap;
+  width: 26px;
+  height: 26px;
+  box-sizing: border-box;
 }
-.group-random svg { width: 12px; height: 12px; }
-.group-random:active { background: var(--blue-light); }
+.gw-play-sm svg { width: 12px; height: 12px; }
+.gw-play-sm .play-glyph-sm svg { width: 13px; height: 13px; }
+.gw-play-sm:hover { border-color: var(--blue); background: var(--blue-light); }
 
 /* 列表项：古文条目左侧用蓝色区分于古诗词 */
 #gw-list .item { border-left-color: var(--blue); }
@@ -570,4 +586,7 @@ body.reader-open .dock { display: none; }
   .icon-seg button svg { width: 15px; height: 15px; }
   .icon-row > .mini-btn { width: 36px; min-height: 0; height: 36px; }
   .mini-btn { font-size: 12.5px; }
+  /* 工具栏圆键在窄屏同收一档（36px），与「全部 / 未读」组合、搜索框继续齐平 */
+  .toolbar { --toolbar-h: 36px; }
+  /* 分组圆键不再等比缩：26px 已是「比一行字略大」的下限，再小就点不准了 */
 }
