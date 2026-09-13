@@ -599,6 +599,10 @@ function check(name, cond, extra) {
         barContent: bar.content,
         padL: itemPad.paddingLeft,
         padR: itemPad.paddingRight,
+        // Issue #55 后续（本轮）：卡头那一行「多 4px」只加在**左侧**，
+        // 右侧那颗 26px 圆键的内缘仍与条目里的右箭头同宽（都是 8px）。
+        headPadL: getComputedStyle(head).paddingLeft,
+        headPadR: getComputedStyle(head).paddingRight,
         headPadBottom: getComputedStyle(head).paddingBottom,
         gapHeadBtnToItem: +(itemRect.top - headBtn.getBoundingClientRect().bottom).toFixed(2),
         numFirstChild: title.firstElementChild === num,
@@ -660,17 +664,31 @@ function check(name, cond, extra) {
     check('iPhone: 序号圆与下方正文左对齐（圆 / 篇名 / 元信息同一条左基准线）',
       numState.numLeft === numState.metaLeft && numState.titleLeft === numState.metaLeft,
       JSON.stringify({ num: numState.numLeft, title: numState.titleLeft, meta: numState.metaLeft }));
-    // 需求（Issue #55 后续）：内容与卡片左缘的间距只加在**左边** 2px。
+    // 需求（Issue #55 后续）：内容与卡片左缘的间距只加在**左边**（本轮再 +2px → 12px）。
     // 右内边距 8px 不动（那是「卡片右缘 → 播放键 / 箭头」的间距）。
     // 所以这里不再要求左右相等，而是逐项量：
-    //   · 左内边距 10px、右内边距 8px（左 - 右 = 2px）；
-    //   · 序号圆左内缘仍与右侧箭头右内缘大致同宽（差 ≤ 2px，就是新加的那 2px）。
-    check('iPhone: 条目左内边距 10px、右内边距 8px（只加左侧 2px）',
-      parseFloat(numState.padL) === 10 && parseFloat(numState.padR) === 8,
+    //   · 左内边距 12px、右内边距 8px（左 - 右 = 4px）；
+    //   · 序号圆左内缘仍与右侧箭头右内缘同宽再加这 4px（右侧没被一起推走）。
+    check('iPhone: 条目左内边距 12px、右内边距 8px（只加左侧，累计 +4px）',
+      parseFloat(numState.padL) === 12 && parseFloat(numState.padR) === 8,
       JSON.stringify({ pad: numState.padL + ' / ' + numState.padR }));
-    check('iPhone: 序号圆与右侧箭头内缘只差新加的那 2px（右侧没被一起推走）',
-      Math.abs(numState.numLeftInset - (numState.arrowRightInset + 2)) <= 0.5,
+    check('iPhone: 序号圆与右侧箭头内缘只差新加的这 4px（右侧没被一起推走）',
+      Math.abs(numState.numLeftInset - (numState.arrowRightInset + 4)) <= 0.5,
       JSON.stringify({ numLeft: numState.numLeftInset, arrowRight: numState.arrowRightInset }));
+    // 需求（Issue #55 后续，本轮）：「卡头那一行多 4px」——卡头左内边距 8 → 12px，
+    // 右侧不动（仍是 8px，右边那颗 26px 圆键的右内缘与条目里的右箭头同宽）。
+    check('iPhone: 卡头那一行左内边距 12px（8 → 12，+4px）',
+      Math.abs(parseFloat(numState.headPadL) - 12) <= 0.5, numState.headPadL);
+    check('iPhone: 卡头右侧内边距仍是 8px（右边那颗圆键没被推走）',
+      Math.abs(parseFloat(numState.headPadR) - 8) <= 0.5, numState.headPadR);
+    // 卡头与条目是兄弟、卡片自身左右不留白，两者左基准线必须重合
+    // —— 本轮两处左内边距同为 12px，卡头文字与条目文字因此严格对齐。
+    check('iPhone: 卡头文字与条目文字左基准线重合（两处左内边距同为 12px）',
+      Math.abs(parseFloat(numState.headPadL) - parseFloat(numState.padL)) <= 0.5,
+      JSON.stringify({ head: numState.headPadL, item: numState.padL }));
+    check('iPhone: 卡头行右端圆键仍贴 8px 右内缘（右侧内缘与条目同值）',
+      Math.abs(parseFloat(numState.headPadR) - parseFloat(numState.padR)) <= 0.5,
+      JSON.stringify({ head: numState.headPadR, item: numState.padR }));
     // 需求（Issue #55 后续）：左侧那道「短竖条」整体隐藏，不再渲染 ::before
     check('iPhone: 左侧短竖条已隐藏（条目不再渲染 ::before 竖条）',
       !numState.barContent || numState.barContent === 'none',
@@ -698,7 +716,7 @@ function check(name, cond, extra) {
     //   1) 内容块宽度小于整行留给它的空间（= 它没有把整行撑满，是按内容取的宽）；
     //   2) 圆键左缘仍在原位（右端三件套没动，正文那一行的可用宽度没被吃掉）。
     check('iPhone: 小古文内容块不再撑满整行（按内容取宽，不是 flex 增长项）',
-      numState.mainW < 393 - 10 - 8 - 36 - 6 - 18 - 1,
+      numState.mainW < 393 - 12 - 8 - 36 - 6 - 18 - 1,
       numState.mainW + 'px（整行 ' + 393 + 'px）');
     check('iPhone: 内容块宽度仍大于最长标题 / 副信息的自然宽（文字没被压窄）',
       numState.mainW >= 226, numState.mainW + 'px');

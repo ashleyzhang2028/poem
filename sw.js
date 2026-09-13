@@ -69,8 +69,12 @@
  *        外径 42px 不动，只把里面的 ▶ / ⏸ 图形从 19px 图标框收到 14px ——
  *        内径另起一个唯一来源 --today-btn-inner（与 --today-btn-size 分开），
  *        ▶ / ⏸ 同框，两态切换不会忽大忽小（css/style.css）
+ *   v33  小古文卡片的左内边距再放一档（Issue #55 后续）：
+ *        卡内条目左内边距 10 → 12px（右侧仍是 8px，只加左边）；
+ *        卡头那一行左内边距 8 → 12px（比条目再多 4px，右 / 上 / 下不动）——
+ *        两处都写四值 padding，防对写法把右侧也推走（css/classic.css）
  */
-const CACHE_NAME = "poem-app-v32";
+const CACHE_NAME = "poem-app-v33";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [
