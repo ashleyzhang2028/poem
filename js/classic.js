@@ -396,9 +396,12 @@
         '<h3 class="item-title"><span class="item-num">' + index + "</span>" + esc(p.title) +
         (read ? '<span class="item-reason read">已读</span>' : "") +
         "</h3>" +
-        '<div class="item-meta"><span>' + esc(p.source) + "</span>" +
-        (p.dynasty ? "<span>·</span><span>" + esc(p.dynasty) + "</span>" : "") +
-        (p.author ? "<span>·</span><span>" + esc(p.author) + "</span>" : "") +
+        // 顺序（Issue #55 后续）：朝代 · 作者 · 出处 —— 「宋 · 王应麟 ·《三字经》」，
+        // 与阅读器 / 详情页「朝代 + 作者 + 书名」的读法一致，出处作为落款压在最后。
+        '<div class="item-meta">' +
+        (p.dynasty ? "<span>" + esc(p.dynasty) + "</span>" : "") +
+        (p.author ? (p.dynasty ? "<span>·</span>" : "") + "<span>" + esc(p.author) + "</span>" : "") +
+        (p.source ? ((p.dynasty || p.author) ? "<span>·</span>" : "") + "<span>" + esc(p.source) + "</span>" : "") +
         "<span>·</span><span>" + esc(p.text.replace(/\n/g, "").slice(0, 16)) + "…</span>" +
         "</div>" +
         "</div>" +
