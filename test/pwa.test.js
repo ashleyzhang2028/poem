@@ -422,6 +422,30 @@ function check(name, cond, extra) {
     check('iPhone: 详情页译文键在首页也有样式（不是浏览器默认按钮）',
       parseFloat(glyphState.transStyled) > 100, glyphState.transStyled);
 
+    // ---- Issue #44：弹卡片里的播放键 / 译文键必须是正圆，不许纵向被拉扁 ----
+    // 光看 CSS 文本不够 —— 真浏览器里量 offsetWidth / offsetHeight，
+    // 免得将来再出现「width 写死 38px、高度却被 flex 拉高」的椭圆。
+    const roundState = await page.evaluate(async () => {
+      const box = document.querySelector('#m-read-btn');
+      const trans = document.querySelector('#m-trans-read');
+      const r = el => {
+        const b = el.getBoundingClientRect();
+        return { w: +b.width.toFixed(1), h: +b.height.toFixed(1), radius: getComputedStyle(el).borderRadius };
+      };
+      return { read: r(box), trans: r(trans) };
+    });
+    check('iPhone: 详情页播放键是正圆（宽高相等）',
+      roundState.read.w === roundState.read.h && roundState.read.w >= 36,
+      JSON.stringify(roundState.read));
+    check('iPhone: 详情页播放键用 50% 圆角（圆环而非圆角方块）',
+      roundState.read.radius === '50%', roundState.read.radius);
+    check('iPhone: 详情页译文键是正圆角胶囊（不纵向拉高）',
+      roundState.trans.h <= 34 && roundState.trans.h >= 18,
+      JSON.stringify(roundState.trans));
+    check('iPhone: 详情页译文键圆角为胶囊（border-radius 接近半高或 999px）',
+      roundState.trans.radius === '999px' || parseFloat(roundState.trans.radius) * 2 >= roundState.trans.h,
+      roundState.trans.radius);
+
     // ---- Issue #32 需求：大背景不用任何图案 ----
     await page.goto(base + '', { waitUntil: 'load' });
     await new Promise(r => setTimeout(r, 400));

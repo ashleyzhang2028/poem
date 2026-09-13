@@ -303,10 +303,18 @@ body.reader-open .dock { display: none; }
 /* 译文开关 / 标记已读：圆形纯图标键，与播放栏的圆形环同一语言。
    这里同时用了「flex 居中 + line-height: 0」，因为 SVG 默认是行内元素，
    行盒的基线留白会把图标顶偏 —— 这正是此前三个图标看着不居中的原因。 */
+/* ⚠️ 宽高都要写死成同一个值，圆才是圆：
+   只写 `width: 38px` + `min-height: 38px`，min-height 只是下限，
+   该行内容一高（标题换行、正文太长）就被 flex 拉伸到 40 多 px，
+   而宽被 width 钉死在 38px —— 圆环纵向被拉长成椭圆，
+   看着就是「不够圆、纵向有点扁」。
+   这里 min-height 归零、改由 height 一锤定音，并禁止 flex-shrink，
+   窄屏排不下时整行横向滑动，绝不把圆压扁。 */
 .icon-row > .mini-btn {
   padding: 0;
   width: 38px;
-  min-height: 38px;
+  min-height: 0;
+  height: 38px;
   border-radius: 50%;
   flex: 0 0 auto;
   line-height: 0;
@@ -480,6 +488,12 @@ body.reader-open .dock { display: none; }
   align-items: center;
   gap: 5px;
   white-space: nowrap;
+  /* 胶囊键：高度固定、纵向不再被拉伸。
+     .trans-head 是 `align-items: center` 的 flex 行，默认 `align-items: stretch`
+     的旧写法会把按钮拉到与标题同高 —— 译文标题一旦换行，胶囊就变高变扁。
+     这里 flex: none + 固定行高，宽由内容撑开，呈标准圆角胶囊。 */
+  flex: none;
+  line-height: 1.5;
 }
 .trans-read .btn-icon { display: inline-flex; align-items: center; justify-content: center; flex: none; }
 .trans-read .btn-icon svg { display: block; width: 13px; height: 13px; margin: 0; }
@@ -562,6 +576,6 @@ body.reader-open .dock { display: none; }
   .reader-actions .seg.mini { padding: 2px; }
   .reader-actions .seg.mini button { padding: 5px 7px; font-size: 11.5px; }
   .icon-seg button svg { width: 15px; height: 15px; }
-  .icon-row > .mini-btn { width: 36px; min-height: 36px; }
+  .icon-row > .mini-btn { width: 36px; min-height: 0; height: 36px; }
   .mini-btn { font-size: 12.5px; }
 }

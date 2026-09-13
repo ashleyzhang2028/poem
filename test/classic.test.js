@@ -381,6 +381,20 @@ setTimeout(() => {
   const iconBtnBlock = /(^|\n)\.icon-row > \.mini-btn \{([\s\S]*?)\}/.exec(actionsCss);
   chk(!!iconBtnBlock && /line-height:\s*0;/.test(iconBtnBlock[2]),
     '图标按钮压掉行盒基线留白（line-height: 0），图标才真居中');
+  // 需求（Issue #44）：圆形图标键必须是正圆，不许纵向被拉扁。
+  // 成因：基础规则只给 `min-height: 38px`（下限），本行内容一高就被 flex 拉到
+  // 40 多 px，而 width 钉死 38px —— 于是圆环变椭圆，看着「不够圆、纵向有点扁」。
+  // 解法：min-height 归零 + height 写死同一个值 + 禁止 flex-shrink。
+  chk(!!iconBtnBlock && /min-height:\s*0;/.test(iconBtnBlock[2]),
+    '圆形图标键的 min-height 归零（下限交还给 height，避免被 flex 拉高）');
+  chk(!!iconBtnBlock && /height:\s*38px;/.test(iconBtnBlock[2]),
+    '圆形图标键显式 height: 38px（与 width 相等，才成正圆）');
+  chk(!!iconBtnBlock && /flex:\s*0 0 auto;/.test(iconBtnBlock[2]),
+    '圆形图标键禁止 flex-shrink（排不下时整行横滑，也不压扁圆）');
+  const iconW = /width:\s*(\d+)px/.exec(iconBtnBlock ? iconBtnBlock[2] : '');
+  const iconH = /height:\s*(\d+)px/.exec(iconBtnBlock ? iconBtnBlock[2] : '');
+  chk(!!iconW && !!iconH && iconW[1] === iconH[1],
+    '圆形图标键的宽高取同一个数值（' + (iconW && iconW[1]) + ' / ' + (iconH && iconH[1]) + '）');
   // 需求：两排按钮都整行居中（与小古文正文、古诗正文共用同一条中轴）
   const actionsRow = /(^|\n)\.reader-actions \{([\s\S]*?)\}/.exec(actionsCss);
   chk(!!actionsRow && /justify-content:\s*center;/.test(actionsRow[2]), '工具条两行都整行水平居中');
@@ -408,6 +422,13 @@ setTimeout(() => {
   chk(/\.trans-read \.btn-icon\.pause-glyph \{ display: none; \}/.test(cssForStyle),
     '首页详情页的译文键 ▶ / ⏸ 同样互斥，不同时并排');
   chk(/\.trans-head \{/.test(cssForStyle), '译文标题与译文键排成一行（标题左、键右）');
+  // 需求（Issue #44）：译文键是可圆角胶囊，纵向不许被 flex 拉高。
+  // .trans-head 是 flex 行，按钮若默认 stretch，标题一换行胶囊就跟着变高变扁。
+  const transReadBlock = /(^|\n)\.trans-read \{([\s\S]*?)\}/.exec(cssForStyle);
+  chk(!!transReadBlock && /flex:\s*none;/.test(transReadBlock[2]),
+    '译文键 flex: none，不被 .trans-head 的行高拉伸（胶囊不变扁）');
+  chk(!!transReadBlock && /line-height:\s*[\d.]+;/.test(transReadBlock[2]),
+    '译文键行高明确，高度由自身决定而非被标题撑开');
   chk(/\.done-btn\.is-done/.test(actionsCss), '「标记已读」按钮有已读高亮态');
   // 需求：上一篇 / 下一篇必须避开底部播放栏 / 页签，否则被压掉约三成、点不着
   const navBlock = /(^|\n)\.reader-nav \{([\s\S]*?)\}/.exec(actionsCss);
@@ -418,6 +439,9 @@ setTimeout(() => {
     '阅读器 z-index（66）高于底部页签（65），页签不浮在正文之上');
   chk(/body\.reader-open \.dock \{ display: none; \}/.test(actionsCss),
     '阅读器打开时收起底部页签，把底部空间让给翻篇导航');
+  // 窄屏那一档（36px）同样要宽高相等，否则小屏上又扁回去
+  chk(/\.icon-row > \.mini-btn \{ width: 36px; min-height: 0; height: 36px; \}/.test(actionsCss),
+    '窄屏档位的圆形图标键同为 36×36，宽高一致');
 
   // 需求 2：正文对齐三档，左 / 中 / 右 都是 SVG 图标，由用户自己选
   const alignSeg = d.querySelector('#rd-align-seg');
