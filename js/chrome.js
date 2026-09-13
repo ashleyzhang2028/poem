@@ -100,6 +100,7 @@
   var ROUTES = {
     home: "/",
     classic: "/classic/",
+    tangshi: "/tangshi/",
     settings: "/settings/",
     terms: "/terms/",
     privacy: "/privacy/"
@@ -132,6 +133,7 @@
     if (v) return v;
     var p = currentPath();
     if (/^\/classic\/?$/.test(p) || /^\/classic\/index\.html$/.test(p)) return "classic";
+    if (/^\/tangshi\/?$/.test(p) || /^\/tangshi\/index\.html$/.test(p)) return "tangshi";
     if (/^\/settings\/?$/.test(p) || /^\/settings\/index\.html$/.test(p)) return "settings";
     return "home";
   }
@@ -233,7 +235,10 @@
   function pageTitle() {
     var v = bodyData("page");
     if (v != null) return v;
-    return pageKey() === "classic" ? "小古文" : "";
+    var k = pageKey();
+    if (k === "classic") return "小古文";
+    if (k === "tangshi") return "唐诗三百首";
+    return "";
   }
 
   function escapeHtml(s) {

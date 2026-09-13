@@ -86,8 +86,15 @@
  *        window.SITE_INDEX / window.buildSiteIndex）
  *        （js/reader-core.js、js/classic.js、classic/index.html、
  *          data/site-index.js、sw.js）
+ *   v37  唐诗三百首（内容 PR，Issue #69）：
+ *        新增 /tangshi/ 索引页（301 首，按卷一至卷八分组），
+ *        数据 data/poems-tangshi.js，挂载脚本 js/tangshi.js；
+ *        与《课外必背小古文》共用 reader-core.js 引擎，
+ *        已读各存各的（poem_tangshi_read_v1）
+ *        （data/poems-tangshi.js、js/tangshi.js、tangshi/index.html、
+ *          js/chrome.js、data/site-index.js、sw.js）
  */
-const CACHE_NAME = "poem-app-v36";
+const CACHE_NAME = "poem-app-v37";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [
@@ -134,6 +141,10 @@ const PRECACHE = [
   "./data/poems-12.js",
   "./data/index.js",
   "./data/poems-classic.js",
+  // 唐诗三百首（内容 PR，Issue #69）：索引页 + 数据 + 挂载脚本
+  "./tangshi/",
+  "./data/poems-tangshi.js",
+  "./js/tangshi.js",
   "./icons/icon-120.png",
   "./icons/icon-152.png",
   "./icons/icon-167.png",

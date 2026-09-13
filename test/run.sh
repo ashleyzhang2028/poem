@@ -6,6 +6,7 @@
 #   2. UI 集成测试       —— jsdom，缺少则一次性临时安装（见下方说明）
 #   3. 小古文学习库测试  —— jsdom，100 篇数据 + 阅读器 + 已读标记
 #   3b. 古籍阅读库测试   —— jsdom + vm，四部集子共用的索引页/详情页引擎
+#   3c. 唐诗三百首测试   —— jsdom + vm，301 首数据 + 卷次分组 + 阅读器
 #   4. 用户名设置测试    —— jsdom，带初始 localStorage 重启应用
 #   5. 用户协议/隐私条款  —— jsdom + 源码扫描：页脚入口、学生保护、邮箱防爬
 #   6. 注音与朗读测试    —— 拼音表/多音字（纯 Node）+ 注音渲染与朗读降级（jsdom）
@@ -66,6 +67,10 @@ node test/classic.test.js
 echo ""
 echo "=== 古籍阅读库（基础架构变更，Issue #69）==="
 node test/engine.test.js
+
+echo ""
+echo "=== 唐诗三百首（内容 PR，Issue #69）==="
+node test/tangshi.test.js
 
 echo ""
 echo "=== 用户名设置测试 ==="
