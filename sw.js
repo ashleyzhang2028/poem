@@ -4,12 +4,11 @@
  * 苹果手机说明：iOS Safari 不弹安装横幅，靠「分享 → 添加到主屏幕」安装；
  * 添加到主屏幕后本 SW 的缓存生效，断网也能正常背诵。
  */
-const CACHE_NAME = "poem-app-v18";
+const CACHE_NAME = "poem-app-v19";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [
   "./",
-  "./index.html",
   "./manifest.webmanifest",
   "./css/style.css",
   "./css/classic.css",
@@ -17,11 +16,11 @@ const PRECACHE = [
   "./fonts/NotoSerifSC-600.woff2",
   "./fonts/NotoSansSC-400.woff2",
   "./fonts/NotoSansSC-600.woff2",
-  "./classic.html",
-  "./settings.html",
+  "./classic/",
+  "./settings/",
   "./js/settings.js",
-  "./terms.html",
-  "./privacy.html",
+  "./terms/",
+  "./privacy/",
   "./css/legal.css",
   "./js/contact.js",
   "./data/pinyin-table.js",
@@ -107,9 +106,8 @@ self.addEventListener("fetch", function (event) {
       }).catch(function () {
         return caches.match(pageUrl).then(function (hit) {
           if (hit) return hit;
-          return caches.match("./index.html").then(function (home) {
-            return home || caches.match("./");
-          });
+          // 首页现在的 URL 就是 "./"（目录化路由，不再有 index.html）
+          return caches.match("./");
         });
       })
     );

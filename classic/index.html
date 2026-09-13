@@ -13,6 +13,9 @@
   <meta name="apple-mobile-web-app-title" content="小古文" />
   <meta name="mobile-web-app-capable" content="yes" />
 
+  <!-- 目录化 URL：页面住在 /classic/ 里，但资源引用仍按站点根算（./css/... 就是 /css/...），
+       这样相对路径与搬家前完全一致，不必改成 ../ ，避免漏改一处就白屏 -->
+  <base href="/" />
   <link rel="icon" href="./icons/icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
   <link rel="stylesheet" href="css/style.css" />

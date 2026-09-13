@@ -880,7 +880,7 @@
   /* ---------------- 事件绑定 ---------------- */
   function bindEvents() {
     // 学段 / 年级 / 学期 / 数量 / 范围 / 阅读辅助 / 小古文入口都住在设置整页
-    // （settings.html + js/settings.js）；首页保留同款监听只为向后兼容，取不到就跳过
+    // （/settings/ + js/settings.js）；首页保留同款监听只为向后兼容，取不到就跳过
     $$("#seg-stage button").forEach(function (b) {
       b.addEventListener("click", function () {
         const stage = b.dataset.stage;
@@ -1064,7 +1064,7 @@
   }
 
   /**
-   * 供设置整页（settings.html）等外部页面调用：
+   * 供设置整页（/settings/）等外部页面调用：
    * 设置写在 localStorage 里，同窗口内的其他脚本可以据此重新读一次并刷新界面
    * （同一浏览器标签里做「改完设置立刻生效」用得到；跨页面跳转时本就是重新启动）
    */

@@ -20,7 +20,7 @@ const read = f => fs.readFileSync(path + f, 'utf8');
 const MAIL = 'kuibuapp@163.com';
 
 /* ---------- 一、静态源码里不能有明文邮箱 ---------- */
-['index.html', 'classic.html', 'settings.html', 'terms.html', 'privacy.html', 'js/contact.js', 'js/chrome.js', 'js/settings.js', 'sw.js']
+['index.html', 'classic/index.html', 'settings/index.html', 'terms/index.html', 'privacy/index.html', 'js/contact.js', 'js/chrome.js', 'js/settings.js', 'sw.js']
   .forEach(f => {
     const src = read(f);
     chk(!src.includes(MAIL), f + ' 源码不含明文邮箱');
@@ -39,9 +39,9 @@ const leaked = tracked.filter(f => {
 chk(leaked.length === 0, '仓库内无任何明文邮箱泄漏（' + (leaked.join(', ') || '无') + '）');
 
 /* ---------- 二、页面层 ---------- */
-function load(file) {
+function load(file, urlPath) {
   const html = read(file);
-  const dom = new JSDOM(html, { runScripts: 'dangerously', url: 'https://local.test/' + file });
+  const dom = new JSDOM(html, { runScripts: 'dangerously', url: 'https://local.test/' + (urlPath || file) });
   const { window } = dom;
   (html.match(/<script src="([^"]+)"><\/script>/g) || [])
     .map(s => s.match(/src="([^"]+)"/)[1])
@@ -53,10 +53,12 @@ function load(file) {
   return { dom, window, doc: window.document };
 }
 
-const terms = load('terms.html');
-const privacy = load('privacy.html');
+/* 目录化 URL：页面真实文件在各目录的 index.html，
+   但页内资源一律用绝对路径（/css/...、/js/...），所以这里按目录地址加载即可 */
+const terms = load('terms/index.html', 'terms/');
+const privacy = load('privacy/index.html', 'privacy/');
 const index = load('index.html');
-const settings = load('settings.html');
+const settings = load('settings/index.html', 'settings/');
 
 setTimeout(() => {
   /* --- 用户协议 --- */
@@ -152,8 +154,8 @@ setTimeout(() => {
 
   /* --- 页脚入口：设置页（版权 + 法务链接的新家）/ 法务页互链 --- */
   const footCases = [
-    ['设置页', settings.doc, './terms.html', './privacy.html'],
-    ['用户协议页', terms.doc, './terms.html', './privacy.html']
+    ['设置页', settings.doc, '/terms/', '/privacy/'],
+    ['用户协议页', terms.doc, '/terms/', '/privacy/']
   ];
   footCases.forEach(([name, d, termsHref, privacyHref]) => {
     const links = [...d.querySelectorAll('.foot .foot-links a')];
@@ -164,23 +166,32 @@ setTimeout(() => {
   // 需求：版权与两个法务入口从首页挪到设置页底部
   chk(!index.doc.querySelector('.foot'), '首页不再挂页脚（版权与法务链接已挪到设置页底部）');
   chk(/©2026 kuibu\.app/.test(settings.doc.querySelector('.foot').textContent), '设置页底部保留版权文案');
-  chk(/terms\.html/.test(read('settings.html')) && /privacy\.html/.test(read('settings.html')),
-    '设置页挂了两个法务链接');
-  chk(/settings\.html/.test(read('index.html')), '首页齿轮指向设置整页');
+  chk(/href="\/terms\/"/.test(read('settings/index.html')) && /href="\/privacy\/"/.test(read('settings/index.html')),
+    '设置页挂了两个法务链接（目录化路径）');
+  // 需求：全站 URL 目录化，页面之间不再出现 .html
+  {
+    // 只看可执行代码：注释与正则里的 index.html 是「兼容老地址」用的，不算页面地址
+    const code = read('js/chrome.js')
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/^\s*\/\/.*$/gm, '');
+    chk(!/["'`]\.?\/([\w-]+\.html)["'`]/.test(code),
+      '导航脚本里不再出现页面 .html 地址（目录化路由）');
+    chk(/"\/classic\/"/.test(read('js/chrome.js')) && /"\/settings\/"/.test(read('js/chrome.js')) &&
+      /start_url/.test('start_url') && /"start_url": "\.\/"/.test(read('manifest.webmanifest')),
+      '页签地址与 PWA start_url 均为目录化路径');
+  }
   // 需求：小古文页底不再挂版权与法务链接（用户要求删除），法务入口只在设置整页底部
-  chk(!/class="foot/.test(read('classic.html')), '小古文页已移除页底页脚（版权 + 法务链接）');
-  chk(/terms\.html/.test(read('settings.html')) && /privacy\.html/.test(read('settings.html')),
-    '法务入口仍保留在设置整页底部');
-  chk(/terms\.html/.test(read('sw.js')) && /privacy\.html/.test(read('sw.js')),
+  chk(!/class="foot/.test(read('classic/index.html')), '小古文页已移除页底页脚（版权 + 法务链接）');
+  chk(/\/terms\//.test(read('sw.js')) && /\/privacy\//.test(read('sw.js')),
     'Service Worker 预缓存了两个法务页（断网也能打开）');
-  chk(/settings\.html/.test(read('sw.js')) && /js\/settings\.js/.test(read('sw.js')),
+  chk(/\/settings\//.test(read('sw.js')) && /js\/settings\.js/.test(read('sw.js')),
     'Service Worker 也预缓存了设置整页（断网也能改设置）');
 
   /* --- 访问统计：整体删除，不留残骸 --- */
   {
     ['admin.html', 'js/admin.js', 'js/stats.js', 'css/admin.css', 'data/visits.json']
       .forEach(f => chk(!fs.existsSync(path + f), '访问统计相关文件已删除：' + f));
-    ['index.html', 'classic.html', 'terms.html', 'privacy.html', 'sw.js'].forEach(f => {
+    ['index.html', 'classic/index.html', 'terms/index.html', 'privacy/index.html', 'sw.js'].forEach(f => {
       chk(!/stats\.js|admin\.html|visits\.json/.test(read(f)), f + ' 不再引用被删除的统计文件');
     });
   }

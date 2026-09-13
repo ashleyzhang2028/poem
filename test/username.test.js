@@ -8,8 +8,8 @@ const { JSDOM } = require('jsdom');
 const fs = require('fs');
 const path = __dirname + '/../';
 const html = fs.readFileSync(path + 'index.html', 'utf8');
-// 设置从「首页弹层」改成了独立整页，用户名输入框现在住在 settings.html
-const settingsHtml = fs.readFileSync(path + 'settings.html', 'utf8');
+// 设置从「首页弹层」改成了独立整页，用户名输入框现在住在 /settings/
+const settingsHtml = fs.readFileSync(path + 'settings/index.html', 'utf8');
 
 function bootIn(pageHtml, file, seed) {
   const dom = new JSDOM(pageHtml, { runScripts: 'dangerously', url: 'https://local.test/' + file });
@@ -28,8 +28,8 @@ function bootIn(pageHtml, file, seed) {
 
 /** 首页：应用名联动 / 计划生效 / 入口显隐 */
 const boot = seed => bootIn(html, '', seed);
-/** 设置页：用户名输入框回填与输入 */
-const bootSettings = seed => bootIn(settingsHtml, 'settings.html', seed);
+/** 设置页：用户名输入框回填与输入 —— URL 走目录化地址 /settings/ */
+const bootSettings = seed => bootIn(settingsHtml, 'settings/', seed);
 
 (async () => {
   let fails = 0;
@@ -59,7 +59,7 @@ const bootSettings = seed => bootIn(settingsHtml, 'settings.html', seed);
   // 顶栏第一行固定应用名，用户名写在右侧的页面名里（只做纯文本）
   chk(r.d.querySelector('#brand-name').textContent === '跬步', '刷新后品牌名保持为「跬步」，应用名不随用户名变');
   chk(/玥玥/.test(r.d.querySelector('#brand-page-text').textContent), '刷新后用户名仍写在「跬步」右侧');
-  // 设置页已改成独立整页，用户名输入框住在 settings.html
+  // 设置页已改成独立整页，用户名输入框住在 /settings/
   s1 = await bootSettings({ poem_recite_settings_v1: JSON.stringify({ grade: 1, term: 1, dailyCount: 5, username: '玥玥' }) });
   chk(s1.d.querySelector('#input-username').value === '玥玥', '刷新后设置页输入框回填 玥玥');
 

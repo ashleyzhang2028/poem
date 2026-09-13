@@ -126,14 +126,15 @@ function check(name, cond, extra) {
     check('iPhone: 已预缓存诗词数据', cached.some(p => /poems-1\.js$/.test(p)), cached.length + ' 项');
     check('iPhone: 已预缓存样式与脚本',
       cached.some(p => /style\.css$/.test(p)) && cached.some(p => /app\.js$/.test(p)));
+    // 目录化 URL：小古文页预缓存的地址是 /classic/（不再是 classic.html）
     check('iPhone: 已预缓存小古文页与数据',
-      cached.some(p => /classic\.html$/.test(p)) && cached.some(p => /poems-classic\.js$/.test(p)),
+      cached.some(p => /\/classic\/?$/.test(p)) && cached.some(p => /poems-classic\.js$/.test(p)),
       cached.length + ' 项');
     check('iPhone: 已预缓存中文字体',
       cached.some(p => /NotoSerifSC-400\.woff2$/.test(p)) && cached.some(p => /NotoSansSC-400\.woff2$/.test(p)),
       cached.length + ' 项');
     check('iPhone: 已预缓存用户协议与隐私条款',
-      cached.some(p => /terms\.html$/.test(p)) && cached.some(p => /privacy\.html$/.test(p)),
+      cached.some(p => /\/terms\/?$/.test(p)) && cached.some(p => /\/privacy\/?$/.test(p)),
       cached.length + ' 项');
 
     // 引导条应出现（iOS + 非 standalone）
@@ -195,7 +196,7 @@ function check(name, cond, extra) {
     check('iPhone: 断网后仍能打开', offlineOk);
 
     // 课外必背小古文：断网状态下也能进入并打开整页阅读器
-    await page.goto(base + 'classic.html', { waitUntil: 'domcontentloaded' });
+    await page.goto(base + 'classic/', { waitUntil: 'domcontentloaded' });
     await new Promise(r => setTimeout(r, 800));
     const gwOffline = await page.evaluate(() => {
       const items = document.querySelectorAll('#gw-list .item');
@@ -222,7 +223,7 @@ function check(name, cond, extra) {
 
 
     /* ---- 设置整页：底部导航栏不得遮挡页面最后一行（真实浏览器几何验证）---- */
-    await page.goto(base + 'settings.html', { waitUntil: 'networkidle0' });
+    await page.goto(base + 'settings/', { waitUntil: 'networkidle0' });
     await new Promise(r => setTimeout(r, 900));
 
     const gap = await page.evaluate(() => ({
@@ -276,7 +277,7 @@ function check(name, cond, extra) {
       JSON.stringify(playAndMeasure));
 
     /* ---- 底部页签（全站导航栏）同样不得压住页面最后一行 ---- */
-    await page.goto(base + 'settings.html', { waitUntil: 'networkidle0' });
+    await page.goto(base + 'settings/', { waitUntil: 'networkidle0' });
     await new Promise(r => setTimeout(r, 900));
     const dockGeom = await page.evaluate(() => {
       const dock = document.getElementById('site-dock');
@@ -304,7 +305,7 @@ function check(name, cond, extra) {
     check('iPhone: 底部页签不遮挡设置页底部的法务链接', !dockGeom.covered, JSON.stringify(dockGeom));
 
     // 首页与小古文页的页签同样不能压住内容
-    for (const file of ['index.html', 'classic.html']) {
+    for (const [file, label] of [['', '/（首页）'], ['classic/', '/classic/']]) {
       await page.goto(base + file, { waitUntil: 'networkidle0' });
       await new Promise(r => setTimeout(r, 700));
       const g = await page.evaluate(() => {
@@ -316,17 +317,17 @@ function check(name, cond, extra) {
           appPad: parseFloat(getComputedStyle(app).paddingBottom)
         };
       });
-      check('iPhone: ' + file + ' 页面留白 ≥ 页签高度',
+      check('iPhone: ' + label + ' 页面留白 ≥ 页签高度',
         g.appPad >= g.dockH - 1, JSON.stringify(g));
     }
 
     // 断网也能进设置页（法务链接与设置项都必须可达）
     await page.setOfflineMode(true);
-    await page.goto(base + 'settings.html', { waitUntil: 'domcontentloaded' });
+    await page.goto(base + 'settings/', { waitUntil: 'domcontentloaded' });
     await new Promise(r => setTimeout(r, 900));
     const settingsOffline = await page.evaluate(() => ({
       hasPage: !!document.querySelector('#settings-page'),
-      hasFoot: !!document.querySelector('.settings-foot a[href*="terms.html"]'),
+      hasFoot: !!document.querySelector('.settings-foot a[href*="/terms/"]'),
       hasHelper: !!document.querySelector('#seg-helper')
     }));
     check('iPhone: 断网也能打开设置整页', settingsOffline.hasPage && settingsOffline.hasHelper && settingsOffline.hasFoot,
@@ -334,7 +335,7 @@ function check(name, cond, extra) {
     await page.setOfflineMode(false);
 
     // 用户协议 / 隐私条款：断网也要能打开，邮箱仍可还原（隐私合规不能靠联网）
-    await page.goto(base + 'terms.html', { waitUntil: 'domcontentloaded' });
+    await page.goto(base + 'terms/', { waitUntil: 'domcontentloaded' });
     await new Promise(r => setTimeout(r, 500));
     const termsOffline = await page.evaluate(() => {
       const link = document.querySelector('[data-mail-slot]');
@@ -352,7 +353,7 @@ function check(name, cond, extra) {
     check('iPhone: 断网也能还原邮箱（用户协议页）', /^mailto:/.test(termsOffline.mail || ''),
       String(termsOffline.mail));
 
-    await page.goto(base + 'privacy.html', { waitUntil: 'domcontentloaded' });
+    await page.goto(base + 'privacy/', { waitUntil: 'domcontentloaded' });
     await new Promise(r => setTimeout(r, 500));
     const privacyOffline = await page.evaluate(() => {
       const link = document.querySelector('[data-mail-slot]');
@@ -373,7 +374,7 @@ function check(name, cond, extra) {
     // 由 CSS 的 [data-on] 规则切换。曾经因为选择器特异性不足被
     // `.icon-row > .mini-btn .btn-icon { display: block }` 压掉，
     // 两个图标就并排同时显示 —— 这里在真实浏览器里量计算样式，防止复发。
-    await page.goto(base + 'index.html', { waitUntil: 'load' });
+    await page.goto(base + '', { waitUntil: 'load' });
     await new Promise(r => setTimeout(r, 600));
     const glyphState = await page.evaluate(async () => {
       const shown = btn => [...btn.querySelectorAll('.btn-icon')]
@@ -422,7 +423,7 @@ function check(name, cond, extra) {
       parseFloat(glyphState.transStyled) > 100, glyphState.transStyled);
 
     // ---- Issue #32 需求：大背景不用任何图案 ----
-    await page.goto(base + 'index.html', { waitUntil: 'load' });
+    await page.goto(base + '', { waitUntil: 'load' });
     await new Promise(r => setTimeout(r, 400));
     const bgState = await page.evaluate(() => {
       const patternEls = [...document.querySelectorAll('*')].filter(el => {
