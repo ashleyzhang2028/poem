@@ -499,6 +499,34 @@ setTimeout(() => {
   chk(/padding:\s*0\s+13px/.test(filterBtnCss) && /align-items:\s*center/.test(filterBtnCss),
     '组合按钮垂直方向只由外框决定高度，压过 .seg.mini button 的 5px 垂直 padding');
 
+  // 需求（Issue #55）：搜索框里的提示字（「搜索篇名 / 出处 / 作者」）字号太大，
+  // 要跟右侧「全部 / 未读」同一个字号 —— 一排三样里最没信息量的一行字不该最抢眼。
+  // 关键：**只降 ::placeholder，不动输入框自身的字号**。
+  // 输入文字若压到 12.5px，iPhone 上一聚焦就会把整页放大（阈值 16px，
+  // 见 css/style.css 末尾的防缩放规则与 theme.test.js 的断言）。
+  const classicSheet = fs.readFileSync(path + 'css/classic.css', 'utf8');
+  const phCss = classicSheet.match(/\.search-input::placeholder \{([^}]*)\}/);
+  chk(!!phCss && /font-size:\s*12\.5px/.test(phCss[1]),
+    '搜索框提示字（placeholder）字号压到 12.5px，与右侧「全部 / 未读」同号');
+  // 「全部 / 未读」实际量出来的字号是 12.5px —— 它由全站 .seg.mini button 给
+  // （0,2,1），压过 classic.css 里 .filter-seg button 那条 13.5px（0,1,1）。
+  // 所以这里断言的是「全站那个 12.5px 还在」，而不是小古文页自己写的那条。
+  const segMini = fs.readFileSync(path + 'css/style.css', 'utf8');
+  chk(/\.seg\.mini button \{[^}]*font-size:\s*12\.5px/.test(segMini),
+    '「全部 / 未读」实际字号 12.5px（.seg.mini button 压过 .filter-seg button 的 13.5px）');
+  const searchCss = barCss.match(/\.search-input \{([^}]*)\}/)[1];
+  chk(!/font-size:\s*12\.5px/.test(searchCss),
+    '输入框自身字号不跟着压小（否则 iOS 聚焦会放大页面）');
+  chk(/font-size:\s*var\(--input-font\)/.test(searchCss),
+    '输入框字号走全站统一的 --input-font 变量，不写死数字');
+  // 小古文页必须自己兜住窄屏 16px：classic.css 与 style.css 都会加载，
+  // 谁写在后面谁生效 —— 规则必须在本表末尾，否则被后加载的那份翻盘。
+  const classicTail = classicSheet.slice(classicSheet.lastIndexOf('--input-font-narrow') - 300);
+  chk(/\.search-input \{\s*font-size:\s*var\(--input-font-narrow\);\s*\}/.test(classicTail),
+    '小古文页在样式表末尾把输入框字号定回 16px（窄屏 iOS 不缩放）');
+  chk(/@media screen and \(max-width: 700px\)/.test(classicTail),
+    '这条窄屏规则写在媒体查询里（桌面仍是 14px）');
+
   // 分组圆键点了要真能连读本组：它是 <button> 不是摆设图标，而且点击不该冒泡到条目上。
   // 这一份 jsdom 没装假语音引擎（Speech.supported() 为 false），所以点击后的
   // 结果应当是「提示不支持语音」而不是「什么都没发生」—— 这刚好证明事件确实接到了按钮上。

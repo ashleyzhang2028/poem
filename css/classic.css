@@ -99,9 +99,22 @@
   background: var(--card);
   color: var(--ink);
   font-family: inherit;
-  font-size: 14px;
+  /* 输入的字号不写死在这儿，统一由文件末尾那条窄屏规则给（见本文件末尾注释）：
+     窄屏 16px（iOS 聚焦不缩放），桌面 14px。 */
+  font-size: var(--input-font);
   outline: none;
 }
+/* 提示字（「搜索篇名 / 出处 / 作者」）单独降一档，与右侧「全部 / 未读」同字号
+   --------------------------------------------------------------------------
+   提示字是给搜索框做说明的**辅助文字**，不是用户输入的正文；
+   它原先跟着输入框走 14 / 16px，比同一排的「全部 / 未读」（12.5px）大出一大截，
+   一排三样里最没信息量的一行字反而最抢眼。
+   注意：只降 ::placeholder，**不动 .search-input 自身的 font-size** ——
+   iOS 上小于 16px 的输入框一聚焦就会把整页放大（见 style.css 末尾的防缩放规则），
+   所以「输入的文字仍是 16px，占位提示才是 12.5px」。
+   字号写死在窄屏媒体查询之外、且与本文件末尾的窄屏规则同特异性 —
+   ::placeholder 是**伪元素**，`:not()` 那组元素选择器命不中它，不会互相翻盘。 */
+.search-input::placeholder { font-size: 12.5px; }
 .search-input:focus { border-color: var(--green); }
 .search-input::-webkit-search-cancel-button { display: none; }
 
@@ -688,4 +701,18 @@ body.reader-open .dock { display: none; }
   /* 工具栏圆键在窄屏同收一档（36px），与「全部 / 未读」组合、搜索框继续齐平 */
   .toolbar { --toolbar-h: 36px; }
   /* 分组圆键不再等比缩：26px 已是「比一行字略大」的下限，再小就点不准了 */
+}
+
+/* 搜索框字号必须排在最后
+   --------------------------------------------------------------------------
+   同一条「iOS 聚焦不缩放」的规矩在 style.css 末尾也有一份（按类名精确命中的
+   `.search-input { font-size: var(--input-font-narrow) }`）。两张表都会加载，
+   **谁写在后面谁生效** —— 放在这里是为了让「小古文页的输入框字号」这件事
+   在本文件里也能一眼查到，而不是只能翻到另一张表去找。
+   桌面 / 平板仍是 14px（--input-font），与界面文字同一层级；
+   窄屏 16px 是 iOS 不肯缩放的阈值，不是设计偏好，不能为了「看起来小一点」压它。
+   真正要小的是提示字 —— 见上面 `.search-input::placeholder` 那条（12.5px，
+   与右侧「全部 / 未读」同字号），且它用的是伪元素，不受这条影响。 */
+@media screen and (max-width: 700px) {
+  .search-input { font-size: var(--input-font-narrow); }
 }
