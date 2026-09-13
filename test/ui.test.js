@@ -244,8 +244,10 @@ setTimeout(() => {
     chk(!!srcEl, '详情页译文框有来源注脚元素 #m-trans-src');
     chk(srcEl && srcEl.textContent.length > 10,
       '详情页照实显示译文来源：' + (srcEl ? srcEl.textContent : ''));
-    chk(srcEl && /本项目|本应用/.test(srcEl.textContent),
-      '来源文案点明译文是自行整理的，不含糊宣称「以某版本为准」');
+    // 注脚只说口径依据，不再挂「由本项目整理为白话直译」的尾巴（Issue #44 要求删除）；
+    // 译文是自拟的这一点由 README / 用户协议承载，界面上照实给出可追溯的口径即可
+    chk(srcEl && /依据/.test(srcEl.textContent) && !/本项目整理|本应用整理/.test(srcEl.textContent),
+      '来源文案只给口径依据，不含「由本项目整理为白话直译」字样');
 
     chk(d.querySelector('#m-text').style.fontSize === '17px',
       '古诗正文默认字号小一号 17px（实际 ' + d.querySelector('#m-text').style.fontSize + '）');

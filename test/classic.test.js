@@ -22,7 +22,7 @@ CLS.forEach(p => {
 });
 chk(true, '小古文 id 无重复');
 chk(CLS.every(p => p.title && p.source && p.text && p.translation), '每篇都有 标题/出处/原文/译文');
-// 译文来源标注：小古文多为先秦诸子与史传，原文属公有领域，据此整理为白话直译。
+// 译文来源标注：小古文多为先秦诸子与史传，原文属公有领域，据此标出通行译注口径。
 // 不能一篇没有 —— 没有标注，用户就不知道译文是怎么来的（见 README「译文的取舍标准」）
 chk(CLS.every(p => p.translationSource === 'public-domain'),
   '100 篇小古文都标了译文来源 public-domain（未标 ' +
