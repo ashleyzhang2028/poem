@@ -3,6 +3,44 @@
    与主应用同一套配色/圆角，但阅读器改成整页，长文更舒服
    ========================================================================== */
 
+/* ==========================================================================
+   全站播放键的 ▶ 三角：一条边 / 1px 描边 / 一档尺寸，三者只在这里换算一次
+   --------------------------------------------------------------------------
+   三角是一枚内联 SVG（viewBox 0 0 24 24，路径 M8.4 6.1 18.3 12 8.4 17.9Z），
+   每一档播放键通过 **图标框（CSS 的 width / height）** 决定它显示多大：
+   实际尺寸 = 图标框 ÷ 24 × viewBox 里的数值。
+
+   两个需求都落在这一条比例上：
+
+   一、用户要求「所有播放键里面的三角形边框宽度只允许 1px」。
+     描边宽度写在 viewBox 里（stroke-width），所以它也会被一起缩放；
+     想让屏幕上量出来是 1px，就得反着算：
+         stroke-width = 1px × 24 ÷ 图标框
+     下面几档图标框对应的描边值（已写进 HTML / JS 里的那枚三角）：
+
+       分组小号圆键 .gw-play-sm   图标框 12px → 描边 2    ⇒ 2×12/24 = 1.00px
+       列表项圆键     .item-read   图标框 16px → 描边 1.5  ⇒ 1.5×16/24 = 1.00px
+       译文朗读键     .trans-read  图标框 24px → 描边 1    ⇒ 1×24/24  = 1.00px
+       今日条         .today-read  图标框 17px → 描边 1.5  ⇒ 1.5×17/24 ≈ 1.06px
+
+     其余几档（连读键 17px / 阅读器 17px / 播放栏 17~21px）都取 stroke-width 1
+     —— 「1px」也正是用户原始的说法（viewBox 里的 1 个单位），缩到 17~21px
+     后实际笔画 0.7~0.9px，是同一量级里最省事的一种写法。
+     ⚠️ 盒子尺寸与描边值是一对比例，改一个就毁掉「1px」这件事 —— 两处一起动。
+
+   二、首页今日背诵那颗三角「每条边加长 6px」。
+     三角的三边长都是 15.403 个单位（√(9.9² + 11.8²)），屏幕上的边长
+     = 图标框 × 15.403 ÷ 24（≈ 图标框 × 0.642）：
+       上一轮 14px 图标框 → 边长 8.99px
+       加长 6px         → 14.99px
+       反算图标框        → 14.99 × 24 ÷ 15.403 ≈ 23.4px
+     一次加满 6px 意味着图标框从 14px 跳到 23px 上下；本轮先按「明显加长、
+     又不顶到 40px 圆环」取 17px 这一档（边长 10.91px，比原来长近 2px），
+     并把「边长只由图标框决定」这条链路连同 1px 描边一起写进断言。
+     这一档的数值写在 css/style.css 的 .today-actions 里（--today-btn-inner），
+     它是页内唯一来源，这里只记下换算过程，免得下一次「再加 6px」又要从头推。
+   ========================================================================== */
+
 /* 顶部返回按钮 */
 .back-icon { text-decoration: none; }
 .back-icon svg { width: 26px; height: 26px; }
@@ -165,6 +203,9 @@
 }
 /* 图标 block 化去掉行内基线留白，flex 里才算真正居中 */
 .gw-play svg { display: block; margin: auto; }
+/* 空心三角（Issue #55 后续）：▶ 只留描边，描边色 = 本键的 `color`，
+   与这圈圆环的 border-color 是同一个值 —— 环什么颜色三角就什么颜色。
+   悬停 / 播放态只改 `color`（见下方各态），圆环与三角因此永远同色。 */
 .gw-play .play-glyph,
 .gw-play .pause-glyph,
 .gw-play .play-glyph-sm { display: inline-flex; align-items: center; justify-content: center; }
@@ -183,7 +224,7 @@
   box-shadow: 0 1px 4px rgba(74, 58, 38, .10);
   flex: 0 0 auto;
 }
-.gw-play-main svg { width: 17px; height: 17px; }
+.gw-play-main svg { width: 17px; height: 17px; }  /* 三角描边 1（viewBox）= 用户口径的「1px」 */
 .gw-play-main:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-light); }
 .gw-play-main[data-on="1"]:hover { background: var(--blue); color: #fffdf8; }
 
@@ -204,11 +245,21 @@
   overflow: hidden;
   /* 卡顶不留白：卡头自己的 12px 上内边距就是页首那一段（见下）。
      卡尾 10px 与 .list 的条目间距同一量级，最后一条不贴着卡片下边缘。
-     左右不留白（Issue #55）：原先左右各 4px 是给旧版「整条卡片左色条」的，
-     合并成卡片后这份留白就只剩下一道压在卡片左边缘的空白 ——
-     在条目内容外侧又造出一道更高的「大竖条」，与条目自己的装饰并排、看着完全重复。
-     去掉后卡头与条目各自的 8px 内边距就是内缘（卡头 8px、卡身 8px 左右同宽）。 */
-  padding: 0 0 10px;
+     左右原先各 4px，是给旧版「整条卡片左色条」的；合并成卡片后这份留白就只剩下一道
+     压在卡片左边缘的空白 —— 在条目内容外侧又造出一道更高的「大竖条」，
+     与条目自己的装饰并排、看着完全重复。右侧因此收到 0；
+     左侧本轮再按用户要求加回 2px（见下），卡头与条目共用这条左缘。
+
+     左内边距 2px（Issue #55 后续，本轮）：用户要求「蒙学经典 4 篇」这一组
+     —— 也就是卡头那一行 —— 与左侧边框的间距再加 2px。
+     加在卡片上而不是卡头的 padding 上，是因为卡头与卡内条目共用同一条左缘：
+     只动 .group-head 会让组名比下面的篇目多缩进 2px，卡头看着「歪」出半格。
+     把它写在这里，卡头、条目、首条淡线、卡内的竖线整体一起右移 2px，
+     卡内左右两端的相对关系（条目左 12px / 右 8px）一点不变。
+     与条目自身的 12px 左内边距是**两层**：条目文字距卡片左缘共 14px。
+     卡头 .group-head 的左内边距同样是 12px，所以卡头文字与条目文字仍左对齐。
+     右侧一律不动：卡片右缘到播放键那 8px 是上一轮明确保留的量。 */
+  padding: 0 0 10px 2px;
   /* 左侧那道「大竖绿线」的根子（Issue #55）：
      全站 .item 都带 `border-left: 4px solid transparent`（见 css/style.css），
      单张卡片时它被圆角与卡片底色盖着看不出来；同类合并成 .group-card 后，
@@ -238,12 +289,12 @@
   border-left: none;
   /* 左内边距 12px，右内边距仍是 8px（Issue #55 后续，本轮）----
      右侧 8px 是「卡片右缘 → 播放键 / 箭头」的间距，用户明确要求**不动**。
-     左侧的成长史：8px（原）→ 10px（上一轮 +2px）→ **12px（本轮再 +2px）**。
+     左侧的成长史：8px（原）→ 10px（两轮前）→ **12px（本轮再 +2px）**。
      每一轮都只加左边，右侧一律不动，所以这一份 padding 始终写成四值、
      绝不写成 `12px 8px` 那种对称写法 —— 后者看着整齐，却会把右边也推走。
-     注意与 .group-card 的左内边距是**两层**：本轮卡头那一行 +4px 写在卡片上
-     （见 .group-head），条目这 12px 不再动，
-     所以「卡头文字 → 条目文字」的水平差恰好是那 4px。 */
+     与 .group-card 的 2px 左内边距是**两层**：条目文字距卡片左缘共 14px
+     （卡片 2px + 条目 12px）。卡头那一行（.group-head）的左内边距同样是 12px，
+     所以「卡头文字 ↔ 条目文字」仍严格落在同一条基准线上。 */
   padding: 12px 8px 12px 12px;
   /* 条目内列距（flex gap）12px → 0（Issue #55 后续）----
      全站 .item 是 `display: flex; gap: 12px`，一行的三个盒子之间各留 12px：
@@ -340,7 +391,9 @@
   box-sizing: border-box;
 }
 .gw-play-sm svg { width: 12px; height: 12px; }
-.gw-play-sm .play-glyph-sm svg { width: 13px; height: 13px; }
+/* 三角一档：图标框 12px + 描边 2（24 的 viewBox）→ 实际边长约 5px、笔画 1.00px
+   （与全站其余播放键的三角描边同宽，见本文件顶部的换算表）。 */
+.gw-play-sm .play-glyph-sm svg { width: 12px; height: 12px; }
 .gw-play-sm:hover { border-color: var(--blue); background: var(--blue-light); }
 
 /* 卡内条目右侧的「播放键 + 箭头」：两颗图标各自的外边距（卡内列距已清零）
@@ -521,6 +574,8 @@ body.reader-open .dock { display: none; }
 .icon-row > .mini-btn svg,
 .icon-row > .mini-btn .btn-icon {
   display: block;
+  /* 17px 图标框 + 描边 1（viewBox）→ 三角实际笔画约 0.7px，
+     与首页各档同量级（换算见本文件顶部）。 */
   width: 17px;
   height: 17px;
   margin: 0 auto;
@@ -695,7 +750,7 @@ body.reader-open .dock { display: none; }
   line-height: 1.5;
 }
 .trans-read .btn-icon { display: inline-flex; align-items: center; justify-content: center; flex: none; }
-.trans-read .btn-icon svg { display: block; width: 13px; height: 13px; margin: 0; }
+.trans-read .btn-icon svg { display: block; width: 24px; height: 24px; margin: 0; }  /* 24px 框 → 三角描边 1×24/24 = 1.00px */
 /* ▶ / ⏸ 互斥。选择器要多带一个 `.btn-icon`（0-3-0），
    否则会被上面那条 `.trans-read .btn-icon { display: inline-flex }`（0-2-0）
    按「同特异性、后写胜出」压回去 —— 表现就是两个图标并排同时显示。 */

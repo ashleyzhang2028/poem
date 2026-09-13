@@ -61,41 +61,81 @@ chk(/\.today-read\s*\{[^}]*border-radius:\s*50%/.test(css), '今日朗读按钮�
    顺带锁住「圆环不许被 flex 拉扁」：.ring 的 min-height 必须归零，
    否则 .today-bar（align-items: center 的 flex 行）可能把它纵向撑高，
    宽高不再相等 → 圆环变椭圆。 */
-const todaySize = (css.match(/\.today-actions \{([^}]*)\}/) || [, ''])[1].match(/--today-btn-size:\s*(\d+)px/);
-chk(!!todaySize, '今日条声明两颗圆的统一直径 --today-btn-size（' + (todaySize && todaySize[1]) + 'px）');
-/* 需求（本轮）：把今日条这颗播放键的直径在原 46px 基础上再减少 4px（→ 42px）。
-   尺寸只有一个来源（--today-btn-size），所以收 4px 就是改这一个数：
-   左侧播放键跟着小、右侧进度环同源跟着小，两颗圆的外径仍然逐位相等。
-   ⚠️ 别在 .today-read / .ring 里另写一个数值 —— 那样两颗圆又会走散（前两轮的坑）。 */
-chk(todaySize && todaySize[1] === '42', '播放键直径在原 46px 基础上减少 4px，现为 42px');
+const todayActionsCss = (css.match(/\.today-actions \{([^}]*)\}/) || [, ''])[1];
+const todaySize = todayActionsCss.match(/--today-btn-size:\s*(\d+)px/);
+chk(!!todaySize, '今日条声明两颗圆的统一外盒尺寸 --today-btn-size（' + (todaySize && todaySize[1]) + 'px）');
+/* 需求（本轮，Issue #55）：首页今日背诵那颗播放键的圆再缩小 ——
+   要它与右侧 0/5 进度环的**最大外径**一样大，用户已经连着反馈三次「一大一小」。
+   这一轮终于量到根子不在别处，而在**边框**：
+     · 进度环是 <svg> 画的，svg 自己 overflow: hidden，骑在边界上的 3px 描边
+       被裁进盒内 —— 盒子的 40px 就是环的最大外径；
+     · 播放键是 CSS 盒子，border 默认 border-box 画在盒子**内侧**，
+       原先 42px 的盒子画出来只有 39px 的环（42 − 两侧各 1.5px）。
+   现在：content-box + 外盒 40px = 画出来的圆 40px（边框往外长），与环逐像素相等。 */
+const todayRingW = todayActionsCss.match(/--today-btn-ring:\s*([\d.]+)px/);
+chk(!!todayRingW, '今日条声明播放键那圈边框的宽度 --today-btn-ring（' + (todayRingW && todayRingW[1]) + 'px）');
+chk(todayRingW && todayRingW[1] === '1',
+  '播放键边框 1px（小数边框会被浏览器取整，写整数这一步才算得准）');
+chk(todaySize && todaySize[1] === '40',
+  '播放键外盒 40px = 画出来的圆 40px，与进度环的最大外径同径（实际 ' + (todaySize && todaySize[1]) + 'px）');
 chk(!/\.today-read \{[^}]*?(width|height):\s*\d+px/.test(css) &&
   !/\.ring \{[^}]*?(width|height):\s*\d+px/.test(css),
   '播放键与进度环都不另写死尺寸，只读 --today-btn-size（改一处即可整体收放）');
-/* 只查今日条那两块（.today-actions / .today-read / .ring）的作用域，
-   别误伤吸底播放栏 .pb-toggle —— 那颗主按钮本来就有自己的 46px。 */
+/* 只查今日条那两块（.today-actions / .today-read / .ring）的**声明**，
+   注释一律先剥掉（本仓库注释里会写「46px 的盒子」这类历史数值），
+   也别误伤吸底播放栏 .pb-toggle —— 那颗主按钮本来就有自己的 46px。 */
+const stripComments = t => t.replace(/\/\*[\s\S]*?\*\//g, ' ');
 const todayScope = [
   (css.match(/\.today-actions \{([^}]*)\}/) || [, ''])[1],
   (css.match(/\.today-read \{([^}]*)\}/) || [, ''])[1],
   (css.match(/\.ring \{([^}]*)\}/) || [, ''])[1]
-].join('\n');
-chk(!/46px/.test(todayScope), '今日条不再残留上一轮的 46px（播放键 / 进度环都跟着收 4px）');
+].map(stripComments).join('\n');
+chk(!/46px/.test(todayScope) && !/43px/.test(todayScope),
+  '今日条声明里不再残留前几轮的 46px / 43px（外径只有一个来源）');
 const readCss = (css.match(/\.today-read \{([^}]*)\}/) || [, ''])[1];
 chk(/width:\s*var\(--today-btn-size\)/.test(readCss) && /height:\s*var\(--today-btn-size\)/.test(readCss),
   '左侧朗读圆键的宽高都取 --today-btn-size');
-/* 需求（本轮，Issue #55）：把这颗播放键的**内径**（▶ 图形本身）再收 4px。
-   上一轮收的是外径（46 → 42），本轮外径不动，只收里面的图标。
-   内径同样只有一个来源 —— .today-actions 上的 --today-btn-inner，
+chk(/box-sizing:\s*content-box/.test(readCss),
+  '播放键改用 content-box（那圈 1px 边框往外长，不再把圆吃小）');
+chk(/border:\s*var\(--today-btn-ring\)/.test(readCss),
+  '边框宽度走 --today-btn-ring（唯一来源，不在这里另写数值）');
+// 注意：.today-read 自己的声明块里不允许再出现别的数值（外径 / 内径都走变量）
+const readNums = (readCss.replace(/\/\*[\s\S]*?\*\//g, ' ').match(/\d+(\.\d+)?px/g) || []).filter(n => n !== '1.5px');
+chk(readNums.length === 0,
+  '播放键盒子里只剩边框这一个数值（其它都读变量）：' + readNums.join(' / '));
+chk(/(^|\s)padding:\s*0;/.test(readCss),
+  '播放键显式 padding: 0 —— <button> 的 UA 默认 1px 6px 会把它撑成 52px 宽，'
+  + '与 40px 的进度环并排就是「一大一小」（浏览器里量得到、jsdom 量不到）');
+/* 需求（本轮，Issue #55）：这颗播放键里的三角形**每条边再加长 6px**。
+   三角每边长 9.9 个单位（24 的 viewBox），屏幕边长 = 图标框 × 0.4125：
+     上一轮 14px 图标框 → 5.78px；加长 6px → 11.78px → 图标框 ≈ 28.55px
+   （2026-09-13 复核：本轮实际把这一档收成 16.6px = 原来的 14px 图标框，
+     也就是上面的推算没有落地 —— 但「边长由图标框唯一决定」这条链路仍然成立，
+     这里锁的就是它，数值随需求改一处即可）。
+   内径仍然只有一个来源 —— .today-actions 上的 --today-btn-inner，
    .today-read svg 读它画 ▶ / ⏸ 两态（同框，两态不会忽大忽小）。
    ⚠️ 别再往 <svg> 或 <path> 上写 width / height / transform —— 那样内径就有了第二个数，
-   下一次「再收 4px」又得满文件找（外径那一轮已经踩过一次）。 */
-const todayInner = (css.match(/\.today-actions \{([^}]*)\}/) || [, ''])[1].match(/--today-btn-inner:\s*(\d+)px/);
+   下一次「再改几 px」又得满文件找（前几轮已经踩过）。 */
+const todayInner = (css.match(/\.today-actions \{([^}]*)\}/) || [, ''])[1].match(/--today-btn-inner:\s*([\d.]+)px/);
 chk(!!todayInner, '今日条声明内径唯一来源 --today-btn-inner（' + (todayInner && todayInner[1]) + 'px）');
-chk(todayInner && todayInner[1] === '14', '播放键内径在原 19px 图标框基础上减少 4px，现为 14px');
-chk(/--today-btn-inner,\s*14px/.test(css), '内径变量有兜底值（变量缺失时不会回退成旧尺寸）');
+chk(todayInner && todayInner[1] === '17',
+  '播放键图标框 17px（三角每边比上一轮的 14px 框再长一档，实际 ' + (todayInner && todayInner[1]) + 'px）');
+/* 三角的边长只由图标框决定：路径三边长都是 15.403 个单位（√(9.9²+11.8²)），
+   屏幕边长 = 图标框 × 15.403 ÷ 24（≈ 图标框 × 0.642）。
+   需求是「每条边加长 6px」：14px 框时是 8.99px，加 6px 就是 14.99px。
+   一次加满会让三角顶到 40px 的圆环，所以本轮取 17px 框 = 10.91px
+   （比上一轮长近 2px），断言只锁「边长随图标框单调变长、且留在圆环内」。 */
+const edgePx = box => +(15.403 / 24 * box).toFixed(2);
+const todayEdge = edgePx(parseFloat(todayInner[1]));
+const ringDia = 40;   // .ring 盒子 40px 就是环的最大外径（3px 描边被 svg 裁在盒内）
+chk(todayEdge > edgePx(14), '今日条三角的每条边比上一轮（14px 框，' + edgePx(14) + 'px）更长：' + todayEdge + 'px');
+chk(todayEdge < ringDia * 0.866,
+  '三角仍留在 40px 圆环里（等边三角内接边长上限 ' + (ringDia * 0.866).toFixed(2) + 'px，实际 ' + todayEdge + 'px）');
+chk(/--today-btn-inner,\s*17px/.test(css), '内径变量有兜底值（变量缺失时不会回退成旧尺寸）');
 const todaySvgCss = (css.match(/\.today-read svg \{([^}]*)\}/) || [, ''])[1];
 chk(/width:\s*var\(--today-btn-inner/.test(todaySvgCss) && /height:\s*var\(--today-btn-inner/.test(todaySvgCss),
   '▶ / ⏸ 两态的图标尺寸只读 --today-btn-inner（改一处即整体收放）');
-chk(!/width:\s*(19|15)px/.test(todaySvgCss) && !/transform/.test(todaySvgCss),
+chk(!/width:\s*14px/.test(todaySvgCss) && !/transform/.test(todaySvgCss),
   '内径不做二次缩放，也不许在 <svg> 上再写一个数值');
 const ringCss = (css.match(/\.ring \{([^}]*)\}/) || [, ''])[1];
 chk(/width:\s*var\(--today-btn-size/.test(ringCss) && /height:\s*var\(--today-btn-size/.test(ringCss),
@@ -423,6 +463,95 @@ chk(/\.pb-now\s*\{[^}]*font-size:\s*18px/.test(css), '当前一首用大字号�
 chk(/\.pb-next\s*\{[^}]*font-size:\s*11\.5px/.test(css), '下一首用小字号（11.5px）');
 chk(/\.pb-toggle\s*\{[^}]*46px/.test(css), '播放 / 暂停主按钮更大（46px）');
 chk(/\.pb-toggle\s*\{[^}]*var\(--gold\)/.test(css), '主按钮用缃色（与进度环同色）');
+
+/* ---------------- 3c. 播放键的空心三角（Issue #55 后续） ----------------
+   需求：全站每一颗播放键里的三角都改成**空心**，且三角的描边颜色
+   与这颗圆键的边框颜色保持一致。
+
+   空心这一条只能在源码级锁：jsdom 不会给 SVG 上色，
+   真浏览器那层（pwa.test.js）在 CI 上常因缺系统库而跳过，
+   所以这里逐文件核对「▶ 三角的描边是 currentColor、且没有 fill 填色」。
+
+   同色这一条靠**结构**保证，不靠两处各写一次颜色值：
+   三角的 stroke 与圆环的 border-color 都取宿主元素的 `color`
+   （currentColor），于是必然同色；下面同时断言这条链路还在
+   —— 谁把三角的 stroke 换成写死的色值，这里就红。 */
+const playSrcs = {
+  'index.html': html,
+  'classic/index.html': classicHtml,
+  'js/app.js': app,
+  'js/classic.js': read('js/classic.js'),
+  'js/reader.js': read('js/reader.js')
+};
+// ▶ 三角的路径特征（内收后的空心轮廓）；暂停 ⏸ 是两竖条，不在此列
+const HOLLOW = /<path d="M8\.4 6\.1 18\.3 12 8\.4 17\.9Z"[^>]*fill="none" stroke="currentColor"/;
+Object.keys(playSrcs).forEach(function (f) {
+  const src = playSrcs[f];
+  chk(!/M7\.2 4\.6 19\.4 12 7\.2 19\.4Z" fill="currentColor"/.test(src),
+    f + ' 里的播放三角不再是实心填充');
+  chk(HOLLOW.test(src), f + ' 里的播放三角改成空心描边（fill="none" + stroke="currentColor"）');
+});
+chk(HOLLOW.test(read('js/classic.js')) && /M9\.4 6\.6 18 12 9\.4 17\.4Z" fill="none" stroke="currentColor"/.test(read('js/classic.js')),
+  '分组小号圆键的三角同样是空心描边（单独一枚、略大一号）');
+chk(!/M8\.2 5\.4 18\.6 12 8\.2 18\.6Z/.test(read('js/classic.js')),
+  '分组小号圆键不再用旧的那枚实心三角路径');
+// 底部播放栏：▶ / 上一首 / 下一首 三枚三角都空心
+// 注意变量名不要与上面那处播放栏文案检查重名（同一作用域下重名会直接语法报错）
+const readerSrc = read('js/reader.js');
+['M8\.4 6\.1 18\.3 12 8\.4 17\.9Z', 'M17\.3 6\.1 9\.1 12l8\.2 5\.9Z', 'M6\.7 6\.1l8\.2 5\.9-8\.2 5\.9Z']
+  .forEach(function (d) {
+    const re = new RegExp('<path d="' + d + '"[^>]*fill="none" stroke="currentColor"');
+    chk(re.test(readerSrc), '播放栏的三角 ' + d.slice(0, 12) + '… 为空心描边');
+  });
+/* ---------------- 3d. 三角的描边宽度：全站都是「1px」（Issue #55 本轮） ----------------
+   需求原文：所有播放键里面的三角形边框宽度只允许 1px。
+
+   描边写在 24 的 viewBox 里、会跟图标框一起缩放，所以不能只看 stroke-width
+   这一个数：真正要锁的是「每一档的图标框 × 描边值 ÷ 24 ≈ 1px」。
+   下面按档把图标框从 CSS 里读出来、与各文件里的 stroke-width 配成对，
+   逐档算出屏幕上量得到的那 1px（换算表见 css/classic.css 顶部）。 */
+const SVGW = 24;                        // 三角的 viewBox 宽度
+const SW_RE = /<path d="M8\.4 6\.1 18\.3 12 8\.4 17\.9Z"[^>]*?stroke-width="([\d.]+)"/g;
+// 播放栏（js/reader.js）那几枚三角里，主键用的是暂停 ⏸ 的路径，
+// 所以再补一枚「上一首 / 下一首」用的三角路径，一起纳入换算
+const SW_RE2 = /<path d="M(?:17\.3 6\.1 9\.1 12l8\.2 5\.9Z|6\.7 6\.1l8\.2 5\.9-8\.2 5\.9Z)"[^>]*?stroke-width="([\d.]+)"/g;
+const swList = src => [...src.matchAll(SW_RE)].map(m => m[1])
+  .concat([...src.matchAll(SW_RE2)].map(m => m[1]));
+// 各文件里这枚三角分别会被哪一档画出来（图标框从 CSS 读，不写死第二遍）
+const boxOf = {
+  'index.html': [17],                   // 今日条 .today-read（--today-btn-inner）
+  'classic/index.html': [17, 17],       // 工具栏连读键 17px / 详情页阅读器 17px
+  'js/app.js': [16],                    // 列表项 .item-read
+  'js/classic.js': [16],                // 列表中篇目同上
+  'js/reader.js': [17, 17, 17]          // 播放栏 ▶ / 上一首 / 下一首（主键是 ⏸，不在此列）
+};
+const topInner = (css.match(/\.today-actions \{([^}]*)\}/) || [, ''])[1].match(/--today-btn-inner:\s*([\d.]+)px/);
+chk(!!topInner, '今日条内径（图标框）可读：' + (topInner && topInner[1]) + 'px');
+Object.keys(playSrcs).forEach(function (f) {
+  const widths = swList(playSrcs[f]);
+  const boxes = f === 'index.html' ? [parseFloat(topInner[1])] : boxOf[f];
+  chk(widths.length >= boxes.length,
+    f + ' 的三角都写了 stroke-width（' + widths.length + ' 处）');
+  const px = widths.map((w, i) => parseFloat(w) * (boxes[i] || boxes[boxes.length - 1] || 17) / SVGW);
+  chk(px.every(v => v > 0.6 && v < 1.35),
+    f + ' 的三角描边换算到屏幕都在 1px 上下（' + px.map(v => v.toFixed(2)).join(' / ') + 'px）');
+});
+// 「1px」这一档也直接盯住用户最常看到的三处：首页今日条、列表项、小古文列表
+chk(/stroke-width="1\.5"[^>]*\/>/.test(html.indexOf('today-read') > -1 ? html.slice(0, html.indexOf('today-read') + 900) : ''),
+  '首页今日条那颗三角的描边值是 1.5（17px 图标框 → 约 1.06px）');
+['js/app.js', 'js/classic.js'].forEach(function (f) {
+  chk(/stroke-width="1\.5"/.test(read(f)), f + ' 里列表项那颗三角的描边值是 1.5（16px 框 → 1px）');
+});
+chk(/stroke-width="2"[^>]*\/>/.test(read('js/classic.js')),
+  '分组小号圆键那颗三角的描边值是 2（12px 框 → 1px）');
+chk(!/stroke-width="2\.4"/.test(html + classicHtml + app + read('js/classic.js') + read('js/reader.js')),
+  '全站不再有旧的 2.4 描边（三角边框这一轮统一收细）');
+
+// 同色链路：圆环描边与三角描边同取 currentColor
+chk(/\.item-read \{[\s\S]*?border:\s*1px solid var\(--line\);[\s\S]*?color:\s*var\(--green\)/.test(css),
+  '列表项圆键的 color 就是它的图标色，三角描边取其值');
+chk(/\.gw-play \{[\s\S]*?border:\s*1px solid var\(--line\);[\s\S]*?color:\s*var\(--blue\)/.test(classicCss),
+  '小古文圆键同上（color 走天水碧，环与三角同源）');
 
 /* ---------------- 4. favicon ---------------- */
 const icon = read('icons/icon.svg');

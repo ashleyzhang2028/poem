@@ -447,17 +447,30 @@ function check(name, cond, extra) {
       roundState.trans.radius);
 
     // ---- Issue #55：首页「今日背诵」两颗圆的直径必须一致 ----
-    // 用户连着报了三次（56px → 54px → 与播放键同径），说明光改 CSS 数值不够，
-    // 得看渲染结果。所以这里不看 CSS 写了多少，直接量真机上画出来的东西：
-    //   左侧播放键 → 外盒尺寸（它就是一颗实心圆键，盒子即直径）
+    // 用户连着报了几轮（56 → 54 → 同径），说明光改 CSS 数值不够，得看渲染结果。
+    // 前几轮一直量错的根源是「量的是盒子，不是画出来的圆」：
+    //   左侧播放键 → **画出来的圆**：盒子用的是 content-box，那圈 1px 边框
+    //                画在盒外，所以「圆外缘 = 盒子宽」；但历史上是 border-box，
+    //                圆会被边框吃小 2px —— 这一条必须按当前 box-sizing 反算，
+    //                不能想当然地拿盒子宽当直径（真机上量出来差的就是这 1~2px）。
+    //                另外还要减掉 `<button>` 的 UA 默认内边距（1px 6px）：
+    //                它会把盒子横向撑宽 12px，是「一大一小」的另一半原因。
     //   右侧进度环 → 圆环的**最大直径**，两种量法取大者：
-    //                a) 外盒（svg overflow: hidden 会把骑在边界上的描边裁进盒内，
-    //                   正常情况下盒子就是最大外径）
-    //                b) 路径几何框 + 一圈描边（若将来放开 overflow，描边探出去也得算）
-    // 取大者，「最大直径」才不会被某一种实现蒙过去。
+    //                a) svg 外盒（svg overflow: hidden 会把骑在边界上的描边裁进盒内）
+    //                b) 路径几何框 + 一圈描边
+    //                再减掉 `<div>` 上可能有的 UA 内边距（正常为 0）。
     const todayRing = await page.evaluate(() => {
       const read = document.querySelector('#today-read');
       const ring = document.querySelector('#today-ring');
+      // 「画出来的圆」直径 = 盒子的**内容盒**（width / height 声明值）。
+      // 这正是 CSS 里两个变量想表达的东西：width/height = 40px 的圆；
+      // `<button>` 的 UA 默认内边距（1px 6px）会让外盒矩形变宽变高
+      // （42×42 → 加上内边距就是 52×42），所以只认内容盒尺寸，
+      // 内边距一出现就说明有 UA 默认值没被清掉 —— 下面单独断言。
+      const paintedCircle = el => {
+        const cs = getComputedStyle(el);
+        return { w: +parseFloat(cs.width).toFixed(2), h: +parseFloat(cs.height).toFixed(2), box: cs.boxSizing };
+      };
       const outer = el => { const b = el.getBoundingClientRect(); return { w: +b.width.toFixed(2), h: +b.height.toFixed(2) }; };
       const r = outer(ring);
       const boxMax = Math.max(r.w, r.h);
@@ -468,6 +481,9 @@ function check(name, cond, extra) {
       const paintedMax = +Math.max(pb.width, pb.height, boxMax - stroke).toFixed(2);
       return {
         read: outer(read),
+        // 播放键「画出来的圆」（去掉 UA 内边距、按 box-sizing 处理那圈边框）
+        readCircle: paintedCircle(read),
+        readPadding: getComputedStyle(read).padding,
         ring: r,
         ringMax: +Math.max(boxMax, paintedMax + stroke).toFixed(2),
         stroke: stroke
@@ -475,13 +491,40 @@ function check(name, cond, extra) {
     });
     check('iPhone: 日期条左侧播放键是正圆（宽高相等）',
       todayRing.read.w === todayRing.read.h, JSON.stringify(todayRing.read));
-    check('iPhone: 今日圆环的最大直径与左侧播放键一致',
-      todayRing.ringMax === todayRing.read.w && todayRing.ringMax === todayRing.read.h,
-      '圆环最大直径 ' + todayRing.ringMax + ' vs 播放键 ' + todayRing.read.w + '×' + todayRing.read.h);
+    check('iPhone: 左侧播放键没有 UA 默认内边距（1px 6px 会把圆撑成 52px 宽）',
+      /^(0px)( 0px)*$/.test(todayRing.readPadding), todayRing.readPadding);
+    check('iPhone: 今日圆环的最大直径与左侧播放键画出来的圆一致',
+      todayRing.ringMax === todayRing.readCircle.w && todayRing.ringMax === todayRing.readCircle.h,
+      '圆环最大直径 ' + todayRing.ringMax + ' vs 播放键画出来的圆 ' + todayRing.readCircle.w + '×' + todayRing.readCircle.h
+      + '（' + todayRing.readCircle.box + '，外盒矩形 ' + todayRing.read.w + '×' + todayRing.read.h + '）');
     check('iPhone: 今日圆环是正圆（没被 flex 行拉成椭圆）',
       todayRing.ring.w === todayRing.ring.h, JSON.stringify(todayRing.ring));
     check('iPhone: 今日圆环里那颗金色描边没被裁掉半圈（描边宽度仍是整数 3px）',
       todayRing.stroke === 3, String(todayRing.stroke));
+
+    // Issue #55 本轮：播放键里那颗 ▶ 三角的边框必须量得到「1px」。
+    // 描边写在 SVG 的 viewBox（24）里、会跟图标框一起缩放，所以不能只看属性值：
+    // 这里按真实渲染尺寸反算 —— stroke-width ÷ viewBox × 图标框尺寸 = 屏幕上的笔画。
+    // 各档图标框与描边值的配对说明在 css/classic.css 顶部。
+    const glyphStroke = await page.evaluate(() => {
+      const out = [];
+      const measure = (btnSel, label) => {
+        const btn = document.querySelector(btnSel);
+        if (!btn) return;
+        const path = btn.querySelector('.play-glyph path') || btn.querySelector('path');
+        if (!path) return;
+        const box = path.ownerSVGElement.getBoundingClientRect();
+        const sw = parseFloat(getComputedStyle(path).strokeWidth) || 0;
+        out.push({ label: label, px: +(sw / 24 * box.width).toFixed(2), sw: sw, box: +box.width.toFixed(2) });
+      };
+      measure('#today-read', '首页今日条');
+      measure('#today-list .item-read', '今日列表项');
+      return out;
+    });
+    glyphStroke.forEach(function (g) {
+      check('iPhone: ' + g.label + '三角的边框量出来是 1px（' + g.px + 'px）',
+        g.px >= 0.7 && g.px <= 1.25, JSON.stringify(g));
+    });
 
     // ---- 小古文页：工具栏「连读」与各分组右侧都改成了圆形播放键 ----
     // 形状必须在真浏览器里量：CSS 写着 50% 圆角，但若高度被 flex 拉高，
@@ -681,7 +724,8 @@ function check(name, cond, extra) {
       Math.abs(parseFloat(numState.headPadL) - 12) <= 0.5, numState.headPadL);
     check('iPhone: 卡头右侧内边距仍是 8px（右边那颗圆键没被推走）',
       Math.abs(parseFloat(numState.headPadR) - 8) <= 0.5, numState.headPadR);
-    // 卡头与条目是兄弟、卡片自身左右不留白，两者左基准线必须重合
+    // 卡头与条目是兄弟、共用卡片同一条左缘（各自左内边距叠加在卡片那 2px 之上），
+    // 两者左基准线必须重合
     // —— 本轮两处左内边距同为 12px，卡头文字与条目文字因此严格对齐。
     check('iPhone: 卡头文字与条目文字左基准线重合（两处左内边距同为 12px）',
       Math.abs(parseFloat(numState.headPadL) - parseFloat(numState.padL)) <= 0.5,
