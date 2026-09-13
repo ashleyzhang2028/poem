@@ -1,7 +1,7 @@
 /**
  * 课外阅读入口页（/library/）
  * ==========================================================================
- * 这一页不读文章，只做一件事：**把四部集子摆出来让你挑**。
+ * 这一页不读文章，只做一件事：**把五部集子摆出来让你挑**。
  *
  * 为什么要有这一页：
  *   底部页签那一行每格只有两三个字，装得下「设置」，装不下
@@ -17,7 +17,7 @@
 (function () {
   "use strict";
 
-  /** 四部集子的入口说明：顺序即页面上的排布顺序（按篇幅由短到长） */
+  /** 五部集子的入口说明：顺序即页面上的排布顺序（按篇幅由短到长） */
   var ENTRIES = [
     {
       id: "classic",
@@ -50,6 +50,14 @@
       page: "/guwen/",
       unit: "篇",
       desc: "十二卷自周文至明文，历代文章的选本经典"
+    },
+    {
+      id: "zhaoming",
+      name: "昭明文选",
+      short: "文选",
+      page: "/zhaoming/",
+      unit: "篇",
+      desc: "六十卷按赋、诗、骚、七等三十九类文体编排，现存最早的诗文总集"
     }
   ];
 
@@ -59,10 +67,31 @@
     });
   }
 
-  /** 取某一部已收录的篇数（从总索引算，排除「集子自身」那一条） */
+  /**
+   * 取某一部的篇数。
+   *
+   * ⚠️ 不能拿 `SITE_INDEX` 来数：那是一张**搜索索引**，按约定不收「待补」条目
+   *    （搜到一条点进去只有提示，等于让人白跑一趟，见 data/site-index.js）。
+   *    用它来数，卡片上就会出现「昭明文选 29 篇」——而点进去明明有 480 篇，
+   *    用户会以为页面坏了。所以直接数各集子自己的数据（window.POEMS_*）。
+   *    集子自身那条也不在这里出现：它本就不是一篇作品。
+   */
   function countOf(bookId) {
     var idx = window.SITE_INDEX || [];
-    return idx.filter(function (p) { return p.book === bookId && !p.isBook; }).length;
+    var direct = idx.filter(function (p) { return p.book === bookId && !p.isBook; }).length;
+    // 各集子的数据在 window 上的变量名（与 data/site-index.js 的 BOOKS 一致）
+    var VARS = {
+      classic: "POEMS_CLASSIC",
+      tangshi: "POEMS_TANGSHI",
+      songci: "POEMS_SONGCI",
+      guwen: "POEMS_GUWEN",
+      zhaoming: "POEMS_ZHAOMING"
+    };
+    var key = VARS[bookId];
+    var list = key ? window[key] : null;
+    if (list && list.length) return list.length;
+    // 兜底：课内诗词（poems）没有单列一部数据，仍按索引数
+    return direct;
   }
 
   function render() {

@@ -416,7 +416,10 @@
   }
 
   function haystack(p) {
-    return [p.title, p.source, p.selection, p.author, p.dynasty].concat(extraFields(p)).join(" ");
+    // authorName：选本署「字」而数据另给了常用姓名（《昭明文选》），
+    // 两种写法都要能搜到 —— 用户多半记得的是「王粲」而不是「王仲宣」。
+    return [p.title, p.source, p.selection, p.author, p.authorName, p.dynasty, p.gradeGroup]
+      .concat(extraFields(p)).join(" ");
   }
 
   function extraFields(p) {
@@ -628,7 +631,8 @@
         // 与阅读器 / 详情页「朝代 + 作者 + 书名」的读法一致，出处作为落款压在最后。
         '<div class="item-meta">' +
         (p.dynasty ? "<span>" + esc(p.dynasty) + "</span>" : "") +
-        (p.author ? (p.dynasty ? "<span>·</span>" : "") + "<span>" + esc(p.author) + "</span>" : "") +
+        (p.author ? (p.dynasty ? "<span>·</span>" : "") + "<span>" + esc(p.author) +
+          (p.authorName && p.authorName !== p.author ? "（" + esc(p.authorName) + "）" : "") + "</span>" : "") +
         (p.source ? ((p.dynasty || p.author) ? "<span>·</span>" : "") + "<span>" + esc(p.source) + "</span>" : "") +
         (p.selection ? "<span class=\"item-selection\">" + esc(p.selection) + "</span>" : "") +
         // 正文摘句：优先用数据自带的 p.excerpt ——
@@ -720,9 +724,16 @@
     el.querySelector('.rd-title, #rd-title').textContent = p.title;
     var meta = el.querySelector('.rd-meta, #rd-meta');
     // 标签顺序（Issue #55 后续）：朝代 · 作者 · 出处 —— 与列表里的读法一致
+    // 作者一栏：选本的题署多为**字**（《昭明文选》署「王仲宣」「班孟坚」），
+    // 数据另给了常用姓名 authorName。两者不同时一并显示 ——
+    // 只写「王仲宣」认得的人少，只写「王粲」又改了原书的题署。
+    var authorTag = p.author || "";
+    if (p.authorName && p.authorName !== p.author) {
+      authorTag = p.author + "（" + p.authorName + "）";
+    }
     meta.innerHTML =
       (p.dynasty ? '<span class="tag ghost">' + esc(p.dynasty) + "</span>" : "") +
-      (p.author ? '<span class="tag ghost">' + esc(p.author) + "</span>" : "") +
+      (authorTag ? '<span class="tag ghost">' + esc(authorTag) + "</span>" : "") +
       (p.source ? '<span class="tag">' + esc(p.source) + "</span>" : "") +
       (p.selection ? '<span class="tag ghost">' + esc(p.selection) + "</span>" : "");
     renderReaderText();

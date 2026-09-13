@@ -1,7 +1,7 @@
 /**
  * 古籍阅读库（基础架构变更，Issue #69）测试
  *
- * 对应需求：站上要装进四部集子（小古文 / 唐诗三百首 / 宋词三百首 / 古文观止）
+ * 对应需求：站上要装进五部集子（小古文 / 唐诗三百首 / 宋词三百首 / 古文观止 / 昭明文选）
  * 再加一个全站搜索页。原先「索引页 + 详情页」整套写死在 js/classic.js 里，
  * 本次把它提成可挂载的引擎 js/reader-core.js，小古文是它的第一个挂载点。
  *
@@ -9,7 +9,7 @@
  *   1. 数据层：data/site-index.js 的总索引齐全、id 不撞、书签条目有
  *   2. 引擎层：同一份 HTML 能挂两部不同的集子，各自独立（互不串台）
  *   3. 小古文侧：换引擎后行为一字不变（100 篇 / 7 组 / 已读键名照旧）
- *   4. 五部集子的「页面地址 / 数据变量名」都在总索引里登记了
+ *   4. 六部集子的「页面地址 / 数据变量名」都在总索引里登记了
  */
 const { JSDOM } = require('jsdom');
 const fs = require('fs');
@@ -37,9 +37,9 @@ chk(IDX.every(x => x.title && x.book && x.bookName && x.page),
   '每条结果都带齐 篇名 / 所属集子 / 集子名 / 跳转地址');
 chk(IDX.some(x => x.isBook && x.title === '课外必背小古文'),
   '集子自身也是一条结果（搜「小古文」能直接进那一页）');
-chk(sandbox.SITE_BOOKS.length === 5 &&
-  sandbox.SITE_BOOKS.map(b => b.page).join(',') === '/,/classic/,/tangshi/,/songci/,/guwen/',
-  '五部集子的索引页地址依次为 / · /classic/ · /tangshi/ · /songci/ · /guwen/');
+chk(sandbox.SITE_BOOKS.length === 6 &&
+  sandbox.SITE_BOOKS.map(b => b.page).join(',') === '/,/classic/,/tangshi/,/songci/,/guwen/,/zhaoming/',
+  '六部集子的索引页地址依次为 / · /classic/ · /tangshi/ · /songci/ · /guwen/ · /zhaoming/');
 // 缺数据的那几部不能「编造」结果，也不能报错 —— 静默少几批结果是最难查的错
 const only = sandbox.buildSiteIndex({ tangshi: [{ id: 'ts-1', title: '感遇·其一', author: '张九龄', dynasty: '唐' }] });
 chk(only.some(x => x.book === 'tangshi' && x.title === '感遇·其一') &&

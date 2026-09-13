@@ -1,11 +1,11 @@
 // 全站搜索页（/search/）+ 课外阅读入口页（/library/）+ 底栏导航变更
-// 端到端测试：五部合一的索引 + 输入才出结果 + 候选下拉 + 阅读器 + 不写已读
+// 端到端测试：六部合一的索引 + 输入才出结果 + 候选下拉 + 阅读器 + 不写已读
 //
 // 要验的四件事：
-//   1. 搜索页确实**搜遍五部**（不是只搜某一部），且候选 / 结果两处口径一致；
+//   1. 搜索页确实**搜遍六部**（不是只搜某一部），且候选 / 结果两处口径一致；
 //   2. 搜索页**输入之前一条都不列**，输入之后才列，且字数越多命中越少；
 //   3. 搜索页**不碰任何一部的已读**（点开一篇、点「标记已读」都不该写 localStorage）；
-//   4. 页签由三格改成四格、名字也改对了，四部集子从入口页进得去。
+//   4. 页签由三格改成四格、名字也改对了，五部集子从入口页进得去。
 const { JSDOM } = require('jsdom');
 const fs = require('fs');
 const vm = require('vm');
@@ -58,7 +58,7 @@ function boot(file, url) {
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 (async () => {
-  /* ---------- 一、数据层：总索引确实是五部合起来的一张表 ---------- */
+  /* ---------- 一、数据层：总索引确实是六部合起来的一张表 ---------- */
   const sandbox = { window: {}, console };
   sandbox.window = sandbox;
   vm.createContext(sandbox);
@@ -66,52 +66,65 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
    'data/poems-5.js', 'data/poems-6.js', 'data/poems-7.js', 'data/poems-8.js',
    'data/poems-9.js', 'data/poems-10.js', 'data/poems-11.js', 'data/poems-12.js',
    'data/index.js', 'data/poems-classic.js', 'data/poems-tangshi.js',
-   'data/poems-songci.js', 'data/poems-guwen.js', 'data/site-index.js'
+   'data/poems-songci.js', 'data/poems-guwen.js', 'data/poems-zhaoming.js',
+   'data/site-index.js'
   ].forEach(f => vm.runInContext(read(f), sandbox, { filename: f }));
 
   const IDX = sandbox.SITE_INDEX;
-  const books = [sandbox.POEMS_CLASSIC, sandbox.POEMS_TANGSHI, sandbox.POEMS_SONGCI, sandbox.POEMS_GUWEN];
-  const BOOK_IDS = ['classic', 'tangshi', 'songci', 'guwen'];
+  const books = [sandbox.POEMS_CLASSIC, sandbox.POEMS_TANGSHI, sandbox.POEMS_SONGCI,
+    sandbox.POEMS_GUWEN, sandbox.POEMS_ZHAOMING];
+  const BOOK_IDS = ['classic', 'tangshi', 'songci', 'guwen', 'zhaoming'];
+  // 昭明文选只把**有译文的** 29 篇收进索引，其余标「待补」的按约定不进
+  // （见 data/site-index.js）；所以它按 zhaomingDoneCount() 算，不是全量 480
+  const zmIndexed = books[4].filter(p => p.text && p.translation).length;
 
-  chk(IDX.length === sandbox.POEMS_ALL.length + books.reduce((n, b) => n + b.length, 0) + 5,
-    '总索引 = 课内诗词 + 四部集子 + 5 条集子条目（实际 ' + IDX.length + '）');
+  chk(IDX.length === sandbox.POEMS_ALL.length +
+      books.slice(0, 4).reduce((n, b) => n + b.length, 0) + zmIndexed + 6,
+    '总索引 = 课内诗词 + 四部全集子 + 昭明文选已译 ' + zmIndexed + ' 篇 + 6 条集子条目（实际 ' + IDX.length + '）');
   BOOK_IDS.forEach(id => {
     chk(IDX.some(x => x.book === id && !x.isBook),
       '总索引含「' + id + '」这一部的篇目');
   });
-  chk(IDX.filter(x => x.isBook).length === 5,
+  chk(IDX.filter(x => x.isBook).length === 6,
     '集子自身也各有一条（搜「唐诗三百首」能直接进那一页）');
-  // id 全站唯一：五部各自从 1 排起，必然撞——所以每条都带集子前缀
+  // id 全站唯一：六部各自从 1 排起，必然撞——所以每条都带集子前缀
   const ids = new Set();
   let dup = 0;
   IDX.forEach(x => { if (ids.has(x.id)) dup++; ids.add(x.id); });
   chk(dup === 0, '全站 id 无重复（重复 ' + dup + ' 个）');
   chk(BOOK_IDS.every(id => IDX.filter(x => x.book === id && !x.isBook)
     .every(x => x.id.indexOf(id + '-') === 0)),
-    '每条结果的 id 都带自己那一部的前缀（五部原 id 会撞，前缀才分得开）');
+    '每条结果的 id 都带自己那一部的前缀（六部原 id 会撞，前缀才分得开）');
   chk(IDX.every(x => x.book && x.bookName && x.page),
     '每条结果都带「出自哪一部」与「该去哪一页」');
 
-  /* ---------- 二、入口页：四部集子都进得去，篇数实时算 ---------- */
+  /* ---------- 二、入口页：五部集子都进得去，篇数实时算 ---------- */
   const wLib = boot('library/index.html', '/library/');
   await wLib.__ready;
   await sleep(200);
   const ld = wLib.document;
   const cards = [...ld.querySelectorAll('.library-card')];
-  chk(cards.length === 4, '入口页列出四部集子（实际 ' + cards.length + '）');
-  chk(cards.map(c => c.getAttribute('data-book')).join('/') === 'classic/tangshi/songci/guwen',
-    '四部的顺序与出处正确');
-  chk(cards.map(c => c.getAttribute('href')).join(' ') === '/classic/ /tangshi/ /songci/ /guwen/',
-    '四张卡各指到自己的索引页（实际 ' + cards.map(c => c.getAttribute('href')).join(' ') + '）');
+  chk(cards.length === 5, '入口页列出五部集子（实际 ' + cards.length + '）');
+  chk(cards.map(c => c.getAttribute('data-book')).join('/') === 'classic/tangshi/songci/guwen/zhaoming',
+    '五部的顺序与出处正确');
+  chk(cards.map(c => c.getAttribute('href')).join(' ') === '/classic/ /tangshi/ /songci/ /guwen/ /zhaoming/',
+    '五张卡各指到自己的索引页（实际 ' + cards.map(c => c.getAttribute('href')).join(' ') + '）');
   // 篇数与总索引一致（不写死数字：日后增补篇目，卡片跟着变）
+  // ⚠️ 卡片上那个数字数的是各集子**自己的数据**，不是搜索索引 ——
+  // 索引按约定不收「待补」条目（昭明文选只有 29 篇有译文），拿索引来数
+  // 会显示「昭明文选 29 篇」而点进去有 480 篇。见 js/library.js 的 countOf()。
+  const CARD_VARS = { classic: 'POEMS_CLASSIC', tangshi: 'POEMS_TANGSHI',
+    songci: 'POEMS_SONGCI', guwen: 'POEMS_GUWEN', zhaoming: 'POEMS_ZHAOMING' };
   BOOK_IDS.forEach((id, i) => {
-    const n = IDX.filter(x => x.book === id && !x.isBook).length;
-    chk(cards[i].querySelector('.library-card-count').textContent === n + ' ' + (id === 'classic' || id === 'guwen' ? '篇' : '首'),
-      cards[i].querySelector('.library-card-name').textContent + ' 篇数与索引一致（' + n + '）');
+    const n = sandbox[CARD_VARS[id]].length;
+    chk(cards[i].querySelector('.library-card-count').textContent ===
+      n + ' ' + (id === 'classic' || id === 'guwen' || id === 'zhaoming' ? '篇' : '首'),
+      cards[i].querySelector('.library-card-name').textContent + ' 篇数与数据一致（' + n + '）');
   });
   chk(/课外必背小古文/.test(ld.body.textContent) && /唐诗三百首/.test(ld.body.textContent) &&
-    /宋词三百首/.test(ld.body.textContent) && /古文观止/.test(ld.body.textContent),
-    '四部的**全名**都写在这一页上（页签装不下书名，这里要写全）');
+    /宋词三百首/.test(ld.body.textContent) && /古文观止/.test(ld.body.textContent) &&
+    /昭明文选/.test(ld.body.textContent),
+    '五部的**全名**都写在这一页上（页签装不下书名，这里要写全）');
   chk(!/\[object|undefined/.test(ld.querySelector('#library-grid').textContent),
     '卡片文案没有渲染异常（无 undefined / [object]）');
 
@@ -133,7 +146,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(!/^\s*\.library-hint\s*\{/m.test(libCss),
     '样式表里不再留 .library-hint 的死规则（元素删了，规则也一起删）');
 
-  /* ---------- 三、搜索页：搜遍五部 ---------- */
+  /* ---------- 三、搜索页：搜遍六部 ---------- */
   const w = boot('search/index.html', '/search/');
   await w.__ready;
   await sleep(250);
@@ -171,7 +184,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     input.dispatchEvent(new w.Event('input', { bubbles: true }));
   };
 
-  // 搜作者：五部都要能搜到（不是只搜某一部）
+  // 搜作者：六部都要能搜到（不是只搜某一部）
   type('王维');
   await sleep(30);
   chk(api.total() === ALL, '一输入关键词，实例里就换上全站篇目（' + api.total() + '）');
@@ -314,17 +327,17 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(dock.every(b => b.querySelectorAll(':scope > *').length === 2),
     '每格仍是 图标 + 文字 两个子元素，没有多加装饰');
   chk(dock.filter(b => b.getAttribute('data-nav-go') === 'classic').length === 0,
-    '四部集子不再各自占一格（「小古文」旧页签已撤）');
+    '五部集子不再各自占一格（「小古文」旧页签已撤）');
   // 首页标题措辞：「XX的古诗词」→「XX的背诵」
   chk(/的背诵/.test(wHome.document.querySelector('#brand-page-text').textContent),
     '首页顶栏页面名改为「XX的背诵」（实际 ' +
     wHome.document.querySelector('#brand-page-text').textContent + '）');
   chk(!/的古诗词/.test(wHome.document.title), '标题里不再写「的古诗词」（实际 ' + wHome.document.title + '）');
 
-  // 四部集子页：页签高亮落在「课外」这一格
+  // 五部集子页：页签高亮落在「课外」这一格
   for (const [page, url] of [['classic/index.html', '/classic/'],
     ['tangshi/index.html', '/tangshi/'], ['songci/index.html', '/songci/'],
-    ['guwen/index.html', '/guwen/']]) {
+    ['guwen/index.html', '/guwen/'], ['zhaoming/index.html', '/zhaoming/']]) {
     const wp = boot(page, url);
     await wp.__ready;
     await sleep(150);

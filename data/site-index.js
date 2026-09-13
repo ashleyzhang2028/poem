@@ -3,7 +3,7 @@
    --------------------------------------------------------------------------
    把站上**所有**可读篇目汇成一张表，供「搜索」页一次搜全站：
      课内诗词一至高三（window.POEMS_ALL）+ 课外必背小古文（window.POEMS_CLASSIC）
-     + 唐诗三百首 + 宋词三百首 + 古文观止
+     + 唐诗三百首 + 宋词三百首 + 古文观止 + 昭明文选
      + 各自集子自身（title 命中，用来搜「唐诗三百首」这种集子名）
 
    为什么单独一个文件、而不是让搜索页去挨个读 window 上的变量：
@@ -16,10 +16,11 @@
    字段（一条 = 一篇）：
      id       全站唯一（集子前缀 + 原 id / 年级id），避免两部集子撞 id
      title    篇名
-     author   作者
+     author   作者（选本题署，多为「字」）
+     authorName 常用姓名（与 author 不同时另存，供搜索）
      dynasty  朝代
      source   出处（书名 / 词牌选本名）
-     book     所属集子 id（poems / classic / tangshi / songci / guwen）
+     book     所属集子 id（poems / classic / tangshi / songci / guwen / zhaoming）
      bookName 集子显示名（搜索页用来标来源）
      page     该集子索引页的地址（点结果直接跳过去）
      grade / term  仅课内诗词有：年级 / 学期
@@ -28,13 +29,16 @@
 (function () {
   "use strict";
 
-  /** 五部集子：id / 显示名 / 索引页地址 / 数据在 window 上的变量名 */
+  /** 六部集子：id / 显示名 / 索引页地址 / 数据在 window 上的变量名 */
   var BOOKS = [
     { id: "poems", name: "课内诗词", page: "/", varName: "POEMS_ALL", unit: "首" },
     { id: "classic", name: "课外必背小古文", page: "/classic/", varName: "POEMS_CLASSIC", unit: "篇" },
     { id: "tangshi", name: "唐诗三百首", page: "/tangshi/", varName: "POEMS_TANGSHI", unit: "首" },
     { id: "songci", name: "宋词三百首", page: "/songci/", varName: "POEMS_SONGCI", unit: "首" },
-    { id: "guwen", name: "古文观止", page: "/guwen/", varName: "POEMS_GUWEN", unit: "篇" }
+    { id: "guwen", name: "古文观止", page: "/guwen/", varName: "POEMS_GUWEN", unit: "篇" },
+    // 昭明文选：按**文体**分三十九类（赋 / 诗 / 骚 / 七 / 诏 / 册……），
+    // 与其余四部的分类口径都不同，见 js/zhaoming.js 的文件头。
+    { id: "zhaoming", name: "昭明文选", page: "/zhaoming/", varName: "POEMS_ZHAOMING", unit: "篇" }
   ];
 
   /**
@@ -51,15 +55,22 @@
       var list = opt[b.id] || (typeof window !== "undefined" ? window[b.varName] : null);
       if (!list || !list.length) return;
       list.forEach(function (p) {
-        // 还没有正文 / 译文的篇目（《古文观止》目录里标着「待补」的那些）
-        // 不进全站搜索索引：搜到一条点进去只有提示，等于把「尚未整理」
-        // 变成用户的一次白跑。它们在各自集子的列表里仍然可见。
-        if (b.id === "guwen" && (!p.text || !p.translation)) return;
+        // 还没有正文 / 译文的篇目（标着「待补」的那些）不进全站搜索索引：
+        // 搜到一条点进去只有提示，等于把「尚未整理」变成用户的一次白跑。
+        // 它们在各自集子的列表里仍然可见。
+        //   · 《古文观止》：166 篇已全部收齐，目前不会命中这条；
+        //   · 《昭明文选》：原文 480 篇全收，但白话译文只整理了 29 篇名篇，
+        //     其余 451 篇走这条 —— 「搜得到篇名、点进去却只有一句提示」
+        //     正是要避免的那种白跑。
+        if ((b.id === "guwen" || b.id === "zhaoming") && (!p.text || !p.translation)) return;
         out.push({
           id: b.id + "-" + p.id,
           originId: p.id,
           title: p.title,
           author: p.author || "",
+          // authorName：选本题署多为「字」（《昭明文选》署「王仲宣」），
+          // 这一栏是常用姓名（「王粲」），供搜索与辨认
+          authorName: p.authorName || "",
           dynasty: p.dynasty || "",
           source: p.source || "",
           // selection：这一篇「从哪本选里读到」（如《古文观止》）。
@@ -96,7 +107,7 @@
     return out;
   }
 
-  /** 五部集子的清单（搜索页用来分组、标注来源） */
+  /** 六部集子的清单（搜索页用来分组、标注来源） */
   var SITE_BOOKS = BOOKS.map(function (b) {
     return { id: b.id, name: b.name, page: b.page, unit: b.unit };
   });

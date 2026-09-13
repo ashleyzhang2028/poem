@@ -1,13 +1,13 @@
 /**
- * 全站搜索（/search/ · 五部集子一次搜遍）
+ * 全站搜索（/search/ · 六部集子一次搜遍）
  * ==========================================================================
  * 这一页与 js/classic.js / js/tangshi.js / js/songci.js / js/guwen.js 同族，
  * 但有三处根本差别：
  *
- *   一、**数据来源**：前四页各取自己那一部的 window.POEMS_*；
+ *   一、**数据来源**：其余几页各取自己那一部的 window.POEMS_*；
  *       这一页取 data/site-index.js 的 window.SITE_INDEX ——
  *       那张表本来就是「全站篇目汇总」，搜索要的正是它。
- *       在页面里再拼一次五部，日后加第六部就会漏一处。
+ *       在页面里再拼一次六部，日后加第七部就会漏一处。
  *
  *   二、**搜什么**：集子索引页只在「篇名 / 作者 / 朝代 / 出处」里找；
  *       搜索页还要搜**正文与译文**（extraFields: text / translation）。
@@ -20,7 +20,7 @@
  *       把上千篇一次性铺出来，既没有人会从头翻，首屏还要为它渲染上千个
  *       DOM 节点（用户反馈的「加载有性能问题」就是这里）。
  *
- * 每条结果的 id 带集子前缀（`tangshi-ts-12`）：五部的原 id 各自从 1 排起，
+ * 每条结果的 id 带集子前缀（`tangshi-ts-12`）：六部的原 id 各自从 1 排起，
  * 必然撞在一起；带前缀才是全站唯一键，也顺带说明了「这一条出自哪一部」。
  *
  *   四、**移动端**（见下面的「屏幕键盘」一节）：软键盘是浮在页面上的，
@@ -109,7 +109,7 @@
   function matchScore(p, q) {
     var title = String(p.title || "").toLowerCase();
     var author = String(p.author || "").toLowerCase();
-    var rest = [p.bookName, p.source, p.selection, p.dynasty, p.gradeGroup].join(" ").toLowerCase();
+    var rest = [p.bookName, p.source, p.selection, p.dynasty, p.gradeGroup, p.authorName].join(" ").toLowerCase();
     var body = [p.text, p.translation].join(" ").toLowerCase();
     if (title.indexOf(q) >= 0) return 4;
     if (author.indexOf(q) >= 0) return 3;
@@ -444,7 +444,7 @@
       allowEmpty: true,
       root: "[data-gw-root]",
       reader: "#gw-reader",
-      // 空数组：搜索结果不按卷次 / 词牌重排，按总索引的顺序（课内在前、四部在后）
+      // 空数组：搜索结果不按卷次 / 词牌 / 文体重排，按总索引的顺序（课内在前、五部在后）
       groupOrder: [],
       pageTitle: "搜索",
       pageSub: "全站篇目，一搜就到",

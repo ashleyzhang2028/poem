@@ -130,13 +130,16 @@ function check(name, cond, extra) {
     check('iPhone: 已预缓存小古文页与数据',
       cached.some(p => /\/classic\/?$/.test(p)) && cached.some(p => /poems-classic\.js$/.test(p)),
       cached.length + ' 项');
-    // 四部大集子（小古文 / 唐诗 / 宋词 / 古文观止）都要能离线打开：
+    // 五部大集子（小古文 / 唐诗 / 宋词 / 古文观止 / 昭明文选）都要能离线打开：
     // 少预缓存一个页面，用户断网点进去就是白屏 —— 这条按「每一部都点名」写，
     // 而不是只验 /classic/ 一个，日后新增集子时这里会立刻发现漏了
     check('iPhone: 已预缓存唐诗 / 宋词 / 古文观止三页与各自数据',
       cached.some(p => /\/tangshi\/?$/.test(p)) && cached.some(p => /poems-tangshi\.js$/.test(p)) &&
       cached.some(p => /\/songci\/?$/.test(p)) && cached.some(p => /poems-songci\.js$/.test(p)) &&
       cached.some(p => /\/guwen\/?$/.test(p)) && cached.some(p => /poems-guwen\.js$/.test(p)),
+      cached.length + ' 项');
+    check('iPhone: 已预缓存昭明文选页与数据',
+      cached.some(p => /\/zhaoming\/?$/.test(p)) && cached.some(p => /poems-zhaoming\.js$/.test(p)),
       cached.length + ' 项');
     check('iPhone: 已预缓存中文字体',
       cached.some(p => /NotoSerifSC-400\.woff2$/.test(p)) && cached.some(p => /NotoSansSC-400\.woff2$/.test(p)),
@@ -312,9 +315,10 @@ function check(name, cond, extra) {
       parseFloat(dockGeom.navH) >= dockGeom.dockH - 1, JSON.stringify(dockGeom));
     check('iPhone: 底部页签不遮挡设置页底部的法务链接', !dockGeom.covered, JSON.stringify(dockGeom));
 
-    // 首页与四部典籍页的页签同样不能压住内容
+    // 首页与五部典籍页的页签同样不能压住内容
     for (const [file, label] of [['', '/（首页）'], ['classic/', '/classic/'],
-      ['tangshi/', '/tangshi/'], ['songci/', '/songci/'], ['guwen/', '/guwen/']]) {
+      ['tangshi/', '/tangshi/'], ['songci/', '/songci/'], ['guwen/', '/guwen/'],
+      ['zhaoming/', '/zhaoming/']]) {
       await page.goto(base + file, { waitUntil: 'networkidle0' });
       await new Promise(r => setTimeout(r, 700));
       const g = await page.evaluate(() => {

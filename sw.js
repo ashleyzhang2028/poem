@@ -15,6 +15,15 @@
  *   版本回滚同理：版本号只能往上走，不要改回旧号，否则老缓存会被复用。
  *
  * 版本历史：
+ *   v45  新增《昭明文选》集子（Issue #69 后续）：/zhaoming/ 索引页 + 详情页，
+ *        六十卷 480 篇，按**文体**分三十九类（赋 / 诗 / 骚 / 七 / 诏 / 册 …），
+ *        数据 data/poems-zhaoming.js（原文全收，29 篇名篇带白话译文，其余标待补），
+ *        挂载脚本 js/zhaoming.js，已读键 poem_zhaoming_read_v1；
+ *        课外阅读入口页由「四部」改为「五部」，站点总索引与搜索页随之
+ *        「五部 → 六部」
+ *        （zhaoming/index.html、js/zhaoming.js、data/poems-zhaoming.js、
+ *          data/site-index.js、js/chrome.js、js/library.js、js/search.js、
+ *          library/index.html、search/index.html、test/run.sh）
  *   v19  全站 URL 目录化（/settings/ 等，不再带 .html）
  *   v20  （跳过）目录化之后又改了 css/style.css、css/classic.css、js/chrome.js
  *   v21  设置页分组标题降级为辅助标签（字号 / 字重 / 颜色三重降级）
@@ -267,6 +276,9 @@ const PRECACHE = [
   "./guwen/",
   "./data/poems-guwen.js",
   "./js/guwen.js",
+  "./zhaoming/",
+  "./js/zhaoming.js",
+  "./data/poems-zhaoming.js",
   // 课外阅读入口页 + 全站搜索页（搜索页 + 导航栏变更 PR，Issue #69）
   "./library/",
   "./js/library.js",
