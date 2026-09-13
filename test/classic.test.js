@@ -337,6 +337,18 @@ setTimeout(() => {
   // 与条目自己的装饰重复 —— 已收掉）；本轮只加回用户要的 2px，右侧仍是 0。
   chk(!!cardCss && /padding:\s*0 0 10px 2px;/.test(cardCss[2]),
     '卡片左内边距 2px（卡头与左侧边框的间距 +2px）、右内边距仍为 0');
+  // 这 2px 与条目 / 卡头自己的左内边距是**两层**，相加才是「文字距卡片左缘」：
+  //   卡片 2px + 条目 12px = 14px（条目文字）
+  //   卡片 2px + 卡头 12px = 14px（组名）
+  // 卡头与条目仍严格落在同一条基准线上（下面几段会分别锁住这两个 12px）。
+  // 另：原先紧跟在 `padding` 之后还有一条 `padding-left: 0`（去「大竖绿线」时
+  // 顺手留下的兜底）。它会把上面这 2px 静默覆盖回 0 —— 两处都在动左内边距，
+  // 留一条「后来的零」在源码里等于给下一次调整埋雷，已一并删除。
+  // 断言必须落在**声明**上，不能落在注释文字上 —— 否则注释里引用一下
+  // `padding-left: 0` 也会把这条防线点亮（红得莫名其妙）。先剔掉注释再判。
+  const cardDeclsOnly = cardCss[2].replace(/\/\*[\s\S]*?\*\//g, ' ');
+  chk(!!cardCss && !/padding-left:\s*0\b/.test(cardDeclsOnly),
+    '卡片规则里不再有会覆盖左内边距的 padding-left: 0 兜底（它会把 2px 抹回 0）');
   chk(!/\.group-card \.item::before\s*\{/.test(classicCssText),
     '条目短竖条（::before）整体去掉，不再出现第二道竖线');
   chk(!/background:\s*var\(--blue\);\s*\}/.test(classicCssText) ||
@@ -355,6 +367,12 @@ setTimeout(() => {
     '条目左内边距 12px（再 +2px）、右内边距仍 8px（只加左侧）');
   chk(!!itemPadBlock && !/padding:\s*12px 12px;/.test(itemPadBlock[2]),
     '右侧内边距没有被一起推走（不能写成 12px 12px 的对称写法）');
+  // 口径（合并 main 后）：main 上另有「卡片左内边距 2px」的改动，那是**卡片层**，
+  // 卡头 / 条目 / 首条淡线整体右移。两层相加才是「文字距卡片左缘」= 2 + 12 = 14px，
+  // 条目与卡头的基准线仍重合（卡头左内边距同为 12px，见后面的断言）。
+  // 这里锁住「层层只加左边」：卡片的右侧内边距仍是 0。
+  chk(!!cardCss && /padding:\s*0 0 10px 2px;/.test(cardCss[2]),
+    '条目 12px 是加在卡片 2px 之上的第二层（文字距卡片左缘 = 2 + 12 = 14px）');
 
   // 需求（Issue #55 后续）：左侧那道「大竖绿线」必须整条去掉。
   // 根子在全站 .item 遗留的 `border-left: 4px solid`：
@@ -544,12 +562,15 @@ setTimeout(() => {
   chk(!/padding:\s*12px 8px 8px;/.test(headPad),
     '卡头不能再写三段 padding（对称写法会把右侧那颗圆键一起推走 4px）');
   // 需求（Issue #55 后续）：「卡头那一行多 4px」——只加左侧 4px，右侧一律不动。
-  // 卡头左内边距 8 → 12px（+4px）。它与条目左内边距同样是 12px，但两者是**兄弟**：
-  //   · .group-card 的左内边距为 0（两侧都不留白），所以卡头文字与条目文字都从
-  //     卡片左缘 + 自己的左内边距起算，两条左基准线仍严格对齐；
+  // 卡头左内边距 8 → 12px（+4px）。它与条目左内边距同样是 12px，但两者是**兄弟**，
+  // 且都长在「卡片左内边距 2px」这层之上（合并 main 后的口径）：
+  //   · .group-card 的左内边距 2px 让卡头 / 条目 / 首条淡线整体右移，
+  //     卡头文字与条目文字都从「卡片左缘 + 2px + 自己的左内边距」起算，
+  //     两条左基准线仍严格对齐（2 + 12 = 14px，两处同值）；
   //   · 「多 4px」体现在卡头行本身：组名与右端那颗 26px 圆键之间收窄 4px，
   //     而右侧内缘（8px）没动。
-  // 一旦有人把这里写成对称的三值 `12px 8px 8px`，右侧会被一起推走 4px，下面会红。
+  // 一旦有人把这里写成对称的三值 `12px 8px 8px`，右侧会被一起推走 4px，下面会红；
+  // 若有人为了「补」卡片的 2px 把卡头改成 14px，下面的基准线断言同样会红。
   const headPadL = parseInt((headPad.match(/padding:\s*\d+px \d+px \d+px (\d+)px/) || [, '0'])[1], 10);
   const headPadR = parseInt((headPad.match(/padding:\s*\d+px (\d+)px/) || [, '0'])[1], 10);
   chk(headPadL === 12, '卡头左内边距 12px（原 8px 基础上 +4px，实际 ' + headPadL + 'px）');
@@ -557,6 +578,19 @@ setTimeout(() => {
   chk(headPadL === itemPadL,
     '卡头与条目左内边距同一数值（两者是兄弟、左基准线对齐：卡头 ' +
     headPadL + ' / 条目 ' + itemPadL + '）');
+  // 两层叠加的口径收口：卡片的 2px 是共同的那一层，卡头 / 条目各自的 12px 是第二层，
+  // 于是「文字距卡片左缘」两处都是 2 + 12 = 14px。改任何一层都要连着另一层一起看。
+  // .group-card 是四值 `padding: 上 右 下 左`（0 0 10px 2px）—— 第 4 个值才是左内边距。
+  // 注意这里的上下两个值是**无单位**的 `0`，所以不能用 `\d+px` 那种写法去量，
+  // 得逐个取「数值 + 可选单位」；断言前也先剔掉注释，免得注释里写到的数值被当成声明。
+  const cardDecls = cardCss[2].replace(/\/\*[\s\S]*?\*\//g, ' ');
+  const cardPadParts = (cardDecls.match(/padding:\s*([^;]+);/) || [, '']) [1]
+    .trim().split(/\s+/).map(v => parseFloat(v));
+  const cardPadL = cardPadParts.length === 4 ? cardPadParts[3] : 0;
+  chk(cardPadL === 2, '卡片左内边距 2px（main 上已生效的那一层，实际 ' + cardPadL + 'px）');
+  chk(cardPadL + headPadL === cardPadL + itemPadL && cardPadL + headPadL === 14,
+    '文字距卡片左缘 = 卡片 2px + 自身 12px = 14px（卡头 / 条目同值：' +
+    (cardPadL + headPadL) + 'px）');
   chk(!/margin-bottom:\s*6px/.test(toolbarBlock),
     '工具栏不再保留旧的 6px 下边距（下方空档曾只有上方的一半）');
   chk(!/padding:\s*14px 2px 8px/.test(headPad),
