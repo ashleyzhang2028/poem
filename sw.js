@@ -122,8 +122,11 @@
  *          js/library.js、js/chrome.js、js/reader-core.js、js/app.js、
  *          js/settings.js、css/style.css、css/classic.css、fonts/、
  *          index.html、manifest.webmanifest、sw.js）
+ *   v42  搜索页删掉「一次搜遍课内诗词……也搜正文与译文里的字句」那段说明文字
+ *        （search/index.html、js/search.js、css/classic.css 一并清掉只服务它的
+ *          #search-hint 显隐逻辑与 .search-hint 样式）
  */
-const CACHE_NAME = "poem-app-v41";
+const CACHE_NAME = "poem-app-v42";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [

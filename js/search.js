@@ -239,8 +239,6 @@
     var kw = input ? input.value : "";
     if (api) api.setKeyword(kw);
     annotateMatches(kw);
-    var hint = document.getElementById("search-hint");
-    if (hint) hint.hidden = String(kw).trim().length > 0;
   }
 
   /**

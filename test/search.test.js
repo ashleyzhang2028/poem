@@ -290,7 +290,11 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(read('js/chrome.js').indexOf('古诗词') === -1 ||
     !/label: "古诗词"/.test(read('js/chrome.js')),
     '页签里不再有名为「古诗词」的那一格');
-  chk(read('sw.js').indexOf('poem-app-v41') >= 0, 'sw.js 缓存版本已升到 v41');
+  // 版本号只验下界：本次搜索页改文案又把缓存提到 v42，
+  // 若写死 v41，下次任何一次改动都会把这条测试判红。
+  // 真正要守的是「改了 css/js 就得抬版本」，所以比对 v41 的下界即可。
+  chk(parseInt((read('sw.js').match(/poem-app-v(\d+)/) || [0, '0'])[1], 10) >= 41,
+    'sw.js 缓存版本不低于 v41');
   ['"./search/"', '"./js/search.js"', '"./library/"', '"./js/library.js"'].forEach(needle => {
     chk(read('sw.js').indexOf(needle) >= 0, 'sw.js 预缓存含 ' + needle);
   });
