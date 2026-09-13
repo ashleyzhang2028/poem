@@ -50,6 +50,25 @@ const classicCss = read('css/classic.css');
 
 // 需求 5：今日朗读按钮是圆形播放键（与 0/5 圆环成对）
 chk(/\.today-read\s*\{[^}]*border-radius:\s*50%/.test(css), '今日朗读按钮是圆形（与 0/5 圆环成对）');
+/* 需求（Issue #55）：今日条这一行两颗圆的直径必须一致 ——
+   左侧「朗读（全部）」圆键与右侧 0/5 进度环并排，一大一小看着就是没对齐。
+   做法：尺寸只在 .today-actions 上声明一次（--today-btn-size: 46px），
+   两颗圆都读它，谁也不能再各写一个数走散。
+   顺带锁住「圆环不许被 flex 拉扁」：.ring 的 min-height 必须归零，
+   否则 .today-bar（align-items: center 的 flex 行）可能把它纵向撑高，
+   宽高不再相等 → 圆环变椭圆。 */
+const todaySize = (css.match(/\.today-actions \{([^}]*)\}/) || [, ''])[1].match(/--today-btn-size:\s*(\d+)px/);
+chk(!!todaySize, '今日条声明两颗圆的统一直径 --today-btn-size（' + (todaySize && todaySize[1]) + 'px）');
+const readCss = (css.match(/\.today-read \{([^}]*)\}/) || [, ''])[1];
+chk(/width:\s*var\(--today-btn-size\)/.test(readCss) && /height:\s*var\(--today-btn-size\)/.test(readCss),
+  '左侧朗读圆键的宽高都取 --today-btn-size');
+const ringCss = (css.match(/\.ring \{([^}]*)\}/) || [, ''])[1];
+chk(/width:\s*var\(--today-btn-size/.test(ringCss) && /height:\s*var\(--today-btn-size/.test(ringCss),
+  '右侧进度环的直径与左侧圆键同源（都是 --today-btn-size）');
+chk(/min-height:\s*0/.test(ringCss) && /flex:\s*none/.test(ringCss),
+  '进度环 min-height 归零 + 不压缩（宽高恒定，不被 flex 拉成椭圆）');
+// 两颗圆的直径不能各写一个数值：源码里不允许再出现写死的 54px 旧尺寸
+chk(!/width:\s*54px/.test(css) && !/height:\s*54px/.test(css), '不再保留上一轮的 54px 写死尺寸');
 // 需求 6：列表单项右侧按钮是圆形播放键
 chk(/\.item-read\s*\{[^}]*border-radius:\s*50%/.test(css), '列表单项右侧按钮是圆形播放键');
 /* 需求（本次）：凡「听」的动作全站都是一枚圆键 ——
