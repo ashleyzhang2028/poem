@@ -407,7 +407,7 @@
   }
 
   function haystack(p) {
-    return [p.title, p.source, p.author, p.dynasty].concat(extraFields(p)).join(" ");
+    return [p.title, p.source, p.selection, p.author, p.dynasty].concat(extraFields(p)).join(" ");
   }
 
   function extraFields(p) {
@@ -600,11 +600,26 @@
         (p.dynasty ? "<span>" + esc(p.dynasty) + "</span>" : "") +
         (p.author ? (p.dynasty ? "<span>·</span>" : "") + "<span>" + esc(p.author) + "</span>" : "") +
         (p.source ? ((p.dynasty || p.author) ? "<span>·</span>" : "") + "<span>" + esc(p.source) + "</span>" : "") +
-        // 正文摘句：摘句由数据自己给（p.excerpt），没给就不显示 ——
-        // 《宋词三百首》《古文观止》的作品太长，截前 16 字往往是「庆历四年春，滕子京谪守巴陵」这类
-        // 交代性开头，看不出是哪一篇；而语料整理者给出的摘句（多为名句）才能真正认出作品。
-        // 这里**不做兜底截断**：没有摘句就少一段，而不是拿一段认不出的字凑数。
-        (p.excerpt ? "<span>·</span><span>" + esc(String(p.excerpt).replace(/\n/g, "")) + "</span>" : "") +
+        (p.selection ? "<span class=\"item-selection\">" + esc(p.selection) + "</span>" : "") +
+        // 正文摘句：优先用数据自带的 p.excerpt ——
+        // 《宋词三百首》《古文观止》的作品长，截前 16 字往往是「庆历四年春，滕子京谪守巴陵」这类
+        // 交代性开头，看不出是哪一篇；语料整理者给出的摘句（多为名句）才能真正认出作品。
+        //
+        // 但**没有 excerpt 的集子必须回落到「原文前 16 字 + 省略号」**，不能整段不显示：
+        //   · 少了摘句那一行，.item-meta 只剩「朝代 · 作者 · 出处」，
+        //     卡内 .item-main 又是 `flex: 0 1 auto`（按内容取宽，见 css/classic.css），
+        //     内容块于是塌到 141px / 167px，条目右半边空出一大片
+        //     （小古文 149.88px、唐诗 124.08px 的空白）——
+        //     这正是 Issue #55 要消灭的那种「文字没占满、右边空一截」。
+        //   · 小古文与唐诗的数据本来就只有 text，没有 excerpt 字段，
+        //     回落就是这两部集子在提取引擎之前一直用的口径（见旧 js/classic.js）。
+        // 有 excerpt 的集子（宋词 / 古文观止）行为不变，仍只显示整理者给的摘句。
+        (function () {
+          var line = p.excerpt != null && String(p.excerpt) !== ""
+            ? String(p.excerpt)
+            : (p.text ? String(p.text) : "").replace(/\n/g, "").slice(0, 16) + (p.text ? "…" : "");
+          return line ? "<span>·</span><span>" + esc(line.replace(/\n/g, "")) + "</span>" : "";
+        })() +
         "</div>" +
         "</div>" +
         '<button type="button" class="item-read" title="播放这一篇" aria-label="播放 ' + esc(p.title) + '">' +
@@ -672,7 +687,8 @@
     meta.innerHTML =
       (p.dynasty ? '<span class="tag ghost">' + esc(p.dynasty) + "</span>" : "") +
       (p.author ? '<span class="tag ghost">' + esc(p.author) + "</span>" : "") +
-      (p.source ? '<span class="tag">' + esc(p.source) + "</span>" : "");
+      (p.source ? '<span class="tag">' + esc(p.source) + "</span>" : "") +
+      (p.selection ? '<span class="tag ghost">' + esc(p.selection) + "</span>" : "");
     renderReaderText();
     el.querySelector('.rd-trans-text, #rd-trans-text').textContent = p.translation || W.pendingTranslation;
     // 译文来源注脚：与首页详情页同一套文案（data/index.js 的 TRANSLATION_SOURCES）
@@ -1382,7 +1398,10 @@
 
   function mount(config) {
     var cfg = config || {};
-    if (!cfg.items || !cfg.items.length) return null;
+    // 空集合默认不挂（多半是数据没加载上，挂上去只会得到一片空列表）。
+    // 例外是 **allowEmpty**：搜索页在用户敲字之前本来就该是空的，
+    // 那时列表空是「对的样子」而不是故障（见 js/search.js）。
+    if ((!cfg.items || !cfg.items.length) && !cfg.allowEmpty) return null;
     var rootSel = cfg.root || "[data-gw-root]";
     var rootEl = typeof rootSel === "string" ? document.querySelector(rootSel) : rootSel;
     if (!rootEl) return null;
@@ -1484,21 +1503,32 @@
 
   function init(session) {
     var s = session || live;
-    var listEl = listBox();
-    if (!items.length) {
-      if (listEl) listEl.innerHTML = '<div class="empty">' + esc(W.loadingFailed) + "</div>";
-      return;
-    }
     // 注音档位由总开关统一裁决（effectivePinyinMode），这里无需预写，
     // 保证「设置里关掉阅读辅助」在任何时候进阅读器都是纯文本。
     if (CFG.setTitle !== false) applyAppName();
     // DOM 事件只在第一份会话建立时绑一次；每颗处理函数进门先认领
     // 「这段 DOM 属于哪一份会话」，所以同一份 HTML 挂多部集子也不会错认。
+    //
+    // ⚠️ 绑事件必须排在「这一份集合是不是空的」那个判断**之前**：
+    //    搜索页在用户敲字之前 items 是空的（见 js/search.js 的 allowEmpty），
+    //    早先这里一发现空集合就 return，绑定整段被跳过 ——
+    //    搜索框打不进字、候选点不开、阅读器的翻篇键与工具条一概没反应，
+    //    页面看起来「加载完了但全是死的」，正是最难查的那种安静失败。
     if (!s.domBound) {
       s.domBound = true;
       bindEvents();
       bindSettings();
       bindGlobal();
+    }
+    // 空集合：只有 allowEmpty 的挂载点会走到这里（其余各页数据没加载上时
+    // 在自己 boot 里就写好了「XX 数据加载失败」，压根挂不到这一步）。
+    // 这一支给的是「这一份自己的空态文案」—— 搜索页要的是
+    // 「输入篇名、作者或诗句，即可搜遍全站」，不是一句加载失败。
+    if (!items.length) {
+      var listEl = listBox();
+      if (listEl) listEl.innerHTML = '<div class="empty">' +
+        esc(CFG.allowEmpty ? W.empty : W.loadingFailed) + "</div>";
+      return;
     }
     renderList();
     syncAlignButtons();
