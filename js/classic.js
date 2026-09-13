@@ -370,6 +370,8 @@
         groupCard.className = "group-card";
         groupCard.dataset.group = p.gradeGroup;
         const head = document.createElement("div");
+        // 卡头直接长在卡上：12px 上内边距是卡顶与页首那一段呼吸，
+        // 下内边距交给卡内条目自己的 12px（见 css/classic.css 的 .group-head）
         head.className = "group-head";
         head.innerHTML =
           '<span class="group-name">' + esc(p.gradeGroup) + "</span>" +

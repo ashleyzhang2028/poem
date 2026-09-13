@@ -250,24 +250,30 @@
   /**
    * 重建顶栏内容。
    *
-   * 页面可以往顶栏里挂自己的小件（小古文页的「0 / 100 篇」进度牌），
-   * 它们不在 headerHtml() 里，所以重建前先出栈、重建后插回**右侧动作位左边**：
+   * 页面可以往顶栏里挂自己的小件（小古文页的「0 / 100 篇」进度牌、
+   * 阅读器里的「第 N / 100 篇」篇号牌），它们不在 headerHtml() 里，
+   * 所以重建前先出栈、重建后插回**品牌区之后、右侧动作位之前**：
    * 顺序固定为　品牌区 ｜ 页面小件 ｜ 返回键（或阅读器里的关闭键）。
-   * 漏掉这一步，阅读器一打开（动作位换成「关闭」）进度牌就会整块消失。
+   * 漏掉这一步，阅读器一打开（动作位换成「关闭」）小件就会整块消失。
+   * 注意是「全部小件」而不是「第一枚」—— 小古文页有两条顶栏，各挂一枚。
    */
   function renderBar(bar) {
     var keep = null;
-    var extra = bar.querySelector(":scope > .count-badge");
-    if (extra) {
-      keep = extra;
-      bar.removeChild(extra);
+    // 小件可能不止一枚：小古文列表页的「0 / 100 篇」与阅读器里的「第 N / 100 篇」
+    // 用的是同款 .count-badge，进了正文两条顶栏各挂一枚。一律全量收集、
+    // 原序插回品牌区之后 —— 只搬第一枚时，阅读器那条顶栏重建后篇号牌就没了。
+    var extras = bar.querySelectorAll(":scope > .count-badge");
+    if (extras.length) {
+      keep = [].slice.call(extras);
+      keep.forEach(function (el) { bar.removeChild(el); });
     }
     bar.innerHTML = headerHtml();
-    if (keep) {
-      var act = bar.querySelector(".top-act, .top-act-spacer");
-      if (act) bar.insertBefore(keep, act);
-      else bar.appendChild(keep);
-    }
+    if (!keep) return;
+    var act = bar.querySelector(".top-act, .top-act-spacer");
+    keep.forEach(function (el) {
+      if (act) bar.insertBefore(el, act);
+      else bar.appendChild(el);
+    });
   }
 
   /* ---------------- 挂载 ---------------- */

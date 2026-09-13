@@ -109,6 +109,16 @@ setTimeout(() => {
   };
   const rBar = openReaderBar();
   chk(!!rBar, '阅读器里有自己的 .topbar（同一套结构）');
+  // 回归：整个小古文页有**两条** .topbar（页面顶部那条 + 阅读器里那条），
+  // 两条各自挂着一枚页面小件（列表页的「0 / 100 篇」、阅读器的「第 N / 100 篇」）。
+  // chrome.js 的 renderBar 重建顶栏时必须把**每一枚**小件都出栈再插回 ——
+  // 只搬第一枚时，阅读器那条顶栏重建后篇号牌整块消失，
+  // 下面那句「rBar.querySelector('#top-act')」就会对着 null 调用而整层测试炸掉。
+  chk(d.querySelectorAll('.topbar > .count-badge').length === 2,
+    '两条顶栏各自的小件都在（列表页 0 / 100 篇 + 阅读器第 N / 100 篇，实际 ' +
+    d.querySelectorAll('.topbar > .count-badge').length + ' 枚）');
+  chk(!!rBar.querySelector('#gw-progress') && rBar.querySelector('#gw-progress').classList.contains('is-ready'),
+    '阅读器顶栏重建后篇号牌仍在（小件按枚迁回，不是只搬第一枚）');
   chk([...rBar.children].map(e => e.className.split(' ')[0]).join('/') === 'brand/count-badge/top-act',
     '阅读器顶栏与列表页同序：品牌区 · 篇号牌 · 返回键（实际 ' +
     [...rBar.children].map(e => e.className).join('/') + '）');
@@ -327,11 +337,17 @@ setTimeout(() => {
   // 为什么页首那一半写在 .toolbar 上、而不是把 .group-head 的 padding 压得更狠：
   //   .group-head 的 padding 同时管着「分组接分组」的那道间隔，压它会连带
   //   挤掉后面每个分组的呼吸；页首专属的间距就该写在页首专属的元素上。
+  //
+  // 同类合并成卡片后（本次），页首那一段仍由这 12px 上内边距给：
+  // 它现在是「卡顶 → 卡头」的呼吸。下内边距改为 0 —— 卡头只跟本卡的第一条
+  // 相邻，下面那一段交给条目自己的 12px 内边距，不叠出更大的空档。
   const headPad = (barCss.match(/\.group-head \{([^}]*)\}/) || [, ''])[1];
   chk(/\.toolbar \{[^}]*margin-bottom:\s*6px/.test(barCss),
     '工具栏下边距收到 6px（页首专属，原 14px：与标题上内边距相加 28px 太大）');
-  chk(/padding:\s*12px 2px 8px/.test(headPad),
-    '分组标题上内边距收到 12px（原 14px），与工具栏下边距合计 18px');
+  chk(/padding:\s*12px 8px 0/.test(headPad),
+    '分组标题上内边距 12px（与工具栏下边距合计 18px），下内边距交给卡内条目');
+  chk(!/\.group-head \{[^}]*padding[^;]*\b8px;/.test(headPad),
+    '分组标题不再保留旧的 14px 上内边距留下的三段 padding');
   chk(!/margin-bottom:\s*14px/.test(barCss.match(/\.toolbar \{([^}]*)\}/)[1]),
     '工具栏不再保留旧的 14px 下边距');
   chk(!/padding:\s*14px 2px 8px/.test(headPad),

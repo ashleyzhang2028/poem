@@ -169,12 +169,10 @@
   border-radius: var(--radius);
   box-shadow: var(--shadow);
   overflow: hidden;
-  padding: 0 4px 4px;
-}
-/* 卡头贴卡顶：去掉原先独立的上下留白，改为卡内内边距 */
-.group-card .group-head {
-  padding: 12px 8px 8px;
-  margin: 0;
+  /* 卡顶不留白：卡头自己的 12px 上内边距就是页首那一段（见下）。
+     卡尾 10px 与 .list 的条目间距同一量级，最后一条不贴着卡片下边缘。
+     左右 4px 是留给旧版整条左色条的位置，卡头与条目各自另有 8px 内边距。 */
+  padding: 0 4px 10px;
 }
 /* 卡身条目：与卡片同底，去掉各自的白底 / 圆角 / 阴影，只留一条细分隔线 */
 .group-card .item {
@@ -206,9 +204,11 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  /* 上内边距 14 → 12px：与工具栏底边合计约 18px（详见 .toolbar 的 margin-bottom）。
-     组内条目之间已有 .list 的 10px 行距，分组标题不必再留出比条目间距更大的空档。 */
-  padding: 12px 2px 8px;
+  /* 上内边距 12px：页首那一段由它给（与 .toolbar 的 margin-bottom 6px 合计 18px，
+     见 .toolbar 的注释），也是合并成卡片后「卡顶 → 卡头」的呼吸。
+     下内边距 0：卡头下面紧跟第一条，间距交给条目自己的 12px 内边距，
+     不再叠出一段比「卡头 → 首条」更大的空档。 */
+  padding: 12px 8px 0;
 }
 .group-name { font-size: 14px; font-weight: 700; color: var(--ink); }
 .group-count { font-size: 11.5px; color: var(--ink-2); }
