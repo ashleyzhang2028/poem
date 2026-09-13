@@ -739,6 +739,11 @@
     if (!prevBtn || !nextBtn) return;
     rd("prev-title").textContent = prev ? prev.title : "已是第一篇";
     rd("next-title").textContent = next ? next.title : "已是最后一篇";
+    // 「上一篇 / 下一篇」的篇名由 .nav-title 的 ellipsis 截断 —— 长篇名
+    //（《唐诗三百首》里有 150 字的题目）在这条窄按钮里必然看不全。
+    // 给它补一个 title：截断之后仍可悬停 / 长按看到全名。
+    prevBtn.title = prev ? prev.title : "已是第一篇";
+    nextBtn.title = next ? next.title : "已是最后一篇";
     prevBtn.disabled = !prev;
     nextBtn.disabled = !next;
     prevBtn.dataset.target = prev ? prev.id : "";
