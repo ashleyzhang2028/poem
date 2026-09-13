@@ -486,6 +486,26 @@ function check(name, cond, extra) {
     check('iPhone: 工具栏圆键与搜索框同高（一排三样上下边缘齐平）',
       Math.abs(gwState.mainH - gwState.searchH) <= 0.5,
       '圆键 ' + gwState.mainH + ' / 搜索框 ' + gwState.searchH);
+
+    // Issue #55：搜索框提示字（「搜索篇名 / 出处 / 作者」）比右侧「全部 / 未读」大一圈，
+    // 一排三样里最没信息量的一行字反而最抢眼。现在两者同号。
+    // 必须在真浏览器里量 —— 提示字走 ::placeholder 伪元素，jsdom 不计算它的样式，
+    // 而且它天生比输入框字号小一号还是同号，只有渲染出来才知道。
+    // 同时要盯住：**输入的文字仍是 16px**，压小了 iPhone 聚焦就会放大整页。
+    const fsState = await page.evaluate(() => {
+      const s = document.querySelector('#gw-search');
+      const seg = document.querySelector('.filter-seg button');
+      return {
+        input: getComputedStyle(s).fontSize,
+        placeholder: getComputedStyle(s, '::placeholder').fontSize,
+        seg: getComputedStyle(seg).fontSize
+      };
+    });
+    check('iPhone: 搜索框提示字与「全部 / 未读」同字号',
+      fsState.placeholder === fsState.seg,
+      '提示字 ' + fsState.placeholder + ' / 全部·未读 ' + fsState.seg);
+    check('iPhone: 输入文字仍是 16px（压小会触发 iOS 聚焦放大整页）',
+      fsState.input === '16px', fsState.input);
     check('iPhone: 圆键的 ▶ / ⏸ 互斥，一次只显示一个',
       gwState.off.join(',') === 'play-glyph' && gwState.on.join(',') === 'pause-glyph',
       JSON.stringify([gwState.off, gwState.on]));
