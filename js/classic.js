@@ -280,6 +280,22 @@
   }
 
   /**
+   * 列表项右侧的「向右」箭头（内联 SVG，与首页折叠箭头同一枚图标）。
+   * 需求（Issue #55）：小古文列表的「›」、首页古诗词列表的「›」、
+   * 首页「全部诗词」的展开 / 收缩箭头，三处大小必须一致 —— 见 js/app.js 的 arrowGlyph。
+   * 之前这里是文本字符「›」（font-size 18px，字形仅约 9px 高），
+   * 与首页那颗 18×18 的 SVG 三角摆在一起一大一小；改用同一枚 18×18 描边箭头，
+   * 尺寸与笔画都不再随字体回退而变。
+   */
+  function arrowGlyph() {
+    return (
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" ' +
+      'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<path d="M9.8 6.6 15.2 12l-5.4 5.4" /></svg>'
+    );
+  }
+
+  /**
    * 分组右侧小号圆键里的图标：只有一个 ▶ 三角，笔画细一档。
    *
    * 它不需要 ⏸ —— 「现在读到哪一篇」由列表里的高亮 + 底部播放栏表达，
@@ -340,12 +356,19 @@
       return;
     }
 
+    // 同一主题的篇目合并进**一张卡片**：卡头是主题名 + 篇数 + 组内随机连读，
+    // 卡身按顺序列出这一类的每一篇（不再每篇各占一张卡）。
+    // 目的：一眼看出「这几篇是一类的」，卡片数量从 100 张降到 7 张，列表不再碎成一片。
     let index = 0;
+    let groupCard = null;
     let lastGroup = "";
     items.forEach(function (p) {
       index += 1;
       if (p.gradeGroup && p.gradeGroup !== lastGroup) {
         lastGroup = p.gradeGroup;
+        groupCard = document.createElement("section");
+        groupCard.className = "group-card";
+        groupCard.dataset.group = p.gradeGroup;
         const head = document.createElement("div");
         head.className = "group-head";
         head.innerHTML =
@@ -357,7 +380,8 @@
           ' title="随机连读「' + esc(p.gradeGroup) + '」：随机抽一篇开读，读完自动跳下一篇"' +
           ' aria-label="随机连读' + esc(p.gradeGroup) + '">' +
           playSmGlyph() + "</button>";
-        box.appendChild(head);
+        groupCard.appendChild(head);
+        box.appendChild(groupCard);
       }
 
       const read = isRead(p.id);
@@ -378,14 +402,14 @@
         "</div>" +
         '<button type="button" class="item-read" title="播放这一篇" aria-label="播放 ' + esc(p.title) + '">' +
         playGlyph() + "</button>" +
-        '<div class="item-arrow">›</div>';
+        '<div class="item-arrow">' + arrowGlyph() + "</div>";
       el.addEventListener("click", function () { openReader(p); });
       const playBtn = el.querySelector(".item-read");
       playBtn.addEventListener("click", function (e) {
         e.stopPropagation();
         readOne(p, playBtn);
       });
-      box.appendChild(el);
+      groupCard.appendChild(el);
     });
 
     // 列表里已有条目正在播放时，进入本页也要显示「暂停」态

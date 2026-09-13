@@ -269,7 +269,18 @@ html, body {
   font-weight: 500;
 }
 .item-reason.review { background: var(--amber-light); color: var(--amber); }
-.item-arrow { color: #9db3a9; font-size: 18px; }
+/* 列表项右侧的「向右」箭头：与首页折叠箭头同一枚 18×18 描边 SVG
+   （需求 Issue #55：三处图标大小一致 —— 不再用文本字符「›」，
+   字符高度随字体回退变化，与 18px 的 SVG 三角摆在一起一大一小） */
+.item-arrow {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #9db3a9;
+  line-height: 0;
+}
+.item-arrow svg { display: block; width: 18px; height: 18px; }
 
 /* 进度条小 */
 .mbar {
@@ -320,6 +331,7 @@ html, body {
   color: #9db3a9;
   transition: transform .2s;
 }
+/* 折叠箭头与列表右侧「›」同尺寸：18×18、同一枚图标、同一笔画宽度 */
 .collapse-head .arrow svg { display: block; width: 18px; height: 18px; }
 .collapse-head.open .arrow { transform: rotate(180deg); }
 .collapse-head:hover .arrow { color: var(--green); }

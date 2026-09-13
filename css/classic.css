@@ -153,6 +153,50 @@
 /* 工具栏：搜索框可伸缩，「全部 / 未读」与「连读」圆键不压缩，三样排成一行 */
 .filter-seg { flex: 0 0 auto; }
 
+/* 同一主题合并成一张卡片
+   --------------------------------------------------------------------------
+   原先每个主题有一个标题行，下面每篇各占一张卡（圆角 + 阴影 + 左色条），
+   100 篇就是 100 张卡，列表碎成一片、看不出「哪几篇是一类的」。
+   现在：一个主题一张 .group-card —— 卡头是主题名 / 篇数 / 组内随机连读，
+   卡身是这一类的每一篇，篇与篇之间只用一条细线分隔，不再各带阴影。
+   卡片整体沿用全站 .card 的纸底 / 圆角 / 阴影（--card、--radius、--shadow）。 */
+.group-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  padding: 0 4px 4px;
+}
+/* 卡头贴卡顶：去掉原先独立的上下留白，改为卡内内边距 */
+.group-card .group-head {
+  padding: 12px 8px 8px;
+  margin: 0;
+}
+/* 卡身条目：与卡片同底，去掉各自的白底 / 圆角 / 阴影，只留一条细分隔线 */
+.group-card .item {
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  border-top: 1px solid var(--line);
+  padding: 12px 8px;
+}
+.group-card .item:first-of-type { border-top: none; }
+/* 左色条仍表达「课内 / 课外」，但改成卡内一枚短竖条：
+   整条卡片左边缘的 4px 色条在合并后会把 7 张卡各自切一道，
+   短竖条贴在每条左侧、上下留白，既区分条目又不切碎卡片。
+   保留 4px 透明边框，条目左右内边距与首页列表项一致（不加也不减）。 */
+.group-card .item::before {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 12px;
+  bottom: 12px;
+  width: 3px;
+  border-radius: 999px;
+  background: var(--blue);
+}
+.group-card .item.in-book::before { background: var(--green); }
+
 /* 分组标题 */
 .group-head {
   display: flex;
@@ -189,11 +233,13 @@
 #gw-list .item-read { color: var(--blue); }
 #gw-list .item-read[data-on="1"] { background: var(--blue); border-color: var(--blue); color: #fffdf8; }
 
-/* 随机连读时高亮当前篇，用户随时能接管 */
+/* 随机连读时高亮当前篇，用户随时能接管。
+   条目已并入卡片，不再是独立浮起的卡片 —— 用底色高亮代替外发光
+   （卡片 overflow: hidden 会把 box-shadow 裁掉），左色条同时点亮。 */
 #gw-list .item.reading {
-  border-left-color: var(--blue);
-  box-shadow: 0 0 0 2px var(--blue-light), var(--shadow);
+  background: var(--blue-light);
 }
+#gw-list .item.reading::before { background: var(--blue); }
 #gw-list .item-meta span:last-child {
   max-width: 100%;
   overflow: hidden;

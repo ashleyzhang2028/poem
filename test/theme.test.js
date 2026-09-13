@@ -213,6 +213,28 @@ chk(!/\.pb-toggle \{[\s\S]{0,200}?border-radius:\s*10px/.test(cssPb), '播放键
 chk(/\.collapse-head \.arrow \{[\s\S]{0,220}?display:\s*inline-flex/.test(css),
   '折叠箭头改为内联 SVG（不再是实心 ▾ 字符）');
 chk(/\.collapse-head \.arrow svg \{ display: block; width: 18px/.test(css), '箭头尺寸与图标一致');
+// 需求（Issue #55）：三处「向右 / 展开」图标大小必须一致 ——
+// 小古文列表右侧的「›」、首页古诗词列表右侧的「›」、首页「全部诗词」的展开 / 收缩箭头。
+// 做法：三处统一用同一枚 18×18 描边 SVG（不再是文本字符「›」——
+// 字符高度随字体回退变化，与 18px 的 SVG 三角摆在一起一大一小）。
+chk(/\.item-arrow svg \{ display: block; width: 18px; height: 18px; \}/.test(css),
+  '列表右侧箭头是 18×18 的内联 SVG（不再是文本字符「›」）');
+chk(!/\.item-arrow \{[^}]*font-size:\s*18px/.test(css),
+  '列表右侧箭头不再靠 font-size 定大小');
+// 两处尺寸同源：都是 18×18，才能保证「大小一致」
+const arrowSvgBlocks = css.match(/\.(?:item-arrow|collapse-head \.arrow) svg \{[^}]*\}/g) || [];
+chk(arrowSvgBlocks.length >= 2 &&
+  arrowSvgBlocks.every(b => /width:\s*18px/.test(b) && /height:\s*18px/.test(b)),
+  '列表箭头与折叠箭头同为 18×18（' + arrowSvgBlocks.length + ' 处）');
+// 首页与小古文页三处箭头都改用同一枚 SVG：页面源码里不再留文本字符「›」
+chk(!/<div class="item-arrow">›<\/div>/.test(read('js/app.js')) &&
+  !/<div class="item-arrow">›<\/div>/.test(read('js/classic.js')),
+  '列表箭头改由 arrowGlyph() 输出内联 SVG（不再写死「›」字符）');
+chk(/function arrowGlyph\(\)/.test(read('js/app.js')) && /function arrowGlyph\(\)/.test(read('js/classic.js')),
+  '首页与小古文各自用同一枚 arrowGlyph() 画箭头');
+// 折叠箭头的笔画宽度与列表箭头一致（同为 1.8）
+chk(/class="arrow"[\s\S]{0,260}?stroke-width="1\.8"/.test(html),
+  '首页折叠箭头笔画宽度 1.8（与列表箭头同一套描边）');
 chk(/\.collapse-head\.open \.arrow \{ transform: rotate\(180deg\); \}/.test(css),
   '展开时箭头旋转 180° 朝上');
 chk(/\.collapse-head \.arrow[\s\S]{0,200}?color:\s*#9db3a9/.test(css),

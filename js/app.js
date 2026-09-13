@@ -376,7 +376,7 @@
         "</div>" +
         '<button type="button" class="item-read" title="朗读这一首" aria-label="朗读 ' + esc(p.title) + '">' +
         playGlyph() + "</button>" +
-        '<div class="item-arrow">›</div>';
+        '<div class="item-arrow">' + arrowGlyph() + "</div>";
       el.addEventListener("click", function () {
         openPoem(p, item);
       });
@@ -417,6 +417,23 @@
       '<span class="pause-glyph" aria-hidden="true">' +
       '<svg viewBox="0 0 24 24"><path d="M8.2 5h2.9v14H8.2Z M12.9 5h2.9v14h-2.9Z" fill="currentColor" stroke="none" /></svg>' +
       "</span>"
+    );
+  }
+
+  /**
+   * 列表项右侧的「向右」箭头（内联 SVG，与折叠箭头同一枚图标）
+   * 需求（Issue #55）：小古文列表的「›」、首页古诗词列表的「›」、
+   * 首页「全部诗词」的展开 / 收缩箭头，三处大小必须一致。
+   * 原先前两处是文本字符「›」（font-size 18px，字形只有约 9px 高），
+   * 第三处是 18×18 的 SVG 三角 —— 摆在一起一胖一瘦、一深一浅。
+   * 现在三处统一用同一枚 18×18 描边箭头：尺寸与笔画都来自同一份定义，
+   * 不会再随字体、字号或系统字体回退而变样。
+   */
+  function arrowGlyph() {
+    return (
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" ' +
+      'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<path d="M9.8 6.6 15.2 12l-5.4 5.4" /></svg>'
     );
   }
 
@@ -472,7 +489,7 @@
         "</div>" +
         (rec && rec.learned ? '<div class="mbar"><i style="width:' + Scheduler.mastery(rec) + '%"></i></div>' : "") +
         "</div>" +
-        '<div class="item-arrow">›</div>';
+        '<div class="item-arrow">' + arrowGlyph() + "</div>";
       el.addEventListener("click", function () {
         openPoem(p, null);
       });
