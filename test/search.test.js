@@ -351,11 +351,11 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   // 显隐逻辑）：源码里不该再有 #search-hint / .search-hint 的死引用
   chk(!/search-hint/.test(searchHtml) && !/search-hint/.test(read('js/search.js')),
     '「一次搜遍……也搜正文与译文里的字句」那段说明与其显隐逻辑都已删除');
-  // 版本号只验下界：本次搜索页改版把缓存提到 v42，
-  // 若写死 v41，下次任何一次改动都会把这条测试判红。
-  // 真正要守的是「改了 css/js 就得抬版本」，所以比对 v41 的下界即可。
-  chk(parseInt((read('sw.js').match(/poem-app-v(\d+)/) || [0, '0'])[1], 10) >= 41,
-    'sw.js 缓存版本不低于 v41');
+  // 版本号只验下界：搜索页改版与「出处」修正都把缓存抬到 v42，
+  // 若写死具体版本，下次任何一次改动 css/js 都会把这条测试判红。
+  // 真正要守的是「改了 css/js 就得抬版本」，所以只比 v41 的下界。
+  const swVer = (/poem-app-v(\d+)/.exec(read('sw.js')) || [])[1];
+  chk(Number(swVer) >= 41, 'sw.js 缓存版本不低于 v41（实际 v' + swVer + '）');
   ['"./search/"', '"./js/search.js"', '"./library/"', '"./js/library.js"'].forEach(needle => {
     chk(read('sw.js').indexOf(needle) >= 0, 'sw.js 预缓存含 ' + needle);
   });

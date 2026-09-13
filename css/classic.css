@@ -464,6 +464,13 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* 所属选本（《古文观止》这类）：真实出处后面跟一个淡色括注。
+   出处讲「这一篇出自哪部书」（《左传》《震川先生集》），
+   选本讲「从哪本选里读到的」（《古文观止》）—— 两者不是一回事，
+   所以出处照常显示，选本只在后面补一句、不抢出处的位。 */
+#gw-list .item-meta .item-selection {
+  color: var(--muted, #9a9a92);
+}
 
 /* ---------------- 整页阅读器 ---------------- */
 body.reader-open { overflow: hidden; }

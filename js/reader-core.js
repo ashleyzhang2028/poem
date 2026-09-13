@@ -407,7 +407,7 @@
   }
 
   function haystack(p) {
-    return [p.title, p.source, p.author, p.dynasty].concat(extraFields(p)).join(" ");
+    return [p.title, p.source, p.selection, p.author, p.dynasty].concat(extraFields(p)).join(" ");
   }
 
   function extraFields(p) {
@@ -600,6 +600,7 @@
         (p.dynasty ? "<span>" + esc(p.dynasty) + "</span>" : "") +
         (p.author ? (p.dynasty ? "<span>·</span>" : "") + "<span>" + esc(p.author) + "</span>" : "") +
         (p.source ? ((p.dynasty || p.author) ? "<span>·</span>" : "") + "<span>" + esc(p.source) + "</span>" : "") +
+        (p.selection ? "<span class=\"item-selection\">" + esc(p.selection) + "</span>" : "") +
         // 正文摘句：优先用数据自带的 p.excerpt ——
         // 《宋词三百首》《古文观止》的作品长，截前 16 字往往是「庆历四年春，滕子京谪守巴陵」这类
         // 交代性开头，看不出是哪一篇；语料整理者给出的摘句（多为名句）才能真正认出作品。
@@ -686,7 +687,8 @@
     meta.innerHTML =
       (p.dynasty ? '<span class="tag ghost">' + esc(p.dynasty) + "</span>" : "") +
       (p.author ? '<span class="tag ghost">' + esc(p.author) + "</span>" : "") +
-      (p.source ? '<span class="tag">' + esc(p.source) + "</span>" : "");
+      (p.source ? '<span class="tag">' + esc(p.source) + "</span>" : "") +
+      (p.selection ? '<span class="tag ghost">' + esc(p.selection) + "</span>" : "");
     renderReaderText();
     el.querySelector('.rd-trans-text, #rd-trans-text').textContent = p.translation || W.pendingTranslation;
     // 译文来源注脚：与首页详情页同一套文案（data/index.js 的 TRANSLATION_SOURCES）
