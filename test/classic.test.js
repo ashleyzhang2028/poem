@@ -348,9 +348,22 @@ setTimeout(() => {
     '圆的直径与标题字号相等（' + numSize + 'px = ' + titleFontSize + 'px）');
   chk(!!numBlock && /font-size:\s*11px;/.test(numDecls),
     '圆里的序号字号单列一档 11px（16.5px 会顶满圆边，两位数也挤）');
+  // 需求（Issue #55 后续）：序号圆去掉淡绿底色，改为与序号同色的 1px 圆形描边，
+  // 圈里的数字水平 + 垂直居中。
+  chk(!!numBlock && /(^|\s)background:\s*none;/.test(numDecls),
+    '序号圆不再铺底色（background: none）');
+  chk(!!numBlock && !/background:\s*var\(--(green|blue|amber)-light\)/.test(numDecls),
+    '序号圆上不再留任何淡色底（--*-light）');
+  chk(!!numBlock && /border:\s*1px solid currentColor;/.test(numDecls),
+    '序号圆改 1px 圆形描边，且边框色走 currentColor（与圈里的数字同色）');
+  chk(!!numBlock && /box-sizing:\s*border-box;/.test(numDecls),
+    '描边占在盒子内（border-box），圆外径仍是 --item-num，不被 1px 撑大');
+  chk(!!numBlock && /align-items:\s*center;/.test(numDecls) && /justify-content:\s*center;/.test(numDecls),
+    '圈里的数字水平 + 垂直居中（flex 两轴 center）');
   // 真浏览器里量一遍：序号圆、篇名、下方正文三者的左缘必须落在同一条竖线上。
   // jsdom 不算布局，这条只能在浏览器里核（见 test/pwa.test.js 的同类断言），
   // 这里先从源码确认「没有负外边距」这个前提成立，布局断言交给 PWA 层。
+  // 空心描边（border-box）不改变圆的占位宽度，所以与「左对齐」并存、不冲突。
   const itemPadL = parseInt((itemPadBlock[2].match(/padding:\s*\d+px (\d+)px/) || [, '8'])[1], 10);
   chk(itemPadL === 8,
     '条目左内边距 8px：序号圆与右侧播放键 / 箭头同宽内缘（实际 ' + itemPadL + 'px）');
@@ -367,9 +380,13 @@ setTimeout(() => {
   chk(numEls[0].textContent === '1', '序号从 1 起（实际 ' + numEls[0].textContent + '）');
   chk(/\.item-index/.test(classicCssText) === false,
     'css/classic.css 里不再留 .item-index 僵尸规则');
-  chk(/\.item-num \{ background: var\(--blue-light\); color: var\(--blue\); \}/.test(classicCssText) &&
-    /#gw-list \.item\.in-book \.item-num \{ background: var\(--green-light\); color: var\(--green\); \}/.test(classicCssText),
-    '小古文的序号圆：课内走天水碧、课外走天青（课内 / 课外现由圆的配色表达）');
+  // 空心圆（本 PR）：小古文只改 color，圈线走 currentColor 自动跟随；
+  // 与 upstream 的「课内 / 课外由圆的配色表达」意图一致，只是底色换成描边。
+  chk(/#gw-list \.item-num \{ color: var\(--blue\); \}/.test(classicCssText) &&
+    /#gw-list \.item\.in-book \.item-num \{ color: var\(--green\); \}/.test(classicCssText),
+    '小古文的序号圆：课内走天水碧、课外走天青（圈线与数字同色）');
+  chk(!/#gw-list \.item-num \{[^}]*background/.test(classicCssText),
+    '小古文也不再给序号圆铺底色（只留描边，课内 / 课外由圈线色表达）');
   // ⚠️ 只看 `border-left: none` 还会被「注释里写着 border-left: 4px」骗过去，
   // 所以先把注释剥掉再查：规则体里不能再出现任何 4px 的左边框。
   const itemRules = itemPadBlock[2].replace(/\/\*[\s\S]*?\*\//g, ' ');

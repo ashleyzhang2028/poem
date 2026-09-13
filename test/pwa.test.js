@@ -591,7 +591,28 @@ function check(name, cond, extra) {
         headPadBottom: getComputedStyle(head).paddingBottom,
         gapHeadBtnToItem: +(itemRect.top - headBtn.getBoundingClientRect().bottom).toFixed(2),
         numFirstChild: title.firstElementChild === num,
-        oldIndexLeft: document.querySelectorAll('#gw-list .item-index').length
+        oldIndexLeft: document.querySelectorAll('#gw-list .item-index').length,
+        // Issue #55 后续：序号圆改为 1px 同色描边（无底色），数字水平 + 垂直居中
+        numBg: getComputedStyle(num).backgroundColor,
+        numBorderW: getComputedStyle(num).borderTopWidth,
+        numBorderStyle: getComputedStyle(num).borderTopStyle,
+        numBorderColor: getComputedStyle(num).borderTopColor,
+        numColor: getComputedStyle(num).color,
+        numRadius: getComputedStyle(num).borderRadius,
+        numPad: getComputedStyle(num).paddingTop,
+        // 真实盒子量居中：数字行盒在圆内上下左右四边留白是否相等
+        numInkRect: (() => {
+          const r = document.createRange();
+          r.selectNodeContents(num);
+          const t = r.getBoundingClientRect();
+          const nr = num.getBoundingClientRect();
+          return {
+            left: +(t.left - nr.left).toFixed(2),
+            right: +(nr.right - t.right).toFixed(2),
+            top: +(t.top - nr.top).toFixed(2),
+            bottom: +(nr.bottom - t.bottom).toFixed(2)
+          };
+        })()
       };
     });
     check('iPhone: 序号圆是正圆（宽高相等）',
@@ -602,6 +623,24 @@ function check(name, cond, extra) {
     check('iPhone: 序号圆的字号比标题小一号（放得下两位数）',
       parseFloat(numState.numFont) < parseFloat(numState.titleFont),
       numState.numFont + ' < ' + numState.titleFont);
+    // Issue #55 后续：序号圆去掉淡绿底，改为与序号同色的 1px 圆形描边，数字居中
+    check('iPhone: 序号圆不再有淡绿底（背景全透明）',
+      /rgba\(0, 0, 0, 0\)|transparent/.test(numState.numBg), numState.numBg);
+    check('iPhone: 序号圆是 1px 实线描边',
+      parseFloat(numState.numBorderW) === 1 && numState.numBorderStyle === 'solid',
+      numState.numBorderW + ' ' + numState.numBorderStyle);
+    check('iPhone: 描边色与圈里的数字同色（currentColor）',
+      numState.numBorderColor === numState.numColor,
+      numState.numBorderColor + ' vs ' + numState.numColor);
+    check('iPhone: 序号圆仍是正圆（50% 圆角）', numState.numRadius === '50%', numState.numRadius);
+    check('iPhone: 圆上没有内边距（居中由 flex 负责）',
+      parseFloat(numState.numPad) === 0, numState.numPad);
+    check('iPhone: 数字在圆内水平居中（左右留白相等）',
+      Math.abs(numState.numInkRect.left - numState.numInkRect.right) <= 1,
+      JSON.stringify(numState.numInkRect));
+    check('iPhone: 数字在圆内垂直居中（上下留白相等）',
+      Math.abs(numState.numInkRect.top - numState.numInkRect.bottom) <= 1,
+      JSON.stringify(numState.numInkRect));
     check('iPhone: 序号圆在标题那一行、排在篇名前面',
       numState.numFirstChild, String(numState.numFirstChild));
     check('iPhone: 旧的独占一列序号已全部移除',
