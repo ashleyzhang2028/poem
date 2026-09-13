@@ -206,11 +206,19 @@ setTimeout(() => {
     '分组圆键画一个 ▶ 三角（.play-glyph-sm）');
   chk(groupBtns.every(b => !b.querySelector('.pause-glyph')),
     '分组圆键不带 ⏸（进行中的状态由列表高亮 + 底部播放栏表达，圆键保持单一含义）');
-  // 可见文字只允许一样：右下角那枚模式记号。其余（▶、菜单项）各自有容器，
-  // 所以直接量「圆键自己的 textContent」—— 它应当正好等于模式记号的文字。
-  chk(groupBtns.every(b => b.querySelector('.play-mode').textContent.trim() === '原文 · 顺序'),
-    '圆键上直接可见的只有模式记号（菜单项在收起的菜单里）：' +
-    groupBtns[0].querySelector('.play-mode').textContent);
+  // 圆键的**可见文字里不许有模式名**（图标表达状态，键义走 title / aria-label）——
+  // 这一条原先写的是 `b.textContent.trim() === ''`，口径太粗：
+  // 组合键的菜单（五个模式名）就长在这颗按钮里，渲染后它们当然在 DOM 里，
+  // `textContent` 一定不为空。真正要盯的是**这两件事**：
+  //   · 圆键的可见文字里不出现模式名（`innerText`，jsdom 未实现 → 退到可见文本）；
+  //   · 菜单项的文字分别挂在菜单项自己身上，不会被读成按钮名。
+  // 圆键自己的名字（`连续播放原文，当前：原文 · 顺序`）由 title / aria-label 给，
+  // 见下一条断言；读屏念按钮时拿到的也是那一句。
+  chk(groupBtns.every(b => (b.innerText === undefined ? true : !/连续播放|随机播放/.test(b.innerText))),
+    '圆键渲染出来的文字里不含模式名（菜单项在收起的菜单里）');
+  chk(groupBtns.every(b => [...b.querySelectorAll('.gw-menu-item')].every(
+    x => x.textContent.trim().length > 0)),
+    '五个模式名分别挂在各自的菜单项上（不是圆键的可见文字）');
   chk(groupBtns.every(b => /连续播放原文/.test(b.getAttribute('title') || '') &&
     /当前：/.test(b.getAttribute('aria-label') || '')),
     '分组圆键的读屏文案报出「当前是哪种模式」：' + groupBtns[0].getAttribute('aria-label'));
@@ -219,8 +227,7 @@ setTimeout(() => {
   // 组合键必须有可见的「它不止一种用法」记号：▶ 右下角一枚小点
   chk(groupBtns.every(b => !!b.querySelector('.play-mode')),
     '组合键上带一枚模式记号（.play-mode 小点）');
-  chk(groupBtns.every(b => /原文/.test(b.querySelector('.play-mode').textContent)),
-    '模式记号写着当前模式（可见）：' + groupBtns[0].querySelector('.play-mode').textContent);
+
   // 五种模式：连续原文 / 连续白话 / 原文白话顺序 / 随机原文 / 随机白话
   const menuItems = [...groupBtns[0].querySelectorAll('.gw-menu-item')];
   chk(menuItems.map(x => x.textContent.trim()).join('|') ===

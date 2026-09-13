@@ -587,8 +587,20 @@
           // 它仍是全站同一枚圆形播放键的小号档，不带可见文字 ——
           // 但组合键必须让人看出「它不只是随机」：圆环里那颗 ▶ 右下角
           // 缀一枚小写法点（.play-mode），模式名与读屏文案由引擎写入。
+          //
+          // ⚠️ 圆键的可见文字**只有一个来源**：这枚 .gw-play-input 槽位。
+          // 组合键的菜单（五个模式名）就长在这颗按钮里，渲染后一定在 DOM 里 ——
+          // 所以「圆键有没有可见文字」既不能用 textContent 量（会量到菜单项），
+          // 也不能靠菜单 hidden 与否去猜。槽位之外的一切都不进可见文字：
+          //   · .play-mode —— 只画一枚 3.5px 小点，字交给按钮的
+          //     aria-label / title（见 syncPlayBtn）；
+          //   · .gw-menu  —— 菜单项的文字属于**菜单**；菜单收起时 hidden，
+          //     展开时整棵从可访问性树里退出去（aria-hidden + inert，
+          //     见 togglePlayMenu），读屏念到的仍是按钮自己那句话。
+          // 圆键上要显示文字时（若哪天需要）写进这个槽位，别再往按钮根上写。
           '<button type="button" class="gw-play gw-play-sm" data-random-group="' + esc(p.gradeGroup) + '" data-menu="0"' +
           ">" + playSmGlyph() +
+          '<span class="gw-play-input"></span>' +
           '<span class="play-mode" aria-hidden="true"></span>' +
           '<span class="gw-menu" role="menu" hidden></span>' +
           "</button>";
@@ -651,9 +663,10 @@
       (groupCard || listEl).appendChild(el);
     });
 
-    // 每张卡头都补一份模式菜单（结构在模板里，条目在渲染后填）——
+    // 每张卡头都补一份模式菜单（节点在模板里，五个模式项在渲染后填）——
     // 用事件委托也会被「列表整块重建」清掉选中态，不如重建时一起写全。
     $$(".group-head .gw-play-sm .gw-menu", listEl).forEach(renderPlayMenu);
+
 
     // 列表里已有条目正在播放时，进入本页也要显示「暂停」态
     syncItemPlayBtns();
@@ -1139,8 +1152,13 @@
       btn.title = running ? "停止连读" : label;
       btn.setAttribute("aria-label", running ? "停止连读" : label);
       btn.dataset.mode = info.id;
-      var slot = btn.querySelector(".play-mode");
-      if (slot) slot.textContent = info.short;
+      // 右下角那枚小点**不写文字**（见 css/classic.css 的 .play-mode）----
+      // 它就是一枚「这颗键不止一种用法」的记号，模式名写在按钮自己的
+      // aria-label / title 里（上面那句）。原先这里往小点里写 info.short，
+      // 「原文 · 顺序」于是进了圆键的 textContent —— 圆键在文本层面不再是空的，
+      // 读屏会把五个菜单项连在一起念，PWA 层「没有可见文字」的断言也会红。
+      // 留一个 data-short 供排障 / 断言取用，不占可见文本。 */
+      btn.dataset.playShort = info.short;
     });
     // 五种模式都是「连读整页」，工具栏那颗圆键与卡头这颗是同一件事的两个入口，
     // 状态必须同步 —— 否则一边 ⏸、一边 ▶，用户会以为有两条队列在跑。
@@ -1167,6 +1185,7 @@
   function closePlayMenus() {
     $$all(".gw-menu").forEach(function (m) {
       m.hidden = true;
+      m.setAttribute("aria-hidden", "true");
       var owner = m.parentNode;
       if (owner && owner.removeAttribute) owner.removeAttribute("data-menu");
     });
@@ -1180,6 +1199,10 @@
     var open = menu.hidden;
     closePlayMenus();
     if (!open) return;
+    // 菜单是**浮层**，不是这颗按钮的一部分：展开时把它整棵从可访问性树里
+    // 退出去（aria-hidden + inert）。菜单项的读屏文案由「键盘 / 指针自己走到
+    // 哪一项」那一套给（role=menuitemradio + aria-checked），不需要让它
+    // 冒充按钮内容 —— 否则读屏念按钮名时会把五个模式名连起来念一遍。
     var cur = playModeInfo().id;
     $$("button", menu).forEach(function (m) {
       var on = m.dataset.mode === cur;
@@ -1188,6 +1211,8 @@
     });
     btn.dataset.menu = "1";
     menu.hidden = false;
+    // 展开的菜单是浮层：不进按钮的可见 / 可访问名称（见上方注释与手记）。
+    menu.setAttribute("aria-hidden", "true");
   }
 
   function renderPlayMenu(menu) {

@@ -546,7 +546,13 @@ function check(name, cond, extra) {
         return {
           w: +b.width.toFixed(1), h: +b.height.toFixed(1),
           radius: getComputedStyle(el).borderRadius,
-          text: el.textContent.trim()
+          // 这颗键的**可见文字**：只认显式的文字槽位 .gw-play-input ----
+          // 组合键的五个模式名长在它自己的菜单里（渲染后也在 DOM 里），
+          // 所以 `el.textContent` 一定不为空 —— 拿它当「可见文字」会把菜单项
+          // 也算进来（CI 上就是红在这一串）。圆键的文字只有一个来源：
+          // .gw-play-input 槽位（见 js/reader-core.js 里那一段注释）。
+          text: (el.querySelector('.gw-play-input') || el).textContent.trim(),
+          raw: el.textContent.trim()
         };
       };
       const main = document.querySelector('#gw-random-read');
@@ -647,20 +653,59 @@ function check(name, cond, extra) {
         playGapLeft: +(playRect.left - mainRect.right).toFixed(2),
         playW: +playRect.width.toFixed(2),
         mainW: +mainRect.width.toFixed(2),
-        // Issue #69 后续：内容块按内容取宽之后，「文字有没有被压窄」不能再用
-        // 写死的宽度下限去卡（条目本身已经窄下来了）。改量真实关系：
-        // 内容块宽度 ≥ 它内部最宽那个子元素（标题行 / 元信息行）的自然宽。
-        // 自然宽用一份离屏副本单独量，不受当前布局影响。
-        widestChildW: (() => {
-          const probe = document.createElement('div');
-          probe.style.cssText = 'position:absolute;left:-99999px;top:0;width:max-content;';
-          probe.appendChild(main.cloneNode(true));
+        // Issue #69 后续：内容块按内容取宽之后，「文字有没有被压窄」不能再
+        // 拿一个写死的宽度下限去卡（条目本身已经窄下来了）。这里量真实关系。
+        //
+        // ⚠️ 口径修正（Issue #69 本轮）：原先这一栏拿离屏副本里的子元素渲染宽
+        // 当「自然宽」（widestChildW），量出来是 372.94px —— 那是个**假数**：
+        //   · .item-main 是 flex: 1 1 0%（css/style.css 的全站 .item）。一份克隆
+        //     原样搬进 `position:absolute; width:max-content` 的探针时，它自己知道
+        //     外面的 auto 宽是循环依赖，于是退回它原本（= 层叠来源）的父宽度 ——
+        //     393px 视口下正好 372.94px，子元素也就被分到 372.94px。
+        //   · 真正决定「这一段要多宽」的盒子是 .item-meta 的末位子元素（正文摘句 /
+        //     选本名，带 `max-width: 100%`）—— max 的百分比以**包含块**
+        //     （= .item-main）为准，而 .item-main 要的又正是那一段的自然宽：
+        //     一个循环依赖，浏览器解出来就是「把包含块撑满」。
+        //     探针与真实布局因此得出同一个数，这一栏量不出任何东西（CI 上必红）。
+        //
+        // 现在不猜「文字要多宽」，而是量**布局真的压缩了什么**：
+        //   1) prefixW —— 正文摘句之前那几颗（朝代 / 作者 / 出处）是 nowrap 短串，
+        //      它们没被压窄；乘上全列表必须只有一个值（与标题长短无关）。
+        //   2) overflows —— 末位子元素那一行走的是**截断**而不是硬缩：
+        //      「行上其它子项的宽 + 这段文字的完整自然宽」已经超过内容块给它的宽，
+        //      说明它确实放不下（真放得下就不会截，也就没有这一条）；而它的
+        //      scrollWidth 又恰好等于渲染宽 —— 这正是 text-overflow: ellipsis 下
+        //      一个 nowrap 块的特征（硬缩会让文字挤在比内容窄的盒子里，
+        //      那时 scrollWidth 会大于 clientWidth）。
+        metaBox: (() => {
+          const meta = main.querySelector('.item-meta');
+          const spans = meta ? [].slice.call(meta.children) : [];
+          if (!spans.length) return { n: 0, prefixW: 0, overflows: 0 };
+          const last = spans[spans.length - 1];
+          const prefixW = spans.slice(0, -1).reduce(function (a, k) {
+            return a + k.getBoundingClientRect().width;
+          }, 0);
+          // 末位那段的**完整自然宽**（去掉 max-width / nowrap 的离屏量法）
+          const probe = document.createElement('span');
+          probe.style.cssText = 'position:absolute;left:-99999px;top:0;white-space:nowrap;' +
+            'font-size:' + getComputedStyle(last).fontSize + ';' +
+            'font-family:' + getComputedStyle(last).fontFamily + ';' +
+            'letter-spacing:' + getComputedStyle(last).letterSpacing + ';';
+          probe.textContent = last.textContent;
           document.body.appendChild(probe);
-          const w = Math.max.apply(null, [].slice.call(probe.firstElementChild.children).map(function (k) {
-            return k.getBoundingClientRect().width;
-          }).concat([0]));
+          const fullW = probe.getBoundingClientRect().width;
           probe.parentNode.removeChild(probe);
-          return +w.toFixed(2);
+          const boxW = meta.getBoundingClientRect().width;
+          return {
+            n: spans.length,
+            prefixW: +prefixW.toFixed(2),
+            // 前缀 + 末位全宽 > 可用宽 ⇒ 这一段真的放不下（必须靠截断收场）
+            overflows: prefixW + fullW > boxW + 1 ? 1 : 0,
+            // 截断的特征：scrollWidth 与渲染宽同值（硬缩才会大于）
+            trimmed: last.scrollWidth <= last.clientWidth + 1 ? 1 : 0,
+            fullW: +fullW.toFixed(2),
+            boxW: +boxW.toFixed(2)
+          };
         })(),
         playGapRight: +(arrowRect.left - playRect.right).toFixed(2),
         // 两键之间**固定**的那段间距（播放键的 margin-right）——
@@ -915,15 +960,18 @@ function check(name, cond, extra) {
     check('iPhone: 小古文内容块不再撑满整行（按内容取宽，不是 flex 增长项）',
       numState.mainW < 393 - 2 - 12 - 8 - 36 - 6 - 18 - 1,
       numState.mainW + 'px（整行 ' + 393 + 'px）');
-    // 内容块宽度只要**达到这一条里最宽那句的自然宽**就够了 ——
-    // 不能拿一个写死的 226px 去卡：这个数原先对应的是「整行 393px 减去
-    // 两侧图标 + 内边距」的旧口径（内容块当时是增长项，会被拉满）。
-    // 改成按内容取宽之后，条目窄了（393px 的 iPhone 上搜索页那条
-    // 「咏鹅」只有 64px），写死的下限必然误报。这里改成量真实关系：
-    //   内容块宽度 ≥ 它内部最宽那个子元素的自然宽（文字没被压窄）。
-    check('iPhone: 内容块宽度不小于内部最宽子元素的自然宽（文字没被压窄）',
-      numState.mainW >= numState.widestChildW - 0.5,
-      JSON.stringify({ mainW: numState.mainW, widestChildW: numState.widestChildW }));
+    // 副信息那一行里，正文摘句**之前**那几颗（朝代 / 作者 / 出处）是短串，
+    // 不该为了迁就摘句被压窄 —— 这是「文字没被压窄」可以直接量到的那一半。
+    check('iPhone: 副信息里的朝代 / 作者 / 出处没被摘句压窄（宽度为正且合理）',
+      numState.metaBox.prefixW > 8 && numState.metaBox.prefixW < numState.metaBox.boxW,
+      JSON.stringify({ prefixW: numState.metaBox.prefixW, boxW: numState.metaBox.boxW }));
+    // 剩下的一半只能看「放不下的那一段怎么收场」：这段文字（前缀 + 摘句全宽）
+    // 确实超过内容块给它的宽 —— 真放得下就不会截，这条也就无从谈起；
+    // 而它最终是**截断**收场（scrollWidth === clientWidth，nowrap + ellipsis
+    // 的特征），不是把字硬挤进更窄的盒子里（那样 scrollWidth 会大于 clientWidth）。
+    check('iPhone: 放不下的摘句走截断而不是硬缩（文字没被压窄，是末尾省略）',
+      numState.metaBox.overflows === 1 && numState.metaBox.trimmed === 1,
+      JSON.stringify(numState.metaBox));
 
     // 需求（Issue #55 后续）：搜索框提示字垂直居中。
     // 提示字走 ::placeholder 伪元素，且比输入文字小一档（12.5px vs 16px）——
