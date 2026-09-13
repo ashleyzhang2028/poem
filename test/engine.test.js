@@ -98,6 +98,29 @@ setTimeout(() => {
   });
   chk(!!a && !!b, '同一页面可以挂两部不同的集子');
 
+  // 空集合默认拒挂（多半是数据没加载上，挂上去只有一片空列表，看不出病根），
+  // 搜索页那种「本来就该是空的」用法必须显式说 allowEmpty 才挂得上。
+  chk(w.ReaderEngine.mount({ id: 'empty1', root: '#rootA', items: [] }) === null,
+    '空集合默认不挂（避免数据没加载上还静默挂出一片空列表）');
+  const emptyRoot = mk(w, 'rootC', 'listC');
+  const c = w.ReaderEngine.mount({
+    id: 'c', root: '#rootC', items: [], allowEmpty: true,
+    words: { list: '丙集', unit: '篇', empty: '还没搜' }
+  });
+  chk(!!c, 'allowEmpty 时空集合照样挂得上（搜索页敲字之前就是这个状态）');
+  chk(w.document.querySelector('#listC .empty').textContent === '还没搜',
+    '空集合的列表区给这一份自己的空态文案（不是加载失败那句）');
+
+  // ⚠️ 绑事件不能被「这一刻集合是不是空的」挡住 —— 空集合那一支若提前 return，
+  //    搜索框、翻篇键、工具条会整片失去反应，页面「加载完了但全是死的」。
+  //    这里用真事件验：空集合挂上来的那一份，它的搜索框敲字必须能把列表填出来。
+  const sc = w.document.querySelector('#rootC [data-gw="search"]');
+  c.setItems(w.POEMS_CLASSIC.slice(0, 3));
+  sc.value = '司马光';
+  sc.dispatchEvent(new w.Event('input', { bubbles: true }));
+  chk(w.document.querySelector('#listC').querySelectorAll('.item').length === 1,
+    '空集合挂上来的那一份，搜索框敲字仍然管用（事件绑定没被空集合挡掉）');
+
   const A = w.document.querySelector('#listA');
   const B = w.document.querySelector('#listB');
   chk(A.querySelectorAll('.item').length === 6 && B.querySelectorAll('.item').length === 4,

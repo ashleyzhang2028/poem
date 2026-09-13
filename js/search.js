@@ -2,7 +2,7 @@
  * 全站搜索（/search/ · 五部集子一次搜遍）
  * ==========================================================================
  * 这一页与 js/classic.js / js/tangshi.js / js/songci.js / js/guwen.js 同族，
- * 但有两处根本差别：
+ * 但有三处根本差别：
  *
  *   一、**数据来源**：前四页各取自己那一部的 window.POEMS_*；
  *       这一页取 data/site-index.js 的 window.SITE_INDEX ——
@@ -14,6 +14,12 @@
  *       用户记不住篇名的时候，往往只记得住一句话 ——
  *       「先天下之忧而忧」要能搜到《岳阳楼记》，这是搜索页存在的理由。
  *
+ *   三、**什么时候列**：没输入关键词时**一条都不列**（列表区为空），
+ *       输入之后才列出命中的篇目，且字数越多命中越少。
+ *       这一页是「查东西」的地方，不是「读东西」的地方：
+ *       把上千篇一次性铺出来，既没有人会从头翻，首屏还要为它渲染上千个
+ *       DOM 节点（用户反馈的「加载有性能问题」就是这里）。
+ *
  * 每条结果的 id 带集子前缀（`tangshi-ts-12`）：五部的原 id 各自从 1 排起，
  * 必然撞在一起；带前缀才是全站唯一键，也顺带说明了「这一条出自哪一部」。
  *
@@ -22,31 +28,25 @@
  *   在搜索页点一下不该改动任何一部的进度 —— 用户是来查东西的，不是来读书的。
  *   阅读器里的「标记已读」按钮因此整颗隐藏（见 reader-core.js 的 hasReadStore）。
  *
- * 集子筛选：一栏药丸，来自 window.SITE_BOOKS；「全部」之外每个都带篇数。
- *   篇数实时从总索引算，不写死 —— 哪一部日后增补篇目，这里跟着变。
- *   筛选状态记在 sessionStorage，从详情页返回时不会丢。
+ * 筛选：本页**不做任何筛选**。「全部」就是默认且唯一的口径 ——
+ *   原先那两栏（「全部 / 未读」组合按钮、集子药丸）都撤了：
+ *   前者筛的是「已读」，而这一页根本不写已读，键名一直是空的；
+ *   后者是「先选一部再搜」，多一步前置操作，却没有任何人会先想好搜哪一部。
  */
+
 (function () {
   "use strict";
-
-  /** 集子筛选状态：'all' 或某一部的 id。存 session 不存 local：
-      用户可能同时开着两个标签页看不同的部，local 会互相覆盖。 */
-  var FILTER_KEY = "poem_search_book_v1";
 
   /** 候选下拉最多几条：够用即可，多了挡住结果列表 */
   var SUGGEST_MAX = 8;
 
-  var api = null;
-  var books = [];
-  var bookFilter = "all";
-  var suggestIndex = -1;   // 键盘上下键当前选中的候选序号
+  /** 空态里的两句话，一处给出（syncEmptyState 与 mountCfg 都读它）：
+      没输入时是「敲几个字就能搜」，输入后没命中才是「没找到」。 */
+  var EMPTY_IDLE = "输入篇名、作者或诗句，即可搜遍全站";
+  var EMPTY_MISS = "没有找到匹配的篇目";
 
-  function readFilter() {
-    try { return sessionStorage.getItem(FILTER_KEY) || "all"; } catch (e) { return "all"; }
-  }
-  function saveFilter(v) {
-    try { sessionStorage.setItem(FILTER_KEY, v); } catch (e) { /* 隐私模式忽略 */ }
-  }
+  var api = null;
+  var suggestIndex = -1;   // 键盘上下键当前选中的候选序号
 
   function esc(s) {
     return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
@@ -64,63 +64,6 @@
    */
   function allItems() {
     return (window.SITE_INDEX || []).filter(function (p) { return !p.isBook; });
-  }
-
-  function currentItems() {
-    if (bookFilter === "all") return allItems();
-    return allItems().filter(function (p) { return p.book === bookFilter; });
-  }
-
-  function totalCount() { return allItems().length; }
-
-  function countOf(bookId) {
-    return allItems().filter(function (p) { return p.book === bookId; }).length;
-  }
-
-  function unitOf(id) {
-    if (id === "all") return "篇";
-    var hit = books.filter(function (b) { return b.id === id; })[0];
-    return hit ? hit.unit : "篇";
-  }
-
-  /* ---------------- 集子筛选药丸 ---------------- */
-
-  function renderBookSeg() {
-    var seg = document.getElementById("search-book-seg");
-    if (!seg) return;
-    var items = [{ id: "all", name: "全部", count: totalCount() }].concat(
-      books.map(function (b) { return { id: b.id, name: b.name, count: countOf(b.id) }; })
-    );
-    seg.innerHTML = items.map(function (it) {
-      var on = bookFilter === it.id;
-      return '<button type="button" data-book="' + it.id + '"' +
-        (on ? ' class="active"' : "") +
-        ' aria-pressed="' + (on ? "true" : "false") + '"' +
-        ' title="只看' + it.name + '（' + it.count + " " + unitOf(it.id) + '）">' +
-        it.name + '<span class="book-count">' + it.count + "</span></button>";
-    }).join("");
-  }
-
-  function onBookClick(e) {
-    var btn = e.target && e.target.closest ? e.target.closest("[data-book]") : null;
-    if (!btn) return;
-    bookFilter = btn.getAttribute("data-book");
-    saveFilter(bookFilter);
-    applyBookFilter();
-    renderBody();
-  }
-
-  /**
-   * 切换集子筛选：**换掉实例里的 items**，不重新 mount。
-   *
-   * mount() 对「同一个 root 又传一份新 config」有防重：它把第二份当成
-   * 「同一块挂在两处」而退回**已有那个实例**（见 reader-core.js 的 mount）。
-   * 所以「改筛选就再 mount 一次」的写法根本不会生效 —— 页面看起来毫无反应，
-   * 用户以为筛选坏了。这里用引擎实例的 setItems()：
-   * 按新的一份重排列表、保留阅读器与关键词状态。
-   */
-  function applyBookFilter() {
-    if (api) api.setItems(currentItems());
   }
 
   /* ---------------- 候选下拉 ---------------- */
@@ -150,7 +93,7 @@
   function suggestItems(kw) {
     var q = String(kw || "").trim().toLowerCase();
     if (!q) return [];
-    var hit = currentItems().filter(function (p) { return matchScore(p, q) > 0; });
+    var hit = allItems().filter(function (p) { return matchScore(p, q) > 0; });
     hit.sort(function (a, b) {
       var sa = matchScore(a, q);
       var sb = matchScore(b, q);
@@ -233,14 +176,37 @@
 
   /* ---------------- 结果列表 ---------------- */
 
+  /**
+   * 没输入关键词时列表为空，输入之后才交给引擎筛。
+   *
+   * 这里把「要不要展示」的决定权收在这一层，而不是靠引擎的 filterGroup：
+   * 引擎的 visibleItems() 在没有关键词时**返回全部**（那是集子索引页要的行为），
+   * 搜索页反过来 —— 空关键词就是没有结果。所以空输入时给引擎一份空集合。
+   */
   function renderBody() {
-    renderBookSeg();
     var input = document.getElementById("gw-search");
     var kw = input ? input.value : "";
-    if (api) api.setKeyword(kw);
-    annotateMatches(kw);
-    var hint = document.getElementById("search-hint");
-    if (hint) hint.hidden = String(kw).trim().length > 0;
+    var q = String(kw == null ? "" : kw).trim();
+    if (api) {
+      // 空关键词：先换掉篇目再设关键词（setItems 会重排一次列表，此时它还是空的）
+      api.setItems(q ? allItems() : []);
+      api.setKeyword(q);
+    }
+    annotateMatches(q);
+    syncEmptyState(q);
+  }
+
+  /**
+   * 空态文案：没输入时说的是「敲几个字就能搜」，输入后没命中才说「没找到」。
+   * 两句话必须分开 —— 不然刚进这一页就写着「没有找到匹配的篇目」，
+   * 像这一页坏了。
+   */
+  function syncEmptyState(q) {
+    var listEl = document.querySelector("#gw-list");
+    if (!listEl) return;
+    var empty = listEl.querySelector(".empty");
+    if (!empty) return;
+    empty.textContent = q ? EMPTY_MISS : EMPTY_IDLE;
   }
 
   /**
@@ -292,11 +258,17 @@
    *     但搜索页必须能搜到 —— 用户记不住篇名，只记得住一句话。
    *   · bookName / gradeGroup —— 搜「唐诗三百首」要列出那一部的全部篇目，
    *     搜「卷一 周文」也要能筛出《古文观止》第一卷。
+   *
+   * items 一开始是**空数组**：这一页在用户敲字之前不列任何篇目
+   * （见文件头第三条）。关键词一进来，renderBody 用 setItems 换上全量。
+   * 也因此这里必须带 allowEmpty —— 引擎默认拒收空集合（那多半是数据没加载上），
+   * 而搜索页的「空」是它本来的样子。
    */
   function mountCfg() {
     return {
       id: "search",
-      items: currentItems(),
+      items: [],
+      allowEmpty: true,
       root: "[data-gw-root]",
       reader: "#gw-reader",
       // 空数组：搜索结果不按卷次 / 词牌重排，按总索引的顺序（课内在前、四部在后）
@@ -308,9 +280,14 @@
         list: "篇目",
         unit: "篇",
         loadingFailed: "全站篇目索引加载失败",
-        empty: "没有找到匹配的篇目",
+        // 引擎在空集合时写进列表区的文案；输入之后没命中的那句由
+        // syncEmptyState 换成 EMPTY_MISS（两句话的语义完全不同）
+        empty: EMPTY_IDLE,
         matchGroup: "",
         backToList: "返回搜索结果",
+        // 空关键词时列表里什么都没有，空态由 syncEmptyState 按「有没有输入」写，
+        // 引擎那句加载失败文案只在索引真的空掉时用得上
+        countInvalid: "全站篇目索引加载失败",
         // 搜索页不碰任何一部的已读 —— 空键名即「本页不提供标记已读」
         readStore: "",
         playerTitle: "朗读",
@@ -322,25 +299,14 @@
   function boot() {
     if (!window.ReaderEngine) return;
     var all = allItems();
+    var listEl = document.querySelector('[data-gw="list"]');
     if (!all.length) {
-      var listEl = document.querySelector('[data-gw="list"]');
       if (listEl) listEl.innerHTML = '<div class="empty">全站篇目索引加载失败</div>';
       return;
     }
 
-    books = (window.SITE_BOOKS || []).slice();
-    bookFilter = readFilter();
-    if (bookFilter !== "all" && !books.some(function (b) { return b.id === bookFilter; })) {
-      bookFilter = "all";
-    }
-
-    // 集子筛选与「全部 / 未读」是两套筛选，不能共用一个容器：
-    // 前者是会话里的 bookFilter（本文件管），后者是引擎的 filter（引擎管）。
     api = window.ReaderEngine.mount(mountCfg());
     if (!api) return;
-
-    var seg = document.getElementById("search-book-seg");
-    if (seg) seg.addEventListener("click", onBookClick);
 
     var input = document.getElementById("gw-search");
     if (input) {
@@ -381,7 +347,6 @@
       });
     }
 
-    renderBookSeg();
     renderBody();
   }
 
@@ -393,15 +358,12 @@
 
   /** 供测试与宿主页面调用 */
   window.SiteSearch = {
-    filter: function () { return bookFilter; },
-    setFilter: function (v) {
-      bookFilter = v;
-      saveFilter(v);
-      applyBookFilter();
-      renderBody();
-    },
-    items: function () { return currentItems(); },
+    items: function () { return allItems(); },
     suggest: function (kw) { return suggestItems(kw); },
-    books: function () { return books.slice(); }
+    /** 输入框里的关键词（结果列表与候选都按它算） */
+    keyword: function () {
+      var input = document.getElementById("gw-search");
+      return input ? input.value : "";
+    }
   };
 })();

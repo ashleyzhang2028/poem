@@ -122,6 +122,25 @@
  *          js/library.js、js/chrome.js、js/reader-core.js、js/app.js、
  *          js/settings.js、css/style.css、css/classic.css、fonts/、
  *          index.html、manifest.webmanifest、sw.js）
+ *   v42  搜索页只留一个搜索框（Issue #69 后续）：
+ *        ① 删掉「全部 / 未读」组合按钮与集子筛选药丸两栏 ——
+ *           前者筛的是已读，而搜索页根本不写已读；后者默认就是「全部」，
+ *           多一步「先选一部再搜」的前置操作；
+ *        ② **没输入关键词时不再铺出全部篇目**：原先首屏要一次渲染上千条
+ *           条目（用户反馈的「加载有性能问题」），现在输入几个字才列命中的
+ *           篇目，字越多命中越少；空列表给的是「敲几个字就能搜」的引导语，
+ *           不是「没有找到匹配的篇目」；
+ *        ③ 搜索框整块在标题栏下方垂直 + 水平居中，页面只有它一个控件；
+ *        ④ 引擎 mount() 新增 allowEmpty：搜索页在敲字之前的空集合是
+ *           「对的样子」，不该被当成数据没加载上而拒挂
+ *        （search/index.html、js/search.js、js/reader-core.js、
+ *          css/classic.css、sw.js）
+ *
+ *        同一轮里还删掉了「一次搜遍课内诗词……也搜正文与译文里的字句」那段说明
+ *        文字（连同只服务它的 #search-hint 显隐逻辑与 .search-hint 样式）：
+ *        搜索页的取舍已经写在文件头与上方注释里，页面上不必再向用户解释一遍
+ *        （css/classic.css、js/search.js、search/index.html）
+ *
  *   v42  集子「出处」修正（Issue #69 收尾）：
  *        《古文观止》155 篇的 source 原先一律写成选本名《古文观止》，
  *        列表与阅读器里看到的「出处」因此全是同一句，认不出这一篇真正
