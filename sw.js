@@ -151,8 +151,22 @@
  *        搜「古文观止」仍能命中全部 155 篇。
  *        （data/poems-guwen.js、data/site-index.js、js/reader-core.js、
  *          js/search.js、css/classic.css、sw.js）
+ *
+ *   v43  《宋词三百首》《古文观止》篇目补齐（Issue #69 收尾）：
+ *        · 宋词三百首与通篇本目录逐条比对后补入 29 首，255 → 284 首；
+ *          并订正五处「篇名张冠李戴 + 正文重复」的错配
+ *          （sc-84 秦观《踏莎行》、sc-93 秦观《江城子》、
+ *           sc-134 贺铸《蝶恋花·改徐冠卿词》、sc-181 辛弃疾《贺新郎·赋琵琶》）；
+ *          同作者同词牌且无法用「其一 / 其二」分辨的两首，副题取首句。
+ *        · 古文观止补齐卷三漏收的 11 篇（公羊传 / 谷梁传 / 礼记 / 孟子），
+ *          155 → 166 篇，全十二卷收齐。
+ *        · 页顶进度牌、列表分组顺序（js/songci.js 的 GROUP_ORDER 增补六个词牌）
+ *          与 README 一并更新。
+ *        （data/poems-songci.js、data/poems-guwen.js、js/songci.js、
+ *          songci/index.html、guwen/index.html、library/index.html、
+ *          test/songci.test.js、test/guwen.test.js、README.md、sw.js）
  */
-const CACHE_NAME = "poem-app-v42";
+const CACHE_NAME = "poem-app-v43";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [
