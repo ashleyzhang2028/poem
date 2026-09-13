@@ -5,6 +5,13 @@
  *   · 首页齿轮 → 跳转到本页（/settings/），不再有弹层
  *   · 页底常驻「版权 + 用户协议 / 隐私条款」，且不被底部导航栏（播放栏 / 引导条）遮挡
  *   · 仍然与首页共用同一份存储（poem_recite_settings_v1），改完即生效
+ *
+ * 分组（功能变多后的归类，见 settings/index.html）：
+ *   · 通用     —— 用户名、数据管理（全站共用）
+ *   · 古诗词背诵 —— 学段 / 年级 / 学期 / 背诵范围 / 每日数量（只作用于「古诗词」页）
+ *   · 阅读辅助  —— 古诗词与小古文共用的注音总开关
+ *   本文件不关心分组的具体归类，只按 id 回显与写值；
+ *   分组会把 DOM 包一层 .settings-group，选择器一律用 id，所以不受影响。
  */
 (function () {
   "use strict";
@@ -31,6 +38,16 @@
   // 与 Scheduler.SCOPES 的默认值保持一致；本页不加载调度器（省流量），只做回显
   const DEFAULT_SCOPE = "term";
   const KNOWN_SCOPES = ["term", "upto", "primary", "middle", "primary_middle", "high", "all"];
+  // 「背诵范围」的读法：与 js/scheduler.js 的 SCOPES[].scopeName 保持一致（本页不加载调度器）
+  const SCOPE_NAMES = {
+    term: "本年级本学期",
+    upto: "本年级本学期及之前",
+    primary: "小学阶段",
+    middle: "初中阶段",
+    primary_middle: "小学及初中阶段",
+    high: "高中阶段",
+    all: "全部阶段"
+  };
 
   const DEFAULTS = {
     username: "",
@@ -153,6 +170,10 @@
     mark("#seg-scope", "scope", settings.scope);
     mark("#seg-count", "count", settings.dailyCount);
     mark("#seg-helper", "helper", settings.helper === "on" ? "on" : "off");
+
+    // 「背诵范围」下方回显当前范围：设置页此前是空的一块，回首页才知道选了什么
+    const scopeHint = $("#scope-hint");
+    if (scopeHint) scopeHint.textContent = "当前：" + (SCOPE_NAMES[settings.scope] || SCOPE_NAMES[DEFAULT_SCOPE]);
 
     const uInput = $("#input-username");
     if (uInput) uInput.value = String(settings.username == null ? "" : settings.username);

@@ -158,6 +158,39 @@ setTimeout(() => {
   // 因此不存在「年级用 .active、别的用另一套」这种分叉。
   chk(groups.every(sel => sd.querySelector(sel + ' button.active')),
     '六个组合的选中态都用同一个 .active 类名，样式可被整段统一');
+  // 需求（本次）：设置项按用途归类成「通用 / 古诗词背诵 / 阅读辅助」三组
+  const setGroups = [...sd.querySelectorAll('#settings-page .settings-group')];
+  chk(setGroups.length === 3, '设置页渲染出三组（实际 ' + setGroups.length + '）');
+  const groupTitles = setGroups.map(g => (g.querySelector('.settings-group-title') || {}).textContent);
+  chk(groupTitles.join('/') === '通用/古诗词背诵/阅读辅助',
+    '分组顺序与标题正确：' + groupTitles.join(' / '));
+  // 每个分组要有自己的说明，且标题、说明与选项都在同一组内
+  chk(setGroups.every(g => g.querySelector('.settings-group-desc')),
+    '每组都有说明文字（说清这组管什么）');
+  const grpOf = sel => {
+    const el = sd.querySelector(sel);
+    const own = el && el.closest('.settings-group');
+    return own ? own.querySelector('.settings-group-title').textContent : null;
+  };
+  chk(grpOf('#input-username') === '通用', '用户名归到「通用」（古诗词与小古文共用）');
+  chk(grpOf('#btn-export') === '通用' && grpOf('#btn-reset') === '通用',
+    '数据管理归到「通用」');
+  chk(grpOf('#seg-stage') === '古诗词背诵' && grpOf('#grade-chips') === '古诗词背诵' &&
+      grpOf('#seg-term') === '古诗词背诵', '学段 / 年级 / 学期归到「古诗词背诵」');
+  chk(grpOf('#seg-scope') === '古诗词背诵' && grpOf('#seg-count') === '古诗词背诵',
+    '背诵范围 / 每日数量归到「古诗词背诵」');
+  chk(grpOf('#seg-helper') === '阅读辅助', '注音总开关归到「阅读辅助」组');
+  // 只给背诵用的选项不能再出现在「通用」组里（这才是这次需求的重点）
+  const generalItems = setGroups[0].querySelectorAll('.settings-item');
+  chk(generalItems.length === 2, '「通用」组只有用户名与数据管理两项（实际 ' + generalItems.length + '）');
+  // 设置项都还在，没有在搬动过程中被漏掉
+  ['#input-username', '#seg-stage', '#grade-chips', '#seg-term', '#seg-scope',
+   '#seg-count', '#seg-helper', '#btn-export', '#btn-import', '#btn-reset'].forEach(sel => {
+    chk(!!sd.querySelector(sel), '分组后设置项仍在：' + sel);
+  });
+  // 「背诵范围」下回显当前范围（此前设置页留空一块）
+  chk(!!sd.querySelector('#scope-hint') && /^当前：/.test(sd.querySelector('#scope-hint').textContent),
+    '背诵范围下回显当前范围（实际「' + (sd.querySelector('#scope-hint') || {}).textContent + '」）');
   chk(!!sd.querySelector('#settings-page'), '设置页是独立的整页容器');
   // 需求：首页下方的「小古文」入口卡片删除（底部页签已承担入口，卡片重复）
   chk(d.querySelector('#classic-entry') === null, '首页不再有小古文入口卡片');

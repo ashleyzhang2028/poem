@@ -767,7 +767,41 @@ body.has-install-tip #app {
      这里一次留够即可，页脚不会被压住也不会多出一条空白 */
   padding-bottom: calc(24px + var(--nav-h));
 }
-.settings-page .settings-item:first-child { margin-top: 4px; }
+
+/* --------------------------------------------------------------------------
+   设置分组：功能多了以后，把「只给古诗词背诵用」的选项与「全站通用」的选项分开
+   --------------------------------------------------------------------------
+   分组标题沿用纸张质感：小字号 + 字距拉开 + 一条淡金细线收尾，
+   视觉上像册页的「卷次」，不与组内选项的深绿药丸抢眼。
+   -------------------------------------------------------------------------- */
+.settings-group { margin-top: 26px; }
+.settings-group:first-of-type { margin-top: 4px; }
+
+.settings-group-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: .16em;
+  color: var(--green-dark);
+}
+/* 标题右侧的淡金细线：一直拉到容器右边，作为分组的收尾 */
+.settings-group-title::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(to right, rgba(214, 178, 106, .55), rgba(214, 178, 106, 0));
+}
+.settings-group-desc {
+  margin: 6px 0 0;
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: var(--ink-3);
+}
+/* 组的第一项紧贴说明文字，别再多出一截空白 */
+.settings-group > .settings-item:first-of-type { margin-top: 14px; }
 
 /* 页脚：推到页面最底，且与正文之间留一段呼吸间距 */
 .settings-foot {

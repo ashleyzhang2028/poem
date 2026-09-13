@@ -383,6 +383,31 @@ chk(settingsHtml.indexOf('id="settings-page"') !== -1, '设置页有独立的整
 chk(settingsHtml.indexOf('settings-modal') === -1, '设置页不再用弹层结构');
 chk(settingsHtml.indexOf('class="foot settings-foot"') !== -1, '设置页底部有页脚（版权 + 法务链接）');
 
+// 需求（本次）：功能变多后设置项按用途归类 —— 分「通用」「古诗词背诵」「阅读辅助」三组
+chk((settingsHtml.match(/class="settings-group"/g) || []).length === 3,
+  '设置分三组：通用 / 古诗词背诵 / 阅读辅助');
+chk(/settings-group-title[^>]*>通用</.test(settingsHtml), '有「通用」分组标题');
+chk(/settings-group-title[^>]*>古诗词背诵</.test(settingsHtml), '有「古诗词背诵」分组标题');
+chk(/settings-group-title[^>]*>阅读辅助</.test(settingsHtml), '有「阅读辅助」分组标题');
+// 分组要真的装对东西：只给背诵用的选项不能落在「通用」里
+const generalBlock = (settingsHtml.match(/aria-labelledby="grp-general"[\s\S]*?<\/section>/) || [''])[0];
+const reciteBlock = (settingsHtml.match(/aria-labelledby="grp-recite"[\s\S]*?<\/section>/) || [''])[0];
+const readerBlock = (settingsHtml.match(/aria-labelledby="grp-reader"[\s\S]*?<\/section>/) || [''])[0];
+chk(!!generalBlock && !!reciteBlock && !!readerBlock, '三个分组各自的区块都能取到');
+chk(/id="input-username"/.test(generalBlock), '「通用」组含用户名');
+chk(/id="btn-export"/.test(generalBlock) && /id="btn-import"/.test(generalBlock) && /id="btn-reset"/.test(generalBlock),
+  '「通用」组含数据管理（导出 / 导入 / 清空）');
+chk(!/seg-scope|seg-stage|seg-term|grade-chips|seg-count/.test(generalBlock),
+  '「通用」组里不再混入只给背诵用的选项');
+chk(/id="seg-stage"/.test(reciteBlock) && /id="grade-chips"/.test(reciteBlock) &&
+    /id="seg-term"/.test(reciteBlock) && /id="seg-scope"/.test(reciteBlock) && /id="seg-count"/.test(reciteBlock),
+  '「古诗词背诵」组聚齐学段 / 年级 / 学期 / 背诵范围 / 每日数量');
+chk(/id="seg-helper"/.test(readerBlock), '「阅读辅助」组含注音总开关');
+// 分组标题的样式：与选项药丸区分开，且靠一条细线收尾
+chk(/\.settings-group-title\s*\{[\s\S]{0,300}?letter-spacing/.test(css),
+  '分组标题用字距拉开，与组内选项区分（命中 .settings-group-title 样式）');
+chk(/\.settings-group-title::after/.test(css), '分组标题右侧有收尾细线（::after）');
+
 // 需求：设置页底部不被底部导航栏遮挡 —— 统一由 --nav-h 这条基准线决定
 chk(/--nav-h:\s*0px/.test(css), '定义了底部导航栏高度变量 --nav-h');
 chk(/\.settings-page \{[\s\S]*?padding-bottom:\s*calc\([^)]*--nav-h/.test(css),

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#2f6055" />
   <title>设置 · 跬步</title>
-  <meta name="description" content="跬步设置：用户名、学段年级学期、背诵范围与数量、阅读辅助、数据备份与清空。" />
+  <meta name="description" content="跬步设置：用户名等通用选项，以及古诗词背诵的学段年级学期、背诵范围与数量，数据备份与清空。" />
   <meta name="format-detection" content="telephone=no" />
 
   <!-- iOS（苹果手机 / iPad）支持 -->
@@ -18,78 +18,111 @@
   <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
   <link rel="stylesheet" href="/css/style.css" />
 </head>
-<body data-nav="settings" data-page="设置" data-sub="用户名 · 学段年级 · 背诵范围 · 数据">
+<body data-nav="settings" data-page="设置" data-sub="通用 · 古诗词背诵 · 数据">
   <div class="app">
     <!-- 顶部栏：由 js/chrome.js 统一渲染（全站同一套 logo + 跬步 + 页面名） -->
     <header class="topbar"></header>
 
     <main class="settings-page" id="settings-page">
-      <div class="settings-item">
-        <label for="input-username">用户名</label>
-        <input id="input-username" class="settings-input" type="text" maxlength="12"
-               placeholder="Ashley" autocomplete="off" enterkeyhint="done" />
-        <div class="settings-hint">留空则显示默认名称「Ashley」</div>
-      </div>
-      <div class="settings-item">
-        <label>学段</label>
-        <div class="seg small" id="seg-stage">
-          <button data-stage="primary" class="active">小学</button>
-          <button data-stage="middle">初中</button>
-          <button data-stage="high">高中</button>
+      <!-- ==================================================================
+           一、通用：与「背诵哪一册」无关，全站都吃这一份设置
+           ================================================================== -->
+      <section class="settings-group" aria-labelledby="grp-general">
+        <h2 class="settings-group-title" id="grp-general">通用</h2>
+        <p class="settings-group-desc">全站共用：用户名与数据备份。</p>
+
+        <div class="settings-item">
+          <label for="input-username">用户名</label>
+          <input id="input-username" class="settings-input" type="text" maxlength="12"
+                 placeholder="Ashley" autocomplete="off" enterkeyhint="done" />
+          <div class="settings-hint">留空则显示默认名称「Ashley」；古诗词与小古文共用</div>
         </div>
-      </div>
-      <div class="settings-item">
-        <label>年级</label>
-        <div class="chips" id="grade-chips"></div>
-      </div>
-      <div class="settings-item">
-        <label>学期</label>
-        <div class="seg small" id="seg-term">
-          <button data-term="1" class="active">上学期</button>
-          <button data-term="2">下学期</button>
+
+        <div class="settings-item">
+          <label>数据管理</label>
+          <div class="settings-btns">
+            <button class="btn ghost-btn" id="btn-export">导出备份</button>
+            <button class="btn ghost-btn" id="btn-import">导入备份</button>
+            <button class="btn danger-btn" id="btn-reset">清空进度</button>
+          </div>
+          <div class="settings-hint">备份含全部设置与古诗词背诵进度</div>
         </div>
-      </div>
-      <div class="settings-item">
-        <label>背诵范围</label>
-        <div class="seg small" id="seg-scope">
-          <button data-scope="term" class="active">本册</button>
-          <button data-scope="upto">本册及之前</button>
-          <button data-scope="primary">小学随机</button>
-          <button data-scope="middle">初中随机</button>
-          <button data-scope="primary_middle">小学+初中随机</button>
-          <button data-scope="high">高中随机</button>
-          <button data-scope="all">全部随机</button>
+      </section>
+
+      <!-- ==================================================================
+           二、古诗词背诵：只作用于「古诗词」页（/），小古文页不受影响
+           ================================================================== -->
+      <section class="settings-group" aria-labelledby="grp-recite">
+        <h2 class="settings-group-title" id="grp-recite">古诗词背诵</h2>
+        <p class="settings-group-desc">决定首页每天背哪一册、背几首，仅作用于古诗词页。</p>
+
+        <div class="settings-item">
+          <label>学段</label>
+          <div class="seg small" id="seg-stage">
+            <button data-stage="primary" class="active">小学</button>
+            <button data-stage="middle">初中</button>
+            <button data-stage="high">高中</button>
+          </div>
         </div>
-        <div class="settings-hint" id="scope-hint"></div>
-      </div>
-      <div class="settings-item">
-        <label>阅读辅助</label>
-        <div class="seg small" id="seg-helper">
-          <button data-helper="off" class="active">关闭</button>
-          <button data-helper="on">开启</button>
+
+        <div class="settings-item">
+          <label>年级</label>
+          <div class="chips" id="grade-chips"></div>
         </div>
-        <div class="settings-hint" id="helper-hint">开启后，打开诗或古文即自动注音；朗读按钮始终可用</div>
-      </div>
-      <div class="settings-item">
-        <label>每日背诵数量</label>
-        <div class="seg small" id="seg-count">
-          <button data-count="3">3 首</button>
-          <button data-count="5" class="active">5 首</button>
-          <button data-count="8">8 首</button>
-          <button data-count="10">10 首</button>
+
+        <div class="settings-item">
+          <label>学期</label>
+          <div class="seg small" id="seg-term">
+            <button data-term="1" class="active">上学期</button>
+            <button data-term="2">下学期</button>
+          </div>
         </div>
-      </div>
-      <div class="settings-item">
-        <label>数据管理</label>
-        <div class="settings-btns">
-          <button class="btn ghost-btn" id="btn-export">导出备份</button>
-          <button class="btn ghost-btn" id="btn-import">导入备份</button>
-          <button class="btn danger-btn" id="btn-reset">清空进度</button>
+
+        <div class="settings-item">
+          <label>背诵范围</label>
+          <div class="seg small" id="seg-scope">
+            <button data-scope="term" class="active">本册</button>
+            <button data-scope="upto">本册及之前</button>
+            <button data-scope="primary">小学随机</button>
+            <button data-scope="middle">初中随机</button>
+            <button data-scope="primary_middle">小学+初中随机</button>
+            <button data-scope="high">高中随机</button>
+            <button data-scope="all">全部随机</button>
+          </div>
+          <div class="settings-hint" id="scope-hint"></div>
         </div>
-      </div>
-      <div class="settings-tip">
-        <p>复习间隔：当天 → 1 → 2 → 4 → 7 → 15 → 30 → 60 → 120 → 240 天</p>
-      </div>
+
+        <div class="settings-item">
+          <label>每日背诵数量</label>
+          <div class="seg small" id="seg-count">
+            <button data-count="3">3 首</button>
+            <button data-count="5" class="active">5 首</button>
+            <button data-count="8">8 首</button>
+            <button data-count="10">10 首</button>
+          </div>
+        </div>
+
+        <div class="settings-tip">
+          <p>复习间隔：当天 → 1 → 2 → 4 → 7 → 15 → 30 → 60 → 120 → 240 天</p>
+        </div>
+      </section>
+
+      <!-- ==================================================================
+           三、阅读辅助：古诗词与小古文都听这一份总开关
+           ================================================================== -->
+      <section class="settings-group" aria-labelledby="grp-reader">
+        <h2 class="settings-group-title" id="grp-reader">阅读辅助</h2>
+        <p class="settings-group-desc">古诗词与小古文共用：打开正文即自动注音。</p>
+
+        <div class="settings-item">
+          <label>自动注音</label>
+          <div class="seg small" id="seg-helper">
+            <button data-helper="off" class="active">关闭</button>
+            <button data-helper="on">开启</button>
+          </div>
+          <div class="settings-hint" id="helper-hint">开启后，打开诗或古文即自动注音；朗读按钮始终可用</div>
+        </div>
+      </section>
     </main>
 
     <!-- 版权 + 用户协议 / 隐私条款：整页设置的最底部（页面内容不足时也贴底） -->
