@@ -153,14 +153,36 @@
     return GLYPHS.mark;
   }
 
+  /** 这条顶栏是不是阅读器里的那条（动作位归它，页面顶部那条不参与） */
+  function isReaderBar(bar) {
+    return !!(bar && bar.parentNode && bar.parentNode.classList &&
+      bar.parentNode.classList.contains("reader"));
+  }
+
   /* ---------------- 渲染：顶栏 ---------------- */
-  function headerHtml() {
+  /**
+   * 顶栏右端那一个动作位。
+   *
+   * isReader 为 true 时（阅读器那条顶栏）才走 headerAction；
+   * 页面自己那条顶栏即使阅读器开着，也照旧显示「回首页」的返回键 ——
+   * 否则页面顶栏与阅读器顶栏会同时渲染出 `id="top-act"`，
+   * 一个页面里出现两个同名 id：HTML 不合法，且 `element.querySelector('#top-act')`
+   * 在部分 DOM 实现（jsdom ≥27）里只认第一枚，阅读器那条会查不到按钮。
+   * 顺带也修掉「顶栏整行连着两个『小古文』」：页面顶栏本该是「跬步 · 小古文 ｜ 返回」，
+   * 不该把阅读器的动作文案「返回小古文列表」也挂上来。
+   */
+  function headerHtml(isReader) {
     var key = pageKey();
     var sub = pageSub();
-    var action = headerAction;
+    var action = isReader ? headerAction : null;
     var right;
 
-    if (action) {
+    if (isReader && !action) {
+      // 阅读器那条顶栏在「没动作」时（阅读器已合上、或还没打开）只留占位：
+      // 它此刻是 hidden 的，不该再渲染一颗 id="top-back" —— 页面顶栏已经有同样一枚，
+      // 同名 id 再一次不合法，且作用域查询会认错人。
+      right = '<span class="top-act-spacer" aria-hidden="true"></span>';
+    } else if (action) {
       // 动作是「关闭阅读器」这类「合上 / 撤回上一层」的语义，一律画成返回箭头：
       // 同一种行为在全站只能是同一个图标（顶栏右侧那颗与底部页签「回首页」各司其职）。
       // 曾经这里换成 ✕，结果阅读器里同时出现「底部页签回首页」与「右上角 ✕」，
@@ -267,7 +289,7 @@
       keep = [].slice.call(extras);
       keep.forEach(function (el) { bar.removeChild(el); });
     }
-    bar.innerHTML = headerHtml();
+    bar.innerHTML = headerHtml(isReaderBar(bar));
     if (!keep) return;
     var act = bar.querySelector(".top-act, .top-act-spacer");
     keep.forEach(function (el) {
@@ -328,13 +350,9 @@
    * 小古文阅读器是全屏 fixed 层，里面**也有**一条同样结构的顶栏 ——
    * 从列表点进正文时，徽标、「跬步 · 小古文」、右侧圆形动作位都不该变样。
    *
-   * ⚠️ 两条顶栏必须**一起**重绘：只重绘一条，另一条就会停在旧状态 ——
-   * 阅读器一打开，页面顶上那条仍挂着「返回首页」，而用户已经在正文里了。
-   *
-   * ⚠️ 顺序也有讲究：DOM 顺序是「页面那条前、阅读器那条后」。
-   * headerAction 是全局的，所以**最后一条**说了算；先渲染阅读器那条、
-   * 再渲染页面那条，页面那条就会把阅读器需要的「返回列表」覆盖回「返回首页」。
-   * 先算清动作、再按顺序渲染，两条才不会打架。
+   * 两条顶栏会被**一起**重绘（品牌区与页面小件按枚迁回，所以进正文时页面顶部不闪），
+   * 但动作位只在阅读器那条上生效（见 headerHtml 的 isReader 与 isReaderBar）：
+   * 页面那条仍显示「回首页」，不会跟着变成按钮，也不会冒出一枚重复的 id="top-act"。
    */
   function readBars() {
     var list = [];
@@ -401,25 +419,25 @@
     },
     /**
      * 顶栏右侧换成自定义动作（阅读器 → 关闭；法务页 → 返回）。
-     * 全站所有顶栏（页面那条 + 阅读器里那条）一起重绘：只换右侧动作位，
-     * 品牌区不动，所以「进正文」时页面顶部不会闪一下、也不会换一张脸。
+     * 所有顶栏一起重绘（品牌区与页面小件不动，所以「进正文」时页面顶部不会闪一下），
+     * 但**只有阅读器那条**的动作位变成这颗按钮：
+     *  · 页面自己那条照旧是「回首页」的返回键（id="top-back"），
+     *    否则同一页面会出现两枚 id="top-act" —— HTML 不合法，
+     *    且 `#top-act` 这种作用域查询在部分 DOM 实现里只认第一枚，
+     *    阅读器那条会查不到按钮（jsdom ≥27 的经典翻车姿势）；
+     *  · 页面顶栏也不必挂上「返回小古文列表」这句话，免得整行连出两个「小古文」。
      */
     setHeaderAction: function (action) {
       headerAction = action || null;
       var bars = readBars();
-      // handle 只挂一次：重复调用（每次翻篇都会调）不该把同一个监听器叠上好几层
-      var wired = false;
-      bars.forEach(function (bar, i) {
+      bars.forEach(function (bar) {
         renderBar(bar);
         bindHeader();
-        var btn = bar.querySelector(".top-act, .top-act-spacer");
-        if (!btn || !action || !action.onclick) return;
+        // 动作只落在阅读器那条顶栏上；页面那条交给它自己的 href 兜底
+        if (!isReaderBar(bar) || !action || !action.onclick) return;
+        var btn = bar.querySelector("#top-act");
+        if (!btn) return;
         btn.setAttribute("type", "button");
-        // 只给**最后一条**（阅读器那条）接上行为；页面顶部那条交给它的 href 兜底。
-        // 两条都挂的话，点一次会跑两遍 closeReader —— 第二次 current 已经为 null，
-        // 会去读 current.id 而报错。
-        if (wired || i !== bars.length - 1) return;
-        wired = true;
         btn.addEventListener("click", action.onclick);
       });
     },

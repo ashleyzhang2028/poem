@@ -133,6 +133,21 @@ setTimeout(() => {
     [...rBar.children].map(e => e.className).join('/') + '）');
   chk(rBar.querySelector('.brand-page-text').textContent === '小古文',
     '阅读器里的页名同样是「小古文」，与列表页一致');
+  // 回归防线：整个页面里 #top-act 只能有一枚 —— 只有阅读器那条顶栏才是动作位。
+  // 曾经 setHeaderAction 把 headerAction 挂在**所有**顶栏上，页面那条也跟着渲染成
+  // id="top-act"：同一页面出现两枚同名 id（HTML 不合法），并且
+  // `readerBar.querySelector('#top-act')` 在 jsdom ≥27 里只认文书里第一枚，
+  // 阅读器那条直接查不到按钮 —— 正是 CI 上那三条 ✗ 的病根。
+  chk(d.querySelectorAll('#top-act').length === 1,
+    '全页只有一枚 #top-act（动作位只归阅读器那条顶栏，实际 ' +
+    d.querySelectorAll('#top-act').length + ' 枚）');
+  chk(d.querySelectorAll('#top-back').length === 1,
+    '全页只有一枚 #top-back（阅读器那条合上时不再跟着渲染第二枚返回键，实际 ' +
+    d.querySelectorAll('#top-back').length + ' 枚）');
+  // 页面顶部那条顶栏不该被阅读器的动作「换脸」：它仍是「回首页」的返回键
+  const appBarBack = d.querySelector('.app > .topbar #top-back');
+  chk(!!appBarBack && appBarBack.getAttribute('href') === '/',
+    '阅读器打开时，页面顶部那条顶栏仍是「回首页」的返回键（不跟着变成动作按钮）');
   const rBack = rBar.querySelector('#top-act');
   chk(!!rBack && !!rBack.querySelector('svg'), '阅读器返回键走全站动作位（同一颗圆形按钮）');
   // ⚠️ 后面要用这枚按钮做交互，先确认它真的在：曾经 top-act 选不到（当场为 null）时
@@ -216,8 +231,10 @@ setTimeout(() => {
   const sub = d.querySelector('.app > .topbar #brand-sub').textContent;
   chk(sub === '想读哪篇点哪篇', '小古文页副标题为「想读哪篇点哪篇」（实际 ' + JSON.stringify(sub) + '）');
   chk(!/小古文/.test(sub) && !/跬步/.test(sub), '副标题不与第一行重复页面名 / 应用名');
-  chk(!/小古文[^。]{0,40}小古文/.test(d.querySelector('.topbar').textContent.replace(/\s+/g, '')),
-    '顶栏整行不出现连着两个「小古文」');
+  // 只看**页面顶部那条**顶栏：阅读器那条的动作文案是「返回小古文列表」，
+  // 那是刻意的读屏说明，不算「重复页面名」。
+  chk(!/小古文[^。]{0,40}小古文/.test(d.querySelector('.app > .topbar').textContent.replace(/\s+/g, '')),
+    '页面顶栏整行不出现连着两个「小古文」');
   const dock = d.querySelector('#site-dock');
   chk(!!dock, '小古文页有底部导航栏');
   const dockItems = [...dock.querySelectorAll('.dock-item')];
