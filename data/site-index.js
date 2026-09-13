@@ -51,6 +51,10 @@
       var list = opt[b.id] || (typeof window !== "undefined" ? window[b.varName] : null);
       if (!list || !list.length) return;
       list.forEach(function (p) {
+        // 还没有正文 / 译文的篇目（《古文观止》目录里标着「待补」的那些）
+        // 不进全站搜索索引：搜到一条点进去只有提示，等于把「尚未整理」
+        // 变成用户的一次白跑。它们在各自集子的列表里仍然可见。
+        if (b.id === "guwen" && (!p.text || !p.translation)) return;
         out.push({
           id: b.id + "-" + p.id,
           originId: p.id,

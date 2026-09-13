@@ -55,6 +55,10 @@
     noReadable: "没有可朗读的篇目",
     backToList: "返回列表",
     readStoreLabel: "已读",
+    // 正文 / 译文尚未整理的篇目（《古文观止》目录里的「待补」条目）：
+    // 点进去要说清「这篇为什么是空的、以后会有」，而不是白屏或假内容
+    pendingText: "本篇原文尚在整理中",
+    pendingTranslation: "本篇白话译文尚在整理中",
     playerTitle: "",        // 底部播放栏的读屏名，留空用默认
     randomRead: "随机连读",
     searchPlaceholder: "搜索篇名 / 出处 / 作者",
@@ -557,14 +561,19 @@
       }
 
       var read = isRead(p.id);
+      // 「待补」= 正文或译文还没整理好（《古文观止》目录里保留的那些条目）：
+      // 列表里照常列出并明确标注，用户不会以为是自己点的这一下有毛病。
+      var pending = !p.text || !p.translation;
       var el = document.createElement("div");
-      el.className = "item" + (read ? " done" : "") + (p.gradeGroup === W.matchGroup ? "" : " in-book");
+      el.className = "item" + (read ? " done" : "") + (pending ? " pending" : "") +
+        (p.gradeGroup === W.matchGroup ? "" : " in-book");
       el.dataset.id = p.id;
       el.innerHTML =
         '<div class="item-main">' +
         // 序号圆挪进标题行、排在篇名前面：与小古文首页、古诗词列表同一套（Issue #55 第三条）
         '<h3 class="item-title"><span class="item-num">' + index + "</span>" + esc(p.title) +
         (read ? '<span class="item-reason read">' + esc(W.readStoreLabel) + "</span>" : "") +
+        (pending ? '<span class="item-reason pending">待补</span>' : "") +
         "</h3>" +
         // 顺序（Issue #55 后续）：朝代 · 作者 · 出处 —— 「宋 · 王应麟 ·《三字经》」，
         // 与阅读器 / 详情页「朝代 + 作者 + 书名」的读法一致，出处作为落款压在最后。
@@ -572,7 +581,11 @@
         (p.dynasty ? "<span>" + esc(p.dynasty) + "</span>" : "") +
         (p.author ? (p.dynasty ? "<span>·</span>" : "") + "<span>" + esc(p.author) + "</span>" : "") +
         (p.source ? ((p.dynasty || p.author) ? "<span>·</span>" : "") + "<span>" + esc(p.source) + "</span>" : "") +
-        "<span>·</span><span>" + esc(String(p.text).replace(/\n/g, "").slice(0, CFG.excerptLen || 16)) + "…</span>" +
+        // 正文摘句：摘句由数据自己给（p.excerpt），没给就不显示 ——
+        // 《宋词三百首》《古文观止》的作品太长，截前 16 字往往是「庆历四年春，滕子京谪守巴陵」这类
+        // 交代性开头，看不出是哪一篇；而语料整理者给出的摘句（多为名句）才能真正认出作品。
+        // 这里**不做兜底截断**：没有摘句就少一段，而不是拿一段认不出的字凑数。
+        (p.excerpt ? "<span>·</span><span>" + esc(String(p.excerpt).replace(/\n/g, "")) + "</span>" : "") +
         "</div>" +
         "</div>" +
         '<button type="button" class="item-read" title="播放这一篇" aria-label="播放 ' + esc(p.title) + '">' +
@@ -642,7 +655,7 @@
       (p.author ? '<span class="tag ghost">' + esc(p.author) + "</span>" : "") +
       (p.source ? '<span class="tag">' + esc(p.source) + "</span>" : "");
     renderReaderText();
-    el.querySelector('.rd-trans-text, #rd-trans-text').textContent = p.translation || "（暂未收录译文）";
+    el.querySelector('.rd-trans-text, #rd-trans-text').textContent = p.translation || W.pendingTranslation;
     // 译文来源注脚：与首页详情页同一套文案（data/index.js 的 TRANSLATION_SOURCES）
     var srcEl = el.querySelector('.rd-trans-src, #rd-trans-src');
     if (srcEl) {
@@ -712,6 +725,11 @@
     if (!current) return;
     var el = rd("text");
     if (!el) return;
+    if (!current.text) {
+      el.classList.remove("with-pinyin");
+      el.textContent = W.pendingText;
+      return;
+    }
     var mode = pinyinMode();
     if (mode !== "off" && window.Pinyin) {
       el.innerHTML = window.Pinyin.annotateHtml(current.text, mode === "all" ? "all" : "rare");

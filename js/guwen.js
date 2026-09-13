@@ -5,7 +5,7 @@
  *   1. 把《古文观止》这**一部集子**的配置交给 js/reader-core.js 的
  *      ReaderEngine.mount()：数据、卷次顺序、文案、已读存的键名。
  *   2. 「已读」进度由引擎统一维护；本页不再自己管 localStorage。
- *   3. 卷次分组靠 gradeGroup 字段（卷一 周文 …… 卷八 唐文）。
+ *   3. 卷次分组靠 gradeGroup 字段（卷一 周文 …… 卷十二 明文）。
  *
  * 为什么分组顺序要在这里显式写出：
  *   引擎按 config.groupOrder 排序，而不是照数组出场顺序 —— 数据文件里
@@ -60,6 +60,9 @@
         empty: "没有匹配的古文",
         matchGroup: "古文观止",
         backToList: "返回古文列表",
+        // 目录里尚未整理正文 / 译文的那些篇目：点开是说清楚，不是白屏
+        pendingText: "本篇原文尚在整理中",
+        pendingTranslation: "本篇白话译文尚在整理中",
         readStore: "poem_guwen_read_v1",
         playerTitle: "古文朗读",
         searchPlaceholder: "搜索篇名 / 出处 / 作者"

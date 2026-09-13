@@ -436,6 +436,17 @@
 #gw-list .item-num { color: var(--blue); }
 #gw-list .item.in-book .item-num { color: var(--green); }
 #gw-list .item-reason.read { background: var(--green-light); color: var(--green); }
+/* 「待补」标记（《古文观止》目录里尚未整理正文 / 译文的篇目）：
+   用最淡的墨色与描边，与「已读」的实底绿点分得开 ——
+   它不是状态，只是「这一篇还没有内容」的说明，不该抢眼。
+   条目名也跟着转淡，一眼能看出整段是空档。 */
+#gw-list .item-reason.pending {
+  background: transparent;
+  color: var(--ink-3);
+  border: 1px solid var(--line);
+  font-weight: 400;
+}
+#gw-list .item.pending .item-title { color: var(--ink-3); }
 /* 列表项右侧播放键：与首页同款圆形播放器按钮，配色走天水碧（小古文主色） */
 #gw-list .item-read { color: var(--blue); }
 #gw-list .item-read[data-on="1"] { background: var(--blue); border-color: var(--blue); color: #fffdf8; }
