@@ -7,18 +7,25 @@
 .back-icon { text-decoration: none; }
 .back-icon svg { width: 26px; height: 26px; }
 
-/* 已读进度：顶栏下方右对齐的小牌，不占内容宽度 */
-.list-head {
-  display: flex;
-  justify-content: flex-end;
-  margin: -4px 0 10px;
+/* 已读进度牌：页顶那一行里，排在返回键左侧
+   --------------------------------------------------------------------------
+   它原先挂在内容区最上面一行（右对齐），标题栏下面平白多出一行；现在挪进页顶行：
+     徽标 · 跬步 · 小古文 · 副标题 ｜ 0 / 100 篇 ｜ 〔返回键〕
+   一个「0 / 100 篇」等于两行，所以给的是整行高度（line-height: 1），
+   让它在品牌区（两行文字）与 40px 的返回键之间**垂直居中** —— 居中对齐交给
+   .topbar 的 align-items: center，这里只保证牌子自身不拉伸、不被压扁。 */
+.topbar-with-count {
+  /* 品牌区与进度牌之间至少 10px：页名 / 用户名再长也不会贴在一起 */
+  gap: 10px;
 }
 .count-badge {
+  flex: none;
   background: var(--green-light);
   color: var(--green);
   font-size: 12.5px;
   font-weight: 600;
-  padding: 4px 11px;
+  line-height: 1;
+  padding: 6px 11px;
   border-radius: 999px;
   white-space: nowrap;
 }
