@@ -332,7 +332,7 @@ setTimeout(() => {
   // 再加 2px。加在卡片这层（.group-card 的左内边距 0 → 2px），而不是卡头自己的
   // padding —— 卡头与卡内条目共用同一条左缘，只动 .group-head 会让组名比下面的
   // 篇目多缩进 2px、卡头看着歪出半格。写在卡片上则卡头 / 条目 / 分隔线一起右移，
-  // 卡内「条目左 10px / 右 8px」的相对关系一点不变。
+  // 卡内「条目左 12px / 右 8px」的相对关系一点不变。
   // 原先左内边距是 0（旧版 4px 是给「整条左色条」的，合并成卡片后只剩一道空白，
   // 与条目自己的装饰重复 —— 已收掉）；本轮只加回用户要的 2px，右侧仍是 0。
   chk(!!cardCss && /padding:\s*0 0 10px 2px;/.test(cardCss[2]),
@@ -345,16 +345,16 @@ setTimeout(() => {
   chk(!/\.group-card \.item\.in-book::before/.test(classicCssText),
     '课内 / 课外改由序号圆配色与卡头分组名表达（不再有 .in-book::before 绿条）');
 
-  // 需求（Issue #55 后续）：条目左内边距 8 → 10px —— 列表内容与卡片左缘之间
+  // 需求（Issue #55 后续）：条目左内边距 10 → 12px —— 列表内容与卡片左缘之间
   // **只加左侧 2px**；右侧仍是 8px（那是「卡片右缘 → 播放键 / 箭头」的间距，
-  // 用户明确要求不要跟着动）。写成四值 padding 而不是 `12px 10px`，
-  // 就是为了让「只加左边」这件事在源码里看得见：一旦有人顺手改成 `12px 10px`，
-  // 右侧也会被推走 2px，下面的数值断言会红。
+  // 用户明确要求不要跟着动）。写成四值 padding 而不是 `12px 12px`，
+  // 就是为了让「只加左边」这件事在源码里看得见：一旦有人顺手改成对称写法，
+  // 右侧也会被推走，下面的数值断言会红。
   const itemPadBlock = /(^|\n)\.group-card \.item \{([\s\S]*?)\}/.exec(classicCssText);
-  chk(!!itemPadBlock && /padding:\s*12px 8px 12px 10px;/.test(itemPadBlock[2]),
-    '条目左内边距 10px（+2px）、右内边距仍 8px（只加左侧）');
-  chk(!!itemPadBlock && !/padding:\s*12px 10px;/.test(itemPadBlock[2]),
-    '右侧内边距没有被一起推走（不能写成 12px 10px 的对称写法）');
+  chk(!!itemPadBlock && /padding:\s*12px 8px 12px 12px;/.test(itemPadBlock[2]),
+    '条目左内边距 12px（再 +2px）、右内边距仍 8px（只加左侧）');
+  chk(!!itemPadBlock && !/padding:\s*12px 12px;/.test(itemPadBlock[2]),
+    '右侧内边距没有被一起推走（不能写成 12px 12px 的对称写法）');
 
   // 需求（Issue #55 后续）：左侧那道「大竖绿线」必须整条去掉。
   // 根子在全站 .item 遗留的 `border-left: 4px solid`：
@@ -445,13 +445,13 @@ setTimeout(() => {
   // 这里先从源码确认「没有负外边距」这个前提成立，布局断言交给 PWA 层。
   // 空心描边（border-box）不改变圆的占位宽度，所以与「左对齐」并存、不冲突。
   const itemPadL = parseInt((itemPadBlock[2].match(/padding:\s*\d+px \d+px \d+px (\d+)px/) || [, '0'])[1], 10);
-  chk(itemPadL === 10,
-    '条目左内边距 10px（在原 8px 基础上 +2px，实际 ' + itemPadL + 'px）');
+  chk(itemPadL === 12,
+    '条目左内边距 12px（8 → 10 → 12，累计 +4px，实际 ' + itemPadL + 'px）');
   const itemPadR = parseInt((itemPadBlock[2].match(/padding:\s*\d+px (\d+)px/) || [, '0'])[1], 10);
   chk(itemPadR === 8,
     '条目右内边距保持 8px 不变（实际 ' + itemPadR + 'px）：本轮只加左侧');
-  chk(itemPadL === itemPadR + 2,
-    '左右差恰好 2px（左 ' + itemPadL + ' / 右 ' + itemPadR + '）：要加的就是这 2px');
+  chk(itemPadL === itemPadR + 4,
+    '左右差恰好 4px（左 ' + itemPadL + ' / 右 ' + itemPadR + '）：要加的就是这 4px');
 
   // 需求（Issue #55 第三条）：序号圆从独占一列挪进标题行，排在篇名前面。
   const numEls = [...d.querySelectorAll('#gw-list .item-num')];
@@ -539,10 +539,24 @@ setTimeout(() => {
   const toolbarBlock = barCss.match(/\.toolbar \{([^}]*)\}/)[1];
   chk(/margin-bottom:\s*12px/.test(toolbarBlock),
     '工具栏下边距 12px（与页顶顶栏的 12px 下内边距一致，搜索框上下等距）');
-  chk(/padding:\s*12px 8px 8px/.test(headPad),
-    '卡头上内边距 12px（卡顶 → 卡头的呼吸）、下内边距 8px：组名与圆键整体上抬');
-  chk(!/\.group-head \{[^}]*padding[^;]*\b8px;/.test(headPad),
-    '分组标题不再保留旧的 14px 上内边距留下的三段 padding');
+  chk(/padding:\s*12px 8px 8px 12px/.test(headPad),
+    '卡头左内边距 12px（本轮 +4px）、上 12px / 右 8px / 下 8px 均不动');
+  chk(!/padding:\s*12px 8px 8px;/.test(headPad),
+    '卡头不能再写三段 padding（对称写法会把右侧那颗圆键一起推走 4px）');
+  // 需求（Issue #55 后续）：「卡头那一行多 4px」——只加左侧 4px，右侧一律不动。
+  // 卡头左内边距 8 → 12px（+4px）。它与条目左内边距同样是 12px，但两者是**兄弟**：
+  //   · .group-card 的左内边距为 0（两侧都不留白），所以卡头文字与条目文字都从
+  //     卡片左缘 + 自己的左内边距起算，两条左基准线仍严格对齐；
+  //   · 「多 4px」体现在卡头行本身：组名与右端那颗 26px 圆键之间收窄 4px，
+  //     而右侧内缘（8px）没动。
+  // 一旦有人把这里写成对称的三值 `12px 8px 8px`，右侧会被一起推走 4px，下面会红。
+  const headPadL = parseInt((headPad.match(/padding:\s*\d+px \d+px \d+px (\d+)px/) || [, '0'])[1], 10);
+  const headPadR = parseInt((headPad.match(/padding:\s*\d+px (\d+)px/) || [, '0'])[1], 10);
+  chk(headPadL === 12, '卡头左内边距 12px（原 8px 基础上 +4px，实际 ' + headPadL + 'px）');
+  chk(headPadR === 8, '卡头右内边距仍是 8px（本轮右侧不动，实际 ' + headPadR + 'px）');
+  chk(headPadL === itemPadL,
+    '卡头与条目左内边距同一数值（两者是兄弟、左基准线对齐：卡头 ' +
+    headPadL + ' / 条目 ' + itemPadL + '）');
   chk(!/margin-bottom:\s*6px/.test(toolbarBlock),
     '工具栏不再保留旧的 6px 下边距（下方空档曾只有上方的一半）');
   chk(!/padding:\s*14px 2px 8px/.test(headPad),
@@ -556,7 +570,7 @@ setTimeout(() => {
     '顶栏主规则下内边距为 12px：搜索框上方的空档与下方同值，页首上下对称');
   // 需求（Issue #55 第三条）：卡头「蒙学经典 4 篇」与右侧圆键不再压在首条的分隔线上。
   // 两件事一起做：卡头下内边距 0 → 8px；首条不画分隔线（留线会变成「卡头 → 线 → 首条」）。
-  chk(/padding:\s*12px 8px 8px/.test(headPad),
+  chk(/padding:\s*12px 8px 8px 12px/.test(headPad),
     '卡头下内边距 8px：组名与圆键整体上抬，不再贴着下面那条线');
   chk(/\.group-card \.item:first-of-type \{ border-top:\s*1px solid color-mix\(in srgb, var\(--line\) 55%, transparent\); \}/
     .test(classicCssText),

@@ -69,6 +69,7 @@
  *        外径 42px 不动，只把里面的 ▶ / ⏸ 图形从 19px 图标框收到 14px ——
  *        内径另起一个唯一来源 --today-btn-inner（与 --today-btn-size 分开），
  *        ▶ / ⏸ 同框，两态切换不会忽大忽小（css/style.css）
+
  *   v33  **全站播放键的三角形改为空心**（Issue #55 后续）：
  *        凡「听」的圆键里那颗 ▶ 一律只留描边、不填色，描边色即圆环色
  *        （currentColor），与「列表序号空心圆 / 折叠箭头空心三角」同一套
@@ -89,8 +90,12 @@
  *            content-box + 外盒 40px（边框往外长），画出来的圆与环逐像素相等；
  *            同一颗键的 ▶ 图标框由 14px 放大到 17px（三角边长 ~5.8 → ~7.0px），
  *            边框仍是 1px 上下（css/style.css、index.html）
+ *   v35  小古文卡片的左内边距再放一档（Issue #55 后续）：
+ *        卡内条目左内边距 10 → 12px（右侧仍是 8px，只加左边）；
+ *        卡头那一行左内边距 8 → 12px，与条目同为 12px ——
+ *        两处都写四值 padding，防对称写法把右侧也推走（css/classic.css）
  */
-const CACHE_NAME = "poem-app-v34";
+const CACHE_NAME = "poem-app-v35";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [
