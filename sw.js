@@ -86,8 +86,14 @@
  *        window.SITE_INDEX / window.buildSiteIndex）
  *        （js/reader-core.js、js/classic.js、classic/index.html、
  *          data/site-index.js、sw.js）
+ *   v37  唐诗三百首集子 /tangshi/（内容 PR，Issue #69，见另一支分支）
+ *   v38  新增《古文观止》集子（Issue #69 内容 PR）：/guwen/ 索引页 + 详情页，
+ *        与《课外必背小古文》《唐诗三百首》共用 js/reader-core.js 引擎；
+ *        首篇收入韩愈《送孟东野序》（卷八 唐文），已读键 poem_guwen_read_v1
+ *        （guwen/index.html、js/guwen.js、data/poems-guwen.js、
+ *          js/chrome.js、sw.js）
  */
-const CACHE_NAME = "poem-app-v36";
+const CACHE_NAME = "poem-app-v38";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [
@@ -134,6 +140,9 @@ const PRECACHE = [
   "./data/poems-12.js",
   "./data/index.js",
   "./data/poems-classic.js",
+  "./guwen/",
+  "./data/poems-guwen.js",
+  "./js/guwen.js",
   "./icons/icon-120.png",
   "./icons/icon-152.png",
   "./icons/icon-167.png",

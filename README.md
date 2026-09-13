@@ -15,11 +15,25 @@
 |---|---|---|---|
 | 课内古诗文（含长文言文） | 273 首（译文 100%，带来源标注） | 按遗忘曲线排每日任务，点击背诵 | 首页「今日背诵」 |
 | 小古文 | 100 篇 | **篇幅长，整页阅读**，逐篇列出点击进入 | 首页「本年级本学期全部诗词」下方的「小古文」卡片 |
+| 古文观止 | 逐步补齐（当前 1 篇） | **篇幅长，整页阅读**，按卷次分组列出 | `/guwen/`（导航入口随后续 PR 补齐） |
 
 为什么小古文要单独一套：
 - **篇幅长**：小古文动辄上百字，手机上卡片式弹窗装不下，所以阅读改成**整页阅读器**，可以一路滚下去
 - **排版需要**：古诗词短，卡片弹窗就能读完；小古文动辄上百字，只有整页阅读器才装得下，与「要不要背」无关
 - **不打扰主线**：小古文独立成页 `/classic/`，有自己的「已读」标记（与古诗词进度互不干扰），不会占用每日 5 首任务的名额
+
+### 古文观止（`/guwen/`，Issue #69 逐步补齐）
+
+与《课外必背小古文》《唐诗三百首》共用同一套「索引页 + 详情页」引擎
+（`js/reader-core.js` 的 `ReaderEngine.mount`），只是换一份数据与配置：
+
+- 数据在 `data/poems-guwen.js`，字段：`id / title / source / dynasty / author /
+  gradeGroup / text / translation / translationSource`
+  - `source` 统一为《古文观止》，`gradeGroup` 承担**卷次分组**（卷一 周文 …… 卷八 唐文）
+- 挂载脚本 `js/guwen.js`：卷次顺序、文案、独立已读键 `poem_guwen_read_v1`
+- 收入篇目与《唐诗三百首》《宋词三百首》《古文观止》各自成集，已读进度互不干扰
+- 首篇收入韩愈《送孟东野序》（卷八 唐文）—— 原文与白话译文均据公认注本整理，
+  译文来源标 `public-domain`
 
 ## ✨ 核心功能
 
@@ -235,6 +249,7 @@
 |---|---|---|
 | 古诗词首页 | `/` | `index.html` |
 | 小古文 | `/classic/` | `classic/index.html` |
+| 古文观止 | `/guwen/` | `guwen/index.html` |
 | 设置 | `/settings/` | `settings/index.html` |
 | 用户协议 | `/terms/` | `terms/index.html` |
 | 隐私条款 | `/privacy/` | `privacy/index.html` |
@@ -703,6 +718,7 @@ node test/pwa.test.js
 .
 ├── index.html              # 应用入口，对应地址 /（含 iOS meta 标签）
 ├── classic/index.html      # 小古文学习库（整页阅读器），对应地址 /classic/
+├── guwen/index.html        # 古文观止（整页阅读器，按卷次分组），对应地址 /guwen/
 ├── settings/index.html     # 设置整页，对应地址 /settings/（通用 / 古诗词背诵 / 阅读辅助三组 + 页脚法务链接）
 ├── terms/index.html        # 跬步 · 用户协议，对应地址 /terms/（使用规则 / 学生保护 / 免责声明）
 ├── privacy/index.html      # 跬步 · 隐私条款，对应地址 /privacy/（不收集儿童信息 / 数据留在本机 / 你的权利）
@@ -718,6 +734,8 @@ node test/pwa.test.js
 │   ├── app.js              # 首页 UI 渲染与交互（含用户名 → 标题联动）
 │   ├── settings.js         # 设置整页：读写同一份设置 + 今日计划缓存失效
 │   ├── classic.js          # 小古文列表 / 搜索 / 阅读器 / 注音 / 朗读 / 已读标记
+│   ├── reader-core.js      # 古籍阅读库引擎（索引页 + 详情页，各集子共用）
+│   ├── guwen.js            # 古文观止的挂载配置（数据 / 卷次顺序 / 文案 / 已读键）
 │   ├── manifest-loader.js  # 读取 PWA 清单，供用户名改名时动态生成
 │   ├── chrome.js           # 全站统一顶栏（跬步 · 页面名）+ 底部三页签
 │   ├── contact.js          # 联系邮箱：运行时拼装，避免被搜索引擎抓走
@@ -740,6 +758,7 @@ node test/pwa.test.js
 ├── data/
 │   ├── poems-1.js ~ poems-12.js   # 各年级诗词数据
 │   ├── poems-classic.js    # 小古文 100 篇（原文 + 译文）
+│   ├── poems-guwen.js      # 古文观止篇目（原文 + 译文，按卷次分组）
 │   ├── pinyin-table.js     # 2515 个汉字拼音表（构建期离线生成，多音字标多个读音）
 │   └── index.js            # 汇总索引与查询方法
 └── test/
@@ -752,6 +771,8 @@ node test/pwa.test.js
     ├── helper.test.js      # 注音与朗读
     ├── auto-read.test.js   # 自动朗读
     ├── classic.test.js     # 小古文 100 篇 + 阅读器
+    ├── engine.test.js      # 古籍阅读库引擎（各集子共用）
+    ├── guwen.test.js       # 古文观止篇目 + 卷次分组 + 阅读器
     └── pwa.test.js         # iOS / 多端兼容测试（真实浏览器）
 ```
 
@@ -770,6 +791,22 @@ node test/pwa.test.js
   text: "第一句，\n第二句。",
   translation: "白话译文，必填 —— 全库 273 首目前 100% 齐备。",
   translationSource: "school"   // 译文口径，必填，四类取值见「译文的取舍标准」
+}
+```
+
+古文观止的篇目加在 `data/poems-guwen.js` 里，结构相同，只是分组字段换成卷次：
+
+```js
+{
+  id: "gwj-2",
+  title: "原道",
+  source: "《古文观止》",
+  dynasty: "唐",
+  author: "韩愈",
+  gradeGroup: "卷八 唐文",   // 卷一 周文 …… 卷十二 明文
+  text: "博爱之谓仁，……",
+  translation: "白话译文。",
+  translationSource: "public-domain"
 }
 ```
 
