@@ -1350,7 +1350,7 @@ html, body {
 }
 .player-bar[hidden] { display: none; }
 
-/* 左侧信息区：当前一首大字，下一首小字 */
+/* 左侧信息区：模式一行小字，当前一首大字，下一首小字 */
 .pb-info {
   flex: 1;
   min-width: 0;
@@ -1358,6 +1358,20 @@ html, body {
   flex-direction: column;
   gap: 2px;
 }
+/* 首行播放模式（如「原文 · 顺序」）——只有从组合播放键开出来的连读才有。
+   11px 是这三行里最轻的一档：它说明的是「怎么放」，不是「在放什么」，
+   抢了大字标题的注意力就把主次颠倒了。缃色是底栏进度环 / 主键同一支色，
+   一行小字用它刚好点出「这轮是按模式连读」。 */
+.pb-mode {
+  font-size: 11px;
+  line-height: 1.2;
+  letter-spacing: .4px;
+  color: rgba(240, 205, 124, .82);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pb-mode[hidden] { display: none; }
 .pb-now {
   font-family: var(--font-poem);
   font-size: 18px;
