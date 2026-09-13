@@ -188,8 +188,21 @@
  *        （data/poems-songci.js、data/poems-guwen.js、js/songci.js、
  *          songci/index.html、guwen/index.html、library/index.html、
  *          test/songci.test.js、test/guwen.test.js、README.md、sw.js）
+ *   v44  搜索页在机上的可用性（Issue #69）：
+ *        用户在手机上反馈三件事，一起修：
+ *        ① 键盘一弹，候选下拉就被键盘盖住 —— 软键盘是盖在页面上的浮层，
+ *           不改窗口高度，而搜索框又在视口居中处。现在用 visualViewport
+ *           实测键盘高度：整块贴到顶栏下方、候选下拉按「可视区 − 键盘」限高，
+ *           永远整条落在键盘上方；键盘收起后自动回到居中。
+ *        ② 候选下拉离搜索框太远 —— 间隙收到 5px，并且换成不透明底色
+ *           （原先是 90% 不透明的卡片色，下层结果列表会透上来）。
+ *        ③ 这一页以搜索为主角，搜索框该更高 —— 视觉高度 40 → 52px
+ *           （只做在绘制层，hero 的居中 / 贴顶算式算的仍是 40px）。
+ *        顺带：进页即聚焦搜索框（少点一次）、空态与结果列表左对齐、
+ *        候选行抬高到 44px（iOS 建议的最小可点面积）。
+ *        （search/index.html、js/search.js、css/classic.css、sw.js）
  */
-const CACHE_NAME = "poem-app-v43";
+const CACHE_NAME = "poem-app-v44";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [
