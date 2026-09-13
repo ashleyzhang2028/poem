@@ -164,6 +164,27 @@ setTimeout(() => {
     '筛选组合与「连读」不压缩（搜索框独占剩余宽度）');
   chk(!randomBtn.classList.contains('toolbar-read'), '不再使用旧的 toolbar-read 专属样式');
 
+  // 需求：工具栏三样（搜索框 / 全部·未读组合 / 连读）高度必须一致。
+  // 组合的高度由「内层按钮 + 内边距 + 描边」叠出，曾因全局 .seg.mini button 的
+  // 5px 垂直 padding 只有 37px，比搜索框与连读（40px）矮一截；
+  // 现在三样统一读同一个高度变量，谁也不能再各算各的。
+  const toolbarCss = barCss.match(/\.toolbar \{([^}]*)\}/)[1];
+  const H = (toolbarCss.match(/--toolbar-h:\s*(\d+)px/) || [])[1];
+  chk(!!H, '工具栏声明统一行高变量 --toolbar-h（' + H + 'px）');
+  ['\.search-input', '\.seg-toggle'].forEach(sel => {
+    const css = barCss.match(new RegExp(sel + ' \\{([^}]*)\\}'))[1];
+    chk(/height:\s*var\(--toolbar-h\)/.test(css) && /box-sizing:\s*border-box/.test(css),
+      sel + ' 高度取自 --toolbar-h 且含描边（不高出工具栏）');
+    chk(/padding:\s*0\s/.test(css), sel + ' 垂直方向不额外撑高');
+  });
+  const segCss = barCss.match(/\.filter-seg \{([^}]*)\}/)[1];
+  chk(/height:\s*var\(--toolbar-h\)/.test(segCss) && /box-sizing:\s*border-box/.test(segCss)
+    && /align-items:\s*stretch/.test(segCss),
+    '「全部 / 未读」外框同样定高为 --toolbar-h，内层按钮铺满外框');
+  const filterBtnCss = barCss.match(/\.filter-seg button \{([^}]*)\}/)[1];
+  chk(/padding:\s*0\s+13px/.test(filterBtnCss) && /align-items:\s*center/.test(filterBtnCss),
+    '组合按钮垂直方向只由外框决定高度，压过 .seg.mini button 的 5px 垂直 padding');
+
   // 搜索
   const search = d.querySelector('#gw-search');
   search.value = '三字经';
