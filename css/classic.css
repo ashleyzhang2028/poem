@@ -343,9 +343,24 @@
       Chrome 交出的是最小宽那一档。`flex-shrink: 1` 才是同一条反馈回路：
       先按自动宽摆、放不下再按比例收，结果是「放得下就撑满、放不下留够间距再截断」。
 
-   四、只写小古文这一处（`#gw-list` 前缀）：首页今日条走全站 `flex: 1 1 0%`，
-      那条只有一个圆键、没有箭头，宽度全给它本来就不吃亏。 */
-#gw-list .group-card .item-main { flex: 0 1 auto; }
+   四、选择器必须能命中**集子页与搜索页两处**（Issue #69 后续）----
+      上面那段原本只写成 `#gw-list .group-card .item-main`：它只在「按分组排布」
+      （有 .group-card 包裹）的集子页里生效。搜索页的结果**不分卷次、不套卡片**，
+      条目直接挂在 #gw-list 下 —— 同一句样式在那里命中不到，
+      于是搜索页仍然是旧的 `flex: 1 1 0%`：内容块把整行吃满，
+      右侧那两颗图标（播放键 + 箭头）被顶到内容块**里面**去，
+      不再贴条目右缘。窄屏上「文字短的那几条」尤其明显：
+      「咏鹅」只有两个字，播放键却排在条目中间，右边空出 200 多像素。
+      这与用户反馈的「卡片中的播放和向右箭头不是右侧对齐」是同一件事的两种表现，
+      病根都在这一句的选择器太窄。
+      现在改成「#gw-list 下的任意 .item」：集子页、搜索页、首页今日条（不在 #gw-list 内）
+      各按各的规则走，前者统一为「内容块先按内容取宽、放不下再收」。
+      首页今日条仍是全站 `flex: 1 1 0%`：那条只有一个圆键、没有箭头，
+      宽度全给它本来就不吃亏。 */
+#gw-list .item .item-main { flex: 0 1 auto; }
+/* 卡内条目（集子页）额外把列距清零，改由两颗图标各自的外边距给间距 -
+   搜索页的条目没有 .group-card 包裹，保持全站 12px 列距即可：
+   那 12px 正好是「内容块 → 播放键」的呼吸，与首页今日条同一档。 */
 .group-card .item:first-of-type { border-top: 1px solid color-mix(in srgb, var(--line) 55%, transparent); }
 /* 左侧短竖条整体去掉（Issue #55 后续，用户要求「直接隐藏」）----
    它原先是一枚 1px、55% 透明的短竖条，用来表达「课内 / 课外」。
@@ -489,12 +504,29 @@
 .gw-menu-item.active { color: var(--blue); font-weight: 600; }
 .gw-menu-item.active .gw-menu-tick { background: var(--blue); border-color: var(--blue); }
 
+/* 两颗图标钉在条目右缘（Issue #69 后续）----
+   内容块改成「按内容取宽」之后，条目里就空出一大段余量：播放键与箭头仍排在
+   内容块后面，于是整组图标停在**条目中间**，右端留白 —— 这正是用户看到的
+   「卡片中的播放和向右箭头不是右侧对齐」。
+   内容块已经在最左（左内边距 12px / 14px 处），余量只能落在它右边，
+   所以给箭头加一个 margin-left: auto 就够：它把箭头（连同前面 6px 处的播放键）
+   整个推到条目右缘，右端固定留出条目的右内边距。
+   只写 .item-arrow：全站 12px 列距在搜索页 / 首页仍是「内容块 → 播放键」的呼吸，
+   集子页那 6px（播放键 ↔ 箭头）写在下面的 .group-card .item-read 上，一律不动。
+   ⚠️ 两颗图标的间距 6px 只能写在**播放键的 margin-right** 上（见下），
+   不能写成箭头的任何一侧：箭头带 auto 时，auto 会把箭头前**所有外边距**一起吃掉，
+   写成箭头的 margin-left 会被吞掉、两颗图标贴成 0px；写成箭头的 padding / border
+   又会被全站的 border-box 算进盒宽、把箭头右缘往里推 6px（实测 8px 变 14px）。 */
+.item-arrow { margin-left: auto; }
 /* 卡内条目右侧的「播放键 + 箭头」：两颗图标各自的外边距（卡内列距已清零）
    --------------------------------------------------------------------------
    先是「播放键离正文太远」这一问题（Issue #55 后续）：全站列距 12px 在首页
    只隔开「正文 ↔ 一颗圆键」，这里却要同时隔开「正文 ↔ 键 ↔ 箭头」两颗图标，
    播放键于是被推得比首页远一倍。改成逐项给间距后：
-     正文 … 12px … 圆键 … 6px … 箭头 …（条目 8px 右内边距）
+     正文 … 圆键 … 6px … 箭头 …（条目 8px 右内边距）
+   合起来是一条规矩：**两颗图标永远钉在条目右缘，正文从左边一直排到图标跟前**。
+   圆键左缘与内容块右缘之间不留空档（间距 0），那一段让给正文 ——
+   见上方 #gw-list .item .item-main 那条（内容块按内容取宽）。
 
    上一轮这里写的是 `margin-left: -12px`：意图是「把圆键左侧这段整个抹掉，
    圆键左缘贴上内容块右缘」。它**没有**让文字多出宽度 —— 原因见上方
@@ -507,6 +539,11 @@
    只写 margin-left：右侧留给箭头的那 6px 与箭头贴边一律不动。 */
 .group-card .item-read {
   margin-left: 0;
+  /* 右侧那 6px 写在**播放键**这一侧，不能挪到箭头上去：
+     箭头带 margin-left: auto 时会吃掉自己前面所有外边距
+     （写成箭头的 margin-left 会被吞成 0），
+     padding / border 又会被全站的 border-box 算进盒宽、把箭头右缘往里推。
+     见上方 .item-arrow 那条的说明。 */
   margin-right: 6px;
 }
 
@@ -618,6 +655,20 @@ body.reader-open .dock { display: none; }
   letter-spacing: 1.5px;
   /* 与正文同一条中轴 */
   text-align: center;
+  /* 长标题必须能折行（Issue #69 后续）----
+     《唐诗三百首》里有一首的题目长达 150 字（《自河南经乱关内阻饥……弟妹》），
+     《古文观止》《宋词》里也有一批 20 字以上的篇名。
+     标题是 <h2>，**块级**元素：不给它换行的话，浏览器按「一行放不下就溢出」
+     处理 —— 列表页那份 .brand-page-text 有 ellipsis 兜着，阅读器这里没有，
+     于是整段标题直接压出 720px 的内容列，手机上把正文挤成横向滚动、
+     右端被裁掉一半（用户看到的「详情页直接把页面撑出去了」）。
+     折行 + anywhere 是两头都要的：
+       · overflow-wrap: anywhere —— 中文虽可在字间断行，但路径 / 数字 / 书名号
+         那类「一整个 token」仍会把盒子顶宽，anywhere 让它在必要时逐字符断；
+       · word-break: normal —— 不能写 break-all：那会把英文单词也从中间劈开。
+     标题与元信息、正文一样永远落在 .reader-body 的定宽列里，不越界。 */
+  overflow-wrap: anywhere;
+  word-break: normal;
 }
 /* 出处 / 朝代 / 作者标签跟着正文居中 */
 .reader-body .meta { justify-content: center; }
@@ -1021,6 +1072,16 @@ body.reader-open .dock { display: none; }
 }
 .search-hint[hidden] { display: none; }
 
+/* 搜索结果的条目内边距，收成与集子页一致（Issue #69 后续）----
+   集子页的条目走 `.group-card .item { padding: 12px 8px 12px 12px }`，
+   右内边距 8px；搜索页的条目没有 .group-card 包裹，落回全站 `.item { padding: 14px }`，
+   右内边距反而是 14px。于是同一个「箭头 → 条目右缘」的量，两页差 6px，
+   两页并排看会觉得搜索页的箭头往里缩了一截 —— 用户反馈的「右侧对齐」
+   正是这种跨页对不齐。这里把搜索页也收到 8px，只动右内边距，
+   左 / 上 / 下仍走全站的那一档（14px）：左侧多出的 2px 正好抵掉
+   集子页卡片自身那 2px 的左内边距，两页正文左缘因此仍在同一条线上。 */
+body[data-nav="search"] #gw-list .item { padding: 14px 8px 14px 14px; }
+
 /* 命中上下文：正文 / 译文里命中关键词时，在元信息行后补一句摘出的上下文。
    用最淡的墨色 —— 它是「为什么会搜到这一条」的说明，不是内容本身。 */
 #gw-list .item-hit {
@@ -1099,12 +1160,9 @@ body.reader-open .dock { display: none; }
 }
 
 /* ---------------- 课外阅读入口页 ---------------- */
-.library-hint {
-  margin: 4px 0 16px;
-  font-size: 13px;
-  line-height: 1.9;
-  color: var(--ink-3);
-}
+/* 这一页的说明文字已挪进顶栏第二行（body 的 data-sub，由 js/chrome.js 渲染）——
+   原先正文里那一段（.library-hint）与顶栏那行说同一件事，已删。
+   所以这里不再留 .library-hint 的样式：留着就是一条指向不存在元素的死规则。 */
 .library-grid {
   display: flex;
   flex-direction: column;
