@@ -38,8 +38,14 @@
  *        只压 ::placeholder 到 12.5px，输入的文字仍是 16px（iOS 聚焦不缩放），
  *        并把「输入框字号」这条写在 classic.css 自己末尾、不再只靠 style.css
  *        （css/classic.css）
+ *   v27  序号圆与下方正文左对齐（Issue #55 后续）：标题行收掉 -12px 负外边距，
+ *        圆周左缘 = 篇名 = 元信息，三者同一条左基准线；
+ *        小古文卡片：左侧短竖条整体隐藏、条目左右内边距收成对称的 8px
+ *        （圆左内缘 = 箭头右内缘）；搜索框提示字用 translateY(-2.25px)
+ *        上抬回水平中轴（输入文字 16px 本来居中，不动输入框本体）
+ *        （css/style.css、css/classic.css）
  */
-const CACHE_NAME = "poem-app-v26";
+const CACHE_NAME = "poem-app-v27";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [
