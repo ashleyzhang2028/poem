@@ -1377,7 +1377,10 @@
 
   function mount(config) {
     var cfg = config || {};
-    if (!cfg.items || !cfg.items.length) return null;
+    // 空集合默认不挂（多半是数据没加载上，挂上去只会得到一片空列表）。
+    // 例外是 **allowEmpty**：搜索页在用户敲字之前本来就该是空的，
+    // 那时列表空是「对的样子」而不是故障（见 js/search.js）。
+    if ((!cfg.items || !cfg.items.length) && !cfg.allowEmpty) return null;
     var rootSel = cfg.root || "[data-gw-root]";
     var rootEl = typeof rootSel === "string" ? document.querySelector(rootSel) : rootSel;
     if (!rootEl) return null;
@@ -1479,21 +1482,32 @@
 
   function init(session) {
     var s = session || live;
-    var listEl = listBox();
-    if (!items.length) {
-      if (listEl) listEl.innerHTML = '<div class="empty">' + esc(W.loadingFailed) + "</div>";
-      return;
-    }
     // 注音档位由总开关统一裁决（effectivePinyinMode），这里无需预写，
     // 保证「设置里关掉阅读辅助」在任何时候进阅读器都是纯文本。
     if (CFG.setTitle !== false) applyAppName();
     // DOM 事件只在第一份会话建立时绑一次；每颗处理函数进门先认领
     // 「这段 DOM 属于哪一份会话」，所以同一份 HTML 挂多部集子也不会错认。
+    //
+    // ⚠️ 绑事件必须排在「这一份集合是不是空的」那个判断**之前**：
+    //    搜索页在用户敲字之前 items 是空的（见 js/search.js 的 allowEmpty），
+    //    早先这里一发现空集合就 return，绑定整段被跳过 ——
+    //    搜索框打不进字、候选点不开、阅读器的翻篇键与工具条一概没反应，
+    //    页面看起来「加载完了但全是死的」，正是最难查的那种安静失败。
     if (!s.domBound) {
       s.domBound = true;
       bindEvents();
       bindSettings();
       bindGlobal();
+    }
+    // 空集合：只有 allowEmpty 的挂载点会走到这里（其余各页数据没加载上时
+    // 在自己 boot 里就写好了「XX 数据加载失败」，压根挂不到这一步）。
+    // 这一支给的是「这一份自己的空态文案」—— 搜索页要的是
+    // 「输入篇名、作者或诗句，即可搜遍全站」，不是一句加载失败。
+    if (!items.length) {
+      var listEl = listBox();
+      if (listEl) listEl.innerHTML = '<div class="empty">' +
+        esc(CFG.allowEmpty ? W.empty : W.loadingFailed) + "</div>";
+      return;
     }
     renderList();
     syncAlignButtons();
