@@ -140,8 +140,16 @@
  *        文字（连同只服务它的 #search-hint 显隐逻辑与 .search-hint 样式）：
  *        搜索页的取舍已经写在文件头与上方注释里，页面上不必再向用户解释一遍
  *        （css/classic.css、js/search.js、search/index.html）
+ *   v43  修回小古文 / 唐诗列表里丢掉的正文摘句：
+ *        摘句改成只认数据自带的 p.excerpt 时，忘了「小古文与唐诗的数据里
+ *        根本没有这个字段」—— 于是这两部的列表条目只剩「朝代 · 作者 · 出处」，
+ *        而卡内 .item-main 是按内容取宽的（flex: 0 1 auto），内容块随之从
+ *        283px 塌到 141px / 167px，条目右半边空出一大片（Issue #55 要消灭的
+ *        正是这种「文字没占满、右边空一截」）。现在没有 excerpt 的集子回落到
+ *        「原文前 16 字 + 省略号」，即这两部集子一直用的口径。
+ *        （js/reader-core.js、sw.js）
  */
-const CACHE_NAME = "poem-app-v42";
+const CACHE_NAME = "poem-app-v43";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [

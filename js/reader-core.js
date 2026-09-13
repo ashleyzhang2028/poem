@@ -600,11 +600,25 @@
         (p.dynasty ? "<span>" + esc(p.dynasty) + "</span>" : "") +
         (p.author ? (p.dynasty ? "<span>·</span>" : "") + "<span>" + esc(p.author) + "</span>" : "") +
         (p.source ? ((p.dynasty || p.author) ? "<span>·</span>" : "") + "<span>" + esc(p.source) + "</span>" : "") +
-        // 正文摘句：摘句由数据自己给（p.excerpt），没给就不显示 ——
-        // 《宋词三百首》《古文观止》的作品太长，截前 16 字往往是「庆历四年春，滕子京谪守巴陵」这类
-        // 交代性开头，看不出是哪一篇；而语料整理者给出的摘句（多为名句）才能真正认出作品。
-        // 这里**不做兜底截断**：没有摘句就少一段，而不是拿一段认不出的字凑数。
-        (p.excerpt ? "<span>·</span><span>" + esc(String(p.excerpt).replace(/\n/g, "")) + "</span>" : "") +
+        // 正文摘句：优先用数据自带的 p.excerpt ——
+        // 《宋词三百首》《古文观止》的作品长，截前 16 字往往是「庆历四年春，滕子京谪守巴陵」这类
+        // 交代性开头，看不出是哪一篇；语料整理者给出的摘句（多为名句）才能真正认出作品。
+        //
+        // 但**没有 excerpt 的集子必须回落到「原文前 16 字 + 省略号」**，不能整段不显示：
+        //   · 少了摘句那一行，.item-meta 只剩「朝代 · 作者 · 出处」，
+        //     卡内 .item-main 又是 `flex: 0 1 auto`（按内容取宽，见 css/classic.css），
+        //     内容块于是塌到 141px / 167px，条目右半边空出一大片
+        //     （小古文 149.88px、唐诗 124.08px 的空白）——
+        //     这正是 Issue #55 要消灭的那种「文字没占满、右边空一截」。
+        //   · 小古文与唐诗的数据本来就只有 text，没有 excerpt 字段，
+        //     回落就是这两部集子在提取引擎之前一直用的口径（见旧 js/classic.js）。
+        // 有 excerpt 的集子（宋词 / 古文观止）行为不变，仍只显示整理者给的摘句。
+        (function () {
+          var line = p.excerpt != null && String(p.excerpt) !== ""
+            ? String(p.excerpt)
+            : (p.text ? String(p.text) : "").replace(/\n/g, "").slice(0, 16) + (p.text ? "…" : "");
+          return line ? "<span>·</span><span>" + esc(line.replace(/\n/g, "")) + "</span>" : "";
+        })() +
         "</div>" +
         "</div>" +
         '<button type="button" class="item-read" title="播放这一篇" aria-label="播放 ' + esc(p.title) + '">' +
