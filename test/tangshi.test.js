@@ -130,6 +130,23 @@ setTimeout(() => {
   const nLi = d.querySelectorAll('#gw-list .item').length;
   chk(nLi > 0 && nLi < 301, '按作者「李白」搜索得到子集（' + nLi + ' 首）');
 
+  // 需求（Issue #69 后续）：长标题不能在详情页把页面撑出去。
+  // 库里有 150 字的题目（《自河南经乱关内阻饥兄弟离散…弟妹》），
+  // 详情页标题是块级 h2，不折行就会按「一行放不下」溢出内容列 ——
+  // 手机上表现为正文横向滚动、右端被裁。这里只查源码里那两条兜底属性有没有丢：
+  //   jsdom 不算布局，真正的「有没有溢出」交给 test/pwa.test.js 在真浏览器里量。
+  api.open('ts-212');
+  const longTitle = d.querySelector('#rd-title').textContent;
+  chk(longTitle === '自河南经乱关内阻饥兄弟离散各在一处因望月有感聊书所怀寄上浮梁大兄於潜七兄乌江十五兄兼示符离及下邽弟妹',
+    '长标题篇目（ts-212，' + longTitle.length + ' 字）可打开');
+  const cssText = fs.readFileSync(path + 'css/classic.css', 'utf8');
+  const h2 = /(^|\n)\.reader-body h2 \{([\s\S]*?)\}/.exec(cssText);
+  const h2decl = h2 ? h2[2].replace(/\/\*[\s\S]*?\*\//g, ' ') : '';
+  chk(/overflow-wrap:\s*anywhere;/.test(h2decl),
+    '详情页标题允许逐字符断行（落进定宽正文列，不把页面撑出横向滚动）');
+  chk(/word-break:\s*normal;/.test(h2decl),
+    '详情页标题不用 break-all（英文单词不会被从中间劈开）');
+
   console.log('');
   console.log(fails === 0 ? '🎉 唐诗三百首测试全部通过' : '❌ 唐诗三百首测试 ' + fails + ' 项失败');
   process.exit(fails === 0 ? 0 : 1);

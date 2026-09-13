@@ -122,8 +122,23 @@
  *          js/library.js、js/chrome.js、js/reader-core.js、js/app.js、
  *          js/settings.js、css/style.css、css/classic.css、fonts/、
  *          index.html、manifest.webmanifest、sw.js）
+ *   v42  课外阅读入口页副标题 + 详情页长标题 + 列表图标右侧对齐（Issue #69 后续）：
+ *        ① /library/ 的说明改走顶栏第二行（body 的 data-sub），
+ *           并删掉正文里那段与顶栏重复的「课本之外的经典……白话译文。」；
+ *        ② 详情页标题（.reader-body h2）允许逐字符断行 —— 《唐诗三百首》里
+ *           有一首题目长达 150 字，块级 h2 不折行就会溢出定宽正文列，
+ *           手机上表现为正文横向滚动、右端被裁（用户反馈「详情页把页面撑出去了」）；
+ *        ③ 列表条目的两颗图标钉在右缘：内容块改为按内容取宽之后，
+ *           播放键与箭头仍跟在内容块后面，于是停在条目中间、右端留白 ——
+ *           给 .item-arrow 加 margin-left: auto 把它顶到右缘；
+ *           同时把「内容块按内容取宽」那句的选择器由 `#gw-list .group-card .item-main`
+ *           放宽为 `#gw-list .item .item-main`（搜索页的条目不分卷次、不套卡片，
+ *           原选择器在那里命中不到，图标同样不贴右缘），
+ *           并把搜索页条目的右内边距收成与集子页同值的 8px
+ *        （library/index.html、css/classic.css、js/reader-core.js、
+ *          test/classic.test.js、test/tangshi.test.js、test/pwa.test.js、sw.js）
  */
-const CACHE_NAME = "poem-app-v41";
+const CACHE_NAME = "poem-app-v42";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [

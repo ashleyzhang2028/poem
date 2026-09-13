@@ -114,6 +114,24 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(!/\[object|undefined/.test(ld.querySelector('#library-grid').textContent),
     '卡片文案没有渲染异常（无 undefined / [object]）');
 
+  // 需求（Issue #69 后续）：入口页的说明改走顶栏第二行，正文里那段重复文字删掉。
+  // 断两层：
+  //   1) body 上给出了 data-sub（顶栏第二行由 js/chrome.js 按它渲染）；
+  //   2) 那张挂在顶栏外的说明段落（.library-hint）在页面里已经不存在。
+  const libSrc = read('library/index.html');
+  chk(/data-sub="课本之外的经典，按部就班读下去"/.test(libSrc),
+    '入口页的说明写在 body 的 data-sub 上（顶栏第二行）');
+  chk(!/library-hint/.test(libSrc),
+    '正文里那段与顶栏重复的说明已删（不再渲染 .library-hint）');
+  // 只认**可见正文**里那句：<meta name="description"> 里仍保留同义的文案
+  // （那是给搜索引擎与分享卡片读的一句话，不属于页面正文，用户没要求删）。
+  const libBody = libSrc.slice(libSrc.indexOf('<body'));
+  chk(!/每篇都有原文、生字注音、语音朗读与白话译文/.test(libBody),
+    '被点名删除的那整句已不在页面正文里（meta description 保留）');
+  const libCss = fs.readFileSync(path + 'css/classic.css', 'utf8');
+  chk(!/^\s*\.library-hint\s*\{/m.test(libCss),
+    '样式表里不再留 .library-hint 的死规则（元素删了，规则也一起删）');
+
   /* ---------- 三、搜索页：搜遍五部 ---------- */
   const w = boot('search/index.html', '/search/');
   await w.__ready;
@@ -290,7 +308,9 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(read('js/chrome.js').indexOf('古诗词') === -1 ||
     !/label: "古诗词"/.test(read('js/chrome.js')),
     '页签里不再有名为「古诗词」的那一格');
-  chk(read('sw.js').indexOf('poem-app-v41') >= 0, 'sw.js 缓存版本已升到 v41');
+  // 版本号只认「比 v41 新」——写死具体版本号的话，后续任何一次改动都要再来改这里
+  const swVer = (read('sw.js').match(/poem-app-v(\d+)/) || [])[1];
+  chk(!!swVer && Number(swVer) >= 41, 'sw.js 缓存版本不低于 v41（实际 v' + swVer + '）');
   ['"./search/"', '"./js/search.js"', '"./library/"', '"./js/library.js"'].forEach(needle => {
     chk(read('sw.js').indexOf(needle) >= 0, 'sw.js 预缓存含 ' + needle);
   });

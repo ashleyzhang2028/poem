@@ -647,7 +647,26 @@ function check(name, cond, extra) {
         playGapLeft: +(playRect.left - mainRect.right).toFixed(2),
         playW: +playRect.width.toFixed(2),
         mainW: +mainRect.width.toFixed(2),
+        // Issue #69 后续：内容块按内容取宽之后，「文字有没有被压窄」不能再用
+        // 写死的宽度下限去卡（条目本身已经窄下来了）。改量真实关系：
+        // 内容块宽度 ≥ 它内部最宽那个子元素（标题行 / 元信息行）的自然宽。
+        // 自然宽用一份离屏副本单独量，不受当前布局影响。
+        widestChildW: (() => {
+          const probe = document.createElement('div');
+          probe.style.cssText = 'position:absolute;left:-99999px;top:0;width:max-content;';
+          probe.appendChild(main.cloneNode(true));
+          document.body.appendChild(probe);
+          const w = Math.max.apply(null, [].slice.call(probe.firstElementChild.children).map(function (k) {
+            return k.getBoundingClientRect().width;
+          }).concat([0]));
+          probe.parentNode.removeChild(probe);
+          return +w.toFixed(2);
+        })(),
         playGapRight: +(arrowRect.left - playRect.right).toFixed(2),
+        // 两键之间**固定**的那段间距（播放键的 margin-right）——
+        // 箭头带 margin-left: auto 后，几何上的那段距离是「固定间距 + 余量」，
+        // 不再是常量，见下方断言处的说明。
+        playGapRightCss: getComputedStyle(play).marginRight,
         barContent: bar.content,
         padL: itemPad.paddingLeft,
         padR: itemPad.paddingRight,
@@ -731,9 +750,107 @@ function check(name, cond, extra) {
     check('iPhone: 条目左内边距 12px、右内边距 8px（只加左侧，累计 +4px）',
       parseFloat(numState.padL) === 12 && parseFloat(numState.padR) === 8,
       JSON.stringify({ pad: numState.padL + ' / ' + numState.padR }));
-    check('iPhone: 序号圆与右侧箭头内缘只差新加的这 4px（右侧没被一起推走）',
-      Math.abs(numState.numLeftInset - (numState.arrowRightInset + 4)) <= 0.5,
-      JSON.stringify({ numLeft: numState.numLeftInset, arrowRight: numState.arrowRightInset }));
+    // ⚠️ Issue #69 后续：这条断言原先写的是「序号圆左内缘 = 箭头右内缘 + 4px」，
+    // 即「左内边距 12px − 右内边距 8px = 4px，两者差等于这个 4px」。
+    // 现在两处**各自**断言（左 12px / 右 8px），不再用一条相对式把它绑在一起：
+    // 相对式在「箭头右内缘」这个量上还混着内容块按内容取宽后的余量
+    // （条目右侧有一大段留白，箭头右缘距条目右缘本就是 100 多像素），
+    // 那个 4px 早已不成立，却会在调整任何一处内边距时继续误报。
+    check('iPhone: 序号圆左内缘距条目左缘 = 条目左内边距 12px',
+      Math.abs(numState.numLeftInset - parseFloat(numState.padL)) <= 0.5,
+      JSON.stringify({ numLeft: numState.numLeftInset, padL: numState.padL }));
+    // 需求（Issue #69 后续）：两颗图标钉在条目右缘。
+    // 这两个量必须分开量 —— 它们说的不是一件事：
+    //   · arrowRightInset = 条目右缘 → 箭头右缘。它**等于** .item-arrow 自身右缘
+    //     到条目右内缘的距离，也就是「箭头右缘是否真的贴在条目右侧」，
+    //     量出来就是条目右内边距 8px（集子页）/ 8px（搜索页）那一档。
+    //   · 条目右缘到**滚动区**右缘还有一段：.group-card 自带 padding-left: 2px
+    //     与 .list / 阅读器列宽的关系，那一段不属于「对齐」这件事。
+    // 这里只认前者：箭头右内缘距条目右缘 = 条目右内边距。
+    check('iPhone: 箭头右内缘距条目右缘 = 条目右内边距（图标钉在条目右缘，不被内容块推走）',
+      Math.abs(numState.arrowRightInset - parseFloat(numState.padR)) <= 0.5,
+      JSON.stringify({ arrowRight: numState.arrowRightInset, padR: numState.padR }));
+    // 需求（Issue #69 后续）：**逐条**量「右箭头距条目右缘」这一个量，
+    // 全列表必须只有一个值 —— 短标题（「画」两个字）与长标题（「两小儿辩日」）
+    // 的箭头要落在同一条右基准线上。此前内容块是增长项、箭头跟在它后面，
+    // 标题多长箭头就漂多远：一屏里七八条，每条的箭头各歪一处。
+    const alignState = await page.evaluate(() => {
+      const items = [].slice.call(document.querySelectorAll('#gw-list .item'));
+      const insets = items.map(function (it) {
+        const ir = it.getBoundingClientRect();
+        const ar = it.querySelector('.item-arrow').getBoundingClientRect();
+        return +(ir.right - ar.right).toFixed(2);
+      });
+      // 「两颗图标之间的**固定**间距」= 播放键的 margin-right（6px）。
+      // 不能量「播放键右缘 → 箭头左缘」的几何距离：箭头带 margin-left: auto，
+      // 这一段是「固定 6px + 余量」，逐条本来就不相等（余量由标题长短决定），
+      // 量它等于在量「标题有多长」，与对齐无关。
+      const gaps = items.map(function (it) {
+        return +(parseFloat(getComputedStyle(it.querySelector('.item-read')).marginRight) || 0).toFixed(2);
+      });
+      return {
+        n: items.length,
+        insetMin: Math.min.apply(null, insets),
+        insetMax: Math.max.apply(null, insets),
+        gapMin: Math.min.apply(null, gaps),
+        gapMax: Math.max.apply(null, gaps),
+        // 内容块不得再把整行吃满（按内容取宽的旁证）
+        mainMax: Math.max.apply(null, items.map(function (it) {
+          return it.querySelector('.item-main').getBoundingClientRect().width;
+        }))
+      };
+    });
+    check('iPhone: 全列表「右箭头 → 条目右缘」只有一个值（短标题与长标题的箭头同一条右基准线）',
+      alignState.n > 5 && alignState.insetMax - alignState.insetMin <= 0.5,
+      JSON.stringify(alignState));
+    check('iPhone: 全列表两颗图标的固定间距只有一个值（6px，与标题长短无关）',
+      alignState.gapMax - alignState.gapMin <= 0.5 && Math.abs(alignState.gapMin - 6) <= 0.5,
+      JSON.stringify({ gapMin: alignState.gapMin, gapMax: alignState.gapMax }));
+
+    // ---- 需求（Issue #69 后续）：详情页长标题不把页面撑出去 ----
+    // 库里有 150 字的题目（《自河南经乱关内阻饥兄弟离散…弟妹》），
+    // 详情页标题是块级 h2：不折行时浏览器按「一行放不下」处理，
+    // 手机上的表现正是用户说的「详情页直接把页面撑出去了」。
+    // jsdom 不算布局，这条只能在真浏览器里量 —— 量三件事：
+    //   1) 标题盒子没有超出正文列（right 不越过 .reader-body 的右内缘）；
+    //   2) 页面没有出现横向滚动（scrollWidth === clientWidth）；
+    //   3) 标题确实折了多行（高度 > 一行的行高）。
+    await page.goto(base + 'tangshi/', { waitUntil: 'load' });
+    await new Promise(r => setTimeout(r, 600));
+    await page.evaluate(() => {
+      document.querySelector('#gw-search').value = '自河南经乱';
+      document.querySelector('#gw-search').dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    await new Promise(r => setTimeout(r, 300));
+    await page.evaluate(() => document.querySelectorAll('#gw-list .item')[0].click());
+    await new Promise(r => setTimeout(r, 600));
+    const longTitleState = await page.evaluate(() => {
+      const t = document.querySelector('#rd-title');
+      const body = document.querySelector('.reader-body');
+      const tr = t.getBoundingClientRect();
+      const br = body.getBoundingClientRect();
+      // 正文列的可用右内缘 = 列右缘 − 列的右内边距
+      const bodyPadR = parseFloat(getComputedStyle(body).paddingRight) || 0;
+      return {
+        text: t.textContent,
+        titleW: +tr.width.toFixed(1),
+        titleH: +tr.height.toFixed(1),
+        lineH: parseFloat(getComputedStyle(t).lineHeight) || 0,
+        bodyInnerRight: +(br.right - bodyPadR).toFixed(1),
+        titleRight: +tr.right.toFixed(1),
+        docScrollW: document.documentElement.scrollWidth,
+        docClientW: document.documentElement.clientWidth
+      };
+    });
+    check('iPhone: 详情页长标题换行后不溢出正文列（右缘不越过列内缘）',
+      longTitleState.titleRight <= longTitleState.bodyInnerRight + 0.5,
+      JSON.stringify(longTitleState));
+    check('iPhone: 详情页长标题把页面撑出横向滚动的情况已消除',
+      longTitleState.docScrollW <= longTitleState.docClientW + 1,
+      'scrollW ' + longTitleState.docScrollW + ' / clientW ' + longTitleState.docClientW);
+    check('iPhone: 详情页长标题确实折成多行（不是被裁掉一行）',
+      longTitleState.titleH > longTitleState.lineH * 1.5,
+      JSON.stringify({ h: longTitleState.titleH, line: longTitleState.lineH }));
     // 需求（Issue #55 后续，本轮）：「卡头那一行多 4px」——卡头左内边距 8 → 12px，
     // 右侧不动（仍是 8px，右边那颗 26px 圆键的右内缘与条目里的右箭头同宽）。
     check('iPhone: 卡头那一行左内边距 12px（8 → 12，+4px）',
@@ -778,8 +895,15 @@ function check(name, cond, extra) {
       numState.playGapLeft <= 1, numState.playGapLeft + 'px');
     check('iPhone: 圆键本体没被压小（仍是 36px 正圆）',
       Math.abs(numState.playW - 36) <= 0.5, numState.playW + 'px');
-    check('iPhone: 播放键右侧（与箭头之间）仍是 6px，未被一起改动',
-      Math.abs(numState.playGapRight - 6) <= 0.5, numState.playGapRight + 'px');
+    // ⚠️ 口径变更（Issue #69 后续）：`playGapRight`（播放键右缘 → 箭头左缘）
+    // 已经不再是「播放键与箭头之间的间距」——箭头现在带 margin-left: auto，
+    // 它会把两键之间**剩下的全部**空间吃掉（余量全落在这一处）。
+    // 两键之间真正的固定间距是播放键的 margin-right: 6px，量它才准。
+    // 这条断言与下面那条「全列表间距只有一个值」是同一件事的两种量法：
+    // 前者量 CSS 里声明的那 6px 是否还在，后者量渲染后是否**每条都一样**。
+    check('iPhone: 播放键带 margin-right: 6px（与箭头之间那 6px 的固定间距在这里）',
+      Math.abs(parseFloat(numState.playGapRightCss) - 6) <= 0.5,
+      numState.playGapRightCss);
     // 需求（Issue #55 后续）：左侧正文的宽度真的放开（本轮的正主）。
     // 只把播放键的间距改小**不会**让正文变长：内容块是全站那句 `flex: 1 1 0%`，
     // 宽度只由「条目宽 − 两侧图标 − 列距 − 内边距」分配而来，与内容宽度无关。
@@ -791,8 +915,15 @@ function check(name, cond, extra) {
     check('iPhone: 小古文内容块不再撑满整行（按内容取宽，不是 flex 增长项）',
       numState.mainW < 393 - 2 - 12 - 8 - 36 - 6 - 18 - 1,
       numState.mainW + 'px（整行 ' + 393 + 'px）');
-    check('iPhone: 内容块宽度仍大于最长标题 / 副信息的自然宽（文字没被压窄）',
-      numState.mainW >= 226, numState.mainW + 'px');
+    // 内容块宽度只要**达到这一条里最宽那句的自然宽**就够了 ——
+    // 不能拿一个写死的 226px 去卡：这个数原先对应的是「整行 393px 减去
+    // 两侧图标 + 内边距」的旧口径（内容块当时是增长项，会被拉满）。
+    // 改成按内容取宽之后，条目窄了（393px 的 iPhone 上搜索页那条
+    // 「咏鹅」只有 64px），写死的下限必然误报。这里改成量真实关系：
+    //   内容块宽度 ≥ 它内部最宽那个子元素的自然宽（文字没被压窄）。
+    check('iPhone: 内容块宽度不小于内部最宽子元素的自然宽（文字没被压窄）',
+      numState.mainW >= numState.widestChildW - 0.5,
+      JSON.stringify({ mainW: numState.mainW, widestChildW: numState.widestChildW }));
 
     // 需求（Issue #55 后续）：搜索框提示字垂直居中。
     // 提示字走 ::placeholder 伪元素，且比输入文字小一档（12.5px vs 16px）——
@@ -802,6 +933,14 @@ function check(name, cond, extra) {
     //   2) 位移量 = 两档字号「行盒中心」的差 =（16px − 12.5px）/ 2 = 1.75px……
     //      实测下沉约 2.25px（含字形墨迹），位移必须为正且落在合理区间，
     //      不能是 0（那样仍偏下），也不能大到把提示字顶出框。
+    // ⚠️ 这一段**必须**在集子索引页上量（.search-input 在那里）。
+    // 上面那段新加的「详情页长标题」断言把页面带去了 /tangshi/ 的阅读器里，
+    // 阅读器打开时 `document.querySelector('.search-input')` 仍是列表页那个输入框，
+    // 但阅读器是 fixed 全屏层、列表页被压在下面，::placeholder 的 computed style
+    // 在部分内核下会退回初始值（transform: none → shift 0）。
+    // 所以在量之前先回到 /classic/，别顺着页面的当前状态往下量。
+    await page.goto(base + 'classic/', { waitUntil: 'load' });
+    await new Promise(r => setTimeout(r, 400));
     const phState = await page.evaluate(() => {
       const inp = document.querySelector('.search-input');
       const cs = getComputedStyle(inp);

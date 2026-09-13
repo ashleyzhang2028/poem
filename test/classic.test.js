@@ -408,16 +408,35 @@ setTimeout(() => {
   chk(!/^\.item \{[^}]*gap:\s*0/m.test(classicCssText),
     '全站 .item 的 12px 列距不动（首页没有这颗圆键，不该跟着改）');
 
+  // 需求（Issue #69 后续）：两颗图标钉在条目右缘。
+  // 内容块按内容取宽之后，条目右侧空出一大段余量 —— 内容是 flex 项、
+  // 不能把余量「放在它后面」，只能让箭头吃掉：margin-left: auto。
+  const arrowAutoBlock = /(^|\n)\.item-arrow \{([\s\S]*?)\}/.exec(classicCssText);
+  chk(!!arrowAutoBlock && /margin-left:\s*auto;/.test(arrowAutoBlock[2]),
+    '箭头 margin-left: auto（把播放键 + 箭头整组推到条目右缘）');
+  chk(!/\.item-main \{[^}]*margin-left:\s*auto/m.test(classicCssText),
+    '内容块仍贴左缘（余量交给箭头吃掉，不是把内容块居中）');
+
   // 需求（Issue #55 后续）：左侧正文的宽度真的放开。
   // 这一条是本轮的正主：只把播放键的间距改小**不会**让正文变长 ——
   // 内容块是全站那句 `flex: 1 1 0%`（flex 增长项），宽度只由「条目宽 − 两侧图标
   // − 列距 − 内边距」分配而来，与内容宽度无关。要真正放开，必须把内容块改成
   // 「按内容取宽」，并把播放键左侧那段空档交给正文占用。
-  const mainBlock = /(^|\n)#gw-list \.group-card \.item-main \{([\s\S]*?)\}/.exec(classicCssText);
+  // ⚠️ 选择器是 `#gw-list .item .item-main`（Issue #69 后续改的）：
+  // 原先只写 `#gw-list .group-card .item-main`，搜索页的结果不分卷次、不套卡片，
+  // 那一句在那里命中不到 —— 搜索页的内容块仍是增长项，右侧两颗图标被顶进条目里、
+  // 不贴右缘（用户反馈的「播放和向右箭头不是右侧对齐」）。
+  const mainBlock = /(^|\n)#gw-list \.item \.item-main \{([\s\S]*?)\}/.exec(classicCssText);
   chk(!!mainBlock && /flex:\s*0 1 auto;/.test(mainBlock[2]),
-    '小古文卡内内容块按内容取宽（flex: 0 1 auto，不再是全站的增长项 1 1 0%）');
+    '集子页与搜索页的内容块都按内容取宽（flex: 0 1 auto，不再是全站的增长项 1 1 0%）');
   chk(!!mainBlock && !/flex:\s*0 0 auto;/.test(mainBlock[2]),
     '内容块不写 flex: 0 0 auto（自动宽 + 摘要 ellipsis 两次布局互相依赖，会退回最小宽）');
+  // 需求（Issue #69 后续）：搜索页与集子页的条目右内边距必须同值（都是 8px），
+  // 否则同一个「箭头 → 条目右缘」的量在两页差 6px，并排看就是箭头缩了一截。
+  const searchPadBlock = /body\[data-nav="search"\] #gw-list \.item \{([\s\S]*?)\}/.exec(classicCssText);
+  const searchPad = searchPadBlock ? searchPadBlock[1].replace(/\/\*[\s\S]*?\*\//g, ' ') : '';
+  chk(/padding:\s*14px 8px 14px 14px;/.test(searchPad),
+    '搜索页条目右内边距收成 8px（与集子页同值，箭头在两页落在同一条右基准线上）');
 
   // 需求（Issue #55 后续）：序号圆与下方正文左对齐。
   // 此前标题行带 `margin-left: -12px`，把序号圆（连同整个标题行）左移 12px、
