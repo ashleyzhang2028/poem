@@ -364,7 +364,7 @@ setTimeout(() => {
   chk(!!pyBlock && /white-space:\s*normal;/.test(pyBlock[2]), '注音档改回 normal，居中时不被保留空白挤歪');
   chk(d.querySelector('#rd-trans').hidden === true, '译文默认折叠');
 
-  // 字号调节：五档 15/17/19/21/23
+  // 字号调节：六档 13/15/17/19/21/23
   d.querySelector('#rd-font-up').dispatchEvent(new window.Event('click', { bubbles: true }));
   chk(d.querySelector('#rd-text').style.fontSize === '19px', '放大字号生效（' + d.querySelector('#rd-text').style.fontSize + '）');
   d.querySelector('#rd-font-down').dispatchEvent(new window.Event('click', { bubbles: true }));
@@ -378,9 +378,21 @@ setTimeout(() => {
     '组合按钮文案为 A－ / A＋');
   // 需求 10：A- 可以再减两级（17 → 15）
   d.querySelector('#rd-font-down').dispatchEvent(new window.Event('click', { bubbles: true }));
-  d.querySelector('#rd-font-down').dispatchEvent(new window.Event('click', { bubbles: true }));
   chk(d.querySelector('#rd-text').style.fontSize === '15px',
-    '连续点 A－ 可再降两级到 15px（实际 ' + d.querySelector('#rd-text').style.fontSize + '）');
+    '再点 A－ 可降一级到 15px（实际 ' + d.querySelector('#rd-text').style.fontSize + '）');
+  // Issue #55：默认档不动，A－ 在 15px 之下还能再多点一次（15 → 13），到 13px 才到底
+  d.querySelector('#rd-font-down').dispatchEvent(new window.Event('click', { bubbles: true }));
+  chk(d.querySelector('#rd-text').style.fontSize === '13px',
+    'A－ 在 15px 之下仍能再降一档到 13px（实际 ' + d.querySelector('#rd-text').style.fontSize + '）');
+  chk(window.localStorage.getItem('poem_classic_font_v1') === '13', '最细档同样持久化');
+  d.querySelector('#rd-font-down').dispatchEvent(new window.Event('click', { bubbles: true }));
+  chk(d.querySelector('#rd-text').style.fontSize === '13px',
+    '到底后继续点 A－ 不再变化，最小字号锁定 13px');
+  // 恢复默认档，后续断言不受影响
+  d.querySelector('#rd-font-up').dispatchEvent(new window.Event('click', { bubbles: true }));
+  d.querySelector('#rd-font-up').dispatchEvent(new window.Event('click', { bubbles: true }));
+  chk(d.querySelector('#rd-text').style.fontSize === '17px',
+    'A＋ 回到默认档 17px（实际 ' + d.querySelector('#rd-text').style.fontSize + '）');
 
   // 译文展开
   d.querySelector('#rd-trans-toggle').dispatchEvent(new window.Event('click', { bubbles: true }));

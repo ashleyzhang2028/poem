@@ -288,6 +288,19 @@ setTimeout(() => {
     chk(d.querySelector('#m-text').style.fontSize === '19px', 'A＋ 放大一级');
     d.querySelector('#m-font-down').dispatchEvent(new window.Event('click', { bubbles: true }));
     chk(d.querySelector('#m-text').style.fontSize === '17px', 'A－ 收小一级');
+    // Issue #55：默认档不动，A－ 能一路再降到最细一档 13px（15 之后仍有效果）
+    for (const px of ['15px', '13px']) {
+      d.querySelector('#m-font-down').dispatchEvent(new window.Event('click', { bubbles: true }));
+      chk(d.querySelector('#m-text').style.fontSize === px,
+        'A－ 可继续降到 ' + px + '（实际 ' + d.querySelector('#m-text').style.fontSize + '）');
+    }
+    d.querySelector('#m-font-down').dispatchEvent(new window.Event('click', { bubbles: true }));
+    chk(d.querySelector('#m-text').style.fontSize === '13px', '到底后继续点 A－ 仍停在 13px');
+    for (let i = 0; i < 2; i++) {
+      d.querySelector('#m-font-up').dispatchEvent(new window.Event('click', { bubbles: true }));
+    }
+    chk(d.querySelector('#m-text').style.fontSize === '17px',
+      'A＋ 回到默认档 17px（实际 ' + d.querySelector('#m-text').style.fontSize + '）');
 
     d.querySelector('#m-align-seg button[data-align="left"]').dispatchEvent(new window.Event('click', { bubbles: true }));
     chk(d.querySelector('#m-text').dataset.align === 'left', '切到左对齐生效');

@@ -26,8 +26,10 @@
  *        「随机连读」都换成与首页今日条同款的圆键（一大一小两档），
  *        ▶ / ⏸ 同键两态、不再有随状态改写的可见文字
  *        （classic/index.html、css/classic.css、js/classic.js）
+ *   v24  字号在最细处再补一档 13px（Issue #55）：默认档仍是 17px 不变，
+ *        A－ 在 15px 之下还能再多点一次（js/app.js、js/classic.js）
  */
-const CACHE_NAME = "poem-app-v23";
+const CACHE_NAME = "poem-app-v24";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [

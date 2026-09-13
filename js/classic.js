@@ -33,8 +33,9 @@
   const ALIGN_KEY = "poem_classic_align_v1";
   const PINYIN_KEY = "poem_helper_pinyin_v1";
 
-  /* 字号五档：A- 可以一路降到 15px，照顾低龄与弱视用户 */
-  const FONT_SIZES = [15, 17, 19, 21, 23];
+  /* 字号六档：A- 可以一路降到 13px，照顾低龄与弱视用户。
+     最细那档是 Issue #55 追加的 —— 默认档仍是 17px，只是 A－ 能再多点一次 */
+  const FONT_SIZES = [13, 15, 17, 19, 21, 23];
   const DEFAULT_FONT = 17; // 默认字号降一级（原默认 19）
 
   /* 正文对齐三档：left / center / right
