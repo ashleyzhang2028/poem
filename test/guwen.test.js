@@ -32,7 +32,12 @@ chk(dup === 0, '古文 id 无重复（重复 ' + dup + ' 个）');
 
 chk(GW.every(p => p.title && p.source && p.dynasty && p.author),
   '每篇都有 标题/出处/朝代/作者');
-chk(GW.every(p => p.source === '《古文观止》'), '出处统一为《古文观止》');
+// 出处 = 这一篇**真正的成书之处**（《左传》《震川先生集》……），
+// 不是选本名《古文观止》—— 选本名退到 selection（Issue #69 收尾）。
+chk(GW.every(p => p.source && p.source !== '《古文观止》'),
+  '每篇的出处是真实来源书，不是选本名《古文观止》');
+chk(GW.every(p => p.selection === '《古文观止》'),
+  '每篇另用 selection 标出「从《古文观止》这本选里读到」');
 chk(GW.every(p => /^卷[一二三四五六七八九十]+ /.test(p.gradeGroup || '')),
   '每篇都归入某一卷（gradeGroup 形如「卷N XX」）');
 
@@ -51,8 +56,8 @@ chk(done.every(p => p.excerpt),
   '已收录的每一篇都给了列表用摘句（excerpt）');
 chk(done.every(p => p.translationSource === 'public-domain'),
   '已收录的每一篇都标了译文来源 public-domain');
-chk(done.every(p => p.book && /^《.+》$/.test(p.book)),
-  '已收录的每一篇都标了出自哪部书（book）');
+chk(done.every(p => /^《.+》$/.test(p.source || '')),
+  '每篇出处形如《书名》');
 
 // 十二卷齐备
 const groups = sandbox.getGuwenGroups();
@@ -71,6 +76,35 @@ const need = ['郑伯克段于鄢', '曹刿论战', '烛之武退秦师', '蹇�
 const titles = GW.map(p => p.title);
 const missing = need.filter(t => !titles.includes(t));
 chk(missing.length === 0, '清单里的名篇齐备（缺 ' + missing.join('/') + '）');
+
+
+// 出处逐篇核对（Issue #69 收尾）：用户清单里「篇名 朝代 作者 出处」的那一列，
+// 抽样覆盖十二卷、各来源书。抽查不通过就是「有人顺手把 source 改回选本名」
+// 或「补录时填错了书」—— 这两类都只有逐个比对才查得出来。
+const SOURCE_SPOT = [
+  ['郑伯克段于鄢', '《左传》'], ['曹刿论战', '《左传》'], ['烛之武退秦师', '《左传》'],
+  ['召公谏厉王弭谤', '《国语》'], ['邹忌讽齐王纳谏', '《战国策》'], ['冯谖客孟尝君', '《战国策》'],
+  ['触龙说赵太后', '《战国策》'], ['唐雎不辱使命', '《战国策》'], ['谏逐客书', '《史记》'],
+  ['卜居', '《楚辞》'], ['宋玉对楚王问', '《楚辞》'], ['五帝本纪赞', '《史记》'],
+  ['报任安书', '《史记》'], ['过秦论（上）', '《新书》'], ['论贵粟疏', '《汉书》'],
+  ['答苏武书', '《文选》'], ['前出师表', '《三国志》'], ['陈情表', '《文选》'],
+  ['兰亭集序', '《兰亭帖》'], ['归去来兮辞', '《陶渊明集》'], ['桃花源记', '《陶渊明集》'],
+  ['北山移文', '《文选》'], ['滕王阁序', '《王子安集》'], ['与韩荆州书', '《李太白集》'],
+  ['春夜宴桃李园序', '《李太白集》'], ['陋室铭', '《全唐文》'], ['阿房宫赋', '《樊川文集》'],
+  ['原道', '《昌黎先生集》'], ['捕蛇者说', '《柳河东集》'], ['小石城山记', '《柳河东集》'],
+  ['待漏院记', '《小畜集》'], ['岳阳楼记', '《范文正公集》'], ['醉翁亭记', '《欧阳文忠公集》'],
+  ['五代史伶官传序', '《新五代史》'], ['留侯论', '《东坡七集》'], ['前赤壁赋', '《东坡七集》'],
+  ['阅江楼记', '《宋学士文集》'], ['卖柑者言', '《诚意伯文集》'], ['深虑论', '《逊志斋集》'],
+  ['尊经阁记', '《王文成公全书》'], ['报刘一丈书', '《宗子相集》'], ['吴山图记', '《震川先生集》'],
+  ['沧浪亭记', '《震川先生集》'], ['青霞先生文集序', '《茅鹿门集》'], ['亲政篇', '《震泽集》'],
+  ['义田记', '《古文苑》'], ['司马季主论卜', '《诚意伯文集》']
+];
+const srcWrong = SOURCE_SPOT.filter(([t, s]) => {
+  const p = GW.filter(x => x.title === t)[0];
+  return !p || p.source !== s;
+});
+chk(srcWrong.length === 0,
+  '抽样 47 篇的出处与清单一致（不符 ' + srcWrong.map(x => x[0]).join('/') + '）');
 
 /**
  * 收录篇目的「正文确实属于这一篇」防线。
@@ -334,6 +368,16 @@ setTimeout(() => {
   const title = d.querySelector('#rd-title').textContent;
   chk(title === '郑伯克段于鄢', '可打开指定篇目（gwj-1 → ' + title + '）');
   chk(/左丘明/.test(d.querySelector('#rd-meta').textContent), '阅读器展示了作者');
+  // Issue #69 收尾：列表与阅读器里的「出处」都必须是真实来源书《左传》，
+  // 选本名《古文观止》只能作为淡色括注出现，不能顶替出处。
+  const firstItem = d.querySelector('#gw-list .item[data-id="gwj-1"]');
+  const itemMeta = firstItem.querySelector('.item-meta').textContent;
+  chk(itemMeta.includes('《左传》'), '列表条目显示真实出处《左传》（' + itemMeta + '）');
+  chk(itemMeta.includes('《古文观止》'),
+    '列表条目另以括注标出选本《古文观止》');
+  const rdMeta = d.querySelector('#rd-meta').textContent;
+  chk(rdMeta.includes('《左传》'), '阅读器显示真实出处《左传》');
+  chk(rdMeta.includes('《古文观止》'), '阅读器另标出选本《古文观止》');
   const plain = d.querySelector('#rd-text').textContent
     .replace(/[a-zāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜüńňǹ·]+/g, '').replace(/\s/g, '');
   chk(/郑武公娶于申/.test(plain), '正文已写入阅读器');

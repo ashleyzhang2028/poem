@@ -43,8 +43,13 @@
 | 古文观止 | `data/poems-guwen.js`（十二卷 155 篇） | `js/guwen.js` | 卷一 周文 …… 卷十二 明文 | `poem_guwen_read_v1` |
 
 数据字段统一为：`id / title / source / dynasty / author / gradeGroup / text /
-excerpt / translation / translationSource`（古文观止另有 `book`，标出这一篇出自
-《左传》《史记》等哪部书）。
+excerpt / translation / translationSource`。
+
+`source` 记的是这一篇**真正的出处**：《古文观止》里就是《左传》《国语》
+《战国策》《史记》《震川先生集》《李太白集》这些成书之处，不是选本名。
+「从哪本选里读到」另有 `selection` 字段（古文观止为《古文观止》），
+列表里作为淡色括注、阅读器里作为淡色标签跟在出处后面 —— 选集不是出处，
+两件事分开放，搜索两种说法都能命中。
 
 - `excerpt` 是列表里显示的**名句摘句**：宋词、古文篇幅长，截正文前十几字往往
   认不出是哪一篇（开头多是交代性的成句），所以摘句由语料单独给出，没给就不显示

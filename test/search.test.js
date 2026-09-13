@@ -290,7 +290,10 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(read('js/chrome.js').indexOf('古诗词') === -1 ||
     !/label: "古诗词"/.test(read('js/chrome.js')),
     '页签里不再有名为「古诗词」的那一格');
-  chk(read('sw.js').indexOf('poem-app-v41') >= 0, 'sw.js 缓存版本已升到 v41');
+  // 版本号只要求「v41 或更高」：后续 PR 还会继续递增，
+  // 写死具体版本会让每个改动 js/css 的 PR 都要回来改这一行。
+  const swVer = (/poem-app-v(\d+)/.exec(read('sw.js')) || [])[1];
+  chk(Number(swVer) >= 41, 'sw.js 缓存版本不低于 v41（实际 v' + swVer + '）');
   ['"./search/"', '"./js/search.js"', '"./library/"', '"./js/library.js"'].forEach(needle => {
     chk(read('sw.js').indexOf(needle) >= 0, 'sw.js 预缓存含 ' + needle);
   });

@@ -137,7 +137,7 @@
   function matchScore(p, q) {
     var title = String(p.title || "").toLowerCase();
     var author = String(p.author || "").toLowerCase();
-    var rest = [p.bookName, p.source, p.dynasty, p.gradeGroup].join(" ").toLowerCase();
+    var rest = [p.bookName, p.source, p.selection, p.dynasty, p.gradeGroup].join(" ").toLowerCase();
     var body = [p.text, p.translation].join(" ").toLowerCase();
     if (title.indexOf(q) >= 0) return 4;
     if (author.indexOf(q) >= 0) return 3;

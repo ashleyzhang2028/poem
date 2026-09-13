@@ -122,8 +122,18 @@
  *          js/library.js、js/chrome.js、js/reader-core.js、js/app.js、
  *          js/settings.js、css/style.css、css/classic.css、fonts/、
  *          index.html、manifest.webmanifest、sw.js）
+ *   v42  集子「出处」修正（Issue #69 收尾）：
+ *        《古文观止》155 篇的 source 原先一律写成选本名《古文观止》，
+ *        列表与阅读器里看到的「出处」因此全是同一句，认不出这一篇真正
+ *        出自哪部书。现改为：source = 真实出处（《左传》《国语》《战国策》
+ *        《史记》《震川先生集》《李太白集》……，即用户清单里那一列），
+ *        selection = 选本名《古文观止》（列表淡色括注、阅读器淡色标签）。
+ *        引擎的 haystack 与搜索页的 matchScore 一并纳入 selection，
+ *        搜「古文观止」仍能命中全部 155 篇。
+ *        （data/poems-guwen.js、data/site-index.js、js/reader-core.js、
+ *          js/search.js、css/classic.css、sw.js）
  */
-const CACHE_NAME = "poem-app-v41";
+const CACHE_NAME = "poem-app-v42";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [
