@@ -407,11 +407,40 @@ chk(/id="seg-helper"/.test(readerBlock), '「阅读辅助」组含注音总开�
 chk(/\.settings-group-title\s*\{[\s\S]{0,300}?letter-spacing/.test(css),
   '分组标题用字距拉开，与组内选项区分（命中 .settings-group-title 样式）');
 chk(/\.settings-group-title::after/.test(css), '分组标题右侧有收尾细线（::after）');
-// 需求（本次）：分组标题字号不再偏大；二级描述（.settings-group-desc）已彻底移除
-const titleSize = (css.match(/\.settings-group-title\s*\{([\s\S]{0,300}?)\}/) || ['', ''])[1];
+// 需求（本次）：分组标题必须「确实小于页面顶部的大标题」，且三重降级
+// （字号 / 字重 / 颜色），否则仍会被读成又一个标题。
+const titleSize = (css.match(/\.settings-group-title\s*\{([\s\S]{0,600}?)\}/) || ['', ''])[1];
 const fsMatch = titleSize.match(/font-size:\s*([\d.]+)px/);
-chk(!!fsMatch && parseFloat(fsMatch[1]) <= 12,
-  '分组标题字号已调小（≤12px，实际 ' + (fsMatch ? fsMatch[1] + 'px' : '未取到') + '）');
+const titleFs = fsMatch ? parseFloat(fsMatch[1]) : NaN;
+chk(!!fsMatch && titleFs <= 11,
+  '分组标题字号足够小（≤11px，实际 ' + (fsMatch ? fsMatch[1] + 'px' : '未取到') + '）');
+chk(!/font-weight:\s*(600|700|bold)/.test(titleSize),
+  '分组标题不再用半粗字重（不与选项文字抢眼）');
+chk(/color:\s*var\(--ink-3\)/.test(titleSize),
+  '分组标题用最淡的辅助色 --ink-3，弱于组内选项');
+// 与「页面顶部大标题」的层级关系：顶栏应用名 19px，分组标题必须明显小于它，
+// 也要小于组内选项文字 13.5px。三条一起锁住，避免以后又被调回去。
+//
+// 注意：同一个选择器可能在样式表里出现多次（如 .brand-name-row 先随一组
+// 只声明 font-family，后面才单独给 font-size:19px）。所以这里把所有匹配块
+// 都收集起来取**最大值**，只取第一个会拿到「没有 font-size」的那块。
+const maxFontSize = function (re) {
+  let m, best = 0;
+  while ((m = re.exec(css)) !== null) {
+    const f = m[1].match(/font-size:\s*([\d.]+)px/);
+    if (f) best = Math.max(best, parseFloat(f[1]));
+  }
+  return best;
+};
+// 直接传正则字面量，避开字符串转义带来的坑
+const brandFs = maxFontSize(/\.brand-name-row\s*\{([\s\S]{0,500}?)\}/g);
+// 选项块的写法是两个选择器共用一个声明块（.seg button, .chips button），
+// 所以按选择器列表整体匹配，再从中取 font-size。
+const optFs = maxFontSize(/\.settings-page \.seg button,[\s\S]{0,60}?\{([\s\S]{0,500}?)\}/g);
+chk(brandFs >= 17 && titleFs < brandFs,
+  '分组标题（' + titleFs + 'px）小于页面顶部大标题（' + brandFs + 'px）');
+chk(optFs >= 13 && titleFs < optFs,
+  '分组标题（' + titleFs + 'px）小于组内选项文字（' + optFs + 'px）');
 chk(!/\.settings-group-desc/.test(css), '样式里不再保留二级描述 .settings-group-desc');
 chk(!/settings-group-desc/.test(settingsHtml), '设置页 HTML 里不再有二级描述节点');
 
@@ -464,8 +493,24 @@ chk(/data-nav-go/.test(read('js/chrome.js')) && /\/settings\//.test(read('js/chr
     'Service Worker 从站点根注册（/sw.js），子目录页面同样能注册');
   chk(!/register\("\.\/sw\.js"\)/.test(read('js/pwa.js')),
     '不再用相对的 ./sw.js 注册（目录化后会解析成 /settings/sw.js 而 404）');
-  // 缓存名必须随 URL 结构变化升级，否则老用户拿到的是旧副本
-  chk(/poem-app-v19/.test(sw), 'Service Worker 缓存版本已升级（v19），老缓存会被清掉');
+  // 缓存名必须随资源变化升级，否则老用户拿到的是旧副本。
+  // 这里不只查「等于某个版本号」——那样每次改 CSS 都得改测试。
+  // 关键约束：静态资源是「缓存优先」，所以缓存版本号必须比最近的资源改动新。
+  const swVer = parseInt((sw.match(/poem-app-v(\d+)/) || [0, '0'])[1], 10) || 0;
+  chk(swVer >= 21, 'Service Worker 缓存版本已提升（≥v21，实际 v' + swVer + '），老缓存会被清掉');
+  // 反向约束：CACHE_NAME 必须出现在 sw.js 里且是纯常量，避免被误改成变量而失效
+  chk(/const CACHE_NAME = "poem-app-v\d+";/.test(sw), 'CACHE_NAME 是带版本号的常量');
+  // 静态资源是「缓存优先」——改样式表却不升版本，用户会一直看到旧样式。
+  // 这里显式锁住这条约定：sw.js 里必须写明「改静态资源要升版本」，
+  // 并且所有页面的样式表 / 脚本都必须在 PRECACHE 里（否则断网/老用户会新老混用）。
+  chk(/缓存优先/.test(sw) && /升|提升|更新/.test(sw.slice(0, 1200)),
+    'sw.js 里写明「静态资源缓存优先、改动需升级版本」的约定');
+  ['css/style.css', 'css/classic.css', 'css/legal.css'].forEach(function (f) {
+    chk(sw.indexOf('./' + f) !== -1, 'PRECACHE 含 ' + f);
+  });
+  ['js/app.js', 'js/chrome.js', 'js/settings.js', 'js/classic.js'].forEach(function (f) {
+    chk(sw.indexOf('./' + f) !== -1, 'PRECACHE 含 ' + f);
+  });
 }
 chk(/invalidatePlan/.test(settingsJs), '设置页改配置后会让首页的今日计划缓存失效');
 
@@ -508,13 +553,27 @@ import sys, json, os, re
 from fontTools.ttLib import TTFont
 root = sys.argv[1]
 chars = set()
+# 只统计「真正会渲染出来」的字符：注释里的字不会被渲染，
+# 却会被算成「站点用字」，逼着字体子集去覆盖注释里偶然出现的生僻字
+# （曾出现：CSS 注释里一个描述「拉成扁圆」的词，让 4 款字体全部报缺字）。
+# 这里先把注释剥掉再扫描，避免这类假警报。
+def strip_comments(src, fn):
+    if fn.endswith(('.js', '.css')):
+        src = re.sub(r'/\\*[\\s\\S]*?\\*/', ' ', src)
+    if fn.endswith('.js'):
+        src = re.sub(r'(?m)^\\s*//.*$', ' ', src)
+    if fn.endswith(('.html', '.css')):
+        src = re.sub(r'<!--[\\s\\S]*?-->', ' ', src)
+    return src
+
 for dirpath, dirnames, filenames in os.walk(root):
     if any(x in dirpath for x in ['.git', 'node_modules', 'fonts']):
         continue
     for fn in filenames:
         if fn.endswith(('.js', '.html', '.css', '.json', '.webmanifest')):
             with open(os.path.join(dirpath, fn), encoding='utf8') as fh:
-                chars |= set(re.findall(r'[\u4e00-\u9fff\u3000-\u303f\uff00-\uffef]', fh.read()))
+                chars |= set(re.findall(r'[\u4e00-\u9fff\u3000-\u303f\uff00-\uffef]',
+                                        strip_comments(fh.read(), fn)))
 chars |= set('跬步·—…「」《》（）？！、。；：')
 out = {'_total': len(chars)}
 for name in ['NotoSansSC-400','NotoSansSC-600','NotoSerifSC-400','NotoSerifSC-600']:
