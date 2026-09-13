@@ -649,18 +649,22 @@ function check(name, cond, extra) {
         mainW: +mainRect.width.toFixed(2),
         // Issue #69 后续：内容块按内容取宽之后，「文字有没有被压窄」不能再用
         // 写死的宽度下限去卡（条目本身已经窄下来了）。改量真实关系：
-        // 内容块宽度 ≥ 它内部最宽那个子元素（标题行 / 元信息行）的自然宽。
-        // 自然宽用一份离屏副本单独量，不受当前布局影响。
-        widestChildW: (() => {
-          const probe = document.createElement('div');
-          probe.style.cssText = 'position:absolute;left:-99999px;top:0;width:max-content;';
-          probe.appendChild(main.cloneNode(true));
-          document.body.appendChild(probe);
-          const w = Math.max.apply(null, [].slice.call(probe.firstElementChild.children).map(function (k) {
-            return k.getBoundingClientRect().width;
-          }).concat([0]));
-          probe.parentNode.removeChild(probe);
-          return +w.toFixed(2);
+        // 内容块宽度 ≥ 标题行的自然宽（用 Range 量文字墨迹，不受当前布局影响）。
+        titleNatW: (() => {
+          const title = main.querySelector('.item-title');
+          if (!title) return 0;
+          // ⚠️ 这里量的是标题**文字**的自然宽，不是标题这个盒子的宽。
+          //    两处坑都得绕开：
+          //    1) 不能量标题盒：它是块级 flex 行，在 .item-main 里宽 283px
+          //       （被内容块的宽度决定），量它等于什么都没量。
+          //    2) 也不能把 .item-title 单独拷进一份 `width: max-content` 离屏副本 ——
+          //       那样量到的是「标题被撑到与父级同宽」，跟自然宽无关。
+          //    换成 Range 框住标题里的文字：它给出的是文字**不折行**时的真实
+          //    墨迹宽度（「1人之初」= 77.31px），这正是「标题有没有被压窄」
+          //    该比的那个数。
+          const rng = document.createRange();
+          rng.selectNodeContents(title);
+          return +rng.getBoundingClientRect().width.toFixed(2);
         })(),
         playGapRight: +(arrowRect.left - playRect.right).toFixed(2),
         // 两键之间**固定**的那段间距（播放键的 margin-right）——
@@ -915,15 +919,18 @@ function check(name, cond, extra) {
     check('iPhone: 小古文内容块不再撑满整行（按内容取宽，不是 flex 增长项）',
       numState.mainW < 393 - 2 - 12 - 8 - 36 - 6 - 18 - 1,
       numState.mainW + 'px（整行 ' + 393 + 'px）');
-    // 内容块宽度只要**达到这一条里最宽那句的自然宽**就够了 ——
+    // 内容块宽度只要**达到标题行的自然宽**就够了 ——
     // 不能拿一个写死的 226px 去卡：这个数原先对应的是「整行 393px 减去
     // 两侧图标 + 内边距」的旧口径（内容块当时是增长项，会被拉满）。
     // 改成按内容取宽之后，条目窄了（393px 的 iPhone 上搜索页那条
     // 「咏鹅」只有 64px），写死的下限必然误报。这里改成量真实关系：
-    //   内容块宽度 ≥ 它内部最宽那个子元素的自然宽（文字没被压窄）。
-    check('iPhone: 内容块宽度不小于内部最宽子元素的自然宽（文字没被压窄）',
-      numState.mainW >= numState.widestChildW - 0.5,
-      JSON.stringify({ mainW: numState.mainW, widestChildW: numState.widestChildW }));
+    //   内容块宽度 ≥ 标题行的自然宽（标题没被压窄）。
+    // ⚠️ 只量标题行，不量 .item-meta：元信息行末尾那段原文摘要是
+    //    nowrap + ellipsis，自然宽等于整段原文、比整行还宽，按它卡必挂；
+    //    见上方 titleNatW 里的说明。
+    check('iPhone: 内容块宽度不小于标题行的自然宽（标题没被压窄）',
+      numState.mainW >= numState.titleNatW - 0.5,
+      JSON.stringify({ mainW: numState.mainW, titleNatW: numState.titleNatW }));
 
     // 需求（Issue #55 后续）：搜索框提示字垂直居中。
     // 提示字走 ::placeholder 伪元素，且比输入文字小一档（12.5px vs 16px）——
