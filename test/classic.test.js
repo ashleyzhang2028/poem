@@ -286,26 +286,30 @@ setTimeout(() => {
   chk(/(^|\n)\.group-card \.item \{[\s\S]*?box-shadow:\s*none/.test(fs.readFileSync(path + 'css/classic.css', 'utf8')),
     '卡内条目去掉各自的阴影（合并进卡片后不再是 100 张独立卡片）');
 
-  // 需求（Issue #55）：左侧曾同时出现**两道竖条** —— 卡片左边缘那道「大竖条」
-  // 与条目自己的短竖条并排，看着完全重复。本次：
-  //   1) 去掉 .group-card 的左右 4px 留白（大竖条消失）；
-  //   2) 条目短竖条 3px → 1px；
-  //   3) 1px 线挪到 left:2px，与序号圆之间留出间隙。
-  // 这里从 CSS 源码锁住这三条，防止再被改回「两道竖条」。
+  // 需求（Issue #55 后续）：左侧那道 1px「短竖条」整体去掉（用户要求「直接隐藏」）。
+  // 它原先是表达「课内 / 课外」的一枚淡记号，但同一条卡片里序号圆的配色
+  // 与卡头分组名已经把这件事说清楚了，竖条既重复、又在视觉上多出一道压在
+  // 序号圆左侧的竖线。这里从 CSS 源码锁住「不再渲染 ::before 竖条」。
   const classicCssText = fs.readFileSync(path + 'css/classic.css', 'utf8');
   chk(!!cardCss && /padding:\s*0 0 10px;/.test(cardCss[2]),
-    '卡片左右不再留白（左色条已由条目短竖条表达，4px 会造出第二道「大竖条」）');
-  const barBlock = /(^|\n)\.group-card \.item::before \{([\s\S]*?)\}/.exec(classicCssText);
-  chk(!!barBlock && /width:\s*1px;/.test(barBlock[2]),
-    '条目短竖条宽 1px（原 3px 像一道色块）');
-  chk(!!barBlock && /left:\s*2px;/.test(barBlock[2]),
-    '短竖条落在 left:2px：与卡片左缘留 2px，与序号圆左缘之间留出间隙');
-  const itemPadBlock = /(^|\n)\.group-card \.item \{([\s\S]*?)\}/.exec(classicCssText);
-  chk(!!itemPadBlock && /padding:\s*12px 8px 12px 16px;/.test(itemPadBlock[2]),
-    '条目左内边距 16px：圆周落在 4px，既不被卡片裁掉，也不压在竖条上');
+    '卡片左右不留白（4px 会在条目内容外侧造出一道更高的「大竖条」）');
+  chk(!/\.group-card \.item::before\s*\{/.test(classicCssText),
+    '条目短竖条（::before）整体去掉，不再出现第二道竖线');
+  chk(!/background:\s*var\(--blue\);\s*\}/.test(classicCssText) ||
+      !/\.group-card \.item::before/.test(classicCssText),
+    '与短竖条一并去掉的还有 .in-book 的绿色覆盖');
+  chk(!/\.group-card \.item\.in-book::before/.test(classicCssText),
+    '课内 / 课外改由序号圆配色与卡头分组名表达（不再有 .in-book::before 绿条）');
 
-  // 需求（Issue #55 后续）：左侧那道「大竖绿线」还在，必须整条去掉。
-  // 根子不在 .group-card 的留白，而在全站 .item 遗留的 `border-left: 4px solid`：
+  // 需求（Issue #55 后续）：条目左右内边距对称 —— 左侧与右侧保持一样的间隔。
+  // 原先左 16px / 右 8px：左内侧那 16px 是给「序号圆 + 短竖条」腾地方的，
+  // 竖条去掉后不再需要，收成与右侧相同的 8px，条目内容块左右同宽。
+  const itemPadBlock = /(^|\n)\.group-card \.item \{([\s\S]*?)\}/.exec(classicCssText);
+  chk(!!itemPadBlock && /padding:\s*12px 8px;/.test(itemPadBlock[2]),
+    '条目左右内边距同为 8px（与右侧播放键 / 箭头同一条内缘）');
+
+  // 需求（Issue #55 后续）：左侧那道「大竖绿线」必须整条去掉。
+  // 根子在全站 .item 遗留的 `border-left: 4px solid`：
   // 100 篇合成一张卡片后，7 张卡的小绿条首尾紧贴卡片上下缘，各自连成一道
   // 贯穿整张卡片左边缘的竖线（用户看到的「左侧一整条大竖绿线」）。
   // 这里同时锁住「卡内条目左边框清零」与「前缀只允许 border-left: none」——
@@ -317,18 +321,20 @@ setTimeout(() => {
   chk(!/border:\s*none;/.test(itemPadBlock[2]) || /border-left:\s*none;/.test(itemPadBlock[2]),
     '用 border-left 定向清零，而不是 border: none 一刀切');
 
-  // 需求（Issue #55 第三条）：序号圆挪进标题行、挂在篇名前面，圆的直径与字号同高。
-  // 间隙的算法也随之换了主人：条目左内边距让出「圆周左缘」这一段，
-  // 标题行自己负外边距左移 12px，圆与竖条之间的间隙由两者之和承担。
-  // 数值上验一遍：竖条右缘 3px，圆周左缘 = 内边距 16px − 12px = 4px ……
-  // 所以这里从**源码**锁住这几段数值，防止有人把任一段改回去。
+  // 需求（Issue #55 后续）：序号圆与下方正文左对齐。
+  // 此前标题行带 `margin-left: -12px`，把序号圆（连同整个标题行）左移 12px、
+  // 让圆「探出」内容块左缘 —— 圆周左缘因此比下方「朝代 · 作者 · 年级」那行
+  // 少缩进了 12px，一眼看去圆不在内容块的左基准线上（用户反馈的正是这一点）。
+  // 现在负外边距收掉：标题行、序号圆、下方 .item-meta 同起于条目内容左缘。
   const styleCssText = fs.readFileSync(path + 'css/style.css', 'utf8');
   const titleBlock = /(^|\n)\.item-title \{([\s\S]*?)\}/.exec(styleCssText);
   // ⚠️ 注释里也会出现 margin-left / font-size 之类的字样（本仓库注释写得长），
   // 取数值前先把注释剥掉，否则命中的是注释里的那个数。
   const titleDecls = titleBlock[2].replace(/\/\*[\s\S]*?\*\//g, ' ');
-  chk(!!titleBlock && /(^|\s)margin-left:\s*-12px;/.test(titleDecls),
-    '标题行负外边距 -12px：序号圆挂到正文基线左侧，正文宽度不受影响');
+  chk(!!titleBlock && /(^|\s)margin-left:\s*0;/.test(titleDecls),
+    '标题行不再负向外移（margin-left: 0）：序号圆与下方正文左对齐');
+  chk(!!titleBlock && !/margin-left:\s*-\d+px;/.test(titleDecls),
+    '标题行不再出现负外边距（圆不会探出内容块左缘）');
   const numBlock = /(^|\n)\.item-num \{([\s\S]*?)\}/.exec(styleCssText);
   // 同理先剥注释：.item-num 的注释里也提到过尺寸与字号
   const numDecls = numBlock[2].replace(/\/\*[\s\S]*?\*\//g, ' ');
@@ -354,31 +360,13 @@ setTimeout(() => {
     '描边占在盒子内（border-box），圆外径仍是 --item-num，不被 1px 撑大');
   chk(!!numBlock && /align-items:\s*center;/.test(numDecls) && /justify-content:\s*center;/.test(numDecls),
     '圈里的数字水平 + 垂直居中（flex 两轴 center）');
-  const barLeft = parseInt((barBlock[2].match(/left:\s*(\d+)px/) || [, '0'])[1], 10);
-  const barW = parseInt((barBlock[2].match(/width:\s*(\d+)px/) || [, '0'])[1], 10);
-  // 几何按数值算一遍：条目左内边距 + 标题行负外边距 = 圆周左缘（相对条目左缘）。
-  // 圆周左缘要落在竖条右缘（left 2px + 宽 1px = 3px）之后，且不超出卡片左缘（≥ 0）——
-  // 超出就会被卡片 overflow: hidden 裁掉，那是曾经踩过的坑。
-  // （真浏览器量过：条目左缘 14px 时圆周左缘落在 18px，相对条目左缘偏移 4px，
-  //   右侧与短竖条右缘 3px 之间留 1px）
-  const itemPadL = parseInt((itemPadBlock[2].match(/padding:\s*\d+px \d+px \d+px (\d+)px/) || [, '0'])[1], 10);
-  const titleNeg = parseInt((titleDecls.match(/margin-left:\s*(-?\d+)px/) || [, '0'])[1], 10);
-  const numLeftRel = itemPadL + titleNeg;
-  chk(numLeftRel >= barLeft + barW,
-    '圆周左缘（' + numLeftRel + 'px）不早于短竖条右缘（' + (barLeft + barW) + 'px）');
-  chk(numLeftRel >= 0,
-    '圆周左缘在卡片内（' + numLeftRel + 'px ≥ 0），不会被 overflow: hidden 裁掉');
-  // 上界：圆的左偏移不能小于 3px（否则被卡片裁掉），也不能大于圆的直径
-  // （否则圆离开竖条太远，与「贴在标题前」的初衷不符）
-  chk(numLeftRel >= 3 && numLeftRel <= 16,
-    '圆周左缘偏移落在 [3, 16] px 之间（实际 ' + numLeftRel + 'px）：既不裁切也不游离');
-
-  // 需求（Issue #55 第三条）：短竖条透明度降到 55% —— 1px 实色深青在纸底上仍是硬线，
-  // 竖排 100 条就是 100 道重描边，视线先落在线上而不是篇名上。
-  chk(!!barBlock && /opacity:\s*\.55;/.test(barBlock[2]),
-    '短竖条透明度 55%（用 opacity 而不是改浅颜色，主题换色仍自动跟随）');
-  chk(!!barBlock && /background:\s*var\(--blue\);/.test(barBlock[2]),
-    '透明度只降不透明度，颜色仍是 --blue（课内 / 课外两色由 .in-book 覆盖）');
+  // 真浏览器里量一遍：序号圆、篇名、下方正文三者的左缘必须落在同一条竖线上。
+  // jsdom 不算布局，这条只能在浏览器里核（见 test/pwa.test.js 的同类断言），
+  // 这里先从源码确认「没有负外边距」这个前提成立，布局断言交给 PWA 层。
+  // 空心描边（border-box）不改变圆的占位宽度，所以与「左对齐」并存、不冲突。
+  const itemPadL = parseInt((itemPadBlock[2].match(/padding:\s*\d+px (\d+)px/) || [, '8'])[1], 10);
+  chk(itemPadL === 8,
+    '条目左内边距 8px：序号圆与右侧播放键 / 箭头同宽内缘（实际 ' + itemPadL + 'px）');
 
   // 需求（Issue #55 第三条）：序号圆从独占一列挪进标题行，排在篇名前面。
   const numEls = [...d.querySelectorAll('#gw-list .item-num')];
@@ -392,11 +380,13 @@ setTimeout(() => {
   chk(numEls[0].textContent === '1', '序号从 1 起（实际 ' + numEls[0].textContent + '）');
   chk(/\.item-index/.test(classicCssText) === false,
     'css/classic.css 里不再留 .item-index 僵尸规则');
+  // 空心圆（本 PR）：小古文只改 color，圈线走 currentColor 自动跟随；
+  // 与 upstream 的「课内 / 课外由圆的配色表达」意图一致，只是底色换成描边。
   chk(/#gw-list \.item-num \{ color: var\(--blue\); \}/.test(classicCssText) &&
     /#gw-list \.item\.in-book \.item-num \{ color: var\(--green\); \}/.test(classicCssText),
-    '小古文的序号圆：课内走天水碧、课外走天青（圈线与数字同色，与短竖条同色系）');
+    '小古文的序号圆：课内走天水碧、课外走天青（圈线与数字同色）');
   chk(!/#gw-list \.item-num \{[^}]*background/.test(classicCssText),
-    '小古文也不再给序号圆铺底色（只留描边）');
+    '小古文也不再给序号圆铺底色（只留描边，课内 / 课外由圈线色表达）');
   // ⚠️ 只看 `border-left: none` 还会被「注释里写着 border-left: 4px」骗过去，
   // 所以先把注释剥掉再查：规则体里不能再出现任何 4px 的左边框。
   const itemRules = itemPadBlock[2].replace(/\/\*[\s\S]*?\*\//g, ' ');
@@ -522,6 +512,16 @@ setTimeout(() => {
   const phCss = classicSheet.match(/\.search-input::placeholder \{([^}]*)\}/);
   chk(!!phCss && /font-size:\s*12\.5px/.test(phCss[1]),
     '搜索框提示字（placeholder）字号压到 12.5px，与右侧「全部 / 未读」同号');
+
+  // 需求（Issue #55 后续）：搜索框里的提示字「搜索篇名 / 出处 / 作者」要垂直居中。
+  // 输入框自身字号 16px，提示字 12.5px —— 浏览器按**输入框的**字体排这一行基线，
+  // 提示字行盒仍坐在 16px 的基线上，字矮了 3.5px，整个就沉到框的中线以下。
+  // 修法：只给 ::placeholder 一个向上 2.25px 的位移（= 两者行盒中心差），
+  // 输入的文字（16px）本来就是居中的，绝不能去动输入框本体的 padding / line-height。
+  chk(!!phCss && /transform:\s*translateY\(-2\.25px\)/.test(phCss[1]),
+    '提示字上抬 2.25px，回到搜索框的水平中轴（只动伪元素，不动输入文字）');
+  chk(!/padding(-top|-bottom)?\s*:/.test(phCss[1]) && !/line-height\s*:/.test(phCss[1]),
+    '居中的修法不碰输入框本体（提示字用 transform，输入文字仍是居中的 16px）');
   // 「全部 / 未读」实际量出来的字号是 12.5px —— 它由全站 .seg.mini button 给
   // （0,2,1），压过 classic.css 里 .filter-seg button 那条 13.5px（0,1,1）。
   // 所以这里断言的是「全站那个 12.5px 还在」，而不是小古文页自己写的那条。

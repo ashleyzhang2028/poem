@@ -446,6 +446,43 @@ function check(name, cond, extra) {
       roundState.trans.radius === '999px' || parseFloat(roundState.trans.radius) * 2 >= roundState.trans.h,
       roundState.trans.radius);
 
+    // ---- Issue #55：首页「今日背诵」两颗圆的直径必须一致 ----
+    // 用户连着报了三次（56px → 54px → 与播放键同径），说明光改 CSS 数值不够，
+    // 得看渲染结果。所以这里不看 CSS 写了多少，直接量真机上画出来的东西：
+    //   左侧播放键 → 外盒尺寸（它就是一颗实心圆键，盒子即直径）
+    //   右侧进度环 → 圆环的**最大直径**，两种量法取大者：
+    //                a) 外盒（svg overflow: hidden 会把骑在边界上的描边裁进盒内，
+    //                   正常情况下盒子就是最大外径）
+    //                b) 路径几何框 + 一圈描边（若将来放开 overflow，描边探出去也得算）
+    // 取大者，「最大直径」才不会被某一种实现蒙过去。
+    const todayRing = await page.evaluate(() => {
+      const read = document.querySelector('#today-read');
+      const ring = document.querySelector('#today-ring');
+      const outer = el => { const b = el.getBoundingClientRect(); return { w: +b.width.toFixed(2), h: +b.height.toFixed(2) }; };
+      const r = outer(ring);
+      const boxMax = Math.max(r.w, r.h);
+      // 路径几何框（getBBox / getBoundingClientRect 都不含描边），加上一圈描边
+      const path = ring.querySelector('.ring-bg');
+      const pb = path.getBoundingClientRect();
+      const stroke = parseFloat(getComputedStyle(path).strokeWidth) || 0;
+      const paintedMax = +Math.max(pb.width, pb.height, boxMax - stroke).toFixed(2);
+      return {
+        read: outer(read),
+        ring: r,
+        ringMax: +Math.max(boxMax, paintedMax + stroke).toFixed(2),
+        stroke: stroke
+      };
+    });
+    check('iPhone: 日期条左侧播放键是正圆（宽高相等）',
+      todayRing.read.w === todayRing.read.h, JSON.stringify(todayRing.read));
+    check('iPhone: 今日圆环的最大直径与左侧播放键一致',
+      todayRing.ringMax === todayRing.read.w && todayRing.ringMax === todayRing.read.h,
+      '圆环最大直径 ' + todayRing.ringMax + ' vs 播放键 ' + todayRing.read.w + '×' + todayRing.read.h);
+    check('iPhone: 今日圆环是正圆（没被 flex 行拉成椭圆）',
+      todayRing.ring.w === todayRing.ring.h, JSON.stringify(todayRing.ring));
+    check('iPhone: 今日圆环里那颗金色描边没被裁掉半圈（描边宽度仍是整数 3px）',
+      todayRing.stroke === 3, String(todayRing.stroke));
+
     // ---- 小古文页：工具栏「连读」与各分组右侧都改成了圆形播放键 ----
     // 形状必须在真浏览器里量：CSS 写着 50% 圆角，但若高度被 flex 拉高，
     // 渲染出来仍是椭圆（曾经列表项那颗就是这样）。所以量的是真实盒尺寸。
@@ -519,7 +556,7 @@ function check(name, cond, extra) {
     check('iPhone: 分组圆键没有可见文字（图标表达状态）',
       gwState.group.text === '', JSON.stringify(gwState.group.text));
 
-    // ---- Issue #55：序号圆 / 短竖条 / 卡头间距 ----
+    // ---- Issue #55（含后续）：序号圆左对齐 / 无短竖条 / 卡头间距 / 提示字居中 ----
     // 这几条只能在真浏览器里量：jsdom 不算布局，CSS 写着数值也可能被裁、
     // 被 flex 拉扁、或被父级 overflow 切掉一角。量的都是渲染后的真实盒子。
     const numState = await page.evaluate(() => {
@@ -529,20 +566,28 @@ function check(name, cond, extra) {
       const item = card.querySelector('.item');
       const num = item.querySelector('.item-num');
       const title = item.querySelector('.item-title');
+      const meta = item.querySelector('.item-meta');
+      const arrow = item.querySelector('.item-arrow');
       const itemRect = item.getBoundingClientRect();
       const numRect = num.getBoundingClientRect();
+      const metaRect = meta.getBoundingClientRect();
+      const titleRect = title.getBoundingClientRect();
+      const arrowRect = arrow.getBoundingClientRect();
       const bar = getComputedStyle(item, '::before');
+      const itemPad = getComputedStyle(item);
       return {
         numW: +numRect.width.toFixed(2),
         numH: +numRect.height.toFixed(2),
         numFont: getComputedStyle(num).fontSize,
         titleFont: getComputedStyle(title).fontSize,
-        numLeftRelItem: +(numRect.left - itemRect.left).toFixed(2),
-        numLeftRelCard: +(numRect.left - card.getBoundingClientRect().left).toFixed(2),
-        barLeft: parseFloat(bar.left),
-        barW: parseFloat(bar.width),
-        barRightRelItem: +(parseFloat(bar.left) + parseFloat(bar.width)).toFixed(2),
-        barOpacity: bar.opacity,
+        numLeft: +numRect.left.toFixed(2),
+        titleLeft: +titleRect.left.toFixed(2),
+        metaLeft: +metaRect.left.toFixed(2),
+        numLeftInset: +(numRect.left - itemRect.left).toFixed(2),
+        arrowRightInset: +(itemRect.right - arrowRect.right).toFixed(2),
+        barContent: bar.content,
+        padL: itemPad.paddingLeft,
+        padR: itemPad.paddingRight,
         headPadBottom: getComputedStyle(head).paddingBottom,
         gapHeadBtnToItem: +(itemRect.top - headBtn.getBoundingClientRect().bottom).toFixed(2),
         numFirstChild: title.firstElementChild === num,
@@ -600,15 +645,55 @@ function check(name, cond, extra) {
       numState.numFirstChild, String(numState.numFirstChild));
     check('iPhone: 旧的独占一列序号已全部移除',
       numState.oldIndexLeft === 0, String(numState.oldIndexLeft));
-    check('iPhone: 序号圆没有被卡片裁掉（相对卡片左缘 ≥ 0）',
-      numState.numLeftRelCard >= 0, numState.numLeftRelCard + 'px');
-    check('iPhone: 序号圆不压住左侧短竖条（圆左缘 ≥ 竖条右缘）',
-      numState.numLeftRelItem >= numState.barRightRelItem,
-      numState.numLeftRelItem + ' ≥ ' + numState.barRightRelItem);
-    check('iPhone: 小古文条目短竖条透明度已调淡',
-      parseFloat(numState.barOpacity) < 1, numState.barOpacity);
+    // 需求（Issue #55 后续）：序号圆与下方正文左对齐（三者同一条竖线）
+    check('iPhone: 序号圆与下方正文左对齐（圆 / 篇名 / 元信息同一条左基准线）',
+      numState.numLeft === numState.metaLeft && numState.titleLeft === numState.metaLeft,
+      JSON.stringify({ num: numState.numLeft, title: numState.titleLeft, meta: numState.metaLeft }));
+    // 需求（Issue #55 后续）：条目左右内边距对称 —— 序号圆与右侧箭头同宽内缘
+    check('iPhone: 条目左右内边距对称（圆左内缘 = 箭头右内缘）',
+      numState.numLeftInset === numState.arrowRightInset &&
+      numState.padL === numState.padR,
+      JSON.stringify({ numLeft: numState.numLeftInset, arrowRight: numState.arrowRightInset,
+        pad: numState.padL + ' / ' + numState.padR }));
+    // 需求（Issue #55 后续）：左侧那道「短竖条」整体隐藏，不再渲染 ::before
+    check('iPhone: 左侧短竖条已隐藏（条目不再渲染 ::before 竖条）',
+      !numState.barContent || numState.barContent === 'none',
+      JSON.stringify(numState.barContent));
     check('iPhone: 卡头与首条之间留出间距（不再贴着分隔线）',
       numState.gapHeadBtnToItem >= 6, numState.gapHeadBtnToItem + 'px');
+
+    // 需求（Issue #55 后续）：搜索框提示字垂直居中。
+    // 提示字走 ::placeholder 伪元素，且比输入文字小一档（12.5px vs 16px）——
+    // 浏览器按**输入框的**字体排基线，提示字因此沉到框中线以下。
+    // 这里量两件事：
+    //   1) ::placeholder 确实带着一个向上的位移（CSS 里写死 2.25px）；
+    //   2) 位移量 = 两档字号「行盒中心」的差 =（16px − 12.5px）/ 2 = 1.75px……
+    //      实测下沉约 2.25px（含字形墨迹），位移必须为正且落在合理区间，
+    //      不能是 0（那样仍偏下），也不能大到把提示字顶出框。
+    const phState = await page.evaluate(() => {
+      const inp = document.querySelector('.search-input');
+      const cs = getComputedStyle(inp);
+      const ph = getComputedStyle(inp, '::placeholder');
+      const shift = (() => {
+        const m = /matrix\(1, 0, 0, 1, 0, (-?[\d.]+)\)/.exec(ph.transform);
+        return m ? parseFloat(m[1]) : 0;
+      })();
+      return {
+        phFont: ph.fontSize, inputFont: cs.fontSize,
+        shift: +shift.toFixed(2),
+        padTop: cs.paddingTop, padBottom: cs.paddingBottom,
+        lh: cs.lineHeight
+      };
+    });
+    check('iPhone: 提示字仍比输入文字小一号（辅助文字不抢眼）',
+      phState.phFont === '12.5px' && phState.inputFont === '16px',
+      JSON.stringify([phState.phFont, phState.inputFont]));
+    check('iPhone: 提示字上抬回正中轴（位移 = 两档字号行盒中心差）',
+      phState.shift === -2.25, 'shift ' + phState.shift + 'px');
+    check('iPhone: 输入框本体不做垂直方向的 padding / line-height 改动',
+      parseFloat(phState.padTop) === 0 && parseFloat(phState.padBottom) === 0 &&
+      phState.lh === 'normal',
+      JSON.stringify([phState.padTop, phState.padBottom, phState.lh]));
 
     // ---- Issue #32 需求：大背景不用任何图案 ----
     await page.goto(base + '', { waitUntil: 'load' });
