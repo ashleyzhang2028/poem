@@ -90,6 +90,8 @@
    * URL 一律目录化，不带 .html：
    *   /            首页（古诗词）
    *   /classic/    小古文
+   *   /tangshi/    唐诗三百首
+   *   /guwen/      古文观止
    *   /settings/   设置
    *   /terms/      用户协议
    *   /privacy/    隐私条款
@@ -101,6 +103,7 @@
     home: "/",
     classic: "/classic/",
     tangshi: "/tangshi/",
+    guwen: "/guwen/",
     settings: "/settings/",
     terms: "/terms/",
     privacy: "/privacy/"
@@ -134,6 +137,7 @@
     var p = currentPath();
     if (/^\/classic\/?$/.test(p) || /^\/classic\/index\.html$/.test(p)) return "classic";
     if (/^\/tangshi\/?$/.test(p) || /^\/tangshi\/index\.html$/.test(p)) return "tangshi";
+    if (/^\/guwen\/?$/.test(p) || /^\/guwen\/index\.html$/.test(p)) return "guwen";
     if (/^\/settings\/?$/.test(p) || /^\/settings\/index\.html$/.test(p)) return "settings";
     return "home";
   }
@@ -238,6 +242,7 @@
     var k = pageKey();
     if (k === "classic") return "小古文";
     if (k === "tangshi") return "唐诗三百首";
+    if (k === "guwen") return "古文观止";
     return "";
   }
 
