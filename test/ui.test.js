@@ -296,7 +296,7 @@ setTimeout(() => {
   chk(sd.querySelector('#seg-scope button.active').dataset.scope === 'term', '默认选中「本册」');
   setOn('scope', 'primary', '#seg-scope button', 'scope');
   chk(sd.querySelector('#seg-scope button.active').dataset.scope === 'primary', '切换后按钮高亮跟随');
-  chk(d.querySelector('#all-count').textContent === '91', '小学随机范围 → 小学 91 首（实际 ' + d.querySelector('#all-count').textContent + '）');
+  chk(d.querySelector('#all-count').textContent === '122', '小学随机范围 → 小学 122 首（实际 ' + d.querySelector('#all-count').textContent + '）');
   chk(d.querySelector('#all-label').textContent === '小学阶段全部诗词', '面板标题跟随范围: ' + d.querySelector('#all-label').textContent);
   chk(d.querySelectorAll('#today-list .item').length === 5, '随机范围下仍按每日数量出计划');
   chk(d.querySelector('#all-list .item .item-meta').textContent.includes('年级') === false ||
