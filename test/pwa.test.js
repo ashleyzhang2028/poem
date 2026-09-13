@@ -649,18 +649,22 @@ function check(name, cond, extra) {
         mainW: +mainRect.width.toFixed(2),
         // Issue #69 后续：内容块按内容取宽之后，「文字有没有被压窄」不能再用
         // 写死的宽度下限去卡（条目本身已经窄下来了）。改量真实关系：
-        // 内容块宽度 ≥ 它内部最宽那个子元素（标题行 / 元信息行）的自然宽。
-        // 自然宽用一份离屏副本单独量，不受当前布局影响。
-        widestChildW: (() => {
-          const probe = document.createElement('div');
-          probe.style.cssText = 'position:absolute;left:-99999px;top:0;width:max-content;';
-          probe.appendChild(main.cloneNode(true));
-          document.body.appendChild(probe);
-          const w = Math.max.apply(null, [].slice.call(probe.firstElementChild.children).map(function (k) {
-            return k.getBoundingClientRect().width;
-          }).concat([0]));
-          probe.parentNode.removeChild(probe);
-          return +w.toFixed(2);
+        // 内容块宽度 ≥ 标题行的自然宽（用 Range 量文字墨迹，不受当前布局影响）。
+        titleNatW: (() => {
+          const title = main.querySelector('.item-title');
+          if (!title) return 0;
+          // ⚠️ 这里量的是标题**文字**的自然宽，不是标题这个盒子的宽。
+          //    两处坑都得绕开：
+          //    1) 不能量标题盒：它是块级 flex 行，在 .item-main 里宽 283px
+          //       （被内容块的宽度决定），量它等于什么都没量。
+          //    2) 也不能把 .item-title 单独拷进一份 `width: max-content` 离屏副本 ——
+          //       那样量到的是「标题被撑到与父级同宽」，跟自然宽无关。
+          //    换成 Range 框住标题里的文字：它给出的是文字**不折行**时的真实
+          //    墨迹宽度（「1人之初」= 77.31px），这正是「标题有没有被压窄」
+          //    该比的那个数。
+          const rng = document.createRange();
+          rng.selectNodeContents(title);
+          return +rng.getBoundingClientRect().width.toFixed(2);
         })(),
         playGapRight: +(arrowRect.left - playRect.right).toFixed(2),
         // 两键之间**固定**的那段间距（播放键的 margin-right）——
@@ -915,22 +919,25 @@ function check(name, cond, extra) {
     check('iPhone: 小古文内容块不再撑满整行（按内容取宽，不是 flex 增长项）',
       numState.mainW < 393 - 2 - 12 - 8 - 36 - 6 - 18 - 1,
       numState.mainW + 'px（整行 ' + 393 + 'px）');
-    // 内容块宽度只要**达到这一条里最宽那句的自然宽**就够了 ——
+    // 内容块宽度只要**达到标题行的自然宽**就够了 ——
     // 不能拿一个写死的 226px 去卡：这个数原先对应的是「整行 393px 减去
     // 两侧图标 + 内边距」的旧口径（内容块当时是增长项，会被拉满）。
     // 改成按内容取宽之后，条目窄了（393px 的 iPhone 上搜索页那条
     // 「咏鹅」只有 64px），写死的下限必然误报。这里改成量真实关系：
-    //   内容块宽度 ≥ 它内部最宽那个子元素的自然宽（文字没被压窄）。
-    check('iPhone: 内容块宽度不小于内部最宽子元素的自然宽（文字没被压窄）',
-      numState.mainW >= numState.widestChildW - 0.5,
-      JSON.stringify({ mainW: numState.mainW, widestChildW: numState.widestChildW }));
+    //   内容块宽度 ≥ 标题行的自然宽（标题没被压窄）。
+    // ⚠️ 只量标题行，不量 .item-meta：元信息行末尾那段原文摘要是
+    //    nowrap + ellipsis，自然宽等于整段原文、比整行还宽，按它卡必挂；
+    //    见上方 titleNatW 里的说明。
+    check('iPhone: 内容块宽度不小于标题行的自然宽（标题没被压窄）',
+      numState.mainW >= numState.titleNatW - 0.5,
+      JSON.stringify({ mainW: numState.mainW, titleNatW: numState.titleNatW }));
 
     // 需求（Issue #55 后续）：搜索框提示字垂直居中。
     // 提示字走 ::placeholder 伪元素，且比输入文字小一档（12.5px vs 16px）——
     // 浏览器按**输入框的**字体排基线，提示字因此沉到框中线以下。
     // 这里量两件事：
-    //   1) ::placeholder 确实带着一个向上的位移（CSS 里写死 2.25px）；
-    //   2) 位移量 = 两档字号「行盒中心」的差 =（16px − 12.5px）/ 2 = 1.75px……
+    //   1. ::placeholder 确实带着一个向上的位移（CSS 里写死 2.25px）；
+    //   2. 位移量 = 两档字号「行盒中心」的差 =（16px − 12.5px）/ 2 = 1.75px……
     //      实测下沉约 2.25px（含字形墨迹），位移必须为正且落在合理区间，
     //      不能是 0（那样仍偏下），也不能大到把提示字顶出框。
     // ⚠️ 这一段**必须**在集子索引页上量（.search-input 在那里）。
@@ -939,32 +946,182 @@ function check(name, cond, extra) {
     // 但阅读器是 fixed 全屏层、列表页被压在下面，::placeholder 的 computed style
     // 在部分内核下会退回初始值（transform: none → shift 0）。
     // 所以在量之前先回到 /classic/，别顺着页面的当前状态往下量。
+    // ⚠️ 这一页是「集子索引页」：搜索框与「全部 / 未读」组合、连读圆键排成一行，
+    //    三样必须同高（下面那条「圆键与搜索框同高」就是量它），
+    //    所以它保持 40px 与 12.5px 的提示字不变 ——
+    //    「搜索框增高、提示字跟着放大」只发生在以搜索为主角的 /search/ 一页。
     await page.goto(base + 'classic/', { waitUntil: 'load' });
     await new Promise(r => setTimeout(r, 400));
-    const phState = await page.evaluate(() => {
-      const inp = document.querySelector('.search-input');
+    const readPh = (sel) => {
+      const inp = document.querySelector(sel);
+      if (!inp) return null;
       const cs = getComputedStyle(inp);
       const ph = getComputedStyle(inp, '::placeholder');
-      const shift = (() => {
-        const m = /matrix\(1, 0, 0, 1, 0, (-?[\d.]+)\)/.exec(ph.transform);
-        return m ? parseFloat(m[1]) : 0;
-      })();
+      const m = /matrix\(1, 0, 0, 1, 0, (-?[\d.]+)\)/.exec(ph.transform);
       return {
         phFont: ph.fontSize, inputFont: cs.fontSize,
-        shift: +shift.toFixed(2),
+        shift: m ? +parseFloat(m[1]).toFixed(2) : 0,
         padTop: cs.paddingTop, padBottom: cs.paddingBottom,
         lh: cs.lineHeight
       };
-    });
-    check('iPhone: 提示字仍比输入文字小一号（辅助文字不抢眼）',
+    };
+    const phState = await page.evaluate(readPh, '.search-input');
+    check('iPhone: 索引页提示字仍比输入文字小一号（辅助文字不抢眼）',
       phState.phFont === '12.5px' && phState.inputFont === '16px',
       JSON.stringify([phState.phFont, phState.inputFont]));
-    check('iPhone: 提示字上抬回正中轴（位移 = 两档字号行盒中心差）',
+    check('iPhone: 索引页提示字上抬回正中轴（位移 = 两档字号行盒中心差）',
       phState.shift === -2.25, 'shift ' + phState.shift + 'px');
-    check('iPhone: 输入框本体不做垂直方向的 padding / line-height 改动',
+    check('iPhone: 索引页输入框本体不做垂直方向的 padding / line-height 改动',
       parseFloat(phState.padTop) === 0 && parseFloat(phState.padBottom) === 0 &&
       phState.lh === 'normal',
       JSON.stringify([phState.padTop, phState.padBottom, phState.lh]));
+
+    /* ============ Issue #69：搜索页在机上的可用性 ============
+       搜索框增高、候选下拉贴住搜索框、软键盘弹出时整块顶到键盘上方。
+       这三件事都只有真浏览器量得出来：
+         · jsdom 不算布局（transform 不产生盒子，量不出高低）；
+         · 软键盘是**覆盖层**，它不改 window.innerHeight ——
+           只能在 this 页面里把 visualViewport 拉小来模拟，
+           这正是键盘弹出时浏览器给页面的唯一信号。
+       ============ */
+    {
+      const { page: sp } = await freshPage();
+      await sp.setUserAgent(IPHONE_UA);
+      await sp.setViewport({ width: 393, height: 852, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
+      await sp.goto(base + 'search/', { waitUntil: 'load' });
+      await new Promise(r => setTimeout(r, 700));
+
+      // 进这一页就是为了搜东西：输入框应当已经是焦点
+      const autoFocus = await sp.evaluate(() => ({
+        focused: document.activeElement && document.activeElement.id,
+        heroClass: document.getElementById('search-hero').className
+      }));
+      check('iPhone 搜索页：进页即聚焦搜索框（少点一次才输得进字）',
+        autoFocus.focused === 'gw-search', JSON.stringify(autoFocus));
+
+      // ① 搜索框比索引页更高 —— 它是这一页唯一的主角
+      const boxState = await sp.evaluate(() => {
+        const hero = document.querySelector('.search-hero .search-wrap');
+        const inp = document.querySelector('.search-hero .search-input');
+        const r = inp.getBoundingClientRect();
+        return {
+          visualH: +r.height.toFixed(1),
+          layoutH: +hero.getBoundingClientRect().height.toFixed(1),
+          // 定位上下文的中轴：候选下拉的 top 就是从这里算的
+          wrapBottom: +hero.getBoundingClientRect().bottom.toFixed(1),
+          inputBottom: +r.bottom.toFixed(1),
+          inputTop: +r.top.toFixed(1)
+        };
+      });
+      check('iPhone 搜索页：搜索框真的变高了（52px，超出 iOS 44px 最小可点面积）',
+        boxState.visualH >= 50 && boxState.visualH <= 54, boxState.visualH + 'px');
+      check('iPhone 搜索页：增高只做在绘制层，hero 的布局高度仍是 40px（居中算式才准）',
+        Math.abs(boxState.layoutH - 40) <= 0.5, boxState.layoutH + 'px');
+      // 输入框视觉上高 52px，而它所在的那一行在布局上仍是 40px：
+      // 多出来的 12px 上下各溢出 6px（居中放大）。所以输入框的**视觉下沿**
+      // 比定位上下文（.search-wrap）的下沿低 6px —— 候选下拉的 top
+      // 正是照着这个差值写的（top: calc(100% + 5px)）。
+      check('iPhone 搜索页：输入框向下溢出 6px，下拉的 top 常量与它对应',
+        Math.abs((boxState.inputBottom - boxState.wrapBottom) - 6) <= 0.5,
+        '溢出 ' + (boxState.inputBottom - boxState.wrapBottom).toFixed(1) + 'px');
+
+      // ② 候选下拉贴着搜索框：间隙必须很小（用户反馈「离搜索框太远」的反面）
+      await sp.type('#gw-search', '月', { delay: 10 });
+      await new Promise(r => setTimeout(r, 300));
+      const gap = await sp.evaluate(() => {
+        const inp = document.querySelector('.search-hero .search-input');
+        const sug = document.getElementById('search-suggest');
+        return {
+          hidden: sug.hidden,
+          items: sug.querySelectorAll('.suggest-item').length,
+          gap: +(sug.getBoundingClientRect().top - inp.getBoundingClientRect().bottom).toFixed(1),
+          top: +sug.getBoundingClientRect().top.toFixed(1),
+          bottom: +sug.getBoundingClientRect().bottom.toFixed(1),
+          vh: window.innerHeight
+        };
+      });
+      check('iPhone 搜索页：输入后候选下拉出现（' + gap.items + ' 条）',
+        !gap.hidden && gap.items > 0, JSON.stringify(gap));
+      // 间隙可以略为负：输入框在绘制层向下溢出的那 6px 是**画出来的**，
+      // 不占布局，候选下拉照着布局算出来就会与它叠 1px 左右。
+      // 真正要守的是「不悬空」：|间隙| ≤ 8px，视觉上就是贴在框下沿。
+      check('iPhone 搜索页：候选下拉紧贴搜索框下沿（不悬空，间隙在 8px 以内）',
+        Math.abs(gap.gap) <= 8, gap.gap + 'px');
+
+      // ③ 软键盘：把可视区压矮（键盘占 336px，约占 iPhone 852 的 40%），
+      //    整块必须顶到键盘上方，候选下拉整条落在可视区之内。
+      await sp.evaluate(() => {
+        const vv = window.visualViewport;
+        const realH = vv.height;
+        Object.defineProperty(vv, 'height', { value: realH - 336, configurable: true });
+        vv.dispatchEvent(new Event('resize'));
+      });
+      await new Promise(r => setTimeout(r, 400));
+      const kb = await sp.evaluate(() => {
+        const hero = document.getElementById('search-hero');
+        const inp = document.querySelector('.search-hero .search-input');
+        const sug = document.getElementById('search-suggest');
+        return {
+          cls: hero.className,
+          kbSpace: getComputedStyle(hero).getPropertyValue('--kb-space').trim(),
+          justify: getComputedStyle(hero).justifyContent,
+          visibleBottom: window.visualViewport.height,
+          inputTop: +inp.getBoundingClientRect().top.toFixed(1),
+          inputBottom: +inp.getBoundingClientRect().bottom.toFixed(1),
+          sugTop: +sug.getBoundingClientRect().top.toFixed(1),
+          sugBottom: +sug.getBoundingClientRect().bottom.toFixed(1),
+          sugCount: sug.querySelectorAll('.suggest-item').length
+        };
+      });
+      check('iPhone 搜索页：键盘弹出后整块贴到顶上（不再垂直居中）',
+        /kb-open/.test(kb.cls) && kb.justify === 'flex-start', JSON.stringify(kb.cls));
+      check('iPhone 搜索页：键盘高度写进 --kb-space（候选下拉据此限高）',
+        parseInt(kb.kbSpace, 10) >= 300, kb.kbSpace);
+      check('iPhone 搜索页：搜索框整个落在键盘上方的可视区里',
+        kb.inputBottom <= kb.visibleBottom, '框下沿 ' + kb.inputBottom + ' / 可视下沿 ' + kb.visibleBottom);
+      check('iPhone 搜索页：候选下拉不伸进键盘底下（首条仍看得见）',
+        kb.sugTop >= kb.inputTop && kb.sugBottom <= kb.visibleBottom + 1,
+        '候选 ' + kb.sugTop + '→' + kb.sugBottom + ' / 可视下沿 ' + kb.visibleBottom);
+
+      // ④ 结果列表紧跟在搜索框下方：不再有一大段空白把它推到屏幕外
+      const listGap = await sp.evaluate(() => {
+        const inp = document.querySelector('.search-hero .search-input');
+        const list = document.getElementById('gw-list');
+        const items = list.querySelectorAll('.item');
+        return {
+          gap: +(list.getBoundingClientRect().top - inp.getBoundingClientRect().bottom).toFixed(1),
+          firstTop: items.length ? +items[0].getBoundingClientRect().top.toFixed(1) : null,
+          visibleBottom: window.visualViewport.height
+        };
+      });
+      check('iPhone 搜索页：结果列表紧跟在搜索框下方（键盘弹着时也在第一屏）',
+        listGap.gap >= 0 && listGap.gap <= 90 &&
+        (listGap.firstTop === null || listGap.firstTop <= listGap.visibleBottom),
+        JSON.stringify(listGap));
+
+      // ⑤ 候选行的可点面积：44px 是 iOS 建议的下限
+      const itemH = await sp.evaluate(() => {
+        const it = document.querySelector('#search-suggest .suggest-item');
+        return it ? +it.getBoundingClientRect().height.toFixed(1) : 0;
+      });
+      check('iPhone 搜索页：候选行高不低于 iOS 建议的 44px', itemH >= 44, itemH + 'px');
+
+      // ⑥ 收起键盘后回到原来的居中布局（不是一直贴着顶）
+      await sp.evaluate(() => {
+        const vv = window.visualViewport;
+        delete vv.height;
+        vv.dispatchEvent(new Event('resize'));
+        document.getElementById('gw-search').blur();
+      });
+      await new Promise(r => setTimeout(r, 500));
+      const restored = await sp.evaluate(() => ({
+        cls: document.getElementById('search-hero').className,
+        justify: getComputedStyle(document.getElementById('search-hero')).justifyContent
+      }));
+      check('iPhone 搜索页：键盘收起后整块回到居中（没有留在贴顶状态）',
+        !/kb-open/.test(restored.cls) && restored.justify === 'center',
+        JSON.stringify(restored));
+    }
 
     // ---- Issue #32 需求：大背景不用任何图案 ----
     await page.goto(base + '', { waitUntil: 'load' });
