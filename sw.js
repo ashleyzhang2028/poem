@@ -94,8 +94,16 @@
  *        卡内条目左内边距 10 → 12px（右侧仍是 8px，只加左边）；
  *        卡头那一行左内边距 8 → 12px，与条目同为 12px ——
  *        两处都写四值 padding，防对称写法把右侧也推走（css/classic.css）
+ *   v36  古籍阅读库（基础架构变更，Issue #69）：
+ *        索引页 + 详情页从 js/classic.js 里整体提成可挂载的引擎
+ *        js/reader-core.js（ReaderEngine.mount），小古文只是它的第一个挂载点；
+ *        页面改用 data-gw-* 标记对接，js/classic.js 收成「这一部是什么」的配置；
+ *        新增站点篇目总索引 data/site-index.js（供全站搜索用，
+ *        window.SITE_INDEX / window.buildSiteIndex）
+ *        （js/reader-core.js、js/classic.js、classic/index.html、
+ *          data/site-index.js、sw.js）
  */
-const CACHE_NAME = "poem-app-v35";
+const CACHE_NAME = "poem-app-v36";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [
@@ -124,6 +132,9 @@ const PRECACHE = [
   "./js/app.js",
   "./js/chrome.js",
   "./js/classic.js",
+  // 古籍阅读库：索引页 + 详情页的引擎（小古文 / 唐诗 / 宋词 / 古文观止 共用）
+  "./js/reader-core.js",
+  "./data/site-index.js",
   "./js/manifest-loader.js",
   "./data/poems-1.js",
   "./data/poems-2.js",
