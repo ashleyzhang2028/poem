@@ -404,6 +404,90 @@
    （与全站其余播放键的三角描边同宽，见本文件顶部的换算表）。 */
 .gw-play-sm .play-glyph-sm svg { width: 12px; height: 12px; }
 .gw-play-sm:hover { border-color: var(--blue); background: var(--blue-light); }
+.gw-play-sm[data-menu="1"] { border-color: var(--blue); background: var(--blue-light); }
+
+/* 卡头这颗是**组合播放键**（点一下连读本组，长按 / 右键挑模式）
+   --------------------------------------------------------------------------
+   形状仍是全站那枚圆键的小号档（26px 正圆 + 空心 ▶），只在 ▶ 的右下角
+   缀一枚 **3.5px 实心小点** —— 全站唯一的「这颗键不止一种用法」记号。
+   ⚠️ 这一档**不写模式名**（别把它当文字标签用）：
+     卡头一行已经有组名（14px 粗体）与篇数，再塞一行模式名会把三样挤成
+     一行小字、看不出主次；而且「随机 / 顺序」几个字会长到把 40px 的箭头
+     推到行外。模式名交给播放栏首行与 title / 读屏文案，圆键只留一个记号。
+   （引擎仍会往 .play-mode 里写当前模式名，但 CSS 用 `font-size: 0` 隐去 ——
+     这样读屏与测试都还拿得到这个信息，视觉上却只有那枚小点。）
+   小点用 absolute 钉在右下角：它不参与 ▶ 的居中（用 flex 会把三角顶偏），
+   也不占圆键内部宽度。 */
+.play-mode {
+  position: absolute;
+  right: 5px;
+  bottom: 5px;
+  width: 3.5px;
+  height: 3.5px;
+  border-radius: 50%;
+  background: currentColor;
+  pointer-events: none;
+  /* 文字只留给读屏 / 断言：字号归零后它不再撑宽圆键，也看不见 —— 视觉上就是一枚小点 */
+  font-size: 0;
+  line-height: 0;
+  overflow: hidden;
+}
+/* 这一行是绝对定位的参考框：圆键自身的定位上下文 */
+.gw-play-sm { position: relative; }
+
+/* 模式菜单（长按 / 右键弹出）
+   --------------------------------------------------------------------------
+   五个模式是**互斥**的一组（同一时刻只有一种），所以用 menuitemradio 而不是
+   普通菜单项；选中态用左侧一枚实心点 + 加深的文字色表达，不做整条高亮 ——
+   菜单是浮在列表上的小卡片，整条高亮会像「这一行被选中了」而不是「模式是它」。
+   弹出位置：贴着圆键右下角向外展开，不遮住组名与篇数。 */
+.gw-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 40;
+  min-width: 168px;
+  padding: 5px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 10px 26px rgba(35, 75, 66, .18);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  cursor: default;
+}
+.gw-menu[hidden] { display: none; }
+.gw-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  padding: 7px 9px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.3;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.gw-menu-item:hover { background: var(--blue-light); }
+/* 选中记号：一枚 6px 空心点，选中后实心 —— 与序号圆同一套「空心 / 实心」语言，
+   不额外引入对勾图标（对勾表达的是「已完成」，模式没有完成之说）。 */
+.gw-menu-tick {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  box-sizing: border-box;
+}
+.gw-menu-item.active { color: var(--blue); font-weight: 600; }
+.gw-menu-item.active .gw-menu-tick { background: var(--blue); border-color: var(--blue); }
 
 /* 卡内条目右侧的「播放键 + 箭头」：两颗图标各自的外边距（卡内列距已清零）
    --------------------------------------------------------------------------

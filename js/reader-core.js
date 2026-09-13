@@ -69,6 +69,10 @@
 
   /* 全站共用的阅读偏好（不按集子分家）：在唐诗里调过字号，宋词不该又变回去 */
   var FONT_KEY = "poem_classic_font_v1";
+  /* 连读偏好的存储键与出厂档：与字号 / 对齐一样是**全站一份** ——
+     在小古文里选了「原文 + 白话」，翻到宋词不该又变回随机听原文。 */
+  var PLAY_KEY = "poem_play_mode_v1";
+  var DEFAULT_PLAY_MODE = "seq-origin";
   var ALIGN_KEY = "poem_classic_align_v1";
   var PINYIN_KEY = "poem_helper_pinyin_v1";
   var SETTINGS_KEY = "poem_recite_settings_v1";
@@ -133,6 +137,7 @@
     keyword = s.keyword;
     filter = s.filter;
     autoReading = s.autoReading;
+    playModeId = s.playMode;
     speakingTarget = s.speakingTarget;
   }
 
@@ -143,6 +148,7 @@
     s.keyword = keyword;
     s.filter = filter;
     s.autoReading = autoReading;
+    s.playMode = playModeId;
     s.speakingTarget = speakingTarget;
   }
 
@@ -219,7 +225,9 @@
   let keyword = "";
   let filter = "all";
   let autoReading = false;
-  /** 组合播放键当前朗读的是哪一段：「原文」/「译文」 */
+  /** 组合播放键选定的播放模式 id（播放偏好，写进本机，跨集子共用一份） */
+  let playModeId = DEFAULT_PLAY_MODE;
+  /** 组合播放键当前朗读的是哪一段：「原文」/「译文」/「原文+译文」 */
   let speakingTarget = "原文";
   /**
    * 当前注音档位。兼容旧版布尔值：
@@ -424,6 +432,11 @@
     });
   }
 
+  /** 清掉一个定时器（可能为 null）—— 长按判定的按下 / 抬起两边都要用 */
+  function closeTimeout(t) {
+    if (t) clearTimeout(t);
+  }
+
   /**
    * 列表项右侧的播放键：播放中换成「暂停」两竖条
    * ▶ 空心描边三角，描边色即外层圆键的 currentColor（Issue #55 后续），
@@ -459,7 +472,7 @@
   }
 
   /**
-   * 分组右侧小号圆键里的图标：只有一个 ▶ 三角。
+   * 分组右侧组合播放键里的图标：一枚 ▶ 与一枚小写法点。
    * 与其它档一样是**空心描边**（Issue #55 后续）。
    * 描边宽 2（Issue #55 本轮，原 2.6）：这一档的图标框只有 12px，
    * 2 × 12 ÷ 24 = 1px —— 与全站其余播放键的三角边框同宽（见 css/classic.css 顶部的换算表）。
@@ -569,12 +582,16 @@
         head.innerHTML =
           '<span class="group-name">' + esc(p.gradeGroup) + "</span>" +
           '<span class="group-count">' + allItems().filter(function (x) { return x.gradeGroup === lastGroup; }).length + " " + esc(W.unit) + "</span>" +
-          // 分组右侧是「在组内随机连读」：与工具栏那颗同一套圆形播放键，只是小一号
-          // （不再带「随机连读」四个字：这一行已有组名与篇数，键义由 title / 读屏文案说明）
-          '<button type="button" class="gw-play gw-play-sm" data-random-group="' + esc(p.gradeGroup) + '"' +
-          ' title="随机连读「' + esc(p.gradeGroup) + '」：随机抽一篇开读，读完自动跳下一篇"' +
-          ' aria-label="随机连读' + esc(p.gradeGroup) + '">' +
-          playSmGlyph() + "</button>";
+          // 分组右侧是**组合播放键**：点一下按当前模式连读本组，
+          // 长按 / 右键从五种模式里挑一种（见本节末尾的 PLAY_MODES）。
+          // 它仍是全站同一枚圆形播放键的小号档，不带可见文字 ——
+          // 但组合键必须让人看出「它不只是随机」：圆环里那颗 ▶ 右下角
+          // 缀一枚小写法点（.play-mode），模式名与读屏文案由引擎写入。
+          '<button type="button" class="gw-play gw-play-sm" data-random-group="' + esc(p.gradeGroup) + '" data-menu="0"' +
+          ">" + playSmGlyph() +
+          '<span class="play-mode" aria-hidden="true"></span>' +
+          '<span class="gw-menu" role="menu" hidden></span>' +
+          "</button>";
         groupCard.appendChild(head);
         listEl.appendChild(groupCard);
       }
@@ -634,8 +651,13 @@
       (groupCard || listEl).appendChild(el);
     });
 
+    // 每张卡头都补一份模式菜单（结构在模板里，条目在渲染后填）——
+    // 用事件委托也会被「列表整块重建」清掉选中态，不如重建时一起写全。
+    $$(".group-head .gw-play-sm .gw-menu", listEl).forEach(renderPlayMenu);
+
     // 列表里已有条目正在播放时，进入本页也要显示「暂停」态
     syncItemPlayBtns();
+    syncPlayBtn();
   }
 
   /** 当前正在朗读的篇目：列表滚动到可见位置并高亮 */
@@ -824,6 +846,10 @@
     autoReading = false;
     clearHighlight();
     syncAllReadState();
+    // 卡头的组合播放键不是 .item-read 那一类，syncAllReadState 管不到它 ——
+    // 少了这一句，从播放栏按「停止」之后卡头那颗还亮着 ⏸，用户再点一下
+    // 会以为要点第二次才停（其实队列早没了）。
+    syncPlayBtn();
   }
 
   /** 一次同步所有朗读相关按钮（译文键也归这里管，避免只同步一半） */
@@ -990,21 +1016,312 @@
     if (progEl) progEl.classList.toggle("is-done", read);
   }
 
-  /* ---------------- 随机连读 ---------------- */
+  /* ---------------- 播放模式（组合播放键） ----------------
+     每部集子的**分类卡头**右侧是一颗组合播放键：点一下按当前模式开听，
+     长按（或鼠标右键）从五种模式里挑一种。五种模式就是「听什么 × 怎么排」
+     两件事的组合：
 
+        听什么         怎么排
+        原文           顺序（按目录一篇接一篇）
+        白话           随机（打乱后一篇接一篇）
+
+     默认「原文 · 顺序」—— 多数人是坐下来从头听，随机是偶尔的玩法；
+     顺序 + 白话 = 一篇文章「原文 → 白话」连着放，等于把每篇读透一遍。
+     模式是**偏好**不是状态：选定后写进本机、跨集子共用，下次打开还是它。
+     实现上「听什么」交给每一条的文本（原文 / 白话 / 两段连起来），
+     「怎么排」交给队列（原序 / 打乱）—— 于是五种模式只落到两个变量上，
+     播放栏、暂停 / 继续 / 上一首 / 下一首一概不用分模式改。
+
+     挑模式的三条路（都落在同一颗键上，不额外占版面）：
+       · 长按 500ms（触屏）
+       · 右键（鼠标）
+       · 读屏用户走 aria-label，模式名写全，不依赖菜单
+
+     「原文白话顺序播放」为什么合成**一条**队列而不是两条：
+       合成两条（先读完全部原文、再读完全部白话）听感上完全是另一件事；
+       用户说的是「顺序播放」，那就一篇一篇来 —— 每篇原文读完接白话，
+       白话读完接下一篇。整段文本一次交给语音引擎还有个好处：
+       引擎按句读的停顿刚好落在「。原文。白话。」的接缝上，不用自己拼停顿。 */
+  var PLAY_MODES = [
+    {
+      id: "seq-origin",
+      source: "原文",
+      order: "seq",
+      label: "连续播放原文",
+      short: "原文 · 顺序"
+    },
+    {
+      id: "seq-trans",
+      source: "译文",
+      order: "seq",
+      label: "连续播放白话译文",
+      short: "白话 · 顺序",
+      note: "无译文的篇目自动跳过"
+    },
+    {
+      id: "seq-both",
+      source: "原文+译文",
+      order: "seq",
+      label: "原文白话顺序播放",
+      short: "原文 + 白话 · 顺序",
+      note: "每篇先读原文，再读白话，然后下一篇"
+    },
+    {
+      id: "shuffle-origin",
+      source: "原文",
+      order: "shuffle",
+      label: "随机播放原文",
+      short: "原文 · 随机",
+      note: "打乱后一篇接一篇"
+    },
+    {
+      id: "shuffle-trans",
+      source: "译文",
+      order: "shuffle",
+      label: "随机播放白话译文",
+      short: "白话 · 随机",
+      note: "打乱后一篇接一篇，无译文的篇目自动跳过"
+    }
+  ];
+
+  function modeOf(id) {
+    for (var i = 0; i < PLAY_MODES.length; i++) {
+      if (PLAY_MODES[i].id === id) return PLAY_MODES[i];
+    }
+    return null;
+  }
+
+  /** 本机存下的播放模式；没存过 / 存了不认识的值 → 出厂档「原文 · 顺序」 */
+  function playMode() {
+    var m = modeOf(localStorage.getItem(PLAY_KEY));
+    return m ? m.id : DEFAULT_PLAY_MODE;
+  }
+
+  function playModeInfo() {
+    return modeOf(playModeId) || modeOf(playMode()) || modeOf(DEFAULT_PLAY_MODE);
+  }
+
+  /**
+   * 组合播放键的读屏文案。
+   *
+   * 可见文字是**没有的**（与全站其它播放键一致，状态只由图标表达），
+   * 所以「它现在是哪种模式、点下去会发生什么」必须由 aria / title 说全 ——
+   * 读屏用户看不到弹出菜单里的字，只能靠这两处。
+   */
+  function playBtnAria(mode) {
+    var m = mode || playModeInfo();
+    return m.label + "，当前：" + m.short + (m.note ? "；" + m.note : "");
+  }
+
+  function setPlayMode(id) {
+    if (!modeOf(id)) return false;
+    // 只改「下次怎么放」，不动正在跑的那一轮：autoReading 是状态，模式是偏好。
+    // 刚刚在跑的那一份去 startPlay 里显式复位，别在这里替它下结论。
+    localStorage.setItem(PLAY_KEY, id);
+    syncPlayBtn();
+    showToast(modeOf(id).label);
+    return true;
+  }
+
+  /** 同步**本挂载点**每一颗卡头组合键（▶ / ⏸ 原地切换，与全站同一套状态表达） */
+  function syncPlayBtn() {
+    var running = autoReading && !!(window.Speech && window.Speech.active && window.Speech.active());
+    var label = playBtnAria();
+    var info = playModeInfo();
+    headPlayBtns().forEach(function (btn) {
+      btn.dataset.on = running ? "1" : "0";
+      btn.setAttribute("aria-pressed", running ? "true" : "false");
+      btn.title = running ? "停止连读" : label;
+      btn.setAttribute("aria-label", running ? "停止连读" : label);
+      btn.dataset.mode = info.id;
+      var slot = btn.querySelector(".play-mode");
+      if (slot) slot.textContent = info.short;
+    });
+    // 五种模式都是「连读整页」，工具栏那颗圆键与卡头这颗是同一件事的两个入口，
+    // 状态必须同步 —— 否则一边 ⏸、一边 ▶，用户会以为有两条队列在跑。
+    // 单向：syncPlayBtn → syncRandomReadButton，反向不再调回来（会死循环）。
+    syncRandomReadButton();
+  }
+
+  /**
+   * 本挂载点列表里**每一颗**卡头组合键。
+   *
+   * 写法必须是「卡头里的 .gw-play-sm」（而不是按 id / 数组下标取第一颗）：
+   * 同一份列表会被 renderList 反复重建，而**搜索一次、翻一页、切一次「未读」
+   * 之后分组根本不一样** —— 哪一颗是第一颗完全看当下筛出什么。
+   * 早先只同步第一颗，于是搜出来只剩「人物故事」一组时，
+   * 那颗键的模式记号是空的（用户看着像坏了）。
+   */
+  function headPlayBtns(scope) {
+    var el = scope || listBox();
+    if (!el) return [];
+    return $$(".group-head .gw-play-sm", el);
+  }
+
+  /** 关闭所有卡头的模式菜单 */
+  function closePlayMenus() {
+    $$all(".gw-menu").forEach(function (m) {
+      m.hidden = true;
+      var owner = m.parentNode;
+      if (owner && owner.removeAttribute) owner.removeAttribute("data-menu");
+    });
+  }
+
+  /** 弹出 / 收起某一颗卡头圆键的模式菜单 */
+  function togglePlayMenu(btn) {
+    if (!btn) return;
+    var menu = btn.querySelector(".gw-menu");
+    if (!menu) return;
+    var open = menu.hidden;
+    closePlayMenus();
+    if (!open) return;
+    var cur = playModeInfo().id;
+    $$("button", menu).forEach(function (m) {
+      var on = m.dataset.mode === cur;
+      m.classList.toggle("active", on);
+      m.setAttribute("aria-checked", on ? "true" : "false");
+    });
+    btn.dataset.menu = "1";
+    menu.hidden = false;
+  }
+
+  function renderPlayMenu(menu) {
+    var cur = playModeInfo().id;
+    menu.innerHTML = PLAY_MODES.map(function (m) {
+      return '<button type="button" role="menuitemradio" class="gw-menu-item' +
+        (m.id === cur ? " active" : "") + '" data-mode="' + m.id + '"' +
+        ' aria-checked="' + (m.id === cur ? "true" : "false") + '">' +
+        '<span class="gw-menu-tick" aria-hidden="true"></span>' +
+        '<span class="gw-menu-text">' + esc(m.label) + "</span></button>";
+    }).join("");
+  }
+
+  /**
+   * 某一颗卡头圆键要连读的「池子」（不含顺序；顺序由模式决定）：
+   *   · data-random-group → 本组（分类卡头那颗）
+   *   · 不传 btn           → 整页（工具栏那颗圆键）
+   * **池子一律是「用户眼前这一份可见列表」的子集**：搜索框里敲了字、
+   * 或者切到「未读」，连读就该只连读搜到 / 没读的那几篇 ——
+   * 「点一颗键，听我现在看到的这些」比「偷偷连读整本集子」好懂。
+   */
+  function playPool(btn) {
+    // 没有元素 = 工具栏那颗「整页」圆键；它与带 data-play-group=all 的那条是同一个池子
+    if (!btn) return visibleItems();
+    var group = btn.dataset.randomGroup;
+    // 两种池子都是「用户眼前这一份可见列表」的子集：
+    // 搜索框里敲了字，连读就该只连读搜到的那几篇；切了「未读」同理。
+    var shown = visibleItems();
+    if (!group) return shown;
+    return shown.filter(function (p) { return p.gradeGroup === group; });
+  }
+
+  /** 模式 → 队列条目：听什么（source）落成文本，怎么排（order）落成顺序 */
+  function buildQueue(pool, mode) {
+    var self = live;   // 队列异步跑，onStart 里要回到这一份会话的现场
+    var out = [];
+    pool.forEach(function (p) {
+      var text = mode.source === "译文" ? p.translation : speechText(p);
+      if (mode.source === "原文+译文" && p.translation) text = speechText(p) + "。" + p.translation;
+      if (!text || !String(text).trim()) return;
+      out.push({
+        id: p.id,
+        title: p.title,
+        text: text,
+        onStart: function () {
+          withSession(self, function () {
+            if (!current || current.id !== p.id) openReader(p);
+            highlightItem(p.id);
+          });
+        }
+      });
+    });
+    return mode.order === "shuffle" ? shuffle(out) : out;
+  }
+
+  /**
+   * 组合播放键的主入口：按当前模式开听 / 再点停止。
+   * 工具栏那颗圆键也走这里（pool 传整页），所以「点哪颗都是同一件事」。
+   * @param {HTMLElement} [btn]  卡头圆键；不传 = 整页
+   */
+  function startPlay(btn) {
+    if (!speechSupported()) {
+      showToast("当前浏览器不支持语音朗读");
+      return;
+    }
+    // 再点一次 = 停：播放栏、列表高亮、两颗圆键一起复位
+    if (autoReading && readingActive()) {
+      window.Speech.stop();
+      if (window.ReaderPlayer) window.ReaderPlayer.close();
+      autoReading = false;
+      clearHighlight();
+      syncPlayBtn();
+      syncItemPlayBtns();
+      showToast("已停止连读");
+      return;
+    }
+    var list = buildQueue(playPool(btn), playModeInfo());
+    if (!list.length) {
+      // 「整页没得读」与「这一组抽不出可读的篇目」是两回事，文案分开说：
+      // 后者多半是选了「白话」而这一组正好都没译文（《古文观止》的待补条目）
+      showToast(btn
+        ? "本分类暂无" + (playModeInfo().source === "原文" ? "可读篇目" : "译文可读")
+        : W.noReadable);
+      return;
+    }
+    closePlayMenus();
+    autoReading = true;
+    syncPlayBtn();
+
+    // items / onIndex 里的 openReader / highlightItem 读的是**当前会话**的现场，
+    // 而队列是异步一条条读的 —— 中间很可能已经切到别的挂载点（搜索页同时挂两部）。
+    // 所以这里把现场钉在本会话上，别让「甲组连读」把乙集的阅读器打开。
+    var selfSession = live;
+    window.ReaderPlayer.player({
+      title: playModeInfo().label,
+      mode: playModeInfo().short,
+      items: list,
+      onIndex: function (i) {
+        withSession(selfSession, function () {
+          var it = list[i];
+          if (!it) return;
+          if (!current || current.id !== it.id) openReader(byId(it.id) || current);
+          syncPlayBtn();
+        });
+      },
+      onEnd: function () {
+        withSession(selfSession, function () {
+          autoReading = false;
+          clearHighlight();
+          syncPlayBtn();
+          syncReadButtons();
+          syncItemPlayBtns();
+        });
+      }
+    });
+  }
+
+  /* ---------------- 连读圆键的状态（工具栏那颗） ---------------- */
+
+  /**
+   * 工具栏那颗圆键（整页连读）的 ▶ / ⏸。
+   *
+   * ⚠️ 这里**不再自己算 running**：卡头组合键与它管的是同一件事，
+   * 状态必须由同一处得出 —— 原先两边各写一遍 autoReading && active()，
+   * 一旦有一边漏同步（例如从播放栏停的），另一边的 ▶ 就骗人。
+   * 现在由 syncPlayBtn() 统一收口，本函数只负责工具栏那颗自身的属性。
+   */
   function syncRandomReadButton() {
     var btn = $('[data-gw="random"]') || $("#gw-random-read");
     if (!btn) return;
     const ok = speechSupported();
     btn.disabled = !ok;
-    // 只有「连读队列真的还在跑」才算进行中：用户中途点「停止」时按钮要立刻复位。
-    // 这里认 active()（含暂停中），不能只看 speaking()：部分设备暂停后 speaking 会变 false，
-    // 那样按钮会误判成「没在连读」，再点一下就会重新开一轮而不是停下来。
     const running = autoReading && !!(window.Speech && window.Speech.active && window.Speech.active());
     btn.dataset.on = running ? "1" : "0";
     // 与首页「今日背诵」那颗圆键同一套口径：状态只由 ▶ / ⏸ 与 aria-pressed 表达，
     // 可见文案一个字都没有（读屏文案固定，不随播放态改写）。
     btn.setAttribute("aria-pressed", running ? "true" : "false");
+    // 键义里带上当前模式：这颗键与卡头那颗同一模式，读屏用户也听得到
+    btn.title = running ? "停止连读" : playBtnAria();
   }
 
   function shuffle(list) {
@@ -1016,65 +1333,6 @@
       arr[j] = t;
     }
     return arr;
-  }
-
-  /**
-   * 随机连读
-   * @param {Array} pool 候选篇目；缺省为当前列表（全部 / 未读）里的篇目
-   */
-  function startRandomRead(pool) {
-    if (!speechSupported()) {
-      showToast("当前浏览器不支持语音朗读");
-      return;
-    }
-    // 再点一次 = 停止连读
-    if (autoReading && readingActive()) {
-      window.Speech.stop();
-      window.ReaderPlayer.close();
-      autoReading = false;
-      clearHighlight();
-      syncRandomReadButton();
-      syncReadButtons();
-      showToast("已停止连读");
-      syncItemPlayBtns();
-      return;
-    }
-    const list = shuffle((pool && pool.length ? pool : visibleItems()));
-    if (!list.length) {
-      showToast("没有可朗读的篇目");
-      return;
-    }
-
-    autoReading = true;
-    syncRandomReadButton();
-
-    window.ReaderPlayer.player({
-      title: list.length + " 篇随机连读",
-      items: list.map(function (p) {
-        return {
-          title: p.title,
-          text: speechText(p),
-          // 每篇读完自动翻到下一篇（阅读器打开的自动翻篇由 onIndex 完成）
-          onStart: function () {
-            if (!current || current.id !== p.id) openReader(p);
-            highlightItem(p.id);
-          }
-        };
-      }),
-      onIndex: function (i) {
-        const p = list[i];
-        if (!p) return;
-        if (!current || current.id !== p.id) openReader(p);
-        syncRandomReadButton();
-      },
-      onEnd: function () {
-        autoReading = false;
-        clearHighlight();
-        syncRandomReadButton();
-        syncReadButtons();
-        syncItemPlayBtns();
-      }
-    });
   }
 
   /* ---------------- 字号 ---------------- */
@@ -1176,21 +1434,94 @@
       });
     });
 
-    // 分组「随机连读」：在组内随机，读完自动跳下一篇
+    // 分类卡头的组合播放键：点一下按当前模式连读本组，长按 / 右键挑模式。
+    // 不能在这里直接 startPlay —— 触摸长按之后浏览器还会补一次 click，
+    // 那一下会把刚挑好模式的连读又停掉。所以 click 先过一道「刚刚开过菜单」的门。
     var listEl = listBox();
     if (listEl) {
+      var menuOpenedAt = 0;
       listEl.addEventListener("click", function (e) {
-        var gbtn = e.target && e.target.closest ? e.target.closest("[data-random-group]") : null;
+        var target = e.target;
+        if (!target || !target.closest) return;
+        claim(e);
+        // 菜单项：先选模式，再就地开听（「选完就放」比「选完再点一次」少一步）
+        var mi = target.closest(".gw-menu-item");
+        if (mi) {
+          e.stopPropagation();
+          setPlayMode(mi.dataset.mode);
+          closePlayMenus();
+          startPlay(mi.closest(".gw-play-sm"));
+          return;
+        }
+        var gbtn = target.closest("[data-random-group]") || target.closest("[data-play-group]");
+        if (!gbtn) {
+          closePlayMenus();
+          return;
+        }
+        e.stopPropagation();
+        // 这一下是「按一下键」还是「点菜单项」？
+        //   点菜单项 → 上面那一支已经处理掉了；
+        //   按一下键 → 短按连读、长按弹菜单。
+        // 早先想「短按开菜单、长按也弹菜单」，结果两头打架：
+        // 长按弹出来的菜单会被紧跟着松手时的那一次 click 收掉（用户看到菜单一闪）。
+        // 现在分工明确：短按 = 开听，长按 / 右键 = 挑模式，
+        // 长按之后的那一次 click 用时间窗吞掉，不再有第二含义。
+        if (Date.now() - menuOpenedAt < 700) return;
+        startPlay(gbtn);
+      });
+      // 长按 = 挑模式。pointerdown / pointerup 在 iOS 上也覆盖触摸，
+      // 500ms 与系统长按的体感一致；不动就不认，避免手指划过也弹菜单。
+      var pressTimer = null;
+      var pressFrom = null;
+      var openMenuByPress = function (e) {
+        var target = e.target;
+        if (!target || !target.closest) return;
+        var gbtn = target.closest("[data-random-group]") || target.closest("[data-play-group]");
         if (!gbtn) return;
         claim(e);
-        e.stopPropagation();
-        var group = gbtn.dataset.randomGroup;
-        startRandomRead(allItems().filter(function (p) { return p.gradeGroup === group; }));
+        closeTimeout(pressTimer);
+        pressFrom = { x: e.clientX, y: e.clientY };
+        pressTimer = setTimeout(function () {
+          menuOpenedAt = Date.now();
+          togglePlayMenu(gbtn);
+        }, 500);
+      };
+      var cancelPress = function () { closeTimeout(pressTimer); };
+      listEl.addEventListener("pointerdown", openMenuByPress);
+      ["pointerup", "pointercancel", "pointerleave", "scroll"].forEach(function (ev) {
+        listEl.addEventListener(ev, cancelPress, true);
+      });
+      listEl.addEventListener("pointermove", function (e) {
+        if (!pressFrom) return;
+        if (Math.abs(e.clientX - pressFrom.x) > 8 || Math.abs(e.clientY - pressFrom.y) > 8) cancelPress();
+      });
+      // 鼠标右键：桌面上最直接的「挑模式」
+      listEl.addEventListener("contextmenu", function (e) {
+        var target = e.target;
+        if (!target || !target.closest) return;
+        var gbtn = target.closest("[data-random-group]") || target.closest("[data-play-group]");
+        if (!gbtn) return;
+        claim(e);
+        e.preventDefault();
+        togglePlayMenu(gbtn);
       });
     }
+    // 点列表以外的地方收起菜单（列表内的点击由上面的委托自己管：
+    // 它要区分「收起」「选模式」「开听」三件事，文档级再补一刀会把刚打开的菜单立刻收掉）
+    document.addEventListener("click", function (e) {
+      var t = e.target;
+      if (t && t.closest && t.closest("#gw-list [data-random-group], #gw-list [data-play-group]")) return;
+      if (t && t.closest && t.closest(".gw-menu")) return;
+      closePlayMenus();
+    });
 
+    // 工具栏那颗圆键与卡头那颗是同一件事（连读整页），共用 startPlay ——
+    // 只是它不给菜单：整页不归任何分类，模式仍由卡头那颗选定。
     var randomBtn = $('[data-gw="random"]') || $("#gw-random-read");
-    if (randomBtn) randomBtn.addEventListener("click", function (e) { claim(e); startRandomRead(null); });
+    if (randomBtn) {
+      // 不带元素 = 「整页」这个池子（见 playPool）
+      randomBtn.addEventListener("click", function (e) { claim(e); startPlay(null); });
+    }
 
     var prevBtn = rd("prev");
     var nextBtn = rd("next");

@@ -333,6 +333,80 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
   w2.ClassicProse.onSpeechStopped();
   await sleep(80);
 
+  /* ---- 组合播放键：五种模式（Issue #69 本轮）----
+     每部集子的分类卡头右侧那颗键不再是「随机」一种用法，而是
+     「听什么 × 怎么排」的组合：顺序 / 随机 × 原文 / 白话 / 原文+白话。
+     这里逐个把模式点开，验证「读到的文本」确实跟着模式走 ——
+     模式名写在菜单里是文案，读出来的是原文还是白话才是功能。 */
+  const modeBtn = () => c.querySelector('#gw-list .group-head .gw-play-sm');
+  /** 长按卡头圆键 → 弹出菜单（短按是「直接开听」，不再兼开菜单） */
+  const longPress = async () => {
+    const press = new w2.Event('pointerdown', { bubbles: true });
+    press.clientX = 10; press.clientY = 10;     // jsdom 没有 PointerEvent，用 Event 补坐标
+    modeBtn().dispatchEvent(press);
+    await sleep(560);
+  };
+  /** 按某个模式开听：长按弹菜单 → 点菜单项 */
+  const pickMode = async (id) => {
+    await longPress();
+    modeBtn().querySelector('.gw-menu-item[data-mode="' + id + '"]')
+      .dispatchEvent(new w2.Event('click', { bubbles: true }));
+    await sleep(60);
+  };
+  const stopAll = async () => { w2.Speech.stop(); w2.ClassicProse.onSpeechStopped(); await sleep(60); };
+
+  // 长按弹出菜单并选中「连续播放白话译文」
+  await longPress();
+  chk(modeBtn().querySelector('.gw-menu').hidden === false, '长按卡头圆键弹出模式菜单');
+  chk(c.querySelectorAll('#gw-list .group-head .gw-menu:not([hidden])').length === 1,
+    '同一时刻只弹一个菜单（点第二颗会把上一颗收起）');
+  c.querySelector('.gw-menu-item[data-mode="seq-trans"]').dispatchEvent(new w2.Event('click', { bubbles: true }));
+  await sleep(80);
+  chk(c.querySelector('#reader-player').hidden === false, '选中「连续播放白话译文」后立刻开读');
+  chk(/白话/.test(c.querySelector('#rp-mode').textContent),
+    '播放栏首行报出当前模式：' + c.querySelector('#rp-mode').textContent);
+  const transText = w2.speechSynthesis._spoken.text;
+  chk(!/人之初，宋，王应麟/.test(transText),
+    '「白话」模式读的是译文而不是原文（' + transText.slice(0, 14) + '…）');
+  await stopAll();
+
+  // 「原文白话顺序播放」：同一篇的两段接在一条里
+  await pickMode('seq-both');
+  const bothText = w2.speechSynthesis._spoken.text;
+  chk(/人之初/.test(bothText) && bothText.length > 40,
+    '「原文 + 白话」把一篇的原文与译文接在一起读（' + bothText.length + ' 字）');
+  await stopAll();
+
+  // 「随机」档：队列顺序与目录顺序不同（随机抽一篇，不保证是第一篇）
+  await pickMode('shuffle-origin');
+  chk(c.querySelector('#reader-player').hidden === false, '随机模式同样能起播');
+  chk(/随机/.test(c.querySelector('#rp-mode').textContent),
+    '播放栏报出随机模式：' + c.querySelector('#rp-mode').textContent);
+  await stopAll();
+
+  // 模式是**偏好**：换到别的集子页也记得（跨集子一份），出厂档是「原文 · 顺序」
+  // 菜单的选中态是**每次打开时**按当前模式刷的，所以要先把菜单打开再查
+  await longPress();
+  chk(modeBtn().querySelector('.gw-menu-item[data-mode="shuffle-origin"]').getAttribute('aria-checked') === 'true',
+    '菜单里把「随机播放原文」标成当前选中项');
+  chk(modeBtn().querySelectorAll('.gw-menu-item[aria-checked="true"]').length === 1,
+    '五个模式里只有一个是选中态（互斥）');
+  // 长按只负责弹菜单，**不该**顺手把队列开一轮。
+  // 判据取「播放栏收到的模式名」——上一轮连读的模式行还在，说明队列没被重开；
+  // 长按若误触发开听，播放栏会被重开成当前模式（且处于播放态）。
+  chk(modeBtn().dataset.menu === '1' && c.querySelector('#rp-mode').textContent.length > 0,
+    '长按只弹菜单、不打断已停的那一轮（挑模式与开听是两件事）');
+  // 点菜单以外的地方把菜单收起
+  c.querySelector('#gw-search').dispatchEvent(new w2.Event('click', { bubbles: true }));
+  await sleep(20);
+  chk(modeBtn().querySelector('.gw-menu').hidden === true, '点别处收起菜单');
+  await stopAll();
+  chk(w2.localStorage.getItem('poem_play_mode_v1') === 'shuffle-origin',
+    '模式写进本机（poem_play_mode_v1），下次打开还是它');
+  await pickMode('seq-origin');
+  chk(w2.localStorage.getItem('poem_play_mode_v1') === 'seq-origin', '改回「连续播放原文」也持久化');
+  await stopAll();
+
   /* ---- 回归：阅读辅助工具条不得再丢（曾因合并把整条工具条丢了）---- */
   const rowMain = c.querySelector('#rd-actions-main');
   const rowIcons = c.querySelector('#rd-actions-icons');

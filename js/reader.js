@@ -20,6 +20,7 @@
   let bar = null;
   let elNow = null;
   let elNext = null;
+  let elMode = null;
   let btnToggle = null;
   let btnPrev = null;
   let btnNext = null;
@@ -27,8 +28,8 @@
   let hideTimer = null;
   let stopCbs = [];
 
-  /** 队列信息（用于文案：当前一首 / 下一首） */
-  let queueInfo = { current: "", next: "", index: 0, total: 0, hasNext: false };
+  /** 队列信息（用于文案：当前一首 / 下一首 / 当前播放模式） */
+  let queueInfo = { current: "", next: "", index: 0, total: 0, hasNext: false, mode: "" };
 
   function $(sel) {
     return document.querySelector(sel);
@@ -69,6 +70,10 @@
     el.setAttribute("aria-label", "朗读播放器");
     el.innerHTML =
       '<div class="pb-info">' +
+      // 头一行小字留给模式名（如「原文 · 顺序」，运行期由引擎写入）：
+      // 键上可切换多种模式，当下用的是哪一种，只有这一行交代得清 ——
+      // ▶ / ⏸ 只管「起 / 停」，说不出这一轮是以哪种方式在连读。
+      '<div class="pb-mode" id="rp-mode"></div>' +
       '<div class="pb-now" id="rp-now"></div>' +
       '<div class="pb-next" id="rp-next-title"></div>' +
       "</div>" +
@@ -79,6 +84,7 @@
     document.body.appendChild(el);
 
     elNow = $("#rp-now");
+    elMode = $("#rp-mode");
     elNext = $("#rp-next-title");
     btnToggle = $("#rp-toggle");
     btnPrev = $("#rp-prev");
@@ -141,6 +147,11 @@
     btnToggle.title = isPaused ? "继续" : "暂停";
     bar.dataset.paused = isPaused ? "1" : "0";
 
+    // 模式行只在真有模式时出现（首页「今日背诵」那条队列不报模式）
+    if (elMode) {
+      elMode.hidden = !queueInfo.mode;
+      elMode.textContent = queueInfo.mode || "";
+    }
     elNow.textContent = queueInfo.current || "";
 
     if (queueInfo.hasNext && queueInfo.next) {
@@ -161,7 +172,9 @@
       next: (info && info.next) || "",
       index: (info && info.index) || 0,
       total: (info && info.total) || 0,
-      hasNext: !!(info && info.hasNext)
+      hasNext: !!(info && info.hasNext),
+      // 模式由调用方透传（连读时不随「第几条」变，所以取上一份兜底）
+      mode: info && info.mode != null ? info.mode : queueInfo.mode
     };
     sync();
   }
@@ -205,7 +218,7 @@
     if (!bar) return;
     clearTimeout(hideTimer);
     bar.hidden = true;
-    queueInfo = { current: "", next: "", index: 0, total: 0, hasNext: false };
+    queueInfo = { current: "", next: "", index: 0, total: 0, hasNext: false, mode: "" };
     document.body.classList.remove("has-audio-player");
     syncBottomGap();
   }
@@ -226,6 +239,7 @@
    *   opt.items      字符串数组，或 [{ title, text, onStart }]
    *   opt.rate       语速
    *   opt.title      总标题（仅用于无障碍标签，不再显示在界面上）
+   *   opt.mode       当前播放模式（如「原文 · 顺序」），显示在播放栏首行
    *   opt.onIndex(i) 当前读到第几条
    *   opt.onEnd()    全部读完
    */
@@ -241,6 +255,7 @@
     };
 
     open();
+    queueInfo.mode = o.mode || "";
     const ctrl = window.Speech.speakQueue(items, {
       rate: o.rate,
       onIndex: function (i) {
@@ -249,7 +264,8 @@
           next: titleAt(i + 1),
           index: i,
           total: items.length,
-          hasNext: i + 1 < items.length
+          hasNext: i + 1 < items.length,
+          mode: o.mode || null
         });
         if (typeof o.onIndex === "function") o.onIndex(i);
       },

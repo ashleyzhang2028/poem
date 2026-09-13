@@ -193,8 +193,9 @@ setTimeout(() => {
     '进度牌与品牌区之间留 10px（长页名 / 长用户名也不会贴在一起）');
   chk(d.querySelectorAll('#gw-list .group-head').length >= 6, '按主题显示分组标题（' + d.querySelectorAll('#gw-list .group-head').length + ' 个）');
 
-  // 需求（本次）：每个分组右侧的「随机连读」也是圆形播放键 —— 比工具栏那颗小一号。
-  // 原先是一枚带「随机连读」四字的胶囊，整行被它压向右边；现在是一颗 26px 的圆键。
+  // 需求（Issue #69 本轮）：每个分组右侧那颗播放键改成**组合播放键** ——
+  // 点一下按当前模式连读本组，长按 / 右键从五种模式里挑一种。
+  // 形状仍是全站那枚小号圆键（26px），但内里多两样：模式菜单 + 一枚模式记号。
   const groupBtns = [...d.querySelectorAll('#gw-list .group-head .gw-play')];
   chk(groupBtns.length === d.querySelectorAll('#gw-list .group-head').length,
     '每个分组右侧都有一颗圆形播放键（' + groupBtns.length + ' 颗）');
@@ -205,12 +206,36 @@ setTimeout(() => {
     '分组圆键画一个 ▶ 三角（.play-glyph-sm）');
   chk(groupBtns.every(b => !b.querySelector('.pause-glyph')),
     '分组圆键不带 ⏸（进行中的状态由列表高亮 + 底部播放栏表达，圆键保持单一含义）');
-  chk(groupBtns.every(b => b.textContent.trim() === ''), '分组圆键没有可见文字');
-  chk(groupBtns.every(b => /随机连读/.test(b.getAttribute('title') || '') &&
-    /随机连读/.test(b.getAttribute('aria-label') || '')),
-    '分组圆键的读屏文案与 title 都说明是「随机连读」');
+  // 可见文字只允许一样：右下角那枚模式记号。其余（▶、菜单项）各自有容器，
+  // 所以直接量「圆键自己的 textContent」—— 它应当正好等于模式记号的文字。
+  chk(groupBtns.every(b => b.querySelector('.play-mode').textContent.trim() === '原文 · 顺序'),
+    '圆键上直接可见的只有模式记号（菜单项在收起的菜单里）：' +
+    groupBtns[0].querySelector('.play-mode').textContent);
+  chk(groupBtns.every(b => /连续播放原文/.test(b.getAttribute('title') || '') &&
+    /当前：/.test(b.getAttribute('aria-label') || '')),
+    '分组圆键的读屏文案报出「当前是哪种模式」：' + groupBtns[0].getAttribute('aria-label'));
   chk(groupBtns.every(b => b.parentElement.classList.contains('group-head')),
     '分组圆键就在分组标题那一行里（不另起一行）');
+  // 组合键必须有可见的「它不止一种用法」记号：▶ 右下角一枚小点
+  chk(groupBtns.every(b => !!b.querySelector('.play-mode')),
+    '组合键上带一枚模式记号（.play-mode 小点）');
+  chk(groupBtns.every(b => /原文/.test(b.querySelector('.play-mode').textContent)),
+    '模式记号写着当前模式（可见）：' + groupBtns[0].querySelector('.play-mode').textContent);
+  // 五种模式：连续原文 / 连续白话 / 原文白话顺序 / 随机原文 / 随机白话
+  const menuItems = [...groupBtns[0].querySelectorAll('.gw-menu-item')];
+  chk(menuItems.map(x => x.textContent.trim()).join('|') ===
+    '连续播放原文|连续播放白话译文|原文白话顺序播放|随机播放原文|随机播放白话译文',
+    '菜单里正好五种模式（顺序保持一致）：' + menuItems.map(x => x.textContent.trim()).join('|'));
+  chk(groupBtns.every(b => b.querySelector('.gw-menu').hidden),
+    '菜单初始收起（不点不占版面）');
+  chk(menuItems.every(x => x.getAttribute('role') === 'menuitemradio'),
+    '五个模式是互斥的一组（menuitemradio），同一时刻只有一个选中');
+  chk(menuItems[0].classList.contains('active') && menuItems[0].getAttribute('aria-checked') === 'true',
+    '出厂档是「连续播放原文」（菜单里它才是选中态）');
+  // 挑一种模式：菜单项点下去要真换模式，而且就地开听（少一次点击）
+  const modeJs = fs.readFileSync(path + 'js/reader-core.js', 'utf8');
+  chk(/PLAY_MODES\s*=/.test(modeJs) && /"seq-origin"/.test(modeJs) && /"shuffle-trans"/.test(modeJs),
+    '五种模式在引擎里有一张单一来源的表（PLAY_MODES）');
   // 样式：小号档比工具栏那颗小，且仍是正圆（宽高同源）
   const gwSmCss = /(^|\n)\.gw-play-sm \{([\s\S]*?)\}/.exec(clsCss);
   chk(!!gwSmCss && /margin-left:\s*auto/.test(gwSmCss[2]),
@@ -529,7 +554,11 @@ setTimeout(() => {
   chk(!/连读中/.test(randomBtn.textContent) && !/连读中/.test(readClsCode) &&
     !/gw-random-read-text/.test(readClsCode),
     '不再有「连读 / 连读中」这类随状态改写的可见文案（状态交给 ▶ / ⏸ 表达）');
-  chk(/随机连读/.test(randomBtn.getAttribute('title')), '键义写在 title 里：' + randomBtn.getAttribute('title'));
+  // 工具栏那颗「整页连读」与卡头组合键是同一档模式，title 里也要带上当前模式：
+  // 「连续播放原文，当前：原文 · 顺序」——读屏用户靠它知道点下去会怎么放。
+  chk(/连续播放原文/.test(randomBtn.getAttribute('title')) &&
+    /当前：/.test(randomBtn.getAttribute('title')),
+    '键义与当前模式都写在 title 里：' + randomBtn.getAttribute('title'));
   chk(randomBtn.dataset.on === '0' && randomBtn.getAttribute('aria-pressed') === 'false',
     '初始为「可播放」态（data-on=0 / aria-pressed=false）');
   // 需求 1：搜索框 + 「全部 / 未读」组合 + 「连读」圆键三样都在同一行，且不压缩
