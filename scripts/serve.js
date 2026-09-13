@@ -6,6 +6,7 @@
  * URL 与线上保持一致：目录化路由，不带 .html
  *   /            首页
  *   /classic/    小古文
+ *   /tangshi/    唐诗三百首
  *   /settings/   设置
  *   /terms/      用户协议
  *   /privacy/    隐私条款

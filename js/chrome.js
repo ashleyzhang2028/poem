@@ -102,6 +102,7 @@
   var ROUTES = {
     home: "/",
     classic: "/classic/",
+    tangshi: "/tangshi/",
     guwen: "/guwen/",
     settings: "/settings/",
     terms: "/terms/",
@@ -135,6 +136,7 @@
     if (v) return v;
     var p = currentPath();
     if (/^\/classic\/?$/.test(p) || /^\/classic\/index\.html$/.test(p)) return "classic";
+    if (/^\/tangshi\/?$/.test(p) || /^\/tangshi\/index\.html$/.test(p)) return "tangshi";
     if (/^\/guwen\/?$/.test(p) || /^\/guwen\/index\.html$/.test(p)) return "guwen";
     if (/^\/settings\/?$/.test(p) || /^\/settings\/index\.html$/.test(p)) return "settings";
     return "home";
@@ -239,6 +241,7 @@
     if (v != null) return v;
     var k = pageKey();
     if (k === "classic") return "小古文";
+    if (k === "tangshi") return "唐诗三百首";
     if (k === "guwen") return "古文观止";
     return "";
   }
