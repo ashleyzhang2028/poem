@@ -243,6 +243,35 @@ setTimeout(() => {
     '人之初/弟子规（节选）/菊/莲',
     '「蒙学经典」四篇连续排列（' + allGroupItems.map(el => el.querySelector('.item-title').textContent).join('/') + '）');
 
+  // 需求（Issue #55）：同类别的文章合并进**同一张卡片**，不再每篇各占一张卡。
+  // 一个主题 = 一张 .group-card（卡头 .group-head + 卡身若干 .item）。
+  const cards = [...d.querySelectorAll('#gw-list .group-card')];
+  chk(cards.length === 7, '共 7 张主题卡片（实际 ' + cards.length + '）');
+  chk(d.querySelectorAll('#gw-list .group-head').length === cards.length,
+    '每张卡片一个卡头，卡片数与卡头数一致');
+  chk(cards.every(c => !!c.querySelector(':scope > .group-head')),
+    '卡头是该卡片的直接子元素（主题名长在卡上，不是飘在卡外）');
+  chk(cards.every(c => c.querySelectorAll(':scope > .item').length > 0),
+    '每张卡片卡身至少列出一篇（同类文章真的合进了一张卡）');
+  const cardItemTotal = cards.reduce((n, c) => n + c.querySelectorAll(':scope > .item').length, 0);
+  chk(cardItemTotal === 100, '7 张卡片合计仍是 100 篇（实际 ' + cardItemTotal + '）');
+  // 「同一类只在一张卡里」：不出现两张同名卡片
+  const cardNames = cards.map(c => c.querySelector('.group-head .group-name').textContent);
+  chk(new Set(cardNames).size === cardNames.length, '同一主题只有一张卡片（不同卡片主题名不重复）');
+  // 「蒙学经典」4 篇就在同一张卡里
+  const mengCard = cards.find(c => c.dataset.group === '蒙学经典');
+  chk(!!mengCard, '「蒙学经典」自成一张卡片');
+  chk(mengCard.querySelectorAll(':scope > .item').length === 4,
+    '「蒙学经典」4 篇并列在同一张卡里（实际 ' +
+    (mengCard ? mengCard.querySelectorAll(':scope > .item').length : 0) + '）');
+  // 卡片样式：合并后条目不再各自带圆角 / 阴影，只留一条分隔线
+  const cardCss = /(^|\n)\.group-card \{([\s\S]*?)\}/.exec(fs.readFileSync(path + 'css/classic.css', 'utf8'));
+  chk(!!cardCss && /border-radius:\s*var\(--radius\)/.test(cardCss[2]),
+    '主题卡片沿用全站圆角（.group-card 是一张真正的卡片）');
+  chk(!!cardCss && /box-shadow:\s*var\(--shadow\)/.test(cardCss[2]), '主题卡片有一层纸阴影');
+  chk(/(^|\n)\.group-card \.item \{[\s\S]*?box-shadow:\s*none/.test(fs.readFileSync(path + 'css/classic.css', 'utf8')),
+    '卡内条目去掉各自的阴影（合并进卡片后不再是 100 张独立卡片）');
+
   // 需求 6：列表每项右侧是播放键（不再是喇叭）
   chk(d.querySelectorAll('#gw-list .item-read').length === 100, '每个列表项都有播放按钮');
   chk(d.querySelectorAll('#gw-list .item .play-glyph').length === 100, '播放键用的是 ▶ 播放图标');
