@@ -460,29 +460,35 @@ setTimeout(() => {
   chk(!randomBtn.classList.contains('toolbar-read'), '不再使用旧的 toolbar-read 专属样式');
   chk(!/\.seg-toggle/.test(barCss), '样式表里不再留 .seg-toggle 僵尸规则');
 
-  // 需求（Issue #55）：工具栏（搜索框那一排）与下面第一个分组标题「蒙学经典」
-  // 之间的空档太大 —— 页首像缺了一行。收紧来源是两处：
-  //   .toolbar 的 margin-bottom  14 → 6px
-  //   .group-head 的上内边距      14 → 12px
-  // 合计 18px，与「分组标题 → 首条」「条目 → 条目」的 10px 级间距同一量级。
-  // 为什么页首那一半写在 .toolbar 上、而不是把 .group-head 的 padding 压得更狠：
-  //   .group-head 的 padding 同时管着「分组接分组」的那道间隔，压它会连带
+  // 需求（Issue #55 后续）：搜索框与下方「蒙学经典」卡片之间的空档，要和
+  // 搜索框与上方页顶那一行之间的空档一致 —— 页首上下等距。
+  //   上方：.topbar 的 padding-bottom 12px（全站顶栏，见 css/style.css）
+  //   下方：.toolbar 的 margin-bottom 12px（页首专属）
+  // 卡片可见边缘就是 .group-card 的顶边，卡头那 12px 上内边距长在卡片**里面**，
+  // 不算作卡片上方的空档 —— 所以下方这一段只能写在这里，不能拿卡头的 padding 抵。
+  // 曾经这里是 6px（页首收紧那一轮），于是下方只有 12px 的一半，看着「上宽下窄」。
+  // 为什么页首那一段写在 .toolbar 上、而不是把 .group-head 的 padding 调来调去：
+  //   .group-head 的 padding 同时管着「分组接分组」的那道间隔，动它会连带
   //   挤掉后面每个分组的呼吸；页首专属的间距就该写在页首专属的元素上。
-  //
-  // 同类合并成卡片后（本次），页首那一段仍由这 12px 上内边距给：
-  // 它现在是「卡顶 → 卡头」的呼吸。下内边距改为 0 —— 卡头只跟本卡的第一条
-  // 相邻，下面那一段交给条目自己的 12px 内边距，不叠出更大的空档。
   const headPad = (barCss.match(/\.group-head \{([^}]*)\}/) || [, ''])[1];
-  chk(/\.toolbar \{[^}]*margin-bottom:\s*6px/.test(barCss),
-    '工具栏下边距收到 6px（页首专属，原 14px：与标题上内边距相加 28px 太大）');
+  const toolbarBlock = barCss.match(/\.toolbar \{([^}]*)\}/)[1];
+  chk(/margin-bottom:\s*12px/.test(toolbarBlock),
+    '工具栏下边距 12px（与页顶顶栏的 12px 下内边距一致，搜索框上下等距）');
   chk(/padding:\s*12px 8px 8px/.test(headPad),
-    '卡头上内边距 12px（与工具栏下边距合计 18px）、下内边距 8px：组名与圆键整体上抬');
+    '卡头上内边距 12px（卡顶 → 卡头的呼吸）、下内边距 8px：组名与圆键整体上抬');
   chk(!/\.group-head \{[^}]*padding[^;]*\b8px;/.test(headPad),
     '分组标题不再保留旧的 14px 上内边距留下的三段 padding');
-  chk(!/margin-bottom:\s*14px/.test(barCss.match(/\.toolbar \{([^}]*)\}/)[1]),
-    '工具栏不再保留旧的 14px 下边距');
+  chk(!/margin-bottom:\s*6px/.test(toolbarBlock),
+    '工具栏不再保留旧的 6px 下边距（下方空档曾只有上方的一半）');
   chk(!/padding:\s*14px 2px 8px/.test(headPad),
     '分组标题不再保留旧的 14px 上内边距');
+  // 源码级对账：页顶那一行的下内边距（搜索框上方）也必须是 12px，两段同源同值。
+  const siteCss = fs.readFileSync(path + 'css/style.css', 'utf8');
+  // .topbar 有两条规则（主规则 + 窄屏媒体的 padding-top 覆盖），取含 max-width 的那条主规则
+  const topbarBlocks = [...siteCss.matchAll(/\.topbar \{([^}]*)\}/g)].map(m => m[1]);
+  const topbarMain = topbarBlocks.find(b => /max-width:\s*720px/.test(b)) || '';
+  chk(/padding:[^;]*12px\s*;/.test(topbarMain),
+    '顶栏主规则下内边距为 12px：搜索框上方的空档与下方同值，页首上下对称');
   // 需求（Issue #55 第三条）：卡头「蒙学经典 4 篇」与右侧圆键不再压在首条的分隔线上。
   // 两件事一起做：卡头下内边距 0 → 8px；首条不画分隔线（留线会变成「卡头 → 线 → 首条」）。
   chk(/padding:\s*12px 8px 8px/.test(headPad),
