@@ -339,7 +339,10 @@ chk(/\.collapse-head \.arrow[\s\S]{0,200}?color:\s*#9db3a9/.test(css),
 // 需求：古诗词详情页与小古文详情页同一套工具条
 chk(/id="m-actions-main"/.test(html) && /id="m-actions-icons"/.test(html),
   '详情页工具条分两行（对齐/字号/注音 + 播放组合键/译文开关）');
-chk(/id="m-align-seg"/.test(html), '详情页有左/中/右对齐组合按钮');
+chk(/id="m-align-seg"/.test(html), '详情页有左/中对齐组合按钮');
+// 需求：文章一律横排，右对齐没有使用场景 —— 按钮与规则都已删除
+chk(!/data-align="right"/.test(html), '详情页不再有右对齐按钮');
+chk(!/id="m-align-seg"[\s\S]{0,900}?data-align="right"/.test(html), '对齐组合里只剩左 / 中两个按钮');
 chk(/id="m-font-seg"/.test(html) && /id="m-font-down"/.test(html) && /id="m-font-up"/.test(html),
   '详情页有 A－ / A＋ 组合按钮');
 chk(/id="m-trans-read"/.test(html), '详情页有白话译文朗读（组合键右段）');
@@ -392,8 +395,8 @@ chk(/自拟|自行编写/.test(read('terms/index.html')), '用户协议里也如
 chk(!/id="gw-done"/.test(html), '古诗词详情页不设「已读」按钮（与小古文唯一区别）');
 // 需求：古诗正文默认字号小一号
 chk(/\.poem-text \{[\s\S]{0,200}?font-size:\s*17px/.test(css), '古诗正文默认字号降为 17px');
-chk(/\.poem-text\[data-align="left"\]/.test(css) && /\.poem-text\[data-align="right"\]/.test(css),
-  '古诗正文支持左 / 右对齐切换');
+chk(/\.poem-text\[data-align="left"\]/.test(css) && !/data-align="right"/.test(css),
+  '古诗正文只留左对齐规则，右对齐规则已删除');
 // 需求：详情页三个评价按钮不被底部页签挡住。
 // 只压 max-height 还不够 —— 弹层底边仍落在屏幕底边，
 // 所以底部内边距也必须垫出页签高度（约 62px）。两条一起才真的「压不住」。

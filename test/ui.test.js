@@ -304,6 +304,9 @@ setTimeout(() => {
     chk(d.querySelector('#m-text').style.fontSize === '17px',
       'A＋ 回到默认档 17px（实际 ' + d.querySelector('#m-text').style.fontSize + '）');
 
+    chk(d.querySelectorAll('#m-align-seg button').length === 2 &&
+      d.querySelectorAll('#m-align-seg button[data-align="right"]').length === 0,
+      '详情页对齐组合只剩 左 / 中 两个按钮（右对齐无使用场景）');
     d.querySelector('#m-align-seg button[data-align="left"]').dispatchEvent(new window.Event('click', { bubbles: true }));
     chk(d.querySelector('#m-text').dataset.align === 'left', '切到左对齐生效');
     chk(window.localStorage.getItem('poem_align_v1') === 'left', '对齐方式已持久化');

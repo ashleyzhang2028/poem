@@ -972,31 +972,32 @@ setTimeout(() => {
   chk(/\.icon-row > \.mini-btn \{ width: 36px; min-height: 0; height: 36px; \}/.test(actionsCss),
     '窄屏档位的圆形图标键同为 36×36，宽高一致');
 
-  // 需求 2：正文对齐三档，左 / 中 / 右 都是 SVG 图标，由用户自己选
+  // 需求 2：正文对齐两档，左 / 中 都是 SVG 图标，由用户自己选。
+  // 文章一律横排，右对齐没有使用场景，按钮与规则都已删除（反向防线在下方）。
   const alignSeg = d.querySelector('#rd-align-seg');
   chk(!!alignSeg, '工具条上有「正文对齐」组合按钮');
-  chk([...alignSeg.querySelectorAll('button')].map(b => b.dataset.align).join('/') === 'left/center/right',
-    '对齐三档为 左 / 中 / 右');
-  chk(alignSeg.querySelectorAll('button svg').length === 3, '三个对齐按钮都是 SVG 图标');
+  chk([...alignSeg.querySelectorAll('button')].map(b => b.dataset.align).join('/') === 'left/center',
+    '对齐两档为 左 / 中');
+  chk(alignSeg.querySelectorAll('button svg').length === 2, '两个对齐按钮都是 SVG 图标');
+  chk(alignSeg.querySelectorAll('button[data-align="right"]').length === 0,
+    '不再有右对齐按钮');
   chk(alignSeg.querySelector('button[data-align="center"]').classList.contains('active'),
     '默认选中「居中对齐」（古诗短句居中好看）');
   chk(d.querySelector('#rd-text').dataset.align === 'center', '正文默认居中（data-align="center"）');
   chk(new RegExp('\\.reader-body \\.reader-text\\[data-align="left"\\]').test(actionsCss),
     'CSS 里有左对齐规则（长古文左对齐更好读）');
-  chk(new RegExp('\\.reader-body \\.reader-text\\[data-align="right"\\]').test(actionsCss),
-    'CSS 里有右对齐规则');
+  chk(!/reader-text\[data-align="right"\]/.test(actionsCss),
+    'CSS 里不再有右对齐规则（右对齐无使用场景）');
   const alignBtn = k => d.querySelector('#rd-align-seg button[data-align="' + k + '"]');
   alignBtn('left').dispatchEvent(new window.Event('click', { bubbles: true }));
   chk(d.querySelector('#rd-text').dataset.align === 'left', '点左对齐立即生效（data-align="left"）');
   chk(alignBtn('left').classList.contains('active') && !alignBtn('center').classList.contains('active'),
     '对齐按钮选中态互斥（同一时刻只有一个是高亮）');
   chk(window.localStorage.getItem('poem_classic_align_v1') === 'left', '对齐方式持久化到 localStorage');
-  alignBtn('right').dispatchEvent(new window.Event('click', { bubbles: true }));
-  chk(d.querySelector('#rd-text').dataset.align === 'right', '点右对齐立即生效');
   // 重新打开阅读器（翻篇）后对齐设置还在
   d.querySelector('#rd-next').dispatchEvent(new window.Event('click', { bubbles: true }));
-  chk(d.querySelector('#rd-text').dataset.align === 'right', '翻到下一篇后仍保持用户选的对齐方式');
-  chk(alignBtn('right').classList.contains('active'), '翻篇后对齐按钮高亮同步');
+  chk(d.querySelector('#rd-text').dataset.align === 'left', '翻到下一篇后仍保持用户选的对齐方式');
+  chk(alignBtn('left').classList.contains('active'), '翻篇后对齐按钮高亮同步');
   alignBtn('center').dispatchEvent(new window.Event('click', { bubbles: true }));
   chk(d.querySelector('#rd-text').dataset.align === 'center', '切回居中对齐');
   // 需求：注音档位文案精简为 不注音 / 生字 / 全文
