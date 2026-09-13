@@ -499,6 +499,58 @@ function check(name, cond, extra) {
     check('iPhone: 分组圆键没有可见文字（图标表达状态）',
       gwState.group.text === '', JSON.stringify(gwState.group.text));
 
+    // ---- Issue #55：序号圆 / 短竖条 / 卡头间距 ----
+    // 这几条只能在真浏览器里量：jsdom 不算布局，CSS 写着数值也可能被裁、
+    // 被 flex 拉扁、或被父级 overflow 切掉一角。量的都是渲染后的真实盒子。
+    const numState = await page.evaluate(() => {
+      const card = document.querySelector('#gw-list .group-card');
+      const head = card.querySelector('.group-head');
+      const headBtn = head.querySelector('.gw-play-sm');
+      const item = card.querySelector('.item');
+      const num = item.querySelector('.item-num');
+      const title = item.querySelector('.item-title');
+      const itemRect = item.getBoundingClientRect();
+      const numRect = num.getBoundingClientRect();
+      const bar = getComputedStyle(item, '::before');
+      return {
+        numW: +numRect.width.toFixed(2),
+        numH: +numRect.height.toFixed(2),
+        numFont: getComputedStyle(num).fontSize,
+        titleFont: getComputedStyle(title).fontSize,
+        numLeftRelItem: +(numRect.left - itemRect.left).toFixed(2),
+        numLeftRelCard: +(numRect.left - card.getBoundingClientRect().left).toFixed(2),
+        barLeft: parseFloat(bar.left),
+        barW: parseFloat(bar.width),
+        barRightRelItem: +(parseFloat(bar.left) + parseFloat(bar.width)).toFixed(2),
+        barOpacity: bar.opacity,
+        headPadBottom: getComputedStyle(head).paddingBottom,
+        gapHeadBtnToItem: +(itemRect.top - headBtn.getBoundingClientRect().bottom).toFixed(2),
+        numFirstChild: title.firstElementChild === num,
+        oldIndexLeft: document.querySelectorAll('#gw-list .item-index').length
+      };
+    });
+    check('iPhone: 序号圆是正圆（宽高相等）',
+      numState.numW === numState.numH, JSON.stringify([numState.numW, numState.numH]));
+    check('iPhone: 序号圆的直径等于标题字号',
+      numState.numW === parseFloat(numState.titleFont),
+      numState.numW + ' vs ' + numState.titleFont);
+    check('iPhone: 序号圆的字号比标题小一号（放得下两位数）',
+      parseFloat(numState.numFont) < parseFloat(numState.titleFont),
+      numState.numFont + ' < ' + numState.titleFont);
+    check('iPhone: 序号圆在标题那一行、排在篇名前面',
+      numState.numFirstChild, String(numState.numFirstChild));
+    check('iPhone: 旧的独占一列序号已全部移除',
+      numState.oldIndexLeft === 0, String(numState.oldIndexLeft));
+    check('iPhone: 序号圆没有被卡片裁掉（相对卡片左缘 ≥ 0）',
+      numState.numLeftRelCard >= 0, numState.numLeftRelCard + 'px');
+    check('iPhone: 序号圆不压住左侧短竖条（圆左缘 ≥ 竖条右缘）',
+      numState.numLeftRelItem >= numState.barRightRelItem,
+      numState.numLeftRelItem + ' ≥ ' + numState.barRightRelItem);
+    check('iPhone: 小古文条目短竖条透明度已调淡',
+      parseFloat(numState.barOpacity) < 1, numState.barOpacity);
+    check('iPhone: 卡头与首条之间留出间距（不再贴着分隔线）',
+      numState.gapHeadBtnToItem >= 6, numState.gapHeadBtnToItem + 'px');
+
     // ---- Issue #32 需求：大背景不用任何图案 ----
     await page.goto(base + '', { waitUntil: 'load' });
     await new Promise(r => setTimeout(r, 400));

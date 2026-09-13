@@ -229,7 +229,7 @@ html, body {
   align-items: center;
   gap: 12px;
   cursor: pointer;
-  transition: transform .15s, box-shadow .15s;
+  transition: transform .15s;
   border-left: 4px solid transparent;
   position: relative;
 }
@@ -239,20 +239,6 @@ html, body {
 .item.done { opacity: .55; }
 .item.done .item-title { text-decoration: line-through; text-decoration-color: rgba(0,0,0,.25); }
 
-.item-index {
-  width: 30px;
-  height: 30px;
-  flex: 0 0 30px;
-  border-radius: 50%;
-  background: var(--green-light);
-  color: var(--green);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  font-weight: 700;
-}
-.item.review .item-index { background: var(--amber-light); color: var(--amber); }
 .item-main { flex: 1; min-width: 0; }
 .item-title {
   font-size: 16.5px;
@@ -262,7 +248,43 @@ html, body {
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
+  /* 序号圆挂到正文基线左侧（Issue #55 第三条）----
+     序号圆已挪进标题行、排在篇名前面（结构见 js/*.js 里的 .item-num）。
+     圆要「领先正文」但不能右推整条内容来留空间 —— 那会连带挤掉每一行文字的宽度。
+     这里用负外边距把标题行左移 12px：正文起点不动，圆挂到基线左侧，
+     与它左边那枚短竖条（小古文列表）之间留出间隙。
+     ⚠️ 12px 是上限：圆直径 16.5px，圆周左缘必须落在 [短竖条右缘, 标题行左缘] 之间 ——
+     再往左，圆会被卡片（小古文列表 .group-card 上的 overflow: hidden）裁掉一角。
+     当前几何（小古文列表）：条目左内边距 16px − 12px = 圆周左缘 4px，竖条右缘 3px。 */
+  margin-left: -12px;
 }
+/* 列表项序号：一枚与首行字号同高的实心圆，排在标题**前面**（同一行）
+   --------------------------------------------------------------------------
+   原先序号是第一列的 30px 圆（.item-index），独占一列宽度，标题只能从第二列起排；
+   圆形按固定 30px 走，与 16.5px 的标题也不同高，横竖两处都不齐。
+   现在：
+     · 圆挪到标题行内，成为标题的兄弟节点 —— 标题行的起点就是圆的起点；
+     · 圆的直径 = 标题字号（走同一个变量 --item-num: 16.5px，两处同源、永远相等）；
+     · 圆的字号单列一档 11px：圆是 16.5px 的实心块，装 16.5px 的数字会顶满圆边，
+       11px 才留得出四周留白，也照顾到两位数（第 10 篇起）不挤。
+   标题行因此只剩「圆 + 篇名 + 状态标签」三样，篇名可用的宽度多出 40 余像素。 */
+.item-num {
+  --item-num: 16.5px;
+  flex: none;
+  width: var(--item-num);
+  height: var(--item-num);
+  border-radius: 50%;
+  background: var(--green-light);
+  color: var(--green);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  line-height: 1;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.item.review .item-num { background: var(--amber-light); color: var(--amber); }
 .item-meta {
   font-size: 12.5px;
   color: var(--ink-2);

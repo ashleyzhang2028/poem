@@ -391,9 +391,9 @@
       el.className = "item" + (read ? " done" : "") + (p.gradeGroup === MATCH_GROUP ? "" : " in-book");
       el.dataset.id = p.id;
       el.innerHTML =
-        '<div class="item-index">' + index + "</div>" +
         '<div class="item-main">' +
-        '<h3 class="item-title">' + esc(p.title) +
+        // 序号圆挪进标题行、排在篇名前面：与小古文首页、古诗词列表同一套（Issue #55 第三条）
+        '<h3 class="item-title"><span class="item-num">' + index + "</span>" + esc(p.title) +
         (read ? '<span class="item-reason read">已读</span>' : "") +
         "</h3>" +
         '<div class="item-meta"><span>' + esc(p.source) + "</span>" +
