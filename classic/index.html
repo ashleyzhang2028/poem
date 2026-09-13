@@ -23,10 +23,14 @@
 </head>
 <body data-nav="classic" data-page="小古文">
   <div class="app">
-    <!-- 顶部栏：由 js/chrome.js 统一渲染（全站同一套 logo + 跬步 + 页面名） -->
-    <header class="topbar"></header>
-    <!-- 小古文进度：已读 / 总数（顶栏与底部页签由 js/chrome.js 渲染） -->
-    <div class="list-head"><span class="count-badge" id="gw-count">0 篇</span></div>
+    <!-- 页顶这一行：由 js/chrome.js 统一渲染（全站同一套 徽标 + 跬步 · 页面名 + 副标题 + 右侧动作位）。
+         顺序：徽标 · 跬步 · 小古文 /「想读哪篇点哪篇」｜ 0 / 100 篇 ｜〔返回键〕
+         —— 已读进度牌挂在品牌区与返回键之间（js/chrome.js 的 renderBar 会保住它，
+         阅读器打开、右侧换成「关闭」键时也不会丢）。
+         这一行整行 align-items: center，徽标 / 两行文字 / 进度牌 / 40px 返回键共用同一条中轴。 -->
+    <header class="topbar topbar-with-count">
+      <span class="count-badge" id="gw-count">0 / 100 篇</span>
+    </header>
     <div class="toolbar">
       <div class="search-wrap">
         <span class="search-icon" aria-hidden="true">

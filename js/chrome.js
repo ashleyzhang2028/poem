@@ -83,6 +83,33 @@
       '<path d="M7.2 18.6V13l2.8-2 2.6 2 2.4-3.2L18.4 11v7.6"/></svg>'
   };
 
+  /* ---------------- 页面路由表 ---------------- */
+  /**
+   * 全站唯一的一份「页面住哪」。
+   *
+   * URL 一律目录化，不带 .html：
+   *   /            首页（古诗词）
+   *   /classic/    小古文
+   *   /settings/   设置
+   *   /terms/      用户协议
+   *   /privacy/    隐私条款
+   *
+   * 各页面真实文件都是该目录下的 index.html。
+   * 这里也兼容直接访问 /classic/index.html 的情形（等价于 /classic/）。
+   */
+  var ROUTES = {
+    home: "/",
+    classic: "/classic/",
+    settings: "/settings/",
+    terms: "/terms/",
+    privacy: "/privacy/"
+  };
+
+  /** 路由 → 跳转地址 */
+  function routeHref(key) {
+    return ROUTES[key] || ROUTES.home;
+  }
+
   /* ---------------- 页面身份 ---------------- */
   var APP_NAME = "跬步";
   /* 顶栏第二行 = 页面自己的说明（页面用 body 上的 data-sub 给）。
@@ -143,8 +170,12 @@
       // 两个入口指向同一面板，右上角那个纯属重复。
       right = '<span class="top-act-spacer" aria-hidden="true"></span>';
     } else {
+      // 子页面（小古文、设置、法务页）右侧都是同一颗「返回」按钮，指向 pageBackHref()。
+      // 返回键统一由这里渲染，各页不要自造一颗：曾出现「页面自己手写返回、
+      // 与重建后的顶栏同时冒出来」的问题。文案只给读屏软件，可见的只有一个箭头。
       right =
-        '<a class="top-act" id="top-back" href="/" title="回到首页" aria-label="回到首页">' +
+        '<a class="top-act" id="top-back" href="' + pageBackHref() + '"' +
+        ' title="返回" aria-label="返回">' +
         '<span class="top-act-icon" aria-hidden="true">' + GLYPHS.back + "</span></a>";
     }
 
@@ -165,6 +196,11 @@
       "</span>" +
       "</div>" + right
     );
+  }
+
+  /** 当前页的返回目标：子页面回首页（首页自己不留返回键，用占位保持两栏对齐） */
+  function pageBackHref() {
+    return ROUTES.home;
   }
 
   /** 第一行里的页面名：首页是「「用户名」的古诗词」，其余页用 data-page */
@@ -207,6 +243,29 @@
     return html + "</nav>";
   }
 
+  /**
+   * 重建顶栏内容。
+   *
+   * 页面可以往顶栏里挂自己的小件（小古文页的「0 / 100 篇」进度牌），
+   * 它们不在 headerHtml() 里，所以重建前先出栈、重建后插回**右侧动作位左边**：
+   * 顺序固定为　品牌区 ｜ 页面小件 ｜ 返回键（或阅读器里的关闭键）。
+   * 漏掉这一步，阅读器一打开（动作位换成「关闭」）进度牌就会整块消失。
+   */
+  function renderBar(bar) {
+    var keep = null;
+    var extra = bar.querySelector(":scope > .count-badge");
+    if (extra) {
+      keep = extra;
+      bar.removeChild(extra);
+    }
+    bar.innerHTML = headerHtml();
+    if (keep) {
+      var act = bar.querySelector(".top-act, .top-act-spacer");
+      if (act) bar.insertBefore(keep, act);
+      else bar.appendChild(keep);
+    }
+  }
+
   /* ---------------- 挂载 ---------------- */
   function mount() {
     // 顶栏：页面里已有 .topbar 就地复用（保住既有测试与结构），没有则插到最前
@@ -217,9 +276,8 @@
       bar.className = "topbar";
       made = true;
     }
-    if (made || !bar.querySelector(".brand-icon")) bar.insertAdjacentHTML("afterbegin", "");
-    // 清空重建，保证三页顶栏结构完全一致
-    bar.innerHTML = headerHtml();
+    // 清空重建，保证三页顶栏结构完全一致（页面自己的小件由 renderBar 保住）
+    renderBar(bar);
     if (made) {
       var app = document.querySelector(".app");
       (app || document.body).insertBefore(bar, (app || document.body).firstChild);
@@ -270,32 +328,6 @@
     });
   }
 
-  /**
-   * 页面路由表 —— 全站唯一的一份「页面住哪」。
-   *
-   * URL 一律目录化，不带 .html：
-   *   /            首页（古诗词）
-   *   /classic/    小古文
-   *   /settings/   设置
-   *   /terms/      用户协议
-   *   /privacy/    隐私条款
-   *
-   * 各页面真实文件都是该目录下的 index.html。
-   * 这里也兼容直接访问 /classic/index.html 的情形（等价于 /classic/）。
-   */
-  var ROUTES = {
-    home: "/",
-    classic: "/classic/",
-    settings: "/settings/",
-    terms: "/terms/",
-    privacy: "/privacy/"
-  };
-
-  /** 路由 → 跳转地址 */
-  function routeHref(key) {
-    return ROUTES[key] || ROUTES.home;
-  }
-
   /** 当前路径（去掉结尾多余的 /，统一成不含末尾斜杠的形式；根路径归一成 "/"） */
   function currentPath() {
     var p = location.pathname.replace(/\/index\.html$/, "/");
@@ -333,7 +365,7 @@
       headerAction = action || null;
       var bar = document.querySelector(".topbar");
       if (bar) {
-        bar.innerHTML = headerHtml();
+        renderBar(bar);
         bindHeader();
         var btn = document.getElementById("top-act");
         if (btn && action && action.onclick) btn.addEventListener("click", action.onclick);

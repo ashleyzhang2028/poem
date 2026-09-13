@@ -73,7 +73,46 @@ setTimeout(() => {
   });
 
   chk(d.querySelectorAll('#gw-list .item').length === 100, '列表渲染 100 篇（实际 ' + d.querySelectorAll('#gw-list .item').length + '）');
+  chk(!!d.querySelector('#gw-count'), '页顶那一行有已读进度牌 #gw-count');
+  chk(d.querySelectorAll('#gw-count').length === 1, '进度牌只有一块（顶栏重建后插回，不重复插入）');
   chk(d.querySelector('#gw-count').textContent === '0 / 100 篇', '顶部显示 0 / 100 篇：' + d.querySelector('#gw-count').textContent);
+
+  /* ---------- 已读进度牌：页顶一行内、紧挨底部页签 ---------- */
+  // 需求（本次）：原先它挂在内容区最上面一行（.list-head，右对齐），
+  // 在标题栏下方平白多占一行；现在挪进页顶那一行，与品牌区同处一行。
+  // 「右下角」＝ 该行最右端，语序上就在底部页签那一栏的正上方，一眼能看见。
+  chk(d.querySelector('.list-head') === null, '内容区不再有单独的进度行（.list-head 已删除）');
+  const clsCss = fs.readFileSync(path + 'css/classic.css', 'utf8');
+  chk(!/list-head/.test(clsCss), 'CSS 里也不留 .list-head 僵尸样式');
+  chk(!/list-head/.test(fs.readFileSync(path + 'classic/index.html', 'utf8')), '页面里也不再出现 .list-head');
+  const topbar = d.querySelector('.topbar');
+  const countInTopbar = d.querySelector('.topbar #gw-count');
+  chk(!!countInTopbar, '进度牌 #gw-count 在页顶栏 .topbar 里');
+  chk(countInTopbar.parentElement === topbar, '进度牌是页顶那一行的直接子元素（与品牌区同一行）');
+  chk([...topbar.children].map(e => e.className.split(' ')[0]).join('/') === 'brand/count-badge/top-act',
+    '页顶一行依次是「品牌区 · 进度牌 · 返回键」，进度牌就在返回键左侧（实际 ' +
+    [...topbar.children].map(e => e.className).join('/') + '）');
+  const backBtn2 = topbar.querySelector('#top-back');
+  chk(!!backBtn2 && backBtn2.tagName === 'A' && backBtn2.getAttribute('href') === '/',
+    '返回键统一由 chrome.js 渲染（回首页），页面不再自造一颗、也不会与进度牌打架');
+  chk(!!backBtn2.querySelector('svg') && backBtn2.querySelectorAll('svg').length === 1,
+    '返回键只有一个箭头图标（不放页名文字）');
+  chk(countInTopbar.compareDocumentPosition(backBtn2) & window.Node.DOCUMENT_POSITION_FOLLOWING,
+    '进度牌确实排在返回键左侧（DOM 顺序就是视觉顺序）');
+  chk(topbar.contains(d.querySelector('#brand-name')) && topbar.contains(d.querySelector('#brand-page-text')),
+    '进度牌与「跬步 · 小古文」同处一行');
+  // 需求（本次）：这一行所有元素垂直居中 —— 靠 .topbar 的 align-items: center，
+  // 具体到小古文页，还要保证进度牌本身不拉伸、不与品牌区贴在一起
+  const styleCss0 = fs.readFileSync(path + 'css/style.css', 'utf8');
+  const topbarBlock = /(^|\n)\.topbar \{([\s\S]*?)\}/.exec(styleCss0);
+  chk(!!topbarBlock && /align-items:\s*center;/.test(topbarBlock[2]),
+    '顶栏 flex 垂直居中（徽标 / 页名 / 副标题 / 进度牌同一条中轴）');
+  const badgeBlock0 = /(^|\n)\.count-badge \{([\s\S]*?)\}/.exec(clsCss);
+  chk(!!badgeBlock0 && /flex:\s*none;/.test(badgeBlock0[2]),
+    '进度牌 flex: none —— 不被拉伸撑成整行高，只按自身高度居中');
+  const withCountBlock = /(^|\n)\.topbar-with-count \{([\s\S]*?)\}/.exec(clsCss);
+  chk(!!withCountBlock && /gap:\s*10px;/.test(withCountBlock[2]),
+    '进度牌与品牌区之间留 10px（长页名 / 长用户名也不会贴在一起）');
   chk(d.querySelectorAll('#gw-list .group-head').length >= 6, '按主题显示分组标题（' + d.querySelectorAll('#gw-list .group-head').length + ' 个）');
   chk(/已读|标记/.test(d.querySelector('#gw-done-text').textContent), '阅读器内有「标记已读」按钮');
   /* ---------- 导航：与首页同一套顶栏 + 底部页签 ---------- */
@@ -266,6 +305,8 @@ setTimeout(() => {
   chk(store['gw-17'] && store['gw-17'].read === true, '已读状态写入 localStorage（独立于古诗词进度）');
   chk(!window.localStorage.getItem('poem_recite_progress_v1'), '不会写古诗词进度 key，两边互不干扰');
   chk(d.querySelector('#gw-count').textContent === '1 / 100 篇', '顶部进度更新为 1 / 100 篇');
+  chk(d.querySelector('.topbar #gw-count').textContent === '1 / 100 篇',
+    '进度更新的是页顶那一行里的同一块牌子（不是另开一份）');
 
   // 返回列表
   d.querySelector('#gw-back').dispatchEvent(new window.Event('click', { bubbles: true }));

@@ -145,6 +145,20 @@
     };
     setSub();
     document.addEventListener("chrome:ready", setSub);
+
+    // 已读进度牌（0 / 100 篇）也在页顶那一行里，chrome.js 重建顶栏时会把它原样留着
+    // （见 chrome.js 的 renderBar），所以这里只要在它渲染完之后补一次数字。
+    const onChrome = function () { setSub(); syncCount(); };
+    document.removeEventListener("chrome:ready", setSub);
+    document.addEventListener("chrome:ready", onChrome);
+  }
+
+  /* 进度牌文案：已读 / 总数。页顶与「标记已读」共用这一处口径 */
+  function syncCount() {
+    const el = $("#gw-count");
+    if (!el) return;
+    el.textContent = allItems().filter(function (p) { return isRead(p.id); }).length +
+      " / " + allItems().length + " 篇";
   }
 
   /* ---------------- 进度存储（与古诗词进度相互独立） ---------------- */
@@ -298,7 +312,9 @@
     const total = allItems().length;
     const readCount = allItems().filter(function (p) { return isRead(p.id); }).length;
 
-    var countEl = $("#gw-count");
+    // 页顶那一行里的「0 / 100 篇」：与列表同一次渲染，保证首屏就是准数
+    // （chrome:ready 早于本函数执行，所以进度牌这时已经在 DOM 里了）
+    const countEl = $("#gw-count");
     if (countEl) countEl.textContent = readCount + " / " + total + " 篇";
 
     box.innerHTML = "";
@@ -933,8 +949,7 @@
       setRead(current.id, !now);
       syncDoneButton();
       showToast(now ? "已取消「已读」" : "已标记为已读");
-      $("#gw-count").textContent =
-        allItems().filter(function (p) { return isRead(p.id); }).length + " / " + allItems().length + " 篇";
+      syncCount();
     });
 
     $("#rd-trans-toggle").addEventListener("click", function () {
