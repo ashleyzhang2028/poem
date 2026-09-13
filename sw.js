@@ -135,6 +135,11 @@
  *           「对的样子」，不该被当成数据没加载上而拒挂
  *        （search/index.html、js/search.js、js/reader-core.js、
  *          css/classic.css、sw.js）
+ *
+ *        同一轮里还删掉了「一次搜遍课内诗词……也搜正文与译文里的字句」那段说明
+ *        文字（连同只服务它的 #search-hint 显隐逻辑与 .search-hint 样式）：
+ *        搜索页的取舍已经写在文件头与上方注释里，页面上不必再向用户解释一遍
+ *        （css/classic.css、js/search.js、search/index.html）
  */
 const CACHE_NAME = "poem-app-v42";
 

@@ -159,7 +159,9 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(api.total() === ALL, '一输入关键词，实例里就换上全站篇目（' + api.total() + '）');
   chk(d.querySelector('#gw-count').textContent === '0 / ' + ALL + ' 篇',
     '顶部进度牌这时报的是全站篇数（实际 ' + d.querySelector('#gw-count').textContent + '）');
-  chk(d.querySelector('#search-hint').hidden === true, '输入之后那句说明收起（它只是「能搜到什么」的注解）');
+  // 说明文字整段已撤（#76 删掉元素、这一版删掉显隐逻辑）：
+  // 页面上不该再出现那一行，敲字前后都不该有
+  chk(d.querySelector('#search-hint') === null, '那段说明文字在页面上已不存在');
   const wangwei = [...d.querySelectorAll('#gw-list .item')];
   chk(wangwei.length > 0, '搜「王维」有结果（' + wangwei.length + ' 条）');
   const wwBooks = new Set(wangwei.map(el => {
@@ -262,13 +264,12 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     '「月 → 明月 → 明月几时有」命中数逐级减少（' + counts.join(' → ') + '）');
   chk(counts[2] > 0, '最长的那一次仍然搜得到（' + counts[2] + ' 条）');
 
-  // 清空输入：列表收干净，说明那句回来，且不再有任何条目留在 DOM 里
+  // 清空输入：列表收干净，且不再有任何条目留在 DOM 里
   type('');
   await sleep(30);
   chk(d.querySelectorAll('#gw-list .item').length === 0, '清空输入后列表里一条都不留');
   chk(/输入篇名、作者或诗句/.test(d.querySelector('#gw-list').textContent),
     '空列表又回到「敲几个字就能搜」的引导语');
-  chk(d.querySelector('#search-hint').hidden === false, '那句说明重新出现');
   chk(w.SiteSearch.keyword() === '', 'SiteSearch.keyword() 为空（没有残留关键词）');
 
   // 一次只敲一个字的「重活」：全站命中不会把列表撑到上千条后再也不收
@@ -343,8 +344,18 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(read('js/chrome.js').indexOf('古诗词') === -1 ||
     !/label: "古诗词"/.test(read('js/chrome.js')),
     '页签里不再有名为「古诗词」的那一格');
-  chk(/\.search-hero/.test(classicCss) === /\.search-hero/.test(classicCss),
-    'CSS 与 HTML 的 .search-hero 口径一致');
+  chk(/class="search-hero"/.test(searchHtml) ===
+    /(?:^|\n)\.search-hero \{/.test(classicCss),
+    'CSS 与 HTML 的 .search-hero 口径一致（HTML 里有它，样式里也有它）');
+  // 搜索页的说明文字已撤（main 上的 #76 删掉了它，这一版又撤掉了只服务它的
+  // 显隐逻辑）：源码里不该再有 #search-hint / .search-hint 的死引用
+  chk(!/search-hint/.test(searchHtml) && !/search-hint/.test(read('js/search.js')),
+    '「一次搜遍……也搜正文与译文里的字句」那段说明与其显隐逻辑都已删除');
+  // 版本号只验下界：本次搜索页改版把缓存提到 v42，
+  // 若写死 v41，下次任何一次改动都会把这条测试判红。
+  // 真正要守的是「改了 css/js 就得抬版本」，所以比对 v41 的下界即可。
+  chk(parseInt((read('sw.js').match(/poem-app-v(\d+)/) || [0, '0'])[1], 10) >= 41,
+    'sw.js 缓存版本不低于 v41');
   ['"./search/"', '"./js/search.js"', '"./library/"', '"./js/library.js"'].forEach(needle => {
     chk(read('sw.js').indexOf(needle) >= 0, 'sw.js 预缓存含 ' + needle);
   });

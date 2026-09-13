@@ -194,8 +194,6 @@
     }
     annotateMatches(q);
     syncEmptyState(q);
-    var hint = document.getElementById("search-hint");
-    if (hint) hint.hidden = q.length > 0;
   }
 
   /**
