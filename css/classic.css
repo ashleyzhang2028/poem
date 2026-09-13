@@ -913,15 +913,6 @@ body.reader-open .dock { display: none; }
 }
 .book-seg button.active .book-count { color: rgba(255, 253, 248, .78); }
 
-/* 搜索说明：只在没输入关键词时出现的一行小字 */
-.search-hint {
-  margin: 0 0 14px;
-  font-size: 12.5px;
-  line-height: 1.8;
-  color: var(--ink-3);
-}
-.search-hint[hidden] { display: none; }
-
 /* 命中上下文：正文 / 译文里命中关键词时，在元信息行后补一句摘出的上下文。
    用最淡的墨色 —— 它是「为什么会搜到这一条」的说明，不是内容本身。 */
 #gw-list .item-hit {
