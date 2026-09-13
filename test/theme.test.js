@@ -424,6 +424,51 @@ chk(/\.pb-next\s*\{[^}]*font-size:\s*11\.5px/.test(css), '下一首用小字号�
 chk(/\.pb-toggle\s*\{[^}]*46px/.test(css), '播放 / 暂停主按钮更大（46px）');
 chk(/\.pb-toggle\s*\{[^}]*var\(--gold\)/.test(css), '主按钮用缃色（与进度环同色）');
 
+/* ---------------- 3c. 播放键的空心三角（Issue #55 后续） ----------------
+   需求：全站每一颗播放键里的三角都改成**空心**，且三角的描边颜色
+   与这颗圆键的边框颜色保持一致。
+
+   空心这一条只能在源码级锁：jsdom 不会给 SVG 上色，
+   真浏览器那层（pwa.test.js）在 CI 上常因缺系统库而跳过，
+   所以这里逐文件核对「▶ 三角的描边是 currentColor、且没有 fill 填色」。
+
+   同色这一条靠**结构**保证，不靠两处各写一次颜色值：
+   三角的 stroke 与圆环的 border-color 都取宿主元素的 `color`
+   （currentColor），于是必然同色；下面同时断言这条链路还在
+   —— 谁把三角的 stroke 换成写死的色值，这里就红。 */
+const playSrcs = {
+  'index.html': html,
+  'classic/index.html': classicHtml,
+  'js/app.js': app,
+  'js/classic.js': read('js/classic.js'),
+  'js/reader.js': read('js/reader.js')
+};
+// ▶ 三角的路径特征（内收后的空心轮廓）；暂停 ⏸ 是两竖条，不在此列
+const HOLLOW = /<path d="M8\.4 6\.1 18\.3 12 8\.4 17\.9Z"[^>]*fill="none" stroke="currentColor"/;
+Object.keys(playSrcs).forEach(function (f) {
+  const src = playSrcs[f];
+  chk(!/M7\.2 4\.6 19\.4 12 7\.2 19\.4Z" fill="currentColor"/.test(src),
+    f + ' 里的播放三角不再是实心填充');
+  chk(HOLLOW.test(src), f + ' 里的播放三角改成空心描边（fill="none" + stroke="currentColor"）');
+});
+chk(HOLLOW.test(read('js/classic.js')) && /M9\.4 6\.6 18 12 9\.4 17\.4Z" fill="none" stroke="currentColor"/.test(read('js/classic.js')),
+  '分组小号圆键的三角同样是空心描边（单独一枚、略大一号）');
+chk(!/M8\.2 5\.4 18\.6 12 8\.2 18\.6Z/.test(read('js/classic.js')),
+  '分组小号圆键不再用旧的那枚实心三角路径');
+// 底部播放栏：▶ / 上一首 / 下一首 三枚三角都空心
+// 注意变量名不要与上面那处播放栏文案检查重名（同一作用域下重名会直接语法报错）
+const readerSrc = read('js/reader.js');
+['M8\.4 6\.1 18\.3 12 8\.4 17\.9Z', 'M17\.3 6\.1 9\.1 12l8\.2 5\.9Z', 'M6\.7 6\.1l8\.2 5\.9-8\.2 5\.9Z']
+  .forEach(function (d) {
+    const re = new RegExp('<path d="' + d + '"[^>]*fill="none" stroke="currentColor"');
+    chk(re.test(readerSrc), '播放栏的三角 ' + d.slice(0, 12) + '… 为空心描边');
+  });
+// 同色链路：圆环描边与三角描边同取 currentColor
+chk(/\.item-read \{[\s\S]*?border:\s*1px solid var\(--line\);[\s\S]*?color:\s*var\(--green\)/.test(css),
+  '列表项圆键的 color 就是它的图标色，三角描边取其值');
+chk(/\.gw-play \{[\s\S]*?border:\s*1px solid var\(--line\);[\s\S]*?color:\s*var\(--blue\)/.test(classicCss),
+  '小古文圆键同上（color 走天水碧，环与三角同源）');
+
 /* ---------------- 4. favicon ---------------- */
 const icon = read('icons/icon.svg');
 chk(/<svg/.test(icon), 'favicon 使用 SVG');

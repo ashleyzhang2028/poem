@@ -1390,6 +1390,8 @@ html, body {
   transition: transform .14s, background .18s, color .18s, border-color .18s;
 }
 .pb-btn svg { display: block; width: 17px; height: 17px; margin: auto; }
+/* 底栏里的 ▶ / 上一首 / 下一首三角同样是空心描边，色取本条目的 `color`：
+   主键暂停态把 color 压成深天青，三角跟着一起变深 —— 与圆底同色。 */
 .pb-glyph { display: inline-flex; align-items: center; justify-content: center; }
 .pb-btn:active { transform: scale(.92); }
 .pb-btn:disabled { opacity: .3; cursor: not-allowed; }
@@ -1473,7 +1475,15 @@ html, body {
 /* 内径（Issue #55 本轮）：▶ / ⏸ 图形本身的大小，仍是上一条「尺寸只声明一次」的延续 ——
    外径（--today-btn-size: 42px）与内径各有一个唯一来源，图中量哪一层都不会走散。
    外径不动，只把 ▶ 三角形的外接圆（内径）在 19px 图标框的基准上收 4px：
-   19 → 14px，等比缩放，三角形仍居中、仍与外径同心；▶ / ⏸ 同框，两态不会忽大忽小。 */
+   19 → 14px，等比缩放，三角形仍居中、仍与外径同心；▶ / ⏸ 同框，两态不会忽大忽小。
+   空心三角（Issue #55 后续）：这里放大的只是**图标框**，▶ 本身只画轮廓、不填色，
+   它的描边色 = 本键的 `color`，也就是上面那圈 1.5px 描边用的**同一个色值** ——
+   圆环什么颜色，三角就什么颜色，两者永远同色。悬停 / 按下只改这个 `color`，
+   圆环与三角于是同步换色，不会出现「环绿了三角还是白的」。
+   注意：三角路径的 stroke-width 是写在 24 的 viewBox 里的（2.4），
+   缩到 14px 图标框后实际笔画约 1.4px，与外圈 1.5px 的环正好同一量级 ——
+   盒子和笔画都别单独改，改了就不成比例。
+   ⚠️ 别在这里给三角单独指定颜色，也别把它改回 fill。 */
 .today-read svg { display: block; width: var(--today-btn-inner, 14px); height: var(--today-btn-inner, 14px); margin: auto; }
 /* 未播放显示 ▶，播放中显示 ⏸：一个圆形播放键说清全部状态，不再配文字 */
 .today-read .pause-glyph { display: none; }
@@ -1515,6 +1525,7 @@ html, body {
 .item-read svg { display: block; width: 16px; height: 16px; margin: auto; }
 .item-read .play-glyph,
 .item-read .pause-glyph { display: inline-flex; align-items: center; justify-content: center; }
+/* 空心三角同上：描边色取自本条目的 `color`，与圆环描边同源 */
 .item-read .pause-glyph { display: none; }
 .item-read[data-on="1"] .play-glyph { display: none; }
 .item-read[data-on="1"] .pause-glyph { display: inline-flex; }

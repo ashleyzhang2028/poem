@@ -165,6 +165,9 @@
 }
 /* 图标 block 化去掉行内基线留白，flex 里才算真正居中 */
 .gw-play svg { display: block; margin: auto; }
+/* 空心三角（Issue #55 后续）：▶ 只留描边，描边色 = 本键的 `color`，
+   与这圈圆环的 border-color 是同一个值 —— 环什么颜色三角就什么颜色。
+   悬停 / 播放态只改 `color`（见下方各态），圆环与三角因此永远同色。 */
 .gw-play .play-glyph,
 .gw-play .pause-glyph,
 .gw-play .play-glyph-sm { display: inline-flex; align-items: center; justify-content: center; }

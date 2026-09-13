@@ -409,11 +409,20 @@
   /**
    * 列表项右侧的播放键图标（内联 SVG，跨设备一致）
    * 播放中换成「暂停」两竖条：一眼就能看出点它可以停
+   *
+   * ▶ 是**空心描边三角**（Issue #55 后续）：只留轮廓、不填色，
+   * 描边色即外层圆键的 `color`（currentColor）—— 圆环与三角同色，
+   * 与「列表序号空心圆」「折叠箭头空心三角」同一套空心描边语言。
+   * 描边宽 2.4（24 的 viewBox）≈ 圆径的 10%，与 18×18 箭头图标
+   * （stroke-width 1.8）笔画同量级；轮廓较原实心路径内收约 1px，
+   * 缩到 13~19px 时三角与外圈之间才留得住呼吸。
+   * ⚠️ 改这里必须同步 js/classic.js、js/reader.js 与两个 index.html ——
+   * 全站播放键共用同一枚三角。
    */
   function playGlyph() {
     return (
       '<span class="play-glyph" aria-hidden="true">' +
-      '<svg viewBox="0 0 24 24"><path d="M7.2 4.6 19.4 12 7.2 19.4Z" fill="currentColor" stroke="none" /></svg>' +
+      '<svg viewBox="0 0 24 24"><path d="M8.4 6.1 18.3 12 8.4 17.9Z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" /></svg>' +
       "</span>" +
       '<span class="pause-glyph" aria-hidden="true">' +
       '<svg viewBox="0 0 24 24"><path d="M8.2 5h2.9v14H8.2Z M12.9 5h2.9v14h-2.9Z" fill="currentColor" stroke="none" /></svg>' +

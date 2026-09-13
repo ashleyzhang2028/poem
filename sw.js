@@ -69,8 +69,17 @@
  *        外径 42px 不动，只把里面的 ▶ / ⏸ 图形从 19px 图标框收到 14px ——
  *        内径另起一个唯一来源 --today-btn-inner（与 --today-btn-size 分开），
  *        ▶ / ⏸ 同框，两态切换不会忽大忽小（css/style.css）
+ *   v33  **全站播放键的三角形改为空心**（Issue #55 后续）：
+ *        凡「听」的圆键里那颗 ▶ 一律只留描边、不填色，描边色即圆环色
+ *        （currentColor），与「列表序号空心圆 / 折叠箭头空心三角」同一套
+ *        「空心描边」语言；三角轮廓较原实心路径内收 1px，
+ *        描边宽 2.4（24 viewBox）≈ 圆径的 10%，与 18×18 箭头图标
+ *        （stroke-width 1.8）笔画同量级。
+ *        改动落在 index.html、classic/index.html、
+ *        js/app.js（今日条 + 列表项）、js/classic.js（列表项 + 分组小键）、
+ *        js/reader.js（底部播放栏 ▶ / 上一首 / 下一首三枚）
  */
-const CACHE_NAME = "poem-app-v32";
+const CACHE_NAME = "poem-app-v33";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [

@@ -34,9 +34,12 @@
     return document.querySelector(sel);
   }
 
-  /* 图标：全部纯笔画 SVG，颜色跟随文字色 */
+  /* 图标：全部纯笔画 SVG，颜色跟随文字色。
+     ▶ 与「上一首 / 下一首」里的三角同样是**空心描边**（Issue #55 后续）：
+     播放键与页面各处的圆键形态一致，笔画量级也与 18×18 箭头图标对齐。
+     底栏背景是深天青，空心以「淡色笔画」表达，不靠填色块压场。 */
   function iconPlay() {
-    return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.2 4.6 19.4 12 7.2 19.4Z" fill="currentColor" stroke="none"/></svg>';
+    return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.4 6.1 18.3 12 8.4 17.9Z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/></svg>';
   }
   function iconPause() {
     return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.2 5h2.9v14H8.2Z M12.9 5h2.9v14h-2.9Z" fill="currentColor" stroke="none"/></svg>';
@@ -45,10 +48,10 @@
     return '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.6" y="6.6" width="10.8" height="10.8" rx="1.6" fill="currentColor" stroke="none"/></svg>';
   }
   function iconPrev() {
-    return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.4 5h2.3v14H6.4Z M18.6 5.2v13.6L9.6 12Z" fill="currentColor" stroke="none"/></svg>';
+    return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.3 6.1 9.1 12l8.2 5.9Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M7.5 5.6v12.8" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>';
   }
   function iconNext() {
-    return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.3 5h2.3v14h-2.3Z M5.4 5.2 14.4 12l-9 6.8Z" fill="currentColor" stroke="none"/></svg>';
+    return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.7 6.1l8.2 5.9-8.2 5.9Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M16.5 5.6v12.8" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>';
   }
 
   /** 创建播放栏（只创建一次） */

@@ -267,11 +267,15 @@
     });
   }
 
-  /** 列表项右侧的播放键：播放中换成「暂停」两竖条 */
+  /**
+   * 列表项右侧的播放键：播放中换成「暂停」两竖条
+   * ▶ 空心描边三角，描边色即外层圆键的 currentColor（Issue #55 后续），
+   * 与 js/app.js 的 playGlyph 是同一枚三角。
+   */
   function playGlyph() {
     return (
       '<span class="play-glyph" aria-hidden="true">' +
-      '<svg viewBox="0 0 24 24"><path d="M7.2 4.6 19.4 12 7.2 19.4Z" fill="currentColor" stroke="none" /></svg>' +
+      '<svg viewBox="0 0 24 24"><path d="M8.4 6.1 18.3 12 8.4 17.9Z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" /></svg>' +
       "</span>" +
       '<span class="pause-glyph" aria-hidden="true">' +
       '<svg viewBox="0 0 24 24"><path d="M8.2 5h2.9v14H8.2Z M12.9 5h2.9v14h-2.9Z" fill="currentColor" stroke="none" /></svg>' +
@@ -296,7 +300,9 @@
   }
 
   /**
-   * 分组右侧小号圆键里的图标：只有一个 ▶ 三角，笔画细一档。
+   * 分组右侧小号圆键里的图标：只有一个 ▶ 三角。
+   * 与其它档一样是**空心描边**（Issue #55 后续）；只有缩到 26px 的小号档
+   * 单独把三角略放大、笔画略加粗（2.6 / 24），补偿缩小后视觉重量的流失。
    *
    * 它不需要 ⏸ —— 「现在读到哪一篇」由列表里的高亮 + 底部播放栏表达，
    * 分组键偏「从这里开始听」，做成一颗会翻状态的键反而多一层状态要管。
@@ -305,7 +311,7 @@
   function playSmGlyph() {
     return (
       '<span class="play-glyph-sm" aria-hidden="true">' +
-      '<svg viewBox="0 0 24 24"><path d="M8.2 5.4 18.6 12 8.2 18.6Z" fill="currentColor" stroke="none" />' +
+      '<svg viewBox="0 0 24 24"><path d="M9.4 6.6 18 12 9.4 17.4Z" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" />' +
       "</svg></span>"
     );
   }
