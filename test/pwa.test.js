@@ -649,12 +649,17 @@ function check(name, cond, extra) {
     check('iPhone: 序号圆与下方正文左对齐（圆 / 篇名 / 元信息同一条左基准线）',
       numState.numLeft === numState.metaLeft && numState.titleLeft === numState.metaLeft,
       JSON.stringify({ num: numState.numLeft, title: numState.titleLeft, meta: numState.metaLeft }));
-    // 需求（Issue #55 后续）：条目左右内边距对称 —— 序号圆与右侧箭头同宽内缘
-    check('iPhone: 条目左右内边距对称（圆左内缘 = 箭头右内缘）',
-      numState.numLeftInset === numState.arrowRightInset &&
-      numState.padL === numState.padR,
-      JSON.stringify({ numLeft: numState.numLeftInset, arrowRight: numState.arrowRightInset,
-        pad: numState.padL + ' / ' + numState.padR }));
+    // 需求（Issue #55 后续）：内容与卡片左缘的间距只加在**左边** 2px。
+    // 右内边距 8px 不动（那是「卡片右缘 → 播放键 / 箭头」的间距）。
+    // 所以这里不再要求左右相等，而是逐项量：
+    //   · 左内边距 10px、右内边距 8px（左 - 右 = 2px）；
+    //   · 序号圆左内缘仍与右侧箭头右内缘大致同宽（差 ≤ 2px，就是新加的那 2px）。
+    check('iPhone: 条目左内边距 10px、右内边距 8px（只加左侧 2px）',
+      parseFloat(numState.padL) === 10 && parseFloat(numState.padR) === 8,
+      JSON.stringify({ pad: numState.padL + ' / ' + numState.padR }));
+    check('iPhone: 序号圆与右侧箭头内缘只差新加的那 2px（右侧没被一起推走）',
+      Math.abs(numState.numLeftInset - (numState.arrowRightInset + 2)) <= 0.5,
+      JSON.stringify({ numLeft: numState.numLeftInset, arrowRight: numState.arrowRightInset }));
     // 需求（Issue #55 后续）：左侧那道「短竖条」整体隐藏，不再渲染 ::before
     check('iPhone: 左侧短竖条已隐藏（条目不再渲染 ::before 竖条）',
       !numState.barContent || numState.barContent === 'none',

@@ -54,8 +54,11 @@
  *   v28  首页今日条两颗圆的直径再收 4px（46 → 42，Issue #55 后续）：
  *        播放键与 0/5 进度环同读 --today-btn-size，一起缩小、外径仍逐位相等，
  *        中线齐平；SVG 图标尺寸不动（css/style.css）
+ *   v29  小古文索引页列表内容与卡片左缘的间距 +2px（Issue #55 后续）：
+ *        条目左内边距 8 → 10px，右侧仍是 8px、不动 ——
+ *        用户明确要求「只加左侧」（css/classic.css）
  */
-const CACHE_NAME = "poem-app-v28";
+const CACHE_NAME = "poem-app-v29";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [

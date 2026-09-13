@@ -338,12 +338,16 @@ setTimeout(() => {
   chk(!/\.group-card \.item\.in-book::before/.test(classicCssText),
     '课内 / 课外改由序号圆配色与卡头分组名表达（不再有 .in-book::before 绿条）');
 
-  // 需求（Issue #55 后续）：条目左右内边距对称 —— 左侧与右侧保持一样的间隔。
-  // 原先左 16px / 右 8px：左内侧那 16px 是给「序号圆 + 短竖条」腾地方的，
-  // 竖条去掉后不再需要，收成与右侧相同的 8px，条目内容块左右同宽。
+  // 需求（Issue #55 后续）：条目左内边距 8 → 10px —— 列表内容与卡片左缘之间
+  // **只加左侧 2px**；右侧仍是 8px（那是「卡片右缘 → 播放键 / 箭头」的间距，
+  // 用户明确要求不要跟着动）。写成四值 padding 而不是 `12px 10px`，
+  // 就是为了让「只加左边」这件事在源码里看得见：一旦有人顺手改成 `12px 10px`，
+  // 右侧也会被推走 2px，下面的数值断言会红。
   const itemPadBlock = /(^|\n)\.group-card \.item \{([\s\S]*?)\}/.exec(classicCssText);
-  chk(!!itemPadBlock && /padding:\s*12px 8px;/.test(itemPadBlock[2]),
-    '条目左右内边距同为 8px（与右侧播放键 / 箭头同一条内缘）');
+  chk(!!itemPadBlock && /padding:\s*12px 8px 12px 10px;/.test(itemPadBlock[2]),
+    '条目左内边距 10px（+2px）、右内边距仍 8px（只加左侧）');
+  chk(!!itemPadBlock && !/padding:\s*12px 10px;/.test(itemPadBlock[2]),
+    '右侧内边距没有被一起推走（不能写成 12px 10px 的对称写法）');
 
   // 需求（Issue #55 后续）：左侧那道「大竖绿线」必须整条去掉。
   // 根子在全站 .item 遗留的 `border-left: 4px solid`：
@@ -401,9 +405,14 @@ setTimeout(() => {
   // jsdom 不算布局，这条只能在浏览器里核（见 test/pwa.test.js 的同类断言），
   // 这里先从源码确认「没有负外边距」这个前提成立，布局断言交给 PWA 层。
   // 空心描边（border-box）不改变圆的占位宽度，所以与「左对齐」并存、不冲突。
-  const itemPadL = parseInt((itemPadBlock[2].match(/padding:\s*\d+px (\d+)px/) || [, '8'])[1], 10);
-  chk(itemPadL === 8,
-    '条目左内边距 8px：序号圆与右侧播放键 / 箭头同宽内缘（实际 ' + itemPadL + 'px）');
+  const itemPadL = parseInt((itemPadBlock[2].match(/padding:\s*\d+px \d+px \d+px (\d+)px/) || [, '0'])[1], 10);
+  chk(itemPadL === 10,
+    '条目左内边距 10px（在原 8px 基础上 +2px，实际 ' + itemPadL + 'px）');
+  const itemPadR = parseInt((itemPadBlock[2].match(/padding:\s*\d+px (\d+)px/) || [, '0'])[1], 10);
+  chk(itemPadR === 8,
+    '条目右内边距保持 8px 不变（实际 ' + itemPadR + 'px）：本轮只加左侧');
+  chk(itemPadL === itemPadR + 2,
+    '左右差恰好 2px（左 ' + itemPadL + ' / 右 ' + itemPadR + '）：要加的就是这 2px');
 
   // 需求（Issue #55 第三条）：序号圆从独占一列挪进标题行，排在篇名前面。
   const numEls = [...d.querySelectorAll('#gw-list .item-num')];
