@@ -362,24 +362,37 @@ setTimeout(() => {
   chk(!/border:\s*none;/.test(itemPadBlock[2]) || /border-left:\s*none;/.test(itemPadBlock[2]),
     '用 border-left 定向清零，而不是 border: none 一刀切');
 
-  // 需求（Issue #55 后续）：卡内条目的播放键左侧间距再减 12px。
+  // 需求（Issue #55 后续）：卡内条目的播放键左侧间距减到 0，把空档让给正文。
   // 全站 .item 是 flex + gap: 12px，首页今日条只有「正文 ↔ 一颗圆键」一段间隔；
   // 小古文条目右侧是「圆键 + 箭头」两颗图标，同一份 12px 摊在两段上，
   // 播放键被推得比首页远一倍。现在卡内 gap 清零、两个图标各自给外边距：
-  //   正文 … 12px … 圆键 … 6px … 箭头
-  // 再按用户要求把「圆键左侧」这段减去 12px：12 - 12 = 0，圆键左缘落在
-  // 内容块右缘。右侧那 6px（圆键 ↔ 箭头）与箭头贴边一律不动。
+  //   正文 … 0px … 圆键 … 6px … 箭头 …（条目 8px 右内边距）
+  // 播放键左侧**不再用负外边距**（上一轮的 -12px 只会把圆键压到正文上，
+  // 正文一个字都不会变长，见下一条断言）；右侧那 6px（圆键 ↔ 箭头）一律不动。
   chk(!!itemPadBlock && /gap:\s*0;/.test(itemPadBlock[2]),
     '卡内条目列距清零（改由播放键 / 箭头各自的外边距给间距）');
   chk(!/gap:\s*12px/.test(itemPadBlock[2].replace(/\/\*[\s\S]*?\*\//g, ' ')),
     '卡内条目不再沿用全站 12px 列距（三样盒子之间不再各留 12px）');
   const itemReadBlock = /(^|\n)\.group-card \.item-read \{([\s\S]*?)\}/.exec(classicCssText);
-  chk(!!itemReadBlock && /margin-left:\s*-12px;/.test(itemReadBlock[2]),
-    '播放键左侧间距在原 12px 上再减 12px（margin-left: -12px，圆键左缘贴内容块右缘）');
+  chk(!!itemReadBlock && /margin-left:\s*0;/.test(itemReadBlock[2]),
+    '播放键左侧间距归零（不再用负外边距把圆键压到正文上）');
+  chk(!!itemReadBlock && !/margin-left:\s*-/.test(itemReadBlock[2]),
+    '播放键左侧没有负外边距（负值只会让圆键压住正文，正文不会变长）');
   chk(!!itemReadBlock && /margin-right:\s*6px;/.test(itemReadBlock[2]),
     '播放键右侧（与箭头之间）保持 6px 不动');
   chk(!/^\.item \{[^}]*gap:\s*0/m.test(classicCssText),
     '全站 .item 的 12px 列距不动（首页没有这颗圆键，不该跟着改）');
+
+  // 需求（Issue #55 后续）：左侧正文的宽度真的放开。
+  // 这一条是本轮的正主：只把播放键的间距改小**不会**让正文变长 ——
+  // 内容块是全站那句 `flex: 1 1 0%`（flex 增长项），宽度只由「条目宽 − 两侧图标
+  // − 列距 − 内边距」分配而来，与内容宽度无关。要真正放开，必须把内容块改成
+  // 「按内容取宽」，并把播放键左侧那段空档交给正文占用。
+  const mainBlock = /(^|\n)#gw-list \.group-card \.item-main \{([\s\S]*?)\}/.exec(classicCssText);
+  chk(!!mainBlock && /flex:\s*0 1 auto;/.test(mainBlock[2]),
+    '小古文卡内内容块按内容取宽（flex: 0 1 auto，不再是全站的增长项 1 1 0%）');
+  chk(!!mainBlock && !/flex:\s*0 0 auto;/.test(mainBlock[2]),
+    '内容块不写 flex: 0 0 auto（自动宽 + 摘要 ellipsis 两次布局互相依赖，会退回最小宽）');
 
   // 需求（Issue #55 后续）：序号圆与下方正文左对齐。
   // 此前标题行带 `margin-left: -12px`，把序号圆（连同整个标题行）左移 12px、

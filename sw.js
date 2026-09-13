@@ -60,8 +60,13 @@
  *   v30  小古文条目的播放键左侧间距再减 12px（Issue #55 后续）：
  *        卡内 gap 清零，改由两颗图标各自给外边距 —— 圆键左缘贴内容块右缘
  *        （12 - 12 = 0），与箭头之间仍是 6px（css/classic.css）
+ *   v31  小古文条目的正文宽度放开（Issue #55 后续）：
+ *        去掉播放键的 margin-left:-12px（负外边距只会把圆键压到正文上，
+ *        正文一个字都不会变长）；内容块由 flex: 1 1 0% 改成 flex: 0 1 auto，
+ *        宽屏下按内容取宽、摘要在自身宽度用完处结束，正文一路排到播放键跟前；
+ *        窄屏下圆键左缘与正文那一行的可用宽度分毫不动（css/classic.css）
  */
-const CACHE_NAME = "poem-app-v30";
+const CACHE_NAME = "poem-app-v31";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [
