@@ -290,6 +290,24 @@ setTimeout(() => {
   chk(!randomBtn.classList.contains('toolbar-read'), '不再使用旧的 toolbar-read 专属样式');
   chk(!/\.seg-toggle/.test(barCss), '样式表里不再留 .seg-toggle 僵尸规则');
 
+  // 需求（Issue #55）：工具栏（搜索框那一排）与下面第一个分组标题「蒙学经典」
+  // 之间的空档太大 —— 页首像缺了一行。收紧来源是两处：
+  //   .toolbar 的 margin-bottom  14 → 6px
+  //   .group-head 的上内边距      14 → 12px
+  // 合计 18px，与「分组标题 → 首条」「条目 → 条目」的 10px 级间距同一量级。
+  // 为什么页首那一半写在 .toolbar 上、而不是把 .group-head 的 padding 压得更狠：
+  //   .group-head 的 padding 同时管着「分组接分组」的那道间隔，压它会连带
+  //   挤掉后面每个分组的呼吸；页首专属的间距就该写在页首专属的元素上。
+  const headPad = (barCss.match(/\.group-head \{([^}]*)\}/) || [, ''])[1];
+  chk(/\.toolbar \{[^}]*margin-bottom:\s*6px/.test(barCss),
+    '工具栏下边距收到 6px（页首专属，原 14px：与标题上内边距相加 28px 太大）');
+  chk(/padding:\s*12px 2px 8px/.test(headPad),
+    '分组标题上内边距收到 12px（原 14px），与工具栏下边距合计 18px');
+  chk(!/margin-bottom:\s*14px/.test(barCss.match(/\.toolbar \{([^}]*)\}/)[1]),
+    '工具栏不再保留旧的 14px 下边距');
+  chk(!/padding:\s*14px 2px 8px/.test(headPad),
+    '分组标题不再保留旧的 14px 上内边距');
+
   // 需求：工具栏三样（搜索框 / 全部·未读组合 / 连读圆键）高度必须一致。
   // 组合的高度由「内层按钮 + 内边距 + 描边」叠出，曾因全局 .seg.mini button 的
   // 5px 垂直 padding 只有 37px，比搜索框与「连读」（40px）矮一截；

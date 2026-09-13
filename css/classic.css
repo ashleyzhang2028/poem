@@ -43,7 +43,11 @@
   display: flex;
   gap: 8px;
   align-items: center;
-  margin-bottom: 14px;
+  /* 与下面的第一个分组标题同属「页首」，贴着走：
+     标题自身还有 12px 上内边距，两段相加 18px —— 与「分组标题 → 首条」
+     「条目 → 条目」的 10px 级间距同一量级，页首不再空出一大块。
+     原先这里给 14px（合计 28px），搜索框与「蒙学经典」之间像缺了一行。 */
+  margin-bottom: 6px;
 }
 /* 「全部 / 未读」组合按钮：与「不注音 / 生字 / 全文」共用一套外观
    --------------------------------------------------------------------------
@@ -158,7 +162,9 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 14px 2px 8px;
+  /* 上内边距 14 → 12px：与工具栏底边合计约 18px（详见 .toolbar 的 margin-bottom）。
+     组内条目之间已有 .list 的 10px 行距，分组标题不必再留出比条目间距更大的空档。 */
+  padding: 12px 2px 8px;
 }
 .group-name { font-size: 14px; font-weight: 700; color: var(--ink); }
 .group-count { font-size: 11.5px; color: var(--ink-2); }

@@ -27,7 +27,9 @@
  *        ▶ / ⏸ 同键两态、不再有随状态改写的可见文字
  *        （classic/index.html、css/classic.css、js/classic.js）
  *   v24  字号在最细处再补一档 13px（Issue #55）：默认档仍是 17px 不变，
- *        A－ 在 15px 之下还能再多点一次（js/app.js、js/classic.js）
+ *        A－ 在 15px 之下还能再多点一次（js/app.js、js/classic.js）；
+ *        小古文页首收紧：搜索框与第一个分组标题之间的空档由 28px 收到 18px
+ *        （.toolbar 的 margin-bottom 与 .group-head 的上内边距各让一点）
  */
 const CACHE_NAME = "poem-app-v24";
 
