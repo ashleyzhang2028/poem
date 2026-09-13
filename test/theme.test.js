@@ -407,6 +407,13 @@ chk(/id="seg-helper"/.test(readerBlock), '「阅读辅助」组含注音总开�
 chk(/\.settings-group-title\s*\{[\s\S]{0,300}?letter-spacing/.test(css),
   '分组标题用字距拉开，与组内选项区分（命中 .settings-group-title 样式）');
 chk(/\.settings-group-title::after/.test(css), '分组标题右侧有收尾细线（::after）');
+// 需求（本次）：分组标题字号不再偏大；二级描述（.settings-group-desc）已彻底移除
+const titleSize = (css.match(/\.settings-group-title\s*\{([\s\S]{0,300}?)\}/) || ['', ''])[1];
+const fsMatch = titleSize.match(/font-size:\s*([\d.]+)px/);
+chk(!!fsMatch && parseFloat(fsMatch[1]) <= 12,
+  '分组标题字号已调小（≤12px，实际 ' + (fsMatch ? fsMatch[1] + 'px' : '未取到') + '）');
+chk(!/\.settings-group-desc/.test(css), '样式里不再保留二级描述 .settings-group-desc');
+chk(!/settings-group-desc/.test(settingsHtml), '设置页 HTML 里不再有二级描述节点');
 
 // 需求：设置页底部不被底部导航栏遮挡 —— 统一由 --nav-h 这条基准线决定
 chk(/--nav-h:\s*0px/.test(css), '定义了底部导航栏高度变量 --nav-h');

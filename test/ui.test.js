@@ -164,9 +164,9 @@ setTimeout(() => {
   const groupTitles = setGroups.map(g => (g.querySelector('.settings-group-title') || {}).textContent);
   chk(groupTitles.join('/') === '通用/古诗词背诵/阅读辅助',
     '分组顺序与标题正确：' + groupTitles.join(' / '));
-  // 每个分组要有自己的说明，且标题、说明与选项都在同一组内
-  chk(setGroups.every(g => g.querySelector('.settings-group-desc')),
-    '每组都有说明文字（说清这组管什么）');
+  // 需求（本次）：分组标题下的二级描述全部删除，标题下方直接就是选项
+  chk(setGroups.every(g => !g.querySelector('.settings-group-desc')),
+    '每个分组都不再有二级描述文字');
   const grpOf = sel => {
     const el = sd.querySelector(sel);
     const own = el && el.closest('.settings-group');

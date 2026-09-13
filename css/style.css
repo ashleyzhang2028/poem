@@ -782,7 +782,7 @@ body.has-install-tip #app {
   align-items: center;
   gap: 10px;
   margin: 0;
-  font-size: 13px;
+  font-size: 11.5px;
   font-weight: 600;
   letter-spacing: .16em;
   color: var(--green-dark);
@@ -794,13 +794,7 @@ body.has-install-tip #app {
   height: 1px;
   background: linear-gradient(to right, rgba(214, 178, 106, .55), rgba(214, 178, 106, 0));
 }
-.settings-group-desc {
-  margin: 6px 0 0;
-  font-size: 11.5px;
-  line-height: 1.6;
-  color: var(--ink-3);
-}
-/* 组的第一项紧贴说明文字，别再多出一截空白 */
+/* 组的第一项紧贴标题，别再多出一截空白 */
 .settings-group > .settings-item:first-of-type { margin-top: 14px; }
 
 /* 页脚：推到页面最底，且与正文之间留一段呼吸间距 */
