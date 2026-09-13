@@ -22,6 +22,11 @@ CLS.forEach(p => {
 });
 chk(true, '小古文 id 无重复');
 chk(CLS.every(p => p.title && p.source && p.text && p.translation), '每篇都有 标题/出处/原文/译文');
+// 译文来源标注：小古文多为先秦诸子与史传，原文属公有领域，据此整理为白话直译。
+// 不能一篇没有 —— 没有标注，用户就不知道译文是怎么来的（见 README「译文的取舍标准」）
+chk(CLS.every(p => p.translationSource === 'public-domain'),
+  '100 篇小古文都标了译文来源 public-domain（未标 ' +
+  CLS.filter(p => !p.translationSource).length + ' 篇）');
 chk(CLS.some(p => p.text.length > 100), '含长篇（>100 字）古文，验证长文场景');
 
 // 需求清单里的篇目必须在库中（抽查关键篇目）
@@ -244,6 +249,11 @@ setTimeout(() => {
   chk(d.querySelectorAll('[id="rd-trans-text"]').length === 1, 'id rd-trans-text 唯一，不与按钮读屏文案冲突');
   chk(d.querySelector('#rd-trans-toggle-text').textContent === '收起译文', '读屏文案同步为「收起译文」');
   chk(d.querySelector('#rd-trans-text').textContent.length > 20, '白话译文段落有内容（不空白）');
+  // 译文框下方照实显示来源口径 —— 用户看得见「这段译文是怎么来的」
+  const srcEl = d.querySelector('#rd-trans-src');
+  chk(!!srcEl, '译文框有来源注脚元素 #rd-trans-src');
+  chk(srcEl && /公有领域|通行译注/.test(srcEl.textContent),
+    '阅读器照实显示小古文译文的来源：' + (srcEl ? srcEl.textContent : ''));
 
   // 标记已读
   d.querySelector('#gw-done').dispatchEvent(new window.Event('click', { bubbles: true }));

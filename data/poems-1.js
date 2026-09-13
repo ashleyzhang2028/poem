@@ -8,7 +8,8 @@ window.POEMS_1 = [
     grade: 1,
     term: 1,
     text: "鹅，鹅，鹅，\n曲项向天歌。\n白毛浮绿水，\n红掌拨清波。",
-    translation: "鹅呀鹅呀鹅，弯着脖子朝天上唱歌。雪白的羽毛浮在绿水上，红色的脚掌拨动清清的水波。"
+    translation: "鹅呀鹅呀鹅，弯着脖子朝天上唱歌。雪白的羽毛浮在绿水上，红色的脚掌拨动清清的水波。",
+    translationSource: "school",
   },
   {
     id: "xx1-02",
@@ -18,7 +19,8 @@ window.POEMS_1 = [
     grade: 1,
     term: 1,
     text: "江南可采莲，莲叶何田田。\n鱼戏莲叶间。\n鱼戏莲叶东，鱼戏莲叶西，\n鱼戏莲叶南，鱼戏莲叶北。",
-    translation: "江南可以采莲，莲叶长得多么茂盛。鱼儿在莲叶间嬉戏：一会儿游到莲叶东边，一会儿西边，一会儿南边，一会儿北边。"
+    translation: "江南可以采莲，莲叶长得多么茂盛。鱼儿在莲叶间嬉戏：一会儿游到莲叶东边，一会儿西边，一会儿南边，一会儿北边。",
+    translationSource: "school",
   },
   {
     id: "xx1-03",
@@ -28,7 +30,8 @@ window.POEMS_1 = [
     grade: 1,
     term: 1,
     text: "远看山有色，近听水无声。\n春去花还在，人来鸟不惊。",
-    translation: "远远看去山有颜色，走近去听水没有声音。春天过去了花儿还开着，人走过来鸟儿也不惊飞。（这是一幅画。）"
+    translation: "远远看去山有颜色，走近去听水没有声音。春天过去了花儿还开着，人走过来鸟儿也不惊飞。（这是一幅画。）",
+    translationSource: "school",
   },
   {
     id: "xx1-04",
@@ -38,7 +41,8 @@ window.POEMS_1 = [
     grade: 1,
     term: 1,
     text: "锄禾日当午，汗滴禾下土。\n谁知盘中餐，粒粒皆辛苦。",
-    translation: "农民正午在烈日下锄地，汗水滴进禾苗下的泥土。谁知道碗里的饭食，每一粒都饱含辛苦。"
+    translation: "农民正午在烈日下锄地，汗水滴进禾苗下的泥土。谁知道碗里的饭食，每一粒都饱含辛苦。",
+    translationSource: "school",
   },
   {
     id: "xx1-05",
@@ -48,7 +52,8 @@ window.POEMS_1 = [
     grade: 1,
     term: 1,
     text: "小时不识月，呼作白玉盘。\n又疑瑶台镜，飞在青云端。",
-    translation: "小时候不认识月亮，把它叫做白玉盘；又怀疑它是瑶台上的镜子，飞到青云之上去了。"
+    translation: "小时候不认识月亮，把它叫做白玉盘；又怀疑它是瑶台上的镜子，飞到青云之上去了。",
+    translationSource: "school",
   },
   {
     id: "xx1-06",
@@ -58,7 +63,8 @@ window.POEMS_1 = [
     grade: 1,
     term: 2,
     text: "解落三秋叶，能开二月花。\n过江千尺浪，入竹万竿斜。",
-    translation: "风能吹落深秋的树叶，也能吹开二月的鲜花；过江时掀起千尺巨浪，进竹林时吹得万竿竹子倾斜。"
+    translation: "风能吹落深秋的树叶，也能吹开二月的鲜花；过江时掀起千尺巨浪，进竹林时吹得万竿竹子倾斜。",
+    translationSource: "school",
   },
   {
     id: "xx1-07",
@@ -68,7 +74,8 @@ window.POEMS_1 = [
     grade: 1,
     term: 2,
     text: "春眠不觉晓，处处闻啼鸟。\n夜来风雨声，花落知多少。",
-    translation: "春天睡得香甜，不知不觉天就亮了，处处听到鸟儿的鸣叫。回想夜里风雨的声音，不知落了多少花。"
+    translation: "春天睡得香甜，不知不觉天就亮了，处处听到鸟儿的鸣叫。回想夜里风雨的声音，不知落了多少花。",
+    translationSource: "school",
   },
   {
     id: "xx1-08",
@@ -78,7 +85,8 @@ window.POEMS_1 = [
     grade: 1,
     term: 2,
     text: "李白乘舟将欲行，忽闻岸上踏歌声。\n桃花潭水深千尺，不及汪伦送我情。",
-    translation: "李白乘船正要出发，忽然听到岸上传来踏歌相送的声音。桃花潭水纵有千尺深，也比不上汪伦送我的这份情谊。"
+    translation: "李白乘船正要出发，忽然听到岸上传来踏歌相送的声音。桃花潭水纵有千尺深，也比不上汪伦送我的这份情谊。",
+    translationSource: "school",
   },
   {
     id: "xx1-09",
@@ -88,7 +96,8 @@ window.POEMS_1 = [
     grade: 1,
     term: 2,
     text: "床前明月光，疑是地上霜。\n举头望明月，低头思故乡。",
-    translation: "床前洒着一片明月的光，疑心是地上结的霜。抬头望着明月，低下头就想起了故乡。"
+    translation: "床前洒着一片明月的光，疑心是地上结的霜。抬头望着明月，低下头就想起了故乡。",
+    translationSource: "school",
   },
   {
     id: "xx1-10",
@@ -98,7 +107,8 @@ window.POEMS_1 = [
     grade: 1,
     term: 2,
     text: "松下问童子，言师采药去。\n只在此山中，云深不知处。",
-    translation: "在松树下问小童师父去哪儿了，他说师父采药去了。就在这座山里，云雾深深不知在何处。"
+    translation: "在松树下问小童师父去哪儿了，他说师父采药去了。就在这座山里，云雾深深不知在何处。",
+    translationSource: "school",
   },
   {
     id: "xx1-11",
@@ -108,7 +118,8 @@ window.POEMS_1 = [
     grade: 1,
     term: 2,
     text: "小娃撑小艇，偷采白莲回。\n不解藏踪迹，浮萍一道开。",
-    translation: "小孩子撑着小船，偷偷采了白莲回来。他不懂得掩藏行迹，水面浮萍被划开一道痕。"
+    translation: "小孩子撑着小船，偷偷采了白莲回来。他不懂得掩藏行迹，水面浮萍被划开一道痕。",
+    translationSource: "school",
   },
   {
     id: "xx1-12",
@@ -118,7 +129,8 @@ window.POEMS_1 = [
     grade: 1,
     term: 2,
     text: "泉眼无声惜细流，树阴照水爱晴柔。\n小荷才露尖尖角，早有蜻蜓立上头。",
-    translation: "泉眼悄悄流着，像是舍不得那一线细流；树阴映在水面，喜爱这晴天的柔和。嫩荷才露出尖尖的角，早有一只蜻蜓立在上头。"
+    translation: "泉眼悄悄流着，像是舍不得那一线细流；树阴映在水面，喜爱这晴天的柔和。嫩荷才露出尖尖的角，早有一只蜻蜓立在上头。",
+    translationSource: "school",
   },
   {
     id: "xx1-13",
@@ -128,6 +140,7 @@ window.POEMS_1 = [
     grade: 1,
     term: 2,
     text: "头上红冠不用裁，\n满身雪白走将来。\n平生不敢轻言语，\n一叫千门万户开。",
-    translation: "头上的红冠不用裁剪，一身雪白走过来。平时不敢轻易开口，一叫起来千门万户都打开。"
+    translation: "头上的红冠不用裁剪，一身雪白走过来。平时不敢轻易开口，一叫起来千门万户都打开。",
+    translationSource: "school",
   }
 ];

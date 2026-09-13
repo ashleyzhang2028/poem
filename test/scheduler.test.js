@@ -29,6 +29,66 @@ const ids = new Set();
 sandbox.POEMS_ALL.forEach(p => { if (ids.has(p.id)) throw new Error('重复 id ' + p.id); ids.add(p.id); });
 assert(true, '诗词 id 无重复');
 
+// 1.0 白话译文：全库 273 首必须首首有译文，且不能敷衍
+//     （回归：#44 反馈「很多古诗词缺白话译文」，此前初高中几乎全缺）
+const plain = s => String(s || '').replace(/\s/g, '');
+const noTrans = sandbox.POEMS_ALL.filter(p => !plain(p.translation));
+assert(noTrans.length === 0,
+  '全库译文齐全（缺 ' + noTrans.length + ' 首：' + noTrans.map(p => p.id).join(',') + '）');
+// 短诗译文不该比原文还短；长词与文言文留 0.7 的余量
+const thinTrans = sandbox.POEMS_ALL.filter(p => {
+  const tl = plain(p.translation).length, xl = plain(p.text).length;
+  const need = xl <= 40 ? 0.9 : xl <= 120 ? 0.85 : 0.7;
+  return tl < 20 || tl < xl * need;
+});
+assert(thinTrans.length === 0,
+  '没有译文过短的篇目（可疑 ' + thinTrans.length + ' 首：' + thinTrans.map(p => p.id).join(',') + '）');
+// 译文不能直接抄原文
+const copyTrans = sandbox.POEMS_ALL.filter(p => plain(p.translation) === plain(p.text));
+assert(copyTrans.length === 0, '译文中没有与原文完全相同的（' + copyTrans.map(p => p.id).join(',') + '）');
+// 抽样核对几首新补的译文内容，防止填错位置
+const trOf = t => sandbox.POEMS_ALL.filter(p => p.title === t).map(p => p.translation);
+assert(trOf('题西林壁').length && trOf('题西林壁').every(t => t.includes('庐山')),
+  '《题西林壁》译文点出「庐山」');
+assert(trOf('岳阳楼记').every(t => t.includes('先天下之忧而忧') || t.includes('天下人忧愁')),
+  '《岳阳楼记》译文含「先天下之忧而忧」的名句意译');
+assert(trOf('琵琶行').every(t => t.includes('天涯')), '《琵琶行》译文含「同是天涯沦落人」');
+assert(trOf('琵琶行并序').length === 0 || trOf('琵琶行并序').every(t => t.includes('浔阳江')),
+  '《琵琶行并序》译文含「浔阳江」');
+
+// 1.0b 译文来源标注：白话译诗没有法定教科书版本，本库译文是自拟直译，
+//      所以每一首都必须说清口径 —— 不能含糊宣称「以教师用书为准」。
+//      （回归：曾有 197 首译文补齐时只在 README 里写了句不可验证的声明）
+const SRC_KEYS = Object.keys(sandbox.TRANSLATION_SOURCES || {});
+assert(SRC_KEYS.length === 4, '译文来源口径共 4 类（实际 ' + SRC_KEYS.join('/') + '）');
+const noSrc = sandbox.POEMS_ALL.filter(p => !plain(p.translation) ? false : !p.translationSource);
+assert(noSrc.length === 0,
+  '全库每首译文都标了来源（缺 ' + noSrc.length + ' 首：' + noSrc.map(p => p.id).join(',') + '）');
+const badSrc = sandbox.POEMS_ALL.filter(p => p.translationSource && SRC_KEYS.indexOf(p.translationSource) < 0);
+assert(badSrc.length === 0,
+  '译文来源取值都在允许范围（异常 ' + badSrc.length + ' 首：' + badSrc.map(p => p.id + ':' + p.translationSource).join(',') + '）');
+// 界面上要真的能取到文案，不能只在数据里躺着
+assert(sandbox.POEMS_ALL.every(p => (sandbox.translationSourceText(p) || '').length > 10),
+  '每首都取得到一句可读的来源说明（译文框下方会照实显示）');
+// 口径要实事求是：谁都不能标成「公共领域」（课内诗词的作者都还在著作权保护内，
+// 或原文本身是课内篇目），现代作品也不能一律靠 school 混过去
+assert(sandbox.POEMS_ALL.every(p => p.translationSource !== 'public-domain'),
+  '课内诗词不得标 public-domain（公有领域只用于小古文一类的古代文本整理）');
+assert(sandbox.POEMS_ALL.filter(p => p.dynasty !== '现代').every(p => p.translationSource !== 'modern'),
+  '非现代作品不得标 modern');
+// 现代作品要分开看：初高中那几首需要通行的创作背景与讲法 → modern；
+// 小学课内的毛泽东诗词只讲字面、与课本口径一致 → school，不算错
+const MODERN_SET = ['沁园春·雪', '我爱这土地', '乡愁', '沁园春·长沙'];
+assert(sandbox.POEMS_ALL.filter(p => MODERN_SET.indexOf(p.title) > -1)
+  .every(p => p.translationSource === 'modern'),
+  '初高中现代作品（' + MODERN_SET.join(' / ') + '）标 modern，不冒充公有领域也不含糊说课内');
+assert(sandbox.POEMS_ALL.filter(p => p.dynasty === '现代' && MODERN_SET.indexOf(p.title) < 0)
+  .every(p => p.translationSource === 'school'),
+  '小学课内的毛泽东诗词标 school（译文只讲字面，与小学课本口径一致）');
+assert(sandbox.POEMS_ALL.filter(p => p.title === '观沧海' || p.title === '琵琶行并序')
+  .every(p => p.translationSource === 'academic'),
+  '鉴赏辞典收录的名家名篇标 academic（观沧海 / 琵琶行并序）');
+
 // 1.1 小学篇目：按 2025 比对清单补齐的 31 首，必须落在标注的年级学期上
 const gradeCount = g => sandbox.POEMS_ALL.filter(p => p.grade === g).length;
 assert([1,2,3,4,5,6].map(gradeCount).reduce((a,b)=>a+b,0) === 122,
