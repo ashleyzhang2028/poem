@@ -283,8 +283,7 @@ setTimeout(() => {
     '卡内条目去掉各自的阴影（合并进卡片后不再是 100 张独立卡片）');
 
   // 需求（Issue #55）：左侧曾同时出现**两道竖条** —— 卡片左边缘那道「大竖条」
-  // （.group-card 左右 4px 留白把条目短竖条衬成了两块绿）与条目自己的短竖条
-  // 并排，看着完全重复。本次：
+  // 与条目自己的短竖条并排，看着完全重复。本次：
   //   1) 去掉 .group-card 的左右 4px 留白（大竖条消失）；
   //   2) 条目短竖条 3px → 1px；
   //   3) 1px 线挪到 left:2px，与序号圆之间留出间隙。
@@ -296,10 +295,36 @@ setTimeout(() => {
   chk(!!barBlock && /width:\s*1px;/.test(barBlock[2]),
     '条目短竖条宽 1px（原 3px 像一道色块）');
   chk(!!barBlock && /left:\s*2px;/.test(barBlock[2]),
-    '短竖条落在 left:2px：与卡片左缘留 2px，与序号圆左缘（内边距 4px）留出间隙');
+    '短竖条落在 left:2px：与卡片左缘留 2px，与序号圆左缘之间留出间隙');
   const itemPadBlock = /(^|\n)\.group-card \.item \{([\s\S]*?)\}/.exec(classicCssText);
-  chk(!!itemPadBlock && /padding:\s*12px 8px 12px 4px;/.test(itemPadBlock[2]),
-    '条目左内边距 4px：内容起点与卡头文字仍对齐，1px 线在内容外侧');
+  chk(!!itemPadBlock && /padding:\s*12px 8px 12px 14px;/.test(itemPadBlock[2]),
+    '条目左内边距 14px：序号圆整体右移，1px 线与序号圆之间留出可见间隙');
+
+  // 需求（Issue #55 后续）：左侧那道「大竖绿线」还在，必须整条去掉。
+  // 根子不在 .group-card 的留白，而在全站 .item 遗留的 `border-left: 4px solid`：
+  // 100 篇合成一张卡片后，7 张卡的小绿条首尾紧贴卡片上下缘，各自连成一道
+  // 贯穿整张卡片左边缘的竖线（用户看到的「左侧一整条大竖绿线」）。
+  // 这里同时锁住「卡内条目左边框清零」与「前缀只允许 border-left: none」——
+  // 不能写成 `border: none`，那会把条目之间那条细分隔线（border-top）一起抹掉。
+  chk(!!itemPadBlock && /border-left:\s*none;/.test(itemPadBlock[2]),
+    '卡内条目左边框清零（那一整道大竖绿线就是它连成的）');
+  chk(!!itemPadBlock && /border-top:\s*1px solid var\(--line\);/i.test(itemPadBlock[2]),
+    '条目之间的细分隔线保留（清零的只是左边框）');
+  chk(!/border:\s*none;/.test(itemPadBlock[2]) || /border-left:\s*none;/.test(itemPadBlock[2]),
+    '用 border-left 定向清零，而不是 border: none 一刀切');
+
+  // 间隙 = 序号圆左缘（内边距 14px）－ 短竖条右缘（left 2px + width 1px）= 11px。
+  // 直接按数值算一遍：只要有人把内边距压回 4px 或把线挪到圆边上，这条就会红。
+  const barLeft = parseInt((barBlock[2].match(/left:\s*(\d+)px/) || [, '0'])[1], 10);
+  const barW = parseInt((barBlock[2].match(/width:\s*(\d+)px/) || [, '0'])[1], 10);
+  const itemPadLeft = parseInt((itemPadBlock[2].match(/padding:\s*\d+px \d+px \d+px (\d+)px/) || [, '0'])[1], 10);
+  chk(itemPadLeft - (barLeft + barW) >= 8,
+    '短竖条与序号圆之间至少留 8px 间隙（实际 ' + (itemPadLeft - (barLeft + barW)) + 'px）');
+  // ⚠️ 只看 `border-left: none` 还会被「注释里写着 border-left: 4px」骗过去，
+  // 所以先把注释剥掉再查：规则体里不能再出现任何 4px 的左边框。
+  const itemRules = itemPadBlock[2].replace(/\/\*[\s\S]*?\*\//g, ' ');
+  chk(!/border-left:\s*4px/.test(itemRules) && !/border-left-color/.test(itemRules),
+    '卡内条目规则体里不再出现 4px 左侧色条（注释里提到不算）');
 
   // 需求 6：列表每项右侧是播放键（不再是喇叭）
   chk(d.querySelectorAll('#gw-list .item-read').length === 100, '每个列表项都有播放按钮');

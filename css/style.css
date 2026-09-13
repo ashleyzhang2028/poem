@@ -190,7 +190,19 @@ html, body {
 }
 .today-title { font-size: 16px; font-weight: 600; }
 .today-sub { font-size: 12.5px; opacity: .88; }
-.ring { position: relative; width: 54px; height: 54px; }
+.ring {
+  /* 直径与左侧「朗读（全部）」圆形播放键一致（Issue #55）：
+     两颗圆并排在同一行，一大一小看着像没对齐。
+     尺寸不写死数值，直接读 .today-read 用同一个来源，避免再被单独改动。
+     ⚠️ min-height 归零：.today-bar 是 align-items: center 的 flex 行，
+     「下限 + height」在 jsdom / 真实浏览器里都可能被内容或行高拉高，
+     那样宽高不再相等，圆环会被压成椭圆（与 .icon-row 那枚圆键同一条教训）。 */
+  position: relative;
+  flex: none;
+  width: var(--today-btn-size, 46px);
+  height: var(--today-btn-size, 46px);
+  min-height: 0;
+}
 .ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
 .ring path { fill: none; stroke-width: 3; stroke-linecap: round; }
 .ring-bg { stroke: rgba(255, 255, 255, .28); }
@@ -1386,10 +1398,14 @@ html, body {
   align-items: center;
   gap: 12px;
   flex: none;
+  /* 这一行两颗圆的统一尺寸（Issue #55）：
+     左侧播放键与右侧进度环直径必须一致，所以尺寸只在这里声明一次，
+     两边都读同一个变量 —— 想再调整时只改这一处，不会再走散。 */
+  --today-btn-size: 46px;
 }
 .today-read {
-  width: 46px;
-  height: 46px;
+  width: var(--today-btn-size);
+  height: var(--today-btn-size);
   border-radius: 50%;
   border: 1.5px solid rgba(240, 205, 124, .62);
   background: rgba(253, 248, 234, .12);
