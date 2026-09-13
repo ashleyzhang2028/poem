@@ -109,12 +109,13 @@
    *   /tangshi/    唐诗三百首
    *   /songci/     宋词三百首
    *   /guwen/      古文观止
+   *   /zhaoming/   昭明文选
    *   /search/     全站搜索
    *   /settings/   设置
    *   /terms/      用户协议
    *   /privacy/    隐私条款
    *
-   * 四部集子不再各自占一个页签（页签只有两三个字，装不下书名），
+   * 五部集子不再各自占一个页签（页签只有两三个字，装不下书名），
    * 而是统一从 /library/ 进；页面名仍按各页 body 上的 data-page 显示，
    * 所以从入口页点进《古文观止》，顶栏第一行照样写「跬步 · 古文观止」。
    *
@@ -128,6 +129,7 @@
     tangshi: "/tangshi/",
     songci: "/songci/",
     guwen: "/guwen/",
+    zhaoming: "/zhaoming/",
     search: "/search/",
     settings: "/settings/",
     terms: "/terms/",
@@ -167,6 +169,7 @@
     if (/^\/tangshi\/?$/.test(p) || /^\/tangshi\/index\.html$/.test(p)) return "tangshi";
     if (/^\/songci\/?$/.test(p) || /^\/songci\/index\.html$/.test(p)) return "songci";
     if (/^\/guwen\/?$/.test(p) || /^\/guwen\/index\.html$/.test(p)) return "guwen";
+    if (/^\/zhaoming\/?$/.test(p) || /^\/zhaoming\/index\.html$/.test(p)) return "zhaoming";
     if (/^\/settings\/?$/.test(p) || /^\/settings\/index\.html$/.test(p)) return "settings";
     return "home";
   }
@@ -275,6 +278,7 @@
     if (k === "tangshi") return "唐诗三百首";
     if (k === "songci") return "宋词三百首";
     if (k === "guwen") return "古文观止";
+    if (k === "zhaoming") return "昭明文选";
     return "";
   }
 
@@ -290,30 +294,31 @@
    *
    * 上一版是三个：「古诗词 / 小古文 / 设置」。问题有两处 ——
    *   1. 当年只有小古文一部集子，页签写「小古文」还算如实；
-   *      唐诗、宋词、古文观止做完之后，它们**一个入口都没有**，
+   *      唐诗、宋词、古文观止、昭明文选做完之后，它们**一个入口都没有**，
    *      只能靠手敲地址进。
    *   2. 「古诗词」这个名字也不准：那一页管的是课内背诵与遗忘曲线复习，
    *      与「课外读」是两回事。
-   * 现在改成：背诵（课内，按遗忘曲线安排复习）｜课外（四部集子入口）
+   * 现在改成：背诵（课内，按遗忘曲线安排复习）｜课外（五部集子入口）
    * ｜搜索（全站篇目）｜设置。四格在窄屏上仍是一行放得下（每格 ≥75px）。
    *
    * 页签与「当前页」的对应关系（pageKey）：
    *   /            → home
    *   /library/    → library
-   *   /classic/ /tangshi/ /songci/ /guwen/ → 都算「课外」这一格选中
+   *   /classic/ /tangshi/ /songci/ /guwen/ /zhaoming/ → 都算「课外」这一格选中
    *   /search/     → search
    *   /settings/   → settings
    */
   var DOCK_ITEMS = [
     { key: "home", href: "/", icon: GLYPHS.tabPoem, label: "背诵", desc: "课内古诗词，按遗忘曲线安排复习" },
-    { key: "library", href: "/library/", icon: GLYPHS.tabLibrary, label: "课外", desc: "小古文 / 唐诗 / 宋词 / 古文观止" },
+    { key: "library", href: "/library/", icon: GLYPHS.tabLibrary, label: "课外", desc: "小古文 / 唐诗 / 宋词 / 古文观止 / 昭明文选" },
     { key: "search", href: "/search/", icon: GLYPHS.tabSearch, label: "搜索", desc: "全站篇目一次搜遍" },
     { key: "settings", href: "/settings/", icon: GLYPHS.tabGear, label: "设置", desc: "用户名 / 年级 / 音量" }
   ];
 
-  /** 四部集子页都算「课外」这一格：它们共用同一个入口，也该共用同一个选中态 */
+  /** 五部集子页都算「课外」这一格：它们共用同一个入口，也该共用同一个选中态 */
   function dockKey(key) {
-    if (key === "classic" || key === "tangshi" || key === "songci" || key === "guwen") return "library";
+    if (key === "classic" || key === "tangshi" || key === "songci" || key === "guwen" ||
+        key === "zhaoming") return "library";
     return key;
   }
 
