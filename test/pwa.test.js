@@ -646,6 +646,13 @@ function check(name, cond, extra) {
         // 右侧那颗 26px 圆键的内缘仍与条目里的右箭头同宽（都是 8px）。
         headPadL: getComputedStyle(head).paddingLeft,
         headPadR: getComputedStyle(head).paddingRight,
+        // 卡片自身的左内边距（main 上「+2px」的那一层）。与条目 / 卡头
+        // 自己的左内边距是**两层**，相加才是「文字距卡片左缘」——
+        // 卡头 / 条目各自 12px + 卡片 2px = 14px，两处同值才算基准线对齐。
+        cardPadL: getComputedStyle(card).paddingLeft,
+        // 卡头文字与条目文字的**真实**左缘，用来直接核对基准线是否重合
+        headNameLeft: +head.querySelector('.group-name').getBoundingClientRect().left.toFixed(2),
+        itemNumLeftAbs: +numRect.left.toFixed(2),
         headPadBottom: getComputedStyle(head).paddingBottom,
         gapHeadBtnToItem: +(itemRect.top - headBtn.getBoundingClientRect().bottom).toFixed(2),
         numFirstChild: title.firstElementChild === num,
@@ -730,6 +737,19 @@ function check(name, cond, extra) {
     check('iPhone: 卡头文字与条目文字左基准线重合（两处左内边距同为 12px）',
       Math.abs(parseFloat(numState.headPadL) - parseFloat(numState.padL)) <= 0.5,
       JSON.stringify({ head: numState.headPadL, item: numState.padL }));
+    // 合并 main 后的口径：卡片自身的左内边距 2px（卡头 / 条目 / 首条淡线整体右移）
+    // 是**第一层**，卡头与条目各自的 12px 是**第二层**。
+    // 这里量两层叠加的结果：两处「文字距卡片左缘」都必须是 2 + 12 = 14px，
+    // 且卡头文字与条目序号圆的真实左缘逐像素重合。
+    check('iPhone: 卡片自身左内边距 2px（main 上那层，条目是加在它之上的第二层）',
+      Math.abs(parseFloat(numState.cardPadL) - 2) <= 0.5, numState.cardPadL);
+    check('iPhone: 卡头 / 条目文字距卡片左缘均为 14px（卡片 2px + 自身 12px，两层同值）',
+      Math.abs((parseFloat(numState.cardPadL) + parseFloat(numState.headPadL)) - 14) <= 0.5 &&
+      Math.abs((parseFloat(numState.cardPadL) + parseFloat(numState.padL)) - 14) <= 0.5,
+      JSON.stringify({ card: numState.cardPadL, head: numState.headPadL, item: numState.padL }));
+    check('iPhone: 卡头组名与条目序号圆真实左缘逐像素重合（两层叠加后基准线仍对齐）',
+      Math.abs(numState.headNameLeft - numState.itemNumLeftAbs) <= 0.5,
+      JSON.stringify({ headName: numState.headNameLeft, numNum: numState.itemNumLeftAbs }));
     check('iPhone: 卡头行右端圆键仍贴 8px 右内缘（右侧内缘与条目同值）',
       Math.abs(parseFloat(numState.headPadR) - parseFloat(numState.padR)) <= 0.5,
       JSON.stringify({ head: numState.headPadR, item: numState.padR }));
@@ -760,7 +780,7 @@ function check(name, cond, extra) {
     //   1) 内容块宽度小于整行留给它的空间（= 它没有把整行撑满，是按内容取的宽）；
     //   2) 圆键左缘仍在原位（右端三件套没动，正文那一行的可用宽度没被吃掉）。
     check('iPhone: 小古文内容块不再撑满整行（按内容取宽，不是 flex 增长项）',
-      numState.mainW < 393 - 12 - 8 - 36 - 6 - 18 - 1,
+      numState.mainW < 393 - 2 - 12 - 8 - 36 - 6 - 18 - 1,
       numState.mainW + 'px（整行 ' + 393 + 'px）');
     check('iPhone: 内容块宽度仍大于最长标题 / 副信息的自然宽（文字没被压窄）',
       numState.mainW >= 226, numState.mainW + 'px');
