@@ -99,6 +99,18 @@
     }
     return hit;
   }
+  /**
+   * 本挂载点是否维护「已读」进度。
+   *
+   * 四部集子各有各的键（poem_classic_read_v1 等），**搜索页的键是空串** ——
+   * 搜索页是「查东西」的地方，点开一篇不该改动任何一部的进度。
+   * 于是本页不显示「标记已读」按钮、不写任何 localStorage 键、
+   * 列表里也不出现「已读」小标（见 renderList / syncDoneButton / syncCount）。
+   */
+  function hasReadStore() {
+    return !!(W && W.readStore);
+  }
+
   /** 整篇文档范围（顶栏那条在挂载点之外，例如 .brand-sub） */
   function $$all(sel) {
     return Array.prototype.slice.call(document.querySelectorAll(sel));
@@ -538,6 +550,13 @@
     var lastGroup = "";
     shown.forEach(function (p) {
       index += 1;
+      // 只有当这一条**确实有分类**、且与上一条不同时才开一张新卡。
+      // 搜索页的条目没有 gradeGroup（它们来自五部，卷次词牌各说各话，
+      // 硬塞一个分类名只会误导），`groupCard` 因此一直是 null ——
+      // 条目就直接挂到列表容器上，不再套卡。
+      // ⚠️ 这里必须判空再 append：早先的写法无条件用 groupCard，
+      // 搜索页一挂上来就整层抛 TypeError（列表一条都出不来）。
+      // 同一个坑在下面 `groupCard.appendChild(el)` 那一处也有。
       if (p.gradeGroup && p.gradeGroup !== lastGroup) {
         lastGroup = p.gradeGroup;
         groupCard = document.createElement("section");
@@ -572,7 +591,7 @@
         '<div class="item-main">' +
         // 序号圆挪进标题行、排在篇名前面：与小古文首页、古诗词列表同一套（Issue #55 第三条）
         '<h3 class="item-title"><span class="item-num">' + index + "</span>" + esc(p.title) +
-        (read ? '<span class="item-reason read">' + esc(W.readStoreLabel) + "</span>" : "") +
+        (read && hasReadStore() ? '<span class="item-reason read">' + esc(W.readStoreLabel) + "</span>" : "") +
         (pending ? '<span class="item-reason pending">待补</span>' : "") +
         "</h3>" +
         // 顺序（Issue #55 后续）：朝代 · 作者 · 出处 —— 「宋 · 王应麟 ·《三字经》」，
@@ -597,7 +616,7 @@
         e.stopPropagation();
         readOne(p, playBtn);
       });
-      groupCard.appendChild(el);
+      (groupCard || listEl).appendChild(el);
     });
 
     // 列表里已有条目正在播放时，进入本页也要显示「暂停」态
@@ -936,9 +955,13 @@
 
   function syncDoneButton() {
     if (!current) return;
-    const read = isRead(current.id);
     var btn = rd("done");
     if (!btn) return;
+    // 本挂载点没有已读进度（搜索页）→ 整颗「标记已读」藏起来。
+    // 藏而不是删：同一份 HTML 被五页共用，删掉这一颗，另外四页就没了。
+    btn.hidden = !hasReadStore();
+    if (!hasReadStore()) return;
+    const read = isRead(current.id);
     btn.classList.toggle("is-done", read);
     // 「标记已读」现在是一个 SVG 勾选图标，可见文案只保留顶栏右侧的「已读」小字
     btn.title = read ? "已读，再点一次取消" : "标记为已读";
@@ -1401,6 +1424,30 @@
       align: function () { return alignMode(); },
       setAlign: function (m) { return withSession(session, function () { return setAlign(m); }); },
       setKeyword: function (kw) { withSession(session, function () { keyword = String(kw == null ? "" : kw); renderList(); }); },
+      /**
+       * 换掉这一份挂载点所辖的篇目（搜索页的「只看某一部」用它）。
+       *
+       * 为什么不重新 mount()：mount() 对「同一个 root 又传一份新 config」
+       * 有防重 —— 它把第二份当成「同一块挂在两处」而退回**已有那个实例**
+       * （一个页面里同一块 DOM 上挂两份实例，两边会互相覆盖状态，
+       * 所以那条防重是对的）。于是「改筛选就再 mount 一次」根本不会生效，
+       * 页面看起来毫无反应。换篇目是**同一份实例的数据变化**，
+       * 该由这里接手：重建 id 索引、重排列表、清掉当前打开的那一篇（它可能
+       * 已不在新集合里），其余（已读、注音、对齐、连读）一概不动。
+       */
+      setItems: function (list) {
+        return withSession(session, function () {
+          var arr = (list || []).slice();
+          session.items = arr;
+          session.byId = {};
+          arr.forEach(function (p) { session.byId[p.id] = p; });
+          items = arr;
+          itemsById = session.byId;
+          if (current && !itemsById[current.id]) closeReader();
+          renderList();
+          syncRandomReadButton();
+        });
+      },
       annotate: function () { return withSession(session, function () { return window.Pinyin ? window.Pinyin.annotateHtml(current ? current.text : "") : ""; }); },
       onSpeechStopped: function () { withSession(session, handleSpeechStopped); },
       root: rootEl,

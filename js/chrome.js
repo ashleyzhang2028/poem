@@ -3,15 +3,15 @@
  * ==========================================================================
  * 为什么要有这个文件：
  *   首页、小古文页、法务页原先各自写了一份顶栏，标题、返回键、右侧按钮
- *   各不一样，用户「不知道自己站在哪、下一层能去哪」。这里把三页的
+ *   各不一样，用户「不知道自己站在哪、下一层能去哪」。这里把全站的
  *   导航收敛成同一套：
  *
  *   ┌──────────────────────────────────┐
- *   │  〔徽标〕 跬步 · 小古文       [↩] │  ← 同一行、同一字体：应用名 · 当前页名
+ *   │  〔徽标〕 跬步 · 课外阅读     [↩] │  ← 同一行、同一字体：应用名 · 当前页名
  *   ├──────────────────────────────────┤
  *   │  …页面内容…                      │
  *   ├──────────────────────────────────┤
- *   │  古诗词    小古文    设置        │  ← 底部三页签：页面身份的锚点
+ *   │  背诵    课外    搜索    设置    │  ← 底部四页签：页面身份的锚点
  *   └──────────────────────────────────┘
  *
  * 设计取向（宋式美学）：
@@ -58,6 +58,21 @@
       '<path d="M10.6 4.6h8A1.4 1.4 0 0 1 20 6v12a1.4 1.4 0 0 1-1.4 1.4h-8"/>' +
       '<path d="M13.2 9.2h4.2M13.2 13h4.2"/></svg>',
 
+    /* 页签：课外阅读（叠着的两册书，与「背诵」那册翻开的不同：
+       这一枚是立着排的几册，表示「还有好几部可以读」） */
+    tabLibrary:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<rect x="3.6" y="4.4" width="5.4" height="15.2" rx="1"/>' +
+      '<rect x="9.6" y="4.4" width="5.4" height="15.2" rx="1"/>' +
+      '<path d="M16.4 4.9l3.2.85a1.1 1.1 0 0 1 .78 1.35l-3.4 12.7"/>' +
+      '<path d="M5.6 8.4h1.4M11.6 8.4h1.4"/></svg>',
+
+    /* 页签：全站搜索（放大镜） */
+    tabSearch:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<circle cx="10.6" cy="10.6" r="6.2"/>' +
+      '<path d="M15.2 15.2 20.4 20.4"/></svg>',
+
     /* 页签：设置（齿轮）——齿形按几何生成，8 齿均分、左右上下都对称：
        齿顶圆 r9.4 / 齿根圆 r6.9 / 轴孔 r3.2。原先那枚手工描的齿轮
        齿距不匀、整体重心偏右，视觉上「摇」，这里换成真正画正的齿轮。 */
@@ -88,24 +103,32 @@
    * 全站唯一的一份「页面住哪」。
    *
    * URL 一律目录化，不带 .html：
-   *   /            首页（古诗词）
-   *   /classic/    小古文
+   *   /            首页（背诵）
+   *   /library/    课外阅读（四部集子的入口页）
+   *   /classic/    课外必背小古文
    *   /tangshi/    唐诗三百首
    *   /songci/     宋词三百首
    *   /guwen/      古文观止
+   *   /search/     全站搜索
    *   /settings/   设置
    *   /terms/      用户协议
    *   /privacy/    隐私条款
+   *
+   * 四部集子不再各自占一个页签（页签只有两三个字，装不下书名），
+   * 而是统一从 /library/ 进；页面名仍按各页 body 上的 data-page 显示，
+   * 所以从入口页点进《古文观止》，顶栏第一行照样写「跬步 · 古文观止」。
    *
    * 各页面真实文件都是该目录下的 index.html。
    * 这里也兼容直接访问 /classic/index.html 的情形（等价于 /classic/）。
    */
   var ROUTES = {
     home: "/",
+    library: "/library/",
     classic: "/classic/",
     tangshi: "/tangshi/",
     songci: "/songci/",
     guwen: "/guwen/",
+    search: "/search/",
     settings: "/settings/",
     terms: "/terms/",
     privacy: "/privacy/"
@@ -121,6 +144,7 @@
   /* 顶栏第二行 = 页面自己的说明（页面用 body 上的 data-sub 给）。
      应用名与页面名已经在第一行，这里只放「这个页面是干什么的」：
        · 首页 —— 「按遗忘曲线复习」（文案在首页的 data-sub 上，此处只做说明）
+       · 课外阅读入口页 —— 「四部集子，想读哪部进哪部」
        · 小古文页 —— 「100 篇 · 想读哪篇点哪篇」
      刻意不再写「一年级至高三」这类学段字样：首页能选年级学期，
      固定写死一个学段反而让非该学段的用户觉得不是给自己用的。
@@ -137,6 +161,8 @@
     var v = bodyData("nav");
     if (v) return v;
     var p = currentPath();
+    if (/^\/library\/?$/.test(p) || /^\/library\/index\.html$/.test(p)) return "library";
+    if (/^\/search\/?$/.test(p) || /^\/search\/index\.html$/.test(p)) return "search";
     if (/^\/classic\/?$/.test(p) || /^\/classic\/index\.html$/.test(p)) return "classic";
     if (/^\/tangshi\/?$/.test(p) || /^\/tangshi\/index\.html$/.test(p)) return "tangshi";
     if (/^\/songci\/?$/.test(p) || /^\/songci\/index\.html$/.test(p)) return "songci";
@@ -150,7 +176,7 @@
     return bodyData("sub") || DEFAULT_SUB;
   }
 
-  /** 是否显示底部三页签（法务页等深页不显示，改用顶栏返回键） */
+  /** 是否显示底部页签（法务页等深页不显示，改用顶栏返回键） */
   function dockEnabled() {
     return bodyData("dock") !== "off";
   }
@@ -201,7 +227,7 @@
         '<span class="top-act-icon" aria-hidden="true">' + GLYPHS.back + "</span>" +
         '<span class="sr-only">' + action.label + "</span></button>";
     } else if (key === "home") {
-      // 首页右上角不再放设置齿轮：底部第三个页签就是「设置」，
+      // 首页右上角不再放设置齿轮：底部最后一个页签就是「设置」，
       // 两个入口指向同一面板，右上角那个纯属重复。
       right = '<span class="top-act-spacer" aria-hidden="true"></span>';
     } else {
@@ -243,6 +269,8 @@
     var v = bodyData("page");
     if (v != null) return v;
     var k = pageKey();
+    if (k === "library") return "课外阅读";
+    if (k === "search") return "搜索";
     if (k === "classic") return "小古文";
     if (k === "tangshi") return "唐诗三百首";
     if (k === "songci") return "宋词三百首";
@@ -256,14 +284,42 @@
     });
   }
 
-  /* ---------------- 渲染：底部三页签 ---------------- */
+  /* ---------------- 渲染：底部页签 ---------------- */
+  /**
+   * 底部四个页签。
+   *
+   * 上一版是三个：「古诗词 / 小古文 / 设置」。问题有两处 ——
+   *   1. 当年只有小古文一部集子，页签写「小古文」还算如实；
+   *      唐诗、宋词、古文观止做完之后，它们**一个入口都没有**，
+   *      只能靠手敲地址进。
+   *   2. 「古诗词」这个名字也不准：那一页管的是课内背诵与遗忘曲线复习，
+   *      与「课外读」是两回事。
+   * 现在改成：背诵（课内，按遗忘曲线安排复习）｜课外（四部集子入口）
+   * ｜搜索（全站篇目）｜设置。四格在窄屏上仍是一行放得下（每格 ≥75px）。
+   *
+   * 页签与「当前页」的对应关系（pageKey）：
+   *   /            → home
+   *   /library/    → library
+   *   /classic/ /tangshi/ /songci/ /guwen/ → 都算「课外」这一格选中
+   *   /search/     → search
+   *   /settings/   → settings
+   */
+  var DOCK_ITEMS = [
+    { key: "home", href: "/", icon: GLYPHS.tabPoem, label: "背诵", desc: "课内古诗词，按遗忘曲线安排复习" },
+    { key: "library", href: "/library/", icon: GLYPHS.tabLibrary, label: "课外", desc: "小古文 / 唐诗 / 宋词 / 古文观止" },
+    { key: "search", href: "/search/", icon: GLYPHS.tabSearch, label: "搜索", desc: "全站篇目一次搜遍" },
+    { key: "settings", href: "/settings/", icon: GLYPHS.tabGear, label: "设置", desc: "用户名 / 年级 / 音量" }
+  ];
+
+  /** 四部集子页都算「课外」这一格：它们共用同一个入口，也该共用同一个选中态 */
+  function dockKey(key) {
+    if (key === "classic" || key === "tangshi" || key === "songci" || key === "guwen") return "library";
+    return key;
+  }
+
   function dockHtml() {
-    var key = pageKey();
-    var items = [
-      { key: "home", href: "/", icon: GLYPHS.tabPoem, label: "古诗词", desc: "今日背诵与全部诗词" },
-      { key: "classic", href: "/classic/", icon: GLYPHS.tabClassic, label: "小古文", desc: "100 篇文言短文" },
-      { key: "settings", href: "/settings/", icon: GLYPHS.tabGear, label: "设置", desc: "用户名 / 年级 / 音量" }
-    ];
+    var key = dockKey(pageKey());
+    var items = DOCK_ITEMS;
     var html = '<nav class="dock" id="site-dock" aria-label="主导航">';
     items.forEach(function (it) {
       var on = key === it.key;

@@ -124,7 +124,7 @@
    * 用户名改动后同步刷新一次顶栏右侧的页面名（若是首页语义则跟随用户名）。
    */
   function applyAppName() {
-    document.title = appTitle() + " · 古诗词背诵";
+    document.title = appTitle() + " · " + APP_NAME;
     const meta = $('meta[name="apple-mobile-web-app-title"]');
     if (meta) meta.setAttribute("content", appTitle());
   }

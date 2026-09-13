@@ -8,7 +8,8 @@
 #   3b. 古籍阅读库测试   —— jsdom + vm，四部集子共用的索引页/详情页引擎
 #   3c. 唐诗三百首测试   —— jsdom + vm，301 首数据 + 卷次分组 + 阅读器
 #   3d. 宋词三百首测试   —— jsdom + vm，255 首数据 + 词牌分组 + 阅读器
-#   3e. 古文观止测试     —— jsdom + vm，目录 + 卷次分组 + 已收录/待补 + 阅读器
+#   3e. 古文观止测试     —— jsdom + vm，十二卷 155 篇全收 + 卷次分组 + 阅读器
+#   3f. 搜索页与导航测试 —— jsdom，五部合一的索引 + 候选下拉 + 集子筛选 + 四格页签
 #   4. 用户名设置测试    —— jsdom，带初始 localStorage 重启应用
 #   5. 用户协议/隐私条款  —— jsdom + 源码扫描：页脚入口、学生保护、邮箱防爬
 #   6. 注音与朗读测试    —— 拼音表/多音字（纯 Node）+ 注音渲染与朗读降级（jsdom）
@@ -81,6 +82,10 @@ node test/songci.test.js
 echo ""
 echo "=== 古文观止（内容 PR，Issue #69）==="
 node test/guwen.test.js
+
+echo ""
+echo "=== 全站搜索 / 课外阅读入口 / 底栏导航（搜索页 + 导航栏变更，Issue #69）==="
+node test/search.test.js
 
 echo ""
 echo "=== 用户名设置测试 ==="

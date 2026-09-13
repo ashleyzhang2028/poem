@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#2f6055" />
+  <title>跬步 · 课外阅读</title>
+  <meta name="description" content="跬步课外阅读：课外必背小古文 100 篇、唐诗三百首 301 首、宋词三百首 255 首、古文观止 155 篇 —— 每篇都有原文、生字注音、语音朗读与白话译文。" />
+  <meta name="format-detection" content="telephone=no" />
+
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="课外阅读" />
+  <meta name="mobile-web-app-capable" content="yes" />
+
+  <base href="/" />
+  <link rel="icon" href="./icons/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/classic.css" />
+</head>
+<body data-nav="library" data-page="课外阅读">
+  <!-- 这一页是「四部集子的入口」：不再把某一部直接摆到页签上，
+       而是先在这里看清有哪几部、各多少篇，再进去读。
+       页签文字只有两三个字，装不下「唐诗三百首」这种书名，
+       所以页签写「课外」，这一页把四部的全名列清楚。 -->
+  <div class="app">
+    <header class="topbar"></header>
+
+    <p class="library-hint">
+      课本之外的经典，按部就班读下去 —— 每篇都有原文、生字注音、语音朗读与白话译文。
+    </p>
+
+    <!-- 四部集子：卡片由 js/library.js 按 data/site-index.js 的清单渲染，
+         篇数实时算，不写死 —— 哪一部日后增补了篇目，这里跟着变。 -->
+    <div class="library-grid" id="library-grid"></div>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+
+  <script src="data/poems-1.js"></script>
+  <script src="data/poems-2.js"></script>
+  <script src="data/poems-3.js"></script>
+  <script src="data/poems-4.js"></script>
+  <script src="data/poems-5.js"></script>
+  <script src="data/poems-6.js"></script>
+  <script src="data/poems-7.js"></script>
+  <script src="data/poems-8.js"></script>
+  <script src="data/poems-9.js"></script>
+  <script src="data/poems-10.js"></script>
+  <script src="data/poems-11.js"></script>
+  <script src="data/poems-12.js"></script>
+  <!-- data/index.js 先把 poems-1..12 汇成 window.POEMS_ALL，
+       站点总索引（最后一行）才读得到课内那一部 —— 顺序不能调换 -->
+  <script src="data/index.js"></script>
+  <script src="data/poems-classic.js"></script>
+  <script src="data/poems-tangshi.js"></script>
+  <script src="data/poems-songci.js"></script>
+  <script src="data/poems-guwen.js"></script>
+  <script src="data/site-index.js"></script>
+  <script src="js/chrome.js"></script>
+  <script src="js/pwa.js"></script>
+  <script src="js/library.js"></script>
+</body>
+</html>

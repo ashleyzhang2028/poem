@@ -49,7 +49,9 @@
       root: "[data-gw-root]",
       reader: "#gw-reader",
       groupOrder: GROUP_ORDER,
-      pageTitle: "小古文",
+      // 页面名与 <title> 口径：与 /guwen/、/tangshi/、/songci/ 一致，用**全名** ——
+      // 「小古文」是页签上的短名（装不下全名），顶栏与 <title> 放得下就该写全。
+      pageTitle: "课外必背小古文",
       pageSub: "想读哪篇点哪篇",
       words: {
         list: "小古文",

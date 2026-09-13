@@ -1,5 +1,5 @@
 /**
- * 古诗词背诵 App 主逻辑
+ * 背诵 App 主逻辑（课内古诗词 · 按遗忘曲线复习）
  */
 (function () {
   "use strict";
@@ -123,22 +123,30 @@
 
   /**
    * 页面主标题：应用正式名固定为「跬步」，用户名永远显示
-   * → 「跬步 · Ashley的古诗词」（用户没填名字时用默认名，不留一段空白）
+   * → 「跬步 · Ashley的背诵」（用户没填名字时用默认名，不留一段空白）
+   *
+   * 措辞：「XX的古诗词」→「XX的背诵」。这一页管的是
+   * 「按遗忘曲线安排复习、今天背这一首」这件事，名字上就该说清 ——
+   * 「古诗词」是体裁（站上还有小古文、唐诗、宋词、古文观止），
+   * 「背诵」才是这一页在干的事。
    */
   function appTitle() {
-    return APP_NAME + " · " + userName() + "的古诗词";
+    return APP_NAME + " · " + userName() + "的背诵";
   }
 
   /**
-   * 把应用名同步到页面标题、顶栏「跬步 · XX的古诗词」、iOS 桌面名与 PWA 清单。
+   * 把应用名同步到页面标题、顶栏「跬步 · XX的背诵」、iOS 桌面名与 PWA 清单。
    *
-   * 顶栏第一行是「跬步 · 当前页名」：首页写「XX的古诗词」，
-   * 小古文页与法务页由各页自己给页名（见 js/chrome.js 的 data-page）。
+   * 顶栏第一行是「跬步 · 当前页名」：首页写「XX的背诵」，
+   * 其余页面由各页自己给页名（见 js/chrome.js 的 data-page）。
    * 用户名留空时用默认名 Ashley，不留空档。
    */
   function applyAppName() {
     const title = appTitle();
-    document.title = title + " · 古诗词背诵";
+    // <title>：「XX的背诵 · 跬步」—— 应用名在后，与其余各页同一口径。
+    // 曾写「跬步 · XX的古诗词 · 古诗词背诵」，同一句话里出现两次「背诵」、
+    // 应用名还前后各一份，读起来像三条不同的信息。
+    document.title = title + " · " + APP_NAME;
     const h1 = $("#brand-name");
     if (h1) h1.textContent = APP_NAME;
     // 第一行页面名：首页是「XX的古诗词」，与「跬步」同字体、同一行
@@ -169,7 +177,7 @@
   }
 
   /**
-   * 顶栏第一行的页面名：首页写「XX的古诗词」，排在「跬步」右侧。
+   * 顶栏第一行的页面名：首页写「XX的背诵」，排在「跬步」右侧。
    * js/chrome.js 渲染完顶栏会派发 chrome:ready，收到后再写一次，
    * 否则刷新页面时 app.js 先跑、DOM 里还没有 #brand-page-text，用户名就丢了。
    */
@@ -177,7 +185,7 @@
     const el = $("#brand-page-text");
     const page = $("#brand-page");
     if (!el) return;
-    el.textContent = userName() + "的古诗词";
+    el.textContent = userName() + "的背诵";
     if (page) page.hidden = false;
     // 默认名 Ashley 与用户自己的名字在视觉上要做区分：默认名走淡墨
     el.classList.toggle("is-default", !String(settings.username || "").trim());
