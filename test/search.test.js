@@ -326,11 +326,19 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(!/filter-seg|data-filter|search-book-seg|book-seg/.test(searchHtml),
     '搜索框右栏（全部 / 未读）与集子药丸都不在这份 HTML 里了');
   chk(!/data-book=/.test(searchHtml), '页面里没有任何集子筛选按钮');
+  // 居中：竖向由「视口 − 顶栏 − 底栏」这一段高度 + 搜索框压在中线负责
+  // （.search-hero 的 height 算式 + .search-toolbar 的 top: 50%），
+  // 横向由整行的 left: 50% + translateX(-50%) 负责。
+  // 2026 这一版把 hero 的 min-height 换成了 height：搜索框（绝对定位）
+  // 不产生内容高度，hero 必须自己拿着那段高度，才谈得上「居中」。
   const heroBlock = /(?:^|\n)\.search-hero \{([\s\S]*?)\}/.exec(classicCss);
-  chk(!!heroBlock && /justify-content:\s*center/.test(heroBlock[1]) &&
-    /align-items:\s*center/.test(heroBlock[1]),
-    'hero 在水平与垂直两个方向都居中');
-  chk(!!heroBlock && /min-height:/.test(heroBlock[1]) && /--nav-h/.test(heroBlock[1]),
+  const heroMid = /--hero-box-h:\s*40px/.test(classicCss);
+  const heroCenter = /justify-content:\s*center/.test(classicCss) &&
+    /top:\s*50%/.test(classicCss) &&
+    /margin-top:\s*calc\(var\(--hero-box-h\) \/ -2\)/.test(classicCss);
+  chk(heroMid && heroCenter,
+    'hero 在水平与垂直两个方向都居中（整行 top: 50% 减去半个盒高）');
+  chk(!!heroBlock && /height:/.test(heroBlock[1]) && /--nav-h/.test(heroBlock[1]),
     'hero 的垂直空间按视口减去顶栏与实测底栏算（不是写死一个高度）');
   chk(!/\.book-seg/.test(classicCss), '集子药丸的样式整块删除（CSS 里不再留死代码）');
   // 空关键词就是「没有结果」：引擎侧靠 setItems([]) 表达，
@@ -339,6 +347,43 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     '搜索页声明 allowEmpty（空关键词时确实要挂一块空列表）');
   chk(/allowEmpty/.test(read('js/reader-core.js')),
     'reader-core 支持 allowEmpty（空集合默认仍不挂）');
+
+  /* ---------- 七之二、机上的可用性（Issue #69） ----------
+     用户在机上反馈三件事：键盘一弹候选下拉就被盖住、候选离搜索框太远、
+     这一页的搜索框该再高一点。三条改动都落在这一页的 HTML / CSS / JS 里，
+     真正的验证在 test/pwa.test.js（真浏览器量渲染后的盒子），
+     这里守的是源码级的几道防线 —— 改动不依赖某个数字，而是依赖一组关系。 */
+  const heroFocus = doc => doc;
+  // ① 搜索框增高：只对搜索页生效，且不能长在 hero 的布局高度上
+  chk(/\.search-hero \.search-input\s*\{[^}]*transform:\s*scaleY\(1\.3\)/.test(classicCss),
+    '搜索页搜索框在绘制层放大到 52px（布局仍是 40px，「居中算式」才不会被带偏）');
+  chk(!/(?:^|\n)\.search-input\s*\{[^}]*height:\s*5[0-9]px/.test(classicCss),
+    '增高只走 transform：没有把 .search-input 的 height 改成 52px（那会连带改掉索引页）');
+  // ② 候选下拉贴住搜索框 / 不透明度 / 层级
+  chk(/\.suggest \{[^}]*top:\s*calc\(100% \+ 5px\)/.test(classicCss),
+    '候选下拉只留 5px 间隙（用户反馈的「离搜索框太远」的反面）');
+  chk(/\.suggest \{[^}]*background:\s*#fffefa/.test(classicCss),
+    '候选下拉用不透明底色（--card 只有 90% 不透明，浮层会让结果列表透上来）');
+  chk(/--kb-space/.test(classicCss) && /max-height:\s*min\(/.test(classicCss),
+    '候选下拉的高度按「可视区 − 键盘」算（键盘弹着也不会伸到键盘底下）');
+  chk(/\.search-hero \.search-toolbar \{[^}]*z-index:\s*1/.test(classicCss),
+    '搜索整行有自己的层级（.search-wrap 的 transform 新建了层叠上下文，' +
+    '整行不进正层级的话，结果列表会从下拉上面压过去）');
+  // ③ 屏上键盘：贴顶的两个状态都由 JS 加类、CSS 表现
+  chk(/kb-open/.test(classicCss) && /search-focus/.test(classicCss),
+    '键盘弹出 / 输入框聚焦两个状态都有对应的样式（整块贴到顶栏下方）');
+  const searchJs = read('js/search.js');
+  chk(/visualViewport/.test(searchJs) && /--kb-space/.test(searchJs),
+    'js/search.js 用 visualViewport 实测键盘高度（软键盘不改 innerHeight，它是唯一入口）');
+  chk(/focusInput/.test(searchJs) && /search-hero-focus/.test(searchHtml),
+    '进页即聚焦：焦点先落在 hero 里的替身输入框上（键盘应声弹出，且不触发 iOS 自行滚动）');
+  const ghostBlock = (/[^}]*\.search-hero-focus \{([^}]*)\}/.exec(classicCss) || ['', ''])[1];
+  chk(!!ghostBlock && /width:\s*1px/.test(ghostBlock) && /height:\s*1px/.test(ghostBlock) &&
+    !/display:\s*none|visibility:\s*hidden|opacity:\s*0/.test(ghostBlock),
+    '替身输入框是一枚真的 1×1 输入框（display: none / visibility: hidden 的元素' +
+    '拿不到焦点，iOS 就不会弹键盘）');
+  chk(/alignEmptyState/.test(searchJs) && /#gw-list \.search-empty/.test(classicCss),
+    '空态与结果列表左对齐（搜索框在左、列表也在左，空态不该孤零零居中在页面中间）');
 
   /* ---------- 八、法务页与设置页的口径一致 ---------- */
   chk(read('js/chrome.js').indexOf('古诗词') === -1 ||
