@@ -201,8 +201,14 @@
  *        顺带：进页即聚焦搜索框（少点一次）、空态与结果列表左对齐、
  *        候选行抬高到 44px（iOS 建议的最小可点面积）。
  *        （search/index.html、js/search.js、css/classic.css、sw.js）
+ *   v45  详情页对齐组合去掉「右对齐」：
+ *        所有文章一律横排，右对齐没有使用场景 —— 六个页面（首页诗词详情、
+ *        小古文、唐诗、宋词、古文观止、搜索页）的对齐组合都只剩 左 / 中 两档，
+ *        JS 的 ALIGNS 与 CSS 的 [data-align="right"] 规则一并删除。
+ *        （index.html、classic|guwen|tangshi|songci|search/index.html、
+ *          js/app.js、js/reader-core.js、css/style.css、css/classic.css、sw.js）
  */
-const CACHE_NAME = "poem-app-v44";
+const CACHE_NAME = "poem-app-v45";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [

@@ -688,7 +688,7 @@ body.reader-open .dock { display: none; }
 .reader-body .meta { justify-content: center; }
 /* 阅读辅助工具条：两行，每行都排成一行不换行，且两行都整行居中
    （与居中的诗题、正文共用同一条中轴）
-   ＝ 第一行：正文对齐（左/中/右 SVG）· A－/A＋ 组合 · 不注音/生字/全文
+   ＝ 第一行：正文对齐（左/中 SVG）· A－/A＋ 组合 · 不注音/生字/全文
    ＝ 第二行：朗读组合键（原文 / 译文）+ 译文开关 + 标记已读，纯 SVG 图标，文案走屏幕阅读器
    尺寸与古诗词详情页完全一致，用户在两个页面不用重新学一遍。 */
 .reader-actions {
@@ -778,7 +778,7 @@ body.reader-open .dock { display: none; }
 /* 「标记已读」：点亮前是描边勾，已读后整颗高亮 */
 .done-btn { color: var(--ink-2); }
 .done-btn.is-done { background: var(--green); border-color: var(--green); color: #fdfaf2; }
-/* 对齐组合按钮：三个 SVG 图标（左 / 中 / 右），选中态与注音档位一致 */
+/* 对齐组合按钮：两个 SVG 图标（左 / 中），选中态与注音档位一致 */
 .icon-seg button {
   display: inline-flex;
   align-items: center;
@@ -809,11 +809,10 @@ body.reader-open .dock { display: none; }
   text-align: center;
   letter-spacing: 1.4px;
 }
-/* 对齐方式交给用户选（工具条上的三个 SVG 图标）：
+/* 对齐方式交给用户选（工具条上的两个 SVG 图标）：
    古诗居中好看；《少年中国说》一类长古文左对齐更好读。
-   右对齐时文字也靠右，整块仍保持居中不越界。 */
+   文章一律横排，右对齐没有使用场景，故不设。 */
 .reader-body .reader-text[data-align="left"] { text-align: left; }
-.reader-body .reader-text[data-align="right"] { text-align: right; }
 
 .trans-box {
   background: var(--bg);

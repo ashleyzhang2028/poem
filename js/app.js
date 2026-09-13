@@ -26,9 +26,10 @@
   const FONT_SIZES = [13, 15, 17, 19, 21, 23];
   const DEFAULT_FONT = 17;
 
-  /* 正文对齐三档：left / center / right，默认居中（与小古文详情页一致） */
+  /* 正文对齐两档：left / center，默认居中（与小古文详情页一致）
+     文章一律横排，右对齐没有使用场景，故不设。 */
   const ALIGN_KEY = "poem_align_v1";
-  const ALIGNS = ["left", "center", "right"];
+  const ALIGNS = ["left", "center"];
   const DEFAULT_ALIGN = "center";
 
   // 注音档位：off 关闭 ｜ rare 只标生字（默认）｜ all 全文注音
@@ -625,7 +626,7 @@
     localStorage.setItem(ALIGN_KEY, ALIGNS.indexOf(mode) > -1 ? mode : DEFAULT_ALIGN);
     applyAlign();
     syncAlignButtons();
-    showToast(mode === "left" ? "正文左对齐" : mode === "right" ? "正文右对齐" : "正文居中对齐");
+    showToast(mode === "left" ? "正文左对齐" : "正文居中对齐");
   }
 
   /* ---------------- 白话译文 ---------------- */

@@ -494,13 +494,13 @@ body.no-dock .modal-box { max-height: 88vh; }
   max-width: fit-content;
   margin: 16px auto;
   /* 行内文字也居中：诗句不满一行（如绝句的起承转合）时按最长句对齐；
-     用户可在工具条上改成左 / 右对齐（data-align 覆盖） */
+     用户可在工具条上改成左对齐（data-align 覆盖）。
+     文章一律横排，右对齐没有使用场景，故不设。 */
   text-align: center;
   color: #22302a;
   letter-spacing: 1.5px;
 }
 .poem-text[data-align="left"] { text-align: left; }
-.poem-text[data-align="right"] { text-align: right; }
 
 .modal-progress {
   background: var(--bg);
@@ -1610,7 +1610,7 @@ html, body {
    古诗词详情页的阅读辅助工具条
    --------------------------------------------------------------------------
    与小古文详情页同一套控件、同一顺序、同一尺寸；只把边距按弹层收紧一点。
-   ＝ 第一行：正文对齐（左/中/右 SVG）· A－/A＋ 组合 · 不注音/生字/全文
+   ＝ 第一行：正文对齐（左/中 SVG）· A－/A＋ 组合 · 不注音/生字/全文
    ＝ 第二行：朗读组合键（原文 / 译文）+ 译文开关
    ========================================================================== */
 /* 工具条（第一行）：对齐 / 字号 / 注音

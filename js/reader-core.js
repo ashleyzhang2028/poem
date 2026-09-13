@@ -172,10 +172,11 @@
   const FONT_SIZES = [13, 15, 17, 19, 21, 23];
   const DEFAULT_FONT = 17; // 默认字号降一级（原默认 19）
 
-  /* 正文对齐三档：left / center / right
+  /* 正文对齐两档：left / center
      古诗短句居中像碑帖，所以默认居中；《少年中国说》这类长古文左对齐更好读，
-     由用户在工具条上用图标自己选，选择记在本机。 */
-  const ALIGNS = ["left", "center", "right"];
+     由用户在工具条上用图标自己选，选择记在本机。
+     文章一律横排，右对齐没有使用场景，故不设。 */
+  const ALIGNS = ["left", "center"];
   const DEFAULT_ALIGN = "center";
 
   /* 注音档位：off 关闭 ｜ rare 只标生字 ｜ all 全文注音 */
@@ -1412,7 +1413,7 @@
     localStorage.setItem(ALIGN_KEY, ALIGNS.indexOf(mode) > -1 ? mode : DEFAULT_ALIGN);
     applyAlign();
     syncAlignButtons();
-    showToast(mode === "left" ? "正文左对齐" : mode === "right" ? "正文右对齐" : "正文居中对齐");
+    showToast(mode === "left" ? "正文左对齐" : "正文居中对齐");
   }
 
   function showToast(msg) {
@@ -1586,7 +1587,7 @@
     if (fontUp) fontUp.addEventListener("click", function (e) { claim(e); changeFont(1); });
     if (fontDown) fontDown.addEventListener("click", function (e) { claim(e); changeFont(-1); });
 
-    // 正文对齐：左 / 中 / 右 三个 SVG 图标，选中态持久化
+    // 正文对齐：左 / 中 两个 SVG 图标，选中态持久化（右对齐无使用场景，已删除）
     rdAll("align").forEach(function (b) {
       b.addEventListener("click", function (e) { claim(e); setAlign(b.dataset.align); });
     });
