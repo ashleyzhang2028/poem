@@ -57,8 +57,11 @@
  *   v29  小古文索引页列表内容与卡片左缘的间距 +2px（Issue #55 后续）：
  *        条目左内边距 8 → 10px，右侧仍是 8px、不动 ——
  *        用户明确要求「只加左侧」（css/classic.css）
+ *   v30  小古文条目的播放键左侧间距再减 12px（Issue #55 后续）：
+ *        卡内 gap 清零，改由两颗图标各自给外边距 —— 圆键左缘贴内容块右缘
+ *        （12 - 12 = 0），与箭头之间仍是 6px（css/classic.css）
  */
-const CACHE_NAME = "poem-app-v29";
+const CACHE_NAME = "poem-app-v30";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [

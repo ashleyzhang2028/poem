@@ -568,7 +568,11 @@ function check(name, cond, extra) {
       const title = item.querySelector('.item-title');
       const meta = item.querySelector('.item-meta');
       const arrow = item.querySelector('.item-arrow');
+      const play = item.querySelector('.item-read');
+      const main = item.querySelector('.item-main');
       const itemRect = item.getBoundingClientRect();
+      const playRect = play.getBoundingClientRect();
+      const mainRect = main.getBoundingClientRect();
       const numRect = num.getBoundingClientRect();
       const metaRect = meta.getBoundingClientRect();
       const titleRect = title.getBoundingClientRect();
@@ -585,6 +589,12 @@ function check(name, cond, extra) {
         metaLeft: +metaRect.left.toFixed(2),
         numLeftInset: +(numRect.left - itemRect.left).toFixed(2),
         arrowRightInset: +(itemRect.right - arrowRect.right).toFixed(2),
+        // Issue #55 后续：播放键左右两侧的真实间距
+        //   左 = 内容块右缘 → 圆键左缘（本轮由 12px 再减 12px → 0）
+        //   右 = 圆键右缘 → 箭头左缘（6px，不动）
+        playGapLeft: +(playRect.left - mainRect.right).toFixed(2),
+        playW: +playRect.width.toFixed(2),
+        playGapRight: +(arrowRect.left - playRect.right).toFixed(2),
         barContent: bar.content,
         padL: itemPad.paddingLeft,
         padR: itemPad.paddingRight,
@@ -666,6 +676,20 @@ function check(name, cond, extra) {
       JSON.stringify(numState.barContent));
     check('iPhone: 卡头与首条之间留出间距（不再贴着分隔线）',
       numState.gapHeadBtnToItem >= 6, numState.gapHeadBtnToItem + 'px');
+    // 需求（Issue #55 后续）：播放键与左侧内容的间距再减 12px ——
+    // 原先「内容 ↔ 圆键 ↔ 箭头」由 flex gap 各给 12px（两段各 12px）；
+    // 现在卡内 gap 清零、改由两颗图标各给外边距，圆键左缘正好落在内容块右缘。
+    // 量的是渲染后的真实盒子。做法是把 12px 从「列距」搬到「圆键的占位」上：
+    // 列距清零（gap: 0）后两段列距都不再占地方，圆键再用 margin-left: -12px
+    // 把这块空档要回来 —— 圆键左缘因此正好落在内容块右缘（间距 0），
+    // 而圆键本体没被压小（仍是 36px 正圆，另有一条断言守着）。
+    check('iPhone: 播放键与左侧内容间距减 12px 后为 0',
+      numState.playGapLeft === -12 && numState.playW > 0,
+      numState.playGapLeft + 'px / 键宽 ' + numState.playW + 'px');
+    check('iPhone: 减掉的 12px 是列距本身，不是把圆键压小（仍是 36px 正圆）',
+      Math.abs(numState.playW - 36) <= 0.5, numState.playW + 'px');
+    check('iPhone: 播放键右侧（与箭头之间）仍是 6px，未被一起改动',
+      Math.abs(numState.playGapRight - 6) <= 0.5, numState.playGapRight + 'px');
 
     // 需求（Issue #55 后续）：搜索框提示字垂直居中。
     // 提示字走 ::placeholder 伪元素，且比输入文字小一档（12.5px vs 16px）——

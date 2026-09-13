@@ -362,6 +362,25 @@ setTimeout(() => {
   chk(!/border:\s*none;/.test(itemPadBlock[2]) || /border-left:\s*none;/.test(itemPadBlock[2]),
     '用 border-left 定向清零，而不是 border: none 一刀切');
 
+  // 需求（Issue #55 后续）：卡内条目的播放键左侧间距再减 12px。
+  // 全站 .item 是 flex + gap: 12px，首页今日条只有「正文 ↔ 一颗圆键」一段间隔；
+  // 小古文条目右侧是「圆键 + 箭头」两颗图标，同一份 12px 摊在两段上，
+  // 播放键被推得比首页远一倍。现在卡内 gap 清零、两个图标各自给外边距：
+  //   正文 … 12px … 圆键 … 6px … 箭头
+  // 再按用户要求把「圆键左侧」这段减去 12px：12 - 12 = 0，圆键左缘落在
+  // 内容块右缘。右侧那 6px（圆键 ↔ 箭头）与箭头贴边一律不动。
+  chk(!!itemPadBlock && /gap:\s*0;/.test(itemPadBlock[2]),
+    '卡内条目列距清零（改由播放键 / 箭头各自的外边距给间距）');
+  chk(!/gap:\s*12px/.test(itemPadBlock[2].replace(/\/\*[\s\S]*?\*\//g, ' ')),
+    '卡内条目不再沿用全站 12px 列距（三样盒子之间不再各留 12px）');
+  const itemReadBlock = /(^|\n)\.group-card \.item-read \{([\s\S]*?)\}/.exec(classicCssText);
+  chk(!!itemReadBlock && /margin-left:\s*-12px;/.test(itemReadBlock[2]),
+    '播放键左侧间距在原 12px 上再减 12px（margin-left: -12px，圆键左缘贴内容块右缘）');
+  chk(!!itemReadBlock && /margin-right:\s*6px;/.test(itemReadBlock[2]),
+    '播放键右侧（与箭头之间）保持 6px 不动');
+  chk(!/^\.item \{[^}]*gap:\s*0/m.test(classicCssText),
+    '全站 .item 的 12px 列距不动（首页没有这颗圆键，不该跟着改）');
+
   // 需求（Issue #55 后续）：序号圆与下方正文左对齐。
   // 此前标题行带 `margin-left: -12px`，把序号圆（连同整个标题行）左移 12px、
   // 让圆「探出」内容块左缘 —— 圆周左缘因此比下方「朝代 · 作者 · 年级」那行
