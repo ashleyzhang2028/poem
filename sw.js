@@ -508,8 +508,22 @@
  *        （data/text-master.js、data/poems-tangshi.js、
  *          scripts/build-text-master.js、test/canonical.test.js、
  *          test/dedup.test.js、README.md）
+ *   v78  小古文 99 篇正文收归存储主表（Issue #69 · 按部推进第 5 部）：
+ *        FULL_BOOKS 清单加 `classic`，主表 1232 → 1331 条，
+ *        data/poems-classic.js 99 条摘掉内联正文、改留 textRef
+ *        （90KB → 30KB，-67%）。页面可见文本零变化：
+ *           · 99 条（小古文独有）的标题 / 元信息 / 正文 / 译文逐字节一致；
+ *           · 剩下 1 条《答谢中书书》（gw-60）与课内八年级上同篇，
+ *             早在前几轮就由判重表收归（主条目 poems-cz8-02），
+ *             这一条的正文 / 译文 / 来源本轮起也就显式走主表那一份
+ *             —— 收归前 canonical-texts.js 在显示层做的就是这件事。
+ *        至此五部集子全部收归完毕（小古文是最后一部）。
+ *        版本号按「并行 PR 一律 +5」的口径从 v73 起落到 v78。
+ *        （data/text-master.js、data/poems-classic.js、
+ *          scripts/build-text-master.js、test/canonical.test.js、
+ *          test/dedup.test.js、README.md）
  */
-const CACHE_NAME = "poem-app-v73";
+const CACHE_NAME = "poem-app-v78";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [
