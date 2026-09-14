@@ -128,6 +128,35 @@
           <div class="settings-hint" id="helper-hint">开启后，打开诗或古文即自动注音；朗读按钮始终可用</div>
         </div>
       </section>
+
+      <!-- ==================================================================
+           四、朗读播放：五档连读偏好，全站一份
+           ------------------------------------------------------------------
+           这一组原先**只存在于分类卡右侧那颗圆键的长按 / 右键菜单**里，
+           界面上没有任何提示、设置页也没有入口，于是「这几个选项在哪儿调」
+           被反复问起（Issue #69）。现在设置页给一栏显式单选项，
+           与圆键菜单读写同一份 poem_play_mode_v1，两边看到的永远是同一档。
+           ================================================================== -->
+      <section class="settings-group" aria-labelledby="grp-play">
+        <h2 class="settings-group-title" id="grp-play">朗读播放</h2>
+
+        <div class="settings-item">
+          <label id="play-mode-label">连读方式</label>
+          <div class="play-modes" id="seg-play" role="radiogroup" aria-labelledby="play-mode-label"></div>
+          <div class="settings-hint" id="play-hint"></div>
+        </div>
+
+        <div class="settings-item">
+          <label>在哪儿快速调</label>
+          <div class="settings-hint">
+            想听完一篇接着听下一篇，不用回这一页：在集子索引页（小古文 / 唐诗 / 宋词 / 古文观止 / 昭明文选）
+            每张分类卡头的右侧有一颗圆形播放键 ——
+            <strong>手机上长按约半秒</strong>、<strong>电脑上点右键</strong>，
+            弹出的菜单就是上面这五档，选中即刻开听。短按那颗键则按当前档位直接连读。
+          </div>
+          <div class="settings-hint">工具栏那颗大圆键不弹菜单，它按这里选定的档位连读整页；连读的篇目范围是「你眼前这一份可见列表」（搜过、切过「未读」就只读那几篇）。</div>
+        </div>
+      </section>
     </main>
 
     <!-- 版权 + 用户协议 / 隐私条款：整页设置的最底部（页面内容不足时也贴底） -->
@@ -146,6 +175,7 @@
 
   <script src="/js/storage.js"></script>
   <script src="/js/manifest-loader.js"></script>
+  <script src="/js/play-modes.js"></script>
   <script src="/js/settings.js"></script>
   <script src="/js/chrome.js"></script>
   <script src="/js/pwa.js"></script>

@@ -610,6 +610,82 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
     chk(log.length === 0, '再点正文键 = 停下，不叠一层朗读');
   }
 
+  /* ---- 设置页的连读档位入口（Issue #69 后续 A+B）----
+     原先这五档只藏在「集子页分类卡右侧圆键的长按 / 右键菜单」里，
+     界面上没有任何提示、设置页也没有入口，被反复问「这几个选项在哪儿调」。
+     现在设置页给一栏显式单选项（A），并写明圆键这条快速入口（B）；
+     两处读写同一份 poem_play_mode_v1，因此**改一边，另一边必须跟着变** ——
+     这正是本段要验的：光有单选项、两边各自存一份状态，等于又开一个错开点。 */
+  {
+    const sd = boot('settings/index.html', { poem_play_mode_v1: 'seq-trans' });
+    await sleep(200);
+    const sdoc = sd.document;
+    const opts = () => [...sdoc.querySelectorAll('#seg-play .play-mode-opt')];
+    chk(opts().length === 5, '设置页渲染出五档连读方式（实际 ' + opts().length + '）');
+    chk(sdoc.querySelector('#seg-play').getAttribute('role') === 'radiogroup',
+      '五档是一组单选（role=radiogroup），不是五个各自为政的按钮');
+    chk(opts().every(b => b.getAttribute('role') === 'radio'),
+      '每个档位都是 role=radio（读屏能听出「五选一」）');
+    chk(opts().filter(b => b.getAttribute('aria-checked') === 'true').length === 1,
+      '五档里只有一个是选中态（互斥）');
+    chk(sdoc.querySelector('.play-mode-opt[data-play-mode="seq-trans"]').classList.contains('active'),
+      '本机存的是「连续播放白话译文」，设置页打开就把它标成选中（读的是同一份本机值）');
+    chk(/当前：白话 · 顺序/.test(sdoc.querySelector('#play-hint').textContent),
+      '档位下方回显当前档（' + sdoc.querySelector('#play-hint').textContent + '）');
+
+    // 在设置页改一档：必须写进与阅读器同一个键
+    sdoc.querySelector('.play-mode-opt[data-play-mode="shuffle-origin"]')
+      .dispatchEvent(new sd.Event('click', { bubbles: true }));
+    await sleep(60);
+    chk(sd.localStorage.getItem('poem_play_mode_v1') === 'shuffle-origin',
+      '设置页选档写进 poem_play_mode_v1（与圆键菜单同一个键）');
+    chk(sdoc.querySelector('.play-mode-opt[data-play-mode="shuffle-origin"]').classList.contains('active') &&
+      sdoc.querySelectorAll('.play-mode-opt.active').length === 1,
+      '选中态立刻跟着走，且仍只有一个');
+    chk(/当前：原文 · 随机/.test(sdoc.querySelector('#play-hint').textContent),
+      '回显也跟着变（' + sdoc.querySelector('#play-hint').textContent + '）');
+
+    // 反向：在集子页用圆键改成别的档，回到设置页要看到新档 ——
+    // 两个页面各自 new 一份 DOM，等价于「换标签页」，中间靠 localStorage 传递。
+    const cwin = boot('classic/index.html', { poem_play_mode_v1: 'shuffle-origin' });
+    await sleep(400);
+    const cbtn = cwin.document.querySelector('#gw-list .group-head .gw-play-sm');
+    chk(cbtn.dataset.playShort === '原文 · 随机',
+      '集子页圆键按本机档位显示当前模式（' + cbtn.dataset.playShort + '）');
+    cwin.PlayModes.write('seq-both');
+    await sleep(40);
+    const sd2 = boot('settings/index.html', { poem_play_mode_v1: cwin.localStorage.getItem('poem_play_mode_v1') });
+    await sleep(200);
+    chk(sd2.document.querySelector('.play-mode-opt[data-play-mode="seq-both"]').classList.contains('active'),
+      '集子页改成「原文白话顺序播放」后，设置页打开就是这一档（双向同步）');
+
+    // 野生值：本机存了不认识的档位时，绝不能把那个野值显示成选中项
+    // （显示成选中 = 告诉用户「现在是这一档」，实际引擎会退回出厂档，
+    //   两边说法不一致）。正确的表现是：选中项落在**出厂档**上，
+    // 也就是说「显示的就是引擎真正会用的那一档」。
+    const sd3 = boot('settings/index.html', { poem_play_mode_v1: 'no-such-mode' });
+    await sleep(200);
+    chk(sd3.document.querySelectorAll('.play-mode-opt[aria-checked="true"]').length === 1 &&
+      sd3.document.querySelector('.play-mode-opt.active').dataset.playMode === 'seq-origin',
+      '本机值不认识时选中项落在出厂档上（显示的就是引擎真正会用的那一档）');
+    chk(![...sd3.document.querySelectorAll('.play-mode-opt')].some(b => b.dataset.playMode === 'no-such-mode'),
+      '那个野生值不会出现在选项里（它是本机脏数据，不是一档模式）');
+    chk(/当前：原文 · 顺序/.test(sd3.document.querySelector('#play-hint').textContent),
+      '本机值不认识时回显出厂档「原文 · 顺序」（实际「' + sd3.document.querySelector('#play-hint').textContent + '」）');
+
+    // B：设置页必须把「圆键长按 / 右键」这条入口讲出来（原先一个字都没写）
+    const playBlock = sdoc.querySelector('#grp-play').closest('.settings-group').textContent;
+    chk(/长按/.test(playBlock) && /右键/.test(playBlock),
+      '设置页写明圆键的「长按（手机）/ 右键（电脑）」快速入口');
+    chk(/勾选|长按/.test(playBlock), '设置页说清了圆键上能直接调这五档');
+
+    // 档位定义同源：设置页与集子页读到的模式表必须是同一份
+    chk(sd.PlayModes.LIST.map(m => m.id).join(',') === cwin.PlayModes.LIST.map(m => m.id).join(','),
+      '两页面共用同一份模式表（js/play-modes.js），不存在两份各写各的');
+    chk(sd.PlayModes.LIST.every(m => /^[a-z-]+$/.test(m.id)) && sd.PlayModes.DEFAULT === 'seq-origin',
+      '出厂档仍是「原文 · 顺序」（seq-origin）');
+  }
+
   console.log(fails ? '\n❌ ' + fails + ' 项失败' : '\n🎉 自动朗读 / 阅读辅助测试全部通过');
   process.exit(fails ? 1 : 0);
 })();
