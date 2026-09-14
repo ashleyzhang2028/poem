@@ -124,9 +124,48 @@
     return null;
   }
 
+  /* ---------------- 正文存储主表（各集子只存归属） ----------------
+     同一篇作品的正文 / 译文在磁盘上只落一份，收在 data/text-master.js 的
+     window.TEXT_MASTER 里（由 scripts/build-text-master.js 算出）。
+     各集子（含课内 12 册）的数据文件里，被主表收编的条目**已摘掉内联正文**，
+     改留一行 textRef 指向主条目（`textRef: "poems-cz8-02"`）——
+     那一条只存归属（题名 / 作者 / 朝代 / 卷次……），正文由这里按 textRef 取回。
+
+     为什么取回要放在引擎、而不是各页自己拼：
+       · 一部集子被六个页面引用（首页、搜索页、四部集子页），
+         每个页面各拼一次，迟早有一页忘了拼 —— 表现是「那一页正文空白」，
+         不报错、也不在数据层，最难查；
+       · 摘内联正文是**存储**决定，仍是**同一份文本**在显示，
+         所以这一步对上层（列表、阅读器、朗读、排程、搜索）完全透明。
+
+     ⚠️ 主表没加载（TEXT_MASTER 为空）时**不报错也不糊弄**：
+        照原样返回，该条的正文就是空的 —— 与「集子页忘了引 data/text-master.js」
+        这个真问题对得上，而不是静默退化成某种看着正常、实则不是原文的东西。
+        测试里有一条专门守这件事（见 test/canonical.test.js）。 */
+  /**
+   * 把条目上的 textRef 展开成正文 / 译文。
+   * 取数入口是 data/text-master.js 的 window.masterTextOf —— 站点索引、
+   * 搜索页、阅读引擎共用同一个，避免各写一份、某一处忘了取。
+   *
+   * 主表没加载（TEXT_MASTER 为空）时 masterTextOf 原样返回，
+   * 该条正文就是空的 —— 与「这一页忘了引 data/text-master.js」这个真问题对得上，
+   * 而不是静默退化成某种看着正常、实则不是原文的东西。
+   */
+  function withMasterText(p, bookId) {
+    if (!p || !p.textRef || p.text) return p;
+    var book = bookId || (CFG && CFG.id) || "";
+    if (typeof window !== "undefined" && typeof window.masterTextOf === "function") {
+      return window.masterTextOf(p, book);
+    }
+    return p;
+  }
+
   /** 本项目里这一篇**用哪条作品的正文**（没有登记就是它自己） */
   function canonicalOf(p, bookId) {
     if (!p || !p.id) return p;
+    // 先按存储主表把 textRef 展开成本条自己的正文 —— 摘掉内联正文的条目
+    // 到这里就**重新拿回**正文，后面的显示层裁定、列表、阅读器都不必知道有这回事。
+    p = withMasterText(p, bookId);
     var rule = canonicalRuleFor(p, bookId);
     var book = bookId || (CFG && CFG.id) || "";
     if (!rule || !rule.of || rule.of === p.id || rule.of === book + "-" + p.id) return p;

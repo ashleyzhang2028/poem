@@ -21,7 +21,10 @@ const vm = require('vm');
 const path = require('path');
 const ROOT = path.join(__dirname, '..');
 
+// ⚠️ data/text-master.js 排最前：各集子条目只存归属（textRef），
+//    正文要按它取回 —— 判重（去标点比正文）没有正文就判不出任何一组。
 const LOAD = [
+  'data/text-master.js',
   'data/poems-1.js', 'data/poems-2.js', 'data/poems-3.js', 'data/poems-4.js',
   'data/poems-5.js', 'data/poems-6.js', 'data/poems-7.js', 'data/poems-8.js',
   'data/poems-9.js', 'data/poems-10.js', 'data/poems-11.js', 'data/poems-12.js',

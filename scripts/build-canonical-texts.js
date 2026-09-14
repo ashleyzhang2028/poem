@@ -1,6 +1,9 @@
 /**
  * 生成 data/canonical-texts.js（正文收归主表）
  * ==========================================================================
+ * ⚠️ 存储层收归之后，这张表**通常是空的**（见下「与 text-master 的分工」）。
+ *    它的机制仍在，留给「日后真出现异文」的那一天。
+ *
  * 口径（Issue #69 收尾，用户原话「正文收归主表，以课本为主，去重」）：
  *
  *   · 课内与选集**同一篇作品**（正文去标点后一致）时，正文只留一份；
@@ -21,6 +24,20 @@
  *   · 某一部增补 / 订正了篇目（正文变了，同篇关系就变）
  *   · data/works-index.js 的判重键（dedupKey）改了
  *
+ * ## 与 data/text-master.js 的分工（存储层 vs 显示层）
+ *
+ *   这张表（canonical-texts.js）是**显示层**的裁定：各集子照旧各存一份正文，
+ *   显示时才替成主条目那一份。它解决了「学生读到两种写法」，
+ *   但没解决「同一篇正文在磁盘上存了五份」。
+ *
+ *   正文收归主表的**存储层**（data/text-master.js）做完之后，
+ *   同一篇的正文本来就只剩一份、各集子条目只存归属（textRef）——
+ *   两种写法不复存在，这一张显示层裁定表也就**自然收敛为空表**。
+ *   （跑一次本脚本，若输出「0 条」即说明语料里已无绕开主表的异文。）
+ *
+ *   一旦这张表又非空，说明有某部语料没走主表、自己又存了一份正文 ——
+ *   那正是该去查的地方，而不是补进这张表里盖住。
+ *
  * 用法：node scripts/build-canonical-texts.js
  */
 const fs = require('fs');
@@ -28,7 +45,10 @@ const vm = require('vm');
 const path = require('path');
 const ROOT = path.join(__dirname, '..');
 
+// ⚠️ data/text-master.js 排最前：各集子条目只存归属（textRef），
+//    正文要按它取回 —— 判重（去标点比正文）没有正文就判不出任何一组。
 const LOAD = [
+  'data/text-master.js',
   'data/poems-1.js', 'data/poems-2.js', 'data/poems-3.js', 'data/poems-4.js',
   'data/poems-5.js', 'data/poems-6.js', 'data/poems-7.js', 'data/poems-8.js',
   'data/poems-9.js', 'data/poems-10.js', 'data/poems-11.js', 'data/poems-12.js',

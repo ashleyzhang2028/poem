@@ -267,6 +267,10 @@
   <script src="data/poems-12.js"></script>
   <script src="data/index.js"></script>
   <!-- 站点篇目总索引：把上面六部汇成一张表（搜索只读这一张） -->
+  <!-- 正文存储主表：同一篇作品的正文 / 译文只落一份，各集子条目退化成只存归属
+       （textRef 指过来，见 data/text-master.js 文件头）。
+       须排在 js/reader-core.js 之前 —— 引擎挂载时就要按它取回正文。 -->
+  <script src="data/text-master.js"></script>
   <script src="data/site-index.js"></script>
   <!-- 同篇对照表 + 作品主表：搜索结果不重复列同一篇（课内《静夜思》与唐诗《夜思》），
        「加入背诵」也按作品判重。搜索页六部数据齐备，主表可现算（rebuild）。 -->

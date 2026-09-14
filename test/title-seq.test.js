@@ -31,14 +31,20 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
 const sb = { window: {}, console };
 sb.window = sb;
 vm.createContext(sb);
+// ⚠️ data/text-master.js 排最前：正文收归主表（Issue #69 收尾）后，
+//    课内条目只留 textRef，正文与译文要按它取回 —— 排在 data/index.js 之前，
+//    数据层聚合时 masterTextOf 才能把正文展开（详见 data/text-master.js 文件头）。
 const DATA = [
+  'data/text-master.js',
   'data/poems-1.js', 'data/poems-2.js', 'data/poems-3.js', 'data/poems-4.js', 'data/poems-5.js',
   'data/poems-6.js', 'data/poems-7.js', 'data/poems-8.js', 'data/poems-9.js', 'data/poems-10.js',
   'data/poems-11.js', 'data/poems-12.js', 'data/index.js', 'data/poems-tangshi.js'
 ];
 DATA.forEach(f => vm.runInContext(fs.readFileSync(__dirname + '/../' + f, 'utf8'), sb, { filename: f }));
 const ALL = sb.POEMS_ALL;
-const TS = sb.POEMS_TANGSHI;
+// 唐诗三百首里被主表收编的条目同样只留 textRef，逐条核对正文前先展开
+// （取数走主表自己的入口，与页面 / 数据层同一条路）。
+const TS = sb.POEMS_TANGSHI.map(p => sb.masterTextOf(p, 'tangshi'));
 
 const norm = t => String(t || '').replace(/\s+/g, '');
 

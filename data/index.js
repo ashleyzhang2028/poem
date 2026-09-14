@@ -7,7 +7,14 @@
   ];
   const all = [];
   groups.forEach(function (g, i) {
-    (g || []).forEach(function (p) {
+    (g || []).forEach(function (raw) {
+      // 正文收归主表（Issue #69 收尾）：课内这 12 册里被主表收编的条目
+      // 已摘掉内联正文、只留 textRef，这里按它取回，再交出去 ——
+      // 上层（排程、复习、朗读、列表）拿到的仍是**带正文的条目**，
+      // 不必知道正文是从哪一份存的。取数走 data/text-master.js 的
+      // window.masterTextOf（各消费方共用同一个入口）。
+      var p = (typeof window.masterTextOf === "function")
+        ? window.masterTextOf(raw, "poems") : raw;
       p.grade = i + 1;
       all.push(p);
     });
