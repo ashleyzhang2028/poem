@@ -1,8 +1,8 @@
 // 古文观止（/guwen/ 页）端到端测试：目录完整性 + 卷次分组 + 收录状态 + 列表/搜索 + 阅读器
 //
-// 十二卷 166 篇这一轮**全部收齐**（每篇都有原文、白话译文、名句摘句）。
+// 十二卷 167 篇这一轮**全部收齐**（每篇都有原文、白话译文、名句摘句）。
 // 所以这里验的是：
-//   1. 目录完整（166 篇 / 12 卷 / 篇名朝代作者出处齐备）；
+//   1. 目录完整（167 篇 / 12 卷 / 篇名朝代作者出处齐备）；
 //   2. 正文确实属于这一篇（逐篇用开篇句当指纹比对 —— 这条来自一次真实事故，
 //      见文件中部 OPENINGS 那段说明）；
 //   3. 已经不存在「待补」条目（引擎与样式的待补分支仍保留，见 assertions 末尾）。
@@ -23,8 +23,8 @@ const { loadData, resolve } = require('./master-env');
 loadData(sandbox, ['data/poems-classic.js', 'data/poems-guwen.js', 'data/site-index.js']);
 
 const GW = resolve(sandbox, sandbox.POEMS_GUWEN, 'guwen');
-chk(Array.isArray(GW) && GW.length === 166,
-  '古文观止目录十二卷共 166 篇（实际 ' + (GW ? GW.length : 'undefined') + '）');
+chk(Array.isArray(GW) && GW.length === 167,
+  '古文观止目录十二卷共 167 篇（实际 ' + (GW ? GW.length : 'undefined') + '）');
 
 const ids = new Set();
 let dup = 0;
@@ -42,11 +42,11 @@ chk(GW.every(p => p.selection === '《古文观止》'),
 chk(GW.every(p => /^卷[一二三四五六七八九十]+ /.test(p.gradeGroup || '')),
   '每篇都归入某一卷（gradeGroup 形如「卷N XX」）');
 
-// 收录状态：十二卷 166 篇**全部收齐**（原文 + 白话译文 + 摘句）
+// 收录状态：十二卷 167 篇**全部收齐**（原文 + 白话译文 + 摘句）
 const done = GW.filter(p => p.text && p.translation);
 const pending = GW.filter(p => !p.text && !p.translation);
 chk(done.length === GW.length,
-  '166 篇全部收录（已收录 ' + done.length + ' · 待补 ' + pending.length + '）');
+  '167 篇全部收录（已收录 ' + done.length + ' · 待补 ' + pending.length + '）');
 chk(pending.length === 0, '没有待补条目：目录里每一篇都能点开就读');
 chk(done.length === sandbox.guwenDoneCount(),
   'guwenDoneCount() 与实际收录数一致（' + done.length + '）');
@@ -68,7 +68,7 @@ chk(done.every(p => /^《.+》$/.test(p.source || '')),
 // 十二卷齐备
 const groups = sandbox.getGuwenGroups();
 chk(groups.length === 12, '按卷次聚合出 12 组（实际 ' + groups.length + '）');
-chk(groups.reduce((n, g) => n + g.items.length, 0) === 166, '各组篇目合计 166');
+chk(groups.reduce((n, g) => n + g.items.length, 0) === 167, '各组篇目合计 167');
 const want = ['卷一 周文', '卷二 周文', '卷三 周文', '卷四 秦文', '卷五 汉文', '卷六 汉文',
   '卷七 六朝唐文', '卷八 唐文', '卷九 唐宋文', '卷十 宋文', '卷十一 宋文', '卷十二 明文'];
 chk(want.every(w => groups.some(g => g.name === w)),
@@ -221,6 +221,7 @@ const OPENINGS = {
   "陋室铭": "山不在高，有仙则名",
   "阿房宫赋": "六王毕，四海一，蜀山兀，阿房出",
   "原道": "博爱之谓仁，行而宜之之谓义，由是而之焉之谓道，足乎己无待于外之谓德",
+  "送孟东野序": "大凡物不得其平则鸣：草木之无声，风挠之鸣",
   "原毁": "古之君子，其责己也重以周，其待人也轻以约",
   "获麟解": "麟之为灵，昭昭也",
   "杂说一·龙说": "龙嘘气成云，云固弗灵于龙也",
@@ -310,6 +311,20 @@ chk(/郑武公/.test(zw.translation || '') && /姜氏/.test(zw.translation || ''
   '白话译文把人物译成今语（含「郑武公」「姜氏」）');
 chk((zw.text || '').length > 300, '《郑伯克段于鄢》是长篇（>300 字，验证长文场景）');
 
+// 「选本名」不当出处 —— 这一条来自一次真实的**整篇丢失**：
+//   当初补录《送孟东野序》时把 source 写成选本名《古文观止》，随后另一轮
+//   「补齐十二卷目录」把整个数据文件重写了一遍，这篇因为「出处 = 选本名」这个
+//   特征列不进任何一卷的真实来源清单，便被静默丢掉 —— 目录、分组、计数、
+//   搜索全都不报错，只是少了一篇。上面那条 `source !== '《古文观止》'` 正是
+//   为了让「重写时按 source 归类」这件事把每一篇都算进去，这里再点名守一遍，
+//   免得日后又有人图省事把 source 改回选本名。
+const mustHave = ['送孟东野序', '原道', '杂说四·马说', '祭十二郎文', '捕蛇者说'];
+chk(mustHave.every(t => titles.includes(t)),
+  '卷八 唐文的名篇都在（缺 ' + mustHave.filter(t => !titles.includes(t)).join('/') + '）');
+chk(GW.filter(p => p.title === '送孟东野序')[0].source === '《昌黎先生集》',
+  '《送孟东野序》的出处记《昌黎先生集》，选本名退到 selection'
+  + '（出处写成选本名的那一篇，曾在重写数据文件时整篇丢失）');
+
 // 不能污染古诗词主库与每日计划
 chk(sandbox.POEMS_ALL === undefined, '古文不写入 POEMS_ALL，不影响每日计划');
 
@@ -356,19 +371,19 @@ setTimeout(() => {
     chk(dups.length === 0, f + ' 无重复 id（重复：' + dups.join(', ') + '）');
   });
 
-  chk(d.querySelectorAll('#gw-list .item').length === 166,
-    '列表渲染 166 篇目录（实际 ' + d.querySelectorAll('#gw-list .item').length + '）');
+  chk(d.querySelectorAll('#gw-list .item').length === 167,
+    '列表渲染 167 篇目录（实际 ' + d.querySelectorAll('#gw-list .item').length + '）');
   chk(d.querySelectorAll('#gw-list .item.pending').length === 0,
-    '列表里没有「待补」条目（166 篇全都有正文与译文）');
+    '列表里没有「待补」条目（167 篇全都有正文与译文）');
   chk(d.querySelectorAll('#gw-list .item-reason.pending').length === 0,
     '列表里也没有「待补」小标');
-  chk(d.querySelector('#gw-count').textContent === '0 / 166 篇',
-    '顶部显示 0 / 166 篇：' + d.querySelector('#gw-count').textContent);
+  chk(d.querySelector('#gw-count').textContent === '0 / 167 篇',
+    '顶部显示 0 / 167 篇：' + d.querySelector('#gw-count').textContent);
 
   // 挂载点对外接口
   const api = w.ReaderEngine.current;
   chk(!!api, '引擎挂上了古文观止实例');
-  chk(api.total() === 166, '实例 total() 为 166');
+  chk(api.total() === 167, '实例 total() 为 167');
 
   // 已读键：古文与别的集子各存各的
   const gsrc = fs.readFileSync(path + 'js/guwen.js', 'utf8');
@@ -433,7 +448,7 @@ setTimeout(() => {
   // 搜索：按作者筛，且只筛古文这一部
   api.setKeyword('左丘明');
   const nZuo = d.querySelectorAll('#gw-list .item').length;
-  chk(nZuo > 0 && nZuo < 166, '按作者「左丘明」搜索得到子集（' + nZuo + ' 篇）');
+  chk(nZuo > 0 && nZuo < 167, '按作者「左丘明」搜索得到子集（' + nZuo + ' 篇）');
   api.setKeyword('');
 
   console.log('');
