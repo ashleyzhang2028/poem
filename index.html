@@ -77,8 +77,13 @@
       </div>
     </section>
 
-    <!-- 今日 5 首列表 -->
-    <section class="list" id="today-list"></section>
+    <!-- 今日 5 首列表。
+         ⚠️ 外层这一层是给平板那一档的：两列排布只作用在 .list 的直接子元素上
+            （见 css/style.css 的平板那一档），这里包一层「今日」自己一组，
+            免得今日几首与下面折叠卡里的全部篇目排进同一个两列流。 -->
+    <div class="today-list">
+      <section class="list" id="today-list"></section>
+    </div>
 
     <!-- 自选背诵不在这里：导入 / 导出 / 改名 / 删除 / 整组移出 / 上移下移
          都搬去了设置整页（/settings/ 的「我的清单」一组，Issue #114 第二条）。

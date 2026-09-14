@@ -35,54 +35,60 @@
   <div class="app">
     <header class="topbar"></header>
 
-    <!-- 总览四格：已学 / 待复习 / 平均掌握度 / 尚未学过 -->
-    <section class="card">
-      <div class="stats-row" id="progress-stats"></div>
-      <p class="progress-tip" id="progress-tip"></p>
-    </section>
+    <!-- 四块内容（总览 / 到期日历 / 到期篇目 / 掌握度与阶段）。
+         平板（≥768px）上这里换成两列并排：见 css/classic.css 的 .progress-main -->
+    <div class="progress-main">
+      <!-- 总览四格：已学 / 待复习 / 平均掌握度 / 尚未学过
+           ⚠️ .wide 是给平板那一档的：这一块内容只有一行数字，
+              平板上占满整行（见 css/classic.css 的 .progress-main） -->
+      <section class="card progress-card wide">
+        <div class="stats-row" id="progress-stats"></div>
+        <p class="progress-tip" id="progress-tip"></p>
+      </section>
 
-    <!-- 到期日历：未来 14 天每天到期的篇数；点某一格 → 下方清单滚到那一天 -->
-    <section class="card progress-card">
-      <div class="progress-head">
-        <h2>到期日历</h2>
-        <span class="progress-sub" id="calendar-sub"></span>
-      </div>
-      <div class="cal" id="progress-calendar"></div>
-      <p class="progress-note" id="calendar-note"></p>
-    </section>
+      <!-- 到期日历：未来 14 天每天到期的篇数；点某一格 → 下方清单滚到那一天 -->
+      <section class="card progress-card">
+        <div class="progress-head">
+          <h2>到期日历</h2>
+          <span class="progress-sub" id="calendar-sub"></span>
+        </div>
+        <div class="cal" id="progress-calendar"></div>
+        <p class="progress-note" id="calendar-note"></p>
+      </section>
 
-    <!-- 全部到期篇目：日历上「哪天几篇」摊开成「哪天是**哪几篇**」。
-         日历是形状（一眼看忙不忙），这里是清单（要背的时候照着背）。
-         两处同一本账、同一套归档规则（逾期并进「今天」、
-         逾期超过一周的在今天那一档里单列一截），数不对就是 bug。 -->
-    <section class="card progress-card">
-      <div class="progress-head">
-        <h2>全部到期篇目</h2>
-        <span class="progress-sub" id="duelist-sub"></span>
-      </div>
-      <!-- 默认只展开「今天」那一档：每天真正会看的往往就是今天这几篇，
-           其余各天折起来，一页不至于长到要找 -->
-      <div class="duelist" id="progress-duelist"></div>
-      <p class="progress-note" id="duelist-note"></p>
-    </section>
+      <!-- 全部到期篇目：日历上「哪天几篇」摊开成「哪天是**哪几篇**」。
+           日历是形状（一眼看忙不忙），这里是清单（要背的时候照着背）。
+           两处同一本账、同一套归档规则（逾期并进「今天」、
+           逾期超过一周的在今天那一档里单列一截），数不对就是 bug。 -->
+      <section class="card progress-card">
+        <div class="progress-head">
+          <h2>全部到期篇目</h2>
+          <span class="progress-sub" id="duelist-sub"></span>
+        </div>
+        <!-- 默认只展开「今天」那一档：每天真正会看的往往就是今天这几篇，
+             其余各天折起来，一页不至于长到要找 -->
+        <div class="duelist" id="progress-duelist"></div>
+        <p class="progress-note" id="duelist-note"></p>
+      </section>
 
-    <!-- 掌握度分布：分五档，每档多少篇 -->
-    <section class="card progress-card">
-      <div class="progress-head">
-        <h2>掌握度分布</h2>
-        <span class="progress-sub" id="mastery-sub"></span>
-      </div>
-      <div class="bars" id="progress-mastery"></div>
-    </section>
+      <!-- 掌握度分布：分五档，每档多少篇 -->
+      <section class="card progress-card">
+        <div class="progress-head">
+          <h2>掌握度分布</h2>
+          <span class="progress-sub" id="mastery-sub"></span>
+        </div>
+        <div class="bars" id="progress-mastery"></div>
+      </section>
 
-    <!-- 记忆阶段分布：第几轮各有多少篇（原先只看得见单篇的「第 N 轮」） -->
-    <section class="card progress-card">
-      <div class="progress-head">
-        <h2>记忆阶段</h2>
-        <span class="progress-sub" id="levels-sub"></span>
-      </div>
-      <div class="bars" id="progress-levels"></div>
-    </section>
+      <!-- 记忆阶段分布：第几轮各有多少篇（原先只看得见单篇的「第 N 轮」） -->
+      <section class="card progress-card">
+        <div class="progress-head">
+          <h2>记忆阶段</h2>
+          <span class="progress-sub" id="levels-sub"></span>
+        </div>
+        <div class="bars" id="progress-levels"></div>
+      </section>
+    </div>
   </div>
 
   <div class="toast" id="toast" hidden></div>

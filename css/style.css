@@ -49,6 +49,10 @@
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --shadow: 0 2px 14px rgba(74, 58, 38, 0.10);
   --shadow-up: 0 -2px 16px rgba(74, 58, 38, 0.12);
+  /* iOS 横屏有一个「按宽度放大文字」的默认行为（与台式机的响应式不是一件事）：
+     它会按视口宽度乘一个倍数，同一段说明在竖屏 / 横屏下字号不同。
+     这里按标准做法关掉，字号只由样式表决定。 */
+  -webkit-text-size-adjust: 100%;
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -79,16 +83,46 @@ html, body {
    顶栏（.topbar 的 max-width: 720px）、阅读器（.reader-body 的 720px）、
    页签（下面 .dock 的 720px）全是这一条，改一处必须三处一起改。
 
-   ⚠️ 为什么桌面端不跟着视口变宽：这一列里排的是诗句与条目，
+   ⚠️ 为什么不能跟着视口无限变宽：这一列里排的是诗句与条目，
    不是表格。屏幕再宽，一行的字符数也不该无限长 —— 行太长反而更难读
    （正文行宽的经验上限约 35~40 个汉字）。
-   所以这里只跟随视口「到 720px 为止」，再宽就居中留白。
-   宽屏下真正该变的是**列内的排布**（入口页两列、设置页两列等，见各处媒体查询），
-   以及页签不再被拉成一格 400px 的巨板（见 .dock）。 */
+   所以宽度封顶，再宽就居中留白。
+
+   平板（Issue #122 后续）之前这里**只有 720px 一个值** —— 手机、平板、
+   桌面全是同一档。720px 落在 iPad 竖屏（768px）上就只剩 24px 的边距：
+   「一张纸」贴满整屏，与手机观感一模一样，白白空着两侧的宽度；
+   而 720px 一栏里本来能并排两列的东西（篇目、入口卡、选项）仍是一列。
+   现在分两档：
+     · 手机 —— 720px（原样不动）
+     · ≥768px 的平板（竖屏 768 / 810 / 820 / 1024，横屏 1024 / 1112 / 1180）
+       —— 更宽的一列（见下面平板那一档），列内同时换成两列排布。
+   ⚠️ 断点取 768px（平板竖屏），不是 560px：560px 只是「两列排得下」的
+      最小值，用在那里会让手机横屏（667px）与小平板也跟着换档；
+      这一档的判据是「这屏够宽、够排两列」，768px 是握在手里的平板。
+   ⚠️ 桌面（≥1280px 或电脑上的窗口）**仍是这一档**：一屏 1920px 排三列，
+      每列 400px，标题与按钮隔得老远 —— 比留白更难看。
+      宽屏上该变的是列内排布，不是列本身无限变宽。 */
 .app, #app {
-  max-width: 720px;
+  max-width: var(--col-w);
   margin: 0 auto;
   padding: 0 14px 40px;
+}
+
+/* 「一列纸」的宽度：全站唯一来源（顶栏 / 页签内层 / 正文列都读它）。
+   ⚠️ 顶栏（.topbar）、页签内层（.dock-inner）、阅读器正文（.reader-body）
+      都写 var(--col-w)，不要再出现第二处 720px —— 改一处必须全站一起改。 */
+:root { --col-w: 720px; }
+
+/* 平板（≥768px）：把「一列纸」放宽一档
+   --------------------------------------------------------------------------
+   720px → 1040px。这一档**只给到 1040px**，不跟视口走：
+   平板横屏（1024~1180px）上留一点边距，桌面（≥1280px）也还是这一列 ——
+   见上面「桌面仍是这一档」那条的理由。
+   与这一档配套的还有：篇目列表两列、入口页三列、设置页满两列、
+   进度条与日历各占一栏 —— 一条一条见各自那条注释。 */
+@media (min-width: 768px) {
+  :root { --col-w: 1040px; }
+  .app, #app { padding: 0 22px 48px; }
 }
 
 .icon-btn {
@@ -240,6 +274,36 @@ html, body {
 
 /* 列表 */
 .list { display: flex; flex-direction: column; gap: 10px; }
+/* 平板（≥768px）：篇目列表排成两列
+   --------------------------------------------------------------------------
+   全站最长的列表就是首页「今日背诵 / 全部篇目」（261 首）与各集子目录页
+   （唐诗 301 / 宋词 255 …）。手机上一列是对的：一行一篇、序号在左、指头一路
+   往下划。但同一列搬到平板上，1040px 里一行横向排开 900 多 px 只放「序号 +
+   篇名 + 作者 + 一个按钮」—— 每行右边的空白比字还宽，一屏只能看 8 行，
+   而屏幕明明放得下两倍。
+   两列后每行约 505px，与手机上一条卡片的视觉宽度同档，
+   序号 / 篇名 / 作者 / 播放键的相对位置一个都不变（行内部本来就是两端对齐的 flex）。
+
+   ⚠️ 用 flex + flex-basis 而不是 grid：条目数量是数据驱动的，
+      哪天多一类少一类都不用改样式；换列时条目自动流过去。
+   ⚠️ 10px 是行距（gap）——列距比行距大（22px），两块之间才分得开：
+      flex 的 column-gap 与 row-gap 各给一个值。
+   ⚠️ 这里只做**视觉**上的两列：DOM 顺序仍是 1 2 3 4 …，
+      读屏与 Tab 键的次序不变（没有用 order / 分桶去重排 DOM）。 */
+@media (min-width: 768px) {
+  .list {
+    flex-direction: row;
+    flex-wrap: wrap;
+    column-gap: 22px;
+    row-gap: 10px;
+  }
+  .list > .item {
+    flex: 1 1 calc(50% - 11px);
+    /* 同上：flex-basis 的百分比算的是容器宽度，不减掉半个 column-gap，
+       两列一加就溢出 22px。 */
+    max-width: calc(50% - 11px);
+  }
+}
 
 .item {
   background: var(--card);
@@ -1282,6 +1346,42 @@ body.has-install-tip #app {
    -------------------------------------------------------------------------- */
 .settings-group { margin-top: 26px; }
 .settings-group:first-of-type { margin-top: 4px; }
+/* 平板（≥768px）：设置分组排成两列
+   --------------------------------------------------------------------------
+   上一轮（PR #133）把「连读方式」「复习算法」两栏**内部**改成了两列，
+   但**分组之间**仍是一列：1040px 里纵向堆五组，每组只用掉 1040px 的宽度
+   去放一行「标签 + 一档选项」，组与组之间隔着一整屏的空白 ——
+   设置页在平板上就是一条又长又空的单列。
+   这里让分组自己流进两列：一屏能看到两组，滚动距离减半。
+   与「我的清单」那种**跨列**的组（自己一个面板、要整行）分开处理：
+   它用下面的 .settings-item.wide 占满两列，不被挤成半栏。 */
+@media (min-width: 768px) {
+  .settings-groups {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    column-gap: 36px;
+    row-gap: 0;
+  }
+  .settings-group {
+    flex: 1 1 calc(50% - 18px);
+    max-width: calc(50% - 18px);
+    margin-top: 22px;
+  }
+  .settings-group:first-of-type { margin-top: 4px; }
+  /* 跨列的那一项：一行独占（宽度 100%），并按整行的宽度重新切自己的两列 */
+  .settings-item.wide {
+    flex: 1 1 100%;
+    max-width: 100%;
+  }
+  .settings-item.wide .collections-panel .list {
+    column-gap: 22px;
+  }
+  .settings-item.wide .collections-panel .list > .item {
+    flex: 1 1 calc(50% - 11px);
+    max-width: calc(50% - 11px);
+  }
+}
 
 .settings-group-title {
   display: flex;
@@ -1477,13 +1577,15 @@ body.has-install-tip #app {
       固定定位的底线会被一起收掉，屏幕左右两侧露出「没有页签」的空白。
    ⚠️ 底部安全区（--safe-bottom）留在**外层**的 padding 里，不能挪进内层 ——
       iPhone 横条的避让按屏幕底边算，与内层多宽无关。
+   ⚠️ 断点 768px 是「握在手里的平板」这一档，不是「桌面窗口够宽」那一档 ——
+      见下面 .app 那条。
    ⚠️ 注意 .dock-item 是内层的直接子元素，`.dock-inner > .dock-item` 的
       flex: 1 才能让四格等分内层。 */
 .dock-inner {
   display: flex;
   align-items: stretch;
   width: 100%;
-  max-width: 720px;
+  max-width: var(--col-w);
   margin: 0 auto;
 }
 @keyframes dockIn { from { transform: translateY(12px); opacity: .4 } to { transform: none; opacity: 1 } }
@@ -1697,7 +1799,7 @@ html, body {
   /* 加上刘海 / 灵动岛高度，左右两栏共用同一条中轴；
      宽度与 .app 的 720px 内容区对齐，大屏上不会比正文宽出一大截 */
   padding: calc(14px + var(--safe-top)) 2px 12px;
-  max-width: 720px;
+  max-width: var(--col-w);
   margin: 0 auto;
   box-sizing: border-box;
 }
