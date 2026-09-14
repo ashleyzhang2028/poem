@@ -15,10 +15,28 @@
    ⚠️ 选本数据整理说明：
      · 原始篇目清单里有一批条目把「作者」「词牌」写颠倒了
        （如「韩疁 宋 高阳台」实为 韩疁《高阳台》），入库前已按词牌表逐条校正；
-     · 同一作者同一词牌有多首的（晏殊三个《木兰花》等），
-       原始清单没有首句可资分辨，按目录先后标作「其一 / 其二 / 其三」，
-       只作条目区分用，不宣称是选本原名；
+     · 同一作者同一词牌有多首的（晏殊三个《木兰花》、欧阳修三个《蝶恋花》等），
+       副题**一律取本篇首句**（「木兰花·燕鸿过后莺归去」「蝶恋花·庭院深深深几许」），
+       不写「其一 / 其二 / 其三」；
      · 词牌一律用中文「·」与副题相连（念奴娇·赤壁怀古），与全站写法一致。
+
+   ⚠️「其一 / 其二 / 其三」已全部撤销（Issue #69 · 本 PR）
+     早前整理这批同名条目时，按目录先后标过一批「其一 / 其二 / 其三」——
+     那是**整理者自拟**的，不是选本原名。《宋词三百首》目录里同一词牌下的
+     多首本无序号，编排次序在各本之间还会出入；把它写成「其一」等于替选本
+     定了一个它没有的篇次，用户点开也看不出是哪一首。
+     现已 20 条全部改为**首句副题** —— 副题就是本篇正文里的第一句，
+     取到第一个逗号为止；首个逗号前以问号收束的（「庭院深深深几许？」
+     「谁道闲情抛弃久？」），只留一句问话认不出是哪一首，连下一句一并带上：
+
+       sc-13  浣溪沙·其一  → 浣溪沙·一曲新词酒一杯
+       sc-17  木兰花·其一  → 木兰花·燕鸿过后莺归去
+       sc-28  蝶恋花·其一  → 蝶恋花·庭院深深深几许
+       （共 20 条，另见 test/songci.test.js 的逐条清单）
+
+     首句副题是**从本篇正文里取的字**，不是补出来的信息 ——
+     全站只有三处「副题」来源是允许的：选本原名、词牌加首句、作者自序里的题名。
+     test/songci.test.js 里有一条反向校验：副题必须等于本篇正文的首句。
 
    ⚠️ 篇目补齐与篇名校正（Issue #69 收尾）：
      · 与通篇本目录逐条比对后，补入 29 首漏收的词作（林逋、梅尧臣、
@@ -176,7 +194,7 @@ window.POEMS_SONGCI = [
   },
   {
     id: "sc-13",
-    title: "浣溪沙·其一",
+    title: "浣溪沙·一曲新词酒一杯",
     source: "《宋词三百首》",
     dynasty: "宋",
     author: "晏殊",
@@ -188,7 +206,7 @@ window.POEMS_SONGCI = [
   },
   {
     id: "sc-14",
-    title: "浣溪沙·其二",
+    title: "浣溪沙·一向年光有限身",
     source: "《宋词三百首》",
     dynasty: "宋",
     author: "晏殊",
@@ -200,7 +218,7 @@ window.POEMS_SONGCI = [
   },
   {
     id: "sc-15",
-    title: "清平乐·其一",
+    title: "清平乐·红笺小字",
     source: "《宋词三百首》",
     dynasty: "宋",
     author: "晏殊",
@@ -212,7 +230,7 @@ window.POEMS_SONGCI = [
   },
   {
     id: "sc-16",
-    title: "清平乐·其二",
+    title: "清平乐·金风细细",
     source: "《宋词三百首》",
     dynasty: "宋",
     author: "晏殊",
@@ -224,7 +242,7 @@ window.POEMS_SONGCI = [
   },
   {
     id: "sc-17",
-    title: "木兰花·其一",
+    title: "木兰花·燕鸿过后莺归去",
     source: "《宋词三百首》",
     dynasty: "宋",
     author: "晏殊",
@@ -236,7 +254,7 @@ window.POEMS_SONGCI = [
   },
   {
     id: "sc-18",
-    title: "木兰花·其二",
+    title: "木兰花·绿杨芳草长亭路",
     source: "《宋词三百首》",
     dynasty: "宋",
     author: "晏殊",
@@ -248,7 +266,7 @@ window.POEMS_SONGCI = [
   },
   {
     id: "sc-19",
-    title: "木兰花·其三",
+    title: "木兰花·池塘水绿风微暖",
     source: "《宋词三百首》",
     dynasty: "宋",
     author: "晏殊",
@@ -260,7 +278,7 @@ window.POEMS_SONGCI = [
   },
   {
     id: "sc-20",
-    title: "踏莎行·其一",
+    title: "踏莎行·碧海无波",
     source: "《宋词三百首》",
     dynasty: "宋",
     author: "晏殊",
@@ -272,7 +290,7 @@ window.POEMS_SONGCI = [
   },
   {
     id: "sc-21",
-    title: "踏莎行·其二",
+    title: "踏莎行·小径红稀",
     source: "《宋词三百首》",
     dynasty: "宋",
     author: "晏殊",
@@ -356,7 +374,7 @@ window.POEMS_SONGCI = [
   },
   {
     id: "sc-28",
-    title: "蝶恋花·其一",
+    title: "蝶恋花·庭院深深深几许？杨柳堆烟",
     source: "《宋词三百首》",
     dynasty: "宋",
     author: "欧阳修",
@@ -368,7 +386,7 @@ window.POEMS_SONGCI = [
   },
   {
     id: "sc-29",
-    title: "蝶恋花·其二",
+    title: "蝶恋花·谁道闲情抛弃久？每到春来",
     source: "《宋词三百首》",
     dynasty: "宋",
     author: "欧阳修",
@@ -380,7 +398,7 @@ window.POEMS_SONGCI = [
   },
   {
     id: "sc-30",
-    title: "蝶恋花·其三",
+    title: "蝶恋花·帘幕风轻双语燕",
     source: "《宋词三百首》",
     dynasty: "宋",
     author: "欧阳修",
@@ -630,7 +648,7 @@ window.POEMS_SONGCI = [
   },
   {
     id: "sc-51",
-    title: "蝶恋花·其一",
+    title: "蝶恋花·醉别西楼醒不记",
     source: "《宋词三百首》",
     dynasty: "宋",
     author: "晏几道",
@@ -642,7 +660,7 @@ window.POEMS_SONGCI = [
   },
   {
     id: "sc-52",
-    title: "蝶恋花·其二",
+    title: "蝶恋花·梦入江南烟水路",
     source: "《宋词三百首》",
     dynasty: "宋",
     author: "晏几道",
@@ -678,7 +696,7 @@ window.POEMS_SONGCI = [
   },
   {
     id: "sc-55",
-    title: "木兰花·其一",
+    title: "木兰花·秋千院落重帘暮",
     source: "《宋词三百首》",
     dynasty: "宋",
     author: "晏几道",
@@ -690,7 +708,7 @@ window.POEMS_SONGCI = [
   },
   {
     id: "sc-56",
-    title: "木兰花·其二",
+    title: "木兰花·小颦若解愁春暮",
     source: "《宋词三百首》",
     dynasty: "宋",
     author: "晏几道",
@@ -714,7 +732,7 @@ window.POEMS_SONGCI = [
   },
   {
     id: "sc-58",
-    title: "阮郎归·其一",
+    title: "阮郎归·天边金掌露成霜",
     source: "《宋词三百首》",
     dynasty: "宋",
     author: "晏几道",
@@ -726,7 +744,7 @@ window.POEMS_SONGCI = [
   },
   {
     id: "sc-59",
-    title: "阮郎归·其二",
+    title: "阮郎归·旧香残粉似当初",
     source: "《宋词三百首》",
     dynasty: "宋",
     author: "晏几道",
@@ -1054,7 +1072,7 @@ window.POEMS_SONGCI = [
   },
   {
     id: "sc-87",
-    title: "满庭芳·其一",
+    title: "满庭芳·山抹微云",
     source: "《宋词三百首》",
     dynasty: "宋",
     author: "秦观",
@@ -1066,7 +1084,7 @@ window.POEMS_SONGCI = [
   },
   {
     id: "sc-88",
-    title: "满庭芳·其二",
+    title: "满庭芳·碧水惊秋",
     source: "《宋词三百首》",
     dynasty: "宋",
     author: "秦观",

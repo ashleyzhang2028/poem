@@ -258,6 +258,22 @@ setTimeout(() => {
     '加入时顺手存了一份最小快照（首页不加载五部集子，靠它显示与排程）');
   chk(!!firstItem.snap.text && !!firstItem.snap.title,
     '快照里带着正文与题名（首页每日任务要读正文）');
+
+  /* ---- 快照里允许没有朝代：自选集合能加进《昭明文选》的篇目 ---- */
+  // 《文选》的题署只给作者的字，朝代是后人按人名表推的，已按
+  // 「补出来的信息一律留空」清掉（见 data/poems-zhaoming.js 文件头）。
+  // 快照要原样带着这个空值 —— 不能在这里回落成「未知」，否则列表里会多出一栏假信息。
+  const zmCol = C.create('文选选背');
+  C.add('zhaoming-zm-246', zmCol.id);      // 古诗十九首，dynasty 为空
+  const zmSnap = C.snapshotOf('zhaoming-zm-246', w.SITE_INDEX);
+  chk(!!zmSnap && zmSnap.title === '古诗十九首', '《古诗十九首》进了快照');
+  chk(zmSnap.dynasty === '', '快照里朝代照旧留空，不回落成「未知」（实际 ' +
+    JSON.stringify(zmSnap.dynasty) + '）');
+  const zmItems = C.scheduleItems(w.SITE_INDEX).filter(p => p.id === 'zhaoming-zm-246');
+  chk(zmItems.length === 1 && zmItems[0].dynasty === '' && zmItems[0].author,
+    '排程拿到的这一篇：朝代空、作者在（留空的是朝代，不是作者）');
+  C.removeItem('zhaoming-zm-246', zmCol.id);
+  C.remove(zmCol.id);
   // 首页只加载课内 12 册：用空索引模拟首页取数，仍应拿得出这一篇
   const noIndex = C.scheduleItems([]);
   chk(noIndex.length === C.count() && noIndex.every(p => p.title && p.text),

@@ -83,14 +83,14 @@ chk(groupAsAuthor.length === 0,
 
 // 需求清单抽查：名家名篇必须在库中
 const need = ['宴山亭·北行见杏花', '苏幕遮', '渔家傲', '雨霖铃', '水调歌头', '念奴娇·赤壁怀古',
-  '江城子·乙卯正月二十日夜记梦', '踏莎行', '满庭芳·其一', '青玉案', '西河·金陵怀古',
+  '江城子·乙卯正月二十日夜记梦', '踏莎行', '青玉案', '西河·金陵怀古',
   '卜算子·咏梅', '钗头凤', '摸鱼儿', '永遇乐·京口北固亭怀古', '扬州慢', '暗香', '疏影',
   '双双燕·咏燕', '莺啼序', '声声慢', '一剪梅', '醉花阴', '武陵春·风住尘香花已尽'];
 const titles = SC.map(p => p.title);
 const missing = need.filter(t => !titles.includes(t));
 chk(missing.length === 0, '需求清单里的名篇齐备（缺 ' + missing.join('/') + '）');
 
-// 同一作者同一词牌的多首：标「其一 / 其二 / 其三」区分，不能两条同名
+// 同一作者同一词牌的多首：副题取首句区分，不能两条同名
 const seen = {};
 let sameName = 0;
 SC.forEach(p => {
@@ -98,7 +98,85 @@ SC.forEach(p => {
   if (seen[k]) sameName++;
   seen[k] = 1;
 });
-chk(sameName === 0, '同一作者的篇名不重复（重名的已按目录次序标「其一 / 其二」区分，重复 ' + sameName + '）');
+chk(sameName === 0, '同一作者的篇名不重复（重名的以首句副题区分，重复 ' + sameName + '）');
+
+/* ---------- 一b、「其一 / 其二 / 其三」自拟编号已全部撤销 ---------- */
+/**
+ * 需求原话（Issue #69 · 本 PR）：
+ *   「宋词那批『其一 / 其二 / 其三』编号是我上轮为分辨同名条目加的自拟编号，
+ *     不是选本原名。=> 请去掉并改成首句副题。」
+ *
+ * 《宋词三百首》目录里同一词牌下的多首**本无序号**，编排次序各本之间还有出入；
+ * 写成「其一」等于替选本定了一个它没有的篇次，用户点开也看不出是哪一首。
+ * 下面这张表**逐条列出**改过的 20 条，锁住「标题 = 词牌·首句」这件事 ——
+ * 日后谁再想加自拟编号，这里会先红。
+ */
+const SEQ_FIXED = [
+  ['sc-13', '浣溪沙·一曲新词酒一杯'], ['sc-14', '浣溪沙·一向年光有限身'],
+  ['sc-15', '清平乐·红笺小字'], ['sc-16', '清平乐·金风细细'],
+  ['sc-17', '木兰花·燕鸿过后莺归去'], ['sc-18', '木兰花·绿杨芳草长亭路'],
+  ['sc-19', '木兰花·池塘水绿风微暖'],
+  ['sc-20', '踏莎行·碧海无波'], ['sc-21', '踏莎行·小径红稀'],
+  ['sc-28', '蝶恋花·庭院深深深几许？杨柳堆烟'], ['sc-29', '蝶恋花·谁道闲情抛弃久？每到春来'],
+  ['sc-30', '蝶恋花·帘幕风轻双语燕'],
+  ['sc-51', '蝶恋花·醉别西楼醒不记'], ['sc-52', '蝶恋花·梦入江南烟水路'],
+  ['sc-55', '木兰花·秋千院落重帘暮'], ['sc-56', '木兰花·小颦若解愁春暮'],
+  ['sc-58', '阮郎归·天边金掌露成霜'], ['sc-59', '阮郎归·旧香残粉似当初'],
+  ['sc-87', '满庭芳·山抹微云'], ['sc-88', '满庭芳·碧水惊秋'],
+];
+const byId = {};
+SC.forEach(p => { byId[p.id] = p; });
+
+/**
+ * 取首句作副题：截到第一个逗号为止。
+ *   · 首句本身就是词牌（「长相思，在长安」）时，取到第二个逗号；
+ *   · 「庭院深深深几许？杨柳堆烟」这种首个逗号前以问号收束的，
+ *     短到只剩一句问话会认不出是哪一首，一并带上下一句 —— 与语料里的取法一致。
+ */
+function firstClause(head, base) {
+  var cut = -1;
+  for (var i = 0; i < head.length; i++) {
+    var ch = head[i];
+    if (ch !== '，' && ch !== '、') continue;
+    var seg = head.slice(0, i);
+    if (seg === base || /[？?]$/.test(seg)) continue;
+    cut = i;
+    break;
+  }
+  return cut >= 0 ? head.slice(0, cut) : head;
+}
+let seqBad = [];
+SEQ_FIXED.forEach(([id, want]) => {
+  const p = byId[id];
+  if (!p) { seqBad.push(id + '(缺)'); return; }
+  if (p.title !== want) seqBad.push(id + ' 应为「' + want + '」，实际「' + p.title + '」');
+});
+chk(seqBad.length === 0,
+  '20 条原「其一 / 其二 / 其三」已改为首句副题（异常：' + seqBad.join('；') + '）');
+
+// 反向防线：全库不得再出现形如「某某·其一」的标题
+const SEQ_RE = /[（(·]其[一二三四五六七八九十]+[）)·]?$/;
+const leftover = SC.filter(p => SEQ_RE.test(p.title));
+chk(leftover.length === 0,
+  '《宋词三百首》里没有残留的自拟「其N」编号（残留 ' +
+  leftover.map(p => p.title).join('、') + '）');
+
+// 副题是从**本篇正文里取的字**，不是补出来的信息 —— 只对上面那 20 条成立。
+// （其余词作的副题是**选本原名**，如「宴山亭·北行见杏花」「江城子·乙卯正月二十日夜记梦」，
+//   那是选本目录里就有的题，不该拿首句去要求它。）
+let subBad = [];
+SEQ_FIXED.forEach(([id]) => {
+  const p = byId[id];
+  if (!p) return;
+  const i = p.title.indexOf('·');
+  const base = p.title.slice(0, i);
+  const sub = p.title.slice(i + 1);
+  if (base !== p.gradeGroup.replace(/^词牌 · /, '')) { subBad.push(p.title + '(词牌与分组不一致)'); return; }
+  const want = firstClause(String(p.text || '').split('\n')[0], base);
+  if (sub !== want) subBad.push(p.title + ' 副题应为「' + want + '」');
+});
+chk(subBad.length === 0,
+  '这 20 条的副题都等于本篇正文首句（异常 ' + subBad.length + ' 条：' + subBad.slice(0, 3).join('；') + '）');
 
 // 不能污染古诗词主库与每日计划
 chk(sandbox.POEMS_ALL === undefined, '宋词不写入 POEMS_ALL，不影响每日计划');
