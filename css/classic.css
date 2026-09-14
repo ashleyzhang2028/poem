@@ -871,15 +871,27 @@ body.reader-open .dock { display: none; }
 }
 .recite-new .settings-input { flex: 1 1 auto; }
 
-/* 列表条目右侧的「加入背诵」圆键：与播放键同款同档，走蓝色（天水碧）。
+/* 列表条目右侧的两枚圆键（「加入背诵」书签 · 播放）
+   --------------------------------------------------------------------------
+   用户原话：「将各个索引页卡片中的播放按钮调整得和添加到自定义背诵按钮一样大小」。
+
+   病根是两枚键**各写一套尺寸**：播放键来自 css/style.css 的 `.item-read`
+   （36px + 16px 图标），书签来自这里的 `.item-recite`（30px + 15px 图标）——
+   两枚并排的圆键量出来一个大一个小。尺寸本身没有对错，错在写了两个数。
+
+   现在两枚键读**同一个直径** `--item-btn` 与同一个图标框 `--item-icon`
+   （都定义在 css/style.css 的 :root），两枚键从此永远同大。
+   ⚠️ 改大小时改那一对变量，不要再往任一枚键上写 width / height。
+
    ⚠️ 与播放键的间距 6px 写在**它自己的** margin-right 上（播放键那侧不动）：
-   箭头带 margin-left:auto，任何写在箭头左侧的 margin 都会被 auto 吃掉。 */
+   箭头带 margin-left:auto，任何写在箭头左侧的 margin 都会被 auto 吃掉。
+   左内边距照旧为 0：那一段要让给正文（见上方 .group-card .item-read 的说明）。 */
 .item-recite {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
+  width: var(--item-btn);
+  height: var(--item-btn);
   flex: 0 0 auto;
   padding: 0;
   margin: 0 6px 0 0;
@@ -890,7 +902,15 @@ body.reader-open .dock { display: none; }
   cursor: pointer;
   line-height: 0;
 }
-.item-recite svg { width: 15px; height: 15px; display: block; }
+/* 图标框与播放键读同一个 --item-icon（16px，原来是各自的 15px）。
+   ⚠️ 书签不是三角：它没有「1px 描边」这条约束（描边落在 24 的 viewBox 里，
+      1.8 ÷ 24 × 16 = 1.2px，是单笔画轮廓里正常的粗细）。
+      这里跟播放键同值，只是因为两枚圆键一样大、图标也该一样大。 */
+.item-recite svg {
+  width: var(--item-icon);
+  height: var(--item-icon);
+  display: block;
+}
 .item-recite[data-on="1"] { background: var(--blue); border-color: var(--blue); color: #fffdf8; }
 /* 对齐组合按钮：两个 SVG 图标（左 / 中），选中态与注音档位一致 */
 .icon-seg button {

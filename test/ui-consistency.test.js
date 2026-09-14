@@ -83,8 +83,40 @@ function ruleOf(src, sel) {
 const itemRead = ruleOf(classicCode, '.item-read');
 chk(!/body\[data-nav/.test(itemRead),
   '列表播放键 .item-read 不按页面分叉（六部集子共用同一条声明）');
-chk(/width:\s*36px/.test(cssCode) && /height:\s*36px/.test(cssCode),
-  '列表播放键 36px 是全站同一档（36px × 36px）');
+
+/* 列表条目右侧那两枚圆键（「加入背诵」书签 · 播放）必须一样大
+   --------------------------------------------------------------------------
+   用户原话：「将各个索引页卡片中的播放按钮调整得和添加到自定义背诵按钮一样大小」。
+   原先两枚键**各写一套尺寸**：.item-read 36px（css/style.css）、
+   .item-recite 30px（css/classic.css），并排量出来一大一小。
+
+   现在两枚键都读全站唯一那颗 `--item-btn`，且**不许**再写死 width / height ——
+   写死的那一刻，这条「一样大」就靠两处数值巧合维持着了。
+   ⚠️ 判的是「两个选择器是否读同一个变量」，不是「两个数值是否都等于 36px」：
+      后者在换尺寸的那天仍会一起变，前者才是这一轮真正的意图。 */
+chk(/--item-btn:\s*36px/.test(ruleOf(cssCode, ':root')),
+  '圆键直径 --item-btn: 36px 在 :root 里定义（全站唯一来源）');
+const readRule = ruleOf(cssCode, '.item-read');
+const reciteRule = ruleOf(classicCode, '.item-recite');
+chk(/width:\s*var\(--item-btn\)/.test(readRule) && /height:\s*var\(--item-btn\)/.test(readRule),
+  '播放键 .item-read 的宽高读 --item-btn（不再写死 36px）');
+chk(/width:\s*var\(--item-btn\)/.test(reciteRule) && /height:\s*var\(--item-btn\)/.test(reciteRule),
+  '「加入背诵」键 .item-recite 的宽高读同一个 --item-btn（与播放键同大）');
+chk(!/width:\s*\d+px/.test(readRule) && !/width:\s*\d+px/.test(reciteRule),
+  '两枚圆键都不再写死直径（写死就退回「两处数值各自巧合相等」）');
+/* 图标框与直径是**一对**（三角的 1px 描边就靠这个配对，见 css/classic.css 顶部），
+   两枚圆键读同一个 --item-icon。
+   ⚠️ 不写成「直径 − 6px」：那不是这条比例的含义 —— 三角的 1px 由
+      「图标框 16px ↔ viewBox 里的 stroke 1.5」算出来（1.5 ÷ 24 × 16 = 1px），
+      跟直径差几像素没有关系。 */
+const readSvg = ruleOf(cssCode, '.item-read svg');
+const reciteSvg = ruleOf(classicCode, '.item-recite svg');
+chk(/--item-icon:\s*16px/.test(ruleOf(cssCode, ':root')),
+  '圆键图标框 --item-icon: 16px 在 :root 里定义（全站唯一来源）');
+chk(/width:\s*var\(--item-icon\)/.test(readSvg) && /width:\s*var\(--item-icon\)/.test(reciteSvg),
+  '两枚圆键的图标框都读同一个 --item-icon（与直径成对，不各写一个数）');
+chk(!/width:\s*15px/.test(reciteSvg) && !/width:\s*16px/.test(readSvg),
+  '两枚圆键的图标框都不再写死 px（写死就与直径脱钩）');
 
 /* 序号圆与条目标题同高：两处都读 --item-num，不同源就会「圆比字大一圈」 */
 const numRule = ruleOf(cssCode, '.item-num');
@@ -94,9 +126,10 @@ const titleRule = ruleOf(cssCode, '.item-title');
 chk(/font-size:\s*16\.5px/.test(titleRule),
   '条目标题 16.5px 与序号圆同一档');
 
-/* 圆键三档（36 / 30 / 26）—— 每一档都写在**同一个文件**里，
-   不允许某一页给同名控件另开一个尺寸 */
-["36px", "30px", "26px"].forEach(sz => {
+/* 余下的圆键档（26 / 30px）—— 每一档都写在**同一个文件**里，
+   不允许某一页给同名控件另开一个尺寸。
+   （列表条目那两枚键已不再是「写死的档位」：它们读 --item-btn，见上。） */
+["30px", "26px"].forEach(sz => {
   chk(new RegExp('width:\\s*' + sz).test(cssCode) || new RegExp('width:\\s*' + sz).test(classicCode),
     '圆键的 ' + sz + ' 这一档由样式表统一定义（各页不另写尺寸）');
 });

@@ -45,6 +45,13 @@
      桌面 / 平板用 14px，与界面文字的层级一致。这个值只在这里定义一次。 */
   --input-font: 14px;
   --input-font-narrow: 16px;   /* ≤700px 时的输入框字号（iOS 防缩放阈值） */
+  /* 列表条目右侧圆键的统一直径与图标框（「加入背诵」书签键 · 播放键读同一对值）——
+     用户要求两枚键一样大，所以尺寸只能有一个来源。
+     直径 36px、图标框 16px 是**一对**：三角的 stroke 写在 24 的 viewBox 里（1.5），
+     缩到 16px 后屏幕上正好 1px（换算表见 css/classic.css 顶部）。
+     ⚠️ 改直径时图标框要一起动，否则那 1px 就没了。 */
+  --item-btn: 36px;
+  --item-icon: 16px;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --shadow: 0 2px 14px rgba(74, 58, 38, 0.10);
@@ -2039,11 +2046,17 @@ html, body {
   border: 0;
 }
 
-/* 列表项右侧的「播放这一首」按钮：圆形播放键 */
+/* 列表项右侧的「播放这一首」按钮：圆形播放键。
+   直径读全站那颗 `--item-btn` —— 同一行里「加入背诵」书签键
+   （css/classic.css 的 .item-recite）读的是同一个变量，两枚并排的圆键
+   因此永远同大（用户原话：「将各个索引页卡片中的播放按钮调整得和
+   添加到自定义背诵按钮一样大小」）。改大小只改 --item-btn 这一处。
+   ⚠️ `flex: none` + width/height 同值：min-height 只是下限，
+      行内容一高就会被 flex 拉成椭圆（见 css/classic.css 里圆键那段的老坑）。 */
 .item-read {
   flex: none;
-  width: 36px;
-  height: 36px;
+  width: var(--item-btn);
+  height: var(--item-btn);
   border-radius: 50%;
   border: 1px solid var(--line);
   background: var(--card);
@@ -2055,10 +2068,11 @@ html, body {
   transition: transform .14s, background .18s, color .18s;
 }
 /* 图标 block 化去掉行内基线留白，flex 里才算真正居中。
-   尺寸 = 三角「实际描边 1px」对应的图标框（见 css/classic.css 的 --glyph-md-px）：
-   描边写在 24 的 viewBox 里（本轮由 2.4 改成 6），缩到 16px 后实际笔画正好 1px。
+   图标框读 --item-icon（与书签键同一个值）；
+   三角描边写在 24 的 viewBox 里（1.5），缩到 16px 后实际笔画正好 1px
+   （换算表见 css/classic.css 顶部）。
    ⚠️ 盒子尺寸与路径描边是一对比例，改一个就毁掉「1px」这件事 —— 两处一起动。 */
-.item-read svg { display: block; width: 16px; height: 16px; margin: auto; }
+.item-read svg { display: block; width: var(--item-icon); height: var(--item-icon); margin: auto; }
 .item-read .play-glyph,
 .item-read .pause-glyph { display: inline-flex; align-items: center; justify-content: center; }
 /* 空心三角同上：描边色取自本条目的 `color`，与圆环描边同源 */
