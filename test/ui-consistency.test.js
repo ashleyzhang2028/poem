@@ -213,8 +213,48 @@ chk(/max-width:\s*720px/.test(ruleOf(cssCode, '.dock-inner')),
   '页签内层与内容区同值（720px）');
 
 /* ==========================================================================
-   四、各页顶栏结构一致（同一套 chrome 渲染）
+   三之二、顶栏在任何容器里都必须占满容器宽（不许被内容顶宽）
+   --------------------------------------------------------------------------
+   现象（用户报的）：详情页标题栏溢出。
+   根因不在「标题会不会折行」——是顶栏**自己**的宽度失控：
+     · 列表页那条顶栏住在 .app（块级）里，块级子元素天然占满一行，
+       所以从来没露过这个问题；
+     · 阅读器那条顶栏住在 .reader 里，而 .reader 是 `display: flex;
+       flex-direction: column`。顶栏作为 flex 项，**交叉轴（横向）默认按
+       内容取宽**，不是撑满容器。于是「跬步 · 页名 + 进度牌 + 返回键」
+       四件加起来多宽，顶栏就多宽 —— 手机上量到 427px（视口 393px）。
+     · body 是 `overflow: hidden`，所以既不出现横向滚动条、也没有报错，
+       只是最右边那颗返回键被屏幕裁掉一半、点不着。
+   判据写成**结构 + 声明**两半（jsdom 不算布局，真浏览器那一半在 pwa.test.js）：
+     1) 阅读器顶栏显式定住宽度；
+     2) 品牌区 / 页名 / 说明都允许被压窄（min-width: 0），
+        且页名不再按视口比例写死上限（那条上限与顶栏结构无关）。
    ========================================================================== */
+const readerBar = ruleOf(classicCode, '.reader > .topbar');
+chk(/width:\s*100%/.test(readerBar),
+  '阅读器顶栏定住 width: 100%（flex 列容器里不靠内容取宽）');
+chk(/min-width:\s*0/.test(readerBar),
+  '阅读器顶栏 min-width: 0（长页名不许把它顶宽）');
+
+const brandRule = ruleOf(cssCode, '.brand');
+chk(/min-width:\s*0/.test(brandRule), '品牌区 min-width: 0（可被压窄，不做「不收到内容以下」）');
+chk(/overflow:\s*hidden/.test(brandRule), '品牌区 overflow: hidden（内部有多宽都不外溢到顶栏）');
+chk(/min-width:\s*0/.test(ruleOf(cssCode, '.brand-text')),
+  '品牌文字区 min-width: 0（页名那一行参与收缩）');
+chk(/min-width:\s*0/.test(ruleOf(cssCode, '.brand-page')), '页名块 min-width: 0');
+const pageTextRule = ruleOf(cssCode, '.brand-page-text');
+chk(/min-width:\s*0/.test(pageTextRule), '页名文字 min-width: 0（压窄后走 ellipsis）');
+chk(/text-overflow:\s*ellipsis/.test(pageTextRule), '页名压窄后仍是省略号收尾');
+chk(!/max-width:\s*\d+vw/.test(pageTextRule),
+  '页名不再按视口比例写死上限（46vw 这类数会重新把顶栏顶宽）');
+chk(!/max-width:\s*\d+vw/.test(ruleOf(cssCode, '.brand-sub')),
+  '顶栏第二行说明也不再按视口比例写死上限（52vw 同理）');
+chk(/flex:\s*none/.test(ruleOf(cssCode, '.brand-name-row h1')),
+  '「跬步」两字钉住不参与收缩（要收就收页名，不许把应用名压成「跬」）');
+
+/* ==========================================================================
+   四、各页顶栏结构一致（同一套 chrome 渲染）
+   ==========================================================================
 
 const pages = ['index.html', 'poems/index.html', 'library/index.html', 'classic/index.html',
   'tangshi/index.html', 'songci/index.html', 'guwen/index.html', 'zhaoming/index.html',

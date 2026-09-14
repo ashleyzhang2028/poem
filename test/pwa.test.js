@@ -936,6 +936,72 @@ function check(name, cond, extra) {
     check('iPhone: 详情页长标题确实折成多行（不是被裁掉一行）',
       longTitleState.titleH > longTitleState.lineH * 1.5,
       JSON.stringify({ h: longTitleState.titleH, line: longTitleState.lineH }));
+
+    /* ---- 详情页顶栏不许溢出屏幕（用户：「详情页标题过长导致标题栏溢出」）----
+       上一段量的是**正文列里的 h2**（那一条此前已经修好了）；
+       这一条量的是**顶栏本身**，是另一件事：
+
+       顶栏宽度在阅读器里失控 —— .reader 是 flex 列容器，而顶栏是它的 flex 项，
+       交叉轴（横向）上 flex 项默认按内容取宽、不是撑满容器。列表页那条顶栏
+       住在 .app（块级）里，所以从没露过这个问题；一进阅读器，
+       「跬步 · 页名 + 第 N/M 篇 + 返回键」四件加起来多宽，顶栏就多宽，
+       手机上量到 427px（视口 393px），最右边那颗返回键被屏幕裁掉一半。
+
+       ⚠️ body 是 overflow: hidden：不会出现横向滚动条、也没有任何报错，
+       只是「右半边不见了」。所以不能拿 scrollWidth 当判据（它一直是干净的），
+       要**直接量顶栏的盒子宽与右缘**，以及返回键右缘是否还在视口里。
+       逐部集子都量一遍，并带上 320px 这一档（最窄的手机）。 */
+    for (const [colPath, colLabel] of [['classic/', '小古文'], ['tangshi/', '唐诗三百首'],
+      ['songci/', '宋词三百首'], ['guwen/', '古文观止'], ['zhaoming/', '昭明文选']]) {
+      for (const vw of [320, 393]) {
+        await page.setViewport({ width: vw, height: 852, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+        await page.goto(base + colPath, { waitUntil: 'load' });
+        await new Promise(r => setTimeout(r, 600));
+        const barState = await page.evaluate(() => {
+          const items = [...document.querySelectorAll('#gw-list .item')];
+          if (!items.length) return null;
+          items[0].click();
+          return new Promise(res => setTimeout(() => {
+            const bar = document.querySelector('.reader > .topbar');
+            if (!bar) return res(null);
+            const r = bar.getBoundingClientRect();
+            const act = bar.querySelector('.top-act:not(.top-act-spacer)');
+            const ar = act ? act.getBoundingClientRect() : null;
+            const text = bar.querySelector('#brand-page-text');
+            const badge = bar.querySelector('.count-badge');
+            return res({
+              vw: document.documentElement.clientWidth,
+              barW: +r.width.toFixed(1),
+              barRight: +r.right.toFixed(1),
+              barScrollW: bar.scrollWidth,
+              actLeft: ar ? +ar.left.toFixed(1) : null,
+              actRight: ar ? +ar.right.toFixed(1) : null,
+              badgeRight: badge ? +badge.getBoundingClientRect().right.toFixed(1) : null,
+              labelW: text ? +text.getBoundingClientRect().width.toFixed(1) : null,
+              label: text ? text.textContent : '',
+              labelEllipsis: text ? getComputedStyle(text).textOverflow : null
+            });
+          }, 600));
+        });
+        check('iPhone ' + vw + 'px：' + colLabel + ' 详情页顶栏不宽于视口（四件挤不下时收页名，不收顶栏）',
+          barState && barState.barW <= barState.vw + 1,
+          barState ? ('顶栏 ' + barState.barW + ' / 视口 ' + barState.vw) : 'no reader');
+        check('iPhone ' + vw + 'px：' + colLabel + ' 详情页返回键整个落在视口里（不被屏幕裁掉）',
+          barState && barState.actRight <= barState.vw + 1 && barState.actLeft >= 0,
+          barState ? ('返回键 ' + barState.actLeft + '→' + barState.actRight + ' / 视口 ' + barState.vw) : 'no reader');
+        check('iPhone ' + vw + 'px：' + colLabel + ' 详情页「第 N / M 篇」也在视口里',
+          barState && barState.badgeRight <= barState.vw + 1,
+          barState ? String(barState.badgeRight) : 'no reader');
+        check('iPhone ' + vw + 'px：' + colLabel + ' 详情页顶栏自己不出现内部横向溢出',
+          barState && barState.barScrollW <= barState.barW + 1,
+          barState ? (barState.barScrollW + ' / ' + barState.barW) : 'no reader');
+        // 页名是被**压窄 + 省略号**收掉的，不是整段消失
+        check('iPhone ' + vw + 'px：' + colLabel + ' 详情页页名仍占着一段可见宽度（收成省略号，不是归零）',
+          barState && barState.labelW > 24 && barState.labelEllipsis === 'ellipsis',
+          barState ? JSON.stringify([barState.labelW, barState.labelEllipsis]) : 'no reader');
+      }
+    }
+    await page.setViewport({ width: 393, height: 852, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
     // 需求（Issue #55 后续，本轮）：「卡头那一行多 4px」——卡头左内边距 8 → 12px，
     // 右侧不动（仍是 8px，右边那颗 26px 圆键的右内缘与条目里的右箭头同宽）。
     check('iPhone: 卡头那一行左内边距 12px（8 → 12，+4px）',
