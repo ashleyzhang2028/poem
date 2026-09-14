@@ -612,8 +612,24 @@
  *        （js/progress.js、test/progress.test.js）
  *
  *        版本号按「并行 PR 一律 +5」的口径从 v83 起落到 v88。
+ *
+ *   v93  设置页那一块「背诵进度 · 看进度总览」收成一个词（Issue #122）：
+ *
+ *        【一】文案：原先标签写「背诵进度」、按钮写「看进度总览」，
+ *        一行里两遍同一件事，读起来像两个并列的动作。现在只留
+ *        「进度总览」一个词（标签与按钮同名），点它进 /progress/。
+ *
+ *        【二】下划线：那枚按钮是 <a>，浏览器默认给链接文字加下划线 ——
+ *        用户看到的那条线就是这么来的，不是设计的一部分
+ *        （与 .dock-item 上处理页签下划线是同一回事）。
+ *        .ghost-btn 里显式补 text-decoration: none，<a> 与 <button>
+ *        形态的次级按钮外观才一致。
+ *        （settings/index.html、css/style.css、test/theme.test.js、
+ *          test/progress.test.js）
+ *
+ *        版本号按「并行 PR 一律 +5」的口径从 v88 起落到 v93。
  */
-const CACHE_NAME = "poem-app-v88";
+const CACHE_NAME = "poem-app-v93";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [

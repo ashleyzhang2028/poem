@@ -238,6 +238,27 @@ chk(/祥云纹/.test(css), '注释里写明被移除的宋「祥云纹」底纹�
 // 按钮分级
 chk(/\.btn\.primary\s*\{[^}]*linear-gradient/.test(css), '一级按钮为实底渐变（主操作）');
 chk(/\.ghost-btn\s*\{[\s\S]{0,200}?border:\s*1px solid var\(--line\)/.test(css), '次级按钮为纸底描边');
+// 需求（Issue #122）：设置页「进度总览」那枚按钮是 <a>（指去 /progress/），
+// 浏览器默认给链接文字加下划线 —— 用户看到的那条线就是这么来的。
+// 必须在 .ghost-btn 上显式 text-decoration: none（与 .dock-item 上处理页签
+// 下划线是同一件事），且该规则不能只写在 :hover / :active 里，
+// 否则默认态仍带线。这里连同「该类按钮仍有 <a> 形态」一起钉住。
+chk(/\.ghost-btn \{[\s\S]{0,400}?text-decoration:\s*none/.test(css),
+  '次级按钮显式去掉文字下划线（<a> 默认下划线不得漏出，Issue #122）');
+// 这条样式不是可有可无的：设置页那枚按钮确实是 <a>（href 指去 /progress/），
+// 所以浏览器默认下划线真的会漏出来；顺带钉住改版后的标签与按钮文案。
+// 注意：settingsHtml 这个常量要到第 7 节才声明，本轮的两条断言挨着按钮样式写，
+// 所以这里读源码用顶部的 read()，不复用那个后声明的名字。
+const settingsSrc = read('settings/index.html');
+chk(/<a class="btn ghost-btn" href="\/progress\/"/.test(settingsSrc),
+  '设置页进「进度总览」的按钮仍是 <a>（因此必须显式去掉链接默认下划线）');
+// 需求（Issue #122）：这一块原先写着「背诵进度」+「看进度总览」两行、
+// 说了同一件事（读起来像两个并列的动作）。现在只留「进度总览」一个词，
+// 标签与按钮同名，整块读作「进度总览 · 进度总览」→ 点它进总览页。
+const progressRow = (settingsSrc.match(/<div class="settings-item">\s*<label>进度总览<\/label>[\s\S]{0,400}?<\/div>/) || [''])[0];
+chk(!!progressRow, '设置页有「进度总览」这一项（标签已由「背诵进度」改名为「进度总览」）');
+chk(!/背诵进度<\/label>/.test(settingsSrc), '设置页不再有「背诵进度」这枚标签（同一件事只说一遍）');
+chk(!/看进度总览/.test(settingsSrc), '设置页不再出现「看进度总览」这串旧文案');
 chk(/\.danger-btn\s*\{[\s\S]{0,200}?color:\s*var\(--red\)/.test(css), '危险按钮用朱砂色，仅用于不可逆操作');
 chk(/\.btn\.good\s*\{[^}]*inset 0 0 0 1px rgba\(240, 205, 124/.test(css), '「记住」按钮补上描金内边，与一级按钮同族');
 // 导航样式
