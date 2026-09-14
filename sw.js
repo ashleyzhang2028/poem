@@ -216,22 +216,32 @@
  *        JS 的 ALIGNS 与 CSS 的 [data-align="right"] 规则一并删除。
  *        （index.html、classic|guwen|tangshi|songci|search/index.html、
  *          js/app.js、js/reader-core.js、css/style.css、css/classic.css、sw.js）
+ *   v46  自选集合（Issue #69 收尾）：作品主表 + 同篇对照表（data/works-map.js /
+ *        data/works-index.js）、js/collections.js；阅读器列表与详情页加「加入背诵」，
+ *        首页加「自选背诵」折叠卡；首页排程纳入自选篇目
+ *        （data/works-map.js、data/works-index.js、js/collections.js、
+ *         js/reader-core.js、js/scheduler.js、js/app.js、index.html、
+ *         classic|tangshi|songci|guwen|zhaoming|search 六个页面的 index.html、
+ *         css/style.css、css/classic.css、sw.js）
+ *   v47  课内自身重复去重 + 《静夜思》教材文本（Issue #69 收尾）：
+ *        12 组在两个年级各存一份的课内篇目**以低年级版本为准**各删一条
+ *        （绝句 / 望洞庭 / 四时田园杂兴（其二）/ 天净沙·秋思 / 师说 / 静女 /
+ *         书愤 / 临安春雨初霁 / 李凭箜篌引 / 登高 / 念奴娇·赤壁怀古 /
+ *         永遇乐·京口北固亭怀古），课内条目 273 → 261，作品主表 66 → 57 组；
+ *        《静夜思》以教材文本「床前明月光」为准（与唐诗三百首那条合并为同一篇）；
+ *        顺带修好上一版遗留的注释块未闭合 —— 那是个真 bug：sw.js 整份
+ *        解析报 SyntaxError，Service Worker 从不注册，离线能力静默失效
+ *        （data/poems-3|4|5|7|11|12.js、data/works-map.js、data/works-index.js、
+ *         test/dedup.test.js、sw.js）
+ *   v48  昭明文选「赋批」内容补齐（Issue #69 后续）：49 篇赋的白话译文
+ *        补入 data/poems-zhaoming.js（赋类 56 篇至此全部有译文，全书译文
+ *        29 → 78 篇，「待补」由 451 → 402）；站点总索引、README 与
+ *        相关测试的计数随之更新
+ *        （data/poems-zhaoming.js、data/site-index.js、README.md、
+ *         test/zhaoming.test.js、sw.js）
  */
- * v46  自选集合（Issue #69 收尾）：作品主表 + 同篇对照表（data/works-map.js /
- *      data/works-index.js）、js/collections.js；阅读器列表与详情页加「加入背诵」，
- *      首页加「自选背诵」折叠卡；首页排程纳入自选篇目
- *      （data/works-map.js、data/works-index.js、js/collections.js、
- *       js/reader-core.js、js/scheduler.js、js/app.js、index.html、
- *       classic|tangshi|songci|guwen|zhaoming|search 六个页面的 index.html、
- *       css/style.css、css/classic.css、sw.js）
- * v47  昭明文选「赋批」内容补齐（Issue #69 后续）：49 篇赋的白话译文
- *      补入 data/poems-zhaoming.js（赋类 56 篇至此全部有译文，全书译文
- *      29 → 78 篇，「待补」由 451 → 402）；站点总索引、README 与
- *      相关测试的计数随之更新
- *      （data/poems-zhaoming.js、data/site-index.js、README.md、
- *       test/zhaoming.test.js、sw.js）
- */
-const CACHE_NAME = "poem-app-v47";
+
+const CACHE_NAME = "poem-app-v48";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [

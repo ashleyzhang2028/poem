@@ -199,17 +199,6 @@ window.POEMS_5 = [
     translationSource: "school",
   },
   {
-    id: "xx5-20",
-    title: "四时田园杂兴（其二）",
-    author: "范成大",
-    dynasty: "宋",
-    grade: 5,
-    term: 2,
-    text: "梅子金黄杏子肥，\n麦花雪白菜花稀。\n日长篱落无人过，\n惟有蜻蜓蝴蝶飞。",
-    translation: "梅子金黄，杏子肥大；麦花雪白，菜花稀疏。白天渐长，篱笆边没有人经过，只有蜻蜓和蝴蝶飞来飞去。",
-    translationSource: "school",
-  },
-  {
     id: "xx5-21",
     title: "长歌行",
     author: "汉乐府",

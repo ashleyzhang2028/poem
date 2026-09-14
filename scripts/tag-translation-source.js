@@ -177,7 +177,7 @@ const poemSource = p => {
   return SOURCE_SCHOOL;
 };
 
-console.log('诗词（data/poems-1..12.js，共 273 首）');
+console.log('诗词（data/poems-1..12.js，共 261 首）');
 let total = 0;
 for (let i = 1; i <= 12; i++) {
   total += tagFile(path.join(ROOT, 'data', `poems-${i}.js`), poemSource, /^(xx|cz|gz)\d+-\d+$/);
