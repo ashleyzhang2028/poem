@@ -13,6 +13,7 @@
 #   3f. 搜索页与导航测试 —— jsdom，五部合一的索引 + 候选下拉 + 集子筛选 + 四格页签
 #   3h. 自选集合测试     —— jsdom + vm，作品主表判重 + 自选集合增删改查 + 排进遗忘曲线
 #   3i. 课内去重测试     —— jsdom + vm，12 组自身重复按低年级版本去重 + 《静夜思》教材文本
+#   3j. 正文收归主表     —— jsdom + vm，同一篇只用主条目那一份正文 / 译文 + 孤儿进度清理
 #   4. 用户名设置测试    —— jsdom，带初始 localStorage 重启应用
 #   5. 用户协议/隐私条款  —— jsdom + 源码扫描：页脚入口、学生保护、邮箱防爬
 #   6. 注音与朗读测试    —— 拼音表/多音字（纯 Node）+ 注音渲染与朗读降级（jsdom）
@@ -101,6 +102,10 @@ node test/collections.test.js
 echo ""
 echo "=== 课内自身重复去重 / 《静夜思》教材文本（Issue #69 收尾）==="
 node test/dedup.test.js
+
+echo ""
+echo "=== 正文收归主表 / 孤儿进度清理（Issue #69 收尾）==="
+node test/canonical.test.js
 
 echo ""
 echo "=== 用户名设置测试 ==="

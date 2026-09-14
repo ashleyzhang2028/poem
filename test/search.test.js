@@ -100,27 +100,32 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(IDX.every(x => x.book && x.bookName && x.page),
     '每条结果都带「出自哪一部」与「该去哪一页」');
 
-  /* ---------- 二、入口页：五部集子都进得去，篇数实时算 ---------- */
+  /* ---------- 二、入口页：六部集子都进得去，篇数实时算 ---------- */
   const wLib = boot('library/index.html', '/library/');
   await wLib.__ready;
   await sleep(200);
   const ld = wLib.document;
   const cards = [...ld.querySelectorAll('.library-card')];
-  chk(cards.length === 5, '入口页列出五部集子（实际 ' + cards.length + '）');
-  chk(cards.map(c => c.getAttribute('data-book')).join('/') === 'classic/tangshi/songci/guwen/zhaoming',
-    '五部的顺序与出处正确');
-  chk(cards.map(c => c.getAttribute('href')).join(' ') === '/classic/ /tangshi/ /songci/ /guwen/ /zhaoming/',
-    '五张卡各指到自己的索引页（实际 ' + cards.map(c => c.getAttribute('href')).join(' ') + '）');
-  // 篇数与总索引一致（不写死数字：日后增补篇目，卡片跟着变）
-  // ⚠️ 卡片上那个数字数的是各集子**自己的数据**，不是搜索索引 ——
-  // 索引按约定不收「待补」条目（昭明文选目前 78 篇有译文），拿索引来数
-  // 会显示「昭明文选 29 篇」而点进去有 480 篇。见 js/library.js 的 countOf()。
-  const CARD_VARS = { classic: 'POEMS_CLASSIC', tangshi: 'POEMS_TANGSHI',
+  // 六部 = 课内诗词（第一张卡指回首页）+ 五部选集。
+  // 课内不是「课外」，但它也该从这张目录进得去 —— 用户在这一页看到的是
+  // 「站上有哪几部、各多少篇」的完整账，而不是缺了课内的一份残表。
+  chk(cards.length === 6, '入口页列出六部（课内 + 五部选集，实际 ' + cards.length + '）');
+  chk(cards.map(c => c.getAttribute('data-book')).join('/') ===
+    'poems/classic/tangshi/songci/guwen/zhaoming',
+    '六部的顺序与出处正确');
+  chk(cards.map(c => c.getAttribute('href')).join(' ') ===
+    '/ /classic/ /tangshi/ /songci/ /guwen/ /zhaoming/',
+    '六张卡各指到自己的索引页（实际 ' + cards.map(c => c.getAttribute('href')).join(' ') + '）');
+  // 篇数与各集子**自己的数据**一致（不写死数字：日后增补篇目，卡片跟着变）
+  // ⚠️ 卡片上那个数字不能拿搜索索引来数 —— 索引按约定不收「待补」条目，
+  // 拿它来数会出现「卡片写 480 篇、索引里只有几十条」。见 js/library.js 的 countOf()。
+  const CARD_VARS = { poems: 'POEMS_ALL', classic: 'POEMS_CLASSIC', tangshi: 'POEMS_TANGSHI',
     songci: 'POEMS_SONGCI', guwen: 'POEMS_GUWEN', zhaoming: 'POEMS_ZHAOMING' };
-  BOOK_IDS.forEach((id, i) => {
+  const CARD_UNITS = { poems: '首', classic: '篇', tangshi: '首',
+    songci: '首', guwen: '篇', zhaoming: '篇' };
+  Object.keys(CARD_VARS).forEach((id, i) => {
     const n = sandbox[CARD_VARS[id]].length;
-    chk(cards[i].querySelector('.library-card-count').textContent ===
-      n + ' ' + (id === 'classic' || id === 'guwen' || id === 'zhaoming' ? '篇' : '首'),
+    chk(cards[i].querySelector('.library-card-count').textContent === n + ' ' + CARD_UNITS[id],
       cards[i].querySelector('.library-card-name').textContent + ' 篇数与数据一致（' + n + '）');
   });
   chk(/课外必背小古文/.test(ld.body.textContent) && /唐诗三百首/.test(ld.body.textContent) &&

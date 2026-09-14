@@ -53,6 +53,39 @@
       localStorage.removeItem(KEY);
     },
 
+    /**
+     * 清理「已删条目」留下的孤儿进度（Issue #69 收尾）。
+     *
+     * 背景：课内数据里原有 12 组篇目在**两个年级**各存一份（正文一字不差），
+     * 属于逐页录入留下的自身重复，已按「低年级版本为准」各删一条。
+     * 学生若曾在被删的高年级那一条上留下过背诵进度，那些键就成了孤儿：
+     * 不影响功能，但导出备份、本地排查时看着像「有 12 首诗不见了」。
+     *
+     * 裁定（用户原话「合并进度，暂时用户极少，可以删掉进度，清理无效数据」）：
+     * **删掉孤儿键**，不做合流 —— 合流要猜「这一篇的进度算谁的」，
+     * 而这一批重复本就是同一份教材内容存了两遍，留着只会让老用户在某一天
+     * 莫名看到「第 4 轮」的复习任务。删掉之后，这一篇按未学过排进每日新学，
+     * 学生照常背，行为与「从没背过」完全一致。
+     *
+     * ⚠️ 只删**确认已不在语料里**的键，且只在有课内数据时动手：
+     *    拿不到语料（页面没加载 data/index.js）时一个键都不删 ——
+     *    宁可留着孤儿，也不能误删一篇真实篇目的进度。
+     *
+     * @param {Array<string>} knownIds 当前语料里全部合法条目 id
+     * @returns {Array<string>} 被清掉的 id
+     */
+    pruneUnknown: function (knownIds) {
+      if (!knownIds || !knownIds.length) return [];
+      var known = {};
+      knownIds.forEach(function (id) { known[id] = true; });
+      var all = readAll();
+      var gone = Object.keys(all).filter(function (id) { return !known[id]; });
+      if (!gone.length) return [];
+      gone.forEach(function (id) { delete all[id]; });
+      saveAll(all);
+      return gone;
+    },
+
     /** 导出备份 */
     exportJSON: function () {
       return JSON.stringify(

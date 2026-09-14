@@ -20,10 +20,11 @@
   <link rel="stylesheet" href="css/classic.css" />
 </head>
 <body data-nav="library" data-page="课外阅读" data-sub="课本之外的经典，按部就班读下去">
-  <!-- 这一页是「五部集子的入口」：不再把某一部直接摆到页签上，
+  <!-- 这一页是「集子的入口」：不再把某一部直接摆到页签上，
        而是先在这里看清有哪几部、各多少篇，再进去读。
        页签文字只有两三个字，装不下「唐诗三百首」这种书名，
-       所以页签写「课外」，这一页把五部的全名列清楚。
+       所以页签写「课外」，这一页把六部的全名列清楚；
+       第一张卡指回课内诗词（首页），课内与课外在这里是一张完整的目录。
        页面说明走 body 上的 data-sub，由 js/chrome.js 渲染进顶栏第二行；
        原先这里另有一段同义的正文（「课本之外的经典……白话译文。」），
        与顶栏那行重复，已删。 -->
@@ -31,7 +32,7 @@
   <div class="app">
     <header class="topbar"></header>
 
-    <!-- 五部集子：卡片由 js/library.js 按 data/site-index.js 的清单渲染，
+    <!-- 六部集子：卡片由 js/library.js 自己的清单渲染，
          篇数实时算，不写死 —— 哪一部日后增补了篇目，这里跟着变。 -->
     <div class="library-grid" id="library-grid"></div>
   </div>
