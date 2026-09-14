@@ -1414,6 +1414,35 @@ function check(name, cond, extra) {
         (idleEmpty.h === null || idleEmpty.h <= 8),
         JSON.stringify(idleEmpty));
 
+      /* ④之二 本轮（Issue #122）第二条：可视区再矮，候选也要有 5 行。
+         用户原话：「手机键盘弹出时，搜索框下拉提示列表的高度变得极小，
+         甚至只有一行？搜索框上提后我觉得可以显示5行吧？」
+         上面的三段量的是正常键盘（336px）下的高度；这一条把可视区压到
+         更极端的一档（键盘占掉大半屏），量的就是「下限优先于比例」。 */
+      const floor = await sp.evaluate(async () => {
+        const vv = window.visualViewport;
+        const realH = vv.height;
+        Object.defineProperty(vv, 'height', { value: 300, configurable: true });
+        vv.dispatchEvent(new Event('resize'));
+        await new Promise(r => setTimeout(r, 300));
+        const sug = document.getElementById('search-suggest');
+        const item = sug.querySelector('.suggest-item');
+        const out = {
+          h: +sug.getBoundingClientRect().height.toFixed(1),
+          itemH: item ? +item.getBoundingClientRect().height.toFixed(1) : 0,
+          rows: getComputedStyle(document.getElementById('search-hero'))
+            .getPropertyValue('--suggest-rows').trim()
+        };
+        // 量完还原，后面的用例还要按正常键盘走
+        Object.defineProperty(vv, 'height', { value: realH - 336, configurable: true });
+        vv.dispatchEvent(new Event('resize'));
+        await new Promise(r => setTimeout(r, 200));
+        return out;
+      });
+      check('iPhone 搜索页：可视区被键盘压到 300px 时，候选仍有 5 行的高度（不再只剩一行）',
+        parseFloat(floor.rows) >= 5 && floor.h >= floor.itemH * 4.5,
+        JSON.stringify(floor));
+
       // ⑤ 候选行的可点面积：44px 是 iOS 建议的下限
       const itemH = await sp.evaluate(() => {
         const it = document.querySelector('#search-suggest .suggest-item');
@@ -1456,10 +1485,71 @@ function check(name, cond, extra) {
       check('iPhone 搜索页：收起下拉不动关键词（用户接着看结果，不必重打一遍）',
         dismiss.keywordKept.length > 0, '「' + dismiss.keywordKept + '」');
 
+      /* ⑥之二 本轮（Issue #122）第三条：设置页的用户名输入框也有那圈淡光晕，
+         「所有页面的输入框都带这样的效果」。 */
+      await sp.goto(base + 'settings/', { waitUntil: 'load' });
+      await new Promise(r => setTimeout(r, 600));
+      const glow = await sp.evaluate(async () => {
+        const inp = document.getElementById('input-username');
+        inp.focus();
+        await new Promise(r => setTimeout(r, 300));
+        // 再插一枚**没有任何类名**的输入框：它也必须带上同一圈光晕
+        // （弹层里那种临时长出来的输入框，逐个补类名必然漏）
+        const plain = document.createElement('input');
+        plain.type = 'text';
+        document.body.appendChild(plain);
+        plain.focus();
+        await new Promise(r => setTimeout(r, 300));
+        const cs = getComputedStyle(plain);
+        const out = { shadow: cs.boxShadow, outline: cs.outlineStyle };
+        plain.remove();
+        return out;
+      });
+      check('iPhone 设置页：用户名输入框聚焦时有淡光晕（与搜索框同一个值）',
+        /rgba\(47, 96, 85, 0\.1\)/.test(glow.shadow) && /3px/.test(glow.shadow),
+        glow.shadow);
+      check('iPhone 设置页：没有类名的输入框（弹层里那种）聚焦时也带同一圈光晕',
+        /rgba\(47, 96, 85, 0\.1\)/.test(glow.shadow) && glow.outline === 'none',
+        JSON.stringify(glow));
+      await sp.goto(base + 'search/', { waitUntil: 'load' });
+      await new Promise(r => setTimeout(r, 600));
+
       // ⑥ 这一轮的四态收尾（用户这一轮点名的四句话，逐条量渲染后的位置）：
       //    · 有内容时失焦 → 框**仍停在页顶**（「当有搜索内容存在时，搜索框停留在页面顶部」）；
       //    · 清空内容 + 失焦 → 框回到页面中心；
       //    · 点空白地方 → 候选下拉消失。
+      /* ⑦ 本轮（Issue #122）第一条：聚焦后框**上下等距**。
+         用户原话：「搜索框和上下元素间隔一致，请以现在下面的间隔为准，
+         上面的间隔也缩小到这么多」。
+         上一版框上 8px、框下 12px（还叠着 hero 的 8px 收尾留白），
+         两个数各自散在 CSS 里；现在两处都读 --search-list-gap。
+         量的就是这两段：框顶到顶栏下沿，与框底到结果列表顶。 */
+      const evenGap = await sp.evaluate(async () => {
+        const vv = window.visualViewport;
+        delete vv.height;                       // 收掉键盘：只留下「聚焦」这一态
+        vv.dispatchEvent(new Event('resize'));
+        const inp = document.getElementById('gw-search');
+        inp.value = '月';
+        inp.dispatchEvent(new Event('input', { bubbles: true }));
+        inp.focus();
+        await new Promise(r => setTimeout(r, 400));
+        const box = inp.getBoundingClientRect();
+        const bar = document.querySelector('.topbar').getBoundingClientRect();
+        const list = document.getElementById('gw-list').getBoundingClientRect();
+        return {
+          above: +(box.top - bar.bottom).toFixed(1),
+          below: +(list.top - box.bottom).toFixed(1),
+          gap: getComputedStyle(document.getElementById('search-hero'))
+            .getPropertyValue('--search-list-gap').trim()
+        };
+      });
+      check('iPhone 搜索页：聚焦后框上（顶栏下沿 → 框顶）与框下（框底 → 结果列表）等距',
+        Math.abs(evenGap.above - evenGap.below) <= 2 && evenGap.below > 0,
+        JSON.stringify(evenGap));
+      check('iPhone 搜索页：那一段间隔由 --search-list-gap 一处供给（框上框下不再各写一个数）',
+        evenGap.below > 0 && Math.abs(evenGap.below - evenGap.above) <= 2,
+        'gap ' + JSON.stringify([evenGap.above, evenGap.below]));
+
       const r1 = await sp.evaluate(async () => {
         const vv = window.visualViewport;
         delete vv.height;

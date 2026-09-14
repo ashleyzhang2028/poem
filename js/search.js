@@ -70,6 +70,14 @@
   /** 候选下拉最多几条：够用即可，多了挡住结果列表 */
   var SUGGEST_MAX = 8;
 
+  /** 候选下拉**至少**看得见几行（用户要求：键盘弹着时也要显示 5 行）。
+      这两个值只写进 CSS 的自定义属性（--suggest-rows / --suggest-row-h），
+      高度仍由 CSS 的 max-height 算 —— 见 css/classic.css 的 .suggest 那条。
+      ⚠️ 一行 44px 与 .suggest-item 的 min-height 是同一个数（iOS 建议的
+         最小可点面积），改一处就要改另一处，不然「5 行」会算出偏差。 */
+  var SUGGEST_ROWS = 5;
+  var SUGGEST_ROW_H = 44;
+
   /** 软键盘弹起后，视觉视口比布局视口矮多少才算「键盘真的出来了」。
       安卓上地址栏收起 / 展开、iOS 上底部横条都会带来几十像素的抖动，
       120px 这个门槛越过了全部这些抖动，只有真正的键盘（>= 216px）才算数。 */
@@ -480,6 +488,19 @@
       if (box) box.style.setProperty("--kb-visible", visible + "px");
     }
     if (box) box.style.setProperty("--kb-space", space + "px");
+    // 候选下拉「至少几行」也在这里定：CSS 的 max-height 是
+    // max(行数 × 行高 + 2px, min(380/320px, 四成可视区, (可视区−键盘) 六成))。
+    // 用户反馈「键盘弹出时下拉只有一行」——那是上一版把「四成可视区」
+    // 当硬指标的结果：可视区被键盘压到 250px 时四成只有 100px。
+    // 现在行数是**承诺**、比例只是分寸，两者冲突时承诺赢。
+    // ⚠️ 写死两个自定义属性、不在 JS 里算高度：高度仍由 CSS 管，
+    //    JS 只报「一行多高、要几行」这两个事实值（见 syncHeroState 的其余变量）。
+    hero.style.setProperty("--suggest-rows", String(SUGGEST_ROWS));
+    hero.style.setProperty("--suggest-row-h", SUGGEST_ROW_H + "px");
+    if (box) {
+      box.style.setProperty("--suggest-rows", String(SUGGEST_ROWS));
+      box.style.setProperty("--suggest-row-h", SUGGEST_ROW_H + "px");
+    }
     // 空格列表（引擎写进列表区的 .empty）跟着一起左对齐。
     // ⚠️ 传的是「框贴不贴顶」而不是「键盘弹没弹」：居中的框下面那段空白里
     //    不该多出一行提示，贴顶的框下面才需要它与结果同一左对齐。
