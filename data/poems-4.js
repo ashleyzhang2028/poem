@@ -144,17 +144,6 @@ window.POEMS_4 = [
     translationSource: "school",
   },
   {
-    id: "xx4-14",
-    title: "望洞庭",
-    author: "刘禹锡",
-    dynasty: "唐",
-    grade: 4,
-    term: 2,
-    text: "湖光秋月两相和，潭面无风镜未磨。\n遥望洞庭山水翠，白银盘里一青螺。",
-    translation: "湖光与秋月互相映照，十分和谐，湖面没有风，像一面还没有磨过的镜子。远远望去，洞庭湖的山水一片青翠，就像白银盘里放着一枚青螺。",
-    translationSource: "school",
-  },
-  {
     id: "xx4-15",
     title: "墨梅",
     author: "王冕",

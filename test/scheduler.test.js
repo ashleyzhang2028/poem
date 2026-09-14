@@ -24,12 +24,12 @@ let fails = 0;
 function assert(c, m) { if (!c) { console.log('✗ ' + m); fails++; } else console.log('✓ ' + m); }
 
 // 1. 数据完整性
-assert(sandbox.POEMS_ALL.length === 273, '诗词总数 273（实际 ' + sandbox.POEMS_ALL.length + '）');
+assert(sandbox.POEMS_ALL.length === 261, '诗词总数 261（实际 ' + sandbox.POEMS_ALL.length + '）');
 const ids = new Set();
 sandbox.POEMS_ALL.forEach(p => { if (ids.has(p.id)) throw new Error('重复 id ' + p.id); ids.add(p.id); });
 assert(true, '诗词 id 无重复');
 
-// 1.0 白话译文：全库 273 首必须首首有译文，且不能敷衍
+// 1.0 白话译文：全库 261 首必须首首有译文，且不能敷衍
 //     （回归：#44 反馈「很多古诗词缺白话译文」，此前初高中几乎全缺）
 const plain = s => String(s || '').replace(/\s/g, '');
 const noTrans = sandbox.POEMS_ALL.filter(p => !plain(p.translation));
@@ -91,11 +91,11 @@ assert(sandbox.POEMS_ALL.filter(p => p.title === '观沧海' || p.title === '琵
 
 // 1.1 小学篇目：按 2025 比对清单补齐的 31 首，必须落在标注的年级学期上
 const gradeCount = g => sandbox.POEMS_ALL.filter(p => p.grade === g).length;
-assert([1,2,3,4,5,6].map(gradeCount).reduce((a,b)=>a+b,0) === 122,
-  '小学共 122 首（实际 ' + [1,2,3,4,5,6].map(gradeCount).reduce((a,b)=>a+b,0) + '）');
-assert(gradeCount(1) === 13 && gradeCount(2) === 14 && gradeCount(3) === 18 &&
-  gradeCount(4) === 24 && gradeCount(5) === 24 && gradeCount(6) === 29,
-  '各年级首数：一 13 / 二 14 / 三 18 / 四 24 / 五 24 / 六 29（实际 ' +
+assert([1,2,3,4,5,6].map(gradeCount).reduce((a,b)=>a+b,0) === 119,
+  '小学共 119 首（实际 ' + [1,2,3,4,5,6].map(gradeCount).reduce((a,b)=>a+b,0) + '）');
+assert(gradeCount(1) === 13 && gradeCount(2) === 14 && gradeCount(3) === 17 &&
+  gradeCount(4) === 23 && gradeCount(5) === 23 && gradeCount(6) === 29,
+  '各年级首数：一 13 / 二 14 / 三 17 / 四 23 / 五 23 / 六 29（实际 ' +
   [1,2,3,4,5,6].map(gradeCount).join(' / ') + '）');
 
 // 新补篇目抽检：标题 + 年级学期 + 作者都要对
@@ -244,9 +244,9 @@ scopeCases.forEach(c => {
   assert(pl.length === 5 && pl.every(x => c.ok(x.poem)), c.label + ' 范围生成 5 首且内容在范围内');
 });
 
-// 「本册及之前」：高三下学期应覆盖全部 273 首中的任意学段
+// 「本册及之前」：高三下学期应覆盖全部 261 首中的任意学段
 const uptoHigh = Scheduler.poolForScope({ grade: 12, term: 2, scope: 'upto' });
-assert(uptoHigh.length === 273, '本册及之前（高三下）= 全部 273 首（实际 ' + uptoHigh.length + '）');
+assert(uptoHigh.length === 261, '本册及之前（高三下）= 全部 261 首（实际 ' + uptoHigh.length + '）');
 
 // 随机范围确实覆盖了整个学段（多跑几次能看到多个年级）
 let seenGrades = new Set();

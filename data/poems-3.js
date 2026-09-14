@@ -100,17 +100,6 @@ window.POEMS_3 = [
     translationSource: "school",
   },
   {
-    id: "xx3-10",
-    title: "绝句",
-    author: "杜甫",
-    dynasty: "唐",
-    grade: 3,
-    term: 2,
-    text: "迟日江山丽，春风花草香。\n泥融飞燕子，沙暖睡鸳鸯。",
-    translation: "春日渐长，江山明丽，春风送来花草的香气。湿软的泥土上有燕子飞过，温暖的沙洲上鸳鸯安睡。",
-    translationSource: "school",
-  },
-  {
     id: "xx3-11",
     title: "惠崇春江晚景",
     author: "苏轼",
