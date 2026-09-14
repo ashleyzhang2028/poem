@@ -10,6 +10,7 @@
  *   · 通用     —— 用户名、数据管理（全站共用）
  *   · 古诗词背诵 —— 学段 / 年级 / 学期 / 背诵范围 / 每日数量（只作用于「古诗词」页）
  *   · 阅读辅助  —— 古诗词与小古文共用的注音总开关
+ *   · 朗读播放  —— 五档连读方式（与集子页圆键菜单读写同一份 poem_play_mode_v1）
  *   本文件不关心分组的具体归类，只按 id 回显与写值；
  *   分组会把 DOM 包一层 .settings-group，选择器一律用 id，所以不受影响。
  */
@@ -177,6 +178,61 @@
 
     const uInput = $("#input-username");
     if (uInput) uInput.value = String(settings.username == null ? "" : settings.username);
+
+    renderPlayModes();
+  }
+
+  /* ---------------- 朗读播放（五档连读方式） ----------------
+     这一组的选项**不写进 poem_recite_settings_v1**，而是写进朗读偏好自己的
+     poem_play_mode_v1 —— 与集子页那颗圆键菜单是同一份。理由是它本来就是
+     「播放档位」，跨集子共用；若塞进背诵设置，导出备份就会把两件事混在一起，
+     而且集子页（不加载本页脚本）也读不到。
+     档位定义取自 js/play-modes.js，与阅读器同源，不在本文件里另抄一份。 */
+  function playModes() {
+    return (typeof window !== "undefined" && window.PlayModes) || null;
+  }
+
+  /** 当前档位（本机存值；缺 js/play-modes.js 时退回出厂档，不猜） */
+  function currentPlayMode() {
+    const PM = playModes();
+    if (!PM) return "";
+    return PM.read();
+  }
+
+  /** 画一遍五档单选项，并把当前档位标成选中 */
+  function renderPlayModes() {
+    const PM = playModes();
+    const box = $("#seg-play");
+    if (!box) return;
+    if (!PM) {
+      // 脚本没加载（或顺序错）时**不要留一块空白**：明确说出来，别让人以为是没做完
+      box.innerHTML = '<div class="settings-hint">播放档位加载失败：请刷新页面重试。</div>';
+      return;
+    }
+    const cur = PM.read();
+    box.innerHTML = PM.LIST.map(function (m) {
+      return '<button type="button" role="radio" class="play-mode-opt' + (m.id === cur ? " active" : "") +
+        '" data-play-mode="' + m.id + '" aria-checked="' + (m.id === cur ? "true" : "false") + '">' +
+        '<span class="play-mode-name">' + m.label + "</span>" +
+        (m.note ? '<span class="play-mode-note">' + m.note + "</span>" : "") +
+        "</button>";
+    }).join("");
+
+    const hint = $("#play-hint");
+    if (hint) {
+      const m = PM.of(cur) || PM.of(PM.DEFAULT);
+      hint.textContent = "当前：" + m.short + (m.note ? "（" + m.note + "）" : "");
+    }
+  }
+
+  /** 改档位：与集子页同一条路 —— 走 PlayModes.write 再通知 */
+  function setPlayMode(id) {
+    const PM = playModes();
+    if (!PM || !PM.write(id)) return;
+    PM.emit(id);
+    renderPlayModes();
+    const m = PM.of(id);
+    if (m) showToast("连读方式已改为「" + m.label + "」");
   }
 
   /* ---------------- 事件 ---------------- */
@@ -245,6 +301,15 @@
         showToast(settings.helper === "on" ? "阅读辅助已开启：打开诗词自动注音" : "阅读辅助已关闭：打开诗词为纯文本");
       });
     });
+
+    const playBox = $("#seg-play");
+    if (playBox) {
+      playBox.addEventListener("click", function (e) {
+        const b = e.target.closest("button[data-play-mode]");
+        if (!b) return;
+        setPlayMode(b.dataset.playMode);
+      });
+    }
 
     const uInput = $("#input-username");
     if (uInput) {
@@ -362,6 +427,16 @@
     applyAppName();
     renderControls();
     bindEvents();
+    // 另一个标签页改了播放档位（集子页那颗圆键）时，本页单选项跟着变 ——
+    // storage 事件只在「别的标签页」触发，正是这里需要的方向。
+    window.addEventListener("storage", function (e) {
+      const PM = playModes();
+      if (!PM || e.key !== PM.KEY) return;
+      renderPlayModes();
+    });
+    if (window.PlayModes && window.PlayModes.subscribe) {
+      window.PlayModes.subscribe(function () { renderPlayModes(); });
+    }
     syncNavGap();
     window.addEventListener("resize", syncNavGap);
     window.addEventListener("orientationchange", syncNavGap);
