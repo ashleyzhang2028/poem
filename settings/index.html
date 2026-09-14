@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#2f6055" />
   <title>设置 · 跬步</title>
-  <meta name="description" content="跬步设置：用户名等通用选项，以及古诗词背诵的学段年级学期、背诵范围与数量，数据备份与清空。" />
+  <meta name="description" content="跬步设置：用户名与数据备份、背诵的学段年级学期与范围数量、自选背诵清单的管理、阅读辅助与连读方式。" />
   <meta name="format-detection" content="telephone=no" />
 
   <!-- iOS（苹果手机 / iPad）支持 -->
@@ -18,14 +18,23 @@
   <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
   <link rel="stylesheet" href="/css/style.css" />
 </head>
-<body data-nav="settings" data-page="设置" data-sub="通用 · 古诗词背诵 · 数据">
+<body data-nav="settings" data-page="设置" data-sub="通用 · 背诵 · 清单 · 阅读">
   <div class="app">
     <!-- 顶部栏：由 js/chrome.js 统一渲染（全站同一套 logo + 跬步 + 页面名） -->
     <header class="topbar"></header>
 
     <main class="settings-page" id="settings-page">
       <!-- ==================================================================
-           一、通用：与「背诵哪一册」无关，全站都吃这一份设置
+           一、通用：与「背哪一册 / 用哪一部集子」无关，全站都吃这一份设置
+           ------------------------------------------------------------------
+           分组的依据是「这条设置管着谁」，不是「它属于哪个页面」
+           （Issue #114 第三条：设置项多了，要合理分类）：
+             · 通用      —— 全站都吃：用户名、数据备份 / 清空
+             · 背诵      —— 只决定「今天背哪几首」：学段 / 年级 / 学期 /
+                            范围 / 数量，以及进进度总览的入口
+             · 我的清单   —— 用户自己的清单：自选背诵的增删改查
+             · 阅读辅助   —— 打开诗词 / 古文时的显示与朗读：注音总开关
+             · 朗读播放   —— 连读怎么读：五档档位
            ================================================================== -->
       <section class="settings-group" aria-labelledby="grp-general">
         <h2 class="settings-group-title" id="grp-general">通用</h2>
@@ -49,10 +58,16 @@
       </section>
 
       <!-- ==================================================================
-           二、古诗词背诵：只作用于「古诗词」页（/），小古文页不受影响
+           二、背诵：只决定「今天背哪几首」，只作用于首页（/）
+           ------------------------------------------------------------------
+           这一组里的每一项都是**排每日任务**的输入：学段 / 年级 / 学期定
+           「哪一册」，背诵范围定「从哪一册里取」，每日数量定「取几首」。
+           课外的五部集子不受这一组影响（它们各自按卷次 / 词牌 / 文体排）；
+           自选背诵也不在「范围」里选 —— 它自己排在自己的清单里，
+           与课内 261 首一起进每日任务（见「我的清单」那一组）。
            ================================================================== -->
       <section class="settings-group" aria-labelledby="grp-recite">
-        <h2 class="settings-group-title" id="grp-recite">古诗词背诵</h2>
+        <h2 class="settings-group-title" id="grp-recite">背诵</h2>
 
         <div class="settings-item">
           <label>学段</label>
@@ -103,7 +118,7 @@
         <div class="settings-item">
           <label>进度总览</label>
           <div class="settings-btns">
-            <a class="btn ghost-btn" href="/progress/">进度总览</a>
+            <a class="btn ghost-btn" href="/progress/">看背诵进度</a>
           </div>
           <div class="settings-hint">到期日历与全部到期篇目：未来两周哪天要复习几篇、具体是哪几篇，以及掌握度分布</div>
         </div>
@@ -142,7 +157,49 @@
       </section>
 
       <!-- ==================================================================
-           三、阅读辅助：古诗词与小古文都听这一份总开关
+           三、我的清单：自选背诵（除教材之外，自己额外想背的篇目）
+           ------------------------------------------------------------------
+           这一整块原先长在**首页**（背诵页）底部，Issue #114 第二条：
+           「自选背诵栏应该全部放到设置中去，首页背诵栏只显示背诵列表，
+             不要干扰背诵。所有导入、导出、重命名、删除等等应该全部在设置中进行。」
+
+           首页是「今天背哪几首」的地方，管理的那些键摆在那儿既与背诵无关，
+           又一排都是「删除」「移出」，翻到今日列表末尾容易误触。
+           搬到这里之后：首页只留背诵本身，增删改查全在设置里。
+
+           ⚠️ 搬的是**管理入口**，不是这些篇目的背诵 ——
+              自选篇目本来就跟课内 261 首一起按遗忘曲线排每日任务
+              （js/scheduler.js），排上了就混在首页的今日列表里、
+              与课内那几首长得一样（出处那一栏写集子名）。
+           ⚠️ 两页读同一份 localStorage 键 poem_recite_collections_v1：
+              在这一页改完，回首页的今日任务立刻跟着变
+              （集合一变会派发 recite-collections-change 事件，
+                首页那一侧照旧监听它重排，一条逻辑都没有分叉）。
+           ================================================================== -->
+      <section class="settings-group" aria-labelledby="grp-lists">
+        <h2 class="settings-group-title" id="grp-lists">我的清单</h2>
+
+        <div class="settings-item">
+          <label>自选背诵</label>
+          <div class="collections-panel" id="collections-panel">
+            <p class="collections-tip" id="collections-tip"></p>
+            <div class="collections-tools" id="collections-tools">
+              <button type="button" class="collection-act" id="btn-collections-import" title="粘贴一份清单，新建一个集合">导入清单</button>
+            </div>
+            <div class="list" id="collections-list"></div>
+          </div>
+          <div class="settings-hint">到「课外」任一集子或「搜索」页，点篇目右边的书签即可加进来；加进来的篇目与课内诗词一起按遗忘曲线复习。</div>
+        </div>
+      </section>
+
+      <!-- ==================================================================
+           四、阅读辅助：无论读课内还是读课外，都听这一份总开关
+           ------------------------------------------------------------------
+           与「朗读播放」的分工：
+             · 阅读辅助 —— 打开一篇时**看不看得到**拼音（注音总开关）
+             · 朗读播放 —— 连读时**怎么念**（原文 / 原文加译文 / 顺序 / 随机）
+           两件不同的事，所以分成两组；共同点是都全站一份，
+           不随「背哪一册」或「读哪一部集子」变化。
            ================================================================== -->
       <section class="settings-group" aria-labelledby="grp-reader">
         <h2 class="settings-group-title" id="grp-reader">阅读辅助</h2>
@@ -158,7 +215,7 @@
       </section>
 
       <!-- ==================================================================
-           四、朗读播放：五档连读偏好，全站一份
+           五、朗读播放：五档连读偏好，全站一份
            ------------------------------------------------------------------
            这一组原先**只存在于分类卡右侧那颗圆键的长按 / 右键菜单**里，
            界面上没有任何提示、设置页也没有入口，于是「这几个选项在哪儿调」
@@ -192,14 +249,63 @@
     </footer>
   </div>
 
+  <!-- 导入 / 导出清单的纯文本对话框：与首页那一枚同一套 .modal（同一份 CSS、同一个层级），
+       所以不会被底部页签压住 -->
+  <div class="modal text-modal" id="text-dialog" hidden>
+    <div class="modal-mask" data-close="1"></div>
+    <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="text-dialog-title">
+      <button class="modal-close" data-close="1" aria-label="关闭">✕</button>
+      <div class="modal-head">
+        <h2 id="text-dialog-title"></h2>
+      </div>
+      <p class="text-dialog-tip" id="text-dialog-tip"></p>
+      <textarea id="text-dialog-text" spellcheck="false" aria-label="清单文本"></textarea>
+      <div class="actions">
+        <button type="button" class="btn" id="text-dialog-cancel">关闭</button>
+        <button type="button" class="btn good primary-btn" id="text-dialog-ok">确定</button>
+      </div>
+    </div>
+  </div>
+
   <div class="toast" id="toast" hidden></div>
   <input type="file" id="file-import" accept="application/json" hidden />
 
+  <!-- ==========================================================================
+       这一页要读的数据：只读**站点总索引**，不读五部集子的 4.4MB 语料。
+       ========================================================================== -->
+
+  <!-- 课内 12 册：站点总索引里的「课内诗词」那一部就来自它。
+       data/text-master.js 必须排在 data/index.js 之前 ——
+       被主表收编的课内条目只存 textRef，汇成 POEMS_ALL 时就要按它取回正文。
+       约 52KB，与首页加载的是同一份、同一顺序。 -->
+  <script src="/data/text-master.js"></script>
+  <script src="/data/poems-1.js"></script>
+  <script src="/data/poems-2.js"></script>
+  <script src="/data/poems-3.js"></script>
+  <script src="/data/poems-4.js"></script>
+  <script src="/data/poems-5.js"></script>
+  <script src="/data/poems-6.js"></script>
+  <script src="/data/poems-7.js"></script>
+  <script src="/data/poems-8.js"></script>
+  <script src="/data/poems-9.js"></script>
+  <script src="/data/poems-10.js"></script>
+  <script src="/data/poems-11.js"></script>
+  <script src="/data/poems-12.js"></script>
+  <script src="/data/index.js"></script>
+  <!-- 站点总索引：给「我的清单」里每一篇认条目（题名 / 作者 / 朝代 / 集子名）。
+       五部集子的数据本页**不加载**（约 4.4MB）—— 认不出的那些篇目回落到
+       加入时存下的最小快照（见 js/settings.js 的 renderCollections）。 -->
+  <script src="/data/site-index.js"></script>
+
   <script src="/js/storage.js"></script>
+  <script src="/js/scheduler.js"></script>
   <script src="/js/manifest-loader.js"></script>
   <script src="/js/play-modes.js"></script>
   <!-- 复习算法清单（与首页同源）：设置页只做回显与写值，不另抄一份定义 -->
   <script src="/js/review-models.js"></script>
+  <!-- 自选集合（用户自己加背的篇目）：「我的清单」那一组要读它做增删改查。
+       与首页、集子页读的是同一个模块、同一份 localStorage 键。 -->
+  <script src="/js/collections.js"></script>
   <script src="/js/settings.js"></script>
   <script src="/js/chrome.js"></script>
   <script src="/js/pwa.js"></script>
