@@ -54,9 +54,9 @@ LOAD.forEach(function (f) {
   vm.runInContext(fs.readFileSync(path.join(ROOT, f), 'utf8'), sandbox, { filename: f });
 });
 
-const WI = sandbox.WorksIndex;
 const byId = {};
 sandbox.SITE_INDEX.forEach(function (p) { byId[p.id] = p; });
+const WI = sandbox.WorksIndex;
 
 /* 已有的主表：改语料重跑时的**正文兜底**。
    ⚠️ 各集子条目在「收归」之后已摘掉内联正文（只留 textRef），
@@ -119,6 +119,70 @@ WI.works.forEach(function (w) {
 });
 master.sort(function (a, b) { return a.id < b.id ? -1 : 1; });
 
+/* ---------------- 近重复对：同篇但字有出入，**故意不合并** ----------------
+   判重键是「正文去标点后逐字相同」。可文献里常见的是一字之差的两种文本：
+
+     《将进酒》  课内「但愿长醉不愿醒」 vs 唐诗「但愿长醉不复醒」      一字
+     《岳阳楼记》古文观止「霪雨霏霏」   vs 课内「淫雨霏霏」（课本通行字） 一字
+     《天香》    宋词「剪春灯」         vs 宋词「翦春灯」（籀文正体）    一字
+     《北山移文》古文观止「比洁」       vs 昭明「比絜」（选本用本字）      一字
+     《宋玉对楚王问》古文观止「凤凰」   vs 昭明「凤皇」（《文选》作皇）    一字
+
+   这些**不是录入出错**，是两条并列的文本传统（选本原貌 vs 教材 / 通行字），
+   见 data/works-index.js 的裁定：「课内以教材文本为准，选集以选本原貌为准，
+   冲突时分成两条并列的作品，各背各的」。所以主表**不去合并它们** ——
+   合并就是把一种写法盖在另一种上，谁对谁错没人能裁。
+
+   那为什么还要在这张**存储**主表里列出这一份清单：因为它们正是「同一篇
+   却存了两份正文」的残余。哪些是真异文、哪些本就是两篇，必须逐条写下来、
+   由测试逐条守着 —— 否则日后有人看见「差不多的两篇」，顺手一合并，
+   又回到「学生读到两种《岳阳楼记》」的老问题上。
+
+   ⚠️ 这一节**只登记事实**，不产出文本、不参与 textRef 的落位。 */
+const NEAR_BY_KEY = {};
+/* 判重再走一步：把常见异体字**归一后**若逐字相同，那就是一篇的两个版本 */
+const VARIANT = [
+  ["惟", "唯"], ["霪", "淫"], ["蘋", "苹"], ["翦", "剪"], ["皇", "凰"],
+  ["懃", "勤"], ["絜", "洁"], ["岀", "出"], ["閒", "闲"], ["彊", "强"]
+];
+function loose(t) {
+  let s = String(t || '').replace(/\s+/g, '');
+  VARIANT.forEach(function (p) { s = s.split(p[0]).join(p[1]); });
+  return s;
+}
+/* 从**全站**扫描、而不是只扫作品表里的那 57 组：像《岳阳楼记》那样
+   「课内 + 古文观止」的一字之差，在判重表里根本没成组 —— 正因为没成组，
+   才要用归一后的写法把它们翻出来（扫作品表就恰好漏掉这一批）。
+
+   只算正文，不比对译文：译文各家各写，比对不上是常态、说明不了任何事。 */
+sandbox.SITE_INDEX.forEach(function (p) {
+  if (!p || p.isBook || !p.text || !p.id) return;
+  const k = loose(p.text);
+  if (!k) return;
+  if (!NEAR_BY_KEY[k]) NEAR_BY_KEY[k] = [];
+  NEAR_BY_KEY[k].push(p.id);
+});
+const nearPairs = [];
+Object.keys(NEAR_BY_KEY).forEach(function (k) {
+  const ids = NEAR_BY_KEY[k];
+  /* 只剩一条的说明这一组已经严格同文（前面 master 里收过），不是异文对 */
+  const loose2strict = {};
+  ids.forEach(function (id) {
+    const strict = sig(byId[id].text);
+    (loose2strict[strict] = loose2strict[strict] || []).push(id);
+  });
+  const variants = Object.keys(loose2strict);
+  if (variants.length < 2) return;
+  nearPairs.push({
+    entries: ids.slice(),
+    /* 只有正文逐字相同的那些才轮得到主表收归；字面有出入的归上面那一节守 */
+    reason: variants.length === 1
+      ? "正文在标点 / 断行上不同，字面相同"
+      : "一字之差的两条文本传统（选本原貌 vs 教材 / 通行字），并列而不合并"
+  });
+});
+nearPairs.sort(function (a, b) { return a.entries[0] < b.entries[0] ? -1 : 1; });
+
 /* 断言：主表是「唯一一份正文」，算出空文就是致命的 —— 宁可中断也不产出空表。
    （重跑顺序错（先摘后算）会让这里亮红，比全站正文空白之后再回查便宜得多。） */
 const empty = master.filter(function (m) { return !m.text; });
@@ -177,6 +241,35 @@ master.forEach(function (m) {
   out += '    text: ' + JSON.stringify(m.text) + ',\n';
   out += '    translation: ' + JSON.stringify(m.translation) + ',\n';
   out += '    translationSource: ' + JSON.stringify(m.translationSource) + '\n';
+  out += '  },\n';
+});
+out += '];\n';
+out += '\n';
+out += '/* ==========================================================================\n';
+out += '   近重复对：同一篇却有两种写法，**故意不合并**\n';
+out += '   --------------------------------------------------------------------------\n';
+out += '   下面是「差不多是同一篇、但正文有一字之差」的那些对，共 ' + nearPairs.length + ' 组。\n';
+out += '   它们**没有**被收进上面的主表 —— 因为一字之差往往不是录入出错，\n';
+out += '   而是两条并列的文本传统：\n';
+out += '\n';
+out += '     · 选本原貌（《文选》作「凤皇」、《古文观止》作「霪雨」）\n';
+out += '     · 教材 / 通行字（课本作「凤凰」，今通行本作「淫雨」）\n';
+out += '\n';
+out += '   裁定见 data/works-index.js：「课内以教材文本为准，选集以选本原貌为准，\n';
+out += '   冲突时分成两条并列的作品，各背各的」—— 所以这里**只登记事实**，\n';
+out += '   不去合并、也不改任何一份正文。主表收归的是「字面完全相同」的那些篇；\n';
+out += '   这一份清单是它的边界：谁要是把这几篇也并了，学生就会读到\n';
+out += '   与自己课本不一样的那一份《岳阳楼记》。\n';
+out += '\n';
+out += '   ⚠️ 这是**生成文件**，改动请改 scripts/build-text-master.js 后重跑。\n';
+out += '\n';
+out += '   字段：entries 两条（及以上）条目 id；reason 为什么它们「像同一篇而不合并」\n';
+out += '   ========================================================================== */\n';
+out += 'window.TEXT_NEAR_DUP = [\n';
+nearPairs.forEach(function (p) {
+  out += '  {\n';
+  out += '    entries: [' + p.entries.map(function (e) { return JSON.stringify(e); }).join(', ') + '],\n';
+  out += '    reason: ' + JSON.stringify(p.reason) + '\n';
   out += '  },\n';
 });
 out += '];\n';
