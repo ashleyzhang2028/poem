@@ -919,6 +919,22 @@ chk(/data-nav-go/.test(read('js/chrome.js')) && /\/settings\//.test(read('js/chr
     catch (e) { swOk = false; }
     chk(swOk, 'sw.js 能通过语法检查（注释块闭合、没有游离的 */ —— 否则 SW 从不注册）');
   }
+  // 需求（用户原话）：「去除 sw.js 中的所有注释，以后也禁止添加」。
+  // 直接禁掉，而不是只清理一遍 —— 那条漏 `*/` 的坑就是从注释里来的，
+  // 注释一多、改动一多，同样的错会再来一次。版本沿革放在 README.md / SW-NOTE.md。
+  {
+    const swSrc = read('sw.js');
+    const lines = swSrc.split('\n');
+    // 逐行找注释：行注释（含行尾）与块注释（含行尾 / 多行）
+    const commented = lines.map((l, i) => [i + 1, l]).filter(([, l]) => {
+      const t = l.trim();
+      return t.indexOf('//') === 0 || t.indexOf('/*') === 0 ||
+             l.indexOf('//') !== -1 || l.indexOf('/*') !== -1 || l.indexOf('*/') !== -1;
+    });
+    chk(commented.length === 0,
+      'sw.js 不含任何注释（用户要求：去除所有注释并禁止再加；' +
+      (commented.length ? '实际第 ' + commented.map(c => c[0]).join('、') + ' 行有注释' : '') + '）');
+  }
 
   // 缓存名必须随资源变化升级，否则老用户拿到的是旧副本。
   // 这里不只查「等于某个版本号」——那样每次改 CSS 都得改测试。
@@ -928,10 +944,14 @@ chk(/data-nav-go/.test(read('js/chrome.js')) && /\/settings\//.test(read('js/chr
   // 反向约束：CACHE_NAME 必须出现在 sw.js 里且是纯常量，避免被误改成变量而失效
   chk(/const CACHE_NAME = "poem-app-v\d+";/.test(sw), 'CACHE_NAME 是带版本号的常量');
   // 静态资源是「缓存优先」——改样式表却不升版本，用户会一直看到旧样式。
-  // 这里显式锁住这条约定：sw.js 里必须写明「改静态资源要升版本」，
+  // 这条约定原写在 sw.js 顶部，现按用户要求「sw.js 不留注释」迁到 SW-NOTE.md；
+  // 约定本身仍有效，所以断言改从那里读（不再从 sw.js 的注释里读）。
+  const swNote = read('SW-NOTE.md');
+  chk(/缓存优先/.test(swNote) && /升|提升|更新/.test(swNote),
+    'SW-NOTE.md 里写明「静态资源缓存优先、改动需升级版本」的约定');
+  chk(sw.indexOf('缓存优先') === -1,
+    'sw.js 里不再出现注释形式的约定（注释已全部迁出）');
   // 并且所有页面的样式表 / 脚本都必须在 PRECACHE 里（否则断网/老用户会新老混用）。
-  chk(/缓存优先/.test(sw) && /升|提升|更新/.test(sw.slice(0, 1200)),
-    'sw.js 里写明「静态资源缓存优先、改动需升级版本」的约定');
   ['css/style.css', 'css/classic.css', 'css/legal.css'].forEach(function (f) {
     chk(sw.indexOf('./' + f) !== -1, 'PRECACHE 含 ' + f);
   });
