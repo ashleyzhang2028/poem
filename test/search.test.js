@@ -466,20 +466,20 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(!/filter-seg|data-filter|search-book-seg|book-seg/.test(searchHtml),
     '搜索框右栏（全部 / 未读）与集子药丸都不在这份 HTML 里了');
   chk(!/data-book=/.test(searchHtml), '页面里没有任何集子筛选按钮');
-  // 居中：竖向由「视口 − 顶栏 − 底栏」这一段高度 + 搜索框压在中线负责
+  // 默认态（没焦点、没内容）：搜索框在视口**中央** —— 用户这一轮的原话是
+  // 「如果用户清除搜索框内容且没有焦点在搜索框，搜索框则回到页面中心」。
+  // 竖向由「视口 − 顶栏 − 底栏」这一段高度 + 搜索框压在中线负责
   // （.search-hero 的 height 算式 + .search-toolbar 的 top: 50%），
   // 横向由整行的 left: 50% + translateX(-50%) 负责。
-  // 2026 这一版把 hero 的 min-height 换成了 height：搜索框（绝对定位）
-  // 不产生内容高度，hero 必须自己拿着那段高度，才谈得上「居中」。
   const heroBlock = /(?:^|\n)\.search-hero \{([\s\S]*?)\}/.exec(classicCss);
-  // 2026 这一版：搜索框「增高」改成**真实高度**（52px，不再用 scaleY 拉伸绘制层），
+  // 搜索框「增高」是**真实高度**（52px，不再用 scaleY 拉伸绘制层），
   // 于是布局高度与视觉高度一致，半盒高就是 26px。
   const heroMid = /--hero-box-h:\s*52px/.test(classicCss);
   const heroCenter = /justify-content:\s*center/.test(classicCss) &&
     /top:\s*50%/.test(classicCss) &&
     /margin-top:\s*calc\(var\(--hero-box-h\) \/ -2\)/.test(classicCss);
   chk(heroMid && heroCenter,
-    'hero 在水平与垂直两个方向都居中（整行 top: 50% 减去半个盒高）');
+    '默认态搜索框居中（整行 top: 50% 减去半个盒高）');
   chk(!!heroBlock && /height:/.test(heroBlock[1]) && /--nav-h/.test(heroBlock[1]),
     'hero 的垂直空间按视口减去顶栏与实测底栏算（不是写死一个高度）');
   chk(!/\.book-seg/.test(classicCss), '集子药丸的样式整块删除（CSS 里不再留死代码）');
@@ -524,9 +524,16 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(/\.search-hero \.search-toolbar \{[^}]*z-index:\s*1/.test(classicCss),
     '搜索整行有自己的层级（.search-wrap 的 transform 新建了层叠上下文，' +
     '整行不进正层级的话，结果列表会从下拉上面压过去）');
-  // ③ 屏上键盘：贴顶的两个状态都由 JS 加类、CSS 表现
-  chk(/kb-open/.test(classicCss) && /search-focus/.test(classicCss),
-    '键盘弹出 / 输入框聚焦两个状态都有对应的样式（整块贴到顶栏下方）');
+  // ⚠️ 整行是**唯一**进正层级的元素：hero 自己一旦写了 z-index，就会新建一层
+  //    层叠上下文，把下拉的 30 关在里头 —— 结果列表在 hero 外面、DOM 里更靠后，
+  //    于是整个 hero（含下拉）都压不过它，两层文字糊在一起（真机上量到过：
+  //    候选正中央的 elementFromPoint 命中的是结果卡片 .item）。
+  const heroZ = (/(?:^|\n)\.search-hero \{([\s\S]*?)\}/.exec(cssCode) || ['', ''])[1];
+  chk(!/(?:^|[;{\s])z-index:\s*\d/.test(heroZ),
+    'hero 自己不写 z-index（写了就会把候选下拉关进新层叠上下文里，压不过结果列表）');
+  // ③ 屏上键盘 / 聚焦：贴顶的状态都由 JS 加类、CSS 表现
+  chk(/kb-open/.test(classicCss) && /search-active/.test(classicCss),
+    '「键盘弹出」与「有焦点或有内容」两个状态都有对应的样式（整块贴到顶栏下方）');
   const searchJs = read('js/search.js');
   chk(/visualViewport/.test(searchJs) && /--kb-space/.test(searchJs),
     'js/search.js 用 visualViewport 实测键盘高度（软键盘不改 innerHeight，它是唯一入口）');
@@ -575,13 +582,16 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   const suggestBlock = (/(?:^|\n)\.suggest \{([^}]*)\}/.exec(cssCode) || ['', ''])[1];
   chk(/max-height:\s*min\(/.test(suggestBlock),
     '候选下拉的高度用 min() 取三项里最小者（不是一个写死的高度）');
-  chk(/400px/.test(suggestBlock) && /60svh|60vh/.test(suggestBlock) &&
+  chk(/380px/.test(suggestBlock) && /40svh|40vh/.test(suggestBlock) &&
     /--kb-space/.test(suggestBlock),
-    '三项分别是：8 条候选的上限 400px、可视区的六成（给结果卡片留地方）、' +
+    '三项分别是：8 条候选的上限 380px、可视区的四成（给结果卡片留地方）、' +
     '可视区 − 键盘（硬边界，绝不伸到键盘底下）');
   const suggestNarrow = (/@media screen and \(max-width: 700px\) \{\s*\.suggest \{([^}]*)\}/.exec(cssCode) || ['', ''])[1];
   chk(/40svh|40vh/.test(suggestNarrow) && /--kb-space/.test(suggestNarrow),
-    '手机上候选只占可视区四成（键盘弹着时更要紧：下拉下面那几成就是结果卡片）');
+    '手机上候选仍按可视区四成收口（键盘弹着时更要紧：下拉下面那几成就是结果卡片）');
+  chk(!/60svh|60vh/.test(suggestBlock),
+    '可视区的六成已放宽到四成（60% 在手机上实测太松：候选铺到可视区下沿前 30px，' +
+    '底下只剩一条缝，「给结果卡片留一片」等于没留）');
 
   // 下拉可滚动：条数被限住之后，剩下的要靠滚动看，滚动位置每次换关键词都回到顶部
   chk(/overflow-y:\s*auto/.test(suggestBlock) && /box\.scrollTop = 0/.test(searchJs),
@@ -602,6 +612,76 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   // 高度受限时靠滚动看全，而不是悄悄少给几条
   chk(/SUGGEST_MAX\s*=\s*8/.test(searchJs),
     '候选最多 8 条仍是结果集的口径（限高只影响「一次看得见几条」，不影响「给几条」）');
+
+  /* ---------- 七之四、这一轮的搜索框三态（Issue #69 后续·再续）----------
+     用户这一轮的六句话，落在四处：
+       ① 聚焦 → 框挪到标题栏下方，下拉跟着上去；
+       ② 有搜索内容 → 框停在页面顶部（失焦也不回中间）；
+       ③ 清了内容且没焦点 → 框回到页面中心；
+       ④ 点空白地方 → 下拉消失；
+       ⑤ 结果卡片列表不要和搜索框有那么多间距；
+       ⑥ 聚焦时那圈黑 border 不好看。
+     真浏览器里量的在 test/pwa.test.js，这里守「改动依赖哪一组关系」。 */
+
+  // ① 三态：CSS 侧两个类，JS 侧一处写进去
+  const heroActiveBlock = (/(?:^|\n)\.search-hero\.search-active \{([^}]*)\}/.exec(cssCode) || ['', ''])[1];
+  const heroKbBlock = (/(?:^|\n)\.search-hero\.kb-open \{([^}]*)\}/.exec(cssCode) || ['', ''])[1];
+  chk(/height:\s*auto/.test(heroActiveBlock) && /padding-top:\s*var\(--hero-top\)/.test(heroActiveBlock),
+    'search-active（有焦点或有内容）：hero 交出高度、顶到 --hero-top 上去（贴顶栏下方）');
+  chk(/height:\s*auto/.test(heroKbBlock) && /padding-top:\s*var\(--hero-top\)/.test(heroKbBlock),
+    'kb-open（键盘弹着）：与 search-active 同一落位，另把列表上方留白收掉');
+  chk(/--hero-top:\s*\d+px/.test(classicCss),
+    '贴顶那一段高度是一个具名变量（--hero-top），不是散落的魔数');
+  chk(/syncHeroState/.test(searchJs) &&
+    /classList\.toggle\("search-active",\s*hasKeyword\(\) \|\| lifted\)/.test(searchJs),
+    '「有焦点」与「有内容」合成同一个类（两者的落位一模一样，分成两个类要写两遍数值）');
+  chk(/classList\.toggle\("kb-open",\s*lifted\)/.test(searchJs),
+    'kb-open 只在键盘真的弹出来时加（贴顶的落位与 search-active 共用）');
+  // 聚焦与失焦都必须**走同一个函数**：否则「清空 + 失焦回中央」这条会被漏掉
+  chk(/addEventListener\("focus"[\s\S]{0,240}syncHeroState\(\)/.test(searchJs) &&
+    /addEventListener\("blur"[\s\S]{0,600}syncHeroState\(\)/.test(searchJs),
+    '聚焦与失焦都调 syncHeroState（焦点 / 内容 / 键盘三件事只有一个出口）');
+  chk(/renderBody[\s\S]{0,600}syncHeroState\(\)/.test(searchJs),
+    '输入变化（renderBody）也重算一次框的位置 —— 清空输入即回到页面中心');
+  chk(!/hero\.style\.paddingBottom/.test(searchJs),
+    'JS 不再写行内 padding-bottom（框的落位与列表间距一律归 CSS，谁写行内谁就得在另一个状态擦掉它）');
+  chk(/hasKeyword/.test(searchJs),
+    '「有没有内容」有一个具名判据（只看非空白字符，与结果 / 候选判空同一口径）');
+
+  // ② 点空白收下拉
+  chk(/bindBlankTapDismiss/.test(searchJs) && /document\.addEventListener\("mousedown"/.test(searchJs),
+    '点页面任何一处空白都收起下拉（挂在 document 上，不挑元素挂 —— 挑着挂必然漏）');
+  chk(/wrap\.contains\(t\)/.test(searchJs) && /#search-suggest/.test(searchJs),
+    '搜索区之内（输入框 / 候选 / 框四周）不算「点空白」，判据只有这一条');
+  chk(!/bindBlankTapDismiss[\s\S]{0,2000}stopPropagation/.test(searchJs),
+    '点空白只收下拉、不阻断事件（点卡片该开篇还是开篇）');
+  chk(/mousedown", onTap, true/.test(searchJs) && /touchstart", onTap, true/.test(searchJs),
+    '鼠标与触屏两个入口都听（capture 阶段，先于一切 click 处理）');
+
+  // ③ 搜索框 → 结果列表：正常间隔
+  chk(/body\[data-nav="search"\] #gw-list \{ padding-top: var\(--search-list-gap/.test(cssCode),
+    '「框 → 列表」的间距在搜索页有一个具名变量（正常间隔，不再靠一段大留白撑）');
+  chk(/body\[data-nav="search"\] \.search-hero\.search-active ~ #gw-list \{ padding-top: 0/.test(cssCode),
+    '框一贴顶（聚焦 / 有内容），列表紧跟着它 —— 那一段间距整个收掉');
+  chk(!/\.search-hero \{[^}]*padding-bottom: 12px/.test(heroBlock[1]),
+    'hero 不再自己留「框 → 列表」那 12px（改由 #gw-list 的 padding-top 明说）');
+  const idleH = (/body\[data-nav="search"\] #gw-list \.empty\[data-empty="idle"\] \{([^}]*)\}/.exec(cssCode) || ['', ''])[1];
+  const idlePx = Number((/height:\s*(\d+)px/.exec(idleH) || [0, 999])[1]);
+  chk(idlePx <= 8,
+    '空列表那段留白收到 8px 以内（上一版是 44px —— 那时它替列表撑「框 → 列表」的距离）');
+  chk(!/max-width: 700px\) \{\s*body\[data-nav="search"\] #gw-list \.empty\[data-empty="idle"\]/.test(cssCode),
+    '手机上不再单独写一套空态高度（桌面那一档已经足够小）');
+
+  // ④ 焦点描边：不再有 UA 给的黑框
+  const focusBlock = (/(?:^|\n)\.search-input:focus \{([^}]*)\}/.exec(cssCode) || ['', ''])[1];
+  chk(/border-color:\s*var\(--green\)/.test(focusBlock),
+    '聚焦时描边落到天青（--green），与全站主色一致');
+  chk(/outline:\s*none/.test(focusBlock),
+    '关掉浏览器默认的 focus ring（用户看到的「黑框」就是它 —— 不是我们写的任何一条）');
+  chk(/box-shadow:[^;}]*rgba\(47,\s*96,\s*85/.test(focusBlock),
+    '换成描边之外的一圈极淡天青光晕（不挤占布局，也不像黑框那样生硬）');
+  chk(!/border-color:\s*#000|border:\s*[^;}]*\bblack\b/i.test(cssCode),
+    '全站没有把输入框的焦点描边写成黑色（黑色的来源已在源头上关掉）');
 
   /* ---------- 八、法务页与设置页的口径一致 ---------- */
   chk(read('js/chrome.js').indexOf('古诗词') === -1 ||

@@ -424,8 +424,34 @@
  *        页面可见文本零变化。
  *        （data/text-master.js、data/poems-zhaoming.js、
  *          scripts/build-text-master.js、scripts/apply-text-master.js、测试）
+ *   v65  搜索框「该待在哪儿」三态 + 点空白收下拉 + 结果贴近搜索框
+ *        （Issue #69 · 再续）：
+ *        ① 搜索框三种摆法（.search-hero 的两个类，js/search.js 的 syncHeroState）——
+ *           居中（默认）/ 贴顶（.search-active：有焦点**或**有内容）/
+ *           键盘弹着（.kb-open，落位同贴顶，另把列表上方留白收掉）。
+ *           聚焦即贴到标题栏下方，候选下拉跟着上去；有内容时失焦**仍停在页顶**；
+ *           清空内容且没焦点才回到页面中心。
+ *        ② 点页面任何一处空白 → 候选下拉消失（挂在 document 的 capture 阶段，
+ *           判据只有一条「落点在搜索区之外」，只收下拉、不阻断事件）。
+ *        ③ 「框 → 结果列表」的间距收成正常间隔：贴顶时紧跟着（0），
+ *           居中时留一小段（--search-list-gap: 12px）；空态留白 44px → 4px。
+ *        ④ 焦点描边不再是浏览器给的黑线：border-color 落到天青 + outline: none +
+ *           一圈极淡天青光晕（真机上量到过：那一圈黑是 UA 的 focus ring）。
+ *        ⑤ 候选下拉限高收到 380px / 可视区四成 / (可视区−键盘) 六成 ——
+ *           上一版 60% 在手机上太松，候选铺到可视区下沿前 30px，
+ *           「给结果卡片留一片」等于没留。
+ *        ⑥ 修两处层级 / 取值 bug（真机与无头浏览器都复现过）：
+ *           · hero 的 z-index: 0 会新建层叠上下文，把候选下拉关在里头 ——
+ *             结果列表在 hero 外面、DOM 里更靠后，于是整个 hero 压不过它，
+ *             候选与结果卡片叠成一团（现已撤掉 hero 的 z-index，
+ *             只留 .search-toolbar 的 z-index: 1 当唯一的层级来源）；
+ *           · --kb-space 只写在 hero 上时，键盘弹起后 .suggest 的继承值
+ *             不会重算，下拉照旧按「没有键盘」的高度铺下来 ——
+ *             现在 hero 与 .suggest 各写一遍。
+ *        （css/classic.css、js/search.js、test/search.test.js、
+ *          test/pwa.test.js、README.md）
  */
-const CACHE_NAME = "poem-app-v64";
+const CACHE_NAME = "poem-app-v65";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [
