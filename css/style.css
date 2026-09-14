@@ -1810,7 +1810,17 @@ html, body {
   margin: 0 auto;
   box-sizing: border-box;
 }
-.brand { display: flex; align-items: center; gap: 11px; min-width: 0; }
+/* 品牌区：可以压窄，但不许把顶栏顶宽。
+   min-width: 0 是 flex 项参与收缩的前提（默认值是 auto，等于「不收到内容以下」）；
+   overflow: hidden 保证即使内部有谁不肯收，也不会把宽度「漏」给顶栏 ——
+   顶栏自己已经钉住 100% 宽，漏出来的部分会溢出到屏幕外。 */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+  overflow: hidden;
+}
 
 /* 徽标：篆意「步」字印，压在描金细圈的圆形「瓷盘」上 */
 .brand-mark,
@@ -1841,6 +1851,9 @@ html, body {
   flex-direction: column;
   justify-content: center;
   min-width: 0;
+  /* 「跬步 · 页名」那一行与下面那行说明一起收缩：这里不设 flex-grow，
+     多出来的宽度留给品牌区右侧的空档，页名不会被无谓地拉长。 */
+  flex: 0 1 auto;
 }
 .brand-name-row {
   display: flex;
@@ -1866,6 +1879,10 @@ html, body {
   align-items: baseline;
   min-width: 0;
 }
+/* 「跬步」那两个字不许被压窄（应用名永远是完整的两个字），
+   要收就收页名那一段 —— 两段一起按比例缩时，「跬步」会被压成「跬」。
+   它的自然宽只有 42px，钉住不参与收缩即可。 */
+.brand-name-row h1 { flex: none; }
 .brand-page::before {
   content: "·";
   margin: 0 6px;
@@ -1877,7 +1894,16 @@ html, body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 46vw;
+  /* 页名这一段的宽度由**顶栏剩下的地方**决定，不再自己按视口比例写死。
+     原先这里是 max-width: 46vw：一个与顶栏结构无关的数 —— 顶栏右边还有
+     进度牌与返回键两件固定宽的东西，46vw 的页名一旦与它们相加超过一行，
+     被挤出去的就是最右边的返回键（见 css/classic.css 里 .reader > .topbar
+     那段：阅读器顶栏曾因此顶出屏幕）。
+     现在这一段的宽度交给 flex：min-width: 0 允许它被压窄，
+     压窄之后由 text-overflow: ellipsis 收成「唐诗三…」，右侧两件原地不动。
+     ⚠️ 不能再留一个 max-width 兜底 —— 任何固定上限都会在某些屏宽下
+     重新把顶栏顶宽，那正是这一条要修掉的东西。 */
+  min-width: 0;
 }
 /* 第二行：留白时不占高度（顶栏永远只有一行，除非页面自己填了说明） */
 .brand-text p,
@@ -1889,7 +1915,12 @@ html, body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 52vw;
+  /* 与页名同一条口径：宽度交给顶栏里剩下的地方，不按 52vw 写死。
+     52vw 在窄屏上比顶栏实际能给的还宽（顶栏还要留出进度牌 + 返回键），
+     于是它会连同上一行一起把顶栏顶出去。 */
+  max-width: 100%;
+  min-width: 0;
+  flex: 0 1 auto;
 }
 .brand-sub:empty { display: none; }
 

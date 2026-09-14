@@ -732,6 +732,20 @@ body.reader-open .dock { display: none; }
 .reader > .topbar {
   background: var(--bg-soft);
   border-bottom: 1px solid var(--line);
+  /* 宽度必须显式定住：.reader 是 flex 列容器（见上），而 .topbar 是它的
+     flex 项 —— 交叉轴（横向）上 flex 项默认按内容取宽，不是撑满容器。
+     列表页那一条顶栏住在 .app（块级）里，块级子元素天然占满一行，所以
+     从没露过这个问题；阅读器这一条一到这里就退化成「按内容取宽」。
+     于是「跬步」+ 页名 + 进度牌 + 返回键四件加起来有多宽，顶栏就有多宽：
+     手机上《昭明文选》量到 427px（视口 393px），《课外必背小古文》424px、
+     《唐诗三百首》389px（视口 320px）—— 顶栏直接顶出屏幕右缘，
+     右边那颗返回键被裁掉一半、点不着；body 是 overflow: hidden，
+     所以既不出现横向滚动条，也不会有任何报错，只是「右边的字/键不见了」。
+     width: 100% 把它钉回容器宽度，max-width: 720px 仍然管宽屏上限。
+     min-width: 0 是同一件事的另一半：flex 项默认 min-width: auto，
+     长页名会把整个顶栏顶宽，这一行不许它参与「撑宽」这件事。 */
+  width: 100%;
+  min-width: 0;
 }
 
 .reader-body {
