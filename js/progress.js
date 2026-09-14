@@ -154,6 +154,12 @@
     });
   }
 
+  /** 当前背诵算法的名字（这一页的刻度与档位名都是它算出来的） */
+  function currentAlgoName() {
+    var a = window.SRS && window.SRS.currentAlgo ? window.SRS.currentAlgo() : null;
+    return a ? a.name : "记忆曲线";
+  }
+
   /** 掌握度五档：与 Scheduler.mastery() 那把尺子对齐（每 20% 一档） */
   var MASTERY_LABELS = [
     { label: "0-19% 刚起步", tone: "m0" },
@@ -183,9 +189,13 @@
     renderBars("#progress-levels", rows);
     var sub = $("#levels-sub");
     if (sub) {
-      // 「已牢固」= 走完 10 阶（240 天后那一档），与首页「较牢固」同一口径
+      // 这一栏的刻度随所选算法变（遗忘曲线 10 档 / 莱特纳盒 6 盒 / ……），
+      // 所以标题上也把算法名标出来，免得用户以为刻度还是原来那张表
       var last = o.levelCounts[o.levelCounts.length - 1].count;
-      sub.textContent = o.learned ? "走完全程的 " + last + " 首" : "还没有学习记录";
+      var algo = currentAlgoName();
+      sub.textContent = o.learned
+        ? "按" + algo + "的 " + o.levelCounts.length + " 阶，走完全程的 " + last + " 首"
+        : "还没有学习记录";
     }
   }
 

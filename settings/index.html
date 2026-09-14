@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#2f6055" />
   <title>设置 · 跬步</title>
-  <meta name="description" content="跬步设置：用户名等通用选项，以及古诗词背诵的学段年级学期、背诵范围与数量，数据备份与清空。" />
+  <meta name="description" content="跬步设置：用户名等通用选项，以及古诗词背诵的学段年级学期、背诵范围、背诵算法与数量，数据备份与清空。" />
   <meta name="format-detection" content="telephone=no" />
 
   <!-- iOS（苹果手机 / iPad）支持 -->
@@ -108,8 +108,17 @@
           <div class="settings-hint">到期日历与掌握度分布：未来两周哪天要复习几篇、整体到什么程度</div>
         </div>
 
-        <div class="settings-tip">
-          <p>复习间隔：当天 → 1 → 2 → 4 → 7 → 15 → 30 → 60 → 120 → 240 天</p>
+        <div class="settings-item">
+          <label id="srs-label">背诵算法</label>
+          <div class="play-modes" id="seg-srs" role="radiogroup" aria-labelledby="srs-label"></div>
+          <div class="settings-hint" id="srs-hint"></div>
+          <div class="settings-hint" id="srs-intro"></div>
+        </div>
+
+        <div class="settings-item">
+          <label>当前算法的节奏</label>
+          <div class="settings-hint" id="srs-intervals"></div>
+          <div class="settings-hint" id="srs-note"></div>
         </div>
       </section>
 
@@ -174,6 +183,9 @@
   <input type="file" id="file-import" accept="application/json" hidden />
 
   <script src="/js/storage.js"></script>
+  <!-- 调度算法表（艾宾浩斯 / 莱特纳盒 / SM-2 / FSRS）：设置页只做选项与说明，
+       公式本身在 js/srs.js 里，设置页不另抄一份档位表 -->
+  <script src="/js/srs.js"></script>
   <script src="/js/manifest-loader.js"></script>
   <script src="/js/play-modes.js"></script>
   <script src="/js/settings.js"></script>

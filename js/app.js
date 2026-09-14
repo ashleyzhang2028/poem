@@ -1,5 +1,5 @@
 /**
- * 背诵 App 主逻辑（课内古诗词 · 按遗忘曲线复习）
+ * 背诵 App 主逻辑（课内古诗词 · 按所选算法安排复习）
  */
 (function () {
   "use strict";
@@ -127,7 +127,7 @@
    * → 「跬步 · Ashley的背诵」（用户没填名字时用默认名，不留一段空白）
    *
    * 措辞：「XX的古诗词」→「XX的背诵」。这一页管的是
-   * 「按遗忘曲线安排复习、今天背这一首」这件事，名字上就该说清 ——
+   * 「按记忆算法安排复习、今天背这一首」这件事，名字上就该说清 ——
    * 「古诗词」是体裁（站上还有小古文、唐诗、宋词、古文观止），
    * 「背诵」才是这一页在干的事。
    */
@@ -152,6 +152,8 @@
     if (h1) h1.textContent = APP_NAME;
     // 第一行页面名：首页是「XX的古诗词」，与「跬步」同字体、同一行
     syncBrandPage();
+    // 顶栏第二行：首页写「按 XX 复习」，XX 随用户选的背诵算法变
+    syncBrandSub();
 
     $$('meta[name="apple-mobile-web-app-title"]').forEach(function (m) {
       m.setAttribute("content", title);
@@ -190,6 +192,31 @@
     if (page) page.hidden = false;
     // 默认名 Ashley 与用户自己的名字在视觉上要做区分：默认名走淡墨
     el.classList.toggle("is-default", !String(settings.username || "").trim());
+  }
+
+  /**
+   * 顶栏第二行 = 当前背诵算法的自称（「按遗忘曲线复习」「按 SM-2 复习」……）。
+   *
+   * 这一句由**页面**给出（body 的 data-sub），不是 chrome.js 硬编码 ——
+   * chrome.js 渲染顶栏时会把 data-sub 写进去，用户一改算法就该当场换过来，
+   * 所以这里再写一次；同时把 body 上的 data-sub 也更新掉，
+   * 否则 chrome.js 下一次重绘（进阅读器又退出、切页签）会把旧文案顶回来。
+   */
+  function brandSubText() {
+    return (window.SRS && window.SRS.currentSub) ? window.SRS.currentSub() : "按记忆曲线复习";
+  }
+
+  /** 当前算法的简称（用户看得懂的那种叫法），用于正文里的说法 */
+  function algoShort() {
+    const a = window.SRS && window.SRS.currentAlgo ? window.SRS.currentAlgo() : null;
+    return a ? (a.short || a.name) : "记忆曲线";
+  }
+
+  function syncBrandSub() {
+    const text = brandSubText();
+    const el = $("#brand-sub");
+    if (el) el.textContent = text;
+    document.body.setAttribute("data-sub", text);
   }
 
   function stageOf(grade) {
@@ -376,12 +403,15 @@
   function planCacheKey() {
     return (
       "poem_plan_" + todayKeyStr() + "_" + settings.grade + "_" + settings.term + "_" +
-      scopeKey() + "_" + settings.dailyCount + "_" + collectionsKey()
+      scopeKey() + "_" + settings.dailyCount + "_" + collectionsKey() +
+      // 背诵算法也要进键：换了算法，同一天重排出来的到期篇目会不一样，
+      // 缓存键不带它就会拿着旧算法的计划当新计划的
+      "_srs-" + ((window.SRS && window.SRS.current) ? window.SRS.current() : "default")
     );
   }
 
   /**
-   * 自选集合交给遗忘曲线的篇目（js/collections.js）。
+   * 自选集合交给调度器的篇目（js/collections.js）。
    *
    * 只存引用、不存正文，正文从站点索引取；站点索引在这里一定齐备
    * （首页加载了六部数据，见 index.html 的 script 顺序）。
@@ -698,7 +728,7 @@
           // 这里把后面的尾巴拼成一段「整串」，再交给 metaLine 排在末尾：
           // 朝代一空时只省掉它自己，不会把「· 二年级上」那一截也吞掉。
           [scope.random ? gradeName(p.grade) + termName(p.term) : "",
-           rec && rec.learned ? Scheduler.levelName(rec.level) : "未学过"]
+           rec && rec.learned ? Scheduler.levelName(rec.level, rec) : "未学过"]
             .filter(Boolean).join(" · "))) +
         "</div>" +
         (rec && rec.learned ? '<div class="mbar"><i style="width:' + Scheduler.mastery(rec) + '%"></i></div>' : "") +
@@ -780,7 +810,7 @@
     const tip = $("#collections-tip");
     if (tip) {
       tip.textContent = total
-        ? "下面这些篇目与课内古诗词一起按遗忘曲线复习。到课外集子或搜索页，点篇目右边的书签即可再加；↑↓ 可调顺序，一组的篇目可整卷移出。"
+        ? "下面这些篇目与课内古诗词一起按当前算法复习。到课外集子或搜索页，点篇目右边的书签即可再加；↑↓ 可调顺序，一组的篇目可整卷移出。"
         : "还没有自选篇目。到「课外」任一集子或「搜索」页，点篇目右边的书签，就能把它加进来一起背。";
     }
 
@@ -847,7 +877,7 @@
           metaLine([esc(p.author || ""), esc(p.dynasty || ""), esc(p.bookName || ""),
             // 掌握度那一栏无条件跟着（空值也显示「未学过」），
             // 所以它不参与「空值即省分隔符」的排布，直接拼成一段尾巴
-            rec && rec.learned ? Scheduler.levelName(rec.level) : "未学过"]) +
+            rec && rec.learned ? Scheduler.levelName(rec.level, rec) : "未学过"]) +
           "</div>" +
           (rec && rec.learned ? '<div class="mbar"><i style="width:' + Scheduler.mastery(rec) + '%"></i></div>' : "") +
           "</div>" +
@@ -1087,7 +1117,7 @@
 
     const info = [];
     if (rec && rec.learned) {
-      info.push("<span>记忆阶段：<b>" + Scheduler.levelName(rec.level) + "</b></span>");
+      info.push("<span>当前阶段：<b>" + Scheduler.levelName(rec.level, rec) + "</b></span>");
       info.push("<span>掌握度：<b>" + Scheduler.mastery(rec) + "%</b></span>");
       info.push("<span>已复习：<b>" + rec.reviewCount + "</b> 次</span>");
       info.push(
@@ -1102,7 +1132,7 @@
 
     $("#m-hint").textContent = planItem
       ? planItem.reason === "review"
-        ? "这首诗按遗忘曲线到期了，复习后请如实选择掌握程度"
+        ? "这首诗按" + algoShort() + "到期了，复习后请如实选择掌握程度"
         : "新学的诗，今天先记一遍"
       : "背诵后点击按钮，系统会安排下次复习时间";
 

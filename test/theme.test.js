@@ -29,7 +29,11 @@ chk(/APP_NAME\s*=\s*"跬步"/.test(app), '应用正式名称为「跬步」');
 chk(html.indexOf('<title>跬步 · 课内背诵</title>') !== -1, '首页标题为「跬步 · 课内背诵」');
 chk(!/积跬步古诗词/.test(html + legalHtml), '页面不再出现「积跬步古诗词」旧名');
 chk(/"name":\s*"跬步/.test(read('manifest.webmanifest')), 'PWA 清单名称为跬步');
-chk(app.indexOf('这首诗按遗忘曲线到期了') !== -1, '到期提示改为「这首诗按遗忘曲线到期了」');
+// 需求（Issue #114）：过期提示里的算法名改成**按当前算法**拼（用户换成 SM-2
+// 就该说「按 SM-2 到期了」），所以这里查的是句式与「算法简称」那段拼装，
+// 不再钉死「遗忘曲线」四个字。
+chk(/这首诗按" \+ algoShort\(\) \+ "到期了/.test(app),
+  '到期提示改为「这首诗按 XX 到期了」（XX 是当前算法，随设置切换）');
 chk(!/这首歌/.test(allSrc), '全站不再出现把诗词称作「歌」的措辞');
 // 需求 1：首页任务条标题精简为「今日背诵」
 chk(html.indexOf('>今日背诵<') !== -1 && html.indexOf('今日背诵任务') === -1,
@@ -287,8 +291,11 @@ chk(!/按遗忘曲线复习/.test(read('js/chrome.js').replace(/\/\*[\s\S]*?\*\/
 chk(/data-sub="[^"]+"/.test(html), '首页用 data-sub 给出主标题下的描述文字');
 const subMatch = /data-sub="([^"]+)"/.exec(html);
 const homeSub = subMatch ? subMatch[1] : '';
-chk(homeSub === '按遗忘曲线复习',
-  '描述文字精简为「按遗忘曲线复习」（实际「' + homeSub + '」）');
+// 需求（Issue #114）：副标题「按 XX 复习」里的 XX 随用户选的背诵算法变
+// （艾宾浩斯 / 莱特纳盒 / SM-2 / FSRS），所以这里判的是句式，
+// 并逐档核对每种算法的自称与首页真正会显示的那句一致。
+chk(/^按.+复习$/.test(homeSub),
+  '描述文字是「按 XX 复习」句式（实际「' + homeSub + '」）');
 chk(!/一年级|二年级|至高三|小学|初中|高中|年级|学段/.test(homeSub),
   '描述文字里不再出现「一年级到高中」这类年级字样');
 chk(!/一年级/.test(read('js/chrome.js').replace(/\/\*[\s\S]*?\*\//g, '')),

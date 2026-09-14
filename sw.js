@@ -341,6 +341,20 @@
  *        导致扩展区一个字也扫不到、「缺 28 字」空转了整整一轮）
  *        （data/poems-zhaoming.js、fonts/*.woff2、
  *          scripts/supplement-fonts.py、test/theme.test.js、test/zhaoming.test.js）
+ *   v83  背诵算法可切换（Issue #114）：
+ *        站上原先只有一张写死的间隔表（0-1-2-4-7-15-30-60-120-240 天）。
+ *        新增 js/srs.js —— 算法注册表，四档可选：
+ *          艾宾浩斯遗忘曲线（固定间隔表，与升级前完全一致，默认）
+ *          莱特纳盒（分盒递进，忘记退回第 1 盒）
+ *          SM-2（间隔 × 简易度 EF，老版 Anki 默认）
+ *          FSRS（难度 D / 稳定性 S / 可提取性 R，新版 Anki 内置；降级实现）
+ *        设置页新增「背诵算法」一栏（含每种算法的适用场景与短板说明），
+ *        首页顶栏第二行随之显示「按 XXX 复习」，掌握度 / 记忆阶段名 /
+ *        进度页刻度全部跟着算法走。
+ *        切换**不重算历史进度**：只影响之后排的复习，老档沿用、新复习按新算法。
+ *        （js/srs.js、js/scheduler.js、js/settings.js、js/app.js、js/progress.js、
+ *          index.html、settings/index.html、progress/index.html、sw.js、
+ *          test/srs.test.js、test/run.sh）
  *   v59  「其N」编号核对与订正（Issue #69 跟进）：课内有两组同题诗在小批次补录时
  *        自拟了「其一 / 其二」的序号，与传世全集里的篇次对不上 ——
  *        卢纶《塞下曲》「月黑雁飞高」标成其一（实为其三）、「野幕敞琼筵」
@@ -523,7 +537,7 @@
  *          scripts/build-text-master.js、test/canonical.test.js、
  *          test/dedup.test.js、README.md）
  */
-const CACHE_NAME = "poem-app-v78";
+const CACHE_NAME = "poem-app-v84";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [
@@ -551,6 +565,9 @@ const PRECACHE = [
   "./js/speech.js",
   "./js/reader.js",
   "./js/storage.js",
+  // 调度算法表（艾宾浩斯 / 莱特纳盒 / SM-2 / FSRS）：间隔公式与档位名的唯一定义，
+  // 首页、设置页、进度页都读它（顺序须在 scheduler.js 之前）
+  "./js/srs.js",
   "./js/scheduler.js",
   "./js/app.js",
   "./js/chrome.js",

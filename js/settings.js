@@ -50,11 +50,16 @@
     all: "全部阶段"
   };
 
+  // 与 window.SRS.DEFAULT 保持一致；本页加载了 js/srs.js，档位表从那里取，
+  // 不在这里另抄一份（抄了就会出现「页面列的与真正在跑的」两套说法）
+  const DEFAULT_SRS = (typeof window !== "undefined" && window.SRS && window.SRS.DEFAULT) || "ebbinghaus";
+
   const DEFAULTS = {
     username: "",
     grade: 1,
     term: 1,
     scope: DEFAULT_SCOPE,
+    srs: DEFAULT_SRS,
     helper: "off",
     dailyCount: 5
   };
@@ -81,6 +86,9 @@
       merged[k] = raw[k];
     });
     if (KNOWN_SCOPES.indexOf(merged.scope) === -1) merged.scope = DEFAULT_SCOPE;
+    // 不认识的算法（老档没有这个字段，或手改成了脏值）一律回默认那一档 ——
+    // 与 js/srs.js 的 SRS.current() 同一口径，页面上看到的与跑起来的是同一个
+    if (!(window.SRS && window.SRS.get(merged.srs))) merged.srs = DEFAULT_SRS;
     if (!STAGES[stageOf(merged.grade)]) merged.grade = DEFAULTS.grade;
     return merged;
   }
@@ -171,6 +179,7 @@
     mark("#seg-scope", "scope", settings.scope);
     mark("#seg-count", "count", settings.dailyCount);
     mark("#seg-helper", "helper", settings.helper === "on" ? "on" : "off");
+    mark("#seg-srs", "srs", settings.srs);
 
     // 「背诵范围」下方回显当前范围：设置页此前是空的一块，回首页才知道选了什么
     const scopeHint = $("#scope-hint");
@@ -180,6 +189,75 @@
     if (uInput) uInput.value = String(settings.username == null ? "" : settings.username);
 
     renderPlayModes();
+    renderSrs();
+  }
+
+  /* ---------------- 背诵算法（间隔重复的四档） ----------------
+     档位与说明都取自 js/srs.js 的注册表 —— 本页只画选项，不解释算法细节，
+     公式与口径都写在那份文件里（一处定义，免得两边各说各话）。
+     选中的值写进 poem_recite_settings_v1 的 `srs` 字段，
+     与学段 / 年级 / 背诵范围同住一份设置，所以「导出备份」会一并带走。 */
+  function srsList() {
+    return (typeof window !== "undefined" && window.SRS && window.SRS.ALGOS) || [];
+  }
+
+  /** 算法一档的副标题：起止年份 + 一句话特点 */
+  function srsMeta(a) {
+    return a.year ? a.year + " · " + a.tagline : a.tagline;
+  }
+
+  /** 画一遍四档算法单选项，并把当前档标成选中 */
+  function renderSrs() {
+    const box = $("#seg-srs");
+    if (!box) return;
+    const list = srsList();
+    if (!list.length) {
+      box.innerHTML = '<div class="settings-hint">背诵算法加载失败：请刷新页面重试。</div>';
+      return;
+    }
+    const cur = settings.srs;
+    box.innerHTML = list.map(function (a) {
+      return '<button type="button" role="radio" class="play-mode-opt srs-opt' + (a.id === cur ? " active" : "") +
+        '" data-srs="' + a.id + '" aria-checked="' + (a.id === cur ? "true" : "false") + '">' +
+        '<span class="play-mode-name">' + a.name + "</span>" +
+        '<span class="play-mode-note">' + srsMeta(a) + "</span>" +
+        "</button>";
+    }).join("");
+
+    // ⚠️ 这里从**设置里的值**取当前档，不能用 window.SRS.current() /
+    //    INTERVALS() —— 那两个读的是 localStorage 里的旧值，而本函数会被
+    //    重画多次（选中、切换、导入备份）：用户刚点下的那一档还没落库或
+    //    落库后没同步时，回显与间隔表就会慢半拍，停在上一档上。
+    const algo = window.SRS.get(cur) || window.SRS.fallback();
+    const hint = $("#srs-hint");
+    if (hint) hint.textContent = "当前：" + algo.name + (algo.note ? "（" + algo.note + "）" : "");
+
+    const intro = $("#srs-intro");
+    if (intro) intro.textContent = algo.intro;
+
+    const iv = $("#srs-intervals");
+    if (iv) {
+      // 间隔表取的正是上面这个 algo（用户选中那一档），与回显同一份来源
+      const days = (algo.intervals || []).slice();
+      iv.textContent = "复习间隔（天）：" + days.join(" → ") +
+        (algo.id === "ebbinghaus" ? "，与升级前完全一致" : "");
+    }
+    const note = $("#srs-note");
+    if (note) {
+      note.textContent = "切换只影响之后排的复习，已经形成的进度与到期日不会重算 —— " +
+        "不会一觉醒来昨天该背的一批全跑到下周去。";
+    }
+  }
+
+  /** 换算法：写设置 → 让缓存失效（首页的今日计划要按新算法重排） */
+  function setSrs(id) {
+    const algo = window.SRS && window.SRS.get(id);
+    if (!algo) return;
+    settings.srs = id;
+    saveSettings();
+    invalidatePlan();
+    renderControls();
+    showToast("背诵算法已改为「" + algo.name + "」");
   }
 
   /* ---------------- 朗读播放（五档连读方式） ----------------
@@ -301,6 +379,15 @@
         showToast(settings.helper === "on" ? "阅读辅助已开启：打开诗词自动注音" : "阅读辅助已关闭：打开诗词为纯文本");
       });
     });
+
+    const srsBox = $("#seg-srs");
+    if (srsBox) {
+      srsBox.addEventListener("click", function (e) {
+        const b = e.target.closest("button[data-srs]");
+        if (!b) return;
+        setSrs(b.dataset.srs);
+      });
+    }
 
     const playBox = $("#seg-play");
     if (playBox) {
