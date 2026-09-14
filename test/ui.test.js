@@ -85,13 +85,16 @@ setTimeout(() => {
   chk(!/小古文想读哪篇点哪篇/.test(d.querySelector('.topbar').textContent),
     '顶栏不再出现「小古文想读哪篇点哪篇」');
   chk(d.querySelector('#all-label').textContent === '本年级本学期全部诗词', '全部诗词标题精确为「本年级本学期全部诗词」');
-  // 顶栏图标：徽标 + 两张折叠卡（全部诗词 / 自选背诵）的图标，全部是内联 SVG。
-  // 自选背诵是后加的一张卡，同样用一枚书签 SVG 作折叠头图标，
-  // 数量因此由 2 变 3 —— 这里按「枚数 = 徽标 1 + 折叠头 N」判，
-  // 再往后添折叠卡时只需改这个 N，不会因为多一张卡就红。
+  // 顶栏图标：徽标 + 折叠卡（只剩「全部诗词」一张）的图标，全部是内联 SVG。
+  // ⚠️ 自选背诵那张折叠卡已搬去设置整页（Issue #114 第二条）：
+  //    首页是「今天背哪几首」的地方，导入 / 导出 / 改名 / 删除 / 整组移出
+  //    那一整块管理入口摆在这儿既与背诵无关，又一排都是「删除」「移出」。
+  //    搬走的只是管理入口 —— 自选篇目照旧跟课内 261 首一起排今日任务。
   chk(d.querySelectorAll('.brand-icon svg').length === 1, '顶栏徽标是内联 SVG');
   const collapseHeads = d.querySelectorAll('.collapse-head');
-  chk(collapseHeads.length === 2, '首页两张折叠卡：全部诗词 + 自选背诵（实际 ' + collapseHeads.length + '）');
+  chk(collapseHeads.length === 1, '首页只剩一张折叠卡：全部诗词（实际 ' + collapseHeads.length + '）');
+  chk(d.querySelector('#collections-section') === null && d.querySelector('#btn-collections') === null,
+    '首页不再有「自选背诵」折叠卡（已搬去设置整页）');
   chk([...collapseHeads].every(h => h.querySelector('.collapse-icon svg')),
     '每张折叠卡的折叠头图标都是内联 SVG');
   chk(d.querySelectorAll('.collapse-icon svg').length === collapseHeads.length,
@@ -170,10 +173,17 @@ setTimeout(() => {
   // 需求（本次）：设置项按用途归类成「通用 / 古诗词背诵 / 阅读辅助」三组；
   // 后续（Issue #69）追加「朗读播放」一组 —— 连读档位原先只在圆键菜单里，
   // 界面上没有任何入口，这一组就是补上的显式入口。
+  // 分组（Issue #114 第二、三条 + 可切换复习算法那一轮）：
+  //   通用      用户名、数据备份 / 清空（全站共用）
+  //   背诵      学段 / 年级 / 学期 / 范围 / 数量 / 进度总览（原「古诗词背诵」改名）
+  //   复习算法   四张模型 4 选 1（决定「下次什么时候复习」）
+  //   我的清单   自选背诵：导入 / 导出 / 改名 / 删除 / 整组移出 / 调顺序
+  //   阅读辅助   注音总开关
+  //   朗读播放   五档连读方式
   const setGroups = [...sd.querySelectorAll('#settings-page .settings-group')];
-  chk(setGroups.length === 4, '设置页渲染出四组（实际 ' + setGroups.length + '）');
+  chk(setGroups.length === 6, '设置页渲染出六组（实际 ' + setGroups.length + '）');
   const groupTitles = setGroups.map(g => (g.querySelector('.settings-group-title') || {}).textContent);
-  chk(groupTitles.join('/') === '通用/古诗词背诵/阅读辅助/朗读播放',
+  chk(groupTitles.join('/') === '通用/背诵/复习算法/我的清单/阅读辅助/朗读播放',
     '分组顺序与标题正确：' + groupTitles.join(' / '));
   // 需求（本次）：分组标题下的二级描述全部删除，标题下方直接就是选项
   chk(setGroups.every(g => !g.querySelector('.settings-group-desc')),
@@ -186,12 +196,21 @@ setTimeout(() => {
   chk(grpOf('#input-username') === '通用', '用户名归到「通用」（古诗词与小古文共用）');
   chk(grpOf('#btn-export') === '通用' && grpOf('#btn-reset') === '通用',
     '数据管理归到「通用」');
-  chk(grpOf('#seg-stage') === '古诗词背诵' && grpOf('#grade-chips') === '古诗词背诵' &&
-      grpOf('#seg-term') === '古诗词背诵', '学段 / 年级 / 学期归到「古诗词背诵」');
-  chk(grpOf('#seg-scope') === '古诗词背诵' && grpOf('#seg-count') === '古诗词背诵',
-    '背诵范围 / 每日数量归到「古诗词背诵」');
+  chk(grpOf('#seg-stage') === '背诵' && grpOf('#grade-chips') === '背诵' &&
+      grpOf('#seg-term') === '背诵', '学段 / 年级 / 学期归到「背诵」');
+  chk(grpOf('#seg-scope') === '背诵' && grpOf('#seg-count') === '背诵',
+    '背诵范围 / 每日数量归到「背诵」');
+  // 需求（Issue #114 第二条）：自选背诵整块搬进设置页的「我的清单」组
+  chk(!!sd.querySelector('#collections-list') && !!sd.querySelector('#collections-tip'),
+    '设置页有自选背诵清单（#collections-list / #collections-tip）');
+  chk(grpOf('#collections-list') === '我的清单' && grpOf('#btn-collections-import') === '我的清单',
+    '自选背诵（清单 + 导入键）归到「我的清单」');
+  // 导入 / 导出用的纯文本对话框也一起搬过来了
+  chk(!!sd.querySelector('#text-dialog') && !!sd.querySelector('#text-dialog-text'),
+    '设置页有导入 / 导出用的纯文本对话框');
   chk(grpOf('#seg-helper') === '阅读辅助', '注音总开关归到「阅读辅助」组');
   chk(grpOf('#seg-play') === '朗读播放', '连读档位归到「朗读播放」组');
+  chk(grpOf('#seg-algo') === '复习算法', '复习算法选择归到「复习算法」组');
   // 只给背诵用的选项不能再出现在「通用」组里（这才是这次需求的重点）
   const generalItems = setGroups[0].querySelectorAll('.settings-item');
   chk(generalItems.length === 2, '「通用」组只有用户名与数据管理两项（实际 ' + generalItems.length + '）');
@@ -435,6 +454,94 @@ setTimeout(() => {
   chk(!!window.localStorage.getItem('poem_recite_progress_v1'), '进度已写入 localStorage');
   chk(!!sp.window.localStorage.getItem('poem_recite_settings_v1'), '设置已写入 localStorage');
 
-  console.log(fails === 0 ? '\n🎉 UI 测试全部通过' : '\n❌ ' + fails + ' 项失败');
-  process.exit(fails ? 1 : 0);
+  /* ---------------- 深链接：/?poem=<id> 落地 ----------------
+     需求（Issue #114 后续）：/progress/ 那份「全部到期篇目」的篇名是
+     `/?poem=<id>` 的链接，但**全站没有一处读它** —— 点过去首页照常画
+     「今日背诵」，什么也不弹（不报错、测试也全过，因为它当时只验了链接形态）。
+     这里验的就是接上的那一头：地址栏带 poem= 进来，首页把那一篇的详情弹层打开。 */
+  function bootHome(search, seed) {
+    const hdom = new JSDOM(html, {
+      runScripts: 'dangerously', resources: undefined,
+      url: 'https://local.test/' + (search || '')
+    });
+    if (seed) for (const k in seed) hdom.window.localStorage.setItem(k, seed[k]);
+    scriptOrder.forEach(f => {
+      const el = hdom.window.document.createElement('script');
+      el.textContent = fs.readFileSync(path + f, 'utf8');
+      hdom.window.document.body.appendChild(el);
+    });
+    return hdom;
+  }
+
+  const targetId = (window.POEMS_ALL || [])[0].id;
+  const targetTitle = window.POEMS_ALL[0].title;
+  const dl = bootHome('?poem=' + encodeURIComponent(targetId));
+  setTimeout(() => {
+    const dd = dl.window.document;
+    chk(dd.querySelector('#modal') && dd.querySelector('#modal').hidden === false,
+      '带 ?poem=<id> 进首页，详情弹层真的打开了（不是「没反应」）');
+    chk(dd.querySelector('#m-title').textContent === targetTitle,
+      '弹层里就是链接指的那一篇（' + targetTitle + '）');
+    chk(dd.querySelector('#m-text').textContent.length > 0, '那一篇的正文渲染出来了');
+    chk(/\?poem=/.test(dl.window.location.search) === false,
+      '读完就把地址栏那一截抹掉（replaceState —— 刷新不再弹、返回键回得到干净的首页）');
+    /* 今日列表照样在弹层下面画好了：关掉弹层回到的是首页，不是半张白纸 */
+    chk(dd.querySelectorAll('#today-list .item').length > 0,
+      '今日列表照常画出来（弹层关掉之后回到的是它）');
+    /** 关掉弹层：首页仍在，没有任何报错 */
+    const closeBtn = dd.querySelector('#modal [data-close]');
+    if (closeBtn) closeBtn.dispatchEvent(new dl.window.Event('click', { bubbles: true }));
+    chk(dd.querySelector('#modal').hidden === true, '关掉弹层后回到首页');
+
+    /* 查不到的 id：安静放过 —— 不该弹一个「找不到」的黄条，也不该报错 */
+    const bad = bootHome('?poem=no-such-poem-xyz');
+    setTimeout(() => {
+      const bd = bad.window.document;
+      chk(bd.querySelector('#modal').hidden === true,
+        '查不到的 id 不打开弹层（旧链接 / 手改错的 id 都安静放过）');
+      chk(bd.querySelector('#toast').hidden === true, '查不到的 id 也不弹一个黄条');
+      chk(bd.querySelectorAll('#today-list .item').length > 0, '查不到时首页照常可用');
+
+      /* 没有 poem= 时一切照旧（不能因为加了这一条就让普通访问变了样） */
+      const plain = bootHome('');
+      setTimeout(() => {
+        chk(plain.window.document.querySelector('#modal').hidden === true,
+          '没有 ?poem= 时首页不弹任何东西（普通访问不受影响）');
+
+        /* 自选集合里的篇目（课外）：走快照也能打开，且那一格显示集子名 */
+        const entryId = 'tangshi-ts-1';
+        const withCol = bootHome('?poem=' + encodeURIComponent(entryId), {
+          poem_recite_collections_v1: JSON.stringify({
+            version: 1,
+            collections: [{
+              id: 'c-dl', name: '深链接', createdAt: Date.now(),
+              items: [{
+                id: entryId,
+                snap: {
+                  title: '感遇·其一', author: '张九龄', dynasty: '唐',
+                  source: '《唐诗三百首》', selection: '《唐诗三百首》',
+                  book: 'tangshi', bookName: '唐诗三百首', page: '/tangshi/',
+                  text: '孤鸿海上来，池潢不敢顾。', translation: '',
+                  translationSource: 'public-domain'
+                }
+              }]
+            }]
+          })
+        });
+        setTimeout(() => {
+          const cd = withCol.window.document;
+          chk(cd.querySelector('#modal').hidden === false,
+            '自选集合里的课外篇目也能被 ?poem= 打开（回落到加入时的快照）');
+          chk(cd.querySelector('#m-title').textContent.indexOf('感遇') >= 0,
+            '打开的是那一篇（' + cd.querySelector('#m-title').textContent + '）');
+          chk(cd.querySelector('#m-grade').textContent.indexOf('唐诗三百首') >= 0,
+            '自选篇目的出处那一格显示集子名（不是「undefined年级 undefined学期」；实际「' +
+            cd.querySelector('#m-grade').textContent + '」）');
+
+          console.log(fails === 0 ? '\n🎉 UI 测试全部通过' : '\n❌ ' + fails + ' 项失败');
+          process.exit(fails ? 1 : 0);
+        }, 300);
+      }, 300);
+    }, 300);
+  }, 300);
 }, 500);

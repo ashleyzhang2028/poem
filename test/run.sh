@@ -12,6 +12,8 @@
 #   3g. 昭明文选测试     —— jsdom + vm，六十卷 480 篇 + 三十九类文体分组 + 阅读器
 #   3f. 搜索页与导航测试 —— jsdom，五部合一的索引 + 候选下拉 + 集子筛选 + 四格页签
 #   3h. 自选集合测试     —— jsdom + vm，作品主表判重 + 自选集合增删改查 + 排进遗忘曲线
+#   3h2.课内诗词索引页   —— jsdom，/poems/ 按教材册次分 24 组的目录页 +
+#                          点一篇进详情（Issue #114 第一条）
 #   3i. 课内去重测试     —— jsdom + vm，12 组自身重复按低年级版本去重 + 《静夜思》教材文本
 #   3j. 正文收归主表     —— jsdom + vm，存储层同一篇只落一份正文 / 译文
 #                          （各集子条目只存归属 textRef）+ 孤儿进度清理
@@ -20,8 +22,9 @@
 #                          集子数据刷新旧快照（Issue #69 后续）
 #   3m. 「其N」编号核对  —— jsdom + vm，课内带「其N」的标题逐条对正文与真实篇次
 #                          （卢纶《塞下曲》、杜甫《江畔独步寻花》原为自拟错标）
-#   3n. 背诵算法可切换   —— jsdom + vm，四档算法的间隔 / 档名 / 掌握度、
-#                          默认档与升级前逐字一致、设置页切换与首页副标题
+#   3n. 复习调度算法    —— jsdom + vm，四张模型（遗忘曲线 / Leitner / SM-2 /
+#                          FSRS 简化版）的公式、换模型不清进度、设置页切换
+#                          与首页副标题跟随（Issue #114 后续）
 #   4. 用户名设置测试    —— jsdom，带初始 localStorage 重启应用
 #   5. 用户协议/隐私条款  —— jsdom + 源码扫描：页脚入口、学生保护、邮箱防爬
 #   6. 注音与朗读测试    —— 拼音表/多音字（纯 Node）+ 注音渲染与朗读降级（jsdom）
@@ -108,6 +111,10 @@ echo "=== 自选集合 + 作品主表（Issue #69 收尾）==="
 node test/collections.test.js
 
 echo ""
+echo "=== 课内诗词索引页（/poems/ · 按年级分册的目录，Issue #114）==="
+node test/poems-page.test.js
+
+echo ""
 echo "=== 课内自身重复去重 / 《静夜思》教材文本（Issue #69 收尾）==="
 node test/dedup.test.js
 
@@ -128,8 +135,8 @@ echo "=== 「其N」编号核对（人教版教材标题与内容一致）==="
 node test/title-seq.test.js
 
 echo ""
-echo "=== 背诵算法可切换（艾宾浩斯 / 莱特纳盒 / SM-2 / FSRS，Issue #114）==="
-node test/srs.test.js
+echo "=== 复习调度算法（可切换：遗忘曲线 / Leitner / SM-2 / FSRS，Issue #114 后续）==="
+node test/review-models.test.js
 
 echo ""
 echo "=== 用户名设置测试 ==="

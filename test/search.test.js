@@ -114,16 +114,21 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   await sleep(200);
   const ld = wLib.document;
   const cards = [...ld.querySelectorAll('.library-card')];
-  // 六部 = 课内诗词（第一张卡指回首页）+ 五部选集。
+  // 六部 = 课内诗词 + 五部选集。
   // 课内不是「课外」，但它也该从这张目录进得去 —— 用户在这一页看到的是
   // 「站上有哪几部、各多少篇」的完整账，而不是缺了课内的一份残表。
+  // ⚠️ 课内那张卡指 /poems/**索引页**，不是首页（/）—— 首页是「今日背诵」，
+  //    点进去看到的是今天那几首，不是「课内都收着哪些诗」（Issue #114 第一条）。
+  //    六张卡的行为因此完全一致：点卡 → 索引页 → 再点一篇 → 详情页。
   chk(cards.length === 6, '入口页列出六部（课内 + 五部选集，实际 ' + cards.length + '）');
   chk(cards.map(c => c.getAttribute('data-book')).join('/') ===
     'poems/classic/tangshi/songci/guwen/zhaoming',
     '六部的顺序与出处正确');
   chk(cards.map(c => c.getAttribute('href')).join(' ') ===
-    '/ /classic/ /tangshi/ /songci/ /guwen/ /zhaoming/',
-    '六张卡各指到自己的索引页（实际 ' + cards.map(c => c.getAttribute('href')).join(' ') + '）');
+    '/poems/ /classic/ /tangshi/ /songci/ /guwen/ /zhaoming/',
+    '六张卡各指到自己的索引页、六张行为一致（实际 ' + cards.map(c => c.getAttribute('href')).join(' ') + '）');
+  chk(cards.every(c => /^\/[a-z]+\/$/.test(c.getAttribute('href'))),
+    '六张卡的去处都是目录化索引页（没有一张指回首页 /）');
   // 篇数与各集子**自己的数据**一致（不写死数字：日后增补篇目，卡片跟着变）
   // ⚠️ 卡片上那个数字不能拿搜索索引来数 —— 索引按约定不收「待补」条目，
   // 拿它来数会出现「卡片写 480 篇、索引里只有几十条」。见 js/library.js 的 countOf()。
@@ -519,7 +524,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     '候选下拉只留 4px 间隙（用户反馈的「离搜索框太远」的反面）');
   chk(/\.suggest \{[^}]*background:\s*#fffefa/.test(classicCss),
     '候选下拉用不透明底色（--card 只有 90% 不透明，浮层会让结果列表透上来）');
-  chk(/--kb-space/.test(classicCss) && /max-height:\s*min\(/.test(classicCss),
+  chk(/--kb-visible/.test(classicCss) && /max-height:\s*min\(/.test(classicCss),
     '候选下拉的高度按「可视区 − 键盘」算（键盘弹着也不会伸到键盘底下）');
   chk(/\.search-hero \.search-toolbar \{[^}]*z-index:\s*1/.test(classicCss),
     '搜索整行有自己的层级（.search-wrap 的 transform 新建了层叠上下文，' +
@@ -585,26 +590,27 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   const suggestBlock = (/(?:^|\n)\.suggest \{([^}]*)\}/.exec(cssCode) || ['', ''])[1];
   chk(/max-height:\s*min\(/.test(suggestBlock),
     '候选下拉的高度用 min() 取三项里最小者（不是一个写死的高度）');
-  // ⚠️ 口径：比例与硬边界两项都按 **JS 实测的可视区**（--kb-visible）算，不用 svh——
-  //    svh 量的是「视口最小时的高度」，它**不认软键盘**（键盘是覆盖层，不改视口），
-  //    在部分内核 / 无头环境里甚至与 vh 相等（实测都是 852）。
-  //    于是「可视区的四成」在键盘弹着时按整屏算，候选下拉一路铺到键盘上沿，
-  //    把下方的结果卡片全吃掉（正是用户反馈的后半句）。
-  //    --kb-visible 由 js/search.js 的 keyboardVisible() 写（visualViewport.height），
-  //    没有键盘时就是整屏，键盘弹起时就是键盘上沿。
+  // ⚠️ 口径（定稿）：三项取最小，且比例与硬边界两项都按 **JS 实测的可视区** 算 ——
+  //    「可视区」不能写 svh：svh 量的是「视口最小时的高度」，它**不认软键盘**
+  //    （键盘是覆盖层、不改视口），部分内核 / 无头环境里甚至与 vh 相等
+  //    （实测 393×852 那一档 svh 与 vh 都是 852）。那样「可视区的四成」在
+  //    键盘弹着时按整屏算，候选一路铺到键盘上沿，把下方结果卡片全吃掉。
+  //    现在按 --kb-visible / --kb-space 算（js/search.js 的 keyboardVisible() /
+  //    keyboardSpace() 把 visualViewport 的两个数实测写进去）。
   chk(/380px/.test(suggestBlock) && /--kb-visible/.test(suggestBlock) &&
-    /\*\s*\.4\b/.test(suggestBlock),
+    /--kb-space/.test(suggestBlock) &&
+    /\*\s*\.4\b/.test(suggestBlock) && /\*\s*\.6\b/.test(suggestBlock),
     '三项分别是：8 条候选的上限 380px、可视区的四成（给结果卡片留地方）、' +
-    '(可视区 − 键盘) 的六成（硬边界，绝不伸到键盘底下）——' +
-    '比例与边界都按 JS 实测的 --kb-visible 算，不用 svh（svh 不认软键盘）');
+    '(可视区 − 键盘) 那一片的六成（硬边界，绝不伸到键盘底下）——' +
+    '后两项按 JS 实测的 --kb-visible / --kb-space 算，不用 svh（svh 不认软键盘）');
   const suggestNarrow = (/@media screen and \(max-width: 700px\) \{\s*\.suggest \{([^}]*)\}/.exec(cssCode) || ['', ''])[1];
   chk(/320px/.test(suggestNarrow) && /\*\s*\.4\b/.test(suggestNarrow) &&
     /--kb-visible/.test(suggestNarrow),
     '手机上候选收到 320px（约 6 条），比例仍按实测可视区四成收口' +
     '（键盘弹着时更要紧：下拉下面那几成就是结果卡片）');
-  chk(!/60svh|60vh/.test(suggestBlock) && !/40svh/.test(suggestBlock),
-    '可视区的六成已放宽到四成（60% 在手机上实测太松：候选铺到可视区下沿前 30px，' +
-    '底下只剩一条缝，「给结果卡片留一片」等于没留），且不再用 svh 算比例');
+  chk(!/60svh|60vh|40svh|40vh/.test(suggestBlock),
+    '不再用 vh / svh 算可视区（它们不认软键盘；60% 那一档在手机上实测也太松 —— ' +
+    '候选铺到可视区下沿前 30px，底下只剩一条缝，「给结果卡片留一片」等于没留）');
 
   // 下拉可滚动：条数被限住之后，剩下的要靠滚动看，滚动位置每次换关键词都回到顶部
   chk(/overflow-y:\s*auto/.test(suggestBlock) && /box\.scrollTop = 0/.test(searchJs),
@@ -636,13 +642,32 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
        ⑥ 聚焦时那圈黑 border 不好看。
      真浏览器里量的在 test/pwa.test.js，这里守「改动依赖哪一组关系」。 */
 
-  // ① 三态：CSS 侧两个类，JS 侧一处写进去
-  const heroActiveBlock = (/(?:^|\n)\.search-hero\.search-active \{([^}]*)\}/.exec(cssCode) || ['', ''])[1];
-  const heroKbBlock = (/(?:^|\n)\.search-hero\.kb-open \{([^}]*)\}/.exec(cssCode) || ['', ''])[1];
-  chk(/height:\s*auto/.test(heroActiveBlock) && /padding-top:\s*var\(--hero-top\)/.test(heroActiveBlock),
-    'search-active（有焦点或有内容）：hero 交出高度、顶到 --hero-top 上去（贴顶栏下方）');
-  chk(/height:\s*auto/.test(heroKbBlock) && /padding-top:\s*var\(--hero-top\)/.test(heroKbBlock),
-    'kb-open（键盘弹着）：与 search-active 同一落位，另把列表上方留白收掉');
+  // ① 三态：CSS 侧两个类共一组落位，JS 侧一处写进去
+  //    贴顶那一块（body[data-nav="search"] .search-hero.search-active, .kb-open）
+  //    同时管三件事：竖向落位、整行由绝对定位改普通流、以及 sticky。
+  //    直接按「选择器 + 大括号」切出那两块：正则里那一串 [data-nav="search"]
+  //    转义穿两层（Python 写、JS 读）太容易错，这里改成先定位再切。
+  //    按「选择器 + {」整体找（不能只 indexOf 前缀：`… .search-active ~ #gw-list`
+  //    那一条也以同一个前缀开头，会先被找到）
+  const cut = (sel) => {
+    const re = new RegExp(sel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      .replace(/\s+/g, '\\s*') + '\\s*\\{([^}]*)\\}');
+    const m = re.exec(cssCode);
+    return m ? m[1] : '';
+  };
+  const pinBlock = cut('body[data-nav="search"] .search-hero.search-active, body[data-nav="search"] .search-hero.kb-open');
+  const pinToolbar = cut('body[data-nav="search"] .search-hero.search-active .search-toolbar,' +
+    ' body[data-nav="search"] .search-hero.kb-open .search-toolbar');
+  chk(/height:\s*auto/.test(pinBlock) && /padding-top:\s*var\(--hero-top\)/.test(pinBlock),
+    '贴顶态（search-active / kb-open 共一组）：hero 交出高度、顶到 --hero-top 上去');
+  chk(/justify-content:\s*flex-start/.test(pinBlock),
+    '贴顶态把 justify-content 从 center 改成 flex-start（这一段只剩一行框，再 center 就偏在中间）');
+  chk(/position:\s*sticky/.test(pinBlock) && /top:\s*0/.test(pinBlock),
+    '贴顶态是 sticky（往下翻结果时整块钉在视口最上沿，框一直看得见）');
+  chk(/position:\s*static/.test(pinToolbar) && /margin-top:\s*0/.test(pinToolbar) &&
+    /transform:\s*none/.test(pinToolbar),
+    '贴顶态把整行的绝对定位复位（top / margin-top / transform 都要松掉，' +
+    '否则框仍按「中线」摆，一贴顶就偏出半行）');
   chk(/--hero-top:\s*\d+px/.test(classicCss),
     '贴顶那一段高度是一个具名变量（--hero-top），不是散落的魔数');
   chk(/syncHeroState/.test(searchJs) &&
@@ -676,8 +701,6 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     '「框 → 列表」的间距在搜索页有一个具名变量（正常间隔，不再靠一段大留白撑）');
   chk(/body\[data-nav="search"\] \.search-hero\.search-active ~ #gw-list \{ padding-top: 0/.test(cssCode),
     '框一贴顶（聚焦 / 有内容），列表紧跟着它 —— 那一段间距整个收掉');
-  chk(!/\.search-hero \{[^}]*padding-bottom: 12px/.test(heroBlock[1]),
-    'hero 不再自己留「框 → 列表」那 12px（改由 #gw-list 的 padding-top 明说）');
   const idleH = (/body\[data-nav="search"\] #gw-list \.empty\[data-empty="idle"\] \{([^}]*)\}/.exec(cssCode) || ['', ''])[1];
   const idlePx = Number((/height:\s*(\d+)px/.exec(idleH) || [0, 999])[1]);
   chk(idlePx <= 8,
@@ -686,15 +709,32 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     '手机上不再单独写一套空态高度（桌面那一档已经足够小）');
 
   // ④ 焦点描边：不再有 UA 给的黑框
+  //    全站 .search-input 那一条只保留「天青描边」，本页再补底与光晕；
+  //    键盘操作另留一圈 focus-visible 的 ring（无障碍要求：焦点要看得见）
   const focusBlock = (/(?:^|\n)\.search-input:focus \{([^}]*)\}/.exec(cssCode) || ['', ''])[1];
-  chk(/border-color:\s*var\(--green\)/.test(focusBlock),
-    '聚焦时描边落到天青（--green），与全站主色一致');
-  chk(/outline:\s*none/.test(focusBlock),
-    '关掉浏览器默认的 focus ring（用户看到的「黑框」就是它 —— 不是我们写的任何一条）');
-  chk(/box-shadow:[^;}]*rgba\(47,\s*96,\s*85/.test(focusBlock),
-    '换成描边之外的一圈极淡天青光晕（不挤占布局，也不像黑框那样生硬）');
+  chk(/border-color:\s*var\(--green\)/.test(focusBlock) && /outline:\s*none/.test(focusBlock),
+    '聚焦时描边落到天青（--green），并关掉浏览器默认的 focus ring ——' +
+    '用户看到的「黑框」就是它，不是我们写的任何一条');
+  // ⚠️ 这两支选择器**共用一条规则**（:focus 与 :focus-visible 的
+  //    特异性完全相同，各自写一条时后者必然盖掉前者的 outline: none）——
+  //    所以这里按「两支都写在一起」的那一条来认。
+  const searchFocus = (/body\[data-nav="search"\] \.search-hero \.search-input:focus,\s*\nbody\[data-nav="search"\] \.search-hero \.search-input:focus-visible \{([^}]*)\}/.exec(cssCode) || ['', ''])[1];
+  chk(/border-color:\s*var\(--green\)/.test(searchFocus) &&
+    /box-shadow:/.test(searchFocus) && /outline:\s*none/.test(searchFocus),
+    '搜索页的聚焦态（两支选择器共用一条）：天青描边 + 淡天青光晕 + outline: none');
   chk(!/border-color:\s*#000|border:\s*[^;}]*\bblack\b/i.test(cssCode),
     '全站没有把输入框的焦点描边写成黑色（黑色的来源已在源头上关掉）');
+  // ⚠️ 曾经有个坑：搜索页那条 `:focus-visible` 规则与 `:focus` 规则
+  //    特异性完全相同（0,4,1），写在后面就把 `outline: none` 整个盖回去 ——
+  //    真机上 outline 又变成 2px solid，用户看到的黑框等于没修。
+  //    这里守两条：搜索页不再有第二条 outline 口径；带 outline 的聚焦规则
+  //    必须同时把 outline 关掉（两支选择器共用一条规则，顺序不影响结果）。
+  const searchFocusOutlines = (cssCode.match(
+    /body\[data-nav="search"\][^{}]*\.search-input[^{}]*:focus(?:-visible)?[^{}]*\{([^}]*)\}/g) || []);
+  chk(searchFocusOutlines.every(block => !/outline:\s*(?!none)\d/.test(block)),
+    '搜索页的聚焦规则里没有第二条 outline 描边（只留 box-shadow 那圈光晕 —— 否则特异性相同时会盖掉 outline: none）');
+  chk(!/body\[data-nav="search"\][^,{}]*\.search-input:focus-visible\s*\{[^}]*outline:\s*2px/.test(cssCode),
+    '没有「:focus / :focus-visible 各画一条 outline」的写法（两条特异相同，后者必然翻盘）');
 
   /* ---------- 八、法务页与设置页的口径一致 ---------- */
   chk(read('js/chrome.js').indexOf('古诗词') === -1 ||

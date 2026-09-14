@@ -242,6 +242,27 @@ chk(/祥云纹/.test(css), '注释里写明被移除的宋「祥云纹」底纹�
 // 按钮分级
 chk(/\.btn\.primary\s*\{[^}]*linear-gradient/.test(css), '一级按钮为实底渐变（主操作）');
 chk(/\.ghost-btn\s*\{[\s\S]{0,200}?border:\s*1px solid var\(--line\)/.test(css), '次级按钮为纸底描边');
+// 需求（Issue #122）：设置页「进度总览」那枚按钮是 <a>（指去 /progress/），
+// 浏览器默认给链接文字加下划线 —— 用户看到的那条线就是这么来的。
+// 必须在 .ghost-btn 上显式 text-decoration: none（与 .dock-item 上处理页签
+// 下划线是同一件事），且该规则不能只写在 :hover / :active 里，
+// 否则默认态仍带线。这里连同「该类按钮仍有 <a> 形态」一起钉住。
+chk(/\.ghost-btn \{[\s\S]{0,400}?text-decoration:\s*none/.test(css),
+  '次级按钮显式去掉文字下划线（<a> 默认下划线不得漏出，Issue #122）');
+// 这条样式不是可有可无的：设置页那枚按钮确实是 <a>（href 指去 /progress/），
+// 所以浏览器默认下划线真的会漏出来；顺带钉住改版后的标签与按钮文案。
+// 注意：settingsHtml 这个常量要到第 7 节才声明，本轮的两条断言挨着按钮样式写，
+// 所以这里读源码用顶部的 read()，不复用那个后声明的名字。
+const settingsSrc = read('settings/index.html');
+chk(/<a class="btn ghost-btn" href="\/progress\/"/.test(settingsSrc),
+  '设置页进「进度总览」的按钮仍是 <a>（因此必须显式去掉链接默认下划线）');
+// 需求（Issue #122）：这一块原先写着「背诵进度」+「看进度总览」两行、
+// 说了同一件事（读起来像两个并列的动作）。现在只留「进度总览」一个词，
+// 标签与按钮同名，整块读作「进度总览 · 进度总览」→ 点它进总览页。
+const progressRow = (settingsSrc.match(/<div class="settings-item">\s*<label>进度总览<\/label>[\s\S]{0,400}?<\/div>/) || [''])[0];
+chk(!!progressRow, '设置页有「进度总览」这一项（标签已由「背诵进度」改名为「进度总览」）');
+chk(!/背诵进度<\/label>/.test(settingsSrc), '设置页不再有「背诵进度」这枚标签（同一件事只说一遍）');
+chk(!/看进度总览/.test(settingsSrc), '设置页不再出现「看进度总览」这串旧文案');
 chk(/\.danger-btn\s*\{[\s\S]{0,200}?color:\s*var\(--red\)/.test(css), '危险按钮用朱砂色，仅用于不可逆操作');
 chk(/\.btn\.good\s*\{[^}]*inset 0 0 0 1px rgba\(240, 205, 124/.test(css), '「记住」按钮补上描金内边，与一级按钮同族');
 // 导航样式
@@ -661,19 +682,36 @@ chk(settingsHtml.indexOf('id="settings-page"') !== -1, '设置页有独立的整
 chk(settingsHtml.indexOf('settings-modal') === -1, '设置页不再用弹层结构');
 chk(settingsHtml.indexOf('class="foot settings-foot"') !== -1, '设置页底部有页脚（版权 + 法务链接）');
 
-// 需求（本次）：功能变多后设置项按用途归类 ——
-// 分「通用」「古诗词背诵」「阅读辅助」「朗读播放」四组
-chk((settingsHtml.match(/class="settings-group"/g) || []).length === 4,
-  '设置分四组：通用 / 古诗词背诵 / 阅读辅助 / 朗读播放');
+// 需求（Issue #114 第三、二条 + 可切换复习算法那一轮）：
+// 设置项多了以后按「这条设置管着谁」归类 —— 共六组：
+//   通用     全站都吃（用户名、数据备份 / 清空）
+//   背诵     只决定「今天背哪几首」（学段 / 年级 / 学期 / 范围 / 数量 / 进度入口）
+//             —— 原「古诗词背诵」改名，它本来就不只作用于古诗词
+//   我的清单  用户自己那份清单（自选背诵的增删改查）—— Issue #114 第二条搬进来的
+//   复习算法  决定「下次什么时候复习」（四张模型 4 选 1）
+//   阅读辅助  打开一篇时看不看得到拼音（注音总开关）
+//   朗读播放  连读时怎么念（五档档位）
+chk((settingsHtml.match(/class="settings-group"/g) || []).length === 6,
+  '设置分六组：通用 / 背诵 / 我的清单 / 复习算法 / 阅读辅助 / 朗读播放');
+chk(/settings-group-title[^>]*>复习算法</.test(settingsHtml), '有「复习算法」分组标题');
 chk(/settings-group-title[^>]*>通用</.test(settingsHtml), '有「通用」分组标题');
-chk(/settings-group-title[^>]*>古诗词背诵</.test(settingsHtml), '有「古诗词背诵」分组标题');
+chk(/settings-group-title[^>]*>背诵</.test(settingsHtml), '有「背诵」分组标题');
+chk(/settings-group-title[^>]*>我的清单</.test(settingsHtml), '有「我的清单」分组标题');
 chk(/settings-group-title[^>]*>阅读辅助</.test(settingsHtml), '有「阅读辅助」分组标题');
 chk(/settings-group-title[^>]*>朗读播放</.test(settingsHtml), '有「朗读播放」分组标题');
+// 分组的**顺序**也是分类的一部分：清单紧跟在「背诵」之后
+//（自选篇目就是跟着背诵走的），阅读 / 朗读两个偏好排在最后
+{
+  const order = [...settingsHtml.matchAll(/aria-labelledby="grp-([a-z]+)"/g)].map(m => m[1]);
+  chk(order.join(',') === 'general,recite,algo,lists,reader,play',
+    '六组的先后顺序为 通用 → 背诵 → 复习算法 → 我的清单 → 阅读辅助 → 朗读播放（实际 ' + order.join(',') + '）');
+}
 // 分组要真的装对东西：只给背诵用的选项不能落在「通用」里
 const generalBlock = (settingsHtml.match(/aria-labelledby="grp-general"[\s\S]*?<\/section>/) || [''])[0];
 const reciteBlock = (settingsHtml.match(/aria-labelledby="grp-recite"[\s\S]*?<\/section>/) || [''])[0];
+const listsBlock = (settingsHtml.match(/aria-labelledby="grp-lists"[\s\S]*?<\/section>/) || [''])[0];
 const readerBlock = (settingsHtml.match(/aria-labelledby="grp-reader"[\s\S]*?<\/section>/) || [''])[0];
-chk(!!generalBlock && !!reciteBlock && !!readerBlock, '三个分组各自的区块都能取到');
+chk(!!generalBlock && !!reciteBlock && !!listsBlock && !!readerBlock, '各分组自己的区块都能取到');
 chk(/id="input-username"/.test(generalBlock), '「通用」组含用户名');
 chk(/id="btn-export"/.test(generalBlock) && /id="btn-import"/.test(generalBlock) && /id="btn-reset"/.test(generalBlock),
   '「通用」组含数据管理（导出 / 导入 / 清空）');
@@ -681,15 +719,28 @@ chk(!/seg-scope|seg-stage|seg-term|grade-chips|seg-count/.test(generalBlock),
   '「通用」组里不再混入只给背诵用的选项');
 chk(/id="seg-stage"/.test(reciteBlock) && /id="grade-chips"/.test(reciteBlock) &&
     /id="seg-term"/.test(reciteBlock) && /id="seg-scope"/.test(reciteBlock) && /id="seg-count"/.test(reciteBlock),
-  '「古诗词背诵」组聚齐学段 / 年级 / 学期 / 背诵范围 / 每日数量');
+  '「背诵」组聚齐学段 / 年级 / 学期 / 背诵范围 / 每日数量');
+chk(/href="\/progress\/"/.test(reciteBlock), '「背诵」组含进度总览入口（它讲的就是这本账）');
+chk(/id="collections-list"/.test(listsBlock) && /id="btn-collections-import"/.test(listsBlock) &&
+    /id="collections-tip"/.test(listsBlock),
+  '「我的清单」组含自选背诵清单 / 导入键 / 说明行（Issue #114 第二条）');
+// 搬过来之后不能两边都留着：首页那张折叠卡必须真的没了
+chk(!/id="collections-section"/.test(html) && !/id="btn-collections"/.test(html),
+  '首页不再有「自选背诵」折叠卡（整块搬进设置，不留两处入口）');
 chk(/id="seg-helper"/.test(readerBlock), '「阅读辅助」组含注音总开关');
 
-// 需求（Issue #69 后续 A+B）：连读档位必须在设置页有显式入口，
-// 同时把「圆键长按 / 右键也能调」这条讲明白（原先一个字都没写）
+// 需求（Issue #69 后续 A）：连读档位必须在设置页有显式单选项入口。
+// 原先还把「圆键长按 / 右键也能调」这段复述在组内（B），#120 把那块
+// 「在哪儿快速调」说明整块删掉；但 #120 顺手删过了头 —— 解冲突（#122 并入
+// main）时发现这条断言一直亮红，是本 PR 里把「不指点操作」的那半段放回了本组
+// （只讲圆键长按 / 右键弹出同一个菜单，不再教手势）。这条断言因此改成正向钉住：
+// 组内确实写回了「长按 / 右键」，但只说圆键，不再重复讲手机上怎么按。
 const playBlock = (settingsHtml.match(/aria-labelledby="grp-play"[\s\S]*?<\/section>/) || [''])[0];
 chk(!!playBlock, '「朗读播放」分组能取到');
 chk(/id="seg-play"/.test(playBlock), '「朗读播放」组有五档单选项容器');
-chk(/长按|右键/.test(playBlock), '同组说明了圆键「长按 / 右键」这个快速入口（B）');
+chk(/长按 \/ 右键/.test(playBlock),
+  '「朗读播放」组说明圆键长按 / 右键弹出的是同一个菜单（Issue #122 把 #120 误删的这半段放回）');
+chk(!/长按约半秒/.test(playBlock), '同一组里不再重复教手势怎么按（只说手势叫什么，不说按多久）');
 // 档位定义必须同源：设置页与阅读器都读 js/play-modes.js，不得各写一份
 chk(/js\/play-modes\.js/.test(settingsHtml), '设置页加载 js/play-modes.js（与阅读器同源）');
 chk(/window\.PlayModes/.test(settingsJs) && /PM*\.(read|LIST|write|of)\b/.test(settingsJs),
@@ -875,6 +926,22 @@ chk(/data-nav-go/.test(read('js/chrome.js')) && /\/settings\//.test(read('js/chr
     catch (e) { swOk = false; }
     chk(swOk, 'sw.js 能通过语法检查（注释块闭合、没有游离的 */ —— 否则 SW 从不注册）');
   }
+  // 需求（用户原话）：「去除 sw.js 中的所有注释，以后也禁止添加」。
+  // 直接禁掉，而不是只清理一遍 —— 那条漏 `*/` 的坑就是从注释里来的，
+  // 注释一多、改动一多，同样的错会再来一次。版本沿革放在 README.md / SW-NOTE.md。
+  {
+    const swSrc = read('sw.js');
+    const lines = swSrc.split('\n');
+    // 逐行找注释：行注释（含行尾）与块注释（含行尾 / 多行）
+    const commented = lines.map((l, i) => [i + 1, l]).filter(([, l]) => {
+      const t = l.trim();
+      return t.indexOf('//') === 0 || t.indexOf('/*') === 0 ||
+             l.indexOf('//') !== -1 || l.indexOf('/*') !== -1 || l.indexOf('*/') !== -1;
+    });
+    chk(commented.length === 0,
+      'sw.js 不含任何注释（用户要求：去除所有注释并禁止再加；' +
+      (commented.length ? '实际第 ' + commented.map(c => c[0]).join('、') + ' 行有注释' : '') + '）');
+  }
 
   // 缓存名必须随资源变化升级，否则老用户拿到的是旧副本。
   // 这里不只查「等于某个版本号」——那样每次改 CSS 都得改测试。
@@ -884,10 +951,14 @@ chk(/data-nav-go/.test(read('js/chrome.js')) && /\/settings\//.test(read('js/chr
   // 反向约束：CACHE_NAME 必须出现在 sw.js 里且是纯常量，避免被误改成变量而失效
   chk(/const CACHE_NAME = "poem-app-v\d+";/.test(sw), 'CACHE_NAME 是带版本号的常量');
   // 静态资源是「缓存优先」——改样式表却不升版本，用户会一直看到旧样式。
-  // 这里显式锁住这条约定：sw.js 里必须写明「改静态资源要升版本」，
+  // 这条约定原写在 sw.js 顶部，现按用户要求「sw.js 不留注释」迁到 SW-NOTE.md；
+  // 约定本身仍有效，所以断言改从那里读（不再从 sw.js 的注释里读）。
+  const swNote = read('SW-NOTE.md');
+  chk(/缓存优先/.test(swNote) && /升|提升|更新/.test(swNote),
+    'SW-NOTE.md 里写明「静态资源缓存优先、改动需升级版本」的约定');
+  chk(sw.indexOf('缓存优先') === -1,
+    'sw.js 里不再出现注释形式的约定（注释已全部迁出）');
   // 并且所有页面的样式表 / 脚本都必须在 PRECACHE 里（否则断网/老用户会新老混用）。
-  chk(/缓存优先/.test(sw) && /升|提升|更新/.test(sw.slice(0, 1200)),
-    'sw.js 里写明「静态资源缓存优先、改动需升级版本」的约定');
   ['css/style.css', 'css/classic.css', 'css/legal.css'].forEach(function (f) {
     chk(sw.indexOf('./' + f) !== -1, 'PRECACHE 含 ' + f);
   });
@@ -994,6 +1065,36 @@ print(json.dumps(out, ensure_ascii=False))
   subsetChecked = true;
 } catch (e) {
   console.log('(未安装 fonttools，跳过字体子集覆盖检查：pip install fonttools brotli)');
+}
+
+/* ---------------- 搜索框聚焦光晕：不许拿不透明的填充色当 box-shadow ---------------- */
+/*
+   全站输入框聚焦时都是「天青描边 + 一圈**半透明**淡光」：
+       .search-input:focus { box-shadow: 0 0 0 3px rgba(47, 96, 85, .10); }
+   搜索页那一条（body[data-nav="search"] ...:focus）曾经误填了 --green-light
+   （#dbe9e2，不透明的浅底**填充色**），于是同一枚控件在搜索页画出一圈实心
+   粉绿外框、在别处是柔和光晕 —— 两副面孔，真机上看着像「框被加粗了一圈」。
+   PWA 层（test/pwa.test.js）会拿真浏览器量这圈光晕的色相，但那一层要 puppeteer，
+   缺依赖时整层跳过 —— 所以在主题层补一条**纯源码**断言，没浏览器也能守住：
+   凡是给搜索框画 box-shadow 的地方，颜色必须是天青主色的半透明光（rgb 47,96,85），
+   不能出现 --green-light / #dbe9e2 这类不透明填充色。
+*/
+{
+  // 抓出所有「作用于 .search-input 的 :focus 规则块」
+  const ruleRe = /([^{}]*?search-input[^{}]*?:focus[^{}]*?)\{([^}]*)\}/g;
+  let m, checked = 0;
+  while ((m = ruleRe.exec(classicCss)) !== null) {
+    const body = m[2];
+    const shadow = body.match(/box-shadow\s*:\s*([^;]+);/);
+    if (!shadow) continue;
+    checked++;
+    const val = shadow[1].trim();
+    chk(/rgba?\(47,\s*96,\s*85/.test(val),
+      '搜索框聚焦光晕用天青主色的半透明光（不是不透明填充色）：' + val);
+    chk(!/--green-light|#dbe9e2/i.test(val),
+      '搜索框聚焦光晕没有误用 --green-light / #dbe9e2 这类不透明填充色：' + val);
+  }
+  chk(checked >= 1, '至少找到一处搜索框聚焦光晕规则（实际 ' + checked + ' 处）');
 }
 
 console.log(fails === 0 ? '\n🎉 主题测试全部通过' : '\n❌ ' + fails + ' 项失败');

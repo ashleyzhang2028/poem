@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#2f6055" />
   <title>背诵进度 · 跬步</title>
-  <meta name="description" content="跬步背诵进度总览：到期日历（未来两周每天要复习几篇、下次何时到期）与掌握度分布。" />
+  <meta name="description" content="跬步背诵进度总览：到期日历与全部到期篇目（接下来两周哪天该背哪几篇）、掌握度分布。" />
   <meta name="format-detection" content="telephone=no" />
 
   <!-- iOS（苹果手机 / iPad）支持 -->
@@ -20,11 +20,17 @@
   <link rel="stylesheet" href="css/style.css" />
   <link rel="stylesheet" href="css/classic.css" />
 </head>
-<body data-nav="progress" data-page="背诵进度" data-sub="到期日历与掌握度分布">
+<body data-nav="progress" data-page="背诵进度" data-sub="到期日历与全部到期篇目">
   <!-- 这一页只读**本机已经留下的进度**，不改任何一篇的排期：
        「下次何时到期」原先只在每首诗的详情弹层里看得到（第几轮 / 掌握度 / 下次复习），
        看不到整体 —— 有 261 首时，「接下来两周哪几天要背几篇」只能一天天点开猜。
-       这里把全量摊成两张图：到期日历（未来 14 天）与掌握度分布。 -->
+       这里把全量摊成三块：到期日历（未来 14 天）、**全部到期篇目**（哪天该背哪几篇）、
+       掌握度分布。
+
+       日历与「全部到期篇目」是同一本账的两面：日历回答「哪天忙」，
+       篇目清单回答「那天具体是哪些」—— 先前只有前者，日历时看着一格 3 篇，
+       却点不进去、也不知道是哪三篇，还得回首页一页页翻。 -->
+
 
   <div class="app">
     <header class="topbar"></header>
@@ -35,7 +41,7 @@
       <p class="progress-tip" id="progress-tip"></p>
     </section>
 
-    <!-- 到期日历：未来 14 天每天到期的篇数 -->
+    <!-- 到期日历：未来 14 天每天到期的篇数；点某一格 → 下方清单滚到那一天 -->
     <section class="card progress-card">
       <div class="progress-head">
         <h2>到期日历</h2>
@@ -43,6 +49,21 @@
       </div>
       <div class="cal" id="progress-calendar"></div>
       <p class="progress-note" id="calendar-note"></p>
+    </section>
+
+    <!-- 全部到期篇目：日历上「哪天几篇」摊开成「哪天是**哪几篇**」。
+         日历是形状（一眼看忙不忙），这里是清单（要背的时候照着背）。
+         两处同一本账、同一套归档规则（逾期并进「今天」、
+         逾期超过一周的在今天那一档里单列一截），数不对就是 bug。 -->
+    <section class="card progress-card">
+      <div class="progress-head">
+        <h2>全部到期篇目</h2>
+        <span class="progress-sub" id="duelist-sub"></span>
+      </div>
+      <!-- 默认只展开「今天」那一档：每天真正会看的往往就是今天这几篇，
+           其余各天折起来，一页不至于长到要找 -->
+      <div class="duelist" id="progress-duelist"></div>
+      <p class="progress-note" id="duelist-note"></p>
     </section>
 
     <!-- 掌握度分布：分五档，每档多少篇 -->
@@ -84,8 +105,9 @@
   <script src="data/works-map.js"></script>
   <script src="data/works-index.js"></script>
   <script src="js/storage.js"></script>
-  <!-- 算法表（档位名与间隔随所选算法变，如 SM-2 的「6 天后」/ 莱特纳盒的「第几盒」） -->
-  <script src="js/srs.js"></script>
+  <!-- 复习调度算法：scheduler.levelName() 要按当前模型说阶段名
+       （「3 号盒 · 4 天后」/「稳定 12.3 天 · 难度 5.2」），故排在 scheduler 之前 -->
+  <script src="js/review-models.js"></script>
   <script src="js/scheduler.js"></script>
   <script src="js/progress.js"></script>
   <script src="js/chrome.js"></script>
