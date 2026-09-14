@@ -524,8 +524,10 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     '候选下拉只留 4px 间隙（用户反馈的「离搜索框太远」的反面）');
   chk(/\.suggest \{[^}]*background:\s*#fffefa/.test(classicCss),
     '候选下拉用不透明底色（--card 只有 90% 不透明，浮层会让结果列表透上来）');
-  chk(/--kb-visible/.test(classicCss) && /max-height:\s*min\(/.test(classicCss),
-    '候选下拉的高度按「可视区 − 键盘」算（键盘弹着也不会伸到键盘底下）');
+  chk(/--kb-visible/.test(classicCss) && /max-height:\s*max\(/.test(classicCss) &&
+    /min\(/.test(classicCss),
+    '候选下拉的高度按「可视区 − 键盘」算（键盘弹着也不会伸到键盘底下），' +
+    '并且外面再套一层 max() 保底 5 行（Issue #122）');
   chk(/\.search-hero \.search-toolbar \{[^}]*z-index:\s*1/.test(classicCss),
     '搜索整行有自己的层级（.search-wrap 的 transform 新建了层叠上下文，' +
     '整行不进正层级的话，结果列表会从下拉上面压过去）');
@@ -587,9 +589,17 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     '「没找到」那一支走通用的 .search-empty 左对齐，没有再单开一套');
 
   // ③ 下拉的高度：三重约束（400px / 可视区的四成 / 键盘上沿）
-  const suggestBlock = (/(?:^|\n)\.suggest \{([^}]*)\}/.exec(cssCode) || ['', ''])[1];
-  chk(/max-height:\s*min\(/.test(suggestBlock),
-    '候选下拉的高度用 min() 取三项里最小者（不是一个写死的高度）');
+  const suggestBlock = (/(?:^|\n)\.suggest \{([\s\S]*?)\n\}/.exec(cssCode) || ['', ''])[1];
+  // ⚠️ 本轮（Issue #122 第二条）把口径改成**两层**：外层 max()、里层 min()。
+  //    里层仍是原来那三项上限（380/320px、可视区四成、(可视区−键盘) 六成），
+  //    外层是新增的**下限**：至少看得见 --suggest-rows 行（默认 5 行）。
+  //    用户反馈「键盘弹出时下拉高度变得极小，甚至只有一行」——
+  //    那正是只有上限时的必然结果：可视区被键盘压到 250px，四成只剩 100px。
+  chk(/max-height:\s*max\(/.test(suggestBlock) && /min\(/.test(suggestBlock),
+    '候选下拉的高度 = max(至少 5 行, min(三项上限))：行数是承诺，比例只是分寸');
+  chk(/--suggest-rows/.test(suggestBlock) && /--suggest-row-h/.test(suggestBlock),
+    '「至少几行 / 一行多高」走 --suggest-rows / --suggest-row-h 两个变量' +
+    '（JS 只报这两个事实值，高度仍由 CSS 算）');
   // ⚠️ 口径（定稿）：三项取最小，且比例与硬边界两项都按 **JS 实测的可视区** 算 ——
   //    「可视区」不能写 svh：svh 量的是「视口最小时的高度」，它**不认软键盘**
   //    （键盘是覆盖层、不改视口），部分内核 / 无头环境里甚至与 vh 相等
@@ -608,6 +618,9 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     /--kb-visible/.test(suggestNarrow),
     '手机上候选收到 320px（约 6 条），比例仍按实测可视区四成收口' +
     '（键盘弹着时更要紧：下拉下面那几成就是结果卡片）');
+  chk(/max\(/.test(suggestNarrow) && /--suggest-rows/.test(suggestNarrow) &&
+    /--suggest-row-h/.test(suggestNarrow),
+    '手机上同样是 max(5 行, min(…))：键盘把可视区压到 300px 以下时，5 行照样给满');
   chk(!/60svh|60vh|40svh|40vh/.test(suggestBlock),
     '不再用 vh / svh 算可视区（它们不认软键盘；60% 那一档在手机上实测也太松 —— ' +
     '候选铺到可视区下沿前 30px，底下只剩一条缝，「给结果卡片留一片」等于没留）');
@@ -699,8 +712,16 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   // ③ 搜索框 → 结果列表：正常间隔
   chk(/body\[data-nav="search"\] #gw-list \{ padding-top: var\(--search-list-gap/.test(cssCode),
     '「框 → 列表」的间距在搜索页有一个具名变量（正常间隔，不再靠一段大留白撑）');
-  chk(/body\[data-nav="search"\] \.search-hero\.search-active ~ #gw-list \{ padding-top: 0/.test(cssCode),
-    '框一贴顶（聚焦 / 有内容），列表紧跟着它 —— 那一段间距整个收掉');
+  // ⚠️ 本轮（Issue #122 第一条）改口径：贴顶态**不再**把间距收成 0。
+  //    用户原话是「搜索框和上下元素间隔一致，以现在下面的间隔为准，
+  //    上面的间隔也缩小到这么多」—— 上一版框上 8px、框下 0，上下不对称。
+  //    现在两处取同一个变量：hero 的 padding-top（--hero-top）与 #gw-list 的
+  //    padding-top 都读 --search-list-gap。
+  chk(/body\[data-nav="search"\] \.search-hero\.search-active ~ #gw-list,\s*\nbody\[data-nav="search"\] \.search-hero\.kb-open ~ #gw-list \{ padding-top: var\(--search-list-gap/.test(cssCode),
+    '框一贴顶（聚焦 / 有内容 / 键盘弹着），框下仍是那一段正常间隔（与框上同值）');
+  chk(/--hero-top:\s*var\(--search-list-gap/.test(cssCode),
+    '框上那一段（--hero-top）与框下那一段（--search-list-gap）取自同一个变量 ——' +
+    '上下才真的等距（上一版是 8px / 12px 的两个魔数）');
   const idleH = (/body\[data-nav="search"\] #gw-list \.empty\[data-empty="idle"\] \{([^}]*)\}/.exec(cssCode) || ['', ''])[1];
   const idlePx = Number((/height:\s*(\d+)px/.exec(idleH) || [0, 999])[1]);
   chk(idlePx <= 8,

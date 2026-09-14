@@ -189,6 +189,10 @@
 .search-input:focus {
   border-color: var(--green);
   outline: none;
+  /* 光晕这一支是**全站输入框的公共口径**（style.css 末尾还有一条按元素命中的
+     兜底，管住弹层里那些没带类名的输入框）：同一个值写两处会走散，
+     所以这里只留一句指路 —— 值本身仍是 rgba(47, 96, 85, .10)，
+     改的时候两处一起改（搜索页这颗 52px 的大框由本文件更高的特异性接管）。 */
   box-shadow: 0 0 0 3px rgba(47, 96, 85, .10);
 }
 .search-input::-webkit-search-cancel-button { display: none; }
@@ -1229,8 +1233,10 @@ body.reader-open .dock { display: none; }
      两者相等：高度就该长在布局里，见下面 .search-hero .search-toolbar 那条。 */
   --hero-input-h: 52px;
   --hero-box-h: 52px;
-  /* 贴顶时：框顶到页顶的距离（这一段 = 顶栏 + 44px 呼吸 + 52px 框） */
-  --hero-top: 44px;
+  /* 贴顶时：框顶到页顶的距离（这一段 = 顶栏 + --hero-top 那段呼吸 + 52px 框）。
+     ⚠️ 这个值与「框 → 列表」那一段是**同一个来源**（--search-list-gap）：
+        两者相等，框上下才对称，见下面「搜索框上下间隔一致」那一节。 */
+  --hero-top: var(--search-list-gap, 12px);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -1383,12 +1389,17 @@ body.reader-open .dock { display: none; }
        · 居中态（没焦点、没内容）—— 那半屏空白是本来的版式（框就是主角），
          只在列表顶上补一小段间距（--search-list-gap: 12px），
          让「框 → 第一张卡片」有 12px 呼吸，而不是贴着框；
-       · 聚焦 / 有内容 —— 框贴顶，列表紧跟其后，
-         那一段间距整个收掉（padding-top: 0），行距回到列表自己的 10px。
+       · 聚焦 / 有内容 —— 框贴顶，列表紧跟其后，**同样只留这一段**
+         （上一版把这一档收成 0，框下贴着卡片、框上离顶栏还有一截，
+          上下不对称，正是用户这一轮反馈的「上面的间隔没跟上」）。
    ⚠️ 只针对搜索页（body[data-nav="search"]）：集子索引页那一排搜索框
-     在工具栏里，本来就没有这个问题，不该被这条规则连带改掉。 */
+     在工具栏里，本来就没有这个问题，不该被这条规则连带改掉。
+   ⚠️ 贴顶态的 padding-top（= --hero-top = --search-list-gap）与本条相加，
+      对「框上」与「框下」两段一视同仁：两处都取这一个变量，
+      写死数字会让两边再次走散（上一版就是这么差出 8 / 12 的）。 */
 body[data-nav="search"] #gw-list { padding-top: var(--search-list-gap, 12px); }
-body[data-nav="search"] .search-hero.search-active ~ #gw-list { padding-top: 0; }
+body[data-nav="search"] .search-hero.search-active ~ #gw-list,
+body[data-nav="search"] .search-hero.kb-open ~ #gw-list { padding-top: var(--search-list-gap, 12px); }
 
 /* 搜索结果的条目内边距，收成与集子页一致（Issue #69 后续）----
    集子页的条目走 `.group-card .item { padding: 12px 8px 12px 12px }`，
@@ -1451,7 +1462,39 @@ body[data-nav="search"] #gw-list .item { padding: 14px 8px 14px 14px; }
             那正是我们要的：两项都管「别越过键盘、也别占满」，谁更紧听谁的。
      三项都用 min() 取小，比写死一个 320px 准 —— 写死的高度在 iPhone 上
      会伸进键盘底下：用户看到 6 条就以为是全部，其实第 7、8 条被键盘盖住了。 */
+/* 候选下拉的高度口径：**先保证看得见的条数，再谈比例**
+   --------------------------------------------------------------------------
+   用户这一轮的原话：「手机键盘弹出时，搜索框下拉提示列表的高度变得极小，
+   甚至只有一行？请调整，搜索框上提后我觉得可以显示5行吧？」
+
+   为什么会只剩一行：上一版把「可视区的四成」当硬指标（为了下拉下方留出
+   看得见的结果区），而**手机键盘弹着时可视区只剩 516px** ——
+   四成 = 206px 还算能看；可只要再叠上地址栏 / 输入法工具条把可视区压到
+   250~300px，四成就是 100~120px，扣掉内边距**只剩一行多一点**。
+   比例口径的问题在于：屏幕越矮、给候选的地方越少 —— 而恰恰是屏幕矮的时候
+   更需要「多看见几行」。
+
+   所以改成两层口径，**第一层是硬指标、第二层才轮到比例**：
+     · 硬指标（下限）：候选至少放得下 --suggest-rows 行（默认 5 行）。
+       一行 = --suggest-row-h（12 + 12 内边距 + 20 行高 = 44px，也是 iOS 的
+       最小可点面积），5 行 = 220px，再加 2px 描边。键盘弹着时这是**必须**
+       给到的：够不着的那几行等于不存在。
+     · 上限（比例）：仍然要「下拉下方留得下一张结果卡片」，所以上限继续按
+       可视区 / 键盘算（原来的三项 min()），只是不再允许它把候选压到 5 行以下。
+   ⚠️ 下限只在「有键盘」时才可能顶到上限之上 —— 没有键盘时可视区整屏，
+      220px 远比四成小，等于不生效（桌面 852px 时四成 = 340px）。
+   ⚠️ 键盘上方那一片至少要有 242px（220px 候选 + 22px 结果区 / 框）这条硬
+      下限才有地方落 —— 这是 iPhone 的现实值：852px 屏、336px 键盘、
+      52px 框 + 12px 呼吸之后，键盘上方还剩约 450px，够。
+      若某台机器的可视区小到连 242px 都没有，候选**必须**宁可伸到键盘底下
+      —— 所以下限写在 max() 里、不在 max-height 里（见下面那条）。
+
+   ⚠️ 这两个变量在 .suggest 与 hero 上都写一遍（与 --kb-visible / --kb-space
+      同一处理）：键盘弹起会让 .search-toolbar 重排，那条链上的**继承值**
+      不会因此重算。 */
 .suggest {
+  --suggest-rows: 5;
+  --suggest-row-h: 44px;
   position: absolute;
   left: 0;
   right: 0;
@@ -1484,10 +1527,18 @@ body[data-nav="search"] #gw-list .item { padding: 14px 8px 14px 14px; }
         见 syncHeroState）：--kb-visible 是可视高度、--kb-space 是键盘占的高度
         （没有键盘时是 0px）。各写两遍是因为键盘弹起会让 .search-toolbar 重排，
         那条链上的**继承值**不会因此重算 —— 只写 hero 的话下拉会照旧按整屏铺。 */
-  max-height: min(
-    380px,
-    calc(var(--kb-visible, 100vh) * .4),
-    calc((var(--kb-visible, 100vh) - var(--kb-space, 0px)) * .6)
+  /* ⚠️ 外层是 max()、里层是 min() —— 顺序不能反：
+     「至少 5 行」是承诺（用户要的是**看得见几行**），
+     「最多占几成」是分寸。两者冲突时（可视区被键盘压得极矮）
+     必须让承诺赢，否则又回到「只剩一行」。
+     下限里的 +2px 是上下两道描边（.suggest 是 border-box）。 */
+  max-height: max(
+    calc(var(--suggest-rows, 5) * var(--suggest-row-h, 44px) + 2px),
+    min(
+      380px,
+      calc(var(--kb-visible, 100vh) * .4),
+      calc((var(--kb-visible, 100vh) - var(--kb-space, 0px)) * .6)
+    )
   );
   overflow-y: auto;
   /* 候选与输入框之间不留视觉缝：间隙已在 top 里给过（4px），
@@ -1558,10 +1609,15 @@ body[data-nav="search"] #gw-list .item { padding: 14px 8px 14px 14px; }
       （都是 JS 实测值，不用 svh）—— 见上面 .suggest 那条的说明。 */
 @media screen and (max-width: 700px) {
   .suggest {
-    max-height: min(
-      320px,
-      calc(var(--kb-visible, 100vh) * .4),
-      calc((var(--kb-visible, 100vh) - var(--kb-space, 0px)) * .6)
+    /* 手机上「5 行」与桌面同一个口径（44px 一行），上限收一档到 320px；
+       下限仍然优先 —— 键盘把可视区压到 300px 以下时，5 行照样给满 */
+    max-height: max(
+      calc(var(--suggest-rows, 5) * var(--suggest-row-h, 44px) + 2px),
+      min(
+        320px,
+        calc(var(--kb-visible, 100vh) * .4),
+        calc((var(--kb-visible, 100vh) - var(--kb-space, 0px)) * .6)
+      )
     );
   }
 }
@@ -1621,12 +1677,15 @@ body[data-nav="search"] .search-hero.search-active,
 body[data-nav="search"] .search-hero.kb-open {
   height: auto;
   justify-content: flex-start;
-  /* 顶栏本体由 .topbar 排到英雄区之上，这里只留一点呼吸（比静止态紧，
-     框离顶栏近一档，读起来才像「贴在标题栏下方」而不是悬在页面中） */
+  /* 顶栏本体由 .topbar 排到英雄区之上，这一段就是「框顶与它上面那一条之间」
+     的间隔 —— 取值与「框 → 列表」相同（--search-list-gap），上下对称。
+     ⚠️ 上一版这里是 8px、而下面列表那条是 12px，框下比框上松 4px；
+        用户的要求是「以现在下面的间隔为准，上面的间隔也缩小到这么多」，
+        于是两处不再各写一个数，改由这一个变量同时供给（列在 .search-hero 里） */
   padding-top: var(--hero-top);
-  /* 「框 → 结果列表」在贴顶态下只有这一档正常间隔（用户要求别再留一大段空）；
-     键盘弹着时由下面 #gw-list 那条再收到 0 */
-  padding-bottom: 8px;
+  /* 这一行只剩 0：框到列表的那一段间距已由下面 #gw-list 的 padding-top 统一给
+     （贴顶态同样是 var(--search-list-gap)），这里再留 8px 就会重复叠加 */
+  padding-bottom: 0;
   position: sticky;
   /* 顶栏自己会滚走，贴住它必须让整块留在视口最上沿（top: 0）——
      非 sticky 时 top 不生效，滚动后才会有区别。 */

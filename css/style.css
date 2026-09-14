@@ -961,7 +961,41 @@ body.no-dock .modal-box { max-height: 88vh; }
   outline: none;
   transition: border-color .15s, background .15s;
 }
-.settings-input:focus { border-color: var(--green); background: #fffdf6; }
+/* 聚焦态：天青描边 + 一圈极淡的天青光晕（与全站搜索框同一个值）
+   --------------------------------------------------------------------------
+   用户要求：「搜索框聚焦后外层那圈浅浅的光晕，设置页的用户名输入框也加上，
+   所有页面的输入框都带这样的效果」。
+   光晕是描边**之外**的柔和扩散（box-shadow），不挤占布局、也不像 UA 默认的
+   focus ring 那样生硬 —— 上一版这里只换了 border-color，浏览器给 <input>
+   的默认 outline 于是与天青描边同时画在框上。
+   ⚠️ 光晕的值必须与 `.search-input:focus` 那条**逐位相同**
+      （rgba(47, 96, 85, .10)），两边都别图省事换成 --green-light：
+      那是不透明的浅底填充色，当 box-shadow 用会画出一圈实心粉绿外框。
+   ⚠️ 本次把 **CSS 变量之外的「所有页面输入框」** 一并覆盖（见下面那条
+      `input/select/textarea` 的 :focus）—— 单独挑 .settings-input 改，
+      日后新加的输入框又只有描边、没有光晕。 */
+.settings-input:focus {
+  border-color: var(--green);
+  background: #fffdf6;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(47, 96, 85, .10);
+}
+/* 全站输入控件的聚焦口径：同一个描边色 + 同一圈光晕
+   --------------------------------------------------------------------------
+   为什么用元素选择器而不是再列一遍类名：页面上还有搜索弹层、自选集合命名
+   这类「临时长出来的」输入框（.modal 里的 input），逐个补类名必然漏。
+   这里只补**聚焦表现**，不动字号 / 内边距 / 底色 —— 那是各组件自己的事。
+   ⚠️ outline: none 必须有：不关掉 UA 那条近黑的 focus ring，
+      用户看到的仍是「黑框 + 青晕」两层叠着。
+   ⚠️ 放在组件样式**之后**、且带上元素选择器（特异性 0,1,1）：
+      `.search-input:focus`（0,2,0）与 `body[data-nav="search"] …`（更高）
+      那几条仍然按自己的值赢 —— 搜索页那颗 52px 的大框不会被这条压回去。 */
+input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(47, 96, 85, .10);
+}
 .settings-input::placeholder { color: #9c8d7b; }
 .settings-hint { font-size: 11.5px; color: var(--ink-3); margin-top: 6px; }
 
