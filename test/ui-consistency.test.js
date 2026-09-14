@@ -195,8 +195,8 @@ chk(/min-height:\s*0/.test(ringRule),
    令牌本身在 :root 里定义一次（手机 720px），平板那一档覆写成更宽的一档（见下）。 */
 chk(/:root\s*\{[^}]*--col-w:\s*720px/s.test(cssCode),
   '「一列纸」的宽度只有 --col-w 一个来源（手机档 720px）');
-chk(/\.dock-inner\s*\{[^}]*max-width:\s*var\(--col-w/s.test(cssCode),
-  '页签内层读 --col-w（与内容区同源，四格不会被拉成巨板）');
+chk(/\.dock-inner\s*\{[^}]*max-width:\s*var\(--content-w/s.test(cssCode),
+  '页签内层读 --content-w（与内容区同源，四格不会被拉成巨板）');
 chk(/\.dock-inner\s*\{[^}]*margin:\s*0 auto/s.test(cssCode),
   '页签内层居中（与内容区共用一条竖轴）');
 chk(/\.dock-inner\s*\{[^}]*width:\s*100%/s.test(cssCode),
@@ -242,12 +242,17 @@ chk(/\.cal-cell\s*\{[^}]*max-width:\s*64px/s.test(classicCode),
    否则「内容与顶栏对不齐」这类错位会一处一处冒出来。 */
 const appRule = ruleOf(cssCode, '.app');
 chk(/max-width:\s*var\(--col-w/.test(appRule), '内容区列宽走 --col-w');
-chk(/max-width:\s*var\(--col-w/.test(ruleOf(cssCode, '.topbar')),
-  '顶栏列宽与内容区同源（--col-w）');
-chk(/width:\s*var\(--col-w/.test(ruleOf(classicCode, '.reader-body')),
-  '阅读器正文列宽与内容区同源（--col-w）');
-chk(/max-width:\s*var\(--col-w/.test(ruleOf(cssCode, '.dock-inner')),
-  '页签内层与内容区同源（--col-w）');
+/* ⚠️ 顶栏 / 页签内层 / 阅读器正文读的是 --content-w（= --col-w 减掉两侧的
+   --col-side），不是 --col-w 本身：这三样住在「整宽」的容器里（.app 的
+   padding 之外，或 body 直下），自己不带左右内边距 —— 直接读 --col-w 的话
+   在平板 / 桌面上会比正文列宽出两侧那一条边（实测 1918px 屏上顶栏左移 42px）。
+   这四条是「四样东西落在同一条竖轴上」的唯一保障，不许只改其中一条。 */
+chk(/max-width:\s*var\(--content-w/.test(ruleOf(cssCode, '.topbar')),
+  '顶栏列宽与内容区同源（--content-w）');
+chk(/width:\s*var\(--content-w/.test(ruleOf(classicCode, '.reader-body')),
+  '阅读器正文列宽与内容区同源（--content-w）');
+chk(/max-width:\s*var\(--content-w/.test(ruleOf(cssCode, '.dock-inner')),
+  '页签内层与内容区同源（--content-w）');
 /* 令牌只能有**两档**：手机 720px、平板一档。写死第三处 720px 就是下次走散的种子。 */
 chk(!/max-width:\s*720px/.test(cssCode) || /max-width:\s*720px/.test(ruleOf(cssCode, '.cal')),
   '样式表里不再有第二处写死的 max-width: 720px（一律走 --col-w）');
@@ -266,13 +271,18 @@ chk(!/max-width:\s*720px/.test(cssCode) || /max-width:\s*720px/.test(ruleOf(cssC
    守着「这一档的媒体查询真的存在、且换的是排布而不是数值」。
    ========================================================================== */
 
-/* 列宽令牌：手机 720px、平板一档更宽 —— 只有两档，不跟视口线性放大 */
-const tabletRoot = /@media \(min-width:\s*768px\)\s*\{[^@]*:root\s*\{[^}]*--col-w:\s*(\d+)px/s.exec(cssCode);
+/* 列宽令牌：手机 720px、平板一档更宽、桌面跟着视口走。
+   ⚠️ 平板那一档写的是 min(1040px, 100vw)：1040px 是握在手里的平板那一档，
+      但 iPad Pro 竖屏 / 分屏窗口比它窄，写死会让一列纸比视口还宽
+      （真机上量到过：顶栏被挤出屏幕、与正文对不齐）。 */
+const tabletRoot = /@media \(min-width:\s*768px\)\s*\{[^@]*:root\s*\{[^}]*--col-w:\s*min\(\s*(\d+)px/s.exec(cssCode);
 chk(!!tabletRoot, '平板（≥768px）那一档把 --col-w 放宽了一档（不是把手机那一列拉宽）');
 if (tabletRoot) {
   const w = Number(tabletRoot[1]);
   chk(w > 720 && w <= 1200,
     '平板列宽 ' + w + 'px 落在「比手机宽、又不到桌面无限」这一档内');
+  chk(/--col-w:\s*min\(\s*\d+px\s*,\s*100vw\s*\)/.test(cssCode),
+    '平板列宽取 min(固定值, 100vw)：比那一档还窄的窗口（iPad Pro 竖屏 / 分屏）下不会比视口宽');
 }
 
 /* 篇目列表：手机一列、平板两列 */
@@ -317,21 +327,120 @@ chk(/@media \(min-width:\s*768px\)[\s\S]{0,400}\.progress-main\s*\{[^}]*flex-wra
 chk(/\.progress-card\.wide\s*\{[^}]*max-width:\s*100%/s.test(classicCode),
   '进度概览那一块占满整行（它只有一行数字，挤在半栏里更难读）');
 
-/* 阅读器：栏变宽了，**正文反而收窄** —— 行宽 35~40 字是阅读上限 */
-chk(/@media \(min-width:\s*768px\)[\s\S]{0,400}\.reader-text\s*\{[^}]*max-width:\s*720px/s.test(classicCode),
-  '阅读器正文列在 ≥768px 封顶 720px（栏宽了，一行字数不跟着涨）');
+/* 阅读器：栏变宽了，**正文反而收窄** —— 行宽 35~40 字是阅读上限。
+   令牌是 --read-w（= 手机那一档 720px，也是「一行字」的唯一来源，
+   见 css/style.css 的 :root）：一列纸在桌面上跟视口走，
+   但一行字 / 一条进度条轨道 / 一格日历不跟 —— 那是「读一行太累」的问题。 */
+chk(/@media \(min-width:\s*768px\)[\s\S]{0,400}\.reader-text\s*\{[^}]*max-width:\s*var\(--read-w/s.test(classicCode),
+  '阅读器正文列在 ≥768px 封顶 --read-w（栏宽了，一行字数不跟着涨）');
 
-/* 页内工具栏与搜索区：宽栏里封顶居中，不被拉成一整条横带 */
+/* 页内工具栏与搜索区：宽栏里封顶居中，不被拉成一整条横带。
+   ⚠️ 工具栏那一档在桌面上从 720px 改成 var(--col-w)：一排控件必须与它下面
+      那张卡片左右同缘，否则前者居中 720px、后者 1808px，左缘差出 400 多 px
+      （见 css/classic.css 的 toolbar 桌面那一档）。 */
 chk(/@media \(min-width:\s*768px\)[\s\S]{0,400}\.toolbar:not\(\.search-toolbar\)\s*\{[^}]*max-width:\s*720px/s.test(classicCode),
   '集子页工具栏在 ≥768px 封顶居中（搜索框一个人吃掉 900px，右边两枚隔着半屏）');
+chk(/@media \(min-width:\s*1024px\)[\s\S]{0,400}\.toolbar:not\(\.search-toolbar\)\s*\{[^}]*max-width:\s*var\(--content-w/s.test(classicCode),
+  '集子页工具栏在 ≥1024px 改跟 --content-w（与下面的卷次卡左右同缘，且不比容器宽）');
 chk(/@media \(min-width:\s*768px\)[\s\S]{0,400}\.search-hero\s*\{[^}]*max-width:\s*520px/s.test(classicCode),
   '搜索页 hero 在 ≥768px 封顶 520px（竖屏高度按视口算，横着拉满就成一条横带）');
 
-/* 进度日历与进度条：均分上限只在手机那一档成立，平板要收回来 */
-chk(/@media \(min-width:\s*768px\)[\s\S]{0,400}\.cal,[\s\S]{0,80}max-width:\s*720px/s.test(classicCode),
-  '进度日历在 ≥768px 收回 720px（14 格均分 1040px 会把格子拉成 64px 的宽方块）');
-chk(/@media \(min-width:\s*768px\)[\s\S]{0,600}\.bars\s*\{[^}]*max-width:\s*720px/s.test(classicCode),
-  '掌握度进度条在 ≥768px 收回 720px（轨道 900px 长时，走两成也像快满了）');
+/* 进度日历与进度条：均分上限只在手机那一档成立，平板起要收回来 */
+chk(/@media \(min-width:\s*768px\)[\s\S]{0,400}\.cal,[\s\S]{0,80}max-width:\s*var\(--read-w/s.test(classicCode),
+  '进度日历在 ≥768px 收回 --read-w（14 格均分 1040px 会把格子拉成 64px 的宽方块）');
+chk(/@media \(min-width:\s*768px\)[\s\S]{0,600}\.bars\s*\{[^}]*max-width:\s*var\(--read-w/s.test(classicCode),
+  '掌握度进度条在 ≥768px 收回 --read-w（轨道 900px 长时，走两成也像快满了）');
+
+/* ==========================================================================
+   四之二、桌面（≥1024px）—— 一列纸跟视口走，其余东西收在「一行」的宽度里
+   --------------------------------------------------------------------------
+   用户原话（Issue #135 后续）：
+     「桌面端特别是满屏桌面端一般是 1920 的宽度，这种情况下页面有限宽吗，
+       我更喜欢布满屏幕的设计，顶多左右留有 margin 或者 padding，
+       而不是限定 max-width 到 960px 或者类似的这种设计。」
+
+   原先桌面与平板共用同一档：一列纸写死 1040px —— 1920px 屏上两侧各空
+   440px（占屏 46%），一屏里近一半是空白。
+   这一档换掉的是「一列纸的宽度从哪来」：平板是握在手里的固定屏宽（给一个
+   数值），桌面是用户自己拉的窗口（跟着视口走，两侧只留一条边）。
+
+   ⚠️ 这一档**不是**把「行宽上限」取消掉。两件事原先都塞给了同一个 720px：
+     · 页面两侧要不要留白 —— 由一列纸决定（桌面：跟视口走）；
+     · 一行字该有多长 —— 由 --read-w 决定（三档都是 720px，永远不跟视口走）。
+    守着「桌面那一档真的换了列宽来源」，同时守着「行宽令牌没有被顺手拉宽」。
+   ========================================================================== */
+
+/* 桌面那一档的列宽由视口算出来（不是又一个写死的数值）：
+   --col-w 就是视口宽，.app 是 border-box，两侧由 --col-side 的 padding 收 ——
+   于是内容宽 = 100vw − 112px，窗口一宽就宽。
+   ⚠️ 写过 max(1040px, 100vw - 112px)：真机上 1023 → 1024 那一步内容从 979
+      掉到 912（max() 取到 1040 下限再减 112），窗口宽 1px、内容窄 67px。
+      写成 100vw 之后 1024px 起内容是一条单调斜线（1040 → 1808）。 */
+const deskRoot = /@media \(min-width:\s*1024px\)\s*\{[^@]*:root\s*\{([^}]*)\}/s.exec(cssCode);
+chk(!!deskRoot, '桌面（≥1024px）那一档真的存在（不是把平板那一列当桌面用）');
+if (deskRoot) {
+  const block = deskRoot[1];
+  chk(/--col-w:\s*100vw/.test(block),
+    '桌面列宽 = 视口宽（内容宽随之 = 100vw − 两侧的边，跟着窗口走）');
+  chk(/--col-side:\s*56px/.test(block),
+    '桌面两侧留 56px（边固定、内容跟视口走 —— 这才叫「布满屏幕」而不是「拉满」）');
+  chk(!/--col-w:\s*max\(\s*\d+px/.test(block),
+    '桌面列宽不再用 max(固定值, …) 兜底（真机上那会在 1024px 处造出一个 1px 断崖）');
+}
+/* 两侧那条边必须是一个值（不是 max()/min() 算式）：算式会让内容被永久卡在
+   上限上 —— 真机上量到过「1920px 屏内容仍是 1040px、两侧各空 440px」。 */
+chk(/--col-side:\s*56px/.test(cssCode) && !/--col-side:\s*(max|min)\(/.test(cssCode),
+  '--col-side 是固定值，不是算式（算式会与 max-width 打架、把内容卡死）');
+
+/* 「一行字」的宽度是全站唯一来源 --read-w，且三档都是 720px */
+chk(/--read-w:\s*720px/.test(cssCode),
+  '「一行字」的宽度令牌 --read-w 只定义一次，取手机那一档 720px（约 38 个汉字）');
+chk(!/--read-w:\s*calc\(100vw/.test(cssCode),
+  '--read-w 不跟视口走（行宽跟着屏幕一起涨正是「读一行太累」的成因）');
+chk(!/@media[^{]*\{[^@]*--read-w:\s*(?!720px)/.test(cssCode),
+  '--read-w 在任何一档里都不被改写（三档同一个值：手机 / 平板 / 桌面一行字一样长）');
+
+/* 桌面上的排布：长列表 / 卡内篇目 / 设置分组都再排一档（两列 → 三列） */
+chk(/@media \(min-width:\s*1024px\)[\s\S]{0,400}\.list\s*>\s*\.item\s*\{[^}]*33\.333%/s.test(cssCode),
+  '篇目列表在 ≥1024px 再排一档（两列时 1808px 里每行 893px，又是「空白比字宽」）');
+chk(/@media \(min-width:\s*1024px\)[\s\S]{0,600}\.group-card\s*>\s*\.item\s*\{[^}]*33\.333%/s.test(classicCode),
+  '集子页卡内篇目在 ≥1024px 排成三列（与首页同一档，同一条「空白比字宽」的理由）');
+chk(/@media \(min-width:\s*1024px\)[\s\S]{0,400}\.settings-group\s*\{[^}]*33\.333%/s.test(cssCode),
+  '设置分组在 ≥1024px 排成三列（一列纸 1808px 时两列每栏 886px，一行选项又是一片空白）');
+/* 三列时「每列第一条不画线」要按**每一列**算：卡头占第一位 →
+   孩子序号 2 / 3 / 4。只写 2、3 的话第三列第一条会凭空多一道横线。 */
+chk(/.group-card\s*>\s*\.item:nth-of-type\(4\)[\s\S]{0,60}border-top:\s*none/s.test(classicCode),
+  '三列时第三列的第一条也不画线（nth-of-type 只写到 3 的话会漏一列）');
+
+/* 输入框：桌面不跟着栏宽拉长（一个「用户名」值只有几个字，框却有 578px 宽） */
+chk(/@media \(min-width:\s*1024px\)[\s\S]{0,200}\.settings-input\s*\{[^}]*max-width:\s*320px/s.test(cssCode),
+  '桌面上的单行输入框封顶 320px（与手机上一整行同档，不跟着栏宽拉长）');
+
+/* 入口页六张卡：桌面换成**三列栅格**，列数是说出来的、不由卡宽与容器宽的
+   除法决定。真机上踩过：flex-basis 三分之一 + max-width 收上限的结果是
+   一行 4 张、第二行 2 张（收窄之后容器里还放得下第 4 张）。 */
+chk(/@media \(min-width:\s*1024px\)[\s\S]{0,900}\.library-grid\s*\{[^}]*grid-template-columns:\s*repeat\(3/s.test(classicCode),
+  '桌面入口页换成三列栅格（六张卡排成 3 × 2，不是 4 + 2）');
+
+/* 翻页那一排与正文同宽。
+   ⚠️ 居中必须写在 .reader-nav 的 margin 简写里（`26px auto …`），
+      不能另写一条 media query 只加 margin-left/right auto ——
+      margin 简写会把后写的左右值重置回 0，媒体查询又不加特异性。
+      真机上踩过：max-width 生效了（720px），但整排贴在正文左缘、没有居中。 */
+chk(/@media \(min-width:\s*1024px\)[\s\S]{0,300}\.reader-nav\s*\{[^}]*max-width:\s*var\(--read-w/s.test(classicCode),
+  '阅读器「上一篇 / 下一篇」在 ≥1024px 收进 --read-w（不然两枚按钮被推到屏幕两端）');
+chk(/\.reader-nav\s*\{[^}]*margin:\s*26px auto\s+calc\(118px/s.test(classicCode),
+  '翻页那一排的左右 auto 写在 margin 简写里（另写一条会被简写重置回 0）');
+
+/* 三样东西必须读同一条「内容宽」令牌，而不是各自读 --col-w ——
+   见上面第三段那四条断言（顶栏 / 页签内层 / 正文列 / 阅读器正文）。 */
+chk(/--content-w:\s*calc\(var\(--col-w\)\s*-\s*2\s*\*\s*var\(--col-side\)\)/.test(cssCode),
+  '「内容宽」= 一列纸减掉两侧那条边，只定义一次（顶栏 / 页签内层 / 正文列都读它）');
+/* 左右内边距只能有一个来源：真机上曾因为后出现的 .app{padding-left:14px}
+   把三档的 --col-side 整条盖掉（1918px 屏上顶栏左移 42px、与正文对不齐）。 */
+chk(/--col-side:\s*var\(--safe\)/.test(cssCode) === false &&
+  /\.app\s*\{[^}]*padding-left:\s*calc\(var\(--col-side\)/.test(cssCode),
+  '左右内边距读同一档 --col-side（不再有一处写死 14px 把三档一起盖掉）');
 
 /* 结构：两列排布要靠 HTML 里的容器才生效，只写 CSS 是空规则 */
 chk(/class="settings-groups"/.test(read('settings/index.html')),

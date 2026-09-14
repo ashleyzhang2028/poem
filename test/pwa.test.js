@@ -1757,6 +1757,81 @@ function check(name, cond, extra) {
     await page.close();
   }
 
+  /* ============ 宽屏桌面：一列纸跟视口走，一行字不跟 ============
+     用户（Issue #135 后续）：「桌面端特别是满屏桌面端一般是 1920 的宽度……
+     我更喜欢布满屏幕的设计，顶多左右留有 margin 或者 padding，
+     而不是限定 max-width 到 960px 或者类似的这种设计。」
+     这一档改成「跟着窗口走」，所以要用**真浏览器**量：
+       · 1920px 屏上两侧的留白必须很小（原先写死 1040px 时两侧各 440px）；
+       · 顶栏 / 页签内层 / 正文列三样必须落在同一条竖轴上（左缘同值）；
+       · 一行字（正文段落）**不能**跟着一起变宽 —— 那是另一件事。
+     ⚠️ 判据写成「两侧留白 ≤ 一小段」而不是「等于 56px」：56px 是本轮的取值，
+        下次想调成 40 或 72 都该允许，不该被这条断言钉死。
+     ⚠️ jsdom 不算布局，这一档的守卫只能在真浏览器里做。 */
+  {
+    const { page } = await freshPage();
+    for (const vw of [1920, 1440, 1280]) {
+      await page.setViewport({ width: vw, height: 1000, deviceScaleFactor: 1 });
+      await page.goto(base, { waitUntil: 'load' });
+      await new Promise(r => setTimeout(r, 800));
+      const w = await page.evaluate(() => {
+        const r = e => e ? e.getBoundingClientRect() : null;
+        const app = r(document.querySelector('.app'));
+        const bar = r(document.querySelector('.app > .topbar'));
+        const dock = r(document.querySelector('.dock-inner'));
+        return {
+          vw: document.documentElement.clientWidth,
+          appL: app && +app.left.toFixed(1), appR: app && +app.right.toFixed(1),
+          barL: bar && +bar.left.toFixed(1), barR: bar && +bar.right.toFixed(1),
+          dockL: dock && +dock.left.toFixed(1), dockR: dock && +dock.right.toFixed(1)
+        };
+      });
+      const sideL = w.appL, sideR = +(w.vw - w.appR).toFixed(1);
+      check('桌面 ' + vw + 'px：内容铺满屏幕，两侧留白各 ≤ 80px（不是被 max-width 压窄）',
+        sideL <= 80 && sideR <= 80,
+        JSON.stringify({ 左: sideL, 右: sideR, 视口: w.vw, 内容宽: +(w.appR - w.appL).toFixed(0) }));
+      check('桌面 ' + vw + 'px：顶栏与正文列左右同缘（不是各写各的宽度）',
+        Math.abs(w.barL - (w.appL + 56)) < 1.5 && Math.abs(w.barR - (w.appR - 56)) < 1.5,
+        JSON.stringify({ 顶栏: [w.barL, w.barR], 正文: [w.appL, w.appR] }));
+      check('桌面 ' + vw + 'px：页签内层与正文列左右同缘（四格落在正文两缘之内）',
+        Math.abs(w.dockL - (w.appL + 56)) < 1.5 && Math.abs(w.dockR - (w.appR - 56)) < 1.5,
+        JSON.stringify({ 页签: [w.dockL, w.dockR], 正文: [w.appL, w.appR] }));
+    }
+    /* 一行字不跟着屏幕走：打开一首长诗，量最宽的那一段正文。
+       1920px 屏上它必须仍停在 720px 这一档（约 38 个汉字），
+       而不是被拉成 1500px 的一整行。 */
+    await page.setViewport({ width: 1920, height: 1000, deviceScaleFactor: 1 });
+    await page.goto(base + 'tangshi/', { waitUntil: 'load' });
+    await new Promise(r => setTimeout(r, 1400));
+    const readW = await page.evaluate(() => new Promise(res => {
+      const items = [...document.querySelectorAll('#gw-list .item')];
+      if (!items.length) return res(null);
+      items[0].click();
+      setTimeout(() => {
+        const body = document.querySelector('.reader-body');
+        const txt = document.querySelector('.reader-text');
+        const nav = document.querySelector('.reader-nav');
+        if (!txt) return res(null);
+        res({
+          bodyW: body ? +body.getBoundingClientRect().width.toFixed(0) : null,
+          txtW: +txt.getBoundingClientRect().width.toFixed(0),
+          navW: nav ? +nav.getBoundingClientRect().width.toFixed(0) : null,
+          fontSize: parseFloat(getComputedStyle(txt).fontSize)
+        });
+      }, 900);
+    }));
+    check('桌面 1920px：阅读器正文列跟着放宽（一列纸铺满屏幕）',
+      readW && readW.bodyW > 1400,
+      readW ? String(readW.bodyW) : 'no reader');
+    check('桌面 1920px：一行字仍封顶 720px 这一档（不跟着屏幕一起变宽）',
+      readW && readW.txtW <= 760,
+      readW ? ('正文 ' + readW.txtW + 'px / 字号 ' + readW.fontSize) : 'no reader');
+    check('桌面 1920px：「上一篇 / 下一篇」与正文同宽（不被推到屏幕两端）',
+      readW && readW.navW !== null && Math.abs(readW.navW - readW.txtW) < 2,
+      readW ? (String(readW.navW) + ' / ' + readW.txtW) : 'no reader');
+    await page.close();
+  }
+
   await browser.close();
 
   console.log('\n=== iOS / 多端兼容检查 ===\n');
