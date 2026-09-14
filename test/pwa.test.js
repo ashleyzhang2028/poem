@@ -856,12 +856,22 @@ function check(name, cond, extra) {
       const gaps = items.map(function (it) {
         return +(parseFloat(getComputedStyle(it.querySelector('.item-read')).marginRight) || 0).toFixed(2);
       });
+      // 内容块 → 播放键那一段（本轮补的口径，原断言量错对象）：
+      // 这一段被「加入背诵」圆键（.item-recite，30px + 6px margin-right）占着，
+      // 逐条必须同值 —— 与标题长短无关，余量全被箭头那颗 margin-left: auto 吃掉。
+      const mainToPlay = items.map(function (it) {
+        const main = it.querySelector('.item-main').getBoundingClientRect();
+        const play = it.querySelector('.item-read').getBoundingClientRect();
+        return +(play.left - main.right).toFixed(2);
+      });
       return {
         n: items.length,
         insetMin: Math.min.apply(null, insets),
         insetMax: Math.max.apply(null, insets),
         gapMin: Math.min.apply(null, gaps),
         gapMax: Math.max.apply(null, gaps),
+        mainToPlayMin: Math.min.apply(null, mainToPlay),
+        mainToPlayMax: Math.max.apply(null, mainToPlay),
         // 内容块不得再把整行吃满（按内容取宽的旁证）
         mainMax: Math.max.apply(null, items.map(function (it) {
           return it.querySelector('.item-main').getBoundingClientRect().width;
@@ -874,6 +884,9 @@ function check(name, cond, extra) {
     check('iPhone: 全列表两颗图标的固定间距只有一个值（6px，与标题长短无关）',
       alignState.gapMax - alignState.gapMin <= 0.5 && Math.abs(alignState.gapMin - 6) <= 0.5,
       JSON.stringify({ gapMin: alignState.gapMin, gapMax: alignState.gapMax }));
+    check('iPhone: 全列表「内容块 → 播放键」的间距只有一个值（由加入背诵圆键给，与标题长短无关）',
+      alignState.n > 5 && alignState.mainToPlayMax - alignState.mainToPlayMin <= 0.5,
+      JSON.stringify({ n: alignState.n, min: alignState.mainToPlayMin, max: alignState.mainToPlayMax }));
 
     // ---- 需求（Issue #69 后续）：详情页长标题不把页面撑出去 ----
     // 库里有 150 字的题目（《自河南经乱关内阻饥兄弟离散…弟妹》），
@@ -953,14 +966,40 @@ function check(name, cond, extra) {
       JSON.stringify(numState.barContent));
     check('iPhone: 卡头与首条之间留出间距（不再贴着分隔线）',
       numState.gapHeadBtnToItem >= 6, numState.gapHeadBtnToItem + 'px');
-    // 需求（Issue #55 后续）：播放键左侧的间距归零，那段空档整个让给正文。
-    // 上一轮用 `margin-left: -12px` 去「抵掉」这段间距，量出来的 playGapLeft 是
-    // **负的 -12px** —— 圆键压在内容块右缘上画；本轮把负外边距去掉，同时把
-    // 内容块改成按内容取宽（见下一条），间距回落成一根线：0 或 1px（子像素取整）。
+    // 需求（Issue #55 后续）：播放键左侧**不留负外边距** ——
+    // 上一轮用 `margin-left: -12px` 去「抵掉」内容块与圆键之间的空档，结果是圆键
+    // 压到内容块右缘上画；本轮按用户要求去掉，那一段让给正文（见下一条）。
     check('iPhone: 播放键左侧没有负外边距（圆键不再压住正文）',
       numState.playGapLeft >= 0, numState.playGapLeft + 'px');
-    check('iPhone: 播放键左缘就贴在内容块右缘（间距 ≤ 1px）',
-      numState.playGapLeft <= 1, numState.playGapLeft + 'px');
+    // ⚠️ 口径修正（本轮，修 CI 红）：「播放键左缘就贴在内容块右缘（间距 ≤ 1px）」
+    // 这条断言量的是 playGapLeft = 内容块右缘 → 播放键左缘，而在**当前**结构里
+    // 这两者之间已经排了第三颗图标「加入背诵」（.item-recite，30px + 6px 外边距，
+    // 见 css/classic.css 与 js/reader-core.js 的 reciteItemBtn）。
+    // 于是 playGapLeft 恒等于 30 + 6 = 36px —— 断言不是「偶发子像素误差」，
+    // 而是**必然失败**：它量错了对象，却把红挂在内容块取宽这件事上。
+    // （这条断言在 #81 那批之后、.item-recite 落地之前写的，本次实测 36px，
+    //   只是 CI 采到的那一行日志被截断，才显得像偶发。）
+    // 现在改量真正的几何关系：**内容块 → 播放键这一段由第三颗图标「加入背诵」
+    // （.item-recite）占着** —— 它 30px 盒宽 + 6px margin-right = 36px，
+    // 与实测的 playGapLeft 一致。这条关系是刻意设计的（css/classic.css 里
+    // .item-recite 的注释写着间距 6px 写在它自己的 margin-right 上），
+    // 量它既不依赖标题长短，也不依赖余量落在哪里。
+    // 逐条的同值性放在上面 alignState 那次 evaluate 里一起量（那里列表有 100 条，
+    // 这里只剩 1 条 —— 从阅读器返回后列表是隐藏的，量不出「与标题长短无关」）。
+    const gapState = await page.evaluate(() => {
+      const item = document.querySelector('#gw-list .item');
+      const main = item.querySelector('.item-main').getBoundingClientRect();
+      const play = item.querySelector('.item-read').getBoundingClientRect();
+      const recite = item.querySelector('.item-recite');
+      return {
+        gap: +(play.left - main.right).toFixed(2),
+        reciteW: +recite.getBoundingClientRect().width.toFixed(2),
+        reciteMr: +(parseFloat(getComputedStyle(recite).marginRight) || 0).toFixed(2)
+      };
+    });
+    check('iPhone: 内容块 → 播放键这一段由「加入背诵」圆键占着（30px + 6px）',
+      Math.abs(gapState.gap - (gapState.reciteW + gapState.reciteMr)) <= 0.5,
+      JSON.stringify(gapState));
     check('iPhone: 圆键本体没被压小（仍是 36px 正圆）',
       Math.abs(numState.playW - 36) <= 0.5, numState.playW + 'px');
     // ⚠️ 口径变更（Issue #69 后续）：`playGapRight`（播放键右缘 → 箭头左缘）

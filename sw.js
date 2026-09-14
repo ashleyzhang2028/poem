@@ -239,9 +239,16 @@
  *        相关测试的计数随之更新
  *        （data/poems-zhaoming.js、data/site-index.js、README.md、
  *         test/zhaoming.test.js、sw.js）
+ *   v49  昭明文选「诗批」内容补齐（Issue #69 后续）：251 篇诗的白话译文
+ *        补入 data/poems-zhaoming.js（诗类 252 篇至此全部有译文，全书译文
+ *        78 → 329 篇，「待补」由 402 → 151）；字体按新语料补字（四款各补 4 字，
+ *        余 27 个 Noto CJK 本身无字形的极生僻字回落系统字体）；
+ *        站点总索引、README 与相关测试的计数随之更新
+ *        （data/poems-zhaoming.js、data/site-index.js、fonts/*.woff2、
+ *         README.md、js/library.js、test/zhaoming.test.js、sw.js）
  */
 
-const CACHE_NAME = "poem-app-v48";
+const CACHE_NAME = "poem-app-v49";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [
