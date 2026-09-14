@@ -46,11 +46,13 @@ const WI = sb.WorksIndex;
 const byId = {};
 sb.SITE_INDEX.forEach(p => { byId[p.id] = p; });
 
-/* ---- 1.0 「已全量收归的部」清单（权威口径） ----
-   与 scripts/build-text-master.js 的 FULL_BOOKS 一致。
-   一部一个 PR 地往下收：清单里没点名的部照旧内联，两种形态并存。
-   ⚠️ 哪一部漏收了、或哪一部多收了，都由这一份清单核 —— 不靠数总数。 */
+/* ---- 1.0 「已全量收归的部」清单（与 scripts/build-text-master.js 同源） ----
+   五部集子当初是一个 PR 收一部地收过来的，这份清单就是那五部的名单；
+   收齐之后它已不再是「收谁不收谁」的开关（现在凡在册且带正文的一律收），
+   只保留为**范围声明**与下面几条对账的锚点。 */
 const FULL_BOOKS = ['zhaoming', 'guwen', 'songci', 'tangshi', 'classic'];
+const FULL_BOOK_SET = {};
+FULL_BOOKS.forEach(b => { FULL_BOOK_SET[b] = true; });
 
 /* ---- 1.1 主表本身 ---- */
 /* 60（跨集重复的作品：
@@ -198,6 +200,37 @@ masterFlat.forEach(e => {
 chk(overlapped.length === 0, '没有条目被两篇作品同时登记（重叠：' + (overlapped.join('、') || '无') + '）');
 chk(MASTER.every(m => m.entries.indexOf(m.id) >= 0),
   '每条主表的 entries 里都有它自己（否则那一篇的正文谁也取不到）');
+
+/* ---- 1.1b 清单制收口：终态断言（清单点名的部，一条都不许漏） ----
+   上面几条说的是「收进来的都对」；这一段说的是「清单点名的部一条都没漏」。
+
+   ⚠️ 口径要小心：**课内 261 首不属于清单点名的部，它们本来就该内联** ——
+      主表只收它们当中「与集子重复」的那 60 条（主条目是课内那一条），
+      其余 201 首的正文就存在 data/poems-1..12.js 里，**没有第二份副本**，
+      进主表反而是把同一份正文搬到别处（见 README「正文收归主表」一节：
+      主表是「同一篇存了多份」的解药，不是「全站正文都要集中一处」）。
+      所以下面这条断言的候选池是**五部集子 + 那 60 条重复条目**，
+      不是「站点索引里所有带正文的条目」。 */
+const inScope = sb.SITE_INDEX.filter(p => p && !p.isBook && p.id &&
+  (p.text || p.translation) && FULL_BOOK_SET[p.book]);
+const missingFromMaster = inScope.filter(p => !masterFlat.some(e => e === p.id));
+chk(missingFromMaster.length === 0,
+  '清单点名的五部里，有正文的 ' + inScope.length + ' 条条目全部登记进了主表（未登记：' +
+  (missingFromMaster.slice(0, 6).map(p => p.id).join('、') || '无') + '）');
+/* 课内那 261 首：要么在册进了主表（60 条跨集重复的），要么自己那份内联正文还在 */
+const keNei = sb.SITE_INDEX.filter(p => p && !p.isBook && p.book === 'poems' && p.id);
+const keNeiLostText = keNei.filter(p => !p.text && !p.translation);
+chk(keNeiLostText.length === 0,
+  '课内 ' + keNei.length + ' 首都有正文（主表里那一份，或自己内联的那一份；' +
+  '实际缺：' + (keNeiLostText.slice(0, 6).map(p => p.id).join('、') || '无') + '）');
+/* 反向：主表登记的条目不许是「语料里根本没有的」—— 有了就是影子条目（1.1 已核 id 存在），
+   这里补一条「主表条目必定来自站点索引的在册条目」 */
+chk(masterFlat.every(id => byId[id] && !byId[id].isBook),
+  '主表登记的每一条都是站点索引里的真实篇目（不是书本身、不是拼错的 id）');
+/* 清单点名的五部 —— 终态下它们必须**全部**在册（少一部说明语料被搬走了） */
+chk(FULL_BOOKS.every(b => sb.SITE_INDEX.some(p => p.book === b)),
+  'FULL_BOOKS 点名的五部在站点索引里都在册（实际：' +
+  FULL_BOOKS.filter(b => !sb.SITE_INDEX.some(p => p.book === b)).join('、') + '）');
 
 /* ---- 1.2 各集子条目「只存归属」：不再内联正文 ---- */
 const BOOK_VARS = {

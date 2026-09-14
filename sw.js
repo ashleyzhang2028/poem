@@ -522,10 +522,33 @@
  *        （data/text-master.js、data/poems-classic.js、
  *          scripts/build-text-master.js、test/canonical.test.js、
  *          test/dedup.test.js、README.md）
- *   v83  搜索页三态与聚焦描边的收尾（Issue #69 · 用户机上反馈 · 收口），
- *        并统一聚焦光晕的写法。两块改动撞在同一个版本号上，故合记为一版：
+ *   v83  背诵进度总览补上「全部到期篇目」+ 正文收归的三件收尾（Issue #69 收尾），
+ *        与搜索页三态 / 聚焦描边的收尾（Issue #69 · 用户机上反馈 · 收口）撞在
+ *        同一个版本号上，故合记为一版：
  *
- *        【一】三态与聚焦描边的收尾：
+ *        【一】背诵进度总览补上「全部到期篇目」+ 正文收归的三件收尾：
+ *        ① /progress/ 原先只有到期日历（哪天几篇）与两张分布图，
+ *           日历上那一格点不进去、也不知道「周三那 5 篇是哪 5 篇」。
+ *           本轮补上**全部到期篇目**：日历那一格摊开成篇名清单，
+ *           每篇带阶段 / 掌握度 / 「逾期 N 天」或「还有 N 天」，
+ *           点日历格子滚到那一天那一档，篇名指回首页去背（这一页仍只读）。
+ *           清单与日历**同一本账**：逐档的篇数与日历逐格的数必须相同，
+ *           逾期超过一周的另挂一截「逾期超过一周 · N 篇」（与 overview 的
+ *           overdue 一样是另计，不并进「今天」的天数，两处数才逐格对得上）。
+ *           口径在 js/scheduler.js 新增的 dueList()：overview() 出「形状」、
+ *           dueList() 出「名册」，两者共用同一套归档规则。
+ *        ② 收尾清扫：README 两处口径数字漂了（正文收归 1402 → **1391**、
+ *           只存归属 765 → **1391**），逐条数回来；
+ *           scripts/build-text-master.js 的 FULL_BOOKS 清单从「收谁不收谁」
+ *           降为**历史声明**（五部已收齐，现在凡在册且带正文的一律全收）。
+ *        ③ 清单制收口：脚本与 test/canonical.test.js 各自多一条**终态断言** ——
+ *           清单点名的部里「有正文」的条目一条都不许漏、语料里「带 textRef
+ *           却还内联正文」的副本一律亮红（同一个脚本里两处点名）。
+ *        （js/scheduler.js、js/progress.js、progress/index.html、css/classic.css、
+ *          settings/index.html、scripts/build-text-master.js、data/text-master.js、
+ *          test/progress.test.js、test/canonical.test.js、README.md）
+ *
+ *        【二】搜索页三态与聚焦描边的收尾，并统一聚焦光晕的写法：
  *        在 v66 / v68 那条线上补齐三处：
  *        ① 贴顶那一块合成**一处**写清（原先 .search-hero 下另有一份
  *           「交出高度 + --hero-top」的规则，与 .search-active / .kb-open
@@ -544,7 +567,7 @@
  *        （css/classic.css、js/search.js、test/search.test.js、
  *          test/pwa.test.js、README.md）
  *
- *        【二】光晕色值不再被误填成不透明填充色：
+ *        【三】光晕色值不再被误填成不透明填充色：
  *        body[data-nav="search"] .search-hero .search-input:focus 的 box-shadow
  *        曾被写成 --green-light（#dbe9e2，不透明的浅底**填充色**），
  *        于是聚焦时搜索框外围画出一圈实心粉绿框，与全站 .search-input:focus
