@@ -108,34 +108,11 @@ python3 -m http.server 8080  # 或 Python 3
 └── test/                   # 测试（见下）
 ```
 
-主要脚本：
+python3 scripts/supplement-fonts.py            # 新译文带来的新字补进字体子集
+node test/run.sh                               # 全量测试
+```
 
-| 文件 | 用途 |
-|---|---|
-| `js/app.js` | 首页 UI 渲染与交互 |
-| `js/scheduler.js` | 遗忘曲线调度算法 + 背诵范围 |
-| `js/review-models.js` | 四套复习算法（遗忘曲线 / 莱特纳盒 / SM-2 / FSRS） |
-| `js/storage.js` | 进度持久化 + 备份导入导出 |
-| `js/reader-core.js` | 古籍阅读库引擎（索引页 + 详情页，六部集子共用） |
-| `js/collections.js` | 自选集合 |
-| `js/search.js` | 全站搜索 |
-| `js/progress.js` | 背诵进度总览 |
-| `js/chrome.js` | 全站统一顶栏 + 底部页签 |
-| `js/pinyin.js` / `js/speech.js` | 注音 / 朗读 |
-| `js/pwa.js` | PWA 注册 + iOS 引导 |
-
-主要数据文件：
-
-| 文件 | 用途 |
-|---|---|
-| `data/poems-1.js` ~ `poems-12.js` | 课内 261 首（按年级） |
-| `data/poems-classic.js` | 小古文 100 篇 |
-| `data/poems-tangshi.js` / `-songci.js` / `-guwen.js` / `-zhaoming.js` | 五部选集语料 |
-| `data/text-master.js` | 正文存储主表：同一篇的正文 / 译文只落一份 |
-| `data/works-index.js` / `works-map.js` | 作品主表与同篇对照表（判重） |
-| `data/group-order.js` | 分组顺序总表（卷次 / 词牌 / 文体） |
-| `data/pinyin-table.js` / `common-chars.js` | 拼音表 / 常用字表 |
-| `data/site-index.js` | 站点篇目总索引（供搜索用） |
+新增译文往往带来字体里没有的字，不补字体那些字会缺笔画（表现为字被吃掉半边）。
 
 ## 扩展数据
 
@@ -201,6 +178,8 @@ node test/run.sh                               # 全量测试
 
 1. **`sw.js` 里不写任何注释**（`//` 行注释与 `/* */` 块注释都不写）。顶部注释块漏一个 `*/` 就会让整份文件解析失败、Service Worker 从不注册、离线能力静默失效，页面上完全看不出来。`test/theme.test.js` 有源码扫描断言守住。
 2. **静态资源是「缓存优先」**：css / js / 字体命中缓存就直接返回，不回源比对。因此**只要动了 `css/` 或 `js/` 里的文件，就必须把 `CACHE_NAME` 的版本号 +1**，否则老用户会一直拿着旧副本（改样式必须升级版本）。同时有几个 PR 在改时，每个 PR +5，避免撞号。
+
+两条约定都写在 `test/theme.test.js` 的源码扫描断言里，改错了测试会拦下来。原先这份维护约定与逐版沿革单独记在 `SW-NOTE.md`，现已删除并禁止再加：`sw.js` 不写注释是硬规矩，约定本身写在本节即可，逐版沿革交给版本控制。
 
 ## 测试
 

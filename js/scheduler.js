@@ -1,28 +1,70 @@
 /**
- * 遗忘曲线复习调度器
- * ---------------------------------------------------
- * 设计说明：
- * 1. 每首诗拥有独立记忆档案：level（记忆阶段）、nextReviewAt（下次复习时间）、history（复习历史）。
- * 2. 采用经典遗忘曲线复习间隔序列（天）：
- *    0（当天学习）→ 1 → 2 → 4 → 7 → 15 → 30 → 60 → 120 → 240
- *    间隔逐级翻倍，符合遗忘"先快后慢"的规律。
- * 3. 每次复习后按掌握程度调整：
- *    - 记住（good）  ：升级到下一阶段
- *    - 模糊（fuzzy） ：停留在当前阶段（间隔不增长），短期后再复习
- *    - 忘记（bad）   ：降级回上一阶段（最低回到第 0 阶段），重新走曲线
- * 4. 每日计划生成（generateDailyPlan）：
- *    - 优先挑选"到期需要复习"的诗（nextReviewAt <= 今天）
- *    - 不足 dailyCount 时，从「背诵范围」（scope，见 SCOPES）中补充"从未学过"的新诗：
- *      本册 / 本册及之前 / 小学随机 / 初中随机 / 小学+初中随机 / 高中随机 / 全部随机
- *    - 仍不足则从其他年级补，保证每天稳定 5 首
+ * 背诵调度器：每日计划 + 进度总览
+ * ==========================================================================
+ * 这一份是**排期层**：决定「今天背哪几首」「进度怎么摊开看」。
+ * 至于「这一篇下次什么时候复习、现在算哪个阶段」—— 那是**算法层**
+ * （js/review-models.js）的事，这里只负责把每一条记忆档案交给它算。
+ *
+ * ## 复习算法可切换（见设置页「复习算法」）
+ *
+ * 站上原先只有一种固定间隔表（0→1→2→4→7→15→30→60→120→240 天）。
+ * 现在算法做成注册表，用户可切：遗忘曲线 / 莱特纳盒 / SM-2 / FSRS。
+ * 本文件**不写死任何公式** —— 排期转交 window.ReviewModels.review()，
+ * 阶段名与阶段数走 ReviewModels 的模型定义，否则会出现
+ * 「按 SM-2 复习，界面上却写着 1 天后 / 4 天后」这种自相矛盾的画面。
+ *
+ * 档案字段各算法共用一套：`{level, nextReviewAt, lastReviewAt, reviewCount,
+ * lapses, learned, history}`，只有 level 的含义随算法变；
+ * 各算法自己要的额外变量（SM-2 的 interval/EF、FSRS 的 S/D）直接存在
+ * 档案本身上，由 ReviewModels.adopt() / review() 维护。
+ *
+ * ## 每日计划生成（generateDailyPlan）
+ *
+ * 1. 优先挑选「到期需要复习」的篇目（nextReviewAt <= 今天）
+ * 2. 不足 dailyCount 时，从「背诵范围」（scope，见 SCOPES）里补充「从未学过」的新诗
+ * 3. 仍不足则从其他年级补，保证每天稳定 N 首
  */
 (function () {
   const DAY = 24 * 60 * 60 * 1000;
 
-  // 遗忘曲线复习间隔（天）
-  const INTERVALS = [0, 1, 2, 4, 7, 15, 30, 60, 120, 240];
-  // 模糊（fuzzy）时的短间隔（小时）
-  const FUZZY_HOURS = 12;
+  // 算法层没加载时的兜底（页面脚本顺序不对、或单测只加载本文件）
+  const FALLBACK_INTERVALS = [0, 1, 2, 4, 7, 15, 30, 60, 120, 240];
+
+  /** 当前复习算法键（认不出来退回出厂默认） */
+  function algoKey() {
+    if (!window.ReviewModels) return "ebbinghaus";
+    const s = window.Storage ? window.Storage.getSettings() : null;
+    const key = s && s.algo;
+    return window.ReviewModels.known(key) ? key : window.ReviewModels.DEFAULT_KEY;
+  }
+
+  /**
+   * 当前算法的复习间隔（天）—— 只作为**调用方与测试的兼容出口**保留。
+   *
+   * 出厂模型（遗忘曲线）是一张固定的间隔表；其余三张的间隔是「走出来」的
+   * （Leitner 看盒号、SM-2 看 EF、FSRS 看稳定性），这里给出该模型自己的
+   * 间隔表。调用方（含历史测试）拿它当「阶段有几档」的尺子：
+   * `Scheduler.INTERVALS.length` 就等于阶段总数，算法一换它就跟着换。
+   */
+  const MODEL_INTERVALS = {
+    ebbinghaus: [0, 1, 2, 4, 7, 15, 30, 60, 120, 240],
+    leitner: [1, 2, 4, 8, 16],
+    sm2: [1, 3, 7, 15, 30, 60, 120, 180, 270, 365],
+    fsrs: [1, 4, 11, 27, 65, 145, 310, 680]
+  };
+
+  function activeIntervals() {
+    const key = algoKey();
+    const t = MODEL_INTERVALS[key] || FALLBACK_INTERVALS;
+    return t.slice();
+  }
+  // 兼容旧调用方的常量形态：取一次当前算法
+  const INTERVALS = activeIntervals();
+
+  /** 当前算法的阶段总数（= INTERVALS.length；算法层缺席时按兜底表算） */
+  function stageCount() {
+    return INTERVALS.length;
+  }
 
   function startOfDay(ts) {
     const d = new Date(ts);
@@ -38,7 +80,15 @@
     return Math.round((startOfDay(b) - startOfDay(a)) / DAY);
   }
 
-  /** 新诗初始化档案 */
+  /**
+   * 新诗初始化档案
+   *
+   * ⚠️ 新增了 `attempted` 字段（老档没有，读到缺省值）。
+   * 它区分「点开看过、当时选了『模糊 / 忘记』」与「还没碰过」：
+   * 前者已经算学过了（该按算法排复习），后者才是「今天该新学一首」。
+   * 原先判的是 `learned`，而原先的 review() 在每一条分支里都把它置真 ——
+   * 于是「模糊 / 忘记」的第一遍也被当成学过。现在按分支各置各的，更准确。
+   */
   function createRecord() {
     return {
       level: 0,
@@ -47,11 +97,15 @@
       reviewCount: 0,
       lapses: 0,
       learned: false,
+      attempted: false,
       history: []
     };
   }
 
-  /** 根据阶段计算下一次复习时间（从今天算起） */
+  /**
+   * 根据阶段算下一次复习时间（从今天算起）
+   * 当前算法已封顶（「已牢固 / 出盒」那一档）时保持原样，不再往后推。
+   */
   function nextTimeForLevel(level, fromTs) {
     const lv = Math.max(0, Math.min(level, INTERVALS.length - 1));
     const days = INTERVALS[lv];
@@ -74,47 +128,44 @@
    * 掌握度 / 阶段名这些**展示口径**不在这里改（仍走 mastery() / levelName()），
    * 否则同一份进度在首页与进度页会显示两个数。
    */
-  function review(rec, result, algo) {
+  function review(rec, result, algoKey) {
     if (window.ReviewModels && typeof window.ReviewModels.review === "function") {
-      return window.ReviewModels.review(rec, result, algo);
+      return window.ReviewModels.review(rec, result, algoKey);
     }
+    // 算法层缺席时的兜底：按遗忘曲线那张表办（与升级前完全一致）
     const r = rec ? JSON.parse(JSON.stringify(rec)) : createRecord();
     const now = Date.now();
 
-    if (result === "good") {
-      r.level = Math.min(r.level + 1, INTERVALS.length - 1);
-    } else if (result === "fuzzy") {
-      // 停留当前阶段，12 小时后再来
-      r.nextReviewAt = now + FUZZY_HOURS * 60 * 60 * 1000;
-      r.lastReviewAt = now;
-      r.reviewCount += 1;
-      r.learned = true;
-      r.history.push({ at: now, result: result, level: r.level });
-      return r;
-    } else {
-      // bad：降级重来
-      r.level = Math.max(0, r.level - 1);
-      r.lapses += 1;
-      r.nextReviewAt = now + 30 * 60 * 1000; // 30 分钟后再来一次
-      r.lastReviewAt = now;
-      r.reviewCount += 1;
-      r.learned = true;
-      r.history.push({ at: now, result: result, level: r.level });
-      return r;
-    }
+    r.attempted = true;
+    if (r.learned === undefined) r.learned = true; // 老档兼容：能走到这里就是学过了
+    r.learned = true;
 
-    r.nextReviewAt = nextTimeForLevel(r.level, now);
+    if (result === "fuzzy") {
+      r.nextReviewAt = now + 12 * 60 * 60 * 1000;
+    } else if (result === "bad") {
+      r.level = Math.max(0, r.level - 1);
+      r.lapses = (r.lapses || 0) + 1;
+      r.nextReviewAt = now + 30 * 60 * 1000;
+    } else {
+      r.level = Math.min(r.level + 1, INTERVALS.length - 1);
+      r.nextReviewAt = nextTimeForLevel(r.level, now);
+    }
     r.lastReviewAt = now;
     r.reviewCount += 1;
-    r.learned = true;
-    r.history.push({ at: now, result: result, level: r.level });
+    r.history.push({ at: now, result: result, level: r.level, algo: "ebbinghaus" });
     return r;
   }
 
-  /** 是否到期需要复习 */
+  /** 是否到期需要复习（还没背过的篇目不算「到期」—— 那条路是「今天新学」） */
   function isDue(rec, ts) {
-    if (!rec || !rec.learned) return false;
+    if (!rec || !(rec.attempted || rec.learned)) return false;
     return rec.nextReviewAt <= (ts === undefined ? Date.now() : ts);
+  }
+
+  /** 这一篇是不是已经背过（老档没有 attempted 时按 learned 判） */
+  function isLearned(rec) {
+    if (!rec) return false;
+    return !!(rec.attempted || rec.learned);
   }
 
   /**
@@ -151,6 +202,31 @@
     }
     const names = ["新学", "1天后", "2天后", "4天后", "7天后", "15天后", "30天后", "60天后", "120天后", "已牢固"];
     return names[Math.max(0, Math.min(level, names.length - 1))] || "新学";
+  }
+
+  /**
+   * 阶段名的**定尺**版本：用一个临时档案按该档的「中位阶段」算名字。
+   *
+   * 有些算法（SM-2）的阶段名要看档案里的 EF 才推得出「下一轮多少天」，
+   * 而进度页要画的是「每一档叫什么，各有多少篇」—— 那里没有档案可给。
+   * 这里就造一个空档（EF 走初值）去取名，保证图上的刻度与单篇的文案同源。
+   */
+  function stageNameOf(level) {
+    // 造一个「停在第 level 档」的临时档案：SM-2 的阶段名要看 EF、
+    // FSRS 要看稳定性，都是各模型最清楚自己那几个量该怎么说
+    const rec = createRecord();
+    rec.level = level;
+    rec.learned = level > 0;
+    rec.algo = algoKey();
+    return levelName(level, rec);
+  }
+
+  /** 当前算法一共几档（进度页要按它铺刻度） */
+  function stages() {
+    const n = stageCount();
+    const out = [];
+    for (let i = 0; i < n; i += 1) out.push(stageNameOf(i));
+    return out;
   }
 
   /**
@@ -344,7 +420,7 @@
       list.forEach(function (p) {
         if (plan.length >= count || used[p.id]) return;
         const rec = getRecord(p.id);
-        if (rec && rec.learned) return;
+        if (isLearned(rec)) return;
         used[p.id] = true;
         plan.push({ poem: p, reason: reason || "new", reviewRound: 0, lastReviewAt: null });
       });
@@ -398,11 +474,14 @@
     let mastered = 0;
     let dueToday = 0;
     const now = Date.now();
+    // 「较牢固」的门槛：走到当前算法的后 1/3 阶段（原先写死 level>=5，
+    // 那是按遗忘曲线 10 档定的；莱特纳盒只有 6 档，写死就永远没有「较牢固」了）
+    const solid = Math.max(1, Math.floor((stageCount() - 1) * 0.55));
     poems.forEach(function (p) {
       const rec = getRecord(p.id);
-      if (rec && rec.learned) {
+      if (isLearned(rec)) {
         learned += 1;
-        if (rec.level >= 5) mastered += 1;
+        if (rec.level >= solid) mastered += 1;
         if (isDue(rec, now)) dueToday += 1;
       }
     });
@@ -434,6 +513,9 @@
     const days = o.days || 14;
     const now = o.now || Date.now();
     const today0 = startOfDay(now);
+    // 当前算法的阶段总数（遗忘曲线 10 档 / 莱特纳盒 6 盒 / SM-2 11 档 / FSRS 8 档）：
+    // 下面归档与摊表都用它，必须在使用之前取好
+    const nStages = stageCount();
 
     const list = (poems || []).filter(function (p) { return p && p.id; });
     const total = list.length;
@@ -454,7 +536,7 @@
       if (seen[p.id]) return;
       seen[p.id] = true;
       const rec = getRecord(p.id);
-      if (!rec || !rec.learned) return;
+      if (!isLearned(rec)) return;
       learned += 1;
 
       // 掌握度分档：与 mastery() 同一把尺子（它是页面到处在用的那一个）
@@ -463,7 +545,7 @@
       const bi = Math.min(4, Math.floor(m / 20));
       masteryBuckets[bi] += 1;
 
-      levels.push({ id: p.id, level: Math.max(0, Math.min(rec.level, INTERVALS.length - 1)) });
+      levels.push({ id: p.id, level: Math.max(0, Math.min(rec.level, nStages - 1)) });
 
       // 到期归档：逾期 → 今天那一格；再往前 7 天以上的单列
       const at = rec.nextReviewAt;
@@ -487,7 +569,7 @@
       : null;
     for (let i = 0; i < INTERVALS.length; i += 1) {
       const nm = algoName
-        ? algoName.stageName({ level: i, box: i, learned: i > 0, interval: INTERVALS[i], ef: 2.5,
+        ? algoName.stageName({ level: i, box: i, learned: i > 0, interval: FALLBACK_INTERVALS[i] || 1, ef: 2.5,
           stability: INTERVALS[i] || 1, difficulty: 5 })
         : levelName(i);
       levelCounts.push({ level: i, name: nm, count: 0 });
@@ -619,7 +701,14 @@
   }
 
   window.Scheduler = {
-    INTERVALS: INTERVALS,
+    // INTERVALS 换成取值函数：算法可切，档位表也就跟着变（见 activeIntervals 的说明）
+    get INTERVALS() { return activeIntervals(); },
+    intervals: activeIntervals,
+    stageCount: stageCount,
+    stageNameOf: stageNameOf,
+    stages: stages,
+    isLearned: isLearned,
+    algoKey: algoKey,
     overview: overview,
     daysUntilDue: daysUntilDue,
     dueList: dueList,

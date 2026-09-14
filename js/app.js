@@ -1,5 +1,5 @@
 /**
- * 背诵 App 主逻辑（课内古诗词 · 按遗忘曲线复习）
+ * 背诵 App 主逻辑（课内古诗词 · 按所选算法安排复习）
  */
 (function () {
   "use strict";
@@ -127,7 +127,7 @@
    * → 「跬步 · Ashley的背诵」（用户没填名字时用默认名，不留一段空白）
    *
    * 措辞：「XX的古诗词」→「XX的背诵」。这一页管的是
-   * 「按遗忘曲线安排复习、今天背这一首」这件事，名字上就该说清 ——
+   * 「按记忆算法安排复习、今天背这一首」这件事，名字上就该说清 ——
    * 「古诗词」是体裁（站上还有小古文、唐诗、宋词、古文观止），
    * 「背诵」才是这一页在干的事。
    */
@@ -152,6 +152,8 @@
     if (h1) h1.textContent = APP_NAME;
     // 第一行页面名：首页是「XX的古诗词」，与「跬步」同字体、同一行
     syncBrandPage();
+    // 顶栏第二行：首页写「按 XX 复习」，XX 随用户选的复习算法变
+    applyAlgoSub();
 
     $$('meta[name="apple-mobile-web-app-title"]').forEach(function (m) {
       m.setAttribute("content", title);
@@ -176,8 +178,6 @@
       }
     }
 
-    // 第二行副标题跟着当前复习算法走（「按 X 复习」）
-    applyAlgoSub();
   }
 
   /**
@@ -228,6 +228,13 @@
   function algoKey() {
     if (!window.ReviewModels) return "ebbinghaus";
     return window.ReviewModels.known(settings.algo) ? settings.algo : window.ReviewModels.DEFAULT_KEY;
+  }
+
+  /** 当前算法的简称（用户看得懂的那种叫法），用于正文里的说法 */
+  function algoShort() {
+    return window.ReviewModels
+      ? window.ReviewModels.describe(algoKey()).short
+      : "遗忘曲线";
   }
 
   /**
@@ -312,12 +319,15 @@
   function planCacheKey() {
     return (
       "poem_plan_" + todayKeyStr() + "_" + settings.grade + "_" + settings.term + "_" +
-      scopeKey() + "_" + settings.dailyCount + "_" + collectionsKey()
+      scopeKey() + "_" + settings.dailyCount + "_" + collectionsKey() +
+      // 复习算法也要进键：换了算法，同一天重排出来的到期篇目会不一样，
+      // 缓存键不带它就会拿着旧算法的计划当新计划的
+      "_algo-" + algoKey()
     );
   }
 
   /**
-   * 自选集合交给遗忘曲线的篇目（js/collections.js）。
+   * 自选集合交给调度器的篇目（js/collections.js）。
    *
    * 只存引用、不存正文，正文从站点索引取；站点索引在这里一定齐备
    * （首页加载了六部数据，见 index.html 的 script 顺序）。
@@ -996,7 +1006,7 @@
 
     $("#m-hint").textContent = planItem
       ? planItem.reason === "review"
-        ? "这首诗按遗忘曲线到期了，复习后请如实选择掌握程度"
+        ? "这首诗按" + algoShort() + "到期了，复习后请如实选择掌握程度"
         : "新学的诗，今天先记一遍"
       : "背诵后点击按钮，系统会安排下次复习时间";
 
