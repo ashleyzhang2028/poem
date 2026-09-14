@@ -1927,3 +1927,85 @@ body[data-nav="search"] #gw-list .empty[data-empty="idle"] { padding: 0; }
 .bar-row.m4 .bar-track i { background: #24564c; }
 /* 记忆阶段十档：同一色系，最后一档「已牢固」压深一档 */
 .bar-row.lv-last .bar-track i { background: #24564c; }
+
+/* ---- 全部到期篇目：日历那一格的展开 ----
+   日历是形状（哪天忙），这里是清单（那天是哪几篇）。
+   一行一篇：篇名在左、阶段与掌握度在中、逾期/还有几天在右。
+   篇名可点，回首页去背 —— 这一页只读，不在原地改进度。 */
+.duelist { display: flex; flex-direction: column; gap: 12px; }
+.duelist-empty { padding: 18px 0; text-align: center; color: var(--ink-3); font-size: 12.5px; }
+.duelist-day {
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  padding: 8px 10px 6px;
+  /* 点日历跳过来时闪一下，用户才知道自己被带到了哪一档 */
+  transition: box-shadow .3s;
+}
+.duelist-day.flash { box-shadow: 0 0 0 2px var(--green-light), 0 0 0 4px var(--green); }
+.duelist-day.today { background: var(--green-light); }
+.duelist-day-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 2px 0 6px;
+  font-size: 12.5px;
+}
+.duelist-when { color: var(--ink-2); font-weight: 600; }
+.duelist-day.today .duelist-when { color: var(--green); }
+.duelist-count { color: var(--ink-3); flex: none; font-variant-numeric: tabular-nums; }
+.duelist-items { display: flex; flex-direction: column; }
+.duelist-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 0;
+  font-size: 12.5px;
+  color: inherit;
+  text-decoration: none;
+  /* 条目之间画一条头发丝细的分隔线（最后一条不画） */
+  border-top: 1px solid rgba(47, 96, 85, .08);
+}
+.duelist-item:first-child { border-top: none; }
+.duelist-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-poem);
+  font-size: 14px;
+  color: var(--ink);
+}
+.duelist-meta {
+  flex: 0 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ink-3);
+  font-size: 11.5px;
+}
+.duelist-state { flex: none; color: var(--ink-3); font-size: 11.5px; }
+.duelist-due {
+  flex: none;
+  width: 62px;
+  text-align: right;
+  color: var(--green);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+}
+/* 已逾期的用暖色点出来：它比「还有几天」更该先看 */
+.duelist-due.late { color: var(--amber); }
+/* 日历格子可点：给一个「能按」的提示（指针 + 轻微抬起） */
+.cal-cell { cursor: pointer; }
+.cal-cell:focus-visible { outline: 2px solid var(--green); outline-offset: 1px; }
+
+/* 「逾期超过一周」那一截：与今天的篇目同处一档，但要看得出是另一类 */
+.duelist-overdue-head {
+  margin-top: 6px;
+  padding: 6px 0 2px;
+  border-top: 1px dashed rgba(165, 92, 25, .35);
+  font-size: 11.5px;
+  color: var(--amber);
+}
+.duelist-items.late .duelist-item { padding-left: 8px; }

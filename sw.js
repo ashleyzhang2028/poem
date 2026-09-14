@@ -522,8 +522,30 @@
  *        （data/text-master.js、data/poems-classic.js、
  *          scripts/build-text-master.js、test/canonical.test.js、
  *          test/dedup.test.js、README.md）
+ *   v83  背诵进度总览补上「全部到期篇目」+ 正文收归的三件收尾（Issue #69 收尾）：
+ *        ① /progress/ 原先只有到期日历（哪天几篇）与两张分布图，
+ *           日历上那一格点不进去、也不知道「周三那 5 篇是哪 5 篇」。
+ *           本轮补上**全部到期篇目**：日历那一格摊开成篇名清单，
+ *           每篇带阶段 / 掌握度 / 「逾期 N 天」或「还有 N 天」，
+ *           点日历格子滚到那一天那一档，篇名指回首页去背（这一页仍只读）。
+ *           清单与日历**同一本账**：逐档的篇数与日历逐格的数必须相同，
+ *           逾期超过一周的另挂一截「逾期超过一周 · N 篇」（与 overview 的
+ *           overdue 一样是另计，不并进「今天」的天数，两处数才逐格对得上）。
+ *           口径在 js/scheduler.js 新增的 dueList()：overview() 出「形状」、
+ *           dueList() 出「名册」，两者共用同一套归档规则。
+ *        ② 收尾清扫：README 两处口径数字漂了（正文收归 1402 → **1391**、
+ *           只存归属 765 → **1391**），逐条数回来；
+ *           scripts/build-text-master.js 的 FULL_BOOKS 清单从「收谁不收谁」
+ *           降为**历史声明**（五部已收齐，现在凡在册且带正文的一律全收）。
+ *        ③ 清单制收口：脚本与 test/canonical.test.js 各自多一条**终态断言** ——
+ *           清单点名的部里「有正文」的条目一条都不许漏、语料里「带 textRef
+ *           却还内联正文」的副本一律亮红（同一个脚本里两处点名）。
+ *        版本号按「并行 PR 一律 +5」的口径从 v78 起落到 v83。
+ *        （js/scheduler.js、js/progress.js、progress/index.html、css/classic.css、
+ *          settings/index.html、scripts/build-text-master.js、data/text-master.js、
+ *          test/progress.test.js、test/canonical.test.js、README.md）
  */
-const CACHE_NAME = "poem-app-v78";
+const CACHE_NAME = "poem-app-v83";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [

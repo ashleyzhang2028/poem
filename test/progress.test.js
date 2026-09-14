@@ -9,9 +9,12 @@
  * 这一层验四件事：
  *   1. Scheduler.overview() / daysUntilDue() 的聚合口径
  *      —— 到期归档、逾期合并、掌握度分档、归一化用的 maxDay；
- *   2. 页面真的把两类图渲染出来了（日历 14 格 / 掌握度 5 档 / 阶段 10 档）；
- *   3. 这一页**只读**：进页面不改任何一篇的进度、不写已读、不重排今日任务；
- *   4. 入口接上了：设置页有进这一页的链接、页签「背诵」在进度页保持选中。
+ *   2. Scheduler.dueList() 的篇目清单口径
+ *      —— 「哪天是**哪几篇**」，与 overview() 的日历**同一本账**（数对得上）；
+ *   3. 页面真的把两类图渲染出来了（日历 14 格 / 掌握度 5 档 / 阶段 10 档），
+ *      以及「全部到期篇目」那一块（哪天该背哪几篇、点篇名回首页）；
+ *   4. 这一页**只读**：进页面不改任何一篇的进度、不写已读、不重排今日任务；
+ *   5. 入口接上了：设置页有进这一页的链接、页签「背诵」在进度页保持选中。
  */
 const { JSDOM } = require('jsdom');
 const fs = require('fs');
@@ -88,6 +91,59 @@ chk(S.daysUntilDue(recs.due3) === 3, '「还有几天到期」算得准（第 3 
 chk(S.daysUntilDue(recs.overdue3) === -3, '已逾期的返回负数（页面据此显示「已到期」）');
 chk(S.daysUntilDue(null) === null, '没学过（无档案）返回 null，不冒充 0');
 chk(S.daysUntilDue({ learned: false }) === null, '没学过（learned=false）也返回 null');
+
+/* ---- dueList：日历那一格的展开（「哪天是**哪几篇**」） ----
+   口径必须与 overview() 一字不差：日历说今天 3 篇，清单里今天就得是那 3 篇。
+   两处各算一遍迟早算出两个数，所以这里逐档对账。 */
+chk(typeof S.dueList === 'function', 'Scheduler 暴露 dueList()');
+const L = S.dueList(pool, id => recs[id] || null, { days: 14 });
+chk(L.days.length === 14, '清单也是 14 档（与日历同长）');
+chk(L.days[0].items.map(x => x.id).sort().join(',') === 'due0,overdue3',
+  '今天那一档 = 今天到期的 + 逾期 3 天的（逾期一周以内的并进今天，实际 ' +
+  L.days[0].items.map(x => x.id).join('、') + '）');
+chk(L.days[3].items.length === 1 && L.days[3].items[0].id === 'due3',
+  '第 3 天那一档就是 due3 那一篇（日历上第 3 天那格的展开）');
+/* 与日历逐格对账 —— 这是这一层最要紧的一条：两边同一本账 */
+const mismatchCal = [];
+for (let i = 0; i < 14; i += 1) {
+  if (L.days[i].items.length !== o.calendar[i].count) {
+    mismatchCal.push(i + '（清单 ' + L.days[i].items.length + ' / 日历 ' + o.calendar[i].count + '）');
+  }
+}
+chk(mismatchCal.length === 0,
+  '清单每一档的篇数与日历每一格的数逐格相同（不一致：' + (mismatchCal.join('、') || '无') + '）');
+chk(L.days[0].items.length + L.backlog.length === o.dueToday,
+  '清单今天那一档 + backlog = dueToday（两处同一本账；实际 ' +
+  (L.days[0].items.length + L.backlog.length) + ' / ' + o.dueToday + '）');
+chk(L.backlog.length === o.overdue && L.backlog[0].id === 'overdue9',
+  '逾期一周以上的单列一份 backlog，条数与 overview 的 overdue 相同');
+chk(L.farther === 1, '超出 14 天窗口的只报个数（第 20 天那一篇；实际 ' + L.farther + '）');
+chk(L.total === 4,
+  '清单总篇数 = 今天 3 篇 + 第 3 天 1 篇（超出窗口的不算；实际 ' + L.total + '）');
+
+/* 每一篇都带齐「背的时候要知道的信息」：篇名 / 阶段 / 掌握度 / 还差几天 */
+const first = L.days[0].items[0];
+chk(first.id && first.title !== undefined && typeof first.level === 'number' &&
+  typeof first.mastery === 'number' && typeof first.daysLeft === 'number',
+  '清单里每一篇带齐 id / 篇名 / 阶段 / 掌握度 / 还差几天');
+chk(first.id === 'overdue3', '今天那一档里最该先背的排最前（逾期最久的在前；实际 ' + first.id + '）');
+chk(L.days[0].items.filter(x => x.daysLeft < 0).length === 1 &&
+  L.backlog.every(x => x.daysLeft < -7),
+  '逾期的那几篇 daysLeft 是负数（页面据此显示「逾期 N 天」；backlog 的都是逾期一周以上）');
+/* 同一天里按「逾期久的 → 掌握度低的 → 篇名」排，从上往下背就是最该先背的 */
+const todayItems = L.days[0].items;
+chk(todayItems.every((x, i) => i === 0 || todayItems[i - 1].daysLeft <= x.daysLeft),
+  '今天那一档按紧迫度排（逾期久的在前）');
+
+// 一篇都没学过：清单是空的，但 14 档仍在（页面据此给「还没有到期的篇目」）
+const emptyL = S.dueList(pool, () => null, { days: 14 });
+chk(emptyL.days.length === 14 && emptyL.total === 0 && emptyL.backlog.length === 0,
+  '一篇都没学过时清单为空、14 档仍在（页面不是白屏，是给一句说明）');
+chk(S.dueList([], () => null).days.length === 14, '空候选池也照样给出 14 档');
+// 同一篇不许在清单里出现两次（重复 id 会把它画两行）
+const dupL = S.dueList([{ id: 'x', title: 'x' }, { id: 'x', title: 'x' }],
+  () => ({ level: 1, learned: true, nextReviewAt: Date.now() }), { days: 14 });
+chk(dupL.days[0].items.length === 1, '同一篇重复出现在候选池里时只列一次');
 
 // 没学过任何一篇时：不抛错、账目全 0
 const empty = S.overview(pool, () => null, { days: 14 });
@@ -207,6 +263,39 @@ setTimeout(() => {
     chk(lRows[lRows.length - 1].querySelector('.bar-count').textContent === '1',
       '「已牢固」那一档显示 1 篇（第 9 阶那首）');
 
+    /* ---- 全部到期篇目：日历那一格的展开 ---- */
+    const dueBlocks = d.querySelectorAll('#progress-duelist .duelist-day');
+    chk(dueBlocks.length >= 2, '到期篇目清单画出了分档（今天 + 第 3 天；实际 ' +
+      dueBlocks.length + ' 档）');
+    chk(dueBlocks[0].classList.contains('today'), '第一档是「今天」');
+    chk(dueBlocks[0].textContent.indexOf('今天') >= 0, '第一档写着「今天」');
+    /* 造的三篇进度：all[0] 逾期 2 天（并进今天）、all[1] 第 3 天到期、
+       all[2] 已牢固（第 200 天到期 → 超出窗口，只报个数）。 */
+    chk(dueBlocks[0].querySelectorAll('.duelist-item').length === 1,
+      '今天那一档列出逾期那 1 篇（实际 ' +
+      dueBlocks[0].querySelectorAll('.duelist-item').length + '）');
+    chk(dueBlocks[0].querySelector('.duelist-due').textContent.indexOf('逾期') >= 0,
+      '逾期的那一篇标出「逾期 N 天」（实际「' +
+      dueBlocks[0].querySelector('.duelist-due').textContent + '」）');
+    const day3 = d.querySelector('#progress-duelist .duelist-day[data-offset="3"]');
+    chk(!!day3 && day3.querySelectorAll('.duelist-item').length === 1,
+      '第 3 天那一档正是 3 天后到期那一篇');
+    chk(day3.querySelector('.duelist-due').textContent.indexOf('还有 3 天') >= 0,
+      '第 3 天那一档标出「还有 3 天」');
+    /* 与日历对账：日历第 3 格写 1，清单里第 3 档也是 1 篇 */
+    chk(d.querySelector('#progress-duelist .duelist-day[data-offset="3"] .duelist-count')
+      .textContent === cells[3].querySelector('.cal-count').textContent + ' 篇',
+      '清单第 3 档的篇数与日历第 3 格一致（同一本账）');
+    /* 篇名可点，回首页去背（这一页只读，不在原地改进度） */
+    const dueLink = dueBlocks[0].querySelector('.duelist-item');
+    chk(dueLink && /^\/\?poem=/.test(dueLink.getAttribute('href')),
+      '篇名是指回首页的链接（/?poem=<id>；这一页只读，不在原地改）');
+    chk((d.querySelector('#duelist-note') || {}).textContent.indexOf('更远还有 1 篇') >= 0,
+      '超出 14 天窗口的那一篇只报个数（「更远还有 1 篇」，写在脚注里）');
+    /* 日历格子可点（要跳得下来），且挂着 role=button */
+    chk(cells[3].getAttribute('data-offset') === '3' && cells[3].getAttribute('role') === 'button',
+      '日历每一格带 data-offset，挂 role=button（点了跳到那一档）');
+
     const stats = d.querySelectorAll('#progress-stats .stat');
     chk(stats.length === 4, '总览四格（已学 / 待复习 / 平均掌握 / 尚未学过）');
     chk(d.querySelector('#progress-stats').textContent.indexOf('已学') >= 0,
@@ -234,6 +323,11 @@ setTimeout(() => {
         '一篇都没学过时给一句「还没有学习记录」的说明');
       chk(db.querySelectorAll('#progress-levels .bar-row').length === 10,
         '一篇都没学过时阶段分布也画全 10 档（全 0，图形不塌）');
+      chk(db.querySelectorAll('#progress-duelist .duelist-item').length === 0,
+        '一篇都没学过时到期篇目清单是空的（不硬凑出几篇）');
+      chk((db.querySelector('#progress-duelist .duelist-empty') || {}).textContent
+        .indexOf('还没有到期的篇目') >= 0,
+        '一篇都没学过时清单给一句说明（不是白屏）');
 
       /* ---- 入口：设置页进得来、页签「背诵」保持选中 ---- */
       const settingsHtml = fs.readFileSync(path + 'settings/index.html', 'utf8');

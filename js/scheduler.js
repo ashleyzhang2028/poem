@@ -470,10 +470,103 @@
     return Math.round((startOfDay(rec.nextReviewAt) - t0) / DAY);
   }
 
+  /**
+   * 到期篇目清单：把「哪天到期几篇」摊开成「哪天到期是**哪几篇**」。
+   *
+   * 与 overview() 是同一本账的两种数法（口径必须一致，否则日历上的数字
+   * 与点进去看到的篇数对不上，用户第一个反应是「这页坏了」）：
+   *   · overview().calendar[i].count  —— 第 i 天有几篇（画竖条）
+   *   · dueList().days[i].items       —— 第 i 天是**哪几篇**（本函数）
+   * 两处都按同一套归档规则，所以：
+   *   days[0].items.length === calendar[0].count   （今天那一档，逾期 7 天以内的并进来）
+   *   backlog.length         === overview().overdue（逾期 7 天以上的单列）
+   * 页面把 backlog 另起一小截放在「今天」那一档的下面 ——
+   *   它不并进天数，这样日历与清单**逐格对得上**，同时用户又看得到那几篇。
+   *
+   * 为什么单独一个函数、而不是让页面自己 filter 一遍：
+   *   归档规则（尤其「逾期并进今天」那一条）写在看得见的地方，
+   *   页面只管画，改口径只改这一处。
+   *
+   * @param {Array} poems  候选篇目（`{id, title, author, dynasty}` 即可）
+   * @param {Function} getRecord  id → 记忆档案
+   * @param {Object} [opt]  opt.days 天数（默认 14），opt.now 基准时间
+   * @returns {Object} { days: [{offset, date, items}], backlog: [items], total }
+   *   days[0] 是今天（已并入逾期 7 天以内的）；backlog 是逾期 7 天以上的；
+   *   每一篇 items 里的元素带上 daysLeft（负数 = 已逾期几天）。
+   */
+  function dueList(poems, getRecord, opt) {
+    const o = opt || {};
+    const days = o.days || 14;
+    const now = o.now || Date.now();
+    const today0 = startOfDay(now);
+
+    const list = (poems || []).filter(function (p) { return p && p.id; });
+    const out = [];
+    for (let i = 0; i < days; i += 1) {
+      out.push({ offset: i, date: today0 + i * DAY, items: [] });
+    }
+    const backlog = [];
+    const seen = {};
+    let total = 0;
+    let farther = 0;
+
+    list.forEach(function (p) {
+      if (seen[p.id]) return;
+      seen[p.id] = true;
+      const rec = getRecord(p.id);
+      if (!rec || !rec.learned) return;
+      const off = Math.round((startOfDay(rec.nextReviewAt) - today0) / DAY);
+      // 与 overview() 同一套归档：逾期 7 天以内并进今天，更早的单列
+      const item = {
+        id: p.id,
+        title: p.title || "",
+        author: p.author || "",
+        dynasty: p.dynasty || "",
+        level: Math.max(0, Math.min(rec.level, INTERVALS.length - 1)),
+        mastery: mastery(rec),
+        nextReviewAt: rec.nextReviewAt,
+        daysLeft: off
+      };
+      if (off < -7) {
+        backlog.push(item);
+      } else if (off < 0) {
+        out[0].items.push(item);
+      } else if (off < days) {
+        out[off].items.push(item);
+      } else {
+        // 超出窗口的那一批既不进日历、也不算「今天该背」——
+        // 但它仍是「已学、只是还早」，页面要能说清「更远还有几篇」。
+        // ⚠️ 这里只报**个数**、不列篇名（「全部到期篇目」讲的是
+        //    「我接下来两周要做的事」）；数要在这里算 ——
+        //    出了这个循环 seen 已经把它标成处理过，再扫一遍会一个也数不到。
+        farther += 1;
+        return;
+      }
+      total += 1;
+    });
+
+    /* 每一天内部按「已逾期几天（越久越前）→ 掌握度低者前 → 篇名」排，
+       让用户从上往下背就是最该先背的那几篇。 */
+    const byUrgency = function (a, b) {
+      if (a.daysLeft !== b.daysLeft) return a.daysLeft - b.daysLeft;
+      if (a.mastery !== b.mastery) return a.mastery - b.mastery;
+      return a.id < b.id ? -1 : 1;
+    };
+    out.forEach(function (d) { d.items.sort(byUrgency); });
+    backlog.sort(byUrgency);
+
+    /* ⚠️ 逾期 7 天以上的**不并进** days[0] —— 它与 overview() 的 overdue 一样
+       是「另计一条」。并进来的话日历说今天 2 篇、清单里今天却是 3 篇，
+       两处对不上；页面把 backlog 单独渲染在「今天」那一档下方，
+       用户照样看得到，而两个数仍逐格对得上。 */
+    return { days: out, backlog: backlog, total: total, farther: farther };
+  }
+
   window.Scheduler = {
     INTERVALS: INTERVALS,
     overview: overview,
     daysUntilDue: daysUntilDue,
+    dueList: dueList,
     startOfDay: startOfDay,
     DAY: DAY,
     createRecord: createRecord,
