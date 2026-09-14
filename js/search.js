@@ -28,20 +28,30 @@
  *       候选下拉正好落在键盘底下。这里把整个搜索区顶到键盘上方，
  *       并在键盘弹出时压掉搜索框下方的留白：候选贴着框、结果紧跟着出现在第一屏。
  *
- *   五、**搜索框的位置**（用户这一轮的四条反馈）：
- *       ① 聚焦在搜索框 → 框连同候选下拉一起升到标题栏下方（见下面「搜索框的位置」一节）；
- *       ② 点空白处 / 点结果区 / 滚结果列表 / Esc → 候选下拉收起；
- *       ③ 搜索框到结果列表的间距只留正常间隔（8px），不再是一段空；
- *       ④ 聚焦时的描边不再是浏览器的黑色默认 ring —— 换成本站的天青描边
- *          （见 css/classic.css 的 .search-hero .search-input:focus）。
+ *   五、**搜索框该待在哪儿**（用户这一轮的六句话，落在四处）：
+ *       ① 聚焦在搜索框 → 框挪到标题栏下方，候选下拉跟着上去；
+ *       ② 有搜索内容 → 框停在页面顶部（失焦也不回去）；
+ *       ③ 清了内容、也没有焦点 → 框回到页面中心。
+ *       三条合起来就是 .search-hero 的两个类（见 syncHeroState 与
+ *       css/classic.css 的「搜索框的三种摆法」）：焦点与内容合成一个
+ *       search-active（两者的落位一模一样），键盘弹着时再叠一个 kb-open。
+ *       焦点在框里时那圈边框也不再是浏览器给的黑线（见 css 的 :focus 那条）。
  *
- *   四、**候选下拉的分寸**（用户这一轮的三条反馈）：
+ *   六、**点空白处收下拉**（同一轮）：
+ *       用户在页面上任何一处空白点一下（结果卡片、列表下方、页面两侧……），
+ *       候选下拉就收起来。判据只有一条：落点在搜索区（输入框 + 下拉）之外。
+ *       挂在 document 的 capture 阶段，只收下拉、不阻断事件 ——
+ *       点卡片该开篇还是开篇。
+ *
+ *   七、**候选下拉的分寸**（上一轮的三条反馈）：
  *       ① 下面几条被键盘盖住 → 下拉的 max-height 里带一项
  *          「可视区 − 键盘 − 框下沿到页顶」，键盘弹着时它最小，下拉自然收在键盘上方；
  *       ② 要能关掉下拉再去点结果卡片 → 下拉的高度同时受「可视区的四成」约束，
  *          绝不铺满键盘上方那片地方，底下始终留着可见的结果区（点它即收起下拉）；
  *       ③ 没输入时的引导语（「输入篇名、作者或诗句，即可搜遍六部集子」）整段撤掉：
  *          空列表就是空列表，只留一段留白（见 css/classic.css 的 #gw-list .empty）。
+ *       此外「框 → 结果列表」的间距收成正常间隔：框贴顶时列表紧跟着它，
+ *       只有框还浮在页面中间时才留一小段（见 #gw-list 的 padding-top）。
  *
  * 已读存储：搜索页**不写任何已读键**（readStore 为空字符串）。
  *   「已读」是每一部自己的进度（poem_classic_read_v1 等），
@@ -295,10 +305,11 @@
     var input = document.getElementById("gw-search");
     var kw = input ? input.value : "";
     var q = String(kw == null ? "" : kw).trim();
-    // 「搜索框 → 结果列表」的间距：CSS 里默认就是 8px，这里**不再按有没有输入去改**——
-    // 原先一边写行内 8px、一边靠 CSS 的 12px 兜底，聚焦 / 失焦来回切时行内值一设一撤，
-    // 列表就跟着挪 4px（用户反馈「下面列表与搜索框之间留太多」，
-    // 顺带把这处抖动的来源也去掉了）。
+    // 框里有内容 → 搜索框停在页顶（见 syncHeroState）。
+    // ⚠️ 这里**不再写行内 padding-bottom**：那 8px 是上一版给候选下拉留的缝，
+    //    现在「框 → 列表」的间距已经由 CSS 按状态给（#gw-list 的 padding-top），
+    //    JS 只负责说清「现在是哪种状态」，样式一律归样式表。
+    syncHeroState();
     if (api) {
       // 空关键词：先换掉篇目再设关键词（setItems 会重排一次列表，此时它还是空的）
       api.setItems(q ? allItems() : []);
@@ -428,31 +439,60 @@
 
   function heroEl() { return document.getElementById("search-hero"); }
 
+  /** 输入框里有没有内容（只看非空白字符，与结果 / 候选判空同一口径） */
+  function hasKeyword() {
+    var input = document.getElementById("gw-search");
+    return !!input && !!String(input.value || "").trim();
+  }
+
   /**
-   * 把「键盘 / 聚焦」两个状态写进 DOM：
-   *   · search-focus → 输入框有焦点（键盘弹出前的一瞬间也算）
-   *   · kb-open      → 键盘确实弹出来了
-   * 两者都由 CSS 负责表现（见 css/classic.css 的 .search-hero.kb-open）。
+   * 搜索框该待在哪儿（Issue #69 后续·再续）
+   * --------------------------------------------------------------------------
+   * 用户这一轮给的是三句话，其实是同一个问题的三个状态：
+   *   · 聚焦在搜索框 → 框挪到标题栏下方（候选下拉跟着上去）；
+   *   · 有搜索内容     → 框停在页顶（不因为失焦又跳回页面中间）；
+   *   · 清了内容、也没焦点 → 框回到页面中心。
+   *
+   * 所以只需两个类，由这一处**唯一**写进去（其余地方一律调它）：
+   *   · search-active → 有焦点 **或** 有内容：贴顶栏下方（CSS 见 .search-hero.search-active）
+   *   · kb-open       → 软键盘弹出来了：同样贴顶，另把列表上方的留白收掉
+   * 两个都不在时是默认态：框压在这一段的垂直中线上（页面中心）。
+   *
+   * ⚠️ 焦点与内容合成一个类：两者的落位一模一样，分成两个类就要把同一组
+   *    数值写两遍；「有内容但没焦点」正是用户说的「搜索框停留在页面顶部」。
+   * ⚠️ --kb-space 也在这里写：候选下拉的 max-height 读它（键盘实测高度）。
    */
-  function syncKeyboardSpace() {
+  function syncHeroState() {
     var hero = heroEl();
     if (!hero) return;
     var input = document.getElementById("gw-search");
     var focused = !!input && document.activeElement === input;
     var space = keyboardSpace();
+    var lifted = focused || space > 0;   // 键盘弹着时也按「有焦点」算 —— 焦点掉了、键盘还在
     try {
-      hero.classList.toggle("search-focus", focused);
-      hero.classList.toggle("kb-open", focused || space > 0);
-    } catch (e) { /* 极老的浏览器：没有 classList 就用下面的行内样式兜底 */ }
-    // 键盘高度与可视区高度都只在这一处写（CSS 的下拉 max-height 读它们）
+      hero.classList.toggle("search-active", hasKeyword() || lifted);
+      hero.classList.toggle("kb-open", lifted);
+    } catch (e) { /* 极老的浏览器：没有 classList 就退化成「始终居中」，仍可用 */ }
+    // 键盘高度只在这一处写（CSS 的下拉 max-height 读它）。
+    // ⚠️ 两处都写：hero 与候选下拉自己。
+    //    候选的 max-height 里有「可视区 − 键盘 − 80」，而它落在 .suggest 上；
+    //    键盘弹起会让 .search-toolbar 重排，那条链上的**继承值**不会因此重算 ——
+    //    只写 hero 的话，下拉会照旧按「没有键盘」的高度铺下来，伸到键盘底下。
     hero.style.setProperty("--kb-space", space + "px");
-    // 可视区高度也实测写进去：CSS 的下拉限高按它算（svh 不认软键盘）
+    var box = suggestBox();
+    if (box) box.style.setProperty("--kb-space", space + "px");
+    // 可视区高度也实测写进去：候选下拉的限高按它算（svh 不认软键盘，见上一节）。
+    // ⚠️ 同样两处都写：键盘弹起会让 .search-toolbar 重排，
+    //    .suggest 上的**继承值**不会因此重算（与 --kb-space 同一个理由）。
     var visible = keyboardVisible();
-    if (visible > 0) hero.style.setProperty("--kb-visible", visible + "px");
-    // 留白一律由 CSS 给（静止态与焦点态都是 8px）：这里只管「空列表怎么摆」。
-    // ⚠️ 不再写 hero.style.paddingBottom —— 一设一撤会让列表整块挪 4px，
-    //    而 CSS 里两种状态本来都是 8px，行内值只是把同一件事写了两遍。
-    alignEmptyState(focused || space > 0);
+    if (visible > 0) {
+      hero.style.setProperty("--kb-visible", visible + "px");
+      if (box) box.style.setProperty("--kb-visible", visible + "px");
+    }
+    // 空格列表（引擎写进列表区的 .empty）跟着一起左对齐。
+    // ⚠️ 传的是「框贴不贴顶」而不是「键盘弹没弹」：居中的框下面那段空白里
+    //    不该多出一行提示，贴顶的框下面才需要它与结果同一左对齐。
+    alignEmptyState(hasKeyword() || lifted);
   }
 
   /**
@@ -487,11 +527,14 @@
     var ghost = document.getElementById("search-hero-focus");
     if (!hero || !ghost) return;
     try { ghost.focus({ preventScroll: true }); } catch (e) { /* 老浏览器忽略可选项 */ }
-    hero.classList.add("search-focus");
-    syncKeyboardSpace();
+    // 先进「有焦点」这一态（贴顶），再刷一次键盘实测值 ——
+    // 顺序要紧：syncHeroState 会把 search-active 与 kb-open 一起算出来，
+    // 不先置焦点态的话，第 80ms 那次 focus 之前框会先按「居中」摆一下。
+    hero.classList.add("search-active");
+    syncHeroState();
     setTimeout(function () {
       try { input.focus({ preventScroll: true }); } catch (e) { input.focus(); }
-      syncKeyboardSpace();
+      syncHeroState();
     }, 80);
   }
 
@@ -508,39 +551,40 @@
     var hero = heroEl();
     if (hero && input) {
       input.addEventListener("focus", function () {
-        hero.classList.add("search-focus");
-        syncKeyboardSpace();
-        // 等键盘真正开始滑，再把整块顶到顶上（见 FOCUS_LIFT_DELAY）
+        hero.classList.add("search-active");
+        syncHeroState();
+        // 等键盘真正开始滑，再让 kb-open 生效（见 FOCUS_LIFT_DELAY）：
+        // 刚聚焦就动的话，用户看着内容先跳一下、键盘才滑出来，像是点错了地方
         setTimeout(function () {
           if (document.activeElement === input || hero.classList.contains("kb-open")) {
             hero.classList.add("kb-open");
-            syncKeyboardSpace();
+            syncHeroState();
           }
         }, FOCUS_LIFT_DELAY);
       });
       input.addEventListener("blur", function () {
+        // 延迟一拍再算：点候选时 blur 先到，立刻收会让 click 落空
+        // （见 BLUR_SETTLE_DELAY）；这一拍里若焦点又回到输入框，就什么都不做。
         setTimeout(function () {
           if (document.activeElement === input) return;
-          hero.classList.remove("search-focus");
           if (keyboardSpace() === 0) hero.classList.remove("kb-open");
-          syncKeyboardSpace();
-          // 失焦之后位置交给 CSS 的 :has 判：输入框里还有内容 → 仍贴顶栏
-          //（结果还摊在下面，滚动看结果时框得看得见）；
-          // 内容也清空了 → 撤掉贴顶、回到居中（用户要求的「回到页面中心」）。
-          // 这里**不写任何位置**，避免出现「两处各管一半」。
+          // ⚠️ search-active 不在这里一并摘掉 —— 交给 syncHeroState：
+          //    有内容时它仍要留着（用户说的「有搜索内容时，搜索框停留在页面顶部」），
+          //    只有「清了内容 + 没了焦点」才真的回到页面中心。
+          syncHeroState();
         }, BLUR_SETTLE_DELAY);
       });
     }
 
     var vv = window.visualViewport;
     if (vv) {
-      vv.addEventListener("resize", syncKeyboardSpace);
-      vv.addEventListener("scroll", syncKeyboardSpace);
+      vv.addEventListener("resize", syncHeroState);
+      vv.addEventListener("scroll", syncHeroState);
     }
-    window.addEventListener("resize", syncKeyboardSpace);
+    window.addEventListener("resize", syncHeroState);
     window.addEventListener("orientationchange", function () {
       // 旋屏时先让布局落定，再量一次
-      setTimeout(syncKeyboardSpace, 300);
+      setTimeout(syncHeroState, 300);
     });
   }
 
@@ -554,15 +598,15 @@
    * 最贵的那几十像素留给候选与结果），空着又没在打字时回到居中（这一页没有
    * 别的东西，居中的框就是它本来的样子）。
    *
-   * 实现上**位置一律归 CSS 管**（一条 :has / 两个类名的选择器，见
-   * css/classic.css 的 `.search-hero.search-focus` 那一段），JS 只负责把
-   * 「有焦点」「键盘弹着」这两个状态写到 DOM 上，不写任何位置数值 ——
+   * 实现上**位置一律归 CSS 管**（两个类名的选择器，见
+   * css/classic.css 的 `.search-hero.search-active` 那一段），JS 只负责把
+   * 「有焦点 / 有内容 / 键盘弹着」这几个状态写到 DOM 上，不写任何位置数值 ——
    * 上一版用行内 padding-bottom 去压留白，结果聚焦 / 失焦各写一次，
    * 列表整块挪 4px，正是「两处各管一半」的典型。
    *
-   * 「有搜索内容」那一半刻意用 CSS 的 `:has(#gw-search:not(:placeholder-shown))`
-   * 判断：placeholder 的显示与否由浏览器按输入框当前值维护，不必 JS 同步，
-   * 也就不会出现「值变了、类名忘了改」这种只有肉眼能发现的错位。
+   * 「有搜索内容」那一半落在同一个 .search-active 里（不是另挂一个类、
+   * 也不是靠 CSS 的 :has 去猜输入框有没有值）：判据收在 hasKeyword() 一处，
+   * 与结果 / 候选的判空同一口径，也就不会出现「值变了、类名忘了改」的错位。
    *
    * 点空白地方收起下拉：三条来源都收了（见 bindSuggestDismiss）——
    * 手指滚结果列表、点结果区、按 Esc；这里再补一条「点页面上其它地方」：
@@ -638,6 +682,9 @@
     var input = document.getElementById("gw-search");
     if (input) {
       input.addEventListener("input", function () {
+        // renderBody 会先按「有没有内容」重算框的位置（贴顶 / 回中心），
+        // 再列出结果；renderSuggest 跟着换候选。清空输入时 renderSuggest
+        // 得到的空关键词没有候选，下拉自然收掉。
         renderBody();
         renderSuggest(input.value);
       });
@@ -695,14 +742,18 @@
    *   ③ 点别处触发 blur（候选是浮层，手指总落在它自己身上，不会 blur）
    * 于是「下拉挡住了结果卡片、却关不掉」就成立 —— 明明下面就有位置，手指够不着。
    *
-   * 这里补两条**看得见也摸得着**的路：
+   * 这里补三条**看得见也摸得着**的路：
    *   · 手指开始滚动结果列表 → 收起（滚 = 用户已经在看下面的东西）
    *   · 点一下结果列表（空白处 / 卡片 / 卡片里的字）→ 收起而不是「穿过浮层点开一篇」
    *     ⚠️ 必须**先收不先开**：候选还挂着时点结果区，用户看到的那一条正是被
    *        浮层压住半截的，先开阅读器会让人觉得「我点的是候选，怎么开了别的篇」。
    *        收起之后关键词仍在、结果还在原位，再点一下才进正文 —— 两下，但每一下
    *        与用户看到的画面一致。
-   * 两条都不动关键词、不动结果、不动键盘 —— 只把那一层浮层收掉。
+   *   · **点页面任何一处空白** → 收起（用户这一轮的原话：「当用户点击空白地方时，
+   *     下拉列表消失」）。前面两条只管结果列表那一片，页面上的空白不止它：
+   *     搜索框左右的空当、列表下方的空白、顶栏留白 —— 全都算「别处」。
+   * 三条都不动关键词、不动结果 —— 只把那一层浮层收掉
+   * （点空白还会顺带收掉键盘，那是浏览器的默认行为，也正是用户要的）。
    */
   function bindSuggestDismiss() {
     var listEl = document.querySelector("#gw-list");
@@ -725,6 +776,45 @@
         e.preventDefault();
       }, true);
     }
+    bindBlankTapDismiss();
+  }
+
+  /**
+   * 点页面上的空白地方 → 收起候选下拉（用户这一轮点名要的那条）。
+   *
+   * 「空白」= 落在搜索区（.search-wrap：输入框 + 候选下拉）之外的一切地方，
+   * 含搜索结果列表、列表下方的空白、顶栏、页面两侧的空当。
+   *
+   * 为什么挂在 document 上而不是挑几个元素挂：
+   *   页面上「能点的地方」是数不完的（结果卡片、卡片里的每一个 span、
+   *   候选、页脚……），挑着挂必然漏掉一处，而漏掉的那处正是用户会点的那处。
+   *   挂在 document 上再排除搜索区，就与「除了搜索框和下拉，点哪儿都算点空白」
+   *   这句话一一对应 —— 判据只有一条，日后也不用维护一张名单。
+   *
+   * ⚠️ 用 mousedown / touchstart 的 capture 阶段，而不是 click：
+   *    ① 候选下拉的收起有自己的节拍（blur 后 180ms，见 SUGGEST_BLUR_DELAY），
+   *       等 click 到 document 时，点结果卡片那一下已经被列表自己的监听拦掉了；
+   *    ② capture 阶段先于一切 click 处理，判据最干净。
+   *    这里只**收下拉**，不阻断事件：点卡片该开篇还是开篇，
+   *    点别处该干嘛干嘛（点空白收起下拉不该顺带把别的动作吃掉）。
+   *
+   * ⚠️ 点搜索区里（输入框 / 候选 / 框四周的 padding）一律不动：
+   *    在框里调整光标位置、点候选、点下拉里的空白，都不是「点别处」。
+   */
+  function bindBlankTapDismiss() {
+    function onTap(e) {
+      var box = suggestBox();
+      if (!box || box.hidden) return;
+      var wrap = document.getElementById("site-search-wrap");
+      var t = e.target;
+      // 搜索区之内的：不是「点空白」
+      if (wrap && t && (t === wrap || wrap.contains(t))) return;
+      // 候选下拉虽然也挂在 .search-wrap 里，但为稳妥再排一次它自己
+      if (t && t.closest && t.closest("#search-suggest")) return;
+      hideSuggest();
+    }
+    document.addEventListener("mousedown", onTap, true);
+    document.addEventListener("touchstart", onTap, true);
   }
 
   if (document.readyState === "loading") {
