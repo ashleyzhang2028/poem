@@ -881,6 +881,37 @@ body.no-dock .modal-box { max-height: 88vh; }
 .settings-input::placeholder { color: #9c8d7b; }
 .settings-hint { font-size: 11.5px; color: var(--ink-3); margin-top: 6px; }
 
+/* --------------------------------------------------------------------------
+   设置页里的「我的清单」（自选背诵）
+   --------------------------------------------------------------------------
+   这一整块原先长在**首页**底部那张「自选背诵」折叠卡里（Issue #114 第二条）：
+   「所有导入，导出，重命名，删除等等应该全部在设置中进行」。
+   搬过来时按「面板」而不是「卡片」来做：设置页已经是卡片式的分组，
+   再套一张带阴影的卡里卡只会多一层框；这里用一条淡界行 + 纸底，
+   让它读起来是**组里的一个区块**，而不是又一个独立页面。
+
+   条目样式（.item / .item-move / .item-remove / .collection-head /
+   .collection-group）一律沿用首页那一套，一个字不改 ——
+   上一次搬家时留的口径：两处同名同类，改样式时一次改到位。
+   -------------------------------------------------------------------------- */
+.collections-panel {
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius-sm);
+  background: var(--bg-soft);
+  padding: 12px 12px 4px;
+}
+.collections-panel .collections-tip { margin: 0 0 10px; }
+/* 面板里的条目不再各自带纸底（那一层已经在面板上了），
+   与集子页 .group-card 里条目的处理同一口径。 */
+.collections-panel .item {
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 12px 2px;
+}
+.collections-panel .item + .item { border-top: 1px solid var(--line-2); }
+.collections-panel .empty { padding: 10px 2px 16px; }
+
 .settings-btns { display: flex; gap: 8px; flex-wrap: wrap; }
 .ghost-btn { flex: 1; min-width: 90px; padding: 9px; font-size: 13.5px; }
 .danger-btn { flex: 1; min-width: 90px; padding: 9px; font-size: 13.5px; color: var(--red); border-color: #ecd2cd; background: var(--red-light); }

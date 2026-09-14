@@ -472,19 +472,41 @@ setTimeout(() => {
     chk(imported.every(p => p.title && p.text),
       '导入进来的篇目照样带题名与正文（能排进今日任务）');
 
-    // 页面上的键真的存在：导入键 + 每集合的导出键 + 移动键 + 整组移出键
-    const homeSrc = fs.readFileSync(path + 'index.html', 'utf8');
-    chk(/id="btn-collections-import"/.test(homeSrc),
-      '首页有「导入清单」键（id=btn-collections-import）');
-    chk(/id="text-dialog"/.test(homeSrc) && /id="text-dialog-text"/.test(homeSrc),
-      '首页有导入 / 导出用的纯文本对话框');
-    const appSrc2 = fs.readFileSync(path + 'js/app.js', 'utf8');
-    chk(/data-export=/.test(appSrc2), '每个集合头上有「导出」键（data-export）');
-    chk(/data-up=|data-down=/.test(appSrc2), '每个条目有上移 / 下移键');
-    chk(/data-group=/.test(appSrc2) && /removeGroup\(/.test(appSrc2),
+    /* ---- 页面上的键真的存在：导入键 + 每集合的导出键 + 移动键 + 整组移出键 ----
+       ⚠️ 这一整套增删改查的界面，Issue #114 第二条起住**设置整页**的「我的清单」，
+          不再住在首页底部那张折叠卡上（用户原话：「所有导入，导出，重命名，删除
+          等等应该全部在设置中进行」）。所以下面点的是 settings/index.html +
+          js/settings.js 的名。
+          ⚠️ 但 js/collections.js（这一层测的数据层）一个字没动：两处读的仍是
+          同一份 localStorage 键 poem_recite_collections_v1。 */
+    const setSrc = fs.readFileSync(path + 'settings/index.html', 'utf8');
+    chk(/id="btn-collections-import"/.test(setSrc),
+      '设置页有「导入清单」键（id=btn-collections-import）');
+    chk(/id="text-dialog"/.test(setSrc) && /id="text-dialog-text"/.test(setSrc),
+      '设置页有导入 / 导出用的纯文本对话框');
+    chk(/id="collections-list"/.test(setSrc) && /id="collections-tip"/.test(setSrc),
+      '设置页有清单容器与说明行');
+    // 首页不再有这一块（搬走了就不该留一半）
+    const homeSrc2 = fs.readFileSync(path + 'index.html', 'utf8');
+    chk(!/id="btn-collections-import"/.test(homeSrc2) && !/id="collections-list"/.test(homeSrc2),
+      '首页不再有自选背诵的管理界面（整块搬去设置）');
+    chk(!/id="collections-section"/.test(homeSrc2) && !/id="btn-collections"/.test(homeSrc2),
+      '首页那张「自选背诵」折叠卡已整个移除（不留空壳）');
+    const setJs = fs.readFileSync(path + 'js/settings.js', 'utf8');
+    chk(/data-export=/.test(setJs), '每个集合头上有「导出」键（data-export）');
+    chk(/data-up=|data-down=/.test(setJs), '每个条目有上移 / 下移键');
+    chk(/data-group=/.test(setJs) && /removeGroup\(/.test(setJs),
       '分组行上有「整组移出」键，并且真的调用 removeGroup');
-    chk(/function exportCollection\(/.test(appSrc2) && /function importCollection\(/.test(appSrc2),
-      'js/app.js 里有导入 / 导出的入口函数');
+    chk(/function exportCollection\(/.test(setJs) && /function importCollection\(/.test(setJs),
+      'js/settings.js 里有导入 / 导出的入口函数');
+    // 首页仍然认自选篇目的**排程**（搬走的是管理入口，不是这些篇目的背诵）
+    const appSrc2 = fs.readFileSync(path + 'js/app.js', 'utf8');
+    chk(/function extraPoems\(/.test(appSrc2) && /ReciteCollections\.scheduleItems/.test(appSrc2),
+      '首页仍把自选篇目并进每日任务（搬走的只是管理入口）');
+    chk(/recite-collections-change/.test(appSrc2),
+      '首页仍监听自选集合变化并重排今日任务（在设置里改完回首页立刻生效）');
+    chk(!/function renderCollections\(/.test(appSrc2),
+      '首页不再渲染自选清单（那一套整体搬到了 js/settings.js）');
 
     /* ---------- 七、显示名去掉「其一 / 其二」（Issue #69 后续） ---------- */
     // 用户原话：「去掉自选集合中其一其二这些你不清楚的」。
@@ -520,7 +542,164 @@ setTimeout(() => {
     chk(/p\.custom \? showTitle\(p\.title\) : p\.title/.test(appSrc3),
       '课内篇目不走去编号（那里的「其一」是教材原名，一个字不能动）');
 
-    console.log('\n' + (fails ? '❌ ' + fails + ' 项失败' : '🎉 自选集合测试全部通过'));
-    process.exit(fails ? 1 : 0);
+    /* ---------- 八、清单的管理界面住在设置页（Issue #114 第二条） ---------- */
+    /* 需求（用户原话）：「现在背诵首页中的自选背诵栏，我觉得应该全部放到设置中去，
+       首页背诵栏只显示背诵列表，不要干扰背诵。所有导入，导出，重命名，删除等等
+       应该全部在设置中进行。」
+       上面「六 / 七」验的是 js/collections.js 这一层的数据逻辑（一个字没动），
+       这一节验**界面搬过去之后真的能跑**：起一个设置页实例，把「改名 / 导出 /
+       上移下移 / 移出 / 删除集合 / 整组移出」逐条走一遍。 */
+    const settingsHtml = fs.readFileSync(path + 'settings/index.html', 'utf8');
+    const setOrder = settingsHtml.match(/<script src="([^"]+)"><\/script>/g)
+      .map(x => x.match(/src="([^"]+)"/)[1]);
+    chk(setOrder.indexOf('/js/collections.js') >= 0 && setOrder.indexOf('/js/collections.js') < setOrder.indexOf('/js/settings.js'),
+      '设置页加载了 js/collections.js，且排在 js/settings.js 之前');
+    chk(setOrder.indexOf('/data/site-index.js') >= 0,
+      '设置页加载了站点总索引（清单里每一篇要靠它认题名 / 作者 / 集子名）');
+
+    const domS = new JSDOM(settingsHtml, { runScripts: 'dangerously', url: 'https://local.test/settings/' });
+    const ws = domS.window;
+    // 预置一个集合：一条课内（索引里查得到）+ 一条唐诗（设置页不加载那一部，
+    // 只能靠加入时存下的快照画出来 —— 正是要验的那条回落路径）
+    ws.localStorage.setItem('poem_recite_collections_v1', JSON.stringify({
+      version: 1,
+      collections: [{
+        id: 'c-set', name: '我要背的', createdAt: Date.now(),
+        items: [
+          'poems-xx1-01',
+          { id: 'tangshi-ts-1', snap: { title: '感遇', author: '张九龄', dynasty: '唐', book: 'tangshi', bookName: '唐诗三百首', gradeGroup: '卷一 五言古诗', text: '孤鸿海上来', translation: '' } }
+        ]
+      }]
+    }));
+    ws.localStorage.setItem('poem_recite_progress_v1', JSON.stringify({
+      'poems-xx1-01': { level: 4, learned: true, reviewCount: 4, nextReviewAt: Date.now(), lapses: 0 }
+    }));
+    // ⚠️ 注入脚本之后**不要再补一次 DOMContentLoaded**：jsdom 这时 readyState
+    //    已经是 complete，脚本末尾那条 `init()` 会当场跑一遍；再补一次事件
+    //    就是 init() 跑两遍 —— 事件监听会被绑两遍，点一下「下移」等于移两次
+    //    （移过去又移回来，看起来像没反应）。这是测试自己的坑，不是页面的。
+    setOrder.forEach(f => {
+      const el = ws.document.createElement('script');
+      el.textContent = fs.readFileSync(path + f.replace(/^\//, ''), 'utf8');
+      ws.document.body.appendChild(el);
+    });
+
+    setTimeout(() => {
+      const ds = ws.document;
+      const items = () => [...ds.querySelectorAll('#collections-list .item')];
+      chk(items().length === 2,
+        '设置页把集合里那两篇都画出来了（课内走索引、唐诗走快照；实际 ' + items().length + '）');
+      chk(items().map(e => e.querySelector('.item-title').textContent).join('/') === '咏鹅/感遇',
+        '篇名正确：' + items().map(e => e.querySelector('.item-title').textContent).join(' / '));
+      chk(/骆宾王/.test(items()[0].querySelector('.item-meta').textContent) &&
+        /张九龄/.test(items()[1].querySelector('.item-meta').textContent),
+        '元信息（作者 / 朝代 / 集子名）都有 —— 快照那一条也画全了');
+      chk(/第 5 轮|较牢固|掌握/.test(items()[0].querySelector('.item-meta').textContent) ||
+        items()[0].querySelector('.mbar') !== null,
+        '背过的那一篇显示记忆阶段 / 掌握度（设置页也加载了 js/scheduler.js）');
+      chk(items()[1].querySelector('.item-meta').textContent.indexOf('未学过') >= 0,
+        '没背过的那一篇如实写「未学过」（不冒充 0 轮）');
+      chk([...ds.querySelectorAll('.collection-group-name')].map(x => x.textContent).join(' / ') ===
+        '课内诗词 / 唐诗三百首 · 卷一 五言古诗',
+        '分组行按「集子 · 卷次」成组：' +
+        [...ds.querySelectorAll('.collection-group-name')].map(x => x.textContent).join(' / '));
+
+      // 上移 / 下移：就地换两位，写回同一份 localStorage
+      const idsOf = () => JSON.parse(ws.localStorage.getItem('poem_recite_collections_v1'))
+        .collections[0].items.map(it => typeof it === 'string' ? it : it.id);
+      const down = [...ds.querySelectorAll('[data-down]')].find(b => !b.disabled);
+      chk(!!down, '首条下方那颗「下移」键可用（队尾那颗是禁用的）');
+      chk(down.getAttribute('data-up') === null && down.getAttribute('data-down') === '0',
+        '这颗键挂在首条（data-down=0）—— 两颗箭头各认自己那一条');
+      down.dispatchEvent(new ws.MouseEvent('click', { bubbles: true }));
+      chk(idsOf().join(',') === 'tangshi-ts-1,poems-xx1-01',
+        '点「下移」就地换两位（实际 ' + idsOf().join(',') + '）');
+      chk(items().map(e => e.querySelector('.item-title').textContent).join('/') === '感遇/咏鹅',
+        '列表跟着重画，顺序当场可见');
+
+      // 改名
+      const oldPrompt = ws.prompt;
+      ws.prompt = () => '新名字';
+      ds.querySelector('[data-rename]').dispatchEvent(new ws.MouseEvent('click', { bubbles: true }));
+      chk(JSON.parse(ws.localStorage.getItem('poem_recite_collections_v1')).collections[0].name === '新名字',
+        '「改名」写进了同一份 localStorage');
+      chk(ds.querySelector('.collection-name').textContent === '新名字', '列表上的集合名跟着换');
+
+      // 导出：弹出纯文本对话框，文本里有条目 id
+      ds.querySelector('[data-export]').dispatchEvent(new ws.MouseEvent('click', { bubbles: true }));
+      chk(!ds.querySelector('#text-dialog').hidden, '「导出」弹出纯文本对话框');
+      chk(/tangshi-ts-1/.test(ds.querySelector('#text-dialog-text').value),
+        '对话框里是这一份清单的条目 id（可直接复制发出去）');
+      chk(ds.querySelector('#text-dialog-text').readOnly === true, '导出的文本框是只读的');
+      ds.querySelector('#text-dialog-cancel').dispatchEvent(new ws.MouseEvent('click', { bubbles: true }));
+      chk(ds.querySelector('#text-dialog').hidden, '点「关闭」收起对话框');
+
+      // 导入：粘贴一份清单 → 新建一个集合
+      ds.querySelector('#btn-collections-import').dispatchEvent(new ws.MouseEvent('click', { bubbles: true }));
+      chk(!ds.querySelector('#text-dialog').hidden, '「导入清单」弹出对话框');
+      ds.querySelector('#text-dialog-text').value = 'poems-xx1-02\nnot-a-real-id';
+      ds.querySelector('#text-dialog-ok').dispatchEvent(new ws.MouseEvent('click', { bubbles: true }));
+      const cols2 = JSON.parse(ws.localStorage.getItem('poem_recite_collections_v1')).collections;
+      chk(cols2.length === 2, '导入新建了一个集合（不动已有的那几个；实际 ' + cols2.length + '）');
+      chk(cols2[1].items.length === 1 && cols2[1].items[0].id === 'poems-xx1-02',
+        '只收进认得出的那一行（认不出的如实跳过，不装作没发生）');
+
+      /* ---- 到这里是「两个集合」，先收敛成一个，后面几步才好逐条对账 ----
+         留着两个集合也不难写，但每一步都要按 id 去别集合里找那一条；
+         这一节要验的是「按钮点下去真的调到了数据层」，不是多集合排版，
+         所以把前一步导入进来的那个先删掉。 */
+      const colsNow = ws.ReciteCollections.list();
+      ws.ReciteCollections.remove(colsNow[1].id);
+      chk(ws.ReciteCollections.list().length === 1, '只留一个集合，后面逐步对账');
+
+      const colId = ws.ReciteCollections.list()[0].id;
+      const lenOf = id => (ws.ReciteCollections.get(id) || { items: [] }).items.length;
+
+      // 逐篇移出：界面点一下「移出」，本地存的那一份里也得少一条
+      const before = lenOf(colId);
+      chk(items().length === before, '列表上画出的条数与集合里的条数一致（' + before + '）');
+      items()[0].querySelector('.item-remove').dispatchEvent(new ws.MouseEvent('click', { bubbles: true }));
+      chk(lenOf(colId) === before - 1,
+        '「移出」把这一篇从集合里拿掉（' + before + ' → ' + lenOf(colId) + '）');
+      chk(items().length === lenOf(colId),
+        '列表跟着重画（界面上少一行，不只是本地存的那份变了）');
+
+      // 整组移出：走集合自身的 removeGroup，分组键由 collectionGroupOf 逐条算 ——
+      // 快照那一条也要认得出自己属于哪一组（设置页不加载那一部集子的数据）
+      ws.confirm = () => true;
+      const gbtn = ds.querySelector('[data-group]');
+      chk(!!gbtn, '每个分组行上有「整组移出」键');
+      const gname = gbtn.getAttribute('data-group');
+      const nInGroup = items().length;
+      gbtn.dispatchEvent(new ws.MouseEvent('click', { bubbles: true }));
+      const leftGroups = [...ds.querySelectorAll('.collection-group-name')].map(x => x.textContent);
+      chk(leftGroups.indexOf(gname) === -1,
+        '整组移出之后这一组从列表上消失（' + gname + '；组内 ' + nInGroup + ' 篇）');
+      chk(lenOf(colId) === 0,
+        '整组移出把这一组的篇目一篇不剩地拿掉（本地存的那份也是 0）');
+
+      // 删除集合：点集合头上那颗「删除」，删掉那一整个集合
+      chk(ws.ReciteCollections.list().length === 1, '删除前还剩 1 个集合');
+      ds.querySelector('[data-drop="' + colId + '"]').dispatchEvent(new ws.MouseEvent('click', { bubbles: true }));
+      chk(ws.ReciteCollections.list().length === 0, '「删除」删掉了一整个集合');
+      chk(ws.ReciteCollections.get(colId) === null, '删掉的那个集合在本地存的那份里也没了');
+      chk(ds.querySelector('#collections-list .empty') !== null,
+        '一个集合都没有时清单区给一句「还没有自选篇目」，不是一片白');
+      chk(ds.querySelector('[data-drop]') === null, '一个集合都没有时界面上没有「删除」键');
+      chk(ds.querySelector('#btn-collections-import') !== null,
+        '一个集合都没有时「导入清单」键也始终在（家长发来清单，第一件事就是导进来）');
+
+      // 用「导入」走一遍完整回路：粘贴 → 导入 → 列表上出现
+      ds.querySelector('#btn-collections-import').dispatchEvent(new ws.MouseEvent('click', { bubbles: true }));
+      ds.querySelector('#text-dialog-text').value = 'poems-xx1-01';
+      ds.querySelector('#text-dialog-ok').dispatchEvent(new ws.MouseEvent('click', { bubbles: true }));
+      chk(items().length === 1, '空清单状态下也能直接导入（不逼用户先建一个集合）');
+      chk(ds.querySelector('#collections-list .empty') === null,
+        '导入之后那句「还没有自选篇目」跟着消失');
+      ws.prompt = oldPrompt;
+
+      console.log('\n' + (fails ? '❌ ' + fails + ' 项失败' : '🎉 自选集合测试全部通过'));
+      process.exit(fails ? 1 : 0);
+    }, 60);
   }, 60);
 }, 60);

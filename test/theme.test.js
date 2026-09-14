@@ -654,19 +654,34 @@ chk(settingsHtml.indexOf('id="settings-page"') !== -1, '设置页有独立的整
 chk(settingsHtml.indexOf('settings-modal') === -1, '设置页不再用弹层结构');
 chk(settingsHtml.indexOf('class="foot settings-foot"') !== -1, '设置页底部有页脚（版权 + 法务链接）');
 
-// 需求（本次）：功能变多后设置项按用途归类 ——
-// 分「通用」「古诗词背诵」「阅读辅助」「朗读播放」四组
-chk((settingsHtml.match(/class="settings-group"/g) || []).length === 4,
-  '设置分四组：通用 / 古诗词背诵 / 阅读辅助 / 朗读播放');
+// 需求（Issue #114 第三条）：设置项多了以后重新合理分类 ——
+// 分「通用」「背诵」「我的清单」「阅读辅助」「朗读播放」五组。
+// 分类的依据是「这条设置管着谁」：
+//   通用     全站都吃（用户名、数据备份 / 清空）
+//   背诵     只决定「今天背哪几首」（学段 / 年级 / 学期 / 范围 / 数量 / 进度入口）
+//   我的清单  用户自己那份清单（自选背诵的增删改查）—— Issue #114 第二条搬进来的
+//   阅读辅助  打开一篇时看不看得到拼音（注音总开关）
+//   朗读播放  连读时怎么念（五档档位）
+chk((settingsHtml.match(/class="settings-group"/g) || []).length === 5,
+  '设置分五组：通用 / 背诵 / 我的清单 / 阅读辅助 / 朗读播放');
 chk(/settings-group-title[^>]*>通用</.test(settingsHtml), '有「通用」分组标题');
-chk(/settings-group-title[^>]*>古诗词背诵</.test(settingsHtml), '有「古诗词背诵」分组标题');
+chk(/settings-group-title[^>]*>背诵</.test(settingsHtml), '有「背诵」分组标题');
+chk(/settings-group-title[^>]*>我的清单</.test(settingsHtml), '有「我的清单」分组标题');
 chk(/settings-group-title[^>]*>阅读辅助</.test(settingsHtml), '有「阅读辅助」分组标题');
 chk(/settings-group-title[^>]*>朗读播放</.test(settingsHtml), '有「朗读播放」分组标题');
+// 分组的**顺序**也是分类的一部分：清单紧跟在「背诵」之后
+//（自选篇目就是跟着背诵走的），阅读 / 朗读两个偏好排在最后
+{
+  const order = [...settingsHtml.matchAll(/aria-labelledby="grp-([a-z]+)"/g)].map(m => m[1]);
+  chk(order.join(',') === 'general,recite,lists,reader,play',
+    '五组的先后顺序为 通用 → 背诵 → 我的清单 → 阅读辅助 → 朗读播放（实际 ' + order.join(',') + '）');
+}
 // 分组要真的装对东西：只给背诵用的选项不能落在「通用」里
 const generalBlock = (settingsHtml.match(/aria-labelledby="grp-general"[\s\S]*?<\/section>/) || [''])[0];
 const reciteBlock = (settingsHtml.match(/aria-labelledby="grp-recite"[\s\S]*?<\/section>/) || [''])[0];
+const listsBlock = (settingsHtml.match(/aria-labelledby="grp-lists"[\s\S]*?<\/section>/) || [''])[0];
 const readerBlock = (settingsHtml.match(/aria-labelledby="grp-reader"[\s\S]*?<\/section>/) || [''])[0];
-chk(!!generalBlock && !!reciteBlock && !!readerBlock, '三个分组各自的区块都能取到');
+chk(!!generalBlock && !!reciteBlock && !!listsBlock && !!readerBlock, '各分组自己的区块都能取到');
 chk(/id="input-username"/.test(generalBlock), '「通用」组含用户名');
 chk(/id="btn-export"/.test(generalBlock) && /id="btn-import"/.test(generalBlock) && /id="btn-reset"/.test(generalBlock),
   '「通用」组含数据管理（导出 / 导入 / 清空）');
@@ -674,7 +689,14 @@ chk(!/seg-scope|seg-stage|seg-term|grade-chips|seg-count/.test(generalBlock),
   '「通用」组里不再混入只给背诵用的选项');
 chk(/id="seg-stage"/.test(reciteBlock) && /id="grade-chips"/.test(reciteBlock) &&
     /id="seg-term"/.test(reciteBlock) && /id="seg-scope"/.test(reciteBlock) && /id="seg-count"/.test(reciteBlock),
-  '「古诗词背诵」组聚齐学段 / 年级 / 学期 / 背诵范围 / 每日数量');
+  '「背诵」组聚齐学段 / 年级 / 学期 / 背诵范围 / 每日数量');
+chk(/href="\/progress\/"/.test(reciteBlock), '「背诵」组含进度总览入口（它讲的就是这本账）');
+chk(/id="collections-list"/.test(listsBlock) && /id="btn-collections-import"/.test(listsBlock) &&
+    /id="collections-tip"/.test(listsBlock),
+  '「我的清单」组含自选背诵清单 / 导入键 / 说明行（Issue #114 第二条）');
+// 搬过来之后不能两边都留着：首页那张折叠卡必须真的没了
+chk(!/id="collections-section"/.test(html) && !/id="btn-collections"/.test(html),
+  '首页不再有「自选背诵」折叠卡（整块搬进设置，不留两处入口）');
 chk(/id="seg-helper"/.test(readerBlock), '「阅读辅助」组含注音总开关');
 
 // 需求（Issue #69 后续 A+B）：连读档位必须在设置页有显式入口，

@@ -414,9 +414,11 @@ setTimeout(() => {
         // 就回来了），所以这里不咬「此刻一定还是旧题名」——那条断言会随机器快慢
         // 抖。只咬真正要守的两条：列表**画出来了**（不是空白），以及刷新之后
         // 跟着**重画成新题名**（下面几行）。
-        const drawn = wh.document.querySelector('#collections-list');
-        chk(drawn && drawn.textContent.indexOf('感遇') >= 0,
-          '自选列表画出来了（不给用户一个空白区块）');
+        // ⚠️ 自选清单的界面（列表 / 改名 / 删除 …）Issue #114 第二条起住在
+        //   设置整页，首页**不再渲染**它 —— 这一段要验的「首页按需拉回集子数据
+        //   刷新旧快照」仍然成立，只是刷新之后不再重画那张清单（它已经不在了）。
+        //   所以这里改成：清单容器在首页确实不存在（搬走了），
+        //   而快照本身照旧被刷新（下面几条断言）。
 
         // 再等数据文件拉回来（走的是我们那个 loader → 仓库真实文件）
         setTimeout(() => {
@@ -428,14 +430,15 @@ setTimeout(() => {
           chk(snap.snap.text && snap.snap.text.length > 20,
             '刷回来的正文也是完整的（旧快照里那句只有 22 字的残句被换掉）');
           chk(!snap.stale, '刷新成功后 stale 标记被清掉（下次启动就不会再拉一遍）');
-          // 注意：列表上的篇名还会过一道 displayTitle（去掉「其一 / 其二」，
-          // 见 js/collections.js），所以这里比对的是**去掉编号之后**的题名。
-          // 那一道与本次「刷新旧快照」是两件事，各自有测试守着。
-          const shownTitle = wh.ReciteCollections.displayTitle(realTitle);
-          chk(wh.document.querySelector('#collections-list').textContent.indexOf(shownTitle) >= 0,
-            '列表上跟着改成新题名（不用用户手动刷新，实际显示「' + shownTitle + '」）');
-          chk(wh.document.querySelector('#collections-list').textContent.indexOf('旧题名') === -1,
-            '旧快照里那个旧题名从界面上消失（不是两条都留着）');
+          // ⚠️ 自选清单的界面（列表 / 改名 / 删除 …）Issue #114 第二条起住在
+          //    设置整页的「我的清单」，首页不再渲染它。这一段要验的
+          //    「首页按需拉回集子数据、刷新旧快照」仍然成立 —— 所以
+          //    上面几条断言的是**存进去的快照**（localStorage 里那一份），
+          //    与界面在哪一页无关。下面再补一条：首页确实不再有那张清单。
+          chk(wh.document.querySelector('#collections-list') === null,
+            '首页不再渲染自选清单（那一块搬去了设置整页，不带半截残留）');
+          chk(wh.ReciteCollections.displayTitle(realTitle) === '感遇',
+            '显示名照旧去掉「其一 / 其二」（这一段与界面搬不搬无关）');
 
           console.log('\n' + (fails ? '❌ ' + fails + ' 项失败' : '🎉 背诵进度可视化测试全部通过'));
           process.exit(fails ? 1 : 0);

@@ -85,13 +85,16 @@ setTimeout(() => {
   chk(!/小古文想读哪篇点哪篇/.test(d.querySelector('.topbar').textContent),
     '顶栏不再出现「小古文想读哪篇点哪篇」');
   chk(d.querySelector('#all-label').textContent === '本年级本学期全部诗词', '全部诗词标题精确为「本年级本学期全部诗词」');
-  // 顶栏图标：徽标 + 两张折叠卡（全部诗词 / 自选背诵）的图标，全部是内联 SVG。
-  // 自选背诵是后加的一张卡，同样用一枚书签 SVG 作折叠头图标，
-  // 数量因此由 2 变 3 —— 这里按「枚数 = 徽标 1 + 折叠头 N」判，
-  // 再往后添折叠卡时只需改这个 N，不会因为多一张卡就红。
+  // 顶栏图标：徽标 + 折叠卡（只剩「全部诗词」一张）的图标，全部是内联 SVG。
+  // ⚠️ 自选背诵那张折叠卡已搬去设置整页（Issue #114 第二条）：
+  //    首页是「今天背哪几首」的地方，导入 / 导出 / 改名 / 删除 / 整组移出
+  //    那一整块管理入口摆在这儿既与背诵无关，又一排都是「删除」「移出」。
+  //    搬走的只是管理入口 —— 自选篇目照旧跟课内 261 首一起排今日任务。
   chk(d.querySelectorAll('.brand-icon svg').length === 1, '顶栏徽标是内联 SVG');
   const collapseHeads = d.querySelectorAll('.collapse-head');
-  chk(collapseHeads.length === 2, '首页两张折叠卡：全部诗词 + 自选背诵（实际 ' + collapseHeads.length + '）');
+  chk(collapseHeads.length === 1, '首页只剩一张折叠卡：全部诗词（实际 ' + collapseHeads.length + '）');
+  chk(d.querySelector('#collections-section') === null && d.querySelector('#btn-collections') === null,
+    '首页不再有「自选背诵」折叠卡（已搬去设置整页）');
   chk([...collapseHeads].every(h => h.querySelector('.collapse-icon svg')),
     '每张折叠卡的折叠头图标都是内联 SVG');
   chk(d.querySelectorAll('.collapse-icon svg').length === collapseHeads.length,
@@ -170,10 +173,16 @@ setTimeout(() => {
   // 需求（本次）：设置项按用途归类成「通用 / 古诗词背诵 / 阅读辅助」三组；
   // 后续（Issue #69）追加「朗读播放」一组 —— 连读档位原先只在圆键菜单里，
   // 界面上没有任何入口，这一组就是补上的显式入口。
+  // 分组（Issue #114 第二、三条）：自选背诵整块搬进来后重新归类 ——
+  //   通用      用户名、数据备份 / 清空（全站共用）
+  //   背诵      学段 / 年级 / 学期 / 范围 / 数量 / 进度总览
+  //   我的清单   自选背诵：导入 / 导出 / 改名 / 删除 / 整组移出 / 调顺序
+  //   阅读辅助   注音总开关
+  //   朗读播放   五档连读方式
   const setGroups = [...sd.querySelectorAll('#settings-page .settings-group')];
-  chk(setGroups.length === 4, '设置页渲染出四组（实际 ' + setGroups.length + '）');
+  chk(setGroups.length === 5, '设置页渲染出五组（实际 ' + setGroups.length + '）');
   const groupTitles = setGroups.map(g => (g.querySelector('.settings-group-title') || {}).textContent);
-  chk(groupTitles.join('/') === '通用/古诗词背诵/阅读辅助/朗读播放',
+  chk(groupTitles.join('/') === '通用/背诵/我的清单/阅读辅助/朗读播放',
     '分组顺序与标题正确：' + groupTitles.join(' / '));
   // 需求（本次）：分组标题下的二级描述全部删除，标题下方直接就是选项
   chk(setGroups.every(g => !g.querySelector('.settings-group-desc')),
@@ -186,10 +195,18 @@ setTimeout(() => {
   chk(grpOf('#input-username') === '通用', '用户名归到「通用」（古诗词与小古文共用）');
   chk(grpOf('#btn-export') === '通用' && grpOf('#btn-reset') === '通用',
     '数据管理归到「通用」');
-  chk(grpOf('#seg-stage') === '古诗词背诵' && grpOf('#grade-chips') === '古诗词背诵' &&
-      grpOf('#seg-term') === '古诗词背诵', '学段 / 年级 / 学期归到「古诗词背诵」');
-  chk(grpOf('#seg-scope') === '古诗词背诵' && grpOf('#seg-count') === '古诗词背诵',
-    '背诵范围 / 每日数量归到「古诗词背诵」');
+  chk(grpOf('#seg-stage') === '背诵' && grpOf('#grade-chips') === '背诵' &&
+      grpOf('#seg-term') === '背诵', '学段 / 年级 / 学期归到「背诵」');
+  chk(grpOf('#seg-scope') === '背诵' && grpOf('#seg-count') === '背诵',
+    '背诵范围 / 每日数量归到「背诵」');
+  // 需求（Issue #114 第二条）：自选背诵整块搬进设置页的「我的清单」组
+  chk(!!sd.querySelector('#collections-list') && !!sd.querySelector('#collections-tip'),
+    '设置页有自选背诵清单（#collections-list / #collections-tip）');
+  chk(grpOf('#collections-list') === '我的清单' && grpOf('#btn-collections-import') === '我的清单',
+    '自选背诵（清单 + 导入键）归到「我的清单」');
+  // 导入 / 导出用的纯文本对话框也一起搬过来了
+  chk(!!sd.querySelector('#text-dialog') && !!sd.querySelector('#text-dialog-text'),
+    '设置页有导入 / 导出用的纯文本对话框');
   chk(grpOf('#seg-helper') === '阅读辅助', '注音总开关归到「阅读辅助」组');
   chk(grpOf('#seg-play') === '朗读播放', '连读档位归到「朗读播放」组');
   // 只给背诵用的选项不能再出现在「通用」组里（这才是这次需求的重点）
