@@ -577,8 +577,30 @@
  *        （css/classic.css、test/theme.test.js）
  *
  *        版本号按「并行 PR 一律 +5」的口径从 v78 起落到 v83。
+ *
+ *   v88  课内诗词补上索引页（Issue #114 第一条）：课外阅读入口页（/library/）
+ *        摆着六张卡，另外五张都指各自的索引页（/classic/、/tangshi/……），
+ *        只有「课内诗词」那张指回首页（/）—— 而首页是**今日背诵**：
+ *        一进去就是按遗忘曲线排的今天那几首。同一个动作在这张卡上得到了
+ *        与其余五张不同的结果。
+ *        现在新增 /poems/ 课内诗词索引页（挂载脚本 js/poems.js），
+ *        与五部集子共用同一套引擎（js/reader-core.js）：按**教材册次**
+ *        分 24 组（一年级上 → 高三下），261 首一首不少，点进去是同一个
+ *        整页详情（注音 / 朗读 / 白话译文 / 上一篇下一篇）。
+ *        gradeGroup 由 js/poems.js 挂载前现算，**不改数据文件**。
+ *        「已读」是新键 poem_poems_read_v1：与首页的背诵进度
+ *        （poem_recite_progress_v1，记的是遗忘曲线）分开存 ——
+ *        在这儿翻一首不该被记成一笔复习。
+ *        首页那一套（今日背诵 + 遗忘曲线 + 自选排程）一个字不动。
+ *        列表上不挂「加入背诵」圆键（reciteList: false）：那 261 首本来
+ *        就在每日任务里，再挂一枚会让人以为「不点它就不会被排上」。
+ *        页签归属：/poems/ 算「课外」这一格（用户是从那一页点进来的）。
+ *        （poems/index.html、js/poems.js、js/chrome.js、js/library.js、
+ *          js/reader-core.js、library/index.html、sw.js、测试）
+ *
+ *        版本号按「并行 PR 一律 +5」的口径从 v83 起落到 v88。
  */
-const CACHE_NAME = "poem-app-v83";
+const CACHE_NAME = "poem-app-v88";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [
@@ -645,6 +667,10 @@ const PRECACHE = [
   "./data/poems-11.js",
   "./data/poems-12.js",
   "./data/index.js",
+  // 课内诗词索引页（/poems/）：与五部集子同一套索引页 + 详情页，
+  // 数据就是上面那 12 册 + data/index.js（已缓存），这里只多一页 + 一个挂载脚本
+  "./poems/",
+  "./js/poems.js",
   "./data/poems-classic.js",
   // 唐诗三百首（内容 PR，Issue #69）：索引页 + 数据 + 挂载脚本
   "./tangshi/",

@@ -819,7 +819,11 @@
         // 右侧三件套：加入背诵（书签）· 播放 · 箭头。
         // 「加入背诵」在最前：它是**选择**（把这一篇收进自己的清单），
         // 播放与箭头是**动作**（现在听 / 进去读），选择排在动作前更像目录。
-        reciteItemBtn(p) +
+        // 列表上的「加入背诵」圆键由 config.reciteList 控制：
+        //   五部集子（默认 true）挂它 —— 课外那一篇要用户主动收进来才进背诵；
+        //   课内诗词索引页（false）不挂 —— 那 261 首本来就在每日任务里，
+        //   再挂一枚会让人以为「不点它就不会被排上」（见 js/poems.js 文件头）。
+        (CFG.reciteList === false ? "" : reciteItemBtn(p)) +
         '<button type="button" class="item-read" title="播放这一篇" aria-label="播放 ' + esc(p.title) + '">' +
         playGlyph() + "</button>" +
         '<div class="item-arrow">' + arrowGlyph() + "</div>";

@@ -103,7 +103,8 @@
    * 全站唯一的一份「页面住哪」。
    *
    * URL 一律目录化，不带 .html：
-   *   /            首页（背诵）
+   *   /            首页（背诵）：今日背诵 + 遗忘曲线
+   *   /poems/      课内古诗词索引页（一至高三 261 首，按年级分册的目录）
    *   /library/    课外阅读（集子入口页：课内诗词 + 五部选集）
    *   /classic/    课外必背小古文
    *   /tangshi/    唐诗三百首
@@ -124,6 +125,7 @@
    */
   var ROUTES = {
     home: "/",
+    poems: "/poems/",
     library: "/library/",
     classic: "/classic/",
     tangshi: "/tangshi/",
@@ -164,6 +166,7 @@
     if (v) return v;
     var p = currentPath();
     if (/^\/library\/?$/.test(p) || /^\/library\/index\.html$/.test(p)) return "library";
+    if (/^\/poems\/?$/.test(p) || /^\/poems\/index\.html$/.test(p)) return "poems";
     if (/^\/search\/?$/.test(p) || /^\/search\/index\.html$/.test(p)) return "search";
     if (/^\/classic\/?$/.test(p) || /^\/classic\/index\.html$/.test(p)) return "classic";
     if (/^\/tangshi\/?$/.test(p) || /^\/tangshi\/index\.html$/.test(p)) return "tangshi";
@@ -274,6 +277,7 @@
     if (v != null) return v;
     var k = pageKey();
     if (k === "library") return "课外阅读";
+    if (k === "poems") return "课内古诗词";
     if (k === "search") return "搜索";
     if (k === "classic") return "小古文";
     if (k === "tangshi") return "唐诗三百首";
@@ -306,13 +310,14 @@
    *   /            → home
    *   /library/    → library
    *   /classic/ /tangshi/ /songci/ /guwen/ /zhaoming/ → 都算「课外」这一格选中
-   *   提示：首页（课内诗词）也从课外这格进得去 —— 入口页第一张卡就指回 /
+   *   课内诗词索引页（/poems/）也算「课外」这一格：入口页第一张卡就指过去，
+   *   用户是从那一页进来的，页签理应停在那一格（而不是跳到「背诵」）。
    *   /search/     → search
    *   /settings/   → settings
    */
   var DOCK_ITEMS = [
     { key: "home", href: "/", icon: GLYPHS.tabPoem, label: "背诵", desc: "课内古诗词，按遗忘曲线安排复习" },
-    { key: "library", href: "/library/", icon: GLYPHS.tabLibrary, label: "课外", desc: "小古文 / 唐诗 / 宋词 / 古文观止 / 昭明文选" },
+    { key: "library", href: "/library/", icon: GLYPHS.tabLibrary, label: "课外", desc: "课内诗词 / 小古文 / 唐诗 / 宋词 / 古文观止 / 昭明文选" },
     { key: "search", href: "/search/", icon: GLYPHS.tabSearch, label: "搜索", desc: "全站篇目一次搜遍" },
     { key: "settings", href: "/settings/", icon: GLYPHS.tabGear, label: "设置", desc: "用户名 / 年级 / 音量" }
   ];
@@ -321,6 +326,10 @@
   function dockKey(key) {
     if (key === "classic" || key === "tangshi" || key === "songci" || key === "guwen" ||
         key === "zhaoming") return "library";
+    // 课内诗词索引页（/poems/）算「课外」这一格：它就是课外阅读入口页
+    // 第一张卡的去处 —— 用户是从那一页点进来的，页签该留在那一格上。
+    // （首页 / 仍是「背诵」那一格：那是另一件事，见 DOCK_ITEMS 第一条。）
+    if (key === "poems") return "library";
     // 背诵进度页（/progress/）算「背诵」这一格：它讲的就是课内背诵那本账
     // （到期日历 / 掌握度），不是独立的一站，也只是从设置页进得去的小页。
     if (key === "progress") return "home";

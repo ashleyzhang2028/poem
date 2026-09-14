@@ -12,6 +12,8 @@
 #   3g. 昭明文选测试     —— jsdom + vm，六十卷 480 篇 + 三十九类文体分组 + 阅读器
 #   3f. 搜索页与导航测试 —— jsdom，五部合一的索引 + 候选下拉 + 集子筛选 + 四格页签
 #   3h. 自选集合测试     —— jsdom + vm，作品主表判重 + 自选集合增删改查 + 排进遗忘曲线
+#   3h2.课内诗词索引页   —— jsdom，/poems/ 按教材册次分 24 组的目录页 +
+#                          点一篇进详情（Issue #114 第一条）
 #   3i. 课内去重测试     —— jsdom + vm，12 组自身重复按低年级版本去重 + 《静夜思》教材文本
 #   3j. 正文收归主表     —— jsdom + vm，存储层同一篇只落一份正文 / 译文
 #                          （各集子条目只存归属 textRef）+ 孤儿进度清理
@@ -104,6 +106,10 @@ node test/search.test.js
 echo ""
 echo "=== 自选集合 + 作品主表（Issue #69 收尾）==="
 node test/collections.test.js
+
+echo ""
+echo "=== 课内诗词索引页（/poems/ · 按年级分册的目录，Issue #114）==="
+node test/poems-page.test.js
 
 echo ""
 echo "=== 课内自身重复去重 / 《静夜思》教材文本（Issue #69 收尾）==="
