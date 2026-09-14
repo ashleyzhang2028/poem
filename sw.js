@@ -394,8 +394,16 @@
  *          data/poems-tangshi.js、data/poems-songci.js、data/text-master.js、
  *          data/works-map.js、scripts/near-dup-merge.js、
  *          test/dedup.test.js、test/canonical.test.js、test/collections.test.js）
+ *   v62  补回被整篇丢掉的《送孟东野序》（Issue #69 收尾）：
+ *        #73 补录这篇时把 source 写成选本名《古文观止》；随后 #74「补齐十二卷
+ *        目录」把 data/poems-guwen.js 整个重写了一遍，这篇因为「出处 = 选本名」
+ *        这个特征列不进任何一卷的真实来源清单，便被静默丢掉 —— 目录、分组、
+ *        计数、搜索全都不报错，只是少了一篇。
+ *        现按现行体例放回「卷八 唐文」（韩愈，《昌黎先生集》），
+ *        并给 test/guwen.test.js 加了防线：出处必须是真实来源书、卷八名篇点名核对。
+ *        （data/poems-guwen.js、data/site-index.js、README.md、test/guwen.test.js、sw.js）
  */
-const CACHE_NAME = "poem-app-v61";
+const CACHE_NAME = "poem-app-v62";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [
