@@ -1702,7 +1702,12 @@ body[data-nav="search"] .search-hero.kb-open .search-wrap { transform: none; }
    于是这一页最显眼的那一支描边，全站唯一一处不随主题走。
    现在与全站输入框（.settings-input）统一：聚焦时绿描边 + 纸色底，
    另给键盘操作留一圈淡天青 focus ring（鼠标 / 触屏点出来的聚焦不显示，
-   见 :focus-visible），保证「看得见焦点」这条无障碍要求不受影响。 */
+   见 :focus-visible），保证「看得见焦点」这条无障碍要求不受影响。
+   ⚠️ 光晕必须与全站 .search-input:focus 用**同一个值**（rgba(47, 96, 85, .10)
+      那圈半透明淡光），不能图省事填 --green-light —— 后者是不透明的浅底
+      **填充色**（#dbe9e2），直接当 box-shadow 用会画出一圈实心粉绿外框，
+      与「描边之外的一层柔和扩散」不是一回事，全站输入框的聚焦态也随之为成两样。
+      test/theme.test.js 与 test/pwa.test.js 各有一条断言守住这条。 */
 body[data-nav="search"] .search-hero .search-input {
   border-color: var(--line);
   background: #fffdf6;
@@ -1711,7 +1716,7 @@ body[data-nav="search"] .search-hero .search-input {
 body[data-nav="search"] .search-hero .search-input:focus {
   border-color: var(--green);
   background: #fffdf6;
-  box-shadow: 0 0 0 3px var(--green-light);
+  box-shadow: 0 0 0 3px rgba(47, 96, 85, .10);
 }
 body[data-nav="search"] .search-hero .search-input:focus-visible {
   outline: 2px solid var(--green);

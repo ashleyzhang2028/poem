@@ -508,8 +508,18 @@
  *        （data/text-master.js、data/poems-tangshi.js、
  *          scripts/build-text-master.js、test/canonical.test.js、
  *          test/dedup.test.js、README.md）
+ *   v74  修搜索框聚焦光晕被写成不透明填充色（Issue #69 · CI 红灯）：
+ *        body[data-nav="search"] .search-hero .search-input:focus 的 box-shadow
+ *        误填了 --green-light（#dbe9e2，不透明的浅底**填充色**），
+ *        于是聚焦时搜索框外围画出一圈实心粉绿框，与全站 .search-input:focus
+ *        那圈半透明淡光（rgba(47, 96, 85, .10)）不是一回事 —— 同一枚控件两副面孔。
+ *        改回与全站同值的 rgba(47, 96, 85, .10)；
+ *        test/pwa.test.js 拿真浏览器量光晕色相，test/theme.test.js 另补一条
+ *        纯源码断言（缺 puppeteer 时也能守住）。
+ *        版本号按「并行 PR 一律 +5」的口径从 v73 起落到 v74。
+ *        （css/classic.css、test/theme.test.js、sw.js）
  */
-const CACHE_NAME = "poem-app-v73";
+const CACHE_NAME = "poem-app-v74";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [
