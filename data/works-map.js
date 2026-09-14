@@ -2,7 +2,7 @@
    同篇对照表（主表裁定规则的静态成果）
    --------------------------------------------------------------------------
    由 scripts/build-works-map.js 离线算出：**正文（去标点后）一致 = 同一篇作品**。
-   只登记「在两部及以上集子里重复出现」的那些作品（共 57 组），
+   只登记「在两部及以上集子里重复出现」的那些作品（共 60 组），
    单条的作品不必登记 —— 它本来就只出现一次，条目 id 自己就是作品 id。
 
    ⚠️ 这是**生成文件**，改动请改 scripts/build-works-map.js 后重跑，
@@ -43,6 +43,7 @@
 window.WORKS_GROUPS = [
   { wid: "w-poems-cz7-03", title: "次北固山下", titles: ["次北固山下"], entries: ["poems-cz7-03","tangshi-ts-102"] },
   { wid: "w-poems-cz7-06", title: "江南逢李龟年", titles: ["江南逢李龟年"], entries: ["poems-cz7-06","tangshi-ts-262"] },
+  { wid: "w-poems-cz7-08", title: "夜上受降城闻笛", titles: ["夜上受降城闻笛"], entries: ["poems-cz7-08","tangshi-ts-270"] },
   { wid: "w-poems-cz7-10", title: "夜雨寄北", titles: ["夜雨寄北"], entries: ["poems-cz7-10","tangshi-ts-295"] },
   { wid: "w-poems-cz7-14", title: "竹里馆", titles: ["竹里馆"], entries: ["poems-cz7-14","tangshi-ts-223"] },
   { wid: "w-poems-cz7-16", title: "逢入京使", titles: ["逢入京使"], entries: ["poems-cz7-16","tangshi-ts-261"] },
@@ -69,6 +70,7 @@ window.WORKS_GROUPS = [
   { wid: "w-poems-gz10-09", title: "声声慢·寻寻觅觅", titles: ["声声慢·寻寻觅觅","声声慢"], entries: ["poems-gz10-09","songci-sc-249"] },
   { wid: "w-poems-gz10-18", title: "桂枝香·金陵怀古", titles: ["桂枝香·金陵怀古","桂枝香"], entries: ["poems-gz10-18","songci-sc-47"] },
   { wid: "w-poems-gz10-21", title: "登岳阳楼", titles: ["登岳阳楼"], entries: ["poems-gz10-21","tangshi-ts-119"] },
+  { wid: "w-poems-gz11-06", title: "将进酒", titles: ["将进酒"], entries: ["poems-gz11-06","tangshi-ts-78"] },
   { wid: "w-poems-gz11-07", title: "江城子·乙卯正月二十日夜记梦", titles: ["江城子·乙卯正月二十日夜记梦"], entries: ["poems-gz11-07","songci-sc-75"] },
   { wid: "w-poems-gz11-12", title: "锦瑟", titles: ["锦瑟"], entries: ["poems-gz11-12","tangshi-ts-213"] },
   { wid: "w-poems-gz11-19", title: "扬州慢·淮左名都", titles: ["扬州慢·淮左名都","扬州慢"], entries: ["poems-gz11-19","songci-sc-192"] },
@@ -88,6 +90,7 @@ window.WORKS_GROUPS = [
   { wid: "w-poems-xx4-17", title: "鹿柴", titles: ["鹿柴"], entries: ["poems-xx4-17","tangshi-ts-222"] },
   { wid: "w-poems-xx4-18", title: "嫦娥", titles: ["嫦娥"], entries: ["poems-xx4-18","tangshi-ts-300"] },
   { wid: "w-poems-xx4-20", title: "芙蓉楼送辛渐", titles: ["芙蓉楼送辛渐"], entries: ["poems-xx4-20","tangshi-ts-255"] },
+  { wid: "w-poems-xx4-23", title: "黄鹤楼送孟浩然之广陵", titles: ["黄鹤楼送孟浩然之广陵","送孟浩然之广陵"], entries: ["poems-xx4-23","tangshi-ts-259"] },
   { wid: "w-poems-xx5-06", title: "山居秋暝", titles: ["山居秋暝"], entries: ["poems-xx5-06","tangshi-ts-121"] },
   { wid: "w-poems-xx5-07", title: "枫桥夜泊", titles: ["枫桥夜泊"], entries: ["poems-xx5-07","tangshi-ts-264"] },
   { wid: "w-poems-xx5-12", title: "游子吟", titles: ["游子吟"], entries: ["poems-xx5-12","tangshi-ts-67"] },
@@ -102,7 +105,7 @@ window.WORKS_GROUPS = [
 /* ==========================================================================
    近重复对（看着像同一篇、**故意不合并**的那些）
    --------------------------------------------------------------------------
-   共 2 组，由 scripts/build-works-map.js 与上面那张表一起算出。
+   共 0 组，由 scripts/build-works-map.js 与上面那张表一起算出。
 
    判重键是「正文去标点后逐字相同」。下面这些是**再走一步**才能对上、
    却仍然不该并的：一字之差的两种文本传统 ——
@@ -122,7 +125,5 @@ window.WORKS_GROUPS = [
    字段：entries 条目 id（两条及以上）；reason 为什么不并
    ========================================================================== */
 window.WORKS_NEAR_DUP = [
-  { entries: ["poems-xx4-23", "tangshi-ts-259"], reason: "一字之差的两条文本传统（选本原貌 vs 教材 / 通行字），并列而不合并" },
-  { entries: ["songci-sc-127", "songci-sc-134"], reason: "一字之差的两条文本传统（选本原貌 vs 教材 / 通行字），并列而不合并" },
 ];
 
