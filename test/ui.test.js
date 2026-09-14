@@ -170,10 +170,12 @@ setTimeout(() => {
   // 需求（本次）：设置项按用途归类成「通用 / 古诗词背诵 / 阅读辅助」三组；
   // 后续（Issue #69）追加「朗读播放」一组 —— 连读档位原先只在圆键菜单里，
   // 界面上没有任何入口，这一组就是补上的显式入口。
+  // 再后续（本轮 · 可切换复习算法）追加「复习算法」一组，排在「古诗词背诵」
+  // 之后（它就是「用什么安排复习」的续篇），并新增「复习算法」分组标题。
   const setGroups = [...sd.querySelectorAll('#settings-page .settings-group')];
-  chk(setGroups.length === 4, '设置页渲染出四组（实际 ' + setGroups.length + '）');
+  chk(setGroups.length === 5, '设置页渲染出五组（实际 ' + setGroups.length + '）');
   const groupTitles = setGroups.map(g => (g.querySelector('.settings-group-title') || {}).textContent);
-  chk(groupTitles.join('/') === '通用/古诗词背诵/阅读辅助/朗读播放',
+  chk(groupTitles.join('/') === '通用/古诗词背诵/复习算法/阅读辅助/朗读播放',
     '分组顺序与标题正确：' + groupTitles.join(' / '));
   // 需求（本次）：分组标题下的二级描述全部删除，标题下方直接就是选项
   chk(setGroups.every(g => !g.querySelector('.settings-group-desc')),
@@ -192,6 +194,7 @@ setTimeout(() => {
     '背诵范围 / 每日数量归到「古诗词背诵」');
   chk(grpOf('#seg-helper') === '阅读辅助', '注音总开关归到「阅读辅助」组');
   chk(grpOf('#seg-play') === '朗读播放', '连读档位归到「朗读播放」组');
+  chk(grpOf('#seg-algo') === '复习算法', '复习算法选择归到「复习算法」组');
   // 只给背诵用的选项不能再出现在「通用」组里（这才是这次需求的重点）
   const generalItems = setGroups[0].querySelectorAll('.settings-item');
   chk(generalItems.length === 2, '「通用」组只有用户名与数据管理两项（实际 ' + generalItems.length + '）');

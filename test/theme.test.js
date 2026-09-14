@@ -655,9 +655,11 @@ chk(settingsHtml.indexOf('settings-modal') === -1, '设置页不再用弹层结�
 chk(settingsHtml.indexOf('class="foot settings-foot"') !== -1, '设置页底部有页脚（版权 + 法务链接）');
 
 // 需求（本次）：功能变多后设置项按用途归类 ——
-// 分「通用」「古诗词背诵」「阅读辅助」「朗读播放」四组
-chk((settingsHtml.match(/class="settings-group"/g) || []).length === 4,
-  '设置分四组：通用 / 古诗词背诵 / 阅读辅助 / 朗读播放');
+// 分「通用」「古诗词背诵」「复习算法」「阅读辅助」「朗读播放」五组
+// （「复习算法」是「可切换复习算法」那一轮追加的：原先只有一套固定间隔表）
+chk((settingsHtml.match(/class="settings-group"/g) || []).length === 5,
+  '设置分五组：通用 / 古诗词背诵 / 复习算法 / 阅读辅助 / 朗读播放');
+chk(/settings-group-title[^>]*>复习算法</.test(settingsHtml), '有「复习算法」分组标题');
 chk(/settings-group-title[^>]*>通用</.test(settingsHtml), '有「通用」分组标题');
 chk(/settings-group-title[^>]*>古诗词背诵</.test(settingsHtml), '有「古诗词背诵」分组标题');
 chk(/settings-group-title[^>]*>阅读辅助</.test(settingsHtml), '有「阅读辅助」分组标题');

@@ -175,6 +175,9 @@
         /* 清单更新失败不影响主流程 */
       }
     }
+
+    // 第二行副标题跟着当前复习算法走（「按 X 复习」）
+    applyAlgoSub();
   }
 
   /**
@@ -213,6 +216,37 @@
   /** 当前背诵范围配置（见 js/scheduler.js 的 SCOPES） */
   function scopeKey() {
     return Scheduler.SCOPES[settings.scope] ? settings.scope : Scheduler.DEFAULT_SCOPE;
+  }
+
+  /**
+   * 当前复习调度算法（见 js/review-models.js）。
+   *
+   * 认不出来的一律退回出厂默认「遗忘曲线」—— 本机存了个野生值时，
+   * **界面上说的**与**引擎真正用的**必须是同一个（否则用户看到「按 FSRS 复习」，
+   * 排出来的却是固定间隔表）。
+   */
+  function algoKey() {
+    if (!window.ReviewModels) return "ebbinghaus";
+    return window.ReviewModels.known(settings.algo) ? settings.algo : window.ReviewModels.DEFAULT_KEY;
+  }
+
+  /**
+   * 顶栏第二行 = 「按 X 复习」，跟着当前算法走。
+   *
+   * 需求原话：「背诵页面现在的副标题是『按遗忘曲线复习』，以后用户选择哪种，
+   * 就显示哪种，例如『按 SM-2 复习』，或者『按 FSRS 复习』」。
+   *
+   * ⚠️ 普通 DOM 赋值 + 在 chrome:ready 之后再写一次 —— 顶栏是 js/chrome.js
+   *    重建的，它读的是 `<body data-sub>`。所以顺手把 data-sub 也改掉：
+   *    这样即便顶栏晚一步重建（或用户切页签回来），也还是当前算法那句。
+   */
+  function applyAlgoSub() {
+    const sub = window.ReviewModels
+      ? window.ReviewModels.subFor(algoKey())
+      : "按遗忘曲线复习";
+    document.body.setAttribute("data-sub", sub);
+    const el = $("#brand-sub");
+    if (el) el.textContent = sub;
   }
 
   function scopeInfo() {
@@ -698,7 +732,7 @@
           // 这里把后面的尾巴拼成一段「整串」，再交给 metaLine 排在末尾：
           // 朝代一空时只省掉它自己，不会把「· 二年级上」那一截也吞掉。
           [scope.random ? gradeName(p.grade) + termName(p.term) : "",
-           rec && rec.learned ? Scheduler.levelName(rec.level) : "未学过"]
+           rec && rec.learned ? Scheduler.levelName(rec.level, rec) : "未学过"]
             .filter(Boolean).join(" · "))) +
         "</div>" +
         (rec && rec.learned ? '<div class="mbar"><i style="width:' + Scheduler.mastery(rec) + '%"></i></div>' : "") +
@@ -847,7 +881,7 @@
           metaLine([esc(p.author || ""), esc(p.dynasty || ""), esc(p.bookName || ""),
             // 掌握度那一栏无条件跟着（空值也显示「未学过」），
             // 所以它不参与「空值即省分隔符」的排布，直接拼成一段尾巴
-            rec && rec.learned ? Scheduler.levelName(rec.level) : "未学过"]) +
+            rec && rec.learned ? Scheduler.levelName(rec.level, rec) : "未学过"]) +
           "</div>" +
           (rec && rec.learned ? '<div class="mbar"><i style="width:' + Scheduler.mastery(rec) + '%"></i></div>' : "") +
           "</div>" +
@@ -1087,7 +1121,7 @@
 
     const info = [];
     if (rec && rec.learned) {
-      info.push("<span>记忆阶段：<b>" + Scheduler.levelName(rec.level) + "</b></span>");
+      info.push("<span>记忆阶段：<b>" + Scheduler.levelName(rec.level, rec) + "</b></span>");
       info.push("<span>掌握度：<b>" + Scheduler.mastery(rec) + "%</b></span>");
       info.push("<span>已复习：<b>" + rec.reviewCount + "</b> 次</span>");
       info.push(
@@ -1426,15 +1460,21 @@
   function handleResult(result) {
     if (!currentPoem) return;
     const rec = Storage.get(currentPoem.id) || Scheduler.createRecord();
-    const next = Scheduler.review(rec, result);
+    // 按当前选定的算法排下一次（见 js/review-models.js）：换模型之后新复习的
+    // 按新模型算，旧记录不做静默改写（换算发生在切模型那一刻，见 adopt()）
+    const next = Scheduler.review(rec, result, algoKey());
     Storage.set(currentPoem.id, next);
 
-    const msgMap = {
-      good: "记住了！下次复习：" + new Date(next.nextReviewAt).toLocaleDateString("zh-CN"),
-      fuzzy: "有点模糊，12 小时后再复习一次",
-      bad: "没关系，30 分钟后再复习一次"
-    };
-    showToast(msgMap[result]);
+    /* 结果提示也说当前模型的话：原先写死「12 小时 / 30 分钟」两句其实各模型一致，
+       但「记住了！下次复习：X」里那个 X 是新模型算出来的日期 ——
+       提示文案统一从模型层取，免得这里再抄一份口径。 */
+    showToast(window.ReviewModels
+      ? window.ReviewModels.resultHint(algoKey(), result, next)
+      : {
+        good: "记住了！下次复习：" + new Date(next.nextReviewAt).toLocaleDateString("zh-CN"),
+        fuzzy: "有点模糊，12 小时后再复习一次",
+        bad: "没关系，30 分钟后再复习一次"
+      }[result]);
 
     // 更新该首在当前计划中的状态
     todayPlan = todayPlan.map(function (it) {
