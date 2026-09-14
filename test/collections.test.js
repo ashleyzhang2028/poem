@@ -36,7 +36,10 @@ const DATA = [
   'data/poems-tangshi.js', 'data/poems-songci.js', 'data/poems-guwen.js', 'data/poems-zhaoming.js',
   'data/site-index.js', 'data/works-map.js', 'data/works-index.js'
 ];
-DATA.forEach(f => vm.runInContext(fs.readFileSync(path + f, 'utf8'), sb, { filename: f }));
+// 正文存储主表：被主表收编的条目只存归属（textRef），正文要按它取回 ——
+// loadData 会把 data/text-master.js 排到最前（data/index.js 聚合时就要用它）。
+const { loadData, resolve } = require('./master-env');
+loadData(sb, DATA);
 const WI = sb.WorksIndex;
 
 chk(Array.isArray(sb.WORKS_GROUPS) && sb.WORKS_GROUPS.length > 0,
@@ -95,8 +98,8 @@ chk(WI.repOf('tangshi-ts-1') === 'tangshi-ts-1',
 const dom0 = new JSDOM('<!doctype html><html><body></body></html>',
   { runScripts: 'dangerously', url: 'https://local.test/' });
 const w0 = dom0.window;
-// 把先前的数据模块灌进这个 window
-DATA.forEach(f => {
+// 把先前的数据模块灌进这个 window（含正文存储主表 —— 站点索引 / 快照都要按它取正文）
+['data/text-master.js'].concat(DATA).forEach(f => {
   const el = w0.document.createElement('script');
   el.textContent = fs.readFileSync(path + f, 'utf8');
   w0.document.body.appendChild(el);

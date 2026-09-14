@@ -717,6 +717,7 @@ window.POEMS_CLASSIC = [
     translationSource: "public-domain",
   },
   {
+    textRef: "poems-cz8-02",
     id: "gw-60",
     title: "答谢中书书",
     source: "《陶隐居集》",
@@ -724,9 +725,6 @@ window.POEMS_CLASSIC = [
     author: "陶弘景",
     gradeGroup: "治学勤读",
     difficulty: 3,
-    text: "山川之美，古来共谈。高峰入云，清流见底。两岸石壁，五色交辉。\n青林翠竹，四时俱备。晓雾将歇，猿鸟乱鸣；夕日欲颓，沉鳞竞跃。\n实是欲界之仙都。自康乐以来，未复有能与其奇者。",
-    translation: "山川的秀美，自古以来为人们所称道。高高的山峰直插云霄，清澈的溪流可以见底。两岸的石壁，五彩交相辉映。青翠的树林、碧绿的竹子，四季都有。清晨雾气将散，猿猴和鸟儿纷纷啼叫；傍晚太阳将要落山，水中的鱼儿争相跳跃。这里实在是人间的仙境。自从谢灵运以来，再也无人能领略这种奇美的景致。",
-    translationSource: "public-domain",
   },
   {
     id: "gw-61",

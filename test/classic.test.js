@@ -11,9 +11,16 @@ const vm = require('vm');
 const sandbox = { window: {}, console };
 sandbox.window = sandbox;
 vm.createContext(sandbox);
+// 正文存储主表：小古文里被主表收编的条目只存归属（textRef），
+// 正文 / 译文在 data/text-master.js 里 —— 先加载它，再按 masterTextOf 取回。
+// ⚠️ 必须排在 poems-classic.js 之前（取数函数要能读到表）。
+vm.runInContext(fs.readFileSync(path + 'data/text-master.js', 'utf8'), sandbox, { filename: 'text-master.js' });
 vm.runInContext(fs.readFileSync(path + 'data/poems-classic.js', 'utf8'), sandbox, { filename: 'poems-classic.js' });
 
-const CLS = sandbox.POEMS_CLASSIC;
+// 数据层这一层拿到的应当是**展开正文后**的条目（与页面里引擎取到的一致）
+var CLS = sandbox.POEMS_CLASSIC.map(function (raw) {
+  return sandbox.masterTextOf ? sandbox.masterTextOf(raw, 'classic') : raw;
+});
 chk(Array.isArray(CLS) && CLS.length === 100, '小古文共 100 篇（实际 ' + (CLS ? CLS.length : 'undefined') + '）');
 const ids = new Set();
 CLS.forEach(p => {
@@ -24,9 +31,15 @@ chk(true, '小古文 id 无重复');
 chk(CLS.every(p => p.title && p.source && p.text && p.translation), '每篇都有 标题/出处/原文/译文');
 // 译文来源标注：小古文多为先秦诸子与史传，原文属公有领域，据此标出通行译注口径。
 // 不能一篇没有 —— 没有标注，用户就不知道译文是怎么来的（见 README「译文的取舍标准」）
-chk(CLS.every(p => p.translationSource === 'public-domain'),
-  '100 篇小古文都标了译文来源 public-domain（未标 ' +
-  CLS.filter(p => !p.translationSource).length + ' 篇）');
+// 小古文多为先秦诸子与史传，原文属公有领域，据此标通行译注口径（public-domain）。
+// ⚠️ 例外：与课内同篇的那几条（《答谢中书书》等），正文收归主表后译文取自
+//    课内那一份，来源随之是 school —— 译文确实换成了课本口径，标 school 才对。
+const CLS_SRC_OK = ['public-domain', 'school'];
+chk(CLS.every(p => CLS_SRC_OK.indexOf(p.translationSource) >= 0),
+  '100 篇小古文都标了译文来源且取值在允许范围（异常 ' +
+  CLS.filter(p => CLS_SRC_OK.indexOf(p.translationSource) < 0).length + ' 篇）');
+chk(CLS.filter(p => p.translationSource === 'public-domain').length === 99,
+  '其中 99 篇标 public-domain（与课内同篇的 1 篇取自课本口径，标 school）');
 chk(CLS.some(p => p.text.length > 100), '含长篇（>100 字）古文，验证长文场景');
 
 // 需求清单里的篇目必须在库中（抽查关键篇目）

@@ -54,7 +54,13 @@
     BOOKS.forEach(function (b) {
       var list = opt[b.id] || (typeof window !== "undefined" ? window[b.varName] : null);
       if (!list || !list.length) return;
-      list.forEach(function (p) {
+      list.forEach(function (raw) {
+        // 正文收归主表（Issue #69 收尾）：各集子条目只存归属，
+        // 被主表收编的那些正文 / 译文在 data/text-master.js 里 ——
+        // 这里先按 textRef 取回，后面才谈得上「有没有正文」。
+        // ⚠️ 不带 textRef 的条目（单篇，未进主表）原样使用。
+        var p = (typeof window.masterTextOf === "function")
+          ? window.masterTextOf(raw, b.id) : raw;
         // 还没有正文 / 译文的篇目（标着「待补」的那些）不进全站搜索索引：
         // 搜到一条点进去只有提示，等于把「尚未整理」变成用户的一次白跑。
         // 它们在各自集子的列表里仍然可见。

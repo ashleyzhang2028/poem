@@ -62,17 +62,25 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   const sandbox = { window: {}, console };
   sandbox.window = sandbox;
   vm.createContext(sandbox);
-  ['data/poems-1.js', 'data/poems-2.js', 'data/poems-3.js', 'data/poems-4.js',
+  // 正文存储主表：被主表收编的条目只存归属（textRef），正文要按它取回 ——
+  // loadData 会把 data/text-master.js 排到最前（data/index.js 聚合时就要用它）。
+  const { loadData, resolve } = require('./master-env');
+  loadData(sandbox, ['data/poems-1.js', 'data/poems-2.js', 'data/poems-3.js', 'data/poems-4.js',
    'data/poems-5.js', 'data/poems-6.js', 'data/poems-7.js', 'data/poems-8.js',
    'data/poems-9.js', 'data/poems-10.js', 'data/poems-11.js', 'data/poems-12.js',
    'data/index.js', 'data/poems-classic.js', 'data/poems-tangshi.js',
    'data/poems-songci.js', 'data/poems-guwen.js', 'data/poems-zhaoming.js',
-   'data/site-index.js', 'data/works-map.js', 'data/works-index.js'
-  ].forEach(f => vm.runInContext(read(f), sandbox, { filename: f }));
+   'data/site-index.js', 'data/works-map.js', 'data/works-index.js']);
 
   const IDX = sandbox.SITE_INDEX;
-  const books = [sandbox.POEMS_CLASSIC, sandbox.POEMS_TANGSHI, sandbox.POEMS_SONGCI,
-    sandbox.POEMS_GUWEN, sandbox.POEMS_ZHAOMING];
+  // 五部集子各自按 textRef 展开（与页面里引擎取到的一致），再数「有正文的篇数」
+  const books = [
+    resolve(sandbox, sandbox.POEMS_CLASSIC, 'classic'),
+    resolve(sandbox, sandbox.POEMS_TANGSHI, 'tangshi'),
+    resolve(sandbox, sandbox.POEMS_SONGCI, 'songci'),
+    resolve(sandbox, sandbox.POEMS_GUWEN, 'guwen'),
+    resolve(sandbox, sandbox.POEMS_ZHAOMING, 'zhaoming')
+  ];
   const BOOK_IDS = ['classic', 'tangshi', 'songci', 'guwen', 'zhaoming'];
   // 昭明文选的译文已全部补齐（480 篇），进索引的条数因此等于它自己的篇数。
   // 那层「待补不进索引」的过滤仍然保留在 data/site-index.js 里（给下一部集子用的），

@@ -40,7 +40,10 @@ const DATA = [
   'data/poems-tangshi.js', 'data/poems-songci.js', 'data/poems-guwen.js', 'data/poems-zhaoming.js',
   'data/site-index.js', 'data/works-map.js', 'data/works-index.js'
 ];
-DATA.forEach(f => vm.runInContext(fs.readFileSync(__dirname + '/../' + f, 'utf8'), sb, { filename: f }));
+// 正文存储主表：被主表收编的条目只存归属（textRef），正文要按它取回 ——
+// loadData 会把 data/text-master.js 排到最前（data/index.js 聚合时就要用它）。
+const { loadData } = require('./master-env');
+loadData(sb, DATA);
 const ALL = sb.POEMS_ALL;
 const byId = {};
 ALL.forEach(p => { byId[p.id] = p; });
@@ -76,7 +79,8 @@ const PROSE_BY_ID = {};
   const src = fs.readFileSync(__dirname + '/../' + f, 'utf8');
   const m = src.match(/window\.POEMS_(\d+) = (\[[\s\S]*\]);/);
   const arr = vm.runInNewContext('(' + m[2] + ')');
-  arr.forEach(p => { PROSE_BY_ID[p.id] = p; });
+  // 被主表收编的条目只存归属（textRef），正文要按它取回，才谈得上「逐字未改」
+  arr.forEach(p => { PROSE_BY_ID[p.id] = sb.masterTextOf ? sb.masterTextOf(p, 'poems') : p; });
 });
 
 const missing = REMOVED.filter(r => PROSE_BY_ID[r[0]]);
@@ -158,7 +162,9 @@ chk(jys.text.indexOf('看月光') < 0, '课内《静夜思》不含宋人刻本�
 chk(jys.title === '静夜思', '课内题名作《静夜思》');
 chk(jys.grade === 1 && jys.term === 2, '《静夜思》归一年级下册（统编版）');
 
-const yt = sb.POEMS_TANGSHI.filter(p => p.id === 'ts-231')[0];
+// 唐诗那条也只存归属了，正文按 textRef 取回
+const ytRaw = sb.POEMS_TANGSHI.filter(p => p.id === 'ts-231')[0];
+const yt = sb.masterTextOf ? sb.masterTextOf(ytRaw, 'tangshi') : ytRaw;
 chk(!!yt, '唐诗三百首《夜思》在库（ts-231）');
 chk(norm(yt.text) === norm(jys.text), '唐诗三百首那条正文与教材逐字一致（同一文本才并为一篇）');
 chk(yt.text.indexOf('看月光') < 0, '唐诗三百首那条同样不含「床前看月光」');

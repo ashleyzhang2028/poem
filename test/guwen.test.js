@@ -18,10 +18,11 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
 const sandbox = { window: {}, console };
 sandbox.window = sandbox;
 vm.createContext(sandbox);
-['data/poems-classic.js', 'data/poems-guwen.js', 'data/site-index.js'].forEach(f =>
-  vm.runInContext(fs.readFileSync(path + f, 'utf8'), sandbox, { filename: f }));
+// 正文存储主表：被主表收编的条目只存归属（textRef），正文要按它取回
+const { loadData, resolve } = require('./master-env');
+loadData(sandbox, ['data/poems-classic.js', 'data/poems-guwen.js', 'data/site-index.js']);
 
-const GW = sandbox.POEMS_GUWEN;
+const GW = resolve(sandbox, sandbox.POEMS_GUWEN, 'guwen');
 chk(Array.isArray(GW) && GW.length === 166,
   '古文观止目录十二卷共 166 篇（实际 ' + (GW ? GW.length : 'undefined') + '）');
 
@@ -54,8 +55,13 @@ chk(done.length + pending.length === GW.length,
   + '（已收录 ' + done.length + ' · 待补 ' + pending.length + '）');
 chk(done.every(p => p.excerpt),
   '已收录的每一篇都给了列表用摘句（excerpt）');
-chk(done.every(p => p.translationSource === 'public-domain'),
-  '已收录的每一篇都标了译文来源 public-domain');
+// 古文观止原文属公有领域，译文据公认注本整理 → public-domain。
+// ⚠️ 例外：与课内同篇的《桃花源记》《陋室铭》，正文收归主表后译文取自课本口径，
+//    来源是 school（译文确实换成了教材那一份）。
+const GW_SRC_OK = ['public-domain', 'school'];
+chk(done.every(p => GW_SRC_OK.indexOf(p.translationSource) >= 0),
+  '已收录的每一篇都标了译文来源且取值在允许范围（异常 ' +
+  done.filter(p => GW_SRC_OK.indexOf(p.translationSource) < 0).length + ' 篇）');
 chk(done.every(p => /^《.+》$/.test(p.source || '')),
   '每篇出处形如《书名》');
 

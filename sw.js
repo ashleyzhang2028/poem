@@ -336,8 +336,22 @@
  *        导致扩展区一个字也扫不到、「缺 28 字」空转了整整一轮）
  *        （data/poems-zhaoming.js、fonts/*.woff2、
  *          scripts/supplement-fonts.py、test/theme.test.js、test/zhaoming.test.js）
+ *   v59  正文收归主表的**存储层**（Issue #69 收尾）：
+ *        此前 data/canonical-texts.js 只做到「显示时把正文换成主条目那一份」——
+ *        磁盘上同一篇正文仍各存一份。这一轮把它收到**存储层**：
+ *        同一篇作品的正文 / 译文只落一份（data/text-master.js，由
+ *        scripts/build-text-master.js 算出），其余集子的条目退化成只存归属
+ *        （条目上留 textRef 指过来，text / translation 三行摘掉）。
+ *        正文由 js/reader-core.js 按 textRef 取回，对列表 / 阅读器 / 朗读 /
+ *        排程 / 搜索完全透明。共 114 条条目收归，57 篇作品的正文自此只有一份。
+ *        显示层的 data/canonical-texts.js 因此收敛为空表（异文既已不存在，
+ *        就不必再替换）；机制保留，给日后真出现异文时用。
+ *        （data/text-master.js、data/poems-*.js、data/index.js、
+ *          data/site-index.js、data/canonical-texts.js、js/reader-core.js、
+ *          scripts/build-text-master.js、scripts/apply-text-master.js、
+ *          test/master-env.js、test/*.test.js、七处页面 HTML）
  */
-const CACHE_NAME = "poem-app-v58";
+const CACHE_NAME = "poem-app-v59";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [
@@ -376,7 +390,12 @@ const PRECACHE = [
   // 判重「这篇是不是已经在别处背过了」，搜索去重、加自选集合、排每日任务都读它
   "./data/works-map.js",
   "./data/works-index.js",
-  // 正文收归主表（Issue #69 收尾）：同一篇作品用主条目那一份正文与译文
+  // 正文存储主表（Issue #69 收尾）：同一篇作品的正文 / 译文只落一份，
+  // 各集子条目退化成只存归属（textRef），正文由引擎按它取回。
+  // ⚠️ 须与页面 <script> 顺序一致：排在 site-index.js / canonical-texts.js 之前。
+  "./data/text-master.js",
+  // 显示层裁定表（Issue #69 收尾）：存储层收归后已收敛为空表，
+  // 保留机制给日后真出现异文时用。
   "./data/canonical-texts.js",
   // 分组顺序总表（卷次 / 词牌 / 文体）：页面与作品主表共用
   "./data/group-order.js",

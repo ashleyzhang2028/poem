@@ -14,7 +14,10 @@ const sandbox = {
 };
 sandbox.window = sandbox;
 vm.createContext(sandbox);
-const files = ['data/poems-1','data/poems-2','data/poems-3','data/poems-4','data/poems-5','data/poems-6',
+// 正文存储主表：各集子条目只存归属（textRef），正文 / 译文在这里取回。
+// ⚠️ 必须排在 data/index.js 之前 —— data/index.js 聚合 POEMS_ALL 时就会调它取正文。
+const files = ['data/text-master',
+  'data/poems-1','data/poems-2','data/poems-3','data/poems-4','data/poems-5','data/poems-6',
   'data/poems-7','data/poems-8','data/poems-9','data/poems-10','data/poems-11','data/poems-12','data/index',
   'js/storage','js/scheduler'];
 files.forEach(f => vm.runInContext(fs.readFileSync(require('path').join(__dirname, '..', f + '.js'), 'utf8'), sandbox, { filename: f }));

@@ -7227,9 +7227,15 @@ window.POEMS_ZHAOMING = [
     return groups;
   };
 
-  /** 已收录译文（原文与译文齐备）的篇数 */
+  /** 已收录译文（原文与译文齐备）的篇数。
+      正文收归主表后，条目只存归属、正文在 data/text-master.js——
+      数之前先按 textRef 取回，否则会把已译的算成「待译」。 */
   window.zhaomingDoneCount = function () {
-    return window.POEMS_ZHAOMING.filter(function (p) { return p.text && p.translation; }).length;
+    return window.POEMS_ZHAOMING.filter(function (raw) {
+      var p = (typeof window.masterTextOf === "function")
+        ? window.masterTextOf(raw, "zhaoming") : raw;
+      return p.text && p.translation;
+    }).length;
   };
 
   /** 已收录原文的篇数（本集原文全收，等于总篇数） */

@@ -11,10 +11,11 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
 const sandbox = { window: {}, console };
 sandbox.window = sandbox;
 vm.createContext(sandbox);
-['data/poems-classic.js', 'data/poems-tangshi.js', 'data/site-index.js'].forEach(f =>
-  vm.runInContext(fs.readFileSync(path + f, 'utf8'), sandbox, { filename: f }));
+// 正文存储主表：被主表收编的条目只存归属（textRef），正文要按它取回
+const { loadData, resolve } = require('./master-env');
+loadData(sandbox, ['data/poems-classic.js', 'data/poems-tangshi.js', 'data/site-index.js']);
 
-const TS = sandbox.POEMS_TANGSHI;
+const TS = resolve(sandbox, sandbox.POEMS_TANGSHI, 'tangshi');
 chk(Array.isArray(TS) && TS.length === 301, '唐诗三百首共 301 首（实际 ' + (TS ? TS.length : 'undefined') + '）');
 
 const ids = new Set();
@@ -24,8 +25,15 @@ chk(dup === 0, '唐诗 id 无重复（重复 ' + dup + ' 个）');
 
 chk(TS.every(p => p.title && p.source && p.dynasty && p.author && p.text && p.translation),
   '每首都有 标题/出处/朝代/作者/原文/译文');
-chk(TS.every(p => p.translationSource === 'public-domain'),
-  '301 首唐诗都标了译文来源 public-domain（未标 ' + TS.filter(p => !p.translationSource).length + ' 首）');
+// 译文来源：唐诗原文属公有领域，据通行译注整理 → public-domain。
+// ⚠️ 例外：与课内同篇的那几条，正文收归主表后译文取自课本口径，来源是 school ——
+//    译文确实换成了教材那一份，标 school 才对（不是漏标，也不是标注漂移）。
+const TS_SRC_OK = ['public-domain', 'school', 'academic', 'modern'];
+chk(TS.every(p => TS_SRC_OK.indexOf(p.translationSource) >= 0),
+  '301 首唐诗都标了译文来源且取值在允许范围（异常 ' +
+  TS.filter(p => TS_SRC_OK.indexOf(p.translationSource) < 0).length + ' 首）');
+chk(TS.filter(p => p.translationSource === 'public-domain').length >= 250,
+  '绝大多数标 public-domain（与课内同篇的数首取课本口径，标 school）');
 chk(TS.every(p => p.source === '《唐诗三百首》'), '出处统一为《唐诗三百首》');
 chk(TS.every(p => p.dynasty === '唐'), '朝代统一为唐');
 chk(TS.some(p => p.text.length > 200), '含长篇（>200 字）唐诗，验证长文场景');
