@@ -320,6 +320,10 @@
        遗忘曲线排程要读它取候选池 -->
   <script src="js/collections.js"></script>
   <script src="js/storage.js"></script>
+  <!-- 复习调度算法（可切换）：必须在 scheduler.js 之前 ——
+       scheduler.review() 一进来就转交给它（见 js/review-models.js 文件头）。
+       缺了它 scheduler 会退回到只认「遗忘曲线」那一套的旧行为。 -->
+  <script src="js/review-models.js"></script>
   <script src="js/scheduler.js"></script>
   <script src="js/app.js"></script>
   <script src="js/manifest-loader.js"></script>

@@ -856,6 +856,75 @@ body.no-dock .modal-box { max-height: 88vh; }
   border-color: #f0cd7c;
   background: #f0cd7c;
 }
+/* --------------------------------------------------------------------------
+   复习算法（设置页）：一行一张模型卡
+   --------------------------------------------------------------------------
+   与「连读方式」那一组同一套语言（一行一张、选中深绿实底 + 描金内边），
+   只是这里每张还要多说两句（名字 + 年份一行，取舍说明一行），
+   所以行距与说明字号略作区分。选中记号同样是右侧那枚实心圆点。
+   -------------------------------------------------------------------------- */
+.algo-modes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.algo-opt {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  width: 100%;
+  box-sizing: border-box;
+  text-align: left;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--ink-2);
+  border-radius: var(--radius-sm);
+  padding: 10px 34px 11px 14px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+}
+.algo-name {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+.algo-years { font-size: 11px; font-weight: 400; color: var(--ink-3); }
+.algo-blurb { font-size: 11.5px; color: var(--ink-3); line-height: 1.6; }
+.algo-opt.active {
+  background: var(--green);
+  border-color: var(--green-dark);
+  color: #fdfaf2;
+  box-shadow: inset 0 0 0 1px rgba(240, 205, 124, .42);
+}
+.algo-opt.active .algo-years,
+.algo-opt.active .algo-blurb { color: rgba(253, 250, 242, .82); }
+.algo-opt:not(.active):active {
+  background: var(--green-light);
+  border-color: var(--celadon);
+  color: var(--green);
+}
+.algo-opt::after {
+  content: "";
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 12px;
+  height: 12px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: transparent;
+}
+.algo-opt.active::after {
+  border-color: #f0cd7c;
+  background: #f0cd7c;
+}
+
 /* 窄屏：药丸再收一档内边距，7 个「背诵范围」才不会挤成两行以上 */
 @media (max-width: 400px) {
   .settings-page .seg button,
@@ -1468,6 +1537,11 @@ html, body {
   color: var(--green);
   border-radius: var(--radius-sm);
   font-weight: 600;
+  /* 这类按钮有几枚是 <a>（如设置页「进度总览」指去 /progress/）——
+     浏览器默认给链接文字加下划线，那条线不是设计的一部分。
+     这里显式去掉，<a> 与 <button> 的观感才一致
+     （与 .dock-item 上处理页签下划线是同一件事）。 */
+  text-decoration: none;
 }
 .ghost-btn:hover { border-color: var(--green); }
 .danger-btn {

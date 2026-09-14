@@ -62,7 +62,9 @@
     term: 1,
     scope: DEFAULT_SCOPE,
     helper: "off",
-    dailyCount: 5
+    dailyCount: 5,
+    // 复习调度算法，见 js/review-models.js（键名即模型名）
+    algo: "ebbinghaus"
   };
 
   let settings = null;
@@ -87,6 +89,8 @@
       merged[k] = raw[k];
     });
     if (KNOWN_SCOPES.indexOf(merged.scope) === -1) merged.scope = DEFAULT_SCOPE;
+    // 认不出来的算法键一律退回出厂默认 —— 界面说的与引擎用的必须是同一个
+    if (!algoModels() || !algoModels().known(merged.algo)) merged.algo = DEFAULTS.algo;
     if (!STAGES[stageOf(merged.grade)]) merged.grade = DEFAULTS.grade;
     return merged;
   }
@@ -596,6 +600,100 @@
         showToast("已删除「" + col.name + "」");
       }
     });
+
+    renderAlgos();
+  }
+
+  /* ---------------- 复习算法（四张模型） ----------------
+     选项定义在 js/review-models.js，与首页 / 进度页同源：
+     这里只负责「画出来、标上当前那张、写回 poem_recite_settings_v1」，
+     不把各模型的说明另抄一份 —— 抄一份就会与首页副标题分叉。 */
+  function algoModels() {
+    return (typeof window !== "undefined" && window.ReviewModels) || null;
+  }
+
+  /** 画一遍四张模型，并把当前那张标成选中 */
+  function renderAlgos() {
+    const RM = algoModels();
+    const box = $("#seg-algo");
+    if (!box) return;
+    if (!RM) {
+      // 脚本没加载（或顺序错）时不要留一块空白：明说一句，别让人以为是没做完
+      box.innerHTML = '<div class="settings-hint">复习算法加载失败：请刷新页面重试。</div>';
+      return;
+    }
+    const cur = RM.known(settings.algo) ? settings.algo : RM.DEFAULT_KEY;
+    box.innerHTML = RM.keys().map(function (k) {
+      const m = RM.describe(k);
+      return '<button type="button" role="radio" class="algo-opt' + (k === cur ? " active" : "") +
+        '" data-algo="' + m.key + '" aria-checked="' + (k === cur ? "true" : "false") + '">' +
+        '<span class="algo-name">' + m.name +
+        '<span class="algo-years">' + m.years + "</span></span>" +
+        '<span class="algo-blurb">' + m.blurb + "</span>" +
+        "</button>";
+    }).join("");
+
+    const m = RM.describe(cur);
+    const hint = $("#algo-hint");
+    if (hint) {
+      hint.textContent = "当前：" + m.name + "（背诵页副标题会写「" + m.sub + "」）";
+    }
+    const iv = $("#algo-interval");
+    if (iv) iv.textContent = intervalText(cur);
+  }
+
+  /**
+   * 「复习间隔」那一行的说明：每张模型的口径不同，**照实说**。
+   * ⚠️ 不把所有模型都写成同一句「当天 → 1 → 2 → 4 …天」——
+   *    那是遗忘曲线那一张的表，Leitner / SM-2 / FSRS 的间隔是走出来的，
+   *    不是一张固定表；写错比不写更误导。
+   */
+  function intervalText(key) {
+    if (key === "leitner") return "五个盒子：1 / 2 / 4 / 8 / 16 天，答对往后挪一盒、答错退回第一盒";
+    if (key === "sm2") return "间隔 × 简易度：1 → 3 → 7 天，之后每次乘简易度（出厂 2.5，最低 1.3）";
+    if (key === "fsrs") return "按稳定天数 S 算：曲线衰减到九成时到期，越稳固间隔越长";
+    return "固定表：当天 → 1 → 2 → 4 → 7 → 15 → 30 → 60 → 120 → 240 天";
+  }
+
+  /**
+   * 把已有进度**换算**到新算法上（不清进度）。
+   *
+   * 这一步在切算法时做一次、且只做一次：已经把每条记录的状态换算成新模型的
+   * 落点（见 ReviewModels.adopt），之后新做的评价就按新模型算。
+   * 为什么不留给首页懒换算：用户换完算法可能先去看进度总览，
+   * 那时记录还挂着旧模型的状态，阶段名会说成旧模型的话。
+   *
+   * ⚠️ 换算**不动** nextReviewAt —— 「什么时候到期」是用户已经排好的事，
+   *    换一套算「以后怎么排」的公式，不该顺手把他今天的任务也挪了。
+   */
+  function adoptProgress(key) {
+    const RM = algoModels();
+    const S = window.Storage;
+    if (!RM || !S || !S.all || !S.setMany) return 0;
+    const all = S.all() || {};
+    const list = [];
+    Object.keys(all).forEach(function (id) {
+      const rec = all[id];
+      if (!rec || rec.algo === key) return;
+      list.push({ id: id, rec: RM.adopt(rec, key) });
+    });
+    if (list.length) S.setMany(list);
+    return list.length;
+  }
+
+  /** 换算法：写进设置，并把已有进度换算到新模型（不清零） */
+  function setAlgo(key) {
+    const RM = algoModels();
+    if (!RM || !RM.known(key) || key === settings.algo) {
+      renderAlgos();
+      return;
+    }
+    settings.algo = key;
+    saveSettings();
+    const n = adoptProgress(key);
+    renderAlgos();
+    const m = RM.describe(key);
+    showToast("复习算法已改为「" + m.name + "」" + (n ? "，已换算 " + n + " 篇的进度" : ""));
   }
 
   /* ---------------- 朗读播放（五档连读方式） ----------------
@@ -724,6 +822,15 @@
         const b = e.target.closest("button[data-play-mode]");
         if (!b) return;
         setPlayMode(b.dataset.playMode);
+      });
+    }
+
+    const algoBox = $("#seg-algo");
+    if (algoBox) {
+      algoBox.addEventListener("click", function (e) {
+        const b = e.target.closest("button[data-algo]");
+        if (!b) return;
+        setAlgo(b.dataset.algo);
       });
     }
 

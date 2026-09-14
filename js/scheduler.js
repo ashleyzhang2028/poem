@@ -58,8 +58,26 @@
     return startOfDay(fromTs || Date.now()) + days * DAY + 9 * 60 * 60 * 1000; // 当天 09:00 复习
   }
 
-  /** 记录一次复习结果 */
-  function review(rec, result) {
+  /**
+   * 记录一次复习结果。
+   *
+   * ⚠️ 从「可切换复习算法」那一轮起，这里**转交**给 js/review-models.js：
+   *    下一次什么时候复习，取决于用户选的是哪张模型（遗忘曲线 / Leitner /
+   *    SM-2 / FSRS 简化版，见该文件顶部的取舍说明）。本函数只留一条兜底 ——
+   *    页面没加载 review-models.js 时（例如只跑调度单测）行为与旧版逐条一致。
+   *
+   * `algo` 传当前选定的模型；不传则沿用记录自己记着的那个（旧记录没有就
+   * 取出厂默认「遗忘曲线」）。于是：
+   *   · 同一份进度在换模型后，**新复习的**按新模型算；
+   *   · 旧记录不会被静默改写 —— 换模型时的换算见 ReviewModels.adopt()。
+   *
+   * 掌握度 / 阶段名这些**展示口径**不在这里改（仍走 mastery() / levelName()），
+   * 否则同一份进度在首页与进度页会显示两个数。
+   */
+  function review(rec, result, algo) {
+    if (window.ReviewModels && typeof window.ReviewModels.review === "function") {
+      return window.ReviewModels.review(rec, result, algo);
+    }
     const r = rec ? JSON.parse(JSON.stringify(rec)) : createRecord();
     const now = Date.now();
 
@@ -99,7 +117,15 @@
     return rec.nextReviewAt <= (ts === undefined ? Date.now() : ts);
   }
 
-  /** 掌握度百分比（用于 UI 展示） */
+  /**
+   * 掌握度百分比（用于 UI 展示）。
+   *
+   * ⚠️ **换模型不改这把尺子**：它一直是「阶段号打底、遗忘次数扣分」，
+   * 而 `level` 是所有模型都在维护的公用字段（见 js/review-models.js 的
+   * adopt()：换模型时 level 原样保留）。所以进度页的掌握度分布在换模型后
+   * 仍然可比 —— 若这里按各模型自己的量（EF / S / 盒号）另算一套，
+   * 用户换个模型就会发现「掌握度」整片重排，那更像 bug 而不是功能。
+   */
   function mastery(rec) {
     if (!rec || !rec.learned) return 0;
     const denom = INTERVALS.length - 1;
@@ -108,8 +134,21 @@
     return Math.max(0, Math.min(100, Math.round(base - penalty + 5)));
   }
 
-  /** 阶段名称 */
-  function levelName(level) {
+  /**
+   * 阶段名称 —— 「这篇现在走到哪一步」。
+   *
+   * 出厂模型（遗忘曲线）下就是那张间隔表的读法：1天后 / 2天后 / ……。
+   * 换了模型则按**该模型自己的说法**给名字（Leitner 说「3 号盒」、
+   * SM-2 说「间隔 7 天 · 简易度 2.5」、FSRS 说「稳定 12.3 天」）——
+   * 否则用户选了 FSRS 却看到「15天后」这种遗忘曲线的档名，会以为没生效。
+   * 名字的取法在 js/review-models.js 里（各模型最清楚自己那几个量叫什么），
+   * 本函数只负责「没有模型层时退回旧的固定档名」。
+   */
+  function levelName(level, rec) {
+    if (rec && window.ReviewModels && window.ReviewModels.MODELS &&
+        rec.algo && rec.algo !== "ebbinghaus" && window.ReviewModels.MODELS[rec.algo]) {
+      return window.ReviewModels.MODELS[rec.algo].stageName(rec) || "学习中";
+    }
     const names = ["新学", "1天后", "2天后", "4天后", "7天后", "15天后", "30天后", "60天后", "120天后", "已牢固"];
     return names[Math.max(0, Math.min(level, names.length - 1))] || "新学";
   }
@@ -386,7 +425,9 @@
    *
    * @param {Array} poems  候选篇目（`{id}` 即可）
    * @param {Function} getRecord  id → 记忆档案
-   * @param {Object} [opt]  opt.days 日历天数（默认 14），opt.now 基准时间
+   * @param {Object} [opt]  opt.days 日历天数（默认 14），opt.now 基准时间，
+   *                         opt.algo 当前复习算法（决定「记忆阶段」那几档怎么说，
+   *                         见 js/review-models.js；缺省则说出厂算法的话）
    */
   function overview(poems, getRecord, opt) {
     const o = opt || {};
@@ -438,8 +479,18 @@
     });
 
     const levelCounts = [];
+    /* 档名：出厂算法就是那张间隔表的读法（1天后 / 2天后 / …）；
+       换了算法则说该算法的阶段名。**档位本身（i = 0..9）不变** ——
+       它是「连续记住几次」的通用刻度，换算法不该让分布图整片重排。 */
+    const algoName = window.ReviewModels
+      ? window.ReviewModels.MODELS[o.algo || ""]
+      : null;
     for (let i = 0; i < INTERVALS.length; i += 1) {
-      levelCounts.push({ level: i, name: levelName(i), count: 0 });
+      const nm = algoName
+        ? algoName.stageName({ level: i, box: i, learned: i > 0, interval: INTERVALS[i], ef: 2.5,
+          stability: INTERVALS[i] || 1, difficulty: 5 })
+        : levelName(i);
+      levelCounts.push({ level: i, name: nm, count: 0 });
     }
     levels.forEach(function (x) { levelCounts[x.level].count += 1; });
 
@@ -525,7 +576,12 @@
         level: Math.max(0, Math.min(rec.level, INTERVALS.length - 1)),
         mastery: mastery(rec),
         nextReviewAt: rec.nextReviewAt,
-        daysLeft: off
+        daysLeft: off,
+        /* 「这篇现在走到哪一步」要说得出各模型自己的说法（几号盒 / 间隔与 EF /
+           稳定与难度）—— 把档案原样带上，交给 levelName(level, rec) 判。
+           只带展示要用的那几个量，不整条扔过来（history 可能很长）。 */
+        stageName: levelName(rec.level, rec),
+        algo: rec.algo || null
       };
       if (off < -7) {
         backlog.push(item);

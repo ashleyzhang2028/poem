@@ -598,7 +598,7 @@
  *        （poems/index.html、js/poems.js、js/chrome.js、js/library.js、
  *          js/reader-core.js、library/index.html、sw.js、测试）
  *
- *        版本号按「并行 PR 一律 +5」的口径从 v83 起落到 v88。
+ *        版本号按「并行 PR 一律 +5」的口径从 v83 起落到 v88（#121 那笔已落在 v88）。
  *
  *   v93  自选背诵整块从首页搬进设置页，设置项按「这条设置管着谁」重新分类
  *        （Issue #114 第二、三条）。用户原话：
@@ -618,12 +618,14 @@
  *           才能把清单里每一篇的题名 / 作者 / 集子名画出来；
  *           五部集子那 4.4MB 仍不加载 —— 认不出的走加入时存的最小快照。
  *
- *        ② 设置分五组，顺序即分类：
+ *        ② 设置分五组，顺序即分类（并入 main 时与「复习算法」一组并存，
+ *           共六组）：
  *             通用     全站都吃（用户名、数据备份 / 清空）
  *             背诵     只决定「今天背哪几首」（学段 / 年级 / 学期 / 范围 /
  *                      数量 / 进度总览入口）—— 原「古诗词背诵」改名，
  *                      它本来就不只作用于古诗词
  *             我的清单  用户自己那份清单（自选背诵的增删改查）
+ *             复习算法  决定「下次什么时候复习」（四张模型 4 选 1，main 那笔）
  *             阅读辅助  打开一篇时看不看得到拼音
  *             朗读播放  连读时怎么念（五档档位）
  *           「我的清单」多了导入 / 导出用的纯文本对话框（.modal.text-modal，
@@ -633,9 +635,10 @@
  *          test/collections.test.js、test/theme.test.js、
  *          test/progress.test.js、README.md）
  *
- *        版本号按「并行 PR 一律 +5」的口径从 v88 起落到 v93。
+ *        版本号按「并行 PR 一律 +5」的口径从 v88 起落到 v93（main 那笔已占 v93，
+ *        并入时本条保持 v93 注释、CACHE_NAME 取 main 的 v98）。
  */
-const CACHE_NAME = "poem-app-v93";
+const CACHE_NAME = "poem-app-v98";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [
@@ -663,6 +666,9 @@ const PRECACHE = [
   "./js/speech.js",
   "./js/reader.js",
   "./js/storage.js",
+  // 复习调度算法（可切换）：遗忘曲线 / Leitner / SM-2 / FSRS 简化版。
+  // ⚠️ 须排在 scheduler.js 之前 —— scheduler.review() 一进来就转交给它。
+  "./js/review-models.js",
   "./js/scheduler.js",
   "./js/app.js",
   "./js/chrome.js",
