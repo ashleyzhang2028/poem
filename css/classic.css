@@ -1182,18 +1182,15 @@ body.reader-open .dock { display: none; }
       垂直中线上（top: 50% - 半行高），两者合起来就是「垂直居中」。
       「键盘弹出时贴顶」（.kb-open）因此只是在同一组数值上换一种摆法：
       height 交还给内容、顶到 padding-top 上去 —— 两个状态都精确，
-      不会因为搜索框长得高一点就少算 12px、把框的下沿送到键盘底下。
-   ⚠️ top: 50% 减去的那「半行高」就是 40px（--hero-box-h）：
-      搜索框在布局上仍是 40px 高（视觉上的 52px 是绘制层的放大，见下一条），
-      所以拿它当「盒高」来算，压出来的中线才与 hero 的中线重合。 */
+      不会因为搜索框长得高一点就少算 12px、把框的下沿送到键盘底下。 */
 .search-hero {
   /* 定位上下文：替身输入框与搜索框整行都压在它身上 */
   position: relative;
-  /* 这一页的搜索框比别处高：它是这一页唯一的主角（见下面的 .search-hero
-     .search-input），下面几个「不占位」的偏移都是按这个高度算的 */
+  /* 这一页的搜索框比别处高：它是这一页唯一的主角。
+     --hero-input-h 是它的**真实高度**（52px），--hero-box-h 是布局高度 ——
+     两者相等：高度就该长在布局里，见下面 .search-hero .search-toolbar 那条。 */
   --hero-input-h: 52px;
-  --hero-input-ph: 15px;
-  --hero-box-h: 40px;
+  --hero-box-h: 52px;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -1225,7 +1222,7 @@ body.reader-open .dock { display: none; }
 /* hero 里的搜索框不再跟任何横向控件并排，圆角仍是全站那一档 */
 .search-hero .search-wrap { flex: 1 1 auto; }
 /* ⚠️ .search-toolbar 自己必须带上层级：候选下拉的 z-index: 30 是**相对它**算的，
-   而 .search-wrap 因为下面那条 translateY 会新建一个层叠上下文 ——
+   而 .search-wrap 会建自己的层叠上下文（transform: translateY(-2px)），
    下拉的层级被关在这个上下文里，跟页面根层上的结果列表就成了「两套编号」，
    谁在上面全看渲染顺序，而结果列表在 DOM 里靠后、于是压过了下拉。
    抬整行（而不是抬 .search-wrap）：它没有 transform，不新建上下文，
@@ -1234,85 +1231,53 @@ body.reader-open .dock { display: none; }
    正层级（1）就够 —— 列表是 auto / 0，30 > 1 > 0，下拉稳稳在最上面。 */
 .search-hero .search-toolbar { z-index: 1; }
 
-/* 搜索框「增高」——但它不能长在 hero 的布局高度上
+/* 搜索框「增高」——但**不在绘制层动手脚**
    --------------------------------------------------------------------------
-   用户反馈：这一页以搜索为主，搜索框该再高一些（参考搜索首页的做法）。
-   40px 是「与一排按钮齐平」的工具栏高度，而这一页只有它一个控件，
-   没有别的东西需要跟它对齐 —— 52px 是有意**超出** iOS 上 44px 的最小可点面积，
-   手指落下去不容易点偏。
+   用户反馈：这一页以搜索为主，搜索框该再高一些；随后又反馈
+   「搜索框四个圆角不太正常，里面的 placeholder 文字有点压扁的感觉」——
+   后者正是前者的做法带来的。
 
-   ⚠️ 多出来的 12px 是**绘制**出来的，不是布局：scaleY(1.3) 把 40px 拉成 52px，
-      文档流里这一行仍按 40px 占位（--hero-box-h 的由来，见上一条）。
-      为什么不直接把 height 写成 52px：hero 的「垂直居中」与「键盘弹出时贴顶」
-      都要**精确**表示成「视口 − 顶栏 − 底栏」的算式 ——
-      搜索框一旦在布局上长高 12px，那一行的中线就偏了 6px，
-      键盘弹出时搜索框会被键盘压住一条。所以高度只长在绘制层。
-      （这一页只有它一个控件，多占 12px 的竖向空间也没有任何东西会被挤走。）
-   ⚠️ 放大之后，那一行的定位上下文也跟着偏了（放大中心在 50% 50%，
-      上下各溢出 6px），所以 .search-wrap 要往回挪半格（见下一条）。
-   ⚠️ 只对**搜索页**生效（选择器带 .search-hero 前缀）：
-     小古文等索引页的搜索框与「全部 / 未读」组合、连读圆键排成一行，
-     那里三样必须同高，不能跟着长。 */
-.search-hero .search-input {
-  transform: scaleY(1.3);
-}
-/* 放大后的定位基准回正：下拉的 top: calc(100% + …) 与输入框图标都相对
-   .search-wrap 算，而视觉上的框已经向上 / 下各溢出 6px（52 = 40 × 1.3）。
-   ⚠️ 这里**只写竖向的** -6px：横向一个字都不能写。
-     外层的 .search-toolbar 已经用 translateX(-50%) 把整行摆正了，
-     这一层再来一次 -50% 就会把搜索框整个推出屏幕左边（-182.5 × 2 = -365px）。
-     这个 bug 的现场很好认：输入框只露出右半截、左端留在屏幕外，
-     而它「明明」写着居中。 */
-.search-hero .search-wrap { transform: translateY(-6px); }
-/* 提示字：仍是辅助文字，比输入的文字小一档（12.5px），但随框一起放大。
-   原有的 translateY(-2.25px) 是「12.5px 的提示字坐在 16px 的基线上」的补偿；
-   本页的基线是 15px（hero 自己那一档），补偿量随之变为 -1.25px。 */
+   一、压扁是怎么来的
+      上一版把 40px 的框用 `transform: scaleY(1.3)` 拉到视觉 52px，
+      高度只长在**绘制层**、文档流里仍按 40px 占位。于是：
+        · 本来按 12px 圆角画出来的四个角，被纵向拉伸 1.3 倍 ——
+          上下两个角的竖向半径变成 15.6px、横向仍是 12px，**圆角成了椭圆**，
+          横向曲率比竖向曲率更「急」，四个角看着就不对了（用户说的
+          「圆角不太正常」）；
+        · 框里的文字（占位提示是绝对主角）跟着被纵向拉长，字形被压扁成
+          52/40 = 1.3 倍高；上一版还专门给提示字写了 -1.25px 的位移去补
+          基线差 —— 那是在给「拉伸」打补丁，字本身仍是变形的。
+      这种「先用 40px 画、再拉长」的做法还有一个隐性代价：框的视觉下沿
+      比定位上下文低 6px，候选下拉的 top 只能靠常量去追那个差值。
+
+   二、现在：52px 是真高度
+      `--toolbar-h: 52px`（只在本页覆写），border-radius 保持 `var(--radius-sm)`
+      这一个圆角值 —— 圆角不被拉伸，四个角就是同一个半径的圆弧；
+      字号也回到正常比例，不必再用位移 / 变形去凑垂直居中。
+      与之配套的三处数值一起改（都写在这条注释附近，免得日后走散）：
+        · --hero-box-h: 52px —— 居中的中线、候选下拉的定位基准；
+        · .search-wrap 的 translateY(-2px) —— 只把整行的圆心从「中线」挪到
+          「视觉中轴」，幅度是 2px（原来为拉伸补偿要挪 6px）；
+        · .suggest 的 top: calc(100% + 4px) —— 框底之下 4px。
+      为什么是 52px：它是「以搜索为主角」这一页的既有设计值（上一版的视觉高度
+      也是 52px），也是 iOS 建议的 44px 最小可点面积之上的一档。 */
+.search-hero .search-toolbar { --toolbar-h: 52px; }
+.search-hero .search-input { --toolbar-h: 52px; }
+/* 提示字：仍是辅助文字，比输入的文字小一档（13.5px）。
+   ⚠️ 不再需要任何 transform 修正 —— 框本身不再被拉伸，
+      浏览器按 15px 的字排基线，13.5px 的提示字落在同一条基线上，
+      视觉上就是居中的（真实浏览器里量出来偏差在 1px 内）。 */
 .search-hero .search-input::placeholder {
   font-size: 13.5px;
-  transform: translateY(-1.25px);
+  transform: none;
 }
+/* 定位基准回正：只挪竖向的 2px（横向一个字都不能写 ——
+   外层的 .search-toolbar 已经用 translateX(-50%) 把整行摆正了，
+   这一层再来一次 -50% 就会把搜索框整个推出屏幕左边）。 */
+.search-hero .search-wrap { transform: translateY(-2px); }
 
-/* 屏幕键盘：把整个搜索区顶到键盘上方，让候选下拉永远落在可视区里
-   --------------------------------------------------------------------------
-   iOS / 安卓的软件键盘是**覆盖**在页面上的，它不改变窗口大小：
-   页面照旧 100vh，只是下半截被键盘盖住。搜索框又正好在视口垂直居中处，
-   一动键盘它就被顶进键盘底下 —— 用户看到的候选下拉，正是被键盘盖住的那几行。
-
-   两条状态（js/search.js 的 syncKeyboardSpace 负责加类，这里只负责表现）：
-     1. .search-focus —— 输入框被聚焦（键盘弹出前的一瞬间也算）：整块贴到顶栏下方，
-                         免得先看到一个居中布局、键盘弹出后再跳一下。
-     2. .kb-open      —— 键盘确实弹出来了：同上，并把搜索区下方的留白压到最小，
-                         候选下拉与结果列表都在键盘上方这一片可视区里。
-   两者都只改竖向位置，不动颜色、不动横向宽度。
-
-   ⚠️ 贴顶的两个值互相配平：hero 交出高度（height: auto）之后，再给它
-      min-height: 56px + padding-top: 6px + 刘海 —— 56px 是「搜索框 40px
-      + 上下各 8px 的呼吸」，于是搜索框（绝对定位、top: 50% - 20px）
-      正好落在 min-height 撑出来的盒子里、距页顶约 62px，
-      在顶栏之下、又离页顶不远。
-      居中是「height = 视口 − 200px，框压在中线」，贴顶是「自己的高度 + 顶边距」，
-      两者都精确到像素，搜索框在两种状态里都是完整可见的。
-      若只写一个魔数，日后改 --hero-chrome 就会两处对不上。 */
-.search-hero.search-focus,
-.search-hero.kb-open {
-  justify-content: flex-start;
-  height: auto;
-  min-height: 56px;
-  padding-top: calc(6px + var(--safe-top));
-  padding-bottom: 8px;
-}
-
-/* 搜索说明：只在没输入关键词时出现的一行小字。
-   居中 —— 它与搜索框是同一条中轴上的「这一页能搜到什么」，
-   并不属于下面的结果列表（结果列表是左对齐的）。 */
-.search-hint {
-  margin: 0 0 14px;
-  font-size: 12.5px;
-  line-height: 1.8;
-  color: var(--ink-3);
-  text-align: center;
-}
-.search-hint[hidden] { display: none; }
+/* 搜索说明：这一行小字整段已撤（用户要求删除「输入篇名、作者或诗句……」）。
+   这里不再留 .search-hint 的样式死规则 —— 元素删了，规则也一起删。 */
 
 /* 搜索结果的条目内边距，收成与集子页一致（Issue #69 后续）----
    集子页的条目走 `.group-card .item { padding: 12px 8px 12px 12px }`，
@@ -1336,34 +1301,38 @@ body[data-nav="search"] #gw-list .item { padding: 14px 8px 14px 14px; }
    绝对定位在输入框正下方、与输入框同宽（left/right: 0）。
    背景与描边沿用卡片那一套；不用投影式的现代浮层感，
    只加一圈淡描边 + 极轻的一层阴影，够把它与列表区分开即可。
-   ⚠️ 视觉上贴不贴住输入框，由「top 的常量」与「框自己向下溢出的 6px」共同决定：
-     · top: calc(100% + 6px) —— 相对 .search-wrap 的那条视觉中轴，即框的下边缘；
-     · 框有 transform: scaleY(1.3)，向下溢出 6px、而定位上下文被
-       translateY(-6px) 拉回，于是「100%」处正是框底，再加 6px 才不重叠。
-   5px 的间隙：候选里第一条就是用户要找的那一篇，中间不该留出一段空白
+   ⚠️ 下拉「贴不贴住输入框」，由三条一起决定（缺一条就会有一条缝或一层叠字）：
+     · 定位上下文是 .search-wrap（它的盒子就是那 52px 的框）；
+     · .search-wrap 有 translateY(-2px)：整行（框 + 下拉）**一起**上移 2px ——
+       下拉相对框的位置因此不受影响，只是整组与「视觉中轴」对齐；
+     · top: calc(100% + 4px)：框底之下 4px。
+   4px 的间隙：候选里第一条就是用户要找的那一篇，中间不该留出一段空白
    （用户反馈「搜索候选列表离搜索框太远」，那说的正是输入框与候选之间的缝）。
-   间隙从 6px 收到 5px 后，视觉上就是「贴在框下沿」，但仍有 1px 的呼吸，
-   不会让人以为第一条候选是输入框的一部分。
+   ⚠️ 它不要写成 0 或负数：那会让第一条候选的底色连进输入框，
+      看着像输入框的一部分。
 
-   ⚠️ max-height 不再写死 320px：候选下拉有它**自己的可视区间**，
-      那就是「输入框下沿 → 键盘上沿」。写死 320px 在 iPhone 上会伸进键盘底下
-      —— 用户看到 6 条就以为是全部，其实第 7、8 条被键盘盖住了。
-      现在用 min(可视高度, 需要的高度)：键盘弹着就只占键盘上方那片地方，
-      没有键盘（桌面 / 平板）时上限是视口的 60%，最多仍只列出 SUGGEST_MAX=8 条。
-      --kb-space 由 js/search.js 实测写入（没有键盘时是 0），
-      86px 是「hero 顶部 > 输入框下沿」的那一段（见上面的 .kb-open 算式）。
-   ⚠️ z-index 要压过列表（列表没有 z-index，同一层流里后来者在上），
-      但要低于底部页签（65）与阅读器（.reader fixed）。
-      30 这个值落在两者之间：候选不会跑到页签上面，也不会被列表盖住。
-   ⚠️ 它必须与父元素 .search-toolbar 的 z-index 配合才生效：
-      30 只在这个**层叠上下文内部**有意义，而 .search-wrap 的 translateY
-      新建了一层上下文，若整行没有自己的 z-index，下拉就会被
-      「层级更高但顺序里靠后的结果列表」压住（详见上面 .search-toolbar 那条）。 */
+   ⚠️ max-height 有三项，取最小者（可读性优先，不是「写死多少条」）：
+       1. 400px —— 桌面 / 平板上「8 条候选」的大致高度（44px × 8 + 边框），
+          即「最多列出 SUGGEST_MAX=8 条」在设计上的上限；
+       2. 60%（60vh / 60svh）—— 让候选**永远给下面的内容（结果卡片列表）
+          留出可见的一片**。键盘弹着时尤其要紧：手机可视区本就只剩一半，
+          候选若一路铺到键盘上沿，用户既看不到候选下面还有结果卡片，
+          也没有地方可以点一下把下拉收起来（用户反馈「也需要预留空间让用户
+          关闭下拉框，然后去点击搜索到的卡片列表」）。
+          ⚠️ 这里用的是 60% 而不是 80%：可视区只剩 516px 时，
+            80% 是 413px —— 候选照样铺满，与「不留空间」没有区别。
+            60% 把手机上的候选收在 6 条以内，下拉下面留出四成可视区。
+       3. 可视区 − 键盘 − 框下沿到页顶的那一段（86px）—— 这是**硬边界**：
+          候选绝不能伸进键盘底下（用户反馈的「下拉框下面几条被键盘覆盖了」）。
+          键盘弹着时这一项通常最小，于是候选的实际高度就是「键盘上方那片地方」。
+     三项都用 min() 取小，比写死一个 320px 准 —— 写死的高度在 iPhone 上
+     会伸进键盘底下：用户看到 6 条就以为是全部，其实第 7、8 条被键盘盖住了。
+     --kb-space 由 js/search.js 实测写入（没有键盘时是 0）。 */
 .suggest {
   position: absolute;
   left: 0;
   right: 0;
-  top: calc(100% + 5px);
+  top: calc(100% + 4px);
   z-index: 30;
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
@@ -1374,15 +1343,20 @@ body[data-nav="search"] #gw-list .item { padding: 14px 8px 14px 14px; }
      下层的结果列表会整段透上来，候选篇名与结果篇名叠在一起，
      看起来像文字花了。这里取 --card 的实色底：同一张纸，不透明。 */
   background: #fffefa;
-  max-height: calc(60vh - 24px);
+  max-height: 400px;
   max-height: min(
-    calc(60svh - 24px),
+    400px,
+    60vh,
+    60svh,
     calc(100svh - var(--kb-space, 0px) - 86px)
   );
   overflow-y: auto;
-  /* 候选与输入框之间不留视觉缝：间隙已在 top 里给过（5px），
-     这里再加 6px 的上外边距只会让它看着悬空 */
+  /* 候选与输入框之间不留视觉缝：间隙已在 top 里给过（4px），
+     这里再加外边距只会让它看着悬空 */
   margin-top: 0;
+  /* iOS 拖动候选时带一点「跟手」的惯性，滚动到底会露白而不是回弹整块 */
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 .suggest[hidden] { display: none; }
 .suggest-item {
@@ -1394,7 +1368,7 @@ body[data-nav="search"] #gw-list .item { padding: 14px 8px 14px 14px; }
   align-items: baseline;
   justify-content: space-between;
   gap: 10px;
-  /* 候选行也随「以搜索为主」一起抬高：48px 上下，
+  /* 候选行也随「以搜索为主」一起抬高：44px 上下，
      手指（iOS 建议 44px）与鼠标都够得着，8 条以内仍是紧凑的一列 */
   min-height: 44px;
   padding: 12px 14px;
@@ -1433,9 +1407,54 @@ body[data-nav="search"] #gw-list .item { padding: 14px 8px 14px 14px; }
   color: var(--green);
   font-weight: 600;
 }
+/* 窄屏（≤700px）：候选列表在手机上再收一档。
+   --------------------------------------------------------------------------
+   手机的可视区本来就只够「搜索框 + 几条候选 + 几条结果卡片」，
+   40% 是留给「下拉下面那片可见的结果区」的硬指标（用户要求能关掉下拉、
+   再去点结果卡片）。40vh 与 40svh 都写：老内核不认 svh 时用 vh 兜底。 */
+@media screen and (max-width: 700px) {
+  .suggest {
+    max-height: min(
+      400px,
+      40vh,
+      40svh,
+      calc(100svh - var(--kb-space, 0px) - 86px)
+    );
+  }
+}
 
-/* 搜索页的空态：与结果列表一样左对齐（见 js/search.js 的 syncKeyboardSpace
-   对 .empty 的处理），不再是一段居中的说明文字孤零零挂在页面中间 */
+/* 搜索页的空态
+   --------------------------------------------------------------------------
+   两条口径，按 js/search.js 写在节点上的 data-empty 分：
+     · data-empty="idle"（还没输入关键词）—— **一个字都不显示**。
+       用户要求删掉「输入篇名、作者或诗句，即可搜遍六部集子」这一句：
+       空列表就是空列表。这里只留一段**留白**（桌面 44px、手机 8px），
+       理由是列表容器若完全没有高度，桌面端搜索框下方塌成一片，
+       看着像这一页没加载完；留一小段，页面「下半截」仍在，只是不出声。
+       ⚠️ 不走 display: none：段落还是要占一点高度（见上），
+          而且被 display: none 掉的节点日后想恢复文案得连样式一起改回来。
+     · data-empty="miss"（输入了但没命中）—— 正常显示「没有找到匹配的篇目」，
+       与结果列表一样左对齐（不再是一段居中的说明文字孤零零挂在页面中间）。 */
+body[data-nav="search"] #gw-list .empty[data-empty="idle"] {
+  font-size: 0;
+  line-height: 0;
+  padding: 0;
+  height: 44px;
+  overflow: hidden;
+  color: transparent;
+  user-select: none;
+}
+/* 手机把这段留白收到最小：可视区本来就只有一半，每一像素都留给候选与结果 */
+@media screen and (max-width: 700px) {
+  body[data-nav="search"] #gw-list .empty[data-empty="idle"] { height: 8px; }
+}
+/* 键盘弹着 / 输入框有焦点时，连这 8px 也不要 —— 这一刻列表区里
+   要么是候选下方的结果卡片，要么就真的空着，没有「过渡留白」的位置 */
+body[data-nav="search"] .search-hero.kb-open ~ #gw-list .empty[data-empty="idle"],
+body[data-nav="search"] .search-hero.search-focus ~ #gw-list .empty[data-empty="idle"] {
+  height: 0;
+}
+/* 空态（无论哪种）与结果列表一样左对齐 */
 #gw-list .search-empty {
   text-align: left;
   padding: 6px 2px 0;
@@ -1443,6 +1462,8 @@ body[data-nav="search"] #gw-list .item { padding: 14px 8px 14px 14px; }
   line-height: 1.9;
   color: var(--ink-3);
 }
+/* idle 那一支上面已把字号归零、内边距归零，别被这条通用左对齐规则顶回来 */
+body[data-nav="search"] #gw-list .empty[data-empty="idle"] { padding: 0; }
 
 /* ---------------- 课外阅读入口页 ---------------- */
 /* 这一页的说明文字已挪进顶栏第二行（body 的 data-sub，由 js/chrome.js 渲染）——

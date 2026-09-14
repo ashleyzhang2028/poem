@@ -358,8 +358,26 @@
  *          data/site-index.js、data/canonical-texts.js、js/reader-core.js、
  *          scripts/build-text-master.js、scripts/apply-text-master.js、
  *          test/master-env.js、test/*.test.js、七处页面 HTML）
+ *   v60  搜索页的四条体验修正（Issue #69 后续·再续）：
+ *        ① 搜索框「增高」改走**真实高度**（52px），不再用 transform: scaleY(1.3)
+ *           把 40px 拉到视觉 52px —— 那会把 12px 的圆角纵向拉伸成椭圆角、
+ *           把 placeholder 的字形压扁（用户反馈的「四个圆角不太正常、
+ *           placeholder 有点压扁」正是这一处）；配套把 hero 的 --hero-box-h
+ *           由 40px 改成 52px（居中的中线）、.search-wrap 的位移由 6px 收到 2px、
+ *           候选下拉的 top 由 5px 改 4px；
+ *        ② 没输入关键词时那段说明（「输入篇名、作者或诗句，即可搜遍六部集子」）
+ *           整段撤掉：空列表就是空列表，只留一小段留白（桌面 44px / 手机 8px），
+ *           节点仍留着并被标成 data-empty="idle"（读屏与「没找到」那一支仍可用）；
+ *        ③ 候选下拉限高改成三项取最小：400px（8 条的上限）、可视区的四成
+ *           （手机；桌面六成）—— 给下方结果卡片留出可见的一片、
+ *           可视区 − 键盘 − 86px（硬边界，绝不伸进键盘底下）；
+ *           每换一次关键词把下拉滚回顶部；
+ *        ④ 补两条「把下拉收起来」的路：滚结果列表即收（140ms 延迟越过手指抖动）、
+ *           候选挂着时点结果区先收那一下且不穿过浮层开篇（关键词与结果都留着）
+ *        （js/search.js、css/classic.css、test/search.test.js、
+ *          test/pwa.test.js、README.md、sw.js）
  */
-const CACHE_NAME = "poem-app-v59";
+const CACHE_NAME = "poem-app-v60";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [

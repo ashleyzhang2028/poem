@@ -183,9 +183,22 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   }).length;
   chk(api.total() === 0, '没输入关键词时实例里没有篇目（实际 ' + api.total() + '）');
   chk(d.querySelectorAll('#gw-list .item').length === 0, '没输入关键词时列表里一条都不列');
-  chk(d.querySelector('#gw-list .textContent') === null &&
-    /输入篇名、作者或诗句/.test(d.querySelector('#gw-list').textContent),
-    '空列表给的是「敲几个字就能搜」，不是「没有找到匹配的篇目」');
+  // 用户要求删掉「输入篇名、作者或诗句，即可搜遍六部集子」这段文字：
+  // 空列表**一个字都不显示**（视觉上只剩一段留白，见 css/classic.css 的
+  // `#gw-list .empty[data-empty="idle"]`）。
+  // 这里守两层：
+  //   ① 节点仍在、且被标成 idle —— 它是列表容器的状态位，清空后还要能被替换；
+  //   ② 文本里**不能**出现那句已撤的引导语，也**不能**是「没有找到匹配的篇目」
+  //      （后者只在「输入过但没命中」时才允许出现）。
+  const idleEmpty = d.querySelector('#gw-list .empty');
+  chk(!!idleEmpty && idleEmpty.dataset.empty === 'idle',
+    '空列表的 .empty 被标成 idle（没输入关键词）');
+  chk(idleEmpty.textContent.trim() === '',
+    '没输入时列表里**不显示**任何引导文字（那段「输入篇名、作者或诗句…」已撤，实际「' +
+    idleEmpty.textContent.trim() + '」）');
+  chk(!/输入篇名、作者或诗句/.test(d.querySelector('#gw-list').textContent) &&
+    !/没有找到匹配的篇目/.test(d.querySelector('#gw-list').textContent),
+    '空列表现场既没有旧的引导语，也没有误报「没有找到匹配的篇目」');
   chk(d.querySelector('#gw-count').textContent === '0 / 0 篇',
     '顶部进度牌跟着是 0 / 0 篇（实际 ' + d.querySelector('#gw-count').textContent + '）');
   chk(!d.querySelector('#gw-filter-seg'), '搜索框右侧的「全部 / 未读」整栏已删除');
@@ -365,8 +378,10 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   type('');
   await sleep(30);
   chk(d.querySelectorAll('#gw-list .item').length === 0, '清空输入后列表里一条都不留');
-  chk(/输入篇名、作者或诗句/.test(d.querySelector('#gw-list').textContent),
-    '空列表又回到「敲几个字就能搜」的引导语');
+  const emptyAfter = d.querySelector('#gw-list .empty');
+  chk(!!emptyAfter && emptyAfter.dataset.empty === 'idle' &&
+    emptyAfter.textContent.trim() === '',
+    '空列表又回到「不写字」的 idle 空态（不是停在「没有找到匹配的篇目」上）');
   chk(w.SiteSearch.keyword() === '', 'SiteSearch.keyword() 为空（没有残留关键词）');
 
   // 一次只敲一个字的「重活」：全站命中不会把列表撑到上千条后再也不收
@@ -416,6 +431,10 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   /* ---------- 七、搜索页的结构与样式（源码级防线） ---------- */
   const searchHtml = read('search/index.html');
   const classicCss = read('css/classic.css');
+  // ⚠️ 样式断言一律拿**剥掉注释**的正文来判：
+  //    本仓库的 CSS 注释里大量引用旧写法（「上一版是 scaleY(1.3)」这类），
+  //    直接对整张表做正则会命中说明文字，把已经改对的东西判成没改。
+  const cssCode = classicCss.replace(/\/\*[\s\S]*?\*\//g, ' ');
   // 搜索框整块居中：HTML 里只有它一个（.search-hero），CSS 走 flex 居中 +
   // 视口高度减去顶栏与底栏 —— 「垂直 + 水平居中」是这条规则的唯一来源
   chk(/class="search-hero"/.test(searchHtml),
@@ -429,7 +448,9 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   // 2026 这一版把 hero 的 min-height 换成了 height：搜索框（绝对定位）
   // 不产生内容高度，hero 必须自己拿着那段高度，才谈得上「居中」。
   const heroBlock = /(?:^|\n)\.search-hero \{([\s\S]*?)\}/.exec(classicCss);
-  const heroMid = /--hero-box-h:\s*40px/.test(classicCss);
+  // 2026 这一版：搜索框「增高」改成**真实高度**（52px，不再用 scaleY 拉伸绘制层），
+  // 于是布局高度与视觉高度一致，半盒高就是 26px。
+  const heroMid = /--hero-box-h:\s*52px/.test(classicCss);
   const heroCenter = /justify-content:\s*center/.test(classicCss) &&
     /top:\s*50%/.test(classicCss) &&
     /margin-top:\s*calc\(var\(--hero-box-h\) \/ -2\)/.test(classicCss);
@@ -451,14 +472,27 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
      真正的验证在 test/pwa.test.js（真浏览器量渲染后的盒子），
      这里守的是源码级的几道防线 —— 改动不依赖某个数字，而是依赖一组关系。 */
   const heroFocus = doc => doc;
-  // ① 搜索框增高：只对搜索页生效，且不能长在 hero 的布局高度上
-  chk(/\.search-hero \.search-input\s*\{[^}]*transform:\s*scaleY\(1\.3\)/.test(classicCss),
-    '搜索页搜索框在绘制层放大到 52px（布局仍是 40px，「居中算式」才不会被带偏）');
+  // ① 搜索框增高：走**真实高度**，不再用 transform 拉伸
+  //    （拉伸会把 12px 的圆角压成椭圆、把提示字纵向拉长 —— 用户反馈的
+  //      「四个圆角不太正常 / placeholder 有点压扁」正是它）
+  chk(!/transform:\s*scaleY/.test(cssCode),
+    '全站不再用 scaleY 在绘制层拉伸任何控件（圆角与字形都不再被压扁）');
+  chk(/\.search-hero \.search-toolbar \{[^}]*--toolbar-h:\s*52px/.test(classicCss) ||
+    /\.search-hero \.search-input \{[^}]*--toolbar-h:\s*52px/.test(classicCss),
+    '搜索页把工具栏行高覆写为 52px（搜索框的真实高度，只对本页生效）');
   chk(!/(?:^|\n)\.search-input\s*\{[^}]*height:\s*5[0-9]px/.test(classicCss),
-    '增高只走 transform：没有把 .search-input 的 height 改成 52px（那会连带改掉索引页）');
+    '增高只发生在搜索页：全站的 .search-input 高度仍走 --toolbar-h（索引页那一排不许跟着长）');
+  // 圆角必须仍是同一个变量：四个角就是同一个半径的圆弧，没有被单独拉伸过
+  chk(/\.search-hero \.search-input\s*\{[^}]*border-radius:\s*var\(--radius-sm\)/.test(classicCss) ||
+    /(?:^|\n)\.search-input \{[^}]*border-radius:\s*var\(--radius-sm\)/.test(classicCss),
+    '搜索页搜索框的圆角仍是 var(--radius-sm) 一个值（四个角同半径，不再是椭圆角）');
+  chk(!/\.search-hero \.search-input\s*\{[^}]*border-radius:\s*[^;}]*(\/|px)/.test(classicCss),
+    '没有给搜索页的搜索框单独写「横 / 竖两个半径」的圆角（那正是椭圆角的写法）');
+  chk(/\.search-hero \.search-input::placeholder \{[^}]*transform:\s*none/.test(classicCss),
+    '提示字不再需要位移补偿（框不拉伸了，字落在同一条基线上）');
   // ② 候选下拉贴住搜索框 / 不透明度 / 层级
-  chk(/\.suggest \{[^}]*top:\s*calc\(100% \+ 5px\)/.test(classicCss),
-    '候选下拉只留 5px 间隙（用户反馈的「离搜索框太远」的反面）');
+  chk(/\.suggest \{[^}]*top:\s*calc\(100% \+ 4px\)/.test(classicCss),
+    '候选下拉只留 4px 间隙（用户反馈的「离搜索框太远」的反面）');
   chk(/\.suggest \{[^}]*background:\s*#fffefa/.test(classicCss),
     '候选下拉用不透明底色（--card 只有 90% 不透明，浮层会让结果列表透上来）');
   chk(/--kb-space/.test(classicCss) && /max-height:\s*min\(/.test(classicCss),
@@ -481,6 +515,69 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     '拿不到焦点，iOS 就不会弹键盘）');
   chk(/alignEmptyState/.test(searchJs) && /#gw-list \.search-empty/.test(classicCss),
     '空态与结果列表左对齐（搜索框在左、列表也在左，空态不该孤零零居中在页面中间）');
+
+  /* ---------- 七之三、这一轮的三条机上反馈（Issue #69 后续·再续）----------
+     用户在机上又提了三件事，逐条落到源码层面各守一道：
+       ① 搜索框四个圆角不正常、placeholder 压扁 → 增高不再用 scaleY 拉伸；
+       ② 「输入篇名、作者或诗句，即可搜遍六部集子」这段删掉 → 空态不写字；
+       ③ 下拉下面几条被键盘盖住 + 要能关掉下拉去点结果卡片 → 高度三重约束。
+     真正量渲染后盒子的是 test/pwa.test.js，这里守的是「改动依赖哪一组关系」。 */
+
+  // ① 圆角与字形：见上面「增高走真实高度」那几条 —— 再补一道「圆角不被单侧拉伸」的防线。
+  //    椭圆角的写法是 `border-radius: 12px / 15.6px` 或 `border-radius: 12px 12px`，
+  //    两者都出现在横 / 竖半径分开给的场合；这里确认搜索页没有这类声明。
+  const heroInputBlock = (/\.search-hero \.search-input \{([^}]*)\}/.exec(cssCode) || ['', ''])[1];
+  chk(!/border-radius:[^;}]*\//.test(heroInputBlock),
+    '搜索页搜索框没有「横半径 / 竖半径」两个值的圆角（那是椭圆角）');
+  chk(!/scaleY|rotateX/.test(heroInputBlock),
+    '搜索页搜索框不在绘制层做纵向量变（圆角与字形都不再被压扁）');
+
+  // ② 空态不写字：JS 侧「没输入时不写文案」+ CSS 侧「idle 那一支不显示文字」
+  chk(/data-empty/.test(searchJs) && /EMPTY_MISS/.test(searchJs),
+    'js/search.js 用 data-empty 区分两种空态（idle 不写字、miss 才报「没找到」）');
+  chk(/empty\.textContent = q \? EMPTY_MISS : ""/.test(searchJs),
+    '没输入关键词时列表里**不写任何文字**（那段引导语已按用户要求撤掉）');
+  chk(!/search-hero\.search-focus ~ #gw-list|#search-hint/.test(searchHtml),
+    '页面上没有任何说明文字元素残留（#search-hint 与其显隐逻辑都已删除）');
+  const idleBlock = (/body\[data-nav="search"\] #gw-list \.empty\[data-empty="idle"\] \{([^}]*)\}/.exec(cssCode) || ['', ''])[1];
+  chk(!!idleBlock && /font-size:\s*0/.test(idleBlock) && /height:\s*\d+px/.test(idleBlock) &&
+    !/display:\s*none/.test(idleBlock),
+    'idle 空态在样式里是「不写字 + 留一段高度」（不是 display: none：节点要留给下一次渲染）');
+  chk(/#gw-list \.empty\[data-empty="miss"\]/.test(cssCode) === false &&
+    /#gw-list \.search-empty/.test(cssCode),
+    '「没找到」那一支走通用的 .search-empty 左对齐，没有再单开一套');
+
+  // ③ 下拉的高度：三重约束（400px / 可视区的四成 / 键盘上沿）
+  const suggestBlock = (/(?:^|\n)\.suggest \{([^}]*)\}/.exec(cssCode) || ['', ''])[1];
+  chk(/max-height:\s*min\(/.test(suggestBlock),
+    '候选下拉的高度用 min() 取三项里最小者（不是一个写死的高度）');
+  chk(/400px/.test(suggestBlock) && /60svh|60vh/.test(suggestBlock) &&
+    /--kb-space/.test(suggestBlock),
+    '三项分别是：8 条候选的上限 400px、可视区的六成（给结果卡片留地方）、' +
+    '可视区 − 键盘（硬边界，绝不伸到键盘底下）');
+  const suggestNarrow = (/@media screen and \(max-width: 700px\) \{\s*\.suggest \{([^}]*)\}/.exec(cssCode) || ['', ''])[1];
+  chk(/40svh|40vh/.test(suggestNarrow) && /--kb-space/.test(suggestNarrow),
+    '手机上候选只占可视区四成（键盘弹着时更要紧：下拉下面那几成就是结果卡片）');
+
+  // 下拉可滚动：条数被限住之后，剩下的要靠滚动看，滚动位置每次换关键词都回到顶部
+  chk(/overflow-y:\s*auto/.test(suggestBlock) && /box\.scrollTop = 0/.test(searchJs),
+    '候选下拉可滚动，且每换一次关键词回到顶部（新关键词的第一条不能停在中间）');
+  // ④ 「怎么把下拉关掉」不能只留 Escape / 退输入 / blur 三条触屏上会落空的路：
+  //     滚结果列表 → 收；点结果区 → 先收且不穿过去开篇
+  chk(/bindSuggestDismiss/.test(searchJs) && /addEventListener\("scroll"/.test(searchJs),
+    '手指开始滚结果列表就收起候选下拉（滚 = 用户已经在看下面的东西了）');
+  chk(/e\.stopPropagation\(\);[\s\S]{0,80}e\.preventDefault\(\)/.test(searchJs),
+    '候选还挂着时点结果区：先收起下拉，并吃掉这一下（不许穿过浮层直接开一篇）');
+  chk(/if \(!box \|\| box\.hidden\) return;/.test(searchJs.split('function bindSuggestDismiss')[1] || ''),
+    '平时点结果卡片仍是**一下就进**（只有下拉真的挂着时才拦那一下）');
+  const rowBlock = (/(?:^|\n)\.suggest-item \{([^}]*)\}/.exec(cssCode) || ['', ''])[1];
+  chk(/min-height:\s*44px/.test(rowBlock),
+    '候选行高不低于 iOS 建议的 44px（「少露几条」只能靠限高 + 滚动，不许压行高 —— ' +
+    '把行高压到 30px 同样能多塞几条，代价是点不准）');
+  // 候选的「最多 8 条」是结果集的口径（SUGGEST_MAX），不是高度公式推出来的：
+  // 高度受限时靠滚动看全，而不是悄悄少给几条
+  chk(/SUGGEST_MAX\s*=\s*8/.test(searchJs),
+    '候选最多 8 条仍是结果集的口径（限高只影响「一次看得见几条」，不影响「给几条」）');
 
   /* ---------- 八、法务页与设置页的口径一致 ---------- */
   chk(read('js/chrome.js').indexOf('古诗词') === -1 ||
