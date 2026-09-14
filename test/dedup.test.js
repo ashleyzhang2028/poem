@@ -338,7 +338,7 @@ chk(uncov.length === 0,
 /* ⚠️ 主表里的条目除了判重表认的，还有「**全量收归的部**」的单篇：
    那是按部推进（Issue #69）把整个集子的正文都搬进主表的，与判重无关。
    口径与 scripts/build-text-master.js 的 FULL_BOOKS 一致。 */
-const FULL_BOOKS = ['zhaoming', 'guwen', 'songci'];
+const FULL_BOOKS = ['zhaoming', 'guwen', 'songci', 'tangshi'];
 const inFullBooks = e => FULL_BOOKS.some(b => e.indexOf(b + '-') === 0);
 const masterInGroups = [];
 Object.keys(masterEntries).forEach(e => {
