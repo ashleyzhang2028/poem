@@ -233,8 +233,15 @@
  *        解析报 SyntaxError，Service Worker 从不注册，离线能力静默失效
  *        （data/poems-3|4|5|7|11|12.js、data/works-map.js、data/works-index.js、
  *         test/dedup.test.js、sw.js）
+ *   v48  昭明文选「赋批」内容补齐（Issue #69 后续）：49 篇赋的白话译文
+ *        补入 data/poems-zhaoming.js（赋类 56 篇至此全部有译文，全书译文
+ *        29 → 78 篇，「待补」由 451 → 402）；站点总索引、README 与
+ *        相关测试的计数随之更新
+ *        （data/poems-zhaoming.js、data/site-index.js、README.md、
+ *         test/zhaoming.test.js、sw.js）
  */
-const CACHE_NAME = "poem-app-v47";
+
+const CACHE_NAME = "poem-app-v48";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [

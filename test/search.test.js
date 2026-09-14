@@ -74,7 +74,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   const books = [sandbox.POEMS_CLASSIC, sandbox.POEMS_TANGSHI, sandbox.POEMS_SONGCI,
     sandbox.POEMS_GUWEN, sandbox.POEMS_ZHAOMING];
   const BOOK_IDS = ['classic', 'tangshi', 'songci', 'guwen', 'zhaoming'];
-  // 昭明文选只把**有译文的** 29 篇收进索引，其余标「待补」的按约定不进
+  // 昭明文选只把**有译文的**那些收进索引（目前 78 篇），其余标「待补」的按约定不进
   // （见 data/site-index.js）；所以它按 zhaomingDoneCount() 算，不是全量 480
   const zmIndexed = books[4].filter(p => p.text && p.translation).length;
 
@@ -111,7 +111,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     '五张卡各指到自己的索引页（实际 ' + cards.map(c => c.getAttribute('href')).join(' ') + '）');
   // 篇数与总索引一致（不写死数字：日后增补篇目，卡片跟着变）
   // ⚠️ 卡片上那个数字数的是各集子**自己的数据**，不是搜索索引 ——
-  // 索引按约定不收「待补」条目（昭明文选只有 29 篇有译文），拿索引来数
+  // 索引按约定不收「待补」条目（昭明文选目前 78 篇有译文），拿索引来数
   // 会显示「昭明文选 29 篇」而点进去有 480 篇。见 js/library.js 的 countOf()。
   const CARD_VARS = { classic: 'POEMS_CLASSIC', tangshi: 'POEMS_TANGSHI',
     songci: 'POEMS_SONGCI', guwen: 'POEMS_GUWEN', zhaoming: 'POEMS_ZHAOMING' };
