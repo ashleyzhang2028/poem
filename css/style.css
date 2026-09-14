@@ -804,6 +804,21 @@ body.no-dock .modal-box { max-height: 88vh; }
   flex-direction: column;
   gap: 8px;
 }
+/* 「复习算法」那一栏（Issue #114）：与五档连读方式共用同一套卡片式单选样式，
+   只在宽屏下排成两列 —— 四张模型每张都带一行年份与取舍，窄屏一行一档，
+   平板 / 桌面一行两档更省纵向空间，也不至于让每张的说明被挤成两行以上。
+   注：这一栏的按钮类名里带 .algo-opt（与 .play-mode-opt 并用），
+   两栏各自成组、选中的判定互不干扰。 */
+@media (min-width: 560px) {
+  #seg-algo {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  #seg-algo .algo-opt {
+    flex: 1 1 calc(50% - 4px);
+    min-width: 200px;
+  }
+}
 .play-mode-opt {
   display: flex;
   flex-direction: column;

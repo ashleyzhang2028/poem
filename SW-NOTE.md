@@ -49,6 +49,24 @@
 每一版改了什么都记在这里（原先写在 `sw.js` 顶部注释块里）。
 
 ```
+  v108 背诵算法与复习算法两层合并为一层（Issue #114 · 解冲突）：
+       #118「背诵算法可切换」（js/srs.js + 设置页「背诵算法」一栏）与
+       #121「复习算法可切换」（js/review-models.js + 设置页「复习算法」一组）
+       是同一需求的两次实现，撞在一起。并入 main 后**统一走
+       js/review-models.js 那一套**，理由是它这一层已经交代清楚：
+         · 四张模型（遗忘曲线 / Leitner / SM-2 / FSRS 简化版）齐备，
+           各自的年份 / 出处 / 取舍都写在模型定义里；
+         · SM-17~SM-20 闭源不做、HLR 并进 FSRS 的 S，缘由照实写明；
+         · 换模型不清进度（adopt() 按最接近的落点换算，不动 nextReviewAt）；
+         · 设置页那一组「换算法会不会清零」的原话说明，用户更看得懂。
+       js/srs.js 与 test/srs.test.js 随之删除（不再有两套算法口径各说各话）；
+       js/scheduler.js 的算法层改读 ReviewModels（间隔表 / 档名 / 阶段数），
+       js/app.js 的顶栏副标题、缓存键、正文说法也一并走 ReviewModels。
+       版本号按「并行 PR 一律 +5」的口径从 v103 起落到 v108。
+       （sw.js、js/review-models.js、js/scheduler.js、js/app.js、js/settings.js、
+         js/progress.js、js/chrome.js、index.html、settings/index.html、
+         progress/index.html、test/run.sh、README.md）
+
   v103 sw.js 去掉全部注释，并禁止再加（Issue #114 · 用户要求）：
        用户原话「去除 sw.js 中的所有注释，以后也禁止添加」。
        原先 sw.js 顶部挂着 675 行的注释块（维护约定 + 从 v45 起的逐版沿革）——

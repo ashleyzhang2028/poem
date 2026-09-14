@@ -640,7 +640,7 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
     chk(sd.localStorage.getItem('poem_play_mode_v1') === 'shuffle-origin',
       '设置页选档写进 poem_play_mode_v1（与圆键菜单同一个键）');
     chk(sdoc.querySelector('.play-mode-opt[data-play-mode="shuffle-origin"]').classList.contains('active') &&
-      sdoc.querySelectorAll('.play-mode-opt.active').length === 1,
+      sdoc.querySelectorAll('#seg-play .play-mode-opt.active').length === 1,
       '选中态立刻跟着走，且仍只有一个');
     chk(/当前：原文 · 随机/.test(sdoc.querySelector('#play-hint').textContent),
       '回显也跟着变（' + sdoc.querySelector('#play-hint').textContent + '）');
@@ -665,10 +665,10 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
     // 也就是说「显示的就是引擎真正会用的那一档」。
     const sd3 = boot('settings/index.html', { poem_play_mode_v1: 'no-such-mode' });
     await sleep(200);
-    chk(sd3.document.querySelectorAll('.play-mode-opt[aria-checked="true"]').length === 1 &&
-      sd3.document.querySelector('.play-mode-opt.active').dataset.playMode === 'seq-origin',
+    chk(sd3.document.querySelectorAll('#seg-play .play-mode-opt[aria-checked="true"]').length === 1 &&
+      sd3.document.querySelector('#seg-play .play-mode-opt.active').dataset.playMode === 'seq-origin',
       '本机值不认识时选中项落在出厂档上（显示的就是引擎真正会用的那一档）');
-    chk(![...sd3.document.querySelectorAll('.play-mode-opt')].some(b => b.dataset.playMode === 'no-such-mode'),
+    chk(![...sd3.document.querySelectorAll('#seg-play .play-mode-opt')].some(b => b.dataset.playMode === 'no-such-mode'),
       '那个野生值不会出现在选项里（它是本机脏数据，不是一档模式）');
     chk(/当前：原文 · 顺序/.test(sd3.document.querySelector('#play-hint').textContent),
       '本机值不认识时回显出厂档「原文 · 顺序」（实际「' + sd3.document.querySelector('#play-hint').textContent + '」）');
