@@ -222,15 +222,13 @@ window.POEMS_4 = [
     translationSource: "school",
   },
   {
+    textRef: "poems-xx4-23",
     id: "xx4-23",
     title: "黄鹤楼送孟浩然之广陵",
     author: "李白",
     dynasty: "唐",
     grade: 4,
     term: 2,
-    text: "故人西辞黄鹤楼，\n烟花三月下扬州。\n孤帆远影碧空尽，\n唯见长江天际流。",
-    translation: "老朋友在黄鹤楼与我辞别，在柳絮如烟的三月去扬州。孤帆的影子消失在碧空尽头，只见长江向天边流去。",
-    translationSource: "school",
   },
   {
     id: "xx4-24",

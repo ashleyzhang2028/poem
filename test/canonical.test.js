@@ -47,8 +47,10 @@ const byId = {};
 sb.SITE_INDEX.forEach(p => { byId[p.id] = p; });
 
 /* ---- 1.1 主表本身 ---- */
-chk(Array.isArray(MASTER) && MASTER.length === 57,
-  'data/text-master.js 有 57 条（两部及以上集子重复出现的作品数；实际 ' +
+/* 57（课内自身重复去重后的跨集重复作品数）
+   + 3（近重复合并进来的《黄鹤楼送孟浩然之广陵》《夜上受降城闻笛》《将进酒》）= 60 */
+chk(Array.isArray(MASTER) && MASTER.length === 60,
+  'data/text-master.js 有 60 条（重复出现的作品数；实际 ' +
   (MASTER ? MASTER.length : 'undefined') + '）');
 chk(MASTER.every(m => m.id && m.work && Array.isArray(m.entries) && m.entries.length >= 2),
   '每条都带 id / work / entries（且至少两条条目指向它）');
@@ -94,8 +96,9 @@ Object.keys(BOOK_VARS).forEach(book => {
     });
   });
 });
-chk(stripped.length === 114,
-  '六部集子里共 114 条条目已退化成只存归属（textRef；实际 ' + stripped.length + '）');
+/* 114（57 组的条目数）+ 6（近重复合并进来的 3 组，各 2 条）= 120 */
+chk(stripped.length === 120,
+  '六部集子里共 120 条条目已退化成只存归属（textRef；实际 ' + stripped.length + '）');
 chk(leftover.length === 0,
   '带 textRef 的条目里不再内联 text / translation（残留：' +
   (leftover.slice(0, 8).join('、') || '无') + '）');
@@ -144,7 +147,7 @@ MASTER.forEach(m => {
   if (texts.some(x => x.t !== first)) mismatch.push(m.id);
 });
 chk(mismatch.length === 0,
-  '57 篇作品在六部集子里读到的正文逐字相同（不一致：' + (mismatch.slice(0, 5).join('、') || '无') + '）');
+  '60 篇作品在六部集子里读到的正文逐字相同（不一致：' + (mismatch.slice(0, 5).join('、') || '无') + '）');
 
 /* ---- 1.4b 主表收齐了「同一篇的重复条目」全集 ---- */
 /* 1.4 说的是「收进来的都对」；这一条说的是「该收的一条都没漏」——
@@ -167,8 +170,8 @@ const uncovered = dupEntries.filter(e => !covered[e]);
 chk(uncovered.length === 0,
   '「同篇判重键下有两条及以上」的条目共 ' + dupEntries.length + ' 条，全部收进了主表（未收：' +
   (uncovered.slice(0, 6).join('、') || '无') + '）');
-chk(dupEntries.length === 114,
-  '重复条目恰为 114 条（57 篇 × 2；实际 ' + dupEntries.length + '）');
+chk(dupEntries.length === 120,
+  '重复条目恰为 120 条（60 篇 × 2；实际 ' + dupEntries.length + '）');
 
 /* 主表的 entries 一个不多、一个不少：多出来的等于把单条也收进来白占地方，
    少一条就等于漏收 —— 两头都要挡。 */

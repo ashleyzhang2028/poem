@@ -16,8 +16,8 @@ const { loadData, resolve } = require('./master-env');
 loadData(sandbox, ['data/poems-classic.js', 'data/poems-songci.js', 'data/site-index.js']);
 
 const SC = resolve(sandbox, sandbox.POEMS_SONGCI, 'songci');
-chk(Array.isArray(SC) && SC.length === 284,
-  '宋词三百首共 284 首（实际 ' + (SC ? SC.length : 'undefined') + '）');
+chk(Array.isArray(SC) && SC.length === 283,
+  '宋词三百首共 283 首（近重复合并掉 1 条自拟编号的重复条目）（实际 ' + (SC ? SC.length : 'undefined') + '）');
 
 const ids = new Set();
 let dup = 0;
@@ -31,7 +31,7 @@ chk(SC.every(p => p.excerpt), '每首都给了列表用摘句（excerpt）');
 // ⚠️ 例外：与课内同篇的那几条，正文收归主表后译文取自课本口径，来源是 school。
 const SC_SRC_OK = ['public-domain', 'school', 'academic', 'modern'];
 chk(SC.every(p => SC_SRC_OK.indexOf(p.translationSource) >= 0),
-  '284 首宋词都标了译文来源且取值在允许范围（异常 ' +
+  '283 首宋词都标了译文来源且取值在允许范围（异常 ' +
   SC.filter(p => SC_SRC_OK.indexOf(p.translationSource) < 0).length + ' 首）');
 chk(SC.filter(p => p.translationSource === 'public-domain').length >= 250,
   '绝大多数标 public-domain（与课内同篇的数首取课本口径，标 school）');
@@ -45,7 +45,7 @@ chk(SC.every(p => /^词牌 · /.test(p.gradeGroup || '')),
 const groups = sandbox.getSongciGroups();
 const groupNames = groups.map(g => g.name);
 chk(new Set(groupNames).size === groupNames.length, '词牌分组名不重复');
-chk(groups.reduce((n, g) => n + g.items.length, 0) === 284, '各组篇目合计 284');
+chk(groups.reduce((n, g) => n + g.items.length, 0) === 283, '各组篇目合计 283');
 chk(groupNames.length >= 120 && groupNames.length <= 150,
   '按词牌聚合出 ' + groupNames.length + ' 组（同一词牌下的多首各自成条）');
 
@@ -143,10 +143,10 @@ setTimeout(() => {
     chk(dups.length === 0, f + ' 无重复 id（重复：' + dups.join(', ') + '）');
   });
 
-  chk(d.querySelectorAll('#gw-list .item').length === 284,
-    '列表渲染 284 首（实际 ' + d.querySelectorAll('#gw-list .item').length + '）');
-  chk(d.querySelector('#gw-count').textContent === '0 / 284 首',
-    '顶部显示 0 / 284 首：' + d.querySelector('#gw-count').textContent);
+  chk(d.querySelectorAll('#gw-list .item').length === 283,
+    '列表渲染 283 首（实际 ' + d.querySelectorAll('#gw-list .item').length + '）');
+  chk(d.querySelector('#gw-count').textContent === '0 / 283 首',
+    '顶部显示 0 / 283 首：' + d.querySelector('#gw-count').textContent);
   // 分组卡：分组数与词牌数一致
   chk(d.querySelectorAll('#gw-list .group-card').length === groupNames.length,
     '按词牌渲染 ' + groupNames.length + ' 张分组卡');
@@ -154,7 +154,7 @@ setTimeout(() => {
   // 挂载点对外接口
   const api = w.ReaderEngine.current;
   chk(!!api, '引擎挂上了宋词实例');
-  chk(api.total() === 284, '实例 total() 为 284');
+  chk(api.total() === 283, '实例 total() 为 283');
 
   // 已读键：宋词与别的集子各存各的
   const ssrc2 = fs.readFileSync(path + 'js/songci.js', 'utf8');
@@ -175,7 +175,7 @@ setTimeout(() => {
   // 搜索：按作者筛，且只筛宋词这一部
   api.setKeyword('李清照');
   const nLi = d.querySelectorAll('#gw-list .item').length;
-  chk(nLi > 0 && nLi < 284, '按作者「李清照」搜索得到子集（' + nLi + ' 首）');
+  chk(nLi > 0 && nLi < 283, '按作者「李清照」搜索得到子集（' + nLi + ' 首）');
 
   console.log('');
   console.log(fails === 0 ? '🎉 宋词三百首测试全部通过' : '❌ 宋词三百首测试 ' + fails + ' 项失败');

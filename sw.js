@@ -376,8 +376,26 @@
  *           候选挂着时点结果区先收那一下且不穿过浮层开篇（关键词与结果都留着）
  *        （js/search.js、css/classic.css、test/search.test.js、
  *          test/pwa.test.js、README.md、sw.js）
+ *   v61  近重复合并（Issue #69 收尾最后一轮）：
+ *        上一轮把「一字之差」的那些登记成 WORKS_NEAR_DUP / TEXT_NEAR_DUP、
+ *        **并列而不合并**（选本原貌 vs 教材 / 通行字，谁对谁错没人能裁）。
+ *        这一轮用户给了裁定口径：「合并，以教材为准，没有教材的，以简体字为准，
+ *        无法裁决的，自行判断并合并」——
+ *          · 《黄鹤楼送孟浩然之广陵》 唯见 / 惟见 → 取教材「唯」
+ *          · 《夜上受降城闻笛》       回乐烽 / 回乐峰 → 取教材「烽」
+ *          · 《将进酒》               不愿醒 / 不复醒（另有顿号 / 逗号）→ 取教材
+ *          · 《蝶恋花》               白苹 / 白蘋 → 没教材，取简体「苹」
+ *        四组并成三篇（《将进酒》与另两组是「课内 ↔ 唐诗三百首」，
+ *        《蝶恋花》两条同在宋词三百首，并成一条、删掉自拟编号的那条）。
+ *        用字统一后按同一篇收归主表：搜索只出一条、自选加不进第二遍、
+ *        排程只排一次，学生也不再读到与课本不一样的那一份。
+ *        裁定表与依据在 scripts/near-dup-merge.js（逐组写明「以谁为准」）。
+ *        （data/poems-4.js、data/poems-7.js、data/poems-11.js、
+ *          data/poems-tangshi.js、data/poems-songci.js、data/text-master.js、
+ *          data/works-map.js、scripts/near-dup-merge.js、
+ *          test/dedup.test.js、test/canonical.test.js、test/collections.test.js）
  */
-const CACHE_NAME = "poem-app-v60";
+const CACHE_NAME = "poem-app-v61";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [
