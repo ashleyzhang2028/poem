@@ -256,9 +256,22 @@
  *        站点总索引、README 与相关测试的计数随之更新
  *        （data/poems-zhaoming.js、data/site-index.js、fonts/*.woff2、
  *         README.md、js/library.js、test/zhaoming.test.js、sw.js）
+ *   v51  收尾一轮（Issue #69 剩余项）：
+ *        ① 缓存键不再「只在监听得到事件的入口失效」—— js/app.js 把
+ *           collectionsKey()（自选集合的版本）编进今日计划缓存键：
+ *           在集子页加完篇目后**直接刷新首页**，刚加的那篇当天也会出现；
+ *        ② 自选快照的来路标出来：js/collections.js 新增 markStale()，
+ *           首页启动时标「快照待刷新」，进集子页 / 搜索页刷新后清标记；
+ *        ③ 全站空态文案「搜遍全站」改为「搜遍六部集子」（与六部口径一致）；
+ *        ④ 数据注释里的语料覆盖范围与体积口径复核
+ *           （data/pinyin-table.js、data/common-chars.js、js/app.js、
+ *            js/collections.js）
+ *        （js/app.js、js/collections.js、js/search.js、js/reader-core.js、
+ *         data/pinyin-table.js、data/common-chars.js、README.md、
+ *         test/collections.test.js、test/search.test.js、sw.js）
  */
 
-const CACHE_NAME = "poem-app-v50";
+const CACHE_NAME = "poem-app-v51";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [

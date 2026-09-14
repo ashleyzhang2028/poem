@@ -74,13 +74,15 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   const books = [sandbox.POEMS_CLASSIC, sandbox.POEMS_TANGSHI, sandbox.POEMS_SONGCI,
     sandbox.POEMS_GUWEN, sandbox.POEMS_ZHAOMING];
   const BOOK_IDS = ['classic', 'tangshi', 'songci', 'guwen', 'zhaoming'];
-  // 昭明文选只把**有译文的**那些收进索引（目前 78 篇），其余标「待补」的按约定不进
-  // （见 data/site-index.js）；所以它按 zhaomingDoneCount() 算，不是全量 480
+  // 昭明文选的译文已全部补齐（480 篇），进索引的条数因此等于它自己的篇数。
+  // 那层「待补不进索引」的过滤仍然保留在 data/site-index.js 里（给下一部集子用的），
+  // 所以这里照 `text && translation` 算，而不是直接拿全量 —— 哪一天又有新部集子
+  // 带「待补」条目进来，这一行会自动跟上，不必再改。
   const zmIndexed = books[4].filter(p => p.text && p.translation).length;
 
   chk(IDX.length === sandbox.POEMS_ALL.length +
-      books.slice(0, 4).reduce((n, b) => n + b.length, 0) + zmIndexed + 6,
-    '总索引 = 课内诗词 + 四部全集子 + 昭明文选已译 ' + zmIndexed + ' 篇 + 6 条集子条目（实际 ' + IDX.length + '）');
+      books.reduce((n, b) => n + b.filter(p => p.text && p.translation).length, 0) + 6,
+    '总索引 = 课内诗词 + 五部全集子（其中昭明 ' + zmIndexed + ' 篇）+ 6 条集子条目（实际 ' + IDX.length + '）');
   BOOK_IDS.forEach(id => {
     chk(IDX.some(x => x.book === id && !x.isBook),
       '总索引含「' + id + '」这一部的篇目');
@@ -220,13 +222,46 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(wwBooks.has('poems') && wwBooks.has('tangshi'),
     '搜「王维」能同时搜到课内与课外（命中 ' + [...wwBooks].join('/') + '）');
 
-  // 搜正文 / 译文（只有正文命中才说明「搜遍全站」是真的）
+  // 搜正文 / 译文（只有正文命中才说明「搜遍全站」是真的（六部各抽一篇））
   type('先天下之忧而忧');
   await sleep(30);
   const byBody = [...d.querySelectorAll('#gw-list .item')];
   chk(byBody.length > 0, '按译文原句「先天下之忧而忧」也能搜到（' + byBody.length + ' 条）');
   chk(byBody.some(el => el.dataset.id === 'guwen-gwj-114'),
     '搜到的是《岳阳楼记》（guwen-gwj-114）');
+
+  // 六部都要「搜得进正文」—— 尤其昭明文选：它是最后加的一部，也是唯一
+  // 一部「一部集子里同时有诗、又有散文」的，句型与其余五部都不同。
+  // 抽它的一篇正文原句，确认这一部的语料确实进了搜索索引。
+  // 抽一句**只在昭明这一篇里出现**的原文（取 10 个连续汉字，去库里确认唯一），
+  // 否则「多处命中」会让结果列表里未必列得到这一条 —— 那是抽样问题，不是覆盖问题。
+  const zmAll = IDX.filter(x => x.book === 'zhaoming' && !x.isBook);
+  chk(zmAll.length === 480, '总索引里昭明文选 480 篇都在（实际 ' + zmAll.length + '）');
+  const freq = {};
+  IDX.forEach(x => {
+    const t = String(x.text || '');
+    for (let i = 0; i + 10 <= t.length; i += 1) freq[t.slice(i, i + 10)] = 1;
+  });
+  const zmSample = zmAll.filter(x => x.text).find(x => {
+    const t = String(x.text).replace(/[\n\r\s]/g, '');
+    for (let i = 0; i + 10 <= t.length; i += 1) {
+      if (freq[t.slice(i, i + 10)]) return true;
+    }
+    return false;
+  });
+  chk(!!zmSample, '抽到一篇昭明文选、且能取到一段独有原句（' + (zmSample && zmSample.id) + '）');
+  let zmQuery = '';
+  if (zmSample) {
+    const t = String(zmSample.text).replace(/[\n\r\s]/g, '');
+    for (let i = 0; i + 10 <= t.length; i += 1) {
+      if (freq[t.slice(i, i + 10)]) { zmQuery = t.slice(i, i + 10); break; }
+    }
+  }
+  type(zmQuery);
+  await sleep(30);
+  const zmHit = [...d.querySelectorAll('#gw-list .item')];
+  chk(!!zmSample && zmHit.some(el => el.dataset.id === zmSample.id),
+    '昭明文选也搜得进正文（搜独有原句「' + zmQuery + '」命中 ' + (zmSample && zmSample.id) + '）');
 
   // 候选下拉
   type('月');

@@ -19,7 +19,7 @@
  * （`tangshi-ts-12` / `songci-sc-4` / `classic-ck-3` …），那是全站唯一键。
  *
  * 但**光有引用不够**：首页要排每日任务、要显示「自选背诵」清单，
- * 而首页只加载课内 12 册的数据（不加载五部集子那 3MB）。
+ * 而首页只加载课内 12 册的数据（不加载五部集子那 4.4MB）。
  * 若首页拿不到正文，今日任务里那一篇就是空壳。
  * 所以「加入背诵」时**顺手存一份最小快照**（题名 / 作者 / 朝代 / 出处 /
  * 集子名与页址 / 正文 / 译文 / 译文来源）—— 只存用户**主动加进来**的那些，
@@ -278,7 +278,7 @@
       var wid = widOf(it.entryId);
       if (seen[wid]) return;
       // 正文以「代表条目」为准：与课内同篇时取课内文本（教材口径）。
-      // 索引里没有这一条时（首页只加载课内 12 册，不加载五部集子）
+      // 索引里没有这一条时（首页只加载课内 12 册，不加载五部集子那 4.4MB）
       // 回落到加入时存下的**快照** —— 有快照就排得上、显示得出，
       // 免得「加入背诵」在首页变成一条空壳。
       var p = byId[repEntry] || byId[it.entryId];
@@ -340,9 +340,12 @@
           if (wasStr) it = { id: it, snap: null };
           var fresh = snapshotOf(it.id, list);
           if (!fresh) return it;
+          // 拿到真语料了：顺手清掉「快照待刷新」的标记（见 markStale）
+          var hadStale = !!it.stale;
+          if (hadStale) delete it.stale;
           // 只在内容真的变了时才写库 —— 否则每次进页面都写一次并派发事件，
           // 会与「集合变化 → 重排今日任务」的事件打转。
-          if (wasStr || JSON.stringify(it.snap) !== JSON.stringify(fresh)) {
+          if (wasStr || hadStale || JSON.stringify(it.snap) !== JSON.stringify(fresh)) {
             it.snap = fresh;
             n += 1;
           }
@@ -350,6 +353,45 @@
         });
       });
       if (n) write(data);
+      return n;
+    },
+    /**
+     * 把「这一篇的快照还是旧的」标出来（首页启动时调用一次）。
+     *
+     * 首页只加载课内 12 册，五部集子那 4.4MB 不加载 —— 课外那些自选篇目
+     * 拿不到新语料，只能知道「我手里这份快照是哪一次存的」。
+     * 于是把 `stale` 记下来（只记状态，不改任何正文）：
+     *   · 课内那几条首页索引里查得到，refreshSnapshots 已经就地把它们刷新了，
+     *     不会走到这一支；
+     *   · 课外那几条标 `stale: true`，等下次进集子页 / 搜索页时由
+     *     refreshSnapshots 用真语料覆盖并清掉这个标记。
+     * 这一趟**不派发 change 事件**（标状态不算集合内容变化），
+     * 否则会与「集合变化 → 重排今日任务」那个监听打转。
+     */
+    markStale: function (index) {
+      var list = index || window.SITE_INDEX || [];
+      var byId = {};
+      list.forEach(function (p) { byId[p.id] = p; });
+      var data = read();
+      var n = 0;
+      data.collections.forEach(function (c) {
+        c.items.forEach(function (it) {
+          if (!it || typeof it !== "object" || !it.id || !it.snap) return;
+          var fresh = byId[it.id];
+          // 首页索引里查得到（课内）→ 上面那一步已经刷过了，没标 stale 的必要；
+          // 查不到（课外）→ 这一份快照来路不明，标上等下次刷新
+          var stale = !fresh;
+          if (!!it.stale !== stale) {
+            if (stale) it.stale = true; else delete it.stale;
+            n += 1;
+          }
+        });
+      });
+      if (n) {
+        // 直接落库、不派发事件：stale 只是「快照待刷新」的标记，
+        // 不是集合内容变化，不需要重排今日任务
+        try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (e) { /* 隐私模式 */ }
+      }
       return n;
     },
     count: count,
