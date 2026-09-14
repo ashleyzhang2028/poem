@@ -399,6 +399,26 @@
     return space > KB_MIN ? Math.round(space) : 0;
   }
 
+  /**
+   * 键盘上方那片**可视区**的高度，直接写进 --kb-visible。
+   *
+   * 为什么不能只靠 CSS 的 svh：svh（small viewport height）量的是
+   * 「视口最小时的高度」，它认地址栏的收放，却**不认软键盘** ——
+   * 键盘是覆盖层，不改视口，svh 一动不动。于是
+   * `max-height: min(..., calc(100svh - --kb-space - 86px))` 里的
+   * 「可视区」那一项在有键盘时仍是整屏高，减掉键盘才回到正确值 ——
+   * 一旦浏览器（或测试环境）把 svh 解析成等于 vh 的整屏高，
+   * 这一项就虚高，候选下拉会一路铺到键盘上沿，把下方的结果卡片全部吃掉。
+   *
+   * 这里改用 visualViewport 实测的**真实可视高度**：有键盘时它就是
+   * 「键盘上沿」，没有键盘时等于整屏。CSS 侧只做减法，不再自己去猜可视区。
+   */
+  function keyboardVisible() {
+    var vv = window.visualViewport;
+    if (!vv || !vv.height) return 0;
+    return Math.round(vv.height);
+  }
+
   function heroEl() { return document.getElementById("search-hero"); }
 
   /**
@@ -417,8 +437,10 @@
       hero.classList.toggle("search-focus", focused);
       hero.classList.toggle("kb-open", focused || space > 0);
     } catch (e) { /* 极老的浏览器：没有 classList 就用下面的行内样式兜底 */ }
-    // 键盘高度只在这一处写（CSS 的下拉 max-height 读它）
+    // 键盘高度与可视区高度都只在这一处写（CSS 的下拉 max-height 读它们）
     hero.style.setProperty("--kb-space", space + "px");
+    var visible = keyboardVisible();
+    if (visible > 0) hero.style.setProperty("--kb-visible", visible + "px");
     // 键盘弹出时把搜索框到结果列表的那段留白压掉：候选与结果都在
     // 键盘上方这一小片地方，12px 的呼吸这时是奢侈 —— 少一行结果。
     var tight = focused || space > 0;
