@@ -326,9 +326,18 @@
  *        按用户要求全部清理（data/poems-zhaoming.js）
  *        （js/app.js、js/collections.js、index.html、data/poems-zhaoming.js、
  *          test/progress.test.js、test/zhaoming.test.js）
+ *   v58  昭明文选生僻字补全（Issue #69 跟进·续）：
+ *        正文里那批 markdown 图片占位符 `![&#x247E2;](images/247E2.svg)`
+ *        换回**真字**；字形从花園明朝（HanaMin，公开领域）逐字取轮廓补进
+ *        四款字体子集，全站用字**零缺字**。
+ *        同时修掉两处「只扫 BMP、看不见扩展区」的隐藏漏洞：
+ *        scripts/supplement-fonts.py 的扫描口径，以及 test/theme.test.js
+ *        里那段 python 的扫描正则（JS 模板字符串把 `\U` 吃掉，
+ *        导致扩展区一个字也扫不到、「缺 28 字」空转了整整一轮）
+ *        （data/poems-zhaoming.js、fonts/*.woff2、
+ *          scripts/supplement-fonts.py、test/theme.test.js、test/zhaoming.test.js）
  */
-
-const CACHE_NAME = "poem-app-v57";
+const CACHE_NAME = "poem-app-v58";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [

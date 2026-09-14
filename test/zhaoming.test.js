@@ -182,28 +182,54 @@ chk(dirty.length === 0,
   '正文里没有混进版刻题名 / 校勘跋语（异常 ' + dirty.length + ' 篇：' +
   dirty.slice(0, 3).map(p => p.title).join('/') + '）');
 
-/* ---------- 四之二、正文里不得留 markdown 图片语法（图片占位符） ---------- */
+/* ---------- 四b、markdown 图片占位符必须已清干净 ---------- */
 /**
- * 昭明文选入库时，有些生僻字（Noto CJK 也没有字形的，如 U+24136、U+20B1C）
- * 曾在正文里以 markdown 图片形式留了占位：
+ * 整理语料时，那些 Noto 没有字形的 ExtB 生僻字曾经用 markdown 图片语法
+ * 「画」在正文里：`![&#x247E2;](images/247E2.svg)`。
+ * 那是占位符，不是字 —— 它不该出现在给学生读的正文里。
  *
- *     ![&#x24136;](images/24136.svg)
- *
- * 这类占位**不该出现在给学生读的正文里** —— 正文要的是文字，
- * 不是一串图片语法；原来那 218 处已按用户要求全部清理。
- * 这里逐篇扫一遍，防止以后整理语料时又把占位带回来。
- * 检查范围是**篇目上所有会显示给学生看的字段**（正文 / 摘句 / 译文）。
+ * 更要紧的是：**这批字现在真的有字形了**（见 theme.test.js 那条
+ * 「零缺字」断言），所以占位符换成真字之后，页面上是一个真字，
+ * 而不是一片空白。这两件事必须一起成立，缺一件就退回原点。
  */
 const MD_IMG = /!\[[^\]]*\]\([^)]*\)/;
-const withMdImg = ZM.filter(p =>
-  MD_IMG.test(p.text || '') || MD_IMG.test(p.excerpt || '') || MD_IMG.test(p.translation || ''));
-chk(withMdImg.length === 0,
-  '正文 / 摘句 / 译文里没有 markdown 图片语法（异常 ' + withMdImg.length + ' 篇：' +
-  withMdImg.slice(0, 3).map(p => p.title).join('/') + '）');
-// 顺带守一条更宽的：正文里不该出现「指向图片文件的链接残片」
-const imgRef = ZM.filter(p => /images\/[0-9A-Fa-f]{5}\.svg/.test(p.text || '') ||
-  /\.svg\)/.test(p.text || ''));
-chk(imgRef.length === 0, '正文里没有残留的图片路径（.svg 引用）');
+const svgRef = /\.svg/;
+const fieldsOf = p => [
+  ['title', p.title], ['excerpt', p.excerpt], ['text', p.text],
+  ['translation', p.translation], ['source', p.source],
+];
+const dirtyFields = [];
+ZM.forEach(p => fieldsOf(p).forEach(([k, v]) => {
+  if (v == null) return;
+  if (MD_IMG.test(v) || svgRef.test(v)) dirtyFields.push(p.title + '.' + k);
+}));
+chk(dirtyFields.length === 0,
+  '正文 / 译文 / 摘句里没有 markdown 图片语法，也没有 .svg 路径残留（异常 ' +
+  dirtyFields.length + ' 处：' + dirtyFields.slice(0, 3).join('/') + '）');
+
+// 反向防线：这一部**本来**就有大批 ExtB 生僻字（鸟兽名、地名），
+// 占位符清掉、字形补上之后，它们应该原样躺在正文里。
+// 若哪天有人图省事把这批字删掉或换成常用字，这里会红。
+const astralInCorpus = new Set();
+ZM.forEach(p => {
+  const all = [p.text, p.translation, p.excerpt].filter(Boolean).join('');
+  for (const ch of all) {
+    if (ch.codePointAt(0) >= 0x20000 && ch.codePointAt(0) <= 0x2FA1F) astralInCorpus.add(ch);
+  }
+});
+chk(astralInCorpus.size >= 150,
+  '扩展区生僻字原样保留在正文里（' + astralInCorpus.size + ' 个不同字，不少于 150）');
+
+// 抽查用户实际点到的位置，字必须真的在正文里
+const zhaoYin = ZM.filter(p => p.title === '招隐士').map(p => p.text).join('');
+chk(/林木茇\u{29A12}/u.test(zhaoYin),
+  '《招隐士》「林木茇𩨒」的𩨒回到正文里了（摘句里也曾被截成「林木茇![」）');
+const ziXu = ZM.filter(p => /子虚赋|上林赋/.test(p.title)).map(p => [p.text, p.translation].join('')).join('');
+chk(/[\u{20000}-\u{2FA1F}]/u.test(ziXu),
+  '《子虚赋》《上林赋》一类鸟兽名篇的扩展区生僻字在位');
+// 摘句不得是「截断的半截」——曾出现 '林木茇![&#x29A12;](images/2'
+chk(ZM.every(p => !/[!\[(]$/.test(String(p.excerpt || '').trim())),
+  '摘句不是被截断的半截字符串');
 
 /* ---------- 五、总索引：昭明文选进了搜索，但只收有译文的那些 ---------- */
 const IDX = sandbox.SITE_INDEX;
@@ -305,6 +331,25 @@ setTimeout(() => {
   chk(/王粲/.test(d.querySelector('#rd-meta').textContent), '元信息含常用姓名「王粲」');
   const trans = d.querySelector('#rd-trans-text').textContent;
   chk(trans.length > 60, '《登楼赋》的白话译文已写入阅读器（' + trans.length + ' 字）');
+
+  // 生僻字真的要渲染出来：打开《招隐士》，正文里得有 𩨒 这个字本身。
+  // 这一条守的是「占位符换成真字」这件事的**最后一公里** ——
+  // 数据里对着、字体里也补了，但若阅读器取数路径把它丢了，页面还是空白。
+  const zhaoEl = itemEls.filter(el => {
+    const p = w.POEMS_ZHAOMING.filter(x => x.id === el.dataset.id)[0];
+    return p && p.title === '招隐士';
+  })[0];
+  chk(!!zhaoEl, '列表里能找到《招隐士》那一条');
+  if (zhaoEl) zhaoEl.click();
+  const zhaoBody = d.querySelector('#rd-text').textContent
+    .replace(/[a-zāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜüńňǹ·]+/g, '').replace(/\s/g, '');
+  chk(zhaoBody.indexOf('林木茇\u{29A12}') >= 0,
+    '阅读器正文里「林木茇𩨒」是完整的真字（不是空白、不是图片语法）');
+  // 扩展区字也不能被注音包装切成两半（ruby 是按码点切的，surrogate pair 不能被拆）
+  const rawReader = d.getElementById('rd-text').innerHTML;
+  chk(rawReader.indexOf('\u{29A12}') >= 0
+    || rawReader.indexOf('&#x29A12;') >= 0 || rawReader.indexOf('&#x29a12;') >= 0,
+    '扩展区字进入阅读器 HTML（未被注音逻辑吞掉）');
 
   // 待补分支仍然可用（给下一部集子留的机制）：把一篇的译文清空后重开，
   // 应给出「尚在整理中」而不是白屏。用《陈情表》当样本 —— 它本轮已有译文。

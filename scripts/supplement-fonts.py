@@ -36,6 +36,17 @@
 
 注意：极少数生僻异体字（如「煣」）Noto CJK 本身就没有，脚本会明确列出这类
 「源字体也缺」的字，需要改用通用字或另找字源。
+
+扩展区（ExtB U+20000 起）的字 **Noto CJK 全系列都没有**（连 44810 字的
+NotoSansCJKsc 也只覆盖到 10 个），需要另挂公开领域的**花園明朝**（HanaMin）：
+    HanaMinB.otf / HanaMinC.otf  ← https://github.com/cjkvi/HanaMinAFDKO/releases
+把它加到 SRC_EXT 里即可。注意它们也是 OTF/CFF，`graft()` 会按目的字体的
+unitsPerEm 做缩放，不必手工换算。
+
+另有一条**必须留意**：目的字体是 BMP 定向的 format 4 + UCS-4 的 format 12
+两张子表并存。扩展区字符只能挂进 **format 12**（format 4 的 endCode 是
+无符号 16 位，塞 ExtB 会直接 OverflowError）。挂错表的表现是字体能存下来、
+页面却仍不显示这个字。
 """
 import glob, os, re
 from fontTools.ttLib import TTFont
@@ -49,12 +60,44 @@ SRC_SERIF = os.environ.get('SRC_SERIF', 'node_modules/@fontsource/noto-serif-sc/
 # 仓库根目录（脚本放在 scripts/ 下，默认取上一级）
 ROOT = os.environ.get('POEM_ROOT', os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+# 扩展区生僻字（ExtB 等）的源：花園明朝。Noto CJK 没有这些字形。
+# 目录 / 文件名按本机实际情况改；文件不存在时自动跳过（不报错）。
+SRC_EXT = [
+    os.environ.get('SRC_HANAMIN_B', '/tmp/HanaMinB.otf'),
+    os.environ.get('SRC_HANAMIN_C', '/tmp/HanaMinC.otf'),
+]
+
 TARGETS = [
     ('NotoSansSC-400', SRC_SANS, 400),
     ('NotoSansSC-600', SRC_SANS, 600),
     ('NotoSerifSC-400', SRC_SERIF, 400),
     ('NotoSerifSC-600', SRC_SERIF, 600),
 ]
+
+# 站点用字的扫描口径。
+# 必须带上扩展区（ExtB U+20000–U+2A6DF 等）——《昭明文选》里《子虚赋》《吴都赋》
+# 那批鸟兽名、地名用的正是这些字；只扫 BMP 的话它们缺字形也查不出来，
+# 页面上就成了空白（曾经正是这样漏过了 183 个缺字）。
+CJK_RE = re.compile(
+    r'[\u4e00-\u9fff\u3000-\u303f\uff00-\uffef'
+    r'\U00020000-\U0002FA1F]'
+)
+
+def strip_comments(src, fn):
+    """剥掉注释再取字。
+
+    注释里的字不会被渲染，却会被算成「站点用字」，逼着字体子集去覆盖
+    注释里偶然出现的生僻字（曾出现：CSS 注释里一个词让 4 款字体全部报缺字）。
+    口径与 test/theme.test.js 里那段扫描保持一致，否则两边算出的
+    「站点用字」不相等，会出现「脚本说补齐了、测试还说缺」。
+    """
+    if fn.endswith(('.js', '.css')):
+        src = re.sub(r'/\*[\s\S]*?\*/', ' ', src)
+    if fn.endswith('.js'):
+        src = re.sub(r'(?m)^\s*//.*$', ' ', src)
+    if fn.endswith(('.html', '.css')):
+        src = re.sub(r'<!--[\s\S]*?-->', ' ', src)
+    return src
 
 def site_chars():
     chars = set()
@@ -64,7 +107,7 @@ def site_chars():
         for f in files:
             if f.endswith(('.js', '.html', '.css', '.json', '.webmanifest')):
                 txt = open(os.path.join(root, f), encoding='utf8').read()
-                chars |= set(re.findall(r'[\u4e00-\u9fff\u3000-\u303f\uff00-\uffef]', txt))
+                chars |= set(re.findall(CJK_RE, strip_comments(txt, f)))
     chars |= set('跬步·—…「」《》（）？！、。；：')
     return chars
 
@@ -91,7 +134,10 @@ def graft(dst_path, src_files, chars):
     for c, (sf, gname) in src_map.items():
         by_src.setdefault(sf, []).append((c, gname))
 
-    unicode_cmaps = [t for t in dst['cmap'].tables if t.isUnicode()]
+    # 只挂 format 12（UCS-4）子表：format 4 是 BMP 专用，endCode 为无符号 16 位，
+    # 塞扩展区字符（U+20000 起）会直接 OverflowError。
+    unicode_cmaps = [t for t in dst['cmap'].tables if t.isUnicode() and t.format == 12]
+    assert unicode_cmaps, '字体里没有 format 12 子表，扩展区字符无处安放'
     hmtx = dst['hmtx']
     cff = dst['CFF '].cff
     top = cff[cff.fontNames[0]]
@@ -104,8 +150,13 @@ def graft(dst_path, src_files, chars):
         src = TTFont(sf)
         gs = src.getGlyphSet()
         src_hmtx = src['hmtx']
+        # 源字体与目的字体的 unitsPerEm 可能不同（Noto 1000 / 花園明朝 1000 或 2048），
+        # 不缩放会把字形画得过大或过小。
+        upem_dst = dst['head'].unitsPerEm
+        upem_src = src['head'].unitsPerEm
+        scale = upem_dst / upem_src
         for c, sname in items:
-            width = src_hmtx[sname][0]
+            width = src_hmtx[sname][0] * scale
             rec = RecordingPen()
             gs[sname].draw(rec)
             pen = T2CharStringPen(width, None)
@@ -118,8 +169,8 @@ def graft(dst_path, src_files, chars):
                 charstrings.charStringsIndex.append(cs)
             else:
                 charstrings.charStrings[tmp] = cs
-            lsb = src_hmtx[sname][1] if len(src_hmtx[sname]) > 1 else 0
-            hmtx.metrics[tmp] = (width, lsb)
+            lsb = (src_hmtx[sname][1] * scale) if len(src_hmtx[sname]) > 1 else 0
+            hmtx.metrics[tmp] = (int(round(width)), int(round(lsb)))
             # 竖排字体带 vmtx，新字形也要补上，否则表长度对不上会读崩
             if 'vmtx' in dst and 'vmtx' in src:
                 dst['vmtx'].metrics[tmp] = src['vmtx'][sname]
@@ -145,6 +196,15 @@ def graft(dst_path, src_files, chars):
     else:
         new_order = raw_order
     dst.setGlyphOrder(new_order)
+    # CID 重排后，charstrings / hmtx / vmtx 的键要与字形序列对齐；
+    # 原字体本就稀疏，缺键会让 hmtx.compile() 直接 KeyError。
+    for gn in new_order:
+        if gn not in charstrings.charStrings:
+            charstrings.charStrings[gn] = charstrings.charStrings.get('space')
+        if gn not in hmtx.metrics:
+            hmtx.metrics[gn] = hmtx.metrics.get('.notdef', (1000, 0))
+        if 'vmtx' in dst and gn not in dst['vmtx'].metrics:
+            dst['vmtx'].metrics[gn] = dst['vmtx'].metrics.get('.notdef', (1000, 0))
     dst['maxp'].numGlyphs = len(new_order)
     if is_cid:
         top.charset = new_order
@@ -158,8 +218,15 @@ def graft(dst_path, src_files, chars):
 def main():
     chars = site_chars()
     print('站点用字：%d 个' % len(chars))
+    # 扩展区字（ExtB U+20000 起）Noto CJK 没有，改由花園明朝兜底。
+    # 放在 Noto 分片之后，只有 Noto 取不到的才轮到它。
+    ext_files = [f for f in SRC_EXT if os.path.exists(f)]
+    if not ext_files:
+        print('提示：未找到花園明朝（SRC_EXT），扩展区生僻字将无从补入。'
+              '下载见 https://github.com/cjkvi/HanaMinAFDKO/releases')
     for name, src_dir, weight in TARGETS:
         src_files = sorted(glob.glob(os.path.join(src_dir, '*-%d-normal.woff2' % weight)))
+        src_files += ext_files
         dst_path = os.path.join(ROOT, 'fonts', name + '.woff2')
         added, left = graft(dst_path, src_files, chars)
         t = TTFont(dst_path)
