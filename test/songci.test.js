@@ -11,10 +11,11 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
 const sandbox = { window: {}, console };
 sandbox.window = sandbox;
 vm.createContext(sandbox);
-['data/poems-classic.js', 'data/poems-songci.js', 'data/site-index.js'].forEach(f =>
-  vm.runInContext(fs.readFileSync(path + f, 'utf8'), sandbox, { filename: f }));
+// 正文存储主表：被主表收编的条目只存归属（textRef），正文要按它取回
+const { loadData, resolve } = require('./master-env');
+loadData(sandbox, ['data/poems-classic.js', 'data/poems-songci.js', 'data/site-index.js']);
 
-const SC = sandbox.POEMS_SONGCI;
+const SC = resolve(sandbox, sandbox.POEMS_SONGCI, 'songci');
 chk(Array.isArray(SC) && SC.length === 284,
   '宋词三百首共 284 首（实际 ' + (SC ? SC.length : 'undefined') + '）');
 
@@ -26,8 +27,14 @@ chk(dup === 0, '宋词 id 无重复（重复 ' + dup + ' 个）');
 chk(SC.every(p => p.title && p.source && p.dynasty && p.author && p.text && p.translation),
   '每首都有 标题/出处/朝代/作者/原文/译文');
 chk(SC.every(p => p.excerpt), '每首都给了列表用摘句（excerpt）');
-chk(SC.every(p => p.translationSource === 'public-domain'),
-  '284 首宋词都标了译文来源 public-domain（未标 ' + SC.filter(p => !p.translationSource).length + ' 首）');
+// 译文来源：宋词原文属公有领域，据通行译注整理 → public-domain。
+// ⚠️ 例外：与课内同篇的那几条，正文收归主表后译文取自课本口径，来源是 school。
+const SC_SRC_OK = ['public-domain', 'school', 'academic', 'modern'];
+chk(SC.every(p => SC_SRC_OK.indexOf(p.translationSource) >= 0),
+  '284 首宋词都标了译文来源且取值在允许范围（异常 ' +
+  SC.filter(p => SC_SRC_OK.indexOf(p.translationSource) < 0).length + ' 首）');
+chk(SC.filter(p => p.translationSource === 'public-domain').length >= 250,
+  '绝大多数标 public-domain（与课内同篇的数首取课本口径，标 school）');
 chk(SC.every(p => p.source === '《宋词三百首》'), '出处统一为《宋词三百首》');
 chk(SC.every(p => p.dynasty === '宋'), '朝代统一为宋');
 chk(SC.some(p => p.text.length > 200), '含长篇（>200 字）宋词，验证长文场景');

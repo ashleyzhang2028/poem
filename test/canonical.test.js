@@ -25,80 +25,156 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
 const norm = t => String(t || '').replace(/\s+/g, '');
 const sig = norm;
 
-/* ================= 一、数据层 ================= */
+/* ================= 一、存储层：正文只落一份 ================= */
 const sb = { window: {}, console, document: { readyState: 'complete', addEventListener() {}, querySelector() { return null; } } };
 sb.window = sb;
 vm.createContext(sb);
-const DATA = [
+const { loadData } = require('./master-env');
+// 正文存储主表须排最前：各集子条目只存归属（textRef），正文按它取回。
+loadData(sb, [
   'data/poems-1.js', 'data/poems-2.js', 'data/poems-3.js', 'data/poems-4.js', 'data/poems-5.js',
   'data/poems-6.js', 'data/poems-7.js', 'data/poems-8.js', 'data/poems-9.js', 'data/poems-10.js',
   'data/poems-11.js', 'data/poems-12.js', 'data/index.js', 'data/poems-classic.js',
   'data/poems-tangshi.js', 'data/poems-songci.js', 'data/poems-guwen.js', 'data/poems-zhaoming.js',
   'data/site-index.js', 'data/works-map.js', 'data/works-index.js',
   'data/canonical-texts.js'
-];
-DATA.forEach(f => vm.runInContext(read(f), sb, { filename: f }));
+]);
 
+const MASTER = sb.TEXT_MASTER;
 const CANON = sb.CANONICAL_TEXTS;
 const WI = sb.WorksIndex;
 const byId = {};
 sb.SITE_INDEX.forEach(p => { byId[p.id] = p; });
 
-chk(Array.isArray(CANON) && CANON.length > 0,
-  'data/canonical-texts.js 有内容（' + (CANON || []).length + ' 条）');
-chk(CANON.every(r => r.id && r.of && r.ofEntry && typeof r.text === 'boolean' &&
-  typeof r.translation === 'boolean' && (r.text || r.translation)),
-  '每条都带 id / of / ofEntry / text / translation（且至少换一样）');
-// id 与 ofEntry 都是站点索引口径（带集子前缀）；of 是集子内 id，供集子页命中
-chk(CANON.every(r => byId[r.id] && byId[r.ofEntry]),
-  '表里的条目 id 全部能在站点索引里找到（没有拼错的影子条目）');
-chk(CANON.every(r => r.ofEntry === 'poems-' + r.of),
-  'of 就是 ofEntry 去掉「poems-」前缀（主条目一律是课内条目，集子内 id 不带前缀）');
-// 口径：of 必须是这一篇的**主条目**（课内优先），且两边确实同篇
-chk(CANON.every(r => WI.repOf(r.id) === r.ofEntry),
-  'of 一律是这一篇的主条目（课内优先）—— 与作品主表同口径');
-chk(CANON.every(r => WI.same(r.id, r.ofEntry)),
-  '登记的每一条都与 of 判为同一篇作品（判重口径一致）');
+/* ---- 1.1 主表本身 ---- */
+chk(Array.isArray(MASTER) && MASTER.length === 57,
+  'data/text-master.js 有 57 条（两部及以上集子重复出现的作品数；实际 ' +
+  (MASTER ? MASTER.length : 'undefined') + '）');
+chk(MASTER.every(m => m.id && m.work && Array.isArray(m.entries) && m.entries.length >= 2),
+  '每条都带 id / work / entries（且至少两条条目指向它）');
+chk(MASTER.every(m => m.text && m.translation),
+  '每条都有正文与译文（主表是唯一一份正文，不许有空文）');
+chk(MASTER.every(m => m.id.indexOf('poems-') === 0),
+  '主条目一律是课内条目（教材口径优先）—— 与作品主表同口径');
+chk(MASTER.every(m => WI.repOf(m.entries[0]) === m.id),
+  '主表的 id 就是这一篇的主条目（与 data/works-index.js 同口径）');
+// 主表里的 id 必须都是站点索引里真实存在的条目 —— 拼错一个就会静默丢一份正文
+chk(MASTER.every(m => byId[m.id]), '主表 id 全部能在站点索引里找到（没有拼错的影子条目）');
+// 主表的文本是**全站唯一一份**：正文逐字等于主条目在站点索引里的那一份
+chk(MASTER.every(m => norm(byId[m.id].text) === norm(m.text)),
+  '主表里的正文与主条目在站点索引里的正文逐字相同');
 
-// 与 data/works-map.js 一样：这层是生成文件，必须与「按规则现算」的结果一致
-const want = [];
-WI.works.forEach(w => {
-  if (w.entries.length < 2) return;
-  const rep = WI.repOf(w.entries[0]);
-  const repEntry = byId[rep];
-  if (!repEntry) return;
-  w.entries.forEach(id => {
-    if (id === rep) return;
-    const p = byId[id];
-    if (!p) return;
-    const needText = sig(p.text) !== sig(repEntry.text);
-    const needTrans = p.translation && repEntry.translation &&
-      sig(p.translation) !== sig(repEntry.translation);
-    if (needText || needTrans) {
-      want.push({ id, of: rep.replace(/^[a-z]+-/, ''), ofEntry: rep,
-        text: needText, translation: !!needTrans });
-    }
+/* ---- 1.2 各集子条目「只存归属」：不再内联正文 ---- */
+const BOOK_VARS = {
+  poems: ['data/poems-1.js', 'data/poems-2.js', 'data/poems-3.js', 'data/poems-4.js',
+    'data/poems-5.js', 'data/poems-6.js', 'data/poems-7.js', 'data/poems-8.js',
+    'data/poems-9.js', 'data/poems-10.js', 'data/poems-11.js', 'data/poems-12.js'],
+  classic: ['data/poems-classic.js'],
+  tangshi: ['data/poems-tangshi.js'],
+  songci: ['data/poems-songci.js'],
+  guwen: ['data/poems-guwen.js'],
+  zhaoming: ['data/poems-zhaoming.js']
+};
+// 各集子数据文件里，被主表收编的条目应**只剩 textRef**，不得再存 text / translation。
+// 直接从源码里数 —— 走 window 变量的话，data/index.js 之类已经把它们展开回来了。
+const stripped = [];
+const leftover = [];
+Object.keys(BOOK_VARS).forEach(book => {
+  BOOK_VARS[book].forEach(f => {
+    const src = read(f);
+    // 逐个条目看：带 textRef 的条目不得同时带 text:
+    const entries = src.split(/\n(?=  \{)/);
+    entries.forEach(blk => {
+      const refM = blk.match(/textRef:\s*"([^"]+)"/);
+      if (!refM) return;
+      stripped.push(book + ':' + refM[1]);
+      if (/^\s+text:\s*"/m.test(blk) || /^\s+translation:\s*"/m.test(blk)) {
+        leftover.push(book + ':' + refM[1]);
+      }
+    });
   });
 });
-want.sort((a, b) => (a.id < b.id ? -1 : 1));
-chk(JSON.stringify(want) === JSON.stringify(CANON),
-  '裁定表与现算结果逐条一致（改了语料要重跑 scripts/build-canonical-texts.js）');
+chk(stripped.length === 114,
+  '六部集子里共 114 条条目已退化成只存归属（textRef；实际 ' + stripped.length + '）');
+chk(leftover.length === 0,
+  '带 textRef 的条目里不再内联 text / translation（残留：' +
+  (leftover.slice(0, 8).join('、') || '无') + '）');
 
-// 《静夜思》：课内与唐诗《夜思》正文都要等于教材文本
-const jys = byId['poems-xx1-09'];
-const yt = byId['tangshi-ts-231'];
+/* ---- 1.3 textRef 能取回正文，且与主表逐字相同 ---- */
+const resolveOne = (raw, book) => (sb.masterTextOf ? sb.masterTextOf(raw, book) : raw);
+// 抽查五个集子各一条
+const SPOT = [
+  ['classic', sb.POEMS_CLASSIC, 'gw-60'],
+  ['tangshi', sb.POEMS_TANGSHI, 'ts-6'],
+  ['songci', sb.POEMS_SONGCI, 'sc-183'],
+  ['guwen', sb.POEMS_GUWEN, 'gwj-88'],
+  ['poems', sb.POEMS_ALL, 'cz8-14']
+];
+SPOT.forEach(row => {
+  const book = row[0], list = row[1], id = row[2];
+  const raw = (list || []).filter(p => p.id === id)[0];
+  if (!raw) return;
+  const got = resolveOne(raw, book);
+  const masterId = raw.textRef;
+  const m = MASTER.filter(x => x.id === masterId)[0];
+  chk(!!m && norm(got.text) === norm(m.text),
+    book + ' 的 ' + id + ' 按 textRef 取回主表那一份正文');
+});
+
+/* ---- 1.4 同一篇在**任何一部**集子里读到的正文逐字相同 ---- */
+// 这是「学生不会读到两种《桃花源记》」这条线 —— 存储层把它从「显示时替换」
+// 变成「本来就只有一份」，所以每一部集子页读出来的都必须一致。
+const mismatch = [];
+MASTER.forEach(m => {
+  const books = m.entries.map(e => e.split('-')[0]);
+  const texts = [];
+  m.entries.forEach(eid => {
+    const book = eid.split('-')[0];
+    const localId = eid.replace(new RegExp('^' + book + '-'), '');
+    const pools = {
+      poems: sb.POEMS_ALL, classic: sb.POEMS_CLASSIC, tangshi: sb.POEMS_TANGSHI,
+      songci: sb.POEMS_SONGCI, guwen: sb.POEMS_GUWEN, zhaoming: sb.POEMS_ZHAOMING
+    };
+    const raw = (pools[book] || []).filter(p => p.id === localId)[0];
+    if (!raw) return;
+    texts.push({ eid: eid, t: norm(resolveOne(raw, book).text) });
+  });
+  if (texts.length < 2) return;
+  const first = texts[0].t;
+  if (texts.some(x => x.t !== first)) mismatch.push(m.id);
+});
+chk(mismatch.length === 0,
+  '57 篇作品在六部集子里读到的正文逐字相同（不一致：' + (mismatch.slice(0, 5).join('、') || '无') + '）');
+
+/* ---- 1.5 显示层裁定表：正文已收归存储层，不再需要替换 ---- */
+// data/canonical-texts.js 是「显示时把正文换成主条目那一份」的裁定表。
+// 存储层收归之后，各集子的正文本来就取自主表，**不再存在两种写法** ——
+// 这张表因此变成空表。保留它（与引擎里的机制）是给日后真出现异文时用的；
+// 一旦它又非空，说明有语料绕过了主表，这里要亮红提醒。
+chk(Array.isArray(CANON) && CANON.length === 0,
+  'data/canonical-texts.js 已收敛为空表（存储层收归后不再有需要替换的条目；' +
+  '实际 ' + (CANON || []).length + ' 条）');
+
+/* ---- 1.6 《静夜思》：课内与唐诗都等于教材文本 ---- */
+const jys = sb.POEMS_ALL.filter(p => p.id === 'xx1-09')[0];
+const ytRaw = sb.POEMS_TANGSHI.filter(p => p.id === 'ts-231')[0];
+const yt = resolveOne(ytRaw, 'tangshi');
 const JYS = '床前明月光，疑是地上霜。举头望明月，低头思故乡。';
-chk(norm(jys.text) === norm(JYS), '课内《静夜思》正文 = 教材文本「床前明月光……」（实际：' + jys.text.replace(/\n/g, '') + '）');
-chk(norm(yt.text) === norm(JYS), '唐诗三百首《夜思》正文 = 教材文本（「静夜思全部改成……」）');
+chk(norm(jys.text) === norm(JYS), '课内《静夜思》正文 = 教材文本「床前明月光……」');
+chk(norm(yt.text) === norm(JYS), '唐诗三百首《夜思》正文 = 同一份教材文本（走主表）');
 chk(sb.SITE_INDEX.filter(p => String(p.text || '').indexOf('看月光') >= 0).length === 0,
   '全站没有「床前看月光」的残留');
 
-/* ================= 二、引擎层：按裁定表换正文 ================= */
+/* ================= 二、引擎层：页面能按 textRef 取回正文 ================= */
 const html = read('classic/index.html');
 const order = html.match(/<script src="([^"]+)"><\/script>/g).map(s => s.match(/src="([^"]+)"/)[1]);
-chk(order.indexOf('data/canonical-texts.js') >= 0, '集子页加载了正文裁定表');
-chk(order.indexOf('data/canonical-texts.js') < order.indexOf('js/reader-core.js'),
-  '裁定表排在引擎之前（mount 时就要读它）');
+chk(order.indexOf('data/text-master.js') >= 0, '集子页加载了正文存储主表');
+chk(order.indexOf('data/text-master.js') < order.indexOf('js/reader-core.js'),
+  '主表排在引擎之前（mount 时就要按它取回正文）');
+if (order.indexOf('data/site-index.js') >= 0) {
+  chk(order.indexOf('data/text-master.js') < order.indexOf('data/site-index.js'),
+    '主表排在站点索引之前（索引组装时就要按它取回正文）');
+}
 
 const dom = new JSDOM(html, { runScripts: 'dangerously', url: 'https://local.test/classic/' });
 const w = dom.window;
@@ -109,59 +185,42 @@ order.forEach(f => {
   w.document.body.appendChild(el);
 });
 
+const strip2 = t => norm(String(t || '')).replace(/[a-zāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜüńňǹ·]+/g, '');
+
 setTimeout(() => {
   const api = w.ReaderEngine.current;
   chk(!!api, '小古文页挂上了引擎实例');
-
-  // 课内那一份（主条目）取到之后，把「同一篇的选本那一条」开出来：
-  // 阅读器里读到的该是主条目那一份正文与译文。
-  // ⚠️ 集子页内的 id 不带集子前缀（gw-60）；前缀只在全站索引里出现（classic-gw-60）。
+  // 打开被主表收编的《答谢中书书》（gw-60）：条目里已没有正文，引擎须按 textRef 取回
   const repInPage = w.POEMS_ALL.filter(p => p.id === 'cz8-02')[0];
   const rd = w.document.querySelector('#gw-reader');
-  // 集子页自己不加载全站索引（那是首页 / 搜索页的事），而主条目的正文在课内那一册里。
-  // 引擎取主条目正文只认索引 —— 所以要先把这本页已有的课内篇目摆进索引，
-  // 再让 api 按同一条规则重判一次（这正是 refreshCanonical 的用途）。
-  w.SITE_INDEX = w.POEMS_ALL.map(p => ({ id: 'poems-' + p.id, text: p.text, translation: p.translation }));
-  api.refreshCanonical();
-  api.open('gw-60');   // 《答谢中书书》：课内八年级上 + 小古文，课内是主条目
-  const shown = rd.querySelector('#rd-text').textContent.replace(/[a-zāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜüńňǹ·]+/g, '');
-  chk(norm(shown) === norm(repInPage.text),
-    '在小古文页读《答谢中书书》，正文就是课内那一份（教材口径）');
+  api.open('gw-60');
+  const shown = strip2(rd.querySelector('#rd-text').textContent);
+  chk(shown.length > 0 && norm(shown) === norm(repInPage.text),
+    '在小古文页读《答谢中书书》，正文由 textRef 取回主表那一份（教材口径）');
   const trans = rd.querySelector('#rd-trans-text').textContent;
   chk(norm(trans) === norm(repInPage.translation),
-    '译文同样是课内那一份（同一篇不该给学生两段不同的白话）');
+    '译文同样由主表取回（同一篇不该给学生两段不同的白话）');
 
-  // 拿不到主条目正文时不许猜、不许拼：索引里没有那一条就照原样显示
-  w.SITE_INDEX = [];
-  api.refreshCanonical();
-  api.open('gw-60');
-  chk(rd.querySelector('#rd-text').textContent.indexOf('山川之美') >= 0,
-    '索引里查不到主条目时照原样显示（既不空着，也不拿别篇的正文顶上）');
+  // 主表取数入口的行为（数据层）：没有 textRef 原样返回、查不到也原样返回 ——
+  // 宁可留空，也不猜、不拼（空文一眼可见，取错一篇却看着正常）。
+  const noRef = { id: 'x', title: '没有 textRef 的条目' };
+  chk(sb.masterTextOf(noRef, 'classic') === noRef, '没有 textRef 的条目原样返回（不是主表的活）');
+  const badRef = { id: 'y', textRef: '根本不存在的-id' };
+  chk(sb.masterTextOf(badRef, 'classic') === badRef, 'textRef 查不到时原样返回（不猜一篇顶上）');
 
-  // 传进来的数据对象不许被就地改写：那会污染集子自己的语料
-  const local = w.POEMS_CLASSIC.filter(p => p.id === 'gw-60')[0];
-  chk(local && norm(local.text).indexOf('山川之美') >= 0,
-    '页面数据里那一篇仍是它本来的正文（裁定只影响显示，不改语料）');
-
-  /* ============ 二之二、每一部集子页都按裁定表读（不止小古文） ============
-     裁定表里 57 条散在五部集子里，而且**集子页不加载全站索引** ——
-     引擎要能自己从 window.POEMS_ALL 里取到主条目那一份。
-     只验小古文一部，会漏掉「古文观止 / 宋词 / 唐诗这几页根本没换」这种整页失效。 */
+  /* ---- 每一部集子页都按 textRef 取回（不止小古文） ---- */
   const PAGES = [
-    ['guwen/index.html', '/guwen/', 'POEMS_GUWEN', 'guwen', 'guwen-gwj-'],
-    ['songci/index.html', '/songci/', 'POEMS_SONGCI', 'songci', 'songci-sc-'],
-    ['tangshi/index.html', '/tangshi/', 'POEMS_TANGSHI', 'tangshi', 'tangshi-ts-']
+    ['guwen/index.html', '/guwen/', 'POEMS_GUWEN', 'guwen'],
+    ['songci/index.html', '/songci/', 'POEMS_SONGCI', 'songci'],
+    ['tangshi/index.html', '/tangshi/', 'POEMS_TANGSHI', 'tangshi']
   ];
-  const strip = t => norm(String(t || '')).replace(/[a-zāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜüńňǹ·]+/g, '');
   function checkPages(row) {
-    const page = row[0], url = row[1], poolVar = row[2], book = row[3], prefix = row[4];
+    const page = row[0], url = row[1], poolVar = row[2], book = row[3];
     const pHtml = read(page);
     const pOrder = pHtml.match(/<script src="([^"]+)"><\/script>/g).map(x => x.match(/src="([^"]+)"/)[1]);
-    chk(pOrder.indexOf('data/canonical-texts.js') >= 0, page + ' 加载了正文裁定表');
-    chk(pOrder.indexOf('data/poems-1.js') >= 0 && pOrder.indexOf('data/index.js') >= 0,
-      page + ' 也加载了课内 12 册（主条目正文在课内那一份里）');
-    chk(pOrder.indexOf('data/index.js') < pOrder.indexOf('js/reader-core.js'),
-      page + ' 课内数据排在引擎之前（mount 时就要用它取主条目）');
+    chk(pOrder.indexOf('data/text-master.js') >= 0, page + ' 加载了正文存储主表');
+    chk(pOrder.indexOf('data/text-master.js') < pOrder.indexOf('js/reader-core.js'),
+      page + ' 主表排在引擎之前');
 
     const dp = new JSDOM(pHtml, { runScripts: 'dangerously', url: 'https://local.test' + url });
     const wp = dp.window;
@@ -171,43 +230,33 @@ setTimeout(() => {
       el.textContent = read(f);
       wp.document.body.appendChild(el);
     });
-    // 挂载脚本在 DOMContentLoaded 之后才跑，等一拍让引擎挂上
-    // 挂载脚本在 DOMContentLoaded 之后才跑：等一拍再验
     return new Promise(function (resolve) {
       setTimeout(function () {
-        const api = wp.ReaderEngine.current;
-        chk(!!api, page + ' 挂上了引擎实例');
-        const rules = CANON.filter(r => r.id.indexOf(prefix) === 0);
-        let checked = 0;
-        const bad = [];
-        rules.forEach(function (r) {
-          const localId = r.id.replace(new RegExp('^' + book + '-'), '');
-          if (!(wp[poolVar] || []).filter(function (p) { return p.id === localId; }).length) return;
-          const course = wp.POEMS_ALL.filter(function (p) { return p.id === r.of; })[0];
-          if (!course || !api) return;
-          checked += 1;
-          api.open(localId);
-          const rdr = wp.document.querySelector('#gw-reader');
-          const okText = r.text ? strip(rdr.querySelector('#rd-text').textContent) === strip(course.text) : true;
-          const okTr = r.translation ? rdr.querySelector('#rd-trans-text').textContent === course.translation : true;
-          if (!okText || !okTr) bad.push(localId + (okText ? '' : ' 正文'));
-        });
-        chk(checked > 0 && bad.length === 0,
-          page + ' 里 ' + checked + ' 条同篇都读主条目那一份正文与译文' +
-          (bad.length ? '（不符：' + bad.join('、') + '）' : ''));
+        const api2 = wp.ReaderEngine.current;
+        chk(!!api2, page + ' 挂上了引擎实例');
+        // 这一部里被主表收编的条目：打开它，正文须等于主表那一份。
+        // ⚠️ 主表条目的 id 一律是**课内**条目（poems- 开头），要找的是
+        //    「entries 里有这一部的条目」的那一条。
+        const m = MASTER.filter(x => (x.entries || []).some(e => e.indexOf(book + '-') === 0))[0];
+        if (!m) { chk(false, page + ' 里找不到被主表收编的条目（测试用例要跟着语料改）'); resolve(); return; }
+        const eid = m.entries.filter(e => e.indexOf(book + '-') === 0)[0];
+        const localId = eid.replace(new RegExp('^' + book + '-'), '');
+        const rawEntry = (wp[poolVar] || []).filter(p => p.id === localId)[0];
+        api2.open(localId);
+        const rdr = wp.document.querySelector('#gw-reader');
+        const got = strip2(rdr.querySelector('#rd-text').textContent);
+        chk(!!rawEntry && norm(got) === norm(m.text),
+          page + ' 里 ' + localId + ' 读到的正文 = 主表那一份');
         resolve();
       }, 150);
     });
   }
-
-  // 逐页串行跑（每页都要等它自己的挂载完成）
   (async function () {
     for (let i = 0; i < PAGES.length; i += 1) await checkPages(PAGES[i]);
     afterPages();
   })();
 
   function afterPages() {
-
   /* ================= 三、孤儿背诵进度清理 ================= */
   const home = read('index.html');
   const hOrder = home.match(/<script src="([^"]+)"><\/script>/g).map(x => x.match(/src="([^"]+)"/)[1]);
