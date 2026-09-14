@@ -55,20 +55,20 @@
     "词牌 · 鹊桥仙", "词牌 · 南柯子", "词牌 · 醉落魄", "词牌 · 忆秦娥", "词牌 · 孤雁儿"
   ];
 
-  function boot() {
-    if (!window.ReaderEngine) return;
-    var all = window.POEMS_SONGCI || window.SONGCI_ALL || [];
-    if (!all.length) {
-      var listEl = document.querySelector('[data-gw="list"]');
-      if (listEl) listEl.innerHTML = '<div class="empty">宋词数据加载失败</div>';
-      return;
-    }
-
-    window.ReaderEngine.mount({
+  /**
+   * 这一部的**挂载配置**（不含数据与 DOM 根）。
+   *
+   * 单独拎出来，是因为同一部集子有两个入口：
+   *   1. 直接打开本页（下面的 boot()）；
+   *   2. 在课外阅读入口页 /library/ 里点开这一部，把索引**就地**铺上来
+   *      （见 js/library.js 的 enterBook）。
+   * 两处必须挂**同一份配置**：分组顺序、页名、文案、已读键名（poem_songci_read_v1）
+   * 一个都不能不一样 —— 各写一份迟早出现「同一部集子两个样子」的病
+   * （从这一页进去显示 N 篇、从入口页进去少几篇），而且两处都「看起来对」，最难查。
+   */
+  function bookConfig() {
+    return {
       id: "songci",
-      items: all,
-      root: "[data-gw-root]",
-      reader: "#gw-reader",
       groupOrder: GROUP_ORDER,
       pageTitle: "宋词三百首",
       pageSub: "想读哪首点哪首",
@@ -83,8 +83,30 @@
         playerTitle: "宋词朗读",
         searchPlaceholder: "搜索词牌 / 出处 / 作者"
       }
-    });
+    };
   }
+
+  function boot() {
+    if (!window.ReaderEngine) return;
+    var all = window.POEMS_SONGCI || window.SONGCI_ALL || [];
+    if (!all.length) {
+      var listEl = document.querySelector('[data-gw="list"]');
+      if (listEl) listEl.innerHTML = '<div class="empty">宋词数据加载失败</div>';
+      return;
+    }
+
+    var cfg = bookConfig();
+    cfg.items = all;
+    cfg.root = "[data-gw-root]";
+    cfg.reader = "#gw-reader";
+    window.ReaderEngine.mount(cfg);
+  }
+
+  /* 课外阅读入口页（/library/）就地铺这一部时用它取数据与配置 */
+  window.SongciBook = {
+    config: bookConfig,
+    items: function () { return window.POEMS_SONGCI || []; }
+  };
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", boot);

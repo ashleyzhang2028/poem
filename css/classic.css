@@ -1951,6 +1951,15 @@ body[data-nav="search"] #gw-list .empty[data-empty="idle"] { padding: 0; }
   flex-direction: column;
   gap: 12px;
 }
+/* 两层「就地叠」的显示开关（Issue #122）----
+   第一层是集子目录（.library-grid），第二层是某一部的索引（[data-lib-view="book"]）。
+   两层的显隐由 js/library.js 切 hidden 属性，这里**不写 display** ——
+   写了就会把 hidden 顶掉（作者样式里的 display 比 hidden 的默认规则更具体，
+   元素明明 hidden 了还看得见）。只保证被 hidden 时确实不占位。 */
+.library-grid[hidden],
+[data-lib-view="book"][hidden] {
+  display: none !important;
+}
 /* 平板 / 桌面：六张卡排成两列
    --------------------------------------------------------------------------
    手机上六张卡竖着排（一屏一张多一点，滚动就是「一部接一部」），是对的；
@@ -1993,11 +2002,21 @@ body[data-nav="search"] #gw-list .empty[data-empty="idle"] { padding: 0; }
     max-width: calc(33.333% - 8px);
   }
 }
-/* 一张卡 = 一部集子。整张卡是一个 <a>，点哪儿都进得去（不是只有标题能点），
-   所以卡片本身要有 active / focus 反馈，不能只在标题上下 300ms 的功夫。 */
+/* 一张卡 = 一部集子。整张卡点哪儿都进得去（不是只有标题能点），
+   所以卡片本身要有 active / focus 反馈，不能只在标题上下 300ms 的功夫。
+   ⚠️ 课内诗词那张是 <a href="/poems/">（跳转，可中键新开），
+      另外五张是 <button>（点了在这一页就地铺开索引，见 js/library.js 的 enterBook）。
+      所以这里的宽度 / 字体 / 颜色要同时对两者成立 —— <button> 自带
+      font: inherit 之外的默认样式（字体、字号、对齐、背景），
+      一条都不能少写，否则五张卡会比课内那张「长得不一样」。 */
 .library-card {
   position: relative;
   display: block;
+  width: 100%;
+  font: inherit;
+  font-size: inherit;
+  text-align: left;
+  cursor: pointer;
   box-sizing: border-box;
   padding: 16px 40px 16px 16px;
   background: var(--card);

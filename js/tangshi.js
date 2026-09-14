@@ -32,20 +32,21 @@
     "卷八 七言绝句"
   ];
 
-  function boot() {
-    if (!window.ReaderEngine) return;
-    var all = window.POEMS_TANGSHI || window.TANGSHI_ALL || [];
-    if (!all.length) {
-      var listEl = document.querySelector('[data-gw="list"]');
-      if (listEl) listEl.innerHTML = '<div class="empty">唐诗数据加载失败</div>';
-      return;
-    }
-
-    window.ReaderEngine.mount({
+  /**
+   * 这一部的**挂载配置**（不含数据与 DOM 根）。
+   *
+   * 单独拎出来，是因为同一部集子有两个入口：
+   *   1. 直接打开 /tangshi/（本文件末尾的 boot()）；
+   *   2. 在课外阅读入口页 /library/ 里点「唐诗三百首」，把这一部的索引
+   *      **就地**铺上来（见 js/library.js 的 enterBook）。
+   * 两处必须挂**同一份配置** —— 分组的卷次顺序、页名、文案、已读键名
+   * （poem_tangshi_read_v1）一个都不能不一样。各写一份的话，
+   * 迟早出现「从 /tangshi/ 进去显示 301 首、从 /library/ 进去只显示 250 首」
+   * 这类「同一部集子两个样子」的病，而且最难查（两处都「看起来对」）。
+   */
+  function bookConfig() {
+    return {
       id: "tangshi",
-      items: all,
-      root: "[data-gw-root]",
-      reader: "#gw-reader",
       groupOrder: GROUP_ORDER,
       pageTitle: "唐诗三百首",
       pageSub: "想读哪首点哪首",
@@ -60,8 +61,30 @@
         playerTitle: "唐诗朗读",
         searchPlaceholder: "搜索诗题 / 出处 / 作者"
       }
-    });
+    };
   }
+
+  function boot() {
+    if (!window.ReaderEngine) return;
+    var all = window.POEMS_TANGSHI || window.TANGSHI_ALL || [];
+    if (!all.length) {
+      var listEl = document.querySelector('[data-gw="list"]');
+      if (listEl) listEl.innerHTML = '<div class="empty">唐诗数据加载失败</div>';
+      return;
+    }
+
+    var cfg = bookConfig();
+    cfg.items = all;
+    cfg.root = "[data-gw-root]";
+    cfg.reader = "#gw-reader";
+    window.ReaderEngine.mount(cfg);
+  }
+
+  /* 课外阅读入口页（/library/）就地铺这一部时用它取数据与配置 */
+  window.TangshiBook = {
+    config: bookConfig,
+    items: function () { return window.POEMS_TANGSHI || window.TANGSHI_ALL || []; }
+  };
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", boot);
