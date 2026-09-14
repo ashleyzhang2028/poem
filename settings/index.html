@@ -36,206 +36,213 @@
              · 阅读辅助   —— 打开诗词 / 古文时的显示与朗读：注音总开关
              · 朗读播放   —— 连读怎么读：五档档位
            ================================================================== -->
-      <section class="settings-group" aria-labelledby="grp-general">
-        <h2 class="settings-group-title" id="grp-general">通用</h2>
+      <!-- 五组设置。平板（≥768px）上这里换成两列并排：见 css/classic.css 的 .settings-groups；
+           跨列的那一项（「我的清单」）单独带 .settings-item.wide -->
+      <div class="settings-groups">
+        <section class="settings-group" aria-labelledby="grp-general">
+          <h2 class="settings-group-title" id="grp-general">通用</h2>
 
-        <div class="settings-item">
-          <label for="input-username">用户名</label>
-          <input id="input-username" class="settings-input" type="text" maxlength="12"
-                 placeholder="Ashley" autocomplete="off" enterkeyhint="done" />
-          <div class="settings-hint">留空则显示默认名称「Ashley」；古诗词与小古文共用</div>
-        </div>
-
-        <div class="settings-item">
-          <label>数据管理</label>
-          <div class="settings-btns">
-            <button class="btn ghost-btn" id="btn-export">导出备份</button>
-            <button class="btn ghost-btn" id="btn-import">导入备份</button>
-            <button class="btn danger-btn" id="btn-reset">清空进度</button>
+          <div class="settings-item">
+            <label for="input-username">用户名</label>
+            <input id="input-username" class="settings-input" type="text" maxlength="12"
+                   placeholder="Ashley" autocomplete="off" enterkeyhint="done" />
+            <div class="settings-hint">留空则显示默认名称「Ashley」；古诗词与小古文共用</div>
           </div>
-          <div class="settings-hint">备份含全部设置与古诗词背诵进度</div>
-        </div>
-      </section>
 
-      <!-- ==================================================================
-           二、背诵：只决定「今天背哪几首」，只作用于首页（/）
-           ------------------------------------------------------------------
-           这一组里的每一项都是**排每日任务**的输入：学段 / 年级 / 学期定
-           「哪一册」，背诵范围定「从哪一册里取」，每日数量定「取几首」。
-           课外的五部集子不受这一组影响（它们各自按卷次 / 词牌 / 文体排）；
-           自选背诵也不在「范围」里选 —— 它自己排在自己的清单里，
-           与课内 261 首一起进每日任务（见「我的清单」那一组）。
-           ================================================================== -->
-      <section class="settings-group" aria-labelledby="grp-recite">
-        <h2 class="settings-group-title" id="grp-recite">背诵</h2>
-
-        <div class="settings-item">
-          <label>学段</label>
-          <div class="seg small" id="seg-stage">
-            <button data-stage="primary" class="active">小学</button>
-            <button data-stage="middle">初中</button>
-            <button data-stage="high">高中</button>
-          </div>
-        </div>
-
-        <div class="settings-item">
-          <label>年级</label>
-          <div class="chips" id="grade-chips"></div>
-        </div>
-
-        <div class="settings-item">
-          <label>学期</label>
-          <div class="seg small" id="seg-term">
-            <button data-term="1" class="active">上学期</button>
-            <button data-term="2">下学期</button>
-          </div>
-        </div>
-
-        <div class="settings-item">
-          <label>背诵范围</label>
-          <div class="seg small" id="seg-scope">
-            <button data-scope="term" class="active">本册</button>
-            <button data-scope="upto">本册及之前</button>
-            <button data-scope="primary">小学随机</button>
-            <button data-scope="middle">初中随机</button>
-            <button data-scope="primary_middle">小学+初中随机</button>
-            <button data-scope="high">高中随机</button>
-            <button data-scope="all">全部随机</button>
-          </div>
-          <div class="settings-hint" id="scope-hint"></div>
-        </div>
-
-        <div class="settings-item">
-          <label>每日背诵数量</label>
-          <div class="seg small" id="seg-count">
-            <button data-count="3">3 首</button>
-            <button data-count="5" class="active">5 首</button>
-            <button data-count="8">8 首</button>
-            <button data-count="10">10 首</button>
-          </div>
-        </div>
-
-        <div class="settings-item">
-          <label>进度总览</label>
-          <div class="settings-btns">
-            <a class="btn ghost-btn" href="/progress/">看背诵进度</a>
-          </div>
-          <div class="settings-hint">到期日历与全部到期篇目：未来两周哪天要复习几篇、具体是哪几篇，以及掌握度分布</div>
-        </div>
-      </section>
-
-      <!-- ==================================================================
-           二·五、复习算法：决定「下次什么时候复习」
-           ------------------------------------------------------------------
-           原先只有一套固定间隔表（「遗忘曲线」），用户没得选。
-           这一栏给出四张模型：遗忘曲线（默认）/ 莱特纳盒 / SM-2 / FSRS。
-           选项定义在 js/review-models.js，本页不另抄一份 —— 加模型只改那一处。
-           换模型**不清进度**：已有记录按最接近的落点换算，接着走。
-           ================================================================== -->
-      <section class="settings-group" aria-labelledby="grp-algo">
-        <h2 class="settings-group-title" id="grp-algo">复习算法</h2>
-
-        <div class="settings-item">
-          <label id="algo-label">用哪一套安排复习</label>
-          <div class="algo-modes" id="seg-algo" role="radiogroup" aria-labelledby="algo-label"></div>
-          <div class="settings-hint" id="algo-hint"></div>
-        </div>
-
-        <div class="settings-item">
-          <label>换算法会不会把进度清零</label>
-          <div class="settings-hint">
-            <strong>不会</strong>。已经背过的篇目一篇不丢，按「最接近的落点」接到新算法上接着走
-            （例如原先走到第 7 阶段的，换到 FSRS 就按第 7 阶段对应的稳定天数接手）。
-            只有之后**新做的评价**才按新算法算。
-          </div>
-        </div>
-
-        <div class="settings-item">
-          <label>复习间隔</label>
-          <div class="settings-hint" id="algo-interval"></div>
-        </div>
-      </section>
-
-      <!-- ==================================================================
-           三、我的清单：自选背诵（除教材之外，自己额外想背的篇目）
-           ------------------------------------------------------------------
-           这一整块原先长在**首页**（背诵页）底部，Issue #114 第二条：
-           「自选背诵栏应该全部放到设置中去，首页背诵栏只显示背诵列表，
-             不要干扰背诵。所有导入、导出、重命名、删除等等应该全部在设置中进行。」
-
-           首页是「今天背哪几首」的地方，管理的那些键摆在那儿既与背诵无关，
-           又一排都是「删除」「移出」，翻到今日列表末尾容易误触。
-           搬到这里之后：首页只留背诵本身，增删改查全在设置里。
-
-           ⚠️ 搬的是**管理入口**，不是这些篇目的背诵 ——
-              自选篇目本来就跟课内 261 首一起按遗忘曲线排每日任务
-              （js/scheduler.js），排上了就混在首页的今日列表里、
-              与课内那几首长得一样（出处那一栏写集子名）。
-           ⚠️ 两页读同一份 localStorage 键 poem_recite_collections_v1：
-              在这一页改完，回首页的今日任务立刻跟着变
-              （集合一变会派发 recite-collections-change 事件，
-                首页那一侧照旧监听它重排，一条逻辑都没有分叉）。
-           ================================================================== -->
-      <section class="settings-group" aria-labelledby="grp-lists">
-        <h2 class="settings-group-title" id="grp-lists">我的清单</h2>
-
-        <div class="settings-item">
-          <label>自选背诵</label>
-          <div class="collections-panel" id="collections-panel">
-            <p class="collections-tip" id="collections-tip"></p>
-            <div class="collections-tools" id="collections-tools">
-              <button type="button" class="collection-act" id="btn-collections-import" title="粘贴一份清单，新建一个集合">导入清单</button>
+          <div class="settings-item">
+            <label>数据管理</label>
+            <div class="settings-btns">
+              <button class="btn ghost-btn" id="btn-export">导出备份</button>
+              <button class="btn ghost-btn" id="btn-import">导入备份</button>
+              <button class="btn danger-btn" id="btn-reset">清空进度</button>
             </div>
-            <div class="list" id="collections-list"></div>
+            <div class="settings-hint">备份含全部设置与古诗词背诵进度</div>
           </div>
-          <div class="settings-hint">到「课外」任一集子或「搜索」页，点篇目右边的书签即可加进来；加进来的篇目与课内诗词一起按遗忘曲线复习。</div>
-        </div>
-      </section>
+        </section>
 
-      <!-- ==================================================================
-           四、阅读辅助：无论读课内还是读课外，都听这一份总开关
-           ------------------------------------------------------------------
-           与「朗读播放」的分工：
-             · 阅读辅助 —— 打开一篇时**看不看得到**拼音（注音总开关）
-             · 朗读播放 —— 连读时**怎么念**（原文 / 原文加译文 / 顺序 / 随机）
-           两件不同的事，所以分成两组；共同点是都全站一份，
-           不随「背哪一册」或「读哪一部集子」变化。
-           ================================================================== -->
-      <section class="settings-group" aria-labelledby="grp-reader">
-        <h2 class="settings-group-title" id="grp-reader">阅读辅助</h2>
+        <!-- ==================================================================
+             二、背诵：只决定「今天背哪几首」，只作用于首页（/）
+             ------------------------------------------------------------------
+             这一组里的每一项都是**排每日任务**的输入：学段 / 年级 / 学期定
+             「哪一册」，背诵范围定「从哪一册里取」，每日数量定「取几首」。
+             课外的五部集子不受这一组影响（它们各自按卷次 / 词牌 / 文体排）；
+             自选背诵也不在「范围」里选 —— 它自己排在自己的清单里，
+             与课内 261 首一起进每日任务（见「我的清单」那一组）。
+             ================================================================== -->
+        <section class="settings-group" aria-labelledby="grp-recite">
+          <h2 class="settings-group-title" id="grp-recite">背诵</h2>
 
-        <div class="settings-item">
-          <label>自动注音</label>
-          <div class="seg small" id="seg-helper">
-            <button data-helper="off" class="active">关闭</button>
-            <button data-helper="on">开启</button>
+          <div class="settings-item">
+            <label>学段</label>
+            <div class="seg small" id="seg-stage">
+              <button data-stage="primary" class="active">小学</button>
+              <button data-stage="middle">初中</button>
+              <button data-stage="high">高中</button>
+            </div>
           </div>
-          <div class="settings-hint" id="helper-hint">开启后，打开诗或古文即自动注音；朗读按钮始终可用</div>
-        </div>
-      </section>
 
-      <!-- ==================================================================
-           五、朗读播放：五档连读偏好，全站一份
-           ------------------------------------------------------------------
-           这一组原先**只存在于分类卡右侧那颗圆键的长按 / 右键菜单**里，
-           界面上没有任何提示、设置页也没有入口，于是「这几个选项在哪儿调」
-           被反复问起（Issue #69）。现在设置页给一栏显式单选项，
-           与圆键菜单读写同一份 poem_play_mode_v1，两边看到的永远是同一档。
-           ================================================================== -->
-      <section class="settings-group" aria-labelledby="grp-play">
-        <h2 class="settings-group-title" id="grp-play">朗读播放</h2>
-
-        <div class="settings-item">
-          <label id="play-mode-label">连读方式</label>
-          <div class="play-modes" id="seg-play" role="radiogroup" aria-labelledby="play-mode-label"></div>
-          <div class="settings-hint" id="play-hint"></div>
-          <div class="settings-hint">
-            想听完一篇接着听下一篇，不用回这一页：在集子索引页（小古文 / 唐诗 / 宋词 / 古文观止 / 昭明文选）
-            每张分类卡头的右侧有一颗圆形播放键，<strong>长按 / 右键</strong>弹出的是同一个菜单，
-            选中即刻开听。
+          <div class="settings-item">
+            <label>年级</label>
+            <div class="chips" id="grade-chips"></div>
           </div>
-        </div>
-      </section>
+
+          <div class="settings-item">
+            <label>学期</label>
+            <div class="seg small" id="seg-term">
+              <button data-term="1" class="active">上学期</button>
+              <button data-term="2">下学期</button>
+            </div>
+          </div>
+
+          <div class="settings-item">
+            <label>背诵范围</label>
+            <div class="seg small" id="seg-scope">
+              <button data-scope="term" class="active">本册</button>
+              <button data-scope="upto">本册及之前</button>
+              <button data-scope="primary">小学随机</button>
+              <button data-scope="middle">初中随机</button>
+              <button data-scope="primary_middle">小学+初中随机</button>
+              <button data-scope="high">高中随机</button>
+              <button data-scope="all">全部随机</button>
+            </div>
+            <div class="settings-hint" id="scope-hint"></div>
+          </div>
+
+          <div class="settings-item">
+            <label>每日背诵数量</label>
+            <div class="seg small" id="seg-count">
+              <button data-count="3">3 首</button>
+              <button data-count="5" class="active">5 首</button>
+              <button data-count="8">8 首</button>
+              <button data-count="10">10 首</button>
+            </div>
+          </div>
+
+          <div class="settings-item">
+            <label>进度总览</label>
+            <div class="settings-btns">
+              <a class="btn ghost-btn" href="/progress/">看背诵进度</a>
+            </div>
+            <div class="settings-hint">到期日历与全部到期篇目：未来两周哪天要复习几篇、具体是哪几篇，以及掌握度分布</div>
+          </div>
+        </section>
+
+        <!-- ==================================================================
+             二·五、复习算法：决定「下次什么时候复习」
+             ------------------------------------------------------------------
+             原先只有一套固定间隔表（「遗忘曲线」），用户没得选。
+             这一栏给出四张模型：遗忘曲线（默认）/ 莱特纳盒 / SM-2 / FSRS。
+             选项定义在 js/review-models.js，本页不另抄一份 —— 加模型只改那一处。
+             换模型**不清进度**：已有记录按最接近的落点换算，接着走。
+             ================================================================== -->
+        <section class="settings-group" aria-labelledby="grp-algo">
+          <h2 class="settings-group-title" id="grp-algo">复习算法</h2>
+
+          <div class="settings-item">
+            <label id="algo-label">用哪一套安排复习</label>
+            <div class="algo-modes" id="seg-algo" role="radiogroup" aria-labelledby="algo-label"></div>
+            <div class="settings-hint" id="algo-hint"></div>
+          </div>
+
+          <div class="settings-item">
+            <label>换算法会不会把进度清零</label>
+            <div class="settings-hint">
+              <strong>不会</strong>。已经背过的篇目一篇不丢，按「最接近的落点」接到新算法上接着走
+              （例如原先走到第 7 阶段的，换到 FSRS 就按第 7 阶段对应的稳定天数接手）。
+              只有之后**新做的评价**才按新算法算。
+            </div>
+          </div>
+
+          <div class="settings-item">
+            <label>复习间隔</label>
+            <div class="settings-hint" id="algo-interval"></div>
+          </div>
+        </section>
+
+        <!-- ==================================================================
+             三、我的清单：自选背诵（除教材之外，自己额外想背的篇目）
+             ------------------------------------------------------------------
+             这一整块原先长在**首页**（背诵页）底部，Issue #114 第二条：
+             「自选背诵栏应该全部放到设置中去，首页背诵栏只显示背诵列表，
+               不要干扰背诵。所有导入、导出、重命名、删除等等应该全部在设置中进行。」
+
+             首页是「今天背哪几首」的地方，管理的那些键摆在那儿既与背诵无关，
+             又一排都是「删除」「移出」，翻到今日列表末尾容易误触。
+             搬到这里之后：首页只留背诵本身，增删改查全在设置里。
+
+             ⚠️ 搬的是**管理入口**，不是这些篇目的背诵 ——
+                自选篇目本来就跟课内 261 首一起按遗忘曲线排每日任务
+                （js/scheduler.js），排上了就混在首页的今日列表里、
+                与课内那几首长得一样（出处那一栏写集子名）。
+             ⚠️ 两页读同一份 localStorage 键 poem_recite_collections_v1：
+                在这一页改完，回首页的今日任务立刻跟着变
+                （集合一变会派发 recite-collections-change 事件，
+                  首页那一侧照旧监听它重排，一条逻辑都没有分叉）。
+             ================================================================== -->
+        <section class="settings-group" aria-labelledby="grp-lists">
+          <h2 class="settings-group-title" id="grp-lists">我的清单</h2>
+
+          <!-- ⚠️ .wide：这一项在平板两列排布里**跨列**（见 css/classic.css 的
+               .settings-item.wide）—— 清单面板自己不常满，但拖拽排序与
+               「导入 / 导出」两排按钮挤在半栏里会折成三四行。 -->
+          <div class="settings-item wide">
+            <label>自选背诵</label>
+            <div class="collections-panel" id="collections-panel">
+              <p class="collections-tip" id="collections-tip"></p>
+              <div class="collections-tools" id="collections-tools">
+                <button type="button" class="collection-act" id="btn-collections-import" title="粘贴一份清单，新建一个集合">导入清单</button>
+              </div>
+              <div class="list" id="collections-list"></div>
+            </div>
+            <div class="settings-hint">到「课外」任一集子或「搜索」页，点篇目右边的书签即可加进来；加进来的篇目与课内诗词一起按遗忘曲线复习。</div>
+          </div>
+        </section>
+
+        <!-- ==================================================================
+             四、阅读辅助：无论读课内还是读课外，都听这一份总开关
+             ------------------------------------------------------------------
+             与「朗读播放」的分工：
+               · 阅读辅助 —— 打开一篇时**看不看得到**拼音（注音总开关）
+               · 朗读播放 —— 连读时**怎么念**（原文 / 原文加译文 / 顺序 / 随机）
+             两件不同的事，所以分成两组；共同点是都全站一份，
+             不随「背哪一册」或「读哪一部集子」变化。
+             ================================================================== -->
+        <section class="settings-group" aria-labelledby="grp-reader">
+          <h2 class="settings-group-title" id="grp-reader">阅读辅助</h2>
+
+          <div class="settings-item">
+            <label>自动注音</label>
+            <div class="seg small" id="seg-helper">
+              <button data-helper="off" class="active">关闭</button>
+              <button data-helper="on">开启</button>
+            </div>
+            <div class="settings-hint" id="helper-hint">开启后，打开诗或古文即自动注音；朗读按钮始终可用</div>
+          </div>
+        </section>
+
+        <!-- ==================================================================
+             五、朗读播放：五档连读偏好，全站一份
+             ------------------------------------------------------------------
+             这一组原先**只存在于分类卡右侧那颗圆键的长按 / 右键菜单**里，
+             界面上没有任何提示、设置页也没有入口，于是「这几个选项在哪儿调」
+             被反复问起（Issue #69）。现在设置页给一栏显式单选项，
+             与圆键菜单读写同一份 poem_play_mode_v1，两边看到的永远是同一档。
+             ================================================================== -->
+        <section class="settings-group" aria-labelledby="grp-play">
+          <h2 class="settings-group-title" id="grp-play">朗读播放</h2>
+
+          <div class="settings-item">
+            <label id="play-mode-label">连读方式</label>
+            <div class="play-modes" id="seg-play" role="radiogroup" aria-labelledby="play-mode-label"></div>
+            <div class="settings-hint" id="play-hint"></div>
+            <div class="settings-hint">
+              想听完一篇接着听下一篇，不用回这一页：在集子索引页（小古文 / 唐诗 / 宋词 / 古文观止 / 昭明文选）
+              每张分类卡头的右侧有一颗圆形播放键，<strong>长按 / 右键</strong>弹出的是同一个菜单，
+              选中即刻开听。
+            </div>
+          </div>
+        </section>
+      </div>
     </main>
 
     <!-- 版权 + 用户协议 / 隐私条款：整页设置的最底部（页面内容不足时也贴底） -->

@@ -677,7 +677,10 @@ setTimeout(() => {
   const siteCss = fs.readFileSync(path + 'css/style.css', 'utf8');
   // .topbar 有两条规则（主规则 + 窄屏媒体的 padding-top 覆盖），取含 max-width 的那条主规则
   const topbarBlocks = [...siteCss.matchAll(/\.topbar \{([^}]*)\}/g)].map(m => m[1]);
-  const topbarMain = topbarBlocks.find(b => /max-width:\s*720px/.test(b)) || '';
+  // ⚠️ 平板那一档（Issue #122 后续）把 max-width 改成了 var(--col-w)，
+  //    所以这里按「含 max-width 且带宽度令牌 / 720px」来认主规则，不再写死 720px。
+  const topbarMain = topbarBlocks.find(b =>
+    /max-width:\s*(720px|var\(--col-w)/.test(b)) || '';
   chk(/padding:[^;]*12px\s*;/.test(topbarMain),
     '顶栏主规则下内边距为 12px：搜索框上方的空档与下方同值，页首上下对称');
   // 需求（Issue #55 第三条）：卡头「蒙学经典 4 篇」与右侧圆键不再压在首条的分隔线上。
