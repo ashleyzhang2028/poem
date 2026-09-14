@@ -655,9 +655,11 @@ chk(settingsHtml.indexOf('settings-modal') === -1, '设置页不再用弹层结�
 chk(settingsHtml.indexOf('class="foot settings-foot"') !== -1, '设置页底部有页脚（版权 + 法务链接）');
 
 // 需求（本次）：功能变多后设置项按用途归类 ——
-// 分「通用」「古诗词背诵」「阅读辅助」「朗读播放」四组
-chk((settingsHtml.match(/class="settings-group"/g) || []).length === 4,
-  '设置分四组：通用 / 古诗词背诵 / 阅读辅助 / 朗读播放');
+// 分「通用」「古诗词背诵」「复习算法」「阅读辅助」「朗读播放」五组
+// （「复习算法」是「可切换复习算法」那一轮追加的：原先只有一套固定间隔表）
+chk((settingsHtml.match(/class="settings-group"/g) || []).length === 5,
+  '设置分五组：通用 / 古诗词背诵 / 复习算法 / 阅读辅助 / 朗读播放');
+chk(/settings-group-title[^>]*>复习算法</.test(settingsHtml), '有「复习算法」分组标题');
 chk(/settings-group-title[^>]*>通用</.test(settingsHtml), '有「通用」分组标题');
 chk(/settings-group-title[^>]*>古诗词背诵</.test(settingsHtml), '有「古诗词背诵」分组标题');
 chk(/settings-group-title[^>]*>阅读辅助</.test(settingsHtml), '有「阅读辅助」分组标题');
@@ -677,12 +679,14 @@ chk(/id="seg-stage"/.test(reciteBlock) && /id="grade-chips"/.test(reciteBlock) &
   '「古诗词背诵」组聚齐学段 / 年级 / 学期 / 背诵范围 / 每日数量');
 chk(/id="seg-helper"/.test(readerBlock), '「阅读辅助」组含注音总开关');
 
-// 需求（Issue #69 后续 A+B）：连读档位必须在设置页有显式入口，
-// 同时把「圆键长按 / 右键也能调」这条讲明白（原先一个字都没写）
+// 需求（Issue #69 后续 A）：连读档位必须在设置页有显式单选项入口。
+// 原先还把「圆键长按 / 右键也能调」这段复述在组内（B），#120 已把那块
+// 「在哪儿快速调」说明整块删掉（入口由本栏显式给出，不必再讲一遍手势），
+// 这条断言跟着改成守住「不再复述」。
 const playBlock = (settingsHtml.match(/aria-labelledby="grp-play"[\s\S]*?<\/section>/) || [''])[0];
 chk(!!playBlock, '「朗读播放」分组能取到');
 chk(/id="seg-play"/.test(playBlock), '「朗读播放」组有五档单选项容器');
-chk(/长按|右键/.test(playBlock), '同组说明了圆键「长按 / 右键」这个快速入口（B）');
+chk(!/长按|右键/.test(playBlock), '同组不再复述圆键「长按 / 右键」（#120 已删该说明）');
 // 档位定义必须同源：设置页与阅读器都读 js/play-modes.js，不得各写一份
 chk(/js\/play-modes\.js/.test(settingsHtml), '设置页加载 js/play-modes.js（与阅读器同源）');
 chk(/window\.PlayModes/.test(settingsJs) && /PM*\.(read|LIST|write|of)\b/.test(settingsJs),

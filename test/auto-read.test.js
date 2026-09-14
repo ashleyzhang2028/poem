@@ -673,11 +673,12 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
     chk(/当前：原文 · 顺序/.test(sd3.document.querySelector('#play-hint').textContent),
       '本机值不认识时回显出厂档「原文 · 顺序」（实际「' + sd3.document.querySelector('#play-hint').textContent + '」）');
 
-    // B：设置页必须把「圆键长按 / 右键」这条入口讲出来（原先一个字都没写）
+    // B：设置页只留这一栏显式单选项，不再复述「圆键长按 / 右键」那段说明
+    //（#120 把那段「在哪儿快速调」说明整块删了 —— 入口已由本栏显式给出，
+    // 口头再讲一遍圆键手势只是重复；这条断言跟着改成守住「不再复述」）。
     const playBlock = sdoc.querySelector('#grp-play').closest('.settings-group').textContent;
-    chk(/长按/.test(playBlock) && /右键/.test(playBlock),
-      '设置页写明圆键的「长按（手机）/ 右键（电脑）」快速入口');
-    chk(/勾选|长按/.test(playBlock), '设置页说清了圆键上能直接调这五档');
+    chk(!/长按/.test(playBlock) && !/右键/.test(playBlock),
+      '设置页不再复述圆键「长按 / 右键」这条快速入口');
 
     // 档位定义同源：设置页与集子页读到的模式表必须是同一份
     chk(sd.PlayModes.LIST.map(m => m.id).join(',') === cwin.PlayModes.LIST.map(m => m.id).join(','),

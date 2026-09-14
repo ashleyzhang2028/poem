@@ -612,8 +612,46 @@
  *        （js/progress.js、test/progress.test.js）
  *
  *        版本号按「并行 PR 一律 +5」的口径从 v83 起落到 v88。
+ *
+ *   v93  复习算法可切换（Issue #114 后续 · 用户需求）：
+ *        原先只有一套固定间隔表（「遗忘曲线」），用户在设置页没得选。
+ *        新增 js/review-models.js —— 把「下次什么时候复习」抽成**可插拔的几张模型**：
+ *
+ *        · ebbinghaus —— 固定间隔表（0/1/2/4/7/15/30/60/120/240 天），
+ *          **出厂默认，行为逐条不变**。⚠️ 说清一件事：艾宾浩斯遗忘曲线
+ *          本身是**心理学规律**（遗忘先快后慢），不是调度算法 ——
+ *          网传的 1-2-4-7-15-30 天是后人自制计划表，与艾宾浩斯本人的
+ *          实验数据并不一一对应。项目照旧用它，但把它当「一张固定表」用。
+ *        · leitner —— 莱特纳盒（1972）：五个盒子，间隔 1/2/4/8/16 天，
+ *          答对往后挪一盒、答错退回第一盒。无数学，就是纸质卡片那一套。
+ *        · sm2 —— SM-2（1987，Anki 旧版默认）：间隔与简易度 EF 两个量，
+ *          原式 EF' = EF + (0.1 − (5−q)×(0.08 + (5−q)×0.02))，间隔 × EF；
+ *          三条按钮映射到质量分 5 / 3 / 1（3 分仍算通过，只是 EF 下调）。
+ *        · fsrs —— FSRS（2022，新版 Anki 内置）**简化可解释版**：
+ *          难度 D、稳定性 S、可提取性 R = 2^(−t/S)，间隔按「R 回落到 0.9」
+ *          反推。⚠️ 官方完整版靠**机器学习拟合个人记忆**，本项目纯前端、
+ *          无后端也无训练数据，只落地公开的固定参数与公式骨架，不做拟合。
+ *        · SM-17 / SM-19 / SM-20 —— **不做**：SuperMemo 私有闭源、公式未公开，
+ *          无法如实复现；宁可明说不做，也不编一套「像 SM-17 的东西」冒充。
+ *        · HLR 半衰期回归（多邻国）—— **不单独成一套**：「每条记忆算半衰期」
+ *          与 FSRS 的稳定性 S 同源，单独再摆一套只会重复，故并作 S 的解读。
+ *
+ *        换算法**不清进度**：ReviewModels.adopt() 把已有记录按最接近的落点
+ *        换算到新模型（level 这个通用刻度原样保留），且**不动 nextReviewAt** ——
+ *        用户已经排好的到期时间不该被顺手挪走。三个展示口径跟着当前模型说：
+ *        首页副标题（「按 FSRS 复习」）、详情弹层的「记忆阶段」、
+ *        进度页的阶段档名与「走完全程」那一行。
+ *
+ *        页面：设置页新增「复习算法」一组（四张模型卡，各自名字 / 出处 /
+ *        一句话取舍），与朗读档位那一组同一套选中语言。
+ *        （js/review-models.js、js/scheduler.js、js/storage.js、js/app.js、
+ *          js/settings.js、js/progress.js、index.html、settings/index.html、
+ *          progress/index.html、css/style.css、test/review-models.test.js、
+ *          test/ui.test.js、test/theme.test.js、test/run.sh、README.md）
+ *
+ *        版本号按「并行 PR 一律 +5」的口径从 v88 起落到 v93（#121 那笔已落在 v88，本条再 +5）。
  */
-const CACHE_NAME = "poem-app-v88";
+const CACHE_NAME = "poem-app-v93";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [
@@ -641,6 +679,9 @@ const PRECACHE = [
   "./js/speech.js",
   "./js/reader.js",
   "./js/storage.js",
+  // 复习调度算法（可切换）：遗忘曲线 / Leitner / SM-2 / FSRS 简化版。
+  // ⚠️ 须排在 scheduler.js 之前 —— scheduler.review() 一进来就转交给它。
+  "./js/review-models.js",
   "./js/scheduler.js",
   "./js/app.js",
   "./js/chrome.js",
