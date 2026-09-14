@@ -439,6 +439,16 @@
  *           逐条打开取出的标题 / 元信息 / 正文 / 译文逐字节一致。
  *        （css/classic.css、js/search.js、data/text-master.js、data/poems-songci.js、
  *          scripts/build-text-master.js、README.md、测试）
+ *   v67  朗读播放档位搬到设置页，与圆键菜单同源（Issue #69 后续）：
+ *        五档连读方式原先只在「分类卡右侧圆键的长按 / 右键菜单」里，
+ *        界面上没有任何提示、设置页也没有入口。现在：
+ *          · 新增 js/play-modes.js —— 五档模式 / 存储键 / 出厂档的**唯一一份**定义，
+ *            js/reader-core.js 与 js/settings.js 都读它（原先两份各写一遍，字或 id
+ *            一改就会错开：设置里选中的和实际连读的不是同一档）；
+ *          · 设置页新增「朗读播放」分组：五档单选项 + 一行说明「圆键长按 / 右键也能调」；
+ *          · 两个入口读写同一份 poem_play_mode_v1，换标签页时靠 storage 事件同步。
+ *        （js/play-modes.js、js/reader-core.js、js/settings.js、
+ *          settings/index.html、css/style.css、sw.js、测试）
  *   v65  古文观止 167 篇正文收归存储主表（Issue #69 · 按部推进第 2 部）：
  *        FULL_BOOKS 清单加 `guwen`，主表 540 → 705 条，
  *        data/poems-guwen.js 167 条摘掉内联正文、改留 textRef。
@@ -472,7 +482,7 @@
  *        （css/classic.css、js/search.js、test/search.test.js、
  *          test/pwa.test.js、sw.js）
  */
-const CACHE_NAME = "poem-app-v66";
+const CACHE_NAME = "poem-app-v67";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [
@@ -487,6 +497,9 @@ const PRECACHE = [
   "./classic/",
   "./settings/",
   "./js/settings.js",
+  // 朗读播放档位：五档模式 / 存储键 / 出厂档的唯一一份定义，
+  // 阅读器与设置页共用（顺序须在两者之前）
+  "./js/play-modes.js",
   "./terms/",
   "./privacy/",
   "./css/legal.css",

@@ -654,12 +654,14 @@ chk(settingsHtml.indexOf('id="settings-page"') !== -1, '设置页有独立的整
 chk(settingsHtml.indexOf('settings-modal') === -1, '设置页不再用弹层结构');
 chk(settingsHtml.indexOf('class="foot settings-foot"') !== -1, '设置页底部有页脚（版权 + 法务链接）');
 
-// 需求（本次）：功能变多后设置项按用途归类 —— 分「通用」「古诗词背诵」「阅读辅助」三组
-chk((settingsHtml.match(/class="settings-group"/g) || []).length === 3,
-  '设置分三组：通用 / 古诗词背诵 / 阅读辅助');
+// 需求（本次）：功能变多后设置项按用途归类 ——
+// 分「通用」「古诗词背诵」「阅读辅助」「朗读播放」四组
+chk((settingsHtml.match(/class="settings-group"/g) || []).length === 4,
+  '设置分四组：通用 / 古诗词背诵 / 阅读辅助 / 朗读播放');
 chk(/settings-group-title[^>]*>通用</.test(settingsHtml), '有「通用」分组标题');
 chk(/settings-group-title[^>]*>古诗词背诵</.test(settingsHtml), '有「古诗词背诵」分组标题');
 chk(/settings-group-title[^>]*>阅读辅助</.test(settingsHtml), '有「阅读辅助」分组标题');
+chk(/settings-group-title[^>]*>朗读播放</.test(settingsHtml), '有「朗读播放」分组标题');
 // 分组要真的装对东西：只给背诵用的选项不能落在「通用」里
 const generalBlock = (settingsHtml.match(/aria-labelledby="grp-general"[\s\S]*?<\/section>/) || [''])[0];
 const reciteBlock = (settingsHtml.match(/aria-labelledby="grp-recite"[\s\S]*?<\/section>/) || [''])[0];
@@ -674,6 +676,21 @@ chk(/id="seg-stage"/.test(reciteBlock) && /id="grade-chips"/.test(reciteBlock) &
     /id="seg-term"/.test(reciteBlock) && /id="seg-scope"/.test(reciteBlock) && /id="seg-count"/.test(reciteBlock),
   '「古诗词背诵」组聚齐学段 / 年级 / 学期 / 背诵范围 / 每日数量');
 chk(/id="seg-helper"/.test(readerBlock), '「阅读辅助」组含注音总开关');
+
+// 需求（Issue #69 后续 A+B）：连读档位必须在设置页有显式入口，
+// 同时把「圆键长按 / 右键也能调」这条讲明白（原先一个字都没写）
+const playBlock = (settingsHtml.match(/aria-labelledby="grp-play"[\s\S]*?<\/section>/) || [''])[0];
+chk(!!playBlock, '「朗读播放」分组能取到');
+chk(/id="seg-play"/.test(playBlock), '「朗读播放」组有五档单选项容器');
+chk(/长按|右键/.test(playBlock), '同组说明了圆键「长按 / 右键」这个快速入口（B）');
+// 档位定义必须同源：设置页与阅读器都读 js/play-modes.js，不得各写一份
+chk(/js\/play-modes\.js/.test(settingsHtml), '设置页加载 js/play-modes.js（与阅读器同源）');
+chk(/window\.PlayModes/.test(settingsJs) && /PM*\.(read|LIST|write|of)\b/.test(settingsJs),
+  '设置页逻辑从 PlayModes 取档位，而不是另抄一份字面量');
+chk(!/seq-origin|shuffle-trans/.test(settingsJs),
+  '设置页 JS 里不再出现模式 id 字面量（避免与阅读器错开）');
+// 设置页不加载 reader-core（那是集子页的引擎），档位只能走 play-modes.js
+chk(!/js\/reader-core\.js/.test(settingsHtml), '设置页不加载阅读器引擎（只引档位定义）');
 // 分组标题的样式：与选项药丸区分开，且靠一条细线收尾
 chk(/\.settings-group-title\s*\{[\s\S]{0,300}?letter-spacing/.test(css),
   '分组标题用字距拉开，与组内选项区分（命中 .settings-group-title 样式）');
