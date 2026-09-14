@@ -446,15 +446,15 @@ node scripts/build-canonical-texts.js    # 5. 显示层裁定表（预期 0 条�
 
 用户口径是「**正文收归主表，各集子退化成只存归属**」。落地分两张表、两件事：
 
-- **存储主表** `data/text-master.js`（705 条，由 `scripts/build-text-master.js` 算出）：
+- **存储主表** `data/text-master.js`（977 条，由 `scripts/build-text-master.js` 算出）：
   同一篇作品的正文 / 译文**只落一份**，key 是主条目（课内优先，教材口径）。
   表尾另给一个取数入口 `window.masterTextOf(p, book)`——把条目上的 `textRef`
   展开成正文 / 译文，**各消费方共用同一个**（站点索引、阅读引擎、搜索页），
   免得各写一份、某一处忘了取，而表现只是「那一处正文空白」。
 - **各集子退化成只存归属**（`scripts/apply-text-master.js`）：被主表收编的条目
   摘掉 `text` / `translation` / `translationSource` 三行，改留一行 `textRef`。
-  共 **765 条条目**收归：120 条跨集重复的（57 组 + 近重复合并进来的 3 组）
-  + 480 条《昭明文选》的单篇 + 165 条《古文观止》的单篇。
+  共 **1048 条条目**收归：120 条跨集重复的（57 组 + 近重复合并进来的 3 组）
+  + 480 条《昭明文选》的单篇 + 165 条《古文观止》的单篇 + 283 条《宋词三百首》的单篇。
   条目仍带齐归属信息（题名 / 作者 / 朝代 / 卷次），只是不再存正文。
 
   **收归范围按部推进**（`build-text-master.js` 里的 `FULL_BOOKS` 清单）：
@@ -463,7 +463,7 @@ node scripts/build-canonical-texts.js    # 5. 显示层裁定表（预期 0 条�
   |---|---|---|---|
   | 1 | 昭明文选 | 480 | ✅ 已收（`poems-zhaoming.js` 2.1MB → 154KB） |
   | 2 | 古文观止 | 167 | ✅ 已收（`poems-guwen.js` 728KB → 53KB） |
-  | 3 | 宋词三百首 | 283 | 排队 |
+  | 3 | 宋词三百首 | 283 | ✅ 已收（`poems-songci.js` 275KB → 76KB） |
   | 4 | 唐诗三百首 | 301 | 排队 |
   | 5 | 小古文 | 100 | 排队 |
 

@@ -50,13 +50,17 @@ sb.SITE_INDEX.forEach(p => { byId[p.id] = p; });
    与 scripts/build-text-master.js 的 FULL_BOOKS 一致。
    一部一个 PR 地往下收：清单里没点名的部照旧内联，两种形态并存。
    ⚠️ 哪一部漏收了、或哪一部多收了，都由这一份清单核 —— 不靠数总数。 */
-const FULL_BOOKS = ['zhaoming', 'guwen'];
+const FULL_BOOKS = ['zhaoming', 'guwen', 'songci'];
 
 /* ---- 1.1 主表本身 ---- */
 /* 60（跨集重复的作品：
      57 课内自身重复去重后的跨集重复 + 3 近重复合并进来的
      《黄鹤楼送孟浩然之广陵》《夜上受降城闻笛》《将进酒》）
-   + FULL_BOOKS 各部的**单篇**条目（昭明 480 + 古文观止 164） */
+   + FULL_BOOKS 各部的**单篇**条目 —— 按部推进，点名的部全收：
+       昭明文选 480 → 古文观止 167 → **宋词三百首 283（本轮）**。
+     ⚠️ 这里**不写死单篇的条数**：那个数字每收一部就变，写死等于每部都要回来改一行，
+        而真正要守的是「单篇条目恰好来自清单点名的那些部」——
+        多一个少一个都由下面两条断言按清单核，不靠数总数。 */
 const multiEntries = MASTER.filter(m => m.entries.length >= 2);
 const singleEntries = MASTER.filter(m => m.entries.length === 1);
 chk(multiEntries.length === 60,

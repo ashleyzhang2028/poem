@@ -424,7 +424,22 @@
  *        页面可见文本零变化。
  *        （data/text-master.js、data/poems-zhaoming.js、
  *          scripts/build-text-master.js、scripts/apply-text-master.js、测试）
- *   v66  朗读播放档位搬到设置页，与圆键菜单同源（Issue #69 后续）：
+ *   v66  搜索页搜索框的机上位置与描边（Issue #69 · 用户机上反馈）：
+ *        ① 聚焦 / 键盘弹着 / 有搜索内容 → 搜索框连同候选下拉一起**升到标题栏下方**
+ *           （position: sticky + top: 0，滚动看结果时框一直看得见）；
+ *           清空内容且不在焦点上 → 回到页面垂直居中（用户原话的四条要求）；
+ *        ② 搜索框到结果列表的留白一律 8px，js/search.js 不再往 hero 上行内写
+ *           paddingBottom —— 一设一撤会让列表整块挪 4px；
+ *        ③ 聚焦描边不再是浏览器默认那支近黑的 ring：改成天青主色 + 纸色底，
+ *           并给键盘操作留一圈 focus-visible 描边；
+ *        ④ 宋词三百首 283 篇正文收归存储主表（Issue #69 · 按部推进第 3 部）：
+ *           FULL_BOOKS 清单加 `songci`，主表 705 → 977 条，
+ *           data/poems-songci.js 283 条摘掉内联正文、改留 textRef
+ *           （275KB → 76KB，-72%）。页面可见文本零变化：列表 283 条、
+ *           逐条打开取出的标题 / 元信息 / 正文 / 译文逐字节一致。
+ *        （css/classic.css、js/search.js、data/text-master.js、data/poems-songci.js、
+ *          scripts/build-text-master.js、README.md、测试）
+ *   v67  朗读播放档位搬到设置页，与圆键菜单同源（Issue #69 后续）：
  *        五档连读方式原先只在「分类卡右侧圆键的长按 / 右键菜单」里，
  *        界面上没有任何提示、设置页也没有入口。现在：
  *          · 新增 js/play-modes.js —— 五档模式 / 存储键 / 出厂档的**唯一一份**定义，
@@ -467,7 +482,7 @@
  *        （css/classic.css、js/search.js、test/search.test.js、
  *          test/pwa.test.js、sw.js）
  */
-const CACHE_NAME = "poem-app-v66";
+const CACHE_NAME = "poem-app-v67";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [
