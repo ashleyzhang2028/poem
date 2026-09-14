@@ -424,8 +424,22 @@
  *        页面可见文本零变化。
  *        （data/text-master.js、data/poems-zhaoming.js、
  *          scripts/build-text-master.js、scripts/apply-text-master.js、测试）
+ *   v65  古文观止 167 篇正文收归存储主表（Issue #69 · 按部推进第 2 部）：
+ *        FULL_BOOKS 清单加 `guwen`，主表 540 → 705 条，
+ *        data/poems-guwen.js 167 条摘掉内联正文、改留 textRef。
+ *        页面可见文本零变化（逐条比对正文 / 译文字节一致）。
+ *        顺带修两处**吞条目**的静默故障：
+ *          ① scripts/apply-text-master.js 的条目切块正则把缩进写死成两格，
+ *             而《齐桓晋文之事》那一条的 `{` 是顶格的 —— 该条一直没被处理；
+ *          ② 同文件按 id 认条目用的正则漏了多行标志 `m`，
+ *             导致 `{` 与 `id:` 不同行的条目（改了排版后是绝大多数）
+ *             一个都匹配不上、id 取成空串，同样静默漏摘。
+ *        另修 data/poems-guwen.js 的 getGuwenById()：条目只剩 textRef 后
+ *        直接返回原始条目会让 `getGuwenById(id).text` 变成 undefined。
+ *        （data/text-master.js、data/poems-guwen.js、
+ *          scripts/build-text-master.js、scripts/apply-text-master.js、测试）
  */
-const CACHE_NAME = "poem-app-v64";
+const CACHE_NAME = "poem-app-v65";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [
