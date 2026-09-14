@@ -246,9 +246,19 @@
  *        站点总索引、README 与相关测试的计数随之更新
  *        （data/poems-zhaoming.js、data/site-index.js、fonts/*.woff2、
  *         README.md、js/library.js、test/zhaoming.test.js、sw.js）
+ *   v50  昭明文选「余类批」内容补齐（Issue #69 后续）：騷、七、诏、册、令、教、
+ *        文、表、上书、启、弹事、笺、奏记、书、檄、对问、设论、辞、序、颂、
+ *        赞、符命、史论、史述赞、论、连珠、箴、铭、诔、哀、碑文、墓志、行状、
+ *        吊文、祭文共 151 篇的白话译文补入 data/poems-zhaoming.js ——
+ *        **昭明文选全书 480 篇至此原文与译文齐备**，列表里不再有「待补」
+ *        （全书译文 329 → 480 篇，「待补」由 151 → 0）；字体按新语料补字
+ *        （四款各补 32 字，余 28 个 Noto CJK 本身无字形的极生僻字回落系统字体）；
+ *        站点总索引、README 与相关测试的计数随之更新
+ *        （data/poems-zhaoming.js、data/site-index.js、fonts/*.woff2、
+ *         README.md、js/library.js、test/zhaoming.test.js、sw.js）
  */
 
-const CACHE_NAME = "poem-app-v49";
+const CACHE_NAME = "poem-app-v50";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [
