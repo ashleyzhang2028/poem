@@ -6,9 +6,10 @@
 //   1. 目录完整：480 篇、三十九类文体齐备、每篇都有篇名/朝代/作者/出处；
 //   2. 正文确实属于这一篇（逐篇用「开篇句指纹」比对 —— 这条防线来自古文观止
 //      那次张冠李戴的真实事故，见 test/guwen.test.js 中部说明）；
-//   3. 译文状态诚实：**原文 480 篇全收**，白话译文已整理 329 篇
-//      （29 篇名篇 + 49 篇赋 + 251 篇诗），其余在列表里标「待补」，
-//      点开是说清楚而不是白屏。
+//   3. 译文状态诚实：**原文与白话译文 480 篇全收**（赋 56 + 诗 252 + 其余
+//      三十二类 172），列表里不再有「待补」小标；
+//      同时保留「待补」分支的回归用例（把某篇译文清空后重开，
+//      仍要给「尚在整理中」而不是白屏）——那是给下一部集子留的机制。
 const { JSDOM } = require('jsdom');
 const fs = require('fs');
 const vm = require('vm');
@@ -71,15 +72,15 @@ const groups = sandbox.getZhaomingGroups();
 chk(groups.length === 91, '按文体（含小类）聚合出 91 组（实际 ' + groups.length + '）');
 chk(groups.reduce((n, g) => n + g.items.length, 0) === 480, '各组篇目合计 480');
 
-/* ---------- 三、收录状态：原文全收，译文按篇标待补 ---------- */
+/* ---------- 三、收录状态：原文与译文全收 ---------- */
 const withText = ZM.filter(p => p.text);
 const withTrans = ZM.filter(p => p.translation);
 chk(withText.length === ZM.length,
   '480 篇原文全部收录（已收录 ' + withText.length + '）');
 chk(withText.every(p => p.excerpt),
   '每一篇都给了列表用摘句（excerpt）');
-chk(withTrans.length === 329,
-  '已整理出 329 篇白话译文（实际 ' + withTrans.length + '）');
+chk(withTrans.length === ZM.length,
+  '480 篇白话译文全部整理完成，列表里不再有「待补」（实际 ' + withTrans.length + '）');
 chk(withTrans.every(p => p.translationSource === 'public-domain'),
   '已译的每一篇都标了译文来源 public-domain');
 chk(withTrans.every(p => p.text),
@@ -184,8 +185,8 @@ chk(dirty.length === 0,
 /* ---------- 五、总索引：昭明文选进了搜索，但只收有译文的那些 ---------- */
 const IDX = sandbox.SITE_INDEX;
 const zmIdx = IDX.filter(x => x.book === 'zhaoming' && !x.isBook);
-chk(zmIdx.length === 329,
-  '总索引收了昭明文选有译文的 329 篇（实际 ' + zmIdx.length + '）');
+chk(zmIdx.length === 480,
+  '总索引收了昭明文选全部 480 篇（实际 ' + zmIdx.length + '）');
 chk(zmIdx.every(x => x.text && x.translation),
   '进索引的每一篇都原文与译文齐备');
 chk(IDX.some(x => x.book === 'zhaoming' && x.isBook),
@@ -240,10 +241,10 @@ setTimeout(() => {
   chk(/昭明文选/.test(bodyText), '页面出现「昭明文选」');
   chk(/赋 · 京都上/.test(bodyText), '分组名「赋 · 京都上」渲染到了页面上');
   chk(/诗 · 赠答/.test(bodyText), '分组名「诗 · 赠答」渲染到了页面上');
-  // 「待补」小标：译文未整理的篇目在列表里要说清楚
+  // 「待补」小标：译文已全部补齐，列表里不该再有
   const pendings = d.querySelectorAll('#gw-list .item-reason.pending');
-  chk(pendings.length === 480 - 329,
-    '151 篇未译的在列表里标「待补」（实际 ' + pendings.length + '）');
+  chk(pendings.length === 0,
+    '480 篇都有译文，列表里没有「待补」小标（实际 ' + pendings.length + '）');
   // 篇首那几张卡里不能出现「undefined / [object」
   chk(!/\[object|undefined/.test(d.querySelector('#gw-list').textContent),
     '列表文案没有渲染异常（无 undefined / [object]）');
@@ -282,15 +283,19 @@ setTimeout(() => {
   const trans = d.querySelector('#rd-trans-text').textContent;
   chk(trans.length > 60, '《登楼赋》的白话译文已写入阅读器（' + trans.length + ' 字）');
 
-  // 待补分支仍然可用：把一篇的译文清空后重开，应给出「尚在整理中」而不是白屏
+  // 待补分支仍然可用（给下一部集子留的机制）：把一篇的译文清空后重开，
+  // 应给出「尚在整理中」而不是白屏。用《陈情表》当样本 —— 它本轮已有译文。
   const first = w.POEMS_ZHAOMING.filter(x => x.title === '陈情表')[0];
-  chk(!!first && !first.translation, '《陈情表》本轮尚无译文（走待补）');
+  chk(!!first && !!first.translation, '《陈情表》本轮已有译文（用作待补分支的样本）');
+  const keepTrans = first.translation;
+  first.translation = '';
   const keepText = first.text;
   api && api.open(first.id);
     chk(d.querySelector('#rd-text').textContent.indexOf('臣密言') >= 0,
     '待补篇目的**原文照样能读**（不是白屏）');
   chk(/尚在整理中/.test(d.querySelector('#rd-trans-text').textContent),
     '译文为空时给出「白话译文尚在整理中」的说明');
+  first.translation = keepTrans;
   api && api.close();
 
   // 搜索：按作者筛出子集，且只筛文选这一部
