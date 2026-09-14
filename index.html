@@ -99,6 +99,9 @@
       </button>
       <div class="collapse-body" id="collections-body" hidden>
         <p class="collections-tip" id="collections-tip"></p>
+        <div class="collections-tools" id="collections-tools">
+          <button type="button" class="collection-act" id="btn-collections-import" title="粘贴一份清单，新建一个集合">导入清单</button>
+        </div>
         <div class="list" id="collections-list"></div>
       </div>
     </section>
@@ -257,6 +260,24 @@
     </div>
   </div>
 
+  <!-- 导入 / 导出清单的纯文本对话框：与诗词弹层同一套 .modal（层级 80），
+       所以不会被底部页签（65）/ 播放栏（70）压住 -->
+  <div class="modal text-modal" id="text-dialog" hidden>
+    <div class="modal-mask" data-close="1"></div>
+    <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="text-dialog-title">
+      <button class="modal-close" data-close="1" aria-label="关闭">✕</button>
+      <div class="modal-head">
+        <h2 id="text-dialog-title"></h2>
+      </div>
+      <p class="text-dialog-tip" id="text-dialog-tip"></p>
+      <textarea id="text-dialog-text" spellcheck="false" aria-label="清单文本"></textarea>
+      <div class="actions">
+        <button type="button" class="btn" id="text-dialog-cancel">关闭</button>
+        <button type="button" class="btn good primary-btn" id="text-dialog-ok">确定</button>
+      </div>
+    </div>
+  </div>
+
   <input type="file" id="file-import" accept="application/json" hidden />
   <div class="toast" id="toast" hidden></div>
 
@@ -293,6 +314,12 @@
   <script src="data/works-index.js"></script>
   <!-- 分组顺序总表（卷次 / 词牌 / 文体）：页面与作品主表共用同一份顺序 -->
   <script src="data/group-order.js"></script>
+  <!-- 站点总索引：自选集合的快照刷新要用它认条目（也用它兜底判重）。
+       原先首页没加载它 —— app.js 那一串 `window.SITE_INDEX || []` 于是**静默为空**：
+       「加入背诵」时存不下快照、首页启动刷不了课内那几条，
+       表上都看不出来（现象是「自选那一篇在首页显示不出来」，而不是报错）。
+       文件本身只做拼装（六部数据在各自页面按需加载），在这里加载不增重。 -->
+  <script src="data/site-index.js"></script>
   <!-- 正文收归主表：同一篇作品在几部集子里各存一份正文时，用主条目（课内优先）
        那一份 —— 学生背的是课本上那一篇，在别的集子里读到同一篇不该是另一种写法。
        由 scripts/build-canonical-texts.js 算出，必须在 js/reader-core.js 之前加载。 -->

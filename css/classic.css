@@ -1510,3 +1510,131 @@ body[data-nav="search"] #gw-list .item { padding: 14px 8px 14px 14px; }
   color: var(--ink-3);
 }
 .library-card-go svg { width: 16px; height: 16px; display: block; }
+
+/* ==========================================================================
+   背诵进度页（/progress/）—— 到期日历 + 掌握度分布
+   ==========================================================================
+   这一页把「下次何时到期」从**单篇**的详情弹层里搬出来，摊成两张图：
+   左边那张是未来两周每天要复习几篇（日历），右边是掌握度都堆在哪一档。
+   两张图都只用 CSS 画（竖条 / 横条），不引图表库 ——
+   全站不请求任何外部资源，这一页也不例外。 */
+
+.progress-card { margin-top: 14px; }
+.progress-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.progress-head h2 {
+  margin: 0;
+  font-family: var(--font-poem);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: .5px;
+}
+.progress-sub { flex: none; font-size: 12px; color: var(--ink-3); }
+.progress-tip,
+.progress-note {
+  margin: 10px 0 0;
+  font-size: 12.5px;
+  line-height: 1.8;
+  color: var(--ink-3);
+}
+.progress-tip { margin: 12px 0 0; text-align: center; }
+
+/* ---- 到期日历：一格一天，竖条越高那天越忙 ----
+   一格同时放四样东西：篇数（数字）/ 竖条 / 星期 / 日期。
+   格子窄（手机上 14 格一行放不下，所以横向滚动），四样一律居中、
+   字号压到 10-11px —— 这是张「一眼看形状」的图，不是表格。 */
+.cal {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  /* 手机上 14 格会超宽：允许横滑，且滑动手感贴近原生 */
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+.cal-cell {
+  flex: 0 0 auto;
+  width: 34px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 0 4px;
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+}
+/* 今天这一格描一道边：用户第一眼要找到「我站在这儿」 */
+.cal-cell.today { background: var(--green-light); }
+.cal-cell.today .cal-day { color: var(--green); font-weight: 600; }
+.cal-count { font-size: 11.5px; font-weight: 600; color: var(--green); min-height: 15px; }
+/* 竖条轨道固定高 56px：不给它定高的话，「0 篇」那几格会把整行压得参差不齐 */
+.cal-bar {
+  display: flex;
+  align-items: flex-end;
+  width: 10px;
+  height: 56px;
+  border-radius: 5px;
+  background: rgba(47, 96, 85, .08);
+  overflow: hidden;
+}
+.cal-bar i {
+  display: block;
+  width: 100%;
+  border-radius: 5px;
+  background: var(--green);
+  transition: height .25s;
+}
+/* 没有到期的那几天不画条，也不显数字（空着才是「这天没事」） */
+.cal-cell:not(.has) .cal-count { color: var(--ink-3); }
+.cal-day { font-size: 10.5px; color: var(--ink-3); }
+.cal-date { font-size: 10px; color: var(--ink-3); opacity: .8; }
+
+/* ---- 横条分布：掌握度五档 / 记忆阶段十档 ----
+   一行一档：档名在左（定宽，各行的条起点才对齐）、条居中、篇数在右。
+   条长按「最多的一档」归一 —— 归一才能看出形状（都堆在「刚起步」还是
+   已经有一批「牢固」），不归一的话每档都短得看不出差别。 */
+.bars { display: flex; flex-direction: column; gap: 8px; }
+.bar-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+.bar-label {
+  flex: 0 0 auto;
+  width: 96px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bar-track {
+  flex: 1 1 auto;
+  height: 10px;
+  border-radius: 5px;
+  background: rgba(47, 96, 85, .08);
+  overflow: hidden;
+}
+.bar-track i {
+  display: block;
+  height: 100%;
+  border-radius: 5px;
+  background: var(--green);
+  transition: width .25s;
+}
+.bar-count { flex: 0 0 auto; width: 28px; text-align: right; font-variant-numeric: tabular-nums; }
+.bar-row.zero { opacity: .45; }
+/* 掌握度五档：由浅到深，一眼看出「堆在哪一头」 */
+.bar-row.m0 .bar-track i { background: var(--amber); }
+.bar-row.m1 .bar-track i { background: #b9a06a; }
+.bar-row.m2 .bar-track i { background: #7fa08c; }
+.bar-row.m3 .bar-track i { background: var(--green); }
+.bar-row.m4 .bar-track i { background: #24564c; }
+/* 记忆阶段十档：同一色系，最后一档「已牢固」压深一档 */
+.bar-row.lv-last .bar-track i { background: #24564c; }

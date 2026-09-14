@@ -297,9 +297,38 @@
  *        （js/pwa.js 实测的底部导航高度）：小弹层的下内边距与下外边距、
  *        大弹层的 max-height，都不再写死像素
  *        （css/style.css、test/layout.test.js、test/theme.test.js、test/run.sh）
+ *   v55  自选集合的排序 / 整组移出 / 导入导出 + 篇名去编号（Issue #69 后续）：
+ *        集合的顺序就是数组顺序，条目上给 ↑↓ 两颗键（不另存排序字段，
+ *        免得两份顺序各说各话）；同一部集子 / 同一个卷次文体可「整组移出」；
+ *        一整个集合能导出成**纯文本**（一颗条目 id 一行，`#` 是说明行），
+ *        家长之间可互传清单，导入总是新建一个集合、认不出的行如实报数；
+ *        自选篇目显示的篇名去掉语料内部用来区分的「其一 / 其二 / 其三」
+ *        （只改显示，存的仍是完整 id）
+ *        （js/collections.js、js/app.js、index.html、css/style.css、
+ *          test/collections.test.js）
+ *   v56  背诵进度总览（/progress/）—— 到期日历 + 掌握度分布（Issue #69 后续）：
+ *        原先「第几轮 / 掌握度 / 下次复习」只在**单篇**的详情弹层里看得到，
+ *        看不出「接下来哪天要复习几篇」。新页把全量摊成三张图：未来 14 天的
+ *        到期日历（逾期并进「今天」那一格，逾期一周以上单列）、掌握度五档、
+ *        记忆阶段十档。这一页**只读**：不改任何一篇的进度、不写已读、不排任务。
+ *        聚合口径在 js/scheduler.js 的 overview() / daysUntilDue()
+ *        （js/scheduler.js、js/progress.js、progress/index.html、css/classic.css、
+ *          js/chrome.js、settings/index.html、sw.js、test/progress.test.js）
+ *   v57  首页快照与语料订正的漂移自动刷新（Issue #69 后续）：
+ *        上一轮只做到「首页启动刷一次 + 课外那些标 stale 等下次进集子页」——
+ *        而用户在首页停留的整个会话里都不会经过集子页，那一篇可能连着好几天
+ *        显示旧题名。现在首页**按需把那一部集子的数据文件拉回来**刷新快照：
+ *        一部都不涉及就不发请求，一次只拉一部，拉不到就留着 stale 下次再试。
+ *        顺带补上一处真缺口：首页原先**没加载 data/site-index.js**，
+ *        app.js 里那一串 `window.SITE_INDEX || []` 于是静默为空
+ *        （表现为「自选那一篇在首页显示不出来」，而不是报错）。
+ *        另：《昭明文选》正文里 218 处 markdown 图片占位（生僻字的 SVG 图）
+ *        按用户要求全部清理（data/poems-zhaoming.js）
+ *        （js/app.js、js/collections.js、index.html、data/poems-zhaoming.js、
+ *          test/progress.test.js、test/zhaoming.test.js）
  */
 
-const CACHE_NAME = "poem-app-v54";
+const CACHE_NAME = "poem-app-v57";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [
@@ -331,6 +360,9 @@ const PRECACHE = [
   // 古籍阅读库：索引页 + 详情页的引擎（小古文 / 唐诗 / 宋词 / 古文观止 共用）
   "./js/reader-core.js",
   "./data/site-index.js",
+  // 背诵进度总览（/progress/）：到期日历 + 掌握度分布，只读本机进度
+  "./progress/",
+  "./js/progress.js",
   // 作品主表 + 同篇对照表（自选集合 PR，Issue #69 收尾）：
   // 判重「这篇是不是已经在别处背过了」，搜索去重、加自选集合、排每日任务都读它
   "./data/works-map.js",

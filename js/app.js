@@ -245,6 +245,104 @@
     }, 1800);
   }
 
+  /* ---------------- 自选集合：导入 / 导出 ----------------
+     一整个集合就是一串条目 id —— 导出成纯文本只有几 KB，
+     微信 / 短信里直接发得出去，家长之间互传清单用得上。
+     导出时顺手写上「集子 · 卷次 篇名」当注释，对方看得懂是什么；
+     导入时跳过 `#` 行，只认 id，认不出的行如实报数，不装作没发生。
+     ------------------------------------------------------------------ */
+
+  /** 弹出一个纯文本对话框（导出=只读可全选；导入=可粘贴） */
+  function textDialog(opts) {
+    const box = $("#text-dialog");
+    if (!box) return;
+    $("#text-dialog-title").textContent = opts.title || "";
+    $("#text-dialog-tip").textContent = opts.tip || "";
+    const ta = $("#text-dialog-text");
+    ta.value = opts.text || "";
+    ta.readOnly = !!opts.readOnly;
+    $("#text-dialog-ok").textContent = opts.okText || "确定";
+    $("#text-dialog-ok").hidden = !!opts.hideOk;
+    $("#text-dialog-cancel").textContent = opts.cancelText || "关闭";
+    box.hidden = false;
+    textDialog._onOk = opts.onOk || null;
+    // 导出时全选，用户少按一次 —— 手机上「全选 → 复制」本就是两步
+    if (opts.readOnly) {
+      setTimeout(function () { ta.focus(); ta.select(); }, 30);
+    }
+  }
+
+  function closeTextDialog() {
+    const box = $("#text-dialog");
+    if (box) box.hidden = true;
+    textDialog._onOk = null;
+  }
+
+  /** 导出一个集合：先落一段文本，再让用户复制（也支持下载成 .txt） */
+  function exportCollection(col) {
+    const labels = {};
+    col.items.forEach(function (it) {
+      const id = typeof it === "string" ? it : it.id;
+      if (id) labels[id] = collectionLabelOf(id);
+    });
+    const text = window.ReciteCollections.exportText(col.id, labels);
+    textDialog({
+      title: "导出「" + col.name + "」",
+      tip: "全选复制即可发出去。对方打开跬步 → 自选背诵 → 导入，粘贴进来就是同一个清单。",
+      text: text,
+      readOnly: true,
+      okText: "下载为文本",
+      onOk: function () {
+        downloadText("跬步-自选集合-" + col.name + ".txt", text);
+        closeTextDialog();
+        showToast("已导出 " + col.items.length + " 篇");
+      }
+    });
+  }
+
+  /** 导入：粘贴文本 → 新建一个集合 */
+  function importCollection() {
+    textDialog({
+      title: "导入清单",
+      tip: "把清单文本粘贴进来（一行一条，以 # 开头的是说明行，会跳过）。导入会新建一个集合，不动你已有的那几个。",
+      text: "",
+      okText: "导入",
+      onOk: function () {
+        const text = $("#text-dialog-text").value;
+        if (!text.trim()) {
+          showToast("还没有粘贴内容");
+          return false;
+        }
+        const res = window.ReciteCollections.importText(text, "", window.SITE_INDEX || []);
+        closeTextDialog();
+        if (!res.added) {
+          showToast("没认出清单里的篇目" + (res.dropped ? "（" + res.dropped + " 行对不上本站篇目）" : ""));
+          return;
+        }
+        renderCollections();
+        showToast("已导入 " + res.added + " 篇" +
+          (res.dropped ? "，另有 " + res.dropped + " 行对不上本站篇目，已跳过" : ""));
+      }
+    });
+  }
+
+  /** 下载一段文本（手机浏览器会把 .txt 存进「文件」里，可再转发） */
+  function downloadText(filename, text) {
+    try {
+      const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 0);
+    } catch (e) {
+      showToast("下载失败，请手动全选复制");
+    }
+  }
+
   /* ---------------- 今日任务缓存 ---------------- */
   /**
    * 自选集合的「版本号」：集合内容一变就跟着变。
@@ -435,7 +533,7 @@
         '<div class="item-main">' +
         // 序号圆挪进标题行、排在篇名前面（不再是独占一列的 30px 圆）：
         // 标题行的起点就是圆的起点，圆形与字号同高，一屏能多读几行字（Issue #55 第三条）
-        '<h3 class="item-title"><span class="item-num">' + (idx + 1) + "</span>" + esc(p.title) +
+        '<h3 class="item-title"><span class="item-num">' + (idx + 1) + "</span>" + esc(p.custom ? showTitle(p.title) : p.title) +
         '<span class="item-reason ' + (item.reason === "review" ? "review" : "") + '">' +
         (item.reason === "review" ? "复习 · 第" + (item.reviewRound || 1) + "轮"
           : item.reason === "extra" ? "巩固"
@@ -447,7 +545,7 @@
           ? '<div class="mbar"><i style="width:' + Scheduler.mastery(rec) + '%"></i></div>'
           : "") +
         "</div>" +
-        '<button type="button" class="item-read" title="朗读这一首" aria-label="朗读 ' + esc(p.title) + '">' +
+        '<button type="button" class="item-read" title="朗读这一首" aria-label="朗读 ' + esc(p.custom ? showTitle(p.title) : p.title) + '">' +
         playGlyph() + "</button>" +
         '<div class="item-arrow">' + arrowGlyph() + "</div>";
       el.addEventListener("click", function () {
@@ -591,6 +689,52 @@
      集子的篇目、卷次、词牌一个字不能改；这里的想加就加、想删就删。
      所以这一块与首页「全部诗词」并列，而不是塞进课外阅读（/library/）里。
      ------------------------------------------------------------------ */
+  /**
+   * 自选篇目的「组」：集子 + 卷次 / 词牌 / 文体。
+   *
+   * 与集子页上的分组同一个口径（那一页按 gradeGroup 分卷次 / 词牌 / 文体）。
+   * 首页只加载课内 12 册，课外那些篇目查不到站点索引，只有一个最小快照
+   * （快照里有 book / bookName）—— 这时按「集子」成组，
+   * 用户看到的分组与能整组移出的范围一致（列表上写的是什么，移的就是什么）。
+   */
+  function collectionGroupOf(entryId) {
+    const p = poemForEntry(entryId);
+    if (!p) return "未分组";
+    const book = p.bookName || p.source || "";
+    if (!book) return "未分组";
+    return p.gradeGroup ? book + " · " + p.gradeGroup : book;
+  }
+
+  /** 条目 id → 篇目对象（站点索引优先，回落到课内数据） */
+  function poemForEntry(entryId) {
+    const repId = window.ReciteCollections.poemIdFor(entryId);
+    const idx = window.SITE_INDEX || [];
+    return idx.filter(function (x) { return x.id === entryId || x.id === repId; })[0] || null;
+  }
+
+  /** 条目 id → 导出时的注释行（「集子 · 卷次 篇名」这种，家长看得懂） */
+  function collectionLabelOf(entryId) {
+    const p = poemForEntry(entryId);
+    if (!p) return entryId;
+    const bits = [p.bookName || p.source || "", p.gradeGroup || "", showTitle(p.title)];
+    return bits.filter(Boolean).join(" · ") || entryId;
+  }
+
+  /**
+   * 篇名显示名：去掉语料内部用来区分同名词作的「其一 / 其二 / 其三」。
+   *
+   * 用户原话「去掉自选集合中其一其二这些你不清楚的」——那个编号是整理宋词时
+   * 按目录次序补的序号（同一作者同一词牌好几首，清单里没有首句可以分辨），
+   * 不是选本原名：「木兰花·其二」看不出是哪一首，反像漏了半句。
+   * 只改**显示**，集合里存的仍是完整 id（`tangshi-ts-1` / `-2` 分得清）。
+   */
+  function showTitle(title) {
+    if (window.ReciteCollections && window.ReciteCollections.displayTitle) {
+      return window.ReciteCollections.displayTitle(title);
+    }
+    return title;
+  }
+
   function renderCollections() {
     const box = $("#collections-list");
     const section = $("#collections-section");
@@ -605,9 +749,14 @@
     const tip = $("#collections-tip");
     if (tip) {
       tip.textContent = total
-        ? "下面这些篇目与课内古诗词一起按遗忘曲线复习。到课外集子或搜索页，点篇目右边的书签即可再加。"
+        ? "下面这些篇目与课内古诗词一起按遗忘曲线复习。到课外集子或搜索页，点篇目右边的书签即可再加；↑↓ 可调顺序，一组的篇目可整卷移出。"
         : "还没有自选篇目。到「课外」任一集子或「搜索」页，点篇目右边的书签，就能把它加进来一起背。";
     }
+
+    // 导入 / 导出整条工具行：一个集合都没有时也留着「导入」
+    // —— 家长发来一串清单，第一件事就是导进来，不该先逼他建一个集合。
+    const tools = $("#collections-tools");
+    if (tools) tools.hidden = false;
 
     if (!cols.length) {
       box.innerHTML = '<div class="empty">还没有自选篇目</div>';
@@ -622,6 +771,7 @@
         '<span class="collection-name">' + esc(col.name) + "</span>" +
         '<span class="collection-count">' + col.items.length + " 篇</span>" +
         '<button type="button" class="collection-act" data-rename="' + esc(col.id) + '" title="重命名" aria-label="重命名 ' + esc(col.name) + '">改名</button>' +
+        '<button type="button" class="collection-act" data-export="' + esc(col.id) + '" title="导出成文本，可发给别的家长" aria-label="导出集合 ' + esc(col.name) + '">导出</button>' +
         '<button type="button" class="collection-act danger" data-drop="' + esc(col.id) + '" title="删除集合" aria-label="删除集合 ' + esc(col.name) + '">删除</button>';
       box.appendChild(head);
 
@@ -632,18 +782,36 @@
       (window.SITE_INDEX || []).forEach(function (p) { map[p.id] = p; });
       (window.POEMS_ALL || []).forEach(function (p) { if (!map[p.id]) map[p.id] = p; });
 
-      col.items.forEach(function (it) {
+      // 按组切段：同一部集子 / 同一个卷次文体连在一起，段头上给「整组移出」。
+      // 分组只为「让用户一次拿掉一组」，不改变集合的顺序 ——
+      // 顺序仍是 col.items 的顺序，用户自己排的。
+      let lastGroup = null;
+      col.items.forEach(function (it, index) {
         const entryId = typeof it === "string" ? it : it.id;
         const snap = (it && typeof it === "object" && it.snap) || {};
         const repId = window.ReciteCollections.poemIdFor(entryId);
         const p = map[repId] || map[entryId] || Object.assign({ id: repId }, snap);
         if (!p || !p.title) return;
+
+        const group = collectionGroupOf(entryId);
+        if (group !== lastGroup) {
+          lastGroup = group;
+          const gh = document.createElement("div");
+          gh.className = "collection-group";
+          gh.innerHTML =
+            '<span class="collection-group-name">' + esc(group) + "</span>" +
+            '<button type="button" class="collection-group-drop" data-group="' + esc(group) + '" ' +
+            'data-col="' + esc(col.id) + '" title="把这一组的篇目整组移出" ' +
+            'aria-label="把 ' + esc(group) + ' 这一组整组移出">整组移出</button>';
+          box.appendChild(gh);
+        }
+
         const rec = getRecord(repId);
         const el = document.createElement("div");
         el.className = "item optional";
         el.innerHTML =
           '<div class="item-main">' +
-          '<h3 class="item-title">' + esc(p.title) + "</h3>" +
+          '<h3 class="item-title">' + esc(showTitle(p.title)) + "</h3>" +
           '<div class="item-meta"><span>' + esc(p.author || "") + "</span>" +
           (p.dynasty ? "<span>·</span><span>" + esc(p.dynasty) + "</span>" : "") +
           (p.bookName ? "<span>·</span><span>" + esc(p.bookName) + "</span>" : "") +
@@ -653,7 +821,19 @@
           "</div>" +
           (rec && rec.learned ? '<div class="mbar"><i style="width:' + Scheduler.mastery(rec) + '%"></i></div>' : "") +
           "</div>" +
-          '<button type="button" class="item-remove" title="移出背诵" aria-label="把 ' + esc(p.title) + ' 移出背诵">' +
+          // 上移 / 下移：集合里只有它自己排的草稿顺序，没有卷次词牌可依，
+          // 所以给的是两颗小箭头，而不是「按某某排序」
+          '<button type="button" class="item-move" data-up="' + index + '" data-col="' + esc(col.id) + '"' +
+          (index === 0 ? " disabled" : "") +
+          ' title="上移一位" aria-label="把 ' + esc(showTitle(p.title)) + ' 上移一位">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6.6 14.2 12 8.8l5.4 5.4"/></svg>' +
+          "</button>" +
+          '<button type="button" class="item-move" data-down="' + index + '" data-col="' + esc(col.id) + '"' +
+          (index === col.items.length - 1 ? " disabled" : "") +
+          ' title="下移一位" aria-label="把 ' + esc(showTitle(p.title)) + ' 下移一位">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6.6 9.8 12 15.2l5.4-5.4"/></svg>' +
+          "</button>" +
+          '<button type="button" class="item-remove" title="移出背诵" aria-label="把 ' + esc(showTitle(p.title)) + ' 移出背诵">' +
           '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M7 12h10"/></svg>' +
           "</button>";
         el.addEventListener("click", function () {
@@ -710,11 +890,142 @@
     if (C.markStale) C.markStale(window.SITE_INDEX || []);
   }
 
+  /* ---------------- 语料订正后的漂移自动刷新 ----------------
+     上一轮补的是「首页启动时刷一次快照 + 标 stale」：课内那几篇当场更新，
+     课外那几篇（首页不加载那几部集子）留一个标记，等下次进集子页 / 搜索页再刷。
+
+     这条路的缺口在于：**集子页 / 搜索页是另一个页面**，用户在首页停留的整个
+     会话里都不会经过它。于是「加了自选、语料后来订正过」这一篇，可能连着
+     好几天显示的还是旧题名或「暂未收录译文」—— 除非他恰好又打开那一页。
+
+     所以这里补一条**按需拉取**：首页启动时若发现还有 `stale` 标记的条目，
+     就把它所属那一部集子的**数据文件**取回来（那是一个普通 JS 文件，
+     与页面里 <script> 加载的是同一份），用它刷新快照。三条约束：
+
+       · **只拉真正需要的**：一部都没涉及就不发请求；
+       · **一次只拉一部**：`book → 数据文件 → 全局变量名` 的对应写死在
+         BOOK_SOURCES，拉回来的文件按全局名取值，不 eval 任何东西；
+       · **拉不到就算了**：离线、文件被改坏、网络不通都不影响用 ——
+         老快照照常显示，`stale` 标记留着，下次再试。
+     拉完只派发一次集合变化事件（走的是 refreshSnapshots 里那套），
+     今日任务与自选列表跟着重画一遍。
+     ------------------------------------------------------------------ */
+  /** 集子 id → 数据文件与它挂在 window 上的全局名（与各页面 <script> 一致） */
+  const BOOK_SOURCES = {
+    classic: { file: "data/poems-classic.js", global: "POEMS_CLASSIC" },
+    tangshi: { file: "data/poems-tangshi.js", global: "POEMS_TANGSHI" },
+    songci: { file: "data/poems-songci.js", global: "POEMS_SONGCI" },
+    guwen: { file: "data/poems-guwen.js", global: "POEMS_GUWEN" },
+    zhaoming: { file: "data/poems-zhaoming.js", global: "POEMS_ZHAOMING" }
+  };
+
+  /**
+   * 还有哪些条目的快照是旧的、各自属于哪一部集子。
+   * @returns {Object} { bookId: [条目 id, ...] }
+   */
+  function staleByBook() {
+    const out = {};
+    const C = window.ReciteCollections;
+    if (!C || !C.list) return out;
+    const idx = {};
+    (window.SITE_INDEX || []).forEach(function (p) { idx[p.id] = p; });
+    C.list().forEach(function (col) {
+      (col.items || []).forEach(function (it) {
+        if (!it || typeof it !== "object" || !it.stale || !it.id) return;
+        const p = idx[it.id];
+        // 站点索引里查得到的（课内那几篇）由 refreshSnapshots 就地更新，
+        // 走不到这一支；真要走到也用不着拉文件。
+        if (p) return;
+        // 快照里记着 book（哪一部集子），没有就按条目 id 前缀猜一次
+        const book = (it.snap && it.snap.book) || guessBook(it.id);
+        if (!book || !BOOK_SOURCES[book]) return;
+        (out[book] = out[book] || []).push(it.id);
+      });
+    });
+    return out;
+  }
+
+  /** 条目 id 前缀 → 集子 id（快照里没记 book 时的兜底） */
+  function guessBook(entryId) {
+    const m = String(entryId).match(/^([a-z]+)-/);
+    if (!m) return "";
+    const pre = m[1];
+    return BOOK_SOURCES[pre] ? pre : "";
+  }
+
+  /**
+   * 按需拉回某一部集子的数据文件，刷新快照。返回拉了几篇（0 表示没成）。
+   *
+   * ⚠️ 手动 `document.createElement("script")` 而不是 fetch + eval：
+   *    与页面里那些 <script> 走**同一条路**（同一个 Service Worker 缓存、
+   *    同一套相对路径解析），不必自己处理「解析出来的文本怎么变成数据」，
+   *    也就不会出现「页面上是对的、这里解析错」的分叉。
+   */
+  function pullBook(bookId) {
+    const src = BOOK_SOURCES[bookId];
+    if (!src) return Promise.resolve(0);
+    if (window[src.global]) return Promise.resolve(refreshFromGlobal(bookId, src));
+    return new Promise(function (resolve) {
+      const el = document.createElement("script");
+      el.src = src.file;
+      el.async = true;
+      el.onload = function () {
+        resolve(refreshFromGlobal(bookId, src));
+        el.parentNode && el.parentNode.removeChild(el);
+      };
+      el.onerror = function () {
+        el.parentNode && el.parentNode.removeChild(el);
+        resolve(0);
+      };
+      (document.head || document.body).appendChild(el);
+    });
+  }
+
+  /** 拿刚加载进来的那一部数据，按站点索引的口径刷新快照 */
+  function refreshFromGlobal(bookId, src) {
+    const list = window[src.global];
+    if (!Array.isArray(list) || !list.length) return 0;
+    // 复用站点索引那一套构造（同一份 buildSiteIndex 口径）：
+    // 直接调它比在这里重抄一遍字段映射可靠 —— 抄一遍就会与搜索页的口径分叉
+    let idx = [];
+    if (window.buildSiteIndex) {
+      const extra = {};
+      extra[bookId] = list;
+      idx = window.buildSiteIndex(extra) || [];
+    } else {
+      idx = (window.SITE_INDEX || []).filter(function (x) { return x.book === bookId; });
+    }
+    if (!idx.length) return 0;
+    return window.ReciteCollections.refreshSnapshots(idx);
+  }
+
+  /**
+   * 启动时跑一次：把还旧着的快照按集子拉回最新的语料刷新。
+   * 返回拉了几篇（0 = 没有需要拉的，或拉失败）。
+   */
+  function refreshStaleSnapshots() {
+    const need = staleByBook();
+    const books = Object.keys(need);
+    if (!books.length) return Promise.resolve(0);
+    // 一部一部来：首页日常只涉及一两部，逐个串行能少发请求，
+    // 也免得几部大集子（昭明 480 篇、几 MB）同时进来把首屏拖慢。
+    return books.reduce(function (chain, book) {
+      return chain.then(function (n) {
+        return pullBook(book).then(function (k) {
+          if (k) rebuildToday();
+          return n + k;
+        });
+      });
+    }, Promise.resolve(0));
+  }
+
   /* ---------------- 弹层 ---------------- */
   function openPoem(p, planItem) {
     currentPoem = p;
     const rec = getRecord(p.id);
-    $("#m-title").textContent = p.title;
+    // 自选篇目的篇名去掉「其一 / 其二」（见 showTitle）——
+    // 课内那 261 首一个字不动：那里的「其一」是教材原名
+    $("#m-title").textContent = p.custom ? showTitle(p.title) : p.title;
     $("#m-dynasty").textContent = "〔" + p.dynasty + "〕";
     $("#m-author").textContent = p.author;
     // 自选篇目没有年级学期，这一格改显示它所在的集子；
@@ -878,7 +1189,8 @@
 
   /** 一首诗的朗读文本：标题 + 朝代 + 作者 + 正文 */
   function speechText(p) {
-    const head = [p.title, p.dynasty, p.author].filter(Boolean).join("，");
+    // 自选篇目读显示名：念出「木兰花其二」会让人以为漏了半句（见 showTitle）
+    const head = [(p.custom ? showTitle(p.title) : p.title), p.dynasty, p.author].filter(Boolean).join("，");
     return head + "。" + p.text;
   }
 
@@ -935,7 +1247,7 @@
       showToast("已停止朗读");
     } else {
       const ok = window.Speech.speak(speechText(p));
-      showToast(ok ? "开始朗读《" + p.title + "》" : "朗读启动失败，请重试");
+      showToast(ok ? "开始朗读《" + (p.custom ? showTitle(p.title) : p.title) + "》" : "朗读启动失败，请重试");
     }
     syncTodayReadBtn();
     syncItemReadBtns();
@@ -1125,15 +1437,66 @@
         colHead.setAttribute("aria-expanded", open ? "true" : "false");
       });
     }
+    const tdOk = $("#text-dialog-ok");
+    if (tdOk) {
+      tdOk.addEventListener("click", function () {
+        const fn = textDialog._onOk;
+        if (typeof fn === "function") {
+          if (fn() === false) return;   // 回调里校验不过就留着对话框
+        }
+        closeTextDialog();
+      });
+    }
+    const tdCancel = $("#text-dialog-cancel");
+    if (tdCancel) tdCancel.addEventListener("click", closeTextDialog);
+    const tdMask = $("#text-dialog .modal-mask");
+    if (tdMask) tdMask.addEventListener("click", closeTextDialog);
+    const importBtn = $("#btn-collections-import");
+    if (importBtn) importBtn.addEventListener("click", importCollection);
+
     const colBox = $("#collections-list");
     if (colBox) {
       colBox.addEventListener("click", function (e) {
-        const t = e.target.closest ? e.target.closest("[data-rename], [data-drop]") : null;
+        // 整组移出挂在分组行上（不在条目里），单独先认一遍
+        const gbtn = e.target.closest ? e.target.closest("[data-group]") : null;
+        if (gbtn && window.ReciteCollections) {
+          e.stopPropagation();
+          const col = window.ReciteCollections.get(gbtn.getAttribute("data-col"));
+          if (!col) return;
+          const group = gbtn.getAttribute("data-group");
+          const n = col.items.filter(function (it) {
+            return collectionGroupOf(typeof it === "string" ? it : it.id) === group;
+          }).length;
+          if (!n) return;
+          if (!window.confirm("把「" + group + "」这一组的 " + n + " 篇整组移出「" + col.name + "」？")) return;
+          const removed = window.ReciteCollections.removeGroup(col.id, group, collectionGroupOf);
+          renderCollections();
+          showToast("已整组移出 " + removed + " 篇");
+          return;
+        }
+        // 上移 / 下移：就地换两位，刷新列表让顺序当场可见
+        const mv = e.target.closest ? e.target.closest("[data-up], [data-down]") : null;
+        if (mv && window.ReciteCollections && !mv.disabled) {
+          e.stopPropagation();
+          const cid = mv.getAttribute("data-col");
+          const up = mv.getAttribute("data-up");
+          const moved = up !== null
+            ? window.ReciteCollections.moveUp(cid, Number(up))
+            : window.ReciteCollections.moveDown(cid, Number(mv.getAttribute("data-down")));
+          if (moved) renderCollections();
+          return;
+        }
+        const t = e.target.closest ? e.target.closest("[data-rename], [data-drop], [data-export]") : null;
         if (!t || !window.ReciteCollections) return;
         e.stopPropagation();
         const rid = t.getAttribute("data-rename");
         const did = t.getAttribute("data-drop");
-        if (rid) {
+        const eid = t.getAttribute("data-export");
+        if (eid) {
+          const col = window.ReciteCollections.get(eid);
+          if (!col) return;
+          exportCollection(col);
+        } else if (rid) {
           const col = window.ReciteCollections.get(rid);
           if (!col) return;
           const name = window.prompt("给这个集合改个名字（最多 12 字）", col.name);
@@ -1197,7 +1560,7 @@
     });
 
     document.addEventListener("keydown", function (e) {
-      if (e.key === "Escape") closeModal();
+      if (e.key === "Escape") { closeModal(); closeTextDialog(); }
     });
 
     $$(".actions .btn").forEach(function (b) {
@@ -1388,11 +1751,22 @@
     bindEvents();
     backfillSnapshots();
     renderCollections();
+    // 语料订正过的自选篇目：把还旧着的快照按需拉回来刷新（拉不到就留着 stale，
+    // 下次再试）。放在这里而不是 document.ready 之后立刻做 —— 首屏先画出来，
+    // 拉取在后台进行，失败也不影响用。
+    refreshStaleSnapshots().catch(function () { /* 离线 / 拉取失败：老快照照常显示 */ });
     // 自选集合在别的页面（集子索引页 / 搜索页）增删之后回到首页：
     // 今日任务要立刻跟着变 —— 不补这一条，刚加的一篇要等刷新才排上。
     window.addEventListener("recite-collections-change", function () {
       invalidatePlan();
       rebuildToday();
+      renderCollections();
+    });
+    // 快照被刷新过（语料订正后首页按需拉回那一部集子，见 refreshStaleSnapshots）：
+    // 自选列表要跟着重画，否则屏幕上还是旧题名，得等用户手动刷新才换过来。
+    // 与上面那条分开：集合**内容**变了要重排今日任务，只是**刷新了快照**
+    // 就不必（题目没换、篇目没增删，排期一个字都不用动）。
+    window.addEventListener("recite-snapshots-refresh", function () {
       renderCollections();
     });
     window.addEventListener("storage", function (e) {

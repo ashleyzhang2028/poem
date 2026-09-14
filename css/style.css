@@ -423,6 +423,72 @@ html, body {
 }
 .item-remove svg { width: 15px; height: 15px; display: block; }
 .item-remove:hover { border-color: var(--red, #b4553c); color: var(--red, #b4553c); }
+
+/* 自选集合：导入 / 导出整条工具行，与折叠体同宽、靠右 ——
+   「导入清单」一颗键常驻（一个集合都没有时也要有：家长发来一串清单，
+   第一件事就是导进来，不该先逼他建一个集合）；每个集合头上的「导出」在它自己那行。 */
+.collections-tools {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-bottom: 6px;
+}
+/* 集合里的分组行：同一部集子 / 同一个卷次文体连在一起，段头给「整组移出」。
+   分组只为「一次拿掉一组」，不改变集合顺序（顺序仍是用户自己排的）。 */
+.collection-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 2px 4px;
+}
+.collection-group-name {
+  font-size: 12px;
+  color: var(--ink-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.collection-group-name::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: var(--blue, #3f7f9e);
+  vertical-align: 1px;
+}
+.collection-group-drop {
+  margin-left: auto;
+  flex: 0 0 auto;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--ink-3);
+  font-size: 11.5px;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.collection-group-drop:hover { border-color: var(--red, #b4553c); color: var(--red, #b4553c); }
+/* 上移 / 下移两颗小箭头：与「移出」同一颗圆键的语言，只是没有圆底。
+   顺序是用户自己排的，所以给箭头而不是「按某某排序」。 */
+.item-move {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 30px;
+  flex: 0 0 auto;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--ink-3);
+  cursor: pointer;
+  line-height: 0;
+}
+.item-move svg { width: 15px; height: 15px; display: block; }
+.item-move:hover:not(:disabled) { color: var(--green); }
+.item-move:disabled { opacity: .3; cursor: default; }
 /* 自选条目左侧色条走蓝色：与课内（绿）、古文条目同属外围辨识色 */
 .item.optional { border-left-color: var(--blue, #3f7f9e); }
 .item-reason.optional { background: var(--blue-light, #eaf3f7); color: var(--blue, #3f7f9e); }
@@ -622,6 +688,35 @@ body.no-dock .modal-box { max-height: 88vh; }
 .btn.good { color: #fdfaf2; background: var(--green); border-color: var(--green); }
 
 .hint { font-size: 12px; color: var(--ink-2); margin-top: 12px; text-align: center; }
+
+/* 导入 / 导出清单的纯文本对话框（自选集合，Issue #69 后续）——
+   走的是同一套 .modal 层级（80），所以不会被底部页签 / 播放栏压住；
+   这里只管内容：说明一行 + 一个等宽文本框 + 两颗键。 */
+.text-modal .modal-box { display: flex; flex-direction: column; }
+.text-dialog-tip {
+  margin: 0 0 10px;
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: var(--ink-2);
+}
+#text-dialog-text {
+  width: 100%;
+  min-height: 180px;
+  flex: 1 1 auto;
+  resize: vertical;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  color: var(--ink);
+  padding: 10px 12px;
+  /* 用等宽字体：这份文本是要被复制、对行数的，字宽一致才看得清 */
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  /* 16px 是 iOS 不缩放的最小输入字号（与小古文搜索框同一条约定） */
+  font-size: 16px;
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+#text-dialog-text[readonly] { background: var(--bg); }
 
 .settings-item { margin: 14px 0; }
 .settings-item .chips { flex-wrap: wrap; }
