@@ -336,8 +336,16 @@
  *        导致扩展区一个字也扫不到、「缺 28 字」空转了整整一轮）
  *        （data/poems-zhaoming.js、fonts/*.woff2、
  *          scripts/supplement-fonts.py、test/theme.test.js、test/zhaoming.test.js）
+ *   v59  「其N」编号核对与订正（Issue #69 跟进）：课内有两组同题诗在小批次补录时
+ *        自拟了「其一 / 其二」的序号，与传世全集里的篇次对不上 ——
+ *        卢纶《塞下曲》「月黑雁飞高」标成其一（实为其三）、「野幕敞琼筵」
+ *        标成其二（实为其四）；杜甫《江畔独步寻花》「黄四娘家花满蹊」标成
+ *        其一（实为其六）、「黄师塔前江水东」标成其二（实为其五）。现已按真实
+ *        篇次订正，并把 17 条带「其N」的课内标题逐条对正文写进测试
+ *        （data/poems-4.js、data/poems-6.js、test/title-seq.test.js、
+ *          test/scheduler.test.js、test/run.sh）
  */
-const CACHE_NAME = "poem-app-v58";
+const CACHE_NAME = "poem-app-v59";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [

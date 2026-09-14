@@ -17,6 +17,8 @@
 #   3k. 布局避让测试     —— 纯 Node，弹层按 --nav-h 避让底部导航，不被页签 / 播放栏压住
 #   3l. 背诵进度可视化   —— jsdom + vm，到期日历 / 掌握度分布，以及首页按需拉回
 #                          集子数据刷新旧快照（Issue #69 后续）
+#   3m. 「其N」编号核对  —— jsdom + vm，课内带「其N」的标题逐条对正文与真实篇次
+#                          （卢纶《塞下曲》、杜甫《江畔独步寻花》原为自拟错标）
 #   4. 用户名设置测试    —— jsdom，带初始 localStorage 重启应用
 #   5. 用户协议/隐私条款  —— jsdom + 源码扫描：页脚入口、学生保护、邮箱防爬
 #   6. 注音与朗读测试    —— 拼音表/多音字（纯 Node）+ 注音渲染与朗读降级（jsdom）
@@ -117,6 +119,10 @@ node test/layout.test.js
 echo ""
 echo "=== 背诵进度总览（到期日历 / 掌握度分布，Issue #69 后续）==="
 node test/progress.test.js
+
+echo ""
+echo "=== 「其N」编号核对（人教版教材标题与内容一致）==="
+node test/title-seq.test.js
 
 echo ""
 echo "=== 用户名设置测试 ==="
