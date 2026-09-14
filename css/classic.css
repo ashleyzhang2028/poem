@@ -1148,6 +1148,12 @@ body.reader-open .dock { display: none; }
    视觉上不可见，可聚焦。 */
 .search-hero-focus {
   position: absolute;
+  /* ⚠️ 贴在英雄区**顶部**，不是页面顶部 —— 「元素在视口里」是 iOS 决定要不要
+     自动滚屏的两个条件之一（另一个是元素高度超出可视区）。英雄区高度等于视口
+     减去顶栏与底部页签，加上顶部这一个像素仍完整落在可视区内，
+     所以聚焦它时浏览器不会自作主张滚一屏，页面稳定停在顶上。
+     改回页面顶部（top: 0 相对整页）或让它被顶栏盖住，iOS 会先滚一屏再弹键盘 ——
+     用户看到的是「点一下搜索框，整页跳一下」。 */
   top: 0;
   left: 50%;
   width: 1px;
@@ -1198,10 +1204,12 @@ body.reader-open .dock { display: none; }
   height: calc(100vh - var(--hero-chrome, 200px));
   height: calc(100svh - var(--hero-chrome, 200px) - var(--safe-top) - var(--nav-h));
   /* 搜索框压在 hero 的垂直中线上（上下内边距各分一半余量），
-     下面那段留白就是「搜索框 → 结果列表」的间距：
-     这一页由 js/search.js 在「输入了关键词」时压到 8px ——
-     下拉要贴着搜索框，结果列表也得尽快出现在第一屏。 */
-  padding-bottom: 12px;
+     下面那段留白就是「搜索框 → 结果列表」的间距。
+     ⚠️ 默认就取 8px，与 js/search.js 在「键盘弹着 / 有焦点」时写的行内值**同值** ——
+        否则一聚焦、一失焦，这个数就在 12 与 8 之间来回写，
+        失焦那一下会看见列表整块挪 4px（用户反馈「搜索结果离搜索框太远」，
+        要求只留正常间隔；顺带把这处抖动的来源也去掉了）。 */
+  padding-bottom: 8px;
 }
 /* 搜索框在 hero 里居中：整行只放它一样。
    宽度交给绝对定位（left: 50% + translateX(-50%)）+ 上限 520px —— 不用
@@ -1450,6 +1458,102 @@ body[data-nav="search"] #gw-list .empty[data-empty="idle"] {
 }
 /* 键盘弹着 / 输入框有焦点时，连这 8px 也不要 —— 这一刻列表区里
    要么是候选下方的结果卡片，要么就真的空着，没有「过渡留白」的位置 */
+/* 焦点态：搜索框连同候选下拉一起**升到顶栏之下**
+   --------------------------------------------------------------------------
+   原先只有「有焦点 → 顶到英雄区顶部」这一半，而英雄区高度是「视口 − 200px」，
+   于是有焦点时搜索框仍停在页面垂直中线偏上处 —— 用户要求的是
+   「把搜索框向上挪到标题栏下方，下拉列表也跟着上去」。
+
+   一条规则同时管三个状态（有焦点 / 键盘弹着 / 有内容），因为它们是同一件事：
+   **这一页此刻以搜索为主，搜索区就该停在顶栏下沿那一行**。
+     · 有焦点 —— 正在打字，框跟着手指走，不被键盘顶走；
+     · 有内容 —— 结果就摊在下面，滚动看结果时框一直看得见（sticky 语义）；
+     · 键盘弹着 —— 可视区只剩一半，框必须在最上面，候选与结果才有地方。
+   触屏上的点击会先聚焦（再取焦），所以「点一下框」与「手指离开、内容还在」
+   这两种情况都落在上面三条里，行为是连续的。
+
+   做法：高度交还给内容（height: auto），框由压在英雄区中线上改为普通流内排布、
+   顶到 padding-top；此时「搜索框 → 结果列表」之间只隔一个 padding-bottom（8px）。
+   ⚠️ 搜索框整行是绝对定位的（left/top/margin-top 那一套），这里必须把
+      top / margin-top 一起复位，否则它仍按「中线」摆，一贴顶就偏出半行。 */
+body[data-nav="search"] .search-hero.search-focus,
+body[data-nav="search"] .search-hero.kb-open,
+body[data-nav="search"] .search-hero:has(#gw-search:not(:placeholder-shown)) {
+  height: auto;
+  justify-content: flex-start;
+  /* 顶栏本体由 .topbar 排到英雄区之上，这里只留一点呼吸（比静止态紧，
+     框离顶栏近一档，读起来才像「贴在标题栏下方」而不是悬在页面中） */
+  padding-top: 6px;
+  padding-bottom: 8px;
+  position: sticky;
+  /* 顶栏自己会滚走，贴住它必须让整块留在视口最上沿（top: 0）——
+     静态页里 top 对 non-sticky 元素不生效，滚动时才会有区别。 */
+  top: 0;
+  z-index: 20;
+  background: var(--bg);
+}
+body[data-nav="search"] .search-hero.search-focus .search-toolbar,
+body[data-nav="search"] .search-hero.kb-open .search-toolbar,
+body[data-nav="search"] .search-hero:has(#gw-search:not(:placeholder-shown)) .search-toolbar {
+  position: static;
+  top: auto;
+  margin-top: 0;
+  transform: none;
+  width: auto;
+}
+/* 焦点态 / 有内容时，框与下拉都压在背景之上（sticky 的底色给了整块，
+   候选下拉仍是浮层，层级不能掉） */
+body[data-nav="search"] .search-hero.search-focus .search-toolbar,
+body[data-nav="search"] .search-hero.kb-open .search-toolbar,
+body[data-nav="search"] .search-hero:has(#gw-search:not(:placeholder-shown)) .search-toolbar { z-index: 30; }
+
+/* 窄屏（≤700px）：贴顶之后框与结果的左右呼吸收一档
+   --------------------------------------------------------------------------
+   静止态（居中）时框是可点面积的主角，左右留 14px 的呼吸更从容；而贴顶之后
+   它已经顶着顶栏、下面就是结果卡片，同样 14px 会显得「框比卡片窄一圈」——
+   卡片是列表容器的内边距决定的，框是 .app 的内边距决定的，两者在贴顶态下
+   并排看就差了这一档。这里只收**贴顶这一档**的左右内边距：
+   框缘与卡片缘对齐，列表看上去是「一张卡接一张卡」而不是错开一格。 */
+@media screen and (max-width: 700px) {
+  body[data-nav="search"] .search-hero.search-focus,
+  body[data-nav="search"] .search-hero.kb-open,
+  body[data-nav="search"] .search-hero:has(#gw-search:not(:placeholder-shown)) {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+}
+
+/* 焦点态下候选下拉要**贴着框**，与静止态同一个 4px —— 这一条同时盖住
+   .search-wrap 的 translateY(-2px)：那个位移是为了让静止态的框压在
+   「视觉中轴」上，贴上顶之后不需要它，留着只会让下拉与框之间多 2px。 */
+body[data-nav="search"] .search-hero.search-focus .search-wrap,
+body[data-nav="search"] .search-hero.kb-open .search-wrap,
+body[data-nav="search"] .search-hero:has(#gw-search:not(:placeholder-shown)) .search-wrap { transform: none; }
+
+/* 聚焦态的描边：**不再用纯黑**
+   --------------------------------------------------------------------------
+   用户反馈「焦点在搜索框时，框 border 是黑色，不好看」。原因是浏览器给
+   `:focus` 套的默认 ring（Chrome 的 -webkit-focus-ring-color 深灰近黑），
+   而 .search-input 只把 outline 设成 none、没有替它画一个自己的 ——
+   于是这一页最显眼的那一支描边，全站唯一一处不随主题走。
+   现在与全站输入框（.settings-input）统一：聚焦时绿描边 + 纸色底，
+   另给键盘操作留一圈淡天青 focus ring（鼠标 / 触屏点出来的聚焦不显示，
+   见 :focus-visible），保证「看得见焦点」这条无障碍要求不受影响。 */
+body[data-nav="search"] .search-hero .search-input {
+  border-color: var(--line);
+  background: #fffdf6;
+  transition: border-color .15s, background .15s, box-shadow .15s;
+}
+body[data-nav="search"] .search-hero .search-input:focus {
+  border-color: var(--green);
+  background: #fffdf6;
+  box-shadow: 0 0 0 3px var(--green-light);
+}
+body[data-nav="search"] .search-hero .search-input:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 1px;
+}
+
 body[data-nav="search"] .search-hero.kb-open ~ #gw-list .empty[data-empty="idle"],
 body[data-nav="search"] .search-hero.search-focus ~ #gw-list .empty[data-empty="idle"] {
   height: 0;

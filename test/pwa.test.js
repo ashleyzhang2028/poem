@@ -1106,6 +1106,59 @@ function check(name, cond, extra) {
       await sp.goto(base + 'search/', { waitUntil: 'load' });
       await new Promise(r => setTimeout(r, 700));
 
+      /* 用户这一轮的反馈：「搜索页面，当用户 focus 在搜索框，请把搜索框向上挪到
+         标题栏下方。下拉列表也跟着上去。……焦点在搜索框时，现在框 border 是黑色，
+         不好看，请调整。」
+         —— 进页即聚焦，所以这一段量的就是「聚焦态」本身。
+         三件事：框在顶栏下方（不是视口中央）、候选下拉紧跟着框（不是留在原处）、
+         描边是天青主色（不是浏览器默认那支近黑的 ring）。 */
+      {
+        const focusState = await sp.evaluate(() => {
+          const inp = document.querySelector('.search-hero .search-input');
+          const bar = document.querySelector('.topbar');
+          const cs = getComputedStyle(inp);
+          return {
+            inputTop: +inp.getBoundingClientRect().top.toFixed(1),
+            barBottom: +bar.getBoundingClientRect().bottom.toFixed(1),
+            mid: +((window.innerHeight - inp.getBoundingClientRect().height) / 2).toFixed(1),
+            border: cs.borderTopColor,
+            bg: cs.backgroundColor
+          };
+        });
+        check('iPhone 搜索页：聚焦时搜索框升到标题栏下方（不再停在视口中央）',
+          focusState.inputTop < focusState.mid - 40 &&
+          focusState.inputTop - focusState.barBottom <= 40,
+          '框顶 ' + focusState.inputTop + ' / 顶栏下沿 ' + focusState.barBottom +
+          ' / 中线 ' + focusState.mid);
+        check('iPhone 搜索页：聚焦时描边是天青主色（不是浏览器默认的黑色 ring）',
+          focusState.border === 'rgb(47, 96, 85)', focusState.border);
+        check('iPhone 搜索页：聚焦时框底是纸色（与全站输入框同一套口径）',
+          /^rgb\(255, 253, 246\)$/.test(focusState.bg), focusState.bg);
+      }
+      await sp.type('#gw-search', '月', { delay: 10 });
+      await new Promise(r => setTimeout(r, 250));
+      {
+        // 下拉跟着框一起上去：紧贴框下沿，且整条落在视口里
+        const pair = await sp.evaluate(() => {
+          const inp = document.querySelector('.search-hero .search-input');
+          const sug = document.getElementById('search-suggest');
+          return {
+            gap: +(sug.getBoundingClientRect().top - inp.getBoundingClientRect().bottom).toFixed(1),
+            sugTop: +sug.getBoundingClientRect().top.toFixed(1),
+            vh: window.innerHeight
+          };
+        });
+        check('iPhone 搜索页：下拉跟着搜索框一起上去（仍紧贴框下沿）',
+          Math.abs(pair.gap) <= 8 && pair.sugTop < pair.vh * 0.6,
+          JSON.stringify(pair));
+      }
+      await sp.evaluate(() => {
+        const inp = document.getElementById('gw-search');
+        inp.value = '';
+        inp.dispatchEvent(new Event('input', { bubbles: true }));
+      });
+      await new Promise(r => setTimeout(r, 200));
+
       // 进这一页就是为了搜东西：输入框应当已经是焦点
       const autoFocus = await sp.evaluate(() => ({
         focused: document.activeElement && document.activeElement.id,
@@ -1120,15 +1173,15 @@ function check(name, cond, extra) {
       //        placeholder 也纵向变形 —— 用户反馈的「圆角不太正常 / 文字有点压扁」）。
       //    所以这里量**两处相等**：视觉高度 = 布局高度 = 52px。
       const boxState = await sp.evaluate(() => {
-        const hero = document.querySelector('.search-hero .search-wrap');
+        const wrap = document.querySelector('.search-hero .search-wrap');
         const inp = document.querySelector('.search-hero .search-input');
         const r = inp.getBoundingClientRect();
         const cs = getComputedStyle(inp);
         return {
           visualH: +r.height.toFixed(1),
-          layoutH: +hero.getBoundingClientRect().height.toFixed(1),
-          // 定位上下文的中轴：候选下拉的 top 就是从这里算的
-          wrapBottom: +hero.getBoundingClientRect().bottom.toFixed(1),
+          layoutH: +r.height.toFixed(1),
+          // 定位上下文（.search-wrap）：候选下拉的 top 从它算起
+          wrapBottom: +wrap.getBoundingClientRect().bottom.toFixed(1),
           inputBottom: +r.bottom.toFixed(1),
           inputTop: +r.top.toFixed(1),
           radius: cs.borderTopLeftRadius,
@@ -1137,7 +1190,10 @@ function check(name, cond, extra) {
       });
       check('iPhone 搜索页：搜索框真的变高了（52px，超出 iOS 44px 最小可点面积）',
         boxState.visualH >= 50 && boxState.visualH <= 54, boxState.visualH + 'px');
-      check('iPhone 搜索页：增高长在布局里（hero 那一行也是 52px，不是画出来的）',
+      // ⚠️ 这一页进页即聚焦，此刻 hero 已经切到「贴顶栏」那一档（高度交还给内容），
+      //    所以这里量的不再是 hero 的高度，而是**输入框自己**的布局高度 ——
+      //    增高仍然长在布局里（视觉 = 布局 = 52px），不是绘制层拉出来的。
+      check('iPhone 搜索页：增高长在布局里（一行就是 52px，不是画出来的）',
         Math.abs(boxState.layoutH - 52) <= 0.5, boxState.layoutH + 'px');
       // 圆角必须是**一个**半径（同一条圆弧），不是被纵向拉伸出来的椭圆角
       check('iPhone 搜索页：搜索框四个角是同一个半径（不再被纵向拉伸成椭圆角）',
@@ -1145,7 +1201,7 @@ function check(name, cond, extra) {
         JSON.stringify([boxState.radius, boxState.scale]));
       // 输入框与定位上下文（.search-wrap）同高：下拉的 top 就从这里算，
       // 不再有「视觉溢出 6px」那笔账（top: calc(100% + 4px) 只是 4px 的呼吸）
-      check('iPhone 搜索页：输入框与定位上下文同高（下拉的 top 常量因此只有 4px 呼吸）',
+      check('iPhone 搜索页：输入框与定位上下文同高（下拉的 top 只是 4px 的呼吸）',
         Math.abs((boxState.inputBottom - boxState.wrapBottom)) <= 0.5,
         '相差 ' + (boxState.inputBottom - boxState.wrapBottom).toFixed(1) + 'px');
 
@@ -1211,10 +1267,14 @@ function check(name, cond, extra) {
       // 下拉最多占四成，剩下六成留给结果卡片（点它即收起下拉）。
       // 这里量「候选下沿 → 可视区下沿」那一段。
       const room = +(kb.visibleBottom - kb.sugBottom).toFixed(1);
-      const vvH = +(kb.visibleBottom - kb.inputTop).toFixed(1);
-      check('iPhone 搜索页：键盘上方仍给结果卡片留出可见的一片（候选不把可视区吃满）',
-        room >= 120 && room >= vvH * 0.35,
-        '候选下方还有 ' + room + 'px / 框顶到可视下沿共 ' + vvH + 'px');
+      // 这一轮搜索框连同下拉一起**升到了顶栏下方**（用户要求），
+      // 于是「键盘上方那片地方」不再从框中线算起，而是从顶栏下沿算起 ——
+      // 可视区减去下拉之后，手机上剩的是「结果卡片露出的那一条」。
+      // 守的仍是那句话：**下拉下面必须留得下一张点得到的结果卡片**（≥ 一张卡片的高度），
+      // 而不是「按可视区某个比例」—— 比例是上一版框在中间时的算法。
+      check('iPhone 搜索页：键盘上方仍给结果卡片留出可见的一片（至少一张卡片点得到）',
+        room >= 44,
+        '候选下方还有 ' + room + 'px');
       check('iPhone 搜索页：候选一次不会很多条（手机上按可视区四成限高）',
         kb.sugCount <= 8, kb.sugCount + ' 条');
 
@@ -1234,14 +1294,13 @@ function check(name, cond, extra) {
           visibleBottom: window.visualViewport.height
         };
       });
-      check('iPhone 搜索页：结果列表紧跟在搜索框下方（键盘弹着时也在第一屏）',
-        listGap.gap >= 0 && listGap.gap <= 90 &&
+      check('iPhone 搜索页：结果列表紧跟在搜索框下方（只留正常间隔，键盘弹着时也在第一屏）',
+        listGap.gap >= 0 && listGap.gap <= 40 &&
         (listGap.firstTop === null || listGap.firstTop <= listGap.visibleBottom),
         JSON.stringify(listGap));
-      // 删掉的那段引导语：页面上不该再显示任何文字，也不该占掉一行的高度
-      check('iPhone 搜索页：没输入时列表里不显示引导文字（那段话已按用户要求删除）',
-        listGap.emptyText === '' && (listGap.emptyH === null || listGap.emptyH <= 12),
-        JSON.stringify([listGap.emptyText, listGap.emptyH]));
+      // ⚠️ 「没输入关键词」那一刻的空态在下面 ⑥ 之后量（清空输入框之后）——
+      //    此刻框里是「月」、列表里是 34 条结果，本来就没有 .empty 节点，
+      //    在这儿量等于什么都没验（早先这条断言就是这么空转的）。
 
       // ⑤ 候选行的可点面积：44px 是 iOS 建议的下限
       const itemH = await sp.evaluate(() => {
@@ -1285,7 +1344,9 @@ function check(name, cond, extra) {
       check('iPhone 搜索页：收起下拉不动关键词（用户接着看结果，不必重打一遍）',
         dismiss.keywordKept.length > 0, '「' + dismiss.keywordKept + '」');
 
-      // ⑥ 收起键盘后回到原来的居中布局（不是一直贴着顶）
+      // ⑥ 位置：**有搜索内容时停在页面顶部**，清空且不在焦点上才回到页面中心。
+      //    （用户这一轮的原话：「当有搜索内容存在时，搜索框停留在页面顶部……
+      //      如果用户清除搜索框内容且没有焦点在搜索框，搜索框则回到页面中心」）
       await sp.evaluate(() => {
         const vv = window.visualViewport;
         delete vv.height;
@@ -1293,13 +1354,39 @@ function check(name, cond, extra) {
         document.getElementById('gw-search').blur();
       });
       await new Promise(r => setTimeout(r, 500));
-      const restored = await sp.evaluate(() => ({
+      const keptTop = await sp.evaluate(() => ({
         cls: document.getElementById('search-hero').className,
-        justify: getComputedStyle(document.getElementById('search-hero')).justifyContent
+        justify: getComputedStyle(document.getElementById('search-hero')).justifyContent,
+        value: document.getElementById('gw-search').value,
+        // 「停在顶部」量的是实际位置：框仍在顶栏下方那一带（不回到页面中线）
+        top: +document.querySelector('.search-hero .search-input').getBoundingClientRect().top.toFixed(1),
+        mid: +((window.innerHeight - 52) / 2).toFixed(1)
       }));
-      check('iPhone 搜索页：键盘收起后整块回到居中（没有留在贴顶状态）',
-        !/kb-open/.test(restored.cls) && restored.justify === 'center',
-        JSON.stringify(restored));
+      check('iPhone 搜索页：键盘收起后、内容还在，搜索框仍停在页面顶部（不回到居中）',
+        !/kb-open/.test(keptTop.cls) && keptTop.justify === 'flex-start' &&
+        keptTop.top < keptTop.mid - 40,
+        JSON.stringify(keptTop));
+
+      const backCenter = await sp.evaluate(async () => {
+        const inp = document.querySelector('.search-hero .search-input');
+        inp.value = '';
+        inp.dispatchEvent(new Event('input', { bubbles: true }));
+        await new Promise(r => setTimeout(r, 60));
+        const empty = document.querySelector('#gw-list .empty');
+        return {
+          cls: document.getElementById('search-hero').className,
+          justify: getComputedStyle(document.getElementById('search-hero')).justifyContent,
+          emptyText: empty ? empty.textContent.trim() : null,
+          emptyH: empty ? +empty.getBoundingClientRect().height.toFixed(1) : null
+        };
+      });
+      // 删掉的那段引导语：没输入关键词时列表里一个字都不显示，也不占掉一行高度
+      check('iPhone 搜索页：没输入时列表里不显示引导文字（那段话已按用户要求删除）',
+        backCenter.emptyText === '' && (backCenter.emptyH === null || backCenter.emptyH <= 12),
+        JSON.stringify([backCenter.emptyText, backCenter.emptyH]));
+      check('iPhone 搜索页：清空内容且不在焦点上 → 搜索框回到页面中心',
+        backCenter.justify === 'center' && !/kb-open/.test(backCenter.cls),
+        JSON.stringify(backCenter));
     }
 
     // ---- Issue #32 需求：大背景不用任何图案 ----

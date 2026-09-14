@@ -603,6 +603,68 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(/SUGGEST_MAX\s*=\s*8/.test(searchJs),
     '候选最多 8 条仍是结果集的口径（限高只影响「一次看得见几条」，不影响「给几条」）');
 
+  /* ---------- 七之四、搜索框的位置（Issue #69 后续·再续）----------
+     用户这一轮的四条反馈：
+       ① 聚焦在搜索框 → 把框向上挪到标题栏下方，下拉也跟着上去；
+       ② 点空白地方 → 下拉消失；
+       ③ 搜索框与结果列表之间只留正常间隔（不要那么多间距）；
+       ④ 聚焦时框的描边是黑色，不好看 → 换掉。
+     真机上的盒子关系由 test/pwa.test.js 量（那层有真浏览器），
+     这里守的是源码层的几组关系 —— 它们不依赖某个具体数值，改坏了才亮红。 */
+
+  // ① 贴顶：焦点 / 键盘 / 有内容三个状态共用一条规则（同一件事，不该写三遍）
+  chk(/body\[data-nav="search"\] \.search-hero\.search-focus\s*,/.test(cssCode) &&
+    /body\[data-nav="search"\] \.search-hero\.kb-open\s*,/.test(cssCode),
+    '焦点态与键盘态都进了「贴顶栏」那一条选择器（不再只有键盘弹着时才顶上去）');
+  chk(/:has\(#gw-search:not\(:placeholder-shown\)\)/.test(cssCode),
+    '「有搜索内容时停在页面顶部」用 :has(:not(:placeholder-shown)) 判 —— ' +
+    'placeholder 的显隐由浏览器维护，不会出现「值变了、类名忘了改」的错位');
+  const liftBlock = (/body\[data-nav="search"\] \.search-hero\.search-focus,[\s\S]*?\n\}/.exec(cssCode) || [''])[0];
+  chk(/position:\s*sticky/.test(liftBlock) && /top:\s*0/.test(liftBlock),
+    '贴顶用 position: sticky + top: 0（滚动看结果时框一直看得见，不是滚上去就不管了）');
+  chk(/height:\s*auto/.test(liftBlock) && /justify-content:\s*flex-start/.test(liftBlock),
+    '贴顶时高度交还给内容、从上往下排（静止态那套「视口 − 200px + 垂直居中」同时撤掉）');
+  chk(/padding-top:\s*\d+px/.test(liftBlock) && /padding-bottom:\s*8px/.test(liftBlock),
+    '贴顶后只留一点呼吸：框离顶栏近一档，框到结果列表仍是正常的 8px');
+  // 绝对定位那一套必须一起复位，否则框仍按「中线」摆、一贴顶就偏出半行
+  const liftBarBlock = (/body\[data-nav="search"\] \.search-hero\.search-focus \.search-toolbar,[\s\S]*?\n\}/.exec(cssCode) || [''])[0];
+  chk(/position:\s*static/.test(liftBarBlock) && /margin-top:\s*0/.test(liftBarBlock) &&
+    /transform:\s*none/.test(liftBarBlock),
+    '贴顶时搜索框整行的绝对定位一起复位（left/top/margin-top 那套是给静止态的）');
+  // 「清空 + 没有焦点 → 回到页面中心」不必另写一条：帖顶那三条条件都不成立时，
+  // 自动落回上面的静止态。反向守一句 —— 静止态必须仍是「视口减掉那些已知高度后居中」。
+  const heroBaseBlock = (/(?:^|\n)\.search-hero \{([^}]*)\}/.exec(cssCode) || ['', ''])[1];
+  chk(/height:\s*calc\(100svh/.test(heroBaseBlock) && /justify-content:\s*center/.test(heroBaseBlock),
+    '静止态仍是「整块在视口里垂直居中」（清空内容又不在焦点上时回到这里）');
+  const ghostAtTop = /(?:^|\n)\.search-hero-focus \{([^}]*)\}/.exec(classicCss);
+  chk(!!ghostAtTop && /top:\s*0/.test(ghostAtTop[1]),
+    '替身输入框仍贴在英雄区顶部（iOS 只在元素超出可视区时才自行滚屏，' +
+    '而英雄区恰好等于可视区高度，所以聚焦它不会让整页跳一下）');
+
+  // 贴顶态下框与结果的左右呼吸收一档：框缘与卡片缘对齐（同一条竖线）
+  chk(/@media screen and \(max-width: 700px\) \{[\s\S]{0,400}?search-hero\.search-focus,[\s\S]{0,300}?padding-left:\s*8px/.test(classicCss),
+    '窄屏上贴顶态的搜索框左右内边距收一档（与结果卡片的边缘对齐，不错开一格）');
+
+  // ③ 间距：默认就是 8px，且 JS **不再**按有没有输入去写行内值
+  //    （一设一撤会让列表整块挪 4px，那正是「看着忽远忽近」的来源）
+  chk(/padding-bottom:\s*8px/.test(heroBaseBlock),
+    '搜索框到结果列表的留白默认就是 8px（只留正常间隔）');
+  chk(!/hero\.style\.paddingBottom/.test(searchJs),
+    'js/search.js 不再往 hero 上行内写 paddingBottom（留白一律归 CSS，不再两处各管一半）');
+
+  // ④ 聚焦描边：不再是浏览器的黑色默认 ring
+  chk(/\.search-hero \.search-input \{[^}]*border-color:\s*var\(--line\)/.test(classicCss),
+    '搜索框的描边走全站界行色（不是浏览器默认那支近黑的 ring）');
+  chk(/\.search-hero \.search-input:focus \{[^}]*border-color:\s*var\(--green\)/.test(classicCss),
+    '聚焦时描边换成天青主色 + 纸色底（与设置页的输入框同一套口径）');
+  chk(/\.search-hero \.search-input:focus-visible \{[^}]*outline:\s*2px solid var\(--green\)/.test(classicCss),
+    '键盘操作仍留一圈 focus ring（「看得见焦点」这条无障碍要求不受影响）');
+
+  // ② 点空白地方收起下拉：三条来源都已存在（结果区 / 滚动 / Escape）
+  chk(/bindSuggestDismiss/.test(searchJs) &&
+    /e\.key === "Escape"/.test(searchJs),
+    '点空白 / 按 Escape / 滚结果列表三条都能把候选下拉收掉');
+
   /* ---------- 八、法务页与设置页的口径一致 ---------- */
   chk(read('js/chrome.js').indexOf('古诗词') === -1 ||
     !/label: "古诗词"/.test(read('js/chrome.js')),
