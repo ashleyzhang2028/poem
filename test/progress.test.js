@@ -154,6 +154,46 @@ chk(empty.unlearned === 6, '一篇都没学过时「尚未学过」= 全部');
 chk(S.overview([], () => null).calendar.length === 14,
   '空候选池也照样给出 14 格日历（不至于让页面白屏）');
 
+/* ---- 边界：正好逾期 7 天的那一篇，两边必须归同一档 ----
+   #119 留下的真 bug 就在这里：`overview()` 与 `dueList()` 各写了一遍
+   「逾期一周以上单列」的归档，且**页面汇总行**又把 backlog 并进了「今天」——
+   于是只要有一篇正好 / 超过 7 天逾期，日历说今天 1 篇、清单汇总说 2 篇。
+   原先的造数只到「逾期 2 天」，绕过了这个边界；这一层专门造它。 */
+const recs7 = {
+  // 正好逾期 7 天：**并进今天**（阈值是「超过一周」才单列）
+  exactly7: { level: 1, learned: true, nextReviewAt: today0 + 9 * 3600000 - 7 * DAY, lapses: 0, reviewCount: 1 },
+  // 逾期 8 天：单列 backlog
+  over7: { level: 1, learned: true, nextReviewAt: today0 + 9 * 3600000 - 8 * DAY, lapses: 0, reviewCount: 1 },
+  // 逾期 1 天：并进今天
+  over1: { level: 1, learned: true, nextReviewAt: today0 + 9 * 3600000 - DAY, lapses: 0, reviewCount: 1 },
+  // 今天到期
+  zero: { level: 2, learned: true, nextReviewAt: today0 + 9 * 3600000, lapses: 0, reviewCount: 2 }
+};
+const pool7 = Object.keys(recs7).map(id => ({ id: id, title: id }));
+const o7 = S.overview(pool7, id => recs7[id] || null, { days: 14 });
+const L7 = S.dueList(pool7, id => recs7[id] || null, { days: 14 });
+
+chk(L7.days[0].items.map(x => x.id).sort().join(',') === 'exactly7,over1,zero',
+  '正好逾期 7 天的并进「今天」那一档（阈值是「超过一周」才单列；实际 ' +
+  L7.days[0].items.map(x => x.id).join('、') + '）');
+chk(L7.backlog.length === 1 && L7.backlog[0].id === 'over7',
+  '逾期 8 天的才落进 backlog（实际 ' + L7.backlog.map(x => x.id).join('、') + '）');
+chk(L7.days[0].items.length === o7.calendar[0].count,
+  '边界上仍然是同一本账：清单「今天」那一档 = 日历「今天」那一格（实际 ' +
+  L7.days[0].items.length + ' / ' + o7.calendar[0].count + '）');
+chk(L7.days[0].items.length + L7.backlog.length === o7.dueToday,
+  'dueToday = 今天那一档 + backlog（含「正好 7 天」这个边界；实际 ' +
+  (L7.days[0].items.length + L7.backlog.length) + ' / ' + o7.dueToday + '）');
+chk(o7.overdue === 1 && o7.calendar[0].count === 3,
+  'overdue 只数「超过一周」的（1）；日历今天那一格含今天到期 + 逾期一周以内（3）');
+
+/* 超出窗口的 farther 与 backlog 互不串档 */
+const farL = S.dueList([{ id: 'a' }], () => ({
+  level: 0, learned: true, nextReviewAt: today0 + 30 * DAY
+}), { days: 14 });
+chk(farL.farther === 1 && farL.total === 0 && farL.backlog.length === 0,
+  '超出 14 天窗口的只进 farther，不进 total / backlog（三处各说各的）');
+
 /* ================= 二、页面层：真的把两类图渲染出来 ================= */
 /**
  * ⚠️ 页面层的加载方式（这里踩过一次坑，写下来免得后来人再撞）：
@@ -224,7 +264,10 @@ setTimeout(() => {
   const all = probe.window.POEMS_ALL;
   chk(all && all.length === 261, '课内 261 首批入（实际 ' + (all ? all.length : 'undefined') + '）');
 
-  // 造一份真进度：逾期 2 天 1 首、3 天后到期 1 首、已牢固 1 首
+  /* 造一份真进度：逾期 2 天 1 首、3 天后到期 1 首、已牢固 1 首，
+     外加**逾期 9 天 1 首** —— 它是 #119 那个 bug 的触发条件：
+     有 backlog 时，原先的汇总行把 backlog 并进了「今天」，
+     与日历「今天」那一格的数对不上（详见下面那几条断言）。 */
   const progress = {};
   progress[all[0].id] = { level: 0, learned: true, nextReviewAt: Date.now() - 2 * DAY2,
     lapses: 0, reviewCount: 1, lastReviewAt: Date.now() - 2 * DAY2, history: [] };
@@ -232,6 +275,8 @@ setTimeout(() => {
     lapses: 0, reviewCount: 3, lastReviewAt: Date.now(), history: [] };
   progress[all[2].id] = { level: 9, learned: true, nextReviewAt: Date.now() + 200 * DAY2,
     lapses: 0, reviewCount: 9, lastReviewAt: Date.now(), history: [] };
+  progress[all[3].id] = { level: 1, learned: true, nextReviewAt: Date.now() - 9 * DAY2,
+    lapses: 0, reviewCount: 2, lastReviewAt: Date.now() - 9 * DAY2, history: [] };
 
   const dom = openPage(progress);
   const w2 = dom.window;
@@ -255,9 +300,9 @@ setTimeout(() => {
 
     const mRows = d.querySelectorAll('#progress-mastery .bar-row');
     chk(mRows.length === 5, '掌握度分布画了 5 档（实际 ' + mRows.length + '）');
-    // 第 0 阶（新学）那首掌握度是 5% → 落在第一档
-    chk(mRows[0].querySelector('.bar-count').textContent === '1',
-      '掌握度第一档（0-19%）显示 1 篇');
+    // 第 0 阶（新学）那首掌握度 5%、逾期 9 天那首（第 1 阶）掌握度 16% → 都在第一档
+    chk(mRows[0].querySelector('.bar-count').textContent === '2',
+      '掌握度第一档（0-19%）显示 2 篇（第 0 阶那首 5% + 第 1 阶那首 16%）');
     const lRows = d.querySelectorAll('#progress-levels .bar-row');
     chk(lRows.length === 10, '记忆阶段画了 10 档（实际 ' + lRows.length + '）');
     chk(lRows[lRows.length - 1].querySelector('.bar-count').textContent === '1',
@@ -271,9 +316,11 @@ setTimeout(() => {
     chk(dueBlocks[0].textContent.indexOf('今天') >= 0, '第一档写着「今天」');
     /* 造的三篇进度：all[0] 逾期 2 天（并进今天）、all[1] 第 3 天到期、
        all[2] 已牢固（第 200 天到期 → 超出窗口，只报个数）。 */
-    chk(dueBlocks[0].querySelectorAll('.duelist-item').length === 1,
-      '今天那一档列出逾期那 1 篇（实际 ' +
-      dueBlocks[0].querySelectorAll('.duelist-item').length + '）');
+    /* 今天那一档 = 逾期 2 天那 1 篇（逾期 9 天那篇进 backlog，另挂一截 ——
+       `.duelist-items.late` 也在 `dueBlocks[0]` 里，所以按「非 late」数）。 */
+    chk(dueBlocks[0].querySelectorAll('.duelist-items:not(.late) .duelist-item').length === 1,
+      '今天那一档列出逾期一周以内那 1 篇（实际 ' +
+      dueBlocks[0].querySelectorAll('.duelist-items:not(.late) .duelist-item').length + '）');
     chk(dueBlocks[0].querySelector('.duelist-due').textContent.indexOf('逾期') >= 0,
       '逾期的那一篇标出「逾期 N 天」（实际「' +
       dueBlocks[0].querySelector('.duelist-due').textContent + '」）');
@@ -292,6 +339,32 @@ setTimeout(() => {
       '篇名是指回首页的链接（/?poem=<id>；这一页只读，不在原地改）');
     chk((d.querySelector('#duelist-note') || {}).textContent.indexOf('更远还有 1 篇') >= 0,
       '超出 14 天窗口的那一篇只报个数（「更远还有 1 篇」，写在脚注里）');
+    /* ---- 逾期超过一周的那一篇：单独一截，**不并进**今天的天数 ----
+       这是 #119 留下那个 bug 的正面验证：有 backlog 时，
+       「今天 N 篇」这个 N 必须仍等于**日历上今天那一格**的数。 */
+    const lateHead = d.querySelector('#progress-duelist .duelist-overdue-head');
+    chk(!!lateHead && lateHead.textContent.indexOf('逾期超过一周 · 1 篇') >= 0,
+      '逾期超过一周的另挂一截「逾期超过一周 · 1 篇」（实际「' +
+      (lateHead ? lateHead.textContent : '（没有这一截）') + '」）');
+    const lateItems = d.querySelectorAll('#progress-duelist .duelist-items.late .duelist-item');
+    chk(lateItems.length === 1 &&
+      lateItems[0].getAttribute('href') === '/?poem=' + encodeURIComponent(all[3].id),
+      '那一截里列出逾期 9 天那一篇，篇名同样指回首页（实际 ' +
+      (lateItems[0] ? lateItems[0].getAttribute('href') : '（没有）') + '）');
+    /* 关键对账：页面上今天那一档的表头数 = 日历今天那一格的数
+       （backlog 不并进来；并进来就成了「日历 2、清单 3」） */
+    const todayBlockHead = dueBlocks[0].querySelector('.duelist-count').textContent;
+    chk(todayBlockHead === cells[0].querySelector('.cal-count').textContent + ' 篇',
+      '清单「今天」那一档的表头 = 日历「今天」那一格（backlog 不并进今天；实际 ' +
+      todayBlockHead + ' / ' + cells[0].querySelector('.cal-count').textContent + ' 篇）');
+    /* 汇总行：今天 N 篇 / 逾期超过一周 M 篇 / 未来两周共 T 篇 —— 三项各说一件事，
+       「今天 N 篇」里的 N 仍与日历对齐 */
+    const sub0 = (d.querySelector('#duelist-sub') || {}).textContent || '';
+    chk(sub0.indexOf('今天 ' + cells[0].querySelector('.cal-count').textContent + ' 篇') >= 0,
+      '汇总行的「今天 N 篇」与日历今天那一格同数（实际「' + sub0 + '」）');
+    chk(sub0.indexOf('逾期超过一周 1 篇') >= 0,
+      '汇总行把逾期超过一周的单独说一句，不混进「今天」（实际「' + sub0 + '」）');
+
     /* 日历格子可点（要跳得下来），且挂着 role=button */
     chk(cells[3].getAttribute('data-offset') === '3' && cells[3].getAttribute('role') === 'button',
       '日历每一格带 data-offset，挂 role=button（点了跳到那一档）');
@@ -300,8 +373,8 @@ setTimeout(() => {
     chk(stats.length === 4, '总览四格（已学 / 待复习 / 平均掌握 / 尚未学过）');
     chk(d.querySelector('#progress-stats').textContent.indexOf('已学') >= 0,
       '四格里第一格是「已学」');
-    chk(d.querySelector('#progress-stats').textContent.indexOf('258') >= 0,
-      '「尚未学过」= 261 - 3 = 258（实际那一格：' +
+    chk(d.querySelector('#progress-stats').textContent.indexOf('257') >= 0,
+      '「尚未学过」= 261 - 4 = 257（实际那一格：' +
       d.querySelectorAll('#progress-stats .stat')[3].textContent + '）');
 
     /* ---- 这一页只读：不许动进度 ---- */
