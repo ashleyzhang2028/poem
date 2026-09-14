@@ -1298,9 +1298,16 @@ function check(name, cond, extra) {
         listGap.gap >= 0 && listGap.gap <= 40 &&
         (listGap.firstTop === null || listGap.firstTop <= listGap.visibleBottom),
         JSON.stringify(listGap));
-      // ⚠️ 「没输入关键词」那一刻的空态在下面 ⑥ 之后量（清空输入框之后）——
-      //    此刻框里是「月」、列表里是 34 条结果，本来就没有 .empty 节点，
-      //    在这儿量等于什么都没验（早先这条断言就是这么空转的）。
+      // 删掉的那段引导语：页面上不该再显示任何文字，也不该占掉一行的高度。
+      // ⚠️ 这里量的是「那一段话不在」，不是「.empty 节点一定在」——
+      //    走到这一步时输入框里已经有「月」，列表里是命中结果，
+      //    引擎**根本不会渲染 .empty 节点**（listGap.emptyText 为 null）。
+      //    要守的是「那段引导语不显示」：有结果（无 node）与空列表两种形态都算过。
+      //    「空列表那一形态」在下面 ⑥ 清空输入框之后再量一次（那一刻才有 .empty）。
+      check('iPhone 搜索页：没输入时列表里不显示引导文字（那段话已按用户要求删除）',
+        (listGap.emptyText === null || listGap.emptyText === '') &&
+        (listGap.emptyH === null || listGap.emptyH <= 12),
+        JSON.stringify([listGap.emptyText, listGap.emptyH]));
 
       // ⑤ 候选行的可点面积：44px 是 iOS 建议的下限
       const itemH = await sp.evaluate(() => {

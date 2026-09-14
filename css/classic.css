@@ -1284,6 +1284,46 @@ body.reader-open .dock { display: none; }
    这一层再来一次 -50% 就会把搜索框整个推出屏幕左边）。 */
 .search-hero .search-wrap { transform: translateY(-2px); }
 
+/* 屏幕键盘：把整个搜索区顶到键盘上方，让候选下拉永远落在可视区里
+   --------------------------------------------------------------------------
+   iOS / 安卓的软件键盘是**覆盖**在页面上的，它不改变窗口大小：
+   页面照旧 100svh，只是下半截被键盘盖住。搜索框又正好在视口垂直居中处，
+   一动键盘它就被顶进键盘底下 —— 用户看到的候选下拉，正是被键盘盖住的那几行。
+
+   两条状态（js/search.js 的 syncKeyboardSpace 负责加类，这里只负责表现）：
+     1. .search-focus —— 输入框被聚焦（键盘弹出前的一瞬间也算）：整块贴到顶栏下方，
+                         免得先看到一个居中布局、键盘弹出后再跳一下。
+     2. .kb-open      —— 键盘确实弹出来了：同上，并把搜索区下方的留白压到最小，
+                         候选下拉与结果列表都在键盘上方这一片可视区里。
+   两者都只改竖向位置，不动颜色、不动横向宽度。
+
+   ⚠️ 贴顶的两个值互相配平：hero 交出高度（height: auto）之后，再给它
+      min-height: 56px + padding-top: 6px + 刘海。实测（393×852 的 iPhone 档）：
+      hero 紧贴顶栏下沿（69.1px），高 56px（border-box，padding-top 含在内），
+      搜索框 52px（这一页 --toolbar-h 的真实值）正好落在它里面、
+      下沿 121.1px —— 远在键盘上沿（516px）之上，且离页顶不远。
+      换言之贴顶态里「6px 呼吸」是**下限**（min-height 56 撑住），
+      搜索框本身不挪窝，挪的是 hero 从「视口 − 200px 的居中盒」缩回内容高。
+      居中是「height = 视口 − 200px，框压在中线」，贴顶是「自己的高度 + 顶边距」，
+      两者都精确到像素，搜索框在两种状态里都是完整可见的。
+      若只写一个魔数，日后改 --hero-chrome 就会两处对不上。
+
+   ⚠️ 2026 这一版把这条规则整个删掉过一次（改成「52px 真高度」时误删），
+      而 js/search.js 仍在加这两个类、test/pwa.test.js 仍在量
+      `justify-content: flex-start` —— 于是搜索页在机上「贴顶」这一步
+      静默失效：hero 仍是 height = 视口 − 200px 的居中盒，
+      搜索框的下沿被留在 388px 处，而键盘弹起后可视区只到 516px，
+      下面那 271px 的留白把结果列表整段推到键盘之外。
+      规则必须与那两个类同生共死：删规则就得删类与断言，三者缺一即静默失效。 */
+.search-hero.search-focus,
+.search-hero.kb-open {
+  justify-content: flex-start;
+  height: auto;
+  min-height: 56px;
+  padding-top: calc(6px + var(--safe-top));
+  padding-bottom: 8px;
+}
+
 /* 搜索说明：这一行小字整段已撤（用户要求删除「输入篇名、作者或诗句……」）。
    这里不再留 .search-hint 的样式死规则 —— 元素删了，规则也一起删。 */
 
@@ -1352,11 +1392,19 @@ body[data-nav="search"] #gw-list .item { padding: 14px 8px 14px 14px; }
      看起来像文字花了。这里取 --card 的实色底：同一张纸，不透明。 */
   background: #fffefa;
   max-height: 400px;
+  /* ⚠️ 硬边界那一项是「可视区高度 − 86px」，而**可视区高度由 JS 实测**：
+     js/search.js 的 keyboardVisible() 把 visualViewport.height 写进
+     --kb-visible（没有键盘时就是整屏，键盘弹起时就是键盘上沿）。
+     为什么不直接写 `100svh - --kb-space`：svh 不认软键盘（覆盖层不改视口），
+     而且部分内核 / 无头环境会把 svh 解析成等于 vh 的整屏高 ——
+     那一项于是虚高，候选下拉一路铺到键盘上沿，把下方结果卡片全吃掉
+     （实测：svh 与 vh 都等于 852，下拉高 340.8px，可视区只剩 516px）。
+     86px 是「hero 顶部 → 输入框下沿」那一段（见上面的 .kb-open 算式）。
+     fallback 100vh 给「JS 还没跑起来」的那一瞬间兜底。 */
   max-height: min(
     400px,
-    60vh,
-    60svh,
-    calc(100svh - var(--kb-space, 0px) - 86px)
+    calc(var(--kb-visible, 100vh) * 0.6),
+    calc(var(--kb-visible, 100vh) - 86px)
   );
   overflow-y: auto;
   /* 候选与输入框之间不留视觉缝：间隙已在 top 里给过（4px），
@@ -1419,14 +1467,14 @@ body[data-nav="search"] #gw-list .item { padding: 14px 8px 14px 14px; }
    --------------------------------------------------------------------------
    手机的可视区本来就只够「搜索框 + 几条候选 + 几条结果卡片」，
    40% 是留给「下拉下面那片可见的结果区」的硬指标（用户要求能关掉下拉、
-   再去点结果卡片）。40vh 与 40svh 都写：老内核不认 svh 时用 vh 兜底。 */
+   再去点结果卡片）。比例算在**实测可视区**（--kb-visible）上，不是 svh ——
+   详见下面 `.suggest` 那条的说明（svh 不认软键盘）。 */
 @media screen and (max-width: 700px) {
   .suggest {
     max-height: min(
       400px,
-      40vh,
-      40svh,
-      calc(100svh - var(--kb-space, 0px) - 86px)
+      calc(var(--kb-visible, 100vh) * 0.4),
+      calc(var(--kb-visible, 100vh) - 86px)
     );
   }
 }
