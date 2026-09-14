@@ -92,7 +92,28 @@
    * 读起来就是错的。集子条目仍留在候选与结果里（搜集子名要能命中它）。
    */
   function allItems() {
-    return (window.SITE_INDEX || []).filter(function (p) { return !p.isBook; });
+    var list = (window.SITE_INDEX || []).filter(function (p) { return !p.isBook; });
+    // 同一篇作品只留一条：课内《静夜思》与唐诗《夜思》正文一致、是同一篇，
+    // 不该在结果里出现两条（点哪一条都是同一篇，用户还得猜哪个是「对」的）。
+    // 判重走 data/works-index.js 的主表口径（正文去标点后一致即同一篇）；
+    // 留下的那一条优先取**课内**条目 —— 教材是主线，课内条目还带着年级学期。
+    // 没有主表时原样返回（搜索页加载了 works-index，理论不会发生），不去猜。
+    if (!window.WorksIndex) return list;
+
+    var out = [];
+    var slotOf = {};   // wid → out 里的下标
+    list.forEach(function (p) {
+      var wid = window.WorksIndex.widOf(p.id);
+      var rep = window.WorksIndex.repOf(p.id);
+      if (slotOf[wid] === undefined) {
+        slotOf[wid] = out.length;
+        out.push(p);
+        return;
+      }
+      // 已经有一条：若这一条才是这一篇的代表条目（课内那一条），就替换上去
+      if (rep === p.id) out[slotOf[wid]] = p;
+    });
+    return out;
   }
 
   /* ---------------- 候选下拉 ---------------- */

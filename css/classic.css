@@ -778,6 +778,99 @@ body.reader-open .dock { display: none; }
 /* 「标记已读」：点亮前是描边勾，已读后整颗高亮 */
 .done-btn { color: var(--ink-2); }
 .done-btn.is-done { background: var(--green); border-color: var(--green); color: #fdfaf2; }
+/* 「加入背诵」：一枚书签。未加入时是淡墨描边，已加入时整个高亮 ——
+   与「标记已读」（勾）分得开：勾是「读过了」，书签是「这一篇我要背」。
+   两者都在工具条第二行，形态同款、颜色语义不同：已读走绿、加入背诵走蓝，
+   与列表里「已读」小标（绿）和条目左侧蓝条（古文）是同一套区分。 */
+.recite-btn { color: var(--ink-2); }
+.recite-btn.is-in { background: var(--blue); border-color: var(--blue); color: #fffdf8; }
+
+/* --------------------------------------------------------------------------
+   自选集合：集合选择器（点「加入背诵」后弹出）
+   --------------------------------------------------------------------------
+   与设置弹层同一套 .modal 语言（纸底、圆角、遮罩），只是内容是「勾选集合」。
+   一个集合一行，勾选态在左、名字居中偏左、篇数在右 ——
+   与列表条目的读法一致：先看自己勾没勾，再看名字，最后看有多少篇。
+   -------------------------------------------------------------------------- */
+.recite-sub {
+  margin-top: 4px;
+  font-size: 12.5px;
+  font-weight: 400;
+  color: var(--ink-3);
+}
+.recite-cols {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 14px 0 0;
+  max-height: 46vh;
+  overflow-y: auto;
+}
+.recite-col {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 11px 13px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+  box-sizing: border-box;
+}
+.recite-col.on { border-color: var(--green); background: var(--green-light); }
+.recite-col-tick {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: transparent;
+}
+.recite-col-tick svg { width: 13px; height: 13px; display: block; }
+.recite-col.on .recite-col-tick { background: var(--green); border-color: var(--green); color: #fdfaf2; }
+.recite-col-name { flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.recite-col-count { flex: 0 0 auto; font-size: 12px; color: var(--ink-3); }
+.recite-empty {
+  padding: 14px 4px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--ink-3);
+}
+.recite-new {
+  display: flex;
+  gap: 8px;
+  margin: 14px 0 0;
+}
+.recite-new .settings-input { flex: 1 1 auto; }
+
+/* 列表条目右侧的「加入背诵」圆键：与播放键同款同档，走蓝色（天水碧）。
+   ⚠️ 与播放键的间距 6px 写在**它自己的** margin-right 上（播放键那侧不动）：
+   箭头带 margin-left:auto，任何写在箭头左侧的 margin 都会被 auto 吃掉。 */
+.item-recite {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  padding: 0;
+  margin: 0 6px 0 0;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--card);
+  color: var(--blue);
+  cursor: pointer;
+  line-height: 0;
+}
+.item-recite svg { width: 15px; height: 15px; display: block; }
+.item-recite[data-on="1"] { background: var(--blue); border-color: var(--blue); color: #fffdf8; }
 /* 对齐组合按钮：两个 SVG 图标（左 / 中），选中态与注音档位一致 */
 .icon-seg button {
   display: inline-flex;

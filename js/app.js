@@ -253,6 +253,27 @@
     );
   }
 
+  /**
+   * 自选集合交给遗忘曲线的篇目（js/collections.js）。
+   *
+   * 只存引用、不存正文，正文从站点索引取；站点索引在这里一定齐备
+   * （首页加载了六部数据，见 index.html 的 script 顺序）。
+   * 与课内同篇的会并到课内那一份进度上（poemIdFor → WorksIndex.repOf），
+   * 所以「在唐诗页把《静夜思》加入背诵」不会让它与课内那一条各背一遍。
+   */
+  function extraPoems() {
+    if (!window.ReciteCollections) return [];
+    return window.ReciteCollections.scheduleItems(window.SITE_INDEX || []);
+  }
+
+  /** 自选集合变化时重排今日任务（用户刚加一篇，今天就该排上） */
+  function invalidateAndRefreshPlan() {
+    invalidatePlan();
+    todayPlan = buildTodayPlan();
+    renderToday();
+    renderAll();
+  }
+
   function buildTodayPlan() {
     // 同一天同一配置下计划保持稳定，避免刷新后跳变
     const key = planCacheKey();
@@ -264,6 +285,10 @@
         window.POEMS_ALL.forEach(function (p) {
           map[p.id] = p;
         });
+        // 自选篇目不在 POEMS_ALL 里，回填时也要认它们
+        extraPoems().forEach(function (p) {
+          map[p.id] = p;
+        });
         const restored = ids
           .map(function (it) {
             return { poem: map[it.id], reason: it.reason, reviewRound: it.reviewRound, lastReviewAt: it.lastReviewAt };
@@ -271,7 +296,7 @@
           .filter(function (it) {
             return !!it.poem;
           });
-        if (restored.length) return restored;
+        if (restored.length === ids.length) return restored;
       } catch (e) {
         /* ignore */
       }
@@ -283,7 +308,8 @@
       count: settings.dailyCount,
       scope: scopeKey(),
       provider: provider,
-      getRecord: getRecord
+      getRecord: getRecord,
+      extraPoems: extraPoems()
     });
 
     sessionStorage.setItem(
@@ -367,8 +393,14 @@
       const p = item.poem;
       const rec = getRecord(p.id);
       const done = !!(rec && rec.learned && Scheduler.isDue(rec) === false && rec.lastReviewAt && sameDay(rec.lastReviewAt, Date.now()));
+      // 自选集合的篇目不在教材里，没有年级学期 —— 出处改成它所在的集子名
+      // （「唐诗三百首 · 卷一 五言古诗」这种），不能让 gradeName(undefined) 露出来。
+      const metaTail = p.custom
+        ? esc((p.bookName || "自选") + (p.source && p.source !== p.bookName ? " · " + p.source : ""))
+        : esc(gradeName(p.grade) + termName(p.term));
       const el = document.createElement("div");
-      el.className = "item " + (item.reason === "review" ? "review" : "new") + (done ? " done" : "");
+      el.className = "item " + (item.reason === "review" ? "review" : "new") +
+        (p.custom ? " optional" : "") + (done ? " done" : "");
       el.dataset.id = p.id;
       el.innerHTML =
         '<div class="item-main">' +
@@ -376,10 +408,12 @@
         // 标题行的起点就是圆的起点，圆形与字号同高，一屏能多读几行字（Issue #55 第三条）
         '<h3 class="item-title"><span class="item-num">' + (idx + 1) + "</span>" + esc(p.title) +
         '<span class="item-reason ' + (item.reason === "review" ? "review" : "") + '">' +
-        (item.reason === "review" ? "复习 · 第" + (item.reviewRound || 1) + "轮" : item.reason === "extra" ? "巩固" : "新学") +
+        (item.reason === "review" ? "复习 · 第" + (item.reviewRound || 1) + "轮"
+          : item.reason === "extra" ? "巩固"
+          : item.reason === "optional" ? "自选" : "新学") +
         "</span></h3>" +
         '<div class="item-meta"><span>' + esc(p.author) + "</span><span>·</span><span>" + esc(p.dynasty) + "</span>" +
-        '<span>·</span><span>' + gradeName(p.grade) + termName(p.term) + "</span></div>" +
+        '<span>·</span><span>' + metaTail + "</span></div>" +
         (rec && rec.learned
           ? '<div class="mbar"><i style="width:' + Scheduler.mastery(rec) + '%"></i></div>'
           : "") +
@@ -519,6 +553,123 @@
     });
   }
 
+  /* ---------------- 渲染：自选集合 ----------------
+     除教材之外，用户自己加进来要背的篇目（见 js/collections.js）。
+     这些篇目已经并进「今日背诵」的排程（见 extraPoems），
+     这里只是让用户看得见、管得住：改名、删集合、逐篇移出。
+
+     ⚠️ 集合是**用户自己的清单**，不是「那一部集子」：
+     集子的篇目、卷次、词牌一个字不能改；这里的想加就加、想删就删。
+     所以这一块与首页「全部诗词」并列，而不是塞进课外阅读（/library/）里。
+     ------------------------------------------------------------------ */
+  function renderCollections() {
+    const box = $("#collections-list");
+    const section = $("#collections-section");
+    if (!box || !section || !window.ReciteCollections) return;
+
+    const cols = window.ReciteCollections.list();
+    const total = window.ReciteCollections.count();
+    $("#collections-count").textContent = total;
+    const label = $("#collections-label");
+    if (label) label.textContent = cols.length > 1 ? "自选背诵 · " + cols.length + " 个集合" : "自选背诵";
+
+    const tip = $("#collections-tip");
+    if (tip) {
+      tip.textContent = total
+        ? "下面这些篇目与课内古诗词一起按遗忘曲线复习。到课外集子或搜索页，点篇目右边的书签即可再加。"
+        : "还没有自选篇目。到「课外」任一集子或「搜索」页，点篇目右边的书签，就能把它加进来一起背。";
+    }
+
+    if (!cols.length) {
+      box.innerHTML = '<div class="empty">还没有自选篇目</div>';
+      return;
+    }
+
+    box.innerHTML = "";
+    cols.forEach(function (col) {
+      const head = document.createElement("div");
+      head.className = "collection-head";
+      head.innerHTML =
+        '<span class="collection-name">' + esc(col.name) + "</span>" +
+        '<span class="collection-count">' + col.items.length + " 篇</span>" +
+        '<button type="button" class="collection-act" data-rename="' + esc(col.id) + '" title="重命名" aria-label="重命名 ' + esc(col.name) + '">改名</button>' +
+        '<button type="button" class="collection-act danger" data-drop="' + esc(col.id) + '" title="删除集合" aria-label="删除集合 ' + esc(col.name) + '">删除</button>';
+      box.appendChild(head);
+
+      // 集合里的每一篇：先查站点索引（课内 12 册 + 索引里有的那几部），
+      // 查不到就回落到加入时存下的**快照** ——
+      // 首页不加载五部集子那 3MB，没有快照这些篇目就显示不出来。
+      const map = {};
+      (window.SITE_INDEX || []).forEach(function (p) { map[p.id] = p; });
+      (window.POEMS_ALL || []).forEach(function (p) { if (!map[p.id]) map[p.id] = p; });
+
+      col.items.forEach(function (it) {
+        const entryId = typeof it === "string" ? it : it.id;
+        const snap = (it && typeof it === "object" && it.snap) || {};
+        const repId = window.ReciteCollections.poemIdFor(entryId);
+        const p = map[repId] || map[entryId] || Object.assign({ id: repId }, snap);
+        if (!p || !p.title) return;
+        const rec = getRecord(repId);
+        const el = document.createElement("div");
+        el.className = "item optional";
+        el.innerHTML =
+          '<div class="item-main">' +
+          '<h3 class="item-title">' + esc(p.title) + "</h3>" +
+          '<div class="item-meta"><span>' + esc(p.author || "") + "</span>" +
+          (p.dynasty ? "<span>·</span><span>" + esc(p.dynasty) + "</span>" : "") +
+          (p.bookName ? "<span>·</span><span>" + esc(p.bookName) + "</span>" : "") +
+          (rec && rec.learned
+            ? "<span>·</span><span>" + Scheduler.levelName(rec.level) + "</span>"
+            : "<span>·</span><span>未学过</span>") +
+          "</div>" +
+          (rec && rec.learned ? '<div class="mbar"><i style="width:' + Scheduler.mastery(rec) + '%"></i></div>' : "") +
+          "</div>" +
+          '<button type="button" class="item-remove" title="移出背诵" aria-label="把 ' + esc(p.title) + ' 移出背诵">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M7 12h10"/></svg>' +
+          "</button>";
+        el.addEventListener("click", function () {
+          // 自选篇目点开用同一个详情弹层：正文 / 译文 / 朗读与课内那一套完全一致。
+          // 正文可能来自快照（首页没加载那一部集子），照样能读。
+          openPoem(customPoem(p, repId, entryId), null);
+        });
+        const rm = el.querySelector(".item-remove");
+        rm.addEventListener("click", function (e) {
+          e.stopPropagation();
+          window.ReciteCollections.removeItem(entryId, col.id);
+          showToast("已移出「" + col.name + "」");
+        });
+        box.appendChild(el);
+      });
+    });
+  }
+
+  /**
+   * 自选篇目 → 详情弹层认的篇目对象。
+   *
+   * 详情弹层（openPoem）读 `p.grade` / `p.term` 显示年级学期，自选篇目没有；
+   * 补 `custom: true` 让那一格改显示集子名（见 openPoem）。
+   * 译文来源口径也一并带上，详情页底部的来源注脚才出得来。
+   */
+  function customPoem(p, repId, entryId) {
+    const src = (window.SITE_INDEX || []).filter(function (x) { return x.id === (entryId || repId); })[0];
+    return Object.assign({}, p, {
+      id: repId,
+      custom: true,
+      bookName: (src && src.bookName) || p.bookName || "",
+      translationSource: (src && src.translationSource) || p.translationSource
+    });
+  }
+
+  /**
+   * 首页没有五部集子的数据，自选篇目的正文只能靠加入时存的快照。
+   * 若某一条是老版本写下的（只有 id、没有快照），这里就地补一份 ——
+   * 首页索引里查得到（课内）就补上，查不到就等用户下次在集子页打开时再补。
+   */
+  function backfillSnapshots() {
+    if (!window.ReciteCollections) return;
+    window.ReciteCollections.refreshSnapshots(window.SITE_INDEX || []);
+  }
+
   /* ---------------- 弹层 ---------------- */
   function openPoem(p, planItem) {
     currentPoem = p;
@@ -526,7 +677,11 @@
     $("#m-title").textContent = p.title;
     $("#m-dynasty").textContent = "〔" + p.dynasty + "〕";
     $("#m-author").textContent = p.author;
-    $("#m-grade").textContent = gradeName(p.grade) + " " + termName(p.term);
+    // 自选篇目没有年级学期，这一格改显示它所在的集子；
+    // 否则会露出「undefined年级 undefined学期」。
+    $("#m-grade").textContent = p.custom
+      ? (p.bookName || "自选篇目")
+      : gradeName(p.grade) + " " + termName(p.term);
     $("#m-trans-text").textContent = hasTranslation(p) ? p.translation : "（暂未收录译文）";
     // 译文来源注脚：与译文正文同进同退，没标注就留空（.trans-src:empty 不占位）
     const srcEl = $("#m-trans-src");
@@ -919,6 +1074,44 @@
 
   /* ---------------- 事件绑定 ---------------- */
   function bindEvents() {
+    // 自选背诵：展开 / 收起 + 改名 + 删除
+    const colHead = $("#btn-collections");
+    if (colHead) {
+      colHead.addEventListener("click", function () {
+        const body = $("#collections-body");
+        const open = body.hidden;
+        body.hidden = !open;
+        colHead.classList.toggle("open", open);
+        colHead.setAttribute("aria-expanded", open ? "true" : "false");
+      });
+    }
+    const colBox = $("#collections-list");
+    if (colBox) {
+      colBox.addEventListener("click", function (e) {
+        const t = e.target.closest ? e.target.closest("[data-rename], [data-drop]") : null;
+        if (!t || !window.ReciteCollections) return;
+        e.stopPropagation();
+        const rid = t.getAttribute("data-rename");
+        const did = t.getAttribute("data-drop");
+        if (rid) {
+          const col = window.ReciteCollections.get(rid);
+          if (!col) return;
+          const name = window.prompt("给这个集合改个名字（最多 12 字）", col.name);
+          if (name === null) return;
+          window.ReciteCollections.rename(rid, name);
+          renderCollections();
+          showToast("已改名为「" + window.ReciteCollections.get(rid).name + "」");
+        } else if (did) {
+          const col = window.ReciteCollections.get(did);
+          if (!col) return;
+          if (!window.confirm("删除集合「" + col.name + "」？它里面的 " + col.items.length + " 篇也会一并移出背诵。")) return;
+          window.ReciteCollections.remove(did);
+          renderCollections();
+          showToast("已删除「" + col.name + "」");
+        }
+      });
+    }
+
     // 学段 / 年级 / 学期 / 数量 / 范围 / 阅读辅助 / 小古文入口都住在设置整页
     // （/settings/ + js/settings.js）；首页保留同款监听只为向后兼容，取不到就跳过
     $$("#seg-stage button").forEach(function (b) {
@@ -1147,6 +1340,21 @@
     rebuildToday();
     renderAll();
     bindEvents();
+    backfillSnapshots();
+    renderCollections();
+    // 自选集合在别的页面（集子索引页 / 搜索页）增删之后回到首页：
+    // 今日任务要立刻跟着变 —— 不补这一条，刚加的一篇要等刷新才排上。
+    window.addEventListener("recite-collections-change", function () {
+      invalidatePlan();
+      rebuildToday();
+      renderCollections();
+    });
+    window.addEventListener("storage", function (e) {
+      if (!window.ReciteCollections || e.key !== window.ReciteCollections.KEY) return;
+      invalidatePlan();
+      rebuildToday();
+      renderCollections();
+    });
     syncBottomGap();
     window.addEventListener("resize", syncBottomGap);
     window.addEventListener("orientationchange", syncBottomGap);

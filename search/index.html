@@ -137,6 +137,20 @@
           </span>
           <span class="sr-only" id="rd-trans-toggle-text">显示译文</span>
         </button>
+        <!-- 「加入背诵」：把这一篇放进**用户自己的清单**（自选集合），
+             进了清单就由遗忘曲线安排复习 —— 与课内 273 首同一套排程。
+             与「标记已读」是两回事：已读只记录这一部集子里的进度，
+             加入背诵才是「这一篇我要跟着一起背」。
+             按下去弹集合选择器：勾选放进哪个集合，或新建一个。
+             自选集合不分卷次不分词牌（用户原话「集合没有必要添加分组了」）。 -->
+        <button type="button" class="mini-btn recite-btn" id="gw-recite" data-gw="recite" data-on="0" aria-pressed="false" title="加入自选集合">
+          <span class="btn-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M7 4.6h10a1.4 1.4 0 0 1 1.4 1.4v13.4l-6.4-4.1-6.4 4.1V6a1.4 1.4 0 0 1 1.4-1.4Z" />
+            </svg>
+          </span>
+          <span class="sr-only" id="gw-recite-text">加入背诵</span>
+        </button>
         <button type="button" class="mini-btn done-btn" id="gw-done" data-gw="done">
           <span class="btn-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -242,6 +256,12 @@
   <script src="data/index.js"></script>
   <!-- 站点篇目总索引：把上面六部汇成一张表（搜索只读这一张） -->
   <script src="data/site-index.js"></script>
+  <!-- 同篇对照表 + 作品主表：搜索结果不重复列同一篇（课内《静夜思》与唐诗《夜思》），
+       「加入背诵」也按作品判重。搜索页六部数据齐备，主表可现算（rebuild）。 -->
+  <script src="data/works-map.js"></script>
+  <script src="data/works-index.js"></script>
+  <!-- 自选集合（用户自己加背的篇目）：搜索页也能「加入背诵」 -->
+  <script src="js/collections.js"></script>
   <script src="data/pinyin-table.js"></script>
   <script src="data/common-chars.js"></script>
   <script src="js/pinyin.js"></script>

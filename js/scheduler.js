@@ -214,6 +214,10 @@
    *   opt.scope      背诵范围（见 SCOPES），默认本年级本学期
    *   opt.provider   函数 (grade, term) => 诗词数组
    *   opt.getRecord  函数 (id) => 进度记录
+   *   opt.extraPoems 自选集合里「额外想背」的篇目（见 js/collections.js）。
+   *                  它们**不属任何学段**，但一样要按遗忘曲线复习：
+   *                  到期的排在最前，未学过的在课内之后补位。
+   *                  每一项需带 id / title / text（以及可选的 translation 等）。
    */
   function generateDailyPlan(opt) {
     const grade = Number(opt.grade);
@@ -248,8 +252,26 @@
     const plan = [];
     const used = {};
 
+    // 0) 自选集合的篇目：与课内同一套遗忘曲线，只是不属于任何学段 / 学期。
+    //    按 id 去重（同一篇在多个集合里各存一份引用，只算一次）；
+    //    与课内已经同篇的也要去重 —— 由调用方给 extraPoems 时保证 id 已合流
+    //    （见 js/collections.js 的 poemIdFor / WorksIndex.repOf）。
+    const extra = (opt.extraPoems || []).filter(function (p) {
+      return p && p.id;
+    });
+    const extraById = {};
+    const extraList = [];
+    extra.forEach(function (p) {
+      if (extraById[p.id]) return;
+      extraById[p.id] = true;
+      extraList.push(p);
+    });
+    // 课内池里已有的 id 不再重复当作自选篇目（判重兜底）
+    const courseIds = {};
+    allPoems.forEach(function (p) { courseIds[p.id] = true; });
+
     // 1) 到期的复习诗（范围之外已学过的诗也应复习，避免遗忘）
-    const dueAll = allPoems.filter(function (p) {
+    const dueAll = allPoems.concat(extraList.filter(function (p) { return !courseIds[p.id]; })).filter(function (p) {
       return isDue(getRecord(p.id), now);
     });
     // 范围内的排前面，其次按到期时间先后
@@ -291,6 +313,9 @@
 
     fillFrom(pool, "new");
 
+    // 2.5) 课内新诗排完之后，轮到自选集合里还没学过的
+    fillFrom(extraList.filter(function (p) { return !courseIds[p.id]; }), "optional");
+
     // 3) 仍然不足：从相邻年级/学期补
     if (plan.length < count) {
       const others = allPoems.filter(function (p) {
@@ -306,9 +331,11 @@
 
     // 4) 极端情况：全部学过且未到期，仍补满（每日巩固）
     if (plan.length < count) {
-      const remain = (scope.random ? shuffle(pool) : pool.concat(current)).filter(function (p) {
-        return !used[p.id];
-      });
+      const remain = (scope.random ? shuffle(pool) : pool.concat(current))
+        .concat(extraList.filter(function (p) { return !courseIds[p.id]; }))
+        .filter(function (p) {
+          return !used[p.id];
+        });
       remain.forEach(function (p) {
         if (plan.length >= count) return;
         used[p.id] = true;

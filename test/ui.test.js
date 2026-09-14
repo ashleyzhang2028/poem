@@ -85,8 +85,17 @@ setTimeout(() => {
   chk(!/小古文想读哪篇点哪篇/.test(d.querySelector('.topbar').textContent),
     '顶栏不再出现「小古文想读哪篇点哪篇」');
   chk(d.querySelector('#all-label').textContent === '本年级本学期全部诗词', '全部诗词标题精确为「本年级本学期全部诗词」');
-  // 顶栏图标：徽标 + 全部诗词折叠图标，全部是内联 SVG
-  chk(d.querySelectorAll('.brand-icon svg, .collapse-icon svg').length === 2, '顶栏徽标与全部诗词图标均为 SVG');
+  // 顶栏图标：徽标 + 两张折叠卡（全部诗词 / 自选背诵）的图标，全部是内联 SVG。
+  // 自选背诵是后加的一张卡，同样用一枚书签 SVG 作折叠头图标，
+  // 数量因此由 2 变 3 —— 这里按「枚数 = 徽标 1 + 折叠头 N」判，
+  // 再往后添折叠卡时只需改这个 N，不会因为多一张卡就红。
+  chk(d.querySelectorAll('.brand-icon svg').length === 1, '顶栏徽标是内联 SVG');
+  const collapseHeads = d.querySelectorAll('.collapse-head');
+  chk(collapseHeads.length === 2, '首页两张折叠卡：全部诗词 + 自选背诵（实际 ' + collapseHeads.length + '）');
+  chk([...collapseHeads].every(h => h.querySelector('.collapse-icon svg')),
+    '每张折叠卡的折叠头图标都是内联 SVG');
+  chk(d.querySelectorAll('.collapse-icon svg').length === collapseHeads.length,
+    '折叠头图标数 = 折叠卡数（都是 SVG，不用文本字符）');
   // 需求：首页右上角的「设置」齿轮删除（底部页签本身就有设置，两个入口重复）
   chk(d.querySelector('.topbar #btn-settings') === null, '首页右上角不再有设置齿轮（交给底部页签）');
   chk(d.querySelector('.topbar .icon-btn') === null, '顶栏不再有圆形图标按钮（设置入口已删）');
