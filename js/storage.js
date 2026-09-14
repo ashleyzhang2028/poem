@@ -110,7 +110,9 @@
         term: 1,
         dailyCount: 5,
         // 背诵范围，见 js/scheduler.js 的 SCOPES
-        scope: "term"
+        scope: "term",
+        // 复习调度算法，见 js/review-models.js（键名即模型名）
+        algo: "ebbinghaus"
       };
     },
 

@@ -242,11 +242,12 @@
         escapeHtml([it.dynasty, it.author].filter(Boolean).join(" · ")) +
       "</span>" +
       '<span class="duelist-state">' +
-        escapeHtml(window.Scheduler.levelName(it.level)) + " · " + it.mastery + "%" +
+        escapeHtml(it.stageName || window.Scheduler.levelName(it.level)) + " · " + it.mastery + "%" +
       "</span>" +
       '<span class="duelist-due' + (it.daysLeft < 0 ? " late" : "") + '">' + dueText(it.daysLeft) + "</span>";
     row.title = showTitle(it.title) + "：" + dueText(it.daysLeft) +
-      "，当前在「" + window.Scheduler.levelName(it.level) + "」、掌握度 " + it.mastery + "%";
+      "，当前在「" + (it.stageName || window.Scheduler.levelName(it.level)) +
+      "」、掌握度 " + it.mastery + "%";
     return row;
   }
 
@@ -320,10 +321,23 @@
     renderBars("#progress-levels", rows);
     var sub = $("#levels-sub");
     if (sub) {
-      // 「已牢固」= 走完 10 阶（240 天后那一档），与首页「较牢固」同一口径
+      // 「已牢固」= 走完 10 阶（240 天后那一档），与首页「较牢固」同一口径。
+      // 换算法后档名会跟着变（Leitner 说「号盒」、SM-2 说「间隔与简易度」、
+      // FSRS 说「稳定与难度」）—— 这里顺带把当前用的是哪一套说出来，
+      // 免得用户看到和上次不一样的档名，以为是数据串了。
       var last = o.levelCounts[o.levelCounts.length - 1].count;
-      sub.textContent = o.learned ? "走完全程的 " + last + " 首" : "还没有学习记录";
+      var algo = window.ReviewModels ? window.ReviewModels.describe(algoKey()).name : "";
+      var tail = algo && algo !== "遗忘曲线" ? "（按 " + algo + " 排期）" : "";
+      sub.textContent = o.learned ? "走完全程的 " + last + " 首" + tail : "还没有学习记录";
     }
+  }
+
+  /** 当前复习算法：进度页只读设置，不改它 */
+  function algoKey() {
+    var s = window.Storage ? window.Storage.getSettings() : null;
+    var key = s && s.algo;
+    if (!window.ReviewModels) return "ebbinghaus";
+    return window.ReviewModels.known(key) ? key : window.ReviewModels.DEFAULT_KEY;
   }
 
   /* ---------------- 启动 ---------------- */
@@ -336,7 +350,8 @@
     }
     if (!window.Scheduler || !window.Scheduler.overview) return;
 
-    var o = window.Scheduler.overview(list, getRecord, { days: DAYS });
+    var ak = algoKey();
+    var o = window.Scheduler.overview(list, getRecord, { days: DAYS, algo: ak });
     // 篇目清单与日历是同一本账：一次算好挂到 o 上，页面各画各的
     // （两处各自算一遍迟早会算出两个数，而表现是「日历说 3 篇、清单里 2 篇」）
     o.dueList = window.Scheduler.dueList(list, getRecord, { days: DAYS });
