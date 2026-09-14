@@ -338,10 +338,21 @@
     return key;
   }
 
+  /**
+   * 底部四页签。
+   *
+   * 结构是「外层整宽 + 内层限宽」两层（见 css/style.css 的 .dock-inner）：
+   *   外层 .dock —— 整宽贴底，底纹 / 描金细线 / 底部安全区都在它身上；
+   *   内层 .dock-inner —— 限宽 720px 居中，四格在这个宽度里等分。
+   * 不这么分的话，1920px 屏上每格会被拉到 477px，一颗 22px 的图标
+   * 孤零零挂在格子正中，页签看着像四块空白板子。
+   * ⚠️ 两层都不能省：把 max-width 直接写在外层，固定定位的底线会一起收掉，
+   *    屏幕左右两侧露出「没有页签」的空白。
+   */
   function dockHtml() {
     var key = dockKey(pageKey());
     var items = DOCK_ITEMS;
-    var html = '<nav class="dock" id="site-dock" aria-label="主导航">';
+    var html = '<nav class="dock" id="site-dock" aria-label="主导航"><div class="dock-inner">';
     items.forEach(function (it) {
       var on = key === it.key;
       // 每个页签都指向真实页面：设置也是独立整页（/settings/），不再是弹层卡片
@@ -357,7 +368,7 @@
         '<span class="dock-label">' + it.label + "</span>" +
         "</button>";
     });
-    return html + "</nav>";
+    return html + "</div></nav>";
   }
 
   /**

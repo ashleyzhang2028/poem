@@ -51,6 +51,9 @@ chk(!/"今日 " \+ todayPlan\.length \+ " 首"/.test(appSrc), '播放栏不再�
 /* ---------------- 2. Web Font ---------------- */
 const css = read('css/style.css');
 const classicCss = read('css/classic.css');
+/* 查源码里的「声明」时一律先剥掉注释 —— 本仓库的注释里会写
+   「40 + 12 = 52px」这类历史数值说明，不剥掉就会被自己的注释判红。 */
+const stripComments = t => t.replace(/\/\*[\s\S]*?\*\//g, ' ');
 
 // 需求 5：今日朗读按钮是圆形播放键（与 0/5 圆环成对）
 chk(/\.today-read\s*\{[^}]*border-radius:\s*50%/.test(css), '今日朗读按钮是圆形（与 0/5 圆环成对）');
@@ -82,13 +85,14 @@ chk(todayRingW && todayRingW[1] === '1',
   '播放键边框 1px（小数边框会被浏览器取整，写整数这一步才算得准）');
 chk(todaySize && todaySize[1] === '40',
   '播放键外盒 40px = 画出来的圆 40px，与进度环的最大外径同径（实际 ' + (todaySize && todaySize[1]) + 'px）');
-chk(!/\.today-read \{[^}]*?(width|height):\s*\d+px/.test(css) &&
-  !/\.ring \{[^}]*?(width|height):\s*\d+px/.test(css),
-  '播放键与进度环都不另写死尺寸，只读 --today-btn-size（改一处即可整体收放）');
+/* ⚠️ 必须先把注释剥掉再查：这两块里的注释会写「40 + 12 = 52px」这类
+   历史数值说明，直接对源码查数字会被自己的注释判红（上一版就是这样红的）。 */
+chk(!/\.today-read \{[^}]*?(width|height):\s*\d+px/.test(stripComments(css)) &&
+  !/\.ring \{[^}]*?(width|height):\s*\d+px/.test(stripComments(css)),
+  '播放键与进度环都不另写死尺寸，只由 --today-btn-size（± 边框）推出（改一处即可整体收放）');
 /* 只查今日条那两块（.today-actions / .today-read / .ring）的**声明**，
    注释一律先剥掉（本仓库注释里会写「46px 的盒子」这类历史数值），
    也别误伤吸底播放栏 .pb-toggle —— 那颗主按钮本来就有自己的 46px。 */
-const stripComments = t => t.replace(/\/\*[\s\S]*?\*\//g, ' ');
 const todayScope = [
   (css.match(/\.today-actions \{([^}]*)\}/) || [, ''])[1],
   (css.match(/\.today-read \{([^}]*)\}/) || [, ''])[1],
@@ -97,8 +101,14 @@ const todayScope = [
 chk(!/46px/.test(todayScope) && !/43px/.test(todayScope),
   '今日条声明里不再残留前几轮的 46px / 43px（外径只有一个来源）');
 const readCss = (css.match(/\.today-read \{([^}]*)\}/) || [, ''])[1];
-chk(/width:\s*var\(--today-btn-size\)/.test(readCss) && /height:\s*var\(--today-btn-size\)/.test(readCss),
-  '左侧朗读圆键的宽高都取 --today-btn-size');
+/* 宽高必须由 --today-btn-size **减去两侧边框**推出，不能只写 var(--today-btn-size)：
+   box-sizing: content-box 下 width 只算内容区，边框是另加的 ——
+   写 `width: var(--today-btn-size)` 画出来其实是 40 + 1 + 1 = 42px，
+   比右边 40px 的进度环大一圈（真机量过，就是用户说的「一颗大一颗小」）。
+   「外缘 = --today-btn-size」才是这一条的口径。 */
+chk(/width:\s*calc\(\s*var\(--today-btn-size\)\s*-\s*var\(--today-btn-ring\)\s*\*\s*2\s*\)/.test(readCss) &&
+  /height:\s*calc\(\s*var\(--today-btn-size\)\s*-\s*var\(--today-btn-ring\)\s*\*\s*2\s*\)/.test(readCss),
+  '左侧朗读圆键的宽高都取「外缘 − 两侧边框」，画出来的圆才等于 --today-btn-size');
 chk(/box-sizing:\s*content-box/.test(readCss),
   '播放键改用 content-box（那圈 1px 边框往外长，不再把圆吃小）');
 chk(/border:\s*var\(--today-btn-ring\)/.test(readCss),

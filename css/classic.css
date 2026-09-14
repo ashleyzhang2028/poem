@@ -1800,6 +1800,32 @@ body[data-nav="search"] #gw-list .empty[data-empty="idle"] { padding: 0; }
   flex-direction: column;
   gap: 12px;
 }
+/* 平板 / 桌面：六张卡排成两列
+   --------------------------------------------------------------------------
+   手机上六张卡竖着排（一屏一张多一点，滚动就是「一部接一部」），是对的；
+   但 720px 的列宽在平板 / 桌面上也竖着排六张，就变成六条又长又空的横条 ——
+   每张卡里只有「书名 + 篇数」与一句说明，两端的空白比内容还宽。
+
+   这里只在 ≥560px（平板竖屏起）排两列：卡宽约 350px，
+   正好与手机上一张卡的视觉宽度同档，「书名 — 篇数 — 箭头」三样的相对位置
+   都不变（卡片内部本来就是左右两端对齐的 flex 行）。
+   ⚠️ 用 flex + flex-basis 而不是 grid：卡片数量是数据驱动的（js/library.js），
+      将来增删一部也不用改样式；gap 与竖排时同一个 12px，节奏一致。
+   ⚠️ flex: 1 1 calc(50% - 6px) 里的 6px 是 gap 的一半 ——
+      flex-basis 百分比算的是容器宽度，不减掉这一半，两列一加就溢出。
+   ⚠️ 最后一张卡（奇数张时）自动占满一行：flex-grow 会把它撑到 100%，
+      宽度与上面两张不同，所以下面用 :last-child 的 max-width 收住，
+      让它保持与上排同一档宽度、左对齐（不居中、不拉长）。 */
+@media (min-width: 560px) {
+  .library-grid {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .library-card {
+    flex: 1 1 calc(50% - 6px);
+    max-width: calc(50% - 6px);
+  }
+}
 /* 一张卡 = 一部集子。整张卡是一个 <a>，点哪儿都进得去（不是只有标题能点），
    所以卡片本身要有 active / focus 反馈，不能只在标题上下 300ms 的功夫。 */
 .library-card {
@@ -1904,8 +1930,14 @@ body[data-nav="search"] #gw-list .empty[data-empty="idle"] { padding: 0; }
   /* 手机上 14 格会超宽：允许横滑，且滑动手感贴近原生 */
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
+  /* 横滑时的左右内边距：格子自己有底色，贴着卡片边缘会显得「切掉半格」，
+     两侧各留一格的最低呼吸；宽屏下这一档归零（见下面那条媒体查询） */
+  padding-left: 2px;
+  padding-right: 2px;
 }
 .cal-cell {
+  /* 手机：34px 定宽（14 格 = 528px，超宽就横滑，见上面的 overflow-x）。
+     宽屏：下面用 flex: 1 让 14 格均分列宽，一屏看全、不用滑。 */
   flex: 0 0 auto;
   width: 34px;
   display: flex;
@@ -1915,6 +1947,30 @@ body[data-nav="search"] #gw-list .empty[data-empty="idle"] { padding: 0; }
   padding: 6px 0 4px;
   border-radius: var(--radius-sm);
   background: var(--bg);
+}
+/* 平板 / 桌面：14 格一屏排得下，就不再横滑
+   --------------------------------------------------------------------------
+   720px 的列宽减去卡片左右内边距（14 × 2）还有 692px，14 格 × 34px = 476px ——
+   完全放得下，却因为手机上那条 overflow-x 与定宽 34px，在桌面上排成
+   左边一溜格子、右边一大片空白（还留着一条不必要的横向滚动条）。
+
+   这里在 ≥700px 时把格子改成可伸缩（flex: 1 1 0 + min-width: 0），
+   14 格均分整列宽：格子更宽，日期数字也更从容，一条竖轴排齐。
+   上限给 64px：再宽下去每格 80 多像素又变成另一头的「空格子」。
+   ⚠️ 上限要写 max-width，不能写 width —— flex-basis: 0 与固定 width 打架时，
+      浏览器按 width 走，格子又回到定宽、右边照样留白。 */
+@media (min-width: 700px) {
+  .cal {
+    overflow-x: visible;
+    padding-left: 0;
+    padding-right: 0;
+    gap: 6px;
+  }
+  .cal-cell {
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: 64px;
+  }
 }
 /* 今天这一格描一道边：用户第一眼要找到「我站在这儿」 */
 .cal-cell.today { background: var(--green-light); }

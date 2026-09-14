@@ -475,14 +475,18 @@ function check(name, cond, extra) {
     const todayRing = await page.evaluate(() => {
       const read = document.querySelector('#today-read');
       const ring = document.querySelector('#today-ring');
-      // 「画出来的圆」直径 = 盒子的**内容盒**（width / height 声明值）。
-      // 这正是 CSS 里两个变量想表达的东西：width/height = 40px 的圆；
-      // `<button>` 的 UA 默认内边距（1px 6px）会让外盒矩形变宽变高
-      // （42×42 → 加上内边距就是 52×42），所以只认内容盒尺寸，
-      // 内边距一出现就说明有 UA 默认值没被清掉 —— 下面单独断言。
+      // 「画出来的圆」直径 = 内容盒 + 两侧边框（content-box 下边框画在盒外）
+      // + <button> 的 UA 默认内边距（1px 6px，没清掉就会撑出 12px）。
+      // ⚠️ 不能再拿 `getComputedStyle(el).width` 当直径：那一项在 content-box 下
+      //    只是**内容区**（40 − 两侧各 1px = 38px），比画出来的圆小一圈。
+      //    历史上这一段就是按内容盒量的，于是 CSS 写 40px、真机画出 42px，
+      //    两边各自「看着对」，并排却差 2px —— 正是用户说的「一颗大一颗小」。
+      //    这里改成量**外盒矩形**（getBoundingClientRect = 内容 + 内边距 + 边框），
+      //    它才是眼睛看到的那一圈。
       const paintedCircle = el => {
+        const b = el.getBoundingClientRect();
         const cs = getComputedStyle(el);
-        return { w: +parseFloat(cs.width).toFixed(2), h: +parseFloat(cs.height).toFixed(2), box: cs.boxSizing };
+        return { w: +b.width.toFixed(2), h: +b.height.toFixed(2), box: cs.boxSizing, content: cs.width };
       };
       const outer = el => { const b = el.getBoundingClientRect(); return { w: +b.width.toFixed(2), h: +b.height.toFixed(2) }; };
       const r = outer(ring);
@@ -509,7 +513,7 @@ function check(name, cond, extra) {
     check('iPhone: 今日圆环的最大直径与左侧播放键画出来的圆一致',
       todayRing.ringMax === todayRing.readCircle.w && todayRing.ringMax === todayRing.readCircle.h,
       '圆环最大直径 ' + todayRing.ringMax + ' vs 播放键画出来的圆 ' + todayRing.readCircle.w + '×' + todayRing.readCircle.h
-      + '（' + todayRing.readCircle.box + '，外盒矩形 ' + todayRing.read.w + '×' + todayRing.read.h + '）');
+      + '（' + todayRing.readCircle.box + '，内容区 ' + todayRing.readCircle.content + '）');
     check('iPhone: 今日圆环是正圆（没被 flex 行拉成椭圆）',
       todayRing.ring.w === todayRing.ring.h, JSON.stringify(todayRing.ring));
     check('iPhone: 今日圆环里那颗金色描边没被裁掉半圈（描边宽度仍是整数 3px）',
