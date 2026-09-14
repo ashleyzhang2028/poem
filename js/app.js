@@ -246,10 +246,39 @@
   }
 
   /* ---------------- 今日任务缓存 ---------------- */
+  /**
+   * 自选集合的「版本号」：集合内容一变就跟着变。
+   *
+   * 为什么要把它编进缓存键：当天计划是缓存在 sessionStorage 里的
+   * （`poem_plan_...`），原先靠「改动时主动 invalidatePlan()」清缓存，
+   * 只在**监听得到事件的那些入口**有效 —— 集子页点了「加入背诵」后
+   * 直接刷新首页、或另开一个标签页，这份缓存还在，刚加的那一篇当天就不出现。
+   * 把「集合里有哪些篇、各在哪几个集合」压成一个短串编进键里，
+   * 缓存自然跟着失效，不再依赖「谁记得清缓存」。
+   */
+  function collectionsKey() {
+    if (!window.ReciteCollections) return "0";
+    try {
+      const cols = window.ReciteCollections.list() || [];
+      const raw = cols
+        .map(function (c) {
+          return (c.items || []).map(function (it) {
+            return typeof it === "string" ? it : it.id;
+          }).join(",");
+        })
+        .join("|");
+      let h = 5381;
+      for (let i = 0; i < raw.length; i += 1) h = ((h * 33) ^ raw.charCodeAt(i)) >>> 0;
+      return raw.length + "-" + h.toString(36);
+    } catch (e) {
+      return "0";
+    }
+  }
+
   function planCacheKey() {
     return (
       "poem_plan_" + todayKeyStr() + "_" + settings.grade + "_" + settings.term + "_" +
-      scopeKey() + "_" + settings.dailyCount
+      scopeKey() + "_" + settings.dailyCount + "_" + collectionsKey()
     );
   }
 
@@ -598,7 +627,7 @@
 
       // 集合里的每一篇：先查站点索引（课内 12 册 + 索引里有的那几部），
       // 查不到就回落到加入时存下的**快照** ——
-      // 首页不加载五部集子那 3MB，没有快照这些篇目就显示不出来。
+      // 首页不加载五部集子那 4.4MB 数据，没有快照这些篇目就显示不出来。
       const map = {};
       (window.SITE_INDEX || []).forEach(function (p) { map[p.id] = p; });
       (window.POEMS_ALL || []).forEach(function (p) { if (!map[p.id]) map[p.id] = p; });
@@ -661,13 +690,24 @@
   }
 
   /**
-   * 首页没有五部集子的数据，自选篇目的正文只能靠加入时存的快照。
-   * 若某一条是老版本写下的（只有 id、没有快照），这里就地补一份 ——
-   * 首页索引里查得到（课内）就补上，查不到就等用户下次在集子页打开时再补。
+   * 首页只加载课内 12 册（约 52KB），五部集子那 4.4MB 不加载，
+   * 自选篇目的正文只能靠加入时存的快照。
+   *
+   * 「加入背诵」那一刻存下的快照是**当时**的语料：集子里那一篇后来订正了
+   * （标题改了、正文改了、译文补上了），首页若一直不再打开那一页，
+   * 快照就一直是旧的 —— 显示的还是旧题名，或「暂未收录译文」。
+   * 集子页 / 搜索页会就地刷新快照，但**用户不再打开那一页**这条路走不到。
+   *
+   * 所以在首页启动时补一道刷新：
+   *   · 课内那几篇（首页索引里查得到）直接就地更新；
+   *   · 课外那几篇首页拿不到新语料，标成 `stale`，等下次进集子页时再刷新 ——
+   *     这一趟不派发 change 事件，免得与「集合变化 → 重排今日任务」打转。
    */
   function backfillSnapshots() {
     if (!window.ReciteCollections) return;
-    window.ReciteCollections.refreshSnapshots(window.SITE_INDEX || []);
+    const C = window.ReciteCollections;
+    C.refreshSnapshots(window.SITE_INDEX || []);
+    if (C.markStale) C.markStale(window.SITE_INDEX || []);
   }
 
   /* ---------------- 弹层 ---------------- */

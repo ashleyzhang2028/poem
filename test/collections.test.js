@@ -307,6 +307,41 @@ setTimeout(() => {
     chk(due.some(it => it.poem.id === 'tangshi-ts-1' && it.reason === 'review'),
       '到期的自选篇目按遗忘曲线排成「复习」任务');
 
+    /* ---------- 五、两个「回来之后」的老问题 ---------- */
+    // 1) 快照待刷新标记：首页启动时跑一遍 markStale()，
+    //    课外那些首页拿不到新语料的条目要被标出来，等下次进集子页再刷新；
+    //    这一趟不许动任何正文（只标状态）。
+    const C2 = w0.ReciteCollections;
+    const beforeSnaps = JSON.stringify(C2.list());
+    const marked = C2.markStale(w0.SITE_INDEX || []);
+    chk(typeof marked === 'number', 'markStale() 返回被标记的条数（' + marked + '）');
+    const afterList = C2.list();
+    const snapsNow = JSON.stringify(afterList);
+    chk(JSON.parse(beforeSnaps).length === JSON.parse(snapsNow).length,
+      'markStale() 不改集合数量');
+    // 快照正文一个字不许动（只允许多一个 stale 标记）
+    const stripStale = o => JSON.parse(JSON.stringify(o, (k, v) => (k === 'stale' ? undefined : v)));
+    chk(JSON.stringify(stripStale(JSON.parse(beforeSnaps))) ===
+      JSON.stringify(stripStale(JSON.parse(snapsNow))),
+      'markStale() 只标状态，不动快照里的任何正文');
+    // 进集子页 / 搜索页（索引齐备）刷新之后，stale 标记要被清掉
+    C2.markStale([]);
+    C2.refreshSnapshots(w0.SITE_INDEX || []);
+    const stillStale = C2.list().reduce((n, c) => n + c.items.filter(it => it.stale).length, 0);
+    chk(stillStale === 0, '索引齐备时 refreshSnapshots() 会把 stale 标记清掉（残留 ' + stillStale + '）');
+
+    // 2) 今日计划缓存键要跟着自选集合走：加了 / 删了一篇，当天的缓存必须失效。
+    //    这是实测踩到的坑 —— 原先只在「监听得到事件」的入口清缓存，
+    //    在集子页加完篇目后**直接刷新首页**时缓存还在，刚加的那篇当天不出现。
+    const appSrc = fs.readFileSync(path + 'js/app.js', 'utf8');
+    chk(/function collectionsKey\(/.test(appSrc),
+      'js/app.js 有 collectionsKey()（把自选集合压进今日计划缓存键）');
+    const keyFn = appSrc.slice(appSrc.indexOf('function planCacheKey()'));
+    chk(/collectionsKey\(\)/.test(keyFn.slice(0, keyFn.indexOf('}'))),
+      '今日计划的缓存键里编进了自选集合的版本（集合一变，当天缓存自动失效）');
+    chk(!/function planCacheKey\([\s\S]{0,400}?settings\.dailyCount\s*\)\s*;/.test(appSrc),
+      '缓存键不再只由「日期 / 年级 / 学期 / 范围 / 数量」决定（少了集合这一维就会拿到旧计划）');
+
     console.log('\n' + (fails ? '❌ ' + fails + ' 项失败' : '🎉 自选集合测试全部通过'));
     process.exit(fails ? 1 : 0);
   }, 60);
