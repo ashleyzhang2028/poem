@@ -124,11 +124,31 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(cards.map(c => c.getAttribute('data-book')).join('/') ===
     'poems/classic/tangshi/songci/guwen/zhaoming',
     '六部的顺序与出处正确');
-  chk(cards.map(c => c.getAttribute('href')).join(' ') ===
-    '/poems/ /classic/ /tangshi/ /songci/ /guwen/ /zhaoming/',
-    '六张卡各指到自己的索引页、六张行为一致（实际 ' + cards.map(c => c.getAttribute('href')).join(' ') + '）');
-  chk(cards.every(c => /^\/[a-z]+\/$/.test(c.getAttribute('href'))),
-    '六张卡的去处都是目录化索引页（没有一张指回首页 /）');
+  // 六张卡点下去都到「自己那一部的索引」，但**实现不同**（Issue #122）：
+  //   · 课内诗词 —— <a href="/poems/">：它有自己的索引页，跳过去；
+  //   · 其余五部 —— <button>：把那一部的索引**就地**铺在这一页上（地址栏不动）。
+  //     为什么改成就地：跳去 /tangshi/ 的话，再点一篇进去，按右上角返回只能
+  //     把阅读器那层收掉，接着就落回 /library/ 的集子目录 ——
+  //     用户看到的是「直接退到了背诵首页」。就地叠层后「正文 → 索引 → 目录」
+  //     三层在同一页里，返回键一层退一层。
+  // ⚠️ 五部仍然各有自己的页面（/tangshi/ 等）：直接访问、贴地址、中键新开
+  //    那一版照旧可用 —— 下面单独验一遍，别让「就地」把那一版悄悄弄丢。
+  chk(cards.map(c => c.tagName).join('/') === 'A/BUTTON/BUTTON/BUTTON/BUTTON/BUTTON',
+    '六张卡：课内是链接（跳 /poems/），其余五部是按钮（就地铺索引；实际 ' +
+    cards.map(c => c.tagName).join('/') + '）');
+  chk(cards[0].getAttribute('href') === '/poems/',
+    '课内那张仍指自己的索引页（实际 ' + cards[0].getAttribute('href') + '）');
+  // page 地址写在 js/library.js 的 ENTRIES 里（HTML 只有挂载点）
+  const libSrcForPages = read('js/library.js');
+  const bookPages = { classic: '/classic/', tangshi: '/tangshi/', songci: '/songci/',
+    guwen: '/guwen/', zhaoming: '/zhaoming/' };
+  const missingPage = Object.keys(bookPages).filter(id =>
+    libSrcForPages.indexOf('page: "' + bookPages[id] + '"') < 0);
+  chk(missingPage.length === 0,
+    '就地打开的五部也各自留着自己的页面地址（直接访问 / 中键新开仍可用；缺 ' +
+    (missingPage.join('/') || '无') + '）');
+  chk(cards.slice(1).every(c => c.querySelector('.library-card-go')),
+    '五张按钮卡与课内那张一样带「进去」的箭头（外观逐项一致）');
   // 篇数与各集子**自己的数据**一致（不写死数字：日后增补篇目，卡片跟着变）
   // ⚠️ 卡片上那个数字不能拿搜索索引来数 —— 索引按约定不收「待补」条目，
   // 拿它来数会出现「卡片写 480 篇、索引里只有几十条」。见 js/library.js 的 countOf()。

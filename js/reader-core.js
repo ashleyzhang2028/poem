@@ -695,7 +695,12 @@
    */
   function listBox() {
     if (live && live.listEl && live.listEl.isConnected) return live.listEl;
-    var el = root ? root.querySelector('[data-gw="list"]') : null;
+    // ⚠️ 不能用 rd("list")：那一支会退到 document.querySelector，
+    //    同一页挂两部集子时（搜索页 / 就地叠层那一页）会写错那一块。
+    //    这里走 inMount：root 自己或它的子孙，再兜 root 的父节点
+    //    —— 就地叠层那一页交给引擎的正是列表容器本身（见 inMount 的注释）。
+    var el = root && root.classList && root.classList.contains("list") ? root : null;
+    if (!el) el = inMount(root, '[data-gw="list"]');
     if (!el && root) el = root.querySelector("#gw-list");
     if (live) live.listEl = el;
     return el;
@@ -893,6 +898,29 @@
     return hits;
   }
 
+  /**
+   * 在**本挂载点**里找带 data-gw="xx" 的元素（给「就地叠层」那一页用）。
+   *
+   * ⚠️ 为什么要向下钻一层：课外阅读入口页（/library/）把某一部的索引
+   *    **就地**铺上来时，交给引擎的挂载点（config.root）是那一块**列表容器**
+   *    本身 —— 「哪一部」由页面的布局决定，引擎不该反过来要求页面把
+   *    参数名写在自己身上。索引页里那些参数名（搜索框、进度牌、阅读器标记……）
+   *    挂在列表容器的**兄弟节点**上，所以这一处先查 root 自身与子孙，
+   *    再查它的父节点。
+   *    ⚠️ 只能用于**页面级**的元素（列表 / 搜索框 / 工具条），
+   *       不能用于阅读器里的那一套（rd() 走的那条路）：
+   *       父节点那一次查找会把同一页里**别的**阅读器替身（测试里挂的第二份实例）
+   *       也认成自己的，译文那一行就写错了地方。
+   *       列表用它、阅读器不用它 —— 这样两边的边界都清楚。
+   */
+  function inMount(elem, sel) {
+    if (!elem || !elem.querySelectorAll) return null;
+    var hit = elem.querySelectorAll(sel)[0];
+    if (hit) return hit;
+    var up = elem.parentNode;
+    return up && up.querySelectorAll ? up.querySelectorAll(sel)[0] : null;
+  }
+
   function openReader(p) {
     // ⚠️ 一律走 itemsById 取「本挂载点里那一份」：传进来的可能是**原始数据对象**
     //    （列表点击传的是重绘时用的 items 元素，那一份已经过主表裁定；
@@ -946,11 +974,21 @@
     syncReciteButtons();
     el.hidden = false;
     document.body.classList.add("reader-open");
-    // 顶栏动作位换成「返回」：阅读器是全屏层，这一颗合上它、回到列表；
-    // 图标形状由 chrome.js 统一给（与其它页面的返回键同一个箭头），
-    // 这里只交代「点了干什么」。
+    // 顶栏动作位换成「返回**上一层**」。
+    //
+    // ⚠️ 这一颗的落点得跟着「阅读器是从哪一层开出来的」走，不能写死成
+    //    closeReader()（Issue #122 就是写死出来的病）：课外阅读入口页
+    //    （/library/）与搜索页都是把集子索引**就地**铺上来的 —— 地址栏还是 /library/，
+    //    只是上面盖了一层「唐诗三百首」索引；从那一层再点开一首诗，
+    //    这时候按返回，该回到的是**唐诗索引**，不是一路退到底下的课外阅读首页。
+    //    写死成 closeReader() 的话，一按就整摞收掉，用户看到的是「直接退到了背诵首页」。
+    //    所以这里把「这一篇后面还压着几层」交给调用方给的 openFrom()：
+    //    它**返回一个函数**就表示「这一层你接手了」；
+    //    返回假值（没有 openFrom / 它就是当前视图）才走原来的 closeReader()。
+    var back = (typeof CFG.openFrom === "function" && CFG.openFrom()) || null;
+    if (!back) back = closeReader;
     if (window.SiteChrome) {
-      window.SiteChrome.setHeaderAction({ label: W.backToList, onclick: closeReader });
+      window.SiteChrome.setHeaderAction({ label: W.backToList, onclick: back });
       // setHeaderAction 会按顺序重绘**所有**顶栏，重绘后顶栏是空的，
       // 第二行要再补一次（chrome:ready 那套不会为它触发）。
       paintSub();
@@ -1193,20 +1231,52 @@
     if (label) label.textContent = on ? "停止朗读" : "朗读译文";
   }
 
-  function closeReader() {
+  /**
+   * 只把阅读器那**一层**收起来：停朗读、藏起阅读器、还掉 body 上的标记，
+   * 顶栏动作位、列表高亮、页顶第二行一概不动。
+   *
+   * 与 closeReader() 的分工：
+   *   · closeReader() —— 「回到本页的索引列表」（原来的那一个出口，全站照旧）；
+   *   · hideReader()  —— 「只合上这一篇」，后面还有一层要露出来（就地叠层那一栈）。
+   * 拆成两支是因为顶栏动作位现在归调用方的 openFrom() 管：
+   * 谁知道自己背后压着几层，谁就决定收几层。
+   */
+  function hideReader() {
     if (window.Speech) window.Speech.stop();
     autoReading = false;
     speakingTarget = "原文";
     var el = rd("reader");
     if (el) el.hidden = true;
     document.body.classList.remove("reader-open");
-    // 顶栏动作位还原为「回首页」；这一次重绘同样会清掉第二行，要跟着补回来 ——
-    // 漏了这一句，读完一篇返回列表，页名下面那句「想读哪篇点哪篇」就整行消失了。
-    if (window.SiteChrome) window.SiteChrome.setHeaderAction(null);
-    paintSub();
     current = null;
     renderList();
     syncRandomReadButton();
+    // 阅读器那一层收起来之后，把**阅读器那条**顶栏的动作位弹掉。
+    // ⚠️ 必须在这里弹，不能留给 closeReader()：就地叠层那一页
+    //    （课外阅读入口页，见 js/library.js）不经过 closeReader ——
+    //    它自己合上阅读器那一层。漏掉这一句，阅读器那条顶栏会留着
+    //    上一颗「返回 XXX 列表」的按钮与它的监听，同一页于是出现两枚
+    //    id="top-act"（HTML 不合法，且作用域查询只认第一枚）。
+    if (window.SiteChrome && window.SiteChrome.setHeaderAction) {
+      window.SiteChrome.setHeaderAction(null);
+    }
+    // 返回值：顶栏动作位是不是已经由调用方接手了（外面还压着一层）。
+    // 就地叠层那一页靠它判断「页面那条顶栏的动作位还是不是我管」——
+    // 它传 onHideReader() 返回 true（见 js/library.js）。
+    return typeof CFG.onHideReader === "function" ? CFG.onHideReader() !== false : false;
+  }
+
+  /**
+   * 「回到本页的索引列表」：合上阅读器那**一层**，再补一次页顶第二行。
+   * 「就地叠层」的页面（课外阅读入口页）不走这一支 —— 它自己合上阅读器那一层、
+   * 自己管页顶的动作位（见 js/library.js 与 openReader 里的 openFrom）。
+   */
+  function closeReader() {
+    // hideReader 里已经把阅读器那条顶栏的动作位弹掉了，
+    // 这里只补一次页顶第二行 —— 那一次重绘会清掉它，漏补的话
+    // 读完一篇返回列表，页名下面那句「想读哪篇点哪篇」就整行消失了。
+    hideReader();
+    paintSub();
   }
 
   function syncDoneButton() {
@@ -1932,6 +2002,32 @@
     return null;
   }
 
+  /**
+   * 摘掉一份挂载（root 元素相同的那一份；不传 root 就摘最后一份）。
+   *
+   * 为什么需要它：课外阅读入口页（/library/）把某一部的索引**就地**铺上来，
+   * 换部时那一块 DOM 是同一个元素 —— 而 mount 对「同一块 DOM」有防重
+   * （见上面那条 for 循环：同一块挂两份会互相覆盖状态，防重是对的）。
+   * 于是「退出再进另一部」时，第二部会退回第一部那个实例，
+   * 列表里还是上一部的篇目、文案也是上一部的 —— 同一块 DOM 上换集子，
+   * 必须先把旧的那一份摘掉。
+   *
+   * 摘掉只做两件事：从 mounts 里删掉、清掉全局的 current（若指向它）。
+   * DOM 由调用方自己收拾（页面知道那块列表该清成什么样）。
+   * 阅读器开着时先合上 —— 否则摘掉之后没人能关它。
+   */
+  function unmount(rootEl) {
+    var target = null;
+    for (var i = mounts.length - 1; i >= 0; i--) {
+      if (!rootEl || mounts[i].root === rootEl) { target = mounts[i]; break; }
+    }
+    if (!target) return false;
+    if (target.api && target.api.isOpen()) withSession(target, function () { closeReader(); });
+    mounts.splice(mounts.indexOf(target), 1);
+    if (window.ReaderEngine.current === target.api) window.ReaderEngine.current = null;
+    return true;
+  }
+
   function mount(config) {
     var cfg = config || {};
     // 空集合默认不挂（多半是数据没加载上，挂上去只会得到一片空列表）。
@@ -1989,6 +2085,11 @@
       align: function () { return alignMode(); },
       setAlign: function (m) { return withSession(session, function () { return setAlign(m); }); },
       setKeyword: function (kw) { withSession(session, function () { keyword = String(kw == null ? "" : kw); renderList(); }); },
+      /**
+       * 只把阅读器那一层收起来（顶栏动作位留给调用方），返回「外面还有没有一层」。
+       * 见 hideReader 的注释：就地叠层那一栈（/library/ 上的集子索引）靠它。
+       */
+      hideReader: function () { return withSession(session, hideReader); },
       /**
        * 按主表裁定重算一次正文 / 译文。
        *
@@ -2392,6 +2493,7 @@
 
   window.ReaderEngine = {
     mount: mount,
+    unmount: unmount,
     active: activeMount,
     words: DEFAULT_WORDS,
     totalItems: function () { return items.length; }
