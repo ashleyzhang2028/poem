@@ -428,21 +428,57 @@ setTimeout(() => {
       name + ' 可打开，正文写入阅读器');
     chk(trans.length > 60, name + ' 的白话译文已写入阅读器（' + trans.length + ' 字）');
   });
-  // 待补分支仍然可用：把一篇的正文清空后重开，应给出「尚在整理中」而不是白屏。
-  // （引擎与样式的待补机制不因本集收齐而删除 —— 下一部集子还要用它。）
   // 待补分支仍然可用：把一篇的正文 / 译文清空后重开，应给出「尚在整理中」
   // 而不是白屏。（引擎与样式的待补机制不因本集收齐而删除 —— 下一部集子还要用它。）
-  const first = w.getGuwenById('gwj-1');
-  const keep = { text: first.text, translation: first.translation };
-  first.text = '';
-  first.translation = '';
-  api.open('gwj-1');
-  chk(/尚在整理中/.test(d.querySelector('#rd-text').textContent),
+  //
+  // ⚠️ 清的是**主表里那一份**，不是条目上的。
+  //    正文收归主表后条目上只剩 textRef，引擎渲染时按 textRef 到主表取 ——
+  //    只改条目上的 `text` 已经影响不到页面（改了个没人读的字段，
+  //    于是这条断言测的东西悄悄失效：页面照旧显示正文，测试却以为验过了）。
+  const GM = w.TEXT_MASTER || [];
+  const masterRows = GM.filter(m => (m.entries || []).indexOf('guwen-gwj-1') >= 0);
+  chk(masterRows.length === 1, '《郑伯克段于鄢》在主表里正好登记一条（待补分支的试验对象）');
+  const keep = { text: masterRows[0].text, translation: masterRows[0].translation };
+  masterRows[0].text = '';
+  masterRows[0].translation = '';
+  // 重新挂一个实例（换一个 root 与一份新配置）。
+  // ⚠️ 必须**重新 mount**，不能只改数据再 open 一次：引擎在 mount 时就把每一篇的
+  //    textRef 展开好了，`itemsById` 里留的是展开后的那一份 —— 只改主表 / 条目，
+  //    页面照旧显示旧正文，这条断言就成了「看着绿、其实什么都没验」。
+  //    这也正是「清空正文」这个场景的真实形态：语料本来就是重新加载的。
+  const box = d.createElement('div');
+  box.setAttribute('data-gw-root', '');
+  // 阅读器内部用 class（.rd-title / .rd-meta / .rd-trans-src）与 data-gw 两种找法，
+  // 这里照 guwen/index.html 的原样给齐，别只给一半 —— 缺一个就是 openReader 里
+  // 对 null 设 textContent，整段以 TypeError 断掉（看着像引擎坏了，其实是替身没搭全）。
+  box.innerHTML = '<div data-gw="list"></div>' +
+    '<section id="probe-reader" data-gw="reader">' +
+    '<h2 class="rd-title"></h2><div class="rd-meta"></div>' +
+    '<div data-gw="text"></div>' +
+    '<div class="rd-trans-text"></div>' +
+    '<div class="rd-trans-src"></div>' +
+    '</section>';
+  d.body.appendChild(box);
+  const probe = w.ReaderEngine.mount({
+    id: 'guwen-probe',
+    items: w.POEMS_GUWEN.map(p => Object.assign({}, p)),
+    root: box,
+    reader: '#probe-reader',
+    groupOrder: [],
+    words: { readStore: 'poem_probe_read_v1', pendingText: '本篇原文尚在整理中',
+      pendingTranslation: '本篇白话译文尚在整理中' }
+  });
+  chk(!!probe, '待补分支试验用的实例已挂上');
+  probe.open('gwj-1');
+  const probeText = box.querySelector('[data-gw="text"]').textContent;
+  const probeTrans = box.querySelector('.rd-trans-text').textContent;
+  chk(/尚在整理中/.test(probeText),
     '正文为空时给出「原文尚在整理中」的说明（引擎的待补分支仍生效）');
-  chk(/尚在整理中/.test(d.querySelector('#rd-trans-text').textContent),
+  chk(/尚在整理中/.test(probeTrans),
     '译文为空时给出「白话译文尚在整理中」的说明');
-  first.text = keep.text;
-  first.translation = keep.translation;
+  masterRows[0].text = keep.text;
+  masterRows[0].translation = keep.translation;
+  box.remove();
   api.close();
 
   // 搜索：按作者筛，且只筛古文这一部

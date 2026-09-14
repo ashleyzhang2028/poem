@@ -74,7 +74,7 @@ const WI = sandbox.WorksIndex;
 
    收谁由这里说了算，部内条目数不必改脚本。下一部要收归时，
    在这里加一个集子 id（并在 apply-text-master.js 已支持的 BOOKS 里存在）。 */
-const FULL_BOOKS = ['zhaoming'];
+const FULL_BOOKS = ['zhaoming', 'guwen'];
 
 /* 已有的主表：改语料重跑时的**正文兜底**。
    ⚠️ 各集子条目在「收归」之后已摘掉内联正文（只留 textRef），

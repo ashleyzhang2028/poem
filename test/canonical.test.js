@@ -50,13 +50,13 @@ sb.SITE_INDEX.forEach(p => { byId[p.id] = p; });
    与 scripts/build-text-master.js 的 FULL_BOOKS 一致。
    一部一个 PR 地往下收：清单里没点名的部照旧内联，两种形态并存。
    ⚠️ 哪一部漏收了、或哪一部多收了，都由这一份清单核 —— 不靠数总数。 */
-const FULL_BOOKS = ['zhaoming'];
+const FULL_BOOKS = ['zhaoming', 'guwen'];
 
 /* ---- 1.1 主表本身 ---- */
 /* 60（跨集重复的作品：
      57 课内自身重复去重后的跨集重复 + 3 近重复合并进来的
      《黄鹤楼送孟浩然之广陵》《夜上受降城闻笛》《将进酒》）
-   + FULL_BOOKS 各部的**单篇**条目（昭明 480） */
+   + FULL_BOOKS 各部的**单篇**条目（昭明 480 + 古文观止 164） */
 const multiEntries = MASTER.filter(m => m.entries.length >= 2);
 const singleEntries = MASTER.filter(m => m.entries.length === 1);
 chk(multiEntries.length === 60,
@@ -96,45 +96,6 @@ chk(MASTER.every(m => byId[m.id]), '主表 id 全部能在站点索引里找到�
 // 主表的文本是**全站唯一一份**：正文逐字等于主条目在站点索引里的那一份
 chk(MASTER.every(m => norm(byId[m.id].text) === norm(m.text)),
   '主表里的正文与主条目在站点索引里的正文逐字相同');
-
-/* ---- 1.2 各集子条目「只存归属」：不再内联正文 ---- */
-const BOOK_VARS = {
-  poems: ['data/poems-1.js', 'data/poems-2.js', 'data/poems-3.js', 'data/poems-4.js',
-    'data/poems-5.js', 'data/poems-6.js', 'data/poems-7.js', 'data/poems-8.js',
-    'data/poems-9.js', 'data/poems-10.js', 'data/poems-11.js', 'data/poems-12.js'],
-  classic: ['data/poems-classic.js'],
-  tangshi: ['data/poems-tangshi.js'],
-  songci: ['data/poems-songci.js'],
-  guwen: ['data/poems-guwen.js'],
-  zhaoming: ['data/poems-zhaoming.js']
-};
-// 各集子数据文件里，被主表收编的条目应**只剩 textRef**，不得再存 text / translation。
-// 直接从源码里数 —— 走 window 变量的话，data/index.js 之类已经把它们展开回来了。
-const stripped = [];
-const leftover = [];
-Object.keys(BOOK_VARS).forEach(book => {
-  BOOK_VARS[book].forEach(f => {
-    const src = read(f);
-    // 逐个条目看：带 textRef 的条目不得同时带 text:
-    const entries = src.split(/\n(?=  \{)/);
-    entries.forEach(blk => {
-      const refM = blk.match(/textRef:\s*"([^"]+)"/);
-      if (!refM) return;
-      stripped.push(book + ':' + refM[1]);
-      if (/^\s+text:\s*"/m.test(blk) || /^\s+translation:\s*"/m.test(blk)) {
-        leftover.push(book + ':' + refM[1]);
-      }
-    });
-  });
-});
-/* 120（跨集重复的条目）+ FULL_BOOKS 各部的条目数（昭明 480） */
-const expectStripped = 120 + fullExpected.length;
-chk(stripped.length === expectStripped,
-  '六部集子里共 ' + expectStripped + ' 条条目已退化成只存归属（textRef；实际 ' +
-  stripped.length + '）');
-chk(leftover.length === 0,
-  '带 textRef 的条目里不再内联 text / translation（残留：' +
-  (leftover.slice(0, 8).join('、') || '无') + '）');
 
 /* ---- 1.3 textRef 能取回正文，且与主表逐字相同 ---- */
 const resolveOne = (raw, book) => (sb.masterTextOf ? sb.masterTextOf(raw, book) : raw);
@@ -183,6 +144,10 @@ chk(mismatch.length === 0,
   '60 篇作品在六部集子里读到的正文逐字相同（不一致：' + (mismatch.slice(0, 5).join('、') || '无') + '）');
 
 /* ---- 1.4b 主表收齐了「同一篇的重复条目」全集 ---- */
+/* 主表登记的全部条目 id（1.4 / 1.2 两段都要用） */
+const masterFlat = [];
+MASTER.forEach(m => (m.entries || []).forEach(e => masterFlat.push(e)));
+
 /* 1.4 说的是「收进来的都对」；这一条说的是「该收的一条都没漏」——
    漏一条的表现不是报错，而是**那一篇的正文在磁盘上又存了一份**，
    日后改一处、漏一处，正是这一层要根除的东西。 */
@@ -210,8 +175,6 @@ chk(dupEntries.length === 120,
      · 收多了 = 把没点名的部的单篇也搬了（那一条的正文会从自己数据文件里消失）
      · 收少了 = 点名的部里有条目还内联着正文
    所以判据不是数总数，而是「主表登记的条目 = 判重条目全集 ∪ FULL_BOOKS 各部条目」。 */
-const masterFlat = [];
-MASTER.forEach(m => (m.entries || []).forEach(e => masterFlat.push(e)));
 const expectFlat = dupEntries.slice();
 fullExpected.forEach(id => { if (expectFlat.indexOf(id) < 0) expectFlat.push(id); });
 const sortJoin = arr => arr.slice().sort().join('|');
@@ -230,6 +193,72 @@ masterFlat.forEach(e => {
 chk(overlapped.length === 0, '没有条目被两篇作品同时登记（重叠：' + (overlapped.join('、') || '无') + '）');
 chk(MASTER.every(m => m.entries.indexOf(m.id) >= 0),
   '每条主表的 entries 里都有它自己（否则那一篇的正文谁也取不到）');
+
+/* ---- 1.2 各集子条目「只存归属」：不再内联正文 ---- */
+const BOOK_VARS = {
+  poems: ['data/poems-1.js', 'data/poems-2.js', 'data/poems-3.js', 'data/poems-4.js',
+    'data/poems-5.js', 'data/poems-6.js', 'data/poems-7.js', 'data/poems-8.js',
+    'data/poems-9.js', 'data/poems-10.js', 'data/poems-11.js', 'data/poems-12.js'],
+  classic: ['data/poems-classic.js'],
+  tangshi: ['data/poems-tangshi.js'],
+  songci: ['data/poems-songci.js'],
+  guwen: ['data/poems-guwen.js'],
+  zhaoming: ['data/poems-zhaoming.js']
+};
+// 各集子数据文件里，被主表收编的条目应**只剩 textRef**，不得再存 text / translation。
+// 直接从源码里数 —— 走 window 变量的话，data/index.js 之类已经把它们展开回来了。
+const stripped = [];
+const leftover = [];
+Object.keys(BOOK_VARS).forEach(book => {
+  BOOK_VARS[book].forEach(f => {
+    const src = read(f);
+    // 逐个条目看：带 textRef 的条目不得同时带 text:
+    // ⚠️ 切条目**不能按「恰好两格缩进的 {」切**：data/poems-guwen.js 里有一条
+    //    （《齐桓晋文之事》）起头是顶格的 `{` —— 用 `/\n(?=  \{)/` 切，
+    //    它会粘在上一条的块里，于是「上一条同时有 textRef 和 text」这条断言
+    //    会**误报**，而真正的问题（那一条压根没被摘）反而被掩过去。
+    //    缩进一律放宽成「至少一格」，与 scripts/apply-text-master.js 同口径。
+    const entries = src.split(/\n(?=\s*\{)/);
+    entries.forEach(blk => {
+      const refM = blk.match(/textRef:\s*"([^"]+)"/);
+      if (!refM) return;
+      // ⚠️ 记的是**条目自己**的 id，不是 textRef 的值 ——
+      //    textRef 存的是**主条目**的 id：跨集重复时两者不同
+      //    （唐诗的 ts-102 指向课内的 poems-cz7-03）。按 textRef 的值登记，
+      //    等于把这 46 条重复条目记成了「课内那些条」，下面逐条对账就会
+      //    把它们全判成「漏摘」—— 而真正漏摘的那一条反而淹在里面。
+      const idM = blk.match(/\bid:\s*"([^"]+)"/);
+      if (!idM) return;
+      const key = book + ':' + idM[1];
+      stripped.push(key);
+      if (/^\s+text:\s*"/m.test(blk) || /^\s+translation:\s*"/m.test(blk)) {
+        leftover.push(key);
+      }
+    });
+  });
+});
+/* 「该摘的条目」= 主表登记的全部条目（跨集重复 120 条 + FULL_BOOKS 各部条目）。
+   ⚠️ 这里刻意**不再按「120 + 各部条目数」数总数** —— 那样只要任一条漏摘，
+      报出来的只是「实际 764」，看不出少的是哪一条。改成从主表出发逐条对，
+      漏摘的那一条能被点名。 */
+const expectStripped = masterFlat.length;
+const strippedSet = {};
+stripped.forEach(k => { strippedSet[k] = 1; });
+const notStripped = masterFlat.filter(id => {
+  const book = Object.keys(BOOK_VARS).filter(b => id.indexOf(b + '-') === 0)[0];
+  // ⚠️ 站点索引 id 带集子前缀（`guwen-gwj-1`），语料里的条目 id 不带（`gwj-1`）——
+  //    拼对账键时要把前缀**去掉**，否则永远拼成 `guwen:guwen-gwj-1`、
+  //    一个都对不上，断言会把 765 条全判成「漏摘」。
+  return !book || !strippedSet[book + ':' + id.slice(book.length + 1)];
+});
+chk(stripped.length === expectStripped && notStripped.length === 0,
+  '主表登记的 ' + expectStripped + ' 条条目都已退化成只存归属（textRef；实际 ' +
+  stripped.length + '）' +
+  (notStripped.length ? '，未摘：' + notStripped.slice(0, 8).join('、') : ''));
+chk(leftover.length === 0,
+  '带 textRef 的条目里不再内联 text / translation（残留：' +
+  (leftover.slice(0, 8).join('、') || '无') + '）');
+
 
 /* ---- 1.5 显示层裁定表：正文已收归存储层，不再需要替换 ---- */
 // data/canonical-texts.js 是「显示时把正文换成主条目那一份」的裁定表。
