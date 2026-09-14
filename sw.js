@@ -224,8 +224,14 @@
  *       js/reader-core.js、js/scheduler.js、js/app.js、index.html、
  *       classic|tangshi|songci|guwen|zhaoming|search 六个页面的 index.html、
  *       css/style.css、css/classic.css、sw.js）
+ * v47  昭明文选「赋批」内容补齐（Issue #69 后续）：49 篇赋的白话译文
+ *      补入 data/poems-zhaoming.js（赋类 56 篇至此全部有译文，全书译文
+ *      29 → 78 篇，「待补」由 451 → 402）；站点总索引、README 与
+ *      相关测试的计数随之更新
+ *      （data/poems-zhaoming.js、data/site-index.js、README.md、
+ *       test/zhaoming.test.js、sw.js）
  */
-const CACHE_NAME = "poem-app-v46";
+const CACHE_NAME = "poem-app-v47";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [
