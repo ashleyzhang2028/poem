@@ -807,6 +807,17 @@ chk(/data-nav-go/.test(read('js/chrome.js')) && /\/settings\//.test(read('js/chr
     'Service Worker 从站点根注册（/sw.js），子目录页面同样能注册');
   chk(!/register\("\.\/sw\.js"\)/.test(read('js/pwa.js')),
     '不再用相对的 ./sw.js 注册（目录化后会解析成 /settings/sw.js 而 404）');
+  // sw.js 必须是能解析的 JS —— 注释块里漏一个 */ 就会让整份文件
+  // 解析失败、Service Worker 从不注册，而页面上完全看不出来
+  //（离线能力静默失效，只有断网时才发现）。这一条守住这次的回归。
+  {
+    const { execFileSync } = require('child_process');
+    let swOk = true;
+    try { execFileSync(process.execPath, ['--check', __dirname + '/../sw.js'], { stdio: 'pipe' }); }
+    catch (e) { swOk = false; }
+    chk(swOk, 'sw.js 能通过语法检查（注释块闭合、没有游离的 */ —— 否则 SW 从不注册）');
+  }
+
   // 缓存名必须随资源变化升级，否则老用户拿到的是旧副本。
   // 这里不只查「等于某个版本号」——那样每次改 CSS 都得改测试。
   // 关键约束：静态资源是「缓存优先」，所以缓存版本号必须比最近的资源改动新。

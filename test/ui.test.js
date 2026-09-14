@@ -265,7 +265,7 @@ setTimeout(() => {
   chk(['10', '11', '12'].indexOf(String(sd.querySelector('#grade-chips button.active').dataset.grade)) > -1,
     '换学段后年级落在新学段内');
   setOn('grade', 12, '#grade-chips button', 'grade');
-  chk(d.querySelector('#all-count').textContent === '14', '高三下学期 → 14 首（实际 ' + d.querySelector('#all-count').textContent + '）');
+  chk(d.querySelector('#all-count').textContent === '11', '高三下学期 → 11 首（实际 ' + d.querySelector('#all-count').textContent + '）');
 
   /* 需求：古诗词详情页与小古文详情页功能对齐（对齐 / 字号 / 译文 / 播放组合键）。
      先单独验一遍，验完把页面状态恢复成「高三下」，不干扰后面的断言。 */
@@ -357,7 +357,7 @@ setTimeout(() => {
   chk(d.querySelector('#all-body').hidden === false, '展开全部诗词');
   // 需求：展开后箭头朝上（只旋转同一枚空心三角，不换图）
   chk(d.querySelector('#btn-all').classList.contains('open'), '展开后折叠键进入 open 态（箭头靠 CSS 旋转朝上）');
-  chk(d.querySelectorAll('#all-list .item').length === 14, '高三下 14 条全部列出');
+  chk(d.querySelectorAll('#all-list .item').length === 11, '高三下 11 条全部列出');
   chk(d.querySelectorAll('#stats-row .stat').length === 4, '统计条渲染 4 项');
   // 需求：详情页工具条与小古文对齐一致；标签行、按钮整行居中，底部不被页签压住
   chk(d.querySelectorAll('#m-actions-main > *').length === 3, '详情页第一行：对齐 / 字号 / 注音 三组');
@@ -383,16 +383,16 @@ setTimeout(() => {
   chk(sd.querySelector('#seg-scope button.active').dataset.scope === 'term', '默认选中「本册」');
   setOn('scope', 'primary', '#seg-scope button', 'scope');
   chk(sd.querySelector('#seg-scope button.active').dataset.scope === 'primary', '切换后按钮高亮跟随');
-  chk(d.querySelector('#all-count').textContent === '122', '小学随机范围 → 小学 122 首（实际 ' + d.querySelector('#all-count').textContent + '）');
+  chk(d.querySelector('#all-count').textContent === '119', '小学随机范围 → 小学 119 首（实际 ' + d.querySelector('#all-count').textContent + '）');
   chk(d.querySelector('#all-label').textContent === '小学阶段全部诗词', '面板标题跟随范围: ' + d.querySelector('#all-label').textContent);
   chk(d.querySelectorAll('#today-list .item').length === 5, '随机范围下仍按每日数量出计划');
   chk(d.querySelector('#all-list .item .item-meta').textContent.includes('年级') === false ||
     /[一二三四五六]年级/.test(d.querySelector('#all-list .item .item-meta').textContent), '随机范围下列表项标注所属年级学期');
   chk(JSON.parse(sp.window.localStorage.getItem('poem_recite_settings_v1')).scope === 'primary', '背诵范围已持久化');
   setOn('scope', 'high', '#seg-scope button', 'scope');
-  chk(d.querySelector('#all-count').textContent === '69', '高中随机范围 → 高中 69 首（实际 ' + d.querySelector('#all-count').textContent + '）');
+  chk(d.querySelector('#all-count').textContent === '61', '高中随机范围 → 高中 61 首（实际 ' + d.querySelector('#all-count').textContent + '）');
   setOn('scope', 'term', '#seg-scope button', 'scope');
-  chk(d.querySelector('#all-count').textContent === '14', '切回「本册」→ 高三下 14 首');
+  chk(d.querySelector('#all-count').textContent === '11', '切回「本册」→ 高三下 11 首');
 
   // 用户名：在设置整页输入后，首页标题与品牌名同步变化
   const uInput = sd.querySelector('#input-username');

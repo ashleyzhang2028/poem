@@ -2,7 +2,7 @@
    同篇对照表（主表裁定规则的静态成果）
    --------------------------------------------------------------------------
    由 scripts/build-works-map.js 离线算出：**正文（去标点后）一致 = 同一篇作品**。
-   只登记「在两部及以上集子里重复出现」的那些作品（共 66 组），
+   只登记「在两部及以上集子里重复出现」的那些作品（共 57 组），
    单条的作品不必登记 —— 它本来就只出现一次，条目 id 自己就是作品 id。
 
    ⚠️ 这是**生成文件**，改动请改 scripts/build-works-map.js 后重跑，
@@ -16,12 +16,20 @@
    ## 为什么不是所有同名篇目都合并
 
    教材与选本的文本**真会不一样**，是文献上的差别、不是录入出错：
-     · 《静夜思》 教材与《唐诗三百首》正文一致 → 合并为同一篇（titles 记两个题名）
+     · 《静夜思》 教材与《唐诗三百首》正文一致（都是「床前明月光」的教材文本）
+       → 合并为同一篇（titles 记两个题名）
      · 《陋室铭》 教材作「孔子云何陋之有」、古文观止作「孔子云『何陋之有』」→ 引号剥掉后
        正文一致，合并
      · 《夜上受降城闻笛》 教材作「回乐烽」、唐诗三百首作「回乐峰」→ 一字之差，是两种文本，
        **分成两条并列的作品**，各背各的
    规则一句话：**课内以教材文本为准，选集以选本原貌为准，冲突时分两条并列**。
+
+   ## 课内自身重复已按「低年级版本为准」去重
+
+   课内数据里曾有 12 组篇目在两个年级各存一份（正文一字不差），是逐页录入留下的
+   自身重复（《绝句》二年级下 / 三年级下、《师说》高一上 / 高三下……）。
+   已各删一条、保留低年级那条，课内条目由 273 降到 261，本表组数由 66 降到 57。
+   跨集那 3 组只删课内自身那份，与选集的判重照旧。
 
    字段：
      wid     作品 id（`w-` 加首个条目 id）
@@ -52,18 +60,13 @@ window.WORKS_GROUPS = [
   { wid: "w-poems-cz9-11", title: "长沙过贾谊宅", titles: ["长沙过贾谊宅"], entries: ["poems-cz9-11","tangshi-ts-200"] },
   { wid: "w-poems-cz9-18", title: "渔家傲·秋思", titles: ["渔家傲·秋思","渔家傲"], entries: ["poems-cz9-18","songci-sc-5"] },
   { wid: "w-poems-cz9-23", title: "临江仙·夜登小阁忆洛中旧游", titles: ["临江仙·夜登小阁忆洛中旧游","临江仙"], entries: ["poems-cz9-23","songci-sc-147"] },
-  { wid: "w-poems-gz10-05", title: "登高", titles: ["登高"], entries: ["poems-gz10-05","poems-gz12-04","tangshi-ts-190"] },
-  { wid: "w-poems-gz10-07", title: "念奴娇·赤壁怀古", titles: ["念奴娇·赤壁怀古"], entries: ["poems-gz10-07","poems-gz12-06","songci-sc-67"] },
-  { wid: "w-poems-gz10-08", title: "永遇乐·京口北固亭怀古", titles: ["永遇乐·京口北固亭怀古"], entries: ["poems-gz10-08","poems-gz12-07","songci-sc-183"] },
+  { wid: "w-poems-gz10-05", title: "登高", titles: ["登高"], entries: ["poems-gz10-05","tangshi-ts-190"] },
+  { wid: "w-poems-gz10-07", title: "念奴娇·赤壁怀古", titles: ["念奴娇·赤壁怀古"], entries: ["poems-gz10-07","songci-sc-67"] },
+  { wid: "w-poems-gz10-08", title: "永遇乐·京口北固亭怀古", titles: ["永遇乐·京口北固亭怀古"], entries: ["poems-gz10-08","songci-sc-183"] },
   { wid: "w-poems-gz10-09", title: "声声慢·寻寻觅觅", titles: ["声声慢·寻寻觅觅","声声慢"], entries: ["poems-gz10-09","songci-sc-249"] },
-  { wid: "w-poems-gz10-11", title: "师说", titles: ["师说"], entries: ["poems-gz10-11","poems-gz12-12"] },
-  { wid: "w-poems-gz10-14", title: "静女", titles: ["静女"], entries: ["poems-gz10-14","poems-gz12-24"] },
   { wid: "w-poems-gz10-18", title: "桂枝香·金陵怀古", titles: ["桂枝香·金陵怀古","桂枝香"], entries: ["poems-gz10-18","songci-sc-47"] },
   { wid: "w-poems-gz10-21", title: "登岳阳楼", titles: ["登岳阳楼"], entries: ["poems-gz10-21","tangshi-ts-119"] },
-  { wid: "w-poems-gz10-23", title: "书愤", titles: ["书愤"], entries: ["poems-gz10-23","poems-gz11-13"] },
-  { wid: "w-poems-gz10-24", title: "临安春雨初霁", titles: ["临安春雨初霁"], entries: ["poems-gz10-24","poems-gz11-21"] },
   { wid: "w-poems-gz11-07", title: "江城子·乙卯正月二十日夜记梦", titles: ["江城子·乙卯正月二十日夜记梦"], entries: ["poems-gz11-07","songci-sc-75"] },
-  { wid: "w-poems-gz11-11", title: "李凭箜篌引", titles: ["李凭箜篌引"], entries: ["poems-gz11-11","poems-gz12-23"] },
   { wid: "w-poems-gz11-12", title: "锦瑟", titles: ["锦瑟"], entries: ["poems-gz11-12","tangshi-ts-213"] },
   { wid: "w-poems-gz11-19", title: "扬州慢·淮左名都", titles: ["扬州慢·淮左名都","扬州慢"], entries: ["poems-gz11-19","songci-sc-192"] },
   { wid: "w-poems-gz11-20", title: "客至", titles: ["客至"], entries: ["poems-gz11-20","tangshi-ts-187"] },
@@ -73,15 +76,12 @@ window.WORKS_GROUPS = [
   { wid: "w-poems-xx2-03", title: "登鹳雀楼", titles: ["登鹳雀楼"], entries: ["poems-xx2-03","tangshi-ts-234"] },
   { wid: "w-poems-xx2-05", title: "江雪", titles: ["江雪"], entries: ["poems-xx2-05","tangshi-ts-242"] },
   { wid: "w-poems-xx2-10", title: "赋得古原草送别", titles: ["赋得古原草送别","草"], entries: ["poems-xx2-10","tangshi-ts-156"] },
-  { wid: "w-poems-xx2-12", title: "绝句", titles: ["绝句"], entries: ["poems-xx2-12","poems-xx3-10"] },
-  { wid: "w-poems-xx3-07", title: "望洞庭", titles: ["望洞庭"], entries: ["poems-xx3-07","poems-xx4-14"] },
   { wid: "w-poems-xx3-08", title: "早发白帝城", titles: ["早发白帝城"], entries: ["poems-xx3-08","tangshi-ts-260"] },
   { wid: "w-poems-xx3-09", title: "采莲曲", titles: ["采莲曲"], entries: ["poems-xx3-09","tangshi-ts-89"] },
   { wid: "w-poems-xx3-16", title: "九月九日忆山东兄弟", titles: ["九月九日忆山东兄弟"], entries: ["poems-xx3-16","tangshi-ts-254"] },
   { wid: "w-poems-xx3-17", title: "滁州西涧", titles: ["滁州西涧"], entries: ["poems-xx3-17","tangshi-ts-263"] },
   { wid: "w-poems-xx4-04", title: "出塞", titles: ["出塞"], entries: ["poems-xx4-04","tangshi-ts-88"] },
   { wid: "w-poems-xx4-05", title: "凉州词", titles: ["凉州词"], entries: ["poems-xx4-05","tangshi-ts-258"] },
-  { wid: "w-poems-xx4-09", title: "四时田园杂兴（其二）", titles: ["四时田园杂兴（其二十五）","四时田园杂兴（其二）"], entries: ["poems-xx4-09","poems-xx5-20"] },
   { wid: "w-poems-xx4-17", title: "鹿柴", titles: ["鹿柴"], entries: ["poems-xx4-17","tangshi-ts-222"] },
   { wid: "w-poems-xx4-18", title: "嫦娥", titles: ["嫦娥"], entries: ["poems-xx4-18","tangshi-ts-300"] },
   { wid: "w-poems-xx4-20", title: "芙蓉楼送辛渐", titles: ["芙蓉楼送辛渐"], entries: ["poems-xx4-20","tangshi-ts-255"] },
@@ -94,6 +94,5 @@ window.WORKS_GROUPS = [
   { wid: "w-poems-xx6-07", title: "回乡偶书", titles: ["回乡偶书","回乡偶书·其一"], entries: ["poems-xx6-07","tangshi-ts-251"] },
   { wid: "w-poems-xx6-08", title: "寒食", titles: ["寒食"], entries: ["poems-xx6-08","tangshi-ts-265"] },
   { wid: "w-poems-xx6-14", title: "清平乐·春归何处", titles: ["清平乐·春归何处","清平乐"], entries: ["poems-xx6-14","songci-sc-80"] },
-  { wid: "w-poems-xx6-17", title: "过故人庄", titles: ["过故人庄"], entries: ["poems-xx6-17","tangshi-ts-132"] },
-  { wid: "w-poems-xx6-20", title: "天净沙·秋思", titles: ["天净沙·秋思"], entries: ["poems-xx6-20","poems-cz7-04"] }
+  { wid: "w-poems-xx6-17", title: "过故人庄", titles: ["过故人庄"], entries: ["poems-xx6-17","tangshi-ts-132"] }
 ];
