@@ -408,6 +408,36 @@ chk(/body\.no-dock \.modal-box \{ padding-bottom:\s*calc\(26px \+ var\(--safe-bo
   '法务页等无页签页面，弹层不必垫页签高度');
 chk(/body\.no-dock \.modal-box \{ max-height: 88vh; \}/.test(css),
   '法务页等无页签页面，弹层照旧铺到底边附近');
+
+// 需求（Issue #69 收尾）：弹层不能被底部页签 / 底部播放栏压在下面。
+// 原先 .modal 写 z-index: 50，低于页签（65）与播放栏（70）——
+// 「加入背诵」弹框的集合列表与新建输入框会被页签横切一刀，还点不到
+// （点下去命中的是页签）。这一条把层级关系钉死：
+//   引导条 40 < 页签 65 < 播放栏 70 < 弹层 80 < toast 99
+/* 取某个选择器在样式表里**最后生效**的 z-index（同名规则后写的覆盖先写的） */
+const zIndexOf = sel => {
+  const re = new RegExp('(^|\\})\\s*' + sel.replace(/\./g, '\\.') + '\\s*\\{([^}]*)\\}', 'gm');
+  let m, out = null;
+  while ((m = re.exec(css))) {
+    const z = /z-index:\s*([^;]+)/.exec(m[2]);
+    if (z) out = z[1].trim();
+  }
+  return out;
+};
+const zModal = zIndexOf('.modal'), zDock = zIndexOf('.dock');
+const zPlayer = zIndexOf('.player-bar'), zTip = zIndexOf('.ios-install-tip');
+const zToast = zIndexOf('.toast');
+chk(Number(zModal) > Number(zDock),
+  '弹层层级（' + zModal + '）高于底部页签（' + zDock + '）——弹层不被页签压住（Issue #69：加入背诵弹框被导航栏挡住）');
+chk(Number(zModal) > Number(zPlayer),
+  '弹层层级（' + zModal + '）高于底部播放栏（' + zPlayer + '）——播放栏不盖住弹层');
+chk(Number(zModal) > Number(zTip),
+  '弹层层级（' + zModal + '）高于「添加到主屏幕」引导条（' + zTip + '）——引导条不挡住弹层里的按钮');
+chk(Number(zModal) < Number(zToast),
+  '弹层层级（' + zModal + '）低于 toast（' + zToast + '）——提示语要压在所有浮层之上');
+// 层叠次序不能只把弹层抬高就完事：页签自己得仍在播放栏之下（播放栏出现时页签让路）
+chk(Number(zDock) < Number(zPlayer),
+  '底部页签（' + zDock + '）仍低于播放栏（' + zPlayer + '），两者的让路关系没被改乱');
 // 需求：小古文阅读器顶栏与其他页面统一
 // 需求（本次）：阅读器顶栏不再自制一套，直接复用全站 .topbar ——
 // 从列表点进正文时，徽标 / 「跬步 · 小古文」/ 右侧圆形动作位都不变样。

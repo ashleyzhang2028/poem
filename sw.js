@@ -283,9 +283,16 @@
  *        （data/canonical-texts.js、data/group-order.js、
  *         scripts/build-canonical-texts.js、js/reader-core.js、js/storage.js、
  *         js/app.js、js/library.js、index.html 与六个集子页的 index.html、sw.js）
+ *   v53  弹层不再被底部页签压住（Issue #69 跟进）：
+ *        「加入背诵」弹框的集合列表与新建输入框原先会被底部导航栏横切一刀 ——
+ *        点下去命中的其实是页签。根因是 .modal 的 z-index 为 50，
+ *        低于底部页签（65）与底部播放栏（70）；给弹层垫 62px 内边距只是把内容
+ *        顶开，遮罩与弹层边框仍被页签切开。现把弹层抬到 80：
+ *        引导条 40 < 页签 65 < 播放栏 70 < 弹层 80 < toast 99
+ *        （css/style.css、test/theme.test.js、test/collections.test.js）
  */
 
-const CACHE_NAME = "poem-app-v52";
+const CACHE_NAME = "poem-app-v53";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [

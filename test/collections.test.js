@@ -232,6 +232,18 @@ setTimeout(() => {
   const picker = w.document.getElementById('gw-recite-picker');
   chk(!!picker, '集合选择器（弹层）已就绪');
 
+  /* ---- 弹层的挂载位置与层级（Issue #69：加入背诵弹框被底部导航栏挡住）----
+     这一枚弹层必须挂在 <body> 下、并且带上 .modal 这套层级。
+     两个坑都在这里防：
+       1) 若挂进 .reader（z-index 66）里面，它就困在那一层层叠上下文里 ——
+          自身 z-index 写多少都盖不过页签 / 播放栏；挂 body 才真的站在整页最上层。
+       2) .modal 自己的 z-index 必须高于页签（65）与播放栏（70），
+          否则页签横切弹层下缘，集合列表与新建输入框点不到（点下去命中的是页签）。 */
+  chk(picker.parentNode === w.document.body,
+    '集合选择器挂在 <body> 下（不在 .reader 里，不受那一层层叠上下文限制）');
+  chk(/\bmodal\b/.test(picker.className),
+    '集合选择器带 .modal 类（继承全站弹层层级，实际 ' + picker.className + '）');
+
   /* ---- 快照：集子索引页不加载全站索引，靠加入时存下的最小快照 ---- */
   const stored = JSON.parse(w.localStorage.getItem('poem_recite_collections_v1'));
   const firstItem = stored.collections[0].items[0];

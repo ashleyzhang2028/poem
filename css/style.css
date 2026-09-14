@@ -480,7 +480,15 @@ html, body {
 .stat span { font-size: 11.5px; color: var(--ink-2); }
 
 /* 弹层 */
-.modal { position: fixed; inset: 0; z-index: 50; display: flex; align-items: flex-end; justify-content: center; }
+/* ⚠️ 弹层的层级必须**高于底部页签（65）与底部播放栏（70）**，否则弹层会被它们压在下面：
+   页签浮在弹层上方，弹层的下缘（「加入背诵」的集合列表与新建输入框、
+   首页诗词弹层的「忘记 / 模糊 / 记住」整排）既看不全、也点不到 ——
+   点下去的其实是页签。原先写 50（低于 65 / 70），
+   靠给 .modal-box 垫 62px 内边距把内容顶到页签上方，治标不治本：
+   内容躲开了，遮罩与弹层边框仍然被页签横切一刀。
+   这里取 80：高于页签与播放栏，低于 toast（99，提示语要压在所有浮层之上），
+   也高于「添加到主屏幕」引导条（40）—— 引导条不能盖住弹层里的按钮。 */
+.modal { position: fixed; inset: 0; z-index: 80; display: flex; align-items: flex-end; justify-content: center; }
 .modal[hidden] { display: none; }
 .modal-mask {
   position: absolute;
@@ -496,8 +504,11 @@ html, body {
   width: 100%;
   max-width: 640px;
   /* 底部页签是浮层（约 62px），弹层若铺到屏幕底边，最下面的
-     「忘记 / 模糊 / 记住」会被页签压掉一截。这里把弹层整体上收：
-     高度扣掉页签与安全区，底边正好落在页签上方。 */
+     「忘记 / 模糊 / 记住」会落进页签名下那片区域。这里把弹层整体上收：
+     高度扣掉页签与安全区，底边正好落在页签上方。
+     （页签本身已被弹层（z-index 80）压在遮罩之下、点不到，
+     这一条管的是**观感**：整排按钮不落在页签那道浮层横带里，
+     免得与页签图标在视觉上叠成一团。） */
   max-height: calc(88vh - 62px - var(--safe-bottom));
   overflow-y: auto;
   border-radius: 22px 22px 0 0;
@@ -785,8 +796,7 @@ body.no-dock .modal-box { max-height: 88vh; }
 /* 底部弹层避开 iPhone 底部横条 + 底部页签。
    `.modal-box` 这条规则与上面的 `.modal-box { padding: ... }` 是同一优先级、
    晚出现，所以它说了算：底部内边距 = 页签高度（约 62px）+ 一段呼吸留白。
-   这样一来，弹层最下面的「忘记 / 模糊 / 记住」不再被底部页签压掉一截，
-   页签也不会浮在按钮上挡住点击。 */
+   这样一来，弹层最下面的「忘记 / 模糊 / 记住」整排落在页签上方那道横带之外。 */
 .modal-box {
   padding-bottom: calc(26px + 62px + var(--safe-bottom));
 }
@@ -877,7 +887,7 @@ button,
 }
 
 /* 引导条不能盖住弹层里的操作按钮：
-   弹层 z-index 为 50，引导条需低于它，否则「忘记/模糊/记住」会被挡住点不到 */
+   弹层 z-index 为 80，引导条需低于它，否则「忘记/模糊/记住」会被挡住点不到 */
 .ios-install-tip {
   z-index: 40;
 }
