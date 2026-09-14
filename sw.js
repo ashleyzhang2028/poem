@@ -508,7 +508,21 @@
  *        （data/text-master.js、data/poems-tangshi.js、
  *          scripts/build-text-master.js、test/canonical.test.js、
  *          test/dedup.test.js、README.md）
- *   v74  修搜索框聚焦光晕被写成不透明填充色（Issue #69 · CI 红灯）：
+ *   v78  小古文 99 篇正文收归存储主表（Issue #69 · 按部推进第 5 部）：
+ *        FULL_BOOKS 清单加 `classic`，主表 1232 → 1331 条，
+ *        data/poems-classic.js 99 条摘掉内联正文、改留 textRef
+ *        （90KB → 30KB，-67%）。页面可见文本零变化：
+ *           · 99 条（小古文独有）的标题 / 元信息 / 正文 / 译文逐字节一致；
+ *           · 剩下 1 条《答谢中书书》（gw-60）与课内八年级上同篇，
+ *             早在前几轮就由判重表收归（主条目 poems-cz8-02），
+ *             这一条的正文 / 译文 / 来源本轮起也就显式走主表那一份
+ *             —— 收归前 canonical-texts.js 在显示层做的就是这件事。
+ *        至此五部集子全部收归完毕（小古文是最后一部）。
+ *        版本号按「并行 PR 一律 +5」的口径从 v73 起落到 v78。
+ *        （data/text-master.js、data/poems-classic.js、
+ *          scripts/build-text-master.js、test/canonical.test.js、
+ *          test/dedup.test.js、README.md）
+ *   v83  修搜索框聚焦光晕被写成不透明填充色（Issue #69 · CI 红灯）：
  *        body[data-nav="search"] .search-hero .search-input:focus 的 box-shadow
  *        误填了 --green-light（#dbe9e2，不透明的浅底**填充色**），
  *        于是聚焦时搜索框外围画出一圈实心粉绿框，与全站 .search-input:focus
@@ -516,10 +530,10 @@
  *        改回与全站同值的 rgba(47, 96, 85, .10)；
  *        test/pwa.test.js 拿真浏览器量光晕色相，test/theme.test.js 另补一条
  *        纯源码断言（缺 puppeteer 时也能守住）。
- *        版本号按「并行 PR 一律 +5」的口径从 v73 起落到 v74。
+ *        版本号按「并行 PR 一律 +5」的口径从 v78 起落到 v83。
  *        （css/classic.css、test/theme.test.js、sw.js）
  */
-const CACHE_NAME = "poem-app-v74";
+const CACHE_NAME = "poem-app-v83";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [
