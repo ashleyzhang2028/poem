@@ -1678,6 +1678,12 @@ body[data-nav="search"] .search-hero.kb-open .search-wrap { transform: none; }
    现在与全站输入框（.settings-input）统一：聚焦时天青描边 + 纸色底，
    外圈只留一道极淡的天青光晕（box-shadow，不挤占布局）。
 
+   ⚠️ 光晕必须与全站 .search-input:focus 用**同一个值**
+      （rgba(47, 96, 85, .10) 那圈半透明淡光），不能图省事填 --green-light ——
+      后者是不透明的浅底**填充色**（#dbe9e2），直接当 box-shadow 用会画出一圈
+      实心粉绿外框，与「描边之外的一层柔和扩散」不是一回事，
+      全站输入框的聚焦态也随之为成两样（这一条曾 CI 红过）。
+
    ⚠️ 这里**不能再写 :focus-visible 的第二条描边**（曾经写过，CI 红在这一条上）。
       `body[data-nav="search"] .search-hero .search-input:focus` 与
       同名再加 `:focus-visible` 的**特异性完全相同**（都是 0,4,1：一个属性选择器
@@ -1688,6 +1694,7 @@ body[data-nav="search"] .search-hero.kb-open .search-wrap { transform: none; }
       而不是 `none`：用户看到的黑框没修掉，反倒多画了一道天青实线。
       「看得见焦点」这条无障碍要求由 box-shadow 那圈光晕满足（它随聚焦出现、
       也是唯一的一支描边口径），不需要再叠一层 outline。 */
+
 body[data-nav="search"] .search-hero .search-input {
   border-color: var(--line);
   background: #fffdf6;
@@ -1697,10 +1704,11 @@ body[data-nav="search"] .search-hero .search-input:focus,
 body[data-nav="search"] .search-hero .search-input:focus-visible {
   border-color: var(--green);
   background: #fffdf6;
-  box-shadow: 0 0 0 3px var(--green-light);
-  /* 两支选择器共用一条规则（特异性相同、书写顺序无所谓）：
-     鼠标 / 触屏点出来的聚焦与键盘 Tab 出来的聚焦，长的是同一支描边 ——
-     不再各画一条、也不是一黑一青叠在一个框上。 */
+  /* 两支选择器共用**一条**规则：鼠标 / 触屏点出来的聚焦与键盘 Tab 出来的
+     聚焦，长的是同一支描边 —— 不再各画一条、也不是一黑一青叠在一个框上。
+     （特异性相同，若拆成两条则由书写顺序定胜负，:focus-visible 会把
+      :focus 的 outline: none 盖回去，真机上黑框等于没修。） */
+  box-shadow: 0 0 0 3px rgba(47, 96, 85, .10);
   outline: none;
   outline-offset: 0;
 }
@@ -1711,8 +1719,6 @@ body[data-nav="search"] .search-hero .search-input:focus-visible {
       这个仓库里已经没有 .search-focus 这个类了（它并入 .search-active）。 */
 body[data-nav="search"] .search-hero.kb-open ~ #gw-list .empty[data-empty="idle"],
 body[data-nav="search"] .search-hero.search-active ~ #gw-list .empty[data-empty="idle"] {
-  height: 0;
-}
   height: 0;
 }
 /* 空态（无论哪种）与结果列表一样左对齐 */
