@@ -931,8 +931,13 @@ for dirpath, dirnames, filenames in os.walk(root):
     for fn in filenames:
         if fn.endswith(('.js', '.html', '.css', '.json', '.webmanifest')):
             with open(os.path.join(dirpath, fn), encoding='utf8') as fh:
-                chars |= set(re.findall(r'[\u4e00-\u9fff\u3000-\u303f\uff00-\uffef]',
-                                        strip_comments(fh.read(), fn)))
+                chars |= set(re.findall(
+                    # 注意 \U 前的双反斜杠：这是 JS 模板字符串，
+                    # 写成单个 \U 会被 JS 先吃掉（\U 不是合法转义，退化成字面量 U），
+                    # python 收到的是「U00020000-U0002FA1F」，于是扩展区一个字也扫不到 ——
+                    # 这条断言正是这样空转了整整一轮，页面缺 183 个字却一直显示「缺 28」。
+                    r'[\\u4e00-\\u9fff\\u3000-\\u303f\\uff00-\\uffef\\U00020000-\\U0002FA1F]',
+                    strip_comments(fh.read(), fn)))
 chars |= set('跬步·—…「」《》（）？！、。；：')
 out = {'_total': len(chars)}
 for name in ['NotoSansSC-400','NotoSansSC-600','NotoSerifSC-400','NotoSerifSC-600']:
@@ -942,19 +947,20 @@ print(json.dumps(out, ensure_ascii=False))
 `;
   const res = JSON.parse(execFileSync('python3', ['-c', py, path], { encoding: 'utf8' }));
   chk(res._total > 3000, '站点用字扫描出 ' + res._total + ' 个字符（含全部诗词译文）');
-  // 覆盖面从「零缺字」放宽为「缺字不增长」：
-  // Noto CJK（全部 13686 字的源字形）本身就缺一批极生僻字 ——
-  // 礼器名（鞛 鞳 鞶 韝）、拟声词（吰 鏦 豗）、古地名（鄏 郏鄏 鯈）、
-  // 古人名与书名（歜 薳 碏 罃 眘 荎 鉧）、以及「剺 媕 岧 鶗」这类生僻字，
-  // 源字体里没有字形可取，补不进去。它们会回落到系统字体显示，
-  // 是真·缺字而不是子集做旧 —— 后者才是这条断言本来要拦的事。
+  // 覆盖面回到「零缺字」。
   //
-  // 这批字本轮由《古文观止》全十二卷收齐一次性带齐（原文用字本就极杂），
-  // 已逐个核对过「源字体确实没有」，且多半是人名 / 地名 / 礼器名，
-  // 换成常用字反而会改动原文，故保留。
-  // 上限因此定在**缺字总数不得超过 90**：新增语料若又带来一批没补的字，
-  // 一定会突破这个上限并报红（补字脚本见 scripts/supplement-fonts.py）。
-  const MAX_MISSING = 90;
+  // 这里曾经放宽到「缺字不超过 90」——当时 Noto CJK 本身缺一批极生僻字
+  // （礼器名、拟声词、古地名、古人名），只能回落系统字体。
+  // 但那个口径有个漏洞：扫描只认 BMP，看不见《昭明文选》里
+  // 《子虚赋》《吴都赋》那批 ExtB 生僻字，于是「缺 28 字」看着很稳，
+  // 实际页面上空白的远不止这些。
+  //
+  // 现在两处都补齐了：
+  //   · 扫描口径带上扩展区（U+20000–U+2FA1F），extB 缺字再也藏不住
+  //   · 字体子集从花園明朝（HanaMin，公开领域）逐字取了轮廓补进去
+  // 所以这条断言收紧成「一个都不能缺」，页面上不该再出现空字。
+  // 补字脚本：scripts/supplement-fonts.py
+  const MAX_MISSING = 0;
   Object.keys(res).filter(k => k.indexOf('Noto') === 0).forEach(name => {
     const miss = res[name] || '';
     chk(miss.length <= MAX_MISSING,

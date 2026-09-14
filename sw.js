@@ -297,9 +297,19 @@
  *        （js/pwa.js 实测的底部导航高度）：小弹层的下内边距与下外边距、
  *        大弹层的 max-height，都不再写死像素
  *        （css/style.css、test/layout.test.js、test/theme.test.js、test/run.sh）
+ *   v55  昭明文选生僻字补全（Issue #69 跟进·续）：
+ *        正文里那批 markdown 图片占位符 `![&#x247E2;](images/247E2.svg)`
+ *        换回**真字**；字形从花園明朝（HanaMin，公开领域）逐字取轮廓补进
+ *        四款字体子集，全站用字**零缺字**。
+ *        同时修掉两处「只扫 BMP、看不见扩展区」的隐藏漏洞：
+ *        scripts/supplement-fonts.py 的扫描口径，以及 test/theme.test.js
+ *        里那段 python 的扫描正则（JS 模板字符串把 `\U` 吃掉，
+ *        导致扩展区一个字也扫不到、「缺 28 字」空转了整整一轮）
+ *        （data/poems-zhaoming.js、fonts/*.woff2、
+ *          scripts/supplement-fonts.py、test/theme.test.js、test/zhaoming.test.js）
  */
 
-const CACHE_NAME = "poem-app-v54";
+const CACHE_NAME = "poem-app-v55";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [
