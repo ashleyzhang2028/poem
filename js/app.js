@@ -1376,6 +1376,12 @@
     document.addEventListener("chrome:ready", function () {
       applyAppName();
     });
+    // 清理已删条目留下的孤儿背诵进度（课内 12 组自身重复去重后的旧键）：
+    // 这动的是用户的本地进度，所以口径写死（见 js/storage.js 的 pruneUnknown）、
+    // 且在**启动时只做一次** —— 每改一次设置、每排一次任务都扫一遍
+    // 既没有必要，也把「什么时候会动用户的进度」这件事变得说不清。
+    var pruned = Storage.pruneUnknown((window.POEMS_ALL || []).map(function (p) { return p.id; }));
+    if (pruned.length) invalidatePlan();
     renderGradeChips();
     rebuildToday();
     renderAll();

@@ -253,6 +253,18 @@
        站点总索引（下一行）读的正是它 —— 反过来先加载 site-index.js，
        课内那 261 首会整批缺席，而且不报错，只是「搜不到课内的诗」，
        是最难查的那种安静失败。 -->
+  <script src="data/poems-1.js"></script>
+  <script src="data/poems-2.js"></script>
+  <script src="data/poems-3.js"></script>
+  <script src="data/poems-4.js"></script>
+  <script src="data/poems-5.js"></script>
+  <script src="data/poems-6.js"></script>
+  <script src="data/poems-7.js"></script>
+  <script src="data/poems-8.js"></script>
+  <script src="data/poems-9.js"></script>
+  <script src="data/poems-10.js"></script>
+  <script src="data/poems-11.js"></script>
+  <script src="data/poems-12.js"></script>
   <script src="data/index.js"></script>
   <!-- 站点篇目总索引：把上面六部汇成一张表（搜索只读这一张） -->
   <script src="data/site-index.js"></script>
@@ -260,6 +272,12 @@
        「加入背诵」也按作品判重。搜索页六部数据齐备，主表可现算（rebuild）。 -->
   <script src="data/works-map.js"></script>
   <script src="data/works-index.js"></script>
+  <!-- 正文收归主表：同一篇作品在几部集子里各存一份正文时，用主条目（课内优先）
+       那一份 —— 学生背的是课本上那一篇，在别的集子里读到同一篇不该是另一种写法。
+       由 scripts/build-canonical-texts.js 算出，必须在 js/reader-core.js 之前加载。 -->
+  <script src="data/canonical-texts.js"></script>
+  <!-- 分组顺序总表（卷次 / 词牌 / 文体）：页面与作品主表共用同一份顺序 -->
+  <script src="data/group-order.js"></script>
   <!-- 自选集合（用户自己加背的篇目）：搜索页也能「加入背诵」 -->
   <script src="js/collections.js"></script>
   <script src="data/pinyin-table.js"></script>

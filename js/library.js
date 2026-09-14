@@ -7,7 +7,7 @@
  *   底部页签那一行每格只有两三个字，装得下「设置」，装不下
  *   「古文观止」这类书名 —— 以前只在页签上写「小古文」，
  *   于是另外三部集子（唐诗 / 宋词 / 古文观止）虽然做完了，却没有入口。
- *   现在页签写「课外」（短、且不偏向任何一部），点进来这一页把四部
+ *   现在页签写「课外」（短、且不偏向任何一部），点进来这一页把五部选集
  *   连同各自篇数一次列清，再各自进自己的索引页。
  *
  * 篇数从 data/site-index.js 实时算，不写死：
@@ -17,8 +17,16 @@
 (function () {
   "use strict";
 
-  /** 五部集子的入口说明：顺序即页面上的排布顺序（按篇幅由短到长） */
+  /** 六部集子的入口说明：顺序即页面上的排布顺序（课内在前，其余按篇幅由短到长） */
   var ENTRIES = [
+    {
+      id: "poems",
+      name: "课内诗词",
+      short: "课内",
+      page: "/",
+      unit: "首",
+      desc: "一年级至高三，按遗忘曲线安排背诵与复习"
+    },
     {
       id: "classic",
       name: "课外必背小古文",
@@ -81,6 +89,7 @@
     var direct = idx.filter(function (p) { return p.book === bookId && !p.isBook; }).length;
     // 各集子的数据在 window 上的变量名（与 data/site-index.js 的 BOOKS 一致）
     var VARS = {
+      poems: "POEMS_ALL",
       classic: "POEMS_CLASSIC",
       tangshi: "POEMS_TANGSHI",
       songci: "POEMS_SONGCI",
@@ -90,7 +99,7 @@
     var key = VARS[bookId];
     var list = key ? window[key] : null;
     if (list && list.length) return list.length;
-    // 兜底：课内诗词（poems）没有单列一部数据，仍按索引数
+    // 兜底：这一部数据没加载上时，按搜索索引里的条数给个近似值
     return direct;
   }
 

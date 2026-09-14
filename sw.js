@@ -269,9 +269,23 @@
  *        （js/app.js、js/collections.js、js/search.js、js/reader-core.js、
  *         data/pinyin-table.js、data/common-chars.js、README.md、
  *         test/collections.test.js、test/search.test.js、sw.js）
+ *   v52  正文收归主表 + 孤儿进度清理（Issue #69 收尾）：
+ *        ① 同一篇作品在几部集子里各存一份正文时，只用**主条目**那一份
+ *           （课内优先）：新增 data/canonical-texts.js（16 条正文、
+ *           57 条译文改用主条目）与 scripts/build-canonical-texts.js；
+ *           js/reader-core.js 在 mount 时按裁定表换正文 / 译文 ——
+ *           《桃花源记》《陋室铭》《凉州词》等不再出现两种写法；
+ *        ② 分组顺序收归一处：新增 data/group-order.js（页面与作品主表共用），
+ *           js/songci.js / js/zhaoming.js 把词牌表与文体表挂上 window；
+ *        ③ 课内自身重复去重后遗留的孤儿背诵进度清掉：js/storage.js 新增
+ *           pruneUnknown()，首页启动时按当前语料清一次（不猜、不合流）；
+ *        ④ 课外阅读入口页第一张卡指回课内诗词（/library/ 成完整的六部目录）
+ *        （data/canonical-texts.js、data/group-order.js、
+ *         scripts/build-canonical-texts.js、js/reader-core.js、js/storage.js、
+ *         js/app.js、js/library.js、index.html 与六个集子页的 index.html、sw.js）
  */
 
-const CACHE_NAME = "poem-app-v51";
+const CACHE_NAME = "poem-app-v52";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [
@@ -307,6 +321,10 @@ const PRECACHE = [
   // 判重「这篇是不是已经在别处背过了」，搜索去重、加自选集合、排每日任务都读它
   "./data/works-map.js",
   "./data/works-index.js",
+  // 正文收归主表（Issue #69 收尾）：同一篇作品用主条目那一份正文与译文
+  "./data/canonical-texts.js",
+  // 分组顺序总表（卷次 / 词牌 / 文体）：页面与作品主表共用
+  "./data/group-order.js",
   // 自选集合（除教材之外，用户自己加进来要背的篇目）
   "./js/collections.js",
   "./js/manifest-loader.js",

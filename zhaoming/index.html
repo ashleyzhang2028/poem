@@ -247,10 +247,35 @@
        集子页只加载自己那一部数据，所以判重走 8KB 的静态表（data/works-map.js），
        而不是现算全站索引 —— 现算要先备齐六部（约 3MB）。
        必须在 js/reader-core.js / js/<集子>.js 之前加载。 -->
+  <!-- 课内诗词一至高三：这一页读的是选本，但「正文收归主表、以课本为主」的
+       裁定要查课内那一份正文与译文（见 data/canonical-texts.js）——
+       《桃花源记》《陋室铭》这些同一篇在教材与选本里都有的，
+       在课外页读到的也该是课本上那一份。脚本很小（12 册合计约 52KB）。 -->
   <script src="data/works-map.js"></script>
   <script src="data/works-index.js"></script>
+  <!-- 正文收归主表：同一篇作品在几部集子里各存一份正文时，用主条目（课内优先）
+       那一份 —— 学生背的是课本上那一篇，在别的集子里读到同一篇不该是另一种写法。
+       由 scripts/build-canonical-texts.js 算出，必须在 js/reader-core.js 之前加载。 -->
+  <script src="data/canonical-texts.js"></script>
   <!-- 自选集合（用户自己加背的篇目）：阅读器里的「加入背诵」读它 -->
   <script src="js/collections.js"></script>
+  <!-- 课内诗词一至高三：这一页读的是选本，但「正文收归主表、以课本为主」的
+       裁定要查课内那一份正文与译文（见 data/canonical-texts.js / 作品主表）——
+       《桃花源记》《陋室铭》这些在教材与选本里都有的同一篇，
+       在课外页读到的也该是课本上那一份。12 册合计约 52KB。
+       注意 data/index.js 必须排在最后：它把 poems-1..12 汇成 window.POEMS_ALL。 -->
+  <script src="data/poems-1.js"></script>
+  <script src="data/poems-2.js"></script>
+  <script src="data/poems-3.js"></script>
+  <script src="data/poems-4.js"></script>
+  <script src="data/poems-5.js"></script>
+  <script src="data/poems-6.js"></script>
+  <script src="data/poems-7.js"></script>
+  <script src="data/poems-8.js"></script>
+  <script src="data/poems-9.js"></script>
+  <script src="data/poems-10.js"></script>
+  <script src="data/poems-11.js"></script>
+  <script src="data/poems-12.js"></script>
   <!-- 译文来源口径文案（与首页同一套 TRANSLATION_SOURCES，不能另写一份） -->
   <script src="data/index.js"></script>
   <script src="data/pinyin-table.js"></script>
@@ -262,6 +287,8 @@
   <script src="js/reader-core.js"></script>
   <script src="js/chrome.js"></script>
   <script src="js/pwa.js"></script>
+  <!-- 分组顺序总表：页面与作品主表共用同一份顺序 -->
+  <script src="data/group-order.js"></script>
   <script src="js/zhaoming.js"></script>
 </body>
 </html>

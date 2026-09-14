@@ -45,7 +45,7 @@ chk(groupNames.length >= 120 && groupNames.length <= 150,
 // 挂载脚本里的词牌顺序表必须与实际分组**完全一致**：
 // 少写一个词牌，那一组就会被引擎排到最后（而不是报错），是最容易漏的那种错
 const ssrc = fs.readFileSync(path + 'js/songci.js', 'utf8');
-const listed = JSON.parse('[' + ssrc.match(/var GROUP_ORDER = \[([\s\S]*?)\];/)[1].replace(/,\s*$/, '') + ']');
+const listed = JSON.parse('[' + ssrc.match(/var GROUP_ORDER = (?:window\.SONGCI_GROUP_ORDER = )?\[([\s\S]*?)\];/)[1].replace(/,\s*$/, '') + ']');
 chk(listed.length === groupNames.length,
   '挂载脚本的词牌顺序表条目数与实际分组一致（表 ' + listed.length + ' · 实际 ' + groupNames.length + '）');
 const notListed = groupNames.filter(g => listed.indexOf(g) < 0);

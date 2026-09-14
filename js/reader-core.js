@@ -72,6 +72,118 @@
     reciteRemove: "移出背诵"
   };
 
+  /* ---------------- 正文收归主表 ----------------
+     同一篇作品在几部集子里各存一份正文时（《桃花源记》课内八年级下 + 古文观止卷六、
+     《登高》课内高一上 + 唐诗卷五……），正文只该有一份，取**主条目**那一份 ——
+     主条目 = 课内条目（教材口径优先）。裁定表在 data/canonical-texts.js，
+     由 scripts/build-canonical-texts.js 算出，与 data/works-map.js 同一套口径。
+
+     这一层不改任何一部集子的数据文件：数据照旧各存各的（离线可用、单页只加载自己那一部），
+     显示时才替成主条目那一份。于是「学生背的是课本上那一篇」这件事，
+     在唐诗页、宋词页、古文观止页里同样成立。
+
+     正文与译文**各自判、各自换**：断行 / 标点不同的（41 条）只有译文要换，
+     真正字词有出入的（16 条，如《陋室铭》的引号，《凉州词》的「？」「。」）
+     正文才换 —— 选本里那点异文留给校勘，不给学生读两种写法。
+     课内条目自己就是主条目，不在表里，读出来仍是它本来的正文。 */
+  var canonicalById = null;
+
+  function canonicalMap() {
+    if (canonicalById) return canonicalById;
+    var list = (typeof window !== "undefined" && window.CANONICAL_TEXTS) || [];
+    // ⚠️ 只有**真的拿到表**才缓存 —— 表还没加载进来时缓存一份空表，
+    //    之后整页都会「查不到规则」，而现象只是「正文没换」，不报错。
+    if (!list.length) return {};
+    canonicalById = {};
+    list.forEach(function (r) { if (r && r.id) canonicalById[r.id] = r; });
+    return canonicalById;
+  }
+
+  /**
+   * 这一篇的裁定记录。
+   *
+   * ⚠️ 两种键都要认，因为同一个条目在两类页面里的 id 不一样：
+   *   · 集子页里是**集子内 id**（`gw-60`）—— 那一页只加载自己那一部；
+   *   · 首页 / 搜索页里是**站点索引 id**（`classic-gw-60`，带集子前缀）。
+   * 裁定表按站点索引口径生成（与 data/works-map.js 一致），
+   * 所以要再按「所属集子 + 集子内 id」拼一次前缀来找。
+   */
+  function canonicalRuleFor(p, bookId) {
+    var map = canonicalMap();
+    var hit = map[p.id];
+    if (hit) return hit;
+    // 集子页里的 id 没有前缀（`ts-231`），裁定表按站点索引口径记的是
+    // `tangshi-ts-231` —— 补上前缀再查一次。
+    // ⚠️ 归属要**由调用方传进来**，不能读 CFG：mount 建会话对象时就要求这个值，
+    //    而那一刻 liveTo(session) 还没跑，CFG 还是 null（曾因此整张表都对不上）。
+    var book = bookId || (CFG && CFG.id) || "";
+    if (book) {
+      hit = map[book + "-" + p.id];
+      if (hit) return hit;
+    }
+    return null;
+  }
+
+  /** 本项目里这一篇**用哪条作品的正文**（没有登记就是它自己） */
+  function canonicalOf(p, bookId) {
+    if (!p || !p.id) return p;
+    var rule = canonicalRuleFor(p, bookId);
+    var book = bookId || (CFG && CFG.id) || "";
+    if (!rule || !rule.of || rule.of === p.id || rule.of === book + "-" + p.id) return p;
+    var byIdx = (typeof window !== "undefined" && window.SITE_INDEX) || null;
+    // ⚠️ 变量名不叫 src —— 这个函数上面的作用域里 `$` / `$$` 一族用的是 root / box，
+    //    而外层的模块级变量里有一个 `src`（mount 的返回值那个名字在别处），
+    //    同名会**遮蔽**外层，取到的就不是主条目那一份了（曾因此正文换了、译文没换）。
+    var fromEntry = null;
+    // 主条目一律是**课内条目**（裁定表生成时已按这个口径筛过），
+    // 而课内条目的 id 只在首页那一套里不带前缀（`cz8-02`），
+    // 在站点索引里是 `poems-cz8-02` —— 两种写法都要认。
+    var keys = [rule.ofEntry, rule.of, "poems-" + rule.of];
+    if (byIdx) {
+      for (var k = 0; k < keys.length && !fromEntry; k++) {
+        for (var i = 0; i < byIdx.length; i++) {
+          if (byIdx[i].id === keys[k]) { fromEntry = byIdx[i]; break; }
+        }
+      }
+    }
+    // 集子页（除首页 / 搜索页）**只加载自己那一部**，没有那张全站索引，
+    // 但主条目一律是课内条目、课内那 261 首就在 window.POEMS_ALL 里 ——
+    // 直接读它，课外各页的裁定才成立（否则「以课本为主」只在首页与搜索页生效）。
+    if (!fromEntry && typeof window !== "undefined") {
+      var course = window.POEMS_ALL || [];
+      for (var c = 0; c < course.length && !fromEntry; c++) {
+        if (course[c].id === rule.of || course[c].id === rule.ofEntry ||
+            ("poems-" + course[c].id) === rule.ofEntry) fromEntry = course[c];
+      }
+    }
+    if (!fromEntry) {
+      // 最后一道兜底：本挂载点若正好就是主条目所在那一部（首页读课内时），
+      // 它的篇目里就有那一份。找不到就**照原样显示，不猜** ——
+      // 「以课本为主」宁可这一次没生效，也不能拿别篇的正文顶上。
+      // （早期这里还有一支「按集子名撞一个」的兜底，那是错的：它会挑中
+      //   同一部里**不相干的那一条**，正文换了、译文没换，正是最难发现的那种错。）
+      var hits = items.filter(function (x) { return x.id === rule.of; });
+      fromEntry = hits.length ? hits[0] : null;
+    }
+    if (!fromEntry) return p;
+    return {
+      id: p.id,
+      title: p.title,
+      author: p.author || "",
+      authorName: p.authorName || "",
+      dynasty: p.dynasty || "",
+      source: p.source || "",
+      selection: p.selection || "",
+      excerpt: p.excerpt,
+      grade: p.grade,
+      term: p.term,
+      gradeGroup: p.gradeGroup || "",
+      translationSource: p.translationSource,
+      text: rule.text === true ? (fromEntry.text || "") : (p.text || ""),
+      translation: rule.translation === true ? (fromEntry.translation || "") : (p.translation || "")
+    };
+  }
+
   /* 全站共用的阅读偏好（不按集子分家）：在唐诗里调过字号，宋词不该又变回去 */
   var FONT_KEY = "poem_classic_font_v1";
   /* 连读偏好的存储键与出厂档：与字号 / 对齐一样是**全站一份** ——
@@ -735,6 +847,12 @@
   }
 
   function openReader(p) {
+    // ⚠️ 一律走 itemsById 取「本挂载点里那一份」：传进来的可能是**原始数据对象**
+    //    （列表点击传的是重绘时用的 items 元素，那一份已经过主表裁定；
+    //     但外部调用 api.open('ts-231') 传的是调用方自己手里的对象），
+    //    直接用它就绕过了「正文收归主表」的裁定 —— 正文换了、译文没换的
+    //    那种半半拉拉的现象就是这么来的。取不到才退回传进来的那一个。
+    if (p && p.id && itemsById[p.id]) p = itemsById[p.id];
     current = p;
     var idx = idIndex(p);
     var el = rd("reader");
@@ -1824,7 +1942,12 @@
       box: (cfg.reader ? (typeof cfg.reader === "string" ? document.querySelector(cfg.reader) : cfg.reader) : null) || document.querySelector("[data-gw-reader]"),
       cfg: cfg,
       words: Object.assign({}, DEFAULT_WORDS, cfg.words || {}),
-      items: cfg.items.slice(),
+      // 每一篇都先过一遍主表裁定：正文与译文取主条目那一份
+      // （见上方「正文收归主表」）。判重、排程、搜索用的仍是各自的条目 id。
+      // src 留着这一部**自己的原稿**：裁定表是覆盖式的，重判必须从原稿起
+      // （否则第二次判的就是上一次的结果，规则永远不再生效）。
+      src: cfg.items.slice(),
+      items: cfg.items.map(function (p) { return canonicalOf(p, cfg.id); }),
       byId: {},
       current: null,
       keyword: "",
@@ -1856,6 +1979,45 @@
       align: function () { return alignMode(); },
       setAlign: function (m) { return withSession(session, function () { return setAlign(m); }); },
       setKeyword: function (kw) { withSession(session, function () { keyword = String(kw == null ? "" : kw); renderList(); }); },
+      /**
+       * 按主表裁定重算一次正文 / 译文。
+       *
+       * 为什么需要它：裁定表只登记「用哪一条的正文」，真正那一份要从站点索引里取；
+       * 而索引是各页自己决定的（集子页只加载自己那一部）。若一类页面先挂载、
+       * 之后索引才齐备，挂载那一刻取到的就不是主条目那一份。
+       * 重算用的是**同一条规则**，永远不猜、不拼。
+       */
+      refreshCanonical: function () {
+        return withSession(session, function () {
+          // ⚠️ 这里要拿 **config 里那份原稿** 重判，不能拿 session.items ——
+          //    「用主条目那一份」是个**覆盖**动作：第一次判过之后
+          //    items 里已经是主条目的正文了，再判一次只会判它自己
+          //    （of === id，规则不生效），于是索引后到的页面永远换不过来。
+          //    session.src 是 mount 时留下的那份「这一部自己的语料」，只读、不改。
+          var source = session.src || session.items;
+          var book = session.cfg && session.cfg.id;
+          var arr = source.map(function (p) { return canonicalOf(p, book); });
+          session.items = arr;
+          session.byId = {};
+          arr.forEach(function (p) { session.byId[p.id] = p; });
+          items = arr;
+          itemsById = session.byId;
+          if (current) {
+            var now = itemsById[current.id];
+            if (now) current = now;
+          }
+          var box = rd("reader");
+          if (current && box && !box.hidden) {
+            // 阅读器正开着：正文与译文就地更新一次
+            renderReaderText();
+            var tt = box.querySelector(".rd-trans-text, #rd-trans-text");
+            if (tt) tt.textContent = current.translation || W.pendingTranslation;
+          }
+          renderList();
+          syncCount();
+          return arr.length;
+        });
+      },
       /**
        * 换掉这一份挂载点所辖的篇目（搜索页的「只看某一部」用它）。
        *
@@ -1947,6 +2109,9 @@
     if (window.ReciteCollections && window.ReciteCollections.refreshSnapshots) {
       window.ReciteCollections.refreshSnapshots(window.SITE_INDEX || []);
     }
+    // 主表裁定的正文（data/canonical-texts.js 要查站点索引）在这一刻可能才齐备：
+    // 让 api 自己按同一条规则重判一次，免得这一页显示的还是旧的一份正文。
+    if (session.api && session.api.refreshCanonical) session.api.refreshCanonical();
   }
 
 /* ---------------- 自选集合：把这一篇「加入背诵」 ----------------
