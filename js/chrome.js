@@ -171,6 +171,7 @@
     if (/^\/guwen\/?$/.test(p) || /^\/guwen\/index\.html$/.test(p)) return "guwen";
     if (/^\/zhaoming\/?$/.test(p) || /^\/zhaoming\/index\.html$/.test(p)) return "zhaoming";
     if (/^\/settings\/?$/.test(p) || /^\/settings\/index\.html$/.test(p)) return "settings";
+    if (/^\/progress\/?$/.test(p) || /^\/progress\/index\.html$/.test(p)) return "progress";
     return "home";
   }
 
@@ -320,6 +321,9 @@
   function dockKey(key) {
     if (key === "classic" || key === "tangshi" || key === "songci" || key === "guwen" ||
         key === "zhaoming") return "library";
+    // 背诵进度页（/progress/）算「背诵」这一格：它讲的就是课内背诵那本账
+    // （到期日历 / 掌握度），不是独立的一站，也只是从设置页进得去的小页。
+    if (key === "progress") return "home";
     return key;
   }
 

@@ -354,6 +354,149 @@ setTimeout(() => {
     chk(!/function planCacheKey\([\s\S]{0,400}?settings\.dailyCount\s*\)\s*;/.test(appSrc),
       '缓存键不再只由「日期 / 年级 / 学期 / 范围 / 数量」决定（少了集合这一维就会拿到旧计划）');
 
+    /* ---------- 六、排序 / 整组移出 / 导入导出（Issue #69 后续） ---------- */
+    // 顺序：集合的顺序就是数组顺序，用户自己排。上移 / 下移就地换两位。
+    const C3 = w0.ReciteCollections;
+    C3.list().slice().forEach(c => C3.remove(c.id));      // 清台
+    const cc = C3.create('排序测试');
+    ['tangshi-ts-1', 'tangshi-ts-2', 'tangshi-ts-3'].forEach(id => C3.add(id, cc.id));
+    const idsOf = () => C3.get(cc.id).items.map(it => typeof it === 'string' ? it : it.id);
+    chk(idsOf().join(',') === 'tangshi-ts-1,tangshi-ts-2,tangshi-ts-3',
+      '新加入的排在末尾（顺序=数组顺序）');
+    chk(C3.moveUp(cc.id, 2) === true && idsOf().join(',') === 'tangshi-ts-1,tangshi-ts-3,tangshi-ts-2',
+      '下一条上移一位，其余顺次让位');
+    chk(C3.moveDown(cc.id, 0) === true && idsOf().join(',') === 'tangshi-ts-3,tangshi-ts-1,tangshi-ts-2',
+      '首条下移一位');
+    chk(C3.moveItem(cc.id, 2, 0) === true && idsOf().join(',') === 'tangshi-ts-2,tangshi-ts-3,tangshi-ts-1',
+      'moveItem 可以把一项挪到任意位置');
+    chk(C3.moveUp(cc.id, 0) === false && C3.moveDown(cc.id, 2) === false,
+      '已经在队首 / 队尾时上下移返回 false（调用方照此禁用按钮）');
+    chk(C3.moveItem(cc.id, 9, 0) === false && idsOf().length === 3,
+      '越界的位置原样返回，不会动到清单');
+
+    // 整组移出：按「集子 + 卷次/词牌/文体」成组，一次拿掉一组
+    C3.list().slice().forEach(c => C3.remove(c.id));
+    const cg = C3.create('整组测试');
+    ['tangshi-ts-1', 'tangshi-ts-2', 'songci-sc-1', 'guwen-gwj-1'].forEach(id => C3.add(id, cg.id));
+    const groupOf = id => {
+      const p = (w0.SITE_INDEX || []).filter(x => x.id === id)[0];
+      return p ? (p.bookName || '') + ' · ' + (p.gradeGroup || '') : '未分组';
+    };
+    const tangshiGroup = groupOf('tangshi-ts-1');
+    const n = C3.removeGroup(cg.id, tangshiGroup, groupOf);
+    chk(n === 2, '整组移出移掉了这一组的 2 篇唐诗（实际 ' + n + '）');
+    chk(C3.get(cg.id).items.length === 2 &&
+      C3.get(cg.id).items.every(it => groupOf(it.id) !== tangshiGroup),
+      '整组移出后，这一组一篇不剩，其他组原样保留');
+    chk(C3.removeGroup(cg.id, '不存在的组', groupOf) === 0,
+      '整组移出时组名对不上就一篇不动（不会误伤）');
+    // 索引里查不到的条目（首页只有快照）→ 算「未分组」，也能整组移出
+    C3.list().slice().forEach(c => C3.remove(c.id));
+    const cu = C3.create('未分组');
+    C3.add('tangshi-ts-1', cu.id);
+    chk(C3.removeGroup(cu.id, '未分组', () => '未分组') === 1,
+      '索引里查不到的条目算「未分组」，同样可整组移出');
+
+    /* ---- 导入 / 导出：一整个集合就是一串条目 id ---- */
+    C3.list().slice().forEach(c => C3.remove(c.id));
+    const ce = C3.create('给奶奶的清单');
+    ['tangshi-ts-1', 'songci-sc-1'].forEach(id => C3.add(id, ce.id));
+    const labels = {};
+    C3.get(ce.id).items.forEach(it => {
+      const p = (w0.SITE_INDEX || []).filter(x => x.id === it.id)[0] || {};
+      labels[it.id] = (p.title || it.id);
+    });
+    const text = C3.exportText(ce.id, labels);
+    chk(text.indexOf('tangshi-ts-1') >= 0 && text.indexOf('songci-sc-1') >= 0,
+      '导出文本里有全部条目 id');
+    chk(text.split('\n').filter(l => l.charAt(0) === '#').length >= 3,
+      '导出文本带说明行（集合名 / 用法 / 每篇的篇名），对方看得懂');
+    chk(text.indexOf('❌') === -1 && /# 跬步 · 自选集合：给奶奶的清单（2 篇）/.test(text),
+      '导出文本第一行写明集合名与篇数');
+
+    // 导入：注释行跳过、空行跳过、重复的只算一次、认不出的如实报数
+    const messy = [
+      '# 跬步 · 自选集合：别人的清单（3 篇）',
+      '',
+      'tangshi-ts-1',
+      '  ',
+      '# 感遇·其一',
+      'tangshi-ts-1      # 重复的一条',
+      'songci-sc-1',
+      'not-a-real-id',
+      'guwen-gwj-1'
+    ].join('\n');
+    const before0 = C3.list().length;
+    const res = C3.importText(messy, '别人的清单', w0.SITE_INDEX || []);
+    chk(C3.list().length === before0 + 1, '导入总是新建一个集合（不往已有集合里塞）');
+    chk(res.collection.name === '别人的清单', '导入的集合名沿用清单里的名字');
+    chk(res.added === 3, '导入收进 3 篇（注释 / 空行 / 重复 / 无效行都不算）实际 ' + res.added);
+    chk(res.dropped === 1, '认不出的那条如实报数（dropped=1，实际 ' + res.dropped + '）');
+    chk(res.collection.items.every(it => it.snap && it.snap.title),
+      '导入时顺手给每一篇存了快照（首页不加载那几部集子，靠它显示）');
+
+    // 没有站点索引时（首页之外拿不到全站 id 清单）照收，不做存在性校验
+    const res2 = C3.importText('tangshi-ts-1\nfoo-bar', '裸清单', []);
+    chk(res2.added === 2 && res2.dropped === 0,
+      '没有站点索引时按原样收（不因查不到就丢掉用户贴的东西）');
+
+    // 裸清单（一行一个 id，没有任何注释）也要认
+    const res3 = C3.importText('tangshi-ts-1\nsongci-sc-1', '裸清单2', w0.SITE_INDEX || []);
+    chk(res3.added === 2, '只贴一串 id 的裸清单同样能导入');
+
+    // 导入之后排程照样认得它（快照 / 索引都能取到正文）
+    const imported = C3.scheduleItems(w0.SITE_INDEX);
+    chk(imported.every(p => p.title && p.text),
+      '导入进来的篇目照样带题名与正文（能排进今日任务）');
+
+    // 页面上的键真的存在：导入键 + 每集合的导出键 + 移动键 + 整组移出键
+    const homeSrc = fs.readFileSync(path + 'index.html', 'utf8');
+    chk(/id="btn-collections-import"/.test(homeSrc),
+      '首页有「导入清单」键（id=btn-collections-import）');
+    chk(/id="text-dialog"/.test(homeSrc) && /id="text-dialog-text"/.test(homeSrc),
+      '首页有导入 / 导出用的纯文本对话框');
+    const appSrc2 = fs.readFileSync(path + 'js/app.js', 'utf8');
+    chk(/data-export=/.test(appSrc2), '每个集合头上有「导出」键（data-export）');
+    chk(/data-up=|data-down=/.test(appSrc2), '每个条目有上移 / 下移键');
+    chk(/data-group=/.test(appSrc2) && /removeGroup\(/.test(appSrc2),
+      '分组行上有「整组移出」键，并且真的调用 removeGroup');
+    chk(/function exportCollection\(/.test(appSrc2) && /function importCollection\(/.test(appSrc2),
+      'js/app.js 里有导入 / 导出的入口函数');
+
+    /* ---------- 七、显示名去掉「其一 / 其二」（Issue #69 后续） ---------- */
+    // 用户原话：「去掉自选集合中其一其二这些你不清楚的」。
+    // 那个编号是整理宋词时按目录次序补的序号（同一作者同一词牌好几首，
+    // 清单里没有首句可以分辨），不是选本原名，对用户没有意义。
+    // 只去**显示**：集合里存的仍是完整 id，两条仍分得清。
+    chk(typeof C3.displayTitle === 'function', 'js/collections.js 暴露 displayTitle()');
+    chk(C3.displayTitle('感遇·其一') === '感遇', '「感遇·其一」显示为「感遇」');
+    chk(C3.displayTitle('木兰花·其三') === '木兰花', '「木兰花·其三」显示为「木兰花」');
+    chk(C3.displayTitle('四时田园杂兴（其二）') === '四时田园杂兴',
+      '括号形态的「（其二）」同样去掉');
+    chk(C3.displayTitle('江城子·乙卯正月二十日夜记梦') === '江城子·乙卯正月二十日夜记梦',
+      '副题里出现别的字（乙卯正月二十日）不会被误伤');
+    chk(C3.displayTitle('夜思') === '夜思' && C3.displayTitle('') === '',
+      '没有编号的篇名原样返回，空值不抛错');
+    // 显示的篇名去编号之后，「同作者同词牌好几首」在列表上就是同名 ——
+    // 这正是用户要的（他明说了这些编号他分不清，不必端给他）。
+    // 但**集合里仍然两条**，条数一篇不少。
+    C3.list().slice().forEach(c => C3.remove(c.id));
+    const cd = C3.create('同名测试');
+    C3.add('tangshi-ts-1', cd.id);
+    C3.add('tangshi-ts-2', cd.id);
+    const dTitles = C3.get(cd.id).items.map(it => C3.displayTitle(
+      ((w0.SITE_INDEX || []).filter(x => x.id === it.id)[0] || {}).title || ''));
+    chk(dTitles.length === 2, '两条同名篇目仍各占一条（去的是显示上的编号，不是条目）');
+    chk(dTitles[0] === dTitles[1],
+      '去编号后两条显示同名（用户看不清的编号不再出现在界面上）');
+    const appSrc3 = fs.readFileSync(path + 'js/app.js', 'utf8');
+    chk(/function showTitle\(/.test(appSrc3) &&
+      (appSrc3.match(/showTitle\(/g) || []).length >= 5,
+      'js/app.js 里自选列表 / 今日任务 / 弹层标题 / 朗读都用显示名（用到 ' +
+      (appSrc3.match(/showTitle\(/g) || []).length + ' 处）');
+    chk(/p\.custom \? showTitle\(p\.title\) : p\.title/.test(appSrc3),
+      '课内篇目不走去编号（那里的「其一」是教材原名，一个字不能动）');
+
     console.log('\n' + (fails ? '❌ ' + fails + ' 项失败' : '🎉 自选集合测试全部通过'));
     process.exit(fails ? 1 : 0);
   }, 60);

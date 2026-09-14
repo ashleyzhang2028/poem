@@ -1,0 +1,352 @@
+/**
+ * 背诵进度总览（/progress/）测试
+ *
+ * 需求（Issue #69 后续，用户原话）：
+ *   「背诵进度可视化（到期日历 / 掌握度分布 —— 现在只看得到「第几轮」，
+ *     看不到「下次何时到期」）」
+ *
+ * 原先「第几轮 / 掌握度 / 下次复习」只在**单篇**的详情弹层里看得到。
+ * 这一层验四件事：
+ *   1. Scheduler.overview() / daysUntilDue() 的聚合口径
+ *      —— 到期归档、逾期合并、掌握度分档、归一化用的 maxDay；
+ *   2. 页面真的把两类图渲染出来了（日历 14 格 / 掌握度 5 档 / 阶段 10 档）；
+ *   3. 这一页**只读**：进页面不改任何一篇的进度、不写已读、不重排今日任务；
+ *   4. 入口接上了：设置页有进这一页的链接、页签「背诵」在进度页保持选中。
+ */
+const { JSDOM } = require('jsdom');
+const fs = require('fs');
+const vm = require('vm');
+const path = __dirname + '/../';
+
+let fails = 0;
+const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else console.log('✓ ' + m); };
+
+const APP_JSON = 'data/poems-1.js,data/poems-2.js,data/poems-3.js,data/poems-4.js,data/poems-5.js,' +
+  'data/poems-6.js,data/poems-7.js,data/poems-8.js,data/poems-9.js,data/poems-10.js,data/poems-11.js,' +
+  'data/poems-12.js,data/index.js';
+
+/* ================= 一、聚合口径（纯 vm，无 DOM） ================= */
+const sb = { window: {}, console };
+sb.window = sb;
+vm.createContext(sb);
+APP_JSON.split(',').concat(['js/scheduler.js']).forEach(f =>
+  vm.runInContext(fs.readFileSync(path + f, 'utf8'), sb, { filename: f }));
+const S = sb.Scheduler;
+
+chk(typeof S.overview === 'function', 'Scheduler 暴露 overview()');
+chk(typeof S.daysUntilDue === 'function', 'Scheduler 暴露 daysUntilDue()');
+
+const DAY = 86400000;
+const today0 = S.startOfDay(Date.now());
+const recs = {
+  // 逾期 3 天 → 并进「今天」这一格
+  overdue3: { level: 0, learned: true, nextReviewAt: today0 - 3 * DAY, lapses: 0, reviewCount: 1 },
+  // 逾期 9 天 → 单列「逾期 7 天以上」，不进日历
+  overdue9: { level: 1, learned: true, nextReviewAt: today0 - 9 * DAY, lapses: 0, reviewCount: 1 },
+  // 今天到期
+  due0: { level: 2, learned: true, nextReviewAt: today0 + 3600000, lapses: 0, reviewCount: 2 },
+  // 第 3 天到期（日历上 offset=3）
+  due3: { level: 3, learned: true, nextReviewAt: today0 + 3 * DAY, lapses: 0, reviewCount: 3 },
+  // 第 20 天到期 → 超出 14 天窗口，日历上不出现，但也没逾期
+  due20: { level: 4, learned: true, nextReviewAt: today0 + 20 * DAY, lapses: 0, reviewCount: 4 }
+};
+const pool = ['overdue3', 'overdue9', 'due0', 'due3', 'due20', 'never'].map(id => ({ id: id, title: id }));
+const o = S.overview(pool, id => recs[id] || null, { days: 14 });
+
+chk(o.total === 6 && o.learned === 5 && o.unlearned === 1,
+  '总览账目：6 首里已学 5 首、未学过 1 首（实际 ' + o.learned + '/' + o.unlearned + '）');
+chk(o.calendar.length === 14, '日历 14 格（含今天）');
+chk(o.calendar[0].count === 2, '「今天」这一格 = 今天到期的 1 首 + 逾期 3 天那 1 首（实际 ' + o.calendar[0].count + '）');
+chk(o.calendar[3].count === 1, '第 3 天那一格有 1 首（实际 ' + o.calendar[3].count + '）');
+chk(o.calendar.reduce((a, d) => a + d.count, 0) === 3,
+  '超出 14 天窗口的（第 20 天）不进日历，未来更远的不占格');
+chk(o.overdue === 1, '逾期 7 天以上的单列一条（实际 ' + o.overdue + '）');
+chk(o.calendar[0].count + o.overdue === o.dueToday,
+  'dueToday = 今天这一格 + 逾期七天以上（不会漏掉也不会重复算）');
+chk(o.maxDay === 2, 'maxDay 取最忙的那一天（画竖条要用它归一，实际 ' + o.maxDay + '）');
+
+// 逾期必须并进「今天」那一格，不能画成负数日期
+chk(o.calendar.every(d => d.offset >= 0), '日历的格一律是非负偏移（逾期不画成负日期）');
+chk(o.calendar[0].due === true, '今天这一格标了 due（页面上要把「今天」描一道边）');
+
+// 掌握度分档：五档，各档之和 = 已学数
+const sumBuckets = o.masteryBuckets.reduce((a, b) => a + b, 0);
+chk(o.masteryBuckets.length === 5, '掌握度分五档（0-19 / 20-39 / 40-59 / 60-79 / 80-100）');
+chk(sumBuckets === o.learned, '五档之和 = 已学数（实际 ' + sumBuckets + ' / ' + o.learned + '）');
+chk(o.avgMastery >= 0 && o.avgMastery <= 100, '平均掌握度在 0-100 之间（实际 ' + o.avgMastery + '）');
+
+// 记忆阶段：十档，与 INTERVALS 同长，名字来自 levelName
+chk(o.levelCounts.length === S.INTERVALS.length, '记忆阶段十档（与复习间隔同长）');
+chk(o.levelCounts[0].name === '新学' &&
+  o.levelCounts[o.levelCounts.length - 1].name === '已牢固',
+  '阶段名沿用 levelName()（首档「新学」、末档「已牢固」）');
+chk(o.levelCounts.reduce((a, l) => a + l.count, 0) === o.learned,
+  '各阶段之和 = 已学数');
+
+// daysUntilDue：「下次何时到期」这个数
+chk(S.daysUntilDue(recs.due3) === 3, '「还有几天到期」算得准（第 3 天 → 3）');
+chk(S.daysUntilDue(recs.overdue3) === -3, '已逾期的返回负数（页面据此显示「已到期」）');
+chk(S.daysUntilDue(null) === null, '没学过（无档案）返回 null，不冒充 0');
+chk(S.daysUntilDue({ learned: false }) === null, '没学过（learned=false）也返回 null');
+
+// 没学过任何一篇时：不抛错、账目全 0
+const empty = S.overview(pool, () => null, { days: 14 });
+chk(empty.learned === 0 && empty.dueToday === 0 && empty.avgMastery === 0 &&
+  empty.maxDay === 0 && empty.calendar.every(d => d.count === 0),
+  '一篇都没学过时不抛错，账目全 0（页面显示「还没有学习记录」）');
+chk(empty.unlearned === 6, '一篇都没学过时「尚未学过」= 全部');
+chk(S.overview([], () => null).calendar.length === 14,
+  '空候选池也照样给出 14 格日历（不至于让页面白屏）');
+
+/* ================= 二、页面层：真的把两类图渲染出来 ================= */
+/**
+ * ⚠️ 页面层的加载方式（这里踩过一次坑，写下来免得后来人再撞）：
+ *   jsdom 打开一个带 `<script src="...">` 的页面时，**默认不取这些外部脚本**
+ *   （URL 是假的），于是 `window.POEMS_ALL` 始终是 undefined，
+ *   测试看起来「页面里什么都没有」。
+ *   所以这里传一个 ResourceLoader：把 `https://local.test/xxx` 映射到仓库
+ *   真实文件，让 jsdom 像浏览器那样按 `<script src>` 顺序加载。
+ *   —— 这也顺带把「页面自己写的 script 顺序对不对」一并验了：顺序错了
+ *   （例如 scheduler 排在 data/index.js 之前）这一层就会拿到 undefined 而红。
+ */
+const html = fs.readFileSync(path + 'progress/index.html', 'utf8');
+const order = html.match(/<script src="([^"]+)"><\/script>/g).map(s => s.match(/src="([^"]+)"/)[1]);
+chk(order.indexOf('data/index.js') < order.indexOf('js/scheduler.js'),
+  '脚本顺序：data/index.js 先于 scheduler（排程要读 POEMS_ALL）');
+chk(order.indexOf('js/scheduler.js') < order.indexOf('js/progress.js'),
+  '脚本顺序：scheduler 先于 progress（页面要用 overview）');
+
+/**
+ * 取脚本的自定义 resource loader：`https://local.test/xxx` → 仓库里的真实文件。
+ *
+ * 为什么要费这道手续（踩过的坑）：jsdom 对 `resources` 有**两道**检查，
+ * 缺一就抛「resources must be an instance of ResourceLoader」——
+ *   1) `constructor.name === "ResourceLoader"`；
+ *   2) `resources instanceof ResourceLoader`（那是内部类，不从包根导出）。
+ * 第 2 条用运行时反查绕开：`resources: "usable"` 会给一个**真实的**
+ * ResourceLoader 实例，取其原型挂到我们这类前面即可（instanceof 只认原型链）。
+ * 不必真的 `extends` —— jsdom 的 ResourceLoader 构造函数本就是空壳。
+ */
+class RepoLoader {
+  constructor() {
+    // ⚠️ 必须自己设 _userAgent / _strictSSL / _proxy：它们是 jsdom 内部
+    //    ResourceLoader 的私有字段，而 `resources` **不传**时 jsdom 会
+    //    `new ResourceLoader()`（空参）—— 那时 userAgent 变成 undefined，
+    //    请求头里就是 "User-Agent: undefined"，node 直接抛
+    //    ERR_HTTP_INVALID_HEADER_VALUE。少一个字段就炸在这一步。
+    this._userAgent = 'jsdom-test';
+    this._strictSSL = true;
+    this._proxy = undefined;
+  }
+  fetch(url) {
+    const file = require('path').join(path, decodeURIComponent(new URL(url).pathname));
+    if (fs.existsSync(file)) return Promise.resolve(fs.readFileSync(file));
+    return Promise.reject(new Error('not found: ' + url));
+  }
+}
+const _probeDom = new JSDOM('', { resources: 'usable' });
+const _realProto = Object.getPrototypeOf(_probeDom.window._resourceLoader || {});
+void _probeDom;
+if (_realProto && _realProto.fetch) Object.setPrototypeOf(RepoLoader.prototype, _realProto);
+Object.defineProperty(RepoLoader, 'name', { value: 'ResourceLoader' });
+
+const DAY2 = 86400000;
+
+/** 起一个页面，带上指定的进度 */
+function openPage(progress) {
+  const d = new JSDOM(html, {
+    runScripts: 'dangerously', resources: new RepoLoader(), url: 'https://local.test/progress/'
+  });
+  if (progress) d.window.localStorage.setItem('poem_recite_progress_v1', JSON.stringify(progress));
+  return d;
+}
+
+// 第一趟：只为拿 POEMS_ALL（要它才知道篇目 id）
+const probe = openPage();
+
+setTimeout(() => {
+  const all = probe.window.POEMS_ALL;
+  chk(all && all.length === 261, '课内 261 首批入（实际 ' + (all ? all.length : 'undefined') + '）');
+
+  // 造一份真进度：逾期 2 天 1 首、3 天后到期 1 首、已牢固 1 首
+  const progress = {};
+  progress[all[0].id] = { level: 0, learned: true, nextReviewAt: Date.now() - 2 * DAY2,
+    lapses: 0, reviewCount: 1, lastReviewAt: Date.now() - 2 * DAY2, history: [] };
+  progress[all[1].id] = { level: 3, learned: true, nextReviewAt: Date.now() + 3 * DAY2,
+    lapses: 0, reviewCount: 3, lastReviewAt: Date.now(), history: [] };
+  progress[all[2].id] = { level: 9, learned: true, nextReviewAt: Date.now() + 200 * DAY2,
+    lapses: 0, reviewCount: 9, lastReviewAt: Date.now(), history: [] };
+
+  const dom = openPage(progress);
+  const w2 = dom.window;
+  w2.scrollTo = function () {};
+
+  setTimeout(() => {
+    const d = w2.document;
+    const cells = d.querySelectorAll('#progress-calendar .cal-cell');
+    chk(cells.length === 14, '日历画了 14 格（实际 ' + cells.length + '）');
+    chk(cells[0].textContent.indexOf('今天') >= 0, '第一格写「今天」');
+    chk(Number(cells[0].querySelector('.cal-count').textContent) >= 1,
+      '今天这一格显示到期的篇数（逾期 2 天那首并进今天）');
+    const barH = cells[0].querySelector('.cal-bar i').style.height;
+    chk(barH && parseInt(barH, 10) > 0, '今天这一格的竖条画出来了（高度 ' + barH + '）');
+    chk(d.querySelectorAll('#progress-calendar .cal-cell.today').length === 1,
+      '「今天」这一格被单独标出来');
+    chk(cells[3].querySelector('.cal-count').textContent === '1',
+      '第 3 天那一格显示 1 首（3 天后到期那首）');
+    chk(cells[1].querySelector('.cal-count').textContent === '',
+      '没到期的那几天不显数字（空着才是「这天没事」）');
+
+    const mRows = d.querySelectorAll('#progress-mastery .bar-row');
+    chk(mRows.length === 5, '掌握度分布画了 5 档（实际 ' + mRows.length + '）');
+    // 第 0 阶（新学）那首掌握度是 5% → 落在第一档
+    chk(mRows[0].querySelector('.bar-count').textContent === '1',
+      '掌握度第一档（0-19%）显示 1 篇');
+    const lRows = d.querySelectorAll('#progress-levels .bar-row');
+    chk(lRows.length === 10, '记忆阶段画了 10 档（实际 ' + lRows.length + '）');
+    chk(lRows[lRows.length - 1].querySelector('.bar-count').textContent === '1',
+      '「已牢固」那一档显示 1 篇（第 9 阶那首）');
+
+    const stats = d.querySelectorAll('#progress-stats .stat');
+    chk(stats.length === 4, '总览四格（已学 / 待复习 / 平均掌握 / 尚未学过）');
+    chk(d.querySelector('#progress-stats').textContent.indexOf('已学') >= 0,
+      '四格里第一格是「已学」');
+    chk(d.querySelector('#progress-stats').textContent.indexOf('258') >= 0,
+      '「尚未学过」= 261 - 3 = 258（实际那一格：' +
+      d.querySelectorAll('#progress-stats .stat')[3].textContent + '）');
+
+    /* ---- 这一页只读：不许动进度 ---- */
+    chk(w2.localStorage.getItem('poem_recite_progress_v1') === JSON.stringify(progress),
+      '进这一页**一个字节都没改进度**（这是「看进度」的地方，不是改的地方）');
+    chk(w2.localStorage.getItem('poem_classic_read_v1') === null,
+      '不写任何一部的「已读」标记');
+    chk(w2.sessionStorage.length === 0,
+      '不排今日任务、不写计划缓存（sessionStorage 空）');
+
+    /* ---- 一篇都没学过时：给一句解释，不是白屏 ---- */
+    const blank = openPage(null);
+    blank.window.scrollTo = function () {};
+    setTimeout(() => {
+      const db = blank.window.document;
+      chk(db.querySelectorAll('#progress-calendar .cal-cell').length === 14,
+        '一篇都没学过时日历照样画出来（不是白屏）');
+      chk((db.querySelector('#progress-tip') || {}).textContent.indexOf('还没有学习记录') >= 0,
+        '一篇都没学过时给一句「还没有学习记录」的说明');
+      chk(db.querySelectorAll('#progress-levels .bar-row').length === 10,
+        '一篇都没学过时阶段分布也画全 10 档（全 0，图形不塌）');
+
+      /* ---- 入口：设置页进得来、页签「背诵」保持选中 ---- */
+      const settingsHtml = fs.readFileSync(path + 'settings/index.html', 'utf8');
+      chk(/href="\/progress\/"/.test(settingsHtml),
+        '设置页有进「背诵进度总览」的链接（/progress/）');
+      const chrome = fs.readFileSync(path + 'js/chrome.js', 'utf8');
+      chk(/if \(key === "progress"\) return "home";/.test(chrome),
+        '进度页的页签选中态落在「背诵」这一格（它就是课内背诵那本账）');
+      chk(/data-nav="progress"/.test(html), '进度页 body 上标了 data-nav="progress"');
+      chk(/<base href="\/" \/>/.test(html), '进度页带了 <base href="/">（目录化 URL 下的相对资源才解析得对）');
+      const sw = fs.readFileSync(path + 'sw.js', 'utf8');
+      chk(/\.\/progress\//.test(sw) && /js\/progress\.js/.test(sw),
+        '进度页进了 Service Worker 预缓存清单（断网也能看）');
+
+      /* ================= 三、语料订正后的漂移自动刷新 ================= */
+      /**
+       * 需求（Issue #69 后续，用户原话）：
+       *   「首页快照与语料订正的漂移自动刷新（现在只在打开集子页/搜索页时才刷新）」
+       *
+       * 上一轮只做到「首页启动刷一次 + 课外那些标 stale 等下次进集子页」——
+       * 而**用户在首页停留的整个会话里都不会经过集子页**，于是那一篇可能
+       * 连着好几天显示旧题名。这一层验的就是补上的那半条：首页自己按需把
+       * 那一部集子的数据文件拉回来刷新，不必等用户去开别的页面。
+       */
+      const appSrc4 = fs.readFileSync(path + 'js/app.js', 'utf8');
+      chk(/function backfillSnapshots\(/.test(appSrc4),
+        '首页启动时仍会刷新一次快照（课内那几条就地更新）');
+      chk(/function refreshStaleSnapshots\(/.test(appSrc4),
+        '首页有「按需拉回集子数据、刷新旧快照」的入口 refreshStaleSnapshots()');
+      chk(/function staleByBook\(/.test(appSrc4),
+        '按集子把还旧着的快照挑出来（staleByBook）');
+      chk(/refreshStaleSnapshots\(\)/.test(appSrc4),
+        'refreshStaleSnapshots() 真的挂在启动流程里（不是写了不调）');
+
+      // 一部都没涉及就不许发请求：这是「只拉真正需要的」那一条
+      chk(/if \(!books\.length\) return Promise\.resolve\(0\);/.test(appSrc4),
+        '没有任何旧快照时不发请求（一部都不涉及就直接返回）');
+      chk(/const BOOK_SOURCES = \{/.test(appSrc4) &&
+        ['classic', 'tangshi', 'songci', 'guwen', 'zhaoming'].every(b =>
+          new RegExp(b + ':').test(appSrc4)),
+        '五部集子的数据文件与全局名写死在 BOOK_SOURCES（不 eval 任何东西）');
+      chk(/el\.src = src\.file/.test(appSrc4) && /document\.createElement\("script"\)/.test(appSrc4),
+        '拉取走的是「新建 <script>」——与页面里那些 <script> 同一条路（同一个 SW 缓存）');
+      chk(/\.catch\(function \(\) \{ \/\* 离线 \/ 拉取失败：老快照照常显示 \*\/ \}\)/.test(appSrc4),
+        '拉取失败不影响用（离线时老快照照常显示，stale 留着下次再试）');
+
+      // 行为层：真起一个首页，塞一条 stale 的课外快照，看它是否把数据拉回来刷新
+      const homeHtml = fs.readFileSync(path + 'index.html', 'utf8');
+      const homeOrder = homeHtml.match(/<script src="([^"]+)"><\/script>/g)
+        .map(x => x.match(/src="([^"]+)"/)[1]);
+      const homeDom = new JSDOM(homeHtml, {
+        runScripts: 'dangerously', resources: new RepoLoader(), url: 'https://local.test/'
+      });
+      const wh = homeDom.window;
+      wh.scrollTo = function () {};
+      // 塞一条「加入时存的是旧题名」的快照：集子里那一篇后来被订正过。
+      // 用真实的唐诗条目（数据文件里查得到），才能验「拉回来之后对得上」。
+      const realTitle = '感遇·其一';
+      wh.localStorage.setItem('poem_recite_collections_v1', JSON.stringify({
+        version: 1,
+        collections: [{
+          id: 'c-stale', name: '漂移测试', createdAt: Date.now(),
+          items: [{
+            id: 'tangshi-ts-1',
+            snap: {
+              title: '感遇（旧题名）', author: '张九龄', dynasty: '唐',
+              source: '《唐诗三百首》', selection: '《唐诗三百首》',
+              book: 'tangshi', bookName: '唐诗三百首', page: '/tangshi/',
+              text: '孤鸿海上来，池潢不敢顾。', translation: '', translationSource: 'public-domain'
+            },
+            stale: true
+          }]
+        }]
+      }));
+      // 首屏先画一遍：这时显示的还是旧快照里的旧题名
+      homeOrder.forEach(f => {
+        const el = wh.document.createElement('script');
+        el.textContent = fs.readFileSync(path + f, 'utf8');
+        wh.document.body.appendChild(el);
+      });
+
+      setTimeout(() => {
+        // 首屏那一帧画的是什么，取决于本地文件回来的快慢（jsdom 里常常几十毫秒
+        // 就回来了），所以这里不咬「此刻一定还是旧题名」——那条断言会随机器快慢
+        // 抖。只咬真正要守的两条：列表**画出来了**（不是空白），以及刷新之后
+        // 跟着**重画成新题名**（下面几行）。
+        const drawn = wh.document.querySelector('#collections-list');
+        chk(drawn && drawn.textContent.indexOf('感遇') >= 0,
+          '自选列表画出来了（不给用户一个空白区块）');
+
+        // 再等数据文件拉回来（走的是我们那个 loader → 仓库真实文件）
+        setTimeout(() => {
+          const snap = JSON.parse(wh.localStorage.getItem('poem_recite_collections_v1'))
+            .collections[0].items[0];
+          chk(snap.snap && snap.snap.title === realTitle,
+            '首页自己把那一部集子拉回来，快照刷成了最新语料（题名 ' +
+            (snap.snap && snap.snap.title) + '）');
+          chk(snap.snap.text && snap.snap.text.length > 20,
+            '刷回来的正文也是完整的（旧快照里那句只有 22 字的残句被换掉）');
+          chk(!snap.stale, '刷新成功后 stale 标记被清掉（下次启动就不会再拉一遍）');
+          // 注意：列表上的篇名还会过一道 displayTitle（去掉「其一 / 其二」，
+          // 见 js/collections.js），所以这里比对的是**去掉编号之后**的题名。
+          // 那一道与本次「刷新旧快照」是两件事，各自有测试守着。
+          const shownTitle = wh.ReciteCollections.displayTitle(realTitle);
+          chk(wh.document.querySelector('#collections-list').textContent.indexOf(shownTitle) >= 0,
+            '列表上跟着改成新题名（不用用户手动刷新，实际显示「' + shownTitle + '」）');
+          chk(wh.document.querySelector('#collections-list').textContent.indexOf('旧题名') === -1,
+            '旧快照里那个旧题名从界面上消失（不是两条都留着）');
+
+          console.log('\n' + (fails ? '❌ ' + fails + ' 项失败' : '🎉 背诵进度可视化测试全部通过'));
+          process.exit(fails ? 1 : 0);
+        }, 900);
+      }, 200);
+    }, 200);
+  }, 200);
+}, 200);

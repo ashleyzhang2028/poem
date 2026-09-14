@@ -370,8 +370,112 @@
     return { total: total, learned: learned, mastered: mastered, dueToday: dueToday };
   }
 
+  /**
+   * 进度总览：把「所有有记录的篇目」摊成一张可视化用的表。
+   *
+   * 为什么要单独做这一层：页面原先只看得到「这一篇在第几轮」——
+   * 第几轮是**单篇**的视角，看不出「接下来哪天要复习几篇」「掌握度都堆在哪」。
+   * 到期日历与掌握度分布要的是**全量**的聚合，所以在这里一次算好：
+   *   · calendar —— 未来 N 天每天到期的篇数（含「已逾期」那一档单独计）
+   *   · levels   —— 每个记忆阶段（新学 / 1 天后 / …… / 已牢固）各有多少篇
+   *   · mastery  —— 掌握度分五档（0-19 / 20-39 / 40-59 / 60-79 / 80-100）
+   *
+   * ⚠️ **已逾期的算进「今天」那一档**，日历上不显示成负数的日期：
+   * 逾期就是「今天该复习」，单独列一条会让日历第一格永远是空的。
+   *    逾期超过 7 天的单列一条「逾期 7 天以上」——那是真正需要提醒的。
+   *
+   * @param {Array} poems  候选篇目（`{id}` 即可）
+   * @param {Function} getRecord  id → 记忆档案
+   * @param {Object} [opt]  opt.days 日历天数（默认 14），opt.now 基准时间
+   */
+  function overview(poems, getRecord, opt) {
+    const o = opt || {};
+    const days = o.days || 14;
+    const now = o.now || Date.now();
+    const today0 = startOfDay(now);
+
+    const list = (poems || []).filter(function (p) { return p && p.id; });
+    const total = list.length;
+    let learned = 0;
+    const calendar = [];          // [{ offset: 0..days-1, label, date, count }]
+    const overdue = [];           // 逾期 7 天以上单列
+    const levels = [];
+    const masteryBuckets = [0, 0, 0, 0, 0];
+    let masterySum = 0;
+
+    for (let i = 0; i < days; i += 1) {
+      const ts = today0 + i * DAY;
+      calendar.push({ offset: i, date: ts, count: 0, due: false });
+    }
+
+    const seen = {};
+    list.forEach(function (p) {
+      if (seen[p.id]) return;
+      seen[p.id] = true;
+      const rec = getRecord(p.id);
+      if (!rec || !rec.learned) return;
+      learned += 1;
+
+      // 掌握度分档：与 mastery() 同一把尺子（它是页面到处在用的那一个）
+      const m = mastery(rec);
+      masterySum += m;
+      const bi = Math.min(4, Math.floor(m / 20));
+      masteryBuckets[bi] += 1;
+
+      levels.push({ id: p.id, level: Math.max(0, Math.min(rec.level, INTERVALS.length - 1)) });
+
+      // 到期归档：逾期 → 今天那一格；再往前 7 天以上的单列
+      const at = rec.nextReviewAt;
+      const off = Math.round((startOfDay(at) - today0) / DAY);
+      if (off < -7) {
+        overdue.push(p.id);
+      } else if (off < 0) {
+        calendar[0].count += 1;
+      } else if (off < days) {
+        calendar[off].count += 1;
+      }
+      if (off <= 0) calendar[0].due = true;
+    });
+
+    const levelCounts = [];
+    for (let i = 0; i < INTERVALS.length; i += 1) {
+      levelCounts.push({ level: i, name: levelName(i), count: 0 });
+    }
+    levels.forEach(function (x) { levelCounts[x.level].count += 1; });
+
+    return {
+      total: total,
+      learned: learned,
+      unlearned: Math.max(0, total - learned),
+      dueToday: calendar[0].count + overdue.length,
+      overdue: overdue.length,
+      avgMastery: learned ? Math.round(masterySum / learned) : 0,
+      calendar: calendar,
+      levelCounts: levelCounts,
+      masteryBuckets: masteryBuckets,
+      // 未来 N 天里哪天最忙（一条竖条的最高那根，画图时要用它定高）
+      maxDay: calendar.reduce(function (a, d) { return Math.max(a, d.count); }, 0)
+    };
+  }
+
+  /**
+   * 再过几天该复习 —— 「下次何时到期」这个数。
+   *
+   * 未被学过的返回 null（没学过就谈不上「下次」）；
+   * 已逾期的返回 0 或负数（页面显示成「已到期」）。
+   */
+  function daysUntilDue(rec, now) {
+    if (!rec || !rec.learned || !rec.nextReviewAt) return null;
+    const t0 = startOfDay(now === undefined ? Date.now() : now);
+    return Math.round((startOfDay(rec.nextReviewAt) - t0) / DAY);
+  }
+
   window.Scheduler = {
     INTERVALS: INTERVALS,
+    overview: overview,
+    daysUntilDue: daysUntilDue,
+    startOfDay: startOfDay,
+    DAY: DAY,
     createRecord: createRecord,
     review: review,
     isDue: isDue,
