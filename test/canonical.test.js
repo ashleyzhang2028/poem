@@ -146,6 +146,50 @@ MASTER.forEach(m => {
 chk(mismatch.length === 0,
   '57 篇作品在六部集子里读到的正文逐字相同（不一致：' + (mismatch.slice(0, 5).join('、') || '无') + '）');
 
+/* ---- 1.4b 主表收齐了「同一篇的重复条目」全集 ---- */
+/* 1.4 说的是「收进来的都对」；这一条说的是「该收的一条都没漏」——
+   漏一条的表现不是报错，而是**那一篇的正文在磁盘上又存了一份**，
+   日后改一处、漏一处，正是这一层要根除的东西。 */
+const byDedupeKey = {};
+sb.SITE_INDEX.forEach(p => {
+  if (!p || p.isBook || !p.text || !p.id) return;
+  const k = WI.dedupKey(p.text);
+  if (!k) return;
+  (byDedupeKey[k] = byDedupeKey[k] || []).push(p.id);
+});
+const dupEntries = [];
+Object.keys(byDedupeKey).forEach(k => {
+  if (byDedupeKey[k].length > 1) dupEntries.push.apply(dupEntries, byDedupeKey[k]);
+});
+const covered = {};
+MASTER.forEach(m => (m.entries || []).forEach(e => { covered[e] = 1; }));
+const uncovered = dupEntries.filter(e => !covered[e]);
+chk(uncovered.length === 0,
+  '「同篇判重键下有两条及以上」的条目共 ' + dupEntries.length + ' 条，全部收进了主表（未收：' +
+  (uncovered.slice(0, 6).join('、') || '无') + '）');
+chk(dupEntries.length === 114,
+  '重复条目恰为 114 条（57 篇 × 2；实际 ' + dupEntries.length + '）');
+
+/* 主表的 entries 一个不多、一个不少：多出来的等于把单条也收进来白占地方，
+   少一条就等于漏收 —— 两头都要挡。 */
+const masterFlat = [];
+MASTER.forEach(m => (m.entries || []).forEach(e => masterFlat.push(e)));
+chk(masterFlat.length === dupEntries.length &&
+  masterFlat.slice().sort().join('|') === dupEntries.slice().sort().join('|'),
+  '主表登记的全部条目与「重复条目全集」逐条对上（主表 ' + masterFlat.length + ' 条）');
+
+/* 每一的主条目都在自己那一组里，且组内条目互不重叠 ——
+   重叠了就是同一条被两篇作品认领，正文取谁的都会有人读错。 */
+const seenOnce = {};
+let overlapped = [];
+masterFlat.forEach(e => {
+  if (seenOnce[e]) overlapped.push(e);
+  seenOnce[e] = 1;
+});
+chk(overlapped.length === 0, '没有条目被两篇作品同时登记（重叠：' + (overlapped.join('、') || '无') + '）');
+chk(MASTER.every(m => m.entries.indexOf(m.id) >= 0),
+  '每条主表的 entries 里都有它自己（否则那一篇的正文谁也取不到）');
+
 /* ---- 1.5 显示层裁定表：正文已收归存储层，不再需要替换 ---- */
 // data/canonical-texts.js 是「显示时把正文换成主条目那一份」的裁定表。
 // 存储层收归之后，各集子的正文本来就取自主表，**不再存在两种写法** ——

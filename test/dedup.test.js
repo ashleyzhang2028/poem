@@ -197,6 +197,94 @@ const thinCourse = REMOVED.filter(r => {
 });
 chk(thinCourse.length === 0, '全站索引里 12 篇各只剩一条课内条目（异常：' + thinCourse.map(r => r[1]).join('、') + '）');
 
+/* ============ 六、一字之差的那些：**看着像同一篇、但不是** ============ */
+
+/* 判重键是「正文去标点后逐字相同」。下面这些只有一字之差，看着像同一篇、
+   题名也常常只差一点，最容易被顺手合并 —— 可它们是两条并列的文本传统：
+   选本用本字（「霪雨」「懃懃」「比絜」「凤皇」），教材 / 通行本用常用字
+   （「淫雨」「勤勤」「比洁」「凤凰」）。
+
+   按 data/works-index.js 的裁定「课内以教材文本为准，选集以选本原貌为准，
+   冲突时分两条并列、各背各的」，它们**不该并**。这一节逐对把这件事钉住：
+   一旦有人把它们合并了，学生背的课本那一份就被悄悄换掉了 —— 不报错，只是变了。
+
+   清单由 data/works-map.js 的 window.WORKS_NEAR_DUP 提供（与判重表同一份文件：
+   上面写「哪些是一篇」，这里写「哪些看着像一篇、但不是」，判重时两处一起看）。 */
+const NEAR = sb.WORKS_NEAR_DUP || [];
+chk(NEAR.length === 2, '近重复对共 2 组（一字之差、并列而不合并；实际 ' + NEAR.length + '）');
+chk(NEAR.every(g => Array.isArray(g.entries) && g.entries.length >= 2 && g.reason),
+  '每组都带 entries（≥2 条）与 reason');
+
+/* 抽样逐对验明：确实「只差一字」且**确实没被合并** */
+const NEAR_SPOT = [
+  ['poems-xx4-23', 'tangshi-ts-259', '唯见长江', '惟见长江', '黄鹤楼送孟浩然之广陵'],
+  ['songci-sc-127', 'songci-sc-134', '白苹花满', '白蘋花满', '蝶恋花'],
+];
+NEAR_SPOT.forEach(function (row) {
+  const a = byId[row[0]], b = byId[row[1]];
+  const aSite = sb.SITE_INDEX.filter(p => p.id === row[0])[0];
+  const bSite = sb.SITE_INDEX.filter(p => p.id === row[1])[0];
+  if (!aSite || !bSite) { chk(false, '近重复对 ' + row[0] + ' / ' + row[1] + ' 两条都在站点索引里'); return; }
+  chk(aSite.text.indexOf(row[2]) >= 0 && bSite.text.indexOf(row[3]) >= 0,
+    row[4] + ' 两条各存原字（' + row[2] + ' / ' + row[3] + '）');
+  chk(!WI.same(row[0], row[1]),
+    row[4] + ' 两条**没有**被判为同一篇（课内 / 选本各背各的）');
+  chk(NEAR.some(g => g.entries.indexOf(row[0]) >= 0 && g.entries.indexOf(row[1]) >= 0),
+    row[4] + ' 这一对登记在近重复清单里');
+});
+
+/* 全站扫描：清单之外，不许再有「一字之差」的两条 ——
+   有就是漏登记的异文，早晚会被当成重复合并掉。 */
+const VARIANT = [
+  ['惟', '唯'], ['霪', '淫'], ['蘋', '苹'], ['翦', '剪'], ['皇', '凰'],
+  ['懃', '勤'], ['絜', '洁'], ['岀', '出'], ['閒', '闲'], ['彊', '强'],
+];
+function loose(t) {
+  let s = norm(t);
+  VARIANT.forEach(function (p) { s = s.split(p[0]).join(p[1]); });
+  return s;
+}
+const byLoose = {};
+sb.SITE_INDEX.forEach(function (p) {
+  if (!p || p.isBook || !p.text || !p.id) return;
+  const k = loose(p.text);
+  if (!k) return;
+  (byLoose[k] = byLoose[k] || []).push(p.id);
+});
+const registered = {};
+NEAR.forEach(g => g.entries.forEach(id => { registered[id] = 1; }));
+const missed = [];
+Object.keys(byLoose).forEach(k => {
+  const ids = byLoose[k];
+  if (ids.length < 2) return;
+  /* 严格判重已经认成一组的，是同一篇（归判重表管），不算漏登记 */
+  const strict = {};
+  ids.forEach(id => {
+    const p = sb.SITE_INDEX.filter(x => x.id === id)[0];
+    strict[norm(p && p.text)] = 1;
+  });
+  if (Object.keys(strict).length < 2) return;
+  if (ids.some(id => !registered[id])) missed.push(ids.join(' / '));
+});
+chk(missed.length === 0,
+  '全站没有漏登记的一字之差异文对（漏登记：' + (missed.slice(0, 5).join('；') || '无') + '）');
+
+/* 判重表与存储主表口径一致：判重表里每一组的每一条，主表都得收下 ——
+   「认得出是同一篇」与「正文只存一份」是同一件事的两面。 */
+const masterEntries = {};
+(sb.TEXT_MASTER || []).forEach(m => (m.entries || []).forEach(e => { masterEntries[e] = m.id; }));
+const uncov = [];
+(sb.WORKS_GROUPS || []).forEach(g => g.entries.forEach(e => { if (!masterEntries[e]) uncov.push(e); }));
+chk(uncov.length === 0,
+  '判重表 57 组的每一条条目都在存储主表里（未覆盖：' + (uncov.slice(0, 6).join('、') || '无') + '）');
+const masterInGroups = [];
+Object.keys(masterEntries).forEach(e => {
+  if (!(sb.WORKS_GROUPS || []).some(g => g.entries.indexOf(e) >= 0)) masterInGroups.push(e);
+});
+chk(masterInGroups.length === 0,
+  '存储主表里没有判重表不认的条目（多出的：' + (masterInGroups.slice(0, 6).join('、') || '无') + '）');
+
+
 console.log('');
 if (fails) { console.log('✗ 课内去重 / 《静夜思》测试失败 ' + fails + ' 项'); process.exit(1); }
 console.log('🎉 课内去重 / 《静夜思》测试全部通过');

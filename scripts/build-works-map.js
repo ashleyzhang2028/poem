@@ -50,6 +50,10 @@ const groups = WI.works
   });
 groups.sort(function (a, b) { return a.entries[0] < b.entries[0] ? -1 : 1; });
 
+/* 站点索引：近重复清单要用它的正文与条目 id（与判重同口径） */
+const byId = {};
+(sandbox.SITE_INDEX || []).forEach(function (p) { if (p && p.id) byId[p.id] = p; });
+
 const BT = '`';
 let out = '';
 out += '/* ==========================================================================\n';
@@ -103,6 +107,91 @@ groups.forEach(function (g, i) {
 });
 out += '];\n';
 
+/* ---------------- 近重复对：像同一篇却**不合并**的那些 ----------------
+   判重键是「正文去标点后逐字相同」。可文献里常见的是一字之差的两种文本：
+
+     《将进酒》  课内「但愿长醉不愿醒」 vs 唐诗「但愿长醉不复醒」      一字
+     《岳阳楼记》古文观止「霪雨霏霏」   vs 课内「淫雨霏霏」              一字
+     《天香》    宋词「剪春灯」         vs 宋词「翦春灯」（籀文正体）    一字
+     《北山移文》古文观止「比洁」       vs 昭明「比絜」（选本用本字）      一字
+     《宋玉对楚王问》古文观止「凤凰」   vs 昭明「凤皇」（《文选》作皇）    一字
+     《黄鹤楼送孟浩然之广陵》教材「唯见」 vs 唐诗「惟见」                 一字
+
+   这些**不是录入出错**，是两条并列的文本传统（选本原貌 vs 教材 / 通行字），
+   按上面那条规则应当**分成两条并列的作品、各背各的**。
+
+   可它们却是最容易被「顺手合并」的一批：正文差不多、题名往往只差一点、
+   搜出来还并排站着。合并的后果不是报错，而是**学生背的那一份被悄悄换掉** ——
+   课本作「淫雨霏霏」，页面上却成了「霪雨霏霏」，正是最难发现的那种错。
+
+   所以这一份清单与上面的判重表放在同一处：上面写「哪些是一篇」，
+   这里写「哪些**看着像一篇、但不是**」，判重时两处一起看。
+
+   ⚠️ 只登记事实，不改任何一份正文；单条的作品不进这里（没有第二个版本）。 */
+const VARIANT = [
+  ['惟', '唯'], ['霪', '淫'], ['蘋', '苹'], ['翦', '剪'], ['皇', '凰'],
+  ['懃', '勤'], ['絜', '洁'], ['岀', '出'], ['閒', '闲'], ['彊', '强']
+];
+function loose(t) {
+  let s = String(t || '').replace(/\s+/g, '');
+  VARIANT.forEach(function (p) { s = s.split(p[0]).join(p[1]); });
+  return s;
+}
+const NEAR = {};
+sandbox.SITE_INDEX.forEach(function (p) {
+  if (!p || p.isBook || !p.text || !p.id) return;
+  const k = loose(p.text);
+  if (!k) return;
+  (NEAR[k] = NEAR[k] || []).push(p.id);
+});
+const nearPairs = [];
+Object.keys(NEAR).forEach(function (k) {
+  const ids = NEAR[k];
+  if (ids.length < 2) return;
+  /* 严格判重已经把它们认成一组的（只剩一种写法），说明是同一篇，归上面那张表管 */
+  const strict = {};
+  ids.forEach(function (id) {
+    const t = String((byId[id] || {}).text || '').replace(/\s+/g, '');
+    (strict[t] = strict[t] || []).push(id);
+  });
+  if (Object.keys(strict).length < 2) return;
+  nearPairs.push({
+    entries: ids.slice(),
+    reason: '一字之差的两条文本传统（选本原貌 vs 教材 / 通行字），并列而不合并'
+  });
+});
+nearPairs.sort(function (a, b) { return a.entries[0] < b.entries[0] ? -1 : 1; });
+
+
+out += '/* ==========================================================================\n';
+out += '   近重复对（看着像同一篇、**故意不合并**的那些）\n';
+out += '   --------------------------------------------------------------------------\n';
+out += '   共 ' + nearPairs.length + ' 组，由 scripts/build-works-map.js 与上面那张表一起算出。\n';
+out += '\n';
+out += '   判重键是「正文去标点后逐字相同」。下面这些是**再走一步**才能对上、\n';
+out += '   却仍然不该并的：一字之差的两种文本传统 ——\n';
+out += '\n';
+out += '     《将进酒》  课内「但愿长醉不愿醒」 vs 唐诗「但愿长醉不复醒」\n';
+out += '     《岳阳楼记》古文观止「霪雨霏霏」   vs 课内「淫雨霏霏」\n';
+out += '     《天香》    宋词「剪春灯」         vs 宋词「翦春灯」（籀文正体）\n';
+out += '     《北山移文》古文观止「比洁」       vs 昭明「比絜」（选本用本字）\n';
+out += '     《答苏武书》古文观止「勤勤」       vs 昭明「懃懃」（选本用本字）\n';
+out += '\n';
+out += '   按本表的规则（课内以教材为准、选集以选本原貌为准、冲突时分两条并列），\n';
+out += '   它们**各背各的**。写在同一处，是因为它们最容易被顺手合并：\n';
+out += '   正文差不多、题名往往只差一点、搜出来还并排站着。一旦并了，\n';
+out += '   学生的课本作「淫雨霏霏」，页面上却成了「霪雨霏霏」—— 不报错，只是变了。\n';
+out += '\n';
+out += '   ⚠️ 这是**生成文件**，改动请改 scripts/build-works-map.js 后重跑。\n';
+out += '   字段：entries 条目 id（两条及以上）；reason 为什么不并\n';
+out += '   ========================================================================== */\n';
+out += 'window.WORKS_NEAR_DUP = [\n';
+nearPairs.forEach(function (p) {
+  out += '  { entries: [' + p.entries.map(function (e) { return JSON.stringify(e); }).join(', ') +
+    '], reason: ' + JSON.stringify(p.reason) + ' },\n';
+});
+out += '];\n';
+out += '\n';
 const target = path.join(ROOT, 'data/works-map.js');
 const prev = fs.existsSync(target) ? fs.readFileSync(target, 'utf8') : '';
 fs.writeFileSync(target, out);
