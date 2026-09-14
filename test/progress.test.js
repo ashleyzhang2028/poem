@@ -405,7 +405,13 @@ setTimeout(() => {
       /* ---- 入口：设置页进得来、页签「背诵」保持选中 ---- */
       const settingsHtml = fs.readFileSync(path + 'settings/index.html', 'utf8');
       chk(/href="\/progress\/"/.test(settingsHtml),
-        '设置页有进「背诵进度总览」的链接（/progress/）');
+        '设置页有进「进度总览」的链接（/progress/）');
+      // 需求（Issue #122）：标签与按钮都收敛成「进度总览」一个词
+      //（原先写「背诵进度」+「看进度总览」，一行里说了两遍同一件事）
+      chk(/<label>进度总览<\/label>/.test(settingsHtml),
+        '设置页这一项的标签就叫「进度总览」');
+      chk(!/背诵进度<\/label>/.test(settingsHtml) && !/看进度总览/.test(settingsHtml),
+        '设置页不再出现「背诵进度 · 看进度总览」这组旧文案');
       const chrome = fs.readFileSync(path + 'js/chrome.js', 'utf8');
       chk(/if \(key === "progress"\) return "home";/.test(chrome),
         '进度页的页签选中态落在「背诵」这一格（它就是课内背诵那本账）');

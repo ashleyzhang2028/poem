@@ -1506,6 +1506,11 @@ html, body {
   color: var(--green);
   border-radius: var(--radius-sm);
   font-weight: 600;
+  /* 这类按钮有几枚是 <a>（如设置页「进度总览」指去 /progress/）——
+     浏览器默认给链接文字加下划线，那条线不是设计的一部分。
+     这里显式去掉，<a> 与 <button> 的观感才一致
+     （与 .dock-item 上处理页签下划线是同一件事）。 */
+  text-decoration: none;
 }
 .ghost-btn:hover { border-color: var(--green); }
 .danger-btn {

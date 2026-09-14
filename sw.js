@@ -650,8 +650,31 @@
  *          test/ui.test.js、test/theme.test.js、test/run.sh、README.md）
  *
  *        版本号按「并行 PR 一律 +5」的口径从 v88 起落到 v93（#121 那笔已落在 v88，本条再 +5）。
+ *
+ *   v98  设置页那一块「背诵进度 · 看进度总览」收成一个词（Issue #122）：
+ *
+ *        【一】文案：原先标签写「背诵进度」、按钮写「看进度总览」，
+ *        一行里两遍同一件事，读起来像两个并列的动作。现在只留
+ *        「进度总览」一个词（标签与按钮同名），点它进 /progress/。
+ *
+ *        【二】下划线：那枚按钮是 <a>，浏览器默认给链接文字加下划线 ——
+ *        用户看到的那条线就是这么来的，不是设计的一部分
+ *        （与 .dock-item 上处理页签下划线是同一回事）。
+ *        .ghost-btn 里显式补 text-decoration: none，<a> 与 <button>
+ *        形态的次级按钮外观才一致。
+ *
+ *        【三】并入 main 时解冲突：main 的 v93（复习算法可切换）与本条
+ *        撞了同一个版本号，本条改落 v98；sw.js 注释块里两条 v9x 并存，
+ *        各写各的，不互相覆盖。另外 main 的 #120「在哪儿快速调」那次
+ *        删说明删过了头，把「圆键长按 / 右键」也一并删了，
+ *        test/theme.test.js 与 test/auto-read.test.js 的断言一直亮红 ——
+ *        本条把**不指点操作**的那半段放回「朗读播放」组，
+ *        两条断言跟着改成正向钉住（只认手势叫什么，不再教按多久）。
+ *        （settings/index.html、test/theme.test.js、test/auto-read.test.js）
+ *
+ *        版本号按「并行 PR 一律 +5」的口径从 v93 起落到 v98（main 那笔已占 v93，本条再 +5）。
  */
-const CACHE_NAME = "poem-app-v93";
+const CACHE_NAME = "poem-app-v98";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [
