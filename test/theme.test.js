@@ -989,5 +989,35 @@ print(json.dumps(out, ensure_ascii=False))
   console.log('(未安装 fonttools，跳过字体子集覆盖检查：pip install fonttools brotli)');
 }
 
+/* ---------------- 搜索框聚焦光晕：不许拿不透明的填充色当 box-shadow ---------------- */
+/*
+   全站输入框聚焦时都是「天青描边 + 一圈**半透明**淡光」：
+       .search-input:focus { box-shadow: 0 0 0 3px rgba(47, 96, 85, .10); }
+   搜索页那一条（body[data-nav="search"] ...:focus）曾经误填了 --green-light
+   （#dbe9e2，不透明的浅底**填充色**），于是同一枚控件在搜索页画出一圈实心
+   粉绿外框、在别处是柔和光晕 —— 两副面孔，真机上看着像「框被加粗了一圈」。
+   PWA 层（test/pwa.test.js）会拿真浏览器量这圈光晕的色相，但那一层要 puppeteer，
+   缺依赖时整层跳过 —— 所以在主题层补一条**纯源码**断言，没浏览器也能守住：
+   凡是给搜索框画 box-shadow 的地方，颜色必须是天青主色的半透明光（rgb 47,96,85），
+   不能出现 --green-light / #dbe9e2 这类不透明填充色。
+*/
+{
+  // 抓出所有「作用于 .search-input 的 :focus 规则块」
+  const ruleRe = /([^{}]*?search-input[^{}]*?:focus[^{}]*?)\{([^}]*)\}/g;
+  let m, checked = 0;
+  while ((m = ruleRe.exec(classicCss)) !== null) {
+    const body = m[2];
+    const shadow = body.match(/box-shadow\s*:\s*([^;]+);/);
+    if (!shadow) continue;
+    checked++;
+    const val = shadow[1].trim();
+    chk(/rgba?\(47,\s*96,\s*85/.test(val),
+      '搜索框聚焦光晕用天青主色的半透明光（不是不透明填充色）：' + val);
+    chk(!/--green-light|#dbe9e2/i.test(val),
+      '搜索框聚焦光晕没有误用 --green-light / #dbe9e2 这类不透明填充色：' + val);
+  }
+  chk(checked >= 1, '至少找到一处搜索框聚焦光晕规则（实际 ' + checked + ' 处）');
+}
+
 console.log(fails === 0 ? '\n🎉 主题测试全部通过' : '\n❌ ' + fails + ' 项失败');
 process.exit(fails ? 1 : 0);
