@@ -93,6 +93,24 @@
      12px 上内边距负责，卡片之间、条目之间的节奏都不受影响。 */
   margin-bottom: 12px;
 }
+/* 平板（≥768px）：工具栏这一排封顶，不再跟着内容区一起变宽
+   --------------------------------------------------------------------------
+   工具栏一排三样（搜索框 + 「全部 / 未读」+ 连读圆键）在手机上是整行铺满的，
+   那是对的：一行就是这一页的入口。但平板的内容区放宽到 1040px 之后，
+   搜索框一个人吃掉 900px，「全部 / 未读」被挤到最右边 ——
+   一排三个控件的两端隔着 900px，看着像两件不相干的東西。
+   这里给这一排一个 720px 的上限：与手机上一整行的宽度同档，
+   三样仍是「搜索框占满、右边两枚贴着它」，只是整排居中。
+   ⚠️ 用 max-width + margin auto（不是定宽）：窄屏仍是整行铺满。
+   ⚠️ 搜索页的 .search-toolbar 不在此列 —— 它自己那条规则里已经写了
+      width: min(520px, 100%)，这里再叠一条会把两颗控件的宽度打架。 */
+@media (min-width: 768px) {
+  .toolbar:not(.search-toolbar) {
+    max-width: 720px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
 /* 「全部 / 未读」组合按钮：与「不注音 / 生字 / 全文」共用一套外观
    --------------------------------------------------------------------------
    行高对齐：组合的高度是「内层按钮 + 3px 内边距 + 1px 描边」叠出来的，
@@ -572,6 +590,62 @@
    而是**正文自己占用的宽度**（因为内容块改成了按内容取宽，见上方 .item-main）。
    圆键左缘仍落在原处（右端三件套一个没动），正文因此能一直排到圆键跟前。
    只写 margin-left：右侧留给箭头的那 6px 与箭头贴边一律不动。 */
+/* 平板（≥768px）：集子目录页的**篇目清单**排成两列
+   --------------------------------------------------------------------------
+   这一页的结构与首页不同，很容易看错，先把它写清楚：
+     #gw-list（.list，主列表）
+       └─ .group-card × N     ← 一卷 / 一类一张，卡头是卷名 + 篇数 + 组内连读圆键
+            ├─ .group-head
+            └─ .item × M      ← 篇目**直接挂在卡片上**（引擎 appendChild 到卡上，
+                                不是挂在卡内某个 .list 里 —— 没有这一层）
+   手机上主列表与卡内篇目都是一列，是对的：一屏一卷，滚着读。
+   但平板上一张卡 530px 宽去放「① 感遇·其一 / 唐·张九龄 ·《唐诗三百首》· 孤鸿海上来…」，
+   右边的空白比字还宽（真机截图里一卷 33 首排了 2500px 长）。
+   这里把**卡内的篇目清单**切成两列，卡本身仍是一列一张（卡头要占满整卡）。
+
+   ⚠️ 选择器必须写 `.group-card > .item`：
+      条目是卡片的**直接子元素**，所以「卡内的篇目」就是「卡片的 .item 子元素」。
+      早先误写成 `.group-card .list > .item` —— 卡里根本没有 .list 这一层，
+      那条规则命中不了任何东西（同一处写成 `.group-card .list` 的还更糟：
+      它把卡片自己当成了清单，给卡加上了 flex-direction: row）。
+   ⚠️ 与首页 .list 那一档同一套算式（半个列距要从 50% 里减掉）：
+      505px 里放得下「序号 + 篇名 + 分类·作者·出处·摘句 + 书签 + 播放 + 箭头」，
+      再窄就开始折行。
+   ⚠️ 搜索页的 #gw-list 没有 .group-card（结果不分卷次、不套卡），
+      所以这里的选择器只命中集子页，搜索页仍是全站那一条。 */
+@media (min-width: 768px) {
+  /* ⚠️ 卡片自己先变成 flex 行容器：条目是卡片的直接子元素，
+      不把卡改成 flex，下面给条目的 flex-basis 无从生效（block 布局里
+      宽度由内容决定，两列排不出来）。
+      .group-head（卡头）用 width: 100% 独占第一行，篇目在它下面两两一行。 */
+  .group-card {
+    display: flex;
+    flex-wrap: wrap;
+    column-gap: 22px;
+    /* 行距 0：条目之间那条分隔线本来就是相邻贴合着画的（见下面
+       .group-card .item:first-of-type），一加行距，两列之间的「折行处」
+       就会露出一个没有线的豁口。 */
+    row-gap: 0;
+  }
+  .group-card > .group-head {
+    flex: 1 1 100%;
+    max-width: 100%;
+  }
+  .group-card > .item {
+    flex: 1 1 calc(50% - 11px);
+    max-width: calc(50% - 11px);
+  }
+  /* 两列下「第一条不画线」这条要按**每一列的第一条**算：
+     原来的 :first-of-type 只认整张卡里的第一条（也就是左列的第一条），
+     右列的第一条会照旧画线 —— 那条线上面并没有内容，看着像凭空多了一道横线。
+     这里把第 1、2 条都当「各列的第一条」（卡头占第一位，所以是 2、3 个孩子）。 */
+  .group-card > .item:nth-of-type(2),
+  .group-card > .item:nth-of-type(3) {
+    border-top: none;
+  }
+}
+
+
 .group-card .item-read {
   margin-left: 0;
   /* 右侧那 6px 写在**播放键**这一侧，不能挪到箭头上去：
@@ -683,14 +757,17 @@ body.reader-open .dock { display: none; }
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   padding: 20px calc(18px + var(--safe-right)) calc(40px + var(--safe-bottom)) calc(18px + var(--safe-left));
-  /* 正文列宽固定 720px。
+  /* 正文列宽走全站那一条 --col-w（css/style.css 的 :root）。
      ⚠️ 这里用的是「定宽 + 自动外边距」，不是 max-width：在 flex 列容器里，
      max-width + width: auto 会被解析成 flex-basis: auto → 内容尺寸，
      于是容器一宽，盒子反而被压成一个窄条（大屏上正文挤在中间一小撮）。
      定宽 + `margin: 0 auto` 才是我们要的：窄屏自动收成满宽（外边距变 0），
-     宽屏稳定 720px 居中，跟顶栏的 720px 内容区落在同一条竖线上。
-     box-sizing: border-box 让 720px 把左右内边距一起算进去，内容区就是 684px。 */
-  width: 720px;
+     宽屏稳定居中，跟顶栏的内容区落在同一条竖线上。
+     box-sizing: border-box 让这条宽度把左右内边距一起算进去。
+     ⚠️ 平板（≥768px）上 --col-w 会变成 1040px，正文列跟着放宽 —— 但正文
+        **仍是一列**：诗句的行宽由 .poem-text 自己封顶（见那条 max-width），
+        放宽的是页面里那些能并排的部分（目录卡片、选项、日历）。 */
+  width: var(--col-w, 720px);
   max-width: calc(100% - var(--safe-left) - var(--safe-right));
   margin: 0 auto;
   box-sizing: border-box;
@@ -885,15 +962,27 @@ body.reader-open .dock { display: none; }
 }
 .recite-new .settings-input { flex: 1 1 auto; }
 
-/* 列表条目右侧的「加入背诵」圆键：与播放键同款同档，走蓝色（天水碧）。
+/* 列表条目右侧的两枚圆键（「加入背诵」书签 · 播放）
+   --------------------------------------------------------------------------
+   用户原话：「将各个索引页卡片中的播放按钮调整得和添加到自定义背诵按钮一样大小」。
+
+   病根是两枚键**各写一套尺寸**：播放键来自 css/style.css 的 `.item-read`
+   （36px + 16px 图标），书签来自这里的 `.item-recite`（30px + 15px 图标）——
+   两枚并排的圆键量出来一个大一个小。尺寸本身没有对错，错在写了两个数。
+
+   现在两枚键读**同一个直径** `--item-btn` 与同一个图标框 `--item-icon`
+   （都定义在 css/style.css 的 :root），两枚键从此永远同大。
+   ⚠️ 改大小时改那一对变量，不要再往任一枚键上写 width / height。
+
    ⚠️ 与播放键的间距 6px 写在**它自己的** margin-right 上（播放键那侧不动）：
-   箭头带 margin-left:auto，任何写在箭头左侧的 margin 都会被 auto 吃掉。 */
+   箭头带 margin-left:auto，任何写在箭头左侧的 margin 都会被 auto 吃掉。
+   左内边距照旧为 0：那一段要让给正文（见上方 .group-card .item-read 的说明）。 */
 .item-recite {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
+  width: var(--item-btn);
+  height: var(--item-btn);
   flex: 0 0 auto;
   padding: 0;
   margin: 0 6px 0 0;
@@ -904,7 +993,15 @@ body.reader-open .dock { display: none; }
   cursor: pointer;
   line-height: 0;
 }
-.item-recite svg { width: 15px; height: 15px; display: block; }
+/* 图标框与播放键读同一个 --item-icon（16px，原来是各自的 15px）。
+   ⚠️ 书签不是三角：它没有「1px 描边」这条约束（描边落在 24 的 viewBox 里，
+      1.8 ÷ 24 × 16 = 1.2px，是单笔画轮廓里正常的粗细）。
+      这里跟播放键同值，只是因为两枚圆键一样大、图标也该一样大。 */
+.item-recite svg {
+  width: var(--item-icon);
+  height: var(--item-icon);
+  display: block;
+}
 .item-recite[data-on="1"] { background: var(--blue); border-color: var(--blue); color: #fffdf8; }
 /* 对齐组合按钮：两个 SVG 图标（左 / 中），选中态与注音档位一致 */
 .icon-seg button {
@@ -1064,6 +1161,24 @@ body.reader-open .dock { display: none; }
 .trans-read:disabled { opacity: .5; cursor: not-allowed; }
 @media (min-width: 700px) {
   .reader-body { padding-top: 28px; }
+}
+/* 平板（≥768px）：正文列封顶
+   --------------------------------------------------------------------------
+   .reader-body 的宽度走 --col-w（平板 1040px），但**诗句不该跟着变宽**：
+   一行 1040px 能排 55 个汉字，远超「一行 35~40 字」的阅读上限 ——
+   眼睛从左到右扫完一行要花很大力气，还容易串行。
+   这里把正文本身封在 720px（也就是手机上的那一档，这个值经过所有既有页面），
+   居中放在更宽的阅读栏里。
+   ⚠️ .reader-text 自己已有 `max-width: fit-content`（短文块居中）——
+      它取的是**内容**宽度，宽栏里照样能长到 1000px，所以正文封顶必须落在
+      它身上（下面这条），不能只封 .reader-body。 */
+@media (min-width: 768px) {
+  .reader-text {
+    /* 封顶用「最宽的段落 720px」，而不是把整块钉死 720px：
+       fit-content 会先按内容取宽，再用这条上限收住 —— 短文仍是居中的窄块，
+       长段落最多 720px（一行约 38 个汉字，正好是阅读上限那一档）。 */
+    max-width: 720px;
+  }
 }
 
 /* ==========================================================================
@@ -1273,6 +1388,21 @@ body.reader-open .dock { display: none; }
    键盘弹出来时搜索框跳一下，肉眼很扎眼。绝对定位下 hero 怎么变都不影响它。
    ⚠️ 宽度写 min(520px, 100%)：hero 的 100% 就是 .app 的 720px 内容区，
       窄屏上 min() 取到的自然是可用宽度（左右各 14px 的呼吸由 .app 给）。 */
+/* 平板（≥768px）：hero 这一整块封顶，别拉成整屏宽的一条
+   --------------------------------------------------------------------------
+   hero 的高度算式里减的是 --nav-h 与 --safe-top，这两样都不随宽度变；
+   而 .app 在平板上有 1040px 宽 —— 于是「框 + 它的候选下拉」横跨整屏，
+   竖着看是一条又扁又长的横带。
+   这里封顶 520px：与搜索框自己的 520px 同宽，下拉也就跟着一起收住
+   （下拉是 .search-wrap 里的绝对定位子元素，宽度是 100%）。
+   ⚠️ 手机（<768px）不封顶：窄屏上它本来就是整行。 */
+@media (min-width: 768px) {
+  .search-hero {
+    max-width: 520px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
 .search-hero .search-toolbar {
   position: absolute;
   left: 50%;
@@ -1283,6 +1413,13 @@ body.reader-open .dock { display: none; }
   top: 50%;
   margin-top: calc(var(--hero-box-h) / -2);
   width: min(520px, 100%);
+  /* ⚠️ 这一行**不能给 z-index**：它自己带着 transform（translateX(-50%)），
+     transform 会新建层叠上下文 —— 一旦新建，里头候选下拉的 z-index: 30
+     就只在**这一行内部**排序，跟外面的结果列表成了两套编号，
+     谁在上面全看 DOM 顺序：结果列表排在 hero 后面，于是压过了下拉，
+     候选与结果卡片叠成一团（真机上看到的就是「两层文字糊在一起」）。
+     抬层级只能落在下面单独那条 .search-hero .search-toolbar { z-index: 1 }
+     上（它写在 hero 之下、不建上下文的 hero 让整行跟在根上下文里比大小）。 */
 }
 /* hero 里的搜索框不再跟任何横向控件并排，圆角仍是全站那一档 */
 .search-hero .search-wrap { flex: 1 1 auto; }
@@ -1840,6 +1977,22 @@ body[data-nav="search"] #gw-list .empty[data-empty="idle"] { padding: 0; }
     max-width: calc(50% - 6px);
   }
 }
+/* 平板（≥768px）：六张卡排成三列
+   --------------------------------------------------------------------------
+   上一档（≥560px）两列是给「小平板 / 大手机」用的：卡宽约 350px。
+   到了平板（列宽 1040px）两列就变成每张 514px —— 卡里还是只有「书名 +
+   篇数」与一句说明，两端的空白又比内容宽了，六张卡依然要滚两屏。
+   三列后每张约 332px，与前一档同档的视觉宽度，六张卡一屏看完（两行三列）。
+   ⚠️ 仍是 flex + flex-basis：集子数量是数据驱动的（js/library.js），
+      将来加一部（第七张）也只多一行，不用改样式。
+   ⚠️ 不排四列：332px → 249px 时，「唐诗三百首」这种六个字的书名加篇数
+      会在 249px 里折行，卡片高度跟着参差。 */
+@media (min-width: 768px) {
+  .library-card {
+    flex: 1 1 calc(33.333% - 8px);
+    max-width: calc(33.333% - 8px);
+  }
+}
 /* 一张卡 = 一部集子。整张卡是一个 <a>，点哪儿都进得去（不是只有标题能点），
    所以卡片本身要有 active / focus 反馈，不能只在标题上下 300ms 的功夫。 */
 .library-card {
@@ -1907,6 +2060,31 @@ body[data-nav="search"] #gw-list .empty[data-empty="idle"] { padding: 0; }
    全站不请求任何外部资源，这一页也不例外。 */
 
 .progress-card { margin-top: 14px; }
+/* 平板（≥768px）：进度页的四张卡排成两列
+   --------------------------------------------------------------------------
+   这一页四块（概览 / 到期日历 / 到期篇目 / 掌握度与阶段）在手机上纵着排，
+   一屏一块、滚着看，是对的；平板上 1040px 一张卡放一行「日历 + 一行说明」，
+   四块要滚三屏，而屏幕明明能并排两块。
+   两列后：概览与掌握度各自成块，日历与到期篇目并排 —— 语义上本来就分两组。
+   ⚠️ 与设置页同一套算式（半个列距从 50% 里减掉）。
+   ⚠️ 奇数块（4 块是偶数，但将来可能加）时最后一块不撑满一行：max-width 收住。 */
+@media (min-width: 768px) {
+  .progress-main {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    column-gap: 20px;
+  }
+  .progress-card {
+    flex: 1 1 calc(50% - 10px);
+    max-width: calc(50% - 10px);
+  }
+  /* 概览那张（statistics 三大格）本身就只有一行数字，占满整行更好看 */
+  .progress-card.wide {
+    flex: 1 1 100%;
+    max-width: 100%;
+  }
+}
 .progress-head {
   display: flex;
   align-items: baseline;
@@ -1986,6 +2164,33 @@ body[data-nav="search"] #gw-list .empty[data-empty="idle"] { padding: 0; }
     max-width: 64px;
   }
 }
+/* 平板（≥768px）：日历 14 格**不再均分整栏**，收到手机上那一档的格子宽
+   --------------------------------------------------------------------------
+   上一档（≥700px）把 14 格改成「均分整列宽、上限 64px」，那是按 692px 的列宽
+   算的：14 × 49px = 692px，一屏放全，正好。
+   平板的内容区放宽到 1040px 之后，同样的均分算式把每格撑到 64px 上限，
+   14 格 + 13 条列距 = 974px —— 格子被拉成又宽又扁的方块（56px 高的竖条轨道
+   摆在 64px 宽的格子里，左右各空一片），日期数字孤零零挂在正中。
+   这里把「日历」整块也收进与正文同一档的宽度（720px），
+   格子仍是均分 + 上限 64px，回到上一档的观感。
+   ⚠️ 只收日历与它自己的说明：卡片仍占满整栏，标题 / 副标题与正文左对齐。 */
+@media (min-width: 768px) {
+  .cal,
+  .progress-note {
+    max-width: 720px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  /* 掌握度 / 记忆阶段那几条进度条同为「一行 = 标签 + 轨道 + 计数」，
+     宽栏里轨道能长到 900px —— 一条只走 20% 的进度条会被读成「几乎满」。
+     同样收进 720px。 */
+  .bars {
+    max-width: 720px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
 /* 今天这一格描一道边：用户第一眼要找到「我站在这儿」 */
 .cal-cell.today { background: var(--green-light); }
 .cal-cell.today .cal-day { color: var(--green); font-weight: 600; }

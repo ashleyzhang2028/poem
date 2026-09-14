@@ -850,8 +850,11 @@ chk(!/border-radius:\s*10px/.test(css) && !/border-radius:\s*10px/.test(classicC
 
 // (6) 大屏上顶栏比正文宽出一大截、阅读器正文还会被切掉左半行：
 //     两者都按 720px 内容区居中
-chk(/\.topbar \{[\s\S]{0,600}?max-width:\s*720px/.test(css),
-  '顶栏宽度与 720px 内容区对齐（大屏不与正文错位）');
+// ⚠️ 平板那一档（Issue #122 后续）把宽度改成了令牌 --col-w（手机 720px、
+//    平板一档更宽），这里改判「读的是同一个令牌」，不再写死 720px ——
+//    错位与否取决于顶栏与内容区**同源**，而不是取决于那一个数值。
+chk(/\.topbar \{[\s\S]{0,600}?max-width:\s*var\(--col-w/.test(css),
+  '顶栏宽度与内容区同源（--col-w，大屏不与正文错位）');
 chk(/\.reader-body \{[\s\S]{0,900}?width:\s*auto/.test(classicCss),
   '阅读器正文不再写 width: 100%（那会让内边距溢出视口、正文贴左边缘被切）');
 chk(/\.reader-body \{[\s\S]{0,1200}?box-sizing:\s*border-box/.test(classicCss),

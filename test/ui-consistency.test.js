@@ -83,8 +83,40 @@ function ruleOf(src, sel) {
 const itemRead = ruleOf(classicCode, '.item-read');
 chk(!/body\[data-nav/.test(itemRead),
   '列表播放键 .item-read 不按页面分叉（六部集子共用同一条声明）');
-chk(/width:\s*36px/.test(cssCode) && /height:\s*36px/.test(cssCode),
-  '列表播放键 36px 是全站同一档（36px × 36px）');
+
+/* 列表条目右侧那两枚圆键（「加入背诵」书签 · 播放）必须一样大
+   --------------------------------------------------------------------------
+   用户原话：「将各个索引页卡片中的播放按钮调整得和添加到自定义背诵按钮一样大小」。
+   原先两枚键**各写一套尺寸**：.item-read 36px（css/style.css）、
+   .item-recite 30px（css/classic.css），并排量出来一大一小。
+
+   现在两枚键都读全站唯一那颗 `--item-btn`，且**不许**再写死 width / height ——
+   写死的那一刻，这条「一样大」就靠两处数值巧合维持着了。
+   ⚠️ 判的是「两个选择器是否读同一个变量」，不是「两个数值是否都等于 36px」：
+      后者在换尺寸的那天仍会一起变，前者才是这一轮真正的意图。 */
+chk(/--item-btn:\s*36px/.test(ruleOf(cssCode, ':root')),
+  '圆键直径 --item-btn: 36px 在 :root 里定义（全站唯一来源）');
+const readRule = ruleOf(cssCode, '.item-read');
+const reciteRule = ruleOf(classicCode, '.item-recite');
+chk(/width:\s*var\(--item-btn\)/.test(readRule) && /height:\s*var\(--item-btn\)/.test(readRule),
+  '播放键 .item-read 的宽高读 --item-btn（不再写死 36px）');
+chk(/width:\s*var\(--item-btn\)/.test(reciteRule) && /height:\s*var\(--item-btn\)/.test(reciteRule),
+  '「加入背诵」键 .item-recite 的宽高读同一个 --item-btn（与播放键同大）');
+chk(!/width:\s*\d+px/.test(readRule) && !/width:\s*\d+px/.test(reciteRule),
+  '两枚圆键都不再写死直径（写死就退回「两处数值各自巧合相等」）');
+/* 图标框与直径是**一对**（三角的 1px 描边就靠这个配对，见 css/classic.css 顶部），
+   两枚圆键读同一个 --item-icon。
+   ⚠️ 不写成「直径 − 6px」：那不是这条比例的含义 —— 三角的 1px 由
+      「图标框 16px ↔ viewBox 里的 stroke 1.5」算出来（1.5 ÷ 24 × 16 = 1px），
+      跟直径差几像素没有关系。 */
+const readSvg = ruleOf(cssCode, '.item-read svg');
+const reciteSvg = ruleOf(classicCode, '.item-recite svg');
+chk(/--item-icon:\s*16px/.test(ruleOf(cssCode, ':root')),
+  '圆键图标框 --item-icon: 16px 在 :root 里定义（全站唯一来源）');
+chk(/width:\s*var\(--item-icon\)/.test(readSvg) && /width:\s*var\(--item-icon\)/.test(reciteSvg),
+  '两枚圆键的图标框都读同一个 --item-icon（与直径成对，不各写一个数）');
+chk(!/width:\s*15px/.test(reciteSvg) && !/width:\s*16px/.test(readSvg),
+  '两枚圆键的图标框都不再写死 px（写死就与直径脱钩）');
 
 /* 序号圆与条目标题同高：两处都读 --item-num，不同源就会「圆比字大一圈」 */
 const numRule = ruleOf(cssCode, '.item-num');
@@ -94,9 +126,10 @@ const titleRule = ruleOf(cssCode, '.item-title');
 chk(/font-size:\s*16\.5px/.test(titleRule),
   '条目标题 16.5px 与序号圆同一档');
 
-/* 圆键三档（36 / 30 / 26）—— 每一档都写在**同一个文件**里，
-   不允许某一页给同名控件另开一个尺寸 */
-["36px", "30px", "26px"].forEach(sz => {
+/* 余下的圆键档（26 / 30px）—— 每一档都写在**同一个文件**里，
+   不允许某一页给同名控件另开一个尺寸。
+   （列表条目那两枚键已不再是「写死的档位」：它们读 --item-btn，见上。） */
+["30px", "26px"].forEach(sz => {
   chk(new RegExp('width:\\s*' + sz).test(cssCode) || new RegExp('width:\\s*' + sz).test(classicCode),
     '圆键的 ' + sz + ' 这一档由样式表统一定义（各页不另写尺寸）');
 });
@@ -158,8 +191,12 @@ chk(/min-height:\s*0/.test(ringRule),
 
 /* 页签：外层整宽（底纹 / 描金线 / 安全区），内层限宽居中（四格不被拉成巨板）。
    1920px 屏上不限定内层，每格会宽到 477px，一颗 22px 图标孤零零挂在正中。 */
-chk(/\.dock-inner\s*\{[^}]*max-width:\s*720px/s.test(cssCode),
-  '页签内层有 720px 上限（与内容区同宽，四格不会被拉成巨板）');
+/* 列宽走**一个令牌** --col-w：顶栏 / 页签内层 / 正文列都读它。
+   令牌本身在 :root 里定义一次（手机 720px），平板那一档覆写成更宽的一档（见下）。 */
+chk(/:root\s*\{[^}]*--col-w:\s*720px/s.test(cssCode),
+  '「一列纸」的宽度只有 --col-w 一个来源（手机档 720px）');
+chk(/\.dock-inner\s*\{[^}]*max-width:\s*var\(--col-w/s.test(cssCode),
+  '页签内层读 --col-w（与内容区同源，四格不会被拉成巨板）');
 chk(/\.dock-inner\s*\{[^}]*margin:\s*0 auto/s.test(cssCode),
   '页签内层居中（与内容区共用一条竖轴）');
 chk(/\.dock-inner\s*\{[^}]*width:\s*100%/s.test(cssCode),
@@ -204,16 +241,117 @@ chk(/\.cal-cell\s*\{[^}]*max-width:\s*64px/s.test(classicCode),
    顶栏、阅读器正文列、页签内层都是它 —— 三处必须同值，
    否则「内容与顶栏对不齐」这类错位会一处一处冒出来。 */
 const appRule = ruleOf(cssCode, '.app');
-chk(/max-width:\s*720px/.test(appRule), '内容区列宽仍是 720px');
-chk(/max-width:\s*720px/.test(ruleOf(cssCode, '.topbar')),
-  '顶栏列宽与内容区同值（720px）');
-chk(/width:\s*720px/.test(ruleOf(classicCode, '.reader-body')),
-  '阅读器正文列宽与内容区同值（720px）');
-chk(/max-width:\s*720px/.test(ruleOf(cssCode, '.dock-inner')),
-  '页签内层与内容区同值（720px）');
+chk(/max-width:\s*var\(--col-w/.test(appRule), '内容区列宽走 --col-w');
+chk(/max-width:\s*var\(--col-w/.test(ruleOf(cssCode, '.topbar')),
+  '顶栏列宽与内容区同源（--col-w）');
+chk(/width:\s*var\(--col-w/.test(ruleOf(classicCode, '.reader-body')),
+  '阅读器正文列宽与内容区同源（--col-w）');
+chk(/max-width:\s*var\(--col-w/.test(ruleOf(cssCode, '.dock-inner')),
+  '页签内层与内容区同源（--col-w）');
+/* 令牌只能有**两档**：手机 720px、平板一档。写死第三处 720px 就是下次走散的种子。 */
+chk(!/max-width:\s*720px/.test(cssCode) || /max-width:\s*720px/.test(ruleOf(cssCode, '.cal')),
+  '样式表里不再有第二处写死的 max-width: 720px（一律走 --col-w）');
 
 /* ==========================================================================
-   三之二、顶栏在任何容器里都必须占满容器宽（不许被内容顶宽）
+   四、平板（≥768px）—— 不是把手机布局拉宽，而是换一种排布
+   --------------------------------------------------------------------------
+   用户原话（Issue #122 后续）：
+     「不仅仅是简单的修复，我们更应该考虑的是平板里桌面环境的排版设计，
+       需要以他们的屏幕大小进行重新设计，而不是完全照搬手机布局。」
+
+   判据不是「某个像素等于多少」，而是**平板那一档有没有换排布**：
+     · 列宽从 720px 变宽（多出来的每一寸都有人用）；
+     · 长列表 / 卡片组 / 设置分组 / 进度卡在这些宽度上**排成两列**；
+     · 正文列反而**收窄**（行宽不跟着屏幕走）。
+   守着「这一档的媒体查询真的存在、且换的是排布而不是数值」。
+   ========================================================================== */
+
+/* 列宽令牌：手机 720px、平板一档更宽 —— 只有两档，不跟视口线性放大 */
+const tabletRoot = /@media \(min-width:\s*768px\)\s*\{[^@]*:root\s*\{[^}]*--col-w:\s*(\d+)px/s.exec(cssCode);
+chk(!!tabletRoot, '平板（≥768px）那一档把 --col-w 放宽了一档（不是把手机那一列拉宽）');
+if (tabletRoot) {
+  const w = Number(tabletRoot[1]);
+  chk(w > 720 && w <= 1200,
+    '平板列宽 ' + w + 'px 落在「比手机宽、又不到桌面无限」这一档内');
+}
+
+/* 篇目列表：手机一列、平板两列 */
+chk(/@media \(min-width:\s*768px\)[\s\S]{0,400}\.list\s*\{[^}]*flex-direction:\s*row/s.test(cssCode),
+  '篇目列表在 ≥768px 排成两列（1040px 里一行只放一篇，右边的空白比字还宽）');
+chk(/\.list\s*>\s*\.item\s*\{[^}]*max-width:\s*calc\(50%/s.test(cssCode),
+  '两列的条目收住宽度（flex-basis 百分比不减掉半个列距就溢出）');
+
+/* 入口页：≥560px 两列，平板三列 */
+chk(/@media \(min-width:\s*768px\)[\s\S]{0,400}\.library-card\s*\{[^}]*33\.333%/s.test(classicCode),
+  '入口页六张卡在 ≥768px 排成三列（两列时每张 514px，空白比内容宽）');
+
+/* 集子目录页：卡内篇目清单两列。
+   ⚠️ 这里守着两件事，都是**踩过的坑**，不是审美：
+     ① 条目是 .group-card 的**直接子元素**（引擎 appendChild 到卡上，
+        卡里没有 .list 这一层）—— 所以两列必须落在这条关系上，
+        选择器要写 `>`。写成 `.group-card .list` 既命不中任何一篇
+        （卡里没有 .list），又会把 .group-card .list 当成容器去排 ——
+        真机上量到过后果：卡被排成横向、卡内条目被压成 102px 一条、
+        卡片高度从 1752px 炸到 2511px。
+     ② 卡自己要先成为 flex 行容器，否则给条目的 flex-basis 不生效。 */
+chk(/@media \(min-width:\s*768px\)[\s\S]{0,600}\.group-card\s*>\s*\.item\s*\{[^}]*max-width:\s*calc\(50%/s.test(classicCode),
+  '集子目录页的篇目在 ≥768px 排成两列（选择器落在「卡 → 条目」这条真实关系上）');
+chk(/@media \(min-width:\s*768px\)[\s\S]{0,600}\.group-card\s*\{[^}]*flex-wrap:\s*wrap/s.test(classicCode),
+  '卡片自己在 ≥768px 变成 flex 行容器（否则条目的 flex-basis 无从生效）');
+chk(!/^\.group-card \.list/sm.test(classicCode),
+  '没有把「卡内的 .list」当容器（卡里没有这一层，写了就是空规则 + 排错对象）');
+chk(/\.group-card\s*>\s*\.group-head\s*\{[^}]*flex:\s*1 1 100%/s.test(classicCode),
+  '卡头在两列排布里独占整行（卷名 / 篇数 / 连读圆键不该被挤进半栏）');
+
+/* 设置页：分组之间排两列；跨列的那一项自己占满一行 */
+chk(/@media \(min-width:\s*768px\)[\s\S]{0,400}\.settings-groups\s*\{[^}]*flex-wrap:\s*wrap/s.test(cssCode),
+  '设置页的分组在 ≥768px 排成两列（纵向堆五组，每组只用掉一行的宽度）');
+chk(/\.settings-group\s*\{[^}]*max-width:\s*calc\(50% - 18px\)/s.test(cssCode),
+  '设置分组收住半栏宽度（flex 不减半列距就溢出）');
+chk(/\.settings-item\.wide\s*\{[^}]*max-width:\s*100%/s.test(cssCode),
+  '「我的清单」那一项跨列（清单面板与两排按钮挤在半栏里会折行）');
+
+/* 进度页：四张卡排两列，概览那张整行 */
+chk(/@media \(min-width:\s*768px\)[\s\S]{0,400}\.progress-main\s*\{[^}]*flex-wrap:\s*wrap/s.test(classicCode),
+  '进度页四张卡在 ≥768px 排成两列');
+chk(/\.progress-card\.wide\s*\{[^}]*max-width:\s*100%/s.test(classicCode),
+  '进度概览那一块占满整行（它只有一行数字，挤在半栏里更难读）');
+
+/* 阅读器：栏变宽了，**正文反而收窄** —— 行宽 35~40 字是阅读上限 */
+chk(/@media \(min-width:\s*768px\)[\s\S]{0,400}\.reader-text\s*\{[^}]*max-width:\s*720px/s.test(classicCode),
+  '阅读器正文列在 ≥768px 封顶 720px（栏宽了，一行字数不跟着涨）');
+
+/* 页内工具栏与搜索区：宽栏里封顶居中，不被拉成一整条横带 */
+chk(/@media \(min-width:\s*768px\)[\s\S]{0,400}\.toolbar:not\(\.search-toolbar\)\s*\{[^}]*max-width:\s*720px/s.test(classicCode),
+  '集子页工具栏在 ≥768px 封顶居中（搜索框一个人吃掉 900px，右边两枚隔着半屏）');
+chk(/@media \(min-width:\s*768px\)[\s\S]{0,400}\.search-hero\s*\{[^}]*max-width:\s*520px/s.test(classicCode),
+  '搜索页 hero 在 ≥768px 封顶 520px（竖屏高度按视口算，横着拉满就成一条横带）');
+
+/* 进度日历与进度条：均分上限只在手机那一档成立，平板要收回来 */
+chk(/@media \(min-width:\s*768px\)[\s\S]{0,400}\.cal,[\s\S]{0,80}max-width:\s*720px/s.test(classicCode),
+  '进度日历在 ≥768px 收回 720px（14 格均分 1040px 会把格子拉成 64px 的宽方块）');
+chk(/@media \(min-width:\s*768px\)[\s\S]{0,600}\.bars\s*\{[^}]*max-width:\s*720px/s.test(classicCode),
+  '掌握度进度条在 ≥768px 收回 720px（轨道 900px 长时，走两成也像快满了）');
+
+/* 结构：两列排布要靠 HTML 里的容器才生效，只写 CSS 是空规则 */
+chk(/class="settings-groups"/.test(read('settings/index.html')),
+  '设置页真的套了 .settings-groups（不是只写了一条 CSS）');
+chk(/class="settings-item wide"/.test(read('settings/index.html')),
+  '「我的清单」那一项真的带了 .wide');
+chk(/class="progress-main"/.test(read('progress/index.html')),
+  '进度页真的套了 .progress-main');
+chk(/class="card progress-card wide"/.test(read('progress/index.html')),
+  '进度概览那张卡真的带了 .wide');
+chk(/class="today-list"/.test(read('index.html')),
+  '首页今日列表套了容器（两列只作用在 .list 的直接子元素上）');
+
+/* iOS 横屏「按宽度放大文字」的默认行为要关掉，否则同一段说明
+   在竖屏 / 横屏下字号不同（这与台式机的响应式不是一件事） */
+chk(/-webkit-text-size-adjust:\s*100%/.test(cssCode),
+  '关掉了 iOS 的横屏文字自动放大（字号只由样式表决定）');
+
+/* ==========================================================================
+   五、顶栏在任何容器里都必须占满容器宽（不许被内容顶宽）
    --------------------------------------------------------------------------
    现象（用户报的）：详情页标题栏溢出。
    根因不在「标题会不会折行」——是顶栏**自己**的宽度失控：
@@ -253,7 +391,7 @@ chk(/flex:\s*none/.test(ruleOf(cssCode, '.brand-name-row h1')),
   '「跬步」两字钉住不参与收缩（要收就收页名，不许把应用名压成「跬」）');
 
 /* ==========================================================================
-   四、各页顶栏结构一致（同一套 chrome 渲染）
+   六、各页顶栏结构一致（同一套 chrome 渲染）
    ==========================================================================
 
 const pages = ['index.html', 'poems/index.html', 'library/index.html', 'classic/index.html',

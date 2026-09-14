@@ -861,8 +861,9 @@ function check(name, cond, extra) {
         return +(parseFloat(getComputedStyle(it.querySelector('.item-read')).marginRight) || 0).toFixed(2);
       });
       // 内容块 → 播放键那一段（本轮补的口径，原断言量错对象）：
-      // 这一段被「加入背诵」圆键（.item-recite，30px + 6px margin-right）占着，
+      // 这一段被「加入背诵」圆键（.item-recite，直径 + 6px margin-right）占着，
       // 逐条必须同值 —— 与标题长短无关，余量全被箭头那颗 margin-left: auto 吃掉。
+      // 圆键直径=播放键直径（同读 --item-btn，见 css/classic.css），实测 36px。
       const mainToPlay = items.map(function (it) {
         const main = it.querySelector('.item-main').getBoundingClientRect();
         const play = it.querySelector('.item-read').getBoundingClientRect();
@@ -1043,17 +1044,18 @@ function check(name, cond, extra) {
       numState.playGapLeft >= 0, numState.playGapLeft + 'px');
     // ⚠️ 口径修正（本轮，修 CI 红）：「播放键左缘就贴在内容块右缘（间距 ≤ 1px）」
     // 这条断言量的是 playGapLeft = 内容块右缘 → 播放键左缘，而在**当前**结构里
-    // 这两者之间已经排了第三颗图标「加入背诵」（.item-recite，30px + 6px 外边距，
+    // 这两者之间已经排了第三颗图标「加入背诵」（.item-recite，直径 + 6px 外边距，
     // 见 css/classic.css 与 js/reader-core.js 的 reciteItemBtn）。
-    // 于是 playGapLeft 恒等于 30 + 6 = 36px —— 断言不是「偶发子像素误差」，
+    // 于是 playGapLeft 恒等于「圆键直径 + 6px」—— 断言不是「偶发子像素误差」，
     // 而是**必然失败**：它量错了对象，却把红挂在内容块取宽这件事上。
-    // （这条断言在 #81 那批之后、.item-recite 落地之前写的，本次实测 36px，
+    // （这条断言在 #81 那批之后、.item-recite 落地之前写的，
     //   只是 CI 采到的那一行日志被截断，才显得像偶发。）
     // 现在改量真正的几何关系：**内容块 → 播放键这一段由第三颗图标「加入背诵」
-    // （.item-recite）占着** —— 它 30px 盒宽 + 6px margin-right = 36px，
-    // 与实测的 playGapLeft 一致。这条关系是刻意设计的（css/classic.css 里
-    // .item-recite 的注释写着间距 6px 写在它自己的 margin-right 上），
-    // 量它既不依赖标题长短，也不依赖余量落在哪里。
+    // （.item-recite）占着** —— 它「盒宽 + 6px margin-right」就是 playGapLeft。
+    // 这条关系是刻意设计的（css/classic.css 里 .item-recite 的注释写着间距 6px
+    // 写在它自己的 margin-right 上），量它既不依赖标题长短，也不依赖余量落在哪里。
+    // ⚠️ 盒宽不写死在断言里：它与播放键同读 --item-btn（本轮改成同大），
+    //    所以这里逐条量出来的真实宽度去比，换尺寸时断言仍成立。
     // 逐条的同值性放在上面 alignState 那次 evaluate 里一起量（那里列表有 100 条，
     // 这里只剩 1 条 —— 从阅读器返回后列表是隐藏的，量不出「与标题长短无关」）。
     const gapState = await page.evaluate(() => {
@@ -1067,10 +1069,16 @@ function check(name, cond, extra) {
         reciteMr: +(parseFloat(getComputedStyle(recite).marginRight) || 0).toFixed(2)
       };
     });
-    check('iPhone: 内容块 → 播放键这一段由「加入背诵」圆键占着（30px + 6px）',
+    check('iPhone: 内容块 → 播放键这一段由「加入背诵」圆键占着（圆键盒宽 + 6px）',
       Math.abs(gapState.gap - (gapState.reciteW + gapState.reciteMr)) <= 0.5,
       JSON.stringify(gapState));
-    check('iPhone: 圆键本体没被压小（仍是 36px 正圆）',
+    // 需求（Issue #122 后续）：「加入背诵」键与播放键必须一样大。
+    // 两枚圆键并排，量它们的真实外径 —— 一个大一个小是肉眼一瞥就能看见的。
+    // 这里不写死 36px：判「两者相等」，并另给一个合理下限（免得一起缩成点）。
+    check('iPhone: 「加入背诵」键与播放键一样大（两枚并排圆键同径）',
+      Math.abs(gapState.reciteW - numState.playW) <= 0.5 && numState.playW >= 30,
+      JSON.stringify({ reciteW: gapState.reciteW, playW: numState.playW }));
+    check('iPhone: 圆键本体没被压小（仍是 --item-btn 那一档的正圆，36px；宽高同值）',
       Math.abs(numState.playW - 36) <= 0.5, numState.playW + 'px');
     // ⚠️ 口径变更（Issue #69 后续）：`playGapRight`（播放键右缘 → 箭头左缘）
     // 已经不再是「播放键与箭头之间的间距」——箭头现在带 margin-left: auto，
@@ -1089,6 +1097,8 @@ function check(name, cond, extra) {
     // 这里量两件事：
     //   1) 内容块宽度小于整行留给它的空间（= 它没有把整行撑满，是按内容取的宽）；
     //   2) 圆键左缘仍在原位（右端三件套没动，正文那一行的可用宽度没被吃掉）。
+    // 右侧三件套的占位：书签键 36（--item-btn）+ 6 + 箭头 18；左侧 12、卡片 2、
+    // 条目右内边距 8 —— 数值与 CSS 同源，本轮两枚圆键同径（都是 36）后这算式不变。
     check('iPhone: 小古文内容块不再撑满整行（按内容取宽，不是 flex 增长项）',
       numState.mainW < 393 - 2 - 12 - 8 - 36 - 6 - 18 - 1,
       numState.mainW + 'px（整行 ' + 393 + 'px）');
