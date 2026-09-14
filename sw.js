@@ -598,9 +598,9 @@
  *        （poems/index.html、js/poems.js、js/chrome.js、js/library.js、
  *          js/reader-core.js、library/index.html、sw.js、测试）
  *
- *        版本号按「并行 PR 一律 +5」的口径从 v83 起落到 v88。
+ *        版本号按「并行 PR 一律 +5」的口径从 v93 起落到 v98（main 那笔已占 v93，本条再 +5）。
  */
-const CACHE_NAME = "poem-app-v88";
+const CACHE_NAME = "poem-app-v98";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [
@@ -628,6 +628,9 @@ const PRECACHE = [
   "./js/speech.js",
   "./js/reader.js",
   "./js/storage.js",
+  // 复习调度算法（可切换）：遗忘曲线 / Leitner / SM-2 / FSRS 简化版。
+  // ⚠️ 须排在 scheduler.js 之前 —— scheduler.review() 一进来就转交给它。
+  "./js/review-models.js",
   "./js/scheduler.js",
   "./js/app.js",
   "./js/chrome.js",

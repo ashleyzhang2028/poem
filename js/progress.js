@@ -79,11 +79,15 @@
       tip.textContent = "还没有学习记录。到首页背一首，回来就能看到到期日历与掌握度。";
       return;
     }
-    // 逾期要单独说一句：它被并进「今天」那一格里，不说明的话用户会以为
-    // 今天凭空多了几篇 —— 其实是他前几天漏掉的
+    /* 逾期要单独说一句：不说明的话用户会以为「今天凭空多了几篇」——
+       其实是他前几天漏掉的。但口径要说准（#119 这里写反了）：
+         · 逾期**一周以内**的：并进「今天」那一格（他今天确实该补）；
+         · 逾期**超过一周**的：**另计**一条（唯一那截 backlog），
+           日历与清单都**不并进**今天 —— 否则两处数就对不上。
+       所以这里说「另有 N 首逾期超过一周」，不能说「已并进今天」。 */
     tip.textContent = o.overdue
-      ? "共 " + o.total + " 首里已学 " + o.learned + " 首，其中 " + o.overdue +
-        " 首已逾期超过一周（已并进「今天」这一格）。"
+      ? "共 " + o.total + " 首里已学 " + o.learned + " 首，另有 " + o.overdue +
+        " 首逾期超过一周（另计一条，不在「今天」这一格里）。"
       : "共 " + o.total + " 首里已学 " + o.learned + " 首。";
   }
 
@@ -123,8 +127,10 @@
     }
     var note = $("#calendar-note");
     if (note) {
+      /* 「今天」这一格含的是**今天到期的 + 逾期一周以内的**；
+         逾期一周以上的（o.overdue）另计一条，不在这格里。 */
       note.textContent = o.overdue
-        ? "「今天」这一格含 " + o.overdue + " 首逾期超过一周的篇目。"
+        ? "另有 " + o.overdue + " 首逾期超过一周（另计，未并进「今天」这一格）。"
         : "竖条越高，那天要复习的篇目越多。";
     }
   }
@@ -156,11 +162,26 @@
       return;
     }
 
-    var today = L.days[0].items.length + L.backlog.length;
+    /* ⚠️ 「今天 N 篇」这个 N 必须等于**日历上今天那一格**的数（`o.calendar[0].count`），
+       不能把 backlog 并进来 —— 这是 #119 留下的真 bug：
+       原先这里写的是 `L.days[0].items.length + L.backlog.length`（把逾期一周以上
+       的也算进今天），而日历那一格与今天这一档的表头都**不含**它们
+       （overview 的 overdue 是另计一条）。于是只要有一篇逾期超过一周，
+       日历说今天 1 篇、清单汇总说今天 2 篇 —— 正是「同一本账」要防的情形。
+       逾期那一批由下方「逾期超过一周 · N 篇」那一截单独报。
+       `test/progress.test.js` 现在造了「逾期 9 天」的进度，逐格对账兜住它。 */
+    var today = L.days[0].items.length;
     if (sub) {
-      sub.textContent = today
-        ? "今天 " + today + " 篇 · 未来两周共 " + L.total + " 篇"
-        : "未来两周共 " + L.total + " 篇";
+      /* 三个数各说一件事，别混：
+           · 今天 N 篇        —— 日历上今天那一格的数（不含逾期一周以上）
+           · 逾期超过一周 M 篇 —— 单独一截，另计（不并进上面那个 N）
+           · 未来两周共 T 篇   —— 14 天窗口里要做的全部（含上面两项）
+         原先这里把 backlog 并进了「今天」，与日历那一格对不上（见上）。 */
+      var parts = [];
+      parts.push(today ? "今天 " + today + " 篇" : "今天没有到期的");
+      if (L.backlog.length) parts.push("逾期超过一周 " + L.backlog.length + " 篇");
+      parts.push("未来两周共 " + L.total + " 篇");
+      sub.textContent = parts.join(" · ");
     }
 
     box.innerHTML = "";
@@ -221,11 +242,12 @@
         escapeHtml([it.dynasty, it.author].filter(Boolean).join(" · ")) +
       "</span>" +
       '<span class="duelist-state">' +
-        escapeHtml(window.Scheduler.levelName(it.level)) + " · " + it.mastery + "%" +
+        escapeHtml(it.stageName || window.Scheduler.levelName(it.level)) + " · " + it.mastery + "%" +
       "</span>" +
       '<span class="duelist-due' + (it.daysLeft < 0 ? " late" : "") + '">' + dueText(it.daysLeft) + "</span>";
     row.title = showTitle(it.title) + "：" + dueText(it.daysLeft) +
-      "，当前在「" + window.Scheduler.levelName(it.level) + "」、掌握度 " + it.mastery + "%";
+      "，当前在「" + (it.stageName || window.Scheduler.levelName(it.level)) +
+      "」、掌握度 " + it.mastery + "%";
     return row;
   }
 
@@ -299,10 +321,23 @@
     renderBars("#progress-levels", rows);
     var sub = $("#levels-sub");
     if (sub) {
-      // 「已牢固」= 走完 10 阶（240 天后那一档），与首页「较牢固」同一口径
+      // 「已牢固」= 走完 10 阶（240 天后那一档），与首页「较牢固」同一口径。
+      // 换算法后档名会跟着变（Leitner 说「号盒」、SM-2 说「间隔与简易度」、
+      // FSRS 说「稳定与难度」）—— 这里顺带把当前用的是哪一套说出来，
+      // 免得用户看到和上次不一样的档名，以为是数据串了。
       var last = o.levelCounts[o.levelCounts.length - 1].count;
-      sub.textContent = o.learned ? "走完全程的 " + last + " 首" : "还没有学习记录";
+      var algo = window.ReviewModels ? window.ReviewModels.describe(algoKey()).name : "";
+      var tail = algo && algo !== "遗忘曲线" ? "（按 " + algo + " 排期）" : "";
+      sub.textContent = o.learned ? "走完全程的 " + last + " 首" + tail : "还没有学习记录";
     }
+  }
+
+  /** 当前复习算法：进度页只读设置，不改它 */
+  function algoKey() {
+    var s = window.Storage ? window.Storage.getSettings() : null;
+    var key = s && s.algo;
+    if (!window.ReviewModels) return "ebbinghaus";
+    return window.ReviewModels.known(key) ? key : window.ReviewModels.DEFAULT_KEY;
   }
 
   /* ---------------- 启动 ---------------- */
@@ -315,7 +350,8 @@
     }
     if (!window.Scheduler || !window.Scheduler.overview) return;
 
-    var o = window.Scheduler.overview(list, getRecord, { days: DAYS });
+    var ak = algoKey();
+    var o = window.Scheduler.overview(list, getRecord, { days: DAYS, algo: ak });
     // 篇目清单与日历是同一本账：一次算好挂到 o 上，页面各画各的
     // （两处各自算一遍迟早会算出两个数，而表现是「日历说 3 篇、清单里 2 篇」）
     o.dueList = window.Scheduler.dueList(list, getRecord, { days: DAYS });

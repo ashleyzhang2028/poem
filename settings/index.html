@@ -101,15 +101,43 @@
         </div>
 
         <div class="settings-item">
-          <label>背诵进度</label>
+          <label>进度总览</label>
           <div class="settings-btns">
-            <a class="btn ghost-btn" href="/progress/">看进度总览</a>
+            <a class="btn ghost-btn" href="/progress/">进度总览</a>
           </div>
           <div class="settings-hint">到期日历与全部到期篇目：未来两周哪天要复习几篇、具体是哪几篇，以及掌握度分布</div>
         </div>
+      </section>
 
-        <div class="settings-tip">
-          <p>复习间隔：当天 → 1 → 2 → 4 → 7 → 15 → 30 → 60 → 120 → 240 天</p>
+      <!-- ==================================================================
+           二·五、复习算法：决定「下次什么时候复习」
+           ------------------------------------------------------------------
+           原先只有一套固定间隔表（「遗忘曲线」），用户没得选。
+           这一栏给出四张模型：遗忘曲线（默认）/ 莱特纳盒 / SM-2 / FSRS。
+           选项定义在 js/review-models.js，本页不另抄一份 —— 加模型只改那一处。
+           换模型**不清进度**：已有记录按最接近的落点换算，接着走。
+           ================================================================== -->
+      <section class="settings-group" aria-labelledby="grp-algo">
+        <h2 class="settings-group-title" id="grp-algo">复习算法</h2>
+
+        <div class="settings-item">
+          <label id="algo-label">用哪一套安排复习</label>
+          <div class="algo-modes" id="seg-algo" role="radiogroup" aria-labelledby="algo-label"></div>
+          <div class="settings-hint" id="algo-hint"></div>
+        </div>
+
+        <div class="settings-item">
+          <label>换算法会不会把进度清零</label>
+          <div class="settings-hint">
+            <strong>不会</strong>。已经背过的篇目一篇不丢，按「最接近的落点」接到新算法上接着走
+            （例如原先走到第 7 阶段的，换到 FSRS 就按第 7 阶段对应的稳定天数接手）。
+            只有之后**新做的评价**才按新算法算。
+          </div>
+        </div>
+
+        <div class="settings-item">
+          <label>复习间隔</label>
+          <div class="settings-hint" id="algo-interval"></div>
         </div>
       </section>
 
@@ -144,17 +172,11 @@
           <label id="play-mode-label">连读方式</label>
           <div class="play-modes" id="seg-play" role="radiogroup" aria-labelledby="play-mode-label"></div>
           <div class="settings-hint" id="play-hint"></div>
-        </div>
-
-        <div class="settings-item">
-          <label>在哪儿快速调</label>
           <div class="settings-hint">
             想听完一篇接着听下一篇，不用回这一页：在集子索引页（小古文 / 唐诗 / 宋词 / 古文观止 / 昭明文选）
-            每张分类卡头的右侧有一颗圆形播放键 ——
-            <strong>手机上长按约半秒</strong>、<strong>电脑上点右键</strong>，
-            弹出的菜单就是上面这五档，选中即刻开听。短按那颗键则按当前档位直接连读。
+            每张分类卡头的右侧有一颗圆形播放键，<strong>长按 / 右键</strong>弹出的是同一个菜单，
+            选中即刻开听。
           </div>
-          <div class="settings-hint">工具栏那颗大圆键不弹菜单，它按这里选定的档位连读整页；连读的篇目范围是「你眼前这一份可见列表」（搜过、切过「未读」就只读那几篇）。</div>
         </div>
       </section>
     </main>
@@ -176,6 +198,8 @@
   <script src="/js/storage.js"></script>
   <script src="/js/manifest-loader.js"></script>
   <script src="/js/play-modes.js"></script>
+  <!-- 复习算法清单（与首页同源）：设置页只做回显与写值，不另抄一份定义 -->
+  <script src="/js/review-models.js"></script>
   <script src="/js/settings.js"></script>
   <script src="/js/chrome.js"></script>
   <script src="/js/pwa.js"></script>

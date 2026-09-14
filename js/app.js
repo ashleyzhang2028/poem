@@ -175,6 +175,9 @@
         /* 清单更新失败不影响主流程 */
       }
     }
+
+    // 第二行副标题跟着当前复习算法走（「按 X 复习」）
+    applyAlgoSub();
   }
 
   /**
@@ -213,6 +216,37 @@
   /** 当前背诵范围配置（见 js/scheduler.js 的 SCOPES） */
   function scopeKey() {
     return Scheduler.SCOPES[settings.scope] ? settings.scope : Scheduler.DEFAULT_SCOPE;
+  }
+
+  /**
+   * 当前复习调度算法（见 js/review-models.js）。
+   *
+   * 认不出来的一律退回出厂默认「遗忘曲线」—— 本机存了个野生值时，
+   * **界面上说的**与**引擎真正用的**必须是同一个（否则用户看到「按 FSRS 复习」，
+   * 排出来的却是固定间隔表）。
+   */
+  function algoKey() {
+    if (!window.ReviewModels) return "ebbinghaus";
+    return window.ReviewModels.known(settings.algo) ? settings.algo : window.ReviewModels.DEFAULT_KEY;
+  }
+
+  /**
+   * 顶栏第二行 = 「按 X 复习」，跟着当前算法走。
+   *
+   * 需求原话：「背诵页面现在的副标题是『按遗忘曲线复习』，以后用户选择哪种，
+   * 就显示哪种，例如『按 SM-2 复习』，或者『按 FSRS 复习』」。
+   *
+   * ⚠️ 普通 DOM 赋值 + 在 chrome:ready 之后再写一次 —— 顶栏是 js/chrome.js
+   *    重建的，它读的是 `<body data-sub>`。所以顺手把 data-sub 也改掉：
+   *    这样即便顶栏晚一步重建（或用户切页签回来），也还是当前算法那句。
+   */
+  function applyAlgoSub() {
+    const sub = window.ReviewModels
+      ? window.ReviewModels.subFor(algoKey())
+      : "按遗忘曲线复习";
+    document.body.setAttribute("data-sub", sub);
+    const el = $("#brand-sub");
+    if (el) el.textContent = sub;
   }
 
   function scopeInfo() {
@@ -698,7 +732,7 @@
           // 这里把后面的尾巴拼成一段「整串」，再交给 metaLine 排在末尾：
           // 朝代一空时只省掉它自己，不会把「· 二年级上」那一截也吞掉。
           [scope.random ? gradeName(p.grade) + termName(p.term) : "",
-           rec && rec.learned ? Scheduler.levelName(rec.level) : "未学过"]
+           rec && rec.learned ? Scheduler.levelName(rec.level, rec) : "未学过"]
             .filter(Boolean).join(" · "))) +
         "</div>" +
         (rec && rec.learned ? '<div class="mbar"><i style="width:' + Scheduler.mastery(rec) + '%"></i></div>' : "") +
@@ -847,7 +881,7 @@
           metaLine([esc(p.author || ""), esc(p.dynasty || ""), esc(p.bookName || ""),
             // 掌握度那一栏无条件跟着（空值也显示「未学过」），
             // 所以它不参与「空值即省分隔符」的排布，直接拼成一段尾巴
-            rec && rec.learned ? Scheduler.levelName(rec.level) : "未学过"]) +
+            rec && rec.learned ? Scheduler.levelName(rec.level, rec) : "未学过"]) +
           "</div>" +
           (rec && rec.learned ? '<div class="mbar"><i style="width:' + Scheduler.mastery(rec) + '%"></i></div>' : "") +
           "</div>" +
@@ -1049,6 +1083,114 @@
     }, Promise.resolve(0));
   }
 
+  /* ---------------- 深链接：/?poem=<id> ----------------
+     「背诵进度总览」（/progress/）里那一份「全部到期篇目」的篇名是指回首页的
+     链接（`/?poem=<id>`）—— 日历回答「哪天忙」、清单回答「那天是哪些」，
+     点进去才是「就读这一篇」。
+
+     ⚠️ 这一节是 #119 断了的那一头：上一轮把「日历点得进清单」做通了，
+     清单里也挂了链接，但**全站没有一处读 `?poem=`** —— 链接指过来，
+     首页照常画「今日背诵」，用户点下去只觉得「没反应」（不报错、测试全过、
+     因为它验的只是链接形态）。所以这里把它接上。
+
+     口径三条：
+       · **只做「落地」不做「状态」**：读完 `?poem=` 就把地址栏那一截抹掉
+         （`replaceState`，不新增一条历史）。留在地址栏里的话，用户随手刷新
+         又弹一次、返回键也回不到「干净的首页」。
+       · **只认首页自己的篇目**：课内 261 首与自选集合里的篇目都能打开
+         （自选篇目走 quickPoem 的快照，与自选列表点开是同一套）；
+         查不到的 id 一律安静放过 —— 旧链接、手改错的 id 都不该弹同一个黄条。
+       · **沿用同一个详情弹层**：`openPoem()` 那一套（正文 / 译文 / 朗读 /
+         三个掌握度按钮）照旧，不在这一页另造一个阅读器。
+         `planItem` 传 null（它不在今日计划里，底部提示按「背诵后点按钮」走）。 */
+  /** 从 `?poem=` / `#poem=` 里取要打开的篇目 id（没有签则返回空串） */
+  function deepLinkId() {
+    var q = "";
+    try {
+      q = (window.location && window.location.search) || "";
+    } catch (e) {
+      q = "";
+    }
+    var m = /(?:^|[?&])poem=([^&]+)/.exec(q);
+    if (!m) {
+      // 兜底认一次 hash：有些分享渠道会把 ? 吃掉
+      var h = "";
+      try { h = (window.location && window.location.hash) || ""; } catch (e2) { h = ""; }
+      m = /(?:^|[#&])poem=([^&]+)/.exec(h);
+      if (!m) return "";
+    }
+    var id = m[1];
+    try {
+      id = decodeURIComponent(id.replace(/\+/g, " "));
+    } catch (e3) {
+      /* 解不开就按原样认一次：宁可查不到，也不要让首页报错 */
+    }
+    return String(id || "").trim();
+  }
+
+  /** 把地址栏里那一截 `?poem=` 抹掉，不新增历史记录（刷新不再弹、返回键照旧） */
+  function clearDeepLink() {
+    try {
+      if (!window.history || !window.history.replaceState) return;
+      var url = window.location.pathname + window.location.hash;
+      window.history.replaceState(null, "", url);
+    } catch (e) {
+      /* 某些内嵌 WebView 禁用 history：抹不掉也不影响打开那一篇 */
+    }
+  }
+
+  /**
+   * 首页的深链接落地：`/?poem=<id>` → 直接打开那一篇的详情弹层。
+   * 启动时调一次；`storage` 之类的事件不该重放它（同一次打开只落地一次）。
+   */
+  function openDeepLink() {
+    var id = deepLinkId();
+    if (!id) return false;
+    // 地址栏先清干净 —— 无论下面找不找得到，这一截都不该留
+    clearDeepLink();
+
+    var poem = coursePoem(id) || optionalPoem(id);
+    if (!poem || !poem.title) return false;
+
+    // 今日列表先画出来：弹层叠在一张画好的首页上，
+    // 关掉之后回到的是「今天背这 5 首」，而不是半张白纸。
+    if (!todayPlan.length) buildTodayPlan();
+    openPoem(poem, null);
+    return true;
+  }
+
+  /**
+   * 课内 261 首里按 id 取一篇。
+   *
+   * ⚠️ 不用 `poemForEntry()` —— 那个只查站点索引（SITE_INDEX），而首页
+   * 只加载课内 12 册；课内篇目在 POEMS_ALL 里一定有，绕开索引更稳，
+   * 也免得「索引里的 id 写法与 POEMS_ALL 不一致」时静默打不开。
+   */
+  function coursePoem(id) {
+    var all = window.POEMS_ALL || [];
+    for (var i = 0; i < all.length; i += 1) {
+      if (all[i] && all[i].id === id) return all[i];
+    }
+    return null;
+  }
+
+  /**
+   * 自选集合里按篇目 id 取一篇（课外的那些）。
+   *
+   * 走 `ReciteCollections.scheduleItems()` —— 与自选列表、今日任务排程
+   * 是**同一个出口**，正文 / 译文取不到索引里那份时自动回落到加入时的快照，
+   * 返回的对象也自带 `custom: true`（弹层那一格才改显示集子名）。
+   * 另起一个查询就会与列表那边分叉：列表点得开、深链接点不开。
+   */
+  function optionalPoem(id) {
+    if (!window.ReciteCollections || !window.ReciteCollections.scheduleItems) return null;
+    var items = window.ReciteCollections.scheduleItems(window.SITE_INDEX || []);
+    for (var i = 0; i < items.length; i += 1) {
+      if (items[i] && items[i].id === id) return items[i];
+    }
+    return null;
+  }
+
   /* ---------------- 弹层 ---------------- */
   function openPoem(p, planItem) {
     currentPoem = p;
@@ -1087,7 +1229,7 @@
 
     const info = [];
     if (rec && rec.learned) {
-      info.push("<span>记忆阶段：<b>" + Scheduler.levelName(rec.level) + "</b></span>");
+      info.push("<span>记忆阶段：<b>" + Scheduler.levelName(rec.level, rec) + "</b></span>");
       info.push("<span>掌握度：<b>" + Scheduler.mastery(rec) + "%</b></span>");
       info.push("<span>已复习：<b>" + rec.reviewCount + "</b> 次</span>");
       info.push(
@@ -1426,15 +1568,21 @@
   function handleResult(result) {
     if (!currentPoem) return;
     const rec = Storage.get(currentPoem.id) || Scheduler.createRecord();
-    const next = Scheduler.review(rec, result);
+    // 按当前选定的算法排下一次（见 js/review-models.js）：换模型之后新复习的
+    // 按新模型算，旧记录不做静默改写（换算发生在切模型那一刻，见 adopt()）
+    const next = Scheduler.review(rec, result, algoKey());
     Storage.set(currentPoem.id, next);
 
-    const msgMap = {
-      good: "记住了！下次复习：" + new Date(next.nextReviewAt).toLocaleDateString("zh-CN"),
-      fuzzy: "有点模糊，12 小时后再复习一次",
-      bad: "没关系，30 分钟后再复习一次"
-    };
-    showToast(msgMap[result]);
+    /* 结果提示也说当前模型的话：原先写死「12 小时 / 30 分钟」两句其实各模型一致，
+       但「记住了！下次复习：X」里那个 X 是新模型算出来的日期 ——
+       提示文案统一从模型层取，免得这里再抄一份口径。 */
+    showToast(window.ReviewModels
+      ? window.ReviewModels.resultHint(algoKey(), result, next)
+      : {
+        good: "记住了！下次复习：" + new Date(next.nextReviewAt).toLocaleDateString("zh-CN"),
+        fuzzy: "有点模糊，12 小时后再复习一次",
+        bad: "没关系，30 分钟后再复习一次"
+      }[result]);
 
     // 更新该首在当前计划中的状态
     todayPlan = todayPlan.map(function (it) {
@@ -1787,6 +1935,10 @@
     bindEvents();
     backfillSnapshots();
     renderCollections();
+    // 深链接：`/?poem=<id>`（「背诵进度总览」里那份到期清单指回来的地址）——
+    // 落在**首屏画好之后**，用户先看到一张正常的首页，弹层再叠上去；
+    // 关掉弹层回到的就是这一张首页，而不是半张白纸。
+    openDeepLink();
     // 语料订正过的自选篇目：把还旧着的快照按需拉回来刷新（拉不到就留着 stale，
     // 下次再试）。放在这里而不是 document.ready 之后立刻做 —— 首屏先画出来，
     // 拉取在后台进行，失败也不影响用。
