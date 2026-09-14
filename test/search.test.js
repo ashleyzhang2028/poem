@@ -114,16 +114,21 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   await sleep(200);
   const ld = wLib.document;
   const cards = [...ld.querySelectorAll('.library-card')];
-  // 六部 = 课内诗词（第一张卡指回首页）+ 五部选集。
+  // 六部 = 课内诗词 + 五部选集。
   // 课内不是「课外」，但它也该从这张目录进得去 —— 用户在这一页看到的是
   // 「站上有哪几部、各多少篇」的完整账，而不是缺了课内的一份残表。
+  // ⚠️ 课内那张卡指 /poems/**索引页**，不是首页（/）—— 首页是「今日背诵」，
+  //    点进去看到的是今天那几首，不是「课内都收着哪些诗」（Issue #114 第一条）。
+  //    六张卡的行为因此完全一致：点卡 → 索引页 → 再点一篇 → 详情页。
   chk(cards.length === 6, '入口页列出六部（课内 + 五部选集，实际 ' + cards.length + '）');
   chk(cards.map(c => c.getAttribute('data-book')).join('/') ===
     'poems/classic/tangshi/songci/guwen/zhaoming',
     '六部的顺序与出处正确');
   chk(cards.map(c => c.getAttribute('href')).join(' ') ===
-    '/ /classic/ /tangshi/ /songci/ /guwen/ /zhaoming/',
-    '六张卡各指到自己的索引页（实际 ' + cards.map(c => c.getAttribute('href')).join(' ') + '）');
+    '/poems/ /classic/ /tangshi/ /songci/ /guwen/ /zhaoming/',
+    '六张卡各指到自己的索引页、六张行为一致（实际 ' + cards.map(c => c.getAttribute('href')).join(' ') + '）');
+  chk(cards.every(c => /^\/[a-z]+\/$/.test(c.getAttribute('href'))),
+    '六张卡的去处都是目录化索引页（没有一张指回首页 /）');
   // 篇数与各集子**自己的数据**一致（不写死数字：日后增补篇目，卡片跟着变）
   // ⚠️ 卡片上那个数字不能拿搜索索引来数 —— 索引按约定不收「待补」条目，
   // 拿它来数会出现「卡片写 480 篇、索引里只有几十条」。见 js/library.js 的 countOf()。
