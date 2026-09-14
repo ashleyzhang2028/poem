@@ -1114,31 +1114,40 @@ function check(name, cond, extra) {
       check('iPhone 搜索页：进页即聚焦搜索框（少点一次才输得进字）',
         autoFocus.focused === 'gw-search', JSON.stringify(autoFocus));
 
-      // ① 搜索框比索引页更高 —— 它是这一页唯一的主角
+      // ① 搜索框比索引页更高 —— 它是这一页唯一的主角。
+      //    ⚠️ 2026 这一版把「增高」从绘制层搬进了布局：高度就是 52px 的真高度
+      //       （上一版用 scaleY(1.3) 把 40px 拉长，四个圆角被压成椭圆、
+      //        placeholder 也纵向变形 —— 用户反馈的「圆角不太正常 / 文字有点压扁」）。
+      //    所以这里量**两处相等**：视觉高度 = 布局高度 = 52px。
       const boxState = await sp.evaluate(() => {
         const hero = document.querySelector('.search-hero .search-wrap');
         const inp = document.querySelector('.search-hero .search-input');
         const r = inp.getBoundingClientRect();
+        const cs = getComputedStyle(inp);
         return {
           visualH: +r.height.toFixed(1),
           layoutH: +hero.getBoundingClientRect().height.toFixed(1),
           // 定位上下文的中轴：候选下拉的 top 就是从这里算的
           wrapBottom: +hero.getBoundingClientRect().bottom.toFixed(1),
           inputBottom: +r.bottom.toFixed(1),
-          inputTop: +r.top.toFixed(1)
+          inputTop: +r.top.toFixed(1),
+          radius: cs.borderTopLeftRadius,
+          scale: cs.transform
         };
       });
       check('iPhone 搜索页：搜索框真的变高了（52px，超出 iOS 44px 最小可点面积）',
         boxState.visualH >= 50 && boxState.visualH <= 54, boxState.visualH + 'px');
-      check('iPhone 搜索页：增高只做在绘制层，hero 的布局高度仍是 40px（居中算式才准）',
-        Math.abs(boxState.layoutH - 40) <= 0.5, boxState.layoutH + 'px');
-      // 输入框视觉上高 52px，而它所在的那一行在布局上仍是 40px：
-      // 多出来的 12px 上下各溢出 6px（居中放大）。所以输入框的**视觉下沿**
-      // 比定位上下文（.search-wrap）的下沿低 6px —— 候选下拉的 top
-      // 正是照着这个差值写的（top: calc(100% + 5px)）。
-      check('iPhone 搜索页：输入框向下溢出 6px，下拉的 top 常量与它对应',
-        Math.abs((boxState.inputBottom - boxState.wrapBottom) - 6) <= 0.5,
-        '溢出 ' + (boxState.inputBottom - boxState.wrapBottom).toFixed(1) + 'px');
+      check('iPhone 搜索页：增高长在布局里（hero 那一行也是 52px，不是画出来的）',
+        Math.abs(boxState.layoutH - 52) <= 0.5, boxState.layoutH + 'px');
+      // 圆角必须是**一个**半径（同一条圆弧），不是被纵向拉伸出来的椭圆角
+      check('iPhone 搜索页：搜索框四个角是同一个半径（不再被纵向拉伸成椭圆角）',
+        boxState.radius === '12px' && !/matrix/.test(boxState.scale),
+        JSON.stringify([boxState.radius, boxState.scale]));
+      // 输入框与定位上下文（.search-wrap）同高：下拉的 top 就从这里算，
+      // 不再有「视觉溢出 6px」那笔账（top: calc(100% + 4px) 只是 4px 的呼吸）
+      check('iPhone 搜索页：输入框与定位上下文同高（下拉的 top 常量因此只有 4px 呼吸）',
+        Math.abs((boxState.inputBottom - boxState.wrapBottom)) <= 0.5,
+        '相差 ' + (boxState.inputBottom - boxState.wrapBottom).toFixed(1) + 'px');
 
       // ② 候选下拉贴着搜索框：间隙必须很小（用户反馈「离搜索框太远」的反面）
       await sp.type('#gw-search', '月', { delay: 10 });
@@ -1164,7 +1173,8 @@ function check(name, cond, extra) {
         Math.abs(gap.gap) <= 8, gap.gap + 'px');
 
       // ③ 软键盘：把可视区压矮（键盘占 336px，约占 iPhone 852 的 40%），
-      //    整块必须顶到键盘上方，候选下拉整条落在可视区之内。
+      //    整块必须顶到键盘上方，候选下拉整条落在可视区之内，
+      //    且**下方仍留出可见的结果区** —— 用户要能先关掉下拉，再去点结果卡片。
       await sp.evaluate(() => {
         const vv = window.visualViewport;
         const realH = vv.height;
@@ -1197,15 +1207,30 @@ function check(name, cond, extra) {
       check('iPhone 搜索页：候选下拉不伸进键盘底下（首条仍看得见）',
         kb.sugTop >= kb.inputTop && kb.sugBottom <= kb.visibleBottom + 1,
         '候选 ' + kb.sugTop + '→' + kb.sugBottom + ' / 可视下沿 ' + kb.visibleBottom);
+      // 用户反馈的后半句：下拉不能把可视区吃干 —— 键盘上方那片地方里，
+      // 下拉最多占四成，剩下六成留给结果卡片（点它即收起下拉）。
+      // 这里量「候选下沿 → 可视区下沿」那一段。
+      const room = +(kb.visibleBottom - kb.sugBottom).toFixed(1);
+      const vvH = +(kb.visibleBottom - kb.inputTop).toFixed(1);
+      check('iPhone 搜索页：键盘上方仍给结果卡片留出可见的一片（候选不把可视区吃满）',
+        room >= 120 && room >= vvH * 0.35,
+        '候选下方还有 ' + room + 'px / 框顶到可视下沿共 ' + vvH + 'px');
+      check('iPhone 搜索页：候选一次不会很多条（手机上按可视区四成限高）',
+        kb.sugCount <= 8, kb.sugCount + ' 条');
 
-      // ④ 结果列表紧跟在搜索框下方：不再有一大段空白把它推到屏幕外
+      // ④ 结果列表紧跟在搜索框下方：不再有一大段空白把它推到屏幕外。
+      //    ⚠️ 用户这一轮把「没输入时那段引导语」整段删了，所以列表上方只剩
+      //       一小段留白（idle 空态在手机上 8px；键盘弹着时归零）。
       const listGap = await sp.evaluate(() => {
         const inp = document.querySelector('.search-hero .search-input');
         const list = document.getElementById('gw-list');
         const items = list.querySelectorAll('.item');
+        const empty = list.querySelector('.empty');
         return {
           gap: +(list.getBoundingClientRect().top - inp.getBoundingClientRect().bottom).toFixed(1),
           firstTop: items.length ? +items[0].getBoundingClientRect().top.toFixed(1) : null,
+          emptyText: empty ? empty.textContent.trim() : null,
+          emptyH: empty ? +empty.getBoundingClientRect().height.toFixed(1) : null,
           visibleBottom: window.visualViewport.height
         };
       });
@@ -1213,6 +1238,10 @@ function check(name, cond, extra) {
         listGap.gap >= 0 && listGap.gap <= 90 &&
         (listGap.firstTop === null || listGap.firstTop <= listGap.visibleBottom),
         JSON.stringify(listGap));
+      // 删掉的那段引导语：页面上不该再显示任何文字，也不该占掉一行的高度
+      check('iPhone 搜索页：没输入时列表里不显示引导文字（那段话已按用户要求删除）',
+        listGap.emptyText === '' && (listGap.emptyH === null || listGap.emptyH <= 12),
+        JSON.stringify([listGap.emptyText, listGap.emptyH]));
 
       // ⑤ 候选行的可点面积：44px 是 iOS 建议的下限
       const itemH = await sp.evaluate(() => {
@@ -1220,6 +1249,41 @@ function check(name, cond, extra) {
         return it ? +it.getBoundingClientRect().height.toFixed(1) : 0;
       });
       check('iPhone 搜索页：候选行高不低于 iOS 建议的 44px', itemH >= 44, itemH + 'px');
+
+      // ⑤之二 关掉下拉再点结果卡片：用户明确要求的那条路。
+      //    （键盘仍压着 —— 正是最需要它的时刻）
+      const dismiss = await sp.evaluate(async () => {
+        const list = document.getElementById('gw-list');
+        const inp = document.querySelector('.search-hero .search-input');
+        const sug = document.getElementById('search-suggest');
+        const first = list.querySelector('.item');
+        const before = {
+          sugOpen: !sug.hidden,
+          firstTop: first ? +first.getBoundingClientRect().top.toFixed(1) : null,
+          // 第一条结果卡片有多少落在可视区里（用户能点到的那部分）
+          firstVisible: first
+            ? Math.max(0, Math.min(first.getBoundingClientRect().bottom,
+                window.visualViewport.height) - first.getBoundingClientRect().top)
+            : 0
+        };
+        // 点一下结果列表：应当「先收起下拉」，而不是穿过浮层开一篇
+        if (first) first.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+        await new Promise(r => setTimeout(r, 60));
+        return {
+          before,
+          sugClosed: sug.hidden,
+          readerOpen: !document.getElementById('gw-reader').hidden,
+          keywordKept: inp.value
+        };
+      });
+      check('iPhone 搜索页：键盘弹着时下拉下方仍有点得到的「第一张结果卡片」',
+        dismiss.before.firstVisible >= 20,
+        JSON.stringify(dismiss.before));
+      check('iPhone 搜索页：点一下结果卡片先收起下拉（不穿过浮层直接开篇）',
+        dismiss.before.sugOpen && dismiss.sugClosed && !dismiss.readerOpen,
+        JSON.stringify(dismiss));
+      check('iPhone 搜索页：收起下拉不动关键词（用户接着看结果，不必重打一遍）',
+        dismiss.keywordKept.length > 0, '「' + dismiss.keywordKept + '」');
 
       // ⑥ 收起键盘后回到原来的居中布局（不是一直贴着顶）
       await sp.evaluate(() => {

@@ -28,6 +28,14 @@
  *       候选下拉正好落在键盘底下。这里把整个搜索区顶到键盘上方，
  *       并在键盘弹出时压掉搜索框下方的留白：候选贴着框、结果紧跟着出现在第一屏。
  *
+ *   五、**候选下拉的分寸**（用户这一轮的三条反馈）：
+ *       ① 下面几条被键盘盖住 → 下拉的 max-height 里带一项
+ *          「可视区 − 键盘 − 框下沿到页顶」，键盘弹着时它最小，下拉自然收在键盘上方；
+ *       ② 要能关掉下拉再去点结果卡片 → 下拉的高度同时受「可视区的四成」约束，
+ *          绝不铺满键盘上方那片地方，底下始终留着可见的结果区（点它即收起下拉）；
+ *       ③ 没输入时的引导语（「输入篇名、作者或诗句，即可搜遍六部集子」）整段撤掉：
+ *          空列表就是空列表，只留一段留白（见 css/classic.css 的 #gw-list .empty）。
+ *
  * 已读存储：搜索页**不写任何已读键**（readStore 为空字符串）。
  *   「已读」是每一部自己的进度（poem_classic_read_v1 等），
  *   在搜索页点一下不该改动任何一部的进度 —— 用户是来查东西的，不是来读书的。
@@ -47,10 +55,14 @@
 
   /** 屏幕键盘的余量：iOS 的键盘高度系统不给，只能自己按可视区反推。
       键盘上方那一片可视区（visualViewport.height）再减掉：
-        · 搜索框自身（hero 里的 52px 视觉高度 + 上下各 6px 的溢出）
-        · 顶栏与它下面那一点点留白
-      剩下的就是候选下拉可以占的高度。这个值只用来写 --kb-space，
-      下拉用它算 max-height —— 宁可按「键盘比实际更高」估，也不能伸到键盘底下。 */
+        · 搜索框自身（hero 里的 52px，框高即布局高度 —— 见 css/classic.css）
+        · 顶栏与它下面那一点点留白（约 30px）
+      剩下的就是「下拉可以占的高度 + 下拉下面那片留给结果的空间」。
+      这个值只用来写 --kb-space，下拉用它算 max-height 的硬上限 ——
+      宁可按「键盘比实际更高」估，也不能伸到键盘底下。
+      要注意它是**上边界**而不是「下拉就该占满」：下拉实际高度还受
+      min() 里那两项（400px、40%/60% 可视区）约束，
+      所以手机上剩下的那几成可视区，正是用户能点到的结果卡片。 */
   var KB_CHROME = 86;
 
   /** 软键盘弹起后，视觉视口比布局视口矮多少才算「键盘真的出来了」。
@@ -69,8 +81,31 @@
       整块在候选被点中的同一帧里又滑回去。 */
   var BLUR_SETTLE_DELAY = 220;
 
-  /** 空态里的两句话，一处给出（syncEmptyState 与 mountCfg 都读它）：
-      没输入时是「敲几个字就能搜」，输入后没命中才是「没找到」。 */
+  /** 失焦后延迟收起候选下拉的时间。
+      必须给这一段：鼠标点候选时先触发 blur，立刻收起就点不到了
+      （click 会落在已经消失的按钮上）。180ms 够指针完成这一下，
+      又短到用户感觉不出「点了以后还赖着」。 */
+  var SUGGEST_BLUR_DELAY = 180;
+
+  /** 用户开始滚动**结果列表**多久之后收起候选下拉。
+      滚结果意味着用户已经在看下面的内容了，下拉还挂在框底下就是挡住视线的一块浮层 ——
+      「要看下面那几条结果，得先想办法把下拉关掉」正是用户反馈的下一半。
+      ⚠️ 这里用「延迟」而不是「滚一下立刻收」：触屏滑动开头那几像素
+        常是手指落下的抖动，立刻收会让下拉在用户还没决定要滚的时候先消失。
+        140ms 够越过这段抖动，又短到与滑动同时发生（不是滚完才收）。 */
+  var SCROLL_HIDE_DELAY = 140;
+
+  /** 空态里的两句话，一处给出（syncEmptyState 与 mountCfg 都读它）。
+      · EMPTY_IDLE —— 没输入关键词时的那一句。**视觉上已经不再显示**：
+        用户要求删掉「输入篇名、作者或诗句，即可搜遍六部集子」这段文字，
+        空列表就是空列表（见 css/classic.css 里 `#gw-list .empty` 那一条：
+        字号归零、只留一段留白）。这里仍把这句话写在**节点的文本里**，
+        是因为它同时是两个东西的出口：
+          a) 读屏软件读到它，才知道「这一页能搜什么」——纯空白对无障碍是黑盒；
+          b) test/search.test.js 用它在源码 / DOM 层面确认「空态给的是引导语，
+             不是『没有找到匹配的篇目』」这条口径没有丢。
+        日后若要恢复文案，把 CSS 里的字号改回去即可，逻辑一行不用动。
+      · EMPTY_MISS —— 输入之后没命中的那一句，照常显示。 */
   var EMPTY_IDLE = "输入篇名、作者或诗句，即可搜遍六部集子";
   var EMPTY_MISS = "没有找到匹配的篇目";
 
@@ -175,6 +210,9 @@
         "</span></button>";
     }).join("");
     box.dataset.items = JSON.stringify(list.map(function (p) { return p.id; }));
+    // 每换一次候选都回到列表顶部：下拉是**可滚动**的（高度受限，见 CSS 的 min()），
+    // 上一次往下翻过之后，新关键词的第一条会停在中间 —— 用户看到的不是「最匹配的那条」。
+    box.scrollTop = 0;
     box.hidden = false;
     setExpanded(true);
   }
@@ -251,19 +289,36 @@
   }
 
   /**
-   * 空态文案：没输入时说的是「敲几个字就能搜」，输入后没命中才说「没找到」。
-   * 两句话必须分开 —— 不然刚进这一页就写着「没有找到匹配的篇目」，
-   * 像这一页坏了。
+   * 空态文案：没输入时说的是「敲几个字就能搜」（**视觉上不显示**，见 EMPTY_IDLE），
+   * 输入后没命中才说「没找到」。两句话必须分开 —— 不然刚进这一页就写着
+   * 「没有找到匹配的篇目」，像这一页坏了。
    */
   function syncEmptyState(q) {
     var listEl = document.querySelector("#gw-list");
     if (!listEl) return;
     var empty = listEl.querySelector(".empty");
     if (!empty) return;
-    empty.textContent = q ? EMPTY_MISS : EMPTY_IDLE;
+    // 没输入时**不写任何文字**：那一句「输入篇名、作者或诗句……」已按用户要求撤掉，
+    // 空列表就是空的（CSS 里把它画成一段留白）。节点仍在、仍带 .search-empty，
+    // 但它不再有可读的内容 —— 读屏软件读到一片空白，好过读到一句已经不在界面上的话。
+    empty.textContent = q ? EMPTY_MISS : "";
     // 刚写进列表区的这一段由引擎生成，样式也归这一页管：
     // 它要跟搜索框、结果条目在同一条左侧基准线上（见 alignEmptyState）
     alignEmptyState(true);
+    syncEmptySpacer(empty, !!q);
+  }
+
+  /**
+   * 空列表那段留白由 CSS 给（见 css/classic.css 的 `#gw-list .empty`）。
+   * 这里只做一件事：把**状态**写到节点上，让 CSS 的三条分支各就各位 ——
+   *   data-empty="idle"  → 没输入：留一小段高度，页面下半截不塌
+   *   data-empty="miss"  → 输入了但没命中：正常显示「没有找到匹配的篇目」
+   * ⚠️ 走属性而不是在这里写行内样式：高度是版式的事，归样式表；
+   *    JS 只负责说清「现在是哪种空」。
+   */
+  function syncEmptySpacer(empty, q) {
+    if (!empty || !empty.dataset) return;
+    empty.dataset.empty = q ? "miss" : "idle";
   }
 
   /**
@@ -359,10 +414,13 @@
   }
 
   /**
-   * 空格列表（「输入篇名、作者或诗句，即可搜遍六部集子」）在输入框下方左对齐。
-   * 引擎写进列表区的 .empty 是全站通用的居中一段（见 css/style.css），
-   * 在集子索引页里居中好看，在搜索页里却离左侧的搜索框、左侧的结果条目
-   * 都不在一条竖线上 —— 这一页的空态是「结果区里的一行提示」，不是页面中间的一句话。
+   * 空格列表（引擎写进列表区的 .empty）挂上 .search-empty。
+   * 引擎那一句是全站通用的居中一段（见 css/style.css），在集子索引页里居中好看，
+   * 在搜索页里却离左侧的搜索框、左侧的结果条目都不在一条竖线上 ——
+   * 这一页的空态是「结果区里的一行提示」，不是页面中间的一句话。
+   * ⚠️ 现在这一行**不显示文字**（用户要求撤掉那段引导语），
+   *    .search-empty 只负责把它画成一段不占地方的留白；
+   *    类名与节点都留着，是为了日后要恢复文案时不必改 JS。
    */
   function alignEmptyState(on) {
     var empty = document.querySelector("#gw-list .empty");
@@ -525,7 +583,7 @@
       });
       input.addEventListener("blur", function () {
         // 延迟收起：鼠标点候选时先触发 blur，立刻收起就点不到了
-        setTimeout(hideSuggest, 180);
+        setTimeout(hideSuggest, SUGGEST_BLUR_DELAY);
       });
     }
 
@@ -539,7 +597,7 @@
     if (box) {
       box.addEventListener("mousedown", function (e) {
         // mousedown 而不是 click：blur 抢在 click 之前，
-        // 点下去时那 180ms 的收起定时器还没到，click 会被吃掉
+        // 点下去时那 SUGGEST_BLUR_DELAY（180ms）的收起定时器还没到，click 会被吃掉
         var btn = e.target.closest ? e.target.closest("[data-suggest]") : null;
         if (!btn) return;
         e.preventDefault();
@@ -547,7 +605,51 @@
       });
     }
 
+    bindSuggestDismiss();
+
     renderBody();
+  }
+
+  /* ---------------- 怎么把候选收起来 ----------------
+   *
+   * 用户这一轮的第二句话是「也需要预留空间让用户关闭下拉框，然后去点击搜索到的卡片列表」。
+   * 上一版只做到了一半：靠 CSS 把下拉限高、给它留出下方可视区
+   * （见 css/classic.css 的 .suggest 那条）—— 但**怎么关**只留了三条容易落空的路：
+   *   ① 敲 Escape（触屏上没有键盘）
+   *   ② 退掉输入（用户其实想保留关键词接着看结果）
+   *   ③ 点别处触发 blur（候选是浮层，手指总落在它自己身上，不会 blur）
+   * 于是「下拉挡住了结果卡片、却关不掉」就成立 —— 明明下面就有位置，手指够不着。
+   *
+   * 这里补两条**看得见也摸得着**的路：
+   *   · 手指开始滚动结果列表 → 收起（滚 = 用户已经在看下面的东西）
+   *   · 点一下结果列表（空白处 / 卡片 / 卡片里的字）→ 收起而不是「穿过浮层点开一篇」
+   *     ⚠️ 必须**先收不先开**：候选还挂着时点结果区，用户看到的那一条正是被
+   *        浮层压住半截的，先开阅读器会让人觉得「我点的是候选，怎么开了别的篇」。
+   *        收起之后关键词仍在、结果还在原位，再点一下才进正文 —— 两下，但每一下
+   *        与用户看到的画面一致。
+   * 两条都不动关键词、不动结果、不动键盘 —— 只把那一层浮层收掉。
+   */
+  function bindSuggestDismiss() {
+    var listEl = document.querySelector("#gw-list");
+    if (listEl) {
+      var timer = 0;
+      listEl.addEventListener("scroll", function () {
+        var box = suggestBox();
+        if (!box || box.hidden) return;
+        clearTimeout(timer);
+        timer = setTimeout(hideSuggest, SCROLL_HIDE_DELAY);
+      }, { passive: true });
+      // 点结果区：capture 阶段先收下拉，并**吃掉这一下**（不让它开阅读器）。
+      // 只有在候选真的挂着时才拦 —— 平时点卡片仍是「一下就进」，
+      // 不能因为这条防线把搜索页最常用的动作变成两下。
+      listEl.addEventListener("click", function (e) {
+        var box = suggestBox();
+        if (!box || box.hidden) return;
+        hideSuggest();
+        e.stopPropagation();
+        e.preventDefault();
+      }, true);
+    }
   }
 
   if (document.readyState === "loading") {
