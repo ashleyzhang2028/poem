@@ -1305,22 +1305,8 @@ body.reader-open .dock { display: none; }
       页顶 + 顶栏高度 + 又一段呼吸；顶栏自带 padding-top 与刘海，
       这里只要给一个纯呼吸值（44px ≈ 顶栏底边之下 44px），
       桌面 / 手机、有刘海 / 无刘海都是同一个相对位置。 */
-.search-hero.search-active {
-  /* ①②：交出「视口 − 200px」那段高度，改由自己的内容撑开 */
-  height: auto;
-  min-height: calc(var(--hero-top) + var(--hero-box-h));
-  padding-top: var(--hero-top);
-}
-/* ③ 键盘弹着：同样贴顶，另外把框到结果列表的那段留白收掉 ——
-   键盘上方这一小片地方要尽量留给候选与结果（多一点是一点） */
-.search-hero.kb-open {
-  height: auto;
-  min-height: calc(var(--hero-top) + var(--hero-box-h));
-  padding-top: var(--hero-top);
-}
-/* 键盘弹着时列表上方不留呼吸：这一刻列表区里要么是候选下方的结果卡片，
-   要么就真的空着，没有「过渡留白」的位置 */
-.search-hero.kb-open ~ #gw-list { padding-top: 0; }
+/* 贴顶那两条规则见下面「贴顶态」那一块 —— 那里同时管竖向落位与 sticky，
+   不在这里另写一套，免得同一件事两处各写一半。 */
 
 /* 搜索框「增高」——但**不在绘制层动手脚**
    --------------------------------------------------------------------------
@@ -1367,46 +1353,20 @@ body.reader-open .dock { display: none; }
    这一层再来一次 -50% 就会把搜索框整个推出屏幕左边）。 */
 .search-hero .search-wrap { transform: translateY(-2px); }
 
-/* 屏幕键盘：把整个搜索区顶到键盘上方，让候选下拉永远落在可视区里
+/* 屏幕键盘与聚焦：整块贴到顶栏下方
    --------------------------------------------------------------------------
-   iOS / 安卓的软件键盘是**覆盖**在页面上的，它不改变窗口大小：
-   页面照旧 100svh，只是下半截被键盘盖住。搜索框又正好在视口垂直居中处，
-   一动键盘它就被顶进键盘底下 —— 用户看到的候选下拉，正是被键盘盖住的那几行。
+   这一条规则**已经并入上面「搜索框的三种摆法」**（.search-hero.search-active /
+   .search-hero.kb-open）—— 那里是唯一的出处，这里只留一句话指路。
 
-   两个类（js/search.js 的 syncHeroState 负责加，这里只负责表现）——
-   与上面「搜索框的三种摆法」是同一组状态，这里只补竖向的那一半口径：
-     1. .search-active —— 有焦点**或**有内容：整块贴到顶栏下方，
-                          免得先看到一个居中布局、键盘弹出后再跳一下。
-     2. .kb-open       —— 键盘确实弹出来了：同上，并把搜索区下方的留白压到最小，
-                          候选下拉与结果列表都在键盘上方这一片可视区里。
-   两者都只改竖向位置，不动颜色、不动横向宽度。
+   历史（值得留着，免得再踩）：这条规则一度在改成「52px 真实高度」时被误删，
+   而 js/search.js 仍在加类、test/pwa.test.js 仍在量 —— 于是机上「贴顶」静默失效：
+   hero 回到「视口 − 200px 的居中盒」，搜索框下沿停在 388px 处，
+   而键盘弹起后可视区只到 516px，下面 271px 的留白把结果列表整段推到键盘之外。
+   教训是：规则、类、断言三者同生共死，删一个就必须删另外两个。
 
-   ⚠️ 贴顶的两个值互相配平：hero 交出高度（height: auto）之后，再给它
-      min-height: 56px + padding-top: 6px + 刘海。实测（393×852 的 iPhone 档）：
-      hero 紧贴顶栏下沿（69.1px），高 56px（border-box，padding-top 含在内），
-      搜索框 52px（这一页 --toolbar-h 的真实值）正好落在它里面、
-      下沿 121.1px —— 远在键盘上沿（516px）之上，且离页顶不远。
-      换言之贴顶态里「6px 呼吸」是**下限**（min-height 56 撑住），
-      搜索框本身不挪窝，挪的是 hero 从「视口 − 200px 的居中盒」缩回内容高。
-      居中是「height = 视口 − 200px，框压在中线」，贴顶是「自己的高度 + 顶边距」，
-      两者都精确到像素，搜索框在两种状态里都是完整可见的。
-      若只写一个魔数，日后改 --hero-chrome 就会两处对不上。
-
-   ⚠️ 2026 这一版把这条规则整个删掉过一次（改成「52px 真高度」时误删），
-      而 js/search.js 仍在加这两个类、test/pwa.test.js 仍在量
-      `justify-content: flex-start` —— 于是搜索页在机上「贴顶」这一步
-      静默失效：hero 仍是 height = 视口 − 200px 的居中盒，
-      搜索框的下沿被留在 388px 处，而键盘弹起后可视区只到 516px，
-      下面那 271px 的留白把结果列表整段推到键盘之外。
-      规则必须与那两个类同生共死：删规则就得删类与断言，三者缺一即静默失效。 */
-.search-hero.search-active,
-.search-hero.kb-open {
-  justify-content: flex-start;
-  height: auto;
-  min-height: 56px;
-  padding-top: calc(6px + var(--safe-top));
-  padding-bottom: 8px;
-}
+   ⚠️ 贴顶的落位见上面「搜索框的三种摆法」（--hero-top 那一组）——
+      这里**不再重复一套 justify-content: flex-start / min-height: 56px**：
+      同一件事两处写，就是下一次「改一处忘一处」的种子。 */
 
 /* 搜索说明：这一行小字整段已撤（用户要求删除「输入篇名、作者或诗句……」）。
    这里不再留 .search-hint 的样式死规则 —— 元素删了，规则也一起删。 */
@@ -1482,16 +1442,15 @@ body[data-nav="search"] #gw-list .item { padding: 14px 8px 14px 14px; }
             也算成了「可以拿来放候选的地方」。
           ⚠️ 写成百分比而不是「减去一个固定量」：减固定量（上一版是减 86px）
             等于假定「框下沿到页顶」总那么高，桌面 / 手机 / 横竖屏各差一截。
-          ⚠️ 可视区取 min(100vh, 100svh)：svh 是「地址栏都收起来时的那一档」，
-            正是不化妆的可视区；vh 兜底只给不认 svh 的老内核。
-            键盘是**覆盖层**，它只改 visualViewport、不改 vh / svh ——
-            所以「键盘占了多少」只能从 --kb-space 里拿（见下）。
+          ⚠️ 「可视区」不是 svh / vh，而是 **JS 实测的 visualViewport.height**
+            （写进 --kb-visible）：键盘是覆盖层，只改 visualViewport、
+            不改 vh / svh；svh 在部分内核 / 无头环境里还与 vh 相等。
+            见下面 max-height 那条的说明。
           ⚠️ 这一项在手机上常被上面那 320px 先压住（键盘 336px 时，
-            (852 − 336) × 0.6 = 310px 与 320px 只差一点点）——
+            (852 − 336) × 0.6 ≈ 310px，与 320px 只差一点点）——
             那正是我们要的：两项都管「别越过键盘、也别占满」，谁更紧听谁的。
      三项都用 min() 取小，比写死一个 320px 准 —— 写死的高度在 iPhone 上
-     会伸进键盘底下：用户看到 6 条就以为是全部，其实第 7、8 条被键盘盖住了。
-     --kb-space 由 js/search.js 实测写入（没有键盘时是 0）。 */
+     会伸进键盘底下：用户看到 6 条就以为是全部，其实第 7、8 条被键盘盖住了。 */
 .suggest {
   position: absolute;
   left: 0;
@@ -1511,15 +1470,20 @@ body[data-nav="search"] #gw-list .item { padding: 14px 8px 14px 14px; }
      · 380px —— 8 条候选的上限（手机 320px，见下面的窄屏那一档）；
      · 可视区的四成 —— 候选下面**必须留得下看得见的结果卡片**
        （用户要求能先关掉下拉、再去点结果卡片），所以留的比给的多；
-     · (可视区 − 键盘) 的六成 —— 硬边界：键盘弹着时候选整条落在键盘上方。
+     · (可视区 − 键盘) 的六成 —— 硬边界：键盘弹着时候选整条落在键盘上方，
+       并且键盘上方那一片里还要留出四成给结果卡片。
      ⚠️ 「可视区」一律取 **JS 实测值**（--kb-visible，由 syncHeroState 写入）：
         svh 只认地址栏的收放、**不认软键盘**（键盘是覆盖层，不改视口），
         部分内核 / 无头环境里更会等于 vh —— 那一项于是虚高，
         候选一路铺到键盘上沿，把下方结果卡片全吃掉。
         实测过：svh 与 vh 都等于 852，候选高 340.8px，可视区只剩 516px。
         fallback 100vh 给「JS 还没跑起来」的那一瞬间兜底。
-     ⚠️ --kb-space 由 js/search.js 写入（hero 与 .suggest 各写一遍，
-        见 syncHeroState）：键盘弹起时它才有值，没有键盘时是 0px。 */
+     ⚠️ 「可视区 − 键盘」才是键盘弹着时真正属于内容的那一片：
+        分母取整个可视区，等于把键盘遮住的那半也算成能放候选的地方。
+     ⚠️ 两个变量都由 js/search.js 写入（hero 与 .suggest 各写一遍，
+        见 syncHeroState）：--kb-visible 是可视高度、--kb-space 是键盘占的高度
+        （没有键盘时是 0px）。各写两遍是因为键盘弹起会让 .search-toolbar 重排，
+        那条链上的**继承值**不会因此重算 —— 只写 hero 的话下拉会照旧按整屏铺。 */
   max-height: min(
     380px,
     calc(var(--kb-visible, 100vh) * .4),
@@ -1588,9 +1552,10 @@ body[data-nav="search"] #gw-list .item { padding: 14px 8px 14px 14px; }
    这里把上限从 380px 收到 320px（约 6 条）——手机上一条候选 44px，
    320px 已经是「一屏看得过来的几行」；再高就是靠滚动看，
    而滚动不如图片式地收窄一档更省地方。
-   ⚠️ 四成那一项与桌面同值：它是「下拉下面必须留出可见的结果区」这条
-      硬指标，不是设备相关的偏好，不因为屏幕窄就放宽；比例同样算在
-      **JS 实测的可视区**（--kb-visible）上，不用 svh —— 见上面 .suggest 的说明。 */
+   ⚠️ 四成 / 六成那两项与桌面同值：它们是「下拉下面必须留出可见的结果区」
+      这条硬指标，不是设备相关的偏好，不因为屏幕窄就放宽。
+   ⚠️ 与桌面那条同一个来源：可视区取 --kb-visible、键盘取 --kb-space
+      （都是 JS 实测值，不用 svh）—— 见上面 .suggest 那条的说明。 */
 @media screen and (max-width: 700px) {
   .suggest {
     max-height: min(
@@ -1627,9 +1592,7 @@ body[data-nav="search"] #gw-list .empty[data-empty="idle"] {
   color: transparent;
   user-select: none;
 }
-/* 键盘弹着 / 输入框有焦点时，连这 8px 也不要 —— 这一刻列表区里
-   要么是候选下方的结果卡片，要么就真的空着，没有「过渡留白」的位置 */
-/* 贴顶态（有焦点 / 有内容 / 键盘弹着）：搜索框连同候选下拉一起**升到顶栏之下**
+/* 贴顶态（有焦点 / 有内容 / 键盘弹着）：搜索框连同候选下拉一起升到顶栏之下
    --------------------------------------------------------------------------
    这一页此刻以搜索为主，搜索区就该停在顶栏下沿那一行：
      · 有焦点 —— 正在打字，框跟着手指走，不被键盘顶走；
@@ -1638,12 +1601,21 @@ body[data-nav="search"] #gw-list .empty[data-empty="idle"] {
    触屏上的点击会先聚焦（再取焦），所以「点一下框」与「手指离开、内容还在」
    这两种情况都落在上面三条里，行为是连续的。
 
-   做法：高度交还给内容（height: auto），框由压在英雄区中线上改为普通流内排布、
-   顶到 padding-top（--hero-top，与上面「搜索框的三种摆法」共用一个变量）。
-   ⚠️ 搜索框整行是绝对定位的（left/top/margin-top 那一套），这里必须把
-      top / margin-top 一起复位，否则它仍按「中线」摆，一贴顶就偏出半行。
-   ⚠️ 三个状态走**两个类**（.search-active 覆盖「有焦点**或**有内容」），
-      不再另挂 .search-focus、也不再用 :has(:not(:placeholder-shown))——
+   两个类管三件事（.search-active 覆盖「有焦点**或**有内容」，.kb-open 是键盘），
+   js/search.js 的 syncHeroState 唯一写入：
+     ① 竖向落位 —— 高度交还给内容（height: auto）、顶到 --hero-top；
+     ② 横向与定位 —— 整行由绝对定位改为**普通流**（position: static + 复位
+        top / margin-top / transform），这样它才跟着 hero 的 padding 走；
+     ③ sticky —— 往下翻结果时整块钉在视口最上沿（top: 0），
+        顶栏自己会滚走，框于是始终看得见。
+   ⚠️ 静止态（居中）下整行是绝对定位的（left: 50% / top: 50% / margin-top 那一套），
+      这一块必须把 top / margin-top / transform 一起复位 —— 否则框仍按「中线」摆，
+      一贴顶就偏出半行。
+   ⚠️ justify-content 也要一起改成 flex-start：静止态的 center 是给「框压在中线」
+      用的；贴顶时这一段只剩 --hero-top + 一行框，再 center 会把框压在那一小段的
+      中线上而不是顶上。
+   ⚠️ 三个状态走**两个类**，不再另挂 .search-focus、也不用
+      :has(:not(:placeholder-shown)) 去猜 —— 判据收在 js 的 hasKeyword() 一处，
       同一件事一处写清，避免「两处各管一半」。 */
 body[data-nav="search"] .search-hero.search-active,
 body[data-nav="search"] .search-hero.kb-open {
@@ -1651,12 +1623,13 @@ body[data-nav="search"] .search-hero.kb-open {
   justify-content: flex-start;
   /* 顶栏本体由 .topbar 排到英雄区之上，这里只留一点呼吸（比静止态紧，
      框离顶栏近一档，读起来才像「贴在标题栏下方」而不是悬在页面中） */
-  padding-top: 6px;
-  /* 「框 → 结果列表」只有这一档正常间隔（用户要求别再留一大段空） */
+  padding-top: var(--hero-top);
+  /* 「框 → 结果列表」在贴顶态下只有这一档正常间隔（用户要求别再留一大段空）；
+     键盘弹着时由下面 #gw-list 那条再收到 0 */
   padding-bottom: 8px;
   position: sticky;
   /* 顶栏自己会滚走，贴住它必须让整块留在视口最上沿（top: 0）——
-     静态页里 top 对 non-sticky 元素不生效，滚动时才会有区别。 */
+     非 sticky 时 top 不生效，滚动后才会有区别。 */
   top: 0;
   z-index: 20;
   background: var(--bg);
@@ -1669,7 +1642,7 @@ body[data-nav="search"] .search-hero.kb-open .search-toolbar {
   transform: none;
   width: auto;
   /* 框与下拉都压在背景之上（sticky 的底色给了整块，候选下拉仍是浮层，
-     层级不能掉） */
+      层级不能掉）。⚠️ 整行仍是这条链上唯一进正层级的元素 —— hero 自己不写。 */
   z-index: 30;
 }
 
@@ -1694,37 +1667,58 @@ body[data-nav="search"] .search-hero.kb-open .search-toolbar {
 body[data-nav="search"] .search-hero.search-active .search-wrap,
 body[data-nav="search"] .search-hero.kb-open .search-wrap { transform: none; }
 
-/* 聚焦态的描边：**不再用纯黑**
+/* 聚焦态的描边：**不再用纯黑**，也不再有第二条 ring
    --------------------------------------------------------------------------
-   用户反馈「焦点在搜索框时，框 border 是黑色，不好看」。原因是浏览器给
-   `:focus` 套的默认 ring（Chrome 的 -webkit-focus-ring-color 深灰近黑），
-   而 .search-input 只把 outline 设成 none、没有替它画一个自己的 ——
-   于是这一页最显眼的那一支描边，全站唯一一处不随主题走。
-   现在与全站输入框（.settings-input）统一：聚焦时绿描边 + 纸色底，
-   另给键盘操作留一圈淡天青 focus ring（鼠标 / 触屏点出来的聚焦不显示，
-   见 :focus-visible），保证「看得见焦点」这条无障碍要求不受影响。
-   ⚠️ 光晕必须与全站 .search-input:focus 用**同一个值**（rgba(47, 96, 85, .10)
-      那圈半透明淡光），不能图省事填 --green-light —— 后者是不透明的浅底
-      **填充色**（#dbe9e2），直接当 box-shadow 用会画出一圈实心粉绿外框，
-      与「描边之外的一层柔和扩散」不是一回事，全站输入框的聚焦态也随之为成两样。
-      test/theme.test.js 与 test/pwa.test.js 各有一条断言守住这条。 */
+   用户反馈「焦点在搜索框时，框 border 是黑色，不好看」。那圈黑不是这里写的，
+   它是浏览器给 <input> 的 UA 默认 focus ring（Chrome 的
+   -webkit-focus-ring-color，深灰近黑）；.search-input 只把 outline 关掉、
+   又没替它画一个自己的，于是「写好的天青描边」与「UA 的黑框」同时画在框上，
+   用户看到的就是黑色。
+
+   现在与全站输入框（.settings-input）统一：聚焦时天青描边 + 纸色底，
+   外圈只留一道极淡的天青光晕（box-shadow，不挤占布局）。
+
+   ⚠️ 光晕必须与全站 .search-input:focus 用**同一个值**
+      （rgba(47, 96, 85, .10) 那圈半透明淡光），不能图省事填 --green-light ——
+      后者是不透明的浅底**填充色**（#dbe9e2），直接当 box-shadow 用会画出一圈
+      实心粉绿外框，与「描边之外的一层柔和扩散」不是一回事，
+      全站输入框的聚焦态也随之为成两样（这一条曾 CI 红过）。
+
+   ⚠️ 这里**不能再写 :focus-visible 的第二条描边**（曾经写过，CI 红在这一条上）。
+      `body[data-nav="search"] .search-hero .search-input:focus` 与
+      同名再加 `:focus-visible` 的**特异性完全相同**（都是 0,4,1：一个属性选择器
+      + 三个类/伪类 + 一个类型），特异性相同就比**书写顺序** ——
+      `:focus-visible` 写在后，它的 `outline: 2px` 就把前一条的 `outline: none`
+      整个盖掉。而这一页进页即自动聚焦，Chrome 判定这次聚焦来自脚本/触屏输入，
+      会命中 `:focus-visible`，于是真机上量到的 `outline-style` 是 `solid`
+      而不是 `none`：用户看到的黑框没修掉，反倒多画了一道天青实线。
+      「看得见焦点」这条无障碍要求由 box-shadow 那圈光晕满足（它随聚焦出现、
+      也是唯一的一支描边口径），不需要再叠一层 outline。 */
+
 body[data-nav="search"] .search-hero .search-input {
   border-color: var(--line);
   background: #fffdf6;
   transition: border-color .15s, background .15s, box-shadow .15s;
 }
-body[data-nav="search"] .search-hero .search-input:focus {
+body[data-nav="search"] .search-hero .search-input:focus,
+body[data-nav="search"] .search-hero .search-input:focus-visible {
   border-color: var(--green);
   background: #fffdf6;
+  /* 两支选择器共用**一条**规则：鼠标 / 触屏点出来的聚焦与键盘 Tab 出来的
+     聚焦，长的是同一支描边 —— 不再各画一条、也不是一黑一青叠在一个框上。
+     （特异性相同，若拆成两条则由书写顺序定胜负，:focus-visible 会把
+      :focus 的 outline: none 盖回去，真机上黑框等于没修。） */
   box-shadow: 0 0 0 3px rgba(47, 96, 85, .10);
-}
-body[data-nav="search"] .search-hero .search-input:focus-visible {
-  outline: 2px solid var(--green);
-  outline-offset: 1px;
+  outline: none;
+  outline-offset: 0;
 }
 
-body[data-nav="search"] .search-hero.search-active ~ #gw-list .empty[data-empty="idle"],
-body[data-nav="search"] .search-hero.kb-open ~ #gw-list .empty[data-empty="idle"] {
+/* 键盘弹着 / 输入框有焦点时，连那几像素留白也不要 —— 这一刻列表区里
+   要么是候选下方的结果卡片，要么就真的空着，没有「过渡留白」的位置。
+   ⚠️ 类名跟着三态走：.search-active（有焦点或有内容）与 .kb-open ——
+      这个仓库里已经没有 .search-focus 这个类了（它并入 .search-active）。 */
+body[data-nav="search"] .search-hero.kb-open ~ #gw-list .empty[data-empty="idle"],
+body[data-nav="search"] .search-hero.search-active ~ #gw-list .empty[data-empty="idle"] {
   height: 0;
 }
 /* 空态（无论哪种）与结果列表一样左对齐 */

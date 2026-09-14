@@ -522,16 +522,38 @@
  *        （data/text-master.js、data/poems-classic.js、
  *          scripts/build-text-master.js、test/canonical.test.js、
  *          test/dedup.test.js、README.md）
- *   v83  修搜索框聚焦光晕被写成不透明填充色（Issue #69 · CI 红灯）：
+ *   v83  搜索页三态与聚焦描边的收尾（Issue #69 · 用户机上反馈 · 收口），
+ *        并统一聚焦光晕的写法。两块改动撞在同一个版本号上，故合记为一版：
+ *
+ *        【一】三态与聚焦描边的收尾：
+ *        在 v66 / v68 那条线上补齐三处：
+ *        ① 贴顶那一块合成**一处**写清（原先 .search-hero 下另有一份
+ *           「交出高度 + --hero-top」的规则，与 .search-active / .kb-open
+ *           那份重复；同一件事两处写就是下次「改一处忘一处」的种子）。
+ *           现在同一块同时交代竖位、整行绝对定位改普通流、以及 sticky。
+ *        ② 候选下拉限高的**硬边界**改按 (可视区 − 键盘) × 六成算 ——
+ *           原先只写「可视区 × 六成」，把键盘遮住的那半也算成了能放候选的地方。
+ *           限高的三个数仍是 380px（手机 320px）/ 可视区四成 / 那一项。
+ *        ③ 聚焦描边这条 CI 红过的坑写进注释与防线：`:focus` 与 `:focus-visible`
+ *           特异性相同（都是 0,4,1），各写一条时后者必把前者的 outline: none
+ *           盖回去（真机上量到 outline 仍是 2px solid，黑框等于没修）——
+ *           两支选择器必须共用一条规则，只留 box-shadow 那圈淡天青光晕。
+ *        ⚠️ 与 v66 / v68 是同一条线上的接力，不是推翻：v66 把「贴顶」找回来、
+ *           把描边从 UA 黑框换成本站天青，v68 把贴顶做成三态（一个出口）、
+ *           改用 sticky、并补上「点空白收下拉」。
+ *        （css/classic.css、js/search.js、test/search.test.js、
+ *          test/pwa.test.js、README.md）
+ *
+ *        【二】光晕色值不再被误填成不透明填充色：
  *        body[data-nav="search"] .search-hero .search-input:focus 的 box-shadow
- *        误填了 --green-light（#dbe9e2，不透明的浅底**填充色**），
+ *        曾被写成 --green-light（#dbe9e2，不透明的浅底**填充色**），
  *        于是聚焦时搜索框外围画出一圈实心粉绿框，与全站 .search-input:focus
  *        那圈半透明淡光（rgba(47, 96, 85, .10)）不是一回事 —— 同一枚控件两副面孔。
- *        改回与全站同值的 rgba(47, 96, 85, .10)；
- *        test/pwa.test.js 拿真浏览器量光晕色相，test/theme.test.js 另补一条
- *        纯源码断言（缺 puppeteer 时也能守住）。
+ *        现已改回与全站同值；test/pwa.test.js 拿真浏览器量光晕色相，
+ *        test/theme.test.js 另补一条纯源码断言（缺 puppeteer 时也能守住）。
+ *        （css/classic.css、test/theme.test.js）
+ *
  *        版本号按「并行 PR 一律 +5」的口径从 v78 起落到 v83。
- *        （css/classic.css、test/theme.test.js、sw.js）
  */
 const CACHE_NAME = "poem-app-v83";
 
