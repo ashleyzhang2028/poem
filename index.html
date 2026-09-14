@@ -77,34 +77,17 @@
     <!-- 今日 5 首列表 -->
     <section class="list" id="today-list"></section>
 
-    <!-- 自选集合：除教材之外，自己额外想背的篇目
-         （在课外集子或搜索页点书签加入，见 js/reader-core.js）。
-         加进来的篇目会跟着遗忘曲线一起复习 —— 与「今日背诵」同一套排程。
-         集合本身不分卷次词牌（用户原话「集合没有必要添加分组了」），
-         只是一个清单，能建多个、能改名、能删。 -->
-    <section class="card collections-section" id="collections-section">
-      <button class="collapse-head" id="btn-collections" aria-expanded="false">
-        <span class="collapse-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M7 4.6h10a1.4 1.4 0 0 1 1.4 1.4v13.4l-6.4-4.1-6.4 4.1V6a1.4 1.4 0 0 1 1.4-1.4Z" />
-          </svg>
-        </span>
-        <span id="collections-label">自选背诵</span>
-        <span id="collections-count" class="badge">0</span>
-        <span class="arrow" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M6.6 9.8 12 15.2l5.4-5.4" />
-          </svg>
-        </span>
-      </button>
-      <div class="collapse-body" id="collections-body" hidden>
-        <p class="collections-tip" id="collections-tip"></p>
-        <div class="collections-tools" id="collections-tools">
-          <button type="button" class="collection-act" id="btn-collections-import" title="粘贴一份清单，新建一个集合">导入清单</button>
-        </div>
-        <div class="list" id="collections-list"></div>
-      </div>
-    </section>
+    <!-- 自选背诵不在这里：导入 / 导出 / 改名 / 删除 / 整组移出 / 上移下移
+         都搬去了设置整页（/settings/ 的「我的清单」一组，Issue #114 第二条）。
+         首页是「今天背哪几首」的地方 —— 管理的那些键摆在这儿，
+         既与背诵无关，又每一条都带一颗「删除」「移出」，
+         翻到今日列表末尾容易误触。现在首页只留背诵本身。
+
+         为什么自选篇目仍会出现在首页：它们本来就跟课内 261 首一起
+         按遗忘曲线排每日任务（js/scheduler.js），排上了就混在今日列表里、
+         与课内那几首长得一样（出处那一栏写集子名）。所以「搬走」的只是
+         **管理入口**，不是这些篇目的背诵 —— 该背的照旧在今日列表里背。
+         两页读的是同一份 localStorage 键 poem_recite_collections_v1。 -->
 
     <!-- 全部诗词（可折叠） -->
     <section class="card all-section">

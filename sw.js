@@ -52,6 +52,8 @@ const PRECACHE = [
   "./data/poems-11.js",
   "./data/poems-12.js",
   "./data/index.js",
+  "./poems/",
+  "./js/poems.js",
   "./data/poems-classic.js",
   "./tangshi/",
   "./data/poems-tangshi.js",
