@@ -438,8 +438,26 @@
  *        直接返回原始条目会让 `getGuwenById(id).text` 变成 undefined。
  *        （data/text-master.js、data/poems-guwen.js、
  *          scripts/build-text-master.js、scripts/apply-text-master.js、测试）
+ *   v66  恢复搜索页「键盘弹出时贴顶」的样式（Issue #69 收尾）：
+ *        v60 把搜索框改真实高度时，误删了 `.search-hero.search-focus /
+ *        .kb-open { justify-content: flex-start }` 那一整条规则 ——
+ *        而 js/search.js 仍在加这两个类、测试仍在量它。规则一没，
+ *        搜索区在机上回到「height = 视口 − 200px 的居中盒」：
+ *        搜索框下沿停在 388px 处，下面 271px 的留白把结果列表推到键盘之外
+ *        （软键盘弹起后可视区只到 516px）。现把规则恢复，并顺手修掉
+ *        候选下拉限高的两处口径问题：
+ *        ① 「可视区的四成 / 六成」原先用 svh 算，而 svh 不认软键盘
+ *           （覆盖层不改视口），部分内核下甚至等于 vh —— 键盘弹着时
+ *           按整屏算，候选一路铺到键盘上沿，把下方结果卡片全吃掉。
+ *           改为 js/search.js 把 visualViewport.height 实测进 --kb-visible，
+ *           CSS 只对实测值做减法；
+ *        ② 下拉的硬边界同样改按 --kb-visible 算（不再用 100svh）。
+ *        另修 test/pwa.test.js 两处量错对象的断言：一条把「空列表」
+ *        写成了「有结果时必须存在 .empty 节点」（点错关键词时必然红）。
+ *        （css/classic.css、js/search.js、test/search.test.js、
+ *          test/pwa.test.js、sw.js）
  */
-const CACHE_NAME = "poem-app-v65";
+const CACHE_NAME = "poem-app-v66";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [
