@@ -335,12 +335,19 @@ const uncov = [];
 (sb.WORKS_GROUPS || []).forEach(g => g.entries.forEach(e => { if (!masterEntries[e]) uncov.push(e); }));
 chk(uncov.length === 0,
   '判重表 59 组的每一条条目都在存储主表里（未覆盖：' + (uncov.slice(0, 6).join('、') || '无') + '）');
+/* ⚠️ 主表里的条目除了判重表认的，还有「**全量收归的部**」的单篇：
+   那是按部推进（Issue #69）把整个集子的正文都搬进主表的，与判重无关。
+   口径与 scripts/build-text-master.js 的 FULL_BOOKS 一致。 */
+const FULL_BOOKS = ['zhaoming'];
+const inFullBooks = e => FULL_BOOKS.some(b => e.indexOf(b + '-') === 0);
 const masterInGroups = [];
 Object.keys(masterEntries).forEach(e => {
+  if (inFullBooks(e)) return;
   if (!(sb.WORKS_GROUPS || []).some(g => g.entries.indexOf(e) >= 0)) masterInGroups.push(e);
 });
 chk(masterInGroups.length === 0,
-  '存储主表里没有判重表不认的条目（多出的：' + (masterInGroups.slice(0, 6).join('、') || '无') + '）');
+  '存储主表里没有判重表不认的条目（全量收归部的单篇除外；多出的：' +
+  (masterInGroups.slice(0, 6).join('、') || '无') + '）');
 
 /* ---- 6.7 合并进来的两组都进了存储主表（正文只落一份）---- */
 MERGES.forEach(function (m) {

@@ -417,8 +417,15 @@
  *        （data/poems-songci.js、data/poems-zhaoming.js、js/app.js、js/search.js、
  *          test/songci.test.js、test/zhaoming.test.js、test/search.test.js、
  *          test/collections.test.js、README.md）
+ *   v64  昭明文选 480 篇正文收归存储主表（Issue #69 · 按部推进第 1 部）：
+ *        同一篇作品的正文 / 译文全站只落一份（data/text-master.js），
+ *        集子条目退化成只存归属（textRef），正文由引擎按主表取回。
+ *        本轮收第一部《昭明文选》480 篇；data/poems-zhaoming.js 2.1MB → 154KB。
+ *        页面可见文本零变化。
+ *        （data/text-master.js、data/poems-zhaoming.js、
+ *          scripts/build-text-master.js、scripts/apply-text-master.js、测试）
  */
-const CACHE_NAME = "poem-app-v63";
+const CACHE_NAME = "poem-app-v64";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [

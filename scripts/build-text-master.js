@@ -13,8 +13,11 @@
  *     一起重跑。
  *
  * ## 谁进主表
- *   只登记「在两部及以上集子里重复出现」的作品（与 data/works-map.js 同口径）。
- *   单条的作品不必登记 —— 它本来就只存一份，条目自己就是主条目。
+ *   两类：
+ *     ① 「在两部及以上集子里重复出现」的作品 —— 自动收（与 data/works-map.js 同口径）；
+ *     ② **FULL_BOOKS 点名的部**里其余全部单篇 —— 按部推进，一部一个 PR。
+ *   清单没点名的部，单篇正文照旧内联在自己的数据文件里（两种形态并存，
+ *   所以每部都能单独落地、单独回退）。
  *
  * ## 主条目取谁的正文
  *   与 data/canonical-texts.js 完全一致：**课内条目优先**（教材口径），
@@ -57,6 +60,21 @@ LOAD.forEach(function (f) {
 const byId = {};
 sandbox.SITE_INDEX.forEach(function (p) { byId[p.id] = p; });
 const WI = sandbox.WorksIndex;
+
+/* ---------------- 已全量收归主表的「部」 ---------------- */
+/* 「跨集重复」的那 60 篇由判重表自动收归；各集子的**单篇**正文默认仍内联在
+   自己的数据文件里。这里点名的是「本轮起全量收归」的部 —— 点名一部，
+   它**全部**条目的正文 / 译文就都进主表，条目退化成只留 textRef。
+
+   为什么用点名的清单、而不是「所有部一律收归」：
+     · 一部一个 PR，落地一部、可回退一部。清单上没点名的部照旧内联，
+       两种形态并存 —— 收归中的集子不必等其余几部一起改完才敢合。
+     · 反过来，这也是给测试的**权威口径**：主表里「多出来的」条目必须恰好
+       来自这里点名的部；哪一部漏收了，也照这一份清单核。
+
+   收谁由这里说了算，部内条目数不必改脚本。下一部要收归时，
+   在这里加一个集子 id（并在 apply-text-master.js 已支持的 BOOKS 里存在）。 */
+const FULL_BOOKS = ['zhaoming'];
 
 /* 已有的主表：改语料重跑时的**正文兜底**。
    ⚠️ 各集子条目在「收归」之后已摘掉内联正文（只留 textRef），
@@ -118,6 +136,58 @@ WI.works.forEach(function (w) {
   });
 });
 master.sort(function (a, b) { return a.id < b.id ? -1 : 1; });
+
+/* ---------------- 全量收归的部：单篇也进主表 ----------------
+   上面那一段只收「两部及以上重复出现」的作品（判重表里成组的）。
+   这一段把 FULL_BOOKS 点名的部里**其余全部单篇**也收进主表 ——
+   它们的「作品」就是它自己（只有一条条目），主条目也取它自己。
+
+   已经收过的（跨集重复的那些条目）在 `seen` 里，跳过：
+   同一条目不得在主表里出现两次（否则 map()[textRef] 谁赢谁输没有定义）。 */
+const seen = {};
+master.forEach(function (m) { (m.entries || []).forEach(function (e) { seen[e] = true; }); });
+
+const fullBooksReport = [];
+FULL_BOOKS.forEach(function (book) {
+  const prefix = book + '-';
+  let n = 0;
+  /* 按站点索引顺序过一遍 —— 顺序稳定，重跑 diff 才不会抖 */
+  sandbox.SITE_INDEX.forEach(function (p) {
+    if (!p || p.isBook || p.book !== book || !p.id || p.id.indexOf(prefix) !== 0) return;
+    if (seen[p.id]) return;
+    if (!p.text && !p.translation) return;   // 空条目（待补）不进主表
+    const t = textOfEntry(p, p.id);
+    master.push({
+      work: 'w-' + p.id,
+      id: p.id,
+      title: p.title,
+      entries: [p.id],
+      text: t.text,
+      translation: t.translation,
+      translationSource: t.translationSource
+    });
+    seen[p.id] = true;
+    n += 1;
+  });
+  fullBooksReport.push('  ' + book + '  ' + n + ' 条');
+});
+master.sort(function (a, b) { return a.id < b.id ? -1 : 1; });
+
+/* 断言：全量收归的部里，每个条目都必须进主表（漏一条就是正文空白）。
+   只查「有正文的条目」—— 待补条目本来就没有正文，不进主表是对的。 */
+FULL_BOOKS.forEach(function (book) {
+  const missing = [];
+  sandbox.SITE_INDEX.forEach(function (p) {
+    if (!p || p.isBook || p.book !== book || !p.id) return;
+    if (!p.text && !p.translation) return;
+    if (!seen[p.id]) missing.push(p.id);
+  });
+  if (missing.length) {
+    console.error('✗ 「' + book + '」有 ' + missing.length + ' 条条目没有进主表：' +
+      missing.slice(0, 8).join('、'));
+    process.exit(1);
+  }
+});
 
 /* ---------------- 近重复对：同篇但字有出入，**故意不合并** ----------------
    判重键是「正文去标点后逐字相同」。可文献里常见的是一字之差的两种文本：
@@ -214,6 +284,11 @@ out += '\n';
 out += '   这一份把这份文本收归**一处**；其余集子的条目退化成只存归属 ——\n';
 out += '   条目上留 ' + BT + 'textRef: "<主条目站点 id>"' + BT + '，正文与译文\n';
 out += '   由引擎（js/reader-core.js）按 ' + BT + 'textRef' + BT + ' 到这里取。\n';
+out += '\n';
+out += '   ## 收归范围（按部推进）\n';
+out += '     ① 「在两部及以上集子里重复出现」的作品 —— 判重表自动收；\n';
+out += '     ② FULL_BOOKS 点名的部里其余全部单篇（本轮：' + FULL_BOOKS.join('、') + '）。\n';
+out += '   清单没点名的部，单篇正文照旧内联在自己的数据文件里。\n';
 out += '\n';
 out += '   ## 与另外两张表的分工\n';
 out += '     data/works-map.js        哪些条目是**同一篇作品**（判重、搜索去重、排程合流）\n';
