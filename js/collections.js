@@ -32,6 +32,27 @@
  * 另一条也会显示「已在背诵」；每日任务里也只会出现一次。
  * 正文有出入的（教材本与选本原貌不同）本就是两篇作品，两条可以各自加入。
  *
+ * ## 顺序 / 整组移出 / 导入导出（Issue #69 后续）
+ *
+ * 集合里的顺序 = 数组里的顺序：**用户自己排的，不由系统重排**。
+ * 新建加入的排在末尾；「上移 / 下移」就地交换两项；「整组移出」把某一组
+ * 一次挑出来（按同一部集子 / 同一个卷次文体分），不必逐篇点。
+ *
+ * 导入导出是**纯文本**：一整个集合就是一串条目 id，一行一条（`#` 开头是
+ * 注释行，导出时写进集合名与篇名，方便家长之间对对清单）。
+ * 文本只有几 KB，微信 / 短信里直接发得出去；也接受只贴 id 的裸清单。
+ *
+ * ## 显示的篇名不带「其一 / 其二」
+ *
+ * 宋词里同一作者同一词牌有好几首（晏殊三个《木兰花》、贺连两个《蝶恋花》），
+ * 原始清单没有首句可以分辨，整理时按目录先后标了「其一 / 其二 / 其三」。
+ * 用户的原话是「去掉自选集合中其一其二这些你不清楚的」——
+ * 那个编号**只作语料内部的条目区分**，不是选本原名，不该端到用户面前。
+ *
+ * 所以自选集合这一块显示篇名时，一律用 displayTitle() 去掉这个尾巴。
+ * 集合里存的仍是**完整的原 id**，`tangshi-ts-1` 与 `tangshi-ts-2` 分得清；
+ * 去掉的只是「给人看的那一行字」。
+ *
  * ## 存储
  *
  * localStorage · `poem_recite_collections_v1`
@@ -110,6 +131,28 @@
       text: p.text || "", translation: p.translation || "",
       translationSource: p.translationSource
     };
+  }
+
+  /**
+   * 篇目的**显示名**：去掉语料内部用来区分同名词作的「其一 / 其二 / 其三」。
+   *
+   * 用户原话「去掉自选集合中其一其二这些你不清楚的」——
+   * 那个编号是整理宋词时按目录次序补的序号（同一作者同一词牌好几首，
+   * 原始清单里没有首句可以分辨），不是选本原名，对用户没有意义：
+   * 「木兰花·其二」看不出是哪一首，反而像漏了前半句。
+   *
+   * 只去尾巴：`感遇·其一` → `感遇`、`木兰花·其二` → `木兰花`；
+   * 句中出现的「其一」不动（`四时田园杂兴（其二）` 另有括号形态，一并去）。
+   *
+   * ⚠️ 目录里**不改名** —— 集合存的仍是完整 id（`tangshi-ts-1` / `-2` 仍分得清），
+   *    去编号只发生在这里，是「给人看的那一行字」。
+   */
+  function displayTitle(title) {
+    var t = String(title == null ? "" : title);
+    // 「·其一」「其一」「（其一）」「(其一)」四种写法在语料里都出现过
+    t = t.replace(/[·・]?其[一二三四五六七八九十]\s*$/, "");
+    t = t.replace(/[（(]\s*其[一二三四五六七八九十]\s*[）)]\s*$/, "");
+    return t.replace(/[·・\s]+$/, "");
   }
 
   /** 条目 id → 作品 id（没有主表时回落自身，判重退化成按条目） */
@@ -226,6 +269,169 @@
     return true;
   }
 
+  // ---------------- 顺序：上移 / 下移 / 移到指定位置 ----------------
+
+  /**
+   * 把集合里的第 i 项挪到第 j 项的位置（其余顺次让位）。
+   *
+   * 只动这一条数组 —— 集合的顺序就是数组顺序，不另存一份「排序字段」，
+   * 免得日后两份顺序各说各话。越界时原样返回，调用方不必先自己夹一遍。
+   */
+  function moveItem(collectionId, from, to) {
+    var data = read();
+    var col = data.collections.filter(function (c) { return c.id === collectionId; })[0];
+    if (!col) return false;
+    var n = col.items.length;
+    var i = Number(from);
+    var j = Number(to);
+    if (!(i >= 0 && i < n) || !(j >= 0 && j < n) || i === j) return false;
+    var it = col.items.splice(i, 1)[0];
+    col.items.splice(j, 0, it);
+    write(data);
+    return true;
+  }
+
+  /** 上移一位（已经在最前就不动） */
+  function moveUp(collectionId, index) { return moveItem(collectionId, index, index - 1); }
+
+  /** 下移一位（已经在最后就不动） */
+  function moveDown(collectionId, index) { return moveItem(collectionId, index, index + 1); }
+
+  // ---------------- 整组移出 ----------------
+
+  /**
+   * 把某个集合里「同一组」的篇目一次移出。
+   *
+   * 「组」= 这一篇所在的集子 + 卷次 / 词牌 / 文体（`book + "|" + group`），
+   * 与集子页上的分组是同一个口径。用户从唐诗里挑了几十篇，想整卷拿掉时，
+   * 不必逐篇点。
+   *
+   * `groupOf` 由调用方给（首页把站点索引的字段取出来），这一层不猜结构；
+   * 给不出组的（索引里查不到的旧快照）算作「未分组」，也能整组移出。
+   *
+   * @param {string} collectionId
+   * @param {string} group  组的键，见 groupKeyOf()
+   * @param {Function} groupOf 条目 id → 组键
+   * @returns {number} 实际移出的篇数
+   */
+  function removeGroup(collectionId, group, groupOf) {
+    var data = read();
+    var col = data.collections.filter(function (c) { return c.id === collectionId; })[0];
+    if (!col) return 0;
+    var g = String(group);
+    var before = col.items.length;
+    col.items = col.items.filter(function (it) {
+      return groupKeyOf(itemId(it), groupOf) !== g;
+    });
+    var removed = before - col.items.length;
+    if (removed) write(data);
+    return removed;
+  }
+
+  /**
+   * 组的键：集子 + 卷次 / 词牌 / 文体。
+   *
+   * 首页只加载课内 12 册，课外那些篇目查不到站点索引，只有一个最小快照
+   * （快照里记了 book / bookName，够认出是哪一部集子）。这时按「集子」成组，
+   * 卷次那一段拿不到 —— 用户在这儿看到的就是「唐诗三百首」这一组，
+   * 点「整组移出」移的是这一部，与列表上显示的分组一致（不多不少）。
+   */
+  function groupKeyOf(entryId, groupOf) {
+    if (typeof groupOf === "function") {
+      var k = groupOf(entryId);
+      if (k) return String(k);
+    }
+    return "未分组";
+  }
+
+  // ---------------- 导入 / 导出 ----------------
+
+  /**
+   * 导出一个集合为纯文本。
+   *
+   * 一整个集合就是一串条目 id —— 导出时顺手写上集合名与篇名当注释，
+   * 家长之间互传时对方看得懂；导入时 `#` 行会被跳过。
+   *
+   *   # 跬步 · 自选集合：我要背的（12 篇）
+   *   # 导入方法：跬步首页 → 自选背诵 → 导入
+   *   # 唐诗三百首 卷一 五言古诗 感遇·其一
+   *   tangshi-ts-1
+   *
+   * @param {string} collectionId
+   * @param {Object} [labels] 条目 id → 一行说明（篇名 / 集子），可省
+   */
+  function exportText(collectionId, labels) {
+    var col = read().collections.filter(function (c) { return c.id === collectionId; })[0];
+    if (!col) return "";
+    var lines = [
+      "# 跬步 · 自选集合：" + col.name + "（" + col.items.length + " 篇）",
+      "# 一行一条条目 id；以 # 开头的行是说明，导入时会跳过",
+      "# 导入方法：跬步首页 → 自选背诵 → 导入"
+    ];
+    col.items.forEach(function (it) {
+      var id = itemId(it);
+      if (!id) return;
+      var label = labels && labels[id];
+      lines.push("# " + (label || id));
+      lines.push(id);
+    });
+    return lines.join("\n") + "\n";
+  }
+
+  /**
+   * 从纯文本导入，返回**新建**的集合。
+   *
+   * 宽松解析：`#` 开头的行、空行都跳过；每行取第一个字段（兼容
+   * 「id 空格 篇名」这种从别处抄来的写法）。认不出的行不算数，
+   * 导入完把「收了几条 / 丢了几条」一并返回，让界面如实告诉用户。
+   *
+   * 导入**总是新建一个集合**，不往已有集合里塞 —— 家长传来的清单
+   * 与自己的那几份混在一起，事后没人分得清哪条是谁的。
+   *
+   * @param {string} text
+   * @param {string} [name] 新集合名；空则用文件名之外的一个默认名
+   * @param {Array}  [index] 站点索引：有它才认得出哪些 id 真的存在
+   */
+  function importText(text, name, index) {
+    var src = String(text == null ? "" : text).split(/\r?\n/);
+    var known = null;
+    var list = index || window.SITE_INDEX || [];
+    if (list && list.length) {
+      known = {};
+      list.forEach(function (p) { known[p.id] = p; });
+    }
+    var ids = [];
+    var seen = {};
+    var dropped = 0;
+    src.forEach(function (line) {
+      var t = String(line).trim();
+      if (!t || t.charAt(0) === "#") return;      // 说明行 / 空行
+      var id = t.split(/\s+/)[0];
+      if (!id) return;
+      // 索引齐备时只收真实存在的条目：贴错一个 id 不该凭空多出一条
+      // 「没有正文的空壳」在今日任务里占位。索引不在（首页之外的页面）
+      // 只能照收 —— 那几页拿不到全站 id 清单。
+      if (known && !known[id]) { dropped += 1; return; }
+      if (seen[id]) return;
+      seen[id] = true;
+      ids.push(id);
+    });
+
+    var snapshots = window.SITE_INDEX || [];
+    var col = {
+      id: uid(),
+      name: cleanName(name || DEFAULT_NAME),
+      createdAt: now(),
+      items: ids.map(function (id) {
+        return { id: id, snap: snapshotOf(id, snapshots) };
+      })
+    };
+    var data = read();
+    data.collections.push(col);
+    write(data);
+    return { collection: col, added: col.items.length, dropped: dropped };
+  }
+
   /**
    * 全部自选篇目的**作品**去重清单：排每日任务用这个。
    * 同一篇在多个集合里只算一次。
@@ -320,11 +526,20 @@
     remove: drop,
     add: add,
     removeItem: remove,
+    // 顺序（Issue #69 后续）：集合的顺序就是数组顺序，用户自己排
+    moveItem: moveItem,
+    moveUp: moveUp,
+    moveDown: moveDown,
+    removeGroup: removeGroup,
+    exportText: exportText,
+    importText: importText,
     removeEverywhere: removeEverywhere,
     collectionsOf: collectionsOf,
     has: has,
     allEntries: allEntries,
     snapshotOf: snapshotOf,
+    // 显示名去掉「其一 / 其二」（只改显示，不改 id）
+    displayTitle: displayTitle,
     /**
      * 用当前页加载到的站点索引刷新所有快照（集子页 / 搜索页六部齐备时调用）。
      * 语料订正过（比如某篇标题改了）之后，老快照能跟着更新。
@@ -353,6 +568,17 @@
         });
       });
       if (n) write(data);
+      // 写库时 write() 已经派发过「集合内容变了」；这一条是**另一种**通知：
+      // 「快照刷新过了」。两者的处理不同 —— 内容变了要重排今日任务，
+      // 只刷了快照则不必（题目没换、篇目没增删，排期一个字都不用动），
+      // 但列表仍要重画，否则屏幕上还是旧题名（Issue #69 后续）。
+      if (n) {
+        try {
+          window.dispatchEvent(new CustomEvent("recite-snapshots-refresh", {
+            detail: { refreshed: n }
+          }));
+        } catch (e) { /* 无 CustomEvent 的环境忽略 */ }
+      }
       return n;
     },
     /**

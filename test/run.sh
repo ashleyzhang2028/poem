@@ -15,6 +15,8 @@
 #   3i. 课内去重测试     —— jsdom + vm，12 组自身重复按低年级版本去重 + 《静夜思》教材文本
 #   3j. 正文收归主表     —— jsdom + vm，同一篇只用主条目那一份正文 / 译文 + 孤儿进度清理
 #   3k. 布局避让测试     —— 纯 Node，弹层按 --nav-h 避让底部导航，不被页签 / 播放栏压住
+#   3l. 背诵进度可视化   —— jsdom + vm，到期日历 / 掌握度分布，以及首页按需拉回
+#                          集子数据刷新旧快照（Issue #69 后续）
 #   4. 用户名设置测试    —— jsdom，带初始 localStorage 重启应用
 #   5. 用户协议/隐私条款  —— jsdom + 源码扫描：页脚入口、学生保护、邮箱防爬
 #   6. 注音与朗读测试    —— 拼音表/多音字（纯 Node）+ 注音渲染与朗读降级（jsdom）
@@ -111,6 +113,10 @@ node test/canonical.test.js
 echo ""
 echo "=== 布局避让（弹层不被底部导航压住）==="
 node test/layout.test.js
+
+echo ""
+echo "=== 背诵进度总览（到期日历 / 掌握度分布，Issue #69 后续）==="
+node test/progress.test.js
 
 echo ""
 echo "=== 用户名设置测试 ==="

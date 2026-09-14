@@ -182,6 +182,29 @@ chk(dirty.length === 0,
   '正文里没有混进版刻题名 / 校勘跋语（异常 ' + dirty.length + ' 篇：' +
   dirty.slice(0, 3).map(p => p.title).join('/') + '）');
 
+/* ---------- 四之二、正文里不得留 markdown 图片语法（图片占位符） ---------- */
+/**
+ * 昭明文选入库时，有些生僻字（Noto CJK 也没有字形的，如 U+24136、U+20B1C）
+ * 曾在正文里以 markdown 图片形式留了占位：
+ *
+ *     ![&#x24136;](images/24136.svg)
+ *
+ * 这类占位**不该出现在给学生读的正文里** —— 正文要的是文字，
+ * 不是一串图片语法；原来那 218 处已按用户要求全部清理。
+ * 这里逐篇扫一遍，防止以后整理语料时又把占位带回来。
+ * 检查范围是**篇目上所有会显示给学生看的字段**（正文 / 摘句 / 译文）。
+ */
+const MD_IMG = /!\[[^\]]*\]\([^)]*\)/;
+const withMdImg = ZM.filter(p =>
+  MD_IMG.test(p.text || '') || MD_IMG.test(p.excerpt || '') || MD_IMG.test(p.translation || ''));
+chk(withMdImg.length === 0,
+  '正文 / 摘句 / 译文里没有 markdown 图片语法（异常 ' + withMdImg.length + ' 篇：' +
+  withMdImg.slice(0, 3).map(p => p.title).join('/') + '）');
+// 顺带守一条更宽的：正文里不该出现「指向图片文件的链接残片」
+const imgRef = ZM.filter(p => /images\/[0-9A-Fa-f]{5}\.svg/.test(p.text || '') ||
+  /\.svg\)/.test(p.text || ''));
+chk(imgRef.length === 0, '正文里没有残留的图片路径（.svg 引用）');
+
 /* ---------- 五、总索引：昭明文选进了搜索，但只收有译文的那些 ---------- */
 const IDX = sandbox.SITE_INDEX;
 const zmIdx = IDX.filter(x => x.book === 'zhaoming' && !x.isBook);

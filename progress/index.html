@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#2f6055" />
+  <title>背诵进度 · 跬步</title>
+  <meta name="description" content="跬步背诵进度总览：到期日历（未来两周每天要复习几篇、下次何时到期）与掌握度分布。" />
+  <meta name="format-detection" content="telephone=no" />
+
+  <!-- iOS（苹果手机 / iPad）支持 -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="背诵进度" />
+  <meta name="mobile-web-app-capable" content="yes" />
+
+  <base href="/" />
+  <link rel="icon" href="./icons/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/classic.css" />
+</head>
+<body data-nav="progress" data-page="背诵进度" data-sub="到期日历与掌握度分布">
+  <!-- 这一页只读**本机已经留下的进度**，不改任何一篇的排期：
+       「下次何时到期」原先只在每首诗的详情弹层里看得到（第几轮 / 掌握度 / 下次复习），
+       看不到整体 —— 有 261 首时，「接下来两周哪几天要背几篇」只能一天天点开猜。
+       这里把全量摊成两张图：到期日历（未来 14 天）与掌握度分布。 -->
+
+  <div class="app">
+    <header class="topbar"></header>
+
+    <!-- 总览四格：已学 / 待复习 / 平均掌握度 / 尚未学过 -->
+    <section class="card">
+      <div class="stats-row" id="progress-stats"></div>
+      <p class="progress-tip" id="progress-tip"></p>
+    </section>
+
+    <!-- 到期日历：未来 14 天每天到期的篇数 -->
+    <section class="card progress-card">
+      <div class="progress-head">
+        <h2>到期日历</h2>
+        <span class="progress-sub" id="calendar-sub"></span>
+      </div>
+      <div class="cal" id="progress-calendar"></div>
+      <p class="progress-note" id="calendar-note"></p>
+    </section>
+
+    <!-- 掌握度分布：分五档，每档多少篇 -->
+    <section class="card progress-card">
+      <div class="progress-head">
+        <h2>掌握度分布</h2>
+        <span class="progress-sub" id="mastery-sub"></span>
+      </div>
+      <div class="bars" id="progress-mastery"></div>
+    </section>
+
+    <!-- 记忆阶段分布：第几轮各有多少篇（原先只看得见单篇的「第 N 轮」） -->
+    <section class="card progress-card">
+      <div class="progress-head">
+        <h2>记忆阶段</h2>
+        <span class="progress-sub" id="levels-sub"></span>
+      </div>
+      <div class="bars" id="progress-levels"></div>
+    </section>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+
+  <script src="data/poems-1.js"></script>
+  <script src="data/poems-2.js"></script>
+  <script src="data/poems-3.js"></script>
+  <script src="data/poems-4.js"></script>
+  <script src="data/poems-5.js"></script>
+  <script src="data/poems-6.js"></script>
+  <script src="data/poems-7.js"></script>
+  <script src="data/poems-8.js"></script>
+  <script src="data/poems-9.js"></script>
+  <script src="data/poems-10.js"></script>
+  <script src="data/poems-11.js"></script>
+  <script src="data/poems-12.js"></script>
+  <!-- data/index.js 先把 poems-1..12 汇成 window.POEMS_ALL，
+       这一页读的正是它 —— 顺序不能调换 -->
+  <script src="data/index.js"></script>
+  <script src="data/works-map.js"></script>
+  <script src="data/works-index.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/scheduler.js"></script>
+  <script src="js/progress.js"></script>
+  <script src="js/chrome.js"></script>
+  <script src="js/pwa.js"></script>
+</body>
+</html>
