@@ -266,7 +266,7 @@ window.POEMS_6 = [
   },
   {
     id: "xx6-25",
-    title: "江畔独步寻花（其一）",
+    title: "江畔独步寻花（其六）",
     author: "杜甫",
     dynasty: "唐",
     grade: 6,
@@ -277,7 +277,7 @@ window.POEMS_6 = [
   },
   {
     id: "xx6-26",
-    title: "江畔独步寻花（其二）",
+    title: "江畔独步寻花（其五）",
     author: "杜甫",
     dynasty: "唐",
     grade: 6,
