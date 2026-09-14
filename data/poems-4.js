@@ -201,7 +201,7 @@ window.POEMS_4 = [
   },
   {
     id: "xx4-21",
-    title: "塞下曲（其一）",
+    title: "塞下曲（其三）",
     author: "卢纶",
     dynasty: "唐",
     grade: 4,
@@ -212,7 +212,7 @@ window.POEMS_4 = [
   },
   {
     id: "xx4-22",
-    title: "塞下曲（其二）",
+    title: "塞下曲（其四）",
     author: "卢纶",
     dynasty: "唐",
     grade: 4,
