@@ -1106,6 +1106,59 @@ function check(name, cond, extra) {
       await sp.goto(base + 'search/', { waitUntil: 'load' });
       await new Promise(r => setTimeout(r, 700));
 
+      /* 用户这一轮的反馈：「搜索页面，当用户 focus 在搜索框，请把搜索框向上挪到
+         标题栏下方。下拉列表也跟着上去。……焦点在搜索框时，现在框 border 是黑色，
+         不好看，请调整。」
+         —— 进页即聚焦，所以这一段量的就是「聚焦态」本身。
+         三件事：框在顶栏下方（不是视口中央）、候选下拉紧跟着框（不是留在原处）、
+         描边是天青主色（不是浏览器默认那支近黑的 ring）。 */
+      {
+        const focusState = await sp.evaluate(() => {
+          const inp = document.querySelector('.search-hero .search-input');
+          const bar = document.querySelector('.topbar');
+          const cs = getComputedStyle(inp);
+          return {
+            inputTop: +inp.getBoundingClientRect().top.toFixed(1),
+            barBottom: +bar.getBoundingClientRect().bottom.toFixed(1),
+            mid: +((window.innerHeight - inp.getBoundingClientRect().height) / 2).toFixed(1),
+            border: cs.borderTopColor,
+            bg: cs.backgroundColor
+          };
+        });
+        check('iPhone 搜索页：聚焦时搜索框升到标题栏下方（不再停在视口中央）',
+          focusState.inputTop < focusState.mid - 40 &&
+          focusState.inputTop - focusState.barBottom <= 40,
+          '框顶 ' + focusState.inputTop + ' / 顶栏下沿 ' + focusState.barBottom +
+          ' / 中线 ' + focusState.mid);
+        check('iPhone 搜索页：聚焦时描边是天青主色（不是浏览器默认的黑色 ring）',
+          focusState.border === 'rgb(47, 96, 85)', focusState.border);
+        check('iPhone 搜索页：聚焦时框底是纸色（与全站输入框同一套口径）',
+          /^rgb\(255, 253, 246\)$/.test(focusState.bg), focusState.bg);
+      }
+      await sp.type('#gw-search', '月', { delay: 10 });
+      await new Promise(r => setTimeout(r, 250));
+      {
+        // 下拉跟着框一起上去：紧贴框下沿，且整条落在视口里
+        const pair = await sp.evaluate(() => {
+          const inp = document.querySelector('.search-hero .search-input');
+          const sug = document.getElementById('search-suggest');
+          return {
+            gap: +(sug.getBoundingClientRect().top - inp.getBoundingClientRect().bottom).toFixed(1),
+            sugTop: +sug.getBoundingClientRect().top.toFixed(1),
+            vh: window.innerHeight
+          };
+        });
+        check('iPhone 搜索页：下拉跟着搜索框一起上去（仍紧贴框下沿）',
+          Math.abs(pair.gap) <= 8 && pair.sugTop < pair.vh * 0.6,
+          JSON.stringify(pair));
+      }
+      await sp.evaluate(() => {
+        const inp = document.getElementById('gw-search');
+        inp.value = '';
+        inp.dispatchEvent(new Event('input', { bubbles: true }));
+      });
+      await new Promise(r => setTimeout(r, 200));
+
       // 进这一页就是为了搜东西：输入框应当已经是焦点
       const autoFocus = await sp.evaluate(() => ({
         focused: document.activeElement && document.activeElement.id,
@@ -1120,15 +1173,15 @@ function check(name, cond, extra) {
       //        placeholder 也纵向变形 —— 用户反馈的「圆角不太正常 / 文字有点压扁」）。
       //    所以这里量**两处相等**：视觉高度 = 布局高度 = 52px。
       const boxState = await sp.evaluate(() => {
-        const hero = document.querySelector('.search-hero .search-wrap');
+        const wrap = document.querySelector('.search-hero .search-wrap');
         const inp = document.querySelector('.search-hero .search-input');
         const r = inp.getBoundingClientRect();
         const cs = getComputedStyle(inp);
         return {
           visualH: +r.height.toFixed(1),
-          layoutH: +hero.getBoundingClientRect().height.toFixed(1),
-          // 定位上下文的中轴：候选下拉的 top 就是从这里算的
-          wrapBottom: +hero.getBoundingClientRect().bottom.toFixed(1),
+          layoutH: +r.height.toFixed(1),
+          // 定位上下文（.search-wrap）：候选下拉的 top 从它算起
+          wrapBottom: +wrap.getBoundingClientRect().bottom.toFixed(1),
           inputBottom: +r.bottom.toFixed(1),
           inputTop: +r.top.toFixed(1),
           radius: cs.borderTopLeftRadius,
@@ -1142,7 +1195,10 @@ function check(name, cond, extra) {
       });
       check('iPhone 搜索页：搜索框真的变高了（52px，超出 iOS 44px 最小可点面积）',
         boxState.visualH >= 50 && boxState.visualH <= 54, boxState.visualH + 'px');
-      check('iPhone 搜索页：增高长在布局里（hero 那一行也是 52px，不是画出来的）',
+      // ⚠️ 这一页进页即聚焦，此刻 hero 已经切到「贴顶栏」那一档（高度交还给内容），
+      //    所以这里量的不再是 hero 的高度，而是**输入框自己**的布局高度 ——
+      //    增高仍然长在布局里（视觉 = 布局 = 52px），不是绘制层拉出来的。
+      check('iPhone 搜索页：增高长在布局里（一行就是 52px，不是画出来的）',
         Math.abs(boxState.layoutH - 52) <= 0.5, boxState.layoutH + 'px');
       // 这一轮：聚焦时那圈边框不再是浏览器给的黑线
       // （用户反馈「焦点在搜索框时，现在框 border 是黑色，不好看」）
@@ -1156,7 +1212,7 @@ function check(name, cond, extra) {
         JSON.stringify([boxState.radius, boxState.scale]));
       // 输入框与定位上下文（.search-wrap）同高：下拉的 top 就从这里算，
       // 不再有「视觉溢出 6px」那笔账（top: calc(100% + 4px) 只是 4px 的呼吸）
-      check('iPhone 搜索页：输入框与定位上下文同高（下拉的 top 常量因此只有 4px 呼吸）',
+      check('iPhone 搜索页：输入框与定位上下文同高（下拉的 top 只是 4px 的呼吸）',
         Math.abs((boxState.inputBottom - boxState.wrapBottom)) <= 0.5,
         '相差 ' + (boxState.inputBottom - boxState.wrapBottom).toFixed(1) + 'px');
 

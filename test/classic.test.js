@@ -253,9 +253,19 @@ setTimeout(() => {
   chk(menuItems[0].classList.contains('active') && menuItems[0].getAttribute('aria-checked') === 'true',
     '出厂档是「连续播放原文」（菜单里它才是选中态）');
   // 挑一种模式：菜单项点下去要真换模式，而且就地开听（少一次点击）
+  //
+  // 这张表**不再写在引擎里**：五档模式 / 存储键 / 出厂档统一收进
+  // js/play-modes.js，因为设置页也要读它（Issue #69 后续 A+B）。
+  // 两份各写一遍，字或 id 一改就会错开 —— 那时「设置里选中的」与
+  // 「圆键实际连读的」不是同一档，而且两边页面都正常，最难查。
   const modeJs = fs.readFileSync(path + 'js/reader-core.js', 'utf8');
-  chk(/PLAY_MODES\s*=/.test(modeJs) && /"seq-origin"/.test(modeJs) && /"shuffle-trans"/.test(modeJs),
-    '五种模式在引擎里有一张单一来源的表（PLAY_MODES）');
+  const sharedJs = fs.readFileSync(path + 'js/play-modes.js', 'utf8');
+  chk(/"seq-origin"/.test(sharedJs) && /"shuffle-trans"/.test(sharedJs) &&
+      /var LIST = \[/.test(sharedJs),
+    '五种模式在 js/play-modes.js 里有一张单一来源的表');
+  chk(!/var PLAY_MODES = \[\s*\{/.test(modeJs),
+    '引擎不再自己抄一份模式表（避免与设置页错开）');
+  chk(/window\.PlayModes/.test(modeJs), '引擎读的是那份共用定义（PlayModes）');
   // 样式：小号档比工具栏那颗小，且仍是正圆（宽高同源）
   const gwSmCss = /(^|\n)\.gw-play-sm \{([\s\S]*?)\}/.exec(clsCss);
   chk(!!gwSmCss && /margin-left:\s*auto/.test(gwSmCss[2]),

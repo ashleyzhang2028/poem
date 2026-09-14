@@ -424,7 +424,46 @@
  *        页面可见文本零变化。
  *        （data/text-master.js、data/poems-zhaoming.js、
  *          scripts/build-text-master.js、scripts/apply-text-master.js、测试）
- *   v65  搜索框「该待在哪儿」三态 + 点空白收下拉 + 结果贴近搜索框
+ *   v66  搜索页搜索框的机上位置与描边（Issue #69 · 用户机上反馈）：
+ *        ① 聚焦 / 键盘弹着 / 有搜索内容 → 搜索框连同候选下拉一起**升到标题栏下方**
+ *           （position: sticky + top: 0，滚动看结果时框一直看得见）；
+ *           清空内容且不在焦点上 → 回到页面垂直居中（用户原话的四条要求）；
+ *        ② 搜索框到结果列表的留白一律 8px，js/search.js 不再往 hero 上行内写
+ *           paddingBottom —— 一设一撤会让列表整块挪 4px；
+ *        ③ 聚焦描边不再是浏览器默认那支近黑的 ring：改成天青主色 + 纸色底，
+ *           并给键盘操作留一圈 focus-visible 描边；
+ *        ④ 宋词三百首 283 篇正文收归存储主表（Issue #69 · 按部推进第 3 部）：
+ *           FULL_BOOKS 清单加 `songci`，主表 705 → 977 条，
+ *           data/poems-songci.js 283 条摘掉内联正文、改留 textRef
+ *           （275KB → 76KB，-72%）。页面可见文本零变化：列表 283 条、
+ *           逐条打开取出的标题 / 元信息 / 正文 / 译文逐字节一致。
+ *        （css/classic.css、js/search.js、data/text-master.js、data/poems-songci.js、
+ *          scripts/build-text-master.js、README.md、测试）
+ *   v67  朗读播放档位搬到设置页，与圆键菜单同源（Issue #69 后续）：
+ *        五档连读方式原先只在「分类卡右侧圆键的长按 / 右键菜单」里，
+ *        界面上没有任何提示、设置页也没有入口。现在：
+ *          · 新增 js/play-modes.js —— 五档模式 / 存储键 / 出厂档的**唯一一份**定义，
+ *            js/reader-core.js 与 js/settings.js 都读它（原先两份各写一遍，字或 id
+ *            一改就会错开：设置里选中的和实际连读的不是同一档）；
+ *          · 设置页新增「朗读播放」分组：五档单选项 + 一行说明「圆键长按 / 右键也能调」；
+ *          · 两个入口读写同一份 poem_play_mode_v1，换标签页时靠 storage 事件同步。
+ *        （js/play-modes.js、js/reader-core.js、js/settings.js、
+ *          settings/index.html、css/style.css、sw.js、测试）
+ *   v65  古文观止 167 篇正文收归存储主表（Issue #69 · 按部推进第 2 部）：
+ *        FULL_BOOKS 清单加 `guwen`，主表 540 → 705 条，
+ *        data/poems-guwen.js 167 条摘掉内联正文、改留 textRef。
+ *        页面可见文本零变化（逐条比对正文 / 译文字节一致）。
+ *        顺带修两处**吞条目**的静默故障：
+ *          ① scripts/apply-text-master.js 的条目切块正则把缩进写死成两格，
+ *             而《齐桓晋文之事》那一条的 `{` 是顶格的 —— 该条一直没被处理；
+ *          ② 同文件按 id 认条目用的正则漏了多行标志 `m`，
+ *             导致 `{` 与 `id:` 不同行的条目（改了排版后是绝大多数）
+ *             一个都匹配不上、id 取成空串，同样静默漏摘。
+ *        另修 data/poems-guwen.js 的 getGuwenById()：条目只剩 textRef 后
+ *        直接返回原始条目会让 `getGuwenById(id).text` 变成 undefined。
+ *        （data/text-master.js、data/poems-guwen.js、
+ *          scripts/build-text-master.js、scripts/apply-text-master.js、测试）
+ *   v68  搜索框「该待在哪儿」三态 + 点空白收下拉 + 结果贴近搜索框
  *        （Issue #69 · 再续）：
  *        ① 搜索框三种摆法（.search-hero 的两个类，js/search.js 的 syncHeroState）——
  *           居中（默认）/ 贴顶（.search-active：有焦点**或**有内容）/
@@ -439,19 +478,20 @@
  *           一圈极淡天青光晕（真机上量到过：那一圈黑是 UA 的 focus ring）。
  *        ⑤ 候选下拉限高收到 380px / 可视区四成 / (可视区−键盘) 六成 ——
  *           上一版 60% 在手机上太松，候选铺到可视区下沿前 30px，
- *           「给结果卡片留一片」等于没留。
+ *           「给结果卡片留一片」等于没留。比例与硬边界都算在 JS 实测的
+ *           --kb-visible 上（svh 不认软键盘）。
  *        ⑥ 修两处层级 / 取值 bug（真机与无头浏览器都复现过）：
  *           · hero 的 z-index: 0 会新建层叠上下文，把候选下拉关在里头 ——
  *             结果列表在 hero 外面、DOM 里更靠后，于是整个 hero 压不过它，
  *             候选与结果卡片叠成一团（现已撤掉 hero 的 z-index，
  *             只留 .search-toolbar 的 z-index: 1 当唯一的层级来源）；
- *           · --kb-space 只写在 hero 上时，键盘弹起后 .suggest 的继承值
- *             不会重算，下拉照旧按「没有键盘」的高度铺下来 ——
+ *           · --kb-space / --kb-visible 只写在 hero 上时，键盘弹起后 .suggest
+ *             的继承值不会重算，下拉照旧按「没有键盘」的高度铺下来 ——
  *             现在 hero 与 .suggest 各写一遍。
  *        （css/classic.css、js/search.js、test/search.test.js、
  *          test/pwa.test.js、README.md）
  */
-const CACHE_NAME = "poem-app-v65";
+const CACHE_NAME = "poem-app-v68";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [
@@ -466,6 +506,9 @@ const PRECACHE = [
   "./classic/",
   "./settings/",
   "./js/settings.js",
+  // 朗读播放档位：五档模式 / 存储键 / 出厂档的唯一一份定义，
+  // 阅读器与设置页共用（顺序须在两者之前）
+  "./js/play-modes.js",
   "./terms/",
   "./privacy/",
   "./css/legal.css",

@@ -226,9 +226,13 @@
   /* 全站共用的阅读偏好（不按集子分家）：在唐诗里调过字号，宋词不该又变回去 */
   var FONT_KEY = "poem_classic_font_v1";
   /* 连读偏好的存储键与出厂档：与字号 / 对齐一样是**全站一份** ——
-     在小古文里选了「原文 + 白话」，翻到宋词不该又变回随机听原文。 */
-  var PLAY_KEY = "poem_play_mode_v1";
-  var DEFAULT_PLAY_MODE = "seq-origin";
+     在小古文里选了「原文 + 白话」，翻到宋词不该又变回随机听原文。
+     键名与出厂档**以 js/play-modes.js 为准**（设置页也读那一份），
+     这里只是同页取用时的兜底，不再各写一份字面量。 */
+  var PLAY_KEY = (typeof window !== "undefined" && window.PlayModes && window.PlayModes.KEY) ||
+    "poem_play_mode_v1";
+  var DEFAULT_PLAY_MODE = (typeof window !== "undefined" && window.PlayModes &&
+    window.PlayModes.DEFAULT) || "seq-origin";
   var ALIGN_KEY = "poem_classic_align_v1";
   var PINYIN_KEY = "poem_helper_pinyin_v1";
   var SETTINGS_KEY = "poem_recite_settings_v1";
@@ -1248,49 +1252,13 @@
        用户说的是「顺序播放」，那就一篇一篇来 —— 每篇原文读完接白话，
        白话读完接下一篇。整段文本一次交给语音引擎还有个好处：
        引擎按句读的停顿刚好落在「。原文。白话。」的接缝上，不用自己拼停顿。 */
-  var PLAY_MODES = [
-    {
-      id: "seq-origin",
-      source: "原文",
-      order: "seq",
-      label: "连续播放原文",
-      short: "原文 · 顺序"
-    },
-    {
-      id: "seq-trans",
-      source: "译文",
-      order: "seq",
-      label: "连续播放白话译文",
-      short: "白话 · 顺序",
-      note: "无译文的篇目自动跳过"
-    },
-    {
-      id: "seq-both",
-      source: "原文+译文",
-      order: "seq",
-      label: "原文白话顺序播放",
-      short: "原文 + 白话 · 顺序",
-      note: "每篇先读原文，再读白话，然后下一篇"
-    },
-    {
-      id: "shuffle-origin",
-      source: "原文",
-      order: "shuffle",
-      label: "随机播放原文",
-      short: "原文 · 随机",
-      note: "打乱后一篇接一篇"
-    },
-    {
-      id: "shuffle-trans",
-      source: "译文",
-      order: "shuffle",
-      label: "随机播放白话译文",
-      short: "白话 · 随机",
-      note: "打乱后一篇接一篇，无译文的篇目自动跳过"
-    }
-  ];
-
+  /* 五档模式的定义**不在这里** —— 见 js/play-modes.js。
+     它同时被设置页（js/settings.js）读，两份各写一遍必然错开，
+     所以「有哪五档、存哪个键、出厂是哪一档」只留一份。 */
+  var PLAY = (typeof window !== "undefined" && window.PlayModes) || null;
+  var PLAY_MODES = PLAY ? PLAY.LIST : [];
   function modeOf(id) {
+    if (PLAY) return PLAY.of(id);
     for (var i = 0; i < PLAY_MODES.length; i++) {
       if (PLAY_MODES[i].id === id) return PLAY_MODES[i];
     }
@@ -1299,8 +1267,7 @@
 
   /** 本机存下的播放模式；没存过 / 存了不认识的值 → 出厂档「原文 · 顺序」 */
   function playMode() {
-    var m = modeOf(localStorage.getItem(PLAY_KEY));
-    return m ? m.id : DEFAULT_PLAY_MODE;
+    return PLAY ? PLAY.read() : DEFAULT_PLAY_MODE;
   }
 
   function playModeInfo() {
@@ -1323,7 +1290,7 @@
     if (!modeOf(id)) return false;
     // 只改「下次怎么放」，不动正在跑的那一轮：autoReading 是状态，模式是偏好。
     // 刚刚在跑的那一份去 startPlay 里显式复位，别在这里替它下结论。
-    localStorage.setItem(PLAY_KEY, id);
+    if (PLAY) { PLAY.write(id); PLAY.emit(id); } else { localStorage.setItem(PLAY_KEY, id); }
     syncPlayBtn();
     showToast(modeOf(id).label);
     return true;

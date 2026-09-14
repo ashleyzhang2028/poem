@@ -537,6 +537,9 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   const searchJs = read('js/search.js');
   chk(/visualViewport/.test(searchJs) && /--kb-space/.test(searchJs),
     'js/search.js 用 visualViewport 实测键盘高度（软键盘不改 innerHeight，它是唯一入口）');
+  chk(/keyboardVisible/.test(searchJs) && /--kb-visible/.test(searchJs),
+    'js/search.js 把 visualViewport.height 实测成 --kb-visible' +
+    '（键盘上沿那片可视区：下拉的百分数与硬边界都按它算，不再靠 svh 猜）');
   chk(/focusInput/.test(searchJs) && /search-hero-focus/.test(searchHtml),
     '进页即聚焦：焦点先落在 hero 里的替身输入框上（键盘应声弹出，且不触发 iOS 自行滚动）');
   const ghostBlock = (/[^}]*\.search-hero-focus \{([^}]*)\}/.exec(classicCss) || ['', ''])[1];
@@ -582,16 +585,26 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   const suggestBlock = (/(?:^|\n)\.suggest \{([^}]*)\}/.exec(cssCode) || ['', ''])[1];
   chk(/max-height:\s*min\(/.test(suggestBlock),
     '候选下拉的高度用 min() 取三项里最小者（不是一个写死的高度）');
-  chk(/380px/.test(suggestBlock) && /40svh|40vh/.test(suggestBlock) &&
-    /--kb-space/.test(suggestBlock),
+  // ⚠️ 口径：比例与硬边界两项都按 **JS 实测的可视区**（--kb-visible）算，不用 svh——
+  //    svh 量的是「视口最小时的高度」，它**不认软键盘**（键盘是覆盖层，不改视口），
+  //    在部分内核 / 无头环境里甚至与 vh 相等（实测都是 852）。
+  //    于是「可视区的四成」在键盘弹着时按整屏算，候选下拉一路铺到键盘上沿，
+  //    把下方的结果卡片全吃掉（正是用户反馈的后半句）。
+  //    --kb-visible 由 js/search.js 的 keyboardVisible() 写（visualViewport.height），
+  //    没有键盘时就是整屏，键盘弹起时就是键盘上沿。
+  chk(/380px/.test(suggestBlock) && /--kb-visible/.test(suggestBlock) &&
+    /\*\s*\.4\b/.test(suggestBlock),
     '三项分别是：8 条候选的上限 380px、可视区的四成（给结果卡片留地方）、' +
-    '可视区 − 键盘（硬边界，绝不伸到键盘底下）');
+    '(可视区 − 键盘) 的六成（硬边界，绝不伸到键盘底下）——' +
+    '比例与边界都按 JS 实测的 --kb-visible 算，不用 svh（svh 不认软键盘）');
   const suggestNarrow = (/@media screen and \(max-width: 700px\) \{\s*\.suggest \{([^}]*)\}/.exec(cssCode) || ['', ''])[1];
-  chk(/40svh|40vh/.test(suggestNarrow) && /--kb-space/.test(suggestNarrow),
-    '手机上候选仍按可视区四成收口（键盘弹着时更要紧：下拉下面那几成就是结果卡片）');
-  chk(!/60svh|60vh/.test(suggestBlock),
+  chk(/320px/.test(suggestNarrow) && /\*\s*\.4\b/.test(suggestNarrow) &&
+    /--kb-visible/.test(suggestNarrow),
+    '手机上候选收到 320px（约 6 条），比例仍按实测可视区四成收口' +
+    '（键盘弹着时更要紧：下拉下面那几成就是结果卡片）');
+  chk(!/60svh|60vh/.test(suggestBlock) && !/40svh/.test(suggestBlock),
     '可视区的六成已放宽到四成（60% 在手机上实测太松：候选铺到可视区下沿前 30px，' +
-    '底下只剩一条缝，「给结果卡片留一片」等于没留）');
+    '底下只剩一条缝，「给结果卡片留一片」等于没留），且不再用 svh 算比例');
 
   // 下拉可滚动：条数被限住之后，剩下的要靠滚动看，滚动位置每次换关键词都回到顶部
   chk(/overflow-y:\s*auto/.test(suggestBlock) && /box\.scrollTop = 0/.test(searchJs),

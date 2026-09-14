@@ -789,6 +789,73 @@ body.no-dock .modal-box { max-height: 88vh; }
 }
 /* 「每日背诵数量」的文字都短，让它们等分铺满，四档一眼看全 */
 .settings-page #seg-count button { flex: 1 1 0; }
+
+/* --------------------------------------------------------------------------
+   朗读播放：五档连读方式
+   --------------------------------------------------------------------------
+   五个模式，每个后面还带一句「选它会发生什么」（无译文跳过等），所以
+   放在药丸里会挤成两行、长短参差。这里改用**竖排单选项**：
+   一行一档、名字在左、说明在下，选中同样用「深绿实底 + 米白字 + 描金内边」
+   这一套页面统一的选中语言（与年级药丸、学段药丸一致），
+   不再引入第三种选中样式。
+   -------------------------------------------------------------------------- */
+.play-modes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.play-mode-opt {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  width: 100%;
+  box-sizing: border-box;
+  text-align: left;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--ink-2);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+}
+.play-mode-name { font-size: 13.5px; font-weight: 500; }
+.play-mode-note { font-size: 11.5px; color: var(--ink-3); line-height: 1.5; }
+.play-mode-opt.active {
+  background: var(--green);
+  border-color: var(--green-dark);
+  color: #fdfaf2;
+  font-weight: 600;
+  box-shadow: inset 0 0 0 1px rgba(240, 205, 124, .42);
+}
+/* 选中项里的那行说明也要跟着变成浅色，否则深绿底上糊成一团黑 */
+.play-mode-opt.active .play-mode-note { color: rgba(253, 250, 242, .82); }
+.play-mode-opt:not(.active):active {
+  background: var(--green-light);
+  border-color: var(--celadon);
+  color: var(--green);
+}
+/* 圆形记号：五档里当前选中的那一档，右侧点亮一枚实心圆点，
+   与圆键菜单里的勾选记号同一套语言（不必只靠底色辨认） */
+.play-mode-opt { position: relative; }
+.play-mode-opt::after {
+  content: "";
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 12px;
+  height: 12px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: transparent;
+}
+.play-mode-opt.active::after {
+  border-color: #f0cd7c;
+  background: #f0cd7c;
+}
 /* 窄屏：药丸再收一档内边距，7 个「背诵范围」才不会挤成两行以上 */
 @media (max-width: 400px) {
   .settings-page .seg button,
