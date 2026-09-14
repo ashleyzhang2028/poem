@@ -217,7 +217,15 @@
  *        （index.html、classic|guwen|tangshi|songci|search/index.html、
  *          js/app.js、js/reader-core.js、css/style.css、css/classic.css、sw.js）
  */
-const CACHE_NAME = "poem-app-v45";
+ * v46  自选集合（Issue #69 收尾）：作品主表 + 同篇对照表（data/works-map.js /
+ *      data/works-index.js）、js/collections.js；阅读器列表与详情页加「加入背诵」，
+ *      首页加「自选背诵」折叠卡；首页排程纳入自选篇目
+ *      （data/works-map.js、data/works-index.js、js/collections.js、
+ *       js/reader-core.js、js/scheduler.js、js/app.js、index.html、
+ *       classic|tangshi|songci|guwen|zhaoming|search 六个页面的 index.html、
+ *       css/style.css、css/classic.css、sw.js）
+ */
+const CACHE_NAME = "poem-app-v46";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [
@@ -249,6 +257,12 @@ const PRECACHE = [
   // 古籍阅读库：索引页 + 详情页的引擎（小古文 / 唐诗 / 宋词 / 古文观止 共用）
   "./js/reader-core.js",
   "./data/site-index.js",
+  // 作品主表 + 同篇对照表（自选集合 PR，Issue #69 收尾）：
+  // 判重「这篇是不是已经在别处背过了」，搜索去重、加自选集合、排每日任务都读它
+  "./data/works-map.js",
+  "./data/works-index.js",
+  // 自选集合（除教材之外，用户自己加进来要背的篇目）
+  "./js/collections.js",
   "./js/manifest-loader.js",
   "./data/poems-1.js",
   "./data/poems-2.js",

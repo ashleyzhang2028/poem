@@ -64,7 +64,12 @@
     searchPlaceholder: "搜索篇名 / 出处 / 作者",
     version: "",            // 一次性文案版本号，用于清掉老版本写下的缓存
     readStore: "poem_classic_read_v1",
-    appName: "跬步"
+    appName: "跬步",
+    // 「加入背诵」（自选集合）的按钮名与提示语，见下方「自选集合」一节
+    recite: "加入背诵",
+    reciteAdd: "加入自选集合",
+    reciteIn: "已在背诵",
+    reciteRemove: "移出背诵"
   };
 
   /* 全站共用的阅读偏好（不按集子分家）：在唐诗里调过字号，宋词不该又变回去 */
@@ -656,6 +661,10 @@
         })() +
         "</div>" +
         "</div>" +
+        // 右侧三件套：加入背诵（书签）· 播放 · 箭头。
+        // 「加入背诵」在最前：它是**选择**（把这一篇收进自己的清单），
+        // 播放与箭头是**动作**（现在听 / 进去读），选择排在动作前更像目录。
+        reciteItemBtn(p) +
         '<button type="button" class="item-read" title="播放这一篇" aria-label="播放 ' + esc(p.title) + '">' +
         playGlyph() + "</button>" +
         '<div class="item-arrow">' + arrowGlyph() + "</div>";
@@ -665,6 +674,14 @@
         e.stopPropagation();
         readOne(p, playBtn);
       });
+      var reciteBtn = el.querySelector(".item-recite");
+      if (reciteBtn) {
+        reciteBtn.addEventListener("click", function (e) {
+          e.stopPropagation();
+          claim(e);
+          startRecite(p);
+        });
+      }
       (groupCard || listEl).appendChild(el);
     });
 
@@ -676,6 +693,7 @@
     // 列表里已有条目正在播放时，进入本页也要显示「暂停」态
     syncItemPlayBtns();
     syncPlayBtn();
+    syncListItemReciteButtons();
   }
 
   /** 当前正在朗读的篇目：列表滚动到可见位置并高亮 */
@@ -760,6 +778,7 @@
     syncPinyinButton();
     syncReadButtons();
     syncDoneButton();
+    syncReciteButtons();
     el.hidden = false;
     document.body.classList.add("reader-open");
     // 顶栏动作位换成「返回」：阅读器是全屏层，这一颗合上它、回到列表；
@@ -1581,6 +1600,13 @@
       syncCount();
     });
 
+    var reciteBtn = rd("recite");
+    if (reciteBtn) reciteBtn.addEventListener("click", function (e) {
+      claim(e);
+      if (!current) return;
+      startRecite(current);
+    });
+
     var transToggle = rd("trans-toggle");
     if (transToggle) transToggle.addEventListener("click", function (e) {
       claim(e);
@@ -1665,6 +1691,20 @@
           if (!current) return;
           renderReaderText();
           syncPinyinButton();
+        });
+      });
+    });
+
+    // 自选集合变化（某个页面加了 / 移了一篇）：其余打开着的页面同步按钮状态。
+    // 引擎里按钮是现画的，不会自己变 —— 不补这一条，在别的标签页加过之后
+    // 回到这一页，那一篇仍显示「未加入」。
+    window.addEventListener("recite-collections-change", function () {
+      mounts.forEach(function (s) {
+        withSession(s, function () {
+          syncListItemReciteButtons();
+          syncReciteButtons();
+          var picker = document.getElementById("gw-recite-picker");
+          if (picker && !picker.hidden) renderRecitePicker();
         });
       });
     });
@@ -1901,6 +1941,278 @@
     renderList();
     syncAlignButtons();
     syncRandomReadButton();
+    // 这一页加载了完整的站点索引（搜索页六部齐备）时，顺手把自选集合的
+    // 快照刷新一次 —— 语料订正过（标题 / 正文改过）之后，老快照不会一直旧着。
+    // 集子页只加载自己那一部，refreshSnapshots 在索引里找得到的那些会更新。
+    if (window.ReciteCollections && window.ReciteCollections.refreshSnapshots) {
+      window.ReciteCollections.refreshSnapshots(window.SITE_INDEX || []);
+    }
+  }
+
+/* ---------------- 自选集合：把这一篇「加入背诵」 ----------------
+   与「标记已读」是两回事：
+     · 已读   —— 这一部集子里的阅读进度（poem_classic_read_v1 等），只为记录
+     · 加入背诵 —— 把这一篇放进**用户自己的清单**（js/collections.js），
+                   进了清单就会由遗忘曲线安排复习，与课内 273 首同一套排程
+
+   自选集合与「唐诗三百首」那几部集子不是一回事：集子是既定选本、篇目不可改，
+   自选集合是用户自己的清单、想加就加想删就删、**不分任何组**
+   （用户原话：「集合没有必要添加分组了」）。
+
+   入口有两个（用户原话「在索引列表或者详情页把他们添加到背诵」）：
+     · 索引列表 —— 每条右边一枚「加入背诵」圆键（与播放键同一档）
+     · 详情页   —— 阅读器工具条上那枚「加入背诵」（与「标记已读」同一行）
+
+   按下之后不是直接塞进某个集合，而是弹一枚**集合选择器**：
+   勾选要放进的集合、或新建一个。一篇可以在多个集合里，各存一份引用，
+   排每日任务时按作品去重（同一篇只背一次）。
+   全部集子页面共用这一份引擎，所以六个页面一处实现、处处可用。 */
+
+  /** 这一篇当前的状态：{ in: bool, collections: [...] } */
+  function reciteState(p) {
+    if (!p || !window.ReciteCollections) return { in: false, collections: [] };
+    var cols = window.ReciteCollections.collectionsOf(p.id);
+    return { in: cols.length > 0, collections: cols };
+  }
+
+  function reciteGlyph() {
+    // 加入背诵：一枚「书签」轮廓，未加入时是空心，加入后填充态由 CSS 给
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" ' +
+      'stroke-linecap="round" stroke-linejoin="round">' +
+      '<path d="M7 4.6h10a1.4 1.4 0 0 1 1.4 1.4v13.4l-6.4-4.1-6.4 4.1V6a1.4 1.4 0 0 1 1.4-1.4Z"/>' +
+      "</svg>";
+  }
+
+  /** 列表条目右侧的「加入背诵」圆键 */
+  function reciteItemBtn(p) {
+    var on = reciteState(p).in;
+    var label = on ? W.reciteIn : W.reciteAdd;
+    return '<button type="button" class="item-recite" data-recite="' + esc(p.id) + '"' +
+      ' data-on="' + (on ? "1" : "0") + '"' +
+      ' title="' + esc(label) + '" aria-label="' + esc(p.title) + "：" + esc(label) + '"' +
+      ' aria-pressed="' + (on ? "true" : "false") + '">' + reciteGlyph() + "</button>";
+  }
+
+  /** 同步列表里所有「加入背诵」圆键的状态（列表整块重建后调用） */
+  function syncListItemReciteButtons() {
+    $$(".item-recite", listBox()).forEach(function (b) {
+      var id = b.getAttribute("data-recite");
+      var p = itemsById[id];
+      if (!p) return;
+      var on = reciteState(p).in;
+      b.dataset.on = on ? "1" : "0";
+      var label = on ? W.reciteIn : W.reciteAdd;
+      b.title = label;
+      b.setAttribute("aria-label", p.title + "：" + label);
+      b.setAttribute("aria-pressed", on ? "true" : "false");
+    });
+  }
+
+  /** 详情页工具条上的「加入背诵」：没进阅读器就不显示 */
+  function syncReciteButtons() {
+    var btn = rd("recite");
+    if (!btn) return;
+    if (!current || !window.ReciteCollections) {
+      btn.hidden = true;
+      return;
+    }
+    btn.hidden = false;
+    var on = reciteState(current).in;
+    btn.classList.toggle("is-in", on);
+    btn.dataset.on = on ? "1" : "0";
+    var label = on ? W.reciteIn : W.reciteAdd;
+    btn.title = label;
+    btn.setAttribute("aria-pressed", on ? "true" : "false");
+    var lab = btn.querySelector(".sr-only");
+    if (lab) lab.textContent = label;
+    syncListItemReciteButtons();
+  }
+
+  /** 集合选择器：列出全部自选集合（可多选）+ 新建一个 + 移出全部 */
+  function openRecitePicker(p) {
+    if (!p || !window.ReciteCollections) return;
+    var C = window.ReciteCollections;
+    var cols = C.list();
+    var inCols = {};
+    C.collectionsOf(p.id).forEach(function (c) { inCols[c.id] = true; });
+
+    var wrap = document.getElementById("gw-recite-picker");
+    if (!wrap) {
+      wrap = document.createElement("div");
+      wrap.id = "gw-recite-picker";
+      wrap.className = "modal recite-picker";
+      wrap.hidden = true;
+      wrap.innerHTML =
+        '<div class="modal-mask" data-recite-close="1"></div>' +
+        '<div class="modal-box small" role="dialog" aria-modal="true" aria-label="加入背诵">' +
+        '<button type="button" class="modal-close" data-recite-close="1" aria-label="关闭">✕</button>' +
+        '<div class="modal-head"><h2>加入背诵</h2>' +
+        '<div class="recite-sub" id="gw-recite-sub"></div></div>' +
+        '<div class="recite-cols" id="gw-recite-cols"></div>' +
+        '<div class="recite-new">' +
+        '<input id="gw-recite-new" class="settings-input" type="text" maxlength="12" ' +
+        'placeholder="新建集合，例如：我要背的" autocomplete="off" enterkeyhint="done" />' +
+        '<button type="button" class="btn ghost-btn" id="gw-recite-create">新建</button>' +
+        "</div>" +
+        "</div>";
+      document.body.appendChild(wrap);
+      bindRecitePicker(wrap);
+    }
+
+    wrap.dataset.item = p.id;
+    wrap.dataset.title = p.title;
+    wrap.hidden = false;
+    // 与设置弹层同一套：弹层打开时锁住页面滚动（点击遮罩 / 关闭键再放开）
+    document.body.style.overflow = "hidden";
+    renderRecitePicker();
+  }
+
+  /** 重绘选择器内容（勾选态、集合列表、空态） */
+  function renderRecitePicker() {
+    var wrap = document.getElementById("gw-recite-picker");
+    if (!wrap || wrap.hidden) return;
+    var p = itemsById[wrap.dataset.item] || current;
+    var C = window.ReciteCollections;
+    if (!p || !C) return;
+    var cols = C.list();
+    var inCols = {};
+    C.collectionsOf(p.id).forEach(function (c) { inCols[c.id] = true; });
+
+    var sub = document.getElementById("gw-recite-sub");
+    if (sub) {
+      var n = Object.keys(inCols).length;
+      sub.textContent = "《" + p.title + "》" + (n ? "已在 " + n + " 个集合里" : "尚未加入任何集合");
+    }
+
+    var box = document.getElementById("gw-recite-cols");
+    if (!box) return;
+    if (!cols.length) {
+      box.innerHTML = '<div class="recite-empty">还没有自选集合。' +
+        "下面输入一个名字，新建第一个 —— 加进来的篇目会跟着遗忘曲线一起复习。</div>";
+      return;
+    }
+    box.innerHTML = cols.map(function (c) {
+      var on = !!inCols[c.id];
+      return '<button type="button" class="recite-col' + (on ? " on" : "") + '"' +
+        ' data-col="' + esc(c.id) + '" aria-pressed="' + (on ? "true" : "false") + '">' +
+        '<span class="recite-col-tick" aria-hidden="true">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+        'stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5 10 17.5 19.5 7"/></svg>' +
+        "</span>" +
+        '<span class="recite-col-name">' + esc(c.name) + "</span>" +
+        '<span class="recite-col-count">' + c.items.length + " 篇</span>" +
+        "</button>";
+    }).join("");
+  }
+
+  function closeRecitePicker() {
+    var wrap = document.getElementById("gw-recite-picker");
+    if (!wrap) return;
+    wrap.hidden = true;
+    document.body.style.overflow = "";
+  }
+
+  /**
+   * 选择器事件绑定（只绑一次）。
+   * 勾选 = 加入 / 移出该集合；「新建」= 建一个集合并把这一篇放进去；
+   * 每次操作后同步列表与详情页按钮，并给一句 toast 交代结果。
+   */
+  function bindRecitePicker(wrap) {
+    wrap.addEventListener("click", function (e) {
+      var t = e.target;
+      if (t.closest && t.closest("[data-recite-close]")) {
+        closeRecitePicker();
+        return;
+      }
+      var colBtn = t.closest ? t.closest("[data-col]") : null;
+      if (colBtn) {
+        var p = itemsById[wrap.dataset.item] || current;
+        var C = window.ReciteCollections;
+        if (!p || !C) return;
+        var cid = colBtn.getAttribute("data-col");
+        var was = C.collectionsOf(p.id).some(function (c) { return c.id === cid; });
+        if (was) {
+          C.removeItem(p.id, cid);
+          showToast("已移出「" + (C.get(cid) ? C.get(cid).name : "") + "」的背诵清单");
+        } else {
+          C.add(p.id, cid);
+          stashSnapshot(p);
+          showToast("已加入「" + (C.get(cid) ? C.get(cid).name : "") + "」，跟着遗忘曲线一起复习");
+        }
+        renderRecitePicker();
+        syncReciteButtons();
+        return;
+      }
+      if (t.id === "gw-recite-create") {
+        var input = document.getElementById("gw-recite-new");
+        var name = input ? input.value : "";
+        var p2 = itemsById[wrap.dataset.item] || current;
+        var C2 = window.ReciteCollections;
+        if (!p2 || !C2) return;
+        var col = C2.create(name);
+        C2.add(p2.id, col.id);
+        stashSnapshot(p2);
+        if (input) input.value = "";
+        renderRecitePicker();
+        syncReciteButtons();
+        showToast("已新建「" + col.name + "」并加入这一篇");
+      }
+    });
+    var input = document.getElementById("gw-recite-new");
+    if (input) {
+      input.addEventListener("keydown", function (e) {
+        if (e.key !== "Enter") return;
+        e.preventDefault();
+        var btn = document.getElementById("gw-recite-create");
+        if (btn) btn.click();
+      });
+    }
+  }
+
+  /**
+   * 把这一篇的正文顺手存进快照。
+   *
+   * 集子索引页并不加载全站总索引（只加载自己那一部），
+   * 所以 collections.add() 那一刻查不到这一条 —— 首页也就拿不到正文。
+   * 这里把当前这一篇（引擎手里的对象就带着正文/译文）直接交给集合模块存下来。
+   * 搜索页 / 首页有完整索引时，refreshSnapshots 会再覆盖一次，口径一致。
+   */
+  function stashSnapshot(p) {
+    if (!p || !window.ReciteCollections || !p.text) return;
+    var snap = {
+      title: p.title, author: p.author || "", authorName: p.authorName || "",
+      dynasty: p.dynasty || "", source: p.source || "", selection: p.selection || "",
+      book: p.book || "", bookName: p.bookName || "", page: p.page || "",
+      text: p.text || "", translation: p.translation || "",
+      translationSource: p.translationSource
+    };
+    var idx = (window.SITE_INDEX || []).slice();
+    if (!idx.some(function (x) { return x.id === p.id; })) idx.push(Object.assign({ id: p.id }, snap));
+    window.ReciteCollections.refreshSnapshots(idx);
+  }
+
+  /**
+   * 按下「加入背诵」（列表圆键或详情页按钮）。
+   * 集合为空时直接建第一个集合，一步到位（用户在详情页只按了一颗键，
+   * 不该再让他先想「放进哪个集合」—— 那正是第一次用这个功能时的样子）；
+   * 已经有集合了则弹集合选择器让他挑。
+   */
+  function startRecite(p) {
+    if (!p) return;
+    if (!window.ReciteCollections) {
+      showToast("本机不支持自选集合");
+      return;
+    }
+    var C = window.ReciteCollections;
+    if (!C.list().length) {
+      var col = C.create("");
+      C.add(p.id, col.id);
+      stashSnapshot(p);
+      syncReciteButtons();
+      showToast("已新建「" + col.name + "」并加入这一篇");
+      return;
+    }
+    openRecitePicker(p);
   }
 
   window.ReaderEngine = {

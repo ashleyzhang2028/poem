@@ -67,7 +67,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
    'data/poems-9.js', 'data/poems-10.js', 'data/poems-11.js', 'data/poems-12.js',
    'data/index.js', 'data/poems-classic.js', 'data/poems-tangshi.js',
    'data/poems-songci.js', 'data/poems-guwen.js', 'data/poems-zhaoming.js',
-   'data/site-index.js'
+   'data/site-index.js', 'data/works-map.js', 'data/works-index.js'
   ].forEach(f => vm.runInContext(read(f), sandbox, { filename: f }));
 
   const IDX = sandbox.SITE_INDEX;
@@ -156,7 +156,16 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   // 输入之前列表里**一条都没有**（用户要求：默认不铺全部列表，加载也更快）。
   // 所以实例的 total() 此刻是 0 —— 它是「当前这份集合的条数」，
   // 关键词一进来就会被 setItems 换成全量（下面 type('王维') 之后再验）。
-  const ALL = IDX.filter(x => !x.isBook).length;
+  // 搜索页按**作品**去重（同一篇只列一条，见 js/search.js 的 allItems）：
+  // 课内《静夜思》与唐诗《夜思》是同一篇，结果里不该出现两条。
+  // 所以这里算的「全站篇数」也是去重后的 —— 与页面上进度牌报的数字同口径。
+  const seenWid = new Set();
+  const ALL = IDX.filter(x => !x.isBook).filter(x => {
+    const wid = sandbox.WorksIndex.widOf(x.id);
+    if (seenWid.has(wid)) return false;
+    seenWid.add(wid);
+    return true;
+  }).length;
   chk(api.total() === 0, '没输入关键词时实例里没有篇目（实际 ' + api.total() + '）');
   chk(d.querySelectorAll('#gw-list .item').length === 0, '没输入关键词时列表里一条都不列');
   chk(d.querySelector('#gw-list .textContent') === null &&
@@ -190,6 +199,15 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(api.total() === ALL, '一输入关键词，实例里就换上全站篇目（' + api.total() + '）');
   chk(d.querySelector('#gw-count').textContent === '0 / ' + ALL + ' 篇',
     '顶部进度牌这时报的是全站篇数（实际 ' + d.querySelector('#gw-count').textContent + '）');
+  // 去重：同一篇作品只列一条（《静夜思》课内 + 唐诗《夜思》正文一致）
+  type('静夜思');
+  await sleep(30);
+  const jys = [...d.querySelectorAll('#gw-list .item')];
+  chk(jys.length === 1, '搜「静夜思」只出一条（同一篇作品不重复列，实际 ' + jys.length + '）');
+  chk(jys.length === 1 && /^poems-/.test(jys[0].dataset.id),
+    '去重后留下的是课内那一条（教材是主线，带年级学期）');
+  type('王维');
+  await sleep(30);
   // 说明文字整段已撤（#76 删掉元素、这一版删掉显隐逻辑）：
   // 页面上不该再出现那一行，敲字前后都不该有
   chk(d.querySelector('#search-hint') === null, '那段说明文字在页面上已不存在');

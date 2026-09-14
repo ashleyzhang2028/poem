@@ -77,6 +77,32 @@
     <!-- 今日 5 首列表 -->
     <section class="list" id="today-list"></section>
 
+    <!-- 自选集合：除教材之外，自己额外想背的篇目
+         （在课外集子或搜索页点书签加入，见 js/reader-core.js）。
+         加进来的篇目会跟着遗忘曲线一起复习 —— 与「今日背诵」同一套排程。
+         集合本身不分卷次词牌（用户原话「集合没有必要添加分组了」），
+         只是一个清单，能建多个、能改名、能删。 -->
+    <section class="card collections-section" id="collections-section">
+      <button class="collapse-head" id="btn-collections" aria-expanded="false">
+        <span class="collapse-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M7 4.6h10a1.4 1.4 0 0 1 1.4 1.4v13.4l-6.4-4.1-6.4 4.1V6a1.4 1.4 0 0 1 1.4-1.4Z" />
+          </svg>
+        </span>
+        <span id="collections-label">自选背诵</span>
+        <span id="collections-count" class="badge">0</span>
+        <span class="arrow" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6.6 9.8 12 15.2l5.4-5.4" />
+          </svg>
+        </span>
+      </button>
+      <div class="collapse-body" id="collections-body" hidden>
+        <p class="collections-tip" id="collections-tip"></p>
+        <div class="list" id="collections-list"></div>
+      </div>
+    </section>
+
     <!-- 全部诗词（可折叠） -->
     <section class="card all-section">
       <button class="collapse-head" id="btn-all">
@@ -260,11 +286,19 @@
   <script src="data/poems-11.js"></script>
   <script src="data/poems-12.js"></script>
   <script src="data/index.js"></script>
+  <!-- 同篇对照表 + 作品主表：判断「这篇是不是已经在别处背过了」。
+       两片都必须在 storage / scheduler / app 之前加载 ——
+       加自选集合时要按作品判重（课内《静夜思》与唐诗《夜思》是同一篇）。 -->
+  <script src="data/works-map.js"></script>
+  <script src="data/works-index.js"></script>
   <script src="data/pinyin-table.js"></script>
   <script src="data/common-chars.js"></script>
   <script src="js/pinyin.js"></script>
   <script src="js/speech.js"></script>
   <script src="js/reader.js"></script>
+  <!-- 自选集合（用户自己加背的篇目）：必须在 app.js 之前，
+       遗忘曲线排程要读它取候选池 -->
+  <script src="js/collections.js"></script>
   <script src="js/storage.js"></script>
   <script src="js/scheduler.js"></script>
   <script src="js/app.js"></script>

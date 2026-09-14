@@ -890,15 +890,17 @@ setTimeout(() => {
   chk(row1.children.length === 3 &&
     row1.querySelector('#rd-align-seg') && row1.querySelector('#rd-font-seg') && row1.querySelector('#rd-pinyin-seg'),
     '上一行依次是 对齐 / 字号 / 注音 三组按钮');
-  // 需求 1：正文朗读键 / 译文开关 / 标记已读 在下行
-  chk(row2.children.length === 3 &&
+  // 需求 1：正文朗读键 / 译文开关 / 标记已读 / 加入背诵 在下行。
+  // 「加入背诵」（自选集合）加在最后：它把这一篇收进用户自己的清单，
+  // 与「标记已读」（记录这一部的阅读进度）是两回事，所以是并列的两颗键。
+  chk(row2.children.length === 4 &&
     row2.querySelector('#rd-read-btn') && row2.querySelector('#rd-trans-toggle') &&
-    row2.querySelector('#gw-done'),
-    '下一行依次是 正文朗读键 / 译文开关 / 标记已读 三组（实际 ' + row2.children.length + '）');
-  chk(row2.querySelectorAll('button > svg, button > span > svg').length >= 3, '图标行的按钮全部是 SVG 图标');
-  chk(row2.querySelectorAll(':scope > button .sr-only').length === 3,
-    '「正文朗读 / 译文开关 / 标记已读」的文案只留给读屏软件（.sr-only）');
-  chk(d.querySelectorAll('.reader-actions .mini-btn, .reader-actions .seg.mini').length === 6,
+    row2.querySelector('#gw-done') && row2.querySelector('#gw-recite'),
+    '下一行依次是 正文朗读键 / 译文开关 / 标记已读 / 加入背诵 四组（实际 ' + row2.children.length + '）');
+  chk(row2.querySelectorAll('button > svg, button > span > svg').length >= 4, '图标行的按钮全部是 SVG 图标');
+  chk(row2.querySelectorAll(':scope > button .sr-only').length === 4,
+    '「正文朗读 / 译文开关 / 标记已读 / 加入背诵」的文案只留给读屏软件（.sr-only）');
+  chk(d.querySelectorAll('.reader-actions .mini-btn, .reader-actions .seg.mini').length === 7,
     '工具条按钮共用同一套样式类（实际 ' +
     d.querySelectorAll('.reader-actions .mini-btn, .reader-actions .seg.mini').length + '）');
   const actionsCss = fs.readFileSync(path + 'css/classic.css', 'utf8');

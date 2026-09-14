@@ -144,6 +144,20 @@
           </span>
           <span class="sr-only" id="rd-trans-toggle-text">显示译文</span>
         </button>
+        <!-- 「加入背诵」：把这一篇放进**用户自己的清单**（自选集合），
+             进了清单就由遗忘曲线安排复习 —— 与课内 273 首同一套排程。
+             与「标记已读」是两回事：已读只记录这一部集子里的进度，
+             加入背诵才是「这一篇我要跟着一起背」。
+             按下去弹集合选择器：勾选放进哪个集合，或新建一个。
+             自选集合不分卷次不分词牌（用户原话「集合没有必要添加分组了」）。 -->
+        <button type="button" class="mini-btn recite-btn" id="gw-recite" data-gw="recite" data-on="0" aria-pressed="false" title="加入自选集合">
+          <span class="btn-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M7 4.6h10a1.4 1.4 0 0 1 1.4 1.4v13.4l-6.4-4.1-6.4 4.1V6a1.4 1.4 0 0 1 1.4-1.4Z" />
+            </svg>
+          </span>
+          <span class="sr-only" id="gw-recite-text">加入背诵</span>
+        </button>
         <button type="button" class="mini-btn done-btn" id="gw-done" data-gw="done">
           <span class="btn-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -224,6 +238,14 @@
   <div class="toast" id="toast" hidden></div>
 
   <script src="data/poems-tangshi.js"></script>
+  <!-- 同篇对照表 + 作品主表：「这篇是不是已经在别处背过了」靠它判重。
+       集子页只加载自己那一部数据，所以判重走 8KB 的静态表（data/works-map.js），
+       而不是现算全站索引 —— 现算要先备齐六部（约 3MB）。
+       必须在 js/reader-core.js / js/<集子>.js 之前加载。 -->
+  <script src="data/works-map.js"></script>
+  <script src="data/works-index.js"></script>
+  <!-- 自选集合（用户自己加背的篇目）：阅读器里的「加入背诵」读它 -->
+  <script src="js/collections.js"></script>
   <!-- 译文来源口径文案（与首页同一套 TRANSLATION_SOURCES，不能另写一份） -->
   <script src="data/index.js"></script>
   <script src="data/pinyin-table.js"></script>

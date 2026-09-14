@@ -358,6 +358,74 @@ html, body {
 
 /* 全部诗词折叠 */
 .all-section { margin-top: 14px; }
+
+/* 自选背诵（除教材之外，用户自己加进来要背的篇目）----------------------
+   与「全部诗词」同一张卡、同一个折叠头，位置在它上面：
+   自选是「我今天额外要背的」，比「本册全部诗词」更该先看到。
+   条目与「全部诗词」同款，只是序号圆改由书签图标占位（见下 .item-remove）。 */
+.collections-section { margin-top: 14px; }
+.collections-tip {
+  margin: 0 0 10px;
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: var(--ink-3);
+}
+/* 集合小标题：名字 + 篇数在左，改名 / 删除在右 ——
+   一个集合一行隔断，下面跟着它自己的篇目清单 */
+.collection-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 2px 6px;
+}
+.collection-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--green);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.collection-count { font-size: 12px; color: var(--ink-3); }
+.collection-act {
+  margin-left: auto;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--ink-2);
+  font-size: 12px;
+  padding: 3px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+.collection-head .collection-act + .collection-act { margin-left: 0; }
+.collection-act.danger { color: var(--red, #b4553c); }
+.collection-act:hover { border-color: var(--green); color: var(--green); }
+.collection-act.danger:hover { border-color: var(--red, #b4553c); color: var(--red, #b4553c); }
+
+/* 自选条目的圆形「移出」键：与集子页的「加入背诵」（书签）形状相反 ——
+   一条横杠，一眼看出是「拿掉它」 */
+.item-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  margin-left: auto;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--card);
+  color: var(--ink-3);
+  cursor: pointer;
+  line-height: 0;
+}
+.item-remove svg { width: 15px; height: 15px; display: block; }
+.item-remove:hover { border-color: var(--red, #b4553c); color: var(--red, #b4553c); }
+/* 自选条目左侧色条走蓝色：与课内（绿）、古文条目同属外围辨识色 */
+.item.optional { border-left-color: var(--blue, #3f7f9e); }
+.item-reason.optional { background: var(--blue-light, #eaf3f7); color: var(--blue, #3f7f9e); }
 .collapse-head {
   width: 100%;
   border: none;
