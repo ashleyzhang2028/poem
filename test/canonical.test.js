@@ -46,20 +46,51 @@ const WI = sb.WorksIndex;
 const byId = {};
 sb.SITE_INDEX.forEach(p => { byId[p.id] = p; });
 
+/* ---- 1.0 「已全量收归的部」清单（权威口径） ----
+   与 scripts/build-text-master.js 的 FULL_BOOKS 一致。
+   一部一个 PR 地往下收：清单里没点名的部照旧内联，两种形态并存。
+   ⚠️ 哪一部漏收了、或哪一部多收了，都由这一份清单核 —— 不靠数总数。 */
+const FULL_BOOKS = ['zhaoming'];
+
 /* ---- 1.1 主表本身 ---- */
-/* 57（课内自身重复去重后的跨集重复作品数）
-   + 3（近重复合并进来的《黄鹤楼送孟浩然之广陵》《夜上受降城闻笛》《将进酒》）= 60 */
-chk(Array.isArray(MASTER) && MASTER.length === 60,
-  'data/text-master.js 有 60 条（重复出现的作品数；实际 ' +
-  (MASTER ? MASTER.length : 'undefined') + '）');
-chk(MASTER.every(m => m.id && m.work && Array.isArray(m.entries) && m.entries.length >= 2),
-  '每条都带 id / work / entries（且至少两条条目指向它）');
+/* 60（跨集重复的作品：
+     57 课内自身重复去重后的跨集重复 + 3 近重复合并进来的
+     《黄鹤楼送孟浩然之广陵》《夜上受降城闻笛》《将进酒》）
+   + FULL_BOOKS 各部的**单篇**条目（昭明 480） */
+const multiEntries = MASTER.filter(m => m.entries.length >= 2);
+const singleEntries = MASTER.filter(m => m.entries.length === 1);
+chk(multiEntries.length === 60,
+  '主表里有 60 条「跨集重复」的作品（实际 ' + multiEntries.length + '）');
+const fullExpected = [];
+FULL_BOOKS.forEach(book => {
+  sb.SITE_INDEX.forEach(p => {
+    if (!p || p.isBook || p.book !== book || !p.id) return;
+    if (!p.text && !p.translation) return;
+    fullExpected.push(p.id);
+  });
+});
+chk(singleEntries.length + multiEntries.length === MASTER.length,
+  '主表条目只有两类：跨集重复（多条目）与全量收归部的单篇（单条目）');
+chk(singleEntries.every(m => m.entries[0] === m.id),
+  '全量收归的单篇条目：主条目就是它自己（entries 只有一条）');
+chk(singleEntries.every(m => fullExpected.indexOf(m.id) >= 0),
+  '单篇条目全部来自 FULL_BOOKS 点名的部（多收的：' +
+  (singleEntries.filter(m => fullExpected.indexOf(m.id) < 0).map(m => m.id).slice(0, 6).join('、') || '无') + '）');
+chk(fullExpected.every(id => singleEntries.some(m => m.id === id)) ||
+  fullExpected.every(id => MASTER.some(m => (m.entries || []).indexOf(id) >= 0)),
+  'FULL_BOOKS 点名的部里，每个有正文的条目都进了主表（漏收的：' +
+  (fullExpected.filter(id => !MASTER.some(m => (m.entries || []).indexOf(id) >= 0)).slice(0, 6).join('、') || '无') + '）');
+chk(MASTER.every(m => m.id && m.work && Array.isArray(m.entries) && m.entries.length >= 1),
+  '每条都带 id / work / entries（跨集重复至少两条条目指它）');
 chk(MASTER.every(m => m.text && m.translation),
   '每条都有正文与译文（主表是唯一一份正文，不许有空文）');
-chk(MASTER.every(m => m.id.indexOf('poems-') === 0),
-  '主条目一律是课内条目（教材口径优先）—— 与作品主表同口径');
-chk(MASTER.every(m => WI.repOf(m.entries[0]) === m.id),
-  '主表的 id 就是这一篇的主条目（与 data/works-index.js 同口径）');
+chk(multiEntries.every(m => m.id.indexOf('poems-') === 0),
+  '跨集重复的主条目一律是课内条目（教材口径优先）—— 与作品主表同口径');
+// 全量收归部的单篇，主条目就是它自己：id 必须带**自己那一部**的前缀
+chk(singleEntries.every(m => FULL_BOOKS.some(b => m.id.indexOf(b + '-') === 0)),
+  '全量收归部的单篇：主条目 id 带自己那一部的前缀');
+chk(multiEntries.every(m => WI.repOf(m.entries[0]) === m.id),
+  '跨集重复的 id 就是这一篇的主条目（与 data/works-index.js 同口径）');
 // 主表里的 id 必须都是站点索引里真实存在的条目 —— 拼错一个就会静默丢一份正文
 chk(MASTER.every(m => byId[m.id]), '主表 id 全部能在站点索引里找到（没有拼错的影子条目）');
 // 主表的文本是**全站唯一一份**：正文逐字等于主条目在站点索引里的那一份
@@ -96,9 +127,11 @@ Object.keys(BOOK_VARS).forEach(book => {
     });
   });
 });
-/* 114（57 组的条目数）+ 6（近重复合并进来的 3 组，各 2 条）= 120 */
-chk(stripped.length === 120,
-  '六部集子里共 120 条条目已退化成只存归属（textRef；实际 ' + stripped.length + '）');
+/* 120（跨集重复的条目）+ FULL_BOOKS 各部的条目数（昭明 480） */
+const expectStripped = 120 + fullExpected.length;
+chk(stripped.length === expectStripped,
+  '六部集子里共 ' + expectStripped + ' 条条目已退化成只存归属（textRef；实际 ' +
+  stripped.length + '）');
 chk(leftover.length === 0,
   '带 textRef 的条目里不再内联 text / translation（残留：' +
   (leftover.slice(0, 8).join('、') || '无') + '）');
@@ -173,13 +206,18 @@ chk(uncovered.length === 0,
 chk(dupEntries.length === 120,
   '重复条目恰为 120 条（60 篇 × 2；实际 ' + dupEntries.length + '）');
 
-/* 主表的 entries 一个不多、一个不少：多出来的等于把单条也收进来白占地方，
-   少一条就等于漏收 —— 两头都要挡。 */
+/* 主表的收归范围**两头都要挡**：
+     · 收多了 = 把没点名的部的单篇也搬了（那一条的正文会从自己数据文件里消失）
+     · 收少了 = 点名的部里有条目还内联着正文
+   所以判据不是数总数，而是「主表登记的条目 = 判重条目全集 ∪ FULL_BOOKS 各部条目」。 */
 const masterFlat = [];
 MASTER.forEach(m => (m.entries || []).forEach(e => masterFlat.push(e)));
-chk(masterFlat.length === dupEntries.length &&
-  masterFlat.slice().sort().join('|') === dupEntries.slice().sort().join('|'),
-  '主表登记的全部条目与「重复条目全集」逐条对上（主表 ' + masterFlat.length + ' 条）');
+const expectFlat = dupEntries.slice();
+fullExpected.forEach(id => { if (expectFlat.indexOf(id) < 0) expectFlat.push(id); });
+const sortJoin = arr => arr.slice().sort().join('|');
+chk(sortJoin(masterFlat) === sortJoin(expectFlat),
+  '主表登记的条目 = 判重条目全集 + FULL_BOOKS 各部条目（主表 ' + masterFlat.length +
+  ' 条，应收 ' + expectFlat.length + ' 条）');
 
 /* 每一的主条目都在自己那一组里，且组内条目互不重叠 ——
    重叠了就是同一条被两篇作品认领，正文取谁的都会有人读错。 */

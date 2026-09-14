@@ -22,11 +22,22 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
 const sandbox = { window: {}, console };
 sandbox.window = sandbox;
 vm.createContext(sandbox);
+// 正文存储主表：昭明文选 480 篇的正文 / 译文已收归主表（Issue #69 · 按部推进第 1 部），
+// 条目只留一行 textRef —— 先加载主表，再按 masterTextOf 取回。
+// ⚠️ 必须排在 poems-zhaoming.js 之前（取数函数要能读到表）。
+vm.runInContext(fs.readFileSync(path + 'data/text-master.js', 'utf8'), sandbox,
+  { filename: 'text-master.js' });
 ['data/poems-classic.js', 'data/poems-guwen.js', 'data/poems-zhaoming.js',
  'data/site-index.js'].forEach(f =>
   vm.runInContext(fs.readFileSync(path + f, 'utf8'), sandbox, { filename: f }));
 
-const ZM = sandbox.POEMS_ZHAOMING;
+// 数据层这一层拿到的是**展开正文后**的条目（与页面里引擎取到的一致）
+function resolveZm(list) {
+  return list.map(function (raw) {
+    return sandbox.masterTextOf ? sandbox.masterTextOf(raw, 'zhaoming') : raw;
+  });
+}
+const ZM = resolveZm(sandbox.POEMS_ZHAOMING);
 chk(Array.isArray(ZM) && ZM.length === 480,
   '昭明文选目录六十卷共 480 篇（实际 ' + (ZM ? ZM.length : 'undefined') + '）');
 
@@ -436,17 +447,24 @@ setTimeout(() => {
 
   // 待补分支仍然可用（给下一部集子留的机制）：把一篇的译文清空后重开，
   // 应给出「尚在整理中」而不是白屏。用《陈情表》当样本 —— 它本轮已有译文。
+  // ⚠️ 昭明 480 篇的正文 / 译文已收归主表（条目只留 textRef），
+  //    所以要清空的是**主表里那一条**的译文，而不是条目自己的 ——
+  //    条目上本来就没有正文，清它是空的，这条回归用例会静默失去意义。
   const first = w.POEMS_ZHAOMING.filter(x => x.title === '陈情表')[0];
-  chk(!!first && !!first.translation, '《陈情表》本轮已有译文（用作待补分支的样本）');
-  const keepTrans = first.translation;
-  first.translation = '';
-  const keepText = first.text;
+  const masterRec = (w.TEXT_MASTER || []).filter(m => m.id === first.textRef)[0];
+  chk(!!masterRec && !!masterRec.translation,
+    '《陈情表》本轮已有译文（用作待补分支的样本）');
+  const keepTrans = masterRec.translation;
+  masterRec.translation = '';
+  // 挂载时已按主表解析过一次，改主表后要让引擎按**同一套规则**重算
+  api && api.refreshCanonical();
   api && api.open(first.id);
     chk(d.querySelector('#rd-text').textContent.indexOf('臣密言') >= 0,
     '待补篇目的**原文照样能读**（不是白屏）');
   chk(/尚在整理中/.test(d.querySelector('#rd-trans-text').textContent),
     '译文为空时给出「白话译文尚在整理中」的说明');
-  first.translation = keepTrans;
+  masterRec.translation = keepTrans;
+  api && api.refreshCanonical();
   api && api.close();
 
   // 搜索：按作者筛出子集，且只筛文选这一部

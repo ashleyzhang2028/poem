@@ -82,6 +82,14 @@ const BOOKS = [
    ⚠️ 兼容紧凑式的 `text: "..." ,`（引号后多一个空格再接逗号）——
       这里只判断行首字段名，值长什么样不关心。 */
 const FIELD = /^(\s+)(text|translation|translationSource):\s*"/;
+// 「键名独占一行、值写在下一行」的写法（昭明文选的长译文就是这样排的）：
+//     translation:
+//       "有人说，赋是古诗的支流。……",
+// ⚠️ 只认「键名后直接换行、下一行以引号起头、且这一行就收尾（`",` 或 `"`）」这一种 ——
+//    正文里出现一个恰好行首是 `translation:` 的句子时不该被当字段名吃掉，
+//    所以不写「跨行找引号」那种宽松正则。
+const FIELD_BARE = /^(\s+)(text|translation|translationSource):\s*$/;
+const VALUE_ONE_LINE = /^\s+".*",?\s*$/;
 const ENTRY_START = /^  \{/;   // 条目起点（`  {` 或 `  { id: ...`）
 const ENTRY_END = /^  \},?\s*$/;
 // 两种写法：A 的 `    id: "ts-6",`（独立一行）；B 的 `  { id: "cz8-01", ...`（与 `{` 同行）
@@ -96,10 +104,21 @@ function rewriteEntry(block, masterId) {
   const lines = block.split('\n');
   const kept = [];
   let removed = 0;
-  lines.forEach(function (line) {
-    if (FIELD.test(line)) { removed += 1; return; }
+  for (let i = 0; i < lines.length; i += 1) {
+    const line = lines[i];
+    if (FIELD.test(line)) { removed += 1; continue; }      // 值同行：摘一行
+    if (FIELD_BARE.test(line)) {                            // 值在下一行：摘两行
+      const next = lines[i + 1];
+      if (!next || !VALUE_ONE_LINE.test(next)) {
+        throw new Error('「' + line.trim() + '」独占一行，但下一行不是单行字符串值 —— ' +
+          '写法变了，脚本要跟着改\n' + block.slice(0, 200));
+      }
+      removed += 1;
+      i += 1;
+      continue;
+    }
     kept.push(line);
-  });
+  }
   if (removed !== 3) {
     throw new Error('条目应恰好含 text / translation / translationSource 三行，实际摘掉 ' +
       removed + ' 行 —— 数据文件写法变了，脚本要跟着改\n' + block.slice(0, 200));
@@ -144,7 +163,9 @@ BOOKS.forEach(function (b) {
       const innerId = idM ? idM[1] : '';
       const masterId = ref[b.prefix + innerId];
       // 幂等：块里没有 text: 行（已摘过）就原样放回
-      if (masterId && lines.slice(i, j + 1).some(function (l) { return FIELD.test(l); })) {
+      if (masterId && lines.slice(i, j + 1).some(function (l) {
+        return FIELD.test(l) || FIELD_BARE.test(l);
+      })) {
         out.push(rewriteEntry(text, masterId));
         fileTouched += 1;
       } else {
