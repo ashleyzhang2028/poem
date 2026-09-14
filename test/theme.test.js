@@ -29,7 +29,11 @@ chk(/APP_NAME\s*=\s*"跬步"/.test(app), '应用正式名称为「跬步」');
 chk(html.indexOf('<title>跬步 · 课内背诵</title>') !== -1, '首页标题为「跬步 · 课内背诵」');
 chk(!/积跬步古诗词/.test(html + legalHtml), '页面不再出现「积跬步古诗词」旧名');
 chk(/"name":\s*"跬步/.test(read('manifest.webmanifest')), 'PWA 清单名称为跬步');
-chk(app.indexOf('这首诗按遗忘曲线到期了') !== -1, '到期提示改为「这首诗按遗忘曲线到期了」');
+// 需求（Issue #114）：过期提示里的算法名改成**按当前算法**拼（用户换成 SM-2
+// 就该说「按 SM-2 到期了」），所以这里查的是句式与「算法简称」那段拼装，
+// 不再钉死「遗忘曲线」四个字。
+chk(/这首诗按" \+ algoShort\(\) \+ "到期了/.test(app),
+  '到期提示改为「这首诗按 XX 到期了」（XX 是当前算法，随设置切换）');
 chk(!/这首歌/.test(allSrc), '全站不再出现把诗词称作「歌」的措辞');
 // 需求 1：首页任务条标题精简为「今日背诵」
 chk(html.indexOf('>今日背诵<') !== -1 && html.indexOf('今日背诵任务') === -1,
@@ -308,8 +312,11 @@ chk(!/按遗忘曲线复习/.test(read('js/chrome.js').replace(/\/\*[\s\S]*?\*\/
 chk(/data-sub="[^"]+"/.test(html), '首页用 data-sub 给出主标题下的描述文字');
 const subMatch = /data-sub="([^"]+)"/.exec(html);
 const homeSub = subMatch ? subMatch[1] : '';
-chk(homeSub === '按遗忘曲线复习',
-  '描述文字精简为「按遗忘曲线复习」（实际「' + homeSub + '」）');
+// 需求（Issue #114）：副标题「按 XX 复习」里的 XX 随用户选的背诵算法变
+// （艾宾浩斯 / 莱特纳盒 / SM-2 / FSRS），所以这里判的是句式，
+// 并逐档核对每种算法的自称与首页真正会显示的那句一致。
+chk(/^按.+复习$/.test(homeSub),
+  '描述文字是「按 XX 复习」句式（实际「' + homeSub + '」）');
 chk(!/一年级|二年级|至高三|小学|初中|高中|年级|学段/.test(homeSub),
   '描述文字里不再出现「一年级到高中」这类年级字样');
 chk(!/一年级/.test(read('js/chrome.js').replace(/\/\*[\s\S]*?\*\//g, '')),
@@ -675,21 +682,36 @@ chk(settingsHtml.indexOf('id="settings-page"') !== -1, '设置页有独立的整
 chk(settingsHtml.indexOf('settings-modal') === -1, '设置页不再用弹层结构');
 chk(settingsHtml.indexOf('class="foot settings-foot"') !== -1, '设置页底部有页脚（版权 + 法务链接）');
 
-// 需求（本次）：功能变多后设置项按用途归类 ——
-// 分「通用」「古诗词背诵」「复习算法」「阅读辅助」「朗读播放」五组
-// （「复习算法」是「可切换复习算法」那一轮追加的：原先只有一套固定间隔表）
-chk((settingsHtml.match(/class="settings-group"/g) || []).length === 5,
-  '设置分五组：通用 / 古诗词背诵 / 复习算法 / 阅读辅助 / 朗读播放');
+// 需求（Issue #114 第三、二条 + 可切换复习算法那一轮）：
+// 设置项多了以后按「这条设置管着谁」归类 —— 共六组：
+//   通用     全站都吃（用户名、数据备份 / 清空）
+//   背诵     只决定「今天背哪几首」（学段 / 年级 / 学期 / 范围 / 数量 / 进度入口）
+//             —— 原「古诗词背诵」改名，它本来就不只作用于古诗词
+//   我的清单  用户自己那份清单（自选背诵的增删改查）—— Issue #114 第二条搬进来的
+//   复习算法  决定「下次什么时候复习」（四张模型 4 选 1）
+//   阅读辅助  打开一篇时看不看得到拼音（注音总开关）
+//   朗读播放  连读时怎么念（五档档位）
+chk((settingsHtml.match(/class="settings-group"/g) || []).length === 6,
+  '设置分六组：通用 / 背诵 / 我的清单 / 复习算法 / 阅读辅助 / 朗读播放');
 chk(/settings-group-title[^>]*>复习算法</.test(settingsHtml), '有「复习算法」分组标题');
 chk(/settings-group-title[^>]*>通用</.test(settingsHtml), '有「通用」分组标题');
-chk(/settings-group-title[^>]*>古诗词背诵</.test(settingsHtml), '有「古诗词背诵」分组标题');
+chk(/settings-group-title[^>]*>背诵</.test(settingsHtml), '有「背诵」分组标题');
+chk(/settings-group-title[^>]*>我的清单</.test(settingsHtml), '有「我的清单」分组标题');
 chk(/settings-group-title[^>]*>阅读辅助</.test(settingsHtml), '有「阅读辅助」分组标题');
 chk(/settings-group-title[^>]*>朗读播放</.test(settingsHtml), '有「朗读播放」分组标题');
+// 分组的**顺序**也是分类的一部分：清单紧跟在「背诵」之后
+//（自选篇目就是跟着背诵走的），阅读 / 朗读两个偏好排在最后
+{
+  const order = [...settingsHtml.matchAll(/aria-labelledby="grp-([a-z]+)"/g)].map(m => m[1]);
+  chk(order.join(',') === 'general,recite,algo,lists,reader,play',
+    '六组的先后顺序为 通用 → 背诵 → 复习算法 → 我的清单 → 阅读辅助 → 朗读播放（实际 ' + order.join(',') + '）');
+}
 // 分组要真的装对东西：只给背诵用的选项不能落在「通用」里
 const generalBlock = (settingsHtml.match(/aria-labelledby="grp-general"[\s\S]*?<\/section>/) || [''])[0];
 const reciteBlock = (settingsHtml.match(/aria-labelledby="grp-recite"[\s\S]*?<\/section>/) || [''])[0];
+const listsBlock = (settingsHtml.match(/aria-labelledby="grp-lists"[\s\S]*?<\/section>/) || [''])[0];
 const readerBlock = (settingsHtml.match(/aria-labelledby="grp-reader"[\s\S]*?<\/section>/) || [''])[0];
-chk(!!generalBlock && !!reciteBlock && !!readerBlock, '三个分组各自的区块都能取到');
+chk(!!generalBlock && !!reciteBlock && !!listsBlock && !!readerBlock, '各分组自己的区块都能取到');
 chk(/id="input-username"/.test(generalBlock), '「通用」组含用户名');
 chk(/id="btn-export"/.test(generalBlock) && /id="btn-import"/.test(generalBlock) && /id="btn-reset"/.test(generalBlock),
   '「通用」组含数据管理（导出 / 导入 / 清空）');
@@ -697,7 +719,14 @@ chk(!/seg-scope|seg-stage|seg-term|grade-chips|seg-count/.test(generalBlock),
   '「通用」组里不再混入只给背诵用的选项');
 chk(/id="seg-stage"/.test(reciteBlock) && /id="grade-chips"/.test(reciteBlock) &&
     /id="seg-term"/.test(reciteBlock) && /id="seg-scope"/.test(reciteBlock) && /id="seg-count"/.test(reciteBlock),
-  '「古诗词背诵」组聚齐学段 / 年级 / 学期 / 背诵范围 / 每日数量');
+  '「背诵」组聚齐学段 / 年级 / 学期 / 背诵范围 / 每日数量');
+chk(/href="\/progress\/"/.test(reciteBlock), '「背诵」组含进度总览入口（它讲的就是这本账）');
+chk(/id="collections-list"/.test(listsBlock) && /id="btn-collections-import"/.test(listsBlock) &&
+    /id="collections-tip"/.test(listsBlock),
+  '「我的清单」组含自选背诵清单 / 导入键 / 说明行（Issue #114 第二条）');
+// 搬过来之后不能两边都留着：首页那张折叠卡必须真的没了
+chk(!/id="collections-section"/.test(html) && !/id="btn-collections"/.test(html),
+  '首页不再有「自选背诵」折叠卡（整块搬进设置，不留两处入口）');
 chk(/id="seg-helper"/.test(readerBlock), '「阅读辅助」组含注音总开关');
 
 // 需求（Issue #69 后续 A）：连读档位必须在设置页有显式单选项入口。
@@ -897,6 +926,22 @@ chk(/data-nav-go/.test(read('js/chrome.js')) && /\/settings\//.test(read('js/chr
     catch (e) { swOk = false; }
     chk(swOk, 'sw.js 能通过语法检查（注释块闭合、没有游离的 */ —— 否则 SW 从不注册）');
   }
+  // 需求（用户原话）：「去除 sw.js 中的所有注释，以后也禁止添加」。
+  // 直接禁掉，而不是只清理一遍 —— 那条漏 `*/` 的坑就是从注释里来的，
+  // 注释一多、改动一多，同样的错会再来一次。版本沿革放在 README.md / SW-NOTE.md。
+  {
+    const swSrc = read('sw.js');
+    const lines = swSrc.split('\n');
+    // 逐行找注释：行注释（含行尾）与块注释（含行尾 / 多行）
+    const commented = lines.map((l, i) => [i + 1, l]).filter(([, l]) => {
+      const t = l.trim();
+      return t.indexOf('//') === 0 || t.indexOf('/*') === 0 ||
+             l.indexOf('//') !== -1 || l.indexOf('/*') !== -1 || l.indexOf('*/') !== -1;
+    });
+    chk(commented.length === 0,
+      'sw.js 不含任何注释（用户要求：去除所有注释并禁止再加；' +
+      (commented.length ? '实际第 ' + commented.map(c => c[0]).join('、') + ' 行有注释' : '') + '）');
+  }
 
   // 缓存名必须随资源变化升级，否则老用户拿到的是旧副本。
   // 这里不只查「等于某个版本号」——那样每次改 CSS 都得改测试。
@@ -906,10 +951,14 @@ chk(/data-nav-go/.test(read('js/chrome.js')) && /\/settings\//.test(read('js/chr
   // 反向约束：CACHE_NAME 必须出现在 sw.js 里且是纯常量，避免被误改成变量而失效
   chk(/const CACHE_NAME = "poem-app-v\d+";/.test(sw), 'CACHE_NAME 是带版本号的常量');
   // 静态资源是「缓存优先」——改样式表却不升版本，用户会一直看到旧样式。
-  // 这里显式锁住这条约定：sw.js 里必须写明「改静态资源要升版本」，
+  // 这条约定原写在 sw.js 顶部，现按用户要求「sw.js 不留注释」迁到 SW-NOTE.md；
+  // 约定本身仍有效，所以断言改从那里读（不再从 sw.js 的注释里读）。
+  const swNote = read('SW-NOTE.md');
+  chk(/缓存优先/.test(swNote) && /升|提升|更新/.test(swNote),
+    'SW-NOTE.md 里写明「静态资源缓存优先、改动需升级版本」的约定');
+  chk(sw.indexOf('缓存优先') === -1,
+    'sw.js 里不再出现注释形式的约定（注释已全部迁出）');
   // 并且所有页面的样式表 / 脚本都必须在 PRECACHE 里（否则断网/老用户会新老混用）。
-  chk(/缓存优先/.test(sw) && /升|提升|更新/.test(sw.slice(0, 1200)),
-    'sw.js 里写明「静态资源缓存优先、改动需升级版本」的约定');
   ['css/style.css', 'css/classic.css', 'css/legal.css'].forEach(function (f) {
     chk(sw.indexOf('./' + f) !== -1, 'PRECACHE 含 ' + f);
   });

@@ -147,11 +147,13 @@
   var APP_NAME = "跬步";
   /* 顶栏第二行 = 页面自己的说明（页面用 body 上的 data-sub 给）。
      应用名与页面名已经在第一行，这里只放「这个页面是干什么的」：
-       · 首页 —— 「按遗忘曲线复习」（文案在首页的 data-sub 上，此处只做说明）
+       · 首页 —— 「按 XX 复习」（XX 是用户选的背诵算法，如 SM-2 / FSRS；
+         文案由 js/app.js 按当前算法写进顶栏，此处只做说明，不硬编码算法名）
        · 课外阅读入口页 —— 「课本之外的经典，按部就班读下去」
        · 小古文页 —— 「100 篇 · 想读哪篇点哪篇」
      刻意不再写「一年级至高三」这类学段字样：首页能选年级学期，
      固定写死一个学段反而让非该学段的用户觉得不是给自己用的。
+     同理也不写死某一种算法的名字 —— 算法是用户能换的（见设置页「背诵算法」）。
      留空则第二行不占高度（.brand-sub:empty）。 */
   var DEFAULT_SUB = "";
 
@@ -316,7 +318,7 @@
    *   /settings/   → settings
    */
   var DOCK_ITEMS = [
-    { key: "home", href: "/", icon: GLYPHS.tabPoem, label: "背诵", desc: "课内古诗词，按遗忘曲线安排复习" },
+    { key: "home", href: "/", icon: GLYPHS.tabPoem, label: "背诵", desc: "课内古诗词，按当前复习算法安排复习" },
     { key: "library", href: "/library/", icon: GLYPHS.tabLibrary, label: "课外", desc: "课内诗词 / 小古文 / 唐诗 / 宋词 / 古文观止 / 昭明文选" },
     { key: "search", href: "/search/", icon: GLYPHS.tabSearch, label: "搜索", desc: "全站篇目一次搜遍" },
     { key: "settings", href: "/settings/", icon: GLYPHS.tabGear, label: "设置", desc: "用户名 / 年级 / 音量" }
