@@ -290,9 +290,16 @@
  *        顶开，遮罩与弹层边框仍被页签切开。现把弹层抬到 80：
  *        引导条 40 < 页签 65 < 播放栏 70 < 弹层 80 < toast 99
  *        （css/style.css、test/theme.test.js、test/collections.test.js）
+ *   v54  弹层避让改用实测的 --nav-h（Issue #69 跟进·续）：
+ *        上一条把层级抬到 80，解决了「点不到」；但避让仍写死 62px
+ *        （默认字号下页签的高度），换字号 / 横屏 / PWA 就失准，
+ *        弹层下缘仍会与页签图标叠成一团。现在三处避让统一用 --nav-h
+ *        （js/pwa.js 实测的底部导航高度）：小弹层的下内边距与下外边距、
+ *        大弹层的 max-height，都不再写死像素
+ *        （css/style.css、test/layout.test.js、test/theme.test.js、test/run.sh）
  */
 
-const CACHE_NAME = "poem-app-v53";
+const CACHE_NAME = "poem-app-v54";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [

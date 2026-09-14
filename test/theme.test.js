@@ -399,11 +399,15 @@ chk(/\.poem-text\[data-align="left"\]/.test(css) && !/data-align="right"/.test(c
   '古诗正文只留左对齐规则，右对齐规则已删除');
 // 需求：详情页三个评价按钮不被底部页签挡住。
 // 只压 max-height 还不够 —— 弹层底边仍落在屏幕底边，
-// 所以底部内边距也必须垫出页签高度（约 62px）。两条一起才真的「压不住」。
-chk(/\.modal-box \{[\s\S]{0,400}?max-height:\s*calc\(88vh - 62px/.test(css),
-  '弹层高度扣掉底部页签，最后的评价按钮不被压住');
-chk(/\.modal-box \{[\s\S]{0,200}?padding-bottom:\s*calc\(26px \+ 62px \+ var\(--safe-bottom\)\)/.test(css),
-  '弹层底部内边距再垫出页签高度，评价按钮整排落在页签上方');
+// 所以底部内边距也必须垫出底部导航高度。两条一起才真的「压不住」。
+//
+// ⚠️ 垫的是 --nav-h（js/pwa.js 实测的底部导航高度），不再写死 62px：
+//    62px 只是默认字号下页签的高度，换字号 / 横屏 / PWA 就失准
+//    —— 那正是「加入背诵弹框被导航挡住」反复出现的原因（见 test/layout.test.js）。
+chk(/\.modal-box \{[\s\S]{0,500}?max-height:\s*calc\(88vh - var\(--nav-h\)/.test(css),
+  '弹层高度扣掉底部导航（--nav-h），最后的评价按钮不被压住');
+chk(/\.modal-box \{[\s\S]{0,200}?padding-bottom:\s*calc\(26px \+ var\(--nav-h\) \+ var\(--safe-bottom\)\)/.test(css),
+  '弹层底部内边距再垫出底部导航高度，评价按钮整排落在页签上方');
 chk(/body\.no-dock \.modal-box \{ padding-bottom:\s*calc\(26px \+ var\(--safe-bottom\)\); \}/.test(css),
   '法务页等无页签页面，弹层不必垫页签高度');
 chk(/body\.no-dock \.modal-box \{ max-height: 88vh; \}/.test(css),
