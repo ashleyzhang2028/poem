@@ -1125,9 +1125,11 @@ function check(name, cond, extra) {
             bg: cs.backgroundColor
           };
         });
+        // 判据：框顶明显高于「视口中央」，且落在顶栏下沿之下不远 ——
+        // 那一段距离就是 --hero-top（44px 的呼吸），是设计值不是随手一个数。
         check('iPhone 搜索页：聚焦时搜索框升到标题栏下方（不再停在视口中央）',
           focusState.inputTop < focusState.mid - 40 &&
-          focusState.inputTop - focusState.barBottom <= 40,
+          focusState.inputTop - focusState.barBottom <= 50,
           '框顶 ' + focusState.inputTop + ' / 顶栏下沿 ' + focusState.barBottom +
           ' / 中线 ' + focusState.mid);
         check('iPhone 搜索页：聚焦时描边是天青主色（不是浏览器默认的黑色 ring）',
@@ -1186,9 +1188,10 @@ function check(name, cond, extra) {
           inputTop: +r.top.toFixed(1),
           radius: cs.borderTopLeftRadius,
           scale: cs.transform,
-          // 这一轮新增：焦点描边不能是 UA 给的黑线
+          // 焦点描边不能是 UA 给的黑线
           borderColor: cs.borderTopColor,
           outlineStyle: cs.outlineStyle,
+          outlineColor: cs.outlineColor,
           outlineWidth: cs.outlineWidth,
           boxShadow: cs.boxShadow
         };
@@ -1202,10 +1205,25 @@ function check(name, cond, extra) {
         Math.abs(boxState.layoutH - 52) <= 0.5, boxState.layoutH + 'px');
       // 这一轮：聚焦时那圈边框不再是浏览器给的黑线
       // （用户反馈「焦点在搜索框时，现在框 border 是黑色，不好看」）
+      //
+      // 三件事一起量，缺一不可：
+      //   · border-color 是天青主色（--green = #2f6055）；
+      //   · outline 真的是 none —— 那圈「黑框」就是 UA 的 outline，
+      //     关掉它才算修掉用户看到的那一支（⚠️ 曾经被同名 :focus-visible
+      //     规则以『特异性相同、写在后面』盖回去过，真机上量到 solid）；
+      //   · 外圈那道淡天青光晕在，用来满足「看得见焦点」。
+      // ⚠️ 光晕的色值**不写死成某一种 rgba**：搜索页这条走的是
+      //     var(--green-light)（#dbe9e2 = rgb(219, 233, 226)），
+      //     通用 .search-input:focus 那条走的是 rgba(47, 96, 85, .10)，
+      //     两者都是天青系、都合法。写死一种就会把另一处的实现判红 ——
+      //     要守的是「有天青光晕、且不是黑」，不是「用了哪个 token」。
+      const halo = boxState.boxShadow || '';
+      const haloIsGreenish = /rgba?\(\s*(47,\s*96,\s*85|219,\s*233,\s*226)\b/.test(halo);
+      const haloIsBlack = /rgba?\(\s*0,\s*0,\s*0\b/.test(halo) || /\bblack\b/.test(halo);
       check('iPhone 搜索页：聚焦描边是天青而不是 UA 的黑框（outline 已关掉）',
         boxState.borderColor === 'rgb(47, 96, 85)' && boxState.outlineStyle === 'none' &&
-        /rgba?\(47, 96, 85/.test(boxState.boxShadow),
-        JSON.stringify([boxState.borderColor, boxState.outlineStyle, boxState.outlineWidth]));
+        haloIsGreenish && !haloIsBlack,
+        JSON.stringify([boxState.borderColor, boxState.outlineStyle, boxState.outlineWidth, halo]));
       // 圆角必须是**一个**半径（同一条圆弧），不是被纵向拉伸出来的椭圆角
       check('iPhone 搜索页：搜索框四个角是同一个半径（不再被纵向拉伸成椭圆角）',
         boxState.radius === '12px' && !/matrix/.test(boxState.scale),
@@ -1298,9 +1316,10 @@ function check(name, cond, extra) {
       // 下拉必须留出可点的一片给结果卡片（点它即收起下拉）。
       // ⚠️ 这一轮把限高的三项从「400px / 60% 可视区 / 可视区−键盘−86」改成
       //    「380px / 40% 可视区 / 可视区−键盘−80」：
-      //    上一版那 60% 与 86px 的余量都偏松 —— 键盘弹着时候选一路铺到
+      //    上一版那 60% 与「减 86px」的余量都偏松 —— 键盘弹着时候选一路铺到
       //    可视区下沿前 30px，底下只剩一条缝，手指够不着「第一张结果卡片」。
-      //    现在按 40% 硬收：候选下沿之上必有可视区的六成留给结果。
+      //    现在按「可视区四成 / (可视区−键盘) 六成」硬收：
+      //    候选下沿之上必有那一片地方的六成留给结果。
       //    这里量「候选下沿 → 可视区下沿」那一段，按「框顶到可视区下沿」算比例。
       const room = +(kb.visibleBottom - kb.sugBottom).toFixed(1);
       const vvH = +(kb.visibleBottom - kb.inputTop).toFixed(1);
@@ -1359,9 +1378,17 @@ function check(name, cond, extra) {
         listGap.firstTop === null ? '(无结果)' :
         (listGap.firstTop - listGap.inputBottom).toFixed(1) + 'px');
       // 删掉的那段引导语：**没输入的那一刻**列表里不该显示任何文字，
-      // 也不该占掉一行的高度。⚠️ 量它必须回到「还没敲字」的状态：
-      //   此刻框里已经有「月」，列表里是命中结果（连 .empty 都被换掉了），
-      //   在这里量只会量到 null —— 上一版就是这么写的，等于什么都没验。
+      // 也不该占掉一行的高度。
+      // ⚠️ 两条量法都要有，缺一条就是漏：
+      //   a) 这一步（框里有「月」、列表是命中结果）量「那段话不在」——
+      //      此刻引擎多半**根本不渲染** .empty 节点，`=== ''` 只在列表为空时
+      //      成立，写死它会在有结果时必然红（上一版踩过）；
+      //   b) 再回到「还没敲字」那一刻量 idle 空态本身（节点在、无文字、很矮）——
+      //      这才是那段话真正会出现的位置，不能只在有结果时量。
+      check('iPhone 搜索页：有结果时列表里没有那段引导语',
+        (listGap.emptyText === null || listGap.emptyText === '') &&
+        (listGap.emptyH === null || listGap.emptyH <= 12),
+        JSON.stringify([listGap.emptyText, listGap.emptyH]));
       const idleEmpty = await sp.evaluate(async () => {
         const inp = document.getElementById('gw-search');
         const keep = inp.value;
@@ -1384,7 +1411,7 @@ function check(name, cond, extra) {
       });
       check('iPhone 搜索页：没输入时列表里不显示引导文字（那段话已按用户要求删除）',
         idleEmpty.text === '' && idleEmpty.dataEmpty === 'idle' &&
-        (idleEmpty.h === null || idleEmpty.h <= 12),
+        (idleEmpty.h === null || idleEmpty.h <= 8),
         JSON.stringify(idleEmpty));
 
       // ⑤ 候选行的可点面积：44px 是 iOS 建议的下限

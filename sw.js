@@ -522,8 +522,27 @@
  *        （data/text-master.js、data/poems-classic.js、
  *          scripts/build-text-master.js、test/canonical.test.js、
  *          test/dedup.test.js、README.md）
+ *   v83  搜索页三态与聚焦描边的收尾（Issue #69 · 用户机上反馈 · 收口）：
+ *        在 v66 / v68 那条线上补齐三处：
+ *        ① 贴顶那一块合成**一处**写清（原先 .search-hero 下另有一份
+ *           「交出高度 + --hero-top」的规则，与 .search-active / .kb-open
+ *           那份重复；同一件事两处写就是下次「改一处忘一处」的种子）。
+ *           现在同一块同时交代竖位、整行绝对定位改普通流、以及 sticky。
+ *        ② 候选下拉限高的**硬边界**改按 (可视区 − 键盘) × 六成算 ——
+ *           原先只写「可视区 × 六成」，把键盘遮住的那半也算成了能放候选的地方。
+ *           限高的三个数仍是 380px（手机 320px）/ 可视区四成 / 那一项。
+ *        ③ 聚焦描边这条 CI 红过的坑写进注释与防线：`:focus` 与 `:focus-visible`
+ *           特异性相同（都是 0,4,1），各写一条时后者必把前者的 outline: none
+ *           盖回去（真机上量到 outline 仍是 2px solid，黑框等于没修）——
+ *           两支选择器必须共用一条规则。
+ *        ⚠️ 与 v66 / v68 是同一条线上的接力，不是推翻：v66 把「贴顶」找回来、
+ *           把描边从 UA 黑框换成本站天青，v68 把贴顶做成三态（一个出口）、
+ *           改用 sticky、并补上「点空白收下拉」。
+ *        版本号按并行的口径从 v78 落到 v83。
+ *        （css/classic.css、js/search.js、test/search.test.js、
+ *          test/pwa.test.js、README.md）
  */
-const CACHE_NAME = "poem-app-v78";
+const CACHE_NAME = "poem-app-v83";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [

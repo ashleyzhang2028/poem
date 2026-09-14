@@ -70,18 +70,6 @@
   /** 候选下拉最多几条：够用即可，多了挡住结果列表 */
   var SUGGEST_MAX = 8;
 
-  /** 屏幕键盘的余量：iOS 的键盘高度系统不给，只能自己按可视区反推。
-      键盘上方那一片可视区（visualViewport.height）再减掉：
-        · 搜索框自身（hero 里的 52px，框高即布局高度 —— 见 css/classic.css）
-        · 顶栏与它下面那一点点留白（约 30px）
-      剩下的就是「下拉可以占的高度 + 下拉下面那片留给结果的空间」。
-      这个值只用来写 --kb-space，下拉用它算 max-height 的硬上限 ——
-      宁可按「键盘比实际更高」估，也不能伸到键盘底下。
-      要注意它是**上边界**而不是「下拉就该占满」：下拉实际高度还受
-      min() 里那两项（400px、40%/60% 可视区）约束，
-      所以手机上剩下的那几成可视区，正是用户能点到的结果卡片。 */
-  var KB_CHROME = 86;
-
   /** 软键盘弹起后，视觉视口比布局视口矮多少才算「键盘真的出来了」。
       安卓上地址栏收起 / 展开、iOS 上底部横条都会带来几十像素的抖动，
       120px 这个门槛越过了全部这些抖动，只有真正的键盘（>= 216px）才算数。 */
@@ -473,22 +461,25 @@
       hero.classList.toggle("search-active", hasKeyword() || lifted);
       hero.classList.toggle("kb-open", lifted);
     } catch (e) { /* 极老的浏览器：没有 classList 就退化成「始终居中」，仍可用 */ }
-    // 键盘高度只在这一处写（CSS 的下拉 max-height 读它）。
-    // ⚠️ 两处都写：hero 与候选下拉自己。
-    //    候选的 max-height 里有「可视区 − 键盘 − 80」，而它落在 .suggest 上；
-    //    键盘弹起会让 .search-toolbar 重排，那条链上的**继承值**不会因此重算 ——
-    //    只写 hero 的话，下拉会照旧按「没有键盘」的高度铺下来，伸到键盘底下。
+    // 两个自定义属性都只在这一处写（CSS 的下拉 max-height 读它们）：
+    //   --kb-space   —— 键盘占了多高（下拉据此把硬边界压下来，见 --kb-visible）
+    //   --kb-visible —— 真正可见的那一片有多高（visualViewport.height 实测）
+    // ⚠️ 取「实测可视高度」而不是 CSS 的 svh / vh：
+    //    svh 不认软键盘（键盘是覆盖层、不改视口），部分内核 / 无头环境里
+    //    还会解析成等于 vh 的整屏高 —— 实测 393×852 那一档 svh 与 vh 都是 852，
+    //    「可视区」于是虚高，候选一路铺到键盘上沿，把下方结果卡片全吃掉。
+    //    visualViewport.height 是键盘弹起时**真的变小**的那个值。
+    // ⚠️ 两处都写（hero 与候选下拉自己）：候选的 max-height 落在 .suggest 上，
+    //    而键盘弹起会让 .search-toolbar 重排 —— 那条链上的**继承值**
+    //    不会因此重算，只写 hero 的话下拉会照旧按整屏铺下来，伸到键盘底下。
     hero.style.setProperty("--kb-space", space + "px");
-    var box = suggestBox();
-    if (box) box.style.setProperty("--kb-space", space + "px");
-    // 可视区高度也实测写进去：候选下拉的限高按它算（svh 不认软键盘，见上一节）。
-    // ⚠️ 同样两处都写：键盘弹起会让 .search-toolbar 重排，
-    //    .suggest 上的**继承值**不会因此重算（与 --kb-space 同一个理由）。
     var visible = keyboardVisible();
+    var box = suggestBox();
     if (visible > 0) {
       hero.style.setProperty("--kb-visible", visible + "px");
       if (box) box.style.setProperty("--kb-visible", visible + "px");
     }
+    if (box) box.style.setProperty("--kb-space", space + "px");
     // 空格列表（引擎写进列表区的 .empty）跟着一起左对齐。
     // ⚠️ 传的是「框贴不贴顶」而不是「键盘弹没弹」：居中的框下面那段空白里
     //    不该多出一行提示，贴顶的框下面才需要它与结果同一左对齐。
