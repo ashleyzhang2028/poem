@@ -503,13 +503,15 @@ html, body {
   background: rgba(252, 250, 243, .90);
   width: 100%;
   max-width: 640px;
-  /* 底部页签是浮层（约 62px），弹层若铺到屏幕底边，最下面的
-     「忘记 / 模糊 / 记住」会落进页签名下那片区域。这里把弹层整体上收：
-     高度扣掉页签与安全区，底边正好落在页签上方。
+  /* 底部导航是浮层（页签 65 / 播放栏 70），弹层若铺到屏幕底边，最下面的
+     「忘记 / 模糊 / 记住」会落进那两条导航横带里。这里把弹层整体上收：
+     高度扣掉**实测**的底部导航高度与安全区，底边正好落在导航上方。
      （页签本身已被弹层（z-index 80）压在遮罩之下、点不到，
      这一条管的是**观感**：整排按钮不落在页签那道浮层横带里，
-     免得与页签图标在视觉上叠成一团。） */
-  max-height: calc(88vh - 62px - var(--safe-bottom));
+     免得与页签图标在视觉上叠成一团。）
+     ⚠️ 垫的是 --nav-h（js/pwa.js 实测），不写死 62px：页签高度随字号 /
+        横屏 / 是否为 PWA 而变，写死的值一失准就会「差几像素」又叠上一点。 */
+  max-height: calc(88vh - var(--nav-h) - var(--safe-bottom));
   overflow-y: auto;
   border-radius: 22px 22px 0 0;
   padding: 22px 20px 26px;
@@ -518,12 +520,11 @@ html, body {
 }
 .modal-box.small { border-radius: 22px; max-width: 420px; margin: auto; animation: pop .2s; }
 /* 但设置面板走的是「内容自适应高度 + 超出滚动」，
-   不需要底部那 62px 的页签垫高（垫了会把面板顶得过高、上下都不好按）。
-   对齐上面那条 `body.no-dock .modal-box`：小弹层只避开 iPhone 底部横条。 */
-.modal-box.small { padding-bottom: calc(26px + var(--safe-bottom)); }
+   不做整层垫高（垫了会把面板顶得过高、上下都不好按）——
+   它的避让规则在下面 PWA 一节里，按 --nav-h 统一给出。 */
 @media (min-width: 700px) {
   .modal { align-items: center; }
-  .modal-box { border-radius: 22px; max-height: calc(86vh - 62px - var(--safe-bottom)); }
+  .modal-box { border-radius: 22px; max-height: calc(86vh - var(--nav-h) - var(--safe-bottom)); }
 }
 /* 法务页等深页没有页签，弹层照旧铺到接近底边 */
 body.no-dock .modal-box { max-height: 88vh; }
@@ -793,22 +794,28 @@ body.no-dock .modal-box { max-height: 88vh; }
   padding-bottom: calc(40px + var(--safe-bottom));
 }
 
-/* 底部弹层避开 iPhone 底部横条 + 底部页签。
+/* 底部弹层避开 iPhone 底部横条 + 底部导航。
    `.modal-box` 这条规则与上面的 `.modal-box { padding: ... }` 是同一优先级、
-   晚出现，所以它说了算：底部内边距 = 页签高度（约 62px）+ 一段呼吸留白。
-   这样一来，弹层最下面的「忘记 / 模糊 / 记住」整排落在页签上方那道横带之外。 */
+   晚出现，所以它说了算：底部内边距 = 底部导航实测高度 + 一段呼吸留白。
+   这样一来，弹层最下面的「忘记 / 模糊 / 记住」整排落在页签上方那道横带之外。
+   ⚠️ 用 --nav-h（实测）而不是写死 62px：写死的是「默认字号下的页签高度」，
+      换字号 / 横屏 / PWA 就不准了 —— 那正是「差几像素又压住一点」的成因。 */
 .modal-box {
-  padding-bottom: calc(26px + 62px + var(--safe-bottom));
+  padding-bottom: calc(26px + var(--nav-h) + var(--safe-bottom));
 }
 body.no-dock .modal-box { padding-bottom: calc(26px + var(--safe-bottom)); }
 
-/* 中间弹出的弹层（设置）也留安全边距。
-   它有自适应的 max-height，内容永远滚得上来，所以不必像底部弹层那样
-   再垫一层页签高度，只避开 iPhone 底部横条即可（否则弹层会被顶得偏高）。 */
+/* 中间弹出的弹层（设置 / 集合选择器）也留安全边距。
+   它有自适应的 max-height，内容永远滚得上来，所以不必像底部弹层那样垫得那么高；
+   但仍要按底部导航避让：这一类的最后一行是「新建集合」的输入框与按钮
+   （见 js/reader-core.js 的 openRecitePicker），正好落在导航那道横带的位置 ——
+   层级上它已高于页签（z-index 80），视觉上却仍会与页签图标叠成一团。 */
 .modal-box.small {
-  max-height: calc(86 * var(--app-vh));
-  padding-bottom: calc(26px + var(--safe-bottom));
-  margin-bottom: calc(12px + var(--safe-bottom));
+  /* 高度扣掉底部导航（--nav-h）：小弹层内容不高，但「加入背诵」那一屏
+     折叠键盘 / 大字号时会顶到导航那道横带，扣掉它才滚得上来 */
+  max-height: calc(86 * var(--app-vh) - var(--nav-h));
+  padding-bottom: calc(26px + var(--nav-h) + var(--safe-bottom));
+  margin-bottom: calc(12px + var(--nav-h) + var(--safe-bottom));
 }
 
 /* 吐司提示上移，避免被横条遮挡 */
