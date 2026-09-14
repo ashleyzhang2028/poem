@@ -188,6 +188,22 @@
     return hit.slice(0, SUGGEST_MAX);
   }
 
+  /**
+   * 候选右侧那行「朝代 · 作者 · 集子名」。
+   * ⚠️ 每一栏都可能为空：《昭明文选》里选本只题作者的字，朝代是后人不补的
+   *    （见 data/poems-zhaoming.js 文件头「补出来的信息一律留空」），
+   *    所以这里按**有哪栏排哪栏**拼，不写死位置 ——
+   *    早前写死了「朝代 · 作者」，朝代一空就会渲染出「 · 徐陵」这种以分隔符开头的残句。
+   */
+  function suggestMeta(p) {
+    var parts = [];
+    if (p.dynasty) parts.push(p.dynasty);
+    if (p.author) parts.push(p.author);
+    var left = parts.length ? esc(parts.join(" · ")) : "";
+    if (!p.bookName) return left;
+    return left + (left ? " · " : "") + "<em>" + esc(p.bookName) + "</em>";
+  }
+
   function renderSuggest(kw) {
     var box = suggestBox();
     if (!box) return;
@@ -204,10 +220,7 @@
       return '<button type="button" class="suggest-item" role="option" data-suggest="' + i + '"' +
         ' aria-selected="false">' +
         '<span class="suggest-title">' + esc(p.title) + "</span>" +
-        '<span class="suggest-meta">' +
-        esc([p.dynasty, p.author].filter(Boolean).join(" · ")) +
-        (p.bookName ? (p.dynasty || p.author ? " · " : "") + "<em>" + esc(p.bookName) + "</em>" : "") +
-        "</span></button>";
+        '<span class="suggest-meta">' + suggestMeta(p) + "</span></button>";
     }).join("");
     box.dataset.items = JSON.stringify(list.map(function (p) { return p.id; }));
     // 每换一次候选都回到列表顶部：下拉是**可滚动**的（高度受限，见 CSS 的 min()），

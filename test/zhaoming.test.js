@@ -35,8 +35,69 @@ let dup = 0;
 ZM.forEach(p => { if (ids.has(p.id)) dup++; ids.add(p.id); });
 chk(dup === 0, '文选 id 无重复（重复 ' + dup + ' 个）');
 
-chk(ZM.every(p => p.title && p.source && p.dynasty && p.author),
-  '每篇都有 标题/出处/朝代/作者');
+// ⚠️ 朝代**允许为空**，而且确实有一批是空的（Issue #69 · 本 PR）：
+//   选本的题署只给作者的字（「班孟坚」），不带朝代 —— 那朝代是后人按人名表
+//    推出来的（班固 → 东汉），不是《文选》原文里有的东西。
+//   按用户口径「这类补出来的信息一律留空」，145 条已清空。
+//   所以这里断言的只有「标题 / 出处 / 作者」，朝代单独另有一条。
+chk(ZM.every(p => p.title && p.source && p.author),
+  '每篇都有 标题/出处/作者');
+
+/* ---------- 一b、「补出来的信息」一律留空 ---------- */
+/**
+ * 需求原话（Issue #69 · 本 PR）：
+ *   「昭明文选 480 篇里，『古诗十九首』在数据里标了 dynasty: 东汉 ——
+ *     这是《昭明文选》诸家题署里没有的朝代，是我整理的推断。
+ *     这类『补出来的信息』=> 一律留空」
+ *
+ * 划线口径（不是拿文本去猜「朝代号」，而是看题署与常用姓名**是否同形**）：
+ *   · author === authorName  → 选本只给了作者的字 → 朝代是补的 → 留空；
+ *   · author !== authorName  → 选本自己给了本名 / 帝号 / 谥号 → 朝代照录。
+ * 为什么不用正则去认朝代号：「窦融」「张说」这类**两个字、其中一个字也是
+ * 朝代号**的人名会被误伤 —— 认得出的是「字」，不是「朝代」。
+ */
+const inferred = ZM.filter(p => p.author && p.author === p.authorName);
+chk(inferred.length > 0, '存在「选本只题作者的字」的条目（' + inferred.length + ' 条）');
+const stillFilled = inferred.filter(p => p.dynasty);
+chk(stillFilled.length === 0,
+  '题署只有「字」的条目，朝代一律留空（仍填着 ' + stillFilled.length + ' 条：' +
+  stillFilled.slice(0, 3).map(p => p.title + '/' + p.dynasty).join('、') + '）');
+
+// 用户点的那一条：古诗十九首的朝代是推断出来的，必须为空
+const gushi = ZM.filter(p => p.title === '古诗十九首')[0];
+chk(!!gushi && !gushi.dynasty,
+  '《古诗十九首》的朝代已留空（Issue #69 点名的那一条，实际 ' + JSON.stringify(gushi && gushi.dynasty) + '）');
+
+// 反向防线：选本自己给了身份的（本名 / 帝号 / 谥号），朝代照录，不许被误清成空。
+//   · 「汉高祖」是**谥号**，「高」字就是「高帝」的一部分，朝代是谥号自带的；
+//   · 「曹子建」「诸葛孔明」这类题署与常用姓名不同形 —— 选本给的是本名，
+//     朝代不是后补的（Author 栏原样，朝代照录）。
+const KEEP = {
+  '两都赋二首': '东汉', '洛神赋': '三国·魏', '登楼赋': '三国·魏',
+  '歌': '西汉', '出师表': '三国·蜀',
+};
+const keepBad = Object.keys(KEEP).filter(n => {
+  const p = ZM.filter(x => x.title === n && x.dynasty)[0];
+  return !p || p.dynasty !== KEEP[n];
+});
+chk(keepBad.length === 0,
+  '选本自带身份线索的条目，朝代照录（异常：' + keepBad.join('/') + '）');
+
+// 同名的《歌》有两首：荆轲那一首（选本署「荆卿」）朝代留空、
+// 汉高祖那一首（谥号自带朝代）朝代是「西汉」—— 同名不同待遇，正是这条口径的样本
+const geSongs = ZM.filter(p => p.title === '歌');
+chk(geSongs.length === 2 &&
+  geSongs.filter(p => p.author === '荆卿')[0].dynasty === '' &&
+  geSongs.filter(p => p.author === '汉高祖')[0].dynasty === '西汉',
+  '同名的两首《歌》按题署分别处理（荆卿留空 / 汉高祖记西汉）');
+chk(ZM.filter(p => p.dynasty).length === 335,
+  '剩 335 条保留朝代（480 − 145），实际 ' + ZM.filter(p => p.dynasty).length);
+
+// emptyText / emptyDynasty 落进数据后不能变成「未知」「不详」这类占位词
+const PLACEHOLDER = /^(未知|不详|待考|佚|—|-|N\/A)$/;
+const ph = ZM.filter(p => p.dynasty && PLACEHOLDER.test(p.dynasty));
+chk(ph.length === 0,
+  '留空的朝代就是空串，没有拿「未知 / 不详」占位（异常 ' + ph.length + ' 条）');
 // 《文选》是选集，出处记选本名是**对的**（与古文观止不同：
 // 那一部 source 必须是真实成书之处，选本名退到 selection）
 chk(ZM.every(p => p.source === '《文选》' && p.selection === '《文选》'),
@@ -331,6 +392,28 @@ setTimeout(() => {
   chk(/王粲/.test(d.querySelector('#rd-meta').textContent), '元信息含常用姓名「王粲」');
   const trans = d.querySelector('#rd-trans-text').textContent;
   chk(trans.length > 60, '《登楼赋》的白话译文已写入阅读器（' + trans.length + ' 字）');
+
+  // 朝代留空的条目渲染成什么样：150 条题署只有「字」的篇目朝代是空的
+  // （见本文件上半部的「补出来的信息一律留空」）。这里守的是**空值那一侧的最后一公里** ——
+  // 数据里留空容易，页面上一不小心就渲染出「· 佚名」这种以分隔符开头的残句。
+  const emptyDynEl = itemEls.filter(el => {
+    const p = w.POEMS_ZHAOMING.filter(x => x.id === el.dataset.id)[0];
+    return p && p.title === '古诗十九首';
+  })[0];
+  chk(!!emptyDynEl, '列表里能找到《古诗十九首》那一条');
+  if (emptyDynEl) {
+    const metaTxt = emptyDynEl.querySelector('.item-meta').textContent;
+    chk(metaTxt.indexOf('东汉') < 0, '列表里不再给《古诗十九首》标「东汉」（实际：' + metaTxt + '）');
+    chk(!/^\s*·/.test(metaTxt) && metaTxt.indexOf('··') < 0,
+      '朝代留空的那一条，列表里没有多出以「·」开头的残句（实际：' + metaTxt + '）');
+    emptyDynEl.click();
+    const rdMeta = d.querySelector('#rd-meta').textContent;
+    chk(rdMeta.indexOf('东汉') < 0, '阅读器里也不再标「东汉」（实际：' + rdMeta + '）');
+    chk(!/^\s*·/.test(rdMeta) && rdMeta.indexOf('··') < 0,
+      '阅读器元信息没有以「·」开头的残句（实际：' + rdMeta + '）');
+    // 作者照旧要看到（留空的是朝代，不是作者）
+    chk(/佚名/.test(rdMeta), '作者仍在元信息里（实际：' + rdMeta + '）');
+  }
 
   // 生僻字真的要渲染出来：打开《招隐士》，正文里得有 𩨒 这个字本身。
   // 这一条守的是「占位符换成真字」这件事的**最后一公里** ——

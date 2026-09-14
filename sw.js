@@ -402,8 +402,23 @@
  *        现按现行体例放回「卷八 唐文」（韩愈，《昌黎先生集》），
  *        并给 test/guwen.test.js 加了防线：出处必须是真实来源书、卷八名篇点名核对。
  *        （data/poems-guwen.js、data/site-index.js、README.md、test/guwen.test.js、sw.js）
+ *   v63  撤掉自拟编号、补出来的信息一律留空（Issue #69 · 收尾最后一轮）：
+ *        ① 宋词 20 条「其一 / 其二 / 其三」是整理者为分辨同名条目**自拟**的，
+ *           不是选本原名 —— 全部改为**首句副题**
+ *           （浣溪沙·一曲新词酒一杯、木兰花·燕鸿过后莺归去、蝶恋花·庭院深深深几许…）；
+ *        ② 《昭明文选》145 条本来填着「东汉 / 西晋」这类朝代，那是按人名表
+ *           推出来的、诸家题署里**没有**的信息 —— 一律留空。
+ *           划线口径是「题署与常用姓名是否同形」：同形 = 选本只给了字 → 留空；
+ *           不同形 = 选本自己给了本名 / 帝号 → 朝代照录（「汉高祖」记西汉）。
+ *           顺带把 data/poems-zhaoming.js 里三处「选本署字、却把字写成本名」
+ *           的题署订正回选本原样（贾谊 → 贾长沙、荆轲 → 荆卿）。
+ *        ③ 查看器 / 列表 / 搜索 / 收藏四处都改成「有哪栏排哪栏」，
+ *           朝代一空不再渲染出「 · 徐陵」这种以分隔符开头的残句。
+ *        （data/poems-songci.js、data/poems-zhaoming.js、js/app.js、js/search.js、
+ *          test/songci.test.js、test/zhaoming.test.js、test/search.test.js、
+ *          test/collections.test.js、README.md）
  */
-const CACHE_NAME = "poem-app-v62";
+const CACHE_NAME = "poem-app-v63";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [

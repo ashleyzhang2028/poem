@@ -539,8 +539,11 @@
           : item.reason === "extra" ? "巩固"
           : item.reason === "optional" ? "自选" : "新学") +
         "</span></h3>" +
-        '<div class="item-meta"><span>' + esc(p.author) + "</span><span>·</span><span>" + esc(p.dynasty) + "</span>" +
-        '<span>·</span><span>' + metaTail + "</span></div>" +
+        // 「作者 · 朝代 · 出处」按**有哪栏排哪栏**拼（见下方 metaLine）——
+        // 自选集合里可能有《昭明文选》的篇目，而文选题署只给作者的字、
+        // 不留朝代（见 data/poems-zhaoming.js 文件头），
+        // 写死位置会渲染出以「·」开头的残句。
+        '<div class="item-meta">' + metaLine([p.author, p.dynasty, metaTail]) + "</div>" +
         (rec && rec.learned
           ? '<div class="mbar"><i style="width:' + Scheduler.mastery(rec) + '%"></i></div>'
           : "") +
@@ -634,6 +637,30 @@
     });
   }
 
+  /**
+   * 列表条目那一行「朝代 · 作者 · 出处」。
+   *
+   * ⚠️ 每一栏都可能为空 —— 不是「大概不会空」，是**确定会有空值**：
+   *    自选集合里能加进《昭明文选》的篇目，而《文选》的题署只给作者的字、
+   *    不留朝代（那朝代是后人按人名表推的，已按「补出来的信息一律留空」清掉，
+   *    见 data/poems-zhaoming.js 文件头）。早前这里把 `p.dynasty` 直接塞进模板，
+   *    空值会渲染成「 · 徐陵」这种以分隔符开头的残句。
+   *
+   * 规矩：**空值连同它那一枚分隔符一起不渲染**，最后把剩下的用「·」串起来。
+   * 传进来的值按原样转义 —— 有的栏本身就是拼好的 HTML 片段（如出处那一段），
+   * 转义与否由调用方决定，这里只做「排布」这一件事。
+   */
+  function metaLine(parts) {
+    const out = [];
+    (parts || []).forEach(function (v) {
+      const t = v == null ? "" : String(v);
+      if (!t) return;
+      if (out.length) out.push('<span>·</span>');
+      out.push('<span>' + t + "</span>");
+    });
+    return out.join("");
+  }
+
   /* ---------------- 渲染：全部诗词 ---------------- */
   function renderAll() {
     const scope = scopeInfo();
@@ -664,11 +691,15 @@
         '<div class="item-main">' +
         // 同上：序号圆在标题行内，排在篇名前面
         '<h3 class="item-title"><span class="item-num">' + (i + 1) + "</span>" + esc(p.title) + "</h3>" +
-        '<div class="item-meta"><span>' + esc(p.dynasty) + "</span><span>·</span><span>" + esc(p.author) + "</span>" +
-        (scope.random ? "<span>·</span><span>" + esc(gradeName(p.grade) + termName(p.term)) + "</span>" : "") +
-        (rec && rec.learned
-          ? '<span>·</span><span>' + Scheduler.levelName(rec.level) + "</span>"
-          : '<span>·</span><span>未学过</span>') +
+        '<div class="item-meta">' +
+        metaLine([p.dynasty, p.author].concat(
+          // ⚠️ 年级 / 掌握度这两栏是**无条件**跟着的（各带一个前置「·」），
+          // 所以 metaLine 里那些「空值即不渲染分隔符」的规矩到第一栏之后就得让位 ——
+          // 这里把后面的尾巴拼成一段「整串」，再交给 metaLine 排在末尾：
+          // 朝代一空时只省掉它自己，不会把「· 二年级上」那一截也吞掉。
+          [scope.random ? gradeName(p.grade) + termName(p.term) : "",
+           rec && rec.learned ? Scheduler.levelName(rec.level) : "未学过"]
+            .filter(Boolean).join(" · "))) +
         "</div>" +
         (rec && rec.learned ? '<div class="mbar"><i style="width:' + Scheduler.mastery(rec) + '%"></i></div>' : "") +
         "</div>" +
@@ -812,12 +843,11 @@
         el.innerHTML =
           '<div class="item-main">' +
           '<h3 class="item-title">' + esc(showTitle(p.title)) + "</h3>" +
-          '<div class="item-meta"><span>' + esc(p.author || "") + "</span>" +
-          (p.dynasty ? "<span>·</span><span>" + esc(p.dynasty) + "</span>" : "") +
-          (p.bookName ? "<span>·</span><span>" + esc(p.bookName) + "</span>" : "") +
-          (rec && rec.learned
-            ? "<span>·</span><span>" + Scheduler.levelName(rec.level) + "</span>"
-            : "<span>·</span><span>未学过</span>") +
+          '<div class="item-meta">' +
+          metaLine([esc(p.author || ""), esc(p.dynasty || ""), esc(p.bookName || ""),
+            // 掌握度那一栏无条件跟着（空值也显示「未学过」），
+            // 所以它不参与「空值即省分隔符」的排布，直接拼成一段尾巴
+            rec && rec.learned ? Scheduler.levelName(rec.level) : "未学过"]) +
           "</div>" +
           (rec && rec.learned ? '<div class="mbar"><i style="width:' + Scheduler.mastery(rec) + '%"></i></div>' : "") +
           "</div>" +
@@ -1026,7 +1056,13 @@
     // 自选篇目的篇名去掉「其一 / 其二」（见 showTitle）——
     // 课内那 261 首一个字不动：那里的「其一」是教材原名
     $("#m-title").textContent = p.custom ? showTitle(p.title) : p.title;
-    $("#m-dynasty").textContent = "〔" + p.dynasty + "〕";
+    // 朝代可能为空：《昭明文选》的题署只给作者的字、不留朝代
+    // （那朝代是后人按人名表推的，已按「补出来的信息一律留空」清掉，见
+    //   data/poems-zhaoming.js 文件头）。空值不渲染这一枚标签 ——
+    // 否则会露出一对「〔〕」空括号，像是数据坏了。
+    const dynEl = $("#m-dynasty");
+    dynEl.textContent = p.dynasty ? "〔" + p.dynasty + "〕" : "";
+    dynEl.hidden = !p.dynasty;
     $("#m-author").textContent = p.author;
     // 自选篇目没有年级学期，这一格改显示它所在的集子；
     // 否则会露出「undefined年级 undefined学期」。

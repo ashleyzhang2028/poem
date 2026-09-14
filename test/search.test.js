@@ -299,6 +299,30 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(input.getAttribute('aria-expanded') === 'true', '输入框 aria-expanded 同步为 true');
   chk(items.every(el => el.querySelector('.suggest-title') && el.querySelector('.suggest-meta')),
     '每条候选都有篇名与「朝代 · 作者 · 集子」');
+
+  // 候选右侧那一行**按有哪栏排哪栏**：昭明文选的 145 条题署只有作者的字、
+  // 朝代留空（见 data/poems-zhaoming.js 文件头），朝代一空不能渲染成
+  // 「 · 徐陵」这种以分隔符开头的残句。
+  type('古诗十九首');
+  await sleep(30);
+  const zmSuggest = [...box.querySelectorAll('.suggest-item')]
+    .map(el => el.querySelector('.suggest-meta').textContent)
+    .filter(t => t.indexOf('昭明文选') >= 0);
+  chk(zmSuggest.length > 0, '搜《古诗十九首》时候选里带昭明文选那一部');
+  chk(zmSuggest.every(t => !/^\s*·/.test(t) && t.indexOf('··') < 0),
+    '留空朝代的候选，右侧那行不以「·」开头（实际：' + JSON.stringify(zmSuggest) + '）');
+  chk(zmSuggest.every(t => t.indexOf('东汉') < 0),
+    '留空朝代的候选，右侧那行不再出现「东汉」（实际：' + JSON.stringify(zmSuggest) + '）');
+
+  // 结果列表里也不该出现「· 佚名」这类残句
+  const zmMeta = [...d.querySelectorAll('#gw-list .item')]
+    .filter(el => el.dataset.id.indexOf('zhaoming-') === 0)
+    .map(el => el.querySelector('.item-meta').textContent);
+  chk(zmMeta.length > 0 && zmMeta.every(t => !/^\s*·/.test(t) && t.indexOf('··') < 0),
+    '结果列表里留空朝代的条目也没有残句（' + zmMeta.length + ' 条）');
+
+  type('月');
+  await sleep(30);
   // 候选与结果**同一套匹配**：候选里每一条都必须能在结果列表里找到
   const resultIds = new Set([...d.querySelectorAll('#gw-list .item')].map(el => el.dataset.id));
   chk(items.every(el => {
