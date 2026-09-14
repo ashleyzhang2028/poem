@@ -14,6 +14,11 @@
  *   改了哪些文件就升一次，宁可多升，不要漏升。
  *   版本回滚同理：版本号只能往上走，不要改回旧号，否则老缓存会被复用。
  *
+ *   ⚠️ 同时有几个 PR 在改 css/ 或 js/ 时，**每次 +5、不要只 +1**：
+ *   大家各自从同一个基线 +1，撞在同一个版本号上，先合的那个把版本号占了，
+ *   后面的每个 PR 都得回来解一次冲突。+5 留出余量，各自落在不同号段上。
+ *   （号段之间留空不碍事：版本号只用来区分新旧，不要求连续。）
+ *
  * 版本历史：
  *   v45  新增《昭明文选》集子（Issue #69 后续）：/zhaoming/ 索引页 + 详情页，
  *        六十卷 480 篇，按**文体**分三十九类（赋 / 诗 / 骚 / 七 / 诏 / 册 …），
@@ -490,8 +495,21 @@
  *             现在 hero 与 .suggest 各写一遍。
  *        （css/classic.css、js/search.js、test/search.test.js、
  *          test/pwa.test.js、README.md）
+ *   v73  唐诗三百首 301 首正文收归存储主表（Issue #69 · 按部推进第 4 部）：
+ *        FULL_BOOKS 清单加 `tangshi`，主表 977 → 1232 条，
+ *        data/poems-tangshi.js 301 条摘掉内联正文、改留 textRef
+ *        （236KB → 64KB，-73%）。页面可见文本零变化：
+ *           · 255 条单篇（唐诗独有）的标题 / 元信息 / 正文 / 译文逐字节一致；
+ *           · 46 条与课内同篇的（如 ts-231《夜思》↔ poems-xx1-09《静夜思》、
+ *             ts-6《望岳》↔ poems-cz7-19）正文 / 译文改取主条目那一份 ——
+ *             这正是收归前 canonical-texts.js 在显示层做的事，
+ *             存储层收归后「本来就只有一份」，显示结果不变。
+ *        版本号按「并行 PR 一律 +5」的口径从 v68 起落到 v73。
+ *        （data/text-master.js、data/poems-tangshi.js、
+ *          scripts/build-text-master.js、test/canonical.test.js、
+ *          test/dedup.test.js、README.md）
  */
-const CACHE_NAME = "poem-app-v68";
+const CACHE_NAME = "poem-app-v73";
 
 /* 需要在首次访问时预缓存的核心资源 */
 const PRECACHE = [
