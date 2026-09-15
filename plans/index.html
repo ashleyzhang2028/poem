@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#2f6055" />
+  <title>层级对比 · 跬步</title>
+  <meta name="description" content="跬步层级对比：未登录、Free、Pro、Max 四种身份能用的功能逐条对照，打钩打叉一眼看清。" />
+  <meta name="format-detection" content="telephone=no" />
+  <meta name="robots" content="noindex, follow" />
+
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="跬步" />
+  <meta name="mobile-web-app-capable" content="yes" />
+
+  <base href="/" />
+  <link rel="icon" href="./icons/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/account.css" />
+</head>
+<!-- data-dock="off"：对比页是「看明白一件事」的一页，看完就走，
+     不留底部页签免得误触跳走（法务页同款）。返回落点回个人中心 ——
+     用户是从 /profile/ 的「权限」那一节点进来的。 -->
+<body data-nav="plans" data-dock="off" data-back="/profile/" data-page="层级对比" data-sub="未登录 · Free · Pro · Max">
+  <div class="app">
+    <header class="topbar"></header>
+
+    <main class="account-page" id="plans-page">
+      <!-- ==================================================================
+           层级对比（Issue #132）
+           ------------------------------------------------------------------
+           用户提的：「像其他网站那样，最左边是对比项，右边几列是不同角色，
+           下面用打钩打叉」。
+
+           ⚠️ 这张表**不是手抄的**：每一格都是当场问 `Entitlement.can()` 得来的
+              （见 js/plans.js 与 entitlement.js 的 compare()）。手抄一份的下场是
+              内核改了门槛、这张表还是老话 —— 而这张表恰恰是用户唯一会逐条看的页面。
+
+           ⚠️ 本期三层是**本机登记**的演示版：手改存储就能给自己升级，
+              所以这张表的表尾必须如实写明它不是付费凭据（不许装作在卖东西）。
+           ================================================================== -->
+
+      <!-- ---------- 一、抬头：三句话把这张表的前提说清 ---------- -->
+      <section class="account-card">
+        <h2 class="account-card-title">先看这一句</h2>
+        <p class="account-lead">
+          <strong>免费版不缩水</strong>：不登录、不花钱，261 首课内古诗文、
+          六部集子 2320 篇、每日背诵与复习排程、生字注音、进度导出，一件都不少。
+          Pro 与 Max 只<strong>加</strong>新能力，不把现有功能收走。
+        </p>
+        <p class="account-hint">
+          下表每一格都按当前代码里的能力清单当场计算，不是手抄的宣传表。
+        </p>
+      </section>
+
+      <!-- ---------- 二、四列对比 ---------- -->
+      <section class="account-card">
+        <h2 class="account-card-title">功能对照</h2>
+        <div class="plans-scroll">
+          <table class="plans-table">
+            <caption class="plans-caption">跬步 · 各身份可用功能对照</caption>
+            <thead id="plans-head"></thead>
+            <tbody id="plans-body"></tbody>
+            <tfoot id="plans-foot"></tfoot>
+          </table>
+        </div>
+        <p class="account-hint">
+          <span class="plans-mark ok" aria-hidden="true">✓</span> 表示可用，
+          <span class="plans-mark no" aria-hidden="true">✕</span> 表示不可用；
+          灰色字是该能力从哪一层开始可用。
+        </p>
+      </section>
+
+      <!-- ---------- 三、你现在在哪一格 ---------- -->
+      <section class="account-card">
+        <h2 class="account-card-title">你现在的身份</h2>
+        <div class="kv-list" id="plans-me"></div>
+        <button class="account-btn" id="btn-go-login" type="button">用邮箱建一个账号</button>
+        <p class="account-hint" id="plans-me-hint"></p>
+      </section>
+
+      <!-- ---------- 四、诚实地说明它现在是什么 ---------- -->
+      <section class="account-card">
+        <h2 class="account-card-title">关于这些层级</h2>
+        <p class="account-lead">
+          本期没有服务器：<strong>层级是本机登记的功能标记，不是付费凭据</strong> ——
+          没有收款，也没有支付入口。管理员（这台设备的主人）可以按邮箱掩码
+          把 Pro / Max 登记给家里人。
+        </p>
+        <button class="account-btn ghost" id="btn-go-profile" type="button">回个人中心看我的权限</button>
+        <p class="account-hint">
+          你想听的声音、想看的诗、想背的进度，都不因为这些层级而多一分或少一分。
+        </p>
+      </section>
+    </main>
+
+    <footer class="foot settings-foot">
+      <span class="foot-copy">&copy;2026 kuibu.app 积跬步, 至千里</span>
+      <span class="foot-links">
+        <a href="/terms/">用户协议</a>
+        <span class="foot-sep">·</span>
+        <a href="/privacy/">隐私条款</a>
+      </span>
+    </footer>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+
+  <!-- 脚本顺序：auth-core → entitlement → avatar → 本页 → chrome → pwa
+       avatar.js 必须在 chrome.js 之前：顶栏右侧那一枚印由 chrome.js 渲染时才读它 -->
+  <script src="/js/auth-core.js"></script>
+  <script src="/js/entitlement.js"></script>
+  <script src="/js/avatar.js"></script>
+  <script src="/js/plans.js"></script>
+  <script src="/js/chrome.js"></script>
+  <script src="/js/pwa.js"></script>
+</body>
+</html>

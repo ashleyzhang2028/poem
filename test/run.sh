@@ -45,6 +45,10 @@
 #                          权限判断只走 Entitlement、页面不自己拼 plan、
 #                          如实标注「本地体验版」（不许假装有服务器）、
 #                          退出只清会话 / 注销不删进度、三页都不写进度键（Issue #132）
+#   3u. 层级对比页      —— 纯 Node，四列（未登录 / Free / Pro / Max）横向对照：
+#                          每格都等于 can() 的答案（不许手抄一份）、
+#                          未登录与 Free 只差语音朗读那一条、层级单调不回退、
+#                          表尾「能用几项」与表身相符（Issue #132）
 #   4. 用户名设置测试    —— jsdom，带初始 localStorage 重启应用
 #   5. 用户协议/隐私条款  —— jsdom + 源码扫描：页脚入口、学生保护、邮箱防爬
 #   6. 注音与朗读测试    —— 拼音表/多音字（纯 Node）+ 注音渲染与朗读降级（jsdom）
@@ -185,6 +189,10 @@ node test/settings-nav.test.js
 echo ""
 echo "=== 账号三页（/login/ /profile/ /admin/，Issue #132）==="
 node test/account-pages.test.js
+
+echo ""
+echo "=== 层级对比页（四列对照 / 每格都来自 can()，Issue #132）==="
+node test/plans-page.test.js
 
 echo ""
 echo "=== 用户名设置测试 ==="

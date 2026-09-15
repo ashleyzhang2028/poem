@@ -349,3 +349,202 @@
 @media (min-width: 1024px) {
   .account-page { max-width: 560px; }
 }
+
+/* ==========================================================================
+   层级对比表（/plans/，Issue #132）
+   --------------------------------------------------------------------------
+   四列表格，最左一列是对比项，右边四格分别打钩 / 打叉。
+
+   手机上四列会挤，所以这张表**横向可滚**（外层 .plans-scroll），
+   第一列（功能名）**粘在左边不跟着滚** —— 不然滚到第三列就不知道在看哪一行了。
+   不把表拆成四张卡片，是因为「对比」的全部价值就在于同一行能横向看齐。
+   ========================================================================== */
+
+.plans-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  /* 只在需要时才出现滚动条，且不占高度 */
+  scrollbar-width: thin;
+}
+
+.plans-table {
+  width: 100%;
+  min-width: 468px;            /* 四列 + 一列功能名，再窄就打不成表了 */
+  border-collapse: collapse;
+  font-size: 12.5px;
+  color: var(--ink);
+}
+
+/* 表格不给屏幕阅读器讲一遍视觉说明（下面另有一段文字口径） */
+.plans-caption {
+  caption-side: top;
+  text-align: left;
+  font-size: 11.5px;
+  color: var(--ink-3);
+  padding: 0 0 8px;
+}
+
+/* ---------- 第一列：对比项（左侧粘住） ---------- */
+.plans-th-cap {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  text-align: left;
+  font-weight: 400;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--ink);
+  background: var(--card);
+  padding: 8px 10px 8px 0;
+  border-bottom: 1px solid var(--line-2);
+  min-width: 150px;
+}
+/* 表头那一格是「功能」二字，另给一档颜色 */
+thead .plans-th-cap {
+  font-size: 11.5px;
+  letter-spacing: .6px;
+  color: var(--ink-3);
+  font-weight: 600;
+  padding-top: 0;
+}
+
+/* ---------- 表头四列 ---------- */
+.plans-table thead th {
+  padding: 0 6px 9px;
+  text-align: center;
+  font-weight: 600;
+  vertical-align: bottom;
+  border-bottom: 1px solid var(--line);
+}
+.plans-col-label {
+  display: block;
+  font-size: 12.5px;
+  color: var(--ink-2);
+  letter-spacing: .4px;
+  white-space: nowrap;
+}
+/* 表头里只有「未登录」三字更宽，允许它折一行 */
+.plans-table thead th:first-of-type + th .plans-col-label { white-space: nowrap; }
+
+/* 「你现在在这」的高亮列 —— 整列淡淡的底色，比给每格加边框安静 */
+.plans-col-me { background: var(--bg); }
+.plans-table td.plans-col-me { background: var(--bg); }
+.plans-you {
+  display: inline-block;
+  margin-top: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .3px;
+  color: var(--green);
+  background: var(--green-light);
+  border-radius: 999px;
+  padding: 1px 6px;
+  white-space: nowrap;
+}
+
+/* ---------- 分组标题行 ---------- */
+.plans-group th {
+  text-align: left;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: .8px;
+  color: var(--ink-2);
+  background: var(--bg);
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line-2);
+  position: sticky;
+  left: 0;
+}
+.plans-group-note {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 1.6;
+  color: var(--ink-3);
+}
+
+/* ---------- 表身 ---------- */
+.plans-table tbody th {
+  font-weight: 400;
+}
+
+.plans-cell {
+  text-align: center;
+  padding: 8px 6px;
+  border-bottom: 1px solid var(--line-2);
+  vertical-align: top;
+}
+.plans-v { display: block; line-height: 1.2; }
+
+/* 打钩 / 打叉：一枚 18px 的圆底符号，不是裸字 */
+.plans-mark {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  line-height: 18px;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+}
+.plans-mark.ok { color: #fff; background: var(--green); }
+.plans-mark.no { color: var(--ink-3); background: var(--green-light); }
+
+/* 不能用的那一格：门槛文案（「Pro 起可用」）跟在叉下面 */
+.plans-cell-hint {
+  display: block;
+  margin-top: 3px;
+  font-size: 10px;
+  line-height: 1.45;
+  color: var(--ink-3);
+}
+.plans-cell.off .plans-mark { opacity: .55; }
+
+.plans-quota {
+  display: block;
+  margin-top: 2px;
+  font-size: 10.5px;
+  color: var(--ink-3);
+}
+
+/* ---------- 表尾：每列能用几项 ---------- */
+.plans-table tfoot th,
+.plans-sum {
+  padding: 10px 6px 0;
+  text-align: center;
+  font-size: 12px;
+  color: var(--ink-2);
+  border-top: 1px solid var(--line);
+}
+.plans-table tfoot .plans-th-cap {
+  text-align: left;
+  font-size: 12px;
+  color: var(--ink-2);
+  padding-left: 0;
+  border-top: 1px solid var(--line);
+  border-bottom: none;
+}
+.plans-sum { font-weight: 600; color: var(--ink); }
+.plans-sum-of { font-weight: 400; font-size: 11px; color: var(--ink-3); margin-left: 2px; }
+
+/* 表格自己已经说明白了，页脚那句图例要小一号 */
+.account-hint .plans-mark { vertical-align: -2px; margin: 0 2px; }
+
+/* ---------- 对比表的两档收边 ----------
+   手机（≤400px）：正文列左右各只有 14px 的边，四列表挤得每格只剩 60 出头，
+   表头「未登录」三个字会折行 —— 把功能名那一列收窄一档，四列才回得来。
+   平板 / 桌面（≥768px）：表跟着正文列一起放宽，不再需要横向滚动。 */
+@media (max-width: 400px) {
+  .plans-table { min-width: 440px; font-size: 12px; }
+  .plans-th-cap { min-width: 132px; padding-right: 8px; }
+  .plans-v { line-height: 1.15; }
+  .plans-cell { padding-left: 4px; padding-right: 4px; }
+}
+@media (min-width: 768px) {
+  /* 一列纸在平板上是 1040px 减两条边，表放得下，不必再滚 */
+  .plans-table { min-width: 0; }
+  .plans-th-cap { min-width: 200px; }
+  .plans-table { font-size: 13px; }
+}

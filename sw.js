@@ -1,4 +1,4 @@
-const CACHE_NAME = "poem-app-v117";
+const CACHE_NAME = "poem-app-v118";
 
 const PRECACHE = [
   "./",
@@ -19,9 +19,11 @@ const PRECACHE = [
   "./login/",
   "./profile/",
   "./admin/",
+  "./plans/",
   "./js/login.js",
   "./js/profile.js",
   "./js/admin-page.js",
+  "./js/plans.js",
   "./js/settings.js",
   "./js/settings-nav.js",
   "./js/play-modes.js",
