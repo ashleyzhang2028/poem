@@ -1888,7 +1888,13 @@ body.has-install-tip #app {
   letter-spacing: .6px;
 }
 
-/* 顶栏右侧动作：圆形纸底按钮，与徽标同族 */
+/* 顶栏右侧动作：圆形纸底按钮，与徽标同族。
+   ⚠️ 顶栏里那一颗的直径走 --top-key（40px），它由 `.top-slot` 那枚 42px
+      的圆槽居中托住（见上）；`.icon-btn` 是别处（工具条、列表行）的同类按钮，
+      沿用 40px。两者同值但**不同来源**：槽里那颗要跟着 --top-slot 一起走，
+      所以它的尺寸从槽那一段继承下来，不再在这里写第二个数字。
+      这里保留 40px 作为 .icon-btn 的口径，并由下面那条把顶栏里的那颗
+      显式改写成 var(--top-key) —— 一条规则管一处，不许两处各写一半。 */
 .top-act,
 .icon-btn {
   width: 40px;
@@ -1906,39 +1912,71 @@ body.has-install-tip #app {
   text-decoration: none;
   transition: transform .15s, color .18s, box-shadow .18s;
 }
-/* 首页右侧占位：右上角不再放设置齿轮（底部页签已有「设置」），
-   留一个不可见占位，顶栏的左右两栏对齐关系不变 */
-/* 不可见占位：宽度必须与右侧簇里那颗**最大**的按钮同宽，否则顶栏左右不配平。
-   头像改成 42px（与 logo 同径）之后，占位也跟着取 42 —— 与 `.top-user`
-   同一条尺寸口径，改一处两处一起走。 */
-.top-act-spacer { width: 42px; height: 42px; flex: none; }
+/* 不可见占位（头像渲染不出来时的兜底）：尺寸走同一条 --top-slot 口径。
+   顶栏右侧的每一件都是同一枚圆槽的尺寸 —— 写死第二个数字就是下一次走散的种子。 */
+.top-act-spacer { width: var(--top-slot); height: var(--top-slot); flex: none; }
+/* 槽里那颗返回键的直径走 --top-key：圆槽 → 圆环 → 头像三枚同一套口径 */
+.top-slot > .top-act { width: var(--top-key); height: var(--top-key); }
 .top-act .top-act-icon { display: inline-flex; }
 .top-act svg, .icon-btn svg { width: 20px; height: 20px; display: block; }
 .top-act:hover, .icon-btn:hover { color: var(--green); }
 .top-act:active, .icon-btn:active { transform: scale(.94); }
 
-/* ---------- 顶栏右侧簇（Issue #132 · 2026-09-15） ----------
-   右侧从「一个动作位」升级成「一枚恒定锚点 + 若干颗」：
-   ┌────────────────────────────────────────────┐
-   │ (徽标42) 跬步 · 页名        [↩40] (头像42) │
-   └────────────────────────────────────────────┘
-     品牌区（可收缩，走 ellipsis）  ↑       ↑
-                                返回键    固定锚点
-   ⚠️ 头像与徽标**同径 42px**（用户 2026-09-15 要求「和 logo 一模一样大小的
-      圆形」）；返回键仍是 40px 的圆形按钮 —— 它不跟 logo 配平，
-      它是右侧簇里的一颗普通动作键。
+/* ---------- 顶栏右侧簇（Issue #132 · 2026-09-15；气泡化重排 Issue #147 · 2026-09-15） ----------
+   顶栏从头到尾只有两栏，靠 `justify-content: space-between` 分列两端 ——
+   **右侧簇是一个整体**，它内部怎么排，与左边品牌区的页名长短完全无关：
 
-   两条硬规矩：
-   1. **头像永远在最右，返回键在它左边** —— 返回键的落点会变（有时没有），
-      头像的落点不能变：用户点头像是靠肌肉记忆，它必须每页都在同一个像素位上。
-   2. **这一簇不收缩**（flex: none）—— 窄屏时只允许左边的品牌区被压窄，
-      徽标 / 头像 / 返回键一个像素都不许缩。宽屏口径与 .brand 那条注释同源。 */
-.top-right {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex: none;
+   ┌────────────────────────────────────────────────┐
+   │ (徽标42) 跬步 · 页名          〔  ↩42  〕 (头像42) │
+   └────────────────────────────────────────────────┘
+     品牌区（可收缩，走 ellipsis）   ↑ 固定圆槽     ↑ 恒定锚点
+                                    (.top-slot)
+
+   ⚠️ 这一段是 Issue #147 的正题。上一版把返回键直接跟在品牌区后面，整行
+      space-between 一分摊 —— 页名**短**的时候返回键就跟着往左跑：
+      搜索页「跬步 · 搜索」比「课外阅读」短，那一颗箭头比别页左偏 36~46px；
+      首页「Ashley的背诵」更长，位置又变一次。用户原话：
+        「搜索页面后退按钮离 profile 头像太远了，他俩应该靠近并固定位置，
+          所有页面都应该如此，而不是因为搜索页面标题太短，位置就可以左移。」
+      现在返回键**住在一枚固定圆槽里**：槽由 `margin-left: auto` 钉在右侧簇
+      左端、槽本身不参与收缩；头像是恒定锚点，钉在最右。两颗的像素位
+      只由「两栏 + 槽宽 + 间距」决定，与页名无关。
+
+   三条硬规矩：
+   1. **头像永远在最右，返回键在它左边的固定槽里** —— 返回键的落点会变
+      （有的页没有、有的页换文案），但**位置不变**；头像更不能变：
+      用户点头像是靠肌肉记忆（「右上角那枚印」），它必须每页都在同一个像素位上。
+   2. **这一簇不收缩**（簇里每一件都是 `flex: none`）—— 窄屏时只允许左边的
+      品牌区被压窄，徽标 / 返回槽 / 头像一个像素都不许缩。
+   3. **尺寸只有一个来源 `--top-slot`**：徽标、头像、返回槽、阅读器里那枚
+      「这一册的印」、以及头像渲染失败时的兜底占位，全部读它。
+      上一版徽标 / 头像走 42px、返回键走 40px、槽另写一个 42 ——
+      三处数字，改一处就会漂一处。 */
+:root {
+  /* 顶栏右侧每一枚的直径（= .brand-mark 的 42px「和 logo 一模一样大」） */
+  --top-slot: 42px;
+  /* 簇内两件之间的间距：返回槽与头像之间那一条 */
+  --top-gap: 8px;
+  /* 返回键自己那颗按钮的直径。它比槽小 2px，是**刻意的**：
+     视觉直径 40px 的圆环摆在 42px 的槽心里，圆环与徽标 / 头像的圆心同轴，
+     三枚放在一行上「一样大」，而返回键仍比另两枚轻一档（它是个动作，不是身份）。 */
+  --top-key: 40px;
 }
+/* 右侧簇：由两件固定宽的东西组成，整体不收缩。
+   `margin-left: auto` 在槽上 —— 品牌区与槽之间那条弹性空档由此生成，
+   顶栏那一行就只剩「左栏 + 右栏」两件事，不再靠 space-between 去分摊。 */
+.top-slot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  margin-left: auto;
+  width: var(--top-slot);
+  height: var(--top-slot);
+}
+.top-slot + .top-user,
+.top-slot + .top-slot-mark,
+.top-slot + .top-act-spacer { margin-left: var(--top-gap); }
 
 /* 头像：**与 logo 一模一样大的圆形**，印色铺满整圆（Issue #132 · 用户 2026-09-15）。
    --------------------------------------------------------------------------
@@ -1956,9 +1994,9 @@ body.has-install-tip #app {
    底色 / 字色仍由 js/avatar.js 内联给出（色值来自用户选择，样式表穷举不了），
    这里只管尺寸、圆角、字族与呼吸感。 */
 .top-user {
-  /* --user-size 就是 .brand-mark 的 42px：两枚同径是同一条口径，
+  /* --user-size 就是槽的 42px：两枚同径是同一条口径，
      写死两处必然有一天只改了一处（尺寸漂移在顶栏上格外显眼）。 */
-  --user-size: 42px;
+  --user-size: var(--top-slot);
   width: var(--user-size);
   height: var(--user-size);
   flex: none;
@@ -1976,6 +2014,29 @@ body.has-install-tip #app {
   height: 100%;
   border-radius: 50%;
 }
+
+/* 阅读器那条顶栏里的恒定锚点（Issue #147）：一枚「翻开的这一册」。
+   --------------------------------------------------------------------------
+   阅读器是全屏沉浸层，那条顶栏**不画头像**（不该把「管账号」压在正文上）。
+   少了头像，右侧簇就短了 50px（头像 42 + 间距 8）—— 若把返回键留在槽里，
+   正文一开一合，那颗箭头就会相对其他页横跳 50px；这正是用户说的
+   「他俩应该靠近并固定位置，所有页面都应该如此」在阅读器里的落法。
+   于是补上这一枚同径的圆形槽位标记：它**占住头像的像素位**，
+   高度、宽度、间距全部来自 --top-slot / --top-gap，一个数字都不另写。
+   观感上也正合适：那一条顶栏右侧是「这一册 · 合上」，讲的还是同一件事。 */
+.top-slot-mark {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--top-slot);
+  height: var(--top-slot);
+  /* 比正文轻一档，不跟正文抢注意力：它是一枚定位标记，不是一个按钮 */
+  color: var(--ink-3);
+  opacity: .78;
+}
+.top-slot-mark svg { width: 24px; height: 24px; display: block; }
+
 .top-user:hover { box-shadow: 0 0 0 3px rgba(165, 92, 25, .18); }
 .top-user:active { transform: scale(.94); }
 

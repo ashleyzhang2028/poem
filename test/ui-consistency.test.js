@@ -46,6 +46,8 @@ const chromeJs = read('js/chrome.js');
     ⚠️ 下面所有断言一律对着 `*Code`（已剥注释）版本，
       不要再拿原始源码去跑正则 —— 那样注释里的括号会把规则切歪。 */
 const strip = t => t.replace(/\/\*[\s\S]*?\*\//g, ' ');
+/** 剥 HTML 注释：注释里会写「这条结构不许写死」的说明 */
+const stripHtml = t => t.replace(/<!--[\s\S]*?-->/g, ' ');
 const cssCode = strip(css);
 const classicCode = strip(classicCss);
 const legalCode = strip(legalCss);
@@ -584,10 +586,17 @@ chk(/flex:\s*none/.test(ruleOf(cssCode, '.brand-name-row h1')),
    （它们守的是「两处同源」，不是「等于某个数」）。 */
 const markRule = ruleOf(cssCode, '.brand-mark');
 const userRule = ruleOf(cssCode, '.top-user');
+// ⚠️ Issue #147 把这一条从「两个数值相等」升级成「**同一条令牌**」：
+//    原先徽标写 42px、头像写 --user-size: 42px，相等全靠人抄对；
+//    现在右侧簇里每一件（徽标 / 返回槽 / 头像 / 阅读器那枚印 / 兜底占位）
+//    都读 :root 的 --top-slot —— 相等是 structural 的，改一处两处一起走。
+const slotTok = (ruleOf(cssCode, ':root').match(/--top-slot:\s*(\d+)px/) || [])[1];
 const markW = (markRule.match(/width:\s*(\d+)px/) || [])[1];
-const userW = (userRule.match(/--user-size:\s*(\d+)px/) || [])[1];
-chk(!!markW && !!userW && markW === userW,
-  '顶栏头像与 logo 徽标**同径**（.brand-mark ' + markW + 'px vs .top-user --user-size ' + userW + 'px）');
+chk(!!slotTok && markW === slotTok,
+  '顶栏右侧的直径令牌 --top-slot 就是品牌徽标的 42px（.brand-mark ' + markW +
+  'px vs :root --top-slot ' + slotTok + 'px）');
+chk(/--user-size:\s*var\(--top-slot\)/.test(userRule),
+  '头像直径读 --top-slot（与徽标同一条令牌，不再两处各写一个 42）');
 chk(/width:\s*var\(--user-size\)/.test(userRule) && /height:\s*var\(--user-size\)/.test(userRule),
   '头像的宽高都读 --user-size（尺寸只有一个来源，不两处各写一个数）');
 chk(/border-radius:\s*50%/.test(userRule),
@@ -601,8 +610,8 @@ chk(/--seal-size:\s*var\(--user-size\)/.test(sealInUser),
   '印的字号基准也读 --user-size（字随圆走，圆变大字跟着变大）');
 chk(/--seal-size:\s*\d+px/.test(ruleOf(cssCode, '.seal-avatar-top')),
   '顶栏那一枚留了兜底直径（万一 .top-user 那段没生效也不退化成零尺寸空圆）');
-chk(/width:\s*\d+px/.test(ruleOf(cssCode, '.top-act-spacer')),
-  '首页的空占位宽度与头像同档（顶栏左右两栏才配平）');
+chk(/width:\s*var\(--top-slot\)/.test(ruleOf(cssCode, '.top-act-spacer')),
+  '头像渲染不出来时的兜底占位与头像同档（顶栏左右两栏才配平）');
 
 /* ==========================================================================
    六、各页顶栏结构一致（同一套 chrome 渲染）
@@ -675,8 +684,15 @@ if (!JSDOM) {
     return e;
   };
 
-  // 造一份「页面那条顶栏 + 一列纸 + 纸里的内容」的最小结构（与全站约定一致）
+  // 造一份「页面那条顶栏 + 一列纸 + 纸里的内容」的最小结构（与全站约定一致）。
+  // ⚠️ 顶栏里要**真的**放上品牌区与右侧簇（品牌区 + `.top-slot` + 恒定锚点）——
+  //    这就是 chrome.js 的 headerHtml 渲染出来的那一行。少了右侧簇，
+  //    jsdom 里盒模型虽然算不出宽度，但「同一把尺子量到底」的前提就丢了：
+  //    量点与被量点必须处在同一份真实结构上，否则这条断言问的不是它想问的事。
   const bar = mkEl('header', 'topbar');
+  mkEl('div', 'brand', bar);
+  mkEl('span', 'top-slot', bar);
+  mkEl('span', 'top-user', bar);
   const paper = mkEl('div', 'app');
   const inner = mkEl('div', '', paper);          // 纸里的内容（不该再缩进一次）
   const nested = mkEl('div', 'app', inner);      // 误写的那种：第二层又套一个 .app
@@ -739,6 +755,97 @@ if (!JSDOM) {
       file + ' 里 ' + sel + ' 的缩进层数不多于页顶那一行（实际 ' + n + ' / ' + m + '）—— ' +
       '页顶与内容必须落在同一条竖轴上');
   }
+}
+
+
+/* ==========================================================================
+   十、顶栏右端是**固定位**：返回键与头像不随页名长短移动（Issue #147）
+   --------------------------------------------------------------------------
+   用户原话（2026-09-15）：
+     「搜索页面后退按钮离 profile 头像太远了，他俩应该靠近并固定位置，
+       所有页面都应该如此，而不是因为搜索页面标题太短，位置就可以左移。」
+
+   病根在**排版方式**，不在某个数值：顶栏是 `justify-content: space-between`
+   的两栏，而右侧簇原先只有「返回键 + 头像」两颗、返回键直接跟在**品牌区**
+   后面（`.brand` 之后的第一个 flex 项）。页名一短，左右两栏一分摊，
+   那一颗箭头就跟着往左跑：真机实测（Chrome 153 · 393px 视口）
+   「跬步 · 搜索」比「课外阅读」短 60px，返回键与头像之间因此空出 56px，
+   而别页只有 10~18px —— 用户点名的正是搜索页。
+
+   修法是把「位置」这件事从**内容流**里拿出来：返回键住进一枚固定圆槽
+   （`.top-slot`，由 `margin-left: auto` 钉住），头像做恒定锚点钉在最右。
+   两颗的像素位此后只由「两栏 + 槽宽 + 间距」决定，与页名长短无关。
+
+   这一层守四件事，缺一条都会以「某个页面上箭头位置又不对了」的形式复发：
+     ① 槽钉得住（`margin-left: auto`）、槽与锚点都不收缩（`flex: none`）；
+     ② 尺寸只有一个来源：徽标 / 槽 / 头像 / 阅读器那枚印全部读 `--top-slot`；
+     ③ 每个页面都走同一份模板，右侧簇的次序恒为「槽 → 恒定锚点」；
+     ④ 阅读器那条顶栏也补上同径的锚点 —— 否则正文一开一合，那颗箭头
+        相对页面其他位置横跳 50px（头像 42 + 间距 8）。
+   ========================================================================== */
+{
+  const rightSlotRule = ruleOf(cssCode, '.top-slot');
+  chk(/margin-left:\s*auto/.test(rightSlotRule),
+    '返回槽由 margin-left: auto 钉在右侧（不随品牌区宽度浮动）');
+  chk(/flex:\s*none/.test(rightSlotRule),
+    '返回槽不参与收缩（窄屏时只允许品牌区被压窄）');
+  chk(/width:\s*var\(--top-slot\)/.test(rightSlotRule) &&
+    /height:\s*var\(--top-slot\)/.test(rightSlotRule),
+    '槽的宽高读 --top-slot（顶栏右侧不出现第二个尺寸来源）');
+  chk(/--top-slot:\s*42px/.test(ruleOf(cssCode, ':root')),
+    ':root 里 --top-slot 是 42px（= 品牌徽标 .brand-mark 的直径，顶栏左右配平）');
+  chk(/flex:\s*none/.test(ruleOf(cssCode, '.top-user')),
+    '头像不参与收缩（它是恒定锚点，一个像素都不许动）');
+  // 返回键自己那颗按钮仍比槽小一档（40 / 42），但尺寸也从同一族令牌来
+  chk(/--top-key:\s*40px/.test(ruleOf(cssCode, ':root')) &&
+    /width:\s*var\(--top-key\)/.test(ruleOf(cssCode, '.top-slot > .top-act')),
+    '槽里的返回键直径读 --top-key（圆槽 → 圆环 → 头像三枚同一套口径）');
+  // 槽与恒定锚点之间的间距只有一个来源
+  chk(/\.top-slot \+ \.top-user,[\s\S]{0,200}\.top-slot-mark[\s\S]{0,120}margin-left:\s*var\(--top-gap\)/.test(cssCode),
+    '槽与恒定锚点之间的间距只有一个来源（--top-gap）');
+
+  // 阅读器那条顶栏的「这一册的印」：与头像同径，占住同一个像素位
+  const markSlotRule = ruleOf(cssCode, '.top-slot-mark');
+  chk(/width:\s*var\(--top-slot\)/.test(markSlotRule) &&
+    /height:\s*var\(--top-slot\)/.test(markSlotRule),
+    '阅读器里的恒定锚点与头像同径（返回键因此原地不动，不横跳 50px）');
+  chk(/top-slot-mark/.test(chromeJs) && /GLYPHS\.reader/.test(chromeJs),
+    '阅读器那条顶栏由 chrome.js 补上这一枚锚点');
+
+  // ③ 结构：右侧簇恒为「槽 → 恒定锚点」，页名与它无关（只有品牌区可收缩）
+  const headerFn = strip(chromeJs.slice(chromeJs.indexOf('function headerHtml'),
+    chromeJs.indexOf('function firstActAnchor')));
+  // ⚠️ 只看**代码**：那段注释里正讲着旧的 `justify-content: space-between`，
+  //    拿裸词扫整个函数体必然误判（这个坑与 account-entry 里那条同源）。
+  const headerCode = strip(chromeJs.slice(chromeJs.indexOf('function headerHtml'),
+    chromeJs.indexOf('function firstActAnchor'))).replace(/\/\/[^\n]*/g, ' ');
+  chk(/right =[\s\S]{0,200}'<span class="top-slot">' \+ leftOfCluster \+ "<\/span>" \+ anchor;/.test(headerCode),
+    '右侧簇恒为「返回槽 → 恒定锚点」，页名与它无关');
+  chk(!/justify-content/.test(headerCode),
+    '右侧簇的位置不由 JS 排（分列两端交给 CSS 的 .topbar，JS 只管渲染结构）');
+  // 每一页都真的能起出顶栏，且都不自己另写一套
+  const PAGES = [
+    ['index.html', '/'],
+    ['search/index.html', '/search/'],
+    ['settings/index.html', '/settings/'],
+    ['library/index.html', '/library/'],
+    ['poems/index.html', '/poems/'],
+    ['profile/index.html', '/profile/'],
+    ['login/index.html', '/login/'],
+    ['terms/index.html', '/terms/']
+  ];
+  PAGES.forEach(([file, url]) => {
+    const d3 = new JSDOM(read(file), { url: 'https://local.test' + url }).window.document;
+    chk(!!d3.querySelector('.topbar'),
+      file + ' 有顶栏（唯一那条由 chrome.js 统一渲染）');
+    chk(!/class="top-slot"/.test(stripHtml(read(file))),
+      file + ' 的 HTML 里不写死右侧簇（结构只出 chrome.js 一处）');
+  });
+  // 被守的页名长短要真的不同 —— 否则这一层看着绿，其实什么都没区分开
+  const pageNames = ['搜索', '课外阅读', '唐诗三百首', '课外必背小古文'];
+  chk(new Set(pageNames.map(n => n.length)).size > 1,
+    '被守的页名长短确实不同（' + pageNames.map(n => n.length).join('/') + ' 字）—— ' +
+    '上一版正是长度差异把返回键推到了不同位置');
 }
 
 console.log(fails === 0 ? '\n🎉 UI 一致性 / 响应式守卫全部通过' : '\n❌ ' + fails + ' 项失败');

@@ -127,11 +127,28 @@ setTimeout(() => {
     d.querySelectorAll('.topbar > .count-badge').length + ' 枚）');
   chk(fs.readFileSync(path + 'classic/index.html', 'utf8').indexOf('count-badge') < 0,
     '页面里连 count-badge 这个类名都不再出现（不留死节点）');
-  // 页顶那一行留下的只有「品牌区 · 返回键 · 头像」三件，次序不变
+  // 页顶那一行留下的只有「品牌区 · 返回键 · 头像」三件，次序不变。
+  // Issue #147 之后返回键**住在右侧簇那枚固定圆槽里**（.top-slot）——
+  // 顶端两件仍是 brand / 槽，槽里才是返回键，槽右边才是头像；
+  // 逐层数下来次序与「品牌区 · 返回键 · 头像」完全一致。
   const topbar = d.querySelector('.topbar');
-  chk([...topbar.children].map(e => e.className.split(' ')[0]).join('/') === 'brand/top-act/top-user',
-    '页顶一行依次是「品牌区 · 返回键 · 头像」（实际 ' +
+  const rightSlot = topbar.querySelector(':scope > .top-slot');
+  chk([...topbar.children].map(e => e.className.split(' ')[0]).join('/') === 'brand/top-slot/top-user',
+    '页顶一行是「品牌区 · 〔返回键槽〕 · 头像」（实际 ' +
     [...topbar.children].map(e => e.className).join('/') + '）');
+  chk(!!rightSlot && !!rightSlot.querySelector(':scope > #top-back') &&
+    [...rightSlot.children].map(e => e.className.split(' ')[0]).join('/') === 'top-act',
+    '返回键就在右侧簇那枚固定圆槽里（槽里只有它一件）');
+  // ⚠️ 这一条是 Issue #147 的正题：**返回键与头像的位置不许随页名长短移动**。
+  //    上一版返回键直接跟在品牌区后面（整行 space-between），搜索页页名短，
+  //    那一颗箭头就比别页左偏 —— 用户的报障正是这个。位置由固定的槽 + 恒定锚点
+  //    决定，所以这里守「顶栏右端两件的次序与尺寸都由 .top-slot 一套口径给」。
+  const cssAll = fs.readFileSync(path + 'css/style.css', 'utf8');
+  chk(/\.top-slot \{[^}]*margin-left:\s*auto/.test(cssAll),
+    '返回槽由 margin-left: auto 钉在右侧（不随左边品牌区的宽度浮动）');
+  chk(/\.top-slot \{[^}]*width:\s*var\(--top-slot\)/.test(cssAll) &&
+    /\.top-user \{[^}]*--user-size:\s*var\(--top-slot\)/.test(cssAll),
+    '返回槽与头像取同一枚 --top-slot（顶栏右侧每一件只有一个尺寸来源）');
   const backBtn2 = topbar.querySelector('#top-back');
   chk(!!backBtn2 && backBtn2.tagName === 'A' && backBtn2.getAttribute('href') === '/',
     '返回键统一由 chrome.js 渲染（回首页），页面不再自造一颗');
@@ -167,13 +184,22 @@ setTimeout(() => {
   chk(!!rMeta.querySelector('.tag') && rMeta.textContent.indexOf('王应麟') >= 0,
     '同一行里朝代 / 作者 / 出处都还在（实际「' + rMeta.textContent + '」）');
   // ⚠️ 阅读器那条顶栏**没有头像**：阅读器是全屏沉浸层，身份入口不在正文上出现
-  //（头像让位给正文，见 js/chrome.js 的 headerHtml）。所以这里是两件，
-  // 与列表页那条（三件）刻意不同 —— 这是本次裁决要的差异，不是漏画。
-  chk([...rBar.children].map(e => e.className.split(' ')[0]).join('/') === 'brand/top-act',
-    '阅读器顶栏是「品牌区 · 返回键」两项，**不含头像也不含篇号牌**（实际 ' +
+  //（头像让位给正文，见 js/chrome.js 的 headerHtml）。
+  // Issue #147：那里改由一枚同径的 `.top-slot-mark`（翻开的这一册）**占住头像的
+  // 像素位** —— 少了它，阅读器的「合上」会比页面返回键横跳 50px（头像 42 + 间距 8）。
+  // 于是两条顶栏的右端结构逐件对齐：品牌区 · 〔返回键槽〕 · 恒定锚点。
+  chk([...rBar.children].map(e => e.className.split(' ')[0]).join('/') === 'brand/top-slot/top-slot-mark',
+    '阅读器顶栏是「品牌区 · 〔返回键槽〕 · 这一册的印」，**不含头像也不含篇号牌**（实际 ' +
     [...rBar.children].map(e => e.className).join('/') + '）');
+  const rSlot = rBar.querySelector(':scope > .top-slot');
+  chk(!!rSlot && !!rSlot.querySelector(':scope > #top-act'),
+    '阅读器的「合上」也住在同一枚固定圆槽里（与页面那条同一个像素位）');
   chk(d.querySelectorAll('.reader .topbar .top-user').length === 0,
     '阅读器里确实一枚头像都没有（让位给正文）');
+  chk(/\.top-slot-mark \{[^}]*width:\s*var\(--top-slot\)/.test(cssAll),
+    '那枚「这一册的印」与头像同径（--top-slot），所以返回键原地不动');
+  chk(/\.top-slot \+ \.top-user,[\s\S]{0,120}\.top-slot-mark/.test(cssAll),
+    '槽与恒定锚点之间的间距只有一个来源（--top-gap）');
   chk(rBar.querySelector('.brand-page-text').textContent === '课外必背小古文',
     '阅读器里的页名同样是「课外必背小古文」，与列表页一致');
   // 回归防线：整个页面里 #top-act 只能有一枚 —— 只有阅读器那条顶栏才是动作位。

@@ -86,6 +86,18 @@
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
       '<path d="M14.4 5.4 7.8 12l6.6 6.6"/></svg>',
 
+    /* 顶栏右侧：翻开这一册（阅读器里的**恒定槽位**，Issue #147）
+       —— 阅读器那一条顶栏里没有头像（沉浸层让位给正文），若把返回键直接摆到
+       最右，正文一开一合那颗箭头就横跳 50px（头像的宽度 + 间距）。
+       于是补上这一枚「正在读的这一册」图标：高度、宽度、间距全部来自
+       --top-slot（= 头像），**占住头像的像素位**，阅读器那条顶栏的右侧簇
+       与页面那条逐像素对齐 —— 这正是「所有页面都应该如此」的落法。
+       画的是翻开的书页，与底部页签「背诵」那一册同源，不做第二套图形语言。 */
+    reader:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<path d="M12 6.6C10.3 5.2 8.1 4.6 5.4 4.6v12.6c2.7 0 4.9.6 6.6 1.9 1.7-1.3 3.9-1.9 6.6-1.9V4.6c-2.7 0-4.9.6-6.6 2Z"/>' +
+      '<path d="M12 6.6V19.1"/></svg>',
+
     /* 顶栏右侧：关闭（弹层 / 阅读器用） */
     close:
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
@@ -309,45 +321,71 @@
     //
     // 为什么阅读器里不画头像：阅读器是全屏沉浸层，那一条顶栏只留「合上」。
     //   把身份入口压在正文上，会把「读诗」拉回「管账号」。
-    if ((isReader && !action) || pageActionHeld) {
-      // 阅读器那条顶栏在「没动作」时（阅读器已合上、或还没打开）只留占位：
-      // 它此刻是 hidden 的，不该再渲染一颗 id="top-back" —— 页面顶栏已经有同样一枚，
-      // 同名 id 再一次不合法，且作用域查询会认错人。
-      right = '<span class="top-act-spacer" aria-hidden="true"></span>';
-    } else if (isReader) {
-      // 阅读器那条顶栏：只有「合上」这一颗，**没有头像**（让位给正文）。
+    // 右侧簇（Issue #132 · 2026-09-15；气泡化重排 Issue #147 · 2026-09-15）：
+    //     ┌────────────────────────────────────────┐
+    //     │ (徽标42) 跬步 · 页名   〔  返回 42  〕(头像42) │
+    //     └────────────────────────────────────────┘
+    //      品牌区（可收缩，走 ellipsis）  ↑ 固定圆槽      ↑ 固定锚点
+    //
+    // **两颗都是固定位**：返回键住在一枚 42px 的圆形槽里（与徽标、头像同径），
+    // 槽钉在右侧簇里（`.top-slot` 的 `margin-left: auto`），头像钉在最右。
+    // 于是返回键与头像的像素位**与页名长短完全无关** —— 上一版把返回键直接
+    // 跟在品牌区后面（整行 `justify-content: space-between`），页名一短
+    // 返回键就左移：搜索页「跬步 · 搜索」比「课外阅读」短，那一颗箭头
+    // 比别页左偏 36~46px（用户 2026-09-15 报的正是这个）。
+    //
+    // 同一条规矩也管到阅读器：阅读器那条顶栏是一个**全屏沉浸层**，
+    // 那里不画头像（不该把「管账号」压在正文上）；若把它的返回键摆到最右，
+    // 正文一开一合那颗箭头就横跳 50px。所以阅读器里由一枚同径的
+    // **`.top-slot-mark`（翻开的这一册）占住头像的像素位**，
+    // 阅读器的「合上」稳稳落在页面返回键那一个像素位上 —— 一页之内也不横跳。
+    var leftOfCluster = "";
+    if (isReader) {
+      // 阅读器那条顶栏：只有「合上」这一颗。
       // 动作是「关闭阅读器」这类「合上 / 撤回上一层」的语义，一律画成返回箭头：
       // 同一种行为在全站只能是同一个图标（顶栏右侧那颗与底部页签「回首页」各司其职）。
       // 曾经这里换成 ✕，结果阅读器里同时出现「底部页签回首页」与「右上角 ✕」，
       // 两个出口语义重叠，✕ 还比全站的箭头多长了一个形状。
-      right =
-        '<button type="button" class="top-act" id="top-act">' +
-        '<span class="top-act-icon" aria-hidden="true">' + GLYPHS.back + "</span>" +
-        '<span class="sr-only">' + action.label + "</span></button>";
-    } else {
-      // 页面顶部那条顶栏：右侧簇 = （首页无返回键）返回键 + 头像。
-      var leftOfCluster = "";
       if (action) {
-        // 页面自己挂的动作（课外阅读入口页「就地叠层」时用）→ 撤回上一层
         leftOfCluster =
           '<button type="button" class="top-act" id="top-act">' +
           '<span class="top-act-icon" aria-hidden="true">' + GLYPHS.back + "</span>" +
           '<span class="sr-only">' + action.label + "</span></button>";
-      } else if (key !== "home") {
-        // 子页面（小古文、设置、法务页）—— 同一颗「返回」，指向 pageBackHref()。
-        // 返回键统一由这里渲染，各页不要自造一颗：曾出现「页面自己手写返回、
-        // 与重建后的顶栏同时冒出来」的问题。文案只给读屏软件，可见的只有一个箭头。
-        leftOfCluster =
-          '<a class="top-act" id="top-back" href="' + pageBackHref() + '"' +
-          ' title="返回" aria-label="返回">' +
-          '<span class="top-act-icon" aria-hidden="true">' + GLYPHS.back + "</span></a>";
       }
-      // 首页右上角不再放设置齿轮：底部最后一个页签就是「设置」，
-      // 两个入口指向同一面板，右上角那个纯属重复。
-      // 但**头像要在**：它正是「导航缺口」的补法 —— 四页签根页（首页/课外/
-      // 搜索/设置）本来右上角就是空占位，把占位换成头像，不新增任何宽度。
-      right = (leftOfCluster || "") + userAvatarHtml();
+    } else if (pageActionHeld) {
+      // 这一页有「就地叠层」的动作，但此刻动作位归阅读器那一层
+      // （阅读器开着，事务栈的栈顶是「合上」）—— **既不该画动作键、
+      // 也不该落回默认的「回首页」**：那一颗在索引层上是错的落点
+      // （点它跳首页）。留空槽，保持两栏对齐，也免得阅读器关掉时左右跳一下。
+      // ⚠️ 槽还在（`.top-slot` 由下面的模板统一给），只是里头没有键 ——
+      //    这正是「返回键的位置与有没有返回键无关」的另一半。
+    } else if (action) {
+      // 页面自己挂的动作（课外阅读入口页「就地叠层」时用）→ 撤回上一层
+      leftOfCluster =
+        '<button type="button" class="top-act" id="top-act">' +
+        '<span class="top-act-icon" aria-hidden="true">' + GLYPHS.back + "</span>" +
+        '<span class="sr-only">' + action.label + "</span></button>";
+    } else if (!isReader && key !== "home") {
+      // 子页面（搜索、小古文、设置、法务页）—— 同一颗「返回」，指向 pageBackHref()。
+      // 返回键统一由这里渲染，各页不要自造一颗：曾出现「页面自己手写返回、
+      // 与重建后的顶栏同时冒出来」的问题。文案只给读屏软件，可见的只有一个箭头。
+      leftOfCluster =
+        '<a class="top-act" id="top-back" href="' + pageBackHref() + '"' +
+        ' title="返回" aria-label="返回">' +
+        '<span class="top-act-icon" aria-hidden="true">' + GLYPHS.back + "</span></a>";
     }
+
+    // 右侧簇 = 〔返回槽〕+ 恒定锚点。
+    //   · 页面那条顶栏的锚点是**头像**（点它看自己，靠肌肉记忆，一像素都不许动）；
+    //   · 阅读器那条的锚点是**这一册的印**（同上一个宽度，让返回键原地不动）。
+    // 首页右上角不再放设置齿轮：底部最后一个页签就是「设置」，
+    // 两个入口指向同一面板，右上角那个纯属重复。首页也不放返回键（没有上一层），
+    // 槽留空 —— 头像仍在最右，四个页签根页的顶栏右端因此完全一致。
+    var anchor = isReader
+      ? '<span class="top-slot-mark" aria-hidden="true">' + GLYPHS.reader + "</span>"
+      : userAvatarHtml();
+    right =
+      '<span class="top-slot">' + leftOfCluster + "</span>" + anchor;
 
     // 品牌：徽标 + 「跬步 · 当前页名」——同一行、同一字体，读起来是一句话
     // 页面名由页面用 data-page 给出（首页由 app.js 写成「XX的古诗词」）
@@ -371,15 +409,15 @@
   /**
    * 右侧簇里**最靠左**的那一颗（页面小件要插在它左边）。
    *
-   * 为什么不用「包一层容器」的写法：顶栏右侧簇现在是「返回键 + 头像」两颗，
-   * 首页更是只有头像一颗；包一层 `.top-right` 确实能让锚点恒定，
-   * 但会改掉顶栏的既有结构与 `test/classic.test.js` 里那两条逐项对齐的断言
-   * （「页顶一行依次是 品牌区 · 返回键 · 头像」），
-   * 那是上一轮为「顶栏不换脸」专门立的防线，不该为这件事动它。
-   *
-   * 所以这里只在**插入时**挑那颗最靠左的：候选顺序即视觉顺序 ——
+   * 挑的是右侧簇里**最靠左**的那一颗，候选顺序即视觉顺序 ——
    * 页面动作键 `#top-act` → 返回键 `#top-back` → 头像 `.top-user` → 占位符。
    * 首页没有返回键时，小件就落在头像左边（那也是唯一正确的落点）。
+   *
+   * ⚠️ Issue #147 之后右侧簇已经**整个包在 `.top-slot` 里**
+   * （返回键住一枚 42px 的固定圆槽，头像钉在最右）—— 小件落在槽**左**边，
+   * 即「品牌区 ｜ 小件 ｜ 返回槽 ｜ 头像」，与重排之前的视觉顺序一致。
+   * 这里仍逐个变量找锚点，不直接取 `.top-slot`：万一将来某一处
+   * 不按这个模板渲染（例如别处复用的顶栏），逐个候选仍能找到正确的落点。
    */
   function firstActAnchor(bar) {
     var list = bar.querySelectorAll(".top-act, .top-user, .top-act-spacer");
@@ -419,6 +457,9 @@
         inner = A.html(backing, { cls: "seal-avatar-top" });
       } catch (e) { inner = ""; }
     }
+    // 没有 Avatar 模块时退回不可见占位。宽度走同一条 `--top-slot` 口径
+    // （见 css/style.css），不再单独写一个 42 —— 顶栏右侧的每一件都是
+    // 同一枚圆槽的尺寸，写第二处数字就是下一次走散的种子。
     if (!inner) return '<span class="top-act-spacer" aria-hidden="true"></span>';
     // 骨架是 <a>：一个真实链接（可右键 / 可键盘 / 可读屏），不是「点了没反应」的装饰。
     // 落点是 `/profile/` —— 那一页建好之后，这里就不再退回设置页了：
