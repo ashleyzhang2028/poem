@@ -69,17 +69,22 @@
           </div>
 
           <div class="settings-item">
-            <label for="toggle-sync">跨设备同步</label>
-            <!-- 开关**出厂关着**（用户裁决：默认本地，docs §4.2 第 2 条）。
+            <!-- 跨设备同步：一行「左标签 · 右开关」，说明文字在开关下面一行
+                 （Issue #163：旧版是「U A 方框 + 一个写着关/开 的字」，与全站语言不搭）。
+
+                 开关**出厂关着**（用户裁决：默认本地，docs §4.2 第 2 条）。
                  关掉即完全退回 0 期行为：不发一个请求、不留一处云端痕迹。
                  ⚠️ 它管的是「要不要把进度上传」—— 与「有没有登录」是两件事：
-                    没登录的人这一项按 unavailable 说明，不是按 off。 -->
-            <label class="switch-row">
-              <input id="toggle-sync" class="switch-input" type="checkbox" />
+                    没登录的人这一项按 unavailable 说明，不是按 off。
+                 ⚠️ 标签是显式的 <span>，不用 <label for>：整行已由外层 <label> 包着，
+                    再套一层 for 会让「点一下文字」触发两次 toggle 又立刻翻回去。 -->
+            <label class="switch">
+              <span class="settings-label" id="switch-sync-name">跨设备同步</span>
+              <input id="toggle-sync" class="switch-input" type="checkbox"
+                     role="switch" aria-labelledby="switch-sync-name" />
               <span class="switch-track" aria-hidden="true"></span>
-              <span class="switch-label" id="sync-label">关</span>
             </label>
-            <div class="settings-hint" id="sync-hint"></div>
+            <p class="switch-hint" id="sync-hint"></p>
           </div>
 
           <div class="settings-item">

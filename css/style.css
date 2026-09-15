@@ -1220,6 +1220,114 @@ textarea:focus {
 .settings-input::placeholder { color: #9c8d7b; }
 .settings-hint { font-size: 11.5px; color: var(--ink-3); margin-top: 6px; }
 
+/* ---------- 开关行（Issue #163 · 跨设备同步那一项） ----------
+   用户原话：「跨设备同步选择框太丑了，改进。」
+
+   旧样子是「<input type=checkbox> + 一个写着「关」/「开」的 <span>」：
+   那颗 13px 的方框沿用浏览器默认外观（白底、灰色勾、圆角 2px），
+   与这一页的纸面 / 描金细线 / 深绿实底是**两套语言**；旁边那颗
+   「关」字还要靠 JS 改写文案来表达状态。一行里横向摊着
+   「方框 + 关 + 说明」，开关到底在哪儿要读两遍才认得出。
+
+   新样子：一行「左标签 · 右开关」的整行控件。
+     · 开关本体 40×24 的胶囊轨道 + 18px 圆滑块，选中 = 深天青实底
+       + 米白滑块 + 描金内边（与全站「选中」同一套：实底 + 米白 + 金线）
+     · 关着 = 纸底 + 界行描边 + 淡墨滑块，一眼区分「没开」与「开着」
+     · 说明文字挪到开关**下面**单独一行（.switch-hint）：开关是主控件，
+       一行字是它的注脚，不该与控件并排抢注意力
+   ⚠️ 外观全用 `appearance: none` 自己画，不再吃 UA 默认样式 ——
+      否则 iOS Safari 又会给出一颗圆角方框，与安卓又是两样。
+   ⚠️ 尺寸只此一份（40 / 24 / 18）：将来别处在卡片标题里再放一颗，
+      要么复用 .switch，要么一起改这三个值，不许另抄一套。
+   ⚠️ 事件照旧走 input 的 change（label 包着 input，点轨道 = 点 input），
+      JS 那侧一行都不用改。 */
+.switch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  /* 整行都是热区：点文字也能开（label 包着 input 的原生行为） */
+  cursor: pointer;
+  /* 触屏上指肚按得着（与 .ghost-btn 同一档的最小高度） */
+  min-height: 32px;
+  -webkit-tap-highlight-color: transparent;
+}
+/* 开关所在的那一侧不参与收缩：窄屏时先收文字，别把开关挤变形 */
+.switch > input { flex: none; }
+/* 左侧的项名：字号 / 颜色与页面上其他项名（.settings-item > label）逐字一致，
+   否则同一页里会出现「有的项名 13.5px、有的 14px」那种看着说不出哪不对的偏差 */
+.settings-label {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--ink-2);
+  min-width: 0;
+}
+
+/* 轨道 / 滑块：一颗 <input type=checkbox class=switch-input> 自己画出来。
+   ⚠️ 用 `+ span.switch-track` 的兄弟选择器找轨道，不用 :has() ——
+      :has() 在老的安卓 WebView 上会静默失效，失效后开关就变成一块空轨。 */
+.switch-input {
+  appearance: none;
+  -webkit-appearance: none;
+  /* 定宽定高 + 0 内边距：滑块的位置按这三个值算，别让 UA 的内边距插一脚 */
+  box-sizing: border-box;
+  flex: none;
+  width: 40px;
+  height: 24px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  position: relative;
+  cursor: pointer;
+  /* 240ms 与 .seg / .chips 的选中过渡同一档：整页的动效不该有两种速度 */
+  transition: background .2s ease, border-color .2s ease;
+}
+/* 滑块：18px 圆 + 左 2px 的起始落点 = 轨道内高 22px 减上下各 2px */
+.switch-track {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--ink-3);
+  transition: transform .2s ease, background .2s ease;
+  pointer-events: none;
+}
+/* 开着：深天青实底 + 米白滑块 + 描金内边（与「年级」「复习算法」的选中是同一句） */
+.switch-input:checked {
+  background: var(--green);
+  border-color: var(--green-dark);
+  box-shadow: inset 0 0 0 1px rgba(240, 205, 124, .42);
+}
+/* 40 - 18 - 2 - 2 - 2（两侧边框）= 16px 的行程 */
+.switch-input:checked + .switch-track {
+  transform: translateX(16px);
+  background: #fdfaf2;
+}
+/* 置灰（服务端未开放同步时）：轨道与滑块一起退到淡墨，且不给 hover 反馈 */
+.switch-input:disabled {
+  cursor: not-allowed;
+  background: var(--card-2);
+  border-color: var(--line-2);
+}
+.switch-input:disabled + .switch-track { background: var(--line); }
+/* 键盘：焦点光晕与全站输入框同一个值（rgba(47, 96, 85, .10)）——
+   ⚠️ 单独写在这一处，因为下面那条全局 `input:focus` 把 checkbox 排除在外了
+      （排除是对的：给复选框套光晕会连着它的方框一起发光）。 */
+.switch-input:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(47, 96, 85, .10);
+}
+.switch-input:checked:focus-visible {
+  box-shadow: inset 0 0 0 1px rgba(240, 205, 124, .42), 0 0 0 3px rgba(47, 96, 85, .10);
+}
+/* 说明文字：开关下面单独一行（旧版是与开关并排、还要兼作「关」/「开」标签） */
+.switch-hint { font-size: 11.5px; color: var(--ink-3); margin-top: 6px; }
+
 /* ---------- 头像印记（Issue #132 · 2026-09-15） ----------
    设置页「用户名」那一行左侧的印 + 下方「头像印记」选择器。
    印本身（.seal-avatar）在文件上半段的顶栏右侧簇那里定义，三处显示共用。

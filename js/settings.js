@@ -970,16 +970,18 @@
    *    `off` / `signin` / `unavailable` 三支各自说清「现在没有上传」——
    *    一句笼统的「已同步」会让人以为自己的进度已经在云上了（docs §1 第 3 条：
    *    不假装）。
+   *
+   * ⚠️ Issue #163 之后**没有「关」/「开」那枚文字标签了**：状态由开关本体表达
+   *    （深天青实底 = 开着、纸底描边 = 关着），一行说明照旧在下面。
+   *    原先那颗文字既要表述状态、又长得像一颗可点的按钮，两处都不清不楚。
    */
   function renderSync() {
     const input = $("#toggle-sync");
-    const label = $("#sync-label");
     const hint = $("#sync-hint");
     if (!input || !hint) return;
     const S = syncMod();
     if (!S) {
       input.disabled = true;
-      if (label) label.textContent = "不可用";
       hint.textContent = "同步层没有加载成功，请刷新页面重试（背诵不受影响）。";
       return;
     }
@@ -987,7 +989,6 @@
     const on = S.enabled();
     input.checked = on;
     input.disabled = (st === "unavailable");
-    if (label) label.textContent = st === "unavailable" ? "未开放" : (on ? "开" : "关");
 
     if (st === "unavailable") {
       hint.textContent = "本站未开放同步，进度只存本机。";

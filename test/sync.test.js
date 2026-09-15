@@ -23,6 +23,13 @@ const fs = require("fs");
 
 const ROOT = path.join(__dirname, "..");
 
+/** style.css 去注释版：下面判「开关长什么样」用的是规则正文，
+    注释里会写历史值（比如旧版的 13px 方框），不剥掉会对着说明判红 */
+const cssCode = ["css/style.css", "css/account.css"]
+  .map(f => fs.readFileSync(path.join(ROOT, f), "utf8"))
+  .join("\n")
+  .replace(/\/\*[\s\S]*?\*\//g, " ");
+
 /* ------------------------------------------------------------------ 断言 */
 
 let fails = 0;
@@ -693,7 +700,7 @@ async function main() {
     const sw = fs.readFileSync(path.join(ROOT, "sw.js"), "utf8");
     chk(/js\/sync-store\.js/.test(sw), "sw.js 预缓存含 js/sync-store.js（断网也要能同步）");
     const vm = sw.match(/poem-app-v(\d+)/);
-    chk(!!vm && Number(vm[1]) >= 121, "sw.js 缓存版本提到 v121 以上（实际 " + (vm && vm[1]) + "）");
+    chk(!!vm && Number(vm[1]) >= 128, "sw.js 缓存版本提到 v128 以上（实际 " + (vm && vm[1]) + "）");
 
     // 设置页必须有开关，个人中心必须有冲突面板
     const gen = fs.readFileSync(path.join(ROOT, "settings/general/index.html"), "utf8");
@@ -784,7 +791,19 @@ async function main() {
     chk(!!input, "设置 · 通用里有同步开关那颗控件");
     eq(input.checked, false, "打开页面时开关是**关着的**（出厂状态）");
     eq(input.disabled, false, "服务端可用时开关点得动（不是灰的）");
-    eq(w.document.getElementById("sync-label").textContent, "关", "标签写「关」");
+    /* 开关本体就是状态（Issue #163 起不再有一颗写着「关」/「开」的文字标签）：
+       高对比的深天青实底只属于「开着」，关着必须是纸底 + 描边 ——
+       这一条是「一眼能不能看出开没开」的机器可判版本。 */
+    const trackRule = (cssCode.match(/\.switch-input\s*\{[^}]*\}/) || [""])[0];
+    const onRule = (cssCode.match(/\.switch-input:checked\s*\{[^}]*\}/) || [""])[0];
+    chk(/border-radius:\s*999px/.test(trackRule), "开关是胶囊轨道（不是方框）");
+    chk(/background:\s*var\(--card\)/.test(trackRule), "关着时是纸底（不是浏览器默认的白底方框）");
+    chk(/background:\s*var\(--green\)/.test(onRule), "开着时是深天青实底（与全站选中态同一个色）");
+    chk(/appearance:\s*none/.test(trackRule), "外观自绘（appearance:none），不吃各浏览器默认样式");
+    eq(!!w.document.getElementById("sync-label"), false,
+      "旧的「关」/「开」文字标签已经拿掉（状态改由开关本体表达）");
+    chk(!!w.document.querySelector(".switch .switch-track"),
+      "开关自带一条轨道（滑块由它画，不是 UA 的勾）");
     ok(/只存本机/.test(w.document.getElementById("sync-hint").textContent),
       "关着时如实说「进度只存本机，不上传」");
 
@@ -792,7 +811,6 @@ async function main() {
     input.checked = true;
     input.dispatchEvent(new w.Event("change", { bubbles: true }));
     await new Promise(r => setTimeout(r, 20));
-    eq(w.document.getElementById("sync-label").textContent, "开", "打开后标签写「开」");
     chk(!!w.localStorage.getItem("poem_sync_pref_v1"), "开关落了盘");
     eq(JSON.parse(w.localStorage.getItem("poem_sync_pref_v1")).enabled, true, "落盘的是 enabled:true");
     ok(/同步到服务器/.test(w.document.getElementById("sync-hint").textContent),
@@ -830,6 +848,25 @@ async function main() {
     ok(/快照/.test(lead), "面板里写明「保留账号」之前会留快照（后悔药先说清）");
     eq((w3.document.getElementById("sync-state") || {}).textContent, "需要你选一下",
       "状态如实写「需要你选一下」，不写「已同步」");
+
+    /* 个人中心那行「开关」是**只读回显**：文字换成了一枚药丸，
+       但读出来仍是「开」/「关」两个字，且**不许**变成能点的控件
+       （开关本体只有设置 · 通用里那一颗 —— 两个入口会各说各话）。 */
+    const pillOff = w3.document.getElementById("sync-switch");
+    chk(!!pillOff && /tier-badge/.test(pillOff.className),
+      "个人中心的「开 / 关」是一枚药丸（不再是裸文字，Issue #163）");
+    chk(!!pillOff && (pillOff.textContent === "开" || pillOff.textContent === "关"),
+      "那枚药丸读出来仍是「开」/「关」两个字（没说别的话）");
+    chk(!!pillOff && !/input|button/i.test(pillOff.tagName),
+      "它是只读回显（span），不是第二个开关 —— 开关本体只在设置 · 通用里");
+    /* 「开着」与「关着」必须是两种样子：实底药丸只属于开着那一种，
+       否则用户扫一眼看不出开没开，与旧版那颗写着「关」的字是同一种毛病 */
+    const onPillCss = (() => {
+      const m = /(\.tier-badge\.on\s*\{[^}]*\})/.exec(cssCode);
+      return m ? m[1] : "";
+    })();
+    chk(/background:\s*var\(--green\)/.test(onPillCss),
+      "「开」那枚药丸是深天青实底（与设置页开关的选中态同一句：实底 = 开着）");
 
     /* 没有冲突的人**不该看到一个空面板** */
     const w4 = await page("profile", {});

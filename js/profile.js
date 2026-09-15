@@ -463,11 +463,18 @@
       : st === "signin" ? "等登录"
       : "开启中";
 
+    /* 「开 / 关」用与层级徽章同一枚药丸（.tier-badge）：这里是**只读回显**，
+       不是开关本体（开关在设置 · 通用里，这里连点都不给点）。
+       ⚠️ 开着才用深天青那枚 —— 与设置页开关的选中色同一句「实底 = 开着」，
+          两处说的是同一件事，不该一处绿一处灰。 */
+    var swPill = on
+      ? '<span class="tier-badge on" id="sync-switch">开</span>'
+      : '<span class="tier-badge" id="sync-switch">关</span>';
     list.innerHTML =
       '<div class="kv-row"><span class="kv-k">状态</span>' +
       '<span class="kv-v" id="sync-state">' + esc(stateText) + "</span></div>" +
       '<div class="kv-row"><span class="kv-k">开关</span>' +
-      '<span class="kv-v" id="sync-switch">' + (on ? "开" : "关") + "</span></div>";
+      '<span class="kv-v">' + swPill + "</span></div>";
 
     if (hint) {
       hint.textContent = n
