@@ -82,8 +82,29 @@
         <button class="account-btn ghost" id="btn-sign-out" type="button">退出登录</button>
         <p class="account-hint">
           退出只结束这次登录，<strong>不会删掉任何背诵进度</strong>。
-          账号与进度一样只存在本机，不上传、不云同步。
+          注销账号在下面的「危险区」，同样不删进度。
         </p>
+      </section>
+
+      <!-- ---------- 四之二、同步：状态 + 需要用户裁决的冲突 ----------
+             同步的开关在「设置 · 通用」里（那是「调机器」的地方）；
+             这里只回答两件事：现在同步到哪一步了、有没有要你选的。 -->
+      <section class="account-card" id="sync-card">
+        <h2 class="account-card-title">跨设备同步</h2>
+        <div class="kv-list" id="sync-list"></div>
+        <!-- 冲突面板：**只在真的判不出来源时出现**（docs §4.4 D 项）。
+             默认隐藏，不给没有冲突的人看一个空面板。 -->
+        <div id="sync-conflict" hidden>
+          <p class="account-hint" id="conflict-lead"></p>
+          <div class="settings-btns">
+            <button class="account-btn" id="btn-keep-local" type="button">保留本机</button>
+            <button class="account-btn ghost" id="btn-keep-remote" type="button">保留账号</button>
+            <button class="account-btn ghost" id="btn-export-first" type="button">先导出再决定</button>
+          </div>
+          <p class="account-msg" id="msg-conflict"></p>
+        </div>
+        <button class="account-btn ghost" id="btn-go-sync" type="button">去设置里开关同步</button>
+        <p class="account-hint" id="sync-hint"></p>
       </section>
 
       <!-- ---------- 五、权限：能用的打勾、不能用的写门槛 ----------
@@ -158,6 +179,10 @@
   <script src="/js/entitlement.js"></script>
   <!-- 分域引擎（Issue #132 阶段 0）：本机数据概览读的就是它。须排在 js/storage.js 之前。 -->
   <script src="/js/progress-store.js"></script>
+  <!-- 同步层（Issue #132 · 1B）：进度 / 账号域设置 / 已读的跨设备同步。
+       必须在 js/storage.js 之前 —— 它要给每条记录打标（云端谁更新），
+       而页面只认识 Storage / ProgressStore 这两个入口。 -->
+  <script src="/js/sync-store.js"></script>
   <script src="/js/storage.js"></script>
   <script src="/js/scheduler.js"></script>
   <script src="/data/poems-1.js"></script>

@@ -25,6 +25,15 @@
     return typeof window !== "undefined" ? window.ProgressStore : null;
   }
 
+  /**
+   * 取同步层（1B）。缺席时返回 null，`set` 就走 0 期的老路 ——
+   * 老缓存里的旧页面（没加载 sync-store.js）照样能正常背书。
+   */
+  function Sync() {
+    return typeof window !== "undefined" && window.SyncStore && window.SyncStore.touch
+      ? window.SyncStore : null;
+  }
+
   /** 引擎缺席时的兜底：读一个原始值 */
   function read(key, fallback) {
     try {
@@ -42,8 +51,21 @@
       return ps ? ps.get(id) : (read("poem_recite_progress_v1", {})[id] || null);
     },
 
-    /** 写入单首诗进度 */
+    /**
+     * 写入单首诗进度。
+     *
+     * ⚠️ 这里调的是 `SyncStore.touch()`（同步开着时）——**它会顺手盖 `updatedAt`**，
+     *    那是跨设备同步唯一的记账字段。收在这一层而不是各调用点：
+     *    写进度的路径有首页答题、自选集合、集子页已读三类，
+     *    分别打标必然漏一处，而漏的那一处表现是「那一篇永远同步不上去」——
+     *    不报错、只是安静地不同步，最难查。
+     *    同步**关着**时 `touch` 原样落盘、一个字段都不多 ——
+     *    盘上形状与 0 期逐字一致（契约见 progress-store.js），
+     *    于是「我不开同步」这件事在数据上也是干净的。
+     */
     set: function (id, rec) {
+      var sy = Sync();
+      if (sy) return sy.touch(id, rec);        // touch 内部按开关判：关着就原样落盘
       var ps = PS();
       if (ps) return ps.set(id, rec);
       var all = read("poem_recite_progress_v1", {});
@@ -53,6 +75,12 @@
 
     /** 批量写入 */
     setMany: function (list) {
+      var sy = Sync();
+      if (sy) {
+        var okAll = true;
+        (list || []).forEach(function (item) { okAll = sy.touch(item.id, item.rec) && okAll; });
+        return okAll;
+      }
       var ps = PS();
       if (ps) return ps.setMany(list);
       var all = read("poem_recite_progress_v1", {});

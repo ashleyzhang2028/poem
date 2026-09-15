@@ -303,12 +303,15 @@ setTimeout(() => {
   chk(grpOf(sreader, '#seg-play') === '朗读播放', '连读档位归到「朗读播放」组');
   chk(grpOf(srecite, '#seg-algo') === '复习算法', '复习算法选择归到「复习算法」组');
   // 只给背诵用的选项不能再出现在「通用」组里（这才是这次需求的重点）
-  // 「通用」组的四项：用户名 / 头像印记 / 账号 / 数据管理（Issue #132 · 2026-09-15
-  // 用户名旁多了头像印记、2026-09-15 二级页又补上「账号」—— 它们都是账号域的身份设置）。
+  // 「通用」组的五项：用户名 / 头像印记 / 账号 / 跨设备同步 / 数据管理
+  // （Issue #132 · 用户名旁多了头像印记、二级页补上「账号」、1B 又补上同步开关 ——
+  //  它们都是账号域的身份与数据设置）。
   // 这里守的仍是原来那条重点：**只给背诵用的选项不许混进「通用」**。
   const generalItems = sgeneral.querySelector('#settings-page .settings-group').querySelectorAll('.settings-item');
-  chk(generalItems.length === 4,
-    '「通用」组只有用户名 / 头像印记 / 账号 / 数据管理四项（实际 ' + generalItems.length + '）');
+  chk(generalItems.length === 5,
+    '「通用」组是用户名 / 头像印记 / 账号 / 跨设备同步 / 数据管理五项（实际 ' + generalItems.length + '）');
+  chk(!!sgeneral.querySelector('#toggle-sync'),
+    '「通用」里有跨设备同步开关（用户有权拒绝上传，默认关着 —— docs §4.2 第 2 条）');
   chk(!!sgeneral.querySelector('#seal-chars') && !!sgeneral.querySelector('#seal-inks'),
     '头像印记的字集与印色选择器都在「通用」组里');
   chk(grpOf(sgeneral, '#seal-chars') === '通用' && grpOf(sgeneral, '#btn-seal-reset') === '通用',

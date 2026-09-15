@@ -316,6 +316,15 @@
 
     /* 进度域 */
     get: function (id) { return allProgress()[id] || null; },
+    /**
+     * 写一条进度。**盘上形状与 0 期逐字一致**：写进去什么就读出什么。
+     *
+     * ⚠️ 跨设备同步的记账字段 `updatedAt` **不在这里盖** —— 盖在这里会让
+     *    「盘上形状 `{id: rec}` 平铺、三处老断言直接读字符串原文」这条契约作废
+     *    （`test/progress-store.test.js` 有两条硬断言逐字比对的）。
+     *    它由同步层自己的入口 `SyncStore.touch(id, rec)` 打标，页面调那个。
+     *    收在同步层还有一个好处：关掉同步时，盘上一个多余字段都不会多出来。
+     */
     set: function (id, rec) { var m = allProgress(); m[id] = rec; return saveProgress(m); },
     setMany: function (list) {
       var m = allProgress();
@@ -324,6 +333,7 @@
     },
     all: allProgress,
     remove: function (id) { var m = allProgress(); delete m[id]; return saveProgress(m); },
+    /** 整份替换（拉取 / 导入用）：**不盖时间戳** —— 那些时间戳是云端给的 */
     replaceAll: saveProgress,
     pruneUnknown: pruneUnknown,
     clearProgress: clearProgress,

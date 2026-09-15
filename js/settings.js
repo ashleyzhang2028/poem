@@ -218,6 +218,7 @@
 
     renderAvatar();
     renderAccount();
+    renderSync();
     renderAlgos();
     renderPlayModes();
     renderCollections();
@@ -897,10 +898,10 @@
       box.innerHTML =
         '<p class="account-line"><span class="account-state" id="account-state">未登录</span>' +
         "（游客）" + badge + "</p>" +
-        '<p class="settings-hint">不登录也能用全部功能；账号只影响「语音朗读」与将来的同步。' +
+        '<p class="settings-hint">不登录也能用全部功能；账号只影响「语音朗读」与跨设备同步。' +
         "语音朗读登录后即可用，免费。</p>" +
         '<div class="settings-btns"><a class="btn ghost-btn" id="btn-gologin" href="/login/">用邮箱登录</a></div>' +
-        '<p class="settings-hint">本机账号与学习进度一样<strong>只存在本机</strong>，不上传、不云同步。</p>';
+        '<p class="settings-hint">没登录时学习进度<strong>只存在本机</strong>，不上传、不云同步。</p>';
       return;
     }
 
@@ -921,7 +922,7 @@
       '<a class="btn ghost-btn" id="btn-goprofile" href="/profile/">个人中心</a>' +
       '<button class="btn ghost-btn" id="btn-signout" type="button">退出登录</button></div>' +
       '<p class="settings-hint">退出只结束这次登录，不会删掉任何背诵进度。' +
-      "本机账号与进度一样只存在本机，不上传、不云同步；注销账号在个人中心里做。</p>";
+      "注销账号在个人中心里做。</p>";
   }
 
   /** 「退出登录」：只清会话，不碰进度 */
@@ -931,11 +932,94 @@
     btn.addEventListener("click", function () {
       if (!window.confirm("退出登录？背诵进度不会受影响。")) return;
       const A = authMod();
+      const S = syncMod();
       try {
         if (A && A.makeStore) A.signOut(A.makeStore(window.localStorage));
       } catch (e) { /* 存储不可用：至少把界面还原成未登录 */ }
+      /* 清掉同步的记账（见过的云端时间戳）—— 那是「这次登录」的上下文。
+         但**绝不动进度数据**，也**不改开关**：用户关掉同步的意愿与登录状态无关。 */
+      try { if (S) S.forget(); } catch (e) { /* 同上 */ }
       renderAccount();
+      renderSync();
       showToast("已退出登录，进度都还在这台设备上");
+    });
+  }
+
+  function syncMod() { return window.SyncStore || null; }
+
+  /**
+   * 画「跨设备同步」那一项。**四种状态各说各的话**（`SyncStore.status()`）：
+   *
+   *   off        开关关着（出厂状态）—— 这一项可点，能开
+   *   signin     开关开着但没登录 —— 开关可点，但说明「要登录才能同步」
+   *   unavailable 本站还没开放云端同步（服务端没配好）—— 开关置灰，如实说明
+   *   ready      可以同步 —— 开关可点，说明「本机那份始终完整」
+   *
+   * ⚠️ 四种状态里，**只有真的在同步（ready + 开启）那一支**才说「会上传到服务器」；
+   *    `off` / `signin` / `unavailable` 三支各自说清「现在没有上传」——
+   *    一句笼统的「已同步」会让人以为自己的进度已经在云上了（docs §1 第 3 条：
+   *    不假装）。
+   */
+  function renderSync() {
+    const input = $("#toggle-sync");
+    const label = $("#sync-label");
+    const hint = $("#sync-hint");
+    if (!input || !hint) return;
+    const S = syncMod();
+    if (!S) {
+      input.disabled = true;
+      if (label) label.textContent = "不可用";
+      hint.textContent = "同步层没有加载成功，请刷新页面重试（背诵不受影响）。";
+      return;
+    }
+    const st = S.status();
+    const on = S.enabled();
+    input.checked = on;
+    input.disabled = (st === "unavailable");
+    if (label) label.textContent = st === "unavailable" ? "未开放" : (on ? "开" : "关");
+
+    if (st === "unavailable") {
+      hint.textContent = "本站还没有开放云端同步（服务端未配置）。学习进度始终只存在本机。";
+      return;
+    }
+    if (!on) {
+      hint.textContent = "关闭中：学习进度只存在本机，不上传、不跨设备。" +
+        (st === "signin" ? "想跨设备同步请先登录。" : "");
+      return;
+    }
+    if (st === "signin") {
+      hint.textContent = "已开启，但还没登录 —— 登录后才会真的同步。";
+      return;
+    }
+    hint.textContent = "开启中：账号域的进度与设置会同步到服务器，可随时关掉。" +
+      "本机那份始终是完整的一份，断网照常背。设备上的阅读偏好（字号、注音、连读）不上传。";
+  }
+
+  /** 开 / 关同步：**关掉只停上传**，绝不删本机数据 */
+  function bindSync() {
+    const input = $("#toggle-sync");
+    if (!input) return;
+    input.addEventListener("change", function () {
+      const S = syncMod();
+      if (!S) return;
+      const ok = S.setEnabled(input.checked);
+      if (!ok) {
+        input.checked = !input.checked;
+        showToast("浏览器不允许保存设置，这次改动没生效");
+        return;
+      }
+      renderSync();
+      renderAccount();
+      if (input.checked) {
+        // 开启那一刻就跑一轮：用户点了开关却要等下一次打开页面才同步，会以为坏了
+        try {
+          const r = S.firstSync();
+          if (r && r.then) r.then(function () { renderSync(); }, function () { /* 静默 */ });
+        } catch (e) { /* 静默 */ }
+        showToast(S.status() === "signin" ? "已开启，登录后才会真的同步" : "已开启跨设备同步");
+      } else {
+        showToast("已关闭同步，进度仍在本机");
+      }
     });
   }
 
@@ -1186,6 +1270,7 @@
     bindCollections();
     bindSealPicker();
     bindAccount();
+    bindSync();
     // 另一个标签页改了播放档位（集子页那颗圆键）时，本页单选项跟着变 ——
     // storage 事件只在「别的标签页」触发，正是这里需要的方向。
     window.addEventListener("storage", function (e) {

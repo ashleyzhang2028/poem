@@ -69,6 +69,20 @@
           </div>
 
           <div class="settings-item">
+            <label for="toggle-sync">跨设备同步</label>
+            <!-- 开关**出厂关着**（用户裁决：默认本地，docs §4.2 第 2 条）。
+                 关掉即完全退回 0 期行为：不发一个请求、不留一处云端痕迹。
+                 ⚠️ 它管的是「要不要把进度上传」—— 与「有没有登录」是两件事：
+                    没登录的人这一项按 unavailable 说明，不是按 off。 -->
+            <label class="switch-row">
+              <input id="toggle-sync" class="switch-input" type="checkbox" />
+              <span class="switch-track" aria-hidden="true"></span>
+              <span class="switch-label" id="sync-label">关</span>
+            </label>
+            <div class="settings-hint" id="sync-hint"></div>
+          </div>
+
+          <div class="settings-item">
             <label>数据管理</label>
             <div class="settings-btns">
               <button class="btn ghost-btn" id="btn-export">导出备份</button>
@@ -134,6 +148,10 @@
   <!-- 分域引擎（Issue #132 阶段 0）：进度 / 账号 / 设备三域的唯一一份定义，
        设置页的读法由 js/storage.js 转发。**必须排在 js/storage.js 之前**。 -->
   <script src="/js/progress-store.js"></script>
+  <!-- 同步层（Issue #132 · 1B）：进度 / 账号域设置 / 已读的跨设备同步。
+       必须在 js/storage.js 之前 —— 它要给每条记录打标（云端谁更新），
+       而页面只认识 Storage / ProgressStore 这两个入口。 -->
+  <script src="/js/sync-store.js"></script>
   <script src="/js/storage.js"></script>
   <script src="/js/scheduler.js"></script>
   <script src="/js/manifest-loader.js"></script>
