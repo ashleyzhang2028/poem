@@ -150,12 +150,19 @@ setTimeout(() => {
   chk(B.querySelectorAll('.item').length === 4, '清空搜索后乙集恢复全部 4 篇');
 
   // 已读键各存各的：给甲集点一篇已读，乙集的计数不该动。
-  // Issue #147 起引擎不再往「挂载点里的那枚 [data-gw=count]」写数 ——
-  // 读数跟着**详情页状态栏**（.rd-count）走，所以这里验的是两件事：
-  //   ① 挂载点里那枚旧占位不会被写（页顶不再有读数）；
-  //   ② 打开甲集一篇、点「标记已读」，只有甲集自己那份状态栏的数会动。
+  // Issue #147 起引擎不再往「挂载点里的那枚 [data-gw=count]」写数，其后追加一轮
+  // 连详情页状态栏那一枚 .rd-count 也撤了 —— 引擎如今**一处读数都不报**。
+  // 所以这里验的是：挂载点里那枚旧占位不会被写，且打开一篇后状态栏里也没有读数。
   const beforeB = w.document.querySelector('#rootB [data-gw="count"]').textContent;
   chk(beforeB === '', '引擎不再往挂载点里那枚 [data-gw=count] 写数（页顶那一枚已撤）');
+  // 详情页状态栏里也一个读数都没有（Issue #147 追加一轮）：打开甲集一篇，
+  // 引擎往真页面的 #rd-meta 里写的应当只有「朝代 · 作者 · 出处 · 选本」这些标签。
+  b.open(w.POEMS_CLASSIC[6].id);
+  const metaText = w.document.querySelector('#rd-meta').textContent;
+  chk(metaText.length > 0 && !/\d\s*\/\s*\d+\s*(篇|首)/.test(metaText),
+    '详情页状态栏里没有「N / M 篇」这类读数，只剩朝代 / 作者 / 出处（实际「' + metaText + '」）');
+  chk(w.document.querySelectorAll('#rd-meta .rd-count').length === 0,
+    '状态栏里连 .rd-count 这个节点都不再产生（不是「有节点但空着」）');
 
   // 引擎对外只暴露一份实例清单，mount 的返回值可用
   chk(typeof a.total === 'function' && a.total() === 6, 'mount 返回的实例带本集子自己的 total()');

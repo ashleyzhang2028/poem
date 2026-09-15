@@ -116,7 +116,9 @@ setTimeout(() => {
   //   将 0 / 283 首 挪到详情页的 宋 张先《宋词三百首》的后面，同一行」。
   // 于是：
   //   · 页顶那一行**一个读数都没有**（原先挂在品牌区与返回键之间的 .count-badge 已撤）；
-  //   · 详情页状态栏（.rd-meta：朝代 · 作者 · 出处）末尾多一枚 .rd-count。
+  //   · 详情页状态栏（.rd-meta：朝代 · 作者 · 出处）里同样一枚读数都没有 ——
+  //     上一轮挪进状态栏的那一枚 .rd-count，这一轮按用户的追加要求也撤了
+  //     （「删除所有详情页中的 0 / 167 篇及类似的」，见 Issue #147 两轮口径）。
   const clsCss = fs.readFileSync(path + 'css/classic.css', 'utf8');
   chk(d.querySelector('.list-head') === null, '内容区不再有单独的进度行（.list-head 已删除）');
   chk(!/list-head/.test(clsCss), 'CSS 里也不留 .list-head 僵尸样式');
@@ -173,14 +175,13 @@ setTimeout(() => {
   };
   const rBar = openReaderBar();
   chk(!!rBar, '阅读器里有自己的 .topbar（同一套结构）');
-  // 详情页状态栏：朝代 · 作者 · 出处 · 已读进度，**同一行**
+  // 详情页状态栏：朝代 · 作者 · 出处 · 选本，**只有标签、没有读数**（Issue #147 追加一轮）
   const rMeta = d.querySelector('#rd-meta');
-  const rdCount = rMeta.querySelector('.rd-count');
-  chk(!!rdCount, '详情页状态栏里有已读进度 .rd-count（Issue #147 挪进来的那一枚）');
-  chk(rdCount && rdCount.textContent === '0 / 100 篇',
-    '这一枚报的是「已读 / 总数 篇」：' + (rdCount ? rdCount.textContent : '无'));
-  chk(!!rdCount && rdCount.parentElement === rMeta,
-    '它与朝代 / 作者 / 出处同处一行（.rd-meta 的直接子元素，不是另起一行）');
+  chk(rMeta.querySelectorAll('.rd-count').length === 0,
+    '详情页状态栏里不再有已读读数 .rd-count（实际 ' +
+    rMeta.querySelectorAll('.rd-count').length + ' 枚）');
+  chk(!/\d\s*\/\s*\d+\s*(篇|首)/.test(rMeta.textContent),
+    '状态栏整行不含「N / M 篇」这类读数（实际「' + rMeta.textContent + '」）');
   chk(!!rMeta.querySelector('.tag') && rMeta.textContent.indexOf('王应麟') >= 0,
     '同一行里朝代 / 作者 / 出处都还在（实际「' + rMeta.textContent + '」）');
   // ⚠️ 阅读器那条顶栏**没有头像**：阅读器是全屏沉浸层，身份入口不在正文上出现
@@ -255,6 +256,11 @@ setTimeout(() => {
     '顶栏 flex 垂直居中（徽标 / 页名 / 副标题 / 返回键同一条中轴）');
   chk(!/\.topbar-with-count/.test(clsCss) && !/\.count-badge/.test(clsCss),
     '样式表里不再留 .topbar-with-count / .count-badge 这一套页顶读数样式');
+  // ⚠️ 判据要写成「不再有 .rd-count 的**规则**」而不是「不再出现 .rd-count 这几个字」：
+  //    上面那段注释里正解释着「为什么这一枚撤了」，注释里提到类名是应当的，
+  //    拿 s.indexOf 去卡就把注释也一起卡死了 —— 那会逼着下一个人删掉解释。
+  chk(!/\.rd-count\s*[,{]/.test(clsCss),
+    '样式表里不再留 .rd-count 规则（详情页那一枚读数已撤，留着只会让人以为还有一处读数）');
   chk(d.querySelectorAll('#gw-list .group-head').length >= 6, '按主题显示分组标题（' + d.querySelectorAll('#gw-list .group-head').length + ' 个）');
 
   // 需求（Issue #69 本轮）：每个分组右侧那颗播放键改成**组合播放键** ——
@@ -927,13 +933,13 @@ setTimeout(() => {
   d.querySelector('#gw-done').dispatchEvent(new window.Event('click', { bubbles: true }));
   chk(/已读，再点一次取消/.test(d.querySelector('#gw-done-text').textContent), '标记后读屏文案变为「已读，再点一次取消」');
   chk(d.querySelector('#gw-done').classList.contains('is-done'), '标记已读按钮进入高亮态');
-  chk(d.querySelector('#rd-meta .rd-count').textContent === '1 / 100 篇',
-    '已读后详情页状态栏那一枚数跟着 +1（读数与「标记已读」同一处口径）');
+  chk(d.querySelectorAll('#rd-meta .rd-count').length === 0,
+    '点「标记已读」之后详情页状态栏仍无读数（那一枚已整段撤除，不留死节点）');
   const store = JSON.parse(window.localStorage.getItem('poem_classic_read_v1'));
   chk(store['gw-17'] && store['gw-17'].read === true, '已读状态写入 localStorage（独立于古诗词进度）');
   chk(!window.localStorage.getItem('poem_recite_progress_v1'), '不会写古诗词进度 key，两边互不干扰');
-  chk(d.querySelector('#rd-meta .rd-count').textContent === '1 / 100 篇',
-    '状态栏那一枚数就是唯一的一份读数（页顶没有第二份）');
+  chk(!/\d\s*\/\s*\d+\s*(篇|首)/.test(d.querySelector('#rd-meta').textContent),
+    '全站口径：列表页顶栏与详情页状态栏都不报「读了 N / M」（读了多少看列表的已读标记）');
 
   // 返回列表：阅读器顶栏的动作位由全站渲染，测试里直接调 closeReader 的入口（点击返回）
   clickReaderBack();
@@ -1139,8 +1145,8 @@ setTimeout(() => {
   d.querySelector('#gw-done').dispatchEvent(new window.Event('click', { bubbles: true }));
   chk(d.querySelector('#gw-done-text').textContent === '标记为已读', '再点一次可取消已读');
   chk(d.querySelector('#gw-done').classList.contains('is-done') === false, '取消后按钮恢复常态');
-  chk(d.querySelector('#rd-meta .rd-count').textContent === '0 / 100 篇',
-    '取消已读后状态栏那一枚数退回 0 / 100 篇');
+  chk(d.querySelectorAll('#rd-meta .rd-count').length === 0,
+    '取消已读后状态栏照旧没有读数（这一枚已撤，取消不再牵动任何数）');
   chk(!JSON.parse(window.localStorage.getItem('poem_classic_read_v1'))['gw-17'], '取消后从存储中移除');
 
   console.log(fails === 0 ? '\n🎉 小古文测试全部通过' : '\n❌ ' + fails + ' 项失败');

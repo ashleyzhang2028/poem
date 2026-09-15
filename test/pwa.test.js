@@ -1039,10 +1039,11 @@ function check(name, cond, extra) {
               barScrollW: bar.scrollWidth,
               actLeft: ar ? +ar.left.toFixed(1) : null,
               actRight: ar ? +ar.right.toFixed(1) : null,
-              countRight: (function () {
-                const c = document.querySelector('#rd-meta .rd-count');
-                return c ? +c.getBoundingClientRect().right.toFixed(1) : null;
+              metaRight: (function () {
+                const m = document.querySelector('#rd-meta');
+                return m ? +m.getBoundingClientRect().right.toFixed(1) : null;
               })(),
+              metaCount: document.querySelectorAll('#rd-meta .rd-count').length,
               labelW: text ? +text.getBoundingClientRect().width.toFixed(1) : null,
               label: text ? text.textContent : '',
               labelEllipsis: text ? getComputedStyle(text).textOverflow : null
@@ -1055,11 +1056,15 @@ function check(name, cond, extra) {
         check('iPhone ' + vw + 'px：' + colLabel + ' 详情页返回键整个落在视口里（不被屏幕裁掉）',
           barState && barState.actRight <= barState.vw + 1 && barState.actLeft >= 0,
           barState ? ('返回键 ' + barState.actLeft + '→' + barState.actRight + ' / 视口 ' + barState.vw) : 'no reader');
-        // Issue #147：详情页顶栏不再挂「第 N / M 篇」那枚牌子，读数落进正文状态栏。
-        // 这里改成量**状态栏那一行**：它整行也必须落在视口里（不能被裁一半）。
-        check('iPhone ' + vw + 'px：' + colLabel + ' 详情页状态栏（含「读了 N / M」）也在视口里',
-          barState && barState.countRight != null && barState.countRight <= barState.vw + 1,
-          barState ? String(barState.countRight) : 'no reader');
+        // Issue #147（两轮）：详情页顶栏那枚「第 N / M 篇」与正文状态栏里那枚
+        // 「读了 N / M」都已撤除。这里量的是**状态栏那一行**本身仍落在视口里
+        //（朝代 · 作者 · 出处 · 选本），并反向守住它里面不再冒出读数。
+        check('iPhone ' + vw + 'px：' + colLabel + ' 详情页状态栏（朝代 / 作者 / 出处）在视口里',
+          barState && barState.metaRight != null && barState.metaRight <= barState.vw + 1,
+          barState ? String(barState.metaRight) : 'no reader');
+        check('iPhone ' + vw + 'px：' + colLabel + ' 详情页状态栏里没有已读读数 .rd-count',
+          !!barState && barState.metaCount === 0,
+          barState ? (barState.metaCount + ' 枚') : 'no reader');
         check('iPhone ' + vw + 'px：' + colLabel + ' 详情页顶栏自己不出现内部横向溢出',
           barState && barState.barScrollW <= barState.barW + 1,
           barState ? (barState.barScrollW + ' / ' + barState.barW) : 'no reader');

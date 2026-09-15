@@ -378,7 +378,7 @@ setTimeout(() => {
   chk(d.querySelectorAll('#gw-list .item-reason.pending').length === 0,
     '列表里也没有「待补」小标');
   chk(d.querySelector('#gw-count') === null,
-    '页顶那一行不再挂已读进度牌（Issue #147：读数挪到详情页状态栏）');
+    '页顶那一行不再挂已读进度牌（Issue #147：读数已撤，页顶与详情页都没有）');
 
   // 挂载点对外接口
   const api = w.ReaderEngine.current;
@@ -400,13 +400,17 @@ setTimeout(() => {
   const title = d.querySelector('#rd-title').textContent;
   chk(title === '郑伯克段于鄢', '可打开指定篇目（gwj-1 → ' + title + '）');
   chk(/左丘明/.test(d.querySelector('#rd-meta').textContent), '阅读器展示了作者');
-  // Issue #147：已读进度与朝代 / 作者 / 出处同行，落在正文状态栏末尾
-  const gwRdCount = d.querySelector('#rd-meta .rd-count');
-  chk(!!gwRdCount && gwRdCount.textContent === '0 / 167 篇',
-    '详情页状态栏里有已读进度且与元信息同一行（实际 ' +
-    (gwRdCount ? gwRdCount.textContent : '无') + '）');
-  chk(!!gwRdCount && gwRdCount.parentElement === d.querySelector('#rd-meta'),
-    '这一枚 .rd-count 是 .rd-meta 的直接子元素（同处一行，不另起一行）');
+  // Issue #147 追加一轮：详情页状态栏里**一枚读数都没有** ——
+  // 用户原话「删除所有详情页中的 0 / 167 篇及类似的」，这一枚 .rd-count 已整段撤除。
+  // 反向守住：状态栏只剩「朝代 · 作者 · 出处 · 选本」四样标签，页顶也没有读数。
+  chk(d.querySelectorAll('#rd-meta .rd-count').length === 0,
+    '详情页状态栏里不再有已读读数 .rd-count（实际 ' +
+    d.querySelectorAll('#rd-meta .rd-count').length + ' 枚）');
+  chk(!/\d\s*\/\s*\d+\s*(篇|首)/.test(d.querySelector('#rd-meta').textContent),
+    '状态栏整行不含「N / M 篇」这类读数（实际「' +
+    d.querySelector('#rd-meta').textContent + '」）');
+  chk(d.querySelectorAll('.topbar > .count-badge').length === 0,
+    '页顶那一行同样一枚读数都没有');
   // Issue #69 收尾：列表与阅读器里的「出处」都必须是真实来源书《左传》，
   // 选本名《古文观止》只能作为淡色括注出现，不能顶替出处。
   const firstItem = d.querySelector('#gw-list .item[data-id="gwj-1"]');

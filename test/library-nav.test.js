@@ -125,12 +125,16 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(gridHidden() && !railHidden(), '目录收起、索引铺开（同一页里的两层）');
   chk(d.querySelectorAll('#lib-gw-list .item').length === 301,
     '索引层列出 301 首（实际 ' + d.querySelectorAll('#lib-gw-list .item').length + '）');
-  // Issue #147：页顶那一行不再挂已读进度牌 —— 它原先在这里按集子换数
-  //（「0 / 301 首」），窄屏上与品牌区抢地方。数挪去了详情页状态栏。
+  // Issue #147（两轮）：页顶那一行不再挂已读进度牌 —— 它原先在这里按集子换数
+  //（「0 / 301 首」）；那一枚先挪去详情页状态栏、后连状态栏那一枚也撤了。
+  // 于是这一层里（页顶 + 索引）一处读数都没有。
   chk(d.querySelector('.app > .topbar .count-badge') === null,
     '页顶那一行不再挂已读进度牌（实际 ' +
     (d.querySelector('.app > .topbar .count-badge') ?
       d.querySelector('.app > .topbar .count-badge').textContent : '无') + '）');
+  chk(!/\d\s*\/\s*\d+\s*(篇|首)/.test(d.querySelector('.app > .topbar').textContent),
+    '页顶整行不含「N / M 篇」这类读数（实际「' +
+    d.querySelector('.app > .topbar').textContent + '」）');
   chk(topActs() === 1 && !!actionBtn() && actionBtn().getAttribute('type') === 'button',
     '索引这一层只有一枚返回键（页面那条顶栏上的 #top-act）');
 
