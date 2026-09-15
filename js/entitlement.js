@@ -207,11 +207,12 @@
    */
   function isOwner(backing, opt) {
     var opt2 = opt || {};
-    // 1 期：**服务端下发的 role 优先**（现在就留好这个口）。
-    // ⚠️ 只在传了明确角色时生效，且 `"user"` 也算明确 —— 但调用方若把
-    //    `identity().role` 原样传回来（那个值本来就是本函数算出来的），
-    //    这里会退化成「自己问自己」。所以调用方要么不传，要么传服务端来的值；
-    //    `js/profile.js` 与 `js/admin-page.js` 都不传（见那两处的注释）。
+    /* 服务端下发的 role **优先**（2 期「补洞」已接通 `/api/me`）。
+       ⚠️ 只在传了明确角色时生效，且 `"user"` 也算明确 —— 但调用方若把
+          `identity().role` 原样传回来（那个值本来就是本函数算出来的），
+          这里会退化成「自己问自己」。所以调用方要么不传，要么传服务端来的值；
+          `identity()` 内部传的是 **`readServerRole()` 读出来的那份**（不是它自己算的）；
+          `js/profile.js` 与 `js/admin-page.js` 仍然不传。 */
     if (opt2.role && isRole(opt2.role)) return opt2.role === "owner" || opt2.role === "admin";
     var b = backing || defaultBacking();
     if (!b) return true;                 // 没有任何存储（隐私模式）：不给落标记，也不拦人
@@ -229,24 +230,78 @@
 
   /* ---------------------------------------------------------- 层级缓存 */
 
-  /** 本机会话层级（1 期由 /api/me 写进来，实现只换这一个函数） */
-  function readTier(backing) {
-    if (!backing) return "free";
+  /** 读 `poem_plan_v1` 那一份原始对象（解析失败一律 null，绝不抛） */
+  function readPlan(backing) {
+    if (!backing) return null;
     var text = null;
-    try { text = backing.getItem(NS); } catch (e) { return "free"; }
-    if (!text) return "free";
+    try { text = backing.getItem(NS); } catch (e) { return null; }
+    if (!text) return null;
     var o = null;
-    try { o = JSON.parse(text); } catch (e) { return "free"; }
-    if (!o || typeof o !== "object") return "free";
+    try { o = JSON.parse(text); } catch (e) { return null; }
+    return o && typeof o === "object" ? o : null;
+  }
+
+  /**
+   * 本机层级缓存。
+   *
+   * ⚠️ **不含**服务端那一份的判据 —— 服务端那份由 `readServerTier()` 单独回答。
+   *    两个问题刻意分开，是因为它们的**权威性不同**：
+   *      · 本机这份：手改一行存储就能改（所以它只是「提示」）
+   *      · 服务端那份：`source === "server"` 标记过，来自 `/api/me`
+   *    合在一个函数里读，调用方就再也分不清自己拿到的是哪一种。
+   */
+  function readTier(backing) {
+    var o = readPlan(backing);
+    if (!o) return "free";
     var until = o.until == null ? null : Number(o.until);
     if (until !== null && isFinite(until) && until <= Date.now()) return "free";   // 到期即回落
     return isTier(o.tier) ? o.tier : "free";
   }
 
-  function writeTier(backing, tier, until) {
+  /**
+   * **服务端下发的层级**（2 期「补洞」）。
+   *
+   * 判据只有一条：那份缓存带着 `source: "server"` —— 它是由
+   * `js/auth-api.js` 的 `me()` 成功返回后写下来的，别处不写。
+   * 于是「本机发放名单写的那一份」（无 source）不会被误当成权威判定。
+   *
+   * 过期（`until` 早于现在）→ 回落 free，与 `readTier` 同口径。
+   */
+  function readServerTier(backing) {
+    var o = readPlan(backing);
+    if (!o || o.source !== "server") return null;
+    var until = o.until == null ? null : Number(o.until);
+    if (until !== null && isFinite(until) && until <= Date.now()) return "free";
+    return isTier(o.tier) ? o.tier : null;
+  }
+
+  /** 服务端下发的角色（`/api/me` 的 `role`）。没有就是 null，本机兜底照旧 */
+  function readServerRole(backing) {
+    var o = readPlan(backing);
+    if (!o || o.source !== "server") return null;
+    return isRole(o.role) ? o.role : null;
+  }
+
+  /** 当前层级是谁定的 —— 给界面如实标注用的，不是判权依据 */
+  function tierSource(backing) {
+    var o = readPlan(backing);
+    return o && o.source === "server" ? "server" : "local";
+  }
+
+  /**
+   * 写层级缓存。
+   *
+   * @param {Object} opt  { source: "server", role: "user" }
+   *   `source:"server"` 表示这一份来自 `/api/me`，页面上据此标注来源，
+   *   而 `identity()` 也据此决定「服务端优先」。
+   */
+  function writeTier(backing, tier, until, opt) {
     if (!backing) return { ok: false, code: "E_STORAGE", message: "浏览器不允许保存数据" };
     if (!isTier(tier)) return { ok: false, code: "E_TIER", message: "不认识的层级" };
+    var o = opt || {};
     var payload = { v: 1, tier: tier, until: until == null ? null : Number(until) };
+    if (o.source) payload.source = String(o.source);
+    if (o.role && isRole(o.role)) payload.role = o.role;
     try { backing.setItem(NS, JSON.stringify(payload)); } catch (e) {
       return { ok: false, code: "E_STORAGE", message: "浏览器不允许保存数据" };
     }
@@ -444,11 +499,20 @@
     })();
 
     var uid = "", mask = "", signedIn = false;
-    // 角色也在这里定：**identity() 是全站唯一的身份入口**，
-    // 页面不该再去问第二个问题（问了就会有第二个答案）。
-    // 本期 role 只可能是 user / owner（见 isOwner 的说明）；
-    // 1 期接服务端后，这里改成读 /api/me 下发的 role。
-    var role = isOwner(backing) ? "owner" : "user";
+    /* 服务端下发的那一份（2 期「补洞」新增，`poem_plan_v1` 的 `source:"server"` 段）。
+       它是**唯一**能把服务端判定的层级/角色带上页面的通道：
+         · 层级：服务端说了算（docs §2.4 第 8 条），本机键只当缓存
+         · 角色：`/api/me` 的 `role` 是 owner 时，本机那个「谁打开谁是主人」
+           的兜底就必须让位 —— 否则一个把储存改空的游客照样是 owner。
+       ⚠️ 只在 `source === "server"` 时认它。本机发放名单写进来的那一份
+          （source 缺省）不被当作权威，走的还是下面那套本机口径。 */
+    var serverTier = readServerTier(backing);
+    var serverRole = readServerRole(backing);
+
+    // 角色：服务端优先，本机兜底（`isOwner` 现在接受明确传入的角色）
+    var role = isOwner(backing, serverRole ? { role: serverRole } : undefined)
+      ? (serverRole === "owner" || serverRole === "admin" ? serverRole : "owner")
+      : "user";
     if (authStore) {
       var s = null;
       try { s = authSession(authStore); } catch (e) { s = null; }
@@ -462,18 +526,26 @@
         // 账号记录里的层级（若该账号已领取过名单，创建账号时已写回）
         var accTier = s.account.plan && s.account.plan.tier;
         if (isTier(accTier) && accTier !== "free") {
-          return finish(accTier, signedIn, uid, mask, role);
+          return finish(accTier, signedIn, uid, mask, role, "local");
+        }
+        // 服务端下发的层级**优先于**本机发放名单（它才是权威判定）
+        if (serverTier && serverTier !== "free") {
+          return finish(serverTier, signedIn, uid, mask, role, "server");
         }
       }
     }
 
     // 未登录，或账号层级还是 free：再看本机层级与发放名单
     var tier = readTier(backing);
+    // 服务端下发的层级仍然优先（哪怕当下没登录 —— 例如会话刚过期、
+    // 但那一份判定还在缓存里；它比手改本机存储可信）
+    if (serverTier && tierIndex(serverTier) > tierIndex(tier)) tier = serverTier;
     if (signedIn) {
       var g = grantFor(backing, mask, t);
       if (g && tierIndex(g.tier) > tierIndex(tier)) tier = g.tier;
     }
-    return finish(tier, signedIn, uid, mask, role);
+    return finish(tier, signedIn, uid, mask, role,
+      serverTier && tierIndex(serverTier) >= tierIndex(tier) ? "server" : "local");
   }
 
   /** 默认存储：浏览器里就是 localStorage；Node / 隐私模式下给不了就返回 null（不抛） */
@@ -509,10 +581,16 @@
     authSession = function (authStore) { return A && A.session ? A.session(authStore) : null; };
   }
 
-  function finish(tier, signedIn, uid, mask, role) {
+  /**
+   * @param {string} tierSource  "server" | "local" —— 这个层级是**谁定的**。
+   *   界面据此如实标注（「由服务器判定」/「本机登记」），
+   *   而**不是**拿它当判权依据 —— 判权只看 tier 与 signedIn。
+   */
+  function finish(tier, signedIn, uid, mask, role, tierSource) {
     var ctx = { tier: tier, signedIn: signedIn };
     return {
       uid: uid, mask: mask, signedIn: signedIn, tier: tier, role: role,
+      tierSource: tierSource || "local",
       label: tierLabel(tier),
       ctx: ctx,
       can: function (name) { return can(name, ctx); },
@@ -521,7 +599,7 @@
   }
 
   /** 游客身份（没有任何存储也不许抛） */
-  function guestIdentity() { return finish("free", false, "", "", "user"); }
+  function guestIdentity() { return finish("free", false, "", "", "user", "local"); }
 
   return {
     NS: NS, GRANT_NS: GRANT_NS, OWNER_NS: OWNER_NS,
@@ -535,6 +613,8 @@
     clearGrants: clearGrants, exportGrants: exportGrants, importGrants: importGrants,
     grantFor: grantFor,
     readTier: readTier, writeTier: writeTier, clearTier: clearTier,
+    readPlan: readPlan, readServerTier: readServerTier,
+    readServerRole: readServerRole, tierSource: tierSource,
     isOwner: isOwner, markOwner: markOwner,
     identity: identity, guestIdentity: guestIdentity, setAuthCore: setAuthCore,
     defaultBacking: defaultBacking

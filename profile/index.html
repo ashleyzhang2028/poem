@@ -141,9 +141,10 @@
       <section class="account-card danger-zone" id="danger-card" hidden>
         <h2 class="account-card-title danger-title">注销账号</h2>
         <p class="account-lead">
-          注销会删掉这台设备上的<strong>账号记录</strong>（邮箱掩码、层级、登录状态），
-          但<strong>不删背诵进度</strong> —— 进度是你自己的东西，不跟着账号走。
-          想连进度一起清空，去<strong>设置 · 通用 · 数据管理</strong>。
+          注销会删掉<strong>账号本身</strong>：这台设备上的账号记录（邮箱掩码、层级、登录状态），
+          以及<strong>服务器上的账号与云端进度</strong>；服务器那一份会先导出来给你留存。
+          但<strong>不删背诵进度</strong>（这台设备上那一份一字不动）—— 进度是你自己的东西，不跟着账号走。
+          想连本机进度一起清空，去<strong>设置 · 通用 · 数据管理</strong>。
         </p>
         <div id="delete-step-1">
           <button class="account-btn danger" id="btn-delete-start" type="button">我要注销账号</button>
@@ -159,6 +160,13 @@
             <button class="account-btn ghost" id="btn-delete-cancel" type="button">取消</button>
           </div>
           <p class="account-msg" id="msg-delete"></p>
+          <!-- 云端那一份的导出：注销时服务端会先导出再删行，那份数据**直接给到用户**
+               （本期没有对象存储放下载链接，所以就地生成一个文件）。
+               没有云端账号的人这一颗不出现。 -->
+          <div id="delete-export" hidden>
+            <button class="account-btn ghost" id="btn-delete-export" type="button">下载云端那一份</button>
+            <p class="account-hint">这是注销时从服务器导出的账号与云端进度，存好它 —— 服务器上已经没有了。</p>
+          </div>
         </div>
       </section>
     </main>
@@ -176,7 +184,12 @@
   <div class="toast" id="toast" hidden></div>
 
   <script src="/js/auth-core.js"></script>
+  <script src="/js/auth-api.js"></script>
   <script src="/js/entitlement.js"></script>
+  <!-- 账号接线层（Issue #132 · 2 期「补洞 + 2A」）：/api/me 的下发与
+       /api/account 的注销都只在这里接一次。须排在 entitlement 之后 ——
+       它要把服务端判定的层级与角色写进权益层。 -->
+  <script src="/js/account-api.js"></script>
   <!-- 分域引擎（Issue #132 阶段 0）：本机数据概览读的就是它。须排在 js/storage.js 之前。 -->
   <script src="/js/progress-store.js"></script>
   <!-- 同步层（Issue #132 · 1B）：进度 / 账号域设置 / 已读的跨设备同步。

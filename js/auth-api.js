@@ -143,6 +143,8 @@
     return {
       degraded: function () { return state.degraded; },
       lastError: function () { return state.lastError; },
+      /** 这台设备的标识（随请求带给服务端做频控分桶；拿不到就是空串） */
+      deviceId: function () { return deviceId; },
 
       /** POST /api/send-code */
       sendCode: function (input) {
@@ -164,7 +166,7 @@
         });
       },
 
-      /** GET /api/me —— 权益的唯一来源 */
+      /** GET /api/me —— 权益的唯一来源（服务端判定层级与角色都在这一条上） */
       me: function () { return call("/me", "GET"); },
 
       /** POST /api/sync/pull */

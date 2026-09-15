@@ -8,6 +8,9 @@
  *   1. **页面上不许自己拼 plan / tier** —— 徽章与权限清单一律读
  *      `Entitlement.tierLabel()` / `Entitlement.matrix()`。
  *      自己拼一份的后果：内核改了层级口径，这一页还是老话。
+ *   1b. **服务端判定只在 `js/account-api.js` 里接一次**（2 期「补洞」）——
+ *      本页不自己 `fetch("/api/me")`、不自己读 Cookie、不自己写层级缓存键。
+ *      层级来源（服务端 / 本机）如实标注出来：`Entitlement.identity().tierSource`。
  *   2. **退出只清会话，注销只清账号** —— 两者都**不碰背诵进度**。
  *      界面上如实写出来，不靠用户猜（「退出不会删掉任何背诵进度」）。
  *   3. **注销要二次确认 + 重输邮箱** —— 内核 `deleteAccount` 会拒掉对不上的邮箱，
@@ -18,6 +21,11 @@
 
   var A = window.AuthCore;
   var Ent = window.Entitlement;
+
+  /* 账号接线层（2 期「补洞 + 2A」）：`/api/me` 与 `/api/account` 的唯一接入口。
+     脚本顺序不对或老缓存时它是 undefined —— 那时**本页照旧工作**（纯本机口径），
+     不报错、不清数据（与 syncMod() 同一条口径）。 */
+  function acct() { return window.AccountApi || null; }
 
   var backing = null;
   try { backing = window.localStorage; } catch (e) { backing = null; }
@@ -67,7 +75,7 @@
     var hint = $("identity-hint");
     if (hint) {
       hint.textContent = id.signedIn
-        ? "昵称与头像印记在「设置 · 通用」里改；层级由管理员发放。"
+        ? "昵称与头像印记在「设置 · 通用」里改；" + tierSourceLine(id) + "。"
         : "昵称与头像印记在「设置 · 通用」里改，不登录也能改。";
     }
 
@@ -147,11 +155,12 @@
     if (!card || !list) return;
     if (!sess || !sess.account) { hide(card); hide($("danger-card")); return; }
     var acc = sess.account;
+    var id = Ent.identity({ backing: backing, authStore: store });
     var days = Math.max(0, Math.round((sess.exp - Date.now()) / 86400000));
     var rows = [
       ["状态", "已登录"],
       ["邮箱", acc.identities[0] ? acc.identities[0].mask : "（无）"],
-      ["层级", Ent.tierLabel(Ent.identity().tier)],
+      ["层级", Ent.tierLabel(id.tier) + "（" + tierSourceLine(id) + "）"],
       ["本次登录", "还剩 " + days + " 天"]
     ];
     list.innerHTML = rows.map(function (r) {
@@ -160,6 +169,17 @@
     }).join("");
     show(card);
     show($("danger-card"));
+  }
+
+  /**
+   * 层级是**谁定的** —— 如实说出来，不含糊。
+   *
+   * 为什么值得单独占一个函数：这两句话在用户眼里的分量完全不同 ——
+   * 「服务器判定」改不了，「本机登记」改一行存储就能改（文档 §3.4 的口径）。
+   * 页面上不写清这一条，等于把本机登记那份说得像权威判定。
+   */
+  function tierSourceLine(id) {
+    return id && id.tierSource === "server" ? "由服务器判定" : "本机登记";
   }
 
   /* ------------------------------------------------------------ 四、权限清单 */
@@ -239,18 +259,89 @@
     if (m) { m.textContent = ""; m.className = "account-msg"; }
   }
 
+  /**
+   * 确认注销（2A 的核心接线）。
+   *
+   * **两条路一起走，顺序不能反**：先服务端（`DELETE /api/account`，
+   * 它要会话 Cookie），再本机（`AuthCore.deleteAccount`，它会清掉内核会话）。
+   * 反过来先本机的话，服务端那一步会以 401 收场，而用户以为注销成功了 ——
+   * 云端那一行还在，且没人会知道。
+   *
+   * 服务端不可用时**不阻断本机注销**（用户要求删除的意愿是明确的），
+   * 但如实说「云端那一份没删掉」—— 删除权上的实情，不许含糊。
+   */
   function onDeleteConfirm() {
     var el = $("input-delete-email");
     var v = (el && el.value ? el.value : "").trim();
     var msg = $("msg-delete");
-    var r = A.deleteAccount(store, v);
-    if (!r.ok) {
-      if (msg) { msg.textContent = r.message; msg.className = "account-msg warn"; }
-      return;
+    var btn = $("btn-delete-confirm");
+    if (btn) btn.disabled = true;
+    if (msg) { msg.textContent = "正在注销……", msg.className = "account-msg"; }
+
+    var M = acct();
+    var p = M
+      ? M.deleteAccount({ email: v, confirm: true, backing: backing, A: A, E: Ent })
+      : Promise.resolve(localOnlyDelete(v));
+
+    Promise.resolve(p).then(function (r) {
+      if (btn) btn.disabled = false;
+      if (!r.ok) {
+        if (msg) { msg.textContent = r.message || "注销没成功，请刷新页面重试", msg.className = "account-msg warn"; }
+        return;
+      }
+      afterDeleted(r, msg);
+    })["catch"](function () {
+      if (btn) btn.disabled = false;
+      if (msg) { msg.textContent = "注销没成功，请刷新页面重试", msg.className = "account-msg warn"; }
+    });
+  }
+
+  /** 账号接线层没加载（老缓存里的旧页面）时的兜底：只做本机那一半，并如实说明 */
+  function localOnlyDelete(email) {
+    var r = A.deleteAccount(store, email);
+    return { ok: r.ok, remote: "none", message: r.message };
+  }
+
+  function afterDeleted(r, msg) {
+    /* 云端那一份**真的给到用户**：服务端注销时先导出再删行，那份数据随响应回来。
+       这一颗按钮只在真导出到东西时出现 —— 不摆一颗点了没反应的按钮。 */
+    var box = $("delete-export"), btn = $("btn-delete-export");
+    if (box && btn && r.export) {
+      show(box);
+      btn.onclick = function () { downloadCloudExport(r.export); };
+    } else if (box) {
+      hide(box);
     }
-    if (msg) { msg.textContent = "账号已注销。", msg.className = "account-msg ok"; }
-    showToast("账号已注销，背诵进度仍在");
-    setTimeout(function () { location.href = "/settings/general/"; }, 900);
+
+    var line;
+    if (r.remote === "deleted") {
+      line = "账号已注销：账号与云端进度都已在服务器上删除，那一份已导出给你。" +
+        "这台设备上的背诵进度仍在。";
+    } else if (r.remote === "skipped") {
+      line = "本机账号已注销。但没连上服务器，云端那一份还在 —— " +
+        "网络恢复后再注销一次，或在服务器上删除。";
+    } else {
+      line = "账号已注销。这台设备上的背诵进度仍在。";
+    }
+    if (msg) { msg.textContent = line, msg.className = "account-msg " + (r.remote === "skipped" ? "warn" : "ok"); }
+    showToast(r.remote === "skipped" ? "已注销本机账号；云端那一份没删掉" : "账号已注销，背诵进度仍在");
+    if (r.remote === "skipped") return;          // 有话说的时候**别跳走**，让他读完
+    setTimeout(function () { location.href = "/settings/general/"; }, 1400);
+  }
+
+  /** 把云端导出写成文件。拿不到 Blob 时如实提示，不假装下载过 */
+  function downloadCloudExport(data) {
+    var text = JSON.stringify(data, null, 2);
+    try {
+      var blob = new Blob([text], { type: "application/json" });
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "跬步-云端数据-" + new Date().toISOString().slice(0, 10) + ".json";
+      a.click();
+      URL.revokeObjectURL(a.href);
+    } catch (e) {
+      showToast("这份浏览器不允许直接下载文件，请换个浏览器再来");
+    }
   }
 
   /* ------------------------------------------------------------ 七、缓存版本 */
@@ -266,11 +357,9 @@
 
   /* ------------------------------------------------------------ 初始化 */
 
-  function init() {
-    if (!A || !Ent || !store) return;
+  /** 把整页按当前（本机 + 服务端已落盘的那一份）口径画一遍 */
+  function paint(sess) {
     var id = Ent.identity({ backing: backing, authStore: store });
-    var sess = A.session(store);
-
     renderIdentity(id);
     renderStats();
     renderAccount(sess);
@@ -278,6 +367,35 @@
     renderCaps(id);
     renderAdmin(id);
     renderCacheInfo();
+  }
+
+  function init() {
+    if (!A || !Ent || !store) return;
+    var sess = A.session(store);
+    paint(sess);
+
+    /* ------------------------------------------------------------------
+       「补洞」（Issue #132 · 2 期）：把 `/api/me` 接上。
+       ------------------------------------------------------------------
+       先画一遍**本机口径**（上面那次 paint）—— 服务端好不好、快不快，
+       页面都已经可用了；`/api/me` 回来之后再画一遍。
+
+       为什么必须**先画再问**，而不是「等回来了再画」：
+         · 断网 / 服务端没配好时，等下去就是一片空白，而本机那份本来就在盘上
+         · 首屏速度是跬步最硬的产品特性（docs §2.3 第 3 条），不能押在一个请求上
+
+       ⚠️ 调不到就**什么都不做**（不当成错误、不清层级缓存）——
+          见 js/account-api.js 的边界第 3 条。
+       ------------------------------------------------------------------ */
+    var M = acct();
+    if (M && sess) {
+      Promise.resolve(M.refreshMe({ backing: backing, A: A, E: Ent })).then(function (r) {
+        /* 只在拿到服务端的答案（或明确「没有会话」）时重画；
+           连不上时数据一字未变，重画纯属白抖一次 DOM。 */
+        if (!r || !r.ok) return;
+        paint(A.session(store));
+      })["catch"](function () { /* 问不到就算了，页面已经是可用状态 */ });
+    }
 
     if (!sess) show($("guest-card"));
 

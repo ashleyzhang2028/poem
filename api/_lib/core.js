@@ -117,12 +117,26 @@ function accountRow(email, hash, mask, now) {
   };
 }
 
-/** 对外的账号形状：**掩码，不是明文邮箱**；不含 email_hash */
+/**
+ * 对外的账号形状：**掩码，不是明文邮箱**；不含 email_hash。
+ *
+ * `role` 也要下发 —— 客户端那边「谁能进管理后台」的唯一判据是
+ * `Entitlement.isOwner()`，而它在拿到服务端角色时**以服务端为准**
+ * （否则一个把本机存储改空的游客照样是 owner）。
+ * 这条链路在 2 期「补洞」之前是断的：`publicAccount` 从来没回过 role，
+ * 客户端也就永远走本机兜底 —— 那时「服务端角色优先」只是一句注释。
+ *
+ * ⚠️ `role` 与 `plan` 是**两条正交的轴**（谁能管理 ≠ 能用什么）：
+ *    店长不是 VIP，下发时也不许把 role 折叠进 tier。
+ */
 function publicAccount(cfg, acc) {
+  var role = String(acc.role || "user").toLowerCase();
+  if (["owner", "admin", "user"].indexOf(role) < 0) role = "user";
   return {
     uid: acc.uid,
     nickname: acc.nickname || "",
     plan: { tier: planTier(acc), until: acc.plan_until || null },
+    role: role,
     features: featuresFor(cfg, planTier(acc)),
     mask: acc.email_mask || "***"
   };
