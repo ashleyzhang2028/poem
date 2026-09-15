@@ -135,10 +135,10 @@
   function renderAbout(id) {
     var box = $("plans-about");
     if (!box) return;
-    var notPay = "本站目前<strong>没有任何收款能力，也没有支付入口</strong> —— 所以层级不是付费凭据。";
+    var notPay = "本站无收款、无支付入口，层级不是付费凭据。";
     box.innerHTML = id && id.tierSource === "server"
-      ? "你的层级<strong>由服务器判定</strong>，本机改一行存储改不动它。" + notPay
-      : "还没拿到服务端的判定，这一份层级是<strong>本机登记的功能标记</strong>，本机改一行存储就能改。" + notPay;
+      ? "你的层级由服务器判定，本机改不动。" + notPay
+      : "这一份层级是本机登记，改一行存储就能改。" + notPay;
   }
 
   /* ------------------------------------------------------------ 四、我在哪一格 */
@@ -167,7 +167,7 @@
     if (hint) {
       hint.textContent = id.signedIn
         ? "已登录也能用免费版全部功能；Pro / Max 由管理员按邮箱掩码登记。"
-        : "不登录也能用免费版全部功能，只有语音朗读要登录（免费）。";
+        : "不登录也能用免费版全部功能，只有语音朗读要登录。";
     }
   }
 

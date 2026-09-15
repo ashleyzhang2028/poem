@@ -173,7 +173,7 @@ const PAGE = strip(pageJs);
     'renderAbout() 按 tierSource 分叉（不自己猜、不自己比 tier）');
   chk(/由服务器判定/.test(rb), '服务端那份：页面上说明层级「由服务器判定」');
   chk(/本机登记/.test(rb), '本机那份：页面上说明层级是「本机登记」');
-  chk(/没有收款|收款|支付入口/.test(rb), '两种状态都写明「本站目前没有任何收款能力」');
+  chk(/无收款|收款|支付入口/.test(rb), '两种状态都写明「本站无收款、无支付入口」');
   chk(/不是付费凭据/.test(rb), '两种状态都写明「不是付费凭据」');
   /* 反向：不许只留一句、不许两态说反 */
   chk(pageJs.indexOf('renderAbout(id)') > 0, '初始化时真的调了 renderAbout(id)');
@@ -220,7 +220,7 @@ const PAGE = strip(pageJs);
   // 两边同源：个人中心的清单与对比页同走 Entitlement
   chk(/Ent\.matrix\(/.test(profileJs) && /Ent\.compare\(/.test(PAGE),
     '个人中心清单走 matrix()、对比页走 compare()，都出自同一个内核');
-  chk(/查看四种身份的完整对比/.test(stripHtml(profileHtml)),
+  chk(/四种身份对比/.test(stripHtml(profileHtml)),
     '按钮文案说清它去哪、去做什么');
 }
 

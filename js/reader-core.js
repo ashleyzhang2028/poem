@@ -2392,8 +2392,7 @@
     var box = document.getElementById("gw-recite-cols");
     if (!box) return;
     if (!cols.length) {
-      box.innerHTML = '<div class="recite-empty">还没有自选集合。' +
-        "下面输入一个名字，新建第一个 —— 加进来的篇目会跟着遗忘曲线一起复习。</div>";
+      box.innerHTML = '<div class="recite-empty">还没有自选集合。在下面输入一个名字新建。</div>';
       return;
     }
     box.innerHTML = cols.map(function (c) {
@@ -2442,7 +2441,7 @@
         } else {
           C.add(p.id, cid);
           stashSnapshot(p);
-          showToast("已加入「" + (C.get(cid) ? C.get(cid).name : "") + "」，跟着遗忘曲线一起复习");
+          showToast("已加入「" + (C.get(cid) ? C.get(cid).name : "") + "」，会排进每日任务");
         }
         renderRecitePicker();
         syncReciteButtons();

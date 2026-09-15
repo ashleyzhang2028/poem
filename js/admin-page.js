@@ -159,7 +159,7 @@
     var title = $("text-dialog-title");
     if (title) title.textContent = "导入发放名单";
     var tip = $("text-dialog-tip");
-    if (tip) tip.textContent = "把对方给你的名单 JSON 粘在这里。导入会覆盖当前名单。";
+    if (tip) tip.textContent = "把对方给你的名单 JSON 粘在这里，导入会覆盖当前名单。";
     modal.hidden = false;
     if (t) t.focus();
   }
@@ -241,9 +241,8 @@
       show($("deny-card"));
       var lead = $("deny-lead");
       if (lead) {
-        lead.textContent = "管理后台只对本机管理员开放。你现在是「" + Ent.tierLabel(id.tier) +
-          "」层级的普通用户" + (id.signedIn ? "（" + (id.mask || "无邮箱") + "）" : "（未登录）") +
-          "，这里没有可做的事。";
+        lead.textContent = "只对本机管理员开放。你现在是「" + Ent.tierLabel(id.tier) +
+          "」" + (id.signedIn ? "（" + (id.mask || "无邮箱") + "）" : "（未登录）") + "。";
       }
       $("btn-back-profile").addEventListener("click", function () { location.href = "/profile/"; });
       return;

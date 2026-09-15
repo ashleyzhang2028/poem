@@ -785,8 +785,8 @@ async function main() {
     eq(input.checked, false, "打开页面时开关是**关着的**（出厂状态）");
     eq(input.disabled, false, "服务端可用时开关点得动（不是灰的）");
     eq(w.document.getElementById("sync-label").textContent, "关", "标签写「关」");
-    ok(/只存在本机/.test(w.document.getElementById("sync-hint").textContent),
-      "关着时如实说「进度只存在本机，不上传」");
+    ok(/只存本机/.test(w.document.getElementById("sync-hint").textContent),
+      "关着时如实说「进度只存本机，不上传」");
 
     /* 点开开关 —— 这一下要同时验三件事：状态文字变了、pref 落盘了、说明换了 */
     input.checked = true;

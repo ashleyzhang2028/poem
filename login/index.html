@@ -46,10 +46,6 @@
            ⚠️ 三步同屏递进、不跳页：跳页会丢状态，而状态机是「不可跳步」的。
            ================================================================== -->
       <section class="account-card">
-        <p class="account-lead">
-          不登录也能用全部功能。建账号只为让<strong>进度不随清缓存丢掉</strong>。
-          输邮箱 → 收码 → 填码，没有账号就建、有就登录。
-        </p>
 
         <!-- ---------- 信任期：信任期内一点即入，不发码 ---------- -->
         <div id="trust-panel" hidden>
@@ -68,7 +64,6 @@
           </div>
           <button class="account-btn" id="btn-send" type="button">发送随机码</button>
           <p class="account-msg" id="msg-email"></p>
-          <p class="account-hint">本机只留摘要与掩码（如 a***@b.com），不留明文邮箱。</p>
         </div>
 
         <!-- ---------- ② 收码回填 ---------- -->
@@ -90,13 +85,12 @@
                ⚠️ 这一段**默认隐藏**，只有在真的走服务端时（state.remote）才显示 ——
                   本机体验版下摆一句「进度会上传到服务器」是假的。 -->
           <div class="account-note" id="remote-note" hidden>
-            进度会保存到服务器以便跨设备同步。点「确定」即表示同意；不想上传可在「设置 · 通用」关掉。
+            进度会保存到服务器以便跨设备同步。点「确定」即表示同意；可在「设置 · 通用」关掉。
           </div>
 
           <!-- 本地体验版的说明：必须显眼，不许含糊 -->
           <div class="account-note" id="local-note" hidden>
-            <strong>本地体验版</strong>：本应用没有服务器，随机码由你这台设备生成。
-            自己复制或发给自己保管，<strong>请勿把码发给他人</strong>。
+            <strong>本地体验版</strong>：本应用没有服务器，随机码由这台设备生成，自己保管，别转给别人。
           </div>
           <div class="account-field" id="code-tools" style="margin-top:10px">
             <button class="account-btn ghost" id="btn-copy-code" type="button">复制随机码</button>
@@ -108,12 +102,12 @@
         <div class="account-step" id="step-done" hidden>
           <p class="account-lead" id="done-lead"></p>
           <div class="account-field">
-            <label class="account-label" for="input-nickname">昵称（可留空，之后随时能改）</label>
+            <label class="account-label" for="input-nickname">昵称（可留空）</label>
             <input id="input-nickname" class="account-input" type="text" maxlength="12"
                    autocomplete="off" enterkeyhint="done" placeholder="Ashley" />
           </div>
           <button class="account-btn" id="btn-finish" type="button">完成</button>
-          <p class="account-hint">昵称只是显示名，不是实名；请只填小名。</p>
+          <p class="account-hint">请只填小名。</p>
         </div>
       </section>
 

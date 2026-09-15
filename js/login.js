@@ -425,10 +425,12 @@
     show($("step-done"));
 
     var isNew = !r.account.lastLoginAt || r.account.lastLoginAt === r.account.createdAt;
-    text($("done-lead"), (isNew ? (r.remote ? "账号已建好。" : "账号已在本机建好。") : "登录成功。") +
-      "层级 " + (Ent ? Ent.tierLabel(Ent.identity().tier) : "Free") +
-      "，记在 " + (r.account.identities[0] ? r.account.identities[0].mask : "") + "。"
-      + (r.remote ? "进度会保存到服务器，以便跨设备同步（可在设置里关掉）。" : ""));
+    /* 一行收场：是新建还是登录 + 层级 + 记在哪个邮箱。
+       ⚠️ 「进度会上传」那一句**不在这里**：它属于收码屏那块 #remote-note
+          （那里是用户点「确定」当场同意的地方），这一屏再说一遍是重复。 */
+    text($("done-lead"), (isNew ? "账号已建好 · " : "已登录 · ") +
+      (Ent ? Ent.tierLabel(Ent.identity().tier) : "Free") +
+      " · " + (r.account.identities[0] ? r.account.identities[0].mask : ""));
 
     // 昵称：先把已有的填上（老用户回来了，别让他以为名字丢了）
     var nickInput = $("input-nickname");

@@ -76,7 +76,7 @@
     var tip = $("#progress-tip");
     if (!tip) return;
     if (!o.learned) {
-      tip.textContent = "还没有学习记录。到首页背一首，回来就能看到到期日历与掌握度。";
+      tip.textContent = "还没有学习记录。";
       return;
     }
     /* 逾期要单独说一句：不说明的话用户会以为「今天凭空多了几篇」——
@@ -85,10 +85,8 @@
          · 逾期**超过一周**的：**另计**一条（唯一那截 backlog），
            日历与清单都**不并进**今天 —— 否则两处数就对不上。
        所以这里说「另有 N 首逾期超过一周」，不能说「已并进今天」。 */
-    tip.textContent = o.overdue
-      ? "共 " + o.total + " 首里已学 " + o.learned + " 首，另有 " + o.overdue +
-        " 首逾期超过一周（另计一条，不在「今天」这一格里）。"
-      : "共 " + o.total + " 首里已学 " + o.learned + " 首。";
+    tip.textContent = "共 " + o.total + " 首，已学 " + o.learned + " 首" +
+      (o.overdue ? "，另有 " + o.overdue + " 首逾期超过一周（另计，不在今天那一格）" : "") + "。";
   }
 
   /* ---------------- 到期日历 ---------------- */
@@ -121,17 +119,15 @@
     var sub = $("#calendar-sub");
     if (sub) {
       var busy = o.calendar.filter(function (d) { return d.count > 0; }).length;
-      sub.textContent = o.learned
-        ? "未来 " + (DAYS - 1) + " 天里 " + busy + " 天有复习"
-        : "还没有学习记录";
+      sub.textContent = o.learned ? busy + " 天有复习" : "还没有学习记录";
     }
     var note = $("#calendar-note");
     if (note) {
       /* 「今天」这一格含的是**今天到期的 + 逾期一周以内的**；
          逾期一周以上的（o.overdue）另计一条，不在这格里。 */
       note.textContent = o.overdue
-        ? "另有 " + o.overdue + " 首逾期超过一周（另计，未并进「今天」这一格）。"
-        : "竖条越高，那天要复习的篇目越多。";
+        ? "另有 " + o.overdue + " 首逾期超过一周（另计，未并进今天）。"
+        : "";
     }
   }
 
@@ -157,7 +153,7 @@
     if (!L || !L.total) {
       box.innerHTML = '<div class="empty duelist-empty">还没有到期的篇目' +
         (o.learned ? "，接下来的两周都没有要复习的" : "，先到首页背几首再回来") + "</div>";
-      if (sub) sub.textContent = o.learned ? "未来两周无到期" : "还没有学习记录";
+      if (sub) sub.textContent = o.learned ? "两周内无到期" : "还没有学习记录";
       if (note) note.textContent = "";
       return;
     }
@@ -178,9 +174,9 @@
            · 未来两周共 T 篇   —— 14 天窗口里要做的全部（含上面两项）
          原先这里把 backlog 并进了「今天」，与日历那一格对不上（见上）。 */
       var parts = [];
-      parts.push(today ? "今天 " + today + " 篇" : "今天没有到期的");
-      if (L.backlog.length) parts.push("逾期超过一周 " + L.backlog.length + " 篇");
-      parts.push("未来两周共 " + L.total + " 篇");
+      parts.push(today ? "今天 " + today + " 篇" : "今天无到期");
+      if (L.backlog.length) parts.push("逾期超一周 " + L.backlog.length + " 篇");
+      parts.push("两周共 " + L.total + " 篇");
       sub.textContent = parts.join(" · ");
     }
 
@@ -224,9 +220,7 @@
     });
 
     if (note) {
-      var bits = ["点篇名回首页背这一篇。"];
-      if (L.farther) bits.push("更远还有 " + L.farther + " 篇（超出未来 " + (DAYS - 1) + " 天）。");
-      note.textContent = bits.join(" ");
+      note.textContent = L.farther ? "更远还有 " + L.farther + " 篇。" : "";
     }
   }
 
@@ -308,7 +302,7 @@
     renderBars("#progress-mastery", rows);
     var sub = $("#mastery-sub");
     if (sub) {
-      sub.textContent = o.learned ? "已学 " + o.learned + " 首，平均 " + o.avgMastery + "%" : "还没有学习记录";
+      sub.textContent = o.learned ? "平均 " + o.avgMastery + "%" : "";
     }
   }
 
@@ -328,7 +322,7 @@
       var last = o.levelCounts[o.levelCounts.length - 1].count;
       var algo = window.ReviewModels ? window.ReviewModels.describe(algoKey()).name : "";
       var tail = algo && algo !== "遗忘曲线" ? "（按 " + algo + " 排期）" : "";
-      sub.textContent = o.learned ? "走完全程的 " + last + " 首" + tail : "还没有学习记录";
+      sub.textContent = o.learned ? "已走完 " + last + " 首" + tail : "";
     }
   }
 

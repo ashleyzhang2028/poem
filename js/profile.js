@@ -74,8 +74,8 @@
 
     var hint = $("identity-hint");
     if (hint) {
-      hint.textContent = "昵称与头像印记在「设置 · 通用」里改" +
-        (id.signedIn ? "；层级" + tierSourceLine(id) + "。" : "，不登录也能改。");
+      hint.textContent = "昵称与印记在「设置 · 通用」里改" +
+        (id.signedIn ? "；层级" + tierSourceLine(id) + "。" : "。");
     }
 
     renderAccountEntry(id);
@@ -93,7 +93,7 @@
    *     所以它是未登录用户最可能落地的地方。
    *
    * 两个状态共用同一个按钮，文案在 JS 里按登录态写：
-   *   · 未登录 → 「用邮箱建一个账号（免费）」
+   *   · 未登录 → 「建一个账号（免费）」
    *   · 已登录 → 「管理登录状态（退出 / 注销）」—— 落到 `/login/` 也**不是死路**：
    *     那一页认信任期与会话，信任期内顶部给「继续以 a***@b.com 进入」，
    *     会话还在时同样能继续，不会把已登录的人再拦一次收码。
@@ -104,9 +104,7 @@
   function renderAccountEntry(id) {
     var btn = $("btn-account-entry");
     if (!btn) return;
-    btn.textContent = id.signedIn
-      ? "管理登录状态（退出 / 注销）"
-      : "用邮箱建一个账号（免费）";
+    btn.textContent = id.signedIn ? "管理登录状态（退出 / 注销）" : "建一个账号（免费）";
     btn.addEventListener("click", function () { location.href = "/login/"; });
   }
 
@@ -136,8 +134,8 @@
     var avg = learned ? Math.round(masterySum / learned) : 0;
     var rows = [
       ["有记录的篇目", ids.length ? ids.length + " 篇" : "还没有"],
-      ["已开始记忆", learned ? learned + " 篇" : "还没有开始"],
-      ["今天到期", due ? due + " 篇" : "今天没有到期的"]
+      ["已开始记忆", learned ? learned + " 篇" : "还没有"],
+      ["今天到期", due ? due + " 篇" : "没有"]
     ];
     if (learned) rows.push(["平均掌握度", avg + "%"]);
     box.innerHTML = rows.map(function (r) {
@@ -194,11 +192,11 @@
    */
   function capsHint(id) {
     if (!id.signedIn) {
-      return "登录后可用语音朗读（免费）；带门槛的能力要管理员发放层级。";
+      return "登录后可用语音朗读（免费）；其余带门槛的能力由管理员发放。";
     }
     return id.tierSource === "server"
-      ? "层级由服务器判定 —— 本机改一行存储改不动它，但本站目前不收款，它仍不是付费凭据。"
-      : "层级由管理员按邮箱掩码发放；这一份是本机登记（还没拿到服务端那份判定），本机改一行存储就能改，不是付费凭据。";
+      ? "层级由服务器判定，本站不收款，不是付费凭据。"
+      : "层级是本机登记，改一行存储就能改，不是付费凭据。";
   }
 
   /* ------------------------------------------------------------ 四、权限清单 */
@@ -448,7 +446,7 @@
     if (!S) {
       list.innerHTML = '<div class="kv-row"><span class="kv-k">状态</span>' +
         '<span class="kv-v" id="sync-state">不可用</span></div>';
-      if (hint) hint.textContent = "同步层没有加载成功，请刷新页面重试（背诵不受影响）。";
+      if (hint) hint.textContent = "同步层没加载成功，刷新页面重试（背诵不受影响）。";
       hide($("sync-conflict"));
       return;
     }
@@ -473,16 +471,14 @@
 
     if (hint) {
       hint.textContent = n
-        ? "有 " + n + " 篇需要你选一下（下面）。选完之前这一篇不会自动合并。" +
-          "同步" + (on ? "开着" : "关着") + "，都不影响本机的进度。"
+        ? "有 " + n + " 篇需要你选一下（下面），选完之前不会自动合并。"
         : st === "unavailable"
-        ? "本站还没有开放云端同步（服务端未配置）。学习进度始终只存在本机。"
+        ? "本站未开放同步，进度只存本机。"
         : st === "off"
           ? "关闭中：进度只存本机。开关在「设置 · 通用」里。"
           : st === "signin"
-            ? "已开启，但还没登录 —— 登录后才会真的同步。"
-            : "进度与账号域设置会同步到服务器；本机那份始终完整，断网照常背。" +
-              "设备上的阅读偏好（字号、注音、连读）不上传。";
+            ? "已开启，登录后才会真的同步。"
+            : "进度与账号设置会同步；本机那份始终完整，断网照常背。";
     }
 
     renderConflict(S, !!sess());
@@ -503,9 +499,9 @@
     var localCount = 0;
     try { localCount = Object.keys(window.ProgressStore.all() || {}).length; } catch (e) { localCount = 0; }
     if (lead) {
-      lead.textContent = "有 " + list.length + " 篇两边都改过，判不出该听谁的，故未自动合并。" +
+      lead.textContent = "有 " + list.length + " 篇两边都改过，判不出该听谁的，未自动合并。" +
         "本机共 " + localCount + " 篇。" +
-        (signedIn ? "" : "当前未登录，请先登录再选。") +
+        (signedIn ? "" : "请先登录再选。") +
         "选「保留账号」前会先在本机留一份快照。";
     }
     show(box);
