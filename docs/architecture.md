@@ -1048,7 +1048,9 @@ curl -sS -o /dev/null -w '%{http_code}\n' -X DELETE "$SITE_URL/api/account"     
 
 #### 验证
 
-- `bash test/run.sh`：**4513 条断言全绿、0 失败**（较 2C 的 4452 增 61）
+- `bash test/run.sh`：全绿、0 失败（2C 当时的条数见 §4.13 末尾的更正说明）
+  ⚠️ 2.1 更正：此处原写「4513」，实跑是 **4552** —— 2D 之后 `sw.js` 等还有改动，
+  这类数字对不上，下次读数就会被当成回归（见 §4.13）
 - `test/ops.test.js` 新增一节：五步全在（A~E）、每一步都有「在哪配」与「怎么验」、
   B 的建表指向 `api/_lib/schema.sql`、C 明写 service_role 不是 anon、
   C 含 SPF/DKIM/DMARC 三条、D 含两个定时任务与「每 5 天不能每 7 天」那条理由、
@@ -1056,6 +1058,47 @@ curl -sS -o /dev/null -w '%{http_code}\n' -X DELETE "$SITE_URL/api/account"     
   **B / E / `--steps` 三处的验收命令逐字同源**、`--steps` 不出现任何密钥值
 - `scripts/doctor.js` 的 `--steps` 退出码与 `--check` 一致（没配齐退 1）
 - 文档与命令**同源**：`--steps` 里那句「最低线」与 `ops.check()` 的 `ok` 是同一个判据
+
+### 4.13 2.1 期「去掉那三处已经变假的旧话」（2026-09-17 回答 Issue #159）
+
+**问题**：2D 之后服务端接通了，但有三处界面还在说「本期没有服务器，
+层级只是本机登记」——**对已登录、且层级确实来自服务端的人来说，这就是假话**。
+它踩的正是本项目那条红线（§1 第 3 条「不假装配齐了」）。
+
+**改法不是删掉那句话，而是按当前状态分叉**：判据只有一个 ——
+`Entitlement.identity().tierSource`（服务端判定的唯一凭据）。
+有会话且 `tierSource === "server"` → 说「由服务器判定」；
+否则照旧说「本机登记」并解释为什么（没配后端 / 连不上时它仍然是对的）。
+
+| 处 | 原先写死的话 | 改后 |
+|---|---|---|
+| `js/profile.js` 权限清单下方 | 「层级由管理员按邮箱掩码发放；本机登记的层级改一行存储就能改」 | 新出 `capsHint(id)`：`tierSource` 决定说「由服务器判定」还是「本机登记」 |
+| `plans/index.html` 四、关于这些层级 | 「本期没有服务器：层级是本机登记的功能标记」 | 改由 `js/plans.js` 的 `renderAbout(id)` 渲染（HTML 里不写死） |
+| `js/plans.js` 头注释、`js/admin-page.js` 头注释、`admin/index.html` 注释 | 「本期没有服务器 / 服务端」 | 更正为「服务端已接通；但**权威发放** `POST /admin/grant` 还没做」（即 2.2 那一件） |
+
+**两条不许混的事**：层级**权威**了（服务端判定）**不等于**能收钱 ——
+`没有任何收款能力 / 不是付费凭据` 这两句**两种状态都要说**（4 期才做的题）。
+
+**`/plans/` 同时接上 `/api/me`**：这一页原本不加载 `js/account-api.js`。
+要如实说清「谁定的」就得问一次服务端 —— 于是补上 `auth-api.js +
+account-api.js` 两个 `<script>`（顺序：entitlement → auth-api → account-api），
+并在 `init()` 里 `AccountApi.refreshMe()` 一次、回来再整页重画（与 `/profile/`
+同款：先画本机口径，服务端回来再画一遍；调不到什么都不做）。
+
+**验证**
+
+- `bash test/run.sh`：**4567 条断言全绿、0 失败**（2.1 之前实跑 4552）
+- `test/plans-page.test.js` 第五节改成**反向**断言（HTML 里不写死那句会变假的话）
+  + 新增「五之二」：`renderAbout()` 两态各说各的实话、两态都写「不是付费凭据」
+- `test/account-pages.test.js`：`capsHint()` 两态断言；管理后台那条从
+  「钉住『本期没有服务端』」改成「不许再宣称没有服务端 + 仍要写明要对方自己导入」
+- `test/account-bind.test.js` 结构一节收进 `plans/index.html`（三处：加载了
+  `account-api.js`、加载了 `auth-api.js`、entitlement 排在它之前）
+- `sw.js` v125 → v126
+
+**数字更正**：§4.12「验证」那段原写「4513 条」，实跑是 **4552** —— 2D 之后
+`sw.js` 等还有改动。这类数字对不上，下次读数就会被当成回归。
+本轮起，各节的条数以**实际跑出来的**为准。
 
 ---
 

@@ -79,10 +79,10 @@
       <!-- ---------- 四、诚实地说明它现在是什么 ---------- -->
       <section class="account-card">
         <h2 class="account-card-title">关于这些层级</h2>
-        <p class="account-lead">
-          本期没有服务器：<strong>层级是本机登记的功能标记，不是付费凭据</strong> ——
-          没有收款，也没有支付入口，本机改一行存储就能改。
-        </p>
+        <!-- 这一段由 js/plans.js 的 renderAbout() 按当前状态渲染：
+             服务端判定 / 本机登记 两种状态各说各的实话，HTML 里不写死一句话
+             （写死的那句在服务端接通之后就是假话，见 2.1） -->
+        <p class="account-lead" id="plans-about"></p>
         <button class="account-btn ghost" id="btn-go-profile" type="button">回个人中心看我的权限</button>
       </section>
     </main>
@@ -99,10 +99,14 @@
 
   <div class="toast" id="toast" hidden></div>
 
-  <!-- 脚本顺序：auth-core → entitlement → avatar → 本页 → chrome → pwa
-       avatar.js 必须在 chrome.js 之前：顶栏右侧那一枚印由 chrome.js 渲染时才读它 -->
+  <!-- 脚本顺序：auth-core → entitlement → auth-api → account-api → avatar → 本页 → chrome → pwa
+       avatar.js 必须在 chrome.js 之前：顶栏右侧那一枚印由 chrome.js 渲染时才读它
+       account-api.js 必须排在 entitlement.js 之后（要先把权益层装上，它才写得进去）；
+       本页要它是因为「关于这些层级」那一段得如实说清层级**是谁定的**（2.1） -->
   <script src="/js/auth-core.js"></script>
   <script src="/js/entitlement.js"></script>
+  <script src="/js/auth-api.js"></script>
+  <script src="/js/account-api.js"></script>
   <script src="/js/avatar.js"></script>
   <script src="/js/plans.js"></script>
   <script src="/js/chrome.js"></script>

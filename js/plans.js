@@ -9,8 +9,10 @@
  *      手抄一份的下场：内核加了能力、改了门槛，这张表还是老话 ——
  *      而这张表恰恰是用户唯一会逐条对着看的页面。
  *   2. **不出现任何权益存储键名**，也不自己比 tier / plan（有源码扫描守着）。
- *   3. **不假装在卖东西** —— 本期没有服务器、没有支付，页面上如实写「本机登记」
+ *   3. **不假装在卖东西** —— 页面上如实写层级是「服务器判定」还是「本机登记」
  *      「不是付费凭据」；也不写「立即购买」「限时优惠」这类话。
+ *      ⚠️ 2.1：这一句**按当前状态分叉**（`renderAbout()`），不再写死
+ *      「本期没有服务器」—— 服务端接通之后那句就是假话。
  */
 (function () {
   "use strict";
@@ -19,6 +21,12 @@
 
   var backing = null;
   try { backing = window.localStorage; } catch (e) { backing = null; }
+
+  /* 账号接线层（2.1 新增）：`/api/me` 的唯一接入口 —— 与 js/profile.js 同一条口径。
+     本页要它只为一件事：「关于这些层级」那一段得如实说清层级**是谁定的**。
+     脚本顺序不对或老缓存时它是 undefined —— 那时**本页照旧工作**（纯本机口径），
+     不报错、不清数据。 */
+  function acct() { return window.AccountApi || null; }
 
   function $(id) { return document.getElementById(id); }
   function show(el) { if (el) el.hidden = false; }
@@ -109,6 +117,30 @@
     foot.innerHTML = html + "</tr>";
   }
 
+  /* --------------------------------------------------- 三点五、这些层级是什么 */
+
+  /**
+   * 「关于这些层级」那一段 —— **按当前状态如实分叉**。
+   *
+   * 2.1 之前这里写死一句「本期没有服务器：层级是本机登记的功能标记」。
+   * 服务端接通（2 期）之后，对有会话、且层级确实来自服务端的人来说，
+   * 这句是**假话** —— 而项目自己有一条红线就是「不假装配齐了」。
+   *
+   * 但整句删掉也不对：没配后端 / 连不上时，本机那一份确实是「改一行存储
+   * 就能改」的。所以两种状态各说各的实话，判据只有一个 —— `id.tierSource`。
+   *
+   * ⚠️ `不是付费凭据` 与 `没有收款` 两句**两种状态都要说**：
+   *    层级权威了不等于能收钱（4 期才做的题），这两件事不许混。
+   */
+  function renderAbout(id) {
+    var box = $("plans-about");
+    if (!box) return;
+    var notPay = "本站目前<strong>没有任何收款能力，也没有支付入口</strong> —— 所以层级不是付费凭据。";
+    box.innerHTML = id && id.tierSource === "server"
+      ? "你的层级<strong>由服务器判定</strong>，本机改一行存储改不动它。" + notPay
+      : "还没拿到服务端的判定，这一份层级是<strong>本机登记的功能标记</strong>，本机改一行存储就能改。" + notPay;
+  }
+
   /* ------------------------------------------------------------ 四、我在哪一格 */
 
   /**
@@ -147,8 +179,8 @@
     return id.tier;
   }
 
-  function init() {
-    if (!Ent) return;
+  /** 按当前（本机 + 已落盘的服务端那一份）口径整页重画 */
+  function paint() {
     var id = Ent.identity({ backing: backing });
     var cmp = Ent.compare({});
     var current = currentColumn(id);
@@ -157,6 +189,31 @@
     renderBody(cmp, current);
     renderFoot(cmp);
     renderMe(id);
+    renderAbout(id);
+  }
+
+  function init() {
+    if (!Ent) return;
+    paint();
+
+    /* ------------------------------------------------------------------
+       「补洞」（Issue #132 · 2 期）的第 N 张页：把 `/api/me` 接上。
+       ------------------------------------------------------------------
+       为什么这张页也要问：本页那一段「关于这些层级」要如实说清层级**是谁
+       定的**。不问的话，一个层级由服务端判定的人会看到「这是本机登记」——
+       而项目自己那条红线就是「不假装配齐了」。
+
+       先画**本机口径**、服务端回来再画一遍 —— 与 profile 同款：
+       断网时页面已经可用，首屏速度不押在一个请求上。
+       ⚠️ 调不到就**什么都不做**（不当成错误、不清层级缓存）。
+       ------------------------------------------------------------------ */
+    var M = acct();
+    if (M && M.refreshMe) {
+      Promise.resolve(M.refreshMe({ backing: backing, E: Ent })).then(function (r) {
+        if (!r || !r.ok) return;      // 连不上 / 没登录：本机那份照旧，不重画
+        paint();
+      })["catch"](function () { /* 问不到就算了，页面已经是可用状态 */ });
+    }
 
     var login = $("btn-go-login");
     if (login) login.addEventListener("click", function () { location.href = "/login/"; });

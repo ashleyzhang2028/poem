@@ -309,7 +309,9 @@ async function main() {
   {
     const sw = read("sw.js");
     chk(sw.indexOf('"./js/account-api.js"') >= 0, "sw.js 预缓存里有 js/account-api.js");
-    ["profile/index.html", "settings/general/index.html"].forEach(f => {
+    /* plans/index.html 是 2.1 新增的接线页：它问 `/api/me` 只为一件事 ——
+       「关于这些层级」那一段得如实说清层级**是谁定的**。 */
+    ["profile/index.html", "settings/general/index.html", "plans/index.html"].forEach(f => {
       const s = read(f);
       chk(/js\/account-api\.js/.test(s), f + " 加载了 js/account-api.js");
       chk(s.indexOf("js/auth-api.js") >= 0, f + " 加载了 js/auth-api.js（接线层的传输依赖）");

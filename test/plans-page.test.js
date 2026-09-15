@@ -148,15 +148,35 @@ const PAGE = strip(pageJs);
 
 /* ============ 五、诚实的口径：不装作在卖东西 ============ */
 {
+  /* 2.1：这一段**按状态分叉**（js/plans.js 的 renderAbout()），HTML 里不写死。
+     所以判据从「HTML 里有没有那句话」改成「两种状态各说各的实话」——
+     见下面「五之二」。这里只看 HTML 里没有写死一句会变假的旧话。 */
   const visible = stripHtml(pageHtml);
-  chk(/本地|本机/.test(visible), '页面上如实写明层级是本机登记');
-  chk(/不是付费凭据/.test(visible), '页面上如实写明「不是付费凭据」');
-  chk(/没有服务器/.test(visible), '页面上如实写明本期没有服务器');
+  chk(!/没有服务器|本期没有服务端/.test(visible),
+    'HTML 里不写死「本期没有服务器」（服务端已接通，写死就是假话，见 2.1）');
   chk(!/立即购买|立即开通|￥|限时优惠|首月|付费订阅|开通会员/.test(visible + PAGE),
     '对比页不出现任何收款/促销话术（本期确实收不了钱，写上就是假的）');
   chk(!/即将上线|敬请期待/.test(visible), '不写「即将上线」这类跑在代码前面的承诺');
   chk(/免费版不缩水|一件都不少/.test(visible),
     '页面头一句就说清「免费不缩水」（对比表最容易误导人的地方）');
+}
+
+/* ====== 五之二、2.1：层级**是谁定的** —— 两种状态各说各的实话 ====== */
+{
+  /* 判据只有一个：id.tierSource（服务端判定的唯一凭据）。
+     这一节不看页面画出来的字（那要 jsdom），而是直接**调 renderAbout 那份逻辑
+     的等价物**：源码里那个三元表达式必须两边都说真话，且两句话都对得上
+     「不是付费凭据 / 没有收款」这一条（它在任何状态下都不变）。 */
+  const rb = pageJs.slice(pageJs.indexOf('function renderAbout'), pageJs.indexOf('function renderAbout') + 1400);
+  chk(!!rb, 'js/plans.js 里有 renderAbout()（那一段的渲染入口）');
+  chk(/tierSource === "server"/.test(rb),
+    'renderAbout() 按 tierSource 分叉（不自己猜、不自己比 tier）');
+  chk(/由服务器判定/.test(rb), '服务端那份：页面上说明层级「由服务器判定」');
+  chk(/本机登记/.test(rb), '本机那份：页面上说明层级是「本机登记」');
+  chk(/没有收款|收款|支付入口/.test(rb), '两种状态都写明「本站目前没有任何收款能力」');
+  chk(/不是付费凭据/.test(rb), '两种状态都写明「不是付费凭据」');
+  /* 反向：不许只留一句、不许两态说反 */
+  chk(pageJs.indexOf('renderAbout(id)') > 0, '初始化时真的调了 renderAbout(id)');
 }
 
 /* ============ 六、只读：这一页一个字节都不写盘 ============ */
