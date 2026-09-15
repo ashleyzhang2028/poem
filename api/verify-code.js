@@ -6,6 +6,9 @@
  *      400 { code:"E_CODE_WRONG|E_CODE_EXPIRED|E_CODE_USED|E_CODE_VOID", remaining }
  *      423 { code:"E_LOCKED", retryAfter }
  *
+ * ⚠️ 校验**不看 channel** —— 码的摘要里带 uid + purpose，通道只决定它怎么送到你手上。
+ *    一条短信码和一条邮件码走的是同一个 verifyCode（docs/auth-design.md §8 第 2 条）。
+ *
  * ⚠️ 会话是 **HttpOnly + Secure + SameSite=Lax** 的签名 Cookie（docs §2.4）；
  *    localStorage 里不出现任何长寿命 token。
  *

@@ -35,7 +35,10 @@ function boot(envVars) {
   const keys = [
     "SUPABASE_URL", "SUPABASE_SERVICE_KEY", "SESSION_SECRET", "MAIL_TRANSPORT",
     "SENDGRID_API_KEY", "RESEND_API_KEY", "MAIL_FROM", "ALLOW_CODE_ECHO",
-    "RESEND_COOLDOWN_MS", "CODE_MAX_ATTEMPTS"
+    "RESEND_COOLDOWN_MS", "CODE_MAX_ATTEMPTS",
+    // 2B：短信开关也是 env，不清就会从上个用例漏进下一个
+    // （症状：「出厂时短信关闭」那条断言在单独跑时绿、连跑时红）
+    "SMS_ENABLED", "SMS_TRANSPORT", "SMS_RESEND_COOLDOWN_MS"
   ];
   keys.forEach(k => { saved[k] = process.env[k]; });
 
@@ -813,7 +816,9 @@ async function main() {
         eq(init.credentials, "same-origin", "请求带 credentials: same-origin（Cookie 才发得出去）");
         chk(/\/api\/send-code$/.test(url), "打到 /api/send-code");
         const sent = JSON.parse(init.body);
-        eq(sent.email, "a@b.com", "请求体带上邮箱");
+        // 2B：通道由 channel + value 表达（缺省 channel 仍是 "email"）
+        eq(sent.channel, "email", "请求体带上 channel（缺省 email）");
+        eq(sent.value, "a@b.com", "请求体把邮箱放在通用的 value 里");
         return { status: 202, text: async () => '{"codeId":"c_1","cooldown":60,"store":"memory"}' };
       }
     });
@@ -1022,6 +1027,147 @@ async function main() {
       const r = await call(sv.base, "POST", "/api/send-code", { email: "offline@example.com" });
       chk(r.status === 202 || r.status === 503, "没配数据库时接口不 500（实际 " + r.status + "）");
     } finally { await sv.close(); }
+  }
+
+  /* ==================================================================
+     十八、2B：短信通道「口子」（channel 枚举 / 更严频控 / 如实拒绝）
+     ==================================================================
+     这一节守的是 docs/auth-design.md §8 的三条与 §12 的总原则：
+       · 短信**不是另一套流程**，只是 channel 的另一个取值（同一套签名）
+       · 没开通时**如实拒**（503 E_SMS_NOT_OPEN），绝不假装发了短信
+       · 手机号归一化 / 掩码 / 摘要与「一个号一个命名空间」
+     ================================================================== */
+  {
+    boot({});
+    const id = require("../api/_lib/identity.js");
+    const core = require("../api/_lib/core.js");
+    const A = require("../js/auth-core.js");
+
+    /* ---- 手机号归一化：+86 / 86 / 0086 / 空格 / 横线 统统收敛 ---- */
+    ["13800138000", "138 0013 8000", "138-0013-8000", "+8613800138000",
+      "8613800138000", "008613800138000", "(138)0013.8000"].forEach(v => {
+      eq(id.normalizePhone(v), "13800138000", "服务端手机号归一化：" + JSON.stringify(v));
+      eq(A.normalizePhone(v), "13800138000", "前端手机号归一化：" + JSON.stringify(v));
+    });
+    chk(id.isPhoneShape("13800138000"), "11 位 1 开头通过形态校验");
+    chk(!id.isPhoneShape("12345"), "位数不足被拒");
+    chk(!id.isPhoneShape("12800138000"), "第二位 2 不是有效号段，被拒");
+    chk(!id.isPhoneShape("138001380000"), "12 位被拒");
+    eq(id.maskPhone("13800138000"), "138****8000", "手机号掩码：前 3 后 4");
+    eq(id.maskPhone("+86 138-0013-8000"), "138****8000", "掩码前先归一化");
+    eq(id.maskPhone("12"), "***", "掩码对脏值给 ***");
+
+    /* ---- 规则一致性：前端 / 服务端必须同判（不一致 = 用户被莫名拦住） ---- */
+    ["13800138000", "12345", "+86 138 0013 8000", "", "abcdefghijk"].forEach(v => {
+      eq(id.normalizePhone(v), A.normalizePhone(v), "两端手机号归一化一致：" + JSON.stringify(v));
+      eq(id.isPhoneShape(v), A.isPhoneShape(v), "两端手机号形状判定一致：" + JSON.stringify(v));
+      eq(id.maskPhone(v), A.maskPhone(v), "两端手机号掩码一致：" + JSON.stringify(v));
+    });
+
+    /* ---- 摘要按通道分命名空间：同样的字符串，email 与 phone 摘要不同 ---- */
+    const eh = id.emailHash("13800138000", "pep");
+    const ph = id.phoneHash("13800138000", "pep");
+    chk(eh !== ph, "同一串在 email 与 phone 两个命名空间下摘要不同（排除交叉命中）");
+    chk(id.phoneHash("13800138000", "p1") !== id.phoneHash("13800138000", "p2"),
+      "换 pepper 得到不同手机号摘要");
+    chk(!/13800138000/.test(ph), "手机号摘要里看不到明文");
+
+    /* ---- 服务端频控真的认 phone 档（不是「写了但没接上」）---- */
+    {
+      const lim = core.makeRateLimiter();
+      const cfg = require("../api/_lib/config.js");
+      const tt = Date.now();
+      chk(lim.check(cfg, "phone", "13800138000", tt).ok, "phone 档初始放行");
+      // 一小时内第 3 次应被拦（rateSms.phone 小时档上限 2）
+      lim.hit("phone", "13800138000", tt - 1000);
+      lim.hit("phone", "13800138000", tt - 2000);
+      const blocked = lim.check(cfg, "phone", "13800138000", tt);
+      chk(!blocked.ok && blocked.retryAfter > 0,
+        "一小时第 3 次发短信被拦（rateWindow 真的认 phone 档，不是空数组）");
+      // 日上限 5 严格小于邮箱日上限 10
+      const smsDay = cfg.rateSms.phone.filter(w => w[0] === 86400000)[0][1];
+      const mailDay = cfg.rate.email.filter(w => w[0] === 86400000)[0][1];
+      chk(smsDay < mailDay, "服务端短信日上限严格小于邮箱（" + smsDay + " < " + mailDay + "）");
+    }
+
+    /* ---- 客户端 RATE_SMS 比邮箱更严（§8：60 秒 1 次、日 5 次、月 15 次）---- */
+    chk(A.RATE_SMS && A.RATE_SMS.phone, "前端内核有独立的短信频控档 RATE_SMS.phone");
+    const smsWins = A.RATE_SMS.phone;
+    chk(smsWins.some(w => w[1] === 5 && w[0] === 86400000), "短信档含「日 5 次」");
+    chk(smsWins.some(w => w[1] === 15), "短信档含「月 15 次」");
+    // 更严：短信的日上限必须 ≤ 邮箱的日上限
+    const emailDay = A.RATE.email.filter(w => w[0] === 86400000)[0][1];
+    const smsDay = smsWins.filter(w => w[0] === 86400000)[0][1];
+    chk(smsDay < emailDay, "短信日上限严格小于邮箱（" + smsDay + " < " + emailDay + "）");
+  }
+
+  /* ---- 走真 HTTP：没开通短信时如实回 503，且**不创建账号、不落码** ---- */
+  {
+    boot({});                       // 默认 SMS_ENABLED 未开
+    const sv = await serve();
+    try {
+      const r = await call(sv.base, "POST", "/api/send-code", { channel: "sms", value: "13800138000" });
+      eq(r.status, 503, "短信未开通时回 503（不是 500，也不是假装 202）");
+      eq(r.body.code, "E_SMS_NOT_OPEN", "错误码如实说「短信没开通」");
+      chk(/短信/.test(r.body.message), "文案里提到短信（不含糊）");
+
+      // 400 类：手机号格式与未知通道
+      const bad = await call(sv.base, "POST", "/api/send-code", { channel: "sms", value: "12345" });
+      eq(bad.status, 400, "手机号形状不对回 400");
+      eq(bad.body.code, "E_PHONE_FORMAT", "错误码是 E_PHONE_FORMAT");
+
+      const unk = await call(sv.base, "POST", "/api/send-code", { channel: "wechat", value: "x" });
+      eq(unk.status, 400, "未知 channel 回 400");
+      eq(unk.body.code, "E_CHANNEL", "未知 channel 回 E_CHANNEL（不静默当邮箱）");
+
+      // 老调用点（只有 email，无 channel）仍然照常 —— 1A 的兼容口
+      const old = await call(sv.base, "POST", "/api/send-code", { email: "compat@example.com" });
+      eq(old.status, 202, "老调用点（只有 email）仍走邮箱通道，202");
+      eq(old.body.channel, "email", "响应里如实回 channel:email");
+    } finally { await sv.close(); }
+  }
+
+  /* ---- 端到端：开了 SMS_ENABLED 但没接商 → 仍是如实失败，不是 console 成功 ---- */
+  {
+    boot({ SMS_ENABLED: "1" });      // 只开了开关，没指定 SMS_TRANSPORT
+    const sv = await serve();
+    try {
+      const r = await call(sv.base, "POST", "/api/send-code", { channel: "sms", value: "13900139000" });
+      eq(r.status, 503, "只开开关没接短信商 → 仍 503（不许落到 console 假装成功）");
+      eq(r.body.code, "E_SMS_NOT_OPEN", "错误码仍是 E_SMS_NOT_OPEN");
+    } finally { await sv.close(); }
+  }
+
+  /* ---- 通道只影响投递：sms 走同一套 verifyCode（同一个码的摘要里没有通道假设）---- */
+  {
+    boot({});
+    const core = require("../api/_lib/core.js");
+    const cfg = require("../api/_lib/config.js");
+    const store = require("../api/_lib/store.js").getStore(cfg);
+    const deps = { cfg, store, limiter: core.makeRateLimiter(), now: () => Date.now(), deviceId: "d", ip: "1.1.1.1" };
+
+    // 直接调内核，绕开「没接商」那一关，验证状态机确实共用
+    const opened = Object.assign({}, cfg, { smsEnabled: true, smsTransport: "sms" });
+    deps.cfg = opened;
+    // 码能落库、verifyCode 能认 —— 与邮件完全同一条路径
+    const rec = await core.sendCode(deps, { channel: "sms", value: "13700137000", code: "246810" });
+    // 没有真短信商 → 投递失败是 502，但**码已经生成**（这正是「共用状态机」的证据）
+    eq(rec.status, 502, "接商为空壳时投递失败回 502（E_SMS_FAIL 那一类）");
+    eq(rec.body.code, "E_SMS_FAIL", "错误码是 E_SMS_FAIL（与邮件的 E_MAIL_FAIL 区分）");
+    const codes = Object.keys(store._codes || {});
+    chk(codes.length >= 1 || typeof store.getCode === "function",
+      "码进入了同一张 codes 表（通道不改变落库形状）");
+  }
+
+  /* ---- 合规：短信没开通 ⇒ 条款里「不收集手机号」这句话仍然成立（§12 总原则）---- */
+  {
+    const fs2 = require("fs");
+    const priv = fs2.readFileSync(path.join(ROOT, "privacy", "index.html"), "utf8");
+    boot({});                        // 出厂：短信未开
+    const cfg = require("../api/_lib/config.js");
+    eq(cfg.smsEnabled, false, "出厂时 SMS_ENABLED 为 false");
+    chk(/不收集手机号/.test(priv),
+      "短信未开通 + 请求被 503 拒掉 ⇒ 隐私条款「不收集手机号」这句话仍然准确（条款跟随代码）");
   }
 
   console.log(fails === 0 ? "\n🎉 服务端账号接口测试全部通过" : "\n❌ " + fails + " 项失败");

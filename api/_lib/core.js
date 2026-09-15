@@ -47,7 +47,19 @@ function uniqueId(taken, base) {
 
 /* ------------------------------------------------------------- 频控 */
 
-function rateWindow(cfg, bucket) { return cfg.rate[bucket] || []; }
+/**
+ * 取某一档的窗口定义。
+ *
+ * ⚠️ `phone` 必须从这里就能认出来 —— 若只写 `cfg.rate.phone`，而 config 里那张表
+ *    叫 `rateSms.phone`，取到的就是空数组 = **该档实际不限速**，
+ *    而代码看起来「写了限制」。这正是 2A 那两个洞的同款：
+ *    限制写在 A 处、读取在 B 处，谁也不报错。
+ *    test/api.test.js 里「短信日上限严格小于邮箱」那条就是钉这件事的。
+ */
+function rateWindow(cfg, bucket) {
+  if (bucket === "phone") return (cfg.rateSms && cfg.rateSms.phone) || [];
+  return cfg.rate[bucket] || [];
+}
 
 /**
  * 四层频控：邮箱 / 设备 / IP / 全局（docs §4.6 第 4 条）。
@@ -102,7 +114,7 @@ function makeRateLimiter() {
 /* --------------------------------------------------------- 账号读写 */
 
 /** 落库的账号形状（**白名单**：多一个字段都不写，免得把不该存的存进去） */
-function accountRow(email, hash, mask, now) {
+function accountRow(_identityValue, hash, mask, now) {
   return {
     uid: id.newUid(),
     email_hash: hash,
@@ -180,11 +192,24 @@ function normalizeGrants(_untrusted) {
 
 /* ------------------------------------------------------- 发码 */
 
-function findOrCreateAccount(store, cfg, email, t) {
-  var hash = id.emailHash(email, cfg.sessionSecret || "no-pepper");
+/**
+ * 找到或新建账号。
+ *
+ * ⚠️ **摘要按 channel 分开命名空间**（email 走 emailHash、sms 走 phoneHash）：
+ *    两条通道的值空间不同（一个含 @、一个是 11 位数字），
+ *    若共用一个 hash 函数，理论上存在「某手机号串正好等于某邮箱串」的交叉命中。
+ *    分命名空间后这种可能被彻底排除，表结构不变（还是 accounts.email_hash 那一列，
+ *    它现在存的是「该身份标识的摘要」，列名是历史包袱，见 §8 第 1 条）。
+ */
+function findOrCreateAccount(store, cfg, identity, t) {
+  var ch = identity.channel;
+  var hash = ch === "sms"
+    ? id.phoneHash(identity.value, cfg.sessionSecret || "no-pepper")
+    : id.emailHash(identity.value, cfg.sessionSecret || "no-pepper");
+  var mask = ch === "sms" ? id.maskPhone(identity.value) : id.maskEmail(identity.value);
   return Promise.resolve(store.getAccountByHash(hash)).then(function (acc) {
     if (acc && acc.status !== "deleted") return { acc: acc, created: false };
-    var row = accountRow(email, hash, id.maskEmail(email), t);
+    var row = accountRow(identity.value, hash, mask, t);
     return Promise.resolve(store.putAccount(row)).then(function (saved) {
       return { acc: saved || row, created: true };
     });
@@ -192,25 +217,86 @@ function findOrCreateAccount(store, cfg, email, t) {
 }
 
 /**
- * 发码：**响应与请求一律不看邮箱是否存在**（第 4 条 checklist）。
+ * 归一化请求里的身份标识，产出 `{channel, value, mask, bucket}`。
+ *
+ * ⚠️ 只认 `email` / `sms` 两种（docs/auth-design.md §13：其余 channel 直接拒绝）。
+ *    未知 channel **不静默当作 email** —— 那是「把短信请求发成一封邮件」的源头，
+ *    而用户会一直等一条永远不来的短信。E_CHANNEL 明确说「不支持」。
+ */
+function normIdentity(input) {
+  var ch = input && input.channel;
+  if (ch === undefined || ch === null || ch === "") ch = "email";  // 缺省仍是邮箱（1A 的老行为）
+  ch = String(ch).toLowerCase();
+  if (ch !== "email" && ch !== "sms") {
+    return { bad: "E_CHANNEL", message: "暂时不支持这种登录方式" };
+  }
+  var raw = input.value != null ? input.value : input.email != null ? input.email : input.phone;
+  if (ch === "email") {
+    var email = id.normalizeEmail(raw);
+    if (!id.isEmailShape(email)) return { bad: "E_EMAIL_FORMAT", message: "这个邮箱看起来不太对，再检查一下" };
+    return { channel: ch, value: email, mask: id.maskEmail(email), bucket: "email", key: email };
+  }
+  var phone = id.normalizePhone(raw);
+  if (!id.isPhoneShape(phone)) return { bad: "E_PHONE_FORMAT", message: "这个手机号看起来不太对，再检查一下" };
+  return { channel: ch, value: phone, mask: id.maskPhone(phone), bucket: "phone", key: phone };
+}
+
+/**
+ * 短信通道当前是否可用。
+ *
+ * ⚠️ 这是 2B 的**核心口径**：`SMS_ENABLED=1` 只是「允许尝试」，
+ *    真正能不能发取决于有没有接入短信商（cfg.smsTransport）。
+ *    两者都不满足时，请求以 503 + `E_SMS_NOT_OPEN` 被**如实拒掉**。
+ *    绝不走 console 兜底把它「成功」掉 —— 一条永远收不到的短信，
+ *    和一个「已发送」的提示，加起来就是骗人（§12 总原则：条款不许跑在代码前面）。
+ */
+function smsReady(cfg) {
+  return !!(cfg.smsEnabled && cfg.smsTransport);
+}
+
+/**
+ * 发码：**响应与请求一律不看账号是否存在**（第 4 条 checklist）。
  * 新老账号走同一条路径，同一个 status、同一个 body 形状。
+ *
+ * channel 只影响三件事：**归一化规则、频控档、谁去投递**。
+ * 状态机、码的生成与摘要、失败上限、时钟回拨保护 —— 两条通道**逐字共用**，
+ * 这正是 §8 那句「短信不是另一套流程」在代码里的样子。
  */
 function sendCode(deps, input) {
   var cfg = deps.cfg, store = deps.store, limiter = deps.limiter, t = deps.now();
-  var email = id.normalizeEmail(input.email);
 
-  if (!id.isEmailShape(email)) return Promise.resolve(err(400, "E_EMAIL_FORMAT", "这个邮箱看起来不太对，再检查一下"));
+  var who = normIdentity(input);
+  if (who.bad) return Promise.resolve(err(400, who.bad, who.message));
 
+  var isSms = who.channel === "sms";
   var purpose = input.purpose === "reset" ? "reset" : "login";
   var device = String(input.deviceId || "unknown").slice(0, 40);
   var ip = String(input.ip || "unknown");
 
-  // 四层频控，取最严
-  var buckets = [["email", email], ["device", device], ["ip", ip], ["global", "all"]];
+  /* ---- 短信口子：没开通就**如实拒绝**，且不做任何副作用 ---- */
+  if (isSms && !smsReady(cfg)) {
+    return Promise.resolve(err(503, "E_SMS_NOT_OPEN",
+      "短信登录还没开通（需要先签短信商并完成模板报备）。当前可用邮箱随机码登录。"));
+  }
+
+  /* ---- 频控 ---- */
+  // 短信档**更严**（docs §8）：phone 是独立的一档，且额外叠 60 秒冷却。
+  // 邮箱档照旧走 email / device / ip / global 四层。
+  var buckets, coolMs, coolBucket, coolKey;
+  if (isSms) {
+    buckets = [["phone", who.key], ["device", device], ["ip", ip], ["global", "all"]];
+    coolBucket = "phone"; coolKey = who.key;
+    coolMs = cfg.smsResendCooldownMs || 60000;
+  } else {
+    buckets = [["email", who.key], ["device", device], ["ip", ip], ["global", "all"]];
+    coolBucket = "email"; coolKey = who.key;
+    coolMs = cfg.resendCooldownMs;
+  }
+
   for (var i = 0; i < buckets.length; i++) {
     var g = limiter.check(cfg, buckets[i][0], buckets[i][1], t);
     if (!g.ok) {
-      var code = buckets[i][0] === "email" ? "E_RATE_EMAIL"
+      var code = buckets[i][0] === "email" || buckets[i][0] === "phone" ? "E_RATE_EMAIL"
         : buckets[i][0] === "device" ? "E_RATE_DEVICE"
           : buckets[i][0] === "ip" ? "E_RATE_IP" : "E_RATE_GLOBAL";
       return Promise.resolve(err(429, code, "发得太快了，请稍后再试", { retryAfter: g.retryAfter }));
@@ -218,7 +304,7 @@ function sendCode(deps, input) {
   }
 
   // 重新发送冷却（与频控分开判，见 limiter.cooldown 的说明）
-  var cool = limiter.cooldown("email", email, cfg.resendCooldownMs, t);
+  var cool = limiter.cooldown(coolBucket, coolKey, coolMs, t);
   if (!cool.ok) {
     return Promise.resolve(err(429, "E_RATE_EMAIL", "发得太快了，请稍后再试", { retryAfter: cool.retryAfter }));
   }
@@ -226,7 +312,7 @@ function sendCode(deps, input) {
   var rawCode = input.code || id.newCode(cfg.codeLength);
   var salt = id.newSalt();
 
-  return findOrCreateAccount(store, cfg, email, t).then(function (r) {
+  return findOrCreateAccount(store, cfg, who, t).then(function (r) {
     var acc = r.acc;
     if (acc.status === "locked") return err(423, "E_LOCKED", "为了安全，请稍后再试", { retryAfter: 3600 });
 
@@ -235,8 +321,8 @@ function sendCode(deps, input) {
       code_id: codeId,
       uid: acc.uid,
       purpose: purpose,
-      channel: "email",
-      sent_to: id.maskEmail(email),      // ⚠️ 落库的也是掩码，不是明文
+      channel: who.channel,
+      sent_to: who.mask,              // ⚠️ 落库的也是掩码，不是明文
       code_hash: id.codeHash(acc.uid, purpose, rawCode, salt, cfg.sessionSecret || ""),
       salt: salt,
       issued_at: t,
@@ -250,17 +336,18 @@ function sendCode(deps, input) {
       .then(function () { return store.putCode(rec); })
       .then(function () {
         buckets.forEach(function (b) { limiter.hit(b[0], b[1], t); });
-        return mail.send(cfg, { to: email, mask: id.maskEmail(email), code: rawCode });
+        return sendVia(cfg, who, rawCode);
       })
       .then(function (sent) {
         // ⚠️ 新老用户回同一个形状。是不是新账号**不在这条响应里**。
         var body = {
           codeId: codeId,
           expiresAt: rec.expires_at,
-          cooldown: Math.round(cfg.resendCooldownMs / 1000),
+          cooldown: Math.round(coolMs / 1000),
           // 如实告知通道现状：console 模式真实用户收不到信，不能装作发了
           transport: sent.transport,
           delivered: !!sent.delivered,
+          channel: who.channel,
           store: store.kind
         };
         // 冒烟自测口子：**显式**开 ALLOW_CODE_ECHO 才回明文码，默认关
@@ -268,10 +355,31 @@ function sendCode(deps, input) {
         return ok(body);
       })
       .catch(function (e) {
-        // 发信失败：码已经落库了，但用户收不到 —— 如实回 502，不假装成功
-        return err(502, "E_MAIL_FAIL", "验证码邮件没发出去，请稍后再试", { detail: String(e.message || e).slice(0, 120) });
+        // 发码失败：码已经落库了，但用户收不到 —— 如实回 502，不假装成功。
+        // 短信那条路有它自己的错误码（E_SMS_FAIL），因为「短信没发出去」
+        // 与「邮件没发出去」对用户的下一步动作不同。
+        var isSmsFail = isSms;
+        return err(502, isSmsFail ? "E_SMS_FAIL" : "E_MAIL_FAIL",
+          isSmsFail ? "短信没发出去，请稍后再试" : "验证码邮件没发出去，请稍后再试",
+          { detail: String(e.message || e).slice(0, 120) });
       });
   });
+}
+
+/**
+ * 把码交给哪个通道送出去。
+ * 邮件走 mail.send（sendgrid / resend / console）；短信走同一个适配层，
+ * 只是 cfg.mail() 会返回 "sms" —— **业务代码不认识任何短信 API**（§8 第 2 条）。
+ */
+function sendVia(cfg, who, code) {
+  if (who.channel !== "sms") {
+    return mail.send(cfg, { to: who.value, mask: who.mask, code: code });
+  }
+  // 走到这里说明 smsReady(cfg) 已为真（否则上面早返回了）。
+  // 复用同一个 mail.send 出口，用一份「短信形态」的 cfg 覆盖通道选择 ——
+  // 这样 transports.sms 的实现无需邮件正文，也不会被误当邮件发出去。
+  var smsCfg = Object.assign({}, cfg, { mailTransport: "sms" });
+  return mail.send(smsCfg, { to: who.value, mask: who.mask, code: code });
 }
 
 /**

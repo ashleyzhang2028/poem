@@ -533,10 +533,15 @@ exportJSON / importJSON` 一个签名都不改，实现转调 `ProgressStore`。
 
 ```
 POST /api/send-code
-  req  { identity:{channel:"email", value}, purpose:"login"|"reset", deviceId }
-  res  202 { codeId, expiresAt, cooldown }
+  req  { channel:"email"|"sms", value, purpose:"login"|"reset", deviceId }
+       （兼容 1A 的 { email } 调用点：channel 缺省即 "email"）
+  res  202 { codeId, expiresAt, cooldown, transport, delivered, channel, store }
+       400 { code:"E_EMAIL_FORMAT|E_PHONE_FORMAT|E_CHANNEL" }
        429 { code:"E_RATE_*", retryAfter }
-  ⚠️ 无论邮箱是否存在，响应完全一致（防用户枚举）
+       503 { code:"E_NOT_CONFIGURED|E_SMS_NOT_OPEN" }
+  ⚠️ 无论账号是否存在，响应完全一致（防用户枚举）
+  ⚠️ channel:"sms" 走**同一套**状态机，只是归一化 / 频控档 / 投递不同；
+     短信未开通时如实回 503 E_SMS_NOT_OPEN，**不假装发送**（docs/auth-design.md §8.2）
 
 POST /api/verify-code
   req  { codeId, code, deviceId }
@@ -555,7 +560,8 @@ POST /api/sync/push        （方案 B）
   req  { recs:[{id,payload,updatedAt}] }   res 200 { applied, conflicts[] }
 
 DELETE /api/account
-  req  { code }   res 200 { exportUrl }  → 24h 内可下载，随后物理删除
+  req  { confirm:true, deviceId }
+  res  200 { deleted:true, export:{...} }   ← 数据随响应回（本期无对象存储，不给下载链接）
 ```
 
 **服务端必须守住的三条（review checklist）：**
@@ -779,6 +785,80 @@ DELETE /api/account
 
 ---
 
+### 4.10 2B 期「短信口子」已落地（2026-09-17）：把注释变成真的能跑
+
+> ✅ **2B 已落地**：在 8.1 之前，短信只是 `identity.channel` 里一个字符串。
+> 现在「加 sms 通道」这件事**只差一个「谁去发」的实现** ——
+> 归一化、摘要、频控、状态机全部就位，且**一分钱没花、一项配置没配**。
+
+#### ① 短信不是「另一套流程」，是同一套流程的另一个 channel
+
+`api/_lib/core.js` 的 `sendCode` / `verifyCode` **没有 channel 分支**在流程上：
+码怎么生成、怎么摘要、失败几次作废、时钟回拨怎么护——两条通道**逐字共用**。
+channel 只改三件事：**归一化规则、频控档、谁去投递**。
+
+```
+normIdentity(input) → { channel, value, mask, key }
+  email → normalizeEmail / isEmailShape / emailHash
+  sms   → normalizePhone / isPhoneShape / phoneHash（|phone| 命名空间）
+```
+
+摘要**按通道分命名空间**：同一个字符串在 email 与 phone 下摘要不同，
+排除「某手机号串 = 某邮箱串」的交叉命中可能。表结构不变
+（`accounts.email_hash` 那一列现在存的是「该身份标识的摘要」，列名是历史包袱）。
+
+#### ② 频控更严 —— 因为短信是真金白银
+
+邮箱成本近似零，短信 0.04 元/条。邮箱那套「一小时 5 封」放短信上
+就是「一小时能烧 0.2 元/人」，被刷一晚几百上千。
+所以短信独立一档：**60 秒 1 次、日 5 次、月 15 次**
+（`config.rateSms` / `AuthCore.RATE_SMS`，两端同值）。
+
+> ⚠️ 客户端内核的 `rateCheck` 必须能认 `phone` 档 ——
+> 写了 `RATE_SMS` 而 `rateCheck` 不认它，短信就成了**实际不限速**，
+> 而代码看起来「写了限制」。这是「写了但没接上」的同款坑（2A 那两个洞）。
+
+#### ③ 没开通时**如实拒**，且不做任何副作用（2B 的核心口径）
+
+```
+POST { channel:"sms", value }  →  503 E_SMS_NOT_OPEN
+```
+
+1. **不假装**：没有真短信商时**绝不走 console 兜底当成功**。`transports.sms`
+   是个空壳，它的 `send()` 直接 reject。一条收不到的短信 + 一个「已发送」提示 = 骗人。
+2. **不做副作用**：拒在落库之前，**不建账号、不写码记录**。否则「试一下短信登录」
+   在库里留一串孤儿账号。
+3. **不偷偷降级**：界面收到 `E_SMS_NOT_OPEN` **不许**切回本机体验版
+   （本机版同样发不出短信，切过去只是换个说法）。
+   `js/auth-api.js` 给它一条**独立**文案，且不在回落名单里。
+
+> `SMS_ENABLED=1` 只是「允许尝试」，不等于能发；`SMS_TRANSPORT` 指向已实现的商才真能发。
+> 只开开关不接商，请求**仍然**是 503。
+
+#### ④ 界面仍不渲染（条款不许跑在代码前面）
+
+`login/index.html` 的短信按钮**仍是注释**。区别在于：注释里现在写清了
+「开通时只需取消注释」——因为接口真的支持了。
+但**按钮不渲染、也不写「即将上线」**：接口支持 ≠ 通道能用（还没签短信商）。
+
+#### 验证
+
+- `bash test/run.sh`：**4263 条断言全绿、0 失败**（较 2A 的 4185 增 78）
+- `test/api.test.js` 新增第十八节：手机号归一化/掩码/摘要命名空间、
+  **两端规则对拍**（前端与服务端对同一输入同判）、更严频控档、
+  真 HTTP 下 503 / 400 的三条路径、老调用点兼容、**「只开开关不接商仍 503」**、
+  码落入同一张 codes 表（通道不改落库形状）
+- `test/auth.test.js` 补 2B 断言：归一化收敛、形状拒绝、独立短信档、返回带 channel
+- `sw.js` 缓存版本 v122 → **v123**
+
+#### 下一步（2D：配置与真开通，代码一个字不用改）
+
+Supabase 建项目 + SendGrid / Resend 密钥 + `SESSION_SECRET` +
+域名 SPF / DKIM / DMARC。**这一步得用户自己去注册**，是本项目唯一
+「没有代码可写」的一步。短信真开通更远：要先签短信商 + 模板报备（3~7 工作日）。
+
+---
+
 ## 5. 排期与顺序（为什么必须这个顺序）
 
 ```
@@ -797,7 +877,14 @@ DELETE /api/account
 2A 期  注销自助 + 补洞 ───────┐  ✅ 已完成（2026-09-17）
        （含接上 /api/me）      │  产出：两根线接上、条款改到与代码一致
                               ▼
-2 期   短信口子 / 条款二改（剩余部分）
+2B 期  短信口子 ─────────────┐  ✅ 已完成（2026-09-17）
+       0 依赖 / 不花钱         │  产出：channel 枚举真的能跑、更严频控档、
+                              │        未开通时如实回 503（不假装发短信）
+                              ▼
+2D 期  配置与真开通（用户自办）—— 注册 Supabase + SendGrid/Resend 密钥 +
+                              │    SESSION_SECRET + 域名 SPF/DKIM/DMARC
+                              ▼
+2 期   条款二改（剩余部分）
                               ▼
 3 期   收费（前置是**主体资质**，不是技术）
 ```
@@ -842,6 +929,9 @@ DELETE /api/account
 | 15 | 1A 期范围 | ✅ **已完成**（六个接口 + 发信适配层 + 条款同步） | §4、§4.7 |
 | 15b | 1B 期范围 | ✅ **已完成**（`js/sync-store.js` + 设置开关 + 冲突裁决 + 224 条断言） | §4.0、§4.8 |
 | 15c | 2A 期范围 | ✅ **已完成**（接上 `/api/me` 与 `/api/account` + 条款同步；`js/account-api.js` + 145 条断言） | §4.9 |
+| 15d | 2B 期范围 | ✅ **已完成**（短信 channel 口子：归一化/摘要/更严频控/未开通如实 503；界面仍不渲染） | §4.10 |
+| 20 | 短信通道现状 | **只接了口子，未签短信商**。`SMS_ENABLED=1` 仅「允许尝试」，没接商仍是 503 E_SMS_NOT_OPEN | §4.10 |
+| 21 | 短信频控 | 比邮箱**更严**：60 秒 1 次、日 5 次、月 15 次（短信有真实成本） | §4.10 |
 | 18 | 服务端角色下发 | ✅ **已接通**：`publicAccount()` 下发 `role`，`identity()` 在 `source:"server"` 时以其为准 | §4.9 |
 | 19 | 注销需要联网吗 | **需要**。连不上时不阻断本机注销，但如实标 `remote:"skipped"`（云端那份还在） | §4.9 |
 | 17 | 云同步开关的默认值 | **出厂关着**（不主动打开就没有任何上传） | §4.2 第 2 条 |

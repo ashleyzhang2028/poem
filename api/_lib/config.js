@@ -44,6 +44,13 @@ var CONFIG = {
   mailFrom: env("MAIL_FROM", "noreply@mail.kuibu.app"),
   mailFromName: env("MAIL_FROM_NAME", "跬步"),
 
+  /* ---- 短信通道（2B：只留口子，**默认关闭**）----
+     ⚠️ 这里没有「密钥」可配 —— 因为**还没有签短信商**。smsEnabled 默认 false，
+        打开它也需要同时实现 smsTransport（见 mail/index.js 的口子），
+        否则请求会以 E_CHANNEL_NOT_OPEN 被如实拒掉，而不是假装发了短信。 */
+  smsEnabled: env("SMS_ENABLED", "0") === "1",
+  smsTransport: env("SMS_TRANSPORT", null),
+
   /* ---- 站点 ---- */
   siteUrl: env("SITE_URL", "https://kuibu.app"),
 
@@ -52,6 +59,9 @@ var CONFIG = {
   codeTtlMs: intEnv("CODE_TTL_MS", 10 * 60 * 1000), // 10 分钟
   codeMaxAttempts: intEnv("CODE_MAX_ATTEMPTS", 5),  // 单码失败上限
   resendCooldownMs: intEnv("RESEND_COOLDOWN_MS", 60 * 1000),
+  // 短信重发冷却：docs §8 定的是 60 秒，与邮箱同值但**独立成键** ——
+  // 将来要单独收紧（比如 120 秒）不必动邮箱那条
+  smsResendCooldownMs: intEnv("SMS_RESEND_COOLDOWN_MS", 60 * 1000),
   sessionDays: intEnv("SESSION_DAYS", 30),
   cookieName: env("COOKIE_NAME", "kbsid"),
 
@@ -62,6 +72,20 @@ var CONFIG = {
     ip: [[3600000, 30], [86400000, 100]],
     global: [[3600000, 200], [86400000, 800]]
   },
+
+  /**
+   * 短信通道的频控档（docs/auth-design.md §8：「比邮箱**更严**」）。
+   *
+   * 为什么必须更严：一条短信是真金白银（0.04 元），而邮箱成本近似为零 ——
+   * 邮箱那套「一小时 5 封」放到短信上就是「一小时能烧 0.2 元／人」，
+   * 被刷一晚就是几百上千元（§8 明写「短信接口是黑产重点目标」）。
+   * 因此短信档对齐 §8 定下的三条：60 秒 1 次、日 5 次、月 15 次。
+   */
+  rateSms: {
+    phone: [[3600000, 2], [86400000, 5], [2592000000, 15]]
+  },
+
+
 
   // 冒烟/自测模式：显式打开才允许把明文码回给调用方（**绝不在生产开**）
   allowCodeEcho: env("ALLOW_CODE_ECHO", "0") === "1"
