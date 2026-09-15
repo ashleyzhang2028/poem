@@ -284,6 +284,10 @@
   <!-- 自选集合（用户自己加背的篇目）：阅读器里的「加入背诵」读它。
        课内这 261 首本来就在每日任务里，所以列表上不挂「加入背诵」圆键
        （见 js/poems.js 的 reciteList: false）—— 引擎里那套仍然可用。 -->
+  <!-- 分域引擎（Issue #132 阶段 0）：进度 / 账号 / 设备三域的唯一一份定义，
+       读法由 js/storage.js 转发。**必须排在 js/storage.js 之前** ——
+       缺了它 storage 只是退化成兜底读法，不会报错（那种「不报错的少数据」最难查）。 -->
+  <script src="js/progress-store.js"></script>
   <script src="js/collections.js"></script>
   <!-- 古籍阅读库（索引页 + 详情页的引擎）：必须排在 js/poems.js 之前 -->
   <!-- 朗读档位（五档模式 / 存储键 / 出厂档的唯一一份定义）：reader-core 与设置页共用 -->

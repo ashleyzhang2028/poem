@@ -341,8 +341,16 @@
   const PINYIN_MODES = ["off", "rare", "all"];
   const DEFAULT_PINYIN_MODE = "rare";
 
-  /* 阅读辅助总开关：开启时打开阅读器即自动注音 */
+  /* 阅读辅助总开关：开启时打开阅读器即自动注音。
+     ⚠️ Issue #132 阶段 0 起它属**设备域**（`poem_device_prefs_v1`），
+     读法收在 `ProgressStore.helper()` 一处 —— 手机上开了阅读辅助，
+     不该让电脑也满屏拼音。引擎缺席（脚本顺序不对 / 老缓存）时退到老键，
+     老键里那份镜像仍在（见 js/progress-store.js 的 saveSettings）。 */
   function helperOn() {
+    if (typeof window !== "undefined" && window.ProgressStore &&
+        typeof window.ProgressStore.helper === "function") {
+      return window.ProgressStore.helper() !== "off";
+    }
     try {
       return JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}").helper !== "off";
     } catch (e) {
@@ -403,8 +411,13 @@
     setHelperOn(m !== "off");
   }
 
-  /** 写入「阅读辅助」总开关（与首页设置共用同一份 settings） */
+  /** 写入「阅读辅助」总开关（设备域；引擎同时镜像一份到老键，见 js/progress-store.js） */
   function setHelperOn(on) {
+    if (typeof window !== "undefined" && window.ProgressStore &&
+        typeof window.ProgressStore.setHelper === "function") {
+      window.ProgressStore.setHelper(!!on);
+      return;
+    }
     let cfg = {};
     try {
       cfg = JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}") || {};

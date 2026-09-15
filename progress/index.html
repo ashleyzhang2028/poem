@@ -110,6 +110,10 @@
   <script src="data/index.js"></script>
   <script src="data/works-map.js"></script>
   <script src="data/works-index.js"></script>
+  <!-- 分域引擎（Issue #132 阶段 0）：进度 / 账号 / 设备三域的唯一一份定义，
+       读法由 js/storage.js 转发。**必须排在 js/storage.js 之前** ——
+       缺了它 storage 只是退化成兜底读法，不会报错（那种「不报错的少数据」最难查）。 -->
+  <script src="js/progress-store.js"></script>
   <script src="js/storage.js"></script>
   <!-- 复习调度算法：scheduler.levelName() 要按当前模型说阶段名
        （「3 号盒 · 4 天后」/「稳定 12.3 天 · 难度 5.2」），故排在 scheduler 之前 -->

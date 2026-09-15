@@ -261,6 +261,10 @@
   <script src="data/text-master.js"></script>
   <script src="data/canonical-texts.js"></script>
   <!-- 自选集合（用户自己加背的篇目）：阅读器里的「加入背诵」读它 -->
+  <!-- 分域引擎（Issue #132 阶段 0）：进度 / 账号 / 设备三域的唯一一份定义，
+       读法由 js/storage.js 转发。**必须排在 js/storage.js 之前** ——
+       缺了它 storage 只是退化成兜底读法，不会报错（那种「不报错的少数据」最难查）。 -->
+  <script src="js/progress-store.js"></script>
   <script src="js/collections.js"></script>
   <!-- 课内诗词一至高三：这一页读的是选本，但「正文收归主表、以课本为主」的
        裁定要查课内那一份正文与译文（见 data/canonical-texts.js / 作品主表）——

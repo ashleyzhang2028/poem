@@ -38,6 +38,18 @@
   const DEFAULT_PINYIN_MODE = "rare"; // 新版默认「只标生字」
 
   let settings = Storage.getSettings();
+
+  /* 阅读辅助属**设备域**（Issue #132 阶段 0）：`Storage.getSettings()` 出来的
+     那份里已经不带它了，现读一次引擎写进本地快照 —— 少了这一句，启动读到的
+     `settings.helper` 是 undefined，`helperEnabled()` 判成「开着」，
+     于是在关掉了阅读辅助的机器上照样注音（而设置页显示的是「关闭」）。
+     引擎缺席时（老缓存 / 脚本顺序不对）保持原样，退到老键那一份镜像。 */
+  function adoptHelperFromDevice() {
+    if (!window.ProgressStore || typeof window.ProgressStore.helper !== "function") return;
+    try { settings.helper = window.ProgressStore.helper(); } catch (e) { /* 保持原样 */ }
+  }
+  adoptHelperFromDevice();
+
   let todayPlan = [];
   let currentPoem = null;
   let todayKey = "";
@@ -1604,6 +1616,8 @@
   window.PoemApp = {
     reloadSettings: function () {
       settings = Storage.getSettings();
+      /* 阅读辅助属设备域，别在这一步丢掉它 —— 见文件顶上 adoptHelperFromDevice */
+      adoptHelperFromDevice();
       applyAppName();
       renderGradeChips();
       // 阅读辅助开关变了要立刻体现：开启回「只标生字」，关闭回「不注音」
