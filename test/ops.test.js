@@ -184,6 +184,105 @@ console.log("\n=== 七、自检脚本：能跑、能出 JSON、退出码如实 =
   has(full.out, "最低线已过", "并明说「能真跑」");
 }
 
+console.log("\n=== 七之二、2D 的五个步骤（配置与真开通，docs §4.12） ===");
+{
+  /* 这一节守的是**「怎么补」那一段本身**：它与清单同源（都在 ops.js 里），
+     所以这里断言的是「五步都在、每步都能落地」——
+     而不是「文档里写了没写」（那一条由另一条断言守着：
+     文档若与命令分叉，就是本节要拦的下一件事故）。 */
+  chk(Array.isArray(ops.STEPS) && ops.STEPS.length === 5, "五步齐备（实际 " + (ops.STEPS || []).length + "）");
+  const ids = ops.STEPS.map(s2 => s2.id).join("");
+  eq(ids, "ABCDE", "五步的编号是 A~E，顺序稳定（顺序错了会把「可选」的一步排在「必须」前面）");
+  ops.STEPS.forEach(st => {
+    chk(!!st.title && !!st.where && !!st.why && !!st.check,
+      "第 " + st.id + " 步四句话都写全了（叫什么 / 在哪配 / 为什么 / 判据）");
+    chk(st.how && st.how.length > 0, "第 " + st.id + " 步给了可照做的动作");
+    chk(["required", "needed", "optional"].indexOf(st.level) >= 0,
+      "第 " + st.id + " 步的档位是三种之一（复用清单那三档，不另立一套）");
+  });
+
+  const A2 = ops.STEPS[0], B2 = ops.STEPS[1], C2 = ops.STEPS[2], D2 = ops.STEPS[3], E2 = ops.STEPS[4];
+  has(A2.how.join(" "), "openssl rand -hex 32", "A 步给的是可照抄的命令，不是「生成一个随机串」");
+  has(A2.how.join(" "), "SESSION_SECRET", "A 步说清这一串填到哪个变量里");
+  has(B2.how.join(" "), "api/_lib/schema.sql", "B 步的建表指向仓库里那份真 schema（不另抄一份 SQL）");
+  has(B2.how.join(" "), "service_role", "B 步明说用 service_role");
+  has(B2.how.join(" "), "不是 anon", "并且**明确排除** anon（配错这一项的症状是「读不到一行数据」）");
+  has(C2.how.join(" "), "SPF", "C 步含 SPF");
+  has(C2.how.join(" "), "DKIM", "C 步含 DKIM");
+  has(C2.how.join(" "), "DMARC", "C 步含 DMARC（只有 SPF+DKIM 仍会被 QQ/163 拒收）");
+  has(C2.why, "console", "C 步说清不配的下场是 console 通道（真实用户收不到信）");
+  /* D 步：探活与备份。三条最容易做错的地方都要在文字里 */
+  has(D2.how.join(" "), "密钥仓库", "D 步说清密钥放密钥仓库（不是 env 里手填）");
+  has(D2.how.join(" "), ".cnb.yml", "D 步指向本仓库的 .cnb.yml");
+  has(D2.why, "7 天", "D 步说清免费档的暂停判定（连续 7 天没请求）");
+  has(D2.how.join(" "), "每 5 天", "探活排每 5 天，并给出理由（留 2 天缓冲）");
+  has(D2.how.join(" "), "pg_dump", "备份走 pg_dump");
+  has(D2.how.join(" "), "打到数据库", "探活必须打到数据库（根路径与状态页不算活动）");
+
+  /* E 步：四条验收判据，每一条都必须是「一个明确数字/布尔」，不许是「应该没问题」 */
+  const ev = E2.how.join(" ");
+  has(ev, "/api/me", "E 步验会话（/api/me）");
+  has(ev, "401", "并给出期望值 401");
+  has(ev, "503", "并给出反面：503 就是 SESSION_SECRET 没生效（两种状态不许合并成「失败」）");
+  has(ev, "delivered:true", "E 步验真发信，判据是 delivered:true");
+  has(ev, "DELETE", "E 步验注销接口可达");
+  /* ⚠️ 这句话本身就是那条规矩的**声明**（「不做『应该没问题』这类判断」），
+     所以先把它抠掉再扫 —— 拿裸词去扫必然误判，与账户页那条
+     「btn-resend 不是 Resend」是同一类坑。 */
+  const stepsText = ops.stepsReport(fullCfg()).replace(/不做「应该没问题」这类判断/g, "");
+  chk(!/应该|大概|基本/.test(stepsText),
+    "整份步骤文字里不出现「应该 / 大概 / 基本」这类判断（只回答事实）");
+
+  /* C6 与 E 的验收命令**同源**：不是两份，是同一份 —— 两边逐字一致 */
+  const dbCmd = ops.STEPS[1].check;
+  chk(dbCmd.indexOf("rest/v1/accounts") >= 0, "B 步的判据里带着那条真命令");
+  chk(ev.indexOf("rest/v1/accounts") >= 0, "E 步的验收里也带着同一条");
+  chk(ops.stepsReport(fullCfg()).indexOf("rest/v1/accounts") >= 0, "渲染出来看得见它");
+
+  /* ⚠️ 与清单同一条纪律：步骤文字里也不许出现任何密钥的值 */
+  const txt2 = ops.stepsReport(fullCfg({ sendgridKey: "SG.STEP_SECRET", supabaseServiceKey: "STEP_SECRET_SVC" }));
+  chk(txt2.indexOf("STEP_SECRET") < 0, "步骤文字里没有出现任何密钥的值");
+  chk(txt2.indexOf("http_code") >= 0, "但命令本身要看得见（占位是 $VAR，由用户自己的 shell 展开）");
+  chk(txt2.indexOf("-o /dev/null") >= 0, "验收命令把响应体丢掉（响应里可能有账号数据，不该进终端日志）");
+
+  /* --steps 的出口：能跑、能自报、退出码与 --check 一致 */
+  const { execFileSync } = require("child_process");
+  const OPS_KEYS2 = ops.ENTRY.map(e => e.key);
+  const bareEnv2 = () => {
+    const e = Object.assign({}, process.env);
+    OPS_KEYS2.forEach(k => { delete e[k]; });
+    return e;
+  };
+  const run2 = (args, env) => {
+    try {
+      return { out: execFileSync("node", [path.join(ROOT, "scripts/doctor.js")].concat(args), { encoding: "utf8", env: env || bareEnv2() }), code: 0 };
+    } catch (e) { return { out: String(e.stdout || ""), code: e.status }; }
+  };
+  const steps = run2(["--steps"]);
+  eq(steps.code, 0, "--steps 只是打印步骤，始终退 0（它不体检）");
+  ["A", "B", "C", "D", "E"].forEach(x => has(steps.out, "第 " + x + " 步", "--steps 打出第 " + x + " 步"));
+  has(steps.out, "未过", "--steps 会如实报「现在到哪一步了」");
+  /* D 步说的两条定时任务，必须**真的在 .cnb.yml 里**（说了不做就是空话） */
+  const cnb = read(".cnb.yml");
+  has(cnb, "crontab: 0 3 */5 * *", "D 步说的探活真的写进了 .cnb.yml（每 5 天）");
+  has(cnb, "crontab: 30 4 * * 1", "D 步说的备份也写了（每周一次）");
+  has(cnb, "supabase-keepalive", "探活流水线有名字");
+  has(cnb, "supabase-backup", "备份流水线有名字");
+  has(cnb, "rest/v1/accounts", "探活打的是真查询（PostgREST），不是根路径");
+  has(cnb, "test \"$CODE\" = \"200\"", "探活失败会红（不静默通过）");
+  has(cnb, "secret", "密钥走密钥仓库的 imports，不手填在 env 里");
+  chk(cnb.indexOf("SUPABASE_SERVICE_KEY=") < 0, ".cnb.yml 里没有把密钥值写死（只有引用）");
+
+  const stepsCheck = run2(["--steps", "--check"]);
+  eq(stepsCheck.code, 1, "--steps --check 没配齐时退出码 1（与 --check 同一条判据）");
+  const fullEnv2 = Object.assign(bareEnv2(), {
+    SESSION_SECRET: "0123456789abcdef0123456789abcdef",
+    SUPABASE_URL: "https://x.supabase.co",
+    SUPABASE_SERVICE_KEY: "svc"
+  });
+  eq(run2(["--steps", "--check"], fullEnv2).code, 0, "配齐后 --steps --check 退出码翻成 0");
+}
+
 console.log("\n=== 八、/api/me 如实自报开通状态（界面才配自称「服务器判定」） ===");
 {
   const core = require(path.join(ROOT, "api/_lib/core.js"));

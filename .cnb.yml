@@ -58,6 +58,67 @@ main:
         image: node:20
       <<: *push-to-github
 
+  # ==========================================================================
+  # 2D · 配置与真开通：探活 + 备份（docs/architecture.md §4.12 的第 D 步）
+  # --------------------------------------------------------------------------
+  # 定时任务写在这个仓库，而不是 GitHub Actions：CNB 是本仓库
+  # （npu-gpu-cpu/poem）的主仓库，GitHub 那份是**同步出去的镜像**；密钥
+  # （SUPABASE_*）放在 CNB 的密钥仓库，一个地方注入、探活与备份共用。
+  # 在镜像仓库上做，等于把密钥多复制一份到第二个平台 —— 成本更高、收益一样。
+  #
+  # ⚠️ 密钥没配时这两条会**如实失败**（报「密钥未注入」），不会静默通过。
+  # ==========================================================================
+
+  # 每 5 天探活一次。免费档的判定是「连续 7 天没有任何请求」就整个项目停机
+  # （用户看到的是「打不开」，不是「有点慢」）；定时任务在高负载时可能延迟
+  # 数小时、偶尔被跳过，排 5 天则跳过一次也仍在 7 天窗口内。
+  # ⚠️ 探活**必须打到数据库** —— PostgREST 查询才算活动，根路径与状态页不算。
+  "crontab: 0 3 */5 * *":
+    - name: supabase-keepalive
+      docker:
+        image: node:20
+      imports:
+        - https://cnb.cool/npu-gpu-cpu/poem-secrets/-/blob/main/supabase.yml
+      stages:
+        - name: ping-db
+          script: |
+            set -e
+            : "${SUPABASE_URL:?SUPABASE_URL 未注入，请检查密钥仓库 supabase.yml}"
+            : "${SUPABASE_SERVICE_KEY:?SUPABASE_SERVICE_KEY 未注入，请检查密钥仓库 supabase.yml}"
+            echo "探活：打一次真查询（不打印任何密钥，也不打印响应体）"
+            CODE=$(curl -sS -o /dev/null -w '%{http_code}' \
+              "$SUPABASE_URL/rest/v1/accounts?select=uid&limit=1" \
+              -H "apikey: $SUPABASE_URL" \
+              -H "Authorization: Bearer $SUPABASE_SERVICE_KEY")
+            echo "HTTP $CODE"
+            # 失败必须红：探活静默挂掉三个月，会以「某天用户突然登不上」的形式暴露
+            test "$CODE" = "200"
+
+  # 每周备份一次。免费档**没有自动备份**（无 PITR），误删就是永久消失。
+  "crontab: 30 4 * * 1":
+    - name: supabase-backup
+      # ⚠️ 用 postgres:16 而不是 node:20 —— 后者**没有 pg_dump**。
+      #    换成 postgres:16（自带 pg_dump）或自建一个预装 postgresql-client
+      #    的镜像；见 docs/architecture.md §4.12 第 D 步。
+      docker:
+        image: postgres:16
+      imports:
+        - https://cnb.cool/npu-gpu-cpu/poem-secrets/-/blob/main/supabase.yml
+      stages:
+        - name: pg-dump
+          script: |
+            set -e
+            : "${SUPABASE_DB_URL:?SUPABASE_DB_URL 未注入，请检查密钥仓库 supabase.yml}"
+            command -v pg_dump >/dev/null 2>&1 || {
+              echo "本镜像没有 pg_dump —— 见 docs/architecture.md §4.12 第 D 步";
+              exit 1;
+            }
+            mkdir -p backup
+            STAMP=$(date +%Y%m%d)
+            pg_dump --no-owner --no-privileges "$SUPABASE_DB_URL" > "backup/kuibu-$STAMP.sql"
+            wc -c "backup/kuibu-$STAMP.sql"
+            echo "备份已生成：backup/kuibu-$STAMP.sql"
+
   pull_request:
     - name: pr-test
       docker:
