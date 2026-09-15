@@ -44,9 +44,27 @@
 
           <div class="settings-item">
             <label for="input-username">用户名</label>
-            <input id="input-username" class="settings-input" type="text" maxlength="12"
-                   placeholder="Ashley" autocomplete="off" enterkeyhint="done" />
+            <div class="name-row">
+              <!-- 账号域那枚「印」：与顶栏右上角、首页那一枚同一份数据（poem_profile_v1）。
+                   印由 js/avatar.js 画，其他文件不许自己拼一份渐变（有源码扫描守着）。 -->
+              <span id="avatar-slot" class="avatar-slot" aria-hidden="true"></span>
+              <input id="input-username" class="settings-input" type="text" maxlength="12"
+                     placeholder="Ashley" autocomplete="off" enterkeyhint="done" />
+            </div>
             <div class="settings-hint">留空则显示默认名称「Ashley」；古诗词与小古文共用</div>
+          </div>
+
+          <div class="settings-item">
+            <label>头像印记</label>
+            <!-- 字符印：从**固定的字集**里挑一个字 + 固定四色。
+                 不弹文件选择框、不上传任何图片 —— 所以 /privacy/ 的「不收集」承诺仍然成立。
+                 见 docs/auth-design.md §2.3。 -->
+            <div class="seal-picker">
+              <div class="seal-chars" id="seal-chars" role="group" aria-label="选一个字"></div>
+              <div class="seal-inks" id="seal-inks" role="group" aria-label="选一个印色"></div>
+              <button class="btn ghost-btn" id="btn-seal-reset" type="button">用默认印</button>
+            </div>
+            <div class="settings-hint" id="seal-hint"></div>
           </div>
 
           <div class="settings-item">
@@ -318,6 +336,7 @@
        与首页、集子页读的是同一个模块、同一份 localStorage 键。 -->
   <script src="/js/collections.js"></script>
   <script src="/js/settings.js"></script>
+  <script src="/js/avatar.js"></script>
   <script src="/js/chrome.js"></script>
   <script src="/js/pwa.js"></script>
 </body>

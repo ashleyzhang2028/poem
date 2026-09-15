@@ -69,6 +69,21 @@
 
   let settings = null;
 
+  /**
+   * 改昵称（Issue #132 · 2026-09-15）：老键 + 账号域新键一起写。
+   * 镜像实现收在 `Avatar.saveNickname` 一处（与首页 js/app.js 同源），
+   * 本页不许自己拼两处 setItem。
+   */
+  function commitNickname(value) {
+    const clean = String(value == null ? "" : value).trim().slice(0, 12);
+    settings.username = clean;
+    saveSettings();
+    const A = window.Avatar;
+    if (A && typeof A.saveNickname === "function") {
+      try { A.saveNickname(window.localStorage, clean); } catch (e) { /* 隐私模式：老键已写 */ }
+    }
+  }
+
   /** 读取设置：以 js/storage.js 为准，本页兜底，避免首页/设置页字段漂移 */
   function loadSettings() {
     let raw = null;
@@ -189,6 +204,7 @@
     const uInput = $("#input-username");
     if (uInput) uInput.value = String(settings.username == null ? "" : settings.username);
 
+    renderAvatar();
     renderPlayModes();
     renderCollections();
   }
@@ -749,6 +765,115 @@
     if (m) showToast("连读方式已改为「" + m.label + "」");
   }
 
+  /* ---------------- 头像印记（Issue #132 · 2026-09-15） ----------------
+     字符印：从**固定字集**挑一个字 + 固定四色，全部存本机 `poem_profile_v1`。
+     不弹文件选择框、不上传图片 —— `/privacy/` 的「不收集」承诺因此不受影响。
+     尺寸、圆角、字族在 css/style.css 的 .seal-avatar；**画印只有 js/avatar.js 一处**，
+     本页不许自己拼一份渐变（test/avatar.test.js 有源码扫描守着）。
+     ------------------------------------------------------------------ */
+
+  /** 取 Avatar 模块（脚本顺序不对 / 老缓存时返回 null，宁可不画也不报错） */
+  function avatarMod() {
+    return window.Avatar || null;
+  }
+
+  /** 重画设置页那枚印（昵称变了、字/色改了都要重画） */
+  function renderAvatar() {
+    const A = avatarMod();
+    const slot = $("#avatar-slot");
+    if (!A || !slot) return;
+    let html = "";
+    try { html = A.html(window.localStorage, { size: 40 }); } catch (e) { html = ""; }
+    slot.innerHTML = html;
+    if (html) slot.removeAttribute("aria-hidden");   // 有内容就给读屏软件读
+    else slot.setAttribute("aria-hidden", "true");
+    renderSealPicker();
+  }
+
+  /** 画字集 / 印色选择器，并把当前选择标出来 */
+  function renderSealPicker() {
+    const A = avatarMod();
+    const charBox = $("#seal-chars");
+    const inkBox = $("#seal-inks");
+    const hint = $("#seal-hint");
+    if (!A || !charBox || !inkBox) return;
+    const cur = A.display(window.localStorage);
+
+    // 字：一排常用字，不弹键盘（固定集合 → 杜绝生僻字与真名）
+    charBox.innerHTML = "";
+    A.CHARS.forEach(function (c) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "seal-chip" + (c === cur.char && cur.source === "chosen" ? " active" : "");
+      b.dataset.sealChar = c;
+      b.textContent = c;
+      b.setAttribute("aria-label", "用「" + c + "」字");
+      charBox.appendChild(b);
+    });
+
+    // 色：四个传统色圆点
+    inkBox.innerHTML = "";
+    A.INK_KEYS.forEach(function (k) {
+      const info = A.INKS[k];
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "seal-ink" + (k === cur.ink ? " active" : "");
+      b.dataset.sealInk = k;
+      b.style.background = info.bg;
+      b.setAttribute("aria-label", "印色：" + info.name);
+      b.title = info.name;
+      inkBox.appendChild(b);
+    });
+
+    // 如实写清这枚印是怎么来的 + 它存在哪里（合规口径，别让用户以为传上去了）
+    if (hint) {
+      const from = cur.source === "chosen" ? "你选的字"
+        : (cur.source === "nickname" ? "取自昵称首字" : "默认字");
+      hint.textContent = "当前：" + cur.char + "字 · " + A.INKS[cur.ink].name +
+        "（" + from + "）。印记只存在本机，不上传。";
+    }
+  }
+
+  /** 换字 / 换色 / 还原默认：写 `poem_profile_v1`，再让顶栏重画 */
+  function applySeal(patch) {
+    const A = avatarMod();
+    if (!A) return;
+    const r = patch && patch.reset
+      ? A.resetAvatar(window.localStorage)
+      : A.setAvatar(window.localStorage, patch);
+    if (!r || !r.ok) {
+      showToast((r && r.message) || "这个值不在可选范围里");
+      return;
+    }
+    renderAvatar();
+    // 顶栏那枚印是 chrome.js 一次画好的，不重画就要刷新页面才看得到
+    if (window.SiteChrome && window.SiteChrome.refreshUser) window.SiteChrome.refreshUser();
+    showToast("头像印记已更新");
+  }
+
+  function bindSealPicker() {
+    const charBox = $("#seal-chars");
+    if (charBox) {
+      charBox.addEventListener("click", function (e) {
+        const b = e.target.closest("button[data-seal-char]");
+        if (!b) return;
+        applySeal({ char: b.dataset.sealChar });
+      });
+    }
+    const inkBox = $("#seal-inks");
+    if (inkBox) {
+      inkBox.addEventListener("click", function (e) {
+        const b = e.target.closest("button[data-seal-ink]");
+        if (!b) return;
+        applySeal({ ink: b.dataset.sealInk });
+      });
+    }
+    const reset = $("#btn-seal-reset");
+    if (reset) {
+      reset.addEventListener("click", function () { applySeal({ reset: true }); });
+    }
+  }
+
   /* ---------------- 事件 ---------------- */
   function bindEvents() {
     $$("#seg-stage button").forEach(function (b) {
@@ -836,20 +961,23 @@
 
     const uInput = $("#input-username");
     if (uInput) {
+      // 昵称属账号域：除老键外还要镜像到 poem_profile_v1（头像与昵称同一份档案），
+      // 收在 commitNickname 一处 —— 见 docs/auth-design.md §2.3.1
       const commit = function () {
-        settings.username = uInput.value.trim().slice(0, 12);
-        saveSettings();
+        commitNickname(uInput.value);
         applyAppName();
       };
       uInput.addEventListener("input", function () {
-        settings.username = uInput.value.trim().slice(0, 12);
-        saveSettings();
+        commitNickname(uInput.value);
         applyAppName();
       });
       uInput.addEventListener("change", function () {
         commit();
         uInput.value = settings.username;
       });
+      // 改昵称 → 印要跟着重画（印的兜底是「昵称首字」，昵称变了印也变）
+      uInput.addEventListener("input", function () { renderAvatar(); });
+      uInput.addEventListener("change", function () { renderAvatar(); });
       uInput.addEventListener("keydown", function (e) {
         if (e.key === "Enter") {
           e.preventDefault();
@@ -951,6 +1079,7 @@
     renderControls();
     bindEvents();
     bindCollections();
+    bindSealPicker();
     // 另一个标签页改了播放档位（集子页那颗圆键）时，本页单选项跟着变 ——
     // storage 事件只在「别的标签页」触发，正是这里需要的方向。
     window.addEventListener("storage", function (e) {

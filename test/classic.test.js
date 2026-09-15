@@ -127,8 +127,11 @@ setTimeout(() => {
   const countInTopbar = d.querySelector('.topbar #gw-count');
   chk(!!countInTopbar, '进度牌 #gw-count 在页顶栏 .topbar 里');
   chk(countInTopbar.parentElement === topbar, '进度牌是页顶那一行的直接子元素（与品牌区同一行）');
-  chk([...topbar.children].map(e => e.className.split(' ')[0]).join('/') === 'brand/count-badge/top-act',
-    '页顶一行依次是「品牌区 · 进度牌 · 返回键」，进度牌就在返回键左侧（实际 ' +
+  // Issue #132（2026-09-15）起，页顶那一行的右端是「返回键 + 头像」两颗：
+  // 头像永远在最右（身份锚点，落点不能变），返回键在它左边。
+  // 这里守的仍是原来那条重点 —— **进度牌在返回键左侧**，不是被挤到右端后面。
+  chk([...topbar.children].map(e => e.className.split(' ')[0]).join('/') === 'brand/count-badge/top-act/top-user',
+    '页顶一行依次是「品牌区 · 进度牌 · 返回键 · 头像」，进度牌在返回键左侧、头像在最右（实际 ' +
     [...topbar.children].map(e => e.className).join('/') + '）');
   const backBtn2 = topbar.querySelector('#top-back');
   chk(!!backBtn2 && backBtn2.tagName === 'A' && backBtn2.getAttribute('href') === '/',
@@ -166,9 +169,14 @@ setTimeout(() => {
     d.querySelectorAll('.topbar > .count-badge').length + ' 枚）');
   chk(!!rBar.querySelector('#gw-progress') && rBar.querySelector('#gw-progress').classList.contains('is-ready'),
     '阅读器顶栏重建后篇号牌仍在（小件按枚迁回，不是只搬第一枚）');
+  // ⚠️ 阅读器那条顶栏**没有头像**：阅读器是全屏沉浸层，身份入口不在正文上出现
+  //（头像让位给正文，见 js/chrome.js 的 headerHtml）。所以这里仍是三件，
+  // 与列表页那条（四件）刻意不同 —— 这是本次裁决要的差异，不是漏画。
   chk([...rBar.children].map(e => e.className.split(' ')[0]).join('/') === 'brand/count-badge/top-act',
-    '阅读器顶栏与列表页同序：品牌区 · 篇号牌 · 返回键（实际 ' +
+    '阅读器顶栏是「品牌区 · 篇号牌 · 返回键」三项，**不含头像**（沉浸阅读里不放身份入口，实际 ' +
     [...rBar.children].map(e => e.className).join('/') + '）');
+  chk(d.querySelectorAll('.reader .topbar .top-user').length === 0,
+    '阅读器里确实一枚头像都没有（让位给正文）');
   chk(rBar.querySelector('.brand-page-text').textContent === '课外必背小古文',
     '阅读器里的页名同样是「课外必背小古文」，与列表页一致');
   // 回归防线：整个页面里 #top-act 只能有一枚 —— 只有阅读器那条顶栏才是动作位。

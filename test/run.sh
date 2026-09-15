@@ -35,6 +35,9 @@
 #   3q. 权益分层与语音门 —— 纯 Node，free/pro/max 功能矩阵的唯一出口 can()、
 #                          登录是语音播放的硬条件、放行后 stop/pause 不受门限制、
 #                          页面上不许自己拼 plan（Issue #132）
+#   3r. 字符印头像      —— 纯 Node，三档回落（选的字 / 昵称首字 / 默认诗字）、
+#                          固定集合外的字与色一律拒收、分域隔离（只写账号域）、
+#                          不存 base64、不用邮箱首字母（Issue #132）
 #   4. 用户名设置测试    —— jsdom，带初始 localStorage 重启应用
 #   5. 用户协议/隐私条款  —— jsdom + 源码扫描：页脚入口、学生保护、邮箱防爬
 #   6. 注音与朗读测试    —— 拼音表/多音字（纯 Node）+ 注音渲染与朗读降级（jsdom）
@@ -163,6 +166,10 @@ node test/auth.test.js
 echo ""
 echo "=== 权益分层与语音播放门（free/pro/max，Issue #132）==="
 node test/entitlement.test.js
+
+echo ""
+echo "=== 字符印头像（Issue #132 · 三档回落 / 分域 / 合规）==="
+node test/avatar.test.js
 
 echo ""
 echo "=== 用户名设置测试 ==="

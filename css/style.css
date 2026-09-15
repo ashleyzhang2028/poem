@@ -1215,6 +1215,74 @@ textarea:focus {
 .settings-input::placeholder { color: #9c8d7b; }
 .settings-hint { font-size: 11.5px; color: var(--ink-3); margin-top: 6px; }
 
+/* ---------- 头像印记（Issue #132 · 2026-09-15） ----------
+   设置页「用户名」那一行左侧的印 + 下方「头像印记」选择器。
+   印本身（.seal-avatar）在文件上半段的顶栏右侧簇那里定义，三处显示共用。
+   这里只管「在设置页里怎么排」。 */
+.name-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+/* 印不参与收缩（与顶栏同一条口径）；输入框照原样 width:100% 跟着栏走 */
+.avatar-slot { flex: none; display: inline-flex; align-items: center; }
+
+.settings-item .seal-picker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+.seal-chars,
+.seal-inks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+/* 可选字：小方印的样子 —— 用户点的是「印面」，不是一个普通按钮 */
+.seal-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.seal-chip {
+  width: 32px;
+  height: 32px;
+  flex: none;
+  border: 1px solid var(--line);
+  border-radius: 26%;
+  background: var(--card);
+  color: var(--ink-2);
+  font-family: var(--font-poem);
+  font-size: 17px;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform .12s, border-color .15s, color .15s;
+}
+.seal-chip:hover { border-color: var(--green); color: var(--green); }
+.seal-chip:active { transform: scale(.94); }
+.seal-chip.active {
+  border-color: var(--green);
+  color: var(--green);
+  background: #fffdf6;
+  box-shadow: inset 0 0 0 1px rgba(47, 96, 85, .28);
+}
+/* 印色：四个圆点，选中的加一圈同色淡环 */
+.seal-ink {
+  width: 26px;
+  height: 26px;
+  flex: none;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  padding: 0;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .34);
+  transition: transform .12s, box-shadow .15s;
+}
+.seal-ink:hover { transform: scale(1.06); }
+.seal-ink:active { transform: scale(.94); }
+.seal-ink.active { box-shadow: 0 0 0 3px rgba(165, 92, 25, .22); }
+
 /* --------------------------------------------------------------------------
    设置页里的「我的清单」（自选背诵）
    --------------------------------------------------------------------------
@@ -1686,6 +1754,68 @@ body.has-install-tip #app {
 .top-act svg, .icon-btn svg { width: 20px; height: 20px; display: block; }
 .top-act:hover, .icon-btn:hover { color: var(--green); }
 .top-act:active, .icon-btn:active { transform: scale(.94); }
+
+/* ---------- 顶栏右侧簇（Issue #132 · 2026-09-15） ----------
+   右侧从「一个动作位」升级成「一枚恒定锚点 + 若干颗」：
+   ┌──────────────────────────────────────────┐
+   │ 〔徽标〕 跬步 · 页名        [↩] [◯头像]  │
+   └──────────────────────────────────────────┘
+    品牌区（可收缩，走 ellipsis）  ↑      ↑
+                                 返回键   固定锚点
+
+   两条硬规矩：
+   1. **头像永远在最右，返回键在它左边** —— 返回键的落点会变（有时没有），
+      头像的落点不能变：用户点头像是靠肌肉记忆，它必须每页都在同一个像素位上。
+   2. **这一簇不收缩**（flex: none）—— 窄屏时只允许左边的品牌区被压窄，
+      徽标 / 头像 / 返回键一个像素都不许缩。宽屏口径与 .brand 那条注释同源。 */
+.top-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+}
+
+/* 头像：圆的方角印（border-radius 26%），与 .top-act 同高，像一枚盖在纸上的印。
+   底色 / 字色由 js/avatar.js 内联给出（色值来自用户选择，样式表穷举不了），
+   这里只管尺寸、圆角、字族与呼吸感。 */
+.top-user {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  text-decoration: none;
+  transition: transform .15s, box-shadow .18s;
+}
+.top-user:hover { box-shadow: 0 0 0 3px rgba(165, 92, 25, .18); }
+.top-user:active { transform: scale(.94); }
+
+/* 印本身（三处显示共用：顶栏 / 设置页昵称旁 / 将来的档案区） */
+.seal-avatar {
+  --seal-size: 34px;
+  width: var(--seal-size);
+  height: var(--seal-size);
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* 圆的方角：既不像正方那么硬，也比正圆更像一枚「印」 */
+  border-radius: 26%;
+  font-family: var(--font-poem);
+  font-size: calc(var(--seal-size) * .56);
+  line-height: 1;
+  font-weight: 600;
+  /* 字略微上提一点点，视觉上落在印面正中（汉字基线偏下） */
+  padding-bottom: calc(var(--seal-size) * .04);
+  box-sizing: border-box;
+  user-select: none;
+  /* 印面一圈极细的高光，像印泥压在纸上的边沿 */
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .34);
+}
+/* 顶栏里那一枚：40px 的圆形点击区里放 32px 的印，留出呼吸 */
+.seal-avatar-top { --seal-size: 32px; }
 
 /* ---------- 底部页签 ---------- */
 .dock {

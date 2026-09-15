@@ -290,12 +290,22 @@
     var action = isReader ? topAction() : (readerLayerOpen() ? null : pageAction);
     var right;
 
+    // 右侧簇（Issue #132 · 2026-09-15）：顶栏右端从「一个动作位」升级成
+    // 「一枚恒定锚点 + 右侧若干颗」。头像永远在最右，返回键在它**左边**。
+    //
+    // 为什么头像固定最右、返回键浮动（不是反过来）：
+    //   返回键的落点会变（有时没有、有时换文案），头像的落点不能变 ——
+    //   用户点头像是靠肌肉记忆（「右上角那枚印」），它必须每页都在同一个像素位上。
+    //
+    // 为什么阅读器里不画头像：阅读器是全屏沉浸层，那一条顶栏只留「合上」。
+    //   把身份入口压在正文上，会把「读诗」拉回「管账号」。
     if ((isReader && !action) || pageActionHeld) {
       // 阅读器那条顶栏在「没动作」时（阅读器已合上、或还没打开）只留占位：
       // 它此刻是 hidden 的，不该再渲染一颗 id="top-back" —— 页面顶栏已经有同样一枚，
       // 同名 id 再一次不合法，且作用域查询会认错人。
       right = '<span class="top-act-spacer" aria-hidden="true"></span>';
-    } else if (action) {
+    } else if (isReader) {
+      // 阅读器那条顶栏：只有「合上」这一颗，**没有头像**（让位给正文）。
       // 动作是「关闭阅读器」这类「合上 / 撤回上一层」的语义，一律画成返回箭头：
       // 同一种行为在全站只能是同一个图标（顶栏右侧那颗与底部页签「回首页」各司其职）。
       // 曾经这里换成 ✕，结果阅读器里同时出现「底部页签回首页」与「右上角 ✕」，
@@ -304,18 +314,29 @@
         '<button type="button" class="top-act" id="top-act">' +
         '<span class="top-act-icon" aria-hidden="true">' + GLYPHS.back + "</span>" +
         '<span class="sr-only">' + action.label + "</span></button>";
-    } else if (key === "home") {
+    } else {
+      // 页面顶部那条顶栏：右侧簇 = （首页无返回键）返回键 + 头像。
+      var leftOfCluster = "";
+      if (action) {
+        // 页面自己挂的动作（课外阅读入口页「就地叠层」时用）→ 撤回上一层
+        leftOfCluster =
+          '<button type="button" class="top-act" id="top-act">' +
+          '<span class="top-act-icon" aria-hidden="true">' + GLYPHS.back + "</span>" +
+          '<span class="sr-only">' + action.label + "</span></button>";
+      } else if (key !== "home") {
+        // 子页面（小古文、设置、法务页）—— 同一颗「返回」，指向 pageBackHref()。
+        // 返回键统一由这里渲染，各页不要自造一颗：曾出现「页面自己手写返回、
+        // 与重建后的顶栏同时冒出来」的问题。文案只给读屏软件，可见的只有一个箭头。
+        leftOfCluster =
+          '<a class="top-act" id="top-back" href="' + pageBackHref() + '"' +
+          ' title="返回" aria-label="返回">' +
+          '<span class="top-act-icon" aria-hidden="true">' + GLYPHS.back + "</span></a>";
+      }
       // 首页右上角不再放设置齿轮：底部最后一个页签就是「设置」，
       // 两个入口指向同一面板，右上角那个纯属重复。
-      right = '<span class="top-act-spacer" aria-hidden="true"></span>';
-    } else {
-      // 子页面（小古文、设置、法务页）右侧都是同一颗「返回」按钮，指向 pageBackHref()。
-      // 返回键统一由这里渲染，各页不要自造一颗：曾出现「页面自己手写返回、
-      // 与重建后的顶栏同时冒出来」的问题。文案只给读屏软件，可见的只有一个箭头。
-      right =
-        '<a class="top-act" id="top-back" href="' + pageBackHref() + '"' +
-        ' title="返回" aria-label="返回">' +
-        '<span class="top-act-icon" aria-hidden="true">' + GLYPHS.back + "</span></a>";
+      // 但**头像要在**：它正是「导航缺口」的补法 —— 四页签根页（首页/课外/
+      // 搜索/设置）本来右上角就是空占位，把占位换成头像，不新增任何宽度。
+      right = (leftOfCluster || "") + userAvatarHtml();
     }
 
     // 品牌：徽标 + 「跬步 · 当前页名」——同一行、同一字体，读起来是一句话
@@ -335,6 +356,67 @@
       "</span>" +
       "</div>" + right
     );
+  }
+
+  /**
+   * 右侧簇里**最靠左**的那一颗（进度牌要插在它左边）。
+   *
+   * 为什么不用「包一层容器」的写法：顶栏右侧簇现在是「返回键 + 头像」两颗，
+   * 首页更是只有头像一颗；包一层 `.top-right` 确实能让锚点恒定，
+   * 但会改掉顶栏的既有结构与 `test/classic.test.js` 里那两条逐项对齐的断言
+   * （「页顶一行依次是 品牌区 · 进度牌 · 返回键」），
+   * 那是上一轮为「顶栏不换脸」专门立的防线，不该为这件事动它。
+   *
+   * 所以这里只在**插入时**挑那颗最靠左的：候选顺序即视觉顺序 ——
+   * 页面动作键 `#top-act` → 返回键 `#top-back` → 头像 `.top-user` → 占位符。
+   * 首页没有返回键，进度牌就落在头像左边（那也是唯一正确的落点）。
+   */
+  function firstActAnchor(bar) {
+    var list = bar.querySelectorAll(".top-act, .top-user, .top-act-spacer");
+    return list.length ? list[0] : null;
+  }
+
+  /**
+   * 顶栏右上角那枚「头像印」（Issue #132 · 2026-09-15）。
+   *
+   * 三个刻意的取舍：
+   *   · **未登录也画**：未登录时是一枚「默认印（诗字 / 朱砂）」，它不是账号入口的
+   *     伪装，而是一个恒定的身份锚点 —— 点了去设置页（`/profile/` 还没建，
+   *     见 auth-design §11 的 A→B→C→D 顺序）。空着反而让用户以为「右上角什么都没有」。
+   *   · **独立的 id / 类名**：`id="top-user"` / `.top-user`，**不复用 `#top-act`
+   *     与 `#top-back`**。仓库里有一条硬断言「全页只有一枚 #top-act / #top-back」，
+   *     顺手写进同一个 id 会让它变红；且 jsdom ≥27 下 `querySelector('#top-act')`
+   *     只认第一枚，会把阅读器的按钮绑错（这个坑仓库里踩过并写进了注释）。
+   *   · **渲染走 Avatar.html()**：全站唯一画印的地方，页面不许自己拼一份渐变
+   *     （`test/avatar.test.js` 有源码扫描守着）。
+   *
+   * 没有 Avatar 模块时（老缓存 / 脚本顺序不对）退回不可见占位，宁可不画也不报错：
+   * 顶栏是每一页都跑的东西，这里抛一次就是全站白屏。
+   */
+  function userAvatarHtml() {
+    var A = (typeof globalThis !== "undefined" && globalThis.Avatar) || null;
+    var inner;
+    if (A && typeof A.html === "function") {
+      try {
+        // ⚠️ 必须显式传 localStorage：传 null 会读不到 `poem_profile_v1`，
+        //    顶栏永远画默认的「诗」字印 —— 用户选了梅、首页也显示梅，
+        //    只有顶栏还是诗，是最难解释的那类不一致（不报错、只是画错）。
+        var backing = (typeof globalThis !== "undefined" && globalThis.localStorage) || null;
+        inner = A.html(backing, { cls: "seal-avatar-top", size: 32 });
+      } catch (e) { inner = ""; }
+    }
+    if (!inner) return '<span class="top-act-spacer" aria-hidden="true"></span>';
+    // 骨架是 <a>：一个真实链接（可右键 / 可键盘 / 可读屏），不是「点了没反应」的装饰。
+    // 目标暂定 `/profile/`；那一页本期还没建（见 auth-design §11 的 A→B→C→D 顺序），
+    // 所以先指设置页 —— 页面上有头像可改、有账号入口，比指一个 404 诚实。
+    return '<a class="top-user" id="top-user" href="' + userHref() + '"' +
+      ' aria-label="个人中心" title="个人中心">' + inner + "</a>";
+  }
+
+  /** 头像的落点：`/profile/` 建好之前先回设置页（有头像可改、有账号入口） */
+  function userHref() {
+    var p = (typeof globalThis !== "undefined" && globalThis.__AVATAR_PAGE__) || "";
+    return p || ROUTES.settings;
   }
 
   /** 当前页的返回目标：子页面回首页（首页自己不留返回键，用占位保持两栏对齐） */
@@ -466,7 +548,10 @@
     }
     bar.innerHTML = headerHtml(isReaderBar(bar));
     if (!keep) return;
-    var act = bar.querySelector(".top-act, .top-act-spacer");
+    // 锚点是右侧簇里**最靠左**的那一颗：簇里有时是「返回键 + 头像」两颗、
+    // 有时只有头像一颗，按单颗找（`querySelector` 认第一枚）本来也对 ——
+    // 但候选必须把 `.top-user` 也列进去，否则首页那颗进度牌会插到头像**后面**。
+    var act = firstActAnchor(bar);
     keep.forEach(function (el) {
       if (act) bar.insertBefore(el, act);
       else bar.appendChild(el);
@@ -698,7 +783,7 @@
       // 还没有：造一枚插到品牌区之后、动作位之前（与 renderBar 的插回位置同一处）
       el = document.createElement("span");
       el.className = "count-badge";
-      var act = bar.querySelector(".top-act, .top-act-spacer");
+      var act = firstActAnchor(bar);
       if (act) bar.insertBefore(el, act);
       else bar.appendChild(el);
       return el;
@@ -719,6 +804,19 @@
       bars.forEach(function (bar) {
         var el = bar.querySelector("#brand-page-text");
         if (el) el.textContent = pageTitle();
+      });
+    },
+    /**
+     * 重画顶栏那枚头像印（`poem_profile_v1` 改了之后调用）。
+     *
+     * 为什么要有这个入口：用户可在设置页改「印」的字与色，而顶栏是 chrome.js
+     * 一次画好的。不重画的话，改完要刷新页面才看得到 —— 那正是「改了个设置却像是没生效」。
+     * 只重绘**页面那条**顶栏（阅读器那条本来就没有头像），与 setPageAction 同一路径。
+     */
+    refreshUser: function () {
+      readBars().forEach(function (bar) {
+        if (isReaderBar(bar)) return;
+        renderBar(bar);
       });
     },
     appName: APP_NAME

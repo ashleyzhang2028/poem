@@ -123,6 +123,25 @@
   }
 
   /**
+   * 改昵称（Issue #132 · 2026-09-15）。
+   *
+   * 昵称属**账号域**（跨设备一致，`docs/auth-design.md` §2.3.1）：
+   * 除老键 `poem_recite_settings_v1` 外，还要镜像到 `poem_profile_v1` ——
+   * 头像与昵称住同一份档案，这是「同一枚印、同一个名字」的前提。
+   * 镜像实现收在 `Avatar.saveNickname` 一处，各页不许各拼两处 setItem
+   * （拼两处必然有一天只改了一处，出现「首页新名字、设置页旧名字」的漂移）。
+   */
+  function commitNickname(value) {
+    const clean = String(value == null ? "" : value).trim().slice(0, 12);
+    settings.username = clean;
+    Storage.saveSettings(settings);
+    const A = window.Avatar;
+    if (A && typeof A.saveNickname === "function") {
+      try { A.saveNickname(window.localStorage, clean); } catch (e) { /* 隐私模式：老键已写 */ }
+    }
+  }
+
+  /**
    * 页面主标题：应用正式名固定为「跬步」，用户名永远显示
    * → 「跬步 · Ashley的背诵」（用户没填名字时用默认名，不留一段空白）
    *
@@ -1417,14 +1436,12 @@
     const uInput = $("#input-username");
     if (uInput) {
       uInput.addEventListener("input", function () {
-        settings.username = uInput.value.trim().slice(0, 12);
-        Storage.saveSettings(settings);
+        commitNickname(uInput.value);
         applyAppName();
       });
       uInput.addEventListener("change", function () {
-        settings.username = uInput.value.trim().slice(0, 12);
+        commitNickname(uInput.value);
         uInput.value = settings.username;
-        Storage.saveSettings(settings);
         applyAppName();
       });
       uInput.addEventListener("keydown", function (e) {
