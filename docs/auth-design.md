@@ -672,7 +672,8 @@ emailMask = "a***@b.com"                          // 用于界面回显
 POST   /api/send-code   {email, purpose, deviceId}   → 202 {codeId, expiresAt, cooldown, transport, delivered, store}
 POST   /api/verify-code {codeId, code, deviceId}     → 200 {account} + Set-Cookie: kbsid=...
                                                        400/423 {code, message, remaining?, retryAfter?}
-GET    /api/me                                        → 200 {uid, nickname, plan:{tier,until}, features[], mask}
+GET    /api/me                                        → 200 {uid, nickname, plan:{tier,until}, features[], mask,
+                                                            channel:{mail,delivered,db,sms}}   ← 2C 补的开通状态
                                                        401 {code:"E_NO_SESSION"}
 POST   /api/sync/pull   {since, deviceId}            → 200 {recs[], serverTime}
 POST   /api/sync/push   {recs[], deviceId}           → 200 {applied, conflicts[], serverTime}
@@ -690,6 +691,34 @@ DELETE /api/account     {confirm:true, deviceId}     → 200 {deleted, export, n
    的接口，而「无害的冗余接口」正是之后会被误用的那一类。
 
 同一套状态机与错误码（§13），客户端只换 `transport` 实现。
+
+> **2C 补：`/api/me` 如实自报开通状态。**
+> 界面在说「由服务器判定」时，得让用户看得见**这台服务器是什么状态**：
+> `channel: { mail:"sendgrid"|"console", delivered, db:"db"|"memory", sms }`。
+> 三个字段全是事实，且全部取自既有判定（`cfg.mail()` / `cfg.hasDb()`），不另算一份。
+> 客户端**收下但不落盘、不参与判权**（`AccountApi.channel()`）——
+> 缓存一份必然与服务端真实状态漂移。
+> 未登录时 `/api/me` 仍是 401，**不下发任何开通状态**。
+> 开通到哪一步、缺哪个变量、怎么补：`npm run doctor`（§7.3）。
+
+### 7.3 配置怎么核对：可执行的自检（2C）
+
+「接服务端」这一步的配置项有 13 个，散在会话 / 数据库 / 发信 / 短信 / 冒烟五组里。
+自检把「缺哪个、缺了会怎样、怎么补」一次说清，**且不部署就能问**：
+
+```
+npm run doctor                 # 人看的一段文字（可直接贴进 Issue）
+npm run doctor -- --json       # 程序看的形状；退出码 = 体检结论
+npm run env:example > .env.example   # 生成可直接粘贴的模板（唯一来源）
+```
+
+三档分得清：**必须**（`SESSION_SECRET`、Supabase 那一对）／
+**这一件需要**（发信商密钥）／**可选**。
+**一个都不配也照样能完全离线使用** —— 自检把这句话写在报告里，
+免得「未配置」被读成「坏掉」。
+
+清单定义在 `api/_lib/ops.js` 的 `ENTRY` 里，**自检与 `.env.example` 读的是同一份** ——
+手抄的清单必然与代码分叉，而本项目里这种分叉已经出现过好几次。
 
 ---
 
@@ -743,6 +772,23 @@ POST /api/send-code  { channel:"sms", value:"13800138000" }
    再叠单号/单设备/单 IP 频控（`E_RATE_*` 已有四层，短信档更严）
 5. 跨端同一账号：绑微信开放平台拿 **unionid**（`openid` 在不同应用间不同）
 6. 海外 / 港澳台号码：**本函数不支持**（只归一化大陆 11 位），要另加区号字段
+
+### 8.4 两端同一张表（2C 收口，2026-09-17）
+
+本节开头那句「同一套状态机与错误码」原先只是**意图**：2A/2B 期间
+「限制写在 A 处、读取在 B 处」的漂移出现过四回（见 `docs/architecture.md` §4.11）。
+2C 把这条线拉出来逐处对拍，改了四处，此后由 `test/api.test.js` 第十九节守着：
+
+| 处 | 口径 | 两端的落点 |
+|---|---|---|
+| 频控**码** | email/phone → `E_RATE_EMAIL`；device → `E_RATE_DEVICE`；ip → `E_RATE_IP`；global → `E_RATE_GLOBAL` | `core.rateCode()` ↔ `AuthCore.rateCode()`（逐字同表） |
+| 频控**文案** | 四层**各说各的话** | `core.RATE_MSG` ↔ `AuthCore.ERR`（逐字一致） |
+| 频控**档位** | email / device / ip / global 四档同上限 | `config.rate` ↔ `AuthCore.RATE` |
+| **冷却时长** | 邮箱与短信**各自成键** | `config.resendCooldownMs` / `smsResendCooldownMs` ↔ `AuthCore.RESEND_COOLDOWN_MS` / `SMS_RESEND_COOLDOWN_MS` |
+
+> ⚠️ 本机版**没有真的 IP 可取**。补 `RATE.ip` 的意义不是「现在能拦住谁」，
+> 而是**两端同一张表** —— 一条档位只在一端存在，就是下一个人踩坑的地方。
+> 真正喂给它的 key 由调用方决定（浏览器里就是「本机」这一个桶）。
 
 ## 9. 【关键】登录时本机已有进度怎么办
 
@@ -921,6 +967,7 @@ POST /api/send-code  { channel:"sms", value:"13800138000" }
 | `E_EMAIL_EMPTY` | 空 | 请先填邮箱 |
 | `E_RATE_EMAIL` | 邮箱频控 | 发得太快了，请等 47 秒后再试 |
 | `E_RATE_DEVICE` | 设备频控 | 这台设备今天发送次数有点多，稍后再试 |
+| `E_RATE_IP` | 出口 IP 频控（2C 补齐前端） | 网络有点异常，稍后再试 |
 | `E_RATE_GLOBAL` | 全局频控 | 服务忙，请稍后再试 |
 | `E_CODE_EXPIRED` | 过期 | 验证码已过期，点「重新发送」 |
 | `E_CODE_WRONG` | 错 | 验证码不对，还可以再试 3 次 |

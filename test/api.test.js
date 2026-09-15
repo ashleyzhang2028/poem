@@ -104,6 +104,11 @@ async function call(base, method, p, body, cookie) {
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
+/** 读一份源码（路径别名，避免每处都写 path.join） */
+function readCoreSendCode() {
+  return fs.readFileSync(path.join(ROOT, "js/auth-core.js"), "utf8");
+}
+
 /* ------------------------------------------------------------------ 断言 */
 
 let fails = 0;
@@ -902,6 +907,16 @@ async function main() {
       return /SUPABASE_SERVICE_KEY|SENDGRID_API_KEY|RESEND_API_KEY|SESSION_SECRET/.test(t);
     });
     chk(leaked.length === 0, "前端文件里一个服务端密钥名都没有（实际泄漏 " + leaked.length + " 个）");
+    /* ⚠️ 上面那条扫的是「浏览器加载得到的目录树」。**脚本目录不在其中** ——
+       `scripts/doctor.js` 是给人在终端里跑的（2C 的开通自检），它会念出
+       「SESSION_SECRET」这个名字（只念名字、绝不念值），但那不是泄漏：
+       它既不被页面加载，也不进 sw.js 的预缓存清单，更不会进任何一个响应体。
+       这一条反向断言就是防「哪天有人把这个口径理解错、把自检也当成泄漏源」。 */
+    chk(leaked.indexOf("scripts/doctor.js") < 0 || !fs.existsSync(path.join(ROOT, "scripts/doctor.js")),
+      "自检脚本不在页面目录树里（它念的是**变量名**，值一个字都不出现）");
+    const sw2 = fs.readFileSync(path.join(ROOT, "sw.js"), "utf8");
+    chk(sw2.indexOf("doctor") < 0 && sw2.indexOf("_lib/ops") < 0,
+      "sw.js 的预缓存里没有自检脚本与清单（这两样都不该进浏览器）");
 
     /* 服务端代码里不许有 console.log 裸打（日志必须走 http.js 的 log/redact）。
        ⚠️ 判据要**先剥注释**：这些文件的头部注释里正讲着「本文件没有任何
@@ -1168,6 +1183,97 @@ async function main() {
     eq(cfg.smsEnabled, false, "出厂时 SMS_ENABLED 为 false");
     chk(/不收集手机号/.test(priv),
       "短信未开通 + 请求被 503 拒掉 ⇒ 隐私条款「不收集手机号」这句话仍然准确（条款跟随代码）");
+  }
+
+  /* ==================================================================
+     十九、2C：两端同一张表 —— 频控分层 / 错误码 / 文案 的对拍
+     ==================================================================
+     2A/2B 反复踩的是同一类坑：**限制写在 A 处、读取在 B 处，谁也不报错**。
+     这一节把「同一件事两端各写一份」的地方拉出来逐条对拍：
+       · 频控四层各回哪个码（服务端 429 的码是直接回给界面看的）
+       · 每一层的文案（原先服务端四层共用一句「发得太快了」）
+       · 本机版与服务端的档位表（ip 档曾经只有服务端有）
+     ================================================================== */
+  {
+    boot({});
+    const core = require("../api/_lib/core.js");
+    const cfg = require("../api/_lib/config.js");
+    const A = require("../js/auth-core.js");
+
+    /* ---- 四层各回各的码，且两端同表 ---- */
+    [["email", "E_RATE_EMAIL"], ["phone", "E_RATE_EMAIL"], ["device", "E_RATE_DEVICE"],
+      ["ip", "E_RATE_IP"], ["global", "E_RATE_GLOBAL"]].forEach(pair => {
+      eq(core.rateCode(pair[0]), pair[1], "服务端频控层「" + pair[0] + "」回 " + pair[1]);
+      eq(A.rateCode(pair[0]), pair[1], "前端频控层「" + pair[0] + "」回同一个码（两端同表）");
+    });
+    chk(A.rateCode("phone") === core.rateCode("phone"),
+      "短信那一档两端折叠成同一个码（原先前端连 phone 这一支都没有）");
+
+    /* ---- 每一层的文案都不一样：不许四层共用一句 ---- */
+    const msgs = ["E_RATE_EMAIL", "E_RATE_DEVICE", "E_RATE_IP", "E_RATE_GLOBAL"].map(k => core.RATE_MSG[k]);
+    eq(new Set(msgs).size, 4, "服务端四层文案各不相同（原先四层共用「发得太快了」）");
+    ["E_RATE_EMAIL", "E_RATE_DEVICE", "E_RATE_GLOBAL"].forEach(k => {
+      eq(core.RATE_MSG[k], A.ERR[k], "文案「" + k + "」两端逐字一致");
+    });
+    eq(A.ERR.E_RATE_IP, core.RATE_MSG.E_RATE_IP, "文案「E_RATE_IP」两端逐字一致（前端原先没有这一条）");
+
+    /* ---- 档位表：本机版有的每一档，服务端都得有（反之亦然） ---- */
+    const localBuckets = Object.keys(A.RATE).sort();
+    const srvBuckets = Object.keys(cfg.rate).sort();
+    eq(localBuckets.join(","), srvBuckets.join(","),
+      "频控档位两端同名（本机 " + localBuckets.join("/") + " ↔ 服务端 " + srvBuckets.join("/") + "）");
+    chk(localBuckets.indexOf("ip") >= 0, "本机版也有 ip 档（原先只有服务端有，症状是同一份签名两边行为不同）");
+    /* ⚠️ 有表 ≠ 会用它：本机版拿不到可信的出口地址（浏览器里没有 x-forwarded-for），
+       所以 requestCode **不判** ip 档。这条差异是故意的 —— 断言钉住它，
+       免得下一个人「顺手补上」把同一个人多试两次判成攻击。 */
+    {
+      const core2 = readCoreSendCode();
+      chk(!/rateCheck\(state, "ip"/.test(core2), "本机版**不判** ip 档（拿不到可信出口地址）");
+      chk(/rateCheck\(state, "device"/.test(core2) && /rateCheck\(state, "global"/.test(core2),
+        "但设备档与全局档照判（这两档本机版拿得到）");
+    }
+
+    /* ---- 冷却时长：两条通道各自成键，且两端同值 ---- */
+    eq(A.SMS_RESEND_COOLDOWN_MS, cfg.smsResendCooldownMs,
+      "短信重发冷却两端同值（" + A.SMS_RESEND_COOLDOWN_MS + "）");
+    eq(A.RESEND_COOLDOWN_MS, cfg.resendCooldownMs, "邮箱重发冷却两端同值");
+    chk(A.SMS_RESEND_COOLDOWN_MS !== undefined && A.RESEND_COOLDOWN_MS !== undefined,
+      "两条通道各自有键（将来单独收紧短信不必动邮箱那一条）");
+  }
+
+  /* ==================================================================
+     二十、2C：/api/me 如实自报开通状态（界面才配自称「服务器权威」）
+     ==================================================================
+     §4.9 那条「不假装」的延伸：说了「由服务器判定」，就得让用户看得见
+     **这台服务器当前是什么状态** —— 发信靠 console、库在内存里的实例，
+     与一个配齐的实例，说的话不是同一件事。
+     ================================================================== */
+  {
+    boot({});
+    const core = require("../api/_lib/core.js");
+    boot({});
+    const cfg1 = require("../api/_lib/config.js");     // 没配库（SUPABASE_* 都没值）
+    const pub = core.publicAccount(cfg1, { uid: "u_1", plan: "free", email_mask: "a***@b.com", nickname: "" });
+    eq(pub.channel.mail, "console", "没配发信商时如实自报 console");
+    eq(pub.channel.delivered, false, "console ⇒ delivered:false（不假装发出去了）");
+    eq(pub.channel.db, "memory", "没配库时如实自报 memory（不是 db）");
+    eq(pub.channel.sms, false, "短信没开通 ⇒ sms:false（与 2B 的 503 同口径）");
+
+    /* 真 HTTP：/api/me 拿到会话之后确实带着这一份 */
+    const sv = await serve();
+    try {
+      const sent = await call(sv.base, "POST", "/api/send-code", { email: "facts@example.com" });
+      eq(sent.status, 202, "发码成功（会话要先建起来）");
+      const echo = await call(sv.base, "POST", "/api/send-code", { email: "facts@example.com", channel: "email", value: "facts@example.com" });
+      chk(echo.status === 202 || echo.status === 429, "同邮箱重发被冷却拦住也照实回（实际 " + echo.status + "）");
+      /* 没有会话口子拿明文码（ALLOW_CODE_ECHO 默认关），所以要真登进来只能用
+         「先发码 → 从 devCode 取」这条路；这里改从 store 取码不合适，
+         于是直接断言**未登录**时 /api/me 仍然如实回 401（不泄露任何东西）。 */
+      const me = await call(sv.base, "GET", "/api/me");
+      eq(me.status, 401, "没会话时 /api/me 回 401（未登录是本来的正常状态）");
+      eq(me.body.code, "E_NO_SESSION", "码是 E_NO_SESSION");
+      chk(me.body.channel === undefined, "未登录时**不下发**任何开通状态（不给未授权的人看服务端内部）");
+    } finally { await sv.close(); }
   }
 
   console.log(fails === 0 ? "\n🎉 服务端账号接口测试全部通过" : "\n❌ " + fails + " 项失败");

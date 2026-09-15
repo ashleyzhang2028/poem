@@ -121,7 +121,7 @@ python3 -m http.server 8080  # 或 Python 3
 ├── fonts/                  # 自托管中文 Web Font（思源宋体 / 黑体，子集化）
 ├── icons/                  # 矢量图标 + 各尺寸 PNG
 ├── data/                   # 诗词语料与索引（见下）
-├── scripts/                # 本地服务器与数据生成 / 体检脚本
+├── scripts/                # 本地服务器、数据生成脚本，以及 doctor.js（开通自检）
 ├── api/                    # 服务端（Vercel Serverless，1 期 1A 已落地）
 │   ├── send-code.js verify-code.js me.js account.js
 │   ├── sync/pull.js sync/push.js       # 六个接口，Vercel 按文件路径路由
@@ -129,6 +129,7 @@ python3 -m http.server 8080  # 或 Python 3
 │                                       #   身份 / 发信适配层 / schema.sql
 ├── docs/                   # 设计文档（architecture.md：最终架构与 0/1 期排期；
 │                           #   auth-design.md：账号 / 登录 / 权益分层）
+├── .env.example            # 服务端环境变量模板（**由清单生成**，见「开通自检」）
 └── test/                   # 测试（见下）
 ```
 
@@ -212,7 +213,9 @@ node test/run.sh                               # 全量测试
 bash test/run.sh   # 全部测试（等价于 npm test）
 ```
 
-测试分多层，覆盖调度算法、各页面端到端（jsdom）、数据完整性、主题、注音朗读、法务页等。其中 PWA 一层需要真实浏览器（`puppeteer`），未安装则跳过。
+测试分多层，覆盖调度算法、各页面端到端（jsdom）、数据完整性、主题、注音朗读、法务页、
+服务端六个接口（真 http，不联网）、账号接线、开通自检等。其中 PWA 一层需要真实浏览器
+（`puppeteer`），未安装则跳过。
 
 依赖装法：`jsdom` 与 `puppeteer` 都用 `--no-save` 临时装，**务必一条命令一起装**（分两条时后一条会清掉前一条），并锁住 jsdom 大版本：
 
@@ -249,7 +252,7 @@ Vercel Serverless，六个文件对应六个接口，**同源、无 CORS**：
 |---|---|
 | `POST /api/send-code` | 邮箱归一化 → 四层频控 → 生成 6 位码 → 哈希落库 → 发信 |
 | `POST /api/verify-code` | 校验码 → 建/取账号 → 签发 **HttpOnly Cookie** 会话 |
-| `GET  /api/me` | 权益的唯一来源：`{uid, nickname, plan, features[], mask}` |
+| `GET  /api/me` | 权益的唯一来源：`{uid, nickname, plan, features[], mask, channel}` |
 | `POST /api/sync/pull` | 增量拉云端进度（游标是**服务端时间**，不是客户端时钟） |
 | `POST /api/sync/push` | 按条合并写回；载荷白名单化，时间戳老的盖不掉新的 |
 | `DELETE /api/account` | 注销：**先导出、再删行**，并清掉会话 |
@@ -270,6 +273,44 @@ Vercel Serverless，六个文件对应六个接口，**同源、无 CORS**：
 | 断网 / 超时 / 连不上 | 发码静默回落本机；校验那一步如实说「连不上」（不回落，因为码在服务端） |
 
 部署与建表见 `api/_lib/schema.sql`（四张表，RLS 全开且不给任何策略 = 默认拒绝）。
+
+`/api/me` 还会**如实自报这台服务器开通到哪一步**：
+
+```jsonc
+"channel": { "mail": "sendgrid"|"console", "delivered": true, "db": "db"|"memory", "sms": false }
+```
+
+`mail` 是 `console` 就是「真实用户收不到信」、`db` 是 `memory` 就是「重启即丢」——
+界面在说「由服务器判定」时，得让用户看得见说的是**哪一台服务器**。
+这一份**不落盘、不参与判权**（只用来如实标注）。
+
+### 开通自检与配置清单（2C 已落地）
+
+「让它真的能用」这件事只需要配几个环境变量 —— 它没有业务代码可写，
+所以做成**可执行**的，而不是一篇要人手抄的文档：
+
+```bash
+npm run doctor                        # 缺哪个、缺了会怎样、怎么补（退出码 = 体检结论）
+npm run doctor -- --json              # 程序看的形状（CI / 部署前检查）
+npm run env:example > .env.example    # 生成可直接粘贴的模板
+```
+
+清单**只有一处**（`api/_lib/ops.js` 的 `ENTRY`），自检与 `.env.example` 读的是同一份 ——
+手抄的清单必然与代码分叉。
+
+三档分得清：
+
+| 档 | 哪些 | 缺了会怎样 |
+|---|---|---|
+| **必须** | `SESSION_SECRET`、`SUPABASE_URL`、`SUPABASE_SERVICE_KEY` | 接口整体 503 / 只用内存存储（重启即丢） |
+| **这一件需要** | `SENDGRID_API_KEY` | 发不出真邮件，落到 `console`（只写服务端日志） |
+| **可选** | `MAIL_TRANSPORT`、`MAIL_FROM`、`SITE_URL`、`COOKIE_NAME`、`SMS_*`、`ALLOW_CODE_ECHO` | 用默认值 |
+
+**一个都不配也照样能完全离线使用** —— 自检把这句话写在报告里，免得「未配置」被读成「坏掉」。
+⚠️ 报告里**只出现变量名、绝不出现值**（连长度都不报），因为这段文字就是给人贴进 Issue 的。
+真值放 `.env`（`.gitignore` 挡着），空模板 `.env.example` 要提交。
+
+`test/ops.test.js` 拿三个假密钥钉死「不报值」，并断言清单与 `config.js` **双向同源**。
 
 ### 二级设置页（已落地）
 
