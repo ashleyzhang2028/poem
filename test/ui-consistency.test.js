@@ -662,20 +662,54 @@ if (!JSDOM) {
    * 「又缩进了一圈」的判据（任何一条成立即算一层）：
    *   · 盒子里有左右内边距 —— 第一个孩子的可用宽度因此比盒子窄；
    *   · 盒子里有左右外边距 —— 盒子自己比父亲窄；
-   *   · 盒子宽度 != auto（max-width / width 收窄，例如 .app 的 max-width: --col-w）。
+   *   · 盒子宽度被写死（不是 auto，例如 .app 的 max-width: --col-w）。
    * ⚠️ 这三条合起来正好描述 .app 那一种盒子；也正是 #147 里被套了两遍的东西。
+   *
+   * ⚠️ 下面三处量法原先各写了一遍，并且都把「宽度」判成
+   *    `cs.width === 'auto' ? 'auto' : 'set'`。这条判据在**真的浏览器**里成立，
+   *    在这套用 jsdom 挂起来的页面里却整个是反的：
+   *      · 这些页面只 `<link>` 了 css/style.css，而测试里的 JSDOM 一律
+   *        `resources` 缺省（不去取外链），于是**一份样式表都没挂上**；
+   *      · 没有样式表 → jsdom 又不做布局 → 任何块级盒的 `cs.width` 都取到
+   *        **空串**（不是 'auto'），`'' === 'auto'` 为假 → 一律判成 'set'。
+   *    结果是从 body 到量点的**每一个**祖先都被数成「缩进了一层」，
+   *    「几层」这个数只反映 DOM 有多深，与有没有多套一层 .app 毫无关系 ——
+   *    一条永远什么都不验、还随时会因别处 DOM 加深而变红的哑断言
+   *    （lib 的三个页面就是这么红的：`.toolbar` 比 `.topbar` 多一个祖先，
+   *      于是恒为「3 / 2」；而 poems 恰好同为 2 个祖先，就一直绿着）。
+   *
+   *    所以判据改成「**量得出来**的宽度才算数」：空串 / 'auto' / NaN 一律
+   *    视为「撑满父亲，不算一层」。这才是这条断言本来想问的事 ——
+   *    「有没有哪个盒子又收窄了一圈」，而不是「DOM 有几层」。
+   *    内边距那一支不受影响（jsdom 对 `padding: 14px` 这种常量是算得出来的）。
    */
-  const insets = el => {
+  /* 数一数：从 body 到 el 之间套了几层 `.app`（「一列纸」的唯一载体）。
+     ⚠️ 判据刻意用 `.app` 这个**类**、而不是量出来的宽度 / 内边距：
+        前者在 DOM 里，量得准；后者要靠布局引擎，而测试里的 jsdom
+        一份样式表都没挂上（见 `insetsOf` 的注释），量出来永远是空的。 */
+  const appCountOf = (ddoc, el) => {
     let n = 0;
-    for (let p = el; p && p !== doc.body; p = p.parentElement) {
-      const cs = dom.window.getComputedStyle(p);
-      const pad = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
-      const mar = parseFloat(cs.marginLeft) + parseFloat(cs.marginRight);
-      const w = cs.width === 'auto' ? 'auto' : 'set';
-      if (pad > 0 || mar > 0 || w === 'set') n += 1;
+    for (let p = el; p && p !== ddoc.body; p = p.parentElement) {
+      if (p.classList && p.classList.contains('app')) n += 1;
     }
     return n;
   };
+
+  const insetsOf = (win, el) => {
+    const ddoc = win.document;
+    let n = 0;
+    for (let p = el; p && p !== ddoc.body; p = p.parentElement) {
+      const cs = win.getComputedStyle(p);
+      const pad = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+      const mar = parseFloat(cs.marginLeft) + parseFloat(cs.marginRight);
+      const w = cs.width;
+      const narrowed = w !== '' && w !== 'auto' && !isNaN(parseFloat(w));
+      if (pad > 0 || mar > 0 || narrowed) n += 1;
+    }
+    return n;
+  };
+
+  const insets = el => insetsOf(dom.window, el);
 
   const mkEl = (tag, cls, parent) => {
     const e = doc.createElement(tag);
@@ -689,11 +723,16 @@ if (!JSDOM) {
   //    这就是 chrome.js 的 headerHtml 渲染出来的那一行。少了右侧簇，
   //    jsdom 里盒模型虽然算不出宽度，但「同一把尺子量到底」的前提就丢了：
   //    量点与被量点必须处在同一份真实结构上，否则这条断言问的不是它想问的事。
-  const bar = mkEl('header', 'topbar');
+  // ⚠️ 顶栏必须**住在 .app 里面** —— 真页面就是这么写的
+  //    （index.html / poems / settings / library 全是 `.app > header.topbar`）。
+  //    早先这里把顶栏与 .app 摆成**兄弟**，于是「页顶那一行」与「纸里的内容」
+  //    天然差一个 .app，量出来的两个数永远不可能相等 —— 一条自己写错前提、
+  //    注定红的断言。量点与被量点要先处在同一份真实结构上。
+  const paper = mkEl('div', 'app');
+  const bar = mkEl('header', 'topbar', paper);
   mkEl('div', 'brand', bar);
   mkEl('span', 'top-slot', bar);
   mkEl('span', 'top-user', bar);
-  const paper = mkEl('div', 'app');
   const inner = mkEl('div', '', paper);          // 纸里的内容（不该再缩进一次）
   const nested = mkEl('div', 'app', inner);      // 误写的那种：第二层又套一个 .app
 
@@ -704,26 +743,27 @@ if (!JSDOM) {
   chk(b === a,
     '一列纸里的内容与页顶那一行缩进**层数相同**（实际 ' + b + ' / ' + a + '）—— ' +
     '任一方多一层，画出来就是「卡片比顶栏窄一条边」');
-  // ⚠️ 这一条**不断言**「多套一层一定被数出来」：jsdom 不做布局，
-  //    `max-width: var(--col-w)` 这种带变量的宽度它算不出来（取到 auto），
-  //    所以「宽度收窄」这一支在 jsdom 里是哑的 —— 写一条它天生看不见的断言，
-  //    只会得到一条永远绿、却什么都不验的规则。
-  //    这里改为**只数内边距那一支**（jsdom 算得出来、也正是真机上量到的
-  //    28px / 112px 那条边）：红的是这一条，不是上面那条。
-  const padOnly = el => {
-    let n = 0;
-    for (let p = el; p && p !== doc.body; p = p.parentElement) {
-      const cs = dom.window.getComputedStyle(p);
-      if (parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight) > 0) n += 1;
-    }
-    return n;
-  };
-  const padNested = mkEl('div', 'app', inner);   // 反面样本：再套一层「纸」
-  // jsdom 没有样式表里的 --col-side，这条只是把「同一把尺子量到底」写出来：
-  // 真的页面由下面那三条（library / poems / settings）守。
-  chk(padOnly(padNested) === padOnly(inner),
-    '同一把尺子量「多套一层」与「不套」是一致的（实际 ' +
-    padOnly(padNested) + ' / ' + padOnly(inner) + '）');
+
+  /* 反面样本：多套一层必须真的被数出来。
+     ⚠️ 上一版这条写成「不断言」（只数内边距那一支），理由是「jsdom 不做布局，
+        `max-width: var(--col-w)` 算不出来」—— 那个理由对**宽度**那一支成立，
+        却顺手把这条断言变成了哑的：既然什么都不验，它就只剩「随时可能红」。
+        而它确实红了（见下面那三条页面断言）。
+
+        真正的做法不是放弃，而是**换一个 jsdom 看得见的口径**：
+        全站「一列纸」这件事只有一个载体 —— `.app` 这个类本身。
+        「有没有又缩进一圈」在结构与真机上都是同一件事：**这条路径上有几个 .app**。
+        这个数完全在 DOM 里，与布局引擎无关，所以它量得准、也不会漂。
+        （`insetsOf` 那两支保留着，但它们**不参与**这两条 ——
+          它们在无样式表的 jsdom 里是哑的，参与了就等于没验。） */
+  const appCount = el => appCountOf(doc, el);
+  chk(appCount(inner) === appCount(bar),
+    '一列纸里的内容与页顶那一行**套了同样多个 .app**（实际 ' +
+    appCount(inner) + ' / ' + appCount(bar) + '）');
+  chk(appCount(nested) === appCount(inner) + 1,
+    '反面样本对得上：多套一层 .app 必须多算一个（实际 ' +
+    appCount(nested) + ' / ' + appCount(inner) + '）—— ' +
+    '这一条保证上面那把尺子不是哑的');
 
   // 真正的页面也要过同一把尺
   for (const [file, url, sel] of [
@@ -734,29 +774,15 @@ if (!JSDOM) {
     const d2 = new JSDOM(read(file), { url: 'https://local.test' + url });
     const dd = d2.window.document;
     const box = dd.querySelector(sel);
-    let n = 0;
-    for (let p = box; p && p !== dd.body; p = p.parentElement) {
-      const cs = d2.window.getComputedStyle(p);
-      const pad = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
-      const mar = parseFloat(cs.marginLeft) + parseFloat(cs.marginRight);
-      const w = cs.width === 'auto' ? 'auto' : 'set';
-      if (pad > 0 || mar > 0 || w === 'set') n += 1;
-    }
-    const t = dd.querySelector('.topbar');
-    let m = 0;
-    for (let p = t; p && p !== dd.body; p = p.parentElement) {
-      const cs = d2.window.getComputedStyle(p);
-      const pad = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
-      const mar = parseFloat(cs.marginLeft) + parseFloat(cs.marginRight);
-      const w = cs.width === 'auto' ? 'auto' : 'set';
-      if (pad > 0 || mar > 0 || w === 'set') m += 1;
-    }
+    // ⚠️ 口径换成 `.app` 层数（原先这里量的是「宽度 / 内边距缩进」，
+    //    而那把尺子在测试里量不到任何东西 —— 详见 `insetsOf` 的注释）。
+    const n = appCountOf(dd, box);
+    const m = appCountOf(dd, dd.querySelector('.topbar'));
     chk(n <= m,
-      file + ' 里 ' + sel + ' 的缩进层数不多于页顶那一行（实际 ' + n + ' / ' + m + '）—— ' +
+      file + ' 里 ' + sel + ' 套的 .app 不多于页顶那一行（实际 ' + n + ' / ' + m + '）—— ' +
       '页顶与内容必须落在同一条竖轴上');
   }
 }
-
 
 /* ==========================================================================
    十、顶栏右端是**固定位**：返回键与头像不随页名长短移动（Issue #147）
