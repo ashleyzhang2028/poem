@@ -39,6 +39,7 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
 const css = read('css/style.css');
 const classicCss = read('css/classic.css');
 const legalCss = read('css/legal.css');
+const accountCss = read('css/account.css');
 const chromeJs = read('js/chrome.js');
 
 /** 注释一律先剥掉：注释里会写历史数值（「40 + 12 = 52px」），
@@ -1050,6 +1051,51 @@ PAGE_FILES.forEach(f => {
       f + ' 有页签（页签是它的退路之一）');
   });
 })();
+
+/* ==========================================================================
+   七、页脚 + 危险按钮：一处定义、全站一样（Issue #163）
+   --------------------------------------------------------------------------
+   用户原话：
+     「我看到设置里无数啰啰嗦嗦的段落及解释，无法容忍。我看到重复的发邮件框，
+       发现重复的注册按钮…… 保持页面元素的统一，ui 一致性等等。」
+
+   这一段守的是「统一」那一半里**能判的两类**：
+     · 页脚：版权 + 法务链接的样式只有一个来源 ——
+       原先法务两页写的是 `.foot`、其余九页写的是 `.foot settings-foot`，
+       同一个组件两种写法，改一处另一处不会跟着走；
+     · 危险色：不可逆动作（清空进度 / 注销账号）的底色与描边只有一个来源 ——
+       原先 .danger-btn 与 .account-btn.danger 各自写了一遍相同色值。
+   ========================================================================== */
+{
+  // ① 页脚：十一张挂页脚的页面用同一个类名（不允许再出现裸 .foot）
+  const FOOT_PAGES = ['settings/index.html', 'settings/general/index.html',
+    'settings/recite/index.html', 'settings/lists/index.html', 'settings/reader/index.html',
+    'login/index.html', 'profile/index.html', 'admin/index.html', 'plans/index.html',
+    'terms/index.html', 'privacy/index.html'];
+  FOOT_PAGES.forEach(f => {
+    chk(/<footer class="foot settings-foot">/.test(read(f)),
+      f + ' 的页脚是同一套写法（class="foot settings-foot"）');
+  });
+  chk(!/<footer class="foot">/.test(read('terms/index.html') + read('privacy/index.html')),
+    '法务两页不再用裸 .foot（与其余九页同一条规则）');
+
+  // ② 危险色：只有一个来源，两处按钮都读它
+  const rootRule = ruleOf(cssCode, ':root');
+  chk(/--danger-bg:\s*#[0-9a-f]{6}/.test(rootRule) && /--danger-line:\s*#[0-9a-f]{6}/.test(rootRule),
+    '危险色令牌 --danger-bg / --danger-line 在 :root 里定义（全站唯一来源）');
+  chk(/var\(--danger-line\)/.test(ruleOf(cssCode, '.danger-btn')) &&
+      /var\(--danger-bg\)/.test(ruleOf(cssCode, '.danger-btn')),
+    '设置页的 .danger-btn 读危险色令牌（不再写死 #ecd2cd）');
+  // ⚠️ 与上面同一把尺子：account.css 的那条规则夹在大段注释之间，
+  //    不先剥注释就会把注释里的 `{` 当成规则边界（ruleOf 会返回空串）。
+  chk(/var\(--danger-line\)/.test(ruleOf(strip(accountCss), '.account-btn.danger')) &&
+      /var\(--danger-bg\)/.test(ruleOf(strip(accountCss), '.account-btn.danger')),
+    '账号页的 .account-btn.danger 读同一条危险色令牌（两种页面同一个底色）');
+  // 反向：两处都不许再写死那一对色值（写死的那一刻，「一处定义」就退回巧合）
+  const dangerWriters = (cssCode + '\n' + accountCss).replace(/^\s*:root\s*\{[\s\S]*?\}/m, '');
+  chk(!/#ecd2cd/.test(dangerWriters.replace(/\/\*[\s\S]*?\*\//g, ' ')),
+    '除 :root 外没有第二处写死 #ecd2cd（危险按钮的描边只有一个来源）');
+}
 
 console.log(fails === 0 ? '\n🎉 UI 一致性 / 响应式守卫全部通过' : '\n❌ ' + fails + ' 项失败');
 process.exit(fails ? 1 : 0);

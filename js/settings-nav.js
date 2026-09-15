@@ -39,26 +39,26 @@
       key: "general",
       href: "/settings/general/",
       title: "通用",
-      desc: "用户名与头像印记、本机账号、数据备份"
+      desc: "用户名、头像印记、账号、数据备份"
     },
     {
       key: "recite",
       href: "/settings/recite/",
       title: "背诵",
-      desc: "今天背哪几首：学段 / 年级 / 学期 / 范围 / 数量",
+      desc: "学段 / 年级 / 学期 / 范围 / 数量",
       extra: "复习算法"
     },
     {
       key: "lists",
       href: "/settings/lists/",
       title: "我的清单",
-      desc: "自选背诵：导入 / 导出 / 改名 / 删除 / 整组移出 / 调顺序"
+      desc: "自选背诵的增删改查"
     },
     {
       key: "reader",
       href: "/settings/reader/",
       title: "阅读与朗读",
-      desc: "自动注音，以及连读时怎么念"
+      desc: "自动注音 · 连读方式"
     }
   ];
 
@@ -157,7 +157,7 @@
         '<div class="account-entry-card" data-state="out">' +
         '<p class="account-entry-line">' +
         '<span class="account-entry-sub">未登录（游客）</span>' + badge + "</p>" +
-        '<p class="settings-hint">不登录也能用全部功能；语音朗读登录后即可用，免费。' +
+        '<p class="settings-hint">不登录也能用全部功能；语音朗读登录后免费。' +
         "账号只让进度不随清缓存丢掉。</p>" +
         '<div class="settings-btns">' +
         '<a class="btn ghost-btn" id="btn-entry-login" href="/login/">用邮箱登录</a>' +

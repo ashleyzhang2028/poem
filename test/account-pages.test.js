@@ -275,5 +275,40 @@ const LOGIN = strip(loginJs), PROFILE = strip(profileJs), ADMIN = strip(adminJs)
     '用户协议不残留「无注册、无登录」这类已被代码推翻的说法');
 }
 
+/* ================= 十一、一页一件事：同一种动作不摆两颗按钮（Issue #163） ================= */
+{
+  /* 用户原话：
+       「我看到设置里无数啰啰嗦嗦的段落及解释，无法容忍。我看到重复的发邮件框，
+         发现重复的注册按钮，不知道怎么想的。」
+
+     这一段把「重复」两类各钉成一条能判的断言：
+       ① 登录页只有**一个**邮箱输入框 —— 原先下面还挂着一整张「重设凭证」卡，
+          里面是同一个邮箱字段的第二种写法（label 不同、按钮不同、说明又一遍），
+          一页里两个「输邮箱 → 收码」的表单；
+       ② 个人中心只有**一颗**去 /login/ 的按钮 —— 原先身份卡那颗账号入口
+          与下面引导卡那颗「用邮箱建一个账号」是同一个去处。
+
+     ⚠️ 判的是「这类输入框 / 这个去处出现了几次」，不是「某个 id 在不在」：
+        id 改名换姓之后这两条仍然成立。 */
+  const loginInputs = [...SRC.login.matchAll(/<input[^>]*type="email"[^>]*>/g)].length;
+  chk(loginInputs === 1, '登录页只有一个邮箱输入框（实际 ' + loginInputs + ' 个）');
+  chk(!/input-reset-email|btn-reset-send|btn-reset-verify/.test(SRC.login),
+    '登录页不再挂第二张「重设凭证」卡（同一个动作一个表单）');
+  // 内核那一半照旧在：能力没删，删的只是页面入口
+  chk(/resetCredential\s*:/.test(read('js/auth-core.js')),
+    'AuthCore.resetCredential 仍在（删的是页面入口，不是能力）');
+  chk(!/onResetSend|onResetVerify/.test(LOGIN), 'js/login.js 不再接重设凭证那一块');
+
+  // ⚠️ 数 JS 里的**裸地址字面量**（`"/login/"`），不要数 `location.href = ...`：
+  //    profile.js 的注释里也写着这串地址（「落到 /login/ 也不是死路」），
+  //    拿整句去数必然误判。裸字面量只出现在真的赋值那一行。
+  const toLogin = [...PROFILE.replace(/^\s*\/\/.*$/gm, ' ').matchAll(/"\/login\/"/g)].length;
+  chk(toLogin === 1,
+    '个人中心只有一颗去 /login/ 的按钮（实际 ' + toLogin +
+    ' 处 —— 身份卡那颗账号入口就是它，下面不该再摆一颗「建账号」）');
+  chk(/btn-account-entry/.test(SRC.profile) && /btn-account-entry/.test(PROFILE),
+    '个人中心靠身份卡那颗 #btn-account-entry 承担去 /login/ 的动线');
+}
+
 console.log('\n' + (fails ? '❌ ' + fails + ' 项失败' : '🎉 账号三页测试全部通过'));
 process.exit(fails ? 1 : 0);

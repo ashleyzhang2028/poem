@@ -451,8 +451,8 @@
     const tip = $("#collections-tip");
     if (tip) {
       tip.textContent = total
-        ? "下面这些篇目与课内古诗词一起按遗忘曲线复习。到课外集子或搜索页，点篇目右边的书签即可再加；↑↓ 可调顺序，一组的篇目可整卷移出。"
-        : "还没有自选篇目。到「课外」任一集子或「搜索」页，点篇目右边的书签，就能把它加进来一起背。";
+        ? "与课内诗词一起按遗忘曲线复习。到集子页或搜索页点书签即可再加；↑↓ 调顺序。"
+        : "还没有自选篇目。到「课外」任一集子或「搜索」页，点篇目右边的书签加进来。";
     }
 
     // 一个集合都没有时也留着「导入」—— 家长发来一串清单，
@@ -666,7 +666,7 @@
     const m = RM.describe(cur);
     const hint = $("#algo-hint");
     if (hint) {
-      hint.textContent = "当前：" + m.name + "（背诵页副标题会写「" + m.sub + "」）";
+      hint.textContent = "当前：" + m.name + " · 换算法不清进度（按最接近的落点接手）";
     }
     const iv = $("#algo-interval");
     if (iv) iv.textContent = intervalText(cur);
@@ -844,7 +844,7 @@
       const from = cur.source === "chosen" ? "你选的字"
         : (cur.source === "nickname" ? "取自昵称首字" : "默认字");
       hint.textContent = "当前：" + cur.char + "字 · " + A.INKS[cur.ink].name +
-        "（" + from + "）。印记只存在本机，不上传。";
+        "（" + from + "）· 只存本机";
     }
   }
 
@@ -898,10 +898,9 @@
       box.innerHTML =
         '<p class="account-line"><span class="account-state" id="account-state">未登录</span>' +
         "（游客）" + badge + "</p>" +
-        '<p class="settings-hint">不登录也能用全部功能；账号只影响「语音朗读」与跨设备同步。' +
-        "语音朗读登录后即可用，免费。</p>" +
-        '<div class="settings-btns"><a class="btn ghost-btn" id="btn-gologin" href="/login/">用邮箱登录</a></div>' +
-        '<p class="settings-hint">没登录时学习进度<strong>只存在本机</strong>。开启云端同步需要先登录。</p>';
+        '<p class="settings-hint">不登录也能用全部功能；没登录时学习进度<strong>只存在本机</strong>。' +
+        "账号只让进度不随清缓存丢掉。</p>" +
+        '<div class="settings-btns"><a class="btn ghost-btn" id="btn-gologin" href="/login/">用邮箱登录</a></div>';
       return;
     }
 
@@ -921,8 +920,7 @@
       '<div class="settings-btns">' +
       '<a class="btn ghost-btn" id="btn-goprofile" href="/profile/">个人中心</a>' +
       '<button class="btn ghost-btn" id="btn-signout" type="button">退出登录</button></div>' +
-      '<p class="settings-hint">退出只结束这次登录，不会删掉任何背诵进度。' +
-      "注销账号（连同服务器上的那一份）在个人中心里做。</p>" +
+      '<p class="settings-hint">退出只结束这次登录，不删背诵进度；注销在个人中心里做。</p>' +
       /* 层级是**谁定的** —— 如实标出来。服务端判定那份改不了，
          本机登记那份改一行存储就能改，两者在用户眼里的分量完全不同
          （docs §3.4 的口径）。 */
@@ -992,20 +990,19 @@
     if (label) label.textContent = st === "unavailable" ? "未开放" : (on ? "开" : "关");
 
     if (st === "unavailable") {
-      hint.textContent = "本站还没有开放云端同步（服务端未配置）。学习进度始终只存在本机。";
+      hint.textContent = "本站还没有开放云端同步，进度始终只存本机。";
       return;
     }
     if (!on) {
-      hint.textContent = "关闭中：学习进度只存在本机，不上传、不跨设备。" +
-        (st === "signin" ? "想跨设备同步请先登录。" : "");
+      hint.textContent = "关闭中：进度只存本机。" + (st === "signin" ? "想同步请先登录。" : "");
       return;
     }
     if (st === "signin") {
-      hint.textContent = "已开启，但还没登录 —— 登录后才会真的同步。";
+      hint.textContent = "已开启，但还没登录 —— 登录后才会真的同步";
       return;
     }
-    hint.textContent = "开启中：账号域的进度与设置会同步到服务器，可随时关掉。" +
-      "本机那份始终是完整的一份，断网照常背。设备上的阅读偏好（字号、注音、连读）不上传。";
+    hint.textContent = "开启中：进度与账号域设置会同步到服务器，可随时关掉；" +
+      "本机那份始终完整，断网照常背。设备偏好（字号、注音、连读）不上传。";
   }
 
   /** 开 / 关同步：**关掉只停上传**，绝不删本机数据 */

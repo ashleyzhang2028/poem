@@ -41,6 +41,11 @@
   --radius: 16px;           /* 卡片圆角 */
   --radius-sm: 12px;        /* 卡片内的小件（按钮组 / 输入框 / 次级面板）圆角 */
   --radius-md: 14px;        /* 卡片与卡片之间的中间一档（入口页那四张卡、阅读器译文框） */
+  /* 危险色（清空进度 / 注销账号这类不可逆动作）：全站唯一一份。
+     设置页的 .danger-btn 与账号页的 .account-btn.danger 都读它 ——
+     否则同一种动作会长出两种底色，改色时也一定会漏一处。 */
+  --danger-bg: #fbeae7;     /* 危险按钮的淡朱砂底 */
+  --danger-line: #ecd2cd;   /* 危险按钮的朱砂描边 */
   /* 输入框字号：窄屏取 16px —— iOS 上小于 16px 的输入框一聚焦就会把整页放大。
      桌面 / 平板用 14px，与界面文字的层级一致。这个值只在这里定义一次。 */
   --input-font: 14px;
@@ -853,7 +858,7 @@ body.no-dock .modal-box { max-height: 88vh; }
   color: var(--ink);
 }
 .btn:active { transform: scale(.97); }
-.btn.bad { color: var(--red); border-color: #ecd2cd; background: var(--red-light); }
+.btn.bad { color: var(--red); border-color: var(--danger-line); background: var(--red-light); }
 .btn.fuzzy { color: var(--amber); border-color: #ecdcc5; background: var(--amber-light); }
 .btn.good { color: #fdfaf2; background: var(--green); border-color: var(--green); }
 
@@ -1316,7 +1321,7 @@ textarea:focus {
 
 .settings-btns { display: flex; gap: 8px; flex-wrap: wrap; }
 .ghost-btn { flex: 1; min-width: 90px; padding: 9px; font-size: 13.5px; }
-.danger-btn { flex: 1; min-width: 90px; padding: 9px; font-size: 13.5px; color: var(--red); border-color: #ecd2cd; background: var(--red-light); }
+.danger-btn { flex: 1; min-width: 90px; padding: 9px; font-size: 13.5px; color: var(--red); border-color: var(--danger-line); background: var(--danger-bg); }
 .settings-tip {
   font-size: 12px;
   color: var(--ink-2);
@@ -2238,7 +2243,7 @@ html, body {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .7);
 }
 .btn.bad {
-  background: linear-gradient(180deg, #fbeae7 0%, var(--red-light) 100%);
+  background: linear-gradient(180deg, var(--danger-bg) 0%, var(--red-light) 100%);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .7);
 }
 /* 二 / 三级按钮：纸底描边，按下去的反馈比主按钮轻一档 */
@@ -2256,8 +2261,8 @@ html, body {
 }
 .ghost-btn:hover { border-color: var(--green); }
 .danger-btn {
-  background: linear-gradient(180deg, #fbeae7 0%, var(--red-light) 100%);
-  border: 1px solid #ecd2cd;
+  background: linear-gradient(180deg, var(--danger-bg) 0%, var(--red-light) 100%);
+  border: 1px solid var(--danger-line);
   color: var(--red);
   border-radius: var(--radius-sm);
   font-weight: 600;
