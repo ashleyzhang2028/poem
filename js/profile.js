@@ -74,9 +74,8 @@
 
     var hint = $("identity-hint");
     if (hint) {
-      hint.textContent = id.signedIn
-        ? "昵称与头像印记在「设置 · 通用」里改；" + tierSourceLine(id) + "。"
-        : "昵称与头像印记在「设置 · 通用」里改，不登录也能改。";
+      hint.textContent = "昵称与头像印记在「设置 · 通用」里改" +
+        (id.signedIn ? "；层级" + tierSourceLine(id) + "。" : "，不登录也能改。");
     }
 
     renderAccountEntry(id);
@@ -208,8 +207,8 @@
     var hint = $("cap-hint");
     if (hint) {
       hint.textContent = id.signedIn
-        ? "层级由管理员按邮箱掩码发放。本期没有服务器，层级只是本机登记，升级后重新打开页面即生效。"
-        : "登录后可用语音朗读（免费）。其他带门槛的能力需要管理员发放的层级。";
+        ? "层级由管理员按邮箱掩码发放；本机登记的层级改一行存储就能改，不是付费凭据。"
+        : "登录后可用语音朗读（免费）；带门槛的能力要管理员发放层级。";
     }
   }
 
@@ -399,7 +398,6 @@
 
     if (!sess) show($("guest-card"));
 
-    $("btn-go-login").addEventListener("click", function () { location.href = "/login/"; });
     $("btn-go-plans").addEventListener("click", function () { location.href = "/plans/"; });
     $("btn-sign-out").addEventListener("click", onSignOut);
     $("btn-go-admin").addEventListener("click", function () { location.href = "/admin/"; });
@@ -462,10 +460,10 @@
         : st === "unavailable"
         ? "本站还没有开放云端同步（服务端未配置）。学习进度始终只存在本机。"
         : st === "off"
-          ? "关闭中：学习进度只存在本机，不上传、不跨设备。开关在「设置 · 通用」里。"
+          ? "关闭中：进度只存本机。开关在「设置 · 通用」里。"
           : st === "signin"
             ? "已开启，但还没登录 —— 登录后才会真的同步。"
-            : "进度与账号域设置会同步到服务器；本机那份始终是完整的一份，断网照常背。" +
+            : "进度与账号域设置会同步到服务器；本机那份始终完整，断网照常背。" +
               "设备上的阅读偏好（字号、注音、连读）不上传。";
     }
 
@@ -487,10 +485,10 @@
     var localCount = 0;
     try { localCount = Object.keys(window.ProgressStore.all() || {}).length; } catch (e) { localCount = 0; }
     if (lead) {
-      lead.textContent = "有 " + list.length + " 篇在本机与账号里都改过，判不出该听谁的，" +
-        "所以没有自动合并。本机这一份共 " + localCount + " 篇。" +
-        (signedIn ? "" : "（当前未登录，请先登录再来选。）") +
-        "选「保留账号」之前会先在本机留一份快照，选错了还能捞回来。";
+      lead.textContent = "有 " + list.length + " 篇两边都改过，判不出该听谁的，故未自动合并。" +
+        "本机共 " + localCount + " 篇。" +
+        (signedIn ? "" : "当前未登录，请先登录再选。") +
+        "选「保留账号」前会先在本机留一份快照。";
     }
     show(box);
   }

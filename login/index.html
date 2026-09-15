@@ -47,17 +47,15 @@
            ================================================================== -->
       <section class="account-card">
         <p class="account-lead">
-          不登录也能用全部功能。花一分钟建一个账号，好处只有一个：
-          <strong>进度不会因为清缓存、换浏览器而丢掉</strong>。
+          不登录也能用全部功能。建账号只为让<strong>进度不随清缓存丢掉</strong>。
+          输邮箱 → 收码 → 填码，没有账号就建、有就登录。
         </p>
 
         <!-- ---------- 信任期：信任期内一点即入，不发码 ---------- -->
         <div id="trust-panel" hidden>
           <button class="account-btn" id="btn-trust" type="button"></button>
           <button class="account-btn ghost" id="btn-trust-other" type="button">用别的邮箱</button>
-          <p class="account-hint">
-            这台设备在信任期内（30 天）。换了设备、或想用别的邮箱，点上面那颗。
-          </p>
+          <p class="account-hint">信任期 30 天。换设备或换邮箱，点上面那颗。</p>
         </div>
 
         <!-- ---------- ① 输邮箱 ---------- -->
@@ -70,9 +68,7 @@
           </div>
           <button class="account-btn" id="btn-send" type="button">发送随机码</button>
           <p class="account-msg" id="msg-email"></p>
-          <p class="account-hint">
-            只用它来收随机码。邮箱不会以明文保存 —— 本机只留摘要与掩码（如 a***@b.com）。
-          </p>
+          <p class="account-hint">本机只留摘要与掩码（如 a***@b.com），不留明文邮箱。</p>
         </div>
 
         <!-- ---------- ② 收码回填 ---------- -->
@@ -94,16 +90,13 @@
                ⚠️ 这一段**默认隐藏**，只有在真的走服务端时（state.remote）才显示 ——
                   本机体验版下摆一句「进度会上传到服务器」是假的。 -->
           <div class="account-note" id="remote-note" hidden>
-            进度会保存到服务器，以便在手机和电脑之间自动同步。点「确定」即表示同意。
-            不想上传的话，可以在「设置 · 通用 · 账号」里关掉云端同步 ——
-            关掉之后一切照旧，只是不同步。
+            进度会保存到服务器以便跨设备同步。点「确定」即表示同意；不想上传可在「设置 · 通用」关掉。
           </div>
 
           <!-- 本地体验版的说明：必须显眼，不许含糊 -->
           <div class="account-note" id="local-note" hidden>
             <strong>本地体验版</strong>：本应用没有服务器，随机码由你这台设备生成。
-            下面这颗按钮会把码复制到剪贴板；也可以开自己的邮箱客户端，把码发给自己保管。
-            <strong>真机上请勿把码发给他人。</strong>
+            自己复制或发给自己保管，<strong>请勿把码发给他人</strong>。
           </div>
           <div class="account-field" id="code-tools" style="margin-top:10px">
             <button class="account-btn ghost" id="btn-copy-code" type="button">复制随机码</button>
@@ -120,33 +113,8 @@
                    autocomplete="off" enterkeyhint="done" placeholder="Ashley" />
           </div>
           <button class="account-btn" id="btn-finish" type="button">完成</button>
-          <p class="account-hint">
-            昵称只是显示名（顶栏那个「XX的古诗词」），不是实名；请只填小名。
-          </p>
+          <p class="account-hint">昵称只是显示名，不是实名；请只填小名。</p>
         </div>
-      </section>
-
-      <!-- ==================================================================
-           重设凭证（「找回密码」的等价物：本期无密码）
-           ------------------------------------------------------------------
-           purpose="reset" 的码与 login 的码**互不通用**（auth-core 里按 purpose
-           绑定）。验过之后：吊销全部会话 + 取消全部设备信任，然后重新登录。
-           ================================================================== -->
-      <section class="account-card">
-        <h2 class="account-card-title" id="reset-title">换了设备、进不去？</h2>
-        <p class="account-lead">
-          本期没有密码，所以「找回密码」就是<strong>重新收一次码</strong>：
-          它会结束这台设备上已有的登录，其他设备上的登录也会一并失效。
-        </p>
-        <div class="account-field">
-          <label class="account-label" for="input-reset-email">注册时用的邮箱</label>
-          <input id="input-reset-email" class="account-input" type="email" inputmode="email"
-                 autocomplete="email" spellcheck="false" placeholder="you@example.com" maxlength="120" />
-        </div>
-        <button class="account-btn ghost" id="btn-reset-send" type="button">发送重设随机码</button>
-        <div class="code-row" id="reset-code-row" style="margin-top:12px" hidden></div>
-        <button class="account-btn" id="btn-reset-verify" type="button" hidden>确定重设</button>
-        <p class="account-msg" id="msg-reset"></p>
       </section>
 
       <!-- ==================================================================

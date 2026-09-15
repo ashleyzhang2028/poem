@@ -241,8 +241,8 @@
       var lead = $("deny-lead");
       if (lead) {
         lead.textContent = "管理后台只对本机管理员开放。你现在是「" + Ent.tierLabel(id.tier) +
-          "」层级的普通用户，" + (id.signedIn ? "账号是 " + (id.mask || "（无邮箱）") : "未登录") +
-          "。这一页没有可做的事，也不会显示任何发放信息。";
+          "」层级的普通用户" + (id.signedIn ? "（" + (id.mask || "无邮箱") + "）" : "（未登录）") +
+          "，这里没有可做的事。";
       }
       $("btn-back-profile").addEventListener("click", function () { location.href = "/profile/"; });
       return;

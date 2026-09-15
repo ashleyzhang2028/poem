@@ -118,7 +118,6 @@
   border: 1px solid var(--line);
 }
 .account-btn.ghost:hover { color: var(--green); border-color: var(--green); filter: none; }
-.account-btn.danger { background: var(--red-light); color: var(--red); border: 1px solid #ecd2cd; }
 .account-btn.danger:hover { filter: brightness(.98); }
 .account-btn + .account-btn { margin-top: 8px; }
 
@@ -323,7 +322,7 @@
 }
 
 /* ---------- 十一、危险区 ---------- */
-.account-card.danger-zone { border: 1px solid #ecd2cd; }
+.account-card.danger-zone { border: 1px solid var(--danger-line); }
 .danger-title { color: var(--red); }
 .confirm-row { display: flex; gap: 8px; }
 .confirm-row .account-btn { margin-top: 0; }
@@ -548,3 +547,26 @@ thead .plans-th-cap {
   .plans-th-cap { min-width: 200px; }
   .plans-table { font-size: 13px; }
 }
+
+/* ==========================================================================
+   危险动作：按钮与全站同一条颜色来源
+   --------------------------------------------------------------------------
+   用户原话：「保持页面元素的统一，ui 一致性等等。」
+
+   在这条之前，账号三页的危险按钮走 `.account-btn.danger`（淡朱砂底 + 朱砂字），
+   而设置页的「清空进度」走 `.btn.danger-btn` —— 两处**各自写了一遍相同的色值**
+   （var(--red-light) / var(--red) / #ecd2cd）。同一种「不可逆」的动作长着两副脸：
+   一处实底、一处描边，一处在卡片里、一处在表单里，改色时也一定会漏一处。
+
+   现在两侧都读全站那一条危险色令牌：
+     `--danger-bg` / `--danger-line`（见 css/style.css 的 :root），
+   于是「改一处，两处一起走」是结构性的，不靠人抄对。
+   ⚠️ 本文件不再出现字面量色值 —— test/account-pages.test.js 有一条
+     「account.css 不许新造调色板里没有的颜色」守着这件事。
+   ========================================================================== */
+.account-btn.danger {
+  background: var(--danger-bg);
+  color: var(--red);
+  border: 1px solid var(--danger-line);
+}
+.account-btn.danger:hover { filter: brightness(.98); }

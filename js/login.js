@@ -53,7 +53,7 @@
 
   /* 本页状态（**不进 localStorage**：它只是「这一屏画到哪一步」） */
   var state = {
-    purpose: "login",        // login | reset
+    purpose: "login",        // 本期只有登录一种用途
     codeId: "",              // 内核给的码记录 id（明文码不在盘上，只在下面这个变量里）
     code: "",                // 明文码，仅存在于本次会话的内存里
     sentTo: "",              // 掩码，用于回显「已发往 a***@b.com」
@@ -198,7 +198,7 @@
   /* ------------------------------------------------------------ 发码 */
 
   /**
-   * 发码。**两条路只有一处入口**：
+   * 发码（登录 / 注册同一件事）。
    *   · 服务端可用 → 走 `POST /api/send-code`（真发信，码在服务端）
    *   · 服务端没配好 / 连不上 → 回落内核的本机实现（「本地体验版」）
    *
@@ -207,10 +207,10 @@
    * ⚠️ 回落之后**绝不**把本机生成的码说成「已发送」——
    *    这正是 docs/auth-design.md §7.1 那条「不假装有服务器」。
    */
-  function sendCode(purpose) {
-    if (!store) { msg(purpose === "login" ? "msg-email" : "msg-reset", "浏览器不允许保存数据，本次登录刷新后会失效", "warn"); }
-    var inputId = purpose === "login" ? "input-email" : "input-reset-email";
-    var msgId = purpose === "login" ? "msg-email" : "msg-reset";
+  function sendCode() {
+    if (!store) { msg("msg-email", "浏览器不允许保存数据，本次登录刷新后会失效", "warn"); }
+    var inputId = "input-email";
+    var msgId = "msg-email";
     var email = (($(inputId) || {}).value || "").trim();
 
     // 先按内核的规矩就地校验一遍：格式错的邮箱**不用**打扰服务端
@@ -221,9 +221,9 @@
       return Promise.resolve(null);
     }
 
-    if (api && !api.degraded()) return sendCodeRemote(purpose, email, msgId);
+    if (api && !api.degraded()) return sendCodeRemote("login", email, msgId);
 
-    return Promise.resolve(sendCodeLocal(purpose, email, msgId));
+    return Promise.resolve(sendCodeLocal("login", email, msgId));
   }
 
   /** 服务端那条路 */
@@ -233,7 +233,7 @@
         // 服务端不可用（没配好 / 断网 / 超时）→ 静默回落本机，用户无感
         if (r.code === "E_NOT_CONFIGURED" || r.code === "E_OFFLINE" || r.code === "E_TIMEOUT") {
           msg(msgId, r.message, "warn");
-          return sendCodeLocal(purpose, email, msgId);
+          return sendCodeLocal("login", email, msgId);
         }
         if (r.retryAfter) {
           state.cooldown = Date.now() + r.retryAfter * 1000;
@@ -249,21 +249,21 @@
 
       // 服务端不回明文码（除非开了冒烟模式），所以 state.code 留空 ——
       // 界面因此**不会**出现「抄下这串码」那一块，这是对的
-      state.purpose = purpose;
+      state.purpose = "login";
       state.codeId = r.codeId;
       state.code = r.devCode || "";
       state.sentTo = A.maskEmail(email);
       state.expiresAt = r.expiresAt;
       state.cooldown = Date.now() + (r.cooldown || 60) * 1000;
       state.remote = true;
-      return afterSent(purpose, r.delivered ? "已发往 " + state.sentTo : "已生成随机码，将发往 " + state.sentTo,
+      return afterSent("login", r.delivered ? "已发往 " + state.sentTo : "已生成随机码，将发往 " + state.sentTo,
         r.delivered ? "验证码已发出" : "已生成随机码");
     });
   }
 
   /** 本机那条路（没有服务端，或它现在不可用） */
   function sendCodeLocal(purpose, email, msgId) {
-    if (purpose === "login") state.remote = false;
+    state.remote = false;
     var r = A.requestCode(store, { channel: "email", value: email }, purpose, {
       // ⚠️ 本机版：码由浏览器生成。这是「本地体验版」的全部含义，
       //    界面必须如实标注，不能与真发信混为一谈。
@@ -272,9 +272,7 @@
 
     if (!r.ok) {
       // 冷却 / 频控：把「还要等多久」如实说出来，并照内核给的秒数起倒计时
-      if (r.retryAfter) {
-        if (purpose === "login") { state.cooldown = Date.now() + r.retryAfter * 1000; startTick(codeBoxes); }
-      }
+      if (r.retryAfter) { state.cooldown = Date.now() + r.retryAfter * 1000; startTick(codeBoxes); }
       msg(msgId, r.message, "warn");
       return null;
     }
@@ -301,7 +299,6 @@
     showToast(toast);
     // 本地体验版那两块「复制码 / 自己发信」的按钮只在真·本机版出现
     renderLocalOnlyTools();
-    if (purpose !== "login") return true;      // 「重设凭证」那一块自己有换屏逻辑
     text($("code-sent-to"), sentToLine);
     hide($("step-email"));
     show($("step-code"));
@@ -343,7 +340,7 @@
   var codeBoxes = [];
 
   function onSend() {
-    return sendCode("login");
+    return sendCode();
   }
 
   /* ------------------------------------------------------------ 校验 */
@@ -488,38 +485,6 @@
     onSignedIn({ account: r.account, isLocalOnly: !store.persistent() });
   }
 
-  /* ------------------------------------------------------------ 重设凭证 */
-
-  function onResetSend() {
-    var email = (($("input-reset-email") || {}).value || "").trim();
-    // ⚠️ 与登录那条路共用 sendCode：`state.codeId / sentTo / expiresAt` 都在
-    //    那里统一填好。这里只负责「重设凭证」这一块自己的换屏与说明。
-    return Promise.resolve(sendCode("reset")).then(function (r) {
-      if (!r) return;
-      state.purpose = "reset";
-      var boxes = buildCodeRow("reset-code-row");
-      show($("reset-code-row"));
-      show($("btn-reset-verify"));
-      if (boxes[0]) boxes[0].focus();
-      msg("msg-reset", (isLocal() ? "随机码已生成，将发往 " : "随机码已发往 ")
-        + state.sentTo + "（与登录的码不通用）");
-      void email;
-    });
-  }
-
-  function onResetVerify() {
-    var boxes = Array.prototype.slice.call($("reset-code-row").querySelectorAll("input"));
-    var digits = readCode(boxes);
-    if (digits.length < A.CODE_LEN) { msg("msg-reset", "请填满 6 位随机码", "warn"); return; }
-    var r = A.resetCredential(store, state.codeId, digits);
-    if (!r.ok) { msg("msg-reset", r.message, "warn"); return; }
-    hide($("reset-code-row"));
-    hide($("btn-reset-verify"));
-    msg("msg-reset", "已重设。这台设备与其他设备上的登录都已结束，请用上面的邮箱重新登录。", "ok");
-    state.purpose = "login";
-    renderTrust();          // 信任期已清，那一条会自己收起来
-  }
-
   /* ------------------------------------------------------------ 本地体验版的工具 */
 
   function onCopyCode() {
@@ -569,8 +534,6 @@
       hide($("trust-panel"));
       show($("step-email"));
     });
-    $("btn-reset-send").addEventListener("click", onResetSend);
-    $("btn-reset-verify").addEventListener("click", onResetVerify);
     $("btn-copy-code").addEventListener("click", onCopyCode);
     $("btn-mail-code").addEventListener("click", onMailCode);
 

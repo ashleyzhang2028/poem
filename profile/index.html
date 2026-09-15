@@ -53,16 +53,17 @@
         <button class="account-btn" id="btn-account-entry" type="button"></button>
       </section>
 
-      <!-- ---------- 二、未登录时的引导（登录后整块收起） ---------- -->
+      <!-- ---------- 二、未登录时的引导（登录后整块收起） ----------
+           这里**不再放**第二颗「建账号」按钮：上一张身份卡里那颗
+           #btn-account-entry 就是同一个去处（/login/），一次性摆两颗
+           用户会以为它们不一样。未登录时那张卡的说明已经把该说的说完了。 -->
       <section class="account-card" id="guest-card" hidden>
         <p class="account-lead">
-          你现在是<strong>本机游客</strong>：背诵进度只保存在这台设备的浏览器里。
-          清缓存、换手机、换浏览器，进度就没了。
+          你现在是<strong>本机游客</strong>：进度只在这台设备上，清缓存、换设备就没了。
+          上面的「建一个账号」就是出路。
         </p>
-        <button class="account-btn" id="btn-go-login" type="button">用邮箱建一个账号</button>
         <p class="account-hint">
-          不建账号也<strong>照旧用全部功能</strong> —— 只有语音朗读需要登录（免费）。
-          账号只是让进度不随缓存丢。
+          不建账号也<strong>照旧用全部功能</strong> —— 只有语音朗读要登录（免费）。
         </p>
       </section>
 
@@ -70,9 +71,7 @@
       <section class="account-card" id="stats-card">
         <h2 class="account-card-title">这台设备上的数据</h2>
         <div class="kv-list" id="stats-list"></div>
-        <p class="account-hint">
-          这些数字只看本机进度，与账号无关；换台设备看到的是那台设备的。
-        </p>
+        <p class="account-hint">只看本机进度，与账号无关。</p>
       </section>
 
       <!-- ---------- 四、账号（登录后才出现） ---------- -->
@@ -80,10 +79,7 @@
         <h2 class="account-card-title">账号</h2>
         <div class="kv-list" id="account-list"></div>
         <button class="account-btn ghost" id="btn-sign-out" type="button">退出登录</button>
-        <p class="account-hint">
-          退出只结束这次登录，<strong>不会删掉任何背诵进度</strong>。
-          注销账号在下面的「危险区」，同样不删进度。
-        </p>
+        <p class="account-hint">退出只结束这次登录，<strong>不会删掉任何背诵进度</strong>；注销在下面「危险区」。</p>
       </section>
 
       <!-- ---------- 四之二、同步：状态 + 需要用户裁决的冲突 ----------
@@ -120,9 +116,7 @@
       <!-- ---------- 六、管理员入口（仅 owner 可见） ---------- -->
       <section class="account-card" id="admin-card" hidden>
         <h2 class="account-card-title">管理</h2>
-        <p class="account-lead">
-          你是这个站点的管理员。可以按邮箱掩码给家里人发放 Pro / Max 层级。
-        </p>
+        <p class="account-lead">你是本站管理员，可按邮箱掩码发放 Pro / Max。</p>
         <button class="account-btn ghost" id="btn-go-admin" type="button">打开管理后台</button>
       </section>
 
@@ -141,10 +135,8 @@
       <section class="account-card danger-zone" id="danger-card" hidden>
         <h2 class="account-card-title danger-title">注销账号</h2>
         <p class="account-lead">
-          注销会删掉<strong>账号本身</strong>：这台设备上的账号记录（邮箱掩码、层级、登录状态），
-          以及<strong>服务器上的账号与云端进度</strong>；服务器那一份会先导出来给你留存。
-          但<strong>不删背诵进度</strong>（这台设备上那一份一字不动）—— 进度是你自己的东西，不跟着账号走。
-          想连本机进度一起清空，去<strong>设置 · 通用 · 数据管理</strong>。
+          注销会删掉<strong>账号本身</strong>与<strong>服务器上的云端进度</strong>（云端那份先导出来给你留档），
+          但<strong>不删背诵进度</strong> —— 本机那一份一字不动。想连本机进度一起清，去<strong>设置 · 通用</strong>。
         </p>
         <div id="delete-step-1">
           <button class="account-btn danger" id="btn-delete-start" type="button">我要注销账号</button>
