@@ -122,6 +122,18 @@ const LOGIN = strip(loginJs), PROFILE = strip(profileJs), ADMIN = strip(adminJs)
     chk(!/plan\s*===/.test(s), f + ' 没有自己比对 plan');
   });
   chk(/Ent\.matrix\(/.test(PROFILE), '权限清单一律由 Entitlement.matrix() 生成');
+  /* 2.1：权限清单下面那句说明**按状态分叉** —— 服务端接通之后，
+     写死「本期没有服务器 / 层级只是本机登记」对有会话的人就是假话。 */
+  const ch = profileJs.slice(profileJs.indexOf('function capsHint'),
+    profileJs.indexOf('function capsHint') + 1200);
+  chk(!!ch, 'js/profile.js 里有 capsHint()（那句说明的唯一出口）');
+  chk(/tierSource === "server"/.test(ch),
+    'capsHint() 按 tierSource 分叉（不自己猜、不自己比 tier）');
+  chk(/由服务器判定/.test(ch), '服务端那份：如实说层级「由服务器判定」');
+  chk(/本机登记/.test(ch), '本机那份：如实说层级「本机登记」');
+  chk(!/本期没有服务器/.test(ch), '那句说明里不再出现「本期没有服务器」（服务端已接通）');
+  chk(/hint\.textContent = capsHint\(id\)/.test(PROFILE),
+    'renderCaps() 走 capsHint(id)（不自己拼那一句）');
   chk(/Ent\.tierLabel\(/.test(PROFILE) && /Ent\.tierLabel\(/.test(ADMIN),
     '层级徽章文案一律由 Entitlement.tierLabel() 出');
   chk(/Ent\.TIERS/.test(ADMIN), '可发放的层级列表读 Entitlement.TIERS（不自己写死一份）');
@@ -183,8 +195,15 @@ const LOGIN = strip(loginJs), PROFILE = strip(profileJs), ADMIN = strip(adminJs)
 {
   chk(/改一行存储就能升级|不是收费凭据|不是安全边界/.test(SRC.admin + ADMIN),
     '管理后台如实写明本机分层的局限（改存储就能升级）');
-  chk(/没有服务器|本期没有服务端/.test(SRC.admin + ADMIN),
-    '管理后台如实写明「本期没有服务端，发给别人要对方自己导入」');
+  /* 2.1：服务端已接通，所以**反向**断言 —— 后台不再宣称「本期没有服务端」；
+     但仍要如实写明「发的是本机名单，要对方自己导入」这层局限。
+     ⚠️ 反向断言要剥掉注释：注释里会写「2.1 更正：不再说『没有服务端』」，
+        不剥掉就是拿解释把自己判红。 */
+  const adminVisible = stripHtml(SRC.admin);
+  chk(!/没有服务器|本期没有服务端/.test(adminVisible),
+    '管理后台不再宣称「本期没有服务端」（服务端 1 期已接通，见 2.1）');
+  chk(/要对方自己导入|对方自己导入|名单导入导出/.test(SRC.admin + ADMIN),
+    '管理后台如实写明「发的是本机名单，要对方自己导入」这层局限');
   chk(/deny-card/.test(SRC.admin) && /isOwner/.test(ADMIN),
     '非管理员有明确的拒绝界面（不是白页、也不是 403 跳走）');
   chk(/hide\(\$\("grant-card"\)\)|show\(\$\("grant-card"\)\)/.test(ADMIN),
