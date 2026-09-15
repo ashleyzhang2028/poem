@@ -107,7 +107,8 @@ python3 -m http.server 8080  # 或 Python 3
 ├── icons/                  # 矢量图标 + 各尺寸 PNG
 ├── data/                   # 诗词语料与索引（见下）
 ├── scripts/                # 本地服务器与数据生成 / 体检脚本
-├── docs/                   # 设计文档（auth-design.md：账号 / 登录 / 权益分层）
+├── docs/                   # 设计文档（architecture.md：最终架构与 0/1 期排期；
+│                           #   auth-design.md：账号 / 登录 / 权益分层）
 └── test/                   # 测试（见下）
 ```
 
@@ -216,7 +217,9 @@ node test/pwa.test.js
 
 ### 账号登录（设计阶段，未接入）
 
-「用邮箱登录」的设计全文在 `docs/auth-design.md`，配套的纯逻辑骨架是
+架构与排期的全文在 `docs/architecture.md`（含免费版 supabase 不休眠的做法、
+发信通道选型、0 期与 1 期范围）；「用邮箱登录」的流程细节在 `docs/auth-design.md`，
+配套的纯逻辑骨架是
 `js/auth-core.js`（零 DOM 依赖，可在 Node 里直接跑）。
 
 **当前状态要说清楚**：骨架已落地并有 110 条测试（`test/auth.test.js`），
