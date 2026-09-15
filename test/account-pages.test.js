@@ -94,8 +94,12 @@ const LOGIN = strip(loginJs), PROFILE = strip(profileJs), ADMIN = strip(adminJs)
   const names = ['login', 'profile', 'admin'].map(k => (SRC[k].match(/data-page="([^"]+)"/) || [])[1]);
   chk(names.join(',') === '登录,个人中心,管理后台', '三张页的页名各不相同且如实：' + names.join(' / '));
   chk(new Set(names).size === 3, '三张页的页名不重复（否则「返回上一页」会让人分不清层）');
-  // 返回落点：登录 / 个人中心回设置页（账号入口在设置 · 通用里），管理后台回个人中心
-  chk(/data-back="\/settings\/"/.test(SRC.login), '登录页的上一层是设置页');
+  // 返回落点：个人中心回设置页（入口在设置 · 通用里），管理后台回个人中心。
+  // ⚠️ 登录页的上一层是**个人中心**、不是设置页（D 步改的，理由见
+  //    docs/auth-design.md §3.6.2）：进来的人主要从个人中心那颗账号入口来，
+  //    而「点账号 → 看自己是谁」比「点账号 → 落回一页设置」更顺。
+  chk(/data-back="\/profile\/"/.test(SRC.login),
+    '登录页的上一层是个人中心（登录是身份的事，落回设置页等于多绕一层）');
   chk(/data-back="\/settings\/"/.test(SRC.profile), '个人中心的上一层是设置页');
   chk(/data-back="\/profile\/"/.test(SRC.admin), '管理后台的上一层是个人中心（不是设置页）');
   // chrome.js 认得这三条路由
