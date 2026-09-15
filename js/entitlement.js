@@ -1,0 +1,399 @@
+/**
+ * 权益总闸（纯逻辑，零 DOM 依赖）
+ * ---------------------------------------------------
+ * 这层存在的唯一理由：**全站只允许有一个地方回答「这个用户能不能用这个功能」。**
+ *
+ * 为什么必须收口：
+ *   · 页面里到处散 `plan === "pro"` 的话，将来「本机发放名单」换成
+ *     「服务端 /api/me 下发」时，要改十几处；收口之后只换本文件的一个实现。
+ *   · 播放入口同理 —— 判据写在 speech.js（所有声音的唯一出口）里，
+ *     app.js / reader-core.js 只是调用方，不各自判断。
+ *
+ * 本期（0 期，无服务端）的诚实口径：
+ *   · `free / pro / max` 三层是**本机演示版分层**，发放名单存本机、可导出粘贴；
+ *   · 用户手改 localStorage 就能升级 —— 所以它**不是收费凭据**，
+ *     也**不是安全边界**（docs/architecture.md §2.4 收窄口径已写明：
+ *     真正的权益判定必须在服务端 /api/me，本期只是先把「唯一出口」留出来）。
+ *
+ * 与本文件配套的规矩（后面所有页面都要守）：
+ *   1. 页面不许直接读 `tier` 做判断，一律走 `Entitlement.can(cap)`
+ *   2. 任何「拦住用户」的提示文案，都由 `denyReason()` 出，页面不自造
+ *   3. 未登录（游客/本机账号会话失效）与 free 是**两回事**：
+ *      游客不能语音播放，free 可以 —— 这是用户 2026-09-15 的裁决
+ */
+(function (root, factory) {
+  if (typeof module === "object" && module.exports) module.exports = factory();
+  else root.Entitlement = factory();
+})(typeof globalThis !== "undefined" ? globalThis : this, function () {
+  "use strict";
+
+  var NS = "poem_plan_v1";        // 账号侧：本机会话的层级（1 期改为 /api/me 下发）
+  var GRANT_NS = "poem_plan_grant_v1";  // 管理员侧：本机发放名单（可导出粘贴）
+
+  var TIERS = ["free", "pro", "max"];
+
+  /** 角色与层级是两条正交的轴：店长不是 VIP（role 管管理，tier 管能力） */
+  var ROLES = ["owner", "admin", "user"];
+
+  /**
+   * 能力清单 —— 这里是全站唯一的功能矩阵。
+   *
+   * 分级原则（用户已确认「free 不残缺」）：
+   *   · free = 今天能用的东西**一件都不收回**（261 首课内 + 2320 篇集子 + 排程 + 注音 + 语音）
+   *   · pro / max 只加「新能力」与「额度」，不拿现有功能当人质
+   *   · 唯独一条例外是用户 2026-09-15 明确要求的：**语音播放要求登录**，
+   *     未登录（游客）不可用，登录后的 free 可以
+   *
+   * minTier 之外的两个字段：
+   *   login  = true 表示「必须登录」——游客拿不到，free 登录后就能拿到
+   *   quota  = 额度（null = 不限；数字 = 每月次数）；本期只做展示，不做计数
+   */
+  var CAPS = {
+    "recite.basic":      { minTier: "free", login: false, quota: null, name: "每日背诵与复习排程" },
+    "library.all":       { minTier: "free", login: false, quota: null, name: "六部集子全文阅读" },
+    "read.aloud":        { minTier: "free", login: true,  quota: null, name: "语音朗读（原文 / 译文 / 连读）" },
+    "pinyin.helper":     { minTier: "free", login: false, quota: null, name: "生字注音与阅读辅助" },
+    "export.progress":   { minTier: "free", login: false, quota: null, name: "导出背诵进度 JSON" },
+    "collections.many":  { minTier: "pro",  login: true,  quota: null, name: "自选清单 20 个" },
+    "sync.multiDevice":  { minTier: "pro",  login: true,  quota: null, name: "跨设备云同步" },
+    "ai.explain":        { minTier: "pro",  login: true,  quota: 50,   name: "AI 讲解 / 背诵纠音" },
+    "export.paper":      { minTier: "pro",  login: true,  quota: null, name: "篇目 PDF / 打印页" },
+    "profile.family":    { minTier: "pro",  login: true,  quota: null, name: "家庭子档案 3 个" },
+    "feihualing":        { minTier: "pro",  login: true,  quota: null, name: "飞花令" },
+    "exam.paper":        { minTier: "pro",  login: true,  quota: null, name: "古诗文大会 / 考试与题库" },
+    "export.all":        { minTier: "max",  login: true,  quota: null, name: "全站批量导出" },
+    "ai.explain.big":    { minTier: "max",  login: true,  quota: 500,  name: "AI 讲解 / 背诵纠音（500 次/月）" },
+    "collections.unlimited": { minTier: "max", login: true, quota: null, name: "自选清单不限" }
+  };
+
+  /**
+   * 层级别名：只用于「同一件事的同一个额度档，名称写法不同」这类情况。
+   * ⚠️ 不许拿它去表达「额度不同」—— `ai.explain`（pro，50 次）与
+   * `ai.explain.big`（max，500 次）曾一度互为别名，结果 pro 也拿到了 500 次档
+   * （测试里那条「pro 不能蹭 max 的额度」就是这么顶回来的）。
+   * 额度不同 = 两条独立的能力，各自带 minTier 与 quota。
+   */
+  var ALIAS = {};
+
+  function tierIndex(t) {
+    var i = TIERS.indexOf(t);
+    return i < 0 ? 0 : i;                     // 脏值一律按 free 处理，不抛
+  }
+
+  function isTier(t) { return TIERS.indexOf(t) >= 0; }
+  function isRole(r) { return ROLES.indexOf(r) >= 0; }
+
+  /* ------------------------------------------------------- 本机发放名单 */
+
+  function emptyGrants() { return { v: 1, grants: [] }; }
+
+  /**
+   * 读发放名单。任何解析失败 / 形状不对 → 回落空名单，绝不抛。
+   * @param {Storage} backing localStorage 或任何 getItem/setItem 实现
+   */
+  function readGrants(backing) {
+    if (!backing) return emptyGrants();
+    var text = null;
+    try { text = backing.getItem(GRANT_NS); } catch (e) { return emptyGrants(); }
+    if (!text) return emptyGrants();
+    var o = null;
+    try { o = JSON.parse(text); } catch (e) { return emptyGrants(); }
+    if (!o || typeof o !== "object" || !Array.isArray(o.grants)) return emptyGrants();
+    return o;
+  }
+
+  function writeGrants(backing, data) {
+    if (!backing) return false;
+    try { backing.setItem(GRANT_NS, JSON.stringify(data || emptyGrants())); return true; }
+    catch (e) { return false; }
+  }
+
+  /**
+   * 归一化一条发放记录。非法 tier / 缺掩码 → 直接丢掉（不是回落 free，
+   * 因为「一条写错的记录」不该悄悄生效成任何层级）。
+   */
+  function normGrant(g) {
+    if (!g || typeof g !== "object") return null;
+    var mask = String(g.emailMask == null ? "" : g.emailMask).trim().toLowerCase();
+    if (!mask || !isTier(g.tier)) return null;
+    var until = g.until == null ? null : Number(g.until);
+    if (until !== null && !isFinite(until)) until = null;
+    return {
+      emailMask: mask, tier: g.tier, until: until,
+      by: String(g.by || "").slice(0, 24),
+      at: Number(g.at) || 0,
+      note: String(g.note == null ? "" : g.note).slice(0, 60)
+    };
+  }
+
+  /** 管理员发放：同一掩码只保留最新一条 */
+  function putGrant(backing, grant) {
+    var g = normGrant(grant);
+    if (!g) return { ok: false, code: "E_GRANT", message: "发放记录不完整：需要邮箱掩码与层级" };
+    var data = readGrants(backing);
+    data.grants = data.grants
+      .map(normGrant)
+      .filter(function (x) { return x && x.emailMask !== g.emailMask; });
+    data.grants.push(g);
+    writeGrants(backing, data);
+    return { ok: true, grant: g };
+  }
+
+  function removeGrant(backing, mask) {
+    var m = String(mask == null ? "" : mask).trim().toLowerCase();
+    var data = readGrants(backing);
+    var before = data.grants.length;
+    data.grants = data.grants.map(normGrant).filter(function (g) { return g && g.emailMask !== m; });
+    writeGrants(backing, data);
+    return { ok: true, removed: before - data.grants.length };
+  }
+
+  function clearGrants(backing) {
+    writeGrants(backing, emptyGrants());
+    return { ok: true };
+  }
+
+  /** 名单可导出 / 粘贴（本期「发给别人」的诚实做法：对方自己导入） */
+  function exportGrants(backing) {
+    return JSON.stringify(readGrants(backing), null, 2);
+  }
+
+  function importGrants(backing, text) {
+    var o = null;
+    try { o = JSON.parse(text); } catch (e) { return { ok: false, code: "E_JSON", message: "名单格式不正确" }; }
+    if (!o || typeof o !== "object" || !Array.isArray(o.grants)) {
+      return { ok: false, code: "E_JSON", message: "名单格式不正确" };
+    }
+    var clean = o.grants.map(normGrant).filter(Boolean);
+    writeGrants(backing, { v: 1, grants: clean });
+    return { ok: true, count: clean.length };
+  }
+
+  /**
+   * 按邮箱掩码匹配名单（本期「认领」的方式：登录取到掩码后再匹配一次）。
+   * 已过期（until 早于 now）的记录不生效。
+   */
+  function grantFor(backing, mask, ts) {
+    var m = String(mask == null ? "" : mask).trim().toLowerCase();
+    if (!m) return null;
+    var t = typeof ts === "number" ? ts : Date.now();
+    var hit = readGrants(backing).grants
+      .map(normGrant)
+      .filter(function (g) { return g && g.emailMask === m; });
+    if (!hit.length) return null;
+    var g = hit[hit.length - 1];                 // 同掩码只留最新，这里仍取最后一条
+    if (g.until != null && g.until <= t) return null;
+    return g;
+  }
+
+  /* ---------------------------------------------------------- 层级缓存 */
+
+  /** 本机会话层级（1 期由 /api/me 写进来，实现只换这一个函数） */
+  function readTier(backing) {
+    if (!backing) return "free";
+    var text = null;
+    try { text = backing.getItem(NS); } catch (e) { return "free"; }
+    if (!text) return "free";
+    var o = null;
+    try { o = JSON.parse(text); } catch (e) { return "free"; }
+    if (!o || typeof o !== "object") return "free";
+    var until = o.until == null ? null : Number(o.until);
+    if (until !== null && isFinite(until) && until <= Date.now()) return "free";   // 到期即回落
+    return isTier(o.tier) ? o.tier : "free";
+  }
+
+  function writeTier(backing, tier, until) {
+    if (!backing) return { ok: false, code: "E_STORAGE", message: "浏览器不允许保存数据" };
+    if (!isTier(tier)) return { ok: false, code: "E_TIER", message: "不认识的层级" };
+    var payload = { v: 1, tier: tier, until: until == null ? null : Number(until) };
+    try { backing.setItem(NS, JSON.stringify(payload)); } catch (e) {
+      return { ok: false, code: "E_STORAGE", message: "浏览器不允许保存数据" };
+    }
+    return { ok: true };
+  }
+
+  function clearTier(backing) {
+    if (!backing) return { ok: false };
+    try { backing.removeItem(NS); } catch (e) { /* 隐私模式：忽略 */ }
+    return { ok: true };
+  }
+
+  /* ------------------------------------------------------------ 判定 */
+
+  function cap(name) {
+    var key = Object.prototype.hasOwnProperty.call(ALIAS, name) ? ALIAS[name] : name;
+    return CAPS[key] || null;
+  }
+
+  /** 全部能力名（含别名），供 /profile/ 与测试遍历 */
+  function capNames() {
+    var out = Object.keys(CAPS);
+    Object.keys(ALIAS).forEach(function (a) { if (out.indexOf(a) < 0) out.push(a); });
+    return out.sort();
+  }
+
+  /**
+   * 唯一出口。
+   * @param {string} name  能力名，见 CAPS
+   * @param {Object} ctx   { tier, signedIn } —— tier 缺省按 free
+   * @returns {{ok:boolean, reason:string, minTier:string, quota:number|null, name:string}}
+   *          reason: "ok" | "unknown" | "login" | "tier"
+   */
+  function can(name, ctx) {
+    var c = cap(name);
+    var k = ctx || {};
+    var tier = isTier(k.tier) ? k.tier : "free";
+    var signedIn = !!k.signedIn;
+
+    if (!c) {
+      return { ok: false, reason: "unknown", minTier: "free", quota: null, name: "" };
+    }
+    if (c.login && !signedIn) {
+      return { ok: false, reason: "login", minTier: c.minTier, quota: c.quota, name: c.name };
+    }
+    if (tierIndex(tier) < tierIndex(c.minTier)) {
+      return { ok: false, reason: "tier", minTier: c.minTier, quota: c.quota, name: c.name };
+    }
+    return { ok: true, reason: "ok", minTier: c.minTier, quota: c.quota, name: c.name };
+  }
+
+  /** 拦住用户时该说的话 —— 页面不自造文案，保证全站口径一致 */
+  function denyReason(name, ctx) {
+    var r = can(name, ctx);
+    if (r.ok) return "";
+    if (r.reason === "unknown") return "这个功能暂不可用";
+    if (r.reason === "login") return "登录后即可使用（免费）";
+    return r.minTier === "max" ? "Max 起可用" : "Pro 起可用";
+  }
+
+  /** 分层徽章文案，供 /profile/ 顶部展示 */
+  function tierLabel(tier) {
+    var t = isTier(tier) ? tier : "free";
+    return t === "max" ? "Max" : t === "pro" ? "Pro" : "Free";
+  }
+
+  /**
+   * 能力清单（给 /profile/ 的「权限」一节用）：一条一事，能用的打勾、不能用的写门槛。
+   * 返回顺序 = CAPS 的声明顺序（先免费后付费，读起来像菜单）。
+   */
+  function matrix(ctx) {
+    return Object.keys(CAPS).map(function (k) {
+      var c = CAPS[k];
+      var r = can(k, ctx);
+      return {
+        cap: k, name: c.name, ok: r.ok, reason: r.reason,
+        minTier: c.minTier, quota: c.quota,
+        hint: r.ok ? (c.quota ? "每月 " + c.quota + " 次" : "") : denyReason(k, ctx)
+      };
+    });
+  }
+
+  /* -------------------------------------------------------- 本机分层 */
+
+  /**
+   * 把「会话 + 名单」合成当前身份。**页面上只准用它，不准自己拼 ctx。**
+   * @param {Object} o  { authStore, backing, now }
+   *   authStore = AuthCore.makeStore(...) 的产物（可空）
+   */
+  function identity(o) {
+    var opt = o || {};
+    var backing = opt.backing || defaultBacking();
+    var t = typeof opt.now === "number" ? opt.now : Date.now();
+
+    // authStore 不传就自己拿一个：页面上写 `Entitlement.identity()` 才是常态，
+    // 若要求每个调用方都自己造 store，早晚会有人忘（忘了的症状是「永远游客」）。
+    var authStore = opt.authStore || (function () {
+      var g = typeof globalThis !== "undefined" ? globalThis : null;
+      var A = (g && g.AuthCore) || null;
+      try { return A && A.makeStore ? A.makeStore(backing) : null; } catch (e) { return null; }
+    })();
+
+    var uid = "", mask = "", signedIn = false, role = "user";
+    if (authStore) {
+      var s = null;
+      try { s = authSession(authStore); } catch (e) { s = null; }
+      if (s && s.account) {
+        signedIn = true;
+        uid = s.account.uid || "";
+        var ids = s.account.identities || [];
+        for (var i = 0; i < ids.length; i++) {
+          if (ids[i] && ids[i].mask) { mask = ids[i].mask; break; }
+        }
+        // 账号记录里的层级（若该账号已领取过名单，创建账号时已写回）
+        var accTier = s.account.plan && s.account.plan.tier;
+        if (isTier(accTier) && accTier !== "free") {
+          return finish(accTier, signedIn, uid, mask, role);
+        }
+      }
+    }
+
+    // 未登录，或账号层级还是 free：再看本机层级与发放名单
+    var tier = readTier(backing);
+    if (signedIn) {
+      var g = grantFor(backing, mask, t);
+      if (g && tierIndex(g.tier) > tierIndex(tier)) tier = g.tier;
+    }
+    return finish(tier, signedIn, uid, mask, role);
+  }
+
+  /** 默认存储：浏览器里就是 localStorage；Node / 隐私模式下给不了就返回 null（不抛） */
+  function defaultBacking() {
+    var g = typeof globalThis !== "undefined" ? globalThis : null;
+    if (!g) return null;
+    try {
+      return g.localStorage && typeof g.localStorage.getItem === "function" ? g.localStorage : null;
+    } catch (e) {
+      return null;                          // 隐私模式下取用即抛
+    }
+  }
+
+  /**
+   * AuthCore 的会话读取。
+   *
+   * ⚠️ 这里**必须用 globalThis，不能写 `window.AuthCore`**：
+   *    本文件在 jsdom（测试）里是作为主 realm 的模块被求值的，
+   *    写 `window` 时 iframe / 多 realm 场景下会解析到**另一个 realm 的 window**，
+   *    结果是「页面里明明有 window.AuthCore，这里却读到 null」——
+   *    症状是全站永远判成游客，语音播放大门永远关着，而且不报任何错。
+   *    globalThis 在所有运行环境（浏览器 / jsdom / Node）都指向当前 realm，不会错。
+   */
+  var authSession = function (authStore) {
+    var g = typeof globalThis !== "undefined" ? globalThis : null;
+    var A = (g && g.AuthCore) || null;
+    if (A && A.session) return A.session(authStore);
+    return null;
+  };
+
+  /** 允许外部注入 AuthCore（Node 测试 / 未来换实现时用） */
+  function setAuthCore(A) {
+    authSession = function (authStore) { return A && A.session ? A.session(authStore) : null; };
+  }
+
+  function finish(tier, signedIn, uid, mask, role) {
+    var ctx = { tier: tier, signedIn: signedIn };
+    return {
+      uid: uid, mask: mask, signedIn: signedIn, tier: tier, role: role,
+      label: tierLabel(tier),
+      ctx: ctx,
+      can: function (name) { return can(name, ctx); },
+      hint: function (name) { return denyReason(name, ctx); }
+    };
+  }
+
+  /** 游客身份（没有任何存储也不许抛） */
+  function guestIdentity() { return finish("free", false, "", "", "user"); }
+
+  return {
+    NS: NS, GRANT_NS: GRANT_NS, TIERS: TIERS, ROLES: ROLES, CAPS: CAPS, ALIAS: ALIAS,
+    capNames: capNames, cap: cap, can: can, denyReason: denyReason,
+    tierLabel: tierLabel, matrix: matrix, isTier: isTier, isRole: isRole,
+    tierIndex: tierIndex,
+    emptyGrants: emptyGrants, readGrants: readGrants, writeGrants: writeGrants,
+    normGrant: normGrant, putGrant: putGrant, removeGrant: removeGrant,
+    clearGrants: clearGrants, exportGrants: exportGrants, importGrants: importGrants,
+    grantFor: grantFor,
+    readTier: readTier, writeTier: writeTier, clearTier: clearTier,
+    identity: identity, guestIdentity: guestIdentity, setAuthCore: setAuthCore,
+    defaultBacking: defaultBacking
+  };
+});

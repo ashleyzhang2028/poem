@@ -11,6 +11,12 @@
  * 3. 不支持的浏览器（少数老安卓 WebView）会返回 false，界面给出提示并禁用按钮，
  *    不会让用户点了没反应。
  * 4. 环境（如 jsdom、无语音包的容器）里没有该 API，代码全部做了存在性判断。
+ * 5. **声音的唯一出口**：全站只有本文件调用 speechSynthesis，
+ *    因此「谁能听」也只在这里判一次 —— 未登录（游客）不可用，登录后的 free 可以
+ *    （用户 2026-09-15 裁决）。判据来自 js/entitlement.js 的 `read.aloud`，
+ *    页面只是调用方，不各自判断层级。
+ *    门是「进入」的大门：放行之后，暂停 / 继续 / 下一首 / 停止一律不受影响，
+ *    否则会出现「听到一半被拦下，声音停不掉」。
  *
  * 队列（自动朗读）机制：
  *   speakQueue(items, opts)  —— 逐条朗读，一条读完自动读下一条
@@ -41,6 +47,40 @@
 
   function supported() {
     return !!(synth && Utter);
+  }
+
+  /**
+   * 权益门（未登录禁语音）。
+   *
+   * 为什么不放在各页面里判：
+   *   · 全站有 9 个页面 + 2 个引擎都在点播放键，分别判断必然漏；
+   *   · 将来「本机发放名单」换成「服务端 /api/me」时，只改 entitlement.js 一处。
+   *
+   * 为什么允许外部注入：Node 测试里没有 window.Entitlement，
+   *   注入 `Speech.setGate(fn)` 即可测「拦不拦」，不必加载整个权益层。
+   */
+  let gateFn = null;
+
+  function setGate(fn) {
+    gateFn = typeof fn === "function" ? fn : null;
+  }
+
+  function gate() {
+    if (gateFn) return gateFn();
+    const E = typeof window !== "undefined" ? window.Entitlement : null;
+    if (!E || typeof E.can !== "function") {
+      // 没有加载权益层（老页面 / 精简页面）：按「不拦」处理，
+      // 保证「一个页面漏加载 js/entitlement.js」不会变成「点了没反应」。
+      return { ok: true, hint: "" };
+    }
+    const id = typeof E.identity === "function" ? E.identity() : E.guestIdentity();
+    const r = id.can("read.aloud");
+    return { ok: !!r.ok, hint: r.ok ? "" : id.hint("read.aloud") };
+  }
+
+  /** 对外只读：某按钮该不该置灰。返回 { ok, hint } */
+  function allowed() {
+    return gate();
   }
 
   /** 中文语音优先：优先 zh-CN，其次任何 zh */
@@ -118,6 +158,7 @@
    */
   function speak(text, opts) {
     if (!supported()) return false;
+    if (!gate().ok) return false;          // 未登录：不出声（提示由调用方按 hint 出）
     const u = makeUtter(text, opts);
     if (!u) return false;
 
@@ -206,6 +247,7 @@
    */
   function speakQueue(items, opts) {
     if (!supported()) return null;
+    if (!gate().ok) return null;           // 未登录：连读同样不出声
     const list = (items || []).filter(function (it) {
       return normalize(it).text;
     });
@@ -356,6 +398,8 @@
 
   window.Speech = {
     supported: supported,
+    allowed: allowed,
+    setGate: setGate,
     speak: speak,
     speakQueue: speakQueue,
     stop: stop,

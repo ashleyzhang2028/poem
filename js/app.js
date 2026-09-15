@@ -123,6 +123,25 @@
   }
 
   /**
+   * 改昵称（Issue #132 · 2026-09-15）。
+   *
+   * 昵称属**账号域**（跨设备一致，`docs/auth-design.md` §2.3.1）：
+   * 除老键 `poem_recite_settings_v1` 外，还要镜像到 `poem_profile_v1` ——
+   * 头像与昵称住同一份档案，这是「同一枚印、同一个名字」的前提。
+   * 镜像实现收在 `Avatar.saveNickname` 一处，各页不许各拼两处 setItem
+   * （拼两处必然有一天只改了一处，出现「首页新名字、设置页旧名字」的漂移）。
+   */
+  function commitNickname(value) {
+    const clean = String(value == null ? "" : value).trim().slice(0, 12);
+    settings.username = clean;
+    Storage.saveSettings(settings);
+    const A = window.Avatar;
+    if (A && typeof A.saveNickname === "function") {
+      try { A.saveNickname(window.localStorage, clean); } catch (e) { /* 隐私模式：老键已写 */ }
+    }
+  }
+
+  /**
    * 页面主标题：应用正式名固定为「跬步」，用户名永远显示
    * → 「跬步 · Ashley的背诵」（用户没填名字时用默认名，不留一段空白）
    *
@@ -159,23 +178,15 @@
       m.setAttribute("content", title);
     });
 
-    // 安卓/桌面安装后的应用名同步为「跬步」
-    const link = $('link[rel="manifest"]');
-    if (link && window.Blob && window.URL && URL.createObjectURL) {
-      try {
-        const manifest = JSON.parse(JSON.stringify(window.__manifest || {}));
-        if (manifest.name) {
-          manifest.name = title;
-          manifest.short_name = APP_NAME;
-          const blob = new Blob([JSON.stringify(manifest)], { type: "application/manifest+json" });
-          const url = URL.createObjectURL(blob);
-          if (link.dataset.blobUrl) URL.revokeObjectURL(link.dataset.blobUrl);
-          link.dataset.blobUrl = url;
-          link.href = url;
-        }
-      } catch (e) {
-        /* 清单更新失败不影响主流程 */
-      }
+    // 安装后的应用名（安卓 / iOS 桌面）与页面标题同源：清单里那份也改成同一个名字。
+    //
+    // 这里只把「叫什么」交给 js/manifest-loader.js，不自己判断清单读没读完 ——
+    // 换 href 的时机由它一处决定（清单读盘完成才换），因此不受脚本加载快慢影响。
+    // 原先这段代码就在本函数里读 window.__manifest，读到才换：
+    // 于是「清单 XHR」与「chrome:ready」谁先到，决定了 href 是静态文件还是 Blob，
+    // 同一页面在不同机器上会落到两种状态（CI 与本地不一致）。
+    if (window.ManifestSync && typeof window.ManifestSync.apply === "function") {
+      window.ManifestSync.apply(title);
     }
 
   }
@@ -1127,6 +1138,26 @@
     return !!(window.Speech && window.Speech.supported());
   }
 
+  /**
+   * 播放能力的真实判据：浏览器支持 **且** 权益允许。
+   *
+   * 未登录（游客）不能用语音播放 —— 用户 2026-09-15 裁决。
+   * 判据只有 js/entitlement.js 一处，这里只读结果，不自己拼 plan。
+   * 所有「按能不能播」置灰按钮的地方都改用它，于是按钮状态与
+   * js/speech.js 内部那道门**同源**，不会出现「按钮亮着但点了没声音」。
+   */
+  function speechReady() {
+    if (!speechOk()) return false;
+    return !!(window.Speech.allowed && window.Speech.allowed().ok);
+  }
+
+  /** 不能播放时该说的话（登录后可用 / 浏览器不支持，两种分开说） */
+  function speechHint() {
+    if (!speechOk()) return "当前浏览器不支持语音朗读";
+    const a = window.Speech.allowed ? window.Speech.allowed() : { ok: true, hint: "" };
+    return a.hint || "登录后即可使用语音朗读";
+  }
+
   /** 一首诗的朗读文本：标题 + 朝代 + 作者 + 正文 */
   function speechText(p) {
     // 自选篇目读显示名：念出「木兰花其二」会让人以为漏了半句（见 showTitle）
@@ -1136,8 +1167,8 @@
 
   /** 朗读当天全部：依次读标题、朝代、作者与正文 */
   function readTodayAll() {
-    if (!speechOk()) {
-      showToast("当前浏览器不支持语音朗读");
+    if (!speechReady()) {
+      showToast(speechHint());
       return;
     }
     if (!todayPlan.length) return;
@@ -1178,8 +1209,8 @@
 
   /** 朗读单首：再点一次停止 */
   function readOne(p, btn) {
-    if (!speechOk()) {
-      showToast("当前浏览器不支持语音朗读");
+    if (!speechReady()) {
+      showToast(speechHint());
       return;
     }
     if (window.Speech.speaking()) {
@@ -1200,13 +1231,14 @@
   function syncTodayReadBtn() {
     const btn = $("#today-read");
     if (!btn) return;
-    const ok = speechOk();
+    const ok = speechReady();
     btn.disabled = !ok;
     // 「今日 5 首」不再显示，播放栏会直接报出当前这一首，
     // 所以这里只区分「是否有队列在跑」，用来切换圆形播放键的 ▶ / ⏸
     const on = ok && !!(window.ReaderPlayer && window.ReaderPlayer.isRunning && window.ReaderPlayer.isRunning());
     btn.dataset.on = on ? "1" : "0";
-    btn.setAttribute("aria-label", on ? "停止朗读" : "依次朗读今天要背的每一首");
+    btn.title = ok ? "依次朗读今天要背的每一首" : speechHint();
+    btn.setAttribute("aria-label", ok ? (on ? "停止朗读" : "依次朗读今天要背的每一首") : speechHint());
     const text = $("#today-read-text");
     if (text) text.textContent = on ? "播放中" : "播放";
   }
@@ -1224,7 +1256,7 @@
   }
 
   function syncItemReadBtns() {
-    const speaking = speechOk() && window.Speech.speaking();
+    const speaking = speechReady() && window.Speech.speaking();
     $$("#today-list .item-read").forEach(function (b) {
       b.dataset.on = speaking ? "1" : "0";
     });
@@ -1239,7 +1271,7 @@
    * 所以一篇诗里任何时候只看得到一个播放信号。
    */
   function syncReadBtn() {
-    const ok = speechOk();
+    const ok = speechReady();
     const playing = ok && !!window.Speech.speaking();
     const keys = [
       { btn: "#m-read-btn", key: "原文", title: "朗读原文：标题、朝代、作者与正文" },
@@ -1250,9 +1282,11 @@
       if (!btn) return;
       const usable = ok && (cfg.key === "原文" || hasTranslation(currentPoem));
       btn.disabled = !usable;
-      btn.title = !ok
+      btn.title = !speechOk()
         ? "当前浏览器不支持语音朗读"
-        : cfg.key === "译文" && !hasTranslation(currentPoem)
+        : !ok
+          ? speechHint()
+          : cfg.key === "译文" && !hasTranslation(currentPoem)
           ? "本篇暂无译文"
           : cfg.title;
       const on = playing && speakingTarget === cfg.key;
@@ -1269,7 +1303,11 @@
 
   /** 原文键：朗读原文（标题 + 朝代 + 作者 + 正文） */
   function toggleRead() {
-    if (!currentPoem || !speechOk()) return;
+    if (!currentPoem) return;
+    if (!speechReady()) {
+      showToast(speechHint());
+      return;
+    }
     if (window.Speech.speaking()) {
       window.Speech.stop();
       showToast("已停止朗读");
@@ -1285,7 +1323,11 @@
 
   /** 译文键：只读白话译文，不读原文；译文框没展开时顺手展开 */
   function toggleTransRead() {
-    if (!currentPoem || !speechOk()) return;
+    if (!currentPoem) return;
+    if (!speechReady()) {
+      showToast(speechHint());
+      return;
+    }
     if (window.Speech.speaking()) {
       window.Speech.stop();
       showToast("已停止朗读");
@@ -1394,14 +1436,12 @@
     const uInput = $("#input-username");
     if (uInput) {
       uInput.addEventListener("input", function () {
-        settings.username = uInput.value.trim().slice(0, 12);
-        Storage.saveSettings(settings);
+        commitNickname(uInput.value);
         applyAppName();
       });
       uInput.addEventListener("change", function () {
-        settings.username = uInput.value.trim().slice(0, 12);
+        commitNickname(uInput.value);
         uInput.value = settings.username;
-        Storage.saveSettings(settings);
         applyAppName();
       });
       uInput.addEventListener("keydown", function (e) {
@@ -1594,6 +1634,12 @@
     applyAppName();
     // 顶栏由 js/chrome.js 渲染，渲染完成后要再同步一次第二行
     document.addEventListener("chrome:ready", function () {
+      applyAppName();
+    });
+    // 清单是异步读进来的：读完那一刻再同步一次应用名（见 js/manifest-loader.js）。
+    // 少了这一句，先跑到这里的页面就只同步了标题、没同步清单里的应用名 ——
+    // 而「先跑到」与否取决于网络快慢，正是上一版状态飘的根源。
+    document.addEventListener("manifest:ready", function () {
       applyAppName();
     });
     // 清理已删条目留下的孤儿背诵进度（课内 12 组自身重复去重后的旧键）：

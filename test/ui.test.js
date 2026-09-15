@@ -62,6 +62,36 @@ setTimeout(() => {
       /\.brand-name-row[\s\S]{0,80}?font-size: 19px/.test(brandRowCss),
     '页面名与「跬步」共用同一套字体样式（.brand-name-row）');
   chk(!/积跬步古诗词/.test(d.documentElement.outerHTML), '页面不出现「积跬步古诗词」旧名');
+
+  /* ---------- 顶栏右上角的头像印（Issue #132 · 2026-09-15） ---------- */
+  // 头像永远在最右（身份锚点，落点不能变），返回键在它左边；
+  // 首页本来右上角是空占位，正好把占位换成头像 —— 顺手补上「四页签根页进不了 profile」的缺口。
+  const tuHome = d.querySelector('.topbar #top-user');
+  chk(!!tuHome, '首页顶栏有头像入口 #top-user（此前是空占位）');
+  chk(tuHome && tuHome.tagName === 'A', '头像是一个真实链接（可键盘、可读屏、不是点了没反应的装饰）');
+  chk(!!tuHome.querySelector('.seal-avatar'), '头像里画的是字符印 .seal-avatar');
+  chk(tuHome.querySelector('.seal-avatar').textContent.length > 0, '印里永远有一个字，不会是空白圆');
+  chk(d.querySelectorAll('.topbar #top-back').length === 0, '首页没有返回键（本来就无处可退），只有头像');
+  chk(d.querySelectorAll('#top-user').length === 1, '全页只有一枚 #top-user（不复用 #top-act / #top-back 的 id）');
+  chk(d.querySelectorAll('#top-act').length === 0 && d.querySelectorAll('#top-back').length === 0,
+    '头像没有顺手写进 #top-act / #top-back（否则会与「全页只有一枚」那条断言打架）');
+
+  // 深页（设置页）：返回键 + 头像都在，且头像在最右
+  const spAvatar = bootSettingsPage(null);
+  const spBar = spAvatar.doc.querySelector('.topbar');
+  const spIds = [...spBar.querySelectorAll('#top-back, #top-user')].map(e => e.id);
+  chk(spIds.join('/') === 'top-back/top-user', '深页右端依次是「返回键 · 头像」，头像在最右（实际 ' + spIds.join('/') + '）');
+
+  // 顶栏那枚印读的是同一份档案：用户选了「梅」，顶栏就得显示梅（不能偷偷回落成「诗」）
+  const spSeal = bootSettingsPage({
+    poem_profile_v1: JSON.stringify({ v: 1, nickname: '玥玥', avatar: { char: '梅', ink: 'pine' } })
+  });
+  const sealTop = spSeal.doc.querySelector('.topbar #top-user .seal-avatar');
+  chk(!!sealTop && sealTop.textContent === '梅', '顶栏的印与档案同源（选了「梅」就画「梅」，实际 ' +
+    (sealTop ? sealTop.textContent : '缺失') + '）');
+  chk(/梅/.test(sealTop.getAttribute('aria-label')), '印的读屏标签也写清了是哪个字');
+  const sealSlot = spSeal.doc.querySelector('#avatar-slot .seal-avatar');
+  chk(!!sealSlot && sealSlot.textContent === '梅', '设置页昵称旁那枚印与顶栏是同一枚');
   // 需求：版权 + 用户协议 / 隐私条款 从首页挪到设置整页底部
   chk(d.querySelector('.app > .foot') === null, '首页不再挂页脚（法务链接已挪到设置页底部）');
   const spEarly = bootSettingsPage(null);
@@ -212,8 +242,16 @@ setTimeout(() => {
   chk(grpOf('#seg-play') === '朗读播放', '连读档位归到「朗读播放」组');
   chk(grpOf('#seg-algo') === '复习算法', '复习算法选择归到「复习算法」组');
   // 只给背诵用的选项不能再出现在「通用」组里（这才是这次需求的重点）
+  // 「通用」组的三项：用户名 / 头像印记 / 数据管理（Issue #132 · 2026-09-15 起
+  // 用户名旁多了头像印记 —— 它跟用户名一样是「账号域」的身份设置，归在这一组）。
+  // 这里守的仍是原来那条重点：**只给背诵用的选项不许混进「通用」**。
   const generalItems = setGroups[0].querySelectorAll('.settings-item');
-  chk(generalItems.length === 2, '「通用」组只有用户名与数据管理两项（实际 ' + generalItems.length + '）');
+  chk(generalItems.length === 3,
+    '「通用」组只有用户名 / 头像印记 / 数据管理三项（实际 ' + generalItems.length + '）');
+  chk(!!sd.querySelector('#seal-chars') && !!sd.querySelector('#seal-inks'),
+    '头像印记的字集与印色选择器都在「通用」组里');
+  chk(grpOf('#seal-chars') === '通用' && grpOf('#btn-seal-reset') === '通用',
+    '头像印记归到「通用」（账号域的身份设置）');
   // 设置项都还在，没有在搬动过程中被漏掉
   ['#input-username', '#seg-stage', '#grade-chips', '#seg-term', '#seg-scope',
    '#seg-count', '#seg-helper', '#btn-export', '#btn-import', '#btn-reset'].forEach(sel => {

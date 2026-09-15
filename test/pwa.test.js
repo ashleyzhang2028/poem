@@ -104,8 +104,25 @@ function check(name, cond, extra) {
       /viewport-fit=cover/.test(await page.$eval('meta[name="viewport"]', el => el.content)));
 
     // manifest
-    check('iPhone: manifest 已链接',
-      await page.$eval('link[rel="manifest"]', el => /manifest\.webmanifest/.test(el.getAttribute('href'))));
+    //
+    // 原来只断言 href 指向静态文件 manifest.webmanifest。这条在「应用名跟随用户名」
+    // 之后就成了时序题：清单读完（XHR 回调）后 href 会被换成一份 Blob 清单，
+    // 于是「读得比 chrome:ready 快」就红、「慢」就绿 —— CI 与本地结论不同。
+    // 真正的不变量是「页面挂了一份清单，且这份清单里的应用名与当前用户名一致」，
+    // 与 href 是静态文件还是 Blob 无关。这里等清单读完再按不变量断言。
+    await page.evaluate(() => window.ManifestSync && window.ManifestSync.ready()
+      ? true : new Promise(r => document.addEventListener('manifest:ready', () => r(true), { once: true })));
+    const manifestInfo = await page.$eval('link[rel="manifest"]', async (el) => {
+      const res = await fetch(el.href);
+      const json = await res.json();
+      return { href: el.href, name: json.name, shortName: json.short_name };
+    });
+    check('iPhone: manifest 已链接', !!manifestInfo.href);
+    // 清单里的应用名跟着用户名走（默认名 Ashley 时也是同一份口径）
+    const expectedAppName = await page.$eval('meta[name="apple-mobile-web-app-title"]', el => el.content);
+    check('iPhone: 清单应用名与当前用户名同源', manifestInfo.name === expectedAppName,
+      JSON.stringify({ manifest: manifestInfo.name, title: expectedAppName }));
+    check('iPhone: 清单短名仍是跬步', manifestInfo.shortName === '跬步', manifestInfo.shortName);
 
     // Service Worker
     const sw = await page.evaluate(async () => {

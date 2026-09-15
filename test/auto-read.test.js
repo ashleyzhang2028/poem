@@ -38,6 +38,27 @@ const URL_OF = {
   'settings/index.html': '/settings/'
 };
 
+/**
+ * 造一个「已用邮箱码登录过」的本机会话（键 → 值）。
+ *
+ * 为什么要它：Issue #132 起**语音播放要求登录**（游客置灰），
+ * 而这些用例测的是「播放本身」，所以必须先有一个真实会话 ——
+ * 调 auth-core 走一遍发码 / 校验，不手拼 JSON。
+ */
+function signedInSeed() {
+  const A = require(ROOT + 'js/auth-core.js');
+  const mem = {};
+  const backing = {
+    getItem: k => (k in mem ? mem[k] : null),
+    setItem: (k, v) => { mem[k] = String(v); },
+    removeItem: k => { delete mem[k]; }
+  };
+  const store = A.makeStore(backing);
+  const req = A.requestCode(store, { channel: 'email', value: 'zhangmin@163.com' }, 'login', { code: '246810' });
+  A.verifyCode(store, req.codeId, '246810', 'login');
+  return mem;
+}
+
 /** 启动一个页面（可选注入假 SpeechSynthesis / 初始 localStorage） */
 function boot(file, seed, withSpeech) {
   const html = fs.readFileSync(ROOT + file, 'utf8');
@@ -48,6 +69,22 @@ function boot(file, seed, withSpeech) {
     beforeParse(win) {
       // jsdom 没有 window.scrollTo，补一个空实现避免噪音日志
       win.scrollTo = function () {};
+      // 要测播放的页面，一律先预置一个已登录会话；useSeed 为 false 时不预置
+      if (withSpeech && !(seed && seed.__guest)) {
+        const mem = signedInSeed();
+        const shadow = new Map(Object.entries(mem));
+        Object.defineProperty(win, 'localStorage', {
+          configurable: true,
+          value: {
+            getItem: k => (shadow.has(k) ? shadow.get(k) : null),
+            setItem: (k, v) => { shadow.set(k, String(v)); },
+            removeItem: k => { shadow.delete(k); },
+            clear: () => shadow.clear(),
+            key: i => Array.from(shadow.keys())[i] || null
+          }
+        });
+        Object.defineProperty(win.localStorage, 'length', { get: () => shadow.size });
+      }
       if (!withSpeech) return;
       win.SpeechSynthesisUtterance = function (t) { this.text = t; };
       win.speechSynthesis = {
@@ -64,7 +101,7 @@ function boot(file, seed, withSpeech) {
     }
   });
   const w = dom.window;
-  if (seed) for (const k in seed) w.localStorage.setItem(k, seed[k]);
+  if (seed) for (const k in seed) if (k !== '__guest') w.localStorage.setItem(k, seed[k]);
   html.match(/<script src="([^"]+)"><\/script>/g)
     .map(x => x.match(/src="([^"]+)"/)[1])
     .forEach(f => {

@@ -62,6 +62,31 @@ chk(groups.reduce((n, g) => n + g.items.length, 0) === 100, '分组内篇目合�
 const html = fs.readFileSync(path + 'classic/index.html', 'utf8');
 const dom = new JSDOM(html, { runScripts: 'dangerously', url: 'https://local.test/classic/', base: 'https://local.test/classic/' });
 const { window } = dom;
+// 假语音引擎 + 假登录：jsdom 默认既没有 SpeechSynthesis 也没有账号，
+// 那样这颗键永远是「置灰」态，测不出它真正的键义（Issue #132：未登录禁语音）。
+window.SpeechSynthesisUtterance = function (t) { this.text = t; };
+window.speechSynthesis = {
+  speaking: false, speak() { this.speaking = true; }, cancel() { this.speaking = false; },
+  getVoices() { return []; }, addEventListener() {}
+};
+window.__setSpeechGate = function (on) {
+  if (window.Speech && window.Speech.setGate) window.Speech.setGate(function () { return { ok: on, hint: '' }; });
+};
+// 预置一个**真的**本机会话（调 auth-core，不手拼 JSON）：
+// 只开 Speech 的门而没登录，权益层仍会判成游客 —— 测不出「登录后能听」这条。
+(function seedSignedIn() {
+  const A = require(path + 'js/auth-core.js');
+  const mem = {};
+  const backing = {
+    getItem: k => (k in mem ? mem[k] : null),
+    setItem: (k, v) => { mem[k] = String(v); },
+    removeItem: k => { delete mem[k]; }
+  };
+  const store = A.makeStore(backing);
+  const req = A.requestCode(store, { channel: 'email', value: 'zhangmin@163.com' }, 'login', { code: '246810' });
+  A.verifyCode(store, req.codeId, '246810', 'login');
+  window.localStorage.setItem(A.NS, mem[A.NS]);
+})();
 const scriptOrder = html.match(/<script src="([^"]+)"><\/script>/g).map(s => s.match(/src="([^"]+)"/)[1]);
 chk(scriptOrder.indexOf('data/poems-classic.js') >= 0, '页面引用了小古文数据');
 scriptOrder.forEach(f => {
@@ -102,8 +127,11 @@ setTimeout(() => {
   const countInTopbar = d.querySelector('.topbar #gw-count');
   chk(!!countInTopbar, '进度牌 #gw-count 在页顶栏 .topbar 里');
   chk(countInTopbar.parentElement === topbar, '进度牌是页顶那一行的直接子元素（与品牌区同一行）');
-  chk([...topbar.children].map(e => e.className.split(' ')[0]).join('/') === 'brand/count-badge/top-act',
-    '页顶一行依次是「品牌区 · 进度牌 · 返回键」，进度牌就在返回键左侧（实际 ' +
+  // Issue #132（2026-09-15）起，页顶那一行的右端是「返回键 + 头像」两颗：
+  // 头像永远在最右（身份锚点，落点不能变），返回键在它左边。
+  // 这里守的仍是原来那条重点 —— **进度牌在返回键左侧**，不是被挤到右端后面。
+  chk([...topbar.children].map(e => e.className.split(' ')[0]).join('/') === 'brand/count-badge/top-act/top-user',
+    '页顶一行依次是「品牌区 · 进度牌 · 返回键 · 头像」，进度牌在返回键左侧、头像在最右（实际 ' +
     [...topbar.children].map(e => e.className).join('/') + '）');
   const backBtn2 = topbar.querySelector('#top-back');
   chk(!!backBtn2 && backBtn2.tagName === 'A' && backBtn2.getAttribute('href') === '/',
@@ -141,9 +169,14 @@ setTimeout(() => {
     d.querySelectorAll('.topbar > .count-badge').length + ' 枚）');
   chk(!!rBar.querySelector('#gw-progress') && rBar.querySelector('#gw-progress').classList.contains('is-ready'),
     '阅读器顶栏重建后篇号牌仍在（小件按枚迁回，不是只搬第一枚）');
+  // ⚠️ 阅读器那条顶栏**没有头像**：阅读器是全屏沉浸层，身份入口不在正文上出现
+  //（头像让位给正文，见 js/chrome.js 的 headerHtml）。所以这里仍是三件，
+  // 与列表页那条（四件）刻意不同 —— 这是本次裁决要的差异，不是漏画。
   chk([...rBar.children].map(e => e.className.split(' ')[0]).join('/') === 'brand/count-badge/top-act',
-    '阅读器顶栏与列表页同序：品牌区 · 篇号牌 · 返回键（实际 ' +
+    '阅读器顶栏是「品牌区 · 篇号牌 · 返回键」三项，**不含头像**（沉浸阅读里不放身份入口，实际 ' +
     [...rBar.children].map(e => e.className).join('/') + '）');
+  chk(d.querySelectorAll('.reader .topbar .top-user').length === 0,
+    '阅读器里确实一枚头像都没有（让位给正文）');
   chk(rBar.querySelector('.brand-page-text').textContent === '课外必背小古文',
     '阅读器里的页名同样是「课外必背小古文」，与列表页一致');
   // 回归防线：整个页面里 #top-act 只能有一枚 —— 只有阅读器那条顶栏才是动作位。
@@ -605,9 +638,26 @@ setTimeout(() => {
     '不再有「连读 / 连读中」这类随状态改写的可见文案（状态交给 ▶ / ⏸ 表达）');
   // 工具栏那颗「整页连读」与卡头组合键是同一档模式，title 里也要带上当前模式：
   // 「连续播放原文，当前：原文 · 顺序」——读屏用户靠它知道点下去会怎么放。
+  // 预置的会话已登录（见文件头 seedSignedIn），所以这里是「登录的 free 用户」那一档。
+  d.querySelector('#gw-filter-seg button').dispatchEvent(new window.Event('click', { bubbles: true }));
+  chk(randomBtn.disabled === false, '登录的 free 用户：整页连读键可用（free 不残缺）');
   chk(/连续播放原文/.test(randomBtn.getAttribute('title')) &&
     /当前：/.test(randomBtn.getAttribute('title')),
     '键义与当前模式都写在 title 里：' + randomBtn.getAttribute('title'));
+  // 反过来：退出登录（清会话）后必须置灰，并说明原因 —— 这是用户明确要的那条规则
+  window.AuthCore.signOut(window.AuthCore.makeStore());
+  d.querySelector('#gw-filter-seg button').dispatchEvent(new window.Event('click', { bubbles: true }));
+  chk(randomBtn.disabled === true && /登录后即可/.test(randomBtn.getAttribute('title')),
+    '退出登录后：整页连读键置灰并说明原因：' + randomBtn.getAttribute('title'));
+  // 再登回来，后面的「点分组圆键开听」才有意义。
+  // ⚠️ 不能重新发码：60 秒重发冷却会直接挡住（E_RATE_EMAIL）——
+  //    走「设备信任期」这条产品里本来就有的路径（30 天内一点即入）。
+  (function reSignIn() {
+    const r = window.AuthCore.signInTrusted(window.AuthCore.makeStore());
+    chk(r.ok, '设备信任期内可一点登回（顺带覆盖 signInTrusted 这条路径）');
+  })();
+  d.querySelector('#gw-filter-seg button').dispatchEvent(new window.Event('click', { bubbles: true }));
+  chk(randomBtn.disabled === false, '重新登录后恢复可播');
   chk(randomBtn.dataset.on === '0' && randomBtn.getAttribute('aria-pressed') === 'false',
     '初始为「可播放」态（data-on=0 / aria-pressed=false）');
   // 需求 1：搜索框 + 「全部 / 未读」组合 + 「连读」圆键三样都在同一行，且不压缩
@@ -763,16 +813,20 @@ setTimeout(() => {
     '这条窄屏规则写在媒体查询里（桌面仍是 14px）');
 
   // 分组圆键点了要真能连读本组：它是 <button> 不是摆设图标，而且点击不该冒泡到条目上。
-  // 这一份 jsdom 没装假语音引擎（Speech.supported() 为 false），所以点击后的
-  // 结果应当是「提示不支持语音」而不是「什么都没发生」—— 这刚好证明事件确实接到了按钮上。
-  const mhBtn = mh.querySelector('.gw-play-sm');
+  // 这一份页面装的是**假语音引擎**且已登录（见文件头 seedSignedIn），所以这一下
+  // 应当真的能把本组读起来 —— 播放栏弹出 + 引擎在跑就是证据。
+  // mh 是上面几节里抓到的那颗分组卡头，可能已被后续的列表重绘淘汰（换了「未读」筛选
+  // 或搜索都会整块重建列表，旧节点成了游离节点 —— 在它上面派发事件不会有人接）。
+  // 所以这里**重新取当下的节点**，与「用户在页面上真的点一下」等价。
+  const mhNow = [...d.querySelectorAll('#gw-list .group-head')].find(h => h.querySelector('.group-name').textContent === '蒙学经典') || mh;
+  const mhBtn = mhNow.querySelector('.gw-play-sm');
   mhBtn.dispatchEvent(new window.Event('click', { bubbles: true }));
-  const toast = d.querySelector('.toast');
-  chk(!!toast && /语音朗读/.test(toast.textContent),
-    '点分组圆键确实触发了连读（无语音环境时提示「不支持语音朗读」：' +
-    (toast ? toast.textContent : '无提示') + '）');
-  chk(d.querySelector('#gw-reader') === null || d.querySelector('#gw-reader').hidden === true,
-    '分组圆键的点击没有冒泡到条目本身（不会顺手打开某篇阅读器）');
+  const playBar = d.querySelector('#reader-player');
+  chk(!!playBar && playBar.hidden === false && window.Speech.active() === true,
+    '点分组圆键确实开听了（底部播放栏弹出 + 语音引擎在跑，而不是只弹个提示）');
+  // ⚠️ 阅读器被顺带打开是**预期行为**：连读到某一篇要跟着高亮并展开那一篇。
+  //    这里只把播放栏收起，后面几条断言（搜索、点条目开阅读器）才不会互相打架。
+  if (playBar && !playBar.hidden) d.querySelector('#rp-stop').dispatchEvent(new window.Event('click', { bubbles: true }));
 
   // 搜索
   const search = d.querySelector('#gw-search');
