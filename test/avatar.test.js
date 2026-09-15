@@ -237,11 +237,17 @@ console.log('\n=== 十之二、顶栏那一枚＝与 logo 同径的整圆 ===');
     return acc;
   });
 
-  // 与 logo 同径：两处**同一个数值**（守的是「同源」，不是「等于某个数」）
+  // 与 logo 同径：守的是「同源」，不是「等于某个数」。
+  // ⚠️ Issue #147：顶栏右侧簇整个重排之后，这一条从「两个数值相等」升级成
+  //    「**同一条令牌**」—— 徽标写 42px 是令牌的定义，头像读 --top-slot。
+  //    两处相等因此是 structural 的（改一处两处一起走），比抄数字更难写错。
   const markW = (cssRule('.brand-mark').match(/width:\s*(\d+)px/) || [])[1];
-  const userW = (cssRule('.top-user').match(/--user-size:\s*(\d+)px/) || [])[1];
-  chk(!!markW && !!userW && markW === userW,
-    '顶栏头像与 logo 徽标同径（' + markW + 'px vs ' + userW + 'px）');
+  const slotTok = (cssRule(':root').match(/--top-slot:\s*(\d+)px/) || [])[1];
+  chk(!!markW && !!slotTok && markW === slotTok,
+    '顶栏右侧的直径令牌 --top-slot 与 logo 徽标同径（.brand-mark ' +
+    markW + 'px vs :root --top-slot ' + slotTok + 'px）');
+  chk(/--user-size:\s*var\(--top-slot\)/.test(cssRule('.top-user')),
+    '顶栏头像直径读 --top-slot（与徽标同一条令牌，不再两处各写一个数）');
 
   // 整圆 + 满幅
   chk(/border-radius:\s*50%/.test(cssRule('.top-user')), '顶栏头像是整圆');
