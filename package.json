@@ -6,7 +6,9 @@
   "scripts": {
     "start": "node scripts/serve.js",
     "test": "bash test/run.sh",
-    "test:pwa": "node test/pwa.test.js"
+    "test:pwa": "node test/pwa.test.js",
+    "doctor": "node scripts/doctor.js",
+    "env:example": "node scripts/env-example.js > .env.example"
   },
   "engines": {
     "node": ">=18"

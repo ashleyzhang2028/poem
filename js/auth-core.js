@@ -28,6 +28,9 @@
   var CODE_LEN = 6;               // 6 位纯数字：邮箱里好认好输，无 O/0 混淆
   var CODE_MAX_ATTEMPTS = 5;      // 单码失败上限，超过即作废
   var RESEND_COOLDOWN_MS = 60 * 1000;
+  // 短信重发冷却：与服务端 `SMS_RESEND_COOLDOWN_MS`（config.smsResendCooldownMs）同值。
+  // **独立成键**是为了「将来单独收紧短信」时不必动邮箱那一条（docs/auth-design.md §8）。
+  var SMS_RESEND_COOLDOWN_MS = 60 * 1000;
   var PURPOSES = ["login", "reset"];   // login = 注册+登录合一；reset = 重设凭证
   var CHANNELS = ["email", "sms"];     // sms 只留口子（2B），流程见 docs/auth-design.md §8
 
@@ -35,6 +38,16 @@
     // email 的第一档是「重新发送冷却」，单独判定；这里只留小时 / 日两档
     email: [[3600000, 5], [86400000, 10]],
     device: [[3600000, 10], [86400000, 30]],
+    /**
+     * IP 档（2C 补上）：**与服务端 `config.rate.ip` 同一把尺子**。
+     *
+     * ⚠️ 本机版没有真的 IP 可取 —— 这条档位存在的意义不是「现在能拦住谁」，
+     *    而是**两端同一张表**：服务端那一档超限时回 `E_RATE_IP`，
+     *    若前端连这个档位都没有，同一份签名在两边的行为就会不一样
+     *    （这类漂移正是 2A/2B 反复踩的那类「写了但没接上」）。
+     *    真正喂给它的 key 由调用方决定（浏览器里就是「本机」这一个桶）。
+     */
+    ip: [[3600000, 30], [86400000, 100]],
     global: [[3600000, 20], [86400000, 60]]
   };
 
@@ -62,6 +75,7 @@
     E_PHONE_FORMAT: "这个手机号看起来不太对，再检查一下",
     E_RATE_EMAIL: "发得太快了，请稍后再试",
     E_RATE_DEVICE: "这台设备今天发送次数有点多，稍后再试",
+    E_RATE_IP: "网络有点异常，稍后再试",
     E_RATE_GLOBAL: "服务忙，请稍后再试",
     E_NO_CODE: "请先获取验证码",
     E_CODE_EXPIRED: "验证码已过期，点「重新发送」",
@@ -382,6 +396,23 @@
     return RATE[bucket] || [];
   }
 
+  /**
+   * 超限时回哪个错误码 —— **服务端 `core.js` 里那张一模一样的表**。
+   *
+   * ⚠️ 这里必须把 `phone` 与 `email` 一起折进 `E_RATE_EMAIL`，且**与线的另一端
+   *    逐字一致**。原先服务端那张表是 `"email" || "phone" ? E_RATE_EMAIL : …`，
+   *    前端只有 email 没 phone —— 两边对着同一份 `sendCode` 签名，
+   *    回的具体码却可能不一样。服务端 429 的码是直接回给界面看的，
+   *    于是症状是「同一个超限，本机版说一句话、服务端版说另一句话」。
+   *    这类「两端各写一份、谁也不报错」的漂移由 test/api.test.js 的对拍守着。
+   */
+  function rateCode(bucket) {
+    if (bucket === "email" || bucket === "phone") return "E_RATE_EMAIL";
+    if (bucket === "device") return "E_RATE_DEVICE";
+    if (bucket === "ip") return "E_RATE_IP";
+    return "E_RATE_GLOBAL";
+  }
+
   function rateCounts(state, bucket, key, t) {
     var id = bucket + ":" + key;
     // 最长窗口是「月」档（短信 30 天），保留 30 天内的记录
@@ -458,17 +489,30 @@
     // 通道各自一档：短信走 RATE_SMS（更严），邮箱走 RATE.email。
     var bucket = id.channel === "sms" ? "phone" : "email";
     var gate = rateCheck(state, bucket, key, t);
-    if (!gate.ok) return { ok: false, code: "E_RATE_EMAIL", retryAfter: gate.retryAfter, message: ERR.E_RATE_EMAIL };
+    if (!gate.ok) {
+      var gc = rateCode(bucket);
+      return { ok: false, code: gc, retryAfter: gate.retryAfter, message: ERR[gc] };
+    }
     // 「重新发送」是重发一封，不是"上一封还没收到就再要一封"，因此冷却不参与封禁判定
+    // ⚠️ 冷却时长与桶**同源**：短信走短信那一档（服务端 `smsResendCooldownMs` 与它同值）。
+    //    原先两条通道共用 RESEND_COOLDOWN_MS 一个常量，而服务端是**两个键** ——
+    //    「将来单独收紧短信」那天，两端就会各说各的秒数。2C 把这条也并到一处。
+    var coolMs = bucket === "phone" ? SMS_RESEND_COOLDOWN_MS : RESEND_COOLDOWN_MS;
     var sent = rateCounts(state, bucket, key, t);
-    if (sent.length && sent[sent.length - 1] > t - RESEND_COOLDOWN_MS) {
-      var wait = Math.ceil((sent[sent.length - 1] + RESEND_COOLDOWN_MS - t) / 1000);
+    if (sent.length && sent[sent.length - 1] > t - coolMs) {
+      var wait = Math.ceil((sent[sent.length - 1] + coolMs - t) / 1000);
       return { ok: false, code: "E_RATE_EMAIL", retryAfter: wait, message: ERR.E_RATE_EMAIL };
     }
     gate = rateCheck(state, "device", state.deviceId, t);
     if (!gate.ok) return { ok: false, code: "E_RATE_DEVICE", retryAfter: gate.retryAfter, message: ERR.E_RATE_DEVICE };
     gate = rateCheck(state, "global", "all", t);
     if (!gate.ok) return { ok: false, code: "E_RATE_GLOBAL", retryAfter: gate.retryAfter, message: ERR.E_RATE_GLOBAL };
+    /* ⚠️ 本机版**不判 IP 档**，但它**有这张表**（见上面的 RATE.ip）。
+       为什么「有表不判」：浏览器里拿不到可信的出口地址 —— 服务端那条路有
+       `x-forwarded-for` 可读，而这里只能拿到「本机」这一个桶。
+       按一个假 key 去限速只会把「同一个人多试两次」判成「有人攻击」。
+       保留这张表的理由是**两端同一张表**：真实部署里 `sendCode` 两端都只连服务端，
+       而表只在一端存在，就是下一个人踩坑的地方（`rateCode` 认 ip 那句同理）。*/
 
     var acc = findAccount(state, id) || createAccount(state, id);
 
@@ -747,6 +791,8 @@
   return {
     NS: NS, PURPOSES: PURPOSES, CHANNELS: CHANNELS, RATE: RATE, RATE_SMS: RATE_SMS, ERR: ERR,
     CODE_LEN: CODE_LEN, CODE_TTL_MS: CODE_TTL_MS, CODE_MAX_ATTEMPTS: CODE_MAX_ATTEMPTS,
+    RESEND_COOLDOWN_MS: RESEND_COOLDOWN_MS, SMS_RESEND_COOLDOWN_MS: SMS_RESEND_COOLDOWN_MS,
+    rateCode: rateCode,
     SESSION_DAYS: SESSION_DAYS, TRUST_DAYS: TRUST_DAYS, RATE: RATE,
     makeStore: makeStore, emptyState: emptyState,
     setClock: setClock, setRandom: setRandom,

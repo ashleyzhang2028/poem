@@ -62,6 +62,29 @@ function rateWindow(cfg, bucket) {
 }
 
 /**
+ * 超限时回哪个码 —— 与前端 `js/auth-core.js` 的 `rateCode()` **逐字同表**。
+ *
+ * 服务端 429 的码是**直接回给界面看的**（前端 `messageOf` 认它），
+ * 所以「哪一层报哪个码」两端必须一模一样，否则同一个超限在本机版与服务端版
+ * 会说出两句不同的话。这类「两端各写一份、谁也不报错」的漂移由
+ * test/api.test.js 第十九节的对拍守着。
+ */
+function rateCode(bucket) {
+  if (bucket === "email" || bucket === "phone") return "E_RATE_EMAIL";
+  if (bucket === "device") return "E_RATE_DEVICE";
+  if (bucket === "ip") return "E_RATE_IP";
+  return "E_RATE_GLOBAL";
+}
+
+/** 每一层各自的文案（docs §13）—— 前端 ERR 表里那几句的同文，逐字对齐 */
+var RATE_MSG = {
+  E_RATE_EMAIL: "发得太快了，请稍后再试",
+  E_RATE_DEVICE: "这台设备今天发送次数有点多，稍后再试",
+  E_RATE_IP: "网络有点异常，稍后再试",
+  E_RATE_GLOBAL: "服务忙，请稍后再试"
+};
+
+/**
  * 四层频控：邮箱 / 设备 / IP / 全局（docs §4.6 第 4 条）。
  * 每层独立计时，**取最严**：任一层超限即拒，并回该层的 retryAfter。
  *
@@ -150,7 +173,37 @@ function publicAccount(cfg, acc) {
     plan: { tier: planTier(acc), until: acc.plan_until || null },
     role: role,
     features: featuresFor(cfg, planTier(acc)),
-    mask: acc.email_mask || "***"
+    mask: acc.email_mask || "***",
+    /* 服务端**如实自报**当前开通到哪一步（2C）。
+       ⚠️ 三个字段都是**事实**，不是「尽力」的判断：
+         · mail   —— 真信走哪个通道（"console" 就是「真实用户收不到」，如实说）
+         · db     —— 账号与进度落在哪（"memory" 就是「重启即丢」，如实说）
+         · sms    —— 短信通道是否真的能发（没接商就是 false，与 2B 的 503 同口径）
+       界面据此标注「由服务器判定」时才有资格自称权威：一个连着内存盘、
+       发信靠 console 的实例，说的话与一个配齐的实例不是同一件事。
+       这一份**不落盘、不参与判权**（客户端只用来如实标注，见 js/account-api.js）。 */
+    channel: channelFacts(cfg)
+  };
+}
+
+/**
+ * 服务端当前**开通到哪一步**（2C）。
+ *
+ * 为什么要把这三件事下发到界面：docs §4.9 第 2 条那条「不假装」——
+ * 说了「由服务器判定」，就得让用户看得见**这台服务器是什么状态**。
+ * 三个字段全部取自既有的判定函数（`cfg.mail()` / `cfg.hasDb()`），
+ * 这里**不重算一份**（重算的下场见 config.mail() 那段注释：假绿且不报错）。
+ *
+ * ⚠️ 未登录时 `/api/me` 回 401，因此这三项**不会**给到未授权的人。
+ */
+function channelFacts(cfg) {
+  var mail = typeof cfg.mail === "function" ? cfg.mail() : "console";
+  var hasDb = typeof cfg.hasDb === "function" ? !!cfg.hasDb() : false;
+  return {
+    mail: mail,
+    delivered: mail !== "console",                  // console 发的信真实用户收不到
+    db: hasDb ? "db" : "memory",                    // memory = 重启即丢，如实标出来
+    sms: !!(cfg.smsEnabled && cfg.smsTransport)     // 与 2B 的 503 同口径
   };
 }
 
@@ -296,10 +349,13 @@ function sendCode(deps, input) {
   for (var i = 0; i < buckets.length; i++) {
     var g = limiter.check(cfg, buckets[i][0], buckets[i][1], t);
     if (!g.ok) {
-      var code = buckets[i][0] === "email" || buckets[i][0] === "phone" ? "E_RATE_EMAIL"
-        : buckets[i][0] === "device" ? "E_RATE_DEVICE"
-          : buckets[i][0] === "ip" ? "E_RATE_IP" : "E_RATE_GLOBAL";
-      return Promise.resolve(err(429, code, "发得太快了，请稍后再试", { retryAfter: g.retryAfter }));
+      var code = rateCode(buckets[i][0]);
+      /* ⚠️ 文案按层**分别说**（docs §13：每一行错误码都有一句对应的话）。
+         原先四层共用「发得太快了」一句 —— 设备层 / IP 层 / 全局层超限
+         也都说「你发得太快」，而用户可能十分钟没点过按钮（是别人在同网段刷）。
+         前端内核（js/auth-core.js 的 ERR 表）本来就是分句的，这里对齐到它：
+         两端的码与文案由 test/api.test.js 第十九节对拍守着。 */
+      return Promise.resolve(err(429, code, RATE_MSG[code] || "发得太快了，请稍后再试", { retryAfter: g.retryAfter }));
     }
   }
 
@@ -620,11 +676,14 @@ module.exports = {
   syncPush: syncPush,
   accountDelete: accountDelete,
   publicAccount: publicAccount,
+  channelFacts: channelFacts,
   featuresFor: featuresFor,
   planTier: planTier,
   normalizeGrants: normalizeGrants,
   sanitizePayload: sanitizePayload,
   makeRateLimiter: makeRateLimiter,
+  rateCode: rateCode,
+  RATE_MSG: RATE_MSG,
   uniqueId: uniqueId,
   dayKey: dayKey
 };
