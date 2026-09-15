@@ -283,6 +283,10 @@
   <!-- 分组顺序总表（卷次 / 词牌 / 文体）：页面与作品主表共用同一份顺序 -->
   <script src="data/group-order.js"></script>
   <!-- 自选集合（用户自己加背的篇目）：搜索页也能「加入背诵」 -->
+  <!-- 分域引擎（Issue #132 阶段 0）：进度 / 账号 / 设备三域的唯一一份定义，
+       读法由 js/storage.js 转发。**必须排在 js/storage.js 之前** ——
+       缺了它 storage 只是退化成兜底读法，不会报错（那种「不报错的少数据」最难查）。 -->
+  <script src="js/progress-store.js"></script>
   <script src="js/collections.js"></script>
   <script src="data/pinyin-table.js"></script>
   <script src="data/common-chars.js"></script>

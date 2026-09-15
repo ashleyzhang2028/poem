@@ -117,6 +117,9 @@
 
   <script src="/js/auth-core.js"></script>
   <script src="/js/entitlement.js"></script>
+  <!-- 分域引擎（Issue #132 阶段 0）：进度 / 账号 / 设备三域的唯一一份定义，
+       设置页的读法由 js/storage.js 转发。**必须排在 js/storage.js 之前**。 -->
+  <script src="/js/progress-store.js"></script>
   <script src="/js/storage.js"></script>
   <script src="/js/scheduler.js"></script>
   <script src="/js/manifest-loader.js"></script>

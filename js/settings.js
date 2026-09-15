@@ -109,6 +109,12 @@
     Object.keys(raw || {}).forEach(function (k) {
       merged[k] = raw[k];
     });
+    /* 阅读辅助属**设备域**（Issue #132 阶段 0，见 js/progress-store.js）——
+       从 `Storage.getSettings()` 出来的那份里已经不带它了，这里现读一次引擎，
+       免得界面显示的是老键里那份可能的旧值（两处打架时以设备域为准）。 */
+    if (window.ProgressStore && typeof window.ProgressStore.helper === "function") {
+      merged.helper = window.ProgressStore.helper();
+    }
     if (KNOWN_SCOPES.indexOf(merged.scope) === -1) merged.scope = DEFAULT_SCOPE;
     // 认不出来的算法键一律退回出厂默认 —— 界面说的与引擎用的必须是同一个
     if (!algoModels() || !algoModels().known(merged.algo)) merged.algo = DEFAULTS.algo;

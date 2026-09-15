@@ -302,6 +302,13 @@ jobs:
 > **目标：让「哪些数据跨设备一致、哪些是设备本地」变成一个可枚举的清单。**
 > 这一期的产出是**那张分类表**，不是那层接口。它本身不给用户任何新功能。
 
+> ✅ **状态：0 期已落地（2026-09-15）**。
+> `js/progress-store.js`（348 行，含中文注释；逻辑约 190 行）+
+> `js/storage.js` 改成薄转发层 + `js/reader-core.js` / `js/settings.js` / `js/app.js`
+> 三处改走设备域。新增 `test/progress-store.test.js`（130 条断言，排在 `test/run.sh`
+> 第 0 层）。全量 32 层测试零回归。`sw.js` 缓存版本提 `v118 → v119`。
+> 落地过程中的**三处与原设计的偏差**记在 §3.4，都是实测顶出来的，不是拍脑袋改的。
+
 ### 3.1 做什么
 
 **① 抽出 `js/progress-store.js`（预计 < 200 行）**
@@ -349,29 +356,86 @@ exportJSON / importJSON` 一个签名都不改，实现转调 `ProgressStore`。
 
 ### 3.3 验收标准
 
-1. `test/run.sh` **现有 25 层、2546 条断言全绿**，`run.sh` 只加一行、不加新依赖
-2. 新增 `test/progress-store.test.js`（纯 Node，排在最前）：
-   - 迁移幂等：老形状连迁两次结果一致，**且老键仍在**
-   - 未知/脏值回落：`poem_font_v1 = "999"` → 默认 17；`pinyin = "xxx"` → `rare`
-   - `pruneUnknown` 行为与旧实现逐字一致（含「拿不到语料时一个键都不删」）
-   - **分域隔离**：改字号**不写** `poem_recite_progress_v1`；改用户名**不写** `poem_device_prefs_v1`
-   - **只读页面**：`progress()` 与集子页读一遍后，localStorage 键集合与内容**零变化**
-   - 清空进度**不删** `poem_device_prefs_v1` / `poem_profile_v1`（守住今天那个误删 bug）
-3. 新增 `test/page-matrix.test.js`（纯 Node 源码扫描）：
-   每张页面 HTML 声明的脚本集合 == `PROGRESS_STORE_PAGES` 常量。
-   ⚠️ 已知坑：设置那几页与 `poems/index.html` 不加载 `js/scheduler.js`，
-   走 `localStorage` 直读兜底。加了 `progress-store.js` 后它们必须**在
-   `settings.js` 之前**加载它 —— 漏了不报错、只是静默走兜底分支，这条测试就是为它写的。
-   ⚠️ 另注（2026-09-15）：设置已拆成主页 + 四张二级页，凡是说「设置页不加载 X」的
-   判据，都要按**五张页**分别核一遍（见 `test/settings-nav.test.js`）
-4. 更新 `sw.js`：`PRECACHE` 加 `./js/progress-store.js`，`CACHE_NAME` **v112 → v113**
-5. 性能红线：`progress-store.js` < 200 行；六部集子页不加载它，只加载引擎那份转发层
-6. **`/privacy/` 与 `/terms/` 一个字不用改** —— 0 期不新增任何数据外发，
+> ✅ **达成情况（2026-09-15）**：全量 **32 层**测试零回归（0 期落地时基线是 31 层），
+> 新增 `test/progress-store.test.js`，`run.sh` 只加了它一行、**没加任何新依赖**。
+> 逐条对照如下 —— 两条**没有按原计划做**，理由写在条目里。
+
+1. ✅ `test/run.sh` **现有各层全绿**，`run.sh` 只加一行、不加新依赖
+2. ✅ 新增 `test/progress-store.test.js`（纯 Node，排在**最前**，130 条断言）：
+   - ✅ 老形状兼容：进度域仍是 `{id: rec}` 平铺、六把已读键不合并不改名、
+     老备份（`helper` 混在 `settings` 里）导入后仍认得
+   - ✅ 脏值回落：设备域 `helper` 取野生值 → 默认 `on`；设置不是 JSON → 整份回落默认
+   - ✅ `pruneUnknown` 行为与旧实现逐字一致（含「拿不到语料时一个键都不删」）
+   - ✅ **分域隔离**：改阅读辅助**不写**进度域、不写档案、不覆盖账号域其他字段；
+     写设置**不写**进度域与档案；清进度**不删**档案 / 设备偏好 / 账号域设置
+   - ⚠️ 「字号 `poem_font_v1 = "999"` → 默认 17、`pinyin = "xxx"` → `rare`」这两条
+     **这一期实现不了**：它们读的是**设备域里原地不动的那几把老键**
+     （`poem_font_v1` / `poem_classic_font_v1` / `poem_helper_pinyin_v1`），
+     本期的引擎**不接管**它们（§3.1 ③ 那张表：字号 / 对齐 / 连读档原地不动）。
+     要拿下得先动六部集子页与 `app.js` 的读写点，那是 1 期同步层上线时顺手做的事。
+     现在的替代守据是 `test/ui.test.js` / `test/classic.test.js` / `test/helper.test.js`
+     里原有那几条（字号档位读写、注音档位持久化）。
+   - ⚠️ 「只读页面读一遍后 localStorage 键集合与内容**零变化**」这一条
+     **这一期没有单独写**（它守的是「浏览型页面不写盘」，而本期没有任何新建的只读页）。
+     已有的等价守据在 `test/account-pages.test.js` / `test/plans-page.test.js`：
+     `/login/` `/profile/` `/admin/` `/plans/` 四页**一个字节都不写进度键**（源码扫描）——
+     1 期开工前会把它扩成「跑一遍页面、比对键集合快照」。
+3. ⚠️ **改成了另一种做法**：原计划的 `test/page-matrix.test.js`（逐页比对脚本集合 ==
+   `PROGRESS_STORE_PAGES` 常量）**没有单独建**。理由：那种常量表本身就是第二份真相，
+   加一层就要两处一起改。改成的判据更小也更硬 ——
+   **凡是加载了 `js/storage.js` 的页面，必须也加载 `js/progress-store.js`，
+   且必须排在它之前**（脚本 src 行序逐个比，不看行号差，免得踩到注释里那句话）。
+   这条就在 `test/progress-store.test.js` 第十一节里，15 张页逐页核。
+   （原计划里那条「设置那几页不加载 `js/scheduler.js`、走直读兜底」的提醒仍然成立，
+   仍需按**五张设置页**分别核 —— 那件事由 `test/settings-nav.test.js` 守着。）
+4. ✅ 更新 `sw.js`：`PRECACHE` 加 `./js/progress-store.js`，`CACHE_NAME` **v118 → v119**
+   （不是设计里写的 v112 → v113 —— 这中间账号三页与层级对比页各提过一档）
+5. ⚠️ **性能红线没守住行数**：`js/progress-store.js` 实测 **348 行**（逻辑约 190 行，
+   其余是「为什么这么写」的注释与降级分支）。六部集子页**是要加载它的** ——
+   原计划写「只加载转发层」，实际那个转发层就在 `storage.js` 里，而
+   `reader-core.js` 的阅读辅助开关也读引擎，故集子页一并加载（它比 `avatar.js` 还小）。
+6. ✅ **`/privacy/` 与 `/terms/` 一个字没改** —— 0 期不新增任何数据外发，
    条款与实现继续自洽（这正是「条款跟随代码」原则的红利）
 
 **工期：1.5 ~ 2 人日**（纯代码约 400 行 + 测试约 200 行）。
 
+**实际落地（2026-09-15）：** 引擎 348 行、storage 转发层 157 行、新增 130 条断言，
+改动文件 22 个（引擎 + 转发层 + 15 张页的脚本顺序 + 3 处调用点 + sw.js + 测试 + 文档）。
+`pruneUnknown` 的行为**逐字一致**（含「拿不到语料时一个键都不删」）——
+这条同时被 `test/progress-store.test.js` 与 `test/canonical.test.js` 守着。
+
 ---
+
+### 3.4 落地时顶出来的三件事（与原设计不同，都是实测的结果）
+
+**① `helper` 必须**双写**，不能只写新键。**
+设计里写的是「`helper` 搬到 `poem_device_prefs_v1`」。真做起来发现：六部集子页与
+设置页**至今仍从 `poem_recite_settings_v1` 读它**（`reader-core.js` 的 `helperOn()`），
+只写新键就会出现「首页说已开启、集子页是纯文本」——一份数据、两处说法。
+现在的口径是：**新键是正主、老键里那份是镜像，写的时候两把一起写**
+（`saveSettings` 与 `setHelper` 都双写），读的时候新键优先。
+集子页那段的读写也已改走 `ProgressStore.helper()` / `setHelper()`，与引擎同源。
+
+**② 导出备份里**必须**补上 `helper`。**
+老版本导入备份时只认 `settings.helper`，导出时若把它从 `settings` 里摘掉，
+用户在另一台设备上导入后会发现「阅读辅助变回默认」。
+所以导出是**宽进严出**：导出时按位补齐（`settings` 里带一份 `helper`），
+导入时按域过滤（`settings.helper` 与 `device.helper` 都收，写回设备域）。
+
+**③ 引擎必须只认 `pick()` 出来的默认值，**不许**从旧盘上「继承」它自己写下的默认值。**
+`saveSettings` 会把 `helper` 的镜像写进老键（见 ①），于是**旧键里一定有它** ——
+如果 `helper()` 的回落顺序是「新键 → 老键 → 默认」，那么「老键里那份默认值」
+就会被读成「用户选择」，而新键一旦有值就以新键为准……这条读法本身没错，
+但 `settings()` 返回的对象里**不能再带 `helper`**：它属设备域，两处都返回就等于
+又回到「一份数据两处说法」。现在 `settings()` 只返回账号域白名单 + `username`。
+
+**顺带修掉的一个真 bug（不是设计里的）：** `js/app.js` 启动时
+`settings = Storage.getSettings()` 拿到的对象里已经没有 `helper` 了，
+`helperEnabled()` 于是判成「开着」——**在关掉了阅读辅助的机器上照样注音，
+而设置页显示的是「关闭」**。现在启动与 `PoemApp.reloadSettings()` 之后都调一次
+`adoptHelperFromDevice()`，从设备域现读一次写进本地快照。
+这条被 `test/auto-read.test.js` 的「阅读辅助关闭 → 打开诗词是纯文本」当场抓住 ——
+那一条在改之前是**绿的**，改完变红，说明它真的守着这件事。
 
 ## 4. 1 期：接后端（账号 + 发信 + 同步）
 
@@ -556,7 +620,7 @@ DELETE /api/account
 | 6 | 登录方式 | 邮箱随机码（`docs/auth-design.md`） | §2.4 |
 | 7 | 会话 | HttpOnly Cookie，30 天，**不用 localStorage 存 token** | §2.4 |
 | 8 | 权益判定 | **只在服务端**（`/api/me`） | §2.4 |
-| 9 | 0 期范围 | `ProgressStore` + 设置域按字段拆家 | §3 |
+| 9 | 0 期范围 | ✅ **已完成**（`ProgressStore` + 设置域按字段拆家） | §3 |
 | 10 | 1 期范围 | 后端 + 账号 + 发信（方案 A/B 待你定） | §4 |
 | 11 | 进度是否出境 | ⬜ **待你裁定**（A 保守 / B 完整） | §4.2 |
 | 12 | 备案与主体资质 | **不阻塞 0/1 期**，只阻塞收费 | §4.1 |

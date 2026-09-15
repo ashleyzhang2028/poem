@@ -262,6 +262,9 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
       .find(b => b.dataset.helper === v)
       .dispatchEvent(new w.Event('click', { bubbles: true }));
     w.localStorage.setItem('poem_recite_settings_v1', helperPage.localStorage.getItem('poem_recite_settings_v1'));
+    // Issue #132 阶段 0：阅读辅助属**设备域**（poem_device_prefs_v1），
+    // 老键里那份只是镜像 —— 两把键要一起搬过去，只搬老键会读到新键的旧值
+    w.localStorage.setItem('poem_device_prefs_v1', helperPage.localStorage.getItem('poem_device_prefs_v1'));
     // 首页用的是启动时读到的快照，让它重新读一次并刷新界面
     w.PoemApp.reloadSettings();
   };
@@ -526,7 +529,8 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
     '手动选「生字」会同步把「阅读辅助」打开（两处状态一致）');
   // 设置页上的开关 UI 同步为「开启」（设置已是独立整页 /settings/）
   const helperPage3 = boot('settings/reader/index.html', {
-    poem_recite_settings_v1: w3.localStorage.getItem('poem_recite_settings_v1')
+    poem_recite_settings_v1: w3.localStorage.getItem('poem_recite_settings_v1'),
+    poem_device_prefs_v1: w3.localStorage.getItem('poem_device_prefs_v1')
   });
   helperPage3.document.dispatchEvent(new helperPage3.Event('DOMContentLoaded', { bubbles: true }));
   await sleep(60);
@@ -537,6 +541,8 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
   [...helperPage3.document.querySelectorAll('#seg-helper button')].find(b => b.dataset.helper === 'off')
     .dispatchEvent(new helperPage3.Event('click', { bubbles: true }));
   w3.localStorage.setItem('poem_recite_settings_v1', helperPage3.localStorage.getItem('poem_recite_settings_v1'));
+  // 阅读辅助属设备域：两把键一起搬（老键只是镜像，见 js/progress-store.js）
+  w3.localStorage.setItem('poem_device_prefs_v1', helperPage3.localStorage.getItem('poem_device_prefs_v1'));
   w3.PoemApp.reloadSettings();
   openPoemIn(d3, 3);
   await sleep(40);

@@ -48,6 +48,9 @@
 #                          权限判断只走 Entitlement、页面不自己拼 plan、
 #                          如实标注「本地体验版」（不许假装有服务器）、
 #                          退出只清会话 / 注销不删进度、三页都不写进度键（Issue #132）
+#   0. ProgressStore   —— 纯 Node（**排在最前**）：进度 / 账号 / 设备三域的唯一一份定义、
+#                          设置域按字段拆家（helper 归设备域）、清进度不删昵称与阅读偏好、
+#                          老形状 / 老备份兼容读、加载了 storage.js 的页面都先加载引擎
 #   3u. 层级对比页      —— 纯 Node，四列（未登录 / Free / Pro / Max）横向对照：
 #                          每格都等于 can() 的答案（不许手抄一份）、
 #                          未登录与 Free 只差语音朗读那一条、层级单调不回退、
@@ -98,6 +101,10 @@ else
   export NODE_PATH="$JS_TMP/node_modules"
 fi
 
+echo "=== ProgressStore 分域（Issue #132 阶段 0 · 进度 / 账号 / 设备三域，纯 Node）==="
+node test/progress-store.test.js
+
+echo ""
 echo "=== 调度算法单元测试 ==="
 node test/scheduler.test.js
 
