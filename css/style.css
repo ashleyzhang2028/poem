@@ -1612,6 +1612,93 @@ body.has-install-tip #app {
   height: 1px;
   background: linear-gradient(to right, rgba(214, 178, 106, .4), rgba(214, 178, 106, 0));
 }
+/* --------------------------------------------------------------------------
+   设置主页：六个二级页入口（Issue #132 后续）
+   --------------------------------------------------------------------------
+   设置项多了以后把每一组摊成一页二级页，主页只留入口。
+   入口沿用 .settings-item 的间距与纸张语言（外框已由 .settings-item 给），
+   但整体是一枚 **<a>**：可右键、可新开、可键盘 —— 所以必须显式去掉
+   链接默认下划线（与 .dock-item / .ghost-btn 上处理的是同一件事）。
+   -------------------------------------------------------------------------- */
+.settings-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  /* 与 .settings-item 是同一档间距，但主语换成了「可点的整行」：
+     左右内边距让 hover 的纸底不贴边，整行都是热区（不是只有文字可点） */
+  margin: 14px 0;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  color: inherit;
+  text-decoration: none;
+  transition: background .16s ease;
+}
+.settings-link:hover,
+.settings-link:focus-visible { background: rgba(47, 96, 85, .06); }
+.settings-link:active { transform: scale(.995); }
+.settings-link-main { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1; }
+.settings-link-title {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--ink);
+  font-family: var(--font-poem);
+}
+.settings-link-desc { font-size: 11.5px; color: var(--ink-3); line-height: 1.5; }
+/* 「复习算法」这类并进另一页的项：只说存在，不喧宾夺主 */
+.settings-link-extra { color: var(--ink-3); }
+/* 右侧那颗箭头：不参与收缩，落点恒定（与顶栏头像同一套理由） */
+.settings-link-go {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  color: var(--ink-3);
+}
+.settings-link-go svg { width: 16px; height: 16px; }
+
+/* 设置主页只有入口清单，不需要二级页那种「第一项紧贴标题」的例外 */
+.settings-index { margin-top: 4px; }
+
+/* 账号那一项（二级页「通用」）：登录状态 + 层级徽章 + 权限清单 */
+.account-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 0 0 8px;
+  font-size: 13.5px;
+  color: var(--ink);
+}
+.account-state { font-weight: 600; }
+.account-state.ok { color: var(--green); }
+.account-mask { color: var(--ink-2); }
+.tier-badge {
+  flex: none;
+  padding: 1px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  font-size: 11px;
+  letter-spacing: .04em;
+  color: var(--ink-2);
+}
+.tier-badge.tier-pro { color: var(--green); border-color: rgba(47, 96, 85, .45); }
+.tier-badge.tier-max { color: #8a6a2f; border-color: rgba(214, 178, 106, .7); background: rgba(214, 178, 106, .12); }
+.account-caps { list-style: none; margin: 0 0 10px; padding: 0; }
+.account-cap {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 3px 0;
+  font-size: 12.5px;
+}
+.account-cap .cap-mark { flex: none; width: 12px; color: var(--green); }
+.account-cap.off .cap-mark { color: var(--ink-3); }
+.account-cap .cap-name { color: var(--ink); }
+.account-cap.off .cap-name { color: var(--ink-3); }
+.account-cap .cap-hint { color: var(--ink-3); font-size: 11.5px; }
+
 /* 组的第一项紧贴标题，别再多出一截空白 */
 .settings-group > .settings-item:first-of-type { margin-top: 14px; }
 

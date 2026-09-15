@@ -163,6 +163,7 @@ jobs:
 │                                                                  │
 │  ┌─ 视图层（13 个 index.html，不动）────────────────────────┐    │
 │  │  首页 /poems/ /library/ 六部集子 /search/ /progress/ /settings/ │
+│  │  设置再拆二级页：/settings/{general,recite,lists,reader}/        │
 │  └────────────────────────┬───────────────────────────────┘    │
 │                           │ 只认 window.ProgressStore            │
 │  ┌─ 存储层（0 期新增 js/progress-store.js）─────────────────┐    │
@@ -358,9 +359,11 @@ exportJSON / importJSON` 一个签名都不改，实现转调 `ProgressStore`。
    - 清空进度**不删** `poem_device_prefs_v1` / `poem_profile_v1`（守住今天那个误删 bug）
 3. 新增 `test/page-matrix.test.js`（纯 Node 源码扫描）：
    每张页面 HTML 声明的脚本集合 == `PROGRESS_STORE_PAGES` 常量。
-   ⚠️ 已知坑：`settings/index.html` 与 `poems/index.html` 不加载 `js/scheduler.js`，
+   ⚠️ 已知坑：设置那几页与 `poems/index.html` 不加载 `js/scheduler.js`，
    走 `localStorage` 直读兜底。加了 `progress-store.js` 后它们必须**在
-   `settings.js` 之前**加载它 —— 漏了不报错、只是静默走兜底分支，这条测试就是为它写的
+   `settings.js` 之前**加载它 —— 漏了不报错、只是静默走兜底分支，这条测试就是为它写的。
+   ⚠️ 另注（2026-09-15）：设置已拆成主页 + 四张二级页，凡是说「设置页不加载 X」的
+   判据，都要按**五张页**分别核一遍（见 `test/settings-nav.test.js`）
 4. 更新 `sw.js`：`PRECACHE` 加 `./js/progress-store.js`，`CACHE_NAME` **v112 → v113**
 5. 性能红线：`progress-store.js` < 200 行；六部集子页不加载它，只加载引擎那份转发层
 6. **`/privacy/` 与 `/terms/` 一个字不用改** —— 0 期不新增任何数据外发，

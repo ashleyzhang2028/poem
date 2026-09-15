@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#2f6055" />
+  <title>我的清单 · 跬步</title>
+  <meta name="description" content="跬步设置 · 我的清单：自选背诵的导入、导出、改名、删除、整组移出与顺序调整。" />
+  <meta name="format-detection" content="telephone=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="跬步" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <base href="/" />
+  <link rel="icon" href="./icons/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body data-nav="settings" data-back="/settings/" data-page="我的清单" data-sub="自选背诵的增删改查">
+  <div class="app">
+    <header class="topbar"></header>
+
+    <main class="settings-page" id="settings-page">
+      <!-- ==================================================================
+           设置 · 我的清单（二级页）
+           ------------------------------------------------------------------
+           自选背诵（除教材之外，自己额外想背的篇目）。
+           这一整块原先长在**首页**底部，Issue #114 第二条：
+           「自选背诵栏应该全部放到设置中去，首页背诵栏只显示背诵列表，
+             不要干扰背诵。所有导入、导出、重命名、删除等等应该全部在设置中进行。」
+           二级页之前它已是设置页里的一组，现在单独占一页 ——
+           因为它是唯一一块「面板 + 一排管理键」的组，混在别的组里最容易误触。
+
+           ⚠️ 搬的是**管理入口**，不是这些篇目的背诵 ——
+              自选篇目本来就跟课内 261 首一起按遗忘曲线排每日任务。
+           ⚠️ 与首页读同一份 localStorage 键 poem_recite_collections_v1：
+              这一页改完，回首页的今日任务立刻跟着变。
+           ================================================================== -->
+      <div class="settings-groups">
+        <section class="settings-group" aria-labelledby="grp-lists">
+          <h2 class="settings-group-title" id="grp-lists">我的清单</h2>
+
+          <!-- ⚠️ .wide：这一项在平板两列排布里**跨列**（见 css/style.css 的
+               .settings-item.wide）—— 清单面板自己不常满，但拖拽排序与
+               「导入 / 导出」两排按钮挤在半栏里会折成三四行。 -->
+          <div class="settings-item wide">
+            <label>自选背诵</label>
+            <div class="collections-panel" id="collections-panel">
+              <p class="collections-tip" id="collections-tip"></p>
+              <div class="collections-tools" id="collections-tools">
+                <button type="button" class="collection-act" id="btn-collections-import" title="粘贴一份清单，新建一个集合">导入清单</button>
+              </div>
+              <div class="list" id="collections-list"></div>
+            </div>
+            <div class="settings-hint">到「课外」任一集子或「搜索」页，点篇目右边的书签即可加进来；加进来的篇目与课内诗词一起按遗忘曲线复习。</div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <footer class="foot settings-foot">
+      <span class="foot-copy">&copy;2026 kuibu.app 积跬步, 至千里</span>
+      <span class="foot-links">
+        <a href="/terms/">用户协议</a>
+        <span class="foot-sep">·</span>
+        <a href="/privacy/">隐私条款</a>
+      </span>
+    </footer>
+  </div>
+
+  <!-- 导入 / 导出清单的纯文本对话框：与首页那一枚同一套 .modal（同一份 CSS、同一个层级），
+       所以不会被底部页签压住 -->
+  <div class="modal text-modal" id="text-dialog" hidden>
+    <div class="modal-mask" data-close="1"></div>
+    <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="text-dialog-title">
+      <button class="modal-close" data-close="1" aria-label="关闭">✕</button>
+      <div class="modal-head">
+        <h2 id="text-dialog-title"></h2>
+      </div>
+      <p class="text-dialog-tip" id="text-dialog-tip"></p>
+      <textarea id="text-dialog-text" spellcheck="false" aria-label="清单文本"></textarea>
+      <div class="actions">
+        <button type="button" class="btn" id="text-dialog-cancel">关闭</button>
+        <button type="button" class="btn good primary-btn" id="text-dialog-ok">确定</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+  <input type="file" id="file-import" accept="application/json" hidden />
+
+  <script src="/data/text-master.js"></script>
+  <script src="/data/poems-1.js"></script>
+  <script src="/data/poems-2.js"></script>
+  <script src="/data/poems-3.js"></script>
+  <script src="/data/poems-4.js"></script>
+  <script src="/data/poems-5.js"></script>
+  <script src="/data/poems-6.js"></script>
+  <script src="/data/poems-7.js"></script>
+  <script src="/data/poems-8.js"></script>
+  <script src="/data/poems-9.js"></script>
+  <script src="/data/poems-10.js"></script>
+  <script src="/data/poems-11.js"></script>
+  <script src="/data/poems-12.js"></script>
+  <script src="/data/index.js"></script>
+  <script src="/data/site-index.js"></script>
+
+  <script src="/js/auth-core.js"></script>
+  <script src="/js/entitlement.js"></script>
+  <script src="/js/storage.js"></script>
+  <script src="/js/scheduler.js"></script>
+  <script src="/js/manifest-loader.js"></script>
+  <script src="/js/play-modes.js"></script>
+  <script src="/js/review-models.js"></script>
+  <!-- 自选集合（用户自己加背的篇目）：本页就是它的增删改查。
+       与首页、集子页读的是同一个模块、同一份 localStorage 键。 -->
+  <script src="/js/collections.js"></script>
+  <script src="/js/settings.js"></script>
+  <script src="/js/avatar.js"></script>
+  <script src="/js/chrome.js"></script>
+  <script src="/js/pwa.js"></script>
+</body>
+</html>

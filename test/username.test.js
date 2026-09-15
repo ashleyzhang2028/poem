@@ -8,8 +8,9 @@ const { JSDOM } = require('jsdom');
 const fs = require('fs');
 const path = __dirname + '/../';
 const html = fs.readFileSync(path + 'index.html', 'utf8');
-// 设置从「首页弹层」改成了独立整页，用户名输入框现在住在 /settings/
-const settingsHtml = fs.readFileSync(path + 'settings/index.html', 'utf8');
+// 设置从「首页弹层」改成了独立整页，Issue #132 后续又拆成二级页 ——
+// 用户名输入框现在住在「通用」页（/settings/general/）。
+const settingsHtml = fs.readFileSync(path + 'settings/general/index.html', 'utf8');
 
 function bootIn(pageHtml, file, seed) {
   const dom = new JSDOM(pageHtml, { runScripts: 'dangerously', url: 'https://local.test/' + file });
@@ -28,8 +29,8 @@ function bootIn(pageHtml, file, seed) {
 
 /** 首页：应用名联动 / 计划生效 / 入口显隐 */
 const boot = seed => bootIn(html, '', seed);
-/** 设置页：用户名输入框回填与输入 —— URL 走目录化地址 /settings/ */
-const bootSettings = seed => bootIn(settingsHtml, 'settings/', seed);
+/** 设置「通用」页：用户名输入框回填与输入 —— URL 走目录化地址 /settings/general/ */
+const bootSettings = seed => bootIn(settingsHtml, 'settings/general/', seed);
 
 (async () => {
   let fails = 0;
@@ -47,9 +48,11 @@ const bootSettings = seed => bootIn(settingsHtml, 'settings/', seed);
   chk(r.d.querySelector('#today-sub').textContent.includes('共 3 首'), '旧版设置 grade/term/count 仍生效: ' + r.d.querySelector('#today-sub').textContent);
   let s1 = await bootSettings({ poem_recite_settings_v1: JSON.stringify({ grade: 2, term: 2, dailyCount: 3 }) });
   chk(s1.d.querySelector('#input-username').value === '', '旧版设置无 username 时设置页输入框为空（代表用默认名）');
-  chk(s1.d.querySelector('#seg-count button.active').dataset.count === '3', '设置页回显旧版每日 3 首');
+  // ⚠️ 每日数量住在「背诵」页了（Issue #132 后续拆页），这一条第 2 小项
+  //    改由 test/ui.test.js 在「背诵」页上守；这里只验与用户名同一页的那几项。
   chk(s1.d.querySelector('#brand-name').textContent === '跬步', '设置页顶栏应用名固定为「跬步」');
-  chk(/设置/.test(s1.d.querySelector('#brand-page-text').textContent), '设置页顶栏页面名为「设置」');
+  chk(/通用/.test(s1.d.querySelector('#brand-page-text').textContent),
+    '「通用」页顶栏页面名为「通用」（二级页各自报自己的名字，用户知道站在哪一层）');
 
   // 3. 已有用户名 → 刷新后保持
   r = await boot({

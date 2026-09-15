@@ -35,7 +35,9 @@ const ROOT = __dirname + '/../';
 const URL_OF = {
   'index.html': '/',
   'classic/index.html': '/classic/',
-  'settings/index.html': '/settings/'
+  'settings/index.html': '/settings/',
+  // 设置拆成二级页（Issue #132 后续）：注音开关住在「阅读与朗读」页
+  'settings/reader/index.html': '/settings/reader/'
 };
 
 /**
@@ -249,9 +251,10 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
 
   // ---- 阅读辅助开关的可见差别 ----
   // 开启（默认「只标生字」）→ 打开诗词自动注音；关闭 → 纯文本，需要时手动切档位。
-  // 设置已改成独立整页（/settings/），开关住在那一页：这里在设置页点开关，
+  // 设置已改成独立整页、又拆成二级页，注音开关住在「阅读与朗读」页
+  // （/settings/reader/）：这里在那一页点开关，
   // 再把结果搬进首页实例的 localStorage（两个 JSDOM 实例的存储各自独立）。
-  const helperPage = boot('settings/index.html', null, false);
+  const helperPage = boot('settings/reader/index.html', null, false);
   // boot() 是同步注入脚本的，DOMContentLoaded 早已触发过，手动补一次让设置页初始化
   helperPage.document.dispatchEvent(new helperPage.Event('DOMContentLoaded', { bubbles: true }));
   const clickHelper = (v) => {
@@ -522,7 +525,7 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
   chk(JSON.parse(w3.localStorage.getItem('poem_recite_settings_v1')).helper === 'on',
     '手动选「生字」会同步把「阅读辅助」打开（两处状态一致）');
   // 设置页上的开关 UI 同步为「开启」（设置已是独立整页 /settings/）
-  const helperPage3 = boot('settings/index.html', {
+  const helperPage3 = boot('settings/reader/index.html', {
     poem_recite_settings_v1: w3.localStorage.getItem('poem_recite_settings_v1')
   });
   helperPage3.document.dispatchEvent(new helperPage3.Event('DOMContentLoaded', { bubbles: true }));
@@ -654,7 +657,7 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
      两处读写同一份 poem_play_mode_v1，因此**改一边，另一边必须跟着变** ——
      这正是本段要验的：光有单选项、两边各自存一份状态，等于又开一个错开点。 */
   {
-    const sd = boot('settings/index.html', { poem_play_mode_v1: 'seq-trans' });
+    const sd = boot('settings/reader/index.html', { poem_play_mode_v1: 'seq-trans' });
     await sleep(200);
     const sdoc = sd.document;
     const opts = () => [...sdoc.querySelectorAll('#seg-play .play-mode-opt')];
@@ -691,7 +694,7 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
       '集子页圆键按本机档位显示当前模式（' + cbtn.dataset.playShort + '）');
     cwin.PlayModes.write('seq-both');
     await sleep(40);
-    const sd2 = boot('settings/index.html', { poem_play_mode_v1: cwin.localStorage.getItem('poem_play_mode_v1') });
+    const sd2 = boot('settings/reader/index.html', { poem_play_mode_v1: cwin.localStorage.getItem('poem_play_mode_v1') });
     await sleep(200);
     chk(sd2.document.querySelector('.play-mode-opt[data-play-mode="seq-both"]').classList.contains('active'),
       '集子页改成「原文白话顺序播放」后，设置页打开就是这一档（双向同步）');
@@ -700,7 +703,7 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
     // （显示成选中 = 告诉用户「现在是这一档」，实际引擎会退回出厂档，
     //   两边说法不一致）。正确的表现是：选中项落在**出厂档**上，
     // 也就是说「显示的就是引擎真正会用的那一档」。
-    const sd3 = boot('settings/index.html', { poem_play_mode_v1: 'no-such-mode' });
+    const sd3 = boot('settings/reader/index.html', { poem_play_mode_v1: 'no-such-mode' });
     await sleep(200);
     chk(sd3.document.querySelectorAll('#seg-play .play-mode-opt[aria-checked="true"]').length === 1 &&
       sd3.document.querySelector('#seg-play .play-mode-opt.active').dataset.playMode === 'seq-origin',

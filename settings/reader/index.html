@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#2f6055" />
+  <title>阅读与朗读 · 跬步</title>
+  <meta name="description" content="跬步设置 · 阅读与朗读：自动注音总开关，以及五档连读方式。" />
+  <meta name="format-detection" content="telephone=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="跬步" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <base href="/" />
+  <link rel="icon" href="./icons/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body data-nav="settings" data-back="/settings/" data-page="阅读与朗读" data-sub="自动注音 · 连读方式">
+  <div class="app">
+    <header class="topbar"></header>
+
+    <main class="settings-page" id="settings-page">
+      <!-- ==================================================================
+           设置 · 阅读与朗读（二级页）
+           ------------------------------------------------------------------
+           原先这两组是分开的（「阅读辅助」+「朗读播放」），每组只有一条设置。
+           合成一页是因为它们回答的是同一个问题：**打开一篇时，你希望它怎么呈现**。
+             阅读辅助   打开一篇时**看不看得到**拼音（注音总开关，设备域）
+             朗读播放   连读时**怎么念**（原文 / 原文加译文 / 顺序 / 随机，设备域）
+           两件不同的事，所以仍是两个分组；共同点是都全站一份，
+           不随「背哪一册」或「读哪一部集子」变化。
+           ================================================================== -->
+      <div class="settings-groups">
+        <section class="settings-group" aria-labelledby="grp-reader">
+          <h2 class="settings-group-title" id="grp-reader">阅读辅助</h2>
+
+          <div class="settings-item">
+            <label>自动注音</label>
+            <div class="seg small" id="seg-helper">
+              <button data-helper="off" class="active">关闭</button>
+              <button data-helper="on">开启</button>
+            </div>
+            <div class="settings-hint" id="helper-hint">开启后，打开诗或古文即自动注音；朗读按钮始终可用</div>
+          </div>
+        </section>
+
+        <!-- ==================================================================
+             朗读播放：五档连读偏好，全站一份
+             ------------------------------------------------------------------
+             这一组原先**只存在于分类卡右侧那颗圆键的长按 / 右键菜单**里，
+             界面上没有任何提示、设置页也没有入口，于是「这几个选项在哪儿调」
+             被反复问起（Issue #69）。现在设置页给一栏显式单选项，
+             与圆键菜单读写同一份 poem_play_mode_v1，两边看到的永远是同一档。
+             ================================================================== -->
+        <section class="settings-group" aria-labelledby="grp-play">
+          <h2 class="settings-group-title" id="grp-play">朗读播放</h2>
+
+          <div class="settings-item">
+            <label id="play-mode-label">连读方式</label>
+            <div class="play-modes" id="seg-play" role="radiogroup" aria-labelledby="play-mode-label"></div>
+            <div class="settings-hint" id="play-hint"></div>
+            <div class="settings-hint">
+              想听完一篇接着听下一篇，不用回这一页：在集子索引页（小古文 / 唐诗 / 宋词 / 古文观止 / 昭明文选）
+              每张分类卡头的右侧有一颗圆形播放键，<strong>长按 / 右键</strong>弹出的是同一个菜单，
+              选中即刻开听。
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <footer class="foot settings-foot">
+      <span class="foot-copy">&copy;2026 kuibu.app 积跬步, 至千里</span>
+      <span class="foot-links">
+        <a href="/terms/">用户协议</a>
+        <span class="foot-sep">·</span>
+        <a href="/privacy/">隐私条款</a>
+      </span>
+    </footer>
+  </div>
+
+  <div class="modal text-modal" id="text-dialog" hidden>
+    <div class="modal-mask" data-close="1"></div>
+    <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="text-dialog-title">
+      <button class="modal-close" data-close="1" aria-label="关闭">✕</button>
+      <div class="modal-head">
+        <h2 id="text-dialog-title"></h2>
+      </div>
+      <p class="text-dialog-tip" id="text-dialog-tip"></p>
+      <textarea id="text-dialog-text" spellcheck="false" aria-label="清单文本"></textarea>
+      <div class="actions">
+        <button type="button" class="btn" id="text-dialog-cancel">关闭</button>
+        <button type="button" class="btn good primary-btn" id="text-dialog-ok">确定</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+  <input type="file" id="file-import" accept="application/json" hidden />
+
+  <script src="/data/text-master.js"></script>
+  <script src="/data/poems-1.js"></script>
+  <script src="/data/poems-2.js"></script>
+  <script src="/data/poems-3.js"></script>
+  <script src="/data/poems-4.js"></script>
+  <script src="/data/poems-5.js"></script>
+  <script src="/data/poems-6.js"></script>
+  <script src="/data/poems-7.js"></script>
+  <script src="/data/poems-8.js"></script>
+  <script src="/data/poems-9.js"></script>
+  <script src="/data/poems-10.js"></script>
+  <script src="/data/poems-11.js"></script>
+  <script src="/data/poems-12.js"></script>
+  <script src="/data/index.js"></script>
+  <script src="/data/site-index.js"></script>
+
+  <script src="/js/auth-core.js"></script>
+  <script src="/js/entitlement.js"></script>
+  <script src="/js/storage.js"></script>
+  <script src="/js/scheduler.js"></script>
+  <script src="/js/manifest-loader.js"></script>
+  <!-- 连读档位定义（与阅读器同源）：本页只画出来、标上当前档、写回同一份键 -->
+  <script src="/js/play-modes.js"></script>
+  <script src="/js/review-models.js"></script>
+  <script src="/js/collections.js"></script>
+  <script src="/js/settings.js"></script>
+  <script src="/js/avatar.js"></script>
+  <script src="/js/chrome.js"></script>
+  <script src="/js/pwa.js"></script>
+</body>
+</html>

@@ -419,8 +419,20 @@
     return p || ROUTES.settings;
   }
 
-  /** 当前页的返回目标：子页面回首页（首页自己不留返回键，用占位保持两栏对齐） */
+  /**
+   * 当前页的返回目标。
+   *
+   * 默认：子页面回首页（首页自己不留返回键，用占位保持两栏对齐）。
+   * 例外：页面可以用 body 上的 `data-back` 指定上一层 —— 设置拆成二级页之后
+   * （Issue #132 后续），四张二级页的上一层是**设置主页**而不是背诵首页：
+   * 从「阅读与朗读」返回背诵首页，等于把用户从设置里一脚踢出来。
+   *
+   * ⚠️ 只认站内绝对路径（`/` 开头）：`data-back` 是页面自己写的属性，
+   *    写成 `javascript:` 或外站地址就等于给了页面一个开放跳转。
+   */
   function pageBackHref() {
+    var back = bodyData("back");
+    if (back && /^\/[^\/\s]/.test(back)) return back;
     return ROUTES.home;
   }
 
