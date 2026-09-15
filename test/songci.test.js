@@ -224,7 +224,7 @@ setTimeout(() => {
   chk(d.querySelectorAll('#gw-list .item').length === 283,
     '列表渲染 283 首（实际 ' + d.querySelectorAll('#gw-list .item').length + '）');
   chk(d.querySelector('#gw-count') === null,
-    '页顶那一行不再挂已读进度牌（Issue #147：读数挪到详情页状态栏）');
+    '页顶那一行不再挂已读进度牌（Issue #147：读数已撤，页顶与详情页都没有）');
   // 分组卡：分组数与词牌数一致
   chk(d.querySelectorAll('#gw-list .group-card').length === groupNames.length,
     '按词牌渲染 ' + groupNames.length + ' 张分组卡');
@@ -245,15 +245,17 @@ setTimeout(() => {
   const title = d.querySelector('#rd-title').textContent;
   chk(title === '声声慢', '可打开指定篇目（sc-249 → ' + title + '）');
   chk(/李清照/.test(d.querySelector('#rd-meta').textContent), '阅读器展示了作者');
-  // Issue #147：用户原话「将 0 / 283 首 挪到详情页的 宋 张先《宋词三百首》的后面，同一行」——
-  // 所以这一枚数必须与朝代 / 作者 / 出处同处一行，且报的是「已读 / 总数 首」。
-  const scRdCount = d.querySelector('#rd-meta .rd-count');
-  chk(!!scRdCount && scRdCount.textContent === '0 / 283 首',
-    '详情页状态栏里有「0 / 283 首」且与元信息同一行（实际「' +
-    (scRdCount ? scRdCount.textContent : '无') + '」；整行「' +
+  // Issue #147 追加一轮：用户原话「删除所有详情页中的 0 / 167 篇及类似的」——
+  // 原先挪进详情页状态栏的那一枚「0 / 283 首」也一并撤除（两轮口径见 #147）。
+  // 反向守住：状态栏只剩「朝代 · 作者 · 出处 · 选本」，整行不含任何「N / M 首」读数。
+  chk(d.querySelectorAll('#rd-meta .rd-count').length === 0,
+    '详情页状态栏里不再有已读读数 .rd-count（实际 ' +
+    d.querySelectorAll('#rd-meta .rd-count').length + ' 枚）');
+  chk(!/\d\s*\/\s*\d+\s*(篇|首)/.test(d.querySelector('#rd-meta').textContent),
+    '状态栏整行不含「0 / 283 首」这类读数（实际「' +
     d.querySelector('#rd-meta').textContent + '」）');
-  chk(!!scRdCount && scRdCount.parentElement === d.querySelector('#rd-meta'),
-    '这一枚 .rd-count 是 .rd-meta 的直接子元素（同一行，不另起一行）');
+  chk(/李清照/.test(d.querySelector('#rd-meta').textContent),
+    '状态栏里的朝代 / 作者 / 出处照旧在');
   const plain = d.querySelector('#rd-text').textContent
     .replace(/[a-zāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜüńňǹ·]+/g, '').replace(/\s/g, '');
   chk(/寻寻觅觅/.test(plain), '正文已写入阅读器');
