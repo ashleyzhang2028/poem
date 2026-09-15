@@ -16,6 +16,10 @@
  * 页面不各自 `fetch("/api/me")`、不各自读 Cookie、不各自拼存储键 ——
  * 有源码扫描守着（test/account-bind.test.js）。
  *
+ * 2.2 期（Issue #159）在这里又加了一组：**权威发放**（`/api/admin/grant`）。
+ * 它是本项目第一条「能改别人数据」的写接口，但**这一层不判权限** ——
+ * 判权限在服务端（`accounts.role`），客户端把入口藏起来从来不是安全边界。
+ *
  * ## 四条不可退让的边界（1A 立的，这一层一条都不许破）
  *
  * 1. **失败不打断任何事** —— 连不上、503、401、超时，一律只是
@@ -63,6 +67,10 @@
     UNAVAILABLE: "unavailable"
   };
 
+  /** 2.2 多出来的一种：通道里**没有发放方法**（老缓存里的旧 AuthApi）。
+      它既不是「没配好」也不是「没权限」，界面上要说的话不一样 —— 刷新即可。 */
+  var REASON_NO_CHANNEL = "no-channel";
+
   /** 依赖现取：脚本顺序不保证，缓存一份就会静默失效 */
   function deps(o) {
     var g = typeof globalThis !== "undefined" ? globalThis : null;
@@ -105,6 +113,20 @@
     function usable(ch) {
       return ch && typeof ch.me === "function" && typeof ch.deleteAccount === "function"
         ? ch : null;
+    }
+
+    /**
+     * 权威发放要的通道**单独判**（2.2）。
+     *
+     * ⚠️ 刻意**不**并进上面的 `usable()`：那一份是 `/api/me` 与注销的闸，
+     *    而老缓存里的旧 `AuthApi`（没有 `grant()`）一进来就会被判成「没有通道」，
+     *    症状是**层级再也不更新** —— 那是拿一个不相关的新功能去废掉既有功能。
+     *    这里只在真正要发放时判一次，缺了如实回 `E_NO_CHANNEL`。
+     */
+    function grantChannel() {
+      var ch = usable(D.api) || (D.make ? safeCreate(D.make) : null);
+      return ch && typeof ch.grant === "function" && typeof ch.revoke === "function" &&
+        typeof ch.grants === "function" ? ch : null;
     }
 
     function safeCreate(make) {
@@ -327,6 +349,90 @@
       });
     }
 
+    /* ------------------------------------------------ 权威发放（2.2） */
+
+    /**
+     * 发放 / 收回 / 列出**服务端权威名单**。
+     *
+     * ⚠️ 这三条**只送到服务端，不碰本机名单**（`poem_plan_grant_v1`）。
+     *    两者是两件事：本机名单是「手工发邀请码的本机版」，改一行存储就能改；
+     *    服务端这一份才改得动 `/api/me` 下发的层级。
+     *    **不自动同步**：服务端发了不等于对方那台机器的本机名单也多一条 ——
+     *    那正是「本机名单传不出去」这条局限在 2.2 之后仍然成立的部分。
+     *
+     * ⚠️ 与 `refreshMe()` 同一条边界：**失败不打断任何事**，如实回 reason。
+     *    这里多一个 `reason: "no-channel"` —— 老缓存里没有发放方法的通道，
+     *    那不是「服务端没配好」，也不是「没权限」，界面上要说的话不一样。
+     */
+    var REASON_NO_CHANNEL = "no-channel";
+
+    function adminGrant(input) {
+      var o = input || {};
+      if (!hasLocalSession()) {
+        return Promise.resolve({ ok: false, reason: REASON.GUEST, message: "请先登录再来发名单" });
+      }
+      var ch = grantChannel();
+      if (!ch) {
+        return Promise.resolve({
+          ok: false, reason: REASON_NO_CHANNEL,
+          message: "页面脚本版本对不上（刷新一次即可），这一轮没发出任何东西"
+        });
+      }
+      return ch.grant({ emailMask: o.emailMask, tier: o.tier, until: o.until }).then(function (r) {
+        if (r && r.ok) {
+          /* 发完之后**立刻问一次 /api/me**：管理员自己可能正是在给别人发
+             同一个层级，而自己的层级也可能刚被改（自己是 owner 时不会，
+             但这条路径不该有「假设」）。refreshMe 有同会话的闸，这里用 force。 */
+          return {
+            ok: true, reason: REASON.OK,
+            matched: r.matched, changed: r.changed, ambiguous: !!r.ambiguous,
+            emailMask: r.emailMask, tier: r.tier, until: r.until == null ? null : r.until,
+            uid: r.uid, note: r.note
+          };
+        }
+        var code = (r && r.code) || "E_OFFLINE";
+        if (code === "E_NOT_CONFIGURED") return { ok: false, reason: REASON.NOT_CONFIGURED, message: r && r.message };
+        if (code === "E_NO_SESSION") {
+          clearServerTier();
+          return { ok: false, reason: REASON.GUEST, message: "登录状态已过期，请重新登录" };
+        }
+        /* E_FORBIDDEN / E_TIER / E_MASK / 429 —— 服务端**明确回绝**，
+           这一类**不是降级**，原样把它的话带上去（不自己改写一份）。 */
+        return { ok: false, reason: REASON.OK, code: code, message: r && r.message, retryAfter: r && r.retryAfter };
+      }).catch(function () {
+        return { ok: false, reason: REASON.UNAVAILABLE, message: "连不上服务端，这一轮没发出任何东西" };
+      });
+    }
+
+    function adminGrants() {
+      if (!hasLocalSession()) return Promise.resolve({ ok: false, reason: REASON.GUEST });
+      var ch = grantChannel();
+      if (!ch) return Promise.resolve({ ok: false, reason: REASON_NO_CHANNEL });
+      return ch.grants().then(function (r) {
+        if (r && r.ok) return { ok: true, reason: REASON.OK, grants: r.grants || [], store: r.store };
+        var code = (r && r.code) || "E_OFFLINE";
+        if (code === "E_NOT_CONFIGURED") return { ok: false, reason: REASON.NOT_CONFIGURED };
+        if (code === "E_NO_SESSION") return { ok: false, reason: REASON.GUEST };
+        if (code === "E_FORBIDDEN") return { ok: false, reason: REASON.OK, code: code, message: r && r.message };
+        return { ok: false, reason: REASON.UNAVAILABLE };
+      }).catch(function () { return { ok: false, reason: REASON.UNAVAILABLE }; });
+    }
+
+    function adminRevoke(input) {
+      var o = input || {};
+      if (!hasLocalSession()) return Promise.resolve({ ok: false, reason: REASON.GUEST });
+      var ch = grantChannel();
+      if (!ch) return Promise.resolve({ ok: false, reason: REASON_NO_CHANNEL });
+      return ch.revoke({ emailMask: o.emailMask }).then(function (r) {
+        if (r && r.ok) return { ok: true, reason: REASON.OK, matched: r.matched, changed: r.changed, emailMask: r.emailMask };
+        var code = (r && r.code) || "E_OFFLINE";
+        if (code === "E_NOT_CONFIGURED") return { ok: false, reason: REASON.NOT_CONFIGURED };
+        if (code === "E_NO_SESSION") return { ok: false, reason: REASON.GUEST };
+        if (code === "E_FORBIDDEN") return { ok: false, reason: REASON.OK, code: code, message: r && r.message };
+        return { ok: false, reason: REASON.UNAVAILABLE };
+      }).catch(function () { return { ok: false, reason: REASON.UNAVAILABLE }; });
+    }
+
     return {
       /* 只读出口：给测试与界面看「上一轮问了什么」，不参与判权 */
       last: function () { return { reason: last.reason, at: last.at }; },
@@ -339,7 +445,11 @@
       applyMe: applyMe,
       clearServerTier: clearServerTier,
       refreshMe: refreshMe,
-      deleteAccount: deleteAccount
+      deleteAccount: deleteAccount,
+      /* 权威发放（2.2）：**只有 /admin/ 页调**。不判权限 —— 判权限在服务端。 */
+      adminGrant: adminGrant,
+      adminGrants: adminGrants,
+      adminRevoke: adminRevoke
     };
   }
 
@@ -383,6 +493,10 @@
     refreshMe: refreshOnce,
     /* 这两个是「接线」的直接出口：页面调它们就够了 */
     deleteAccount: function (o) { return boundOnce(o).deleteAccount(o); },
+    /* 权威发放（2.2）：**只有 /admin/ 页用**，别处不许调（有源码扫描守着） */
+    adminGrant: function (o) { return boundOnce(o).adminGrant(o); },
+    adminGrants: function (o) { return boundOnce(o).adminGrants(o); },
+    adminRevoke: function (o) { return boundOnce(o).adminRevoke(o); },
     applyMe: function (o) { return boundOnce(o).applyMe(o); },
     clearServerTier: function (o) { return boundOnce(o).clearServerTier(o); },
     hasLocalSession: function (o) { return boundOnce(o).hasLocalSession(o); },

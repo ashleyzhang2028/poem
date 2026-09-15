@@ -213,6 +213,66 @@ const LOGIN = strip(loginJs), PROFILE = strip(profileJs), ADMIN = strip(adminJs)
     '清空发放名单有二次确认');
 }
 
+/* ========== 六之二、2.2：两份名单分开写、分开渲染，一份也不许说成另一份 ========== */
+{
+  /* 2.2 之后 /admin/ 有**两份名单**，它们不是一回事：
+       · 服务端那一份 = 权威（POST /api/admin/grant → accounts.plan）
+       · 本机那一份   = 「手工发邀请码的本机版」，只在没配服务端时兜底
+     这一节守三件事：
+       ① 界面上两块**分开**（各有各的卡片、各有各的说明），不许混成一块
+       ② 不许把本机那份说成权威，也不许把服务端那份说成「已经能收费」
+       ③ 发放**走接线层**（js/account-api.js），本页不自己 fetch
+  */
+  const adminVisible = stripHtml(SRC.admin);
+
+  chk(/id="server-card"/.test(SRC.admin) && /id="list-card"/.test(SRC.admin),
+    '后台有**两块**名单：服务端那一份与本机那一份各是一张卡');
+  chk(/id="server-list"/.test(SRC.admin) && /id="grant-list"/.test(SRC.admin),
+    '两块各有各的列表挂载点（不是同一个 DOM 复用）');
+  chk(/服务端名单（权威）/.test(adminVisible), '服务端那一块抬头写明「权威」');
+  chk(/本机发放名单/.test(adminVisible), '本机那一块抬头写明是「本机」');
+  chk(/对方改一行存储改不动它/.test(adminVisible),
+    '服务端那一块说清「改一行存储改不动它」（这才是「权威」的具体含义）');
+  chk(/要对方自己导入/.test(adminVisible),
+    '本机那一块说清「要对方自己导入」这层局限（1 期之前那套没变）');
+  chk(/不是权威/.test(adminVisible),
+    '本机那一块**明说它不是权威**（不许让它顶着「服务端已接通」蹭权威）');
+  chk(/两份\*{0,2}不自动同步|不自动同步/.test(adminVisible) || /不自动同步/.test(ADMIN),
+    '说清两份**不自动同步**（服务端发了一条，对方那台机器的本机名单不会跟着多一条）');
+  chk(/对方先登录过一次/.test(adminVisible),
+    '说清服务端发放的**前提**：对方先登录过一次，库里才会有那一行');
+  chk(/没有收款能力|没有任何收款能力/.test(adminVisible),
+    '服务端那一块也明说「本站现在没有收款能力」（权威 ≠ 能收钱，这是 4 期的题）');
+
+  /* 发放走接线层：**本页不许自己 fetch**（有源码扫描守着，与 /profile/ 同一条） */
+  chk(!/fetch\(|XMLHttpRequest/.test(ADMIN),
+    'js/admin-page.js 不自己发网络请求（走 js/account-api.js）');
+  chk(/AccountApi/.test(ADMIN), '发放走 AccountApi（接线层的唯一出口）');
+  chk(/adminGrant|adminRevoke|adminGrants/.test(ADMIN),
+    '三条都走接线层的方法名（本页不自己拼 /api/admin/*）');
+  chk(!/\/api\/admin/.test(ADMIN),
+    'js/admin-page.js 里不出现 /api/admin 字面量（路径只有 js/auth-api.js 一处）');
+  chk(/E_FORBIDDEN|只对管理员开放|403/.test(ADMIN + adminVisible),
+    '角色闸是**服务端**的这件事写进了实现（不是只靠这一页藏入口）');
+
+  /* 脚本顺序：auth-api + account-api 都要加载，且排在 entitlement 之后 */
+  const atIn = (f, name) => SRC[f].indexOf('<script src="/js/' + name + '"></script>');
+  ['auth-api.js', 'account-api.js'].forEach(n => {
+    chk(atIn('admin', n) >= 0, 'admin 页加载了 js/' + n);
+    chk(atIn('admin', n) > atIn('admin', 'entitlement.js'),
+      'js/' + n + ' 排在 entitlement.js 之后（要先把权益层装上）');
+    chk(atIn('admin', n) < atIn('admin', 'admin-page.js'),
+      'js/' + n + ' 排在 admin-page.js 之前（发放要接线层先就位）');
+  });
+
+  /* 失败与「命中 0 条」各说各的话：不许合并成一句「发放失败」 */
+  chk(/r\.changed/.test(ADMIN),
+    'js/admin-page.js 判的是服务端回的 changed（不是自己猜有没有这个人）');
+  chk(/命中 0 条/.test(ADMIN + adminVisible),
+    '命中 0 条被当成**一种如实的状态**说出来（文案里写着这句话），不是错误');
+  chk(/refreshMe|reason/.test(ADMIN), '失败按 reason 分情况说话（不许合并成一句「失败」）');
+}
+
 /* ================= 七、离线：三张页与三份脚本都进预缓存，版本号跟着提 ================= */
 {
   ['login', 'profile', 'admin'].forEach(k => {
@@ -223,7 +283,7 @@ const LOGIN = strip(loginJs), PROFILE = strip(profileJs), ADMIN = strip(adminJs)
   });
   chk(/css\/account\.css/.test(sw), 'sw.js 预缓存里有 css/account.css');
   const ver = parseInt((sw.match(/poem-app-v(\d+)/) || [0, '0'])[1], 10);
-  chk(ver >= 117, '缓存版本已跟着提（本轮新增 3 页 + 1 表 + 4 脚本，实际 v' + ver + '）');
+  chk(ver >= 127, '缓存版本已跟着提（2.2 改了 /admin/ 页与三份脚本，实际 v' + ver + '）');
   // 预缓存清单里的路径必须真的存在，否则 install 时静默失败
   const list = [...sw.matchAll(/"(\.\/[^"]+)"/g)].map(m => m[1]);
   const missing = list.filter(u => {

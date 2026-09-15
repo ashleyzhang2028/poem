@@ -6,7 +6,8 @@
  *   · 数据库走 `memoryStore`（进程内 Map），不需要真 Supabase
  *   · 发信走 `console` 通道（只打日志，不出网）
  *   · HTTP 层用 Node 的 `http` 起一个**只监听 127.0.0.1:0** 的真服务器，
- *     把 `api/*.js` 那六个 handler 挂上去 —— 这样测的是**真的请求-响应链**，
+ *     把 `api/*.js` 那些 handler（九个：1A 的六个 + 2.2 的三个）挂上去 ——
+ *     这样测的是**真的请求-响应链**，
  *     包括 Cookie 头、状态码、JSON 形状，而不是「直接调内核」。
  *
  * 这一层守的是 docs/architecture.md §4.3 那份 review checklist，逐条：
@@ -58,7 +59,7 @@ function boot(envVars) {
   return { restore: () => { keys.forEach(k => { if (saved[k] === undefined) delete process.env[k]; else process.env[k] = saved[k]; }); } };
 }
 
-/** 起一个真 HTTP 服务器，把 6 个 handler 按路由挂上 */
+/** 起一个真 HTTP 服务器，把 9 个 handler 按路由挂上 */
 function serve() {
   const routes = {
     "POST /api/send-code": require("../api/send-code.js"),
@@ -66,7 +67,12 @@ function serve() {
     "GET /api/me": require("../api/me.js"),
     "POST /api/sync/pull": require("../api/sync/pull.js"),
     "POST /api/sync/push": require("../api/sync/push.js"),
-    "DELETE /api/account": require("../api/account.js")
+    "DELETE /api/account": require("../api/account.js"),
+    /* 2.2：权威发放。**第一条能改别人数据的写接口** —— 它必须走真 HTTP 测，
+       因为要测的正是「角色闸在服务端」（直接打接口，不经任何界面）。 */
+    "POST /api/admin/grant": require("../api/admin/grant.js"),
+    "DELETE /api/admin/grant": require("../api/admin/grant.js"),
+    "POST /api/admin/grants": require("../api/admin/grants.js")
   };
   const server = http.createServer((req, res) => {
     const pathname = req.url.split("?")[0];
@@ -878,7 +884,7 @@ async function main() {
          · `/api/*` 是账号与同步接口，每个响应都带 Cookie 与时效。
            缓存它 = 「换个人打开手机还是上一个人的会话」；
            离线应答更糟 —— 会让人以为「登录成功了」，其实什么都没发生。
-         · 上面那条 `req.method !== "GET"` **现在**已经天然挡住了六个接口
+         · 上面那条 `req.method !== "GET"` **现在**已经天然挡住了这些接口
            （全是 POST / DELETE）。这一条是防**将来有人把它改成 GET**：
            那个改法看着无害，却会让「GET 被 SW 缓存」以
            「换个账号看到别人的数据」的形式炸出来。
@@ -1274,6 +1280,204 @@ async function main() {
       eq(me.body.code, "E_NO_SESSION", "码是 E_NO_SESSION");
       chk(me.body.channel === undefined, "未登录时**不下发**任何开通状态（不给未授权的人看服务端内部）");
     } finally { await sv.close(); }
+  }
+
+  /* ==================================================================
+     二十一、2.2：服务端权威发放（POST/DELETE /admin/grant · POST /admin/grants）
+     ==================================================================
+     这是本项目**第一条能改别人数据的写接口**，因此这一节的重点不是「能发」，
+     而是四条不许含糊的边界：
+
+       ① **角色闸在服务端** —— 有会话但不是 owner / admin 时回 403。
+          界面上藏不藏入口不是安全边界：这一节全部**直接打 HTTP**，
+          一个界面都不经过。
+       ② **只认掩码** —— 库里不存明文邮箱（§2.4 第 1 条），接口也不自己掩一次。
+          形状不对回 400，绝不「猜一个」。
+       ③ **命中 0 条不是错误** —— 如实回 matched:0。本方案里对方**先登录一次**
+          才会在库里留下一行，绝不「查不到就替他建一条」（掩码不可逆，
+          造出来的是永远登不上的幽灵行）。
+       ④ **改了就要真的生效** —— 发完之后 /api/me 下发的 tier 必须跟着变，
+          且**收回等价于发一个 free**（没有第二张表，不会出现「收回只做了一半」）。
+     ================================================================== */
+  {
+    /* ---- ① 归一化：只认三个层级、只认掩码形状 ---- */
+    boot({});
+    const core = require("../api/_lib/core.js");
+
+    eq(core.normGrantInput({ emailMask: "a***@qq.com", tier: "pro" }).tier, "pro", "层级 pro 通过");
+    ["free", "pro", "max"].forEach(t => {
+      chk(!core.normGrantInput({ emailMask: "a***@qq.com", tier: t }).bad, "三个合法层级之一通过：" + t);
+    });
+    ["Pro", "PRO", "vip", "", null, "max "].forEach(t => {
+      const r = core.normGrantInput({ emailMask: "a***@qq.com", tier: t });
+      const low = String(t == null ? "" : t).toLowerCase();
+      if (["free", "pro", "max"].indexOf(low) >= 0) return;    // 大小写归一后合法的跳过
+      chk(!!r.bad && r.bad === "E_TIER", "不认识的层级一律拒（" + JSON.stringify(t) + "）—— 不回落 free");
+    });
+    eq(core.normGrantInput({ emailMask: "a***@qq.com", tier: "PRO" }).tier, "pro", "层级大小写归一成小写");
+
+    eq(core.normGrantInput({ emailMask: "zhangmin@163.com", tier: "pro" }).bad, "E_MASK",
+      "**完整邮箱**被拒：只认掩码（库里不存明文，掩码规则只许有一份实现）");
+    eq(core.normGrantInput({ emailMask: "", tier: "pro" }).bad, "E_MASK", "空掩码被拒");
+    eq(core.normGrantInput({ emailMask: "a***@", tier: "pro" }).bad, "E_MASK", "掩码缺域名被拒");
+    eq(core.normGrantInput({ emailMask: "a@b.com", tier: "pro" }).bad, "E_MASK", "没有 *** 的地址被拒");
+    chk(!core.normGrantInput({ emailMask: " A***@QQ.com ", tier: "pro" }).bad, "掩码接受并归一大小写/空格");
+    eq(core.normGrantInput({ emailMask: " A***@QQ.com ", tier: "pro" }).mask, "a***@qq.com", "掩码归一成小写");
+    eq(core.normGrantInput({ emailMask: "a***@qq.com", tier: "pro", until: "x" }).bad, "E_UNTIL",
+      "看不懂的到期时刻被拒（不静默当成永久）");
+    eq(core.normGrantInput({ emailMask: "a***@qq.com", tier: "pro", until: "" }).until, null, "空到期 = 永久");
+    eq(core.normGrantInput({ emailMask: "a***@qq.com", tier: "pro" }).until, null, "缺到期 = 永久");
+
+    /* ---- ② 角色表两端同源：只有 owner / admin 放行 ---- */
+    ["owner", "admin"].forEach(r => chk(core.isAdminRole(r), "服务端放行角色：" + r));
+    ["user", "", null, "OWNER ", "root"].forEach(r => {
+      const low = String(r == null ? "" : r).trim().toLowerCase();
+      if (["owner", "admin"].indexOf(low) >= 0) return;
+      chk(!core.isAdminRole(r), "服务端拒绝角色：" + JSON.stringify(r));
+    });
+    {
+      /* 客户端与**服务端**的角色表对拍：兜底形态可以不同（客户端在没服务端时
+         默认本机主人），但**放行的角色集合必须一致** —— 否则会出现
+         「界面上是管理员、接口回 403」这种自相矛盾的组合。 */
+      const E = require("../js/entitlement.js");
+      ["owner", "admin", "user"].forEach(r => {
+        const srv = core.isAdminRole(r);
+        const cli = E.isOwner(null, { role: r });
+        chk(srv === cli, "角色 " + JSON.stringify(r) + " 两端一致（服务端 " + srv + " ↔ 客户端 " + cli + "）");
+      });
+      /* ⚠️ 不认识的 / 空的角色**两端故意不同**，且这处不同不许被「顺手统一」：
+         服务端没有兜底 —— 没配 role 的账号就是没权限（判的是「能不能改别人数据」）；
+         客户端在拿不到**明确角色**时会退化成「首次打开的这个浏览器就是主人」
+         （那时没有服务端，不兜底则 /admin/ 永远对所有人关着）。
+         兜底形态不同，但**同一个明确角色**的答案必须一致（上面那三条）。 */
+      ["root", "", null].forEach(r => {
+        chk(!core.isAdminRole(r), "服务端对不认识的角色 " + JSON.stringify(r) + " 一律不放行（无兜底）");
+      });
+      chk(E.isOwner(null, { role: "root" }) === true,
+        "客户端遇到不认识的角色时退回本机兜底（那是它本来就有的行为，不是 bug）");
+    }
+
+    /* ---- ③ 走真 HTTP：没有会话 / 不是管理员 / 是管理员，三种各说各的话 ---- */
+    boot({ ALLOW_CODE_ECHO: "1" });
+    const sv = await serve();
+    try {
+      const POST = (p, b, cookie) => call(sv.base, "POST", p, b, cookie);
+
+      const anon = await POST("/api/admin/grant", { emailMask: "a***@qq.com", tier: "pro" });
+      eq(anon.status, 401, "没有会话时回 401（不是 403、不是 500）");
+      eq(anon.body.code, "E_NO_SESSION", "码是 E_NO_SESSION");
+
+      /* 先建一个**普通用户**会话（收码 → 校验），然后拿他的 Cookie 打发放接口 */
+      const u1 = await POST("/api/send-code", { email: "plain@example.com" });
+      eq(u1.status, 202, "普通用户收到码");
+      const c1 = await POST("/api/verify-code", { codeId: u1.body.codeId, code: u1.body.devCode });
+      eq(c1.status, 200, "普通用户登入成功");
+      const plainCookie = String(c1.setCookie || "").split(";")[0];
+      chk(/^kbsid=/.test(plainCookie), "拿到了普通用户的会话 Cookie");
+
+      const forbidden = await POST("/api/admin/grant", { emailMask: "a***@qq.com", tier: "pro" }, plainCookie);
+      eq(forbidden.status, 403, "**普通用户**打发放接口回 403（角色闸在服务端，不经界面）");
+      eq(forbidden.body.code, "E_FORBIDDEN", "码是 E_FORBIDDEN（不是「连不上」，用户不该一直重试）");
+      chk(/管理员/.test(forbidden.body.message), "文案里说清是权限问题");
+
+      const forbidList = await POST("/api/admin/grants", {}, plainCookie);
+      eq(forbidList.status, 403, "列名单也要管理员（只读接口同样走角色闸）");
+
+      const forbidRevoke = await call(sv.base, "DELETE", "/api/admin/grant", { emailMask: "a***@qq.com" }, plainCookie);
+      eq(forbidRevoke.status, 403, "收回也要管理员");
+
+      /* 把这个账号提成 owner（模拟「库里已有一个管理员」——真实流程是改库，
+         这里直接改 store，等于跳过那一步，测的是闸本身） */
+      const cfgM = require("../api/_lib/config.js");
+      const storeM = require("../api/_lib/store.js").getStore(cfgM);
+      const rows = Object.keys(storeM._db.accounts).map(k => storeM._db.accounts[k]);
+      const plain = rows.filter(a => a.email_mask === "p***@example.com")[0];
+      chk(!!plain, "普通用户那一行在库里（掩码 p***@example.com）");
+      plain.role = "owner";
+
+      const noHit = await POST("/api/admin/grant", { emailMask: "nobody***@qq.com", tier: "pro" }, plainCookie);
+      eq(noHit.status, 200, "**命中 0 条不是错误**：回 200（不是 404、不是 400）");
+      eq(noHit.body.matched, 0, "如实回 matched:0");
+      eq(noHit.body.changed, false, "changed 为 false —— 一个字都没改");
+      chk(/先登录/.test(noHit.body.note), "note 里说清成因：对方先登录一次才会有那一行");
+      {
+        const before = Object.keys(storeM._db.accounts).length;
+        const after = Object.keys(storeM._db.accounts).length;
+        eq(after, before, "命中 0 条**不建账号**（掩码不可逆，造出来是永远登不上的幽灵行）");
+      }
+
+      /* 真的发一条：掩码对上库里的行 → 改 plan，并回「改完之后」的层级 */
+      const okG = await POST("/api/admin/grant", { emailMask: "p***@example.com", tier: "pro" }, plainCookie);
+      eq(okG.status, 200, "掩码命中时回 200");
+      eq(okG.body.matched, 1, "matched 如实回 1");
+      eq(okG.body.changed, true, "changed 为 true");
+      eq(okG.body.tier, "pro", "回的是**改完之后**的层级（服务端判定，不是请求体回显）");
+
+      /* ④ 改了要真的生效：/api/me 下发的 tier 必须跟着变 */
+      const me1 = await call(sv.base, "GET", "/api/me", undefined, plainCookie);
+      eq(me1.status, 200, "发完之后 /api/me 拿得到");
+      eq(me1.body.plan.tier, "pro", "**发完就真的生效**：/api/me 下发的 tier 变成 pro");
+      chk(me1.body.features.indexOf("sync.multiDevice") >= 0, "能力清单跟着变（pro 才有跨设备同步）");
+      chk(me1.body.channel && me1.body.channel.db === "memory", "开通状态照旧如实自报（2C 那条没被改坏）");
+
+      /* 有效期：过期即回落 free（与 planTier 同一处判定） */
+      const future = Date.now() + 86400000;
+      const withUntil = await POST("/api/admin/grant", { emailMask: "p***@example.com", tier: "max", until: future }, plainCookie);
+      eq(withUntil.body.tier, "max", "到期时刻写进去之后 tier 是 max");
+      const me2 = await call(sv.base, "GET", "/api/me", undefined, plainCookie);
+      eq(me2.body.plan.until, future, "plan.until 原样下发（客户端据此显示到期日）");
+      const past = await POST("/api/admin/grant", { emailMask: "p***@example.com", tier: "max", until: Date.now() - 1000 }, plainCookie);
+      eq(past.status, 200, "写一个已过去的到期时刻不报错");
+      const me3 = await call(sv.base, "GET", "/api/me", undefined, plainCookie);
+      eq(me3.body.plan.tier, "free", "**到期即回落 free**（与 planTier 同一处判定，不是两套）");
+
+      /* 名单只回掩码、只列非 free，且不回摘要 */
+      await POST("/api/admin/grant", { emailMask: "p***@example.com", tier: "pro" }, plainCookie);
+      const listR = await POST("/api/admin/grants", {}, plainCookie);
+      eq(listR.status, 200, "管理员能列名单");
+      chk(Array.isArray(listR.body.grants), "grants 是数组");
+      eq(listR.body.grants.length, 1, "只列 plan !== free 的行（普通账号不在里面）");
+      eq(listR.body.grants[0].emailMask, "p***@example.com", "只回掩码");
+      chk(!/email_hash/.test(JSON.stringify(listR.body)), "名单里**没有摘要**（泄出去等于「这人是不是本站用户」可被查询）");
+      chk(!JSON.stringify(listR.body).includes("plain@example.com"),
+        "名单里**没有明文邮箱**（掩码是给人看的，明文从不落库也不回传）");
+      chk(!/uid/.test(JSON.stringify(listR.body.grants[0])), "名单里连 uid 都不给（掩码已经够用）");
+
+      /* 收回 = 发一个 free，且不删账号、不删进度 */
+      const rev = await call(sv.base, "DELETE", "/api/admin/grant", { emailMask: "p***@example.com" }, plainCookie);
+      eq(rev.status, 200, "收回回 200");
+      eq(rev.body.changed, true, "收回改了东西");
+      const me4 = await call(sv.base, "GET", "/api/me", undefined, plainCookie);
+      eq(me4.body.plan.tier, "free", "收回之后 /api/me 回落 free");
+      eq(me4.body.uid, plain.uid, "**收回不删账号**（uid 还是那一个，进度记录跟着 uid 走）");
+      const revNo = await call(sv.base, "DELETE", "/api/admin/grant", { emailMask: "nobody***@qq.com" }, plainCookie);
+      eq(revNo.body.matched, 0, "收回一个不存在的掩码：matched 0、不报错");
+
+      /* 写接口都要频控（docs §4.3 第 3 条）：连点要能被拦住 */
+      let sawRate = false;
+      for (let i = 0; i < 60 && !sawRate; i++) {
+        const r = await POST("/api/admin/grant", { emailMask: "p***@example.com", tier: "pro" }, plainCookie);
+        if (r.status === 429) { sawRate = true; eq(r.body.code, "E_RATE_DEVICE", "发放也走设备档频控（429 的码与同步/注销同表）"); }
+      }
+      chk(sawRate, "发放是写接口：连点会被频控拦住（不是只有 send-code 才有频控）");
+    } finally { await sv.close(); }
+
+    /* ---- ④ 没配服务端时：503，一个字都不改（与 /api/me 同口径） ---- */
+    boot({ SESSION_SECRET: "" });
+    const sv2 = await serve();
+    try {
+      const r = await call(sv2.base, "POST", "/api/admin/grant", { emailMask: "a***@qq.com", tier: "pro" });
+      eq(r.status, 503, "缺 SESSION_SECRET 时回 503（不是 500、不是 403）");
+      eq(r.body.code, "E_NOT_CONFIGURED", "码是 E_NOT_CONFIGURED（「未开放」是如实回答）");
+    } finally { await sv2.close(); }
+
+    /* ---- ⑤ 方法校验：GET 不许打这一条（POST / DELETE 之外一律 405） ---- */
+    boot({});
+    const sv3 = await serve();
+    try {
+      const g = await call(sv3.base, "GET", "/api/admin/grant");
+      eq(g.status, 405, "GET /api/admin/grant 回 405（写接口不接受 GET）");
+    } finally { await sv3.close(); }
   }
 
   console.log(fails === 0 ? "\n🎉 服务端账号接口测试全部通过" : "\n❌ " + fails + " 项失败");
