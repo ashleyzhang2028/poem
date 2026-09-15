@@ -6,14 +6,20 @@
  *   · 页底常驻「版权 + 用户协议 / 隐私条款」，且不被底部导航栏（播放栏 / 引导条）遮挡
  *   · 仍然与首页共用同一份存储（poem_recite_settings_v1），改完即生效
  *
- * 分组（功能变多后的归类，见 settings/index.html）：
- *   · 通用     —— 用户名、数据管理（备份 / 清空，全站共用）
- *   · 背诵     —— 学段 / 年级 / 学期 / 背诵范围 / 每日数量 / 进度总览入口
- *   · 我的清单  —— 自选背诵：导入 / 导出 / 改名 / 删除 / 整组移出 / 调顺序
- *   · 阅读辅助  —— 古诗词与古文共用的注音总开关
- *   · 朗读播放  —— 五档连读方式（与集子页圆键菜单读写同一份 poem_play_mode_v1）
- *   本文件不关心分组的具体归类，只按 id 回显与写值；
- *   分组会把 DOM 包一层 .settings-group，选择器一律用 id，所以不受影响。
+ * 二级设置页（Issue #132 后续）：
+ *   设置项多了以后，六组摊成三页二级页，本文件仍是**三页共用**的那一份逻辑：
+ *     /settings/general/  通用     —— 用户名 / 头像印记 / 本机账号 / 数据管理
+ *     /settings/recite/   背诵     —— 学段 / 年级 / 学期 / 范围 / 数量
+ *                                     + 复习算法 + 进度总览入口
+ *     /settings/lists/    我的清单 —— 自选背诵：导入 / 导出 / 改名 / 删除 / 整组移出 / 顺顺序
+ *     /settings/reader/   阅读与朗读 —— 注音总开关 + 五档连读
+ *   主页（/settings/）只列入口 + 法务链接，不加载本文件。
+ *
+ *   ⚠️ 本文件**一页一实例**：每张页只放自己那几组控件，
+ *      所有回显 / 写值都走「取不到就跳过」（`$()` 返回 null 时直接 return），
+ *      所以同一份逻辑在四张页上都跑得对，不靠「哪张页必须有哪几个 id」的假设。
+ *   ⚠️ 分组的容器仍是 .settings-group / .settings-groups，
+ *      本文件不关心分组，只按 id 回显与写值。
  *
  * 「我的清单」那一组（Issue #114 第二条）原先是**首页**底部那张「自选背诵」折叠卡，
  * 用户原话：「所有导入，导出，重命名，删除等等应该全部在设置中进行」。
@@ -205,6 +211,8 @@
     if (uInput) uInput.value = String(settings.username == null ? "" : settings.username);
 
     renderAvatar();
+    renderAccount();
+    renderAlgos();
     renderPlayModes();
     renderCollections();
   }
@@ -617,7 +625,6 @@
       }
     });
 
-    renderAlgos();
   }
 
   /* ---------------- 复习算法（四张模型） ----------------
@@ -832,6 +839,95 @@
       hint.textContent = "当前：" + cur.char + "字 · " + A.INKS[cur.ink].name +
         "（" + from + "）。印记只存在本机，不上传。";
     }
+  }
+
+  /* ---------------- 本机账号（Issue #132 · 二级页「通用」） ----------------
+     本期没有服务端：账号记录（`poem_auth_v1`）与学习进度一样只存在本机，
+     `/privacy/` 里那句「不上传、不云同步」仍然成立。
+     这一块只做**只读展示 + 退出**：
+       · 层级徽章与「当前权限」清单读 js/entitlement.js（全站唯一判据），
+         本页不自己拼 plan / tier（有源码扫描守着）；
+       · 「退出」只清会话，绝不碰任何进度数据（AuthCore.signOut 的口径）；
+       · 注销账号要求重输一次邮箱 —— 但那一步依赖 `/profile/`（还没建），
+         所以这里只给退出，并如实写明「注销在 /profile/ 里做」，不假装有。
+     ------------------------------------------------------------------ */
+
+  /** 取 AuthCore / Entitlement（脚本顺序不对或老缓存时返回 null，宁可不画也不报错） */
+  function authMod() {
+    return window.AuthCore || null;
+  }
+  function entitlementMod() {
+    return window.Entitlement || null;
+  }
+
+  /** 当前身份（会话 + 本机名单合成）：页面上只准用它，不自己拼 ctx */
+  function currentIdentity() {
+    const E = entitlementMod();
+    if (!E) return null;
+    try {
+      return E.identity({ backing: window.localStorage });
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /** 画「账号」这一项：已登录 / 未登录两种形态，文案如实 */
+  function renderAccount() {
+    const box = $("#account-panel");
+    if (!box) return;
+    const A = authMod();
+    const E = entitlementMod();
+    const ident = currentIdentity();
+
+    if (!A || !E || !ident) {
+      box.innerHTML = '<p class="settings-hint">账号信息加载失败：请刷新页面重试。</p>';
+      return;
+    }
+
+    const badge = '<span class="tier-badge tier-' + ident.tier + '" id="account-tier">' +
+      E.tierLabel(ident.tier) + "</span>";
+
+    if (!ident.signedIn) {
+      box.innerHTML =
+        '<p class="account-line"><span class="account-state" id="account-state">未登录</span>' +
+        "（游客）" + badge + "</p>" +
+        '<p class="settings-hint">不登录也能用全部功能；账号只影响「语音朗读」与将来的同步。' +
+        "登录入口在 <code>/login/</code>，还没建（见 docs/auth-design.md §11）。</p>" +
+        '<p class="settings-hint">本机账号与学习进度一样<strong>只存在本机</strong>，不上传、不云同步。</p>';
+      return;
+    }
+
+    const rows = E.matrix(ident).map(function (m) {
+      const mark = m.ok ? "✓" : "·";
+      const tail = m.ok ? (m.hint ? "（" + m.hint + "）" : "") : "（" + m.hint + "）";
+      return '<li class="account-cap' + (m.ok ? " ok" : " off") + '">' +
+        '<span class="cap-mark" aria-hidden="true">' + mark + "</span>" +
+        '<span class="cap-name">' + m.name + "</span>" +
+        '<span class="cap-hint">' + tail + "</span></li>";
+    }).join("");
+
+    box.innerHTML =
+      '<p class="account-line"><span class="account-state ok" id="account-state">已登录</span>' +
+      '<span class="account-mask" id="account-mask">' + (ident.mask || "本机账号") + "</span>" + badge + "</p>" +
+      '<ul class="account-caps" id="account-caps">' + rows + "</ul>" +
+      '<div class="settings-btns"><button class="btn ghost-btn" id="btn-signout" type="button">退出登录</button></div>' +
+      '<p class="settings-hint">退出只结束这次登录，不会删掉任何背诵进度。' +
+      "本机账号与进度一样只存在本机，不上传、不云同步；注销账号在个人中心（/profile/）里做。</p>";
+  }
+
+  /** 「退出登录」：只清会话，不碰进度 */
+  function bindAccount() {
+    const btn = $("#btn-signout");
+    if (!btn) return;
+    btn.addEventListener("click", function () {
+      if (!window.confirm("退出登录？背诵进度不会受影响。")) return;
+      const A = authMod();
+      try {
+        if (A && A.makeStore) A.signOut(A.makeStore(window.localStorage));
+      } catch (e) { /* 存储不可用：至少把界面还原成未登录 */ }
+      renderAccount();
+      showToast("已退出登录，进度都还在这台设备上");
+    });
   }
 
   /** 换字 / 换色 / 还原默认：写 `poem_profile_v1`，再让顶栏重画 */
@@ -1080,6 +1176,7 @@
     bindEvents();
     bindCollections();
     bindSealPicker();
+    bindAccount();
     // 另一个标签页改了播放档位（集子页那颗圆键）时，本页单选项跟着变 ——
     // storage 事件只在「别的标签页」触发，正是这里需要的方向。
     window.addEventListener("storage", function (e) {

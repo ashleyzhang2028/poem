@@ -473,13 +473,14 @@ setTimeout(() => {
       '导入进来的篇目照样带题名与正文（能排进今日任务）');
 
     /* ---- 页面上的键真的存在：导入键 + 每集合的导出键 + 移动键 + 整组移出键 ----
-       ⚠️ 这一整套增删改查的界面，Issue #114 第二条起住**设置整页**的「我的清单」，
+       ⚠️ 这一整套增删改查的界面，Issue #114 第二条起住**设置**的「我的清单」，
           不再住在首页底部那张折叠卡上（用户原话：「所有导入，导出，重命名，删除
-          等等应该全部在设置中进行」）。所以下面点的是 settings/index.html +
-          js/settings.js 的名。
+          等等应该全部在设置中进行」）。
+          ⚠️ Issue #132 后续又把设置拆成二级页，「我的清单」独占一页，
+          所以下面读的是 settings/lists/index.html + js/settings.js 的名。
           ⚠️ 但 js/collections.js（这一层测的数据层）一个字没动：两处读的仍是
           同一份 localStorage 键 poem_recite_collections_v1。 */
-    const setSrc = fs.readFileSync(path + 'settings/index.html', 'utf8');
+    const setSrc = fs.readFileSync(path + 'settings/lists/index.html', 'utf8');
     chk(/id="btn-collections-import"/.test(setSrc),
       '设置页有「导入清单」键（id=btn-collections-import）');
     chk(/id="text-dialog"/.test(setSrc) && /id="text-dialog-text"/.test(setSrc),
@@ -549,7 +550,7 @@ setTimeout(() => {
        上面「六 / 七」验的是 js/collections.js 这一层的数据逻辑（一个字没动），
        这一节验**界面搬过去之后真的能跑**：起一个设置页实例，把「改名 / 导出 /
        上移下移 / 移出 / 删除集合 / 整组移出」逐条走一遍。 */
-    const settingsHtml = fs.readFileSync(path + 'settings/index.html', 'utf8');
+    const settingsHtml = fs.readFileSync(path + 'settings/lists/index.html', 'utf8');
     const setOrder = settingsHtml.match(/<script src="([^"]+)"><\/script>/g)
       .map(x => x.match(/src="([^"]+)"/)[1]);
     chk(setOrder.indexOf('/js/collections.js') >= 0 && setOrder.indexOf('/js/collections.js') < setOrder.indexOf('/js/settings.js'),
@@ -557,7 +558,7 @@ setTimeout(() => {
     chk(setOrder.indexOf('/data/site-index.js') >= 0,
       '设置页加载了站点总索引（清单里每一篇要靠它认题名 / 作者 / 集子名）');
 
-    const domS = new JSDOM(settingsHtml, { runScripts: 'dangerously', url: 'https://local.test/settings/' });
+    const domS = new JSDOM(settingsHtml, { runScripts: 'dangerously', url: 'https://local.test/settings/lists/', base: 'https://local.test/settings/lists/' });
     const ws = domS.window;
     // 预置一个集合：一条课内（索引里查得到）+ 一条唐诗（设置页不加载那一部，
     // 只能靠加入时存下的快照画出来 —— 正是要验的那条回落路径）

@@ -121,7 +121,16 @@ chk(missing.length === 0, "课内 + 小古文全部汉字都有注音（缺 " + 
 chk(d.POEMS_CLASSIC.length === 100, "小古文共 100 篇（实际 " + d.POEMS_CLASSIC.length + "）");
 
 /* ---------- 二、课内弹层注音（jsdom） ---------- */
-const URL_OF = { "index.html": "/", "classic/index.html": "/classic/", "settings/index.html": "/settings/" };
+// 设置拆成二级页（Issue #132 后续）：注音开关住在「阅读与朗读」页，
+// 清单类控件（收藏 / 自选合集）住在「我的清单」页。
+const URL_OF = {
+  "index.html": "/",
+  "classic/index.html": "/classic/",
+  "settings/index.html": "/settings/",
+  "settings/recite/index.html": "/settings/recite/",
+  "settings/lists/index.html": "/settings/lists/",
+  "settings/reader/index.html": "/settings/reader/"
+};
 
 function bootPage(name) {
   const dom = new JSDOM(fs.readFileSync(ROOT + name, "utf8"), {
@@ -233,8 +242,8 @@ setTimeout(async () => {
     "注音档位文案精简为 不注音/生字/全文");
   chk(!!seg.querySelector('button[data-mode="rare"]'), "默认档「只标生字」按钮存在");
   chk(!!doc.querySelector("#m-read-btn"), "诗词弹层有「朗读」按钮");
-  // 设置已改成独立整页（/settings/），开关住在那一页
-  const settingsWin = bootPage("settings/index.html");
+  // 设置已改成独立整页，Issue #132 后续又拆成二级页：注音开关住在「阅读与朗读」页
+  const settingsWin = bootPage("settings/reader/index.html");
   settingsWin.document.dispatchEvent(new settingsWin.Event("DOMContentLoaded", { bubbles: true }));
   chk(!!settingsWin.document.querySelector("#seg-helper"), "设置页里有「阅读辅助」开关");
   chk(!doc.querySelector("#seg-helper"), "首页不再有设置弹层里的阅读辅助开关");

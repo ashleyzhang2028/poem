@@ -263,7 +263,9 @@ chk(/\.ghost-btn \{[\s\S]{0,400}?text-decoration:\s*none/.test(css),
 // 所以浏览器默认下划线真的会漏出来；顺带钉住改版后的标签与按钮文案。
 // 注意：settingsHtml 这个常量要到第 7 节才声明，本轮的两条断言挨着按钮样式写，
 // 所以这里读源码用顶部的 read()，不复用那个后声明的名字。
-const settingsSrc = read('settings/index.html');
+// ⚠️ 这几条断言的控件住在「背诵」二级页（Issue #132 后续拆页），
+//    读的是那一页的源码，不是主页 —— 主页只列四个入口。
+const settingsSrc = read('settings/recite/index.html');
 chk(/<a class="btn ghost-btn" href="\/progress\/"/.test(settingsSrc),
   '设置页进「进度总览」的按钮仍是 <a>（因此必须显式去掉链接默认下划线）');
 // 需求（Issue #122）：这一块原先写着「背诵进度」+「看进度总览」两行、
@@ -677,7 +679,21 @@ chk(Buffer.compare(norm, any) !== 0, 'maskable 图标与普通图标是两份不
 
 
 /* ---------------- 7. 设置整页 + 底部导航栏不遮挡 ---------------- */
+/* 设置拆成**二级页**（Issue #132 后续）：
+   /settings/          主页：四个入口 + 页脚
+   /settings/general/ 通用（用户名 / 头像印记 / 账号 / 数据管理）
+   /settings/recite/  背诵（学段 / 年级 / 学期 / 范围 / 数量）+ 复习算法
+   /settings/lists/   我的清单（自选背诵的增删改查）
+   /settings/reader/  阅读与朗读（注音 + 五档连读）
+   下面的断言按这一结构读源码：分组判据仍是原来那六组、顺序不变，
+   只是要「合起来看」——拆页不该顺手改分类。 */
 const settingsHtml = read('settings/index.html');
+const SETTINGS_HTML = [
+  'settings/general/index.html',
+  'settings/recite/index.html',
+  'settings/lists/index.html',
+  'settings/reader/index.html'
+].map(read).join('\n');
 const settingsJs = read('js/settings.js');
 const pwaJs = read('js/pwa.js');
 
@@ -686,11 +702,25 @@ chk(html.indexOf('settings-modal') === -1, '首页不再有向上弹出的设置
 // 设置的入口是底部页签「设置」，由 js/chrome.js 渲染成真实链接
 chk(/href:\s*"\/settings\/"/.test(read('js/chrome.js')), '底部页签「设置」指向设置整页（目录化路径）');
 chk(html.indexOf('btn-settings') === -1, '首页顶栏不再有设置齿轮（入口收敛到页签）');
-chk(/data-nav="settings"/.test(settingsHtml), '设置页声明自己是「设置」页签');
+chk(/data-nav="settings"/.test(settingsHtml), '设置主页声明自己是「设置」页签');
 chk(/js\/chrome\.js/.test(settingsHtml), '设置页与首页共用同一套顶栏与底部页签');
-chk(settingsHtml.indexOf('id="settings-page"') !== -1, '设置页有独立的整页容器');
+chk(settingsHtml.indexOf('id="settings-page"') !== -1, '设置主页有独立的整页容器');
 chk(settingsHtml.indexOf('settings-modal') === -1, '设置页不再用弹层结构');
-chk(settingsHtml.indexOf('class="foot settings-foot"') !== -1, '设置页底部有页脚（版权 + 法务链接）');
+chk(settingsHtml.indexOf('class="foot settings-foot"') !== -1, '设置主页底部有页脚（版权 + 法务链接）');
+// 四张二级页与主页一样：声明页签、共用顶栏、有整页容器与页脚、不用弹层
+['settings/general/index.html', 'settings/recite/index.html',
+ 'settings/lists/index.html', 'settings/reader/index.html'].forEach(f => {
+  const src = read(f);
+  chk(/data-nav="settings"/.test(src), f + ' 声明自己是「设置」页签（页签选中态不漂）');
+  chk(/js\/chrome\.js/.test(src), f + ' 共用同一套顶栏与底部页签');
+  chk(src.indexOf('id="settings-page"') !== -1, f + ' 有独立的整页容器');
+  chk(src.indexOf('class="foot settings-foot"') !== -1, f + ' 有页脚（版权 + 法务链接）');
+  chk(src.indexOf('settings-modal') === -1, f + ' 不用弹层结构');
+  // 二级页的返回键回设置主页，而不是回背诵首页
+  chk(/data-back="\/settings\/"/.test(src), f + ' 顶栏返回键指回设置主页');
+});
+chk(/data-back="\/settings\/"/.test(read('settings/general/index.html')),
+  '二级页用 data-back 声明上一层（js/chrome.js 读它）');
 
 // 需求（Issue #114 第三、二条 + 可切换复习算法那一轮）：
 // 设置项多了以后按「这条设置管着谁」归类 —— 共六组：
@@ -701,26 +731,26 @@ chk(settingsHtml.indexOf('class="foot settings-foot"') !== -1, '设置页底部�
 //   复习算法  决定「下次什么时候复习」（四张模型 4 选 1）
 //   阅读辅助  打开一篇时看不看得到拼音（注音总开关）
 //   朗读播放  连读时怎么念（五档档位）
-chk((settingsHtml.match(/class="settings-group"/g) || []).length === 6,
-  '设置分六组：通用 / 背诵 / 我的清单 / 复习算法 / 阅读辅助 / 朗读播放');
-chk(/settings-group-title[^>]*>复习算法</.test(settingsHtml), '有「复习算法」分组标题');
-chk(/settings-group-title[^>]*>通用</.test(settingsHtml), '有「通用」分组标题');
-chk(/settings-group-title[^>]*>背诵</.test(settingsHtml), '有「背诵」分组标题');
-chk(/settings-group-title[^>]*>我的清单</.test(settingsHtml), '有「我的清单」分组标题');
-chk(/settings-group-title[^>]*>阅读辅助</.test(settingsHtml), '有「阅读辅助」分组标题');
-chk(/settings-group-title[^>]*>朗读播放</.test(settingsHtml), '有「朗读播放」分组标题');
+chk((SETTINGS_HTML.match(/class="settings-group"/g) || []).length === 6,
+  '四张设置页合起来仍是六组：通用 / 背诵 / 复习算法 / 我的清单 / 阅读辅助 / 朗读播放');
+chk(/settings-group-title[^>]*>复习算法</.test(SETTINGS_HTML), '有「复习算法」分组标题');
+chk(/settings-group-title[^>]*>通用</.test(SETTINGS_HTML), '有「通用」分组标题');
+chk(/settings-group-title[^>]*>背诵</.test(SETTINGS_HTML), '有「背诵」分组标题');
+chk(/settings-group-title[^>]*>我的清单</.test(SETTINGS_HTML), '有「我的清单」分组标题');
+chk(/settings-group-title[^>]*>阅读辅助</.test(SETTINGS_HTML), '有「阅读辅助」分组标题');
+chk(/settings-group-title[^>]*>朗读播放</.test(SETTINGS_HTML), '有「朗读播放」分组标题');
 // 分组的**顺序**也是分类的一部分：清单紧跟在「背诵」之后
 //（自选篇目就是跟着背诵走的），阅读 / 朗读两个偏好排在最后
 {
-  const order = [...settingsHtml.matchAll(/aria-labelledby="grp-([a-z]+)"/g)].map(m => m[1]);
+  const order = [...SETTINGS_HTML.matchAll(/aria-labelledby="grp-([a-z]+)"/g)].map(m => m[1]);
   chk(order.join(',') === 'general,recite,algo,lists,reader,play',
     '六组的先后顺序为 通用 → 背诵 → 复习算法 → 我的清单 → 阅读辅助 → 朗读播放（实际 ' + order.join(',') + '）');
 }
 // 分组要真的装对东西：只给背诵用的选项不能落在「通用」里
-const generalBlock = (settingsHtml.match(/aria-labelledby="grp-general"[\s\S]*?<\/section>/) || [''])[0];
-const reciteBlock = (settingsHtml.match(/aria-labelledby="grp-recite"[\s\S]*?<\/section>/) || [''])[0];
-const listsBlock = (settingsHtml.match(/aria-labelledby="grp-lists"[\s\S]*?<\/section>/) || [''])[0];
-const readerBlock = (settingsHtml.match(/aria-labelledby="grp-reader"[\s\S]*?<\/section>/) || [''])[0];
+const generalBlock = (SETTINGS_HTML.match(/aria-labelledby="grp-general"[\s\S]*?<\/section>/) || [''])[0];
+const reciteBlock = (SETTINGS_HTML.match(/aria-labelledby="grp-recite"[\s\S]*?<\/section>/) || [''])[0];
+const listsBlock = (SETTINGS_HTML.match(/aria-labelledby="grp-lists"[\s\S]*?<\/section>/) || [''])[0];
+const readerBlock = (SETTINGS_HTML.match(/aria-labelledby="grp-reader"[\s\S]*?<\/section>/) || [''])[0];
 chk(!!generalBlock && !!reciteBlock && !!listsBlock && !!readerBlock, '各分组自己的区块都能取到');
 chk(/id="input-username"/.test(generalBlock), '「通用」组含用户名');
 chk(/id="btn-export"/.test(generalBlock) && /id="btn-import"/.test(generalBlock) && /id="btn-reset"/.test(generalBlock),
@@ -745,20 +775,20 @@ chk(/id="seg-helper"/.test(readerBlock), '「阅读辅助」组含注音总开�
 // main）时发现这条断言一直亮红，是本 PR 里把「不指点操作」的那半段放回了本组
 // （只讲圆键长按 / 右键弹出同一个菜单，不再教手势）。这条断言因此改成正向钉住：
 // 组内确实写回了「长按 / 右键」，但只说圆键，不再重复讲手机上怎么按。
-const playBlock = (settingsHtml.match(/aria-labelledby="grp-play"[\s\S]*?<\/section>/) || [''])[0];
+const playBlock = (SETTINGS_HTML.match(/aria-labelledby="grp-play"[\s\S]*?<\/section>/) || [''])[0];
 chk(!!playBlock, '「朗读播放」分组能取到');
 chk(/id="seg-play"/.test(playBlock), '「朗读播放」组有五档单选项容器');
 chk(/长按 \/ 右键/.test(playBlock),
   '「朗读播放」组说明圆键长按 / 右键弹出的是同一个菜单（Issue #122 把 #120 误删的这半段放回）');
 chk(!/长按约半秒/.test(playBlock), '同一组里不再重复教手势怎么按（只说手势叫什么，不说按多久）');
 // 档位定义必须同源：设置页与阅读器都读 js/play-modes.js，不得各写一份
-chk(/js\/play-modes\.js/.test(settingsHtml), '设置页加载 js/play-modes.js（与阅读器同源）');
+chk(/js\/play-modes\.js/.test(SETTINGS_HTML), '设置页加载 js/play-modes.js（与阅读器同源）');
 chk(/window\.PlayModes/.test(settingsJs) && /PM*\.(read|LIST|write|of)\b/.test(settingsJs),
   '设置页逻辑从 PlayModes 取档位，而不是另抄一份字面量');
 chk(!/seq-origin|shuffle-trans/.test(settingsJs),
   '设置页 JS 里不再出现模式 id 字面量（避免与阅读器错开）');
 // 设置页不加载 reader-core（那是集子页的引擎），档位只能走 play-modes.js
-chk(!/js\/reader-core\.js/.test(settingsHtml), '设置页不加载阅读器引擎（只引档位定义）');
+chk(!/js\/reader-core\.js/.test(SETTINGS_HTML), '设置页不加载阅读器引擎（只引档位定义）');
 // 分组标题的样式：与选项药丸区分开，且靠一条细线收尾
 chk(/\.settings-group-title\s*\{[\s\S]{0,300}?letter-spacing/.test(css),
   '分组标题用字距拉开，与组内选项区分（命中 .settings-group-title 样式）');
@@ -798,7 +828,7 @@ chk(brandFs >= 17 && titleFs < brandFs,
 chk(optFs >= 13 && titleFs < optFs,
   '分组标题（' + titleFs + 'px）小于组内选项文字（' + optFs + 'px）');
 chk(!/\.settings-group-desc/.test(css), '样式里不再保留二级描述 .settings-group-desc');
-chk(!/settings-group-desc/.test(settingsHtml), '设置页 HTML 里不再有二级描述节点');
+chk(!/settings-group-desc/.test(SETTINGS_HTML), '设置页 HTML 里不再有二级描述节点');
 
 /* ---------------- 7d. 全站一致性（本次 UI review 的修复） ----------------
    逐页看过之后收口的一致性问题，每条都对应一个真实可复现的现象，

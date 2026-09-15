@@ -402,8 +402,10 @@ setTimeout(() => {
         .indexOf('还没有到期的篇目') >= 0,
         '一篇都没学过时清单给一句说明（不是白屏）');
 
-      /* ---- 入口：设置页进得来、页签「背诵」保持选中 ---- */
-      const settingsHtml = fs.readFileSync(path + 'settings/index.html', 'utf8');
+      /* ---- 入口：设置页进得来、页签「背诵」保持选中 ----
+         ⚠️ Issue #132 后续把设置拆成二级页，这一项住在「背诵」页
+            （/settings/recite/）—— 它决定「今天背哪几首」，与那一页同一件事。 */
+      const settingsHtml = fs.readFileSync(path + 'settings/recite/index.html', 'utf8');
       chk(/href="\/progress\/"/.test(settingsHtml),
         '设置页有进「进度总览」的链接（/progress/）');
       // 需求（Issue #122）：标签与按钮都收敛成「进度总览」一个词

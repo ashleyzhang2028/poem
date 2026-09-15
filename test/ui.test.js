@@ -3,19 +3,35 @@ const fs = require('fs');
 const path = __dirname + '/../';
 
 const html = fs.readFileSync(path + 'index.html', 'utf8');
-// 设置已从「底部弹出的卡片」改为独立整页（/settings/），页脚也搬到了这一页
-const settingsHtml = fs.readFileSync(path + 'settings/index.html', 'utf8');
+// 设置已从「底部弹出的卡片」改为独立整页（/settings/），页脚也搬到了这一页；
+// 再进一步（Issue #132 后续）拆成**二级设置页**：
+//   /settings/          主页：四个入口 + 页脚
+//   /settings/general/  通用     —— 用户名 / 头像印记 / 数据管理
+//   /settings/recite/   背诵     —— 学段 / 年级 / 学期 / 范围 / 数量 + 复习算法
+//   /settings/lists/    我的清单 —— 自选背诵的增删改查
+//   /settings/reader/   阅读与朗读 —— 注音总开关 + 五档连读
+// 下面这一条路径映射同时给「源码扫描」与「起页实例」两处用。
+const SETTINGS_PAGE = {
+  'settings/index.html': '/settings/',
+  'settings/general/index.html': '/settings/general/',
+  'settings/recite/index.html': '/settings/recite/',
+  'settings/lists/index.html': '/settings/lists/',
+  'settings/reader/index.html': '/settings/reader/'
+};
 
-/** 起一个设置整页实例（供读取设置项回显 / 改写配置） */
-function bootSettingsPage(seed) {
-  const sdom = new JSDOM(settingsHtml, { runScripts: 'dangerously', url: 'https://local.test/settings/', base: 'https://local.test/settings/' });
+/** 起一张设置页实例（主页 + 四张二级页共用同一套起页方式） */
+function bootSettingsPage(seed, file) {
+  const f = file || 'settings/index.html';
+  const url = 'https://local.test' + SETTINGS_PAGE[f];
+  const src = fs.readFileSync(path + f, 'utf8');
+  const sdom = new JSDOM(src, { runScripts: 'dangerously', url: url, base: url });
   const sw = sdom.window;
   if (seed) for (const k in seed) sw.localStorage.setItem(k, seed[k]);
-  settingsHtml.match(/<script src="([^"]+)"><\/script>/g)
+  src.match(/<script src="([^"]+)"><\/script>/g)
     .map(x => x.match(/src="([^"]+)"/)[1])
-    .forEach(f => {
+    .forEach(rel => {
       const el = sw.document.createElement('script');
-      el.textContent = fs.readFileSync(path + f, 'utf8');
+      el.textContent = fs.readFileSync(path + rel.replace(/^\//, ''), 'utf8');
       sw.document.body.appendChild(el);
     });
   // jsdom 解析完 HTML 后 DOMContentLoaded 已触发过，注入脚本后手动补一次
@@ -85,13 +101,13 @@ setTimeout(() => {
   // 顶栏那枚印读的是同一份档案：用户选了「梅」，顶栏就得显示梅（不能偷偷回落成「诗」）
   const spSeal = bootSettingsPage({
     poem_profile_v1: JSON.stringify({ v: 1, nickname: '玥玥', avatar: { char: '梅', ink: 'pine' } })
-  });
+  }, 'settings/general/index.html');
   const sealTop = spSeal.doc.querySelector('.topbar #top-user .seal-avatar');
   chk(!!sealTop && sealTop.textContent === '梅', '顶栏的印与档案同源（选了「梅」就画「梅」，实际 ' +
     (sealTop ? sealTop.textContent : '缺失') + '）');
   chk(/梅/.test(sealTop.getAttribute('aria-label')), '印的读屏标签也写清了是哪个字');
   const sealSlot = spSeal.doc.querySelector('#avatar-slot .seal-avatar');
-  chk(!!sealSlot && sealSlot.textContent === '梅', '设置页昵称旁那枚印与顶栏是同一枚');
+  chk(!!sealSlot && sealSlot.textContent === '梅', '「通用」页昵称旁那枚印与顶栏是同一枚');
   // 需求：版权 + 用户协议 / 隐私条款 从首页挪到设置整页底部
   chk(d.querySelector('.app > .foot') === null, '首页不再挂页脚（法务链接已挪到设置页底部）');
   const spEarly = bootSettingsPage(null);
@@ -182,92 +198,159 @@ setTimeout(() => {
   chk(!d.querySelector('.selector.card'), '年级/学期选择不再常驻首页');
   // 设置是独立整页（不是弹层）：相关内容在 settings.html 里校验
   chk(d.querySelector('#settings-modal') === null, '首页不再有「向上弹出的设置卡片」');
-  const sp = bootSettingsPage(null);
-  const sd = sp.doc;
-  chk(!!sd.querySelector('#input-username'), '设置页含用户名输入框');
-  chk(!!sd.querySelector('#seg-stage'), '学段选择已移入设置');
-  chk(!!sd.querySelector('#seg-term'), '学期选择已移入设置');
-  chk(!!sd.querySelector('#grade-chips'), '年级选择已移入设置');
-  chk(sd.querySelectorAll('#grade-chips button').length === 6, '设置页默认小学显示 6 个年级按钮');
+  const spGeneral = bootSettingsPage(null, 'settings/general/index.html');
+  const sgeneral = spGeneral.doc;
+  const spRecite = bootSettingsPage(null, 'settings/recite/index.html');
+  const srecite = spRecite.doc;
+  const spLists = bootSettingsPage(null, 'settings/lists/index.html');
+  const slists = spLists.doc;
+  const spReader = bootSettingsPage(null, 'settings/reader/index.html');
+  const sreader = spReader.doc;
+  const spIndex = bootSettingsPage(null);
+  const sindex = spIndex.doc;
+
+  // 主页：只列四个入口 + 页脚，控件都搬到各二级页
+  chk(sindex.querySelectorAll('#settings-index a.settings-link').length === 4,
+    '设置主页有四个二级页入口（实际 ' + sindex.querySelectorAll('#settings-index a.settings-link').length + '）');
+  chk([...sindex.querySelectorAll('#settings-index a.settings-link')].map(a => a.getAttribute('href')).join(' ') ===
+    '/settings/general/ /settings/recite/ /settings/lists/ /settings/reader/',
+    '四个入口指向目录化的二级页地址（不带 .html）');
+  chk(!sindex.querySelector('#input-username') && !sindex.querySelector('#seg-stage') &&
+    !sindex.querySelector('#collections-list') && !sindex.querySelector('#seg-play'),
+    '主页不再堆控件（用户名 / 学段 / 清单 / 连读都搬去各二级页）');
+  chk(!/<script src="[^"]*js\/settings\.js"><\/script>/.test(fs.readFileSync(path + 'settings/index.html', 'utf8')),
+    '主页不加载 js/settings.js（它只管进哪一页）');
+  chk(/<script src="\/js\/settings-nav\.js"><\/script>/.test(fs.readFileSync(path + 'settings/index.html', 'utf8')),
+    '主页加载 js/settings-nav.js（四个入口的唯一来源）');
+  chk(!!sindex.querySelector('.settings-foot'), '设置主页底部仍有页脚');
+
+  // 二级页：每一页只放自己那一组/几组
+  chk(!!sgeneral.querySelector('#input-username'), '「通用」页含用户名输入框');
+  chk(!!sgeneral.querySelector('#account-panel'), '「通用」页含账号一项');
+  chk(!!srecite.querySelector('#seg-stage'), '学段选择在「背诵」页');
+  chk(!!srecite.querySelector('#seg-term'), '学期选择在「背诵」页');
+  chk(!!srecite.querySelector('#grade-chips'), '年级选择在「背诵」页');
+  chk(srecite.querySelectorAll('#grade-chips button').length === 6, '「背诵」页默认小学显示 6 个年级按钮');
   // 需求（本次）：一页里五个组合（学段 / 学期 / 背诵范围 / 阅读辅助 / 每日数量）
   // 与「年级」用同一套选中语言 —— 每行都恰好一个选中项，不再出现「这行选了、那行没选」的错觉。
-  const groups = ['#seg-stage', '#seg-term', '#seg-scope', '#seg-helper', '#seg-count', '#grade-chips'];
-  chk(groups.every(sel => {
-    const btns = [...sd.querySelectorAll(sel + ' button')];
+  // ⚠️ 二级页之后这六个组合不再同住一页：背诵三项在「背诵」页、
+  //    注音在「阅读与朗读」页，所以要按页取（同一条判据仍成立）。
+  const activeOne = (doc, sel) => {
+    const btns = [...doc.querySelectorAll(sel + ' button')];
     return btns.length > 0 && btns.filter(b => b.classList.contains('active')).length === 1;
-  }), '设置页每个组合都恰好一个选中项（学段/学期/范围/辅助/数量/年级）');
+  };
+  const comboPages = [
+    ['背诵', srecite, ['#seg-stage', '#seg-term', '#seg-scope', '#seg-count', '#grade-chips']],
+    ['阅读与朗读', sreader, ['#seg-helper']]
+  ];
+  chk(comboPages.every(([, doc, sels]) => sels.every(sel => activeOne(doc, sel))),
+    '每个组合都恰好一个选中项（学段/学期/范围/数量/年级 · 注音）');
   // 选中态是同一套 class（.active），样式由 .settings-page 作用域统一接管，
   // 因此不存在「年级用 .active、别的用另一套」这种分叉。
-  chk(groups.every(sel => sd.querySelector(sel + ' button.active')),
+  chk(comboPages.every(([, doc, sels]) => sels.every(sel => doc.querySelector(sel + ' button.active'))),
     '六个组合的选中态都用同一个 .active 类名，样式可被整段统一');
   // 需求（本次）：设置项按用途归类成「通用 / 古诗词背诵 / 阅读辅助」三组；
   // 后续（Issue #69）追加「朗读播放」一组 —— 连读档位原先只在圆键菜单里，
   // 界面上没有任何入口，这一组就是补上的显式入口。
   // 分组（Issue #114 第二、三条 + 可切换复习算法那一轮）：
-  //   通用      用户名、数据备份 / 清空（全站共用）
-  //   背诵      学段 / 年级 / 学期 / 范围 / 数量 / 进度总览（原「古诗词背诵」改名）
+  //   通用      用户名、头像印记、账号、数据备份 / 清空（全站共用）
+  //   背诵      学段 / 年级 / 学期 / 范围 / 数量 / 进度总览
   //   复习算法   四张模型 4 选 1（决定「下次什么时候复习」）
   //   我的清单   自选背诵：导入 / 导出 / 改名 / 删除 / 整组移出 / 调顺序
   //   阅读辅助   注音总开关
   //   朗读播放   五档连读方式
-  const setGroups = [...sd.querySelectorAll('#settings-page .settings-group')];
-  chk(setGroups.length === 6, '设置页渲染出六组（实际 ' + setGroups.length + '）');
-  const groupTitles = setGroups.map(g => (g.querySelector('.settings-group-title') || {}).textContent);
-  chk(groupTitles.join('/') === '通用/背诵/复习算法/我的清单/阅读辅助/朗读播放',
-    '分组顺序与标题正确：' + groupTitles.join(' / '));
+  // 二级页（Issue #132 后续）不再改变**分组**，只是把它们摊到三张页上：
+  //   通用 → /settings/general/      背诵 + 复习算法 → /settings/recite/
+  //   我的清单 → /settings/lists/    阅读辅助 + 朗读播放 → /settings/reader/
+  const groupTitlesOf = doc => [...doc.querySelectorAll('#settings-page .settings-group')]
+    .map(g => (g.querySelector('.settings-group-title') || {}).textContent);
+  chk(groupTitlesOf(sgeneral).join('/') === '通用', '「通用」页只有一组：通用');
+  chk(groupTitlesOf(srecite).join('/') === '背诵/复习算法',
+    '「背诵」页是两组：背诵 + 复习算法（实际 ' + groupTitlesOf(srecite).join('/') + '）');
+  chk(groupTitlesOf(slists).join('/') === '我的清单', '「我的清单」页只有一组：我的清单');
+  chk(groupTitlesOf(sreader).join('/') === '阅读辅助/朗读播放',
+    '「阅读与朗读」页是两组：阅读辅助 + 朗读播放（实际 ' + groupTitlesOf(sreader).join('/') + '）');
+  // 四张页合起来仍是原来那六组，顺序不变 —— 拆页不该顺手改分类
+  const allGroupTitles = [...groupTitlesOf(sgeneral), ...groupTitlesOf(srecite),
+    ...groupTitlesOf(slists), ...groupTitlesOf(sreader)];
+  chk(allGroupTitles.join('/') === '通用/背诵/复习算法/我的清单/阅读辅助/朗读播放',
+    '四张二级页合起来仍是六组、顺序不变（实际 ' + allGroupTitles.join('/') + '）');
   // 需求（本次）：分组标题下的二级描述全部删除，标题下方直接就是选项
-  chk(setGroups.every(g => !g.querySelector('.settings-group-desc')),
+  chk([sgeneral, srecite, slists, sreader].every(doc =>
+    [...doc.querySelectorAll('.settings-group')].every(g => !g.querySelector('.settings-group-desc'))),
     '每个分组都不再有二级描述文字');
-  const grpOf = sel => {
-    const el = sd.querySelector(sel);
+  const grpOf = (doc, sel) => {
+    const el = doc.querySelector(sel);
     const own = el && el.closest('.settings-group');
     return own ? own.querySelector('.settings-group-title').textContent : null;
   };
-  chk(grpOf('#input-username') === '通用', '用户名归到「通用」（古诗词与小古文共用）');
-  chk(grpOf('#btn-export') === '通用' && grpOf('#btn-reset') === '通用',
+  chk(grpOf(sgeneral, '#input-username') === '通用', '用户名归到「通用」（古诗词与小古文共用）');
+  chk(grpOf(sgeneral, '#btn-export') === '通用' && grpOf(sgeneral, '#btn-reset') === '通用',
     '数据管理归到「通用」');
-  chk(grpOf('#seg-stage') === '背诵' && grpOf('#grade-chips') === '背诵' &&
-      grpOf('#seg-term') === '背诵', '学段 / 年级 / 学期归到「背诵」');
-  chk(grpOf('#seg-scope') === '背诵' && grpOf('#seg-count') === '背诵',
+  chk(grpOf(srecite, '#seg-stage') === '背诵' && grpOf(srecite, '#grade-chips') === '背诵' &&
+      grpOf(srecite, '#seg-term') === '背诵', '学段 / 年级 / 学期归到「背诵」');
+  chk(grpOf(srecite, '#seg-scope') === '背诵' && grpOf(srecite, '#seg-count') === '背诵',
     '背诵范围 / 每日数量归到「背诵」');
-  // 需求（Issue #114 第二条）：自选背诵整块搬进设置页的「我的清单」组
-  chk(!!sd.querySelector('#collections-list') && !!sd.querySelector('#collections-tip'),
-    '设置页有自选背诵清单（#collections-list / #collections-tip）');
-  chk(grpOf('#collections-list') === '我的清单' && grpOf('#btn-collections-import') === '我的清单',
+  // 需求（Issue #114 第二条）：自选背诵整块搬进设置的「我的清单」
+  chk(!!slists.querySelector('#collections-list') && !!slists.querySelector('#collections-tip'),
+    '「我的清单」页有自选背诵清单（#collections-list / #collections-tip）');
+  chk(grpOf(slists, '#collections-list') === '我的清单' && grpOf(slists, '#btn-collections-import') === '我的清单',
     '自选背诵（清单 + 导入键）归到「我的清单」');
-  // 导入 / 导出用的纯文本对话框也一起搬过来了
-  chk(!!sd.querySelector('#text-dialog') && !!sd.querySelector('#text-dialog-text'),
-    '设置页有导入 / 导出用的纯文本对话框');
-  chk(grpOf('#seg-helper') === '阅读辅助', '注音总开关归到「阅读辅助」组');
-  chk(grpOf('#seg-play') === '朗读播放', '连读档位归到「朗读播放」组');
-  chk(grpOf('#seg-algo') === '复习算法', '复习算法选择归到「复习算法」组');
+  // 导入 / 导出用的纯文本对话框也跟着那一页走
+  chk(!!slists.querySelector('#text-dialog') && !!slists.querySelector('#text-dialog-text'),
+    '「我的清单」页有导入 / 导出用的纯文本对话框');
+  chk(grpOf(sreader, '#seg-helper') === '阅读辅助', '注音总开关归到「阅读辅助」组');
+  chk(grpOf(sreader, '#seg-play') === '朗读播放', '连读档位归到「朗读播放」组');
+  chk(grpOf(srecite, '#seg-algo') === '复习算法', '复习算法选择归到「复习算法」组');
   // 只给背诵用的选项不能再出现在「通用」组里（这才是这次需求的重点）
-  // 「通用」组的三项：用户名 / 头像印记 / 数据管理（Issue #132 · 2026-09-15 起
-  // 用户名旁多了头像印记 —— 它跟用户名一样是「账号域」的身份设置，归在这一组）。
+  // 「通用」组的四项：用户名 / 头像印记 / 账号 / 数据管理（Issue #132 · 2026-09-15
+  // 用户名旁多了头像印记、2026-09-15 二级页又补上「账号」—— 它们都是账号域的身份设置）。
   // 这里守的仍是原来那条重点：**只给背诵用的选项不许混进「通用」**。
-  const generalItems = setGroups[0].querySelectorAll('.settings-item');
-  chk(generalItems.length === 3,
-    '「通用」组只有用户名 / 头像印记 / 数据管理三项（实际 ' + generalItems.length + '）');
-  chk(!!sd.querySelector('#seal-chars') && !!sd.querySelector('#seal-inks'),
+  const generalItems = sgeneral.querySelector('#settings-page .settings-group').querySelectorAll('.settings-item');
+  chk(generalItems.length === 4,
+    '「通用」组只有用户名 / 头像印记 / 账号 / 数据管理四项（实际 ' + generalItems.length + '）');
+  chk(!!sgeneral.querySelector('#seal-chars') && !!sgeneral.querySelector('#seal-inks'),
     '头像印记的字集与印色选择器都在「通用」组里');
-  chk(grpOf('#seal-chars') === '通用' && grpOf('#btn-seal-reset') === '通用',
+  chk(grpOf(sgeneral, '#seal-chars') === '通用' && grpOf(sgeneral, '#btn-seal-reset') === '通用',
     '头像印记归到「通用」（账号域的身份设置）');
-  // 设置项都还在，没有在搬动过程中被漏掉
-  ['#input-username', '#seg-stage', '#grade-chips', '#seg-term', '#seg-scope',
-   '#seg-count', '#seg-helper', '#btn-export', '#btn-import', '#btn-reset'].forEach(sel => {
-    chk(!!sd.querySelector(sel), '分组后设置项仍在：' + sel);
+  // 拆页之后不能两页都留同一件控件，也不能哪一页都找不到
+  const OWNER_OF = {
+    '#input-username': [sgeneral], '#seal-chars': [sgeneral], '#account-panel': [sgeneral],
+    '#btn-export': [sgeneral], '#btn-import': [sgeneral], '#btn-reset': [sgeneral],
+    '#seg-stage': [srecite], '#grade-chips': [srecite], '#seg-term': [srecite],
+    '#seg-scope': [srecite], '#seg-count': [srecite], '#seg-algo': [srecite],
+    '#collections-list': [slists], '#btn-collections-import': [slists],
+    '#seg-helper': [sreader], '#seg-play': [sreader]
+  };
+  Object.keys(OWNER_OF).forEach(sel => {
+    const docs = [sgeneral, srecite, slists, sreader];
+    const owners = OWNER_OF[sel];
+    const found = docs.filter(doc => doc.querySelector(sel));
+    chk(found.length === owners.length && owners.every(o => found.indexOf(o) !== -1),
+      '设置项 ' + sel + ' 只在它该在的那一页（实际 ' + found.length + ' 页）');
+  });
+  // 主页与四张二级页都是独立的整页容器
+  [sindex, sgeneral, srecite, slists, sreader].forEach(doc => {
+    chk(!!doc.querySelector('#settings-page'), '每一张设置页都有独立的整页容器');
+    chk(!!doc.querySelector('.settings-foot'), '每一张设置页都有页脚（版权 + 法务链接）');
   });
   // 「背诵范围」下回显当前范围（此前设置页留空一块）
-  chk(!!sd.querySelector('#scope-hint') && /^当前：/.test(sd.querySelector('#scope-hint').textContent),
-    '背诵范围下回显当前范围（实际「' + (sd.querySelector('#scope-hint') || {}).textContent + '」）');
-  chk(!!sd.querySelector('#settings-page'), '设置页是独立的整页容器');
+  chk(!!srecite.querySelector('#scope-hint') && /^当前：/.test(srecite.querySelector('#scope-hint').textContent),
+    '背诵范围下回显当前范围（实际「' + (srecite.querySelector('#scope-hint') || {}).textContent + '」）');
+  // 账号那一项：未登录时如实写「未登录」+ 一段「只存在本机」的口径
+  chk(/未登录/.test(sgeneral.querySelector('#account-panel').textContent),
+    '「账号」一项在未登录时如实写「未登录」');
+  chk(/只存在本机/.test(sgeneral.querySelector('#account-panel').textContent),
+    '「账号」一项写明数据只存在本机（与 /privacy/ 口径一致）');
   // 需求：首页下方的「小古文」入口卡片删除（底部页签已承担入口，卡片重复）
   chk(d.querySelector('#classic-entry') === null, '首页不再有小古文入口卡片');
   chk(d.querySelector('.classic-entry') === null, '首页不再有小古文入口卡片（classic-entry 已删）');
   chk(d.querySelector('#classic-title') === null && d.querySelector('.classic-title') === null,
     '不再渲染小古文入口标题');
-  chk(sd.querySelector('#seg-classic-entry') === null, '设置里不再有「首页小古文入口」选项（入口已删）');
-  chk(!/首页小古文入口/.test(sd.body.textContent), '设置页文案里不再出现「首页小古文入口」');
+  chk(![sindex, sgeneral, srecite, slists, sreader].some(doc => doc.querySelector('#seg-classic-entry')),
+    '设置里不再有「首页小古文入口」选项（入口已删）');
+  chk(![sindex, sgeneral, srecite, slists, sreader].some(doc => /首页小古文入口/.test(doc.body.textContent)),
+    '设置页文案里不再出现「首页小古文入口」');
   chk(d.querySelector('#all-count').textContent === '5', '小古文不会混进古诗词列表（仍为 5 首）');
   // 底部页签的「课外」是四部集子的统一入口，指向入口页（不再是某一部直连）
   const dockLibraryCount = [...dock.querySelectorAll('.dock-item')].filter(b => b.dataset.navGo === 'library').length;
@@ -302,16 +385,18 @@ setTimeout(() => {
 
   /* 年级 / 学期 / 学段 / 范围 / 数量的切换现在都发生在设置整页：
      设置页写的是同一份 localStorage，改完让首页重读一次设置即可生效 */
+  // ⚠️ 这些控件现在住在「背诵」二级页（/settings/recite/），
+  //    所以按页取、按页派发事件 —— 写的仍是同一份 localStorage。
   const setOn = (key, val, sel, attr) => {
-    const b = [...sd.querySelectorAll(sel)].find(x => String(x.dataset[attr]) === String(val));
-    b.dispatchEvent(new sp.window.Event('click', { bubbles: true }));
-    window.localStorage.setItem('poem_recite_settings_v1', sp.window.localStorage.getItem('poem_recite_settings_v1'));
+    const b = [...srecite.querySelectorAll(sel)].find(x => String(x.dataset[attr]) === String(val));
+    b.dispatchEvent(new spRecite.window.Event('click', { bubbles: true }));
+    window.localStorage.setItem('poem_recite_settings_v1', spRecite.window.localStorage.getItem('poem_recite_settings_v1'));
     window.PoemApp.reloadSettings();
   };
 
   // 年级切换（一年级 → 二年级）
   setOn('grade', 2, '#grade-chips button', 'grade');
-  chk(String(sd.querySelector('#grade-chips button.active').dataset.grade) === '2', '设置页年级高亮切到二年级（实际 ' + (sd.querySelector('#grade-chips button.active') ? sd.querySelector('#grade-chips button.active').textContent : '无') + '）');
+  chk(String(srecite.querySelector('#grade-chips button.active').dataset.grade) === '2', '设置页年级高亮切到二年级（实际 ' + (srecite.querySelector('#grade-chips button.active') ? srecite.querySelector('#grade-chips button.active').textContent : '无') + '）');
   chk(d.querySelector('#all-count').textContent === '7', '切到二年级上学期 → 7 首');
   chk(d.querySelectorAll('#today-list .item').length === 5, '切换后仍是 5 首计划');
 
@@ -321,8 +406,8 @@ setTimeout(() => {
 
   // 学段切换：年级必须落在新学段内
   setOn('stage', 'high', '#seg-stage button', 'stage');
-  chk(sd.querySelectorAll('#grade-chips button').length === 3, '设置页切高中后显示 3 个年级');
-  chk(['10', '11', '12'].indexOf(String(sd.querySelector('#grade-chips button.active').dataset.grade)) > -1,
+  chk(srecite.querySelectorAll('#grade-chips button').length === 3, '设置页切高中后显示 3 个年级');
+  chk(['10', '11', '12'].indexOf(String(srecite.querySelector('#grade-chips button.active').dataset.grade)) > -1,
     '换学段后年级落在新学段内');
   setOn('grade', 12, '#grade-chips button', 'grade');
   chk(d.querySelector('#all-count').textContent === '11', '高三下学期 → 11 首（实际 ' + d.querySelector('#all-count').textContent + '）');
@@ -434,32 +519,32 @@ setTimeout(() => {
     '详情页有白话译文区');
 
   // 设置整页：回显当前配置
-  chk(sd.querySelector('#seg-stage button.active').dataset.stage === 'high', '设置页回显当前学段高中');
-  chk(sd.querySelector('#seg-term button.active').dataset.term === '2', '设置页回显当前学期下学期');
-  chk(sd.querySelector('#grade-chips button.active').dataset.grade === '12', '设置页回显当前年级高三');
+  chk(srecite.querySelector('#seg-stage button.active').dataset.stage === 'high', '设置页回显当前学段高中');
+  chk(srecite.querySelector('#seg-term button.active').dataset.term === '2', '设置页回显当前学期下学期');
+  chk(srecite.querySelector('#grade-chips button.active').dataset.grade === '12', '设置页回显当前年级高三');
 
   // 背诵范围：7 个选项，切换后计划与「全部诗词」跟随
-  chk(sd.querySelectorAll('#seg-scope button').length === 7, '设置页含 7 个背诵范围选项');
-  chk(sd.querySelector('#seg-scope button.active').dataset.scope === 'term', '默认选中「本册」');
+  chk(srecite.querySelectorAll('#seg-scope button').length === 7, '设置页含 7 个背诵范围选项');
+  chk(srecite.querySelector('#seg-scope button.active').dataset.scope === 'term', '默认选中「本册」');
   setOn('scope', 'primary', '#seg-scope button', 'scope');
-  chk(sd.querySelector('#seg-scope button.active').dataset.scope === 'primary', '切换后按钮高亮跟随');
+  chk(srecite.querySelector('#seg-scope button.active').dataset.scope === 'primary', '切换后按钮高亮跟随');
   chk(d.querySelector('#all-count').textContent === '119', '小学随机范围 → 小学 119 首（实际 ' + d.querySelector('#all-count').textContent + '）');
   chk(d.querySelector('#all-label').textContent === '小学阶段全部诗词', '面板标题跟随范围: ' + d.querySelector('#all-label').textContent);
   chk(d.querySelectorAll('#today-list .item').length === 5, '随机范围下仍按每日数量出计划');
   chk(d.querySelector('#all-list .item .item-meta').textContent.includes('年级') === false ||
     /[一二三四五六]年级/.test(d.querySelector('#all-list .item .item-meta').textContent), '随机范围下列表项标注所属年级学期');
-  chk(JSON.parse(sp.window.localStorage.getItem('poem_recite_settings_v1')).scope === 'primary', '背诵范围已持久化');
+  chk(JSON.parse(spRecite.window.localStorage.getItem('poem_recite_settings_v1')).scope === 'primary', '背诵范围已持久化');
   setOn('scope', 'high', '#seg-scope button', 'scope');
   chk(d.querySelector('#all-count').textContent === '61', '高中随机范围 → 高中 61 首（实际 ' + d.querySelector('#all-count').textContent + '）');
   setOn('scope', 'term', '#seg-scope button', 'scope');
   chk(d.querySelector('#all-count').textContent === '11', '切回「本册」→ 高三下 11 首');
 
-  // 用户名：在设置整页输入后，首页标题与品牌名同步变化
-  const uInput = sd.querySelector('#input-username');
+  // 用户名：在「通用」二级页输入后，首页标题与品牌名同步变化
+  const uInput = sgeneral.querySelector('#input-username');
   chk(uInput.value === '', '用户名初始为空（使用默认名 Ashley）');
   uInput.value = '小明';
-  uInput.dispatchEvent(new sp.window.Event('input', { bubbles: true }));
-  window.localStorage.setItem('poem_recite_settings_v1', sp.window.localStorage.getItem('poem_recite_settings_v1'));
+  uInput.dispatchEvent(new spGeneral.window.Event('input', { bubbles: true }));
+  window.localStorage.setItem('poem_recite_settings_v1', spGeneral.window.localStorage.getItem('poem_recite_settings_v1'));
   window.PoemApp.reloadSettings();
   chk(d.title === '跬步 · 小明的背诵 · 跬步', '填了用户名后标题为「小明的背诵 · 跬步」（实际 ' + d.title + '）');
   // 顶栏第一行固定为应用名（不随用户名变），用户名只出现在页面标题与第二行里，
@@ -471,11 +556,11 @@ setTimeout(() => {
     '填了用户名后不再走淡墨（是自己填的名字）');
   chk(d.querySelector('meta[name="apple-mobile-web-app-title"]').getAttribute('content') === '跬步 · 小明的背诵',
     'iOS 桌面名随用户名变化');
-  chk(JSON.parse(sp.window.localStorage.getItem('poem_recite_settings_v1')).username === '小明', '用户名已持久化');
+  chk(JSON.parse(spGeneral.window.localStorage.getItem('poem_recite_settings_v1')).username === '小明', '用户名已持久化');
 
   uInput.value = '   ';
-  uInput.dispatchEvent(new sp.window.Event('input', { bubbles: true }));
-  window.localStorage.setItem('poem_recite_settings_v1', sp.window.localStorage.getItem('poem_recite_settings_v1'));
+  uInput.dispatchEvent(new spGeneral.window.Event('input', { bubbles: true }));
+  window.localStorage.setItem('poem_recite_settings_v1', spGeneral.window.localStorage.getItem('poem_recite_settings_v1'));
   window.PoemApp.reloadSettings();
   chk(d.title === '跬步 · Ashley的背诵 · 跬步',
     '用户名留空时回到默认名 Ashley（实际 ' + d.title + '）');
@@ -490,7 +575,7 @@ setTimeout(() => {
 
   // 持久化：进度写在首页实例，设置写在设置页实例
   chk(!!window.localStorage.getItem('poem_recite_progress_v1'), '进度已写入 localStorage');
-  chk(!!sp.window.localStorage.getItem('poem_recite_settings_v1'), '设置已写入 localStorage');
+  chk(!!spRecite.window.localStorage.getItem('poem_recite_settings_v1'), '设置已写入 localStorage');
 
   /* ---------------- 深链接：/?poem=<id> 落地 ----------------
      需求（Issue #114 后续）：/progress/ 那份「全部到期篇目」的篇名是

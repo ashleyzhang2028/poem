@@ -20,7 +20,9 @@ const read = f => fs.readFileSync(path + f, 'utf8');
 const MAIL = 'kuibuapp@163.com';
 
 /* ---------- 一、静态源码里不能有明文邮箱 ---------- */
-['index.html', 'classic/index.html', 'settings/index.html', 'terms/index.html', 'privacy/index.html', 'js/contact.js', 'js/chrome.js', 'js/settings.js', 'sw.js']
+['index.html', 'classic/index.html', 'settings/index.html', 'settings/general/index.html',
+ 'settings/recite/index.html', 'settings/lists/index.html', 'settings/reader/index.html',
+ 'terms/index.html', 'privacy/index.html', 'js/contact.js', 'js/chrome.js', 'js/settings-nav.js', 'js/settings.js', 'sw.js']
   .forEach(f => {
     const src = read(f);
     chk(!src.includes(MAIL), f + ' 源码不含明文邮箱');
@@ -58,7 +60,11 @@ function load(file, urlPath) {
 const terms = load('terms/index.html', 'terms/');
 const privacy = load('privacy/index.html', 'privacy/');
 const index = load('index.html');
-const settings = load('settings/index.html', 'settings/');
+// 设置拆成二级页后，页脚（法务入口 + 版权）**每一页都有**，
+// 这里把主页与四张二级页一起加载，逐页守一遍。
+const settingsPages = ['settings/index.html', 'settings/general/index.html',
+  'settings/recite/index.html', 'settings/lists/index.html', 'settings/reader/index.html']
+  .map(f => Object.assign({ f: f }, load(f, f.replace(/index\.html$/, ''))));
 
 setTimeout(() => {
   /* --- 用户协议 --- */
@@ -165,10 +171,8 @@ setTimeout(() => {
   });
 
   /* --- 页脚入口：设置页（版权 + 法务链接的新家）/ 法务页互链 --- */
-  const footCases = [
-    ['设置页', settings.doc, '/terms/', '/privacy/'],
-    ['用户协议页', terms.doc, '/terms/', '/privacy/']
-  ];
+  const footCases = [['用户协议页', terms.doc, '/terms/', '/privacy/']]
+    .concat(settingsPages.map(sp => [sp.f, sp.doc, '/terms/', '/privacy/']));
   footCases.forEach(([name, d, termsHref, privacyHref]) => {
     const links = [...d.querySelectorAll('.foot .foot-links a')];
     const hrefs = links.map(a => a.getAttribute('href'));
@@ -177,9 +181,12 @@ setTimeout(() => {
   });
   // 需求：版权与两个法务入口从首页挪到设置页底部
   chk(!index.doc.querySelector('.foot'), '首页不再挂页脚（版权与法务链接已挪到设置页底部）');
-  chk(/©2026 kuibu\.app/.test(settings.doc.querySelector('.foot').textContent), '设置页底部保留版权文案');
-  chk(/href="\/terms\/"/.test(read('settings/index.html')) && /href="\/privacy\/"/.test(read('settings/index.html')),
-    '设置页挂了两个法务链接（目录化路径）');
+  settingsPages.forEach(sp => {
+    chk(/©2026 kuibu\.app/.test(sp.doc.querySelector('.foot').textContent),
+      sp.f + ' 底部保留版权文案');
+    chk(/href="\/terms\/"/.test(read(sp.f)) && /href="\/privacy\/"/.test(read(sp.f)),
+      sp.f + ' 挂了两个法务链接（目录化路径）');
+  });
   // 需求：全站 URL 目录化，页面之间不再出现 .html
   {
     // 只看可执行代码：注释与正则里的 index.html 是「兼容老地址」用的，不算页面地址

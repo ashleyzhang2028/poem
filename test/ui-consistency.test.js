@@ -443,10 +443,14 @@ chk(/--col-side:\s*var\(--safe\)/.test(cssCode) === false &&
   '左右内边距读同一档 --col-side（不再有一处写死 14px 把三档一起盖掉）');
 
 /* 结构：两列排布要靠 HTML 里的容器才生效，只写 CSS 是空规则 */
-chk(/class="settings-groups"/.test(read('settings/index.html')),
-  '设置页真的套了 .settings-groups（不是只写了一条 CSS）');
-chk(/class="settings-item wide"/.test(read('settings/index.html')),
+// ⚠️ Issue #132 后续把设置拆成二级页：主页套 .settings-groups（入口清单），
+//    「我的清单」那一条 .wide 住在它自己的二级页上。
+chk(/class="settings-groups/.test(read('settings/index.html')),
+  '设置主页真的套了 .settings-groups（不是只写了一条 CSS）');
+chk(/class="settings-item wide"/.test(read('settings/lists/index.html')),
   '「我的清单」那一项真的带了 .wide');
+chk(read('settings/index.html').indexOf('id="settings-index"') !== -1,
+  '设置主页有入口清单容器 #settings-index（四个二级页入口由 js/settings-nav.js 生成）');
 chk(/class="progress-main"/.test(read('progress/index.html')),
   '进度页真的套了 .progress-main');
 chk(/class="card progress-card wide"/.test(read('progress/index.html')),

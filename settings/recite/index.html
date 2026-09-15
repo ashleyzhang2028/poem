@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#2f6055" />
+  <title>背诵 · 跬步</title>
+  <meta name="description" content="跬步设置 · 背诵：学段、年级、学期、背诵范围与每日数量，以及可切换的复习算法与进度总览入口。" />
+  <meta name="format-detection" content="telephone=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="跬步" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <base href="/" />
+  <link rel="icon" href="./icons/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body data-nav="settings" data-back="/settings/" data-page="背诵" data-sub="今天背哪几首 · 复习算法">
+  <div class="app">
+    <header class="topbar"></header>
+
+    <main class="settings-page" id="settings-page">
+      <!-- ==================================================================
+           设置 · 背诵（二级页）
+           ------------------------------------------------------------------
+           这一组只决定「今天背哪几首」，只作用于首页（/）：
+             学段 / 年级 / 学期  → 哪一册
+             背诵范围            → 从哪一册里取
+             每日数量            → 取几首
+             复习算法            → 下次什么时候复习（原「复习算法」那一组
+                                   只有一条，并入本页，读起来才是一件事）
+             进度总览            → 这本账的入口
+           ⚠️ 课外的五部集子不受这一组影响（它们各按卷次 / 词牌 / 文体排）；
+              自选背诵也不在「范围」里选 —— 它排在自己的清单里，
+              与课内 261 首一起进每日任务（见「我的清单」那一页）。
+           ================================================================== -->
+      <div class="settings-groups">
+        <section class="settings-group" aria-labelledby="grp-recite">
+          <h2 class="settings-group-title" id="grp-recite">背诵</h2>
+
+          <div class="settings-item">
+            <label>学段</label>
+            <div class="seg small" id="seg-stage">
+              <button data-stage="primary" class="active">小学</button>
+              <button data-stage="middle">初中</button>
+              <button data-stage="high">高中</button>
+            </div>
+          </div>
+
+          <div class="settings-item">
+            <label>年级</label>
+            <div class="chips" id="grade-chips"></div>
+          </div>
+
+          <div class="settings-item">
+            <label>学期</label>
+            <div class="seg small" id="seg-term">
+              <button data-term="1" class="active">上学期</button>
+              <button data-term="2">下学期</button>
+            </div>
+          </div>
+
+          <div class="settings-item">
+            <label>背诵范围</label>
+            <div class="seg small" id="seg-scope">
+              <button data-scope="term" class="active">本册</button>
+              <button data-scope="upto">本册及之前</button>
+              <button data-scope="primary">小学随机</button>
+              <button data-scope="middle">初中随机</button>
+              <button data-scope="primary_middle">小学+初中随机</button>
+              <button data-scope="high">高中随机</button>
+              <button data-scope="all">全部随机</button>
+            </div>
+            <div class="settings-hint" id="scope-hint"></div>
+          </div>
+
+          <div class="settings-item">
+            <label>每日背诵数量</label>
+            <div class="seg small" id="seg-count">
+              <button data-count="3">3 首</button>
+              <button data-count="5" class="active">5 首</button>
+              <button data-count="8">8 首</button>
+              <button data-count="10">10 首</button>
+            </div>
+          </div>
+
+          <div class="settings-item">
+            <label>进度总览</label>
+            <div class="settings-btns">
+              <a class="btn ghost-btn" href="/progress/">看背诵进度</a>
+            </div>
+            <div class="settings-hint">到期日历与全部到期篇目：未来两周哪天要复习几篇、具体是哪几篇，以及掌握度分布</div>
+          </div>
+        </section>
+
+        <!-- ==================================================================
+             复习算法：决定「下次什么时候复习」
+             ------------------------------------------------------------------
+             原先只有一套固定间隔表（「遗忘曲线」），用户没得选。
+             这一栏给出四张模型：遗忘曲线（默认）/ 莱特纳盒 / SM-2 / FSRS。
+             选项定义在 js/review-models.js，本页不另抄一份 —— 加模型只改那一处。
+             换模型**不清进度**：已有记录按最接近的落点换算，接着走。
+             ================================================================== -->
+        <section class="settings-group" aria-labelledby="grp-algo">
+          <h2 class="settings-group-title" id="grp-algo">复习算法</h2>
+
+          <div class="settings-item">
+            <label id="algo-label">用哪一套安排复习</label>
+            <div class="algo-modes" id="seg-algo" role="radiogroup" aria-labelledby="algo-label"></div>
+            <div class="settings-hint" id="algo-hint"></div>
+          </div>
+
+          <div class="settings-item">
+            <label>换算法会不会把进度清零</label>
+            <div class="settings-hint">
+              <strong>不会</strong>。已经背过的篇目一篇不丢，按「最接近的落点」接到新算法上接着走
+              （例如原先走到第 7 阶段的，换到 FSRS 就按第 7 阶段对应的稳定天数接手）。
+              只有之后**新做的评价**才按新算法算。
+            </div>
+          </div>
+
+          <div class="settings-item">
+            <label>复习间隔</label>
+            <div class="settings-hint" id="algo-interval"></div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <footer class="foot settings-foot">
+      <span class="foot-copy">&copy;2026 kuibu.app 积跬步, 至千里</span>
+      <span class="foot-links">
+        <a href="/terms/">用户协议</a>
+        <span class="foot-sep">·</span>
+        <a href="/privacy/">隐私条款</a>
+      </span>
+    </footer>
+  </div>
+
+  <div class="modal text-modal" id="text-dialog" hidden>
+    <div class="modal-mask" data-close="1"></div>
+    <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="text-dialog-title">
+      <button class="modal-close" data-close="1" aria-label="关闭">✕</button>
+      <div class="modal-head">
+        <h2 id="text-dialog-title"></h2>
+      </div>
+      <p class="text-dialog-tip" id="text-dialog-tip"></p>
+      <textarea id="text-dialog-text" spellcheck="false" aria-label="清单文本"></textarea>
+      <div class="actions">
+        <button type="button" class="btn" id="text-dialog-cancel">关闭</button>
+        <button type="button" class="btn good primary-btn" id="text-dialog-ok">确定</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+  <input type="file" id="file-import" accept="application/json" hidden />
+
+  <script src="/data/text-master.js"></script>
+  <script src="/data/poems-1.js"></script>
+  <script src="/data/poems-2.js"></script>
+  <script src="/data/poems-3.js"></script>
+  <script src="/data/poems-4.js"></script>
+  <script src="/data/poems-5.js"></script>
+  <script src="/data/poems-6.js"></script>
+  <script src="/data/poems-7.js"></script>
+  <script src="/data/poems-8.js"></script>
+  <script src="/data/poems-9.js"></script>
+  <script src="/data/poems-10.js"></script>
+  <script src="/data/poems-11.js"></script>
+  <script src="/data/poems-12.js"></script>
+  <script src="/data/index.js"></script>
+  <script src="/data/site-index.js"></script>
+
+  <script src="/js/auth-core.js"></script>
+  <script src="/js/entitlement.js"></script>
+  <script src="/js/storage.js"></script>
+  <script src="/js/scheduler.js"></script>
+  <script src="/js/manifest-loader.js"></script>
+  <script src="/js/play-modes.js"></script>
+  <!-- 复习算法清单（与首页同源）：本页只做回显与写值，不另抄一份定义 -->
+  <script src="/js/review-models.js"></script>
+  <script src="/js/collections.js"></script>
+  <script src="/js/settings.js"></script>
+  <script src="/js/avatar.js"></script>
+  <script src="/js/chrome.js"></script>
+  <script src="/js/pwa.js"></script>
+</body>
+</html>

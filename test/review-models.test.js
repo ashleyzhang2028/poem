@@ -200,8 +200,10 @@ const never = RM.adopt({ level: 0, learned: false, reviewCount: 0, lapses: 0 }, 
 chk(never.learned === false && never.level === 0,
   '从没背过的记录换算后仍是未学过（不会被算成学过）');
 
-/* ================= 三、页面层：设置页能切、副标题跟着变 ================= */
-const settingsHtml = fs.readFileSync(path + 'settings/index.html', 'utf8');
+/* ================= 三、页面层：设置页能切、副标题跟着变 =================
+   ⚠️ Issue #132 后续把设置拆成二级页：复习算法住在「背诵」页
+      （/settings/recite/），与「今天背哪几首」是同一件事。 */
+const settingsHtml = fs.readFileSync(path + 'settings/recite/index.html', 'utf8');
 const homeHtml = fs.readFileSync(path + 'index.html', 'utf8');
 
 chk(/id="seg-algo"/.test(settingsHtml), '设置页有「复习算法」选择器（id="seg-algo"）');
@@ -232,10 +234,24 @@ if (_realProto && _realProto.fetch) Object.setPrototypeOf(RepoLoader.prototype, 
 Object.defineProperty(RepoLoader, 'name', { value: 'ResourceLoader' });
 
 const sdom = new JSDOM(settingsHtml, {
-  runScripts: 'dangerously', resources: new RepoLoader(), url: 'https://local.test/settings/'
+  runScripts: 'dangerously', resources: new RepoLoader(), url: 'https://local.test/settings/recite/'
 });
 const sd = sdom.window.document;
-setTimeout(() => {
+// ⚠️ jsdom 解析完 HTML 后会触发一次 DOMContentLoaded，但**那时脚本还没取回来**
+//    （`<script src>` 由 RepoLoader 异步取、取到才执行）。脚本自己会判断
+//    `document.readyState === "loading"` 再挂 DOMContentLoaded 监听 ——
+//    在那个时点上它确实是 loading，于是监听挂上了、之后谁都不再补事件，
+//    init() 永远不跑（表现正是「四张模型卡一张都没画出来」）。
+//    这里在脚本取完（readyState 变 complete）之后补一次事件，与各页手工注入
+//    脚本那一套的收尾是同一条路（见 test/ui.test.js 的 bootSettingsPage）。
+function bootSettled() {
+  if (sd.readyState === 'loading') return setTimeout(bootSettled, 30);
+  sd.dispatchEvent(new sdom.window.Event('DOMContentLoaded', { bubbles: true }));
+  setTimeout(body, 60);
+}
+setTimeout(bootSettled, 30);
+
+function body() {
   const opts = sd.querySelectorAll('#seg-algo .algo-opt');
   chk(opts.length === 4, '设置页画出四张模型卡（实际 ' + opts.length + '）');
   chk([...opts].map(o => o.dataset.algo).join(',') === 'ebbinghaus,leitner,sm2,fsrs',
@@ -312,6 +328,6 @@ setTimeout(() => {
 
       console.log('\n' + (fails ? '❌ ' + fails + ' 项失败' : '🎉 复习算法测试全部通过'));
       process.exit(fails ? 1 : 0);
-    }, 500);
-  }, 500);
-}, 500);
+    }, 800);
+  }, 800);
+}
