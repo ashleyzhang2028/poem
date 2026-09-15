@@ -662,17 +662,35 @@ if (!JSDOM) {
    * 「又缩进了一圈」的判据（任何一条成立即算一层）：
    *   · 盒子里有左右内边距 —— 第一个孩子的可用宽度因此比盒子窄；
    *   · 盒子里有左右外边距 —— 盒子自己比父亲窄；
-   *   · 盒子宽度 != auto（max-width / width 收窄，例如 .app 的 max-width: --col-w）。
-   * ⚠️ 这三条合起来正好描述 .app 那一种盒子；也正是 #147 里被套了两遍的东西。
+   *   · 盒子给自己定了宽度上限（max-width / width 收窄，
+   *     例如 .app 的 max-width: var(--col-w)）。
+   *
+   * ⚠️ 宽度这一支只能读「声明」，不能读「算出来的值」（2026-09-15 修）：
+   *    jsdom（26.x）不做布局，接不上的取值它不返回 'auto' 而是返回**空串**
+   *    （`width: ""`、`max-width: ""`）—— 于是 `cs.width === 'auto' ? 'auto' : 'set'`
+   *    这条判据把**每一个没有显式宽度的元素**都数成「又缩进了一圈」：
+   *    顶栏那条链只数到 .app 一层（它真有 padding），内容那条链则把
+   *    .app + .settings-page + .settings-groups 数成三层 —— 「3 / 2」恒红，
+   *    与 DOM 里到底套没套东西无关。（带 var() 的声明 jsdom 解成
+   *    "calc(var(--col-side) + var(--safe-left))"，parseFloat 得到 NaN，
+   *    同样落进「不是 auto」那一支 —— 所以这一支必须**只认真正的数值**。）
+   *    「宽度收窄」本来就是为了抓 .app 的 max-width，那就直接读 maxWidth：
+   *    它是一个具体数值（720px / 1040px…）时才真正收窄；auto / none /
+   *    空串 / 带 calc / var() 的一律不算 —— 这才是真机上量到的那条边。
    */
+  const widthIsCapped = cs => {
+    const concrete = v => typeof v === 'string' && v !== '' &&
+      v !== 'auto' && v !== 'none' && !/calc\(|var\(|%/.test(v);
+    return concrete(cs.width) || concrete(cs.maxWidth);
+  };
+
   const insets = el => {
     let n = 0;
     for (let p = el; p && p !== doc.body; p = p.parentElement) {
       const cs = dom.window.getComputedStyle(p);
       const pad = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
       const mar = parseFloat(cs.marginLeft) + parseFloat(cs.marginRight);
-      const w = cs.width === 'auto' ? 'auto' : 'set';
-      if (pad > 0 || mar > 0 || w === 'set') n += 1;
+      if (pad > 0 || mar > 0 || widthIsCapped(cs)) n += 1;
     }
     return n;
   };
@@ -704,12 +722,10 @@ if (!JSDOM) {
   chk(b === a,
     '一列纸里的内容与页顶那一行缩进**层数相同**（实际 ' + b + ' / ' + a + '）—— ' +
     '任一方多一层，画出来就是「卡片比顶栏窄一条边」');
-  // ⚠️ 这一条**不断言**「多套一层一定被数出来」：jsdom 不做布局，
-  //    `max-width: var(--col-w)` 这种带变量的宽度它算不出来（取到 auto），
-  //    所以「宽度收窄」这一支在 jsdom 里是哑的 —— 写一条它天生看不见的断言，
-  //    只会得到一条永远绿、却什么都不验的规则。
-  //    这里改为**只数内边距那一支**（jsdom 算得出来、也正是真机上量到的
-  //    28px / 112px 那条边）：红的是这一条，不是上面那条。
+  // ⚠️ 这一条用的是「内边距那一支」：上面造出来的 .app 不带样式表里的
+  //    --col-side（jsdom 只有内联样式，量不到变量），所以宽度的收窄在这里是哑的，
+  //    能真的量出差别的只有内边距 —— 也正是真机上量到的 28px / 112px 那条边。
+  //    （宽度那一支由下面三个真页面守：它们带着 css/style.css 里的 max-width。）
   const padOnly = el => {
     let n = 0;
     for (let p = el; p && p !== doc.body; p = p.parentElement) {
@@ -731,29 +747,42 @@ if (!JSDOM) {
     ['poems/index.html', '/poems/', '.toolbar'],
     ['settings/index.html', '/settings/', '#settings-index']
   ]) {
-    const d2 = new JSDOM(read(file), { url: 'https://local.test' + url });
+    // ⚠️ `<link rel="stylesheet">` 在 jsdom 里**不会被取回**（它不联网，
+    //    也不做布局）—— 直接 new JSDOM(read(file)) 量到的是一份「没有样式表」的
+    //    DOM：每个元素取到的都是空串，这把尺子于是完全量不到样式表里写的那条边。
+    //    所以这里把页面自己链的那几张样式表按顺序内联进去，
+    //    量点与被量点才真的处在同一份级联上（与浏览器里的次序一致）。
+    const html = read(file).replace(/<link[^>]*rel="stylesheet"[^>]*>/g,
+      tag => '<style>' + read((tag.match(/href="([^"]+)"/) || [])[1] || '') + '</style>');
+    const d2 = new JSDOM(html, { url: 'https://local.test' + url });
     const dd = d2.window.document;
-    const box = dd.querySelector(sel);
-    let n = 0;
-    for (let p = box; p && p !== dd.body; p = p.parentElement) {
-      const cs = d2.window.getComputedStyle(p);
-      const pad = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
-      const mar = parseFloat(cs.marginLeft) + parseFloat(cs.marginRight);
-      const w = cs.width === 'auto' ? 'auto' : 'set';
-      if (pad > 0 || mar > 0 || w === 'set') n += 1;
-    }
+    // 页顶那一行是同一把尺子的**基准**（它住在 .app 里，只该有一条边）
     const t = dd.querySelector('.topbar');
-    let m = 0;
-    for (let p = t; p && p !== dd.body; p = p.parentElement) {
-      const cs = d2.window.getComputedStyle(p);
-      const pad = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
-      const mar = parseFloat(cs.marginLeft) + parseFloat(cs.marginRight);
-      const w = cs.width === 'auto' ? 'auto' : 'set';
-      if (pad > 0 || mar > 0 || w === 'set') m += 1;
-    }
+    const depth = el => {
+      let n = 0;
+      for (let p = el; p && p !== dd.body; p = p.parentElement) {
+        const cs = d2.window.getComputedStyle(p);
+        const pad = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+        const mar = parseFloat(cs.marginLeft) + parseFloat(cs.marginRight);
+        if (pad > 0 || mar > 0 || widthIsCapped(cs)) n += 1;
+      }
+      return n;
+    };
+    const n = depth(dd.querySelector(sel));
+    const m = depth(t);
     chk(n <= m,
       file + ' 里 ' + sel + ' 的缩进层数不多于页顶那一行（实际 ' + n + ' / ' + m + '）—— ' +
       '页顶与内容必须落在同一条竖轴上');
+    // ⚠️ 反面样本：给内容自己加一条边（源码断言抓不到的那种写法），
+    //    这一条必须变红 —— 否则上面那条只是「数出来总是 0」的空规则。
+    //    （2026-09-15：上一版恒红正是因为这条判据把每个元素都数成一层，
+    //      红与绿都与 DOM 无关；这里把「这把尺子真的有牙」写进断言。）
+    const probe = dd.createElement('div');
+    probe.setAttribute('style', 'padding-left: 14px; padding-right: 14px');
+    dd.querySelector(sel).appendChild(probe);
+    chk(depth(probe) > depth(t),
+      file + ' 的反面样本被数出来了（给内容加一条边 → ' + depth(probe) + ' > 页顶 ' +
+      depth(t) + '）—— 这把尺子不是空的');
   }
 }
 
