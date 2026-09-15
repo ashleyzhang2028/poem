@@ -329,6 +329,100 @@
     });
   }
 
+  /* ------------------------------------------- 四列（含「未登录」）横向对比 */
+
+  /**
+   * 对比页的四列。
+   *
+   * 前三列是**同一个人升到不同层级**（都按已登录算），第一列是**没登录的游客**。
+   * 为什么不把「未登录」写成第四列：游客不是一个层级，`tier` 无论如何都是 free，
+   * 他和「登录的 free」之间差的是 `signedIn` 那个布尔 —— 这里把它显式做成
+   * 一列（`guest: true`），页面上就不必自己拼 ctx（拼 ctx 正是要收口的东西）。
+   */
+  var COLUMNS = [
+    { id: "guest", tier: "free", guest: true  },
+    { id: "free",  tier: "free", guest: false },
+    { id: "pro",   tier: "pro",  guest: false },
+    { id: "max",   tier: "max",  guest: false }
+  ];
+
+  /** 列标题文案 —— 与 tierLabel 同源，不在这里另起一套大小写 */
+  function columnLabel(col) {
+    if (!col) return "";
+    if (col.guest) return "未登录";
+    return tierLabel(col.tier);
+  }
+
+  /**
+   * 四列能力对比（给 /plans/ 对比页用）。
+   *
+   * 一条能力一行、一行四格，**每格都是当场问 `can()` 算出来的**，不是手抄的表。
+   * 手抄一份的下场：内核加了能力、改了门槛，对比页还是老话 ——
+   * 而对比页恰恰是用户唯一会逐条对着看的页面。
+   *
+   * 返回：
+   *   cols   —— 四列的 id / 是否游客 / 层级 / 标题
+   *   rows   —— 一条能力一行：{cap, name, quota, cells: [{ok, reason, hint}…]}
+   *             cells 的下标与 cols 一一对应
+   *   groups —— 一次对比刚好够用的三个分组（一行都不重不漏）
+   *   summary—— 每列「能用几项 / 共几项」，给表尾那一行用
+   *
+   * @param {Object} o { now }   —— 目前只认 now，将来核对「已经买到的层级」时再扩
+   */
+  function compare(o) {
+    var opt = o || {};
+    var now = typeof opt.now === "number" ? opt.now : undefined;
+
+    var cols = COLUMNS.map(function (c) {
+      return { id: c.id, guest: !!c.guest, tier: c.tier, label: columnLabel(c) };
+    });
+
+    var rows = Object.keys(CAPS).map(function (k) {
+      var c = CAPS[k];
+      var cells = COLUMNS.map(function (col) {
+        // 游客列看的是「没登录」那一刻的能力 —— 与 /profile/ 顶部那句
+        // 「登录后可用语音朗读（免费）」必须是同一个答案，所以两边都走 can()。
+        var ctx = { tier: col.tier, signedIn: !col.guest };
+        if (now !== undefined) ctx.now = now;
+        var r = can(k, ctx);
+        return {
+          ok: r.ok,
+          reason: r.ok ? "ok" : r.reason,
+          // 能用的格子里没有字（打钩就是全部信息）；不能用的那一格写清是什么拦的
+          hint: r.ok ? (c.quota ? "每月 " + c.quota + " 次" : "") : denyReason(k, ctx)
+        };
+      });
+      return { cap: k, name: c.name, quota: c.quota, minTier: c.minTier, cells: cells };
+    });
+
+    // 分组：只按「这一行从哪一列起全绿」切三刀。能力表本身就是「先免费后付费」
+    // 声明的，所以同一个门槛的能力天然是连续的，这里不必再做排序（也不能做 ——
+    // 换个顺序就等于替内核重新排了一次优先级）。
+    var groups = [];
+    var byMin = { free: [], pro: [], max: [] };
+    rows.forEach(function (r) {
+      (byMin[r.minTier] || byMin.free).push(r);
+    });
+    [
+      { key: "free", title: "所有版本都有",
+        note: "免费且不缩水 —— 课内 261 首、六部集子、排程、注音，一件都不收回" },
+      { key: "pro", title: "Pro 起",
+        note: "在免费的全部功能之上，再加这些" },
+      { key: "max", title: "Max 起",
+        note: "在 Pro 之上再加的额度与能力" }
+    ].forEach(function (g) {
+      if (byMin[g.key].length) groups.push({ key: g.key, title: g.title, note: g.note, rows: byMin[g.key] });
+    });
+
+    var summary = cols.map(function (col, i) {
+      var on = 0;
+      rows.forEach(function (r) { if (r.cells[i] && r.cells[i].ok) on += 1; });
+      return { id: col.id, label: col.label, ok: on, total: rows.length };
+    });
+
+    return { cols: cols, rows: rows, groups: groups, summary: summary };
+  }
+
   /* -------------------------------------------------------- 本机分层 */
 
   /**
@@ -433,7 +527,8 @@
     NS: NS, GRANT_NS: GRANT_NS, OWNER_NS: OWNER_NS,
     TIERS: TIERS, ROLES: ROLES, CAPS: CAPS, ALIAS: ALIAS,
     capNames: capNames, cap: cap, can: can, denyReason: denyReason,
-    tierLabel: tierLabel, matrix: matrix, isTier: isTier, isRole: isRole,
+    tierLabel: tierLabel, matrix: matrix, compare: compare, COLUMNS: COLUMNS,
+    isTier: isTier, isRole: isRole,
     tierIndex: tierIndex,
     emptyGrants: emptyGrants, readGrants: readGrants, writeGrants: writeGrants,
     normGrant: normGrant, putGrant: putGrant, removeGrant: removeGrant,

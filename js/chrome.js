@@ -137,6 +137,7 @@
     login: "/login/",
     profile: "/profile/",
     admin: "/admin/",
+    plans: "/plans/",
     terms: "/terms/",
     privacy: "/privacy/"
   };
@@ -184,6 +185,8 @@
     if (/^\/login\/?$/.test(p) || /^\/login\/index\.html$/.test(p)) return "login";
     if (/^\/profile\/?$/.test(p) || /^\/profile\/index\.html$/.test(p)) return "profile";
     if (/^\/admin\/?$/.test(p) || /^\/admin\/index\.html$/.test(p)) return "admin";
+    // 层级对比页（/plans/）：从个人中心的「权限」进，看完就走的小页
+    if (/^\/plans\/?$/.test(p) || /^\/plans\/index\.html$/.test(p)) return "plans";
     return "home";
   }
 

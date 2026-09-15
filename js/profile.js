@@ -281,6 +281,7 @@
     if (!sess) show($("guest-card"));
 
     $("btn-go-login").addEventListener("click", function () { location.href = "/login/"; });
+    $("btn-go-plans").addEventListener("click", function () { location.href = "/plans/"; });
     $("btn-sign-out").addEventListener("click", onSignOut);
     $("btn-go-admin").addEventListener("click", function () { location.href = "/admin/"; });
     $("btn-delete-start").addEventListener("click", onDeleteStart);
