@@ -185,20 +185,26 @@ setTimeout(() => {
     '同一行里朝代 / 作者 / 出处都还在（实际「' + rMeta.textContent + '」）');
   // ⚠️ 阅读器那条顶栏**没有头像**：阅读器是全屏沉浸层，身份入口不在正文上出现
   //（头像让位给正文，见 js/chrome.js 的 headerHtml）。
-  // Issue #147：那里改由一枚同径的 `.top-slot-mark`（翻开的这一册）**占住头像的
-  // 像素位** —— 少了它，阅读器的「合上」会比页面返回键横跳 50px（头像 42 + 间距 8）。
-  // 于是两条顶栏的右端结构逐件对齐：品牌区 · 〔返回键槽〕 · 恒定锚点。
-  chk([...rBar.children].map(e => e.className.split(' ')[0]).join('/') === 'brand/top-slot/top-slot-mark',
-    '阅读器顶栏是「品牌区 · 〔返回键槽〕 · 这一册的印」，**不含头像也不含篇号牌**（实际 ' +
+  // Issue #147 后续（用户 2026-09-15 二次确认）：那里原先是一枚「翻开的这一册」
+  // （`.top-slot-mark`），用户看着像一本多余的书，要求撤掉 —— 于是换成一枚
+  // **不可见的占位**（`.top-act-spacer`）：书没了，像素位一个都不动，
+  // 阅读器的「合上」仍与页面返回键同处一个像素位。
+  chk([...rBar.children].map(e => e.className.split(' ')[0]).join('/') === 'brand/top-slot/top-act-spacer',
+    '阅读器顶栏是「品牌区 · 〔返回键槽〕 · 不可见占位」，**不含头像 / 篇号牌 / 任何图标**（实际 ' +
     [...rBar.children].map(e => e.className).join('/') + '）');
   const rSlot = rBar.querySelector(':scope > .top-slot');
   chk(!!rSlot && !!rSlot.querySelector(':scope > #top-act'),
     '阅读器的「合上」也住在同一枚固定圆槽里（与页面那条同一个像素位）');
   chk(d.querySelectorAll('.reader .topbar .top-user').length === 0,
     '阅读器里确实一枚头像都没有（让位给正文）');
-  chk(/\.top-slot-mark \{[^}]*width:\s*var\(--top-slot\)/.test(cssAll),
-    '那枚「这一册的印」与头像同径（--top-slot），所以返回键原地不动');
-  chk(/\.top-slot \+ \.top-user,[\s\S]{0,120}\.top-slot-mark/.test(cssAll),
+  // 反向防线：那枚「书」连同它的样式规则一起清掉，不许留下僵尸
+  chk(!/\.top-slot-mark/.test(cssAll),
+    '样式表里不再留 `.top-slot-mark` 规则（留着下一个人会以为阅读器里还有一枚图标）');
+  chk(!/\.top-slot-mark/.test(fs.readFileSync(path + 'js/chrome.js', 'utf8').replace(/\/\/[^\n]*/g, ' ')),
+    '引擎的代码里也不再生成 `.top-slot-mark`');
+  chk(/\.top-act-spacer \{[^}]*width:\s*var\(--top-slot\)/.test(cssAll),
+    '那枚占位与头像同径（--top-slot），所以返回键原地不动');
+  chk(/\.top-slot \+ \.top-user,[\s\S]{0,120}\.top-act-spacer/.test(cssAll),
     '槽与恒定锚点之间的间距只有一个来源（--top-gap）');
   chk(rBar.querySelector('.brand-page-text').textContent === '课外必背小古文',
     '阅读器里的页名同样是「课外必背小古文」，与列表页一致');
