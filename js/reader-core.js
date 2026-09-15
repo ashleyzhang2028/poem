@@ -663,8 +663,8 @@
 
   /** 单篇播放 / 暂停：再点一次停止 */
   function readOne(p, btn) {
-    if (!speechSupported()) {
-      showToast("当前浏览器不支持语音朗读");
+    if (!speechReady()) {
+      showToast(speechHint());
       return;
     }
     // 再点一次 = 停止当前朗读（含已暂停的情况）
@@ -1081,6 +1081,23 @@
   }
 
   /**
+   * 播放的真实判据：浏览器支持 **且** 权益允许（未登录游客不可用语音播放）。
+   * 判据只在 js/entitlement.js 一处，js/speech.js 里那道门与它同源 ——
+   * 因此按钮的置灰状态不会与「点了有没有声音」脱节。
+   */
+  function speechReady() {
+    if (!speechSupported()) return false;
+    return !!(window.Speech.allowed && window.Speech.allowed().ok);
+  }
+
+  /** 不能播放时该说的话 */
+  function speechHint() {
+    if (!speechSupported()) return "当前浏览器不支持语音朗读";
+    const a = window.Speech.allowed ? window.Speech.allowed() : { ok: true, hint: "" };
+    return a.hint || "登录后即可使用语音朗读";
+  }
+
+  /**
    * 当前是否有「朗读任务」在跑（**含暂停中**）。
    * 只看 speaking() 会漏掉「已暂停」：部分设备 pause() 之后 speaking 会变成
    * false，但队列 / 单条朗读还在，点按钮应当继续或停止，而不是又开一遍。
@@ -1118,14 +1135,14 @@
    * 译文框里那颗键由 syncTransReadButton() 管，只在译文展开时可见。
    */
   function syncReadButtons() {
-    const ok = speechSupported();
+    const ok = speechReady();
     // 自动连读中不算「本篇朗读中」（避免按钮来回跳）；暂停中仍算朗读中，点它即停止
     const playing = ok && !autoReading && readingActive();
 
     var btn = rd("read");
     if (btn) {
       btn.disabled = !ok;
-      btn.title = ok ? "朗读原文：标题、朝代、作者与正文" : "当前浏览器不支持语音朗读";
+      btn.title = ok ? "朗读原文：标题、朝代、作者与正文" : speechHint();
       const on = playing && speakingTarget === "原文";
       btn.dataset.on = on ? "1" : "0";
       btn.setAttribute("aria-pressed", on ? "true" : "false");
@@ -1138,7 +1155,14 @@
 
   /** 正文播放键：朗读原文（标题 + 朝代 + 作者 + 正文） */
   function toggleRead() {
-    if (!speechSupported() || !current) return;
+    if (!current) return;
+    // 「已登录才出声」这道门在 js/speech.js 里，但按钮的 disabled 是**同源**判断，
+    // 正常情况下点不到这里；留着这句是给键盘 / 程序化触发兜底 ——
+    // 没有它，未登录用户会点到一个「按下去没反应」的键。
+    if (!speechReady()) {
+      showToast(speechHint());
+      return;
+    }
     // 点播放键即接管朗读：无论开始还是停止，都退出「随机连读」状态，
     // 否则 autoReading 残留会让播放键一直显示不出播放态
     autoReading = false;
@@ -1160,7 +1184,11 @@
 
   /** 译文播放键：只读白话译文，不读原文；译文没展开时顺手展开，省一次点击 */
   function toggleTransRead() {
-    if (!speechSupported() || !current) return;
+    if (!current) return;
+    if (!speechReady()) {
+      showToast(speechHint());
+      return;
+    }
     autoReading = false;
     // 暂停中同样能停：认 readingActive()（含暂停中），不认 speaking() ——
     // 部分设备 pause 之后 speaking 会变 false，此时点它应当是停下来，
@@ -1218,11 +1246,11 @@
   function syncTransReadButton() {
     var btn = rd("trans-read");
     if (!btn) return;
-    const ok = speechSupported();
+    const ok = speechReady();
     var tbox = rd("trans");
     const boxOpen = !!tbox && !tbox.hidden;
     btn.disabled = !ok;
-    btn.title = ok ? "朗读白话译文" : "当前浏览器不支持语音朗读";
+    btn.title = ok ? "朗读白话译文" : speechHint();
     // 暂停中仍是「在读译文」：按钮点下去就是停下来，不会再重读一遍
     const on = ok && boxOpen && !autoReading && speakingTarget === "译文" && readingActive();
     btn.dataset.on = on ? "1" : "0";
@@ -1503,8 +1531,8 @@
    * @param {HTMLElement} [btn]  卡头圆键；不传 = 整页
    */
   function startPlay(btn) {
-    if (!speechSupported()) {
-      showToast("当前浏览器不支持语音朗读");
+    if (!speechReady()) {
+      showToast(speechHint());
       return;
     }
     // 再点一次 = 停：播放栏、列表高亮、两颗圆键一起复位
@@ -1572,7 +1600,7 @@
   function syncRandomReadButton() {
     var btn = $('[data-gw="random"]') || $("#gw-random-read");
     if (!btn) return;
-    const ok = speechSupported();
+    const ok = speechReady();
     btn.disabled = !ok;
     const running = autoReading && !!(window.Speech && window.Speech.active && window.Speech.active());
     btn.dataset.on = running ? "1" : "0";
@@ -1580,7 +1608,7 @@
     // 可见文案一个字都没有（读屏文案固定，不随播放态改写）。
     btn.setAttribute("aria-pressed", running ? "true" : "false");
     // 键义里带上当前模式：这颗键与卡头那颗同一模式，读屏用户也听得到
-    btn.title = running ? "停止连读" : playBtnAria();
+    btn.title = running ? "停止连读" : (ok ? playBtnAria() : speechHint());
   }
 
   function shuffle(list) {

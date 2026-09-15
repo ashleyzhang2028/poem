@@ -1127,6 +1127,26 @@
     return !!(window.Speech && window.Speech.supported());
   }
 
+  /**
+   * 播放能力的真实判据：浏览器支持 **且** 权益允许。
+   *
+   * 未登录（游客）不能用语音播放 —— 用户 2026-09-15 裁决。
+   * 判据只有 js/entitlement.js 一处，这里只读结果，不自己拼 plan。
+   * 所有「按能不能播」置灰按钮的地方都改用它，于是按钮状态与
+   * js/speech.js 内部那道门**同源**，不会出现「按钮亮着但点了没声音」。
+   */
+  function speechReady() {
+    if (!speechOk()) return false;
+    return !!(window.Speech.allowed && window.Speech.allowed().ok);
+  }
+
+  /** 不能播放时该说的话（登录后可用 / 浏览器不支持，两种分开说） */
+  function speechHint() {
+    if (!speechOk()) return "当前浏览器不支持语音朗读";
+    const a = window.Speech.allowed ? window.Speech.allowed() : { ok: true, hint: "" };
+    return a.hint || "登录后即可使用语音朗读";
+  }
+
   /** 一首诗的朗读文本：标题 + 朝代 + 作者 + 正文 */
   function speechText(p) {
     // 自选篇目读显示名：念出「木兰花其二」会让人以为漏了半句（见 showTitle）
@@ -1136,8 +1156,8 @@
 
   /** 朗读当天全部：依次读标题、朝代、作者与正文 */
   function readTodayAll() {
-    if (!speechOk()) {
-      showToast("当前浏览器不支持语音朗读");
+    if (!speechReady()) {
+      showToast(speechHint());
       return;
     }
     if (!todayPlan.length) return;
@@ -1178,8 +1198,8 @@
 
   /** 朗读单首：再点一次停止 */
   function readOne(p, btn) {
-    if (!speechOk()) {
-      showToast("当前浏览器不支持语音朗读");
+    if (!speechReady()) {
+      showToast(speechHint());
       return;
     }
     if (window.Speech.speaking()) {
@@ -1200,13 +1220,14 @@
   function syncTodayReadBtn() {
     const btn = $("#today-read");
     if (!btn) return;
-    const ok = speechOk();
+    const ok = speechReady();
     btn.disabled = !ok;
     // 「今日 5 首」不再显示，播放栏会直接报出当前这一首，
     // 所以这里只区分「是否有队列在跑」，用来切换圆形播放键的 ▶ / ⏸
     const on = ok && !!(window.ReaderPlayer && window.ReaderPlayer.isRunning && window.ReaderPlayer.isRunning());
     btn.dataset.on = on ? "1" : "0";
-    btn.setAttribute("aria-label", on ? "停止朗读" : "依次朗读今天要背的每一首");
+    btn.title = ok ? "依次朗读今天要背的每一首" : speechHint();
+    btn.setAttribute("aria-label", ok ? (on ? "停止朗读" : "依次朗读今天要背的每一首") : speechHint());
     const text = $("#today-read-text");
     if (text) text.textContent = on ? "播放中" : "播放";
   }
@@ -1224,7 +1245,7 @@
   }
 
   function syncItemReadBtns() {
-    const speaking = speechOk() && window.Speech.speaking();
+    const speaking = speechReady() && window.Speech.speaking();
     $$("#today-list .item-read").forEach(function (b) {
       b.dataset.on = speaking ? "1" : "0";
     });
@@ -1239,7 +1260,7 @@
    * 所以一篇诗里任何时候只看得到一个播放信号。
    */
   function syncReadBtn() {
-    const ok = speechOk();
+    const ok = speechReady();
     const playing = ok && !!window.Speech.speaking();
     const keys = [
       { btn: "#m-read-btn", key: "原文", title: "朗读原文：标题、朝代、作者与正文" },
@@ -1250,9 +1271,11 @@
       if (!btn) return;
       const usable = ok && (cfg.key === "原文" || hasTranslation(currentPoem));
       btn.disabled = !usable;
-      btn.title = !ok
+      btn.title = !speechOk()
         ? "当前浏览器不支持语音朗读"
-        : cfg.key === "译文" && !hasTranslation(currentPoem)
+        : !ok
+          ? speechHint()
+          : cfg.key === "译文" && !hasTranslation(currentPoem)
           ? "本篇暂无译文"
           : cfg.title;
       const on = playing && speakingTarget === cfg.key;
@@ -1269,7 +1292,11 @@
 
   /** 原文键：朗读原文（标题 + 朝代 + 作者 + 正文） */
   function toggleRead() {
-    if (!currentPoem || !speechOk()) return;
+    if (!currentPoem) return;
+    if (!speechReady()) {
+      showToast(speechHint());
+      return;
+    }
     if (window.Speech.speaking()) {
       window.Speech.stop();
       showToast("已停止朗读");
@@ -1285,7 +1312,11 @@
 
   /** 译文键：只读白话译文，不读原文；译文框没展开时顺手展开 */
   function toggleTransRead() {
-    if (!currentPoem || !speechOk()) return;
+    if (!currentPoem) return;
+    if (!speechReady()) {
+      showToast(speechHint());
+      return;
+    }
     if (window.Speech.speaking()) {
       window.Speech.stop();
       showToast("已停止朗读");

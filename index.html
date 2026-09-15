@@ -322,6 +322,13 @@
   <script src="data/pinyin-table.js"></script>
   <script src="data/common-chars.js"></script>
   <script src="js/pinyin.js"></script>
+  <!-- 权益总闸：全站唯一的「能不能用某功能」出口。必须排在 speech.js 之前 ——
+       语音播放要求登录（free 即可用），判据由它出，speech.js 里那道门与它同源。 -->
+  <!-- 认证内核：会话是谁、邮箱码在哪台设备上验证过。纯逻辑、零网络，
+       与权益层一样属于「引擎」，不是页面。必须在 entitlement.js 之前 ——
+       identity() 要靠它读会话，顺序反了就永远判成游客。 -->
+  <script src="js/auth-core.js"></script>
+  <script src="js/entitlement.js"></script>
   <script src="js/speech.js"></script>
   <script src="js/reader.js"></script>
   <!-- 自选集合（用户自己加背的篇目）：必须在 app.js 之前，

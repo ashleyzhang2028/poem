@@ -141,12 +141,57 @@ function bootPage(name) {
   return window;
 }
 
-function bootPageWithSpeech() {
+/** 造一个「已用邮箱码登录过」的 localStorage：调真 auth-core，不手工拼 JSON */
+function signedInStorage() {
+  const A = require(ROOT + "js/auth-core.js");
+  const mem = {};
+  const backing = {
+    getItem: k => (k in mem ? mem[k] : null),
+    setItem: (k, v) => { mem[k] = String(v); },
+    removeItem: k => { delete mem[k]; }
+  };
+  const store = A.makeStore(backing);
+  const req = A.requestCode(store, { channel: "email", value: "zhangmin@163.com" }, "login", { code: "246810" });
+  A.verifyCode(store, req.codeId, "246810", "login");
+  // 返回**普通对象**（键 → 值），不返回 getItem/setItem 那种 backing：
+  // 普通对象在 beforeParse 里既能直接读值，也不会被误当成「自带 getItem 的存储」。
+  return Object.assign({}, mem);
+}
+
+/**
+ * 预置 localStorage。
+ *
+ * ⚠️ 不能只调 `win.localStorage.setItem` 然后在页面里读：
+ *    jsdom 注入的 localStorage 是带名字访问器的**代理**，直接把 `window` 换成
+ *    iframe 时索引会错位（实测会出现「写进去 1 条、再读只有 0 条」）。
+ *    所以这里用一张影子 Map 顶掉 window.localStorage 本身 ——
+ *    浏览器里它是同一个接口，行为一致，且不依赖 jsdom 的代理实现。
+ */
+function seedStorage(win, data) {
+  if (!data) return;
+  const shadow = new Map(Object.entries(data).map(([k, v]) => [k, String(v)]));
+  const ls = {
+    getItem: k => (shadow.has(k) ? shadow.get(k) : null),
+    setItem: (k, v) => { shadow.set(k, String(v)); },
+    removeItem: k => { shadow.delete(k); },
+    clear: () => shadow.clear(),
+    key: i => Array.from(shadow.keys())[i] || null
+  };
+  Object.defineProperty(ls, "length", { get: () => shadow.size });
+  Object.defineProperty(win, "localStorage", { configurable: true, value: ls });
+}
+
+/**
+ * 启动首页并在启动**之前**预置存储。
+ * @param {Object} [opt] opt.storage 预置的 localStorage（如已登录的账号）
+ */
+function bootPageWithSpeech(opt) {
   const { JSDOM } = require("jsdom");
   const dom = new JSDOM(fs.readFileSync(ROOT + "index.html", "utf8"), {
     runScripts: "dangerously",
     url: "https://local.test/",
     beforeParse(win) {
+      seedStorage(win, opt && opt.storage);
       win.SpeechSynthesisUtterance = function (t) { this.text = t; };
       // 形态与浏览器一致：以 speaking 属性反映播放状态
       win.speechSynthesis = {
@@ -268,12 +313,34 @@ setTimeout(async () => {
   readBtn.dispatchEvent(new w.Event("click", { bubbles: true }));
   chk(true, "点击禁用的朗读按钮不会抛异常");
 
-  // 模拟支持的浏览器：注入假 SpeechSynthesis 后再启动页面，验证能真正发出朗读
-  const w2 = bootPageWithSpeech();
+  // 模拟支持的浏览器：注入假 SpeechSynthesis 后再启动页面
+  // —— 但没登录，语音播放必须被拦住（用户 2026-09-15 裁决）
+  const wGuest = bootPageWithSpeech();
   await phase1();
-  chk(w2.Speech.supported() === true, '有语音能力时 Speech.supported() 返回 true');
+  chk(wGuest.Speech.supported() === true, '有语音能力时 Speech.supported() 返回 true');
+  chk(wGuest.Speech.allowed().ok === false, '未登录：权益层不放行语音播放');
+  chk(wGuest.Speech.allowed().hint === '登录后即可使用（免费）',
+    '未登录：给的话是「登录后即可使用（免费）」（' + wGuest.Speech.allowed().hint + '）');
+  const gBtn = wGuest.document.querySelector('#m-read-btn');
+  const gToday = wGuest.document.querySelector('#today-read');
+  chk(gToday.disabled === true, '未登录：首页「今日连读」那颗大圆键置灰（它一进页面就在）');
+  // 弹层里的键要先打开一首诗才会同步状态
+  wGuest.document.querySelector('#today-list .item').dispatchEvent(new wGuest.Event('click', { bubbles: true }));
+  chk(gBtn.disabled === true, '未登录：朗读按钮置灰（不是点了没反应）');
+  chk(/登录后即可/.test(gBtn.title), '未登录：按钮 title 说明原因（' + gBtn.title + '）');
+  gBtn.dispatchEvent(new wGuest.Event('click', { bubbles: true }));
+  chk(!wGuest.__spoken(), '未登录：点朗读不会把文本交给语音合成（一个字节都没发出去）');
+  chk(wGuest.document.querySelector('#toast').textContent === '登录后即可使用（免费）',
+    '未登录：点朗读给出的提示与权益层一致（' + wGuest.document.querySelector('#toast').textContent + '）');
+
+  // 登录后的 free 用户：语音播放可用（free 不残缺）
+  const w2 = bootPageWithSpeech({ storage: signedInStorage() });
+  await phase1();
+  chk(w2.AuthCore && w2.Entitlement, '页面同时加载了认证内核与权益层');
+  chk(w2.Entitlement.identity().signedIn === true, '预置的账号会话被识别为已登录');
+  chk(w2.Speech.allowed().ok === true, '登录的 free 用户：语音播放放行');
   const btn2 = w2.document.querySelector('#m-read-btn');
-  chk(btn2.disabled === false, '有语音能力时朗读按钮可用');
+  chk(btn2.disabled === false, '登录的 free 用户：朗读按钮可用');
   w2.document.querySelector('#today-list .item').dispatchEvent(new w2.Event('click', { bubbles: true }));
   btn2.dispatchEvent(new w2.Event('click', { bubbles: true }));
   const spoken = w2.__spoken();
