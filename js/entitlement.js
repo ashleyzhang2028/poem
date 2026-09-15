@@ -459,12 +459,13 @@
       (byMin[r.minTier] || byMin.free).push(r);
     });
     [
-      { key: "free", title: "所有版本都有",
-        note: "免费且不缩水 —— 课内 261 首、六部集子、排程、注音，一件都不收回" },
-      { key: "pro", title: "Pro 起",
-        note: "在免费的全部功能之上，再加这些" },
+      /* Issue #163：三组的注解原先各是一句「把表再说一遍」的话
+         （「免费且不缩水 —— 课内 261 首、六部集子…一件都不收回」之类），
+         用户点名的就是这种。分组名自己已经说完，注解只留一句还有信息量的。 */
+      { key: "free", title: "所有版本都有" },
+      { key: "pro", title: "Pro 起" },
       { key: "max", title: "Max 起",
-        note: "在 Pro 之上再加的额度与能力" }
+        note: "额度更大：AI 讲解 500 次/月" }
     ].forEach(function (g) {
       if (byMin[g.key].length) groups.push({ key: g.key, title: g.title, note: g.note, rows: byMin[g.key] });
     });

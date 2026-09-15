@@ -75,8 +75,10 @@
     if (!body) return;
     var html = "";
     cmp.groups.forEach(function (g) {
+      // 注解缺席就不画那个 span（空 span 会占一行高度）
+      var gnote = g.note ? '<span class="plans-group-note">' + esc(g.note) + "</span>" : "";
       html += '<tr class="plans-group"><th colspan="' + (cmp.cols.length + 1) + '" scope="colgroup">' +
-        esc(g.title) + '<span class="plans-group-note">' + esc(g.note) + "</span></th></tr>";
+        esc(g.title) + gnote + "</th></tr>";
       g.rows.forEach(function (row) {
         html += '<tr><th class="plans-th-cap" scope="row">' + esc(row.name) +
           (row.quota ? '<span class="plans-quota">每月 ' + esc(row.quota) + " 次</span>" : "") +
@@ -106,11 +108,12 @@
   /**
    * 表尾：每列「能用几项 / 共几项」。
    * 这一行是把整张表压成一个数字 —— 也是「免费不残缺」最直接的数字证据。
+   * Issue #163：表头那格只留「能用」，不再写「能用多少项」。
    */
   function renderFoot(cmp) {
     var foot = $("plans-foot");
     if (!foot) return;
-    var html = '<tr><th class="plans-th-cap" scope="row">能用多少项</th>';
+    var html = '<tr><th class="plans-th-cap" scope="row">能用</th>';
     cmp.summary.forEach(function (s) {
       html += '<td class="plans-sum">' + esc(s.ok) + '<span class="plans-sum-of">/ ' + esc(s.total) + "</span></td>";
     });
@@ -129,16 +132,17 @@
    * 但整句删掉也不对：没配后端 / 连不上时，本机那一份确实是「改一行存储
    * 就能改」的。所以两种状态各说各的实话，判据只有一个 —— `id.tierSource`。
    *
-   * ⚠️ `不是付费凭据` 与 `没有收款` 两句**两种状态都要说**：
-   *    层级权威了不等于能收钱（4 期才做的题），这两件事不许混。
+   * Issue #163：原先两种状态后面还各接一句「本站无收款、无支付入口，
+   * 层级不是付费凭据」—— 那讲的是「本站不卖东西」，不是这一页要回答的
+   * 「这些层级是什么」，删掉。**两种状态各说各的实话**这一条照旧：
+   * 判据只有 `id.tierSource`（见 entitlement.js 的 identity()）。
    */
   function renderAbout(id) {
     var box = $("plans-about");
     if (!box) return;
-    var notPay = "本站无收款、无支付入口，层级不是付费凭据。";
-    box.innerHTML = id && id.tierSource === "server"
-      ? "你的层级由服务器判定，本机改不动。" + notPay
-      : "这一份层级是本机登记，改一行存储就能改。" + notPay;
+    box.textContent = id && id.tierSource === "server"
+      ? "层级由服务器判定，本机改不动。"
+      : "层级本机登记，改一行存储就能改。";
   }
 
   /* ------------------------------------------------------------ 四、我在哪一格 */
@@ -165,9 +169,7 @@
 
     var hint = $("plans-me-hint");
     if (hint) {
-      hint.textContent = id.signedIn
-        ? "已登录也能用免费版全部功能；Pro / Max 由管理员按邮箱掩码登记。"
-        : "不登录也能用免费版全部功能，只有语音朗读要登录。";
+      hint.textContent = id.signedIn ? "" : "不登录只有语音朗读不能用。";
     }
   }
 

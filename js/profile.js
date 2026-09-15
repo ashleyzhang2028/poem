@@ -180,52 +180,23 @@
   }
 
   /**
-   * 权限清单下面那句说明 —— **按当前状态如实分叉**，不是一句写死的话。
+   * 「权限」一节 —— **只报一行身份，其余去对比页看**。
    *
-   * 2.1 之前这里写的是「本期没有服务器，层级只是本机登记」。服务端接通
-   * 之后，这句在有会话的人眼里就是**假话**：那时层级是服务端判定的，
-   * 说出来才有分量。但反过来把它整句删掉也不行 —— 没配后端 / 连不上时，
-   * 本机那一份确实是「改一行存储就能改」的，用户有权知道这一条。
+   * Issue #163 用户原话：「权限那个章节说了一堆，直接链接到对比页面不就行了吗」。
+   * 原先这里是 `Entitlement.matrix()` 生成的 15 条清单（能用的打钩、不能用的
+   * 写门槛），下面再挂一颗进对比页的按钮 —— 同一件事在两页各说一遍。
    *
-   * 所以分叉的判据只有一个：`id.tierSource`（服务端判定的唯一凭据，
-   * 见 entitlement.js 的 identity()）。**不自己猜、不自己比 tier**。
-   */
-  function capsHint(id) {
-    if (!id.signedIn) {
-      return "登录后可用语音朗读（免费）；其余带门槛的能力由管理员发放。";
-    }
-    return id.tierSource === "server"
-      ? "层级由服务器判定，本站不收款，不是付费凭据。"
-      : "层级是本机登记，改一行存储就能改，不是付费凭据。";
-  }
-
-  /* ------------------------------------------------------------ 四、权限清单 */
-
-  /**
-   * 权限清单：一条一事，能用的打勾、不能用的写门槛。
+   * 现在这一节只说一件事：**你在哪一层**。谁能用什么，去 /plans/ 那张表看，
+   * 那边四列横向对齐、每格都是当场算的。
    *
-   * 全部来自 `Entitlement.matrix(ctx)` —— 本页**只负责排版**。
-   * 这也是「免费不残缺」这条原则在界面上唯一能被用户看见的地方：
-   * 他得能一眼看出「我现在能用什么、什么要升级」。
+   * ⚠️ 层级文案仍然只走 `Ent.tierLabel()`；**本页不自己比 tier**。
+   * ⚠️ **不许把这一节画成空白**：`Entitlement` 没装上时不画（整页都不画），
+   *    但装上了就必须有一行字，否则用户看到的是一张空卡。
    */
   function renderCaps(id) {
-    var list = $("cap-list");
-    if (!list) return;
-    var rows = Ent.matrix(id.ctx);
-    list.innerHTML = rows.map(function (r) {
-      var mark = r.ok ? "✓" : "·";
-      // 门槛文案与能力名之间留一个空格：不加的话读起来是
-      // 「自选清单 20 个Pro 起可用」，像是排版出错
-      var hint = r.hint ? '<span class="cap-hint"> ' + esc(r.hint) + "</span>" : "";
-      return '<li class="' + (r.ok ? "on" : "off") + '">' +
-        '<span class="cap-mark" aria-hidden="true">' + mark + "</span>" +
-        '<span class="cap-name">' + esc(r.name) + hint + "</span></li>";
-    }).join("");
-    // 清单里的门槛文案来自内核；这里只补一句「本机演示版」的诚实说明
-    var hint = $("cap-hint");
-    if (hint) {
-      hint.textContent = capsHint(id);
-    }
+    var box = $("cap-tier");
+    if (!box) return;
+    box.textContent = Ent.tierLabel(id.tier);
   }
 
   /* ------------------------------------------------------------ 五、管理员入口 */

@@ -904,19 +904,21 @@
       return;
     }
 
-    const rows = E.matrix(ident).map(function (m) {
-      const mark = m.ok ? "✓" : "·";
-      const tail = m.ok ? (m.hint ? "（" + m.hint + "）" : "") : "（" + m.hint + "）";
-      return '<li class="account-cap' + (m.ok ? " ok" : " off") + '">' +
-        '<span class="cap-mark" aria-hidden="true">' + mark + "</span>" +
-        '<span class="cap-name">' + m.name + "</span>" +
-        '<span class="cap-hint">' + tail + "</span></li>";
-    }).join("");
+    /* Issue #163：这一段原先把**全部** 15 条能力列一遍（能用的打钩、不能用的
+       写门槛）—— 与个人中心那份清单、与 /plans/ 那张四列表说的是同一件事，
+       三处各说一遍。现在只留一句还有信息量的：**你还差哪几项**（没有就一句
+       「全都能用」）。「我能用什么」去 /plans/ 那张表看，一列到底。 */
+    const lacks = E.matrix(ident).filter(function (m) { return !m.ok; });
+    const rows = lacks.length
+      ? '<p class="settings-hint">还差：' + lacks.map(function (m) {
+          return esc(m.name + "（" + m.hint + "）");
+        }).join("、") + '</p>'
+      : '<p class="settings-hint">全部功能都能用。</p>';
 
     box.innerHTML =
       '<p class="account-line"><span class="account-state ok" id="account-state">已登录</span>' +
       '<span class="account-mask" id="account-mask">' + (ident.mask || "本机账号") + "</span>" + badge + "</p>" +
-      '<ul class="account-caps" id="account-caps">' + rows + "</ul>" +
+      rows +
       '<div class="settings-btns">' +
       '<a class="btn ghost-btn" id="btn-goprofile" href="/profile/">个人中心</a>' +
       '<button class="btn ghost-btn" id="btn-signout" type="button">退出登录</button></div>' +

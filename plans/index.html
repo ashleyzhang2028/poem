@@ -42,17 +42,12 @@
               所以这张表的表尾必须如实写明它不是付费凭据（不许装作在卖东西）。
            ================================================================== -->
 
-      <!-- ---------- 一、抬头：三句话把这张表的前提说清 ---------- -->
+      <!-- ---------- 一、四列对比（这一页就只有这张表） ----------
+           Issue #163：原先顶上还挂一张「免费版不缩水：全部篇目、每日排程、注音、
+           进度导出一件不少。Pro / Max 只加能力」的卡 —— 那是把表**第一组**
+           又说了一遍（灰字已经写着「免费且不缩水」），删掉。
+           下面是这张表本身唯一还需要的一句图例（符号各是什么）。 -->
       <section class="account-card">
-        <p class="account-lead">
-          <strong>免费版不缩水</strong>：全部篇目、每日排程、注音、进度导出一件不少。
-          Pro / Max 只<strong>加</strong>能力。
-        </p>
-      </section>
-
-      <!-- ---------- 二、四列对比 ---------- -->
-      <section class="account-card">
-        <h2 class="account-card-title">功能对照</h2>
         <div class="plans-scroll">
           <table class="plans-table">
             <caption class="plans-caption">各身份可用功能对照</caption>
@@ -63,26 +58,26 @@
         </div>
         <p class="account-hint">
           <span class="plans-mark ok" aria-hidden="true">✓</span> 可用 ·
-          <span class="plans-mark no" aria-hidden="true">✕</span> 不可用 · 灰字是从哪一层起可用
+          <span class="plans-mark no" aria-hidden="true">✕</span> 不可用
         </p>
       </section>
 
-      <!-- ---------- 三、你现在在哪一格 ---------- -->
+      <!-- ---------- 二、你在哪一格 ---------- -->
       <section class="account-card">
-        <h2 class="account-card-title">你现在的身份</h2>
+        <h2 class="account-card-title">你在这</h2>
         <div class="kv-list" id="plans-me"></div>
         <button class="account-btn" id="btn-go-login" type="button">建一个账号</button>
         <p class="account-hint" id="plans-me-hint"></p>
       </section>
 
-      <!-- ---------- 四、诚实地说明它现在是什么 ---------- -->
+      <!-- ---------- 三、诚实地说明它现在是什么 ---------- -->
       <section class="account-card">
         <h2 class="account-card-title">关于这些层级</h2>
         <!-- 这一段由 js/plans.js 的 renderAbout() 按当前状态渲染：
              服务端判定 / 本机登记 两种状态各说各的实话，HTML 里不写死一句话
              （写死的那句在服务端接通之后就是假话，见 2.1） -->
         <p class="account-lead" id="plans-about"></p>
-        <button class="account-btn ghost" id="btn-go-profile" type="button">去个人中心看我的权限</button>
+        <button class="account-btn ghost" id="btn-go-profile" type="button">看我的权限</button>
       </section>
     </main>
 
