@@ -21,8 +21,14 @@
   <link rel="stylesheet" href="css/account.css" />
 </head>
 <!-- data-dock="off"：登录页是一段「专心做完」的流程，不留底部页签免得误触跳走
-     （法务页同款）。data-back 指设置页：账号入口在设置里。 -->
-<body data-nav="login" data-dock="off" data-back="/settings/" data-page="登录" data-sub="邮箱随机码">
+     （法务页同款）。
+     返回落点（Issue #132 · D）指**个人中心**而不是设置页：
+     进来的人有两种 —— 一种从设置主页那张「账号」卡（未登录时才出现），
+     另一种从个人中心（首页那枚印 → /profile/ → 这颗入口）进来。
+     前者占少数，后者才是主要动线；而且「点账号 → 看自己是谁」比
+     「点账号 → 落回一页设置」更符合上一轮定下的说法：
+     登录是身份的事，落回设置页等于又多绕一层。 -->
+<body data-nav="login" data-dock="off" data-back="/profile/" data-page="登录" data-sub="邮箱随机码">
   <div class="app">
     <header class="topbar"></header>
 

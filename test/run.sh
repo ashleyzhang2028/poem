@@ -41,6 +41,9 @@
 #   3s. 二级设置页      —— 纯 Node，五张设置页（主页 + 四张二级页）的结构：
 #                          四张页合起来仍是原来那六组、每件控件只在一页上、
 #                          二级页的返回键回设置主页、新页面都进了预缓存（Issue #132）
+#   3t2.账号入口动线    —— jsdom + 源码扫描，从一个「未登录的人」到 /login/ 的
+#                          三条落点（顶栏印 → /profile/ → 账号入口、设置主页那张
+#                          账号卡）与返回落点（登录 → 个人中心 → 设置主页）（Issue #132）
 #   3t. 账号三页        —— 纯 Node，/login/ /profile/ /admin/ 的结构与口径：
 #                          权限判断只走 Entitlement、页面不自己拼 plan、
 #                          如实标注「本地体验版」（不许假装有服务器）、
@@ -185,6 +188,10 @@ node test/settings-nav.test.js
 echo ""
 echo "=== 账号三页（/login/ /profile/ /admin/，Issue #132）==="
 node test/account-pages.test.js
+
+echo ""
+echo "=== 账号入口动线（顶栏印 / 个人中心 / 设置主页那张卡，Issue #132）==="
+node test/account-entry.test.js
 
 echo ""
 echo "=== 用户名设置测试 ==="

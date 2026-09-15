@@ -294,8 +294,11 @@
       try { Avatar.saveNickname(backing, clean); } catch (e) { /* 隐私模式：不抛 */ }
     }
     if (A.setNickname && store) { try { A.setNickname(store, clean); } catch (e) { /* 昵称写不进不影响登录 */ } }
-    // 回到设置页：账号那一项在「通用」里，用户接着能看到自己的状态
-    location.href = "/settings/general/";
+    // 回到**个人中心**（Issue #132 · D）：登录完最该看见的是「我是谁、
+    // 现在能用什么」——那张权限清单就在这里。落回设置页要多绕一层，
+    // 而且设置页是「调机器」的地方，不是「看自己」的地方。
+    // 与顶栏返回键的落点（data-back="/profile/"）同一条动线，不出现两条。
+    location.href = "/profile/";
   }
 
   /* ------------------------------------------------------------ 信任期 */
