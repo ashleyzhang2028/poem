@@ -1,0 +1,276 @@
+/**
+ * 账号入口动线专项测试（Issue #132 · A→B→C→D 的 D）
+ * ==========================================================================
+ * 账号三页（/login/ /profile/ /admin/）落地之后，还差**最后一块**：
+ * 从一个「未登录的人」到 `/login/` 的路。这一层就是守那条路。
+ *
+ * 为什么不能靠肉眼点一遍就下结论：动线的毛病全是**静默**的 ——
+ *   入口指向一个 404（`/login/` 建好之前就是这么摆的）；返回键落回设置页
+ *   而不是个人中心；「管理后台」入口在个人中心里看得见、点进去却被拒；
+ *   顶栏那枚印没画（`Avatar.html(null, …)` 那个坑，表现是「只有顶栏还是诗」）。
+ *
+ * 三个真实存在的落地点，一处都不能少：
+ *   ① 顶栏那枚印  → `/profile/`（每页都有，未登录也画）—— 由 chrome.js 出
+ *   ② 个人中心    → 身份卡里的账号入口 → `/login/`
+ *   ③ 设置主页    → 「账号」卡（未登录给登录、已登录给个人中心）→ 由 settings-nav.js 出
+ *
+ * 另外守两条口径：
+ *   · `/login/` 的返回落点是 `/profile/`（登录是身份的事，不是设置的事）
+ *   · 页面 / 脚本里**不许自己拼 plan / tier**，判据一律走 Entitlement
+ *
+ * 跑法：`node test/account-entry.test.js`（jsdom + 源码扫描，不联网、不装依赖）
+ */
+const { JSDOM } = require('jsdom');
+const fs = require('fs');
+const path = __dirname + '/../';
+const read = f => fs.readFileSync(path + f, 'utf8');
+
+let fails = 0;
+const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else console.log('✓ ' + m); };
+
+/** 剥注释：注释里会写历史口径，不剥掉就会对着自己的说明判红 */
+const strip = t => t.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/^\s*\/\/.*$/gm, ' ');
+/** 剥 HTML 注释：注释里可以写「这条占位不许渲染」的说明 */
+const stripHtml = t => t.replace(/<!--[\s\S]*?-->/g, ' ');
+
+const SETTINGS_HOME = 'settings/index.html';
+const PROFILE = 'profile/index.html';
+const LOGIN = 'login/index.html';
+
+const SRC = {
+  home: read(SETTINGS_HOME),
+  profile: read(PROFILE),
+  login: read(LOGIN)
+};
+const NAV = read('js/settings-nav.js');
+const PROFILE_JS = read('js/profile.js');
+const LOGIN_JS = read('js/login.js');
+const CHROME = read('js/chrome.js');
+const SW = read('sw.js');
+
+/**
+ * 起一张真页。
+ *
+ * 与 test/ui.test.js 同一套起页方式（jsdom 不加载外部资源，脚本按 HTML 里的
+ * 声明顺序手动读进来注入 —— **顺序本身就是被测口径的一部分**），
+ * 但这里多三步，都是「不补就测不出真东西」的：
+ *
+ *   1. **先注入内核**（auth-core / entitlement）：设置主页的 HTML 里没有它们，
+ *      而账号卡要读；不注入的话测的是「拿不到内核 → 整卡不画」那条降级分支。
+ *   2. **内核之间显式对接**（`Entitlement.setAuthCore(AuthCore)`）：
+ *      `identity()` 要从会话里取账号，靠的是这个显式注入，不是「读完两个文件
+ *      就自动连上」。少这一步的症状正是「盘上明明有会话，账号卡却永远
+ *      画成未登录」—— 与 test/entitlement.test.js 里那条跨 realm 的坑同源。
+ *   3. **最后补一次 DOMContentLoaded**：jsdom 构造时 `readyState` 是
+ *      `loading`，页面脚本于是把 `init()` 挂到 DOMContentLoaded 上等 ——
+ *      不补这一下，账号卡永远停在 HTML 里那个 `hidden`（测出来是「没渲染」，
+ *      而真相只是「还没轮到它跑」）。
+ */
+function boot(file, url, seed) {
+  const src = read(file);
+  const sdom = new JSDOM(src, { runScripts: 'dangerously', url: url, base: url });
+  const w = sdom.window;
+  if (seed) for (const k in seed) { try { w.localStorage.setItem(k, seed[k]); } catch (e) {} }
+
+  ['js/auth-core.js', 'js/entitlement.js'].forEach(f => {
+    const el = w.document.createElement('script');
+    el.textContent = read(f);
+    w.document.body.appendChild(el);
+  });
+  if (w.Entitlement && w.Entitlement.setAuthCore) w.Entitlement.setAuthCore(w.AuthCore);
+
+  (src.match(/<script src="([^"]+)"><\/script>/g) || [])
+    .map(x => x.match(/src="([^"]+)"/)[1])
+    .forEach(rel => {
+      const el = w.document.createElement('script');
+      el.textContent = read(rel.replace(/^\//, ''));
+      w.document.body.appendChild(el);
+    });
+
+  w.document.dispatchEvent(new w.Event('DOMContentLoaded', { bubbles: true }));
+  return { window: w, doc: w.document };
+}
+
+/**
+ * 在**同一份** storage 上建会话（不是两处各写一遍）。
+ *
+ * ⚠️ 会话键（`poem_auth_v1`）由内核写进它拿到的那个 storage，所以
+ *    必须先在这张页自己的 localStorage 上建会话，再让账号卡重画 ——
+ *    分两处写会得到「页面里看着有账号、Entitlement 却判成游客」那种
+ *    最难查的不一致。这也正是账号卡要读 `Entitlement.identity()`、
+ *    而不是自己另判一遍会话的原因。
+ */
+function signIn(w, email) {
+  const A = w.AuthCore;
+  const store = A.makeStore(w.localStorage);
+  const id = { channel: 'email', value: email };
+  const r = A.requestCode(store, id, 'login');
+  const v = A.verifyCode(store, r.codeId, r.code, 'login');
+  if (!v || !v.ok) throw new Error('测试里的登录没能建立会话：' + JSON.stringify(v));
+  return v;
+}
+
+/** 让两张设置页的卡按当前盘上状态重画一遍（补一次 DCL 就够） */
+function repaint(p) {
+  p.doc.dispatchEvent(new p.window.Event('DOMContentLoaded', { bubbles: true }));
+}
+
+/* ================= 一、顶栏那枚印：每页都画，且指 /profile/ ================= */
+{
+  chk(/userAvatarHtml\(\)/.test(CHROME), '顶栏右上角那枚印由 chrome.js 一处渲染');
+  chk(/return p \|\| ROUTES\.profile;/.test(CHROME),
+    '印的落点是 /profile/（不是设置页 —— 「点头像看自己」是肌肉记忆）');
+  // 未登录也画：否则「右上角什么都没有」，入口就不存在了
+  chk(!/signedIn|isSignedIn/.test(CHROME),
+    'chrome.js 画印时不看登录态（未登录也画，否则最后一个入口也没了）');
+  // ⚠️ 必须显式传 localStorage（传 null 会读不到档案，只有顶栏画默认「诗」字）
+  chk(/A\.html\(backing, \{ cls: "seal-avatar-top" \}\)/.test(CHROME),
+    '画印时显式传 localStorage（传 null 就读不到档案，只有顶栏画默认「诗」字）');
+  // ⚠️ 「不传尺寸」这条不能靠扫 `size:` 字符串：那段注释里正写着
+  //    「**不传 size**：直径由 CSS 统一给（--user-size: 42px）……」
+  //    —— 拿裸词去扫必然误判（这个坑本条一开始就踩了）。
+  //    判据换成**剥掉注释之后**，画印那一次调用里不出现 size 选项。
+  const avFn = strip(CHROME.slice(CHROME.indexOf('function userAvatarHtml'),
+    CHROME.indexOf('function userHref')));
+  chk(!/size:/.test(avFn), '画印那次调用里不出现 size 选项（直径只有 CSS 一处来源）');
+  chk(/\.top-user\s*\{[\s\S]{0,200}?--user-size/.test(read('css/style.css')),
+    '.top-user 的直径由 --user-size 一处给（不散落在 JS 里）');
+  chk(/--user-size/.test(read('css/style.css')),
+    '直径由 CSS 的 --user-size 给（与品牌徽标同径）');
+}
+
+/* ================= 二、个人中心：身份卡里的账号入口 ================= */
+{
+  chk(/id="btn-account-entry"/.test(SRC.profile),
+    '/profile/ 的身份卡里有账号入口（它是账号三页唯一的枢纽）');
+  chk(/renderAccountEntry\(id\)/.test(PROFILE_JS),
+    '那颗入口的文案由 profile.js 按登录态写（不在 HTML 里写死两处）');
+  chk(/location\.href = "\/login\/"/.test(PROFILE_JS),
+    '账号入口落在 /login/');
+  chk(/id\.signedIn/.test(PROFILE_JS.slice(PROFILE_JS.indexOf('function renderAccountEntry'))),
+    '入口文案按 id.signedIn 分两种（不是自己另算一遍登录态）');
+  // ⚠️ 不做「到了 /login/ 就把已登录的人弹回来」那种聪明
+  chk(!/replace\(\s*"\/profile\//.test(PROFILE_JS) && !/history\.back/.test(PROFILE_JS),
+    '个人中心不做「跳回来」的花招（点一下就被弹回去，用户只会以为按钮坏了）');
+}
+
+/* ================= 三、设置主页：那张自己会收敛的账号卡 ================= */
+{
+  chk(/id="account-entry"/.test(SRC.home), '设置主页有账号卡的容器');
+  chk(/hidden/.test(SRC.home.slice(SRC.home.indexOf('id="account-entry"') - 60,
+    SRC.home.indexOf('id="account-entry"') + 40)),
+    '账号卡初始 hidden（拿不到内核时宁可少一张卡，也不长出点了不知道去哪儿的按钮）');
+  chk(/settings-nav\.js/.test(SRC.home), '设置主页加载 js/settings-nav.js（这一页唯一的脚本）');
+  chk(/renderAccountEntry/.test(NAV) || /renderAccountEntry/.test(read('js/settings-nav.js')),
+    '账号卡由 js/settings-nav.js 的 renderAccountEntry 渲染');
+  chk(/renderAccountEntry\(\)/.test(NAV), 'init() 里会去画账号卡（不画就永远 hidden）');
+  // 入口地址由 JS 给，不在 HTML 里写死（写死就两处各一份）
+  chk(!/href="\/login\/"/.test(stripHtml(SRC.home)), '主页 HTML 里不写死 /login/（地址只在 JS 一处）');
+  chk(/"\/login\/"/.test(NAV) && /"\/profile\/"/.test(NAV),
+    '账号卡的两个落点（/login/ 与 /profile/）都在 js/settings-nav.js 里');
+}
+
+/* ================= 四、真跑一遍：四种状态下账号卡长什么样 ================= */
+{
+  const URL_HOME = 'https://local.test/settings/';
+  // ① 全新（未登录）
+  let p = boot(SETTINGS_HOME, URL_HOME, {});
+  let box = p.doc.querySelector('#account-entry');
+  const E = p.window.Entitlement, A = p.window.AuthCore;
+  chk(!!E && !!A, '设置主页上 Entitlement 与 AuthCore 都在（账号卡要读它们）');
+  chk(box && !box.hidden, '未登录时账号卡是**可见**的（这正是它存在的理由）');
+  const out = box ? stripHtml(box.innerHTML) : '';
+  chk(/未登录/.test(out), '未登录时如实写「未登录」');
+  chk(/btn-entry-login/.test(out) && /href="\/login\/"/.test(out), '未登录时给的是去 /login/ 的入口');
+  chk(/语音朗读/.test(out) && /免费/.test(out), '顺手说明语音朗读登录后免费（未登录唯一真的用不了的现有功能）');
+  chk(/Free/.test(out), '未登录也是 Free 徽章（徽章文案由 Entitlement.tierLabel 出，不自己拼）');
+  chk(!/btn-entry-profile/.test(out), '未登录时不给「个人中心」（那条路走不到东西）');
+
+  // ② 已登录（free）：给「个人中心」，且**不**再给「去登录」
+  // 先在真页上起盘，再建会话，最后重放一遍 DOMContentLoaded 让卡重画
+  p = boot(SETTINGS_HOME, URL_HOME, {});
+  signIn(p.window, 'belem@example.com');
+  repaint(p);
+  box = p.doc.querySelector('#account-entry');
+  const inn = stripHtml(box.innerHTML);
+  chk(/btn-entry-profile/.test(inn) && /href="\/profile\/"/.test(inn),
+    '已登录时给的是去 /profile/ 的「个人中心」');
+  chk(!/btn-entry-login/.test(inn),
+    '已登录时**不**再摆「用邮箱登录」（再摆一次是自相矛盾的）');
+  chk(/已登录 · b\*\*\*@example\.com/.test(inn),
+    '已登录时如实显示掩码（不是明文邮箱）：实际 ' + (inn.match(/已登录[^<]*/) || [''])[0]);
+  chk(!/belem@example\.com/.test(inn), '页面上不出现明文邮箱（掩码之外一个字符都不露）');
+
+  // ③ 层级换了 → 徽章跟着换（判据只在 Entitlement 里，页面不缓存一份）
+  const E2 = p.window.Entitlement;
+  E2.writeTier(p.window.localStorage, 'max');
+  repaint(p);
+  const inn2 = stripHtml(p.doc.querySelector('#account-entry').innerHTML);
+  const badge = (inn2.match(/tier-badge[^>]*>([^<]*)/) || ['', ''])[1];
+  chk(/Max/.test(badge), '层级改成 max 后徽章跟着变（实际「' + badge + '」）');
+  chk(/Free/.test(out) && !/Free/.test(inn2), '徽章的取数随盘上层级走，不是页面里写死的');
+
+  // ④ 页面上不出现权益存储键名（判据只在 entitlement.js 里）
+  ['poem_plan_v1', 'poem_plan_grant_v1'].forEach(k => {
+    chk(strip(NAV).indexOf(k) < 0, 'js/settings-nav.js 不出现权益存储键名 ' + k);
+  });
+  // ⚠️ 同样要剥注释再判：文件头就写着「没有任何 `plan === 'pro'` 这类判断」
+  const navCode = strip(NAV);
+  chk(!/plan\s*===/.test(navCode) && !/tier\s*===\s*["']/.test(navCode),
+    'js/settings-nav.js 不自己比对 plan / tier（一律走 Entitlement）');
+  chk(/E\.identity\(/.test(navCode) && /E\.tierLabel\(/.test(navCode),
+    '账号卡的登录态与徽章文案都取自 Entitlement');
+}
+
+/* ================= 五、返回落点：登录 → 个人中心 → 设置主页 ================= */
+{
+  chk(/data-back="\/profile\/"/.test(SRC.login),
+    '登录页的返回落点是个人中心（登录是身份的事，落回设置页等于又多绕一层）');
+  chk(/data-back="\/settings\/"/.test(SRC.profile),
+    '个人中心的返回落点仍是设置主页');
+  chk(!/data-back="\/settings\/"/.test(SRC.login), '登录页不再退回设置页（两处落点会打架）');
+  // 登录成功之后去哪：与返回落点同一条动线
+  chk(/location\.href = "\/profile\/"/.test(LOGIN_JS),
+    '登录成功后回个人中心（权限清单在那里，登录完最该看见的是「我能用什么」）');
+  chk(!/\/settings\/general\//.test(LOGIN_JS), '登录页里不再有回设置 · 通用的老落点');
+  // chrome.js 认得这两条路由
+  chk(/login: "\/login\/"/.test(CHROME) && /profile: "\/profile\/"/.test(CHROME),
+    'js/chrome.js 的 ROUTES 里有 /login/ 与 /profile/');
+}
+
+/* ================= 六、收敛：三条动线不互斥、也不留死路 ================= */
+{
+  /**
+   * 从一个未登录的人出发，必须**至少**有两条独立的路到 /login/：
+   * 顶栏印 → /profile/ → 账号入口，或 设置主页那张卡。
+   * 这两条都不是「碰巧」：各自由不同的文件渲染，任一文件漏了就少一条路。
+   */
+  chk(/ROUTES\.profile/.test(CHROME), '路一：每页顶栏那枚印 → /profile/');
+  chk(/location\.href = "\/login\/"/.test(PROFILE_JS), '路一续：/profile/ → /login/');
+  chk(/"\/login\/"/.test(NAV), '路二：设置主页那张卡 → /login/');
+  // 死路检查：三张页的落点必须都真的存在
+  ['login', 'profile', 'admin', 'settings/general'].forEach(f => {
+    chk(fs.existsSync(path + f + '/index.html'), '落点真的有那张页：/' + f + '/');
+  });
+  // 登录页自己也要能出去（它不是一站，是一条路）
+  chk(/id="top-back"|data-back=/.test(SRC.login) || /top-back/.test(CHROME),
+    '登录页有返回键（深页不留底部页签，只能靠顶栏退出）');
+  chk(/data-dock="off"/.test(SRC.login) && /data-dock="off"/.test(SRC.profile),
+    '登录页与个人中心都不挂底部页签（专心做完一件事，免得误触跳走）');
+}
+
+/* ================= 七、离线与文档 ================= */
+{
+  chk(/\.\/settings\//.test(SW) && /\.\/js\/settings-nav\.js/.test(SW),
+    '设置主页与 js/settings-nav.js 都在预缓存清单里');
+  const ver = parseInt((SW.match(/poem-app-v(\d+)/) || [0, '0'])[1], 10);
+  chk(ver >= 118, '缓存版本跟着提（本轮改了 3 张页面 + 3 份 js + css，实际 v' + ver + '）');
+  const design = read('docs/auth-design.md');
+  chk(/账号入口|入口动线/.test(design),
+    'docs/auth-design.md 里记了账号入口的动线（D 这一步）');
+  const readme = read('README.md');
+  chk(/账号入口|用邮箱登录|个人中心/.test(readme), 'README 里能查到账号入口在哪');
+}
+
+console.log('\n' + (fails ? '❌ ' + fails + ' 项失败' : '🎉 账号入口动线测试全部通过'));
+process.exit(fails ? 1 : 0);

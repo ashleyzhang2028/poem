@@ -43,6 +43,14 @@
       <section class="account-card">
         <div class="identity-row" id="identity-row"></div>
         <p class="account-hint" id="identity-hint"></p>
+
+        <!-- 账号入口（Issue #132 · D）：本页在四页签里**没有**位置，
+             所以它是账号三页唯一的枢纽 —— 首页那枚印（点它就到这一页）、
+             设置主页那张「账号」卡（未登录时才出现）都指着这里。
+             两个状态同一个位置：已登录去 /login/，信任期内一点即入
+             （那一页自己会认会话）；未登录也去 /login/。
+             文案由 js/profile.js 按登录态写，本页不写死两处。 -->
+        <button class="account-btn" id="btn-account-entry" type="button"></button>
       </section>
 
       <!-- ---------- 二、未登录时的引导（登录后整块收起） ---------- -->
