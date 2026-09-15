@@ -29,12 +29,12 @@
        靠的就是这个边界，而不是从头到尾写出的五个不同 id。 -->
   <div class="app" data-gw-root>
     <!-- 页顶这一行：由 js/chrome.js 统一渲染（全站同一套 徽标 + 跬步 · 页面名 + 副标题 + 右侧动作位）。
-         顺序：徽标 · 跬步 · 古文观止 /「想读哪篇点哪篇」｜ 0 / 166 篇 ｜〔返回键〕
-         —— 已读进度牌挂在品牌区与返回键之间（js/chrome.js 的 renderBar 会保住它，
-         阅读器打开、右侧换成「关闭」键时也不会丢）。
-         这一行整行 align-items: center，徽标 / 两行文字 / 进度牌 / 40px 返回键共用同一条中轴。 -->
-    <header class="topbar topbar-with-count">
-      <span class="count-badge" data-gw="count" id="gw-count">0 / 166 篇</span>
+         顺序：徽标 · 跬步 · 古文观止 /「想读哪篇点哪篇」｜〔返回键〕
+         —— 页顶这一行**不再挂已读进度牌**（Issue #147）：它原先在品牌区与返回键之间，
+         窄屏上会与品牌区抢地方（页名被收成省略号）；「读了 N / M」现在只出现在
+         详情页的状态栏里（见 js/reader-core.js 的 syncCount），列表这一层不重复报数。
+         这一行整行 align-items: center，徽标 / 两行文字 / 40px 返回键共用同一条中轴。 -->
+    <header class="topbar">
     </header>
     <div class="toolbar">
       <div class="search-wrap">
@@ -79,11 +79,10 @@
     <!-- 阅读器顶栏：不另造一套，直接复用全站顶栏的 .topbar（徽标 + 跬步 · 古文观止 +
          右侧 40px 圆形返回键）。原先这里是自制的 .reader-bar —— 左侧返回、中间居中进度，
          比全站顶栏少一个徽标、页名位置也完全不同，从列表点进正文时整行导航会「换一张脸」。
-         现在品牌区与列表页完全对齐；「第 N / 166 篇」作为页面小件挂在品牌区与返回键之间，
-         与列表页顶部的「0 / 166 篇」进度牌同一位置。 -->
-    <header class="topbar topbar-with-count">
-      <span class="count-badge reader-count" data-gw="count-reader" id="gw-progress"></span>
-    </header>
+         现在品牌区与列表页完全对齐；顶栏右侧只剩那颗 40px 圆形返回键 ——
+         已读进度不挂在这里，它跟着正文的状态栏走（朝代 / 作者 / 出处
+         那一行，见 js/reader-core.js 的 syncCount）。 -->
+    <header class="topbar"></header>
     <div class="reader-body">
       <h2 class="rd-title" id="rd-title"></h2>
       <div class="meta rd-meta" id="rd-meta"></div>

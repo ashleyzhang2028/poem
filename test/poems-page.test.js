@@ -108,8 +108,8 @@ setTimeout(function () {
 
   chk(d.querySelectorAll('#gw-list .item').length === 261,
     '列表渲染 261 首（实际 ' + d.querySelectorAll('#gw-list .item').length + '）');
-  chk(d.querySelector('#gw-count').textContent === '0 / 261 首',
-    '顶部显示 0 / 261 首（实际「' + d.querySelector('#gw-count').textContent + '」）');
+  chk(d.querySelector('#gw-count') === null,
+    '页顶那一行不再挂已读进度牌（Issue #147：读数挪到详情页状态栏）');
 
   // 分组 = 教材册次，24 册齐备、顺序对
   const groups = [].slice.call(d.querySelectorAll('#gw-list .group-name')).map(function (x) { return x.textContent; });
@@ -158,12 +158,18 @@ setTimeout(function () {
   const body = d.querySelector('#rd-text').textContent.replace(/[a-zA-Zāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜüńňǹ\s]/g, '');
   chk(body.indexOf('曲项向天歌') >= 0, '正文已写入阅读器（实际「' + body.slice(0, 12) + '…」）');
   chk(/弯着脖子/.test(d.querySelector('#rd-trans-text').textContent), '白话译文已写入阅读器');
-  chk(d.querySelector('#gw-progress').textContent === '第 1 / 261 首',
-    '篇号牌写作「第 N / 261 首」（实际「' + d.querySelector('#gw-progress').textContent + '」）');
-  // 篇号跟着册次顺序走：一年级上第 6 首是《风》（数据里的第 6 条）
+  // Issue #147：顶栏那枚「第 N / 261 首」篇号牌已撤 —— 详情页的读数只有
+  // 状态栏里那一枚（朝代 / 作者 / 出处 · 已读 N / M 首），篇序由「上一篇 / 下一篇」表达。
+  chk(d.querySelector('#gw-progress') === null,
+    '详情页顶栏不再挂篇号牌（页面里已无该节点）');
+  const xxCount = d.querySelector('#rd-meta .rd-count');
+  chk(!!xxCount && xxCount.textContent === '0 / 261 首',
+    '详情页状态栏里有「0 / 261 首」且与朝代 / 作者同一行（实际「' +
+    (xxCount ? xxCount.textContent : '无') + '」）');
+  // 篇序跟着册次走：打开一年级上第 6 首《风》，阅读器里的「下一篇」应是它后面那一首
   api.open('xx1-06');
-  chk(d.querySelector('#gw-progress').textContent === '第 6 / 261 首',
-    '篇号按册次顺序编号（xx1-06 → ' + d.querySelector('#gw-progress').textContent + '）');
+  chk(d.querySelector('#rd-title').textContent === '风',
+    '可打开一年级上第 6 首（xx1-06 → ' + d.querySelector('#rd-title').textContent + '）');
 
   // 搜索：按作者筛，子集小于全部
   api.setKeyword('李白');

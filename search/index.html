@@ -29,10 +29,11 @@
        靠的就是这个边界，而不是从头到尾写出的五个不同 id。 -->
   <div class="app" data-gw-root>
     <!-- 页顶这一行：由 js/chrome.js 统一渲染（徽标 + 跬步 · 页面名 + 副标题 + 右侧动作位）。
-         顺序：徽标 · 跬步 · 搜索 /「全站篇目，一搜就到」｜ 共 N 篇 ｜〔返回键〕 -->
-    <header class="topbar topbar-with-count">
-      <span class="count-badge" data-gw="count" id="gw-count">共 0 篇</span>
-    </header>
+         顺序：徽标 · 跬步 · 搜索｜〔返回键〕
+         —— 页顶这一行**不再挂「共 N 篇」进度牌**（Issue #147）：搜索页的进度牌
+         原先只报「当前筛出多少条」，与集子页的「读了 N / M」不是一回事，
+         窄屏上还占掉品牌区的宽度。命中条数由列表自己说（no results 时给空态文案）。 -->
+    <header class="topbar"></header>
 
     <!-- 搜索区：整块在标题栏下方**垂直 + 水平居中**，页面上只有它一个。
          左右两栏（「全部 / 未读」与集子药丸）都撤了：
@@ -73,10 +74,10 @@
     <!-- 阅读器顶栏：不另造一套，直接复用全站顶栏的 .topbar（徽标 + 跬步 · 搜索 +
          右侧 40px 圆形返回键）。原先这里是自制的 .reader-bar —— 左侧返回、中间居中进度，
          比全站顶栏少一个徽标、页名位置也完全不同，从列表点进正文时整行导航会「换一张脸」。
-         现在品牌区与列表页完全对齐；「第 N / 全部 篇」作为页面小件挂在品牌区与返回键之间。 -->
-    <header class="topbar topbar-with-count">
-      <span class="count-badge reader-count" data-gw="count-reader" id="gw-progress"></span>
-    </header>
+         现在品牌区与列表页完全对齐；顶栏右侧只剩那颗 40px 圆形返回键 ——
+         已读进度不挂在这里，它跟着正文的状态栏走（朝代 / 作者 / 出处
+         那一行，见 js/reader-core.js 的 syncCount）。 -->
+    <header class="topbar"></header>
     <div class="reader-body">
       <h2 class="rd-title" id="rd-title"></h2>
       <div class="meta rd-meta" id="rd-meta"></div>

@@ -149,9 +149,13 @@ setTimeout(() => {
   sb.dispatchEvent(new w.Event('input', { bubbles: true }));
   chk(B.querySelectorAll('.item').length === 4, '清空搜索后乙集恢复全部 4 篇');
 
-  // 已读键各存各的：给甲集点一篇已读，乙集的计数不该动
+  // 已读键各存各的：给甲集点一篇已读，乙集的计数不该动。
+  // Issue #147 起引擎不再往「挂载点里的那枚 [data-gw=count]」写数 ——
+  // 读数跟着**详情页状态栏**（.rd-count）走，所以这里验的是两件事：
+  //   ① 挂载点里那枚旧占位不会被写（页顶不再有读数）；
+  //   ② 打开甲集一篇、点「标记已读」，只有甲集自己那份状态栏的数会动。
   const beforeB = w.document.querySelector('#rootB [data-gw="count"]').textContent;
-  chk(/0 \/ 4/.test(beforeB), '乙集的进度牌是它自己的 0 / 4（不是甲集的数）');
+  chk(beforeB === '', '引擎不再往挂载点里那枚 [data-gw=count] 写数（页顶那一枚已撤）');
 
   // 引擎对外只暴露一份实例清单，mount 的返回值可用
   chk(typeof a.total === 'function' && a.total() === 6, 'mount 返回的实例带本集子自己的 total()');

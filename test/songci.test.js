@@ -223,8 +223,8 @@ setTimeout(() => {
 
   chk(d.querySelectorAll('#gw-list .item').length === 283,
     '列表渲染 283 首（实际 ' + d.querySelectorAll('#gw-list .item').length + '）');
-  chk(d.querySelector('#gw-count').textContent === '0 / 283 首',
-    '顶部显示 0 / 283 首：' + d.querySelector('#gw-count').textContent);
+  chk(d.querySelector('#gw-count') === null,
+    '页顶那一行不再挂已读进度牌（Issue #147：读数挪到详情页状态栏）');
   // 分组卡：分组数与词牌数一致
   chk(d.querySelectorAll('#gw-list .group-card').length === groupNames.length,
     '按词牌渲染 ' + groupNames.length + ' 张分组卡');
@@ -245,6 +245,15 @@ setTimeout(() => {
   const title = d.querySelector('#rd-title').textContent;
   chk(title === '声声慢', '可打开指定篇目（sc-249 → ' + title + '）');
   chk(/李清照/.test(d.querySelector('#rd-meta').textContent), '阅读器展示了作者');
+  // Issue #147：用户原话「将 0 / 283 首 挪到详情页的 宋 张先《宋词三百首》的后面，同一行」——
+  // 所以这一枚数必须与朝代 / 作者 / 出处同处一行，且报的是「已读 / 总数 首」。
+  const scRdCount = d.querySelector('#rd-meta .rd-count');
+  chk(!!scRdCount && scRdCount.textContent === '0 / 283 首',
+    '详情页状态栏里有「0 / 283 首」且与元信息同一行（实际「' +
+    (scRdCount ? scRdCount.textContent : '无') + '」；整行「' +
+    d.querySelector('#rd-meta').textContent + '」）');
+  chk(!!scRdCount && scRdCount.parentElement === d.querySelector('#rd-meta'),
+    '这一枚 .rd-count 是 .rd-meta 的直接子元素（同一行，不另起一行）');
   const plain = d.querySelector('#rd-text').textContent
     .replace(/[a-zāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜüńňǹ·]+/g, '').replace(/\s/g, '');
   chk(/寻寻觅觅/.test(plain), '正文已写入阅读器');

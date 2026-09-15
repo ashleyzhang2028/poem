@@ -485,15 +485,18 @@ chk(Number(zDock) < Number(zPlayer),
 // 需求：小古文阅读器顶栏与其他页面统一
 // 需求（本次）：阅读器顶栏不再自制一套，直接复用全站 .topbar ——
 // 从列表点进正文时，徽标 / 「跬步 · 小古文」/ 右侧圆形动作位都不变样。
-// 「第 N / 100 篇」用列表页同款 .count-badge，挂在品牌区与返回键之间。
-chk(/<header class="topbar topbar-with-count">/.test(classicHtml) &&
-  /id="gw-reader"[\s\S]*?<header class="topbar topbar-with-count">/.test(classicHtml),
-  '阅读器顶栏复用全站 .topbar（topbar-with-count）');
+// Issue #147 起，顶栏那枚「第 N / 100 篇」不再挂任何牌子：整行只剩品牌区与返回键，
+// 已读进度落进正文状态栏（.rd-count，见 css/classic.css）。
+chk(/<header class="topbar">/.test(classicHtml) &&
+  /id="gw-reader"[\s\S]*?<header class="topbar">/.test(classicHtml),
+  '阅读器顶栏复用全站 .topbar（不再带 count 小件的变体）');
 chk(!/\.reader-bar \{/.test(classicCss) && !/reader-progress/.test(classicHtml),
   '自制的 .reader-bar / .reader-progress 已整段删除（不再两套顶栏）');
 chk(/\.reader > \.topbar \{/.test(classicCss), '阅读器内的顶栏有独立背景，正文不会从它下面透出来');
-chk(/\.reader-count \.is-done|reader-count\.is-done/.test(classicCss),
-  '篇号牌有「已读」状态（与列表页进度牌同一枚牌子）');
+chk(!/reader-count/.test(classicCss) && !/count-badge/.test(classicHtml),
+  '页顶读数那一套（.count-badge / .reader-count）已随 Issue #147 一起撤干净');
+chk(/\.rd-count \{/.test(classicCss),
+  '正文状态栏里那一枚已读进度 .rd-count 有样式（它是现在唯一的一处读数）');
 chk(/\.top-act,[\s\S]{0,300}?border-radius:\s*50%/.test(css), '全站顶栏动作位是圆形纸底（返回键与它同款）');
 chk(!/<span>小古文<\/span>/.test(classicHtml), '顶栏里不再叠「小古文」三个字');
 
