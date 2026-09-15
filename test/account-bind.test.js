@@ -74,8 +74,20 @@ function fakeApi(answers) {
     deleteAccount: function (input) {
       calls.push("delete");
       return Promise.resolve(a.del || { ok: false, code: "E_OFFLINE" });
-    }
+    },
+    /* 2.2 权威发放的三条。**故意不并进上面两条的闸**（见 account-api.js 的
+       `grantChannel()`）：老缓存里的旧 AuthApi 没有它们，那不该让 refreshMe 失效。 */
+    grant: function (input) { calls.push("grant"); return Promise.resolve(a.grant || { ok: false, code: "E_OFFLINE" }); },
+    revoke: function (input) { calls.push("revoke"); return Promise.resolve(a.revoke || { ok: false, code: "E_OFFLINE" }); },
+    grants: function () { calls.push("grants"); return Promise.resolve(a.grants || { ok: false, code: "E_OFFLINE" }); }
   };
+}
+
+/** 只有 me / deleteAccount 的旧通道（**没有** admin 三条）—— 用来钉住「不相关的新功能
+    不许废掉既有功能」这条。 */
+function legacyApi(answers) {
+  const full = fakeApi(answers);
+  return { calls: full.calls, me: full.me, deleteAccount: full.deleteAccount };
 }
 
 /* ==================================================================== 一 */
@@ -369,6 +381,168 @@ async function main() {
     }
   }
 
+  console.log("\n=== 十七、2.2 权威发放：只送服务端、四种失败各说各的话、绝不拿本机名单顶替 ===");
+  {
+    /* 这一节守的是 2.2 那条接线的**边界**：
+       发放是本项目第一条「能改别人数据」的写接口，前端这层**不判权限** ——
+       但每一条失败都必须如实分开说，且**绝不回落成「本机名单发放」**。 */
+
+    // ① 没登录：一个请求都不发
+    {
+      const b = mem();
+      const fake = fakeApi({});
+      const api = M.bind({ api: fake, E: E, A: A, backing: b });
+      const r = await api.adminGrant({ emailMask: "a***@qq.com", tier: "pro" });
+      eq(r.ok, false, "没登录时发放回 ok:false");
+      eq(r.reason, M.REASON.GUEST, "reason 是 guest");
+      eq(fake.calls.length, 0, "没登录时**一个请求都不发**");
+    }
+
+    // ② 发成功：参数原样送到，回执如实带回
+    {
+      const b = mem();
+      const { store, mask } = signedInStore(b);
+      const fake = fakeApi({ grant: { ok: true, matched: 1, changed: true, emailMask: mask, tier: "pro", until: null } });
+      const api = M.bind({ api: fake, E: E, A: A, backing: b });
+      const r = await api.adminGrant({ emailMask: mask, tier: "pro" });
+      eq(r.ok, true, "发放成功");
+      eq(r.matched, 1, "matched 原样带回");
+      eq(fake.calls.join(","), "grant", "只调了 grant 一条");
+    }
+
+    // ③ **命中 0 条**：不是失败 —— ok:true + changed:false
+    {
+      const b = mem();
+      signedInStore(b);
+      const fake = fakeApi({ grant: { ok: true, matched: 0, changed: false, emailMask: "n***@qq.com", tier: "pro" } });
+      const api = M.bind({ api: fake, E: E, A: A, backing: b });
+      const r = await api.adminGrant({ emailMask: "n***@qq.com", tier: "pro" });
+      eq(r.ok, true, "命中 0 条**不是失败**：ok 仍是 true");
+      eq(r.changed, false, "changed 为 false —— 界面上据此说「对方还没登录过」，不说「发放失败」");
+    }
+
+    // ④ 403：服务端明确回绝，**不是降级**，原样把服务端的话带上去
+    {
+      const b = mem();
+      signedInStore(b);
+      const fake = fakeApi({ grant: { ok: false, code: "E_FORBIDDEN", message: "这一条只对管理员开放" } });
+      const api = M.bind({ api: fake, E: E, A: A, backing: b });
+      const r = await api.adminGrant({ emailMask: "a***@qq.com", tier: "pro" });
+      eq(r.ok, false, "403 时 ok:false");
+      eq(r.reason, M.REASON.OK, "**reason 不是 unavailable**（403 是「确实没权限」，说成「连不上」会让人一直重试）");
+      eq(r.code, "E_FORBIDDEN", "错误码原样带上去");
+      eq(r.message, "这一条只对管理员开放", "文案直接用服务端那句，不自己改写一份");
+    }
+
+    // ⑤ 连不上：说清「这一轮没发出任何东西」，且**不碰本机名单**
+    {
+      const b = mem();
+      const { store, mask } = signedInStore(b);
+      E.putGrant(b, { emailMask: mask, tier: "free" });           // 本机名单里有一条
+      const boom = { me: () => Promise.reject(new Error("down")), deleteAccount: () => Promise.reject(new Error("down")),
+        grant: () => Promise.reject(new Error("down")), revoke: () => Promise.reject(new Error("down")), grants: () => Promise.reject(new Error("down")) };
+      const api = M.bind({ api: boom, E: E, A: A, backing: b });
+      const r = await api.adminGrant({ emailMask: mask, tier: "max" });
+      eq(r.ok, false, "连不上时 ok:false");
+      eq(r.reason, M.REASON.UNAVAILABLE, "reason 是 unavailable");
+      chk(/没发出任何东西/.test(r.message), "文案说清「这一轮没发出任何东西」（不许让人以为发成了）");
+      eq(E.readGrants(b).grants.length, 1, "本机名单**一条都没多**（绝不拿本机那份顶替服务端那份）");
+      eq(E.readGrants(b).grants[0].tier, "free", "也没有被改（发放失败不该有任何副作用）");
+    }
+
+    // ⑥ 服务端没配好：503 → not-configured，界面据此提示可以用本机那份兜底
+    {
+      const b = mem();
+      signedInStore(b);
+      const fake = fakeApi({ grant: { ok: false, code: "E_NOT_CONFIGURED", message: "服务端还没配置好" } });
+      const api = M.bind({ api: fake, E: E, A: A, backing: b });
+      const r = await api.adminGrant({ emailMask: "a***@qq.com", tier: "pro" });
+      eq(r.reason, M.REASON.NOT_CONFIGURED, "reason 是 not-configured（与「连不上」分开说）");
+    }
+
+    // ⑦ 老缓存里的旧通道（没有 grant）：如实回 no-channel，**且不影响 refreshMe**
+    {
+      const b = mem();
+      signedInStore(b);
+      const old = legacyApi({ me: { ok: true, plan: { tier: "pro" }, role: "owner" } });
+      const api = M.bind({ api: old, E: E, A: A, backing: b });
+      const r = await api.adminGrant({ emailMask: "a***@qq.com", tier: "pro" });
+      eq(r.ok, false, "旧通道里没有 grant → 发放失败");
+      eq(r.reason, "no-channel", "reason 是 no-channel（既不是「没配好」也不是「没权限」，刷新即可）");
+      const me = await api.refreshMe();
+      eq(me.ok, true, "**同一个旧通道上 refreshMe 照常工作**（不相关的新功能不许废掉既有功能）");
+      eq(E.readServerTier(b), "pro", "…而且服务端那份判定照旧落盘");
+    }
+
+    // ⑧ 三条路径都走接线层（同一组边界）
+    {
+      const b = mem();
+      signedInStore(b);
+      const fake = fakeApi({ grants: { ok: true, grants: [{ emailMask: "a***@qq.com", tier: "pro" }] } });
+      const api = M.bind({ api: fake, E: E, A: A, backing: b });
+      const r = await api.adminGrants();
+      eq(r.ok, true, "列名单走接线层");
+      eq(r.grants.length, 1, "名单原样带回（接线层不加工）");
+      const r2 = await api.adminRevoke({ emailMask: "a***@qq.com" });
+      eq(r2.ok, false, "假通道没给 revoke 的答案时如实失败（不假装成功）");
+    }
+  }
+
+  console.log("\n=== 十八、真页面：/admin/ 的发放真的打接口，两份名单分开渲染（jsdom） ===");
+  {
+    let JSDOM = null;
+    try { JSDOM = require("jsdom").JSDOM; } catch (e) { JSDOM = null; }
+
+    if (!JSDOM) {
+      console.log("(未安装 jsdom，跳过真页面一节 —— run.sh 会先装好它)");
+    } else {
+      const page = await bootAdminPage();
+      const w = page.window, doc = page.doc;
+
+      chk(!!w.AccountApi, "/admin/ 里 AccountApi 挂在 window 上（接线层真的被加载了）");
+      chk(!!w.AuthCore.session(w.AuthCore.makeStore(w.localStorage)), "用例里的登录建立成功");
+
+      /* 两份名单**两块不同的卡**，各有各的列表 */
+      eq(doc.getElementById("server-card").hidden, false, "服务端那一块渲染出来了");
+      eq(doc.getElementById("list-card").hidden, false, "本机那一块也渲染出来了");
+      await sleep(60);
+
+      /* 服务端名单来自**接口**，不是本机存储 */
+      const srv = doc.getElementById("server-list").textContent;
+      chk(/s\*\*\*@qq\.com/.test(srv), "服务端名单渲染的是**接口回的**那条掩码（实际：" + srv.replace(/\s+/g, " ").slice(0, 80) + "）");
+      const local = doc.getElementById("grant-list").textContent;
+      chk(/l\*\*\*@qq\.com/.test(local), "本机名单渲染的是**本机存储**的那一条（两份分开）");
+      chk(!/s\*\*\*@qq\.com/.test(local), "本机那一块里**没有**服务端那条（两块不混）");
+
+      /* 发放：填表 → 点「发放到服务端」 → 真的发了 POST，且不再多看一眼本机名单 */
+      doc.getElementById("input-mask").value = "x***@qq.com";
+      doc.getElementById("btn-grant").click();
+      await sleep(60);
+      eq(page.calls.grantMethod, "POST", "「发放到服务端」真的发了 POST");
+      eq(page.calls.grantUrl.indexOf("/api/admin/grant") >= 0, true, "打的是 /api/admin/grant");
+      eq(page.calls.grantBody.tier, "pro", "带上默认档位 pro");
+      eq(page.calls.grantBody.emailMask, "x***@qq.com", "带上填的掩码（表单读法只有一份）");
+      okLine(doc.getElementById("msg-grant").textContent, "发放成功的回执如实说出「已写进服务端」");
+
+      /* 「只发到本机名单」：一条网络请求都不发，本机名单多一条 */
+      const before = page.calls.count;
+      doc.getElementById("input-mask").value = "y***@qq.com";
+      doc.getElementById("btn-grant-local").click();
+      await sleep(30);
+      eq(page.calls.count, before, "「只发到本机名单」**一个网络请求都不发**（它就是本地那条路）");
+      chk(/y\*\*\*@qq\.com/.test(doc.getElementById("grant-list").textContent),
+        "本机名单多了一条（那条路仍然是可用的降级）");
+
+      /* 收回：服务端名单里那颗按钮真的发 DELETE */
+      const revokeBtn = doc.querySelector('#server-list button[data-revoke]');
+      chk(!!revokeBtn, "服务端名单每行有一颗「收回」");
+      revokeBtn.click();
+      await sleep(60);
+      eq(page.calls.revokeMethod, "DELETE", "「收回」真的发了 DELETE");
+      eq(page.calls.revokeUrl.indexOf("/api/admin/grant") >= 0, true, "打的是同一个地址");
+    }
+  }
+
   console.log("");
   if (fails) { console.log("❌ 账号接线测试 " + fails + " 项失败"); process.exit(1); }
   console.log("🎉 账号接线测试全部通过");
@@ -430,6 +604,81 @@ async function bootPage(rel, url, answers) {
   w.document.dispatchEvent(new w.Event("DOMContentLoaded"));
   await sleep(30);
   return { window: w, doc: w.document, calls: calls };
+}
+
+/**
+ * 起一张**真的 /admin/ 页**：脚本按 HTML 里的顺序执行，`fetch` 换成假的。
+ *
+ * 这一张页与别的页不同：它要**同时**看得见两份名单 ——
+ * 一份来自接口（服务端），一份来自本机存储。因此这个用例的假 fetch
+ * 必须按路径分别作答，并且把「发了什么」全记下来供断言。
+ */
+async function bootAdminPage() {
+  const JSDOM = require("jsdom").JSDOM;
+  const html = read("admin/index.html");
+  const dom = new JSDOM(html, { url: "https://kuibu.app/admin/", runScripts: "outside-only", pretendToBeVisual: true });
+  const w = dom.window;
+  const calls = {
+    count: 0, me: 0,
+    grantMethod: null, grantUrl: null, grantBody: null,
+    revokeMethod: null, revokeUrl: null,
+    listMethod: null
+  };
+
+  w.fetch = function (u, init) {
+    const url = String(u);
+    const m = ((init && init.method) || "GET").toUpperCase();
+    calls.count += 1;
+    if (url.indexOf("/api/me") >= 0) {
+      calls.me += 1;
+      return Promise.resolve(jsonRes(200, { uid: "u_1", role: "owner", plan: { tier: "free", until: null }, mask: "a***@b.com", features: [] }));
+    }
+    if (url.indexOf("/api/admin/grants") >= 0) {
+      calls.listMethod = m;
+      return Promise.resolve(jsonRes(200, { grants: [{ emailMask: "s***@qq.com", tier: "pro", until: null }], store: "memory" }));
+    }
+    if (url.indexOf("/api/admin/grant") >= 0) {
+      const body = init && init.body ? JSON.parse(init.body) : {};
+      if (m === "DELETE") {
+        calls.revokeMethod = m; calls.revokeUrl = url;
+        return Promise.resolve(jsonRes(200, { matched: 1, changed: true, emailMask: body.emailMask, tier: "free" }));
+      }
+      calls.grantMethod = m; calls.grantUrl = url; calls.grantBody = body;
+      return Promise.resolve(jsonRes(200, { matched: 1, changed: true, emailMask: body.emailMask, tier: body.tier, until: null, note: "已写进服务端的权威名单" }));
+    }
+    return Promise.resolve(jsonRes(404, { code: "E_404" }));
+  };
+
+  [...w.document.querySelectorAll("script[src]")].forEach(s => {
+    const src = s.getAttribute("src");
+    if (!src) return;
+    const p = path.join(ROOT, src.replace(/^\//, ""));
+    if (!fs.existsSync(p)) return;
+    try { w.eval(fs.readFileSync(p, "utf8")); } catch (e) { }
+  });
+  if (w.Entitlement && w.Entitlement.setAuthCore) w.Entitlement.setAuthCore(w.AuthCore);
+
+  /* 本机那一份名单里先放一条（与服务端那条**掩码不同**，才能验「两块不混」） */
+  if (w.Entitlement) {
+    w.Entitlement.putGrant(w.localStorage, { emailMask: "l***@qq.com", tier: "pro" });
+  }
+  if (w.AuthCore) {
+    const store = w.AuthCore.makeStore(w.localStorage);
+    const r = w.AuthCore.requestCode(store, { channel: "email", value: "zhangmin@163.com" }, "login", { code: "246810" });
+    w.AuthCore.verifyCode(store, r.codeId, "246810", "login");
+  }
+  w.document.dispatchEvent(new w.Event("DOMContentLoaded"));
+  await sleep(40);
+  return { window: w, doc: w.document, calls: calls };
+}
+
+/** 一个「像 Response」的东西：被测代码只用到 status / ok / headers / text() */
+function jsonRes(status, body) {
+  return {
+    status: status, ok: status >= 200 && status < 300,
+    headers: { get: () => "application/json" },
+    text: () => Promise.resolve(JSON.stringify(body))
+  };
 }
 
 /** 造一个「像 Response」的东西：被测代码只用到 status 与 text() */

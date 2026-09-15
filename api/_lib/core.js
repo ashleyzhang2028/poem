@@ -620,6 +620,209 @@ function sanitizePayload(p) {
   return out;
 }
 
+/* -------------------------------------------------- 权威发放（2.2） */
+
+/**
+ * 谁算管理员 —— **服务端这一份是全站唯一判据**（与 `js/entitlement.js` 的
+ * `isOwner()` 同口径，但**不是同一套兜底**）。
+ *
+ * ⚠️ 两边**故意不同**，且这处不同不许被「顺手统一」：
+ *    客户端那份在拿不到服务端角色时，会退化成「首次打开的这个浏览器就是主人」
+ *    （那时没有服务端，不兜底则 `/admin/` 永远对所有人关着）；
+ *    而服务端**没有这种兜底** —— 一个没配 `role` 的账号就是 `"user"`，
+ *    因为服务端的判据直接对应「能不能改别人的层级」这个真实权限。
+ *    兜底的形态不同，判据的名字与集合必须一致（`owner` / `admin` 才放行），
+ *    这一条由 test/api.test.js 拿两边的角色表对拍守着。
+ */
+function isAdminRole(role) {
+  var r = String(role || "user").toLowerCase();
+  return r === "owner" || r === "admin";
+}
+
+/**
+ * 一层「管理员闸」：`POST /admin/grant`、`/admin/grants`、`DELETE /admin/grant`
+ * 共用它。**三件事分开回**（未配好 / 未登录 / 没权限），不许合并成一句「失败」——
+ * 用户看到的下一步动作完全不同（去配置 / 去登录 / 找管理员）。
+ *
+ * ⚠️ 没权限回 **403** 而不是 404：这里不玩「假装不存在」那套 ——
+ *    接口地址本来就写在 `docs/auth-design.md` §3.5 里，藏着只会让人
+ *    以为是自己配错了。
+ */
+function adminGate(deps, cfg) {
+  if (!cfg.hasSession()) {
+    return err(503, "E_NOT_CONFIGURED", "服务端还没配置好（缺 SESSION_SECRET）。当前仍可完全离线使用本站。");
+  }
+  if (!deps.account) return err(401, "E_NO_SESSION", "还没有登录");
+  return null;   // 剩下的在 adminGrant 里按**账号的 role** 判（要查一次库）
+}
+
+/** 掩码的形状校验：与 `id.maskEmail()` 产出的形态一致（a***@b.com） */
+var MASK_RE = /^[^\s@]{1,64}\*{2,}[^\s@]{1,64}@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$/;
+
+/**
+ * 归一化一条发放请求 → `{ tier, until, mask }` 或 `{ bad, message }`。
+ *
+ * ⚠️ **只认掩码，不认完整邮箱** —— 界面与管理员手上都只有掩码
+ *    （`accounts` 表里也不存明文邮箱，见 §2.4 第 1 条）。
+ *    若这里接受明文邮箱再自己掩一次，掩码规则就有了第二份实现，
+ *    而两处规则一旦漂移，症状是「管理员明明发了，对方却拿不到」。
+ *
+ * ⚠️ 层级只认内核那三个值。**不认识的值一律拒**（不是回落 free）——
+ *    回落的下场是「管理员手滑写错，用户被降级，而界面说发放成功」。
+ */
+function normGrantInput(input) {
+  var tier = String((input && input.tier) || "").toLowerCase();
+  if (["free", "pro", "max"].indexOf(tier) < 0) {
+    return { bad: "E_TIER", message: "层级只认 free / pro / max 三个值" };
+  }
+  var mask = String((input && (input.emailMask || input.mask)) || "").trim().toLowerCase();
+  if (!mask) return { bad: "E_MASK", message: "请填邮箱掩码（形如 a***@qq.com）" };
+  if (!MASK_RE.test(mask)) {
+    return { bad: "E_MASK", message: "掩码形状不对：形如 a***@qq.com，与账号页上显示的那串一致" };
+  }
+  var until = input && input.until != null && input.until !== "" ? Number(input.until) : null;
+  if (until !== null && (!isFinite(until) || until <= 0)) {
+    return { bad: "E_UNTIL", message: "到期时刻看不懂（要毫秒时间戳，留空即永久）" };
+  }
+  return { tier: tier, mask: mask, until: until };
+}
+
+/**
+ * 发放 / 收回一个层级的**权威名单**（2.2）。
+ *
+ * ## 与「本机名单」的关系（这条必须说清，否则两边会各说各的）
+ *
+ *   · 服务端发放 = **权威**。它落在 `accounts.plan` / `accounts.plan_until`，
+ *     由 `/api/me` 下发，客户端改一行存储改不动它。
+ *   · 本机名单（`poem_plan_grant_v1`）= **手工发邀请码的本机版**，仍在，
+ *     没配服务端 / 连不上时的降级路径。它**不是**权威，谁也不许把它说成权威。
+ *   · 两者**不自动同步**：服务端发了不等于对方那台机器的本机名单也多一条 ——
+ *     那正是「本机名单传不出去」这条局限（docs §3.5）在 2.2 之后仍然成立的部分。
+ *
+ * ## 按掩码改层级：命中 0 条怎么办
+ *
+ * **如实回 `matched: 0`，不改任何东西，也不是错误**。理由是本方案里
+ * 「发名单」与「对方登录」有必然的先后：对方**先登录一次**（哪怕只是收码进来
+ * 又退出去）才会在 `accounts` 里留下一行，管理员才可能拿到他的掩码。
+ * 因此 matched:0 的常见成因是「对方还没来过」—— 而这不是可以让代码替他猜的事。
+ * ⚠️ 绝不「查不到就先建一条」：那等于按掩码凭空造账号，而掩码是**不可逆**的
+ *    （a***@qq.com 对应哪个真实邮箱谁也不知道），造出来的是一个永远登不上的幽灵行。
+ *
+ * @param {object} input { emailMask, tier, until }
+ */
+function adminGrant(deps, input) {
+  var cfg = deps.cfg, store = deps.store, t = deps.now();
+
+  var gate = adminGate(deps, cfg);
+  if (gate) return Promise.resolve(gate);
+
+  var who = normGrantInput(input);
+  if (who.bad) return Promise.resolve(err(400, who.bad, who.message));
+
+  return Promise.resolve(store.getAccount(deps.account.uid)).then(function (me) {
+    if (!me || me.status === "deleted") return err(401, "E_NO_SESSION", "还没有登录");
+    var role = String(me.role || "user").toLowerCase();
+    if (!isAdminRole(role)) {
+      return err(403, "E_FORBIDDEN", "这一条只对管理员开放（当前角色：" + (role === "user" ? "普通用户" : role) + "）");
+    }
+
+    /* 频控：发放是写接口（docs §4.3 第 3 条），走设备档。
+       ⚠️ 与同步 / 注销同档同写法，不新开一档 —— 新开一档就要新开一张表，
+          而「表写在 A 处、读取在 B 处」正是 2A 那两个洞的形状。 */
+    var device = String(input.deviceId || "unknown");
+    var g = deps.limiter.check(cfg, "device", "grant:" + device, t);
+    if (!g.ok) return err(429, "E_RATE_DEVICE", "操作太频繁了，请稍后再试", { retryAfter: g.retryAfter });
+    deps.limiter.hit("device", "grant:" + device, t);
+
+    return Promise.resolve(store.findAccountsByMask(who.mask)).then(function (rows) {
+      var hits = (rows || []).filter(function (a) { return a && a.status !== "deleted"; });
+      /* 掩码理论上可能撞（a***@qq.com 这样的掩码空间不大）。撞了**不猜**：
+         只改第一条，并把 `ambiguous` 如实标出来 —— 猜错等于给另一个人开了 Pro。 */
+      var target = hits[0] || null;
+      if (!target) {
+        return ok({
+          matched: 0, changed: false,
+          emailMask: who.mask, tier: who.tier, until: who.until,
+          note: "这个掩码还没有对应的账号。本方案里「对方先登录一次」才会在库里留下一行 —— 请让对方先登录一次再发。"
+        });
+      }
+      return Promise.resolve(store.patchAccount(target.uid, { plan: who.tier, plan_until: who.until }))
+        .then(function () {
+          return ok({
+            matched: hits.length, changed: true,
+            ambiguous: hits.length > 1,
+            uid: target.uid,
+            emailMask: who.mask,
+            /* 回的是**改完之后**的层级 —— 直接复用 publicAccount 的判定，
+               不在这里重算一份（重算一份必然与 /api/me 漂移）。 */
+            tier: who.tier, until: who.until,
+            plan: { tier: who.tier, until: who.until },
+            by: me.uid,
+            at: t,
+            note: "已写进服务端的权威名单：对方下次打开页面（或刷新个人中心）时由服务器判定生效。"
+          });
+        });
+    });
+  });
+}
+
+/**
+ * 列出**权威名单**（`POST /admin/grants`，只读）。
+ *
+ * ⚠️ 只回掩码，**绝不回 email_hash 或明文**：掩码是给人看的，
+ *    摘要泄出去等于把「这个人是不是本站用户」变成可查询的事实。
+ * ⚠️ 只列 `plan !== "free"` 的行：那才是「发过东西」的记录。
+ *    把全部账号都倒出来不是这一页要做的事（那是「用户列表」，本项目没有它）。
+ */
+function adminGrants(deps) {
+  var cfg = deps.cfg, store = deps.store;
+  var gate = adminGate(deps, cfg);
+  if (gate) return Promise.resolve(gate);
+  return Promise.resolve(store.getAccount(deps.account.uid)).then(function (me) {
+    if (!me || me.status === "deleted") return err(401, "E_NO_SESSION", "还没有登录");
+    if (!isAdminRole(me.role)) return err(403, "E_FORBIDDEN", "这一条只对管理员开放");
+    return Promise.resolve(store.listAccounts()).then(function (rows) {
+      var grants = (rows || []).filter(function (a) {
+        return a && a.status !== "deleted" && planTier(a) !== "free";
+      }).map(function (a) {
+        return { emailMask: a.email_mask, tier: planTier(a), until: a.plan_until == null ? null : Number(a.plan_until) };
+      });
+      return ok({ grants: grants, store: store.kind });
+    });
+  });
+}
+
+/**
+ * 收回（`DELETE /admin/grant`）：**等价于发一个 free**，不删账号、不删进度。
+ *
+ * ⚠️ 刻意不做「删掉那一行的发放记录」这种写法 —— 权威名单**就是** `accounts` 表
+ *    里的两个字段，没有第二张表。多一张表就多一处会漂移的地方
+ *    （而且那张表一旦与 accounts 对不上，「收回」这件事就有一半不生效）。
+ */
+function adminRevoke(deps, input) {
+  var cfg = deps.cfg, store = deps.store, t = deps.now();
+  var gate = adminGate(deps, cfg);
+  if (gate) return Promise.resolve(gate);
+  var mask = String((input && (input.emailMask || input.mask)) || "").trim().toLowerCase();
+  if (!mask || !MASK_RE.test(mask)) return Promise.resolve(err(400, "E_MASK", "掩码形状不对：形如 a***@qq.com"));
+  return Promise.resolve(store.getAccount(deps.account.uid)).then(function (me) {
+    if (!me || me.status === "deleted") return err(401, "E_NO_SESSION", "还没有登录");
+    if (!isAdminRole(me.role)) return err(403, "E_FORBIDDEN", "这一条只对管理员开放");
+    var device = String(input.deviceId || "unknown");
+    var g = deps.limiter.check(cfg, "device", "grant:" + device, t);
+    if (!g.ok) return err(429, "E_RATE_DEVICE", "操作太频繁了，请稍后再试", { retryAfter: g.retryAfter });
+    deps.limiter.hit("device", "grant:" + device, t);
+    return Promise.resolve(store.findAccountsByMask(mask)).then(function (rows) {
+      var hits = (rows || []).filter(function (a) { return a && a.status !== "deleted"; });
+      if (!hits.length) return ok({ matched: 0, changed: false, emailMask: mask });
+      return Promise.resolve(store.patchAccount(hits[0].uid, { plan: "free", plan_until: null }))
+        .then(function () {
+          return ok({ matched: hits.length, changed: true, emailMask: mask, tier: "free", by: me.uid, at: t });
+        });
+    });
+  });
+}
+
 /* -------------------------------------------------------- 注销 */
 
 /**
@@ -675,6 +878,12 @@ module.exports = {
   syncPull: syncPull,
   syncPush: syncPush,
   accountDelete: accountDelete,
+  adminGrant: adminGrant,
+  adminGrants: adminGrants,
+  adminRevoke: adminRevoke,
+  isAdminRole: isAdminRole,
+  normGrantInput: normGrantInput,
+  MASK_RE: MASK_RE,
   publicAccount: publicAccount,
   channelFacts: channelFacts,
   featuresFor: featuresFor,

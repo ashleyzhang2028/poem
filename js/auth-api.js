@@ -40,7 +40,13 @@
        服务端是通的、只是短信没接商，所以不许像 E_OFFLINE 那样
        偷偷切回本机体验版（本机版也发不出短信，切过去只是换个说法骗人）。
        界面拿到它应当**如实显示**「还没开通」。 */
-    E_SMS_NOT_OPEN: "短信登录还没开通（需要先签短信商并完成模板报备）"
+    E_SMS_NOT_OPEN: "短信登录还没开通（需要先签短信商并完成模板报备）",
+    /* 2.2 权威发放。**这三条都不是「降级」**：服务端是通的，只是这件事没成。
+       E_FORBIDDEN 尤其不许被说成「连不上」—— 它是「你确实没这个权限」，
+       而用户看到「连不上」会一直重试。 */
+    E_FORBIDDEN: "这一条只对管理员开放",
+    E_TIER: "层级只认 Free / Pro / Max",
+    E_MASK: "邮箱掩码形状不对（形如 a***@qq.com，与账号页上显示的那串一致）"
   };
 
   function messageOf(code, fallback) {
@@ -193,6 +199,34 @@
         input = input || {};
         return post("/sync/push", { recs: input.recs || [], deviceId: deviceId });
       },
+
+      /* ---------------------------------------------------- 权威发放（2.2）
+         这三条**只有管理员用得上**，但传输层不判权限 —— 权限在服务端
+         （`accounts.role`）。客户端把入口藏起来不是安全边界（docs §3.5）。
+         传输层只做一件事：把参数送到，把 `{ok, code, message}` 带回来。 */
+
+      /** POST /api/admin/grant —— 发放层级（服务端权威名单） */
+      grant: function (input) {
+        input = input || {};
+        return post("/admin/grant", {
+          emailMask: input.emailMask,
+          tier: input.tier,
+          until: input.until == null ? null : input.until,
+          deviceId: deviceId
+        });
+      },
+
+      /** DELETE /api/admin/grant —— 收回（等价于发一个 free） */
+      revoke: function (input) {
+        input = input || {};
+        return call("/admin/grant", "DELETE", {
+          emailMask: input.emailMask,
+          deviceId: deviceId
+        });
+      },
+
+      /** POST /api/admin/grants —— 列出服务端那一份权威名单（只读） */
+      grants: function () { return post("/admin/grants", { deviceId: deviceId }); },
 
       /** DELETE /api/account —— 注销（服务端先导出再删行） */
       deleteAccount: function (input) {

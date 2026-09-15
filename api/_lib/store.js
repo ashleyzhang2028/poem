@@ -16,7 +16,8 @@
  *   sessions (sid, uid, iat, exp, revoked, device)
  *
  * 接口共 15 个方法，两个实现（memory / supabase）**一个都不能少**：
- *   账号 5（getAccountByHash / getAccount / putAccount / deleteAccount / ——）
+ *   账号 8（getAccountByHash / getAccount / putAccount / deleteAccount /
+ *          patchAccount / findAccountsByMask / listAccounts / ——）
  *   码   4（putCode / getCode / patchCode / voidCodes）
  *   会话 3（putSession / getSession / revokeSessions）
  *   进度 3（listProgress / putProgress / deleteProgress）
@@ -58,6 +59,43 @@ function memoryStore() {
       Object.keys(patch).forEach(function (k) { c[k] = patch[k]; });
       return true;
     },
+    /**
+     * 单条更新（**权威发放用**：改 plan / plan_until）。
+     *
+     * ⚠️ 与 patchCode 同一条教训：少一个方法不会编译报错，只会让
+     *    「发放层级」这件事**静默失效** —— 接口照样回 200，改了库里啥也没变。
+     *    所以两个实现的键集合必须完全一致（test/api.test.js 有断言守着）。
+     * ⚠️ 白名单式落库：只写调用方明确给的那几个键，不做「整个对象盖进去」——
+     *    后者会把请求体里的任意字段写进 accounts 表（那是坏客户端的提权口子）。
+     */
+    patchAccount: function (uid, patch) {
+      var a = db.accounts[uid];
+      if (!a) return false;
+      ["plan", "plan_until", "role", "last_login_at", "nickname"].forEach(function (k) {
+        if (patch && Object.prototype.hasOwnProperty.call(patch, k)) a[k] = patch[k];
+      });
+      return true;
+    },
+    /**
+     * 按**邮箱掩码**找账号（权威发放的检索方式：管理员手上只有掩码）。
+     *
+     * ⚠️ 只回「账面上的掩码完全相同」的那一条，不做模糊匹配、不做大小写以外的
+     *    归一 —— 模糊匹配的下场是「发一个 a***@qq.com，命中了另一个人的账号」。
+     */
+    findAccountsByMask: function (mask) {
+      var m = String(mask == null ? "" : mask).trim().toLowerCase();
+      if (!m) return [];
+      var out = [];
+      Object.keys(db.accounts).forEach(function (uid) {
+        var a = db.accounts[uid];
+        if (String(a.email_mask || "").toLowerCase() === m) out.push(a);
+      });
+      return out;
+    },
+    listAccounts: function () {
+      return Object.keys(db.accounts).map(function (uid) { return db.accounts[uid]; });
+    },
+
     voidCodes: function (uid, purpose, at) {
       Object.keys(db.codes).forEach(function (k) {
         var c = db.codes[k];
@@ -173,6 +211,27 @@ function supabaseStore(cfg) {
       return call("/codes?code_id=eq." + q(codeId), {
         method: "PATCH", body: patch, prefer: "return=minimal"
       }).then(function () { return true; });
+    },
+
+    patchAccount: function (uid, patch) {
+      var body = {};
+      ["plan", "plan_until", "role", "last_login_at", "nickname"].forEach(function (k) {
+        if (patch && Object.prototype.hasOwnProperty.call(patch, k)) body[k] = patch[k];
+      });
+      if (!Object.keys(body).length) return Promise.resolve(true);
+      return call("/accounts?uid=eq." + q(uid), {
+        method: "PATCH", body: body, prefer: "return=minimal"
+      }).then(function () { return true; });
+    },
+    findAccountsByMask: function (mask) {
+      var m = String(mask == null ? "" : mask).trim().toLowerCase();
+      if (!m) return Promise.resolve([]);
+      return call("/accounts?email_mask=eq." + q(m) + "&select=" + COLS + "&limit=2")
+        .then(function (rows) { return rows || []; });
+    },
+    listAccounts: function () {
+      return call("/accounts?select=" + COLS + "&order=created_at.desc&limit=500")
+        .then(function (rows) { return rows || []; });
     },
 
     putSession: function (s) {
