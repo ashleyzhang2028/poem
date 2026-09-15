@@ -111,37 +111,34 @@ setTimeout(() => {
   });
 
   chk(d.querySelectorAll('#gw-list .item').length === 100, '列表渲染 100 篇（实际 ' + d.querySelectorAll('#gw-list .item').length + '）');
-  chk(!!d.querySelector('#gw-count'), '页顶那一行有已读进度牌 #gw-count');
-  chk(d.querySelectorAll('#gw-count').length === 1, '进度牌只有一块（顶栏重建后插回，不重复插入）');
-  chk(d.querySelector('#gw-count').textContent === '0 / 100 篇', '顶部显示 0 / 100 篇：' + d.querySelector('#gw-count').textContent);
-
-  /* ---------- 已读进度牌：页顶一行内、紧挨底部页签 ---------- */
-  // 需求（本次）：原先它挂在内容区最上面一行（.list-head，右对齐），
-  // 在标题栏下方平白多占一行；现在挪进页顶那一行，与品牌区同处一行。
-  // 「右下角」＝ 该行最右端，语序上就在底部页签那一栏的正上方，一眼能看见。
-  chk(d.querySelector('.list-head') === null, '内容区不再有单独的进度行（.list-head 已删除）');
+  /* ---------- 已读进度：跟着**详情页状态栏**走（Issue #147） ---------- */
+  // 用户原话：「删除所有页面标题栏中的 0 / 0 篇、0 / 283 首这些，节省空间；
+  //   将 0 / 283 首 挪到详情页的 宋 张先《宋词三百首》的后面，同一行」。
+  // 于是：
+  //   · 页顶那一行**一个读数都没有**（原先挂在品牌区与返回键之间的 .count-badge 已撤）；
+  //   · 详情页状态栏（.rd-meta：朝代 · 作者 · 出处）末尾多一枚 .rd-count。
   const clsCss = fs.readFileSync(path + 'css/classic.css', 'utf8');
+  chk(d.querySelector('.list-head') === null, '内容区不再有单独的进度行（.list-head 已删除）');
   chk(!/list-head/.test(clsCss), 'CSS 里也不留 .list-head 僵尸样式');
   chk(!/list-head/.test(fs.readFileSync(path + 'classic/index.html', 'utf8')), '页面里也不再出现 .list-head');
+  chk(d.querySelector('#gw-count') === null, '页顶那一行不再挂已读进度牌 #gw-count（Issue #147）');
+  chk(d.querySelectorAll('.topbar > .count-badge').length === 0,
+    '全页两条顶栏（列表页 + 阅读器）**一枚 .count-badge 都没有**（实际 ' +
+    d.querySelectorAll('.topbar > .count-badge').length + ' 枚）');
+  chk(fs.readFileSync(path + 'classic/index.html', 'utf8').indexOf('count-badge') < 0,
+    '页面里连 count-badge 这个类名都不再出现（不留死节点）');
+  // 页顶那一行留下的只有「品牌区 · 返回键 · 头像」三件，次序不变
   const topbar = d.querySelector('.topbar');
-  const countInTopbar = d.querySelector('.topbar #gw-count');
-  chk(!!countInTopbar, '进度牌 #gw-count 在页顶栏 .topbar 里');
-  chk(countInTopbar.parentElement === topbar, '进度牌是页顶那一行的直接子元素（与品牌区同一行）');
-  // Issue #132（2026-09-15）起，页顶那一行的右端是「返回键 + 头像」两颗：
-  // 头像永远在最右（身份锚点，落点不能变），返回键在它左边。
-  // 这里守的仍是原来那条重点 —— **进度牌在返回键左侧**，不是被挤到右端后面。
-  chk([...topbar.children].map(e => e.className.split(' ')[0]).join('/') === 'brand/count-badge/top-act/top-user',
-    '页顶一行依次是「品牌区 · 进度牌 · 返回键 · 头像」，进度牌在返回键左侧、头像在最右（实际 ' +
+  chk([...topbar.children].map(e => e.className.split(' ')[0]).join('/') === 'brand/top-act/top-user',
+    '页顶一行依次是「品牌区 · 返回键 · 头像」（实际 ' +
     [...topbar.children].map(e => e.className).join('/') + '）');
   const backBtn2 = topbar.querySelector('#top-back');
   chk(!!backBtn2 && backBtn2.tagName === 'A' && backBtn2.getAttribute('href') === '/',
-    '返回键统一由 chrome.js 渲染（回首页），页面不再自造一颗、也不会与进度牌打架');
+    '返回键统一由 chrome.js 渲染（回首页），页面不再自造一颗');
   chk(!!backBtn2.querySelector('svg') && backBtn2.querySelectorAll('svg').length === 1,
     '返回键只有一个箭头图标（不放页名文字）');
-  chk(countInTopbar.compareDocumentPosition(backBtn2) & window.Node.DOCUMENT_POSITION_FOLLOWING,
-    '进度牌确实排在返回键左侧（DOM 顺序就是视觉顺序）');
 
-  // 阅读器顶栏与列表页逐项对齐：同一套 .topbar 结构、同一枚进度牌位置 ——
+  // 阅读器顶栏与列表页逐项对齐：同一套 .topbar 结构 ——
   // 从列表点进正文时整行导航不「换脸」（原先阅读器自带一套 reader-bar，
   // 返回键在左、页名只有一处居中进度，和列表页完全不在一根轴上）
   const openReaderBar = function () {
@@ -159,21 +156,21 @@ setTimeout(() => {
   };
   const rBar = openReaderBar();
   chk(!!rBar, '阅读器里有自己的 .topbar（同一套结构）');
-  // 回归：整个小古文页有**两条** .topbar（页面顶部那条 + 阅读器里那条），
-  // 两条各自挂着一枚页面小件（列表页的「0 / 100 篇」、阅读器的「第 N / 100 篇」）。
-  // chrome.js 的 renderBar 重建顶栏时必须把**每一枚**小件都出栈再插回 ——
-  // 只搬第一枚时，阅读器那条顶栏重建后篇号牌整块消失，
-  // 下面那句「rBar.querySelector('#top-act')」就会对着 null 调用而整层测试炸掉。
-  chk(d.querySelectorAll('.topbar > .count-badge').length === 2,
-    '两条顶栏各自的小件都在（列表页 0 / 100 篇 + 阅读器第 N / 100 篇，实际 ' +
-    d.querySelectorAll('.topbar > .count-badge').length + ' 枚）');
-  chk(!!rBar.querySelector('#gw-progress') && rBar.querySelector('#gw-progress').classList.contains('is-ready'),
-    '阅读器顶栏重建后篇号牌仍在（小件按枚迁回，不是只搬第一枚）');
+  // 详情页状态栏：朝代 · 作者 · 出处 · 已读进度，**同一行**
+  const rMeta = d.querySelector('#rd-meta');
+  const rdCount = rMeta.querySelector('.rd-count');
+  chk(!!rdCount, '详情页状态栏里有已读进度 .rd-count（Issue #147 挪进来的那一枚）');
+  chk(rdCount && rdCount.textContent === '0 / 100 篇',
+    '这一枚报的是「已读 / 总数 篇」：' + (rdCount ? rdCount.textContent : '无'));
+  chk(!!rdCount && rdCount.parentElement === rMeta,
+    '它与朝代 / 作者 / 出处同处一行（.rd-meta 的直接子元素，不是另起一行）');
+  chk(!!rMeta.querySelector('.tag') && rMeta.textContent.indexOf('王应麟') >= 0,
+    '同一行里朝代 / 作者 / 出处都还在（实际「' + rMeta.textContent + '」）');
   // ⚠️ 阅读器那条顶栏**没有头像**：阅读器是全屏沉浸层，身份入口不在正文上出现
-  //（头像让位给正文，见 js/chrome.js 的 headerHtml）。所以这里仍是三件，
-  // 与列表页那条（四件）刻意不同 —— 这是本次裁决要的差异，不是漏画。
-  chk([...rBar.children].map(e => e.className.split(' ')[0]).join('/') === 'brand/count-badge/top-act',
-    '阅读器顶栏是「品牌区 · 篇号牌 · 返回键」三项，**不含头像**（沉浸阅读里不放身份入口，实际 ' +
+  //（头像让位给正文，见 js/chrome.js 的 headerHtml）。所以这里是两件，
+  // 与列表页那条（三件）刻意不同 —— 这是本次裁决要的差异，不是漏画。
+  chk([...rBar.children].map(e => e.className.split(' ')[0]).join('/') === 'brand/top-act',
+    '阅读器顶栏是「品牌区 · 返回键」两项，**不含头像也不含篇号牌**（实际 ' +
     [...rBar.children].map(e => e.className).join('/') + '）');
   chk(d.querySelectorAll('.reader .topbar .top-user').length === 0,
     '阅读器里确实一枚头像都没有（让位给正文）');
@@ -208,9 +205,6 @@ setTimeout(() => {
   } else {
     chk(!/#top-act[^>]*>[\s\S]{0,200}?M6\.4 6\.4/.test(rBar.innerHTML),
       '动作位画的是返回箭头，不是 ✕（同一种行为全站同一个图标）');
-    chk(rBar.querySelector('#gw-progress').textContent === '第 1 / 100 篇' &&
-      rBar.querySelector('#gw-progress').classList.contains('count-badge'),
-      '篇号牌用列表页同款 .count-badge，挂在品牌区与返回键之间');
     // 收起来，后面的用例仍从列表页开始
     rBack.dispatchEvent(new window.MouseEvent('click', { bubbles: true, cancelable: true }));
     chk(d.querySelector('#gw-reader').hidden === true, '阅读器返回键能合上阅读器');
@@ -224,19 +218,17 @@ setTimeout(() => {
   chk(readerSub() === '想读哪篇点哪篇', '阅读器顶栏的第二行也在（与列表页同一句）');
   chk(appSub() === '想读哪篇点哪篇', '合上阅读器后，列表页顶栏的第二行还在（重绘后已补回）');
   chk(topbar.contains(d.querySelector('#brand-name')) && topbar.contains(d.querySelector('#brand-page-text')),
-    '进度牌与「跬步 · 小古文」同处一行');
-  // 需求（本次）：这一行所有元素垂直居中 —— 靠 .topbar 的 align-items: center，
-  // 具体到小古文页，还要保证进度牌本身不拉伸、不与品牌区贴在一起
+    '顶栏那件「跬步 · 小古文」仍在（撤掉的只是那枚读数）');
+  // 需求（本次）：顶栏整行仍垂直居中 —— 靠 .topbar 的 align-items: center。
+  // ⚠️ .topbar-with-count / .count-badge 两条样式已随进度牌一起撤（Issue #147），
+  //    这里反向守住：样式表里不该再留着这两位「页顶读数」的僵尸规则 ——
+  //    留着的唯一后果是下一个人以为页顶还有一枚牌子，改样式时白改一遍。
   const styleCss0 = fs.readFileSync(path + 'css/style.css', 'utf8');
   const topbarBlock = /(^|\n)\.topbar \{([\s\S]*?)\}/.exec(styleCss0);
   chk(!!topbarBlock && /align-items:\s*center;/.test(topbarBlock[2]),
-    '顶栏 flex 垂直居中（徽标 / 页名 / 副标题 / 进度牌同一条中轴）');
-  const badgeBlock0 = /(^|\n)\.count-badge \{([\s\S]*?)\}/.exec(clsCss);
-  chk(!!badgeBlock0 && /flex:\s*none;/.test(badgeBlock0[2]),
-    '进度牌 flex: none —— 不被拉伸撑成整行高，只按自身高度居中');
-  const withCountBlock = /(^|\n)\.topbar-with-count \{([\s\S]*?)\}/.exec(clsCss);
-  chk(!!withCountBlock && /gap:\s*10px;/.test(withCountBlock[2]),
-    '进度牌与品牌区之间留 10px（长页名 / 长用户名也不会贴在一起）');
+    '顶栏 flex 垂直居中（徽标 / 页名 / 副标题 / 返回键同一条中轴）');
+  chk(!/\.topbar-with-count/.test(clsCss) && !/\.count-badge/.test(clsCss),
+    '样式表里不再留 .topbar-with-count / .count-badge 这一套页顶读数样式');
   chk(d.querySelectorAll('#gw-list .group-head').length >= 6, '按主题显示分组标题（' + d.querySelectorAll('#gw-list .group-head').length + ' 个）');
 
   // 需求（Issue #69 本轮）：每个分组右侧那颗播放键改成**组合播放键** ——
@@ -909,14 +901,13 @@ setTimeout(() => {
   d.querySelector('#gw-done').dispatchEvent(new window.Event('click', { bubbles: true }));
   chk(/已读，再点一次取消/.test(d.querySelector('#gw-done-text').textContent), '标记后读屏文案变为「已读，再点一次取消」');
   chk(d.querySelector('#gw-done').classList.contains('is-done'), '标记已读按钮进入高亮态');
-  chk(d.querySelector('#gw-progress').classList.contains('is-done'),
-    '已读后顶栏篇号牌转成深绿实底（与列表页未读 / 已读同一套语言）');
+  chk(d.querySelector('#rd-meta .rd-count').textContent === '1 / 100 篇',
+    '已读后详情页状态栏那一枚数跟着 +1（读数与「标记已读」同一处口径）');
   const store = JSON.parse(window.localStorage.getItem('poem_classic_read_v1'));
   chk(store['gw-17'] && store['gw-17'].read === true, '已读状态写入 localStorage（独立于古诗词进度）');
   chk(!window.localStorage.getItem('poem_recite_progress_v1'), '不会写古诗词进度 key，两边互不干扰');
-  chk(d.querySelector('#gw-count').textContent === '1 / 100 篇', '顶部进度更新为 1 / 100 篇');
-  chk(d.querySelector('.topbar #gw-count').textContent === '1 / 100 篇',
-    '进度更新的是页顶那一行里的同一块牌子（不是另开一份）');
+  chk(d.querySelector('#rd-meta .rd-count').textContent === '1 / 100 篇',
+    '状态栏那一枚数就是唯一的一份读数（页顶没有第二份）');
 
   // 返回列表：阅读器顶栏的动作位由全站渲染，测试里直接调 closeReader 的入口（点击返回）
   clickReaderBack();
@@ -1122,8 +1113,8 @@ setTimeout(() => {
   d.querySelector('#gw-done').dispatchEvent(new window.Event('click', { bubbles: true }));
   chk(d.querySelector('#gw-done-text').textContent === '标记为已读', '再点一次可取消已读');
   chk(d.querySelector('#gw-done').classList.contains('is-done') === false, '取消后按钮恢复常态');
-  chk(d.querySelector('#gw-progress').classList.contains('is-done') === false,
-    '取消已读后顶栏篇号牌恢复常态');
+  chk(d.querySelector('#rd-meta .rd-count').textContent === '0 / 100 篇',
+    '取消已读后状态栏那一枚数退回 0 / 100 篇');
   chk(!JSON.parse(window.localStorage.getItem('poem_classic_read_v1'))['gw-17'], '取消后从存储中移除');
 
   console.log(fails === 0 ? '\n🎉 小古文测试全部通过' : '\n❌ ' + fails + ' 项失败');

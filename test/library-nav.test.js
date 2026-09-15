@@ -117,9 +117,12 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(gridHidden() && !railHidden(), '目录收起、索引铺开（同一页里的两层）');
   chk(d.querySelectorAll('#lib-gw-list .item').length === 301,
     '索引层列出 301 首（实际 ' + d.querySelectorAll('#lib-gw-list .item').length + '）');
-  const badge = d.querySelector('.app > .topbar .count-badge');
-  chk(!!badge && badge.textContent === '0 / 301 首',
-    '页顶那一行的进度牌跟着换成这一部的数（实际 ' + (badge ? badge.textContent : '无') + '）');
+  // Issue #147：页顶那一行不再挂已读进度牌 —— 它原先在这里按集子换数
+  //（「0 / 301 首」），窄屏上与品牌区抢地方。数挪去了详情页状态栏。
+  chk(d.querySelector('.app > .topbar .count-badge') === null,
+    '页顶那一行不再挂已读进度牌（实际 ' +
+    (d.querySelector('.app > .topbar .count-badge') ?
+      d.querySelector('.app > .topbar .count-badge').textContent : '无') + '）');
   chk(topActs() === 1 && !!actionBtn() && actionBtn().getAttribute('type') === 'button',
     '索引这一层只有一枚返回键（页面那条顶栏上的 #top-act）');
 
@@ -168,9 +171,8 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     d.querySelectorAll('#lib-gw-list .item').length !== 301,
     '列表换成了宋词的篇目（不再是唐诗的 301 条；实际 ' +
     d.querySelectorAll('#lib-gw-list .item').length + '）');
-  const b2 = d.querySelector('.app > .topbar .count-badge');
-  chk(!!b2 && /^0 \/ \d+ 首$/.test(b2.textContent) && b2.textContent !== '0 / 301 首',
-    '进度牌跟着换成宋词的数（实际 ' + (b2 ? b2.textContent : '无') + '）');
+  chk(d.querySelector('.app > .topbar .count-badge') === null,
+    '换一部之后页顶照样没有读数（读数只有详情页那一处）');
   chk(d.querySelector('[data-lib-part="search"]').value === '',
     '换到另一部时搜索框是空的（上一部敲过的字不带过来）');
 

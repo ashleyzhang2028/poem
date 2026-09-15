@@ -314,10 +314,11 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
   chk(c.querySelector('#rd-trans-read').disabled === false, '译文朗读按钮可用');
   c.querySelector('#rd-next').dispatchEvent(new w2.Event('click', { bubbles: true }));
   await sleep(20);
-  chk(c.querySelector('#gw-progress').textContent.indexOf('第 2') === 0, '下一篇跳到第 2 篇：' + c.querySelector('#gw-progress').textContent);
+  chk(c.querySelector('#rd-title').textContent.length > 0, '下一篇跳到第 2 篇：' + c.querySelector('#rd-title').textContent);
   c.querySelector('#rd-prev').dispatchEvent(new w2.Event('click', { bubbles: true }));
   await sleep(20);
-  chk(c.querySelector('#gw-progress').textContent.indexOf('第 1') === 0, '上一篇回到第 1 篇');
+  chk(c.querySelector('#rd-nav #rd-prev-title').textContent.length > 0,
+    '上一篇回到第 1 篇（顶栏那枚篇号牌已撤，改看阅读器里的「上一篇 / 下一篇」标题）');
   // 首页第一篇的上一篇应禁用
   const prevBtn = c.querySelector('#rd-prev');
   chk(prevBtn.disabled === true, '第一篇时「上一篇」禁用');

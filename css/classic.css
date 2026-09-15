@@ -45,34 +45,31 @@
 .back-icon { text-decoration: none; }
 .back-icon svg { width: 26px; height: 26px; }
 
-/* 已读进度牌：页顶那一行里，排在返回键左侧
+/* 已读进度：跟着正文状态栏走（Issue #147）
    --------------------------------------------------------------------------
-   它原先挂在内容区最上面一行（右对齐），标题栏下面平白多出一行；现在挪进页顶行：
-     徽标 · 跬步 · 小古文 · 副标题 ｜ 0 / 100 篇 ｜ 〔返回键〕
-   一个「0 / 100 篇」等于两行，所以给的是整行高度（line-height: 1），
-   让它在品牌区（两行文字）与 40px 的返回键之间**垂直居中** —— 居中对齐交给
-   .topbar 的 align-items: center，这里只保证牌子自身不拉伸、不被压扁。 */
-.topbar-with-count {
-  /* 品牌区与进度牌之间至少 10px：页名 / 用户名再长也不会贴在一起 */
-  gap: 10px;
-}
-.count-badge {
-  flex: none;
-  background: var(--green-light);
-  color: var(--green);
-  font-size: 12.5px;
+   这一枚数原先挂在**页顶那一行**（品牌区与返回键之间那枚小牌子）：
+     徽标 · 跬步 · 小古文 · 副标题 ｜ 0 / 100 篇 ｜〔返回键〕
+   窄屏上它会与品牌区抢地方（页名被收成省略号「唐诗三…」），
+   而用户真正要的是「读了几首」——**读第几首**本来就在详情页上。
+   于是撤掉页顶那一枚，只留详情页状态栏里的这一枚，与朝代 / 作者 / 出处同一行：
+     宋 · 张先 ·《宋词三百首》 · 0 / 283 首
+   .rd-meta 是 flex 行（见 css/style.css 的 .meta），所以这一枚只是又一个行内项，
+   天然与那些 .tag 共处一行、随正文一起居中；窄屏放不下时整行换行，不会互相压。
+
+   尺寸刻意比 .tag 小一档、字重轻一档、底色不用绿：它是**读数**而不是标签。
+   与「标记已读」联动：点一次，数字立刻 +1（见 js/reader-core.js 的 syncCount）。 */
+.rd-count {
+  font-size: 11.5px;
   font-weight: 600;
+  letter-spacing: .3px;
   line-height: 1;
-  padding: 6px 11px;
+  padding: 4px 9px;
   border-radius: 999px;
+  background: var(--bg);
+  color: var(--ink-3);
   white-space: nowrap;
+  align-self: center;
 }
-/* 阅读器里的那枚「第 N / 100 篇」与列表页顶部的「0 / 100 篇」是同一枚牌子：
-   位置一样（品牌区与返回键之间）、配色一样，只是内容换成当前篇号。
-   这里只补「已读到 / 已读过」两种状态的淡色区分，不另起一套形状。 */
-.reader-count { display: none; }
-.reader-count.is-ready { display: inline-block; }
-.reader-count.is-done { background: var(--green); color: #fdfaf2; }
 
 /* 搜索 + 筛选 */
 .toolbar {
@@ -771,7 +768,8 @@ body.reader-open .dock { display: none; }
    原先这里有一套自制的 .reader-bar（返回键在左、进度居中、右侧等宽占位），
    与列表页 / 设置页的顶栏结构完全不同，从列表点进正文时整行导航会「换一张脸」。
    现在品牌区（徽标 + 跬步 · 小古文）与列表页逐像素对齐，返回键落在全站统一的
-   右侧动作位，「第 N / 100 篇」用列表页同款 .count-badge 挂在两者中间。
+   右侧动作位，两者中间**不再挂任何小件**（Issue #147：篇号与已读数都跟着
+   正文状态栏走，见上面 .rd-count 那一段）。
    另补背景色：.reader 是整屏 fixed 的滚动区，顶栏若透明，正文会从它下面透出来。 */
 .reader > .topbar {
   background: var(--bg-soft);
@@ -780,7 +778,7 @@ body.reader-open .dock { display: none; }
      flex 项 —— 交叉轴（横向）上 flex 项默认按内容取宽，不是撑满容器。
      列表页那一条顶栏住在 .app（块级）里，块级子元素天然占满一行，所以
      从没露过这个问题；阅读器这一条一到这里就退化成「按内容取宽」。
-     于是「跬步」+ 页名 + 进度牌 + 返回键四件加起来有多宽，顶栏就有多宽：
+     于是「跬步」+ 页名 + 返回键加起来有多宽，顶栏就有多宽：
      手机上《昭明文选》量到 427px（视口 393px），《课外必背小古文》424px、
      《唐诗三百首》389px（视口 320px）—— 顶栏直接顶出屏幕右缘，
      右边那颗返回键被裁掉一半、点不着；body 是 overflow: hidden，

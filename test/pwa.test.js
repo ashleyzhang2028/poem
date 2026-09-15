@@ -1032,7 +1032,6 @@ function check(name, cond, extra) {
             const act = bar.querySelector('.top-act:not(.top-act-spacer)');
             const ar = act ? act.getBoundingClientRect() : null;
             const text = bar.querySelector('#brand-page-text');
-            const badge = bar.querySelector('.count-badge');
             return res({
               vw: document.documentElement.clientWidth,
               barW: +r.width.toFixed(1),
@@ -1040,7 +1039,10 @@ function check(name, cond, extra) {
               barScrollW: bar.scrollWidth,
               actLeft: ar ? +ar.left.toFixed(1) : null,
               actRight: ar ? +ar.right.toFixed(1) : null,
-              badgeRight: badge ? +badge.getBoundingClientRect().right.toFixed(1) : null,
+              countRight: (function () {
+                const c = document.querySelector('#rd-meta .rd-count');
+                return c ? +c.getBoundingClientRect().right.toFixed(1) : null;
+              })(),
               labelW: text ? +text.getBoundingClientRect().width.toFixed(1) : null,
               label: text ? text.textContent : '',
               labelEllipsis: text ? getComputedStyle(text).textOverflow : null
@@ -1053,9 +1055,11 @@ function check(name, cond, extra) {
         check('iPhone ' + vw + 'px：' + colLabel + ' 详情页返回键整个落在视口里（不被屏幕裁掉）',
           barState && barState.actRight <= barState.vw + 1 && barState.actLeft >= 0,
           barState ? ('返回键 ' + barState.actLeft + '→' + barState.actRight + ' / 视口 ' + barState.vw) : 'no reader');
-        check('iPhone ' + vw + 'px：' + colLabel + ' 详情页「第 N / M 篇」也在视口里',
-          barState && barState.badgeRight <= barState.vw + 1,
-          barState ? String(barState.badgeRight) : 'no reader');
+        // Issue #147：详情页顶栏不再挂「第 N / M 篇」那枚牌子，读数落进正文状态栏。
+        // 这里改成量**状态栏那一行**：它整行也必须落在视口里（不能被裁一半）。
+        check('iPhone ' + vw + 'px：' + colLabel + ' 详情页状态栏（含「读了 N / M」）也在视口里',
+          barState && barState.countRight != null && barState.countRight <= barState.vw + 1,
+          barState ? String(barState.countRight) : 'no reader');
         check('iPhone ' + vw + 'px：' + colLabel + ' 详情页顶栏自己不出现内部横向溢出',
           barState && barState.barScrollW <= barState.barW + 1,
           barState ? (barState.barScrollW + ' / ' + barState.barW) : 'no reader');

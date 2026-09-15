@@ -201,22 +201,25 @@
     });
   }
 
-  /** 把页顶那一行换成这一部的（页名 / 说明 / 进度牌），退出时再换回来 */
+  /**
+   * 把页顶那一行换成这一部的（页名 / 说明），退出时再换回来。
+   *
+   * ⚠️ 页顶那一行**不再挂已读进度牌**（Issue #147）：它原先在这里按集子换数
+   *    （「0 / 301 首」），窄屏上会把品牌区挤成省略号。已读进度现在跟着
+   *    **详情页的状态栏**走（朝代 / 作者 / 出处那一行，见 js/reader-core.js 的
+   *    syncCount），所以这一层只换页名与说明；数由正文自己报。
+   *    这一页的进度牌（若将来要挂回来）要走 C.badge()，见 js/chrome.js。
+   */
   function paintHeader(entry) {
     var C = window.SiteChrome;
     if (!C) return;
     if (!entry) {
       C.setPage("");
       C.setSub("");
-      var b0 = C.badge();
-      if (b0) b0.textContent = "";
       return;
     }
     C.setPage(entry.name);
-    var sub = pageSubOf(entry.id);
-    C.setSub(sub);
-    var b = C.badge();
-    if (b) b.textContent = "0 / " + countOf(entry.id) + " " + entry.unit;
+    C.setSub(pageSubOf(entry.id));
   }
 
   /**

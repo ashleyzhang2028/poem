@@ -24,9 +24,7 @@
  * 页面怎么用：
  *   <body data-nav="classic" data-page="小古文">
  *   <div data-gw-root>            ← 一块 data-gw-root 对应一个挂载点
- *     <header class="topbar topbar-with-count">
- *       <span class="count-badge" data-gw="count">0 / 100 篇</span>
- *     </header>
+ *     <header class="topbar"></header>   ← 顶栏只有品牌区 + 返回键，**不挂进度牌**
  *     <div class="toolbar"> … <input data-gw="search"> … </div>
  *     <div class="list" data-gw="list"></div>
  *   </div>
@@ -455,18 +453,36 @@
     });
     paintSub();
 
-    // 已读进度牌（0 / 100 篇）也在页顶那一行里，chrome.js 重建顶栏时会把它原样留着
-    // （见 chrome.js 的 renderBar），所以这里只要在它渲染完之后补一次数字。
+    // 已读进度跟着正文状态栏走（见 syncCount），而顶栏会被 chrome.js 整行重建 ——
+    // 所以这里在它重建之后再补一次数字。
     var onChrome = function () { paintSub(); syncCount(); };
     document.addEventListener("chrome:ready", onChrome);
   }
 
-  /* 进度牌文案：已读 / 总数。页顶与「标记已读」共用这一处口径 */
-  function syncCount() {
-    var el = $('[data-gw="count"]') || $("#gw-count");
-    if (!el) return;
-    el.textContent = allItems().filter(function (p) { return isRead(p.id); }).length +
+  /* 已读进度的唯一一处口径：「读了 N / M 首（篇）」。
+     ⚠️ 它**不写在页顶那一行**（Issue #147）：
+        原先页顶挂在品牌区与返回键之间，窄屏上品牌区被挤成省略号，
+        「0 / 283 首」这种两行高的牌子又白占一块地方；
+        用户要的是「读了几首」这件事，而**读第几首**本来就在详情页上 ——
+        于是这一枚数跟着正文的状态栏走：朝代 · 作者 · 出处 · N / M 首，同一行。
+     口径只此一处：详情页的状态栏、内容区里别处要报数都读它。 */
+  function countText() {
+    return allItems().filter(function (p) { return isRead(p.id); }).length +
       " / " + allItems().length + " " + W.unit;
+  }
+
+  /** 详情页状态栏（.rd-meta）里的那一枚已读进度；没有正文状态栏的挂载点返回 null */
+  function countEl() {
+    var bar = rd("reader");
+    var meta = bar ? bar.querySelector(".rd-meta, #rd-meta, [data-gw=\"meta\"]") : null;
+    return meta ? meta.querySelector(".rd-count") : null;
+  }
+
+  /* 已读进度文案：写进详情页状态栏那一枚 .rd-count 里 */
+  function syncCount() {
+    var el = countEl();
+    if (!el) return;
+    el.textContent = countText();
   }
 
   /* ---------------- 进度存储（每部集子一份，互不干扰） ---------------- */
@@ -713,8 +729,8 @@
     var total = allItems().length;
     var readCount = allItems().filter(function (p) { return isRead(p.id); }).length;
 
-    // 页顶那一行里的「0 / 100 篇」：与列表同一次渲染，保证首屏就是准数
-    // （chrome:ready 早于本函数执行，所以进度牌这时已经在 DOM 里了）
+    // 详情页状态栏里的「0 / 100 篇」（读了 N / M）：与列表同一次渲染，
+    // 保证翻到下一篇时那一枚数就是准的（它读的是 items，不是 DOM 里的旧数）
     syncCount();
 
     listEl.innerHTML = "";
@@ -942,11 +958,19 @@
     if (p.authorName && p.authorName !== p.author) {
       authorTag = p.author + "（" + p.authorName + "）";
     }
+    // 「读了 N / M 首（篇）」挂在出处后面、**同一行**（Issue #147）：
+    // 这一枚数原先挂在页顶那一行（列表页与详情页各一枚），现已撤掉；
+    // 用户要的是「宋 张先《宋词三百首》」后面跟着「0 / 283 首」——
+    // 朝代 / 作者 / 出处 / 选本 / 进度，从左到右读下来是一句话。
+    // ⚠️ 没有正文状态栏的挂载点（搜索页仍走这里，但读的是全站篇目）照旧给这一枚，
+    //    它报的是本挂载点当前篇目的已读数，口径与列表一致。
     meta.innerHTML =
       (p.dynasty ? '<span class="tag ghost">' + esc(p.dynasty) + "</span>" : "") +
       (authorTag ? '<span class="tag ghost">' + esc(authorTag) + "</span>" : "") +
       (p.source ? '<span class="tag">' + esc(p.source) + "</span>" : "") +
-      (p.selection ? '<span class="tag ghost">' + esc(p.selection) + "</span>" : "");
+      (p.selection ? '<span class="tag ghost">' + esc(p.selection) + "</span>" : "") +
+      (hasReadStore() ? '<span class="rd-count" data-gw="rd-count"></span>' : "");
+    syncCount();
     renderReaderText();
     el.querySelector('.rd-trans-text, #rd-trans-text').textContent = p.translation || W.pendingTranslation;
     // 译文来源注脚：与首页详情页同一套文案（data/index.js 的 TRANSLATION_SOURCES）
@@ -955,14 +979,9 @@
       srcEl.textContent = p.translation && window.translationSourceText
         ? window.translationSourceText(p) : "";
     }
-    // 「第 N / 100 篇」挂在顶栏品牌区与返回键之间，与列表页顶部的「0 / 100 篇」
-    // 是同一枚 .count-badge：整行导航只换内容、不换结构。
-    var progEl = el.querySelector('.count-badge, #gw-progress');
-    if (progEl) {
-      progEl.textContent = "第 " + (idx + 1) + " / " + allItems().length + " " + W.unit;
-      progEl.classList.toggle("is-done", isRead(p.id));
-      progEl.classList.add("is-ready");
-    }
+    // ⚠️ 顶栏那枚「第 N / 100 篇」篇号牌已撤（Issue #147）：详情页的顶栏只剩
+    //    品牌区与返回键，篇号与「读了 N / M」都落在正文状态栏里（见上面那一段）。
+    //    整行导航因此从「一堆小件」回到「徽标 + 页名 + 返回键」三件。
     showTransBox(false);
     speakingTarget = "原文";
     renderNav();
@@ -1322,10 +1341,9 @@
     btn.setAttribute("aria-pressed", read ? "true" : "false");
     var label = btn.querySelector(".sr-only");
     if (label) label.textContent = read ? "已读，再点一次取消" : "标记为已读";
-    // 顶栏的篇号牌同步「已读」状态：读过的那篇整枚牌子转成深绿实底，
-    // 与列表页里未读 / 已读的区分同一套语言（不再另加一颗小勾图标）。
-    var progEl = rd("reader") && rd("reader").querySelector(".count-badge, #gw-progress");
-    if (progEl) progEl.classList.toggle("is-done", read);
+    // 状态栏里那一枚已读进度跟着刷新：点「标记已读」之后数字要立刻变
+    //（它数的是 items 里已读的条数，不是这一篇的状态）。
+    syncCount();
   }
 
   /* ---------------- 播放模式（组合播放键） ----------------

@@ -224,8 +224,11 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(!/输入篇名、作者或诗句/.test(d.querySelector('#gw-list').textContent) &&
     !/没有找到匹配的篇目/.test(d.querySelector('#gw-list').textContent),
     '空列表现场既没有旧的引导语，也没有误报「没有找到匹配的篇目」');
-  chk(d.querySelector('#gw-count').textContent === '0 / 0 篇',
-    '顶部进度牌跟着是 0 / 0 篇（实际 ' + d.querySelector('#gw-count').textContent + '）');
+  // Issue #147：搜索页顶栏那枚「共 N 篇」也一并撤了 —— 它是「当前筛出多少条」，
+  // 与集子页的「读了 N / M」不是一回事，窄屏上同样挤占品牌区。
+  chk(d.querySelector('#gw-count') === null,
+    '页顶那一行不再挂「共 N 篇」进度牌（实际「' +
+    (d.querySelector('#gw-count') ? d.querySelector('#gw-count').textContent : '无') + '」）');
   chk(!d.querySelector('#gw-filter-seg'), '搜索框右侧的「全部 / 未读」整栏已删除');
   chk(!d.querySelector('#search-book-seg'), '集子筛选药丸整栏已删除（默认就是全部）');
 
@@ -250,8 +253,8 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   type('王维');
   await sleep(30);
   chk(api.total() === ALL, '一输入关键词，实例里就换上全站篇目（' + api.total() + '）');
-  chk(d.querySelector('#gw-count').textContent === '0 / ' + ALL + ' 篇',
-    '顶部进度牌这时报的是全站篇数（实际 ' + d.querySelector('#gw-count').textContent + '）');
+  chk(d.querySelector('#gw-count') === null,
+    '敲字前后页顶都不再有那枚读数（命中条数由列表自己说）');
   // 去重：同一篇作品只列一条（《静夜思》课内 + 唐诗《夜思》正文一致）
   type('静夜思');
   await sleep(30);

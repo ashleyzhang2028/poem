@@ -104,8 +104,8 @@ setTimeout(() => {
 
   chk(d.querySelectorAll('#gw-list .item').length === 301,
     '列表渲染 301 首（实际 ' + d.querySelectorAll('#gw-list .item').length + '）');
-  chk(d.querySelector('#gw-count').textContent === '0 / 301 首',
-    '顶部显示 0 / 301 首：' + d.querySelector('#gw-count').textContent);
+  chk(d.querySelector('#gw-count') === null,
+    '页顶那一行不再挂已读进度牌（Issue #147：读数挪到详情页状态栏）');
 
   // 挂载点对外接口：用量与卷次
   const api = w.ReaderEngine.current;
