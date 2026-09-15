@@ -292,6 +292,8 @@ Vercel Serverless，六个文件对应六个接口，**同源、无 CORS**：
 ```bash
 npm run doctor                        # 缺哪个、缺了会怎样、怎么补（退出码 = 体检结论）
 npm run doctor -- --json              # 程序看的形状（CI / 部署前检查）
+npm run doctor -- --steps             # 怎么补：A~E 五步（配 Supabase / 发信商 / 探活 / 验收）
+npm run doctor -- --steps --check     # 同上，外加「据当前环境变量，走到第几步了」
 npm run env:example > .env.example    # 生成可直接粘贴的模板
 ```
 
@@ -311,6 +313,34 @@ npm run env:example > .env.example    # 生成可直接粘贴的模板
 真值放 `.env`（`.gitignore` 挡着），空模板 `.env.example` 要提交。
 
 `test/ops.test.js` 拿三个假密钥钉死「不报值」，并断言清单与 `config.js` **双向同源**。
+
+**五步是按顺序走的**（`--steps` 打的就是这五步）：
+
+| 步 | 做什么 | 判据 |
+|---|---|---|
+| **A** | 生成 `SESSION_SECRET`（`openssl rand -hex 32`） | 自检里它从「未设置」变「已设置」 |
+| **B** | 建 Supabase 项目 → 跑 `api/_lib/schema.sql` → 拿 URL + **service_role**（不是 anon） | 自检「最低线已过」；`rest/v1/accounts` 回 **200** |
+| **C** | 注册 SendGrid 或 Resend → 建 key → **验发信子域 + SPF/DKIM/DMARC 三条 DNS** | 自检里发信通道不再是 `console`；真发一封信 `delivered:true` |
+| **D** | 上探活与备份（`.cnb.yml` 里两条 `crontab`） | 流水线列表里看得见；手动触发探活成功 |
+| **E** | 配完当场验收四步 | `/api/me` 回 **401**（回 503 就是 A 没生效）、发码 `delivered:true`、注销回 **401** |
+
+**这一步 AI 做不了**：注册 Supabase / 发信商都要本人邮箱与手机号。能自动化的部分是
+**「步骤本身」与「判据本身」**（都在 `api/_lib/ops.js` 的 `STEPS` 里，与清单同一份数据）。
+
+### 下一步：3 期（AI 能力）与 4 期（收费）现在要不要动
+
+**结论：一件都还不该开工 —— 卡的不是代码，是资质与定价。** 详 `docs/architecture.md` §5.0。
+
+| 期 | 内容 | 卡在哪 |
+|---|---|---|
+| **3 期** | AI 讲解 / 背诵纠音 / 考试与题库（Pro / Max 的正主） | 每调一次都**真花钱**，而 Pro / Max 现在收不到一分钱；额度多大又取决于定价 |
+| **4 期** | 收费 | **主体资质**：营业执照或个体工商户 + 备案 + 微信支付商户号 —— 全是日历时间，不是人日 |
+
+技术侧其实**已经就位**：服务端判定（`/api/me` 下发 `plan` / `role` / `features[]`）、
+层级与额度挂载点、注销即删除，1A 就做完了。等资质到、定价定下来就能开闸。
+
+> ⚠️ 与短信那条同口径：**没实现就说没实现**。3 期的界面现在一个字都不渲染
+> （「即将上线」这类话 `/login/` 里已经明确禁止）。
 
 ### 二级设置页（已落地）
 

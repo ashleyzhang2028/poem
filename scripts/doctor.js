@@ -15,10 +15,18 @@
  * ⚠️ 用户明确要求 **sw.js 里一个注释都不许有**，但这里没有这个限制；
  *    本文件不是被浏览器加载的，只在 Node 里跑。
  *
+ * 2D 又补了一条出口：`--steps`。自检回答「现在缺哪个」，而「按什么顺序补齐、
+ * 每一步在哪配、做完了怎么知道成了」原本散在文档 / 模板 / 注释三处 ——
+ * 现在与清单同源（`api/_lib/ops.js` 的 STEPS），一条命令打完。
+ *
  * 用法：
  *   node scripts/doctor.js            # 读当前进程的环境变量
  *   node scripts/doctor.js --json     # 给程序看的形状（CI / 别的脚本用）
  *   node scripts/doctor.js --example  # 打印 .env.example 的内容
+ *   node scripts/doctor.js --steps    # 2D 的五个步骤（配 Supabase / 发信商 / 探活）该怎么走
+ *   node scripts/doctor.js --steps --check   # 同上，外加「据当前环境变量，走到第几步了」
+ *
+ * ⚠️ 四个出口都**只报缺、不报值**（连密钥长度都不报）—— 这段文字是给人贴进 Issue 的。
  */
 "use strict";
 
@@ -31,6 +39,19 @@ var argv = process.argv.slice(2);
 
 if (argv.indexOf("--example") >= 0) {
   process.stdout.write(ops.envExample());
+  process.exit(0);
+}
+
+/* 2D：五个步骤。`--check` 只是把「现在到哪一步」那一段加上 ——
+   上一步的判据与自检是**同一个函数**（ops.check），不在这里重算一遍。 */
+if (argv.indexOf("--steps") >= 0) {
+  process.stdout.write(ops.stepsReport(CONFIG) + "\n");
+  if (argv.indexOf("--check") >= 0) {
+    var v1 = ops.check(CONFIG);
+    console.log("");
+    console.log(v1.ok ? "自检结论：最低线已过（A / B 步成了）。" : "自检结论：还没到最低线，先做 A、B 两步。");
+    process.exit(v1.ok ? 0 : 1);
+  }
   process.exit(0);
 }
 

@@ -262,6 +262,140 @@ function report(cfg) {
 }
 
 /**
+ * 「配置与真开通」的**步骤清单**（2D 的唯一来源）。
+ * ==========================================================================
+ * 2C 把「缺哪个变量」做成了可执行的（`doctor.js`），但**「照着补」这件事本身**
+ * 还散在三处：文档一句「去 Supabase 建项目」、`.env.example` 一句
+ * 「Project Settings → API」、以及只有做过的人才知道的坑
+ * （service_role 不是 anon、SPF/DKIM/DMARC 三条 DNS、探活为什么每 5 天）。
+ *
+ * 这一份把那三处收成一处，`doctor.js --steps` 直接打印它。
+ * 与 ENTRY 的关系是**互补而不是重复**：
+ *   · ENTRY 回答「每个变量缺了会怎样」
+ *   · STEPS 回答「为了让它不缺，先做什么、在哪做、做完了怎么知道成了」
+ * 两步各有一句 `check`（判据），与 `ops.check()` 是**同一个函数**，不重算一遍。
+ *
+ * ⚠️ 与 ENTRY 同一条纪律：**不出现任何密钥的值**（连长度都不报）。
+ *    这份文字同样是可以直接贴进 Issue 的。
+ * ⚠️ 本文件仍不 import 任何第三方包（Node 里可直接 require）。
+ */
+
+/** 一段可直接粘进终端的验收命令（`$VAR` 由用户自己的 shell 展开） */
+var VERIFY_DB = 'curl -sS -o /dev/null -w \'%{http_code}\\n\' "$SUPABASE_URL/rest/v1/accounts?select=uid&limit=1" -H "apikey: $SUPABASE_URL" -H "Authorization: Bearer $SUPABASE_SERVICE_KEY"';
+
+var STEPS = [
+  {
+    id: "A",
+    title: "生成会话密钥",
+    level: "required",
+    where: "托管平台的环境变量（一个 SESSION_SECRET）",
+    why: "会话 Cookie 靠它签名。缺它时 /api/* 一律回 503 —— 「未开放」是如实回答，不是坏掉",
+    how: [
+      "本机执行：openssl rand -hex 32",
+      "把输出**整串**填进托管平台的环境变量 SESSION_SECRET",
+      "至少 16 个字符才算设上了（`config.hasSession()` 判的就是这一条）"
+    ],
+    check: "自检里 SESSION_SECRET 从「未设置」变「已设置」，并且 hasSession 为 true"
+  },
+  {
+    id: "B",
+    title: "建 Supabase 项目并跑到能连",
+    level: "required",
+    where: "Supabase 控制台 + 托管平台的环境变量（两个值）",
+    why: "不配库时自动降级为**内存存储**：本实例重启即丢账号与进度（进程内的假象）",
+    how: [
+      "supabase.com 建项目（免费档即可；免费项目连续 7 天没有请求会被暂停 —— 见第 D 步）",
+      "控制台左侧 SQL Editor：整段粘贴 api/_lib/schema.sql 并执行（四张表 + 条件 upsert 函数 + 四表 RLS 全开）",
+      "Project Settings → API：复制 Project URL → 填 SUPABASE_URL",
+      "**同一页**复制 service_role key → 填 SUPABASE_SERVICE_KEY（⚠️ 不是 anon key）"
+    ],
+    check: "自检里「最低线已过」（hasSession 且 hasDb），并且这段命令回 200：" + VERIFY_DB
+  },
+  {
+    id: "C",
+    title: "注册发信商并把域名验到能真发信",
+    level: "needed",
+    where: "发信商后台 + 域名 DNS + 托管平台的环境变量（一个密钥）",
+    why: "不配时落到 console 通道：**真实用户收不到信**，只往服务端日志写一行（本地开发与 CI 正是靠它跑完整链路）",
+    how: [
+      "二选一注册：SendGrid（主选，国内到达率较好）或 Resend（备选，账号数据固定在美国）",
+      "SendGrid → Settings → API Keys → 建一枚 **Mail Send** 权限的 key → 填 SENDGRID_API_KEY",
+      "Resend → API Keys → 建一枚 key → 填 RESEND_API_KEY（与上面只备其一）",
+      "在发信商后台验证**发信子域**（如 mail.kuibu.app）→ 按提示加 SPF / DKIM / DMARC 三条 DNS 记录",
+      "MAIL_FROM 填验证过的子域里的地址（默认 noreply@mail.kuibu.app）"
+    ],
+    verify: [
+      "POST /api/send-code 看看 delivered 是不是 true（false 就是还在 console 通道）",
+      "往自己的 QQ / 163 邮箱发一封：**缺 SPF/DKIM/DMARC 会被直接判成垃圾邮件或拒收**，只验证域名不够",
+      "收不到时先看垃圾箱，再看发信商后台的投递日志（那一页会说 ISP 为什么拒）"
+    ],
+    check: "自检里「发信通道」从 console 变成你配的那一家；发一封真信，delivered 为 true"
+  },
+  {
+    id: "D",
+    title: "上探活与备份（可用性兜底，不是可靠性方案）",
+    level: "optional",
+    where: "本仓库的 .cnb.yml（两条 crontab 流水线）+ CNB 密钥仓库",
+    why: "免费档连续 7 天没有请求就**整个项目停机**。用户看到的是「打不开」，不是「有点慢」—— 这是本方案里唯一会直接砸在用户身上的平台限制",
+    how: [
+      "把 SUPABASE_URL / SUPABASE_SERVICE_KEY 放进**密钥仓库**（禁止本地克隆，只由流水线引用）",
+      "在 .cnb.yml 里加两条定时任务：supabase-keepalive 与 supabase-backup",
+      "探活的请求**必须打到数据库**（PostgREST 查询算活动，根路径与状态页不算）",
+      "探活排**每 5 天**而不是每 7 天：平台可能延迟数小时甚至跳过，留 2 天缓冲",
+      "备份每周一次 pg_dump（免费档没有自动备份，误删就是永久消失）"
+    ],
+    check: "仓库的流水线列表里能看见这两条；手动触发一次探活，成功即回执"
+  },
+  {
+    id: "E",
+    title: "配完当场验收（四步，每步一个明确结论）",
+    level: "required",
+    where: "本机终端（对着已部署的站点）",
+    why: "「配完了」和「配对了」是两件事。这一段把前者变成后者 —— 只回答事实，不做「应该没问题」这类判断",
+    how: [
+      "① 库连通：期望回 200 —— " + VERIFY_DB,
+      "② 会话可签：curl -sS \"$SITE_URL/api/me\" | head -c 200 —— 期望 401 E_NO_SESSION；**回 503 E_NOT_CONFIGURED 就是 SESSION_SECRET 没生效**",
+      "③ 真发信：POST /api/send-code → delivered:true 且 transport 是你配的那一家（console 通道**永远**是 false，这是 2C 定的，2D 不改）",
+      "④ 注销可达：curl -sS -o /dev/null -w '%{http_code}\\n' -X DELETE \"$SITE_URL/api/account\" —— 期望 401（不是 500）"
+    ],
+    check: "四条全对：① 200 ② 401 ③ delivered=true ④ 401。任何一条不对，回到它上面那一步"
+  }
+];
+
+/** 步骤渲染成给人看的文字（`doctor.js --steps` 与 Issue 评论用同一份） */
+function stepsReport(cfg) {
+  var lines = [];
+  lines.push("跬步 · 配置与真开通（2D：Supabase + 发信商 + 会话密钥 + 探活）");
+  lines.push("=".repeat(60));
+  lines.push("五步，按顺序做。每一步做完都有一条**本机就能跑的判据**，不必先部署。");
+  lines.push("真值进托管平台的环境变量，**不进仓库**（.env 被 .gitignore 挡着）。");
+  lines.push("");
+  STEPS.forEach(function (st) {
+    lines.push("── 第 " + st.id + " 步 · " + st.title + "  [" + TIER_TEXT[st.level] + "]");
+    lines.push("   在哪配：" + st.where);
+    lines.push("   为什么：" + st.why);
+    lines.push("   怎么做：");
+    st.how.forEach(function (h, i) { lines.push("     " + (i + 1) + ". " + h); });
+    if (st.verify) {
+      lines.push("   怎么验：");
+      st.verify.forEach(function (h) { lines.push("     · " + h); });
+    }
+    lines.push("   判据：" + st.check);
+    lines.push("");
+  });
+  lines.push("-- 现在到哪一步了（据当前环境变量如实报，不报值）--");
+  var r = check(cfg);
+  lines.push("   第 A/B 步（最低线）：" + (r.ok ? "已过" : "未过（缺 " + r.blocking.map(function (i) { return i.key; }).join("、") + "）"));
+  lines.push("   第 C 步（真发信）：" + (r.mail === "console" ? "未过（发信通道是 console）" : "已过（" + r.mail + "）"));
+  lines.push("   第 D 步（探活与备份）：不在环境变量里，看仓库 .cnb.yml 的两条 crontab");
+  lines.push("   第 E 步（验收）：上面四条命令，本机跑");
+  lines.push("");
+  lines.push("短信不在五步里：要先签商 + 模板报备（3~7 工作日，**日历时间不是人日**），");
+  lines.push("再实现 transports.<商名>，最后才开 SMS_ENABLED=1。开了但不接商，仍是 503 E_SMS_NOT_OPEN。");
+  return lines.join("\n");
+}
+
+/**
  * `.env.example` 的**唯一来源** —— 脚本 `scripts/env-example.js` 生成它，不手抄。
  * 手抄一份的下场：某天加了一个变量，文档还是老样子，用户照文档配完发现「还是不对」。
  */
@@ -294,7 +428,9 @@ function envExample() {
 
 module.exports = {
   ENTRY: ENTRY,
+  STEPS: STEPS,
   check: check,
   report: report,
+  stepsReport: stepsReport,
   envExample: envExample
 };
