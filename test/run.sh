@@ -30,6 +30,8 @@
 #   3n. 复习调度算法    —— jsdom + vm，四张模型（遗忘曲线 / Leitner / SM-2 /
 #                          FSRS 简化版）的公式、换模型不清进度、设置页切换
 #                          与首页副标题跟随（Issue #114 后续）
+#   3p. 账号与随机码认证 —— 纯 Node，邮箱归一化 / 发码频控 / 单次使用 /
+#                          过期 / 锁定 / 时间倒退 / 退化随机源不死循环（Issue #132）
 #   4. 用户名设置测试    —— jsdom，带初始 localStorage 重启应用
 #   5. 用户协议/隐私条款  —— jsdom + 源码扫描：页脚入口、学生保护、邮箱防爬
 #   6. 注音与朗读测试    —— 拼音表/多音字（纯 Node）+ 注音渲染与朗读降级（jsdom）
@@ -150,6 +152,10 @@ node test/title-seq.test.js
 echo ""
 echo "=== 复习调度算法（可切换：遗忘曲线 / Leitner / SM-2 / FSRS，Issue #114 后续）==="
 node test/review-models.test.js
+
+echo ""
+echo "=== 账号与邮箱随机码认证（Issue #132）==="
+node test/auth.test.js
 
 echo ""
 echo "=== 用户名设置测试 ==="
