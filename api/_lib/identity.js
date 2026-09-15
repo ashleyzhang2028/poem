@@ -43,6 +43,51 @@ function isEmailShape(email) {
   return /^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$/.test(e);
 }
 
+/* --------------------------------------------------------- 手机号（短信口） */
+
+/**
+ * 手机号归一化：**去空格 / 横线 / 括号 / 点**，`+86` / `86` / `0086` 前缀统一成裸 11 位。
+ *
+ * ⚠️ 本期**不启用短信通道**，这个函数也不被 sendCode 调用 ——
+ *    它存在的唯一理由是：让「加 sms 通道」这件事只差一个「谁去发」的实现，
+ *    而不是还要回头改归一化规则（docs/auth-design.md §8）。
+ * ⚠️ 只归一化中国大陆手机号（1 开头 11 位）。港澳台 / 海外号码**不在此列**，
+ *    将来开通时要另加区号字段，不能靠这个函数硬塞。
+ */
+function normalizePhone(value) {
+  var s = String(value == null ? "" : value).replace(/[\s\-()\.]/g, "");
+  s = s.replace(/^\+?0*86/, "");   // +86 / 86 / 0086 / 086 一律剥掉
+  return s;
+}
+
+/** 是否中国大陆手机号形状：1 开头、第二位 3-9、共 11 位 */
+function isPhoneShape(value) {
+  return /^1[3-9]\d{9}$/.test(normalizePhone(value));
+}
+
+/**
+ * 手机号掩码：13800138000 → 138****8000。与前端 js/auth-core.js 的 maskPhone 同规则。
+ *
+ * ⚠️ 非手机号形态（含字母、位数不够）一律给 `***`，**不截字母** ——
+ *    掩码的意义是「让用户认得出是自己的号」，而一串乱码掩成 `abc****hijk`
+ *    只会让人以为系统存了什么奇怪的东西；且它可能把脏值里的片段带进回显与日志。
+ */
+function maskPhone(value) {
+  var s = normalizePhone(value);
+  if (!isPhoneShape(s)) return "***";
+  return s.slice(0, 3) + "****" + s.slice(-4);
+}
+
+/**
+ * 手机号摘要 = SHA-256(pepper | | 归一化手机号)。
+ * 与 emailHash 同一条口径：手机号空间同样很小，裸哈希可被枚举反查。
+ */
+function phoneHash(value, pepper) {
+  return crypto.createHash("sha256")
+    .update(String(pepper || "") + "|phone|" + normalizePhone(value), "utf8")
+    .digest("hex");
+}
+
 /** 掩码：a@b.com → a***@b.com。界面回显与日志**一律**用它 */
 function maskEmail(email) {
   var e = normalizeEmail(email);
@@ -114,6 +159,10 @@ function newSalt() {
 
 module.exports = {
   normalizeEmail: normalizeEmail,
+  normalizePhone: normalizePhone,
+  isPhoneShape: isPhoneShape,
+  maskPhone: maskPhone,
+  phoneHash: phoneHash,
   isEmailShape: isEmailShape,
   maskEmail: maskEmail,
   emailHash: emailHash,

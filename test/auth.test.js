@@ -342,6 +342,41 @@ console.log('\n=== 十三、边界规矩 ===');
   chk(sms.ok, '短信通道走的是同一套 requestCode，只差通道实现（无需改签名）');
   const sv = A.verifyCode(e9.store, sms.codeId, '151515', 'login');
   chk(sv.ok, '短信码校验复用同一套 verifyCode');
+
+  /* ------------------------------------------------------------------
+     2B：短信口子的具体口径
+     ------------------------------------------------------------------ */
+  // 归一化在多语言输入下都要收敛到同一个裸 11 位
+  ['13800138000', '138 0013 8000', '138-0013-8000', '+8613800138000',
+    '008613800138000', '(138)0013.8000'].forEach(v => {
+    eq(A.normalizePhone(v), '13800138000', '手机号归一化收敛：' + JSON.stringify(v));
+  });
+  chk(A.isPhoneShape('13800138000'), '11 位 1 开头是手机号形状');
+  chk(!A.isPhoneShape('12345'), '位数不足不是手机号形状');
+  chk(!A.isPhoneShape('12800138000'), '非法号段（第二位 2）被拒');
+  eq(A.maskPhone('+86 138-0013-8000'), '138****8000', '掩码前先归一化（去掉 +86）');
+  eq(A.maskPhone('abcdefghijk'), '***', '非手机号形态掩成 ***（不截字母）');
+
+  // 形状不对的短信请求就地拒绝，**不消耗**本机状态
+  const e10 = env();
+  const badPhone = A.requestCode(e10.store, { channel: 'sms', value: '123' }, 'login', {});
+  eq(badPhone.ok, false, '手机号形状不对：拒绝');
+  eq(badPhone.code, 'E_PHONE_FORMAT', '错误码 E_PHONE_FORMAT');
+  chk(!!A.ERR.E_PHONE_FORMAT, '错误码有对应文案');
+
+  // 未知 channel 明确拒绝，不静默当邮箱
+  const badCh = A.requestCode(e10.store, { channel: 'wechat', value: 'x' }, 'login', {});
+  eq(badCh.code, 'E_CHANNEL', '未知 channel 回 E_CHANNEL（不静默当邮箱）');
+
+  // 独立且更严的短信频控档
+  chk(A.RATE_SMS && A.RATE_SMS.phone && A.RATE_SMS.phone.length >= 3, '短信有独立的频控档（三档：时/日/月）');
+  const e11 = env();
+  const s1 = A.requestCode(e11.store, { channel: 'sms', value: '13900139000' }, 'login', { code: '111111' });
+  chk(s1.ok, '短信首条发送成功');
+  eq(s1.channel, 'sms', '返回里如实带 channel');
+  const s2 = A.requestCode(e11.store, { channel: 'sms', value: '13900139000' }, 'login', { code: '222222' });
+  eq(s2.ok, false, '60 秒内重复发短信被冷却拦住');
+  chk(s2.retryAfter > 0, '冷却给出 retryAfter');
 }
 
 console.log('');

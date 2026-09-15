@@ -29,13 +29,24 @@
   var CODE_MAX_ATTEMPTS = 5;      // 单码失败上限，超过即作废
   var RESEND_COOLDOWN_MS = 60 * 1000;
   var PURPOSES = ["login", "reset"];   // login = 注册+登录合一；reset = 重设凭证
-  var CHANNELS = ["email", "sms"];     // sms 只留口子，流程见 docs 第 8 节
+  var CHANNELS = ["email", "sms"];     // sms 只留口子（2B），流程见 docs/auth-design.md §8
 
   var RATE = {
     // email 的第一档是「重新发送冷却」，单独判定；这里只留小时 / 日两档
     email: [[3600000, 5], [86400000, 10]],
     device: [[3600000, 10], [86400000, 30]],
     global: [[3600000, 20], [86400000, 60]]
+  };
+
+  /**
+   * 短信档：**比邮箱更严**（docs/auth-design.md §8）。
+   * 60 秒 1 次、日 5 次、月 15 次。与服务端 config.rateSms 同值 ——
+   * 本地体验版与服务端若给两套阈值，用户会在两种模式下遇到两种限制。
+   * ⚠️ 本地版**不真的发短信**（本节不实现投递），这张表只是把「将来接上短信后
+   *    会怎么限速」先钉在代码里，免得开通时又变成一次设计。
+   */
+  var RATE_SMS = {
+    phone: [[3600000, 2], [86400000, 5], [2592000000, 15]]
   };
 
   // 一次性邮箱前缀：命中只提示、不阻断（挡住的是真用户，挡不住有心人）
@@ -48,6 +59,7 @@
   var ERR = {
     E_EMAIL_EMPTY: "请先填邮箱",
     E_EMAIL_FORMAT: "这个邮箱看起来不太对，再检查一下",
+    E_PHONE_FORMAT: "这个手机号看起来不太对，再检查一下",
     E_RATE_EMAIL: "发得太快了，请稍后再试",
     E_RATE_DEVICE: "这台设备今天发送次数有点多，稍后再试",
     E_RATE_GLOBAL: "服务忙，请稍后再试",
@@ -58,6 +70,7 @@
     E_CODE_VOID: "请用最新收到的验证码",
     E_LOCKED: "为了安全，请稍后再试",
     E_CHANNEL: "暂时不支持这种登录方式",
+    E_SMS_NOT_OPEN: "短信登录还没开通（需要先签短信商并完成模板报备）。当前可用邮箱随机码登录",
     E_PURPOSE: "验证码用途不匹配，请重新获取",
     E_IDENTITY: "这个账号没有登记该登录方式",
     E_STORAGE: "浏览器不允许保存数据，本次登录刷新后会失效"
@@ -179,11 +192,38 @@
     return head + "***@" + e.slice(at + 1);
   }
 
-  /** 手机号掩码：138****8000（短信通道只留口子，本期不启用） */
+  /**
+   * 手机号掩码：138****8000（短信通道只留口子，本期不启用）。
+   *
+   * ⚠️ 必须先走 normalizePhone 再掩码 —— 否则 `+86 138…` 会掩成 `+86****8000`
+   *    （前 3 位是区号不是号段），而服务端那份是归一化后再掩的。两边不一致 =
+   *    「回显给用户看的号」与「后端认的号」对不上，是最难查的那种 bug。
+   *    一致性由 test/api.test.js 的双端对拍守着。
+   */
   function maskPhone(v) {
-    var s = String(v || "").replace(/\D/g, "");
-    if (s.length < 7) return "***";
+    var s = normalizePhone(v);
+    // 非手机号形态一律 `***`（与服务端 identity.maskPhone 同规则），
+    // 不截字母、不猜——掩码只对「确实是手机号」的值才有意义
+    if (!isPhoneShape(s)) return "***";
     return s.slice(0, 3) + "****" + s.slice(-4);
+  }
+
+  /**
+   * 手机号归一化：去空格 / 横线 / 括号 / 点，`+86` / `86` / `0086` 前缀统一成裸 11 位。
+   *
+   * ⚠️ 规则必须与**服务端** `api/_lib/identity.js` 的 normalizePhone 逐条一致 ——
+   *    两边各存一份是**故意**的（前端这份不能持有 pepper、也绝不做哈希），
+   *    但归一化规则不一致的后果是「前端说这个号没问题、后端说形状不对」，
+   *    用户被拦在一个看不懂的提示前。一致性由 test/auth.test.js 守着。
+   */
+  function normalizePhone(input) {
+    var s = String(input == null ? "" : input).replace(/[\s\-()\.]/g, "");
+    return s.replace(/^\+?0*86/, "");
+  }
+
+  /** 是否中国大陆手机号形状：1 开头、第二位 3-9、共 11 位（与服务端同规则） */
+  function isPhoneShape(v) {
+    return /^1[3-9]\d{9}$/.test(normalizePhone(v));
   }
 
   /* -------------------------------------------------------------- 存储 */
@@ -283,7 +323,7 @@
     if (!identity || typeof identity !== "object") return null;
     var ch = identity.channel;
     if (CHANNELS.indexOf(ch) < 0) return null;
-    var value = ch === "email" ? normalizeEmail(identity.value) : String(identity.value || "").replace(/[\s-]/g, "");
+    var value = ch === "email" ? normalizeEmail(identity.value) : normalizePhone(identity.value);
     if (!value) return null;
     return { channel: ch, value: value };
   }
@@ -331,15 +371,27 @@
 
   /* ----------------------------------------------------------- 频控 */
 
+  /**
+   * 这一档的窗口定义：`phone` 走更严的 RATE_SMS，其余走 RATE。
+   * ⚠️ 认档必须发生在**同一个地方** —— 若 rateCheck 不认 phone 档，
+   *    `RATE_SMS.phone` 就永远读不到，短信实际是**不限速**的，
+   *    而代码看起来「写了限制」（这类「写了但没接上」正是 2A 那两个洞的同款）。
+   */
+  function windowsFor(bucket) {
+    if (bucket === "phone") return RATE_SMS.phone || [];
+    return RATE[bucket] || [];
+  }
+
   function rateCounts(state, bucket, key, t) {
     var id = bucket + ":" + key;
-    var arr = (state.rate[id] || []).filter(function (ts) { return ts > t - 86400000; });
+    // 最长窗口是「月」档（短信 30 天），保留 30 天内的记录
+    var arr = (state.rate[id] || []).filter(function (ts) { return ts > t - 2592000000; });
     state.rate[id] = arr;
     return arr;
   }
 
   function rateCheck(state, bucket, key, t) {
-    var windows = RATE[bucket] || [];
+    var windows = windowsFor(bucket);
     var arr = rateCounts(state, bucket, key, t);
     for (var i = 0; i < windows.length; i++) {
       var span = windows[i][0], cap = windows[i][1];
@@ -390,6 +442,9 @@
       var ch = identity && identity.channel;
       return { ok: false, code: ch && CHANNELS.indexOf(ch) < 0 ? "E_CHANNEL" : "E_EMAIL_EMPTY", message: ERR[ch && CHANNELS.indexOf(ch) < 0 ? "E_CHANNEL" : "E_EMAIL_EMPTY"] };
     }
+    if (id.channel === "sms" && !isPhoneShape(id.value)) {
+      return { ok: false, code: "E_PHONE_FORMAT", message: ERR.E_PHONE_FORMAT };
+    }
     if (id.channel === "email" && !isEmailShape(id.value)) {
       return { ok: false, code: "E_EMAIL_FORMAT", message: ERR.E_EMAIL_FORMAT };
     }
@@ -400,10 +455,12 @@
     guardClock(state, t);
 
     var key = identityKey(id);
-    var gate = rateCheck(state, "email", key, t);
+    // 通道各自一档：短信走 RATE_SMS（更严），邮箱走 RATE.email。
+    var bucket = id.channel === "sms" ? "phone" : "email";
+    var gate = rateCheck(state, bucket, key, t);
     if (!gate.ok) return { ok: false, code: "E_RATE_EMAIL", retryAfter: gate.retryAfter, message: ERR.E_RATE_EMAIL };
     // 「重新发送」是重发一封，不是"上一封还没收到就再要一封"，因此冷却不参与封禁判定
-    var sent = rateCounts(state, "email", key, t);
+    var sent = rateCounts(state, bucket, key, t);
     if (sent.length && sent[sent.length - 1] > t - RESEND_COOLDOWN_MS) {
       var wait = Math.ceil((sent[sent.length - 1] + RESEND_COOLDOWN_MS - t) / 1000);
       return { ok: false, code: "E_RATE_EMAIL", retryAfter: wait, message: ERR.E_RATE_EMAIL };
@@ -449,15 +506,15 @@
       attempts: 0, consumedAt: null
     };
     state.codes[rec.codeId] = rec;
-    rateHit(state, "email", key, t);
+    rateHit(state, bucket, key, t);
     rateHit(state, "device", state.deviceId, t);
     rateHit(state, "global", "all", t);
     store.write(state);
 
     // ⚠️ 只把明文码交给调用方（用于本地体验版的复制/mailto），绝不落盘、绝不打日志
     return {
-      ok: true, codeId: rec.codeId, code: code, purpose: purpose,
-      sentTo: rec.sentTo, expiresAt: rec.expiresAt, cooldown: Math.ceil(RATE.email[0][0] / 1000),
+      ok: true, codeId: rec.codeId, code: code, purpose: purpose, channel: id.channel,
+      sentTo: rec.sentTo, expiresAt: rec.expiresAt, cooldown: Math.ceil(RESEND_COOLDOWN_MS / 1000),
       isNewAccount: acc.createdAt === acc.updatedAt,
       disposable: id.channel === "email" && isDisposable(id.value),
       hint: id.channel === "email" ? emailHint(id.value) : null
@@ -688,13 +745,14 @@
   /* -------------------------------------------------------------- 导出 */
 
   return {
-    NS: NS, PURPOSES: PURPOSES, CHANNELS: CHANNELS, ERR: ERR,
+    NS: NS, PURPOSES: PURPOSES, CHANNELS: CHANNELS, RATE: RATE, RATE_SMS: RATE_SMS, ERR: ERR,
     CODE_LEN: CODE_LEN, CODE_TTL_MS: CODE_TTL_MS, CODE_MAX_ATTEMPTS: CODE_MAX_ATTEMPTS,
     SESSION_DAYS: SESSION_DAYS, TRUST_DAYS: TRUST_DAYS, RATE: RATE,
     makeStore: makeStore, emptyState: emptyState,
     setClock: setClock, setRandom: setRandom,
     normalizeEmail: normalizeEmail, isEmailShape: isEmailShape, emailHint: emailHint,
     isDisposable: isDisposable, maskEmail: maskEmail, maskPhone: maskPhone,
+    normalizePhone: normalizePhone, isPhoneShape: isPhoneShape,
     digest: digest, codeDigest: codeDigest,
     requestCode: requestCode, verifyCode: verifyCode,
     session: session, trustedAccount: trustedAccount, signInTrusted: signInTrusted,

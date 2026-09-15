@@ -35,7 +35,12 @@
     E_NOT_CONFIGURED: "这个站点还没开放云端账号，当前是本机体验版",
     E_OFFLINE: "连不上服务端，已切回本机体验版",
     E_TIMEOUT: "服务端响应太慢，已切回本机体验版",
-    E_INTERNAL: "服务端出了点问题，稍后再试；期间本站仍可完全离线使用"
+    E_INTERNAL: "服务端出了点问题，稍后再试；期间本站仍可完全离线使用",
+    /* 2B：短信通道没开通。**这一条不是「降级」** ——
+       服务端是通的、只是短信没接商，所以不许像 E_OFFLINE 那样
+       偷偷切回本机体验版（本机版也发不出短信，切过去只是换个说法骗人）。
+       界面拿到它应当**如实显示**「还没开通」。 */
+    E_SMS_NOT_OPEN: "短信登录还没开通（需要先签短信商并完成模板报备）"
   };
 
   function messageOf(code, fallback) {
@@ -147,13 +152,21 @@
       deviceId: function () { return deviceId; },
 
       /** POST /api/send-code */
+      /**
+       * POST /api/send-code
+       * ⚠️ 通道由 `channel` 表达（缺省 "email"，与 1A 的老调用点兼容）：
+       *    `value` 是那一通道的标识（邮箱或手机号）。
+       *    老字段 `email` 仍然接受，服务端也保留了这个兼容口。
+       */
       sendCode: function (input) {
         input = input || {};
-        return post("/send-code", {
-          email: input.email,
+        var body = {
+          channel: input.channel || "email",
+          value: input.value != null ? input.value : (input.channel === "sms" ? input.phone : input.email),
           purpose: input.purpose || "login",
           deviceId: deviceId
-        });
+        };
+        return post("/send-code", body);
       },
 
       /** POST /api/verify-code —— 成功后服务端会 Set-Cookie */

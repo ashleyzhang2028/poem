@@ -693,25 +693,56 @@ DELETE /api/account     {confirm:true, deviceId}     → 200 {deleted, export, n
 
 ---
 
-## 8. 短信登录：只留口子，不写流程
+## 8. 短信登录：口子已接好（2B），通道未开通
 
-**短信不是另一套流程，是同一套流程的另一个 channel。** 预留三处：
+> **一句话**：短信**不是另一套流程，是同一套流程的另一个 channel**。
+> 2B 把「另一个 channel」这件事从**注释**变成了**真的能跑通的代码**；
+> 但**通道本身（谁去发这条短信）没有接** —— 没有签短信商，也就没有密钥、没有模板。
 
-1. `identity.channel` 已是枚举，加 `"sms"` 即可，表结构不变
-2. `AuthCore.requestCode(identity, purpose)` / `verifyCode(...)` 签名**不带 channel 假设**，
-   channel 在 `identity` 里
-3. 界面上「其他登录方式」区域**现在不渲染**，但 `login/index.html` 留注释位占位，
-   将来只加一个按钮，不动布局
+### 8.1 已经在代码里的（2B 落地）
 
-一旦开通短信，需要**增补**的东西（现在不做，但先写下来免得漏）：
-- 手机号归一化（去空格/横线，`+86` 前缀统一）
-- 手机号 `<input type="tel" inputmode="numeric">` + 11 位校验
-- 短信模板报备（3~7 工作日）、签名审核
-- 频控阈值比邮箱**更严**（短信有真实成本）：60 秒 1 次、日 5 次、月 15 次
-- 同一手机号在不同渠道（网页/小程序）的 `openid/unionid` 绑定关系
-- 人机校验前置（图形/滑块），因为短信接口是黑产重点目标
+| 位置 | 做了什么 |
+|---|---|
+| `identity.channel` | 枚举 `email` / `sms`；其余一律 `E_CHANNEL` 拒绝，**不静默当邮箱** |
+| `api/_lib/identity.js` | `normalizePhone` / `isPhoneShape` / `maskPhone` / `phoneHash` |
+| `js/auth-core.js` | 同一组规则的前端那份（**故意不共用代码**，规则一致性由测试双端对拍守着） |
+| `api/_lib/core.js` | `normIdentity()` 按 channel 归一化；发码/校验状态机**两条通道逐字共用** |
+| 频控 | 短信独立更严档 `RATE_SMS` / `config.rateSms`：**60 秒 1 次、日 5 次、月 15 次** |
+| 摘要命名空间 | email 走 `emailHash`、sms 走 `phoneHash`（`|phone|` 分隔），排除交叉命中 |
+| 发信适配层 | `transports.sms` 是**空壳**：它如实失败，绝不当邮件发、也绝不假装成功 |
+| `login/index.html` | 按钮仍是**注释**，但注释里写清了「开通时只需取消注释」 |
 
----
+### 8.2 「没开通」时会发生什么（这是 2B 的核心口径）
+
+```
+POST /api/send-code  { channel:"sms", value:"13800138000" }
+  → 503  { code:"E_SMS_NOT_OPEN", message:"短信登录还没开通（需要先签短信商并完成模板报备）…" }
+```
+
+三条不能退让的：
+
+1. **如实拒，不假装** —— 没有真短信商时**绝不走 console 兜底把它「成功」掉**。
+   一条永远收不到的短信 + 一个「已发送」提示 = 骗人（§12 总原则）。
+2. **不做副作用** —— 拒在归一化之后、落库之前：**不创建账号、不写一条码记录**。
+   否则「试一下短信登录」会在库里留下一串孤儿账号。
+3. **不偷偷降级** —— 界面收到 `E_SMS_NOT_OPEN` **不许**像 `E_OFFLINE` 那样切回
+   「本机体验版」（本机版同样发不出短信，切过去只是换个说法）。
+   `js/auth-api.js` 的 `TRANSPORT_ERR` 里它有一条**独立**文案，且不在回落名单里。
+
+> ⚠️ `SMS_ENABLED=1` 只是「允许尝试」，**不等于能发**。
+> 真正能发还要求 `SMS_TRANSPORT` 指向一个已实现的短信商；
+> 只开开关不接商，请求**仍然**是 503。
+
+### 8.3 真正开通那天要做的（现在不做，先写下来免得漏）
+
+1. **选商 + 报备**：签名审核、模板报备（3~7 工作日）——**日历时间，不是人日**
+2. 实现 `transports.<商名>`，把 `SMS_TRANSPORT` 指过去（本文件之外业务代码不动）
+3. `login/index.html` 取消那行注释；`js/login.js` 接 `data-channel="sms"` 的发送分支
+   （`sendCode({channel:"sms", value})` 已经能用，只差一个输入框与校验提示）
+4. **前置人机校验（图形/滑块）** —— 短信接口是黑产重点目标；
+   再叠单号/单设备/单 IP 频控（`E_RATE_*` 已有四层，短信档更严）
+5. 跨端同一账号：绑微信开放平台拿 **unionid**（`openid` 在不同应用间不同）
+6. 海外 / 港澳台号码：**本函数不支持**（只归一化大陆 11 位），要另加区号字段
 
 ## 9. 【关键】登录时本机已有进度怎么办
 
@@ -885,7 +916,8 @@ DELETE /api/account     {confirm:true, deviceId}     → 200 {deleted, export, n
 
 | code | 场景 | 用户看到的话 |
 |---|---|---|
-| `E_EMAIL_FORMAT` | 格式错 | 这个邮箱看起来不太对，再检查一下 |
+| `E_EMAIL_FORMAT` | 邮箱格式错 | 这个邮箱看起来不太对，再检查一下 |
+| `E_PHONE_FORMAT` | 手机号格式错（2B） | 这个手机号看起来不太对，再检查一下 |
 | `E_EMAIL_EMPTY` | 空 | 请先填邮箱 |
 | `E_RATE_EMAIL` | 邮箱频控 | 发得太快了，请等 47 秒后再试 |
 | `E_RATE_DEVICE` | 设备频控 | 这台设备今天发送次数有点多，稍后再试 |
@@ -897,6 +929,8 @@ DELETE /api/account     {confirm:true, deviceId}     → 200 {deleted, export, n
 | `E_LOCKED` | 锁定 | 为了安全，1 小时后再试 |
 | `E_NO_CODE` | 没先发码就校验 | 请先获取验证码 |
 | `E_CHANNEL` | 不支持的 channel | 暂时不支持这种登录方式 |
+| `E_SMS_NOT_OPEN` | 短信通道未开通（2B） | 短信登录还没开通（需要先签短信商并完成模板报备）|
+| `E_SMS_FAIL` | 短信投递失败（2B） | 短信没发出去，请稍后再试 |
 | `E_STORAGE` | 存储不可用 | 浏览器不允许保存数据，本次登录刷新后会失效 |
 
 ---

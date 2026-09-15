@@ -1,11 +1,13 @@
 /**
  * POST /api/send-code —— 发验证码。
  *
- * req  { email, purpose:"login"|"reset", deviceId }
- * res  202 { codeId, expiresAt, cooldown, transport, delivered, store }
- *      400 { code:"E_EMAIL_FORMAT" }
+ * req  { channel:"email"|"sms", value, purpose:"login"|"reset", deviceId }
+ *      （兼容老字段：channel 缺省时读 email；email/phone 亦可）
+ * res  202 { codeId, expiresAt, cooldown, transport, delivered, channel, store }
+ *      400 { code:"E_EMAIL_FORMAT|E_PHONE_FORMAT|E_CHANNEL" }
  *      429 { code:"E_RATE_EMAIL|E_RATE_DEVICE|E_RATE_IP|E_RATE_GLOBAL", retryAfter }
- *      503 { code:"E_NOT_CONFIGURED" }   ← 服务端没配好（前端据此整体降级为 local）
+ *      503 { code:"E_NOT_CONFIGURED|E_SMS_NOT_OPEN" }  ← 前者服务端没配好；
+ *            后者短信通道没开通（2B：只留口子，如实拒掉，不假装发了短信）
  *
  * ⚠️ 无论邮箱是否存在，响应**完全一致**（防用户枚举，docs §4.3 第 4 条）。
  * ⚠️ 明文码不进任何日志；只有开了 ALLOW_CODE_ECHO 的冒烟模式才回 devCode。
@@ -23,7 +25,10 @@ module.exports = handler.make("send-code", ["POST"], function (d, body) {
     return { status: 503, body: { code: "E_NOT_CONFIGURED", message: "服务端还没配置好（缺 SESSION_SECRET）。当前仍可完全离线使用本站。" } };
   }
   return handler.core.sendCode(d, {
+    channel: body.channel,
+    value: body.value,
     email: body.email,
+    phone: body.phone,
     purpose: body.purpose,
     deviceId: body.deviceId || d.deviceId,
     ip: d.ip

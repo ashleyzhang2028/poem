@@ -152,9 +152,45 @@ transports.console = function (cfg) {
   };
 };
 
+/* --------------------------------------------------------- 短信（口子） */
+
+/**
+ * 短信通道的**空壳**（2B：只留口子，不接任何短信商）。
+ *
+ * 为什么这里不写一个「调腾讯云/阿里云」的实现：
+ *   1. 没签短信商就没有密钥，写了也是死代码 —— 而**死代码会被当成"已经支持"**
+ *   2. 短信要求签名 + 模板报备（3~7 工作日），模板 ID 现在根本不存在；
+ *      凭空写一个 SMS_TEMPLATE_ID 只会让人以为填上就能用
+ *   3. 真正开通时要做的第一件事是「选商 + 报备 + 定模板」，
+ *      那是产品动作，不是往这个文件里加 20 行
+ *
+ * 所以：`sms` 被显式选中时，它**如实失败** ——
+ * 「未接入短信商」是当前的事实，不是错误。sendCode 会把它翻成
+ * `E_SMS_NOT_OPEN`（503），绝不假装「短信已发送」。
+ * 将来接入时：实现 transports.<商名>，把 cfg.smsTransport 指过去，本文件之外的
+ * 业务代码一行都不用改（这正是 §8「只换 transport」那句话的兑现）。
+ */
+transports.sms = function (cfg) {
+  return {
+    name: "sms",
+    configured: function () { return false; },   // 还没接入任何短信商
+    notImplemented: true,
+    send: function () {
+      return Promise.reject(new Error("SMS channel not implemented: 尚未接入短信商（需签名 + 模板报备）"));
+    }
+  };
+};
+
 /** 取通道：显式指定的优先，否则按「有哪个密钥用哪个」推，最后落到 console */
 function pick(cfg) {
   var want = cfg.mail ? cfg.mail() : "console";
+  // 短信通道：**默认关**。cfg.smsTransport 显式指定了商名才走它，
+  // 否则落到 transports.sms 的空壳（它会如实失败）。
+  if (want === "sms") {
+    var svc = cfg.smsTransport;
+    if (svc && transports[svc]) return transports[svc](cfg);
+    return transports.sms(cfg);
+  }
   var t = transports[want] ? transports[want](cfg) : transports.console(cfg);
   return t;
 }
