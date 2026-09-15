@@ -86,18 +86,6 @@
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
       '<path d="M14.4 5.4 7.8 12l6.6 6.6"/></svg>',
 
-    /* 顶栏右侧：翻开这一册（阅读器里的**恒定槽位**，Issue #147）
-       —— 阅读器那一条顶栏里没有头像（沉浸层让位给正文），若把返回键直接摆到
-       最右，正文一开一合那颗箭头就横跳 50px（头像的宽度 + 间距）。
-       于是补上这一枚「正在读的这一册」图标：高度、宽度、间距全部来自
-       --top-slot（= 头像），**占住头像的像素位**，阅读器那条顶栏的右侧簇
-       与页面那条逐像素对齐 —— 这正是「所有页面都应该如此」的落法。
-       画的是翻开的书页，与底部页签「背诵」那一册同源，不做第二套图形语言。 */
-    reader:
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-      '<path d="M12 6.6C10.3 5.2 8.1 4.6 5.4 4.6v12.6c2.7 0 4.9.6 6.6 1.9 1.7-1.3 3.9-1.9 6.6-1.9V4.6c-2.7 0-4.9.6-6.6 2Z"/>' +
-      '<path d="M12 6.6V19.1"/></svg>',
-
     /* 顶栏右侧：关闭（弹层 / 阅读器用） */
     close:
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
@@ -337,7 +325,7 @@
     // 同一条规矩也管到阅读器：阅读器那条顶栏是一个**全屏沉浸层**，
     // 那里不画头像（不该把「管账号」压在正文上）；若把它的返回键摆到最右，
     // 正文一开一合那颗箭头就横跳 50px。所以阅读器里由一枚同径的
-    // **`.top-slot-mark`（翻开的这一册）占住头像的像素位**，
+    // **不可见占位（`.top-act-spacer`）占住头像的像素位**，
     // 阅读器的「合上」稳稳落在页面返回键那一个像素位上 —— 一页之内也不横跳。
     var leftOfCluster = "";
     if (isReader) {
@@ -377,12 +365,21 @@
 
     // 右侧簇 = 〔返回槽〕+ 恒定锚点。
     //   · 页面那条顶栏的锚点是**头像**（点它看自己，靠肌肉记忆，一像素都不许动）；
-    //   · 阅读器那条的锚点是**这一册的印**（同上一个宽度，让返回键原地不动）。
+    //   · 阅读器那条的锚点是一枚**不可见的占位**（同上一个宽度）。
     // 首页右上角不再放设置齿轮：底部最后一个页签就是「设置」，
     // 两个入口指向同一面板，右上角那个纯属重复。首页也不放返回键（没有上一层），
     // 槽留空 —— 头像仍在最右，四个页签根页的顶栏右端因此完全一致。
+    //
+    // ⚠️ 阅读器那一条**不再画任何图标**（Issue #147 后续 · 用户 2026-09-15 二次确认：
+    //    「删除详情页中右上角书一样的图标」）。原先那里是一枚「翻开的这一册」
+    //    （.top-slot-mark），用户看着像一本多余的书，要求撤掉。
+    //    但**像素位不能跟着撤**：阅读器是全屏沉浸层，那一条顶栏没有头像，
+    //    右侧簇若只剩返回槽，`margin-left: auto` 会把「合上」推到最右边缘，
+    //    正文一开一合就横跳 50px（头像 42 + 间距 8）。
+    //    所以这里留一枚**不可见的占位**（.top-act-spacer，同一枚 --top-slot 的尺寸
+    //    与同一条 --top-gap 的间距）—— 书没了，位置一个像素都不动。
     var anchor = isReader
-      ? '<span class="top-slot-mark" aria-hidden="true">' + GLYPHS.reader + "</span>"
+      ? '<span class="top-act-spacer" aria-hidden="true"></span>'
       : userAvatarHtml();
     right =
       '<span class="top-slot">' + leftOfCluster + "</span>" + anchor;

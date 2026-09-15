@@ -1975,7 +1975,6 @@ body.has-install-tip #app {
   height: var(--top-slot);
 }
 .top-slot + .top-user,
-.top-slot + .top-slot-mark,
 .top-slot + .top-act-spacer { margin-left: var(--top-gap); }
 
 /* 头像：**与 logo 一模一样大的圆形**，印色铺满整圆（Issue #132 · 用户 2026-09-15）。
@@ -2014,28 +2013,6 @@ body.has-install-tip #app {
   height: 100%;
   border-radius: 50%;
 }
-
-/* 阅读器那条顶栏里的恒定锚点（Issue #147）：一枚「翻开的这一册」。
-   --------------------------------------------------------------------------
-   阅读器是全屏沉浸层，那条顶栏**不画头像**（不该把「管账号」压在正文上）。
-   少了头像，右侧簇就短了 50px（头像 42 + 间距 8）—— 若把返回键留在槽里，
-   正文一开一合，那颗箭头就会相对其他页横跳 50px；这正是用户说的
-   「他俩应该靠近并固定位置，所有页面都应该如此」在阅读器里的落法。
-   于是补上这一枚同径的圆形槽位标记：它**占住头像的像素位**，
-   高度、宽度、间距全部来自 --top-slot / --top-gap，一个数字都不另写。
-   观感上也正合适：那一条顶栏右侧是「这一册 · 合上」，讲的还是同一件事。 */
-.top-slot-mark {
-  flex: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: var(--top-slot);
-  height: var(--top-slot);
-  /* 比正文轻一档，不跟正文抢注意力：它是一枚定位标记，不是一个按钮 */
-  color: var(--ink-3);
-  opacity: .78;
-}
-.top-slot-mark svg { width: 24px; height: 24px; display: block; }
 
 .top-user:hover { box-shadow: 0 0 0 3px rgba(165, 92, 25, .18); }
 .top-user:active { transform: scale(.94); }

@@ -891,16 +891,23 @@ if (!JSDOM) {
     /width:\s*var\(--top-key\)/.test(ruleOf(cssCode, '.top-slot > .top-act')),
     '槽里的返回键直径读 --top-key（圆槽 → 圆环 → 头像三枚同一套口径）');
   // 槽与恒定锚点之间的间距只有一个来源
-  chk(/\.top-slot \+ \.top-user,[\s\S]{0,200}\.top-slot-mark[\s\S]{0,120}margin-left:\s*var\(--top-gap\)/.test(cssCode),
+  chk(/\.top-slot \+ \.top-user,[\s\S]{0,200}\.top-act-spacer[\s\S]{0,120}margin-left:\s*var\(--top-gap\)/.test(cssCode),
     '槽与恒定锚点之间的间距只有一个来源（--top-gap）');
 
-  // 阅读器那条顶栏的「这一册的印」：与头像同径，占住同一个像素位
-  const markSlotRule = ruleOf(cssCode, '.top-slot-mark');
-  chk(/width:\s*var\(--top-slot\)/.test(markSlotRule) &&
-    /height:\s*var\(--top-slot\)/.test(markSlotRule),
+  // 阅读器那条顶栏的恒定锚点（Issue #147 后续）：一枚**不可见占位**，与头像同径。
+  // 原先那里是一枚「翻开的这一册」（.top-slot-mark / GLYPHS.reader），
+  // 用户 2026-09-15 二次确认「删除详情页中右上角书一样的图标」—— 书撤了，
+  // 但像素位仍得占住，否则「合上」会横跳 50px。
+  const spacerRule = ruleOf(cssCode, '.top-act-spacer');
+  chk(/width:\s*var\(--top-slot\)/.test(spacerRule) &&
+    /height:\s*var\(--top-slot\)/.test(spacerRule),
     '阅读器里的恒定锚点与头像同径（返回键因此原地不动，不横跳 50px）');
-  chk(/top-slot-mark/.test(chromeJs) && /GLYPHS\.reader/.test(chromeJs),
-    '阅读器那条顶栏由 chrome.js 补上这一枚锚点');
+  chk(/isReader[\s\S]{0,300}'<span class="top-act-spacer"/.test(chromeJs),
+    '阅读器那条顶栏由 chrome.js 补上这一枚不可见占位（书撤了，像素位仍占住）');
+  chk(!/\.top-slot-mark/.test(cssCode),
+    '样式表里不再留 `.top-slot-mark` 规则（僵尸规则会误导下一个改样式的人）');
+  chk(!/GLYPHS\.reader/.test(chromeJs.replace(/\/\/[^\n]*/g, ' ')),
+    '那枚「书」图标（GLYPHS.reader）连同定义一起删掉，不留没人用的图形');
 
   // ③ 结构：右侧簇恒为「槽 → 恒定锚点」，页名与它无关（只有品牌区可收缩）
   const headerFn = strip(chromeJs.slice(chromeJs.indexOf('function headerHtml'),
@@ -983,6 +990,66 @@ PAGE_FILES.forEach(f => {
   chk(m && !/count-badge|\d\s*\/\s*\d+\s*(篇|首)/.test(m[1]),
     f + ' 的页顶那一行不挂任何读数（Issue #147 撤干净，不留死节点）');
 });
+
+/* ==========================================================================
+   十二、顶栏返回键**不能全删**：这三处它是唯一的出口
+   --------------------------------------------------------------------------
+   Issue #147 里用户问：「我后来想，手机界面我们需要标题栏中的后退按钮吗？
+   如果不需要，是不是可以全部删除？」
+   答案是不能全删 —— 有一条硬性的结构约束把它钉住，且**只有三处**：
+
+     · 阅读器是全屏沉浸层（position: fixed; inset: 0; z-index: 66），
+       比底部页签（z-index: 65）高一层。开着阅读器时，页签整个被盖住点不到，
+       于是顶栏那颗「合上」就是**唯一**的出口；
+     · 阅读器**不写 history**（全站无 pushState / #read），
+       所以手机的浏览器返回手势在 PWA 独立窗口里回不到「列表」这一层；
+       桌面还能按 Esc，手机没有 Esc。
+     · 另外六页刻意关掉页签（body data-dock="off"）：登录 / 个人中心 /
+       管理后台 / 层级对比 / 用户协议 / 隐私条款 —— 它们没有页签可回，
+       顶栏那颗「返回」是唯一的上一层。
+
+   反过来，**有页签的页**（首页 / 课外阅读 / 六个集子 / 搜索 / 设置 / 进度）
+   返回键确实与页签重复 —— 但保留它有三个理由，所以这一轮**不动**：
+     · 深一层的地方它指向的不是页签那一格（设置的四张二级页 data-back 回设置主页，
+       不是回首页）；
+     · 手机上的拇指够不到页签时，右上角那颗仍是最短的退路；
+     · 删掉它要同时改「右侧簇只放头像」的布局口径，收益不抵风险。
+
+   这一节**不测「有没有返回键」**（那是功能选择），只把上面那几条
+   **结构约束**钉住：约束一旦被改（阅读器不再全屏 / 页签不再被盖 /
+   那六页重新装上页签），这条结论就该被重新评估 —— 那时这几条断言会先红。 */
+(function backButtonIsIndispensable() {
+  // ① 阅读器全屏且高于页签：开着时页签点不到，「合上」是唯一出口
+  const readerRule = ruleOf(classicCode, '.reader');
+  chk(/position:\s*fixed/.test(readerRule) && /inset:\s*0/.test(readerRule),
+    '阅读器是全屏层（fixed + inset:0）—— 所以它必须自带一枚出口');
+  const readerZ = /z-index:\s*(\d+)/.exec(readerRule);
+  const dockZ = /z-index:\s*(\d+)/.exec(ruleOf(cssCode, '.dock'));
+  chk(!!readerZ && !!dockZ && Number(readerZ[1]) > Number(dockZ[1]),
+    '阅读器（z-index ' + (readerZ ? readerZ[1] : '?') + '）压在底部页签（z-index ' +
+    (dockZ ? dockZ[1] : '?') + '）之上 —— 页签在阅读器里点不到，' +
+    '顶栏那颗「合上」是唯一的出口');
+
+  // ② 阅读器不写 history：手机的浏览器返回手势回不到列表那一层
+  const readerJs = read('js/reader-core.js');
+  chk(!/pushState|replaceState/.test(readerJs.replace(/\/\/[^\n]*/g, ' ')),
+    '阅读器不往 history 里压栈（没有浏览器返回键可关它）—— 所以要用界面上的那一颗');
+  chk(/keydown[\s\S]{0,200}Escape/.test(readerJs),
+    '桌面还能按 Esc 合上（手机没有 Esc —— 这正是手机更要那颗按钮的原因）');
+
+  // ③ 六页刻意关掉页签：它们没有页签可回，返回键是唯一的上一层
+  const DOCKLESS = ['login/index.html', 'profile/index.html', 'admin/index.html',
+    'plans/index.html', 'terms/index.html', 'privacy/index.html'];
+  DOCKLESS.forEach(f => {
+    chk(/data-dock="off"/.test(stripHtml(read(f))),
+      f + ' 关着底部页签（data-dock="off"）—— 它只能靠顶栏那颗返回键上一层');
+  });
+  // 反向：有页签的页不该关页签，否则「页签是退路」这条前提也塌了
+  ['search/index.html', 'settings/index.html', 'library/index.html'].forEach(f => {
+    chk(!/data-dock="off"/.test(stripHtml(read(f))),
+      f + ' 有页签（页签是它的退路之一）');
+  });
+})();
 
 console.log(fails === 0 ? '\n🎉 UI 一致性 / 响应式守卫全部通过' : '\n❌ ' + fails + ' 项失败');
 process.exit(fails ? 1 : 0);
