@@ -781,6 +781,21 @@ if (!JSDOM) {
     chk(n <= m,
       file + ' 里 ' + sel + ' 套的 .app 不多于页顶那一行（实际 ' + n + ' / ' + m + '）—— ' +
       '页顶与内容必须落在同一条竖轴上');
+    // ⚠️ 反面样本：给内容自己再套一层 .app（源码断言抓不到的那种写法），
+    //    上面那条必须变红 —— 否则它只是「数出来总是 1」的空规则。
+    //    （2026-09-15：上一版恒红正是因为判据把每个元素都数成一层，
+    //      红与绿都与 DOM 无关；这里把「这把尺子真的有牙」写进断言。）
+    const box2 = dd.querySelector(sel);
+    box2.appendChild(dd.createElement('span')).className = '';
+    const wrapper = dd.createElement('div');
+    wrapper.className = 'app';
+    wrapper.appendChild(box2.cloneNode(true));
+    const probe = dd.createElement('div');
+    probe.className = 'app';
+    box2.appendChild(probe);
+    chk(appCountOf(dd, probe) > m,
+      file + ' 的反面样本被数出来了（给内容多套一层 .app → ' + appCountOf(dd, probe) +
+      ' > 页顶 ' + m + '）—— 这把尺子不是空的');
   }
 }
 
