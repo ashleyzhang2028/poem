@@ -29,6 +29,7 @@
 
   var NS = "poem_plan_v1";        // 账号侧：本机会话的层级（1 期改为 /api/me 下发）
   var GRANT_NS = "poem_plan_grant_v1";  // 管理员侧：本机发放名单（可导出粘贴）
+  var OWNER_NS = "poem_owner_v1";       // 管理员侧：本机主人标记（谁能进 /admin/）
 
   var TIERS = ["free", "pro", "max"];
 
@@ -186,6 +187,46 @@
     return g;
   }
 
+  /* ---------------------------------------------------------- 管理员（谁能管理） */
+
+  /**
+   * **谁能进管理后台** —— 这是全站唯一回答这个问题的函数。
+   *
+   * 为什么单独一个键（`poem_owner_v1`）而不是复用层级：
+   *   店长不是 VIP。`role` 管「谁能管理」，`tier` 管「能用什么」，
+   *   两条正交的轴。把管理员塞进 `tier: "max"` 里，等于说「买了 Max 就能
+   *   给别人发权限」，那是两件完全不同的事，日后做收费时必然出事。
+   *
+   * **首次打开的浏览器自动成为本机主人**（幂等：标记一旦落下就不再变）。
+   * 理由：本期没有服务端，「你就是唯一的权威」—— 没有这个兜底，
+   * `/admin/` 会永远对所有人关着，那一页等于不存在。
+   * 1 期接服务端后，本函数改为读 `/api/me` 的 `role` 字段，页面一行不动。
+   *
+   * ⚠️ 与层级同理：本期这是**本机登记**，手改存储就能骗过它。
+   *    所以它只用于「谁能进这一页」，**不作为任何安全边界**（文档 §3.4）。
+   */
+  function isOwner(backing, opt) {
+    var opt2 = opt || {};
+    // 1 期：**服务端下发的 role 优先**（现在就留好这个口）。
+    // ⚠️ 只在传了明确角色时生效，且 `"user"` 也算明确 —— 但调用方若把
+    //    `identity().role` 原样传回来（那个值本来就是本函数算出来的），
+    //    这里会退化成「自己问自己」。所以调用方要么不传，要么传服务端来的值；
+    //    `js/profile.js` 与 `js/admin-page.js` 都不传（见那两处的注释）。
+    if (opt2.role && isRole(opt2.role)) return opt2.role === "owner" || opt2.role === "admin";
+    var b = backing || defaultBacking();
+    if (!b) return true;                 // 没有任何存储（隐私模式）：不给落标记，也不拦人
+    var raw = null;
+    try { raw = b.getItem(OWNER_NS); } catch (e) { raw = null; }
+    return raw == null || raw === "" || raw === "owner";
+  }
+
+  /** 把「本机主人」这个标记落下（幂等；只有管理员入口与初始化会调它） */
+  function markOwner(backing) {
+    var b = backing || defaultBacking();
+    if (!b) return { ok: false };
+    try { b.setItem(OWNER_NS, "owner"); return { ok: true }; } catch (e) { return { ok: false }; }
+  }
+
   /* ---------------------------------------------------------- 层级缓存 */
 
   /** 本机会话层级（1 期由 /api/me 写进来，实现只换这一个函数） */
@@ -308,7 +349,12 @@
       try { return A && A.makeStore ? A.makeStore(backing) : null; } catch (e) { return null; }
     })();
 
-    var uid = "", mask = "", signedIn = false, role = "user";
+    var uid = "", mask = "", signedIn = false;
+    // 角色也在这里定：**identity() 是全站唯一的身份入口**，
+    // 页面不该再去问第二个问题（问了就会有第二个答案）。
+    // 本期 role 只可能是 user / owner（见 isOwner 的说明）；
+    // 1 期接服务端后，这里改成读 /api/me 下发的 role。
+    var role = isOwner(backing) ? "owner" : "user";
     if (authStore) {
       var s = null;
       try { s = authSession(authStore); } catch (e) { s = null; }
@@ -384,7 +430,8 @@
   function guestIdentity() { return finish("free", false, "", "", "user"); }
 
   return {
-    NS: NS, GRANT_NS: GRANT_NS, TIERS: TIERS, ROLES: ROLES, CAPS: CAPS, ALIAS: ALIAS,
+    NS: NS, GRANT_NS: GRANT_NS, OWNER_NS: OWNER_NS,
+    TIERS: TIERS, ROLES: ROLES, CAPS: CAPS, ALIAS: ALIAS,
     capNames: capNames, cap: cap, can: can, denyReason: denyReason,
     tierLabel: tierLabel, matrix: matrix, isTier: isTier, isRole: isRole,
     tierIndex: tierIndex,
@@ -393,6 +440,7 @@
     clearGrants: clearGrants, exportGrants: exportGrants, importGrants: importGrants,
     grantFor: grantFor,
     readTier: readTier, writeTier: writeTier, clearTier: clearTier,
+    isOwner: isOwner, markOwner: markOwner,
     identity: identity, guestIdentity: guestIdentity, setAuthCore: setAuthCore,
     defaultBacking: defaultBacking
   };

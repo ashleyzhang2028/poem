@@ -503,6 +503,38 @@ chk(!/max-width:\s*\d+vw/.test(ruleOf(cssCode, '.brand-sub')),
 chk(/flex:\s*none/.test(ruleOf(cssCode, '.brand-name-row h1')),
   '「跬步」两字钉住不参与收缩（要收就收页名，不许把应用名压成「跬」）');
 
+/* ---------- 顶栏右上角那枚头像：**与 logo 一模一样的圆** ----------
+   用户原话（Issue #132 · 2026-09-15）：
+     「右上角方形圆角还是替换成和 logo 一模一样大小的圆形吧。」
+   三个「一模一样」都要能判：
+     1) 同**直径** —— 头像的 --user-size 与徽标 .brand-mark 的 width 同一个数值
+     2) 同**形状** —— 头像整圆（border-radius 50%），不再是 26% 的「圆的方角」
+     3) 印色**铺满** —— 内层 .seal-avatar 在顶栏里被覆写成 100% 满幅，
+        否则圆里还缩着一个小一号的方角印，「一模一样大」当场不成立
+   为什么按算式判而不是写死 42：下次要调尺寸时，这两条断言仍会自动成立
+   （它们守的是「两处同源」，不是「等于某个数」）。 */
+const markRule = ruleOf(cssCode, '.brand-mark');
+const userRule = ruleOf(cssCode, '.top-user');
+const markW = (markRule.match(/width:\s*(\d+)px/) || [])[1];
+const userW = (userRule.match(/--user-size:\s*(\d+)px/) || [])[1];
+chk(!!markW && !!userW && markW === userW,
+  '顶栏头像与 logo 徽标**同径**（.brand-mark ' + markW + 'px vs .top-user --user-size ' + userW + 'px）');
+chk(/width:\s*var\(--user-size\)/.test(userRule) && /height:\s*var\(--user-size\)/.test(userRule),
+  '头像的宽高都读 --user-size（尺寸只有一个来源，不两处各写一个数）');
+chk(/border-radius:\s*50%/.test(userRule),
+  '头像外框是整圆（不是 26% 的「圆的方角」—— 用户要的是「圆形」）');
+const sealInUser = ruleOf(cssCode, '.top-user > .seal-avatar');
+chk(/width:\s*100%/.test(sealInUser) && /height:\s*100%/.test(sealInUser),
+  '顶栏那一枚印铺满整圆（width/height 100%，不在圆里再缩一圈）');
+chk(/border-radius:\s*50%/.test(sealInUser),
+  '顶栏那一枚印自身也是圆（印色满幅 + 圆边，两处口径一致）');
+chk(/--seal-size:\s*var\(--user-size\)/.test(sealInUser),
+  '印的字号基准也读 --user-size（字随圆走，圆变大字跟着变大）');
+chk(/--seal-size:\s*\d+px/.test(ruleOf(cssCode, '.seal-avatar-top')),
+  '顶栏那一枚留了兜底直径（万一 .top-user 那段没生效也不退化成零尺寸空圆）');
+chk(/width:\s*\d+px/.test(ruleOf(cssCode, '.top-act-spacer')),
+  '首页的空占位宽度与头像同档（顶栏左右两栏才配平）');
+
 /* ==========================================================================
    六、各页顶栏结构一致（同一套 chrome 渲染）
    ==========================================================================

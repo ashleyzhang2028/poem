@@ -892,7 +892,8 @@
         '<p class="account-line"><span class="account-state" id="account-state">未登录</span>' +
         "（游客）" + badge + "</p>" +
         '<p class="settings-hint">不登录也能用全部功能；账号只影响「语音朗读」与将来的同步。' +
-        "登录入口在 <code>/login/</code>，还没建（见 docs/auth-design.md §11）。</p>" +
+        "语音朗读登录后即可用，免费。</p>" +
+        '<div class="settings-btns"><a class="btn ghost-btn" id="btn-gologin" href="/login/">用邮箱登录</a></div>' +
         '<p class="settings-hint">本机账号与学习进度一样<strong>只存在本机</strong>，不上传、不云同步。</p>';
       return;
     }
@@ -910,9 +911,11 @@
       '<p class="account-line"><span class="account-state ok" id="account-state">已登录</span>' +
       '<span class="account-mask" id="account-mask">' + (ident.mask || "本机账号") + "</span>" + badge + "</p>" +
       '<ul class="account-caps" id="account-caps">' + rows + "</ul>" +
-      '<div class="settings-btns"><button class="btn ghost-btn" id="btn-signout" type="button">退出登录</button></div>' +
+      '<div class="settings-btns">' +
+      '<a class="btn ghost-btn" id="btn-goprofile" href="/profile/">个人中心</a>' +
+      '<button class="btn ghost-btn" id="btn-signout" type="button">退出登录</button></div>' +
       '<p class="settings-hint">退出只结束这次登录，不会删掉任何背诵进度。' +
-      "本机账号与进度一样只存在本机，不上传、不云同步；注销账号在个人中心（/profile/）里做。</p>";
+      "本机账号与进度一样只存在本机，不上传、不云同步；注销账号在个人中心里做。</p>";
   }
 
   /** 「退出登录」：只清会话，不碰进度 */

@@ -1,10 +1,11 @@
-const CACHE_NAME = "poem-app-v116";
+const CACHE_NAME = "poem-app-v117";
 
 const PRECACHE = [
   "./",
   "./manifest.webmanifest",
   "./css/style.css",
   "./css/classic.css",
+  "./css/account.css",
   "./fonts/NotoSerifSC-400.woff2",
   "./fonts/NotoSerifSC-600.woff2",
   "./fonts/NotoSansSC-400.woff2",
@@ -15,6 +16,12 @@ const PRECACHE = [
   "./settings/recite/",
   "./settings/lists/",
   "./settings/reader/",
+  "./login/",
+  "./profile/",
+  "./admin/",
+  "./js/login.js",
+  "./js/profile.js",
+  "./js/admin-page.js",
   "./js/settings.js",
   "./js/settings-nav.js",
   "./js/play-modes.js",

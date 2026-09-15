@@ -256,6 +256,49 @@ console.log('\n=== 十、源码扫描：页面上不许自己拼 plan ===');
     const src = fs.readFileSync(f, 'utf8');
     chk(/Speech\.allowed/.test(src), f + ' 的按钮状态读的是 Speech.allowed（与门同源）');
   });
+  // 三张账号页也要守同一条：页面不许自己比对层级
+  ['js/login.js', 'js/profile.js', 'js/admin-page.js'].forEach(function (f) {
+    const src = fs.readFileSync(f, 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+    chk(!/tier\s*===\s*["']|plan\s*===\s*["']/.test(src),
+      f + ' 里没有直接比较层级（一律走 Entitlement）');
+    chk(!/poem_plan_v1|poem_plan_grant_v1|poem_owner_v1/.test(src),
+      f + ' 不自己拼权益相关的存储键名（键名只在 entitlement.js 里）');
+  });
+  chk(/isOwner\(backing\)/.test(fs.readFileSync('js/admin-page.js', 'utf8')) &&
+      /isOwner\(backing\)/.test(fs.readFileSync('js/profile.js', 'utf8')),
+    '「谁能进管理后台」两页走同一个出口 Entitlement.isOwner()');
+}
+
+console.log('\n=== 十一、管理员（role）：与层级正交，且是全站唯一出口 ===');
+{
+  const mem = function (init) {
+    const m = Object.assign({}, init || {});
+    return { getItem: k => (k in m ? m[k] : null), setItem: (k, v) => { m[k] = String(v); }, raw: () => m };
+  };
+  // 全新机器：主人的标记还没落下 → 是主人（否则 /admin/ 永远对所有人关着）
+  eq(E.isOwner(mem()), true, '全新机器上是主人（第一次打开后台不该被拒）');
+  eq(E.isOwner(mem({ [E.OWNER_NS]: 'owner' })), true, '已落下主人标记 → 是主人');
+  eq(E.isOwner(mem({ [E.OWNER_NS]: 'member' })), false, '标记是 member → 不是主人');
+  eq(E.isOwner(mem({ [E.OWNER_NS]: '' })), true, '空标记当作「还没决定」→ 仍是主人（幂等）');
+  eq(E.isOwner(null), true, '没有任何存储（隐私模式）→ 不拦人也不落标记');
+  // 服务端 role 优先（1 期那个口）
+  eq(E.isOwner(mem(), { role: 'user' }), false, '服务端下发的 role=user 优先于本机（1 期的口）');
+  eq(E.isOwner(mem({ [E.OWNER_NS]: 'member' }), { role: 'owner' }), true,
+    '服务端下发的 role=owner 优先于本机（1 期的口）');
+  // 落标记是幂等的，且不覆盖别的键
+  const b = mem();
+  E.markOwner(b);
+  eq(b.raw()[E.OWNER_NS], 'owner', 'markOwner 落下 owner 标记');
+  E.markOwner(b);
+  eq(b.raw()[E.OWNER_NS], 'owner', 'markOwner 连落两次结果一致（幂等）');
+  // ✅ 角色与层级**正交**：店长不是 VIP
+  const owner = E.identity({ backing: mem({ [E.OWNER_NS]: 'owner' }), authStore: null });
+  eq(owner.role, 'owner', '本机主人：identity().role 是 owner');
+  eq(owner.tier, 'free', '…但层级仍是 free —— 管理员不是「买了 Max 的人」');
+  const member = E.identity({ backing: mem({ [E.OWNER_NS]: 'member' }), authStore: null });
+  eq(member.role, 'user', '非主人：role 是 user');
+  eq(E.tierLabel(member.tier), 'Free', '…层级照旧按发放名单算');
 }
 
 console.log('');

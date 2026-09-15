@@ -217,6 +217,50 @@ console.log('\n=== 十、每张加载了顶栏的页面都加载了 js/avatar.js
   });
 }
 
+console.log('\n=== 十之二、顶栏那一枚＝与 logo 同径的整圆 ===');
+{
+  const fs = require('fs');
+  const css = fs.readFileSync('css/style.css', 'utf8').replace(/\/\*[\s\S]*?\*\//g, ' ');
+  const chrome = fs.readFileSync('js/chrome.js', 'utf8').replace(/\/\*[\s\S]*?\*\//g, ' ')
+    .replace(/^\s*\/\/.*$/gm, '');
+  // 与 test/ui-consistency.test.js 同一套取法：**选择器组整条相等**才算命中
+  //（`.brand-mark, .brand-icon { … }` 是一条规则，用 indexOf 找 `.brand-mark {`
+  //  会找不到；用「包含」又会张冠李戴）。
+  const cssRule = (function (sel) {
+    const flat = css.replace(/@media[^{]+\{/g, '{');
+    let acc = '';
+    const re = /([^{}]+)\{([^}]*)\}/g;
+    let m;
+    while ((m = re.exec(flat))) {
+      if (m[1].split(',').map(x => x.trim()).includes(sel)) acc += ';' + m[2];
+    }
+    return acc;
+  });
+
+  // 与 logo 同径：两处**同一个数值**（守的是「同源」，不是「等于某个数」）
+  const markW = (cssRule('.brand-mark').match(/width:\s*(\d+)px/) || [])[1];
+  const userW = (cssRule('.top-user').match(/--user-size:\s*(\d+)px/) || [])[1];
+  chk(!!markW && !!userW && markW === userW,
+    '顶栏头像与 logo 徽标同径（' + markW + 'px vs ' + userW + 'px）');
+
+  // 整圆 + 满幅
+  chk(/border-radius:\s*50%/.test(cssRule('.top-user')), '顶栏头像是整圆');
+  chk(/width:\s*100%/.test(cssRule('.top-user > .seal-avatar')) &&
+      /height:\s*100%/.test(cssRule('.top-user > .seal-avatar')),
+    '顶栏那一枚印铺满整圆（不在圆里再缩一圈方角印）');
+
+  // chrome.js 不再自带一个 size 数字：尺寸只有一个来源（CSS）
+  chk(!/size:\s*\d+/.test(chrome),
+    'js/chrome.js 不自己写死头像尺寸（尺寸只在 css/style.css 的 --user-size 一处）');
+  chk(/A\.html\(backing, \{ cls: "seal-avatar-top" \}\)/.test(chrome),
+    '顶栏渲染仍只传类名（cls），尺寸交给样式表');
+
+  // avatar.js 的 size 选项仍然是「显式传才生效」：不传就由 CSS 定
+  const htmlNoSize = A.html(mem());
+  chk(!/--seal-size/.test(htmlNoSize), '不传 size 时 HTML 里不出现 --seal-size（由 CSS 兜底）');
+  chk(/--seal-size:48px/.test(A.html(mem(), { size: 48 })), '显式传 size 时才内联那一个值');
+}
+
 console.log('\n=== 十一、源码扫描：页面不许自己拼一套印 ===');
 {
   const fs = require('fs');

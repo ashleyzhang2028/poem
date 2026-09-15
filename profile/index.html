@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#2f6055" />
+  <title>个人中心 · 跬步</title>
+  <meta name="description" content="跬步个人中心：昵称与头像印记、本机账号与订阅层级、权限清单、本机数据概览，以及退出登录与注销账号。" />
+  <meta name="format-detection" content="telephone=no" />
+  <meta name="robots" content="noindex, follow" />
+
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="跬步" />
+  <meta name="mobile-web-app-capable" content="yes" />
+
+  <base href="/" />
+  <link rel="icon" href="./icons/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/account.css" />
+</head>
+<!-- data-dock="off"：个人中心是「看自己」的一页，不是第四个页签的去处；
+     返回落点由 data-back 指回设置页（入口在设置 · 通用里）。 -->
+<body data-nav="profile" data-dock="off" data-back="/settings/" data-page="个人中心" data-sub="昵称 · 账号 · 权限">
+  <div class="app">
+    <header class="topbar"></header>
+
+    <main class="account-page" id="profile-page">
+      <!-- ==================================================================
+           个人中心（Issue #132 · A→B→C→D 的 C）
+           ------------------------------------------------------------------
+           为什么必须**独立于设置页**：
+             设置页 6 组（通用 / 背诵 / 复习算法 / 我的清单 / 阅读辅助 / 朗读播放），
+             再塞账号 + 权限 + 同步 = 7 组一长条。而且设置是「调机器」，
+             个人中心是「看人」，语义不同。两者之间只放一个跳转链接。
+
+           未登录时整页变成**引导页**（不是 403、不是空页）：
+           如实告诉他「你现在是本机游客，进度只在这台设备上」，再给两条出路。
+           ================================================================== -->
+
+      <!-- ---------- 一、身份 ---------- -->
+      <section class="account-card">
+        <div class="identity-row" id="identity-row"></div>
+        <p class="account-hint" id="identity-hint"></p>
+      </section>
+
+      <!-- ---------- 二、未登录时的引导（登录后整块收起） ---------- -->
+      <section class="account-card" id="guest-card" hidden>
+        <p class="account-lead">
+          你现在是<strong>本机游客</strong>：背诵进度只保存在这台设备的浏览器里。
+          清缓存、换手机、换浏览器，进度就没了。
+        </p>
+        <button class="account-btn" id="btn-go-login" type="button">用邮箱建一个账号</button>
+        <p class="account-hint">
+          不建账号也<strong>照旧用全部功能</strong> —— 只有语音朗读需要登录（免费）。
+          账号只是让进度不随缓存丢。
+        </p>
+      </section>
+
+      <!-- ---------- 三、本机数据概览 ---------- -->
+      <section class="account-card" id="stats-card">
+        <h2 class="account-card-title">这台设备上的数据</h2>
+        <div class="kv-list" id="stats-list"></div>
+        <p class="account-hint">
+          这些数字只看本机进度，与账号无关；换台设备看到的是那台设备的。
+        </p>
+      </section>
+
+      <!-- ---------- 四、账号（登录后才出现） ---------- -->
+      <section class="account-card" id="account-card" hidden>
+        <h2 class="account-card-title">账号</h2>
+        <div class="kv-list" id="account-list"></div>
+        <button class="account-btn ghost" id="btn-sign-out" type="button">退出登录</button>
+        <p class="account-hint">
+          退出只结束这次登录，<strong>不会删掉任何背诵进度</strong>。
+          账号与进度一样只存在本机，不上传、不云同步。
+        </p>
+      </section>
+
+      <!-- ---------- 五、权限：能用的打勾、不能用的写门槛 ---------- -->
+      <section class="account-card">
+        <h2 class="account-card-title">权限</h2>
+        <ul class="cap-list" id="cap-list"></ul>
+        <p class="account-hint" id="cap-hint"></p>
+      </section>
+
+      <!-- ---------- 六、管理员入口（仅 owner 可见） ---------- -->
+      <section class="account-card" id="admin-card" hidden>
+        <h2 class="account-card-title">管理</h2>
+        <p class="account-lead">
+          你是这个站点的管理员。可以按邮箱掩码给家里人发放 Pro / Max 层级。
+        </p>
+        <button class="account-btn ghost" id="btn-go-admin" type="button">打开管理后台</button>
+      </section>
+
+      <!-- ---------- 七、关于 ---------- -->
+      <section class="account-card">
+        <h2 class="account-card-title">关于</h2>
+        <div class="kv-list">
+          <div class="kv-row"><span class="kv-k">应用</span><span class="kv-v">跬步 · 古诗词背诵</span></div>
+          <div class="kv-row"><span class="kv-k">用户协议</span><span class="kv-v"><a href="/terms/">查看</a></span></div>
+          <div class="kv-row"><span class="kv-k">隐私条款</span><span class="kv-v"><a href="/privacy/">查看</a></span></div>
+          <div class="kv-row"><span class="kv-k">离线缓存</span><span class="kv-v" id="about-cache"></span></div>
+        </div>
+      </section>
+
+      <!-- ---------- 八、危险区：注销账号（二次确认 + 重输邮箱） ---------- -->
+      <section class="account-card danger-zone" id="danger-card" hidden>
+        <h2 class="account-card-title danger-title">注销账号</h2>
+        <p class="account-lead">
+          注销会删掉这台设备上的<strong>账号记录</strong>（邮箱掩码、层级、登录状态），
+          但<strong>不删背诵进度</strong> —— 进度是你自己的东西，不跟着账号走。
+          想连进度一起清空，去<strong>设置 · 通用 · 数据管理</strong>。
+        </p>
+        <div id="delete-step-1">
+          <button class="account-btn danger" id="btn-delete-start" type="button">我要注销账号</button>
+        </div>
+        <div id="delete-step-2" hidden>
+          <div class="account-field">
+            <label class="account-label" for="input-delete-email">再输一次注册时用的完整邮箱以确认</label>
+            <input id="input-delete-email" class="account-input" type="email" inputmode="email"
+                   autocomplete="off" spellcheck="false" placeholder="you@example.com" maxlength="120" />
+          </div>
+          <div class="confirm-row">
+            <button class="account-btn danger" id="btn-delete-confirm" type="button">确认注销</button>
+            <button class="account-btn ghost" id="btn-delete-cancel" type="button">取消</button>
+          </div>
+          <p class="account-msg" id="msg-delete"></p>
+        </div>
+      </section>
+    </main>
+
+    <footer class="foot settings-foot">
+      <span class="foot-copy">&copy;2026 kuibu.app 积跬步, 至千里</span>
+      <span class="foot-links">
+        <a href="/terms/">用户协议</a>
+        <span class="foot-sep">·</span>
+        <a href="/privacy/">隐私条款</a>
+      </span>
+    </footer>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+
+  <script src="/js/auth-core.js"></script>
+  <script src="/js/entitlement.js"></script>
+  <script src="/js/storage.js"></script>
+  <script src="/js/scheduler.js"></script>
+  <script src="/data/poems-1.js"></script>
+  <script src="/data/poems-2.js"></script>
+  <script src="/data/poems-3.js"></script>
+  <script src="/data/poems-4.js"></script>
+  <script src="/data/poems-5.js"></script>
+  <script src="/data/poems-6.js"></script>
+  <script src="/data/poems-7.js"></script>
+  <script src="/data/poems-8.js"></script>
+  <script src="/data/poems-9.js"></script>
+  <script src="/data/poems-10.js"></script>
+  <script src="/data/poems-11.js"></script>
+  <script src="/data/poems-12.js"></script>
+  <script src="/data/index.js"></script>
+  <script src="/js/avatar.js"></script>
+  <script src="/js/profile.js"></script>
+  <script src="/js/chrome.js"></script>
+  <script src="/js/pwa.js"></script>
+</body>
+</html>
