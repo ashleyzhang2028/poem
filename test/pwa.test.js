@@ -351,17 +351,63 @@ function check(name, cond, extra) {
         g.appPad >= g.dockH - 1, JSON.stringify(g));
     }
 
-    // 断网也能进设置页（法务链接与设置项都必须可达）
+    // 断网也能进设置（Issue #132 后续拆成二级页之后，主页只剩四个入口，
+    // 原来那些设置控件都在二级页上；这条路按「用户真的会怎么走」量一遍：
+    // 主页四个入口 → 点进「通用」→ 点进「阅读与朗读」，逐张页查该页的控件）。
+    // 预缓存的页面请求在断网下也走 SW 缓存，所以连点进去都不必联网。
     await page.setOfflineMode(true);
     await page.goto(base + 'settings/', { waitUntil: 'domcontentloaded' });
     await new Promise(r => setTimeout(r, 900));
     const settingsOffline = await page.evaluate(() => ({
       hasPage: !!document.querySelector('#settings-page'),
       hasFoot: !!document.querySelector('.settings-foot a[href*="/terms/"]'),
-      hasHelper: !!document.querySelector('#seg-helper')
+      links: [...document.querySelectorAll('a[data-group-link]')].map(a => a.getAttribute('data-group-link'))
     }));
-    check('iPhone: 断网也能打开设置整页', settingsOffline.hasPage && settingsOffline.hasHelper && settingsOffline.hasFoot,
+    check('iPhone: 断网也能打开设置整页',
+      settingsOffline.hasPage && settingsOffline.hasFoot,
       JSON.stringify(settingsOffline));
+    check('iPhone: 断网也能看到设置主页的四个二级页入口',
+      settingsOffline.links.join(',') === 'general,recite,lists,reader',
+      settingsOffline.links.join(','));
+
+    // 点入口走到二级页：断网、且是站内链接（不是按钮）——正好是拆页时
+    // 最容易坏的两种：预缓存少了那一张，或是入口渲染成了点不动的元素。
+    const enterSub = async (key, sel) => {
+      await page.goto(base + 'settings/', { waitUntil: 'domcontentloaded' });
+      await new Promise(r => setTimeout(r, 700));
+      // 点之前先确认入口是站内 <a>（不是按钮、也不是写死的外链）
+      const link = await page.evaluate(k => {
+        const a = document.querySelector('a[data-group-link="' + k + '"]');
+        return a ? { tag: a.tagName, href: a.getAttribute('href') } : null;
+      }, key);
+      if (!link) return { clicked: false };
+      // 「点一下就跳过去」交给浏览器自己完成（真用户就是这么走的），
+      // 之后等新页面就绪再查控件 —— 不在同一个 evaluate 里跨导航取值
+      await page.evaluate(k => document.querySelector('a[data-group-link="' + k + '"]').click(), key);
+      await page.waitForFunction(() => {
+        const m = document.querySelector('.app main');
+        return m && (m.className.indexOf('settings-page') >= 0);
+      }, { timeout: 8000 }).catch(() => {});
+      await new Promise(r => setTimeout(r, 800));
+      const after = await page.evaluate(s => ({
+        url: location.pathname,
+        hasPage: !!document.querySelector('#settings-page'),
+        hasCtrl: !!document.querySelector(s)
+      }), sel);
+      return Object.assign({ clicked: true, href: link.href }, after);
+    };
+    const subGeneral = await enterSub('general', '#input-username');
+    check('iPhone: 断网时点「通用」进得去二级页（预缓存里真的有这张页）',
+      subGeneral.clicked && subGeneral.href === '/settings/general/' &&
+      subGeneral.url === '/settings/general/' &&
+      subGeneral.hasPage && subGeneral.hasCtrl,
+      JSON.stringify(subGeneral));
+    const subReader = await enterSub('reader', '#seg-helper');
+    check('iPhone: 断网时点「阅读与朗读」进得去二级页，注音开关就在这一页',
+      subReader.clicked && subReader.href === '/settings/reader/' &&
+      subReader.url === '/settings/reader/' &&
+      subReader.hasPage && subReader.hasCtrl,
+      JSON.stringify(subReader));
     await page.setOfflineMode(false);
 
     // 用户协议 / 隐私条款：断网也要能打开，邮箱仍可还原（隐私合规不能靠联网）
@@ -1584,7 +1630,7 @@ function check(name, cond, extra) {
 
       /* ⑥之二 本轮（Issue #122）第三条：设置页的用户名输入框也有那圈淡光晕，
          「所有页面的输入框都带这样的效果」。 */
-      await sp.goto(base + 'settings/', { waitUntil: 'load' });
+      await sp.goto(base + 'settings/general/', { waitUntil: 'load' });
       await new Promise(r => setTimeout(r, 600));
       const glow = await sp.evaluate(async () => {
         const inp = document.getElementById('input-username');
