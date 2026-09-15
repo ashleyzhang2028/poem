@@ -668,16 +668,24 @@ if (!JSDOM) {
           · 反过来，真正该抓的「第二层 .app」（max-width: var(--col-w)）
             反而抓不到 —— 合成样本里根本没挂样式表。
 
-        现在两条都修：样式表挂进去，判据改成「真的能算出来的那种收窄」——
-        左右内边距 / 左右外边距，或者**声明过**的 max-width / width。
-        jsdom 只对「没声明」的取空串，对 `max-width: var(--col-w)` 会原样
-        返回那个字符串，所以这一条既能判、也不会误伤。
+        现在两条都修：样式表挂进去（`styled()`），判据改成「真的能算出来的
+        那种收窄」—— 左右内边距 / 左右外边距，或者**声明过**的
+        max-width / width。jsdom 只对「没声明」的取空串，
+        对 `max-width: var(--col-w)` 会原样返回那个字符串，
+        所以这一条既能判、也不会误伤。
      -------------------------------------------------------------------- */
+
+  /* 样式表的唯一一份挂载入口：jsdom 默认不去取 `<link>` 的外链，
+     所以**必须**把 css/style.css、css/legal.css、css/classic.css 的内容
+     手动插进 head，`getComputedStyle` 才算得出宽度 / 内边距。 */
   const SHEETS = [css, legalCss, classicCss]
     .map(t => '<style>' + t.replace(/<\/style>/gi, '') + '</style>')
     .join('\n');
-  const styled = (file, url) => {
-    const d0 = new JSDOM(read(file), { url: 'https://local.test' + url });
+  /** 挂一份带样式的真页面（文件 → JSDOM 实例）。 */
+  const styled = (markupOrFile, url) => {
+    // 传进来的是文件名（真页面）时读文件；否则当成一段 HTML（合成样本）。
+    const html = /^[\w./-]+\.html$/.test(markupOrFile) ? read(markupOrFile) : markupOrFile;
+    const d0 = new JSDOM(html, { url: 'https://local.test' + url });
     d0.window.document.head.insertAdjacentHTML('beforeend', SHEETS);
     return d0;
   };
@@ -705,38 +713,95 @@ if (!JSDOM) {
     return n;
   };
 
+  /* --------------------------------------------------------------------
+     另一把尺（两版合并时保留下来的那个口径）：数一数这条路径上有几个 `.app`。
+     --------------------------------------------------------------------
+     ⚠️ 两版的判据各修了对方的一个盲点，所以这里**两把都留**：
+        · `insets`（宽度 / 内边距那一支）—— 真机上「卡片比顶栏窄一条边」
+          量到的就是这条边，写法换成 margin 也照样抓得住；
+        · `appCountOf` —— `.app` 这个**类**在 DOM 里，与布局引擎无关，
+          在任何 jsdom 里都量得准，是 `insets` 失效时的安全带。
+     它们各守一句，两句都不是空的（下面每条断言都配了反面样本）。
+     -------------------------------------------------------------------- */
+
+  /* 数一数：从 body 到 el 之间套了几层 `.app`（「一列纸」的唯一载体）。
+     ⚠️ 判据刻意用 `.app` 这个**类**、而不是量出来的宽度 / 内边距：
+        前者在 DOM 里，量得准；后者要靠布局引擎，而 jsdom 只对**声明过的**
+        宽度 / 内边距给得出值（没声明的取空串），量出来会漂。 */
+  const appCountOf = (ddoc, el) => {
+    let n = 0;
+    for (let p = el; p && p !== ddoc.body; p = p.parentElement) {
+      if (p.classList && p.classList.contains('app')) n += 1;
+    }
+    return n;
+  };
+
   // 造一份「页面那条顶栏 + 一列纸 + 纸里的内容」的最小结构（与全站约定一致）。
   // ⚠️ 顶栏里要**真的**放上品牌区与右侧簇（品牌区 + `.top-slot` + 恒定锚点）——
-  //    这就是 chrome.js 的 headerHtml 渲染出来的那一行。
-  // ⚠️ 纸里也要**真的**再套一层 .app（反面样本）：#147 的复发形态就是它。
-  //    样本必须挂上与真页面同一份样式表，否则 max-width 算不出来、
-  //    这条断言又会退化成「数 DOM 层数」。
-  const sample = new JSDOM(
-    '<!doctype html><html><head></head><body>' +
+  //    这就是 chrome.js 的 headerHtml 渲染出来的那一行。少了右侧簇，
+  //    jsdom 里盒模型虽然算不出宽度，但「同一把尺子量到底」的前提就丢了：
+  //    量点与被量点必须处在同一份真实结构上，否则这条断言问的不是它想问的事。
+  // ⚠️ 合成样本里**顶栏与纸是兄弟**（都住在同一个 `.app` 里），这不是笔误：
+  //      · `bar`（`.topbar`）自己就带一层 —— `max-width: var(--content-w)`；
+  //      · `paper`（纸里的内容）不带，它那「一层」来自**共同的祖先** `.app`
+  //        （`max-width: var(--col-w)` + 左右各一条 `--col-side` 的边）。
+  //    所以两者数出来必然是「2 / 1」—— 差的就是顶栏自己那一条 --content-w。
+  //    这一层想问的**不是**让这两个数相等，而是问「`paper` 那 1 层是不是
+  //    **正好**就是 `--col-w` 那一层、没有再套第二层」——见下面 `paperN`。
+  // ⚠️ 反面样本 `nested` 是在 `paper` 里**再套一层 `.app`**：这正是 #147
+  //    的复发形态。`--col-w` / 左右各一条边会被算第二遍，必须被数出来。
+  //    样本**必须挂上与真页面同一份样式表**（`styled()`），否则
+  //    `max-width: var(--col-w)` 在 jsdom 里取到空串，宽度那一支就是哑的。
+  const sample = styled('<div class="app">' +
     '<header class="topbar"><div class="brand"></div>' +
     '<span class="top-slot"></span><span class="top-user"></span></header>' +
-    '<div class="app"><div class="paper"><div class="app"></div></div></div>' +
-    '</body></html>', { url: 'https://local.test/library/' });
-  sample.window.document.head.insertAdjacentHTML('beforeend', SHEETS);
+    '<div class="paper"></div>' +
+    '<div class="nested"><div class="app"></div></div>' +
+    '</div>', '/library/');
   const sd = sample.window.document;
   const sw = sample.window;
-  const bar = sd.querySelector('.topbar');
-  const paper = sd.querySelector('.app > .paper');   // 纸里的内容（不该再缩进一次）
-  const nested = sd.querySelector('.paper > .app');  // 误写的那种：第二层又套一个 .app
+  const bar = sd.querySelector('.topbar');           // 页顶那一行（自带 --content-w）
+  const paper = sd.querySelector('.paper');          // 纸里的内容（不该再缩进一次）
+  const leaf = sd.querySelector('.app');        // 一列纸那一层（缩进的唯一正当来源）
+  const nested = sd.querySelector('.nested > .app');  // 误写的那种：又套一层 .app
 
-  chk(insets(sw, sd, paper) === insets(sw, sd, bar),
-    '一列纸里的内容与页顶那一行缩进**层数相同**（实际 ' +
-    insets(sw, sd, paper) + ' / ' + insets(sw, sd, bar) + '）—— ' +
-    '任一方多一层，画出来就是「卡片比顶栏窄一条边」');
+  // ⚠️ 判据是「纸里的内容**正好**等于一列纸那一层」，不是与顶栏相等 ——
+  //    顶栏天然多一层（它自己那条 --content-w），拿相等当判据是错的前提。
+  chk(insets(sw, sd, paper) === insets(sw, sd, leaf),
+    '纸里的内容正好只缩进一列纸那一层（实际 ' +
+    insets(sw, sd, paper) + ' / ' + insets(sw, sd, leaf) + '）—— ' +
+    '这一层是 .app 自己（--col-w），多出来的任何一层都是第二层 .app（#147）');
+  chk(insets(sw, sd, bar) > insets(sw, sd, paper),
+    '页顶那一行自带的 --content-w 不算「多套一层」（实际 ' +
+    insets(sw, sd, bar) + ' > ' + insets(sw, sd, paper) + '）—— ' +
+    '它是顶栏自己的列宽，不是纸里被算了两遍的那条边');
   // ⚠️ 上面那条是**相等**，而顶栏自己就带一层（max-width + margin: auto）——
-  //    所以「真页面」那三条写成 `<=` 时，纸里多套一层也能凑出 2 <= 2 蒙混过去。
+  //    所以「真页面」那几条写成 `<=` 时，纸里多套一层也能凑出 2 <= 2 蒙混过去。
   //    真页面过的这把尺要更严：内容的缩进层数必须**正好**等于一列纸那一层，
   //    多出来的任何一层都是 #147。
-  // 反面样本：纸里再套一层 .app（max-width: var(--col-w) 又算一遍）必须被数出来
+  // ⚠️ 两版这一条都写着「反面样本必须被数出来」，只是**量法相反**：
+  //    一边用 `insets`（宽度 / 内边距），一边用 `.app` 层数（DOM）。
+  //    两把尺子管两件事，所以两条都留下，各自配自己的反面样本：
+  //      · `insets` 那一支：样本挂了样式表，`.app` 的
+  //        `max-width: var(--col-w)` 在 jsdom 里真的量得出来 ——
+  //        「再套一层会多算一层」这句话在这一支上是真的；
+  //      · `appCountOf` 那一支：与布局引擎无关，所以在任何 jsdom 里
+  //        都量得准，是上一支**万一**又变哑时的安全带。
+  // 反面样本一：纸里再套一层 .app（max-width: var(--col-w) 又算一遍）
   chk(insets(sw, sd, nested) > insets(sw, sd, paper),
     '纸里再套一层 .app 会被数出来（实际 ' +
     insets(sw, sd, nested) + ' > ' + insets(sw, sd, paper) + '）—— ' +
     '这条是 #147 的复发线，量不出来这层守卫就是空的');
+  // 反面样本二：同一件事换算 `.app` 层数，必须正好多一个
+  chk(appCountOf(sd, nested) === appCountOf(sd, paper) + 1,
+    '反面样本换个口径也对得上：纸里多套一层 .app → 多算一个（实际 ' +
+    appCountOf(sd, nested) + ' / ' + appCountOf(sd, paper) + '）—— ' +
+    '这一支与布局引擎无关，保证上面那把尺子不是哑的');
+  // 同一路径上的两个量点必须落在同一份结构上（顶栏住在纸里，不在纸外）
+  chk(appCountOf(sd, bar) === appCountOf(sd, paper),
+    '页顶那一行与纸里的内容处在同一层 .app 上（实际 ' +
+    appCountOf(sd, bar) + ' / ' + appCountOf(sd, paper) + '）—— ' +
+    '量点与被量点共用一个祖先，两个数才可比');
 
   // 真正的页面也要过同一把尺
   for (const [file, url, sel] of [
@@ -746,19 +811,42 @@ if (!JSDOM) {
   ]) {
     const d2 = styled(file, url);
     const dd = d2.window.document;
-    const n = insets(d2.window, dd, dd.querySelector(sel));
+    const box = dd.querySelector(sel);
+    // 两把尺子都量：「宽度 / 内边距缩进」（insets）与 `.app` 层数（appCountOf）。
+    // ⚠️ 原先这里量的是「宽度 / 内边距缩进」，而那把尺子在**没挂样式表**的
+    //    jsdom 里量不到任何东西（详见 `insets` 的注释）。现在样本走 `styled()`
+    //    把样式表真的挂进去了，两把尺子才都量得准 —— 于是两条都留下来，
+    //    一条守「缩进正好等于一列纸那一层」，一条守「一个 `.app` 都没多套」。
+    const n = insets(d2.window, dd, box);
     const m = insets(d2.window, dd, dd.querySelector('.topbar'));
     // 一列纸（.app）那一层：全站唯一一个有权收窄宽度的盒子
     const paperN = insets(d2.window, dd, dd.querySelector('.app'));
+    const na = appCountOf(dd, box);
+    const ma = appCountOf(dd, dd.querySelector('.topbar'));
     chk(n <= m,
-      file + ' 里 ' + sel + ' 的缩进层数不多于页顶那一行（实际 ' + n + ' / ' + m + '）—— ' +
+      file + ' 里 ' + sel + ' 套的 .app 不多于页顶那一行（实际 ' + n + ' / ' + m + '）—— ' +
       '页顶与内容必须落在同一条竖轴上');
     chk(n === paperN,
       file + ' 里 ' + sel + ' 的缩进层数正好等于一列纸那一层（实际 ' + n + ' / ' + paperN + '）—— ' +
       '多出来的一层就是第二层 .app，卡片会比顶栏窄一条边（#147）');
+    // 同一件事换算 `.app` 层数：页顶上下的内容必须套一样多的纸
+    chk(na === ma,
+      file + ' 里 ' + sel + ' 套的 .app 与页顶那一行一样多（实际 ' + na + ' / ' + ma + '）—— ' +
+      '多出来的一层 .app 就是把「一列纸」的宽度算了两次（#147）');
+    // ⚠️ 反面样本：给内容自己再套一层 .app（源码断言抓不到的那种写法），
+    //    上面两条必须变红 —— 否则它们只是「数出来总是 1」的空规则。
+    //    （2026-09-15：上一版恒红正是因为判据把每个元素都数成一层，
+    //      红与绿都与 DOM 无关；这里把「这把尺子真的有牙」写进断言。）
+    const probe = dd.createElement('div');
+    probe.className = 'app';
+    box.appendChild(probe);
+    chk(appCountOf(dd, probe) === ma + 1,
+      file + ' 的反面样本被数出来了（给内容多套一层 .app → ' + appCountOf(dd, probe) +
+      ' / 页顶 ' + ma + '）—— 这把尺子不是空的');
+    // ⚠️ 探针只加不改：量完就摘掉，别把被测页面留在改动过的状态里。
+    probe.remove();
   }
 }
-
 
 /* ==========================================================================
    十、顶栏右端是**固定位**：返回键与头像不随页名长短移动（Issue #147）
