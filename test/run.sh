@@ -32,6 +32,12 @@
 #                          与首页副标题跟随（Issue #114 后续）
 #   3p. 账号与随机码认证 —— 纯 Node，邮箱归一化 / 发码频控 / 单次使用 /
 #                          过期 / 锁定 / 时间倒退 / 退化随机源不死循环（Issue #132）
+#   3v. 服务端账号接口  —— 纯 Node + 本机 http（不联网、不装新依赖）：1A 期的
+#                          六个接口（send-code / verify-code / me / sync·pull /
+#                          sync·push / account）与发信适配层。守的是 docs §4.3
+#                          那份 checklist：明文码不进日志、权益只从 /api/me 来、
+#                          写接口都有频控、响应不透露邮箱是否存在、会话是
+#                          HttpOnly Cookie、注销即删除、sw.js 不缓存 /api/*
 #   3q. 权益分层与语音门 —— 纯 Node，free/pro/max 功能矩阵的唯一出口 can()、
 #                          登录是语音播放的硬条件、放行后 stop/pause 不受门限制、
 #                          页面上不许自己拼 plan（Issue #132）
@@ -187,6 +193,10 @@ node test/auth.test.js
 echo ""
 echo "=== 权益分层与语音播放门（free/pro/max，Issue #132）==="
 node test/entitlement.test.js
+
+echo ""
+echo "=== 服务端账号接口（/api/* · 发信适配层 · 1A 期，Issue #132）==="
+node test/api.test.js
 
 echo ""
 echo "=== 字符印头像（Issue #132 · 三档回落 / 分域 / 合规）==="

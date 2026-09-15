@@ -1,4 +1,4 @@
-const CACHE_NAME = "poem-app-v119";
+const CACHE_NAME = "poem-app-v120";
 
 const PRECACHE = [
   "./",
@@ -36,6 +36,7 @@ const PRECACHE = [
   "./js/pinyin.js",
   "./js/progress-store.js",
   "./js/auth-core.js",
+  "./js/auth-api.js",
   "./js/entitlement.js",
   "./js/avatar.js",
   "./js/speech.js",
@@ -130,6 +131,8 @@ self.addEventListener("fetch", function (event) {
   if (req.method !== "GET") return;
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
+
+  if (url.pathname === "/api" || url.pathname.startsWith("/api/")) return;
 
   if (req.mode === "navigate") {
     const pageUrl = req.url.split("#")[0].split("?")[0];

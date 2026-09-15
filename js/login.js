@@ -10,8 +10,11 @@
  * 而漂移出来的 bug 恰好都是最敏感的账号问题。
  *
  * 三条刻意的做法：
- *   1. **不假装有服务器**：本期没有后端，码由本机生成，界面如实标注
+ *   1. **不假装有服务器**：有服务端时真的走服务端（`js/auth-api.js`），
+ *      没有（没配好 / 连不上 / 断网）才回落本机，并如实标注
  *      「本地体验版」，绝不写成「邮件已发出」（docs/auth-design.md §7.1）
+ *      —— 1A 期之前只有一个「本机」分支，现在多了一个**真服务端**分支，
+ *      两条路的判据只有一处：`api.degraded()`
  *   2. **错误码→文案只映射一次**：内核返回的 `message` 就是给用户看的话，
  *      本页**不重写一份**。重写就意味着「内核改了口径、界面还是老话」。
  *   3. **只读不写**：本页只碰 `poem_auth_v1`（会话/码）与 `poem_profile_v1`
@@ -27,6 +30,26 @@
   var backing = null;
   try { backing = window.localStorage; } catch (e) { backing = null; }
   var store = A && A.makeStore ? A.makeStore(backing) : null;
+
+  /* 服务端通道（1 期 · 1A 期）。**没配好 / 连不上 / 断网**时整体降级为
+     「本地体验版」：那时下面的每一个分支都回落到内核的本机实现，
+     界面上多一行如实说明，其余一字不改（docs §4.6 第 1 条）。 */
+  var api = (window.AuthApi && window.AuthApi.supported()) ? window.AuthApi.create({
+    // 设备标识由内核发；取不到（隐私模式 / 还没建过会话）就留空，
+    // 服务端会退回按 IP 分桶 —— 绝不在这里现编一个 id
+    deviceId: (function () {
+      try { return (store && store.read().deviceId) || ""; } catch (e) { return ""; }
+    })()
+  }) : null;
+
+  /**
+   * 这一屏走的是哪条路。
+   *   true  = 本机体验版（没有服务端，或它现在不可用）
+   *   false = 服务端（真发信、真会话）
+   * ⚠️ 判据**只有这一处**：别在别的分支里各写一遍 `if (api)`，
+   *    那种写法在「服务端先成功、后失败」时会两处不一致。
+   */
+  function isLocal() { return !api || api.degraded(); }
 
   /* 本页状态（**不进 localStorage**：它只是「这一屏画到哪一步」） */
   var state = {
@@ -174,15 +197,76 @@
 
   /* ------------------------------------------------------------ 发码 */
 
+  /**
+   * 发码。**两条路只有一处入口**：
+   *   · 服务端可用 → 走 `POST /api/send-code`（真发信，码在服务端）
+   *   · 服务端没配好 / 连不上 → 回落内核的本机实现（「本地体验版」）
+   *
+   * ⚠️ 回落是**静默**的：连不上服务端不是用户的问题，
+   *    不该弹一次错误、更不该打断他。界面上多一行如实说明即可。
+   * ⚠️ 回落之后**绝不**把本机生成的码说成「已发送」——
+   *    这正是 docs/auth-design.md §7.1 那条「不假装有服务器」。
+   */
   function sendCode(purpose) {
     if (!store) { msg(purpose === "login" ? "msg-email" : "msg-reset", "浏览器不允许保存数据，本次登录刷新后会失效", "warn"); }
     var inputId = purpose === "login" ? "input-email" : "input-reset-email";
     var msgId = purpose === "login" ? "msg-email" : "msg-reset";
     var email = (($(inputId) || {}).value || "").trim();
 
+    // 先按内核的规矩就地校验一遍：格式错的邮箱**不用**打扰服务端
+    // （也就不会因为一次手滑消耗掉服务端的一格频控额度）
+    var shaped = A.isEmailShape(A.normalizeEmail(email));
+    if (!shaped) {
+      msg(msgId, email ? A.ERR.E_EMAIL_FORMAT : A.ERR.E_EMAIL_EMPTY, "warn");
+      return Promise.resolve(null);
+    }
+
+    if (api && !api.degraded()) return sendCodeRemote(purpose, email, msgId);
+
+    return Promise.resolve(sendCodeLocal(purpose, email, msgId));
+  }
+
+  /** 服务端那条路 */
+  function sendCodeRemote(purpose, email, msgId) {
+    return api.sendCode({ email: email, purpose: purpose }).then(function (r) {
+      if (!r.ok) {
+        // 服务端不可用（没配好 / 断网 / 超时）→ 静默回落本机，用户无感
+        if (r.code === "E_NOT_CONFIGURED" || r.code === "E_OFFLINE" || r.code === "E_TIMEOUT") {
+          msg(msgId, r.message, "warn");
+          return sendCodeLocal(purpose, email, msgId);
+        }
+        if (r.retryAfter) {
+          state.cooldown = Date.now() + r.retryAfter * 1000;
+          startTick(codeBoxes);
+        }
+        // 服务端明确回绝（频控 / 格式错）：这一屏**还没决定**走哪条路，
+        // 两块说明都收起来 —— 摆着「本机体验版」而实际是服务端在管，
+        // 等于给用户一个错的解释。
+        hideNotes();
+        msg(msgId, r.message, "warn");
+        return null;
+      }
+
+      // 服务端不回明文码（除非开了冒烟模式），所以 state.code 留空 ——
+      // 界面因此**不会**出现「抄下这串码」那一块，这是对的
+      state.purpose = purpose;
+      state.codeId = r.codeId;
+      state.code = r.devCode || "";
+      state.sentTo = A.maskEmail(email);
+      state.expiresAt = r.expiresAt;
+      state.cooldown = Date.now() + (r.cooldown || 60) * 1000;
+      state.remote = true;
+      return afterSent(purpose, r.delivered ? "已发往 " + state.sentTo : "已生成随机码，将发往 " + state.sentTo,
+        r.delivered ? "验证码已发出" : "已生成随机码");
+    });
+  }
+
+  /** 本机那条路（没有服务端，或它现在不可用） */
+  function sendCodeLocal(purpose, email, msgId) {
+    if (purpose === "login") state.remote = false;
     var r = A.requestCode(store, { channel: "email", value: email }, purpose, {
-      // ⚠️ 本期没有服务端，码只能由本机生成 —— 这是「本地体验版」的全部含义。
-      //    有服务端之后这一个参数就删掉，改成等接口返回。
+      // ⚠️ 本机版：码由浏览器生成。这是「本地体验版」的全部含义，
+      //    界面必须如实标注，不能与真发信混为一谈。
       code: undefined
     });
 
@@ -203,22 +287,22 @@
     } else {
       msg(msgId, "");
     }
-    return r;
+    state.remote = false;
+    return afterSent(purpose, "随机码已生成，将发往 " + r.sentTo,
+      r.isNewAccount ? "这是一封新账号的随机码" : "已生成随机码");
   }
 
-  var codeBoxes = [];
-
-  function onSend() {
-    var r = sendCode("login");
-    if (!r) return;
-    state.purpose = "login";
-    state.codeId = r.codeId;
-    state.code = r.code;
-    state.sentTo = r.sentTo;
-    state.expiresAt = r.expiresAt;
-    state.cooldown = Date.now() + r.cooldown * 1000;
-
-    text($("code-sent-to"), "随机码已生成，将发往 " + r.sentTo);
+  /**
+   * 码已出去（或本机已生成）之后，两条路共用的收尾：
+   * 换屏、清空输入格、起倒计时、给一句 toast。
+   * ⚠️ 合成一处，是为了「服务端版忘了一件事、本机版记住了」这类漂移不再可能。
+   */
+  function afterSent(purpose, sentToLine, toast) {
+    showToast(toast);
+    // 本地体验版那两块「复制码 / 自己发信」的按钮只在真·本机版出现
+    renderLocalOnlyTools();
+    if (purpose !== "login") return true;      // 「重设凭证」那一块自己有换屏逻辑
+    text($("code-sent-to"), sentToLine);
     hide($("step-email"));
     show($("step-code"));
     hide($("step-done"));
@@ -226,12 +310,54 @@
     setCode(codeBoxes, "");
     if (codeBoxes[0]) codeBoxes[0].focus();
     startTick(codeBoxes);
-    // 本地体验版：**不写成「已发送」** —— 没有服务器，发不出去
-    showToast(r.isNewAccount ? "这是一封新账号的随机码" : "已生成随机码");
+    return true;
+  }
+
+  /**
+   * 「复制码 / 用邮件发给自己」这两颗按钮只在**本机版**画出来。
+   * 服务端版里码在用户邮箱里，摆这两颗按钮是自相矛盾的
+   * （既没有码可复制，也不该让用户「自己发给自己」）。
+   */
+  /** 两块说明都收起来（发码还没决定走哪条路时用） */
+  function hideNotes() {
+    var localNote = $("local-note"), remoteNote = $("remote-note"), tools = $("code-tools");
+    if (localNote) localNote.hidden = true;
+    if (remoteNote) remoteNote.hidden = true;
+    if (tools) tools.hidden = true;
+  }
+
+  function renderLocalOnlyTools() {
+    var local = isLocal();
+    var copy = $("btn-copy-code"), mailBtn = $("btn-mail-code");
+    var tools = $("code-tools"), localNote = $("local-note"), remoteNote = $("remote-note");
+    if (copy) copy.hidden = !local;
+    if (mailBtn) mailBtn.hidden = !local;
+    if (tools) tools.hidden = !local;          // 一整行都收起来，不留空档
+    if (localNote) localNote.hidden = !local;
+    // ⚠️ 两个说明**互斥**：本机版不许出现「进度会上传到服务器」，
+    //    服务端版也不许出现「本应用没有服务器」——
+    //    任一情况下摆错一句，都等于对用户说谎（docs §1 第 3 条）。
+    if (remoteNote) remoteNote.hidden = local;
+  }
+
+  var codeBoxes = [];
+
+  function onSend() {
+    return sendCode("login");
   }
 
   /* ------------------------------------------------------------ 校验 */
 
+  /**
+   * 校验码。与发码一样是**两条路**：
+   *   · `state.remote` 为真 → 走 `POST /api/verify-code`（服务端签会话 Cookie）
+   *   · 否则 → 内核的本机实现
+   *
+   * ⚠️ 判据用 `state.remote`（**这一次发码走的是哪条路**），
+   *    而不是 `api.degraded()`：发码成功之后网络再抖一下，
+   *    用 degraded 判就会把「服务端发出去的码」拿到本机去校验 —— 必然失败，
+   *    而用户看到的是「验证码不对」，完全无从排查。
+   */
   function verify() {
     var digits = readCode(codeBoxes);
     if (digits.length < A.CODE_LEN) {
@@ -242,6 +368,8 @@
       msg("msg-code", A.ERR.E_CODE_EXPIRED, "warn");
       return;
     }
+    if (state.remote) return verifyRemote(digits);
+
     var r = A.verifyCode(store, state.codeId, digits, state.purpose);
     if (!r.ok) {
       msg("msg-code", r.message, "warn");
@@ -251,6 +379,38 @@
       return;
     }
     onSignedIn(r);
+  }
+
+  /** 服务端校验。会话由服务端通过 HttpOnly Cookie 签发，**JS 读不到 token** */
+  function verifyRemote(digits) {
+    return api.verifyCode({ codeId: state.codeId, code: digits }).then(function (r) {
+      if (!r.ok) {
+        if (r.code === "E_OFFLINE" || r.code === "E_TIMEOUT" || r.code === "E_NOT_CONFIGURED") {
+          // 校验这一步**不能**静默回落本机：服务端发出去的码，
+          // 本机根本没有记录，回落只会给出一个必然错的结论。
+          // 如实说「连不上」，并让「重新发送」保持可点。
+          msg("msg-code", r.message, "warn");
+          state.cooldown = 0;
+          startTick(codeBoxes);
+          return;
+        }
+        msg("msg-code", r.message, "warn");
+        if (r.code === "E_CODE_VOID" || r.code === "E_CODE_USED") state.cooldown = 0;
+        startTick(codeBoxes);
+        return;
+      }
+      // 服务端的账号形状与内核不同（多了 mask、少了 identities）——
+      // 统一成内核那一套再交给 onSignedIn，免得下游要判两种形状
+      onSignedIn({
+        account: {
+          uid: r.account.uid,
+          nickname: r.account.nickname || "",
+          identities: [{ channel: "email", mask: r.account.mask || "" }],
+          createdAt: 0, lastLoginAt: 1
+        },
+        remote: true
+      });
+    });
   }
 
   /**
@@ -268,9 +428,10 @@
     show($("step-done"));
 
     var isNew = !r.account.lastLoginAt || r.account.lastLoginAt === r.account.createdAt;
-    text($("done-lead"), (isNew ? "账号已在本机建好。" : "登录成功。") +
+    text($("done-lead"), (isNew ? (r.remote ? "账号已建好。" : "账号已在本机建好。") : "登录成功。") +
       "层级 " + (Ent ? Ent.tierLabel(Ent.identity().tier) : "Free") +
-      "，记在 " + (r.account.identities[0] ? r.account.identities[0].mask : "") + "。");
+      "，记在 " + (r.account.identities[0] ? r.account.identities[0].mask : "") + "。"
+      + (r.remote ? "进度会保存到服务器，以便跨设备同步（可在设置里关掉）。" : ""));
 
     // 昵称：先把已有的填上（老用户回来了，别让他以为名字丢了）
     var nickInput = $("input-nickname");
@@ -279,10 +440,12 @@
       nickInput.value = cur || "";
       nickInput.focus();
     }
-    if (r.isLocalOnly) {
+    if (r.remote) {
+      showToast("登录成功：进度已可跨设备同步");
+    } else if (r.isLocalOnly) {
       showToast("浏览器不允许保存数据：本次登录刷新后会失效");
     } else {
-      showToast("登录成功");
+      showToast("登录成功（本机体验版）");
     }
   }
 
@@ -328,18 +491,20 @@
   /* ------------------------------------------------------------ 重设凭证 */
 
   function onResetSend() {
-    var r = sendCode("reset");
-    if (!r) return;
-    state.purpose = "reset";
-    state.codeId = r.codeId;
-    state.code = r.code;
-    state.sentTo = r.sentTo;
-    state.expiresAt = r.expiresAt;
-    var boxes = buildCodeRow("reset-code-row");
-    show($("reset-code-row"));
-    show($("btn-reset-verify"));
-    if (boxes[0]) boxes[0].focus();
-    msg("msg-reset", "随机码已生成，将发往 " + r.sentTo + "（与登录的码不通用）");
+    var email = (($("input-reset-email") || {}).value || "").trim();
+    // ⚠️ 与登录那条路共用 sendCode：`state.codeId / sentTo / expiresAt` 都在
+    //    那里统一填好。这里只负责「重设凭证」这一块自己的换屏与说明。
+    return Promise.resolve(sendCode("reset")).then(function (r) {
+      if (!r) return;
+      state.purpose = "reset";
+      var boxes = buildCodeRow("reset-code-row");
+      show($("reset-code-row"));
+      show($("btn-reset-verify"));
+      if (boxes[0]) boxes[0].focus();
+      msg("msg-reset", (isLocal() ? "随机码已生成，将发往 " : "随机码已发往 ")
+        + state.sentTo + "（与登录的码不通用）");
+      void email;
+    });
   }
 
   function onResetVerify() {

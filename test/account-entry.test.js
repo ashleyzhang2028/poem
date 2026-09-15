@@ -259,7 +259,98 @@ function repaint(p) {
     '登录页与个人中心都不挂底部页签（专心做完一件事，免得误触跳走）');
 }
 
-/* ================= 七、离线与文档 ================= */
+/* ================= 七、登录页的两条路（1A 期：服务端 + 本机回落）=================
+   1A 之前这张页只有一个「本机」分支，源码扫描就够。
+   现在它有**两条**路，而「走哪条」是运行时才定的 —— 扫描看不见，
+   必须起真页面、塞一个假 fetch 跑一遍。
+
+   判的只有一件事：**说明与走向必须一致**。
+     · 摆着「本应用没有服务器」而实际在跟服务器说话 —— 说谎
+     · 摆着「进度会上传到服务器」而其实全在本机 —— 也说谎
+   两条都发生过（本机版是上一轮，服务端版是这一轮新加的），所以两条都守。
+   ========================================================================= */
+{
+  const fsMod = require('fs');
+  const pathMod = require('path');
+  const ROOT = pathMod.join(__dirname, '..');
+
+  const boot = (fetchImpl) => {
+    const d = new JSDOM(read('login/index.html'),
+      { url: 'https://local.test/login/', runScripts: 'outside-only', pretendToBeVisual: true });
+    const W = d.window;
+    if (fetchImpl) W.fetch = fetchImpl;
+    ['js/auth-core.js', 'js/auth-api.js', 'js/entitlement.js', 'js/avatar.js', 'js/login.js']
+      .forEach(f => W.eval(fsMod.readFileSync(pathMod.join(ROOT, f), 'utf8')));
+    // jsdom 构造时 readyState 是 loading，page 脚本把 init 挂在 DOMContentLoaded 上等
+    W.document.dispatchEvent(new W.Event('DOMContentLoaded'));
+    return W;
+  };
+  const send = (W, email) => {
+    W.document.getElementById('input-email').value = email || 'a@b.com';
+    W.document.getElementById('btn-send').click();
+    return new Promise(r => setTimeout(r, 60)).then(() => W.document);
+  };
+
+  const W1 = boot(async (u) => u.endsWith('/send-code')
+    ? { status: 202, text: async () => JSON.stringify({ codeId: 'c_1', expiresAt: Date.now() + 6e5, cooldown: 60, transport: 'sendgrid', delivered: true, store: 'supabase' }) }
+    : { status: 404, text: async () => '{}' });
+  const W2 = boot(async () => ({ status: 503, text: async () => '{"code":"E_NOT_CONFIGURED"}' }));
+  const W3 = boot(async () => { throw new Error('boom'); });
+  const W4 = boot(null);
+  const W5 = boot(async () => ({
+    status: 429, text: async () => '{"code":"E_RATE_EMAIL","retryAfter":42,"message":"发得太快了，请稍后再试"}'
+  }));
+
+  Promise.all([send(W1), send(W2), send(W3), send(W4), send(W5)]).then(([d1, d2, d3, d4, d5]) => {
+    const n = d => ({
+      local: d.getElementById('local-note').hidden,
+      remote: d.getElementById('remote-note').hidden,
+      tools: d.getElementById('code-tools').hidden
+    });
+
+    chk(n(d1).remote === false && n(d1).local === true,
+      '服务端可用：只摆「进度会保存到服务器」，不摆「本应用没有服务器」');
+    chk(n(d1).tools === true, '服务端可用：收起「复制随机码 / 自己发信」（码在用户邮箱里）');
+    chk(/已发往/.test(d1.getElementById('code-sent-to').textContent),
+      '服务端可用：文案是「已发往 a***@b.com」');
+
+    [['503 没配好', d2], ['网络异常', d3], ['没有 fetch', d4]].forEach(([label, d]) => {
+      chk(n(d).local === false && n(d).remote === true,
+        label + '：回落本机，如实摆「本应用没有服务器」（不许假装走了服务端）');
+      chk(n(d).tools === false, label + '：露出「复制随机码」（本机版的码只能用户自己保管）');
+      chk(/随机码已生成/.test(d.getElementById('code-sent-to').textContent),
+        label + '：文案是「已生成」而不是「已发送」');
+      chk(d.getElementById('step-code').hidden === false, label + '：仍进填码屏（不打断用户）');
+    });
+
+    chk(n(d5).local === true && n(d5).remote === true,
+      '服务端明确回绝（429）时两块说明都收起来 —— 这一屏还没决定走哪条路');
+    chk(d5.getElementById('step-code').hidden === true, '429 时不进填码屏');
+    chk(/太快/.test(d5.getElementById('msg-email').textContent), '429 如实回显服务端的话');
+
+    /* 源码层：两条路的**判据只能有一处**。
+       各处分别写 `if (api)` 的后果是「服务端先成功、后失败」时两处不一致，
+       而那种 bug 只在网络抖动时出现，肉眼测不出来。 */
+    chk(/function isLocal\(\)/.test(LOGIN_JS), '登录页把「走哪条路」收在一个判据函数里');
+    chk(/AuthApi/.test(LOGIN_JS) && /auth-api\.js/.test(read('login/index.html')),
+      '登录页加载了 js/auth-api.js（通道）');
+    // 传输层必须在登录页脚本之前 —— 加载顺序错了，window.AuthApi 就是 undefined
+    const html = read('login/index.html');
+    chk(html.indexOf('/js/auth-api.js') > 0 &&
+      html.indexOf('/js/auth-api.js') < html.indexOf('/js/login.js'),
+      'js/auth-api.js 排在 js/login.js 之前（顺序错了通道就是 undefined）');
+    chk(/state\.remote/.test(LOGIN_JS),
+      '校验那一步按「这次发码走的是哪条路」判（不是按 degraded()）');
+
+    console.log('\n' + (fails ? '❌ ' + fails + ' 项失败' : '🎉 账号入口动线测试全部通过'));
+    process.exit(fails ? 1 : 0);
+  }).catch(e => {
+    console.log('✗ 登录页两条路断言自身抛异常：' + e.message);
+    process.exit(1);
+  });
+}
+
+/* ================= 八、离线与文档 ================= */
 {
   chk(/\.\/settings\//.test(SW) && /\.\/js\/settings-nav\.js/.test(SW),
     '设置主页与 js/settings-nav.js 都在预缓存清单里');
@@ -272,5 +363,3 @@ function repaint(p) {
   chk(/账号入口|用邮箱登录|个人中心/.test(readme), 'README 里能查到账号入口在哪');
 }
 
-console.log('\n' + (fails ? '❌ ' + fails + ' 项失败' : '🎉 账号入口动线测试全部通过'));
-process.exit(fails ? 1 : 0);
