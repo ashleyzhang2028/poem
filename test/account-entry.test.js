@@ -182,7 +182,10 @@ function repaint(p) {
   const out = box ? stripHtml(box.innerHTML) : '';
   chk(/未登录/.test(out), '未登录时如实写「未登录」');
   chk(/btn-entry-login/.test(out) && /href="\/login\/"/.test(out), '未登录时给的是去 /login/ 的入口');
-  chk(/语音朗读/.test(out) && /免费/.test(out), '顺手说明语音朗读登录后免费（未登录唯一真的用不了的现有功能）');
+  // 精简后这句话只剩一句「进度只存在本机，清缓存就没了。登录只为不丢。」——
+  // 「语音朗读要登录」改由个人中心那张引导卡说（那才是用户会落地的地方），
+  // 这里只钉住「把建账号的**目的**说清」，不再要求它顺带列功能。
+  chk(/清缓存/.test(out), '顺手说清建账号的目的（进度不随清缓存丢掉）');
   chk(/Free/.test(out), '未登录也是 Free 徽章（徽章文案由 Entitlement.tierLabel 出，不自己拼）');
   chk(!/btn-entry-profile/.test(out), '未登录时不给「个人中心」（那条路走不到东西）');
 

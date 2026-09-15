@@ -362,7 +362,7 @@ setTimeout(() => {
     const sub0 = (d.querySelector('#duelist-sub') || {}).textContent || '';
     chk(sub0.indexOf('今天 ' + cells[0].querySelector('.cal-count').textContent + ' 篇') >= 0,
       '汇总行的「今天 N 篇」与日历今天那一格同数（实际「' + sub0 + '」）');
-    chk(sub0.indexOf('逾期超过一周 1 篇') >= 0,
+    chk(sub0.indexOf('逾期超一周 1 篇') >= 0,
       '汇总行把逾期超过一周的单独说一句，不混进「今天」（实际「' + sub0 + '」）');
 
     /* 日历格子可点（要跳得下来），且挂着 role=button */

@@ -157,8 +157,7 @@
         '<div class="account-entry-card" data-state="out">' +
         '<p class="account-entry-line">' +
         '<span class="account-entry-sub">未登录（游客）</span>' + badge + "</p>" +
-        '<p class="settings-hint">不登录也能用全部功能；语音朗读登录后免费。' +
-        "账号只让进度不随清缓存丢掉。</p>" +
+        '<p class="settings-hint">进度只存在本机，清缓存就没了。登录只为不丢。</p>' +
         '<div class="settings-btns">' +
         '<a class="btn ghost-btn" id="btn-entry-login" href="/login/">用邮箱登录</a>' +
         "</div></div>";

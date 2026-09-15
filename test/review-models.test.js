@@ -51,8 +51,10 @@ chk(RM.known('') === false && RM.modelOf('不存在').key === 'ebbinghaus',
 /* 每张模型的「自我介绍」齐备：名字 / 副标题 / 出处 / 一句话取舍 */
 RM.keys().forEach(k => {
   const d = RM.describe(k);
-  chk(d.name && d.sub && d.years && d.blurb.length > 20,
-    '「' + k + '」的说明齐备（' + d.name + ' · ' + d.years + '）');
+    // blurb 是「一句取舍」：精简后长度收到一句以内（> 8 字才叫说明，> 40 字就又是散文）。
+  // 长度上限那一半在 test/account-pages.test.js 的文案守卫里也钉了一遍。
+  chk(d.name && d.sub && d.years && d.blurb.length > 8 && d.blurb.length <= 40,
+    '「' + k + '」的说明齐备且只有一句（' + d.name + ' · ' + d.years + '）');
 });
 chk(RM.subFor('ebbinghaus') === '按遗忘曲线复习' &&
   RM.subFor('sm2') === '按 SM-2 复习' &&

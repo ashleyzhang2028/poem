@@ -396,7 +396,7 @@
     const text = window.ReciteCollections.exportText(col.id, labels);
     textDialog({
       title: "导出「" + col.name + "」",
-      tip: "全选复制即可发出去。对方打开跬步 → 设置 → 我的清单 → 导入，粘贴进来就是同一个清单。",
+      tip: "全选复制即可发出去；对方在同一页导入。",
       text: text,
       readOnly: true,
       okText: "下载为文本",
@@ -412,7 +412,7 @@
   function importCollection() {
     textDialog({
       title: "导入清单",
-      tip: "把清单文本粘贴进来（一行一条，以 # 开头的是说明行，会跳过）。导入会新建一个集合，不动你已有的那几个。",
+      tip: "一行一条，# 开头的是说明行，会跳过。导入会新建一个集合，不动已有的。",
       text: "",
       okText: "导入",
       onOk: function () {
@@ -451,8 +451,8 @@
     const tip = $("#collections-tip");
     if (tip) {
       tip.textContent = total
-        ? "与课内诗词一起按遗忘曲线复习。到集子页或搜索页点书签即可再加；↑↓ 调顺序。"
-        : "还没有自选篇目。到「课外」任一集子或「搜索」页，点篇目右边的书签加进来。";
+        ? "与课内诗词一起排进每日任务；↑↓ 调顺序。"
+        : "到任一集子页或搜索页点篇目右边的书签即可加进来。";
     }
 
     // 一个集合都没有时也留着「导入」—— 家长发来一串清单，
@@ -625,7 +625,7 @@
       } else if (did) {
         const col = window.ReciteCollections.get(did);
         if (!col) return;
-        if (!window.confirm("删除集合「" + col.name + "」？它里面的 " + col.items.length + " 篇也会一并移出背诵。")) return;
+        if (!window.confirm("删除集合「" + col.name + "」？里面的 " + col.items.length + " 篇也会移出背诵。")) return;
         window.ReciteCollections.remove(did);
         renderCollections();
         showToast("已删除「" + col.name + "」");
@@ -666,7 +666,7 @@
     const m = RM.describe(cur);
     const hint = $("#algo-hint");
     if (hint) {
-      hint.textContent = "当前：" + m.name + " · 换算法不清进度（按最接近的落点接手）";
+      hint.textContent = "当前：" + m.name + " · 换算法不清进度";
     }
     const iv = $("#algo-interval");
     if (iv) iv.textContent = intervalText(cur);
@@ -679,10 +679,10 @@
    *    不是一张固定表；写错比不写更误导。
    */
   function intervalText(key) {
-    if (key === "leitner") return "五个盒子：1 / 2 / 4 / 8 / 16 天，答对往后挪一盒、答错退回第一盒";
-    if (key === "sm2") return "间隔 × 简易度：1 → 3 → 7 天，之后每次乘简易度（出厂 2.5，最低 1.3）";
-    if (key === "fsrs") return "按稳定天数 S 算：曲线衰减到九成时到期，越稳固间隔越长";
-    return "固定表：当天 → 1 → 2 → 4 → 7 → 15 → 30 → 60 → 120 → 240 天";
+    if (key === "leitner") return "五个盒子：1 / 2 / 4 / 8 / 16 天";
+    if (key === "sm2") return "1 → 3 → 7 天，之后每次乘简易度";
+    if (key === "fsrs") return "按稳定天数算：越稳固间隔越长";
+    return "当天 → 1 → 2 → 4 → 7 → 15 → 30 → 60 → 120 → 240 天";
   }
 
   /**
@@ -762,10 +762,12 @@
         "</button>";
     }).join("");
 
+    /* 只回显档位短名 —— mode.note（「无译文的篇目自动跳过」那类）已经印在
+       选项自己身上，这里再说一遍是同页两遍。 */
     const hint = $("#play-hint");
     if (hint) {
       const m = PM.of(cur) || PM.of(PM.DEFAULT);
-      hint.textContent = "当前：" + m.short + (m.note ? "（" + m.note + "）" : "");
+      hint.textContent = "当前：" + m.short;
     }
   }
 
@@ -843,8 +845,7 @@
     if (hint) {
       const from = cur.source === "chosen" ? "你选的字"
         : (cur.source === "nickname" ? "取自昵称首字" : "默认字");
-      hint.textContent = "当前：" + cur.char + "字 · " + A.INKS[cur.ink].name +
-        "（" + from + "）· 只存本机";
+      hint.textContent = "当前：" + cur.char + "字 · " + A.INKS[cur.ink].name + " · " + from;
     }
   }
 
@@ -898,8 +899,7 @@
       box.innerHTML =
         '<p class="account-line"><span class="account-state" id="account-state">未登录</span>' +
         "（游客）" + badge + "</p>" +
-        '<p class="settings-hint">不登录也能用全部功能；没登录时学习进度<strong>只存在本机</strong>。' +
-        "账号只让进度不随清缓存丢掉。</p>" +
+        '<p class="settings-hint">进度只存在本机，清缓存就没了。登录只为不丢。</p>' +
         '<div class="settings-btns"><a class="btn ghost-btn" id="btn-gologin" href="/login/">用邮箱登录</a></div>';
       return;
     }
@@ -920,12 +920,12 @@
       '<div class="settings-btns">' +
       '<a class="btn ghost-btn" id="btn-goprofile" href="/profile/">个人中心</a>' +
       '<button class="btn ghost-btn" id="btn-signout" type="button">退出登录</button></div>' +
-      '<p class="settings-hint">退出只结束这次登录，不删背诵进度；注销在个人中心里做。</p>' +
+      '<p class="settings-hint">退出不删进度；注销在个人中心。</p>' +
       /* 层级是**谁定的** —— 如实标出来。服务端判定那份改不了，
          本机登记那份改一行存储就能改，两者在用户眼里的分量完全不同
          （docs §3.4 的口径）。 */
-      '<p class="settings-hint" id="account-tier-src">当前层级：' +
-      esc(ident.tierSource === "server" ? "由服务器判定" : "本机登记") + "</p>";
+      '<p class="settings-hint" id="account-tier-src">层级来源：' +
+      esc(ident.tierSource === "server" ? "服务器" : "本机登记") + "</p>";
   }
 
   /** 「退出登录」：只清会话，不碰进度 */
@@ -933,7 +933,7 @@
     const btn = $("#btn-signout");
     if (!btn) return;
     btn.addEventListener("click", function () {
-      if (!window.confirm("退出登录？背诵进度不会受影响。")) return;
+      if (!window.confirm("退出登录？进度不受影响。")) return;
       const A = authMod();
       const S = syncMod();
       try {
@@ -990,7 +990,7 @@
     if (label) label.textContent = st === "unavailable" ? "未开放" : (on ? "开" : "关");
 
     if (st === "unavailable") {
-      hint.textContent = "本站还没有开放云端同步，进度始终只存本机。";
+      hint.textContent = "本站未开放同步，进度只存本机。";
       return;
     }
     if (!on) {
@@ -998,11 +998,10 @@
       return;
     }
     if (st === "signin") {
-      hint.textContent = "已开启，但还没登录 —— 登录后才会真的同步";
+      hint.textContent = "已开启，登录后才会真的同步。";
       return;
     }
-    hint.textContent = "开启中：进度与账号域设置会同步到服务器，可随时关掉；" +
-      "本机那份始终完整，断网照常背。设备偏好（字号、注音、连读）不上传。";
+    hint.textContent = "开启中：进度与账号设置会同步；本机那份始终完整，断网照常背。";
   }
 
   /** 开 / 关同步：**关掉只停上传**，绝不删本机数据 */

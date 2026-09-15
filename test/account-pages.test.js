@@ -149,6 +149,8 @@ const LOGIN = strip(loginJs), PROFILE = strip(profileJs), ADMIN = strip(adminJs)
 {
   // 本期没有后端，码由本机生成 —— 界面必须如实标注，绝不许写成「邮件已发出」
   chk(/本地体验版/.test(SRC.login), '登录页如实标注「本地体验版」');
+  // 精简后那句长成一行短的：只说事实（没有服务器、码由本机生成），
+  // 但这一条事实**一个字都不许省** —— 它是「不假装」那条纪律的落点。
   chk(/没有服务器/.test(SRC.login), '登录页如实写明「本应用没有服务器」');
   chk(!/邮件已发送|验证码已发送|已发送到你的邮箱|已发送至/.test(SRC.login),
     '登录页不出现「已发送到你的邮箱」这类未实现的说法');
@@ -183,12 +185,12 @@ const LOGIN = strip(loginJs), PROFILE = strip(profileJs), ADMIN = strip(adminJs)
   });
   // 个人中心的「退出」必须只清会话
   chk(/AuthCore\.signOut|A\.signOut/.test(PROFILE), '个人中心的退出走 AuthCore.signOut()（只清会话）');
-  chk(/不会删掉任何背诵进度/.test(SRC.profile), '界面上如实写「退出不会删掉任何背诵进度」');
+  chk(/退出不删进度/.test(SRC.profile), '界面上如实写「退出不删进度」（长句精简后事实保留）');
   // 注销必须二次确认
   chk(/delete-step-1/.test(SRC.profile) && /delete-step-2/.test(SRC.profile),
     '注销账号分两步：先说明、再要求重输邮箱');
   chk(/deleteAccount\(store, /.test(PROFILE), '注销走 AuthCore.deleteAccount()（内含邮箱二次确认）');
-  chk(/不删背诵进度/.test(SRC.profile), '注销前如实写明「不删背诵进度」（进度与账号是两回事）');
+  chk(/不动本机背诵进度/.test(SRC.profile), '注销前如实写明「不动本机背诵进度」（进度与账号是两回事）');
 }
 
 /* ================= 六、管理后台的诚实口径 ================= */
@@ -387,6 +389,59 @@ const LOGIN = strip(loginJs), PROFILE = strip(profileJs), ADMIN = strip(adminJs)
     ' 处 —— 身份卡那颗账号入口就是它，下面不该再摆一颗「建账号」）');
   chk(/btn-account-entry/.test(SRC.profile) && /btn-account-entry/.test(PROFILE),
     '个人中心靠身份卡那颗 #btn-account-entry 承担去 /login/ 的动线');
+}
+
+/* ================= 十二、没有一句「废话」：文案守卫（Issue #163 再次清理） ================= */
+{
+  /* 用户第二次提这件事时点的是具体句子：
+       「不登录也能用全部功能。建账号只为让进度不随清缓存丢掉。
+         输邮箱 → 收码 → 填码，没有账号就建、有就登录。」
+       —— 这是登录页顶上那段**三句并排的自我介绍**：不是表单、不是说明，
+          用户打开页面只想知道「填哪里」，不需要先读一段产品介绍。
+       「未来两周哪天要复习几篇、具体哪几篇，以及掌握度分布」
+       —— 这是设置里「进度总览」入口下的一句，把跳过去之后**会看到什么**
+          又先念了一遍。
+
+     这一段把这两类废话各钉成能判的断言。判据取的是**句式**，不是某一句话：
+       ① 登录页首屏不许出现「输邮箱 → 收码 → 填码」这种把表单流程念一遍的句子；
+       ② 不许出现「不登录也能用全部功能」这种把「免费」当卖点的整句；
+       ③ 入口下面的说明不许把目的地**有哪些板块**一条条数出来。
+     ⚠️ 事实不许跟着删：「本地体验版 / 没有服务器」「进度只存在本机」这类
+        **用户必须知道的事实**在这两条断言之外，另有各自的守卫（见第四、九节）。 */
+  const loginVisible = SRC.login.replace(/<!--[\s\S]*?-->/g, "");
+  chk(!/输邮箱/.test(loginVisible) && !/收码/.test(loginVisible),
+    '登录页不再把「输邮箱 → 收码 → 填码」这套流程念一遍（表单自己会说话）');
+  chk(!/不登录也能用/.test(loginVisible),
+    '登录页不再写「不登录也能用全部功能」这类卖点式整句');
+  chk(!/没有账号就建、有就登录/.test(loginVisible),
+    '登录页不再解释「注册与登录是同一个动作」（该说的在按钮上）');
+
+  /* ③ 入口说明不数板块：三条以上并列的「、」+「以及」是最典型的句式。
+     先只看被自动测试盯着的两页（设置 · 背诵的「进度总览」那一行、复习算法卡）。 */
+  const recite = read('settings/recite/index.html').replace(/<!--[\s\S]*?-->/g, "");
+  chk(!/未来两周哪[天些]/.test(recite) && !/具体哪几篇/.test(recite),
+    '「进度总览」入口下不再先念一遍目的地有什么（跳过去就看得到）');
+  chk(!/哪天要复习几篇/.test(recite), '不再出现「哪天要复习几篇」这类把图表说成一句话的说明');
+
+  /* 复习算法那一栏：说明只留「当前是哪个 + 换算法不清进度」与一行间隔口径。
+     ⚠️ 判的是**长度**，不是措辞 —— 措辞会变，而「一张卡的说明长得像一段散文」
+        正是用户第二次点名的那件事。 */
+  const RM = require('fs').readFileSync(__dirname + '/../js/review-models.js', 'utf8');
+  const blurbs = [...RM.matchAll(/blurb: "([^"]+)"/g)].map(m => m[1]);
+  chk(blurbs.length >= 4, '四张复习算法各有一句说明（实际 ' + blurbs.length + ' 句）');
+  blurbs.forEach(b => {
+    chk(b.length <= 40, '算法说明控制在一句以内（' + b.length + ' 字：「' + b + '」）');
+    chk(!/。.*。/.test(b), '算法说明不再一句接一句（「' + b + '」）');
+  });
+
+  /* 法务两页：这轮又砍了一截 —— 用**字数上限**兜住，免得有一天又长回去。
+     （上限取的是本次实测值再加一点余量，不是「刚好卡住现在」。） */
+  const legalLen = (f) => read(f).replace(/<!--[\s\S]*?-->/g, "")
+    .replace(/<[^>]+>/g, "").replace(/\s+/g, "").length;
+  chk(legalLen('terms/index.html') < 1000,
+    '用户协议正文 < 1000 字（实际 ' + legalLen('terms/index.html') + '）');
+  chk(legalLen('privacy/index.html') < 1400,
+    '隐私条款正文 < 1400 字（实际 ' + legalLen('privacy/index.html') + '）');
 }
 
 console.log('\n' + (fails ? '❌ ' + fails + ' 项失败' : '🎉 账号三页测试全部通过'));

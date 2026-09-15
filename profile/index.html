@@ -58,20 +58,14 @@
            #btn-account-entry 就是同一个去处（/login/），一次性摆两颗
            用户会以为它们不一样。未登录时那张卡的说明已经把该说的说完了。 -->
       <section class="account-card" id="guest-card" hidden>
-        <p class="account-lead">
-          你现在是<strong>本机游客</strong>：进度只在这台设备上，清缓存、换设备就没了。
-          上面的「建一个账号」就是出路。
-        </p>
-        <p class="account-hint">
-          不建账号也<strong>照旧用全部功能</strong> —— 只有语音朗读要登录（免费）。
-        </p>
+        <p class="account-lead">进度只在这台设备上，清缓存、换设备就没了。</p>
+        <p class="account-hint">不建账号也照旧用全部功能，只有语音朗读要登录（免费）。</p>
       </section>
 
       <!-- ---------- 三、本机数据概览 ---------- -->
       <section class="account-card" id="stats-card">
         <h2 class="account-card-title">这台设备上的数据</h2>
         <div class="kv-list" id="stats-list"></div>
-        <p class="account-hint">只看本机进度，与账号无关。</p>
       </section>
 
       <!-- ---------- 四、账号（登录后才出现） ---------- -->
@@ -79,7 +73,7 @@
         <h2 class="account-card-title">账号</h2>
         <div class="kv-list" id="account-list"></div>
         <button class="account-btn ghost" id="btn-sign-out" type="button">退出登录</button>
-        <p class="account-hint">退出只结束这次登录，<strong>不会删掉任何背诵进度</strong>；注销在下面「危险区」。</p>
+        <p class="account-hint">退出不删进度；注销在下面「危险区」。</p>
       </section>
 
       <!-- ---------- 四之二、同步：状态 + 需要用户裁决的冲突 ----------
@@ -109,14 +103,14 @@
       <section class="account-card">
         <h2 class="account-card-title">权限</h2>
         <ul class="cap-list" id="cap-list"></ul>
-        <button class="account-btn ghost" id="btn-go-plans" type="button">查看四种身份的完整对比</button>
+        <button class="account-btn ghost" id="btn-go-plans" type="button">四种身份对比</button>
         <p class="account-hint" id="cap-hint"></p>
       </section>
 
       <!-- ---------- 六、管理员入口（仅 owner 可见） ---------- -->
       <section class="account-card" id="admin-card" hidden>
         <h2 class="account-card-title">管理</h2>
-        <p class="account-lead">你是本站管理员，可按邮箱掩码发放 Pro / Max。</p>
+        <p class="account-lead">可按邮箱掩码发放 Pro / Max。</p>
         <button class="account-btn ghost" id="btn-go-admin" type="button">打开管理后台</button>
       </section>
 
@@ -135,8 +129,7 @@
       <section class="account-card danger-zone" id="danger-card" hidden>
         <h2 class="account-card-title danger-title">注销账号</h2>
         <p class="account-lead">
-          注销会删掉<strong>账号本身</strong>与<strong>服务器上的云端进度</strong>（云端那份先导出来给你留档），
-          但<strong>不删背诵进度</strong> —— 本机那一份一字不动。想连本机进度一起清，去<strong>设置 · 通用</strong>。
+          注销会删掉账号与服务器上的云端进度（云端那份先导给你留档），<strong>不动本机背诵进度</strong>。想连本机一起清，去「设置 · 通用」。
         </p>
         <div id="delete-step-1">
           <button class="account-btn danger" id="btn-delete-start" type="button">我要注销账号</button>
@@ -157,7 +150,7 @@
                没有云端账号的人这一颗不出现。 -->
           <div id="delete-export" hidden>
             <button class="account-btn ghost" id="btn-delete-export" type="button">下载云端那一份</button>
-            <p class="account-hint">这是注销时从服务器导出的账号与云端进度，存好它 —— 服务器上已经没有了。</p>
+            <p class="account-hint">注销时从服务器导出，存好它 —— 服务器上已经没有了。</p>
           </div>
         </div>
       </section>
