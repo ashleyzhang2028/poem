@@ -111,6 +111,27 @@
     margin-right: auto;
   }
 }
+
+/* 桌面（≥1024px）：工具栏跟着内容列一起放宽（不再停在 720px）
+   --------------------------------------------------------------------------
+   720px 那条上限是给 1040px 的列宽定的：一排三样收在「手机一整行」的宽度里，
+   居中之后与正文两缘略有出入但不明显。
+   桌面上列宽变成 1168 / 1808px，再看这一排就露馅了 ——
+   下面那张卷次卡有 1808px 宽，上面这排控件却只有一半宽、居中悬着，
+   两者左缘差出 400 多 px，看着像两张不相干的纸叠在一起。
+   这一档把上限改成 var(--content-w)（= 一列纸减掉两侧那条边）：
+   一排控件与它下面那张卷次卡左右两缘重新对齐。
+   ⚠️ 读 --content-w 而不是 --col-w：桌面那一档的 --col-w 是 100vw，
+      而工具栏住在已经减过两侧内边距的 .app 里 —— 再按视口宽去算，
+      这一排会比容器还宽（多出两侧各 56px）。
+   ⚠️ 搜索框自己会拉开（它是 flex: 1），但「全部 / 未读」与圆键仍贴着右缘，
+      三样的相对位置与手机上完全一致 —— 变的只是这一排有多宽。 */
+@media (min-width: 1024px) {
+  .toolbar:not(.search-toolbar) {
+    max-width: var(--content-w);
+  }
+}
+
 /* 「全部 / 未读」组合按钮：与「不注音 / 生字 / 全文」共用一套外观
    --------------------------------------------------------------------------
    行高对齐：组合的高度是「内层按钮 + 3px 内边距 + 1px 描边」叠出来的，
@@ -645,6 +666,29 @@
   }
 }
 
+/* 桌面（≥1024px）：卡内篇目再排一档 —— 两列 → 三列
+   --------------------------------------------------------------------------
+   一列纸在 1280px 窗口上是 1168px，每列 573px；
+   在 1920px 上是 1808px，两列各 893px —— 一行里「序号 + 篇名 + 分类·作者·
+   出处·摘句 + 书签 + 播放 + 箭头」七件，两头拉开近 900px，
+   与首页那条「空白比字还宽」是同一件事（首页已在同一档改成三列）。
+   三列后 1808px 里每列 588px、1168px 里每列 375px，
+   与手机上一条卡片的视觉宽度同档。
+   ⚠️ 卡头 .group-head 仍是 100%（独占第一行），规则在本档之上不动。
+   ⚠️ 「第一条不画线」这条要按**每一列的第一条**算：三列之后是第 1、2、3 条
+      （卡头占第一位，所以是 2、3、4 个孩子）。只写 2、3 的话第三列第一条
+      会凭空多出一道横线 —— 与上一档（两列）踩过的是同一个坑。 */
+@media (min-width: 1024px) {
+  .group-card > .item {
+    flex: 1 1 calc(33.333% - 14.667px);
+    max-width: calc(33.333% - 14.667px);
+  }
+  .group-card > .item:nth-of-type(2),
+  .group-card > .item:nth-of-type(3),
+  .group-card > .item:nth-of-type(4) {
+    border-top: none;
+  }
+}
 
 .group-card .item-read {
   margin-left: 0;
@@ -757,17 +801,19 @@ body.reader-open .dock { display: none; }
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   padding: 20px calc(18px + var(--safe-right)) calc(40px + var(--safe-bottom)) calc(18px + var(--safe-left));
-  /* 正文列宽走全站那一条 --col-w（css/style.css 的 :root）。
+  /* 正文列宽走全站那一条「内容宽」--content-w（css/style.css 的 :root）——
+     与顶栏、页签内层同一条：三样东西落在同一条竖轴上。
      ⚠️ 这里用的是「定宽 + 自动外边距」，不是 max-width：在 flex 列容器里，
      max-width + width: auto 会被解析成 flex-basis: auto → 内容尺寸，
      于是容器一宽，盒子反而被压成一个窄条（大屏上正文挤在中间一小撮）。
      定宽 + `margin: 0 auto` 才是我们要的：窄屏自动收成满宽（外边距变 0），
      宽屏稳定居中，跟顶栏的内容区落在同一条竖线上。
      box-sizing: border-box 让这条宽度把左右内边距一起算进去。
-     ⚠️ 平板（≥768px）上 --col-w 会变成 1040px，正文列跟着放宽 —— 但正文
-        **仍是一列**：诗句的行宽由 .poem-text 自己封顶（见那条 max-width），
-        放宽的是页面里那些能并排的部分（目录卡片、选项、日历）。 */
-  width: var(--col-w, 720px);
+     ⚠️ 三档下它依次是 692 / 996 / 一列纸减 112px：手机 692 与原来那条
+        720 减两侧各 14 是同一个数，观感不变；平板起跟着放宽 ——
+        但正文**仍是一列**：诗句的行宽由 .reader-text 自己封顶 --read-w
+        （见那条 max-width），放宽的是页面里那些能并排的部分（目录卡片、选项、日历）。 */
+  width: var(--content-w, 692px);
   max-width: calc(100% - var(--safe-left) - var(--safe-right));
   margin: 0 auto;
   box-sizing: border-box;
@@ -1084,7 +1130,23 @@ body.reader-open .dock { display: none; }
 .reader-nav {
   display: flex;
   gap: 10px;
-  margin: 26px 0 calc(118px + var(--safe-bottom));
+  /* ⚠️ 上下那两段留白（上方 26px、下方 118px 给播放栏与页签避让）写在
+     margin 这一条**全部四个值**里，不另外拆 margin-top / margin-bottom ——
+     桌面那一档要给它加左右 auto 才能居中，而 margin 简写会把后写的
+     margin-left/right 一起重置回 0（媒体查询不加特异性，后出现的简写说了算）。
+     所以居中这件事只能写在这条简写里：
+       · ≤1023px：左右 0（整行铺满，与手机上一致）；
+       · ≥1024px：左右 auto + 下面那条 max-width，把这一排收进 --read-w ——
+         一列纸在桌面上跟视口走（1920px → 1808px），而正文仍封在 720px，
+         这一排不一起收的话，「上一篇」与「下一篇」会被推到屏幕两端、
+         隔着 1800px（与集子页工具栏同一条毛病）。
+         三条线（标题 / 正文 / 翻页）落在同一条竖轴上。 */
+  margin: 26px auto calc(118px + var(--safe-bottom));
+}
+@media (min-width: 1024px) {
+  .reader-nav {
+    max-width: var(--read-w, 720px);
+  }
 }
 .reader-nav button {
   flex: 1;
@@ -1177,7 +1239,7 @@ body.reader-open .dock { display: none; }
     /* 封顶用「最宽的段落 720px」，而不是把整块钉死 720px：
        fit-content 会先按内容取宽，再用这条上限收住 —— 短文仍是居中的窄块，
        长段落最多 720px（一行约 38 个汉字，正好是阅读上限那一档）。 */
-    max-width: 720px;
+    max-width: var(--read-w, 720px);
   }
 }
 
@@ -2002,6 +2064,36 @@ body[data-nav="search"] #gw-list .empty[data-empty="idle"] { padding: 0; }
     max-width: calc(33.333% - 8px);
   }
 }
+
+/* 桌面（≥1024px）：**三列栅格**，每张卡自己不再决定它多宽
+   --------------------------------------------------------------------------
+   六部集子排成 3 × 2 是这一页的目标形状（平板上已经是三列了）。
+   上一版想在 flex 里守住它：flex-basis 写三分之一 + max-width 收在上限。
+   真机上量到的结果是一行 **4** 张、第二行 2 张 —— 因为 max-width 一收，
+   容器里就还放得下第 4 张（4 × 392 + 36 = 1604 ≤ 1696），flex 于是顺着填。
+   「六张卡排成 4 + 2」看着像漏了一张，是这一条要治的东西。
+   这里换成 grid + repeat(3, 1fr)：列数是**说出来的**，
+   不再由卡宽与容器宽的除法决定。
+   ⚠️ 不给列再加上限（一开始写了 minmax(0, 392px)）：上限一收，整排就只剩
+      左边一段，右边空出半屏 —— 这一页本来就只有这六件事，
+      三张卡各占三分之一行，比「三张挤在左边、右边空着」更像「布满屏幕」。
+   ⚠️ 只在桌面这一档换 grid：平板那一档（768~1023px，列宽 1040px）用 flex
+      三列正好，不必动；手机 / 小平板那一档（≥560px 两列）同样不动。
+   ⚠️ 卡里的那句说明在 1fr（1920px 屏上约 557px 一列）里会不会抻成一整行：
+      不会 —— 说明文字自己换行，两行封顶，与平板三列那一档同一个观感。
+   ⚠️ grid 的 column-gap 与 flex 那一档同一个 12px，节奏与上面两档一致。 */
+@media (min-width: 1024px) {
+  .library-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    column-gap: 12px;
+    row-gap: 12px;
+  }
+  .library-card {
+    flex: none;
+    max-width: none;
+  }
+}
 /* 一张卡 = 一部集子。整张卡点哪儿都进得去（不是只有标题能点），
    所以卡片本身要有 active / focus 反馈，不能只在标题上下 300ms 的功夫。
    ⚠️ 课内诗词那张是 <a href="/poems/">（跳转，可中键新开），
@@ -2196,7 +2288,7 @@ body[data-nav="search"] #gw-list .empty[data-empty="idle"] { padding: 0; }
 @media (min-width: 768px) {
   .cal,
   .progress-note {
-    max-width: 720px;
+    max-width: var(--read-w, 720px);
     margin-left: auto;
     margin-right: auto;
   }
@@ -2204,7 +2296,7 @@ body[data-nav="search"] #gw-list .empty[data-empty="idle"] { padding: 0; }
      宽栏里轨道能长到 900px —— 一条只走 20% 的进度条会被读成「几乎满」。
      同样收进 720px。 */
   .bars {
-    max-width: 720px;
+    max-width: var(--read-w, 720px);
     margin-left: auto;
     margin-right: auto;
   }

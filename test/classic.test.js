@@ -677,10 +677,11 @@ setTimeout(() => {
   const siteCss = fs.readFileSync(path + 'css/style.css', 'utf8');
   // .topbar 有两条规则（主规则 + 窄屏媒体的 padding-top 覆盖），取含 max-width 的那条主规则
   const topbarBlocks = [...siteCss.matchAll(/\.topbar \{([^}]*)\}/g)].map(m => m[1]);
-  // ⚠️ 平板那一档（Issue #122 后续）把 max-width 改成了 var(--col-w)，
-  //    所以这里按「含 max-width 且带宽度令牌 / 720px」来认主规则，不再写死 720px。
+  // ⚠️ 宽度令牌换过两次（720px → var(--col-w) → var(--content-w)，见 css/style.css
+  //    里「内容列宽」那一条），所以这里按「含 max-width 且读某个宽度令牌」认主规则，
+  //    不再写死具体令牌 —— 这条断言管的是**下内边距 12px**，不该被宽度令牌的改名绊倒。
   const topbarMain = topbarBlocks.find(b =>
-    /max-width:\s*(720px|var\(--col-w)/.test(b)) || '';
+    /max-width:\s*(720px|var\(--col-w|var\(--content-w)/.test(b)) || '';
   chk(/padding:[^;]*12px\s*;/.test(topbarMain),
     '顶栏主规则下内边距为 12px：搜索框上方的空档与下方同值，页首上下对称');
   // 需求（Issue #55 第三条）：卡头「蒙学经典 4 篇」与右侧圆键不再压在首条的分隔线上。
@@ -989,7 +990,10 @@ setTimeout(() => {
   chk(/\.done-btn\.is-done/.test(actionsCss), '「标记已读」按钮有已读高亮态');
   // 需求：上一篇 / 下一篇必须避开底部播放栏 / 页签，否则被压掉约三成、点不着
   const navBlock = /(^|\n)\.reader-nav \{([\s\S]*?)\}/.exec(actionsCss);
-  chk(!!navBlock && /margin:\s*26px 0 calc\(118px \+ var\(--safe-bottom\)\)/.test(navBlock[2]),
+  // ⚠️ 左右那两个值在桌面那一档要写 auto（居中），所以断言只认上下两段：
+  //    上方 26px；下方 118px + 安全区（避开播放栏与页签）。
+  //    写成「整条等于 26px 0 calc(…)」的话，桌面那一档的居中就永远过不了。
+  chk(!!navBlock && /margin:\s*26px (auto|0) calc\(118px \+ var\(--safe-bottom\)\)/.test(navBlock[2]),
     '阅读器底部导航预留 118px + 安全区，不被底栏压住');
   const readerBlock = /(^|\n)\.reader \{([\s\S]*?)\}/.exec(actionsCss);
   chk(!!readerBlock && /z-index:\s*66/.test(readerBlock[2]),

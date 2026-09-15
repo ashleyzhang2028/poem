@@ -850,11 +850,14 @@ chk(!/border-radius:\s*10px/.test(css) && !/border-radius:\s*10px/.test(classicC
 
 // (6) 大屏上顶栏比正文宽出一大截、阅读器正文还会被切掉左半行：
 //     两者都按 720px 内容区居中
-// ⚠️ 平板那一档（Issue #122 后续）把宽度改成了令牌 --col-w（手机 720px、
-//    平板一档更宽），这里改判「读的是同一个令牌」，不再写死 720px ——
-//    错位与否取决于顶栏与内容区**同源**，而不是取决于那一个数值。
-chk(/\.topbar \{[\s\S]{0,600}?max-width:\s*var\(--col-w/.test(css),
-  '顶栏宽度与内容区同源（--col-w，大屏不与正文错位）');
+// ⚠️ 宽度令牌换过两次（720px → var(--col-w) → var(--content-w)，见 css/style.css
+//    的「内容列宽」那一条），这里改判「顶栏读的是那条**内容宽**令牌」，
+//    不再写死具体令牌 —— 错位与否取决于顶栏与内容区**同源**，而不是那一个数值。
+//    顶栏 / 页签内层 / 正文列读 --content-w（一列纸减掉两侧那条边）：
+//    这三样住在「整宽」容器里、自己不带左右内边距，读 --col-w 会在平板 /
+//    桌面上比正文列宽出两侧那一条边。
+chk(/\.topbar \{[\s\S]{0,600}?max-width:\s*var\(--content-w/.test(css),
+  '顶栏宽度与内容区同源（--content-w，大屏不与正文错位）');
 chk(/\.reader-body \{[\s\S]{0,900}?width:\s*auto/.test(classicCss),
   '阅读器正文不再写 width: 100%（那会让内边距溢出视口、正文贴左边缘被切）');
 chk(/\.reader-body \{[\s\S]{0,1200}?box-sizing:\s*border-box/.test(classicCss),
@@ -862,10 +865,10 @@ chk(/\.reader-body \{[\s\S]{0,1200}?box-sizing:\s*border-box/.test(classicCss),
 // 宽度必须用「定宽 + 自动外边距」，不能用 max-width：
 // .reader-body 是 flex 列容器的子项，max-width + width: auto 会被解析成
 // flex-basis: auto → 内容尺寸，容器一宽盒子反而被压成窄条（大屏上正文挤成一小撮）。
-chk(/\.reader-body \{[\s\S]{0,1200}?width:\s*720px/.test(classicCss),
-  '阅读器正文用定宽 720px（flex 子项上的 max-width 会退化成 flex-basis）');
+chk(/\.reader-body \{[\s\S]{0,1200}?width:\s*var\(--content-w/.test(classicCss),
+  '阅读器正文用定宽 --content-w（flex 子项上的 max-width 会退化成 flex-basis）');
 chk(/\.reader-body \{[\s\S]{0,1200}?max-width:\s*calc\(100%/.test(classicCss),
-  '窄屏由 max-width: calc(100% - 安全区) 收成满宽，宽屏稳定 720px');
+  '窄屏由 max-width: calc(100% - 安全区) 收成满宽，宽屏稳定居中');
 chk(/\.reader-body \{[\s\S]{0,400}?min-height:\s*0/.test(classicCss),
   '阅读器正文 min-height: 0，否则 flex 项被内容撑开、滚动条永远不出现');
 
