@@ -1627,28 +1627,61 @@ body.has-install-tip #app {
   /* 与 .settings-item 是同一档间距，但主语换成了「可点的整行」：
      左右内边距让 hover 的纸底不贴边，整行都是热区（不是只有文字可点） */
   margin: 14px 0;
-  padding: 10px 12px;
-  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  /* ⚠️ 这四个值的来历（Issue #147）：右上角那颗箭头是 absolute 定位，
+     多出来的那 4px 是给它的落点留出的空间（右侧内边距 16 + 4）；
+     上下的 14px 与 .settings-item 同一档 —— 四个入口现在是四张卡，
+     与二级页里的「一项」不该是两个厚度。 */
+  padding-right: 46px;
+  /* 一张卡：底色 + 描边 + 圆角，与阅读器译文框（.trans-box）、
+     入口页那六张卡同一档 —— 设置主页原先的四条入口是「裸在纸面上的一行字」，
+     既看不出是一块可点的东西，也与下面那张账号卡（一块深底纸）不像一套。
+     ⚠️ 圆角走 --radius-md：与 .trans-box / .library-card 同为
+        「卡片与卡片之间」的中间档，不新开一个数值。 */
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
   color: inherit;
   text-decoration: none;
-  transition: background .16s ease;
+  transition: background .16s ease, border-color .16s ease;
+  /* 右侧那颗箭头绝对定位在卡片里（见 .settings-link-go） */
+  position: relative;
 }
+/* 按下 / 悬停：换成首页那些「分类卡」的浅天青底（--green-light），
+   不再只是压一层半透明色 —— 卡片有了底色，反馈也该是同一个色系的一档。 */
 .settings-link:hover,
-.settings-link:focus-visible { background: rgba(47, 96, 85, .06); }
+.settings-link:focus-visible { background: var(--green-light); border-color: var(--celadon); }
 .settings-link:active { transform: scale(.995); }
 .settings-link-main { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1; }
+/* 入口标题：与集子索引页的分组标题同一档字号
+   --------------------------------------------------------------------------
+   用户原话（Issue #147）：「四个标题字号需要变大，可以和其他索引页页面
+   例如集子的标题字号一样大。」
+
+   ⚠️「集子的标题」就是集子索引页里每一卷卡头那颗卷名（js/reader-core.js
+      渲染出的 .group-name，规则在 css/classic.css：14px / 700）。原先这里写
+      14.5px / 600 —— 数值上只差 0.5px，但**字重**差着一档（600 对 700），
+      四张卡读起来仍是「一列说明文字」。这里取同一个值（字号 14px、字重 700），
+      两页的标题才是同一种东西。
+      两处各在一张表里（一张管设置页、一张管集子页），所以是一对**约定**：
+      改一边就要改另一边，谁也别再加第三个近似值。 */
 .settings-link-title {
-  font-size: 14.5px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 700;
   color: var(--ink);
   font-family: var(--font-poem);
 }
 .settings-link-desc { font-size: 11.5px; color: var(--ink-3); line-height: 1.5; }
 /* 「复习算法」这类并进另一页的项：只说存在，不喧宾夺主 */
 .settings-link-extra { color: var(--ink-3); }
-/* 右侧那颗箭头：不参与收缩，落点恒定（与顶栏头像同一套理由） */
+/* 右侧那颗箭头：绝对定位在卡片的右边中线上（与集子卡 .library-card-go 同一手法）——
+   它不参与这一行的排布，卡片变宽变窄都由右侧内边距兜着，落点恒定。
+   ⚠️ 上面 .settings-link 的 padding-right 里那 4px 就是给它留的。 */
 .settings-link-go {
-  flex: none;
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
   display: inline-flex;
   align-items: center;
   justify-content: center;

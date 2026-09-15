@@ -76,6 +76,14 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   // ——同一页里两套 id 必须分得开（引擎按 data-gw 找元素，
   //   参数名若也叫 data-gw，索引层就会把自己的列表认成阅读器的）
   chk(/data-lib-part="list"/.test(libHtml), '索引层的列表用 data-lib-part（引擎的 data-gw 让给阅读器）');
+  // ⚠️ 不套 .app（Issue #147）—— 见 test/ui-consistency.test.js 那一段的完整说明。
+  //    这里只看结构本身：入口页全页只有一个 .app，第二层住在它里面。
+  {
+    const bare = libHtml.replace(/<!--[\s\S]*?-->/g, ' ');
+    chk((bare.match(/class="app"/g) || []).length === 1 &&
+      /<div data-lib-view="book" hidden>/.test(bare),
+      '入口页第二层不套 .app（列宽与两侧的边只算一次，卡片才不会比搜索框窄一条边）');
+  }
   const libBody = libHtml.slice(libHtml.indexOf('<body'));
   const dupIds = (() => {
     const seen = {}; const out = [];

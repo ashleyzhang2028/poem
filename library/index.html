@@ -75,8 +75,16 @@
          ⚠️ 这一层不带自己的 topbar：页顶那一行是外层那一条（全站共用一条，
             阅读器那条除外），免得同一页出现两条顶栏 —— chrome.js 会把它们
             一起重绘，多出来的一条反而打架。
+         ⚠️ 这一层**也不再套 .app**（Issue #147）：原先它写的是
+            <div class="app" data-lib-view="book">，而 .app 是全站「一列纸」的
+            宽度来源（max-width: --col-w + 左右各一条 --col-side 的边）。
+            它套在外层 .app **里面**，于是这 720px 的宽度被算了两次、
+            两侧的边也被算了两次：索引层的搜索框与卷次卡比上面的顶栏
+            左右各窄 28px（「和上面的搜索框行一起左右变窄」正是这个）。
+            同页的课内诗词索引页（/poems/）里没有这一层嵌套，
+            所以只有它看着是对的。DOM 上少一层，.app 的宽度就只有一个来源。
     -->
-    <div class="app" data-lib-view="book" hidden>
+    <div data-lib-view="book" hidden>
     <div class="toolbar">
       <div class="search-wrap">
         <span class="search-icon" aria-hidden="true">

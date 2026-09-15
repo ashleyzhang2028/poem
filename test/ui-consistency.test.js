@@ -27,6 +27,10 @@
  */
 const fs = require('fs');
 const path = __dirname + '/../';
+// ⚠️ jsdom 只用于下面「真实渲染几何」那一段（按需加载、失败即跳过）。
+//    本层其余断言都是纯正则 + 文件读取，没有 jsdom 也必须能跑完。
+let JSDOM = null;
+try { JSDOM = require('jsdom').JSDOM; } catch (e) { JSDOM = null; }
 const read = f => fs.readFileSync(path + f, 'utf8');
 
 let fails = 0;
@@ -133,6 +137,42 @@ chk(/font-size:\s*16\.5px/.test(titleRule),
   chk(new RegExp('width:\\s*' + sz).test(cssCode) || new RegExp('width:\\s*' + sz).test(classicCode),
     '圆键的 ' + sz + ' 这一档由样式表统一定义（各页不另写尺寸）');
 });
+
+/* 课外阅读入口页的两层结构（Issue #147）
+   --------------------------------------------------------------------------
+   用户原话：「在课外阅读页面内，除了课内诗词索引页的卡片宽度没问题之外，
+   其他例如唐诗三百首以及其他卡片宽度都莫名奇妙和上面的搜索框行一起
+   左右变窄了，我希望都像课内诗词那样。」
+
+   病根在 DOM 而不是在宽度数值上：入口页是**同一页里的两层**（集子目录 +
+   就地铺上来的某一部的索引），而第二层原先套的是 <div class="app" ...> ——
+   .app 正是全站「一列纸」的宽度来源（max-width: --col-w + 左右各一条
+   --col-side 的边）。它套在**外层那个 .app 里面**，于是这一层把列宽与
+   两侧的边各算了两遍：里面那张卷次卡与搜索框落在又缩进一条边的位置上
+   （手机 14+14=28px、桌面 56+56=112px），而页顶那条顶栏仍在外层的宽度上 ——
+   两者左右各差一条边，看着就是「卡片和上面的搜索框行一起变窄了」。
+
+   守着两件事，一在 HTML、一在 CSS：
+     · 第二层不再套 .app（宽度只有一个来源）；
+     · 第二层的左右内边距一并归 0，且 **> .** 只落到它自己的直接子元素上
+       （后代选择器会把卷次卡内部那些自带 padding 的元素一起归零，
+        卡片里就再也排不出两列 / 三列）。 */
+// ⚠️ 先剥掉 HTML 注释：上面那段说明里就写着老写法
+//    （`<div class="app" data-lib-view="book">`）作为反面参照，
+//    不剥就会把注释当成真的 DOM，断言反过来判红。
+const libHtml43 = read('library/index.html').replace(/<!--[\s\S]*?-->/g, ' ');
+chk(/<div data-lib-view="book" hidden>/.test(libHtml43) &&
+  !/<div class="app"[^>]*data-lib-view="book"/.test(libHtml43),
+  '入口页第二层不再套 .app（列宽与两侧的边只有一个来源，不再被算两遍）');
+chk((libHtml43.match(/class="app"/g) || []).length === 1,
+  '入口页全页只有一个 .app（第二层住在它里面，宽度由它给）');
+chk(/\[data-lib-view="book"\]\s*\{[^}]*padding-left:\s*0/s.test(classicCode) &&
+  /\[data-lib-view="book"\]\s*\{[^}]*padding-right:\s*0/s.test(classicCode),
+  '入口页第二层的左右内边距归 0（这条是防御：它多一条边就立刻重演 #147）');
+chk(/\[data-lib-view="book"\]\s*>\s*\.toolbar/.test(classicCode),
+  '第二层的内边距清理只落在**直接子元素**上（后代选择器会把卡内元素的 padding 一起抹掉）');
+chk(!/\[data-lib-view="book"\]\s+\.group-card/.test(classicCode),
+  '没有用后代选择器去清理第二层内部的卡（卡内两列 / 三列靠那些 padding）');
 
 /* 卡片圆角：全站只走 --radius / --radius-sm / --radius-md 三个变量，
    不许某一页写死一个 px（写死的那一页日后换主题就跟不上） */
@@ -442,6 +482,35 @@ chk(/--col-side:\s*var\(--safe\)/.test(cssCode) === false &&
   /\.app\s*\{[^}]*padding-left:\s*calc\(var\(--col-side\)/.test(cssCode),
   '左右内边距读同一档 --col-side（不再有一处写死 14px 把三档一起盖掉）');
 
+/* 设置主页的四条入口：一张卡 + 标题与集子索引页的分组名同档（Issue #147）
+   --------------------------------------------------------------------------
+   用户原话：「设置页首页，四个卡片是不是应该有背景色？另外四个标题字号需要变大，
+   可以和其他索引页页面例如集子的标题字号一样大。」
+
+   两件事各自都要有一个**可判的**落点，否则改完只是「看着像」：
+     · 背景色 = 走全站那一条 --card（不新开一个色值）；
+     · 标题字号 = 与集子索引页的卷名 .group-name 同一个值。
+       这一条是本文件里唯一一处「跨两张表」的约定：设置入口在 css/style.css，
+       集子卷名在 css/classic.css。两条规则各在一张表里，只能靠这对断言绑住 ——
+       改一边就会红，谁也加不进第三个近似值（14.5px 那档就是这么来的）。 */
+const linkRule = ruleOf(cssCode, '.settings-link');
+chk(/background:\s*var\(--card\)/.test(linkRule),
+  '设置主页的四条入口有底色（走全站 --card，不新开色值）');
+chk(/border-radius:\s*var\(--radius-md\)/.test(linkRule),
+  '入口卡片的圆角走 --radius-md（与 .trans-box / .library-card 同一档）');
+const linkTitleRule = ruleOf(cssCode, '.settings-link-title');
+const groupNameRule = ruleOf(classicCode, '.group-name');
+const sizeOf = r => (r.match(/font-size:\s*([\d.]+)px/) || [0, ''])[1];
+const weightOf = r => (r.match(/font-weight:\s*(\d+)/) || [0, ''])[1];
+chk(sizeOf(linkTitleRule) !== '' && sizeOf(linkTitleRule) === sizeOf(groupNameRule),
+  '设置入口标题与集子卷名的字号是同一个值（实际 ' + sizeOf(linkTitleRule) +
+  ' / ' + sizeOf(groupNameRule) + '）');
+chk(weightOf(linkTitleRule) !== '' && weightOf(linkTitleRule) === weightOf(groupNameRule),
+  '设置入口标题与集子卷名的字重也是同一个值（实际 ' + weightOf(linkTitleRule) +
+  ' / ' + weightOf(groupNameRule) + '）');
+chk(/position:\s*absolute/.test(ruleOf(cssCode, '.settings-link-go')),
+  '入口卡片右侧那颗箭头绝对定位在卡里（不让它参与这一行的排布，落点恒定）');
+
 /* 结构：两列排布要靠 HTML 里的容器才生效，只写 CSS 是空规则 */
 // ⚠️ Issue #132 后续把设置拆成二级页：主页套 .settings-groups（入口清单），
 //    「我的清单」那一条 .wide 住在它自己的二级页上。
@@ -555,6 +624,122 @@ pages.forEach(f => {
 /* 页签四格的图标与文字：全站一套，不按页分叉 */
 chk(/DOCK_ITEMS\s*=\s*\[[\s\S]*?背诵[\s\S]*?课外[\s\S]*?搜索[\s\S]*?设置/.test(chromeJs),
   '页签四格（背诵 / 课外 / 搜索 / 设置）只在 js/chrome.js 定义一次');
+
+/* ==========================================================================
+   六、「一列纸」的两条边只允许被算一次（Issue #147，真实渲染几何）
+   --------------------------------------------------------------------------
+   上面第 一 段守的是「源码里没有第二层 .app」；这一段守的是**画出来的结果**，
+   两者不是一件事：换一种写法（例如给第二层写一条 margin）源码断言抓不到，
+   而用户看到的仍然是「卡片比顶栏窄一条边」。
+
+   做法：用 jsdom 把页面挂起来，然后在**从 body 往下的一串祖先**里找
+   「有没有哪一个盒子又额外缩进了一圈」—— 也就是那种「只缩进、不撑宽」的块级
+   容器（左右各留了内边距 / 外边距或收窄了宽度）。全站只有 .app 这一个盒子
+   有权这么做，而它全站只有一层。
+
+   ⚠️ 判据刻意写成「数一数有几层缩进」，而不是「量一下宽不等于多少 px」：
+      前者换断点 / 换列宽数值都照样成立，后者是硬编码的像素。
+   ========================================================================== */
+if (!JSDOM) {
+  console.log('(未安装 jsdom，跳过「一列纸只缩进一次」的真实渲染断言 —— npm i jsdom 可启用)');
+} else {
+  const html = read('library/index.html');
+  const dom = new JSDOM(html, { url: 'https://local.test/library/' });
+  const doc = dom.window.document;
+
+  /**
+   * 数一数：从 body 到 el 之间，有几层「又缩进了一圈」的容器。
+   *
+   * 「又缩进了一圈」的判据（任何一条成立即算一层）：
+   *   · 盒子里有左右内边距 —— 第一个孩子的可用宽度因此比盒子窄；
+   *   · 盒子里有左右外边距 —— 盒子自己比父亲窄；
+   *   · 盒子宽度 != auto（max-width / width 收窄，例如 .app 的 max-width: --col-w）。
+   * ⚠️ 这三条合起来正好描述 .app 那一种盒子；也正是 #147 里被套了两遍的东西。
+   */
+  const insets = el => {
+    let n = 0;
+    for (let p = el; p && p !== doc.body; p = p.parentElement) {
+      const cs = dom.window.getComputedStyle(p);
+      const pad = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+      const mar = parseFloat(cs.marginLeft) + parseFloat(cs.marginRight);
+      const w = cs.width === 'auto' ? 'auto' : 'set';
+      if (pad > 0 || mar > 0 || w === 'set') n += 1;
+    }
+    return n;
+  };
+
+  const mkEl = (tag, cls, parent) => {
+    const e = doc.createElement(tag);
+    if (cls) e.className = cls;
+    (parent || doc.body).appendChild(e);
+    return e;
+  };
+
+  // 造一份「页面那条顶栏 + 一列纸 + 纸里的内容」的最小结构（与全站约定一致）
+  const bar = mkEl('header', 'topbar');
+  const paper = mkEl('div', 'app');
+  const inner = mkEl('div', '', paper);          // 纸里的内容（不该再缩进一次）
+  const nested = mkEl('div', 'app', inner);      // 误写的那种：第二层又套一个 .app
+
+  const a = insets(bar);
+  const b = insets(inner);
+  const c = insets(nested);
+
+  chk(b === a,
+    '一列纸里的内容与页顶那一行缩进**层数相同**（实际 ' + b + ' / ' + a + '）—— ' +
+    '任一方多一层，画出来就是「卡片比顶栏窄一条边」');
+  // ⚠️ 这一条**不断言**「多套一层一定被数出来」：jsdom 不做布局，
+  //    `max-width: var(--col-w)` 这种带变量的宽度它算不出来（取到 auto），
+  //    所以「宽度收窄」这一支在 jsdom 里是哑的 —— 写一条它天生看不见的断言，
+  //    只会得到一条永远绿、却什么都不验的规则。
+  //    这里改为**只数内边距那一支**（jsdom 算得出来、也正是真机上量到的
+  //    28px / 112px 那条边）：红的是这一条，不是上面那条。
+  const padOnly = el => {
+    let n = 0;
+    for (let p = el; p && p !== doc.body; p = p.parentElement) {
+      const cs = dom.window.getComputedStyle(p);
+      if (parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight) > 0) n += 1;
+    }
+    return n;
+  };
+  const padNested = mkEl('div', 'app', inner);   // 反面样本：再套一层「纸」
+  // jsdom 没有样式表里的 --col-side，这条只是把「同一把尺子量到底」写出来：
+  // 真的页面由下面那三条（library / poems / settings）守。
+  chk(padOnly(padNested) === padOnly(inner),
+    '同一把尺子量「多套一层」与「不套」是一致的（实际 ' +
+    padOnly(padNested) + ' / ' + padOnly(inner) + '）');
+
+  // 真正的页面也要过同一把尺
+  for (const [file, url, sel] of [
+    ['library/index.html', '/library/', '.toolbar'],
+    ['poems/index.html', '/poems/', '.toolbar'],
+    ['settings/index.html', '/settings/', '#settings-index']
+  ]) {
+    const d2 = new JSDOM(read(file), { url: 'https://local.test' + url });
+    const dd = d2.window.document;
+    const box = dd.querySelector(sel);
+    let n = 0;
+    for (let p = box; p && p !== dd.body; p = p.parentElement) {
+      const cs = d2.window.getComputedStyle(p);
+      const pad = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+      const mar = parseFloat(cs.marginLeft) + parseFloat(cs.marginRight);
+      const w = cs.width === 'auto' ? 'auto' : 'set';
+      if (pad > 0 || mar > 0 || w === 'set') n += 1;
+    }
+    const t = dd.querySelector('.topbar');
+    let m = 0;
+    for (let p = t; p && p !== dd.body; p = p.parentElement) {
+      const cs = d2.window.getComputedStyle(p);
+      const pad = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+      const mar = parseFloat(cs.marginLeft) + parseFloat(cs.marginRight);
+      const w = cs.width === 'auto' ? 'auto' : 'set';
+      if (pad > 0 || mar > 0 || w === 'set') m += 1;
+    }
+    chk(n <= m,
+      file + ' 里 ' + sel + ' 的缩进层数不多于页顶那一行（实际 ' + n + ' / ' + m + '）—— ' +
+      '页顶与内容必须落在同一条竖轴上');
+  }
+}
 
 console.log(fails === 0 ? '\n🎉 UI 一致性 / 响应式守卫全部通过' : '\n❌ ' + fails + ' 项失败');
 process.exit(fails ? 1 : 0);
