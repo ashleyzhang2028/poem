@@ -87,8 +87,20 @@
           <button class="account-btn ghost" id="btn-edit-email" type="button">换个邮箱</button>
           <p class="account-msg" id="msg-code"></p>
 
+          <!-- 云端同步的据实告知（docs/architecture.md §4.2）
+               ------------------------------------------------------------------
+               ⚠️ 不是「出境同意」，也**不做单独勾选框**：上传就要求知情同意，
+                  与机房在哪个国家无关。说清一件事、点「确定」即视为同意。
+               ⚠️ 这一段**默认隐藏**，只有在真的走服务端时（state.remote）才显示 ——
+                  本机体验版下摆一句「进度会上传到服务器」是假的。 -->
+          <div class="account-note" id="remote-note" hidden>
+            进度会保存到服务器，以便在手机和电脑之间自动同步。点「确定」即表示同意。
+            不想上传的话，可以在「设置 · 通用 · 账号」里关掉云端同步 ——
+            关掉之后一切照旧，只是不同步。
+          </div>
+
           <!-- 本地体验版的说明：必须显眼，不许含糊 -->
-          <div class="account-note" id="local-note">
+          <div class="account-note" id="local-note" hidden>
             <strong>本地体验版</strong>：本应用没有服务器，随机码由你这台设备生成。
             下面这颗按钮会把码复制到剪贴板；也可以开自己的邮箱客户端，把码发给自己保管。
             <strong>真机上请勿把码发给他人。</strong>
@@ -164,6 +176,7 @@
 
   <!-- 脚本顺序：auth-core（内核）→ entitlement（权益）→ avatar（印）→ login（本页）→ chrome（顶栏）→ pwa -->
   <script src="/js/auth-core.js"></script>
+  <script src="/js/auth-api.js"></script>
   <script src="/js/entitlement.js"></script>
   <script src="/data/text-master.js"></script>
   <script src="/data/index.js"></script>

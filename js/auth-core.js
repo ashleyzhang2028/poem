@@ -138,6 +138,8 @@
     if (at > 64) return false;                 // 本地部分上限
     var domain = email.slice(at + 1);
     if (domain.length > 253 || domain[0] === "." || domain.slice(-1) === ".") return false;
+    if (domain.indexOf("..") >= 0) return false;              // 域名不许连续的点
+    if (email.slice(0, at).indexOf("..") >= 0) return false;  // 本地部分同样（RFC 5321）
     return EMAIL_RE.test(email);
   }
 

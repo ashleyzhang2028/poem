@@ -657,17 +657,37 @@ emailMask = "a***@b.com"                          // 用于界面回显
 **它不比「输两次邮箱」更安全，也不比它更不安全** —— 因为它本来就是本机自证。
 所以**绝不能把它宣传成"邮件认证已经做好了"**。
 
-### 7.2 服务端版（一期之后，接口不变）
+### 7.2 服务端版（**1A 期已落地**，接口见下）
+
+> ✅ **已实现**（2026-09-15）。落地时路径从设计里的 `/auth/*` 改成 `/api/*` ——
+> Vercel Serverless 的目录约定就是 `api/`，用 `/auth/*` 要多配一层 rewrite，
+> 而 rewrite 会让「哪个文件对应哪个接口」变得不可见。六个接口的实现在
+> `api/{send-code,verify-code,me,account}.js` 与 `api/sync/{pull,push}.js`，
+> 业务内核全在 `api/_lib/core.js`（这样才写得了测试），
+> 客户端的 `transport` 是 `js/auth-api.js`。
+> 上面「本期的做法」（本地发码 + 用户自送）**保留为降级路径**：
+> 服务端没配好 / 连不上 / 断网时自动回落，界面如实标注「本机体验版」。
 
 ```
-POST /auth/code    {identity, purpose, deviceId}      → 202 {codeId, expiresAt, cooldown}
-POST /auth/verify  {codeId, code, deviceId}           → 200 {session, account} | 4xx {code, retryAfter}
-POST /auth/session {deviceId}                          → 200 {session} | 401
-POST /auth/reset   {identity, purpose:"reset", code}    → 200 {ok}   // 吊销全部会话
-POST /auth/link    {channel:"sms", value} + code        → 200 {account} // 绑定第二身份
-DELETE /auth/session → 204                              // 退出
-DELETE /auth/account {code}   → 204                     // 注销
+POST   /api/send-code   {email, purpose, deviceId}   → 202 {codeId, expiresAt, cooldown, transport, delivered, store}
+POST   /api/verify-code {codeId, code, deviceId}     → 200 {account} + Set-Cookie: kbsid=...
+                                                       400/423 {code, message, remaining?, retryAfter?}
+GET    /api/me                                        → 200 {uid, nickname, plan:{tier,until}, features[], mask}
+                                                       401 {code:"E_NO_SESSION"}
+POST   /api/sync/pull   {since, deviceId}            → 200 {recs[], serverTime}
+POST   /api/sync/push   {recs[], deviceId}           → 200 {applied, conflicts[], serverTime}
+DELETE /api/account     {confirm:true, deviceId}     → 200 {deleted, export, note} + 清 Cookie
 ```
+
+**与设计原稿的三处差异**（都是实测顶出来的）：
+
+1. **`/auth/*` → `/api/*`**，理由见上（Vercel 目录约定；少一层 rewrite 就少一层不可见映射）
+2. **注销不返回 `exportUrl`** —— 本期没有对象存储放导出文件。
+   数据**直接随响应回**，用户自己存。假装有个下载链接比不做更糟。
+3. **退出登录没有单独接口** —— 会话是签名 Cookie，前端清 Cookie 即可；
+   服务端那条 `revokeSessions` 只在「注销」与「重设凭证」时用（那两件才需要真正吊销）。
+   `/api/session` 那条设计里写了但 1A 没建：它会是一个「删了也不影响任何断言」
+   的接口，而「无害的冗余接口」正是之后会被误用的那一类。
 
 同一套状态机与错误码（§13），客户端只换 `transport` 实现。
 
