@@ -34,20 +34,20 @@
     "诸子论道"
   ];
 
-  function boot() {
-    if (!window.ReaderEngine) return;
-    var all = window.CLASSIC_ALL || window.POEMS_CLASSIC || [];
-    if (!all.length) {
-      var listEl = document.querySelector('[data-gw="list"]');
-      if (listEl) listEl.innerHTML = '<div class="empty">小古文数据加载失败</div>';
-      return;
-    }
-
-    window.ReaderEngine.mount({
+  /**
+   * 这一部的**挂载配置**（不含数据与 DOM 根）。
+   *
+   * 单独拎出来，是因为同一部集子有两个入口：
+   *   1. 直接打开本页（下面的 boot()）；
+   *   2. 在课外阅读入口页 /library/ 里点开这一部，把索引**就地**铺上来
+   *      （见 js/library.js 的 enterBook）。
+   * 两处必须挂**同一份配置**：分组顺序、页名、文案、已读键名（poem_classic_read_v1）
+   * 一个都不能不一样 —— 各写一份迟早出现「同一部集子两个样子」的病
+   * （从这一页进去显示 N 篇、从入口页进去少几篇），而且两处都「看起来对」，最难查。
+   */
+  function bookConfig() {
+    return {
       id: "classic",
-      items: all,
-      root: "[data-gw-root]",
-      reader: "#gw-reader",
       groupOrder: GROUP_ORDER,
       // 页面名与 <title> 口径：与 /guwen/、/tangshi/、/songci/ 一致，用**全名** ——
       // 「小古文」是页签上的短名（装不下全名），顶栏与 <title> 放得下就该写全。
@@ -63,8 +63,30 @@
         readStore: "poem_classic_read_v1",
         playerTitle: "小古文朗读"
       }
-    });
+    };
   }
+
+  function boot() {
+    if (!window.ReaderEngine) return;
+    var all = window.CLASSIC_ALL || window.POEMS_CLASSIC || [];
+    if (!all.length) {
+      var listEl = document.querySelector('[data-gw="list"]');
+      if (listEl) listEl.innerHTML = '<div class="empty">小古文数据加载失败</div>';
+      return;
+    }
+
+    var cfg = bookConfig();
+    cfg.items = all;
+    cfg.root = "[data-gw-root]";
+    cfg.reader = "#gw-reader";
+    window.ReaderEngine.mount(cfg);
+  }
+
+  /* 课外阅读入口页（/library/）就地铺这一部时用它取数据与配置 */
+  window.ClassicBook = {
+    config: bookConfig,
+    items: function () { return window.POEMS_CLASSIC || []; }
+  };
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", boot);

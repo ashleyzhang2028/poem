@@ -180,9 +180,36 @@
     return "home";
   }
 
+  /** 页名的临时覆盖（见 setPage；空串 = 用 body 上的 data-page） */
+  var pageOverride = "";
+
   /** 当前页副标题：由页面在 body 上给出，避免把各页文案硬编码在这里 */
   function pageSub() {
+    if (subOverride) return subOverride;
     return bodyData("sub") || DEFAULT_SUB;
+  }
+
+  /** 副标题的临时覆盖（与 pageOverride 同出一辙，见 setPage / setSub） */
+  var subOverride = "";
+
+  /**
+   * 写（或还原）页顶第二行那句说明。
+   *
+   * 各页的说明本来走 body 上的 data-sub，由 headerHtml 一次画好；
+   * 但「就地换一层」的页面（课外阅读入口页铺一层集子索引）要临时改写它，
+   * 而 headerHtml 只在整行重绘时读一次 —— 所以这里直接落到 #brand-sub 上，
+   * 并把它记成覆盖值，免得下一次重绘（例如打开阅读器）又翻回旧文案。
+   * 传空串 = 还回 body 上的 data-sub。
+   */
+  function paintSubText(text) {
+    subOverride = text == null ? "" : String(text);
+    var bars = readBars();
+    bars.forEach(function (bar) {
+      var el = bar.querySelector("#brand-sub");
+      if (!el) return;
+      var want = subOverride || pageSub();
+      if (el.textContent !== want) el.textContent = want;
+    });
   }
 
   /** 是否显示底部页签（法务页等深页不显示，改用顶栏返回键） */
@@ -190,11 +217,41 @@
     return bodyData("dock") !== "off";
   }
 
-  /* 顶栏右侧动作：JS 可覆盖（阅读器打开时要变成「关闭」） */
-  var headerAction = null; // {icon, label, href, onclick}
+  /* 顶栏右侧动作：JS 可覆盖（阅读器打开时要变成「返回上一级」）。
+     用**栈**而不是一个变量：阅读器可以叠着开 —— 课外阅读入口页
+     （/library/）就是一例，它把一部集子的索引页**就地**铺上来
+     （见 js/library.js），索引页上再点一篇又叠一层阅读器。
+     一个变量的话，开第二层就把第一层的动作冲掉，合上第二层只能落到 null，
+     底下那层露出「回首页」的返回键 —— 就是 Issue #122 那个「点开一首诗，
+     再点右上角返回，直接退到了背诵首页」。
+     栈底那一枚（动作从无到有的第一次）只当锚点，合到最后仍走原来的 null 分支。 */
+  var headerStack = []; // 每项 {icon, label, href, onclick}
+
+  function topAction() {
+    return headerStack.length > 1 ? headerStack[headerStack.length - 1] : null;
+  }
 
   function markSvg() {
     return GLYPHS.mark;
+  }
+
+  /* 页面自己那条顶栏的动作位（默认 null = 画各页默认的「回首页」返回键）。
+     与 headerStack 分开：一个管阅读器那一层，一个管页面这一层，
+     合并起来太绕（阅读器的开 / 关与页面的进 / 退是两件独立的事）。 */
+  var pageAction = null;
+  /* 这一页有没有「就地叠层」的动作位（setPageAction 设过 —— 哪怕现在传的是 null）。
+     常设之后，页面那条顶栏在阅读器开着时画的是**占位符**而不是默认的
+     「回首页」返回键：在集子索引这一层，「回首页」是个错误的落点
+     （点它直接跳去背诵首页，正是 Issue #122 报的那个现象）。 */
+  var pageActionHint = false;
+
+  /** 有没有阅读器那一层开着（开着时页面那条顶栏不画动作键，见 headerHtml） */
+  function readerLayerOpen() {
+    var boxes = document.querySelectorAll(".reader");
+    for (var i = 0; i < boxes.length; i++) {
+      if (!boxes[i].hidden) return true;
+    }
+    return false;
   }
 
   /** 这条顶栏是不是阅读器里的那条（动作位归它，页面顶部那条不参与） */
@@ -207,7 +264,7 @@
   /**
    * 顶栏右端那一个动作位。
    *
-   * isReader 为 true 时（阅读器那条顶栏）才走 headerAction；
+   * isReader 为 true 时（阅读器那条顶栏）才走 topAction()（动作栈的栈顶）；
    * 页面自己那条顶栏即使阅读器开着，也照旧显示「回首页」的返回键 ——
    * 否则页面顶栏与阅读器顶栏会同时渲染出 `id="top-act"`，
    * 一个页面里出现两个同名 id：HTML 不合法，且 `element.querySelector('#top-act')`
@@ -218,10 +275,22 @@
   function headerHtml(isReader) {
     var key = pageKey();
     var sub = pageSub();
-    var action = isReader ? headerAction : null;
+    // 动作位归谁：
+    //   · 阅读器那条（isReader）—— 归 setHeaderAction（阅读器开着时它盖在最上面）；
+    //   · 页面那条 —— 归 setPageAction，但**只在没有阅读器开着的时候**：
+    //     阅读器一开，它那条顶栏就盖在最上面、动作位也归它了，
+    //     页面那条若还画一颗 #top-act，同一页就有两枚同名 id
+    //     （HTML 不合法，且作用域查询只认第一枚 —— jsdom ≥27 的经典翻车姿势）。
+    //     阅读器合上时页面那条会自动重新露出它那一颗（重绘由 hideReader 触发）。
+    // 页面那条还有一个「暂时不画」的中间态：这一页有 setPageAction 的动作，
+    // 但此刻阅读器那一层开着（动作位归阅读器）—— 那时**既不该画动作键，
+    // 也不该落回默认的「回首页」**：那一颗在索引层上是错的落点（点它跳首页）。
+    // 所以给它占位符，保持两栏对齐，也免得阅读器关掉时左右跳一下。
+    var pageActionHeld = !isReader && !readerLayerOpen() && !pageAction && !!pageActionHint;
+    var action = isReader ? topAction() : (readerLayerOpen() ? null : pageAction);
     var right;
 
-    if (isReader && !action) {
+    if ((isReader && !action) || pageActionHeld) {
       // 阅读器那条顶栏在「没动作」时（阅读器已合上、或还没打开）只留占位：
       // 它此刻是 hidden 的，不该再渲染一颗 id="top-back" —— 页面顶栏已经有同样一枚，
       // 同名 id 再一次不合法，且作用域查询会认错人。
@@ -275,6 +344,10 @@
 
   /** 第一行里的页面名：首页是「「用户名」的古诗词」，其余页用 data-page */
   function pageTitle() {
+    // 页名可以被页面临时改掉（课外阅读入口页铺上一层集子索引时，
+    // 第一行要从「课外阅读」变成「唐诗三百首」，见 setPage）。
+    // ⚠️ 覆盖只影响**这一行**，body 上的 data-page 不动，清掉覆盖就还原。
+    if (pageOverride) return pageOverride;
     var v = bodyData("page");
     if (v != null) return v;
     var k = pageKey();
@@ -471,6 +544,27 @@
     return list;
   }
 
+  /**
+   * 页面顶栏的「返回上一层」动作：事件委托，绑一次就够。
+   *
+   * 为什么要委托：这一条顶栏会被整行重绘多次（renderBar 换 innerHTML），
+   * 逐次 addEventListener 会在每一次重绘后失效 —— 表现正是
+   * 「按钮画出来了、点了没反应」，而且只在第二次之后再点才发生，最难查。
+   * 委托绑在顶栏节点上（那个节点本身不换），一次绑好、终身有效；
+   * 只有**页面自己那条**顶栏会响应（阅读器那条走 setHeaderAction 直接绑）。
+   */
+  function bindPageAction() {
+    var bar = document.querySelector(".app > .topbar");
+    if (!bar || bar.dataset.pageActionBound) return;
+    bar.dataset.pageActionBound = "1";
+    bar.addEventListener("click", function (e) {
+      if (!pageAction || !pageAction.onclick) return;
+      var btn = e.target && e.target.closest ? e.target.closest("#top-act") : null;
+      if (!btn || btn.closest(".reader")) return;
+      pageAction.onclick(e);
+    });
+  }
+
   function bindDock(dock) {
     dock.addEventListener("click", function (e) {
       var btn = e.target && e.target.closest ? e.target.closest("[data-nav-go]") : null;
@@ -530,7 +624,18 @@
      *  · 页面顶栏也不必挂上「返回小古文列表」这句话，免得整行连出两个「小古文」。
      */
     setHeaderAction: function (action) {
-      headerAction = action || null;
+      // null = 「这一层合上了」：弹掉栈顶一层；栈空了就是全合上。
+      // 传对象 = 「又开了一层」：压栈。
+      // 压栈时若底下还是空的，先垫一枚空锚点，让「合到最后」仍落回 null 分支
+      // （否则最后一层合上会弹空栈，页面上留下一个错误的默认返回键）。
+      if (action) {
+        if (!headerStack.length) headerStack.push(null);
+        headerStack.push(action);
+      } else if (headerStack.length > 1) {
+        headerStack.pop();
+      } else {
+        headerStack.length = 0;
+      }
       var bars = readBars();
       bars.forEach(function (bar) {
         renderBar(bar);
@@ -543,8 +648,79 @@
         btn.addEventListener("click", action.onclick);
       });
     },
+    /** 写 / 还原页顶第二行那句说明（见 paintSubText） */
+    setSub: function (text) { paintSubText(text); },
+    /**
+     * 页面自己那条顶栏的右侧动作位换成「返回上一层」。
+     *
+     * 与 setHeaderAction 的分工（两者都画成同一颗返回箭头，位置也一样）：
+     *   · setHeaderAction —— **阅读器那条**顶栏的动作位（阅读器开着时它盖在最上面）；
+     *   · setPageAction   —— **页面顶部那条**顶栏的动作位，页面里没有阅读器
+     *     可挂动作时用（课外阅读入口页把某部的索引**就地**铺上来，那一层
+     *     就是页面本身，没有另一条顶栏，见 js/library.js）。
+     * 两条各画各的，同一时刻只有一条看得见 —— 所以全页仍然只有一枚 #top-act。
+     * 传 null 还原成各页默认那颗「回首页」。
+     */
+    setPageAction: function (action) {
+      pageAction = action || null;
+      if (action) pageActionHint = true;
+      // 重绘页面那条（页面小件由 renderBar 按枚搬回，与别处同一条路），
+      // 再把动作绑上去 —— 重绘会把它清掉，顺序不能反。
+      var bars = readBars();
+      bars.forEach(function (bar) {
+        if (isReaderBar(bar)) return;
+        renderBar(bar);
+      });
+      if (!pageAction || !pageAction.onclick) return;
+      // ⚠️ 用**事件委托**绑在顶栏上，不再逐次给那一颗按钮 addEventListener：
+      //    这一条顶栏会被反复整行重绘（换集子、开合阅读器都会），逐次绑就得
+      //    每次重绘后重绑一遍 —— 漏一次，按钮就成了一颗按不动的装饰：
+      //    「画出来了、点了没反应」，而且只在第二次之后再点才发生，最难查。
+      //    委托绑在顶栏节点上（那个节点本身不换），一次绑好、终身有效。
+      bindPageAction();
+    },
+    /**
+     * 页顶那一行里的「进度牌」（0 / 301 首 之类）。
+     *
+     * 给课外阅读入口页用：铺上一层集子索引时，这一枚牌子要按集子换数、换单位
+     * （课内 261 首 / 小古文 100 篇……）。牌子**不是** chrome.js 渲染的
+     * （它是各页自己挂在顶栏里的「页面小件」，见 renderBar），
+     * 所以这里只提供「取到那一枚」与「整行重绘后别丢」两件事：
+     *   · 取：返回页顶那条顶栏里的 .count-badge（没有就 null）；
+     *   · 保：整行重绘会把小件出栈再插回，调用方不必自己搬。
+     * 页面自己设文案与 textContent，chrome.js 不猜它的口径。
+     */
+    badge: function () {
+      var bar = document.querySelector(".app > .topbar") || document.querySelector(".topbar");
+      if (!bar) return null;
+      var el = bar.querySelector(":scope > .count-badge");
+      if (el) return el;
+      // 还没有：造一枚插到品牌区之后、动作位之前（与 renderBar 的插回位置同一处）
+      el = document.createElement("span");
+      el.className = "count-badge";
+      var act = bar.querySelector(".top-act, .top-act-spacer");
+      if (act) bar.insertBefore(el, act);
+      else bar.appendChild(el);
+      return el;
+    },
     /** 打开设置（页签与顶栏按钮共用） */
     openSettings: openSettings,
+    /**
+     * 改第一行的页名（默认取 body 上的 data-page）。
+     *
+     * 给课外阅读入口页用：它把某一部的索引**就地**铺上来时，页顶那一行
+     * 要跟着换成那一部的名字（「课外阅读」→「唐诗三百首」，见 js/library.js）。
+     * 不传 / 传空串就还回 body 上的 data-page。
+     * 只改这一行，不动 DOM 里的其它东西；页名是纯文本，走 textContent，不拼 HTML。
+     */
+    setPage: function (name) {
+      pageOverride = name == null ? "" : String(name);
+      var bars = readBars();
+      bars.forEach(function (bar) {
+        var el = bar.querySelector("#brand-page-text");
+        if (el) el.textContent = pageTitle();
+      });
+    },
     appName: APP_NAME
   };
 

@@ -776,6 +776,20 @@ body.reader-open .dock { display: none; }
 .reader > .topbar {
   background: var(--bg-soft);
   border-bottom: 1px solid var(--line);
+  /* 宽度必须显式定住：.reader 是 flex 列容器（见上），而 .topbar 是它的
+     flex 项 —— 交叉轴（横向）上 flex 项默认按内容取宽，不是撑满容器。
+     列表页那一条顶栏住在 .app（块级）里，块级子元素天然占满一行，所以
+     从没露过这个问题；阅读器这一条一到这里就退化成「按内容取宽」。
+     于是「跬步」+ 页名 + 进度牌 + 返回键四件加起来有多宽，顶栏就有多宽：
+     手机上《昭明文选》量到 427px（视口 393px），《课外必背小古文》424px、
+     《唐诗三百首》389px（视口 320px）—— 顶栏直接顶出屏幕右缘，
+     右边那颗返回键被裁掉一半、点不着；body 是 overflow: hidden，
+     所以既不出现横向滚动条，也不会有任何报错，只是「右边的字/键不见了」。
+     width: 100% 把它钉回容器宽度，max-width: 720px 仍然管宽屏上限。
+     min-width: 0 是同一件事的另一半：flex 项默认 min-width: auto，
+     长页名会把整个顶栏顶宽，这一行不许它参与「撑宽」这件事。 */
+  width: 100%;
+  min-width: 0;
 }
 
 .reader-body {
@@ -1999,6 +2013,15 @@ body[data-nav="search"] #gw-list .empty[data-empty="idle"] { padding: 0; }
   flex-direction: column;
   gap: 12px;
 }
+/* 两层「就地叠」的显示开关（Issue #122）----
+   第一层是集子目录（.library-grid），第二层是某一部的索引（[data-lib-view="book"]）。
+   两层的显隐由 js/library.js 切 hidden 属性，这里**不写 display** ——
+   写了就会把 hidden 顶掉（作者样式里的 display 比 hidden 的默认规则更具体，
+   元素明明 hidden 了还看得见）。只保证被 hidden 时确实不占位。 */
+.library-grid[hidden],
+[data-lib-view="book"][hidden] {
+  display: none !important;
+}
 /* 平板 / 桌面：六张卡排成两列
    --------------------------------------------------------------------------
    手机上六张卡竖着排（一屏一张多一点，滚动就是「一部接一部」），是对的；
@@ -2071,11 +2094,21 @@ body[data-nav="search"] #gw-list .empty[data-empty="idle"] { padding: 0; }
     max-width: none;
   }
 }
-/* 一张卡 = 一部集子。整张卡是一个 <a>，点哪儿都进得去（不是只有标题能点），
-   所以卡片本身要有 active / focus 反馈，不能只在标题上下 300ms 的功夫。 */
+/* 一张卡 = 一部集子。整张卡点哪儿都进得去（不是只有标题能点），
+   所以卡片本身要有 active / focus 反馈，不能只在标题上下 300ms 的功夫。
+   ⚠️ 课内诗词那张是 <a href="/poems/">（跳转，可中键新开），
+      另外五张是 <button>（点了在这一页就地铺开索引，见 js/library.js 的 enterBook）。
+      所以这里的宽度 / 字体 / 颜色要同时对两者成立 —— <button> 自带
+      font: inherit 之外的默认样式（字体、字号、对齐、背景），
+      一条都不能少写，否则五张卡会比课内那张「长得不一样」。 */
 .library-card {
   position: relative;
   display: block;
+  width: 100%;
+  font: inherit;
+  font-size: inherit;
+  text-align: left;
+  cursor: pointer;
   box-sizing: border-box;
   padding: 16px 40px 16px 16px;
   background: var(--card);
