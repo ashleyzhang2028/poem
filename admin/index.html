@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#2f6055" />
+  <title>管理后台 · 跬步</title>
+  <meta name="description" content="跬步管理后台：按邮箱掩码发放 Free / Pro / Max 层级，导出与导入发放名单。" />
+  <meta name="format-detection" content="telephone=no" />
+  <meta name="robots" content="noindex, nofollow" />
+
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="mobile-web-app-capable" content="yes" />
+
+  <base href="/" />
+  <link rel="icon" href="./icons/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/account.css" />
+</head>
+<body data-nav="admin" data-dock="off" data-back="/profile/" data-page="管理后台" data-sub="发放层级 · 名单导入导出">
+  <div class="app">
+    <header class="topbar"></header>
+
+    <main class="account-page" id="admin-page">
+      <!-- ==================================================================
+           管理后台（Issue #132 · A→B→C→D 的 C）
+           ------------------------------------------------------------------
+           ⚠️ 两条必须说清的诚实口径（写进界面、也写进文档 §3.5）：
+             1. **本期没有服务端，「发给别人」发不出去。**
+                做法是「手工发邀请码」的本机版：管理员按邮箱掩码写好名单 →
+                把名单发给对方 → 对方在自己浏览器上导入 → 匹配到掩码即生效。
+             2. **对方改一行存储就能升级。** 所以它**不是收费凭据、
+                也不是安全边界**；真正的权威发放要等 1 期服务端
+                （`POST /admin/grant`），届时这个名单文件原样搬过去。
+           界面上一句都不含糊，免得日后被当成「已经能收费了」。
+           ================================================================== -->
+
+      <!-- ---------- 非管理员：整页如实拒绝（且不渲染下面任何一块） ---------- -->
+      <section class="account-card" id="deny-card" hidden>
+        <h2 class="account-card-title danger-title">没有权限</h2>
+        <p class="account-lead" id="deny-lead"></p>
+        <button class="account-btn ghost" id="btn-back-profile" type="button">回到个人中心</button>
+      </section>
+
+      <!-- ---------- 一、发放 ---------- -->
+      <section class="account-card" id="grant-card" hidden>
+        <h2 class="account-card-title">发放层级</h2>
+        <p class="account-lead">
+          按<strong>邮箱掩码</strong>发放（如 <code>b***@qq.com</code>，与账号页上显示的那串一致）。
+          同一掩码重复发放时以最新一条为准。
+        </p>
+        <div class="grant-form">
+          <div class="account-field">
+            <label class="account-label" for="input-mask">邮箱掩码</label>
+            <input id="input-mask" class="account-input" type="text" autocomplete="off"
+                   spellcheck="false" placeholder="b***@qq.com" maxlength="80" />
+          </div>
+          <div class="account-field">
+            <label class="account-label" for="input-until">到期日（可留空＝永久）</label>
+            <input id="input-until" class="account-input" type="date" />
+          </div>
+          <button class="account-btn" id="btn-grant" type="button">发放</button>
+        </div>
+        <div class="account-field" style="margin-top:12px">
+          <label class="account-label">层级</label>
+          <div class="tier-pick" id="tier-pick" role="radiogroup" aria-label="选择层级"></div>
+        </div>
+        <p class="account-msg" id="msg-grant"></p>
+      </section>
+
+      <!-- ---------- 二、名单 ---------- -->
+      <section class="account-card" id="list-card" hidden>
+        <h2 class="account-card-title">本机发放名单</h2>
+        <ul class="grant-list" id="grant-list"></ul>
+        <p class="account-hint" id="grant-empty" hidden>还没有发放过任何层级。</p>
+        <div class="confirm-row" style="margin-top:12px">
+          <button class="account-btn ghost" id="btn-export" type="button">导出名单</button>
+          <button class="account-btn ghost" id="btn-import-open" type="button">导入名单</button>
+        </div>
+        <p class="account-msg" id="msg-list"></p>
+      </section>
+
+      <!-- ---------- 三、模拟身份（本期后台最有用的功能） ---------- -->
+      <section class="account-card" id="sim-card" hidden>
+        <h2 class="account-card-title">模拟身份</h2>
+        <div class="sim-row">
+          <span>以 <strong id="sim-label">Free</strong> 身份预览</span>
+          <button class="account-btn ghost" id="btn-sim" type="button" style="width:auto;padding:9px 16px"></button>
+        </div>
+        <p class="settings-hint" id="sim-hint">
+          打开后，本机层级临时降到 Free：一秒看清免费用户看到什么。
+          这是本期后台最有用的功能，也是将来做真实权益时的回归手段。
+        </p>
+      </section>
+
+      <!-- ---------- 四、危险区 ---------- -->
+      <section class="account-card danger-zone" id="danger-card" hidden>
+        <h2 class="account-card-title danger-title">危险区</h2>
+        <p class="account-lead">
+          清空发放名单会<strong>立刻收回所有已发放的层级</strong>（对方下次打开页面即回落 Free）。
+          这条不可撤销。
+        </p>
+        <div class="confirm-row" id="wipe-step-1">
+          <button class="account-btn danger" id="btn-wipe-start" type="button">清空发放名单</button>
+        </div>
+        <div class="confirm-row" id="wipe-step-2" hidden>
+          <button class="account-btn danger" id="btn-wipe-confirm" type="button">确认清空</button>
+          <button class="account-btn ghost" id="btn-wipe-cancel" type="button">取消</button>
+        </div>
+        <p class="account-msg" id="msg-wipe"></p>
+      </section>
+    </main>
+
+    <footer class="foot settings-foot">
+      <span class="foot-copy">&copy;2026 kuibu.app 积跬步, 至千里</span>
+      <span class="foot-links">
+        <a href="/terms/">用户协议</a>
+        <span class="foot-sep">·</span>
+        <a href="/privacy/">隐私条款</a>
+      </span>
+    </footer>
+  </div>
+
+  <!-- 导入名单的对话框：与「我的清单」导入同一套 .modal / .text-modal 组件，
+       不另起一套弹层。textarea 里粘 JSON，确定即导入。 -->
+  <div class="modal text-modal" id="text-dialog" hidden>
+    <div class="modal-mask" data-close="1"></div>
+    <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="text-dialog-title">
+      <button class="modal-close" data-close="1" aria-label="关闭">✕</button>
+      <div class="modal-head">
+        <h2 id="text-dialog-title"></h2>
+      </div>
+      <p class="text-dialog-tip" id="text-dialog-tip"></p>
+      <textarea id="text-dialog-text" spellcheck="false" aria-label="发放名单 JSON"></textarea>
+      <div class="actions">
+        <button type="button" class="btn" id="text-dialog-cancel">关闭</button>
+        <button type="button" class="btn good primary-btn" id="text-dialog-ok">导入</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+
+  <script src="/js/auth-core.js"></script>
+  <script src="/js/entitlement.js"></script>
+  <script src="/js/avatar.js"></script>
+  <script src="/js/admin-page.js"></script>
+  <script src="/js/chrome.js"></script>
+  <script src="/js/pwa.js"></script>
+</body>
+</html>

@@ -1836,7 +1836,10 @@ body.has-install-tip #app {
 }
 /* 首页右侧占位：右上角不再放设置齿轮（底部页签已有「设置」），
    留一个不可见占位，顶栏的左右两栏对齐关系不变 */
-.top-act-spacer { width: 40px; height: 40px; flex: none; }
+/* 不可见占位：宽度必须与右侧簇里那颗**最大**的按钮同宽，否则顶栏左右不配平。
+   头像改成 42px（与 logo 同径）之后，占位也跟着取 42 —— 与 `.top-user`
+   同一条尺寸口径，改一处两处一起走。 */
+.top-act-spacer { width: 42px; height: 42px; flex: none; }
 .top-act .top-act-icon { display: inline-flex; }
 .top-act svg, .icon-btn svg { width: 20px; height: 20px; display: block; }
 .top-act:hover, .icon-btn:hover { color: var(--green); }
@@ -1844,11 +1847,14 @@ body.has-install-tip #app {
 
 /* ---------- 顶栏右侧簇（Issue #132 · 2026-09-15） ----------
    右侧从「一个动作位」升级成「一枚恒定锚点 + 若干颗」：
-   ┌──────────────────────────────────────────┐
-   │ 〔徽标〕 跬步 · 页名        [↩] [◯头像]  │
-   └──────────────────────────────────────────┘
-    品牌区（可收缩，走 ellipsis）  ↑      ↑
-                                 返回键   固定锚点
+   ┌────────────────────────────────────────────┐
+   │ (徽标42) 跬步 · 页名        [↩40] (头像42) │
+   └────────────────────────────────────────────┘
+     品牌区（可收缩，走 ellipsis）  ↑       ↑
+                                返回键    固定锚点
+   ⚠️ 头像与徽标**同径 42px**（用户 2026-09-15 要求「和 logo 一模一样大小的
+      圆形」）；返回键仍是 40px 的圆形按钮 —— 它不跟 logo 配平，
+      它是右侧簇里的一颗普通动作键。
 
    两条硬规矩：
    1. **头像永远在最右，返回键在它左边** —— 返回键的落点会变（有时没有），
@@ -1862,12 +1868,27 @@ body.has-install-tip #app {
   flex: none;
 }
 
-/* 头像：圆的方角印（border-radius 26%），与 .top-act 同高，像一枚盖在纸上的印。
-   底色 / 字色由 js/avatar.js 内联给出（色值来自用户选择，样式表穷举不了），
+/* 头像：**与 logo 一模一样大的圆形**，印色铺满整圆（Issue #132 · 用户 2026-09-15）。
+   --------------------------------------------------------------------------
+   用户原话：「右上角方形圆角还是替换成和 logo 一模一样大小的圆形吧。」
+   于是顶栏那一枚的规格与品牌区那枚徽标（.brand-mark）**逐位对齐**：
+     · 同一个直径 —— 42px（此前是 40px 的点击区里放 32px 的方角印）
+     · 同一个圆心 —— 品牌标在左、头像在右，两枚同高同径，顶栏左右才配平
+     · 同一个圆 —— border-radius 50%（此前 .seal-avatar 是 26% 的「圆的方角」）
+
+   为什么整圆不是「方角印缩成 40px」：圆形的视觉直径比同边长的方角小两圈，
+   要让它看着与 logo 一般大，就必须**真的同径**（42px），并且让印色**铺满**
+   —— 所以顶栏这一枚不再留 .seal-avatar 的 26% 圆角与内缩，而是由
+   `.top-user > .seal-avatar` 覆写成 100% 满幅的圆。
+
+   底色 / 字色仍由 js/avatar.js 内联给出（色值来自用户选择，样式表穷举不了），
    这里只管尺寸、圆角、字族与呼吸感。 */
 .top-user {
-  width: 40px;
-  height: 40px;
+  /* --user-size 就是 .brand-mark 的 42px：两枚同径是同一条口径，
+     写死两处必然有一天只改了一处（尺寸漂移在顶栏上格外显眼）。 */
+  --user-size: 42px;
+  width: var(--user-size);
+  height: var(--user-size);
   flex: none;
   display: inline-flex;
   align-items: center;
@@ -1875,6 +1896,13 @@ body.has-install-tip #app {
   border-radius: 50%;
   text-decoration: none;
   transition: transform .15s, box-shadow .18s;
+}
+/* 顶栏那一枚整圆：印色铺满，与左侧 logo 的圆「同一个圆」 */
+.top-user > .seal-avatar {
+  --seal-size: var(--user-size);
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
 }
 .top-user:hover { box-shadow: 0 0 0 3px rgba(165, 92, 25, .18); }
 .top-user:active { transform: scale(.94); }
@@ -1901,8 +1929,10 @@ body.has-install-tip #app {
   /* 印面一圈极细的高光，像印泥压在纸上的边沿 */
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .34);
 }
-/* 顶栏里那一枚：40px 的圆形点击区里放 32px 的印，留出呼吸 */
-.seal-avatar-top { --seal-size: 32px; }
+/* 顶栏里那一枚：直径由 .top-user 的 --user-size 统一给（与 logo 同径 42px）。
+   这里只保留一个兜底值 —— 万一 .top-user 的样式没生效（老缓存里少了那一段），
+   印也不会退化成零尺寸的空圆。 */
+.seal-avatar-top { --seal-size: 42px; }
 
 /* ---------- 底部页签 ---------- */
 .dock {

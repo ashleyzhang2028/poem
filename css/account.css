@@ -1,0 +1,351 @@
+/* ==========================================================================
+   账号页样式（Issue #132 · /login/ 与 /profile/、/admin/）
+   --------------------------------------------------------------------------
+   与主应用同一套配色（宋代传统色）与圆角 —— 本文件的调色板以 css/style.css
+   的 :root 变量为准，**不另起一套颜色**。
+
+   三种页共用一张表，是因为它们回答的是同一类问题：
+     /login/    我是谁（进来）
+     /profile/  我是谁（看自己、退出、注销）
+     /admin/    谁能管理（发放层级）
+   表单控件的圆角 / 内边距 / 聚焦光晕一律沿用 .settings-input 那一套口径，
+   不在这里重新发明一套 —— 账号页的输入框和设置页的输入框必须是同一个样子。
+   ========================================================================== */
+
+/* ---------- 页容器：与设置页同一档宽度 ---------- */
+.account-page {
+  padding: 4px 0 14px;
+}
+
+/* ---------- 一、卡片（与设置页 .settings-group 同一视觉语言） ---------- */
+.account-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 16px 14px;
+  margin-bottom: 12px;
+}
+.account-card + .account-card { margin-top: 0; }
+.account-card-title {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: .8px;
+  color: var(--ink-2);
+  margin: 0 0 12px;
+}
+.account-lead {
+  margin: 0 0 12px;
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--ink-2);
+}
+.account-hint {
+  margin: 8px 0 0;
+  font-size: 11.5px;
+  line-height: 1.7;
+  color: var(--ink-3);
+}
+/* 如实标注「本地体验版」的那一条：要显眼，不许含糊 */
+.account-note {
+  margin: 10px 0 0;
+  font-size: 12px;
+  line-height: 1.75;
+  color: var(--ink-2);
+  background: var(--bg);
+  border-left: 3px solid var(--line);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  padding: 9px 11px;
+}
+
+/* ---------- 二、表单 ---------- */
+.account-field { margin-bottom: 12px; }
+.account-field:last-child { margin-bottom: 0; }
+.account-label {
+  display: block;
+  font-size: 12.5px;
+  color: var(--ink-2);
+  margin-bottom: 6px;
+}
+/* 输入框与设置页 .settings-input 同档；圆角 / 聚焦光晕沿用全站那条 */
+.account-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 11px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 15px;
+  outline: none;
+  transition: border-color .15s, background .15s;
+}
+.account-input:focus {
+  border-color: var(--green);
+  background: #fffdf6;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(47, 96, 85, .10);
+}
+.account-input::placeholder { color: #9c8d7b; }
+/* 邮箱要走系统键盘的邮箱布局；验证码走数字键盘（手机上这一步差别很大） */
+.account-input[type="email"] { letter-spacing: .2px; }
+
+.account-btn {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--green);
+  color: #fdfaf2;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter .15s, transform .12s;
+}
+.account-btn:hover { filter: brightness(1.06); }
+.account-btn:active { transform: scale(.985); }
+.account-btn[disabled] {
+  background: var(--line);
+  color: var(--ink-3);
+  cursor: default;
+  filter: none;
+}
+.account-btn.ghost {
+  background: var(--bg);
+  color: var(--ink-2);
+  border: 1px solid var(--line);
+}
+.account-btn.ghost:hover { color: var(--green); border-color: var(--green); filter: none; }
+.account-btn.danger { background: var(--red-light); color: var(--red); border: 1px solid #ecd2cd; }
+.account-btn.danger:hover { filter: brightness(.98); }
+.account-btn + .account-btn { margin-top: 8px; }
+
+/* 就地提示：格式错 / 频控 / 码错，都在输入框下方出现，不弹窗 */
+.account-msg {
+  margin: 8px 0 0;
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: var(--ink-2);
+  min-height: 0;
+}
+.account-msg:empty { display: none; }
+.account-msg.warn { color: var(--red); }
+.account-msg.ok { color: var(--green); }
+
+/* ---------- 三、六格验证码 ---------- */
+.code-row {
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+.code-box {
+  flex: 1 1 0;
+  min-width: 0;
+  aspect-ratio: 1 / 1.18;
+  max-width: 54px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  color: var(--ink);
+  font-family: var(--font-poem);
+  font-size: 21px;
+  font-weight: 600;
+  text-align: center;
+  outline: none;
+  padding: 0;
+  transition: border-color .15s, box-shadow .15s, background .15s;
+  -moz-appearance: textfield;
+}
+.code-box::-webkit-outer-spin-button,
+.code-box::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.code-box:focus {
+  border-color: var(--green);
+  background: #fffdf6;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(47, 96, 85, .10);
+}
+.code-box.filled { border-color: var(--green); }
+
+/* ---------- 四、倒计时 / 重发那一行 ---------- */
+.code-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 10px 0 12px;
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+.code-resend {
+  border: none;
+  background: none;
+  color: var(--green);
+  font-family: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+  padding: 2px 0;
+  text-decoration: underline;
+}
+.code-resend[disabled] { color: var(--ink-3); cursor: default; text-decoration: none; }
+
+/* ---------- 五、步骤切换：同屏递进，不跳页 ---------- */
+.account-step[hidden] { display: none; }
+
+/* ---------- 六、身份一览（profile 顶部 / 管理员发放表） ---------- */
+.identity-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.identity-main { min-width: 0; flex: 1; }
+.identity-name {
+  font-family: var(--font-poem);
+  font-size: 19px;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0 0 3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.identity-sub {
+  font-size: 12.5px;
+  color: var(--ink-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* 头像那一枚印在账号页要更大一号（这里是「看自己」的地方） */
+.identity-row .seal-avatar { --seal-size: 52px; }
+
+/* ---------- 七、层级徽章 ---------- */
+.tier-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: .5px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--ink-2);
+  border: 1px solid var(--line);
+  white-space: nowrap;
+}
+.tier-badge.tier-pro { background: var(--amber-light); color: var(--amber); border-color: var(--line); }
+.tier-badge.tier-max { background: var(--green-light); color: var(--green); border-color: var(--line); }
+
+/* ---------- 八、权限清单：一条一事 ---------- */
+.cap-list { list-style: none; margin: 0; padding: 0; }
+.cap-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--ink);
+  border-bottom: 1px solid var(--line-2);
+}
+.cap-list li:last-child { border-bottom: none; }
+.cap-mark { flex: none; width: 16px; text-align: center; }
+.cap-list li.off { color: var(--ink-3); }
+.cap-name { flex: 1; min-width: 0; }
+.cap-hint { font-size: 11.5px; color: var(--ink-3); }
+
+/* ---------- 九、键值行（账号 / 设备 / 时间） ---------- */
+.kv-list { margin: 0; }
+.kv-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 0;
+  font-size: 13px;
+  border-bottom: 1px solid var(--line-2);
+}
+.kv-row:last-child { border-bottom: none; }
+.kv-k { color: var(--ink-2); flex: none; }
+.kv-v {
+  color: var(--ink);
+  text-align: right;
+  min-width: 0;
+  word-break: break-all;
+}
+
+/* ---------- 十、发放名单 ---------- */
+.grant-list { list-style: none; margin: 0; padding: 0; }
+.grant-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line-2);
+  font-size: 13px;
+}
+.grant-row:last-child { border-bottom: none; }
+.grant-mail { flex: 1; min-width: 0; word-break: break-all; }
+.grant-when { font-size: 11.5px; color: var(--ink-3); }
+.grant-del {
+  flex: none;
+  border: none;
+  background: none;
+  color: var(--red);
+  font-family: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+  padding: 2px 4px;
+}
+.grant-form { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; }
+.grant-form .account-field { flex: 1 1 140px; margin-bottom: 0; }
+.grant-form .account-btn { width: auto; flex: none; padding: 11px 16px; }
+.grant-form .account-input { font-size: 14px; }
+.tier-pick { display: flex; gap: 6px; flex-wrap: wrap; }
+.tier-pick button {
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--ink-2);
+  font-family: inherit;
+  font-size: 12.5px;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.tier-pick button.active {
+  border-color: var(--green);
+  color: var(--green);
+  background: #fffdf6;
+  box-shadow: inset 0 0 0 1px rgba(47, 96, 85, .28);
+}
+
+/* ---------- 十一、危险区 ---------- */
+.account-card.danger-zone { border: 1px solid #ecd2cd; }
+.danger-title { color: var(--red); }
+.confirm-row { display: flex; gap: 8px; }
+.confirm-row .account-btn { margin-top: 0; }
+
+/* ---------- 十二、管理员页的「模拟身份」 ---------- */
+.sim-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 13px;
+}
+.sim-row .settings-hint { margin: 0; }
+
+/* ---------- 十三、窄屏 ----------
+   六格验证码在 320px 屏上会各自缩到 40px 出头 —— 仍然点得着（>=40px 是
+   移动端可点面积的下限），不额外做分隔符或换行。 */
+@media (max-width: 340px) {
+  .code-row { gap: 5px; }
+  .code-box { font-size: 19px; }
+}
+/* ---------- 十四、宽屏：单列不拉满整屏（与全站 --content-w 同一条口径） ---------- */
+@media (min-width: 1024px) {
+  .account-page { max-width: 560px; }
+}

@@ -134,6 +134,9 @@
     zhaoming: "/zhaoming/",
     search: "/search/",
     settings: "/settings/",
+    login: "/login/",
+    profile: "/profile/",
+    admin: "/admin/",
     terms: "/terms/",
     privacy: "/privacy/"
   };
@@ -177,6 +180,10 @@
     if (/^\/zhaoming\/?$/.test(p) || /^\/zhaoming\/index\.html$/.test(p)) return "zhaoming";
     if (/^\/settings\/?$/.test(p) || /^\/settings\/index\.html$/.test(p)) return "settings";
     if (/^\/progress\/?$/.test(p) || /^\/progress\/index\.html$/.test(p)) return "progress";
+    // 账号三页：登录 / 个人中心 / 管理后台（Issue #132 · A→B→C→D 的 B / C）
+    if (/^\/login\/?$/.test(p) || /^\/login\/index\.html$/.test(p)) return "login";
+    if (/^\/profile\/?$/.test(p) || /^\/profile\/index\.html$/.test(p)) return "profile";
+    if (/^\/admin\/?$/.test(p) || /^\/admin\/index\.html$/.test(p)) return "admin";
     return "home";
   }
 
@@ -381,8 +388,8 @@
    *
    * 三个刻意的取舍：
    *   · **未登录也画**：未登录时是一枚「默认印（诗字 / 朱砂）」，它不是账号入口的
-   *     伪装，而是一个恒定的身份锚点 —— 点了去设置页（`/profile/` 还没建，
-   *     见 auth-design §11 的 A→B→C→D 顺序）。空着反而让用户以为「右上角什么都没有」。
+   *     伪装，而是一个恒定的身份锚点 —— 点了去 `/profile/`（未登录时那一页
+   *     自己会变成引导页，见 js/profile.js）。空着反而让用户以为「右上角什么都没有」。
    *   · **独立的 id / 类名**：`id="top-user"` / `.top-user`，**不复用 `#top-act`
    *     与 `#top-back`**。仓库里有一条硬断言「全页只有一枚 #top-act / #top-back」，
    *     顺手写进同一个 id 会让它变红；且 jsdom ≥27 下 `querySelector('#top-act')`
@@ -402,21 +409,32 @@
         //    顶栏永远画默认的「诗」字印 —— 用户选了梅、首页也显示梅，
         //    只有顶栏还是诗，是最难解释的那类不一致（不报错、只是画错）。
         var backing = (typeof globalThis !== "undefined" && globalThis.localStorage) || null;
-        inner = A.html(backing, { cls: "seal-avatar-top", size: 32 });
+        // ⚠️ **不传 size**：直径由 CSS 统一给（`.top-user` 的 `--user-size: 42px`，
+        //    与 `.brand-mark` 的徽标同径 —— 用户 2026-09-15 要求「和 logo
+        //    一模一样大小的圆形」）。在这里再写一个数字就是第二个尺寸来源，
+        //    那个数字早晚会和样式表里那个不一致。
+        inner = A.html(backing, { cls: "seal-avatar-top" });
       } catch (e) { inner = ""; }
     }
     if (!inner) return '<span class="top-act-spacer" aria-hidden="true"></span>';
     // 骨架是 <a>：一个真实链接（可右键 / 可键盘 / 可读屏），不是「点了没反应」的装饰。
-    // 目标暂定 `/profile/`；那一页本期还没建（见 auth-design §11 的 A→B→C→D 顺序），
-    // 所以先指设置页 —— 页面上有头像可改、有账号入口，比指一个 404 诚实。
+    // 落点是 `/profile/` —— 那一页建好之后，这里就不再退回设置页了：
+    // 「点头像 → 看自己」是肌肉记忆，中间隔一层设置页就不叫锚点了。
     return '<a class="top-user" id="top-user" href="' + userHref() + '"' +
       ' aria-label="个人中心" title="个人中心">' + inner + "</a>";
   }
 
-  /** 头像的落点：`/profile/` 建好之前先回设置页（有头像可改、有账号入口） */
+  /**
+   * 头像的落点 = `/profile/`。
+   *
+   * 曾经先指设置页（那时 `/profile/` 还没建，指一个 404 不如指一个能改头像的地方）。
+   * 现在那一页有了，就回到「点头像看自己」这个唯一正确的语义上 ——
+   * 保留 `__AVATAR_PAGE__` 这个覆盖口是给「同一套 chrome 渲染到别处」的情形用的
+   * （测试与将来的多入口），不是给页面自己改跳转的。
+   */
   function userHref() {
     var p = (typeof globalThis !== "undefined" && globalThis.__AVATAR_PAGE__) || "";
-    return p || ROUTES.settings;
+    return p || ROUTES.profile;
   }
 
   /**

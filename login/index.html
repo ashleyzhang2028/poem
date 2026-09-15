@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#2f6055" />
+  <title>登录 · 跬步</title>
+  <meta name="description" content="跬步登录：不注册也能用全部功能；用邮箱随机码建一个只存在本机的账号，让背诵进度不因清缓存而丢失。" />
+  <meta name="format-detection" content="telephone=no" />
+  <meta name="robots" content="noindex, follow" />
+
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="跬步" />
+  <meta name="mobile-web-app-capable" content="yes" />
+
+  <base href="/" />
+  <link rel="icon" href="./icons/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/account.css" />
+</head>
+<!-- data-dock="off"：登录页是一段「专心做完」的流程，不留底部页签免得误触跳走
+     （法务页同款）。data-back 指设置页：账号入口在设置里。 -->
+<body data-nav="login" data-dock="off" data-back="/settings/" data-page="登录" data-sub="邮箱随机码">
+  <div class="app">
+    <header class="topbar"></header>
+
+    <main class="account-page" id="login-page">
+      <!-- ==================================================================
+           登录 / 注册（Issue #132 · A→B→C→D 的 B）
+           ------------------------------------------------------------------
+           注册与登录是**同一个动作**：输邮箱 → 收码 → 填码。
+           该邮箱没有账号就建号，有就登录 —— 用户不需要理解自己在做哪一件。
+
+           ⚠️ 本期没有服务端，所以这里如实标注「本地体验版」：
+              码由本机生成，靠用户自己复制或走 mailto 带回填。
+              **绝不许把它宣传成「邮件认证已经做好了」**
+              （docs/auth-design.md §7.1 白纸黑字写着这一条）。
+           ⚠️ 三步同屏递进、不跳页：跳页会丢状态，而状态机是「不可跳步」的。
+           ================================================================== -->
+      <section class="account-card">
+        <p class="account-lead">
+          不登录也能用全部功能。花一分钟建一个账号，好处只有一个：
+          <strong>进度不会因为清缓存、换浏览器而丢掉</strong>。
+        </p>
+
+        <!-- ---------- 信任期：信任期内一点即入，不发码 ---------- -->
+        <div id="trust-panel" hidden>
+          <button class="account-btn" id="btn-trust" type="button"></button>
+          <button class="account-btn ghost" id="btn-trust-other" type="button">用别的邮箱</button>
+          <p class="account-hint">
+            这台设备在信任期内（30 天）。换了设备、或想用别的邮箱，点上面那颗。
+          </p>
+        </div>
+
+        <!-- ---------- ① 输邮箱 ---------- -->
+        <div class="account-step" id="step-email">
+          <div class="account-field">
+            <label class="account-label" for="input-email">邮箱</label>
+            <input id="input-email" class="account-input" type="email" inputmode="email"
+                   autocomplete="email" spellcheck="false" enterkeyhint="send"
+                   placeholder="you@example.com" maxlength="120" />
+          </div>
+          <button class="account-btn" id="btn-send" type="button">发送随机码</button>
+          <p class="account-msg" id="msg-email"></p>
+          <p class="account-hint">
+            只用它来收随机码。邮箱不会以明文保存 —— 本机只留摘要与掩码（如 a***@b.com）。
+          </p>
+        </div>
+
+        <!-- ---------- ② 收码回填 ---------- -->
+        <div class="account-step" id="step-code" hidden>
+          <p class="account-lead" id="code-sent-to"></p>
+          <div class="code-row" id="code-row"></div>
+          <div class="code-meta">
+            <span id="code-timer"></span>
+            <button class="code-resend" id="btn-resend" type="button">重新发送</button>
+          </div>
+          <button class="account-btn" id="btn-verify" type="button">确定</button>
+          <button class="account-btn ghost" id="btn-edit-email" type="button">换个邮箱</button>
+          <p class="account-msg" id="msg-code"></p>
+
+          <!-- 本地体验版的说明：必须显眼，不许含糊 -->
+          <div class="account-note" id="local-note">
+            <strong>本地体验版</strong>：本应用没有服务器，随机码由你这台设备生成。
+            下面这颗按钮会把码复制到剪贴板；也可以开自己的邮箱客户端，把码发给自己保管。
+            <strong>真机上请勿把码发给他人。</strong>
+          </div>
+          <div class="account-field" id="code-tools" style="margin-top:10px">
+            <button class="account-btn ghost" id="btn-copy-code" type="button">复制随机码</button>
+            <button class="account-btn ghost" id="btn-mail-code" type="button">用邮箱客户端发送</button>
+          </div>
+        </div>
+
+        <!-- ---------- ③ 登录后：补昵称 ---------- -->
+        <div class="account-step" id="step-done" hidden>
+          <p class="account-lead" id="done-lead"></p>
+          <div class="account-field">
+            <label class="account-label" for="input-nickname">昵称（可留空，之后随时能改）</label>
+            <input id="input-nickname" class="account-input" type="text" maxlength="12"
+                   autocomplete="off" enterkeyhint="done" placeholder="Ashley" />
+          </div>
+          <button class="account-btn" id="btn-finish" type="button">完成</button>
+          <p class="account-hint">
+            昵称只是显示名（顶栏那个「XX的古诗词」），不是实名；请只填小名。
+          </p>
+        </div>
+      </section>
+
+      <!-- ==================================================================
+           重设凭证（「找回密码」的等价物：本期无密码）
+           ------------------------------------------------------------------
+           purpose="reset" 的码与 login 的码**互不通用**（auth-core 里按 purpose
+           绑定）。验过之后：吊销全部会话 + 取消全部设备信任，然后重新登录。
+           ================================================================== -->
+      <section class="account-card">
+        <h2 class="account-card-title" id="reset-title">换了设备、进不去？</h2>
+        <p class="account-lead">
+          本期没有密码，所以「找回密码」就是<strong>重新收一次码</strong>：
+          它会结束这台设备上已有的登录，其他设备上的登录也会一并失效。
+        </p>
+        <div class="account-field">
+          <label class="account-label" for="input-reset-email">注册时用的邮箱</label>
+          <input id="input-reset-email" class="account-input" type="email" inputmode="email"
+                 autocomplete="email" spellcheck="false" placeholder="you@example.com" maxlength="120" />
+        </div>
+        <button class="account-btn ghost" id="btn-reset-send" type="button">发送重设随机码</button>
+        <div class="code-row" id="reset-code-row" style="margin-top:12px" hidden></div>
+        <button class="account-btn" id="btn-reset-verify" type="button" hidden>确定重设</button>
+        <p class="account-msg" id="msg-reset"></p>
+      </section>
+
+      <!-- ==================================================================
+           短信通道的占位（**现在不渲染**）
+           ------------------------------------------------------------------
+           设计早有，只留口子（docs/auth-design.md §8）：
+           identity.channel 已是枚举，加 "sms" 即可，表结构不变；
+           requestCode / verifyCode 的签名里没有 channel 假设。
+           将来只在这里加一颗按钮，不动布局与任何逻辑。
+           ⚠️ 不许提前写「短信登录即将上线」这类文案 —— 条款与界面都不许
+              跑在代码前面（§12 的总原则）。
+           ================================================================== -->
+      <!-- <button class="account-btn ghost" data-channel="sms">用手机号登录</button> -->
+    </main>
+
+    <footer class="foot settings-foot">
+      <span class="foot-copy">&copy;2026 kuibu.app 积跬步, 至千里</span>
+      <span class="foot-links">
+        <a href="/terms/">用户协议</a>
+        <span class="foot-sep">·</span>
+        <a href="/privacy/">隐私条款</a>
+      </span>
+    </footer>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+
+  <!-- 脚本顺序：auth-core（内核）→ entitlement（权益）→ avatar（印）→ login（本页）→ chrome（顶栏）→ pwa -->
+  <script src="/js/auth-core.js"></script>
+  <script src="/js/entitlement.js"></script>
+  <script src="/data/text-master.js"></script>
+  <script src="/data/index.js"></script>
+  <script src="/js/avatar.js"></script>
+  <script src="/js/login.js"></script>
+  <script src="/js/chrome.js"></script>
+  <script src="/js/pwa.js"></script>
+</body>
+</html>

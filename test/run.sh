@@ -41,6 +41,10 @@
 #   3s. 二级设置页      —— 纯 Node，五张设置页（主页 + 四张二级页）的结构：
 #                          四张页合起来仍是原来那六组、每件控件只在一页上、
 #                          二级页的返回键回设置主页、新页面都进了预缓存（Issue #132）
+#   3t. 账号三页        —— 纯 Node，/login/ /profile/ /admin/ 的结构与口径：
+#                          权限判断只走 Entitlement、页面不自己拼 plan、
+#                          如实标注「本地体验版」（不许假装有服务器）、
+#                          退出只清会话 / 注销不删进度、三页都不写进度键（Issue #132）
 #   4. 用户名设置测试    —— jsdom，带初始 localStorage 重启应用
 #   5. 用户协议/隐私条款  —— jsdom + 源码扫描：页脚入口、学生保护、邮箱防爬
 #   6. 注音与朗读测试    —— 拼音表/多音字（纯 Node）+ 注音渲染与朗读降级（jsdom）
@@ -177,6 +181,10 @@ node test/avatar.test.js
 echo ""
 echo "=== 二级设置页（Issue #132 · 主页 + 四张二级页 / 返回上一层 / 离线）==="
 node test/settings-nav.test.js
+
+echo ""
+echo "=== 账号三页（/login/ /profile/ /admin/，Issue #132）==="
+node test/account-pages.test.js
 
 echo ""
 echo "=== 用户名设置测试 ==="
