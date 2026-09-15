@@ -5,7 +5,7 @@
 > `js/entitlement.js` 已落地为「权益总闸」并接入语音播放（见 §3.5），
 > 但它目前是本机演示版分层，**不是收费凭据**。
 > 落地分三期，见 §11。
-> 关联：Issue #132。当前 SW 缓存版本：`poem-app-v113`。
+> 关联：Issue #132。当前 SW 缓存版本：`poem-app-v114`。
 
 ---
 
@@ -616,7 +616,7 @@ DELETE /auth/account {code}   → 204                     // 注销
    `js/reader-core.js` 的按钮置灰读 `Speech.allowed()`（同源）。
    9 张有播放键的页面都按「auth-core → entitlement → speech」的顺序加载。
 4. ✅ 现有 27 层测试**零回归**（本期不改任何现有页面逻辑）
-5. ✅ `sw.js` 的 `CACHE_NAME` 已从 `poem-app-v110` 提到 `poem-app-v113`，
+5. ✅ `sw.js` 的 `CACHE_NAME` 已从 `poem-app-v110` 提到 `poem-app-v114`，
    `PRECACHE` 加了 `./js/auth-core.js` 与 `./js/entitlement.js`（后者排在 speech.js 前）
 6. ✅ **隐私/协议文案与实现一致** —— 已按裁决一（§12.1）落地：
    `/privacy/` 与 `/terms/` 改写为「无需注册即可全功能；也可选填邮箱建一个
