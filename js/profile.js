@@ -274,6 +274,7 @@
     renderIdentity(id);
     renderStats();
     renderAccount(sess);
+    renderSync();
     renderCaps(id);
     renderAdmin(id);
     renderCacheInfo();
@@ -287,6 +288,125 @@
     $("btn-delete-start").addEventListener("click", onDeleteStart);
     $("btn-delete-cancel").addEventListener("click", onDeleteCancel);
     $("btn-delete-confirm").addEventListener("click", onDeleteConfirm);
+    $("btn-go-sync").addEventListener("click", function () { location.href = "/settings/general/"; });
+    $("btn-keep-local").addEventListener("click", function () { onResolve("keepLocal"); });
+    $("btn-keep-remote").addEventListener("click", function () { onResolve("keepRemote"); });
+    $("btn-export-first").addEventListener("click", function () { onResolve("exportFirst"); });
+  }
+
+  /* ------------------------------------------------------------ 四之二、同步 */
+
+  function syncMod() { return window.SyncStore || null; }
+
+  /**
+   * 同步这一卡。**三种状态各说各的话**，而且**都不许出现「已同步」这种笼统话** ——
+   * 1A 立的那条「不假装」的纪律在这里同样成立：没同步上就直说没同步上。
+   *
+   * 冲突面板只在 `SyncStore.conflicts()` 非空时出现，且**必须同时显示两边**
+   * 「篇数 / 截至时间」（docs §4.4 D 项）—— 不让用户在不知代价的情况下选。
+   */
+  function renderSync() {
+    var list = $("sync-list");
+    var S = syncMod();
+    if (!list) return;
+    var hint = $("sync-hint");
+
+    if (!S) {
+      list.innerHTML = '<div class="kv-row"><span class="kv-k">状态</span>' +
+        '<span class="kv-v" id="sync-state">不可用</span></div>';
+      if (hint) hint.textContent = "同步层没有加载成功，请刷新页面重试（背诵不受影响）。";
+      hide($("sync-conflict"));
+      return;
+    }
+
+    var st = S.status();
+    var on = S.enabled();
+    var n = S.conflicts().length;
+    /* ⚠️ 冲突**最先说**：它是一件「欠着用户一个决定」的事，
+       不该被「开关关着」盖过去 —— 面板摆出来了、状态却写「已关闭」，
+       用户会以为那个面板是个残留物。关掉开关也一样要他把这一篇选完。 */
+    var stateText = n ? "需要你选一下"
+      : st === "unavailable" ? "未开放"
+      : st === "off" ? "已关闭"
+      : st === "signin" ? "等登录"
+      : "开启中";
+
+    list.innerHTML =
+      '<div class="kv-row"><span class="kv-k">状态</span>' +
+      '<span class="kv-v" id="sync-state">' + esc(stateText) + "</span></div>" +
+      '<div class="kv-row"><span class="kv-k">开关</span>' +
+      '<span class="kv-v" id="sync-switch">' + (on ? "开" : "关") + "</span></div>";
+
+    if (hint) {
+      hint.textContent = n
+        ? "有 " + n + " 篇需要你选一下（下面）。选完之前这一篇不会自动合并。" +
+          "同步" + (on ? "开着" : "关着") + "，都不影响本机的进度。"
+        : st === "unavailable"
+        ? "本站还没有开放云端同步（服务端未配置）。学习进度始终只存在本机。"
+        : st === "off"
+          ? "关闭中：学习进度只存在本机，不上传、不跨设备。开关在「设置 · 通用」里。"
+          : st === "signin"
+            ? "已开启，但还没登录 —— 登录后才会真的同步。"
+            : "进度与账号域设置会同步到服务器；本机那份始终是完整的一份，断网照常背。" +
+              "设备上的阅读偏好（字号、注音、连读）不上传。";
+    }
+
+    renderConflict(S, !!sess());
+  }
+
+  function sess() {
+    try { return A && A.session ? A.session(store) : null; } catch (e) { return null; }
+  }
+
+  function renderConflict(S, signedIn) {
+    var box = $("sync-conflict");
+    var lead = $("conflict-lead");
+    if (!box) return;
+    var list = S.conflicts();
+    if (!list.length) { hide(box); return; }
+
+    // 两边各有多少篇、本机那份截止到什么时候 —— 用户有权在知道代价之后再选
+    var localCount = 0;
+    try { localCount = Object.keys(window.ProgressStore.all() || {}).length; } catch (e) { localCount = 0; }
+    if (lead) {
+      lead.textContent = "有 " + list.length + " 篇在本机与账号里都改过，判不出该听谁的，" +
+        "所以没有自动合并。本机这一份共 " + localCount + " 篇。" +
+        (signedIn ? "" : "（当前未登录，请先登录再来选。）") +
+        "选「保留账号」之前会先在本机留一份快照，选错了还能捞回来。";
+    }
+    show(box);
+  }
+
+  /** 用户选边。三种都走 SyncStore —— 复盘口径只在那里有一份 */
+  function onResolve(mode) {
+    var S = syncMod();
+    var msg = $("msg-conflict");
+    if (!S) return;
+    var r = S.resolveConflict(mode);
+    if (!r || !r.ok) {
+      if (msg) { msg.textContent = (r && r.message) || "没能完成这一步"; msg.className = "account-msg warn"; }
+      return;
+    }
+    if (mode === "exportFirst") {
+      /* 先导出再决定：**不动任何数据**，只把快照给用户。
+         这一步存在的意义是让用户拿着两份数据（本机的备份 + 这份快照）去第三方比对，
+         所以这里给的是文件，不是一句提示。 */
+      var text = JSON.stringify(r.backup || {}, null, 2);
+      try {
+        var blob = new Blob([text], { type: "application/json" });
+        var a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "跬步-同步快照-" + new Date().toISOString().slice(0, 10) + ".json";
+        a.click();
+        URL.revokeObjectURL(a.href);
+        if (msg) { msg.textContent = "快照已导出，冲突还没处理，你想好了再回来选。"; msg.className = "account-msg"; }
+      } catch (e) {
+        if (msg) { msg.textContent = "这份浏览器不允许直接下载文件，请到「设置 · 通用」用导出备份。"; msg.className = "account-msg warn"; }
+      }
+      return;
+    }
+    renderSync();
+    showToast(mode === "keepLocal" ? "已按本机这一份处理，稍后会同步上去" : "已按账号这一份处理");
   }
 
   if (document.readyState === "loading") {
@@ -295,5 +415,5 @@
     init();
   }
 
-  window.ProfilePage = { renderCaps: renderCaps, esc: esc };
+  window.ProfilePage = { renderCaps: renderCaps, renderSync: renderSync, esc: esc };
 })();

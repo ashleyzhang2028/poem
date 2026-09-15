@@ -120,6 +120,10 @@
   <!-- 分域引擎（Issue #132 阶段 0）：进度 / 账号 / 设备三域的唯一一份定义，
        设置页的读法由 js/storage.js 转发。**必须排在 js/storage.js 之前**。 -->
   <script src="/js/progress-store.js"></script>
+  <!-- 同步层（Issue #132 · 1B）：进度 / 账号域设置 / 已读的跨设备同步。
+       必须在 js/storage.js 之前 —— 它的 touch() 要给每条记录打标，
+       而页面只认识 Storage/ProgressStore 这两个入口。 -->
+  <script src="/js/sync-store.js"></script>
   <script src="/js/storage.js"></script>
   <script src="/js/scheduler.js"></script>
   <script src="/js/manifest-loader.js"></script>

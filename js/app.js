@@ -1692,6 +1692,43 @@
     syncBottomGap();
     window.addEventListener("resize", syncBottomGap);
     window.addEventListener("orientationchange", syncBottomGap);
+    /* 跨设备同步（Issue #132 · 1B）：只在**关掉同步 / 没登录 / 服务端没配好**之外的
+       情况下才发请求，且失败一律静默 —— 背诵功能不受它影响（docs §4.6 第 8 条）。
+       刻意**不 await**：排程与首屏先画出来，同步在后台跑。 */
+    startSync();
+  }
+
+  /* ---------------- 跨设备同步（1B） ----------------
+     ① 未登录 / 开关关着 / 服务端没配好 → 一个请求都不发（status() 说了算）
+     ② 页面隐藏时再跑一轮：用户背完切走，是「该把这一轮推上去」的自然时刻
+     ③ 云端有新东西落盘 → 重排今日任务（账号域设置也可能跟着变了） */
+  function startSync() {
+    const S = window.SyncStore;
+    if (!S) return;
+    try {
+      const first = S.firstSync();
+      if (first && first.then) first.then(afterSync, function () { /* 同步失败不打断背诵 */ });
+    } catch (e) { /* 同上：同步层的任何异常都不许冒到启动流程里 */ }
+
+    document.addEventListener("visibilitychange", function () {
+      if (document.visibilityState !== "hidden") return;
+      try { S.now({ pull: false }); } catch (e) { /* 同上 */ }
+    });
+  }
+
+  function afterSync(r) {
+    // 只有真的从云端落了东西（或出现了需要用户裁决的冲突）才重绘 ——
+    // 每轮都 rebuildToday() 会把用户正在看的那一屏抖一下，而多数轮次是无事发生
+    if (!r || r.skipped) return;
+    if (r.pulled || (r.conflicts && r.conflicts)) {
+      settings = Storage.getSettings();
+      adoptHelperFromDevice();
+      applyAppName();
+      renderGradeChips();
+      invalidatePlan();
+      rebuildToday();
+      renderAll();
+    }
   }
 
   if (document.readyState === "loading") {
