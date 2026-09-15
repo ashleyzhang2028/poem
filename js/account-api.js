@@ -140,9 +140,27 @@
      *    「这一份是权威判定」的唯一凭据。漏了它，界面照旧显示本机登记那份，
      *    症状是「服务端给了 Pro，用户看到的还是 Free」，且不报任何错。
      */
+    /**
+     * 服务端自报的**开通状态**（2C）。**只记不判** —— 它不参与任何判权，
+     * 只是让界面在说「由服务器判定」时能如实补一句这台服务器当前是什么状态
+     * （发信靠 console 的实例，与配齐的实例，说的不是同一件事）。
+     *
+     * ⚠️ 这一份**不落盘**：它是「这一轮问到的实情」，缓存一份下来必然与
+     *    服务端的真实状态漂移（服务端改配置不会通知客户端）。
+     */
+    var lastChannel = null;
+
     function applyMe(me) {
       var E = D.E;
       if (!E || !E.writeTier || !D.backing) return false;
+      /* 服务端自报的开通状态：如实收下，字段缺了就留 null（**不编默认值**） */
+      lastChannel = (me && me.channel && typeof me.channel === "object") ? {
+        mail: typeof me.channel.mail === "string" ? me.channel.mail : null,
+        delivered: me.channel.delivered === true,
+        db: typeof me.channel.db === "string" ? me.channel.db : null,
+        sms: me.channel.sms === true
+      } : null;
+
       var plan = (me && me.plan) || {};
       var tier = E.isTier(plan.tier) ? plan.tier : "free";
       var until = plan.until == null ? null : Number(plan.until);
@@ -312,7 +330,11 @@
     return {
       /* 只读出口：给测试与界面看「上一轮问了什么」，不参与判权 */
       last: function () { return { reason: last.reason, at: last.at }; },
-      channel: function () { return channel; },
+      /* 服务端自报的开通状态（2C）。**不参与判权**，只用于如实标注。
+         ⚠️ 这里**刻意不再暴露底层通道对象**（原来那个 `channel()` 已被本方法取代）：
+            同一个名字给两个东西，症状正是刚才实测到的那种 —— 后写的把前写的盖掉，
+            而且不报错，只是「服务端自报的状态永远是空的」。 */
+      channel: function () { return lastChannel; },
       hasLocalSession: hasLocalSession,
       applyMe: applyMe,
       clearServerTier: clearServerTier,
@@ -365,6 +387,7 @@
     clearServerTier: function (o) { return boundOnce(o).clearServerTier(o); },
     hasLocalSession: function (o) { return boundOnce(o).hasLocalSession(o); },
     last: function () { return globalBound ? globalBound.last() : { reason: null, at: 0 }; },
+    channel: function () { return globalBound ? globalBound.channel() : null; },
     reset: reset
   };
 });

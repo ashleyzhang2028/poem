@@ -66,6 +66,9 @@
 #   0. ProgressStore   —— 纯 Node（**排在最前**）：进度 / 账号 / 设备三域的唯一一份定义、
 #                          设置域按字段拆家（helper 归设备域）、清进度不删昵称与阅读偏好、
 #                          老形状 / 老备份兼容读、加载了 storage.js 的页面都先加载引擎
+#   3y. 开通自检 / 配置清单 —— 纯 Node（2C）：清单与 config.js 同源、三档分得清、
+#                          **只报缺不报值**（那段文字会被贴进 Issue）、
+#                          .env.example 由清单生成、/api/me 如实自报开通状态
 #   3u. 层级对比页      —— 纯 Node，四列（未登录 / Free / Pro / Max）横向对照：
 #                          每格都等于 can() 的答案（不许手抄一份）、
 #                          未登录与 Free 只差语音朗读那一条、层级单调不回退、
@@ -234,6 +237,10 @@ node test/plans-page.test.js
 echo ""
 echo "=== 账号入口动线（顶栏印 / 个人中心 / 设置主页那张卡，Issue #132）==="
 node test/account-entry.test.js
+
+echo ""
+echo "=== 开通自检 / 配置清单（2C：2D 那一步做成可执行的，Issue #132）==="
+node test/ops.test.js
 
 echo ""
 echo "=== 用户名设置测试 ==="

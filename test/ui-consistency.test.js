@@ -946,6 +946,52 @@ if (!JSDOM) {
 }
 
 /* ==========================================================================
+   十一、详情页里不许再冒出「读了 N / M 篇 / 首」这类读数
+   --------------------------------------------------------------------------
+   用户原话（2026-09-15）：「删除所有详情页中的 0 / 167 篇及类似的」。
+
+   这一枚数在 Issue #147 里走过两站：先由**页顶那一行**挪进**详情页状态栏**
+   （朝代 · 作者 · 出处 · N / M 首，同一行），用户看过之后仍嫌它占地方，
+   于是连状态栏那一枚也一起撤了。读了多少改在两处看：列表页每条自己的已读标记，
+   与 /progress/ 那页总览；详情页上真正属于「这一篇」的是「读第几篇」，
+   由正文里的「上一篇 / 下一篇」表达。
+
+   这一段守的是**源码层面**的那条线，三件事：
+     ① 引擎不再生成 .rd-count 节点；
+     ② 样式表里不再留 .rd-count 规则（留着的唯一后果是下一个人以为还有一枚）；
+     ③ 真页面的 HTML 里 #rd-meta 那一段不再写死任何读数。
+   —— 与各集子测试里那几条「渲染出来没有这一枚」的断言合起来，
+      源码与渲染两头都堵上：只堵一头的话，换一种写法就漏了。
+   ========================================================================== */
+const PAGE_FILES = ['classic/index.html', 'guwen/index.html', 'songci/index.html',
+  'tangshi/index.html', 'zhaoming/index.html', 'poems/index.html',
+  'library/index.html', 'search/index.html'];
+const engineJs = read('js/reader-core.js');
+
+chk(!/<span class="rd-count"/.test(engineJs) && !/createElement\("span"\)[\s\S]{0,80}rd-count/.test(engineJs),
+  '引擎不再生成 .rd-count 那一枚已读读数（详情页里没有这一枚了）');
+chk(!/\.rd-count\s*[,{]/.test(classicCss),
+  '样式表里不再留 .rd-count 规则（不是「留着但没人用」）');
+// 反向样本：判据本身得是有牙的 —— 拿一段真的写着读数的 HTML 试一下
+chk(/\d\s*\/\s*\d+\s*(篇|首)/.test('<span class="rd-count">0 / 167 篇</span>'),
+  '那段正则真的能抓到「0 / 167 篇」（这把尺子不是空的）');
+PAGE_FILES.forEach(f => {
+  const html = read(f);
+  // 只取详情页状态栏那一段（#rd-meta 所在的那个 div），别把整页正文误伤
+  const m = /<div class="meta rd-meta" id="rd-meta">([^]*?)<\/div>/.exec(html);
+  chk(!!m, f + ' 的详情页状态栏节点还在（撤的是读数，不是这一行本身）');
+  chk(!!m && !/\d\s*\/\s*\d+\s*(篇|首)/.test(m[1]),
+    f + ' 的详情页状态栏里不写死任何「N / M 篇 / 首」读数（实际「' + (m ? m[1] : '') + '」）');
+});
+// 页顶那一条也不许冒出来 —— 六部集子 + 课外阅读入口页 + 搜索页
+['classic/index.html', 'guwen/index.html', 'songci/index.html', 'tangshi/index.html',
+ 'zhaoming/index.html', 'poems/index.html', 'library/index.html', 'search/index.html'].forEach(f => {
+  const m = /<header class="topbar">([^]*?)<\/header>/.exec(read(f));
+  chk(m && !/count-badge|\d\s*\/\s*\d+\s*(篇|首)/.test(m[1]),
+    f + ' 的页顶那一行不挂任何读数（Issue #147 撤干净，不留死节点）');
+});
+
+/* ==========================================================================
    十二、顶栏返回键**不能全删**：这三处它是唯一的出口
    --------------------------------------------------------------------------
    Issue #147 里用户问：「我后来想，手机界面我们需要标题栏中的后退按钮吗？

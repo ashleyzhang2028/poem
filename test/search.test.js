@@ -226,6 +226,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     '空列表现场既没有旧的引导语，也没有误报「没有找到匹配的篇目」');
   // Issue #147：搜索页顶栏那枚「共 N 篇」也一并撤了 —— 它是「当前筛出多少条」，
   // 与集子页的「读了 N / M」不是一回事，窄屏上同样挤占品牌区。
+  // 其后追加一轮：连详情页状态栏那一枚读数也撤了，全站不再有这类「N / M」读数。
   chk(d.querySelector('#gw-count') === null,
     '页顶那一行不再挂「共 N 篇」进度牌（实际「' +
     (d.querySelector('#gw-count') ? d.querySelector('#gw-count').textContent : '无') + '」）');
