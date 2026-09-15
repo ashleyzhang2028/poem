@@ -901,7 +901,7 @@
         '<p class="settings-hint">不登录也能用全部功能；账号只影响「语音朗读」与跨设备同步。' +
         "语音朗读登录后即可用，免费。</p>" +
         '<div class="settings-btns"><a class="btn ghost-btn" id="btn-gologin" href="/login/">用邮箱登录</a></div>' +
-        '<p class="settings-hint">没登录时学习进度<strong>只存在本机</strong>，不上传、不云同步。</p>';
+        '<p class="settings-hint">没登录时学习进度<strong>只存在本机</strong>。开启云端同步需要先登录。</p>';
       return;
     }
 
@@ -922,7 +922,12 @@
       '<a class="btn ghost-btn" id="btn-goprofile" href="/profile/">个人中心</a>' +
       '<button class="btn ghost-btn" id="btn-signout" type="button">退出登录</button></div>' +
       '<p class="settings-hint">退出只结束这次登录，不会删掉任何背诵进度。' +
-      "注销账号在个人中心里做。</p>";
+      "注销账号（连同服务器上的那一份）在个人中心里做。</p>" +
+      /* 层级是**谁定的** —— 如实标出来。服务端判定那份改不了，
+         本机登记那份改一行存储就能改，两者在用户眼里的分量完全不同
+         （docs §3.4 的口径）。 */
+      '<p class="settings-hint" id="account-tier-src">当前层级：' +
+      esc(ident.tierSource === "server" ? "由服务器判定" : "本机登记") + "</p>";
   }
 
   /** 「退出登录」：只清会话，不碰进度 */
@@ -939,6 +944,14 @@
       /* 清掉同步的记账（见过的云端时间戳）—— 那是「这次登录」的上下文。
          但**绝不动进度数据**，也**不改开关**：用户关掉同步的意愿与登录状态无关。 */
       try { if (S) S.forget(); } catch (e) { /* 同上 */ }
+      /* 服务端下发的那一份层级/角色也清掉 —— 否则一个刚退出的人还顶着
+         「由服务器判定」的 Pro 徽章，而那正是「不假装」要拦的事。
+         ⚠️ 只清 `source:"server"` 那一份：本机发放名单与服务端判定无关，
+            退出登录不该把管理员的名单抹掉（`clearServerTier` 里判的就是这条）。 */
+      try {
+        const M = window.AccountApi;
+        if (M && M.clearServerTier) M.clearServerTier({ backing: window.localStorage, E: entitlementMod() });
+      } catch (e) { /* 同上 */ }
       renderAccount();
       renderSync();
       showToast("已退出登录，进度都还在这台设备上");
@@ -1262,6 +1275,28 @@
     }
   }
 
+  /**
+   * 「补洞」（Issue #132 · 2 期）：问一次 `/api/me`，把服务端判定的层级与角色落到权益层。
+   *
+   * ⚠️ **只在本页有账号面板时才问** —— 别页（背诵 / 清单 / 阅读）不关心层级，
+   *    多问一次只是白白多一个请求；而那些页面里 `#account-panel` 根本不在。
+   * ⚠️ 问完之后只重画**受它影响的那两块**（账号 + 同步），不整页重画 ——
+   *    整页重画会把用户正在输入的框（用户名、清单名）清掉。
+   */
+  function refreshServerIdentity() {
+    const M = window.AccountApi;
+    const box = $("#account-panel");
+    if (!M || !M.refreshMe || !box) return;
+    Promise.resolve(M.refreshMe({
+      backing: window.localStorage,
+      A: authMod(),
+      E: entitlementMod()
+    })).then(function (r) {
+      if (!r || !r.ok) return;          // 连不上 / 没登录：本机那份照旧，不重画
+      renderAccount();
+    })["catch"](function () { /* 问不到就算了，本页已经是可用状态 */ });
+  }
+
   function init() {
     settings = loadSettings();
     applyAppName();
@@ -1271,6 +1306,7 @@
     bindSealPicker();
     bindAccount();
     bindSync();
+    refreshServerIdentity();
     // 另一个标签页改了播放档位（集子页那颗圆键）时，本页单选项跟着变 ——
     // storage 事件只在「别的标签页」触发，正是这里需要的方向。
     window.addEventListener("storage", function (e) {

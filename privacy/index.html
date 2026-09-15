@@ -36,7 +36,7 @@
       <section id="p1">
         <h2>一、收集什么</h2>
         <ul class="legal-mini">
-          <li><span class="mini-k">无需注册</span><span class="mini-v">不注册也能用全部功能。如你想让进度在多台设备间一致，可选填邮箱建一个账号 —— 不建账号时，本应用一行数据都不往外发。</span></li>
+          <li><span class="mini-k">无需注册</span><span class="mini-v">不注册也能用全部功能。想跨设备一致，可选填邮箱建账号 —— 不建账号时一行数据都不外发。</span></li>
           <li><span class="mini-k">几乎不收集</span><span class="mini-v">不收集手机号、姓名、学校、位置、设备标识。邮箱仅在你主动填写时收集：浏览器本机只留摘要与掩码（如 a***@b.com）；建账号时会把你邮箱的<strong>不可逆摘要</strong>（加盐哈希，还原不出邮箱）与掩码送到服务器，用于登录识别。明文邮箱不会离开你的设备。</span></li>
           <li><span class="mini-k">无埋点</span><span class="mini-v">无统计脚本、无用户画像、无广告联盟、无社交与上传功能；不记录你在背哪首诗、点了哪个按钮。</span></li>
           <li><span class="mini-k">层级与名额</span><span class="mini-v">账号的订阅层级（Free / Pro / Max）与管理员发放的名额，建账号后由服务器下发；它不是付费凭据，也不涉及任何支付信息 —— 本应用目前没有任何收款能力。</span></li>
@@ -50,7 +50,7 @@
           <li><span class="mini-k">默认存本机</span><span class="mini-v">学习进度与复习排期、设置项（昵称、头像印记、年级学期、背诵范围、每日数量、阅读辅助开关）、小古文「已读」标记、正文字号与对齐方式，默认通过 localStorage 只保存在你的设备上。<strong>本机这一份始终是完整、可用的</strong> —— 服务器连不上、同步关着、没登录，背书、朗读、导出一切照旧。</span></li>
           <li><span class="mini-k">开启同步才上传</span><span class="mini-v">只有当你建了账号、<strong>并且自己把云端同步开关打开</strong>时，学习进度与账号域设置（年级学期、背诵范围、每日数量、复习算法、昵称与头像印记）才会传到服务器，用于换设备时自动同步。<strong>这个开关出厂是关着的</strong> —— 不主动打开，就不会有任何上传。<strong>设备偏好不上云</strong>：正文字号、对齐方式、注音开关、连读档位只留在这台设备。想停止上传，在「设置 · 通用 · 跨设备同步」关掉开关即可，关掉之后立刻退回只存本机的行为。若同一篇在两台设备上都改过、各自又判不出该听谁的，我们会列出两边各有几篇让你自己选（保留本机 / 保留账号 / 先导出再决定），<strong>不替你自动合并</strong>；选「保留账号」之前会先在本机留一份快照。</span></li>
           <li><span class="mini-k">谁在处理</span><span class="mini-v">服务器与数据库由 Supabase 提供（账号摘要、掩码、进度），登录验证码邮件由 SendGrid 发送（主）或 Resend（备）。除此之外不向任何第三方提供任何数据；不使用统计、画像、广告或社交 SDK。</span></li>
-          <li><span class="mini-k">删除方式</span><span class="mini-v">背诵进度在设置里「清空进度」清空；账号在「个人中心 → 注销账号」注销 —— <strong>注销即删除</strong>服务器上的账号行与进度行，同时会把云端那一份导出给你留存；也可以直接清除浏览器站点数据。均为永久删除，本应用无法帮你恢复。</span></li>
+          <li><span class="mini-k">删除方式</span><span class="mini-v">背诵进度在设置里「清空进度」清空；账号在「个人中心 → 注销账号」注销 —— <strong>注销即删除</strong>服务器上的账号行与进度行，同时会把云端那一份导给你留存，随后本机账号记录一并清掉，本机背诵进度不受影响。注销需联网：<strong>连不上服务器时页面会如实说明云端那份还没删掉</strong>，联网后再注销即可。也可直接清除浏览器站点数据。以上均为永久删除，无法恢复。</span></li>
           <li><span class="mini-k">备份方式</span><span class="mini-v">设置里「导出备份」可把本机数据导出为 JSON 文件自行留存。</span></li>
         </ul>
       </section>

@@ -50,6 +50,10 @@
 #   3t2.账号入口动线    —— jsdom + 源码扫描，从一个「未登录的人」到 /login/ 的
 #                          三条落点（顶栏印 → /profile/ → 账号入口、设置主页那张
 #                          账号卡）与返回落点（登录 → 个人中心 → 设置主页）（Issue #132）
+#   3x. 账号接线        —— 纯 Node + 假 fetch，2 期「补洞 + 2A」接上的两根线：
+#                          /api/me 下发的层级与角色真的落到权益层（服务端优先）、
+#                          注销时「先服务端、后本机」且云端那一份导出给用户、
+#                          四条边界（失败不打断 / 不假装 / 不清数据 / 不发无谓请求）
 #   3t. 账号三页        —— 纯 Node，/login/ /profile/ /admin/ 的结构与口径：
 #                          权限判断只走 Entitlement、页面不自己拼 plan、
 #                          如实标注「本地体验版」（不许假装有服务器）、
@@ -214,6 +218,10 @@ node test/avatar.test.js
 echo ""
 echo "=== 二级设置页（Issue #132 · 主页 + 四张二级页 / 返回上一层 / 离线）==="
 node test/settings-nav.test.js
+
+echo ""
+echo "=== 账号接线（2 期「补洞 + 2A」：/api/me 下发 · 注销自助，Issue #132）==="
+node test/account-bind.test.js
 
 echo ""
 echo "=== 账号三页（/login/ /profile/ /admin/，Issue #132）==="

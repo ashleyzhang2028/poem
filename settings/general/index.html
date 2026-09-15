@@ -144,7 +144,12 @@
 
   <!-- 账号与权益：设置页的「账号」一项由它们出判据（顺序与全站一致） -->
   <script src="/js/auth-core.js"></script>
+  <script src="/js/auth-api.js"></script>
   <script src="/js/entitlement.js"></script>
+  <!-- 账号接线层（Issue #132 · 2 期「补洞」）：/api/me 的下发只在它里面接一次。
+       本页据此把「当前层级」标成「服务器判定」或「本机登记」——
+       不标出来的话，本机登记那份会被读成权威判定（docs §3.4）。 -->
+  <script src="/js/account-api.js"></script>
   <!-- 分域引擎（Issue #132 阶段 0）：进度 / 账号 / 设备三域的唯一一份定义，
        设置页的读法由 js/storage.js 转发。**必须排在 js/storage.js 之前**。 -->
   <script src="/js/progress-store.js"></script>
