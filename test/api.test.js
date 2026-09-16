@@ -1488,7 +1488,7 @@ async function main() {
      十七、古诗词大会 · 判分口（3 期 · 不花钱的那一层）
 
      这一条最要紧的三件事：
-       ① **能力闸在服务端** —— 飞花令 / 现场考试要 Max、题库复习要 Pro
+       ① **能力闸在服务端** —— 飞花令 / 试题模拟要 Max、题库复习要 Pro
           （用户 2026-09-17 的裁决）。直接打 HTTP，不经任何界面。
        ② **答案由服务端重建** —— 请求体里塞一个假的 answer / chosen
           改不掉判定；客户端说了不算。
@@ -1508,13 +1508,18 @@ async function main() {
 
       /* 三层各自的能力键 —— 与 js/entitlement.js 的 CAPS 对得上 */
       eq(core.GAME_CAP.fly, "feihualing", "飞花令那一档的能力键与前端同源");
-      eq(core.GAME_CAP.paper, "exam.paper", "现场考试那一档的能力键与前端同源");
+      eq(core.GAME_CAP.paper, "exam.paper", "试题模拟那一档的能力键与前端同源");
       eq(core.GAME_CAP.review, "quiz.review", "题库复习那一档的能力键与前端同源");
       chk(core.gameAllowed(cfg, "pro", "quiz.review"), "题库复习：Pro 放行");
       chk(!core.gameAllowed(cfg, "pro", "feihualing"), "**飞花令：Pro 不放行**（用户裁决：归 Max）");
-      chk(!core.gameAllowed(cfg, "pro", "exam.paper"), "**现场考试：Pro 不放行**（用户裁决：归 Max）");
+      chk(!core.gameAllowed(cfg, "pro", "exam.paper"), "**试题模拟：Pro 不放行**（用户裁决：归 Max）");
       chk(core.gameAllowed(cfg, "max", "feihualing"), "飞花令：Max 放行");
-      chk(core.gameAllowed(cfg, "max", "exam.paper"), "现场考试：Max 放行");
+      chk(core.gameAllowed(cfg, "max", "exam.paper"), "试题模拟：Max 放行");
+      /* Issue #163 末条：集子访问是从这一格里**拆出去**的第二条能力 */
+      chk(core.featuresFor(cfg, "max").indexOf("exam.gathering") >= 0,
+        "服务端 max 档下发 exam.gathering（集子访问）");
+      chk(core.featuresFor(cfg, "pro").indexOf("exam.gathering") < 0,
+        "服务端 pro 档**不**下发 exam.gathering（与试题模拟同一条口径）");
       chk(!core.gameAllowed(cfg, "free", "quiz.review"), "free 一样都拿不到");
 
       /* 未登录 → 401；不认识的题型 → 400 */
@@ -1547,7 +1552,7 @@ async function main() {
       eq(asFree.body.code, "E_TIER", "码是 E_TIER（不是「连不上」，用户不该一直重试）");
       eq(asFree.body.tier, "free", "如实回当前层级");
 
-      /* 提成 Pro：题库复习可用，飞花令 / 现场考试仍然 403 */
+      /* 提成 Pro：题库复习可用，飞花令 / 试题模拟仍然 403 */
       const rows = Object.keys(storeM._db.accounts).map(k => storeM._db.accounts[k]);
       const me = rows.filter(a => a.email_mask === "p***@example.com")[0];
       chk(!!me, "玩家那一行在库里");
@@ -1568,7 +1573,7 @@ async function main() {
       const proFly = await POST("/api/game/answer", { kind: "fly", chars: ["月"], said: "日月之行" }, cookie);
       eq(proFly.status, 403, "Pro 打飞花令仍然 403（用户裁决：飞花令归 Max）");
       const proPaper = await POST("/api/game/answer", { kind: "paper", poemId: "xx1-01", chosen: "鹅" }, cookie);
-      eq(proPaper.status, 403, "Pro 打现场考试仍然 403（用户裁决：现场考试归 Max）");
+      eq(proPaper.status, 403, "Pro 打试题模拟仍然 403（用户裁决：试题模拟归 Max）");
 
       /* 提成 Max：三层全开 */
       me.plan = "max";
@@ -1597,7 +1602,7 @@ async function main() {
         (truth ? truth.answer : "?") + "）");
 
       const maxPaper = await POST("/api/game/answer", { kind: "paper", poemId: "xx1-01", chosen: truth.answer }, cookie);
-      eq(maxPaper.status, 200, "Max 打现场考试回 200");
+      eq(maxPaper.status, 200, "Max 打试题模拟回 200");
       eq(maxPaper.body.ok, true, "选了正确答案 → ok:true");
       eq(maxPaper.body.answer, truth.answer, "回出正确答案（界面据此把错的标红、对的标绿）");
       chk(maxPaper.body.bankId, "回出这一题的 bankId（与题库同源）");

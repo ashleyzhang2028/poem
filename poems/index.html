@@ -74,12 +74,16 @@
            地址栏不动，页顶换成本页的页名与说明，右上角那颗返回键一层退一层。
            ⚠️ 这里只留一个空槽位与一个 data 标记：那一层的全部逻辑在 js/game.js 里，
               这一页自己一个字都不写（页面只管它自己的列表与阅读器）。
+           ⚠️ 「古诗词大会」是**集子**（`exam.gathering`），点进去之后那三个玩法
+              是另一条能力「试题模拟」（`exam.paper`）—— 两件事各有自己的钩叉。
            ⚠️ 未登录 / 层级不够时它**照旧看得见**（不许把入口藏起来当成权限边界，
               那是 docs §3.4 明写禁止的）—— 点进去是一张如实说明「要哪一层」的卡。 -->
+      <!-- 集子访问那一条权限（`exam.gathering`）的落点。点它之前 js/game.js 先
+           判一次 —— 没过闸就地铺一张如实说明的卡（入口本身照旧看得见）。 -->
       <button class="poems-game-entry" type="button" data-game-open="1"
-        title="古诗词大会：飞花令 · 现场考试 · 题库复习">
+        title="古诗词大会：试题模拟 · 飞花令 · 题库复习">
         <span class="poems-game-name">古诗词大会</span>
-        <span class="poems-game-sub">飞花令 · 现场考试 · 题库复习</span>
+        <span class="poems-game-sub">试题模拟 · 飞花令 · 题库复习</span>
       </button>
     </div>
 
@@ -345,16 +349,16 @@
   <!-- 朗读档位（五档模式 / 存储键 / 出厂档的唯一一份定义）：reader-core 与设置页共用 -->
   <script src="js/play-modes.js"></script>
   <script src="js/reader-core.js"></script>
-  <!-- 账号接线层（2.1 / 3 期）：古诗词大会的判分要走 /api/game/answer。
+  <!-- 账号接线层（2.1 / 3 期）：试题模拟的判分要走 /api/game/answer。
        顺序固定：entitlement → auth-api → account-api（前者是后者的前置）。
        缺任何一个都不会报错 —— js/game.js 会退化为「本机判分」并如实标注。 -->
   <script src="js/auth-api.js"></script>
   <script src="js/account-api.js"></script>
-  <!-- 古诗词大会的出题内核（纯逻辑、零 DOM、零网络）：飞花令 / 现场考试 / 题库复习
+  <!-- 试题模拟的出题内核（纯逻辑、零 DOM、零网络）：飞花令 / 试题模拟 / 题库复习
        三件共用它。它必须排在 js/game.js 之前。 -->
   <script src="js/quiz.js"></script>
   <script src="js/game.js"></script>
-  <!-- 篇目打印页（Pro）：版面内核 + 那一层。与古诗词大会同一条路子 ——
+  <!-- 篇目打印页（Pro）：版面内核 + 那一层。与试题模拟那一层同一条路子 ——
        就地叠层，不是新的一页。print-core 必须排在 print.js 之前。 -->
   <script src="js/print-core.js"></script>
   <script src="js/print.js"></script>

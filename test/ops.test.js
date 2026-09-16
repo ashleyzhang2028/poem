@@ -306,7 +306,7 @@ console.log("\n=== 八、/api/me 如实自报开通状态（界面才配自称�
 console.log("\n=== 十、3 期那三件：口径写清了，而且**不许偷偷接 AI / 收钱** ===");
 {
   /* 用户 2026-09-17 在 Issue #159 里定下的层级口径：
-     飞花令与现场考试归 Max、题库复习归 Pro。
+     飞花令与试题模拟（原名「现场考试」）归 Max、题库复习归 Pro。
      设计落在 docs/architecture.md §4.15（先落设计），实现落在 §5.0.1（后落代码）。
 
      ⚠️ 这一节原先守的是「**不许提前开工**」（当时只有设计、没有代码）。
@@ -326,7 +326,7 @@ console.log("\n=== 十、3 期那三件：口径写清了，而且**不许偷偷
 
   ["飞花令", "题库", "现场考试"].forEach(k => has(sec, k, "§4.15 里写到了「" + k + "」"));
   chk(/飞花令[\s\S]{0,200}Max/.test(sec), "飞花令归 Max（用户口径）");
-  chk(/现场考试[\s\S]{0,200}Max/.test(sec), "现场考试归 Max（同上）");
+  chk(/现场考试[\s\S]{0,200}Max/.test(sec), "现场考试（今名「试题模拟」）归 Max（同上）");
   chk(/题库[\s\S]{0,160}Pro/.test(sec), "题库复习归 Pro（同上）");
 
   /* 文档里那两条「不」：不接 AI 商、不建额度表 */
@@ -344,7 +344,10 @@ console.log("\n=== 十、3 期那三件：口径写清了，而且**不许偷偷
   chk(!E.can("feihualing", ctx("pro")).ok && E.can("feihualing", ctx("max")).ok,
     "内核表：飞花令 pro 不可、max 可（与 §4.15 一致）");
   chk(!E.can("exam.paper", ctx("pro")).ok && E.can("exam.paper", ctx("max")).ok,
-    "内核表：现场考试 pro 不可、max 可（与 §4.15 一致）");
+    "内核表：试题模拟 pro 不可、max 可（与 §4.15 一致）");
+  /* Issue #163 末条：集子访问是拆出来的第二条能力（两行两个钩叉） */
+  chk(!E.can("exam.gathering", ctx("pro")).ok && E.can("exam.gathering", ctx("max")).ok,
+    "内核表：古诗词大会集子 pro 不可、max 可（同一条口径）");
   chk(!E.can("quiz.review", ctx("free")).ok && E.can("quiz.review", ctx("pro")).ok,
     "内核表：题库复习 pro 起（与 §4.15 一致）");
 
@@ -366,13 +369,17 @@ console.log("\n=== 十、3 期那三件：口径写清了，而且**不许偷偷
 
   /* ③ 界面不假装：3 期的功能名**只许出现在该出现的地方** */
   const files = fs.readdirSync(path.join(ROOT, "js")).filter(f => /\.js$/.test(f));
-  const holders = files.filter(f => /飞花令|现场考试|题库/.test(read("js/" + f)));
-  /* ⚠️ Issue #163：`js/plans.js` 也出现在这里了 —— 它是**对比页的排版层**，
-     里头对 `exam.paper` 那一格有一处「名字分两行」的写法（古诗词大会 / 试题模拟）。
-     那一处只说**显示**（键名一个字没动），不渲染任何题目、也不判权，
-     所以它与「其余页面一个字都不渲染」不冲突 —— 判据按**文件**列出来。 */
-  eq(holders.sort().join(","), "entitlement.js,game.js,plans.js,quiz.js",
-    "js/ 下提到这三件事的只有内核能力表 + 对比页的排版层 + 出题内核 + 那一层页面");
+  const holders = files.filter(f => /飞花令|现场考试|试题模拟|题库/.test(read("js/" + f)));
+  /* ⚠️ 判据按**文件**列出来（不是按出现次数）：这里要的是「这几件事的名字
+     只活在该活的那几处」。`js/poems.js` 是索引页自己，它只在一句注释里
+     说明「那一层点一句能打开原文」—— 不渲染题目、不判权、不写文案。 */
+  /* ⚠️ Issue #163 末条（2026-09-19）：`js/plans.js` **不再**出现在这里。
+     它原先有一处把 `exam.paper` 那一格写成两行字的排版（「古诗词大会 / 试题模拟」）——
+     用户把那个折中否掉了：「是要拆成两个表格行，不是换行 这是两个功能」。
+     现在那一页只画内核给的名字（一个字都不拼），所以这几件事的名字只活在
+     内核能力表 + 出题内核 + 那一层页面里。 */
+  eq(holders.sort().join(","), "entitlement.js,game.js,poems.js,quiz.js",
+    "js/ 下提到这几件事的只有内核能力表 + 出题内核 + 那一层页面 + 挂载它的索引页");
   const gameSrc = read("js/game.js").replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^\s*\/\/.*$/gm, " ");
   chk(!/即将上线|敬请期待/.test(gameSrc), "js/game.js 里不写「即将上线」这类提前承诺");
   /* 未登录时先提登录，不提层级 —— 「未登录」与「层级不够」是两回事 */
