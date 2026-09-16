@@ -237,6 +237,17 @@
 }
 .tier-badge.tier-pro { background: var(--amber-light); color: var(--amber); border-color: var(--line); }
 .tier-badge.tier-max { background: var(--green-light); color: var(--green); border-color: var(--line); }
+/* 「开着」的那一枚（个人中心 · 跨设备同步的只读回显，Issue #163）
+   --------------------------------------------------------------------------
+   与设置页那颗开关说同一句「实底 = 开着」：深天青实底 + 米白字 + 描金内边。
+   ⚠️ 单独一个修饰类，不去改 .tier-max —— 层级徽章是**身份**、这里是**开关状态**，
+      两者共用一个浅底药丸的壳可以，语义色不该互相牵连。 */
+.tier-badge.on {
+  background: var(--green);
+  color: #fdfaf2;
+  border-color: var(--green-dark);
+  box-shadow: inset 0 0 0 1px rgba(240, 205, 124, .42);
+}
 
 /* ---------- 九、键值行（账号 / 设备 / 时间） ---------- */
 .kv-list { margin: 0; }

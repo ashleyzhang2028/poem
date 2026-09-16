@@ -1053,6 +1053,115 @@ PAGE_FILES.forEach(f => {
 })();
 
 /* ==========================================================================
+   十三、开关：外观与尺寸只有一个来源，且真的画得出来（Issue #163）
+   --------------------------------------------------------------------------
+   用户原话：「跨设备同步选择框太丑了，改进。」
+
+   旧样子是浏览器默认的 `<input type=checkbox>`：一颗 13px 的方框，
+   白底、灰勾、圆角 2px —— 与全站的纸面 / 描金细线 / 深绿实底是两套语言；
+   状态还要靠旁边一颗写着「关」/「开」的文字来表达。
+
+   新样子是自绘的胶囊开关：深天青实底 = 开着（与「年级」那些药丸同一句
+   「实底 + 米白 + 金线」）、纸底描边 = 关着、圆滑块在轨道里走。
+
+   这一节守三件事：
+     ① 外观自绘（appearance: none），不吃各浏览器默认样式；
+     ② 尺寸只有一份（轨道 40×24 / 滑块 18 / 左 2），**且行程是按这三个值算的**——
+        写死一个 translateX 而不跟着尺寸走，改一次尺寸滑块就会越界；
+     ③ 真渲染出来确实是这个尺寸、滑块确实在轨道里（不是只在源码里写着）。
+   ========================================================================== */
+{
+  const box = ruleOf(cssCode, '.switch-input');
+  chk(/appearance:\s*none/.test(box),
+    '开关外观自绘（appearance: none）—— 各浏览器给不出两样的方框');
+
+  /* 尺寸：先从声明里读出来，再用它算行程，最后拿渲染结果核对。
+     ⚠️ 三处判据共用同一组数值：换尺寸时这三条要么一起绿、要么一起红，
+        不会出现「尺寸改了、行程断言还在守旧值」那种过期守卫。 */
+  const px = (src, prop) => {
+    const m = new RegExp(prop + ':\\s*([\\d.]+)px').exec(src);
+    return m ? Number(m[1]) : NaN;
+  };
+  const trackW = px(box, 'width'), trackH = px(box, 'height');
+  const knob = ruleOf(cssCode, '.switch-track');
+  const knobW = px(knob, 'width');
+  const left = px(knob, 'left');
+  chk(trackW > 0 && trackH > 0 && knobW > 0,
+    '开关的轨道 / 滑块尺寸写在一条规则里（轨道 ' + trackW + '×' + trackH +
+    '、滑块 ' + knobW + '）');
+
+  /* 行程 = 轨道宽 − 边框×2 − 滑块宽 − 起点×2。
+     开着时滑块应当走到「右端对齐」——写死 16px 而尺寸一改就越界，
+     所以这里判的是**算出来的值**，不是源码里有没有 16 这个数字。 */
+  const onKnob = ruleOf(cssCode, '.switch-input:checked + .switch-track');
+  const shift = (/-?translateX\((\d+)px\)/.exec(onKnob) || [])[1];
+  const borderW = Number((/border:\s*([\d.]+)px/.exec(box) || [])[1]);
+  const expect = trackW - 2 * borderW - knobW - 2 * left;
+  chk(Number(shift) === expect,
+    '滑块的行程与尺寸同源（轨道 ' + trackW + ' − 边框 ' + borderW + '×2 − 滑块 ' +
+    knobW + ' − 起点 ' + left + '×2 = ' + expect + '，源码写的 ' + shift + '）');
+
+  /* 开 / 关两种状态必须是**两种颜色**：全站「选中」都是深天青实底 + 描金内边 */
+  const onTrack = ruleOf(cssCode, '.switch-input:checked');
+  chk(/background:\s*var\(--green\)/.test(onTrack),
+    '开着 = 深天青实底（与全站选中态同一个令牌）');
+  chk(/box-shadow:\s*inset[^;]*240,\s*205,\s*124/.test(onTrack),
+    '开着时带描金内边（与药丸 / 主按钮同一手法）');
+  chk(/background:\s*var\(--card\)/.test(box) || /background:\s*var\(--card-2\)/.test(box),
+    '关着 = 纸底（不是浏览器默认的白底方框）');
+
+  /* 置灰：服务端未开放同步时开关不可点，但**不许**长得和「关着能点」一样 */
+  const offTrack = ruleOf(cssCode, '.switch-input:disabled');
+  chk(/cursor:\s*not-allowed/.test(offTrack) && /background:/.test(offTrack),
+    '置灰态有自己的一句（不可点的开关与「关着但能点」必须看得出不同）');
+
+  /* 原生结构：轨道是 input 的**紧邻兄弟**（CSS 用 `+` 找它，不用 :has()——
+     :has() 在老的安卓 WebView 上会静默失效，失效后开关就变成一块空轨） */
+  chk(!/:has\(/.test(box) && !/:has\(/.test(knob),
+    '开关的样式不依赖 :has()（老 WebView 上会静默失效）');
+
+  /* 页面结构：同样的 HTML 也只有一个来源 —— 设置页那一项 */
+  const genHtml = read('settings/general/index.html');
+  chk(/class="switch"[\s\S]{0,400}class="switch-input"[\s\S]{0,200}class="switch-track"/.test(genHtml),
+    '设置页的开关是 <label.switch> 包着 input 与轨道（点文字 = 点开关）');
+  chk(/id="toggle-sync"[\s\S]{0,200}role="switch"/.test(genHtml),
+    '开关带 role="switch"（读屏念得出「开关」，而不是「复选框」）');
+  chk(!/id="sync-label"/.test(genHtml),
+    '旧的那颗「关」/「开」文字标签已经拿掉（状态由开关本体表达）');
+
+  /* 真渲染：把样式表挂进去，量一遍画出来的结果 —— 上面全是源码断言，
+     换一种写法（例如给 track 一条 margin）源码看不出来，用户看到的却不对。 */
+  if (!JSDOM) {
+    console.log('(未安装 jsdom，跳过「开关真的画得出来」的真实渲染断言 —— npm i jsdom 可启用)');
+  } else {
+    const sheet = '<style>' + css.replace(/<\/style>/gi, '') + '</style>';
+    const d = new JSDOM(genHtml, { url: 'https://local.test/settings/general/' });
+    d.window.document.head.insertAdjacentHTML('beforeend', sheet);
+    const win = d.window, doc = win.document;
+    const input = doc.getElementById('toggle-sync');
+    chk(!!input, '设置 · 通用里能取到那颗同步开关');
+    if (input) {
+      const cs = win.getComputedStyle(input);
+      chk(cs.width === trackW + 'px' && cs.height === trackH + 'px',
+        '画出来的轨道就是声明的尺寸（' + cs.width + '×' + cs.height + '）');
+      chk(cs.borderRadius === '999px',
+        '轨道是胶囊（画出来的圆角 999px，不是方框）');
+      const knobEl = input.nextElementSibling;
+      chk(!!knobEl && knobEl.classList.contains('switch-track'),
+        '轨道是 input 的紧邻兄弟（CSS 的 `+` 才找得到它）');
+      if (knobEl) {
+        const kcs = win.getComputedStyle(knobEl);
+        chk(kcs.width === knobW + 'px', '滑块也是声明尺寸（' + kcs.width + '）');
+        /* 滑块必须在轨道里：左起点 + 滑块宽 ≤ 轨道宽 —— 越界就是「画歪了」 */
+        const l = parseFloat(kcs.left) || 0;
+        chk(l + knobW <= trackW,
+          '滑块落在轨道内（起点 ' + l + ' + 滑块 ' + knobW + ' ≤ 轨道 ' + trackW + '）');
+      }
+    }
+  }
+}
+
+/* ==========================================================================
    七、页脚 + 危险按钮：一处定义、全站一样（Issue #163）
    --------------------------------------------------------------------------
    用户原话：
