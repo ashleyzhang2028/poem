@@ -922,87 +922,6 @@ body.no-dock .modal-box { max-height: 88vh; }
 }
 
 /* --------------------------------------------------------------------------
-   开关行（跨设备同步）：.switch-row / .switch-track / .switch-label
-   --------------------------------------------------------------------------
-   ⚠️ 这一段是补的缺：HTML 里从 1B 起就写着这三个类名，样式表里却一条都没有 ——
-   于是那颗 checkbox 一直以**浏览器原生**的样子露在纸面上（浅灰方块 + 系统蓝勾），
-   与整页的米纸 / 天青是两套语言。用户看到的「选择框太丑」就是这一处。
-   做法与全站开关类控件同一套：真实 input 留作可点 / 可聚焦 / 可读屏的那一层
-   （opacity:0 覆盖在轨道上），可见的轨道由 span 画 —— 键盘、读屏、
-   触屏一律照旧，改的只是画法。
-   -------------------------------------------------------------------------- */
-.switch-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  cursor: pointer;
-  /* 整行都是热区，且不许出现原生 checkbox 的默认外边距 */
-  margin-bottom: 0;
-  /* 透明输入框要盖在轨道上，得先给它一个定位参照 */
-  position: relative;
-}
-/* 真实输入框：不删（删了键盘与读屏就没了），只让它透明地盖在轨道上。
-   ⚠️ 尺寸与 .switch-track 严格同值（40×24）：它不是「藏起来」，
-      是「盖在上面」—— 点哪儿、焦点框多大，都跟着这两行走。
-      top: 50% + translateY(-50%) 与 flex 的 align-items: center 对齐同一个中点，
-      窄屏换行时也不会偏出去半格。 */
-.switch-input {
-  position: absolute;
-  top: 50%;
-  left: 0;
-  transform: translateY(-50%);
-  width: 40px;
-  height: 24px;
-  margin: 0;
-  opacity: 0;
-  cursor: pointer;
-}
-.switch-input:disabled { cursor: default; }
-/* 轨道：与 .seg / 药丸同一档圆角语言，关是淡纸底 + 一条界行，开是天青实底 */
-.switch-track {
-  position: relative;
-  flex: none;
-  width: 40px;
-  height: 24px;
-  border-radius: 999px;
-  background: var(--line);
-  border: 1px solid var(--line-2);
-  transition: background .18s ease, border-color .18s ease;
-}
-/* 滑块 */
-.switch-track::after {
-  content: "";
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: var(--card);
-  box-shadow: 0 1px 3px rgba(74, 58, 38, .22);
-  transition: transform .18s cubic-bezier(.2, .8, .3, 1);
-}
-.switch-input:checked + .switch-track {
-  background: var(--green);
-  border-color: var(--green);
-}
-.switch-input:checked + .switch-track::after { transform: translateX(16px); }
-/* 置灰（本站未开放同步）：轨道退回纸色，滑块仍是米白，读得出「点不动」 */
-.switch-input:disabled + .switch-track {
-  background: var(--bg);
-  border-color: var(--line-2);
-  opacity: .7;
-}
-/* 键盘焦点：全站那条天青光晕，与 .account-input:focus 同一档 */
-.switch-input:focus-visible + .switch-track {
-  box-shadow: 0 0 0 3px rgba(47, 96, 85, .16);
-}
-/* 开关旁的状态字（开 / 关 / 未开放）：与 .settings-hint 同一档淡墨 */
-.switch-label { font-size: 12.5px; color: var(--ink-2); }
-@media (prefers-reduced-motion: reduce) {
-  .switch-track, .switch-track::after { transition: none; }
-}
-/* --------------------------------------------------------------------------
    设置页的选中态：全页统一成「深绿实底 + 米白字」，与「年级」那些深绿药丸同一套语言
    --------------------------------------------------------------------------
    原先同一个页面里有两套选中语言，读起来像两个控件库拼在一起：
@@ -1364,7 +1283,16 @@ textarea:focus {
 
 /* 轨道 / 滑块：一颗 <input type=checkbox class=switch-input> 自己画出来。
    ⚠️ 用 `+ span.switch-track` 的兄弟选择器找轨道，不用 :has() ——
-      :has() 在老的安卓 WebView 上会静默失效，失效后开关就变成一块空轨。 */
+      :has() 在老的安卓 WebView 上会静默失效，失效后开关就变成一块空轨。
+   ⚠️ 这一段是 .switch-input / .switch-track 的**唯一定义处**。
+      它们原先被定义了两遍：本段（自绘：input 当轨道、旁边的 span 当滑块）
+      与页面中部的「开关行（跨设备同步）」一节（透明 input 当覆盖层、
+      span 当轨道）—— 两套结构相反，CSS 层叠取后者，于是浏览器画出来的是
+      后者（轨道 40×24、滑块 18），而本段源码里量到的却是前者
+      （input 40×24、span 40×24）：「源码写的」与「画出来的」对不上，
+      UI 一致性那一节的五条断言因此长期亮红（滑块行程 −6、滑块 40 落在 40 的
+      轨道外、找不到 .switch-row / .switch-label）。现在只留下本段
+      —— 与 HTML 里真实存在的 .switch > input + .switch-track 完全对应。 */
 .switch-input {
   appearance: none;
   -webkit-appearance: none;
