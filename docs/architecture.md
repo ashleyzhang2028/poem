@@ -2909,8 +2909,8 @@ pg_dump: error: could not translate host name "db.twmtmohcaifswxtjowru.supabase.
 ##### ②之四 这一轮的验证（2026-09-17 追溯，回答 Issue #159 的后半）
 
 - `node test/ops.test.js` 全绿：新增「D 步写了 `%3A` / 写了『`@` 只许出现一次』/
-  写了 Session pooler / 写了 6543 不要给 `pg_dump` 用 / 写了 server version mismatch
-  不是失败」，以及 `.cnb.yml` 的备份脚本真的先自检 URL 形状
+  写了 Session pooler / 写了 6543 不要给 `pg_dump` 用」，以及 `.cnb.yml`
+  的备份脚本真的先自检 URL 形状（§5.8 又把「版本 mismatch 是 abort 不是警告」更正过来）
 - `bash test/run.sh` 全绿、0 失败（PWA 那一层在**能起 Chrome 的镜像里**跑；
   本轮工作区缺系统库，跳过并如实打印原因，不是静默通过）
 - 探活那条**一个字没改** —— 它本来就是绿的（HTTP 200），绿的别动
@@ -2929,3 +2929,59 @@ pg_dump: error: could not translate host name "db.twmtmohcaifswxtjowru.supabase.
   （并把那条正则的窗口从 600 开到 1400 —— 600 装不下新加的说明，会假红）
 - `sw.js` v134 → **v135**
 - `sw.js` v135 → **v136**（§5.7 备份脚本自检那一轮）
+
+### 5.8 `supabase-backup` 一直红：pg_dump 比服务端低一个大版本（2026-09-17 · 回答 Issue #159）
+
+用户贴的失败日志（`supabase-backup`，定时任务 `crontab: 30 4 * * 1`）：
+
+```
+pg_dump: error: aborting because of server version mismatch
+pg_dump: detail: server version: 17.6; pg_dump version: 16.15 (Debian 16.15-1.pgdg13+2)
+Finished, code: 1
+```
+
+#### ① 这条**不是**上一条的复发
+
+上一节（§5.7 ②之二）修的是「密码没百分号编码 → `could not translate host name`」。
+这一条报的是**版本**，而且 `aborting` 这个词是关键：
+
+- 那两句「版本不匹配」的**提示式**措辞是错的。原先把 `server version mismatch`
+  写成「**警告**，不是备份失败，下一轮别当成新 bug 去查」—— 事实相反：
+  **pg_dump 比服务端低大版本时是直接 abort**，一条数据都不导，退出码 1。
+  写下「别当成 bug」那句，恰好会让下一轮的人放过一条真红。已在 §4.12 与
+  `api/_lib/ops.js` 的 D 步里改成「低 = 直接 abort，不是警告」。
+- 规则本身：**pg_dump 允许比服务端新，不允许旧**（新客户端读得懂老服务端的目录；
+  老客户端读不懂新服务端的目录）。所以镜像跟着**服务端**大版本走。
+
+#### ② 为什么之前选了 `postgres:16`，以及它为什么必然红
+
+`node:20` 镜像里**没有** `pg_dump`（脚本里那句 `command -v pg_dump` 就是为此加的），
+于是当初换成了 `postgres:16` —— 这解决了「工具不存在」，但没解决「工具的版本」。
+Supabase 服务端是 **17.6**，`postgres:16` 里的 `pg_dump` 是 **16.15**，于是每次
+都 abort。**备份从上线起就没成功过一次**，而红的原因看起来像「密钥 / 网络」那一类。
+
+`0.7s` 的 duration 也是个指纹：真要连库导数据不可能这么快 ——
+它在**连接之前**就退了。
+
+#### ③ 改法：镜像换 `postgres:17` + 把两条「不许发生的事」变成脚本里的门
+
+1. `docker.image: postgres:16` → **`postgres:17`**（跟着服务端大版本；
+   服务端升 18 时同步换）。pg_dump 是**客户端**工具，不需要与服务端同发行版 ——
+   镜像只是取工具的地方，工具够新就行。
+2. 开跑先 `pg_dump --version` 打出版本：这一行让「镜像对不对」在日志里可见，
+   不用等那句 abort 去猜。
+3. **0 字节不算备份**。原先 `> backup/kuibu-$STAMP.sql` 一重定向，文件就
+   已经存在了 —— abort 之后留下一个 **0 字节的 `.sql`**，「备份存在但只有 0 字节」
+   比彻底没有更危险（人会以为那天备份过了）。现在失败时 `rm -f` 掉半截文件，
+   成功后用 `test "$SIZE" -gt 0` 把门。
+
+#### 验证
+
+- `node test/ops.test.js` 全绿：新增「D 步写明用 `postgres:17`」「写明版本低是
+  **abort** 不是警告」「写明 0 字节不算备份」，以及 `.cnb.yml` 的
+  「镜像就是 `postgres:17`」「不再是 `postgres:16`」「先打 `pg_dump --version`」
+  「空文件退非 0」「失败删半截文件」
+- `bash test/run.sh` 全绿、0 失败（PWA 那一层需能起 Chrome 的镜像）
+- 探活那条照旧**一个字没改** —— 它本来就是绿的
+- `sw.js` **不动**（v136）：本轮只改 `.cnb.yml` / `api/_lib/ops.js` / 文档与测试，
+  没有任何进预缓存的资源
