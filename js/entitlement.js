@@ -58,7 +58,12 @@
     "collections.many":  { minTier: "pro",  login: true,  quota: null, name: "自选清单 20 个" },
     "sync.multiDevice":  { minTier: "pro",  login: true,  quota: null, name: "跨设备云同步" },
     "export.paper":      { minTier: "pro",  login: true,  quota: null, name: "篇目 PDF / 打印页" },
-    "profile.family":    { minTier: "pro",  login: true,  quota: null, name: "家庭子档案 3 个" },
+    /* 家庭子档案 —— 用户 2026-09-17 裁决「子档案 Max 180 个」。
+       ⚠️ 与 docs/auth-design.md §3.5 那张老表（Pro 3 / Max 8）相比，
+          **Max 由 8 上收到 180**，以用户裁决为准（另有「Free 算 1 个还是 3 个」
+          的口径冲突，一并按 Free 1 个落 —— 与自选清单同一条「免费不残缺」）。
+       ⚠️ Free 1 个：用户第一次自动认领的那一份永远放得下，不是「一个都没有」。 */
+    "profile.family":    { minTier: "pro",  login: true,  quota: null, name: "家庭子档案（Free 1 / Pro 3 / Max 180）" },
     "quiz.review":       { minTier: "pro",  login: true,  quota: null, name: "题库复习（给上句选下句）" },
     /* ⚠️ `export.all` 的门槛与名字**被用户改过一次**（2026-09-16，Issue #159）：
        「为啥要有全站批量导出功能？这不是这个网站的核心资产吗？

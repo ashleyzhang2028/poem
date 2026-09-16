@@ -61,6 +61,21 @@
             <div class="settings-hint" id="seal-hint"></div>
           </div>
 
+          <div class="settings-item" id="family-item">
+            <!-- 家庭子档案（3 期 P1 · profile.family）：一个家长多个小孩，
+                 每个孩子各背各的。孩子**不建独立账号**（只是账号下的一个展示名），
+                 所以这里既没有「邀请」也没有「孩子登录」——只有一份名册 + 一个切换。
+
+                 ⚠️ 切换是**账号域**的事：换孩子 = 换一套进度 / 年级 / 已读
+                    （同一台平板上字号不会跟着变，那是设备域，见 js/family.js）。
+                 ⚠️ 名册为空时**不画**这一块（而不是画一个空框）：老用户升级后
+                    第一次进这一页，认领会把它变成「子档案 1」，界面上不出现
+                    一个「一个孩子都没有」的中间态。 -->
+            <label>子档案</label>
+            <div class="family-panel" id="family-panel"></div>
+            <p class="settings-hint" id="family-hint"></p>
+          </div>
+
           <div class="settings-item">
             <label>账号</label>
             <!-- 本机账号（/privacy/ 口径：只存在本机，不上传、不云同步）。
@@ -174,6 +189,10 @@
   <script src="/js/account-api.js"></script>
   <!-- 分域引擎（Issue #132 阶段 0）：进度 / 账号 / 设备三域的唯一一份定义，
        设置页的读法由 js/storage.js 转发。**必须排在 js/storage.js 之前**。 -->
+  <!-- 家庭子档案（3 期 P1）：**必须排在 progress-store 之前** ——
+       引擎按当前孩子拼键名（js/family.js 是唯一的拼接处），
+       顺序反了不会报错，只是永远读「没有后缀」那把老键，症状是「切换孩子后进度为空」。 -->
+  <script src="/js/family.js"></script>
   <script src="/js/progress-store.js"></script>
   <!-- 同步层（Issue #132 · 1B）：进度 / 账号域设置 / 已读的跨设备同步。
        必须在 js/storage.js 之前 —— 它要给每条记录打标（云端谁更新），

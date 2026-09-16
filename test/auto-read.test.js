@@ -36,7 +36,8 @@ const URL_OF = {
   'index.html': '/',
   'classic/index.html': '/classic/',
   'settings/index.html': '/settings/',
-  // 设置拆成二级页（Issue #132 后续）：注音开关住在「阅读与朗读」页
+  // 设置拆成二级页（Issue #132 后续）：注音开关住在「朗读」页
+  //（Issue #163 把原「阅读与朗读」页名精简为「朗读」，见 js/settings-nav.js）
   'settings/reader/index.html': '/settings/reader/'
 };
 
@@ -251,8 +252,8 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
 
   // ---- 阅读辅助开关的可见差别 ----
   // 开启（默认「只标生字」）→ 打开诗词自动注音；关闭 → 纯文本，需要时手动切档位。
-  // 设置已改成独立整页、又拆成二级页，注音开关住在「阅读与朗读」页
-  // （/settings/reader/）：这里在那一页点开关，
+  // 设置已改成独立整页、又拆成二级页，注音开关住在「朗读」页
+  // （/settings/reader/，Issue #163 的组标题就是「朗读」）：这里在那一页点开关，
   // 再把结果搬进首页实例的 localStorage（两个 JSDOM 实例的存储各自独立）。
   const helperPage = boot('settings/reader/index.html', null, false);
   // boot() 是同步注入脚本的，DOMContentLoaded 早已触发过，手动补一次让设置页初始化
@@ -720,14 +721,22 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
     chk(/当前：原文 · 顺序/.test(sd3.document.querySelector('#play-hint').textContent),
       '本机值不认识时回显出厂档「原文 · 顺序」（实际「' + sd3.document.querySelector('#play-hint').textContent + '」）');
 
-    // B：设置页写明圆键这条快速入口 —— #120 把那段说明整块删掉时删过了头，
-    // 本组说明也一并没了；#122 并入 main 解冲突时把**不教手势**的那半段放回
-    // （只说圆键长按 / 右键弹出的是同一个菜单，不再重复讲手机上按多久）。
-    const playBlock = sdoc.querySelector('#grp-play').closest('.settings-group').textContent;
-    chk(/长按 \/ 右键/.test(playBlock),
-      '设置页写明圆键「长按 / 右键」这条快速入口（#120 误删，Issue #122 放回）');
-    chk(!/长按约半秒/.test(playBlock),
-      '这半段只说手势叫什么，不再重复教怎么按（怎么按是集子页的事）');
+    /* B：设置「朗读」页只装**两条设置**，不教别处的操作手势 —— Issue #163「精简」。
+       沿革：#69 在设置页加了一句「集子索引页卡头的圆键长按 / 右键弹出同一个菜单」，
+       后来这半段被反复删了又放回；本轮（#163）的结论是**整句撤掉** ——
+       它是在设置页教另一处的操作，属于该页职责之外的话。
+       ⚠️ 这里守的是「本页只做设置」这件事，不是某一句文案：
+          · 本页的说明文字（settings-hint）一律不超过一句；
+          · 全页不再出现手势教学（长按 / 右键 / 半秒）。
+       哪天真有必要把入口写回来，那也该是集子页自己的事，本页不加回。 */
+    const readerHints = [...sdoc.querySelectorAll('#settings-page .settings-hint')]
+      .map(el => el.textContent.trim());
+    chk(readerHints.length === 2,
+      '「朗读」页两条设置各带一句说明（实际 ' + readerHints.length + ' 句）');
+    chk(!/长按|右键|半秒/.test(sdoc.querySelector('#settings-page').textContent),
+      '设置页不再教别处的手势（长按 / 右键那半段整句撤掉，#163）');
+    chk(readerHints.every(t => t.length <= 24),
+      '每条说明控制在一句以内（最长 ' + Math.max(...readerHints.map(t => t.length)) + ' 字）');
 
     // 档位定义同源：设置页与集子页读到的模式表必须是同一份
     chk(sd.PlayModes.LIST.map(m => m.id).join(',') === cwin.PlayModes.LIST.map(m => m.id).join(','),

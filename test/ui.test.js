@@ -9,7 +9,7 @@ const html = fs.readFileSync(path + 'index.html', 'utf8');
 //   /settings/general/  通用     —— 用户名 / 头像印记 / 数据管理
 //   /settings/recite/   背诵     —— 学段 / 年级 / 学期 / 范围 / 数量 + 复习算法
 //   /settings/lists/    我的清单 —— 自选背诵的增删改查
-//   /settings/reader/   阅读与朗读 —— 注音总开关 + 五档连读
+//   /settings/reader/   朗读 —— 注音总开关 + 五档连读方式
 // 下面这一条路径映射同时给「源码扫描」与「起页实例」两处用。
 const SETTINGS_PAGE = {
   'settings/index.html': '/settings/',
@@ -231,17 +231,17 @@ setTimeout(() => {
   chk(!!srecite.querySelector('#seg-term'), '学期选择在「背诵」页');
   chk(!!srecite.querySelector('#grade-chips'), '年级选择在「背诵」页');
   chk(srecite.querySelectorAll('#grade-chips button').length === 6, '「背诵」页默认小学显示 6 个年级按钮');
-  // 需求（本次）：一页里五个组合（学段 / 学期 / 背诵范围 / 阅读辅助 / 每日数量）
+  // 需求（本次）：一页里五个组合（学段 / 学期 / 背诵范围 / 注音 / 每日数量）
   // 与「年级」用同一套选中语言 —— 每行都恰好一个选中项，不再出现「这行选了、那行没选」的错觉。
   // ⚠️ 二级页之后这六个组合不再同住一页：背诵三项在「背诵」页、
-  //    注音在「阅读与朗读」页，所以要按页取（同一条判据仍成立）。
+  //    注音在「朗读」页（Issue #163 改名），所以要按页取（同一条判据仍成立）。
   const activeOne = (doc, sel) => {
     const btns = [...doc.querySelectorAll(sel + ' button')];
     return btns.length > 0 && btns.filter(b => b.classList.contains('active')).length === 1;
   };
   const comboPages = [
     ['背诵', srecite, ['#seg-stage', '#seg-term', '#seg-scope', '#seg-count', '#grade-chips']],
-    ['阅读与朗读', sreader, ['#seg-helper']]
+    ['朗读', sreader, ['#seg-helper']]
   ];
   chk(comboPages.every(([, doc, sels]) => sels.every(sel => activeOne(doc, sel))),
     '每个组合都恰好一个选中项（学段/学期/范围/数量/年级 · 注音）');
@@ -249,32 +249,39 @@ setTimeout(() => {
   // 因此不存在「年级用 .active、别的用另一套」这种分叉。
   chk(comboPages.every(([, doc, sels]) => sels.every(sel => doc.querySelector(sel + ' button.active'))),
     '六个组合的选中态都用同一个 .active 类名，样式可被整段统一');
-  // 需求（本次）：设置项按用途归类成「通用 / 古诗词背诵 / 阅读辅助」三组；
+  // 需求（本轮）：设置项按用途归类成「通用 / 古诗词背诵 / 阅读辅助」三组；
   // 后续（Issue #69）追加「朗读播放」一组 —— 连读档位原先只在圆键菜单里，
   // 界面上没有任何入口，这一组就是补上的显式入口。
-  // 分组（Issue #114 第二、三条 + 可切换复习算法那一轮）：
+  // 分组（Issue #114 第二、三条 + 可切换复习算法那一轮 + Issue #163 精简）：
   //   通用      用户名、头像印记、账号、数据备份 / 清空（全站共用）
   //   背诵      学段 / 年级 / 学期 / 范围 / 数量 / 进度总览
   //   复习算法   四张模型 4 选 1（决定「下次什么时候复习」）
   //   我的清单   自选背诵：导入 / 导出 / 改名 / 删除 / 整组移出 / 调顺序
-  //   阅读辅助   注音总开关
-  //   朗读播放   五档连读方式
+  //   朗读       自动注音 + 五档连读方式（Issue #163：原先的「阅读辅助」与
+  //              「朗读播放」各只有一条设置，两个组标题并成一个）
   // 二级页（Issue #132 后续）不再改变**分组**，只是把它们摊到三张页上：
   //   通用 → /settings/general/      背诵 + 复习算法 → /settings/recite/
-  //   我的清单 → /settings/lists/    阅读辅助 + 朗读播放 → /settings/reader/
+  //   我的清单 → /settings/lists/    朗读 → /settings/reader/
   const groupTitlesOf = doc => [...doc.querySelectorAll('#settings-page .settings-group')]
     .map(g => (g.querySelector('.settings-group-title') || {}).textContent);
   chk(groupTitlesOf(sgeneral).join('/') === '通用', '「通用」页只有一组：通用');
   chk(groupTitlesOf(srecite).join('/') === '背诵/复习算法',
     '「背诵」页是两组：背诵 + 复习算法（实际 ' + groupTitlesOf(srecite).join('/') + '）');
-  chk(groupTitlesOf(slists).join('/') === '我的清单', '「我的清单」页只有一组：我的清单');
-  chk(groupTitlesOf(sreader).join('/') === '阅读辅助/朗读播放',
-    '「阅读与朗读」页是两组：阅读辅助 + 朗读播放（实际 ' + groupTitlesOf(sreader).join('/') + '）');
-  // 四张页合起来仍是原来那六组，顺序不变 —— 拆页不该顺手改分类
+  /* ⚠️ 「我的清单」这一页现在是**两组**：清单本身 + 打印。
+     打印（Pro · export.paper）就长在它下面 —— 要打印的正是这份清单，
+     分开两页等于让用户在两张页之间来回搬东西（见 docs §5.2 与 js/print.js）。 */
+  chk(groupTitlesOf(slists).join('/') === '我的清单/打印',
+    '「我的清单」页是两组：我的清单 + 打印（实际 ' + groupTitlesOf(slists).join('/') + '）');
+  chk(groupTitlesOf(sreader).join('/') === '朗读',
+    '「朗读」页只有一组（Issue #163：原「阅读辅助 + 朗读播放」并成「朗读」，实际 ' +
+    groupTitlesOf(sreader).join('/') + '）');
+  // 四张页合起来：前四组与顺序不变 —— 拆页不该顺手改分类；
+  // 「阅读辅助 + 朗读播放」两条各只有一条设置的组并成一组「朗读」（Issue #163），
+  // 再 + 3 期新增的「打印」一组（长在「我的清单」页上）。
   const allGroupTitles = [...groupTitlesOf(sgeneral), ...groupTitlesOf(srecite),
     ...groupTitlesOf(slists), ...groupTitlesOf(sreader)];
-  chk(allGroupTitles.join('/') === '通用/背诵/复习算法/我的清单/阅读辅助/朗读播放',
-    '四张二级页合起来仍是六组、顺序不变（实际 ' + allGroupTitles.join('/') + '）');
+  chk(allGroupTitles.join('/') === '通用/背诵/复习算法/我的清单/打印/朗读',
+    '四张二级页合起来是六组、顺序不变（实际 ' + allGroupTitles.join('/') + '）');
   // 需求（本次）：分组标题下的二级描述全部删除，标题下方直接就是选项
   chk([sgeneral, srecite, slists, sreader].every(doc =>
     [...doc.querySelectorAll('.settings-group')].every(g => !g.querySelector('.settings-group-desc'))),
@@ -299,19 +306,20 @@ setTimeout(() => {
   // 导入 / 导出用的纯文本对话框也跟着那一页走
   chk(!!slists.querySelector('#text-dialog') && !!slists.querySelector('#text-dialog-text'),
     '「我的清单」页有导入 / 导出用的纯文本对话框');
-  chk(grpOf(sreader, '#seg-helper') === '阅读辅助', '注音总开关归到「阅读辅助」组');
-  chk(grpOf(sreader, '#seg-play') === '朗读播放', '连读档位归到「朗读播放」组');
+  chk(grpOf(sreader, '#seg-helper') === '朗读', '注音总开关归到「朗读」组');
+  chk(grpOf(sreader, '#seg-play') === '朗读', '连读档位归到「朗读」组');
   chk(grpOf(srecite, '#seg-algo') === '复习算法', '复习算法选择归到「复习算法」组');
   // 只给背诵用的选项不能再出现在「通用」组里（这才是这次需求的重点）
-  // 「通用」组的六项：用户名 / 头像印记 / 账号 / 跨设备同步 / 数据管理 /
+  // 「通用」组的七项：用户名 / 头像印记 / 子档案 / 账号 / 跨设备同步 / 数据管理 /
   // 课内诗词导出
-  // （Issue #132 · 用户名旁多了头像印记、二级页补上「账号」、1B 补上同步开关；
-  //  Issue #159 · 再补上「课内诗词导出」——用户点名只要课本那一部分，
+  // （Issue #132 · 用户名旁多了头像印记、二级页补上「账号」、1B 又补上同步开关；
+  //  3 期 P1 再补上「子档案」（Issue #159 的 ④）；
+  //  Issue #159 · 最后补上「课内诗词导出」——用户点名只要课本那一部分，
   //  且门槛是 Pro。它们都是账号域的身份与数据设置）。
   // 这里守的仍是原来那条重点：**只给背诵用的选项不许混进「通用」**。
   const generalItems = sgeneral.querySelector('#settings-page .settings-group').querySelectorAll('.settings-item');
-  chk(generalItems.length === 6,
-    '「通用」组是用户名 / 头像印记 / 账号 / 跨设备同步 / 数据管理 / 课内诗词导出六项（实际 ' + generalItems.length + '）');
+  chk(generalItems.length === 7,
+    '「通用」组是用户名 / 头像印记 / 子档案 / 账号 / 跨设备同步 / 数据管理 / 课内诗词导出七项（实际 ' + generalItems.length + '）');
   chk(!!sgeneral.querySelector('#btn-export-poems'),
     '「通用」里有课内诗词导出（Issue #159：只导课本那 261 首）');
   chk(grpOf(sgeneral, '#btn-export-poems') === '通用',
@@ -325,6 +333,7 @@ setTimeout(() => {
   // 拆页之后不能两页都留同一件控件，也不能哪一页都找不到
   const OWNER_OF = {
     '#input-username': [sgeneral], '#seal-chars': [sgeneral], '#account-panel': [sgeneral],
+    '#family-panel': [sgeneral],
     '#btn-export': [sgeneral], '#btn-import': [sgeneral], '#btn-reset': [sgeneral],
     '#seg-stage': [srecite], '#grade-chips': [srecite], '#seg-term': [srecite],
     '#seg-scope': [srecite], '#seg-count': [srecite], '#seg-algo': [srecite],

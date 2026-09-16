@@ -984,9 +984,9 @@ body.no-dock .modal-box { max-height: 88vh; }
 .settings-page #seg-count button { flex: 1 1 0; }
 
 /* --------------------------------------------------------------------------
-   朗读播放：五档连读方式
+   朗读：五档连读方式
    --------------------------------------------------------------------------
-   五个模式，每个后面还带一句「选它会发生什么」（无译文跳过等），所以
+   五档连读，每档后面还带一句「选它会发生什么」（无译文跳过等），所以
    放在药丸里会挤成两行、长短参差。这里改用**竖排单选项**：
    一行一档、名字在左、说明在下，选中同样用「深绿实底 + 米白字 + 描金内边」
    这一套页面统一的选中语言（与年级药丸、学段药丸一致），
@@ -1287,12 +1287,15 @@ textarea:focus {
    ⚠️ 这一段是 .switch-input / .switch-track 的**唯一定义处**。
       它们原先被定义了两遍：本段（自绘：input 当轨道、旁边的 span 当滑块）
       与页面中部的「开关行（跨设备同步）」一节（透明 input 当覆盖层、
-      span 当轨道）—— 两套结构相反，CSS 层叠取后者，于是浏览器画出来的是
-      后者（轨道 40×24、滑块 18），而本段源码里量到的却是前者
+      span 当轨道；那一节的类名是 .switch-row / .switch-label）——
+      两套结构相反，CSS 层叠取后者，于是浏览器画出来的是后者
+      （轨道 40×24、滑块 18），而本段源码里量到的却是前者
       （input 40×24、span 40×24）：「源码写的」与「画出来的」对不上，
       UI 一致性那一节的五条断言因此长期亮红（滑块行程 −6、滑块 40 落在 40 的
-      轨道外、找不到 .switch-row / .switch-label）。现在只留下本段
-      —— 与 HTML 里真实存在的 .switch > input + .switch-track 完全对应。 */
+      轨道外、找不到 .switch-row / .switch-label）。现在两段已并成这一段
+      —— 与 HTML 里真实存在的 .switch > input + .switch-track 完全对应，
+      这两个选择器各只出现一次，源码里量到的就是画出来的。
+      ⚠️ 改尺寸就是改这一段，别处不许再写一遍同名规则。 */
 .switch-input {
   appearance: none;
   -webkit-appearance: none;
@@ -1422,6 +1425,101 @@ textarea:focus {
 .seal-ink:hover { transform: scale(1.06); }
 .seal-ink:active { transform: scale(.94); }
 .seal-ink.active { box-shadow: 0 0 0 3px rgba(165, 92, 25, .22); }
+
+/* --------------------------------------------------------------------------
+   家庭子档案（3 期 P1）：名册 + 切换 + 增删
+   --------------------------------------------------------------------------
+   一个家长多个小孩。整块只有一行一行的「名字 · 当前 · 改名 · 删除」，
+   与「我的清单」那一组同一套排版语言（.settings-link 那一档），
+   不新造一套视觉 —— 同一页里两种列表样式正是用户点过的「看着说不出哪不对」。
+
+   ⚠️ 「当前」那一档只用**文字 + 实底**表达，不靠颜色单独承载语义：
+      色盲用户与黑白打印时也得读得出「现在是哪一个」。
+   -------------------------------------------------------------------------- */
+.family-panel { display: flex; flex-direction: column; gap: 6px; }
+.family-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--card);
+  padding: 6px 8px 6px 10px;
+}
+.family-row.current {
+  border-color: var(--green);
+  box-shadow: inset 0 0 0 1px rgba(47, 96, 85, .22);
+}
+/* 点名字 = 切到它。整颗键占满左侧，热区够大（触屏上指肚按得着） */
+.family-pick {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  background: none;
+  padding: 6px 0;
+  text-align: left;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+.family-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.family-now {
+  flex: none;
+  font-size: 11px;
+  color: var(--green);
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  padding: 1px 7px;
+}
+.family-acts { flex: none; display: flex; gap: 4px; }
+.family-act {
+  border: none;
+  background: none;
+  color: var(--ink-3);
+  font-family: inherit;
+  font-size: 12.5px;
+  padding: 4px 6px;
+  cursor: pointer;
+  border-radius: 6px;
+}
+.family-act:hover { color: var(--green); }
+.family-act.danger:hover { color: var(--ink); }
+/* 「再建一个」：虚线框的一行，与上面的实线行区分开（它是动作，不是条目） */
+.family-add {
+  border: 1px dashed var(--line-2);
+  border-radius: var(--radius);
+  background: none;
+  color: var(--ink-2);
+  font-family: inherit;
+  font-size: 13px;
+  padding: 9px 10px;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color .15s, color .15s;
+}
+.family-add:hover { border-color: var(--green); color: var(--green); }
+/* 原地改名用的输入框：与 .settings-input 同一档（同一页里两种输入框是两种语言） */
+.family-rename {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius);
+  background: var(--card);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 14px;
+  padding: 7px 9px;
+}
+.family-rename:focus { outline: none; border-color: var(--green); }
 
 /* --------------------------------------------------------------------------
    设置页里的「我的清单」（自选背诵）
