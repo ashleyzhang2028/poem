@@ -1510,5 +1510,96 @@ if (JSDOM) {
   console.log('- (未安装 jsdom，跳过开关的真实渲染几何一节)');
 }
 
+/* ==========================================================================
+   Issue #163 续（第二轮）：登录卡垂直居中 · 账号页主按钮与全站同一颗
+   --------------------------------------------------------------------------
+   用户原话：
+     「登录页面的登录卡片能垂直居中吗 发送随机码的按钮是黑色的？
+       和其他页面主按钮色不一致？」
+
+   〓〓〓 这两条为什么必须落成断言，而不是「改完看一眼」 〓〓〓
+
+   ① **垂直居中**这件事：它改的是一条 `min-height` 上的算式
+      （`100vh − 顶栏 − 页脚`）。这一屏在手机上恰好是「内容不足一屏」，
+      于是它看着生效了；到了大字号 / 横屏 / 平板那一档，算式里的常数一旦
+      离谱，卡片就会被推到屏幕外或者贴顶 —— 而**没人会去那个尺寸再看一遍**。
+      断言守的是「算式与页面拿得到的东西同源」「只给登录页」「没有 justify-content」
+      这三件，换数值时它们仍成立。
+   ② **主按钮**这件事：两处的色值**本来就一样**，是描金细边少了一条。
+      也就是说「用户报的不一致」在源码里长得和人眼看到的原因不一样 ——
+      只比对 background 会判绿，而屏幕上依旧是两副脸。所以这里判的是
+      **一整个观感**（背景 / 描边 / 描金内边 / 按下反馈），
+      并把「不是平铺一个色值」也钉住（平铺正是那个「一块黑」的成因）。
+   ========================================================================== */
+{
+  /* ---------- ① 登录卡垂直居中（Issue #163） ---------- */
+  const loginPageRule = ruleOf(strip(accountCss), '#login-page');
+  chk(/display:\s*flex/.test(loginPageRule),
+    '登录页那一列是 flex 容器（居中要靠它算剩余空间，不是靠外边距拍一个数）');
+  chk(/min-height:\s*calc\(100\s*\*\s*var\(--app-vh\)/.test(loginPageRule),
+    '容器高度按实测视口算（--app-vh 是 js/pwa.js 量出来的，不是 100vh 在 iOS 上的跳变值）');
+  /* ⚠️ 兜底那条（`calc(100vh - Npx)`）**不能**用 `ruleOf('#login-page')` 去读：
+     `ruleOf()` 按「**同名属性留最后一条**」累积，而 `min-height` 正是同名属性 ——
+     宽屏那一档写的 `min-height: calc(100 * var(--app-vh) - 240px)` 是**后一条**，
+     于是它把兜底整条盖掉了。源码里明明写着兜底，这把尺子却判红（踩过一次）。
+     兜底与实测那一条是**成对**出现在每一档里的，所以判「成对出现的档数」：
+     两档 = 两对 = 各 2 条；少一条就说明某一档只剩了一条腿。 */
+  const vhFallbacks = (strip(accountCss).match(/min-height:\s*calc\(100vh\s*-\s*\d+px\)/g) || []).length;
+  const vhMeasured = (strip(accountCss).match(/min-height:\s*calc\(100 \* var\(--app-vh\)\s*-\s*\d+px\)/g) || []).length;
+  chk(vhFallbacks >= 1 && vhFallbacks === vhMeasured,
+    '实测视高（--app-vh）与 100vh 兜底成对出现（各 ' + vhMeasured + ' / ' + vhFallbacks +
+    ' 条）—— 没有 js 量过视高的那一档也照样算得出高度');
+  chk(vhMeasured >= 2,
+    '手机与桌面两档各给自己留了一对（实际 ' + vhMeasured + ' 对 —— 大字号 / 横屏那一档也得算得对）');
+  // 卡片靠 auto 外边距居中，**不是** justify-content: center
+  const loginCardRule = ruleOf(strip(accountCss), '#login-page > .account-card');
+  chk(/margin-top:\s*auto/.test(loginCardRule) && /margin-bottom:\s*auto/.test(loginCardRule),
+    '卡片上下外边距都是 auto（卡片比容器高时退化成 0，顶端仍贴得住 —— ' +
+    'justify-content: center 会把顶端顶到容器外，顶栏那一段滚不回来）');
+  chk(!/justify-content/.test(loginPageRule),
+    '不用 justify-content 居中（溢出时会把卡片顶端推出容器）');
+  // 反向：这三条只给登录页，不许按 .account-page 一锅端 ——
+  // 个人中心 / 管理后台是一叠卡的长清单页，居中在它们身上永远不生效；
+  // 而卡一变少（注销之后），它们会被推到屏幕正中，像一张贴墙的明信片。
+  const plainPage = ruleOf(strip(accountCss), '.account-page');
+  chk(!/min-height/.test(plainPage) && !/display:\s*flex/.test(plainPage),
+    '只有登录页垂直居中（.account-page 那一档既不定高也不改排布 —— ' +
+    '个人中心 / 管理后台是清单页，居中对它们不成立）');
+  chk(/#login-page\s*\{/.test(strip(accountCss)) &&
+    /<main class="account-page" id="login-page">/.test(read('login/index.html')),
+    '那一列真的有 #login-page 这个钩子（HTML 与 CSS 对得上，不是一条空规则）');
+  /* 反向样本：把居中那两行拿掉，判据必须变红 —— 有牙的尺子才叫断言 */
+  const noCenter = strip(accountCss).replace(/#login-page[^}]*\}/, '');
+  chk(!/display:\s*flex/.test(ruleOf(noCenter, '#login-page')),
+    '反面样本：抹掉 #login-page 那段之后，这把尺子立刻判它没有 flex（断言不是空的）');
+
+  /* ---------- ② 账号页那颗主按钮 = 全站一级按钮 ---------- */
+  const acctPrimary = ruleOf(strip(accountCss), '.account-btn');
+  const sitePrimary = ruleOf(cssCode, '.btn.primary');
+  const goldenLine = /rgba\(\s*240,\s*205,\s*124/;      // 描金线：全站只有这一个来源
+  chk(goldenLine.test(sitePrimary) && goldenLine.test(acctPrimary),
+    '两处的一级按钮都带描金内边（inset 0 0 0 1px rgba(240,205,124,…)）—— ' +
+    '少的就是这一圈，「发黑」正是它缺席的观感');
+  chk(/linear-gradient\(180deg/.test(acctPrimary),
+    '账号页主按钮走三段渐变（描金细边 + 顶部高光）—— 不再是平铺一个色值的实心块');
+  chk(!/background:\s*var\(--green\)\s*;/.test(acctPrimary),
+    '它不再是一块平铺的 --green（平铺 = 米纸底上一块没有收边的深色块）');
+  chk(/border:\s*1px solid var\(--green-dark\)/.test(acctPrimary),
+    '描边读 --green-dark（与全站一级按钮同一条边）');
+  // 按下反馈：两处都只留描金内边、去掉外投影 —— 同一个动作不许两副脸
+  const acctActive = ruleOf(strip(accountCss), '.account-btn:active');
+  const siteActive = ruleOf(cssCode, '.btn.primary:active');
+  chk(goldenLine.test(acctActive) && !/0 2px 10px/.test(acctActive),
+    '账号页主按钮按下时只留描金内边、去掉外投影（与 .btn.primary:active 同一条）');
+  chk(/inset/.test(siteActive),
+    '（对照）全站一级按钮的按下态也是「只留描金内边」—— 两处口径一致');
+  chk(/font-size:\s*15px/.test(acctPrimary) && /font-size:\s*15px/.test(ruleOf(cssCode, '.btn')),
+    '两处主按钮的字号同一档（15px）—— 并排看不会一大一小');
+  // 反向：账号页不许自己造一个绿色 / 金色字面量（调色板只有一份）
+  const acctCode = strip(accountCss).replace(/^\s*:root\s*\{[\s\S]*?\}/m, '');
+  chk(!/#2f6055|#234b42|#4f7a6e|#f0cd7c/i.test(acctCode),
+    'account.css 里不出现天青 / 缃色的字面量（一律读 css/style.css 的 :root 令牌）');
+}
+
 console.log(fails === 0 ? '\n🎉 UI 一致性 / 响应式守卫全部通过' : '\n❌ ' + fails + ' 项失败');
 process.exit(fails ? 1 : 0);
