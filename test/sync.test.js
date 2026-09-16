@@ -700,7 +700,9 @@ async function main() {
     const sw = fs.readFileSync(path.join(ROOT, "sw.js"), "utf8");
     chk(/js\/sync-store\.js/.test(sw), "sw.js 预缓存含 js/sync-store.js（断网也要能同步）");
     const vm = sw.match(/poem-app-v(\d+)/);
-    chk(!!vm && Number(vm[1]) >= 128, "sw.js 缓存版本提到 v128 以上（实际 " + (vm && vm[1]) + "）");
+    /* Issue #163 第三轮动了 css/style.css 与 settings/general/index.html
+       —— 缓存版本不跟着提，老用户的 PWA 会一直拿着那份「滑块在页面外」的旧样式表。 */
+    chk(!!vm && Number(vm[1]) >= 132, "sw.js 缓存版本提到 v132 以上（实际 " + (vm && vm[1]) + "）");
 
     // 设置页必须有开关，个人中心必须有冲突面板
     const gen = fs.readFileSync(path.join(ROOT, "settings/general/index.html"), "utf8");
@@ -794,16 +796,30 @@ async function main() {
     /* 开关本体就是状态（Issue #163 起不再有一颗写着「关」/「开」的文字标签）：
        高对比的深天青实底只属于「开着」，关着必须是纸底 + 描边 ——
        这一条是「一眼能不能看出开没开」的机器可判版本。 */
-    const trackRule = (cssCode.match(/\.switch-input\s*\{[^}]*\}/) || [""])[0];
-    const onRule = (cssCode.match(/\.switch-input:checked\s*\{[^}]*\}/) || [""])[0];
+    /* ⚠️ Issue #163 第三轮改过结构：不再是「input 自己当胶囊」，
+       而是 input（0 尺寸、只当状态与焦点）+ <span class="switch-toggle">（可见的轨道，
+       滑块是它的 ::after）。上一版把滑块做成独立元素、靠 absolute 去叠，
+       结果是它落到了页面左上角（屏幕外），用户看到的是一颗空药丸。
+       ⚠️ 这里判「**可见的那颗**是胶囊、有纸底、开着换实底」——
+          读的是 .switch-toggle 那一段，别再读 input 那一段（它现在是 0 尺寸的隐形件）。 */
+    const trackRule = (cssCode.match(/\.switch-toggle\s*\{[^}]*\}/) || [""])[0];
+    const onRule = (cssCode.match(/\.switch-input:checked\s*\+\s*\.switch-toggle\s*\{[^}]*\}/) || [""])[0];
     chk(/border-radius:\s*999px/.test(trackRule), "开关是胶囊轨道（不是方框）");
     chk(/background:\s*var\(--card\)/.test(trackRule), "关着时是纸底（不是浏览器默认的白底方框）");
     chk(/background:\s*var\(--green\)/.test(onRule), "开着时是深天青实底（与全站选中态同一个色）");
-    chk(/appearance:\s*none/.test(trackRule), "外观自绘（appearance:none），不吃各浏览器默认样式");
+    chk(/appearance:\s*none/.test(trackRule) || /position:\s*relative/.test(trackRule),
+      "外观自绘（轨道是自己画的 span，不吃各浏览器默认样式）");
     eq(!!w.document.getElementById("sync-label"), false,
       "旧的「关」/「开」文字标签已经拿掉（状态改由开关本体表达）");
-    chk(!!w.document.querySelector(".switch .switch-track"),
+    chk(!!w.document.querySelector(".switch .switch-toggle"),
       "开关自带一条轨道（滑块由它画，不是 UA 的勾）");
+    /* 反向：上一版那两颗（input 自己当胶囊 / 独立滑块）都不许回来 ——
+       前者会让「可见件」与「状态件」是两套东西，后者正是滑到页面外的病根。 */
+    chk(!w.document.querySelector(".switch .switch-track"),
+      "不再有独立滑块 .switch-track（滑块现在是轨道的 ::after）");
+    var _inpCss = (cssCode.match(/\.switch-input\s*\{[^}]*\}/) || [""])[0];
+    chk(/width:\s*0/.test(_inpCss) && /height:\s*0/.test(_inpCss),
+      "真实复选框画成 0 尺寸（不占位，视觉交给轨道那颗 span）");
     ok(/只存本机/.test(w.document.getElementById("sync-hint").textContent),
       "关着时如实说「进度只存本机，不上传」");
 

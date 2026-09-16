@@ -84,11 +84,21 @@
           </div>
 
           <div class="settings-item">
-            <!-- 跨设备同步：一行「左标签 · 右开关」，说明文字在开关下面一行
-                 （Issue #163：旧版是「U A 方框 + 一个写着关/开 的字」，与全站语言不搭）。
+            <!-- 跨设备同步：一行「左标签 · 右开关」，说明文字在开关下面一行。
 
-                 开关**出厂关着**（用户裁决：默认本地，docs §4.2 第 2 条）。
-                 关掉即完全退回 0 期行为：不发一个请求、不留一处云端痕迹。
+                 结构是**手机系统开关**那一路（Issue #163 第三轮）：
+                   · <input class=switch-input>  真实复选框 —— 键盘 / 读屏 / 原生 toggle 都走它，
+                                                画成 0 尺寸（不占位），只当状态与焦点用
+                   · <span class=switch-toggle>  可见的那颗轨道 + 滑块（滑块是它的 ::after）
+
+                 ⚠️ 滑块画在**轨道内部**（.switch-toggle 是 position:relative 的包含块）。
+                    上一版滑块是可以出现在 DOM 任何位置的 <span class=switch-track>，
+                    靠 absolute 定位去叠 —— 而它一路上没有非 static 祖先，于是以**文档**
+                    为坐标落在页面左上角（实测在屏幕外），用户看到的是一颗空药丸。
+                    现在轨道与滑块是同一个元素的「盒子 + ::after」，画不到一起去都难。
+                 ⚠️ 顺序不能反：CSS 用 `input:checked + .switch-toggle` 找轨道。
+                 ⚠️ 开关**出厂关着**（用户裁决：默认本地，docs §4.2 第 2 条）。
+                    关掉即完全退回 0 期行为：不发一个请求、不留一处云端痕迹。
                  ⚠️ 它管的是「要不要把进度上传」—— 与「有没有登录」是两件事：
                     没登录的人这一项按 unavailable 说明，不是按 off。
                  ⚠️ 标签是显式的 <span>，不用 <label for>：整行已由外层 <label> 包着，
@@ -97,7 +107,7 @@
               <span class="settings-label" id="switch-sync-name">跨设备同步</span>
               <input id="toggle-sync" class="switch-input" type="checkbox"
                      role="switch" aria-labelledby="switch-sync-name" />
-              <span class="switch-track" aria-hidden="true"></span>
+              <span class="switch-toggle" aria-hidden="true"></span>
             </label>
             <p class="switch-hint" id="sync-hint"></p>
           </div>
