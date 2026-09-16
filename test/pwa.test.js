@@ -353,7 +353,8 @@ function check(name, cond, extra) {
 
     // 断网也能进设置（Issue #132 后续拆成二级页之后，主页只剩四个入口，
     // 原来那些设置控件都在二级页上；这条路按「用户真的会怎么走」量一遍：
-    // 主页四个入口 → 点进「通用」→ 点进「阅读与朗读」，逐张页查该页的控件）。
+    // 主页四个入口 → 点进「通用」→ 点进「朗读」，逐张页查该页的控件）。
+    //（「阅读与朗读」在 Issue #163 精简成「朗读」）。
     // 预缓存的页面请求在断网下也走 SW 缓存，所以连点进去都不必联网。
     await page.setOfflineMode(true);
     await page.goto(base + 'settings/', { waitUntil: 'domcontentloaded' });
@@ -403,7 +404,7 @@ function check(name, cond, extra) {
       subGeneral.hasPage && subGeneral.hasCtrl,
       JSON.stringify(subGeneral));
     const subReader = await enterSub('reader', '#seg-helper');
-    check('iPhone: 断网时点「阅读与朗读」进得去二级页，注音开关就在这一页',
+    check('iPhone: 断网时点「朗读」进得去二级页，注音开关就在这一页',
       subReader.clicked && subReader.href === '/settings/reader/' &&
       subReader.url === '/settings/reader/' &&
       subReader.hasPage && subReader.hasCtrl,

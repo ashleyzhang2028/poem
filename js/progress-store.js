@@ -68,6 +68,7 @@
     settings: "poem_recite_settings_v1", // 账号域：年级/学期/范围/每日数量/算法
     profile: "poem_profile_v1",          // 账号域：昵称 + 字符印头像
     device: "poem_device_prefs_v1",      // 设备域：阅读偏好（本机）
+    search: "poem_search_kw_v1",         // 设备域：搜索页上次搜的词（本机）
     premerge: "poem_pre_merge_backup_v1" // 同步合并前的本机快照（1 期用）
   };
 
@@ -296,8 +297,35 @@
     return ok;
   }
 
+  /* ---------------- 设备域：搜索页上次搜的词（Issue #163） ----------------
+   *
+   * 与 helper 同一套路：**本机**的阅读偏好，同步层一个字节都不上传。
+   * 为什么要有它：搜索页从 Issue #163 起**进页不再自动聚焦**
+   *（用户：手机键盘自己弹出来，烦人），于是这一页进来先看见的应该是
+   *「上次搜过什么」—— 把上次的关键词放回框里、结果照旧列着，
+   * 想接着搜自己点一下框。这就是「键盘不出来」与「进来不是一片空白」的折中。
+   *
+   * ⚠️ 不塞进 settings 对象：那份是**账号域**（跟着人走、会被推上云），
+   *    「上次在这台机器上搜了什么」不属于账号。
+   */
+  function searchKeyword() {
+    var v = raw(KEYS.search);
+    return typeof v === "string" ? v : "";
+  }
+
+  /* ⚠️ 这一把键**不拼子档案后缀**：scopes 表里它是 `perChild: false` ——
+     「上次搜的词」是这台设备的，不跟孩子走（与字体 / 连读档同一档）。
+     所以 `raw(KEYS.search)` 那两句**不能**改成 `kk(KEYS.search)`：
+     那样会让搜索页的偏好变成「小明搜过的词小红也看得到」，
+     恰好与 `Family.isPerChild` 里那张名单相反。
+     这一对与 scopes 里那一行是同一件事的两面，改一处就得看另一处。 */
+  function setSearchKeyword(v) {
+    var t = String(v == null ? "" : v);
+    return t ? put(KEYS.search, t) : drop(KEYS.search);
+  }
+
   function device() {
-    return { helper: helper() };
+    return { helper: helper(), searchKeyword: searchKeyword() };
   }
 
   /* ---------------- 导出 / 导入（按域） ---------------- */
@@ -376,6 +404,7 @@
          给它也拼后缀会让名册藏进「某个孩子的档案里」，症状是换个孩子就丢名册。 */
       { key: KEYS.profile, domain: "account", local: false, perChild: false },
       { key: KEYS.device, domain: "device", local: true, perChild: false },
+      { key: KEYS.search, domain: "device", local: true, perChild: false },
       { key: KEYS.premerge, domain: "backup", local: true, perChild: false }
     ];
   }
@@ -429,6 +458,8 @@
     device: device,
     helper: helper,
     setHelper: setHelper,
+    searchKeyword: searchKeyword,
+    setSearchKeyword: setSearchKeyword,
 
     /* 已读域：六把键**不合并不改名**，这里只是读写一处收敛。
        ⚠️ 多子档案之后**按当前孩子拼后缀**（读没读过是孩子自己的事）——

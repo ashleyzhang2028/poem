@@ -7,12 +7,12 @@
  *   · 仍然与首页共用同一份存储（poem_recite_settings_v1），改完即生效
  *
  * 二级设置页（Issue #132 后续）：
- *   设置项多了以后，六组摊成三页二级页，本文件仍是**三页共用**的那一份逻辑：
+ *   设置项多了以后，各组摊成四张二级页，本文件仍是**各页共用**的那一份逻辑：
  *     /settings/general/  通用     —— 用户名 / 头像印记 / 本机账号 / 数据管理
  *     /settings/recite/   背诵     —— 学段 / 年级 / 学期 / 范围 / 数量
  *                                     + 复习算法 + 进度总览入口
  *     /settings/lists/    我的清单 —— 自选背诵：导入 / 导出 / 改名 / 删除 / 整组移出 / 顺顺序
- *     /settings/reader/   阅读与朗读 —— 注音总开关 + 五档连读
+ *     /settings/reader/   朗读     —— 自动注音 + 五档连读方式
  *   主页（/settings/）只列入口 + 法务链接，不加载本文件。
  *
  *   ⚠️ 本文件**一页一实例**：每张页只放自己那几组控件，
@@ -488,6 +488,10 @@
         '<span class="collection-count">' + col.items.length + " 篇</span>" +
         '<button type="button" class="collection-act" data-rename="' + esc(col.id) + '" title="重命名" aria-label="重命名 ' + esc(col.name) + '">改名</button>' +
         '<button type="button" class="collection-act" data-export="' + esc(col.id) + '" title="导出成文本，可发给别的家长" aria-label="导出集合 ' + esc(col.name) + '">导出</button>' +
+        /* 「打印」这一颗是 3 期 Pro 的能力（`export.paper`）。**它不判权限、
+           也不置灰** —— 点开那一层自己会说清「这一项要 Pro」（`js/print.js`），
+           判据只有 `Entitlement.can()` 一处（docs §3.4：把入口藏起来不是边界）。 */
+        '<button type="button" class="collection-act" data-print="' + esc(col.id) + '" title="把这份清单排成一页纸，打印或存成 PDF" aria-label="打印集合 ' + esc(col.name) + '">打印</button>' +
         '<button type="button" class="collection-act danger" data-drop="' + esc(col.id) + '" title="删除集合" aria-label="删除集合 ' + esc(col.name) + '">删除</button>';
       box.appendChild(head);
 
@@ -613,12 +617,20 @@
         if (moved) renderCollections();
         return;
       }
-      const t = e.target.closest ? e.target.closest("[data-rename], [data-drop], [data-export]") : null;
+      const t = e.target.closest ? e.target.closest("[data-rename], [data-drop], [data-export], [data-print]") : null;
       if (!t || !window.ReciteCollections) return;
       e.stopPropagation();
       const rid = t.getAttribute("data-rename");
       const did = t.getAttribute("data-drop");
       const eid = t.getAttribute("data-export");
+      const pid = t.getAttribute("data-print");
+      if (pid) {
+        /* 打印（Pro · `export.paper`）：把这一本清单交给打印那一层。
+           ⚠️ 这里**一个字都不判权限** —— 入口照旧可点，那一层自己会说清
+              「这一项要 Pro」（docs §3.4：把入口藏起来不是边界）。 */
+        if (window.PrintPage) window.PrintPage.open({ collectionId: pid });
+        return;
+      }
       if (eid) {
         const col = window.ReciteCollections.get(eid);
         if (!col) return;
@@ -735,7 +747,7 @@
     showToast("复习算法已改为「" + m.name + "」" + (n ? "，已换算 " + n + " 篇的进度" : ""));
   }
 
-  /* ---------------- 朗读播放（五档连读方式） ----------------
+  /* ---------------- 朗读（五档连读方式） ----------------
      这一组的选项**不写进 poem_recite_settings_v1**，而是写进朗读偏好自己的
      poem_play_mode_v1 —— 与集子页那颗圆键菜单是同一份。理由是它本来就是
      「播放档位」，跨集子共用；若塞进背诵设置，导出备份就会把两件事混在一起，
@@ -1346,7 +1358,7 @@
         settings.helper = b.dataset.helper === "on" ? "on" : "off";
         saveSettings();
         renderControls();
-        showToast(settings.helper === "on" ? "阅读辅助已开启：打开诗词自动注音" : "阅读辅助已关闭：打开诗词为纯文本");
+        showToast(settings.helper === "on" ? "自动注音已开启：打开诗词自动注音" : "自动注音已关闭：打开诗词为纯文本");
       });
     });
 

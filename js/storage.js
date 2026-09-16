@@ -19,6 +19,8 @@
   "use strict";
 
   var SETTINGS_KEY = "poem_recite_settings_v1";
+  /* 与 progress-store.js 的 KEYS.search 是同一把键（那一份是唯一出处） */
+  var SEARCH_KEY = "poem_search_kw_v1";
 
   /** 取引擎。**每次现取**而不是启动时存一份 —— 页面里脚本顺序可能与预期不同 */
   function PS() {
@@ -180,6 +182,32 @@
       var ps = PS();
       if (ps) return ps.saveSettings(s);
       localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
-    }
+    },
+
+    /**
+     * 搜索页「上次搜的词」（Issue #163）。
+     *
+     * 它是**设备域**的一件阅读偏好（本机、不上云），所以不走 getSettings ——
+     * 那份是账号域的对象，混进去会让它跟着账号上传到别的设备上，
+     * 而「上次在这台机器上搜了什么」换台机器看是没有意义的。
+     *
+     * 兜底路径（引擎缺席）直接读写本机那一把键：
+     * 搜索页的这条功能不值得为了脚本顺序而整页失效，退化成老写法仍可用。
+     */
+    getSearchKeyword: function () {
+      var ps = PS();
+      if (ps) return ps.searchKeyword();
+      try { return localStorage.getItem(SEARCH_KEY) || ""; } catch (e) { return ""; }
+    },
+    setSearchKeyword: function (v) {
+      var ps = PS();
+      var t = String(v == null ? "" : v);
+      if (ps) return ps.setSearchKeyword(t);
+      try {
+        if (t) localStorage.setItem(SEARCH_KEY, t);
+        else localStorage.removeItem(SEARCH_KEY);
+      } catch (e) { /* 隐私模式 / 配额满：搜索本身照常 */ }
+      return true;
+    },
   };
 })();
