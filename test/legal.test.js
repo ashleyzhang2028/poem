@@ -162,8 +162,15 @@ setTimeout(() => {
       '如实写明「默认只存本机 + 开关云端同步」这层结构');
     chk(/关掉|关闭/.test(t), '写明云端同步可以关掉');
     chk(/注销即删除/.test(t), '写明注销即删除服务器上的数据');
-    chk(/Supabase|SendGrid|Resend/.test(t),
+    chk(/Supabase/.test(t) && /Resend/.test(t),
       '列明实际的数据处理者（数据库与发信服务）');
+    /* ⚠️ 这一条 2026-09-17 从「Supabase|SendGrid|Resend」**收紧**成具名两项。
+       原因：SendGrid 已于 2026-09-16 转向收费、本站改用 Resend（Issue #159），
+       条款里那句「由 SendGrid（主）或 Resend（备）发送」**已经不成立**。
+       放宽的写法（三选一命中即可）会放过这种漂移 —— 它只要求「提到了某一家」，
+       而条款说的是「in fact 谁在处理」。所以这里改成正向点名 Resend。 */
+    chk(!/SendGrid/.test(t),
+      '条款里不再出现 SendGrid（已停用，写了就是假的第三方处理者）');
     chk(!/出境|跨境|数据跨境/.test(t), '全篇不出现「出境 / 跨境」字样（本站不以国内限定为前提）');
     chk(/无需注册/.test(t) && /账号/.test(t),
       '如实写明「无需注册即可用 + 可选建账号」');

@@ -103,16 +103,17 @@ main:
   # 每周备份一次。免费档**没有自动备份**（无 PITR），误删就是永久消失。
   "crontab: 30 4 * * 1":
     - name: supabase-backup
-      # ⚠️ 用 postgres:17 而不是 node:20 —— 后者**没有 pg_dump**。
-      # ⚠️ 而且**必须是 17**，不是「随便哪个带 pg_dump 的版本」：
-      #    Supabase 现在是 PostgreSQL 17.6，而 pg_dump **不改**连比自己新的服务端 ——
-      #    「16 的 pg_dump 连 17 的库」在真正读到数据之前就会以
-      #    `aborting because of server version mismatch` 退出。
-      #    这条的杀伤力在于**它看起来像密钥配错了**（和探活那条 401 同一形状）：
-      #    症状是「密码换成 Session pooler 串了、还是红」，于是下一轮会反过来
-      #    怀疑连接串 —— 而真正的病根是**客户端比服务端老一个大版本**。
-      #    升级到新大版本时这一行要**跟着一起升**：pg_dump 允许连比自己旧的
-      #    （16 的也能导 15 的），所以落后一点只是隐患，领先服务端才会直接红。
+      # ⚠️ 镜像里的 pg_dump 版本**必须 ≥ Supabase 服务端**（现为 17.6）。
+      #    早先这里用的是 postgres:16 —— 但 node:20 里根本没有 pg_dump，
+      #    而 postgres:16 里的 pg_dump 只有 16，对着 17 的服务端跑会直接
+      #    abort（注意不是警告）：
+      #      pg_dump: error: aborting because of server version mismatch
+      #      pg_dump: detail: server version: 17.6; pg_dump version: 16.15
+      #    于是备份**一条都没产出**，还留下一个空文件 —— 见 docs/architecture.md §4.12 第 D 步。
+      #    pg_dump 允许比服务端**高**，不允许低；所以镜像跟着服务端大版本走，
+      #    这里用 postgres:17（自带 pg_dump 17）。服务端升到 18 时同步换 postgres:18。
+      #    另：pg_dump 是客户端工具，**不需要**与服务端同发行版，
+      #    镜像只是取工具的地方（image 可以不重，工具必须够新）。
       docker:
         image: postgres:17
       imports:
@@ -145,18 +146,31 @@ main:
                 exit 1
                 ;;
             esac
-            # ⚠️ 这个镜像的 pg_dump 是 16，而 Supabase 服务端是 17。pg_dump 比
-            #    服务端**大版本低**时，会对着 17 才有的对象报
-            #    "server version mismatch"（老版本读不懂新目录）。这条警告不是备份失败，
-            #    但下一轮看见它别当成新 bug 去查。
+            # ⚠️ 版本自检：pg_dump 比服务端**大版本低**时会直接 abort
+            #    （不是警告、不是「能跑但少东西」）：
+            #      pg_dump: error: aborting because of server version mismatch
+            #      pg_dump: detail: server version: 17.6; pg_dump version: 16.15
+            #    这时备份是**零产出**的，而且 shell 重定向已经建好了空文件 ——
+            #    于是「备份存在但只有 0 字节」，比彻底失败更危险。
+            #    先把版本打出来，再让 pg_dump 自己去连（服务端版本只有连上才知道）。
+            pg_dump --version
             mkdir -p backup
             STAMP=$(date +%Y%m%d)
-            pg_dump --no-owner --no-privileges "$SUPABASE_DB_URL" > "backup/kuibu-$STAMP.sql"
-            wc -c "backup/kuibu-$STAMP.sql"
-            echo "备份已生成：backup/kuibu-$STAMP.sql"
-            # ⚠️ 若上面报 `server version: X; pg_dump version: Y`：那不是密码 / 网络 /
-            #    连接串的问题 —— 是这一条流水线的镜像版本落后了服务端。把
-            #    `image: postgres:17` 升到与服务端同一个大版本即可（见 docs §5.7）。
+            OUT="backup/kuibu-$STAMP.sql"
+            # 失败时把半截/空文件删掉 —— 留着它就会被人当成「这天备份过了」
+            rm -f "$OUT"
+            if ! pg_dump --no-owner --no-privileges "$SUPABASE_DB_URL" > "$OUT"; then
+              rm -f "$OUT"
+              echo "备份失败，未产出文件。若是 server version mismatch：" >&2
+              echo "  镜像里的 pg_dump 比 Supabase 服务端低一个大版本（16 对 17），" >&2
+              echo "  把 .cnb.yml 的 docker.image 换成 postgres:<服务端大版本> 即可。" >&2
+              echo "  pg_dump 允许比服务端高，不允许低。（0 字节的 .sql 不是备份）" >&2
+              exit 1
+            fi
+            # 空文件同样不算备份：pg_dump 静默失败过一次，别让 0 字节过门
+            SIZE=$(wc -c < "$OUT")
+            echo "备份已生成：$OUT（$SIZE 字节）"
+            test "$SIZE" -gt 0
 
   pull_request:
     - name: pr-test

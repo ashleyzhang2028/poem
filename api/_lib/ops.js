@@ -83,25 +83,25 @@ var ENTRY = [
     secret: false,
     what: "发信通道：sendgrid | resend | console（缺省按「有哪个密钥用哪个」推）",
     missing: "不填也能跑：自动落到 console —— **真实用户收不到信**，只往服务端日志写一行",
-    how: "二选一填 sendgrid / resend；本地开发不必填"
-  },
-  {
-    key: "SENDGRID_API_KEY",
-    level: "needed",
-    group: "发信",
-    secret: true,
-    what: "SendGrid 的 API key（主选通道）",
-    missing: "发不出真邮件；登录链接验证码只能走 ALLOW_CODE_ECHO 冒烟模式手动取",
-    how: "SendGrid → Settings → API Keys → 建一枚 Mail Send 权限的 key"
+    how: "只填了 RESEND_API_KEY 时不必填（推断就是 resend）；两个密钥都填时必须填 resend，否则缺省会挑 sendgrid；本地开发不必填"
   },
   {
     key: "RESEND_API_KEY",
+    level: "needed",
+    group: "发信",
+    secret: true,
+    what: "Resend 的 API key（当前主选通道）",
+    missing: "发不出真邮件；登录验证码只能走 ALLOW_CODE_ECHO 冒烟模式手动取",
+    how: "Resend → API Keys → 建一枚 key；再在 Domains 里验发信子域（SPF/DKIM/DMARC）"
+  },
+  {
+    key: "SENDGRID_API_KEY",
     level: "optional",
     group: "发信",
     secret: true,
-    what: "Resend 的 API key（备选通道，与 SendGrid 只备其一）",
-    missing: "不影响：SendGrid 能用就用 SendGrid",
-    how: "Resend → API Keys"
+    what: "SendGrid 的 API key（曾经的备选；2026-09-16 起 SendGrid 已转向收费，**默认不再用它**）",
+    missing: "不影响：Resend 能用就用 Resend。除非你另有 SendGrid 付费账号，否则这一项不用填",
+    how: "SendGrid → Settings → API Keys → 建一枚 Mail Send 权限的 key（**只有你已经付费时才填**）"
   },
   {
     key: "MAIL_FROM",
@@ -219,6 +219,14 @@ function check(cfg) {
   if (!hasSession) notes.push("缺 SESSION_SECRET：所有 /api/* 会回 503 —— 本站仍可完全离线使用（这是设计好的降级，不是坏掉）");
   if (hasSession && !hasDb) notes.push("会话可签但没配库：账号与进度只活在**当前实例的内存**里，重启即丢");
   if (mail === "console") notes.push("当前发信通道是 console：真实用户**收不到**验证码邮件（本地开发与 CI 正是靠它跑完整链路）");
+  /* 两个密钥都填、又没显式指定通道 —— 缺省推断会挑 SendGrid。
+     而 SendGrid 已经转向收费，于是这一档的后果是「你以为在用免费的 Resend，
+     账单走的是 SendGrid」，**两侧都不报错**。这条提醒就是为这种错写的。 */
+  if (!cfg.mailTransport && isSet(cfg.sendgridKey) && isSet(cfg.resendKey)) {
+    notes.push("SENDGRID_API_KEY 与 RESEND_API_KEY **都填了**，又没设 MAIL_TRANSPORT：" +
+      "缺省选中的是 sendgrid（推断顺序里它在前面）—— 你以为在用 Resend，实际走的是 SendGrid。" +
+      "想用 Resend 就显式写 MAIL_TRANSPORT=resend，或把 SENDGRID_API_KEY 去掉");
+  }
   if (smsEnabled && !smsTransport) notes.push("SMS_ENABLED=1 但没接短信商：请求仍是 503 E_SMS_NOT_OPEN（这是 2B 定死的口径，不是 bug）");
   if (smsTransport) notes.push("SMS_TRANSPORT 指向了 " + smsTransport + "：请确认 api/_lib/mail/index.js 里真的实现了它，否则投递会以 E_SMS_FAIL 失败");
 
@@ -327,9 +335,10 @@ var STEPS = [
     where: "发信商后台 + 域名 DNS + 托管平台的环境变量（一个密钥）",
     why: "不配时落到 console 通道：**真实用户收不到信**，只往服务端日志写一行（本地开发与 CI 正是靠它跑完整链路）",
     how: [
-      "二选一注册：SendGrid（主选，国内到达率较好）或 Resend（备选，账号数据固定在美国）",
-      "SendGrid → Settings → API Keys → 建一枚 **Mail Send** 权限的 key → 填 SENDGRID_API_KEY",
-      "Resend → API Keys → 建一枚 key → 填 RESEND_API_KEY（与上面只备其一）",
+      "注册 **Resend**（当前主选：免费档 100 封/天、3000 封/月）。⚠️ **SendGrid 已转向收费**（2026-09-16 起限时免费额度收窄），所以本站默认不再以它为主 —— 除非你本来就有它的付费账号",
+      "Resend → API Keys → 建一枚 key → 填 RESEND_API_KEY",
+      "（可选）另有 SendGrid 付费账号时：Settings → API Keys → 建一枚 **Mail Send** 权限的 key → 填 SENDGRID_API_KEY。两个都填也不必指定谁主谁备：下面那条 MAIL_TRANSPORT 说了算",
+      "⚠️ 两个密钥都填、又**没有**设 MAIL_TRANSPORT 时，缺省按「有哪个密钥用哪个」推，而推断的顺序里 SendGrid 在前 —— 想真的用 Resend，就显式写 MAIL_TRANSPORT=resend",
       "在发信商后台验证**发信子域**（如 mail.kuibu.app）→ 按提示加 SPF / DKIM / DMARC 三条 DNS 记录",
       "MAIL_FROM 填验证过的子域里的地址（默认 noreply@mail.kuibu.app）"
     ],
@@ -357,7 +366,8 @@ var STEPS = [
       "填完先验 URL 形状：整串必须以 postgresql:// 或 postgres:// 开头；用户名 / 密码 / 主机三段里，**@ 只许出现一次**（就是分隔密码与主机的那一个）。多了就说明密码没编码 —— .cnb.yml 的备份脚本已把这两条做成开跑前的自检，命中会直接教你改哪里，而不是等你去看那句「could not translate host name」",
       "备份镜像的**大版本要跟服务端一致**：Supabase 现在是 PostgreSQL 17，所以镜像用 postgres:17（不是 postgres:16）。pg_dump **不改**连比自己新的服务端 —— 落后一个大版本时它会在读到数据之前就以「aborting because of server version mismatch」退出，而这句话看着像连接串配错了，其实只是客户端旧了。服务端升大版本时，.cnb.yml 里那一行要跟着升",
       "密码忘了：Project Settings → Database → Reset database password，重设后把新密码编码再填回密钥仓库（旧的立刻失效）",
-      "跑通一次看回执：备份产出 backup/kuibu-<日期>.sql 并打印字节数。⚠️ 若打印的是「server version mismatch」，那是镜像里的 pg_dump 比 Supabase 服务端低一个大版本（16 对 17），**不是备份失败**，下一轮别当成新 bug 去查 —— 本轮已把镜像升到 postgres:17，报这句就是镜像版本又落后了",
+      "跑通一次看回执：备份产出 backup/kuibu-<日期>.sql 并打印字节数（0 字节不算备份 —— 脚本会删掉失败留下的半截文件）",
+      "⚠️ 镜像里的 pg_dump 大版本**必须 ≥ Supabase 服务端**（现在服务端是 17.6，所以 .cnb.yml 用的是 postgres:17）。低一个大版本时 pg_dump 会**直接 abort**，不是警告：`pg_dump: error: aborting because of server version mismatch` / `detail: server version: 17.6; pg_dump version: 16.15`。这时备份是零产出的（postgres:16 对 17 就是这么红过一次）。pg_dump 允许比服务端**高**，不允许低；服务端升到 18 就把 docker.image 换成 postgres:18",
       "见到 could not translate host name 时先看**引号里那串主机名**：带 [at] 或密码尾巴 = 密码没编码（改密钥仓库里的值）；干净的 db.<ref>.supabase.co = URL 已解析，是**这个名字解析不到**。后者按代价从低到高试：① 刚建的项目 DNS 可能还没发布完，过一会儿重跑；② 直连主机名 db.<ref>.supabase.co 在新项目上只有 IPv6（AAAA，IPv4 要另开 add-on），零成本的替代是同一页 Connection string 上的 **Session pooler**（…@aws-0-<region>.pooler.supabase.com:5432，用户名是 postgres.<ref> 而不是 postgres）",
       "⚠️ Transaction pooler 那个 **6543** 端口**不要**给 pg_dump 用 —— 它不支持 pg_dump 需要的会话级特性（给应用连接池用）",
       "兜底：只要探活是通的（SUPABASE_URL + SUPABASE_SERVICE_KEY 都在），导出可以不依赖 Postgres 直连，直接用 PostgREST 逐表拉 JSON；数据量小的时候够用"
