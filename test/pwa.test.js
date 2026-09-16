@@ -2045,12 +2045,61 @@ function check(name, cond, extra) {
        会把父元素的样式原样返回）。
 
      判的都是「滑块**相对轨道**」的关系（不是绝对坐标，那会随滚动变），
-     以及两态之间**真的动过**。 */
+     以及两态之间**真的动过**。
+
+     ⚠️ **「点得动」这件事要先满足两件与几何无关的前提**（缺了它这五条必红，
+        而红的原因与滑块位置毫无关系 —— 修过一轮才发现）：
+        · 这台设备上必须**登录着**（`sync.multiDevice` 带 `login:true`）
+        · 层级至少 **pro**（`minTier:"pro"`）
+        不满足时 `SyncStore.setEnabled(true)` 回 `E_TIER`，`bindSync()` 把勾
+        回滚（`input.checked = enabled()`），于是「点轨道真的把它打开了」永远
+        是 false、「换成深青实底」「滑块右移」跟着一起红。
+        `test/sync.test.js` 那一节是**显式 `signInPro()` 之后**才点开关的；
+        这里原先漏了这一步，种子身份是游客 free —— 一行代码没坏，断言却在
+        戳一个它自己没准备好的前提。
+        下面直接借用页面自己的 `AuthCore` 造一份真会话（不手搓
+        `poem_auth_v1`：内部形状一改，假种子还「像」是对的）。 */
   {
     const { page } = await freshPage();
     await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
     await page.goto(base + 'settings/general/', { waitUntil: 'networkidle0' });
     await new Promise(r => setTimeout(r, 600));
+
+    /* 造一个「登录着的 Pro」再重开这一页 —— 与 jsdom 那边 signInPro() 同源 */
+    const seed = await page.evaluate(() => {
+      const A = window.AuthCore;
+      if (!A) return null;
+      const store = A.makeStore(window.localStorage);
+      const rc = A.requestCode(store, { channel: 'email', value: 'pro@example.com' }, 'login');
+      const v = A.verifyCode(store, rc.codeId, rc.code, 'login');
+      if (!v || !v.ok) return null;
+      return {
+        auth: window.localStorage.getItem('poem_auth_v1'),
+        plan: JSON.stringify({ v: 1, tier: 'pro', until: null, source: 'server' })
+      };
+    });
+    if (seed) {
+      await page.evaluate((s) => {
+        window.localStorage.setItem('poem_auth_v1', s.auth);
+        window.localStorage.setItem('poem_plan_v1', s.plan);
+      }, seed);
+      await page.reload({ waitUntil: 'networkidle0' });
+      await new Promise(r => setTimeout(r, 600));
+    }
+    /* 前提本身也判一条：造不出 Pro 会话时下面五条必红，得让人一眼看出
+       红在「前提没就位」而不是「滑块画错了」。 */
+    const pre = await page.evaluate(() => {
+      const i = document.getElementById('toggle-sync');
+      return {
+        pro: !!(window.Entitlement && window.Entitlement.identity
+          && window.Entitlement.identity().can
+          && window.Entitlement.identity().can('sync.multiDevice').ok),
+        hint: (document.getElementById('sync-hint') || {}).textContent || '',
+        disabled: i ? i.disabled : null
+      };
+    });
+    check('同步开关：这台设备上确实登录着 Pro（不满足时下面五条必红，与滑块无关）',
+      pre.pro === true, 'sync.multiDevice 放行=' + pre.pro + ' / 提示「' + pre.hint + '」');
 
     const measure = () => page.evaluate(() => {
       const input = document.getElementById('toggle-sync');
