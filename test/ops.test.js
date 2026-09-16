@@ -303,6 +303,33 @@ console.log("\n=== 七之二、2D 的五个步骤（配置与真开通，docs §
   has(stepD, "%40", "D 步写明密码里的特殊字符要百分号编码");
   has(cnb, "SUPABASE_DB_URL:?", ".cnb.yml 的备份真的校验这个变量注入没注入");
 
+  /* ⚠️ 备份镜像的大版本必须跟得上服务端（2026-09-16 修的第二处真 bug）
+     ----------------------------------------------------------------------
+     用户在 Issue #159 报了第三条红：`pg_dump` 连 Supabase（PostgreSQL **17.6**）
+     时以 `aborting because of server version mismatch` 退出，而流水线用的是
+     `postgres:16` —— 里面的 pg_dump 是 16.15。pg_dump **不改**连比自己新的
+     服务端（反方向才行），所以它在真正读到数据之前就会退出。
+
+     这条和新版探活那条 401 是**同一形状**的坑：症状都像「密钥 / 连接串配错了」
+     （用户当时正是把密码换成 Session pooler 串之后再试的），于是下一轮排查会
+     反过来怀疑连接串 —— 而真正的病根是**客户端比服务端老一个大版本**。
+
+     判据落在「.cnb.yml 里的备份镜像声明了与服务端同大版本」上 ——
+     不写死 17 这个数字的反面（写「不是 16」会过期），只钉住它**声明的版本**
+     与 D 步文字里写的那一个大版本**是同一个**。 */
+  /* ⚠️ 先按新版探活那条的老规矩**抠掉注释行**再扫：镜像名在解释它的注释里
+     也会出现一次，拿裸串去数必然数出两份 —— 那是测试自己读数错，不是重复声明。 */
+  const cnbPinned = (cnbCode.match(/image:\s*postgres:\d+/g) || []);
+  chk(cnbPinned.length === 1,
+    "备份那条流水线的镜像**只声明一次**（出现 " + cnbPinned.length + " 次；多一处就是下次只改一处）");
+  chk(cnbPinned.length === 1 && cnbPinned[0].indexOf("postgres:17") >= 0,
+    "备份镜像是 postgres:17（Supabase 现在是 17；用 16 会在读数据之前就以 version mismatch 退出）");
+  chk(!/image:\s*postgres:16\b/.test(cnbCode),
+    "备份镜像不再是 postgres:16（pg_dump 不改连比自己新的服务端）");
+  has(cnb, "server version mismatch", ".cnb.yml 里写明了这条报错原文（下次有人报同样的红，一眼能对上）");
+  has(stepD, "version mismatch", "D 步也写了这条坑（说了不做 = 下一个人还会踩）");
+  has(stepD, "postgres:17", "D 步给出的是可照抄的镜像名，不是「选个匹配的版本」");
+
   const stepsCheck = run2(["--steps", "--check"]);
   eq(stepsCheck.code, 1, "--steps --check 没配齐时退出码 1（与 --check 同一条判据）");
   const fullEnv2 = Object.assign(bareEnv2(), {

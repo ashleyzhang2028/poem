@@ -344,7 +344,8 @@ var STEPS = [
       "探活排**每 5 天**而不是每 7 天：平台可能延迟数小时甚至跳过，留 2 天缓冲",
       "备份每周一次 pg_dump（免费档没有自动备份，误删就是永久消失）",
       "备份还要第三个值 SUPABASE_DB_URL —— 它**不能在控制台复制**，只能去 Project Settings → Database → Connection string 那一页取模板，再把里面的 [YOUR-PASSWORD] 换成数据库密码（那串明文密码只在建项目时出现过一次；忘了就点 Reset database password 重设）。模板形如 postgresql://postgres:[YOUR-PASSWORD]@db.<ref>.supabase.co:5432/postgres，把 [YOUR-PASSWORD] 整体替换掉再填进密钥仓库",
-      "密码里有 @ : / # ? 这类字符时必须**百分号编码**（@ → %40），否则 pg_dump 会把密码里那一段当成主机名，报的是「could not translate host name」，看着像 DNS 坏了其实不是"
+      "密码里有 @ : / # ? 这类字符时必须**百分号编码**（@ → %40），否则 pg_dump 会把密码里那一段当成主机名，报的是「could not translate host name」，看着像 DNS 坏了其实不是",
+      "备份镜像的**大版本要跟服务端一致**：Supabase 现在是 PostgreSQL 17，所以镜像用 postgres:17（不是 postgres:16）。pg_dump **不改**连比自己新的服务端 —— 落后一个大版本时它会在读到数据之前就以「aborting because of server version mismatch」退出，而这句话看着像连接串配错了，其实只是客户端旧了。服务端升大版本时，.cnb.yml 里那一行要跟着升"
     ],
     check: "仓库的流水线列表里能看见这两条；手动触发一次探活，成功即回执"
   },

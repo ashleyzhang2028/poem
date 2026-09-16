@@ -103,11 +103,18 @@ main:
   # 每周备份一次。免费档**没有自动备份**（无 PITR），误删就是永久消失。
   "crontab: 30 4 * * 1":
     - name: supabase-backup
-      # ⚠️ 用 postgres:16 而不是 node:20 —— 后者**没有 pg_dump**。
-      #    换成 postgres:16（自带 pg_dump）或自建一个预装 postgresql-client
-      #    的镜像；见 docs/architecture.md §4.12 第 D 步。
+      # ⚠️ 用 postgres:17 而不是 node:20 —— 后者**没有 pg_dump**。
+      # ⚠️ 而且**必须是 17**，不是「随便哪个带 pg_dump 的版本」：
+      #    Supabase 现在是 PostgreSQL 17.6，而 pg_dump **不改**连比自己新的服务端 ——
+      #    「16 的 pg_dump 连 17 的库」在真正读到数据之前就会以
+      #    `aborting because of server version mismatch` 退出。
+      #    这条的杀伤力在于**它看起来像密钥配错了**（和探活那条 401 同一形状）：
+      #    症状是「密码换成 Session pooler 串了、还是红」，于是下一轮会反过来
+      #    怀疑连接串 —— 而真正的病根是**客户端比服务端老一个大版本**。
+      #    升级到新大版本时这一行要**跟着一起升**：pg_dump 允许连比自己旧的
+      #    （16 的也能导 15 的），所以落后一点只是隐患，领先服务端才会直接红。
       docker:
-        image: postgres:16
+        image: postgres:17
       imports:
         - https://cnb.cool/npu-gpu-cpu/poem-secrets/-/blob/main/supabase.yml
       stages:
@@ -124,6 +131,9 @@ main:
             pg_dump --no-owner --no-privileges "$SUPABASE_DB_URL" > "backup/kuibu-$STAMP.sql"
             wc -c "backup/kuibu-$STAMP.sql"
             echo "备份已生成：backup/kuibu-$STAMP.sql"
+            # ⚠️ 若上面报 `server version: X; pg_dump version: Y`：那不是密码 / 网络 /
+            #    连接串的问题 —— 是这一条流水线的镜像版本落后了服务端。把
+            #    `image: postgres:17` 升到与服务端同一个大版本即可（见 docs §5.7）。
 
   pull_request:
     - name: pr-test
