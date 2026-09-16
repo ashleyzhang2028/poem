@@ -97,14 +97,17 @@
         <p class="account-hint" id="sync-hint"></p>
       </section>
 
-      <!-- ---------- 五、权限：能用的打勾、不能用的写门槛 ----------
-             清单只讲「你」；「别人是什么样」在 /plans/ 那张四列表里，
-             两边同源（都走 Entitlement），不给这条路径另抄一份。 -->
+      <!-- ---------- 五、权限：一条链接，不留清单 ----------
+           Issue #163 用户原话：「权限那个章节说了一堆，直接链接到对比页面
+           不就行了吗」。原先这里是一张 15 条的能力清单（能用的打钩、不能用的
+           写门槛），下面再加一颗「四种身份对比」的按钮 —— 同一件事两处说。
+           现在整块收成一行：能力有几项、对比表在哪，一眼就到。
+
+           ⚠️ 只有**层级对比页**在预缓存里（离线进得去），所以这里可以放心点。 -->
       <section class="account-card">
         <h2 class="account-card-title">权限</h2>
-        <ul class="cap-list" id="cap-list"></ul>
-        <button class="account-btn ghost" id="btn-go-plans" type="button">四种身份对比</button>
-        <p class="account-hint" id="cap-hint"></p>
+        <p class="kv-row"><span class="kv-k">身份</span><span class="kv-v" id="cap-tier"></span></p>
+        <button class="account-btn ghost" id="btn-go-plans" type="button">权限对比</button>
       </section>
 
       <!-- ---------- 六、管理员入口（仅 owner 可见） ---------- -->

@@ -121,19 +121,18 @@ const LOGIN = strip(loginJs), PROFILE = strip(profileJs), ADMIN = strip(adminJs)
       f + ' 没有自己写 tier === "pro" 这类判断（一律走 Entitlement）');
     chk(!/plan\s*===/.test(s), f + ' 没有自己比对 plan');
   });
-  chk(/Ent\.matrix\(/.test(PROFILE), '权限清单一律由 Entitlement.matrix() 生成');
-  /* 2.1：权限清单下面那句说明**按状态分叉** —— 服务端接通之后，
-     写死「本期没有服务器 / 层级只是本机登记」对有会话的人就是假话。 */
-  const ch = profileJs.slice(profileJs.indexOf('function capsHint'),
-    profileJs.indexOf('function capsHint') + 1200);
-  chk(!!ch, 'js/profile.js 里有 capsHint()（那句说明的唯一出口）');
-  chk(/tierSource === "server"/.test(ch),
-    'capsHint() 按 tierSource 分叉（不自己猜、不自己比 tier）');
-  chk(/由服务器判定/.test(ch), '服务端那份：如实说层级「由服务器判定」');
-  chk(/本机登记/.test(ch), '本机那份：如实说层级「本机登记」');
-  chk(!/本期没有服务器/.test(ch), '那句说明里不再出现「本期没有服务器」（服务端已接通）');
-  chk(/hint\.textContent = capsHint\(id\)/.test(PROFILE),
-    'renderCaps() 走 capsHint(id)（不自己拼那一句）');
+  /* Issue #163：权限一节从「15 条清单 + 一句说明」收成**一行身份 + 一条链接**。
+     —— 清单本身还在，但它只有一处：/plans/ 那张四列表（每格都当场算）。
+     这一节守的是「两边不各说一遍」：
+       ① 个人中心不再画能力清单（`matrix()` 那一份只给对比页用）
+       ② 层级文案仍然只走 `Ent.tierLabel()`（本页不自己比 tier） */
+  chk(!/Ent\.matrix\(/.test(PROFILE),
+    '个人中心不再自己画一遍能力清单（清单只有 /plans/ 一处，见 plans-page 测试）');
+  chk(!/cap-list|cap-name|cap-hint/.test(PROFILE + SRC.profile),
+    '个人中心不再有清单的挂载点与样式类（整块收成一行身份）');
+  chk(/Ent\.tierLabel\(/.test(PROFILE), '那一行身份仍然由 Entitlement.tierLabel() 出');
+  chk(/cap-tier/.test(SRC.profile) && /cap-tier/.test(PROFILE),
+    '那一行的挂载点叫 cap-tier（renderCaps() 画的就是它）');
   chk(/Ent\.tierLabel\(/.test(PROFILE) && /Ent\.tierLabel\(/.test(ADMIN),
     '层级徽章文案一律由 Entitlement.tierLabel() 出');
   chk(/Ent\.TIERS/.test(ADMIN), '可发放的层级列表读 Entitlement.TIERS（不自己写死一份）');
@@ -285,7 +284,7 @@ const LOGIN = strip(loginJs), PROFILE = strip(profileJs), ADMIN = strip(adminJs)
   });
   chk(/css\/account\.css/.test(sw), 'sw.js 预缓存里有 css/account.css');
   const ver = parseInt((sw.match(/poem-app-v(\d+)/) || [0, '0'])[1], 10);
-  chk(ver >= 127, '缓存版本已跟着提（2.2 改了 /admin/ 页与三份脚本，实际 v' + ver + '）');
+  chk(ver >= 128, '缓存版本已跟着提（本轮 Issue #163 动了 /plans/、/profile/ 与三份脚本，实际 v' + ver + '）');
   // 预缓存清单里的路径必须真的存在，否则 install 时静默失败
   const list = [...sw.matchAll(/"(\.\/[^"]+)"/g)].map(m => m[1]);
   const missing = list.filter(u => {

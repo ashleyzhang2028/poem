@@ -238,24 +238,6 @@
 .tier-badge.tier-pro { background: var(--amber-light); color: var(--amber); border-color: var(--line); }
 .tier-badge.tier-max { background: var(--green-light); color: var(--green); border-color: var(--line); }
 
-/* ---------- 八、权限清单：一条一事 ---------- */
-.cap-list { list-style: none; margin: 0; padding: 0; }
-.cap-list li {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  padding: 8px 0;
-  font-size: 13px;
-  line-height: 1.6;
-  color: var(--ink);
-  border-bottom: 1px solid var(--line-2);
-}
-.cap-list li:last-child { border-bottom: none; }
-.cap-mark { flex: none; width: 16px; text-align: center; }
-.cap-list li.off { color: var(--ink-3); }
-.cap-name { flex: 1; min-width: 0; }
-.cap-hint { font-size: 11.5px; color: var(--ink-3); }
-
 /* ---------- 九、键值行（账号 / 设备 / 时间） ---------- */
 .kv-list { margin: 0; }
 .kv-row {

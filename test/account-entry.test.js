@@ -234,7 +234,7 @@ function repaint(p) {
   chk(!/data-back="\/settings\/"/.test(SRC.login), '登录页不再退回设置页（两处落点会打架）');
   // 登录成功之后去哪：与返回落点同一条动线
   chk(/location\.href = "\/profile\/"/.test(LOGIN_JS),
-    '登录成功后回个人中心（权限清单在那里，登录完最该看见的是「我能用什么」）');
+    '登录成功后回个人中心（权限那一节就在那里，登录完最该看见的是「我在哪一层」）');
   chk(!/\/settings\/general\//.test(LOGIN_JS), '登录页里不再有回设置 · 通用的老落点');
   // chrome.js 认得这两条路由
   chk(/login: "\/login\/"/.test(CHROME) && /profile: "\/profile\/"/.test(CHROME),

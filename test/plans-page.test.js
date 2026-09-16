@@ -103,6 +103,14 @@ const PAGE = strip(pageJs);
   chk(new Set(inGroups).size === cmp.rows.length, '分组不遗漏：每个能力恰好出现一次');
   chk(cmp.groups.every(g => g.rows.every(r => r.minTier === g.key)),
     '每一行落在它自己门槛那一组里（不许把 Pro 能力摆进「所有版本都有」）');
+  /* Issue #163：用户点的就是「对比项也不够精简」。分组注解原先三组各一句
+     （「免费且不缩水 —— 课内 261 首、六部集子…一件都不收回」之类），
+     现在只留 max 那一句还有信息量的。判据取**长度**，不取措辞。 */
+  const notes = cmp.groups.map(g => g.note || '');
+  chk(notes.every(n => n.length <= 20),
+    '分组注解不超过一句 20 字（实际：' + notes.map(n => n.length).join(' / ') + '）');
+  chk(cmp.groups[0].note == null && cmp.groups[1].note == null,
+    '「所有版本都有」「Pro 起」两组不再挂一句解释（组名自己已经说完）');
 
   chk(cmp.summary.length === 4, '表尾每列一个汇总');
   const sumOK = cmp.summary.every((s, i) =>
@@ -157,24 +165,34 @@ const PAGE = strip(pageJs);
   chk(!/立即购买|立即开通|￥|限时优惠|首月|付费订阅|开通会员/.test(visible + PAGE),
     '对比页不出现任何收款/促销话术（本期确实收不了钱，写上就是假的）');
   chk(!/即将上线|敬请期待/.test(visible), '不写「即将上线」这类跑在代码前面的承诺');
-  chk(/免费版不缩水|一件都不少/.test(visible),
-    '页面头一句就说清「免费不缩水」（对比表最容易误导人的地方）');
+  /* Issue #163：顶上那张「免费版不缩水：全部篇目、每日排程、注音、进度导出
+     一件不少。Pro / Max 只加能力」的卡**删了** —— 那是把表第一组又说一遍
+     （分组名「所有版本都有」+ 每格打钩就是那句证据）。所以断言从
+     「页面里必须有这句话」翻成「不许再有这句替表说话的话」。 */
+  chk(!/免费版不缩水|一件都不少|只加能力/.test(visible),
+    '页面不再替表说一遍「免费不缩水」（分组名与打钩本身就是证据）');
 }
 
 /* ====== 五之二、2.1：层级**是谁定的** —— 两种状态各说各的实话 ====== */
 {
   /* 判据只有一个：id.tierSource（服务端判定的唯一凭据）。
-     这一节不看页面画出来的字（那要 jsdom），而是直接**调 renderAbout 那份逻辑
-     的等价物**：源码里那个三元表达式必须两边都说真话，且两句话都对得上
-     「不是付费凭据 / 没有收款」这一条（它在任何状态下都不变）。 */
+     这一节不看页面画出来的字（那要 jsdom），而是直接对着那段源码判：
+     两种状态各说各的实话，且都是一句。 */
   const rb = pageJs.slice(pageJs.indexOf('function renderAbout'), pageJs.indexOf('function renderAbout') + 1400);
   chk(!!rb, 'js/plans.js 里有 renderAbout()（那一段的渲染入口）');
   chk(/tierSource === "server"/.test(rb),
     'renderAbout() 按 tierSource 分叉（不自己猜、不自己比 tier）');
   chk(/由服务器判定/.test(rb), '服务端那份：页面上说明层级「由服务器判定」');
   chk(/本机登记/.test(rb), '本机那份：页面上说明层级是「本机登记」');
-  chk(/无收款|收款|支付入口/.test(rb), '两种状态都写明「本站无收款、无支付入口」');
-  chk(/不是付费凭据/.test(rb), '两种状态都写明「不是付费凭据」');
+  /* Issue #163 翻面：原先两种状态后面还各接一句「本站无收款、无支付入口，
+     层级不是付费凭据」—— 用户点名的就是这种「说了等于没说」的话。
+     现在**不许**再出现：那一页要回答的是「这些层级是什么」，不是「本站卖不卖东西」。 */
+  chk(!/无收款|不是付费凭据/.test(rb),
+    '页面不再替本站解释「不收款、不是付费凭据」（层级是什么才是这一页的问题）');
+  /* 只留一句：那一段的每个分支都不许出现第二个句号（不许一句接一句） */
+  const aboutBranches = rb.match(/"[^"]*。"/g) || [];
+  chk(aboutBranches.every(b => (b.match(/。/g) || []).length === 1),
+    '两种状态各只留一句（实际：' + aboutBranches.join(' / ') + '）');
   /* 反向：不许只留一句、不许两态说反 */
   chk(pageJs.indexOf('renderAbout(id)') > 0, '初始化时真的调了 renderAbout(id)');
 }
@@ -218,10 +236,13 @@ const PAGE = strip(pageJs);
   chk(/btn-go-plans/.test(profileJs), '那颗按钮真的绑了跳转（不是摆着不动的）');
   chk(/location\.href = "\/plans\/"/.test(profileJs), '按钮跳到 /plans/');
   // 两边同源：个人中心的清单与对比页同走 Entitlement
-  chk(/Ent\.matrix\(/.test(profileJs) && /Ent\.compare\(/.test(PAGE),
-    '个人中心清单走 matrix()、对比页走 compare()，都出自同一个内核');
-  chk(/四种身份对比/.test(stripHtml(profileHtml)),
-    '按钮文案说清它去哪、去做什么');
+  /* Issue #163：个人中心**不再自己画一份清单** —— 能力清单只有 /plans/ 一处，
+     两边就不再是「各抄一份」的关系了。判据从「两边同源」翻成「只有一处」。 */
+  chk(/Ent\.compare\(/.test(PAGE), '对比表一律由 compare() 生成（清单的唯一一处）');
+  chk(!/Ent\.matrix\(/.test(profileJs),
+    '个人中心不再自己画一遍能力清单（同一件事只在一页说）');
+  chk(/权限对比/.test(stripHtml(profileHtml)),
+    '按钮文案说清它去哪（「权限对比」—— 这一节的去处只有它）');
 }
 
 /* ============ 九、离线：页面与脚本都进预缓存，版本号跟着提 ============ */
@@ -229,7 +250,7 @@ const PAGE = strip(pageJs);
   chk(sw.indexOf('"./plans/"') >= 0, 'sw.js 预缓存里有 ./plans/（断网也进得去）');
   chk(sw.indexOf('"./js/plans.js"') >= 0, 'sw.js 预缓存里有 js/plans.js');
   const ver = parseInt((sw.match(/poem-app-v(\d+)/) || [0, '0'])[1], 10);
-  chk(ver >= 118, '缓存版本已跟着提（本轮新增 1 页 + 1 脚本，实际 v' + ver + '）');
+  chk(ver >= 128, '缓存版本已跟着提（本轮 Issue #163 改了本页与 js/plans.js，实际 v' + ver + '）');
   const list = [...sw.matchAll(/"(\.\/[^"]+)"/g)].map(m => m[1]);
   const missing = list.filter(u => {
     if (u === './') return false;
