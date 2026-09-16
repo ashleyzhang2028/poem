@@ -387,6 +387,46 @@ npm run env:example > .env.example    # 生成可直接粘贴的模板
 **这一步 AI 做不了**：注册 Supabase / 发信商都要本人邮箱与手机号。能自动化的部分是
 **「步骤本身」与「判据本身」**（都在 `api/_lib/ops.js` 的 `STEPS` 里，与清单同一份数据）。
 
+#### 发信商到底在哪配：**托管平台的环境变量**，不是 Resend、也不是 Supabase
+
+这一条被问过好几次，所以写死在这里：
+
+| 你做了什么 | 它管什么 | 它**不管**什么 |
+|---|---|---|
+| 在 **Resend** 后台建 key / 验域名 | Resend 那一家**允许**你用它的服务发信 | 我们的代码不知道有这枚 key |
+| 在 **Supabase** 建项目 / 跑 `schema.sql` | 账号与进度**存哪**（数据库） | 与发信**完全无关**（Supabase 的邮件是它自己的注册信，不是本站的验证码） |
+| 在 **托管平台**（Vercel / CNB / 自建）配环境变量 | 把上面那枚 key **交给本站的服务端** | — |
+
+所以：**Resend 配好只是「钥匙配好了」，还得把钥匙插到这把锁上** ——
+那把锁就是**跑着本站服务端的那台机器**的环境变量。本站的 `api/*` 是 Vercel
+Serverless 函数（`docs/architecture.md` §4.1），所以那台机器就是**Vercel 这个项目**：
+Vercel → 你的项目 → Settings → Environment Variables。
+
+要填的就是这一枚（`MAIL_TRANSPORT` 不必填 —— 只填 Resend 一枚时推断就是它）：
+
+```
+RESEND_API_KEY = re_xxxxxxxx        # Resend → API Keys → 建一枚（Sending access 即可）
+MAIL_FROM      = noreply@mail.你的域  # 必须是 Resend 里**验过的那个子域**里的地址
+```
+
+顺序只能这样走，**倒过来不行**：
+
+1. Resend → Domains → 加一个发信子域（如 `mail.kuibu.app`），按提示加 **SPF / DKIM / DMARC** 三条 DNS 记录，等到状态是 **Verified**
+2. Resend → API Keys → 建一枚 key（**Sending access** 就够，别给 Full access）
+3. **Vercel → 项目 → Settings → Environment Variables** → 建 `RESEND_API_KEY`（值填第 2 步那枚 key），`MAIL_FROM` 填第 1 步验过的子域里的地址
+4. **重新部署一次**：Vercel 的环境变量**只在新部署里生效**，光改不重新部署 = 没改（这是最常见的「我明明配了」）
+5. 回来验：终端里 `curl -sS "$SITE_URL/api/me"` 那段照 `npm run doctor -- --steps` 的第 E 步走，或直接在 `/login/` 发一次码 —— `delivered:true` 才算成了。`npm run doctor` 里「发信通道」那一行从 `console` 变成 `resend` 是同一件事的另一种看法
+
+⚠️ 三条容易踩的：
+
+- **只验域名不够**：SPF / DKIM / DMARC 缺一条，QQ / 163 会直接判垃圾邮件或拒收。先看垃圾箱，再看 Resend 的投递日志（那里会说 ISP 为什么拒）
+- **`MAIL_FROM` 必须落在验过的子域里**：`noreply@gmail.com` 这类会被发信商直接拒（你不是那个域的主人）
+- **`RESEND_API_KEY` 只在服务端**：它是密钥，不进浏览器、不进仓库、不写进 `.env.example`
+
+不必填 `MAIL_TRANSPORT=resend` 的前提是「**只有** Resend 一枚密钥」。
+哪天又填了 `SENDGRID_API_KEY`，缺省推断会**挑 SendGrid**（推断顺序里它在前面），
+这时必须显式写 `MAIL_TRANSPORT=resend` —— `npm run doctor` 会主动点破这一条。
+
 ### 古诗词大会 / 试题模拟（3 期「不花钱的那三件」，已落地）
 
 **设计见 `docs/architecture.md` §4.15**（先落设计，后落代码）。
