@@ -302,6 +302,7 @@
   <!-- 分域引擎（Issue #132 阶段 0）：进度 / 账号 / 设备三域的唯一一份定义，
        读法由 js/storage.js 转发。**必须排在 js/storage.js 之前** ——
        缺了它 storage 只是退化成兜底读法，不会报错（那种「不报错的少数据」最难查）。 -->
+  <script src="js/family.js"></script>
   <script src="js/progress-store.js"></script>
   <!-- 同步层（Issue #132 · 1B）：进度 / 账号域设置 / 已读的跨设备同步。
        必须在 js/storage.js 之前 —— 它的 touch() 要给每条记录打标，

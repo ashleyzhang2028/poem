@@ -66,6 +66,9 @@
 #   0. ProgressStore   —— 纯 Node（**排在最前**）：进度 / 账号 / 设备三域的唯一一份定义、
 #                          设置域按字段拆家（helper 归设备域）、清进度不删昵称与阅读偏好、
 #                          老形状 / 老备份兼容读、加载了 storage.js 的页面都先加载引擎
+#   3z. 家庭子档案       —— 纯 Node（3 期 P1）：一个家长多个小孩，各背各的；
+#                          上限拦在数据层；老档案与老进度一并认领；
+#                          设备域不分家（字号是设备的）
 #   3y. 开通自检 / 配置清单 —— 纯 Node（2C）：清单与 config.js 同源、三档分得清、
 #                          **只报缺不报值**（那段文字会被贴进 Issue）、
 #                          .env.example 由清单生成、/api/me 如实自报开通状态；
@@ -244,6 +247,14 @@ node test/account-entry.test.js
 echo ""
 echo "=== 开通自检 / 配置清单（2C：2D 那一步做成可执行的，Issue #132）==="
 node test/ops.test.js
+
+echo ""
+echo "=== 家庭子档案（3 期 P1 · profile.family，纯 Node）==="
+echo "    守四件事：名册（增/改名/删/切换/上限）拦在**数据层**；"
+echo "    老用户零感知（昵称 + 印 + 进度/设置/已读一并认领）；"
+echo "    分家的边界（进度/设置/已读跟着孩子走，设备域不跟）；"
+echo "    上限与内核同源（Free 1 / Pro 3 / Max 180）。"
+node test/family.test.js
 
 echo ""
 echo "=== 古诗词大会 · 出题内核（3 期：飞花令 / 题库 / 现场考试，纯 Node）==="

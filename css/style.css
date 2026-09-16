@@ -1427,6 +1427,101 @@ textarea:focus {
 .seal-ink.active { box-shadow: 0 0 0 3px rgba(165, 92, 25, .22); }
 
 /* --------------------------------------------------------------------------
+   家庭子档案（3 期 P1）：名册 + 切换 + 增删
+   --------------------------------------------------------------------------
+   一个家长多个小孩。整块只有一行一行的「名字 · 当前 · 改名 · 删除」，
+   与「我的清单」那一组同一套排版语言（.settings-link 那一档），
+   不新造一套视觉 —— 同一页里两种列表样式正是用户点过的「看着说不出哪不对」。
+
+   ⚠️ 「当前」那一档只用**文字 + 实底**表达，不靠颜色单独承载语义：
+      色盲用户与黑白打印时也得读得出「现在是哪一个」。
+   -------------------------------------------------------------------------- */
+.family-panel { display: flex; flex-direction: column; gap: 6px; }
+.family-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--card);
+  padding: 6px 8px 6px 10px;
+}
+.family-row.current {
+  border-color: var(--green);
+  box-shadow: inset 0 0 0 1px rgba(47, 96, 85, .22);
+}
+/* 点名字 = 切到它。整颗键占满左侧，热区够大（触屏上指肚按得着） */
+.family-pick {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  background: none;
+  padding: 6px 0;
+  text-align: left;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+.family-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.family-now {
+  flex: none;
+  font-size: 11px;
+  color: var(--green);
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  padding: 1px 7px;
+}
+.family-acts { flex: none; display: flex; gap: 4px; }
+.family-act {
+  border: none;
+  background: none;
+  color: var(--ink-3);
+  font-family: inherit;
+  font-size: 12.5px;
+  padding: 4px 6px;
+  cursor: pointer;
+  border-radius: 6px;
+}
+.family-act:hover { color: var(--green); }
+.family-act.danger:hover { color: var(--ink); }
+/* 「再建一个」：虚线框的一行，与上面的实线行区分开（它是动作，不是条目） */
+.family-add {
+  border: 1px dashed var(--line-2);
+  border-radius: var(--radius);
+  background: none;
+  color: var(--ink-2);
+  font-family: inherit;
+  font-size: 13px;
+  padding: 9px 10px;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color .15s, color .15s;
+}
+.family-add:hover { border-color: var(--green); color: var(--green); }
+/* 原地改名用的输入框：与 .settings-input 同一档（同一页里两种输入框是两种语言） */
+.family-rename {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius);
+  background: var(--card);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 14px;
+  padding: 7px 9px;
+}
+.family-rename:focus { outline: none; border-color: var(--green); }
+
+/* --------------------------------------------------------------------------
    设置页里的「我的清单」（自选背诵）
    --------------------------------------------------------------------------
    这一整块原先长在**首页**底部那张「自选背诵」折叠卡里（Issue #114 第二条）：

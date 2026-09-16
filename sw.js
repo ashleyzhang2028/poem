@@ -38,6 +38,7 @@ const PRECACHE = [
   "./data/pinyin-table.js",
   "./data/common-chars.js",
   "./js/pinyin.js",
+  "./js/family.js",
   "./js/progress-store.js",
   "./js/sync-store.js",
   "./js/auth-core.js",

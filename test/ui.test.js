@@ -310,13 +310,13 @@ setTimeout(() => {
   chk(grpOf(sreader, '#seg-play') === '朗读', '连读档位归到「朗读」组');
   chk(grpOf(srecite, '#seg-algo') === '复习算法', '复习算法选择归到「复习算法」组');
   // 只给背诵用的选项不能再出现在「通用」组里（这才是这次需求的重点）
-  // 「通用」组的五项：用户名 / 头像印记 / 账号 / 跨设备同步 / 数据管理
-  // （Issue #132 · 用户名旁多了头像印记、二级页补上「账号」、1B 又补上同步开关 ——
-  //  它们都是账号域的身份与数据设置）。
+  // 「通用」组的六项：用户名 / 头像印记 / 子档案 / 账号 / 跨设备同步 / 数据管理
+  // （Issue #132 · 用户名旁多了头像印记、二级页补上「账号」、1B 又补上同步开关；
+  //  3 期 P1 再补上「子档案」—— 它们都是账号域的身份与数据设置）。
   // 这里守的仍是原来那条重点：**只给背诵用的选项不许混进「通用」**。
   const generalItems = sgeneral.querySelector('#settings-page .settings-group').querySelectorAll('.settings-item');
-  chk(generalItems.length === 5,
-    '「通用」组是用户名 / 头像印记 / 账号 / 跨设备同步 / 数据管理五项（实际 ' + generalItems.length + '）');
+  chk(generalItems.length === 6,
+    '「通用」组是用户名 / 头像印记 / 子档案 / 账号 / 跨设备同步 / 数据管理六项（实际 ' + generalItems.length + '）');
   chk(!!sgeneral.querySelector('#toggle-sync'),
     '「通用」里有跨设备同步开关（用户有权拒绝上传，默认关着 —— docs §4.2 第 2 条）');
   chk(!!sgeneral.querySelector('#seal-chars') && !!sgeneral.querySelector('#seal-inks'),
@@ -326,6 +326,7 @@ setTimeout(() => {
   // 拆页之后不能两页都留同一件控件，也不能哪一页都找不到
   const OWNER_OF = {
     '#input-username': [sgeneral], '#seal-chars': [sgeneral], '#account-panel': [sgeneral],
+    '#family-panel': [sgeneral],
     '#btn-export': [sgeneral], '#btn-import': [sgeneral], '#btn-reset': [sgeneral],
     '#seg-stage': [srecite], '#grade-chips': [srecite], '#seg-term': [srecite],
     '#seg-scope': [srecite], '#seg-count': [srecite], '#seg-algo': [srecite],
