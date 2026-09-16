@@ -518,8 +518,12 @@
             ok: true, reason: REASON.OK,
             alreadyVerified: r.alreadyVerified === true,
             /* ⚠️ `verifySent` 是**事实**：发信商没配时它是 false，
-               界面据此写「没能发出去」而不是「已发出」。 */
+               界面据此写「没能发出去」而不是「已发出」。
+               `verifyAttempts` 同一条：试了几次 —— 只写「没能发出」
+               用户不知道该等一下还是该找运维。 */
             verifySent: r.verifySent === true,
+            verifyAttempts: Number(r.verifyAttempts) || 1,
+            verifyReason: r.verifyReason || null,
             emailMask: r.emailMask || ""
           };
         }

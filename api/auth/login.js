@@ -33,7 +33,10 @@ module.exports = handler.make("auth.login", ["POST"], function (d, body) {
     email: body.email,
     value: body.value,
     password: body.password,
-    deviceId: body.deviceId || d.deviceId
+    deviceId: body.deviceId || d.deviceId,
+    /* ⚠️ 出口 IP 必须传下去：login 的退避档按「设备 + IP」两层记，
+       deviceId 是客户端自己给的，换一个就绕过了。 */
+    ip: d.ip
   }).then(function (r) {
     if (r.status !== 200 || !r._session) return r;
     var s = r._session;

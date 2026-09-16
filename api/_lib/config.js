@@ -87,6 +87,28 @@ var CONFIG = {
   sessionDays: intEnv("SESSION_DAYS", 30),
   cookieName: env("COOKIE_NAME", "kbsid"),
 
+  /* ---- 发信重试（Issue #197 复审：用户问「收不到邮件时重试机制怎么设计」）----
+     `mailRetryMax` 是**重试次数**（不含第一次），默认 2 → 最多共 3 次尝试。
+     退避是指数 + 抖动：第 1 次失败后约 400ms，第 2 次约 1200ms。
+     `mailRetryBudgetMs` 是**这一次请求内**的总预算，默认 6 秒 ——
+     压在 Serverless 函数超时（Vercel 默认 10s）之前收手，
+     免得「为了重试把整个注册请求拖成 504」。
+     ⚠️ 它**不是**一个后台补发队列。Serverless 里没有常驻进程，
+        「过五分钟再试一次」需要一个真队列（Redis / 云任务），那是另一件事。
+        所以这一层的承诺只有一句：**这一次请求内尽力重试，且如实回报**。 */
+  mailRetryMax: intEnv("MAIL_RETRY_MAX", 2),
+  mailRetryBudgetMs: intEnv("MAIL_RETRY_BUDGET_MS", 6000),
+
+  /* ---- 邮箱确认闸（Issue #197 复审）----
+     用户 2026-09-16 裁决「不确认就不让登录」。默认为 1（拦）。
+     ⚠️ 允许关掉**只有一个理由**：发信商没配（MAIL_TRANSPORT=console）时，
+        确认邮件送不到真人的收件箱 —— 那种实例上开着这道闸等于谁也别想注册。
+        所以口径是：**默认拦；只有在 console 发信商的实例上**才由运维关掉，
+        且关掉时界面必须看得出来（服务端把它自报在 `channel.requireVerified` 里）。
+     ⚠️ 它不是「把确认邮件这件事变成可有可无」——那是**反过来的**。
+        它只是「发信真的通不了时，别把全部用户挡在门外」的应急口。 */
+  requireEmailVerified: env("REQUIRE_EMAIL_VERIFIED", "1") !== "0",
+
   /* ---- 连续猜错封禁（docs/auth-design.md §5.5）----
      判据是**整轮失败**：发一枚码 → 一次都没对 → 才算一轮。
      连续 `E_WRONG_ROUNDS_LIMIT` 轮 → 锁 24 小时。

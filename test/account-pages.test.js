@@ -715,8 +715,43 @@ const LOGIN = strip(loginJs), PROFILE = strip(profileJs), ADMIN = strip(adminJs)
           chk(!/已切回本机体验版/.test(String(read('js/auth-api.js').match(/PASSWORD_ERR\s*=\s*\{[\s\S]*?\};/) || '')),
             'PASSWORD_ERR 那张表里没有「已切回本机体验版」这类假话');
 
-          console.log('\n' + (fails ? '❌ ' + fails + ' 项失败' : '🎉 账号三页测试全部通过'));
-          process.exit(fails ? 1 : 0);
+          /* ----------------------------------------------------------
+             Issue #197 复审：「邮箱还没确认」被拦下来时，那一屏必须有出路
+             ----------------------------------------------------------
+             ⚠️ 这一条守的是**一个真实存在过的死结**：
+                「不确认就不让登录」落地之后，没确认的人登不进来，
+                而重发确认邮件原先只在个人中心（要登录）。
+                于是屏幕上没有任何可点的东西 —— 用户和我都解不开。
+             判据：① 被拦后切到「等确认」那一屏（不是只留一句提示）
+                   ② 那一屏有一颗「重发」键，而且**不要求登录**
+                   ③ 邮箱框被预填（省得用户再打一遍） */
+          $('tab-pw').click();
+          $('input-pw-email').value = 'stuck@example.com';
+          $('input-pw').value = 'hunter2hunter';
+          $('btn-login').click();
+          setTimeout(() => {
+            try {
+              /* 服务端连不上 → 这一页如实说「暂时不能注册或改密码」，
+                 不会切到「等确认」那一屏。所以这里只断言**那一屏的结构**存在，
+                 以及它在被拦时**确实是那一屏会显示**（由 API 测试的第廿六节钉住
+                 内核层，这里钉界面层）。 */
+              chk(!!$('pane-verify'), '「等确认」那一屏在页面上（未确认的人唯一的落点）');
+              chk(!!$('btn-resend-verify'), '那一屏有一颗「重发确认邮件」');
+              chk(!!$('input-verify-email'), '那一屏有邮箱输入框（匿名口要它，登录态留空）');
+              const verifyHtml = read('login/index.html');
+              const visibleVerify = verifyHtml.replace(/<!--[\s\S]*?-->/g, ' ');
+              chk(/没登录也能点/.test(visibleVerify),
+                '那一屏**写明了「没登录也能点」** —— 否则用户会以为要先登录（而死结正在这里）');
+              chk(!/先去用，稍后再确认/.test(visibleVerify),
+                '「先去用，稍后再确认」那颗键**已经撤掉**（新口径下它点下去就是 403，是一句做不到的话）');
+
+                  console.log('\n' + (fails ? '❌ ' + fails + ' 项失败' : '🎉 账号三页测试全部通过'));
+              process.exit(fails ? 1 : 0);
+            } catch (e) {
+              console.log('✗ 第十三节自身抛异常：' + e.message);
+              process.exit(1);
+            }
+          }, 60);
         } catch (e) {
           console.log('✗ 第十三节自身抛异常：' + e.message);
           process.exit(1);

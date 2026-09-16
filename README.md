@@ -362,7 +362,14 @@ npm run env:example > .env.example    # 生成可直接粘贴的模板
 |---|---|---|
 | **必须** | `SESSION_SECRET`（或 `SESSION_KEY`，二选一，前者优先）、`SUPABASE_URL`、`SUPABASE_SERVICE_KEY` | 接口整体 503 / 只用内存存储（重启即丢） |
 | **这一件需要** | `SENDGRID_API_KEY` | 发不出真邮件，落到 `console`（只写服务端日志） |
-| **可选** | `MAIL_TRANSPORT`、`MAIL_FROM`、`SITE_URL`、`COOKIE_NAME`、`SMS_*`、`ALLOW_CODE_ECHO` | 用默认值 |
+| **可选** | `MAIL_TRANSPORT`、`MAIL_FROM`、`SITE_URL`、`COOKIE_NAME`、`SMS_*`、`ALLOW_CODE_ECHO`、`REQUIRE_EMAIL_VERIFIED`、`MAIL_RETRY_MAX`、`MAIL_RETRY_BUDGET_MS`、`PASSWORD_MIN`/`PASSWORD_MAX`、`VERIFY_TTL_MS`、`RESET_TTL_MS` | 用默认值 |
+
+⚠️ 其中两个要留意：
+- `REQUIRE_EMAIL_VERIFIED` **默认 `1` = 邮箱没确认就不让登录**（用户裁决）。
+  只在**发信真的通不了**的实例上才写 `0` —— 那时确认邮件送不到收件箱，
+  开着这道闸等于谁也别想注册。关掉时界面会如实标注。
+- `MAIL_RETRY_*` 是发信失败时的**退避重试**（默认重试 2 次、总预算 6 秒）。
+  ⚠️ 它不是后台补发队列 —— Serverless 里没有常驻进程，「过五分钟再试」需要真队列。
 
 **一个都不配也照样能完全离线使用** —— 自检把这句话写在报告里，免得「未配置」被读成「坏掉」。
 ⚠️ 报告里**只出现变量名、绝不出现值**（连长度都不报），因为这段文字就是给人贴进 Issue 的。

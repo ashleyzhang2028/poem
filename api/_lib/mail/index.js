@@ -250,6 +250,121 @@ transports.console = function (cfg) {
   };
 };
 
+/* ==================================================================
+   发信重试（Issue #197 复审：用户问「如果用户收不到邮件，重试的机制如何设计？」）
+   ==================================================================
+   这一节回答的是**一条发信请求失败了之后发生什么**。它必须同时说清四件事，
+   少一件这个机制就是假的：
+
+   ① **重试几次、隔多久** —— 指数退避 + 抖动，最多 `MAIL_RETRY_MAX` 次（默认 2，
+      也就是**最多共 3 次尝试**）。第一次失败后等 ~400ms，第二次 ~1200ms。
+      总预算压在 `MAIL_RETRY_BUDGET_MS`（默认 6 秒）以内 —— 因为整个请求
+      要在 Serverless 的函数超时（Vercel 默认 10s）之前收手。超预算就**不再重试**，
+      如实把「没发出去」告诉调用方。
+
+   ② **哪些错值得重试** —— 只重试**可能自愈**的：
+      · 网络层错误（ECONNRESET / ETIMEDOUT / DNS 抖动）
+      · 429（发信商限速）
+      · 5xx（对方服务抽风）
+      **绝不重试** 4xx（除了 429）：401/403 是密钥不对，400 是收件人格式被拒，
+      422 是域名/发信人未验证 —— 重试一万次也还是同一个结果，
+      只会把事做慢、把额度烧光、把真正的错因埋掉。
+
+   ③ **发信失败之后那条凭据还在不在** —— **在**。
+      确认令牌 / 重设令牌 / 验证码**都落库了**，只有「送到」这一步没成。
+      所以用户点界面上的「重新发一封」时，走的是一条**新凭据**的路
+      （`issueVerification` / `issueReset` 会作废旧的那一条），
+      而不是一个「补发上一条」的队列 —— 队列会让「哪一条还有效」变成
+      一件谁也说不清的事，而它的症状是「用户点开了三封里的旧那一封」。
+
+   ④ **界面怎么知道** —— 返回值里的 `delivered` 是**事实**（不是「尽力了」）。
+      `attempts` 如实带上试了几次，`reason` 带上最后一次失败的形状。
+      界面据此写「没能发出，请点重发」而不是「已发出」。
+
+   ⚠️ 这一层**不排队、不落盘、不异步补发**。Serverless 里没有常驻进程，
+     「过五分钟再试一次」需要一个真正的队列（Redis / 云任务）——
+     那是另一件事，在它落地之前**不许假装有**。
+     现在能保证的是「这一次请求内尽力重试 + 如实回报」，仅此而已。
+   ================================================================== */
+
+/** 这个错值不值得再试一次（见上面 ②） */
+function retriable(e) {
+  if (!e) return false;
+  var st = Number(e.status || 0);
+  /* HTTP 层面的判定：429 与 5xx 值得重试，其余 4xx 不值得 */
+  if (st) return st === 429 || st >= 500;
+  /* 没有 HTTP 状态 = 网络层错误（postJson 里 reject 的那些）。
+     这些是**最该重试**的一类：DNS 抖动、连接被重置、TLS 握手超时。 */
+  return true;
+}
+
+/** 等一会儿（有抖动，避免同一次流量高峰的所有请求同时重试） */
+function sleep(ms) {
+  return new Promise(function (r) { setTimeout(r, ms); });
+}
+
+/**
+ * 带退避重试的发信。**业务代码只认这一个出口**。
+ *
+ * @param {Function} attempt  () => Promise<{delivered,...}>
+ * @param {object} cfg
+ * @returns {Promise<{ok, delivered, attempts, transport, reason?, detail?}>}
+ */
+function withRetry(cfg, attempt) {
+  var max = Number(cfg.mailRetryMax);
+  if (!isFinite(max) || max < 0) max = 2;           // 默认最多 2 次**重试**（共 3 次尝试）
+  var budget = Number(cfg.mailRetryBudgetMs);
+  if (!isFinite(budget) || budget <= 0) budget = 6000;
+  var started = Date.now();
+  var attempts = 0;
+
+  function once() {
+    attempts++;
+    return attempt().then(function (r) {
+      /* 通道自己说「没送出去」（console 通道就是这种）→ 这不是失败，
+         是「这个通道本来就不往外发」。**不重试** —— 重试它一万次
+         也还是 console。如实把 delivered:false 带回去。 */
+      return { out: r, attempts: attempts };
+    }).catch(function (e) {
+      var left = budget - (Date.now() - started);
+      var canRetry = retriable(e) && attempts <= max && left > 300;
+      if (!canRetry) {
+        return { failed: e, attempts: attempts, gaveUp: true };
+      }
+      /* 指数退避：第 1 次失败后 ~400ms，第 2 次 ~1200ms，加 ±30% 抖动 */
+      var wait = Math.round(400 * Math.pow(3, attempts - 1) * (0.7 + Math.random() * 0.6));
+      if (wait > left) wait = Math.max(0, left - 50);
+      return sleep(wait).then(once);
+    });
+  }
+
+  return once().then(function (res) {
+    if (res.failed) {
+      /* ⚠️ **放弃时必须抛出去，不能改成「成功但 delivered:false」**。
+         这一条是想清楚了才写的：调用方（`core.sendCode` / `register` /
+         `issueReset`）判的正是这个异常 ——
+         · `sendCode` 靠它回 502 `E_MAIL_FAIL` / `E_SMS_FAIL`
+         · `issueVerification` / `issueReset` 靠它把 `verifySent` 标成 false
+         一旦这里改成一个「成功」的返回值，症状就是：**发信彻底失败，
+         接口却回 201/200，界面上写着「已发出」** —— 比不做重试更糟。
+         抛出去时把 `attempts` / `reason` 挂在 error 上，调用方仍能如实回报。 */
+      var e = res.failed;
+      e.attempts = res.attempts;
+      e.reason = Number(e && e.status) ? ("http_" + e.status) : "network";
+      throw e;
+    }
+    var out = res.out || {};
+    return {
+      ok: true,
+      delivered: !!out.delivered,
+      attempts: res.attempts,
+      transport: out.transport || "unknown",
+      status: out.status || null,
+      id: out.id || null
+    };
+  });
+}
+
 /* --------------------------------------------------------- 短信（口子） */
 
 /**
@@ -301,20 +416,7 @@ function pick(cfg) {
  * @returns {Promise<{ok,transport,delivered}>}
  */
 function send(cfg, opts) {
-  var t = pick(cfg);
-  var msg = buildMessage(cfg, opts);
-  msg.to = opts.to;
-  msg.mask = opts.mask;
-  msg.code = opts.code;
-  return t.send(msg).then(function (r) {
-    return {
-      ok: true,
-      transport: r.transport,
-      delivered: r.transport !== "console",
-      status: r.status || null,
-      id: r.id || null
-    };
-  });
+  return sendKind(cfg, "code", opts);
 }
 
 /**
@@ -335,17 +437,23 @@ function sendKind(cfg, kind, opts) {
   msg.code = opts.code;
   if (opts.vid) msg.vid = opts.vid;
   if (opts.rid) msg.rid = opts.rid;
-  return t.send(msg).then(function (r) {
-    return {
-      ok: true,
-      transport: r.transport,
-      /* ⚠️ 「发出去了」这件事**只由通道决定**，不由「接口回没回 200」决定。
-         console 通道下 delivered 必须是 false —— 它是「没往外发」的通道，
-         界面据此写「没能发出」而不是「已发出」（§12 总原则）。 */
-      delivered: r.transport !== "console",
-      status: r.status || null,
-      id: r.id || null
-    };
+  /* ⚠️ 走 `withRetry`：网络抖动 / 429 / 5xx 会**带退避重试**，
+     4xx（密钥不对、收件人被拒、域名未验证）**不重试** —— 重试那些
+     只会把额度烧光、把真正的错因埋掉。返回值里 `attempts` / `reason`
+     是事实，界面据此如实说「试了几次、为什么没成」。 */
+  return withRetry(cfg, function () {
+    return t.send(msg).then(function (r) {
+      return {
+        ok: true,
+        transport: r.transport,
+        /* ⚠️ 「发出去了」这件事**只由通道决定**，不由「接口回没回 200」决定。
+           console 通道下 delivered 必须是 false —— 它是「没往外发」的通道，
+           界面据此写「没能发出」而不是「已发出」（§12 总原则）。 */
+        delivered: r.transport !== "console" && r.delivered !== false,
+        status: r.status || null,
+        id: r.id || null
+      };
+    });
   });
 }
 
@@ -365,6 +473,8 @@ function reset(cfg, opts) {
 
 module.exports = {
   send: send,
+  withRetry: withRetry,
+  retriable: retriable,
   confirm: confirm,
   reset: reset,
   sendKind: sendKind,

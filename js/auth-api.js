@@ -62,7 +62,11 @@
     E_TOKEN_USED: "这个链接已经用过了",
     E_TOKEN_EXPIRED: "链接已过期，请重新发一封邮件",
     E_VERIFY_MAIL_FAIL: "确认邮件没能发出去，请稍后再试",
-    E_RESET_MAIL_FAIL: "重设邮件没能发出去，请稍后再试"
+    E_RESET_MAIL_FAIL: "重设邮件没能发出去，请稍后再试",
+    /* ⚠️ 「邮箱还没确认」**不是传输层错误**，是服务端明确的业务判定（403）。
+       它必须原样说出来 —— 说成「连不上」会让人一直点登录，
+       而正确动作是去收件箱或点「重新发一封」。 */
+    E_EMAIL_UNVERIFIED: "邮箱还没确认，请先去收件箱点开那封确认邮件"
   };
 
   /**
@@ -266,9 +270,20 @@
         return post("/verify-email", { vid: input.vid, token: input.token }, PASSWORD_ERR);
       },
 
-      /** POST /api/resend-verification —— 重发确认邮件（**要登录**） */
-      resendVerification: function () {
-        return post("/resend-verification", { deviceId: deviceId }, PASSWORD_ERR);
+      /**
+       * POST /api/resend-verification —— 重发确认邮件。
+       *
+       * ⚠️ **两条入口**（与服务端 `core.resendVerification` 对应）：
+       *   · 登录着（Cookie）→ 不带 `email`，服务端认会话里的 uid
+       *   · **没登录**（被「不确认就不让登录」拦在门外的人）→ 带上 `email`，
+       *     走匿名口。这是那种用户**唯一**的出路，所以必须支持。
+       * 两条回复的形状在服务端是**逐字相同**的（防邮箱枚举）。
+       */
+      resendVerification: function (input) {
+        input = input || {};
+        var body = { deviceId: deviceId };
+        if (input.email) body.email = input.email;
+        return post("/resend-verification", body, PASSWORD_ERR);
       },
 
       /** POST /api/reset-request —— 忘记密码第一步：发重设邮件 */

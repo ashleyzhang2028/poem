@@ -336,6 +336,10 @@ function channelFacts(cfg) {
     delivered: mail !== "console",                  // console 发的信真实用户收不到
     db: hasDb ? "db" : "memory",                    // memory = 重启即丢，如实标出来
     sms: !!(cfg.smsEnabled && cfg.smsTransport),    // 与 2B 的 503 同口径
+    /* 这台实例拦不拦「未确认邮箱」的登录（§5.5 的应急闸门）。
+       默认 true（拦）。只有**发信真的通不了**的实例才该关掉 ——
+       关掉时界面必须如实标注，否则用户会以为「没确认就进不来」。 */
+    requireVerified: requireVerified(cfg),
     /* ---------------------------------------------------------------
        `rate: "instance"` —— **登录态的频控与猜错封禁只在本实例内有效**
        ---------------------------------------------------------------
@@ -898,6 +902,12 @@ function verifyCode_(deps, input) {
       .then(function () { return store.getAccount(rec.uid); })
       .then(function (acc) {
         if (!acc || acc.status === "deleted") return err(400, "E_CODE_VOID", "请用最新收到的验证码");
+        /* ⚠️ 邮箱确认闸 —— **紧随口令/码校验之后**（见 verifyGate 的说明）。
+           这道闸原先只写在口令那一条路上，随机码那条路压根没看账号状态，
+           于是「不确认就不让登录」只要换个页签就绕过去了。
+           判在这里而不是上面早退，是为了不把「注册过没确认」变成可查询的事实。 */
+        var gate = verifyGate(cfg, acc);
+        if (gate) return gate;
         acc.last_login_at = t;
         return Promise.resolve(store.putAccount(acc)).then(function (saved) {
           var s = session.issue(cfg, acc.uid, t);
@@ -967,6 +977,70 @@ function checkPassword(cfg, pw) {
   return null;
 }
 
+/**
+ * 邮箱确认闸（Issue #197 复审）—— **两条登录路都读它**，只此一处。
+ *
+ * ## 它为什么必须存在，而且必须只写一处
+ *
+ * 上一轮（PR #199）把「不确认也能用」定成了口径，并把「不确认就不让登录」
+ * 留成一个待用户裁决的选项。用户裁了：**不确认就不让登录**。
+ * 但那一次的落地**没有进这个仓库** —— 于是形如：
+ *   · 注册完（`status:'pending'`）走随机码路可拿完整会话；
+ *   · 走口令路同样可拿；（见 test/api.test.js 第廿六节 ①）
+ * 也就是说「邮箱确认」这件事在服务端**一处都没生效过**：
+ * 随机码那条路是更早的 1A 就有的、签会话时压根不看账号状态。
+ *
+ * ## 判据为什么落在「口令/码校验之后」
+ *
+ * 落在**之前**，回话就会区分「这个邮箱注册过但没确认」与「这个邮箱压根不存在」——
+ * 那就成了「谁是本站用户」的查询口（本文件里三条反枚举纪律同源）。
+ * 落在之后，攻击者得先猜中口令/码才撞得到这道闸，而那时他本来就已经是账号主人。
+ *
+ * ## 为什么回 403 而不是 401 / 423
+ *
+ * 401 会被客户端读成「没会话，静默降级」（`js/auth-api.js` 的那条分支）；
+ * 423 是「等一会儿再来试」——而这里要做的是**去收件箱**，不是重试登录。
+ * 403 + 一个专属码 `E_EMAIL_UNVERIFIED`，界面据此给出一条**出路**（重发确认邮件）。
+ *
+ * ## 应急闸门 `REQUIRE_EMAIL_VERIFIED`
+ *
+ * 默认**拦**（`1`）。留 `0` 只有一个理由，且必须写清楚：
+ * **发信商没配（console 通道）时，确认邮件送不到真人的收件箱。**
+ * 在那台实例上开着这道闸，等于谁也别想注册。所以判据是
+ * 「拦，且**只在那台实例发信通不了时才允许关**」—— 关掉时界面必须看得出来
+ * （`/api/me` 与注册响应都自报 `requireVerified:false`），
+ * 不然用户会以为「没确认就进不来」而实际上进得来。
+ */
+function requireVerified(cfg) {
+  /* 读 `this`：与 cfg.mail() / cfg.hasSession() 同一条纪律 ——
+     测试里 `Object.assign({}, CONFIG, {...})` 这类覆盖必须生效。 */
+  if (!cfg) return true;
+  return cfg.requireEmailVerified !== false;
+}
+
+/**
+ * 账号是否「可以登录」。返回 null 表示放行，否则是一个 `{status, code, message, extra}`
+ * 形状的拒绝 —— 与 err() 同形，便于调用处直接返回。
+ *
+ * ⚠️ 只判**邮箱确认**这一件事。`locked`（猜错封禁）在各自的路上另有判据
+ *    （因为两者的「下一步动作」不同：一个去收件箱，一个等时间）。
+ */
+function verifyGate(cfg, acc) {
+  if (!requireVerified(cfg)) return null;
+  /* ⚠️ 老账号（Issue #197 之前建的）没有 `email_verified_at`，
+     但它们**曾经是能用的**。把它们一并拦下，等于在旧实例上升级一次
+     就锁死全部老用户 —— 而他们连「重发确认邮件」那颗键都找不到
+     （那颗键要登录）。所以：
+       · `status === 'pending'`（流程内如实标着「待确认」）→ 拦
+       · 其余（老行没有这个状态、或 active）→ 放行，但**不假装已确认**
+         （`publicAccount().emailVerified` 仍如实为 false）
+     这条不是「网开一面」，是「不把口径变更倒扣到已经存在的账号上」。 */
+  if (acc && acc.status === "pending" && acc.email_verified_at == null) {
+    return err(403, "E_EMAIL_UNVERIFIED", "邮箱还没确认，先去收件箱点开那封确认邮件（登录页有一颗「重新发一封」）");
+  }
+  return null;
+}
+
 /** 一次性令牌的形状校验：64 位 hex。形状不对**不进库**（省一次查询，也少一条脏数据） */
 function isTokenShape(t) {
   return /^[0-9a-f]{64}$/.test(String(t || ""));
@@ -1005,16 +1079,61 @@ function register(deps, input) {
   if (bad) return Promise.resolve(err(400, bad.code, bad.message));
 
   var device = String(input.deviceId || "unknown");
-  var gate = limiter.check(cfg, "device", device, t);
-  if (!gate.ok) return Promise.resolve(err(429, "E_RATE_DEVICE", RATE_MSG.E_RATE_DEVICE, { retryAfter: gate.retryAfter }));
+  var ip = String(input.ip || "unknown");
+  /* ⚠️ 三层闸，**原子 take**（判完当场落账）：
+       设备（客户端给的，换一个就绕过）→ **出口 IP**（唯一改不动的那一个）→ 全局。
+     原先只有 device 一档，而且是 `check`（不落账）—— 于是并发下全过，
+     而「每天换一个 deviceId」的坏客户端等于**不限速**。
+     注册口是匿名可写的（它会建号、会发信），必须按 IP 兜住。 */
+  var rBuckets = [[cfg.rate.device ? "device" : "global", "reg:" + device], ["ip", "reg:" + ip]];
+  for (var ri = 0; ri < rBuckets.length; ri++) {
+    var rg = limiter.take(cfg, rBuckets[ri][0], rBuckets[ri][1], t);
+    if (!rg.ok) {
+      var rcode = rateCode(rBuckets[ri][0]);
+      return Promise.resolve(err(429, rcode, RATE_MSG[rcode] || "稍后再试", { retryAfter: rg.retryAfter }));
+    }
+  }
 
   return findOrCreateAccount(store, cfg, { channel: "email", value: email }, t).then(function (r) {
     var acc = r.acc;
     if (acc.status === "locked") return err(423, "E_LOCKED", "为了安全，请稍后再试", { retryAfter: 3600 });
-    /* ⚠️ 老账号（发码那条路建的）**没有口令** —— 注册要给它补上，
-       而不是回一句「这个邮箱已经注册过」。那句回话等于**邮箱枚举**：
-       攻击者拿一份邮箱字典逐个打，就能筛出谁是本站用户。
-       所以这里走的是「补口令 + 重新发确认邮件」，响应与全新注册**完全一致**。 */
+
+    /* ==================================================================
+       ⚠️⚠️ **已有口令的账号不许被「再注册」改掉口令**（Issue #197 复审）
+       ==================================================================
+       原先这里无条件把 `password_hash` 覆盖成这次请求填的那个，理由写的是
+       「老账号（发码那条路建的）没有口令，要给它补上」。那个理由**只对
+       没有口令的账号成立** —— 而对已经有口令的账号，这一行就是一个
+       **账号接管洞**：
+
+         register("victim@example.com", "attacker-pw")   ← 攻击者只填邮箱
+           → 库里那个账号的 password_hash 被换成攻击者的
+           → 攻击者用自己的口令登录成功，拿到受害者账号的会话与全部进度
+
+       实测现场（第廿六节 ③）：注册两次，第二次换了口令之后，
+       **新口令能登、原主人口令登不进去**。整个洞不需要任何凭据。
+       所以判据改成两条：
+         · **没有口令的账号**（老行 / 只走随机码的人）→ 补口令（原样保留，
+           它是「发码那条路建的账号」的迁移路径，不回「已注册」免得邮箱枚举）
+         · **已经有口令的账号** → **一个字都不写**，回同一个响应形状
+           （`created:false`），但**绝不覆盖口令、也绝不重发确认邮件**
+           （否则任何人都能用它给机主刷确认邮件 —— 那是另一条滥用）。
+       ================================================================== */
+    if (!r.created && acc.password_hash) {
+      return ok({
+        uid: acc.uid,
+        registerRequested: true,
+        created: false,
+        /* ⚠️ 关键：**没有** verifySent / devVerifyToken —— 因为真的什么都没发。
+           回一个 `verifySent:false` 会引导界面写「没能发出去」，而这里
+           是「本来就不该发」（这个邮箱已经有主了）。两件事在界面上
+           必须长得不一样，所以这里连字段都不给。 */
+        existing: true,
+        store: store.kind,
+        note: "如果这个邮箱已经注册过，请直接用「密码登录」；忘了密码就用「忘记密码」重设。"
+      });
+    }
+
     var salt = id.newPasswordSalt();
     acc.email = email;                              // 明文回填（老行可能没有）
     acc.password_hash = id.hashPassword(String(input.password), salt);
@@ -1024,7 +1143,6 @@ function register(deps, input) {
     } else {
       acc.status = "pending";
     }
-    limiter.hit("device", device, t);
     return Promise.resolve(store.putAccount(acc)).then(function (saved) {
       return issueVerification(deps, saved || acc).then(function (v) {
         return ok({
@@ -1037,6 +1155,14 @@ function register(deps, input) {
              「本次没能把确认邮件发出去」，绝不写「确认邮件已发出」。 */
           verifySent: v.sent,
           verifyTransport: v.transport,
+          /* ⚠️ 试了几次、为什么没成 —— 这是「重试机制」在界面上唯一看得见的部分。
+             不带它的话用户只有「没能发出」一句，不知道该等一下还是该找运维。 */
+          verifyAttempts: v.attempts || 1,
+          verifyReason: v.reason || null,
+          /* 服务端把「这台实例拦不拦未确认邮箱」**如实自报** ——
+             运维为了应急关掉闸门（REQUIRE_EMAIL_VERIFIED=0）时，
+             界面必须看得出来，否则用户会以为「没确认就进不来」。 */
+          requireVerified: requireVerified(cfg),
           /* 冒烟自测口子：与发码的 devCode 同一条纪律 ——
              只有显式开 ALLOW_CODE_ECHO 才回明文令牌，默认关。 */
           devVerifyToken: cfg.allowCodeEcho ? v.token : undefined,
@@ -1085,12 +1211,28 @@ function issueVerification(deps, acc) {
       return mail.confirm(cfg, { to: acc.email, mask: acc.email_mask, vid: vid, token: token, ttlMs: cfg.verifyTtlMs });
     })
     .then(function (sent) {
-      return { vid: vid, token: token, sent: !!sent.delivered, transport: sent.transport };
+      /* ⚠️ `attempts` / `reason` 是**事实**（试了几次、为什么没成），
+         界面据此如实说「试了 3 次都没发出去」。不带上它们的话，
+         用户只会看到一句「没能发出」，而无法判断该等一会儿还是该找运维。 */
+      return {
+        vid: vid, token: token,
+        sent: !!sent.delivered,
+        transport: sent.transport,
+        attempts: Number(sent.attempts) || 1,
+        reason: sent.reason || null
+      };
     })
-    .catch(function () {
+    .catch(function (e) {
       /* 发信失败**不抛**：账号已经建好了。把事实（没发出去）回给界面，
-         而不是把整个注册回滚 —— 回滚等于「发信商抽风一次，用户就注册不上」。 */
-      return { vid: vid, token: token, sent: false, transport: "failed" };
+         而不是把整个注册回滚 —— 回滚等于「发信商抽风一次，用户就注册不上」。
+         ⚠️ `withRetry` 在**放弃重试之后**会把这个异常抛出来（见那边的注释），
+            并把 `attempts` / `reason` 挂在它身上 —— 这里如实带上，
+            界面才能说「试了 3 次都没发出去」而不是含糊的一句「没能发出」。 */
+      return {
+        vid: vid, token: token, sent: false, transport: "failed",
+        attempts: Number(e && e.attempts) || 1,
+        reason: (e && e.reason) || "unknown"
+      };
     });
 }
 
@@ -1144,17 +1286,26 @@ function verifyEmail(deps, input) {
   }
 
   if (vid) return Promise.resolve(store.getVerification(vid)).then(act);
-  /* 只给了令牌（用户把链接里的参数拷了一半）：按令牌找记录。
-     这一条与「按 vid 找」等价，只是入口不同 —— 两条都必须过同一个 act()。 */
-  return Promise.resolve(store.listVerifications ? store.listVerifications(0) : []).then(function (rows) {
-    var want = id.tokenHash("", "verify", String(input.token), cfg.sessionSecret || "no-pepper");
-    void want;
-    var hit = null;
-    (rows || []).forEach(function (r) { if (!hit && !r.consumed_at) hit = r; });
-    return act(hit);
-  }).catch(function () {
-    return err(400, "E_TOKEN_INVALID", "这个确认链接不对，请重新发一封确认邮件");
-  });
+
+  /* ------------------------------------------------------------------
+     只给了令牌、没给 vid —— **如实拒绝**
+     ------------------------------------------------------------------
+     原先这里有一段「按令牌找记录」的代码：把全表拉出来、
+     挑**第一条还没消费的**记录、拿它去过 act()。那一段是错的，而且错得危险：
+
+       · 令牌摘要里带 uid（`tokenHash(uid, purpose, token)`），而这里
+         挑出来的记录是**任意一条**。于是「拿的是别人的记录、比的是自己的令牌」
+         —— 真实的链接永远比对不上，**合法的确认链接会被判成无效**。
+       · 它把 `/verify/` 那条链接里的 `vid` 变成了「可有可无」。而邮件里
+         那条链接是**我们自己拼的**（`mail.link()` 两个参数都带），
+         缺 vid 只可能来自「用户手工拷贝时漏了一段」或「有人在乱试」。
+       · 更要紧的是：它是一次**全表扫描**，而入口是匿名的 ——
+         每个请求都能让别人付出一次 listAll 的代价。
+
+     所以现在这两条都走 `E_NO_TOKEN`：**不猜、不扫表、不替调用方补参数**。
+     判据与 `resetConfirm` 里那条 `if (!rid) → E_NO_TOKEN` 逐字同源。
+     ------------------------------------------------------------------ */
+  return Promise.resolve(err(400, "E_NO_TOKEN", "确认链接不完整，请重新发一封确认邮件"));
 }
 
 /**
@@ -1180,8 +1331,18 @@ function loginWithPassword(deps, input) {
 
   if (!id.isEmailShape(email) || !pw) return Promise.resolve(err(400, "E_LOGIN_FAIL", GREY.message));
 
-  var gate = limiter.check(cfg, "device", "login:" + device, t);
-  if (!gate.ok) return Promise.resolve(err(429, "E_RATE_DEVICE", RATE_MSG.E_RATE_DEVICE, { retryAfter: gate.retryAfter }));
+  /* ⚠️ 原子 take + **退避档用 `login`**：撞库要在**账号**上计数（那是终态），
+     但设备/IP 这一层是「退避」—— 两者都要有。原先这里是 `check("device")`
+     之后再找地方 `hit`，中间隔着一次 scrypt（约 40ms），并发下全是空窗口。 */
+  var loginIp = String(input.ip || "unknown");
+  var lgBuckets = [["device", "login:" + device], ["ip", "login:" + loginIp]];
+  for (var li = 0; li < lgBuckets.length; li++) {
+    var lgate = limiter.take(cfg, lgBuckets[li][0], lgBuckets[li][1], t);
+    if (!lgate.ok) {
+      var lcode = rateCode(lgBuckets[li][0]);
+      return Promise.resolve(err(429, lcode, RATE_MSG[lcode] || "稍后再试", { retryAfter: lgate.retryAfter }));
+    }
+  }
 
   return Promise.resolve(store.getAccountByHash(id.emailHash(email, cfg.sessionSecret || "no-pepper")))
     .then(function (acc) {
@@ -1192,7 +1353,6 @@ function loginWithPassword(deps, input) {
            变成一个可以测的差异，而固定的常量每次耗时一致。 */
         id.verifyPassword(pw, id.hashPassword("not-a-real-password", "0000000000000000", { N: 16384, r: 8, p: 1, len: 32 })
           .replace(/\$[0-9a-f]{32}\$/, "$00000000000000000000000000000000$"));
-        limiter.hit("device", "login:" + device, t);
         return err(401, GREY.code, GREY.message);
       }
       if (acc.status === "locked") return err(423, "E_LOCKED", "为了安全，请稍后再试", { retryAfter: 3600 });
@@ -1200,7 +1360,6 @@ function loginWithPassword(deps, input) {
 
       var okPw = !!acc.password_hash && id.verifyPassword(pw, acc.password_hash);
       if (!okPw) {
-        limiter.hit("device", "login:" + device, t);
         /* 连续失败锁号：窗内 10 次即锁。与发码那条「整轮失败锁 24 小时」
            同一形状 —— 判的是**连续失败**，成功一次就把窗口清空（见下）。 */
         var fails = (limiter.fails ? limiter.fails("login", "uid:" + acc.uid, t) : 0) + 1;
@@ -1214,9 +1373,14 @@ function loginWithPassword(deps, input) {
         return err(401, GREY.code, GREY.message, { remaining: Math.max(0, 10 - fails) });
       }
 
+      /* ⚠️ 邮箱确认闸：判在**口令校验成功之后**（见 verifyGate 的说明）。
+         判在之前的话，「这个邮箱注册过但没确认」与「这个邮箱压根不存在」
+         会给出两种不同的回答 —— 那就成了邮箱枚举口。 */
+      var gatePw = verifyGate(cfg, acc);
+      if (gatePw) return gatePw;
+
       /* 成功：清掉失败窗口（否则「错九次、对一次、再错一次」就锁号了） */
       if (limiter.clearFails) limiter.clearFails("login", "uid:" + acc.uid);
-      limiter.hit("device", "login:" + device, t);
       acc.last_login_at = t;
       return Promise.resolve(store.putAccount(acc)).then(function (saved) {
         var s = session.issue(cfg, acc.uid, t);
@@ -1250,13 +1414,25 @@ function resetRequest(deps, input) {
   };
   if (!id.isEmailShape(email)) return Promise.resolve(err(400, "E_EMAIL_FORMAT", "这个邮箱看起来不太对，再检查一下"));
 
-  var gate = limiter.check(cfg, "device", "reset:" + device, t);
-  if (!gate.ok) return Promise.resolve(err(429, "E_RATE_DEVICE", RATE_MSG.E_RATE_DEVICE, { retryAfter: gate.retryAfter }));
-  var g2 = limiter.check(cfg, "email", "reset:" + id.emailHash(email, cfg.sessionSecret || "no-pepper"), t);
-  if (!g2.ok) return Promise.resolve(err(429, "E_RATE_EMAIL", RATE_MSG.E_RATE_EMAIL, { retryAfter: g2.retryAfter }));
-
-  limiter.hit("device", "reset:" + device, t);
-  limiter.hit("email", "reset:" + id.emailHash(email, cfg.sessionSecret || "no-pepper"), t);
+  /* ⚠️ 四层闸 + **原子 take**（原先只有 device / email 两层，而且是
+     「check 一圈 → 发信 → hit 一圈」—— 中间隔着发信商那次真实的 HTTP，
+     并发下每一条请求都在空窗口上通过；而整条路径**没有 IP 那一档**，
+     换一个 deviceId 就绕过了）。
+     忘记密码口是**匿名可写**的（它会往任意邮箱发信），必须按 IP 兜住：
+     实测（第廿六节 ⑤）换邮箱 + 换 deviceId 可以把它刷成发信机。 */
+  var ip = String(input.ip || "unknown");
+  var rBuckets = [
+    ["device", "reset:" + device],
+    ["ip", "reset:" + ip],
+    ["email", "reset:" + id.emailHash(email, pepperOf(cfg))]
+  ];
+  for (var bi = 0; bi < rBuckets.length; bi++) {
+    var bg = limiter.take(cfg, rBuckets[bi][0], rBuckets[bi][1], t);
+    if (!bg.ok) {
+      var bcode = rateCode(rBuckets[bi][0]);
+      return Promise.resolve(err(429, bcode, RATE_MSG[bcode] || "发得太快了，请稍后再试", { retryAfter: bg.retryAfter }));
+    }
+  }
 
   return Promise.resolve(store.getAccountByHash(id.emailHash(email, cfg.sessionSecret || "no-pepper")))
     .then(function (acc) {
@@ -1293,8 +1469,22 @@ function issueReset(deps, acc, email) {
       /* 同上：`rid` 必须在链接里（`/reset/?rid=..&token=..`） */
       return mail.reset(cfg, { to: acc.email, mask: acc.email_mask, rid: rid, token: token, ttlMs: cfg.resetTtlMs });
     })
-    .then(function (sent) { return { rid: rid, token: token, sent: !!sent.delivered, transport: sent.transport }; })
-    .catch(function () { return { rid: rid, token: token, sent: false, transport: "failed" }; });
+    .then(function (sent) {
+      return {
+        rid: rid, token: token,
+        sent: !!sent.delivered,
+        transport: sent.transport,
+        attempts: Number(sent.attempts) || 1,
+        reason: sent.reason || null
+      };
+    })
+    .catch(function (e) {
+      return {
+        rid: rid, token: token, sent: false, transport: "failed",
+        attempts: Number(e && e.attempts) || 1,
+        reason: (e && e.reason) || "unknown"
+      };
+    });
 }
 
 /**
@@ -1318,8 +1508,20 @@ function resetConfirm(deps, input) {
   if (!rid) return Promise.resolve(err(400, "E_NO_TOKEN", "重设链接不完整，请重新发一封邮件"));
 
   var device = String(input.deviceId || "unknown");
-  var gate = limiter.check(cfg, "device", "resetc:" + device, t);
-  if (!gate.ok) return Promise.resolve(err(429, "E_RATE_DEVICE", RATE_MSG.E_RATE_DEVICE, { retryAfter: gate.retryAfter }));
+  var resetIp = String(input.ip || "unknown");
+  /* ⚠️ 原子 take + IP 档：这一条也是匿名可写的（只要拿到 rid + token），
+     原先只按设备档 `check`（且落账在最后那一步），等于并发下不限速。 */
+  var rcBuckets = [["device", "resetc:" + device], ["ip", "resetc:" + resetIp]];
+  var rcBlocked = null;
+  for (var ci = 0; ci < rcBuckets.length; ci++) {
+    var cg = limiter.take(cfg, rcBuckets[ci][0], rcBuckets[ci][1], t);
+    if (!cg.ok) {
+      var ccode = rateCode(rcBuckets[ci][0]);
+      rcBlocked = err(429, ccode, RATE_MSG[ccode] || "稍后再试", { retryAfter: cg.retryAfter });
+      break;
+    }
+  }
+  if (rcBlocked) return Promise.resolve(rcBlocked);
 
   return Promise.resolve(store.getReset(rid)).then(function (rec) {
     if (!rec) return err(400, "E_TOKEN_INVALID", "这个重设链接不对，请重新发一封邮件");
@@ -1334,7 +1536,6 @@ function resetConfirm(deps, input) {
         .then(function () { return err(400, "E_TOKEN_INVALID", "这个重设链接不对，请重新发一封邮件"); });
     }
 
-    limiter.hit("device", "resetc:" + device, t);
     return Promise.resolve(store.patchReset(rid, { consumed_at: t }))
       .then(function () { return store.getAccount(rec.uid); })
       .then(function (acc) {
@@ -1362,32 +1563,132 @@ function resetConfirm(deps, input) {
   });
 }
 
-/** 重发确认邮件（`POST /api/resend-verification`）。要登录 —— 这是「你自己」的事 */
+/**
+ * 重发确认邮件（`POST /api/resend-verification`）—— **两条入口，一套闸**。
+ *
+ * ## 两条入口（Issue #197 复审：这一条以前只有「要登录」那一条）
+ *
+ * 用户裁了「不确认就不让登录」。那之后有一个**死结**：
+ * 「注册完没点确认」的人登不进来，而重发确认邮件那颗键原先只住在
+ * 个人中心里 —— 个人中心要登录。于是屏幕上**没有任何可点的东西**，
+ * 他唯一能做的是再注册一次（而那条路刚刚才被堵上，见 register）。
+ *
+ * 所以这一条现在有两条入口，**共用同一套闸与同一套文案**：
+ *   · 登录态（Cookie）→ 认会话里的 uid
+ *   · 匿名（带 `email`）→ 认那个邮箱，**且存在与否回一模一样的话**
+ *
+ * ## 匿名入口的四条闸（它是全站唯一「不登录也能让本站往外发信」的接口）
+ *
+ *   ① 频控四层（邮箱 / 设备 / IP / 全局）—— 与发码同一套 take 语义
+ *   ② 70 秒冷却（同一邮箱别连点）
+ *   ③ **邮箱存在与否 + 已确认与否，回话逐字相同**
+ *      —— 否则它就是一个「这个邮箱是谁的、确认了没有」的查询口
+ *   ④ 已确认的不发信（发一封「你的邮箱已确认」没有意义，
+ *      还会让「重发」这颗键看起来永远有用）
+ *
+ * ## 为什么必须回「一模一样」而不是「差不多」
+ *
+ * 这一条原先挂着「要登录」，所以它没有枚举风险。开了匿名口之后
+ * **风险形状与 `/api/reset-request` 完全一样**，于是口径也照抄那一条：
+ * 同一个状态、同一个 body、同一句条件句。
+ */
 function resendVerification(deps, input) {
   var cfg = deps.cfg, store = deps.store, limiter = deps.limiter, t = deps.now();
-  if (!deps.account) return Promise.resolve(err(401, "E_NO_SESSION", "还没有登录"));
   var device = String(input.deviceId || "unknown");
-  var gate = limiter.check(cfg, "device", "verify:" + device, t);
-  if (!gate.ok) return Promise.resolve(err(429, "E_RATE_DEVICE", RATE_MSG.E_RATE_DEVICE, { retryAfter: gate.retryAfter }));
-  limiter.hit("device", "verify:" + device, t);
-  return Promise.resolve(store.getAccount(deps.account.uid)).then(function (acc) {
-    if (!acc || acc.status === "deleted") return err(401, "E_NO_SESSION", "还没有登录");
-    if (acc.email_verified_at != null) {
-      /* 已经确认过：如实回，且**不再发信**（发一封「你的邮箱已确认」没有意义，
-         而它还会让「重发」这颗按钮看起来永远有用）。 */
-      return ok({ alreadyVerified: true, emailMask: acc.email_mask || "***", verifySent: false });
+  var ip = String(input.ip || "unknown");
+
+  var email = id.normalizeEmailForStore(input.email != null ? input.email : input.value);
+  var anon = !deps.account;
+  if (anon && !id.isEmailShape(email)) {
+    /* ⚠️ 匿名口连邮箱形状都不给时，如实回格式错 —— 这一条**不泄露任何东西**
+       （形状是调用方自己给的，与库里有没有这个人无关）。 */
+    return Promise.resolve(err(400, "E_EMAIL_FORMAT", "这个邮箱看起来不太对，再检查一下"));
+  }
+
+  /* 匿名口回话的**唯一形状**：与「已发出」「不存在」「已确认」逐字一致的那一个。
+     只有 `devVerifyToken`（冒烟口，生产永远关着）与 `sent` 这类**我们自己的
+     调试事实**允许不同 —— 而它们恰恰是生产看不到的。 */
+  var SAME = {
+    requested: true,
+    alreadyVerified: false,
+    verifySent: false,
+    store: store.kind,
+    note: "如果这个邮箱在本站注册过而且还没确认，我们已经把确认邮件发了出去。"
+  };
+
+  /* ---- 闸：四层频控（**原子 take**：判完当场落账）+ 冷却 ---- */
+  var buckets = [["email", "resend:" + id.emailHash(email, pepperOf(cfg))],
+    ["device", "resend:" + device], ["ip", "resend:" + ip], ["global", "resend-all"]];
+  var cool = limiter.cooldown("email", "resend:" + id.emailHash(email, pepperOf(cfg)), cfg.resendCooldownMs || 60000, t);
+  if (!cool.ok) {
+    return Promise.resolve(err(429, "E_RATE_EMAIL", RATE_MSG.E_RATE_EMAIL, { retryAfter: cool.retryAfter }));
+  }
+  for (var i = 0; i < buckets.length; i++) {
+    var g = limiter.take(cfg, buckets[i][0], buckets[i][1], t);
+    if (!g.ok) {
+      var code = rateCode(buckets[i][0]);
+      return Promise.resolve(err(429, code, RATE_MSG[code] || "发得太快了，请稍后再试", { retryAfter: g.retryAfter }));
+    }
+  }
+
+  function act(acc) {
+    /* 「不存在」与「已确认」走**同一条出口** —— 这一条是反枚举的全部内容。
+       两条各写一小段文案的下场是：某天改了一句，两个响应就不再逐字相同，
+       而那时没有任何东西会报错。 */
+    if (!acc || acc.status === "deleted" || acc.email_verified_at != null) {
+      /* ⚠️ 匿名口：**逐字回 SAME**（连字段顺序都一样 —— 用 Object.assign
+         从 SAME 复制，不新拼一个对象），已确认与否也**不说**。
+         登录态那条入口本来就知道自己是谁，多回几个字段不构成泄露。 */
+      if (anon) return ok(Object.assign({}, SAME));
+      return ok({
+        requested: true,
+        alreadyVerified: !!(acc && acc.email_verified_at != null),
+        emailMask: (acc && acc.email_mask) || "***",
+        verifySent: false,
+        store: store.kind,
+        note: SAME.note
+      });
     }
     return issueVerification(deps, acc).then(function (v) {
-      var body = {
-        alreadyVerified: false,
-        emailMask: acc.email_mask || "***",
-        verifySent: v.sent,
-        verifyTransport: v.transport
-      };
-      if (cfg.allowCodeEcho) body.devVerifyToken = v.token;
+      var body;
+      if (anon) {
+        /* ⚠️ **匿名口逐字回 SAME** —— 一个字段都不许加。
+           加 `emailMask` 就等于回答「这个邮箱在我们这儿」（掩码就是从真邮箱算出来的），
+           加 `verifyAttempts` 同理（不存在的那一次没有发信这个动作，
+           所以它没有「试了几次」）。这两条都是**这一版实测出来的**：
+           第一版把 `emailMask` 写进了公共分支，`known` 与 `unknown`
+           两个响应于是不再逐字相同 —— 那正是它想守的那条纪律。 */
+        body = Object.assign({}, SAME);
+      } else {
+        /* 登录态那条入口：**自己看自己**，所以可以、也应该回得更细
+           （掩码 + 发信通道 + 试了几次、为什么没成）。 */
+        body = {
+          requested: true,
+          alreadyVerified: false,
+          emailMask: acc.email_mask || "***",
+          verifySent: v.sent,
+          verifyTransport: v.transport,
+          verifyAttempts: v.attempts || 1,
+          verifyReason: v.reason || null,
+          note: SAME.note
+        };
+      }
+      /* ⚠️ 冒烟口只在**登录态**那条路上给明文令牌。
+         匿名口给的话，它就是一个「凭邮箱取确认令牌」的接口 ——
+         而 ALLOW_CODE_ECHO 恰恰只会在本地联调 / CI 里打开，
+         那些环境的 MAIL_TRANSPORT 常是 console，令牌本来就只在这一条路上能取到。 */
+      if (cfg.allowCodeEcho && !anon) body.devVerifyToken = v.token;
       return ok(body);
     });
-  });
+  }
+
+  if (!anon) {
+    return Promise.resolve(store.getAccount(deps.account.uid)).then(function (acc) {
+      if (!acc || acc.status === "deleted") return err(401, "E_NO_SESSION", "还没有登录");
+      return act(acc);
+    });
+  }
+  return Promise.resolve(store.getAccountByHash(id.emailHash(email, pepperOf(cfg)))).then(act);
 }
 
 /* ---------------------------------------------------------- /me */

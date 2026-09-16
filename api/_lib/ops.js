@@ -171,6 +171,38 @@ var ENTRY = [
     how: "重设链接比确认链接短得多 —— 它能直接改掉账号凭据，时效要更紧"
   },
   {
+    key: "REQUIRE_EMAIL_VERIFIED",
+    level: "optional",
+    group: "登录",
+    secret: false,
+    what: "邮箱没确认时**不许登录**（默认 1 = 拦；写 0 才关掉）",
+    missing: "用默认值 1（拦）。用户 2026-09-16 裁的就是这一条",
+    how: "⚠️ 只在**发信真的通不了**的实例上才写 0 —— 那时确认邮件送不到真人的收件箱，" +
+      "开着这道闸等于谁也别想注册。关掉时界面会如实标注（服务端把它自报在 /api/me 的 channel.requireVerified 里），" +
+      "不会让人误以为「没确认就进不来」。配好发信商（RESEND_API_KEY）之后请把它删掉（回到默认拦）"
+  },
+  {
+    key: "MAIL_RETRY_MAX",
+    level: "optional",
+    group: "发信",
+    secret: false,
+    what: "发信失败时**重试几次**（默认 2，不含第一次 → 最多共 3 次）",
+    missing: "用默认值 2",
+    how: "一般不必改。只重试「可能自愈」的错（网络抖动 / 429 / 5xx）；" +
+      "4xx（密钥不对、收件人被拒、域名未验证）**不重试** —— 重试它们只会烧光额度、埋掉错因"
+  },
+  {
+    key: "MAIL_RETRY_BUDGET_MS",
+    level: "optional",
+    group: "发信",
+    secret: false,
+    what: "这一次请求内重试的**总预算**（毫秒，默认 6000）",
+    missing: "用默认值 6 秒",
+    how: "压在 Serverless 函数超时（Vercel 默认 10s）之前收手，" +
+      "免得「为了重试把整个注册请求拖成 504」。⚠️ 它**不是**后台补发队列 —— " +
+      "Serverless 里没有常驻进程，「过五分钟再试」需要一个真队列（Redis / 云任务），那是另一件事"
+  },
+  {
     key: "COOKIE_NAME",
     level: "optional",
     group: "会话",
