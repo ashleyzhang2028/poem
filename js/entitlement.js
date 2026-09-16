@@ -462,7 +462,7 @@
       var c = CAPS[k];
       var cells = COLUMNS.map(function (col) {
         // 游客列看的是「没登录」那一刻的能力 —— 与 /profile/ 顶部那句
-        // 「登录可用语音朗读」必须是同一个答案，所以两边都走 can()。
+        // 与个人中心那颗登录键的理由必须是同一个答案，所以两边都走 can()。
         var ctx = { tier: col.tier, signedIn: !col.guest };
         if (now !== undefined) ctx.now = now;
         var r = can(k, ctx);

@@ -2010,43 +2010,19 @@ body.has-install-tip #app {
 .settings-index { margin-top: 4px; }
 
 /* --------------------------------------------------------------------------
-   设置主页的「账号」卡（Issue #132 · A→B→C→D 的 D）
+   设置主页清单里的「账号」那一行（Issue #132 · A→B→C→D 的 D）
    --------------------------------------------------------------------------
-   位置刻意放在**四条入口之前**：账号是「我是谁」，四条入口是「我要调什么」，
-   先答身份再答设置。未登录时它是设置主页上唯一会把用户引向 /login/ 的地方。
-
-   与四条入口同一套纸张语言（同样的 .settings-btns 按钮、同样的 .settings-hint
-   说明字），只是不自带 .settings-item 的外框 —— 卡里的元素自己给间距。
+   ⚠️ Issue #163：它原先是一张**自己一张卡**（#account-entry + .account-entry-card，
+      印 38px、昵称 14.5px、一行说明、一颗 ghost 按钮），架在四组入口上面。
+      用户原话「另外把这个按钮和其他按钮放一起啊」之后，那一套结构整个撤了 ——
+      这一行现在与「通用」等四行**共用 .settings-link 的同一份稿子**
+      （卡片 / 圆角 / 内边距 / hover / 右箭头全都是同一套），
+      所以这里**不再有**账号专属的卡与按钮样式，只剩下行内的两处小件：
+        · .settings-link-title 里的层级徽章（与 /profile/ 那枚同一份文案）
+        · 已登录那一行的昵称与徽章之间留一点间距
    -------------------------------------------------------------------------- */
-#account-entry { margin: 4px 0 2px; }
-.account-entry-card { margin: 0; }
-.account-entry-line {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 0 0 8px;
-  flex-wrap: wrap;
-}
-/* 印：与设置 · 通用里的那一枚同一份数据，尺寸比顶栏大一档 —— 这里是
-   「看自己」的位置，与 /profile/ 的 .identity-row 同一档口径。 */
-.account-entry-card .seal-avatar { --seal-size: 38px; }
-.account-entry-main {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-  flex: 1;
-}
-.account-entry-name {
-  font-size: 14.5px;
-  font-weight: 600;
-  color: var(--ink);
-  font-family: var(--font-poem);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.account-entry-sub { font-size: 11.5px; color: var(--ink-3); }
+.settings-link-desc .tier-badge { margin-left: 6px; }
+.settings-link-title .tier-badge { margin-left: 6px; }
 
 /* 账号那一项（二级页「通用」）：登录状态 + 层级徽章 + 权限清单 */
 .account-line {

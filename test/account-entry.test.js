@@ -154,61 +154,77 @@ function repaint(p) {
     '个人中心不做「跳回来」的花招（点一下就被弹回去，用户只会以为按钮坏了）');
 }
 
-/* ================= 三、设置主页：那张自己会收敛的账号卡 ================= */
+/* ================= 三、设置主页：账号那一行并进入口清单 =================
+   Issue #163 用户原话：「另外把这个按钮和其他按钮放一起啊」——
+   它原先是一张自己一张卡、架在四组入口上面；现在与「通用」等四行
+   同宽同高、同一个右箭头，排在**同一张清单**里（最后一个）。
+   所以这一节判的是：**页面里只有一张清单**，账号那一行在里面。 */
 {
-  chk(/id="account-entry"/.test(SRC.home), '设置主页有账号卡的容器');
-  chk(/hidden/.test(SRC.home.slice(SRC.home.indexOf('id="account-entry"') - 60,
-    SRC.home.indexOf('id="account-entry"') + 40)),
-    '账号卡初始 hidden（拿不到内核时宁可少一张卡，也不长出点了不知道去哪儿的按钮）');
+  chk(!/id="account-entry"/.test(SRC.home),
+    '不再有独立的账号卡容器（#account-entry 整块撤了，不留空壳）');
   chk(/settings-nav\.js/.test(SRC.home), '设置主页加载 js/settings-nav.js（这一页唯一的脚本）');
   chk(/renderAccountEntry/.test(NAV) || /renderAccountEntry/.test(read('js/settings-nav.js')),
-    '账号卡由 js/settings-nav.js 的 renderAccountEntry 渲染');
-  chk(/renderAccountEntry\(\)/.test(NAV), 'init() 里会去画账号卡（不画就永远 hidden）');
+    '账号那一行由 js/settings-nav.js 的 renderAccountEntry 画');
+  chk(/renderIndex\(\);\s*\n\s*renderAccountEntry\(\)/.test(NAV),
+    'init() 里 renderIndex 在前、renderAccountEntry 在后（反了就被清单重画抹掉）');
+  chk(/box\.appendChild\(row\)/.test(NAV) && /querySelector\("#settings-index"\)/.test(NAV),
+    '账号那一行是**追加进 #settings-index 这张清单**的（不是另起一处）');
+  chk(/row\.className = "settings-item settings-link"/.test(NAV),
+    '与「通用」等四行同一个类名（同一套卡片 / 内边距 / hover / 右箭头）');
   // 入口地址由 JS 给，不在 HTML 里写死（写死就两处各一份）
   chk(!/href="\/login\/"/.test(stripHtml(SRC.home)), '主页 HTML 里不写死 /login/（地址只在 JS 一处）');
   chk(/"\/login\/"/.test(NAV) && /"\/profile\/"/.test(NAV),
-    '账号卡的两个落点（/login/ 与 /profile/）都在 js/settings-nav.js 里');
+    '账号那一行的两个落点（/login/ 与 /profile/）都在 js/settings-nav.js 里');
 }
 
-/* ================= 四、真跑一遍：四种状态下账号卡长什么样 ================= */
+/* ================= 四、真跑一遍：四种状态下账号那一行长什么样 ================= */
 {
   const URL_HOME = 'https://local.test/settings/';
+  /** 主页上「一张清单」里那几行 —— 判「并在一起」，不是判某个选择器在不在 */
+  const rowsOf = (p) => [...p.doc.querySelectorAll('#settings-index > .settings-link')];
+  const lastRow = (p) => { const r = rowsOf(p); return r[r.length - 1]; };
+
   // ① 全新（未登录）
   let p = boot(SETTINGS_HOME, URL_HOME, {});
-  let box = p.doc.querySelector('#account-entry');
   const E = p.window.Entitlement, A = p.window.AuthCore;
-  chk(!!E && !!A, '设置主页上 Entitlement 与 AuthCore 都在（账号卡要读它们）');
-  chk(box && !box.hidden, '未登录时账号卡是**可见**的（这正是它存在的理由）');
-  const out = box ? stripHtml(box.innerHTML) : '';
-  chk(/未登录/.test(out), '未登录时如实写「未登录」');
-  chk(/btn-entry-login/.test(out) && /href="\/login\/"/.test(out), '未登录时给的是去 /login/ 的入口');
-  // 精简后这句话只剩一句「进度只存在本机，清缓存就没了。登录只为不丢。」——
-  // 「语音朗读要登录」改由个人中心那张引导卡说（那才是用户会落地的地方），
-  // 这里只钉住「把建账号的**目的**说清」，不再要求它顺带列功能。
-  chk(/清缓存/.test(out), '顺手说清建账号的目的（进度不随清缓存丢掉）');
+  chk(!!E && !!A, '设置主页上 Entitlement 与 AuthCore 都在（账号那行要读它们）');
+  let rows = rowsOf(p);
+  chk(rows.length === 5, '主页清单是五行：四组入口 + 账号那一行（实际 ' + rows.length + '）');
+  chk(p.doc.querySelectorAll('.settings-index').length === 1,
+    '全页只有一张清单（不是「一张卡 + 一张清单」两处）');
+  chk(lastRow(p).id === 'btn-entry-login' && /href="\/login\/"/.test(lastRow(p).outerHTML),
+    '未登录时那一行给的是去 /login/ 的入口');
+  const out = stripHtml(lastRow(p).outerHTML);
+  chk(/登录/.test(out), '未登录那行写「登录」');
   chk(/Free/.test(out), '未登录也是 Free 徽章（徽章文案由 Entitlement.tierLabel 出，不自己拼）');
   chk(!/btn-entry-profile/.test(out), '未登录时不给「个人中心」（那条路走不到东西）');
+  /* ⚠️ 用户点名的就是这一串：「登录可用语音朗读？？？登录就登录，写那么多废话干什么」。
+     所以这里判的是**整句没了**，不是「短了一点」——
+     那一行只许写「差的那件事」（差语音朗读），不许再念一遍理由。 */
+  chk(!/登录可用/.test(out), '那一行不再出现「登录可用……」这一串理由');
+  chk(/差语音朗读/.test(out), '只写还差的那件事：差语音朗读');
 
   // ② 已登录（free）：给「个人中心」，且**不**再给「去登录」
-  // 先在真页上起盘，再建会话，最后重放一遍 DOMContentLoaded 让卡重画
+  // 先在真页上起盘，再建会话，最后重放一遍 DOMContentLoaded 让那行重画
   p = boot(SETTINGS_HOME, URL_HOME, {});
   signIn(p.window, 'belem@example.com');
   repaint(p);
-  box = p.doc.querySelector('#account-entry');
-  const inn = stripHtml(box.innerHTML);
+  rows = rowsOf(p);
+  chk(rows.length === 5, '已登录时清单仍是五行（账号那一行换内容，不新增一行）');
+  const inn = stripHtml(lastRow(p).outerHTML);
   chk(/btn-entry-profile/.test(inn) && /href="\/profile\/"/.test(inn),
     '已登录时给的是去 /profile/ 的「个人中心」');
   chk(!/btn-entry-login/.test(inn),
     '已登录时**不**再摆「用邮箱登录」（再摆一次是自相矛盾的）');
-  chk(/已登录 · b\*\*\*@example\.com/.test(inn),
-    '已登录时如实显示掩码（不是明文邮箱）：实际 ' + (inn.match(/已登录[^<]*/) || [''])[0]);
+  chk(/未起名|belem/.test(inn), '已登录时那一行的主标题是昵称（还没起名时如实写「未起名」）：' +
+    stripHtml(lastRow(p).innerHTML));
   chk(!/belem@example\.com/.test(inn), '页面上不出现明文邮箱（掩码之外一个字符都不露）');
 
   // ③ 层级换了 → 徽章跟着换（判据只在 Entitlement 里，页面不缓存一份）
   const E2 = p.window.Entitlement;
   E2.writeTier(p.window.localStorage, 'max');
   repaint(p);
-  const inn2 = stripHtml(p.doc.querySelector('#account-entry').innerHTML);
+  const inn2 = stripHtml(lastRow(p).outerHTML);
   const badge = (inn2.match(/tier-badge[^>]*>([^<]*)/) || ['', ''])[1];
   chk(/Max/.test(badge), '层级改成 max 后徽章跟着变（实际「' + badge + '」）');
   chk(/Free/.test(out) && !/Free/.test(inn2), '徽章的取数随盘上层级走，不是页面里写死的');
@@ -222,7 +238,7 @@ function repaint(p) {
   chk(!/plan\s*===/.test(navCode) && !/tier\s*===\s*["']/.test(navCode),
     'js/settings-nav.js 不自己比对 plan / tier（一律走 Entitlement）');
   chk(/E\.identity\(/.test(navCode) && /E\.tierLabel\(/.test(navCode),
-    '账号卡的登录态与徽章文案都取自 Entitlement');
+    '账号那一行的登录态与徽章文案都取自 Entitlement');
 }
 
 /* ================= 五、返回落点：登录 → 个人中心 → 设置主页 ================= */
@@ -245,12 +261,12 @@ function repaint(p) {
 {
   /**
    * 从一个未登录的人出发，必须**至少**有两条独立的路到 /login/：
-   * 顶栏印 → /profile/ → 账号入口，或 设置主页那张卡。
+   * 顶栏印 → /profile/ → 账号入口，或 设置主页清单里账号那一行。
    * 这两条都不是「碰巧」：各自由不同的文件渲染，任一文件漏了就少一条路。
    */
   chk(/ROUTES\.profile/.test(CHROME), '路一：每页顶栏那枚印 → /profile/');
   chk(/location\.href = "\/login\/"/.test(PROFILE_JS), '路一续：/profile/ → /login/');
-  chk(/"\/login\/"/.test(NAV), '路二：设置主页那张卡 → /login/');
+  chk(/"\/login\/"/.test(NAV), '路二：设置主页清单里账号那一行 → /login/');
   // 死路检查：三张页的落点必须都真的存在
   ['login', 'profile', 'admin', 'settings/general'].forEach(f => {
     chk(fs.existsSync(path + f + '/index.html'), '落点真的有那张页：/' + f + '/');

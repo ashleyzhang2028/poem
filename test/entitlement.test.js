@@ -61,6 +61,20 @@ console.log('\n=== 二、语音播放：游客不行，登录的 free 可以 ===
     chk(h.indexOf('登录') < 0 || h.length <= 6,
       '登录取向的文案都短（' + c + ' → 「' + h + '」）');
   });
+  /* 本轮（Issue #163 用户 2026-09-16：「登录可用语音朗读？？？登录就登录，
+     写那么多废话干什么」）：全站**再也不许**出现「登录可用语音朗读」这一串 ——
+     按钮写事（「登录」），理由写三个字（「登录可用」）。 */
+  const fs = require('fs');
+  const root = require('path').join(__dirname, '..');
+  const SRC_FILES = ['js/entitlement.js', 'js/profile.js', 'js/app.js', 'js/reader-core.js',
+    'js/settings-nav.js', 'profile/index.html', 'settings/index.html'];
+  SRC_FILES.forEach(function (f) {
+    const src = fs.readFileSync(root + '/' + f, 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/<!--[\s\S]*?-->/g, ' ')
+      .split('\n').map(l => l.replace(/^\s*\/\/.*$/, ' ')).join('\n');
+    chk(src.indexOf('登录可用语音朗读') < 0,
+      f + ' 里不再出现「登录可用语音朗读」这一串（按钮写事、理由三个字）');
+  });
 }
 
 console.log('\n=== 三、pro / max 只加不减：层级越高能力单调不减 ===');
