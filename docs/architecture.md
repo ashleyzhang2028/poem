@@ -5,7 +5,7 @@
 > 结论压成**一张架构图 + 一份排期表 + 一组不可退让的边界**。
 >
 > 关联：Issue #132、`docs/auth-design.md`（账号与邮箱登录，细节不在此重复）。
-> 当前 SW 缓存版本：`poem-app-v135`。
+> 当前 SW 缓存版本：`poem-app-v136`。
 > **「现在不做、以后做」的条目另有一份**：[`docs/todo.md`](todo.md) ——
 > 那是唯一一处（短信登录真开通、微信小程序版、微信登录、
 > 头像上云、国内 CDN、额度真限额）。本文写的是**已排期**的顺序，两者别混。
@@ -1084,6 +1084,14 @@ service_role key 两处都要带：
 ```
 -H "apikey: $SUPABASE_SERVICE_KEY" -H "Authorization: Bearer $SUPABASE_SERVICE_KEY"
 ```
+
+**两条排在 D 步最后才看得到的坑**：**①** 备份镜像的**大版本要跟服务端一致** ——
+`supabase-backup` 用的是 **`postgres:17`**，不是 `postgres:16`；`pg_dump`
+**不改**连比自己新的服务端，16 的客户端去连 Supabase 的 17.6 会在读到数据之前
+就以 `aborting because of server version mismatch` 退出（`server version: 17.6;
+pg_dump version: 16.15`）—— 报这句话**与连接串无关**，详见 §5.9，服务端升大版本时
+`.cnb.yml` 里那一行要跟着升（反方向 —— 客户端比服务端新 —— 是允许的）；
+**②** `SUPABASE_DB_URL` 本身怎么来。
 
 **备份还要第三个值 `SUPABASE_DB_URL`**：它**不能在控制台直接复制** ——
 去 Project Settings → Database → Connection string 取模板，再把
@@ -2842,6 +2850,63 @@ Connection string 取模板，再把 `[YOUR-PASSWORD]` 整体换成数据库密�
 由 `test/ops.test.js` 断言「D 步写了 DB URL / 写了那个占位符 / 指明了去哪取 /
 写了百分号编码」。
 
+#### ②之二 那条 `could not translate host name` 就是「密码没转义」（2026-09-17 复查）
+
+**Issue #159 里两条任务一绿一红**，红的那条报的正是：
+
+```
+pg_dump: error: could not translate host name "db.twmtmohcaifswxtjowru.supabase.co" to address: No address associated with hostname
+```
+
+⚠️ **注意报错里那个主机名是「干净」的** —— 没有 `…@` 前缀、没有密码尾巴，
+就是 `db.<ref>.supabase.co`。这说明**密码那一段已经被正确地从 URL 里解析掉了**，
+「密码没百分号编码」在**这一例里不是原因**：
+
+- 密码里的 `@` 没编码时，报错长这样：`could not translate host name "…@db.<ref>.supabase.co"`
+  （引号里那串**带 `@` 和密码尾巴**）—— 这才是「密码没转义」的指纹；
+- 报错里的主机名干净、且确实是 `db.<ref>.supabase.co` 时，URL 已经解析成功，
+  失败发生在**解析这个名字**这一步：容器里这个域名**没有可用地址**。
+
+两者只差引号里那几个字符，却指向完全不同的排查方向。所以这一步把**判据**写死，
+不再靠「看着像」：
+
+| 报错里引号内的主机名 | 结论 | 下一步 |
+|---|---|---|
+| 带 `…@` 或密码尾巴 | 密码没百分号编码 | 改密钥仓库里的值（`@` → `%40`） |
+| 干净的 `db.<ref>.supabase.co` | URL 已解析，是 DNS 解析不到 | 按下面顺序查 |
+| `localhost` / 别的域名 | 值填错了（不是 Supabase 的串） | 回 Connection string 重取模板 |
+
+名字确实解析不到时，**按代价从低到高**查三条（前两条是平台侧的事实，与业务无关）：
+
+1. **新项目有个发布窗口**：刚建的项目 DNS 可能还没发布完（几分钟到几十分钟）。
+   先重跑一次这条流水线 —— 失败名单里最省事的一种。
+2. **直连主机名 `db.<ref>.supabase.co` 在新项目上只给 IPv6（AAAA）**。Supabase 的
+   「Direct connection」在新项目上不再提供 A 记录（IPv4 要另开 IPv4 add-on），
+   解析不到地址的表现之一就是 `No address associated with hostname`。
+   两个**零成本**的替代串，都在同一页 **Project Settings → Database →
+   Connection string** 上：
+   - **Session pooler**：`…@aws-0-<region>.pooler.supabase.com:5432`，用户名是
+     `postgres.<ref>`（**不是** `postgres`）。给 `pg_dump` 用这个最稳，它走 IPv4。
+   - **Transaction pooler**（`:6543`）：**不要**给 `pg_dump` 用 —— 它不支持
+     `pg_dump` 需要的会话级特性。
+3. 兜底：只要 `SUPABASE_URL` + `SUPABASE_SERVICE_KEY` 是通的（探活那条就是证明），
+   导出可以**不依赖 Postgres 直连** —— 用 PostgREST 逐表拉 JSON。数据量小的时候
+   够用（`backup/` 的产物从来不进 Git，拉到本地保存即可）。
+
+#### ②之三 备份脚本现在**先自检 URL 形状，再跑 `pg_dump`**
+
+只写文档不够 —— 上面那个「看着像 DNS 坏了」的坑要让**流水线自己**说出来。
+`.cnb.yml` 的 `supabase-backup` 在 `pg_dump` 之前加了两条自检：
+
+- 整串必须以 `postgresql://` / `postgres://` 开头（挡掉「只填了个主机名」这种填法）；
+- 剥掉 `scheme://user:pass@` 之后，**主机段里不许再出现 `@`**。出现就是密码没编码 ——
+  这时直接打印「把密码里的特殊字符百分号编码：`@` → `%40` …」并退出，
+  **不再往 `pg_dump` 里送**那句容易被误读成 DNS 故障的报错。
+
+> 这是「症状看起来像 A，其实是 B」那类坑的通用解法：**把 B 在更早的地方判掉**，
+> 让报错本身指向真正要改的地方。与探活那条 `apikey` 头同源 ——
+> 那次是「看起来像密钥仓库没配好」，这次是「看起来像 DNS 坏了」。
+
 #### ③ 顺带修掉的一个真 bug：桌面首页的顶栏被挤成 369px
 
 查上面两条时把 `bash test/run.sh` 跑了一遍，CI 的 PWA 那一层有 **3 条红**：
@@ -2878,7 +2943,7 @@ Connection string 取模板，再把 `[YOUR-PASSWORD]` 整体换成数据库密�
 2. 「Vercel 环境变量、Supabase 均已配置完成」
    → 前置条件表从「⬜ 待注册 / 待创建」翻成 ✅（§4.1）
 3. 「`supabase-backup` 报 `could not translate host name …`」
-   → 与 §5.7 ② 记的 `SUPABASE_DB_URL` 是同一件事：那个值只能在
+   → 与 §5.7 ②/②之二、§5.9 记的 `SUPABASE_DB_URL` 是同一件事：那个值只能在
      Connection string 页取模板替换 `[YOUR-PASSWORD]`，且密码里的
      `@ : / # ?` 必须百分号编码
 
@@ -2934,6 +2999,17 @@ mailTransport → sendgridKey ? "sendgrid" : resendKey ? "resend" : "console"
 - `.env.example` 由 `node scripts/env-example.js` 重新生成（清单改了，模板必须跟着走）
 - `sw.js` v135 → **v136**
 
+---
+
+#### ②之四 这一轮的验证（2026-09-17 追溯，回答 Issue #159 的后半）
+
+- `node test/ops.test.js` 全绿：新增「D 步写了 `%3A` / 写了『`@` 只许出现一次』/
+  写了 Session pooler / 写了 6543 不要给 `pg_dump` 用」，以及 `.cnb.yml`
+  的备份脚本真的先自检 URL 形状（§5.9 又把「版本 mismatch 是 abort 不是警告」更正过来）
+- `bash test/run.sh` 全绿、0 失败（PWA 那一层在**能起 Chrome 的镜像里**跑；
+  本轮工作区缺系统库，跳过并如实打印原因，不是静默通过）
+- 探活那条**一个字没改** —— 它本来就是绿的（HTTP 200），绿的别动
+
 #### 验证
 
 - `bash test/run.sh` 全绿、0 失败（PWA 那一层 **256 项全过**）
@@ -2947,3 +3023,65 @@ mailTransport → sendgridKey ? "sendgrid" : resendKey ? "resend" : "console"
 - `test/theme.test.js` 新增：`.topbar` 有 `width: 100%`
   （并把那条正则的窗口从 600 开到 1400 —— 600 装不下新加的说明，会假红）
 - `sw.js` v134 → **v135**
+- `sw.js` v135 → **v136**（§5.7 备份脚本自检那一轮）
+
+### 5.9 `supabase-backup` 一直红：pg_dump 比服务端低一个大版本（2026-09-17 · 回答 Issue #159）
+
+用户贴的失败日志（`supabase-backup`，定时任务 `crontab: 30 4 * * 1`）：
+
+```
+pg_dump: error: aborting because of server version mismatch
+pg_dump: detail: server version: 17.6; pg_dump version: 16.15 (Debian 16.15-1.pgdg13+2)
+Finished, code: 1
+```
+
+#### ① 这条**不是**上一条的复发
+
+上一节（§5.7 ②之二）修的是「密码没百分号编码 → `could not translate host name`」。
+这一条报的是**版本**，而且 `aborting` 这个词是关键：
+
+- 那两句「版本不匹配」的**提示式**措辞是错的。原先把 `server version mismatch`
+  写成「**警告**，不是备份失败，下一轮别当成新 bug 去查」—— 事实相反：
+  **pg_dump 比服务端低大版本时是直接 abort**，一条数据都不导，退出码 1。
+  写下「别当成 bug」那句，恰好会让下一轮的人放过一条真红。已在 §4.12 与
+  `api/_lib/ops.js` 的 D 步里改成「低 = 直接 abort，不是警告」。
+- 规则本身：**pg_dump 允许比服务端新，不允许旧**（新客户端读得懂老服务端的目录；
+  老客户端读不懂新服务端的目录）。所以镜像跟着**服务端**大版本走。
+
+#### ② 为什么之前选了 `postgres:16`，以及它为什么必然红
+
+`node:20` 镜像里**没有** `pg_dump`（脚本里那句 `command -v pg_dump` 就是为此加的），
+于是当初换成了 `postgres:16` —— 这解决了「工具不存在」，但没解决「工具的版本」。
+Supabase 服务端是 **17.6**，`postgres:16` 里的 `pg_dump` 是 **16.15**，于是每次
+都 abort。**备份从上线起就没成功过一次**，而红的原因看起来像「密钥 / 网络」那一类。
+
+`0.7s` 的 duration 也是个指纹：真要连库导数据不可能这么快 ——
+它在**连接之前**就退了。
+
+#### ③ 改法：镜像换 `postgres:17` + 把两条「不许发生的事」变成脚本里的门
+
+1. `docker.image: postgres:16` → **`postgres:17`**（跟着服务端大版本；
+   服务端升 18 时同步换）。pg_dump 是**客户端**工具，不需要与服务端同发行版 ——
+   镜像只是取工具的地方，工具够新就行。
+2. 开跑先 `pg_dump --version` 打出版本：这一行让「镜像对不对」在日志里可见，
+   不用等那句 abort 去猜。
+3. **0 字节不算备份**。原先 `> backup/kuibu-$STAMP.sql` 一重定向，文件就
+   已经存在了 —— abort 之后留下一个 **0 字节的 `.sql`**，「备份存在但只有 0 字节」
+   比彻底没有更危险（人会以为那天备份过了）。现在失败时 `rm -f` 掉半截文件，
+   成功后用 `test "$SIZE" -gt 0` 把门。
+
+#### 验证
+
+- `node test/ops.test.js` 全绿：新增「D 步写明用 `postgres:17`」「写明版本低是
+  **abort** 不是警告」「写明 0 字节不算备份」，以及 `.cnb.yml` 的
+  「镜像就是 `postgres:17`」「不再是 `postgres:16`」「先打 `pg_dump --version`」
+  「空文件退非 0」「失败删半截文件」
+- `bash test/run.sh` 全绿、0 失败（PWA 那一层需能起 Chrome 的镜像）
+- 探活那条照旧**一个字没改** —— 它本来就是绿的
+- `sw.js` **不动**（v136）：本轮只改 `.cnb.yml` / `api/_lib/ops.js` / 文档与测试，
+  没有任何进预缓存的资源
+- 反向验证：把镜像改回 `postgres:16` → 立刻红 2 条（断言有牙）
+  ⚠️ 判据先**抠掉注释行**再数镜像名 —— 镜像名在解释它的注释里也出现一次，
+  拿裸串去数会数出两份，那是**测试自己读数错**（与探活 `apikey` 那条同一类坑，
+  §4.18 记过它的形状）
+- 密钥仓库那一侧**不需要任何改动** —— 这个问题绕开它

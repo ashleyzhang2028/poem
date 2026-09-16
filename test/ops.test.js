@@ -389,6 +389,72 @@ console.log("\n=== 七之二、2D 的五个步骤（配置与真开通，docs §
   has(stepD, "%40", "D 步写明密码里的特殊字符要百分号编码");
   has(cnb, "SUPABASE_DB_URL:?", ".cnb.yml 的备份真的校验这个变量注入没注入");
 
+  /* ⚠️ 备份镜像的大版本必须跟得上服务端（2026-09-16 修的第二处真 bug）
+     ----------------------------------------------------------------------
+     用户在 Issue #159 报了第三条红：`pg_dump` 连 Supabase（PostgreSQL **17.6**）
+     时以 `aborting because of server version mismatch` 退出，而流水线用的是
+     `postgres:16` —— 里面的 pg_dump 是 16.15。pg_dump **不改**连比自己新的
+     服务端（反方向才行），所以它在真正读到数据之前就会退出。
+
+     这条和新版探活那条 401 是**同一形状**的坑：症状都像「密钥 / 连接串配错了」
+     （用户当时正是把密码换成 Session pooler 串之后再试的），于是下一轮排查会
+     反过来怀疑连接串 —— 而真正的病根是**客户端比服务端老一个大版本**。
+
+     判据落在「.cnb.yml 里的备份镜像声明了与服务端同大版本」上 ——
+     不写死 17 这个数字的反面（写「不是 16」会过期），只钉住它**声明的版本**
+     与 D 步文字里写的那一个大版本**是同一个**。 */
+  /* ⚠️ 先按新版探活那条的老规矩**抠掉注释行**再扫：镜像名在解释它的注释里
+     也会出现一次，拿裸串去数必然数出两份 —— 那是测试自己读数错，不是重复声明。 */
+  const cnbPinned = (cnbCode.match(/image:\s*postgres:\d+/g) || []);
+  chk(cnbPinned.length === 1,
+    "备份那条流水线的镜像**只声明一次**（出现 " + cnbPinned.length + " 次；多一处就是下次只改一处）");
+  chk(cnbPinned.length === 1 && cnbPinned[0].indexOf("postgres:17") >= 0,
+    "备份镜像是 postgres:17（Supabase 现在是 17；用 16 会在读数据之前就以 version mismatch 退出）");
+  chk(!/image:\s*postgres:16\b/.test(cnbCode),
+    "备份镜像不再是 postgres:16（pg_dump 不改连比自己新的服务端）");
+  has(cnb, "server version mismatch", ".cnb.yml 里写明了这条报错原文（下次有人报同样的红，一眼能对上）");
+  has(stepD, "version mismatch", "D 步也写了这条坑（说了不做 = 下一个人还会踩）");
+  has(stepD, "postgres:17", "D 步给出的是可照抄的镜像名，不是「选个匹配的版本」");
+
+  /* ⚠️ Issue #159：备份报 could not translate host name，别一律当成「密码没编码」
+     ----------------------------------------------------------------------------
+     报错里引号内那串主机名是**判据**：
+       · 带 `…@` / 密码尾巴  → 密码没百分号编码（改密钥仓库里的值）
+       · 干净的 db.<ref>.…    → URL 已经解析成功，是这个名字解析不到（DNS / IPv6）
+     两者只差几个字符，方向完全相反。所以备份脚本现在**先把 URL 形状判掉**，
+     不让那句会被误读的报错发出来。 */
+  has(stepD, "%3A", "D 步写明了其余保留字符怎么编码（: → %3A）");
+  has(stepD, "只许出现一次", "D 步给出了「@ 只许出现一次」这条可自检的判据");
+  has(stepD, "pooler.supabase.com", "D 步给出了解析不到直连主机名时的替代串（Session pooler）");
+  has(stepD, "6543", "D 步写明 Transaction pooler 那个端口不要给 pg_dump 用");
+  has(stepD, "server version mismatch", "D 步写明 pg_dump 比服务端低时的报错");
+
+  /* ⚠️ Issue #159（备份那一半）：pg_dump 比服务端**低**大版本时是 abort，不是警告
+     ------------------------------------------------------------------------------
+     原先把「server version mismatch」写成「警告、不是备份失败」—— 那是错的：
+     pg_dump 16 对服务端 17 直接
+       pg_dump: error: aborting because of server version mismatch
+     备份**零产出**，而 shell 重定向已经建好了空文件（「有 0 字节的备份」比没有更坏）。
+     镜像已换成 postgres:17，并把「低版本 = 直接失败」与「0 字节不算备份」钉在
+     D 步文字与 .cnb.yml 的脚本里。 */
+  has(stepD, "postgres:17", "D 步写明备份镜像用 postgres:17（跟着服务端大版本走）");
+  has(stepD, "abort", "D 步写明版本低是直接 abort，不是「警告不是失败」");
+  has(stepD, "0 字节", "D 步写明 0 字节不算备份");
+  has(cnb, "image: postgres:17", ".cnb.yml 的备份镜像真的是 postgres:17");
+  chk(!/image: postgres:16/.test(cnb),
+    "备份镜像不再是 postgres:16（它对着服务端 17 一定 abort）");
+  chk(cnbCode.indexOf("pg_dump --version") >= 0, "备份脚本先把 pg_dump 版本打出来");
+  chk(/test "\$SIZE" -gt 0/.test(cnbCode), "备份脚本会为空文件把门（0 字节退非 0）");
+  chk(/rm -f "\$OUT"/.test(cnbCode), "备份失败会把半截文件删掉（不让空文件冒充备份）");
+
+  has(cnbCode, "could not translate host name", "备份脚本自己会把那句误读的报错讲清楚");
+  has(cnbCode, "DB_HOST=", "备份脚本真的从 URL 里拆出主机段来自检");
+  chk(/case "\$DB_HOST" in[\s\S]{0,200}\*@\*/.test(cnbCode),
+    "备份脚本判的是「主机段里还有 @」= 密码没编码");
+  chk(cnbCode.indexOf("postgres://*|postgresql://*") >= 0,
+    "备份脚本先要求整串是 postgres:// / postgresql:// 开头");
+  chk(cnb.indexOf("SUPABASE_DB_URL=") < 0, ".cnb.yml 里没有把 DB URL 的值写死");
+
   const stepsCheck = run2(["--steps", "--check"]);
   eq(stepsCheck.code, 1, "--steps --check 没配齐时退出码 1（与 --check 同一条判据）");
   const fullEnv2 = Object.assign(bareEnv2(), {
