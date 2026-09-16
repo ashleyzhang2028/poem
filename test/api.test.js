@@ -1556,15 +1556,14 @@ async function main() {
       const pro1 = await POST("/api/game/answer", { kind: "review", poemId: "xx1-01", chosen: "鹅" }, cookie);
       eq(pro1.status, 200, "Pro 打题库复习回 200");
       eq(pro1.body.cap, "quiz.review", "回的是它自己那一档能力");
-      eq(pro1.body.counted, false, "本站不收款：**如实回 counted:false**（不假装扣费）");
-      /* ⚠️ 这一条 2026-09-17 随用户裁决改了口径：原先要 note 里说
-         「3 期还没有定价，不计入额度」，现在本站**不收款**（4 期整期取消），
-         该说的是「免费、不限次 / 不计额度」而不是「还没有定价」。
-         仍要守住那句实质：**不许写成「已计入额度」**（那是假话、是「假装扣了费」）。
-         ⚠️ 措辞跟着源码走（api/_lib/core.js 回的是「免费、不限次，不计额度」），
-         两种写法都认，但不钉具体措辞。 */
-      chk(/不计额度|不计入额度|免费|不收款/.test(pro1.body.note) && !/已计入/.test(pro1.body.note),
-        "note 里说清为什么没计费（实际「" + pro1.body.note + "」）");
+      eq(pro1.body.counted, false, "本站不收款、也没有计费：**如实回 counted:false**（不假装扣费）");
+      /* ⚠️ 这条文案在 PR #174 里改过口径：原先写「3 期还没有定价」（**暂缓**的语气），
+         用户 2026-09-16 / 09-17 裁决「不搞收费」之后改成「免费、不限次，不计额度」
+         （**不做**的语气，Issue #159）。
+         断言守的是那件事本身（如实说清**为什么**没计费），不是某一版措辞；
+         仍要守住那句实质：**不许写成「已计入额度」**（那是假话、是「假装扣了费」）。 */
+      chk(/免费、不限次/.test(pro1.body.note), "note 里说清是免费不限次（不假装扣费）");
+      chk(!/已计入额度/.test(pro1.body.note), "note 里不许写成「已计入额度」");
 
       const proFly = await POST("/api/game/answer", { kind: "fly", chars: ["月"], said: "日月之行" }, cookie);
       eq(proFly.status, 403, "Pro 打飞花令仍然 403（用户裁决：飞花令归 Max）");

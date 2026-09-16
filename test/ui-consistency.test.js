@@ -98,6 +98,25 @@ function ruleOf(src, sel) {
   return order.map(n => last.get(n)).join(';');
 }
 
+/**
+ * 某个选择器**单独**出现在几段规则里。
+ *
+ * 与 `ruleOf()` 配套：那个函数按累积读（同一个选择器写在好几处时把声明拼起来），
+ * 这个函数数「拼了几段」—— 段数 > 1 且两段里写的是**同一族**的尺寸时，
+ * 累积读法就会读到前一段那个作废的值，算出来的结论与浏览器里画出来的相反。
+ */
+function ruleSegments(src, sel) {
+  const flat = src.replace(/@media[^{]+\{/g, '{');
+  const out = [];
+  const re = /([^{}]+)\{([^}]*)\}/g;
+  let m;
+  while ((m = re.exec(flat))) {
+    const sels = m[1].split(',').map(x => x.trim());
+    if (sels.includes(sel)) out.push(m[2]);
+  }
+  return out;
+}
+
 /* ==========================================================================
    一、同一套组件在六个集子页 + 搜索页上共用同一条声明
    ========================================================================== */
@@ -1327,70 +1346,73 @@ PAGE_FILES.forEach(f => {
   chk(noneWriters.length <= 1,
     '除全局那条外，各页面文件里不再各写一遍 text-decoration: none（实际 ' + noneWriters.length + ' 条）');
 
-  // ③ 同步开关：HTML 真正用到的那套类名，样式表里必须真的存在。
-  //    ⚠️ 这份清单与 settings/general/index.html 里的结构一一对应：
-  //       .switch = 整行；.switch-input = 那颗 40×24 的胶囊本体
-  //       （真实 input，appearance:none 自绘，可点 / 可聚焦 / 可读屏）；
-  //       .switch-track = 滑块（胶囊里那枚 18px 圆点）。
-  //       上一版那套 .switch-row / .switch-label 已被 Issue #163 的第二轮
-  //       改动取代（HTML 里一个字都不再用），所以**不进这份清单** ——
-  //       反过来还要判它们没有被留下来当死样式（见下一行）。
-  //       尺寸只此一份：`.switch-input` / `.switch-track` 的**唯一定义处**
-  //       在 css/style.css（name ③ 那一段写死了唯一一段，量到的就是画出来的）。
-  ['switch', 'switch-input', 'switch-track'].forEach(cls => {
+  // ③ 同步开关：**HTML 里真实用到的**那几个类名，样式表里必须真的存在。
+  //    ⚠️ 这一条从「四个类名都查」改成「查 HTML 里真出现的那几个」——
+  //       `.switch-row` / `.switch-label` 是 1B 期旧写法的名字，Issue #163
+  //       改成自绘胶囊之后**任何 HTML 里都不再出现**，查它们等于守一份不存在的契约。
+  const genHtml0 = read('settings/general/index.html');
+  const usedSwitchCls = ['switch', 'switch-input', 'switch-track'].filter(cls =>
+    new RegExp('class="[^"]*\\b' + cls + '\\b').test(genHtml0));
+  chk(usedSwitchCls.length >= 3, '设置页的开关用到了 switch / switch-input / switch-track 三个类名');
+  usedSwitchCls.forEach(cls => {
     chk(new RegExp('\\.' + cls + '\\s*[,{]').test(cssCode),
       '开关的 .' + cls + ' 在样式表里有规则（HTML 写了就得画出来）');
   });
-  // 反向：上一版的 .switch-row / .switch-label 不许再出现在样式表里 ——
-  // 「HTML 已经不用的类名却还留着一整段规则」会让下一个改开关的人找不到北。
-  // ⚠️ 这条判据读的是**剥掉注释之后**的源码：这两组类名在 style.css 的
-  //    注释里被点名说明过「已删掉」，按裸源码匹配会把说明文字当成死规则。
+  /* 反向：那套旧写法（透明 input 覆盖层 + span 轨道）的类名不许再写进样式表 ——
+     它与自绘那一版**同名两段**，会让「按累积读声明」的断言读到错的那一段
+     （算出来的滑块行程是 -6px，把一条真 bug 的读数教成「旧的、不用管」）。
+     ⚠️ 这条判据读的是**剥掉注释之后**的源码：这两组类名在 style.css 的
+        注释里被点名说明过「已删掉」，按裸源码匹配会把说明文字当成死规则。 */
   ['switch-row', 'switch-label'].forEach(cls => {
     chk(!new RegExp('\\.' + cls + '\\s*[,{]').test(strip(cssCode)),
-      '上一版的 .' + cls + ' 已从样式表里清掉（HTML 不用的类名不留死规则）');
+      '样式表里不再有 .' + cls + '（旧写法的残留，与自绘版冲突）');
   });
   chk(/input:checked\s*\+\s*\.switch-track/.test(cssCode),
     '开关的「开」态由 :checked + .switch-track 表达（不是靠原生 checkbox）');
   chk(/input:disabled\s*\+\s*\.switch-track/.test(cssCode),
     '开关的「未开放」态也有样式（置灰，不是原生 disabled 的样子）');
-  // 真实输入框留着（键盘 / 读屏要用），自绘成胶囊本体
-  chk(/appearance:\s*none/.test(ruleOf(cssCode, '.switch-input')),
-    '.switch-input 是自绘胶囊本体（appearance:none，不删 input，键盘与读屏照旧）');
-  // ⚠️ 这里判的是「不许把它藏掉」：自绘版里 input 就是**可见的胶囊本体**，
-  //    藏 form 控件的三种常见手法（display:none / visibility:hidden / opacity:0）
-  //    任一出现，键盘与读屏就一起没了。
-  const swIn = ruleOf(cssCode, '.switch-input');
-  chk(!/display:\s*none/.test(swIn) && !/visibility:\s*hidden/.test(swIn) &&
-      !/opacity:\s*0(?![.\d])/.test(swIn),
-    '.switch-input 没有被藏掉（不删 input，键盘与读屏照旧）');
-  // 滑块必须画在胶囊里：左起点 + 滑块宽 ≤ 轨道宽 —— 越界就是「画歪了」。
-  // 判的是**声明之间的关系**，不是某个具体像素：换尺寸照样成立。
-  const numOf = (code, sel, prop) => {
-    const m = new RegExp(prop + ':\\s*([\\d.]+)px').exec(ruleOf(code, sel));
-    return m ? Number(m[1]) : NaN;
+  /* 真实输入框留着（键盘 / 读屏 / 焦点要用），只是**自己画成了那颗胶囊**
+     （`appearance: none`，见 §6 那一节）。旧版是「opacity:0 透明地盖在
+     span 轨道上」，新版 input 本身就是轨道 —— 所以判据从「透明」翻成
+     「自绘 + 有可点尺寸 + 有焦点可见态」。 */
+  const inpRule = ruleOf(cssCode, '.switch-input');
+  chk(/appearance:\s*none/.test(inpRule),
+    '.switch-input 自绘（appearance: none）—— 不删 input，键盘与读屏照旧');
+  chk(!/opacity:\s*0\s*[;}]/.test(inpRule),
+    '不再是「透明覆盖层」那种写法（自绘版 input 本身就是那颗胶囊）');
+  /* 输入框与轨道**同一颗元素**（自绘版），所以「点哪儿」与「画哪儿」不可能错位 ——
+     这正是旧写法需要的对齐断言，现在从「两处声明相等」变成「就是同一个类名」。 */
+  const sizeOf = (code, sel) => {
+    const decl = ruleOf(code, sel);
+    const w = /(?:^|[;{\s])width:\s*([^;]+)/.exec(decl);
+    const h = /(?:^|[;{\s])height:\s*([^;]+)/.exec(decl);
+    return { w: w ? w[1].trim() : '', h: h ? h[1].trim() : '' };
   };
-  const capW = numOf(cssCode, '.switch-input', 'width');
-  const knobW = numOf(cssCode, '.switch-track', 'width');
-  const knobL = numOf(cssCode, '.switch-track', 'left');
-  chk(capW > 0 && knobW > 0 && knobL + knobW <= capW,
-    '滑块落在胶囊里（起点 ' + knobL + ' + 滑块 ' + knobW + ' ≤ 轨道 ' + capW + '）');
-  // ⚠️ 这一条是那 5 条长期亮红的断言里最后一条的**直接守门人**：
-  //    「滑块 18px 按 40 去算、行程 −6px」那个错误的根因就是
-  //    `.switch-track` 在样式表里有两段（一段是轨道、一段是滑块）。
-  //    现在这两个选择器只有**唯一定义处**，判它们的声明段数 == 1，
-  //    两段同名规则再长回来时立刻报出来。
-  const segCount = (sel) => {
-    const flat = cssCode.replace(/@media[^{]+\{/g, '{');
-    const re = /([^{}]+)\{([^}]*)\}/g;
-    let m, n = 0;
-    while ((m = re.exec(flat))) {
-      if (m[1].split(',').map(x => x.trim()).includes(sel)) n++;
-    }
-    return n;
-  };
-  chk(segCount('.switch-input') === 1 && segCount('.switch-track') === 1,
-    '开关的 .switch-input / .switch-track 各只有一段规则（源码里量到的就是画出来的）');
+  const inp = sizeOf(cssCode, '.switch-input');
+  const trk = sizeOf(cssCode, '.switch-track');
+  chk(!!inp.w && !!inp.h && !!trk.w && !!trk.h,
+    '开关的胶囊（.switch-input）与滑块（.switch-track）都有声明尺寸（' +
+    inp.w + '×' + inp.h + ' / ' + trk.w + '×' + trk.h + '）');
+  chk(parseFloat(inp.w) > parseFloat(trk.w) && parseFloat(inp.h) > parseFloat(trk.h),
+    '滑块比轨道小（滑块在轨道里走 —— 反了就是「画歪了」）');
+  chk(/focus-visible/.test(cssCode) && new RegExp('\\.switch-input:focus-visible\\s*[,{]').test(cssCode),
+    '开关有键盘焦点态（focus-visible）—— 自绘之后不许把焦点框一起丢掉');
+
+  /* 反向：**开关这几个类名**在同一份样式表里不许出现两段以上的规则。
+     上面那些断言都是「按累积读声明」的（见 ruleOf 的注释），而累积读法有个
+     代价：同名两段时，读到的是**前一段**里那个早已作废的值，算出来的结论
+     与浏览器里画出来的完全不同 —— 开关那 5 条假失败就是这么来的
+     （.switch-input 的第一段是旧的透明覆盖层，宽 40；真生效的是第二段）。
+     ⚠️ 只查这几个（**不查全表**）：`.app` / `:root` 这类选择器本来就会写在
+        多处（max-width 在中部、padding 在 PWA 一节），那是正常写法，
+        一律禁掉等于把一条正确的写法判成错。 */
+  ['switch-input', 'switch-track', 'switch', 'switch-hint'].forEach(cls => {
+    const seg = ruleSegments(cssCode, '.' + cls);
+    chk(seg.length <= 1,
+      '样式表里 .' + cls + ' 只有一段规则（实际 ' + seg.length + ' 段 —— 同名两段会让「按累积读」的断言读到作废的值）');
+  });
 }
+
 
 /* ==========================================================================
    十一之二、卡片主标题真的和其他页一样大（Issue #163，真实渲染）
@@ -1453,7 +1475,6 @@ if (JSDOM) {
 } else {
   console.log('- (未安装 jsdom，跳过卡片主标题的真实渲染一节)');
 }
-
 /* ==========================================================================
    十二、开关真的画出来了（Issue #163，真实渲染几何）
    --------------------------------------------------------------------------

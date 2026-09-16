@@ -857,9 +857,12 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     /readStore:\s*""/.test(searchJs),
     '那个新键是设备域的阅读偏好，不是某一部分的已读（readStore 仍是空串）');
   // 设备域：引擎那边把这把键列进 scopes 且 local: true（同步层不许碰）
+  // ⚠️ 表里还多一个 `perChild: false` —— 家庭子档案之后 scopes 的每一行都带这一档：
+  //    「上次搜的词」是设备的，不跟孩子走（与本文件另一处「设备域」判据同一口径）。
+  //    所以这里只钉「归到设备域 + local: true」，不钉整行的字面量。
   const psJs = read('js/progress-store.js');
   chk(/search:\s*"poem_search_kw_v1"/.test(psJs) &&
-    /\{ key: KEYS\.search, domain: "device", local: true \}/.test(psJs),
+    /\{ key: KEYS\.search, domain: "device", local: true[^}]*\}/.test(psJs),
     'progress-store 把这把键归到**设备域**且 local: true（换台机器看「上次搜的词」没有意义）');
   chk(/searchKeyword: searchKeyword/.test(psJs) && /setSearchKeyword: setSearchKeyword/.test(psJs),
     '设备域的两个具名入口导出到 ProgressStore（页面不自己拼键名）');

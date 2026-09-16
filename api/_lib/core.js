@@ -241,10 +241,12 @@ function featuresFor(cfg, tier) {
        read.aloud **一一对不上** —— 接口照常回 200，界面照着做，谁也发现不了）。
      · quiz.review 是 3 期新增的那一档（题库复习，归 Pro）。 */
   var base = ["recite.basic", "library.all", "read.aloud", "pinyin.helper", "export.progress"];
+  /* ⚠️ export.all 原先在 max 那一档，**用户 2026-09-16 把它下到 pro**
+     （Issue #159：「顶多支持学校课本部分的全部导出。这个 pro 用户就行」）——
+     与 js/entitlement.js 的 CAPS 逐字一致（有对拍断言守着）。 */
   var pro = ["collections.many", "sync.multiDevice", "export.paper",
-             "profile.family", "quiz.review"];
-  var max = ["export.all", "collections.unlimited",
-             "feihualing", "exam.paper"];
+             "profile.family", "quiz.review", "export.all"];
+  var max = ["collections.unlimited", "feihualing", "exam.paper"];
   /* ⚠️ 这里**没有** ai.explain / ai.explain.big —— 已被删除（用户 2026-09-17：
      「把需要收我 app 费用的功能删除」）。AI 讲解 / 纠音是每调一次都真花钱的
      那一类，与「本站不收款」放在一起就是每用一次亏一次。客户端 CAPS 同步删除，
