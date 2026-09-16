@@ -15,6 +15,14 @@
  *      `history.replaceState` 抹掉它，用户的下一步动作一个字不受影响。
  *
  * ⚠️ 本页**不写任何存储**：确认邮箱是服务端的事，这一页一个字节都不落盘。
+ *
+ * ⚠️ Issue #197 后半段：默认口径是「**没确认就不让登录**」，所以确认成功
+ *    这一屏的下一句话不再是「忘记密码时能重设了」，而是
+ *    「**现在可以去登录了**」—— 先说用户真正要的那件事。
+ *    这句话**必须按事实说**：站长把闸关掉的实例上（没配好发信商），
+ *    说「现在可以去登录了」是一句废话（他本来就能登）。
+ *    事实来自 `POST /api/verify-email` 回来之后那一次 `/api/me` 的自报，
+ *    不是这一页自己猜的。
  */
 (function () {
   "use strict";
@@ -75,6 +83,32 @@
       if (r.ok) {
         state("ok");
         text($("verify-ok-lead"), "邮箱已确认：" + (r.emailMask || r.email || "") + "。");
+        /* 下一步说什么，取决于**这台服务器拦不拦**（见文件头那段）。
+           ⚠️ 这一句是**加法不是判断**：拿不到那两项时（老缓存 / 连不上）
+              只说最保守的那一句（「可以去找回密码了」），
+              绝不替服务器宣称「你被拦着」或「你没被拦」。
+
+              原本这里写的是「确认之后，忘记密码时就能用它重设密码了」，
+              在新口径下**不够**：用户走完这一趟最想知道的
+              是「我现在能登进去了吗」。
+           ⚠️ 用 `me()` 而不是把事实塞进 verify-email 的响应里：
+              那一次确认是**匿名**做的（用户可能压根没登录），
+              而「这台服务器现在拦不拦」是一条公共事实 —— /api/me 那条
+              已经在自报了（`channel.emailGate`），不必再抄一份。 */
+        var fallback = "现在可以用它找回密码了。";
+        var hint = $("verify-ok-hint");
+        if (hint) hint.textContent = fallback;
+        if (api.me) {
+          api.me().then(function (m) {
+            var ch = (m && m.ok && m.channel) || null;
+            if (!hint || !ch) return;
+            if (ch.emailGate === true) {
+              hint.textContent = "现在可以回登录页用这个邮箱登录了。";
+            } else if (ch.emailGate === false) {
+              hint.textContent = "这台服务器**没有**拦「没确认就不让登录」，确认只影响找回密码。";
+            }
+          }, function () { /* 拿不到就留着那一句保守的话 */ });
+        }
         return;
       }
       state("bad");

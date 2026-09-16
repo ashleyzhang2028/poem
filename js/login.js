@@ -167,7 +167,7 @@
    *
    * @param {string} mode  pw | code | register | verify | forgot | done
    */
-  var MODES = ["pw", "code", "register", "verify", "forgot", "done"];
+  var MODES = ["pw", "code", "register", "verify", "unverified", "forgot", "done"];
   function setMode(mode) {
     if (MODES.indexOf(mode) < 0) mode = "pw";
     state.mode = mode;
@@ -186,8 +186,9 @@
       if (!el) return;
       if (k === mode) show(el); else hide(el);
     });
-    // 「已登录，补昵称」那一屏住在 .account-step 里（不是页签之一）
+    // 「已登录，补昵称」与「等你点确认」两屏住在 .account-step 里（不是页签之一）
     if (mode === "done") show($("step-done")); else hide($("step-done"));
+    if (mode === "unverified") show($("step-unverified")); else hide($("step-unverified"));
     if (mode === "code") { show($("step-email")); hide($("step-code")); }
   }
 
@@ -382,13 +383,44 @@
       /* ⚠️ 「已发往」与「发出去了」是两件事。发信商没配（console 通道）时
          `verifySent` 为 false —— 那时**必须**如实写「没能发出去」，
          并把「重发」那颗按钮显眼地摆出来（§12 总原则：不许跑在代码前面）。 */
-      if (r.verifySent) {
+      /* ------------------------------------------------------------------
+         注册完这一屏说什么，**取决于服务端拦不拦确认**（Issue #197 后半段）
+         ------------------------------------------------------------------
+         默认拦（用户 2026-09-16 裁决）：那这一屏的第一句话必须是
+         「去收件箱点链接」，而不是任何形式的「先去用」——
+         后者是一句用户照做会被 403 挡回来的假话。
+         实测过的那种翻车正是这一处：界面上写「现在就可以回密码登录」，
+         用户回过去，得到的是一句「邮箱还没确认」。
+         ------------------------------------------------------------------ */
+      var gated = r.requiresVerification === true;
+      if (!gated) {
+        /* 运维在这台服务器上关掉了闸（没配好发信商时的应急口径）。
+           ⚠️ 这时**必须说出来**，否则用户以为自己已经通过了确认这套流程，
+              而实际上这台服务器根本没有拦。与「如实标注」是同一条纪律。 */
+        if (r.verifySent) {
+          note("verify-fail-note", "这台服务器现在**没有**拦「邮箱没确认」——不点也能登录，确认只是为了将来能找回密码。", "warn");
+          text($("verify-lead"), "确认邮件已发往 " + state.regEmail + "。");
+        } else {
+          text($("verify-lead"), "账号建好了。但这台服务器现在**没能把确认邮件发出去**（发信商还没配好）。");
+          note("verify-fail-note", "这台服务器也没拦「邮箱没确认」：现在就可以回「密码登录」用刚才那个密码进来。", "warn");
+        }
+      } else if (r.verifySent) {
         note("verify-fail-note", "", "");
         text($("verify-lead"), "确认邮件已发往 " + state.regEmail + "。");
+        note("verify-fail-note", "**邮箱确认之后才能登录**：请现在去收件箱点开那条链接。", "warn");
       } else {
+        /* 最糟的一格：既拦着，又发不出去。必须一次把两件事都说清 ——
+           只说「账号建好了」等于把用户锁在门外还不告诉他门在哪。
+           `verifyTransport` 那句由服务端的实测事实决定（console = 没真发）。 */
         text($("verify-lead"), "账号建好了。但这台服务器现在**没能把确认邮件发出去**（发信商还没配好）。");
-        note("verify-fail-note", mailNotConfiguredNote(state.regEmail) +
-          " 不确认也能用：现在就可以回「密码登录」用刚才那个密码进来。确认是为了将来能找回密码。", "warn");
+        /* ⚠️ 两个分支在这里各改了一半，必须**同时**保留（Issue #197 前半 + 后半）：
+           ① 这台服务器是**拦**确认的 → 不许写「不确认也能用」（那是被推翻的旧口径）；
+           ② 发信商没配好 → 必须把**去哪补**说出来，否则用户只知道「发不出去」，
+              却不知道该找谁、改哪里。两句合起来才是这一格该说的话：
+              「现在是拦着的 + 信发不出去 + 钥匙要去哪插 + 唯一那条出路在下面那颗键」。 */
+        note("verify-fail-note", "而这台服务器**要求邮箱确认之后才能登录**。" +
+          mailNotConfiguredNote(state.regEmail) +
+          " 请稍后点下面那颗「重发确认邮件」，或者联系站长先把发信商配好。", "warn");
       }
       showToast(r.created ? "账号已建好" : "账号信息已更新");
       setMode("verify");
@@ -417,6 +449,11 @@
         /* ⚠️ `E_LOGIN_FAIL` 的文案**原样用服务端那句**（「邮箱或密码不对」）。
            在客户端改写成「这个邮箱没注册过」就等于把全站用户名单
            变成可查询的事实 —— 这正是服务端刻意只说一句话的原因。 */
+        /* ⚠️ `E_EMAIL_UNVERIFIED` **不走这一行** —— 它要的是一整屏
+           「去点确认」（那一屏上有「重新发一封」的键），而不是输入框
+           旁边一行小字。把它当普通错误处理的后果实测过：
+           用户停在登录页反复点「登录」，因为屏幕上没有任何办法把信再来一封。 */
+        if (r.code === "E_EMAIL_UNVERIFIED") { showUnverified(r); return null; }
         msg("msg-pw", r.message, "warn");
         return null;
       }
@@ -431,11 +468,10 @@
         remote: true,
         emailVerified: r.account.emailVerified === true
       });
-      /* 邮箱没确认时**顺手给他留一句**（不拦他进去，只让他知道）。
-         不在这里弹一次确认：「先去用，稍后再确认」是这一页明确给的路。 */
-      if (r.account.emailVerified !== true) {
-        showToast("登录成功；邮箱还没确认（确认后才能找回密码）");
-      }
+      /* ⚠️ 这里**不再有**「邮箱没确认也放进来了」那个分支 —— 默认口径下
+         服务端不会让这种会话签发（走上面那个 403 分支）。
+         留着它等于留一条「万一服务端放行了，界面也装作没事」的暗路；
+         而一个「点不点确认都一样」的界面，正是这道闸最容易被无声撤销的地方。 */
       return r;
     }, function () {
       msg("msg-pw", "连不上服务器，请稍后再试", "warn");
@@ -628,6 +664,11 @@
           startTick(codeBoxes);
           return;
         }
+        /* 码对的、邮箱没确认（Issue #197 后半段）→ 同样一整屏说清。
+           ⚠️ 这一条**必须在 `E_CODE_*` 那一支之前判**：它是 403、不是 400，
+              走到下面那一支会把「去点确认」说成「验证码不对」，而用户
+              会一直在那儿重填那六位数字。 */
+        if (r.code === "E_EMAIL_UNVERIFIED") { showUnverified(r); return; }
         msg("msg-code", r.message, "warn");
         if (r.code === "E_CODE_VOID" || r.code === "E_CODE_USED") state.cooldown = 0;
         startTick(codeBoxes);
@@ -683,6 +724,85 @@
     }
     if (A.setNickname && store) { try { A.setNickname(store, clean); } catch (e) { /* 昵称写不进不影响登录 */ } }
     location.href = "/profile/";
+  }
+
+  /* ------------------------------------------------------------ 邮箱没确认 */
+
+  /**
+   * 「口令对了 / 码也对了，但邮箱还没确认」——**切到「等确认」那一屏**。
+   *
+   * ## 为什么不是输入框旁边一行字
+   * 这条路的下一步**不在这一页**（去收件箱），而且屏幕上必须有一个
+   * 「信还是没收到」的出路（那颗「重新发一封」）。做成一行小字的后果
+   * 实测过：用户停在登录页反复点「登录」，因为没有任何别的可点。
+   *
+   * ## 为什么是一个独立状态而不是复用 setMode("verify")
+   * `setMode("verify")` 是**注册完**那一屏，它的文案里全是「账号建好了…」
+   * ——对「回来登录但没确认」的人说「账号建好了」是一句错话（他早就建好了）。
+   * 所以走 `.account-step` 里单独一块 `step-unverified`，与 `step-done` 同级。
+   *
+   * ⚠️ 进去时**停下倒计时**（`stopTick`）：这一屏与那个码没关系了，
+   *    留着一个每秒跳动的「有效 3:12」会让人以为还要填什么。
+   *
+   * @param {object} r 服务端那一份响应（`message` / `emailMask` / `verifySent`）
+   */
+  function showUnverified(r) {
+    stopTick();
+    setMode("unverified");
+    text($("unverified-lead"), r.message || "邮箱还没确认：请点开注册时那封确认邮件里的链接。");
+    /* ⚠️ 「刚才这一下有没有真发出去」必须分开说 —— 实测过的那句翻车话是
+       「确认邮件已发出」，而发信商是 console（真实用户收不到）。
+       服务端把事实放在 `verifySent` 里，这里照它说。 */
+    if (r.verifySent === true) {
+      note("unverified-note", "我们又发了一封，发往 " + (r.emailMask || "你的邮箱") + "。", "ok");
+    } else if (r.verifySent === false) {
+      note("unverified-note", "这一次没有重复发信 —— 稍后点下面那颗「重新发一封」即可。", "");
+    } else {
+      note("unverified-note", "", "");
+    }
+    msg("msg-unverified", "");
+    var lead = $("unverified-lead");
+    if (lead) lead.focus && lead.focus();
+  }
+
+  /**
+   * 那一屏的「重新发一封」。
+   *
+   * ⚠️ 它**必须能在没登录的情况下用**（这一屏上的人不可能登录着 ——
+   *    登录正是被这道闸挡下来的那件事）。所以它走
+   *    `POST /api/resend-verification` 之外的一条**匿名**路：
+   *    服务端 `send-code` 那条「无论邮箱是否存在，响应完全一致」的纪律
+   *    在 `resend` 上也必须成立，否则这里就成了一个邮箱枚举口
+   *    （「没注册过 / 已确认过」两种回答能筛出全站用户名单）。
+   */
+  function onUnverifiedResend() {
+    var ch = passwordChannel("msg-unverified");
+    if (!ch) return;
+    if (!ch.resendVerificationByEmail) {
+      msg("msg-unverified", "这个页面是旧缓存，刷新一下再试", "warn");
+      return;
+    }
+    var email = (($("input-pw-email") || {}).value || (($("input-email") || {}).value || "")).trim();
+    if (!A.isEmailShape(A.normalizeEmail(email))) {
+      msg("msg-unverified", "请回到登录那一屏填上邮箱，再点这颗键", "warn");
+      return;
+    }
+    msg("msg-unverified", "");
+    return ch.resendVerificationByEmail({ email: email }).then(function (r) {
+      if (!r.ok) { msg("msg-unverified", r.message, "warn"); return null; }
+      /* ⚠️ 文案与 `reset-request` 同一条纪律：**不说这个邮箱注册过没有**。
+         服务端回的也是同一个形状（存在与否都一样）。 */
+      if (r.alreadyVerified) {
+        msg("msg-unverified", "这个邮箱已经确认过了，直接回「密码登录」进来即可。", "ok");
+      } else if (r.verifySent) {
+        msg("msg-unverified", "确认邮件已发往 " + (r.emailMask || "你的邮箱") + "。", "ok");
+      } else {
+        msg("msg-unverified", "这台服务器现在没能把邮件发出去（发信商还没配好），稍后再试。", "warn");
+      }
+      return r;
+    }, function () {
+      msg("msg-unverified", "连不上服务器，请稍后再试", "warn");
+    });
   }
 
   /* ------------------------------------------------------------ 重发确认邮件 */
@@ -779,6 +899,8 @@
     $("btn-register").addEventListener("click", onRegister);
     $("btn-forgot-send").addEventListener("click", onForgotSend);
     $("btn-resend-verify").addEventListener("click", onResendVerify);
+    $("btn-unverified-resend").addEventListener("click", onUnverifiedResend);
+    $("btn-unverified-back").addEventListener("click", function () { setMode("pw"); });
     $("btn-go-register").addEventListener("click", function () { setMode("register"); msg("msg-reg", ""); });
     $("btn-forgot").addEventListener("click", function () { setMode("forgot"); msg("msg-forgot", ""); });
     $("btn-back-login").addEventListener("click", function () { setMode("pw"); });
