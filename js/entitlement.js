@@ -50,22 +50,37 @@
    *   quota  = 额度（null = 不限；数字 = 每月次数）；本期只做展示，不做计数
    */
   var CAPS = {
-    "recite.basic":      { minTier: "free", login: false, quota: null, name: "每日背诵与复习排程" },
-    "library.all":       { minTier: "free", login: false, quota: null, name: "六部集子全文阅读" },
-    "read.aloud":        { minTier: "free", login: true,  quota: null, name: "语音朗读（原文 / 译文 / 连读）" },
-    "pinyin.helper":     { minTier: "free", login: false, quota: null, name: "生字注音与阅读辅助" },
-    "export.progress":   { minTier: "free", login: false, quota: null, name: "导出背诵进度 JSON" },
-    "collections.many":  { minTier: "pro",  login: true,  quota: null, name: "自选清单 20 个" },
-    "sync.multiDevice":  { minTier: "pro",  login: true,  quota: null, name: "跨设备云同步" },
-    "export.paper":      { minTier: "pro",  login: true,  quota: null, name: "篇目 PDF / 打印页" },
-    /* 家庭子档案 —— 用户 2026-09-17 裁决「子档案 Max 180 个」。
-       ⚠️ 与 docs/auth-design.md §3.5 那张老表（Pro 3 / Max 8）相比，
-          **Max 由 8 上收到 180**，以用户裁决为准（另有「Free 算 1 个还是 3 个」
-          的口径冲突，一并按 Free 1 个落 —— 与自选清单同一条「免费不残缺」）。
-       ⚠️ Free 1 个：用户第一次自动认领的那一份永远放得下，不是「一个都没有」。 */
-    "profile.family":    { minTier: "pro",  login: true,  quota: null, name: "家庭子档案（Free 1 / Pro 3 / Max 180）" },
+    /* ⚠️ 名字被用户改过一次（2026-09-18，Issue #163）：对比页那一列字数长了
+       「功能列就占掉半屏」，用户逐个点名要短名 —— 见每条上面的改名注。
+       规则只有一条：**短到能在一列里放下，且不许因为短而含糊**。 */
+    "recite.basic":      { minTier: "free", login: false, quota: null, name: "每日背诵" },
+    /* 「六部集子全文阅读」→「课外阅读」（用户原话）；
+       ⚠️ 短名不改内容：六部集子照旧**全文**开放（docs §2.4「免费不残缺」）。 */
+    "library.all":       { minTier: "free", login: false, quota: null, name: "课外阅读" },
+    /* 「语音朗读（原文 / 译文 / 连读）」→「语音朗读」—— 括号里那三种读法
+       是这一条**是什么**，不是**能不能用**；对比表只回答后者。 */
+    "read.aloud":        { minTier: "free", login: true,  quota: null, name: "语音朗读" },
+    "pinyin.helper":     { minTier: "free", login: false, quota: null, name: "阅读辅助" },
+    "export.progress":   { minTier: "free", login: false, quota: null, name: "进度导出" },
+    /* 自选清单 —— 用户 2026-09-18 裁决（Issue #163）：
+       「自选清单 20 个 改成 自选清单 Free 10个，pro 100个，max 5000个，
+        直接在各列列出数字，这个需要改功能代码或者数据」
+       → 三档额度**真的是** 10 / 100 / 5000（不只是表格上的字）：
+         `quota` 是同一个数的唯一来源，js/collections.js 的 limit() 读它。
+       ⚠️ Free 由 1 提到 10（用户点名），Max 由「不限」改成 5000（有天花板的
+         数字可比「不限」在表格里更好看明白，也不会变成真正无限）。
+       ⚠️ 9000 行以上的大数不写成 `5,000` —— 表格里带千分位会被读成两个数。 */
+    "collections.many":  { minTier: "pro",  login: true,  quota: null, name: "自选清单",
+                           quotas: { free: 10, pro: 100, max: 5000 } },
+    "sync.multiDevice":  { minTier: "pro",  login: true,  quota: null, name: "设备同步" },
+    "export.paper":      { minTier: "pro",  login: true,  quota: null, name: "PDF / 打印" },
+    /* 家庭子档案 —— 用户 2026-09-17 裁决「子档案 Max 180 个」，
+       2026-09-18 又把名字里的括号摘掉（Issue #163：「在各列列出支持的数字」）：
+       三档数字与自选清单走同一套 `quotas`，表格里才有一列可对齐。 */
+    "profile.family":    { minTier: "pro",  login: true,  quota: null, name: "家庭档案",
+                           quotas: { free: 1, pro: 3, max: 180 } },
 
-    "quiz.review":       { minTier: "pro",  login: true,  quota: null, name: "题库复习（给上句选下句）" },
+    "quiz.review":       { minTier: "pro",  login: true,  quota: null, name: "题库" },
     /* ⚠️ `export.all` 的门槛与名字**被用户改过一次**（2026-09-16，Issue #159）：
        「为啥要有全站批量导出功能？这不是这个网站的核心资产吗？
         顶多支持学校课本部分的全部导出。这个 pro 用户就行。」
@@ -73,16 +88,26 @@
          门槛从 **max 降到 pro**；六部集子**不做**一次性整本导出。
        ⚠️ 名字、门槛、内容三处必须一起改：名字里写着「全站」而实际只给课内，
          服务端下发的那份 features 与这张表就会开始说谎（两端有逐字对拍）。
-       ⚠️ 这条**不是**「保留旧名字但缩水」—— 见 js/export-core.js 文件头。 */
-    "export.all":        { minTier: "pro",  login: true,  quota: null, name: "全站课内诗词批量导出 261 首" },
+       ⚠️ 这条**不是**「保留旧名字但缩水」—— 见 js/export-core.js 文件头。
+       2026-09-18（Issue #163）名字再收成「课内诗词导出」，**261 首挪进 quotas**
+       —— 用户原话「pro 和 max 列列出 261 首」：数字归右边四列，不归功能名。 */
+    "export.all":        { minTier: "pro",  login: true,  quota: null, name: "课内诗词导出",
+                           quotas: { free: 0, pro: 261, max: 261 } },
     /* 古诗词大会的两项 —— **归 Max**（用户 2026-09-17 裁决：
        「现场考试和飞花令归 max 所有，题库归 pro」）。
        ⚠️ 与 docs/auth-design.md §3.5 那张老表（「飞花令 / 古诗文大会 / 考试与题库」
           一律 pro 起）相比，这两条**上收到 max**，以用户裁决为准。
-       ⚠️ 服务端的 featuresFor() 用的就是这两个键名（有对拍断言守着）； */
+       ⚠️ 服务端的 featuresFor() 用的就是这两个键名（有对拍断言守着）。
+       2026-09-18（Issue #163）：`exam.paper` 的名字里带了一个 `·`，对比表那一列
+       一折行就成了「古诗词大会 ·」/「现场考试」—— 用户点名要**在这个格子里分两行**
+       说清这是两件事。名字回到一件事一个词（「试题模拟」），拆分交给展示层。 */
     "feihualing":        { minTier: "max",  login: true,  quota: null, name: "飞花令" },
-    "exam.paper":        { minTier: "max",  login: true,  quota: null, name: "古诗词大会 · 现场考试" },
-    "collections.unlimited": { minTier: "max", login: true, quota: null, name: "自选清单不限" }
+    "exam.paper":        { minTier: "max",  login: true,  quota: null, name: "试题模拟" }
+    /* ⚠️ `collections.unlimited` 已**删除**（用户 2026-09-18，Issue #163：
+       「自选清单不限 删除，已经被前面的自选清单代替」）。
+       Max 的额度由 `collections.many` 的 quotas.max = 5000 表达 ——
+       同一个东西不留两条能力（两条必然开始各说各的）。
+       ⚠️ 服务端 featuresFor() 的 max 那一档同步删掉这个键（有对拍断言守着）。 */
     /* ⚠️ 这里**没有** `ai.explain` / `ai.explain.big` —— 它们已被**删除**。
        用户 2026-09-17 裁决：「把需要收我 app 费用的功能删除，我不会去做」。
        AI 讲解 / 背诵纠音是「每调一次都要真花钱」的那一类（调用 AI 商按次计费），
@@ -427,11 +452,47 @@
     { id: "max",   tier: "max",  guest: false }
   ];
 
-  /** 列标题文案 —— 与 tierLabel 同源，不在这里另起一套大小写 */
+  /**
+   * 列标题文案 —— 与 tierLabel 同源，不在这里另起一套大小写。
+   *
+   * ⚠️ 游客那一列写作「**游客**」而不是「未登录」（用户 2026-09-18，Issue #163：
+   *   「未登录 / 你现在在这里」→「游客 / 现在」）。
+   *   含义一个字都没变（`guest` 那个布尔还是同一个），只是不再把「你没登录」
+   *   这句操作状态当身份名念 —— 身份名是「游客」。
+   */
   function columnLabel(col) {
     if (!col) return "";
-    if (col.guest) return "未登录";
+    if (col.guest) return "游客";
     return tierLabel(col.tier);
+  }
+
+  /**
+   * 这一档的能力额度（数字 / Infinity 表示不限 / null 表示「这条能力没有额度可言」）。
+   *
+   * 两种写法**各有各的用处**，不是重复：
+   *   · `quota`  —— 「每月 50 次」这种**次数**限制，全站一张值（TTS 之类）；
+   *   · `quotas` —— 「Free 10 / Pro 100 / Max 5000」这种**逐档不同**的容量上限。
+   * 后者是同一个数的唯一来源：`js/collections.js` 的 `limit()`、
+   * `js/family.js` 的 `limit()` 都读它 —— 表格上那个数字与实际能建几个
+   * 是**同一个数**，不靠人抄对。
+   *
+   * ⚠️ 找不到 `quotas` 就回落到 `quota`（`null` = 没有额度），不抛。
+   */
+  function quotaFor(c, tier) {
+    if (!c) return null;
+    if (c.quotas && typeof c.quotas === "object") {
+      if (!isTier(tier)) return null;
+      var v = c.quotas[tier];
+      return typeof v === "number" ? v : null;
+    }
+    return c.quota == null ? null : c.quota;
+  }
+
+  /** 额度的人话。不写千分位（`5,000` 在窄格子会被读成两个数） */
+  function quotaText(amount) {
+    if (amount === Infinity) return "不限";
+    if (amount === 0) return "不支持";
+    return String(amount) + " 个";
   }
 
   /**
@@ -466,14 +527,23 @@
         var ctx = { tier: col.tier, signedIn: !col.guest };
         if (now !== undefined) ctx.now = now;
         var r = can(k, ctx);
+        /* 额度：`quotas` 逐档写着数字的能力（自选清单 / 家庭档案 / 课内诗词导出）
+           直接报**这一档的数字**；`quota` 那种「每月 N 次」的限制照旧。
+           额度的读法只有这一处 —— 页面不自己挑字段、也不自己拼「个 / 次」。 */
+        var amount = quotaFor(c, col.tier);
         return {
           ok: r.ok,
           reason: r.ok ? "ok" : r.reason,
-          // 能用的格子里没有字（打钩就是全部信息）；不能用的那一格写清是什么拦的
-          hint: r.ok ? (c.quota ? "每月 " + c.quota + " 次" : "") : denyReason(k, ctx)
+          quota: amount,
+          // 能用的格子：额度数字就是全部信息，没有额度才是空的；
+          // 不能用的那一格写清是什么拦的（层级 / 未登录）。
+          hint: r.ok
+            ? (amount == null ? (c.quota ? "每月 " + c.quota + " 次" : "") : quotaText(amount))
+            : denyReason(k, ctx)
         };
       });
-      return { cap: k, name: c.name, quota: c.quota, minTier: c.minTier, cells: cells };
+      return { cap: k, name: c.name, quota: c.quota, quotas: c.quotas || null,
+               unit: c.unit || "", minTier: c.minTier, cells: cells };
     });
 
     // 分组：只按「这一行从哪一列起全绿」切三刀。能力表本身就是「先免费后付费」
@@ -495,6 +565,9 @@
       if (byMin[g.key].length) groups.push({ key: g.key, title: g.title, note: g.note, rows: byMin[g.key] });
     });
 
+    /* 表尾：这一列有几格是绿的。
+       ⚠️ 这一行原先写作「能用」（Issue #163 改称「**合计**」）—— 用户原话
+          「能用 改成 合计」。同一个数，不再借「能用」那个词去表态。 */
     var summary = cols.map(function (col, i) {
       var on = 0;
       rows.forEach(function (r) { if (r.cells[i] && r.cells[i].ok) on += 1; });
@@ -632,6 +705,7 @@
     TIERS: TIERS, ROLES: ROLES, CAPS: CAPS, ALIAS: ALIAS,
     capNames: capNames, cap: cap, can: can, denyReason: denyReason,
     tierLabel: tierLabel, matrix: matrix, compare: compare, COLUMNS: COLUMNS,
+    quotaFor: quotaFor, quotaText: quotaText, columnLabel: columnLabel,
     isTier: isTier, isRole: isRole,
     tierIndex: tierIndex,
     emptyGrants: emptyGrants, readGrants: readGrants, writeGrants: writeGrants,

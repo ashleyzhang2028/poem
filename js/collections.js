@@ -79,21 +79,35 @@
    * 或从别处调用 create 都绕不过），写在页面里就只能拦按钮、拦不住数据。
    * 与 `Entitlement.can()` 同一条纪律 —— 界面的置灰不是边界。
    *
-   * 层级对应（用户 2026-09-17 的 Pro / Max 口径）：
-   *   free 1 个 / pro `collections.many` 20 个 / max `collections.unlimited` 不限
+   * 三个数字（用户 2026-09-18 裁决，Issue #163）：
+   *   「自选清单 Free 10 个，pro 100 个，max 5000 个，直接在各列列出数字，
+   *     这个需要改功能代码或者数据」
+   * → Free 由 1 提到 **10**、Pro 由 20 提到 **100**、Max 由「不限」改成 **5000**。
    *
-   * ⚠️ 与 js/entitlement.js 的 CAPS 键名同源 —— 那边改了门槛、这里跟着改；
-   *    `test/collections.test.js` 有断言把两个数字钉在一起。
+   * ⚠️ 这三个数是**从内核读的**（`CAPS["collections.many"].quotas`），不是在这里
+   *    再抄一份 —— 对比表上写的数字与实际能建几个必须是同一个数：两边各写一份，
+   *    改了这头忘了那头，用户就成了「表上说 100 个，建到 20 个就建不动」。
+   *    兜底（读不到内核 / 内核里没写 quotas）仍有一份字面量，
+   *    与 entitlement.js 那边**同值**，`test/collections.test.js` 有断言钉住。
    */
-  var FREE_COLLECTIONS = 1;
-  var PRO_COLLECTIONS = 20;
+  var FALLBACK = { free: 10, pro: 100, max: 5000 };
+
+  /** 从内核拿这一档的上限；拿不到就回落到与内核同值的兜底 */
+  function limitFor(E, tier) {
+    var n = null;
+    if (E && typeof E.quotaFor === "function" && E.CAPS) {
+      n = E.quotaFor(E.CAPS["collections.many"], tier);
+    }
+    if (typeof n !== "number") n = FALLBACK[tier];
+    return typeof n === "number" ? n : FALLBACK.free;
+  }
 
   function limit() {
     var E = (typeof window !== "undefined" && window.Entitlement) || null;
     /* ⚠️ 拿不到权益内核时**不设限**（返回 Infinity），不是按 free 算。
        理由：这一层是**产品分层**，不是安全边界（用户手改存储就能改层级，
        docs §2.4 已写明）；页面脚本顺序不对 / 老缓存时把内核读成 null，
-       若此时按 free 卡 1 个，症状就是「本来能建 20 个的人突然建不了第二个」——
+       若此时按 free 卡 10 个，症状就是「本来能建 100 个的人突然建不了第 11 个」——
        一个由加载顺序引起的、用户无法自查的功能倒退。
        「宁可不判，也不误拦」与 entitlement 里 `isOwner` 无存储时的兜底同一条口径。 */
     if (!E || !E.identity) return Infinity;
@@ -101,14 +115,11 @@
     try { id = E.identity({ backing: window.localStorage }); } catch (e) { id = null; }
     if (!id) return Infinity;
     /* ⚠️ 按 **tier** 判，不按 `can()` 判。
-       那两条能力带 `login:true`，走 `can()` 时「登录过了但会话刚过期」
-       会被判成 free —— 症状是「昨天还能建 20 个，今天一刷新只剩 1 个」。
+       那条能力带 `login:true`，走 `can()` 时「登录过了但会话刚过期」
+       会被判成 free —— 症状是「昨天还能建 100 个，今天一刷新只剩 10 个」。
        而这里只是产品分层的软限（真正的边界是服务端），按已发放的层级判更稳。
-       能力表仍是同一个来源：门槛值取自 CAPS 的 minTier，不另抄一份。 */
-    var tier = id.tier;
-    if (tier === "max") return Infinity;
-    if (tier === "pro") return PRO_COLLECTIONS;
-    return FREE_COLLECTIONS;
+       能力表仍是同一个来源：数字取自 CAPS 的 quotas，不另抄一份。 */
+    return limitFor(E, id.tier);
   }
 
   /** 还能建几个（Infinity 表示不限） */
@@ -578,8 +589,11 @@
     KEY: KEY,
     DEFAULT_NAME: DEFAULT_NAME,
     NAME_MAX: NAME_MAX,
-    FREE_COLLECTIONS: FREE_COLLECTIONS,
-    PRO_COLLECTIONS: PRO_COLLECTIONS,
+    /* 与内核同值的兜底（`test/collections.test.js` 拿它对着 CAPS 的 quotas 判） */
+    FREE_COLLECTIONS: FALLBACK.free,
+    PRO_COLLECTIONS: FALLBACK.pro,
+    MAX_COLLECTIONS: FALLBACK.max,
+    FALLBACK: FALLBACK,
     limit: limit,
     remaining: remaining,
     cleanName: cleanName,

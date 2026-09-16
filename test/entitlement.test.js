@@ -98,10 +98,58 @@ console.log('\n=== 三、pro / max 只加不减：层级越高能力单调不减
        · 门槛 → **pro 起**（不再是 max）
        · 内容 → **只有课内 261 首**，六部集子不做一次性整本导出
      ⚠️ 六部集子**不是「还没做」**，是「不做」—— 这条断言守的是那个结论。 */
-  eq(E.can('export.all', pro).ok, true, '全站课内诗词导出：pro 起（用户指定）');
+  eq(E.can('export.all', pro).ok, true, '课内诗词导出：pro 起（用户指定）');
   eq(E.can('export.all', max).ok, true, 'max 当然也能用');
   eq(E.can('export.all', free).ok, false, 'free 不可（登录了也不行）');
   chk(/课内/.test(E.cap('export.all').name), '能力名字里写明是「课内」（不许含糊成全站）');
+
+  /* ---------- Issue #163：名字收短 + 额度逐档写进 quotas ----------
+     用户 2026-09-18 逐个点名（原话在 js/entitlement.js 的 CAPS 里）：
+       每日背诵与复习排程 → 每日背诵 / 六部集子全文阅读 → 课外阅读 /
+       语音朗读（原文 / 译文 / 连读） → 语音朗读 / 生字注音与阅读辅助 → 阅读辅助 /
+       导出背诵进度 JSON → 进度导出 / 自选清单 20 个 → 自选清单 /
+       跨设备云同步 → 设备同步 / 篇目 PDF / 打印页 → PDF / 打印 /
+       家庭子档案（Free 1 / Pro 3 / Max 180） → 家庭档案 /
+       题库复习（给上句选下句） → 题库 / 全站课内诗词批量导出 261 首 → 课内诗词导出 /
+       古诗词大会 · 现场考试 → 试题模拟 / 自选清单不限 → 删除。
+     守两件事：① 能力**键名**一个都没动（服务端 featuresFor 靠它对拍）；
+              ② 名字不长、括号里的额度搬到 quotas 上。 */
+  const renames = {
+    'recite.basic': '每日背诵', 'library.all': '课外阅读', 'read.aloud': '语音朗读',
+    'pinyin.helper': '阅读辅助', 'export.progress': '进度导出',
+    'collections.many': '自选清单', 'sync.multiDevice': '设备同步',
+    'export.paper': 'PDF / 打印', 'profile.family': '家庭档案',
+    'quiz.review': '题库', 'export.all': '课内诗词导出', 'exam.paper': '试题模拟'
+  };
+  Object.keys(renames).forEach(function (k) {
+    eq(E.cap(k).name, renames[k], 'Issue #163 改名：' + k + ' → 「' + renames[k] + '」');
+  });
+  E.capNames().forEach(function (k) {
+    const c = E.cap(k);
+    if (!c) return;
+    /* 8 个「字」是上限，不是目标 —— 名字里有 `/` 与空格的那一条（PDF / 打印）
+       本来就该多两个字符，判据取「宽度」而不是「字数」太玄，直接给到 8。 */
+    chk(c.name.length <= 8, '能力名都短到能在一列里放下：「' + c.name + '」（' + c.name.length + ' 字）');
+    chk(c.name.indexOf('（') < 0 && c.name.indexOf('(') < 0,
+      '能力名不带括号（括号里的额度搬到 quotas 上）：「' + c.name + '」');
+    chk(c.name.indexOf(' · ') < 0, '能力名里不塞两件事：「' + c.name + '」');
+  });
+  /* 逐档额度：数字长在 quotas 上，页面（对比表各列）与数据层（collections /
+     family 的 limit()）读的都是它 —— 表上写 100、实际能建别的数就是假话。 */
+  eq(E.quotaFor(E.cap('collections.many'), 'free'), 10, '自选清单 Free 10 个（用户点名）');
+  eq(E.quotaFor(E.cap('collections.many'), 'pro'), 100, '自选清单 Pro 100 个（用户点名）');
+  eq(E.quotaFor(E.cap('collections.many'), 'max'), 5000, '自选清单 Max 5000 个（用户点名）');
+  eq(E.quotaFor(E.cap('profile.family'), 'free'), 1, '家庭档案 Free 1 个');
+  eq(E.quotaFor(E.cap('profile.family'), 'pro'), 3, '家庭档案 Pro 3 个');
+  eq(E.quotaFor(E.cap('profile.family'), 'max'), 180, '家庭档案 Max 180 个');
+  eq(E.quotaFor(E.cap('export.all'), 'pro'), 261, '课内诗词导出 Pro 261 首（用户点名「pro 和 max 列列出 261 首」）');
+  eq(E.quotaFor(E.cap('export.all'), 'max'), 261, '课内诗词导出 Max 261 首（同上）');
+  /* 没有 quotas 的能力回落到 quota（会话里的 TTS 那类「每月 N 次」） */
+  eq(E.quotaFor({ quota: 50 }, 'pro'), 50, '没有 quotas 的能力回落 quota');
+  eq(E.quotaFor({ quota: null }, 'pro'), null, '既没 quotas 也没 quota → null（这一格没有数字可说）');
+  eq(E.quotaText(5000), '5000 个', '额度文案不带千分位（5,000 在窄格子会被读成两个数）');
+  eq(E.quotaText(Infinity), '不限', 'Infinity 写作「不限」');
+  eq(E.quotaText(0), '不支持', '0 写作「不支持」（不是「0 个」）');
 }
 
 console.log('\n=== 四、唯一出口：脏值 / 未知能力 / 缺参一律回落，不抛 ===');

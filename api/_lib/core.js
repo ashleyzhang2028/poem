@@ -246,7 +246,11 @@ function featuresFor(cfg, tier) {
      与 js/entitlement.js 的 CAPS 逐字一致（有对拍断言守着）。 */
   var pro = ["collections.many", "sync.multiDevice", "export.paper",
              "profile.family", "quiz.review", "export.all"];
-  var max = ["collections.unlimited", "feihualing", "exam.paper"];
+  /* ⚠️ `collections.unlimited` 已**删除**（用户 2026-09-18，Issue #163：
+     「自选清单不限 删除，已经被前面的自选清单代替」）——
+     Max 的额度由 `collections.many` 的 `quotas.max = 5000` 表达，
+     同一个东西不留两条能力（两条必然开始各说各的，客户端 CAPS 同步删除）。 */
+  var max = ["feihualing", "exam.paper"];
   /* ⚠️ 这里**没有** ai.explain / ai.explain.big —— 已被删除（用户 2026-09-17：
      「把需要收我 app 费用的功能删除」）。AI 讲解 / 纠音是每调一次都真花钱的
      那一类，与「本站不收款」放在一起就是每用一次亏一次。客户端 CAPS 同步删除，
