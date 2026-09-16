@@ -348,7 +348,8 @@ var STEPS = [
       "填完先验 URL 形状：整串必须以 postgresql:// 或 postgres:// 开头；用户名 / 密码 / 主机三段里，**@ 只许出现一次**（就是分隔密码与主机的那一个）。多了就说明密码没编码 —— .cnb.yml 的备份脚本已把这两条做成开跑前的自检，命中会直接教你改哪里，而不是等你去看那句「could not translate host name」",
       "备份镜像的**大版本要跟服务端一致**：Supabase 现在是 PostgreSQL 17，所以镜像用 postgres:17（不是 postgres:16）。pg_dump **不改**连比自己新的服务端 —— 落后一个大版本时它会在读到数据之前就以「aborting because of server version mismatch」退出，而这句话看着像连接串配错了，其实只是客户端旧了。服务端升大版本时，.cnb.yml 里那一行要跟着升",
       "密码忘了：Project Settings → Database → Reset database password，重设后把新密码编码再填回密钥仓库（旧的立刻失效）",
-      "跑通一次看回执：备份产出 backup/kuibu-<日期>.sql 并打印字节数。⚠️ 若打印的是「server version mismatch」，那是镜像里的 pg_dump 比 Supabase 服务端低一个大版本（16 对 17），**不是备份失败**，下一轮别当成新 bug 去查 —— 本轮已把镜像升到 postgres:17，报这句就是镜像版本又落后了",
+      "跑通一次看回执：备份产出 backup/kuibu-<日期>.sql 并打印字节数（0 字节不算备份 —— 脚本会删掉失败留下的半截文件）",
+      "⚠️ 镜像里的 pg_dump 大版本**必须 ≥ Supabase 服务端**（现在服务端是 17.6，所以 .cnb.yml 用的是 postgres:17）。低一个大版本时 pg_dump 会**直接 abort**，不是警告：`pg_dump: error: aborting because of server version mismatch` / `detail: server version: 17.6; pg_dump version: 16.15`。这时备份是零产出的（postgres:16 对 17 就是这么红过一次）。pg_dump 允许比服务端**高**，不允许低；服务端升到 18 就把 docker.image 换成 postgres:18",
       "见到 could not translate host name 时先看**引号里那串主机名**：带 [at] 或密码尾巴 = 密码没编码（改密钥仓库里的值）；干净的 db.<ref>.supabase.co = URL 已解析，是**这个名字解析不到**。后者按代价从低到高试：① 刚建的项目 DNS 可能还没发布完，过一会儿重跑；② 直连主机名 db.<ref>.supabase.co 在新项目上只有 IPv6（AAAA，IPv4 要另开 add-on），零成本的替代是同一页 Connection string 上的 **Session pooler**（…@aws-0-<region>.pooler.supabase.com:5432，用户名是 postgres.<ref> 而不是 postgres）",
       "⚠️ Transaction pooler 那个 **6543** 端口**不要**给 pg_dump 用 —— 它不支持 pg_dump 需要的会话级特性（给应用连接池用）",
       "兜底：只要探活是通的（SUPABASE_URL + SUPABASE_SERVICE_KEY 都在），导出可以不依赖 Postgres 直连，直接用 PostgREST 逐表拉 JSON；数据量小的时候够用"

@@ -2917,8 +2917,8 @@ pg_dump: error: could not translate host name "db.twmtmohcaifswxtjowru.supabase.
 ##### ②之四 这一轮的验证（2026-09-17 追溯，回答 Issue #159 的后半）
 
 - `node test/ops.test.js` 全绿：新增「D 步写了 `%3A` / 写了『`@` 只许出现一次』/
-  写了 Session pooler / 写了 6543 不要给 `pg_dump` 用 / 写了 server version mismatch
-  不是失败」，以及 `.cnb.yml` 的备份脚本真的先自检 URL 形状
+  写了 Session pooler / 写了 6543 不要给 `pg_dump` 用」，以及 `.cnb.yml`
+  的备份脚本真的先自检 URL 形状（§5.8 又把「版本 mismatch 是 abort 不是警告」更正过来）
 - `bash test/run.sh` 全绿、0 失败（PWA 那一层在**能起 Chrome 的镜像里**跑；
   本轮工作区缺系统库，跳过并如实打印原因，不是静默通过）
 - 探活那条**一个字没改** —— 它本来就是绿的（HTTP 200），绿的别动
@@ -2936,63 +2936,65 @@ pg_dump: error: could not translate host name "db.twmtmohcaifswxtjowru.supabase.
 - `test/theme.test.js` 新增：`.topbar` 有 `width: 100%`
   （并把那条正则的窗口从 600 开到 1400 —— 600 装不下新加的说明，会假红）
 - `sw.js` v134 → **v135**
+- `sw.js` v135 → **v136**（§5.7 备份脚本自检那一轮）
 
----
+### 5.8 `supabase-backup` 一直红：pg_dump 比服务端低一个大版本（2026-09-17 · 回答 Issue #159）
 
-### 5.8 备份红在 `server version mismatch`（2026-09-16 · 回答 Issue #159）
-
-用户接着报 D 步的第三条红：`SUPABASE_DB_URL` 已经换成 **Session pooler** 串
-（`aws-0-ap-northeast-1.pooler.supabase.com:5432`），`supabase-backup` 仍然失败：
+用户贴的失败日志（`supabase-backup`，定时任务 `crontab: 30 4 * * 1`）：
 
 ```
 pg_dump: error: aborting because of server version mismatch
 pg_dump: detail: server version: 17.6; pg_dump version: 16.15 (Debian 16.15-1.pgdg13+2)
+Finished, code: 1
 ```
 
-**这条报错与连接串无关，一个字节都无关。** 它说的是两件事对不上：
+#### ① 这条**不是**上一条的复发
 
-| 谁 | 版本 |
-|---|---|
-| Supabase 服务端 | PostgreSQL **17.6** |
-| 流水线 `postgres:16` 镜像里的 `pg_dump` | **16.15** |
+上一节（§5.7 ②之二）修的是「密码没百分号编码 → `could not translate host name`」。
+这一条报的是**版本**，而且 `aborting` 这个词是关键：
 
-`pg_dump` 有一条版本规矩：**能连比自己旧的，不能连比自己新的**。
-16 的客户端去连 17 的服务端，服务端报的版本比它能理解的高一个**大版本**
-（16 → 17 是高版本对象目录的一次换代），于是它在读任何数据之前就退出。
-换个说法：那条报错是 `pg_dump` 在**保护**这次还原 —— 用 16 的 SQL 文本去还原
-17 的库，导出结果是不可信的，所以它宁可不出。
+- 那两句「版本不匹配」的**提示式**措辞是错的。原先把 `server version mismatch`
+  写成「**警告**，不是备份失败，下一轮别当成新 bug 去查」—— 事实相反：
+  **pg_dump 比服务端低大版本时是直接 abort**，一条数据都不导，退出码 1。
+  写下「别当成 bug」那句，恰好会让下一轮的人放过一条真红。已在 §4.12 与
+  `api/_lib/ops.js` 的 D 步里改成「低 = 直接 abort，不是警告」。
+- 规则本身：**pg_dump 允许比服务端新，不允许旧**（新客户端读得懂老服务端的目录；
+  老客户端读不懂新服务端的目录）。所以镜像跟着**服务端**大版本走。
 
-**为什么「换成 Session pooler 串」不可能修好它。** pooler 与直连只换了
-「从哪条路连到同一个库」，服务端版本一个字都没变；报错里那两句已经把版本
-逐字打出来了。这一步之所以看起来像连接串的问题，是因为**前一版文档把
-D 步的坑全写成连接串的坑**（`[YOUR-PASSWORD]`、百分号编码那两个）——
-于是「D 步红 = 串写错了」成了默认假设，人在这里先换了串、再换回来，而真正的
-病根在 `docker.image` 那一行。
+#### ② 为什么之前选了 `postgres:16`，以及它为什么必然红
 
-**改法**：`.cnb.yml` 的备份镜像 `postgres:16` → **`postgres:17`**。
-选它而不是自己拼一个 `postgresql-client` 镜像，理由与这条流水线无关 ——
-官方 `postgres` 镜像**自带与服务端同大版本的 `pg_dump`**，一行 `image` 就够，
-不引入 Dockerfile。
+`node:20` 镜像里**没有** `pg_dump`（脚本里那句 `command -v pg_dump` 就是为此加的），
+于是当初换成了 `postgres:16` —— 这解决了「工具不存在」，但没解决「工具的版本」。
+Supabase 服务端是 **17.6**，`postgres:16` 里的 `pg_dump` 是 **16.15**，于是每次
+都 abort。**备份从上线起就没成功过一次**，而红的原因看起来像「密钥 / 网络」那一类。
 
-**退役的写法旁边要留话**：`.cnb.yml` 里把这条报错的**原文**抄进了注释
-（`server version mismatch`），并在脚本尾部留一句「报这句就是镜像版本落后了」。
-没有这句话时，下一个人读到的是「镜像名后面跟着一大段关于密码 + 连接串的
-说明」—— 而那段说明恰好把他往错误的方向推。
+`0.7s` 的 duration 也是个指纹：真要连库导数据不可能这么快 ——
+它在**连接之前**就退了。
 
-**这一版**：`.cnb.yml` 的 `image: postgres:17`、D 步文字补上
-「大版本要跟服务端一致」那一条、`test/ops.test.js` 钉住上面三处。
+#### ③ 改法：镜像换 `postgres:17` + 把两条「不许发生的事」变成脚本里的门
+
+1. `docker.image: postgres:16` → **`postgres:17`**（跟着服务端大版本；
+   服务端升 18 时同步换）。pg_dump 是**客户端**工具，不需要与服务端同发行版 ——
+   镜像只是取工具的地方，工具够新就行。
+2. 开跑先 `pg_dump --version` 打出版本：这一行让「镜像对不对」在日志里可见，
+   不用等那句 abort 去猜。
+3. **0 字节不算备份**。原先 `> backup/kuibu-$STAMP.sql` 一重定向，文件就
+   已经存在了 —— abort 之后留下一个 **0 字节的 `.sql`**，「备份存在但只有 0 字节」
+   比彻底没有更危险（人会以为那天备份过了）。现在失败时 `rm -f` 掉半截文件，
+   成功后用 `test "$SIZE" -gt 0` 把门。
 
 #### 验证
 
-- `bash test/run.sh` 全绿、0 失败
-- `test/ops.test.js` 新增：`.cnb.yml` 里**只有一处** `image: postgres:*`
-  （多一处就一定会漏改一处）、这一处是 `postgres:17`、不再是 `postgres:16`、
-  镜像名旁边写着 `server version mismatch` 这句原文、D 步也写了
-  「大版本要跟服务端一致」且给出可照抄的 `postgres:17`
+- `node test/ops.test.js` 全绿：新增「D 步写明用 `postgres:17`」「写明版本低是
+  **abort** 不是警告」「写明 0 字节不算备份」，以及 `.cnb.yml` 的
+  「镜像就是 `postgres:17`」「不再是 `postgres:16`」「先打 `pg_dump --version`」
+  「空文件退非 0」「失败删半截文件」
+- `bash test/run.sh` 全绿、0 失败（PWA 那一层需能起 Chrome 的镜像）
+- 探活那条照旧**一个字没改** —— 它本来就是绿的
+- `sw.js` **不动**（v136）：本轮只改 `.cnb.yml` / `api/_lib/ops.js` / 文档与测试，
+  没有任何进预缓存的资源
 - 反向验证：把镜像改回 `postgres:16` → 立刻红 2 条（断言有牙）
   ⚠️ 判据先**抠掉注释行**再数镜像名 —— 镜像名在解释它的注释里也出现一次，
   拿裸串去数会数出两份，那是**测试自己读数错**（与探活 `apikey` 那条同一类坑，
   §4.18 记过它的形状）
-- `sw.js` **不动**：§5.7 那一轮已升到 **v136**（备份脚本自检进的是 `.cnb.yml`，
-  没有进预缓存的资源）；本轮只改流水线、文档与测试
 - 密钥仓库那一侧**不需要任何改动** —— 这个问题绕开它

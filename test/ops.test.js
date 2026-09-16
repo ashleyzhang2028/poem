@@ -341,6 +341,25 @@ console.log("\n=== 七之二、2D 的五个步骤（配置与真开通，docs §
   has(stepD, "只许出现一次", "D 步给出了「@ 只许出现一次」这条可自检的判据");
   has(stepD, "pooler.supabase.com", "D 步给出了解析不到直连主机名时的替代串（Session pooler）");
   has(stepD, "6543", "D 步写明 Transaction pooler 那个端口不要给 pg_dump 用");
+  has(stepD, "server version mismatch", "D 步写明 pg_dump 比服务端低时的报错");
+
+  /* ⚠️ Issue #159（备份那一半）：pg_dump 比服务端**低**大版本时是 abort，不是警告
+     ------------------------------------------------------------------------------
+     原先把「server version mismatch」写成「警告、不是备份失败」—— 那是错的：
+     pg_dump 16 对服务端 17 直接
+       pg_dump: error: aborting because of server version mismatch
+     备份**零产出**，而 shell 重定向已经建好了空文件（「有 0 字节的备份」比没有更坏）。
+     镜像已换成 postgres:17，并把「低版本 = 直接失败」与「0 字节不算备份」钉在
+     D 步文字与 .cnb.yml 的脚本里。 */
+  has(stepD, "postgres:17", "D 步写明备份镜像用 postgres:17（跟着服务端大版本走）");
+  has(stepD, "abort", "D 步写明版本低是直接 abort，不是「警告不是失败」");
+  has(stepD, "0 字节", "D 步写明 0 字节不算备份");
+  has(cnb, "image: postgres:17", ".cnb.yml 的备份镜像真的是 postgres:17");
+  chk(!/image: postgres:16/.test(cnb),
+    "备份镜像不再是 postgres:16（它对着服务端 17 一定 abort）");
+  chk(cnbCode.indexOf("pg_dump --version") >= 0, "备份脚本先把 pg_dump 版本打出来");
+  chk(/test "\$SIZE" -gt 0/.test(cnbCode), "备份脚本会为空文件把门（0 字节退非 0）");
+  chk(/rm -f "\$OUT"/.test(cnbCode), "备份失败会把半截文件删掉（不让空文件冒充备份）");
 
   has(cnbCode, "could not translate host name", "备份脚本自己会把那句误读的报错讲清楚");
   has(cnbCode, "DB_HOST=", "备份脚本真的从 URL 里拆出主机段来自检");
