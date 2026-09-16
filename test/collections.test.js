@@ -739,10 +739,12 @@ setTimeout(() => {
   }, 60);
 }, 60);
 
-/* ---------- 九、集合数量上限：Pro / Max 分层落地（本轮新增） ----------
-   用户 2026-09-17：「先把所有 pro, max 的功能做出来」。
+/* ---------- 九、集合数量上限：Free 10 / Pro 100 / Max 5000（Issue #163） ----------
+   用户 2026-09-18（Issue #163）：「自选清单 20 个 改成 自选清单 Free 10个，
+   pro 100个，max 5000个，直接在各列列出数字，**这个需要改功能代码或者数据**」。
    上限是全站**唯一一处**回答「能建几个集合」的地方（js/collections.js 的 limit()），
    拦在**数据层**而不是按钮上 —— 界面置灰不是边界（与 Entitlement.can 同一条纪律）。
+   ⚠️ 三个数字取自内核 CAPS 的 quotas：对比表上写 100，这里就必须是 100。
    单开一个 sandbox：entitlement.js + collections.js，与前面的测试互不干扰。 */
 setTimeout(function () {
   const domT = new JSDOM('<!doctype html><html><body></body></html>',
@@ -766,10 +768,14 @@ setTimeout(function () {
 
     clearAll();                                   // free（未登录）
     chk(L.limit() === L.FREE_COLLECTIONS, 'free：上限 = ' + L.limit() + ' 个');
-    const f1 = L.create('free 第一个');
-    chk(f1 && f1.id, 'free 建第 1 个集合：成功');
-    const f2 = L.create('free 第二个');
-    chk(f2 && f2.error === 'E_LIMIT', 'free 建第 2 个：被拦（E_LIMIT，不是静默丢掉）');
+
+    /* free：建满 10 个就停（用户点名 Free 10 个）——
+       第 10 个成功、第 11 个被拦，这才是「上限」而不是「建不了第二个」。 */
+    let fb = 0;
+    for (let i = 0; i < 12; i++) { const r = L.create('f' + i); if (r && r.id) fb++; }
+    chk(fb === L.FREE_COLLECTIONS, 'free 正好建到 ' + L.FREE_COLLECTIONS + ' 个就停（实际 ' + fb + '）');
+    const fLast = L.create('free 第 11 个');
+    chk(fLast && fLast.error === 'E_LIMIT', 'free 第 11 个：被拦（E_LIMIT，不是静默丢掉）');
     const imp = L.importText('poems-xx1-01', '', wt.SITE_INDEX || []);
     chk(imp.error === 'E_LIMIT' && imp.collection === null,
       'free 满额时导入也被拦（与 create 同一条不变量，绝不悄悄丢一半）');
@@ -778,24 +784,37 @@ setTimeout(function () {
     E2.writeTier(wt.localStorage, 'pro');
     chk(L.limit() === L.PRO_COLLECTIONS, 'Pro：上限 = ' + L.limit() + ' 个');
     let built = 0;
-    for (let i = 0; i < 25; i++) { const r = L.create('p' + i); if (r && r.id) built++; }
+    for (let i = 0; i < L.PRO_COLLECTIONS + 5; i++) { const r = L.create('p' + i); if (r && r.id) built++; }
     chk(built === L.PRO_COLLECTIONS, 'Pro 正好建到 ' + L.PRO_COLLECTIONS + ' 个就停（实际 ' + built + '）');
 
     clearAll();
     E2.writeTier(wt.localStorage, 'max');
-    chk(L.limit() === Infinity, 'Max：不限（limit() === Infinity）');
+    chk(L.limit() === L.MAX_COLLECTIONS, 'Max：上限 = ' + L.limit() + ' 个（不再是 Infinity）');
+    /* ⚠️ 5000 个不真建 5000 次（那是几秒的 I/O），只钉三件事：
+       limit() 是那个数、没到那个数就能建、到了就被拦（用 remaining 现算）。 */
     let b2 = 0;
     for (let j = 0; j < 30; j++) { const r = L.create('m' + j); if (r && r.id) b2++; }
     chk(b2 === 30, 'Max 连建 30 个全成功（实际 ' + b2 + '）');
+    chk(L.remaining() === L.MAX_COLLECTIONS - 30, 'Max 的 remaining() = 5000 − 已建数');
 
-    /* 与内核同源：上限里的两个数字必须与 entitlement.js 的能力名对得上 ——
-       「限制写在 A 处、读取在 B 处」正是本项目反复修的那一类洞。 */
-    chk(L.PRO_COLLECTIONS === 20 && /自选清单 20 个/.test(E2.CAPS['collections.many'].name),
-      'Pro 的 20 个与能力表「' + E2.CAPS['collections.many'].name + '」是同一个数');
-    chk(L.FREE_COLLECTIONS === 1, 'Free 1 个（「不收回现有功能」：加进来的第一篇永远放得下）');
+    /* 与内核同源：三个数字必须与 entitlement.js 的 quotas 对得上 ——
+       「限制写在 A 处、读取在 B 处」正是本项目反复修的那一类洞。
+       ⚠️ 判据是**数值**而不是能力名里的字：Issue #163 之后名字收成「自选清单」，
+       数字改由 quotas 承担（各列直接列出数字）。 */
+    const cap = E2.CAPS['collections.many'];
+    chk(L.FREE_COLLECTIONS === E2.quotaFor(cap, 'free'), 'Free 的 ' + L.FREE_COLLECTIONS + ' 个与内核 quotas 是同一个数');
+    chk(L.PRO_COLLECTIONS === E2.quotaFor(cap, 'pro'), 'Pro 的 ' + L.PRO_COLLECTIONS + ' 个与内核 quotas 是同一个数');
+    chk(L.MAX_COLLECTIONS === E2.quotaFor(cap, 'max'), 'Max 的 ' + L.MAX_COLLECTIONS + ' 个与内核 quotas 是同一个数');
+    chk(!/自选清单不限|20 个/.test(cap.name) && cap.name === '自选清单', '能力名收成「自选清单」（额度归 quotas，不写在名字里）');
+
+    /* 「自选清单不限」这条能力被**删除**（用户 2026-09-18：「已经被前面的
+       自选清单代替」）—— 同一个东西不留两条能力，否则必然开始各说各的。 */
+    chk(!E2.cap('collections.unlimited'), 'collections.unlimited 能力已删除（Max 的额度归 collections.many 的 5000）');
+    chk(E2.compare({}).rows.every(r => r.cap !== 'collections.unlimited'),
+      '对比表里不再单列一行「自选清单不限」');
 
     /* 拿不到权益内核时**不设限**（页脚本顺序不对 / 老缓存）——
-       否则症状是「本来能建 20 个的人突然建不了第二个」，且用户无法自查。 */
+       否则症状是「本来能建 100 个的人突然建不了第 11 个」，且用户无法自查。 */
     const saved = wt.Entitlement;
     delete wt.Entitlement;
     chk(L.limit() === Infinity, '读不到 Entitlement 时不设限（宁可不判，也不误拦）');

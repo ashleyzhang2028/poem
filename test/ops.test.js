@@ -367,8 +367,12 @@ console.log("\n=== 十、3 期那三件：口径写清了，而且**不许偷偷
   /* ③ 界面不假装：3 期的功能名**只许出现在该出现的地方** */
   const files = fs.readdirSync(path.join(ROOT, "js")).filter(f => /\.js$/.test(f));
   const holders = files.filter(f => /飞花令|现场考试|题库/.test(read("js/" + f)));
-  eq(holders.sort().join(","), "entitlement.js,game.js,quiz.js",
-    "js/ 下提到这三件事的只有内核能力表 + 那一层页面 + 出题内核（其余页面一个字都不渲染）");
+  /* ⚠️ Issue #163：`js/plans.js` 也出现在这里了 —— 它是**对比页的排版层**，
+     里头对 `exam.paper` 那一格有一处「名字分两行」的写法（古诗词大会 / 试题模拟）。
+     那一处只说**显示**（键名一个字没动），不渲染任何题目、也不判权，
+     所以它与「其余页面一个字都不渲染」不冲突 —— 判据按**文件**列出来。 */
+  eq(holders.sort().join(","), "entitlement.js,game.js,plans.js,quiz.js",
+    "js/ 下提到这三件事的只有内核能力表 + 对比页的排版层 + 出题内核 + 那一层页面");
   const gameSrc = read("js/game.js").replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^\s*\/\/.*$/gm, " ");
   chk(!/即将上线|敬请期待/.test(gameSrc), "js/game.js 里不写「即将上线」这类提前承诺");
   /* 未登录时先提登录，不提层级 —— 「未登录」与「层级不够」是两回事 */

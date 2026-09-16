@@ -2,7 +2,13 @@
  * 层级对比页专项测试（Issue #132 · /plans/）
  * ==========================================================================
  * 用户提的：「像其他网站那样，最左边是对比项，右边几列是不同角色，
- * 下面用打钩打叉」。落地为四列：未登录 / Free / Pro / Max。
+ * 下面用打钩打叉」。落地为四列：游客 / Free / Pro / Max。
+ *
+ * Issue #163（用户 2026-09-18）又在这一页上提了一串「说得更短、看得更全」：
+ *   · 第一列改称「游客」，角标「你现在在这」→「现在」；
+ *   · 功能列收窄一半，右侧四列尽量都进屏幕；
+ *   · 能力名逐个收短（额度数字从名字里搬到**各列**上，见 CAPS 的 `quotas`）；
+ *   · 表尾「能用」→「合计」。
  *
  * 这一层守五件事（都是「不靠肉眼点一遍就判得出」的那类）：
  *   一、表本身如实：每一格都等于 `can()` 的答案 —— 不许手抄一份
@@ -34,6 +40,8 @@ const chromeJs = read('js/chrome.js');
 const strip = t => t.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/^\s*\/\/.*$/gm, ' ');
 const stripHtml = t => t.replace(/<!--[\s\S]*?-->/g, ' ');
 const PAGE = strip(pageJs);
+/** 只剥注释的原文（有些断言要看注释里记的来龙去脉） */
+const plansCommentOnly = pageJs;
 
 /* ============ 一、表格如实：每格都等于 can() 的答案 ============ */
 {
@@ -41,7 +49,7 @@ const PAGE = strip(pageJs);
   chk(cmp.cols.length === 4, '对比表有四列（未登录 / Free / Pro / Max）');
   chk(cmp.cols.map(c => c.id).join(',') === 'guest,free,pro,max',
     '四列的顺序是 未登录 → Free → Pro → Max（从低到高，最左是最弱的身份）');
-  chk(cmp.cols.map(c => c.label).join(',') === '未登录,Free,Pro,Max',
+  chk(cmp.cols.map(c => c.label).join(',') === '游客,Free,Pro,Max',
     '四列标题如实：' + cmp.cols.map(c => c.label).join(' / '));
   chk(cmp.cols[0].guest === true && cmp.cols.slice(1).every(c => !c.guest),
     '只有第一列是「未登录」，其余三列都是登录后的身份');
@@ -65,9 +73,25 @@ const PAGE = strip(pageJs);
   chk(mism.length === 0,
     '表里的每一格都等于 Entitlement.can() 当场算的答案（实际不一致：' + mism.join(',') + '）');
 
-  // 钩的形态：能用 = 打钩、不能用 = 打叉 + 一句门槛
-  chk(cmp.rows.every(r => r.cells.every(c => c.ok ? c.hint === "" || /每月/.test(c.hint) : !!c.hint)),
-    '能用的格子要么无字、要么只写额度；不能用的格子一定有门槛文案');
+  // 钩的形态：能用 = 打钩（+ 有额度就写数字）、不能用 = 打叉 + 一句门槛
+  chk(cmp.rows.every(r => r.cells.every(c => c.ok ? true : !!c.hint)),
+    '不能用的格子一定有门槛文案（「登录可用」/「Pro 起可用」）');
+  /* Issue #163：额度数字**长在格子上**（用户原话「直接在各列列出数字」）——
+     自选清单 10 / 100 / 5000、家庭档案 1 / 3 / 180、课内诗词导出 261 首。
+     这一条把「数字在表里真的看得见」钉住：改回「都塞进功能名」就红。 */
+  const capRow = n => cmp.rows.find(r => r.cap === n);
+  chk(capRow('collections.many').cells[1].quota === 10 &&
+      capRow('collections.many').cells[2].quota === 100 &&
+      capRow('collections.many').cells[3].quota === 5000,
+    '自选清单三档额度在**格子上**：Free 10 / Pro 100 / Max 5000');
+  chk(capRow('profile.family').cells[1].quota === 1 &&
+      capRow('profile.family').cells[2].quota === 3 &&
+      capRow('profile.family').cells[3].quota === 180,
+    '家庭档案三档在格子上：1 / 3 / 180');
+  chk(capRow('export.all').cells[2].quota === 261 && capRow('export.all').cells[3].quota === 261,
+    '课内诗词导出：Pro / Max 两列都列出 261 首');
+  chk(capRow('export.all').cells[2].hint === '261 个',
+    '能用的格子里带额度数字（不只是打钩，用户点名要「直接列出数字」）：' + capRow('export.all').cells[2].hint);
   const readAloud = cmp.rows.find(r => r.cap === 'read.aloud');
   chk(readAloud.cells[0].ok === false && readAloud.cells[0].reason === 'login',
     '「语音朗读」在未登录列是叉，且拦它的是「未登录」而不是层级');
@@ -135,6 +159,36 @@ const PAGE = strip(pageJs);
   const a = Ent.compare({}), b = Ent.compare({});
   chk(JSON.stringify(a.rows) === JSON.stringify(b.rows),
     'compare() 是纯函数：同样输入两次调用结果逐字相同（大小写 / 顺序都不许漂）');
+}
+
+/* ============ 三之二、Issue #163：名字收短 / 两行那句话 / 表尾改称「合计」 ============ */
+{
+  const cmp = Ent.compare({});
+  /* 能力名逐个收短（用户点名的十二处）。判据是**内核里的名字**，
+     不是页面画出来的字 —— 名字只有一个来源，页面只是把它画出来。 */
+  const want = {
+    'recite.basic': '每日背诵', 'library.all': '课外阅读', 'read.aloud': '语音朗读',
+    'pinyin.helper': '阅读辅助', 'export.progress': '进度导出',
+    'collections.many': '自选清单', 'sync.multiDevice': '设备同步',
+    'export.paper': 'PDF / 打印', 'profile.family': '家庭档案',
+    'quiz.review': '题库', 'export.all': '课内诗词导出', 'exam.paper': '试题模拟'
+  };
+  Object.keys(want).forEach(k => {
+    const row = cmp.rows.find(r => r.cap === k);
+    chk(row && row.name === want[k], k + ' 的名字是「' + want[k] + '」（实际 ' +
+      (row ? row.name : '(缺这一行)') + '）');
+  });
+  /* 「古诗词大会 / 试题模拟」这一格要**分两行**说两件事 —— 拆写在 JS 里，
+     按 cap 认（不按名字猜），且两行都来自内核给的名字之外的一处常量。 */
+  chk(/TWO_LINE[\s\S]{0,200}exam\.paper/.test(PAGE), 'js/plans.js 里对 exam.paper 有分两行的写法');
+  chk(/古诗词大会/.test(PAGE) && /试题模拟/.test(PAGE), '两行分别是「古诗词大会」与「试题模拟」');
+  chk(/plans-cap-line/.test(PAGE) && /plans-cap-line/.test(css), '两行用 .plans-cap-line 排版（样式也在）');
+  /* ⚠️ 拆的是**显示**：键名 `exam.paper` 一个字都不许动（服务端 featuresFor 对拍）。 */
+  chk(!!Ent.cap('exam.paper'), 'exam.paper 键名照旧（改的是显示，不是键名）');
+  /* 表尾改称「合计」：这一格不再借「能用」那个词表态。 */
+  chk(/合计/.test(PAGE), '表尾那一格写作「合计」（Issue #163：能用 → 合计）');
+  chk(!/['"]能用['"]/.test(PAGE), 'js/plans.js 里不再出现「能用」这个表尾词');
+  chk(/你现在在这/.test(plansCommentOnly), '注释里留了改名的来龙去脉（「你现在这」是从哪来的）');
 }
 
 /* ============ 四、页面收口：不许自己拼 tier / plan ============ */
@@ -254,7 +308,7 @@ const PAGE = strip(pageJs);
   chk(sw.indexOf('"./plans/"') >= 0, 'sw.js 预缓存里有 ./plans/（断网也进得去）');
   chk(sw.indexOf('"./js/plans.js"') >= 0, 'sw.js 预缓存里有 js/plans.js');
   const ver = parseInt((sw.match(/poem-app-v(\d+)/) || [0, '0'])[1], 10);
-  chk(ver >= 128, '缓存版本已跟着提（本轮 Issue #163 改了本页与 js/plans.js，实际 v' + ver + '）');
+  chk(ver >= 132, '缓存版本已跟着提（本轮 Issue #163 改了本页 / 内核 / 数据层，实际 v' + ver + '）');
   const list = [...sw.matchAll(/"(\.\/[^"]+)"/g)].map(m => m[1]);
   const missing = list.filter(u => {
     if (u === './') return false;
@@ -276,12 +330,26 @@ const PAGE = strip(pageJs);
   chk(/\.plans-mark\.ok/.test(css) && /\.plans-mark\.no/.test(css),
     '打钩与打叉各有自己的样子（不是同一个符号换色）');
   chk(/\.plans-col-me/.test(css), '「你现在在这」那一列有高亮');
-  // 两档收边：手机上收窄功能名那一列（否则表头「未登录」三个字折行），
-  // 平板上不再需要横向滚（一列纸 1040px 放得下四列）
-  chk(/@media \(max-width: 400px\)[\s\S]*?\.plans-table \{ min-width: 440px/.test(css),
-    '手机（≤400px）对四列表单独收过一档（四列不能挤成豆腐块）');
-  chk(/@media \(min-width: 768px\)[\s\S]*?\.plans-table \{ min-width: 0/.test(css),
-    '平板 / 桌面不再横向滚（表跟着正文列一起放宽）');
+  /* ---------- Issue #163：功能列收窄一半、四列尽量都进屏幕 ----------
+     用户原话：「功能列，减少一半的宽度，让右侧四列尽可能多的显示进屏幕」。
+     落地靠三件事（缺一不可）：功能列收窄、四列各有最小宽、默认不再靠总宽顶。
+     判据全部对着 **css/account.css** 的数值判 —— 这几条数值之间是绑死的，
+     改一条忘了另几条，症状就是「四列又被挤出去了」。 */
+  chk(/\.plans-th-cap \{[\s\S]{0,400}?max-width: 132px/.test(css),
+    '功能列收窄（max-width: 132px，原先 150px 起步 + 表格总宽 468px 顶着）');
+  chk(/\.plans-cell \{[\s\S]{0,300}?min-width: 42px/.test(css),
+    '四列各有最小宽（42px + 左右 padding = 50px 一格 \(五位数额度也放得下\)）');
+  /* ⚠️ 反向那条最要紧：`.plans-table` 的 `min-width` 只要大于四列之和，
+     四列就必然被挤出屏幕（这正是 #163 之前的样子：468px）。 */
+  chk(/\.plans-table \{[\s\S]{0,400}?min-width: 0/.test(css),
+    '\.plans-table 不再声明一个「放不下就横滚」的总宽（宽度交给四列的最小宽回答）');
+  chk(!/min-width: 4[0-9][0-9]px/.test(css.slice(css.indexOf('.plans-scroll'))),
+    '对比表这一节里没有 4xx px 那种老总宽残留（四列进不进屏不再被一个总数挡住）');
+  // 两档收边：窄机收功能列（四列仍然进屏）、平板放宽功能列（长名不折两行）
+  chk(/@media \(max-width: 360px\)[\s\S]*?\.plans-cell \{ min-width: 38px/.test(css),
+    '窄机（≤360px）再收一档：功能列与四列同时让一步，四列仍然进屏');
+  chk(/@media \(min-width: 768px\)[\s\S]*?\.plans-th-cap \{ width: auto; max-width: 240px/.test(css),
+    '平板 / 桌面把功能列放宽（长名一行放得下，不必折两行）');
   const palette = read('css/style.css') + read('css/classic.css') + read('css/legal.css');
   const mine = css.slice(css.indexOf('.plans-scroll'));
   const hex = (mine.replace(/rgba?\([^)]*\)/g, '').match(/#[0-9a-fA-F]{6}/g) || [])
