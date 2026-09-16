@@ -64,17 +64,38 @@ const legalCode = strip(legalCss);
  *   而 `#app` 那条里也有 max-width —— 用包含匹配就会张冠李戴。
  * 做法：先把 @media 外壳剥掉、把里面的规则提到顶层（只关心「某档是否存在这条声明」），
  * 再按顺序把「选择器组里恰好含这一条」的规则块累加。
+ *
+ * ⚠️ 同名属性只保留**最后一条**（这一步不能省）。原先的版本把每一段的声明
+ *   原样拼起来，于是 `.switch-track` 的 `width` 同时是 40px（旧段：那是轨道）
+ *   与 18px（新段：那是滑块）—— 断言按累积读，读到的是**先写的那条**，
+ *   而浏览器用的是后写的那条。真踩过：同一份样式表里出现两段同名规则之后，
+ *   「滑块 18px」的断言去读了轨道那一段的 40px，接着按 40 算行程，算出一个负数。
+ *   症状是**测试红、页面却完全正常** —— 比漏判更难查，因为没人会去怀疑读数。
+ *   留最后一条之后，「哪个值真生效」与浏览器一致，这类断言才是在判页面。
  */
 function ruleOf(src, sel) {
   const flat = src.replace(/@media[^{]+\{/g, '{');
-  let acc = '';
+  /* 全部命中片段的注释先去掉：注释里常带 `width: 40×24` 这类说明文字，
+     按 `;` 取最后一条会把注释里的半句当成声明。 */
+  const decls = [];
   const re = /([^{}]+)\{([^}]*)\}/g;
   let m;
   while ((m = re.exec(flat))) {
     const sels = m[1].split(',').map(x => x.trim());
-    if (sels.includes(sel)) acc += ';' + m[2];
+    if (!sels.includes(sel)) continue;
+    m[2].split(';').forEach(d => {
+      if (d.trim()) decls.push(d.trim());
+    });
   }
-  return acc;
+  /* 同属性留最后一条，且**保持各属性首次出现的顺序**（可读性，不影响判定） */
+  const last = new Map();
+  const order = [];
+  decls.forEach(d => {
+    const name = d.split(':')[0].trim().toLowerCase();
+    if (!last.has(name)) order.push(name);
+    last.set(name, d);
+  });
+  return order.map(n => last.get(n)).join(';');
 }
 
 /* ==========================================================================
@@ -1103,6 +1124,9 @@ PAGE_FILES.forEach(f => {
         **且行程是照这几个值算出来的** —— 写死一个 translateX 而不跟着尺寸走，
         改一次尺寸滑块就会越界或走不到位；
      ③ 真渲染出来确实是这个尺寸、滑块确实落在轨道里（不是只在源码里写着）。
+     ④ 这两段的判据取的是**剥掉注释之后**的源码：.switch-row / .switch-label
+        这两个名字在 css/style.css 的注释里被点名说过「已删掉」，
+        按裸源码匹配会把说明文字当成还在的死规则。
 
    ⚠️ 「轨道」在这一版里就是 .switch-input 本身，不是 .switch-track ——
       .switch-track 是**滑块**（40×24 的胶囊里那枚 18px 圆点）。
@@ -1173,7 +1197,8 @@ PAGE_FILES.forEach(f => {
   // 反向：那个只存在于 CSS 里的 .switch-row / .switch-label 不许再回来
   //（Issue #163 两轮改动各写了一套开关，旧的 .switch-row 那一套被后写的覆盖，
   //  留下的是一整段「谁都没用」的死样式 —— 死样式会误导下一个改开关的人）
-  chk(!/\.switch-row\s*[,{]/.test(cssCode) && !/\.switch-label\s*[,{]/.test(cssCode),
+  // ⚠️ 读的是 strip(cssCode)：这两个名字在样式表的注释里被点名说明过「已删」。
+  chk(!/\.switch-row\s*[,{]/.test(strip(cssCode)) && !/\.switch-label\s*[,{]/.test(strip(cssCode)),
     '样式表里没有 .switch-row / .switch-label 的死规则（HTML 从不使用这两个类名）');
 
   /* 真渲染：把样式表挂进去，量一遍画出来的结果 —— 上面全是源码断言，
@@ -1310,14 +1335,18 @@ PAGE_FILES.forEach(f => {
   //       上一版那套 .switch-row / .switch-label 已被 Issue #163 的第二轮
   //       改动取代（HTML 里一个字都不再用），所以**不进这份清单** ——
   //       反过来还要判它们没有被留下来当死样式（见下一行）。
+  //       尺寸只此一份：`.switch-input` / `.switch-track` 的**唯一定义处**
+  //       在 css/style.css（name ③ 那一段写死了唯一一段，量到的就是画出来的）。
   ['switch', 'switch-input', 'switch-track'].forEach(cls => {
     chk(new RegExp('\\.' + cls + '\\s*[,{]').test(cssCode),
       '开关的 .' + cls + ' 在样式表里有规则（HTML 写了就得画出来）');
   });
   // 反向：上一版的 .switch-row / .switch-label 不许再出现在样式表里 ——
   // 「HTML 已经不用的类名却还留着一整段规则」会让下一个改开关的人找不到北。
+  // ⚠️ 这条判据读的是**剥掉注释之后**的源码：这两组类名在 style.css 的
+  //    注释里被点名说明过「已删掉」，按裸源码匹配会把说明文字当成死规则。
   ['switch-row', 'switch-label'].forEach(cls => {
-    chk(!new RegExp('\\.' + cls + '\\s*[,{]').test(cssCode),
+    chk(!new RegExp('\\.' + cls + '\\s*[,{]').test(strip(cssCode)),
       '上一版的 .' + cls + ' 已从样式表里清掉（HTML 不用的类名不留死规则）');
   });
   chk(/input:checked\s*\+\s*\.switch-track/.test(cssCode),
@@ -1327,6 +1356,13 @@ PAGE_FILES.forEach(f => {
   // 真实输入框留着（键盘 / 读屏要用），自绘成胶囊本体
   chk(/appearance:\s*none/.test(ruleOf(cssCode, '.switch-input')),
     '.switch-input 是自绘胶囊本体（appearance:none，不删 input，键盘与读屏照旧）');
+  // ⚠️ 这里判的是「不许把它藏掉」：自绘版里 input 就是**可见的胶囊本体**，
+  //    藏 form 控件的三种常见手法（display:none / visibility:hidden / opacity:0）
+  //    任一出现，键盘与读屏就一起没了。
+  const swIn = ruleOf(cssCode, '.switch-input');
+  chk(!/display:\s*none/.test(swIn) && !/visibility:\s*hidden/.test(swIn) &&
+      !/opacity:\s*0(?![.\d])/.test(swIn),
+    '.switch-input 没有被藏掉（不删 input，键盘与读屏照旧）');
   // 滑块必须画在胶囊里：左起点 + 滑块宽 ≤ 轨道宽 —— 越界就是「画歪了」。
   // 判的是**声明之间的关系**，不是某个具体像素：换尺寸照样成立。
   const numOf = (code, sel, prop) => {
@@ -1338,6 +1374,22 @@ PAGE_FILES.forEach(f => {
   const knobL = numOf(cssCode, '.switch-track', 'left');
   chk(capW > 0 && knobW > 0 && knobL + knobW <= capW,
     '滑块落在胶囊里（起点 ' + knobL + ' + 滑块 ' + knobW + ' ≤ 轨道 ' + capW + '）');
+  // ⚠️ 这一条是那 5 条长期亮红的断言里最后一条的**直接守门人**：
+  //    「滑块 18px 按 40 去算、行程 −6px」那个错误的根因就是
+  //    `.switch-track` 在样式表里有两段（一段是轨道、一段是滑块）。
+  //    现在这两个选择器只有**唯一定义处**，判它们的声明段数 == 1，
+  //    两段同名规则再长回来时立刻报出来。
+  const segCount = (sel) => {
+    const flat = cssCode.replace(/@media[^{]+\{/g, '{');
+    const re = /([^{}]+)\{([^}]*)\}/g;
+    let m, n = 0;
+    while ((m = re.exec(flat))) {
+      if (m[1].split(',').map(x => x.trim()).includes(sel)) n++;
+    }
+    return n;
+  };
+  chk(segCount('.switch-input') === 1 && segCount('.switch-track') === 1,
+    '开关的 .switch-input / .switch-track 各只有一段规则（源码里量到的就是画出来的）');
 }
 
 /* ==========================================================================
@@ -1411,9 +1463,14 @@ if (JSDOM) {
     { url: 'https://local.test/settings/general/' }).window.document;
   const input = doc.getElementById('toggle-sync');
   const track = doc.querySelector('.switch-track');
-  chk(!!input && !!track, '开关的 input 与滑块两样都在 DOM 里');
-  chk(!!doc.querySelector('label.switch'),
-    '两者包在同一个 <label> 里（点文字 / 点滑块都切得动，iOS 上也是）');
+  /* Issue #163 之后开关是**一颗 input 自己画出来的**（胶囊 = input 本体、
+     滑块 = 它的紧邻兄弟 span），不再有「状态字」那一颗 span ——
+     所以这里判的是「input 与滑块两样都在 DOM 里、且真在一个 label 里」。 */
+  chk(!!input && !!track, '开关的 input / 滑块两样都在 DOM 里（状态由是否选中表达）');
+  chk(!!doc.querySelector('label.switch') &&
+      doc.querySelector('label.switch').contains(input) &&
+      doc.querySelector('label.switch').contains(track),
+    '两者包在同一个 <label.switch> 里（点轨道任意处都切得动，iOS 上也是）');
   // 顺序：input → 滑块。CSS 的 `input:checked + .switch-track` 靠的就是它
   chk(!!input && input.nextElementSibling === track,
     '滑块是 input 的紧邻兄弟（`:checked + .switch-track` 这条相邻选择器才对得上）');

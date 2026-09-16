@@ -54,7 +54,42 @@
             </div>
           </div>
         </section>
+
+        <!-- ==================================================================
+             篇目打印页（Pro · export.paper）
+             ------------------------------------------------------------------
+             入口**就在自选清单下面**，因为要打印的正是这份清单：
+             挑了几十篇、排好顺序，下一步就是「打出来贴墙上」。
+
+             ⚠️ 与古诗词大会同一条路子：**就地叠层**，地址栏不动，
+                返回键一层退一层。这一件事没有自己的状态 ——
+                它用的就是「哪一份清单」，单开一页等于让人来回搬东西。
+
+             ⚠️ 未登录 / 层级不够时这颗键**照旧看得见**（不许把入口藏起来
+                当成权限边界，docs §3.4），点进去是一张如实说明「要 Pro」的卡。
+
+             ⚠️ 这一块的说明只说「能做什么」，**不写「即将上线」** ——
+                它就是做完了，只是要 Pro（2A 立的规矩）。
+             注意 `data-print-collection` 留空 = **全部自选**（按作品去重，
+             与每日任务同一份口径）；某一本清单的「打印」在那一行的操作键里。
+             ================================================================== -->
+        <section class="settings-group" aria-labelledby="grp-print">
+          <h2 class="settings-group-title" id="grp-print">打印</h2>
+          <div class="settings-item wide">
+            <label>篇目打印页</label>
+            <p class="settings-hint">把自选清单排成一页纸：选纸型、选要不要拼音 / 译文 / 注释格线，
+              然后点「打印 / 存 PDF」。打的是原文，标点一个都不改。</p>
+            <div class="settings-btns">
+              <button class="btn ghost-btn" type="button" data-print-open="1"
+                title="把这份清单排成一页纸，打印或存成 PDF">打印这份清单</button>
+            </div>
+          </div>
+        </section>
       </div>
+
+      <!-- 篇目打印页那一层：就地铺在同一个 .app 里（与 /poems/ 的古诗词大会同一条规矩）。
+           默认 hidden，点上面那颗键才铺上来。 -->
+      <div class="poems-print" data-print-view="sheet" hidden></div>
     </main>
 
     <footer class="foot settings-foot">
@@ -121,7 +156,11 @@
   <!-- 自选集合（用户自己加背的篇目）：本页就是它的增删改查。
        与首页、集子页读的是同一个模块、同一份 localStorage 键。 -->
   <script src="/js/collections.js"></script>
+  <!-- 篇目打印页的版面内核（纯逻辑、零 DOM、零网络）：页数**算得出来**，
+       且只有这一份参数（css/account.css 的打印那一段读的是同一份口径）。 -->
+  <script src="/js/print-core.js"></script>
   <script src="/js/settings.js"></script>
+  <script src="/js/print.js"></script>
   <script src="/js/avatar.js"></script>
   <script src="/js/chrome.js"></script>
   <script src="/js/pwa.js"></script>

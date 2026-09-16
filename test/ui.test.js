@@ -267,16 +267,21 @@ setTimeout(() => {
   chk(groupTitlesOf(sgeneral).join('/') === '通用', '「通用」页只有一组：通用');
   chk(groupTitlesOf(srecite).join('/') === '背诵/复习算法',
     '「背诵」页是两组：背诵 + 复习算法（实际 ' + groupTitlesOf(srecite).join('/') + '）');
-  chk(groupTitlesOf(slists).join('/') === '我的清单', '「我的清单」页只有一组：我的清单');
+  /* ⚠️ 「我的清单」这一页现在是**两组**：清单本身 + 打印。
+     打印（Pro · export.paper）就长在它下面 —— 要打印的正是这份清单，
+     分开两页等于让用户在两张页之间来回搬东西（见 docs §5.2 与 js/print.js）。 */
+  chk(groupTitlesOf(slists).join('/') === '我的清单/打印',
+    '「我的清单」页是两组：我的清单 + 打印（实际 ' + groupTitlesOf(slists).join('/') + '）');
   chk(groupTitlesOf(sreader).join('/') === '朗读',
     '「朗读」页只有一组（Issue #163：原「阅读辅助 + 朗读播放」并成「朗读」，实际 ' +
     groupTitlesOf(sreader).join('/') + '）');
   // 四张页合起来：前四组与顺序不变 —— 拆页不该顺手改分类；
-  // 「阅读辅助 + 朗读播放」两条各只有一条设置的组并成一组「朗读」（Issue #163）。
+  // 「阅读辅助 + 朗读播放」两条各只有一条设置的组并成一组「朗读」（Issue #163），
+  // 再 + 3 期新增的「打印」一组（长在「我的清单」页上）。
   const allGroupTitles = [...groupTitlesOf(sgeneral), ...groupTitlesOf(srecite),
     ...groupTitlesOf(slists), ...groupTitlesOf(sreader)];
-  chk(allGroupTitles.join('/') === '通用/背诵/复习算法/我的清单/朗读',
-    '四张二级页合起来是五组、顺序不变（实际 ' + allGroupTitles.join('/') + '）');
+  chk(allGroupTitles.join('/') === '通用/背诵/复习算法/我的清单/打印/朗读',
+    '四张二级页合起来是六组、顺序不变（实际 ' + allGroupTitles.join('/') + '）');
   // 需求（本次）：分组标题下的二级描述全部删除，标题下方直接就是选项
   chk([sgeneral, srecite, slists, sreader].every(doc =>
     [...doc.querySelectorAll('.settings-group')].every(g => !g.querySelector('.settings-group-desc'))),

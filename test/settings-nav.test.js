@@ -79,11 +79,13 @@ const NAV = read('js/settings-nav.js');
     });
   });
   // 分组：四张页合起来是五组（Issue #163 把「阅读辅助 + 朗读播放」并成一组「朗读」），
-  // 前四组与顺序一个字没改。
+  // 再 + 3 期新增的「打印」一组，前四组与顺序一个字没改。
+  // ⚠️ `print` 那一组是**新增**的（篇目打印页，Pro · `export.paper`），
+  //    它长在「我的清单」页上 —— 要打印的正是这份清单，分两页等于让人来回搬东西。
   const titles = ['general', 'recite', 'lists', 'reader']
     .flatMap(k => [...SRC[k].matchAll(/aria-labelledby="grp-([a-z]+)"/g)].map(m => m[1]));
-  chk(titles.join(',') === 'general,recite,algo,lists,reader',
-    '四张页合起来是原六组并成五组、顺序不变（实际 ' + titles.join(',') + '）');
+  chk(titles.join(',') === 'general,recite,algo,lists,print,reader',
+    '四张页合起来是原六组并成五组 + 打印、顺序不变（实际 ' + titles.join(',') + '）');
   // Issue #163：两条只有一条设置的组不再各占一个组标题 ——
   // 「阅读辅助 + 朗读播放」并成「朗读」一组，组标题只留一个。
   chk(/aria-labelledby="grp-reader"[\s\S]*?<\/section>/.test(SRC.reader) &&

@@ -26,6 +26,8 @@ const PRECACHE = [
   "./js/plans.js",
   "./js/quiz.js",
   "./js/game.js",
+  "./js/print-core.js",
+  "./js/print.js",
   "./js/settings.js",
   "./js/settings-nav.js",
   "./js/play-modes.js",

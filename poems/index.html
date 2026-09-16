@@ -91,6 +91,10 @@
             「一列纸」的宽度与两侧的边就会被算两遍（卡片看着莫名变窄）。 -->
     <div class="poems-game" data-poems-view="game" hidden></div>
 
+    <!-- 篇目打印页那一层：同样就地铺在 .app 里，与古诗词大会同一套「一层退一层」。
+         点详情页工具条上那颗「打印」才铺上来。 -->
+    <div class="poems-print" data-print-view="sheet" hidden></div>
+
     <!-- 页底不再挂版权与法务链接：这一页只留列表，版权 + 用户协议 / 隐私条款只在设置整页底部 -->
   </div>
 
@@ -183,6 +187,22 @@
             </svg>
           </span>
           <span class="sr-only" id="gw-done-text">标记已读</span>
+        </button>
+        <!-- 「这一篇打出来」（Pro · export.paper）：把**当前这一篇**交给打印那一层。
+             它挂在详情页工具条上（不是列表里）—— 打印的对象是「我正在读的这一篇」。
+             ⚠️ 入口照旧看得见：未登录 / 层级不够时点进去是一张如实说明「要 Pro」的卡
+                （docs §3.4：把入口藏起来不是权限边界）。
+             ⚠️ `data-print-poem` 由 js/poems.js / 引擎在打开某一篇时写上去 ——
+                这一页只放槽位，那一层的逻辑全在 js/print.js 里。 -->
+        <button type="button" class="mini-btn" id="gw-print" data-print-open="1" data-print-poem="" title="这一篇打出来（打印或存 PDF）">
+          <span class="btn-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M7.4 8.6V4.8h9.2v3.8" />
+              <path d="M5.4 8.6h13.2a1.4 1.4 0 0 1 1.4 1.4v5.6a1.4 1.4 0 0 1-1.4 1.4h-2.2v3.2H7.4v-3.2H5.4A1.4 1.4 0 0 1 4 15.6V10a1.4 1.4 0 0 1 1.4-1.4Z" />
+              <path d="M7.4 12.6h9.2" />
+            </svg>
+          </span>
+          <span class="sr-only" id="gw-print-text">这一篇打出来</span>
         </button>
       </div>
       <pre class="poem-text reader-text" id="rd-text" data-gw="text"></pre>
@@ -333,6 +353,10 @@
        三件共用它。它必须排在 js/game.js 之前。 -->
   <script src="js/quiz.js"></script>
   <script src="js/game.js"></script>
+  <!-- 篇目打印页（Pro）：版面内核 + 那一层。与古诗词大会同一条路子 ——
+       就地叠层，不是新的一页。print-core 必须排在 print.js 之前。 -->
+  <script src="js/print-core.js"></script>
+  <script src="js/print.js"></script>
   <script src="js/avatar.js"></script>
   <script src="js/chrome.js"></script>
   <script src="js/pwa.js"></script>
