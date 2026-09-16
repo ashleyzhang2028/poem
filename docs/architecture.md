@@ -213,6 +213,8 @@ jobs:
 │  /api/login              POST 邮箱 + 密码 → 同一枚会话             │
 │  /api/verify-email       POST 确认邮件里那条链接（不需登录）        │
 │  /api/resend-verification POST 重发确认邮件（要登录）              │
+│  /api/resend-verification-by-email POST 同上，**匿名**（登不进来   │
+│                          的人正是最需要那封信的人）                │
 │  /api/reset-request      POST 忘记密码 → 发重设邮件（不泄露存在性）  │
 │  /api/reset-confirm      POST 新密码 + 吊销全部会话                │
 │  /api/admin/accounts     POST 账号名录（含明文邮箱，只读，管理员）   │
@@ -255,7 +257,8 @@ jobs:
 | **确认邮箱**（#197） | `verify-email` | 邮件里那条链接的落点。**不要求登录** —— 用户可能在另一台设备上点开 |
 | **重发确认**（#197） | `resend-verification` | 「我没收到那封信」必须有一条路；**要登录**，否则任何人都能拿别人邮箱刷确认邮件 |
 | **忘记密码**（#197） | `reset-request` | 发重设邮件。**无论邮箱存不存在回同一个响应**（不泄露存在性） |
-| **重设密码**（#197） | `reset-confirm` | 换新摘要 + **吊销全部会话** —— 那是「重设」这件事的一半含义 |
+| **重设密码**（#197） | `reset-confirm` | 换新摘要 + **吊销全部会话** —— 那是「重设」这件事的一半含义；并如实回 `emailVerified`（没确认的人走完这一套**仍然登不进去**，那一句必须说出来） |
+| **匿名重发确认**（#197 后半段） | `resend-verification-by-email` | 「没确认就不让登录」这条口径下**唯一的出路**（要登录那条对这条路的人必然 401）。因此它是全站唯一一条「不登录也能让本站发信」的接口：频控四层 + 冷却 + 存在与否回同一形状 + 已确认的不发信 |
 | **账号名录**（#197） | `admin/accounts` | 用户裁决「邮箱必须记录到数据库」「我还是要看到这些用户」：一张**只读**的名录，含明文邮箱。它与会「只列发过层级的」那张**不是一张表** |
 
 **不需要的东西，明确列出，免得以后有人「顺手加」：**
@@ -311,7 +314,7 @@ jobs:
 | 登录标识 | `email_hash`（SHA-256 + 服务端 pepper）—— **登录查找**走它 |
 | 邮箱明文 | `accounts.email` —— **存明文**（Issue #197 用户裁决）。显示、管理员名录、发信走它；`/api/me` 只把它给「你自己」 |
 | 登录方式 | ① 邮箱随机码（6 位 / 10 分钟 / 单次）② 邮箱 + 密码（scrypt 摘要，见 `docs/auth-design.md` §4.4.3） |
-| 邮箱确认 | `accounts.email_verified_at` / `status`（`pending` → 点确认邮件 → `active`）。**不确认也能用**，确认是为了找回密码 |
+| 邮箱确认 | `accounts.email_verified_at` / `status`（`pending` → 点确认邮件 → `active`）。**没确认就登不进来**（用户 2026-09-16 在 Issue #197 裁决）；应急闸门 `REQUIRE_EMAIL_VERIFIED=0` 供未配发信商的实例使用，关掉时 `/api/me` 的 `channel.emailGate` 会如实自报 |
 | 会话 | **HttpOnly + Secure + SameSite=Lax 的签名 Cookie**，30 天 |
 | 权益来源 | **只有 `/api/me`**，客户端一切 `plan` 字段都是显示用的缓存；唯一能写它的地方是 `POST /api/admin/grant`（2.2 已落地，见 §4.14） |
 | 权益由谁写 | 服务端：`accounts.plan` / `plan_until`。**不在客户端**，也不在本机名单里（本机那份降级为兜底，见 §4.14） |

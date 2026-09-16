@@ -297,9 +297,13 @@
       /* 老行（Issue #197 之前建的）没有明文邮箱那一列 —— 那时如实回落到掩码，
          **不假装有**（编一个 a@b.com 出来比空着更糟）。 */
       var mail = a.email || a.emailMask || "（无邮箱）";
+      /* ⚠️ 「待确认」这三个字现在的分量与 Issue #197 之前**不一样**：
+         默认口径是「没确认就不让登录」，所以它不是一条参考信息，
+         而是一句「**这个人现在进不来**」。文案照这个说，
+         否则站长会以为「待确认」只是个还没填完的标记。 */
       var verified = a.emailVerified
         ? '<span class="acct-tag ok">已确认</span>'
-        : '<span class="acct-tag warn">待确认</span>';
+        : '<span class="acct-tag warn" title="没确认就登不进来（默认口径）">待确认 · 登不进来</span>';
       var pw = a.hasPassword
         ? '<span class="acct-tag">有密码</span>'
         : '<span class="acct-tag muted">无密码</span>';
