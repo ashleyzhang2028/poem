@@ -570,3 +570,134 @@ thead .plans-th-cap {
   border: 1px solid var(--danger-line);
 }
 .account-btn.danger:hover { filter: brightness(.98); }
+
+/* ==========================================================================
+   古诗词大会（3 期 · /poems/ 上就地铺开的那一层）
+   --------------------------------------------------------------------------
+   三个玩法（飞花令 / 现场考试 / 题库复习）共用这一套。与账号页共用同一张
+   `.account-card` —— 它们回答的是同一类问题：「我现在能用什么、怎么用」。
+   调色板全部走 css/style.css 的 :root 变量，本文件不新造颜色
+   （test/account-pages.test.js 有一条守着这件事）。
+
+   ⚠️ 飞花令的「看答案」是**点开才给内容**（内容先不生成，不是拿 CSS 遮住）：
+      `hidden` 的节点不渲染，读屏也念不到 —— 这是真的「先自己想」，
+      与「用一张不透明遮罩盖住底下那行字」不是一回事。
+   ========================================================================== */
+
+/* 索引页工具条上那颗入口键：与搜索框、连读键同一行 */
+.poems-game-entry {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  padding: 4px 10px;
+  margin-left: 8px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  box-shadow: var(--shadow);
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+.poems-game-entry:hover { filter: brightness(1.04); }
+.poems-game-entry:active { transform: scale(.985); }
+.poems-game-name { font-size: 13px; font-weight: 600; letter-spacing: .5px; }
+.poems-game-sub { font-size: 10.5px; color: var(--ink-3); white-space: nowrap; }
+
+/* 那一层本身：与列表同一列宽，只是换一屏内容 */
+.poems-game { padding: 4px 0 14px; }
+.poems-game[hidden] { display: none; }
+
+/* ---------- 三个玩法的选择卡 ---------- */
+.game-mode {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 12px 13px;
+  margin-bottom: 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  font: inherit;
+  color: var(--ink);
+  cursor: pointer;
+}
+.game-mode:last-child { margin-bottom: 0; }
+.game-mode:active { transform: scale(.99); }
+.game-mode[data-locked] { opacity: .62; background: var(--bg-soft); }
+.game-mode-main { display: flex; align-items: baseline; gap: 8px; }
+.game-mode-name { font-size: 14px; font-weight: 600; }
+.game-mode-tier {
+  font-size: 10.5px;
+  letter-spacing: .4px;
+  color: var(--green);
+  background: var(--green-light);
+  border-radius: 999px;
+  padding: 1px 7px;
+}
+.game-mode[data-locked] .game-mode-tier { color: var(--ink-3); background: var(--line); }
+.game-mode-desc { display: block; margin-top: 4px; font-size: 12px; color: var(--ink-3); line-height: 1.7; }
+
+/* 锁着时那张说明卡：为什么不能用、怎么才能用 */
+.game-gate { margin-top: 4px; }
+.game-gate-why { margin: 0 0 8px; font-size: 13px; color: var(--ink-2); line-height: 1.8; }
+
+/* ---------- 飞花令 ---------- */
+.game-head { position: relative; }
+.game-back { margin-bottom: 10px; }
+.game-chars { display: flex; align-items: flex-end; gap: 14px; margin: 2px 0 8px; }
+.game-char {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 38px;
+  line-height: 1.1;
+  color: var(--green);
+  font-weight: 600;
+}
+/* 令字的注音由 js/pinyin.js 给出（生字 / 多音字才会有）—— 不另写一份读音表 */
+.game-char-py { font-size: 12px; color: var(--ink-3); font-weight: 400; letter-spacing: .5px; }
+
+.game-lines { margin-top: 10px; }
+.game-line {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 9px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  margin-bottom: 6px;
+  cursor: pointer;
+}
+.game-line:last-child { margin-bottom: 0; }
+.game-line:active { transform: scale(.995); }
+.game-line-text { font-size: 14px; line-height: 1.75; color: var(--ink); }
+.game-line-src { font-size: 11px; color: var(--ink-3); }
+.game-hit { background: transparent; color: var(--red); font-weight: 600; }
+
+/* ---------- 考试 / 题库 ---------- */
+.game-stem { font-size: 17px; line-height: 1.9; color: var(--ink); margin-bottom: 6px; }
+.game-opts { display: flex; flex-direction: column; gap: 8px; margin: 10px 0 4px; }
+.game-opt {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 11px 13px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--ink);
+  cursor: pointer;
+}
+.game-opt.on { border-color: var(--green); background: var(--green-light); }
+.game-opt.ok { border-color: var(--green); background: var(--green-light); color: var(--green-dark); }
+.game-opt.no { border-color: var(--red); background: var(--red-light); color: var(--red); }
+.game-opt[disabled] { cursor: default; opacity: 1; }
+.game-nav { display: flex; gap: 8px; }
+.game-nav .account-btn { flex: 1 1 0; margin-top: 0; }

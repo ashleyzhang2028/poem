@@ -72,7 +72,11 @@ function serve() {
        因为要测的正是「角色闸在服务端」（直接打接口，不经任何界面）。 */
     "POST /api/admin/grant": require("../api/admin/grant.js"),
     "DELETE /api/admin/grant": require("../api/admin/grant.js"),
-    "POST /api/admin/grants": require("../api/admin/grants.js")
+    "POST /api/admin/grants": require("../api/admin/grants.js"),
+    /* 3 期（不花钱的那一层）：古诗词大会的判分口。
+       它**不调任何 AI、不引入任何依赖**，判分用的是 js/quiz.js ——
+       与客户端同一份代码。见 api/game/answer.js 的文件头。 */
+    "POST /api/game/answer": require("../api/game/answer.js")
   };
   const server = http.createServer((req, res) => {
     const pathname = req.url.split("?")[0];
@@ -486,7 +490,7 @@ async function main() {
     const mine = await core.me({ cfg, store, limiter, now: () => t, account: { uid } });
     eq(mine.status, 200, "有会话时 /api/me 回 200");
     eq(mine.body.plan.tier, "free", "free 账号回 free");
-    chk(mine.body.features.indexOf("speech.read") >= 0, "free 有 speech.read");
+    chk(mine.body.features.indexOf("read.aloud") >= 0, "free 有 read.aloud（与 js/entitlement.js 同一个键名）");
     chk(mine.body.features.indexOf("sync.multiDevice") < 0, "free 没有 sync.multiDevice");
     chk(!/email_hash/.test(JSON.stringify(mine.body)), "响应里不含 email_hash");
 
@@ -1477,6 +1481,169 @@ async function main() {
     try {
       const g = await call(sv3.base, "GET", "/api/admin/grant");
       eq(g.status, 405, "GET /api/admin/grant 回 405（写接口不接受 GET）");
+    } finally { await sv3.close(); }
+  }
+
+  /* ==================================================================
+     十七、古诗词大会 · 判分口（3 期 · 不花钱的那一层）
+
+     这一条最要紧的三件事：
+       ① **能力闸在服务端** —— 飞花令 / 现场考试要 Max、题库复习要 Pro
+          （用户 2026-09-17 的裁决）。直接打 HTTP，不经任何界面。
+       ② **答案由服务端重建** —— 请求体里塞一个假的 answer / chosen
+          改不掉判定；客户端说了不算。
+       ③ **不假装计费** —— charge 默认 false 时如实回 counted:false。
+     ================================================================== */
+  {
+    boot({ ALLOW_CODE_ECHO: "1" });
+
+    /* ---- ① 内核那一层：判分是纯比对，客户端传什么都不看 ---- */
+    {
+      const core = require("../api/_lib/core.js");
+      const cfg = require("../api/_lib/config.js");
+      const store = require("../api/_lib/store.js").memoryStore();
+      const limiter = core.makeRateLimiter();
+      const t = 1757900000000;
+      const d = { cfg, store, limiter, now: () => t, ip: "1.1.1.1", deviceId: "dev-1" };
+
+      /* 三层各自的能力键 —— 与 js/entitlement.js 的 CAPS 对得上 */
+      eq(core.GAME_CAP.fly, "feihualing", "飞花令那一档的能力键与前端同源");
+      eq(core.GAME_CAP.paper, "exam.paper", "现场考试那一档的能力键与前端同源");
+      eq(core.GAME_CAP.review, "quiz.review", "题库复习那一档的能力键与前端同源");
+      chk(core.gameAllowed(cfg, "pro", "quiz.review"), "题库复习：Pro 放行");
+      chk(!core.gameAllowed(cfg, "pro", "feihualing"), "**飞花令：Pro 不放行**（用户裁决：归 Max）");
+      chk(!core.gameAllowed(cfg, "pro", "exam.paper"), "**现场考试：Pro 不放行**（用户裁决：归 Max）");
+      chk(core.gameAllowed(cfg, "max", "feihualing"), "飞花令：Max 放行");
+      chk(core.gameAllowed(cfg, "max", "exam.paper"), "现场考试：Max 放行");
+      chk(!core.gameAllowed(cfg, "free", "quiz.review"), "free 一样都拿不到");
+
+      /* 未登录 → 401；不认识的题型 → 400 */
+      const anon = await core.gameAnswer(d, { kind: "review", poemId: "xx1-01", chosen: "鹅" });
+      eq(anon.status, 401, "没有会话时判分口回 401（这一项要登录）");
+      eq(anon.body.code, "E_NO_SESSION", "码是 E_NO_SESSION");
+      const badKind = await core.gameAnswer(d, { kind: "nonsense" });
+      eq(badKind.status, 400, "不认识的题型回 400（不静默当成 review）");
+      eq(badKind.body.code, "E_KIND", "码是 E_KIND");
+    }
+
+    /* ---- ② 走真 HTTP：三层各说各的话 + 客户端改不了答案 ---- */
+    const sv = await serve();
+    try {
+      const POST = (p, b, cookie) => call(sv.base, "POST", p, b, cookie);
+      const cfgM = require("../api/_lib/config.js");
+      const storeM = require("../api/_lib/store.js").getStore(cfgM);
+
+      const anon = await POST("/api/game/answer", { kind: "review", poemId: "xx1-01", chosen: "鹅" });
+      eq(anon.status, 401, "没有会话时回 401（不是 403、不是 500）");
+
+      /* 造一个 free 账号：判分口应当回 403 而不是「能用」 */
+      const u = await POST("/api/send-code", { email: "player@example.com" });
+      const c = await POST("/api/verify-code", { codeId: u.body.codeId, code: u.body.devCode });
+      const cookie = String(c.setCookie || "").split(";")[0];
+      chk(/^kbsid=/.test(cookie), "拿到了玩家会话 Cookie");
+
+      const asFree = await POST("/api/game/answer", { kind: "review", poemId: "xx1-01", chosen: "鹅" }, cookie);
+      eq(asFree.status, 403, "**free 打判分口回 403**（能力闸在服务端，不经界面）");
+      eq(asFree.body.code, "E_TIER", "码是 E_TIER（不是「连不上」，用户不该一直重试）");
+      eq(asFree.body.tier, "free", "如实回当前层级");
+
+      /* 提成 Pro：题库复习可用，飞花令 / 现场考试仍然 403 */
+      const rows = Object.keys(storeM._db.accounts).map(k => storeM._db.accounts[k]);
+      const me = rows.filter(a => a.email_mask === "p***@example.com")[0];
+      chk(!!me, "玩家那一行在库里");
+      me.plan = "pro";
+
+      const pro1 = await POST("/api/game/answer", { kind: "review", poemId: "xx1-01", chosen: "鹅" }, cookie);
+      eq(pro1.status, 200, "Pro 打题库复习回 200");
+      eq(pro1.body.cap, "quiz.review", "回的是它自己那一档能力");
+      eq(pro1.body.counted, false, "3 期没有定价：**如实回 counted:false**（不假装扣费）");
+      chk(/不计入额度|定价/.test(pro1.body.note), "note 里说清为什么没计费");
+
+      const proFly = await POST("/api/game/answer", { kind: "fly", chars: ["月"], said: "日月之行" }, cookie);
+      eq(proFly.status, 403, "Pro 打飞花令仍然 403（用户裁决：飞花令归 Max）");
+      const proPaper = await POST("/api/game/answer", { kind: "paper", poemId: "xx1-01", chosen: "鹅" }, cookie);
+      eq(proPaper.status, 403, "Pro 打现场考试仍然 403（用户裁决：现场考试归 Max）");
+
+      /* 提成 Max：三层全开 */
+      me.plan = "max";
+      const maxFly = await POST("/api/game/answer", { kind: "fly", chars: ["月"], said: "日月之行" }, cookie);
+      eq(maxFly.status, 200, "Max 打飞花令回 200");
+      eq(maxFly.body.kind, "fly", "回的是飞花令那一支");
+      eq(maxFly.body.ok, true, "「日月之行」确实是语料里的一句（逐字比对）");
+      eq(maxFly.body.title, "观沧海", "如实回出这一句出自哪一篇");
+      eq(maxFly.body.found, true, "found 为 true");
+      chk(maxFly.body.total > 0, "如实回「这个令字能对上几句」（实际 " + maxFly.body.total + "）");
+
+      const notFound = await POST("/api/game/answer", { kind: "fly", chars: ["月"], said: "这句话不存在于合集" }, cookie);
+      eq(notFound.body.ok, false, "编的句子如实回 false（不猜、不模糊匹配）");
+      eq(notFound.body.why, "notfound", "why 说清是「没找到」而不是「错了」");
+
+      /* ⚠️ 正确答案从**服务端自己的语料**里取，不写死一个字。
+         写死的话，哪天题库的取法一动（例如《咏鹅》开头三声「鹅」一字不差、
+         出题时改从「相邻且不相同的两句」里挑），这条断言就会以
+         「选了正确答案却 ok:false」的形式红掉 —— 而它想守的其实是
+         「选对了就是对了」，不是「答案永远是那个字」。 */
+      const core0 = require("../api/_lib/core.js");
+      const game0 = require("../api/_lib/game.js");
+      game0._reset();
+      const truth = game0.rebuild({ poemId: "xx1-01" });
+      chk(!!truth && !!truth.answer, "服务端能按 poemId 重建出这一题（答案 " +
+        (truth ? truth.answer : "?") + "）");
+
+      const maxPaper = await POST("/api/game/answer", { kind: "paper", poemId: "xx1-01", chosen: truth.answer }, cookie);
+      eq(maxPaper.status, 200, "Max 打现场考试回 200");
+      eq(maxPaper.body.ok, true, "选了正确答案 → ok:true");
+      eq(maxPaper.body.answer, truth.answer, "回出正确答案（界面据此把错的标红、对的标绿）");
+      chk(maxPaper.body.bankId, "回出这一题的 bankId（与题库同源）");
+      eq(core0.planTier({ plan: "max" }), "max", "（顺带：max 在服务端算得出 max）");
+
+      /* ③ 客户端说了不算：请求体里塞一个假的 answer 改不掉判定 */
+      const cheat = await POST("/api/game/answer",
+        { kind: "paper", poemId: "xx1-01", chosen: "肯定不是答案", answer: "肯定不是答案" }, cookie);
+      eq(cheat.status, 200, "塞了假 answer 也照常回 200");
+      eq(cheat.body.ok, false, "**客户端传上来的 answer 一律忽略**：判定仍然是错的");
+      eq(cheat.body.answer, truth.answer, "服务端回的是自己重建出来的答案");
+
+      const stale = await POST("/api/game/answer", { kind: "paper", bankId: "不存在的题", chosen: "x" }, cookie);
+      eq(stale.status, 400, "题库里没有这一条时回 400（不猜一个）");
+      eq(stale.body.code, "E_STALE", "码是 E_STALE（多半是前端缓存旧了一版）");
+
+      /* ④ 计费：打开 charge 才真计数，且按 uid 记在 progress 里 */
+      const charged = await POST("/api/game/answer", { kind: "review", poemId: "xx1-01", chosen: truth.answer, charge: true }, cookie);
+      eq(charged.status, 200, "打开 charge 也回 200");
+      eq(charged.body.counted, true, "打开 charge 时如实回 counted:true");
+      const quotaRows = storeM._db.progress;
+      const hit = Object.keys(quotaRows).filter(k => /game-quota:/.test(k));
+      eq(hit.length, 1, "额度记在 progress 里的一条记录上（不新开一张表）");
+      eq(quotaRows[hit[0]].payload.used, 1, "第一次计数为 1");
+      const charged2 = await POST("/api/game/answer", { kind: "review", poemId: "xx1-01", chosen: truth.answer, charge: true }, cookie);
+      eq(charged2.body.counted, true, "第二次也计数");
+      eq(quotaRows[hit[0]].payload.used, 2, "第二次为 2（真的在累加，不是每次都写 1）");
+      chk(!!quotaRows[hit[0]].payload.month, "额度按**日历月**记（用户看的账单与日历对得上）");
+
+      /* ⑤ 写接口都要频控（docs §4.3 第 3 条） */
+      let sawRate = false;
+      for (let i = 0; i < 80 && !sawRate; i++) {
+        const r = await POST("/api/game/answer", { kind: "review", poemId: "xx1-01", chosen: "鹅" }, cookie);
+        if (r.status === 429) { sawRate = true; eq(r.body.code, "E_RATE_DEVICE", "判分也走设备档频控（与同步/发放同表）"); }
+      }
+      chk(sawRate, "判分是写接口：连点会被频控拦住");
+    } finally { await sv.close(); }
+
+    /* ---- ⑥ 缺 SESSION_SECRET：503（与其余接口同口径）；GET 回 405 ---- */
+    boot({ SESSION_SECRET: "" });
+    const sv2 = await serve();
+    try {
+      const r = await call(sv2.base, "POST", "/api/game/answer", { kind: "review", poemId: "xx1-01", chosen: "鹅" });
+      eq(r.status, 503, "缺 SESSION_SECRET 时回 503（不是 500、不是 403）");
+      eq(r.body.code, "E_NOT_CONFIGURED", "码是 E_NOT_CONFIGURED（「未开放」是如实回答）");
+    } finally { await sv2.close(); }
+
+    boot({});
+    const sv3 = await serve();
+    try {
+      const g = await call(sv3.base, "GET", "/api/game/answer");
+      eq(g.status, 405, "GET /api/game/answer 回 405（判分不接受 GET）");
     } finally { await sv3.close(); }
   }
 

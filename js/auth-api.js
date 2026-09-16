@@ -232,6 +232,26 @@
       deleteAccount: function (input) {
         input = input || {};
         return call("/account", "DELETE", { confirm: input.confirm === true, deviceId: deviceId });
+      },
+
+      /* ---------------------------------------------------- 古诗词大会（3 期）
+         判分口。**它不判权限** —— 权限在服务端（`featuresFor`）。
+         这里只把「哪一道题、选了哪一条」送到，把答案带回来。
+         ⚠️ 刻意**不传**客户端手上那份答案：传上去也不会被采信
+            （服务端从自己的语料重建），传它只会让人误以为「服务端看了客户端的答案」。
+            js/game.js 里那一处显式传 `answer` 是**故意留的反例**（有断言守着）。 */
+      gameAnswer: function (input) {
+        input = input || {};
+        return post("/game/answer", {
+          kind: input.kind,
+          bankId: input.bankId,
+          poemId: input.poemId,
+          chosen: input.chosen,
+          chars: input.chars,
+          said: input.said,
+          charge: input.charge === true,
+          deviceId: deviceId
+        });
       }
     };
   }

@@ -114,7 +114,7 @@
       return;
     }
 
-    window.ReaderEngine.mount({
+    var engine = window.ReaderEngine.mount({
       id: "poems",
       items: withGroups(all),
       root: "[data-gw-root]",
@@ -138,6 +138,29 @@
       },
       // 列表上不挂「加入背诵」圆键：这一部本来就在每日任务里（见文件头）
       reciteList: false
+    });
+
+    /* ------------------------------------------------------------------
+       古诗词大会那一层要能「点一句 → 打开那一篇的原文」（3 期）。
+
+       它自己不知道阅读器怎么开 —— 那是这一页与引擎的事。所以它只发一个
+       事件（`poems:open`），由这里接住并调 `api.open(id)`。
+       **这是这两个模块之间唯一的接口**：那一层不认识 `ReaderEngine`，
+       这一页也不认识 `PoemGame` 的内部状态；少一处耦合，就少一处
+       「一边改了、另一边还在用老假设」的坑。
+
+       ⚠️ 引擎缺席（老缓存 / 脚本顺序变了）时**什么都不做**：
+          那一层照样能玩，只是点句子不开原文 —— 不报错、不打断答题。
+       ------------------------------------------------------------------ */
+    document.addEventListener("poems:open", function (e) {
+      var id = e && e.detail && e.detail.id;
+      if (!id || !engine || !engine.open) return;
+      /* 大会那一层还盖在上面：先把它收掉，再开阅读器 ——
+         否则阅读器叠在大会那一层底下，用户看到的是「点了没反应」。 */
+      if (window.PoemGame && window.PoemGame.isOpen && window.PoemGame.isOpen()) {
+        window.PoemGame.close();
+      }
+      engine.open(id);
     });
   }
 

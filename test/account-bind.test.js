@@ -110,7 +110,11 @@ async function main() {
     eq(id.tier, "pro", "服务端判定的 pro 真的落到了权益层（「补洞」那一件）");
     eq(id.label, "Pro", "徽章文案跟着变");
     eq(id.tierSource, "server", "层级来源标成「服务器判定」（不标的话本机那份会被读成权威）");
-    eq(E.can("feihualing", id.ctx).ok, true, "于是 Pro 能力真的开了（飞花令）");
+    /* ⚠️ 「Pro 能力真的开了」用**题库复习**来验，不用飞花令 ——
+       用户 2026-09-17 的裁决（Issue #159）把飞花令上收到了 Max，
+       这里判的是「服务端那份 pro 落没落到权益层」，与哪一条能力归哪一层无关。 */
+    eq(E.can("quiz.review", id.ctx).ok, true, "于是 Pro 能力真的开了（题库复习）");
+    eq(E.can("feihualing", id.ctx).ok, false, "而 Max 的飞花令没跟着开（层级没被抬高）");
   }
 
   console.log("\n=== 二、角色（role）也是服务端优先，本机兜底只在没有服务端答案时生效 ===");

@@ -20,6 +20,7 @@
   <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
   <link rel="stylesheet" href="css/style.css" />
   <link rel="stylesheet" href="css/classic.css" />
+  <link rel="stylesheet" href="css/account.css" />
 </head>
 <body data-nav="poems" data-page="课内古诗词">
   <!-- 挂载点：一段 data-gw-root 对应一份「索引页 + 阅读器」实例，
@@ -68,9 +69,27 @@
         </span>
         <span class="sr-only" id="gw-random-read-text">随机连读</span>
       </button>
+      <!-- 「古诗词大会」：这一页上的第二件事（第一件是「按册次翻目录」）。
+           它是**就地叠层**，不是跳走 —— 与 /library/ 上那五部集子的索引同一套：
+           地址栏不动，页顶换成本页的页名与说明，右上角那颗返回键一层退一层。
+           ⚠️ 这里只留一个空槽位与一个 data 标记：那一层的全部逻辑在 js/game.js 里，
+              这一页自己一个字都不写（页面只管它自己的列表与阅读器）。
+           ⚠️ 未登录 / 层级不够时它**照旧看得见**（不许把入口藏起来当成权限边界，
+              那是 docs §3.4 明写禁止的）—— 点进去是一张如实说明「要哪一层」的卡。 -->
+      <button class="poems-game-entry" type="button" data-game-open="1"
+        title="古诗词大会：飞花令 · 现场考试 · 题库复习">
+        <span class="poems-game-name">古诗词大会</span>
+        <span class="poems-game-sub">飞花令 · 现场考试 · 题库复习</span>
+      </button>
     </div>
 
-    <div class="list" id="gw-list" data-gw="list"></div>
+    <div class="list" id="gw-list" data-gw="list" data-poems-view="list"></div>
+
+    <!-- 古诗词大会那一层：**就地**铺在同一个 .app 里（不套 .app，见 Issue #149）。
+         默认 hidden，点工具条上那颗键才铺上来；铺上来时上面的列表那一段收起。
+         ⚠️ 与 /library/ 那两层同一条规矩：嵌在 .app 里面再套一层 .app，
+            「一列纸」的宽度与两侧的边就会被算两遍（卡片看着莫名变窄）。 -->
+    <div class="poems-game" data-poems-view="game" hidden></div>
 
     <!-- 页底不再挂版权与法务链接：这一页只留列表，版权 + 用户协议 / 隐私条款只在设置整页底部 -->
   </div>
@@ -297,6 +316,15 @@
   <!-- 朗读档位（五档模式 / 存储键 / 出厂档的唯一一份定义）：reader-core 与设置页共用 -->
   <script src="js/play-modes.js"></script>
   <script src="js/reader-core.js"></script>
+  <!-- 账号接线层（2.1 / 3 期）：古诗词大会的判分要走 /api/game/answer。
+       顺序固定：entitlement → auth-api → account-api（前者是后者的前置）。
+       缺任何一个都不会报错 —— js/game.js 会退化为「本机判分」并如实标注。 -->
+  <script src="js/auth-api.js"></script>
+  <script src="js/account-api.js"></script>
+  <!-- 古诗词大会的出题内核（纯逻辑、零 DOM、零网络）：飞花令 / 现场考试 / 题库复习
+       三件共用它。它必须排在 js/game.js 之前。 -->
+  <script src="js/quiz.js"></script>
+  <script src="js/game.js"></script>
   <script src="js/avatar.js"></script>
   <script src="js/chrome.js"></script>
   <script src="js/pwa.js"></script>
