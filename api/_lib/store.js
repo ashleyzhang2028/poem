@@ -390,6 +390,10 @@ function supabaseStore(cfg) {
  * 取 store：配好 Supabase 就用它，否则**降级为内存**。
  * 降级不是「假装成功」—— 调用方通过 kind 能知道自己在跟谁说话，
  * `/api/me` 也会把 `store` 字段如实回给前端（便于排查，不含敏感信息）。
+ *
+ * ⚠️ `_reset()` 的顺序要清两件东西：store 单例**与频控器**。
+ *    只清 store 的后果是「换一个 cfg 跑第二遍时，频控的账还挂在上一轮的键上」——
+ *    test/api.test.js 每次 boot() 都换一套环境变量，那里就是靠 _reset 分家的。
  */
 var singleton = null;
 function getStore(cfg) {
