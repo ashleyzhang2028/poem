@@ -481,19 +481,49 @@ setTimeout(() => {
           ⚠️ 但 js/collections.js（这一层测的数据层）一个字没动：两处读的仍是
           同一份 localStorage 键 poem_recite_collections_v1。 */
     const setSrc = fs.readFileSync(path + 'settings/lists/index.html', 'utf8');
+    const setJs = fs.readFileSync(path + 'js/settings.js', 'utf8');
     chk(/id="btn-collections-import"/.test(setSrc),
       '设置页有「导入清单」键（id=btn-collections-import）');
     chk(/id="text-dialog"/.test(setSrc) && /id="text-dialog-text"/.test(setSrc),
       '设置页有导入 / 导出用的纯文本对话框');
     chk(/id="collections-list"/.test(setSrc) && /id="collections-tip"/.test(setSrc),
       '设置页有清单容器与说明行');
+    /* Issue #163：说明行**只在清单还空着的时候**说一句话（怎么加第一篇）；
+       有篇目之后整句撤掉 —— 每日任务与两条箭头当场看得见，不必先用字念一遍。 */
+    chk(/id="collections-tip"[^>]*hidden/.test(setSrc),
+      '说明行默认收起（空态才由 js/settings.js 打开并填字）');
+    const tipBlock = (setJs.match(/const tip = \$\("#collections-tip"\)[\s\S]{0,320}?\n    \}/) || [''])[0];
+    chk(/tip\.hidden = total > 0/.test(tipBlock),
+      '有篇目时不写那句「与课内诗词一起排进每日任务；↑↓ 调顺序。」（Issue #163）');
+    chk(!/["']与课内诗词一起排进每日任务/.test(setJs),
+      '那句话作为**用户可见的文案**全句已删（维护者注释里留着它的来历）');
     // 首页不再有这一块（搬走了就不该留一半）
     const homeSrc2 = fs.readFileSync(path + 'index.html', 'utf8');
     chk(!/id="btn-collections-import"/.test(homeSrc2) && !/id="collections-list"/.test(homeSrc2),
       '首页不再有自选背诵的管理界面（整块搬去设置）');
     chk(!/id="collections-section"/.test(homeSrc2) && !/id="btn-collections"/.test(homeSrc2),
       '首页那张「自选背诵」折叠卡已整个移除（不留空壳）');
-    const setJs = fs.readFileSync(path + 'js/settings.js', 'utf8');
+    /* ---- 卡片设计：与「课外阅读」入口页那六张卡（.library-card）同一套 ----
+       Issue #163 用户原话：「我的清单卡片设计最好和 课外阅读 页面的卡片设计
+       保持一致，里面没有绿色竖线，横着的项目用边框颜色一样的线隔开。」
+       判据取的是「同一个类名 / 同一条规则」，不是「看起来像」——
+       两处各写一套描边，改一边另一边就漂。 */
+    const listsCss = fs.readFileSync(path + 'css/style.css', 'utf8');
+    const classicCss = fs.readFileSync(path + 'css/classic.css', 'utf8');
+    chk(/class="library-grid" id="collections-list"/.test(setSrc),
+      '清单容器就是 «课外阅读» 那一页的 .library-grid（同一份排版）');
+    chk(/className = "library-card collection-card"/.test(setJs),
+      '一张集合一张卡，类名带上 .library-card（复用那一页的描边 / 圆角 / 纸底）');
+    chk(/\.collection-card \{[\s\S]{0,200}?border-left: 3px solid var\(--line\)/.test(classicCss),
+      '集合卡把左色条换成卡片边框同色的一条 3px 边（「里面没有绿色竖线」）');
+    chk(/\.collection-body \.item \{[\s\S]{0,600}?border-left: none/.test(listsCss) &&
+        /\.collection-body \.item \{[\s\S]{0,600}?border-top: 1px solid var\(--line\)/.test(listsCss),
+      '卡内条目去掉竖色条，横着用与边框同一个 --line 的细线隔开');
+    chk(/link rel="stylesheet" href="css\/classic\.css"/.test(setSrc),
+      '这一页加载了 css/classic.css（卡片的稿子只有那一处，不抄第二份）');
+    chk(!/\.item\.optional \{ border-left-color: var\(--blue/.test(listsCss) ||
+        /\.collection-body \.item/.test(listsCss),
+      '「蓝竖条」那一档在卡内被清掉（.optional 的 border-left-color 落不到卡里）');
     chk(/data-export=/.test(setJs), '每个集合头上有「导出」键（data-export）');
     chk(/data-up=|data-down=/.test(setJs), '每个条目有上移 / 下移键');
     chk(/data-group=/.test(setJs) && /removeGroup\(/.test(setJs),

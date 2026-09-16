@@ -34,8 +34,7 @@
               但都跑同一份 js/settings.js —— 它取不到某个 id 就跳过那一段。
            ================================================================== -->
       <div class="settings-groups">
-        <section class="settings-group" aria-labelledby="grp-general">
-          <h2 class="settings-group-title" id="grp-general">通用</h2>
+        <section class="settings-group">
 
           <div class="settings-item">
             <label for="input-username">用户名</label>
@@ -62,18 +61,19 @@
             <div class="settings-hint" id="seal-hint"></div>
           </div>
 
-          <!-- 子档案（Issue #159）：一个家长多个孩子各背各的。
-               ⚠️ 只用一个档案的用户**看不到这一块**（js/settings.js 里置 hidden）——
-                  老用户升级零感知，盘上也不会多出那把键。 -->
-          <div class="settings-item" id="item-profiles" hidden>
+          <div class="settings-item" id="family-item">
+            <!-- 家庭子档案（3 期 P1 · profile.family）：一个家长多个小孩，
+                 每个孩子各背各的。孩子**不建独立账号**（只是账号下的一个展示名），
+                 所以这里既没有「邀请」也没有「孩子登录」——只有一份名册 + 一个切换。
+
+                 ⚠️ 切换是**账号域**的事：换孩子 = 换一套进度 / 年级 / 已读
+                    （同一台平板上字号不会跟着变，那是设备域，见 js/family.js）。
+                 ⚠️ 名册为空时**不画**这一块（而不是画一个空框）：老用户升级后
+                    第一次进这一页，认领会把它变成「子档案 1」，界面上不出现
+                    一个「一个孩子都没有」的中间态。 -->
             <label>子档案</label>
-            <div class="profiles-panel" id="profiles-panel">
-              <div class="profiles-list" id="profiles-list" role="radiogroup" aria-label="切换子档案"></div>
-              <div class="settings-btns">
-                <button class="btn ghost-btn" id="btn-profile-add" type="button">再建一个</button>
-              </div>
-            </div>
-            <div class="settings-hint" id="profiles-hint"></div>
+            <div class="family-panel" id="family-panel"></div>
+            <p class="settings-hint" id="family-hint"></p>
           </div>
 
           <div class="settings-item">
@@ -110,6 +110,23 @@
               <button class="btn danger-btn" id="btn-reset">清空进度</button>
             </div>
             <div class="settings-hint">含全部设置与背诵进度</div>
+          </div>
+
+          <!-- 课内诗词整体导出（Pro）。
+               ⚠️ 这一块的口径被用户改过一次（2026-09-16，Issue #159）：
+                  原先能力表上写的是「全站批量导出（Max，含六部集子 1592 篇）」，
+                  用户点名不要那种「把站点内容整本拷走」的导出，
+                  只保留**学校课本部分**（课内 261 首），且门槛降到 **Pro**。
+               ⚠️ 按钮**不隐藏**：层级不够时点它得到的是「Pro 起可用」（与全站
+                  同一句 denyReason），把入口藏起来从来不是权限边界（docs §3.4）。
+               ⚠️ 拦在**数据层**：范围表只认「课内」这一部（js/export-core.js 的
+                  SCOPES），按钮之外直接调用那一层也一样导不出集子。 -->
+          <div class="settings-item">
+            <label>课内诗词导出</label>
+            <div class="settings-btns">
+              <button class="btn ghost-btn" id="btn-export-poems">导出课内 261 首</button>
+            </div>
+            <div class="settings-hint" id="export-poems-hint"></div>
           </div>
         </section>
       </div>
@@ -172,17 +189,21 @@
   <script src="/js/account-api.js"></script>
   <!-- 分域引擎（Issue #132 阶段 0）：进度 / 账号 / 设备三域的唯一一份定义，
        设置页的读法由 js/storage.js 转发。**必须排在 js/storage.js 之前**。 -->
+  <!-- 家庭子档案（3 期 P1）：**必须排在 progress-store 之前** ——
+       引擎按当前孩子拼键名（js/family.js 是唯一的拼接处），
+       顺序反了不会报错，只是永远读「没有后缀」那把老键，症状是「切换孩子后进度为空」。 -->
+  <script src="/js/family.js"></script>
   <script src="/js/progress-store.js"></script>
-  <!-- 子档案（Issue #159）：名册 + 当前选中项 + 键映射的唯一一处实现。
-       必须排在 js/progress-store.js 之后（引擎每次读盘都要问它「当前是哪个档案」）
-       与 js/settings.js 之前（设置页那块切档 UI 用它）。 -->
-  <script src="/js/profiles.js"></script>
   <!-- 同步层（Issue #132 · 1B）：进度 / 账号域设置 / 已读的跨设备同步。
        必须在 js/storage.js 之前 —— 它要给每条记录打标（云端谁更新），
        而页面只认识 Storage / ProgressStore 这两个入口。 -->
   <script src="/js/sync-store.js"></script>
   <script src="/js/storage.js"></script>
   <script src="/js/scheduler.js"></script>
+  <!-- 导出内核（纯逻辑，零 DOM）：课内 261 首整份导出成文本。
+       它**只认范围表**（SCOPES 里只有「课内」）—— 六部集子不做一次性整本导出，
+       是用户 2026-09-16 的裁决（Issue #159），那一条拦在内核里、不拦在按钮上。 -->
+  <script src="/js/export-core.js"></script>
   <script src="/js/manifest-loader.js"></script>
   <script src="/js/play-modes.js"></script>
   <script src="/js/review-models.js"></script>

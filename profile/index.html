@@ -32,11 +32,32 @@
            ------------------------------------------------------------------
            为什么必须**独立于设置页**：
              设置页 5 组（通用 / 背诵 / 复习算法 / 我的清单 / 朗读），
-             再塞账号 + 权限 + 同步 = 7 组一长条。而且设置是「调机器」，
+             再塞账号 + 同步 = 7 组一长条。而且设置是「调机器」，
              个人中心是「看人」，语义不同。两者之间只放一个跳转链接。
 
-           未登录时整页变成**引导页**（不是 403、不是空页）：
-           如实告诉他「你现在是本机游客，进度只在这台设备上」，再给两条出路。
+           未登录时整页仍是**可用页**（不是 403、不是空页）：
+           印与昵称照旧显示，身份那一行如实写「本机游客 · 未登录」，
+           操作键那一行给一颗「登录可用语音朗读」。
+           ================================================================== -->
+
+      <!-- ==================================================================
+           这一页的排布（Issue #163）：**一张卡一件事，操作键攒在一行**
+           ------------------------------------------------------------------
+           用户原话：「个人页面一个卡片一个按钮，不能让这些需要操作的按钮
+           组合在一张卡片吗，其他描述部分重新整理组合。」
+
+           改之前是六张卡、每张卡底下挂一颗按钮（身份 / 账号 / 同步 / 权限 /
+           管理 / 危险区），一屏里五颗孤零零的按钮各占一行，
+           而它们里有三颗其实是同一类事：「去别处看 / 去别处调」。
+           现在收成四张卡：
+
+             身份    印 + 昵称 + 邮箱 + 层级，下面**一行**操作键（登录 / 退出 / 注销）
+             本机数据 这台设备上有什么（只读）
+             同步    同步到哪一步了 + 「同步设置」，需要你裁决时再铺冲突面板
+             关于    应用 / 法务两页 / 离线缓存，附管理员与权限两条入口
+
+           ⚠️ 「注销账号」那一块仍**单独占一张卡**（朱砂描边的危险区）：
+              它是不可逆动作，与别的键并列会让人误按 —— 这一条是刻意不合并的。
            ================================================================== -->
 
       <!-- ---------- 一、身份 ---------- -->
@@ -44,41 +65,26 @@
         <div class="identity-row" id="identity-row"></div>
         <p class="account-hint" id="identity-hint"></p>
 
-        <!-- 账号入口（Issue #132 · D）：本页在四页签里**没有**位置，
-             所以它是账号三页唯一的枢纽 —— 首页那枚印（点它就到这一页）、
-             设置主页那张「账号」卡（未登录时才出现）都指着这里。
-             两个状态同一个位置：已登录去 /login/，信任期内一点即入
-             （那一页自己会认会话）；未登录也去 /login/。
-             文案由 js/profile.js 按登录态写，本页不写死两处。 -->
-        <button class="account-btn" id="btn-account-entry" type="button"></button>
+        <!-- 身份卡底下**一行**操作键：
+             未登录 → 一颗「登录可用语音朗读」（去 /login/）
+             已登录 → 「管理登录状态」+「退出登录」
+             按钮文案与显隐都由 js/profile.js 按登录态写，本页不写死两处。 -->
+        <div class="account-actions" id="identity-actions">
+          <button class="account-btn" id="btn-account-entry" type="button"></button>
+          <button class="account-btn ghost" id="btn-sign-out" type="button" hidden>退出登录</button>
+        </div>
+        <p class="account-hint" id="signout-hint" hidden>退出不删进度；注销在下面「危险区」。</p>
       </section>
 
-      <!-- ---------- 二、未登录时的引导（登录后整块收起） ----------
-           这里**不再放**第二颗「建账号」按钮：上一张身份卡里那颗
-           #btn-account-entry 就是同一个去处（/login/），一次性摆两颗
-           用户会以为它们不一样。未登录时那张卡的说明已经把该说的说完了。 -->
-      <section class="account-card" id="guest-card" hidden>
-        <p class="account-lead">进度只在这台设备上，清缓存、换设备就没了。</p>
-        <p class="account-hint">不建账号也照旧用全部功能，只有语音朗读要登录（免费）。</p>
-      </section>
-
-      <!-- ---------- 三、本机数据概览 ---------- -->
+      <!-- ---------- 二、本机数据概览 ---------- -->
       <section class="account-card" id="stats-card">
-        <h2 class="account-card-title">这台设备上的数据</h2>
+        <h2 class="account-card-title">本机数据</h2>
         <div class="kv-list" id="stats-list"></div>
       </section>
 
-      <!-- ---------- 四、账号（登录后才出现） ---------- -->
-      <section class="account-card" id="account-card" hidden>
-        <h2 class="account-card-title">账号</h2>
-        <div class="kv-list" id="account-list"></div>
-        <button class="account-btn ghost" id="btn-sign-out" type="button">退出登录</button>
-        <p class="account-hint">退出不删进度；注销在下面「危险区」。</p>
-      </section>
-
-      <!-- ---------- 四之二、同步：状态 + 需要用户裁决的冲突 ----------
-             同步的开关在「设置 · 通用」里（那是「调机器」的地方）；
-             这里只回答两件事：现在同步到哪一步了、有没有要你选的。 -->
+      <!-- ---------- 三、同步：状态 + 需要用户裁决的冲突 ----------
+           同步的开关在「设置 · 通用」里（那是「调机器」的地方）；
+           这里只回答两件事：现在同步到哪一步了、有没有要你选的。 -->
       <section class="account-card" id="sync-card">
         <h2 class="account-card-title">跨设备同步</h2>
         <div class="kv-list" id="sync-list"></div>
@@ -93,31 +99,23 @@
           </div>
           <p class="account-msg" id="msg-conflict"></p>
         </div>
-        <button class="account-btn ghost" id="btn-go-sync" type="button">去设置里开关同步</button>
         <p class="account-hint" id="sync-hint"></p>
       </section>
 
-      <!-- ---------- 五、权限：一条链接，不留清单 ----------
-           Issue #163 用户原话：「权限那个章节说了一堆，直接链接到对比页面
-           不就行了吗」。原先这里是一张 15 条的能力清单（能用的打钩、不能用的
-           写门槛），下面再加一颗「四种身份对比」的按钮 —— 同一件事两处说。
-           现在整块收成一行：能力有几项、对比表在哪，一眼就到。
+      <!-- ---------- 四、关于 + 两条入口 ----------
+           这一张卡把原先三张卡的**只读信息**与**两条「去别处」的键**收在一起：
+             · 应用 / 用户协议 / 隐私条款 / 离线缓存（原来各自一张卡）
+             · 权限对比（原来那张卡只剩一行「身份」+ 一颗按钮）
+             · 管理后台（仅 owner 可见，原来也占一整张卡）
 
-           ⚠️ 只有**层级对比页**在预缓存里（离线进得去），所以这里可以放心点。 -->
-      <section class="account-card">
-        <h2 class="account-card-title">权限</h2>
-        <p class="kv-row"><span class="kv-k">身份</span><span class="kv-v" id="cap-tier"></span></p>
-        <button class="account-btn ghost" id="btn-go-plans" type="button">权限对比</button>
-      </section>
-
-      <!-- ---------- 六、管理员入口（仅 owner 可见） ---------- -->
-      <section class="account-card" id="admin-card" hidden>
-        <h2 class="account-card-title">管理</h2>
-        <p class="account-lead">可按邮箱掩码发放 Pro / Max。</p>
-        <button class="account-btn ghost" id="btn-go-admin" type="button">打开管理后台</button>
-      </section>
-
-      <!-- ---------- 七、关于 ---------- -->
+           ⚠️ 「我去哪一层、谁能用什么」的答案**只有 /plans/ 一处**
+              （Issue #163 用户原话：「权限那个章节说了一堆，直接链接到
+              对比页面不就行了吗」），本页不再复述清单。
+           ⚠️ 原先「账号」那一张卡（状态 / 邮箱 / 层级 / 本次登录）并进这一张：
+              只留两行（账号掩码 + 本次登录还剩几天），层级与「它由谁定」在
+              身份卡上说（徽章 + `#identity-hint`）—— 同一个人不必介绍两遍。
+           ⚠️ 原先那张「权限」卡也撤了：它当时只剩「一行身份 + 一颗进对比页的键」，
+              而那一行身份就是身份卡上的层级徽章。谁能用什么**只有 /plans/ 一处**。 -->
       <section class="account-card">
         <h2 class="account-card-title">关于</h2>
         <div class="kv-list">
@@ -126,9 +124,21 @@
           <div class="kv-row"><span class="kv-k">隐私条款</span><span class="kv-v"><a href="/privacy/">查看</a></span></div>
           <div class="kv-row"><span class="kv-k">离线缓存</span><span class="kv-v" id="about-cache"></span></div>
         </div>
+        <div class="account-actions">
+          <button class="account-btn ghost" id="btn-go-plans" type="button">权限对比</button>
+          <button class="account-btn ghost" id="btn-go-sync" type="button">同步设置</button>
+          <button class="account-btn ghost" id="btn-go-admin" type="button" hidden>管理后台</button>
+        </div>
+        <!-- 账号那一行（状态 / 邮箱 / 层级 / 本次登录）由 js/profile.js 填。
+             它只在**已登录**时出现 —— 未登录时身份那一行已经把该说的说完了，
+             再列一遍「未登录」是同一件事说两次。 -->
+        <div class="kv-list" id="account-list" hidden></div>
       </section>
 
-      <!-- ---------- 八、危险区：注销账号（二次确认 + 重输邮箱） ---------- -->
+      <!-- ---------- 五、危险区：注销账号（二次确认 + 重输邮箱） ----------
+           刻意**自己一张卡**、朱砂描边（.danger-zone）：它是不可逆动作，
+           与上面那些「去别处看看」的键并列，迟早有人误按。 -->
+
       <section class="account-card danger-zone" id="danger-card" hidden>
         <h2 class="account-card-title danger-title">注销账号</h2>
         <p class="account-lead">
@@ -179,11 +189,8 @@
        它要把服务端判定的层级与角色写进权益层。 -->
   <script src="/js/account-api.js"></script>
   <!-- 分域引擎（Issue #132 阶段 0）：本机数据概览读的就是它。须排在 js/storage.js 之前。 -->
+  <script src="/js/family.js"></script>
   <script src="/js/progress-store.js"></script>
-  <!-- 子档案（Issue #159）：名册 + 当前选中项 + 键映射的唯一一处实现。
-       必须排在 js/progress-store.js 之后（引擎每次读盘都要问它「当前是哪个档案」）
-       与 js/avatar.js 之前（那两处都用它）。 -->
-  <script src="/js/profiles.js"></script>
   <!-- 同步层（Issue #132 · 1B）：进度 / 账号域设置 / 已读的跨设备同步。
        必须在 js/storage.js 之前 —— 它要给每条记录打标（云端谁更新），
        而页面只认识 Storage / ProgressStore 这两个入口。 -->

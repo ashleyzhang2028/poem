@@ -562,27 +562,40 @@ html, body {
   line-height: 1.7;
   color: var(--ink-3);
 }
-/* 集合小标题：名字 + 篇数在左，改名 / 删除在右 ——
-   一个集合一行隔断，下面跟着它自己的篇目清单 */
+/* 集合卡头：名字 + 篇数在左，改名 / 导出 / 删除在右。
+   ---- Issue #163：这一行原先长在**面板**上（`.collection-head` 一行行隔断），
+   现在长在**卡片**上（`.collection-card` 的卡头），与「课外阅读」入口页那张
+   `.library-card` 是同一套：卡头一行、卡身是内容、整卡一条描边 + 圆角。
+   字号 / 字重 / 颜色都照 .library-card-name 那一档，不再自己开一套。 */
 .collection-head {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 2px 6px;
+  /* 折行：卡头上的三颗动作键（改名 / 导出 / 删除）在窄屏上允许折到第二行，
+     篇数跟着名字走，三颗键整组靠右。 */
+  flex-wrap: wrap;
+  /* 卡头与卡身之间那条线由卡身第一行给（见 .collection-body .item:first-of-type
+     的 border-top: none）—— 这里不另画，免得卡头下面顶着两道横线。 */
+  padding: 14px 16px 12px;
 }
 .collection-name {
-  font-size: 13.5px;
+  font-size: 15px;
   font-weight: 600;
-  color: var(--green);
+  color: var(--ink);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  /* 字体与「课外阅读」那六张卡的书名同一档（--font-poem 在后面才定义，
+     所以这里显式写一遍作兜底，与 .settings-link-title 同一条口径）。 */
+  font-family: var(--font-poem);
+  letter-spacing: .5px;
 }
 .collection-count { font-size: 12px; color: var(--ink-3); }
+/* 卡头上的三颗动作键：改名 / 导出 / 删除，整组靠右 */
 .collection-act {
   margin-left: auto;
   border: 1px solid var(--line);
-  background: var(--card);
+  background: var(--bg-soft);
   color: var(--ink-2);
   font-size: 12px;
   padding: 3px 10px;
@@ -626,12 +639,15 @@ html, body {
   margin-bottom: 6px;
 }
 /* 集合里的分组行：同一部集子 / 同一个卷次文体连在一起，段头给「整组移出」。
-   分组只为「一次拿掉一组」，不改变集合顺序（顺序仍是用户自己排的）。 */
+   分组只为「一次拿掉一组」，不改变集合顺序（顺序仍是用户自己排的）。
+   ---- Issue #163：这些分组头原先长在**面板**上（左右各 2px 内边距），
+   现在长在**卡片**里，左右内边距跟卡内条目对齐（14 / 16px），
+   段头的名字与下面篇目的篇名落在同一条基准线上。 */
 .collection-group {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 2px 4px;
+  padding: 10px 14px 4px 16px;
 }
 .collection-group-name {
   font-size: 12px;
@@ -1287,12 +1303,15 @@ textarea:focus {
    ⚠️ 这一段是 .switch-input / .switch-track 的**唯一定义处**。
       它们原先被定义了两遍：本段（自绘：input 当轨道、旁边的 span 当滑块）
       与页面中部的「开关行（跨设备同步）」一节（透明 input 当覆盖层、
-      span 当轨道）—— 两套结构相反，CSS 层叠取后者，于是浏览器画出来的是
-      后者（轨道 40×24、滑块 18），而本段源码里量到的却是前者
+      span 当轨道；那一节的类名是 .switch-row / .switch-label）——
+      两套结构相反，CSS 层叠取后者，于是浏览器画出来的是后者
+      （轨道 40×24、滑块 18），而本段源码里量到的却是前者
       （input 40×24、span 40×24）：「源码写的」与「画出来的」对不上，
       UI 一致性那一节的五条断言因此长期亮红（滑块行程 −6、滑块 40 落在 40 的
-      轨道外、找不到 .switch-row / .switch-label）。现在只留下本段
-      —— 与 HTML 里真实存在的 .switch > input + .switch-track 完全对应。 */
+      轨道外、找不到 .switch-row / .switch-label）。现在两段已并成这一段
+      —— 与 HTML 里真实存在的 .switch > input + .switch-track 完全对应，
+      这两个选择器各只出现一次，源码里量到的就是画出来的。
+      ⚠️ 改尺寸就是改这一段，别处不许再写一遍同名规则。 */
 .switch-input {
   appearance: none;
   -webkit-appearance: none;
@@ -1424,74 +1443,172 @@ textarea:focus {
 .seal-ink.active { box-shadow: 0 0 0 3px rgba(165, 92, 25, .22); }
 
 /* --------------------------------------------------------------------------
-   设置页里的「我的清单」（自选背诵）
+   家庭子档案（3 期 P1）：名册 + 切换 + 增删
    --------------------------------------------------------------------------
-   这一整块原先长在**首页**底部那张「自选背诵」折叠卡里（Issue #114 第二条）：
-   「所有导入，导出，重命名，删除等等应该全部在设置中进行」。
-   搬过来时按「面板」而不是「卡片」来做：设置页已经是卡片式的分组，
-   再套一张带阴影的卡里卡只会多一层框；这里用一条淡界行 + 纸底，
-   让它读起来是**组里的一个区块**，而不是又一个独立页面。
+   一个家长多个小孩。整块只有一行一行的「名字 · 当前 · 改名 · 删除」，
+   与「我的清单」那一组同一套排版语言（.settings-link 那一档），
+   不新造一套视觉 —— 同一页里两种列表样式正是用户点过的「看着说不出哪不对」。
 
-   条目样式（.item / .item-move / .item-remove / .collection-head /
-   .collection-group）一律沿用首页那一套，一个字不改 ——
-   上一次搬家时留的口径：两处同名同类，改样式时一次改到位。
+   ⚠️ 「当前」那一档只用**文字 + 实底**表达，不靠颜色单独承载语义：
+      色盲用户与黑白打印时也得读得出「现在是哪一个」。
    -------------------------------------------------------------------------- */
-.collections-panel {
-  border: 1px solid var(--line-2);
-  border-radius: var(--radius-sm);
-  background: var(--bg-soft);
-  padding: 12px 12px 4px;
-}
-.collections-panel .collections-tip { margin: 0 0 10px; }
-/* 面板里的条目不再各自带纸底（那一层已经在面板上了），
-   与集子页 .group-card 里条目的处理同一口径。 */
-.collections-panel .item {
-  background: transparent;
-  border-radius: 0;
-  box-shadow: none;
-  padding: 12px 2px;
-}
-.collections-panel .item + .item { border-top: 1px solid var(--line-2); }
-.collections-panel .empty { padding: 10px 2px 16px; }
-
-/* 子档案（Issue #159）：一个家长多个孩子各背各的。
-   一行一个档案：左边一枚印（画印只有 js/avatar.js 一处）+ 名字，
-   当前那个标出来，其余两个各带「改名 / 删除」。
-   ⚠️ 这一块只用一个档案的用户看不到（HTML 里 hidden，js/settings.js 控制）。 */
-.profiles-panel { display: flex; flex-direction: column; gap: 6px; }
-.profiles-list { display: flex; flex-direction: column; }
-.profile-row {
+.family-panel { display: flex; flex-direction: column; gap: 6px; }
+.family-row {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 7px 0;
-  border-bottom: 1px solid var(--line-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--card);
+  padding: 6px 8px 6px 10px;
 }
-.profile-row:last-child { border-bottom: none; }
-.profile-pick {
+.family-row.current {
+  border-color: var(--green);
+  box-shadow: inset 0 0 0 1px rgba(47, 96, 85, .22);
+}
+/* 点名字 = 切到它。整颗键占满左侧，热区够大（触屏上指肚按得着） */
+.family-pick {
   flex: 1;
   min-width: 0;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   border: none;
   background: none;
-  padding: 0;
+  padding: 6px 0;
   text-align: left;
-  cursor: pointer;
-  color: var(--ink-2);
+  color: var(--ink);
+  font-family: inherit;
   font-size: 14px;
+  cursor: pointer;
 }
-.profile-pick .profile-name {
+.family-name {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.profile-row.active .profile-pick { color: var(--green); font-weight: 600; }
-.profile-acts { display: flex; gap: 6px; flex: none; }
-/* 行内小按钮：与全站「描边按钮」同一套语言，只是更矮一点 */
-.tiny-btn { flex: none; min-width: 0; padding: 5px 10px; font-size: 12px; }
-.profile-now { flex: none; font-size: 11.5px; color: var(--green); }
+.family-now {
+  flex: none;
+  font-size: 11px;
+  color: var(--green);
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  padding: 1px 7px;
+}
+.family-acts { flex: none; display: flex; gap: 4px; }
+.family-act {
+  border: none;
+  background: none;
+  color: var(--ink-3);
+  font-family: inherit;
+  font-size: 12.5px;
+  padding: 4px 6px;
+  cursor: pointer;
+  border-radius: 6px;
+}
+.family-act:hover { color: var(--green); }
+.family-act.danger:hover { color: var(--ink); }
+/* 「再建一个」：虚线框的一行，与上面的实线行区分开（它是动作，不是条目） */
+.family-add {
+  border: 1px dashed var(--line-2);
+  border-radius: var(--radius);
+  background: none;
+  color: var(--ink-2);
+  font-family: inherit;
+  font-size: 13px;
+  padding: 9px 10px;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color .15s, color .15s;
+}
+.family-add:hover { border-color: var(--green); color: var(--green); }
+/* 原地改名用的输入框：与 .settings-input 同一档（同一页里两种输入框是两种语言） */
+.family-rename {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius);
+  background: var(--card);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 14px;
+  padding: 7px 9px;
+}
+.family-rename:focus { outline: none; border-color: var(--green); }
+
+/* --------------------------------------------------------------------------
+   设置页里的「我的清单」（自选背诵）
+   --------------------------------------------------------------------------
+   这一整块原先长在**首页**底部那张「自选背诵」折叠卡里（Issue #114 第二条）：
+   「所有导入，导出，重命名，删除等等应该全部在设置中进行」。
+   搬过来时按「面板」而不是「卡片」来做，Issue #163 用户又提了一次：
+
+     「我的清单卡片设计最好和 课外阅读 页面的卡片设计保持一致，
+       里面没有绿色竖线，横着的项目用边框颜色一样的线隔开。」
+
+   所以现在**一张集合一张卡**，与 «课外阅读» 入口页那六张卡（.library-card）
+   逐项对齐 —— 同一套描边 + 圆角 + 纸底，卡头一行（清单名 + 篇数 + 三颗动作键），
+   卡身是篇目。这一块只负责「卡片与卡身」的细节；
+   .library-card 自己的那一套（宽度 / 描边 / 圆角 / hover）原样复用，不另写一遍。
+
+   卡内条目：与集子页卡内条目同一口径 —— 去掉各自的白底 / 圆角 / 阴影，
+   只留一条分隔线；**没有竖色条**（全站 .item 的 border-left 在这里清零），
+   分隔线的颜色与卡片边框同一个 --line。
+   -------------------------------------------------------------------------- */
+.collections-panel .collections-tip { margin: 0 0 10px; }
+.collections-panel .empty { padding: 10px 2px 16px; }
+
+/* 清单容器：一张集合一张卡，竖着排。间距与 «课外阅读» 那一页的 .library-grid
+   同一档（12px）—— 两处的「几张卡排一列」看着是同一种东西。
+   ⚠️ 但**不跟着那一页分两列 / 三列**（.library-grid 在 ≥560px / ≥1024px
+      有那两档）：那一页每张卡里只有「书名 + 篇数 + 一句说明」，
+      而这里的卡里是**一列篇目** —— 卡一分栏，篇目就跟着挤成两根细条。
+      所以这里把列数与卡片宽度都收回单列（宽度交给 .settings-item.wide）。 */
+.collections-panel #collections-list { gap: 12px; }
+.collections-panel #collections-list .collection-card {
+  flex: 0 0 auto;
+  max-width: none;
+}
+
+/* 卡：描边 / 圆角 / 纸底 / 去竖线那几条在 css/classic.css 的 .collection-card 里
+   （与 .library-card 写在一起，一眼看得出是同一套卡）。这里只补一个
+   「卡内内容不越出圆角」—— 卡头与卡身各自带底色，溢出会把圆角切掉。 */
+.collection-card { overflow: hidden; }
+/* 卡身（篇目）：最后一条不贴着卡片下缘，与 .group-card 的 10px 同一档 */
+.collection-body { padding-bottom: 6px; }
+
+/* 卡内条目：与集子页卡内条目同一套处理（见 css/classic.css 的 .group-card .item）——
+   同底、无圆角、无阴影、无竖色条，只留一条与卡边同色的分隔线。 */
+.collection-body .item {
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  /* ⚠️ 必须显式写 border-left（而不是只写 border: none）：
+     `border-top` 与 `border-left` 特异度相同、按位置后者胜出，
+     条目之间那条分隔线才不会被顺手抹掉。这一句治的就是用户说的「绿色竖线」——
+     全站 .item 的 4px 左色条（.optional 那档是蓝色）在卡里连成一道大竖线。 */
+  border-left: none;
+  border-top: 1px solid var(--line);
+  padding: 12px 14px 12px 16px;
+  /* 条目本身不再可点（这一页只管增删改查，点一条没有去处），
+     所以不给按下缩放那一下反馈 —— 反馈只落在真正能点的键上。 */
+  cursor: default;
+}
+.collection-body .item:active { transform: none; }
+/* 卡身第一行：与卡头之间也要有一条线，但**更淡一档** ——
+   与集子页卡内条目的处理同一个手法（见 css/classic.css 的
+   `.group-card .item:first-of-type`）：卡头已经用 12px 下内边距与它拉开了距离，
+   这一条只是让「卡头 / 卡身」上下两段的层次仍读得出来。
+   注意选择器写 `:first-child` 而不是 `:first-of-type`：卡身里可能先来一行
+   分组头（.collection-group，也是 div），`first-of-type` 那时会落空。 */
+.collection-body > .item:first-child,
+.collection-body > .collection-group:first-child + .item {
+  border-top-color: color-mix(in srgb, var(--line) 55%, transparent);
+}
+/* 分组头前面若已有条目（多组连排），它自己带一条实色分隔线 */
+.collection-body > .item + .collection-group { border-top: 1px solid var(--line); }
+.collection-body > .item + .item { border-top: 1px solid var(--line); }
 
 .settings-btns { display: flex; gap: 8px; flex-wrap: wrap; }
 .ghost-btn { flex: 1; min-width: 90px; padding: 9px; font-size: 13.5px; }
@@ -1746,13 +1863,10 @@ body.has-install-tip #app {
     flex: 1 1 100%;
     max-width: 100%;
   }
-  .settings-item.wide .collections-panel .list {
-    column-gap: 22px;
-  }
-  .settings-item.wide .collections-panel .list > .item {
-    flex: 1 1 calc(50% - 11px);
-    max-width: calc(50% - 11px);
-  }
+  /* ⚠️ 「我的清单」那边**不再**跟着 .list 排两列（Issue #163）：
+     它现在是一张集合一张卡（.collection-card），卡里是一列篇目 ——
+     卡内条目不再按栏宽分列，否则一张卡里会并排两篇，读起来像是两列表。
+     这里刻意留一句「不再有 .list 的那些规则」，免得下次有人顺手加回来。 */
 }
 
 /* 桌面（≥1024px）：设置分组排成三列
@@ -1771,9 +1885,11 @@ body.has-install-tip #app {
     flex: 1 1 calc(33.333% - 24px);
     max-width: calc(33.333% - 24px);
   }
-  .settings-item.wide .collections-panel .list > .item {
-    flex: 1 1 calc(33.333% - 14.667px);
-    max-width: calc(33.333% - 14.667px);
+  /* 清单那一段仍是**单列**：卡里是一列篇目，分三栏会把篇名挤断
+     （那一页 six 张卡分栏是因为每张卡里只有两行字，见 .library-grid 的说明）。 */
+  .settings-item.wide .collections-panel #collections-list {
+    display: flex;
+    flex-direction: column;
   }
 }
 

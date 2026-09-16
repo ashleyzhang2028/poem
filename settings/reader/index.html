@@ -34,8 +34,7 @@
            两条都全站一份，不随「背哪一册」或「读哪一部集子」变化。
            ================================================================== -->
       <div class="settings-groups">
-        <section class="settings-group" aria-labelledby="grp-reader">
-          <h2 class="settings-group-title" id="grp-reader">朗读</h2>
+        <section class="settings-group">
 
           <div class="settings-item">
             <label>自动注音</label>
@@ -117,11 +116,8 @@
   <script src="/js/entitlement.js"></script>
   <!-- 分域引擎（Issue #132 阶段 0）：进度 / 账号 / 设备三域的唯一一份定义，
        设置页的读法由 js/storage.js 转发。**必须排在 js/storage.js 之前**。 -->
+  <script src="/js/family.js"></script>
   <script src="/js/progress-store.js"></script>
-  <!-- 子档案（Issue #159）：名册 + 当前选中项 + 键映射的唯一一处实现。
-       必须排在 js/progress-store.js 之后（引擎每次读盘都要问它「当前是哪个档案」）
-       与 js/avatar.js 之前（那两处都用它）。 -->
-  <script src="/js/profiles.js"></script>
   <!-- 同步层（Issue #132 · 1B）：进度 / 账号域设置 / 已读的跨设备同步。
        必须在 js/storage.js 之前 —— 它的 touch() 要给每条记录打标，
        而页面只认识 Storage/ProgressStore 这两个入口。 -->

@@ -86,11 +86,11 @@
     saveSettings();
     const A = window.Avatar;
     if (A && typeof A.saveNickname === "function") {
+      /* ⚠️ 名册是正主：`Avatar.saveNickname` 自己会把名字收进**当前子档案**
+         （`write` → `saveToChild` → `Family.rename`）。本页不再自己收一遍 ——
+         收两遍的时机一旦对不上，症状是「切回来名字退回改名之前那个」。 */
       try { A.saveNickname(window.localStorage, clean); } catch (e) { /* 隐私模式：老键已写 */ }
     }
-    // 分家之后**名册是正主**：把新名字收进当前子档案，切回来时名字才是对的
-    // （不收的话，切到老二再切回老大，名字会退回改名之前那个）
-    commitProfileName(clean);
   }
 
   /** 读取设置：以 js/storage.js 为准，本页兜底，避免首页/设置页字段漂移 */
@@ -220,12 +220,111 @@
     if (uInput) uInput.value = String(settings.username == null ? "" : settings.username);
 
     renderAvatar();
-    renderProfiles();
+    renderFamily();
     renderAccount();
     renderSync();
     renderAlgos();
     renderPlayModes();
     renderCollections();
+    renderExportPoems();
+  }
+
+  /* ---------------- 课内诗词整体导出（Pro） ----------------
+
+     用户 2026-09-16（Issue #159）把这一条的口径改了一次，原话：
+
+       「为啥要有全站批量导出功能？这不是这个网站的核心资产吗？
+        顶多支持学校课本部分的全部导出。这个 pro 用户就行。」
+
+     于是：**能力名字、门槛、内容三处一起改**（见 js/entitlement.js 的 CAPS
+     与 js/export-core.js 的文件头）。落在这里的就是那个「内容」：
+     只导**课内 261 首**，六部集子不做一次性整本导出。
+
+     ⚠️ 三道关口，缺一不可：
+       ① 能力表（`export.all`，Pro 起）—— 「谁能用」
+       ② 范围表（js/export-core.js 的 SCOPES，只有「课内」）—— 「能导什么」
+       ③ 这一层只做「问一次、给一次」，不自己判层级、不自己拼门槛文案
+     把①的入口藏起来不是边界（docs §3.4）：所以按钮**照旧可见**，
+     点了层级不够就照实说「Pro 起可用」。
+     ------------------------------------------------------------------ */
+
+  /** 导出内核（脚本顺序不保证：现取，不在模块加载时缓存） */
+  function exportMod() { return window.ExportCore || null; }
+
+  /**
+   * 画这一项的说明行。**三种状态各说各的话**，不许合并成「失败」：
+   *   · 内核没加载（老缓存）      → 如实说「请刷新」
+   *   · 没登录 / 层级不够          → 照实说拦在哪一层（`denyReason`）
+   *   · 能用                      → 说清导出的是什么、有多少首
+   */
+  function renderExportPoems() {
+    const hint = $("#export-poems-hint");
+    if (!hint) return;
+    const C = exportMod();
+    const E = entitlementMod();
+    const ident = currentIdentity();
+    if (!C || !E || !ident) {
+      hint.textContent = "导出组件没有加载成功，请刷新页面重试（背诵不受影响）。";
+      return;
+    }
+    if (!E.can("export.all", ident).ok) {
+      hint.textContent = E.denyReason("export.all", ident) + "；现在导出的是课内诗词，六部集子不做整本导出。";
+      return;
+    }
+    const items = exportItems("poems");
+    hint.textContent = "把课内 " + items.length + " 首（一年级至高三）整份导出成一个文本文件，" +
+      "按册次排好，可直接打印或存 PDF。六部集子不做整本导出。";
+  }
+
+  /** 按范围取篇目（课内 = 站点索引里 poems 那一部，按册次排序） */
+  function exportItems(scope) {
+    const C = exportMod();
+    const idx = window.SITE_INDEX || [];
+    if (!C) return [];
+    return C.order(C.pick(idx, scope), scope);
+  }
+
+  /**
+   * 真的导一次。
+   *
+   * @param {boolean} [asCopy] true = 弹纯文本对话框（手机上更好用），
+   *                           false/缺省 = 直接落一个 .txt
+   */
+  function exportPoems(asCopy) {
+    const C = exportMod();
+    const E = entitlementMod();
+    const ident = currentIdentity();
+    if (!C || !E || !ident) { showToast("导出组件没有加载成功，请刷新页面重试"); return; }
+    /* 闸**在这里也要判一次**：按钮之外还能从控制台调到这里。
+       「拦在数据层」指的是范围表（SCOPES）—— 但门槛这件事本身也得在这一层拦，
+       否则「藏入口」就成了事实上的边界。 */
+    if (!E.can("export.all", ident).ok) { showToast(E.denyReason("export.all", ident)); return; }
+
+    const items = exportItems("poems");
+    if (!items.length) { showToast("课内诗词数据没加载出来，请刷新页面重试"); return; }
+
+    const r = C.build({ items: items, scope: "poems", now: new Date() });
+    /* ⚠️ 有篇目但没正文时**如实报出来**：悄悄少一篇比多导一篇更难发现。
+       目前课内 261 首全部有正文，这一支是给日后新增篇目留的（与打印页同一条纪律）。 */
+    const skip = r.skipped ? "（另有 " + r.skipped + " 首没有正文，没有写进去）" : "";
+
+    if (asCopy) {
+      textDialog({
+        title: "课内诗词（" + r.count + " 首）",
+        tip: "全选复制即可粘进任何文档；也可以点下面的按钮存成文本文件。" + skip,
+        text: r.text,
+        readOnly: true,
+        okText: "下载为文本",
+        onOk: function () {
+          downloadText(C.fileName("poems", new Date()), r.text);
+          closeTextDialog();
+          showToast("已导出 " + r.count + " 首" + skip);
+        }
+      });
+      return;
+    }
+    downloadText(C.fileName("poems", new Date()), r.text);
+    showToast("已导出 " + r.count + " 首" + skip);
   }
 
   /* ---------------- 我的清单：自选背诵（Issue #114 第二条） ----------------
@@ -460,11 +559,14 @@
     const cols = window.ReciteCollections.list();
     const total = window.ReciteCollections.count();
 
+    /* 说明行**只在清单还空着的时候**说一句话（怎么加第一篇）——
+       Issue #163 用户原话：「删除 与课内诗词一起排进每日任务；↑↓ 调顺序。」
+       有篇目之后那一行整句撤掉：每日任务与两条箭头当场就看得见，
+       不必先用文字念一遍；空的容器也一并藏起来，不留一行空行。 */
     const tip = $("#collections-tip");
     if (tip) {
-      tip.textContent = total
-        ? "与课内诗词一起排进每日任务；↑↓ 调顺序。"
-        : "到任一集子页或搜索页点篇目右边的书签即可加进来。";
+      tip.hidden = total > 0;
+      if (!total) tip.textContent = "到任一集子页或搜索页点篇目右边的书签即可加进来。";
     }
 
     // 一个集合都没有时也留着「导入」—— 家长发来一串清单，
@@ -484,15 +586,31 @@
 
     box.innerHTML = "";
     cols.forEach(function (col) {
-      const head = document.createElement("div");
-      head.className = "collection-head";
-      head.innerHTML =
+      /* 一张集合一张卡：结构与「课外阅读」入口页那六张卡（.library-card）
+         逐项对齐 —— 卡头是「清单名 + 篇数 + 改名 / 导出 / 删除」，
+         卡身是篇目，篇与篇之间只隔一条与卡边同色的细线。
+         Issue #163 用户原话：「我的清单卡片设计最好和 课外阅读 页面的卡片
+         设计保持一致，里面没有绿色竖线，横着的项目用边框颜色一样的线隔开。」
+         改之前它是「一行集合名 + 一列各自带纸底的条目」（每条还挂一道
+         4px 蓝色竖条），与课外那六张卡是两套语言。 */
+      const card = document.createElement("div");
+      card.className = "library-card collection-card";
+      card.setAttribute("data-col", col.id);
+      card.innerHTML =
+        '<div class="collection-head">' +
         '<span class="collection-name">' + esc(col.name) + "</span>" +
         '<span class="collection-count">' + col.items.length + " 篇</span>" +
         '<button type="button" class="collection-act" data-rename="' + esc(col.id) + '" title="重命名" aria-label="重命名 ' + esc(col.name) + '">改名</button>' +
         '<button type="button" class="collection-act" data-export="' + esc(col.id) + '" title="导出成文本，可发给别的家长" aria-label="导出集合 ' + esc(col.name) + '">导出</button>' +
-        '<button type="button" class="collection-act danger" data-drop="' + esc(col.id) + '" title="删除集合" aria-label="删除集合 ' + esc(col.name) + '">删除</button>';
-      box.appendChild(head);
+        /* 「打印」这一颗是 3 期 Pro 的能力（`export.paper`）。**它不判权限、
+           也不置灰** —— 点开那一层自己会说清「这一项要 Pro」（`js/print.js`），
+           判据只有 `Entitlement.can()` 一处（docs §3.4：把入口藏起来不是边界）。 */
+        '<button type="button" class="collection-act" data-print="' + esc(col.id) + '" title="把这份清单排成一页纸，打印或存成 PDF" aria-label="打印集合 ' + esc(col.name) + '">打印</button>' +
+        '<button type="button" class="collection-act danger" data-drop="' + esc(col.id) + '" title="删除集合" aria-label="删除集合 ' + esc(col.name) + '">删除</button>' +
+        "</div>" +
+        '<div class="collection-body"></div>';
+      const body = card.querySelector(".collection-body");
+      box.appendChild(card);
 
       // 按组切段：同一部集子 / 同一个卷次文体连在一起，段头上给「整组移出」。
       // 分组只为「让用户一次拿掉一组」，不改变集合的顺序 ——
@@ -517,7 +635,7 @@
             '<button type="button" class="collection-group-drop" data-group="' + esc(group) + '" ' +
             'data-col="' + esc(col.id) + '" title="把这一组的篇目整组移出" ' +
             'aria-label="把 ' + esc(group) + ' 这一组整组移出">整组移出</button>';
-          box.appendChild(gh);
+          body.appendChild(gh);
         }
 
         const rec = getRecord(repId);
@@ -556,7 +674,7 @@
           renderCollections();
           showToast("已移出「" + col.name + "」");
         });
-        box.appendChild(el);
+        body.appendChild(el);
       });
     });
   }
@@ -616,12 +734,20 @@
         if (moved) renderCollections();
         return;
       }
-      const t = e.target.closest ? e.target.closest("[data-rename], [data-drop], [data-export]") : null;
+      const t = e.target.closest ? e.target.closest("[data-rename], [data-drop], [data-export], [data-print]") : null;
       if (!t || !window.ReciteCollections) return;
       e.stopPropagation();
       const rid = t.getAttribute("data-rename");
       const did = t.getAttribute("data-drop");
       const eid = t.getAttribute("data-export");
+      const pid = t.getAttribute("data-print");
+      if (pid) {
+        /* 打印（Pro · `export.paper`）：把这一本清单交给打印那一层。
+           ⚠️ 这里**一个字都不判权限** —— 入口照旧可点，那一层自己会说清
+              「这一项要 Pro」（docs §3.4：把入口藏起来不是边界）。 */
+        if (window.PrintPage) window.PrintPage.open({ collectionId: pid });
+        return;
+      }
       if (eid) {
         const col = window.ReciteCollections.get(eid);
         if (!col) return;
@@ -793,228 +919,203 @@
     if (m) showToast("连读方式已改为「" + m.label + "」");
   }
 
+  /* ---------------- 家庭子档案（3 期 P1 · profile.family） ----------------
+     一个家长多个小孩。**孩子不建独立账号** —— 只是账号下的一个展示名 + 一份自己的进度
+     （`docs/auth-design.md` §2.1 的裁决：未成年人实名/同意合规成本高，且无产品收益）。
 
-  /* ---------------- 子档案（Issue #159 · 一个家长，多个孩子各背各的） ----------------
-     用户 2026-09-17 裁决：「进度也分家：切到小明只看到小明的排期」「Free 档给 1 个昵称」
-     「要跟着分家」「一台设备上多个孩子各背各的」。
+     这一块只做三件事，全部走 `js/family.js` 的接口（名册 / 切换 / 上限都在那里）：
+       · 列出名册，标出**当前那一个**；
+       · 切换（换孩子 = 换一套进度 / 年级 / 已读）；
+       · 增 / 改名 / 删 —— 上限按 tier，越限时**如实说是上限拦的**。
 
-     这一块管的是**名册**（谁在这台设备上背书）+ **切换**。它自己不算任何权限：
-       · 上限问 `js/profiles.js` 的 `limit()`（按已发放层级判，不按 can()）
-       · 越限时如实说是上限，不说「建不了」（错因说错 = 让人白试一遍）
-       · 切换之后**整页重画**（不这么做会出现「名字换了、年级还是上一个孩子的」）
-
-     ⚠️ 只用一个档案的用户**看不到这一块**（`hidden`），盘上也不会多出那把键 ——
-        老用户升级零感知，「再建一个」之前一切照旧。
+     ⚠️ 权限判断只走 `Family.limit()` / `Entitlement.identity()` ——
+        本页不出现 `tier === "pro"` 这类判断（与账号那一块同一条纪律）。
+     ⚠️ **切换之后要重画全页**：年级 / 每日数量 / 进度都是从「当前孩子」的键读的，
+        只重画这一块会让用户看到「名字换了、年级还是上一个孩子的」。
      ------------------------------------------------------------------ */
 
-  /** 取子档案层（脚本顺序不对 / 老缓存时返回 null，宁可不做也不误判） */
-  function profilesMod() {
-    return window.Profiles || null;
+  function familyMod() {
+    return window.Family || null;
   }
 
-  /** 子档案这一块要不要显示：用户已经被讲过一次「可以分家」才显示 */
-  function profilesVisible() {
-    const P = profilesMod();
-    if (!P) return false;
-    try {
-      return P.roster(window.localStorage).implied !== true;
-    } catch (e) { return false; }
-  }
+  /** 画名册：一行一个孩子，当前那个打标；行尾两颗小键（改名 / 删除） */
+  function renderFamily() {
+    const box = $("#family-panel");
+    const hint = $("#family-hint");
+    if (!box) return;
+    const F = familyMod();
+    if (!F) { box.innerHTML = ""; if (hint) hint.textContent = ""; return; }
 
-  function renderProfiles() {
-    const box = $("#profiles-list");
-    const item = $("#item-profiles");
-    if (!box || !item) return;
-    const P = profilesMod();
-    if (!P || !profilesVisible()) {
-      item.hidden = true;
-      return;
-    }
-    item.hidden = false;
-
-    let r = null;
-    try { r = P.roster(window.localStorage); } catch (e) { r = null; }
-    if (!r) { item.hidden = true; return; }
-    const lim = P.limit({ Entitlement: window.Entitlement });
+    /* 先认领：名册为空时把老档案（昵称 + 字符印）搬成第一个 —— 老用户零感知。
+       认领是幂等的，且只在名册为空时发生。 */
+    const data = F.ensureDetailed({ backing: window.localStorage });
+    const list = data.data.profiles;
+    const at = data.data.at;
+    const lim = F.limit({ backing: window.localStorage, E: entitlementMod() });
+    const unlimited = lim === Infinity;
 
     box.innerHTML = "";
-    r.profiles.forEach(function (p) {
-      const on = p.id === r.current;
+    list.forEach(function (p) {
       const row = document.createElement("div");
-      row.className = "profile-row" + (on ? " active" : "");
-
-      const pick = document.createElement("button");
-      pick.type = "button";
-      pick.className = "profile-pick";
-      pick.dataset.profilePick = p.id;
-      pick.setAttribute("role", "radio");
-      pick.setAttribute("aria-checked", on ? "true" : "false");
-      pick.setAttribute("aria-label", "切到「" + (p.nickname || "未命名") + "」");
-      // 印由 js/avatar.js 画（全站只有那一处拼渐变，有源码扫描守着）。
-      // 这里画的是**这个子档案自己的**印，不是当前那份 —— 所以要显式传一份档案给它。
-      let seal = "";
-      const A = avatarMod();
-      if (A && typeof A.html === "function") {
-        try {
-          if (typeof A.htmlFor === "function") seal = A.htmlFor(p, { size: 32 });
-          else seal = A.html(window.localStorage, { size: 32 });
-        } catch (e) { seal = ""; }
-      }
-      pick.innerHTML = seal + '<span class="profile-name"></span>';
-      pick.querySelector(".profile-name").textContent = p.nickname || "未命名";
-      row.appendChild(pick);
-
-      // 非当前档案才给「改名 / 删除」（当前那个的名字就在上面那个输入框里改）
-      if (!on) {
-        const acts = document.createElement("span");
-        acts.className = "profile-acts";
-        const ren = document.createElement("button");
-        ren.type = "button";
-        ren.className = "btn ghost-btn tiny-btn";
-        ren.dataset.profileRename = p.id;
-        ren.textContent = "改名";
-        const del = document.createElement("button");
-        del.type = "button";
-        del.className = "btn ghost-btn tiny-btn";
-        del.dataset.profileRemove = p.id;
-        del.textContent = "删除";
-        acts.appendChild(ren);
-        acts.appendChild(del);
-        row.appendChild(acts);
-      } else {
-        const now = document.createElement("span");
-        now.className = "profile-now";
-        now.textContent = "当前";
-        row.appendChild(now);
-      }
+      row.className = "family-row" + (p.id === at ? " current" : "");
+      row.dataset.familyId = p.id;
+      const name = p.nickname || "未起名";
+      row.innerHTML =
+        '<button class="family-pick" type="button" data-family-pick="' + esc(p.id) + '"' +
+        (p.id === at ? ' aria-current="true"' : "") + ">" +
+        '<span class="family-name">' + esc(name) + "</span>" +
+        (p.id === at ? '<span class="family-now">当前</span>' : "") +
+        "</button>" +
+        '<span class="family-acts">' +
+        '<button class="family-act" type="button" data-family-rename="' + esc(p.id) + '" ' +
+        'aria-label="重命名">改名</button>' +
+        (list.length > 1
+          ? '<button class="family-act danger" type="button" data-family-remove="' + esc(p.id) +
+            '" aria-label="删除">删除</button>'
+          : "") +
+        "</span>";
       box.appendChild(row);
     });
 
-    // 第一行那个「再建一个」只在没到上限时给出；到了上限就如实说上限
-    const addBtn = $("#btn-profile-add");
-    if (addBtn) {
-      addBtn.hidden = false;
-      addBtn.disabled = lim !== Infinity && r.profiles.length >= lim;
-    }
+    /* 「再建一个」：超限时**不藏按钮**（把入口藏起来不是边界，也让人以为坏了）——
+       点了如实回一句话，说清「是上限拦的」以及「怎么才能更多」。 */
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "family-add";
+    btn.id = "btn-family-add";
+    btn.textContent = unlimited ? "再建一个" : "再建一个（还可建 " + F.remaining({ backing: window.localStorage, E: entitlementMod() }) + " 个）";
+    box.appendChild(btn);
 
-    const hint = $("#profiles-hint");
     if (hint) {
-      const count = r.profiles.length + " / " + (lim === Infinity ? "不限" : lim);
-      hint.textContent =
-        "每个子档案有自己的背诵进度、年级与已读，互不影响（当前 " + count + " 个）。" +
-        "字号、连读方式这类阅读偏好是**这台设备**的，不跟着切换。";
+      hint.textContent = unlimited
+        ? "当前 " + list.length + " 个。切到哪一个，看到的背诵进度、年级与已读就是那一个的。"
+        : "当前 " + list.length + " / " + lim + " 个。切到哪一个，看到的背诵进度、年级与已读就是那一个的。";
     }
   }
 
-  /** 切换：**整页重画**。名字换了、年级还是上一个孩子的，是这里最容易出的事 */
-  function switchProfile(pid) {
-    const P = profilesMod();
-    if (!P) return;
-    const r = P.select(window.localStorage, pid);
-    if (!r.ok) { showToast(r.message || "切换没能完成"); return; }
-    if (!r.changed) return;
-    P.mirrorToAvatar(window.localStorage, { Avatar: avatarMod() });
-    // 计划缓存按天 + 配置缓存，切档案等于换了一整套配置 —— 必须失效
-    invalidatePlan();
-    settings = loadSettings();
-    applyAppName();
-    renderControls();
-    renderProfiles();
-    // 顶栏那枚印跟着当前档案走（它有更新入口，本页不自己重画顶栏）
-    window.dispatchEvent(new CustomEvent("profile-change", { detail: { id: pid } }));
-    showToast("已切到「" + (r.profile && r.profile.nickname || "未命名") + "」");
+  /** 切换：换孩子 = 换一套进度 / 年级 / 已读。**切换之后整页重画** */
+  function switchFamily(id) {
+    const F = familyMod();
+    if (!F) return;
+    const r = F.select(id, { backing: window.localStorage });
+    if (!r.ok) { showToast("这个子档案已经不在名册里了"); return; }
+    const p = F.current({ backing: window.localStorage });
+    showToast("已切到「" + ((p && p.nickname) || "未起名") + "」");
+    /* 整页重画：年级 / 每日数量 / 进度 / 已读全都换了主人。
+       只重画 family 那一块会留下「名字换了、年级还是上一个孩子的」这种半换状态。 */
+    reloadAll();
   }
 
-  function addProfile() {
-    const P = profilesMod();
-    if (!P) return;
-    const name = window.prompt("新子档案的名字（最多 12 个字）", "");
-    if (name === null) return;                       // 点了取消：什么都不做
-    const r = P.create(window.localStorage, name, { Entitlement: window.Entitlement });
-    if (!r.ok) { showToast(r.message); return; }
-    P.mirrorToAvatar(window.localStorage, { Avatar: avatarMod() });
-    invalidatePlan();
-    settings = loadSettings();
-    applyAppName();
-    renderControls();
-    renderProfiles();
-    window.dispatchEvent(new CustomEvent("profile-change", { detail: { id: r.profile.id } }));
-    // 新档案是空的 —— 这句必须说出来，否则家长会以为孩子的进度「丢了」
-    showToast("已新建「" + r.profile.nickname + "」，它是一个全新的空档案");
-  }
-
-  function renameProfile(pid) {
-    const P = profilesMod();
-    const r0 = P && P.roster(window.localStorage);
-    if (!r0) return;
-    const hit = r0.profiles.filter(function (p) { return p.id === pid; })[0];
-    if (!hit) return;
-    const name = window.prompt("改个名字（最多 12 个字）", hit.nickname || "");
-    if (name === null) return;
-    const r = P.update(window.localStorage, pid, { nickname: name });
-    if (!r.ok) { showToast(r.message); return; }
-    renderProfiles();
-    showToast("已改名为「" + r.profile.nickname + "」");
-  }
-
-  function removeProfile(pid) {
-    const P = profilesMod();
-    const r0 = P && P.roster(window.localStorage);
-    const hit = r0 && r0.profiles.filter(function (p) { return p.id === pid; })[0];
-    if (!hit) return;
-    if (!window.confirm("删除「" + (hit.nickname || "未命名") + "」？它自己的背诵进度、年级与已读会一并删掉，不能恢复。")) return;
-    const r = P.remove(window.localStorage, pid);
-    if (!r.ok) { showToast(r.message); return; }
-    P.mirrorToAvatar(window.localStorage, { Avatar: avatarMod() });
-    invalidatePlan();
-    settings = loadSettings();
-    applyAppName();
-    renderControls();
-    renderProfiles();
-    window.dispatchEvent(new CustomEvent("profile-change", { detail: { id: r.current } }));
-    showToast(r.message);
-  }
-
-  function bindProfiles() {
-    const box = $("#profiles-list");
-    const addBtn = $("#btn-profile-add");
-    if (!box && !addBtn) return;
-    const P = profilesMod();
-    if (!P) return;
-
-    /* 进本页时做两件一次性的事（幂等，重复进没副作用）：
-       ① `ensure()`：把「还没分家」的现状认定下来 —— 第一个档案的 id 落盘，
-          这样切档 UI 才有对象可指。**不写盘也无妨**（老键就是第一个档案的家）。
-       ② `adopt()`：老用户那份昵称 / 印认领进第一个档案 —— 不认领的症状是
-          「升级之后印变回默认的诗字」。 */
-    let r = null;
-    try { r = P.ensure(window.localStorage); } catch (e) { r = null; }
-    if (r) {
-      try { P.adopt(window.localStorage); } catch (e) { /* 认领失败不影响主流程 */ }
-      try { P.mirrorToAvatar(window.localStorage, { Avatar: avatarMod() }); } catch (e) { /* 同上 */ }
+  /** 增：空名也允许（与用户名同口径，界面回落「Ashley」） */
+  function addFamily() {
+    const F = familyMod();
+    if (!F) return;
+    const r = F.create("", { backing: window.localStorage, E: entitlementMod() });
+    if (!r.ok) {
+      /* 上限拦的，**如实说上限**（不笼统说「建不了」—— 错因说错等于让人白试一遍） */
+      if (r.code === "E_LIMIT") {
+        const name = entitlementMod() && entitlementMod().CAPS["profile.family"]
+          ? entitlementMod().CAPS["profile.family"].name : "家庭子档案";
+        showToast("子档案已达上限（" + name + "）");
+      } else {
+        showToast("这一台设备上写不进去（隐私模式？）");
+      }
+      return;
     }
-
-    if (box) {
-      box.addEventListener("click", function (e) {
-        const pick = e.target.closest("[data-profile-pick]");
-        if (pick) { switchProfile(pick.dataset.profilePick); return; }
-        const ren = e.target.closest("[data-profile-rename]");
-        if (ren) { renameProfile(ren.dataset.profileRename); return; }
-        const del = e.target.closest("[data-profile-remove]");
-        if (del) { removeProfile(del.dataset.profileRemove); return; }
-      });
-    }
-    if (addBtn) addBtn.addEventListener("click", addProfile);
+    /* 新档案建好就切过去 —— 建完还停在旧孩子身上，用户会以为没建成功 */
+    F.select(r.profile.id, { backing: window.localStorage });
+    renderFamily();
+    showToast("建好了，顺手切了过来。给它起个名字。");
+    const inp = $("#family-rename-input");
+    if (inp) inp.focus();
   }
 
-  /** 用户在「用户名」输入框里改名时，把新名字收进**当前档案**（名册是正主） */
-  function commitProfileName(value) {
-    const P = profilesMod();
-    if (!P || !profilesVisible()) return;
-    const cur = P.current(window.localStorage);
-    if (cur.implied) return;
-    P.update(window.localStorage, cur.profile.id, { nickname: value });
-    renderProfiles();
+  /**
+   * 改名。**用页面里的文本框而不是 prompt()**：prompt 在 iOS 上样式不可控、
+   * 在部分安卓 WebView 里还会被拦，且它挡不住 XSS 之外的任何东西。
+   * 这里原地长出一个输入框，回车 / 失焦即写盘。
+   */
+  function startRenameFamily(id) {
+    const F = familyMod();
+    if (!F) return;
+    const row = document.querySelector('.family-row[data-family-id="' + id + '"]');
+    if (!row) return;
+    const p = F.list({ backing: window.localStorage }).filter(function (x) { return x.id === id; })[0];
+    if (!p) return;
+    row.innerHTML =
+      '<input class="family-rename" id="family-rename-input" type="text" maxlength="' +
+      F.NAME_MAX + '" value="' + esc(p.nickname || "") + '" placeholder="Ashley" ' +
+      'aria-label="子档案名称" enterkeyhint="done" />' +
+      '<span class="family-acts"><button class="family-act" type="button" ' +
+      'data-family-rename-cancel="1">取消</button></span>';
+    const inp = $("#family-rename-input");
+    if (!inp) return;
+    inp.focus();
+    inp.select();
+    const commit = function () {
+      const r = F.rename(id, inp.value, { backing: window.localStorage });
+      if (r.ok) {
+        renderFamily();
+        /* 名字可能同时是「用户名」那一栏在显示的那一个 —— 重画印与用户名 */
+        const F2 = familyMod();
+        const cur = F2.current({ backing: window.localStorage });
+        if (cur && cur.id === id) {
+          const u = $("#input-username");
+          if (u) u.value = cur.nickname || "";
+          renderAvatar();
+        }
+        showToast("名字改好了");
+      } else {
+        showToast("这个子档案已经不在名册里了");
+        renderFamily();
+      }
+    };
+    inp.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") { e.preventDefault(); commit(); }
+      if (e.key === "Escape") { e.preventDefault(); renderFamily(); }
+    });
+    inp.addEventListener("blur", function () { commit(); });
+  }
+
+  /** 删。**不动那一份进度数据** —— 界面如实说明，别让人以为连带清了进度 */
+  function removeFamily(id) {
+    const F = familyMod();
+    if (!F) return;
+    const p = F.list({ backing: window.localStorage }).filter(function (x) { return x.id === id; })[0];
+    const name = (p && p.nickname) || "未起名";
+    if (!confirm("删除子档案「" + name + "」？\n\n名册里不再有它；它背过的进度数据仍留在本机（不会连带删除）。")) return;
+    const r = F.remove(id, { backing: window.localStorage });
+    if (!r.ok) {
+      if (r.code === "E_LAST") showToast("至少要留一个子档案");
+      else showToast("这个子档案已经不在名册里了");
+      renderFamily();
+      return;
+    }
+    showToast("已从名册里删掉「" + name + "」");
+    /* 删掉的如果是**当前**那一个，引擎已经落到第一条 —— 整页重画才对得上 */
+    reloadAll();
+  }
+
+  /** 名册变化后整页重画（年级 / 数量 / 进度 / 印 全都要跟着换） */
+  function reloadAll() {
+    renderControls();
+    renderFamily();
+    if (window.SiteChrome && window.SiteChrome.refreshUser) window.SiteChrome.refreshUser();
+  }
+
+  function bindFamily() {
+    const box = $("#family-panel");
+    if (!box) return;
+    box.addEventListener("click", function (e) {
+      const pick = e.target.closest("[data-family-pick]");
+      if (pick) { switchFamily(pick.dataset.familyPick); return; }
+      const rn = e.target.closest("[data-family-rename]");
+      if (rn) { startRenameFamily(rn.dataset.familyRename); return; }
+      if (e.target.closest("[data-family-rename-cancel]")) { renderFamily(); return; }
+      const rm = e.target.closest("[data-family-remove]");
+      if (rm) { removeFamily(rm.dataset.familyRemove); return; }
+      if (e.target.closest("#btn-family-add")) { addFamily(); return; }
+    });
   }
 
   /* ---------------- 头像印记（Issue #132 · 2026-09-15） ----------------
@@ -1283,13 +1384,10 @@
       return;
     }
     renderAvatar();
-    // 印跟着当前子档案走：换完印要把它收进名册（否则切走再切回来就退回旧印）
-    const P = profilesMod();
-    if (P && profilesVisible()) {
-      try { P.syncCurrentFromProfile(window.localStorage, { Avatar: avatarMod() }); } catch (e) { /* 收不上不影响本次显示 */ }
-      renderProfiles();
-    }
-    // 顶栏那枚印是 chrome.js 一次画好的，不重画就要刷新页面才看得到
+    /* ⚠️ 印跟着当前子档案走：`Avatar.setAvatar` 自己会把它收进名册
+       （`saveToChild` → `Family.setAvatar`，见 avatar.js 文件头）——
+       本页不再自己写第二遍，也不自己拼键名。
+       顶栏那枚印是 chrome.js 一次画好的，不重画就要刷新页面才看得到 */
     if (window.SiteChrome && window.SiteChrome.refreshUser) window.SiteChrome.refreshUser();
     showToast("头像印记已更新");
   }
@@ -1470,6 +1568,16 @@
       });
     }
 
+    /* 课内诗词整体导出（Pro）。**按住 Shift 点** = 先弹文本对话框（手机上便于复制）——
+       直接点是「落一个 .txt」，那是最常见的用法；对话框留着是因为
+       手机浏览器对下载文件的处理各不相同（存进「文件」里、或直接打开）。 */
+    const poemsBtn = $("#btn-export-poems");
+    if (poemsBtn) {
+      poemsBtn.addEventListener("click", function (e) {
+        exportPoems(!!e.shiftKey);
+      });
+    }
+
     const importBtn = $("#btn-import");
     const fileInput = $("#file-import");
     if (importBtn && fileInput) {
@@ -1545,7 +1653,7 @@
     bindEvents();
     bindCollections();
     bindSealPicker();
-    bindProfiles();
+    bindFamily();
     bindAccount();
     bindSync();
     refreshServerIdentity();

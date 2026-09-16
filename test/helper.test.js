@@ -329,18 +329,18 @@ setTimeout(async () => {
   await phase1();
   chk(wGuest.Speech.supported() === true, '有语音能力时 Speech.supported() 返回 true');
   chk(wGuest.Speech.allowed().ok === false, '未登录：权益层不放行语音播放');
-  chk(wGuest.Speech.allowed().hint === '登录后即可使用（免费）',
-    '未登录：给的话是「登录后即可使用（免费）」（' + wGuest.Speech.allowed().hint + '）');
+  chk(wGuest.Speech.allowed().hint === '登录可用',
+    '未登录：给的话是「登录可用」（' + wGuest.Speech.allowed().hint + '）');
   const gBtn = wGuest.document.querySelector('#m-read-btn');
   const gToday = wGuest.document.querySelector('#today-read');
   chk(gToday.disabled === true, '未登录：首页「今日连读」那颗大圆键置灰（它一进页面就在）');
   // 弹层里的键要先打开一首诗才会同步状态
   wGuest.document.querySelector('#today-list .item').dispatchEvent(new wGuest.Event('click', { bubbles: true }));
   chk(gBtn.disabled === true, '未登录：朗读按钮置灰（不是点了没反应）');
-  chk(/登录后即可/.test(gBtn.title), '未登录：按钮 title 说明原因（' + gBtn.title + '）');
+  chk(/登录可用/.test(gBtn.title), '未登录：按钮 title 说明原因（' + gBtn.title + '）');
   gBtn.dispatchEvent(new wGuest.Event('click', { bubbles: true }));
   chk(!wGuest.__spoken(), '未登录：点朗读不会把文本交给语音合成（一个字节都没发出去）');
-  chk(wGuest.document.querySelector('#toast').textContent === '登录后即可使用（免费）',
+  chk(wGuest.document.querySelector('#toast').textContent === '登录可用',
     '未登录：点朗读给出的提示与权益层一致（' + wGuest.document.querySelector('#toast').textContent + '）');
 
   // 登录后的 free 用户：语音播放可用（free 不残缺）

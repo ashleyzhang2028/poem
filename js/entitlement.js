@@ -58,9 +58,23 @@
     "collections.many":  { minTier: "pro",  login: true,  quota: null, name: "自选清单 20 个" },
     "sync.multiDevice":  { minTier: "pro",  login: true,  quota: null, name: "跨设备云同步" },
     "export.paper":      { minTier: "pro",  login: true,  quota: null, name: "篇目 PDF / 打印页" },
-    "profile.family":    { minTier: "pro",  login: true,  quota: null, name: "家庭子档案 Pro 3 个 / Max 180 个" },
+    /* 家庭子档案 —— 用户 2026-09-17 裁决「子档案 Max 180 个」。
+       ⚠️ 与 docs/auth-design.md §3.5 那张老表（Pro 3 / Max 8）相比，
+          **Max 由 8 上收到 180**，以用户裁决为准（另有「Free 算 1 个还是 3 个」
+          的口径冲突，一并按 Free 1 个落 —— 与自选清单同一条「免费不残缺」）。
+       ⚠️ Free 1 个：用户第一次自动认领的那一份永远放得下，不是「一个都没有」。 */
+    "profile.family":    { minTier: "pro",  login: true,  quota: null, name: "家庭子档案（Free 1 / Pro 3 / Max 180）" },
+
     "quiz.review":       { minTier: "pro",  login: true,  quota: null, name: "题库复习（给上句选下句）" },
-    "export.all":        { minTier: "max",  login: true,  quota: null, name: "全站批量导出" },
+    /* ⚠️ `export.all` 的门槛与名字**被用户改过一次**（2026-09-16，Issue #159）：
+       「为啥要有全站批量导出功能？这不是这个网站的核心资产吗？
+        顶多支持学校课本部分的全部导出。这个 pro 用户就行。」
+       → 名字从「全站批量导出」改成「全站课内诗词批量导出」（内容 = 课内 261 首），
+         门槛从 **max 降到 pro**；六部集子**不做**一次性整本导出。
+       ⚠️ 名字、门槛、内容三处必须一起改：名字里写着「全站」而实际只给课内，
+         服务端下发的那份 features 与这张表就会开始说谎（两端有逐字对拍）。
+       ⚠️ 这条**不是**「保留旧名字但缩水」—— 见 js/export-core.js 文件头。 */
+    "export.all":        { minTier: "pro",  login: true,  quota: null, name: "全站课内诗词批量导出 261 首" },
     /* 古诗词大会的两项 —— **归 Max**（用户 2026-09-17 裁决：
        「现场考试和飞花令归 max 所有，题库归 pro」）。
        ⚠️ 与 docs/auth-design.md §3.5 那张老表（「飞花令 / 古诗文大会 / 考试与题库」
@@ -370,7 +384,7 @@
     var r = can(name, ctx);
     if (r.ok) return "";
     if (r.reason === "unknown") return "这个功能暂不可用";
-    if (r.reason === "login") return "登录后即可使用（免费）";
+    if (r.reason === "login") return "登录可用";
     return r.minTier === "max" ? "Max 起可用" : "Pro 起可用";
   }
 
@@ -448,7 +462,7 @@
       var c = CAPS[k];
       var cells = COLUMNS.map(function (col) {
         // 游客列看的是「没登录」那一刻的能力 —— 与 /profile/ 顶部那句
-        // 「登录后可用语音朗读（免费）」必须是同一个答案，所以两边都走 can()。
+        // 「登录可用语音朗读」必须是同一个答案，所以两边都走 can()。
         var ctx = { tier: col.tier, signedIn: !col.guest };
         if (now !== undefined) ctx.now = now;
         var r = can(k, ctx);

@@ -309,7 +309,7 @@ console.log('\n=== 十一、源码扫描：加载了 storage.js 的页面必须�
   /* ⚠️ 这一条只看**真的用了 Storage 这个门面的页面**（regex 认 script 标签，
      不认注释 —— 放行注释的话「某页到底有没有转发层」就没人知道了）。
      `login / plans / admin / settings` 主页只有顶栏那一枚印读昵称，
-     走的是 `avatar.js` 与「当前子档案」（js/profiles.js），**不碰进度与设置** ——
+     走的是 `avatar.js` 与「当前子档案」（js/family.js），**不碰进度与设置** ——
      它们本来就既没有 progress-store.js 也没有 storage.js（见下一条正向断言）。 */
   pages.forEach(p => {
     const html = fs.readFileSync(path.join(ROOT, p), 'utf8');
@@ -320,13 +320,16 @@ console.log('\n=== 十一、源码扫描：加载了 storage.js 的页面必须�
     }
     chk(/<script[^>]+js\/storage\.js/.test(html),
       p + ' 加载了 progress-store.js，也加载了它的转发层 js/storage.js');
-    /* 子档案层（Issue #159）必须排在引擎之后：引擎每次读盘都要问它
-       「当前是哪个档案」——顺序反了不报错，症状是**静默串档** */
-    if (!/js\/profiles\.js/.test(html)) return;
-    const at = html.indexOf('js/profiles.js');
+    /* 子档案层（Issue #159）必须排在引擎**之前**：引擎每次读盘都要问它
+       「当前是哪个档案」——顺序反了不报错，症状是**静默串档**。
+       ⚠️ 这一条的正主在 `test/family.test.js` 第七节（它逐页扫，且只认
+          `<script src>` 行，不会被注释里的说明骗到）；这里只顺带确认
+          加载了引擎的页面也把 family.js 带上了。 */
+    if (!/js\/family\.js/.test(html)) return;
+    const at = html.indexOf('js/family.js');
     const eng = html.indexOf('js/progress-store.js');
-    chk(eng > -1 && eng < at,
-      p + ' 里 profiles.js 排在 progress-store.js 之后（反了就串档、且不报错）');
+    chk(at > -1 && at < eng,
+      p + ' 里 family.js 排在 progress-store.js 之前（反了就不报错、只是永远读没有后缀的老键）');
   });
 
   /* 六部集子页与设置页**直接**读 helper / 已读键，它们不经过 storage.js ——

@@ -830,7 +830,13 @@ async function main() {
     chk(!!S, "页面里 SyncStore 挂在 window 上");
     S.setEnabled(true);
     w2.Storage.set("p_probe", { level: 1 });
-    const stored = JSON.parse(w2.localStorage.getItem("poem_recite_progress_v1") || "{}");
+    /* ⚠️ 3 期 P1 起进度键**带子档案后缀**（多孩子各背各的）—— 键名由引擎算，
+       这里问它一次，而不是自己拼「poem_recite_progress_v1」。
+       自己拼音的症状是：明明写盘成功，测试却说「updatedAt 是 undefined」。 */
+    const progKey = w2.ProgressStore.childProgressKey();
+    chk(progKey.indexOf("poem_recite_progress_v1") === 0,
+      "进度键仍以进度域键名为前缀（实际 " + progKey + "）");
+    const stored = JSON.parse(w2.localStorage.getItem(progKey) || "{}");
     chk(!!stored.p_probe && !!stored.p_probe.updatedAt,
       "真页面上写进度会自动盖 updatedAt（引擎挂载时机错了这里就是 undefined）");
     const pending = S.pending();

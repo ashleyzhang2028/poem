@@ -486,7 +486,7 @@
    *
    * ⚠️ 读写**经 `ProgressStore`**（而不是直接 `localStorage`）：已读是「孩子自己的东西」，
    *    要跟着**子档案**分家（Issue #159：一个家长多个孩子各背各的）。
-   *    键的映射只在 `js/profiles.js` 一处决定，本文件只交出逻辑键名 `W.readStore`。
+   *    键的映射只在 `js/family.js` 一处决定，本文件只交出逻辑键名 `W.readStore`。
    *    引擎缺席（老缓存 / 隐私模式）时退回直接读写那一把键 —— 行为与分家前一致。 */
   function RS() {
     return typeof window !== "undefined" && window.ProgressStore ? window.ProgressStore : null;
@@ -1013,6 +1013,12 @@
       // 第二行要再补一次（chrome:ready 那套不会为它触发）。
       paintSub();
     }
+    /* 「这一篇打出来」那颗键（`data-print-open` + `data-print-poem`）——
+       把当前这一篇的 id 写到那颗键上，打印那一层据此取篇目。
+       ⚠️ **一处写、一处读**：打印层只从属性上取 id，不自己猜「现在在读哪一篇」
+          （猜的话，从列表开出来的与从阅读器翻页翻到的会取到两篇不一样的）。 */
+    var printBtn = document.querySelector("[data-print-open]");
+    if (printBtn) printBtn.setAttribute("data-print-poem", p.id || "");
     window.scrollTo(0, 0);
   }
 
@@ -1114,7 +1120,7 @@
   function speechHint() {
     if (!speechSupported()) return "当前浏览器不支持语音朗读";
     const a = window.Speech.allowed ? window.Speech.allowed() : { ok: true, hint: "" };
-    return a.hint || "登录后即可使用语音朗读";
+    return a.hint || "登录可用语音朗读";
   }
 
   /**

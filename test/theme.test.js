@@ -706,6 +706,7 @@ const SETTINGS_HTML = [
   'settings/reader/index.html'
 ].map(read).join('\n');
 const settingsJs = read('js/settings.js');
+const NAV_SRC = read('js/settings-nav.js');
 
 /* 分组标题与入口标题共用一个声明块（`.settings-group-title, .settings-link-title`）——
    字号 / 字重 / 颜色三个值只写一次。这里把它取出来，
@@ -752,28 +753,71 @@ chk(/data-back="\/settings\/"/.test(read('settings/general/index.html')),
 //   朗读     打开一篇时怎么念 / 看不看得到拼音（注音总开关 + 五档连读方式）
 //             —— Issue #163：原「阅读辅助」与「朗读播放」各只有一条设置，
 //             两个组标题 + 四行说明只为两条设置服务，并成一组「朗读」
-chk((SETTINGS_HTML.match(/class="settings-group"/g) || []).length === 5,
-  '四张设置页合起来是五组：通用 / 背诵 / 复习算法 / 我的清单 / 朗读');
-chk(/settings-group-title[^>]*>复习算法</.test(SETTINGS_HTML), '有「复习算法」分组标题');
-chk(/settings-group-title[^>]*>通用</.test(SETTINGS_HTML), '有「通用」分组标题');
-chk(/settings-group-title[^>]*>背诵</.test(SETTINGS_HTML), '有「背诵」分组标题');
-chk(/settings-group-title[^>]*>我的清单</.test(SETTINGS_HTML), '有「我的清单」分组标题');
-chk(/settings-group-title[^>]*>朗读</.test(SETTINGS_HTML), '有「朗读」分组标题');
+/* ⚠️ Issue #163 之前是六组；3 期新增了「打印」（篇目打印页，Pro · `export.paper`），
+   再并掉一组，所以现在是**六组**。新增那一组长在「我的清单」页上 ——
+   要打印的正是这份清单，分两页等于让用户在两张页之间来回搬东西
+   （见 docs §5.2 与 js/print.js）。
+   ---- Issue #163（第三轮）：**一页只有一组时不再写组标题** ——
+   「通用」「朗读」这些字已经写在顶栏页名上（几十像素之上），
+   正文顶部再写一遍是同一句话在同一屏里说两次。所以 titles 判据是
+   「按页取、与组数对齐」：单组页 0 个标题，两组的「背诵」页剩
+   「背诵 / 复习算法」两颗，「我的清单」页剩「打印」一颗
+   （前一组的名字仍是顶栏页名）。
+   ⚠️ 用户可见处一个字都没少：分组名仍是顶栏的 data-page。 */
+const PAGE_GROUPS = {
+  general: { count: 1, titles: [] },
+  recite: { count: 2, titles: ['背诵', '复习算法'] },
+  lists: { count: 2, titles: ['打印'] },
+  reader: { count: 1, titles: [] }
+};
+const pageGroups = {};
+chk((SETTINGS_HTML.match(/class="settings-group"/g) || []).length === 6,
+  '四张设置页合起来是六组：通用 / 背诵 / 复习算法 / 我的清单 / 打印 / 朗读');
+Object.keys(PAGE_GROUPS).forEach(k => {
+  const src = read('settings/' + k + '/index.html');
+  chk((src.match(/class="settings-group"/g) || []).length === PAGE_GROUPS[k].count,
+    '「settings/' + k + '」页有 ' + PAGE_GROUPS[k].count + ' 个分组');
+  const titles = [...src.matchAll(/settings-group-title[^>]*>([^<]+)</g)].map(m => m[1]);
+  chk(titles.join(',') === PAGE_GROUPS[k].titles.join(','),
+    '「settings/' + k + '」页的组标题是「' + (PAGE_GROUPS[k].titles.join(',') || '一个都不写') +
+    '」（实际 ' + (titles.join(',') || '一个都没有') + '）');
+  pageGroups[k] = src;
+});
+chk(['general', 'reader'].every(k =>
+    !/settings-group-title/.test(pageGroups[k]) && /data-page="/.test(pageGroups[k])),
+  '只有一组的页不再写正文组标题（组名只留顶栏页名一处）');
+chk(/settings-group-title[^>]*>复习算法</.test(pageGroups.recite),
+  '「复习算法」仍是分组标题（它是「背诵」页里两段的分界）');
+chk(/settings-group-title[^>]*>打印</.test(pageGroups.lists),
+  '「打印」仍是分组标题（3 期新增，「我的清单」页里两段的分界）');
 chk(!/settings-group-title[^>]*>阅读辅助</.test(SETTINGS_HTML) &&
     !/settings-group-title[^>]*>朗读播放</.test(SETTINGS_HTML),
   '不再有「阅读辅助」「朗读播放」两个组标题（Issue #163 并成「朗读」）');
-// 分组的**顺序**也是分类的一部分：清单紧跟在「背诵」之后
-//（自选篇目就是跟着背诵走的），朗读那一条偏好排在最后
+// 分组要真的装对东西：只给背诵用的选项不能落在「通用」里。
+// ⚠️ 单组页不再有 aria-labelledby（组标题已撤），所以区块按**页**取。
+const blockOf = k => pageGroups[k];
+const generalBlock = blockOf('general');
+const reciteBlock = blockOf('recite');
+const listsBlock = blockOf('lists');
+const readerBlock = blockOf('reader');
+// Issue #163：分组的**顺序**仍是分类的一部分（清单紧跟在「背诵」之后，
+// 打印紧跟清单，朗读那一条偏好排在最后）。组标题撤了之后，这个顺序改由
+// js/settings-nav.js 的 GROUPS 与各页的区块顺序共同表达 —— 两处一起判。
 {
-  const order = [...SETTINGS_HTML.matchAll(/aria-labelledby="grp-([a-z]+)"/g)].map(m => m[1]);
-  chk(order.join(',') === 'general,recite,algo,lists,reader',
-    '五组的先后顺序为 通用 → 背诵 → 复习算法 → 我的清单 → 朗读（实际 ' + order.join(',') + '）');
+  const order = [...NAV_SRC.matchAll(/key:\s*"([a-z]+)"/g)].map(m => m[1]);
+  chk(order.join(',') === 'general,recite,lists,reader',
+    '四个入口的顺序为 通用 → 背诵 → 我的清单 → 朗读（实际 ' + order.join(',') + '）');
+  // 判「标签那一行」而不是整页：页首 HTML 注释里也写着「复习算法」四个字，
+  // 用整页 indexOf 比会拿注释当答案（源码注释不是界面）。
+  const algoTitleAt = reciteBlock.search(/settings-group-title[^>]*>复习算法</);
+  const countAt = reciteBlock.indexOf('id="seg-count"');
+  chk(algoTitleAt > -1 && countAt > -1 && algoTitleAt > countAt,
+    '「复习算法」这一段的标题仍在「背诵」几项之后（两段的分界不丢）');
+  const printAt = listsBlock.search(/settings-group-title[^>]*>打印</);
+  const colAt = listsBlock.indexOf('id="collections-list"');
+  chk(printAt > -1 && colAt > -1 && printAt > colAt,
+    '「打印」这一段排在自选清单之后（打的就是这份清单）');
 }
-// 分组要真的装对东西：只给背诵用的选项不能落在「通用」里
-const generalBlock = (SETTINGS_HTML.match(/aria-labelledby="grp-general"[\s\S]*?<\/section>/) || [''])[0];
-const reciteBlock = (SETTINGS_HTML.match(/aria-labelledby="grp-recite"[\s\S]*?<\/section>/) || [''])[0];
-const listsBlock = (SETTINGS_HTML.match(/aria-labelledby="grp-lists"[\s\S]*?<\/section>/) || [''])[0];
-const readerBlock = (SETTINGS_HTML.match(/aria-labelledby="grp-reader"[\s\S]*?<\/section>/) || [''])[0];
 chk(!!generalBlock && !!reciteBlock && !!listsBlock && !!readerBlock, '各分组自己的区块都能取到');
 chk(/id="input-username"/.test(generalBlock), '「通用」组含用户名');
 chk(/id="btn-export"/.test(generalBlock) && /id="btn-import"/.test(generalBlock) && /id="btn-reset"/.test(generalBlock),

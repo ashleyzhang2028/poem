@@ -34,6 +34,57 @@
   /** 账号域档案键：昵称 + 头像印记同住一处（跨设备一致的都放这儿） */
   var NS = "poem_profile_v1";
 
+  /**
+   * 家庭子档案（3 期 P1）：有了名册之后，**昵称与印跟着当前孩子走**。
+   *
+   * 为什么收在这里而不是各调用点：全站三处画这枚印（顶栏 / 设置页 / 档案区）+
+   * 多处读昵称，各自去问一次「现在是谁」的话，早晚有一处忘了问 ——
+   * 症状是「顶栏是小明的印、设置页是小红的」。这一层只提供**一个**答案。
+   *
+   * ⚠️ `Family` 缺席（脚本顺序不对 / 老缓存里的旧页面）时一律走老路径：
+   *    读 `poem_profile_v1` 本身。**退化成 0 期的行为，一个字节都不坏。**
+   * ⚠️ 名册为空时也走老路径 —— 认领是**写**，不在读的时候做
+   *    （一次纯渲染不该留副作用；认领由 `js/settings.js` 的 renderFamily 发起）。
+   */
+  function familyMod() {
+    var g = typeof globalThis !== "undefined" ? globalThis : null;
+    return g && g.Family ? g.Family : null;
+  }
+
+  /** 当前子档案（没有 Family / 名册为空 → null）。任何异常都当「没有」 */
+  function currentChild(backing) {
+    var F = familyMod();
+    if (!F || !F.current) return null;
+    try { return F.current({ backing: backing }); } catch (e) { return null; }
+  }
+
+  /**
+   * 取「这一份档案」的读写目标：有当前子档案就是它，否则是老的那整份。
+   *
+   * 返回形状刻意**与 `read()` 的返回值同形**（`{v,nickname,avatar}`）——
+   * 于是下面那些函数一处都不用改写法。`save` 回调负责把改动落回正确的地方。
+   */
+  function target(backing) {
+    var p = currentChild(backing);
+    if (!p) return null;
+    return {
+      v: 1,
+      nickname: String(p.nickname == null ? "" : p.nickname).slice(0, 12),
+      avatar: normAvatar(p.avatar)
+    };
+  }
+
+  /** 把改动写回「当前子档案」（`Family` 在场且确实有名册时） */
+  function saveToChild(backing, data) {
+    var F = familyMod();
+    if (!F) return false;
+    var p = currentChild(backing);
+    if (!p) return false;
+    var r1 = F.rename(p.id, data.nickname, { backing: backing });
+    var r2 = F.setAvatar(p.id, normAvatar(data.avatar), { backing: backing });
+    return !!(r1 && r1.ok) || !!(r2 && r2.ok);
+  }
+
   /** 老键：昵称此前混在设置里（`settings.username`），只读不写，幂等迁移 */
   var LEGACY_SETTINGS_NS = "poem_recite_settings_v1";
 
@@ -113,6 +164,10 @@
 
   /** 读档案。解析失败 / 形状不对 → 空档案（不抛） */
   function read(backing) {
+    /* 有当前子档案时读它的那一份（昵称与印是**孩子的**）——
+       没有 Family / 名册为空时回落下面那条老路径，一个字节都不坏。 */
+    var child = target(backing);
+    if (child) return child;
     if (!backing) return emptyProfile();
     var text = null;
     try { text = backing.getItem(NS); } catch (e) { return emptyProfile(); }
@@ -126,6 +181,16 @@
   }
 
   function write(backing, data) {
+    /* 名册在场时写回**当前子档案**（昵称 + 印都属孩子）。
+       ⚠️ 先试子档案、写不进去才落老键 —— 反过来会让同一个昵称有两份，
+          而「两份」的症状是「顶栏一个名字、设置页另一个」。 */
+    if (backing && currentChild(backing)) {
+      var okChild = saveToChild(backing, {
+        nickname: String((data && data.nickname) == null ? "" : data.nickname).trim().slice(0, 12),
+        avatar: normAvatar(data && data.avatar)
+      });
+      if (okChild) return true;
+    }
     if (!backing) return false;
     var clean = {
       v: 1,
