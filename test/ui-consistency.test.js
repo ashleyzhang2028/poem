@@ -485,32 +485,63 @@ chk(/--col-side:\s*var\(--safe\)/.test(cssCode) === false &&
   /\.app\s*\{[^}]*padding-left:\s*calc\(var\(--col-side\)/.test(cssCode),
   '左右内边距读同一档 --col-side（不再有一处写死 14px 把三档一起盖掉）');
 
-/* 设置主页的四条入口：一张卡 + 标题与集子索引页的分组名同档（Issue #147）
+/* 设置主页的四条入口 + 二级页的六颗分组名：一张卡 + 与集子卷名同一档字号
    --------------------------------------------------------------------------
-   用户原话：「设置页首页，四个卡片是不是应该有背景色？另外四个标题字号需要变大，
-   可以和其他索引页页面例如集子的标题字号一样大。」
+   用户原话（Issue #147）：「设置页首页，四个卡片是不是应该有背景色？
+   另外四个标题字号需要变大，可以和其他索引页页面例如集子的标题字号一样大。」
+   用户原话（Issue #163）：「设置页首页 通用 我的清单这些卡片主标题之前希望
+   字号和其他页面一样大 还没修复。」
+
+   后一条点的正是 #147 只改了一半的地方：主页那四张入口卡改了，
+   **二级页里那六颗分组名没跟上**（还是更早一轮压下去的 11px / 400 / 淡墨）——
+   于是同一个设置模块里两套字号。现在三处读同一句：
+
+     .settings-group-title  （二级页的分组名）
+     .settings-link-title   （设置主页的入口标题）
+     .group-name            （集子索引页的卷名）
 
    两件事各自都要有一个**可判的**落点，否则改完只是「看着像」：
      · 背景色 = 走全站那一条 --card（不新开一个色值）；
-     · 标题字号 = 与集子索引页的卷名 .group-name 同一个值。
-       这一条是本文件里唯一一处「跨两张表」的约定：设置入口在 css/style.css，
-       集子卷名在 css/classic.css。两条规则各在一张表里，只能靠这对断言绑住 ——
-       改一边就会红，谁也加不进第三个近似值（14.5px 那档就是这么来的）。 */
+     · 标题字号 / 字重 = 与集子索引页的卷名 .group-name 同一个值。
+       这一条是本文件里唯一一处「跨两张表」的约定：设置页那两条在
+       css/style.css，集子卷名在 css/classic.css。只能靠这组断言绑住 ——
+       改一边就会红，谁也加不进第三个近似值（11px / 14.5px 那两档就是这么来的）。 */
 const linkRule = ruleOf(cssCode, '.settings-link');
 chk(/background:\s*var\(--card\)/.test(linkRule),
   '设置主页的四条入口有底色（走全站 --card，不新开色值）');
 chk(/border-radius:\s*var\(--radius-md\)/.test(linkRule),
   '入口卡片的圆角走 --radius-md（与 .trans-box / .library-card 同一档）');
-const linkTitleRule = ruleOf(cssCode, '.settings-link-title');
+/* 标题那三个值（字号 / 字重 / 颜色）在 css/style.css 里**只写一次**：
+   `.settings-group-title, .settings-link-title` 共用一个声明块。
+   下面这两个取值的函数就按这个共用块取 —— 单取 .settings-link-title 会
+   拿到「只有 font-family」的那一块（Issue #163 之前正是这么写的，
+   于是 11px 的分组标题在断言里看不见）。 */
+const sharedTitleRule = (code) =>
+  ((code.match(/\.settings-group-title,\s*\n?\.settings-link-title\s*\{([\s\S]{0,400}?)\}/) || [0, ''])[1]) || '';
 const groupNameRule = ruleOf(classicCode, '.group-name');
 const sizeOf = r => (r.match(/font-size:\s*([\d.]+)px/) || [0, ''])[1];
 const weightOf = r => (r.match(/font-weight:\s*(\d+)/) || [0, ''])[1];
-chk(sizeOf(linkTitleRule) !== '' && sizeOf(linkTitleRule) === sizeOf(groupNameRule),
-  '设置入口标题与集子卷名的字号是同一个值（实际 ' + sizeOf(linkTitleRule) +
-  ' / ' + sizeOf(groupNameRule) + '）');
-chk(weightOf(linkTitleRule) !== '' && weightOf(linkTitleRule) === weightOf(groupNameRule),
-  '设置入口标题与集子卷名的字重也是同一个值（实际 ' + weightOf(linkTitleRule) +
-  ' / ' + weightOf(groupNameRule) + '）');
+chk(sizeOf(sharedTitleRule(cssCode)) !== '',
+  '卡片主标题的大小 / 字重 / 颜色只在共用块里写一次（分组标题与入口标题同一句）');
+[['.settings-group-title', sharedTitleRule(cssCode)],
+ ['.settings-link-title', sharedTitleRule(cssCode)]].forEach(function (pair) {
+  chk(sizeOf(pair[1]) === sizeOf(groupNameRule),
+    pair[0] + ' 与集子卷名的字号是同一个值（实际 ' + sizeOf(pair[1]) +
+    ' / ' + sizeOf(groupNameRule) + '）');
+  chk(weightOf(pair[1]) === weightOf(groupNameRule),
+    pair[0] + ' 与集子卷名的字重也是同一个值（实际 ' + weightOf(pair[1]) +
+    ' / ' + weightOf(groupNameRule) + '）');
+});
+/* 入口标题那条**自己写**的规则里不许再出现字号 / 字重 / 颜色
+   （那就是第二个来源：上一版分组标题被压成 11px 时，抄过去的那三个值
+   跟着一起降级了）。
+   ⚠️ 判的是「`.settings-link-title` 单独成组的那条规则」，
+      不是 ruleOf() 的累加结果 —— 累加会连共用块一起算进来。 */
+const ownLinkTitle = (cssCode.match(/[^{}]*\.settings-link-title\s*\{([^}]*)\}/g) || [])
+  .filter(sel => sel.split('{')[0].split(',').map(x => x.trim()).join(',') === '.settings-link-title')
+  .map(sel => sel.slice(sel.indexOf('{') + 1)).join(';');
+chk(!!ownLinkTitle && !/font-size|font-weight|color:/.test(ownLinkTitle),
+  '入口标题自己的那条规则只有字体族兜底，不再另写字号 / 字重 / 颜色');
 chk(/position:\s*absolute/.test(ruleOf(cssCode, '.settings-link-go')),
   '入口卡片右侧那颗箭头绝对定位在卡里（不让它参与这一行的排布，落点恒定）');
 
@@ -1279,6 +1310,60 @@ PAGE_FILES.forEach(f => {
   const trk = sizeOf(cssCode, '.switch-track');
   chk(!!inp.w && inp.w === trk.w && inp.h === trk.h,
     '透明输入框与开关轨道同尺寸（' + inp.w + '×' + inp.h + '）—— 点哪儿就是哪儿');
+}
+
+/* ==========================================================================
+   十一之二、卡片主标题真的和其他页一样大（Issue #163，真实渲染）
+   --------------------------------------------------------------------------
+   用户原话：「设置页首页 通用 我的清单这些卡片主标题之前希望字号和其他页面
+   一样大 还没修复。」
+
+   上面第 ⑪ 段判的是**源码里的值**：共用块与 .group-name 同为 14px / 700。
+   这一段判的是**渲染出来的结果** —— jsdom 把真页面 + 两张样式表挂上，
+   量二级页「通用」那颗 <h2> 与设定主页四张入口卡的标题。
+
+   ⚠️ 为什么非要有这一段：源码值对、渲染值不对是踩过的坑。
+      上一版 .settings-link-title 自己写了一遍 font-size / font-weight，
+      .settings-group-title 那边被压成 11px 时它跟着一起降级了（抄出来的值）。
+      现在三个值只在共用块里写一次，这一段就是「真的画出来是这么大」的闭环。
+   ========================================================================== */
+if (JSDOM) {
+  const sheet = '<style>' + cssCode + '</style><style>' + classicCode + '</style>';
+  const px = (json) => json.fontSize;
+
+  // 二级页：分组名
+  ['settings/general/index.html', 'settings/recite/index.html',
+   'settings/lists/index.html', 'settings/reader/index.html'].forEach(function (f) {
+    const d = new JSDOM(read(f), { url: 'https://local.test/' + f.replace('index.html', '') });
+    d.window.document.head.insertAdjacentHTML('beforeend', sheet);
+    const t = d.window.document.querySelector('.settings-group-title');
+    const sz = t ? d.window.getComputedStyle(t).fontSize : '';
+    chk(sz === sizeOf(groupNameRule) + 'px',
+      f + ' 的分组标题画出来和集子卷名同号（' + sz + '）');
+  });
+
+  // 设置主页：四张入口卡的标题（由 js/settings-nav.js 画出来）
+  const d2 = new JSDOM(read('settings/index.html'),
+    { url: 'https://local.test/settings/', runScripts: 'dangerously' });
+  d2.window.document.head.insertAdjacentHTML('beforeend', sheet);
+  const sc = d2.window.document.createElement('script');
+  sc.textContent = read('js/settings-nav.js');
+  d2.window.document.body.appendChild(sc);
+  d2.window.document.dispatchEvent(new d2.window.Event('DOMContentLoaded'));
+  const titles = [...d2.window.document.querySelectorAll('.settings-link-title')];
+  chk(titles.length > 0 &&
+    titles.every(el => d2.window.getComputedStyle(el).fontSize === sizeOf(groupNameRule) + 'px'),
+    '设置主页四张入口卡的标题画出来也是同一号（' +
+    (titles[0] ? d2.window.getComputedStyle(titles[0]).fontSize : '未取到') + '）');
+  /* 两个页面之间不再有第二档字号：主页与二级页的标题画出来必须**同一个字符串** */
+  const d3 = new JSDOM(read('settings/general/index.html'), { url: 'https://local.test/settings/general/' });
+  d3.window.document.head.insertAdjacentHTML('beforeend', sheet);
+  const grp = d3.window.document.querySelector('.settings-group-title');
+  chk(titles.length > 0 && grp &&
+    d2.window.getComputedStyle(titles[0]).fontSize === d3.window.getComputedStyle(grp).fontSize,
+    '设置主页入口标题与二级页分组名画出来一样大（同名同号，不再两套）');
+} else {
+  console.log('- (未安装 jsdom，跳过卡片主标题的真实渲染一节)');
 }
 
 /* ==========================================================================
