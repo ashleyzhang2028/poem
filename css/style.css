@@ -922,86 +922,23 @@ body.no-dock .modal-box { max-height: 88vh; }
 }
 
 /* --------------------------------------------------------------------------
-   开关行（跨设备同步）：.switch-row / .switch-track / .switch-label
+   开关行：**只剩一条状态字的规则**（.switch-label）
    --------------------------------------------------------------------------
-   ⚠️ 这一段是补的缺：HTML 里从 1B 起就写着这三个类名，样式表里却一条都没有 ——
-   于是那颗 checkbox 一直以**浏览器原生**的样子露在纸面上（浅灰方块 + 系统蓝勾），
-   与整页的米纸 / 天青是两套语言。用户看到的「选择框太丑」就是这一处。
-   做法与全站开关类控件同一套：真实 input 留作可点 / 可聚焦 / 可读屏的那一层
-   （opacity:0 覆盖在轨道上），可见的轨道由 span 画 —— 键盘、读屏、
-   触屏一律照旧，改的只是画法。
+   ⚠️ 这里原本还有一整套 `.switch-row` / `.switch-input` / `.switch-track` ——
+   那是 1B 期「真实 input 透明覆盖在 span 轨道上」写法的遗留。Issue #163 把开关
+   改成**自绘胶囊**（`appearance: none`，input 本身就是轨道）之后，那三个类名
+   在**任何 HTML 里都不再出现**（有断言守着），这一段就成了死样式。
+
+   死样式的害处不止占地方：`.switch-input` 与 `.switch-track` 在文件下半段
+   （自绘那一版）**同名两段**，于是「按累积读声明」的断言读到的是前一段的值，
+   算出来的滑块行程是 -6px —— 一条真 bug 的读数被它教成了「旧的、不用管」。
+   删掉之后同名规则只剩一段，那类误读再也不会发生（并有断言守着「不许再长回来」）。
    -------------------------------------------------------------------------- */
-.switch-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  cursor: pointer;
-  /* 整行都是热区，且不许出现原生 checkbox 的默认外边距 */
-  margin-bottom: 0;
-  /* 透明输入框要盖在轨道上，得先给它一个定位参照 */
-  position: relative;
-}
-/* 真实输入框：不删（删了键盘与读屏就没了），只让它透明地盖在轨道上。
-   ⚠️ 尺寸与 .switch-track 严格同值（40×24）：它不是「藏起来」，
-      是「盖在上面」—— 点哪儿、焦点框多大，都跟着这两行走。
-      top: 50% + translateY(-50%) 与 flex 的 align-items: center 对齐同一个中点，
-      窄屏换行时也不会偏出去半格。 */
-.switch-input {
-  position: absolute;
-  top: 50%;
-  left: 0;
-  transform: translateY(-50%);
-  width: 40px;
-  height: 24px;
-  margin: 0;
-  opacity: 0;
-  cursor: pointer;
-}
-.switch-input:disabled { cursor: default; }
-/* 轨道：与 .seg / 药丸同一档圆角语言，关是淡纸底 + 一条界行，开是天青实底 */
-.switch-track {
-  position: relative;
-  flex: none;
-  width: 40px;
-  height: 24px;
-  border-radius: 999px;
-  background: var(--line);
-  border: 1px solid var(--line-2);
-  transition: background .18s ease, border-color .18s ease;
-}
-/* 滑块 */
-.switch-track::after {
-  content: "";
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: var(--card);
-  box-shadow: 0 1px 3px rgba(74, 58, 38, .22);
-  transition: transform .18s cubic-bezier(.2, .8, .3, 1);
-}
-.switch-input:checked + .switch-track {
-  background: var(--green);
-  border-color: var(--green);
-}
-.switch-input:checked + .switch-track::after { transform: translateX(16px); }
-/* 置灰（本站未开放同步）：轨道退回纸色，滑块仍是米白，读得出「点不动」 */
-.switch-input:disabled + .switch-track {
-  background: var(--bg);
-  border-color: var(--line-2);
-  opacity: .7;
-}
-/* 键盘焦点：全站那条天青光晕，与 .account-input:focus 同一档 */
-.switch-input:focus-visible + .switch-track {
-  box-shadow: 0 0 0 3px rgba(47, 96, 85, .16);
-}
-/* 开关旁的状态字（开 / 关 / 未开放）：与 .settings-hint 同一档淡墨 */
+/* 开关旁的状态字（开 / 关 / 未开放）：与 .settings-hint 同一档淡墨。
+   ⚠️ 当前 HTML 里没有用到它（状态由开关本体表达，Issue #163）——
+      保留这一条是因为它仍是一个**可用的**语义类（`.switch-label`），
+      而不是那套已删写法的残留；哪天要在开关旁边写一句状态说明，用它。 */
 .switch-label { font-size: 12.5px; color: var(--ink-2); }
-@media (prefers-reduced-motion: reduce) {
-  .switch-track, .switch-track::after { transition: none; }
-}
 /* --------------------------------------------------------------------------
    设置页的选中态：全页统一成「深绿实底 + 米白字」，与「年级」那些深绿药丸同一套语言
    --------------------------------------------------------------------------
@@ -1494,6 +1431,101 @@ textarea:focus {
 .seal-ink:hover { transform: scale(1.06); }
 .seal-ink:active { transform: scale(.94); }
 .seal-ink.active { box-shadow: 0 0 0 3px rgba(165, 92, 25, .22); }
+
+/* --------------------------------------------------------------------------
+   家庭子档案（3 期 P1）：名册 + 切换 + 增删
+   --------------------------------------------------------------------------
+   一个家长多个小孩。整块只有一行一行的「名字 · 当前 · 改名 · 删除」，
+   与「我的清单」那一组同一套排版语言（.settings-link 那一档），
+   不新造一套视觉 —— 同一页里两种列表样式正是用户点过的「看着说不出哪不对」。
+
+   ⚠️ 「当前」那一档只用**文字 + 实底**表达，不靠颜色单独承载语义：
+      色盲用户与黑白打印时也得读得出「现在是哪一个」。
+   -------------------------------------------------------------------------- */
+.family-panel { display: flex; flex-direction: column; gap: 6px; }
+.family-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--card);
+  padding: 6px 8px 6px 10px;
+}
+.family-row.current {
+  border-color: var(--green);
+  box-shadow: inset 0 0 0 1px rgba(47, 96, 85, .22);
+}
+/* 点名字 = 切到它。整颗键占满左侧，热区够大（触屏上指肚按得着） */
+.family-pick {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  background: none;
+  padding: 6px 0;
+  text-align: left;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+.family-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.family-now {
+  flex: none;
+  font-size: 11px;
+  color: var(--green);
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  padding: 1px 7px;
+}
+.family-acts { flex: none; display: flex; gap: 4px; }
+.family-act {
+  border: none;
+  background: none;
+  color: var(--ink-3);
+  font-family: inherit;
+  font-size: 12.5px;
+  padding: 4px 6px;
+  cursor: pointer;
+  border-radius: 6px;
+}
+.family-act:hover { color: var(--green); }
+.family-act.danger:hover { color: var(--ink); }
+/* 「再建一个」：虚线框的一行，与上面的实线行区分开（它是动作，不是条目） */
+.family-add {
+  border: 1px dashed var(--line-2);
+  border-radius: var(--radius);
+  background: none;
+  color: var(--ink-2);
+  font-family: inherit;
+  font-size: 13px;
+  padding: 9px 10px;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color .15s, color .15s;
+}
+.family-add:hover { border-color: var(--green); color: var(--green); }
+/* 原地改名用的输入框：与 .settings-input 同一档（同一页里两种输入框是两种语言） */
+.family-rename {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius);
+  background: var(--card);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 14px;
+  padding: 7px 9px;
+}
+.family-rename:focus { outline: none; border-color: var(--green); }
 
 /* --------------------------------------------------------------------------
    设置页里的「我的清单」（自选背诵）
