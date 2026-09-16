@@ -281,7 +281,7 @@ function report(cfg) {
  */
 
 /** 一段可直接粘进终端的验收命令（`$VAR` 由用户自己的 shell 展开） */
-var VERIFY_DB = 'curl -sS -o /dev/null -w \'%{http_code}\\n\' "$SUPABASE_URL/rest/v1/accounts?select=uid&limit=1" -H "apikey: $SUPABASE_URL" -H "Authorization: Bearer $SUPABASE_SERVICE_KEY"';
+var VERIFY_DB = 'curl -sS -o /dev/null -w \'%{http_code}\\n\' "$SUPABASE_URL/rest/v1/accounts?select=uid&limit=1" -H "apikey: $SUPABASE_SERVICE_KEY" -H "Authorization: Bearer $SUPABASE_SERVICE_KEY"';
 
 var STEPS = [
   {
@@ -342,7 +342,9 @@ var STEPS = [
       "在 .cnb.yml 里加两条定时任务：supabase-keepalive 与 supabase-backup",
       "探活的请求**必须打到数据库**（PostgREST 查询算活动，根路径与状态页不算）",
       "探活排**每 5 天**而不是每 7 天：平台可能延迟数小时甚至跳过，留 2 天缓冲",
-      "备份每周一次 pg_dump（免费档没有自动备份，误删就是永久消失）"
+      "备份每周一次 pg_dump（免费档没有自动备份，误删就是永久消失）",
+      "备份还要第三个值 SUPABASE_DB_URL —— 它**不能在控制台复制**，只能去 Project Settings → Database → Connection string 那一页取模板，再把里面的 [YOUR-PASSWORD] 换成数据库密码（那串明文密码只在建项目时出现过一次；忘了就点 Reset database password 重设）。模板形如 postgresql://postgres:[YOUR-PASSWORD]@db.<ref>.supabase.co:5432/postgres，把 [YOUR-PASSWORD] 整体替换掉再填进密钥仓库",
+      "密码里有 @ : / # ? 这类字符时必须**百分号编码**（@ → %40），否则 pg_dump 会把密码里那一段当成主机名，报的是「could not translate host name」，看着像 DNS 坏了其实不是"
     ],
     check: "仓库的流水线列表里能看见这两条；手动触发一次探活，成功即回执"
   },

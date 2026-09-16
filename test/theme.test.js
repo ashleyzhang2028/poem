@@ -1031,8 +1031,16 @@ chk(!/border-radius:\s*10px/.test(css) && !/border-radius:\s*10px/.test(classicC
 //    顶栏 / 页签内层 / 正文列读 --content-w（一列纸减掉两侧那条边）：
 //    这三样住在「整宽」容器里、自己不带左右内边距，读 --col-w 会在平板 /
 //    桌面上比正文列宽出两侧那一条边。
-chk(/\.topbar \{[\s\S]{0,600}?max-width:\s*var\(--content-w/.test(css),
+/* ⚠️ 窗口取 1400 而不是 600：`.topbar {` 与 `max-width` 之间现在夹了一整段
+   「只写 max-width 是收缩到内容宽，必须先 width: 100%」的说明（那条注释修的是
+   2026-09-17 顶栏在桌面被挤成 369px 的真 bug），600 装不下它 —— 窗口开小
+   会让这条判据变成「查不到」的假红，而红的原因与真实问题毫无关系。 */
+chk(/\.topbar \{[\s\S]{0,1400}?max-width:\s*var\(--content-w/.test(css),
   '顶栏宽度与内容区同源（--content-w，大屏不与正文错位）');
+/* 同一条的另一半：光有 max-width 还不够 —— 顶栏是块级且内容比内容区窄时
+   （桌面那一档就是），max-width 只是天花板，盒子仍会收缩到内容宽。 */
+chk(/\.topbar \{[\s\S]{0,1400}?width:\s*100%/.test(css),
+  '顶栏有 width: 100%（只写 max-width 时它会收缩到内容宽，桌面那一档挤成一小截）');
 chk(/\.reader-body \{[\s\S]{0,900}?width:\s*auto/.test(classicCss),
   '阅读器正文不再写 width: 100%（那会让内边距溢出视口、正文贴左边缘被切）');
 chk(/\.reader-body \{[\s\S]{0,1200}?box-sizing:\s*border-box/.test(classicCss),

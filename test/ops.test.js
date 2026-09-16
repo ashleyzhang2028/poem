@@ -273,6 +273,36 @@ console.log("\n=== 七之二、2D 的五个步骤（配置与真开通，docs §
   has(cnb, "secret", "密钥走密钥仓库的 imports，不手填在 env 里");
   chk(cnb.indexOf("SUPABASE_SERVICE_KEY=") < 0, ".cnb.yml 里没有把密钥值写死（只有引用）");
 
+  /* ⚠️ 探活的 apikey 头必须是**密钥**，不是 URL（2026-09-17 修的真 bug）
+     ----------------------------------------------------------------------
+     原先写的是 `-H "apikey: $SUPABASE_URL"`：把一个 URL 当 key 发出去，
+     Supabase 一律回 401 —— 而症状看起来像「密钥仓库没配好」，于是会被
+     反复去查密钥仓库。这条断言把「apikey 后面跟的不是 URL」钉死，
+     并把那条命令在三处（.cnb.yml / ops.STEPS / 文档）都对一遍。 */
+  /* ⚠️ 先把注释行抠掉再扫 —— 那条错误的写法会出现在解释它的注释里，
+     拿裸串去扫必然误判（与账户页那条「btn-resend 不是 Resend」同一类坑）。 */
+  const cnbCode = cnb.split("\n").filter(l => !/^\s*#/.test(l)).join("\n");
+  chk(cnbCode.indexOf('apikey: $SUPABASE_URL') < 0,
+    ".cnb.yml 的 apikey 头不是 SUPABASE_URL（那是 URL，不是 key —— 会回 401）");
+  has(cnbCode, "apikey: $SUPABASE_SERVICE_KEY", ".cnb.yml 的 apikey 头用的是 service key");
+  /* 同一个 key 两个头都要带：apikey 给的是 key，Authorization 给的是 token */
+  has(cnb, "Authorization: Bearer $SUPABASE_SERVICE_KEY", "Authorization 那一头也带着同一个 key");
+  const vdb = ops.STEPS[4].how.join("\n") + "\n" + ops.STEPS[1].check;
+  chk(vdb.indexOf("apikey: $SUPABASE_URL") < 0,
+    "ops.js 里那条验收命令（B 的判据 / E 的第①条）同样不是 SUPABASE_URL");
+  has(vdb, "apikey: $SUPABASE_SERVICE_KEY", "ops.js 里那条命令用的是 service key");
+
+  /* ⚠️ 备份要的第三个值 SUPABASE_DB_URL：**控制台复制不到**，
+     得去 Connection string 取模板再替换 [YOUR-PASSWORD]。这一步不写出来，
+     下一个人只会拿到一个含占位符的串，然后看着
+     「could not translate host name」以为 DNS 坏了。 */
+  const stepD = ops.STEPS[3].how.join("\n");
+  has(stepD, "SUPABASE_DB_URL", "D 步写明了备份还要第三个值");
+  has(stepD, "[YOUR-PASSWORD]", "D 步写明了那个占位符要整体替换掉");
+  has(stepD, "Connection string", "D 步指明了去哪里取模板");
+  has(stepD, "%40", "D 步写明密码里的特殊字符要百分号编码");
+  has(cnb, "SUPABASE_DB_URL:?", ".cnb.yml 的备份真的校验这个变量注入没注入");
+
   const stepsCheck = run2(["--steps", "--check"]);
   eq(stepsCheck.code, 1, "--steps --check 没配齐时退出码 1（与 --check 同一条判据）");
   const fullEnv2 = Object.assign(bareEnv2(), {

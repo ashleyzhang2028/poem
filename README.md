@@ -364,7 +364,7 @@ npm run env:example > .env.example    # 生成可直接粘贴的模板
 | **A** | 生成 `SESSION_SECRET`（`openssl rand -hex 32`） | 自检里它从「未设置」变「已设置」 |
 | **B** | 建 Supabase 项目 → 跑 `api/_lib/schema.sql` → 拿 URL + **service_role**（不是 anon） | 自检「最低线已过」；`rest/v1/accounts` 回 **200** |
 | **C** | 注册 SendGrid 或 Resend → 建 key → **验发信子域 + SPF/DKIM/DMARC 三条 DNS** | 自检里发信通道不再是 `console`；真发一封信 `delivered:true` |
-| **D** | 上探活与备份（`.cnb.yml` 里两条 `crontab`） | 流水线列表里看得见；手动触发探活成功 |
+| **D** | 上探活与备份（`.cnb.yml` 里两条 `crontab`）；备份另需 `SUPABASE_DB_URL` | 流水线列表里看得见；手动触发探活成功 |
 | **E** | 配完当场验收四步 | `/api/me` 回 **401**（回 503 就是 A 没生效）、发码 `delivered:true`、注销回 **401** |
 
 **这一步 AI 做不了**：注册 Supabase / 发信商都要本人邮箱与手机号。能自动化的部分是
