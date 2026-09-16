@@ -347,7 +347,7 @@ npm run env:example > .env.example    # 生成可直接粘贴的模板
 
 | 档 | 哪些 | 缺了会怎样 |
 |---|---|---|
-| **必须** | `SESSION_SECRET`、`SUPABASE_URL`、`SUPABASE_SERVICE_KEY` | 接口整体 503 / 只用内存存储（重启即丢） |
+| **必须** | `SESSION_SECRET`（或 `SESSION_KEY`，二选一，前者优先）、`SUPABASE_URL`、`SUPABASE_SERVICE_KEY` | 接口整体 503 / 只用内存存储（重启即丢） |
 | **这一件需要** | `SENDGRID_API_KEY` | 发不出真邮件，落到 `console`（只写服务端日志） |
 | **可选** | `MAIL_TRANSPORT`、`MAIL_FROM`、`SITE_URL`、`COOKIE_NAME`、`SMS_*`、`ALLOW_CODE_ECHO` | 用默认值 |
 
