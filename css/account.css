@@ -468,6 +468,14 @@
    手机上四列会挤，所以这张表**横向可滚**（外层 .plans-scroll），
    第一列（功能名）**粘在左边不跟着滚** —— 不然滚到第三列就不知道在看哪一行了。
    不把表拆成四张卡片，是因为「对比」的全部价值就在于同一行能横向看齐。
+
+   ⚠️ Issue #163（用户原话：「功能列，减少一半的宽度，让右侧四列尽可能多的
+      显示进屏幕」）：功能名那一列从 150px 收到 ~92px，四列各让出一点，
+      于是「手机不滚就能看全四列」从奢望变成默认。收窄靠三件事，缺一不可：
+        · 列宽改由**内容 + 四列最小宽**定（`.plans-cell` 给 `min-width`），
+          不再由 `.plans-table` 的 `min-width` 顶 —— 后者一写死就必然要横滚；
+        · 功能名允许换行（`line-height` 收到 1.35），长名最多占两行；
+        · padding 收到 4px 级 —— 左右各 4px 乘 6 列 = 48px，够放下半列字。
    ========================================================================== */
 
 .plans-scroll {
@@ -479,7 +487,10 @@
 
 .plans-table {
   width: 100%;
-  min-width: 468px;            /* 四列 + 一列功能名，再窄就打不成表了 */
+  /* ⚠️ 不再是 468px 那种「先声明一个总宽、放不下就横滚」。四列的宽度由
+     `.plans-cell` 的 `min-width` 定，功能名那一列只吃剩下的 —— 于是
+     「四列能不能进屏」由**四列自己的最小宽**回答，不是被一个总数挡住。 */
+  min-width: 0;
   border-collapse: collapse;
   font-size: 12.5px;
   color: var(--ink);
@@ -505,9 +516,14 @@
   line-height: 1.55;
   color: var(--ink);
   background: var(--card);
-  padding: 8px 10px 8px 0;
+  padding: 8px 6px 8px 0;
   border-bottom: 1px solid var(--line-2);
-  min-width: 150px;
+  /* 功能列：能窄则窄（Issue #163 点名「减少一半的宽度」）。
+     不写死 min-width —— 写死就等于把四列挤出去；这里只给一个上限口径，
+     真正的宽度由 table-layout 与四列的最小宽一起算。 */
+  width: 34%;
+  max-width: 132px;
+  line-height: 1.35;
 }
 /* 表头那一格是「功能」二字，另给一档颜色 */
 thead .plans-th-cap {
@@ -582,9 +598,14 @@ thead .plans-th-cap {
 
 .plans-cell {
   text-align: center;
-  padding: 8px 6px;
+  padding: 8px 4px;
   border-bottom: 1px solid var(--line-2);
   vertical-align: top;
+  /* ⚠️ 四列的**唯一宽度来源**（Issue #163）。42px + 左右各 4px padding
+     = 50px 一格：够放「✓」「5000 个」，四格 200px，加上功能列
+     132px 与卡片两条边，360px 的机器不滚也能看全四列。
+     括号里的数字是这三条一起算出来的，改一条就得三条一起看。 */
+  min-width: 42px;
 }
 .plans-v { display: block; line-height: 1.2; }
 
@@ -622,7 +643,7 @@ thead .plans-th-cap {
 /* ---------- 表尾：每列能用几项 ---------- */
 .plans-table tfoot th,
 .plans-sum {
-  padding: 10px 6px 0;
+  padding: 10px 4px 0;
   text-align: center;
   font-size: 12px;
   color: var(--ink-2);
@@ -643,21 +664,29 @@ thead .plans-th-cap {
 .account-hint .plans-mark { vertical-align: -2px; margin: 0 2px; }
 
 /* ---------- 对比表的两档收边 ----------
-   手机（≤400px）：正文列左右各只有 14px 的边，四列表挤得每格只剩 60 出头，
-   表头「未登录」三个字会折行 —— 把功能名那一列收窄一档，四列才回得来。
-   平板 / 桌面（≥768px）：表跟着正文列一起放宽，不再需要横向滚动。 */
+   Issue #163 之后**默认就不横滚**（功能列收窄 + 四列各 42px），
+   这两档只做「更小 / 更大时各让一步」：
+   窄机（≤360px）：功能名再收一档，四列仍然进屏。
+   平板 / 桌面（≥768px）：功能列放宽到 200px，长名一行放得下，不必再折两行。 */
 @media (max-width: 400px) {
-  .plans-table { min-width: 440px; font-size: 12px; }
-  .plans-th-cap { min-width: 132px; padding-right: 8px; }
+  .plans-table { font-size: 12px; }
+  .plans-th-cap { width: 30%; max-width: 104px; padding-right: 4px; }
   .plans-v { line-height: 1.15; }
-  .plans-cell { padding-left: 4px; padding-right: 4px; }
+}
+@media (max-width: 360px) {
+  /* 再窄一档：功能名与四列同时收，字小到 11.5px 也还读得清 */
+  .plans-table { font-size: 11.5px; }
+  .plans-th-cap { width: 28%; max-width: 92px; }
+  .plans-cell { min-width: 38px; padding-left: 2px; padding-right: 2px; }
 }
 @media (min-width: 768px) {
-  /* 一列纸在平板上是 1040px 减两条边，表放得下，不必再滚 */
-  .plans-table { min-width: 0; }
-  .plans-th-cap { min-width: 200px; }
+  .plans-th-cap { width: auto; max-width: 240px; min-width: 200px; }
   .plans-table { font-size: 13px; }
 }
+
+/* 一个格子里说两件事的能力（`exam.paper`：古诗词大会 / 试题模拟）——
+   名字分两行写，行距收一点，不然那一格会顶出别人一格高。 */
+.plans-cap-line { display: block; line-height: 1.3; }
 
 /* ==========================================================================
    危险动作：按钮与全站同一条颜色来源
