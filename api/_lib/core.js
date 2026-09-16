@@ -1246,7 +1246,14 @@ function resetRequest(deps, input) {
     requested: true,
     store: store.kind,
     ttlSeconds: Math.round((cfg.resetTtlMs || 3600000) / 1000),
-    note: "如果这个邮箱在本站注册过，我们已经把重设链接发了出去。"
+    note: "如果这个邮箱在本站注册过，我们已经把重设链接发了出去。",
+    /* ⚠️ 这一条是**事实**（与 register 的 verifySent 同一条纪律），
+       而且它**不泄露「这个邮箱注册过没有」** —— 它说的是
+       「本站的发信商配好了没有」，那是这台服务器的属性，
+       与请求里那个邮箱是谁无关。所以对**不存在的邮箱**它也必须在这里：
+       否则「没这一条 = 注册过、有这一条 = 没注册过」就成了新的枚举口
+       （`test/api.test.js` 有断言钉着这条：存在与不存在回同一个形状）。 */
+    mailConfigured: cfg.mail() !== "console"
   };
   if (!id.isEmailShape(email)) return Promise.resolve(err(400, "E_EMAIL_FORMAT", "这个邮箱看起来不太对，再检查一下"));
 

@@ -2116,6 +2116,19 @@ async function main() {
       eq(rr.status, 202, "POST /api/reset-request 回 202");
       const rrr = await POST("/api/reset-request", { email: "ghost@example.com" });
       eq(rrr.status, 202, "不存在的邮箱也回 202（**同一条接口、同一个形状**）");
+      /* 形状**逐字**同：连键都只许多、不许少。多一个「只有注册过的邮箱才带」
+         的键，就是一个新的枚举口（这里钉的是 `mailConfigured` 那条 ——
+         它讲的是**这台服务器**接没接发信商，与请求里那个邮箱无关，
+         所以不存在的邮箱也必须带上它，且值一样）。 */
+      /* ⚠️ 比的时候要**抠掉** `devResetToken` —— 它是 `ALLOW_CODE_ECHO=1`
+         这个冒烟开关的产物，**只可能出现在真发过信的那一侧**（存在的那一个邮箱）。
+         不抠掉的话，这条断言会把「冒烟口子」误判成「枚举口」。
+         抠掉之后剩下的仍是全部对外字段，枚举口藏不住。 */
+      const shape = (b) => JSON.stringify(Object.keys(b).filter(k => k !== "devResetToken").sort());
+      eq(shape(rr.body), shape(rrr.body),
+        "存在 / 不存在的邮箱：响应的键集合逐字相同（`devResetToken` 是冒烟开关的产物，不计）");
+      eq(rrr.body.mailConfigured, rr.body.mailConfigured,
+        "`mailConfigured` 说的是服务器，不是邮箱：两侧取值必须一样");
       const cfgE = require("../api/_lib/config.js");
       const storeE = require("../api/_lib/store.js").getStore(cfgE);
       const rid = Object.keys(storeE._db.resets)[0];
