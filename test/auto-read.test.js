@@ -36,7 +36,8 @@ const URL_OF = {
   'index.html': '/',
   'classic/index.html': '/classic/',
   'settings/index.html': '/settings/',
-  // 设置拆成二级页（Issue #132 后续）：注音开关住在「阅读与朗读」页
+  // 设置拆成二级页（Issue #132 后续）：注音开关住在「朗读」页
+  //（Issue #163 把原「阅读与朗读」页名精简为「朗读」，见 js/settings-nav.js）
   'settings/reader/index.html': '/settings/reader/'
 };
 
@@ -251,8 +252,8 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
 
   // ---- 阅读辅助开关的可见差别 ----
   // 开启（默认「只标生字」）→ 打开诗词自动注音；关闭 → 纯文本，需要时手动切档位。
-  // 设置已改成独立整页、又拆成二级页，注音开关住在「阅读与朗读」页
-  // （/settings/reader/）：这里在那一页点开关，
+  // 设置已改成独立整页、又拆成二级页，注音开关住在「朗读」页
+  // （/settings/reader/，Issue #163 的组标题就是「朗读」）：这里在那一页点开关，
   // 再把结果搬进首页实例的 localStorage（两个 JSDOM 实例的存储各自独立）。
   const helperPage = boot('settings/reader/index.html', null, false);
   // boot() 是同步注入脚本的，DOMContentLoaded 早已触发过，手动补一次让设置页初始化

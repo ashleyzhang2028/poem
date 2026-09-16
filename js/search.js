@@ -30,7 +30,8 @@
  *
  *   五、**搜索框该待在哪儿**（用户这一轮的六句话，落在四处）：
  *       ① 聚焦在搜索框 → 框挪到标题栏下方，候选下拉跟着上去；
- *       ② 有搜索内容 → 框停在页面顶部（失焦也不回去）；
+ *       ② 有搜索内容 → 框停在页面顶部（失焦也不回去）——⚠️ 这一条已按
+ *          Issue #163 作废：见文件头第八条，贴顶只认「框里真的有焦点」；
  *       ③ 清了内容、也没有焦点 → 框回到页面中心。
  *       三条合起来就是 .search-hero 的两个类（见 syncHeroState 与
  *       css/classic.css 的「搜索框的三种摆法」）：焦点与内容合成一个
@@ -53,6 +54,16 @@
  *       此外「框 → 结果列表」的间距收成正常间隔：框贴顶时列表紧跟着它，
  *       只有框还浮在页面中间时才留一小段（见 #gw-list 的 padding-top）。
  *
+ *   八、**进来不聚焦**（Issue #163）：
+ *       用户原话：「进入搜索页时不要立刻聚焦，手机键盘自动弹出来了，烦人」。
+ *       于是上一版的 focusInput()（先聚焦 hero 里那枚 1×1 替身输入框、
+ *       80ms 后把焦点交给真输入框）整套撤掉 —— 它存在的理由只有
+ *       「一进来就能打字」，而软键盘是半屏浮层，一进页就盖掉半页内容。
+ *       取而代之的是**把上一次搜的词放回框里**（本机设备域，防抖写入）：
+ *       进来先看见上次的结果，想接着搜自己点一下框，键盘自然出来。
+ *       连带的两条：「有内容就贴顶」作废（否则回填的词一进页就把框顶上去），
+ *       贴顶的判据收成「框里真的有焦点 / 键盘真的弹着」一条。
+ *
  * 已读存储：搜索页**不写任何已读键**（readStore 为空字符串）。
  *   「已读」是每一部自己的进度（poem_classic_read_v1 等），
  *   在搜索页点一下不该改动任何一部的进度 —— 用户是来查东西的，不是来读书的。
@@ -66,6 +77,11 @@
 
 (function () {
   "use strict";
+
+  /** 电脑上的「敲 / 直接进搜索框」。
+      ⚠️ 这是一种**用户自己发起的**聚焦（用户按了键），键盘弹出来是应答而非打扰 ——
+        与「进页自动聚焦」是两件事：前者用户要的，后者是用户没要的（Issue #163）。 */
+  var SLASH_KEYS = ["/", "／"];
 
   /** 候选下拉最多几条：够用即可，多了挡住结果列表 */
   var SUGGEST_MAX = 8;
@@ -99,6 +115,12 @@
       （click 会落在已经消失的按钮上）。180ms 够指针完成这一下，
       又短到用户感觉不出「点了以后还赖着」。 */
   var SUGGEST_BLUR_DELAY = 180;
+
+  /** 「清空输入框」多久之后才算真的不要这个词了。
+      清空之后如果立刻把关键词从库里抹掉，用户「清空 → 反悔 → Ctrl+Z / 长按粘贴」
+      就找不回来了 —— 所以留着它一小会儿；这几百毫秒里用户若真的走开
+      （关掉这一页 / 点进某篇 / 收起键盘去点结果），下一次 pagehide 会立刻落盘。 */
+  var KEYWORD_HOLD_DELAY = 800;
 
   /** 用户开始滚动**结果列表**多久之后收起候选下拉。
       滚结果意味着用户已经在看下面的内容了，下拉还挂在框底下就是挡住视线的一块浮层 ——
@@ -288,6 +310,76 @@
     return true;
   }
 
+  /* ---------------- 上次搜的词 ----------------
+   *
+   * Issue #163：用户要的是「进这一页键盘别弹」，也就是**进来先别聚焦**。
+   * 那么这一页进来该长什么样？空着一个输入框、下面一片空白，用户还得先回忆
+   * 上次搜的是什么。所以：把上一次的关键词从本机读回来，在**不聚焦**的前提下
+   * 把结果列好 —— 上次搜过《静夜思》，进来就还是那一条，想接着搜点一下框即可。
+   *
+   * 三件事收在这一小段里，其余代码一行不用改：
+   *   · readKeyword()  进来时读回上一次的词，交给输入框与 renderBody；
+   *   · noteKeyword()  把「现在这个词是什么」记进本机（防抖，键打一次不写一次盘）；
+   *   · onLiftLost()   用户从框里走开（收键盘 / 点别处）时，立刻把当前词落盘 ——
+   *                    这一页随时可能被切走或被系统回收，不能只靠「离开页面」那一下。
+   *
+   * ⚠️ 不写「清空输入框 = 删掉这个词」：清空只是不要现在的结果，
+   *    立刻抹掉的话「清空 → 反悔 → 长按粘贴」就找不回来了。
+   *    延迟 KEYWORD_HOLD_DELAY 再判；这几百毫秒里用户若走开，
+   *    onLiftLost 会先把词落盘 —— 先记后忘，两边都不丢。
+   *
+   * 读法一律走分域存储层（js/storage.js 转发到设备域）：搜索页**不写进度 /
+   * 账号任何一个键**，「上次搜的词」是这台设备的阅读偏好，本来就该跟着设备走。
+   */
+  var kdTimer = 0;
+  var kdPending = null;
+
+  function storage() { return window.Storage || null; }
+
+  function readKeyword() {
+    var st = storage();
+    if (!st || !st.getSearchKeyword) return "";
+    try { return String(st.getSearchKeyword() || ""); } catch (e) { return ""; }
+  }
+
+  /** 把关键词写进本机（写不进去就算了 —— 搜索本身不该因为存储不可用而废掉）。
+      ⚠️ 空串即删除：上层（Storage → ProgressStore）已经按这把键的语义写好，
+         这里不再自作判断，免得「什么算空」在两处各写一遍。 */
+  function writeKeyword(kw) {
+    var st = storage();
+    if (!st || !st.setSearchKeyword) return;
+    try { st.setSearchKeyword(String(kw == null ? "" : kw)); } catch (e) { /* 隐私模式 / 配额满 */ }
+  }
+
+  /**
+   * 记下「现在框里是什么」。防抖 KEYWORD_HOLD_DELAY：
+   * 一个字一次盘太吵，而且清空之后还有反悔的余地（见上面那一段）。
+   */
+  function noteKeyword(kw) {
+    kdPending = String(kw == null ? "" : kw);
+    clearTimeout(kdTimer);
+    kdTimer = setTimeout(function () {
+      kdTimer = 0;
+      var v = kdPending;
+      kdPending = null;
+      writeKeyword(v);
+    }, KEYWORD_HOLD_DELAY);
+  }
+
+  /**
+   * 「框不再贴顶」的那一下（用户收键盘 / 点了别处 / 关掉这一页）：
+   * 把还没落盘的那个词立刻写进去 —— 防抖窗口里切页是常事，
+   * 那一次切页若不落盘，用户回来看到的是更早的那个词。
+   */
+  function onLiftLost() {
+    if (kdPending === null) return;   // 没有待写的，别白写一次
+    var v = kdPending;
+    kdPending = null;
+    clearTimeout(kdTimer);
+    kdTimer = 0;
+    writeKeyword(v);
+  }
+
   /* ---------------- 结果列表 ---------------- */
 
   /**
@@ -313,6 +405,8 @@
     }
     annotateMatches(q);
     syncEmptyState(q);
+    // 关键词落盘（防抖，见「上次搜的词」那一节）—— 这一页随时可能被切走
+    noteKeyword(q);
   }
 
   /**
@@ -464,9 +558,22 @@
     var input = document.getElementById("gw-search");
     var focused = !!input && document.activeElement === input;
     var space = keyboardSpace();
+    /* ⚠️ 贴顶（search-active / kb-open）的判据在 Issue #163 收成了**一条**：
+       输入框真的有焦点（或软键盘真的弹着 —— 那是焦点在框里的物理结果）。
+       早前是「有焦点 **或** 框里有内容」两条：于是这一页一进来
+       （关键词从库里回填 → 有内容 → search-active）就自动贴顶，
+       而后焦点在 iOS 上会被浏览器自己交给第一个可聚焦元素 ——
+       键盘跟着弹出来，正是用户说的「一进搜索页键盘就自己出来了，烦人」。
+       「有内容就贴顶」那条语义也随之作废：那一半当初要解决的是
+       「敲完字滚动看结果时框要一直看得见」，而贴顶态本来就是 sticky
+       （见 css/classic.css），用户一碰框它就钉住了，不必靠内容去猜。
+
+       于是进这一页的默认样子是**静止态**：框压在页面中心、键盘不出来、
+       结果列表就摊在它下面 —— 上次搜过的话，答案直接看得见。 */
     var lifted = focused || space > 0;   // 键盘弹着时也按「有焦点」算 —— 焦点掉了、键盘还在
+    setLift(lifted, onLiftLost);
     try {
-      hero.classList.toggle("search-active", hasKeyword() || lifted);
+      hero.classList.toggle("search-active", lifted);
       hero.classList.toggle("kb-open", lifted);
     } catch (e) { /* 极老的浏览器：没有 classList 就退化成「始终居中」，仍可用 */ }
     // 两个自定义属性都只在这一处写（CSS 的下拉 max-height 读它们）：
@@ -504,7 +611,7 @@
     // 空格列表（引擎写进列表区的 .empty）跟着一起左对齐。
     // ⚠️ 传的是「框贴不贴顶」而不是「键盘弹没弹」：居中的框下面那段空白里
     //    不该多出一行提示，贴顶的框下面才需要它与结果同一左对齐。
-    alignEmptyState(hasKeyword() || lifted);
+    alignEmptyState(lifted);
   }
 
   /**
@@ -523,31 +630,74 @@
   }
 
   /**
-   * 让「输入框被聚焦」这件事在键盘弹出前后都是稳定的。
+   * 输入框该不该「贴顶」—— 只在**用户真的在框里**时才贴顶（Issue #163）。
    *
-   * 做法：聚焦到一个 1×1、透明的替身输入框（#search-hero-focus），
-   * 它一直待在 hero 的最顶上。理由：
-   *   · iOS 键盘弹出时会自动把**聚焦的那个输入框**滚进视野。若聚焦的是搜索框本体
-   *     （在 hero 里垂直居中），浏览器会为了「让它可见」而滚动页面 ——
-   *     我们同时又把 hero 顶到顶上，两次滚动相叠，框会跳一下。
-   *   · 聚焦替身时，浏览器只保证「hero 顶部可见」，正是我们想要的位置。
-   * 替身没有实际用途（readonly 语义上由 aria-hidden + tabindex=-1 排除在
-   * 可访问性树之外），载入后立刻归还焦点给真输入框。
+   * setLift(on) 是那件事的唯一出口：syncHeroState 每算一次都照着当前焦点写一遍
+   * （而不是各自 toggle 一次），并在**离开贴顶态的那一次**调用 onLift(false)，
+   * 由调用方决定要不要把关键词留在库里（见 noteKeyword）。
+   *
+   * 收在一个闭包里，是因为 syncHeroState 会被 keyboardSpace 的每一帧
+   * （visualViewport 的 resize / scroll）叫起来：只有「值真的变了」才回调，
+   * 否则键盘弹起的那一瞬间会连着敲十几次 storage。
    */
-  function focusInput(input) {
-    var hero = heroEl();
-    var ghost = document.getElementById("search-hero-focus");
-    if (!hero || !ghost) return;
-    try { ghost.focus({ preventScroll: true }); } catch (e) { /* 老浏览器忽略可选项 */ }
-    // 先进「有焦点」这一态（贴顶），再刷一次键盘实测值 ——
-    // 顺序要紧：syncHeroState 会把 search-active 与 kb-open 一起算出来，
-    // 不先置焦点态的话，第 80ms 那次 focus 之前框会先按「居中」摆一下。
-    hero.classList.add("search-active");
-    syncHeroState();
-    setTimeout(function () {
-      try { input.focus({ preventScroll: true }); } catch (e) { input.focus(); }
+  var lift = { on: false, cb: null };
+  function setLift(on, cb) {
+    var changed = lift.on !== !!on;
+    lift.on = !!on;
+    if (cb) lift.cb = cb;
+    if (changed && !lift.on && lift.cb) lift.cb();
+  }
+
+  /**
+   * 用户自己让输入框取到焦点时（点一下框、按 / 聚焦、Tab 过来），
+   * 位置状态跟着走一帧 —— 见 syncHeroState 的 lifted 判据。
+   *
+   * ⚠️ **键盘并不在这里弹**（进页不自动聚焦，用户点的才是用户要的）：
+   *    这一条只是让「框贴顶 / 回中」这件事的判据落在 focus 上，
+   *    与键盘实测值（keyboardSpace）互相独立 —— 桌面浏览器没有软键盘，
+   *    但点一下框同样该把它挪到顶栏下方。
+   */
+  function bindLightFocus() {
+    var input = document.getElementById("gw-search");
+    if (!input) return;
+    // 触屏 / 鼠标点框：浏览器自己会把焦点给它，这里只补一次位置状态
+    input.addEventListener("pointerdown", function () {
+      setLift(true);
       syncHeroState();
-    }, 80);
+      setTimeout(syncHeroState, 0);
+    });
+  }
+
+  /**
+   * 电脑上敲 / 直接进搜索框（手机上不挂：那一页没有实体键盘，也就没有这个动作）。
+   *
+   * 为什么值得加：进页不再自动聚焦（Issue #163），桌面用户于是多一步「先把鼠标
+   * 移到框上」。这是全站唯一一个「以打字为主」的入口，敲 / 是一个几乎不写字的键，
+   * 且不会与正文里的任何输入冲突（这一页只有这一个输入框）。
+   *
+   * 三条边界：
+   *   · 焦点已经在输入框里 → 不动（那一下 / 就是要打一个斜杠）；
+   *   · 焦点在别的可输入控件 / 富文本里 → 不动（别抢别人的字）；
+   *   · 带修饰键（Ctrl / Cmd / Alt）→ 不动（那是浏览器的快捷键，如 Cmd+/）。
+   */
+  function bindSlashKey() {
+    document.addEventListener("keydown", function (e) {
+      if (SLASH_KEYS.indexOf(e.key) < 0) return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.defaultPrevented) return;
+      var input = document.getElementById("gw-search");
+      if (!input) return;
+      var t = e.target;
+      if (t === input) return;
+      var tag = t && t.tagName ? String(t.tagName).toLowerCase() : "";
+      var typing = tag === "input" || tag === "textarea" || tag === "select" ||
+        (t && t.isContentEditable);
+      if (typing) return;
+      e.preventDefault();
+      try { input.focus({ preventScroll: true }); } catch (err) { /* 老浏览器忽略可选项 */ }
+      setLift(true);
+      syncHeroState();
+    });
   }
 
   /**
@@ -692,6 +842,12 @@
     if (!api) return;
 
     var input = document.getElementById("gw-search");
+    // 把上一次搜的词放回框里（**不聚焦**：键盘不出来，键盘出来得等用户自己点）。
+    // 放在绑监听之前：此刻还没有 input 监听，灌进去不会触发一串重排。
+    if (input) {
+      var last = readKeyword();
+      if (last) input.value = last;
+    }
     if (input) {
       input.addEventListener("input", function () {
         // renderBody 会先按「有没有内容」重算框的位置（贴顶 / 回中心），
@@ -721,11 +877,16 @@
       });
     }
 
-    // 进这一页就是为了搜东西：把输入框的焦点占上（键盘由系统决定弹不弹）。
-    // 焦点走替身输入框，键盘弹出时 iOS 不会为了「看见输入框」而自己滚一屏
-    // （见 focusInput 的注释）。
-    focusInput(input);
+    // ⚠️ 进这一页**不自动聚焦**（Issue #163）。
+    //    用户原话：「进入搜索页时不要立刻聚焦，手机键盘自动弹出来了，烦人」。
+    //    软键盘是半屏浮层，一进页就弹出来等于把「这一页有什么」先盖掉一半；
+    //    用户想搜的时候自己点一下框（或按 / ），键盘自然出来 —— 那一下本来就要点。
+    //    于是上一版的 focusInput() 整套（替身输入框 + 80ms 后交接焦点）一并撤了：
+    //    它存在的理由只有一个「一进来就能打字」，那个前提已经不在。
+    //    位置状态仍要跟着焦点走 —— 那几条监听在这里挂上。
     bindKeyboardWatchers();
+    bindLightFocus();
+    bindSlashKey();
 
     var box = suggestBox();
     if (box) {
@@ -741,7 +902,15 @@
 
     bindSuggestDismiss();
 
+    // 离开这一页时把还没落盘的关键词写完（防抖窗口里切页是常事）。
+    // pagehide 比 beforeunload 靠得住：iOS 上切后台 / 被系统回收都走它。
+    window.addEventListener("pagehide", onLiftLost);
+
+    // 列表先按「框里现有的词」建起来 —— 有上一次的词就列出那一次的结果，
+    // 没有就是空列表（这一页进来不铺全部篇目）。渲染完再刷一次框的位置状态，
+    // 让「贴顶 / 居中」与刚建出来的列表对齐（此时框里没焦点，落在静止态）。
     renderBody();
+    syncHeroState();
   }
 
   /* ---------------- 怎么把候选收起来 ----------------
@@ -843,6 +1012,8 @@
     keyword: function () {
       var input = document.getElementById("gw-search");
       return input ? input.value : "";
-    }
+    },
+    /** 本机存着的「上次搜的词」（Issue #163：进来不聚焦，但要能接着看上次的结果） */
+    storedKeyword: function () { return readKeyword(); }
   };
 })();

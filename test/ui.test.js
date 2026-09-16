@@ -9,7 +9,7 @@ const html = fs.readFileSync(path + 'index.html', 'utf8');
 //   /settings/general/  通用     —— 用户名 / 头像印记 / 数据管理
 //   /settings/recite/   背诵     —— 学段 / 年级 / 学期 / 范围 / 数量 + 复习算法
 //   /settings/lists/    我的清单 —— 自选背诵的增删改查
-//   /settings/reader/   阅读与朗读 —— 注音总开关 + 五档连读
+//   /settings/reader/   朗读 —— 注音总开关 + 五档连读方式
 // 下面这一条路径映射同时给「源码扫描」与「起页实例」两处用。
 const SETTINGS_PAGE = {
   'settings/index.html': '/settings/',
@@ -234,7 +234,7 @@ setTimeout(() => {
   // 需求（本次）：一页里五个组合（学段 / 学期 / 背诵范围 / 注音 / 每日数量）
   // 与「年级」用同一套选中语言 —— 每行都恰好一个选中项，不再出现「这行选了、那行没选」的错觉。
   // ⚠️ 二级页之后这六个组合不再同住一页：背诵三项在「背诵」页、
-  //    注音在「阅读与朗读」页，所以要按页取（同一条判据仍成立）。
+  //    注音在「朗读」页（Issue #163 改名），所以要按页取（同一条判据仍成立）。
   const activeOne = (doc, sel) => {
     const btns = [...doc.querySelectorAll(sel + ' button')];
     return btns.length > 0 && btns.filter(b => b.classList.contains('active')).length === 1;
@@ -249,15 +249,15 @@ setTimeout(() => {
   // 因此不存在「年级用 .active、别的用另一套」这种分叉。
   chk(comboPages.every(([, doc, sels]) => sels.every(sel => doc.querySelector(sel + ' button.active'))),
     '六个组合的选中态都用同一个 .active 类名，样式可被整段统一');
-  // 需求（本次）：设置项按用途归类成「通用 / 古诗词背诵 / 阅读辅助」三组；
+  // 需求（本轮）：设置项按用途归类成「通用 / 古诗词背诵 / 阅读辅助」三组；
   // 后续（Issue #69）追加「朗读播放」一组 —— 连读档位原先只在圆键菜单里，
   // 界面上没有任何入口，这一组就是补上的显式入口。
-  // 分组（Issue #114 第二、三条 + 可切换复习算法那一轮）：
+  // 分组（Issue #114 第二、三条 + 可切换复习算法那一轮 + Issue #163 精简）：
   //   通用      用户名、头像印记、账号、数据备份 / 清空（全站共用）
   //   背诵      学段 / 年级 / 学期 / 范围 / 数量 / 进度总览
   //   复习算法   四张模型 4 选 1（决定「下次什么时候复习」）
   //   我的清单   自选背诵：导入 / 导出 / 改名 / 删除 / 整组移出 / 调顺序
-  //   朗读       自动注音 + 五档连读范围（Issue #163：原先的「阅读辅助」与
+  //   朗读       自动注音 + 五档连读方式（Issue #163：原先的「阅读辅助」与
   //              「朗读播放」各只有一条设置，两个组标题并成一个）
   // 二级页（Issue #132 后续）不再改变**分组**，只是把它们摊到三张页上：
   //   通用 → /settings/general/      背诵 + 复习算法 → /settings/recite/
