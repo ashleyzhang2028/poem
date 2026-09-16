@@ -121,6 +121,36 @@
 .account-btn.danger:hover { filter: brightness(.98); }
 .account-btn + .account-btn { margin-top: 8px; }
 
+/* ---------- 二之二、操作键那一行（Issue #163） ----------
+   用户原话：「个人页面一个卡片一个按钮，不能让这些需要操作的按钮组合在一张
+   卡片吗，其他描述部分重新整理组合。」
+
+   改之前每张卡底下挂一颗**满宽**的按钮，四张卡就是四颗各占一整行 ——
+   一屏里四道一样长的实心条，看不出哪颗是主要动作、哪颗只是「去别处看看」。
+   现在同一类动作（都是「去别处 / 换个状态」）并成一行：
+   横排、等分、可折行；窄屏放不下时自己换成两行，按钮不缩成一根细条。
+
+   ⚠️ 这一行里的 `.account-btn + .account-btn { margin-top: 8px }`（上一句）
+      要在这里清掉：那是给「上下叠着的两颗」用的，横排时它会顶歪整行。 */
+.account-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+.account-actions .account-btn,
+/* 下一条选择器与 `.account-btn + .account-btn`（第 122 行）**同特异度**，
+   靠写在它后面取胜 —— 用 !important 会把整份表的口径搞乱，
+   而这里要的只是「横排时别把上一颗的下外边距算进来」。 */
+.account-actions .account-btn + .account-btn {
+  /* 等分：三颗键的宽度由容器除以条数决定，不按文字长短参差 */
+  flex: 1 1 0;
+  width: auto;
+  min-width: 104px;
+  /* 上下叠着的那两颗才需要 8px 间隔；横排由 gap 给，这里清零 */
+  margin-top: 0;
+}
+
 /* 就地提示：格式错 / 频控 / 码错，都在输入框下方出现，不弹窗 */
 .account-msg {
   margin: 8px 0 0;

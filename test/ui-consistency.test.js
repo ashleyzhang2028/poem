@@ -1359,15 +1359,21 @@ if (JSDOM) {
   const sheet = '<style>' + cssCode + '</style><style>' + classicCode + '</style>';
   const px = (json) => json.fontSize;
 
-  // 二级页：分组名
+  /* 二级页：还写着的那几颗分组名。
+     ⚠️ Issue #163 第三轮：**一页只有一组时不再写组标题**（组名只在顶栏页名上），
+        所以这里判的是「页面上**凡有**分组名，画出来都是这一号」——
+        没有的那几页不参与（它们由 test/theme.test.js 与 test/settings-nav.test.js
+        按页守着「不该有标题」）。 */
   ['settings/general/index.html', 'settings/recite/index.html',
    'settings/lists/index.html', 'settings/reader/index.html'].forEach(function (f) {
     const d = new JSDOM(read(f), { url: 'https://local.test/' + f.replace('index.html', '') });
     d.window.document.head.insertAdjacentHTML('beforeend', sheet);
-    const t = d.window.document.querySelector('.settings-group-title');
-    const sz = t ? d.window.getComputedStyle(t).fontSize : '';
-    chk(sz === sizeOf(groupNameRule) + 'px',
-      f + ' 的分组标题画出来和集子卷名同号（' + sz + '）');
+    const all = [...d.window.document.querySelectorAll('.settings-group-title')];
+    if (!all.length) return;                       // 单组页：组名只在顶栏，这里没有可量的
+    const bad = all.filter(el => d.window.getComputedStyle(el).fontSize !== sizeOf(groupNameRule) + 'px');
+    chk(bad.length === 0,
+      f + ' 的分组名画出来和集子卷名同号（实际 ' +
+      all.map(el => d.window.getComputedStyle(el).fontSize).join('/') + '）');
   });
 
   // 设置主页：四张入口卡的标题（由 js/settings-nav.js 画出来）
@@ -1383,8 +1389,10 @@ if (JSDOM) {
     titles.every(el => d2.window.getComputedStyle(el).fontSize === sizeOf(groupNameRule) + 'px'),
     '设置主页四张入口卡的标题画出来也是同一号（' +
     (titles[0] ? d2.window.getComputedStyle(titles[0]).fontSize : '未取到') + '）');
-  /* 两个页面之间不再有第二档字号：主页与二级页的标题画出来必须**同一个字符串** */
-  const d3 = new JSDOM(read('settings/general/index.html'), { url: 'https://local.test/settings/general/' });
+  /* 两个页面之间不再有第二档字号：主页入口标题与二级页**凡有**的分组名
+     画出来必须**同一个字符串**。「背诵」页仍有两颗（背诵 / 复习算法），
+     用这两颗是最合适的量尺 —— 单组页现在不写标题，量不到东西。 */
+  const d3 = new JSDOM(read('settings/recite/index.html'), { url: 'https://local.test/settings/recite/' });
   d3.window.document.head.insertAdjacentHTML('beforeend', sheet);
   const grp = d3.window.document.querySelector('.settings-group-title');
   chk(titles.length > 0 && grp &&

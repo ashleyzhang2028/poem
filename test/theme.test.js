@@ -706,6 +706,7 @@ const SETTINGS_HTML = [
   'settings/reader/index.html'
 ].map(read).join('\n');
 const settingsJs = read('js/settings.js');
+const NAV_SRC = read('js/settings-nav.js');
 
 /* 分组标题与入口标题共用一个声明块（`.settings-group-title, .settings-link-title`）——
    字号 / 字重 / 颜色三个值只写一次。这里把它取出来，
@@ -754,26 +755,61 @@ chk(/data-back="\/settings\/"/.test(read('settings/general/index.html')),
 //             两个组标题 + 四行说明只为两条设置服务，并成一组「朗读」
 chk((SETTINGS_HTML.match(/class="settings-group"/g) || []).length === 5,
   '四张设置页合起来是五组：通用 / 背诵 / 复习算法 / 我的清单 / 朗读');
-chk(/settings-group-title[^>]*>复习算法</.test(SETTINGS_HTML), '有「复习算法」分组标题');
-chk(/settings-group-title[^>]*>通用</.test(SETTINGS_HTML), '有「通用」分组标题');
-chk(/settings-group-title[^>]*>背诵</.test(SETTINGS_HTML), '有「背诵」分组标题');
-chk(/settings-group-title[^>]*>我的清单</.test(SETTINGS_HTML), '有「我的清单」分组标题');
-chk(/settings-group-title[^>]*>朗读</.test(SETTINGS_HTML), '有「朗读」分组标题');
+/* Issue #163（第二轮）：**一页只有一组时不再写组标题** ——
+   「通用」「我的清单」「朗读」这些字已经写在顶栏页名上（几十像素之上），
+   正文顶部再写一遍是同一句话在同一屏里说两次。所以 titles 判据改成
+   「按页取、与页数对齐」：单组页 0 个标题，两组的「背诵」页只剩
+   一个标题（它区分的是「背诵」与「复习算法」两段，仍有用）。
+   ⚠️ 用户可见处一个字都没少：分组名仍是顶栏的 data-page。 */
+const TITLE_BY_PAGE = {
+  general: ['通用'],
+  recite: ['背诵', '复习算法'],
+  lists: ['我的清单'],
+  reader: ['朗读']
+};
+const pageGroups = {};
+Object.keys(TITLE_BY_PAGE).forEach(k => {
+  const src = read('settings/' + k + '/index.html');
+  chk((src.match(/class="settings-group"/g) || []).length === TITLE_BY_PAGE[k].length,
+    '「' + TITLE_BY_PAGE[k].join(' / ') + '」页有 ' + TITLE_BY_PAGE[k].length + ' 个分组');
+  const titles = [...src.matchAll(/settings-group-title[^>]*>([^<]+)</g)].map(m => m[1]);
+  const want = TITLE_BY_PAGE[k].length === 1 ? [] : TITLE_BY_PAGE[k];
+  chk(titles.join(',') === want.join(','),
+    '「' + TITLE_BY_PAGE[k].join(' / ') + '」页的组标题是「' + (want.join(',') || '一个都不写') +
+    '」（实际 ' + (titles.join(',') || '一个都没有') + '）');
+  pageGroups[k] = src;
+});
+chk(['general', 'lists', 'reader'].every(k =>
+    !/settings-group-title/.test(pageGroups[k]) &&
+    /data-page="/.test(pageGroups[k])),
+  '只有一组的页不再写正文组标题（组名只留顶栏页名一处）');
+chk(/settings-group-title[^>]*>复习算法</.test(pageGroups.recite),
+  '「复习算法」仍是分组标题（它是「背诵」页里两段的分界）');
 chk(!/settings-group-title[^>]*>阅读辅助</.test(SETTINGS_HTML) &&
     !/settings-group-title[^>]*>朗读播放</.test(SETTINGS_HTML),
   '不再有「阅读辅助」「朗读播放」两个组标题（Issue #163 并成「朗读」）');
-// 分组的**顺序**也是分类的一部分：清单紧跟在「背诵」之后
-//（自选篇目就是跟着背诵走的），朗读那一条偏好排在最后
+// 分组要真的装对东西：只给背诵用的选项不能落在「通用」里。
+// ⚠️ 单组页不再有 aria-labelledby（组标题已撤），所以区块按**页**取：
+//    每页正文就是它的那一块（各页只有一个 <section class="settings-group">）。
+const blockOf = k => pageGroups[k];
+const generalBlock = blockOf('general');
+const reciteBlock = blockOf('recite');
+const listsBlock = blockOf('lists');
+const readerBlock = blockOf('reader');
+// Issue #163：分组的**顺序**仍是分类的一部分（清单紧跟在「背诵」之后，
+// 朗读那一条偏好排在最后）。组标题撤了之后，这个顺序改由
+// js/settings-nav.js 的 GROUPS 与四张页的文件顺序共同表达 —— 两处一起判。
 {
-  const order = [...SETTINGS_HTML.matchAll(/aria-labelledby="grp-([a-z]+)"/g)].map(m => m[1]);
-  chk(order.join(',') === 'general,recite,algo,lists,reader',
-    '五组的先后顺序为 通用 → 背诵 → 复习算法 → 我的清单 → 朗读（实际 ' + order.join(',') + '）');
+  const order = [...NAV_SRC.matchAll(/key:\s*"([a-z]+)"/g)].map(m => m[1]);
+  chk(order.join(',') === 'general,recite,lists,reader',
+    '四个入口的顺序为 通用 → 背诵 → 我的清单 → 朗读（实际 ' + order.join(',') + '）');
+  // 判「标签那一行」而不是整页：页首 HTML 注释里也写着「复习算法」四个字，
+  // 用整页 indexOf 比会拿注释当答案（源码注释不是界面）。
+  const algoTitleAt = reciteBlock.search(/settings-group-title[^>]*>复习算法</);
+  const countAt = reciteBlock.indexOf('id="seg-count"');
+  chk(algoTitleAt > -1 && countAt > -1 && algoTitleAt > countAt,
+    '「复习算法」这一段的标题仍在「背诵」几项之后（两段的分界不丢）');
 }
-// 分组要真的装对东西：只给背诵用的选项不能落在「通用」里
-const generalBlock = (SETTINGS_HTML.match(/aria-labelledby="grp-general"[\s\S]*?<\/section>/) || [''])[0];
-const reciteBlock = (SETTINGS_HTML.match(/aria-labelledby="grp-recite"[\s\S]*?<\/section>/) || [''])[0];
-const listsBlock = (SETTINGS_HTML.match(/aria-labelledby="grp-lists"[\s\S]*?<\/section>/) || [''])[0];
-const readerBlock = (SETTINGS_HTML.match(/aria-labelledby="grp-reader"[\s\S]*?<\/section>/) || [''])[0];
 chk(!!generalBlock && !!reciteBlock && !!listsBlock && !!readerBlock, '各分组自己的区块都能取到');
 chk(/id="input-username"/.test(generalBlock), '「通用」组含用户名');
 chk(/id="btn-export"/.test(generalBlock) && /id="btn-import"/.test(generalBlock) && /id="btn-reset"/.test(generalBlock),

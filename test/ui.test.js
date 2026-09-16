@@ -262,29 +262,42 @@ setTimeout(() => {
   // 二级页（Issue #132 后续）不再改变**分组**，只是把它们摊到三张页上：
   //   通用 → /settings/general/      背诵 + 复习算法 → /settings/recite/
   //   我的清单 → /settings/lists/    朗读 → /settings/reader/
-  const groupTitlesOf = doc => [...doc.querySelectorAll('#settings-page .settings-group')]
-    .map(g => (g.querySelector('.settings-group-title') || {}).textContent);
-  chk(groupTitlesOf(sgeneral).join('/') === '通用', '「通用」页只有一组：通用');
-  chk(groupTitlesOf(srecite).join('/') === '背诵/复习算法',
+  const groupsOf = doc => [...doc.querySelectorAll('#settings-page .settings-group')];
+  const groupTitlesOf = doc => groupsOf(doc).map(g => (g.querySelector('.settings-group-title') || {}).textContent);
+  /* Issue #163（第二轮）：一页只有一组时，正文顶部**不再**重复写组名 ——
+     它已经写在顶栏页名上（`data-page`），正文再写一遍是同一屏里说两次。
+     所以这里判的是「分组数」与「还写不写标题」，而不是标题文字：
+     单组页 0 个标题，两组的「背诵」页只剩一个（它分的是「背诵 / 复习算法」两段）。 */
+  chk(groupsOf(sgeneral).length === 1 && groupTitlesOf(sgeneral).join('/') === '',
+    '「通用」页只有一组，且正文不再重复写组名（实际标题「' + groupTitlesOf(sgeneral).join('/') + '」）');
+  chk(groupsOf(srecite).length === 2 && groupTitlesOf(srecite).join('/') === '背诵/复习算法',
     '「背诵」页是两组：背诵 + 复习算法（实际 ' + groupTitlesOf(srecite).join('/') + '）');
-  chk(groupTitlesOf(slists).join('/') === '我的清单', '「我的清单」页只有一组：我的清单');
-  chk(groupTitlesOf(sreader).join('/') === '朗读',
-    '「朗读」页只有一组（Issue #163：原「阅读辅助 + 朗读播放」并成「朗读」，实际 ' +
-    groupTitlesOf(sreader).join('/') + '）');
-  // 四张页合起来：前四组与顺序不变 —— 拆页不该顺手改分类；
-  // 「阅读辅助 + 朗读播放」两条各只有一条设置的组并成一组「朗读」（Issue #163）。
-  const allGroupTitles = [...groupTitlesOf(sgeneral), ...groupTitlesOf(srecite),
-    ...groupTitlesOf(slists), ...groupTitlesOf(sreader)];
-  chk(allGroupTitles.join('/') === '通用/背诵/复习算法/我的清单/朗读',
-    '四张二级页合起来是五组、顺序不变（实际 ' + allGroupTitles.join('/') + '）');
+  chk(groupsOf(slists).length === 1 && groupTitlesOf(slists).join('/') === '',
+    '「我的清单」页只有一组，且正文不再重复写组名');
+  chk(groupsOf(sreader).length === 1 && groupTitlesOf(sreader).join('/') === '',
+    '「朗读」页只有一组（Issue #163：原「阅读辅助 + 朗读播放」并成「朗读」），正文不重复写组名');
+  // 四张页合起来：组数与顺序不变 —— 拆页不该顺手改分类。
+  const allGroupCount = [sgeneral, srecite, slists, sreader]
+    .reduce((n, doc) => n + groupsOf(doc).length, 0);
+  chk(allGroupCount === 5, '四张二级页合起来仍是五组（实际 ' + allGroupCount + '）');
+  // 页名就是「组名」的唯一一处：单组页的组名写在顶栏页名上，一个字没少。
+  ['通用', '背诵', '我的清单', '朗读'].forEach((n, i) => {
+    const doc = [sgeneral, srecite, slists, sreader][i];
+    chk(doc.body.getAttribute('data-page') === n, '「' + n + '」写在顶栏页名上（data-page）');
+  });
   // 需求（本次）：分组标题下的二级描述全部删除，标题下方直接就是选项
   chk([sgeneral, srecite, slists, sreader].every(doc =>
     [...doc.querySelectorAll('.settings-group')].every(g => !g.querySelector('.settings-group-desc'))),
     '每个分组都不再有二级描述文字');
+  /* 控件归到哪一组 —— Issue #163 之后**单组页不再写组标题**（组名只在顶栏页名上），
+     所以判据改成「落在哪张页的分组里 + 那张页的组名」：
+     单组页回它的 `data-page`，两组的页仍按组标题回（那条信息还在）。 */
   const grpOf = (doc, sel) => {
     const el = doc.querySelector(sel);
     const own = el && el.closest('.settings-group');
-    return own ? own.querySelector('.settings-group-title').textContent : null;
+    if (!own) return null;
+    const title = own.querySelector('.settings-group-title');
+    return title ? title.textContent : doc.body.getAttribute('data-page');
   };
   chk(grpOf(sgeneral, '#input-username') === '通用', '用户名归到「通用」（古诗词与小古文共用）');
   chk(grpOf(sgeneral, '#btn-export') === '通用' && grpOf(sgeneral, '#btn-reset') === '通用',

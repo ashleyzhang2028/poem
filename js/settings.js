@@ -456,11 +456,14 @@
     const cols = window.ReciteCollections.list();
     const total = window.ReciteCollections.count();
 
+    /* 说明行**只在清单还空着的时候**说一句话（怎么加第一篇）——
+       Issue #163 用户原话：「删除 与课内诗词一起排进每日任务；↑↓ 调顺序。」
+       有篇目之后那一行整句撤掉：每日任务与两条箭头当场就看得见，
+       不必先用文字念一遍；空的容器也一并藏起来，不留一行空行。 */
     const tip = $("#collections-tip");
     if (tip) {
-      tip.textContent = total
-        ? "与课内诗词一起排进每日任务；↑↓ 调顺序。"
-        : "到任一集子页或搜索页点篇目右边的书签即可加进来。";
+      tip.hidden = total > 0;
+      if (!total) tip.textContent = "到任一集子页或搜索页点篇目右边的书签即可加进来。";
     }
 
     // 一个集合都没有时也留着「导入」—— 家长发来一串清单，
@@ -480,15 +483,27 @@
 
     box.innerHTML = "";
     cols.forEach(function (col) {
-      const head = document.createElement("div");
-      head.className = "collection-head";
-      head.innerHTML =
+      /* 一张集合一张卡：结构与「课外阅读」入口页那六张卡（.library-card）
+         逐项对齐 —— 卡头是「清单名 + 篇数 + 改名 / 导出 / 删除」，
+         卡身是篇目，篇与篇之间只隔一条与卡边同色的细线。
+         Issue #163 用户原话：「我的清单卡片设计最好和 课外阅读 页面的卡片
+         设计保持一致，里面没有绿色竖线，横着的项目用边框颜色一样的线隔开。」
+         改之前它是「一行集合名 + 一列各自带纸底的条目」（每条还挂一道
+         4px 蓝色竖条），与课外那六张卡是两套语言。 */
+      const card = document.createElement("div");
+      card.className = "library-card collection-card";
+      card.setAttribute("data-col", col.id);
+      card.innerHTML =
+        '<div class="collection-head">' +
         '<span class="collection-name">' + esc(col.name) + "</span>" +
         '<span class="collection-count">' + col.items.length + " 篇</span>" +
         '<button type="button" class="collection-act" data-rename="' + esc(col.id) + '" title="重命名" aria-label="重命名 ' + esc(col.name) + '">改名</button>' +
         '<button type="button" class="collection-act" data-export="' + esc(col.id) + '" title="导出成文本，可发给别的家长" aria-label="导出集合 ' + esc(col.name) + '">导出</button>' +
-        '<button type="button" class="collection-act danger" data-drop="' + esc(col.id) + '" title="删除集合" aria-label="删除集合 ' + esc(col.name) + '">删除</button>';
-      box.appendChild(head);
+        '<button type="button" class="collection-act danger" data-drop="' + esc(col.id) + '" title="删除集合" aria-label="删除集合 ' + esc(col.name) + '">删除</button>' +
+        "</div>" +
+        '<div class="collection-body"></div>';
+      const body = card.querySelector(".collection-body");
+      box.appendChild(card);
 
       // 按组切段：同一部集子 / 同一个卷次文体连在一起，段头上给「整组移出」。
       // 分组只为「让用户一次拿掉一组」，不改变集合的顺序 ——
@@ -513,7 +528,7 @@
             '<button type="button" class="collection-group-drop" data-group="' + esc(group) + '" ' +
             'data-col="' + esc(col.id) + '" title="把这一组的篇目整组移出" ' +
             'aria-label="把 ' + esc(group) + ' 这一组整组移出">整组移出</button>';
-          box.appendChild(gh);
+          body.appendChild(gh);
         }
 
         const rec = getRecord(repId);
@@ -552,7 +567,7 @@
           renderCollections();
           showToast("已移出「" + col.name + "」");
         });
-        box.appendChild(el);
+        body.appendChild(el);
       });
     });
   }

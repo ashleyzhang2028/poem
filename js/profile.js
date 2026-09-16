@@ -72,10 +72,15 @@
       '<span class="identity-sub">' + sub + "</span>" +
       "</span>" + badge;
 
+    /* Issue #163：这一行原先是「昵称与印记在「设置 · 通用」里改；层级本机登记。」
+       —— 前半句讲的是**怎么改**，属于「去别处调」的事，与页面里已经有的
+       那几颗键说的是同一类东西（用户原话：「删除 昵称与印记在「设置 · 通用」里改。」）。
+       现在这一行只说**这一页答不出来的那一件事**：层级是谁定的。
+       未登录时连它也不必说（「本机登记」对一个还没登录的人没有意义）。 */
     var hint = $("identity-hint");
     if (hint) {
-      hint.textContent = "昵称与印记在「设置 · 通用」里改" +
-        (id.signedIn ? "；层级" + tierSourceLine(id) + "。" : "。");
+      hint.hidden = !id.signedIn;
+      hint.textContent = id.signedIn ? "层级" + tierSourceLine(id) + "。" : "";
     }
 
     renderAccountEntry(id);
@@ -104,8 +109,18 @@
   function renderAccountEntry(id) {
     var btn = $("btn-account-entry");
     if (!btn) return;
-    btn.textContent = id.signedIn ? "管理登录状态（退出 / 注销）" : "建一个账号（免费）";
+    var out = $("btn-sign-out");
+    var hint = $("signout-hint");
+    /* 未登录那一颗原来写的是「建一个账号（免费）」—— 那是在**劝人注册**，
+       而这一页要说的是「登录能用什么」。改成「登录可用语音朗读」：
+       如实说明登录换来的那一件事（免费层与游客只差这一条，见 docs §3.4）。 */
+    btn.textContent = id.signedIn ? "管理登录状态" : "登录可用语音朗读";
     btn.addEventListener("click", function () { location.href = "/login/"; });
+
+    /* 「退出登录」与它并排在同一行：两件事都是「管登录状态」，
+       一次性摆两颗各占一整行，用户会以为是两件不相干的事。 */
+    if (out) out.hidden = !id.signedIn;
+    if (hint) hint.hidden = !id.signedIn;
   }
 
   /* ------------------------------------------------------------ 二、本机数据概览 */
@@ -146,25 +161,35 @@
 
   /* ------------------------------------------------------------ 三、账号信息 */
 
+  /**
+   * 账号那一行 —— 只在「关于」卡的末尾占一行，不再独占一张卡。
+   *
+   * Issue #163 用户原话：「个人页面一个卡片一个按钮……其他描述部分重新整理组合。」
+   * 原先「账号」自成一卡（状态 / 邮箱 / 层级 / 本次登录四行 + 一颗退出键），
+   * 而它回答的「我是谁」与上面那张身份卡完全重合 —— 同一个人介绍两遍。
+   * 现在身份卡说「印 + 昵称 + 邮箱 + 层级」，这一行只补身份卡上没有的那两条：
+   * 本次登录还剩多久、这台设备上记着哪个邮箱。
+   */
   function renderAccount(sess) {
-    var card = $("account-card");
     var list = $("account-list");
-    if (!card || !list) return;
-    if (!sess || !sess.account) { hide(card); hide($("danger-card")); return; }
+    if (!list) return;
+    if (!sess || !sess.account) { hide(list); hide($("danger-card")); return; }
     var acc = sess.account;
-    var id = Ent.identity({ backing: backing, authStore: store });
     var days = Math.max(0, Math.round((sess.exp - Date.now()) / 86400000));
+    /* ⚠️ 这里**不再列层级**：层级徽章已经在身份卡那一行上，
+       「由谁定」也已经在它的下一行说了（`#identity-hint`）——
+       第三处再写一遍「Free（本机登记）」就是同一件事说三次。
+       所以这个函数**不需要**再问一次 `Ent.identity()`（少一次合成，
+       也少一处可能与身份卡不一致的读数）。 */
     var rows = [
-      ["状态", "已登录"],
-      ["邮箱", acc.identities[0] ? acc.identities[0].mask : "（无）"],
-      ["层级", Ent.tierLabel(id.tier) + "（" + tierSourceLine(id) + "）"],
+      ["账号", acc.identities[0] ? acc.identities[0].mask : "（无邮箱）"],
       ["本次登录", "还剩 " + days + " 天"]
     ];
     list.innerHTML = rows.map(function (r) {
       return '<div class="kv-row"><span class="kv-k">' + esc(r[0]) +
         '</span><span class="kv-v">' + esc(r[1]) + "</span></div>";
     }).join("");
-    show(card);
+    show(list);
     show($("danger-card"));
   }
 
@@ -179,25 +204,15 @@
     return id && id.tierSource === "server" ? "由服务器判定" : "本机登记";
   }
 
-  /**
-   * 「权限」一节 —— **只报一行身份，其余去对比页看**。
-   *
-   * Issue #163 用户原话：「权限那个章节说了一堆，直接链接到对比页面不就行了吗」。
-   * 原先这里是 `Entitlement.matrix()` 生成的 15 条清单（能用的打钩、不能用的
-   * 写门槛），下面再挂一颗进对比页的按钮 —— 同一件事在两页各说一遍。
-   *
-   * 现在这一节只说一件事：**你在哪一层**。谁能用什么，去 /plans/ 那张表看，
-   * 那边四列横向对齐、每格都是当场算的。
-   *
-   * ⚠️ 层级文案仍然只走 `Ent.tierLabel()`；**本页不自己比 tier**。
-   * ⚠️ **不许把这一节画成空白**：`Entitlement` 没装上时不画（整页都不画），
-   *    但装上了就必须有一行字，否则用户看到的是一张空卡。
-   */
-  function renderCaps(id) {
-    var box = $("cap-tier");
-    if (!box) return;
-    box.textContent = Ent.tierLabel(id.tier);
-  }
+  /* 「权限」那一节**整节撤掉了**（Issue #163 第三轮）----
+     它原先只剩「一行身份（你在哪一层）+ 一颗进对比页的按钮」。而那一行身份
+     与身份卡上的层级徽章是同一个值、徽章由 `Ent.tierLabel()` 出，
+     那颗按钮又与「同步设置」「管理后台」同属「去别处」的一类 ——
+     于是它两头都重复。现在：层级只在身份卡上说（徽章 + 「层级由谁定」一行），
+     「谁能用什么」只在 /plans/ 那张表上说，进表的那颗键并进「关于」卡那一行。
+
+     ⚠️ 判权仍然一个字都没变：徽章文案照旧只走 `Ent.tierLabel()`，
+        本页不自己比 tier（有源码扫描守着）。 */
 
   /* ------------------------------------------------------------ 五、管理员入口 */
 
@@ -209,13 +224,18 @@
     //    （见 entitlement.js 的 identity()），传回去等于自己问自己，
     //    而服务端版会在 `id.role` 里下发真实角色 —— 那时这一行要改成
     //    `Ent.isOwner(null, { role: id.role })`。现在不传才是对的。
+    /* Issue #163：「管理」原先自成一卡（一句说明 + 一颗键），
+       而它只是「去别处」的一颗键 —— 与权限对比、同步设置同属一类，
+       现在三颗并排在「关于」卡底下那一行里。入口的判据一个字没改。 */
+    var btn = $("btn-go-admin");
+    if (!btn) return;
     if (Ent.isOwner(backing)) {
       // 与 /admin/ 页**同一个判据**；第一次看到入口时顺手把主人标记落下，
       // 免得出现「个人中心里有入口、点进去却被拒」这种自相矛盾的组合。
       Ent.markOwner(backing);
-      show($("admin-card"));
+      show(btn);
     } else {
-      hide($("admin-card"));
+      hide(btn);
     }
   }
 
@@ -350,7 +370,6 @@
     renderStats();
     renderAccount(sess);
     renderSync();
-    renderCaps(id);
     renderAdmin(id);
     renderCacheInfo();
   }
@@ -382,8 +401,6 @@
         paint(A.session(store));
       })["catch"](function () { /* 问不到就算了，页面已经是可用状态 */ });
     }
-
-    if (!sess) show($("guest-card"));
 
     $("btn-go-plans").addEventListener("click", function () { location.href = "/plans/"; });
     $("btn-sign-out").addEventListener("click", onSignOut);
@@ -523,5 +540,5 @@
     init();
   }
 
-  window.ProfilePage = { renderCaps: renderCaps, renderSync: renderSync, esc: esc };
+  window.ProfilePage = { renderSync: renderSync, esc: esc };
 })();

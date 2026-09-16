@@ -50,7 +50,17 @@ console.log('\n=== 二、语音播放：游客不行，登录的 free 可以 ===
   eq(g.reason, 'login', '被拦的原因是「未登录」，不是层级不够');
   chk(E.can('read.aloud', free).ok, '登录后的 free 可以用语音播放');
   chk(E.can('read.aloud', pro).ok, 'pro 当然也能用');
-  eq(E.denyReason('read.aloud', guest), '登录后即可使用（免费）', '拦住游客时说的是「登录后即可（免费）」');
+  eq(E.denyReason('read.aloud', guest), '登录可用', '拦住游客时说的是「登录可用」');
+  /* Issue #163 用户原话：「『登录后即可使用（免费）』上面这种描述就极其长
+     且有问题，改成 登录可用 即可。」—— 这一句是全站唯一一处在「登录取向」
+     上出文案的地方（矩阵的格子、按钮的 title、toast 都走它），所以在这里锁住：
+     短句、不加括号、不解释「免费」。 */
+  E.capNames().forEach(function (c) {
+    const h = E.denyReason(c, guest);
+    if (h === '登录可用') return;
+    chk(h.indexOf('登录') < 0 || h.length <= 6,
+      '登录取向的文案都短（' + c + ' → 「' + h + '」）');
+  });
 }
 
 console.log('\n=== 三、pro / max 只加不减：层级越高能力单调不减 ===');
@@ -153,7 +163,7 @@ console.log('\n=== 七、身份合成：只认 AuthCore 会话，不认页面自
   eq(g.signedIn, false, '没有会话时是游客');
   eq(g.tier, 'free', '游客层级是 free');
   eq(g.can('read.aloud').ok, false, '游客不能语音播放');
-  eq(g.hint('feihualing'), '登录后即可使用（免费）', '游客看付费功能：先提示登录（登录是硬条件）');
+  eq(g.hint('feihualing'), '登录可用', '游客看付费功能：先提示登录（登录是硬条件）');
   /* 拦住用户的那句话由 denyReason() 出，且**按能力自己的门槛**说 ——
      飞花令现在归 Max，句子里的层级名必须跟着变（写死「Pro 起」就是假话）。 */
   eq(E.denyReason('feihualing', free), 'Max 起可用', '已登录的 free 看飞花令：提示 Max 起可用');
@@ -197,7 +207,7 @@ console.log('\n=== 八、能力清单（/profile/ 的「权限」一节）===');
   chk(m.filter(x => !x.ok).every(x => x.minTier !== 'free' || x.reason === 'login'), 'free 用不了的条目都写明门槛（不会出现「无理由锁住」）');
   const g = E.matrix(guest);
   chk(g.filter(x => x.cap === 'read.aloud')[0].ok === false, '游客清单里语音播放是灰的');
-  chk(g.filter(x => x.cap === 'read.aloud')[0].hint === '登录后即可使用（免费）', '灰掉的理由是「登录后即可（免费）」');
+  chk(g.filter(x => x.cap === 'read.aloud')[0].hint === '登录可用', '灰掉的理由是「登录可用」');
   chk(E.matrix(max).every(x => x.ok), 'max 的能力清单全绿（最高层不残留灰条）');
 }
 
@@ -215,7 +225,7 @@ console.log('\n=== 九、语音门：与按钮置灰同源，放行后不打断�
   const S = global.window.Speech;
   chk(S.supported(), '假语音引擎可用');
 
-  S.setGate(() => ({ ok: false, hint: '登录后即可使用（免费）' }));
+  S.setGate(() => ({ ok: false, hint: '登录可用' }));
   eq(S.allowed().ok, false, '门关着时 allowed() 报 false（按钮据此置灰）');
   eq(S.speak('咏鹅'), false, '未登录：speak() 不出声');
   eq(spoken.length, 0, '未登录：语音引擎一次都没被调用');

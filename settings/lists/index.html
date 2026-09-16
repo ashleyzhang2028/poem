@@ -15,6 +15,11 @@
   <link rel="icon" href="./icons/icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
   <link rel="stylesheet" href="css/style.css" />
+  <!-- 清单卡片与「课外阅读」入口页那六张卡（.library-card）是同一套设计
+       （Issue #163 用户要求两者保持一致），所以那一套样式要能取到。
+       ⚠️ 只搬样式，不搬 js/library.js —— 那一页的卡片由它自己的数据渲染，
+          这一页的清单仍是 js/settings.js 按集合数据画。 -->
+  <link rel="stylesheet" href="css/classic.css" />
 </head>
 <body data-nav="settings" data-back="/settings/" data-page="我的清单" data-sub="自选背诵的增删改查">
   <div class="app">
@@ -37,8 +42,7 @@
               这一页改完，回首页的今日任务立刻跟着变。
            ================================================================== -->
       <div class="settings-groups">
-        <section class="settings-group" aria-labelledby="grp-lists">
-          <h2 class="settings-group-title" id="grp-lists">我的清单</h2>
+        <section class="settings-group">
 
           <!-- ⚠️ .wide：这一项在平板两列排布里**跨列**（见 css/style.css 的
                .settings-item.wide）—— 清单面板自己不常满，但拖拽排序与
@@ -46,11 +50,19 @@
           <div class="settings-item wide">
             <label>自选背诵</label>
             <div class="collections-panel" id="collections-panel">
-              <p class="collections-tip" id="collections-tip"></p>
+              <p class="collections-tip" id="collections-tip" hidden></p>
               <div class="collections-tools" id="collections-tools">
                 <button type="button" class="collection-act" id="btn-collections-import" title="粘贴一份清单，新建一个集合">导入清单</button>
               </div>
-              <div class="list" id="collections-list"></div>
+              <!-- 清单：**一张集合一张卡**，样式与「课外阅读」入口页那六张卡
+                   （.library-card）同一套 —— 卡片描边 + 圆角，篇与篇之间用
+                   同色的一条细线隔开，卡内不再各带纸底、也不再画竖色条。
+                   Issue #163 用户原话：「我的清单卡片设计最好和 课外阅读 页面的
+                   卡片设计保持一致，里面没有绿色竖线，横着的项目用边框颜色
+                   一样的线隔开。」
+                   ⚠️ 集子那一段的 DOM 仍由 js/settings.js 按同一份数据画，
+                      容器由 .collections-panel 换成 .library-grid（单列）。 -->
+              <div class="library-grid" id="collections-list"></div>
             </div>
           </div>
         </section>

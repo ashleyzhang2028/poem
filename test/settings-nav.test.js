@@ -78,15 +78,20 @@ const NAV = read('js/settings-nav.js');
         '控件 ' + sel + ' 只在「' + owner + '」页（实际：' + (pagesWithIt.join(',') || '哪一页都没有') + '）');
     });
   });
-  // 分组：四张页合起来是五组（Issue #163 把「阅读辅助 + 朗读播放」并成一组「朗读」），
-  // 前四组与顺序一个字没改。
+  // 分组：四张页合起来是五组（Issue #163 把「阅读辅助 + 朗读播放」并成一组「朗读」）。
   const titles = ['general', 'recite', 'lists', 'reader']
     .flatMap(k => [...SRC[k].matchAll(/aria-labelledby="grp-([a-z]+)"/g)].map(m => m[1]));
-  chk(titles.join(',') === 'general,recite,algo,lists,reader',
-    '四张页合起来是原六组并成五组、顺序不变（实际 ' + titles.join(',') + '）');
-  // Issue #163：两条只有一条设置的组不再各占一个组标题 ——
-  // 「阅读辅助 + 朗读播放」并成「朗读」一组，组标题只留一个。
-  chk(/aria-labelledby="grp-reader"[\s\S]*?<\/section>/.test(SRC.reader) &&
+  chk(titles.join(',') === 'recite,algo',
+    '四张页合起来仍是那五组（只有两组的那一页还留 aria-labelledby，实际 ' + titles.join(',') + '）');
+  // Issue #163（第二轮）：**一页只有一组时，正文顶部不再重复写组名** ——
+  // 「通用」「我的清单」「朗读」都已经写在顶栏页名上，正文再写一遍是同一屏里说两次。
+  ['general', 'lists', 'reader'].forEach(k => {
+    chk(!/settings-group-title/.test(SRC[k]),
+      PAGES[k] + ' 正文顶部不再重复写组标题（组名只留顶栏 data-page 一处）');
+    chk(/data-page="/.test(SRC[k]),
+      PAGES[k] + ' 仍带着页名（顶栏据此写出「跬步 · 通用」这类标题）');
+  });
+  chk(/aria-labelledby="grp-algo"[\s\S]*?<\/section>/.test(SRC.recite) &&
       !/aria-labelledby="grp-play"/.test(SRC.reader),
     '「朗读」页只有一组（原「阅读辅助」「朗读播放」两个组标题并成一个）');
   // 主页不再是「一堆控件里的一页」：它没有分组，只有入口清单
