@@ -57,7 +57,7 @@ const LOGIN = strip(loginJs), PROFILE = strip(profileJs), ADMIN = strip(adminJs)
     chk(/js\/pwa\.js/.test(s), f + ' 加载 js/pwa.js（--nav-h 每页都要实测）');
     chk(/js\/auth-core\.js/.test(s), f + ' 加载 js/auth-core.js（账号内核）');
     chk(/js\/entitlement\.js/.test(s), f + ' 加载 js/entitlement.js（权益总闸）');
-    chk(/js\/avatar\.js/.test(s), f + ' 加载 js/avatar.js（印只有一处画）');
+    chk(/js\/avatar\.js/.test(s), f + ' 加载 js/avatar.js（头像只有一处画）');
     chk(/<header class="topbar"/.test(s), f + ' 有顶栏挂载点');
     chk(/data-page="/.test(s), f + ' 声明页名（顶栏第一行写得出「跬步 · 登录」）');
     chk(/class="foot settings-foot"/.test(s), f + ' 有页脚（版权 + 法务链接）');
@@ -476,18 +476,22 @@ const LOGIN = strip(loginJs), PROFILE = strip(profileJs), ADMIN = strip(adminJs)
           · 密码不存明文、找不回原密码 → 必须写明「只能重设」
           · 重设密码会踢掉其它设备 → 必须写明，否则用户会觉得被莫名登出
         所以上限调高，而不是把那几件事删掉。**调高的是数字，不是纪律**：
-        没有这几件事的时候，谁也别把这个数字再往上抬。 */
+        没有这几件事的时候，谁也别把这个数字再往上抬。
+     ⚠️ Issue #163（2026-09-19）又调了一次：**图片头像上云**这件事本身
+        必须在条款里（上一版写的是「不收集」那套口径，而现在用户传的图
+        真的会存到服务器、地址公开可访问）。加的是这一件，上限跟着它走一档。 */
   const legalLen = (f) => read(f).replace(/<!--[\s\S]*?-->/g, "")
     .replace(/<[^>]+>/g, "").replace(/\s+/g, "").length;
   chk(legalLen('terms/index.html') < 1250,
     '用户协议正文 < 1250 字（实际 ' + legalLen('terms/index.html') + '）');
-  chk(legalLen('privacy/index.html') < 1650,
-    '隐私条款正文 < 1650 字（实际 ' + legalLen('privacy/index.html') + '）');
+  chk(legalLen('privacy/index.html') < 1670,
+    '隐私条款正文 < 1670 字（实际 ' + legalLen('privacy/index.html') + '）');
   /* 反向：这几件事**必须**在条款里（少一件就是条款落后于代码） */
   const priv = read('privacy/index.html');
   chk(/保存到服务器/.test(priv), '隐私条款写明邮箱会保存到服务器（Issue #197 起明文确实落库）');
   chk(/不会保存明文/.test(priv), '隐私条款写明密码不存明文');
   chk(/全部退出/.test(priv), '隐私条款写明改密码会踢掉其它设备');
+  chk(/别用真人照片/.test(priv), '隐私条款写明头像会上传到服务器、别用真人照片（Issue #163 起图片头像真的上云）');
 }
 
 /* ============ 十三、个人中心：一张卡一件事、操作键攒成一行（Issue #163 第三轮） ============ */

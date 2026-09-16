@@ -8,7 +8,7 @@
  *
  * 二级设置页（Issue #132 后续）：
  *   设置项多了以后，各组摊成四张二级页，本文件仍是**各页共用**的那一份逻辑：
- *     /settings/general/  通用     —— 用户名 / 头像印记 / 本机账号 / 数据管理
+ *     /settings/general/  通用     —— 用户名 / 头像 / 本机账号 / 数据管理
  *     /settings/recite/   背诵     —— 学段 / 年级 / 学期 / 范围 / 数量
  *                                     + 复习算法 + 进度总览入口
  *     /settings/lists/    我的清单 —— 自选背诵：导入 / 导出 / 改名 / 删除 / 整组移出 / 顺顺序
@@ -944,9 +944,10 @@
     const hint = $("#family-hint");
     if (!box) return;
     const F = familyMod();
+    const AV = avatarMod();
     if (!F) { box.innerHTML = ""; if (hint) hint.textContent = ""; return; }
 
-    /* 先认领：名册为空时把老档案（昵称 + 字符印）搬成第一个 —— 老用户零感知。
+    /* 先认领：名册为空时把老档案（昵称 + 头像）搬成第一个 —— 老用户零感知。
        认领是幂等的，且只在名册为空时发生。 */
     const data = F.ensureDetailed({ backing: window.localStorage });
     const list = data.data.profiles;
@@ -963,6 +964,10 @@
       row.innerHTML =
         '<button class="family-pick" type="button" data-family-pick="' + esc(p.id) + '"' +
         (p.id === at ? ' aria-current="true"' : "") + ">" +
+        /* 每行一个孩子都带他自己的头像（首字 / 上传的图）——
+           `Avatar.htmlFor()` 画的是**那一份档案**，不是盘上「当前那份」，
+           否则 N 枚印全一样。 */
+        (AV ? AV.htmlFor(p, {}) : "") +
         '<span class="family-name">' + esc(name) + "</span>" +
         (p.id === at ? '<span class="family-now">当前</span>' : "") +
         "</button>" +
@@ -1118,72 +1123,375 @@
     });
   }
 
-  /* ---------------- 头像印记（Issue #132 · 2026-09-15） ----------------
-     字符印：从**固定字集**挑一个字 + 固定四色，全部存本机 `poem_profile_v1`。
-     不弹文件选择框、不上传图片 —— `/privacy/` 的「不收集」承诺因此不受影响。
-     尺寸、圆角、字族在 css/style.css 的 .seal-avatar；**画印只有 js/avatar.js 一处**，
-     本页不许自己拼一份渐变（test/avatar.test.js 有源码扫描守着）。
+  /* ---------------- 头像（Issue #163 · 2026-09-19） ----------------
+     用户裁决：上一版那套「固定字集 + 固定四色」的字符印**整块删掉**
+     （「头像印记设置和传统用户头像流程不符，让人困惑」）。现在是两档：
+
+       ① 没传图 → 昵称的第一个字母 / 汉字（由 js/avatar.js 画）
+       ② 传了图 → 那张图。**选文件 → 本地压缩 → 方形裁切 → 上传**
+
+     三件事的落点各在各处，这一层只做「串起来 + 说人话」：
+       · 画头像      js/avatar.js（唯一画它的地方）
+       · 压缩 / 裁切 js/avatar-image.js（本地 canvas，纯几何那半在 Node 里可测）
+       · 上传        js/account-api.js（先服务端、后本机）
      ------------------------------------------------------------------ */
 
-  /** 取 Avatar 模块（脚本顺序不对 / 老缓存时返回 null，宁可不画也不报错） */
-  function avatarMod() {
-    return window.Avatar || null;
-  }
+  /** 取 Avatar / AvatarImage / AccountApi（脚本顺序不对或老缓存时返回 null） */
+  function avatarMod() { return window.Avatar || null; }
+  function avatarImageMod() { return window.AvatarImage || null; }
+  function accountApiMod() { return window.AccountApi || null; }
 
-  /** 重画设置页那枚印（昵称变了、字/色改了都要重画） */
+  /** 裁切层的临时状态（只在这一次选择里有效，**不落盘**） */
+  var crop = { file: null, url: "", w: 0, h: 0, zoom: 1, ox: 0.5, oy: 0.5, drag: null };
+
+  /** 重画设置页那枚头像（昵称变了、换图了、删图了都要重画） */
   function renderAvatar() {
     const A = avatarMod();
     const slot = $("#avatar-slot");
     if (!A || !slot) return;
     let html = "";
-    try { html = A.html(window.localStorage, { size: 40 }); } catch (e) { html = ""; }
+    try { html = A.html(window.localStorage, { size: 44 }); } catch (e) { html = ""; }
     slot.innerHTML = html;
-    if (html) slot.removeAttribute("aria-hidden");   // 有内容就给读屏软件读
+    if (html) slot.removeAttribute("aria-hidden");
     else slot.setAttribute("aria-hidden", "true");
-    renderSealPicker();
+
+    /* 「删除头像」只在**真有图**时出现：没图时摆一颗灰键（点了什么都不发生）
+       比不摆更让人困惑。 */
+    const d = (function () { try { return A.display(window.localStorage); } catch (e) { return null; } })();
+    const clear = $("#btn-avatar-clear");
+    if (clear) clear.hidden = !(d && d.hasImage);
+    renderAvatarHint(d);
   }
 
-  /** 画字集 / 印色选择器，并把当前选择标出来 */
-  function renderSealPicker() {
-    const A = avatarMod();
-    const charBox = $("#seal-chars");
-    const inkBox = $("#seal-inks");
-    const hint = $("#seal-hint");
-    if (!A || !charBox || !inkBox) return;
-    const cur = A.display(window.localStorage);
+  /**
+   * 头像底下那句说明 —— **只写这一页答不出来的那一件事**。
+   *
+   * 三档各一行（用户原话「所有内容都使用精简的语句」）：
+   *   没图 / 有云端地址 / 只有本机那份。第三档把「正在传」「传失败」
+   *   「没登录」三种情况合起来说一句**真话** —— 它们的现状确实是同一个。
+   */
+  function renderAvatarHint(d) {
+    const hint = $("#avatar-hint");
+    if (!hint || !d) return;
+    if (!d.hasImage) hint.textContent = "未上传时显示用户名首字";
+    else if (d.img) hint.textContent = "已同步到服务器";
+    else hint.textContent = "已存在本机，还没同步到服务器";
+  }
 
-    // 字：一排常用字，不弹键盘（固定集合 → 杜绝生僻字与真名）
-    charBox.innerHTML = "";
-    A.CHARS.forEach(function (c) {
-      const b = document.createElement("button");
-      b.type = "button";
-      b.className = "seal-chip" + (c === cur.char && cur.source === "chosen" ? " active" : "");
-      b.dataset.sealChar = c;
-      b.textContent = c;
-      b.setAttribute("aria-label", "用「" + c + "」字");
-      charBox.appendChild(b);
+  /** 图片选择框 → 裁切层 */
+  function onPickFile(input) {
+    const AI = avatarImageMod();
+    if (!AI) return;
+    const file = input && input.files && input.files[0];
+    if (!file) return;
+    const chk = AI.checkFile(file);
+    if (!chk.ok) { showToast(chk.message); input.value = ""; return; }
+    /* 先解码拿到原图尺寸，才知道缩放的范围与初始框 */
+    AI.decode(file).then(function (src) {
+      crop.file = file;
+      crop.w = src.width || src.naturalWidth || 0;
+      crop.h = src.height || src.naturalHeight || 0;
+      crop.zoom = 1; crop.ox = 0.5; crop.oy = 0.5;
+      /* 预览用 blob URL：**不把原图 base64 读进来**（一张 4MB 的图
+         变成 base64 就是 5.4MB 的字符串，手机上会卡住） */
+      crop.url = (window.URL && URL.createObjectURL) ? URL.createObjectURL(file) : "";
+      AI.release(src);
+      openCrop();
+      input.value = "";                    // 同一张图连选两次也要能触发 change
+    }).catch(function () {
+      showToast("这张图片打不开，请换一张");
+      input.value = "";
     });
+  }
 
-    // 色：四个传统色圆点
-    inkBox.innerHTML = "";
-    A.INK_KEYS.forEach(function (k) {
-      const info = A.INKS[k];
-      const b = document.createElement("button");
-      b.type = "button";
-      b.className = "seal-ink" + (k === cur.ink ? " active" : "");
-      b.dataset.sealInk = k;
-      b.style.background = info.bg;
-      b.setAttribute("aria-label", "印色：" + info.name);
-      b.title = info.name;
-      inkBox.appendChild(b);
-    });
+  function openCrop() {
+    const layer = $("#crop-layer");
+    const img = $("#crop-img");
+    if (!layer || !img) return;
+    img.src = crop.url;
+    const z = $("#crop-zoom");
+    if (z) { z.value = "0"; z.disabled = false; }
+    layer.hidden = false;
+    document.body.classList.add("crop-open");
+    drawCrop();
+  }
 
-    // 如实写清这枚印是怎么来的 + 它存在哪里（合规口径，别让用户以为传上去了）
-    if (hint) {
-      const from = cur.source === "chosen" ? "你选的字"
-        : (cur.source === "nickname" ? "取自昵称首字" : "默认字");
-      hint.textContent = "当前：" + cur.char + "字 · " + A.INKS[cur.ink].name + " · " + from;
+  function closeCrop() {
+    const layer = $("#crop-layer");
+    if (layer) layer.hidden = true;
+    document.body.classList.remove("crop-open");
+    const img = $("#crop-img");
+    if (img) img.removeAttribute("src");
+    if (crop.url && window.URL && URL.revokeObjectURL) URL.revokeObjectURL(crop.url);
+    crop.file = null; crop.url = ""; crop.drag = null;
+  }
+
+  /**
+   * 把裁切状态画到预览上。
+   *
+   * 用 CSS transform 缩放平移**那一张原图**，而不是每帧重画 canvas ——
+   * 手机上后者在拖动时会掉帧，而前者是合成器干的活。
+   *
+   * 换算：方框里「铺满」的那一档（zoom = 1）对应原图短边贴住方框边。
+   * 于是显示尺寸 = 方框边长 × zoom × (原图对应比例)，
+   * 位置 = 让 (ox, oy) 那个点落在方框中心。
+   */
+  function drawCrop() {
+    const img = $("#crop-img");
+    const box = $("#crop-box");
+    if (!img || !box || !crop.w || !crop.h) return;
+    const side = box.clientWidth || 260;
+    /* 短边铺满：先把原图缩到「短边 = side」，再乘用户的 zoom */
+    const base = side / Math.min(crop.w, crop.h);
+    const k = base * crop.zoom;
+    const dispW = crop.w * k;
+    const dispH = crop.h * k;
+    /* 让归一化中心点落在方框中心；再夹回「不出界」的范围 */
+    let left = side / 2 - crop.ox * dispW;
+    let top = side / 2 - crop.oy * dispH;
+    left = Math.min(0, Math.max(side - dispW, left));
+    top = Math.min(0, Math.max(side - dispH, top));
+    img.style.width = dispW + "px";
+    img.style.height = dispH + "px";
+    img.style.transform = "translate(" + left + "px," + top + "px)";
+  }
+
+  /** 拖动：按位移反算归一化中心点（手指往右拖 = 看左边那块 → ox 减小） */
+  function onCropDrag(dx, dy) {
+    const box = $("#crop-box");
+    if (!box || !crop.w || !crop.h) return;
+    const side = box.clientWidth || 260;
+    const base = side / Math.min(crop.w, crop.h);
+    const k = base * crop.zoom;
+    const dispW = crop.w * k;
+    const dispH = crop.h * k;
+    crop.ox -= dx / dispW;
+    crop.oy -= dy / dispH;
+    const AI = avatarImageMod();
+    if (AI && AI.clampOffset) {
+      const c = AI.clampOffset(crop.w, crop.h, crop.zoom, crop.ox, crop.oy);
+      crop.ox = c.ox; crop.oy = c.oy;
+    } else {
+      crop.ox = Math.min(1, Math.max(0, crop.ox));
+      crop.oy = Math.min(1, Math.max(0, crop.oy));
     }
+    drawCrop();
+  }
+
+  /** 滑杆（0~1）→ zoom（几何下限 1，上限由原图短边推） */
+  function setZoomFromSlider(v) {
+    const AI = avatarImageMod();
+    if (!AI) return;
+    const r = AI.zoomRange(crop.w, crop.h);
+    const t = Math.min(1, Math.max(0, Number(v) || 0));
+    /* 对数刻度：放大两倍与放大八倍的手感一致（线性刻度下后半段几乎不动） */
+    crop.zoom = r.min * Math.pow(r.max / r.min, t);
+    const c = AI.clampOffset(crop.w, crop.h, crop.zoom, crop.ox, crop.oy);
+    crop.ox = c.ox; crop.oy = c.oy;
+    drawCrop();
+  }
+
+  /**
+   * 确认裁切：本地压成 256×256 → **先存本机**再上传。
+   *
+   * 顺序是刻意的（与 `AccountApi.deleteAccount` 的「先服务端、后本机」相反）：
+   * 头像的**展示**不依赖云端，所以本机那份先落地 —— 于是「还在传」的这几秒里
+   * 顶栏已经是新图。上传成功了才把云端地址写进账号域（那一步在 AccountApi 里）。
+   */
+  function confirmCrop() {
+    const AI = avatarImageMod();
+    const A = avatarMod();
+    const btn = $("#btn-crop-ok");
+    if (!AI || !A || !crop.file) return;
+    if (btn) { btn.disabled = true; btn.textContent = "处理中…"; }
+    const view = { zoom: crop.zoom, ox: crop.ox, oy: crop.oy };
+    AI.process(crop.file, view).then(function (blob) {
+      return AI.blobToDataUrl(blob).then(function (dataUrl) {
+        return { blob: blob, dataUrl: dataUrl };
+      });
+    }).then(function (out) {
+      /* ① 本机那份先落地 —— 断网也看得见，而且**上传还没回来时界面就该是新图**。
+         ⚠️ 顺序不能反：先 setLocalImage 再清云端地址（`setAvatar({img:""})` 会顺手
+            清掉本机那份，它是「删头像」那条路上的语义 —— 见 avatar.js）。
+            反过来写的话，用户刚裁完的那张图当场被清掉，界面回到首字印，
+            看着像「点了确定什么都没发生」。 */
+      A.setLocalImage(window.localStorage, out.dataUrl);
+      closeCrop();
+      renderAvatar();
+      refreshUserChrome();
+      return uploadAvatar(out.blob);
+    }).then(function () {
+      if (btn) { btn.disabled = false; btn.textContent = "用这张"; }
+    }).catch(function () {
+      if (btn) { btn.disabled = false; btn.textContent = "用这张"; }
+      showToast("这张图片处理不了，请换一张");
+    });
+  }
+
+  /**
+   * 上传到服务端。
+   *
+   * 四种结果各说各的话（未登录 / 服务器没开放 / 连不上 / 成了）——
+   * 合并成一句「失败」的话，用户不知道下一步该做什么。
+   */
+  function uploadAvatar(blob) {
+    const Api = accountApiMod();
+    if (!Api || !Api.uploadAvatar) return Promise.resolve(false);
+    return Api.uploadAvatar({ blob: blob, type: blob.type }).then(function (r) {
+      renderAvatar();
+      if (r && r.ok) {
+        refreshUserChrome();
+        showToast("头像已保存");
+        return true;
+      }
+      if (r && r.reason === "guest") showToast("头像已存在本机，登录后才会同步到其它设备");
+      else if (r && r.reason === "not-configured") showToast("头像已存在本机（服务器还没开放）");
+      else showToast((r && r.message) || "头像已存在本机，还没同步到服务器");
+      return false;
+    });
+  }
+
+  /** 删头像：**先清地址、再删对象**（理由见 account-api.js 的 deleteAvatar） */
+  function clearAvatar() {
+    const Api = accountApiMod();
+    if (!confirm("删除头像？之后显示用户名首字。")) return;
+    const done = function () { renderAvatar(); refreshUserChrome(); };
+    if (!Api || !Api.deleteAvatar) {
+      const A = avatarMod();
+      if (A) A.resetAvatar(window.localStorage);
+      done(); return;
+    }
+    Api.deleteAvatar().then(function (r) {
+      done();
+      if (r && r.remote === "skipped") showToast("本机头像已删除，服务器那份还没删掉");
+      else showToast("头像已删除");
+    });
+  }
+
+  function refreshUserChrome() {
+    if (window.SiteChrome && window.SiteChrome.refreshUser) window.SiteChrome.refreshUser();
+  }
+
+  /**
+   * 绑事件：**三档输入归到同一组状态**（`crop.zoom` / `crop.ox` / `crop.oy`）。
+   *
+   *   · 单指 / 鼠标拖 → 平移
+   *   · 双指捏合 → 缩放（手机上唯一的自然手势）
+   *   · 滚轮 / 滑杆 → 缩放（桌面与键盘、以及「手势不好使」的兜底）
+   *
+   * ⚠️ 用 Pointer Events 一套吃下鼠标与触摸（不再各写一份 touchstart / mousedown）：
+   *    两份实现的下场是「手机上能拖、桌面拖不动」，而那是**只在一边测得到**的 bug。
+   * ⚠️ 捏合的判定放在**同一个 pointerdown 里**（按活跃指针数分流），
+   *    而不是再挂第二个 pointerdown —— 两个监听器都改 `crop.drag`，
+   *    症状是两指按下时图会先跳一下再缩。
+   */
+  function bindCrop() {
+    const layer = $("#crop-layer");
+    const box = $("#crop-box");
+    const zoom = $("#crop-zoom");
+    if (!layer) return;
+    if (zoom) zoom.addEventListener("input", function () { setZoomFromSlider(zoom.value); });
+    const ok = $("#btn-crop-ok");
+    if (ok) ok.addEventListener("click", confirmCrop);
+    const cancel = $("#btn-crop-cancel");
+    if (cancel) cancel.addEventListener("click", closeCrop);
+    if (!box) return;
+
+    /* 活跃指针表：1 个 = 拖、2 个 = 捏合。第三根手指按下时忽略（不取平均） */
+    var pointers = {};
+    var pinchDist = 0;
+
+    box.addEventListener("pointerdown", function (e) {
+      pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+      if (box.setPointerCapture) { try { box.setPointerCapture(e.pointerId); } catch (err) { /* 老浏览器 */ } }
+      var n = Object.keys(pointers).length;
+      if (n === 1) {
+        crop.drag = { x: e.clientX, y: e.clientY };
+      } else if (n === 2) {
+        /* 变两指：**立刻停掉平移**（否则缩的同时还在挪，看着像抖） */
+        crop.drag = null;
+        pinchDist = distOf(pointers);
+      }
+      e.preventDefault();
+    });
+
+    box.addEventListener("pointermove", function (e) {
+      if (!pointers[e.pointerId]) return;
+      pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+      var n = Object.keys(pointers).length;
+      if (n >= 2) {
+        var d = distOf(pointers);
+        if (pinchDist > 0 && d > 0) applyZoomFactor(d / pinchDist);
+        pinchDist = d;
+        return;
+      }
+      if (!crop.drag) return;
+      var dx = e.clientX - crop.drag.x;
+      var dy = e.clientY - crop.drag.y;
+      crop.drag.x = e.clientX; crop.drag.y = e.clientY;
+      onCropDrag(dx, dy);
+    });
+
+    var stop = function (e) {
+      if (e && e.pointerId !== undefined) delete pointers[e.pointerId];
+      if (Object.keys(pointers).length === 0) { crop.drag = null; pinchDist = 0; }
+      else if (Object.keys(pointers).length === 1) {
+        /* 从两指回到一指：不要接着平移（那时手指位置与图已经对不上了），
+           等用户抬起再按下 —— 宁可少一次拖动，也不要图「忽然跳一下」 */
+        crop.drag = null;
+        pinchDist = 0;
+      }
+    };
+    box.addEventListener("pointerup", stop);
+    box.addEventListener("pointercancel", stop);
+    box.addEventListener("pointerleave", stop);
+
+    /* 滚轮缩放（桌面）：一次一格 1.12 倍，按住 shift 更快 */
+    box.addEventListener("wheel", function (e) {
+      e.preventDefault();
+      var step = e.shiftKey ? 0.24 : 0.12;
+      applyZoomFactor(1 + (e.deltaY < 0 ? step : -step));
+    }, { passive: false });
+  }
+
+  /** 两指之间的距离（>2 根手指时取**前两根**，不取平均 —— 平均值会让图乱跳） */
+  function distOf(pointers) {
+    var keys = Object.keys(pointers);
+    if (keys.length < 2) return 0;
+    var a = pointers[keys[0]];
+    var b = pointers[keys[1]];
+    return Math.hypot(a.x - b.x, a.y - b.y);
+  }
+
+  /** 按倍率改 zoom，并把滑杆同步过去（滑杆是 zoom 的**对数刻度**回显） */
+  function applyZoomFactor(f) {
+    const AI = avatarImageMod();
+    if (!AI || !crop.w) return;
+    const r = AI.zoomRange(crop.w, crop.h);
+    crop.zoom = AI.clampZoom(crop.w, crop.h, crop.zoom * f);
+    const t = Math.log(crop.zoom / r.min) / Math.log(r.max / r.min || 1);
+    const z = $("#crop-zoom");
+    if (z) z.value = String(Math.min(1, Math.max(0, t)));
+    const c = AI.clampOffset(crop.w, crop.h, crop.zoom, crop.ox, crop.oy);
+    crop.ox = c.ox; crop.oy = c.oy;
+    drawCrop();
+  }
+
+  function bindAvatar() {
+    const pick = $("#btn-avatar-pick");
+    const file = $("#avatar-file");
+    if (pick && file) {
+      pick.addEventListener("click", function () { file.click(); });
+      file.addEventListener("change", function () { onPickFile(file); });
+    }
+    const clear = $("#btn-avatar-clear");
+    if (clear) clear.addEventListener("click", clearAvatar);
+    bindCrop();
+    /* 窗口尺寸变了要重算显示尺寸（方框边长跟着走） */
+    window.addEventListener("resize", function () {
+      const layer = $("#crop-layer");
+      if (layer && !layer.hidden) drawCrop();
+    });
   }
 
   /* ---------------- 本机账号（Issue #132 · 二级页「通用」） ----------------
@@ -1388,49 +1696,6 @@
         showToast("已关闭同步，进度仍在本机");
       }
     });
-  }
-
-  /** 换字 / 换色 / 还原默认：写 `poem_profile_v1`，再让顶栏重画 */
-  function applySeal(patch) {
-    const A = avatarMod();
-    if (!A) return;
-    const r = patch && patch.reset
-      ? A.resetAvatar(window.localStorage)
-      : A.setAvatar(window.localStorage, patch);
-    if (!r || !r.ok) {
-      showToast((r && r.message) || "这个值不在可选范围里");
-      return;
-    }
-    renderAvatar();
-    /* ⚠️ 印跟着当前子档案走：`Avatar.setAvatar` 自己会把它收进名册
-       （`saveToChild` → `Family.setAvatar`，见 avatar.js 文件头）——
-       本页不再自己写第二遍，也不自己拼键名。
-       顶栏那枚印是 chrome.js 一次画好的，不重画就要刷新页面才看得到 */
-    if (window.SiteChrome && window.SiteChrome.refreshUser) window.SiteChrome.refreshUser();
-    showToast("头像印记已更新");
-  }
-
-  function bindSealPicker() {
-    const charBox = $("#seal-chars");
-    if (charBox) {
-      charBox.addEventListener("click", function (e) {
-        const b = e.target.closest("button[data-seal-char]");
-        if (!b) return;
-        applySeal({ char: b.dataset.sealChar });
-      });
-    }
-    const inkBox = $("#seal-inks");
-    if (inkBox) {
-      inkBox.addEventListener("click", function (e) {
-        const b = e.target.closest("button[data-seal-ink]");
-        if (!b) return;
-        applySeal({ ink: b.dataset.sealInk });
-      });
-    }
-    const reset = $("#btn-seal-reset");
-    if (reset) {
-      reset.addEventListener("click", function () { applySeal({ reset: true }); });
-    }
   }
 
   /* ---------------- 事件 ---------------- */
@@ -1670,7 +1935,7 @@
     renderControls();
     bindEvents();
     bindCollections();
-    bindSealPicker();
+    bindAvatar();
     bindFamily();
     bindAccount();
     bindSync();

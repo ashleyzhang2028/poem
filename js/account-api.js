@@ -19,6 +19,13 @@
  * 它是本项目第一条「能改别人数据」的写接口，但**这一层不判权限** ——
  * 判权限在服务端（`accounts.role`），客户端把入口藏起来从来不是安全边界。
  *
+ * 3.1 期（Issue #163 · 2026-09-19）再加一条：**头像上传**（`/api/avatar`）。
+ * 它与注销同源的两件硬要求：
+ *   ① **先服务端、后本机** —— 传上去了才把云端地址写进 `poem_profile_v1`；
+ *      没传上去就把本机那份图留着（离线照旧显示），并如实说「还没传上去」。
+ *   ② **失败不假装** —— 服务端没开放 / 连不上时回 `reason`，界面说
+ *      「头像只在本机」，不许在顶栏画一张只在你这台设备上存在的图却不说。
+ *
  * ## 四条不可退让的边界（1A 立的，这一层一条都不许破）
  *
  * 1. **失败不打断任何事** —— 连不上、503、401、超时，一律只是
@@ -80,6 +87,10 @@
       make: d.make || (d.api && d.api.create) || (g && g.AuthApi && g.AuthApi.create) || null,
       E: d.E || (g && g.Entitlement) || null,
       A: d.A || (g && g.AuthCore) || null,
+      /* 头像内核（Issue #163）：上传成功后要把云端地址写进档案 ——
+         走 `Avatar.setAvatar()`（它才知道当前是哪一份档案：有子档案名册时
+         写的是**当前孩子**那一份）。测试里可注入。 */
+      AV: d.AV || (g && g.Avatar) || null,
       backing: d.backing || (g && g.localStorage) || null,
       now: d.now || function () { return Date.now(); }
     };
@@ -388,6 +399,84 @@
      */
     var REASON_NO_CHANNEL = "no-channel";
 
+    /**
+     * 上传头像（Issue #163 · 2026-09-19）。
+     *
+     * ## 四条口径
+     *
+     * 1. **先服务端、后本机**（与 `deleteAccount()` 同源）：上传成功后把
+     *    云端地址写进账号域 `poem_profile_v1`。反过来先写地址的话，
+     *    传失败就是一条**指向不存在文件的地址**（裂图），而用户以为换好了。
+     * 2. **本机那份副本先落地**：调用方（设置页）在压缩完之后立刻
+     *    `Avatar.setLocalImage()`。于是「还没传上去」的这段时间里，
+     *    顶栏已经是新图 —— 这是设备的资产，与云端无关。
+     * 3. **没登录不上传**：`E_NO_SESSION` 如实回，由界面说「登录后才能同步到其它设备」。
+     *    不是错误（本机头像照样能用），所以 `reason` 是 `GUEST` 而不是 `UNAVAILABLE`。
+     * 4. **不删本机那份**：上传失败时留下的正是它 —— 界面下一轮照旧画得出来。
+     *
+     * @param {Blob|ArrayBuffer|Uint8Array} input.blob 已经压好、裁好的图片字节
+     * @returns {Promise<{ok, reason, url?, bytes?, message?}>}
+     */
+    function uploadAvatar(input) {
+      var o = input || {};
+      if (!hasLocalSession()) return Promise.resolve({ ok: false, reason: REASON.GUEST, code: "E_NO_SESSION" });
+      var ch = avatarChannel();
+      if (!ch) return Promise.resolve({ ok: false, reason: REASON_NO_CHANNEL });
+      return Promise.resolve(ch.uploadAvatar({ blob: o.blob, type: o.type })).then(function (r) {
+        if (r && r.ok && r.url) {
+          /* 地址写进账号域 —— 走 Avatar 那一层（它才知道当前是哪一份档案：
+             有子档案名册时写的是**当前孩子**的那一份）。 */
+          var AV = D.AV;
+          if (AV && AV.setAvatar) {
+            try { AV.setAvatar(D.backing, { img: r.url }); } catch (e) { /* 写不进去时界面会下一轮读到旧的 */ }
+          }
+          return { ok: true, reason: REASON.OK, url: r.url, bytes: r.bytes, note: r.note };
+        }
+        var code = (r && r.code) || "E_OFFLINE";
+        if (code === "E_NOT_CONFIGURED") return { ok: false, reason: REASON.NOT_CONFIGURED, code: code, message: r && r.message };
+        if (code === "E_NO_SESSION") return { ok: false, reason: REASON.GUEST, code: code, message: r && r.message };
+        return { ok: false, reason: REASON.UNAVAILABLE, code: code, message: r && r.message };
+      })["catch"](function () { return { ok: false, reason: REASON.UNAVAILABLE, code: "E_OFFLINE" }; });
+    }
+
+    /**
+     * 删掉云端那张头像，并把账号域那个地址清成空（回到首字印）。
+     *
+     * ⚠️ **先清地址、再删对象**：反过来的话，删对象成功而地址没清掉，
+     *    顶栏会去拉一张已经不存在的图 —— 一只裂图，且用户以为自己已经删了。
+     *    地址清了之后，最坏情况是桶里留一个没人引用的对象（下次上传就盖掉）。
+     */
+    function deleteAvatar() {
+      var AV = D.AV;
+      function clearLocal() {
+        if (AV && AV.resetAvatar) {
+          try { AV.resetAvatar(D.backing); } catch (e) { /* 清不掉时界面下一轮读到的是旧地址 */ }
+        }
+      }
+      if (!hasLocalSession()) { clearLocal(); return Promise.resolve({ ok: true, reason: REASON.GUEST, remote: "none" }); }
+      var ch = avatarChannel();
+      if (!ch) { clearLocal(); return Promise.resolve({ ok: true, reason: REASON_NO_CHANNEL, remote: "none" }); }
+      return Promise.resolve(ch.deleteAvatar()).then(function (r) {
+        clearLocal();
+        if (r && r.ok) return { ok: true, reason: REASON.OK, remote: "deleted" };
+        var code = (r && r.code) || "E_OFFLINE";
+        if (code === "E_NOT_CONFIGURED") return { ok: true, reason: REASON.NOT_CONFIGURED, remote: "none" };
+        if (code === "E_NO_SESSION") return { ok: true, reason: REASON.GUEST, remote: "none" };
+        /* 连不上：本机那份已经清了，但云端那一个还在 —— **如实说** */
+        return { ok: true, reason: REASON.UNAVAILABLE, remote: "skipped", code: code };
+      })["catch"](function () { clearLocal(); return { ok: true, reason: REASON.UNAVAILABLE, remote: "skipped" }; });
+    }
+
+    /**
+     * 头像通道**单独判**（与 `grantChannel()` 同一条口径）：
+     * 并进 `usable()` 的话，老缓存里的旧 `AuthApi`（没有 uploadAvatar）
+     * 会被判成「没有通道」，症状是 `/api/me` 再也不问 —— 拿新功能废掉既有功能。
+     */
+    function avatarChannel() {
+      var ch = usable(D.api) || (D.make ? safeCreate(D.make) : null);
+      return ch && typeof ch.uploadAvatar === "function" && typeof ch.deleteAvatar === "function" ? ch : null;
+    }
+
     function adminGrant(input) {
       var o = input || {};
       if (!hasLocalSession()) {
@@ -579,6 +668,9 @@
       refreshMe: refreshMe,
       deleteAccount: deleteAccount,
       resendVerification: resendVerification,
+      /* 头像上传 / 删除（Issue #163）：只有设置·通用页调 */
+      uploadAvatar: uploadAvatar,
+      deleteAvatar: deleteAvatar,
       /* 权威发放（2.2）：**只有 /admin/ 页调**。不判权限 —— 判权限在服务端。 */
       adminGrant: adminGrant,
       adminGrants: adminGrants,
@@ -634,6 +726,9 @@
     adminGrant: function (o) { return boundOnce(o).adminGrant(o); },
     adminGrants: function (o) { return boundOnce(o).adminGrants(o); },
     adminRevoke: function (o) { return boundOnce(o).adminRevoke(o); },
+    /* 头像上传 / 删除（Issue #163）：只有设置·通用页与个人中心用 */
+    uploadAvatar: function (o) { return boundOnce(o).uploadAvatar(o); },
+    deleteAvatar: function (o) { return boundOnce(o).deleteAvatar(o); },
     /* 名录（全部账号，Issue #197）：同样只有 /admin/ 页用 */
     adminAccounts: function (o) { return boundOnce(o).adminAccounts(o); },
     /* 古诗词大会的判分（3 期）。**刻意不走 boundOnce 的 globalBound 闸** ——

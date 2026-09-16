@@ -1718,6 +1718,26 @@ function sanitizePayload(p, poemId) {
  *   · **不认的档案整条丢掉**，但**不因此让整份名册失败** ——
  *     一份脏名册把同步打死，比少一个孩子更糟。
  */
+/**
+ * 头像地址的白名单化（权威那一边的尺子）。
+ *
+ * 与 `js/avatar.js` 的 `isImgUrl()` **同源但不同宽**：这里的任务不是「能不能画」，
+ * 而是「会不会被别的设备拿去 `<img src>`」—— 所以只有 https 与本站的
+ * `/api/avatar/` 两条路，**data URL 一律不收**：
+ *   · 账号域这一份要被同步（`js/sync-store.js`）与导出（`js/export-core.js`），
+ *     一条几十 KB 的 base64 混进每一条进度记录里，会把免费档的 500MB 吃光
+ *   · data URL 里能塞任何 MIME，甚至 `data:image/svg+xml`（SVG 内可以带脚本）——
+ *     而它画在**别人**的屏幕上
+ * 本机那份图（`poem_avatar_local_v1`）走的是另一条路，压根不上云。
+ */
+function sanitizeImgUrl(u) {
+  var s = String(u == null ? "" : u).trim();
+  if (!s || s.length > 512) return "";
+  if (/^https:\/\/[^\s"'<>]+$/i.test(s)) return s;
+  if (s.indexOf("/api/avatar/") === 0 && !/[\s"'<>]/.test(s)) return s;
+  return "";
+}
+
 function sanitizeFamily(p) {
   var out = { v: 1, at: childId(p && p.at), profiles: [] };
   var list = (p && Array.isArray(p.profiles)) ? p.profiles.slice(0, 200) : [];
@@ -1727,14 +1747,14 @@ function sanitizeFamily(p) {
     if (!id) return;
     var name = String(q.nickname == null ? "" : q.nickname).trim().slice(0, 12);
     var av = (q.avatar && typeof q.avatar === "object") ? q.avatar : {};
-    var ink = String(av.ink == null ? "" : av.ink);
     out.profiles.push({
       id: id,
       nickname: name,
-      avatar: {
-        char: String(av.char == null ? "" : av.char).slice(0, 2),
-        ink: /^#[0-9a-fA-F]{6}$/.test(ink) ? ink : ""
-      },
+      /* ⚠️ 头像只有 `img` 一个字段（Issue #163 · 2026-09-19）：上一版的
+         `char` / `ink`（固定字 + 固定四色）已被用户点名删掉。这里**不认它们** ——
+         认了的话，一台设备推一份老形状的名册上来，另一台就会用一套
+         已经不在界面上的东西画头像。丢掉之后两边都画首字印，一致。 */
+      avatar: { img: sanitizeImgUrl(av.img) },
       createdAt: Number(q.createdAt) > 0 ? Math.round(Number(q.createdAt)) : 0
     });
   });
@@ -2249,6 +2269,7 @@ module.exports = {
   familyPut: familyPut,
   childId: childId,
   sanitizeFamily: sanitizeFamily,
+  sanitizeImgUrl: sanitizeImgUrl,
   FAMILY_ROW_ID: FAMILY_ROW_ID,
   accountDelete: accountDelete,
   /* Issue #197：完整登录流程那五条 */

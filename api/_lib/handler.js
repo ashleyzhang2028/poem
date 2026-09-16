@@ -53,13 +53,21 @@ function withSession(req, d) {
  * @param {string[]} methods    允许的方法
  * @param {Function} run        (deps, body, req) => Promise<{status,body,cookies?}>
  */
-function make(name, methods, run) {
+function make(name, methods, run, opts) {
+  opts = opts || {};
   return function (req, res) {
     var m = String(req.method || "GET").toUpperCase();
     if (methods.indexOf(m) < 0) return H.methodNotAllowed(res, methods);
+    /* rawBody：这个 handler 的 body 是**裸字节**（图片），不是 JSON。
+       交给它自己去读流，`deps` 里仍然给一个空对象（它只用会话与设备号）。 */
+    var rawBody = !!opts.rawBody;
 
     // GET/DELETE 也可能带 body，但这两个方法我们只用查询串与 Cookie
-    var wantBody = m !== "GET";
+    /* ⚠️ **裸字节那一条路不走 `readBody()`**（Issue #163 的头像上传）：
+       `readBody()` 会把请求体当 JSON 解，图片字节一进去就是 `E_BAD_BODY` ——
+       而它的症状是「传头像永远 400」，看着像前端坏了。
+       `rawBody` 的 handler 自己去读流（见 api/avatar/index.js 的 readBytes）。 */
+    var wantBody = m !== "GET" && !rawBody;
     Promise.resolve(wantBody ? H.readBody(req) : {})
       .then(function (body) {
         if (body === null) {

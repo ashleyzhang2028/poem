@@ -77,6 +77,15 @@ var ENTRY = [
     how: "Supabase → Project Settings → API → service_role（不是 anon）"
   },
   {
+    key: "SUPABASE_AVATAR_BUCKET",
+    level: "optional",
+    group: "头像存储",
+    secret: false,
+    what: "头像图片的 Storage bucket 名（缺省 `avatars`；必须是一个 **public** bucket）",
+    missing: "不填时按 `avatars` 找桶；桶不存在时上传接口如实回 503「存储桶还没建好」，头像退回只存本机（功能不坏）",
+    how: "Supabase → Storage → New bucket → 名字填 `avatars`、勾上 Public。**不用建表、不用改 RLS**：图片是公开读的，写只有服务端的 service key 做得到"
+  },
+  {
     key: "MAIL_TRANSPORT",
     level: "optional",
     group: "发信",

@@ -6,7 +6,7 @@
  *   一页里堆不下。再往上加只会更长，于是把每一组摊成一页二级页：
  *
  *     /settings/         设置主页 —— 四条入口 + 版权与法务链接
- *     /settings/general/   通用     （用户名 / 头像印记 / 账号 / 数据管理）
+ *     /settings/general/   通用     （用户名 / 头像 / 账号 / 数据管理）
  *     /settings/recite/    背诵     （学段 / 年级 / 学期 / 范围 / 数量 / 算法 / 进度总览）
  *     /settings/lists/     我的清单 （自选背诵的增删改查 / 篇目打印 · Pro）
  *     /settings/reader/    朗读     （自动注音 + 五档连读方式）
@@ -50,7 +50,7 @@
       key: "general",
       href: "/settings/general/",
       title: "通用",
-      desc: "用户名、头像印记、账号、数据备份"
+      desc: "用户名、头像、账号、数据备份"
     },
     {
       key: "recite",

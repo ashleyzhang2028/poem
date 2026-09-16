@@ -147,7 +147,7 @@ python3 -m http.server 8080  # 或 Python 3
 ├── css/                    # style.css（全站）/ classic.css（阅读器）/ legal.css（法务页）
 ├── js/                     # 应用脚本（progress-store.js：分域引擎；
 │                           #   sync-store.js：跨设备同步，storage.js 是前者的转发层）
-├── api/                    # Vercel Serverless：9 个接口（_lib/ 是可在 Node 里直接测的内核）
+├── api/                    # Vercel Serverless：18 个路由文件（_lib/ 是可在 Node 里直接测的内核）
 ├── fonts/                  # 自托管中文 Web Font（思源宋体 / 黑体，子集化）
 ├── icons/                  # 矢量图标 + 各尺寸 PNG
 ├── data/                   # 诗词语料与索引（见下）
@@ -155,8 +155,9 @@ python3 -m http.server 8080  # 或 Python 3
 ├── api/                    # 服务端（Vercel Serverless，1 期 1A 已落地）
 │   ├── send-code.js verify-code.js me.js account.js
 │   ├── sync/pull.js sync/push.js
-│   ├── admin/grant.js admin/grants.js  # 9 个接口，Vercel 按文件路径路由
-│   │                                   #   （admin/* 是 2.2 的**权威发放**）
+│   ├── avatar/index.js                 # 18 个路由文件，Vercel 按文件路径路由
+│   ├── admin/grant.js admin/grants.js  #   （admin/* 是 2.2 的**权威发放**；
+│   │                                   #     avatar/ 是 #163 的头像上传）
 │   └── _lib/                           # 业务内核（core.js）+ 配置 / 存储 / 会话 /
 │                                       #   身份 / 发信适配层 / schema.sql
 ├── docs/                   # 设计文档（architecture.md：最终架构与 0/1 期排期；
@@ -248,7 +249,8 @@ bash test/run.sh   # 全部测试（等价于 npm test）
 ```
 
 测试分多层，覆盖调度算法、各页面端到端（jsdom）、数据完整性、主题、注音朗读、法务页、
-服务端 16 个接口（真 http，不联网）、账号接线、权威发放、开通自检等。其中 PWA 一层需要真实浏览器
+服务端 18 个路由（真 http，不联网）、头像上传（裸字节 + 客户端压缩裁切）、
+账号接线、权威发放、开通自检等。其中 PWA 一层需要真实浏览器
 （`puppeteer`），未安装则跳过。
 
 依赖装法：`jsdom` 与 `puppeteer` 都用 `--no-save` 临时装，**务必一条命令一起装**（分两条时后一条会清掉前一条），并锁住 jsdom 大版本：
@@ -296,6 +298,8 @@ Vercel Serverless，**同源、无 CORS**：
 | `POST /api/sync/pull` | 增量拉云端进度（游标是**服务端时间**，不是客户端时钟） |
 | `POST /api/sync/push` | 按条合并写回；载荷白名单化，时间戳老的盖不掉新的 |
 | `DELETE /api/account` | 注销：**先导出、再删行**，并清掉会话 |
+| `POST /api/avatar` | 头像上传：请求体是**裸字节**（压缩 + 裁切都在客户端做完），按 magic number 判类型，存 Supabase Storage |
+| `DELETE /api/avatar` | 删掉云端那张（回到用户名首字印）|
 | `POST /api/admin/grant` | 2.2 **权威发放**层级：写 `accounts.plan`，按邮箱掩码 |
 | `DELETE /api/admin/grant` | 2.2 收回：等价于发一个 `free`，不删账号、不删进度 |
 | `POST /api/admin/grants` | 2.2 看权威名单（只回掩码，只列**发过层级**的那几条） |
@@ -496,7 +500,7 @@ npm run env:example > .env.example    # 生成可直接粘贴的模板
 | 地址 | 页名 | 装什么 |
 |---|---|---|
 | `/settings/` | 设置 | 四个入口 + 版权与法务链接 |
-| `/settings/general/` | 通用 | 用户名、头像印记、账号、数据管理 |
+| `/settings/general/` | 通用 | 用户名、头像、账号、数据管理 |
 | `/settings/recite/` | 背诵 | 学段 / 年级 / 学期 / 范围 / 数量 + 复习算法 |
 | `/settings/lists/` | 我的清单 | 自选背诵的增删改查 + 篇目打印（Pro）|
 | `/settings/reader/` | 朗读 | 自动注音 + 五档连读方式 |
@@ -722,23 +726,39 @@ npm run env:example > .env.example    # 生成可直接粘贴的模板
 `role`（owner / admin / user，谁能管理）与 `tier`（free / pro / max，能用什么）
 是**两条正交的轴**：店长不是 VIP。
 
-### 头像：字符印，不是图片（已落地）
+### 头像：用户名首字，也可以传一张图（已落地）
 
-顶栏右上角那枚圆是**字符印**：一个汉字 + 一个传统色底色（朱砂 / 天青 / 松绿 / 赭石），
-字从**固定的 12 字**里挑（诗书山月风云松竹梅兰菊莲），也可用昵称首字或默认「诗」字。
-全部存在本机 `poem_profile_v1`（与昵称同一份档案），**不上传、不请求任何接口**。
+两档，没有第三档：
 
-**为什么不做图片头像**：上传一张图的每一项成本（对象存储、内容审核、CDN、
-儿童真人照片上传）都由这一件事引爆，而它对「背诗」毫无帮助；
-字符印能拿到 90% 的辨识度，成本是零 —— 这也是 `/privacy/` 的「不收集」承诺
-得以继续成立的原因（见 `docs/auth-design.md` §2.3）。
-⚠️ 哪天改成允许上传图片，`/privacy/`、`/terms/`、`test/legal.test.js` **三处必须同时改**。
+- **没传图** → 用户名的第一个字母 / 汉字（英文取首字母并大写）；昵称为空才回落到「诗」
+- **传了图** → 那张图。选文件 → **本地压缩 + 方形裁切**（拖动、双指捏合 / 滑杆缩放）
+  → 上传到 Supabase Storage
+
+**压缩与裁切全在这台设备上做**（`js/avatar-image.js` 画进离屏 canvas，
+压成 256×256 的 JPEG；原图带透明则存 PNG）—— 一个字节都不出去，直到最后那一次上传。
+上传走 `POST /api/avatar`，**请求体是裸字节**（不是 JSON + base64），
+服务端**按 magic number 判类型**（不看客户端声明的 Content-Type）。
+
+盘上分两处，这一分不是洁癖：
+
+| 键 | 域 | 存什么 |
+|---|---|---|
+| `poem_profile_v1` | 账号域 | 图片**地址**（跟着同步与导出走 —— 换台设备也该看到同一张脸）|
+| `poem_avatar_local_v1` | **设备域** | 那张图的**字节**（离线时画的是它；**不上云、不进导出**）|
+
+一句话：**地址属身份，字节属可用性**。几十 KB 的 base64 混进账号域，
+每一条进度记录推一次就是几十 KB × 篇数（见 `docs/architecture.md` §4.21）。
+
+**上一版那套「固定 12 字 + 固定四色」的字符印整块删了**（用户 2026-09-19 原话：
+「头像印记设置和传统用户头像流程不符，让人困惑」）。教训不是「做得不好」，
+是**自造的流程就是困惑本身** —— 要改的是条款，不是功能。
+`/privacy/` 已经如实补上「自己传的那张图会存到服务器，别用真人照片」。
 
 布局上：**头像永远在最右**（身份锚点，落点不能变），返回键在它左边（落点本就会变）；
 **阅读器里不画头像**（全屏沉浸，身份入口不压在正文上）。
-顶栏那一枚与左上角 logo 徽标**同径 42px、整圆、印色铺满**（用户要求
-「和 logo 一模一样大小的圆形」）—— 尺寸只有一个来源（CSS 的 `--user-size`），
-`js/chrome.js` 不再自己传一个数字。点击落点是 `/profile/`。
+顶栏那一枚与左上角 logo 徽标**同径 42px、整圆**（用户要求「和 logo 一模一样大小的圆形」）
+—— 尺寸只有一个来源（CSS 的 `--user-size`），`js/chrome.js` 不再自己传一个数字。
+点击落点是 `/profile/`。
 
 ### 存储分域：进度 / 账号 / 设备
 

@@ -53,20 +53,20 @@
   /**
    * 身份那一行：印 + 昵称 + 邮箱掩码 + 层级徽章。
    *
-   * 印走 `Avatar.html()`（全站唯一画印的地方）—— 这一页的印要比别处大一档，
-   * 由 CSS 的 `.identity-row .seal-avatar` 给尺寸，本页不传 size。
+   * 头像走 `Avatar.html()`（全站唯一画它的地方）—— 这一页要比别处大一档，
+   * 由 CSS 的 `.identity-row .avatar` 给尺寸，本页不传 size。
    */
   function renderIdentity(id) {
     var row = $("identity-row");
     if (!row) return;
-    var d = window.Avatar ? Avatar.display(backing) : { char: "诗", nickname: "", isDefaultName: true };
+    var d = window.Avatar ? Avatar.display(backing) : { char: "诗", nickname: "", isDefaultName: true, hasImage: false };
     var name = d.nickname || (d.isDefaultName ? "未起名" : d.nickname);
     var badge = '<span class="tier-badge tier-' + esc(id.tier) + '">' + esc(Ent.tierLabel(id.tier)) + "</span>";
     var sub = id.signedIn
       ? "已登录 · " + esc(id.mask || "（无邮箱）")
       : "本机游客 · 未登录";
     row.innerHTML =
-      (window.Avatar ? Avatar.html(backing, { cls: "seal-avatar-id" }) : "") +
+      (window.Avatar ? Avatar.html(backing) : "") +
       '<span class="identity-main">' +
       '<p class="identity-name">' + esc(name) + "</p>" +
       '<span class="identity-sub">' + sub + "</span>" +

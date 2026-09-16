@@ -115,17 +115,17 @@ function repaint(p) {
   p.doc.dispatchEvent(new p.window.Event('DOMContentLoaded', { bubbles: true }));
 }
 
-/* ================= 一、顶栏那枚印：每页都画，且指 /profile/ ================= */
+/* ================= 一、顶栏那枚头像：每页都画，且指 /profile/ ================= */
 {
-  chk(/userAvatarHtml\(\)/.test(CHROME), '顶栏右上角那枚印由 chrome.js 一处渲染');
+  chk(/userAvatarHtml\(\)/.test(CHROME), '顶栏右上角那枚头像由 chrome.js 一处渲染');
   chk(/return p \|\| ROUTES\.profile;/.test(CHROME),
-    '印的落点是 /profile/（不是设置页 —— 「点头像看自己」是肌肉记忆）');
+    '头像的落点是 /profile/（不是设置页 —— 「点头像看自己」是肌肉记忆）');
   // 未登录也画：否则「右上角什么都没有」，入口就不存在了
   chk(!/signedIn|isSignedIn/.test(CHROME),
-    'chrome.js 画印时不看登录态（未登录也画，否则最后一个入口也没了）');
+    'chrome.js 画头像时不看登录态（未登录也画，否则最后一个入口也没了）');
   // ⚠️ 必须显式传 localStorage（传 null 会读不到档案，只有顶栏画默认「诗」字）
-  chk(/A\.html\(backing, \{ cls: "seal-avatar-top" \}\)/.test(CHROME),
-    '画印时显式传 localStorage（传 null 就读不到档案，只有顶栏画默认「诗」字）');
+  chk(/A\.html\(backing, \{ cls: "avatar-top" \}\)/.test(CHROME),
+    '画头像时显式传 localStorage（传 null 就读不到档案，顶栏永远画默认首字）');
   // ⚠️ 「不传尺寸」这条不能靠扫 `size:` 字符串：那段注释里正写着
   //    「**不传 size**：直径由 CSS 统一给（--user-size: 42px）……」
   //    —— 拿裸词去扫必然误判（这个坑本条一开始就踩了）。

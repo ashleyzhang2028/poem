@@ -75,7 +75,10 @@ const NAV = read('js/settings-nav.js');
 /* ================= 二、每张页只放自己那一组，控件不重复 ================= */
 {
   const OWNER = {
-    general: ['#input-username', '#seal-chars', '#account-panel', '#btn-export', '#btn-import', '#btn-reset'],
+    /* Issue #163：'#seal-chars'（字集 / 四色那套）已随功能删掉，
+       换成头像上传的入口与文件选择框。 */
+    general: ['#input-username', '#btn-avatar-pick', '#avatar-file', '#account-panel',
+      '#btn-export', '#btn-import', '#btn-reset'],
     recite: ['#seg-stage', '#grade-chips', '#seg-term', '#seg-scope', '#seg-count', '#seg-algo'],
     lists: ['#collections-list', '#btn-collections-import', '#collections-tip'],
     reader: ['#seg-helper', '#seg-play']

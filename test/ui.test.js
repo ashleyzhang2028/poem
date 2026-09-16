@@ -85,8 +85,8 @@ setTimeout(() => {
   const tuHome = d.querySelector('.topbar #top-user');
   chk(!!tuHome, '首页顶栏有头像入口 #top-user（此前是空占位）');
   chk(tuHome && tuHome.tagName === 'A', '头像是一个真实链接（可键盘、可读屏、不是点了没反应的装饰）');
-  chk(!!tuHome.querySelector('.seal-avatar'), '头像里画的是字符印 .seal-avatar');
-  chk(tuHome.querySelector('.seal-avatar').textContent.length > 0, '印里永远有一个字，不会是空白圆');
+  chk(!!tuHome.querySelector('.avatar'), '头像里画的是 .avatar（首字 / 图片两档共用同一枚）');
+  chk(tuHome.querySelector('.avatar').textContent.length > 0, '没传图时头像里永远有一个字，不会是空白圆');
   chk(d.querySelectorAll('.topbar #top-back').length === 0, '首页没有返回键（本来就无处可退），只有头像');
   chk(d.querySelectorAll('#top-user').length === 1, '全页只有一枚 #top-user（不复用 #top-act / #top-back 的 id）');
   chk(d.querySelectorAll('#top-act').length === 0 && d.querySelectorAll('#top-back').length === 0,
@@ -98,16 +98,16 @@ setTimeout(() => {
   const spIds = [...spBar.querySelectorAll('#top-back, #top-user')].map(e => e.id);
   chk(spIds.join('/') === 'top-back/top-user', '深页右端依次是「返回键 · 头像」，头像在最右（实际 ' + spIds.join('/') + '）');
 
-  // 顶栏那枚印读的是同一份档案：用户选了「梅」，顶栏就得显示梅（不能偷偷回落成「诗」）
+  // 顶栏那枚头像读的是同一份档案：昵称是「玥玥」，顶栏就得画「玥」（不能偷偷回落成「诗」）
   const spSeal = bootSettingsPage({
-    poem_profile_v1: JSON.stringify({ v: 1, nickname: '玥玥', avatar: { char: '梅', ink: 'pine' } })
+    poem_profile_v1: JSON.stringify({ v: 1, nickname: '玥玥', avatar: { img: '' } })
   }, 'settings/general/index.html');
-  const sealTop = spSeal.doc.querySelector('.topbar #top-user .seal-avatar');
-  chk(!!sealTop && sealTop.textContent === '梅', '顶栏的印与档案同源（选了「梅」就画「梅」，实际 ' +
+  const sealTop = spSeal.doc.querySelector('.topbar #top-user .avatar');
+  chk(!!sealTop && sealTop.textContent === '玥', '顶栏的头像与档案同源（昵称首字是「玥」就画「玥」，实际 ' +
     (sealTop ? sealTop.textContent : '缺失') + '）');
-  chk(/梅/.test(sealTop.getAttribute('aria-label')), '印的读屏标签也写清了是哪个字');
-  const sealSlot = spSeal.doc.querySelector('#avatar-slot .seal-avatar');
-  chk(!!sealSlot && sealSlot.textContent === '梅', '「通用」页昵称旁那枚印与顶栏是同一枚');
+  chk(/玥/.test(sealTop.getAttribute('aria-label')), '头像的读屏标签也写清了是谁');
+  const sealSlot = spSeal.doc.querySelector('#avatar-slot .avatar');
+  chk(!!sealSlot && sealSlot.textContent === '玥', '「通用」页那枚头像与顶栏是同一枚');
   // 需求：版权 + 用户协议 / 隐私条款 从首页挪到设置整页底部
   chk(d.querySelector('.app > .foot') === null, '首页不再挂页脚（法务链接已挪到设置页底部）');
   const spEarly = bootSettingsPage(null);
@@ -344,13 +344,16 @@ setTimeout(() => {
     '课内诗词导出归到「通用」（与数据管理同一组：都是「把你的东西拿走」）');
   chk(!!sgeneral.querySelector('#toggle-sync'),
     '「通用」里有跨设备同步开关（用户有权拒绝上传，默认关着 —— docs §4.2 第 2 条）');
-  chk(!!sgeneral.querySelector('#seal-chars') && !!sgeneral.querySelector('#seal-inks'),
-    '头像印记的字集与印色选择器都在「通用」组里');
-  chk(grpOf(sgeneral, '#seal-chars') === '通用' && grpOf(sgeneral, '#btn-seal-reset') === '通用',
-    '头像印记归到「通用」（账号域的身份设置）');
+  /* Issue #163：上一版那套「固定字集 + 固定四色」整块删掉了 —— 这里**反过来守**：
+     它们不许再出现在页面上（用户原话「四个颜色背景选择全部删除」）。 */
+  chk(!sgeneral.querySelector('#seal-chars') && !sgeneral.querySelector('#seal-inks'),
+    '那四个色点与字集选择器都不在了（用户点名删掉的自造流程）');
+  chk(!!sgeneral.querySelector('#btn-avatar-pick') && !!sgeneral.querySelector('#avatar-file'),
+    '「通用」里有头像上传的入口与文件选择框');
+  chk(grpOf(sgeneral, '#btn-avatar-pick') === '通用', '头像归到「通用」（账号域的身份设置）');
   // 拆页之后不能两页都留同一件控件，也不能哪一页都找不到
   const OWNER_OF = {
-    '#input-username': [sgeneral], '#seal-chars': [sgeneral], '#account-panel': [sgeneral],
+    '#input-username': [sgeneral], '#btn-avatar-pick': [sgeneral], '#account-panel': [sgeneral],
     '#family-panel': [sgeneral],
     '#btn-export': [sgeneral], '#btn-import': [sgeneral], '#btn-reset': [sgeneral],
     '#seg-stage': [srecite], '#grade-chips': [srecite], '#seg-term': [srecite],

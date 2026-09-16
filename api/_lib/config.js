@@ -117,8 +117,63 @@ var CONFIG = {
 
 
 
+  /* ---- 头像存储（Supabase Storage，Issue #163 · 2026-09-19）----
+     同一个 Supabase 项目里另开一个 **public** bucket。三个口径：
+
+     · **bucket 名可配**，默认 `avatars`。写死一个名字的后果是
+       「控制台里叫别的名字」时接口全部失败，而报错是那句最难查的
+       `supabase 404: {"error":"Bucket not found"}`。
+     · **URL 由服务端拼**（`CONFIG.avatarBucketUrl`），不下发给客户端去拼：
+       桶名、项目地址、路径规则只有一处，换桶不用改前端。
+     · 图片是**公开可读**的（`/object/public/...`）—— 头像本来就要画在
+       每一页顶栏上，走签名 URL 会让每一页多一次请求、且离线时全是裂图。
+       路径里带 32 位随机 uid，不是用户名，猜不到别人那一条。 */
+  avatarBucket: env("SUPABASE_AVATAR_BUCKET", "avatars"),
+  avatarMaxBytes: intEnv("AVATAR_MAX_BYTES", 1024 * 1024),      // 单张上限 1MB
+  rateAvatar: [[3600000, 10], [86400000, 30]],
+
   // 冒烟/自测模式：显式打开才允许把明文码回给调用方（**绝不在生产开**）
   allowCodeEcho: env("ALLOW_CODE_ECHO", "0") === "1"
+};
+
+/**
+ * 头像是否可用：数据库配好了（要拿 service key 上传）。
+ *
+ * ⚠️ 与 `hasDb()` 一样读模块级 CONFIG 还是读 this 的问题见下方 hasSession 的注释 ——
+ *    这里刻意调 `this.hasDb`，让 `Object.assign({}, CONFIG, {...})` 的覆盖生效。
+ */
+CONFIG.hasAvatarStore = function () {
+  return !!(this.hasDb ? this.hasDb() : CONFIG.hasDb());
+};
+
+/**
+ * 某个头像的公开地址。**服务端这一份是全站唯一拼它的地方**。
+ *
+ * 路径规则：`<bucket>/<uid 前 2 位>/<uid>/avatar.jpg`
+ *   · 一级两位前缀 —— 同一个桶里条目多了以后，平坦目录在控制台里翻不动
+ *   · 文件名固定 `avatar.jpg` —— 改头像就是**覆盖同一个对象**，
+ *     不需要「删旧的」（删旧的要再发一个请求，而它失败时用户头像不变、
+ *     桶里却多一份垃圾）。图片是同一条 URL，浏览器缓存也在下一轮自然失效
+ *     （前端拼一个 `?v=<时间戳>` 破缓存，见 js/account-api.js）。
+ */
+CONFIG.avatarPath = function (uid) {
+  var u = String(uid || "").replace(/[^A-Za-z0-9_-]/g, "");
+  if (u.length < 2) return "";
+  return u.slice(0, 2) + "/" + u + "/avatar.jpg";
+};
+
+/** 前缀（`https://xxx.supabase.co/storage/v1/object/public/`），末尾不带斜杠 */
+CONFIG.avatarBucketUrl = function () {
+  var base = String(CONFIG.supabaseUrl || "").replace(/\/+$/, "");
+  if (!base) return "";
+  return base + "/storage/v1/object/public/" + String(CONFIG.avatarBucket || "avatars");
+};
+
+/** 某个 uid 的公开头像地址（配不全时回空串 —— 界面据此如实说「还不支持头像」） */
+CONFIG.avatarPublicUrl = function (uid) {
+  var b = CONFIG.avatarBucketUrl();
+  var p = CONFIG.avatarPath(uid);
+  return (b && p) ? b + "/" + p : "";
 };
 
 /** 数据库是否配好（没配就整体走内存降级，见 store.js） */

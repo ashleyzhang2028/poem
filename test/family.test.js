@@ -148,7 +148,7 @@ console.log('\n=== 二、删：最后一个不许删，且不动进度数据 ===
 console.log('\n=== 三、老用户零感知：老档案与老数据一并认领 ===');
 {
   const b = mem({
-    poem_profile_v1: JSON.stringify({ v: 1, nickname: '小明', avatar: { char: '月', ink: 'pine' } }),
+    poem_profile_v1: JSON.stringify({ v: 1, nickname: '小明', avatar: { img: 'https://x.supabase.co/a.jpg' } }),
     poem_recite_settings_v1: JSON.stringify({ grade: 4, term: 2, scope: 'all', dailyCount: 7, algo: 'sm2' }),
     poem_recite_progress_v1: JSON.stringify({ 'tangshi-ts-1': { level: 3, stage: 5 } }),
     poem_tangshi_read_v1: JSON.stringify({ 'tangshi-ts-1': true })
@@ -163,8 +163,7 @@ console.log('\n=== 三、老用户零感知：老档案与老数据一并认领 
 
   const d = F.ensureDetailed({ backing: b });
   eq(d.data.profiles[0].nickname, '小明', '昵称被认领进第一个子档案');
-  eq(d.data.profiles[0].avatar.char, '月', '印（选的字）一并认领');
-  eq(d.data.profiles[0].avatar.ink, 'pine', '印色一并认领');
+  eq(d.data.profiles[0].avatar.img, 'https://x.supabase.co/a.jpg', '头像（图片地址）一并认领');
 
   PS.useStore(b);
   eq(PS.childId(), d.data.profiles[0].id, '认领之后引擎认到了当前子档案');
@@ -483,8 +482,12 @@ if (!JSDOM) {
 } else {
   console.log('\n=== 八、真页面上跑一遍（jsdom）===');
 
+  /* ⚠️ 脚本顺序**照抄页面**（settings/general/index.html 的 <script> 顺序）：
+     多一个 / 少一个 / 顺序不同，这一层就变成「测一个不存在的环境」——
+     第三期它就因为漏了 avatar-image.js 而在 renderAvatar 上静默失败。 */
   const SCRIPTS = ['js/auth-core.js', 'js/entitlement.js', 'js/family.js', 'js/avatar.js',
-    'js/progress-store.js', 'js/storage.js', 'js/settings.js'];
+    'js/avatar-image.js', 'js/account-api.js', 'js/progress-store.js', 'js/storage.js',
+    'js/settings.js'];
 
   /** 起一张真的设置页（按真实顺序注入脚本、按需预置层级与会话） */
   function openPage(tier, signedIn) {
@@ -541,8 +544,8 @@ if (!JSDOM) {
     u.dispatchEvent(new w.Event('input', { bubbles: true }));
     const fam = JSON.parse(w.localStorage.getItem('poem_family_v1'));
     eq(fam.profiles[0].nickname, '小明', '真页面：用户名写进的是**当前子档案**（昵称属孩子）');
-    chk(/小明字印|头像：小/.test(w.document.getElementById('avatar-slot').innerHTML),
-      '真页面：那枚印跟着昵称重画（顶栏 / 设置页同一个来源）');
+    chk(/头像：小/.test(w.document.getElementById('avatar-slot').innerHTML),
+      '真页面：头像跟着昵称重画（顶栏 / 设置页同一个来源）');
 
     /* 改名：点「改名」→ 原地长输入框 → 回车落盘 */
     w.document.querySelector('[data-family-rename]').dispatchEvent(new w.Event('click', { bubbles: true }));
