@@ -184,11 +184,16 @@
   color: var(--green);
   font-family: inherit;
   font-size: 12.5px;
+  font-weight: 600;
   cursor: pointer;
   padding: 2px 0;
-  text-decoration: underline;
+  /* ⚠️ 与全站链接同一条口径（Issue #163）：**不画下划线**。
+     它是 <button> 不是 <a>，但长相与旁边的「重新发送 / 换个邮箱」是同一族，
+     一条下划线会让它在整页里显得是另一种控件。
+     「可点」这点靠天青 + 加粗（比旁边的说明文字重一档）与 hover 说清。 */
 }
-.code-resend[disabled] { color: var(--ink-3); cursor: default; text-decoration: none; }
+.code-resend:hover { color: var(--green-dark); }
+.code-resend[disabled] { color: var(--ink-3); font-weight: 400; cursor: default; }
 
 /* ---------- 五、步骤切换：同屏递进，不跳页 ---------- */
 .account-step[hidden] { display: none; }
@@ -268,6 +273,13 @@
   min-width: 0;
   word-break: break-all;
 }
+/* ⚠️ 值里的链接（个人中心「关于」→ 用户协议 / 隐私条款 的「查看」）：
+   这两个 <a> 没有任何类名，此前靠浏览器默认渲染 —— 蓝紫色 + 下划线，
+   在整页米纸天青里是最扎眼的两处。这里给它们本页的口径：
+   天青一色、无下划线，hover 加深一档（与 .foot-links a 同一套「只用颜色做反馈」）。
+   全局那条 `a { text-decoration: none }` 在 css/style.css 里，这里是配色。 */
+.kv-v a { color: var(--green); }
+.kv-v a:hover { color: var(--green-dark); }
 
 /* ---------- 十、发放名单 ---------- */
 .grant-list { list-style: none; margin: 0; padding: 0; }

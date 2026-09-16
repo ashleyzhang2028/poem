@@ -1206,5 +1206,108 @@ PAGE_FILES.forEach(f => {
     '除 :root 外没有第二处写死 #ecd2cd（危险按钮的描边只有一个来源）');
 }
 
+
+/* ==========================================================================
+   Issue #163 续：页脚横线 / 链接下划线 / 开关样式
+   ==========================================================================
+   用户原话：「©2026 kuibu.app 积跬步, 至千里 上面的横线删除，
+   有些页面链接样式不对，甚至还有下划线那么丑。」
+
+   这一段守三件事，每一件都是**「这类元素出现了几次」的判据**，
+   不是「某个 id 在不在」—— 免得哪天换个写法又悄悄长回来：
+
+     1. 页脚与正文之间不再画那条 `border-top`；
+     2. 全站**所有** <a> 都不长下划线（不是某一处去掉、另一处忘了写）；
+     3. 同步开关那三个类名真的被样式表接管了（不许只有 HTML 没有 CSS）。
+   ========================================================================== */
+{
+  // ① 页脚上面的横线：.settings-foot 不许再声明 border-top
+  chk(!/border-top/.test(ruleOf(cssCode, '.settings-foot')),
+    '页脚 .settings-foot 不再画上边框（「©2026 kuibu.app」上面那条横线已删）');
+  chk(/padding-top/.test(ruleOf(cssCode, '.settings-foot')),
+    '页脚与正文之间的间距改用留白表达（padding-top 还在）');
+
+  // ② 链接下划线：全局唯一一条默认，且是 none
+  chk(/a\s*\{[^}]*text-decoration:\s*none/.test(cssCode),
+    '全局 `a { text-decoration: none }` 存在（全站唯一一条「不给下划线」的默认）');
+  // 反向：页脚链接 hover 时也不许把下划线加回来（原先就是 hover 加回来的）
+  const footRule = ruleOf(cssCode, '.foot-links a:hover');
+  chk(/text-decoration:\s*none/.test(footRule) || !/text-decoration/.test(footRule),
+    '页脚链接 hover 不再把下划线加回来（反馈只走颜色一档）');
+  // 反向：正文里那几个没类名的链接（个人中心「查看」）归了本页的配色规则
+  // ⚠️ 判的是「有自己的颜色」而不是「有 text-decoration: none」——
+  //    下划线那件事现在只有全局一条规则在管，本页再写一遍反而是第二个来源。
+  chk(/\.kv-v a\s*\{[^}]*color:\s*var\(--green\)/.test(strip(accountCss)),
+    '个人中心「关于」里的「查看」链接有自己的配色规则（不再是浏览器默认的蓝紫链接）');
+  // 反向：全站样式表里再没有一条 `text-decoration: underline`
+  //（那条「链接默认长下划线」的行为已由全局规则统一去掉；按钮样的「重新发送」
+  //  也改走加粗 + 天青，与链接同一套语言）
+  const underlines = (cssCode + '\n' + accountCss + '\n' + legalCode)
+    .match(/text-decoration:\s*underline/g) || [];
+  chk(underlines.length === 0,
+    '全站样式表里没有一条 `text-decoration: underline`（实际 ' + underlines.length + ' 条）');
+  // 反向：六处「各写一遍 text-decoration: none」已收归全局那一条
+  //（这一条守的是「别再长回来」：除全局规则外，其余文件里不许再出现它）
+  const noneWriters = (cssCode.replace(/^[^\n]*\ba\s*\{[^}]*text-decoration:\s*none[^}]*\}[^\n]*$/m, '')
+    + '\n' + strip(classicCss) + '\n' + strip(legalCss) + '\n' + strip(accountCss))
+    .match(/text-decoration:\s*none/g) || [];
+  chk(noneWriters.length <= 1,
+    '除全局那条外，各页面文件里不再各写一遍 text-decoration: none（实际 ' + noneWriters.length + ' 条）');
+
+  // ③ 同步开关：HTML 用到的三个类名，样式表里必须真的存在
+  ['switch-row', 'switch-track', 'switch-input', 'switch-label'].forEach(cls => {
+    chk(new RegExp('\\.' + cls + '\\s*[,{]').test(cssCode),
+      '开关的 .' + cls + ' 在样式表里有规则（HTML 写了就得画出来）');
+  });
+  chk(/input:checked\s*\+\s*\.switch-track/.test(cssCode),
+    '开关的「开」态由 :checked + .switch-track 表达（不是靠原生 checkbox）');
+  chk(/input:disabled\s*\+\s*\.switch-track/.test(cssCode),
+    '开关的「未开放」态也有样式（置灰，不是原生 disabled 的样子）');
+  // 真实输入框留着（键盘 / 读屏要用），只是透明
+  chk(/opacity:\s*0/.test(ruleOf(cssCode, '.switch-input')),
+    '.switch-input 是透明覆盖层（不删 input，键盘与读屏照旧）');
+  // 透明输入框与轨道必须**同尺寸**：不同尺寸就意味着「看得见的开关」与
+  // 「真正接住点击 / 焦点的那块」错位 —— 点上去没反应，或焦点框画在轨道外面。
+  // 判的是「两处声明的 宽 与 高 相等」，不是「等于某个具体像素」：换尺寸照样成立。
+  const sizeOf = (code, sel) => {
+    const decl = ruleOf(code, sel);
+    const w = /(?:^|[;{\s])width:\s*([^;]+)/.exec(decl);
+    const h = /(?:^|[;{\s])height:\s*([^;]+)/.exec(decl);
+    return { w: w ? w[1].trim() : '', h: h ? h[1].trim() : '' };
+  };
+  const inp = sizeOf(cssCode, '.switch-input');
+  const trk = sizeOf(cssCode, '.switch-track');
+  chk(!!inp.w && inp.w === trk.w && inp.h === trk.h,
+    '透明输入框与开关轨道同尺寸（' + inp.w + '×' + inp.h + '）—— 点哪儿就是哪儿');
+}
+
+/* ==========================================================================
+   十二、开关真的画出来了（Issue #163，真实渲染几何）
+   --------------------------------------------------------------------------
+   用户原话：「跨设备同步选择框太丑了，改进。」
+   丑的根因是**没有样式**：HTML 从 1B 起就用 .switch-row / .switch-track /
+   .switch-label 三个类名写着结构，样式表里却一条都没有 ——
+   于是那颗 <input type=checkbox> 一直以浏览器原生的样子露在纸面上。
+
+   上面第 ⑨ 段判的是「样式表里有没有这几条规则」；这一段判的是**画出来的结果**：
+   那三个 span 真的被挂上、真的在一个 flex 行里、真的不是 display:none。
+   两段合起来才闭环 —— 只判源码，把 display:none 写进去也是绿的。
+   ========================================================================== */
+if (JSDOM) {
+  const doc = new JSDOM(read('settings/general/index.html'),
+    { url: 'https://local.test/settings/general/' }).window.document;
+  const input = doc.getElementById('toggle-sync');
+  const track = doc.querySelector('.switch-track');
+  const label = doc.querySelector('.switch-label');
+  chk(!!input && !!track && !!label, '开关的 input / 轨道 / 状态字三样都在 DOM 里');
+  chk(!!doc.querySelector('label.switch-row'),
+    '三者包在同一个 <label> 里（点轨道任意处都切得动，iOS 上也是）');
+  // 顺序：input → 轨道 → 状态字。CSS 的 `input:checked + .switch-track` 靠的就是它
+  chk(input.nextElementSibling === track,
+    'input 紧邻轨道（`:checked + .switch-track` 这条相邻选择器才对得上）');
+} else {
+  console.log('- (未安装 jsdom，跳过开关的真实渲染几何一节)');
+}
+
 console.log(fails === 0 ? '\n🎉 UI 一致性 / 响应式守卫全部通过' : '\n❌ ' + fails + ' 项失败');
 process.exit(fails ? 1 : 0);

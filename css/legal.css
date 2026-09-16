@@ -4,7 +4,8 @@
    注意：本文件的调色板以 css/style.css 的 :root 变量为准，不另起一套颜色。
    ========================================================================== */
 
-.back-icon { text-decoration: none; }
+/* ⚠️ 下划线不在这里管：全站统一由 css/style.css 顶部那条 `a { text-decoration: none }`
+   （Issue #163 之后它是唯一来源 —— 六处各写一遍，就是六个会漏的地方）。 */
 .back-icon svg { width: 26px; height: 26px; }
 
 /* 更新日期：原先进顶栏副标题，顶栏统一后单独一行，仍然精确到年月日 */
@@ -19,7 +20,6 @@
 .legal-nav-link {
   font-size: 12.5px;
   color: var(--green);
-  text-decoration: none;
   background: var(--green-light);
   padding: 5px 12px;
   border-radius: 999px;
@@ -37,7 +37,6 @@
 .legal-toc a {
   font-size: 12.5px;
   color: var(--ink-2);
-  text-decoration: none;
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: 999px;
@@ -82,14 +81,17 @@
   border-radius: 4px;
   padding: 1px 5px;
 }
+/* 正文里的外链：全局默认已去掉下划线（见 css/style.css 的 `a`），
+   这里只上调一档天青 —— 与正文的黑墨分得开，又不至于像浏览器默认那样跳出来。
+   hover 加深一档（与 .foot-links a / .kv-v a 同一套反馈）。 */
 .legal a { color: var(--green); }
+.legal a:hover { color: var(--green-dark); }
 
 .mail-line { margin: 10px 0 4px; }
 .mail-link {
   display: inline-block;
   font-size: 13.5px;
   color: var(--green);
-  text-decoration: none;
   background: var(--green-light);
   border: 1px dashed var(--green);
   border-radius: var(--radius-sm);
