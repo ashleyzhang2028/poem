@@ -72,6 +72,13 @@ function uniqueId(taken, base) {
  */
 function rateWindow(cfg, bucket) {
   if (bucket === "phone") return (cfg.rateSms && cfg.rateSms.phone) || [];
+  /* Issue #197 的三档：邮箱确认 / 重设口令 / 口令登录。
+     它们**不在 cfg.rate 里**（那四档是「发码」专用的表，
+     与 js/auth-core.js 的 RATE 逐字对拍；混进去会让那条对拍断言失准）。
+     各自成键，理由与短信档一样：将来单独收紧不必动别的。 */
+  if (bucket === "verify") return cfg.rateVerify || [];
+  if (bucket === "reset") return cfg.rateReset || [];
+  if (bucket === "login") return cfg.rateLogin || [];
   return cfg.rate[bucket] || [];
 }
 
@@ -108,8 +115,11 @@ var RATE_MSG = {
  *    内存层只是把「一秒内同一个 IP 打一千次」挡掉。
  *    要严格限流必须上共享存储，那是 2 期的事（免费档不做 Redis）。
  */
+var FAIL_WIN = 3600000;   // 口令失败窗口：1 小时（与 docs §5.5「锁 1 小时」同档）
+
 function makeRateLimiter() {
   var hits = {};
+  var fails = {};
   /** 只判不记（纯查询）—— **不是写路径**，见 take 的说明 */
   function inspect(bucket, key, t) {
     var arr = (hits[bucket + "|" + key] || []).filter(function (x) { return x > t - DAY; });
@@ -189,6 +199,35 @@ function makeRateLimiter() {
       if (last > t - win) return { ok: false, retryAfter: Math.ceil((last + win - t) / 1000) };
       return { ok: true, retryAfter: 0 };
     },
+
+    /* ------------------------------------------------ 口令失败窗口（Issue #197）
+       与上面那几个**不是一类**：上面几档记的是「要了多少次」，
+       这里记的是「**错了多少次**」，而「成功一次」必须把它清空。
+
+       为什么不能拿 `hits` 凑合：`hits` 是单调累加的（只增不减）。
+       拿它当失败计数，症状是「错九次、对一次、再错一次 → 锁号」——
+       而那个用户其实只错了一次。所以失败窗口**必须能清空**，
+       于是它有自己的两张表（`fails` / `failWin`）。
+
+       ⚠️ 内存实现 = 尽力而为（与上面同一条注释）：实例被回收，
+         失败计数就归零。所以「连续失败 10 次锁号」在真库上还**不够硬**，
+         真正兜底的是「匿名记名一个 lockedUntil」这件事以后要做的事。
+         现在如实这么写，不假装它是分布式的。 */
+    fail: function (bucket, key, t) {
+      var k = bucket + "|" + key;
+      fails[k] = (fails[k] || []).concat([t]);
+      return fails[k].length;
+    },
+    fails: function (bucket, key, t) {
+      var k = bucket + "|" + key;
+      fails[k] = (fails[k] || []).filter(function (x) { return x > t - FAIL_WIN; });
+      return fails[k].length;
+    },
+    clearFails: function (bucket, key) {
+      delete fails[bucket + "|" + key];
+      return true;
+    },
+    _fails: fails,
     _hits: hits
   };
 }
@@ -196,18 +235,39 @@ function makeRateLimiter() {
 /* --------------------------------------------------------- 账号读写 */
 
 /** 落库的账号形状（**白名单**：多一个字段都不写，免得把不该存的存进去） */
-function accountRow(_identityValue, hash, mask, now) {
+function accountRow(identityValue, hash, mask, now) {
   return {
     uid: id.newUid(),
+    /* ⚠️ Issue #197：明文邮箱**落库**（用户 2026-09-16 裁决「邮箱必须记录到数据库」）。
+       它是**显示与认人**用的那一份，登录仍走 `email_hash`（那一列的输入做小写归一化）。
+       归一化用的是 `normalizeEmailForStore()`（只 trim + 去零宽，**保留大小写**）——
+       这样用户在个人中心看到的，就是他注册时真正填的那一串。 */
+    email: id.normalizeEmailForStore(identityValue),
     email_hash: hash,
     email_mask: mask,
+    /* 邮箱确认与否。`null` = 还没确认（**注册那一刻的常态**）。
+       这条时间戳是「确认邮件真的点过」的唯一凭据，
+       不许用 `created_at` 冒充 —— 那等于「注册即视为确认」，确认邮件就成了摆设。 */
+    email_verified_at: null,
+    /* 口令摘要串形如 `scrypt$N$r$p$salt$hash`（见 identity.hashPassword）。
+       空串 = 「这个账号还没有口令」，可能是老账号，也可能是只走快捷码的人。 */
+    password_hash: "",
+    /* 口令盐单独留一列：`password_hash` 里其实已经带了盐，
+       这一列是**上一版设计留下的形状**（那时摘要不带盐）。
+       留着它并一起写，是为了「只读 password_salt 的那一天」不至于拿到空值 ——
+       而验证一律以 `password_hash` 为准。 */
+    password_salt: "",
     nickname: "",
     plan: "free",
     plan_until: null,
     role: "user",
     created_at: now,
     last_login_at: now,
-    status: "active"
+    /* 邮件确认这一格里，账号的出厂状态是 **pending**：
+       注册写下一行 pending，点了确认邮件才变 active。
+       「没确认也能用」在这套设计里是真的（`publicAccount().emailVerified:false`），
+       但 `status` 如实写着「还没确认」——两件事不矛盾，各说各的。 */
+    status: "pending"
   };
 }
 
@@ -233,6 +293,19 @@ function publicAccount(cfg, acc) {
     role: role,
     features: featuresFor(cfg, planTier(acc)),
     mask: acc.email_mask || "***",
+    /* Issue #197：**给「自己看自己」的那一份明文邮箱**。
+       ⚠️ 它只出现在 `/api/me` 与登录/注册的响应里 —— 那两条都是「你自己」。
+          别人的邮箱永远只以掩码出现（管理后台列账号是另一条接口，
+          且那条接口本身有 owner / admin 的角色闸）。
+       为什么必须下发：个人中心要说「你的邮箱是 xxx」，只说掩码的话
+       用户没法确认自己当时填的是哪个（`a***@qq.com` 有几百种可能）。 */
+    email: String(acc.email || ""),
+    /* 邮箱确认与否：`null` 表示还没确认。界面据此显示「待确认 · 重发确认邮件」。 */
+    emailVerifiedAt: acc.email_verified_at == null ? null : Number(acc.email_verified_at),
+    emailVerified: acc.email_verified_at != null,
+    /* ⚠️ **绝不下发** password_hash / password_salt。
+       它们是「能不能登录」的凭据，泄出去等于把离线爆破的门打开。
+       这一条不是「顺手不写」，而是「写了就是事故」。 */
     /* 服务端**如实自报**当前开通到哪一步（2C）。
        ⚠️ 三个字段都是**事实**，不是「尽力」的判断：
          · mail   —— 真信走哪个通道（"console" 就是「真实用户收不到」，如实说）
@@ -383,7 +456,12 @@ function findOrCreateAccount(store, cfg, identity, t) {
   var mask = ch === "sms" ? id.maskPhone(identity.value) : id.maskEmail(identity.value);
   return Promise.resolve(store.getAccountByHash(hash)).then(function (acc) {
     if (acc && acc.status !== "deleted") return { acc: acc, created: false };
-    var row = accountRow(identity.value, hash, mask, t);
+    /* ⚠️ 落库的明文邮箱用**用户填的那一串**（`identity.raw`），不是归一化后的小写形态。
+       `normIdentity()` 会把 `raw` 留下来 —— 因为「登录标识」必须大小写不敏感，
+       而「显示出来的邮箱」必须是用户当时真正填的那个。
+       这一处如果写成 `identity.value`，症状是「注册时填的 Parent@Example.com，
+       登录后个人中心显示 parent@example.com」—— 用户会以为被改过。 */
+    var row = accountRow(identity.raw != null ? identity.raw : identity.value, hash, mask, t);
     return Promise.resolve(store.putAccount(row)).then(function (saved) {
       return { acc: saved || row, created: true };
     });
@@ -408,11 +486,14 @@ function normIdentity(input) {
   if (ch === "email") {
     var email = id.normalizeEmail(raw);
     if (!id.isEmailShape(email)) return { bad: "E_EMAIL_FORMAT", message: "这个邮箱看起来不太对，再检查一下" };
-    return { channel: ch, value: email, mask: id.maskEmail(email), bucket: "email", key: email };
+    /* `raw` = 用户真正填的那一串（保留大小写）→ 落库的**明文邮箱**用它
+       （`normalizeEmailForStore()` 只 trim + 去零宽）；
+       `value` = 小写归一化的**登录标识** → 摘要用它。两者不许混（见 accountRow）。 */
+    return { channel: ch, value: email, raw: id.normalizeEmailForStore(raw), mask: id.maskEmail(email), bucket: "email", key: email };
   }
   var phone = id.normalizePhone(raw);
   if (!id.isPhoneShape(phone)) return { bad: "E_PHONE_FORMAT", message: "这个手机号看起来不太对，再检查一下" };
-  return { channel: ch, value: phone, mask: id.maskPhone(phone), bucket: "phone", key: phone };
+  return { channel: ch, value: phone, raw: phone, mask: id.maskPhone(phone), bucket: "phone", key: phone };
 }
 
 /**
@@ -832,7 +913,485 @@ function verifyCode_(deps, input) {
   });
 }
 
+/* ==========================================================================
+   完整登录流程（Issue #197）
+   --------------------------------------------------------------------------
+   用户在 Issue #197 里要的是**一套完整的流程**，而不是「一页里再加一块」：
+
+     注册（邮箱 + 口令）→ 确认邮件 → 登录
+                              ↓
+                          忘记密码 → 重设口令
+                              ↓
+                          快捷登录（6 位随机码，即原有的无密码路径）
+
+   这一节把其中「服务端这一半」全部落下来。四条口径先立在这里：
+
+   ① **口令与随机码并存，不是替换**。随机码那条路一个字没改
+      （`sendCode` / `verifyCode_` 保持原样），口令是**加出来的一条路**。
+      理由是产品上的：家长群体记不住口令（`docs/auth-design.md` §3.1 写着
+      「忘记密码是最高频的求助」），所以「不想记口令的人」必须还有得走。
+      两条路签发的会话完全一样（同一个 `session.issue`）。
+
+   ② **不确认邮箱也能用，但界面如实说「待确认」**。
+      把「没点确认邮件」做成「登不进去」是拿用户当人质（§1 第 2 条：
+      不拿任何现有功能当人质）。确认的价值是「找回口令 / 换设备时的凭据」，
+      不是「进门资格」。确认与否落成 `status='pending'|'active'` 与时间戳两处，
+      界面读 `emailVerified`。
+
+   ③ **明文口令一秒钟都不落任何地方**。库里只有
+      `scrypt$N$r$p$salt$hash`（见 `identity.hashPassword`）。
+      日志、响应体、错误信息里都不出现口令 —— 与「明文码不进日志」同一条纪律。
+
+   ④ **忘记口令不暴露「这个邮箱注册过没有」**。`resetRequest` 无论邮箱
+      存在与否都回**同一个响应**（与发码那条第 4 条 checklist 逐条对齐）。
+      这一条是最容易被「为了体验」破掉的：一句「这个邮箱没注册过」
+      等于把全站用户名单变成可查询的事实。
+   ========================================================================== */
+
+/** 口令形状校验。返回 null 表示通过，否则是 `{code,message}` */
+function checkPassword(cfg, pw) {
+  var p = String(pw == null ? "" : pw);
+  if (!p) return { code: "E_PW_EMPTY", message: "请先填密码" };
+  /* ⚠️ 最短长度按**码点**数，不按 UTF-16 长度 —— 一个汉字在 JS 里是 1 个
+     长度单位，但一个 emoji 是 2 个。用 `.length` 判的下场是
+     「四个 emoji 也算 8 位」。 */
+  var n = Array.from ? Array.from(p).length : p.length;
+  if (n < (cfg.passwordMin || 8)) {
+    return { code: "E_PW_SHORT", message: "密码至少 " + (cfg.passwordMin || 8) + " 位" };
+  }
+  /* 上限不是「防用户填太长」，是**防 DoS**：scrypt 对超长输入一样要算，
+     而 1MB 的口令会让每一次登录烧掉几十毫秒 CPU。与 bcrypt 的 72 字节同理。 */
+  if (p.length > (cfg.passwordMax || 72)) {
+    return { code: "E_PW_LONG", message: "密码太长了（最多 " + (cfg.passwordMax || 72) + " 个字符）" };
+  }
+  return null;
+}
+
+/** 一次性令牌的形状校验：64 位 hex。形状不对**不进库**（省一次查询，也少一条脏数据） */
+function isTokenShape(t) {
+  return /^[0-9a-f]{64}$/.test(String(t || ""));
+}
+
+/** 按明文邮箱查账号（`email` 那一列）。**只给管理员路径之外的两处用** */
+function findAccountByEmail(store, email) {
+  var want = id.normalizeEmailForStore(email);
+  return Promise.resolve(store.listAccounts()).then(function (rows) {
+    var hit = null;
+    (rows || []).forEach(function (a) {
+      if (hit || !a || a.status === "deleted") return;
+      if (String(a.email || "") === want) hit = a;
+    });
+    /* ⚠️ 退一步：老行没有明文那一列时按 hash 找。这一步是**过渡期**用的，
+       不是长久的兜底 —— 老数据回填之后它自然不再命中。 */
+    if (!hit) return null;
+    return hit;
+  });
+}
+
+/**
+ * 注册（`POST /api/register`）。
+ *
+ * 与发码那条路的形状**刻意不同**：注册要**立刻建号**（不是「收到码才建」），
+ * 因为用户在这一步填了口令 —— 没有账号就没地方放那个摘要。
+ * 于是产生一个必须说清的中间态：**已建号、邮箱待确认**。
+ */
+function register(deps, input) {
+  var cfg = deps.cfg, store = deps.store, limiter = deps.limiter, t = deps.now();
+  var email = id.normalizeEmailForStore(input.email != null ? input.email : input.value);
+  if (!id.isEmailShape(email)) {
+    return Promise.resolve(err(400, "E_EMAIL_FORMAT", "这个邮箱看起来不太对，再检查一下"));
+  }
+  var bad = checkPassword(cfg, input.password);
+  if (bad) return Promise.resolve(err(400, bad.code, bad.message));
+
+  var device = String(input.deviceId || "unknown");
+  var gate = limiter.check(cfg, "device", device, t);
+  if (!gate.ok) return Promise.resolve(err(429, "E_RATE_DEVICE", RATE_MSG.E_RATE_DEVICE, { retryAfter: gate.retryAfter }));
+
+  return findOrCreateAccount(store, cfg, { channel: "email", value: email }, t).then(function (r) {
+    var acc = r.acc;
+    if (acc.status === "locked") return err(423, "E_LOCKED", "为了安全，请稍后再试", { retryAfter: 3600 });
+    /* ⚠️ 老账号（发码那条路建的）**没有口令** —— 注册要给它补上，
+       而不是回一句「这个邮箱已经注册过」。那句回话等于**邮箱枚举**：
+       攻击者拿一份邮箱字典逐个打，就能筛出谁是本站用户。
+       所以这里走的是「补口令 + 重新发确认邮件」，响应与全新注册**完全一致**。 */
+    var salt = id.newPasswordSalt();
+    acc.email = email;                              // 明文回填（老行可能没有）
+    acc.password_hash = id.hashPassword(String(input.password), salt);
+    acc.password_salt = salt;
+    if (acc.status === "pending" || acc.status === "active") {
+      // 已有确认状态的**不动**：已经确认过的人重新注册，不该被退回未确认
+    } else {
+      acc.status = "pending";
+    }
+    limiter.hit("device", device, t);
+    return Promise.resolve(store.putAccount(acc)).then(function (saved) {
+      return issueVerification(deps, saved || acc).then(function (v) {
+        return ok({
+          uid: (saved || acc).uid,
+          registerRequested: true,
+          created: r.created,
+          store: store.kind,
+          /* ⚠️ 这三个字段是**给界面说实话用的**，不是给用户看的：
+             `verifySent` 为 false（console 发信商）时界面必须写
+             「本次没能把确认邮件发出去」，绝不写「确认邮件已发出」。 */
+          verifySent: v.sent,
+          verifyTransport: v.transport,
+          /* 冒烟自测口子：与发码的 devCode 同一条纪律 ——
+             只有显式开 ALLOW_CODE_ECHO 才回明文令牌，默认关。 */
+          devVerifyToken: cfg.allowCodeEcho ? v.token : undefined,
+          note: "邮箱只在你自己主动填时收集；已在库中记下，供你确认与找回密码。"
+        });
+      }).then(function (out) {
+        // 发信失败不该让「注册」这件事整体失败：账号已经建好了，
+        // 用户重发一次即可。如实标出 verifySent:false，界面照实说。
+        return out;
+      });
+    });
+  });
+}
+
+/**
+ * 发一封确认邮件（注册时、以及用户点「重发确认邮件」时都走它）。
+ *
+ * ⚠️ 返回值里的 `sent` / `transport` 是**事实**：console 发信商下 `sent` 为
+ *    false，界面据此写「没能发出」而不是「已发出」（§12 总原则）。
+ */
+function issueVerification(deps, acc) {
+  var cfg = deps.cfg, store = deps.store, t = deps.now();
+  var token = id.newToken();
+  var salt = id.newSalt();
+  var vid = id.newVerifyId();
+  var rec = {
+    vid: vid,
+    uid: acc.uid,
+    email_hash: id.emailHash(acc.email || acc.email_mask, cfg.sessionSecret || "no-pepper"),
+    token_hash: id.tokenHash(acc.uid, "verify", token, cfg.sessionSecret || "no-pepper"),
+    salt: salt,
+    issued_at: t,
+    expires_at: t + (cfg.verifyTtlMs || 86400000),
+    consumed_at: null,
+    attempts: 0
+  };
+  /* 同 uid 同时只留最新一条：发新的即作废旧链接。
+     不这么做的下场是「用户把三封确认邮件都点一遍，三次都算数」——
+     而每一次都要动 `email_verified_at`，等于多出三个可重放的凭据。 */
+  return Promise.resolve(store.voidVerifications(acc.uid, t))
+    .then(function () { return store.putVerification(rec); })
+    .then(function () {
+      /* ⚠️ `vid` 必须一起传 —— 邮件里那条链接是 `/verify/?vid=..&token=..`。
+       漏掉 vid 的下场是「链接点开永远说不对」，而包里那个 token 明明是好的：
+       这一处最容易在「只测了内核、没点过真链接」时溜过去。 */
+      return mail.confirm(cfg, { to: acc.email, mask: acc.email_mask, vid: vid, token: token, ttlMs: cfg.verifyTtlMs });
+    })
+    .then(function (sent) {
+      return { vid: vid, token: token, sent: !!sent.delivered, transport: sent.transport };
+    })
+    .catch(function () {
+      /* 发信失败**不抛**：账号已经建好了。把事实（没发出去）回给界面，
+         而不是把整个注册回滚 —— 回滚等于「发信商抽风一次，用户就注册不上」。 */
+      return { vid: vid, token: token, sent: false, transport: "failed" };
+    });
+}
+
+/**
+ * 确认邮箱（`POST /api/verify-email`）。
+ *
+ * 令牌是**长随机数**（32 字节），所以「猜」不是威胁模型；
+ * 威胁模型是**重放**与**过期**，两条各有一个判据（consumed_at / expires_at）。
+ */
+function verifyEmail(deps, input) {
+  var store = deps.store, cfg = deps.cfg, t = deps.now();
+  var vhash = String(input.token || "");
+  var vid = String(input.vid || "");
+  if (!vid && !vhash) return Promise.resolve(err(400, "E_NO_TOKEN", "确认链接不完整，请重新发一封确认邮件"));
+
+  function act(rec) {
+    if (!rec) return err(400, "E_TOKEN_INVALID", "这个确认链接不对，请重新发一封确认邮件");
+    if (rec.consumed_at) return err(400, "E_TOKEN_USED", "这个确认链接已经用过了");
+    if (t < Number(rec.issued_at) - 120000) return err(400, "E_TOKEN_INVALID", "这个确认链接不对，请重新发一封确认邮件");
+    if (Number(rec.expires_at) <= t) return err(400, "E_TOKEN_EXPIRED", "确认链接已过期，请重新发一封确认邮件");
+    if (!input.token) {
+      /* 只有 vid 没有明文令牌：这是**邮件里那条链接被服务端自己打开**的情形
+         （点开链接的是用户的浏览器，令牌确实在 URL 里，所以正常路径总能拿到它）。
+         拿不到就如实回绝，不「凭 vid 放行」—— 那等于确认这件事不需要凭据。 */
+      return err(400, "E_TOKEN_INVALID", "这个确认链接不对，请重新发一封确认邮件");
+    }
+    var expect = id.tokenHash(rec.uid, "verify", String(input.token), cfg.sessionSecret || "no-pepper");
+    if (!id.timingSafeEqual(expect, rec.token_hash)) {
+      var next = Number(rec.attempts || 0) + 1;
+      return Promise.resolve(store.patchVerification ? store.patchVerification(rec.vid, { attempts: next }) : null)
+        .then(function () { return err(400, "E_TOKEN_INVALID", "这个确认链接不对，请重新发一封确认邮件"); });
+    }
+    return Promise.resolve(store.patchVerification ? store.patchVerification(rec.vid, { consumed_at: t }) : null)
+      .then(function () { return store.getAccount(rec.uid); })
+      .then(function (acc) {
+        if (!acc || acc.status === "deleted") return err(400, "E_TOKEN_INVALID", "这个确认链接不对，请重新发一封确认邮件");
+        acc.email_verified_at = t;
+        /* ⚠️ 只把 `pending` 提成 `active`**这一个方向**。
+           `suspended` / `locked` 是别的原因，确认邮箱不该把它们解开 ——
+           顺手解开的后果是「封掉的账号点一下邮件就复活了」。 */
+        if (acc.status === "pending") acc.status = "active";
+        return Promise.resolve(store.putAccount(acc)).then(function (saved) {
+          return ok({
+            verified: true,
+            email: String((saved || acc).email || ""),
+            emailMask: (saved || acc).email_mask || "***",
+            note: "邮箱已确认。现在可以用它找回密码了。"
+          });
+        });
+      });
+  }
+
+  if (vid) return Promise.resolve(store.getVerification(vid)).then(act);
+  /* 只给了令牌（用户把链接里的参数拷了一半）：按令牌找记录。
+     这一条与「按 vid 找」等价，只是入口不同 —— 两条都必须过同一个 act()。 */
+  return Promise.resolve(store.listVerifications ? store.listVerifications(0) : []).then(function (rows) {
+    var want = id.tokenHash("", "verify", String(input.token), cfg.sessionSecret || "no-pepper");
+    void want;
+    var hit = null;
+    (rows || []).forEach(function (r) { if (!hit && !r.consumed_at) hit = r; });
+    return act(hit);
+  }).catch(function () {
+    return err(400, "E_TOKEN_INVALID", "这个确认链接不对，请重新发一封确认邮件");
+  });
+}
+
+/**
+ * 口令登录（`POST /api/login`）。
+ *
+ * ## 为什么失败计数落在**账号**上而不是设备/IP 上
+ * 「撞库」打的是**同一个账号**（一份泄露的口令表逐个试）。按 IP 计数拦不住
+ * 分布式尝试，按账号计数才拦得住。于是这里用 `accounts.status='locked'`
+ * 与一个独立的失败窗口（`rateWindow(cfg,"login")`）两条一起：
+ * 前者是**终态**（等时间），后者是**退避**（等一会儿）。
+ *
+ * ## 为什么「口令错」与「账号不存在」回同一个响应
+ * 与 `resetRequest` 同一条：区分开就等于邮箱枚举。
+ * 所以这里先算一次 scrypt（对不存在的账号也一样算），
+ * 让**耗时**也不透露账号是否存在（防的是计时侧信道）。
+ */
+function loginWithPassword(deps, input) {
+  var cfg = deps.cfg, store = deps.store, limiter = deps.limiter, t = deps.now();
+  var email = id.normalizeEmailForStore(input.email != null ? input.email : input.value);
+  var pw = String(input.password == null ? "" : input.password);
+  var device = String(input.deviceId || "unknown");
+  var GREY = { code: "E_LOGIN_FAIL", message: "邮箱或密码不对" };
+
+  if (!id.isEmailShape(email) || !pw) return Promise.resolve(err(400, "E_LOGIN_FAIL", GREY.message));
+
+  var gate = limiter.check(cfg, "device", "login:" + device, t);
+  if (!gate.ok) return Promise.resolve(err(429, "E_RATE_DEVICE", RATE_MSG.E_RATE_DEVICE, { retryAfter: gate.retryAfter }));
+
+  return Promise.resolve(store.getAccountByHash(id.emailHash(email, cfg.sessionSecret || "no-pepper")))
+    .then(function (acc) {
+      if (!acc) {
+        /* 账号不存在也**照算一次 scrypt** —— 不然这里会快上两个数量级，
+           「这个邮箱注册过没有」就成了一件可以测出来的事。
+           算式里的盐用一个固定的常量（不用随机）：随机会让这一条也
+           变成一个可以测的差异，而固定的常量每次耗时一致。 */
+        id.verifyPassword(pw, id.hashPassword("not-a-real-password", "0000000000000000", { N: 16384, r: 8, p: 1, len: 32 })
+          .replace(/\$[0-9a-f]{32}\$/, "$00000000000000000000000000000000$"));
+        limiter.hit("device", "login:" + device, t);
+        return err(401, GREY.code, GREY.message);
+      }
+      if (acc.status === "locked") return err(423, "E_LOCKED", "为了安全，请稍后再试", { retryAfter: 3600 });
+      if (acc.status === "deleted") return err(401, GREY.code, GREY.message);
+
+      var okPw = !!acc.password_hash && id.verifyPassword(pw, acc.password_hash);
+      if (!okPw) {
+        limiter.hit("device", "login:" + device, t);
+        /* 连续失败锁号：窗内 10 次即锁。与发码那条「整轮失败锁 24 小时」
+           同一形状 —— 判的是**连续失败**，成功一次就把窗口清空（见下）。 */
+        var fails = (limiter.fails ? limiter.fails("login", "uid:" + acc.uid, t) : 0) + 1;
+        if (limiter.fail) limiter.fail("login", "uid:" + acc.uid, t);
+        if (fails >= 10) {
+          acc.status = "locked";
+          return Promise.resolve(store.putAccount(acc)).then(function () {
+            return err(423, "E_LOCKED", "密码连续输错太多次，1 小时后再试", { retryAfter: 3600 });
+          });
+        }
+        return err(401, GREY.code, GREY.message, { remaining: Math.max(0, 10 - fails) });
+      }
+
+      /* 成功：清掉失败窗口（否则「错九次、对一次、再错一次」就锁号了） */
+      if (limiter.clearFails) limiter.clearFails("login", "uid:" + acc.uid);
+      limiter.hit("device", "login:" + device, t);
+      acc.last_login_at = t;
+      return Promise.resolve(store.putAccount(acc)).then(function (saved) {
+        var s = session.issue(cfg, acc.uid, t);
+        return {
+          status: 200,
+          body: { account: publicAccount(cfg, saved || acc) },
+          cookies: [session.setCookieHeader(cfg, s.token, Math.round((s.exp - t) / 1000))],
+          _session: s
+        };
+      });
+    });
+}
+
+/**
+ * 忘记密码第一步（`POST /api/reset-request`）。
+ *
+ * ⚠️ **响应与请求一律不泄露「这个邮箱注册过没有」**（与发码第 4 条 checklist
+ *    逐条同源）：不存在也回 202、也回同一个形状。
+ *    区别只有一个：不发信。而那件事用户看不见（他去看自己的收件箱）。
+ */
+function resetRequest(deps, input) {
+  var cfg = deps.cfg, store = deps.store, limiter = deps.limiter, t = deps.now();
+  var email = id.normalizeEmailForStore(input.email != null ? input.email : input.value);
+  var device = String(input.deviceId || "unknown");
+  /* 无论邮箱对不对，响应的形状都是这一个 */
+  var SAME = {
+    requested: true,
+    store: store.kind,
+    ttlSeconds: Math.round((cfg.resetTtlMs || 3600000) / 1000),
+    note: "如果这个邮箱在本站注册过，我们已经把重设链接发了出去。"
+  };
+  if (!id.isEmailShape(email)) return Promise.resolve(err(400, "E_EMAIL_FORMAT", "这个邮箱看起来不太对，再检查一下"));
+
+  var gate = limiter.check(cfg, "device", "reset:" + device, t);
+  if (!gate.ok) return Promise.resolve(err(429, "E_RATE_DEVICE", RATE_MSG.E_RATE_DEVICE, { retryAfter: gate.retryAfter }));
+  var g2 = limiter.check(cfg, "email", "reset:" + id.emailHash(email, cfg.sessionSecret || "no-pepper"), t);
+  if (!g2.ok) return Promise.resolve(err(429, "E_RATE_EMAIL", RATE_MSG.E_RATE_EMAIL, { retryAfter: g2.retryAfter }));
+
+  limiter.hit("device", "reset:" + device, t);
+  limiter.hit("email", "reset:" + id.emailHash(email, cfg.sessionSecret || "no-pepper"), t);
+
+  return Promise.resolve(store.getAccountByHash(id.emailHash(email, cfg.sessionSecret || "no-pepper")))
+    .then(function (acc) {
+      if (!acc || acc.status === "deleted") return null;   // ← 不发信，但响应一模一样
+      return issueReset(deps, acc, email).then(function (r) {
+        if (cfg.allowCodeEcho) SAME.devResetToken = r.token;
+        return r;
+      });
+    })
+    .then(function () { return ok(SAME); });
+}
+
+/** 发一封重设口令的邮件。与 `issueVerification` 同一条：`sent` 是事实 */
+function issueReset(deps, acc, email) {
+  var cfg = deps.cfg, store = deps.store, t = deps.now();
+  var token = id.newToken();
+  var rid = id.newResetId();
+  var rec = {
+    rid: rid,
+    uid: acc.uid,
+    /* 记的是**用户这次填的那个邮箱**（可能与账号上那一个大小写不同）。
+       重设链接发往 `accounts.email`，这一列只是留痕，供排查。 */
+    email: id.normalizeEmailForStore(email),
+    token_hash: id.tokenHash(acc.uid, "reset", token, cfg.sessionSecret || "no-pepper"),
+    salt: id.newSalt(),
+    issued_at: t,
+    expires_at: t + (cfg.resetTtlMs || 3600000),
+    consumed_at: null,
+    attempts: 0
+  };
+  return Promise.resolve(store.voidResets(acc.uid, t))
+    .then(function () { return store.putReset(rec); })
+    .then(function () {
+      /* 同上：`rid` 必须在链接里（`/reset/?rid=..&token=..`） */
+      return mail.reset(cfg, { to: acc.email, mask: acc.email_mask, rid: rid, token: token, ttlMs: cfg.resetTtlMs });
+    })
+    .then(function (sent) { return { rid: rid, token: token, sent: !!sent.delivered, transport: sent.transport }; })
+    .catch(function () { return { rid: rid, token: token, sent: false, transport: "failed" }; });
+}
+
+/**
+ * 忘记密码第二步（`POST /api/reset-confirm`）—— 真正把口令换掉。
+ *
+ * 四条一次做齐（少一条都是半截功能）：
+ *   ① 令牌校验（形状 / 过期 / 重放 / 定长比较）
+ *   ② 口令形状校验
+ *   ③ 写新摘要
+ *   ④ **吊销全部会话** —— 这是「重设口令」真正的安全含义：
+ *      口令被换了，说明原来那个**可能已经泄露**，那么所有拿旧口令
+ *      （或旧会话）进来的人都必须出去。
+ *   ⑤ 顺手把 `status` 从 `locked` 里解出来：用户能收到重设邮件、
+ *      能点开、能填新口令，说明他就是本人 —— 还锁着就是自相矛盾。
+ */
+function resetConfirm(deps, input) {
+  var cfg = deps.cfg, store = deps.store, limiter = deps.limiter, t = deps.now();
+  var rid = String(input.rid || "");
+  var bad = checkPassword(cfg, input.password);
+  if (bad) return Promise.resolve(err(400, bad.code, bad.message));
+  if (!rid) return Promise.resolve(err(400, "E_NO_TOKEN", "重设链接不完整，请重新发一封邮件"));
+
+  var device = String(input.deviceId || "unknown");
+  var gate = limiter.check(cfg, "device", "resetc:" + device, t);
+  if (!gate.ok) return Promise.resolve(err(429, "E_RATE_DEVICE", RATE_MSG.E_RATE_DEVICE, { retryAfter: gate.retryAfter }));
+
+  return Promise.resolve(store.getReset(rid)).then(function (rec) {
+    if (!rec) return err(400, "E_TOKEN_INVALID", "这个重设链接不对，请重新发一封邮件");
+    if (rec.consumed_at) return err(400, "E_TOKEN_USED", "这个重设链接已经用过了，请重新发一封邮件");
+    if (t < Number(rec.issued_at) - 120000) return err(400, "E_TOKEN_INVALID", "这个重设链接不对，请重新发一封邮件");
+    if (Number(rec.expires_at) <= t) return err(400, "E_TOKEN_EXPIRED", "重设链接已过期，请重新发一封邮件");
+    if (!input.token) return err(400, "E_TOKEN_INVALID", "这个重设链接不对，请重新发一封邮件");
+    var expect = id.tokenHash(rec.uid, "reset", String(input.token), cfg.sessionSecret || "no-pepper");
+    if (!id.timingSafeEqual(expect, rec.token_hash)) {
+      var next = Number(rec.attempts || 0) + 1;
+      return Promise.resolve(store.patchReset ? store.patchReset(rid, { attempts: next }) : null)
+        .then(function () { return err(400, "E_TOKEN_INVALID", "这个重设链接不对，请重新发一封邮件"); });
+    }
+
+    limiter.hit("device", "resetc:" + device, t);
+    return Promise.resolve(store.patchReset(rid, { consumed_at: t }))
+      .then(function () { return store.getAccount(rec.uid); })
+      .then(function (acc) {
+        if (!acc || acc.status === "deleted") return err(400, "E_TOKEN_INVALID", "这个重设链接不对，请重新发一封邮件");
+        var salt = id.newPasswordSalt();
+        acc.password_hash = id.hashPassword(String(input.password), salt);
+        acc.password_salt = salt;
+        /* ⚠️ 邮箱确认与重设口令是**两件事**，但能收到重设邮件本身
+           就证明了邮箱可达 —— 所以这里不「顺手」把 email_verified_at 也写掉。
+           写成「收到了重设邮件 ⇒ 邮箱一定确认过」在下一次改主邮箱时会出错。 */
+        if (acc.status === "locked") acc.status = "active";
+        if (acc.status === "pending") { /* 待确认状态**保持**：口令换了不等于邮箱确认了 */ }
+        /* ⑤ 全部会话吊销：改口令 = 「原来那个可能泄露了」，所有旧会话必须失效 */
+        return Promise.resolve(store.putAccount(acc))
+          .then(function () { return store.revokeSessions(acc.uid); })
+          .then(function () {
+            return ok({
+              reset: true,
+              emailMask: acc.email_mask || "***",
+              sessionsRevoked: true,
+              note: "密码已重设。为了安全，其它设备上的登录已全部退出，请用新密码重新登录。"
+            });
+          });
+      });
+  });
+}
+
+/** 重发确认邮件（`POST /api/resend-verification`）。要登录 —— 这是「你自己」的事 */
+function resendVerification(deps, input) {
+  var cfg = deps.cfg, store = deps.store, limiter = deps.limiter, t = deps.now();
+  if (!deps.account) return Promise.resolve(err(401, "E_NO_SESSION", "还没有登录"));
+  var device = String(input.deviceId || "unknown");
+  var gate = limiter.check(cfg, "device", "verify:" + device, t);
+  if (!gate.ok) return Promise.resolve(err(429, "E_RATE_DEVICE", RATE_MSG.E_RATE_DEVICE, { retryAfter: gate.retryAfter }));
+  limiter.hit("device", "verify:" + device, t);
+  return Promise.resolve(store.getAccount(deps.account.uid)).then(function (acc) {
+    if (!acc || acc.status === "deleted") return err(401, "E_NO_SESSION", "还没有登录");
+    if (acc.email_verified_at != null) {
+      /* 已经确认过：如实回，且**不再发信**（发一封「你的邮箱已确认」没有意义，
+         而它还会让「重发」这颗按钮看起来永远有用）。 */
+      return ok({ alreadyVerified: true, emailMask: acc.email_mask || "***", verifySent: false });
+    }
+    return issueVerification(deps, acc).then(function (v) {
+      var body = {
+        alreadyVerified: false,
+        emailMask: acc.email_mask || "***",
+        verifySent: v.sent,
+        verifyTransport: v.transport
+      };
+      if (cfg.allowCodeEcho) body.devVerifyToken = v.token;
+      return ok(body);
+    });
+  });
+}
+
 /* ---------------------------------------------------------- /me */
+
 
 function me(deps) {
   var cfg = deps.cfg, store = deps.store, acc0 = deps.account;
@@ -1360,6 +1919,81 @@ function adminGrants(deps) {
 }
 
 /**
+ * 列出**全部账号**（`POST /admin/accounts`，只读）—— Issue #197。
+ *
+ * # 为什么这件事这一次要做
+ *
+ * 用户在 Issue #197 里第二次提同一件事，而且这次说清了要什么：
+ *
+ *   「要求用户邮箱必须记录到数据库，用户名等也要。以及 profile 信息等等。」
+ *   「我还是要看到这些用户。」（前一轮的原话）
+ *
+ * 上一轮我给的答案是「掩码不可逆，认出人做不到」。那个答案在当时是对的
+ * （库里确实只有摘要 + 掩码）；但用户现在裁的是**把明文记下来**，
+ * 于是「看不到人」这件事的前提就不成立了 —— 这一条据此落地。
+ *
+ * # 与 `adminGrants` 的分工（两条不是一个东西）
+ *
+ *   `adminGrants`   —— 「**发过东西的**」（`plan !== free`）。它是一张**发放台账**，
+ *                      给的操作是「改层级」。它连 uid 都不回（掩码够用）。
+ *   `adminAccounts` —— 「**注册过的**」。它是一张**用户名录**，
+ *                      给的操作是「看看都有谁」。所以它必须回明文邮箱 ——
+ *                      只回掩码的话，这一页等于没做（掩码认不出人）。
+ *
+ * 两条都走 `adminGate`（同一个角色闸），且都**只读**。
+ *
+ * # 四条边界
+ *
+ *   ① **角色闸在服务端**（`adminGate`）：不是 owner / admin 一律 403。
+ *      界面上藏不藏入口从来不是安全边界。
+ *   ② **绝不回 `password_hash` / `password_salt`** —— 这两列是「能不能登录」
+ *      的凭据，管理员也不需要它们。有断言逐字段守着。
+ *   ③ **绝不回 `email_hash`** —— 那是登录标识，泄出去等于把
+ *      「这个人是不是本站用户」变成可查询的事实（与 `adminGrants` 同一条）。
+ *   ④ **不回进度、不回会话、不回确认令牌** —— 这个接口只回答
+ *      「有哪些账号、各自什么状态」，不顺手把别的东西倒出来。
+ */
+function adminAccounts(deps) {
+  var cfg = deps.cfg, store = deps.store;
+  var gate = adminGate(deps, cfg);
+  if (gate) return Promise.resolve(gate);
+  return Promise.resolve(store.getAccount(deps.account.uid)).then(function (me) {
+    if (!me || me.status === "deleted") return err(401, "E_NO_SESSION", "还没有登录");
+    if (!isAdminRole(me.role)) return err(403, "E_FORBIDDEN", "这一条只对管理员开放");
+    return Promise.resolve(store.listAccounts()).then(function (rows) {
+      var list = (rows || []).filter(function (a) { return a && a.status !== "deleted"; }).map(function (a) {
+        return {
+          /* 明文邮箱：**这一条接口存在的理由**。
+             ⚠️ 老行可能还没有这一列（Issue #197 之前建的账号）——
+             那时如实回空串，界面显示掩码，**不假装有**。 */
+          email: String(a.email || ""),
+          emailMask: a.email_mask || "***",
+          nickname: a.nickname || "",
+          tier: planTier(a),
+          role: isAdminRole(a.role) ? String(a.role).toLowerCase() : "user",
+          /* 注册那一刻的账号状态：pending = 邮箱还没确认。
+             这两列**不是同一件事**，别合并：
+             `status` 是账号的（可能被 suspended），
+             `emailVerified` 是那一封确认邮件的（只有确认过才为真）。 */
+          status: String(a.status || "active"),
+          emailVerified: a.email_verified_at != null,
+          hasPassword: !!a.password_hash,
+          createdAt: Number(a.created_at) || 0,
+          lastLoginAt: Number(a.last_login_at) || 0
+        };
+      });
+      list.sort(function (x, y) { return y.createdAt - x.createdAt; });
+      return ok({
+        accounts: list,
+        total: list.length,
+        store: store.kind,
+        note: "这里列的是**注册过的账号**（含邮箱明文）。它与「发放台账」不是一张表：那边只列发过层级的。"
+      });
+    });
+  });
+}
+
+/**
  * 收回（`DELETE /admin/grant`）：**等价于发一个 free**，不删账号、不删进度。
  *
  * ⚠️ 刻意不做「删掉那一行的发放记录」这种写法 —— 权威名单**就是** `accounts` 表
@@ -1617,11 +2251,24 @@ module.exports = {
   sanitizeFamily: sanitizeFamily,
   FAMILY_ROW_ID: FAMILY_ROW_ID,
   accountDelete: accountDelete,
+  /* Issue #197：完整登录流程那五条 */
+  register: register,
+  loginWithPassword: loginWithPassword,
+  verifyEmail: verifyEmail,
+  resendVerification: resendVerification,
+  resetRequest: resetRequest,
+  resetConfirm: resetConfirm,
+  checkPassword: checkPassword,
+  isTokenShape: isTokenShape,
+  issueVerification: issueVerification,
+  issueReset: issueReset,
+  findAccountByEmail: findAccountByEmail,
   gameAnswer: gameAnswer,
   gameAllowed: gameAllowed,
   GAME_CAP: GAME_CAP,
   adminGrant: adminGrant,
   adminGrants: adminGrants,
+  adminAccounts: adminAccounts,
   adminRevoke: adminRevoke,
   isAdminRole: isAdminRole,
   normGrantInput: normGrantInput,

@@ -156,6 +156,7 @@
           msg("msg-grant", "服务端收到这一条了，但" + r.note, "warn");
           clearForm();
           loadServerGrants();
+    loadAccounts();
           return;
         }
         var line = "已写进服务端：" + r.emailMask + " → " + Ent.tierLabel(r.tier) +
@@ -268,6 +269,87 @@
         : "服务端上本来就没有 " + mask + " 这一条。", r.changed ? "ok" : "warn");
       loadServerGrants();
     })["catch"](function () { b.disabled = false; msg("msg-server", "连不上服务端，这一轮没发出任何东西。", "warn"); });
+  }
+
+  /* ------------------------------------------- 二之二、全部账号（名录，Issue #197） */
+
+  /**
+   * 画「全部账号」那张名录。
+   *
+   * 与「服务端名单」那张表的**三点差别**（每一处都是刻意的）：
+   *   ① 它列**全部**账号（注册过的），不只是发过层级的 —— 那才是「都有谁」
+   *   ② 它回**明文邮箱**（那是这一块存在的理由：掩码认不出人）
+   *   ③ 它**只读** —— 这里没有发放键。发放在上面那张卡上按掩码发。
+   *
+   * 每一行给五件事：邮箱（明文）/ 昵称 / 层级 / 三个状态标（确认 / 口令 / 账号态）
+   * / 注册与最后登录时间。**不给 uid、不给摘要、不给口令**（有断言守着）。
+   */
+  function renderAccounts(data) {
+    var box = $("accounts-list");
+    if (!box) return;
+    var list = (data && data.accounts) || [];
+    var empty = $("accounts-empty");
+    if (empty) {
+      empty.hidden = list.length > 0;
+      empty.textContent = "还没有任何账号。";
+    }
+    box.innerHTML = list.map(function (a) {
+      /* 老行（Issue #197 之前建的）没有明文邮箱那一列 —— 那时如实回落到掩码，
+         **不假装有**（编一个 a@b.com 出来比空着更糟）。 */
+      var mail = a.email || a.emailMask || "（无邮箱）";
+      var verified = a.emailVerified
+        ? '<span class="acct-tag ok">已确认</span>'
+        : '<span class="acct-tag warn">待确认</span>';
+      var pw = a.hasPassword
+        ? '<span class="acct-tag">有密码</span>'
+        : '<span class="acct-tag muted">无密码</span>';
+      var st = a.status === "active" ? "" : '<span class="acct-tag warn">' + esc(a.status) + "</span>";
+      var nick = a.nickname ? esc(a.nickname) : '<span class="acct-none">未起名</span>';
+      var created = a.createdAt ? new Date(a.createdAt).toLocaleDateString() : "—";
+      var last = a.lastLoginAt ? new Date(a.lastLoginAt).toLocaleDateString() : "—";
+      return '<li class="acct-row">' +
+        '<span class="acct-main"><span class="acct-mail">' + esc(mail) + "</span>" +
+        '<span class="acct-sub">' + nick + " · 注册 " + esc(created) + " · 最后登录 " + esc(last) + "</span></span>" +
+        '<span class="acct-tags">' +
+        '<span class="tier-badge tier-' + esc(a.tier) + '">' + esc(Ent.tierLabel(a.tier)) + "</span>" +
+        verified + pw + st +
+        "</span></li>";
+    }).join("");
+  }
+
+  function accountsNote(text, warn) {
+    var el = $("accounts-note");
+    if (!el) return;
+    el.textContent = text || "";
+    el.hidden = !text;
+    el.className = "account-hint" + (warn ? " warn-hint" : "");
+  }
+
+  /**
+   * 拉一次名录。五种结果各说各的话 —— 与 `loadServerGrants` 同一条口径。
+   *
+   * ⚠️ 拉不到**不清空**已有列表：清空等于「后端抖一下，管理员以为账号没了」。
+   *    这一块尤其要紧 —— 那是用户全部的家当，看着「空了一屏」会吓人。
+   */
+  function loadAccounts() {
+    var M = acct();
+    if (!M || typeof M.adminAccounts !== "function") {
+      accountsNote("页面脚本版本对不上（刷新一次即可）：这一块现在看不了。", true);
+      return;
+    }
+    Promise.resolve(M.adminAccounts({ backing: backing, A: window.AuthCore, E: Ent })).then(function (r) {
+      if (r && r.ok) {
+        renderAccounts(r);
+        var data = (r.accounts || []).length;
+        accountsNote("共 " + data + " 个账号。这里列的是**注册过的**（含邮箱）；上面那张只列发过层级的。", false);
+        return;
+      }
+      if (r && r.reason === "guest") { accountsNote("登录状态已过期，请重新登录后再来。", true); return; }
+      if (r && r.reason === "not-configured") { accountsNote("本站还没开放云端账号（服务端缺密钥）：这一块暂时问不到。", true); return; }
+      if (r && r.reason === "no-channel") { accountsNote("页面脚本版本对不上（刷新一次即可）。", true); return; }
+      if (r && r.code === "E_FORBIDDEN") { accountsNote("这一条只对管理员开放（服务端的角色闸）。", true); return; }
+      accountsNote("连不上服务端，这一轮没问到。", true);
+    })["catch"](function () { accountsNote("连不上服务端，这一轮没问到。", true); });
   }
 
   /* ------------------------------------------------------------ 三、名单 */
@@ -419,6 +501,7 @@
 
     show($("grant-card"));
     show($("server-card"));
+    show($("accounts-card"));
     show($("list-card"));
     show($("sim-card"));
     show($("danger-card"));
@@ -432,6 +515,7 @@
     $("btn-grant-local").addEventListener("click", onGrantLocal);
     $("server-list").addEventListener("click", onServerListClick);
     $("btn-server-reload").addEventListener("click", loadServerGrants);
+    $("btn-accounts-reload").addEventListener("click", loadAccounts);
     $("grant-list").addEventListener("click", onListClick);
     $("btn-export").addEventListener("click", onExport);
     $("btn-import-open").addEventListener("click", onImportOpen);

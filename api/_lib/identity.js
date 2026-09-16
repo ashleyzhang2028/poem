@@ -153,12 +153,121 @@ function newCode(len) {
   return s.slice(0, n);
 }
 
+
+/* ------------------------------------------------- 邮箱明文、口令与一次性令牌 */
+
+/**
+ * 落库的**邮箱明文**（归一化之后）。
+ *
+ * ## 口径变更（Issue #197）：从「只存摘要 + 掩码」改成「明文也存一份」
+ *
+ * 之前那一版**只**存 `email_hash`（SHA-256 + pepper）与 `email_mask`，
+ * 用户原话是「我还是要看到这些用户」—— 而掩码 `a***@qq.com` **认不出是谁**，
+ * 摘要又不可逆。于是「谁是本站用户」这个管理员必须回答的问题，
+ * 在库里根本没有答案。用户 2026-09-16 就此裁了第二次：
+ * **邮箱必须记录到数据库**。这一版据此落地。
+ *
+ * ## 一并改掉的三条口径（不藏着）
+ *
+ * 1. 归一化**不再做小写折叠**。`normalizeEmailForStore()` 只 trim + 去零宽，
+ *    大小写原样保留 —— 这是「显示用的是用户真正填的那个邮箱」的前提。
+ *    登录识别仍走 `email_hash`，它的输入**继续**做小写归一化，
+ *    所以「大小写不同算同一个账号」这条历史行为一个字都没变。
+ * 2. `email_hash` **保留**，且仍是唯一索引与登录查找的那一列。
+ *    留着的理由有两条：老数据平滑（老行不必回填明文就能继续登录），
+ *    以及「按明文查账号」这条路永远不必开。
+ * 3. 明文只在**服务端**出现：`/privacy/` 已如实写出「邮箱会保存到服务器」。
+ *    给用户看的回显仍以掩码为准（`publicAccount().mask`），
+ *    明文只下发给**管理员**那一条接口（`POST /api/admin/accounts`）。
+ *
+ * ⚠️ 与 `normalizeEmail()` 的关系：那是**登录标识**的归一化（含小写），
+ *    这是**落库明文**的归一化。两者故意分开 —— 合成一个函数的后果是
+ *    「为了显示原样大小写，把登录标识也变成大小写敏感」。
+ */
+function normalizeEmailForStore(value) {
+  return String(value == null ? "" : value)
+    .replace(ZERO_WIDTH, "")
+    .trim();
+}
+
+/**
+ * 口令摘要：`scrypt(N=16384, r=8, p=1, 32 字节)` + 每账号 16 字节随机盐。
+ *
+ * 为什么不引 bcrypt / argon2：本项目**零运行时依赖**是硬约束
+ * （`api/_lib/` 下每一个文件都在 Node 里直接 require，测试不装任何包）。
+ * `crypto.scrypt` 是 Node 自带的，参数是 OWASP 推荐的那一档。
+ *
+ * ⚠️ 摘要串形如 `scrypt$16384$8$1$<saltHex>$<hashHex>`：**参数写在串里**。
+ *    参数不写进串的下场是「将来调 N 值，老用户全部登录不上」——
+ *    而那时没有任何办法区分「口令错」与「参数变了」。
+ */
+function newPasswordSalt() {
+  return crypto.randomBytes(16).toString("hex");
+}
+
+function hashPassword(password, salt, params) {
+  var p = params || { N: 16384, r: 8, p: 1, len: 32 };
+  var dk = crypto.scryptSync(String(password == null ? "" : password), String(salt || ""), p.len, {
+    N: p.N, r: p.r, p: p.p,
+    // scrypt 的默认 maxmem 是 32MB，而 N=16384,r=8 需要约 16MB ——
+    // 恰好卡在边界上，Node 会以 "memory limit exceeded" 抛错。
+    // 显式放宽到 64MB，别让它成为一个「换台机器就登录不上」的玄学问题。
+    maxmem: 64 * 1024 * 1024
+  });
+  return "scrypt$" + p.N + "$" + p.r + "$" + p.p + "$" + String(salt) + "$" + dk.toString("hex");
+}
+
+/** 现算一遍再定长比较（与 codeHash 同一条：失败也走完全程） */
+function verifyPassword(password, stored) {
+  var parts = String(stored || "").split("$");
+  if (parts.length !== 6 || parts[0] !== "scrypt") return false;
+  var p = { N: Number(parts[1]), r: Number(parts[2]), p: Number(parts[3]), len: 32 };
+  if (!(p.N > 0) || !(p.r > 0) || !(p.p > 0)) return false;
+  var expect;
+  try { expect = hashPassword(password, parts[4], p); } catch (e) { return false; }
+  return timingSafeEqual(expect, stored);
+}
+
+/**
+ * 一次性令牌摘要（邮箱确认 / 重设口令都用它）。
+ *
+ * 令牌是 32 字节随机数的 hex（64 个字符），存的是
+ * `SHA-256(pepper | purpose | uid | token)`。带 pepper 与 purpose 的理由
+ * 与 `codeHash` 逐条相同：邮箱确认令牌与重设令牌**必须互不通用**。
+ */
+function newToken() {
+  return crypto.randomBytes(32).toString("hex");
+}
+
+function tokenHash(uid, purpose, token, pepper) {
+  return crypto.createHash("sha256")
+    .update([String(pepper || ""), String(purpose || ""), String(uid || ""), String(token || "")].join("|"), "utf8")
+    .digest("hex");
+}
+
+/** 业务 id：`v_` 邮箱确认 / `r_` 重设口令。不依赖随机源不重复（撞了由调用方线性探测） */
+function newVerifyId() {
+  return "v_" + crypto.randomBytes(8).toString("hex");
+}
+
+function newResetId() {
+  return "r_" + crypto.randomBytes(8).toString("hex");
+}
+
 function newSalt() {
   return crypto.randomBytes(8).toString("hex");
 }
 
 module.exports = {
   normalizeEmail: normalizeEmail,
+  normalizeEmailForStore: normalizeEmailForStore,
+  newPasswordSalt: newPasswordSalt,
+  hashPassword: hashPassword,
+  verifyPassword: verifyPassword,
+  newToken: newToken,
+  tokenHash: tokenHash,
+  newVerifyId: newVerifyId,
+  newResetId: newResetId,
   normalizePhone: normalizePhone,
   isPhoneShape: isPhoneShape,
   maskPhone: maskPhone,

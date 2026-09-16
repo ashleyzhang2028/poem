@@ -210,7 +210,7 @@
   function renderAccount(sess) {
     var list = $("account-list");
     if (!list) return;
-    if (!sess || !sess.account) { hide(list); hide($("danger-card")); return; }
+    if (!sess || !sess.account) { hide(list); hide($("danger-card")); hide($("verify-row")); return; }
     var acc = sess.account;
     var days = Math.max(0, Math.round((sess.exp - Date.now()) / 86400000));
     /* ⚠️ 这里**不再列层级**：层级徽章已经在身份卡那一行上，
@@ -218,8 +218,17 @@
        第三处再写一遍「Free（本机登记）」就是同一件事说三次。
        所以这个函数**不需要**再问一次 `Ent.identity()`（少一次合成，
        也少一处可能与身份卡不一致的读数）。 */
+    /* Issue #197：邮箱那一行优先显示**明文**（走服务端登录时它能拿到），
+       拿不到才回落到掩码。为什么要显示明文：掩码 `a***@qq.com`
+       有几百种可能，用户没法据此确认「我当时填的是哪一个」——
+       而个人中心恰恰是他来确认这件事的地方。
+       ⚠️ 未登录 / 老缓存 / 本机体验版下 `AccountApi.account()` 是 null，
+          那时**如实回落到掩码**，不编一个明文。 */
+    var info = acct() && acct().account ? acct().account() : null;
+    var email = (info && info.email) ? info.email
+      : (acc.identities[0] ? acc.identities[0].mask : "（无邮箱）");
     var rows = [
-      ["账号", acc.identities[0] ? acc.identities[0].mask : "（无邮箱）"],
+      ["账号", email],
       ["本次登录", "还剩 " + days + " 天"]
     ];
     list.innerHTML = rows.map(function (r) {
@@ -228,6 +237,68 @@
     }).join("");
     show(list);
     show($("danger-card"));
+    renderVerifyState(info);
+  }
+
+  /**
+   * 邮箱确认状态（Issue #197）—— **只在「待确认」时画出来**。
+   *
+   * 三条口径：
+   *   ① 已确认的人**不摆这一行**。「已确认」是噪音 ——
+   *      它没有下一步动作可做，而这一页上每一行都该有下一步。
+   *   ② 拿不到服务端信息（本机体验版 / 老缓存）时**也不摆**：
+   *      不知道状态就说「待确认」是编的，说「已确认」更是编的。
+   *   ③ 「重发」那颗键调 `/api/resend-verification`（**要登录**），
+   *      回来之后如实说发出去没有 —— 发信商没配时写「没能发出去」，
+   *      绝不写「已发出」。
+   */
+  function renderVerifyState(info) {
+    var row = $("verify-row");
+    if (!row) return;
+    if (!info || info.emailVerified) { hide(row); return; }
+    var el = $("verify-state");
+    if (el) el.textContent = "邮箱还没确认。确认后才能用它找回密码。";
+    show(row);
+  }
+
+  /**
+   * 重发确认邮件。**做完之后不重画整页** —— 只更新这一行的文案。
+   * 重画整页会把别的卡片（同步冲突面板这类）的中间态一起冲掉。
+   */
+  function onResendVerify() {
+    var btn = $("btn-resend-verify");
+    var el = $("verify-state");
+    /* ⚠️ 传输层从 `AccountApi` 现取，**不在模块加载时缓存** ——
+       缓存一份的后果是「脚本顺序一变就永远抓到 null」，
+       而症状是静默失效（与 `acct()` 那条注释同一条教训）。
+       老缓存里的 AccountApi 可能没有 resendVerification 这个方法，
+       那时如实说「页面是旧缓存，刷新一下」，不假装点过了。 */
+    var M = acct();
+    if (!M || typeof M.resendVerification !== "function") {
+      if (el) el.textContent = "这个页面是旧缓存，刷新一下再试。";
+      return;
+    }
+    if (btn) btn.disabled = true;
+    M.resendVerification().then(function (r) {
+      if (btn) btn.disabled = false;
+      if (!r.ok) { if (el) el.textContent = r.message || "没能发出去，稍后再试。"; return; }
+      if (r.alreadyVerified) {
+        if (el) el.textContent = "这个邮箱已经确认过了。";
+        if (btn) btn.disabled = true;
+        return;
+      }
+      /* ⚠️ 与登录页那一条同源：`verifySent` 为 false 时必须如实说
+         「没能发出去」—— 那是发信商没配，不是用户做错了什么。 */
+      if (el) {
+        el.textContent = r.verifySent
+          ? "确认邮件已发往 " + (r.emailMask || "你的邮箱") + "。"
+          : "这台服务器现在没能把邮件发出去（发信商还没配好）。稍后再试。";
+      }
+      showToast(r.verifySent ? "确认邮件已发出" : "没能发出去");
+    }, function () {
+      if (btn) btn.disabled = false;
+      if (el) el.textContent = "连不上服务器，请稍后再试。";
+    });
   }
 
   /**
@@ -418,6 +489,7 @@
        而这里原先只在文件底部接它 —— 服务端那一遍 paint 之前就点，
        事件是空的（点了没反应）。所以接在 paint 之前。 */
     $("btn-sign-out").addEventListener("click", onSignOut);
+    $("btn-resend-verify").addEventListener("click", onResendVerify);
     var sess = A.session(store);
     paint(sess);
 

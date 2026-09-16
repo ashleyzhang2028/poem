@@ -984,3 +984,211 @@ thead .plans-th-cap {
       一个字都不许改成字面量色值：本文件不新造调色板
       （test/account-pages.test.js 有一条守着这件事）。
    ========================================================================== */
+
+/* ==========================================================================
+   Issue #197：完整登录流程的四个页签
+   --------------------------------------------------------------------------
+   用户要的是一整套流程（注册 / 确认 / 登录 / 忘记密码 / 重设 / 快捷码）。
+   摊成一页长条的后果上一轮已经被点过名（「重复的注册按钮」），
+   所以这里用**页签**：一次只显示一件动作，页签只切动作、不跳页。
+
+   ⚠️ 这一节刻意**不引任何新色值**：页签的选中态用朱砂下划线（`--seal`）,
+      与全站「当前项」的表达（底栏页签、设置清单的行）同一条口径。
+      引一个新色会让这一页在全站里显得是另一套东西。
+   ========================================================================== */
+
+/* ---------- 页签条 ---------- */
+.auth-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+  /* 一条底线把两个页签串起来 —— 选中态那条下划线压在它上面 */
+  border-bottom: 1px solid var(--line);
+}
+
+.auth-tab {
+  appearance: none;
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  /* 负的 1px 让下划线正好压在容器那条底线上（不压就是两根线） */
+  margin-bottom: -1px;
+  padding: 8px 12px 9px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink-3);
+  cursor: pointer;
+}
+
+.auth-tab[aria-selected="true"] {
+  color: var(--ink);
+  font-weight: 600;
+  border-bottom-color: var(--red);
+}
+
+.auth-tab:focus-visible {
+  outline: 2px solid var(--red);
+  outline-offset: 2px;
+  border-radius: 4px 4px 0 0;
+}
+
+/* ---------- 面板：同屏切换，不跳页 ---------- */
+.auth-pane[hidden] { display: none; }
+
+/* ---------- 密码那一格 + 「显示」键 ----------
+   ⚠️ 「显示」是 <button> 不是 <a>：它不做跳转，只是切换 input 的 type。
+      这一点在触屏上尤其重要 —— 它必须是能聚焦、能被读屏念出状态的那种元素。 */
+.pw-row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.pw-row .account-input { margin-bottom: 0; }
+
+.pw-eye {
+  appearance: none;
+  background: var(--card-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 0 12px;
+  font-family: inherit;
+  font-size: 12.5px;
+  color: var(--ink-2);
+  cursor: pointer;
+  flex: none;
+}
+
+.pw-eye:hover { color: var(--green); border-color: var(--green); }
+
+/* ---------- 文字链那一行（注册 / 忘记密码） ----------
+   ⚠️ 一页只有**一件主动作**（实心按钮），其余动作收成文字链。
+      把它们也做成实心按钮的后果是「一屏里三颗一样重的按钮」，
+      用户不知道先点哪一颗 —— 这正是上一轮被点名的那个形状。 */
+.auth-links {
+  margin: 14px 0 0;
+  text-align: center;
+  font-size: 13px;
+  color: var(--ink-3);
+}
+
+.link-btn {
+  appearance: none;
+  background: none;
+  border: 0;
+  padding: 2px 0;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--green);
+  cursor: pointer;
+}
+
+/* ⚠️ 与全站同一条口径（test/ui-consistency.test.js 有反向断言守着）：
+   反馈**只走颜色一档**，不把下划线加回来。按钮样的「重新发送」也是这么做的。 */
+.link-btn:hover { color: var(--green-dark); font-weight: 600; }
+
+.link-sep { margin: 0 6px; color: var(--line); }
+
+/* ---------- 提示块的三种语气 ----------
+   `.account-note` 是「说明」（中灰底），下面两个是**结果**：
+   ok = 真的成了，warn = 没成 / 要注意。两者都不许用「红得吓人」的色 ——
+   「确认邮件没发出去」不是事故，是发信商没配，用户重发一次即可。 */
+.account-note.ok {
+  background: var(--green-light);
+  border-left: 3px solid var(--green);
+  color: var(--ink-2);
+}
+
+.account-note.warn {
+  background: rgba(180, 80, 60, .06);
+  border-left: 3px solid var(--red);
+  color: var(--ink-2);
+}
+
+@media (max-width: 420px) {
+  .auth-tab { padding: 8px 9px 9px; font-size: 13.5px; }
+}
+
+/* ==========================================================================
+   Issue #197：管理后台那张「全部账号」名录
+   --------------------------------------------------------------------------
+   与服务端名单（`.grant-row`）**刻意长得不一样**：
+   那张是「一行一条发放记录」（掩码 + 层级 + 到期 + 收回键），
+   这张是「一行一个人」（邮箱 + 昵称 + 时间 + 三个状态标）。长得像的后果
+   是管理员点错行 —— 而在这一页上点错行的意思是「改了别人不该改的东西」。
+   ========================================================================== */
+
+.account-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.acct-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line-2);
+}
+
+.acct-row:last-child { border-bottom: 0; }
+
+/* 左边那一列：邮箱 + 一行小字（昵称 / 注册 / 最后登录）。
+   ⚠️ `min-width: 0` 是必需的：flex 子项默认 `min-width: auto`，
+   而长邮箱会把整行撑破（`.acct-mail` 自己带 `overflow-wrap`）。 */
+.acct-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+/* 邮箱：**明文**。长邮箱要能断行 —— 不断行的下场是整页横向滚动 */
+.acct-mail {
+  font-size: 13.5px;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.acct-sub {
+  font-size: 11.5px;
+  color: var(--ink-3);
+}
+
+.acct-none { color: var(--ink-3); font-style: normal; }
+
+/* 右边那一列：层级徽章 + 三个状态标。**允许换行**（窄屏上五枚标签放不下） */
+.acct-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: flex-end;
+  flex: 0 1 auto;
+  max-width: 55%;
+}
+
+.acct-tag {
+  font-size: 11px;
+  line-height: 1;
+  padding: 4px 7px;
+  border-radius: 999px;
+  background: var(--card-2);
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+
+.acct-tag.ok { background: var(--green-light); color: var(--green-dark); }
+.acct-tag.warn { background: var(--amber-light); color: var(--amber); }
+.acct-tag.muted { color: var(--ink-3); }
+
+/* 名单拉不到时那一行说明（与 `.account-hint` 同族，但语气更明确） */
+.account-hint.warn-hint { color: var(--red); }
+
+@media (max-width: 420px) {
+  .acct-row { flex-direction: column; gap: 6px; }
+  .acct-tags { max-width: 100%; justify-content: flex-start; }
+}

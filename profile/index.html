@@ -140,6 +140,16 @@
              它只在**已登录**时出现 —— 未登录时身份那一行已经把该说的说完了，
              再列一遍「未登录」是同一件事说两次。 -->
         <div class="kv-list" id="account-list" hidden></div>
+        <!-- 邮箱确认状态（Issue #197）：**只在待确认时出现**。
+             确认过的人不需要看到一行「已确认」—— 那是噪音。
+             未确认的人需要的是一颗「重发确认邮件」的键，
+             而不是一句「你的邮箱还没确认」然后没有下文。 -->
+        <div id="verify-row" hidden>
+          <p class="account-msg" id="verify-state"></p>
+          <div class="settings-btns">
+            <button class="account-btn ghost" id="btn-resend-verify" type="button">重发确认邮件</button>
+          </div>
+        </div>
       </section>
 
       <!-- ---------- 五、危险区：注销账号（二次确认 + 重输邮箱） ----------

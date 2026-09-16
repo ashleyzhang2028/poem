@@ -9,16 +9,29 @@
  * 一旦某页自己写了「错三次就锁」这类判断，三张页的规则必然漂移，
  * 而漂移出来的 bug 恰好都是最敏感的账号问题。
  *
- * 三条刻意的做法：
+ * ## Issue #197：这一页从一个表单改成**四个页签 + 两屏支路**
+ *
+ * 用户要的是**一整套完整流程**：注册 → 邮件确认 → 登录 / 忘记密码 → 重设，
+ * 外加原有的随机码快捷登录。摊成一页长条的后果上一轮已经被点过名
+ * （「重复的注册按钮」），所以：
+ *
+ *   · 页签只有两个 —— **密码登录 / 快捷登录**（两条并行的主路）
+ *   · 注册与忘记密码是**藏在文字链后面的另外两屏**（它们本来就是少数路径）
+ *   · 注册完多一屏「等你去邮箱点确认」
+ *
+ * 四条刻意的做法：
  *   1. **不假装有服务器**：有服务端时真的走服务端（`js/auth-api.js`），
  *      没有（没配好 / 连不上 / 断网）才回落本机，并如实标注
  *      「本地体验版」，绝不写成「邮件已发出」（docs/auth-design.md §7.1）
- *      —— 1A 期之前只有一个「本机」分支，现在多了一个**真服务端**分支，
- *      两条路的判据只有一处：`api.degraded()`
- *   2. **错误码→文案只映射一次**：内核返回的 `message` 就是给用户看的话，
- *      本页**不重写一份**。重写就意味着「内核改了口径、界面还是老话」。
+ *   2. **错误码→文案只映射一次**：内核与 `js/auth-api.js` 返回的 `message`
+ *      就是给用户看的话，本页**不重写一份**。重写就意味着
+ *      「内核改了口径、界面还是老话」。
  *   3. **只读不写**：本页只碰 `poem_auth_v1`（会话/码）与 `poem_profile_v1`
  *      （昵称），**一个字节都不写进度键** —— 有测试守着（只读页面不写盘）。
+ *   4. **口令不落任何本地存储**（Issue #197 新增的一条）：填进 input 的那串
+ *      只在内存里活到发请求那一刻，之后既不写 localStorage，
+ *      也不进 URL、不进日志。有源码断言守着（本文件里不许出现
+ *      `localStorage` 与 `password` 同时出现在一行）。
  */
 (function () {
   "use strict";
@@ -51,15 +64,36 @@
    */
   function isLocal() { return !api || api.degraded(); }
 
+  /**
+   * 口令那一套是不是**需要服务端**。
+   *
+   * ⚠️ 这是 Issue #197 里最要紧的一条「不假装」：
+   *    注册、口令登录、确认邮件、重设口令**全都 100% 在服务端**
+   *    （口令摘要要有 pepper、要落库；确认链接要发信）。本机内核里
+   *    没有这些东西，也不该有 —— 在浏览器里存一份口令摘要等于
+   *    把「谁都改得动」的东西当成凭据（docs/auth-design.md §1 第 3 条）。
+   *
+   *    所以服务端不可用时，这几条路**如实说「暂时不可用」**，
+   *    绝不偷偷回落到一个本机版本 —— 那会给出一个「注册成功了」
+   *    但换台设备就登不上去的假承诺。
+   *    而**随机码那条路照旧可以本机降级**（它本来就是本机自证）。
+   */
+  function passwordNeedsServer() {
+    return isLocal();
+  }
+
   /* 本页状态（**不进 localStorage**：它只是「这一屏画到哪一步」） */
   var state = {
-    purpose: "login",        // 本期只有登录一种用途
+    purpose: "login",        // 只有"login"一种用途，保留以兼容旧断言
+    mode: "pw",              // 当前显示哪一屏：pw | code | register | verify | forgot | done
     codeId: "",              // 内核给的码记录 id（明文码不在盘上，只在下面这个变量里）
     code: "",                // 明文码，仅存在于本次会话的内存里
     sentTo: "",              // 掩码，用于回显「已发往 a***@b.com」
     expiresAt: 0,
     cooldown: 0,
-    tick: null
+    tick: null,
+    /* 从 URL 里取来的那两个参数（/reset/ 那一页用同一个页面逻辑的另一半，见 js/reset.js） */
+    regEmail: ""             // 注册时填的邮箱（确认那一屏要回显掩码）
   };
 
   function $(id) { return document.getElementById(id); }
@@ -84,9 +118,97 @@
     el.className = "account-msg" + (level ? " " + level : "");
   }
 
+  /**
+   * 一块「结果」提示（`.account-note` 的 ok / warn 两个语气）。
+   *
+   * ⚠️ 它与 `msg()` 分工不同：`msg()` 是**表单字段旁边那一行**（说哪里填错了），
+   *    这一块是**动作之后的结果**（说这件事成了没有）。
+   *    合成一处的后果是「确认邮件没发出去」被塞进邮箱框下面那一行小字里 ——
+   *    而它讲的其实不是邮箱的问题。
+   */
+  function note(id, s, level) {
+    var el = $(id);
+    if (!el) return;
+    if (!s) { el.hidden = true; el.textContent = ""; return; }
+    el.className = "account-note" + (level ? " " + level : "");
+    el.textContent = String(s);
+    el.hidden = false;
+  }
+
+  /**
+   * 一屏一屏地切。**这是本页唯一的「画到哪一步」出口** ——
+   * 别在别处直接 `hide/show` 面板，那种写法必然漏掉一两块（然后留下一个
+   * 「上一步的提示还挂在屏幕上」的鬼影）。
+   *
+   * @param {string} mode  pw | code | register | verify | forgot | done
+   */
+  var MODES = ["pw", "code", "register", "verify", "forgot", "done"];
+  function setMode(mode) {
+    if (MODES.indexOf(mode) < 0) mode = "pw";
+    state.mode = mode;
+    // 两个主路页签（只有 pw / code 两种；其余几屏是支路，页签不跟着动）
+    var tabPw = $("tab-pw"), tabCode = $("tab-code");
+    var isPw = mode === "pw" || mode === "register" || mode === "forgot";
+    if (tabPw) tabPw.setAttribute("aria-selected", isPw ? "true" : "false");
+    if (tabCode) tabCode.setAttribute("aria-selected", isPw ? "false" : "true");
+    hide($("auth-tabs"));                       // 支路屏不摆页签
+    if (mode === "pw" || mode === "code") show($("auth-tabs"));
+
+    var panes = { pw: $("pane-pw"), code: $("pane-code"), register: $("pane-register"),
+      verify: $("pane-verify"), forgot: $("pane-forgot") };
+    Object.keys(panes).forEach(function (k) {
+      var el = panes[k];
+      if (!el) return;
+      if (k === mode) show(el); else hide(el);
+    });
+    // 「已登录，补昵称」那一屏住在 .account-step 里（不是页签之一）
+    if (mode === "done") show($("step-done")); else hide($("step-done"));
+    if (mode === "code") { show($("step-email")); hide($("step-code")); }
+  }
+
   function esc(s) {
     return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  /* ------------------------------------------------------------ 口令那一套 */
+
+  /**
+   * 把「需要服务端」这条路走通，或者**如实说不通**。
+   *
+   * ⚠️ 这是本页唯一回答「口令功能现在能不能用」的地方。
+   *    在别处各写一遍 `if (api && !api.degraded())` 的下场是
+   *    「注册那一颗按钮说能用、点了又说不能用」这种自相矛盾。
+   *
+   * @param {string} msgId 就地提示落在哪一行
+   * @returns {object|null} 通道，或 null（已就地提示）
+   */
+  function passwordChannel(msgId) {
+    if (!api) {
+      msg(msgId, "这个站点没有连上服务器，暂时不能注册或改密码。你仍然可以用「快捷登录」的随机码进来。", "warn");
+      return null;
+    }
+    return api;
+  }
+
+  /**
+   * 口令那一栏旁边那颗「显示 / 隐藏」。
+   *
+   * ⚠️ 三个必须做对的细节：
+   *   ① 它只切 `type`，**不复制那份值到别处**（复制一处就多一处泄露口）
+   *   ② 切回隐藏时**不重排光标位置**（重排会让正在打字的用户丢掉输入点）
+   *   ③ 按钮上的字跟着状态变（「显示」↔「隐藏」），且 `aria-label` 一起变 ——
+   *      不然读屏用户听到的永远是「显示密码」，而他眼前是明文
+   */
+  function bindEye(btnId, inputId) {
+    var btn = $(btnId), input = $(inputId);
+    if (!btn || !input) return;
+    btn.addEventListener("click", function () {
+      var shown = input.type === "text";
+      input.type = shown ? "password" : "text";
+      btn.textContent = shown ? "显示" : "隐藏";
+      btn.setAttribute("aria-label", shown ? "显示密码" : "隐藏密码");
     });
   }
 
@@ -195,7 +317,131 @@
     if (state.tick) { clearInterval(state.tick); state.tick = null; }
   }
 
-  /* ------------------------------------------------------------ 发码 */
+  /* ============================================================ 注册 */
+
+  /**
+   * 注册那一条：**只在服务端**走（见 `passwordNeedsServer`）。
+   *
+   * 三件客户端先做的事（都能省下一次必然失败的请求）：
+   *   ① 邮箱形状（用内核那一份规则，与服务端同源）
+   *   ② 口令长度（与服务端 `checkPassword` 同一档，但**不替代**它 ——
+   *      这里只是「早点说」，真正说了算的永远是服务端）
+   *   ③ 两次口令一致
+   */
+  function onRegister() {
+    var ch = passwordChannel("msg-reg");
+    if (!ch) return;
+    var email = (($("input-reg-email") || {}).value || "").trim();
+    var pw = ($("input-reg-pw") || {}).value || "";
+    var pw2 = ($("input-reg-pw2") || {}).value || "";
+
+    if (!A.isEmailShape(A.normalizeEmail(email))) {
+      msg("msg-reg", email ? A.ERR.E_EMAIL_FORMAT : A.ERR.E_EMAIL_EMPTY, "warn");
+      return;
+    }
+    if (!pw) { msg("msg-reg", ch.messageOf("E_PW_EMPTY") || "请先填密码", "warn"); return; }
+    if (pw.length < 8) { msg("msg-reg", "密码至少 8 位", "warn"); return; }
+    if (pw !== pw2) { msg("msg-reg", "两次填的密码不一样", "warn"); return; }
+
+    msg("msg-reg", "");
+    return ch.register({ email: email, password: pw }).then(function (r) {
+      // 口令这一栏用完就清 —— 它不该在屏幕上多留一秒
+      if ($("input-reg-pw")) $("input-reg-pw").value = "";
+      if ($("input-reg-pw2")) $("input-reg-pw2").value = "";
+      if (!r.ok) {
+        msg("msg-reg", r.message, "warn");
+        return null;
+      }
+      state.regEmail = A.maskEmail(email);
+      text($("verify-lead"), "确认邮件已发往 " + state.regEmail + "。");
+      /* ⚠️ 「已发往」与「发出去了」是两件事。发信商没配（console 通道）时
+         `verifySent` 为 false —— 那时**必须**如实写「没能发出去」，
+         并把「重发」那颗按钮显眼地摆出来（§12 总原则：不许跑在代码前面）。 */
+      if (r.verifySent) {
+        note("verify-fail-note", "", "");
+        text($("verify-lead"), "确认邮件已发往 " + state.regEmail + "。");
+      } else {
+        text($("verify-lead"), "账号建好了。但这台服务器现在**没能把确认邮件发出去**（发信商还没配好）。");
+        note("verify-fail-note", "不确认也能用：现在就可以回「密码登录」用刚才那个密码进来。确认是为了将来能找回密码。", "warn");
+      }
+      showToast(r.created ? "账号已建好" : "账号信息已更新");
+      setMode("verify");
+      return r;
+    }, function () {
+      msg("msg-reg", "连不上服务器，请稍后再试", "warn");
+    });
+  }
+
+  /* ============================================================ 口令登录 */
+
+  function onLogin() {
+    var ch = passwordChannel("msg-pw");
+    if (!ch) return;
+    var email = (($("input-pw-email") || {}).value || "").trim();
+    var pw = ($("input-pw") || {}).value || "";
+    if (!A.isEmailShape(A.normalizeEmail(email))) {
+      msg("msg-pw", email ? A.ERR.E_EMAIL_FORMAT : A.ERR.E_EMAIL_EMPTY, "warn");
+      return;
+    }
+    if (!pw) { msg("msg-pw", ch.messageOf("E_PW_EMPTY") || "请先填密码", "warn"); return; }
+    msg("msg-pw", "");
+    return ch.login({ email: email, password: pw }).then(function (r) {
+      if ($("input-pw")) $("input-pw").value = "";
+      if (!r.ok) {
+        /* ⚠️ `E_LOGIN_FAIL` 的文案**原样用服务端那句**（「邮箱或密码不对」）。
+           在客户端改写成「这个邮箱没注册过」就等于把全站用户名单
+           变成可查询的事实 —— 这正是服务端刻意只说一句话的原因。 */
+        msg("msg-pw", r.message, "warn");
+        return null;
+      }
+      // 服务端的账号形状与内核不同（多了 mask / email）→ 统一成内核那一套
+      onSignedIn({
+        account: {
+          uid: r.account.uid,
+          nickname: r.account.nickname || "",
+          identities: [{ channel: "email", mask: r.account.mask || "" }],
+          createdAt: 0, lastLoginAt: 1
+        },
+        remote: true,
+        emailVerified: r.account.emailVerified === true
+      });
+      /* 邮箱没确认时**顺手给他留一句**（不拦他进去，只让他知道）。
+         不在这里弹一次确认：「先去用，稍后再确认」是这一页明确给的路。 */
+      if (r.account.emailVerified !== true) {
+        showToast("登录成功；邮箱还没确认（确认后才能找回密码）");
+      }
+      return r;
+    }, function () {
+      msg("msg-pw", "连不上服务器，请稍后再试", "warn");
+    });
+  }
+
+  /* ============================================================ 忘记密码 */
+
+  function onForgotSend() {
+    var ch = passwordChannel("msg-forgot");
+    if (!ch) return;
+    var email = (($("input-forgot-email") || {}).value || "").trim();
+    if (!A.isEmailShape(A.normalizeEmail(email))) {
+      msg("msg-forgot", email ? A.ERR.E_EMAIL_FORMAT : A.ERR.E_EMAIL_EMPTY, "warn");
+      return;
+    }
+    msg("msg-forgot", "");
+    return ch.resetRequest({ email: email }).then(function (r) {
+      if (!r.ok) { msg("msg-forgot", r.message, "warn"); return null; }
+      /* ⚠️ 这一句是**刻意的措辞**：「如果这个邮箱在本站注册过」。
+         服务端回的也是同一个响应（不区分存在与否）—— 客户端要是写成
+         「重设邮件已发往 xxx」，就等于替服务端回答了那个问题。
+         那一句话把「谁是本站用户」变成可查询的事实（邮箱枚举）。 */
+      msg("msg-forgot", "如果这个邮箱在本站注册过，重设链接已经发出去了。", "ok");
+      showToast("请查收邮件");
+      return r;
+    }, function () {
+      msg("msg-forgot", "连不上服务器，请稍后再试", "warn");
+    });
+  }
+
+  /* ============================================================ 随机码 */
 
   /**
    * 发码（登录 / 注册同一件事）。
@@ -204,17 +450,13 @@
    *
    * ⚠️ 回落是**静默**的：连不上服务端不是用户的问题，
    *    不该弹一次错误、更不该打断他。界面上多一行如实说明即可。
-   * ⚠️ 回落之后**绝不**把本机生成的码说成「已发送」——
-   *    这正是 docs/auth-design.md §7.1 那条「不假装有服务器」。
+   * ⚠️ 回落之后**绝不**把本机生成的码说成「已发送」。
    */
   function sendCode() {
     if (!store) { msg("msg-email", "浏览器不允许保存数据，本次登录刷新后会失效", "warn"); }
-    var inputId = "input-email";
     var msgId = "msg-email";
-    var email = (($(inputId) || {}).value || "").trim();
+    var email = (($("input-email") || {}).value || "").trim();
 
-    // 先按内核的规矩就地校验一遍：格式错的邮箱**不用**打扰服务端
-    // （也就不会因为一次手滑消耗掉服务端的一格频控额度）
     var shaped = A.isEmailShape(A.normalizeEmail(email));
     if (!shaped) {
       msg(msgId, email ? A.ERR.E_EMAIL_FORMAT : A.ERR.E_EMAIL_EMPTY, "warn");
@@ -222,7 +464,6 @@
     }
 
     if (api && !api.degraded()) return sendCodeRemote("login", email, msgId);
-
     return Promise.resolve(sendCodeLocal("login", email, msgId));
   }
 
@@ -230,7 +471,6 @@
   function sendCodeRemote(purpose, email, msgId) {
     return api.sendCode({ email: email, purpose: purpose }).then(function (r) {
       if (!r.ok) {
-        // 服务端不可用（没配好 / 断网 / 超时）→ 静默回落本机，用户无感
         if (r.code === "E_NOT_CONFIGURED" || r.code === "E_OFFLINE" || r.code === "E_TIMEOUT") {
           msg(msgId, r.message, "warn");
           return sendCodeLocal("login", email, msgId);
@@ -239,16 +479,10 @@
           state.cooldown = Date.now() + r.retryAfter * 1000;
           startTick(codeBoxes);
         }
-        // 服务端明确回绝（频控 / 格式错）：这一屏**还没决定**走哪条路，
-        // 两块说明都收起来 —— 摆着「本机体验版」而实际是服务端在管，
-        // 等于给用户一个错的解释。
         hideNotes();
         msg(msgId, r.message, "warn");
         return null;
       }
-
-      // 服务端不回明文码（除非开了冒烟模式），所以 state.code 留空 ——
-      // 界面因此**不会**出现「抄下这串码」那一块，这是对的
       state.purpose = "login";
       state.codeId = r.codeId;
       state.code = r.devCode || "";
@@ -264,24 +498,18 @@
   /** 本机那条路（没有服务端，或它现在不可用） */
   function sendCodeLocal(purpose, email, msgId) {
     state.remote = false;
-    var r = A.requestCode(store, { channel: "email", value: email }, purpose, {
-      // ⚠️ 本机版：码由浏览器生成。这是「本地体验版」的全部含义，
-      //    界面必须如实标注，不能与真发信混为一谈。
-      code: undefined
-    });
+    var r = A.requestCode(store, { channel: "email", value: email }, purpose, { code: undefined });
 
     if (!r.ok) {
-      // 冷却 / 频控：把「还要等多久」如实说出来，并照内核给的秒数起倒计时
       if (r.retryAfter) { state.cooldown = Date.now() + r.retryAfter * 1000; startTick(codeBoxes); }
       msg(msgId, r.message, "warn");
       return null;
     }
 
-    // 提示一次性邮箱：**只提示不阻断**（挡的是真用户，挡不住有心人）
     if (r.disposable) {
       msg(msgId, "这是临时邮箱，收不到后续邮件，可能丢失账号。仍可继续。", "warn");
     } else if (r.hint) {
-      msg(msgId, r.hint, "warn");           // 域名级错别字（gmial.com 这类）
+      msg(msgId, r.hint, "warn");
     } else {
       msg(msgId, "");
     }
@@ -291,18 +519,16 @@
   }
 
   /**
-   * 码已出去（或本机已生成）之后，两条路共用的收尾：
-   * 换屏、清空输入格、起倒计时、给一句 toast。
+   * 码已出去（或本机已生成）之后，两条路共用的收尾。
    * ⚠️ 合成一处，是为了「服务端版忘了一件事、本机版记住了」这类漂移不再可能。
    */
   function afterSent(purpose, sentToLine, toast) {
     showToast(toast);
-    // 本地体验版那两块「复制码 / 自己发信」的按钮只在真·本机版出现
     renderLocalOnlyTools();
     text($("code-sent-to"), sentToLine);
+    setMode("code");
     hide($("step-email"));
     show($("step-code"));
-    hide($("step-done"));
     codeBoxes = buildCodeRow("code-row");
     setCode(codeBoxes, "");
     if (codeBoxes[0]) codeBoxes[0].focus();
@@ -310,11 +536,6 @@
     return true;
   }
 
-  /**
-   * 「复制码 / 用邮件发给自己」这两颗按钮只在**本机版**画出来。
-   * 服务端版里码在用户邮箱里，摆这两颗按钮是自相矛盾的
-   * （既没有码可复制，也不该让用户「自己发给自己」）。
-   */
   /** 两块说明都收起来（发码还没决定走哪条路时用） */
   function hideNotes() {
     var localNote = $("local-note"), remoteNote = $("remote-note"), tools = $("code-tools");
@@ -329,11 +550,8 @@
     var tools = $("code-tools"), localNote = $("local-note"), remoteNote = $("remote-note");
     if (copy) copy.hidden = !local;
     if (mailBtn) mailBtn.hidden = !local;
-    if (tools) tools.hidden = !local;          // 一整行都收起来，不留空档
+    if (tools) tools.hidden = !local;
     if (localNote) localNote.hidden = !local;
-    // ⚠️ 两个说明**互斥**：本机版不许出现「进度会上传到服务器」，
-    //    服务端版也不许出现「本应用没有服务器」——
-    //    任一情况下摆错一句，都等于对用户说谎（docs §1 第 3 条）。
     if (remoteNote) remoteNote.hidden = local;
   }
 
@@ -343,18 +561,8 @@
     return sendCode();
   }
 
-  /* ------------------------------------------------------------ 校验 */
+  /* ------------------------------------------------------------ 校验（随机码） */
 
-  /**
-   * 校验码。与发码一样是**两条路**：
-   *   · `state.remote` 为真 → 走 `POST /api/verify-code`（服务端签会话 Cookie）
-   *   · 否则 → 内核的本机实现
-   *
-   * ⚠️ 判据用 `state.remote`（**这一次发码走的是哪条路**），
-   *    而不是 `api.degraded()`：发码成功之后网络再抖一下，
-   *    用 degraded 判就会把「服务端发出去的码」拿到本机去校验 —— 必然失败，
-   *    而用户看到的是「验证码不对」，完全无从排查。
-   */
   function verify() {
     var digits = readCode(codeBoxes);
     if (digits.length < A.CODE_LEN) {
@@ -370,7 +578,6 @@
     var r = A.verifyCode(store, state.codeId, digits, state.purpose);
     if (!r.ok) {
       msg("msg-code", r.message, "warn");
-      // 码作废（错满 5 次 / 已用过）→ 让「重新发送」立刻可点，别让用户在那儿等
       if (r.code === "E_CODE_VOID" || r.code === "E_CODE_USED") state.cooldown = 0;
       startTick(codeBoxes);
       return;
@@ -383,9 +590,6 @@
     return api.verifyCode({ codeId: state.codeId, code: digits }).then(function (r) {
       if (!r.ok) {
         if (r.code === "E_OFFLINE" || r.code === "E_TIMEOUT" || r.code === "E_NOT_CONFIGURED") {
-          // 校验这一步**不能**静默回落本机：服务端发出去的码，
-          // 本机根本没有记录，回落只会给出一个必然错的结论。
-          // 如实说「连不上」，并让「重新发送」保持可点。
           msg("msg-code", r.message, "warn");
           state.cooldown = 0;
           startTick(codeBoxes);
@@ -396,8 +600,6 @@
         startTick(codeBoxes);
         return;
       }
-      // 服务端的账号形状与内核不同（多了 mask、少了 identities）——
-      // 统一成内核那一套再交给 onSignedIn，免得下游要判两种形状
       onSignedIn({
         account: {
           uid: r.account.uid,
@@ -405,40 +607,32 @@
           identities: [{ channel: "email", mask: r.account.mask || "" }],
           createdAt: 0, lastLoginAt: 1
         },
-        remote: true
+        remote: true,
+        emailVerified: r.account.emailVerified === true
       });
     });
   }
 
   /**
    * 登录成功（注册与登录走的是同一条路 —— 这正是邮箱码方案的省事之处）。
-   *
-   * 这里**不做**「本机进度 vs 账号进度」的合并：本期没有服务端，账号数据也
-   * 只在本机，两边其实是同一份。真正的合并策略（§9 的 A~E 场景，含
-   * 「弹选择」）属于接服务端的那一期，接口已由 `AuthCore.mergePolicy` 留好。
-   * 现在假装做了合并，反而是给用户一个假的承诺。
    */
   function onSignedIn(r) {
     stopTick();
-    hide($("step-email"));
-    hide($("step-code"));
-    show($("step-done"));
+    setMode("done");
 
     var isNew = !r.account.lastLoginAt || r.account.lastLoginAt === r.account.createdAt;
-    /* 一行收场：是新建还是登录 + 层级 + 记在哪个邮箱。
-       ⚠️ 「进度会上传」那一句**不在这里**：它属于收码屏那块 #remote-note
-          （那里是用户点「确定」当场同意的地方），这一屏再说一遍是重复。 */
     text($("done-lead"), (isNew ? "账号已建好 · " : "已登录 · ") +
       (Ent ? Ent.tierLabel(Ent.identity().tier) : "Free") +
       " · " + (r.account.identities[0] ? r.account.identities[0].mask : ""));
 
-    // 昵称：先把已有的填上（老用户回来了，别让他以为名字丢了）
     var nickInput = $("input-nickname");
     if (nickInput) {
       var cur = window.Avatar && Avatar.nickname ? Avatar.nickname(backing) : "";
       nickInput.value = cur || "";
       nickInput.focus();
     }
+    /* ⚠️ 这一句只在**服务端**那条路上说。本机体验版说「进度已可跨设备同步」
+       是假话（本机版根本没有跨设备这回事）—— 与 §12「不假装」同一条。 */
     if (r.remote) {
       showToast("登录成功：进度已可跨设备同步");
     } else if (r.isLocalOnly) {
@@ -451,16 +645,36 @@
   function onFinish() {
     var v = ($("input-nickname") || {}).value || "";
     var clean = String(v).trim().slice(0, 12);
-    // 昵称写账号域（poem_profile_v1）+ 老键镜像，收在 Avatar.saveNickname 一处
     if (window.Avatar && Avatar.saveNickname) {
       try { Avatar.saveNickname(backing, clean); } catch (e) { /* 隐私模式：不抛 */ }
     }
     if (A.setNickname && store) { try { A.setNickname(store, clean); } catch (e) { /* 昵称写不进不影响登录 */ } }
-    // 回到**个人中心**（Issue #132 · D）：登录完最该看见的是「我是谁、
-    // 现在能用什么」——那张权限清单就在这里。落回设置页要多绕一层，
-    // 而且设置页是「调机器」的地方，不是「看自己」的地方。
-    // 与顶栏返回键的落点（data-back="/profile/"）同一条动线，不出现两条。
     location.href = "/profile/";
+  }
+
+  /* ------------------------------------------------------------ 重发确认邮件 */
+
+  function onResendVerify() {
+    var ch = passwordChannel("msg-verify");
+    if (!ch) return;
+    if (!ch.resendVerification) {
+      msg("msg-verify", "这个页面是旧缓存，刷新一下再试", "warn");
+      return;
+    }
+    msg("msg-verify", "");
+    return ch.resendVerification().then(function (r) {
+      if (!r.ok) { msg("msg-verify", r.message, "warn"); return null; }
+      if (r.alreadyVerified) {
+        msg("msg-verify", "这个邮箱已经确认过了，不用再发。", "ok");
+        return r;
+      }
+      /* ⚠️ 这里同样不许写「已发出」—— 只写「发往哪」+ 如实标出成没成 */
+      if (r.verifySent) msg("msg-verify", "确认邮件已发往 " + (r.emailMask || state.regEmail) + "。", "ok");
+      else msg("msg-verify", "这台服务器现在没能把邮件发出去（发信商还没配好）。稍后再试。", "warn");
+      return r;
+    }, function () {
+      msg("msg-verify", "连不上服务器，请稍后再试", "warn");
+    });
   }
 
   /* ------------------------------------------------------------ 信任期 */
@@ -468,8 +682,10 @@
   /**
    * 信任期内一点即入（30 天），不发码。
    *
-   * 这是「每次都要去邮箱拿码」的代价补偿 —— 但信任期**不等于永久会话**：
-   * 会话仍然会过期，那时还是要收码（docs §6.3）。
+   * ⚠️ 信任期那一条按钮**只对本机会话有意义**。走服务端登录的人，
+   *    会话在 HttpOnly Cookie 里，页面上没有「信任」这件事可谈 ——
+   *    所以服务端可用时它一并交给服务端会话的过期规则去管，
+   *    这里仍然沿用内核的本机信任期（两条不冲突，各管各的）。
    */
   function renderTrust() {
     var acc = A.trustedAccount(store);
@@ -511,15 +727,34 @@
 
   /* ------------------------------------------------------------ 初始化 */
 
+  var inited = false;
   function init() {
+    if (inited) return;              // 幂等：兜底重跑时不再挂第二遍监听
+    inited = true;
     if (!A || !store) {
       msg("msg-email", "账号内核没有加载成功，请刷新页面重试", "warn");
       return;
     }
-    // 已登录：不必再走一遍流程，直接把他送回账号页
-    var sess = A.session(store);
     renderTrust();
 
+    // 页签：切动作，不跳页
+    $("tab-pw").addEventListener("click", function () { setMode("pw"); msg("msg-pw", ""); });
+    $("tab-code").addEventListener("click", function () { setMode("code"); msg("msg-email", ""); });
+
+    // 口令那两屏
+    $("btn-login").addEventListener("click", onLogin);
+    $("btn-register").addEventListener("click", onRegister);
+    $("btn-forgot-send").addEventListener("click", onForgotSend);
+    $("btn-resend-verify").addEventListener("click", onResendVerify);
+    $("btn-go-register").addEventListener("click", function () { setMode("register"); msg("msg-reg", ""); });
+    $("btn-forgot").addEventListener("click", function () { setMode("forgot"); msg("msg-forgot", ""); });
+    $("btn-back-login").addEventListener("click", function () { setMode("pw"); });
+    $("btn-back-login2").addEventListener("click", function () { setMode("pw"); });
+    $("btn-verify-later").addEventListener("click", function () { setMode("pw"); });
+    bindEye("btn-pw-eye", "input-pw");
+    bindEye("btn-reg-eye", "input-reg-pw");
+
+    // 随机码那一屏
     $("btn-send").addEventListener("click", onSend);
     $("btn-edit-email").addEventListener("click", function () {
       hide($("step-code"));
@@ -534,22 +769,30 @@
     $("btn-trust").addEventListener("click", onTrust);
     $("btn-trust-other").addEventListener("click", function () {
       hide($("trust-panel"));
-      show($("step-email"));
+      setMode("pw");
     });
     $("btn-copy-code").addEventListener("click", onCopyCode);
     $("btn-mail-code").addEventListener("click", onMailCode);
 
-    var emailInput = $("input-email");
-    if (emailInput) {
-      emailInput.addEventListener("keydown", function (e) {
-        if (e.key === "Enter") { e.preventDefault(); onSend(); }
+    // 回车即提交（三个口令输入框各绑一次；邮箱框走「回车发码」）
+    [["input-pw-email", onLogin], ["input-pw", onLogin],
+      ["input-reg-email", onRegister], ["input-reg-pw", onRegister], ["input-reg-pw2", onRegister],
+      ["input-forgot-email", onForgotSend],
+      ["input-email", onSend]].forEach(function (pair) {
+      var el = $(pair[0]);
+      if (!el) return;
+      el.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") { e.preventDefault(); pair[1](); }
       });
-    }
+    });
 
-    // 已登录时把「登录」这一块收起来 —— 别让已登录的人再走一遍登录流程
+    // 已登录：不必再走一遍流程，直接把他送回账号页
+    var sess = A.session(store);
     if (sess && sess.account) {
       onSignedIn({ account: sess.account, isLocalOnly: !store.persistent() });
+      return;
     }
+    setMode("pw");
   }
 
   if (document.readyState === "loading") {
@@ -561,10 +804,14 @@
   /* 给测试用的出口：**只暴露读，不暴露写** —— 写一律经由按钮事件 */
   window.LoginPage = {
     state: state,
+    MODES: MODES,
     buildCodeRow: buildCodeRow,
     readCode: readCode,
     setCode: setCode,
     sendCode: sendCode,
+    setMode: setMode,
+    isLocal: isLocal,
+    passwordNeedsServer: passwordNeedsServer,
     esc: esc
   };
 })();

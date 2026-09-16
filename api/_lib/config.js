@@ -62,6 +62,20 @@ var CONFIG = {
   /* ---- 站点 ---- */
   siteUrl: env("SITE_URL", "https://kuibu.app"),
 
+  /* ---- 注册与口令（Issue #197：完整登录流程）----
+     ⚠️ 这几项**没有一项是开关**：注册 / 登录 / 忘记密码 / 重设口令
+        都是本流程的组成部分，开关一开一半就成了「某些用户走不通」。
+        唯一一个真正的开关是 ALLOW_CODE_ECHO（冒烟用），它不在这一段。 */
+  passwordMin: intEnv("PASSWORD_MIN", 8),
+  passwordMax: intEnv("PASSWORD_MAX", 72),
+  verifyTtlMs: intEnv("VERIFY_TTL_MS", 24 * 60 * 60 * 1000),     // 确认邮件 24 小时
+  resetTtlMs: intEnv("RESET_TTL_MS", 60 * 60 * 1000),            // 重设链接 1 小时
+  // 这两张的频控档：与发码同源的 [[窗口毫秒, 上限]] 形状，
+  // 让 limiter.check(cfg, bucket, key, t) 一套代码量到底（不另写一套判断）
+  rateVerify: [[3600000, 5], [86400000, 10]],
+  rateReset: [[3600000, 5], [86400000, 10]],
+  rateLogin: [[3600000, 20], [86400000, 60]],
+
   /* ---- 数值：与文档定死的一致，改这里就要改文档 ---- */
   codeLength: intEnv("CODE_LENGTH", 6),            // 6 位纯数字
   codeTtlMs: intEnv("CODE_TTL_MS", 10 * 60 * 1000), // 10 分钟

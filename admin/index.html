@@ -100,6 +100,30 @@
         <p class="account-msg" id="msg-server"></p>
       </section>
 
+      <!-- ---------- 二之二、全部账号（名录，Issue #197） ----------
+           与上面那张「服务端名单」**不是一张表**：
+             · 上面那张是**台账**（`plan !== free`，只列发过东西的），它只回掩码；
+             · 这一张是**名录**（注册过的全部账号），它**回明文邮箱**——
+               因为只有明文才认得出是谁（掩码 a***@qq.com 认不出来）。
+           用户原话：「要求用户邮箱必须记录到数据库，用户名等也要。」
+                    「我还是要看到这些用户。」——这一块就是那件事。
+           ⚠️ 它**只读**：这里不给发放键（发放在上面那张卡上，按掩码发）。
+              把「看」与「发」混在一张表上，迟早有人点错行。 -->
+      <section class="account-card" id="accounts-card" hidden>
+        <h2 class="account-card-title">全部账号（名录）</h2>
+        <p class="account-lead">
+          这里列的是<strong>注册过的账号</strong>，含<strong>邮箱</strong>与昵称。
+          与上面那张「服务端名单」不是一张表：那边只列发过层级的人。
+        </p>
+        <ul class="account-list" id="accounts-list"></ul>
+        <p class="account-hint" id="accounts-empty" hidden>还没有任何账号。</p>
+        <p class="account-hint" id="accounts-note" hidden></p>
+        <div class="confirm-row" style="margin-top:12px">
+          <button class="account-btn ghost" id="btn-accounts-reload" type="button">刷新名录</button>
+        </div>
+        <p class="account-msg" id="msg-accounts"></p>
+      </section>
+
       <!-- ---------- 三、本机发放名单（降级路径，仍然不是权威） ---------- -->
       <section class="account-card" id="list-card" hidden>
         <h2 class="account-card-title">本机发放名单</h2>
