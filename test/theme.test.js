@@ -694,7 +694,7 @@ chk(Buffer.compare(norm, any) !== 0, 'maskable 图标与普通图标是两份不
    /settings/general/ 通用（用户名 / 头像印记 / 账号 / 数据管理）
    /settings/recite/  背诵（学段 / 年级 / 学期 / 范围 / 数量）+ 复习算法
    /settings/lists/   我的清单（自选背诵的增删改查）
-   /settings/reader/  阅读与朗读（注音 + 五档连读）
+   /settings/reader/  朗读（注音 + 五档连读方式）
    下面的断言按这一结构读源码：分组判据仍是原来那六组、顺序不变，
    只是要「合起来看」——拆页不该顺手改分类。 */
 const settingsHtml = read('settings/index.html');
@@ -748,7 +748,7 @@ chk(/data-back="\/settings\/"/.test(read('settings/general/index.html')),
 //             —— 原「古诗词背诵」改名，它本来就不只作用于古诗词
 //   我的清单  用户自己那份清单（自选背诵的增删改查）—— Issue #114 第二条搬进来的
 //   复习算法  决定「下次什么时候复习」（四张模型 4 选 1）
-//   朗读     打开一篇时怎么念 / 看不看得到拼音（注音总开关 + 五档连读范围）
+//   朗读     打开一篇时怎么念 / 看不看得到拼音（注音总开关 + 五档连读方式）
 //             —— Issue #163：原「阅读辅助」与「朗读播放」各只有一条设置，
 //             两个组标题 + 四行说明只为两条设置服务，并成一组「朗读」
 chk((SETTINGS_HTML.match(/class="settings-group"/g) || []).length === 5,
