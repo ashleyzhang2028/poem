@@ -2,16 +2,17 @@
  * 二级设置页专项测试（Issue #132 后续）
  * ==========================================================================
  * 为什么设置要拆页：一页里已经堆了六组（#114 分组、#132 账号 / 头像 /
- * 复习算法 / 朗读播放）。再往上加只会更长，于是每一组摊成一页：
+ * 复习算法 / 朗读播放；#163 又把最后两组并成一组「朗读」，现在是五组）。
+ * 再往上加只会更长，于是每一组摊成一页：
  *
  *   /settings/          主页：四个入口 + 版权与法务链接（不加载 js/settings.js）
  *   /settings/general/  通用     —— 用户名 / 头像印记 / 账号 / 数据管理
  *   /settings/recite/   背诵     —— 学段 / 年级 / 学期 / 范围 / 数量 + 复习算法
  *   /settings/lists/    我的清单 —— 自选背诵的增删改查
- *   /settings/reader/   阅读与朗读 —— 注音总开关 + 五档连读
+ *   /settings/reader/   朗读     —— 自动注音 + 五档连读方式
  *
  * 这一层守三件事（都是「拆页会静默出错」的那类）：
- *   一、结构：四张页合起来仍是原来那六组、每件控件**只在一页**上
+ *   一、结构：四张页合起来是精简后的五组、每件控件**只在一页**上
  *   二、返回：二级页的返回键回设置主页，不回背诵首页
  *   三、离线：新页面与新脚本都进了 sw.js 的预缓存清单，且版本号跟着提
  * 跑法：`node test/settings-nav.test.js`（纯 Node，不联网、不装依赖）
@@ -55,7 +56,7 @@ const NAV = read('js/settings-nav.js');
   // 入口清单由数据生成，HTML 里不手写一遍（加一组只改一处）
   chk(/renderIndex\(\)/.test(NAV) && /#settings-index/.test(NAV),
     '入口清单由 js/settings-nav.js 按数据渲染进 #settings-index');
-  chk(/settings-index/.test(SRC.index), '主页有一块空的入口清单容器（不在 HTML 里手写六组）');
+  chk(/settings-index/.test(SRC.index), '主页有一块空的入口清单容器（不在 HTML 里手写分组）');
   chk(!/href="\/settings\/(general|recite|lists|reader)\/"/.test(SRC.index),
     '主页 HTML 里不写死入口地址（避免两处各写一份，加一组漏一页）');
   chk(/settings-nav\.js/.test(SRC.index), '主页加载 js/settings-nav.js');
@@ -77,13 +78,19 @@ const NAV = read('js/settings-nav.js');
         '控件 ' + sel + ' 只在「' + owner + '」页（实际：' + (pagesWithIt.join(',') || '哪一页都没有') + '）');
     });
   });
-  // 分组：四张页合起来是原来那六组 + 3 期新增的「打印」一组，分类与顺序一个字没改。
+  // 分组：四张页合起来是五组（Issue #163 把「阅读辅助 + 朗读播放」并成一组「朗读」），
+  // 再 + 3 期新增的「打印」一组，前四组与顺序一个字没改。
   // ⚠️ `print` 那一组是**新增**的（篇目打印页，Pro · `export.paper`），
   //    它长在「我的清单」页上 —— 要打印的正是这份清单，分两页等于让人来回搬东西。
   const titles = ['general', 'recite', 'lists', 'reader']
     .flatMap(k => [...SRC[k].matchAll(/aria-labelledby="grp-([a-z]+)"/g)].map(m => m[1]));
-  chk(titles.join(',') === 'general,recite,algo,lists,print,reader,play',
-    '四张页合起来是原六组 + 打印、原顺序（实际 ' + titles.join(',') + '）');
+  chk(titles.join(',') === 'general,recite,algo,lists,print,reader',
+    '四张页合起来是原六组并成五组 + 打印、顺序不变（实际 ' + titles.join(',') + '）');
+  // Issue #163：两条只有一条设置的组不再各占一个组标题 ——
+  // 「阅读辅助 + 朗读播放」并成「朗读」一组，组标题只留一个。
+  chk(/aria-labelledby="grp-reader"[\s\S]*?<\/section>/.test(SRC.reader) &&
+      !/aria-labelledby="grp-play"/.test(SRC.reader),
+    '「朗读」页只有一组（原「阅读辅助」「朗读播放」两个组标题并成一个）');
   // 主页不再是「一堆控件里的一页」：它没有分组，只有入口清单
   chk(!/aria-labelledby="grp-/.test(SRC.index), '主页不再有设置分组（只有入口清单）');
   chk(!/id="input-username"|id="seg-stage"|id="seg-play"|id="collections-list"/.test(SRC.index),
@@ -124,7 +131,7 @@ const NAV = read('js/settings-nav.js');
   // 页面名各自不同：用户得知道自己在哪一层
   const pageNames = ['index', 'general', 'recite', 'lists', 'reader']
     .map(k => (SRC[k].match(/data-page="([^"]+)"/) || [])[1]);
-  chk(pageNames.join(',') === '设置,通用,背诵,我的清单,阅读与朗读',
+  chk(pageNames.join(',') === '设置,通用,背诵,我的清单,朗读',
     '五张页的页名各不相同且如实：' + pageNames.join(' / '));
   chk(new Set(pageNames).size === 5, '五张页的页名不重复（否则「返回上一页」会让人分不清层）');
 }
