@@ -5,7 +5,7 @@
 > 结论压成**一张架构图 + 一份排期表 + 一组不可退让的边界**。
 >
 > 关联：Issue #132、`docs/auth-design.md`（账号与邮箱登录，细节不在此重复）。
-> 当前 SW 缓存版本：`poem-app-v135`。
+> 当前 SW 缓存版本：`poem-app-v136`。
 > **「现在不做、以后做」的条目另有一份**：[`docs/todo.md`](todo.md) ——
 > 那是唯一一处（短信登录真开通、微信小程序版、微信登录、
 > 头像上云、国内 CDN、额度真限额）。本文写的是**已排期**的顺序，两者别混。
@@ -1040,14 +1040,6 @@ $ npm run doctor
 C 只影响「这一件」（发不出真信），D 是**可用性兜底**（不做的话第 8 天项目
 会被 Supabase 暂停，而用户看到的不是「有点慢」而是「打不开」）。
 
-**备份镜像的版本（2026-09-16 修）**：`supabase-backup` 用的是 **`postgres:17`**，
-不是 `postgres:16`。Supabase 现在的服务端是 PostgreSQL **17.6**，而 `pg_dump`
-**不改**连比自己新的服务端 —— 16 的客户端在读到数据之前就会以
-`aborting because of server version mismatch` 退出（`server version: 17.6;
-pg_dump version: 16.15`）。这条和后面 §5.7 记的那两条是**同一形状**的坑：
-看起来都像「密钥 / 连接串配错了」，其实与连接串无关。服务端升大版本时，
-`.cnb.yml` 里那一行要跟着升（反方向——客户端比服务端新——是允许的）。
-
 #### ③ D 为什么落在 CNB 而不是 GitHub Actions
 
 §1.2 A 写的是「GitHub Actions 探活」，那条判断的依据是
@@ -1073,11 +1065,13 @@ service_role key 两处都要带：
 -H "apikey: $SUPABASE_SERVICE_KEY" -H "Authorization: Bearer $SUPABASE_SERVICE_KEY"
 ```
 
-**两条排在 D 步最后才看得到的坑**（都在下面这句后面）：**①** 备份镜像的
-大版本要跟服务端一致 —— `pg_dump` 不改连比自己新的服务端，用 `postgres:16`
-去连 Supabase 的 17.6 会以 `aborting because of server version mismatch`
-退出（详见 §5.8，报这句话**与连接串无关**）；**②** `SUPABASE_DB_URL` 本身
-怎么来。
+**两条排在 D 步最后才看得到的坑**：**①** 备份镜像的**大版本要跟服务端一致** ——
+`supabase-backup` 用的是 **`postgres:17`**，不是 `postgres:16`；`pg_dump`
+**不改**连比自己新的服务端，16 的客户端去连 Supabase 的 17.6 会在读到数据之前
+就以 `aborting because of server version mismatch` 退出（`server version: 17.6;
+pg_dump version: 16.15`）—— 报这句话**与连接串无关**，详见 §5.8，服务端升大版本时
+`.cnb.yml` 里那一行要跟着升（反方向 —— 客户端比服务端新 —— 是允许的）；
+**②** `SUPABASE_DB_URL` 本身怎么来。
 
 **备份还要第三个值 `SUPABASE_DB_URL`**：它**不能在控制台直接复制** ——
 去 Project Settings → Database → Connection string 取模板，再把
@@ -2836,6 +2830,63 @@ Connection string 取模板，再把 `[YOUR-PASSWORD]` 整体换成数据库密�
 由 `test/ops.test.js` 断言「D 步写了 DB URL / 写了那个占位符 / 指明了去哪取 /
 写了百分号编码」。
 
+#### ②之二 那条 `could not translate host name` 就是「密码没转义」（2026-09-17 复查）
+
+**Issue #159 里两条任务一绿一红**，红的那条报的正是：
+
+```
+pg_dump: error: could not translate host name "db.twmtmohcaifswxtjowru.supabase.co" to address: No address associated with hostname
+```
+
+⚠️ **注意报错里那个主机名是「干净」的** —— 没有 `…@` 前缀、没有密码尾巴，
+就是 `db.<ref>.supabase.co`。这说明**密码那一段已经被正确地从 URL 里解析掉了**，
+「密码没百分号编码」在**这一例里不是原因**：
+
+- 密码里的 `@` 没编码时，报错长这样：`could not translate host name "…@db.<ref>.supabase.co"`
+  （引号里那串**带 `@` 和密码尾巴**）—— 这才是「密码没转义」的指纹；
+- 报错里的主机名干净、且确实是 `db.<ref>.supabase.co` 时，URL 已经解析成功，
+  失败发生在**解析这个名字**这一步：容器里这个域名**没有可用地址**。
+
+两者只差引号里那几个字符，却指向完全不同的排查方向。所以这一步把**判据**写死，
+不再靠「看着像」：
+
+| 报错里引号内的主机名 | 结论 | 下一步 |
+|---|---|---|
+| 带 `…@` 或密码尾巴 | 密码没百分号编码 | 改密钥仓库里的值（`@` → `%40`） |
+| 干净的 `db.<ref>.supabase.co` | URL 已解析，是 DNS 解析不到 | 按下面顺序查 |
+| `localhost` / 别的域名 | 值填错了（不是 Supabase 的串） | 回 Connection string 重取模板 |
+
+名字确实解析不到时，**按代价从低到高**查三条（前两条是平台侧的事实，与业务无关）：
+
+1. **新项目有个发布窗口**：刚建的项目 DNS 可能还没发布完（几分钟到几十分钟）。
+   先重跑一次这条流水线 —— 失败名单里最省事的一种。
+2. **直连主机名 `db.<ref>.supabase.co` 在新项目上只给 IPv6（AAAA）**。Supabase 的
+   「Direct connection」在新项目上不再提供 A 记录（IPv4 要另开 IPv4 add-on），
+   解析不到地址的表现之一就是 `No address associated with hostname`。
+   两个**零成本**的替代串，都在同一页 **Project Settings → Database →
+   Connection string** 上：
+   - **Session pooler**：`…@aws-0-<region>.pooler.supabase.com:5432`，用户名是
+     `postgres.<ref>`（**不是** `postgres`）。给 `pg_dump` 用这个最稳，它走 IPv4。
+   - **Transaction pooler**（`:6543`）：**不要**给 `pg_dump` 用 —— 它不支持
+     `pg_dump` 需要的会话级特性。
+3. 兜底：只要 `SUPABASE_URL` + `SUPABASE_SERVICE_KEY` 是通的（探活那条就是证明），
+   导出可以**不依赖 Postgres 直连** —— 用 PostgREST 逐表拉 JSON。数据量小的时候
+   够用（`backup/` 的产物从来不进 Git，拉到本地保存即可）。
+
+#### ②之三 备份脚本现在**先自检 URL 形状，再跑 `pg_dump`**
+
+只写文档不够 —— 上面那个「看着像 DNS 坏了」的坑要让**流水线自己**说出来。
+`.cnb.yml` 的 `supabase-backup` 在 `pg_dump` 之前加了两条自检：
+
+- 整串必须以 `postgresql://` / `postgres://` 开头（挡掉「只填了个主机名」这种填法）；
+- 剥掉 `scheme://user:pass@` 之后，**主机段里不许再出现 `@`**。出现就是密码没编码 ——
+  这时直接打印「把密码里的特殊字符百分号编码：`@` → `%40` …」并退出，
+  **不再往 `pg_dump` 里送**那句容易被误读成 DNS 故障的报错。
+
+> 这是「症状看起来像 A，其实是 B」那类坑的通用解法：**把 B 在更早的地方判掉**，
+> 让报错本身指向真正要改的地方。与探活那条 `apikey` 头同源 ——
+> 那次是「看起来像密钥仓库没配好」，这次是「看起来像 DNS 坏了」。
+
 #### ③ 顺带修掉的一个真 bug：桌面首页的顶栏被挤成 369px
 
 查上面两条时把 `bash test/run.sh` 跑了一遍，CI 的 PWA 那一层有 **3 条红**：
@@ -2862,6 +2913,15 @@ Connection string 取模板，再把 `[YOUR-PASSWORD]` 整体换成数据库密�
 改法与 `.dock-inner` 同一条写法：`width: 100%` 负责撑满那一格、
 `max-width: var(--content-w)` 负责不许比内容区更宽、`margin: 0 auto` 居中；
 再加上 `body[data-nav="home"] .topbar { grid-area: bar; }`。
+
+##### ②之四 这一轮的验证（2026-09-17 追溯，回答 Issue #159 的后半）
+
+- `node test/ops.test.js` 全绿：新增「D 步写了 `%3A` / 写了『`@` 只许出现一次』/
+  写了 Session pooler / 写了 6543 不要给 `pg_dump` 用 / 写了 server version mismatch
+  不是失败」，以及 `.cnb.yml` 的备份脚本真的先自检 URL 形状
+- `bash test/run.sh` 全绿、0 失败（PWA 那一层在**能起 Chrome 的镜像里**跑；
+  本轮工作区缺系统库，跳过并如实打印原因，不是静默通过）
+- 探活那条**一个字没改** —— 它本来就是绿的（HTTP 200），绿的别动
 
 #### 验证
 
@@ -2933,5 +2993,6 @@ D 步的坑全写成连接串的坑**（`[YOUR-PASSWORD]`、百分号编码那�
   ⚠️ 判据先**抠掉注释行**再数镜像名 —— 镜像名在解释它的注释里也出现一次，
   拿裸串去数会数出两份，那是**测试自己读数错**（与探活 `apikey` 那条同一类坑，
   §4.18 记过它的形状）
-- `sw.js` **不动**（v135）：本轮只改流水线、文档与测试，没有进预缓存的资源
+- `sw.js` **不动**：§5.7 那一轮已升到 **v136**（备份脚本自检进的是 `.cnb.yml`，
+  没有进预缓存的资源）；本轮只改流水线、文档与测试
 - 密钥仓库那一侧**不需要任何改动** —— 这个问题绕开它

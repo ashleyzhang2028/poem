@@ -126,6 +126,29 @@ main:
               echo "本镜像没有 pg_dump —— 见 docs/architecture.md §4.12 第 D 步";
               exit 1;
             }
+            # ⚠️ pg_dump 从 URL 里**自己拆**主机名，不认 shell 的引号。密码含
+            #    @ : / # ? 这类保留字符时必须百分号编码（@ → %40），否则它会把
+            #    密码里那一段当成主机名，报的是：
+            #      could not translate host name "…@db.<ref>.supabase.co"
+            #    —— **看着像 DNS 坏了，其实只是密码没转义**。这种报错会把人
+            #    引向「网络 / DNS / 项目被暂停」三条错路，所以先按 URL 形状自检。
+            case "$SUPABASE_DB_URL" in
+              postgres://*|postgresql://*) : ;;
+              *) echo "SUPABASE_DB_URL 必须以 postgresql:// 开头（Project Settings → Database → Connection string 的模板）"; exit 1 ;;
+            esac
+            DB_HOST=$(printf '%s' "$SUPABASE_DB_URL" | sed -E 's#^[a-z]+://[^@/]*@##; s#[:/].*$##')
+            case "$DB_HOST" in
+              *@*)
+                echo "SUPABASE_DB_URL 的密码里含未转义的 @ —— 用户名/主机名会被拆错，"
+                echo "pg_dump 于是一律报 could not translate host name（那**不是** DNS 坏了）。"
+                echo "把密码里的特殊字符百分号编码后再填：@ → %40  : → %3A  / → %2F  # → %23  ? → %3F"
+                exit 1
+                ;;
+            esac
+            # ⚠️ 这个镜像的 pg_dump 是 16，而 Supabase 服务端是 17。pg_dump 比
+            #    服务端**大版本低**时，会对着 17 才有的对象报
+            #    "server version mismatch"（老版本读不懂新目录）。这条警告不是备份失败，
+            #    但下一轮看见它别当成新 bug 去查。
             mkdir -p backup
             STAMP=$(date +%Y%m%d)
             pg_dump --no-owner --no-privileges "$SUPABASE_DB_URL" > "backup/kuibu-$STAMP.sql"
