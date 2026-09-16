@@ -1065,6 +1065,14 @@ service_role key 两处都要带：
 -H "apikey: $SUPABASE_SERVICE_KEY" -H "Authorization: Bearer $SUPABASE_SERVICE_KEY"
 ```
 
+**两条排在 D 步最后才看得到的坑**：**①** 备份镜像的**大版本要跟服务端一致** ——
+`supabase-backup` 用的是 **`postgres:17`**，不是 `postgres:16`；`pg_dump`
+**不改**连比自己新的服务端，16 的客户端去连 Supabase 的 17.6 会在读到数据之前
+就以 `aborting because of server version mismatch` 退出（`server version: 17.6;
+pg_dump version: 16.15`）—— 报这句话**与连接串无关**，详见 §5.8，服务端升大版本时
+`.cnb.yml` 里那一行要跟着升（反方向 —— 客户端比服务端新 —— 是允许的）；
+**②** `SUPABASE_DB_URL` 本身怎么来。
+
 **备份还要第三个值 `SUPABASE_DB_URL`**：它**不能在控制台直接复制** ——
 去 Project Settings → Database → Connection string 取模板，再把
 `[YOUR-PASSWORD]` 整体换成数据库密码（那串明文只在建项目时出现过一次，
@@ -2985,3 +2993,8 @@ Supabase 服务端是 **17.6**，`postgres:16` 里的 `pg_dump` 是 **16.15**，
 - 探活那条照旧**一个字没改** —— 它本来就是绿的
 - `sw.js` **不动**（v136）：本轮只改 `.cnb.yml` / `api/_lib/ops.js` / 文档与测试，
   没有任何进预缓存的资源
+- 反向验证：把镜像改回 `postgres:16` → 立刻红 2 条（断言有牙）
+  ⚠️ 判据先**抠掉注释行**再数镜像名 —— 镜像名在解释它的注释里也出现一次，
+  拿裸串去数会数出两份，那是**测试自己读数错**（与探活 `apikey` 那条同一类坑，
+  §4.18 记过它的形状）
+- 密钥仓库那一侧**不需要任何改动** —— 这个问题绕开它

@@ -346,6 +346,7 @@ var STEPS = [
       "备份还要第三个值 SUPABASE_DB_URL —— 它**不能在控制台复制**，只能去 Project Settings → Database → Connection string 那一页取模板，再把里面的 [YOUR-PASSWORD] 换成数据库密码（那串明文密码只在建项目时出现过一次；忘了就点 Reset database password 重设）。模板形如 postgresql://postgres:[YOUR-PASSWORD]@db.<ref>.supabase.co:5432/postgres，把 [YOUR-PASSWORD] 整体替换掉再填进密钥仓库",
       "密码里有 @ : / # ? 这类字符时必须**百分号编码**（@ → %40，: → %3A，/ → %2F，# → %23，? → %3F），否则 pg_dump 会把密码里那一段当成主机名，报的是「could not translate host name」—— **看着像 DNS 坏了，其实只是密码没转义**",
       "填完先验 URL 形状：整串必须以 postgresql:// 或 postgres:// 开头；用户名 / 密码 / 主机三段里，**@ 只许出现一次**（就是分隔密码与主机的那一个）。多了就说明密码没编码 —— .cnb.yml 的备份脚本已把这两条做成开跑前的自检，命中会直接教你改哪里，而不是等你去看那句「could not translate host name」",
+      "备份镜像的**大版本要跟服务端一致**：Supabase 现在是 PostgreSQL 17，所以镜像用 postgres:17（不是 postgres:16）。pg_dump **不改**连比自己新的服务端 —— 落后一个大版本时它会在读到数据之前就以「aborting because of server version mismatch」退出，而这句话看着像连接串配错了，其实只是客户端旧了。服务端升大版本时，.cnb.yml 里那一行要跟着升",
       "密码忘了：Project Settings → Database → Reset database password，重设后把新密码编码再填回密钥仓库（旧的立刻失效）",
       "跑通一次看回执：备份产出 backup/kuibu-<日期>.sql 并打印字节数（0 字节不算备份 —— 脚本会删掉失败留下的半截文件）",
       "⚠️ 镜像里的 pg_dump 大版本**必须 ≥ Supabase 服务端**（现在服务端是 17.6，所以 .cnb.yml 用的是 postgres:17）。低一个大版本时 pg_dump 会**直接 abort**，不是警告：`pg_dump: error: aborting because of server version mismatch` / `detail: server version: 17.6; pg_dump version: 16.15`。这时备份是零产出的（postgres:16 对 17 就是这么红过一次）。pg_dump 允许比服务端**高**，不允许低；服务端升到 18 就把 docker.image 换成 postgres:18",
