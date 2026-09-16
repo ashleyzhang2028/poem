@@ -98,8 +98,7 @@
    *     所以它是未登录用户最可能落地的地方。
    *
    * 两个状态共用同一个按钮，文案在 JS 里按登录态写：
-   *   · 未登录 → 「建一个账号（免费）」
-   *   · 已登录 → 「管理登录状态（退出 / 注销）」—— 落到 `/login/` 也**不是死路**：
+   *   · 未登录 → 「登录」—— 落到 `/login/` 也**不是死路**：
    *     那一页认信任期与会话，信任期内顶部给「继续以 a***@b.com 进入」，
    *     会话还在时同样能继续，不会把已登录的人再拦一次收码。
    *
@@ -111,16 +110,54 @@
     if (!btn) return;
     var out = $("btn-sign-out");
     var hint = $("signout-hint");
-    /* 未登录那一颗原来写的是「建一个账号（免费）」—— 那是在**劝人注册**，
-       而这一页要说的是「登录能用什么」。改成「登录可用语音朗读」：
-       如实说明登录换来的那一件事（免费层与游客只差这一条，见 docs §3.4）。 */
-    btn.textContent = id.signedIn ? "管理登录状态" : "登录可用语音朗读";
+    /* 未登录那一颗的文案（Issue #163 用户 2026-09-16）：
+       从「建一个账号（免费）」改成「登录可用语音朗读」，本轮再收成**「登录」**——
+
+       用户原话：「登录可用语音朗读？？？登录就登录，写那么多废话干什么」。
+       这一颗键做的事就是「去登录」，按钮上写理由是说给已经决定点的人听的；
+       「登录能多出什么」这件事由 /login/ 那一页自己说，不在这儿念一遍。 */
+    btn.textContent = id.signedIn ? "管理登录状态" : "登录";
     btn.addEventListener("click", function () { location.href = "/login/"; });
 
     /* 「退出登录」与它并排在同一行：两件事都是「管登录状态」，
-       一次性摆两颗各占一整行，用户会以为是两件不相干的事。 */
+       一次性摆两颗各占一整行，用户会以为是两件不相干的事。
+       Issue #163 又往前一步：它旁边还有「权限对比」——
+       一页里三颗需要动手的键（登录 / 退出 / 去对比页）现在全在同一行上。 */
     if (out) out.hidden = !id.signedIn;
     if (hint) hint.hidden = !id.signedIn;
+
+    /* 未登录时补一句「登录还差什么」：只写**还差的那件事**，不写理由。
+       文案由权益层出自己的口径（`hint`），这里不手拼「登录可用」这类字样 ——
+       全站「登录取向说什么」只有 denyReason() 一处。
+       ⚠️ 未登录那颗键就叫「登录」，「差语音朗读」这件事在它底下的说明行里说：
+         按钮写事、说明写差别，两处分工不与全站别处冲突。 */
+    var loginHint = $("login-hint");
+    if (loginHint) {
+      loginHint.hidden = id.signedIn;
+      loginHint.textContent = id.signedIn ? "" : diffLine(id);
+    }
+  }
+
+  /**
+   * 未登录与 Free 之间**只差的那一条**（当前是语音朗读）。
+   *
+   * 数出「差几条」，再从权益层取那一条的中文名 —— 不把「语音朗读」四个字
+   * 写死在这里：将来 Free 只差的那一条变成别的（或不止一条），
+   * 这一行会自己跟着变，而不是悄悄地开始说假话。
+   */
+  function diffLine(id) {
+    if (!Ent || typeof Ent.capNames !== "function") return "";
+    var freeCtx = { tier: "free", signedIn: true };
+    var diff = Ent.capNames().filter(function (key) {
+      /* 只看真能力（别名指回同一张表，列两遍是同一件事） */
+      if (typeof Ent.cap === "function" && !Ent.cap(key)) return false;
+      return id.can(key).ok !== Ent.can(key, freeCtx).ok;
+    });
+    if (!diff.length) return "";
+    if (diff.length > 1) return "差 " + diff.length + " 项。";
+    var c = Ent.cap(diff[0]);
+    var name = c && c.name ? String(c.name).split("（")[0] : diff[0];
+    return "差" + name + "。";
   }
 
   /* ------------------------------------------------------------ 二、本机数据概览 */
@@ -376,6 +413,11 @@
 
   function init() {
     if (!A || !Ent || !store) return;
+    /* ⚠️ onSignOut 必须先接上：paint() 里那颗「登录 / 管理登录状态」的键
+       在 paint 期间就被画出来并被点得到（本机口径那一遍是同步跑的），
+       而这里原先只在文件底部接它 —— 服务端那一遍 paint 之前就点，
+       事件是空的（点了没反应）。所以接在 paint 之前。 */
+    $("btn-sign-out").addEventListener("click", onSignOut);
     var sess = A.session(store);
     paint(sess);
 
@@ -403,7 +445,6 @@
     }
 
     $("btn-go-plans").addEventListener("click", function () { location.href = "/plans/"; });
-    $("btn-sign-out").addEventListener("click", onSignOut);
     $("btn-go-admin").addEventListener("click", function () { location.href = "/admin/"; });
     $("btn-delete-start").addEventListener("click", onDeleteStart);
     $("btn-delete-cancel").addEventListener("click", onDeleteCancel);

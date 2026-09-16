@@ -37,7 +37,7 @@
 
            未登录时整页仍是**可用页**（不是 403、不是空页）：
            印与昵称照旧显示，身份那一行如实写「本机游客 · 未登录」，
-           操作键那一行给一颗「登录可用语音朗读」。
+           操作键那一行给一颗「登录」。
            ================================================================== -->
 
       <!-- ==================================================================
@@ -51,10 +51,11 @@
            而它们里有三颗其实是同一类事：「去别处看 / 去别处调」。
            现在收成四张卡：
 
-             身份    印 + 昵称 + 邮箱 + 层级，下面**一行**操作键（登录 / 退出 / 注销）
+             身份    印 + 昵称 + 邮箱 + 层级，下面**一行**操作键
+                     （登录（已登录时是「管理登录状态」）/ 退出 / 权限对比）
              本机数据 这台设备上有什么（只读）
              同步    同步到哪一步了 + 「同步设置」，需要你裁决时再铺冲突面板
-             关于    应用 / 法务两页 / 离线缓存，附管理员与权限两条入口
+             关于    应用 / 法务两页 / 离线缓存，附同步设置与管理后台两条入口
 
            ⚠️ 「注销账号」那一块仍**单独占一张卡**（朱砂描边的危险区）：
               它是不可逆动作，与别的键并列会让人误按 —— 这一条是刻意不合并的。
@@ -66,13 +67,20 @@
         <p class="account-hint" id="identity-hint"></p>
 
         <!-- 身份卡底下**一行**操作键：
-             未登录 → 一颗「登录可用语音朗读」（去 /login/）
-             已登录 → 「管理登录状态」+「退出登录」
+             未登录 → 「登录」、「权限对比」（去 /login/、/plans/）
+             已登录 → 「管理登录状态」、「退出登录」、「权限对比」
+             Issue #163 用户原话：「把这个按钮和其他按钮放一起啊」——
+             动手的两颗键（登录 / 退出）与「去看看」的那颗键**同一行**，
+             不再一颗独占一行、另两颗缩在第四张卡里。
              按钮文案与显隐都由 js/profile.js 按登录态写，本页不写死两处。 -->
         <div class="account-actions" id="identity-actions">
           <button class="account-btn" id="btn-account-entry" type="button"></button>
           <button class="account-btn ghost" id="btn-sign-out" type="button" hidden>退出登录</button>
+          <button class="account-btn ghost" id="btn-go-plans" type="button">权限对比</button>
         </div>
+        <!-- 「登录」那一颗未登录时底下补一句它还差什么（语音朗读）——
+             未登录用户唯一真的用不了的现有功能；已登录时这一句收起。 -->
+        <p class="account-hint" id="login-hint" hidden></p>
         <p class="account-hint" id="signout-hint" hidden>退出不删进度；注销在下面「危险区」。</p>
       </section>
 
@@ -125,7 +133,6 @@
           <div class="kv-row"><span class="kv-k">离线缓存</span><span class="kv-v" id="about-cache"></span></div>
         </div>
         <div class="account-actions">
-          <button class="account-btn ghost" id="btn-go-plans" type="button">权限对比</button>
           <button class="account-btn ghost" id="btn-go-sync" type="button">同步设置</button>
           <button class="account-btn ghost" id="btn-go-admin" type="button" hidden>管理后台</button>
         </div>

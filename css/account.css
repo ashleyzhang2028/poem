@@ -882,7 +882,7 @@ thead .plans-th-cap {
         判在元素上，不判在 `.app` 的某一条上（改一次结构就会漏）。 */
   .topbar, .dock, .foot, .toast, .modal,
   .account-btn, .account-card-title, .account-hint, .account-lead,
-  .seg, .settings-index, .account-entry-card,
+  .seg, .settings-index,
   .print-actions, .print-opt, .print-blank-lines, .print-paper,
   .settings-groups > .settings-group > .settings-item > label,
   .collections-panel, .poems-game-entry, .game-back, .reader-actions,

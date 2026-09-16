@@ -60,6 +60,16 @@ const NAV = read('js/settings-nav.js');
   chk(!/href="\/settings\/(general|recite|lists|reader)\/"/.test(SRC.index),
     '主页 HTML 里不写死入口地址（避免两处各写一份，加一组漏一页）');
   chk(/settings-nav\.js/.test(SRC.index), '主页加载 js/settings-nav.js');
+  /* Issue #163 用户原话：「另外把这个按钮和其他按钮放一起啊」——
+     账号那一行（登录 / 个人中心）**在清单里面**，与四组入口排成一列，
+     不再是架在清单上面的另一张卡。所以判据是「同一张清单里五行、
+     它排最后一个」，而不是「有没有那一行」。 */
+  chk(!/id="account-entry"/.test(SRC.index),
+    '主页不再有独立的账号卡容器（那一行已在清单里）');
+  chk(/querySelector\("#settings-index"\)/.test(NAV) && /appendChild\(row\)/.test(NAV),
+    '账号那一行被**追加进同一张清单**（#settings-index），不是另起一处');
+  chk(/renderIndex\(\);\s*\n\s*renderAccountEntry\(\);/.test(NAV),
+    'append 排在 renderIndex 之后（反了就被清单重画抹掉，那一行会凭空消失）');
 }
 
 /* ================= 二、每张页只放自己那一组，控件不重复 ================= */

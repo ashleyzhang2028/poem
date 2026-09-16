@@ -1167,7 +1167,9 @@
   function speechHint() {
     if (!speechOk()) return "当前浏览器不支持语音朗读";
     const a = window.Speech.allowed ? window.Speech.allowed() : { ok: true, hint: "" };
-    return a.hint || "登录可用语音朗读";
+    /* 兜底不再写「登录可用语音朗读」那半句理由（Issue #163）：
+       真实理由由权益层的 denyReason() 出 —— 它给的就是「登录可用」三个字。 */
+    return a.hint || "登录可用";
   }
 
   /** 一首诗的朗读文本：标题 + 朝代 + 作者 + 正文 */
