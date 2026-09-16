@@ -337,6 +337,10 @@
        读法由 js/storage.js 转发。**必须排在 js/storage.js 之前** ——
        缺了它 storage 只是退化成兜底读法，不会报错（那种「不报错的少数据」最难查）。 -->
   <script src="js/progress-store.js"></script>
+  <!-- 子档案（Issue #159）：名册 + 当前选中项 + 键映射的唯一一处实现。
+       必须排在 js/progress-store.js 之后（引擎每次读盘都要问它「当前是哪个档案」）
+       与 js/avatar.js 之前（那两处都用它）。 -->
+  <script src="js/profiles.js"></script>
   <!-- 同步层（Issue #132 · 1B）：进度 / 账号域设置 / 已读的跨设备同步。
        必须在 js/storage.js 之前 —— 它的 touch() 要给每条记录打标，
        而页面只认识 Storage/ProgressStore 这两个入口。 -->

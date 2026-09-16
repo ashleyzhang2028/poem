@@ -305,13 +305,20 @@ setTimeout(() => {
   chk(grpOf(sreader, '#seg-play') === '朗读', '连读档位归到「朗读」组');
   chk(grpOf(srecite, '#seg-algo') === '复习算法', '复习算法选择归到「复习算法」组');
   // 只给背诵用的选项不能再出现在「通用」组里（这才是这次需求的重点）
-  // 「通用」组的五项：用户名 / 头像印记 / 账号 / 跨设备同步 / 数据管理
-  // （Issue #132 · 用户名旁多了头像印记、二级页补上「账号」、1B 又补上同步开关 ——
-  //  它们都是账号域的身份与数据设置）。
+  // 「通用」组的六项：用户名 / 头像印记 / 子档案 / 账号 / 跨设备同步 / 数据管理
+  // （Issue #132 · 用户名旁多了头像印记、二级页补上「账号」、1B 又补上同步开关；
+  //  Issue #159 再补上「子档案」—— 一个家长多个孩子各背各的，
+  //  它也是账号域的身份设置）。
   // 这里守的仍是原来那条重点：**只给背诵用的选项不许混进「通用」**。
   const generalItems = sgeneral.querySelector('#settings-page .settings-group').querySelectorAll('.settings-item');
-  chk(generalItems.length === 5,
-    '「通用」组是用户名 / 头像印记 / 账号 / 跨设备同步 / 数据管理五项（实际 ' + generalItems.length + '）');
+  chk(generalItems.length === 6,
+    '「通用」组是用户名 / 头像印记 / 子档案 / 账号 / 跨设备同步 / 数据管理六项（实际 ' + generalItems.length + '）');
+  /* 子档案那一块**默认 hidden**：只用一个档案的用户看不到它 ——
+     老用户升级零感知，盘上也不会多出那把键（有 test/profiles.test.js 守着） */
+  chk(!!sgeneral.querySelector('#item-profiles') && sgeneral.querySelector('#item-profiles').hidden === true,
+    '「通用」里有子档案一项，且默认隐藏（「再建一个」之前一切照旧）');
+  chk(///js/profiles.js/.test(require('fs').readFileSync(__dirname + '/../settings/general/index.html', 'utf8')),
+    '设置页加载了 js/profiles.js（那一块切档 UI 用它）');
   chk(!!sgeneral.querySelector('#toggle-sync'),
     '「通用」里有跨设备同步开关（用户有权拒绝上传，默认关着 —— docs §4.2 第 2 条）');
   chk(!!sgeneral.querySelector('#seal-chars') && !!sgeneral.querySelector('#seal-inks'),

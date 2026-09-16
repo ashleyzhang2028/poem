@@ -1454,6 +1454,45 @@ textarea:focus {
 .collections-panel .item + .item { border-top: 1px solid var(--line-2); }
 .collections-panel .empty { padding: 10px 2px 16px; }
 
+/* 子档案（Issue #159）：一个家长多个孩子各背各的。
+   一行一个档案：左边一枚印（画印只有 js/avatar.js 一处）+ 名字，
+   当前那个标出来，其余两个各带「改名 / 删除」。
+   ⚠️ 这一块只用一个档案的用户看不到（HTML 里 hidden，js/settings.js 控制）。 */
+.profiles-panel { display: flex; flex-direction: column; gap: 6px; }
+.profiles-list { display: flex; flex-direction: column; }
+.profile-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--line-2);
+}
+.profile-row:last-child { border-bottom: none; }
+.profile-pick {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: none;
+  background: none;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+  color: var(--ink-2);
+  font-size: 14px;
+}
+.profile-pick .profile-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.profile-row.active .profile-pick { color: var(--green); font-weight: 600; }
+.profile-acts { display: flex; gap: 6px; flex: none; }
+/* 行内小按钮：与全站「描边按钮」同一套语言，只是更矮一点 */
+.tiny-btn { flex: none; min-width: 0; padding: 5px 10px; font-size: 12px; }
+.profile-now { flex: none; font-size: 11.5px; color: var(--green); }
+
 .settings-btns { display: flex; gap: 8px; flex-wrap: wrap; }
 .ghost-btn { flex: 1; min-width: 90px; padding: 9px; font-size: 13.5px; }
 .danger-btn { flex: 1; min-width: 90px; padding: 9px; font-size: 13.5px; color: var(--red); border-color: var(--danger-line); background: var(--danger-bg); }

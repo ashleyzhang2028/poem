@@ -14,6 +14,26 @@
  * | 设备域 | `poem_device_prefs_v1` ｜ 字号 / 对齐 / 连读档 / 播放模式 / iOS 引导条 | ❌ |
  * | 已读域 | 六部集子各一把 `poem_*_read_v1` | ✅ |
  *
+ * ## 子档案（Issue #159 · 用户 2026-09-17 裁「进度也分家」「Free 档给 1 个昵称」）
+ *
+ * 上面那张表回答「哪些数据跨设备一致」，**没有回答「哪一份进度是谁的」**。
+ * 一个家长两个孩子的场景（同一台平板上午小明读、下午小红读）到了之后，
+ * 需要第二把尺子：**哪些数据属于「孩子自己的东西」**。
+ *
+ * | 跟子档案走 | 不跟 |
+ * |---|---|
+ * | 进度域 / 账号域（含设置）/ 已读域 | 设备域（字号 / 对齐 / 连读档 / 注音开关 / 上次搜的词） |
+ *
+ * 落地方式是**改 `Physical.raw` 一处**：所有读盘（进度、设置、设备、搜索词、
+ * 六把已读键）都经它，于是「换成哪个孩子的键」只在一处决定 ——
+ * 而不是在 500 行调用点里各判一次。键的映射规则在 `js/profiles.js`（唯一一处）。
+ *
+ * ⚠️ 三个不许含糊的边界：
+ *    1. **没分家时物理键一个字节都不变** —— 只用一个档案的用户，
+ *       升级前后盘上完全一样（`Profiles.index()` 返回 0 → 无后缀）
+ *    2. **设备域不换键** —— 给小红调了字号、切回小明又变回去，那是错的
+ *    3. **引擎缺席时不报错、按老键读写** —— 老缓存里的旧页面照常能背书
+ *
  * ⚠️ `grade/term/scope/dailyCount/algo` **仍在老键 `poem_recite_settings_v1` 里** ——
  * 用户裁决它们属账号域，而账号域正好沿用这个旧键名（最小改动、不动 500 行调用点）。
  * 这一期动的**只有 `helper` 一件**：它从设置对象搬到 `poem_device_prefs_v1`
@@ -81,13 +101,68 @@
     backing = null; // 隐私模式下取 localStorage 本身就会抛
   }
 
+  /** 测试可注入子档案层（只给测试用；浏览器里永远现取 window.Profiles） */
+  var deps = {};
+
+  /**
+   * 取子档案层。**每次现取**而不是启动时存一份 —— 与 `storage.js` 的 `PS()` 同一条教训：
+   * 页面里的脚本顺序不保证，缓存一份 null 的后果是「切换子档案之后整站还在读老键」，
+   * 症状是**静默串档**（不报错、只是看到别人的进度）。
+   */
+  function PR() {
+    if (deps.Profiles) return deps.Profiles;
+    return (typeof window !== "undefined" && window.Profiles) || null;
+  }
+
+  /**
+   * 当前子档案的序号。
+   *
+   * ⚠️ 0 = **无后缀的老键**。这不是「没分家时的特例」，而是长期规则：
+   *    第一个档案的家就是分家前那份数据原本的家 —— 于是老用户升级时
+   *    **零迁移、零感知**（昵称、进度、年级、已读全都在原地）。
+   *    只有拿不到子档案层（老缓存 / 隐私模式）时才一律返回 0。
+   */
+  function slot() {
+    var P = PR();
+    if (!P || typeof P.index !== "function") return 0;
+    try { return P.index(backing) || 0; } catch (e) { return 0; }
+  }
+
+  /** 当前子档案的 id（序号 0 时可能为空串；键映射靠序号，不靠它） */
+  function pid() {
+    var P = PR();
+    if (!P || typeof P.pid !== "function") return "";
+    try { return P.pid(backing) || ""; } catch (e) { return ""; }
+  }
+
+  /**
+   * **读盘唯一入口** —— 子档案分家就落在这里。
+   *
+   * `key` 是逻辑键（进度 / 账号 / 设备 / 已读六把之一）；
+   * 返回的是**当前子档案的那一份**。设备域与认不出来的键原样返回
+   * （`Profiles.isSharedKey()` 一处说了算，本文件不再抄一份清单）。
+   */
   function raw(key) {
     if (!backing) return null;
+    var k = key;
+    var P = PR();
+    if (P && typeof P.isSharedKey === "function" && P.isSharedKey(key)) {
+      var n = slot();
+      if (n) k = P.keyFor(key, n, pid());
+    }
     try {
-      return backing.getItem(key);
+      return backing.getItem(k);
     } catch (e) {
       return null;
     }
+  }
+
+  /** **写盘的时候**那把物理键是什么（与 `raw` 同一套规则，写成一处才不会漂移） */
+  function physKey(key) {
+    var P = PR();
+    if (!P || typeof P.isSharedKey !== "function" || !P.isSharedKey(key)) return key;
+    var n = slot();
+    return n ? P.keyFor(key, n, pid()) : key;
   }
 
   /**
@@ -97,7 +172,7 @@
   function put(key, text) {
     if (!backing) return false;
     try {
-      backing.setItem(key, text);
+      backing.setItem(physKey(key), text);
       return true;
     } catch (e) {
       return false;
@@ -107,7 +182,7 @@
   function drop(key) {
     if (!backing) return false;
     try {
-      backing.removeItem(key);
+      backing.removeItem(physKey(key));
       return true;
     } catch (e) {
       return false;
@@ -233,7 +308,7 @@
     /* helper() 读老键时用的是 readObject(KEYS.settings).helper —— 这里改的是同一个字段 */
     var legacy = readObject(KEYS.settings);
     legacy.helper = v;
-    put(KEYS.settings, JSON.stringify(legacy));
+    put(KEYS.settings, JSON.stringify(legacy));   // 走 physKey：镜像落在**当前子档案**的设置里
     return ok;
   }
 
@@ -375,6 +450,9 @@
 
     /* 已读域：六把键**不合并不改名**，这里只是读写一处收敛 */
     readMap: function (key) { return readObject(key); },
+    /** 整份写回（`js/reader-core.js` 的已读用它 —— 它先读整张 map、改一条、写回）。
+        与 `setRead` 是同一个语义的两个粒度：单条改、整份改。 */
+    setReadMap: function (key, map) { return put(key, JSON.stringify(map || {})); },
     setRead: function (key, id, val) {
       var m = readObject(key);
       if (val) m[id] = true; else delete m[id];
@@ -385,13 +463,22 @@
     exportJSON: exportJSON,
     importJSON: importJSON,
 
-    /* 注入存储：只为测试（node 里没有 window.localStorage）。传 null 复位 */
+    /* 子档案（Issue #159）：当前是第几个档案、它的几把键长什么样。
+       ⚠️ 这是给**测试与诊断**用的读数，页面不许拿它拼键名（键映射只有 profiles.js 一处）。 */
+    slot: slot,
+    profileId: pid,
+    physKey: physKey,
+
+    /* 注入：存储（测试用；传 null 复位）与子档案层（同理，浏览器里不传） */
     useStore: function (store) { backing = store || null; },
+    useProfiles: function (P) { deps.Profiles = P || null; },
     reset: function () {
       try { backing = typeof window !== "undefined" ? window.localStorage : null; } catch (e) { backing = null; }
     },
     /** 当前挂着的存储（测试用；也是「隐私模式下不可用」的判据） */
     store: function () { return backing; },
+    /** 当前挂着的子档案层（测试用） */
+    profiles: function () { return PR(); },
 
     /* 分域口径 */
     scopes: scopes,

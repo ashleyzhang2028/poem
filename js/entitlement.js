@@ -58,7 +58,7 @@
     "collections.many":  { minTier: "pro",  login: true,  quota: null, name: "自选清单 20 个" },
     "sync.multiDevice":  { minTier: "pro",  login: true,  quota: null, name: "跨设备云同步" },
     "export.paper":      { minTier: "pro",  login: true,  quota: null, name: "篇目 PDF / 打印页" },
-    "profile.family":    { minTier: "pro",  login: true,  quota: null, name: "家庭子档案 3 个" },
+    "profile.family":    { minTier: "pro",  login: true,  quota: null, name: "家庭子档案 Pro 3 个 / Max 180 个" },
     "quiz.review":       { minTier: "pro",  login: true,  quota: null, name: "题库复习（给上句选下句）" },
     "export.all":        { minTier: "max",  login: true,  quota: null, name: "全站批量导出" },
     /* 古诗词大会的两项 —— **归 Max**（用户 2026-09-17 裁决：

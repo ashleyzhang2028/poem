@@ -27,6 +27,7 @@
            这一组是「全站都吃」的身份与数据设置：
              · 用户名      账号域的展示名（古诗词与小古文共用）
              · 头像印记    字符印：固定字集 + 固定四色，全部存本机
+             · 子档案      一个家长多个孩子各背各的（进度 / 年级 / 已读分家）
              · 账号        本机账号的登录状态 / 层级 / 权限，可退出
              · 数据管理    导出备份 / 导入备份 / 清空进度
            ⚠️ 与本页无关的控件（学段 / 范围 / 算法 / 连读 / 清单）在别页，
@@ -59,6 +60,20 @@
               <button class="btn ghost-btn" id="btn-seal-reset" type="button">用默认印</button>
             </div>
             <div class="settings-hint" id="seal-hint"></div>
+          </div>
+
+          <!-- 子档案（Issue #159）：一个家长多个孩子各背各的。
+               ⚠️ 只用一个档案的用户**看不到这一块**（js/settings.js 里置 hidden）——
+                  老用户升级零感知，盘上也不会多出那把键。 -->
+          <div class="settings-item" id="item-profiles" hidden>
+            <label>子档案</label>
+            <div class="profiles-panel" id="profiles-panel">
+              <div class="profiles-list" id="profiles-list" role="radiogroup" aria-label="切换子档案"></div>
+              <div class="settings-btns">
+                <button class="btn ghost-btn" id="btn-profile-add" type="button">再建一个</button>
+              </div>
+            </div>
+            <div class="settings-hint" id="profiles-hint"></div>
           </div>
 
           <div class="settings-item">
@@ -158,6 +173,10 @@
   <!-- 分域引擎（Issue #132 阶段 0）：进度 / 账号 / 设备三域的唯一一份定义，
        设置页的读法由 js/storage.js 转发。**必须排在 js/storage.js 之前**。 -->
   <script src="/js/progress-store.js"></script>
+  <!-- 子档案（Issue #159）：名册 + 当前选中项 + 键映射的唯一一处实现。
+       必须排在 js/progress-store.js 之后（引擎每次读盘都要问它「当前是哪个档案」）
+       与 js/settings.js 之前（设置页那块切档 UI 用它）。 -->
+  <script src="/js/profiles.js"></script>
   <!-- 同步层（Issue #132 · 1B）：进度 / 账号域设置 / 已读的跨设备同步。
        必须在 js/storage.js 之前 —— 它要给每条记录打标（云端谁更新），
        而页面只认识 Storage / ProgressStore 这两个入口。 -->
@@ -170,6 +189,7 @@
   <script src="/js/collections.js"></script>
   <script src="/js/settings.js"></script>
   <script src="/js/avatar.js"></script>
+  
   <script src="/js/chrome.js"></script>
   <script src="/js/pwa.js"></script>
 </body>
