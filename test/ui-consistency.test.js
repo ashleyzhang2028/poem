@@ -1113,14 +1113,24 @@ PAGE_FILES.forEach(f => {
    白底、灰勾、圆角 2px —— 与全站的纸面 / 描金细线 / 深绿实底是两套语言；
    状态还要靠旁边一颗写着「关」/「开」的文字来表达。
 
-   新样子是自绘的胶囊开关：深天青实底 = 开着（与「年级」那些药丸同一句
-   「实底 + 米白 + 金线」）、纸底描边 = 关着、圆滑块在轨道里走。
+   新样子是自绘的胶囊开关：**.switch-input 自己就是那颗 40×24 的胶囊**
+   （appearance:none 自绘轨道 + 米白/淡墨色圆滑块由 .switch-track 画）。
+   深天青实底 = 开着（与「年级」那些药丸同一句「实底 + 米白 + 金线」）、
+   纸底描边 = 关着。
 
    这一节守三件事：
      ① 外观自绘（appearance: none），不吃各浏览器默认样式；
-     ② 尺寸只有一份（轨道 40×24 / 滑块 18 / 左 2），**且行程是按这三个值算的**——
-        写死一个 translateX 而不跟着尺寸走，改一次尺寸滑块就会越界；
-     ③ 真渲染出来确实是这个尺寸、滑块确实在轨道里（不是只在源码里写着）。
+     ② 轨道（= .switch-input）与滑块（= .switch-track）的尺寸只有一个来源，
+        **且行程是照这几个值算出来的** —— 写死一个 translateX 而不跟着尺寸走，
+        改一次尺寸滑块就会越界或走不到位；
+     ③ 真渲染出来确实是这个尺寸、滑块确实落在轨道里（不是只在源码里写着）。
+     ④ 这两段的判据取的是**剥掉注释之后**的源码：.switch-row / .switch-label
+        这两个名字在 css/style.css 的注释里被点名说过「已删掉」，
+        按裸源码匹配会把说明文字当成还在的死规则。
+
+   ⚠️ 「轨道」在这一版里就是 .switch-input 本身，不是 .switch-track ——
+      .switch-track 是**滑块**（40×24 的胶囊里那枚 18px 圆点）。
+      两个类名的字面意思与实际职责是反着的（历史遗留），下面一律按实际职责判。
    ========================================================================== */
 {
   const box = ruleOf(cssCode, '.switch-input');
@@ -1144,7 +1154,9 @@ PAGE_FILES.forEach(f => {
 
   /* 行程 = 轨道宽 − 边框×2 − 滑块宽 − 起点×2。
      开着时滑块应当走到「右端对齐」——写死 16px 而尺寸一改就越界，
-     所以这里判的是**算出来的值**，不是源码里有没有 16 这个数字。 */
+     所以这里判的是**算出来的值**，不是源码里有没有 16 这个数字。
+     ⚠️ :checked 那一句改的是**滑块**（.switch-track）的 translateX，
+        不是 .switch-input 自己 —— 判据要取在滑块那条规则上。 */
   const onKnob = ruleOf(cssCode, '.switch-input:checked + .switch-track');
   const shift = (/-?translateX\((\d+)px\)/.exec(onKnob) || [])[1];
   const borderW = Number((/border:\s*([\d.]+)px/.exec(box) || [])[1]);
@@ -1167,19 +1179,27 @@ PAGE_FILES.forEach(f => {
   chk(/cursor:\s*not-allowed/.test(offTrack) && /background:/.test(offTrack),
     '置灰态有自己的一句（不可点的开关与「关着但能点」必须看得出不同）');
 
-  /* 原生结构：轨道是 input 的**紧邻兄弟**（CSS 用 `+` 找它，不用 :has()——
-     :has() 在老的安卓 WebView 上会静默失效，失效后开关就变成一块空轨） */
+  /* 原生结构：滑块是 input 的**紧邻兄弟**（CSS 用 `+` 找它，不用 :has()——
+     :has() 在老的安卓 WebView 上会静默失效，失效后开关就变成一颗不掉下来的点） */
   chk(!/:has\(/.test(box) && !/:has\(/.test(knob),
     '开关的样式不依赖 :has()（老 WebView 上会静默失效）');
 
-  /* 页面结构：同样的 HTML 也只有一个来源 —— 设置页那一项 */
+  /* 页面结构：同样的 HTML 也只有一个来源 —— 设置页那一项。
+     ⚠️ 外层是 <label.switch>（不是一个从不存在的 .switch-row），
+        input 带 role="switch"，旧那颗「关/开」文字标签（#sync-label）已删。 */
   const genHtml = read('settings/general/index.html');
   chk(/class="switch"[\s\S]{0,400}class="switch-input"[\s\S]{0,200}class="switch-track"/.test(genHtml),
-    '设置页的开关是 <label.switch> 包着 input 与轨道（点文字 = 点开关）');
+    '设置页的开关是 <label.switch> 包着 input 与滑块（点文字 = 点开关）');
   chk(/id="toggle-sync"[\s\S]{0,200}role="switch"/.test(genHtml),
     '开关带 role="switch"（读屏念得出「开关」，而不是「复选框」）');
   chk(!/id="sync-label"/.test(genHtml),
     '旧的那颗「关」/「开」文字标签已经拿掉（状态由开关本体表达）');
+  // 反向：那个只存在于 CSS 里的 .switch-row / .switch-label 不许再回来
+  //（Issue #163 两轮改动各写了一套开关，旧的 .switch-row 那一套被后写的覆盖，
+  //  留下的是一整段「谁都没用」的死样式 —— 死样式会误导下一个改开关的人）
+  // ⚠️ 读的是 strip(cssCode)：这两个名字在样式表的注释里被点名说明过「已删」。
+  chk(!/\.switch-row\s*[,{]/.test(strip(cssCode)) && !/\.switch-label\s*[,{]/.test(strip(cssCode)),
+    '样式表里没有 .switch-row / .switch-label 的死规则（HTML 从不使用这两个类名）');
 
   /* 真渲染：把样式表挂进去，量一遍画出来的结果 —— 上面全是源码断言，
      换一种写法（例如给 track 一条 margin）源码看不出来，用户看到的却不对。 */
@@ -1200,7 +1220,7 @@ PAGE_FILES.forEach(f => {
         '轨道是胶囊（画出来的圆角 999px，不是方框）');
       const knobEl = input.nextElementSibling;
       chk(!!knobEl && knobEl.classList.contains('switch-track'),
-        '轨道是 input 的紧邻兄弟（CSS 的 `+` 才找得到它）');
+        '滑块是 input 的紧邻兄弟（CSS 的 `+` 才找得到它）');
       if (knobEl) {
         const kcs = win.getComputedStyle(knobEl);
         chk(kcs.width === knobW + 'px', '滑块也是声明尺寸（' + kcs.width + '）');
@@ -1270,7 +1290,8 @@ PAGE_FILES.forEach(f => {
 
      1. 页脚与正文之间不再画那条 `border-top`；
      2. 全站**所有** <a> 都不长下划线（不是某一处去掉、另一处忘了写）；
-     3. 同步开关那三个类名真的被样式表接管了（不许只有 HTML 没有 CSS）。
+     3. 同步开关那套类名（.switch / .switch-input / .switch-track）真的
+        被样式表接管了 —— 且**只此一套**，不许留着上一版的死类名。
    ========================================================================== */
 {
   // ① 页脚上面的横线：.settings-foot 不许再声明 border-top
@@ -1306,51 +1327,69 @@ PAGE_FILES.forEach(f => {
   chk(noneWriters.length <= 1,
     '除全局那条外，各页面文件里不再各写一遍 text-decoration: none（实际 ' + noneWriters.length + ' 条）');
 
-  // ③ 同步开关：HTML 用到的类名，样式表里必须真的存在。
-  // ⚠️ Issue #163 之后只有**这一套**：`.switch`（整行 label）+
-  //    `.switch-input` / `.switch-track`（控制器本体）。旧的
-  //    `.switch-row` / `.switch-label` 是「透明覆盖层 + 写着关/开的状态字」
-  //    那一版的类名，HTML 里已经删掉 —— 样式表里留着只会让人以为
-  //    「还有一套控件在用它们」，下一次改尺寸就不知道该改哪一段。
-  ['switch', 'switch-track', 'switch-input'].forEach(cls => {
+  // ③ 同步开关：HTML 真正用到的那套类名，样式表里必须真的存在。
+  //    ⚠️ 这份清单与 settings/general/index.html 里的结构一一对应：
+  //       .switch = 整行；.switch-input = 那颗 40×24 的胶囊本体
+  //       （真实 input，appearance:none 自绘，可点 / 可聚焦 / 可读屏）；
+  //       .switch-track = 滑块（胶囊里那枚 18px 圆点）。
+  //       上一版那套 .switch-row / .switch-label 已被 Issue #163 的第二轮
+  //       改动取代（HTML 里一个字都不再用），所以**不进这份清单** ——
+  //       反过来还要判它们没有被留下来当死样式（见下一行）。
+  //       尺寸只此一份：`.switch-input` / `.switch-track` 的**唯一定义处**
+  //       在 css/style.css（name ③ 那一段写死了唯一一段，量到的就是画出来的）。
+  ['switch', 'switch-input', 'switch-track'].forEach(cls => {
     chk(new RegExp('\\.' + cls + '\\s*[,{]').test(cssCode),
       '开关的 .' + cls + ' 在样式表里有规则（HTML 写了就得画出来）');
   });
-  // 反向：旧两套类名不许再出现在样式表里（注释里的名字不算）
-  chk(!/^\s*\.switch-row\s*[,{]/m.test(strip(cssCode)) &&
-      !/^\s*\.switch-label\s*[,{]/m.test(strip(cssCode)),
-    '旧的 .switch-row / .switch-label 规则已从样式表里清掉（同一个控件只剩一套类名）');
+  // 反向：上一版的 .switch-row / .switch-label 不许再出现在样式表里 ——
+  // 「HTML 已经不用的类名却还留着一整段规则」会让下一个改开关的人找不到北。
+  // ⚠️ 这条判据读的是**剥掉注释之后**的源码：这两组类名在 style.css 的
+  //    注释里被点名说明过「已删掉」，按裸源码匹配会把说明文字当成死规则。
+  ['switch-row', 'switch-label'].forEach(cls => {
+    chk(!new RegExp('\\.' + cls + '\\s*[,{]').test(strip(cssCode)),
+      '上一版的 .' + cls + ' 已从样式表里清掉（HTML 不用的类名不留死规则）');
+  });
   chk(/input:checked\s*\+\s*\.switch-track/.test(cssCode),
     '开关的「开」态由 :checked + .switch-track 表达（不是靠原生 checkbox）');
   chk(/input:disabled\s*\+\s*\.switch-track/.test(cssCode),
     '开关的「未开放」态也有样式（置灰，不是原生 disabled 的样子）');
-  // 真实输入框留着（键盘 / 读屏要用）——自绘版里它就是**可见的胶囊本体**
-  //（appearance: none 之后由我们自己画），所以这里判的是「不许把它藏掉」：
-  //  藏 form 控件的三种常见手法（display:none / visibility:hidden / width:0）
-  //  任一出现，键盘与读屏就一起没了。
+  // 真实输入框留着（键盘 / 读屏要用），自绘成胶囊本体
+  chk(/appearance:\s*none/.test(ruleOf(cssCode, '.switch-input')),
+    '.switch-input 是自绘胶囊本体（appearance:none，不删 input，键盘与读屏照旧）');
+  // ⚠️ 这里判的是「不许把它藏掉」：自绘版里 input 就是**可见的胶囊本体**，
+  //    藏 form 控件的三种常见手法（display:none / visibility:hidden / opacity:0）
+  //    任一出现，键盘与读屏就一起没了。
   const swIn = ruleOf(cssCode, '.switch-input');
   chk(!/display:\s*none/.test(swIn) && !/visibility:\s*hidden/.test(swIn) &&
       !/opacity:\s*0(?![.\d])/.test(swIn),
     '.switch-input 没有被藏掉（不删 input，键盘与读屏照旧）');
-  // 透明输入框与轨道必须**同尺寸**：不同尺寸就意味着「看得见的开关」与
-  // 「真正接住点击 / 焦点的那块」错位 —— 点上去没反应，或焦点框画在轨道外面。
-  // 判的是「两处声明的 宽 与 高 相等」，不是「等于某个具体像素」：换尺寸照样成立。
-  const sizeOf = (code, sel) => {
-    const decl = ruleOf(code, sel);
-    const w = /(?:^|[;{\s])width:\s*([^;]+)/.exec(decl);
-    const h = /(?:^|[;{\s])height:\s*([^;]+)/.exec(decl);
-    return { w: w ? w[1].trim() : '', h: h ? h[1].trim() : '' };
+  // 滑块必须画在胶囊里：左起点 + 滑块宽 ≤ 轨道宽 —— 越界就是「画歪了」。
+  // 判的是**声明之间的关系**，不是某个具体像素：换尺寸照样成立。
+  const numOf = (code, sel, prop) => {
+    const m = new RegExp(prop + ':\\s*([\\d.]+)px').exec(ruleOf(code, sel));
+    return m ? Number(m[1]) : NaN;
   };
-  const inp = sizeOf(cssCode, '.switch-input');
-  const trk = sizeOf(cssCode, '.switch-track');
-  /* ⚠️ 这两条判的不是「等于某个像素」，而是**「画开关的那块」与「接住点击
-     与焦点的那块」是同一个矩形**。自绘版里 `.switch-input` 本身就是轨道
-     （它画胶囊、滑块是它的紧邻兄弟 span），所以这条只剩「两者都定了宽高」
-     一个意义；上一版（透明覆盖层盖在轨道上）它守的是「两层不错位」。
-     尺寸的**同源**由旁边那条 `.switch > input { flex: none }` + 第 十 段
-     的行程断言一起守。 */
-  chk(!!inp.w && !!inp.h && !!trk.w && !!trk.h,
-    '开关的 input 与滑块都定了宽高（' + inp.w + '×' + inp.h + ' / ' + trk.w + '×' + trk.h + '）');
+  const capW = numOf(cssCode, '.switch-input', 'width');
+  const knobW = numOf(cssCode, '.switch-track', 'width');
+  const knobL = numOf(cssCode, '.switch-track', 'left');
+  chk(capW > 0 && knobW > 0 && knobL + knobW <= capW,
+    '滑块落在胶囊里（起点 ' + knobL + ' + 滑块 ' + knobW + ' ≤ 轨道 ' + capW + '）');
+  // ⚠️ 这一条是那 5 条长期亮红的断言里最后一条的**直接守门人**：
+  //    「滑块 18px 按 40 去算、行程 −6px」那个错误的根因就是
+  //    `.switch-track` 在样式表里有两段（一段是轨道、一段是滑块）。
+  //    现在这两个选择器只有**唯一定义处**，判它们的声明段数 == 1，
+  //    两段同名规则再长回来时立刻报出来。
+  const segCount = (sel) => {
+    const flat = cssCode.replace(/@media[^{]+\{/g, '{');
+    const re = /([^{}]+)\{([^}]*)\}/g;
+    let m, n = 0;
+    while ((m = re.exec(flat))) {
+      if (m[1].split(',').map(x => x.trim()).includes(sel)) n++;
+    }
+    return n;
+  };
+  chk(segCount('.switch-input') === 1 && segCount('.switch-track') === 1,
+    '开关的 .switch-input / .switch-track 各只有一段规则（源码里量到的就是画出来的）');
 }
 
 /* ==========================================================================
@@ -1411,13 +1450,13 @@ if (JSDOM) {
    十二、开关真的画出来了（Issue #163，真实渲染几何）
    --------------------------------------------------------------------------
    用户原话：「跨设备同步选择框太丑了，改进。」
-   丑的根因是**没有样式**：HTML 从 1B 起就用 .switch-row / .switch-track /
-   .switch-label 三个类名写着结构，样式表里却一条都没有 ——
-   于是那颗 <input type=checkbox> 一直以浏览器原生的样子露在纸面上。
+   丑的根因是**没有样式**：HTML 一直写着 .switch 那一套类名，
+   样式表里却一条都没有 —— 于是那颗 <input type=checkbox> 以浏览器原生的
+   样子露在纸面上（浅灰方块 + 系统蓝勾），与整页的米纸 / 天青是两套语言。
 
-   上面第 ⑨ 段判的是「样式表里有没有这几条规则」；这一段判的是**画出来的结果**：
-   那三个 span 真的被挂上、真的在一个 flex 行里、真的不是 display:none。
-   两段合起来才闭环 —— 只判源码，把 display:none 写进去也是绿的。
+   上面那一节判的是「样式表里有没有这几条规则」；这一节判的是**画出来的结果**：
+   轨道真的被挂上、真的画成胶囊、真的不是 display:none。
+   两节合起来才闭环 —— 只判源码，把 display:none 写进去也是绿的。
    ========================================================================== */
 if (JSDOM) {
   const doc = new JSDOM(read('settings/general/index.html'),
@@ -1432,9 +1471,12 @@ if (JSDOM) {
       doc.querySelector('label.switch').contains(input) &&
       doc.querySelector('label.switch').contains(track),
     '两者包在同一个 <label.switch> 里（点轨道任意处都切得动，iOS 上也是）');
-  // 顺序：input → 轨道 → 状态字。CSS 的 `input:checked + .switch-track` 靠的就是它
-  chk(input.nextElementSibling === track,
-    'input 紧邻轨道（`:checked + .switch-track` 这条相邻选择器才对得上）');
+  // 顺序：input → 滑块。CSS 的 `input:checked + .switch-track` 靠的就是它
+  chk(!!input && input.nextElementSibling === track,
+    '滑块是 input 的紧邻兄弟（`:checked + .switch-track` 这条相邻选择器才对得上）');
+  // 反向：上一版的 .switch-row / .switch-label 结构不许再回到 HTML 里
+  chk(!doc.querySelector('.switch-row') && !doc.querySelector('.switch-label'),
+    'HTML 里不再有上一版的 .switch-row / .switch-label（开关只此一套结构）');
 } else {
   console.log('- (未安装 jsdom，跳过开关的真实渲染几何一节)');
 }

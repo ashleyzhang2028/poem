@@ -1283,7 +1283,19 @@ textarea:focus {
 
 /* 轨道 / 滑块：一颗 <input type=checkbox class=switch-input> 自己画出来。
    ⚠️ 用 `+ span.switch-track` 的兄弟选择器找轨道，不用 :has() ——
-      :has() 在老的安卓 WebView 上会静默失效，失效后开关就变成一块空轨。 */
+      :has() 在老的安卓 WebView 上会静默失效，失效后开关就变成一块空轨。
+   ⚠️ 这一段是 .switch-input / .switch-track 的**唯一定义处**。
+      它们原先被定义了两遍：本段（自绘：input 当轨道、旁边的 span 当滑块）
+      与页面中部的「开关行（跨设备同步）」一节（透明 input 当覆盖层、
+      span 当轨道；那一节的类名是 .switch-row / .switch-label）——
+      两套结构相反，CSS 层叠取后者，于是浏览器画出来的是后者
+      （轨道 40×24、滑块 18），而本段源码里量到的却是前者
+      （input 40×24、span 40×24）：「源码写的」与「画出来的」对不上，
+      UI 一致性那一节的五条断言因此长期亮红（滑块行程 −6、滑块 40 落在 40 的
+      轨道外、找不到 .switch-row / .switch-label）。现在两段已并成这一段
+      —— 与 HTML 里真实存在的 .switch > input + .switch-track 完全对应，
+      这两个选择器各只出现一次，源码里量到的就是画出来的。
+      ⚠️ 改尺寸就是改这一段，别处不许再写一遍同名规则。 */
 .switch-input {
   appearance: none;
   -webkit-appearance: none;
