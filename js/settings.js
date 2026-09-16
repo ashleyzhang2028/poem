@@ -222,6 +222,105 @@
     renderAlgos();
     renderPlayModes();
     renderCollections();
+    renderExportPoems();
+  }
+
+  /* ---------------- 课内诗词整体导出（Pro） ----------------
+
+     用户 2026-09-16（Issue #159）把这一条的口径改了一次，原话：
+
+       「为啥要有全站批量导出功能？这不是这个网站的核心资产吗？
+        顶多支持学校课本部分的全部导出。这个 pro 用户就行。」
+
+     于是：**能力名字、门槛、内容三处一起改**（见 js/entitlement.js 的 CAPS
+     与 js/export-core.js 的文件头）。落在这里的就是那个「内容」：
+     只导**课内 261 首**，六部集子不做一次性整本导出。
+
+     ⚠️ 三道关口，缺一不可：
+       ① 能力表（`export.all`，Pro 起）—— 「谁能用」
+       ② 范围表（js/export-core.js 的 SCOPES，只有「课内」）—— 「能导什么」
+       ③ 这一层只做「问一次、给一次」，不自己判层级、不自己拼门槛文案
+     把①的入口藏起来不是边界（docs §3.4）：所以按钮**照旧可见**，
+     点了层级不够就照实说「Pro 起可用」。
+     ------------------------------------------------------------------ */
+
+  /** 导出内核（脚本顺序不保证：现取，不在模块加载时缓存） */
+  function exportMod() { return window.ExportCore || null; }
+
+  /**
+   * 画这一项的说明行。**三种状态各说各的话**，不许合并成「失败」：
+   *   · 内核没加载（老缓存）      → 如实说「请刷新」
+   *   · 没登录 / 层级不够          → 照实说拦在哪一层（`denyReason`）
+   *   · 能用                      → 说清导出的是什么、有多少首
+   */
+  function renderExportPoems() {
+    const hint = $("#export-poems-hint");
+    if (!hint) return;
+    const C = exportMod();
+    const E = entitlementMod();
+    const ident = currentIdentity();
+    if (!C || !E || !ident) {
+      hint.textContent = "导出组件没有加载成功，请刷新页面重试（背诵不受影响）。";
+      return;
+    }
+    if (!E.can("export.all", ident).ok) {
+      hint.textContent = E.denyReason("export.all", ident) + "；现在导出的是课内诗词，六部集子不做整本导出。";
+      return;
+    }
+    const items = exportItems("poems");
+    hint.textContent = "把课内 " + items.length + " 首（一年级至高三）整份导出成一个文本文件，" +
+      "按册次排好，可直接打印或存 PDF。六部集子不做整本导出。";
+  }
+
+  /** 按范围取篇目（课内 = 站点索引里 poems 那一部，按册次排序） */
+  function exportItems(scope) {
+    const C = exportMod();
+    const idx = window.SITE_INDEX || [];
+    if (!C) return [];
+    return C.order(C.pick(idx, scope), scope);
+  }
+
+  /**
+   * 真的导一次。
+   *
+   * @param {boolean} [asCopy] true = 弹纯文本对话框（手机上更好用），
+   *                           false/缺省 = 直接落一个 .txt
+   */
+  function exportPoems(asCopy) {
+    const C = exportMod();
+    const E = entitlementMod();
+    const ident = currentIdentity();
+    if (!C || !E || !ident) { showToast("导出组件没有加载成功，请刷新页面重试"); return; }
+    /* 闸**在这里也要判一次**：按钮之外还能从控制台调到这里。
+       「拦在数据层」指的是范围表（SCOPES）—— 但门槛这件事本身也得在这一层拦，
+       否则「藏入口」就成了事实上的边界。 */
+    if (!E.can("export.all", ident).ok) { showToast(E.denyReason("export.all", ident)); return; }
+
+    const items = exportItems("poems");
+    if (!items.length) { showToast("课内诗词数据没加载出来，请刷新页面重试"); return; }
+
+    const r = C.build({ items: items, scope: "poems", now: new Date() });
+    /* ⚠️ 有篇目但没正文时**如实报出来**：悄悄少一篇比多导一篇更难发现。
+       目前课内 261 首全部有正文，这一支是给日后新增篇目留的（与打印页同一条纪律）。 */
+    const skip = r.skipped ? "（另有 " + r.skipped + " 首没有正文，没有写进去）" : "";
+
+    if (asCopy) {
+      textDialog({
+        title: "课内诗词（" + r.count + " 首）",
+        tip: "全选复制即可粘进任何文档；也可以点下面的按钮存成文本文件。" + skip,
+        text: r.text,
+        readOnly: true,
+        okText: "下载为文本",
+        onOk: function () {
+          downloadText(C.fileName("poems", new Date()), r.text);
+          closeTextDialog();
+          showToast("已导出 " + r.count + " 首" + skip);
+        }
+      });
+      return;
+    }
+    downloadText(C.fileName("poems", new Date()), r.text);
+    showToast("已导出 " + r.count + " 首" + skip);
   }
 
   /* ---------------- 我的清单：自选背诵（Issue #114 第二条） ----------------
@@ -1233,6 +1332,16 @@
         a.click();
         URL.revokeObjectURL(a.href);
         showToast("备份已导出");
+      });
+    }
+
+    /* 课内诗词整体导出（Pro）。**按住 Shift 点** = 先弹文本对话框（手机上便于复制）——
+       直接点是「落一个 .txt」，那是最常见的用法；对话框留着是因为
+       手机浏览器对下载文件的处理各不相同（存进「文件」里、或直接打开）。 */
+    const poemsBtn = $("#btn-export-poems");
+    if (poemsBtn) {
+      poemsBtn.addEventListener("click", function (e) {
+        exportPoems(!!e.shiftKey);
       });
     }
 

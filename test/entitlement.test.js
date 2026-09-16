@@ -79,8 +79,19 @@ console.log('\n=== 三、pro / max 只加不减：层级越高能力单调不减
   chk(!E.cap('ai.explain'), 'AI 讲解能力**已删除**（收 app 费用的功能不留）');
   chk(!E.cap('ai.explain.big'), 'AI 讲解 max 档**已删除**');
   chk(E.capNames().every(k => !/^ai\./.test(k)), '能力表里**没有任何** ai.* 能力');
-  eq(E.can('export.all', max).ok, true, '全站批量导出：max 起');
-  eq(E.can('export.all', pro).ok, false, '全站批量导出：pro 不可');
+  /* ⚠️ 用户 2026-09-16 的裁决（Issue #159）：
+     「顶多支持学校课本部分的全部导出。这个 pro 用户就行。」
+     `export.all` 原先的名字是「全站批量导出（= 课内 261 + 六部集子 1592 篇）」、
+     门槛是 max；现在**名字、门槛、内容三处一起改**（只改名字不改门槛，
+     对比表与实际行为就会分叉）：
+       · 名字 →「全站课内诗词批量导出 261 首」
+       · 门槛 → **pro 起**（不再是 max）
+       · 内容 → **只有课内 261 首**，六部集子不做一次性整本导出
+     ⚠️ 六部集子**不是「还没做」**，是「不做」—— 这条断言守的是那个结论。 */
+  eq(E.can('export.all', pro).ok, true, '全站课内诗词导出：pro 起（用户指定）');
+  eq(E.can('export.all', max).ok, true, 'max 当然也能用');
+  eq(E.can('export.all', free).ok, false, 'free 不可（登录了也不行）');
+  chk(/课内/.test(E.cap('export.all').name), '能力名字里写明是「课内」（不许含糊成全站）');
 }
 
 console.log('\n=== 四、唯一出口：脏值 / 未知能力 / 缺参一律回落，不抛 ===');

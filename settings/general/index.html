@@ -96,6 +96,23 @@
             </div>
             <div class="settings-hint">含全部设置与背诵进度</div>
           </div>
+
+          <!-- 课内诗词整体导出（Pro）。
+               ⚠️ 这一块的口径被用户改过一次（2026-09-16，Issue #159）：
+                  原先能力表上写的是「全站批量导出（Max，含六部集子 1592 篇）」，
+                  用户点名不要那种「把站点内容整本拷走」的导出，
+                  只保留**学校课本部分**（课内 261 首），且门槛降到 **Pro**。
+               ⚠️ 按钮**不隐藏**：层级不够时点它得到的是「Pro 起可用」（与全站
+                  同一句 denyReason），把入口藏起来从来不是权限边界（docs §3.4）。
+               ⚠️ 拦在**数据层**：范围表只认「课内」这一部（js/export-core.js 的
+                  SCOPES），按钮之外直接调用那一层也一样导不出集子。 -->
+          <div class="settings-item">
+            <label>课内诗词导出</label>
+            <div class="settings-btns">
+              <button class="btn ghost-btn" id="btn-export-poems">导出课内 261 首</button>
+            </div>
+            <div class="settings-hint" id="export-poems-hint"></div>
+          </div>
         </section>
       </div>
     </main>
@@ -164,6 +181,10 @@
   <script src="/js/sync-store.js"></script>
   <script src="/js/storage.js"></script>
   <script src="/js/scheduler.js"></script>
+  <!-- 导出内核（纯逻辑，零 DOM）：课内 261 首整份导出成文本。
+       它**只认范围表**（SCOPES 里只有「课内」）—— 六部集子不做一次性整本导出，
+       是用户 2026-09-16 的裁决（Issue #159），那一条拦在内核里、不拦在按钮上。 -->
+  <script src="/js/export-core.js"></script>
   <script src="/js/manifest-loader.js"></script>
   <script src="/js/play-modes.js"></script>
   <script src="/js/review-models.js"></script>
