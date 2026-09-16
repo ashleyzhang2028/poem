@@ -52,6 +52,9 @@ function fullCfg(over) {
     if (this.resendKey) return "resend";
     return "console";
   };
+  /* ⚠️ 形状要与 config.js 一致 —— 少一个判定函数，第 八 节的 channelFacts
+     就会走「cfg 里没有 hasMail」那条兜底分支，于是「真实判定处」这条断言会假红。 */
+  cfg.hasMail = function () { return this.mail() !== "console"; };
   return cfg;
 }
 
@@ -74,7 +77,12 @@ console.log("\n=== 二、三档分得清：必须 / 这一件需要 / 可选 ===
   const byKey = {};
   ops.ENTRY.forEach(e => { byKey[e.key] = e; });
   eq(byKey.SESSION_SECRET.level, "required", "SESSION_SECRET 是「必须」（缺了接口整体 503）");
-  eq(byKey.SENDGRID_API_KEY.level, "needed", "SendGrid 密钥是「这一件需要」（缺了只是发不出真信）");
+  /* 2026-09-16（Issue #159）：SendGrid 转向收费，用户改用 Resend。
+     于是「这一件需要」那一档挂到了 Resend 上，SendGrid 退成「可选（只有付费账号才配）」。 */
+  eq(byKey.RESEND_API_KEY.level, "needed", "Resend 密钥是「这一件需要」（缺了只是发不出真信）");
+  eq(byKey.SENDGRID_API_KEY.level, "optional", "SendGrid 退成「可选」（已收费，只有付费账号才配）");
+  chk(/收费|付费/.test(byKey.SENDGRID_API_KEY.what), "SendGrid 那一项里如实写明「已收费」（不装作还能免费用）");
+  eq(byKey.SENDGRID_API_KEY.secret, true, "SendGrid 仍是密钥项（不因为它退档就当成明文）");
   eq(byKey.MAIL_FROM_NAME.level, "optional", "发信人显示名是「可选」");
   ops.ENTRY.forEach(e => {
     chk(["required", "needed", "optional"].indexOf(e.level) >= 0, e.key + " 的档位是三种之一");
@@ -124,6 +132,77 @@ console.log("\n=== 五、**只报缺、不报值**：任何密钥的值都不许
   chk(json.indexOf("SUPER_SECRET") < 0, "连 --json 的形状里也没有值（只有 key 与档位）");
   /* 密钥项连长度都不报：长度是密钥信息的一半 */
   chk(!/长度|len\b/i.test(ops.report(cfg)), "报告里不报密钥长度");
+}
+
+console.log("\n=== 五之二、发信商主备口径：2026-09-16 起主 Resend（Issue #159） ===");
+{
+  /* 用户 2026-09-16 在 Issue #159 报「SendGrid 现在已经限时收费了，所以我用的 Resend」。
+     这一节守的是**改完之后不许再往回转**：清单、步骤、条目说明、推断的暗礁，
+     四处的口径必须一致，否则下一轮又会有人照着旧表格把主选写回 SendGrid。 */
+  const byKey2 = {};
+  ops.ENTRY.forEach(e => { byKey2[e.key] = e; });
+  const sg = byKey2.SENDGRID_API_KEY, rs = byKey2.RESEND_API_KEY;
+
+  eq(rs.level, "needed", "Resend 是「这一件需要」");
+  eq(sg.level, "optional", "SendGrid 是「可选」");
+  chk(/收费|付费/.test(sg.what + sg.missing + sg.how),
+    "SendGrid 三句话里至少有一处写明「已收费」（否则用户会以为它还免费）");
+
+  /* 缺省推断的暗礁：两个密钥都填 + 没设 MAIL_TRANSPORT → 选中的是 sendgrid。
+     这条不是「可能」，是当前代码的事实（推断顺序没改），必须主动提示。 */
+  const both = fullCfg({ sendgridKey: "SG.x", resendKey: "RS.y", mailTransport: null });
+  const r = ops.check(both);
+  eq(r.mail, "sendgrid", "两个密钥都填、又没指定通道时，缺省选中的仍是 sendgrid（推断顺序的事实）");
+  chk(r.notes.some(n => /MAIL_TRANSPORT/.test(n) && /sendgrid/i.test(n)),
+    "并在提醒里点破：想用 Resend 就要显式写 MAIL_TRANSPORT=resend");
+  /* 只填 Resend 那一档（= 用户现在的配置）：推断就是 resend，不必写 MAIL_TRANSPORT */
+  const onlyResend = fullCfg({ sendgridKey: null, resendKey: "RS.y", mailTransport: null });
+  eq(ops.check(onlyResend).mail, "resend", "只填 Resend 密钥时，推断出来的通道就是 resend");
+  chk(!ops.check(onlyResend).notes.some(n => /都填了/.test(n)),
+    "只填一个时不出现「都填了」那条提醒（提醒不许对不适用的人喊）");
+  /* ⚠️ 提醒里不许出现密钥的值 */
+  const txt = ops.report(both);
+  chk(txt.indexOf("SG.x") < 0 && txt.indexOf("RS.y") < 0, "那条提醒里没有出现任何密钥的值");
+}
+
+console.log("\n=== 五之三、文档与清单不许分叉（这轮换主选最容易漏的就是文档） ===");
+{
+  /* 换发信商这件事踩过的坑：**代码改了、文档没改** ——
+     下一个人照着文档去注册 SendGrid，注册完才发现要收费。
+     所以这里把「文档不许把 SendGrid 写成主选」钉住。
+     ⚠️ 排除注释行：解释这次变更的段落里必然要提到 SendGrid，
+        拿裸串扫全文必然误判（与「btn-resend 不是 Resend」同一类坑）。 */
+  const arch = read("docs/architecture.md");
+  /* ⚠️ 排除规则要写宽一点：**记录这次变更本身的表格与段落里必然要引到旧口径**
+     （「原先：主 SendGrid」这种「改前 → 改后」对照是本仓库的固定写法）。
+     拿裸串扫全文必然误判 —— 「btn-resend 不是 Resend」同一类坑。
+     真正要拦的是「新写的、面向用户的正文里还把 SendGrid 当主选」。 */
+  const archProse = arch.split("\n").filter(l =>
+    !/^\s*[|>#]?\s*[-:\s]*\|?\s*(免费档|国内到达率|数据落地|SDK 体验)/.test(l)
+    && !/2026-09-16|已收费|转向收费|收费|~~|停用|放弃|Issue #159/.test(l)
+    && !/原先|改前|旧口径|修订|对调|退为|退成/.test(l)
+    /* 「改前 → 改后」对照表那一行整行都是引旧口径（左列写的就是旧话），
+       按行首那个竖线后面紧跟的正是要展示的旧字串的特征排除掉。 */
+    && !/\|\s*「[^」]*SendGrid[^」]*」[^|]*\|/.test(l)
+  ).join("\n");
+  chk(!/主\s*SendGrid|SendGrid\s*主|SendGrid（主）/i.test(archProse),
+    "docs/architecture.md 不再把 SendGrid 写成主选（排除了说明这次变更的那些行）");
+  has(arch, "主 Resend", "docs/architecture.md 写明现在的主选是 Resend");
+
+  /* README 的 C 步：只写 Resend（不写「SendGrid 或 Resend」那种含糊话） */
+  const readme = read("README.md");
+  const cLine = readme.split("\n").filter(l => /\|\s*\*\*C\*\*\s*\|/.test(l)).join("\n");
+  has(cLine, "Resend", "README 的 C 步写的是 Resend");
+  chk(cLine.indexOf("SendGrid") < 0, "README 的 C 步不再写 SendGrid（写了就等于让人白注册一个收费的）");
+
+  /* 隐私条款：第三方处理者只能写实际在用的那一家 */
+  const privacy = read("privacy/index.html");
+  has(privacy, "Resend", "隐私条款列的服务商是 Resend");
+  chk(privacy.indexOf("SendGrid") < 0, "隐私条款里不再出现 SendGrid（已停用，写了就是假的处理者）");
+
+  /* 代码注释里的主备口径 */
+  const mailSrc = read("api/_lib/mail/index.js");
+  chk(!/sendgrid\s*—\s*主选/.test(mailSrc), "mail/index.js 的注释不再把 sendgrid 写成主选");
 }
 
 console.log("\n=== 六、`.env.example` 由清单生成，且与清单一致 ===");
@@ -211,6 +290,13 @@ console.log("\n=== 七之二、2D 的五个步骤（配置与真开通，docs §
   has(C2.how.join(" "), "DKIM", "C 步含 DKIM");
   has(C2.how.join(" "), "DMARC", "C 步含 DMARC（只有 SPF+DKIM 仍会被 QQ/163 拒收）");
   has(C2.why, "console", "C 步说清不配的下场是 console 通道（真实用户收不到信）");
+  /* C 步的主选：2026-09-16 起是 Resend（SendGrid 已收费）。同理钉住整段文字，
+     免得下一个人照着旧表格把「主选」又写回 SendGrid —— 那会让人白花一笔钱。 */
+  const chow = C2.how.join(" ");
+  has(chow, "Resend", "C 步的主选是 Resend");
+  has(chow, "收费", "并如实写明「SendGrid 已转向收费」（这是换主选的原因）");
+  has(chow, "RESEND_API_KEY", "C 步说清这一枚 key 填到哪个变量里");
+  has(chow, "MAIL_TRANSPORT", "C 步说清「两个密钥都填时必须显式指定通道」（不写就会一直花 SendGrid 的钱）");
   /* D 步：探活与备份。三条最容易做错的地方都要在文字里 */
   has(D2.how.join(" "), "密钥仓库", "D 步说清密钥放密钥仓库（不是 env 里手填）");
   has(D2.how.join(" "), ".cnb.yml", "D 步指向本仓库的 .cnb.yml");
