@@ -61,6 +61,20 @@ console.log('\n=== 二、语音播放：游客不行，登录的 free 可以 ===
     chk(h.indexOf('登录') < 0 || h.length <= 6,
       '登录取向的文案都短（' + c + ' → 「' + h + '」）');
   });
+  /* 本轮（Issue #163 用户 2026-09-16：「登录可用语音朗读？？？登录就登录，
+     写那么多废话干什么」）：全站**再也不许**出现「登录可用语音朗读」这一串 ——
+     按钮写事（「登录」），理由写三个字（「登录可用」）。 */
+  const fs = require('fs');
+  const root = require('path').join(__dirname, '..');
+  const SRC_FILES = ['js/entitlement.js', 'js/profile.js', 'js/app.js', 'js/reader-core.js',
+    'js/settings-nav.js', 'profile/index.html', 'settings/index.html'];
+  SRC_FILES.forEach(function (f) {
+    const src = fs.readFileSync(root + '/' + f, 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/<!--[\s\S]*?-->/g, ' ')
+      .split('\n').map(l => l.replace(/^\s*\/\/.*$/, ' ')).join('\n');
+    chk(src.indexOf('登录可用语音朗读') < 0,
+      f + ' 里不再出现「登录可用语音朗读」这一串（按钮写事、理由三个字）');
+  });
 }
 
 console.log('\n=== 三、pro / max 只加不减：层级越高能力单调不减 ===');
@@ -80,7 +94,14 @@ console.log('\n=== 三、pro / max 只加不减：层级越高能力单调不减
      与 docs/auth-design.md §3.5 那张老表（「飞花令 / 古诗文大会 / 考试与题库」
      一律 pro 起）相比，这两条**上收到 max** —— 以用户裁决为准。 */
   chk(!E.can('feihualing', pro).ok && E.can('feihualing', max).ok, '飞花令：pro 不可、max 可用（用户指定）');
-  chk(!E.can('exam.paper', pro).ok && E.can('exam.paper', max).ok, '现场考试：pro 不可、max 可用（用户指定）');
+  chk(!E.can('exam.paper', pro).ok && E.can('exam.paper', max).ok, '试题模拟：pro 不可、max 可用（用户指定）');
+  /* ⚠️ Issue #163 末条（2026-09-19）：原先挤在 `exam.paper` 那一格里的两件事
+     被用户裁成**两条能力** ——「古诗词大会的集子的访问权限」与「在线试题模拟的权限」。
+     它们各自有 minTier（都归 Max），对比表上是两行、两个钩叉。 */
+  chk(!!E.cap('exam.gathering'), 'exam.gathering 是**独立的一条**能力（集子访问）');
+  chk(!E.can('exam.gathering', pro).ok && E.can('exam.gathering', max).ok,
+    '古诗词大会集子：pro 不可、max 可用（与试题模拟同一条口径）');
+  chk(E.cap('exam.gathering').name === '古诗词大会', '它的名字就叫「古诗词大会」（一格说一件事）');
   chk(!E.can('quiz.review', free).ok && E.can('quiz.review', pro).ok, '题库复习：free 不可、pro 起');
   chk(!E.can('sync.multiDevice', free).ok && E.can('sync.multiDevice', pro).ok, '跨设备云同步：pro 起');
   /* 用户 2026-09-17：「把需要收我 app 费用的功能删除」——
@@ -98,10 +119,62 @@ console.log('\n=== 三、pro / max 只加不减：层级越高能力单调不减
        · 门槛 → **pro 起**（不再是 max）
        · 内容 → **只有课内 261 首**，六部集子不做一次性整本导出
      ⚠️ 六部集子**不是「还没做」**，是「不做」—— 这条断言守的是那个结论。 */
-  eq(E.can('export.all', pro).ok, true, '全站课内诗词导出：pro 起（用户指定）');
+  eq(E.can('export.all', pro).ok, true, '课内诗词导出：pro 起（用户指定）');
   eq(E.can('export.all', max).ok, true, 'max 当然也能用');
   eq(E.can('export.all', free).ok, false, 'free 不可（登录了也不行）');
   chk(/课内/.test(E.cap('export.all').name), '能力名字里写明是「课内」（不许含糊成全站）');
+
+  /* ---------- Issue #163：名字收短 + 额度逐档写进 quotas ----------
+     用户 2026-09-18 逐个点名（原话在 js/entitlement.js 的 CAPS 里）：
+       每日背诵与复习排程 → 每日背诵 / 六部集子全文阅读 → 课外阅读 /
+       语音朗读（原文 / 译文 / 连读） → 语音朗读 / 生字注音与阅读辅助 → 阅读辅助 /
+       导出背诵进度 JSON → 进度导出 / 自选清单 20 个 → 自选清单 /
+       跨设备云同步 → 设备同步 / 篇目 PDF / 打印页 → PDF / 打印 /
+       家庭子档案（Free 1 / Pro 3 / Max 180） → 家庭档案 /
+       题库复习（给上句选下句） → 题库 / 全站课内诗词批量导出 261 首 → 课内诗词导出 /
+       古诗词大会 · 现场考试 → 试题模拟 / 自选清单不限 → 删除。
+     2026-09-19 再补一条（同一条 Issue 的末条）：**「古诗词大会」与「试题模拟」
+     拆成两条能力** —— `exam.gathering`（集子访问）与 `exam.paper`（在线模拟考试），
+     原先挤在一个格子里的两行字，一个钩叉答不了两个问题。
+     守两件事：① 能力**键名**一个都没动（服务端 featuresFor 靠它对拍）；
+              ② 名字不长、括号里的额度搬到 quotas 上。 */
+  const renames = {
+    'recite.basic': '每日背诵', 'library.all': '课外阅读', 'read.aloud': '语音朗读',
+    'pinyin.helper': '阅读辅助', 'export.progress': '进度导出',
+    'collections.many': '自选清单', 'sync.multiDevice': '设备同步',
+    'export.paper': 'PDF / 打印', 'profile.family': '家庭档案',
+    'quiz.review': '题库', 'export.all': '课内诗词导出',
+    'exam.gathering': '古诗词大会', 'exam.paper': '试题模拟'
+  };
+  Object.keys(renames).forEach(function (k) {
+    eq(E.cap(k).name, renames[k], 'Issue #163 改名：' + k + ' → 「' + renames[k] + '」');
+  });
+  E.capNames().forEach(function (k) {
+    const c = E.cap(k);
+    if (!c) return;
+    /* 8 个「字」是上限，不是目标 —— 名字里有 `/` 与空格的那一条（PDF / 打印）
+       本来就该多两个字符，判据取「宽度」而不是「字数」太玄，直接给到 8。 */
+    chk(c.name.length <= 8, '能力名都短到能在一列里放下：「' + c.name + '」（' + c.name.length + ' 字）');
+    chk(c.name.indexOf('（') < 0 && c.name.indexOf('(') < 0,
+      '能力名不带括号（括号里的额度搬到 quotas 上）：「' + c.name + '」');
+    chk(c.name.indexOf(' · ') < 0, '能力名里不塞两件事：「' + c.name + '」');
+  });
+  /* 逐档额度：数字长在 quotas 上，页面（对比表各列）与数据层（collections /
+     family 的 limit()）读的都是它 —— 表上写 100、实际能建别的数就是假话。 */
+  eq(E.quotaFor(E.cap('collections.many'), 'free'), 10, '自选清单 Free 10 个（用户点名）');
+  eq(E.quotaFor(E.cap('collections.many'), 'pro'), 100, '自选清单 Pro 100 个（用户点名）');
+  eq(E.quotaFor(E.cap('collections.many'), 'max'), 5000, '自选清单 Max 5000 个（用户点名）');
+  eq(E.quotaFor(E.cap('profile.family'), 'free'), 1, '家庭档案 Free 1 个');
+  eq(E.quotaFor(E.cap('profile.family'), 'pro'), 3, '家庭档案 Pro 3 个');
+  eq(E.quotaFor(E.cap('profile.family'), 'max'), 180, '家庭档案 Max 180 个');
+  eq(E.quotaFor(E.cap('export.all'), 'pro'), 261, '课内诗词导出 Pro 261 首（用户点名「pro 和 max 列列出 261 首」）');
+  eq(E.quotaFor(E.cap('export.all'), 'max'), 261, '课内诗词导出 Max 261 首（同上）');
+  /* 没有 quotas 的能力回落到 quota（会话里的 TTS 那类「每月 N 次」） */
+  eq(E.quotaFor({ quota: 50 }, 'pro'), 50, '没有 quotas 的能力回落 quota');
+  eq(E.quotaFor({ quota: null }, 'pro'), null, '既没 quotas 也没 quota → null（这一格没有数字可说）');
+  eq(E.quotaText(5000), '5000 个', '额度文案不带千分位（5,000 在窄格子会被读成两个数）');
+  eq(E.quotaText(Infinity), '不限', 'Infinity 写作「不限」');
+  eq(E.quotaText(0), '不支持', '0 写作「不支持」（不是「0 个」）');
 }
 
 console.log('\n=== 四、唯一出口：脏值 / 未知能力 / 缺参一律回落，不抛 ===');
@@ -330,6 +403,110 @@ console.log('\n=== 十一、管理员（role）：与层级正交，且是全站
   const member = E.identity({ backing: mem({ [E.OWNER_NS]: 'member' }), authStore: null });
   eq(member.role, 'user', '非主人：role 是 user');
   eq(E.tierLabel(member.tier), 'Free', '…层级照旧按发放名单算');
+}
+
+console.log('\n=== 十二、每条付费能力都得**真的有人管**（不许只写在能力表里）===');
+{
+  /* ⚠️ 这一节补的是**本轮踩到的那类洞**，而不是某一条能力：
+     全站的能力表（`CAPS`）是 `/plans/` 对比表的唯一来源（当场问内核算出来），
+     所以**能力表里写了什么，页面上就对用户宣称了什么**。
+     但「写在能力表里」与「真的有人拿它拦过」是两件事 —— 
+     只要有一处没接，那条公开宣称就是**假话**：
+       · 2A 的两个洞、2.2 的断链、③ 的 `export.all`、本轮的 `sync.multiDevice`
+     全都是这一个形状（限制写在 A 处、读取在 B 处，谁也不报错）。
+
+     所以这一节逐条扫：**每一条付费能力的键名，必须在 js/ 或 api/ 里
+     有一处真的读它**（`can("键名")` 或服务端 `featuresFor` 那一档）。
+
+     ⚠️ 例外要**明着列出**，不许用「差不多就算了」的口径放过去：
+     下面 EXEMPT 里每一条都写清了「为什么它不需要一个读取点」。 */
+  const fs = require('fs');
+  const path = require('path');
+  const root = path.join(__dirname, '..');
+
+  /* 只在「代码」里扫，不扫文档与测试自己 */
+  function walk(dir, out) {
+    fs.readdirSync(dir).forEach(function (name) {
+      const p = path.join(dir, name);
+      const st = fs.statSync(p);
+      if (st.isDirectory()) { walk(p, out); return; }
+      if (!/\.(js|html)$/.test(name)) return;
+      out.push(p);
+    });
+    return out;
+  }
+
+  const files = []
+    .concat(walk(path.join(root, 'js'), []))
+    .concat(walk(path.join(root, 'api'), []))
+    .concat(walk(path.join(root, 'settings'), []))
+    .concat(walk(path.join(root, 'profile'), []))
+    .concat(walk(path.join(root, 'plans'), []))
+    .concat(walk(path.join(root, 'admin'), []));
+
+  const sources = files.map(function (f) {
+    return { rel: path.relative(root, f), text: fs.readFileSync(f, 'utf8') };
+  });
+
+  /* 能力表自身与服务端那一份清单不算「读取点」—— 它们只是把键名列出来，
+     没有任何判定行为。扫的时候要排掉，否则每条都「有人读」。 */
+  const DECL_ONLY = ['js/entitlement.js', 'api/_lib/core.js'];
+
+  /* 明着列出的例外：这几条**不需要**单独的读取点，理由各自写清 */
+  const EXEMPT = {
+    /* free 那一档就是「打开即用」，没有任何需要拦的地方 ——
+       它的「读取点」是「不拦」这件事本身（有断言在第一节钉着）。 */
+    'recite.basic': '免费档：打开即用，没有需要拦的地方（第一节断言钉着）',
+    'library.all': '免费档：六部集子全文，一律可读',
+    'pinyin.helper': '免费档：注音是阅读辅助，不做门槛',
+    'export.progress': '免费档：导出进度 JSON，按钮直接调 Export（无门槛）',
+    'read.aloud': '语音播放：闸在 js/speech.js 的 gate()（有专门的第九节验它）',
+    /* 自选清单那两条（`collections.many` / `collections.unlimited`）按
+       **已发放的 tier** 判，不按 `can()` 判 —— 见 `js/collections.js` 的 `limit()`：
+       那两条能力带 `login:true`，走 `can()` 时「登录过但会话刚过期」会被判成
+       free，症状是「昨天还能建 20 个，今天一刷新只剩 1 个」。
+       所以它们的读取点是 `limit()` 里那句 `if (tier === "pro")`，
+       **读的是同一个门槛值**（`CAPS` 的 `minTier`），只是没写键名。
+       有断言把两个数字钉在一起（`test/collections.test.js`）。 */
+    'collections.many': '按 tier 判（js/collections.js 的 limit()），读同一个门槛值',
+    'collections.unlimited': '同上：max 档 → 不限'
+  };
+
+  const paid = E.capNames().filter(function (k) {
+    const c = E.cap(k);
+    return c && c.minTier !== 'free' && !EXEMPT[k];
+  });
+
+  chk(paid.length >= 6, '付费能力至少 6 条（实际 ' + paid.length + ' 条）');
+
+  const unmanaged = paid.filter(function (k) {
+    return !sources.some(function (s) {
+      if (DECL_ONLY.indexOf(s.rel) >= 0) return false;
+      return s.text.indexOf('"' + k + '"') >= 0 || s.text.indexOf("'" + k + "'") >= 0;
+    });
+  });
+
+  chk(unmanaged.length === 0,
+    '每条付费能力都有一处真的读它（没被读的：' + (unmanaged.join('、') || '无') + '）');
+
+  /* 反向自检：这条断言不是空的 —— 把 sync.multiDevice 从它两个读取点里
+     抹掉一个，下面的手写检查必须能发现。用一个**假的能力名**验这把尺子。 */
+  const fake = 'zzz.never.read';
+  const hit = sources.some(function (s) {
+    if (DECL_ONLY.indexOf(s.rel) >= 0) return false;
+    return s.text.indexOf('"' + fake + '"') >= 0;
+  });
+  chk(!hit, '反面样本：一个谁都不读的能力名，这把尺子判它「没人管」（断言有牙）');
+
+  /* `sync.multiDevice` 这一条**两处都要在**（本轮补的就是它）。
+     只做界面层等于没拦（藏界面不是安全边界），
+     只做服务端会出现「点开开关、看着开启中、其实一条都传不上去」的静默失败。 */
+  const ui = sources.filter(function (s) { return s.rel === 'js/sync-store.js'; })[0];
+  chk(!!ui && /can\("sync\.multiDevice"\)/.test(ui.text),
+    '界面层真的问了 can("sync.multiDevice")（js/sync-store.js）');
+  const srv = sources.filter(function (s) { return s.rel === 'api/_lib/core.js'; })[0];
+  chk(!!srv && /syncTierGate/.test(srv.text), '服务端有一条层级闸（core.syncTierGate）');
+  chk(!!srv && /"sync\.multiDevice"/.test(srv.text), '服务端那道闸用的就是同一个键名');
 }
 
 console.log('');

@@ -300,9 +300,15 @@ console.log('\n=== 六、上限与内核同源 ===');
   chk(!!cap, '内核能力表里有 profile.family');
   eq(cap.minTier, 'pro', 'minTier = pro（Free 那一个不算「能力」，是保底）');
   eq(cap.login, true, '要求登录（层级要登录才拿得到）');
-  chk(new RegExp(String(F.FREE_PROFILES)).test(cap.name), '能力名里写着 Free 的档（' + F.FREE_PROFILES + '）');
-  chk(new RegExp(String(F.PRO_PROFILES)).test(cap.name), '能力名里写着 Pro 的档（' + F.PRO_PROFILES + '）');
-  chk(new RegExp(String(F.MAX_PROFILES)).test(cap.name), '能力名里写着 Max 的档（' + F.MAX_PROFILES + '）');
+  /* Issue #163：名字里的括号摘掉了（「家庭子档案（Free 1 / Pro 3 / Max 180）」
+     →「家庭档案」）—— 三档数字改由 **`quotas`** 承担（对比页在各列直接列出数字，
+     不再把三个数字塞进功能名里撑宽那一列）。
+     所以判据从「能力名里有没有这三个数」翻成「quotas 里的数与 family.js 同值」。 */
+  eq(E.quotaFor(cap, 'free'), F.FREE_PROFILES, '内核 quotas.free 与 family.js 同值');
+  eq(E.quotaFor(cap, 'pro'), F.PRO_PROFILES, '内核 quotas.pro 与 family.js 同值');
+  eq(E.quotaFor(cap, 'max'), F.MAX_PROFILES, '内核 quotas.max 与 family.js 同值');
+  eq(cap.name, '家庭档案', '能力名收成「家庭档案」（额度归 quotas，不写在名字里）');
+  chk(!/（/.test(cap.name), '名字里不再带括号（那是三个数字的旧住处）');
 
   /* 服务端 featuresFor：max 是 pro 的超集，profile.family 只在 pro 那一档列一次 */
   const core = read('api/_lib/core.js');
@@ -314,6 +320,11 @@ console.log('\n=== 六、上限与内核同源 ===');
   eq(F.FREE_PROFILES, 1, 'Free 1 个：第一次自动认领的那一份永远放得下');
   eq(F.PRO_PROFILES, 3, 'Pro 3 个');
   eq(F.MAX_PROFILES, 180, 'Max 180 个');
+
+  /* ⚠️ 拿不到内核时**不设限**（返回 Infinity，与 collections 同一条纪律）——
+     否则一次加载顺序错误就是「本来有 3 个子档案的人突然只剩 1 个」。 */
+  const memB = { getItem: () => null, setItem: () => {}, removeItem: () => {} };
+  eq(F.limit({ E: null, backing: memB }), Infinity, '读不到内核时不设限（宁可不判，也不误拦）');
 }
 
 /* ==========================================================================

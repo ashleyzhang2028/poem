@@ -709,14 +709,17 @@ const settingsJs = read('js/settings.js');
 const NAV_SRC = read('js/settings-nav.js');
 
 /* 「一页里最大的那颗标题」这一档只写一次（Issue #163 第四轮）——
-   `.settings-group-title, .settings-link-title, .account-entry-name, .item-title`
-   共用一个声明块，字号 / 字重 / 颜色三个值只写一遍。这里把它取出来，
+   `.settings-group-title, .settings-link-title, .item-title`
+   共用一个声明块，字号 / 字重 / 颜色三个值只写一遍。
+   ⚠️ 主页「账号」那一角原先另有一个 `.account-entry-name`；它现在**不是独立一角**了：
+      账号那一行与四组入口共用 `.settings-link-title` 同一份稿子
+      （账号不再自己一张卡，见 §4.19），所以共用块里也就没有这个名字。这里把它取出来，
    下面的层级断言与 ui-consistency 那一组约定都从这一个来源读。
    ⚠️ 判据是「共用块里含这四角」，不是「选择器列表恰好等于这四角」——
       以后再加一角（例如入口页的书名）不该让这一条变红；
       它要守的是「只有一个来源」，不是「只许四处」。 */
 const SHARED_TITLE_SELECTORS = ['.settings-group-title', '.settings-link-title',
-  '.account-entry-name', '.item-title'];
+  '.item-title'];
 function sharedTitleRule(code) {
   const m = code.match(/\.settings-group-title,[\s\S]{0,200}?\{([\s\S]{0,400}?)\}/);
   if (!m) return '';
@@ -877,9 +880,10 @@ chk(!/js\/reader-core\.js/.test(SETTINGS_HTML), '设置页不加载阅读器引�
 //    （卡头卷名 .group-name、列表篇名 .item-title、入口页书名、详情页标题），
 //    14px 落在「卡片主标题」与「辅助标签」（11~12.5px）之间，读起来还是标签。
 //
-// 这一档现在**五处读同一句**（写在 css/style.css 中部的共用块里）：
+// 这一档现在**四角读同一句**（写在 css/style.css 中部的共用块里）：
 //     .settings-group-title（二级页分组名）  .settings-link-title（主页入口标题）
-//     .account-entry-name（主页账号卡名字）  .item-title（列表篇名）
+//       —— 主页账号那一行也用同一个名字（与四组入口共用一份稿子）
+//     .item-title（列表篇名）
 //     css/classic.css 的 .group-name（集子卡头卷名）
 // 下面这组断言判的是「这几处**逐位相同**」，不是「等于某几个类名」——
 // 以后再加一角（例如入口页书名）不该让守卫变红，改口径时才会红。
@@ -928,10 +932,11 @@ chk(/color:\s*var\(--ink\)/.test(sharedTitle),
     .replace(/\/\*[\s\S]*?\*\//g, ' ');
   chk(!!itemTitleOwn && !/font-size|font-weight|color:/.test(itemTitleOwn),
     '列表篇名那条规则不再另写字号 / 字重 / 颜色（读共用块，只留字体族与字距）');
-  // 账号卡上的名字同理
-  const entryNameOwn = (css.match(/\.account-entry-name\s*\{([^}]*)\}/) || ['', ''])[1];
-  chk(!!entryNameOwn && !/font-size|font-weight|color:/.test(entryNameOwn),
-    '主页账号卡上的名字不再另写字号 / 字重 / 颜色（与入口标题同一档）');
+  // 主页账号那一行：它是**清单里的一行**（Issue #163 第四轮「把这个按钮和其他按钮
+  // 放一起」），所以标题走的就是 .settings-link-title 那一角 ——
+  // 样式表里不该再有一个名叫 `.account-entry-name` 的第二来源。
+  chk(!/\.account-entry-name\s*\{/.test(css),
+    '主页账号那一行不再自带一份标题样式（读 .settings-link-title，与四组入口同档）');
   // 反向样本：把共用块的 17 改小 → 这条判据必须红（否则它只是空规则）
   chk(px(shared.replace('font-size: 17px', 'font-size: 14px'), 'font-size') !== sharedFs,
     '这一档真的能被改坏（把共用块的 17px 改成 14px 时上面那些断言会红）');

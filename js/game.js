@@ -1,19 +1,25 @@
 /**
- * 古诗词大会（3 期 · 不花钱的那一层）
+ * 试题模拟（3 期 · 不花钱的那一层）
  * ==========================================================================
  * 三个玩法，同一个内核（`js/quiz.js`）、同一份语料（各集子自己的数据文件）。
  *
  *   飞花令      —— 给一个令字，写出所有带这个字的句子（**Max**）
- *   现场考试    —— 抽一套卷子当场做，交卷即判分（**Max**）
+ *   试题模拟    —— 抽一套卷子当场做，交卷即判分（**Max**）
  *   题库复习    —— 给上句选下句，一道道过（**Pro**）
+ *
+ * ⚠️ 2026-09-19（Issue #163）用户把两件事裁清了：
+ *   「一个是古诗词大会的集子的访问权限，一个是在线试题模拟的权限」
+ * 这一页是**后者**（在线出题 · 判分）；前者的权限键是 `exam.gathering`，
+ * 落在 `/poems/` 上那颗入口（见 js/poems.js），点进来之前就先判过。
+ * 两件事各有自己的钩叉 —— 能进集子 ≠ 能考试。
  *
  * ## 这一页的定位：它是 `/poems/` 上的一层，不是新的一站
  *
- * 底部四个页签已经满了（背诵 / 课外 / 搜索 / 设置），「古诗词大会」不该再挤一个。
+ * 底部四个页签已经满了（背诵 / 课外 / 搜索 / 设置），不该再挤一个。
  * 它是**课内那 261 首的另一种用法** —— 所以挂在课内诗词索引页（`/poems/`）里，
  * 与 `/library/` 上那五部集子的索引**同一套「就地叠层」**：
  * 地址栏不动，页顶那一行换成本页的页名与说明，右上角那颗返回键一层退一层。
- * 于是「课内目录 → 古诗词大会 → 一层退一层」与用户点出来的路径一一对应。
+ * 于是「课内目录 → 试题模拟 → 一层退一层」与用户点出来的路径一一对应。
  *
  * ## 三条口径
  *
@@ -22,7 +28,7 @@
  * 2. **答案与题目一起出** —— 抽题时就配好了答案，界面用 CSS 遮住。
  *    这一点必须如实说：答案就在浏览器里，它**不是防作弊**，
  *    是一份「先自己想一想再看」的自省工具（离线、不联网、不上传作答记录）。
- * 3. **判分服务端说了算（配了服务端时）** —— 飞花令与考试都走
+ * 3. **判分服务端说了算（配了服务端时）** —— 飞花令与试题模拟都走
  *    `POST /api/game/answer`；服务端不在时**如实降级为本机判分**并标注，
  *    不假装「已由服务器判定」。
  */
@@ -32,8 +38,22 @@
   var Ent = window.Entitlement;
   var Q = window.Quiz;
 
+  /**
+   * 「《古诗词大会》集子的访问」这一条能力的键名 —— 与 js/entitlement.js 的
+   * `exam.gathering` **逐字一致**（用户 2026-09-19 裁清的那两件事里的第一件）。
+   *
+   * ⚠️ 它与下面三层玩法（`exam.paper` 那条）是**两条能力**：能进集子 ≠ 能考试。
+   *    两颗钩叉各答各的问题，所以这里不许把它并回 MODES 里当第四张卡 ——
+   *    它不是「一个玩法」，是一层的入场券。
+   */
+  var GATHERING_CAP = "exam.gathering";
+
   /* 三层各自的定义。cap 与 js/entitlement.js 的 CAPS 键名**逐字一致** ——
-     写错的下场是「界面点亮了，服务端判分口回 403」。 */
+     写错的下场是「界面点亮了，服务端判分口回 403」。
+     ⚠️ 这三层是「**试题模拟**」这个权限下面的三件事（用户 2026-09-19 裁清：
+        「一个是在线试题模拟的权限」）。《古诗词大会》那个**集子**的访问是
+        另一条能力 `exam.gathering` —— 它落在这一页的**入口**上（见集子卡），
+        不落在这三张玩法卡上：能进集子 ≠ 能考试，两件事各有自己的钩叉。 */
   var MODES = [
     {
       id: "fly", cap: "feihualing", tier: "max",
@@ -42,8 +62,11 @@
       unit: "句"
     },
     {
+      /* ⚠️ 2026-09-19（Issue #163）：名字从「现场考试」改成「**试题模拟**」——
+         与对比页那一行同名同义（用户点名：「一个是在线试题模拟的权限」）。
+         能力键仍是 `exam.paper`（服务端判分口与它同源，一个字没动）。 */
       id: "paper", cap: "exam.paper", tier: "max",
-      name: "现场考试",
+      name: "试题模拟",
       desc: "抽一套卷子当场做，交卷即判分",
       unit: "题"
     },
@@ -182,12 +205,17 @@
     return null;
   }
 
+  /** 这一档玩法现在能不能开（与集子那条共用同一个出口） */
+  function allowed(mode, id) {
+    return capAllowed(mode.cap, id);
+  }
+
   /**
-   * 这一档玩法现在能不能开。
+   * 这一条能力现在开不开。
    * **一律走 `Entitlement.can()`**，页面不自己比 tier（有源码扫描守着）。
    */
-  function allowed(mode, id) {
-    return Ent.can(mode.cap, { tier: (id && id.tier) || "free", signedIn: !!(id && id.signedIn) });
+  function capAllowed(cap, id) {
+    return Ent.can(cap, { tier: (id && id.tier) || "free", signedIn: !!(id && id.signedIn) });
   }
 
   /* ------------------------------------------------- 服务端判分（有就优先） */
@@ -251,7 +279,7 @@
   /* ---------------------------------------------------------- 渲染 */
 
   function gateCard(mode, id) {
-    var r = allowed(mode, id);
+    var r = capAllowed(mode.cap, id);
     if (r.ok) return "";
     /* ⚠️ 未登录与层级不够是**两回事**（与 /plans/ 那一页同口径）：
        游客要先登录，已登录的 free 要有人给他发层级。文案走 denyReason()。*/
@@ -264,10 +292,32 @@
       "</div>";
   }
 
+  /**
+   * 集子访问没过闸时，就地铺一张如实说明的卡（**不跳走、不把入口藏起来**）。
+   * 文案与其余各处同一个来源：`Entitlement.denyReason()`。
+   */
+  function renderEntryGate() {
+    if (!host) return;
+    var id = identifier();
+    host.innerHTML = '<section class="account-card">' +
+      '<h2 class="account-card-title">古诗词大会</h2>' +
+      '<p class="account-lead">这一项是《古诗词大会》的集子，与试题模拟分开。</p>' +
+      gateCard({ cap: GATHERING_CAP }, id) +
+      '<button class="account-btn ghost" type="button" data-game-close="1">返回诗词列表</button>' +
+      "</section>";
+    host.hidden = false;
+    if (viewEl) viewEl.hidden = true;
+    bind();          // 那张卡上的两颗键（去登录 / 返回列表）也要真的接上
+    paintBack();
+  }
+
   function renderHome() {
     var id = identifier();
+    /* ⚠️ 顶上那张卡说清的是「**试题模拟**」这一层（三张玩法卡都在它下面），
+       不是《古诗词大会》那个集子 —— 集子的访问权限在**入口那一层**
+       （`exam.gathering`，见 js/poems.js 与 poems/index.html），与这里分开。 */
     var html = '<section class="account-card">' +
-      '<h2 class="account-card-title">古诗词大会</h2>' +
+      '<h2 class="account-card-title">试题模拟</h2>' +
       '<p class="account-lead">三个玩法，同一份语料。答完当场判分。</p>' +
       "</section>";
 
@@ -459,7 +509,7 @@
   function startPaper(mode) {
     var cps = corpus();
     var bank = Q.buildBank(cps, { perPoem: 1, options: 4 });
-    var size = mode === "paper" ? 8 : 5;   // 现场考试 8 题、题库复习 5 题
+    var size = mode === "paper" ? 8 : 5;   // 试题模拟 8 题、题库复习 5 题
     // 种子用「现在的分钟数」：同分钟内重抽是同一副卷子（可复现），
     // 隔一会儿再来是新的一副 —— 不用 Math.random，测试才钉得住。
     var seed = String(Math.floor(Date.now() / 60000));
@@ -556,6 +606,10 @@
       var back = hit("data-game-back");
       if (back) { state.mode = ""; render(); return; }
 
+      /* 集子访问没过闸那张卡上的「返回诗词列表」——与 ☓ 收掉这一层同一条路 */
+      var cl = hit("data-game-close");
+      if (cl) { close(); return; }
+
       var mode = hit("data-game-mode");
       if (mode) {
         var mid = mode.getAttribute("data-game-mode");
@@ -626,8 +680,8 @@
     var C = window.SiteChrome;
     if (!C) return;
     if (!mode) { C.setPage(""); C.setSub(""); return; }
-    C.setPage("古诗词大会");
-    C.setSub("飞花令 · 现场考试 · 题库复习");
+    C.setPage("试题模拟");
+    C.setSub("飞花令 · 试题模拟 · 题库复习");
   }
 
   function paintBack() {
@@ -664,12 +718,16 @@
     viewEl = document.querySelector('[data-poems-view="list"]');
     if (!host) return;
     host.hidden = true;
-    /* 索引页里那颗「诗词大会」键。挂在工具条上（与搜索、连读同一行），
-       由这一层自己绑 —— 索引页那边只留一个空槽位，不写任何本页的逻辑。 */
+    /* 索引页里那颗「古诗词大会」入口键。挂在工具条上（与搜索、连读同一行），
+       由这一层自己绑 —— 索引页那边只留一个空槽位，不写任何本页的逻辑。
+       ⚠️ 它就是**集子访问**那一条权限（`exam.gathering`）的落点：
+          用户 2026-09-19 把两件事裁清了（「一个是古诗词大会的集子的访问权限，
+          一个是在线试题模拟的权限」）—— 所以点它之前先判这条能力。 */
     var entry = document.querySelector("[data-game-open]");
     if (entry) {
       entry.addEventListener("click", function (e) {
         e.preventDefault();
+        if (!capAllowed(GATHERING_CAP, identifier()).ok) { renderEntryGate(); return; }
         open();
       });
     }

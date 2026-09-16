@@ -2028,6 +2028,119 @@ function check(name, cond, extra) {
     await page.close();
   }
 
+  /* ============ 同步开关：滑块真的落在轨道里（真浏览器，Issue #163） ============
+     用户原话：「跨设备同步 现在这个选择项你是认真的吗？奇丑无比，
+               你哪怕设计成 iPhone 设置里的选项开关一样也行啊。」
+
+     上一版把外观自绘成胶囊，但**画出来是错的**：轨道是那颗 appearance:none 的
+     input，滑块是可以长在 DOM 任何位置的独立 <span>，两者靠 absolute 定位去叠 ——
+     而 .switch / .settings-item / .settings-group / .app / body 一路上全是 static，
+     absolute 于是以**文档**为包含块：滑块落在页面左上角（实测 y = -415px，
+     在屏幕外）。用户看到的是一颗空药丸，滑块一次都没出现过。
+
+     ⚠️ 当时那五条守卫**全绿** —— 它们查的是源码字符串（有没有 appearance:none、
+       尺寸是不是 40/24、translateX 是不是算出来的 16）：源码一条不错，画出来全错。
+       所以这一段必须用真浏览器量**几何落点**，而不是再读一遍样式表。
+       同理，jsdom 也判不了这件事（它不支持 getComputedStyle(el,'::after')，
+       会把父元素的样式原样返回）。
+
+     判的都是「滑块**相对轨道**」的关系（不是绝对坐标，那会随滚动变），
+     以及两态之间**真的动过**。 */
+  {
+    const { page } = await freshPage();
+    await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+    await page.goto(base + 'settings/general/', { waitUntil: 'networkidle0' });
+    await new Promise(r => setTimeout(r, 600));
+
+    const measure = () => page.evaluate(() => {
+      const input = document.getElementById('toggle-sync');
+      if (!input) return null;
+      const track = input.nextElementSibling;
+      const tr = track.getBoundingClientRect();
+      const ir = input.getBoundingClientRect();
+      const after = getComputedStyle(track, '::after');
+      const tcs = getComputedStyle(track);
+      return {
+        sibling: track.className,
+        checked: input.checked,
+        track: { x: tr.x, y: tr.y, w: tr.width, h: tr.height, radius: tcs.borderRadius, pos: tcs.position },
+        input: { w: ir.width, h: ir.height },
+        knob: {
+          w: parseFloat(after.width), h: parseFloat(after.height),
+          left: parseFloat(after.left), top: parseFloat(after.top),
+          position: after.position,
+          // 伪元素的位移在父元素坐标系里 —— matrix 的第五个分量就是 translateX
+          dx: (() => { const m = /matrix\(([^)]+)\)/.exec(after.transform); return m ? parseFloat(m[1].split(',')[4]) : 0; })()
+        }
+      };
+    });
+
+    const off = await measure();
+    check('同步开关：轨道画出来了（轨道是 input 的紧邻兄弟）',
+      off && /switch-toggle/.test(off.sibling),
+      off ? off.sibling : 'no switch');
+    if (off) {
+      check('同步开关：轨道是 40×24 的胶囊',
+        Math.abs(off.track.w - 40) < 0.6 && Math.abs(off.track.h - 24) < 0.6 && off.track.radius === '999px',
+        '轨道 ' + off.track.w + '×' + off.track.h + ' 圆角 ' + off.track.radius);
+      check('同步开关：真实复选框不占位（视觉交给轨道那颗 span）',
+        off.input.w === 0 && off.input.h === 0,
+        'input ' + off.input.w + '×' + off.input.h);
+      check('同步开关：轨道是定位包含块（滑块只能落在它里面）',
+        off.track.pos === 'relative', off.track.pos);
+      check('同步开关：滑块是轨道的 ::after（不是另一个能到处跑的元素）',
+        off.knob.position === 'absolute' && off.knob.w > 0,
+        'position ' + off.knob.position + ' / ' + off.knob.w + '×' + off.knob.h);
+      /* 关着：滑块靠左，且**整颗都在轨道口袋里** */
+      check('同步开关（关）：滑块落在轨道内（不越界）',
+        off.knob.left >= 0 && off.knob.top >= 0 &&
+        off.knob.left + off.knob.w <= off.track.w &&
+        off.knob.top + off.knob.h <= off.track.h,
+        'left ' + off.knob.left + ' + ' + off.knob.w + ' ≤ ' + off.track.w);
+      check('同步开关（关）：滑块停在左端（未位移）',
+        off.knob.dx === 0, '位移 ' + off.knob.dx + 'px');
+    }
+
+    // 真点一下（滑块是伪元素，点的是轨道那颗 span），再量一次
+    /* ⚠️ 点到就说明轨道真的画出来了；点不到（选择器落空）本身就是回归 ——
+       上一版的病根正是「轨道不是那颗 span」，所以这里不能让它抛出去把
+       整个文件打断：判红，然后继续跑完剩下的检查。 */
+    let clicked = true;
+    try { await page.click('.switch-toggle', { timeout: 5000 }); }
+    catch (e) { clicked = false; }
+    check('同步开关：轨道是可以点到的实体（点它 = 切开关）', clicked,
+      clicked ? '(点到了)' : '点不到 .switch-toggle');
+    await new Promise(r => setTimeout(r, 600));
+    const on = await measure();
+    /* 轨道那颗 span 在不在（读数都从它来）。取不到时下面一律判红，
+       而不是抛出去把这个文件打断 —— 回归时应当看到一串 ✗，不是 FATAL。 */
+    const bg = await page.evaluate(() => {
+      const t = document.querySelector('.switch-toggle');
+      return t ? getComputedStyle(t).backgroundColor : null;
+    });
+    if (!on) check('同步开关：轨道那颗 span 还在（结构回归了）', false, '取不到 input.nextElementSibling');
+    if (on) {
+      check('同步开关：点轨道真的把它打开了', on.checked === true, String(on.checked));
+      check('同步开关（开）：轨道换成深青实底',
+        bg !== null && /rgb\(47, 96, 85\)|rgba\(47, 96, 85/.test(bg),
+        String(bg));
+      check('同步开关（开）：滑块右移了（不是一颗不动的点）',
+        on.knob.dx > 0, '位移 ' + on.knob.dx + 'px');
+      /* 这一条是上一版真正的病：开着时滑块右端也要在轨道内。
+         上一版滑块压根不在轨道里（在页面左上角），这条必红。 */
+      check('同步开关（开）：滑块仍在轨道内，右端不越界',
+        on.knob.left + on.knob.dx + on.knob.w <= on.track.w,
+        '起点 ' + on.knob.left + ' + 位移 ' + on.knob.dx + ' + 滑块 ' + on.knob.w +
+        ' ≤ 轨道 ' + on.track.w);
+      /* 滑块真的在「视野里」—— 上一版它的 y 是 -415（屏幕上方之外）。
+         ⚠️ 判的是「与轨道同一行的高度带」，不是绝对坐标。 */
+      check('同步开关（开）：滑块没有跑到页面别处（与轨道同一个高度带）',
+        Math.abs(on.knob.top) < on.track.h,
+        '滑块 top ' + on.knob.top + ' / 轨道高 ' + on.track.h);
+    }
+    await page.close();
+  }
+
   await browser.close();
 
   console.log('\n=== iOS / 多端兼容检查 ===\n');

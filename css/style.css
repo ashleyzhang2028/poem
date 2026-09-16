@@ -1262,25 +1262,37 @@ textarea:focus {
 
 /* ---------- 开关行（Issue #163 · 跨设备同步那一项） ----------
    用户原话：「跨设备同步选择框太丑了，改进。」
+   用户第二次原话（上一版上线后）：「现在这个选择项你是认真的吗？
+   奇丑无比，你哪怕设计成 iPhone 设置里的选项开关一样也行啊。」
 
-   旧样子是「<input type=checkbox> + 一个写着「关」/「开」的 <span>」：
-   那颗 13px 的方框沿用浏览器默认外观（白底、灰色勾、圆角 2px），
-   与这一页的纸面 / 描金细线 / 深绿实底是**两套语言**；旁边那颗
-   「关」字还要靠 JS 改写文案来表达状态。一行里横向摊着
-   「方框 + 关 + 说明」，开关到底在哪儿要读两遍才认得出。
+   第一版是浏览器默认的 <input type=checkbox>：一颗 13px 的方框（白底 /
+   灰勾 / 圆角 2px），旁边还挂一颗写着「关」「开」的文字标签。方框与全站
+   纸面 / 描金细线 / 深青实底是两套语言；那颗文字既像状态又像按钮。
 
-   新样子：一行「左标签 · 右开关」的整行控件。
-     · 开关本体 40×24 的胶囊轨道 + 18px 圆滑块，选中 = 深天青实底
-       + 米白滑块 + 描金内边（与全站「选中」同一套：实底 + 米白 + 金线）
-     · 关着 = 纸底 + 界行描边 + 淡墨滑块，一眼区分「没开」与「开着」
-     · 说明文字挪到开关**下面**单独一行（.switch-hint）：开关是主控件，
-       一行字是它的注脚，不该与控件并排抢注意力
-   ⚠️ 外观全用 `appearance: none` 自己画，不再吃 UA 默认样式 ——
-      否则 iOS Safari 又会给出一颗圆角方框，与安卓又是两样。
-   ⚠️ 尺寸只此一份（40 / 24 / 18）：将来别处在卡片标题里再放一颗，
-      要么复用 .switch，要么一起改这三个值，不许另抄一套。
-   ⚠️ 事件照旧走 input 的 change（label 包着 input，点轨道 = 点 input），
-      JS 那侧一行都不用改。 */
+   第二版（上一版）改成自绘胶囊，但**画出来是错的**：轨道是那颗
+   appearance:none 的 input 自己，滑块是可以出现在 DOM 任何位置的
+   <span class="switch-track">。两者要靠「absolute 定位」叠在一起，
+   而 absolute 的落点是**最近一个非 static 祖先** —— 而
+   .switch / .settings-item / .settings-group / .app … 一路到 <body>
+   全是 static，于是滑块直接以**文档**为坐标：left:2px / top:2px 让它
+   落在页面左上角（实测 y = -415px，在屏幕外），:checked 那句
+   translateX(16px) 只是把它从页面 x=2 挪到 x=18。用户看到的因此是
+   「一颗空药丸」—— 开着只有深青底，关着只有一圈描边，**滑块一次都没出现**。
+
+   ⚠️ 上一轮的五条守卫全绿而界面仍然是错的，因为那些断言查的是**源码字符串**
+      （「有没有 appearance:none」「尺寸是不是 40/24」「translateX 是不是算出来的 16」）
+      —— 源码看着全对，画出来全错。这一版把滑块**放进轨道元素里**，
+      并补上真渲染的几何断言（见 test/ui-consistency.test.js §13）。
+
+   现在这一版（手机系统开关那一路）：
+     · 一颗 <span class="switch-toggle"> 同时是**轨道**与滑块的 containing block
+       （position: relative，轨道与滑块因此不可能再分家）
+     · 轨道 40×24 胶囊：关 = 纸底 + 界行描边 + 淡墨滑块靠左；
+       开 = 深青实底 + 描金内边 + 米白滑块靠右（全站「选中」同一句）
+     · 位移 180ms、轨道换色 220ms：与 .seg / .chips 的选中过渡同一档，
+       整页的动效不该有两种速度
+     · 真实 <input type=checkbox> 仍在 DOM 里（键盘 / 读屏 / 焦点都用它），
+       只是画成 0 尺寸 —— 焦点态由 :focus-visible 画在**轨道**上 */
 .switch {
   display: flex;
   align-items: center;
@@ -1292,8 +1304,6 @@ textarea:focus {
   min-height: 32px;
   -webkit-tap-highlight-color: transparent;
 }
-/* 开关所在的那一侧不参与收缩：窄屏时先收文字，别把开关挤变形 */
-.switch > input { flex: none; }
 /* 左侧的项名：字号 / 颜色与页面上其他项名（.settings-item > label）逐字一致，
    否则同一页里会出现「有的项名 13.5px、有的 14px」那种看着说不出哪不对的偏差 */
 .settings-label {
@@ -1303,41 +1313,25 @@ textarea:focus {
   min-width: 0;
 }
 
-/* 轨道 / 滑块：一颗 <input type=checkbox class=switch-input> 自己画出来。
-   ⚠️ 用 `+ span.switch-track` 的兄弟选择器找轨道，不用 :has() ——
-      :has() 在老的安卓 WebView 上会静默失效，失效后开关就变成一块空轨。
-   ⚠️ 这一段是 .switch-input / .switch-track 的**唯一定义处**。
-      它们原先被定义了两遍：本段（自绘：input 当轨道、旁边的 span 当滑块）
-      与页面中部的「开关行（跨设备同步）」一节（透明 input 当覆盖层、
-      span 当轨道；那一节的类名是 .switch-row / .switch-label）——
-      两套结构相反，CSS 层叠取后者，于是浏览器画出来的是后者
-      （轨道 40×24、滑块 18），而本段源码里量到的却是前者
-      （input 40×24、span 40×24）：「源码写的」与「画出来的」对不上，
-      UI 一致性那一节的五条断言因此长期亮红（滑块行程 −6、滑块 40 落在 40 的
-      轨道外、找不到 .switch-row / .switch-label）。现在两段已并成这一段
-      —— 与 HTML 里真实存在的 .switch > input + .switch-track 完全对应，
-      这两个选择器各只出现一次，源码里量到的就是画出来的。
-      ⚠️ 改尺寸就是改这一段，别处不许再写一遍同名规则。 */
-.switch-input {
-  appearance: none;
-  -webkit-appearance: none;
-  /* 定宽定高 + 0 内边距：滑块的位置按这三个值算，别让 UA 的内边距插一脚 */
-  box-sizing: border-box;
+/* 轨道：这一颗 span 是**开关的可见本体**，同时是滑块的包含块。
+   开关那三个尺寸（轨道宽 / 轨道高 / 滑块直径）只此一份 ——
+   滑块起点与行程都由它们算出来，别处不许再写一遍。 */
+.switch-toggle {
   flex: none;
+  position: relative;          /* ⚠️ 就是这一句把滑块留在轨道里 */
+  display: inline-block;
+  box-sizing: border-box;
   width: 40px;
   height: 24px;
-  margin: 0;
-  padding: 0;
   border: 1px solid var(--line);
   border-radius: 999px;
   background: var(--card);
-  position: relative;
   cursor: pointer;
-  /* 240ms 与 .seg / .chips 的选中过渡同一档：整页的动效不该有两种速度 */
-  transition: background .2s ease, border-color .2s ease;
+  /* 220ms 与 .seg / .chips 的选中过渡同一档：整页的动效不该有两种速度 */
+  transition: background .22s ease, border-color .22s ease, box-shadow .22s ease;
 }
 /* 滑块：18px 圆 + 左 2px 的起始落点 = 轨道内高 22px 减上下各 2px */
-.switch-track {
+.switch-toggle::after {
   content: "";
   position: absolute;
   top: 2px;
@@ -1346,35 +1340,44 @@ textarea:focus {
   height: 18px;
   border-radius: 50%;
   background: var(--ink-3);
-  transition: transform .2s ease, background .2s ease;
-  pointer-events: none;
+  box-shadow: 0 1px 2px rgba(74, 58, 38, .28);
+  transition: transform .18s ease, background .22s ease;
 }
-/* 开着：深天青实底 + 米白滑块 + 描金内边（与「年级」「复习算法」的选中是同一句） */
-.switch-input:checked {
+/* 开着：深青实底 + 米白滑块 + 描金内边（与「年级」「复习算法」的选中是同一句） */
+.switch-input:checked + .switch-toggle {
   background: var(--green);
   border-color: var(--green-dark);
   box-shadow: inset 0 0 0 1px rgba(240, 205, 124, .42);
 }
 /* 40 - 18 - 2 - 2 - 2（两侧边框）= 16px 的行程 */
-.switch-input:checked + .switch-track {
+.switch-input:checked + .switch-toggle::after {
   transform: translateX(16px);
   background: #fdfaf2;
 }
 /* 置灰（服务端未开放同步时）：轨道与滑块一起退到淡墨，且不给 hover 反馈 */
-.switch-input:disabled {
+.switch-input:disabled + .switch-toggle {
   cursor: not-allowed;
   background: var(--card-2);
   border-color: var(--line-2);
 }
-.switch-input:disabled + .switch-track { background: var(--line); }
-/* 键盘：焦点光晕与全站输入框同一个值（rgba(47, 96, 85, .10)）——
-   ⚠️ 单独写在这一处，因为下面那条全局 `input:focus` 把 checkbox 排除在外了
-      （排除是对的：给复选框套光晕会连着它的方框一起发光）。 */
-.switch-input:focus-visible {
-  outline: none;
+.switch-input:disabled + .switch-toggle::after { background: var(--line); }
+/* 真实输入框留在 DOM 里（键盘 / 读屏 / 原生 toggle 都走它），但不占位：
+   一格 0 尺寸的盒子 —— 焦点环改画在轨道上（下一句） */
+.switch-input {
+  position: absolute;
+  width: 0;
+  height: 0;
+  margin: 0;
+  padding: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+/* 键盘：焦点光晕与全站输入框同一个值（rgba(47, 96, 85, .10)）
+   ⚠️ 画在**轨道**上，不是画在那颗 0 尺寸的 input 上（那样等于看不见） */
+.switch-input:focus-visible + .switch-toggle {
   box-shadow: 0 0 0 3px rgba(47, 96, 85, .10);
 }
-.switch-input:checked:focus-visible {
+.switch-input:checked:focus-visible + .switch-toggle {
   box-shadow: inset 0 0 0 1px rgba(240, 205, 124, .42), 0 0 0 3px rgba(47, 96, 85, .10);
 }
 /* 说明文字：开关下面单独一行（旧版是与开关并排、还要兼作「关」/「开」标签） */
@@ -2041,43 +2044,19 @@ body.has-install-tip #app {
 .settings-index { margin-top: 4px; }
 
 /* --------------------------------------------------------------------------
-   设置主页的「账号」卡（Issue #132 · A→B→C→D 的 D）
+   设置主页清单里的「账号」那一行（Issue #132 · A→B→C→D 的 D）
    --------------------------------------------------------------------------
-   位置刻意放在**四条入口之前**：账号是「我是谁」，四条入口是「我要调什么」，
-   先答身份再答设置。未登录时它是设置主页上唯一会把用户引向 /login/ 的地方。
-
-   与四条入口同一套纸张语言（同样的 .settings-btns 按钮、同样的 .settings-hint
-   说明字），只是不自带 .settings-item 的外框 —— 卡里的元素自己给间距。
+   ⚠️ Issue #163：它原先是一张**自己一张卡**（#account-entry + .account-entry-card，
+      印 38px、昵称 14.5px、一行说明、一颗 ghost 按钮），架在四组入口上面。
+      用户原话「另外把这个按钮和其他按钮放一起啊」之后，那一套结构整个撤了 ——
+      这一行现在与「通用」等四行**共用 .settings-link 的同一份稿子**
+      （卡片 / 圆角 / 内边距 / hover / 右箭头全都是同一套），
+      所以这里**不再有**账号专属的卡与按钮样式，只剩下行内的两处小件：
+        · .settings-link-title 里的层级徽章（与 /profile/ 那枚同一份文案）
+        · 已登录那一行的昵称与徽章之间留一点间距
    -------------------------------------------------------------------------- */
-#account-entry { margin: 4px 0 2px; }
-.account-entry-card { margin: 0; }
-.account-entry-line {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 0 0 8px;
-  flex-wrap: wrap;
-}
-/* 印：与设置 · 通用里的那一枚同一份数据，尺寸比顶栏大一档 —— 这里是
-   「看自己」的位置，与 /profile/ 的 .identity-row 同一档口径。 */
-.account-entry-card .seal-avatar { --seal-size: 38px; }
-.account-entry-main {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-  flex: 1;
-}
-.account-entry-name {
-  /* ⚠️ 字号 / 字重 / 颜色读「卡片主标题」那一档（见文件中部那一段的
-     `.account-entry-name` 一角），自己不再写第二份 —— 这张卡上的「名字」
-     与四张入口卡的标题本来就是同一档东西。 */
-  font-family: var(--font-poem);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.account-entry-sub { font-size: 11.5px; color: var(--ink-3); }
+.settings-link-desc .tier-badge { margin-left: 6px; }
+.settings-link-title .tier-badge { margin-left: 6px; }
 
 /* 账号那一项（二级页「通用」）：登录状态 + 层级徽章 + 权限清单 */
 .account-line {

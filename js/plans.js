@@ -9,6 +9,9 @@
  *      手抄一份的下场：内核加了能力、改了门槛，这张表还是老话 ——
  *      而这张表恰恰是用户唯一会逐条对着看的页面。
  *   2. **不出现任何权益存储键名**，也不自己比 tier / plan（有源码扫描守着）。
+ *   2b. **额度数字也不自己拼** —— 「10 个 / 100 个 / 5000 个」「261 首」这些
+ *      数字都在 `Entitlement.compare()` 的 cells[].hint 里（内核从 CAPS 的
+ *      `quotas` 取），本页只负责把 hint 放进格子。
  *   3. **不假装在卖东西** —— 页面上如实写层级是「服务器判定」还是「本机登记」
  *      「不是付费凭据」；也不写「立即购买」「限时优惠」这类话。
  *      ⚠️ 2.1：这一句**按当前状态分叉**（`renderAbout()`），不再写死
@@ -43,9 +46,17 @@
 
   /* ------------------------------------------------------------ 一、表头 */
 
+  /** 能力名 —— 一格一个名字，名字由内核给（本页一个字都不拼）。 */
+  function nameHtml(row) {
+    return esc(row.name);
+  }
+
   /**
    * 表头：左上角一格写「功能」，右边四格是四种身份。
    * 「你现在在这」的那一列加一枚高亮角标 —— 对比表最要紧的一眼就是这个。
+   *
+   * Issue #163：角标文案从「你现在在这」收成「**现在**」（用户点名）；
+   * 第一列（游客）的标题也由内核给出（内核那边从「未登录」改成「游客」）。
    */
   function renderHead(cmp, current) {
     var head = $("plans-head");
@@ -54,7 +65,7 @@
     cmp.cols.forEach(function (col) {
       var mine = col.id === current ? ' class="plans-col-me"' : "";
       var now = col.id === current
-        ? '<span class="plans-you">你现在在这</span>'
+        ? '<span class="plans-you">现在</span>'
         : "";
       html += '<th scope="col"' + (mine ? ' class="plans-col-me"' : "") + '>' +
         '<span class="plans-col-label">' + esc(col.label) + "</span>" + now + "</th>";
@@ -80,7 +91,7 @@
       html += '<tr class="plans-group"><th colspan="' + (cmp.cols.length + 1) + '" scope="colgroup">' +
         esc(g.title) + gnote + "</th></tr>";
       g.rows.forEach(function (row) {
-        html += '<tr><th class="plans-th-cap" scope="row">' + esc(row.name) +
+        html += '<tr><th class="plans-th-cap" scope="row">' + nameHtml(row) +
           (row.quota ? '<span class="plans-quota">每月 ' + esc(row.quota) + " 次</span>" : "") +
           "</th>";
         row.cells.forEach(function (cell, i) {
@@ -108,14 +119,17 @@
   /**
    * 表尾：每列「能用几项 / 共几项」。
    * 这一行是把整张表压成一个数字 —— 也是「免费不残缺」最直接的数字证据。
-   * Issue #163：表头那格只留「能用」，不再写「能用多少项」。
+   *
+   * Issue #163：这一格从「能用」改称「**合计**」（用户原话）——
+   * 同一个数，不再借「能用」那个词替表表态（能用多少项，四列自己看得见）。
    */
   function renderFoot(cmp) {
     var foot = $("plans-foot");
     if (!foot) return;
-    var html = '<tr><th class="plans-th-cap" scope="row">能用</th>';
+    var html = '<tr><th class="plans-th-cap" scope="row">合计</th>';
     cmp.summary.forEach(function (s) {
-      html += '<td class="plans-sum">' + esc(s.ok) + '<span class="plans-sum-of">/ ' + esc(s.total) + "</span></td>";
+      html += '<td class="plans-sum">' + esc(s.ok) +
+        '<span class="plans-sum-of">/ ' + esc(s.total) + "</span></td>";
     });
     foot.innerHTML = html + "</tr>";
   }
@@ -155,9 +169,12 @@
     var box = $("plans-me");
     if (!box) return;
     var rows = [
-      ["身份", id.signedIn ? "已登录 · " + (id.mask || "（无邮箱）") : "未登录（本机游客）"],
+      ["身份", id.signedIn ? "已登录 · " + (id.mask || "（无邮箱）") : "游客（本机）"],
       ["层级", Ent.tierLabel(id.tier)],
-      ["落在哪一列", id.signedIn ? esc(Ent.tierLabel(id.tier)) : "未登录"]
+      /* 列名只说一次：`columnLabel()` 是那张表的列名（游客 / Free / Pro / Max），
+         这里再手写一遍就会出现「表头写游客、这一行写未登录」的两套叫法。 */
+      ["落在哪一列", Ent.columnLabel(
+        id.signedIn ? { tier: id.tier, guest: false } : { tier: id.tier, guest: true })]
     ];
     box.innerHTML = rows.map(function (r) {
       return '<div class="kv-row"><span class="kv-k">' + esc(r[0]) +
@@ -176,7 +193,7 @@
   /* ------------------------------------------------------------ 初始化 */
 
   function currentColumn(id) {
-    // 未登录 ≠ free：游客看的是「未登录」那一列的能力（语音朗读那一格差在这里）
+    // 游客 ≠ free：游客看的是「游客」那一列的能力（语音朗读那一格差在这里）
     if (!id.signedIn) return "guest";
     return id.tier;
   }

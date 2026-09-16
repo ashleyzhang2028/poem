@@ -69,10 +69,13 @@
    *
    * 层级对应（用户 2026-09-17 裁决「子档案 Max 180 个」）：
    *   free 1 个 / pro 3 个 / max **180 个**
+   *
+   * ⚠️ 这三个数是**从内核读的**（`CAPS["profile.family"].quotas`），不是在这里
+   *    再抄一份 —— 对比表上写的 1 / 3 / 180 与实际能建几个必须是同一个数。
+   *    兜底（读不到内核 / 内核里没写 quotas）留一份与 entitlement.js **同值**的
+   *    字面量，`test/family.test.js` 有断言钉住。
    */
-  var FREE_PROFILES = 1;
-  var PRO_PROFILES = 3;
-  var MAX_PROFILES = 180;
+  var FALLBACK = { free: 1, pro: 3, max: 180 };
 
   /* ------------------------------------------------ 存储（薄包装，全部不抛） */
 
@@ -320,10 +323,14 @@
     var id = null;
     try { id = E.identity({ backing: backing }); } catch (e) { id = null; }
     if (!id) return Infinity;
-    var tier = id.tier;
-    if (tier === "max") return MAX_PROFILES;
-    if (tier === "pro") return PRO_PROFILES;
-    return FREE_PROFILES;
+    /* 数字取自内核的 CAPS["profile.family"].quotas（与「自选清单」同一套写法），
+       `E` 是测试注入的那个内核 —— 拿不到 quotaFor 就回落到与内核同值的兜底。 */
+    var n = null;
+    if (typeof E.quotaFor === "function" && E.CAPS) {
+      n = E.quotaFor(E.CAPS["profile.family"], id.tier);
+    }
+    if (typeof n !== "number") n = FALLBACK[id.tier];
+    return typeof n === "number" ? n : FALLBACK.free;
   }
 
   /** 还能建几个（Infinity 表示不限） */
@@ -569,9 +576,11 @@
     NS: NS,
     LEGACY_PROFILE_NS: LEGACY_PROFILE_NS,
     NAME_MAX: NAME_MAX,
-    FREE_PROFILES: FREE_PROFILES,
-    PRO_PROFILES: PRO_PROFILES,
-    MAX_PROFILES: MAX_PROFILES,
+    /* 与内核同值的兜底（`test/family.test.js` 拿它对着 CAPS 的 quotas 判） */
+    FREE_PROFILES: FALLBACK.free,
+    PRO_PROFILES: FALLBACK.pro,
+    MAX_PROFILES: FALLBACK.max,
+    FALLBACK: FALLBACK,
 
     cleanName: cleanName,
     normAvatar: normAvatar,

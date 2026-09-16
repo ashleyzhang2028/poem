@@ -475,9 +475,17 @@ const LOGIN = strip(loginJs), PROFILE = strip(profileJs), ADMIN = strip(adminJs)
   chk(actionRows === 2,
     '操作键收成两行（身份卡那一行 + 「关于」卡那一行，实际 ' + actionRows + ' 行）');
   chk(/id="identity-actions"/.test(SRC.profile),
-    '登录 / 退出的两颗键并排在同一行（#identity-actions）');
-  chk(/id="btn-go-plans"[\s\S]{0,400}?id="btn-go-sync"/.test(SRC.profile),
-    '「权限对比」与「同步设置」并排在「关于」卡那一行');
+    '登录 / 退出 / 权限对比三颗键并排在同一行（#identity-actions）');
+  /* Issue #163 用户原话：「另外把这个按钮和其他按钮放一起啊」——
+     登录那颗键此前虽与「退出」同一行，却与「权限对比 / 同步设置」隔了两张卡。
+     判据是**它们在同一行里**（用 outerHTML 的顺序），不是某个 id 在不在。 */
+  const idActions = (SRC.profile.match(/id="identity-actions"[\s\S]*?<\/div>/) || [''])[0];
+  chk(/id="btn-account-entry"[\s\S]*?id="btn-sign-out"[\s\S]*?id="btn-go-plans"/.test(idActions),
+    '登录 / 退出 / 权限对比三颗键真的在同一行里（顺序也在）');
+  chk(/id="btn-go-sync"/.test(SRC.profile),
+    '「同步设置」仍在「关于」卡那一行（它属于「去别处调同步」，与登录不同类）');
+  chk(!/id="btn-go-plans"[\s\S]{0,400}?id="btn-go-sync"/.test(SRC.profile),
+    '「权限对比」已从「关于」卡挪走（同一颗键不在两处）');
   chk(/class="account-card danger-zone"/.test(SRC.profile),
     '注销仍**单独一张卡**（朱砂描边的危险区，不与那些「去别处」的键并列）');
   // 每张卡底下不再各挂一颗满宽按钮：满宽按钮只该出现在表单 / 危险区里
@@ -495,15 +503,75 @@ const LOGIN = strip(loginJs), PROFILE = strip(profileJs), ADMIN = strip(adminJs)
     '删掉「不建账号也照旧用全部功能，只有语音朗读要登录（免费）。」');
   chk(!/guest-card/.test(SRC.profile),
     '那块「未登录引导」整块撤掉（不留空壳容器）');
-  /* 但**事实**一条都没少：登录换来的那一件事写在那一颗按钮上 ——
-     未登录的人打开这一页仍然知道「登录能多出什么」。 */
-  chk(/登录可用语音朗读/.test(PROFILE),
-    '那一颗按钮如实写着「登录可用语音朗读」（事实没跟着删）');
+  /* 但**事实**一条都没少，只是换了说法（Issue #163 用户：
+     「登录可用语音朗读？？？登录就登录，写那么多废话干什么」）：
+     按钮就叫「登录」，它差的那件事写在同一行底下（#login-hint）。 */
+  chk(/btn\.textContent = id\.signedIn \? "管理登录状态" : "登录"/.test(PROFILE),
+    '未登录那颗键就叫「登录」（不把理由写在按钮上）');
+  chk(/id="login-hint"/.test(SRC.profile) && /diffLine/.test(PROFILE),
+    '「还差什么」写在同一行底下的说明里（#login-hint，由 diffLine 现算）');
+  chk(/Ent\.capNames\(\)\.filter/.test(PROFILE) &&
+    /Ent\.can\(key, freeCtx\)\.ok/.test(PROFILE),
+    '那一行是**数出来**的（未登录 vs 登录的 free 逐条比 can()），不是写死「语音朗读」四个字');
+  chk(!/语音朗读/.test(strip(stripHtml(SRC.profile))),
+    '个人中心的**可见文字里**不再出现「语音朗读」四个字（只剩布局注释里提它）');
   // 「账号」不再自成一卡：状态行挂在身份卡里说
   chk(!/id="account-card"/.test(SRC.profile),
     '「账号」不再独占一张卡（它回答的「我是谁」与身份卡重合）');
   chk(/id="account-list"/.test(SRC.profile) && /\$\("account-list"\)/.test(PROFILE),
     '账号那几行挪进「关于」卡（#account-list），仍由 renderAccount() 画');
+}
+
+/* ================= 五、真跑一遍个人中心：操作键真的在同一行 =================
+   上面那些是源码扫描，判得出「代码里写了什么」，判不出「画出来是什么」。
+   用户那句「把这个按钮和其他按钮放一起啊」说的是**看到的**东西，
+   所以这一节起真页面、真渲染，按 id 把那一行的三颗键量出来。 */
+{
+  const { JSDOM } = require('jsdom');
+  const ROOT = require('path').join(__dirname, '..');
+  const boot = () => {
+    const d = new JSDOM(read('profile/index.html'),
+      { url: 'https://local.test/profile/', runScripts: 'outside-only', pretendToBeVisual: true });
+    const W = d.window;
+    // ⚠️ 用 `W.eval` 而不是「造 <script> 插进 body」：jsdom 的 outside-only 下，
+    //    后插的 <script> 在部分版本里不执行，而 profile.js 的两个内核会双双 undefined，
+    //    症状是「页面一片空白，测试却以为自己在判渲染」。
+    ['js/auth-core.js', 'js/auth-api.js', 'js/entitlement.js', 'js/account-api.js',
+      'js/family.js', 'js/progress-store.js', 'js/sync-store.js', 'js/storage.js',
+      'js/avatar.js', 'js/profile.js'].forEach(f => {
+        W.eval(fs.readFileSync(ROOT + '/' + f, 'utf8'));
+      });
+    W.document.dispatchEvent(new W.Event('DOMContentLoaded', { bubbles: true }));
+    return W;
+  };
+
+  // 未登录
+  let W = boot();
+  let row = W.document.getElementById('identity-actions');
+  const ids = [...row.querySelectorAll('button')].filter(b => !b.hidden).map(b => b.id);
+  chk(ids.join(',') === 'btn-account-entry,btn-go-plans',
+    '未登录时那一行里是「登录」+「权限对比」两颗（实际 ' + ids.join(',') + '）');
+  chk(W.document.getElementById('btn-account-entry').textContent === '登录',
+    '那颗键上只有一个词：登录（实际「' + W.document.getElementById('btn-account-entry').textContent + '」）');
+  const lh = W.document.getElementById('login-hint');
+  chk(!lh.hidden && lh.textContent === '差语音朗读。',
+    '它底下的说明只写还差的那件事（实际「' + lh.textContent + '」）');
+
+  // 已登录：三颗键同一行
+  W = boot();
+  const A = W.AuthCore;
+  const store = A.makeStore(W.localStorage);
+  const req = A.requestCode(store, { channel: 'email', value: 'zhangmin@163.com' }, 'login');
+  A.verifyCode(store, req.codeId, req.code, 'login');
+  W.document.dispatchEvent(new W.Event('DOMContentLoaded', { bubbles: true }));
+  row = W.document.getElementById('identity-actions');
+  const ids2 = [...row.querySelectorAll('button')].filter(b => !b.hidden).map(b => b.id);
+  chk(ids2.join(',') === 'btn-account-entry,btn-sign-out,btn-go-plans',
+    '已登录时三颗键（管理登录状态 / 退出 / 权限对比）在同一行（实际 ' + ids2.join(',') + '）');
+  chk(W.document.getElementById('login-hint').hidden,
+    '已登录时「差语音朗读」那一句收起（同一件事不说两遍）');
+  chk(W.document.getElementById('btn-account-entry').textContent === '管理登录状态',
+    '已登录时那颗键换成「管理登录状态」（仍落在 /login/，不是死路）');
 }
 
 console.log('\n' + (fails ? '❌ ' + fails + ' 项失败' : '🎉 账号三页测试全部通过'));

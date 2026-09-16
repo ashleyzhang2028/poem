@@ -544,7 +544,41 @@ async function main() {
     const noPush = await core.syncPush({ cfg, store, limiter, now: () => t, account: null }, {});
     eq(noPush.status, 401, "未登录时 push 回 401");
 
-    const dd = Object.assign({}, d, { account: { uid: "u_test0001" } });
+    /* ⚠️ 这一节的服务端同步接口有**层级闸**（`sync.multiDevice`，Pro 起）。
+       所以这里必须有一个**真账号**（`store.getAccount` 查得到）且层级为 pro ——
+       原先写死一个不存在的 uid `u_test0001`，在补闸之前「碰巧」能跑通
+       （闸要查库，查不到就 401），补闸之后它立刻红。 */
+    const d0 = { cfg, store, limiter, now: () => t, ip: "1.1.1.1" };
+    const reg = await core.sendCode(d0, { email: "sync@example.com", ip: "1.1.1.1", code: "333333" });
+    const ver = await core.verifyCode(d0, { codeId: reg.body.codeId, code: "333333" });
+    const uid = ver.body.account.uid;
+    const acc = store.getAccount(uid);
+    acc.plan = "pro";
+    store.putAccount(acc);
+
+    // 层级不够时：**403，不是 401、也不是静默成功**（补闸这一轮的判据）
+    {
+      const freeAcc = store.getAccount(uid);
+      freeAcc.plan = "free";
+      store.putAccount(freeAcc);
+      const freeD = Object.assign({}, d, { account: { uid } });
+      const noPush = await core.syncPush(freeD, { deviceId: "A", recs: [{ id: "x", payload: {}, updatedAt: t }] });
+      eq(noPush.status, 403, "free 账号推不上去（403，不是静默成功）");
+      eq(noPush.body.code, "E_TIER", "错误码 E_TIER");
+      eq(noPush.body.minTier, "pro", "如实回门槛是 pro");
+      const noPull = await core.syncPull(freeD, { deviceId: "A" });
+      eq(noPull.status, 403, "free 账号也拉不下来（拉同样要 Pro）");
+      /* ⚠️ 403 与 401 **必须是两个码**：前者「你确实没这个权限」，
+         后者「你还没登录」—— 用户看到的下一步动作完全不同
+         （一个去找管理员发层级，一个去登录）。合并成一句「失败」等于什么也没说。 */
+      chk(noPush.body.code !== "E_NO_SESSION", "403 不说成「还没登录」");
+      chk(/Pro/.test(noPush.body.message), "文案里如实写明要 Pro 起");
+      chk(/本机/.test(noPush.body.message), "文案里如实写明本机进度不受影响");
+      freeAcc.plan = "pro";
+      store.putAccount(freeAcc);
+    }
+
+    const dd = Object.assign({}, d, { account: { uid } });
 
     // push 三条
     const p1 = await core.syncPush(dd, {
@@ -621,6 +655,10 @@ async function main() {
     const r = await core.sendCode(d, { email: "bye@example.com", ip: "1.1.1.1", code: "888888" });
     const v = await core.verifyCode(d, { codeId: r.body.codeId, code: "888888" });
     const uid = v.body.account.uid;
+    /* 注销要导出云端那份，所以这一节也得先过一次层级闸（同第九节）。 */
+    const acc = store.getAccount(uid);
+    acc.plan = "pro";
+    store.putAccount(acc);
     await core.syncPush(Object.assign({}, d, { account: { uid } }), {
       deviceId: "A", recs: [{ id: "p1", payload: { level: 3 }, updatedAt: t }]
     });
@@ -763,6 +801,15 @@ async function main() {
           "落库的会话 revoked 是 0/1");
 
         // pull / push 带 Cookie
+        // ⚠️ 这一节验的是 **HTTP 层**（Cookie / 方法 / 状态码），不是层级闸，
+        //    所以先把库里那个账号抬到 pro —— 层级闸另有专门一节在别处验
+        //    （上面第九节：free 推/拉都回 403 E_TIER）。
+        const httpStore = require("../api/_lib/store.js").getStore(require("../api/_lib/config.js"));
+        const httpUid = me1.body.uid;
+        const httpAcc = httpStore.getAccount(httpUid);
+        httpAcc.plan = "pro";
+        httpStore.putAccount(httpAcc);
+
         const push = await call(sv2.base, "POST", "/api/sync/push", {
           recs: [{ id: "a1", payload: { level: 1 }, updatedAt: Date.now() }]
         }, cookie);
@@ -1488,7 +1535,7 @@ async function main() {
      十七、古诗词大会 · 判分口（3 期 · 不花钱的那一层）
 
      这一条最要紧的三件事：
-       ① **能力闸在服务端** —— 飞花令 / 现场考试要 Max、题库复习要 Pro
+       ① **能力闸在服务端** —— 飞花令 / 试题模拟要 Max、题库复习要 Pro
           （用户 2026-09-17 的裁决）。直接打 HTTP，不经任何界面。
        ② **答案由服务端重建** —— 请求体里塞一个假的 answer / chosen
           改不掉判定；客户端说了不算。
@@ -1508,13 +1555,18 @@ async function main() {
 
       /* 三层各自的能力键 —— 与 js/entitlement.js 的 CAPS 对得上 */
       eq(core.GAME_CAP.fly, "feihualing", "飞花令那一档的能力键与前端同源");
-      eq(core.GAME_CAP.paper, "exam.paper", "现场考试那一档的能力键与前端同源");
+      eq(core.GAME_CAP.paper, "exam.paper", "试题模拟那一档的能力键与前端同源");
       eq(core.GAME_CAP.review, "quiz.review", "题库复习那一档的能力键与前端同源");
       chk(core.gameAllowed(cfg, "pro", "quiz.review"), "题库复习：Pro 放行");
       chk(!core.gameAllowed(cfg, "pro", "feihualing"), "**飞花令：Pro 不放行**（用户裁决：归 Max）");
-      chk(!core.gameAllowed(cfg, "pro", "exam.paper"), "**现场考试：Pro 不放行**（用户裁决：归 Max）");
+      chk(!core.gameAllowed(cfg, "pro", "exam.paper"), "**试题模拟：Pro 不放行**（用户裁决：归 Max）");
       chk(core.gameAllowed(cfg, "max", "feihualing"), "飞花令：Max 放行");
-      chk(core.gameAllowed(cfg, "max", "exam.paper"), "现场考试：Max 放行");
+      chk(core.gameAllowed(cfg, "max", "exam.paper"), "试题模拟：Max 放行");
+      /* Issue #163 末条：集子访问是从这一格里**拆出去**的第二条能力 */
+      chk(core.featuresFor(cfg, "max").indexOf("exam.gathering") >= 0,
+        "服务端 max 档下发 exam.gathering（集子访问）");
+      chk(core.featuresFor(cfg, "pro").indexOf("exam.gathering") < 0,
+        "服务端 pro 档**不**下发 exam.gathering（与试题模拟同一条口径）");
       chk(!core.gameAllowed(cfg, "free", "quiz.review"), "free 一样都拿不到");
 
       /* 未登录 → 401；不认识的题型 → 400 */
@@ -1547,7 +1599,7 @@ async function main() {
       eq(asFree.body.code, "E_TIER", "码是 E_TIER（不是「连不上」，用户不该一直重试）");
       eq(asFree.body.tier, "free", "如实回当前层级");
 
-      /* 提成 Pro：题库复习可用，飞花令 / 现场考试仍然 403 */
+      /* 提成 Pro：题库复习可用，飞花令 / 试题模拟仍然 403 */
       const rows = Object.keys(storeM._db.accounts).map(k => storeM._db.accounts[k]);
       const me = rows.filter(a => a.email_mask === "p***@example.com")[0];
       chk(!!me, "玩家那一行在库里");
@@ -1568,7 +1620,7 @@ async function main() {
       const proFly = await POST("/api/game/answer", { kind: "fly", chars: ["月"], said: "日月之行" }, cookie);
       eq(proFly.status, 403, "Pro 打飞花令仍然 403（用户裁决：飞花令归 Max）");
       const proPaper = await POST("/api/game/answer", { kind: "paper", poemId: "xx1-01", chosen: "鹅" }, cookie);
-      eq(proPaper.status, 403, "Pro 打现场考试仍然 403（用户裁决：现场考试归 Max）");
+      eq(proPaper.status, 403, "Pro 打试题模拟仍然 403（用户裁决：试题模拟归 Max）");
 
       /* 提成 Max：三层全开 */
       me.plan = "max";
@@ -1597,7 +1649,7 @@ async function main() {
         (truth ? truth.answer : "?") + "）");
 
       const maxPaper = await POST("/api/game/answer", { kind: "paper", poemId: "xx1-01", chosen: truth.answer }, cookie);
-      eq(maxPaper.status, 200, "Max 打现场考试回 200");
+      eq(maxPaper.status, 200, "Max 打试题模拟回 200");
       eq(maxPaper.body.ok, true, "选了正确答案 → ok:true");
       eq(maxPaper.body.answer, truth.answer, "回出正确答案（界面据此把错的标红、对的标绿）");
       chk(maxPaper.body.bankId, "回出这一题的 bankId（与题库同源）");

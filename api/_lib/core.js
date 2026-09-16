@@ -246,7 +246,15 @@ function featuresFor(cfg, tier) {
      与 js/entitlement.js 的 CAPS 逐字一致（有对拍断言守着）。 */
   var pro = ["collections.many", "sync.multiDevice", "export.paper",
              "profile.family", "quiz.review", "export.all"];
-  var max = ["collections.unlimited", "feihualing", "exam.paper"];
+  /* ⚠️ `collections.unlimited` 已**删除**（用户 2026-09-18，Issue #163：
+     「自选清单不限 删除，已经被前面的自选清单代替」）——
+     Max 的额度由 `collections.many` 的 `quotas.max = 5000` 表达，
+     同一个东西不留两条能力（两条必然开始各说各的，客户端 CAPS 同步删除）。 */
+  /* ⚠️ `exam.gathering` 是 2026-09-19（Issue #163）从 `exam.paper` 里**拆出来**的
+     第二条能力：《古诗词大会》那个集子的访问权限。用户原话「是要拆成两个表格行，
+     不是换行 这是两个功能」—— 一个格子的钩叉答不了两个问题。
+     两条都归 Max（沿用户 2026-09-17「现场考试和飞花令归 max 所有」那一档）。*/
+  var max = ["feihualing", "exam.gathering", "exam.paper"];
   /* ⚠️ 这里**没有** ai.explain / ai.explain.big —— 已被删除（用户 2026-09-17：
      「把需要收我 app 费用的功能删除」）。AI 讲解 / 纠音是每调一次都真花钱的
      那一类，与「本站不收款」放在一起就是每用一次亏一次。客户端 CAPS 同步删除，
@@ -560,11 +568,64 @@ function me(deps) {
 /* -------------------------------------------------------- 同步 */
 
 /**
+ * 跨设备云同步的**能力闸**（`sync.multiDevice`，Pro 起）。
+ *
+ * ## 为什么这条闸必须补
+ *
+ * `/plans/` 的对比表是**当场问内核**算出来的，而 `CAPS` 里写着
+ * `sync.multiDevice: minTier "pro"` —— 于是页面上公开对用户宣称「跨设备云同步 = Pro」。
+ * 但在这一轮之前，**全站 0 处**真的拿这条能力拦过任何人：一个 free 用户
+ * 把设置页那颗开关打开，进度就真的推上去了。
+ *
+ * 也就是说：那条公开宣称是**假话**，而且是对 free 用户**白送**、对 Pro 用户
+ * **白收了一道本该有的门**。这与 2A 那两个洞、2.2 的断链、③ 的 `export.all`
+ * 是同一个形状 —— 限制写在 A 处（能力表）、读取在别处（没有读取点）。
+ *
+ * ## 闸拦在哪一层：**服务端**，不是按钮
+ *
+ * 客户端的开关置灰**不是**安全边界（§3.4 从 1A 起就这么写着）：
+ * 直接的 HTTP 请求照样打得到 `/api/sync/push`。所以这一条与 `gameAnswer` 同款 ——
+ * 拿账号落库的 `plan` 现判一次，不够就 **403 E_TIER**。
+ *
+ * ## 401 与 403 分开回
+ *
+ * 前者是「你还没登录」，后者是「你确实没这个权限」—— 用户看到的下一步动作
+ * 完全不同（一个去登录、一个去找管理员发层级）。合并成一句「失败」等于什么也没说。
+ *
+ * ⚠️ **拉与推都要判**，不是只判推。只判推的话，「关掉同步」这件事仍然做得成，
+ *    但一个 free 用户照样能把云端**已有的**那份拉下来（那是别人的进度）。
+ */
+function syncTierGate(deps, input) {
+  var store = deps.store, cfg = deps.cfg;
+  if (!deps.account) return Promise.resolve(err(401, "E_NO_SESSION", "还没有登录"));
+  return Promise.resolve(store.getAccount(deps.account.uid)).then(function (me) {
+    if (!me || me.status === "deleted") return err(401, "E_NO_SESSION", "还没有登录");
+    var tier = planTier(me);
+    if (!gameAllowed(cfg, tier, "sync.multiDevice")) {
+      return err(403, "E_TIER", "跨设备云同步要 Pro 起才能用（当前：" + tier + "）。进度在本机一字不少，背诵不受影响。",
+        { cap: "sync.multiDevice", tier: tier, minTier: "pro" });
+    }
+    return null;
+  });
+}
+
+/**
  * pull：增量拉。
  * `since` 是客户端上次拿到的服务端时间（`serverTime`），不是「自己最后修改时间」——
  * 用服务端时间做游标，才不会被客户端时钟误差拖出「永远拉不到 / 拉到重复」。
+ *
+ * ⚠️ 权限闸（`syncTierGate`）在**频控之前**判：不够层级的人反复重试也不该
+ *    占掉别人的频控额度，而且他看到的必须是「你没这个权限」而不是「太频繁了」——
+ *    后者会让他一直重试（那是完全不同的两件事）。
  */
 function syncPull(deps, input) {
+  var store = deps.store, cfg = deps.cfg, t = deps.now();
+  var gate = syncTierGate(deps, input);
+  if (gate) return Promise.resolve(gate).then(function (bad) { return bad || syncPullInner(deps, input); });
+  return syncPullInner(deps, input);
+}
+
+function syncPullInner(deps, input) {
   var store = deps.store, cfg = deps.cfg, t = deps.now();
   if (!deps.account) return Promise.resolve(err(401, "E_NO_SESSION", "还没有登录"));
   var since = Number(input.since) || 0;
@@ -589,6 +650,12 @@ function syncPull(deps, input) {
  * 服务端只做「能确定的合并」，判不了的如实上报。
  */
 function syncPush(deps, input) {
+  var gate = syncTierGate(deps, input);
+  if (gate) return Promise.resolve(gate).then(function (bad) { return bad || syncPushInner(deps, input); });
+  return syncPushInner(deps, input);
+}
+
+function syncPushInner(deps, input) {
   var store = deps.store, cfg = deps.cfg, t = deps.now();
   if (!deps.account) return Promise.resolve(err(401, "E_NO_SESSION", "还没有登录"));
 
@@ -854,14 +921,19 @@ function adminRevoke(deps, input) {
  * 古诗词大会的三层能力 —— 与 `js/entitlement.js` 的能力表**同一张表**。
  *
  * ⚠️ 这里的键名必须与 `featuresFor()` 和 `js/entitlement.js` 的 `CAPS` 对得上：
- *    · `feihualing` —— 飞花令（**max**）
- *    · `exam.paper` —— 现场考试（**max**）
- *    · `quiz.review` —— 题库复习（**pro**）
+ *    · `feihualing`     —— 飞花令（**max**）
+ *    · `exam.gathering` —— 《古诗词大会》集子的访问（**max**）
+ *    · `exam.paper`     —— 在线试题模拟 · 判分（**max**）
+ *    · `quiz.review`    —— 题库复习（**pro**）
  *    对不上的症状是「界面说能用、服务端说不能」—— 而两边都觉得自己是对的。
  *
  * ⚠️ 用户 2026-09-17 的裁决：**「现场考试和飞花令归 max 所有，题库归 pro」**。
  *    与 `docs/auth-design.md` §3.5 那句「飞花令 / 古诗文大会 / 考试与题库 pro 起」
  *    相比，飞花令与现场考试被**上收到 max**，题库复习留在 pro —— 以用户裁决为准。
+ *
+ * ⚠️ 2026-09-19（Issue #163）：`exam.gathering` 从 `exam.paper` 里拆出来
+ *    （集子访问 vs 在线模拟考试，两个功能）。判分口仍然只认 `exam.paper` ——
+ *    出题判分是它一直在答的那件事；集子访问不走这个口（它是列表页上的可见性）。
  */
 var GAME_CAP = { fly: "feihualing", paper: "exam.paper", review: "quiz.review" };
 
