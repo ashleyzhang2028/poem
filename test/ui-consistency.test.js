@@ -1124,104 +1124,141 @@ PAGE_FILES.forEach(f => {
 })();
 
 /* ==========================================================================
-   十三、开关：外观与尺寸只有一个来源，且真的画得出来（Issue #163）
+   十三、开关：长得像手机系统开关，且**滑块真的在轨道里**（Issue #163）
    --------------------------------------------------------------------------
-   用户原话：「跨设备同步选择框太丑了，改进。」
+   用户原话（第一次）：「跨设备同步选择框太丑了，改进。」
+   用户原话（第二次，上一版上线之后）：
+     「现在这个选择项你是认真的吗？奇丑无比，
+       你哪怕设计成 iPhone 设置里的选项开关一样也行啊。」
 
-   旧样子是浏览器默认的 `<input type=checkbox>`：一颗 13px 的方框，
-   白底、灰勾、圆角 2px —— 与全站的纸面 / 描金细线 / 深绿实底是两套语言；
-   状态还要靠旁边一颗写着「关」/「开」的文字来表达。
+   第一版是浏览器默认的 checkbox（13px 方框 + 一颗写着「关」/「开」的文字）。
 
-   新样子是自绘的胶囊开关：**.switch-input 自己就是那颗 40×24 的胶囊**
-   （appearance:none 自绘轨道 + 米白/淡墨色圆滑块由 .switch-track 画）。
-   深天青实底 = 开着（与「年级」那些药丸同一句「实底 + 米白 + 金线」）、
-   纸底描边 = 关着。
+   第二版把外观自绘成胶囊，却**画出来是错的**：轨道是那颗 appearance:none 的
+   input，滑块是可以长在 DOM 任何位置的 <span class="switch-track"> ——
+   两者靠 absolute 定位去叠，而 .switch / .settings-item / .settings-group /
+   .app / body 一路上全是 static，absolute 于是以**文档**为包含块：
+   left:2px / top:2px 让滑块落在页面左上角（真机实测 y = -415px，在屏幕外），
+   :checked 那句 translateX(16px) 只是把它从页面 x=2 挪到 x=18。
+   用户看到的是一颗**空药丸** —— 开着只有深青底、关着只有一圈描边，
+   滑块一次都没出现过。
 
-   这一节守三件事：
-     ① 外观自绘（appearance: none），不吃各浏览器默认样式；
-     ② 轨道（= .switch-input）与滑块（= .switch-track）的尺寸只有一个来源，
-        **且行程是照这几个值算出来的** —— 写死一个 translateX 而不跟着尺寸走，
-        改一次尺寸滑块就会越界或走不到位；
-     ③ 真渲染出来确实是这个尺寸、滑块确实落在轨道里（不是只在源码里写着）。
-     ④ 这两段的判据取的是**剥掉注释之后**的源码：.switch-row / .switch-label
-        这两个名字在 css/style.css 的注释里被点名说过「已删掉」，
-        按裸源码匹配会把说明文字当成还在的死规则。
+   ⚠️ 而当时那五条守卫**全绿**。它们查的是源码字符串：「有没有 appearance:none」
+     「尺寸是不是 40/24」「translateX 是不是按尺寸算出来的」——
+     源码看着一条不错，画出来全错。教训是这一节现在的写法：
 
-   ⚠️ 「轨道」在这一版里就是 .switch-input 本身，不是 .switch-track ——
-      .switch-track 是**滑块**（40×24 的胶囊里那枚 18px 圆点）。
-      两个类名的字面意思与实际职责是反着的（历史遗留），下面一律按实际职责判。
+       ① **几何断言必须量渲染结果**（滑块相对轨道的落点），不能只量源码里的数字；
+       ② 结构上让「画不到一起去」变成不可能 —— 滑块改成轨道的 ::after，
+          轨道自己是 position:relative 的包含块，父子关系由选择器钉死；
+       ③ 源码断言只留「只有一个来源」这一类（尺寸别处不许再写一遍）。
+
+   现在这一版（手机系统开关那一路）：
+     <input class="switch-input">  真实复选框 —— 键盘 / 读屏 / 原生 toggle 都走它，
+                                   画成 0 尺寸不占位，只当状态与焦点用
+     <span class="switch-toggle">  可见的轨道；滑块是它的 ::after
    ========================================================================== */
 {
-  const box = ruleOf(cssCode, '.switch-input');
-  chk(/appearance:\s*none/.test(box),
-    '开关外观自绘（appearance: none）—— 各浏览器给不出两样的方框');
+  const genHtml = read('settings/general/index.html');
+  const usedHtml = stripHtml(genHtml);
 
-  /* 尺寸：先从声明里读出来，再用它算行程，最后拿渲染结果核对。
-     ⚠️ 三处判据共用同一组数值：换尺寸时这三条要么一起绿、要么一起红，
-        不会出现「尺寸改了、行程断言还在守旧值」那种过期守卫。 */
+  /* ---------- 一、结构：滑块画在轨道**里面**，不靠 absolute 去叠 ---------- */
+  chk(/class="switch"[\s\S]{0,400}class="switch-input"[\s\S]{0,200}class="switch-toggle"/.test(usedHtml),
+    '设置页的开关是 <label.switch> 包着 input 与轨道（点文字 = 点开关）');
+  chk(/id="toggle-sync"[\s\S]{0,200}role="switch"/.test(usedHtml),
+    '开关带 role="switch"（读屏念得出「开关」，而不是「复选框」）');
+  chk(/aria-labelledby="switch-sync-name"/.test(usedHtml),
+    '开关用 aria-labelledby 指向左侧项名（读屏念得出「跨设备同步，开关」）');
+  chk(!/id="sync-label"/.test(usedHtml),
+    '旧的那颗「关」/「开」文字标签已经拿掉（状态由开关本体表达）');
+  /* 反向：上一版那颗可以到处跑的独立滑块不许再回来 ——
+     这是「滑块落在页面左上角」那件事的结构根因。
+     ⚠️ 判据读的是**剥掉 HTML 注释**后的源码：注释里会点名说明它为什么被删。 */
+  chk(!/switch-track/.test(usedHtml),
+    'HTML 里不再有独立滑块 .switch-track（上一版它靠 absolute 叠在 input 上）');
+  chk(!/\.switch-track\s*[,{]/.test(strip(css)),
+    '样式表里也不再留 .switch-track 的规则（结构没了，规则就是僵尸）');
+
+  /* ---------- 二、尺寸只有一个来源，别处不许再写一遍 ---------- */
+  const track = ruleOf(strip(css), '.switch-toggle');
+  chk(/position:\s*relative/.test(track),
+    '.switch-toggle 自己是定位包含块（position: relative）—— 滑块跑不出去就靠这一句');
   const px = (src, prop) => {
-    const m = new RegExp(prop + ':\\s*([\\d.]+)px').exec(src);
+    const m = new RegExp('(?:^|[;{\\s])' + prop + ':\\s*([\\d.]+)(px)?').exec(src);
     return m ? Number(m[1]) : NaN;
   };
-  const trackW = px(box, 'width'), trackH = px(box, 'height');
-  const knob = ruleOf(cssCode, '.switch-track');
-  const knobW = px(knob, 'width');
-  const left = px(knob, 'left');
-  chk(trackW > 0 && trackH > 0 && knobW > 0,
-    '开关的轨道 / 滑块尺寸写在一条规则里（轨道 ' + trackW + '×' + trackH +
-    '、滑块 ' + knobW + '）');
+  const trackW = px(track, 'width'), trackH = px(track, 'height');
+  const borderW = Number((/border:\s*([\d.]+)px/.exec(track) || [])[1]);
+  const knob = ruleOf(strip(css), '.switch-toggle::after');
+  const knobW = px(knob, 'width'), knobH = px(knob, 'height');
+  const left = px(knob, 'left'), top = px(knob, 'top');
+  chk(trackW > 0 && trackH > 0,
+    '轨道有声明尺寸（' + trackW + '×' + trackH + '）');
+  chk(knobW > 0 && knobH > 0,
+    '滑块有声明尺寸（' + knobW + '×' + knobH + '）');
+
+  /* 滑块必须在轨道里：宽高两个方向都要放得下（含两侧 1px 边框） */
+  chk(knobW + 2 * left + 2 * borderW <= trackW,
+    '滑块横向落在轨道内（起点 ' + left + ' + 滑块 ' + knobW + ' + 边框 ' +
+    borderW + '×2 ≤ 轨道 ' + trackW + '）');
+  chk(knobH + 2 * top + 2 * borderW <= trackH,
+    '滑块纵向落在轨道内（起点 ' + top + ' + 滑块 ' + knobH + ' + 边框 ' +
+    borderW + '×2 ≤ 轨道 ' + trackH + '）');
+  /* 开关的滑块是圆的：轨道是胶囊，滑块是正圆 —— 宽高不等就是画歪了 */
+  chk(knobW === knobH, '滑块是正圆（宽 ' + knobW + ' = 高 ' + knobH + '）');
 
   /* 行程 = 轨道宽 − 边框×2 − 滑块宽 − 起点×2。
-     开着时滑块应当走到「右端对齐」——写死 16px 而尺寸一改就越界，
-     所以这里判的是**算出来的值**，不是源码里有没有 16 这个数字。
-     ⚠️ :checked 那一句改的是**滑块**（.switch-track）的 translateX，
-        不是 .switch-input 自己 —— 判据要取在滑块那条规则上。 */
-  const onKnob = ruleOf(cssCode, '.switch-input:checked + .switch-track');
+     开着时滑块应当走到「右端对齐」—— 写死一个数而尺寸一改就越界，
+     所以判的是**算出来的值**，不是源码里有没有 16 这个数字。 */
+  const onKnob = ruleOf(strip(css), '.switch-input:checked + .switch-toggle::after');
   const shift = (/-?translateX\((\d+)px\)/.exec(onKnob) || [])[1];
-  const borderW = Number((/border:\s*([\d.]+)px/.exec(box) || [])[1]);
   const expect = trackW - 2 * borderW - knobW - 2 * left;
   chk(Number(shift) === expect,
     '滑块的行程与尺寸同源（轨道 ' + trackW + ' − 边框 ' + borderW + '×2 − 滑块 ' +
     knobW + ' − 起点 ' + left + '×2 = ' + expect + '，源码写的 ' + shift + '）');
 
-  /* 开 / 关两种状态必须是**两种颜色**：全站「选中」都是深天青实底 + 描金内边 */
-  const onTrack = ruleOf(cssCode, '.switch-input:checked');
+  /* ---------- 三、三态各说各的话 ---------- */
+  const onTrack = ruleOf(strip(css), '.switch-input:checked + .switch-toggle');
   chk(/background:\s*var\(--green\)/.test(onTrack),
-    '开着 = 深天青实底（与全站选中态同一个令牌）');
+    '开着 = 深青实底（与全站选中态同一个令牌）');
   chk(/box-shadow:\s*inset[^;]*240,\s*205,\s*124/.test(onTrack),
     '开着时带描金内边（与药丸 / 主按钮同一手法）');
-  chk(/background:\s*var\(--card\)/.test(box) || /background:\s*var\(--card-2\)/.test(box),
+  chk(/background:\s*var\(--card\)/.test(track),
     '关着 = 纸底（不是浏览器默认的白底方框）');
-
-  /* 置灰：服务端未开放同步时开关不可点，但**不许**长得和「关着能点」一样 */
-  const offTrack = ruleOf(cssCode, '.switch-input:disabled');
+  const offTrack = ruleOf(strip(css), '.switch-input:disabled + .switch-toggle');
   chk(/cursor:\s*not-allowed/.test(offTrack) && /background:/.test(offTrack),
     '置灰态有自己的一句（不可点的开关与「关着但能点」必须看得出不同）');
+  chk(/background:\s*var\(--line\)/.test(ruleOf(strip(css), '.switch-input:disabled + .switch-toggle::after')),
+    '置灰时滑块也一并退到淡墨（不是轨道灰了、圆点还亮着）');
 
-  /* 原生结构：滑块是 input 的**紧邻兄弟**（CSS 用 `+` 找它，不用 :has()——
-     :has() 在老的安卓 WebView 上会静默失效，失效后开关就变成一颗不掉下来的点） */
-  chk(!/:has\(/.test(box) && !/:has\(/.test(knob),
-    '开关的样式不依赖 :has()（老 WebView 上会静默失效）');
+  /* 真实输入框留着（键盘 / 读屏 / 原生 toggle 都用它），只是画成 0 尺寸。
+     ⚠️ 反面：它若还占位（40×24）就会把轨道挤到旁边去 —— 一颗开关画成两颗。 */
+  const inpRule = ruleOf(strip(css), '.switch-input');
+  chk(px(inpRule, 'width') === 0 && px(inpRule, 'height') === 0,
+    '.switch-input 画成 0 尺寸（真实复选框留着，但不占位）');
+  chk(/opacity:\s*0/.test(inpRule) && /position:\s*absolute/.test(inpRule),
+    '真实复选框透明且脱流（视觉交给轨道那颗 span）');
+  chk(/focus-visible/.test(css) && /\.switch-input:focus-visible\s*\+\s*\.switch-toggle\s*[,{]/.test(strip(css)),
+    '焦点环画在**轨道**上（画在那颗 0 尺寸的 input 上等于看不见）');
+  /* 键盘焦点不能靠 :focus（鼠标点一下也亮环）；必须限 :focus-visible */
+  chk(!/\.switch-input:focus\s*\{/.test(strip(css)),
+    '焦点态只走 :focus-visible（鼠标点轨道不该留下键盘才有的光晕）');
 
-  /* 页面结构：同样的 HTML 也只有一个来源 —— 设置页那一项。
-     ⚠️ 外层是 <label.switch>（不是一个从不存在的 .switch-row），
-        input 带 role="switch"，旧那颗「关/开」文字标签（#sync-label）已删。 */
-  const genHtml = read('settings/general/index.html');
-  chk(/class="switch"[\s\S]{0,400}class="switch-input"[\s\S]{0,200}class="switch-track"/.test(genHtml),
-    '设置页的开关是 <label.switch> 包着 input 与滑块（点文字 = 点开关）');
-  chk(/id="toggle-sync"[\s\S]{0,200}role="switch"/.test(genHtml),
-    '开关带 role="switch"（读屏念得出「开关」，而不是「复选框」）');
-  chk(!/id="sync-label"/.test(genHtml),
-    '旧的那颗「关」/「开」文字标签已经拿掉（状态由开关本体表达）');
-  // 反向：那个只存在于 CSS 里的 .switch-row / .switch-label 不许再回来
-  //（Issue #163 两轮改动各写了一套开关，旧的 .switch-row 那一套被后写的覆盖，
-  //  留下的是一整段「谁都没用」的死样式 —— 死样式会误导下一个改开关的人）
-  // ⚠️ 读的是 strip(cssCode)：这两个名字在样式表的注释里被点名说明过「已删」。
-  chk(!/\.switch-row\s*[,{]/.test(strip(cssCode)) && !/\.switch-label\s*[,{]/.test(strip(cssCode)),
+  /* 反向：开关这几个类名在同一份样式表里不许出现两段以上的规则。
+     上面那些断言都是「按累积读声明」的（见 ruleOf 的注释），而累积读法有个
+     代价：同名两段时，读到的是**前一段**里那个早已作废的值 ——
+     上一版的五条假绿就是这么来的。 */
+  ['switch', 'switch-input', 'switch-toggle', 'switch-hint'].forEach(cls => {
+    const seg = ruleSegments(css, '.' + cls);
+    chk(seg.length <= 1,
+      '样式表里 .' + cls + ' 只有一段规则（实际 ' + seg.length + ' 段 —— 同名两段会让「按累积读」的断言读到作废的值）');
+  });
+  chk(!/\.switch-row\s*[,{]/.test(strip(css)) && !/\.switch-label\s*[,{]/.test(strip(css)),
     '样式表里没有 .switch-row / .switch-label 的死规则（HTML 从不使用这两个类名）');
 
-  /* 真渲染：把样式表挂进去，量一遍画出来的结果 —— 上面全是源码断言，
-     换一种写法（例如给 track 一条 margin）源码看不出来，用户看到的却不对。 */
+  /* ---------- 四、真渲染：滑块**几何上**落在轨道里（这一节的核心） ----------
+     上面全是源码断言。上一版正是「源码一条不错、画出来全错」：
+     所以这一段必须量 getBoundingClientRect 与 ::after 的实际落点。
+     ⚠️ 判的是「滑块相对轨道的偏移」，不是绝对坐标 —— 绝对坐标随页面滚动变，
+        写进去只会得到一条风湿预报。 */
   if (!JSDOM) {
     console.log('(未安装 jsdom，跳过「开关真的画得出来」的真实渲染断言 —— npm i jsdom 可启用)');
   } else {
@@ -1232,21 +1269,35 @@ PAGE_FILES.forEach(f => {
     const input = doc.getElementById('toggle-sync');
     chk(!!input, '设置 · 通用里能取到那颗同步开关');
     if (input) {
-      const cs = win.getComputedStyle(input);
-      chk(cs.width === trackW + 'px' && cs.height === trackH + 'px',
-        '画出来的轨道就是声明的尺寸（' + cs.width + '×' + cs.height + '）');
-      chk(cs.borderRadius === '999px',
-        '轨道是胶囊（画出来的圆角 999px，不是方框）');
-      const knobEl = input.nextElementSibling;
-      chk(!!knobEl && knobEl.classList.contains('switch-track'),
-        '滑块是 input 的紧邻兄弟（CSS 的 `+` 才找得到它）');
-      if (knobEl) {
-        const kcs = win.getComputedStyle(knobEl);
-        chk(kcs.width === knobW + 'px', '滑块也是声明尺寸（' + kcs.width + '）');
-        /* 滑块必须在轨道里：左起点 + 滑块宽 ≤ 轨道宽 —— 越界就是「画歪了」 */
-        const l = parseFloat(kcs.left) || 0;
-        chk(l + knobW <= trackW,
-          '滑块落在轨道内（起点 ' + l + ' + 滑块 ' + knobW + ' ≤ 轨道 ' + trackW + '）');
+      const box = input.nextElementSibling;
+      chk(!!box && box.classList.contains('switch-toggle'),
+        '轨道是 input 的紧邻兄弟（CSS 的 `+` 才找得到它）');
+      if (box) {
+        const bcs = win.getComputedStyle(box);
+        chk(bcs.position === 'relative',
+          '画出来的轨道是定位包含块（position: relative）—— 滑块因此只能落在它里面');
+        chk(bcs.width === trackW + 'px' && bcs.height === trackH + 'px',
+          '画出来的轨道就是声明的尺寸（' + bcs.width + '×' + bcs.height + '）');
+        chk(bcs.borderRadius === '999px',
+          '轨道是胶囊（画出来的圆角 999px，不是方框）');
+
+        /* 滑块（::after）：JSDOM 不给伪元素布局，所以量的是**计算样式**，
+           再用轨道自己的矩形核对落点。这一条正是上一版缺的那一条：
+           上一版滑块是独立元素，getBoundingClientRect 落在 (2, -415)，
+           与轨道 (126, 705) 毫无关系 —— 而当时的断言只看它的 width。 */
+        /* 输入框**真的**是 0 尺寸（不是只在源码里写了个 0）——
+           它若占位就会把轨道挤到旁边，一颗开关画成两颗。
+           ⚠️ 这一条必须量真元素：JSDOM 支持元素本身的布局，只是不支持伪元素。 */
+        const ics = win.getComputedStyle(input);
+        chk(parseFloat(ics.width) === 0 && parseFloat(ics.height) === 0,
+          '画出来的 .switch-input 是 0 尺寸（' + ics.width + '×' + ics.height + '，不占位）');
+        /* ⚠️ 滑块的几何落点**这一层判不了**：JSDOM 不支持
+           getComputedStyle(el, '::after') —— 它把**父元素**的样式原样返回
+           （实测：.switch-toggle::after 的 position 读出 relative、
+           width 读出 40px，全是轨道的值）。拿它量滑块等于什么也没量。
+           滑块落点由下面「真浏览器（Chromium）」那一段判 ——
+           上一版栽的正是「只量源码、没量渲染」，所以那一段是必须有的，
+           不是可选的锦上添花。 */
       }
     }
   }
@@ -1309,7 +1360,7 @@ PAGE_FILES.forEach(f => {
 
      1. 页脚与正文之间不再画那条 `border-top`；
      2. 全站**所有** <a> 都不长下划线（不是某一处去掉、另一处忘了写）；
-     3. 同步开关那套类名（.switch / .switch-input / .switch-track）真的
+     3. 同步开关那套类名（.switch / .switch-input / .switch-toggle）真的
         被样式表接管了 —— 且**只此一套**，不许留着上一版的死类名。
    ========================================================================== */
 {
@@ -1351,9 +1402,9 @@ PAGE_FILES.forEach(f => {
   //       `.switch-row` / `.switch-label` 是 1B 期旧写法的名字，Issue #163
   //       改成自绘胶囊之后**任何 HTML 里都不再出现**，查它们等于守一份不存在的契约。
   const genHtml0 = read('settings/general/index.html');
-  const usedSwitchCls = ['switch', 'switch-input', 'switch-track'].filter(cls =>
-    new RegExp('class="[^"]*\\b' + cls + '\\b').test(genHtml0));
-  chk(usedSwitchCls.length >= 3, '设置页的开关用到了 switch / switch-input / switch-track 三个类名');
+  const usedSwitchCls = ['switch', 'switch-input', 'switch-toggle'].filter(cls =>
+    new RegExp('class="[^"]*\\b' + cls + '\\b').test(stripHtml(genHtml0)));
+  chk(usedSwitchCls.length >= 3, '设置页的开关用到了 switch / switch-input / switch-toggle 三个类名');
   usedSwitchCls.forEach(cls => {
     chk(new RegExp('\\.' + cls + '\\s*[,{]').test(cssCode),
       '开关的 .' + cls + ' 在样式表里有规则（HTML 写了就得画出来）');
@@ -1363,40 +1414,38 @@ PAGE_FILES.forEach(f => {
      （算出来的滑块行程是 -6px，把一条真 bug 的读数教成「旧的、不用管」）。
      ⚠️ 这条判据读的是**剥掉注释之后**的源码：这两组类名在 style.css 的
         注释里被点名说明过「已删掉」，按裸源码匹配会把说明文字当成死规则。 */
-  ['switch-row', 'switch-label'].forEach(cls => {
+  ['switch-row', 'switch-label', 'switch-track'].forEach(cls => {
     chk(!new RegExp('\\.' + cls + '\\s*[,{]').test(strip(cssCode)),
       '样式表里不再有 .' + cls + '（旧写法的残留，与自绘版冲突）');
   });
-  chk(/input:checked\s*\+\s*\.switch-track/.test(cssCode),
-    '开关的「开」态由 :checked + .switch-track 表达（不是靠原生 checkbox）');
-  chk(/input:disabled\s*\+\s*\.switch-track/.test(cssCode),
+  chk(/input:checked\s*\+\s*\.switch-toggle/.test(strip(cssCode)),
+    '开关的「开」态由 :checked + .switch-toggle 表达（不是靠原生 checkbox）');
+  chk(/input:disabled\s*\+\s*\.switch-toggle/.test(strip(cssCode)),
     '开关的「未开放」态也有样式（置灰，不是原生 disabled 的样子）');
-  /* 真实输入框留着（键盘 / 读屏 / 焦点要用），只是**自己画成了那颗胶囊**
-     （`appearance: none`，见 §6 那一节）。旧版是「opacity:0 透明地盖在
-     span 轨道上」，新版 input 本身就是轨道 —— 所以判据从「透明」翻成
-     「自绘 + 有可点尺寸 + 有焦点可见态」。 */
+  /* 真实输入框留着（键盘 / 读屏 / 原生 toggle 都用它），画成 0 尺寸不占位，
+     视觉交给轨道那颗 <span class="switch-toggle">。
+     ⚠️ 这一条的来历：上一版让 input **自己**当轨道（appearance:none），
+        滑块是另一个独立 span —— 结构上两者可以分家，滑块就这样跑到了页面左上角。
+        现在判的是「输入框不占位 + 轨道另有其人」，而不是「input 自绘得多漂亮」。 */
   const inpRule = ruleOf(cssCode, '.switch-input');
-  chk(/appearance:\s*none/.test(inpRule),
-    '.switch-input 自绘（appearance: none）—— 不删 input，键盘与读屏照旧');
-  chk(!/opacity:\s*0\s*[;}]/.test(inpRule),
-    '不再是「透明覆盖层」那种写法（自绘版 input 本身就是那颗胶囊）');
-  /* 输入框与轨道**同一颗元素**（自绘版），所以「点哪儿」与「画哪儿」不可能错位 ——
-     这正是旧写法需要的对齐断言，现在从「两处声明相等」变成「就是同一个类名」。 */
-  const sizeOf = (code, sel) => {
-    const decl = ruleOf(code, sel);
-    const w = /(?:^|[;{\s])width:\s*([^;]+)/.exec(decl);
-    const h = /(?:^|[;{\s])height:\s*([^;]+)/.exec(decl);
-    return { w: w ? w[1].trim() : '', h: h ? h[1].trim() : '' };
-  };
-  const inp = sizeOf(cssCode, '.switch-input');
-  const trk = sizeOf(cssCode, '.switch-track');
-  chk(!!inp.w && !!inp.h && !!trk.w && !!trk.h,
-    '开关的胶囊（.switch-input）与滑块（.switch-track）都有声明尺寸（' +
-    inp.w + '×' + inp.h + ' / ' + trk.w + '×' + trk.h + '）');
-  chk(parseFloat(inp.w) > parseFloat(trk.w) && parseFloat(inp.h) > parseFloat(trk.h),
-    '滑块比轨道小（滑块在轨道里走 —— 反了就是「画歪了」）');
-  chk(/focus-visible/.test(cssCode) && new RegExp('\\.switch-input:focus-visible\\s*[,{]').test(cssCode),
-    '开关有键盘焦点态（focus-visible）—— 自绘之后不许把焦点框一起丢掉');
+  chk(/position:\s*absolute/.test(inpRule) && /opacity:\s*0/.test(inpRule),
+    '.switch-input 透明且脱流（真实复选框留着，视觉交给轨道那颗 span）');
+  /* 输入框不许还占着 40×24：那样轨道会被挤到旁边，一颗开关画成两颗 */
+  chk(/\bwidth:\s*0/.test(inpRule) && /\bheight:\s*0/.test(inpRule),
+    '.switch-input 画成 0 尺寸（不占位）');
+  /* 轨道与滑块：**同一个元素**（滑块是轨道的 ::after）——
+     这正是「画不到一起去」那件事的结构解法，所以判的是「伪元素在轨道上」，
+     而不是「两处声明相等」（旧写法需要的对齐断言，现在从根上不需要了）。 */
+  chk(/\.switch-toggle::after\s*[,{]/.test(strip(cssCode)),
+    '滑块是轨道的 ::after（与轨道同一个盒子，不存在两处分家的可能）');
+  const trk = ruleOf(cssCode, '.switch-toggle');
+  const knb = ruleOf(cssCode, '.switch-toggle::after');
+  chk(/\bwidth:\s*40px/.test(trk) && /\bheight:\s*24px/.test(trk),
+    '轨道尺寸写在这一段里（40×24）');
+  chk(/\bwidth:\s*18px/.test(knb) && /\bheight:\s*18px/.test(knb),
+    '滑块尺寸写在这一段里（18×18）');
+  chk(/focus-visible/.test(cssCode) && new RegExp('\\.switch-input:focus-visible\\s*\\+\\s*\\.switch-toggle\\s*[,{]').test(strip(cssCode)),
+    '开关有键盘焦点态（focus-visible）—— 画在轨道上，不许把焦点框一起丢掉');
 
   /* 反向：**开关这几个类名**在同一份样式表里不许出现两段以上的规则。
      上面那些断言都是「按累积读声明」的（见 ruleOf 的注释），而累积读法有个
@@ -1406,7 +1455,7 @@ PAGE_FILES.forEach(f => {
      ⚠️ 只查这几个（**不查全表**）：`.app` / `:root` 这类选择器本来就会写在
         多处（max-width 在中部、padding 在 PWA 一节），那是正常写法，
         一律禁掉等于把一条正确的写法判成错。 */
-  ['switch-input', 'switch-track', 'switch', 'switch-hint'].forEach(cls => {
+  ['switch-input', 'switch-toggle', 'switch', 'switch-hint'].forEach(cls => {
     const seg = ruleSegments(cssCode, '.' + cls);
     chk(seg.length <= 1,
       '样式表里 .' + cls + ' 只有一段规则（实际 ' + seg.length + ' 段 —— 同名两段会让「按累积读」的断言读到作废的值）');
@@ -1476,38 +1525,39 @@ if (JSDOM) {
   console.log('- (未安装 jsdom，跳过卡片主标题的真实渲染一节)');
 }
 /* ==========================================================================
-   十二、开关真的画出来了（Issue #163，真实渲染几何）
+   十二、开关的 DOM 结构与顺序（Issue #163）
    --------------------------------------------------------------------------
-   用户原话：「跨设备同步选择框太丑了，改进。」
-   丑的根因是**没有样式**：HTML 一直写着 .switch 那一套类名，
-   样式表里却一条都没有 —— 于是那颗 <input type=checkbox> 以浏览器原生的
-   样子露在纸面上（浅灰方块 + 系统蓝勾），与整页的米纸 / 天青是两套语言。
+   上一版的问题是**结构**：轨道与滑块是两个各自定位的元素，能不能叠在一起
+   全看绝对定位能不能找到同一个包含块 —— 而它一路上没有非 static 祖先，
+   于是滑块落到了页面左上角（真机实测 y = -415px，屏幕外）。
 
-   上面那一节判的是「样式表里有没有这几条规则」；这一节判的是**画出来的结果**：
-   轨道真的被挂上、真的画成胶囊、真的不是 display:none。
-   两节合起来才闭环 —— 只判源码，把 display:none 写进去也是绿的。
+   这一节只判 DOM 关系（谁在谁旁边、谁包着谁）；几何落点由上一节与下面
+   「真浏览器」那一段判。三段合起来才闭环：
+     · 结构对 → 不该分家；
+     · 源码只有一个来源 → 尺寸不会两边不一致；
+     · 真渲染落点在轨道内 → 前面两条真的一起成立了。
    ========================================================================== */
 if (JSDOM) {
   const doc = new JSDOM(read('settings/general/index.html'),
     { url: 'https://local.test/settings/general/' }).window.document;
   const input = doc.getElementById('toggle-sync');
-  const track = doc.querySelector('.switch-track');
-  /* Issue #163 之后开关是**一颗 input 自己画出来的**（胶囊 = input 本体、
-     滑块 = 它的紧邻兄弟 span），不再有「状态字」那一颗 span ——
-     所以这里判的是「input 与滑块两样都在 DOM 里、且真在一个 label 里」。 */
-  chk(!!input && !!track, '开关的 input / 滑块两样都在 DOM 里（状态由是否选中表达）');
+  const track = doc.querySelector('.switch-toggle');
+  chk(!!input && !!track, '开关的 input / 轨道两样都在 DOM 里（状态由是否选中表达）');
   chk(!!doc.querySelector('label.switch') &&
       doc.querySelector('label.switch').contains(input) &&
       doc.querySelector('label.switch').contains(track),
     '两者包在同一个 <label.switch> 里（点轨道任意处都切得动，iOS 上也是）');
-  // 顺序：input → 滑块。CSS 的 `input:checked + .switch-track` 靠的就是它
+  /* 顺序：input → 轨道。CSS 的 `input:checked + .switch-toggle` 靠的就是它 */
   chk(!!input && input.nextElementSibling === track,
-    '滑块是 input 的紧邻兄弟（`:checked + .switch-track` 这条相邻选择器才对得上）');
+    '轨道是 input 的紧邻兄弟（`:checked + .switch-toggle` 这条相邻选择器才对得上）');
+  /* 反向：滑块不许再作为独立元素出现 —— 这是「跑到页面左上角」的结构根因 */
+  chk(!doc.querySelector('.switch-track'),
+    'HTML 里不再有独立滑块 .switch-track（滑块现在是轨道的 ::after）');
   // 反向：上一版的 .switch-row / .switch-label 结构不许再回到 HTML 里
   chk(!doc.querySelector('.switch-row') && !doc.querySelector('.switch-label'),
-    'HTML 里不再有上一版的 .switch-row / .switch-label（开关只此一套结构）');
+    'HTML 里不再有 1B 期的 .switch-row / .switch-label（开关只此一套结构）');
 } else {
-  console.log('- (未安装 jsdom，跳过开关的真实渲染几何一节)');
+  console.log('- (未安装 jsdom，跳过开关的 DOM 结构一节)');
 }
 
 /* ==========================================================================
