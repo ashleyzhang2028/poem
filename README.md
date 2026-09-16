@@ -360,7 +360,7 @@ npm run env:example > .env.example    # 生成可直接粘贴的模板
 
 | 档 | 哪些 | 缺了会怎样 |
 |---|---|---|
-| **必须** | `SESSION_SECRET`、`SUPABASE_URL`、`SUPABASE_SERVICE_KEY` | 接口整体 503 / 只用内存存储（重启即丢） |
+| **必须** | `SESSION_SECRET`（或 `SESSION_KEY`，二选一，前者优先）、`SUPABASE_URL`、`SUPABASE_SERVICE_KEY` | 接口整体 503 / 只用内存存储（重启即丢） |
 | **这一件需要** | `SENDGRID_API_KEY` | 发不出真邮件，落到 `console`（只写服务端日志） |
 | **可选** | `MAIL_TRANSPORT`、`MAIL_FROM`、`SITE_URL`、`COOKIE_NAME`、`SMS_*`、`ALLOW_CODE_ECHO` | 用默认值 |
 
@@ -376,7 +376,7 @@ npm run env:example > .env.example    # 生成可直接粘贴的模板
 |---|---|---|
 | **A** | 生成 `SESSION_SECRET`（`openssl rand -hex 32`） | 自检里它从「未设置」变「已设置」 |
 | **B** | 建 Supabase 项目 → 跑 `api/_lib/schema.sql` → 拿 URL + **service_role**（不是 anon） | 自检「最低线已过」；`rest/v1/accounts` 回 **200** |
-| **C** | 注册 SendGrid 或 Resend → 建 key → **验发信子域 + SPF/DKIM/DMARC 三条 DNS** | 自检里发信通道不再是 `console`；真发一封信 `delivered:true` |
+| **C** | 注册 **Resend**（主选）→ 建 key → **验发信子域 + SPF/DKIM/DMARC 三条 DNS** | 自检里发信通道不再是 `console`；真发一封信 `delivered:true` |
 | **D** | 上探活与备份（`.cnb.yml` 里两条 `crontab`）；备份另需 `SUPABASE_DB_URL` | 流水线列表里看得见；手动触发探活成功 |
 | **E** | 配完当场验收四步 | `/api/me` 回 **401**（回 503 就是 A 没生效）、发码 `delivered:true`、注销回 **401** |
 

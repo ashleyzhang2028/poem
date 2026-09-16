@@ -2277,6 +2277,219 @@ async function main() {
     chk(/其它设备|其他设备/.test(resetSrc), "重设页写明「其它设备上的登录会全部退出」");
   }
 
+  /* ==================================================================
+     二十四、Issue #197：邮箱随机码那条路上的安全洞（全面审查第二轮）
+
+     这一节守的是**六个已经真实存在过的洞**，每一个都附了当时的现场。
+     它们有一个共同形状：**限制写在 A 处、读取在 B 处** ——
+     文档（docs/auth-design.md §5.4/§5.5/§6.2/§6.4）写着一套，代码里溜过去了。
+     所以这一节的断言全部**直接打内核与 HTTP**，一个界面都不经过。
+
+       ① 失败次数只进不出：单账号一天能猜 `枚数 × 5` 次
+       ② 频控是「先检查、后落账」，中间隔着发信商的网络往返 —— 并发下形同不限
+       ③ 校验口没有 IP 档，而且格式早退那条路**一条账都不留**
+       ④ 冒烟中转码会随 5xx / 不一致响应泄出（恰好在 ALLOW_CODE_ECHO 开着的那种环境）
+       ⑤ 会话是无上限的滑动窗口（30 天的会话可以活成 60 天、90 天…）
+       ⑥ 频控只在单实例内有效，而接口从没如实说过这件事
+     ================================================================== */
+  {
+    /* ---- ①②③⑤ 内核层：直接调 core，用注入的假时钟 ---- */
+    boot({ ALLOW_CODE_ECHO: "1" });
+    const core = require("../api/_lib/core.js");
+    const storeMod = require("../api/_lib/store.js");
+    const sessionMod = require("../api/_lib/session.js");
+
+    /* 造一套「频控不挡路」的环境：这一节要验的是**猜错封禁与并发**，
+       不是频控档位本身（那一档由第十八节 / 第十九节守着）。 */
+    const T0 = 1757900000000;
+    function rig(extra) {
+      const cfg = Object.assign({}, require("../api/_lib/config.js"), {
+        allowCodeEcho: true,
+        resendCooldownMs: 1,
+        rate: { email: [[1e9, 1e9]], device: [[1e9, 1e9]], ip: [[1e9, 1e9]], global: [[1e9, 1e9]] }
+      }, extra || {});
+      const clock = { t: T0 };
+      return {
+        clock,
+        d: {
+          cfg, store: storeMod.memoryStore(), limiter: core.makeRateLimiter(),
+          now: () => clock.t
+        }
+      };
+    }
+    const send = (d, v, dev, ip) => core.sendCode(d, { channel: "email", value: v, purpose: "login", deviceId: dev || "D", ip: ip || "I" });
+    const verify = (d, codeId, code, dev, ip) => core.verifyCode(d, { codeId: codeId, code: code, deviceId: dev || "D", ip: ip || "I" });
+
+    /* ------------------------------------------------ ① 猜错封禁真的存在 */
+    {
+      const r = rig();
+      const seen = [];
+      let lockedAt = -1;
+      for (let round = 0; round < 6 && lockedAt < 0; round++) {
+        r.clock.t += 5000;                       // 每轮隔开，绕开冷却
+        const s = await send(r.d, "victim@example.com");
+        if (s.status !== 200) break;
+        let last = null;
+        for (let g = 0; g < 5; g++) last = await verify(r.d, s.body.codeId, "000000", "D" + round, "I" + round);
+        seen.push(last.body.code);
+        if (last.body.code === "E_LOCKED") lockedAt = round;
+      }
+      chk(lockedAt >= 0, "① 连轮猜错会**锁账号**（原先永远不锁：实测可以无限猜下去）");
+      eq(lockedAt, 2, "① 第 3 轮就锁（判据是「连续 3 轮整轮失败」，与 §5.5 一致）");
+      eq(seen.filter(c => c === "E_CODE_VOID").length, 2,
+        "① 前两轮如实回 E_CODE_VOID（不是 E_LOCKED，也不是含糊的「失败」）");
+
+      /* 锁是**账号级**的：换个设备、换个出口 IP 也拦得住 —— 这正是
+         「只认 uid、不认邮箱字符串」那条口径在起作用（§5.5 末句）。 */
+      r.clock.t += 5000;
+      const after = await send(r.d, "victim@example.com", "brand-new-device", "203.0.113.7");
+      eq(after.status, 423, "① 锁后换设备 + 换 IP 再发码：仍然 423（锁认 uid）");
+      eq(after.body.code, "E_LOCKED", "① 码是 E_LOCKED");
+      chk(after.body.retryAfter > 80000 && after.body.retryAfter <= 86400,
+        "① 如实回「还剩多久」（实际 " + after.body.retryAfter + " 秒）");
+
+      /* 锁**会到期**：原先写进去就没人擦，「24 小时」变「一辈子」。 */
+      r.clock.t += 86400000 + 1000;
+      const later = await send(r.d, "victim@example.com", "third-device", "203.0.113.8");
+      eq(later.status, 200, "① 24 小时之后自动解锁（锁不是终态）");
+      const acc = Object.values(r.d.store._db.accounts)[0];
+      eq(acc.status, "active", "① 解锁时把账号状态改回 active（不留在 locked 上）");
+      eq(acc.locked_until, null, "① 解锁时清掉 locked_until");
+      eq((r.d.limiter._hits["wrong|" + acc.uid] || []).length, 0,
+        "① 解锁时连错轮数的账一并清掉（不清的话用户回来错一枚码就又被锁一天）");
+    }
+
+    /* ------------------------------------------------ ② 频控是原子的 */
+    {
+      const r = rig({ resendCooldownMs: 1 });
+      /* 把窗口收窄到「一小时 3 枚」，然后**并发**打 3 次：
+         正确的实现里只放行 1 次（后两次被冷却挡），
+         而「先 check 后 hit」的写法会让 3 次全部通过（各自看到空窗口）。 */
+      r.d.cfg.resendCooldownMs = 1;
+      const results = await Promise.all([
+        send(r.d, "race@example.com", "R1"),
+        send(r.d, "race@example.com", "R2"),
+        send(r.d, "race@example.com", "R3")
+      ]);
+      const okCount = results.filter(x => x.status === 200).length;
+      eq(okCount, 1, "② 同一瞬间并发发 3 次码，**只有 1 次**真的发出去了（实测原先 3 次全过）");
+      chk(results.some(x => x.status === 429), "② 另外两次被拒且给出 retryAfter");
+    }
+
+    /* ------------------------------------------------ ③ 校验口：格式早退也落账 */
+    {
+      const r = rig();
+      r.d.cfg.codeLength = 6;
+      /* 这条路的要命之处：`given.length !== 6` 时**连 store 都不碰**，
+         原先一条账都不留 —— 一个可以无限打的免费 oracle。 */
+      const before = Object.keys(r.d.limiter._hits).filter(k => k.indexOf("verify:") >= 0).length;
+      await verify(r.d, "c_none", "123");
+      const after = Object.keys(r.d.limiter._hits).filter(k => k.indexOf("verify:") >= 0).length;
+      chk(after > before, "③ 码长不对那条早退路径**也要落账**（原先一条不记，可以无限打）");
+      const devKeys = Object.keys(r.d.limiter._hits).filter(k => k.startsWith("device|verify:"));
+      const ipKeys = Object.keys(r.d.limiter._hits).filter(k => k.startsWith("ip|verify:"));
+      chk(devKeys.length > 0, "③ 校验口按**设备**记账");
+      chk(ipKeys.length > 0, "③ 校验口按**出口 IP**记账（deviceId 是客户端给的，换一个就绕过了）");
+    }
+
+    /* ------------------------------------------------ ③b 换 deviceId 绕不过 IP 档 */
+    {
+      const r = rig();
+      r.d.cfg.wrongRoundsLimit = 3;
+      /* 攻击者：每轮换一个 deviceId、换一个邮箱（也就换一个 uid），
+         但出口 IP 换不掉 —— IP 那一档必须兜住。 */
+      let blocked = false;
+      for (let i = 0; i < 30 && !blocked; i++) {
+        const s = await send(r.d, "victim" + i + "@example.com", "dev" + i, "198.51.100.9");
+        if (s.status !== 200) { blocked = true; break; }
+        for (let g = 0; g < 5; g++) {
+          const v = await verify(r.d, s.body.codeId, "000000", "dev" + i, "198.51.100.9");
+          if (v.status === 429 && v.body.code === "E_RATE_IP") { blocked = true; break; }
+        }
+      }
+      chk(blocked, "③ 换 deviceId + 换邮箱都绕不过**出口 IP**那一档");
+    }
+
+    /* ------------------------------------------------ ④ 中转码不随 5xx 泄出 */
+    {
+      const r = rig();
+      /* 把发信通道掰成一个**会抛**的实现 —— 模拟「配了 sendgrid 但请求发不出去」。
+         `sendVia` 抛出去之后走的是 catch 那条 502 分支。 */
+      const mailMod = require("../api/_lib/mail/index.js");
+      const realSend = mailMod.send;
+      mailMod.send = () => Promise.reject(new Error("SMTP 连不上"));
+      try {
+        const s = await send(r.d, "boom@example.com");
+        eq(s.status, 502, "④ 发信失败如实回 502（不假装成功）");
+        chk(s.body.devCode === undefined,
+          "④ **502 的响应里不许带明文码**（原先 catch 把中转那一条原样回了出去 —— " +
+          "而 ALLOW_CODE_ECHO 恰恰只会在本地联调/冒烟那种环境打开）");
+        chk(s.body.code === "E_MAIL_FAIL", "④ 码是 E_MAIL_FAIL（短信那条是 E_SMS_FAIL）");
+      } finally { mailMod.send = realSend; }
+    }
+
+    /* ------------------------------------------------ ⑤ 会话不再无上限续期 */
+    {
+      const cfg = Object.assign({}, require("../api/_lib/config.js"));
+      const base = { sid: "s_x", uid: "u_x" };
+      eq(sessionMod.shouldRenew(cfg, Object.assign({}, base, { exp: T0 + 29 * 86400000 }), T0), false,
+        "⑤ 还剩 29 天的会话**不续**（每次登录都签新的 = 无上限滑动窗口）");
+      eq(sessionMod.shouldRenew(cfg, Object.assign({}, base, { exp: T0 + 10 * 86400000 }), T0), true,
+        "⑤ 还剩 10 天（不足一半）时才续到 30 天（§6.4 那条「剩余 < 15 天且用户有操作」）");
+      eq(sessionMod.shouldRenew(cfg, Object.assign({}, base, { exp: T0 + 14 * 86400000 }), T0), true,
+        "⑤ 还剩 14 天（< 一半）：续 —— 这就是 §6.4 那句「剩余 < 15 天」");
+      eq(sessionMod.shouldRenew(cfg, Object.assign({}, base, { exp: T0 + 15 * 86400000 }), T0), false,
+        "⑤ 恰好 15 天 = 一半，**不**续（判据是 full/2，不是写死 15 天：写死的那版在 sessionDays 改成 7 时会让每一次请求都续期）");
+      eq(sessionMod.shouldRenew(cfg, null, T0), false, "⑤ 没有会话时不续（不是「续一个空会话」）");
+    }
+
+    /* ------------------------------------------------ ⑥ 隔离性如实自报 */
+    {
+      const cfg = Object.assign({}, require("../api/_lib/config.js"));
+      const facts = core.channelFacts(cfg);
+      eq(facts.rate, "instance",
+        "⑥ /api/me 如实自报「频控只在本实例内有效」（配了库也一样 —— 账本在进程内存里）");
+      chk(facts.rate === "instance" && facts.db === "memory" || facts.rate === "instance",
+        "⑥ 这一条与 db 那条是**两件事**：db 说数据活多久，rate 说限流在几台机器上算数");
+    }
+
+    /* ------------------------------------------------ ⑤b 走真 HTTP：续期只在后半段发生 */
+    boot({ ALLOW_CODE_ECHO: "1" });
+    const sv = await serve();
+    try {
+      const POST = (p, b, cookie) => call(sv.base, "POST", p, b, cookie);
+      const s1 = await POST("/api/send-code", { email: "session@example.com" });
+      eq(s1.status, 202, "⑤ 发码回 202");
+      const v1 = await POST("/api/verify-code", { codeId: s1.body.codeId, code: s1.body.devCode });
+      eq(v1.status, 200, "⑤ 第一次登录成功并签发会话");
+      const c1 = String(v1.setCookie || "").split(";")[0];
+      chk(/kbsid=/.test(c1), "⑤ 拿到 kbsid 那枚 Cookie");
+
+      /* 紧接着再登一次（信任期内一点即入的真实形状）：
+         会话还剩 30 天 —— **不该续**，于是不发新 Set-Cookie。 */
+      /* ⚠️ 用**另一个邮箱**再走一遍：同一个邮箱连着要第二枚码会被 60 秒冷却挡住，
+         而那一条是**另一件正确的事**（第十九节的频控对拍守着），
+         在这里挡下来只会让这一节变成「测冷却」而不是「测续期」。 */
+      const s2 = await POST("/api/send-code", { email: "session2@example.com" }, c1);
+      eq(s2.status, 202, "⑤ 再发一枚码（换个邮箱，避开 60 秒重发冷却）");
+      const v2 = await POST("/api/verify-code", { codeId: s2.body.codeId, code: s2.body.devCode }, c1);
+      eq(v2.status, 200, "⑤ 再登一次成功");
+      eq(v2.setCookie, null,
+        "⑤ 会话还在有效期的前一半里 → **不续期、不发新 Cookie**（原先每次都发，于是 30 天变成无限）");
+      eq(v2.body.sessionKept, true, "⑤ 如实回 sessionKept:true（界面与测试都能看出这一枚是沿用）");
+      chk(v2.body.account && v2.body.account.uid, "⑤ 即便没续期，该回的账号信息一条不少");
+    } finally { await sv.close(); }
+
+    boot({ ALLOW_CODE_ECHO: "1", SESSION_KEY: "a-different-key-at-least-16-chars" });
+    const sv2 = await serve();
+    try {
+      const r = await call(sv2.base, "POST", "/api/send-code", { email: "key@example.com" });
+      eq(r.status, 202,
+        "⑥ SESSION_KEY 能单独把会话签起来（不必借用发信那个变量）—— " +
+        "「配发信」与「签会话」是两件事，各有各的变量");
+    } finally { await sv2.close(); }
+  }
+
   console.log(fails === 0 ? "\n🎉 服务端账号接口测试全部通过" : "\n❌ " + fails + " 项失败");
   process.exit(fails ? 1 : 0);
 }
