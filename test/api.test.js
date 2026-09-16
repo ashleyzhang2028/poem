@@ -662,7 +662,7 @@ async function main() {
     await core.syncPush(Object.assign({}, d, { account: { uid } }), {
       deviceId: "A", recs: [{ id: "p1", payload: { level: 3 }, updatedAt: t }]
     });
-    chk(store.listProgress(uid, 0).length === 1, "注销前有一条云端进度");
+    chk(store.listProgress(uid, "", 0).length === 1, "注销前有一条云端进度");
 
     // 没确认 → 400
     const noConfirm = await core.accountDelete(Object.assign({}, d, { account: { uid } }), {});
@@ -680,14 +680,14 @@ async function main() {
 
     // 真的删干净了
     eq(store.getAccount(uid), null, "账号行已删除");
-    eq(store.listProgress(uid, 0).length, 0, "云端进度已删除");
+    eq(store.listProgress(uid, "", 0).length, 0, "云端进度已删除");
 
     // 再登录是全新账号（uid 不回收）
     t += 61000;
     const r2 = await core.sendCode(d, { email: "bye@example.com", ip: "1.1.1.1", code: "999999" });
     const v2 = await core.verifyCode(d, { codeId: r2.body.codeId, code: "999999" });
     chk(v2.body.account.uid !== uid, "注销后重新登录拿到全新的 uid（uid 不回收）");
-    eq(store.listProgress(v2.body.account.uid, 0).length, 0, "新账号里没有旧进度");
+    eq(store.listProgress(v2.body.account.uid, "", 0).length, 0, "新账号里没有旧进度");
   }
 
   /* ==================================================================
@@ -1058,12 +1058,12 @@ async function main() {
     chk(!/resolution=merge-duplicates/.test(progressFn),
       "连进度不用无条件的 upsert（那等于「谁最后写谁赢」，跨设备会把新进度回退成旧的）");
 
-    await mem.putProgress("u_1", [{ poem_id: "p1", payload: { level: 9 }, updated_at: 100 }]);
-    await mem.putProgress("u_1", [{ poem_id: "p1", payload: { level: 1 }, updated_at: 50 }]);
-    const kept = mem.listProgress("u_1", 0)[0];
+    await mem.putProgress("u_1", "", [{ poem_id: "p1", payload: { level: 9 }, updated_at: 100 }]);
+    await mem.putProgress("u_1", "", [{ poem_id: "p1", payload: { level: 1 }, updated_at: 50 }]);
+    const kept = mem.listProgress("u_1", "", 0)[0];
     eq(kept.payload.level, 9, "memoryStore：老时间戳盖不掉新值");
-    await mem.putProgress("u_1", [{ poem_id: "p1", payload: { level: 7 }, updated_at: 200 }]);
-    eq(mem.listProgress("u_1", 0)[0].payload.level, 7, "memoryStore：新时间戳能盖掉老值");
+    await mem.putProgress("u_1", "", [{ poem_id: "p1", payload: { level: 7 }, updated_at: 200 }]);
+    eq(mem.listProgress("u_1", "", 0)[0].payload.level, 7, "memoryStore：新时间戳能盖掉老值");
 
     // ③ 表名与列名和 schema.sql 对齐（改名了但 SQL 没改 = 线上 400）
     const src = fs.readFileSync(path.join(ROOT, "api/_lib/store.js"), "utf8");

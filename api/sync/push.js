@@ -1,7 +1,7 @@
 /**
  * POST /api/sync/push —— 按条合并写回云端进度。
  *
- * req  { recs:[{id,payload,updatedAt,deleted}], deviceId }
+ * req  { recs:[{id,payload,updatedAt,deleted}], deviceId, child }
  * res  200 { applied, conflicts:[], serverTime }
  *     400 { code:"E_BAD_REC" }   有记录缺 id 或时间戳
  *     401 { code:"E_NO_SESSION" }
@@ -26,6 +26,9 @@ module.exports = handler.make("sync.push", ["POST"], function (d, body) {
   }
   return handler.core.syncPush(d, {
     recs: body.recs,
-    deviceId: body.deviceId || d.deviceId
+    deviceId: body.deviceId || d.deviceId,
+    /* 空串 = 第一个孩子那一份（与 js/family.js 的无后缀老键同源）。
+       老客户端不带这个字段，落到的正是同一档 —— 于是升级前后行为一致。 */
+    child: body.child
   });
 });

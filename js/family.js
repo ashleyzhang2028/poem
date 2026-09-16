@@ -278,6 +278,53 @@
    * 认领失败（隐私模式写不进去）时**一个键都不删**：宁可让老数据留在原地，
    * 也不能出现「搬了一半、两边都没有」。
    */
+  /**
+   * **恢复一份名册**（跨设备分档案：云端那一份落到本机）。
+   *
+   * 它是 `write()` 之外的**第二个写入口**，刻意做成一个单独的函数而不是
+   * 「让调用方自己拼一个对象再写进去」—— 名册是**账号域**里唯一一份数组，
+   * 谁都能拼的话，早晚有人拼出一份缺 `at`、或有两条同 id 的脏名册。
+   *
+   * ## 四条不许省的规矩
+   *
+   * 1. **先读本机、再决定要不要动**：本机已经一个档案都不少时，
+   *    调用方（同步层）按时间戳判过谁新，但**这里再判一次「不许清空」**——
+   *    一条脏的云端记录不该把本机名册清成空（那是用户唯一能看到孩子的地方）。
+   * 2. **最后一个孩子不许被顶掉**：云端那份是空的 / 全是脏 id 时，**原样返回本机那一份**
+   *    （`E_EMPTY`），**不写盘**。与 `remove()` 的 `E_LAST` 是同一条产品口径：
+   *    删到最后一个就没地方背书了。
+   * 3. **`at` 必须落在名册里**：云端给的 `at` 指向一个不在列表里的 id 时，
+   *    落回第一条（`read()` 里那条同款）—— 否则另一台设备切过去会看到一份空进度，
+   *    而**没人知道该看谁的**。
+   * 4. **不删任何一份进度数据**：本函数只动这一把名册键。
+   *    云端少一个孩子时，那个孩子的进度仍在盘上（`poem_recite_progress_v1@<pid>`），
+   *    只是当前看不到 —— 由用户自己在设置页决定要不要删
+   *    （与 `remove()` 那条「删名册不动那一份进度数据」同口径）。
+   *
+   * @returns {{ok:boolean, code?:string, data?:object}}
+   */
+  function restore(cloud, opt) {
+    var o = opt || {};
+    var backing = o.backing === undefined ? defaultBacking() : o.backing;
+    var raw = cloud && typeof cloud === "object" ? cloud : null;
+    if (!raw || !Array.isArray(raw.profiles) || !raw.profiles.length) {
+      return { ok: false, code: "E_EMPTY" };         // 空名册不是「清空本机」，什么都不动
+    }
+    var clean = raw.profiles.map(normProfile).filter(function (p) { return !!p; });
+    var seen = {};
+    clean = clean.filter(function (p) {
+      if (seen[p.id]) return false;
+      seen[p.id] = true;
+      return true;
+    });
+    if (!clean.length) return { ok: false, code: "E_EMPTY" };
+    var at = String(raw.at == null ? "" : raw.at);
+    if (!seen[at]) at = clean[0].id;
+    var next = { v: 1, at: at, profiles: clean };
+    if (!write(backing, next)) return { ok: false, code: "E_WRITE" };
+    return { ok: true, data: read(backing) };
+  }
+
   function adoptLegacyData(b, profileId) {
     if (!b || !profileId) return [];
     var moved = [];
@@ -603,6 +650,9 @@
     setAvatar: function (id, patch, opt) { return setAvatar(id, patch, opt); },
     remove: function (id, opt) { return remove(id, opt); },
     select: function (id, opt) { return select(id, opt); },
+    /* 跨设备分档案（5.3）：云端那一份名册落到本机。**唯一的第二个写入口**，
+       不许调用方自己拼对象再写 —— 见 `restore()` 的注释。 */
+    restore: function (cloud, opt) { return restore(cloud, opt); },
 
     list: function (opt) { return list(opt); },
     count: function (opt) { return count(opt); },

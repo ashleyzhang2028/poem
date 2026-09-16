@@ -108,3 +108,61 @@ as $$
          deleted    = excluded.deleted
    where excluded.updated_at >= public.progress.updated_at;
 $$;
+
+-- ==========================================================================
+-- 5.3 跨设备分档案（Issue #159 · todo.md 第 4 条落地）
+-- ==========================================================================
+-- 一个账号下可以有几个孩子（`docs/auth-design.md` §2.1：孩子**不建独立账号**，
+-- 只是账号下的一个展示名 + 一份自己的进度）。本机那一半早就落地了（`js/family.js`），
+-- 这一节补的是**云端那一半**：进度按孩子分家。
+--
+-- 三条口径（改了就有一层测试直接红）：
+--
+--   1. **第一个孩子的 `child_id` 是空串，不是 `::p1`** —— 与 `js/family.js`
+--      的键映射**逐字同源**：分家前那份数据住在**无后缀的老键**上，
+--      所以它的云端那一份也必须住在 `child_id = ''` 那一行。
+--      给它编个新 id 就得写「搬一半时断电」的恢复逻辑，而搬的是用户唯一的进度。
+--   2. **`kb_upsert_progress()` 的 where 一个字都不许省** —— 见上面那一大段。
+--      主键换了、那条 where 没换，症状是「谁最后写谁赢」，而且**只在真库上出现**。
+--   3. **一个账号一行的「名册」也落在 progress 里，不新开表** —— 与 2.2
+--      （`game-quota:` 那一条）同源：新开一张表就要再写一套 memory / supabase
+--      两个实现，而「两个实现键集合不一致 → 静默失效」是反复踩过的坑。
+--      名册是**账号级**的（`child_id = ''`、`poem_id = 'family:v1'`）。
+-- --------------------------------------------------------------------------
+
+-- ① 加列：默认空串 = 「第一个孩子那一份」（现有所有行都落在这一档）
+alter table public.progress add column if not exists child_id text not null default '';
+
+-- ② 主键换掉。**先建新索引再换主键** —— 中途失败也不会出现「两个主键都在」或
+--    「一个都没有」的中间态：换主键那一步只是把约束指过去。
+alter table public.progress drop constraint if exists progress_pkey;
+alter table public.progress add primary key (uid, child_id, poem_id);
+
+-- ③ 拉取索引跟着换成三列（pull 的游标仍是 updated_at）
+drop index if exists public.progress_uid_updated_idx;
+create index if not exists progress_uid_child_updated_idx
+  on public.progress (uid, child_id, updated_at);
+
+-- ④ 条件 upsert 加上 child_id。**整段重写**，因为 `on conflict` 那两列
+--    必须与上一步的主键逐字一致 —— 不一致的报错是运行时的
+--    「there is no unique or exclusion constraint matching the ON CONFLICT
+--    specification」，只在真库上出现，memoryStore 全绿。
+create or replace function public.kb_upsert_progress(rows jsonb)
+returns void
+language sql
+security definer
+as $$
+  insert into public.progress (uid, child_id, poem_id, payload, updated_at, deleted)
+  select r->>'uid',
+         coalesce(r->>'child_id', ''),
+         r->>'poem_id',
+         coalesce(r->'payload', '{}'::jsonb),
+         (r->>'updated_at')::bigint,
+         coalesce((r->>'deleted')::int, 0)
+    from jsonb_array_elements(rows) as r
+  on conflict (uid, child_id, poem_id) do update
+     set payload    = excluded.payload,
+         updated_at = excluded.updated_at,
+         deleted    = excluded.deleted
+   where excluded.updated_at >= public.progress.updated_at;
+$$;

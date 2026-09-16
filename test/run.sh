@@ -301,6 +301,15 @@ echo "    排序按教材册次，不跟着数据文件的出场顺序走。"
 node test/export-core.test.js
 
 echo ""
+echo "=== 跨设备分档案（Issue #159 · todo.md 第 4 条：一个孩子一份进度上云）==="
+echo "    守的是：空串 = 第一个孩子那一份（与 family.js 的无后缀老键同源，"
+echo "    老客户端行为一字不差）；A 孩子的进度不能被 B 孩子拉到（两端都挡）；"
+echo "    两个孩子的 seen / 游标分家（串了的症状是「冲突弹的是别人家孩子的」）；"
+echo "    名册 family:v1 落在账号那一档、且不被当成一篇「诗」；"
+echo "    注销导出**所有**孩子（少导出一个就是永久丢失）。"
+node test/cross-device.test.js
+
+echo ""
 echo "=== 用户名设置测试 ==="
 node test/username.test.js
 

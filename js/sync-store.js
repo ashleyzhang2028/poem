@@ -51,15 +51,53 @@
   "use strict";
 
   var NS = {
-    pref: "poem_sync_pref_v1",      // 开关（设备域：本机自己决定要不要上传）
-    seen: "poem_sync_seen_v1",      // 每条记录「见过的最后一次云端时间戳」
+    pref: "poem_sync_pref_v1",      // 开关（**设备域**：本机自己决定要不要上传）
+    /* 记账表（**账号域 × 子档案**）：每条记录「见过的最后一次云端时间戳」+ 游标。
+       ⚠️ 它必须跟着孩子分家（见 `seenKey()`）—— 不分家的症状极难查：
+          **两个孩子的冲突混在一张表里**，于是界面上弹的
+          「保留本机 / 保留账号」争的是**别人家孩子**的那一条。 */
+    seen: "poem_sync_seen_v1",
     premerge: "poem_pre_merge_backup_v1"  // 合并前静默快照（「保留账号」前的后悔药）
   };
+
+  /**
+   * 「当前是哪个孩子」——同步这一层只认这一件事（`docs/architecture.md` §5.5）。
+   *
+   * ⚠️ 取不到 `Family` 时给空串（不是报错、也不是「随便挑一个」）：
+   *    空串恰好就是**分家之前那一份**的键，于是老缓存里的旧页面、
+   *    或 `Family` 没加载上的页面，行为与分家之前**逐字相同**。
+   *    服务端 `childId()` 的口径与此完全一致（空串 = 第一个孩子那一份）。
+   */
+  function childId() {
+    var g = typeof window !== "undefined" ? window.Family : null;
+    if (!g || typeof g.currentId !== "function") return "";
+    /* ⚠️ **显式传当前存储**（`backing()`），不用 Family 自己的默认盘。
+       两者在这层里正常情况下是同一个（都是 localStorage），但在
+       「注入存储」的场景（测试、将来换存储实现）里不是 ——
+       那时 Family 读默认盘得到空串，而同步层读写的是注入那块盘，
+       症状是「所有数据都落在第一个孩子那一档」，看着像分家没生效。 */
+    try {
+      var b = backing();
+      return String(b ? g.currentId({ backing: b }) : g.currentId()) || "";
+    } catch (e) { return ""; }
+  }
 
   /** 一次最多推几条 —— 与服务端 `E_TOO_MANY`（2000）留出余量 */
   var CHUNK = 500;
   /** 单次请求最长等待：超过就当作「这一轮没同步上」，不阻塞任何交互 */
   var TIMEOUT_MS = 15000;
+
+  /**
+   * 记账表的**真键**：跟着当前孩子走。
+   *
+   * ⚠️ 拼法只有一处（这里）—— 各处各拼一遍的下场与 `Family.keyFor` 那条一样。
+   *    这把键**不在** `ProgressStore.KEYS` 里（它是同步层自己的簿记），
+   *    所以走不了 `Family.keyFor` 的转发，只能在本文件里显式拼一次。
+   */
+  function seenKey() {
+    var cid = childId();
+    return cid ? NS.seen + "::" + cid : NS.seen;
+  }
 
   var deps = {};
 
@@ -194,7 +232,7 @@
     var b = backing();
     if (!b) return {};
     var text = null;
-    try { text = b.getItem(NS.seen); } catch (e) { return {}; }
+    try { text = b.getItem(seenKey()); } catch (e) { return {}; }
     if (!text) return {};
     var o = null;
     try { o = JSON.parse(text); } catch (e) { return {}; }
@@ -204,7 +242,7 @@
   function writeSeen(map) {
     var b = backing();
     if (!b) return false;
-    try { b.setItem(NS.seen, JSON.stringify(map || {})); return true; }
+    try { b.setItem(seenKey(), JSON.stringify(map || {})); return true; }
     catch (e) { return false; }
   }
 
@@ -292,8 +330,10 @@
   function conflicts() {
     var seen = readSeen();
     return Object.keys(seen).filter(function (id) {
-      // 游标用的是同一张表，但它不是一条「记录」，绝不能混进冲突清单
-      return id !== CURSOR_KEY && norm(seen[id]) < 0;
+      /* 游标、名册指纹、名册那一行用的是同一张表，但它们都不是「一篇记录」——
+         混进冲突清单的下场是界面上弹一个「保留本机 / 保留账号」，
+         而争的其实是一个记账标记（用户根本看不懂在问什么）。 */
+      return id !== CURSOR_KEY && id !== SIG_KEY && id !== FAMILY_ROW_ID && norm(seen[id]) < 0;
     });
   }
 
@@ -389,7 +429,12 @@
       headers: { "Content-Type": "application/json" }
     };
     if (deps.deviceId) init.headers["x-kb-device"] = deps.deviceId;
-    if (body !== undefined && body !== null) init.body = JSON.stringify(body);
+    /* ⚠️ **每一个请求都带 `child`**（调用方已给的不覆盖），而不是只在某一路带上。
+       漏带的症状是「名册推上去了、进度推的是另一个孩子的」（或反过来），
+       而两处都在这一层里，谁也不会去怀疑另一个接口少了个字段。 */
+    var outgoing = (body === undefined || body === null) ? null : Object.assign({}, body);
+    if (outgoing && outgoing.child === undefined) outgoing.child = childId();
+    if (outgoing !== null) init.body = JSON.stringify(outgoing);
     if (ctrl) init.signal = ctrl.signal;
 
     return f(deps.base + path, init).then(function (res) {
@@ -568,30 +613,54 @@
 
   /* ------------------------------------------------------------ 推 / 拉 */
 
+  /**
+   * 一批推上去（进度或名册，形状一样）。
+   * 推成功就打标：**用推上去的那一枚时间戳**，不是「现在」——
+   * 一次批量写盘（逐条 setItem 会在 N 条时抖 N 次，且中途失败就只记了一半）。
+   */
+  function sendBatch(recs, child) {
+    return request("/sync/push", "POST", { recs: recs, child: child }).then(function (r) {
+      if (!r.ok) return r;
+      markSeenMany(recs.map(function (it) { return { id: it.id, ts: it.updatedAt }; }));
+      return r;
+    });
+  }
+
   function pushPending() {
     if (status() !== "ready") return Promise.resolve({ ok: true, applied: 0, skipped: true });
     var seen = readSeen();
     var list = pending(seen);
-    if (!list.length) return Promise.resolve({ ok: true, applied: 0 });
+    var reg = familyRow();
+    if (!list.length && !reg) return Promise.resolve({ ok: true, applied: 0 });
 
     var sent = 0;
-    var chain = Promise.resolve();
-    for (var i = 0; i < list.length; i += CHUNK) {
-      (function (batch) {
-        chain = chain.then(function () {
-          if (sent && status() !== "ready") return null;       // 半路被关掉就停手
-          return request("/sync/push", "POST", { recs: batch }).then(function (r) {
-            if (!r.ok) return r;
-            sent += batch.length;
-            // 推成功就打标：**用推上去的那一枚时间戳**，不是「现在」。
-            // 一次批量写盘（逐条 setItem 会在 N 条时抖 N 次，且中途失败就只记了一半）。
-            markSeenMany(batch.map(function (it) { return { id: it.id, ts: it.updatedAt }; }));
-            return r;
-          });
-        });
-      })(list.slice(i, i + CHUNK));
+    /* 名册那一行**先推**，且显式用空串（账号级）—— 见 `familyRow()` 的注释。
+       先推它的理由：另一台设备拿到名册才知道「有几个孩子」，
+       而在那之前，那边拉到任何孩子的进度都不知道该归给谁。 */
+    var head = Promise.resolve({ ok: true });
+    if (reg) {
+      head = sendBatch([reg], "").then(function (r) {
+        if (r && r.ok) { sent++; writeSig(cloudSig(reg.payload)); }
+        return r;
+      });
     }
-    return chain.then(function (last) {
+
+    return head.then(function (prev) {
+      if (prev && prev.ok === false) return prev;
+      var chain = Promise.resolve();
+      for (var i = 0; i < list.length; i += CHUNK) {
+        (function (batch) {
+          chain = chain.then(function () {
+            if (status() !== "ready") return null;       // 半路被关掉就停手
+            return sendBatch(batch, undefined).then(function (r) {
+              if (r && r.ok) sent += batch.length;
+              return r;
+            });
+          });
+        })(list.slice(i, i + CHUNK));
+      }
+      return chain;
+    }).then(function (last) {
       if (last && last.ok === false) return last;
       return { ok: true, applied: sent };
     });
@@ -599,8 +668,17 @@
 
   function applyPull(r) {
     var rows = (r && r.recs) || [];
-    var out = { applied: 0, keepLocal: 0, conflict: 0, serverTime: norm(r && r.serverTime) };
+    var out = { applied: 0, keepLocal: 0, conflict: 0, family: false, serverTime: norm(r && r.serverTime) };
     rows.forEach(function (row) {
+      /* 名册那一行**不是一篇诗的档案**：它不能被按条合并（那份数组要么整份收下、
+         要么整份留着），所以走另一条路（`applyRemoteFamily`）。
+         走同一条路的症状：名册被当成一篇「诗」，`profiles` 字段在服务端
+         白名单化时被丢掉，于是另一台设备收到一份空名册 —— 看着就像「孩子没了」。 */
+      if (row && row.id === FAMILY_ROW_ID) {
+        var fv = applyRemoteFamily(row);
+        if (fv === "applied") { out.applied++; out.family = true; }
+        return;
+      }
       var verdict = applyRemote(row);
       if (verdict === "applied") out.applied++;
       else if (verdict === "conflict") out.conflict++;
@@ -621,8 +699,17 @@
    */
   function pullOnce(since) {
     if (status() !== "ready") return Promise.resolve({ ok: true, applied: 0, skipped: true });
+    /* ⚠️ 问的是**谁**：`child` 由 request() 统一带上，但**回来的时候**
+       当前选中的孩子可能已经换了（切换正好发生在请求在途时）。
+       服务端把它判给了谁回在回包里（`r.child`），这里逐字比对：
+       对不上就**整批丢掉**，一个字都不落盘。 */
+    var asked = childId();
     return request("/sync/pull", "POST", { since: norm(since) }).then(function (r) {
       if (!r.ok) return r;
+      if (String(r.child == null ? "" : r.child) !== asked) {
+        return { ok: true, recs: [], serverTime: norm(r.serverTime), stale: true,
+                 applied: { applied: 0, keepLocal: 0, conflict: 0 } };
+      }
       var applied = applyPull(r);
       var st = norm(r.serverTime);
       if (st > cursor()) setCursor(st);
@@ -632,9 +719,119 @@
 
   /** 服务端时间游标（存在 seen 表里的一个约定键上，不另开一把存储键） */
   var CURSOR_KEY = "__cursor__";
+  /** 名册那一行在服务端的 id —— 与 `api/_lib/core.js` 的 `FAMILY_ROW_ID` 逐字一致 */
+  var FAMILY_ROW_ID = "family:v1";
+  /** 上一轮推上去的名册「指纹」（与游标、seen 同一张表，但都不是「一篇篇目」） */
+  var SIG_KEY = "__family_sig__";
   function cursor() { return norm(readSeen()[CURSOR_KEY]); }
   function setCursor(ts) {
     markSeen(CURSOR_KEY, ts);
+  }
+
+  /* ------------------------------------------------------------ 名册（子档案） */
+
+  /** 名册内核（`js/family.js`）；没加载上就是 null（老缓存里的旧页面） */
+  function familyMod() {
+    var g = typeof window !== "undefined" ? window.Family : null;
+    return g && typeof g.list === "function" ? g : null;
+  }
+
+  function familySig() { return String(readSeen()[SIG_KEY] || ""); }
+
+  function writeSig(sig) {
+    var m = readSeen();
+    m[SIG_KEY] = String(sig || "");
+    return writeSeen(m);
+  }
+
+  /** 名册内容的可比指纹（判「本机这一份是不是就是云端那一份」） */
+  function cloudSig(cloud) {
+    return String((cloud && cloud.at) || "") + "|" + ((cloud && cloud.profiles) || []).map(function (p) {
+      return [p.id, p.nickname, (p.avatar && p.avatar.char) || "", (p.avatar && p.avatar.ink) || ""].join("~");
+    }).join(";");
+  }
+
+  /** 本机名册的时间戳：名册自己没有 updatedAt，取各档案 `createdAt` 里最大的那个 */
+  function localTs(list) {
+    var ts = 0;
+    (list || []).forEach(function (p) { var t = norm(p && p.createdAt); if (t > ts) ts = t; });
+    return ts;
+  }
+
+  /**
+   * 把本机名册打包成一条**同步记录**（推上去用）。
+   *
+   * ⚠️ 名册**不是**进度档案：`js/family.js` 的盘上形状里没有 `updatedAt`
+   *    （只有 `v/at/profiles`）。所以这里现配一枚 —— 判据是
+   *    「名册最后一次改动是什么时候」，而它**只有本机知道**：
+   *    取各档案 `createdAt` 里最大的那个（新加的孩子一定是最新那个动作）。
+   *    **不用 `Date.now()`** —— 那会让每一轮都被判成「本机有改动」，
+   *    名册于是每轮都往上传一次（白花流量，还会把别的设备刚改的盖回旧的）。
+   *
+   * 返回 `null` 表示「本机没有名册 / 与上一轮推上去的那一份逐字相同」——
+   * 这时**什么都不推**，绝不用一份空名册去覆盖云端那一份。
+   */
+  function familyRow() {
+    var F = familyMod();
+    if (!F) return null;
+    var b = backing();
+    var opt = b ? { backing: b } : undefined;
+    var list = [], at = "";
+    try { list = F.list(opt) || []; at = String(F.currentId(opt) || ""); } catch (e) { return null; }
+    if (!list.length) return null;
+    var sig = cloudSig({ at: at, profiles: list });
+    if (familySig() === sig) return null;                 // 与上一轮推上去的那一份逐字相同
+    var ts = localTs(list);
+    var known = norm(readSeen()[FAMILY_ROW_ID]);
+    if (!ts) ts = deps.now ? deps.now() : Date.now();
+    /* ⚠️ 时间戳要**单调不减**：比 `known`（云端那一份的时间戳）小的话，
+       服务端那条 `where excluded.updated_at >= ...` 会把它丢掉 ——
+       症状是「改了名册，另一台设备上没变」，而且不报错。 */
+    if (ts <= known) ts = known + 1;
+    return { id: FAMILY_ROW_ID, payload: { v: 1, at: at, profiles: list, updatedAt: ts }, updatedAt: ts, deleted: false };
+  }
+
+  /**
+   * 云端下来的名册怎么落到本机。
+   *
+   * 判据与进度**同一条**（时间戳 + `seen` 记账），但落法完全不同 ——
+   * 名册是**一份数组**，不是一篇篇独立的档案：它不能被「按条合并」，
+   * 要么整份收下、要么整份留着。所以这里只有两个结论：`applied` / `skip`，
+   * **不给 `conflict`** —— 一份名册弹不出「保留本机 / 保留账号」这样的选择，
+   * 让用户在两个孩子的名单之间点一个是不负责任的问题。
+   *
+   * 三条口径：
+   *   1. **本机没有名册时直接收下**（新设备第一次登录的常态）
+   *   2. **两边都有时按时间戳判**；本机这一份更新（且与云端不是同一条线）时留本机，下一轮推上去
+   *   3. **恢复走内核 `Family.restore()`** —— 内核不在或没给这个入口时**不假装落上了**
+   *      （返回 `skip`，而不是记一个「已经同步过了」的印）
+   */
+  function applyRemoteFamily(row) {
+    var F = familyMod();
+    if (!F) return "skip";
+    var cloud = (row && row.payload) || null;
+    if (!cloud || !Array.isArray(cloud.profiles) || !cloud.profiles.length) return "skip";
+    if (typeof F.restore !== "function") return "skip";     // 内核没给恢复入口：不假装
+    var cloudTs = norm(row.updatedAt);
+    var known = norm(readSeen()[FAMILY_ROW_ID]);
+    if (known === cloudTs) return "skip";                   // 已经是这一份了（幂等）
+    var inSig = cloudSig(cloud);
+    if (familySig() === inSig) { markSeen(FAMILY_ROW_ID, cloudTs); return "skip"; }
+    var b = backing();
+    var opt = b ? { backing: b } : undefined;
+    var local = [];
+    try { local = F.list(opt) || []; } catch (e) { local = []; }
+    /* 本机这一份也改过、而且改在云端之后 —— 本机赢，下一轮推上去。
+       判据是两边的时间戳：本机的取各档案 `createdAt` 的最大值。 */
+    if (local.length && known > 0 && known !== cloudTs && localTs(local) > cloudTs) return "skip";
+    var applied = false;
+    /* ⚠️ 恢复也传**同步层当前那块盘**（与 `childId()` 同一条口径）——
+       不传的话，注入存储的场景下会把云端名册写进默认盘（localStorage），
+       而进度在另一块盘上，症状是「名册恢复了、进度还是空的」。 */
+    try { applied = !!(opt ? F.restore(cloud, opt) : F.restore(cloud)); } catch (e) { applied = false; }
+    markSeen(FAMILY_ROW_ID, cloudTs);
+    if (applied) { writeSig(inSig); emit(EVT.applied, { count: 1, family: true }); }
+    return applied ? "applied" : "skip";
   }
 
   /* ------------------------------------------------------------ 认领 / 全面合并 */
@@ -788,7 +985,26 @@
   function forget() {
     var b = backing();
     if (!b) return { ok: true };
-    try { b.removeItem(NS.seen); } catch (e) { /* 隐私模式：没盘可清，也不是错误 */ }
+    /* ⚠️ 清的是**所有孩子**的记账表，不只当前那一个。
+       只清当前那份的下场：退出登录再换个人登录，**上一个账号留下的
+       游标与 `seen` 还在别的孩子名下**（那些键按子档案分家），
+       于是新账号第一轮同步「以为云端已经给过这些记录了」——
+       症状是「换账号之后，有一部分进度怎么都同步不过来」，
+       且只在多档案账号上出现。清法与建法必须是同一把尺子：
+       `seenKey()` 拼得出哪些键，这里就要清掉哪些键。 */
+    var keys = [NS.seen];
+    try {
+      var g = typeof window !== "undefined" ? window.Family : null;
+      if (g && typeof g.list === "function") {
+        (g.list({ backing: b }) || []).forEach(function (p) {
+          var id = p && p.id ? String(p.id) : "";
+          if (id) keys.push(NS.seen + "::" + id);
+        });
+      }
+    } catch (e) { /* 名册读不出来就只清当前那一份 —— 宁少清，不乱清 */ }
+    keys.forEach(function (k) {
+      try { b.removeItem(k); } catch (e) { /* 隐私模式：没盘可清，也不是错误 */ }
+    });
     emit(EVT.state, { conflicts: 0 });
     return { ok: true };
   }

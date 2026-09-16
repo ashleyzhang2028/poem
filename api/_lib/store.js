@@ -21,9 +21,13 @@
  *   码   4（putCode / getCode / patchCode / voidCodes）
  *   会话 3（putSession / getSession / revokeSessions）
  *   进度 3（listProgress / putProgress / deleteProgress）
+ *         ⚠️ 前两个的签名是 `(uid, child, ...)` —— **child 是必给的**，
+ *            两个实现漏一个不会报错，只会「一个账号的孩子互相看得见进度」。
  * 少一个的后果不是编译错误，是**某个安全约束静默失效** ——
  * 所以 test/api.test.js 有一个「两个实现的键集合完全一致」的断言。
- *   progress (uid, poem_id, payload, updated_at, deleted)
+ *   progress (uid, child_id, poem_id, payload, updated_at, deleted)
+ *            —— `child_id` 是 5.3 加的（跨设备分档案）；**空串 = 第一个孩子那一份**，
+ *               与 `js/family.js` 的无后缀老键逐字同源。主键 `(uid, child_id, poem_id)`。
  *
  * ⚠️ 索引：accounts.email_hash 与 progress.(uid,poem_id) 都要有唯一索引，
  *    建表 SQL 在 api/_lib/schema.sql（1A 交付物之一）。
@@ -111,26 +115,41 @@ function memoryStore() {
       return true;
     },
 
-    listProgress: function (uid, since) {
+    /**
+     * 拉一个账号下**某一个子档案**的进度。
+     *
+     * ⚠️ `child` 是**必给的**（与 supabase 实现逐字一致）—— 不传不是「全部」，
+     *    而是**第一个孩子那一份**（空串就是 `js/family.js` 里那个无后缀老键）。
+     *    默认成「全部」的下场：另一个人家孩子的进度会混进来，而症状只是
+     *    「怎么多出几首没背过的」—— 谁也查不出来。
+     *
+     * ⚠️ 但**不许因此把别人的孩子挡住**：`uid` 仍然是第一道过滤。
+     *    两个条件都要，缺一个都是串数据。
+     */
+    listProgress: function (uid, child, since) {
+      var cid = child == null ? "" : String(child);
       var out = [];
       Object.keys(db.progress).forEach(function (k) {
         var r = db.progress[k];
         if (r.uid !== uid) return;
+        if (String(r.child_id || "") !== cid) return;
         if (since && r.updated_at <= since) return;
         out.push({ poem_id: r.poem_id, payload: r.payload, updated_at: r.updated_at, deleted: r.deleted });
       });
       return out;
     },
-    putProgress: function (uid, recs) {
+    putProgress: function (uid, child, recs) {
+      var cid = child == null ? "" : String(child);
       recs.forEach(function (r) {
-        var key = uid + "|" + r.poem_id;
+        var key = uid + "|" + cid + "|" + r.poem_id;
         var cur = db.progress[key];
         // 按条覆盖，但**时间戳老的不能盖掉新的**（防乱序到达把新数据写回旧值）
         if (cur && cur.updated_at > r.updated_at) return;
-        db.progress[key] = { uid: uid, poem_id: r.poem_id, payload: r.payload, updated_at: r.updated_at, deleted: r.deleted ? 1 : 0 };
+        db.progress[key] = { uid: uid, child_id: cid, poem_id: r.poem_id, payload: r.payload, updated_at: r.updated_at, deleted: r.deleted ? 1 : 0 };
       });
       return true;
     },
+    /** 注销：一个账号下**所有孩子**的进度一并删（账号没了，档案也没了） */
     deleteProgress: function (uid) {
       Object.keys(db.progress).forEach(function (k) { if (db.progress[k].uid === uid) delete db.progress[k]; });
       return true;
@@ -245,8 +264,15 @@ function supabaseStore(cfg) {
         .then(function () { return true; });
     },
 
-    listProgress: function (uid, since) {
-      var p = "/progress?uid=eq." + q(uid) + "&select=poem_id,payload,updated_at,deleted";
+    /**
+     * 拉某个子档案的进度。`child` 是必给的 —— 空串 = 第一个孩子那一份
+     * （与 `js/family.js` 的无后缀老键同源，见 schema.sql 第 5.3 节）。
+     * `child_id=eq.` 那一节**不能省**：省了就是「一个账号的孩子互相看得见进度」。
+     */
+    listProgress: function (uid, child, since) {
+      var cid = child == null ? "" : String(child);
+      var p = "/progress?uid=eq." + q(uid) + "&child_id=eq." + q(cid)
+            + "&select=poem_id,payload,updated_at,deleted";
       if (since) p += "&updated_at=gt." + q(since);
       return call(p);
     },
@@ -261,9 +287,10 @@ function supabaseStore(cfg) {
      *    memoryStore 那边有等价的判断 —— 两个实现必须同语义，
      *    test/api.test.js 的「老时间戳盖不掉新值」在两边都跑。
      */
-    putProgress: function (uid, recs) {
+    putProgress: function (uid, child, recs) {
+      var cid = child == null ? "" : String(child);
       var rows = recs.map(function (r) {
-        return { uid: uid, poem_id: r.poem_id, payload: r.payload, updated_at: r.updated_at, deleted: r.deleted ? 1 : 0 };
+        return { uid: uid, child_id: cid, poem_id: r.poem_id, payload: r.payload, updated_at: r.updated_at, deleted: r.deleted ? 1 : 0 };
       });
       if (!rows.length) return Promise.resolve(true);
       return call("/rpc/kb_upsert_progress", {
