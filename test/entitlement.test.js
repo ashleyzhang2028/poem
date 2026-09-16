@@ -73,12 +73,12 @@ console.log('\n=== 三、pro / max 只加不减：层级越高能力单调不减
   chk(!E.can('exam.paper', pro).ok && E.can('exam.paper', max).ok, '现场考试：pro 不可、max 可用（用户指定）');
   chk(!E.can('quiz.review', free).ok && E.can('quiz.review', pro).ok, '题库复习：free 不可、pro 起');
   chk(!E.can('sync.multiDevice', free).ok && E.can('sync.multiDevice', pro).ok, '跨设备云同步：pro 起');
-  chk(E.can('ai.explain', pro).ok, 'AI 讲解：pro 可用（额度 50/月）');
-  chk(!E.can('ai.explain', free).ok, 'AI 讲解：free 不可');
-  eq(E.cap('ai.explain').quota, 50, 'AI 讲解 pro 额度 50 次/月');
-  eq(E.cap('ai.explain.big').quota, 500, 'AI 讲解 max 额度 500 次/月');
-  eq(E.can('ai.explain.big', max).ok, true, 'max 可用 500 次档');
-  eq(E.can('ai.explain.big', pro).ok, false, 'pro 不能蹭 max 的 500 次档');
+  /* 用户 2026-09-17：「把需要收我 app 费用的功能删除」——
+     AI 讲解 / 背诵纠音（每调一次真花钱）已从能力表删除，不是「暂缓」。
+     任何人以任何名义把它加回来，这条断言就红。 */
+  chk(!E.cap('ai.explain'), 'AI 讲解能力**已删除**（收 app 费用的功能不留）');
+  chk(!E.cap('ai.explain.big'), 'AI 讲解 max 档**已删除**');
+  chk(E.capNames().every(k => !/^ai\./.test(k)), '能力表里**没有任何** ai.* 能力');
   eq(E.can('export.all', max).ok, true, '全站批量导出：max 起');
   eq(E.can('export.all', pro).ok, false, '全站批量导出：pro 不可');
 }

@@ -423,6 +423,14 @@
         }
         const res = window.ReciteCollections.importText(text, "", window.SITE_INDEX || []);
         closeTextDialog();
+        /* 超上限时**如实说清是上限拦的**（不说「没认出篇目」那种错因）——
+           E_LIMIT 与「清单里全是认不出的行」是两件完全不同的事。 */
+        if (res.error === "E_LIMIT") {
+          const lim = res.limit === Infinity ? "不限" : res.limit + " 个";
+          showToast("自选清单已达上限（当前层级最多 " + lim + "）—— " +
+            "Free 1 个、Pro 20 个、Max 不限。");
+          return;
+        }
         if (!res.added) {
           showToast("没认出清单里的篇目" + (res.dropped ? "（" + res.dropped + " 行对不上本站篇目）" : ""));
           return;

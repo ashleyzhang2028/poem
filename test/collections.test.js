@@ -635,7 +635,11 @@ setTimeout(() => {
       ds.querySelector('#text-dialog-cancel').dispatchEvent(new ws.MouseEvent('click', { bubbles: true }));
       chk(ds.querySelector('#text-dialog').hidden, '点「关闭」收起对话框');
 
-      // 导入：粘贴一份清单 → 新建一个集合
+      /* 导入：粘贴一份清单 → 新建一个集合。
+         ⚠️ 先把自己升到 **Pro**：Free 只许 1 个集合（本轮新增的产品分层，
+         见 js/collections.js 的 limit()），而这一步要验的是「导入真的走到了
+         数据层」，不是「Free 被拦」。Free 的拦截在下面「九」单开一节验。 */
+      ws.Entitlement.writeTier(ws.localStorage, 'pro');
       ds.querySelector('#btn-collections-import').dispatchEvent(new ws.MouseEvent('click', { bubbles: true }));
       chk(!ds.querySelector('#text-dialog').hidden, '「导入清单」弹出对话框');
       ds.querySelector('#text-dialog-text').value = 'poems-xx1-02\nnot-a-real-id';
@@ -704,3 +708,70 @@ setTimeout(() => {
     }, 60);
   }, 60);
 }, 60);
+
+/* ---------- 九、集合数量上限：Pro / Max 分层落地（本轮新增） ----------
+   用户 2026-09-17：「先把所有 pro, max 的功能做出来」。
+   上限是全站**唯一一处**回答「能建几个集合」的地方（js/collections.js 的 limit()），
+   拦在**数据层**而不是按钮上 —— 界面置灰不是边界（与 Entitlement.can 同一条纪律）。
+   单开一个 sandbox：entitlement.js + collections.js，与前面的测试互不干扰。 */
+setTimeout(function () {
+  const domT = new JSDOM('<!doctype html><html><body></body></html>',
+    { runScripts: 'dangerously', url: 'https://limit.test/' });
+  const wt = domT.window;
+  ['js/entitlement.js', 'js/collections.js'].forEach(f => {
+    const el = wt.document.createElement('script');
+    el.textContent = fs.readFileSync(path + f, 'utf8');
+    wt.document.body.appendChild(el);
+  });
+  const L = wt.ReciteCollections;
+  const E2 = wt.Entitlement;
+  const clearAll = () => {
+    L.list().slice().forEach(c => L.remove(c.id));
+    E2.clearTier(wt.localStorage);
+  };
+
+  setTimeout(function () {
+    chk(typeof L.limit === 'function' && typeof L.remaining === 'function',
+      'js/collections.js 暴露 limit() / remaining()');
+
+    clearAll();                                   // free（未登录）
+    chk(L.limit() === L.FREE_COLLECTIONS, 'free：上限 = ' + L.limit() + ' 个');
+    const f1 = L.create('free 第一个');
+    chk(f1 && f1.id, 'free 建第 1 个集合：成功');
+    const f2 = L.create('free 第二个');
+    chk(f2 && f2.error === 'E_LIMIT', 'free 建第 2 个：被拦（E_LIMIT，不是静默丢掉）');
+    const imp = L.importText('poems-xx1-01', '', wt.SITE_INDEX || []);
+    chk(imp.error === 'E_LIMIT' && imp.collection === null,
+      'free 满额时导入也被拦（与 create 同一条不变量，绝不悄悄丢一半）');
+
+    clearAll();
+    E2.writeTier(wt.localStorage, 'pro');
+    chk(L.limit() === L.PRO_COLLECTIONS, 'Pro：上限 = ' + L.limit() + ' 个');
+    let built = 0;
+    for (let i = 0; i < 25; i++) { const r = L.create('p' + i); if (r && r.id) built++; }
+    chk(built === L.PRO_COLLECTIONS, 'Pro 正好建到 ' + L.PRO_COLLECTIONS + ' 个就停（实际 ' + built + '）');
+
+    clearAll();
+    E2.writeTier(wt.localStorage, 'max');
+    chk(L.limit() === Infinity, 'Max：不限（limit() === Infinity）');
+    let b2 = 0;
+    for (let j = 0; j < 30; j++) { const r = L.create('m' + j); if (r && r.id) b2++; }
+    chk(b2 === 30, 'Max 连建 30 个全成功（实际 ' + b2 + '）');
+
+    /* 与内核同源：上限里的两个数字必须与 entitlement.js 的能力名对得上 ——
+       「限制写在 A 处、读取在 B 处」正是本项目反复修的那一类洞。 */
+    chk(L.PRO_COLLECTIONS === 20 && /自选清单 20 个/.test(E2.CAPS['collections.many'].name),
+      'Pro 的 20 个与能力表「' + E2.CAPS['collections.many'].name + '」是同一个数');
+    chk(L.FREE_COLLECTIONS === 1, 'Free 1 个（「不收回现有功能」：加进来的第一篇永远放得下）');
+
+    /* 拿不到权益内核时**不设限**（页脚本顺序不对 / 老缓存）——
+       否则症状是「本来能建 20 个的人突然建不了第二个」，且用户无法自查。 */
+    const saved = wt.Entitlement;
+    delete wt.Entitlement;
+    chk(L.limit() === Infinity, '读不到 Entitlement 时不设限（宁可不判，也不误拦）');
+    wt.Entitlement = saved;
+
+    console.log('\n' + (fails ? '❌ ' + fails + ' 项失败（含上限一节）' : '🎉 自选集合测试全部通过（含上限一节）'));
+    process.exit(fails ? 1 : 0);
+  }, 60);
+}, 120);

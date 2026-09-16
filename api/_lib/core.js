@@ -241,10 +241,14 @@ function featuresFor(cfg, tier) {
        read.aloud **一一对不上** —— 接口照常回 200，界面照着做，谁也发现不了）。
      · quiz.review 是 3 期新增的那一档（题库复习，归 Pro）。 */
   var base = ["recite.basic", "library.all", "read.aloud", "pinyin.helper", "export.progress"];
-  var pro = ["collections.many", "sync.multiDevice", "ai.explain", "export.paper",
+  var pro = ["collections.many", "sync.multiDevice", "export.paper",
              "profile.family", "quiz.review"];
-  var max = ["export.all", "ai.explain.big", "collections.unlimited",
+  var max = ["export.all", "collections.unlimited",
              "feihualing", "exam.paper"];
+  /* ⚠️ 这里**没有** ai.explain / ai.explain.big —— 已被删除（用户 2026-09-17：
+     「把需要收我 app 费用的功能删除」）。AI 讲解 / 纠音是每调一次都真花钱的
+     那一类，与「本站不收款」放在一起就是每用一次亏一次。客户端 CAPS 同步删除，
+     两端逐字对拍由 test/api.test.js 与 test/ops.test.js 守着。 */
   var out = base.slice();
   if (tier === "pro" || tier === "max") out = out.concat(pro);
   if (tier === "max") out = out.concat(max);
@@ -879,9 +883,10 @@ function gameAllowed(cfg, tier, cap) {
  *    重建不出来（题库里没这一条）→ 如实回 400 E_STALE，
  *    **不猜一个」** —— 猜的下场是「服务端判了另一道题，用户答对了却显示错」。
  *
- * ③ **计费只如实报，不假装** —— `charge` 默认 false（3 期没有定价）。
- *    打开它时按下 uid 真计数（`gameCharge`），并如实回 `counted:true`。
- *    在定价定下来之前，这里一个字都不许写成「已计入额度」。
+ * ③ **不假装计费** —— 本站**不收款**（用户 2026-09-17：不做收费流程），
+ *    所以 `charge` 恒为 false，如实回 `counted:false`、`note` 写明「免费不限次」。
+ *    `gameCharge()` 那份按 uid 计数的实现**保留**（万一将来要限次，形状已就位），
+ *    但**没有任何调用路径会打开它** —— 一个字都不许写成「已计入额度」。
  */
 function gameAnswer(deps, input, extra) {
   var cfg = deps.cfg, t = deps.now();
@@ -947,7 +952,7 @@ function gameAnswer(deps, input, extra) {
         counted: !!counted,
         note: charge
           ? (counted ? "这一次已计入额度。" : "这次没记上（存储不可用），如实告诉您。")
-          : "3 期还没有定价，这一次**不计入额度**（不假装扣费）。"
+          : "这一项**免费、不限次**，不计额度（本站不收款，也没有计费）。"
       });
     }
 

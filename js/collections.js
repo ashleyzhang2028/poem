@@ -72,6 +72,50 @@
   var NAME_MAX = 12;
   var DEFAULT_NAME = "我要背的";
 
+  /**
+   * 集合数量上限 —— **全站唯一一处**回答「这个用户能建几个集合」。
+   *
+   * 为什么在这里而不是在设置页：上限是**存储层的不变量**（用户手改存储、
+   * 或从别处调用 create 都绕不过），写在页面里就只能拦按钮、拦不住数据。
+   * 与 `Entitlement.can()` 同一条纪律 —— 界面的置灰不是边界。
+   *
+   * 层级对应（用户 2026-09-17 的 Pro / Max 口径）：
+   *   free 1 个 / pro `collections.many` 20 个 / max `collections.unlimited` 不限
+   *
+   * ⚠️ 与 js/entitlement.js 的 CAPS 键名同源 —— 那边改了门槛、这里跟着改；
+   *    `test/collections.test.js` 有断言把两个数字钉在一起。
+   */
+  var FREE_COLLECTIONS = 1;
+  var PRO_COLLECTIONS = 20;
+
+  function limit() {
+    var E = (typeof window !== "undefined" && window.Entitlement) || null;
+    /* ⚠️ 拿不到权益内核时**不设限**（返回 Infinity），不是按 free 算。
+       理由：这一层是**产品分层**，不是安全边界（用户手改存储就能改层级，
+       docs §2.4 已写明）；页面脚本顺序不对 / 老缓存时把内核读成 null，
+       若此时按 free 卡 1 个，症状就是「本来能建 20 个的人突然建不了第二个」——
+       一个由加载顺序引起的、用户无法自查的功能倒退。
+       「宁可不判，也不误拦」与 entitlement 里 `isOwner` 无存储时的兜底同一条口径。 */
+    if (!E || !E.identity) return Infinity;
+    var id = null;
+    try { id = E.identity({ backing: window.localStorage }); } catch (e) { id = null; }
+    if (!id) return Infinity;
+    /* ⚠️ 按 **tier** 判，不按 `can()` 判。
+       那两条能力带 `login:true`，走 `can()` 时「登录过了但会话刚过期」
+       会被判成 free —— 症状是「昨天还能建 20 个，今天一刷新只剩 1 个」。
+       而这里只是产品分层的软限（真正的边界是服务端），按已发放的层级判更稳。
+       能力表仍是同一个来源：门槛值取自 CAPS 的 minTier，不另抄一份。 */
+    var tier = id.tier;
+    if (tier === "max") return Infinity;
+    if (tier === "pro") return PRO_COLLECTIONS;
+    return FREE_COLLECTIONS;
+  }
+
+  /** 还能建几个（Infinity 表示不限） */
+  function remaining() {
+    return Math.max(0, limit() - read().collections.length);
+  }
+
   function now() { return Date.now(); }
 
   function uid() {
@@ -243,8 +287,18 @@
     return hit;
   }
 
+  /**
+   * 新建一个集合。**超上限时不建**，如实回原因（不抛、不静默截断）。
+   * @returns {Object} 成功回集合对象（带 `id`）；超限回
+   *   `{ error:"E_LIMIT", limit, count }` —— 用带错误码的对象而不是 null，
+   *   是为了让调用方能说清「为什么不给建」（`null` 说不清是上限还是别的原因）。
+   */
   function create(name) {
     var data = read();
+    var lim = limit();
+    if (data.collections.length >= lim) {
+      return { error: "E_LIMIT", limit: lim, count: data.collections.length };
+    }
     var col = { id: uid(), name: cleanName(name), createdAt: now(), items: [] };
     data.collections.push(col);
     write(data);
@@ -393,6 +447,12 @@
    * @param {Array}  [index] 站点索引：有它才认得出哪些 id 真的存在
    */
   function importText(text, name, index) {
+    /* 超上限时**不导入**：与 create 同一条不变量。用户手上一串清单导不进来，
+       要如实说清「是数量上限拦的」，不能悄悄丢一半。 */
+    if (read().collections.length >= limit()) {
+      return { collection: null, added: 0, dropped: 0,
+               error: "E_LIMIT", limit: limit() };
+    }
     var src = String(text == null ? "" : text).split(/\r?\n/);
     var known = null;
     var list = index || window.SITE_INDEX || [];
@@ -518,6 +578,10 @@
     KEY: KEY,
     DEFAULT_NAME: DEFAULT_NAME,
     NAME_MAX: NAME_MAX,
+    FREE_COLLECTIONS: FREE_COLLECTIONS,
+    PRO_COLLECTIONS: PRO_COLLECTIONS,
+    limit: limit,
+    remaining: remaining,
     cleanName: cleanName,
     list: function () { return read().collections; },
     get: function (id) { return read().collections.filter(function (c) { return c.id === id; })[0] || null; },
