@@ -708,12 +708,23 @@ const SETTINGS_HTML = [
 const settingsJs = read('js/settings.js');
 const NAV_SRC = read('js/settings-nav.js');
 
-/* 分组标题与入口标题共用一个声明块（`.settings-group-title, .settings-link-title`）——
-   字号 / 字重 / 颜色三个值只写一次。这里把它取出来，
-   下面的层级断言与 ui-consistency 那一对约定都从这一个来源读。 */
+/* 「一页里最大的那颗标题」这一档只写一次（Issue #163 第四轮）——
+   `.settings-group-title, .settings-link-title, .item-title`
+   共用一个声明块，字号 / 字重 / 颜色三个值只写一遍。
+   ⚠️ 主页「账号」那一角原先另有一个 `.account-entry-name`；它现在**不是独立一角**了：
+      账号那一行与四组入口共用 `.settings-link-title` 同一份稿子
+      （账号不再自己一张卡，见 §4.19），所以共用块里也就没有这个名字。这里把它取出来，
+   下面的层级断言与 ui-consistency 那一组约定都从这一个来源读。
+   ⚠️ 判据是「共用块里含这四角」，不是「选择器列表恰好等于这四角」——
+      以后再加一角（例如入口页的书名）不该让这一条变红；
+      它要守的是「只有一个来源」，不是「只许四处」。 */
+const SHARED_TITLE_SELECTORS = ['.settings-group-title', '.settings-link-title',
+  '.item-title'];
 function sharedTitleRule(code) {
-  const m = code.match(/\.settings-group-title,\s*\n?\.settings-link-title\s*\{([\s\S]{0,400}?)\}/);
-  return m ? m[1] : '';
+  const m = code.match(/\.settings-group-title,[\s\S]{0,200}?\{([\s\S]{0,400}?)\}/);
+  if (!m) return '';
+  const block = m[0].slice(0, m[0].indexOf('{'));
+  return SHARED_TITLE_SELECTORS.every(sel => block.indexOf(sel) !== -1) ? m[1] : '';
 }
 
 const pwaJs = read('js/pwa.js');
@@ -861,22 +872,75 @@ chk(!/seq-origin|shuffle-trans/.test(settingsJs),
 chk(!/js\/reader-core\.js/.test(SETTINGS_HTML), '设置页不加载阅读器引擎（只引档位定义）');
 // 分组标题的样式：与组内选项药丸区分开（字距 + 主标题档字号）
 // 需求（Issue #44 一轮 · 本次改口径）：分组标题**不再是 11px 的辅助标签**，
-// 而是与其他页卡片主标题同一档（Issue #163：『通用』『我的清单』这些
-// 卡片主标题要和设置主页那四张卡、集子卷名一样大）。
-// 与「页面顶部大标题」的层级关系不变：仍必须小于顶栏应用名（19px）。
+// 而是与其他页卡片主标题同一档。
+//
+// ⚠️ Issue #163 第四轮把「同一档」定死在 **17px** 上。前三轮定在 14px
+//    （= 集子索引页的卡头卷名），用户仍连着报「设置首页卡片里的标题
+//    还没变大」——因为他眼里的「集子 / 诗词标题」是 17px 那一档
+//    （卡头卷名 .group-name、列表篇名 .item-title、入口页书名、详情页标题），
+//    14px 落在「卡片主标题」与「辅助标签」（11~12.5px）之间，读起来还是标签。
+//
+// 这一档现在**四角读同一句**（写在 css/style.css 中部的共用块里）：
+//     .settings-group-title（二级页分组名）  .settings-link-title（主页入口标题）
+//       —— 主页账号那一行也用同一个名字（与四组入口共用一份稿子）
+//     .item-title（列表篇名）
+//     css/classic.css 的 .group-name（集子卡头卷名）
+// 下面这组断言判的是「这几处**逐位相同**」，不是「等于某几个类名」——
+// 以后再加一角（例如入口页书名）不该让守卫变红，改口径时才会红。
 const titleSize = (css.match(/\.settings-group-title\s*\{([\s\S]{0,600}?)\}/) || ['', ''])[1];
 chk(/letter-spacing/.test(titleSize) || /letter-spacing/.test(sharedTitleRule(css)),
   '分组标题有自己的字距（与组内选项区分，不是一列裸字）');
-// 字号 / 字重 / 颜色三个值现在与入口标题共用同一句，从共用块里取
+// 字号 / 字重 / 颜色三个值现在与另外几角共用同一句，从共用块里取
 const sharedTitle = sharedTitleRule(css);
 const fsMatch = sharedTitle.match(/font-size:\s*([\d.]+)px/);
 const titleFs = fsMatch ? parseFloat(fsMatch[1]) : NaN;
-chk(!!fsMatch && titleFs >= 14,
-  '分组标题是卡片主标题档（≥14px，实际 ' + (fsMatch ? fsMatch[1] + 'px' : '未取到') + '）');
+chk(!!fsMatch && titleFs >= 17,
+  '分组标题是卡片主标题档（≥17px，与集子卷名 / 列表篇名同一档，实际 ' +
+  (fsMatch ? fsMatch[1] + 'px' : '未取到') + '）');
 chk(/font-weight:\s*(600|700|bold)/.test(sharedTitle),
   '分组标题用主标题的字重（与集子卷名 / 入口标题同为 700）');
 chk(/color:\s*var\(--ink\)/.test(sharedTitle),
   '分组标题用正文主色 --ink（与集子卷名同一档）');
+/* 五处逐位相同 —— 这才是用户那句「和前面几个页面里集子或者诗词标题一样大」
+   的可判形式。少一处就是下一次「某一页看着还是小一号」的种子。 */
+(function titleSizeIsOneValue() {
+  const px = (src, prop) => {
+    const m = new RegExp(prop + ':\\s*([\\d.]+)px').exec(src);
+    return m ? m[1] : '';
+  };
+  const shared = sharedTitleRule(css);
+  const sharedFs = px(shared, 'font-size');
+  const sharedFw = px(shared, 'font-weight');
+  chk(!!sharedFs,
+    '卡片主标题那一档（字号 / 字重 / 颜色）在 css/style.css 里只有一个来源');
+  // 集子卡头卷名（另一张表：:root 变量跨不过文件边界，所以是平的约定）
+  const groupName = (classicCss.match(/\.group-name\s*\{([^}]*)\}/) || ['', ''])[1];
+  chk(px(groupName, 'font-size') === sharedFs && px(groupName, 'font-weight') === sharedFw,
+    '集子卡头卷名（.group-name）与设置页主标题逐位相同（实际 ' +
+    px(groupName, 'font-size') + '/' + px(groupName, 'font-weight') + ' vs ' +
+    sharedFs + '/' + sharedFw + '）');
+  // 列表篇名：字号 / 字重 / 颜色读共用块，自己那条只留字体族与字距
+  // ⚠️ 同名的规则有好几条（`.item.done .item-title`、共用块自己那条……），
+  //    这里只挑**单独成组**的那一条（选择器就是 `.item-title`）——
+  //    取第一条会拿到 `.item.done .item-title` 那一条（它本来就不该管字号）。
+  const itemTitleOwn = (css.match(/[^{}]*\.item-title\s*\{([^}]*)\}/g) || [])
+    .filter(chunk => chunk.split('{')[0].split(',').map(x => x.trim()).join(',') === '.item-title')
+    .map(chunk => chunk.slice(chunk.indexOf('{') + 1))
+    .join(';')
+    // 剥掉 CSS 注释：这条规则里正讲着「曾经写过 font-weight: 600」，
+    // 不剥注释会对着自己的说明判红（与 ui-consistency 里 strip() 同一条口径）。
+    .replace(/\/\*[\s\S]*?\*\//g, ' ');
+  chk(!!itemTitleOwn && !/font-size|font-weight|color:/.test(itemTitleOwn),
+    '列表篇名那条规则不再另写字号 / 字重 / 颜色（读共用块，只留字体族与字距）');
+  // 主页账号那一行：它是**清单里的一行**（Issue #163 第四轮「把这个按钮和其他按钮
+  // 放一起」），所以标题走的就是 .settings-link-title 那一角 ——
+  // 样式表里不该再有一个名叫 `.account-entry-name` 的第二来源。
+  chk(!/\.account-entry-name\s*\{/.test(css),
+    '主页账号那一行不再自带一份标题样式（读 .settings-link-title，与四组入口同档）');
+  // 反向样本：把共用块的 17 改小 → 这条判据必须红（否则它只是空规则）
+  chk(px(shared.replace('font-size: 17px', 'font-size: 14px'), 'font-size') !== sharedFs,
+    '这一档真的能被改坏（把共用块的 17px 改成 14px 时上面那些断言会红）');
+})();
 // 与「页面顶部大标题」的层级关系：顶栏应用名 19px，分组标题必须小于它。
 // ⚠️ 这里**只**锁「小于顶栏应用名」这一条。原先还锁了「小于组内选项文字
 //    13.5px」—— Issue #163 之后这条不再成立：分组标题是卡片主标题（14px），
@@ -901,9 +965,13 @@ const brandFs = maxFontSize(/\.brand-name-row\s*\{([\s\S]{0,500}?)\}/g);
 const optFs = maxFontSize(/\.settings-page \.seg button,[\s\S]{0,60}?\{([\s\S]{0,500}?)\}/g);
 chk(brandFs >= 17 && titleFs < brandFs,
   '分组标题（' + titleFs + 'px）小于页面顶部大标题（' + brandFs + 'px）');
-// 反向：分组标题也不许把选项文字盖过去 —— 差的必须是字重与颜色，不是字号
-chk(optFs >= 13 && Math.abs(titleFs - optFs) <= 1,
-  '分组标题（' + titleFs + 'px）与组内选项文字（' + optFs + 'px）同一档，主次靠字重与颜色分');
+// 反向：**选项文字不许比分组标题还大**，也不许与它「差不多大」到分不出主次。
+// ⚠️ Issue #163 第四轮把这一档从 14px 提到 17px 之后，原先那条
+//    「两者相差 ≤1px」的判据不再成立（也不该成立）：它当时是配合 14px 那一档
+//    写的（「刻意同档、靠字重与颜色分」）。现在的口径是**字号先分出主次**
+//    （17px 对 13.5px），字重与颜色再各加一档 —— 所以改判「选项文字 < 标题」。
+chk(optFs >= 13 && titleFs > optFs,
+  '分组标题（' + titleFs + 'px）大于组内选项文字（' + optFs + 'px），主次由字号 + 字重 + 颜色三档一起分');
 chk(!/\.settings-group-desc/.test(css), '样式里不再保留二级描述 .settings-group-desc');
 chk(!/settings-group-desc/.test(SETTINGS_HTML), '设置页 HTML 里不再有二级描述节点');
 
