@@ -260,13 +260,21 @@ console.log('\n=== 五、拼键只有一处；Family 缺席时退化 ===');
   eq(km.keys.progress, 'poem_recite_progress_v1::f-x', 'keyMap 给得出进度键');
   eq(km.keys.device, 'poem_device_prefs_v1', 'keyMap 里设备键不带后缀');
 
-  /* 源码：全站只有 Family.keyFor 一处拼 `::` 后缀 */
+  /* 源码：拼 `::` 后缀的地方**必须逐一列出来**，不许悄悄多一处。
+     ⚠️ 这条断言原先写「只有 family.js」。5.3 之后**多了一处**：
+        `js/sync-store.js` 的记账表（`poem_sync_seen_v1`）——
+        它**不在** `ProgressStore.KEYS` 里（那是同步层自己的簿记，不是六把域键之一），
+        所以走不了 `Family.keyFor` 的转发，只能在那一层里显式拼一次。
+        判据因此从「只有一个文件」改成「**就是这两个文件**」：
+        名单是白名单，多一个文件就红一次 —— 那正是这条断言要守的
+        （防的是「各处各拼一遍」，不是「一个字都不许拼」）。 */
   const files = fs.readdirSync(path + 'js').filter(f => /\.js$/.test(f));
   const splicers = files.filter(f => {
     const src = read('js/' + f).replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/^\s*\/\/.*$/gm, ' ');
     return /["']::["']|\+\s*["']::/.test(src) || /::\s*["']\s*\+/.test(src);
   });
-  eq(splicers.join(','), 'family.js', 'js/ 下拼 `::` 后缀的只有 family.js（别处不许各拼一遍）');
+  eq(splicers.sort().join(','), 'family.js,sync-store.js',
+    'js/ 下拼 `::` 后缀的只有 family.js 与 sync-store.js 的记账表（多一处就红）');
 
   /* 有子档案时写的是带后缀那把键 / Family 缺席时按老键读 */
   const sb5 = sandbox();

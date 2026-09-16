@@ -561,6 +561,142 @@ function me(deps) {
   });
 }
 
+/**
+ * 名册（子档案清单）—— **账号域，本该跨设备**。
+ *
+ * ## 它为什么在服务端有一份
+ *
+ * 一台平板上午小明读、下午小红读，晚上爸爸拿手机看小明的进度。
+ * 名册只在本机的话，手机根本不知道有「小明」这个人 —— 也就无法切过去。
+ * 所以名册与进度**一起上云**，但两者的**键不同域**：
+ *   · 名册  `family:v1`      —— `child_id = ''`（账号级，一份）
+ *   · 进度  `poem:<篇目>#<child>` —— `child_id = <孩子>`（每个孩子一份）
+ *
+ * ## ⚠️ 一处刻意的不对称：**它不参与判权**
+ *
+ * 本机那份名册由 `js/family.js` 自己写盘（它同时服务于**没登录**的用户 ——
+ * 离线单机也要能建多个孩子）。服务端这一份只做「另一个设备看得见」这一件事，
+ * 于是判权仍只有一处：`/api/me` 下发的 `plan`。
+ * 「这个账号里有几个孩子」**不是**权限，别把它读成权限。
+ */
+function familyGet(deps) {
+  var store = deps.store;
+  if (!deps.account) return Promise.resolve(err(401, "E_NO_SESSION", "还没有登录"));
+  return Promise.resolve(store.listProgress(deps.account.uid, "", 0)).then(function (rows) {
+    var row = null;
+    (rows || []).forEach(function (r) { if (r.poem_id === FAMILY_ROW_ID) row = r; });
+    return ok({
+      /* 没有这一行**不是错误** —— 那是「对方还没同步过名册」（新账号的常态）。
+         回一份空名册而不是 404：客户端据此知道「服务端还没有我这一份」，
+         于是推上去，而不是把本机名册清成空。 */
+      family: row && row.payload ? row.payload : { v: 1, at: "", profiles: [] },
+      updatedAt: row ? Number(row.updated_at) : 0,
+      serverTime: deps.now()
+    });
+  });
+}
+
+/**
+ * 写名册（`POST /api/family`）—— 与 `sync/push` **同一把闸**（Pro 起）。
+ *
+ * ⚠️ 不能绕开 `syncTierGate`：它写的就是云端那份进度表里的一行。
+ *    两把闸不同的下场是「界面说 Free 也能跨设备」（因为家庭档案那一项写着 Pro）
+ *    而实际推得上去 —— 正是反复踩过的「限制写在 A 处、读取在 B 处」。
+ */
+function familyPut(deps, input) {
+  var store = deps.store, cfg = deps.cfg, t = deps.now(), input2 = input || {};
+  var gate = syncTierGate(deps, input2);
+  function inner() {
+    var g = deps.limiter.check(cfg, "device", "family:" + String(input2.deviceId || "unknown"), t);
+    if (!g.ok) return Promise.resolve(err(429, "E_RATE_DEVICE", "同步太频繁了，请稍后再试", { retryAfter: g.retryAfter }));
+    deps.limiter.hit("device", "family:" + String(input2.deviceId || "unknown"), t);
+    var clean = sanitizeFamily(input2.family);
+    return Promise.resolve(store.putProgress(deps.account.uid, "", [{
+      poem_id: FAMILY_ROW_ID,
+      payload: clean,
+      updated_at: t,
+      deleted: 0
+    }])).then(function () { return ok({ family: clean, serverTime: t }); });
+  }
+  if (gate) return Promise.resolve(gate).then(function (bad) { return bad || inner(); });
+  return inner();
+}
+
+/* -------------------------------------------------- 子档案（跨设备分档案） */
+
+/**
+ * 子档案 id 的**服务端口径**（`docs/architecture.md` §5.5 / §5.2 ④）。
+ *
+ * ## 名字为什么叫 child 而不是 profile
+ *
+ * 客户端那边这东西叫「子档案」（`js/family.js`），库这一列叫 `child_id`。
+ * 两个名字指的是同一件事：**账号下的一个孩子 + 一份自己的进度**。
+ * 孩子**不建独立账号**（`docs/auth-design.md` §2.1）—— 只是展示名，
+ * 因此这里**不做任何权限判定**：它不是身份，是「哪一份数据」。
+ *
+ * ## 三条铁律
+ *
+ * 1. **空串 = 第一个孩子那一份**，与 `js/family.js` 的无后缀老键**逐字同源**。
+ *    分家前那份数据的 `child_id` 就是空串，不是 `::p1`、不是 `default`。
+ *    这是**一次真的数据库迁移**里最容易做错的一处：认领成别的值，
+ *    老用户的进度会在升级后「看着空了」（数据还在，只是没人再指得到它）。
+ *
+ * 2. **长度与字符集都收窄**：id 是客户端生成的，服务端只当它是**一个键**，
+ *    当不了任何权限。但它会进 URL 与 SQL 参数，所以必须限长、去掉空白，
+ *    且只允许 `[A-Za-z0-9_-]` —— 不这么做的下场是「一个带引号的 id
+ *    能在 PostgREST 的查询串里插一段」（构造出来的话，那个 eq. 就不再是等值比较）。
+ *
+ * 3. **不认识的一律落回空串**（而不是报错、也不是「替他建一个」）：
+ *    报错会让一份脏数据把整个同步打死；替他建一个则会造出**永远没人用的行**。
+ */
+function childId(raw) {
+  var c = String(raw == null ? "" : raw).trim();
+  if (!c) return "";
+  if (c.length > 64) return "";
+  if (!/^[A-Za-z0-9_-]+$/.test(c)) return "";
+  return c;
+}
+
+/** 名册在 progress 表里的位置（账号级：`child_id = ''`）—— 与 js/family.js 同源 */
+var FAMILY_ROW_ID = "family:v1";
+
+/**
+ * 导出**一个账号下所有孩子**的进度（注销用）。
+ *
+ * ⚠️ 为什么不能只 `listProgress(uid, child, 0)` 一次：那只能拿到**一个**档案的那一份。
+ *    注销之后再没有第二次机会，少导出一个孩子的进度就是**永久丢失** ——
+ *    所以这里逐个档案地取。取不漏的判据在测试里：两个各写一份、注销，
+ *    导出里两个孩子的记录都在。
+ */
+function exportAllProgress(deps, uid) {
+  var store = deps.store;
+  function one(child) {
+    return Promise.resolve(store.listProgress(uid, child, 0)).then(function (rows) {
+      return (rows || []).map(function (r) {
+        return { poem_id: r.poem_id, child_id: child, payload: r.payload, updated_at: r.updated_at, deleted: r.deleted };
+      });
+    });
+  }
+  if (!store || !store.listProgress) return Promise.resolve([]);
+  /* 名册那一行（账号级）一定在 `''` 里，所以它至少会被取一次。
+     其余的孩子从名册里读 —— 名册是**唯一**知道「这个账号有几个孩子」的地方。 */
+  return one("").then(function (rows) {
+    var reg = null;
+    (rows || []).forEach(function (r) {
+      if (r.poem_id === FAMILY_ROW_ID && r.payload && Array.isArray(r.payload.profiles)) reg = r.payload;
+    });
+    var ids = reg ? reg.profiles.map(function (p) { return childId(p && p.id); }).filter(Boolean) : [];
+    /* 去重（脏名册里可能两条同 id）且不要重复取空串那一份 */
+    var seen = {};
+    ids = ids.filter(function (id) { if (seen[id]) return false; seen[id] = true; return true; });
+    return Promise.resolve(ids.reduce(function (chain, id) {
+      return chain.then(function (all) {
+        return one(id).then(function (more) { return all.concat(more); });
+      });
+    }, Promise.resolve(rows || [])));
+  });
+}
+
 /* -------------------------------------------------------- 同步 */
 
 /**
@@ -625,12 +761,18 @@ function syncPullInner(deps, input) {
   var store = deps.store, cfg = deps.cfg, t = deps.now();
   if (!deps.account) return Promise.resolve(err(401, "E_NO_SESSION", "还没有登录"));
   var since = Number(input.since) || 0;
+  var child = childId(input.child);
   var g = deps.limiter.check(cfg, "device", "pull:" + String(input.deviceId || "unknown"), t);
   if (!g.ok) return Promise.resolve(err(429, "E_RATE_DEVICE", "同步太频繁了，请稍后再试", { retryAfter: g.retryAfter }));
   deps.limiter.hit("device", "pull:" + String(input.deviceId || "unknown"), t);
 
-  return Promise.resolve(store.listProgress(deps.account.uid, since)).then(function (rows) {
+  return Promise.resolve(store.listProgress(deps.account.uid, child, since)).then(function (rows) {
     return ok({
+      /* ⚠️ 回包里带上 `child`：客户端据此分辨「这一份是谁的」。
+         少了它，拉回来的数据会被写进**当前选中**那个孩子的盘上 ——
+         而拉的时候选中的可能是另一个（切换发生在请求在途时），
+         症状是「两个孩子的进度混了」，且只在慢网络下偶发。 */
+      child: child,
       recs: (rows || []).map(function (r) {
         return { id: r.poem_id, payload: r.payload, updatedAt: Number(r.updated_at), deleted: !!r.deleted };
       }),
@@ -658,6 +800,7 @@ function syncPushInner(deps, input) {
   var g = deps.limiter.check(cfg, "device", "push:" + String(input.deviceId || "unknown"), t);
   if (!g.ok) return Promise.resolve(err(429, "E_RATE_DEVICE", "同步太频繁了，请稍后再试", { retryAfter: g.retryAfter }));
 
+  var child = childId(input.child);
   var recs = Array.isArray(input.recs) ? input.recs : [];
   if (recs.length > 2000) return Promise.resolve(err(413, "E_TOO_MANY", "一次推的条数太多了"));
 
@@ -669,7 +812,7 @@ function syncPushInner(deps, input) {
     if (!pid || !isFinite(ts) || ts <= 0) { dropped++; return; }
     clean.push({
       poem_id: pid,
-      payload: sanitizePayload(r.payload),
+      payload: sanitizePayload(r.payload, pid),
       updated_at: Math.round(ts),
       deleted: r.deleted ? 1 : 0
     });
@@ -678,8 +821,8 @@ function syncPushInner(deps, input) {
 
   deps.limiter.hit("device", "push:" + String(input.deviceId || "unknown"), t);
 
-  return Promise.resolve(store.putProgress(deps.account.uid, clean)).then(function () {
-    return ok({ applied: clean.length, conflicts: [], serverTime: t });
+  return Promise.resolve(store.putProgress(deps.account.uid, child, clean)).then(function () {
+    return ok({ applied: clean.length, child: child, conflicts: [], serverTime: t });
   });
 }
 
@@ -689,9 +832,19 @@ function syncPushInner(deps, input) {
  *    并且把长度与数值范围卡死 —— 否则一个坏客户端能把 JSON 塞成任意大小，
  *    免费档那 500MB 与 5GB 出口流量会被人一夜刷爆（docs §4.3 第 3 条）。
  */
-function sanitizePayload(p) {
+function sanitizePayload(p, poemId) {
   var out = {};
   if (!p || typeof p !== "object") return out;
+
+  /* 名册那一行（`family:v1`）是**另一种载荷** —— 它不是一篇诗的背诵档案。
+     ⚠️ 走同一条白名单的下场：`sanitizePayload` 不认 `profiles`，
+        于是名册推上去变成 `{}`，另一台设备读到的名册是空的 ——
+        症状不是报错，是「在平板建的孩子，手机上根本看不见」。
+     所以这里按 `poem_id` 分岔，而不是放宽那条白名单（放宽等于让一篇诗的
+     档案能塞任意字段，那正是它要挡的）。 */
+  if (poemId === "family:v1") return sanitizeFamily(p);
+
+  if (typeof p.level === "number") out.level = Math.max(0, Math.min(99, Math.round(p.level)));
   if (typeof p.level === "number") out.level = Math.max(0, Math.min(99, Math.round(p.level)));
   if (typeof p.nextReviewAt === "number") out.nextReviewAt = Math.max(0, Math.round(p.nextReviewAt));
   if (typeof p.learned === "boolean") out.learned = p.learned;
@@ -705,6 +858,50 @@ function sanitizePayload(p) {
       return r;
     }).filter(Boolean);
   }
+  return out;
+}
+
+/**
+ * 名册载荷的白名单化（`family:v1` 那一行）—— 与 `js/family.js` 的盘上形状同源。
+ *
+ * ```
+ * { v:1, at:"f-...", profiles:[{ id, nickname, avatar:{char,ink}, createdAt }] }
+ * ```
+ *
+ * 收得比进度那一份还紧，理由是它**跨设备可写**（谁登录谁就能推）：
+ *   · 档案数封顶 **200** —— `js/family.js` 的上限是 Max 180，留出余量；
+ *     不封顶的话，一份名册能把免费档那 500MB 撑爆（与进度白名单同一条理由）。
+ *   · 昵称截 12 字（与客户端 `NAME_MAX` 同值）、头像字符截 2 字，
+ *     颜色只收 `#rrggbb` —— 头像那两个字会进 DOM，长与形状都得收窄。
+ *   · `id` 用与 `childId()` **同一把尺子**（同一个值要当键用，两套规则就有一天对不上）。
+ *   · **不认的档案整条丢掉**，但**不因此让整份名册失败** ——
+ *     一份脏名册把同步打死，比少一个孩子更糟。
+ */
+function sanitizeFamily(p) {
+  var out = { v: 1, at: childId(p && p.at), profiles: [] };
+  var list = (p && Array.isArray(p.profiles)) ? p.profiles.slice(0, 200) : [];
+  list.forEach(function (q) {
+    if (!q || typeof q !== "object") return;
+    var id = childId(q.id);
+    if (!id) return;
+    var name = String(q.nickname == null ? "" : q.nickname).trim().slice(0, 12);
+    var av = (q.avatar && typeof q.avatar === "object") ? q.avatar : {};
+    var ink = String(av.ink == null ? "" : av.ink);
+    out.profiles.push({
+      id: id,
+      nickname: name,
+      avatar: {
+        char: String(av.char == null ? "" : av.char).slice(0, 2),
+        ink: /^#[0-9a-fA-F]{6}$/.test(ink) ? ink : ""
+      },
+      createdAt: Number(q.createdAt) > 0 ? Math.round(Number(q.createdAt)) : 0
+    });
+  });
+  /* 选中的那个必须真的在名册里 —— 不在就落回第一条（与客户端 read() 同款）。
+     不这么做的话，名册里 `at` 指向一个已被删除的孩子，另一台设备切过去
+     会看到一份空进度，且**没人知道该看谁的**。 */
+  var has = out.profiles.some(function (q) { return q.id === out.at; });
+  if (!has) out.at = out.profiles.length ? out.profiles[0].id : "";
   return out;
 }
 
@@ -1049,13 +1246,18 @@ function gameCharge(deps, uid, cap, t) {
   var month = new Date(t).toISOString().slice(0, 7);     // YYYY-MM
   var rowId = "game-quota:" + cap;
   var used = 0;
-  return Promise.resolve(store.listProgress(uid, 0)).then(function (rows) {
+  /* ⚠️ 额度记在哪一份？**记在账号那一行（`child_id = ''`），不记在孩子的进度里** ——
+     额度是「这个账号这个月用了几次」的账，不是孩子背了多少首。
+     记进当前孩子那一份的下场：换个孩子接着刷，额度跟着清零。
+     这一条与「不新开一张表」那条判断同源：它借的是 progress 表的位置，
+     但**归属是账号级的**，于是这里显式写死空串，不跟着子档案走。 */
+  return Promise.resolve(store.listProgress(uid, "", 0)).then(function (rows) {
     (rows || []).forEach(function (r) {
       if (r && r.poem_id === rowId && r.payload && r.payload.month === month) {
         used = Number(r.payload.used) || 0;
       }
     });
-    store.putProgress(uid, [{
+    store.putProgress(uid, "", [{
       poem_id: rowId,
       payload: { v: 1, cap: cap, month: month, used: used + 1 },
       updated_at: t,
@@ -1082,14 +1284,17 @@ function accountDelete(deps, input) {
   if (!g.ok) return Promise.resolve(err(429, "E_RATE_DEVICE", "操作太频繁了，请稍后再试", { retryAfter: g.retryAfter }));
   deps.limiter.hit("device", "del:" + String(input.deviceId || "unknown"), t);
 
-  return Promise.resolve(store.listProgress(uid, 0)).then(function (rows) {
+  /* ⚠️ 注销导出的必须是**所有孩子**的那一份，不是「当前那个」。
+     注销之后再没有第二次机会，少导出一个孩子的进度就是**永久丢失**。
+     所以这里逐个档案地取（`listChildren`），而不是只取当前选中的那一个。 */
+  return Promise.resolve(exportAllProgress(deps, uid)).then(function (rows) {
     // 导出的是**服务端这一份**（本机那一份由前端自己导出，两边都在用户手里）
     var dump = {
       v: 1,
       exportedAt: t,
       uid: uid,
       recs: (rows || []).map(function (r) {
-        return { id: r.poem_id, payload: r.payload, updatedAt: Number(r.updated_at), deleted: !!r.deleted };
+        return { id: r.poem_id, child: r.child_id || "", payload: r.payload, updatedAt: Number(r.updated_at), deleted: !!r.deleted };
       })
     };
     return Promise.resolve(store.deleteProgress(uid))
@@ -1119,6 +1324,11 @@ module.exports = {
   me: me,
   syncPull: syncPull,
   syncPush: syncPush,
+  familyGet: familyGet,
+  familyPut: familyPut,
+  childId: childId,
+  sanitizeFamily: sanitizeFamily,
+  FAMILY_ROW_ID: FAMILY_ROW_ID,
   accountDelete: accountDelete,
   gameAnswer: gameAnswer,
   gameAllowed: gameAllowed,
