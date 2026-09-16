@@ -8,7 +8,7 @@
  *   /settings/general/  通用     —— 用户名 / 头像印记 / 账号 / 数据管理
  *   /settings/recite/   背诵     —— 学段 / 年级 / 学期 / 范围 / 数量 + 复习算法
  *   /settings/lists/    我的清单 —— 自选背诵的增删改查
- *   /settings/reader/   阅读与朗读 —— 注音总开关 + 五档连读
+ *   /settings/reader/   朗读     —— 自动注音 + 五档连读范围
  *
  * 这一层守三件事（都是「拆页会静默出错」的那类）：
  *   一、结构：四张页合起来仍是原来那六组、每件控件**只在一页**上
@@ -77,11 +77,17 @@ const NAV = read('js/settings-nav.js');
         '控件 ' + sel + ' 只在「' + owner + '」页（实际：' + (pagesWithIt.join(',') || '哪一页都没有') + '）');
     });
   });
-  // 分组：四张页合起来仍是原来那六组，分类与顺序一个字没改
+  // 分组：四张页合起来是五组（Issue #163 把「阅读辅助 + 朗读播放」并成一组「朗读」），
+  // 前四组与顺序一个字没改。
   const titles = ['general', 'recite', 'lists', 'reader']
     .flatMap(k => [...SRC[k].matchAll(/aria-labelledby="grp-([a-z]+)"/g)].map(m => m[1]));
-  chk(titles.join(',') === 'general,recite,algo,lists,reader,play',
-    '四张页合起来仍是原六组、原顺序（实际 ' + titles.join(',') + '）');
+  chk(titles.join(',') === 'general,recite,algo,lists,reader',
+    '四张页合起来是原六组并成五组、顺序不变（实际 ' + titles.join(',') + '）');
+  // Issue #163：两条只有一条设置的组不再各占一个组标题 ——
+  // 「阅读辅助 + 朗读播放」并成「朗读」一组，组标题只留一个。
+  chk(/aria-labelledby="grp-reader"[\s\S]*?<\/section>/.test(SRC.reader) &&
+      !/aria-labelledby="grp-play"/.test(SRC.reader),
+    '「朗读」页只有一组（原「阅读辅助」「朗读播放」两个组标题并成一个）');
   // 主页不再是「一堆控件里的一页」：它没有分组，只有入口清单
   chk(!/aria-labelledby="grp-/.test(SRC.index), '主页不再有设置分组（只有入口清单）');
   chk(!/id="input-username"|id="seg-stage"|id="seg-play"|id="collections-list"/.test(SRC.index),
@@ -122,7 +128,7 @@ const NAV = read('js/settings-nav.js');
   // 页面名各自不同：用户得知道自己在哪一层
   const pageNames = ['index', 'general', 'recite', 'lists', 'reader']
     .map(k => (SRC[k].match(/data-page="([^"]+)"/) || [])[1]);
-  chk(pageNames.join(',') === '设置,通用,背诵,我的清单,阅读与朗读',
+  chk(pageNames.join(',') === '设置,通用,背诵,我的清单,朗读',
     '五张页的页名各不相同且如实：' + pageNames.join(' / '));
   chk(new Set(pageNames).size === 5, '五张页的页名不重复（否则「返回上一页」会让人分不清层）');
 }

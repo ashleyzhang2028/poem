@@ -9,7 +9,7 @@
  *     /settings/general/   通用     （用户名 / 头像印记 / 账号 / 数据管理）
  *     /settings/recite/    背诵     （学段 / 年级 / 学期 / 范围 / 数量 / 算法 / 进度总览）
  *     /settings/lists/     我的清单 （自选背诵的增删改查）
- *     /settings/reader/    阅读与朗读（注音总开关 + 五档连读）
+ *     /settings/reader/    朗读     （自动注音 + 五档连读范围）
  *
  * 这一份文件只做**渲染**两件事：
  *   · 主页那四条入口（一组一件事、点进去是那一页）；
@@ -33,7 +33,7 @@
 (function () {
   "use strict";
 
-  /** 六组 → 二级页的对照表（主页清单与各二级页共用这一份） */
+  /** 组 → 二级页的对照表（主页清单与各二级页共用这一份） */
   var GROUPS = [
     {
       key: "general",
@@ -57,8 +57,8 @@
     {
       key: "reader",
       href: "/settings/reader/",
-      title: "阅读与朗读",
-      desc: "自动注音 · 连读方式"
+      title: "朗读",
+      desc: "自动注音 · 连读范围"
     }
   ];
 

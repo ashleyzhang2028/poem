@@ -732,29 +732,32 @@ chk(settingsHtml.indexOf('class="foot settings-foot"') !== -1, '设置主页底�
 chk(/data-back="\/settings\/"/.test(read('settings/general/index.html')),
   '二级页用 data-back 声明上一层（js/chrome.js 读它）');
 
-// 需求（Issue #114 第三、二条 + 可切换复习算法那一轮）：
-// 设置项多了以后按「这条设置管着谁」归类 —— 共六组：
+// 需求（Issue #114 第三、二条 + 可切换复习算法那一轮 + Issue #163 精简）：
+// 设置项按「这条设置管着谁」归类 —— 共五组：
 //   通用     全站都吃（用户名、数据备份 / 清空）
 //   背诵     只决定「今天背哪几首」（学段 / 年级 / 学期 / 范围 / 数量 / 进度入口）
 //             —— 原「古诗词背诵」改名，它本来就不只作用于古诗词
 //   我的清单  用户自己那份清单（自选背诵的增删改查）—— Issue #114 第二条搬进来的
 //   复习算法  决定「下次什么时候复习」（四张模型 4 选 1）
-//   阅读辅助  打开一篇时看不看得到拼音（注音总开关）
-//   朗读播放  连读时怎么念（五档档位）
-chk((SETTINGS_HTML.match(/class="settings-group"/g) || []).length === 6,
-  '四张设置页合起来仍是六组：通用 / 背诵 / 复习算法 / 我的清单 / 阅读辅助 / 朗读播放');
+//   朗读     打开一篇时怎么念 / 看不看得到拼音（注音总开关 + 五档连读范围）
+//             —— Issue #163：原「阅读辅助」与「朗读播放」各只有一条设置，
+//             两个组标题 + 四行说明只为两条设置服务，并成一组「朗读」
+chk((SETTINGS_HTML.match(/class="settings-group"/g) || []).length === 5,
+  '四张设置页合起来是五组：通用 / 背诵 / 复习算法 / 我的清单 / 朗读');
 chk(/settings-group-title[^>]*>复习算法</.test(SETTINGS_HTML), '有「复习算法」分组标题');
 chk(/settings-group-title[^>]*>通用</.test(SETTINGS_HTML), '有「通用」分组标题');
 chk(/settings-group-title[^>]*>背诵</.test(SETTINGS_HTML), '有「背诵」分组标题');
 chk(/settings-group-title[^>]*>我的清单</.test(SETTINGS_HTML), '有「我的清单」分组标题');
-chk(/settings-group-title[^>]*>阅读辅助</.test(SETTINGS_HTML), '有「阅读辅助」分组标题');
-chk(/settings-group-title[^>]*>朗读播放</.test(SETTINGS_HTML), '有「朗读播放」分组标题');
+chk(/settings-group-title[^>]*>朗读</.test(SETTINGS_HTML), '有「朗读」分组标题');
+chk(!/settings-group-title[^>]*>阅读辅助</.test(SETTINGS_HTML) &&
+    !/settings-group-title[^>]*>朗读播放</.test(SETTINGS_HTML),
+  '不再有「阅读辅助」「朗读播放」两个组标题（Issue #163 并成「朗读」）');
 // 分组的**顺序**也是分类的一部分：清单紧跟在「背诵」之后
-//（自选篇目就是跟着背诵走的），阅读 / 朗读两个偏好排在最后
+//（自选篇目就是跟着背诵走的），朗读那一条偏好排在最后
 {
   const order = [...SETTINGS_HTML.matchAll(/aria-labelledby="grp-([a-z]+)"/g)].map(m => m[1]);
-  chk(order.join(',') === 'general,recite,algo,lists,reader,play',
-    '六组的先后顺序为 通用 → 背诵 → 复习算法 → 我的清单 → 阅读辅助 → 朗读播放（实际 ' + order.join(',') + '）');
+  chk(order.join(',') === 'general,recite,algo,lists,reader',
+    '五组的先后顺序为 通用 → 背诵 → 复习算法 → 我的清单 → 朗读（实际 ' + order.join(',') + '）');
 }
 // 分组要真的装对东西：只给背诵用的选项不能落在「通用」里
 const generalBlock = (SETTINGS_HTML.match(/aria-labelledby="grp-general"[\s\S]*?<\/section>/) || [''])[0];
@@ -777,7 +780,7 @@ chk(/id="collections-list"/.test(listsBlock) && /id="btn-collections-import"/.te
 // 搬过来之后不能两边都留着：首页那张折叠卡必须真的没了
 chk(!/id="collections-section"/.test(html) && !/id="btn-collections"/.test(html),
   '首页不再有「自选背诵」折叠卡（整块搬进设置，不留两处入口）');
-chk(/id="seg-helper"/.test(readerBlock), '「阅读辅助」组含注音总开关');
+chk(/id="seg-helper"/.test(readerBlock), '「朗读」组含注音总开关');
 
 // 需求（Issue #69 后续 A）：连读档位必须在设置页有显式单选项入口。
 // 原先还把「圆键长按 / 右键也能调」这段复述在组内（B），#120 把那块
@@ -785,12 +788,15 @@ chk(/id="seg-helper"/.test(readerBlock), '「阅读辅助」组含注音总开�
 // main）时发现这条断言一直亮红，是本 PR 里把「不指点操作」的那半段放回了本组
 // （只讲圆键长按 / 右键弹出同一个菜单，不再教手势）。这条断言因此改成正向钉住：
 // 组内确实写回了「长按 / 右键」，但只说圆键，不再重复讲手机上怎么按。
-const playBlock = (SETTINGS_HTML.match(/aria-labelledby="grp-play"[\s\S]*?<\/section>/) || [''])[0];
-chk(!!playBlock, '「朗读播放」分组能取到');
-chk(/id="seg-play"/.test(playBlock), '「朗读播放」组有五档单选项容器');
-chk(/长按 \/ 右键/.test(playBlock),
-  '「朗读播放」组说明圆键长按 / 右键弹出的是同一个菜单（Issue #122 把 #120 误删的这半段放回）');
-chk(!/长按约半秒/.test(playBlock), '同一组里不再重复教手势怎么按（只说手势叫什么，不说按多久）');
+// Issue #163：原来两个组标题并成一个「朗读」，五档单选项与注音开关同组；
+// 「圆键长按 / 右键弹同一个菜单」那半段说明也一并撤掉 —— 两条设置的组
+// 不该再配三行操作指导（用户原话：能省则省）。
+chk(/id="seg-play"/.test(readerBlock), '「朗读」组有五档单选项容器');
+/* 剥掉 HTML 注释再判：源码注释里仍在说明「这一组原先只存在于圆键菜单里」
+   （那是给维护者看的历史），用户可见处一个字都不教手势。 */
+const readerBlockVis = readerBlock.replace(/<!--[\s\S]*?-->/g, ' ');
+chk(!/长按|右键/.test(readerBlockVis),
+  '「朗读」组里不再教圆键手势（Issue #163：设置页不再啰嗦操作说明）');
 // 档位定义必须同源：设置页与阅读器都读 js/play-modes.js，不得各写一份
 chk(/js\/play-modes\.js/.test(SETTINGS_HTML), '设置页加载 js/play-modes.js（与阅读器同源）');
 chk(/window\.PlayModes/.test(settingsJs) && /PM*\.(read|LIST|write|of)\b/.test(settingsJs),

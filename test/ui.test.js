@@ -231,7 +231,7 @@ setTimeout(() => {
   chk(!!srecite.querySelector('#seg-term'), '学期选择在「背诵」页');
   chk(!!srecite.querySelector('#grade-chips'), '年级选择在「背诵」页');
   chk(srecite.querySelectorAll('#grade-chips button').length === 6, '「背诵」页默认小学显示 6 个年级按钮');
-  // 需求（本次）：一页里五个组合（学段 / 学期 / 背诵范围 / 阅读辅助 / 每日数量）
+  // 需求（本次）：一页里五个组合（学段 / 学期 / 背诵范围 / 注音 / 每日数量）
   // 与「年级」用同一套选中语言 —— 每行都恰好一个选中项，不再出现「这行选了、那行没选」的错觉。
   // ⚠️ 二级页之后这六个组合不再同住一页：背诵三项在「背诵」页、
   //    注音在「阅读与朗读」页，所以要按页取（同一条判据仍成立）。
@@ -241,7 +241,7 @@ setTimeout(() => {
   };
   const comboPages = [
     ['背诵', srecite, ['#seg-stage', '#seg-term', '#seg-scope', '#seg-count', '#grade-chips']],
-    ['阅读与朗读', sreader, ['#seg-helper']]
+    ['朗读', sreader, ['#seg-helper']]
   ];
   chk(comboPages.every(([, doc, sels]) => sels.every(sel => activeOne(doc, sel))),
     '每个组合都恰好一个选中项（学段/学期/范围/数量/年级 · 注音）');
@@ -257,24 +257,26 @@ setTimeout(() => {
   //   背诵      学段 / 年级 / 学期 / 范围 / 数量 / 进度总览
   //   复习算法   四张模型 4 选 1（决定「下次什么时候复习」）
   //   我的清单   自选背诵：导入 / 导出 / 改名 / 删除 / 整组移出 / 调顺序
-  //   阅读辅助   注音总开关
-  //   朗读播放   五档连读方式
+  //   朗读       自动注音 + 五档连读范围（Issue #163：原先的「阅读辅助」与
+  //              「朗读播放」各只有一条设置，两个组标题并成一个）
   // 二级页（Issue #132 后续）不再改变**分组**，只是把它们摊到三张页上：
   //   通用 → /settings/general/      背诵 + 复习算法 → /settings/recite/
-  //   我的清单 → /settings/lists/    阅读辅助 + 朗读播放 → /settings/reader/
+  //   我的清单 → /settings/lists/    朗读 → /settings/reader/
   const groupTitlesOf = doc => [...doc.querySelectorAll('#settings-page .settings-group')]
     .map(g => (g.querySelector('.settings-group-title') || {}).textContent);
   chk(groupTitlesOf(sgeneral).join('/') === '通用', '「通用」页只有一组：通用');
   chk(groupTitlesOf(srecite).join('/') === '背诵/复习算法',
     '「背诵」页是两组：背诵 + 复习算法（实际 ' + groupTitlesOf(srecite).join('/') + '）');
   chk(groupTitlesOf(slists).join('/') === '我的清单', '「我的清单」页只有一组：我的清单');
-  chk(groupTitlesOf(sreader).join('/') === '阅读辅助/朗读播放',
-    '「阅读与朗读」页是两组：阅读辅助 + 朗读播放（实际 ' + groupTitlesOf(sreader).join('/') + '）');
-  // 四张页合起来仍是原来那六组，顺序不变 —— 拆页不该顺手改分类
+  chk(groupTitlesOf(sreader).join('/') === '朗读',
+    '「朗读」页只有一组（Issue #163：原「阅读辅助 + 朗读播放」并成「朗读」，实际 ' +
+    groupTitlesOf(sreader).join('/') + '）');
+  // 四张页合起来：前四组与顺序不变 —— 拆页不该顺手改分类；
+  // 「阅读辅助 + 朗读播放」两条各只有一条设置的组并成一组「朗读」（Issue #163）。
   const allGroupTitles = [...groupTitlesOf(sgeneral), ...groupTitlesOf(srecite),
     ...groupTitlesOf(slists), ...groupTitlesOf(sreader)];
-  chk(allGroupTitles.join('/') === '通用/背诵/复习算法/我的清单/阅读辅助/朗读播放',
-    '四张二级页合起来仍是六组、顺序不变（实际 ' + allGroupTitles.join('/') + '）');
+  chk(allGroupTitles.join('/') === '通用/背诵/复习算法/我的清单/朗读',
+    '四张二级页合起来是五组、顺序不变（实际 ' + allGroupTitles.join('/') + '）');
   // 需求（本次）：分组标题下的二级描述全部删除，标题下方直接就是选项
   chk([sgeneral, srecite, slists, sreader].every(doc =>
     [...doc.querySelectorAll('.settings-group')].every(g => !g.querySelector('.settings-group-desc'))),
@@ -299,8 +301,8 @@ setTimeout(() => {
   // 导入 / 导出用的纯文本对话框也跟着那一页走
   chk(!!slists.querySelector('#text-dialog') && !!slists.querySelector('#text-dialog-text'),
     '「我的清单」页有导入 / 导出用的纯文本对话框');
-  chk(grpOf(sreader, '#seg-helper') === '阅读辅助', '注音总开关归到「阅读辅助」组');
-  chk(grpOf(sreader, '#seg-play') === '朗读播放', '连读档位归到「朗读播放」组');
+  chk(grpOf(sreader, '#seg-helper') === '朗读', '注音总开关归到「朗读」组');
+  chk(grpOf(sreader, '#seg-play') === '朗读', '连读档位归到「朗读」组');
   chk(grpOf(srecite, '#seg-algo') === '复习算法', '复习算法选择归到「复习算法」组');
   // 只给背诵用的选项不能再出现在「通用」组里（这才是这次需求的重点）
   // 「通用」组的五项：用户名 / 头像印记 / 账号 / 跨设备同步 / 数据管理
