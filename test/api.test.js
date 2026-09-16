@@ -544,7 +544,41 @@ async function main() {
     const noPush = await core.syncPush({ cfg, store, limiter, now: () => t, account: null }, {});
     eq(noPush.status, 401, "未登录时 push 回 401");
 
-    const dd = Object.assign({}, d, { account: { uid: "u_test0001" } });
+    /* ⚠️ 这一节的服务端同步接口有**层级闸**（`sync.multiDevice`，Pro 起）。
+       所以这里必须有一个**真账号**（`store.getAccount` 查得到）且层级为 pro ——
+       原先写死一个不存在的 uid `u_test0001`，在补闸之前「碰巧」能跑通
+       （闸要查库，查不到就 401），补闸之后它立刻红。 */
+    const d0 = { cfg, store, limiter, now: () => t, ip: "1.1.1.1" };
+    const reg = await core.sendCode(d0, { email: "sync@example.com", ip: "1.1.1.1", code: "333333" });
+    const ver = await core.verifyCode(d0, { codeId: reg.body.codeId, code: "333333" });
+    const uid = ver.body.account.uid;
+    const acc = store.getAccount(uid);
+    acc.plan = "pro";
+    store.putAccount(acc);
+
+    // 层级不够时：**403，不是 401、也不是静默成功**（补闸这一轮的判据）
+    {
+      const freeAcc = store.getAccount(uid);
+      freeAcc.plan = "free";
+      store.putAccount(freeAcc);
+      const freeD = Object.assign({}, d, { account: { uid } });
+      const noPush = await core.syncPush(freeD, { deviceId: "A", recs: [{ id: "x", payload: {}, updatedAt: t }] });
+      eq(noPush.status, 403, "free 账号推不上去（403，不是静默成功）");
+      eq(noPush.body.code, "E_TIER", "错误码 E_TIER");
+      eq(noPush.body.minTier, "pro", "如实回门槛是 pro");
+      const noPull = await core.syncPull(freeD, { deviceId: "A" });
+      eq(noPull.status, 403, "free 账号也拉不下来（拉同样要 Pro）");
+      /* ⚠️ 403 与 401 **必须是两个码**：前者「你确实没这个权限」，
+         后者「你还没登录」—— 用户看到的下一步动作完全不同
+         （一个去找管理员发层级，一个去登录）。合并成一句「失败」等于什么也没说。 */
+      chk(noPush.body.code !== "E_NO_SESSION", "403 不说成「还没登录」");
+      chk(/Pro/.test(noPush.body.message), "文案里如实写明要 Pro 起");
+      chk(/本机/.test(noPush.body.message), "文案里如实写明本机进度不受影响");
+      freeAcc.plan = "pro";
+      store.putAccount(freeAcc);
+    }
+
+    const dd = Object.assign({}, d, { account: { uid } });
 
     // push 三条
     const p1 = await core.syncPush(dd, {
@@ -621,6 +655,10 @@ async function main() {
     const r = await core.sendCode(d, { email: "bye@example.com", ip: "1.1.1.1", code: "888888" });
     const v = await core.verifyCode(d, { codeId: r.body.codeId, code: "888888" });
     const uid = v.body.account.uid;
+    /* 注销要导出云端那份，所以这一节也得先过一次层级闸（同第九节）。 */
+    const acc = store.getAccount(uid);
+    acc.plan = "pro";
+    store.putAccount(acc);
     await core.syncPush(Object.assign({}, d, { account: { uid } }), {
       deviceId: "A", recs: [{ id: "p1", payload: { level: 3 }, updatedAt: t }]
     });
@@ -763,6 +801,15 @@ async function main() {
           "落库的会话 revoked 是 0/1");
 
         // pull / push 带 Cookie
+        // ⚠️ 这一节验的是 **HTTP 层**（Cookie / 方法 / 状态码），不是层级闸，
+        //    所以先把库里那个账号抬到 pro —— 层级闸另有专门一节在别处验
+        //    （上面第九节：free 推/拉都回 403 E_TIER）。
+        const httpStore = require("../api/_lib/store.js").getStore(require("../api/_lib/config.js"));
+        const httpUid = me1.body.uid;
+        const httpAcc = httpStore.getAccount(httpUid);
+        httpAcc.plan = "pro";
+        httpStore.putAccount(httpAcc);
+
         const push = await call(sv2.base, "POST", "/api/sync/push", {
           recs: [{ id: "a1", payload: { level: 1 }, updatedAt: Date.now() }]
         }, cookie);

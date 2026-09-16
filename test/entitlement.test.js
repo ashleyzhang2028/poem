@@ -405,6 +405,110 @@ console.log('\n=== 十一、管理员（role）：与层级正交，且是全站
   eq(E.tierLabel(member.tier), 'Free', '…层级照旧按发放名单算');
 }
 
+console.log('\n=== 十二、每条付费能力都得**真的有人管**（不许只写在能力表里）===');
+{
+  /* ⚠️ 这一节补的是**本轮踩到的那类洞**，而不是某一条能力：
+     全站的能力表（`CAPS`）是 `/plans/` 对比表的唯一来源（当场问内核算出来），
+     所以**能力表里写了什么，页面上就对用户宣称了什么**。
+     但「写在能力表里」与「真的有人拿它拦过」是两件事 —— 
+     只要有一处没接，那条公开宣称就是**假话**：
+       · 2A 的两个洞、2.2 的断链、③ 的 `export.all`、本轮的 `sync.multiDevice`
+     全都是这一个形状（限制写在 A 处、读取在 B 处，谁也不报错）。
+
+     所以这一节逐条扫：**每一条付费能力的键名，必须在 js/ 或 api/ 里
+     有一处真的读它**（`can("键名")` 或服务端 `featuresFor` 那一档）。
+
+     ⚠️ 例外要**明着列出**，不许用「差不多就算了」的口径放过去：
+     下面 EXEMPT 里每一条都写清了「为什么它不需要一个读取点」。 */
+  const fs = require('fs');
+  const path = require('path');
+  const root = path.join(__dirname, '..');
+
+  /* 只在「代码」里扫，不扫文档与测试自己 */
+  function walk(dir, out) {
+    fs.readdirSync(dir).forEach(function (name) {
+      const p = path.join(dir, name);
+      const st = fs.statSync(p);
+      if (st.isDirectory()) { walk(p, out); return; }
+      if (!/\.(js|html)$/.test(name)) return;
+      out.push(p);
+    });
+    return out;
+  }
+
+  const files = []
+    .concat(walk(path.join(root, 'js'), []))
+    .concat(walk(path.join(root, 'api'), []))
+    .concat(walk(path.join(root, 'settings'), []))
+    .concat(walk(path.join(root, 'profile'), []))
+    .concat(walk(path.join(root, 'plans'), []))
+    .concat(walk(path.join(root, 'admin'), []));
+
+  const sources = files.map(function (f) {
+    return { rel: path.relative(root, f), text: fs.readFileSync(f, 'utf8') };
+  });
+
+  /* 能力表自身与服务端那一份清单不算「读取点」—— 它们只是把键名列出来，
+     没有任何判定行为。扫的时候要排掉，否则每条都「有人读」。 */
+  const DECL_ONLY = ['js/entitlement.js', 'api/_lib/core.js'];
+
+  /* 明着列出的例外：这几条**不需要**单独的读取点，理由各自写清 */
+  const EXEMPT = {
+    /* free 那一档就是「打开即用」，没有任何需要拦的地方 ——
+       它的「读取点」是「不拦」这件事本身（有断言在第一节钉着）。 */
+    'recite.basic': '免费档：打开即用，没有需要拦的地方（第一节断言钉着）',
+    'library.all': '免费档：六部集子全文，一律可读',
+    'pinyin.helper': '免费档：注音是阅读辅助，不做门槛',
+    'export.progress': '免费档：导出进度 JSON，按钮直接调 Export（无门槛）',
+    'read.aloud': '语音播放：闸在 js/speech.js 的 gate()（有专门的第九节验它）',
+    /* 自选清单那两条（`collections.many` / `collections.unlimited`）按
+       **已发放的 tier** 判，不按 `can()` 判 —— 见 `js/collections.js` 的 `limit()`：
+       那两条能力带 `login:true`，走 `can()` 时「登录过但会话刚过期」会被判成
+       free，症状是「昨天还能建 20 个，今天一刷新只剩 1 个」。
+       所以它们的读取点是 `limit()` 里那句 `if (tier === "pro")`，
+       **读的是同一个门槛值**（`CAPS` 的 `minTier`），只是没写键名。
+       有断言把两个数字钉在一起（`test/collections.test.js`）。 */
+    'collections.many': '按 tier 判（js/collections.js 的 limit()），读同一个门槛值',
+    'collections.unlimited': '同上：max 档 → 不限'
+  };
+
+  const paid = E.capNames().filter(function (k) {
+    const c = E.cap(k);
+    return c && c.minTier !== 'free' && !EXEMPT[k];
+  });
+
+  chk(paid.length >= 6, '付费能力至少 6 条（实际 ' + paid.length + ' 条）');
+
+  const unmanaged = paid.filter(function (k) {
+    return !sources.some(function (s) {
+      if (DECL_ONLY.indexOf(s.rel) >= 0) return false;
+      return s.text.indexOf('"' + k + '"') >= 0 || s.text.indexOf("'" + k + "'") >= 0;
+    });
+  });
+
+  chk(unmanaged.length === 0,
+    '每条付费能力都有一处真的读它（没被读的：' + (unmanaged.join('、') || '无') + '）');
+
+  /* 反向自检：这条断言不是空的 —— 把 sync.multiDevice 从它两个读取点里
+     抹掉一个，下面的手写检查必须能发现。用一个**假的能力名**验这把尺子。 */
+  const fake = 'zzz.never.read';
+  const hit = sources.some(function (s) {
+    if (DECL_ONLY.indexOf(s.rel) >= 0) return false;
+    return s.text.indexOf('"' + fake + '"') >= 0;
+  });
+  chk(!hit, '反面样本：一个谁都不读的能力名，这把尺子判它「没人管」（断言有牙）');
+
+  /* `sync.multiDevice` 这一条**两处都要在**（本轮补的就是它）。
+     只做界面层等于没拦（藏界面不是安全边界），
+     只做服务端会出现「点开开关、看着开启中、其实一条都传不上去」的静默失败。 */
+  const ui = sources.filter(function (s) { return s.rel === 'js/sync-store.js'; })[0];
+  chk(!!ui && /can\("sync\.multiDevice"\)/.test(ui.text),
+    '界面层真的问了 can("sync.multiDevice")（js/sync-store.js）');
+  const srv = sources.filter(function (s) { return s.rel === 'api/_lib/core.js'; })[0];
+  chk(!!srv && /syncTierGate/.test(srv.text), '服务端有一条层级闸（core.syncTierGate）');
+  chk(!!srv && /"sync\.multiDevice"/.test(srv.text), '服务端那道闸用的就是同一个键名');
+}
+
 console.log('');
 if (fails) {
   console.log('✗ 权益分层测试失败 ' + fails + ' 项');

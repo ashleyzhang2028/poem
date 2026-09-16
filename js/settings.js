@@ -1298,17 +1298,25 @@
   function syncMod() { return window.SyncStore || null; }
 
   /**
-   * 画「跨设备同步」那一项。**四种状态各说各的话**（`SyncStore.status()`）：
+   * 画「跨设备同步」那一项。**五种状态各说各的话**（`SyncStore.status()`）：
    *
    *   off        开关关着（出厂状态）—— 这一项可点，能开
+   *   tier       开关开着但**层级不够**（`sync.multiDevice` 要 Pro 起）——
+   *              如实说「Pro 起可用」，**不说「打不开」**（错因说错 = 让人白试一遍），
+   *              并写明本机进度一字不少、背诵不受影响
    *   signin     开关开着但没登录 —— 开关可点，但说明「要登录才能同步」
    *   unavailable 本站还没开放云端同步（服务端没配好）—— 开关置灰，如实说明
    *   ready      可以同步 —— 开关可点，说明「本机那份始终完整」
    *
-   * ⚠️ 四种状态里，**只有真的在同步（ready + 开启）那一支**才说「会上传到服务器」；
-   *    `off` / `signin` / `unavailable` 三支各自说清「现在没有上传」——
+   * ⚠️ 五种状态里，**只有真的在同步（ready + 开启）那一支**才说「会上传到服务器」；
+   *    其余四支各自说清「现在没有上传」——
    *    一句笼统的「已同步」会让人以为自己的进度已经在云上了（docs §1 第 3 条：
    *    不假装）。
+   *
+   * ⚠️ **开关本身不置灰，只有提示分状态**。层级不够时把开关置灰，
+   *    用户看到的是一个点不动的东西、不知道差在哪；而开关点下去会得到
+   *    「Pro 起可用」这句话（`bindSync` 里那颗 toast）。与自选清单上限、
+   *    导出按钮同一条纪律：**入口不藏，点了如实说差什么**。
    *
    * ⚠️ Issue #163 之后**没有「关」/「开」那枚文字标签了**：状态由开关本体表达
    *    （深天青实底 = 开着、纸底描边 = 关着），一行说明照旧在下面。
@@ -1333,6 +1341,10 @@
       hint.textContent = "本站未开放同步，进度只存本机。";
       return;
     }
+    if (st === "tier") {
+      hint.textContent = "跨设备云同步要 Pro 起可用（当前没到这一层）。进度仍在本机、一字不少。";
+      return;
+    }
     if (!on) {
       hint.textContent = "关闭中：进度只存本机。" + (st === "signin" ? "想同步请先登录。" : "");
       return;
@@ -1351,10 +1363,16 @@
     input.addEventListener("change", function () {
       const S = syncMod();
       if (!S) return;
-      const ok = S.setEnabled(input.checked);
-      if (!ok) {
-        input.checked = !input.checked;
-        showToast("浏览器不允许保存设置，这次改动没生效");
+      const r = S.setEnabled(input.checked);
+      if (!r || !r.ok) {
+        input.checked = !!S.enabled();       // 没落盘就别停在用户点出来的那个位置
+        /* ⚠️ **按错因分开说**。两件事的用户动作完全不同：
+             · 层级不够 → 去找管理员 / 自己去发一次 Pro，说「Pro 起可用」
+             · 存储写不进 → 换个浏览器 / 关无痕模式，说「浏览器不允许保存」
+           合并成一句「打不开」= 让人白试一遍。 */
+        if (r && r.code === "E_TIER") showToast(r.hint || "跨设备云同步要 Pro 起可用");
+        else showToast("浏览器不允许保存设置，这次改动没生效");
+        renderSync();
         return;
       }
       renderSync();
@@ -1362,8 +1380,8 @@
       if (input.checked) {
         // 开启那一刻就跑一轮：用户点了开关却要等下一次打开页面才同步，会以为坏了
         try {
-          const r = S.firstSync();
-          if (r && r.then) r.then(function () { renderSync(); }, function () { /* 静默 */ });
+          const first = S.firstSync();       // ⚠️ 别叫 r：上面那颗回执就叫 r，重名会遮蔽
+          if (first && first.then) first.then(function () { renderSync(); }, function () { /* 静默 */ });
         } catch (e) { /* 静默 */ }
         showToast(S.status() === "signin" ? "已开启，登录后才会真的同步" : "已开启跨设备同步");
       } else {
