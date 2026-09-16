@@ -103,17 +103,80 @@
     return { v: 1, enabled: o.enabled === true };
   }
 
+  /**
+   * 层级闸：`sync.multiDevice`（Pro 起）。
+   *
+   * ## 为什么这一层要有闸
+   *
+   * `/plans/` 的对比表是**当场问内核**算出来的，内核里写着
+   * `sync.multiDevice: minTier "pro"` —— 于是页面上公开对用户宣称
+   * 「跨设备云同步 = Pro」。而在补这一条之前，全站**0 处**真的拿它拦过谁：
+   * 一个 free 用户把设置页那颗开关打开，进度就真的推上去了。
+   * 那条公开宣称因此是**假话**（§1 第 3 条「不假装配齐了」）。
+   *
+   * ## 闸拦在这里，但**不是**唯一一道
+   *
+   * 真正的边界在**服务端**（`/api/sync/push` / `/api/sync/pull` 会 403）。
+   * 这一层拦的是「界面上的动作」——用户手改 localStorage 绕得过它，
+   * 但绕不过服务端那一份。两道都要有：
+   *   · 只有服务端没有本地闸 → 用户点开开关、看着「开启中」、实际一条都传不上去，
+   *     而且失败是静默的（`guard()` 吞掉异常）→「怎么不同步了」根本查不出来
+   *   · 只有本地闸没有服务端 → 那才是真的没拦（§3.4：藏入口不是安全边界）
+   *
+   * ## 两条不许省的规矩
+   *
+   * ① **拿不到权益内核时不拦**（返回 ok）。与 `collections.limit()` /
+   *    `family` 的上限同一条兜底口径：这一层是**产品分层**，不是安全边界；
+   *    脚本加载顺序不对 / 老缓存时把内核读成 null，若此时按 free 拦，
+   *    症状是「本来有 Pro 的人突然同步打不开」—— 一个由加载顺序引起的、
+   *    用户无法自查的功能倒退。「宁可不判，也不误拦」。
+   * ② **关掉永远允许** —— 见 `setEnabled()`。Pro 过期之后若连关都关不掉，
+   *    症状是「同步一直在传、用户关不了」，那是最糟的形状。
+   */
+  function gate() {
+    var E = deps.Entitlement ||
+      ((typeof window !== "undefined" && window.Entitlement) || null);
+    /* 「权益层加载好了没」的判据是 `identity`（全站判权的唯一入口）——
+       不要求它自己也带 `can`：真身上两个都有，但**只认一个**作判据，
+       免得将来某个精简页面只挂了 identity 时被判成「内核没加载」而放行。 */
+    if (!E || typeof E.identity !== "function") return { ok: true, hint: "" };
+    var id = null;
+    try { id = typeof E.identity === "function" ? E.identity() : E.guestIdentity(); } catch (e) { id = null; }
+    if (!id || typeof id.can !== "function") return { ok: true, hint: "" };
+    var r = id.can("sync.multiDevice");
+    return { ok: !!r.ok, hint: r.ok ? "" : (id.hint ? id.hint("sync.multiDevice") : "Pro 起可用") };
+  }
+
+  /**
+   * 开关。
+   *
+   * @returns {{ok:boolean, enabled:boolean, code?:string, hint?:string}}
+   *   `code` = "E_TIER" 时是**层级不够**（不是坏掉）—— 界面据此说「Pro 起可用」，
+   *   而不是说「打不开」。错因说错 = 让用户白试一遍。
+   *
+   * ⚠️ **打开要过闸，关掉不过闸**。关掉不过闸是刻意的：
+   *    一个 Pro 用户的层级过期之后，若「关」也被拦住，症状就是
+   *    「同步还在传，用户关不掉」—— 而关掉同步只是停上传，不需要任何权限。
+   */
   function setEnabled(on) {
+    var want = !!on;
+    if (want) {
+      var g = gate();
+      if (!g.ok) return { ok: false, enabled: enabled(), code: "E_TIER", hint: g.hint };
+    }
     var b = backing();
-    var next = { v: 1, enabled: !!on };
-    if (!b) return false;                    // 隐私模式：开关落不了盘，也不假装落上了
+    if (!b) return { ok: false, enabled: enabled(), code: "E_STORAGE" };   // 隐私模式：不假装落上了
+    var next = { v: 1, enabled: want };
     try { b.setItem(NS.pref, JSON.stringify(next)); }
-    catch (e) { return false; }
+    catch (e) { return { ok: false, enabled: enabled(), code: "E_STORAGE" }; }
     emit(EVT.state, { enabled: next.enabled });
-    return true;
+    return { ok: true, enabled: next.enabled };
   }
 
   function enabled() { return pref().enabled; }
+
+  /** 对外只读：这一项该不该置灰。返回 { ok, hint }（与 speech.js 的 allowed() 同款） */
+  function allowed() { return gate(); }
 
   /* ------------------------------------------------------------ 打标 */
 
@@ -379,9 +442,23 @@
     return "/api";
   }
 
+  /**
+   * 同步的当前状态。**五种各说各的话**，页面不许自己拼：
+   *   unavailable —— 不接后端（测试 / 将来「不接后端」的构建）
+   *   tier        —— 开关开着，但层级不够（补闸之后新增）：一个 Pro 过期的人
+   *                 开关还留在「开」的位置上，这时如实说「要 Pro 起」，
+   *                 而不是说 "ready"（那会让界面显示「开启中」，实际一条都传不上去）
+   *   off         —— 开关关着（出厂状态）
+   *   signin      —— 开着但没登录
+   *   ready       —— 真的能同步
+   *
+   * ⚠️ `tier` 这一档**排在 `off` 之后、`signin` 之前**：开关没开时不谈层级
+   *    （没开就是没开，说「要 Pro」会让人以为开了就能用）。
+   */
   function status() {
     if (deps.base === null) return "unavailable";     // 显式关掉（测试与将来「不接后端」的构建）
     if (!enabled()) return "off";
+    if (!gate().ok) return "tier";
     if (deps.signedIn && !deps.signedIn()) return "signin";
     return "ready";
   }
@@ -728,13 +805,15 @@
     NS: NS, EVT: EVT, CHUNK: CHUNK, TIMEOUT_MS: TIMEOUT_MS,
 
     init: init,
-    /** 注入依赖（测试用）：ProgressStore / fetch / base / signedIn / now / emit */
+    /** 注入依赖（测试用）：ProgressStore / fetch / base / signedIn / now / emit / Entitlement */
     use: function (o) { deps = o || {}; return api; },
 
     pref: pref,
     enabled: enabled,
     setEnabled: setEnabled,
     status: status,
+    allowed: allowed,
+    gate: gate,
 
     touch: touch,
     markSeen: markSeen,
