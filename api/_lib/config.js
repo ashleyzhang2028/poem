@@ -96,6 +96,14 @@ CONFIG.hasDb = function () {
   return !!(CONFIG.supabaseUrl && CONFIG.supabaseServiceKey);
 };
 
+/** 发信是否真的配好了（有密钥，且**不是** console 那条只写日志的通道） */
+CONFIG.hasMail = function () {
+  // ⚠️ 读 **this**，与 CONFIG.mail() 同一个理由：写成 CONFIG.mail() 时
+  //    `Object.assign({}, CONFIG, { resendKey })` 这类覆盖完全不生效
+  var c = (this && this.mailTransport !== undefined) ? this : CONFIG;
+  return c.mail() !== "console";
+};
+
 /** 会话是否可签名（没配就**不签发会话**，而不是签发一个假的） */
 CONFIG.hasSession = function () {
   return !!CONFIG.sessionSecret && CONFIG.sessionSecret.length >= 16;
@@ -103,6 +111,15 @@ CONFIG.hasSession = function () {
 
 /**
  * 选中的发信通道：显式指定的优先，否则按「有哪个密钥用哪个」推。
+ *
+ * ⚠️ 这个「用哪个」的顺序（SendGrid 在前）是 **2026-09-16 之前** 的口径。
+ *    那天用户在 Issue #159 报「SendGrid 现在已经限时收费了，所以我用的 Resend」——
+ *    于是「哪个是主选」从**代码里的顺序**变成了**用户填的那个变量**：
+ *    · 只填 RESEND_API_KEY（现在的推荐做法）→ 推断出 resend，无需 MAIL_TRANSPORT
+ *    · 两个都填 → 推断仍是 sendgrid（顺序没改，改了会动到既有的断言）
+ *      → 这时**必须显式写 MAIL_TRANSPORT=resend**，否则你以为在用 Resend，
+ *        实际花的是 SendGrid 那笔钱 —— 而两边都不报错
+ *    这条「不报错的错」现在由 `ops.check()` 的 notes 主动提示（见 ops.js）。
  *
  * ⚠️ 必须读 **this**（也就是调用它的那一个 cfg 对象），不能读模块级 CONFIG。
  *    写成 CONFIG.xxx 的后果很隐蔽：`Object.assign({}, CONFIG, { sendgridKey })`

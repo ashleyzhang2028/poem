@@ -22,7 +22,7 @@
 ## 0. 一句话结论
 
 **用 Supabase，免费版不休眠，但它只当「账号目录」和「跨设备进度库」；
-发信不走 Supabase，走自己的 `/api` 云函数（主 SendGrid、备 Resend）；
+发信不走 Supabase，走自己的 `/api` 云函数（**主 Resend**；SendGrid 已转向收费，见 §2.5）；
 前端不上 Next.js，继续静态站；后端**每个业务需求一个函数**，不合并成框架。**
 
 > ⚠️ **原始口径是「不超过 6 个 Serverless 函数」**，2.2（权威发放）把它变成 **9 个**，
@@ -40,7 +40,7 @@
   │  js/sync-store.js           ← 新增，ProgressStore 的远端实现
   ▼
 api（同一个 Vercel 项目里的 /api/*，10 个函数）
-  ├─ /api/send-code      → SendGrid 主 / Resend 备（不花钱）
+  ├─ /api/send-code      → Resend 主（不花钱；SendGrid 已收费，见 §2.5）
   ├─ /api/verify-code    → 校验 → 签发会话（HttpOnly Cookie）
   ├─ /api/me             → {uid, plan, features[]}   ← Pro/Max 唯一合法挂载点
   ├─ /api/sync/pull      → 拉服务端进度（增量）
@@ -209,8 +209,8 @@ jobs:
 │  /api/account     DELETE 注销（先导出、再删行）                    │
 │                                                                  │
 │  发信适配层（transport，可替换）                                   │
-│    ├─ sendgrid.js   主选（100 封/天永久免费，国内到达率较好）        │
-│    └─ resend.js     备选（100 封/天、3000/月；数据落美国）          │
+│    ├─ resend.js     主选（100 封/天、3000/月；数据落美国）          │
+│    └─ sendgrid.js   备选（已转向收费 —— 只有付费账号才配，见 §2.5） │
 └───────────────────────────┬──────────────────────────────────────┘
                             │ supabase-js（service key，仅服务端）
 ┌───────────────────────────▼──────────────────────────────────────┐
@@ -299,17 +299,37 @@ jobs:
 
 ### 2.5 发信通道
 
-| | **SendGrid** | **Resend** |
+| | ~~**SendGrid**~~（已收费） | **Resend**（当前主选） |
 |---|---|---|
-| 免费档 | 100 封/天（永久免费档） | 100 封/天、3000 封/月 |
+| 免费档 | ~~100 封/天（永久免费档）~~ **2026-09-16 起转向收费** | 100 封/天、3000 封/月 |
 | 国内到达率 | 较好（多年的 IP 信誉积累） | 普遍较差，易进垃圾箱 |
 | 数据落地 | 可选 | **账号数据固定在美国**（官方明确） |
 | SDK 体验 | 老派但稳 | 更现代 |
 
-**决定（你已接受）：主 SendGrid，备 Resend。**
-两者写在同一个 `transport` 接口后面，加起来不到 200 行，
+**决定一（原设计，仍成立）**：两者写在同一个 `transport` 接口后面，加起来不到 200 行，
 通过环境变量 `MAIL_TRANSPORT=sendgrid|resend` 切换 ——
 **换发信商不用改任何业务代码**，这正是 `docs/auth-design.md` §11 那句「只换 transport」的意思。
+
+**决定二（2026-09-16 修订，以这条为准）：主 Resend，SendGrid 退为「已有付费账号才配」。**
+上表写「100 封/天（永久免费档）」，而用户 2026-09-16 在 Issue #159 报
+「**SendGrid 现在已经限时收费了**，所以我用的 Resend」—— 那行「永久免费档」已经不成立。
+用户实际填的是 `RESEND_API_KEY`，Vercel 环境变量与 Supabase 均已配好。
+
+因此**主备关系从「代码里的推断顺序」改成了「你填的那个变量」**：
+
+| 你填了什么 | 缺省选中的通道 | 要不要显式写 `MAIL_TRANSPORT` |
+|---|---|---|
+| 只有 `RESEND_API_KEY` | `resend` | 不必（现在的推荐做法） |
+| 只有 `SENDGRID_API_KEY` | `sendgrid` | 不必 |
+| **两个都填** | **`sendgrid`**（推断顺序没改） | **必须写 `resend`** |
+
+⚠️ 最后一行是这一改动唯一的暗礁：`config.mail()` 的推断顺序仍是
+「有 sendgridKey 就用 sendgrid」，于是「两个都填、又以为 Resend 是主选」的人
+会**一直花 SendGrid 的钱而两边都不报错**。它已经在 `ops.check()` 的 notes 里
+主动提示（`npm run doctor` 看得见），并由 `test/ops.test.js` 钉住。
+
+那条「国内到达率较好」的差别**没有消失**：Resend 的信更容易进垃圾箱。
+对国内用户（QQ / 163）的唯一判据仍是**发一封真信并确认落进收件箱**（C 步的判据）。
 
 **发信必须做对的三件事（不做就等于没发）：**
 1. **域名要配 SPF + DKIM + DMARC** —— 只验证域名不够，缺这三条会被 QQ/163 拒收
@@ -491,13 +511,13 @@ exportJSON / importJSON` 一个签名都不改，实现转调 `ProgressStore`。
 |---|---|---|
 | 域名 `kuibu.app` | ✅ 已有，已在 Vercel | 未备案 |
 | Vercel 账号 | ✅ 已有 | — |
-| SendGrid 账号 | ⬜ 待注册 | 免费，需配 SPF/DKIM |
-| Resend 账号 | ⬜ 待注册（备选） | 免费 |
-| Supabase 项目 | ⬜ 待创建 | 免费，需配探活 |
-| GitHub Actions secrets | ⬜ 待配 | `SUPABASE_URL` / `SUPABASE_SERVICE_KEY` / `SENDGRID_API_KEY` / `SESSION_SECRET` |
+| Resend 账号 | ✅ 已注册（2026-09-16） | 免费档；需配 SPF/DKIM/DMARC |
+| ~~SendGrid 账号~~ | ❌ **放弃** | 2026-09-16 起转向收费，故改用 Resend（见 §2.5） |
+| Supabase 项目 | ✅ 已建（2026-09-16） | 免费，已配探活 |
+| Vercel 环境变量 | ✅ 已配（2026-09-16） | `SUPABASE_URL` / `SUPABASE_SERVICE_KEY` / `RESEND_API_KEY` / `SESSION_SECRET` |
 | **备案** | ❌ **未办** | **不阻塞 1 期**（Vercel 免备案），但会阻塞微信登录/支付 |
 
-> **重要澄清**：`Vercel + Supabase + SendGrid` 这条链路**全程不需要备案**。
+> **重要澄清**：`Vercel + Supabase + Resend` 这条链路**全程不需要备案**。
 > 未备案只影响「微信网页授权」「微信支付」「国内 CDN 加速」这三件 1 期都不做的事。
 > 换句话说：**1 期可以在完全没有主体资质的情况下做完并上线。**
 
@@ -623,7 +643,7 @@ POST   /api/admin/grants     （2.2 看名单：只回掩码，只列 plan !== f
 | 「无服务器」「不上传、不云同步」 | 「账号与学习进度默认只存本机；**开启云端同步后会上传到服务器**，可随时在设置里关闭，注销即删除」（方案 B） |
 | 「邮箱只以摘要与掩码存在本机」 | 「邮箱摘要会上传至服务器用于登录，**明文邮箱不离开你的设备**」（⚠️需核对实现） |
 | —— | **全篇不出现「出境」「跨境」字样**（本站不以「国内限定」为前提，见 §4.2） |
-| 「不发送给任何第三方」 | 列明实际处理者：Supabase（数据库）、SendGrid / Resend（发信） |
+| 「不发送给任何第三方」 | 列明实际处理者：Supabase（数据库）、Resend（发信） |
 | 页脚日期 | 更新为实际改动日期 |
 
 **同时要改的测试断言**：`test/legal.test.js` 有两条**反向断言**
@@ -887,7 +907,7 @@ POST { channel:"sms", value }  →  503 E_SMS_NOT_OPEN
 
 #### 下一步（2D：配置与真开通）
 
-Supabase 建项目 + SendGrid / Resend 密钥 + `SESSION_SECRET` +
+Supabase 建项目 + Resend 密钥 + `SESSION_SECRET` +
 域名 SPF / DKIM / DMARC。**这一步得用户自己去注册**，是本项目唯一
 「没有业务代码可写」的一步（**注**：2D 后来把「怎么写步骤」也做成了代码 ——
 见 §4.12，但注册与填密钥这件事仍然只能人做）。短信真开通更远：
@@ -904,7 +924,7 @@ Supabase 建项目 + SendGrid / Resend 密钥 + `SESSION_SECRET` +
 
 #### ① 「没有代码可写」≠ 没有东西可做
 
-2D 要用户在 Supabase / SendGrid 后台点几下、再往托管平台填几个变量。
+2D 要用户在 Supabase / Resend 后台点几下、再往托管平台填几个变量。
 放在一期工程里，这件事的常见下场是：**一篇文档 + 一张手抄的清单**。
 而手抄的清单必然与代码分叉 —— 本项目里这种分叉已经出现过好几次
 （`docs/auth-design.md` 里那些「已落地 / 未落地」的标注就是补丁）。
@@ -972,7 +992,7 @@ $ npm run doctor
 
 ```jsonc
 { "uid": "u_…", "plan": {"tier":"free"}, "role": "user", "mask": "a***@b.com",
-  "channel": { "mail": "sendgrid", "delivered": true, "db": "db", "sms": false } }
+  "channel": { "mail": "resend", "delivered": true, "db": "db", "sms": false } }
 ```
 
 三个字段全是**事实**，且全部取自既有的判定函数（`cfg.mail()` / `cfg.hasDb()`），
@@ -1069,7 +1089,7 @@ service_role key 两处都要带：
 `supabase-backup` 用的是 **`postgres:17`**，不是 `postgres:16`；`pg_dump`
 **不改**连比自己新的服务端，16 的客户端去连 Supabase 的 17.6 会在读到数据之前
 就以 `aborting because of server version mismatch` 退出（`server version: 17.6;
-pg_dump version: 16.15`）—— 报这句话**与连接串无关**，详见 §5.8，服务端升大版本时
+pg_dump version: 16.15`）—— 报这句话**与连接串无关**，详见 §5.9，服务端升大版本时
 `.cnb.yml` 里那一行要跟着升（反方向 —— 客户端比服务端新 —— 是允许的）；
 **②** `SUPABASE_DB_URL` 本身怎么来。
 
@@ -2914,11 +2934,78 @@ pg_dump: error: could not translate host name "db.twmtmohcaifswxtjowru.supabase.
 `max-width: var(--content-w)` 负责不许比内容区更宽、`margin: 0 auto` 居中；
 再加上 `body[data-nav="home"] .topbar { grid-area: bar; }`。
 
-##### ②之四 这一轮的验证（2026-09-17 追溯，回答 Issue #159 的后半）
+### 5.8 发信商主备翻转：主 Resend（2026-09-16/17 · 回答 Issue #159）
+
+用户 2026-09-16 在 Issue #159 报三件事，这一节记的是它们落到仓库里的结果：
+
+1. **「SendGrid 现在已经限时收费了，所以我用的 Resend，已经配置好了」**
+   → 主备翻转（本节）
+2. 「Vercel 环境变量、Supabase 均已配置完成」
+   → 前置条件表从「⬜ 待注册 / 待创建」翻成 ✅（§4.1）
+3. 「`supabase-backup` 报 `could not translate host name …`」
+   → 与 §5.7 ②/②之二、§5.9 记的 `SUPABASE_DB_URL` 是同一件事：那个值只能在
+     Connection string 页取模板替换 `[YOUR-PASSWORD]`，且密码里的
+     `@ : / # ?` 必须百分号编码
+
+#### 改了什么
+
+| 处 | 原先 | 现在 |
+|---|---|---|
+| `ops.js` 的 `ENTRY` | `SENDGRID_API_KEY` 是「这一件需要」、`RESEND_API_KEY` 是「可选」 | **对调**：Resend 是「这一件需要」，SendGrid 退成「可选（只有付费账号才配）」 |
+| `ops.js` 的 C 步 | 「二选一注册：SendGrid（主选）或 Resend（备选）」 | 「注册 **Resend**（当前主选）+ ⚠️ SendGrid 已转向收费」 |
+| `config.js` 的 `mail()` 注释 | 只有「按有哪个密钥推」 | 补上**推断顺序的暗礁**（见下） |
+| `ops.check()` | 无 | 新增一条 note：两个密钥都填又没写 `MAIL_TRANSPORT` 时**主动点破** |
+| `mail/index.js` 头部 | 「sendgrid — 主选 / resend — 备选」 | 顺序与主备脱钩，并写明 SendGrid 收费的来由 |
+| `privacy/index.html` | 「由 SendGrid（主）或 Resend（备）发送」 | 「由 Resend 发送」（**停用的那家不许留在条款里**） |
+| README 的 C 步 / §2.5 / §4.1 | 「主 SendGrid，备 Resend」「⬜ 待注册」 | 「主 Resend」+ 前置条件翻 ✅ |
+
+#### 唯一的暗礁：`mail()` 的推断顺序**没改**
+
+```
+mailTransport → sendgridKey ? "sendgrid" : resendKey ? "resend" : "console"
+```
+
+推断顺序保持原样（改了会动到既有断言，而顺序本身不是错的），于是：
+
+- **只填 `RESEND_API_KEY`**（用户现在的配置）→ 推断出 `resend`，**不必**写 `MAIL_TRANSPORT`
+- **两个都填、又没写 `MAIL_TRANSPORT`** → 推断出 **`sendgrid`**
+
+第二行的后果是「你以为在用免费的 Resend，账单走的是 SendGrid」，而**两侧都不报错**。
+所以这条**不能只写在文档里**：`ops.check()` 现在会主动提示
+（`npm run doctor` / `--json` 的 `notes` 里都看得见），
+`test/ops.test.js` 新增一节「五之二」把它钉住（并断言提醒里不出现密钥的值）。
+
+`channelFacts()` / `ops.check()` 读的仍是 `cfg.mail()` **这一个判定处**，
+本轮**没有**新增第二套「谁是主选」的逻辑 —— 否则就会出现两份口径，
+下一轮必然分叉（这正是 §4.11 第 ② 条那条教训）。
+
+#### 条款侧的一处收紧
+
+`test/legal.test.js` 原先那条断言是 `/Supabase|SendGrid|Resend/` ——
+**三家命中一家就算过**。它会放过「条款里写着一家已经停用的服务商」这种漂移。
+本轮收紧成：必须点名 `Resend`，且**不许出现 `SendGrid`**。
+
+#### 验证
+
+- `bash test/run.sh`：**6151 条断言全绿、0 失败**（本轮开始 6135）
+- `test/ops.test.js` 新增三节：
+  - 「五之二」主备口径 —— 两档 level、SendGrid 三句话里有「已收费」、
+    推断暗礁的实测（`sendgrid`）、提醒里不含密钥值、只填一个时不喊那条提醒
+  - 「五之三」文档不许分叉 —— `architecture.md` 不再把 SendGrid 写成主选、
+    README 的 C 步不再提 SendGrid、隐私条款里没有 SendGrid、
+    `mail/index.js` 不再把 sendgrid 写成主选
+  - 「二」里 `SENDGRID_API_KEY` 的档位断言从 `needed` 改成 `optional`（并补 `RESEND_API_KEY` 那条）
+- `test/legal.test.js`：那条「列明实际处理者」的断言收紧为正向点名 + 反向禁 SendGrid
+- `.env.example` 由 `node scripts/env-example.js` 重新生成（清单改了，模板必须跟着走）
+- `sw.js` v135 → **v136**
+
+---
+
+#### ②之四 这一轮的验证（2026-09-17 追溯，回答 Issue #159 的后半）
 
 - `node test/ops.test.js` 全绿：新增「D 步写了 `%3A` / 写了『`@` 只许出现一次』/
   写了 Session pooler / 写了 6543 不要给 `pg_dump` 用」，以及 `.cnb.yml`
-  的备份脚本真的先自检 URL 形状（§5.8 又把「版本 mismatch 是 abort 不是警告」更正过来）
+  的备份脚本真的先自检 URL 形状（§5.9 又把「版本 mismatch 是 abort 不是警告」更正过来）
 - `bash test/run.sh` 全绿、0 失败（PWA 那一层在**能起 Chrome 的镜像里**跑；
   本轮工作区缺系统库，跳过并如实打印原因，不是静默通过）
 - 探活那条**一个字没改** —— 它本来就是绿的（HTTP 200），绿的别动
@@ -2938,7 +3025,7 @@ pg_dump: error: could not translate host name "db.twmtmohcaifswxtjowru.supabase.
 - `sw.js` v134 → **v135**
 - `sw.js` v135 → **v136**（§5.7 备份脚本自检那一轮）
 
-### 5.8 `supabase-backup` 一直红：pg_dump 比服务端低一个大版本（2026-09-17 · 回答 Issue #159）
+### 5.9 `supabase-backup` 一直红：pg_dump 比服务端低一个大版本（2026-09-17 · 回答 Issue #159）
 
 用户贴的失败日志（`supabase-backup`，定时任务 `crontab: 30 4 * * 1`）：
 
