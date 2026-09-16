@@ -171,6 +171,17 @@
      */
     var lastChannel = null;
 
+    /**
+     * 上一次 `/api/me` 带回来的**账号自助信息**（Issue #197）。
+     *
+     * 三件事：明文邮箱（给自己看的那一份）、邮箱确认状态、uid。
+     * ⚠️ 与 `lastChannel` 一样**只记不判**：界面上要显示「你的邮箱是 xxx」
+     *    与「邮箱待确认」时才用它。判权仍然只看 tier / role。
+     * ⚠️ 也**不落盘**：邮箱是服务端上的那一份最准，缓存一份下来
+     *    会在「用户改了邮箱」之后一直显示旧的。
+     */
+    var lastAccount = null;
+
     function applyMe(me) {
       var E = D.E;
       if (!E || !E.writeTier || !D.backing) return false;
@@ -180,6 +191,15 @@
         delivered: me.channel.delivered === true,
         db: typeof me.channel.db === "string" ? me.channel.db : null,
         sms: me.channel.sms === true
+      } : null;
+
+      lastAccount = (me && typeof me === "object") ? {
+        uid: typeof me.uid === "string" ? me.uid : null,
+        email: typeof me.email === "string" ? me.email : "",
+        mask: typeof me.mask === "string" ? me.mask : "",
+        emailVerified: me.emailVerified === true,
+        emailVerifiedAt: me.emailVerifiedAt == null ? null : Number(me.emailVerifiedAt),
+        nickname: typeof me.nickname === "string" ? me.nickname : ""
       } : null;
 
       var plan = (me && me.plan) || {};
@@ -203,6 +223,9 @@
       try {
         if (E.readServerTier && E.readServerTier(D.backing)) {
           if (E.clearTier) E.clearTier(D.backing);
+          /* 账号自助信息（明文邮箱 / 确认状态）跟着一起清：
+             一个已经退出的人不该还能在界面上看到「你的邮箱是 xxx」。 */
+          lastAccount = null;
           return true;
         }
       } catch (e) { /* 隐私模式：没盘可清 */ }
@@ -417,6 +440,30 @@
       }).catch(function () { return { ok: false, reason: REASON.UNAVAILABLE }; });
     }
 
+    /**
+     * 名录（全部账号，Issue #197）。**与 `adminGrants` 是两条接口**：
+     *   · `adminGrants`  —— 台账（`plan !== free`），只回掩码
+     *   · `adminAccounts` —— 名录（注册过的全部），**回明文邮箱**
+     * 合成一条的下场是：要么台账里泄出明文，要么名录里认不出人。
+     *
+     * ⚠️ 通道判据**单独判 `accounts()`**，不并进 `grantChannel()` ——
+     *    老缓存里的旧 AuthApi 有 grant/grants 但没有 accounts，
+     *    并进去的症状是「名单也一起看不了了」（拿新功能废掉既有功能）。
+     */
+    function adminAccounts() {
+      if (!hasLocalSession()) return Promise.resolve({ ok: false, reason: REASON.GUEST });
+      var ch = usable(D.api) || (D.make ? safeCreate(D.make) : null);
+      if (!ch || typeof ch.accounts !== "function") return Promise.resolve({ ok: false, reason: REASON_NO_CHANNEL });
+      return ch.accounts().then(function (r) {
+        if (r && r.ok) return { ok: true, reason: REASON.OK, accounts: r.accounts || [], total: r.total, store: r.store };
+        var code = (r && r.code) || "E_OFFLINE";
+        if (code === "E_NOT_CONFIGURED") return { ok: false, reason: REASON.NOT_CONFIGURED };
+        if (code === "E_NO_SESSION") return { ok: false, reason: REASON.GUEST };
+        if (code === "E_FORBIDDEN") return { ok: false, reason: REASON.OK, code: code, message: r && r.message };
+        return { ok: false, reason: REASON.UNAVAILABLE };
+      })["catch"](function () { return { ok: false, reason: REASON.UNAVAILABLE }; });
+    }
+
     function adminRevoke(input) {
       var o = input || {};
       if (!hasLocalSession()) return Promise.resolve({ ok: false, reason: REASON.GUEST });
@@ -444,6 +491,47 @@
      *    这一层不做那个决定 —— 它有可能会做错（把 403 也当成连不上），
      *    而 403 是「你确实没这个权限」，与连不上是两回事。
      */
+    /**
+     * 重发确认邮件（Issue #197）。
+     *
+     * 与 `gameAnswer()` 同一条口径：**单独判通道，不并进 `usable()`**。
+     * 老缓存里的旧 `AuthApi` 没有 `resendVerification()`，并进去的症状是
+     * 「整个 /api/me 都问不到了」—— 拿一个新功能废掉既有功能。
+     *
+     * ⚠️ 通道里没有这个方法时回 `E_NO_CHANNEL`，**不假装点过了**：
+     *    界面据此说「页面是旧缓存，刷新一下」，而不是让用户对着
+     *    一颗点了没反应的键反复点。
+     *
+     * @returns {Promise<{ok, reason, code?, alreadyVerified?, verifySent?, emailMask?}>}
+     */
+    function resendVerification() {
+      if (!hasLocalSession()) {
+        return Promise.resolve({ ok: false, reason: REASON.GUEST, code: "E_NO_SESSION" });
+      }
+      var ch = usable(D.api) || (D.make ? safeCreate(D.make) : null);
+      if (!ch || typeof ch.resendVerification !== "function") {
+        return Promise.resolve({ ok: false, reason: REASON_NO_CHANNEL, code: "E_NO_CHANNEL" });
+      }
+      return ch.resendVerification().then(function (r) {
+        if (r && r.ok) {
+          return {
+            ok: true, reason: REASON.OK,
+            alreadyVerified: r.alreadyVerified === true,
+            /* ⚠️ `verifySent` 是**事实**：发信商没配时它是 false，
+               界面据此写「没能发出去」而不是「已发出」。 */
+            verifySent: r.verifySent === true,
+            emailMask: r.emailMask || ""
+          };
+        }
+        var code = (r && r.code) || "E_OFFLINE";
+        if (code === "E_NOT_CONFIGURED") return { ok: false, reason: REASON.NOT_CONFIGURED, code: code };
+        if (code === "E_NO_SESSION") return { ok: false, reason: REASON.GUEST, code: code };
+        return { ok: false, reason: REASON.UNAVAILABLE, code: code, message: r && r.message };
+      })["catch"](function () {
+        return { ok: false, reason: REASON.UNAVAILABLE, code: "E_OFFLINE" };
+      });
+    }
+
     function gameAnswer(input) {
       var o = input || {};
       if (!hasLocalSession()) {
@@ -483,15 +571,19 @@
             同一个名字给两个东西，症状正是刚才实测到的那种 —— 后写的把前写的盖掉，
             而且不报错，只是「服务端自报的状态永远是空的」。 */
       channel: function () { return lastChannel; },
+      /** 上一次 /api/me 带回来的账号自助信息（明文邮箱 / 确认状态）。**不是缓存** */
+      account: function () { return lastAccount; },
       hasLocalSession: hasLocalSession,
       applyMe: applyMe,
       clearServerTier: clearServerTier,
       refreshMe: refreshMe,
       deleteAccount: deleteAccount,
+      resendVerification: resendVerification,
       /* 权威发放（2.2）：**只有 /admin/ 页调**。不判权限 —— 判权限在服务端。 */
       adminGrant: adminGrant,
       adminGrants: adminGrants,
       adminRevoke: adminRevoke,
+      adminAccounts: adminAccounts,
       /* 古诗词大会的判分（3 期）：**只有 js/game.js 调**。
          它判的是「这一答对不对」，判权在服务端 —— 这一层不重算一遍。 */
       gameAnswer: gameAnswer
@@ -542,6 +634,8 @@
     adminGrant: function (o) { return boundOnce(o).adminGrant(o); },
     adminGrants: function (o) { return boundOnce(o).adminGrants(o); },
     adminRevoke: function (o) { return boundOnce(o).adminRevoke(o); },
+    /* 名录（全部账号，Issue #197）：同样只有 /admin/ 页用 */
+    adminAccounts: function (o) { return boundOnce(o).adminAccounts(o); },
     /* 古诗词大会的判分（3 期）。**刻意不走 boundOnce 的 globalBound 闸** ——
        那个闸是给「同一份 /api/me 答案」用的，而判分每次都不同（每题的答案不一样），
        并进去的症状是「第二题之后全都拿第一题的结果判」。 */
@@ -551,6 +645,11 @@
     hasLocalSession: function (o) { return boundOnce(o).hasLocalSession(o); },
     last: function () { return globalBound ? globalBound.last() : { reason: null, at: 0 }; },
     channel: function () { return globalBound ? globalBound.channel() : null; },
+  account: function () { return globalBound ? globalBound.account() : null; },
+  resendVerification: function () {
+    return globalBound ? globalBound.resendVerification()
+      : Promise.resolve({ ok: false, reason: REASON.NOT_CONFIGURED, code: "E_NOT_CONFIGURED" });
+  },
     reset: reset
   };
 });

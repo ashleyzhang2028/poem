@@ -19,6 +19,8 @@
  *   账号 8（getAccountByHash / getAccount / putAccount / deleteAccount /
  *          patchAccount / findAccountsByMask / listAccounts / ——）
  *   码   4（putCode / getCode / patchCode / voidCodes）
+ *   确认 4（putVerification / getVerification / patchVerification / voidVerifications）
+ *   重设 4（putReset / getReset / patchReset / voidResets）
  *   会话 3（putSession / getSession / revokeSessions）
  *   进度 3（listProgress / putProgress / deleteProgress）
  *         ⚠️ 前两个的签名是 `(uid, child, ...)` —— **child 是必给的**，
@@ -37,7 +39,7 @@
 /* ------------------------------------------------------------ 内存实现 */
 
 function memoryStore() {
-  var db = { accounts: {}, codes: {}, sessions: {}, progress: {} };
+  var db = { accounts: {}, codes: {}, sessions: {}, progress: {}, verifications: {}, resets: {} };
   var api = {
     kind: "memory",
     ready: function () { return true; },
@@ -75,7 +77,12 @@ function memoryStore() {
     patchAccount: function (uid, patch) {
       var a = db.accounts[uid];
       if (!a) return false;
-      ["plan", "plan_until", "role", "last_login_at", "nickname"].forEach(function (k) {
+      /* ⚠️ 白名单式落库（不把整个对象盖进去）。这一份**同时是**
+         「哪些列是可改的」的定义 —— 加一列忘了加在这里，
+         症状是「接口回 200、库里啥也没变」（反复踩过）。
+         Issue #197 新增四列：明文邮箱 / 确认时刻 / 口令摘要 / 口令盐。 */
+      ["plan", "plan_until", "role", "last_login_at", "nickname", "status",
+        "email", "email_verified_at", "password_hash", "password_salt"].forEach(function (k) {
         if (patch && Object.prototype.hasOwnProperty.call(patch, k)) a[k] = patch[k];
       });
       return true;
@@ -104,6 +111,45 @@ function memoryStore() {
       Object.keys(db.codes).forEach(function (k) {
         var c = db.codes[k];
         if (c.uid === uid && c.purpose === purpose && !c.consumed_at) c.consumed_at = at;
+      });
+      return true;
+    },
+
+    /* ------------------------------------------------ 邮箱确认（Issue #197）
+       一张表一件事：`codes` 管「短码」，`verifications` 管「确认邮件里的长链接」。
+       合成一张表的后果是「两种凭据的 TTL、失败上限、作废规则互相污染」——
+       而它们是两种完全不同的东西（一个是 6 位数字、一个是 64 位 hex）。 */
+    putVerification: function (rec) { db.verifications[rec.vid] = rec; return rec; },
+    getVerification: function (vid) { return db.verifications[vid] || null; },
+    /** 单条更新（失败次数 / 已确认）。两个实现都必须有 —— 缺了「一次即废」会静默失效 */
+    patchVerification: function (vid, patch) {
+      var r = db.verifications[vid];
+      if (!r) return false;
+      Object.keys(patch).forEach(function (k) { r[k] = patch[k]; });
+      return true;
+    },
+    /** 同 uid + purpose 的旧记录一并作废（发新的即作废旧链接） */
+    voidVerifications: function (uid, at) {
+      Object.keys(db.verifications).forEach(function (k) {
+        var r = db.verifications[k];
+        if (r.uid === uid && !r.consumed_at) r.consumed_at = at;
+      });
+      return true;
+    },
+
+    /* ------------------------------------------------ 重设口令（Issue #197） */
+    putReset: function (rec) { db.resets[rec.rid] = rec; return rec; },
+    getReset: function (rid) { return db.resets[rid] || null; },
+    patchReset: function (rid, patch) {
+      var r = db.resets[rid];
+      if (!r) return false;
+      Object.keys(patch).forEach(function (k) { r[k] = patch[k]; });
+      return true;
+    },
+    voidResets: function (uid, at) {
+      Object.keys(db.resets).forEach(function (k) {
+        var r = db.resets[k];
+        if (r.uid === uid && !r.consumed_at) r.consumed_at = at;
       });
       return true;
     },
@@ -190,7 +236,10 @@ function supabaseStore(cfg) {
     });
   }
 
-  var COLS = "uid,email_hash,email_mask,nickname,plan,plan_until,role,created_at,last_login_at,status";
+  /* ⚠️ `email` 明文也在这一份里（Issue #197）：它是**给管理员看**的列，
+     而这一份 COLS 是服务端内部读取用的（service key 的请求，不经浏览器）。
+     下发给普通用户的 `publicAccount()` 仍然只回掩码 —— 两件事别混。 */
+  var COLS = "uid,email,email_hash,email_mask,nickname,plan,plan_until,role,created_at,last_login_at,status,email_verified_at,password_hash,password_salt";
   var q = encodeURIComponent;
 
   return {
@@ -234,7 +283,8 @@ function supabaseStore(cfg) {
 
     patchAccount: function (uid, patch) {
       var body = {};
-      ["plan", "plan_until", "role", "last_login_at", "nickname"].forEach(function (k) {
+      ["plan", "plan_until", "role", "last_login_at", "nickname", "status",
+        "email", "email_verified_at", "password_hash", "password_salt"].forEach(function (k) {
         if (patch && Object.prototype.hasOwnProperty.call(patch, k)) body[k] = patch[k];
       });
       if (!Object.keys(body).length) return Promise.resolve(true);
@@ -251,6 +301,39 @@ function supabaseStore(cfg) {
     listAccounts: function () {
       return call("/accounts?select=" + COLS + "&order=created_at.desc&limit=500")
         .then(function (rows) { return rows || []; });
+    },
+
+    /* ------------------------------------ 邮箱确认 / 重设口令（Issue #197） */
+    putVerification: function (rec) {
+      return call("/verifications", { method: "POST", body: rec, prefer: "return=minimal" }).then(function () { return rec; });
+    },
+    getVerification: function (vid) {
+      return call("/verifications?vid=eq." + q(vid) + "&limit=1").then(function (rows) { return rows && rows[0] ? rows[0] : null; });
+    },
+    patchVerification: function (vid, patch) {
+      return call("/verifications?vid=eq." + q(vid), { method: "PATCH", body: patch, prefer: "return=minimal" })
+        .then(function () { return true; });
+    },
+    voidVerifications: function (uid, at) {
+      return call("/verifications?uid=eq." + q(uid) + "&consumed_at=is.null", {
+        method: "PATCH", body: { consumed_at: at }, prefer: "return=minimal"
+      }).then(function () { return true; });
+    },
+
+    putReset: function (rec) {
+      return call("/resets", { method: "POST", body: rec, prefer: "return=minimal" }).then(function () { return rec; });
+    },
+    getReset: function (rid) {
+      return call("/resets?rid=eq." + q(rid) + "&limit=1").then(function (rows) { return rows && rows[0] ? rows[0] : null; });
+    },
+    patchReset: function (rid, patch) {
+      return call("/resets?rid=eq." + q(rid), { method: "PATCH", body: patch, prefer: "return=minimal" })
+        .then(function () { return true; });
+    },
+    voidResets: function (uid, at) {
+      return call("/resets?uid=eq." + q(uid) + "&consumed_at=is.null", {
+        method: "PATCH", body: { consumed_at: at }, prefer: "return=minimal"
+      }).then(function () { return true; });
     },
 
     putSession: function (s) {

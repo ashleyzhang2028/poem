@@ -46,11 +46,50 @@
        而用户看到「连不上」会一直重试。 */
     E_FORBIDDEN: "这一条只对管理员开放",
     E_TIER: "层级只认 Free / Pro / Max",
-    E_MASK: "邮箱掩码形状不对（形如 a***@qq.com，与账号页上显示的那串一致）"
+    E_MASK: "邮箱掩码形状不对（形如 a***@qq.com，与账号页上显示的那串一致）",
+
+    /* ---- Issue #197：完整登录流程那五条 ----
+       ⚠️ 这一组**没有一条是「降级」**：服务端是通的，只是这件事没成。
+          尤其 E_LOGIN_FAIL —— 它必须原样说「邮箱或密码不对」，
+          客户端不许把它改写成更具体的任何一种（那就成了邮箱枚举）。 */
+    E_LOGIN_FAIL: "邮箱或密码不对",
+    E_PW_EMPTY: "请先填密码",
+    E_PW_SHORT: "密码太短了（至少 8 位）",
+    E_PW_LONG: "密码太长了（最多 72 个字符）",
+    E_CONFIRM_PW: "两次填的密码不一样",
+    E_NO_TOKEN: "链接不完整，请重新发一封邮件",
+    E_TOKEN_INVALID: "这个链接不对，请重新发一封邮件",
+    E_TOKEN_USED: "这个链接已经用过了",
+    E_TOKEN_EXPIRED: "链接已过期，请重新发一封邮件",
+    E_VERIFY_MAIL_FAIL: "确认邮件没能发出去，请稍后再试",
+    E_RESET_MAIL_FAIL: "重设邮件没能发出去，请稍后再试"
+  };
+
+  /**
+   * **口令那几条路专用**的传输失败文案（Issue #197）。
+   *
+   * ⚠️ 必须与 `TRANSPORT_ERR` 分开，而且这一分是**非做不可的**：
+   *    通用那一份写的是「已切回本机体验版」—— 对随机码那条路是**真的**
+   *    （它确实会回落到本机内核），但对注册 / 密码登录 / 忘记密码 / 重设
+   *    **是假的**：那四件事压根没有本机版本（口令摘要要有服务端 pepper、
+   *    要落库，在浏览器里存一份等于把「谁都改得动」的东西当凭据）。
+   *    照抄通用文案的下场是实测到的这个：服务端连不上时界面上写着
+   *    「已切回本机体验版」，而用户什么都做不了 —— 一句当场被自己推翻的话。
+   */
+  var PASSWORD_ERR = {
+    E_NOT_CONFIGURED: "这台服务器还没开放云端账号，暂时不能注册或改密码",
+    E_OFFLINE: "连不上服务器，暂时不能注册或改密码",
+    E_TIMEOUT: "服务端响应太慢，暂时不能注册或改密码",
+    E_INTERNAL: "服务端出了点问题，稍后再试"
   };
 
   function messageOf(code, fallback) {
     return TRANSPORT_ERR[code] || fallback || "操作没成功，请稍后再试";
+  }
+
+  /** 口令那几条路的传输失败文案（见 `PASSWORD_ERR` 那段说明） */
+  function passwordMessageOf(code, fallback) {
+    return PASSWORD_ERR[code] || messageOf(code, fallback);
   }
 
   /** 有 fetch 才谈得上云端；没有就整体不可用（老 WebView） */
@@ -78,15 +117,25 @@
       lastError: null
     };
 
-    function post(path, body) {
-      return call(path, "POST", body);
+    /**
+     * @param {string} path
+     * @param {object} body
+     * @param {object|null} errs  这一条路自己的**传输失败文案表**。
+     *   不传就用通用那一份（会说「已切回本机体验版」）。
+     *   口令那几条必须传 `PASSWORD_ERR` —— 理由见那张表的注释。
+     */
+    function post(path, body, errs) {
+      return call(path, "POST", body, errs);
     }
 
-    function call(path, method, body) {
+    function call(path, method, body, errs) {
+      var em = errs
+        ? function (c) { return errs[c] || messageOf(c); }
+        : messageOf;
       if (!doFetch) {
         state.degraded = true;
         state.lastError = "E_OFFLINE";
-        return Promise.resolve({ ok: false, code: "E_OFFLINE", message: messageOf("E_OFFLINE") });
+        return Promise.resolve({ ok: false, code: "E_OFFLINE", message: em("E_OFFLINE") });
       }
       var ctrl = typeof AbortController === "function" ? new AbortController() : null;
       var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, TIMEOUT_MS) : null;
@@ -109,14 +158,14 @@
           try { data = text ? JSON.parse(text) : null; } catch (e) { data = null; }
           if (!data || typeof data !== "object") {
             state.lastError = "E_INTERNAL";
-            return { ok: false, code: "E_INTERNAL", message: messageOf("E_INTERNAL"), status: res.status };
+            return { ok: false, code: "E_INTERNAL", message: em("E_INTERNAL"), status: res.status };
           }
           /* 503 = 服务端没配好：这不是错误，是「本期还没开放」，
              据实标成降级，界面据此继续用本机体验版 */
           if (res.status === 503 || data.code === "E_NOT_CONFIGURED") {
             state.degraded = true;
             state.lastError = "E_NOT_CONFIGURED";
-            return { ok: false, code: "E_NOT_CONFIGURED", message: messageOf("E_NOT_CONFIGURED"), status: res.status };
+            return { ok: false, code: "E_NOT_CONFIGURED", message: em("E_NOT_CONFIGURED"), status: res.status };
           }
           /* 401 = 没有会话。**不是错误**：未登录是本来的正常状态，
              前端据此保持 local 模式，不弹窗、不打断背诵 */
@@ -147,7 +196,7 @@
         // 连不上 = 降级，**不是**错误弹窗 —— docs §10「会话过期静默降级」
         state.degraded = true;
         state.lastError = code;
-        return { ok: false, code: code, message: messageOf(code) };
+        return { ok: false, code: code, message: em(code) };
       });
     }
 
@@ -184,6 +233,63 @@
           deviceId: deviceId
         });
       },
+
+      /* ------------------------------------------------ 完整登录流程（Issue #197）
+         六条路：注册 / 口令登录 / 确认邮箱 / 重发确认 / 忘记密码两步。
+         ⚠️ 传输层只做一件事：把参数送到，把 `{ok, code, message}` 带回来。
+            业务规则（口令多长、令牌怎么校验）全在服务端内核里，
+            这一层**一条都不新造** —— 造一条就是两处规则开始漂移。 */
+
+      /** POST /api/register —— 注册（邮箱 + 口令）。**注册完还要确认邮件** */
+      register: function (input) {
+        input = input || {};
+        return post("/register", {
+          email: input.email,
+          password: input.password,
+          deviceId: deviceId
+        }, PASSWORD_ERR);
+      },
+
+      /** POST /api/login —— 邮箱 + 口令登录（与随机码那条路签发同一枚会话） */
+      login: function (input) {
+        input = input || {};
+        return post("/login", {
+          email: input.email,
+          password: input.password,
+          deviceId: deviceId
+        }, PASSWORD_ERR);
+      },
+
+      /** POST /api/verify-email —— 点邮件里那条链接确认邮箱（不需要登录） */
+      verifyEmail: function (input) {
+        input = input || {};
+        return post("/verify-email", { vid: input.vid, token: input.token }, PASSWORD_ERR);
+      },
+
+      /** POST /api/resend-verification —— 重发确认邮件（**要登录**） */
+      resendVerification: function () {
+        return post("/resend-verification", { deviceId: deviceId }, PASSWORD_ERR);
+      },
+
+      /** POST /api/reset-request —— 忘记密码第一步：发重设邮件 */
+      resetRequest: function (input) {
+        input = input || {};
+        return post("/reset-request", { email: input.email, deviceId: deviceId }, PASSWORD_ERR);
+      },
+
+      /** POST /api/reset-confirm —— 忘记密码第二步：真正换掉口令 */
+      resetConfirm: function (input) {
+        input = input || {};
+        return post("/reset-confirm", {
+          rid: input.rid,
+          token: input.token,
+          password: input.password,
+          deviceId: deviceId
+        }, PASSWORD_ERR);
+      },
+
+      /** POST /api/admin/accounts —— 列出全部账号（只读，**回明文邮箱**） */
+      accounts: function () { return post("/admin/accounts", { deviceId: deviceId }); },
 
       /** GET /api/me —— 权益的唯一来源（服务端判定层级与角色都在这一条上） */
       me: function () { return call("/me", "GET"); },
@@ -260,7 +366,9 @@
     create: create,
     supported: supported,
     messageOf: messageOf,
+    passwordMessageOf: passwordMessageOf,
     TRANSPORT_ERR: TRANSPORT_ERR,
+    PASSWORD_ERR: PASSWORD_ERR,
     BASE: BASE,
     TIMEOUT_MS: TIMEOUT_MS
   };

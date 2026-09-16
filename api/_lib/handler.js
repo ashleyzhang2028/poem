@@ -22,7 +22,7 @@ var limiter = core.makeRateLimiter();
 /** 每次请求现算，便于测试注入 cfg / store */
 function deps(req, body) {
   return {
-    cfg: CONFIG,
+    cfg: CONFIG,   /* ⚠️ 与 withSession 里用的 CONFIG 必须是**同一个对象** —— 见下方那条断言 */
     store: storeMod.getStore(CONFIG),
     limiter: limiter,
     now: function () { return Date.now(); },

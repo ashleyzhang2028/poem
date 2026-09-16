@@ -121,6 +121,46 @@ var ENTRY = [
     missing: "用默认值",
     how: "填你自己的域名"
   },
+  /* ---- Issue #197：完整登录流程那几档 ----
+     ⚠️ 这几项**没有一项是开关**：注册 / 确认 / 登录 / 忘记密码 / 重设
+        都是本流程的组成部分，开关一开一半就成了「某些用户走不通」。
+        所以它们全在 `optional` 那一档（有合理默认值，能覆盖绝大多数场景）。 */
+  {
+    key: "PASSWORD_MIN",
+    level: "optional",
+    group: "登录",
+    secret: false,
+    what: "密码最短长度（默认 8，按**码点**数）",
+    missing: "用默认值 8",
+    how: "一般不必改。调短会削弱账号安全，调长会把用户挡在注册门外"
+  },
+  {
+    key: "PASSWORD_MAX",
+    level: "optional",
+    group: "登录",
+    secret: false,
+    what: "密码最长长度（默认 72）",
+    missing: "用默认值 72",
+    how: "**不要往上调** —— 这不是「防用户填太长」，是防 DoS（超长输入 scrypt 一样要算）"
+  },
+  {
+    key: "VERIFY_TTL_MS",
+    level: "optional",
+    group: "登录",
+    secret: false,
+    what: "邮箱确认链接的有效期（毫秒，默认 24 小时）",
+    missing: "用默认值 24 小时",
+    how: "一般不必改"
+  },
+  {
+    key: "RESET_TTL_MS",
+    level: "optional",
+    group: "登录",
+    secret: false,
+    what: "重设密码链接的有效期（毫秒，默认 1 小时）",
+    missing: "用默认值 1 小时",
+    how: "重设链接比确认链接短得多 —— 它能直接改掉账号凭据，时效要更紧"
+  },
   {
     key: "COOKIE_NAME",
     level: "optional",

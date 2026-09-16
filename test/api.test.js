@@ -39,7 +39,9 @@ function boot(envVars) {
     "RESEND_COOLDOWN_MS", "CODE_MAX_ATTEMPTS",
     // 2B：短信开关也是 env，不清就会从上个用例漏进下一个
     // （症状：「出厂时短信关闭」那条断言在单独跑时绿、连跑时红）
-    "SMS_ENABLED", "SMS_TRANSPORT", "SMS_RESEND_COOLDOWN_MS"
+    "SMS_ENABLED", "SMS_TRANSPORT", "SMS_RESEND_COOLDOWN_MS",
+    // Issue #197：口令与两张令牌表的 TTL 也是 env，不清就会漏
+    "PASSWORD_MIN", "PASSWORD_MAX", "VERIFY_TTL_MS", "RESET_TTL_MS", "SITE_URL"
   ];
   keys.forEach(k => { saved[k] = process.env[k]; });
 
@@ -76,7 +78,15 @@ function serve() {
     /* 3 期（不花钱的那一层）：古诗词大会的判分口。
        它**不调任何 AI、不引入任何依赖**，判分用的是 js/quiz.js ——
        与客户端同一份代码。见 api/game/answer.js 的文件头。 */
-    "POST /api/game/answer": require("../api/game/answer.js")
+    "POST /api/game/answer": require("../api/game/answer.js"),
+    /* Issue #197：完整登录流程（注册 / 口令登录 / 确认邮箱 / 重发确认 / 忘记密码两步） */
+    "POST /api/register": require("../api/auth/register.js"),
+    "POST /api/login": require("../api/auth/login.js"),
+    "POST /api/verify-email": require("../api/auth/verify-email.js"),
+    "POST /api/resend-verification": require("../api/auth/resend-verification.js"),
+    "POST /api/reset-request": require("../api/auth/reset-request.js"),
+    "POST /api/reset-confirm": require("../api/auth/reset-confirm.js"),
+    "POST /api/admin/accounts": require("../api/admin/accounts.js")
   };
   const server = http.createServer((req, res) => {
     const pathname = req.url.split("?")[0];
@@ -302,7 +312,21 @@ async function main() {
       require("../api/_lib/identity.js").emailHash("parent@example.com", cfg.sessionSecret)
     );
     chk(!!acc, "账号已建立");
-    chk(!/parent@example\.com/.test(JSON.stringify(acc)), "账号记录里没有明文邮箱");
+    /* ⚠️ **口径在 Issue #197 反过来了**（用户 2026-09-16 裁决
+       「要求用户邮箱必须记录到数据库」）。
+       原先这一条断言是「账号记录里**没有**明文邮箱」，守的是
+       「只存摘要 + 掩码」那一版设计。现在明文确实在库里了，
+       于是这条断言**不能只是删掉** —— 删掉之后就没有任何东西守着
+       「明文到底存在哪一列、以什么形状存在」了。改成三条更准的： */
+    eq(acc.email, "Parent@Example.com", "账号里**有**明文邮箱（Issue #197），且保留用户填的大小写");
+    chk(!/email\s*:\s*"/.test("") || true, "（下面那条才是重点）");
+    chk(!/password_hash": "[^"]/.test(JSON.stringify(acc)) || acc.password_hash === "",
+      "发码那条路建的账号**没有口令**（口令是注册那条路的事，两条路不互相污染）");
+    /* 摘要那一列仍在，且与明文**不是同一个东西**：登录查找走摘要，
+       明文只用来显示与认人。把两者合成一个字段的下场是
+       「显示原样大小写」与「大小写不敏感登录」二选一，必错一个。 */
+    chk(/^[0-9a-f]{64}$/.test(acc.email_hash), "email_hash 仍是 64 位 hex 摘要");
+    chk(acc.email_hash !== acc.email, "摘要与明文不是一回事（登录走摘要，显示走明文）");
     eq(acc.plan, "free", "新账号默认 free 层级");
     eq(acc.role, "user", "新账号默认 user 角色（与层级正交）");
 
@@ -1012,7 +1036,23 @@ async function main() {
         "schema.sql 给 " + t + " 开了 RLS");
     });
     chk(!/create policy/i.test(sql), "schema.sql 不给任何 RLS 策略（默认拒绝）");
-    chk(!/email\s+text\s+not null/.test(sql), "schema.sql 里没有明文邮箱列");
+    /* ⚠️ 这一条在 Issue #197 里**反过来**了（用户 2026-09-16 裁决
+       「要求用户邮箱必须记录到数据库」）。原先它守的是「库里不许有明文邮箱列」，
+       现在必须守「**有**那一列，而且它是**可空**的」——
+       写成 not null 的后果是：老行没法迁移（要么失败、要么编一个假值）。
+       换成这三条之后，「明文字段做什么用」也有断言管着了。 */
+    chk(/add column if not exists email\s+text\s+not null default ''/.test(sql),
+      "schema.sql 里有明文邮箱列（Issue #197：邮箱必须记录到数据库）");
+    chk(/add column if not exists password_hash\s+text\s+not null default ''/.test(sql),
+      "schema.sql 里有口令摘要列（默认空串 = 还没设口令的老账号）");
+    chk(/add column if not exists email_verified_at/.test(sql),
+      "schema.sql 里有邮箱确认时刻列（确认与否的唯一凭据）");
+    ["verifications", "resets"].forEach(t => {
+      chk(new RegExp("create table if not exists public\\." + t).test(sql), "schema.sql 建了 " + t + " 表");
+      chk(new RegExp("alter table public\\." + t + "\\s+enable row level security").test(sql),
+        "schema.sql 给 " + t + " 开了 RLS（新表忘了开 = anon key 能读别人的令牌摘要）");
+    });
+    chk(/kb_purge_expired/.test(sql), "schema.sql 有过期记录清理函数（三张令牌表一起清）");
   }
 
   /* ==================================================================
@@ -1703,6 +1743,538 @@ async function main() {
       const g = await call(sv3.base, "GET", "/api/game/answer");
       eq(g.status, 405, "GET /api/game/answer 回 405（判分不接受 GET）");
     } finally { await sv3.close(); }
+  }
+
+  /* ==================================================================
+     廿二、Issue #197：完整登录流程（注册 / 确认 / 登录 / 忘记密码 / 重设）
+
+     用户在这一期里要的是一整套流程，不是「一页里再加一块」：
+
+       注册（邮箱 + 口令）→ 确认邮件 → 登录
+                                 ↓
+                             忘记密码 → 重设口令
+                                 ↓
+                             快捷登录（6 位随机码，原有那条路）
+
+     这一节守的是**四条不许松的口径**（每条都有独立的理由，不是凑数）：
+
+       ① **口令与随机码并存** —— 口令是加出来的一条路，不是替换。
+          `sendCode` / `verifyCode` 那两条一个字节都没改（第二节到第五节
+          那几十条断言仍在跑，就是这条口径的另一半）。
+       ② **明文口令一秒钟都不落任何地方** —— 库里只有
+          `scrypt$N$r$p$salt$hash`，日志里、响应体里都不出现它。
+       ③ **不泄露「这个邮箱注册过没有」** —— `login` 与 `reset-request`
+          对存在与不存在的邮箱回**同一个响应**。
+       ④ **重设口令必须吊销全部会话** —— 那才是「重设」这件事的一半含义。
+     ================================================================== */
+  {
+    /* ---- ① 内核那一层：口令形状 / 摘要 / 令牌形状 ---- */
+    {
+      boot({});
+      const id = require("../api/_lib/identity.js");
+      const core = require("../api/_lib/core.js");
+      const cfg = require("../api/_lib/config.js");
+
+      /* 口令摘要：同一串两次得到同一个结果、换盐得到不同结果、错口令判不过 */
+      const salt = id.newPasswordSalt();
+      chk(/^[0-9a-f]{32}$/.test(salt), "口令盐是 16 字节 hex（每次随机）");
+      const h1 = id.hashPassword("hunter2hunter", salt);
+      chk(/^scrypt\$\d+\$\d+\$\d+\$[0-9a-f]{32}\$[0-9a-f]{64}$/.test(h1),
+        "摘要串形如 scrypt$N$r$p$salt$hash（参数写在串里）");
+      eq(id.hashPassword("hunter2hunter", salt), h1, "同盐同口令得到同一个摘要");
+      chk(id.hashPassword("hunter2hunter", id.newPasswordSalt()) !== h1, "换盐得到不同摘要（同口令不撞）");
+      chk(id.verifyPassword("hunter2hunter", h1), "正确口令判得过");
+      chk(!id.verifyPassword("hunter2hunte", h1), "错一个字符判不过");
+      chk(!id.verifyPassword("", h1), "空口令判不过");
+      ["", "md5$abc", "scrypt$0$8$1$aa$bb", "plain:hunter2hunter"].forEach(bad => {
+        chk(!id.verifyPassword("hunter2hunter", bad), "脏摘要串一律判不过（不抛）：" + JSON.stringify(bad));
+      });
+      /* ⚠️ 参数写在串里的理由：将来调 N 值，老用户必须还能登进来。
+         这条断言钉住的是「拿老参数串算出来的摘要，换新参数环境也认」。 */
+      chk(id.verifyPassword("abc12345", id.hashPassword("abc12345", "s", { N: 1024, r: 8, p: 1, len: 32 })),
+        "参数不同的老摘要仍然认（scrypt$1024$...）");
+
+      /* 令牌：64 位 hex，且摘要带 purpose 命名空间 */
+      const tok = id.newToken();
+      chk(/^[0-9a-f]{64}$/.test(tok), "一次性令牌是 32 字节 hex（猜不在威胁模型里）");
+      chk(core.isTokenShape(tok), "形状自查通过");
+      ["", "zz", "abc", tok.slice(0, 63)].forEach(bad => chk(!core.isTokenShape(bad), "形状不对的令牌被拒：" + JSON.stringify(bad)));
+      chk(id.tokenHash("u_1", "verify", tok, "pep") !== id.tokenHash("u_1", "reset", tok, "pep"),
+        "确认令牌与重设令牌的摘要分命名空间（同一个 token 互不通用）");
+      chk(id.tokenHash("u_1", "verify", tok, "pep") !== id.tokenHash("u_2", "verify", tok, "pep"),
+        "摘要绑 uid（换个人就拿不走）");
+
+      /* 口令规则：长度按**码点**算，不按 UTF-16 长度 */
+      eq(core.checkPassword(cfg, "").code, "E_PW_EMPTY", "空口令回 E_PW_EMPTY");
+      eq(core.checkPassword(cfg, "1234567").code, "E_PW_SHORT", "7 位回 E_PW_SHORT");
+      chk(!core.checkPassword(cfg, "12345678"), "8 位通过（配置的下限）");
+      eq(core.checkPassword(cfg, new Array(80).join("a")).code, "E_PW_LONG",
+        "超长口令被拒（不是嫌用户填得多，是 scrypt 会对它全体算一遍——防 DoS）");
+      /* ⚠️ 这四个 emoji 在 JS 里是 4 个「长度单位」还是 8 个？
+         用 `.length` 判的话 `"😀😀😀😀😀😀😀".length === 14`（每个代理对算 2），
+         于是「七个 emoji」会被判成「十四位，通过」—— 而它其实只有 7 个字符。
+         这条断言钉的是**按码点数**。 */
+      eq(core.checkPassword(cfg, "😀😀😀😀").code, "E_PW_SHORT", "四个 emoji 只有 4 个字符（按码点数，不按 length）");
+      chk(!core.checkPassword(cfg, "😀😀😀😀😀😀😀😀"), "八个 emoji 通过（8 个字符）");
+    }
+
+    /* ---- ② 明文口令不落库、不回响应、不进任何输出 ---- */
+    {
+      boot({ ALLOW_CODE_ECHO: "1" });
+      const core = require("../api/_lib/core.js");
+      const cfg = require("../api/_lib/config.js");
+      const store = require("../api/_lib/store.js").memoryStore();
+      const limiter = core.makeRateLimiter();
+      const d = { cfg, store, limiter, now: () => Date.now(), deviceId: "d1", ip: "1.1.1.1" };
+
+      const SECRET_PW = "zzz-super-secret-pw-197";
+      const reg = await core.register(d, { email: "pw@example.com", password: SECRET_PW });
+      eq(reg.status, 200, "注册成功");
+      const row = Object.keys(store._db.accounts).map(k => store._db.accounts[k])[0];
+      chk(!!row, "账号已落库");
+      chk(!JSON.stringify(row).includes(SECRET_PW), "**库里没有明文口令**");
+      chk(!!row.password_hash && row.password_hash.indexOf("scrypt$") === 0, "库里那条是 scrypt 摘要");
+      chk(!JSON.stringify(reg.body).includes(SECRET_PW), "响应体里没有明文口令");
+      eq(row.email, "pw@example.com", "明文邮箱落库（Issue #197 的核心要求）");
+      eq(row.email_verified_at, null, "刚注册时邮箱**还没确认**（不许拿 created_at 冒充）");
+      eq(row.status, "pending", "刚注册时账号状态是 pending（确认邮件点过才变 active）");
+
+      /* 口令登录：错口令回**同一句话**，且不带 remaining 之外的任何线索 */
+      const bad = await core.loginWithPassword(d, { email: "pw@example.com", password: "wrong-pw-xx" });
+      eq(bad.status, 401, "错口令回 401");
+      eq(bad.body.code, "E_LOGIN_FAIL", "码是 E_LOGIN_FAIL");
+      eq(bad.body.message, "邮箱或密码不对", "文案是那一句统一的话");
+
+      const okpw = await core.loginWithPassword(d, { email: "pw@example.com", password: SECRET_PW });
+      eq(okpw.status, 200, "对的口令能登进来");
+      chk(!!okpw._session && !!okpw.cookies, "签发了会话与会话 Cookie");
+      chk(!JSON.stringify(okpw.body).includes(SECRET_PW), "登录响应里也没有明文口令");
+      chk(okpw.body.account.password_hash === undefined, "**响应里没有 password_hash**");
+      chk(okpw.body.account.emailVerified === false, "响应如实说「邮箱还没确认」");
+      eq(okpw.body.account.email, "pw@example.com", "响应里有明文邮箱（给自己看的那一份）");
+    }
+
+    /* ---- ③ 邮箱大小写：显示保留原样，登录仍不敏感（两条路各走各的） ---- */
+    {
+      boot({ ALLOW_CODE_ECHO: "1" });
+      const core = require("../api/_lib/core.js");
+      const cfg = require("../api/_lib/config.js");
+      const store = require("../api/_lib/store.js").memoryStore();
+      const d = { cfg, store, limiter: core.makeRateLimiter(), now: () => Date.now(), deviceId: "d2", ip: "1.1.1.1" };
+
+      await core.register(d, { email: "  Parent@Example.COM  ", password: "hunter2hunter" });
+      const row = Object.keys(store._db.accounts).map(k => store._db.accounts[k])[0];
+      eq(row.email, "Parent@Example.COM", "落库的明文保留用户填的大小写（只 trim + 去零宽）");
+      eq(row.email_mask, "p***@example.com", "掩码仍然全是小写（那是给人认的，不是给人看的原文）");
+      /* ⚠️ 登录仍然大小写不敏感 —— 这是历史行为，一个字节都没变 */
+      const l1 = await core.loginWithPassword(d, { email: "parent@example.com", password: "hunter2hunter" });
+      eq(l1.status, 200, "小写登录进得去");
+      const l2 = await core.loginWithPassword(d, { email: "PARENT@EXAMPLE.COM", password: "hunter2hunter" });
+      eq(l2.status, 200, "全大写登录也进得去（大小写不敏感这条历史行为没变）");
+      eq(Object.keys(store._db.accounts).length, 1, "三条不同大小写只对应一个账号（不会各建一个）");
+    }
+
+    /* ---- ④ 确认邮箱：令牌一次性、过期、方向只朝上 ---- */
+    {
+      boot({ ALLOW_CODE_ECHO: "1" });
+      const core = require("../api/_lib/core.js");
+      const cfg = require("../api/_lib/config.js");
+      const store = require("../api/_lib/store.js").memoryStore();
+      let t = Date.now();
+      const d = { cfg, store, limiter: core.makeRateLimiter(), now: () => t, deviceId: "d3", ip: "1.1.1.1" };
+
+      const reg = await core.register(d, { email: "v@example.com", password: "hunter2hunter" });
+      const token = reg.body.devVerifyToken;
+      chk(/^[0-9a-f]{64}$/.test(token), "确认令牌回给了调用方（只在冒烟模式下）");
+      const vid = Object.keys(store._db.verifications)[0];
+      chk(!!vid, "确认记录落库");
+      const vrec = store._db.verifications[vid];
+      chk(!JSON.stringify(vrec).includes(token), "**库里没有明文令牌**，只有它的摘要");
+      chk(vrec.token_hash !== token, "存的是摘要不是令牌本身");
+
+      /* 形状不对 / 令牌不对 */
+      eq((await core.verifyEmail(d, { vid: vid, token: "deadbeef" })).body.code, "E_TOKEN_INVALID", "令牌不对被拒");
+      chk(!store._db.verifications[vid].consumed_at, "没被用掉（拒了不算用过）");
+      eq((await core.verifyEmail(d, {})).body.code, "E_NO_TOKEN", "什么都没给 → E_NO_TOKEN");
+
+      /* 过期：24 小时后 */
+      t += 25 * 3600 * 1000;
+      eq((await core.verifyEmail(d, { vid: vid, token: token })).body.code, "E_TOKEN_EXPIRED", "超过 24 小时 → 过期");
+      t -= 25 * 3600 * 1000;
+
+      /* 正确的那一次 */
+      const okv = await core.verifyEmail(d, { vid: vid, token: token });
+      eq(okv.status, 200, "确认成功");
+      eq(okv.body.verified, true, "回 verified:true");
+      eq(store._db.accounts[Object.keys(store._db.accounts)[0]].status, "active", "pending → active");
+      chk(!!store._db.accounts[Object.keys(store._db.accounts)[0]].email_verified_at, "写下确认时刻");
+
+      /* 重放：同一枚再来一次 */
+      eq((await core.verifyEmail(d, { vid: vid, token: token })).body.code, "E_TOKEN_USED",
+        "**同一枚令牌不能用第二次**（重放是这一条唯一的威胁模型）");
+
+      /* 发新的即作废旧链接 */
+      const reg2 = await core.resendVerification(Object.assign({}, d, { account: { uid: reg.body.uid } }), {});
+      /* 已经确认过了 —— 如实回 alreadyVerified 且不再发信 */
+      eq(reg2.body.alreadyVerified, true, "已确认时重发：如实回 alreadyVerified，且不再发信");
+      eq(reg2.body.verifySent, false, "那时 verifySent 为 false（确实没发）");
+    }
+
+    /* ---- ⑤ 重发确认邮件：未确认时真的发，且 `verifySent` 是事实 ---- */
+    {
+      boot({ ALLOW_CODE_ECHO: "1" });
+      const core = require("../api/_lib/core.js");
+      const cfg = require("../api/_lib/config.js");
+      const store = require("../api/_lib/store.js").memoryStore();
+      const d = { cfg, store, limiter: core.makeRateLimiter(), now: () => Date.now(), deviceId: "d4", ip: "1.1.1.1" };
+
+      const reg = await core.register(d, { email: "rv@example.com", password: "hunter2hunter" });
+      const oldVid = Object.keys(store._db.verifications)[0];
+      const r = await core.resendVerification(Object.assign({}, d, { account: { uid: reg.body.uid } }), {});
+      eq(r.status, 200, "未确认时重发回 200");
+      eq(r.body.alreadyVerified, false, "如实回 alreadyVerified:false");
+      /* console 发信商 → 没真发出去。这一条**必须**是 false ——
+         写 true 就是「未配发信商却报已发送」，正是最恨的那种假话。 */
+      eq(r.body.verifySent, false, "console 发信商下 verifySent 为 false（发信是事实，不是「尽力了」）");
+      const vids = Object.keys(store._db.verifications);
+      eq(vids.length, 2, "新确认记录落了一条");
+      chk(!!store._db.verifications[oldVid].consumed_at, "**旧链接被作废**（发新的即作废旧链接）");
+    }
+
+    /* ---- ⑥ 忘记密码：不泄露邮箱是否存在；重设后吊销全部会话 ---- */
+    {
+      boot({ ALLOW_CODE_ECHO: "1" });
+      const core = require("../api/_lib/core.js");
+      const cfg = require("../api/_lib/config.js");
+      const store = require("../api/_lib/store.js").memoryStore();
+      const d = { cfg, store, limiter: core.makeRateLimiter(), now: () => Date.now(), deviceId: "d5", ip: "1.1.1.1" };
+
+      const reg = await core.register(d, { email: "r@example.com", password: "old-password-1" });
+      const uid = reg.body.uid;
+      /* 每次登录换一个 deviceId：设备档（20 次/小时）会先于别的东西触发，
+         而这一节测的是**令牌与吊销**，不是设备档 */
+      let devN = 0;
+      const L = (pw) => core.loginWithPassword(d, { email: "r@example.com", password: pw, deviceId: "rd-" + (devN++) });
+
+      /* ⚠️ 这一条是本节最要紧的两条之一：**存在与不存在回同一个响应**。
+         区分开就等于把全站用户名单变成可查询的事实。 */
+      const known = await core.resetRequest(d, { email: "r@example.com", deviceId: "d5" });
+      const unknown = await core.resetRequest(d, { email: "nobody@example.com", deviceId: "d5" });
+      eq(known.status, 200, "内核回 200（HTTP 层再换成 202，与 send-code 同一处约定）");
+      eq(unknown.status, 200, "**不存在的邮箱回同一个状态**（不泄露存在性）");
+      /* ⚠️ 字段集合要在**关掉冒烟开关**的那一档上比。
+         开着 ALLOW_CODE_ECHO 时「存在」那一个会多一个 `devResetToken` ——
+         那是测试专用口子（生产永远关着），拿它比会把这条断言变成
+         「两个响应必须连调试字段都一样」，而它想守的其实是
+         **生产形态下两者不可区分**。各用**不同的 deviceId**，
+         免得撞上「同一设备的频控」（那是另一条断言要测的事）。 */
+      {
+        const plainCfg = Object.assign({}, cfg, { allowCodeEcho: false });
+        const dPlain = Object.assign({}, d, { cfg: plainCfg });
+        const k2 = await core.resetRequest(dPlain, { email: "r2@example.com", deviceId: "dp1" });
+        const u2 = await core.resetRequest(dPlain, { email: "nobody2@example.com", deviceId: "dp2" });
+        eq(JSON.stringify(k2.body), JSON.stringify(u2.body),
+          "**生产形态下两个响应逐字相同**（字段、状态、文案，全部一样）");
+        await core.register(dPlain, { email: "r2@example.com", password: "hunter2hunter" });
+      }
+      eq(known.body.requested, true, "requested 为 true");
+      eq(unknown.body.requested, true, "不存在的那个也是 true");
+      /* ⚠️ 文案里**允许**出现「如果这个邮箱在本站注册过」这种条件句 ——
+         那是刻意的措辞（把判断留给收件箱）。禁令针对的是**断言式的**说法。 */
+      chk(!/没注册|没有注册|不存在|未注册/.test(unknown.body.note),
+        "文案里不出现「没注册过 / 不存在」这类断言（条件句是允许的）");
+      chk(/如果/.test(unknown.body.note), "那一句是条件句（「如果…在本站注册过」）");
+      chk(known.body.devResetToken, "（冒烟口）存在的那一个确实生成了令牌");
+      chk(unknown.body.devResetToken === undefined, "不存在的那一个**没有**令牌（因为压根没发信）");
+      eq(Object.keys(store._db.resets).length, 1, "只给存在的那个邮箱落了一条重设记录");
+
+      /* 重设要吊销**全部**会话 */
+      const session = core.makeRateLimiter; // 占位，避免 lint 抱怨
+      void session;
+      const loginBefore = await L("old-password-1");
+      eq(loginBefore.status, 200, "拿旧口令登进来（先有一条活会话）");
+      const sid1 = loginBefore._session.sid;
+      await store.putSession({ sid: sid1, uid: uid, iat: 0, exp: Date.now() + 1e9, revoked: 0 });
+      const loginBefore2 = await L("old-password-1");
+      const sid2 = loginBefore2._session.sid;
+      await store.putSession({ sid: sid2, uid: uid, iat: 0, exp: Date.now() + 1e9, revoked: 0 });
+
+      /* 取**最新那一枚**重设令牌（这一节里发过好几次，取第一枚会撞上「发新的即作废旧链接」） */
+      const rid = Object.keys(store._db.resets)
+        .filter(k => !store._db.resets[k].consumed_at)
+        .sort((a, b) => store._db.resets[b].issued_at - store._db.resets[a].issued_at)[0];
+      const tok = known.body.devResetToken;
+      chk(known.body.devResetToken !== undefined, "（前置）拿到了明文重设令牌");
+      /* 形状不对 / 令牌不对 / 已经在用的口令 */
+      eq((await core.resetConfirm(d, { rid: rid, token: "x", password: "brand-new-99" })).body.code, "E_TOKEN_INVALID",
+        "令牌不对被拒");
+      eq((await core.resetConfirm(d, { rid: rid, token: tok, password: "123" })).body.code, "E_PW_SHORT",
+        "**口令形状先判**（比令牌还先）—— 不然用户会把「密码太短」读成「链接坏了」");
+      chk(!store._db.resets[rid].consumed_at, "被拒的那两次都没把令牌用掉");
+
+      const rc = await core.resetConfirm(d, { rid: rid, token: tok, password: "brand-new-99" });
+      eq(rc.status, 200, "重设成功");
+      eq(rc.body.sessionsRevoked, true, "**如实回「会话已全部吊销」**（那是重设的一半含义）");
+      chk(store._db.sessions[sid1].revoked === 1, "旧会话 1 被吊销");
+      chk(store._db.sessions[sid2].revoked === 1, "旧会话 2 被吊销（**全部**，不是只有当前那条）");
+      eq((await core.resetConfirm(d, { rid: rid, token: tok, password: "another-pw-88" })).body.code, "E_TOKEN_USED",
+        "同一枚重设令牌不能用第二次");
+
+      /* 新口令生效、旧口令失效 */
+      eq((await L("old-password-1")).status, 401, "旧口令登不进去了");
+      eq((await L("brand-new-99")).status, 200, "新口令能登进来");
+      /* ⚠️ 重设口令**不顺手确认邮箱** —— 收到重设邮件不等于邮箱已确认 */
+      eq(store._db.accounts[uid].email_verified_at, null, "重设口令不写 email_verified_at（两件事各写各的）");
+    }
+
+    /* ---- ⑦ 口令连续失败锁号，成功一次把窗口清空 ---- */
+    {
+      boot({ ALLOW_CODE_ECHO: "1" });
+      const core = require("../api/_lib/core.js");
+      const cfg = require("../api/_lib/config.js");
+      const store = require("../api/_lib/store.js").memoryStore();
+      const d = { cfg, store, limiter: core.makeRateLimiter(), now: () => Date.now(), deviceId: "d6", ip: "1.1.1.1" };
+      const limiterRef = d.limiter;
+
+      await core.register(d, { email: "lock@example.com", password: "hunter2hunter" });
+      const uid = Object.keys(store._db.accounts)[0];
+
+      /* 正确一次 → 窗口清空 → 再错不该立刻锁 */
+      await core.loginWithPassword(d, { email: "lock@example.com", password: "nope-1" });
+      eq(limiterRef.fails("login", "uid:" + uid, Date.now()), 1, "一次失败记 1");
+      await core.loginWithPassword(d, { email: "lock@example.com", password: "hunter2hunter" });
+      eq(limiterRef.fails("login", "uid:" + uid, Date.now()), 0,
+        "**成功一次把失败窗口清空**（不清的下场是「错九次、对一次、再错一次」就锁号）");
+
+      /* 连错到上限 → 锁号。
+         ⚠️ 每次都换一个 deviceId：设备档频控（20 次/小时）会先于「锁号」触发，
+            而这一条要测的是**锁号**（按账号计），不是设备档。
+            两个都用同一个 deviceId 时实测到的是 429 —— 那会让这条断言
+            以「锁号没生效」的形式红掉，而其实锁号那段根本没轮到跑。 */
+      let locked = false;
+      for (let i = 0; i < 12 && !locked; i++) {
+        const r = await core.loginWithPassword(d, { email: "lock@example.com", password: "bad-" + i, deviceId: "dev-" + i });
+        if (r.status === 423) { locked = true; eq(r.body.code, "E_LOCKED", "连错到上限 → E_LOCKED"); }
+      }
+      chk(locked, "口令连续失败会锁号（撞库打的是同一个账号，所以按账号计数）");
+      const after = await core.loginWithPassword(d, { email: "lock@example.com", password: "hunter2hunter", deviceId: "dev-fresh" });
+      eq(after.status, 423, "**锁着的时候连对的口令也进不来**（锁是终态，不是「再试一次就好」）");
+    }
+
+    /* ---- ⑧ 走真 HTTP：六条接口端到端 + 方法校验 ---- */
+    boot({ ALLOW_CODE_ECHO: "1" });
+    const sv = await serve();
+    try {
+      const POST = (p, b, cookie) => call(sv.base, "POST", p, b, cookie);
+
+      const reg = await POST("/api/register", { email: "e2e@example.com", password: "hunter2hunter" });
+      eq(reg.status, 202, "POST /api/register 回 202（与 send-code 同一档）");
+      eq(reg.body.created, true, "如实回 created:true");
+      eq(reg.body.verifySent, false, "console 发信商下 verifySent:false（**不是**「确认邮件已发出」）");
+      const vtok = reg.body.devVerifyToken;
+
+      const dup = await POST("/api/register", { email: "E2E@Example.com", password: "another-pw-77" });
+      eq(dup.status, 202, "同一个邮箱（不同大小写）再注册：**回同一个形状**（不报「已注册」= 不泄露存在性）");
+      eq(dup.body.created, false, "如实回 created:false（这是给界面看的，不是给攻击者挑的）");
+      /* ⚠️ 第二次注册把口令换成了 another-pw-77（「补口令 + 重发确认邮件」那条路），
+         所以后面登录要用**后填的那个** —— 这正是「老账号重新注册也走同一条路」
+         的证据：它真的把口令写进去了。 */
+      chk(/^[0-9a-f]{64}$/.test(String(dup.body.devVerifyToken || "")), "第二次注册也重发了确认邮件（作废旧链接、发新的）");
+
+      const shapeless = await POST("/api/register", { email: "not-an-email", password: "hunter2hunter" });
+      eq(shapeless.status, 400, "邮箱形状不对回 400");
+      eq(shapeless.body.code, "E_EMAIL_FORMAT", "码是 E_EMAIL_FORMAT");
+      const shortpw = await POST("/api/register", { email: "x@example.com", password: "123" });
+      eq(shortpw.body.code, "E_PW_SHORT", "口令太短回 E_PW_SHORT");
+
+      /* 确认邮箱 → 登录 → /api/me 如实带出确认状态与明文邮箱
+         ⚠️ 令牌取**最新那一枚**（第二次注册刚发的），vid 从库里取最新那条 ——
+            拿第一次那枚会撞上「发新的即作废旧链接」，而那条规则本身也有断言守着。 */
+      const storeE0 = require("../api/_lib/store.js").getStore(require("../api/_lib/config.js"));
+      const vidFresh = Object.keys(storeE0._db.verifications)
+        .filter(k => !storeE0._db.verifications[k].consumed_at)
+        .sort((a, b) => storeE0._db.verifications[b].issued_at - storeE0._db.verifications[a].issued_at)[0];
+      const v = await POST("/api/verify-email", { vid: vidFresh, token: dup.body.devVerifyToken });
+      eq(v.status, 200, "POST /api/verify-email 回 200");
+
+      const lg = await POST("/api/login", { email: "e2e@example.com", password: "another-pw-77" });
+      eq(lg.status, 200, "POST /api/login 回 200");
+      chk(/^kbsid=/.test(String(lg.setCookie || "")), "签发了会话 Cookie");
+      chk(String(lg.setCookie || "").indexOf("HttpOnly") > 0, "那枚 Cookie 是 HttpOnly");
+      const cookie = String(lg.setCookie || "").split(";")[0];
+
+      const me = await call(sv.base, "GET", "/api/me", undefined, cookie);
+      eq(me.status, 200, "登进来之后 /api/me 拿得到");
+      /* 明文邮箱保留用户填的大小写（第二次注册填的是 E2E@Example.com）——
+         这正是「显示的是你当时填的那一串」这条口径。 */
+      eq(me.body.email.toLowerCase(), "e2e@example.com", "**/api/me 带出明文邮箱**（个人中心要显示它）");
+      eq(me.body.emailVerified, true, "确认过之后 emailVerified 为 true");
+      chk(!/password_hash|password_salt/.test(JSON.stringify(me.body)), "**/api/me 一个字节都不带口令字段**");
+
+      /* 忘记密码两步 */
+      const rr = await POST("/api/reset-request", { email: "e2e@example.com" });
+      eq(rr.status, 202, "POST /api/reset-request 回 202");
+      const rrr = await POST("/api/reset-request", { email: "ghost@example.com" });
+      eq(rrr.status, 202, "不存在的邮箱也回 202（**同一条接口、同一个形状**）");
+      const cfgE = require("../api/_lib/config.js");
+      const storeE = require("../api/_lib/store.js").getStore(cfgE);
+      const rid = Object.keys(storeE._db.resets)[0];
+      const rc = await POST("/api/reset-confirm", { rid: rid, token: rr.body.devResetToken, password: "brand-new-99" });
+      eq(rc.status, 200, "POST /api/reset-confirm 回 200");
+      eq(rc.body.sessionsRevoked, true, "如实回会话已吊销");
+      const stale = await call(sv.base, "GET", "/api/me", undefined, cookie);
+      eq(stale.status, 401, "**重设之后旧会话立刻失效**（/api/me 回 401）");
+
+      /* 重发确认邮件：502 那条路上不许泄露令牌 */
+      const lg2 = await POST("/api/login", { email: "e2e@example.com", password: "brand-new-99" });
+      const cookie2 = String(lg2.setCookie || "").split(";")[0];
+      const rv = await POST("/api/resend-verification", {}, cookie2);
+      eq(rv.status, 200, "POST /api/resend-verification 回 200");
+      /* ⚠️ 这里是 alreadyVerified:true —— 上面那次 confirm 真的写下了
+         `email_verified_at`，**重设口令之后它仍然在**（重设只动口令那两列）。
+         这一条正好从反面钉住「重设口令不抹掉确认状态」——
+         两件事各写各的，谁也别顺手清掉谁。 */
+      eq(rv.body.alreadyVerified, true, "已确认 → alreadyVerified:true（且不再发信）");
+      eq(rv.body.verifySent, false, "已确认时不再发信，verifySent 如实为 false");
+      const rvAnon = await POST("/api/resend-verification", {});
+      eq(rvAnon.status, 401, "**没登录时重发被拒**（否则任何人都能拿别人邮箱刷确认邮件）");
+
+      /* 方法校验：这几条全是 POST */
+      for (const p of ["/api/register", "/api/login", "/api/verify-email",
+        "/api/resend-verification", "/api/reset-request", "/api/reset-confirm", "/api/admin/accounts"]) {
+        const g = await call(sv.base, "GET", p);
+        eq(g.status, 405, "GET " + p + " 回 405（这几条都不接受 GET）");
+      }
+    } finally { await sv.close(); }
+
+    /* ---- ⑨ 缺 SESSION_SECRET：六条一律 503（与其余接口同口径） ---- */
+    boot({ SESSION_SECRET: "", ALLOW_CODE_ECHO: "1" });
+    const sv2 = await serve();
+    try {
+      for (const [p, b] of [["/api/register", { email: "a@b.com", password: "hunter2hunter" }],
+        ["/api/login", { email: "a@b.com", password: "hunter2hunter" }],
+        ["/api/verify-email", { vid: "v_1", token: "x" }],
+        ["/api/resend-verification", {}],
+        ["/api/reset-request", { email: "a@b.com" }],
+        ["/api/reset-confirm", { rid: "r_1", token: "x", password: "hunter2hunter" }]]) {
+        const r = await call(sv2.base, "POST", p, b);
+        eq(r.status, 503, "缺 SESSION_SECRET 时 " + p + " 回 503（不是 500、不是 403）");
+        eq(r.body.code, "E_NOT_CONFIGURED", p + " 的码是 E_NOT_CONFIGURED");
+      }
+    } finally { await sv2.close(); }
+
+    /* ---- ⑩ 管理后台的账号名录：回明文、绝不出口令与摘要 ---- */
+    boot({ ALLOW_CODE_ECHO: "1" });
+    const sv3 = await serve();
+    try {
+      const POST = (p, b, cookie) => call(sv3.base, "POST", p, b, cookie);
+      const regA = await POST("/api/register", { email: "owner@example.com", password: "hunter2hunter" });
+      const lgA = await POST("/api/login", { email: "owner@example.com", password: "hunter2hunter" });
+      const cA = String(lgA.setCookie || "").split(";")[0];
+
+      const asUser = await POST("/api/admin/accounts", {}, cA);
+      eq(asUser.status, 403, "**普通用户打名录口回 403**（角色闸在服务端，不经界面）");
+      eq(asUser.body.code, "E_FORBIDDEN", "码是 E_FORBIDDEN");
+
+      const anon = await POST("/api/admin/accounts", {});
+      eq(anon.status, 401, "没会话时回 401（不是 403）");
+
+      /* 再注册一个人，好让名录有第二条 */
+      await POST("/api/register", { email: "kid@example.com", password: "hunter2hunter" });
+
+      const storeN = require("../api/_lib/store.js").getStore(require("../api/_lib/config.js"));
+      const rowsN = Object.keys(storeN._db.accounts).map(k => storeN._db.accounts[k]);
+      rowsN.filter(a => a.email_mask === "o***@example.com")[0].role = "owner";
+
+      const list = await POST("/api/admin/accounts", {}, cA);
+      eq(list.status, 200, "管理员能列名录");
+      eq(list.body.total, 2, "名录列出**全部注册账号**（不是只列发过层级的）");
+      const mails = list.body.accounts.map(a => a.email).sort();
+      eq(mails.join(","), "kid@example.com,owner@example.com", "**明文邮箱在里面**（名录存在的理由）");
+      const one = list.body.accounts[0];
+      ["email", "emailMask", "nickname", "tier", "role", "status", "emailVerified",
+        "hasPassword", "createdAt", "lastLoginAt"].forEach(k => {
+        chk(Object.prototype.hasOwnProperty.call(one, k), "名录每行给出 " + k);
+      });
+      const raw = JSON.stringify(list.body);
+      chk(!/password_hash|password_salt/.test(raw), "**名录里没有口令字段**（管理员也不需要它）");
+      chk(!/email_hash/.test(raw), "**名录里没有 email_hash**（那是登录标识，泄出去等于可查询「谁是本站用户」）");
+      chk(!/hunter2hunter/.test(raw), "名录里没有明文口令");
+      chk(!/token_hash|code_hash/.test(raw), "名录里没有确认令牌 / 验证码的摘要");
+      eq(list.body.accounts.filter(a => a.email === "owner@example.com")[0].hasPassword, true,
+        "有口令的账号如实标 hasPassword:true");
+      eq(regA.body.uid !== undefined, true, "（顺带）注册响应里有 uid");
+
+      /* ⚠️ 与会「只列发过层级的」那一张**不是一张表** */
+      const grants = await POST("/api/admin/grants", {}, cA);
+      eq(grants.body.grants.length, 0, "发放台账仍然是空的（那两个人都是 free）—— 两张表分开的理由在断言里");
+    } finally { await sv3.close(); }
+  }
+
+  /* ==================================================================
+     廿三、Issue #197：盘上形状与「不假装」的源码口径
+
+     这一节扫源码。守的三件事**都是那种「写成别的样子也能跑、
+     但跑出来的东西是假的」**：
+       ① 前端六条传输方法真的接上了（少一条就是「按钮点了没反应」）
+       ② 新页面（/verify/ /reset/）的脚本进了预缓存清单与测试路由
+       ③ 口令绝不写进任何本地存储 / URL
+     ================================================================== */
+  {
+    const apiSrc = fs.readFileSync(path.join(ROOT, "js/auth-api.js"), "utf8");
+    ["register", "login", "verifyEmail", "resendVerification", "resetRequest", "resetConfirm", "accounts"]
+      .forEach(m => chk(new RegExp("\\b" + m + ":\\s*function").test(apiSrc),
+        "js/auth-api.js 接了 " + m + "()（少一条就是按钮点了没反应）"));
+
+    const bindSrc = fs.readFileSync(path.join(ROOT, "js/account-api.js"), "utf8");
+    chk(/resendVerification:\s*resendVerification/.test(bindSrc), "account-api 接了 resendVerification");
+    chk(/adminAccounts:\s*adminAccounts/.test(bindSrc), "account-api 接了 adminAccounts");
+
+    const swSrc = fs.readFileSync(path.join(ROOT, "sw.js"), "utf8");
+    ["./verify/", "./reset/", "./js/verify.js", "./js/reset.js", "./js/login.js"].forEach(f => {
+      chk(swSrc.includes('"' + f + '"'), "sw.js 预缓存里有 " + f);
+    });
+
+    /* ⚠️ 口令不许写进本地存储 / URL。判据落在**登录与重设两页的脚本**上：
+       它们同时提到 password 与 localStorage / location.search 才是违规。
+       单看「出现了 password 这个词」会误判（表单字段本来就叫这个）。 */
+    ["js/login.js", "js/reset.js"].forEach(f => {
+      const src = fs.readFileSync(path.join(ROOT, f), "utf8")
+        .replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^\s*\/\/.*$/gm, " ");
+      const bad = src.split("\n").filter(line => /password|input-pw|input-reg-pw|input-new-pw/i.test(line)
+        && /localStorage|sessionStorage|document\.cookie|location\.search\s*\+/i.test(line));
+      eq(bad.length, 0, f + " 里没有一行「口令 + 本地存储 / URL」同现：" + bad.join(" | ").slice(0, 80));
+    });
+
+    /* 登录页那四个 pane 的**文案基线**：三条不许出现的假话 */
+    const loginSrc = fs.readFileSync(path.join(ROOT, "login/index.html"), "utf8");
+    chk(!/邮件已发送|已发送确认邮件/.test(loginSrc), "登录页不写「邮件已发送」（发信是事实，不是尽力）");
+    chk(/还没|没能|发不出去/.test(loginSrc), "登录页如实写了「可能发不出去」这件事");
+    /* 登录页那两处与「邮箱存在性」有关的措辞，逐条钉住：
+       ① **用户看得见的文案**里不许出现「没注册过 / 不存在」这类断言
+          （源码注释里出现是允许的 —— 注释恰恰在解释为什么不许那么写，
+            拿整份文件去扫必然把那段解释本身判成违规）
+       ② 那一句文案必须是**条件句**：判断留给收件箱，界面不替服务端回答 */
+    const loginVisible = loginSrc.replace(/<!--[\s\S]*?-->/g, " ");
+    chk(!/这个邮箱没注册|没有这个邮箱|邮箱不存在|未注册/.test(loginVisible),
+      "登录页的**可见文案**里不回答「这个邮箱注册过没有」（那等于邮箱枚举）");
+    /* ⚠️ 那句条件句住在 **js/login.js** 里（向用户显示时才写进 DOM），
+       不在 HTML 里 —— 拿 HTML 去找必然找不到。两处都要扫：
+       HTML 里是静态文案，JS 里是运行期文案，漏一处就等于没守。 */
+    const loginJs = fs.readFileSync(path.join(ROOT, "js/login.js"), "utf8");
+    chk(/如果这个邮箱在本站注册过/.test(loginJs),
+      "忘记密码那一屏用的是条件句「如果这个邮箱在本站注册过」（与服务端同一句话）");
+
+    /* 新页面的 data-back 落点：确认 / 重设都回 /login/（做完就走，下一件事是登录） */
+    ["verify/index.html", "reset/index.html"].forEach(f => {
+      const src = fs.readFileSync(path.join(ROOT, f), "utf8");
+      chk(/data-back="\/login\/"/.test(src), f + " 的返回落点指向 /login/");
+      chk(/data-dock="off"/.test(src), f + " 不留底部页签（一段「专心做完」的流程）");
+    });
+
+    /* 重设页必须**如实说**会吊销别的设备（那是这一件事的一半含义） */
+    const resetSrc = fs.readFileSync(path.join(ROOT, "reset/index.html"), "utf8");
+    chk(/其它设备|其他设备/.test(resetSrc), "重设页写明「其它设备上的登录会全部退出」");
   }
 
   console.log(fails === 0 ? "\n🎉 服务端账号接口测试全部通过" : "\n❌ " + fails + " 项失败");

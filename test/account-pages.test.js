@@ -12,8 +12,9 @@
  *   三、收口：页面不许自己拼 plan / tier，权限判断只走 Entitlement
  *   四、只读：这几页**一个字节都不写进度键**（首页浏览不该被写盘污染）
  *
- * 跑法：`node test/account-pages.test.js`（纯 Node，不联网、不装依赖）
+ * 跑法：`node test/account-pages.test.js`（纯 Node + jsdom，不联网、不装依赖）
  */
+const { JSDOM } = require('jsdom');
 const fs = require('fs');
 const path = __dirname + '/../';
 const read = f => fs.readFileSync(path + f, 'utf8');
@@ -387,14 +388,30 @@ const LOGIN = strip(loginJs), PROFILE = strip(profileJs), ADMIN = strip(adminJs)
 
      ⚠️ 判的是「这类输入框 / 这个去处出现了几次」，不是「某个 id 在不在」：
         id 改名换姓之后这两条仍然成立。 */
-  const loginInputs = [...SRC.login.matchAll(/<input[^>]*type="email"[^>]*>/g)].length;
-  chk(loginInputs === 1, '登录页只有一个邮箱输入框（实际 ' + loginInputs + ' 个）');
-  chk(!/input-reset-email|btn-reset-send|btn-reset-verify/.test(SRC.login),
-    '登录页不再挂第二张「重设凭证」卡（同一个动作一个表单）');
+  /* ⚠️ 这一条在 Issue #197 里**被重塑过**。
+     原先它数的是「页面上有几个 `type="email"` 输入框」，守的是
+     「同一页不许出现两张『输邮箱 → 收码』的表单」。
+     现在这一页有**四个**邮箱框，而它们**不是同一件事的四种写法**：
+       密码登录 / 快捷登录 / 注册 / 忘记密码，四件不同的事各一个。
+     但「一页一件事」这条原则一个字都没松 —— 所以判据从
+     「总数是几」改成**「同一时刻屏幕上最多一个」**：
+     它们分住在四个互斥的 pane 里（`display:none` 的那个不显示），
+     由 `LoginPage.setMode()` 一处切换。
+     这条断言钉住的是那个**结构**（每个框都在一个 pane 里），
+     而不是某个数字 —— 数字会随着流程增减而变，结构不该变。 */
+  const loginInputs = [...SRC.login.matchAll(/<input[^>]*type="email"[^>]*>/g)];
+  chk(loginInputs.length >= 1, '登录页有邮箱输入框（实际 ' + loginInputs.length + ' 个）');
+  const panes = [...SRC.login.matchAll(/class="auth-pane" id="(pane-[a-z]+)"/g)].map(m => m[1]);
+  chk(panes.length >= 4, '登录页把四个动作分进各自的 pane（实际 ' + panes.length + ' 个：' + panes.join('/') + '）');
+  chk(panes.indexOf("pane-pw") >= 0 && panes.indexOf("pane-register") >= 0 &&
+    panes.indexOf("pane-code") >= 0 && panes.indexOf("pane-forgot") >= 0,
+    '四个 pane 就是「密码登录 / 注册 / 快捷登录 / 忘记密码」—— 少一个就有一件事没处放');
+  chk(/LoginPage\s*=\s*{[\s\S]*setMode/.test(LOGIN),
+    'js/login.js 暴露 setMode（本页唯一的「画到哪一步」出口，测试靠它切屏）');
   // 内核那一半照旧在：能力没删，删的只是页面入口
   chk(/resetCredential\s*:/.test(read('js/auth-core.js')),
-    'AuthCore.resetCredential 仍在（删的是页面入口，不是能力）');
-  chk(!/onResetSend|onResetVerify/.test(LOGIN), 'js/login.js 不再接重设凭证那一块');
+    'AuthCore.resetCredential 仍在（本机那条路的能力没删）');
+  chk(!/onResetSend|onResetVerify/.test(LOGIN), 'js/login.js 不再接旧的重设凭证那一块');
 
   // ⚠️ 数 JS 里的**裸地址字面量**（`"/login/"`），不要数 `location.href = ...`：
   //    profile.js 的注释里也写着这串地址（「落到 /login/ 也不是死路」），
@@ -450,14 +467,27 @@ const LOGIN = strip(loginJs), PROFILE = strip(profileJs), ADMIN = strip(adminJs)
     chk(!/。.*。/.test(b), '算法说明不再一句接一句（「' + b + '」）');
   });
 
-  /* 法务两页：这轮又砍了一截 —— 用**字数上限**兜住，免得有一天又长回去。
-     （上限取的是本次实测值再加一点余量，不是「刚好卡住现在」。） */
+  /* 法务两页：Issue #163 那轮砍过一截，用**字数上限**兜住，免得又长回去。
+     ⚠️ Issue #197 把上限往上调了一档，理由不是「写长了」而是
+        **法务事项本身多了几件**（这几件都是「条款跟随代码」的硬要求，
+        少写一件就是条款落后于代码）：
+          · 邮箱明文现在真的落库了 → 必须写明「邮箱会保存到服务器」
+          · 注册多了邮箱确认这一步 → 必须写明有那封邮件、有效期多久
+          · 密码不存明文、找不回原密码 → 必须写明「只能重设」
+          · 重设密码会踢掉其它设备 → 必须写明，否则用户会觉得被莫名登出
+        所以上限调高，而不是把那几件事删掉。**调高的是数字，不是纪律**：
+        没有这几件事的时候，谁也别把这个数字再往上抬。 */
   const legalLen = (f) => read(f).replace(/<!--[\s\S]*?-->/g, "")
     .replace(/<[^>]+>/g, "").replace(/\s+/g, "").length;
-  chk(legalLen('terms/index.html') < 1000,
-    '用户协议正文 < 1000 字（实际 ' + legalLen('terms/index.html') + '）');
-  chk(legalLen('privacy/index.html') < 1400,
-    '隐私条款正文 < 1400 字（实际 ' + legalLen('privacy/index.html') + '）');
+  chk(legalLen('terms/index.html') < 1250,
+    '用户协议正文 < 1250 字（实际 ' + legalLen('terms/index.html') + '）');
+  chk(legalLen('privacy/index.html') < 1650,
+    '隐私条款正文 < 1650 字（实际 ' + legalLen('privacy/index.html') + '）');
+  /* 反向：这几件事**必须**在条款里（少一件就是条款落后于代码） */
+  const priv = read('privacy/index.html');
+  chk(/保存到服务器/.test(priv), '隐私条款写明邮箱会保存到服务器（Issue #197 起明文确实落库）');
+  chk(/不会保存明文/.test(priv), '隐私条款写明密码不存明文');
+  chk(/全部退出/.test(priv), '隐私条款写明改密码会踢掉其它设备');
 }
 
 /* ============ 十三、个人中心：一张卡一件事、操作键攒成一行（Issue #163 第三轮） ============ */
@@ -574,5 +604,127 @@ const LOGIN = strip(loginJs), PROFILE = strip(profileJs), ADMIN = strip(adminJs)
     '已登录时那颗键换成「管理登录状态」（仍落在 /login/，不是死路）');
 }
 
-console.log('\n' + (fails ? '❌ ' + fails + ' 项失败' : '🎉 账号三页测试全部通过'));
-process.exit(fails ? 1 : 0);
+
+/* ================= 十三、Issue #197：四屏真的切得动（jsdom 真跑一遍） ================= */
+{
+  /* 用户要的是一整套登录流程（注册 / 确认 / 登录 / 忘记密码 / 重设）。
+     这一节**真的把 /login/ 跑起来点一遍** —— 前面第十二节那些断言读的是源码，
+     而源码读得再细也测不出「`init()` 有没有真的把监听器挂上」。
+
+     为什么必须有这一节：实测踩到过两个**只看源码看不出来**的 bug ——
+       ① 服务端连不上时点「注册」，界面跳回了密码登录那一屏
+          （`init()` 里那句 `setMode("pw")` 在异步回调之后又跑了一遍，
+            把用户刚切过去的那一屏冲掉了）
+       ② 注册失败时提示的是「连不上服务端，**已切回本机体验版**」——
+          而口令那四屏压根没有本机版本，那句话是一句当场被自己推翻的假话
+     两个都只在「真的点一下」时才现形。 */
+
+  const html = read('login/index.html');
+  const sdom = new JSDOM(html, { runScripts: 'dangerously', url: 'https://x.test/login/', base: 'https://x.test/login/' });
+  const w = sdom.window;
+  /* 离线：所有 fetch 都失败 —— 这正是「服务端连不上」那一档，也是实测出问题的那一档 */
+  w.fetch = () => Promise.reject(new Error('offline'));
+  ['js/auth-core.js', 'js/auth-api.js', 'js/entitlement.js', 'js/avatar.js',
+    'js/family.js', 'js/progress-store.js'].forEach(f => {
+    const el = w.document.createElement('script');
+    el.textContent = read(f);
+    w.document.body.appendChild(el);
+  });
+  const s2 = w.document.createElement('script');
+  s2.textContent = read('js/login.js');
+  w.document.body.appendChild(s2);
+  w.document.dispatchEvent(new w.Event('DOMContentLoaded', { bubbles: true }));
+
+  const doc = w.document;
+  const $ = (id) => doc.getElementById(id);
+  const shown = (sel) => { const e = doc.querySelector(sel); return !!(e && !e.hidden); };
+
+  chk(!!w.LoginPage, '登录页脚本跑起来了（window.LoginPage 在）');
+  chk(shown('#pane-pw') && !shown('#pane-code') && !shown('#pane-register') && !shown('#pane-forgot'),
+    '初始只显示「密码登录」那一屏（其余三屏都收着）');
+
+  $('btn-go-register').click();
+  chk(shown('#pane-register') && !shown('#pane-pw'), '点「还没有账号？注册」切到注册屏');
+  chk(!shown('#auth-tabs'), '支路屏不摆主路页签（不然用户会以为还能切回去）');
+
+  $('btn-back-login').click();
+  chk(shown('#pane-pw'), '「返回登录」切回密码登录屏');
+  $('btn-forgot').click();
+  chk(shown('#pane-forgot'), '「忘记密码」切到忘记密码屏');
+
+  $('tab-code').click();
+  chk(shown('#pane-code') && !shown('#pane-forgot'),
+    '点页签「快捷登录」切到随机码那一屏（页签只切动作、不跳页）');
+  chk($('tab-code').getAttribute('aria-selected') === 'true' &&
+    $('tab-pw').getAttribute('aria-selected') === 'false',
+    '页签的 aria-selected 跟着走（读屏用户能听出在哪一屏）');
+
+  /* 「显示密码」那颗键：切 type、改按钮字、改 aria-label，三件一起 */
+  $('btn-go-register').click();
+  const pw = $('input-reg-pw'), eye = $('btn-reg-eye');
+  chk(pw.type === 'password', '口令栏初始是 password');
+  eye.click();
+  chk(pw.type === 'text' && eye.textContent === '隐藏' && eye.getAttribute('aria-label') === '隐藏密码',
+    '「显示」键三件一起切：type / 按钮字 / aria-label');
+  eye.click();
+  chk(pw.type === 'password' && eye.textContent === '显示', '再点切回去');
+
+  /* 客户端先判：两次口令不一样 / 太短 —— 这两条**不用**打扰服务端 */
+  $('input-reg-email').value = 'a@b.com';
+  $('input-reg-pw').value = 'hunter2hunter';
+  $('input-reg-pw2').value = 'hunter2hunterX';
+  $('btn-register').click();
+  chk($('msg-reg').textContent === '两次填的密码不一样', '两次口令不一样就地提示');
+
+  $('input-reg-pw').value = 'abc';
+  $('input-reg-pw2').value = 'abc';
+  $('btn-register').click();
+  chk(/至少 8 位/.test($('msg-reg').textContent), '口令太短就地提示');
+
+  /* ⚠️ 这一节的核心：服务端连不上时点注册，界面必须**留在原地**并**如实说话** */
+  $('input-reg-pw').value = 'hunter2hunter';
+  $('input-reg-pw2').value = 'hunter2hunter';
+  $('btn-register').click();
+
+  setTimeout(() => {
+    try {
+      chk(shown('#pane-register'), '服务端连不上时点注册：**留在注册屏**（不把用户刚切过去的那一屏冲掉）');
+      chk(!shown('#pane-pw'), '没有偷偷跳回密码登录屏（实测踩过这个 bug）');
+      const m = $('msg-reg').textContent;
+      chk(!/本机体验版/.test(m),
+        '注册失败时**不说「已切回本机体验版」**（口令这条路压根没有本机版本，那是假话）');
+      chk(/注册|改密码/.test(m), '如实说「暂时不能注册或改密码」（实际「' + m + '」）');
+      chk($('input-reg-pw').value === '' && $('input-reg-pw2').value === '',
+        '口令那一栏用完就清（不在屏幕上多留一秒）');
+
+      /* 忘记密码那一屏同样：留在原地 + 同一句实话 */
+      $('btn-forgot').click();
+      $('input-forgot-email').value = 'who@example.com';
+      $('btn-forgot-send').click();
+      setTimeout(() => {
+        try {
+          chk(shown('#pane-forgot'), '忘记密码失败也留在原地');
+          chk(!/本机体验版/.test($('msg-forgot').textContent),
+            '忘记密码失败同样不说「已切回本机体验版」');
+          chk(/注册|改密码/.test($('msg-forgot').textContent),
+            '如实说这一件事现在做不了（实际「' + $('msg-forgot').textContent + '」）');
+
+          /* 源码那一半：两条路的传输文案**必须分开两张表** */
+          chk(/PASSWORD_ERR/.test(read('js/auth-api.js')),
+            'js/auth-api.js 有独立的 PASSWORD_ERR（口令那几条的传输文案）');
+          chk(!/已切回本机体验版/.test(String(read('js/auth-api.js').match(/PASSWORD_ERR\s*=\s*\{[\s\S]*?\};/) || '')),
+            'PASSWORD_ERR 那张表里没有「已切回本机体验版」这类假话');
+
+          console.log('\n' + (fails ? '❌ ' + fails + ' 项失败' : '🎉 账号三页测试全部通过'));
+          process.exit(fails ? 1 : 0);
+        } catch (e) {
+          console.log('✗ 第十三节自身抛异常：' + e.message);
+          process.exit(1);
+        }
+      }, 60);
+    } catch (e) {
+      console.log('✗ 第十三节自身抛异常：' + e.message);
+      process.exit(1);
+    }
+  }, 60);
+}

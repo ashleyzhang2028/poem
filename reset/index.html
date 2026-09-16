@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#2f6055" />
+  <title>重设密码 · 跬步</title>
+  <meta name="description" content="跬步账号的重设密码页：点开邮件里那条链接，在这里设置新密码。" />
+  <meta name="format-detection" content="telephone=no" />
+  <meta name="robots" content="noindex, nofollow" />
+
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="跬步" />
+  <meta name="mobile-web-app-capable" content="yes" />
+
+  <base href="/" />
+  <link rel="icon" href="./icons/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/account.css" />
+</head>
+<!-- data-dock="off"：与 /verify/ 同一条（做完就走）。
+     返回落点指 /login/：重设完密码的下一件事就是拿新密码登进来。 -->
+<body data-nav="reset" data-dock="off" data-back="/login/" data-page="重设密码" data-sub="邮件里的那条链接">
+  <div class="app">
+    <header class="topbar"></header>
+
+    <main class="account-page" id="reset-page">
+      <section class="account-card">
+        <div id="reset-none" hidden>
+          <p class="account-lead">这条链接不完整。</p>
+          <p class="account-hint">请直接点邮件里那颗按钮，或者把整条链接完整地打开一次。</p>
+          <div class="account-actions">
+            <button class="account-btn" id="btn-reset-to-login" type="button">去登录</button>
+          </div>
+        </div>
+
+        <div id="reset-form">
+          <p class="account-lead">设置一个新密码。</p>
+          <div class="account-field">
+            <label class="account-label" for="input-new-pw">新密码</label>
+            <div class="pw-row">
+              <input id="input-new-pw" class="account-input" type="password"
+                     autocomplete="new-password" spellcheck="false" enterkeyhint="next"
+                     placeholder="至少 8 位" maxlength="72" />
+              <button class="pw-eye" id="btn-new-eye" type="button" aria-label="显示密码">显示</button>
+            </div>
+          </div>
+          <div class="account-field">
+            <label class="account-label" for="input-new-pw2">再填一次</label>
+            <input id="input-new-pw2" class="account-input" type="password"
+                   autocomplete="new-password" spellcheck="false" enterkeyhint="go"
+                   placeholder="两次要一样" maxlength="72" />
+          </div>
+          <button class="account-btn" id="btn-reset-confirm" type="button">重设密码</button>
+          <p class="account-msg" id="msg-reset"></p>
+          <!-- ⚠️ 这一句必须写：重设口令会**吊销全部会话**，用户得先知道 -->
+          <p class="account-hint">重设之后，你在其它设备上的登录会全部退出。</p>
+        </div>
+
+        <div id="reset-ok" hidden>
+          <p class="account-lead" id="reset-ok-lead"></p>
+          <div class="account-actions">
+            <button class="account-btn" id="btn-reset-login" type="button">用新密码登录</button>
+          </div>
+        </div>
+
+        <div id="reset-bad" hidden>
+          <p class="account-lead" id="reset-bad-lead"></p>
+          <p class="account-hint">重设链接 1 小时内有效、且只能用一次。可以回登录页重新申请一封。</p>
+          <div class="account-actions">
+            <button class="account-btn" id="btn-reset-retry" type="button">回登录页</button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="foot settings-foot">
+      <span class="foot-copy">&copy;2026 kuibu.app 积跬步, 至千里</span>
+      <span class="foot-links">
+        <a href="/terms/">用户协议</a>
+        <span class="foot-sep">·</span>
+        <a href="/privacy/">隐私条款</a>
+      </span>
+    </footer>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+
+  <script src="/js/auth-core.js"></script>
+  <script src="/js/auth-api.js"></script>
+  <script src="/js/entitlement.js"></script>
+  <script src="/js/family.js"></script>
+  <script src="/js/avatar.js"></script>
+  <script src="/js/reset.js"></script>
+  <script src="/js/chrome.js"></script>
+  <script src="/js/pwa.js"></script>
+</body>
+</html>
