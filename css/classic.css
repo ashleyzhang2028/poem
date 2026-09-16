@@ -1329,39 +1329,37 @@ body.reader-open .dock { display: none; }
    否则下拉会相对整页定位、跑到别处去。 */
 .search-wrap { position: relative; }
 
-/* 替身输入框：进这一页时先让「焦点」落在它身上（见 js/search.js 的 focusInput）。
+/* 「敲 / 直接进搜索框」的那枚提示（Issue #163）
    --------------------------------------------------------------------------
-   它必须**确实是一枚 1×1 的真输入框**，不能改成一个 div / span 之类的空元素：
-   iOS 只有在「焦点落在一个可输入的控件上」时才会把软件键盘弹出来，
-   而搜索页的整个设计就是「一进来就能打字」。
-   代价是这种控件天生带着一串 UA 默认外观（白底、描边、内边距），
-   必须逐条抹平 —— 而且**不能**用 display: none / visibility: hidden /
-   opacity: 0 这些「不渲染」的做法：不渲染的元素拿不到焦点，键盘就不会来。
-   所以这里留着一枚 1×1 的框：方位（top/left）在下方给了确定值，
-   视觉上不可见，可聚焦。 */
-.search-hero-focus {
+   进页不再自动聚焦，桌面用户于是多一步「把鼠标移到框上」。这一枚告诉他
+   不用移 —— 敲 / 就行。它是 <kbd>，不是按钮：没有去处、点它不该发生任何事。
+   · 只画给**有实体键盘**的设备（pointer: fine）：手机上有键盘的是屏幕里那一块，
+     / 这个动作在那里不成立，留着只是一枚看不懂的小徽章；
+   · 位置由 .search-wrap（position: relative）给，贴在框的右内侧；
+   · 视觉是「纸面 + 细描边 + 中性字」的一枚小键帽，不抢 placeholder 的注意力。 */
+.search-slash {
   position: absolute;
-  /* ⚠️ 贴在英雄区**顶部**，不是页面顶部 —— 「元素在视口里」是 iOS 决定要不要
-     自动滚屏的两个条件之一（另一个是元素高度超出可视区）。英雄区高度等于视口
-     减去顶栏与底部页签，加上顶部这一个像素仍完整落在可视区内，
-     所以聚焦它时浏览器不会自作主张滚一屏，页面稳定停在顶上。
-     改回页面顶部（top: 0 相对整页）或让它被顶栏盖住，iOS 会先滚一屏再弹键盘 ——
-     用户看到的是「点一下搜索框，整页跳一下」。 */
-  top: 0;
-  left: 50%;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: 0;
-  border: none;
-  outline: none;
-  background: transparent;
-  color: transparent;
-  -webkit-appearance: none;
-  appearance: none;
-  box-shadow: none;
-  font-size: 1px;
-  z-index: -1;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 20px;
+  padding: 0 4px;
+  box-sizing: border-box;
+  font: inherit;
+  font-size: 12px;
+  line-height: 1;
+  color: var(--ink-3);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  pointer-events: none;
+}
+@media (pointer: fine) {
+  .search-slash { display: inline-flex; }
 }
 
 /* 搜索区：整块在标题栏下方**垂直 + 水平居中**，页面上只有它一个

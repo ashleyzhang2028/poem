@@ -45,8 +45,10 @@
          现在：没输入关键词时下面为空，输入几个字才列出命中的篇目，
          字越多命中越少 —— 输入框就是这一页唯一的入口。 -->
     <div class="search-hero" id="search-hero">
-      <input id="search-hero-focus" class="search-hero-focus" type="search" tabindex="-1"
-             aria-hidden="true" autocomplete="off" />
+      <!-- ⚠️ Issue #163：进这一页**不再自动聚焦**（用户：手机键盘自己弹出来，烦人）。
+           这里原先有一枚 1×1 的替身输入框（先聚焦它，让 iOS 弹键盘、再由它把焦点
+           交给真输入框），那套动作从此没有用途，元素与样式一并撤掉 ——
+           留着一枚 aria-hidden 的可聚焦控件，只会给读屏与 Tab 顺序添乱。 -->
       <div class="toolbar search-toolbar">
         <div class="search-wrap" id="site-search-wrap">
           <span class="search-icon" aria-hidden="true">
@@ -57,7 +59,12 @@
           </span>
           <input id="gw-search" data-gw="search" class="search-input" type="search"
                  placeholder="搜索篇名 / 作者 / 诗句（全站）" autocomplete="off" role="combobox"
-                 aria-expanded="false" aria-controls="search-suggest" aria-autocomplete="list" />
+                 aria-expanded="false" aria-controls="search-suggest" aria-autocomplete="list"
+                 enterkeyhint="search" />
+          <!-- 键盘提示：电脑上按 / 直接进搜索框（见 js/search.js 的 bindSlashKey）。
+               ⚠️ 不写「点这里搜索」这类话 —— 输入框自己就说明了一切；
+               这一枚只说「不用点，敲 / 就行」，窄屏（无实体键盘）由 CSS 收起。 -->
+          <kbd class="search-slash">/</kbd>
           <!-- 候选下拉：没有候选时整个容器 hidden，不占位、不出边框 -->
           <div class="suggest" id="search-suggest" role="listbox" aria-label="搜索候选" hidden></div>
         </div>
@@ -291,6 +298,14 @@
        必须在 js/storage.js 之前 —— 它的 touch() 要给每条记录打标，
        而页面只认识 Storage/ProgressStore 这两个入口。 -->
   <script src="js/sync-store.js"></script>
+  <!-- 分域读法的**转发层**：页面各处的 Storage.get / getSettings 都落在这里，
+       实现是上面那份 progress-store。上面那段注释一直写着「读法由 js/storage.js
+       转发」——但这一页此前**只加载了引擎、没加载转发层**，于是这些页面上
+       window.Storage 一直是 undefined，凡走它的地方都静默退化成「读不到」。
+       Issue #163 把搜索页「上次搜的词」接到这一层时暴露了它：搜索页原来
+       读不到任何存储，只是因为它从不读。顺序：progress-store → sync-store →
+       storage（后者才认前两个）。 -->
+  <script src="js/storage.js"></script>
   <script src="js/collections.js"></script>
   <script src="data/pinyin-table.js"></script>
   <script src="data/common-chars.js"></script>
