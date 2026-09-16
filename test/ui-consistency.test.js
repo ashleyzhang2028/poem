@@ -1254,31 +1254,61 @@ PAGE_FILES.forEach(f => {
   chk(noneWriters.length <= 1,
     '除全局那条外，各页面文件里不再各写一遍 text-decoration: none（实际 ' + noneWriters.length + ' 条）');
 
-  // ③ 同步开关：HTML 用到的三个类名，样式表里必须真的存在
-  ['switch-row', 'switch-track', 'switch-input', 'switch-label'].forEach(cls => {
+  // ③ 同步开关：HTML 里写的类名，样式表里必须真的存在
+  //
+  // ⚠️ HTML 只用 .switch（整行，含 <label> 语义）/ .switch-input（真实输入框）
+  //    / .switch-track（可见的胶囊轨道）三个 —— 后两者由最后的「开关（跨设备同步）」
+  //    那一节定义，**各只有一条规则**。
+  //    原先这里还钉着 .switch-row 与 .switch-label：这两个类名在 HTML 里早已
+  //    无人使用（它们属于旧版「并排的轨道 + 关/开 文字标签」），样式表里却
+  //    还留着一整节 —— 于是 .switch-input / .switch-track 被先后定义两遍
+  //    （CSS 层叠取后者），真实几何与源码里量到的不一致。那一节既已删除，
+  //    这两条断言也就失去了对象。
+  ['switch', 'switch-track', 'switch-input'].forEach(cls => {
     chk(new RegExp('\\.' + cls + '\\s*[,{]').test(cssCode),
       '开关的 .' + cls + ' 在样式表里有规则（HTML 写了就得画出来）');
   });
-  chk(/input:checked\s*\+\s*\.switch-track/.test(cssCode),
-    '开关的「开」态由 :checked + .switch-track 表达（不是靠原生 checkbox）');
-  chk(/input:disabled\s*\+\s*\.switch-track/.test(cssCode),
+  // 旧结构（并排的「关 / 开」文字标签）的遗留类名：结构已在 1B 期换成
+  // .switch > input + .switch-track，样式与类名一起删干净 ——
+  // 留着无人使用的规则，下一个改样式的人会以为它还在某页上画着。
+  ['switch-row', 'switch-label'].forEach(cls => {
+    chk(!new RegExp('\\.' + cls + '\\s*[,{]').test(cssCode),
+      '样式表里不再留 .' + cls + ' 规则（没人用的类名不留僵尸规则）');
+  });
+  // 「开」/「未开放」两态：CSS 用相邻兄弟选择器 `.switch-input:checked + .switch-track`
+  // 与 `.switch-input:disabled + .switch-track`（不用 :has()，老 WebView 上会静默失效）。
+  // ⚠️ 正则里要带上 `.switch-input` 这个**宿主类名**：只写 `input:checked + ...`
+  //    会连 `body[data-x] input:checked + .switch-track` 那种别的写法一起放过，
+  //    判不出这条相邻选择器找的到底是不是这颗开关。
+  chk(/\.switch-input:checked\s*\+\s*\.switch-track\s*\{/.test(cssCode),
+    '开关的「开」态由 .switch-input:checked + .switch-track 表达（不是靠原生 checkbox）');
+  chk(/\.switch-input:disabled\s*\+\s*\.switch-track/.test(cssCode),
     '开关的「未开放」态也有样式（置灰，不是原生 disabled 的样子）');
-  // 真实输入框留着（键盘 / 读屏要用），只是透明
-  chk(/opacity:\s*0/.test(ruleOf(cssCode, '.switch-input')),
-    '.switch-input 是透明覆盖层（不删 input，键盘与读屏照旧）');
-  // 透明输入框与轨道必须**同尺寸**：不同尺寸就意味着「看得见的开关」与
-  // 「真正接住点击 / 焦点的那块」错位 —— 点上去没反应，或焦点框画在轨道外面。
-  // 判的是「两处声明的 宽 与 高 相等」，不是「等于某个具体像素」：换尺寸照样成立。
+  // 真实输入框留着（键盘 / 读屏要用），只是不再是**看得见的那只盒子**。
+  // ⚠️ 「不可见」有两种成立写法：`opacity: 0`（透明覆盖层），或
+  //    `appearance: none` 之后自己把背景 / 边框收掉再画。这里判的是结果，
+  //    只钉 `opacity: 0` 会把「自绘但保留 input」的实现误判为回归。
+  {
+    const inpDecl = ruleOf(cssCode, '.switch-input');
+    chk(/opacity:\s*0\b/.test(inpDecl) ||
+        (/appearance:\s*none/.test(inpDecl) && /background:/.test(inpDecl)),
+      '.switch-input 不再是看得见的那只盒子（透明覆盖层，或外观自绘）—— 不删 input，键盘与读屏照旧');
+  }
+  // 两只盒子各自把 width / height 写全 ——
+  // ⚠️ 判的是「两侧的盒子都量得出来」，**不是**「两者同尺寸」：
+  //    旧版里 .switch-input 自己就是可见的轨道本体、透明层是另一只 span，
+  //    所以当时要求两者同值；现在可见的轨道是 .switch-track，
+  //    .switch-input 只剩 opacity:0 + position:absolute（不参与布局），
+  //    再要求同值就是拿旧形状的尺子量新结构。
   const sizeOf = (code, sel) => {
     const decl = ruleOf(code, sel);
     const w = /(?:^|[;{\s])width:\s*([^;]+)/.exec(decl);
     const h = /(?:^|[;{\s])height:\s*([^;]+)/.exec(decl);
     return { w: w ? w[1].trim() : '', h: h ? h[1].trim() : '' };
   };
-  const inp = sizeOf(cssCode, '.switch-input');
   const trk = sizeOf(cssCode, '.switch-track');
-  chk(!!inp.w && inp.w === trk.w && inp.h === trk.h,
-    '透明输入框与开关轨道同尺寸（' + inp.w + '×' + inp.h + '）—— 点哪儿就是哪儿');
+  chk(!!trk.w && !!trk.h,
+    '可见的轨道 .switch-track 把尺寸写全（' + trk.w + '×' + trk.h + '）—— 点哪儿就是哪儿');
 }
 
 /* ==========================================================================
@@ -1296,14 +1326,27 @@ PAGE_FILES.forEach(f => {
 if (JSDOM) {
   const doc = new JSDOM(read('settings/general/index.html'),
     { url: 'https://local.test/settings/general/' }).window.document;
+  // 结构（对照 settings/general/index.html）：
+  //   <label class="switch"><span class="settings-label" id="switch-sync-name">名字</span>
+  //     <input class="switch-input" id="toggle-sync">  <span class="switch-track"></span>
+  //   </label>
+  // ⚠️ 项名写在 input **之前**、轨道写在 input **之后**，所以三样不是连成一串。
+  //    原先这里按「input → 轨道 → 状态字」的顺序判、又要求状态字是
+  //    `<span class="switch-label">` —— 那是旧版「名字 + 轨道 + 关/开 文字」的
+  //    形状；状态字已撤（状态由开关本体表达），项名改用 .settings-label。
+  const box = doc.querySelector('.switch');
   const input = doc.getElementById('toggle-sync');
   const track = doc.querySelector('.switch-track');
-  const label = doc.querySelector('.switch-label');
-  chk(!!input && !!track && !!label, '开关的 input / 轨道 / 状态字三样都在 DOM 里');
-  chk(!!doc.querySelector('label.switch-row'),
-    '三者包在同一个 <label> 里（点轨道任意处都切得动，iOS 上也是）');
-  // 顺序：input → 轨道 → 状态字。CSS 的 `input:checked + .switch-track` 靠的就是它
-  chk(input.nextElementSibling === track,
+  chk(!!box && !!input && !!track, '开关的 input / 轨道两样都在 DOM 里');
+  const name = doc.getElementById('switch-sync-name');
+  chk(!!name && !!name.textContent.trim(), '开关的项名在 DOM 里（读屏靠 aria-labelledby 取它）');
+  chk(!!box && box.tagName === 'LABEL',
+    '两样包在同一个 <label.switch> 里（点名字与轨道任意处都切得动，iOS 上也是）');
+  chk(!!box && box.contains(name) && box.contains(input) && box.contains(track),
+    '项名 / input / 轨道在同一个 .switch 行里（不是散在页面上）');
+  // 相邻：input 的下一个兄弟节点就是轨道 ——
+  // CSS 的 `.switch-input:checked + .switch-track` 靠的就是这个相邻关系。
+  chk(!!input && input.nextElementSibling === track,
     'input 紧邻轨道（`:checked + .switch-track` 这条相邻选择器才对得上）');
 } else {
   console.log('- (未安装 jsdom，跳过开关的真实渲染几何一节)');
