@@ -44,6 +44,14 @@ var CONFIG = {
   mailFrom: env("MAIL_FROM", "noreply@mail.kuibu.app"),
   mailFromName: env("MAIL_FROM_NAME", "跬步"),
 
+  /* ---- 会话签名密钥（另一条路：给测试与自建部署用）---- */
+  // 与 SESSION_SECRET 同时存在时**以 SESSION_SECRET 为准**，见下方 hasSession()。
+  // ⚠️ 存在的理由：会话的签名密钥与「发码」用的 pepper 原先串在同一个变量上，
+  //    于是「把发信配起来」这件事天生带不上会话（README 里那条
+  //    「`npm run doctor` 会告诉你缺哪个」也就对不上）。分成两个变量之后，
+  //    「谁负责发信」与「谁负责签会话」可以各自配置、各自轮换。
+  sessionKey: env("SESSION_KEY"),
+
   /* ---- 短信通道（2B：只留口子，**默认关闭**）----
      ⚠️ 这里没有「密钥」可配 —— 因为**还没有签短信商**。smsEnabled 默认 false，
         打开它也需要同时实现 smsTransport（见 mail/index.js 的口子），
@@ -64,6 +72,14 @@ var CONFIG = {
   smsResendCooldownMs: intEnv("SMS_RESEND_COOLDOWN_MS", 60 * 1000),
   sessionDays: intEnv("SESSION_DAYS", 30),
   cookieName: env("COOKIE_NAME", "kbsid"),
+
+  /* ---- 连续猜错封禁（docs/auth-design.md §5.5）----
+     判据是**整轮失败**：发一枚码 → 一次都没对 → 才算一轮。
+     连续 `E_WRONG_ROUNDS_LIMIT` 轮 → 锁 24 小时。
+     ⚠️ 之所以按「轮」而不是按「次」：单枚码本身就能错 5 次，
+        按次计会把正常用户手抖三次锁一天（这条教训文档里写着）。 */
+  wrongRoundsLimit: intEnv("WRONG_ROUNDS_LIMIT", 3),
+  lockMs: intEnv("ACCOUNT_LOCK_MS", 24 * 3600 * 1000),
 
   /* ---- 频控四层（docs §4.6 第 4 条：邮箱 / 设备 / 全局 / 单账号）---- */
   rate: {
@@ -96,6 +112,20 @@ CONFIG.hasDb = function () {
   return !!(CONFIG.supabaseUrl && CONFIG.supabaseServiceKey);
 };
 
+/**
+ * 会话签名密钥（**只有一处读**）：显式配的 SESSION_SECRET 优先，
+ * 否则退到 SESSION_KEY。两条都没有就不签会话。
+ *
+ * ⚠️ 与 config.mail() 同一条纪律：必须读 **this**（调用它的那一个 cfg 对象），
+ *    不能读模块级 CONFIG —— 否则测试里 `Object.assign({}, CONFIG, {...})`
+ *    这类覆盖完全不生效，症状是「明明给了密钥却仍然落到默认」。
+ */
+CONFIG.sessionKeyOf = function () {
+  var c = (this && (this.sessionSecret !== undefined || this.sessionKey !== undefined)) ? this : CONFIG;
+  var v = c.sessionSecret || c.sessionKey || "";
+  return String(v);
+};
+
 /** 发信是否真的配好了（有密钥，且**不是** console 那条只写日志的通道） */
 CONFIG.hasMail = function () {
   // ⚠️ 读 **this**，与 CONFIG.mail() 同一个理由：写成 CONFIG.mail() 时
@@ -106,7 +136,7 @@ CONFIG.hasMail = function () {
 
 /** 会话是否可签名（没配就**不签发会话**，而不是签发一个假的） */
 CONFIG.hasSession = function () {
-  return !!CONFIG.sessionSecret && CONFIG.sessionSecret.length >= 16;
+  return CONFIG.sessionKeyOf.call(this).length >= 16;
 };
 
 /**

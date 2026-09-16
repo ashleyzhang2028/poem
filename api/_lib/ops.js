@@ -50,6 +50,15 @@ var ENTRY = [
     how: "生成一串随机字符（openssl rand -hex 32），填进托管平台的环境变量"
   },
   {
+    key: "SESSION_KEY",
+    level: "optional",
+    group: "会话",
+    secret: true,
+    what: "会话签名密钥的**别名**（与 SESSION_SECRET 二选一，配置里优先读 SESSION_SECRET）",
+    missing: "不影响：SESSION_SECRET 填了就够；两条都空才会回 503 E_NOT_CONFIGURED。这一条的用处是「发信有密钥、会话暂时不想占那个变量名」时仍能把会话签起来",
+    how: "与 SESSION_SECRET 同一条命令生成（openssl rand -hex 32），**二选一**填进托管平台；两条都填时以 SESSION_SECRET 为准"
+  },
+  {
     key: "SUPABASE_URL",
     level: "required",
     group: "数据库",

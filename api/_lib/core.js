@@ -22,6 +22,20 @@ var session = require("./session");
 
 var DAY = 86400000;
 
+/**
+ * 猜错计数的命名空间。**两种键，存在同一个频控器里**
+ * （`progress` 表是业务数据，不许拿它当安全计数的账本 —— 一个坏客户端
+ * 顺手写一行同 id 就能把计数清零，而症状是「封禁时不时失效」）。
+ *
+ *   · `wrong:<uid>` —— 该账号连续错了多少轮（**判据用 uid，不用邮箱字符串**，
+ *                      与本地版 js/auth-core.js 同口径：换大小写 / 别名绕不过）
+ *   · `wrongip:<ip>` —— 同一个出口 IP 错了多少次（挡住「换小号猜」那条路）
+ *
+ * 用频控器的滑动窗口而**不是新开一张表**：新开一张表要再写 memory / supabase
+ * 两套实现，而「两个实现的键集合不一致 → 静默失效」是本项目反复踩的坑。
+ */
+var WRONG = { uid: "wrong:", ip: "wrongip:" };
+
 /* ------------------------------------------------------------- 工具 */
 
 function ok(body) { return { status: 200, body: body }; }
@@ -96,24 +110,61 @@ var RATE_MSG = {
  */
 function makeRateLimiter() {
   var hits = {};
+  /** 只判不记（纯查询）—— **不是写路径**，见 take 的说明 */
+  function inspect(bucket, key, t) {
+    var arr = (hits[bucket + "|" + key] || []).filter(function (x) { return x > t - DAY; });
+    hits[bucket + "|" + key] = arr;
+    return arr;
+  }
+  function verdict(cfg, bucket, arr, t) {
+    var windows = rateWindow(cfg, bucket);
+    for (var i = 0; i < windows.length; i++) {
+      var span = windows[i][0], cap = windows[i][1];
+      var inWin = arr.filter(function (x) { return x > t - span; });
+      if (inWin.length >= cap) {
+        return { ok: false, retryAfter: Math.ceil((Math.min.apply(null, inWin) + span - t) / 1000) };
+      }
+    }
+    return { ok: true, retryAfter: 0 };
+  }
+  function record(bucket, key, t) {
+    hits[bucket + "|" + key] = (hits[bucket + "|" + key] || []).concat([t]);
+  }
   return {
     check: function (cfg, bucket, key, t) {
-      var windows = rateWindow(cfg, bucket);
-      var k = bucket + "|" + key;
-      var arr = (hits[k] || []).filter(function (x) { return x > t - DAY; });
-      hits[k] = arr;
-      for (var i = 0; i < windows.length; i++) {
-        var span = windows[i][0], cap = windows[i][1];
-        var inWin = arr.filter(function (x) { return x > t - span; });
-        if (inWin.length >= cap) {
-          return { ok: false, retryAfter: Math.ceil((Math.min.apply(null, inWin) + span - t) / 1000) };
-        }
-      }
-      return { ok: true, retryAfter: 0 };
+      return verdict(cfg, bucket, inspect(bucket, key, t), t);
     },
     hit: function (bucket, key, t) {
-      var k = bucket + "|" + key;
-      hits[k] = (hits[k] || []).concat([t]);
+      record(bucket, key, t);
+    },
+    /**
+     * **判完当场落账** —— 频控四层的**唯一正确用法**（2A 那两个洞的补法）。
+     *
+     * ## 为什么必须是一个原子动作
+     *
+     * 原先的写法是「`check` 一圈 → … 干活 … → `hit` 一圈」，中间隔着
+     * `await store.getAccount()`、`putCode()`、**一次真的往发信商发 HTTP** ——
+     * 那是几百毫秒到几秒。落账之前，`hits` 里一条记录都没有，于是：
+     *   · 同一个客户端并发打 20 次 `/api/send-code`，20 次**全部**
+     *     在各自的 `check` 里看到空窗口、全部放行 —— 20 封邮件；
+     *   · 更省事的一种坏法：**只调 `check` 不调 `hit` 的路径**在任何一层
+     *     都不落账（同一个函数名，两处各写一半，正是本项目反复踩的形状）。
+     * 也就是说「一小时 5 封」在并发下不是 5 封，是**不限**。
+     *
+     * ## 与 cooldown 的关系
+     *
+     * 冷却（「两次之间至少隔 60 秒」）判的是**上一条记录**，所以落账必须
+     * **先于**冷却判定之后的任何分支 —— 包括「拒绝」那一条。
+     * 否则连着点两次重发会被当成「从来没发过」，冷却永远不生效：
+     * 第一次试通过、第二次试还是通过。
+     *
+     * @returns {{ok:boolean, retryAfter:number}} 不够就 false，**且什么都不记**
+     */
+    take: function (cfg, bucket, key, t) {
+      var v = verdict(cfg, bucket, inspect(bucket, key, t), t);
+      if (!v.ok) return v;
+      record(bucket, key, t);
+      return { ok: true, retryAfter: 0 };
     },
     /**
      * 「重新发送冷却」：上一次发出去还没到 60 秒就再要一封，直接拒。
@@ -122,12 +173,20 @@ function makeRateLimiter() {
      *    而这一条是「两次之间至少隔多久」。混进窗口里写就会出现
      *    「一小时 5 次可以随便连点」这种既能刷、又不像限制的行为
      *    （test/api.test.js 的「60 秒内重复发码被拒」正是它）。
+     * ⚠️ 与 take 同一条口径：**判与记必须在同一个同步块里**，
+     *    中间不许有 await（`take` 的注释里有实测的现场）。
      */
     cooldown: function (bucket, key, winMs, t) {
       var arr = hits[bucket + "|" + key] || [];
       if (!arr.length) return { ok: true, retryAfter: 0 };
       var last = arr[arr.length - 1];
-      if (last > t - winMs) return { ok: false, retryAfter: Math.ceil((last + winMs - t) / 1000) };
+      /* ⚠️ 三条判据必须是**函数**而不是常量：`winMs` 允许是
+         `{email, sms}` 两个值（两条通道的冷却时长各自成键，docs §8.4），
+         而调用方只传一个「桶名」。这里按桶取 —— 写成常量的症状是
+         「短信那条档位被静默地套用了邮箱的 60 秒」，而代码看起来完全正常。 */
+      var win = (winMs && typeof winMs === "object") ? Number(winMs[bucket]) || 0 : Number(winMs) || 0;
+      if (!win) return { ok: true, retryAfter: 0 };
+      if (last > t - win) return { ok: false, retryAfter: Math.ceil((last + win - t) / 1000) };
       return { ok: true, retryAfter: 0 };
     },
     _hits: hits
@@ -203,7 +262,22 @@ function channelFacts(cfg) {
     mail: mail,
     delivered: mail !== "console",                  // console 发的信真实用户收不到
     db: hasDb ? "db" : "memory",                    // memory = 重启即丢，如实标出来
-    sms: !!(cfg.smsEnabled && cfg.smsTransport)     // 与 2B 的 503 同口径
+    sms: !!(cfg.smsEnabled && cfg.smsTransport),    // 与 2B 的 503 同口径
+    /* ---------------------------------------------------------------
+       `rate: "instance"` —— **登录态的频控与猜错封禁只在本实例内有效**
+       ---------------------------------------------------------------
+       频控器是一张进程内的 Map（`makeRateLimiter`），它的两条硬约束：
+         · 内存存储时**账号本身也活不过一次冷启动**（`db: "memory"`），
+           频控跟着丢不是新增问题；
+         · 但**配了数据库之后**账号能活下来，而频控仍然只在单实例里 ——
+           Serverless 拉起多少个实例就有多少本账，
+           「一小时 5 封」「连续 3 轮锁 24 小时」在多实例下都被放大成 N 倍。
+       这不是「已经做好了限流」，是「尽力而为」；服务端**如实自报**它，
+       免得界面把一句「次数有限」说得比事实更硬（§4.9 第 2 条：不假装）。
+       要真正做到跨实例，必须把窗口搬到共享存储（Redis / 库表），
+       那是另一件事 —— 在它落地之前，这个字段就得是这个值。
+       --------------------------------------------------------------- */
+    rate: "instance"
   };
 }
 
@@ -279,6 +353,20 @@ function normalizeGrants(_untrusted) {
 /* ------------------------------------------------------- 发码 */
 
 /**
+ * 摘要用的 pepper（**只有一处读**）。
+ *
+ * 为什么与「会话签名密钥」分开命名：它们是两件事 ——
+ * pepper 决定「库里的 email_hash 能不能被彩虹表反查」，
+ * 签名密钥决定「Cookie 能不能被伪造」。串在同一个变量上时，
+ * 轮换其中一个就必须连带动另一个（而轮换 pepper 等于让全站账号失联）。
+ * 取值顺序与 config.sessionKeyOf 一致，**同源不同名**，免得某天两边配置对不上。
+ */
+function pepperOf(cfg) {
+  if (typeof cfg.sessionKeyOf === "function") return cfg.sessionKeyOf.call(cfg);
+  return String(cfg.sessionSecret || cfg.sessionKey || "");
+}
+
+/**
  * 找到或新建账号。
  *
  * ⚠️ **摘要按 channel 分开命名空间**（email 走 emailHash、sms 走 phoneHash）：
@@ -290,8 +378,8 @@ function normalizeGrants(_untrusted) {
 function findOrCreateAccount(store, cfg, identity, t) {
   var ch = identity.channel;
   var hash = ch === "sms"
-    ? id.phoneHash(identity.value, cfg.sessionSecret || "no-pepper")
-    : id.emailHash(identity.value, cfg.sessionSecret || "no-pepper");
+    ? id.phoneHash(identity.value, pepperOf(cfg))
+    : id.emailHash(identity.value, pepperOf(cfg));
   var mask = ch === "sms" ? id.maskPhone(identity.value) : id.maskEmail(identity.value);
   return Promise.resolve(store.getAccountByHash(hash)).then(function (acc) {
     if (acc && acc.status !== "deleted") return { acc: acc, created: false };
@@ -379,8 +467,32 @@ function sendCode(deps, input) {
     coolMs = cfg.resendCooldownMs;
   }
 
+  /* ------------------------------------------------------------------
+     顺序：**先冷却、后频控，而且两件都在同一个同步块里**
+     ------------------------------------------------------------------
+     这条顺序是实测顶出来的，写反过一次，症状是**第一封就发不出去**：
+        · `take` 会当场把这一次记进窗口；
+        · 而冷却判的是「上一条记录」——
+      于是「先 take 后 cooldown」= 拿刚记下的这一条跟自己比，
+      永远落在冷却里。`test/api.test.js` 那条「第一次发码回 202」会直接红。
+     （同一个坑的另一半：`take` 与 `cooldown` 之间**不许有 await**，
+       否则并发下两次请求都过 —— 见 makeRateLimiter().take 的注释。）
+
+     顺序定下来之后，语义也正好是我们想要的：冷却管「两次之间至少隔多久」，
+     频控管「这段窗口里一共要了几枚」。被冷却拒掉的那一次**不占频控额度**
+     （先判先返回），所以「手抖连点两下」不会把当天的 10 枚额度白扣一枚。
+     ------------------------------------------------------------------ */
+  var cool = limiter.cooldown(coolBucket, coolKey, coolMs, t);
+  if (!cool.ok) {
+    return Promise.resolve(err(429, "E_RATE_EMAIL", "发得太快了，请稍后再试", { retryAfter: cool.retryAfter }));
+  }
+
   for (var i = 0; i < buckets.length; i++) {
-    var g = limiter.check(cfg, buckets[i][0], buckets[i][1], t);
+    /* ⚠️ `take` 不是 `check` —— 判完**当场落账**。原先写成
+       「check 一圈 → 发信 → hit 一圈」，中间隔着收信商那次真实的 HTTP，
+       于是并发打进来时每一条请求都在空窗口上通过（实测：连点两次重发，
+       第二次也放行）。见 makeRateLimiter().take 的注释。 */
+    var g = limiter.take(cfg, buckets[i][0], buckets[i][1], t);
     if (!g.ok) {
       var code = rateCode(buckets[i][0]);
       /* ⚠️ 文案按层**分别说**（docs §13：每一行错误码都有一句对应的话）。
@@ -392,18 +504,37 @@ function sendCode(deps, input) {
     }
   }
 
-  // 重新发送冷却（与频控分开判，见 limiter.cooldown 的说明）
-  var cool = limiter.cooldown(coolBucket, coolKey, coolMs, t);
-  if (!cool.ok) {
-    return Promise.resolve(err(429, "E_RATE_EMAIL", "发得太快了，请稍后再试", { retryAfter: cool.retryAfter }));
-  }
-
+  /* ⚠️ 明文码**只在这一条调用链里活着**（生成它的那一次函数调用内 + 用户的邮箱里）。
+     下面 `closed` 这个名字是刻意的：**只有真送出去了，才允许它随响应回**。 */
   var rawCode = input.code || id.newCode(cfg.codeLength);
   var salt = id.newSalt();
+  var echoAllowed = false;
 
   return findOrCreateAccount(store, cfg, who, t).then(function (r) {
     var acc = r.acc;
-    if (acc.status === "locked") return err(423, "E_LOCKED", "为了安全，请稍后再试", { retryAfter: 3600 });
+    /* ---- 锁定闸（§5.5 那条「锁 24 小时」的读端）----
+       ⚠️ 原先这里判的是 `status === "locked"` 而**没有任何地方会把它写回去了** ——
+          写进去就永久锁死，「锁 24 小时」变「锁一辈子」，而界面上写着「1 小时后再试」。
+          现在锁定带 `locked_until`：
+            · 还在锁里 → 423（如实说还剩多久）
+            · 已过期   → **当场解锁**再放行，并把连错轮数的账清掉
+              （不清的话下一次错一轮就又被锁，用户会觉得「说好 24 小时，怎么又锁了」） */
+    if (acc.status === "locked") {
+      var until = Number(acc.locked_until) || 0;
+      if (until > t) {
+        return err(423, "E_LOCKED", "为了安全，这个账号暂时不能收验证码",
+          { retryAfter: Math.max(1, Math.ceil((until - t) / 1000)) });
+      }
+      acc.status = "active";
+      acc.locked_until = null;
+      /* 连错轮数的账**一并清掉**：不清的话用户等满 24 小时回来，
+         错一枚码就又被锁一天（而界面上写的是「24 小时后再试」）。
+         ⚠️ 这里清的是 `WRONG.uid` 那一张账（按 uid 计的轮数）；
+         `WRONG.ip` 那张是**出口 IP** 的账，与本账号无关，**不许跟着清** ——
+         清了等于让攻击者用「换个账号触发解锁」把 IP 计数洗白。 */
+      limiter._hits[WRONG.uid + "|" + acc.uid] = [];
+      store.putAccount(acc);
+    }
 
     var codeId = id.newCodeId();
     var rec = {
@@ -412,7 +543,7 @@ function sendCode(deps, input) {
       purpose: purpose,
       channel: who.channel,
       sent_to: who.mask,              // ⚠️ 落库的也是掩码，不是明文
-      code_hash: id.codeHash(acc.uid, purpose, rawCode, salt, cfg.sessionSecret || ""),
+      code_hash: id.codeHash(acc.uid, purpose, rawCode, salt, pepperOf(cfg)),
       salt: salt,
       issued_at: t,
       expires_at: t + cfg.codeTtlMs,
@@ -424,10 +555,14 @@ function sendCode(deps, input) {
     return Promise.resolve(store.voidCodes(acc.uid, purpose, t))
       .then(function () { return store.putCode(rec); })
       .then(function () {
-        buckets.forEach(function (b) { limiter.hit(b[0], b[1], t); });
+        /* 频控的账**已经**在 take 那一步落好了（不是在这里）。
+           原先这里还有一句 `buckets.forEach(hit)` —— 那正是
+           「判在 A 处、记在 B 处」的形状：中间隔着网络往返，并发下形同不限。
+           留这句注释是为了让下一个人别把它加回来。 */
         return sendVia(cfg, who, rawCode);
       })
       .then(function (sent) {
+        echoAllowed = true;
         // ⚠️ 新老用户回同一个形状。是不是新账号**不在这条响应里**。
         var body = {
           codeId: codeId,
@@ -440,7 +575,7 @@ function sendCode(deps, input) {
           store: store.kind
         };
         // 冒烟自测口子：**显式**开 ALLOW_CODE_ECHO 才回明文码，默认关
-        if (cfg.allowCodeEcho) body.devCode = rawCode;
+        if (cfg.allowCodeEcho && echoAllowed) body.devCode = rawCode;
         return ok(body);
       })
       .catch(function (e) {
@@ -448,6 +583,12 @@ function sendCode(deps, input) {
         // 短信那条路有它自己的错误码（E_SMS_FAIL），因为「短信没发出去」
         // 与「邮件没发出去」对用户的下一步动作不同。
         var isSmsFail = isSms;
+        /* ⚠️ 这一条分支**绝不许回 `devCode`** —— 见上面 `echoAllowed` 的说明。
+           它真的漏过一次：`catch` 里原样把「已生成的那条响应」回了出去，
+           于是**冒烟开关一开，一条连不上发信商的实例（或者任何人拿一个会让
+           `sendVia` 抛的输入）就能拿到明文码** —— 而这条路径恰恰是
+           `ALLOW_CODE_ECHO` 唯一会被打开的那种环境（本地联调 / 冒烟）。
+           现在 `echoAllowed` 只在 `sendVia` 真回来之后才置真，且这里再判一次。 */
         return err(502, isSmsFail ? "E_SMS_FAIL" : "E_MAIL_FAIL",
           isSmsFail ? "短信没发出去，请稍后再试" : "验证码邮件没发出去，请稍后再试",
           { detail: String(e.message || e).slice(0, 120) });
@@ -472,6 +613,95 @@ function sendVia(cfg, who, code) {
 }
 
 /**
+ * 猜错计数：一轮错完就 +1；连着错够 `wrongRoundsLimit` 轮 → 该账号锁 24 小时。
+ *
+ * ## 为什么这一条必须存在（而且原先并不存在）
+ *
+ * docs/auth-design.md §5.5 白纸黑字写着「单账号连续 3 轮『发码后一次都没对』→
+ * 锁 24 小时」，并且声称「已钉进测试」。**服务端从来没有实现它** ——
+ * 实测（test/api.test.js 第二十一节）：一个坏客户端对同一个邮箱连着发码、
+ * 每枚码错 5 次，可以**无限**进行下去，只受设备档（一小时 10 次）这条
+ * 与安全无关的频控限制。而「每枚码 5 次」是**每枚码各自**的上限，
+ * 换一枚码就重新从 5 次数起 —— 单账号在一天里能试的次数是
+ * 「发码枚数 × 5」，不是 5。
+ *
+ * ## 一轮 = 发一枚码 → 一次都没对
+ *
+ * 与本地版 js/auth-core.js 的 `roundFailed` 同口径。本地版那条注释说得很清楚：
+ * 按「次」计会同时踩两个坑 —— 真用户手抖三次被锁一天，而手改
+ * localStorage 清掉计数又能立刻重来。判据从「次」改成「轮」之后，
+ * 正常用户不受影响（一轮就是一枚码的整个生命周期），攻击者的成本也不会被
+ * 「每枚码 5 次」放大成 5 倍机会。
+ *
+ * ## 幂等：同一个 uid 的同一轮只记一次
+ *
+ * 每次猜错都会走到这里，但**只有本轮第一枚码被消费**时才 +1 ——
+ * 否则一枚码错 5 次就是 5 轮，正常用户手抖三次就被锁一天（正是上一条要避免的）。
+ * 判据是「这一轮里有没有已经记过的轮次标记」。
+ *
+ * ⚠️ 键是 **uid**，不是邮箱字符串：换大小写、加别名都绕不过（§5.5 末句）。
+ */
+function bumpWrongRound(deps, uid, t) {
+  var cfg = deps.cfg;
+  limiterHit(deps, WRONG.uid, uid, t);
+  var limit = Number(cfg.wrongRoundsLimit) || 3;
+  if (wrongRounds(deps, uid) >= limit) {
+    /* 够轮数：**锁**。锁写在账号那一行（`status = "locked"`），
+       与 sendCode 里那条 `if (acc.status === "locked") → 423` 是同一个出口 ——
+       「锁」这件事只有一处读、一处写。 */
+    return Promise.resolve(deps.store.getAccount(uid)).then(function (acc) {
+      if (!acc) return null;
+      acc.status = "locked";
+      acc.locked_until = t + (Number(cfg.lockMs) || 86400000);
+      return deps.store.putAccount(acc);
+    });
+  }
+  return null;
+}
+
+/**
+ * 记一次（薄封装，只为让「记在哪一档」在调用处一眼看得见）。
+ *
+ * ⚠️ 键**必须带前缀**：`limiter.hit(bucket, key)` 内部拼的是 `bucket + "|" + key`，
+ *    所以「`hit("uid", x)` 与 `hit("uid", x, …)`」这种把用户名当桶名的写法
+ *    会在两张不同的账上各记一半 —— 而 `wrongRounds()` 只读其中一张，
+ *    症状是**封禁永远不生效，却每次都回一句「还能再试 N 轮」**。
+ *    计数一律走 `WRONG` 里那两个命名空间。
+ */
+function limiterHit(deps, ns, key, t) {
+  deps.limiter.hit(ns, String(key), t);
+}
+
+/** 读某一档的计数（同上，键必须与写的那一处逐字一致） */
+function limiterCount(deps, ns, key) {
+  return (deps.limiter._hits[ns + "|" + String(key)] || []).length;
+}
+
+/**
+ * 这个账号连着错了多少轮（**这一条就是 §5.5 那个判据的唯一读端**）。
+ *
+ * ⚠️ 幂等由**调用处**保证：只在「一枚码刚好被第 5 次错误作废」那一刻记一轮。
+ *    不写成「同一秒内只记一次」那种时间窗判据 —— 攻击者只要把请求间隔拉到
+ *    一秒以上，一轮就能刷成好几轮；反过来真用户手抖快了又会被漏记。
+ *    语义判据（一枚码 = 最多一轮）不依赖时钟，两端也好对拍。
+ */
+function wrongRounds(deps, uid) {
+  return limiterCount(deps, WRONG.uid, uid);
+}
+
+/** 这个出口 IP 猜错了多少次（挡住「换小号猜」那条路） */
+function wrongByIp(deps, ip) {
+  return limiterCount(deps, WRONG.ip, ip);
+}
+
+/** 这一轮要不要锁（判据与 bumpWrongRound 同源，不重算一份上限） */
+function lockVerdict(deps, uid, t) {
+  var cfg = deps.cfg;
+  var limit = Number(cfg.wrongRoundsLimit) || 3;
+  return wrongRounds(deps, uid) >= limit;
+}
+
+/**
  * 校验码 → 签发会话。
  * 失败分两类，必须区分开（docs §13）：
  *   · 码本身的问题（错 / 过期 / 已用 / 作废，400）
@@ -481,11 +711,42 @@ function verifyCode_(deps, input) {
   var cfg = deps.cfg, store = deps.store, limiter = deps.limiter, t = deps.now();
   var codeId = String(input.codeId || "");
   var given = String(input.code == null ? "" : input.code).replace(/\D/g, "");
+  var devKey = String(input.deviceId || "unknown");
+  var ipKey = String(input.ip || "unknown");
   if (!codeId) return Promise.resolve(err(400, "E_NO_CODE", "请先获取验证码"));
-  if (given.length !== cfg.codeLength) return Promise.resolve(err(400, "E_CODE_WRONG", "验证码不对，再检查一下"));
 
-  var gate = limiter.check(cfg, "device", String(input.deviceId || "unknown"), t);
-  if (!gate.ok) return Promise.resolve(err(429, "E_RATE_DEVICE", "试得太频繁了，请稍后再试", { retryAfter: gate.retryAfter }));
+  /* ------------------------------------------------------------------
+     校验口的四层闸（与 sendCode 同一套 take 语义）：
+       设备档 → IP 档 → 那枚码自己的 5 次 → 账号的连续失败轮数
+     ------------------------------------------------------------------
+     ⚠️ 原先这里**只有设备档，而且用的是 check 不是 take** —— 两条都错：
+        · 用 check：这个函数里**没有任何一处调 hit**（原来那句 `limiter.hit`
+          写在「猜错」分支里，最长的那条错误路径上），于是设备档的账
+          只在猜错时才落，而一个手改客户端的人完全可以只猜对的次数……
+          更直接的后果是：**任何一种被拒的走法都不落账**，
+          包括「码长不对」这条连 store 都不碰的早退路径 —— 也就是
+          「限制写在 A 处、读取在 B 处」，本项目反复踩的那一个。
+        · 没有 IP 档：deviceId 由客户端自己给，每天换一个就绕过了设备档。
+          出口 IP 是唯一一处客户端改不动的东西 —— 它必须进闸。
+     ⚠️ `device` 这一档同时被 syncPull / syncPush / familyPut / adminGrant /
+        accountDelete 复用（键前缀各不相同），所以这里也用前缀，
+        免得「校验码太频繁」把「同步」也一起挡了（那是完全不同的两件事）。
+     ------------------------------------------------------------------ */
+  var deviceGate = limiter.take(cfg, "device", "verify:" + devKey, t);
+  if (!deviceGate.ok) return Promise.resolve(err(429, "E_RATE_DEVICE", RATE_MSG.E_RATE_DEVICE, { retryAfter: deviceGate.retryAfter }));
+  var ipGate = limiter.take(cfg, "ip", "verify:" + ipKey, t);
+  if (!ipGate.ok) return Promise.resolve(err(429, "E_RATE_IP", RATE_MSG.E_RATE_IP, { retryAfter: ipGate.retryAfter }));
+  /* 这个出口 IP 已经猜错了多少次 —— **独立一档**，不借 `rate.ip` 那张表。
+     ⚠️ 借那张表的下场是「猜错」与「限流」共用一本账：一次正常的校验请求
+        也会记进 ip 档，于是 IP 档的日上限（30）被正常用户自己吃满，
+        而真正的猜错计数看起来还很宽松。两件事分开记，各自有各自的读数。 */
+  if (wrongByIp(deps, ipKey) >= (Number(cfg.wrongRoundsLimit) || 3) * (Number(cfg.codeMaxAttempts) || 5)) {
+    return Promise.resolve(err(429, "E_RATE_IP", "这个网络下猜验证码的次数太多了，稍后再试", { retryAfter: 3600 }));
+  }
+
+  /* 格式不对就地拒 —— **在落账之后**。这条早退路径原先一条账都不留，
+     而它是「结构化猜」最省事的走法（一次请求一个 6 位串，零成本）。 */
+  if (given.length !== cfg.codeLength) return Promise.resolve(err(400, "E_CODE_WRONG", "验证码不对，再检查一下"));
 
   return Promise.resolve(store.getCode(codeId)).then(function (rec) {
     if (!rec) return err(400, "E_CODE_VOID", "请用最新收到的验证码");
@@ -517,19 +778,36 @@ function verifyCode_(deps, input) {
 
     if (Number(rec.expires_at) <= t) return err(400, "E_CODE_EXPIRED", "验证码已过期，点「重新发送」");
 
-    var expect = id.codeHash(rec.uid, rec.purpose, given, rec.salt, cfg.sessionSecret || "");
+    var expect = id.codeHash(rec.uid, rec.purpose, given, rec.salt, pepperOf(cfg));
     var same = id.timingSafeEqual(expect, rec.code_hash);
 
     if (!same) {
-      limiter.hit("device", String(input.deviceId || "unknown"), t);
+      /* IP 档的猜错计数（挡住「每天换一个 deviceId、换一个邮箱」那条路）。
+         它与 uid 那一档是两个不同的判据，所以两处都要记。 */
+      limiterHit(deps, WRONG.ip, ipKey, t);
       var next = Number(rec.attempts) + 1;
       var patch = { attempts: next };
       // 超过上限即作废（与本地版同口径）
       if (next >= cfg.codeMaxAttempts) patch.consumed_at = t;
+      var voided = next >= cfg.codeMaxAttempts;
       return Promise.resolve(store.patchCode ? store.patchCode(codeId, patch) : null)
         .then(function () {
-          return err(400, "E_CODE_WRONG", "验证码不对，再检查一下", {
-            remaining: Math.max(0, cfg.codeMaxAttempts - next)
+          /* 这一轮错了 → 记一轮（**只在码被作废那一刻记**，见 bumpWrongRound）。
+             够轮数就把账号锁上，并**当场**回 423 —— 不让攻击者再多试一枚码。 */
+          if (!voided) {
+            return err(400, "E_CODE_WRONG", "验证码不对，再检查一下", {
+              remaining: Math.max(0, cfg.codeMaxAttempts - next)
+            });
+          }
+          return Promise.resolve(bumpWrongRound(deps, rec.uid, t)).then(function () {
+            if (lockVerdict(deps, rec.uid, t)) {
+              return err(423, "E_LOCKED", "为了安全，请 24 小时后再试（也可以换一个网络或用别的邮箱）",
+                { retryAfter: Math.round((Number(cfg.lockMs) || 86400000) / 1000) });
+            }
+            return err(400, "E_CODE_VOID", "这一枚验证码已作废，请重新发送", {
+              round: wrongRounds(deps, rec.uid),
+              limit: Number(cfg.wrongRoundsLimit) || 3
+            });
           });
         });
     }
