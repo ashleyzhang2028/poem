@@ -41,8 +41,8 @@
      它是页内唯一来源，这里只记下换算过程，免得下一次「再加 6px」又要从头推。
    ========================================================================== */
 
-/* 顶部返回按钮 */
-.back-icon { text-decoration: none; }
+/* 顶部返回按钮（下划线不在这里管：全站由 css/style.css 顶部那条
+   `a { text-decoration: none }` 统一给，Issue #163） */
 .back-icon svg { width: 26px; height: 26px; }
 
 /* 已读进度读数：**已整段撤除**（Issue #147 追加一轮）
@@ -2119,7 +2119,6 @@ body[data-nav="search"] #gw-list .empty[data-empty="idle"] { padding: 0; }
   /* 左侧短竖条：与列表里的条目同一套语言，颜色按部走（与各集子索引页一致） */
   border-left: 3px solid var(--green);
   border-radius: var(--radius-md);
-  text-decoration: none;
   color: inherit;
   transition: background .18s, border-color .18s;
 }
@@ -2409,7 +2408,6 @@ body[data-nav="search"] #gw-list .empty[data-empty="idle"] { padding: 0; }
   padding: 7px 0;
   font-size: 12.5px;
   color: inherit;
-  text-decoration: none;
   /* 条目之间画一条头发丝细的分隔线（最后一条不画） */
   border-top: 1px solid rgba(47, 96, 85, .08);
 }

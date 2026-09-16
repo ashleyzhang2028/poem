@@ -69,6 +69,23 @@
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
+/* --------------------------------------------------------------------------
+   链接：全站一条规则 —— **不给下划线**，靠颜色分「可点」与「不可点」
+   --------------------------------------------------------------------------
+   这条是补的缺，不是新设计：在此之前样式表里没有任何一条全局 `a` 规则，
+   于是每一个没被类名接管的链接都按浏览器默认渲染（蓝紫色 + 下划线）。
+   已经踩过的三个例子都以「单独给某一处写 text-decoration: none」收场 ——
+   .dock-item（页签）、.ghost-btn（按钮样的 <a>）、.settings-link（设置入口）。
+   第 N 个链接再长出来时，那一条就漏了（个人中心「关于」里的「查看」正是漏网的）。
+
+   所以这里把它变成**唯一的一条默认**：所有 <a> 默认无下划线、颜色继承所在容器
+   （正文里的外链由 .legal a / .mail-link 这类有语义的类自己上调一档天青）。
+   加下划线从此是需要显式声明的事，而不是「忘了写就自动长出来」。
+   ⚠️ 只写 text-decoration，不写 color：默认颜色一旦钉死，正文里的绿色链接、
+      页脚里的淡墨链接都会被它盖住（那两处各有一条更具体的规则）。
+   -------------------------------------------------------------------------- */
+a { text-decoration: none; }
+
 /* 原生表单控件默认用系统 UI 字体（Windows/安卓上常被解析成 Arial），
    显式继承页面字体，保证中文字形一致、不跳出主题字体 */
 button,
@@ -903,6 +920,88 @@ body.no-dock .modal-box { max-height: 88vh; }
   margin-bottom: 8px;
   font-weight: 500;
 }
+
+/* --------------------------------------------------------------------------
+   开关行（跨设备同步）：.switch-row / .switch-track / .switch-label
+   --------------------------------------------------------------------------
+   ⚠️ 这一段是补的缺：HTML 里从 1B 起就写着这三个类名，样式表里却一条都没有 ——
+   于是那颗 checkbox 一直以**浏览器原生**的样子露在纸面上（浅灰方块 + 系统蓝勾），
+   与整页的米纸 / 天青是两套语言。用户看到的「选择框太丑」就是这一处。
+   做法与全站开关类控件同一套：真实 input 留作可点 / 可聚焦 / 可读屏的那一层
+   （opacity:0 覆盖在轨道上），可见的轨道由 span 画 —— 键盘、读屏、
+   触屏一律照旧，改的只是画法。
+   -------------------------------------------------------------------------- */
+.switch-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  /* 整行都是热区，且不许出现原生 checkbox 的默认外边距 */
+  margin-bottom: 0;
+  /* 透明输入框要盖在轨道上，得先给它一个定位参照 */
+  position: relative;
+}
+/* 真实输入框：不删（删了键盘与读屏就没了），只让它透明地盖在轨道上。
+   ⚠️ 尺寸与 .switch-track 严格同值（40×24）：它不是「藏起来」，
+      是「盖在上面」—— 点哪儿、焦点框多大，都跟着这两行走。
+      top: 50% + translateY(-50%) 与 flex 的 align-items: center 对齐同一个中点，
+      窄屏换行时也不会偏出去半格。 */
+.switch-input {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 24px;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.switch-input:disabled { cursor: default; }
+/* 轨道：与 .seg / 药丸同一档圆角语言，关是淡纸底 + 一条界行，开是天青实底 */
+.switch-track {
+  position: relative;
+  flex: none;
+  width: 40px;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--line);
+  border: 1px solid var(--line-2);
+  transition: background .18s ease, border-color .18s ease;
+}
+/* 滑块 */
+.switch-track::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--card);
+  box-shadow: 0 1px 3px rgba(74, 58, 38, .22);
+  transition: transform .18s cubic-bezier(.2, .8, .3, 1);
+}
+.switch-input:checked + .switch-track {
+  background: var(--green);
+  border-color: var(--green);
+}
+.switch-input:checked + .switch-track::after { transform: translateX(16px); }
+/* 置灰（本站未开放同步）：轨道退回纸色，滑块仍是米白，读得出「点不动」 */
+.switch-input:disabled + .switch-track {
+  background: var(--bg);
+  border-color: var(--line-2);
+  opacity: .7;
+}
+/* 键盘焦点：全站那条天青光晕，与 .account-input:focus 同一档 */
+.switch-input:focus-visible + .switch-track {
+  box-shadow: 0 0 0 3px rgba(47, 96, 85, .16);
+}
+/* 开关旁的状态字（开 / 关 / 未开放）：与 .settings-hint 同一档淡墨 */
+.switch-label { font-size: 12.5px; color: var(--ink-2); }
+@media (prefers-reduced-motion: reduce) {
+  .switch-track, .switch-track::after { transition: none; }
+}
 /* --------------------------------------------------------------------------
    设置页的选中态：全页统一成「深绿实底 + 米白字」，与「年级」那些深绿药丸同一套语言
    --------------------------------------------------------------------------
@@ -1336,8 +1435,15 @@ textarea:focus {
 /* 版权 + 用户协议 / 隐私条款链接：两行居中，窄屏不挤在一起 */
 .foot-copy { display: block; }
 .foot-links { display: inline-flex; gap: 6px; margin-top: 6px; }
-.foot-links a { color: var(--ink-3); text-decoration: none; }
-.foot-links a:hover { color: var(--green); text-decoration: underline; }
+/* ⚠️ 页脚链接**始终没有下划线**，hover 也不给「再画一条线」当反馈 ——
+   之前写的是「常态去掉、hover 加回来」，于是鼠标一过那条下划线就蹦出来。
+   反馈改用颜色一档（淡墨 → 天青），与 .dock-item / .settings-link 同一套口径：
+   全站的链接一律靠颜色区分，不靠下划线。
+   （下划线本身已由文件顶部那条全局 `a` 规则去掉，这里只管颜色。） */
+.foot-links a { color: var(--ink-3); }
+.foot-links a:hover { color: var(--green); }
+/* hover 的颜色差在触屏 / 强光下也读得出，这里补一条按下反馈：不画线，只加深一档 */
+.foot-links a:active { color: var(--green-dark); }
 .foot-sep { color: #c8bcaa; }
 
 .empty {
@@ -1647,7 +1753,6 @@ body.has-install-tip #app {
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
   color: inherit;
-  text-decoration: none;
   transition: background .16s ease, border-color .16s ease;
   /* 右侧那颗箭头绝对定位在卡片里（见 .settings-link-go） */
   position: relative;
@@ -1779,11 +1884,14 @@ body.has-install-tip #app {
 /* 组的第一项紧贴标题，别再多出一截空白 */
 .settings-group > .settings-item:first-of-type { margin-top: 14px; }
 
-/* 页脚：推到页面最底，且与正文之间留一段呼吸间距 */
+/* 页脚：推到页面最底，且与正文之间留一段呼吸间距。
+   ⚠️ **没有上边框**：原先这里有一条 `border-top: 1px solid var(--line)`，
+   于是每张页面的「©2026 kuibu.app 积跬步, 至千里」上面都顶着一条横线。
+   页脚与正文之间本来就隔着 26px 的空白，那条线只是多画了一道道子
+   （用户点名的「上面的横线删除」就是它）。间距改用留白表达。 */
 .settings-foot {
   margin-top: 26px;
   padding-top: 14px;
-  border-top: 1px solid var(--line);
 }
 .settings-foot .foot-copy,
 .settings-foot .foot-links { font-size: 12px; }
@@ -1914,7 +2022,6 @@ body.has-install-tip #app {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  text-decoration: none;
   transition: transform .15s, color .18s, box-shadow .18s;
 }
 /* 不可见占位（头像渲染不出来时的兜底）：尺寸走同一条 --top-slot 口径。
@@ -2008,7 +2115,6 @@ body.has-install-tip #app {
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  text-decoration: none;
   transition: transform .15s, box-shadow .18s;
 }
 /* 顶栏那一枚整圆：印色铺满，与左侧 logo 的圆「同一个圆」 */
@@ -2118,10 +2224,9 @@ body.has-install-tip #app {
   letter-spacing: .6px;
   cursor: pointer;
   transition: color .18s, background .18s;
-  /* 「设置」页签是一个 <a>，浏览器默认会给链接文字加下划线 ——
-     页签文字下面那条线就是这么来的（不是设计的一部分）。
-     这里显式去掉，四个页签不论 <a> 还是 <button> 外观完全一致。 */
-  text-decoration: none;
+  /* ⚠️ 下划线这一件事**不在这里写**了：全站由 css/style.css 顶部那条
+     `a { text-decoration: none }` 统一管（Issue #163 之后的唯一来源）。
+     这里再写一遍，就是「同一个决定有两个地方在说」。 */
   -webkit-user-select: none;
   user-select: none;
 }
@@ -2253,11 +2358,6 @@ html, body {
   color: var(--green);
   border-radius: var(--radius-sm);
   font-weight: 600;
-  /* 这类按钮有几枚是 <a>（如设置页「进度总览」指去 /progress/）——
-     浏览器默认给链接文字加下划线，那条线不是设计的一部分。
-     这里显式去掉，<a> 与 <button> 的观感才一致
-     （与 .dock-item 上处理页签下划线是同一件事）。 */
-  text-decoration: none;
 }
 .ghost-btn:hover { border-color: var(--green); }
 .danger-btn {
@@ -2333,7 +2433,6 @@ html, body {
     inset 0 0 0 1px rgba(255, 255, 255, .9),
     inset 0 0 0 2.5px rgba(165, 92, 25, .16),
     var(--shadow);
-  text-decoration: none;
 }
 .brand-icon svg { width: 27px; height: 27px; }
 

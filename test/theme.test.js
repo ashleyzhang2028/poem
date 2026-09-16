@@ -252,13 +252,19 @@ chk(/祥云纹/.test(css), '注释里写明被移除的宋「祥云纹」底纹�
 // 按钮分级
 chk(/\.btn\.primary\s*\{[^}]*linear-gradient/.test(css), '一级按钮为实底渐变（主操作）');
 chk(/\.ghost-btn\s*\{[\s\S]{0,200}?border:\s*1px solid var\(--line\)/.test(css), '次级按钮为纸底描边');
-// 需求（Issue #122）：设置页「进度总览」那枚按钮是 <a>（指去 /progress/），
+// 需求（Issue #122 → Issue #163）：设置页「进度总览」那枚按钮是 <a>（指去 /progress/），
 // 浏览器默认给链接文字加下划线 —— 用户看到的那条线就是这么来的。
-// 必须在 .ghost-btn 上显式 text-decoration: none（与 .dock-item 上处理页签
-// 下划线是同一件事），且该规则不能只写在 :hover / :active 里，
-// 否则默认态仍带线。这里连同「该类按钮仍有 <a> 形态」一起钉住。
-chk(/\.ghost-btn \{[\s\S]{0,400}?text-decoration:\s*none/.test(css),
-  '次级按钮显式去掉文字下划线（<a> 默认下划线不得漏出，Issue #122）');
+// ⚠️ 这一条 Issue #163 之后**换了实现**：当时是在 .ghost-btn 上单独写一遍
+//    `text-decoration: none`，后来发现同一个决定在六处各写了一遍（.dock-item /
+//    .ghost-btn / .settings-link / .foot-links / .kv-v / .legal-toc …），
+//    第 N 个链接再长出来时必然漏一处（个人中心「关于」的「查看」正是漏网的）。
+//    现在收归全局一条 `a { text-decoration: none }`，其余各处不再各写一遍。
+//    断言随之改成判**全局那一条**：`<a>` 默认下划线不得漏出这件事仍然被钉住，
+//    钉的位置从「某一只按钮上」挪到了「全站唯一的那个来源上」。
+chk(/\ba\s*\{[^}]*text-decoration:\s*none/.test(css),
+  '全站 <a> 默认无下划线（唯一来源，Issue #122 → #163）');
+chk(!/\.ghost-btn \{[\s\S]{0,400}?text-decoration:/.test(css),
+  '次级按钮不再单独写一遍 text-decoration（下划线归全局那一条管）');
 // 这条样式不是可有可无的：设置页那枚按钮确实是 <a>（href 指去 /progress/），
 // 所以浏览器默认下划线真的会漏出来；顺带钉住改版后的标签与按钮文案。
 // 注意：settingsHtml 这个常量要到第 7 节才声明，本轮的两条断言挨着按钮样式写，
