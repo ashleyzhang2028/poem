@@ -677,7 +677,7 @@ setTimeout(() => {
   // 反过来：退出登录（清会话）后必须置灰，并说明原因 —— 这是用户明确要的那条规则
   window.AuthCore.signOut(window.AuthCore.makeStore());
   d.querySelector('#gw-filter-seg button').dispatchEvent(new window.Event('click', { bubbles: true }));
-  chk(randomBtn.disabled === true && /登录后即可/.test(randomBtn.getAttribute('title')),
+  chk(randomBtn.disabled === true && /登录可用/.test(randomBtn.getAttribute('title')),
     '退出登录后：整页连读键置灰并说明原因：' + randomBtn.getAttribute('title'));
   // 再登回来，后面的「点分组圆键开听」才有意义。
   // ⚠️ 不能重新发码：60 秒重发冷却会直接挡住（E_RATE_EMAIL）——

@@ -1167,7 +1167,7 @@
   function speechHint() {
     if (!speechOk()) return "当前浏览器不支持语音朗读";
     const a = window.Speech.allowed ? window.Speech.allowed() : { ok: true, hint: "" };
-    return a.hint || "登录后即可使用语音朗读";
+    return a.hint || "登录可用语音朗读";
   }
 
   /** 一首诗的朗读文本：标题 + 朝代 + 作者 + 正文 */

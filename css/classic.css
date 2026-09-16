@@ -2125,6 +2125,25 @@ body[data-nav="search"] #gw-list .empty[data-empty="idle"] { padding: 0; }
 .library-card[data-book="guwen"] { border-left-color: var(--ink-3); }
 .library-card:hover { background: var(--green-light); }
 .library-card:active { transform: scale(.995); }
+/* 「我的清单」那张集合卡（Issue #163）----
+   用户原话：「我的清单卡片设计最好和 课外阅读 页面的卡片设计保持一致，
+   里面没有绿色竖线，横着的项目用边框颜色一样的线隔开。」
+   那六张卡上正好有一道 3px 左色条，而这句要求的恰恰是**不要**竖线。
+   所以这不是「再加一种卡」，而是那六张卡上的一条装饰在这边不成立：
+   集合是一个清单容器，不是「一部集子」这一个入口，没有「属于哪一部」可分。
+   ---- 具体做法：
+   · 描边 / 圆角 / 纸底沿用上面那套（同一个视觉）；
+   · 左色条清零并补齐左边框宽度（两条都写，免得只清颜色留下一道缝）；
+   · hover 不变的底色 —— 整张卡不可点（里面才是可点的键），
+     跟着变底会让人以为点卡能进哪儿。
+   ⚠️ 这一段放在 .library-card 之后，所以不必提高特异度。 */
+.collection-card {
+  cursor: default;
+  padding: 0;
+  border-left: 3px solid var(--line);
+}
+.collection-card:hover { background: var(--card); }
+.collection-card:active { transform: none; }
 .library-card-head {
   display: flex;
   align-items: baseline;

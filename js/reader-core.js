@@ -1107,7 +1107,7 @@
   function speechHint() {
     if (!speechSupported()) return "当前浏览器不支持语音朗读";
     const a = window.Speech.allowed ? window.Speech.allowed() : { ok: true, hint: "" };
-    return a.hint || "登录后即可使用语音朗读";
+    return a.hint || "登录可用语音朗读";
   }
 
   /**

@@ -232,7 +232,11 @@ const PAGE = strip(pageJs);
 
 /* ============ 八、入口：从个人中心的「权限」进得去 ============ */
 {
-  chk(/btn-go-plans/.test(profileHtml), '个人中心的「权限」一节有进对比页的按钮');
+  /* Issue #163 第三轮：「权限」那一节整节撤掉，进表的那颗键并进「关于」卡
+     底下那一行（与「同步设置」「管理后台」同类：都是「去别处」）。 */
+  chk(/btn-go-plans/.test(profileHtml), '个人中心有进对比页的按钮（现在在「关于」卡那一行里）');
+  chk(/class="account-actions"[\s\S]{0,400}?btn-go-plans/.test(profileHtml),
+    '它与「同步设置」并排在同一行操作键里');
   chk(/btn-go-plans/.test(profileJs), '那颗按钮真的绑了跳转（不是摆着不动的）');
   chk(/location\.href = "\/plans\/"/.test(profileJs), '按钮跳到 /plans/');
   // 两边同源：个人中心的清单与对比页同走 Entitlement

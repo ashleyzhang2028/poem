@@ -84,13 +84,26 @@ const NAV = read('js/settings-nav.js');
   //    它长在「我的清单」页上 —— 要打印的正是这份清单，分两页等于让人来回搬东西。
   const titles = ['general', 'recite', 'lists', 'reader']
     .flatMap(k => [...SRC[k].matchAll(/aria-labelledby="grp-([a-z]+)"/g)].map(m => m[1]));
-  chk(titles.join(',') === 'general,recite,algo,lists,print,reader',
-    '四张页合起来是原六组并成五组 + 打印、顺序不变（实际 ' + titles.join(',') + '）');
-  // Issue #163：两条只有一条设置的组不再各占一个组标题 ——
-  // 「阅读辅助 + 朗读播放」并成「朗读」一组，组标题只留一个。
-  chk(/aria-labelledby="grp-reader"[\s\S]*?<\/section>/.test(SRC.reader) &&
+  chk(titles.join(',') === 'recite,algo,print',
+    '四张页合起来仍是那几组，顺序不变（只有两组以上的页才留 aria-labelledby，实际 ' + titles.join(',') + '）');
+  // Issue #163（第三轮）：**一页只有一组时，正文顶部不再重复写组名** ——
+  // 「通用」「我的清单」「朗读」都已经写在顶栏页名上，正文再写一遍是同一屏里说两次。
+  // ⚠️ 「我的清单」页现在**有两组**（自选背诵 + 3 期的打印），所以它只该留
+  //    「打印」那一颗组标题 —— 前一组的名字仍是顶栏页名。
+  ['general', 'reader'].forEach(k => {
+    chk(!/settings-group-title/.test(SRC[k]),
+      PAGES[k] + ' 正文顶部不再重复写组标题（组名只留顶栏 data-page 一处）');
+  });
+  chk(!/settings-group-title[^>]*>我的清单</.test(SRC.lists) &&
+      /settings-group-title[^>]*>打印</.test(SRC.lists),
+    '「我的清单」页只留「打印」那一颗组标题（页名本身不再重复写一遍）');
+  ['general', 'lists', 'reader'].forEach(k => {
+    chk(/data-page="/.test(SRC[k]),
+      PAGES[k] + ' 仍带着页名（顶栏据此写出「跬步 · 通用」这类标题）');
+  });
+  chk(/aria-labelledby="grp-algo"[\s\S]*?<\/section>/.test(SRC.recite) &&
       !/aria-labelledby="grp-play"/.test(SRC.reader),
-    '「朗读」页只有一组（原「阅读辅助」「朗读播放」两个组标题并成一个）');
+    '「朗读」页不再有第二个组标题（原「阅读辅助」「朗读播放」两个组标题并成一个）');
   // 主页不再是「一堆控件里的一页」：它没有分组，只有入口清单
   chk(!/aria-labelledby="grp-/.test(SRC.index), '主页不再有设置分组（只有入口清单）');
   chk(!/id="input-username"|id="seg-stage"|id="seg-play"|id="collections-list"/.test(SRC.index),

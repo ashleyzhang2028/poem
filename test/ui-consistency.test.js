@@ -1410,8 +1410,71 @@ PAGE_FILES.forEach(f => {
     const seg = ruleSegments(cssCode, '.' + cls);
     chk(seg.length <= 1,
       '样式表里 .' + cls + ' 只有一段规则（实际 ' + seg.length + ' 段 —— 同名两段会让「按累积读」的断言读到作废的值）');
-  });}
+  });
+}
 
+
+/* ==========================================================================
+   十一之二、卡片主标题真的和其他页一样大（Issue #163，真实渲染）
+   --------------------------------------------------------------------------
+   用户原话：「设置页首页 通用 我的清单这些卡片主标题之前希望字号和其他页面
+   一样大 还没修复。」
+
+   上面第 ⑪ 段判的是**源码里的值**：共用块与 .group-name 同为 14px / 700。
+   这一段判的是**渲染出来的结果** —— jsdom 把真页面 + 两张样式表挂上，
+   量二级页「通用」那颗 <h2> 与设定主页四张入口卡的标题。
+
+   ⚠️ 为什么非要有这一段：源码值对、渲染值不对是踩过的坑。
+      上一版 .settings-link-title 自己写了一遍 font-size / font-weight，
+      .settings-group-title 那边被压成 11px 时它跟着一起降级了（抄出来的值）。
+      现在三个值只在共用块里写一次，这一段就是「真的画出来是这么大」的闭环。
+   ========================================================================== */
+if (JSDOM) {
+  const sheet = '<style>' + cssCode + '</style><style>' + classicCode + '</style>';
+  const px = (json) => json.fontSize;
+
+  /* 二级页：还写着的那几颗分组名。
+     ⚠️ Issue #163 第三轮：**一页只有一组时不再写组标题**（组名只在顶栏页名上），
+        所以这里判的是「页面上**凡有**分组名，画出来都是这一号」——
+        没有的那几页不参与（它们由 test/theme.test.js 与 test/settings-nav.test.js
+        按页守着「不该有标题」）。 */
+  ['settings/general/index.html', 'settings/recite/index.html',
+   'settings/lists/index.html', 'settings/reader/index.html'].forEach(function (f) {
+    const d = new JSDOM(read(f), { url: 'https://local.test/' + f.replace('index.html', '') });
+    d.window.document.head.insertAdjacentHTML('beforeend', sheet);
+    const all = [...d.window.document.querySelectorAll('.settings-group-title')];
+    if (!all.length) return;                       // 单组页：组名只在顶栏，这里没有可量的
+    const bad = all.filter(el => d.window.getComputedStyle(el).fontSize !== sizeOf(groupNameRule) + 'px');
+    chk(bad.length === 0,
+      f + ' 的分组名画出来和集子卷名同号（实际 ' +
+      all.map(el => d.window.getComputedStyle(el).fontSize).join('/') + '）');
+  });
+
+  // 设置主页：四张入口卡的标题（由 js/settings-nav.js 画出来）
+  const d2 = new JSDOM(read('settings/index.html'),
+    { url: 'https://local.test/settings/', runScripts: 'dangerously' });
+  d2.window.document.head.insertAdjacentHTML('beforeend', sheet);
+  const sc = d2.window.document.createElement('script');
+  sc.textContent = read('js/settings-nav.js');
+  d2.window.document.body.appendChild(sc);
+  d2.window.document.dispatchEvent(new d2.window.Event('DOMContentLoaded'));
+  const titles = [...d2.window.document.querySelectorAll('.settings-link-title')];
+  chk(titles.length > 0 &&
+    titles.every(el => d2.window.getComputedStyle(el).fontSize === sizeOf(groupNameRule) + 'px'),
+    '设置主页四张入口卡的标题画出来也是同一号（' +
+    (titles[0] ? d2.window.getComputedStyle(titles[0]).fontSize : '未取到') + '）');
+  /* 两个页面之间不再有第二档字号：主页入口标题与二级页**凡有**的分组名
+     画出来必须**同一个字符串**。「背诵」页仍有两颗（背诵 / 复习算法），
+     用这两颗是最合适的量尺 —— 单组页现在不写标题，量不到东西。 */
+  const d3 = new JSDOM(read('settings/recite/index.html'), { url: 'https://local.test/settings/recite/' });
+  d3.window.document.head.insertAdjacentHTML('beforeend', sheet);
+  const grp = d3.window.document.querySelector('.settings-group-title');
+  chk(titles.length > 0 && grp &&
+    d2.window.getComputedStyle(titles[0]).fontSize === d3.window.getComputedStyle(grp).fontSize,
+    '设置主页入口标题与二级页分组名画出来一样大（同名同号，不再两套）');
+} else {
+  console.log('- (未安装 jsdom，跳过卡片主标题的真实渲染一节)');
+}
 /* ==========================================================================
    十二、开关真的画出来了（Issue #163，真实渲染几何）
    --------------------------------------------------------------------------

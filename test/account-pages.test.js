@@ -121,18 +121,24 @@ const LOGIN = strip(loginJs), PROFILE = strip(profileJs), ADMIN = strip(adminJs)
       f + ' 没有自己写 tier === "pro" 这类判断（一律走 Entitlement）');
     chk(!/plan\s*===/.test(s), f + ' 没有自己比对 plan');
   });
-  /* Issue #163：权限一节从「15 条清单 + 一句说明」收成**一行身份 + 一条链接**。
-     —— 清单本身还在，但它只有一处：/plans/ 那张四列表（每格都当场算）。
-     这一节守的是「两边不各说一遍」：
-       ① 个人中心不再画能力清单（`matrix()` 那一份只给对比页用）
-       ② 层级文案仍然只走 `Ent.tierLabel()`（本页不自己比 tier） */
+  /* Issue #163：权限一节从「15 条清单 + 一句说明」→「一行身份 + 一条链接」
+     → **整节撤掉**（第三轮）。清单唯一的一处是 /plans/ 那张四列表（每格都当场算），
+     层级唯一的一处是身份卡上的徽章。
+     这一节守的是「同一件事不各说一遍」：
+       ① 个人中心不画能力清单（`matrix()` 那一份只给对比页用）
+       ② 层级文案仍然只走 `Ent.tierLabel()`（本页不自己比 tier）
+       ③ 层级与「它是谁定的」在页面上各只出现一次 */
   chk(!/Ent\.matrix\(/.test(PROFILE),
     '个人中心不再自己画一遍能力清单（清单只有 /plans/ 一处，见 plans-page 测试）');
   chk(!/cap-list|cap-name|cap-hint/.test(PROFILE + SRC.profile),
-    '个人中心不再有清单的挂载点与样式类（整块收成一行身份）');
-  chk(/Ent\.tierLabel\(/.test(PROFILE), '那一行身份仍然由 Entitlement.tierLabel() 出');
-  chk(/cap-tier/.test(SRC.profile) && /cap-tier/.test(PROFILE),
-    '那一行的挂载点叫 cap-tier（renderCaps() 画的就是它）');
+    '个人中心不再有清单的挂载点与样式类');
+  chk(!/cap-tier/.test(PROFILE + SRC.profile),
+    '「身份」那一行也撤了（层级只在身份卡徽章上说一次）');
+  chk(/Ent\.tierLabel\(/.test(PROFILE), '层级徽章仍然由 Entitlement.tierLabel() 出');
+  chk((PROFILE.match(/Ent\.tierLabel\(/g) || []).length === 1,
+    '层级文案在个人中心只有一处来源（实际 ' + (PROFILE.match(/Ent\.tierLabel\(/g) || []).length + ' 处）');
+  chk(!/renderCaps/.test(PROFILE),
+    '不再有 renderCaps()（那节撤了就不留一个画空东西的函数）');
   chk(/Ent\.tierLabel\(/.test(PROFILE) && /Ent\.tierLabel\(/.test(ADMIN),
     '层级徽章文案一律由 Entitlement.tierLabel() 出');
   chk(/Ent\.TIERS/.test(ADMIN), '可发放的层级列表读 Entitlement.TIERS（不自己写死一份）');
@@ -452,6 +458,52 @@ const LOGIN = strip(loginJs), PROFILE = strip(profileJs), ADMIN = strip(adminJs)
     '用户协议正文 < 1000 字（实际 ' + legalLen('terms/index.html') + '）');
   chk(legalLen('privacy/index.html') < 1400,
     '隐私条款正文 < 1400 字（实际 ' + legalLen('privacy/index.html') + '）');
+}
+
+/* ============ 十三、个人中心：一张卡一件事、操作键攒成一行（Issue #163 第三轮） ============ */
+{
+  /* 用户原话：
+       「个人页面一个卡片一个按钮，不能让这些需要操作的按钮组合在一张卡片吗，
+         其他描述部分重新整理组合。」
+
+     改之前是**六张卡、六颗各占一整行的按钮**。判据取的是「几张卡」与
+     「有几行操作键」，不是某个 id 在不在 —— id 改名换姓之后这两条仍成立。 */
+  const cards = [...SRC.profile.matchAll(/<section class="account-card/g)].length;
+  chk(cards === 5,
+    '个人中心是五张卡（身份 / 本机数据 / 同步 / 关于 / 危险区，实际 ' + cards + '）');
+  const actionRows = [...SRC.profile.matchAll(/class="account-actions"/g)].length;
+  chk(actionRows === 2,
+    '操作键收成两行（身份卡那一行 + 「关于」卡那一行，实际 ' + actionRows + ' 行）');
+  chk(/id="identity-actions"/.test(SRC.profile),
+    '登录 / 退出的两颗键并排在同一行（#identity-actions）');
+  chk(/id="btn-go-plans"[\s\S]{0,400}?id="btn-go-sync"/.test(SRC.profile),
+    '「权限对比」与「同步设置」并排在「关于」卡那一行');
+  chk(/class="account-card danger-zone"/.test(SRC.profile),
+    '注销仍**单独一张卡**（朱砂描边的危险区，不与那些「去别处」的键并列）');
+  // 每张卡底下不再各挂一颗满宽按钮：满宽按钮只该出现在表单 / 危险区里
+  const fullBtns = [...SRC.profile.matchAll(/<button class="account-btn(?! ghost)[^"]*"/g)].length;
+  chk(fullBtns <= 4,
+    '满宽的实心按钮不再一排排出现在每张卡底下（实际 ' + fullBtns + ' 颗，都是表单 / 危险区里的）');
+
+  /* 三句用户点名要删的整句 —— 判「这句话没了」，不是「少写几个字」 */
+  const profileVisible = stripHtml(SRC.profile);
+  chk(!/昵称与印记在/.test(profileVisible),
+    '删掉「昵称与印记在「设置 · 通用」里改。」（去别处调的话不必在这一页念）');
+  chk(!/进度只在这台设备上/.test(profileVisible),
+    '删掉「进度只在这台设备上，清缓存、换设备就没了。」（登录页已经如实说过一次）');
+  chk(!/不建账号也照旧用全部功能/.test(profileVisible),
+    '删掉「不建账号也照旧用全部功能，只有语音朗读要登录（免费）。」');
+  chk(!/guest-card/.test(SRC.profile),
+    '那块「未登录引导」整块撤掉（不留空壳容器）');
+  /* 但**事实**一条都没少：登录换来的那一件事写在那一颗按钮上 ——
+     未登录的人打开这一页仍然知道「登录能多出什么」。 */
+  chk(/登录可用语音朗读/.test(PROFILE),
+    '那一颗按钮如实写着「登录可用语音朗读」（事实没跟着删）');
+  // 「账号」不再自成一卡：状态行挂在身份卡里说
+  chk(!/id="account-card"/.test(SRC.profile),
+    '「账号」不再独占一张卡（它回答的「我是谁」与身份卡重合）');
+  chk(/id="account-list"/.test(SRC.profile) && /\$\("account-list"\)/.test(PROFILE),
+    '账号那几行挪进「关于」卡（#account-list），仍由 renderAccount() 画');
 }
 
 console.log('\n' + (fails ? '❌ ' + fails + ' 项失败' : '🎉 账号三页测试全部通过'));

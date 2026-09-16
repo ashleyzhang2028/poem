@@ -383,7 +383,7 @@
     var r = can(name, ctx);
     if (r.ok) return "";
     if (r.reason === "unknown") return "这个功能暂不可用";
-    if (r.reason === "login") return "登录后即可使用（免费）";
+    if (r.reason === "login") return "登录可用";
     return r.minTier === "max" ? "Max 起可用" : "Pro 起可用";
   }
 
@@ -461,7 +461,7 @@
       var c = CAPS[k];
       var cells = COLUMNS.map(function (col) {
         // 游客列看的是「没登录」那一刻的能力 —— 与 /profile/ 顶部那句
-        // 「登录后可用语音朗读（免费）」必须是同一个答案，所以两边都走 can()。
+        // 「登录可用语音朗读」必须是同一个答案，所以两边都走 can()。
         var ctx = { tier: col.tier, signedIn: !col.guest };
         if (now !== undefined) ctx.now = now;
         var r = can(k, ctx);
