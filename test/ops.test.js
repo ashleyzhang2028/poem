@@ -303,6 +303,27 @@ console.log("\n=== 七之二、2D 的五个步骤（配置与真开通，docs §
   has(stepD, "%40", "D 步写明密码里的特殊字符要百分号编码");
   has(cnb, "SUPABASE_DB_URL:?", ".cnb.yml 的备份真的校验这个变量注入没注入");
 
+  /* ⚠️ Issue #159：备份报 could not translate host name，别一律当成「密码没编码」
+     ----------------------------------------------------------------------------
+     报错里引号内那串主机名是**判据**：
+       · 带 `…@` / 密码尾巴  → 密码没百分号编码（改密钥仓库里的值）
+       · 干净的 db.<ref>.…    → URL 已经解析成功，是这个名字解析不到（DNS / IPv6）
+     两者只差几个字符，方向完全相反。所以备份脚本现在**先把 URL 形状判掉**，
+     不让那句会被误读的报错发出来。 */
+  has(stepD, "%3A", "D 步写明了其余保留字符怎么编码（: → %3A）");
+  has(stepD, "只许出现一次", "D 步给出了「@ 只许出现一次」这条可自检的判据");
+  has(stepD, "pooler.supabase.com", "D 步给出了解析不到直连主机名时的替代串（Session pooler）");
+  has(stepD, "6543", "D 步写明 Transaction pooler 那个端口不要给 pg_dump 用");
+  has(stepD, "server version mismatch", "D 步写明 pg_dump 16 对服务端 17 的警告不是失败");
+
+  has(cnbCode, "could not translate host name", "备份脚本自己会把那句误读的报错讲清楚");
+  has(cnbCode, "DB_HOST=", "备份脚本真的从 URL 里拆出主机段来自检");
+  chk(/case "\$DB_HOST" in[\s\S]{0,200}\*@\*/.test(cnbCode),
+    "备份脚本判的是「主机段里还有 @」= 密码没编码");
+  chk(cnbCode.indexOf("postgres://*|postgresql://*") >= 0,
+    "备份脚本先要求整串是 postgres:// / postgresql:// 开头");
+  chk(cnb.indexOf("SUPABASE_DB_URL=") < 0, ".cnb.yml 里没有把 DB URL 的值写死");
+
   const stepsCheck = run2(["--steps", "--check"]);
   eq(stepsCheck.code, 1, "--steps --check 没配齐时退出码 1（与 --check 同一条判据）");
   const fullEnv2 = Object.assign(bareEnv2(), {
