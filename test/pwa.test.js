@@ -1261,10 +1261,43 @@ function check(name, cond, extra) {
       /* 用户这一轮的反馈：「搜索页面，当用户 focus 在搜索框，请把搜索框向上挪到
          标题栏下方。下拉列表也跟着上去。……焦点在搜索框时，现在框 border 是黑色，
          不好看，请调整。」
-         —— 进页即聚焦，所以这一段量的就是「聚焦态」本身。
          三件事：框在顶栏下方（不是视口中央）、候选下拉紧跟着框（不是留在原处）、
-         描边是天青主色（不是浏览器默认那支近黑的 ring）。 */
+         描边是天青主色（不是浏览器默认那支近黑的 ring）。
+
+         ⚠️ Issue #163 改掉了这一段的前提：**进页不再自动聚焦**
+            （用户：「进入搜索页时不要立刻聚焦，手机键盘自动弹出来了，烦人」）。
+            所以「聚焦态」不再是一进页就有的状态，得**用户自己点一下框**才有 ——
+            这里补上那一下真实点击（`#gw-search` 的点击判定里加了 pointerdown
+            轻量上提，见 js/search.js 的 bindLightFocus）。
+
+         ⚠️ 点击必须用**真鼠标**（page.mouse），不能用 el.click()：
+            Chrome 对脚本合成的 `.click()` 聚焦一律按「程序发起的聚焦」处理，
+            不命中 :focus-visible —— 于是聚焦态里量到的描边仍是纸线
+            （rgb(214, 200, 173)），而**真手指点出来的聚焦**才是用户看到的那一圈
+            天青（实测：点击后 border-color 落到 rgb(47, 96, 85)）。
+            这一段本来就是「用户聚焦时看到什么」，所以要量的正是后者。
+
+         ⚠️ 也不能用 page.tap()：puppeteer 的模拟触摸会把点击派发到
+            坐标处**最上层**的元素上，而搜索框在 touch 场景下落在
+            .search-wrap / .search-toolbar 的层叠之下，那一下会打到外壳上、
+            焦点根本进不去框（实测：点完 activeElement 仍是 body）。
+            真鼠标点击走的是命中测试后的同一套默认行为，稳定得多。 */
       {
+        /* 用户自己点一下搜索框 —— 这是进入「聚焦态」的唯一入口（Issue #163）。
+           ⚠️ 断言这一下真的点着了：若这条红了，下面几条量的都是「没聚焦」，
+              报出来的数值会指向 CSS，而病根其实在「焦点没进框」。 */
+        await sp.evaluate(() => document.activeElement && document.activeElement.blur());
+        const ibox = await (await sp.$('#gw-search')).boundingBox();
+        await sp.mouse.click(ibox.x + ibox.width / 2, ibox.y + ibox.height / 2);
+        await new Promise(r => setTimeout(r, 500));
+        const clicked = await sp.evaluate(() => ({
+          focused: document.activeElement && document.activeElement.id,
+          cls: document.getElementById('search-hero').className
+        }));
+        check('iPhone 搜索页：点一下搜索框，焦点真的进到框里（进页不聚焦，用户点的才算）',
+          clicked.focused === 'gw-search' && /search-active/.test(clicked.cls),
+          JSON.stringify(clicked));
+
         const focusState = await sp.evaluate(() => {
           const inp = document.querySelector('.search-hero .search-input');
           const bar = document.querySelector('.topbar');
@@ -1313,13 +1346,68 @@ function check(name, cond, extra) {
       });
       await new Promise(r => setTimeout(r, 200));
 
-      // 进这一页就是为了搜东西：输入框应当已经是焦点
-      const autoFocus = await sp.evaluate(() => ({
-        focused: document.activeElement && document.activeElement.id,
-        heroClass: document.getElementById('search-hero').className
-      }));
-      check('iPhone 搜索页：进页即聚焦搜索框（少点一次才输得进字）',
-        autoFocus.focused === 'gw-search', JSON.stringify(autoFocus));
+      /* ⚠️ 这一条在 Issue #163 **反向**了：进页**不再**聚焦。
+         用户原话是「进入搜索页时不要立刻聚焦，手机键盘自动弹出来了，烦人」。
+         于是这里守的不再是「一进来焦点就在框里」，而是
+         「一进来**键盘不会自己弹出来**」——那正是用户要的那件事。
+
+         判据是「键盘真的弹着」这一个实测信号（软键盘是覆盖层，不改
+         window.innerHeight，只能靠 visualViewport.height 变小来看）：
+         框里没焦点、整块没贴顶（还在 .search-hero 的静态摆法里）。
+
+         ⚠️ 量之前必须先把焦点与键盘模拟**都**清干净：
+            前面几段有 `inp.focus()`（DOM 级聚焦，会真的弹键盘），
+            也有把 `visualViewport.height` 删掉来模拟收键盘的 ——
+            `delete vv.height` 之后可视区就变回整屏了，而**焦点仍在框里**，
+            于是整块还停在贴顶态。这一条量的是「一进这一页的默认样子」，
+            所以先把外部状态还原成「没聚焦、没键盘」。
+
+         ⚠️ 还原时用 `blur()` + 派发 resize，让页面自己重算状态；
+            不要用 `document.activeElement.blur()` 之外的办法去「假装」没聚焦 ——
+            那会把下面每一条的前提一起搅乱。 */
+      await sp.evaluate(async () => {
+        const inp = document.getElementById('gw-search');
+        inp.blur();
+        const vv = window.visualViewport;
+        if (vv) vv.dispatchEvent(new Event('resize'));
+        await new Promise(r => setTimeout(r, 400));
+      });
+
+      const autoFocus = await sp.evaluate(() => {
+        const vv = window.visualViewport;
+        return {
+          focused: document.activeElement && document.activeElement.id,
+          heroClass: document.getElementById('search-hero').className,
+          kbSpace: getComputedStyle(document.getElementById('search-hero'))
+            .getPropertyValue('--kb-space').trim(),
+          vvH: vv ? +vv.height.toFixed(1) : null,
+          winH: window.innerHeight
+        };
+      });
+      check('iPhone 搜索页：进页不自动聚焦、键盘不自己弹出来（Issue #163）',
+        autoFocus.focused !== 'gw-search' &&
+        !/search-active/.test(autoFocus.heroClass) &&
+        !/kb-open/.test(autoFocus.heroClass),
+        JSON.stringify(autoFocus));
+      check('iPhone 搜索页：进页没有键盘占位（--kb-space 是 0，可视区就是整屏）',
+        autoFocus.kbSpace === '0px' &&
+        (autoFocus.vvH === null || autoFocus.vvH >= autoFocus.winH - 1),
+        JSON.stringify({ kbSpace: autoFocus.kbSpace, vvH: autoFocus.vvH, winH: autoFocus.winH }));
+
+      // ② 尺寸与聚焦描边：再照用户的动作**点一次框**，把它带进聚焦态。
+      //    （上面那一段量的是「进来时的默认样子」，这里量的是「聚焦时长什么样」。
+      //      Issue #163 之后这两件事必须分开来量 —— 进页不聚焦了。）
+      {
+        const ib = await (await sp.$('#gw-search')).boundingBox();
+        await sp.mouse.click(ib.x + ib.width / 2, ib.y + ib.height / 2);
+        await new Promise(r => setTimeout(r, 400));
+        const st = await sp.evaluate(() => ({
+          focused: document.activeElement && document.activeElement.id,
+          cls: document.getElementById('search-hero').className
+        }));
+        check('iPhone 搜索页：点框之后焦点真的进到框里（下面几条量的都是聚焦态）',
+          st.focused === 'gw-search' && /search-active/.test(st.cls), JSON.stringify(st));
+      }
 
       // ① 搜索框比索引页更高 —— 它是这一页唯一的主角。
       //    ⚠️ 2026 这一版把「增高」从绘制层搬进了布局：高度就是 52px 的真高度
@@ -1350,7 +1438,8 @@ function check(name, cond, extra) {
       });
       check('iPhone 搜索页：搜索框真的变高了（52px，超出 iOS 44px 最小可点面积）',
         boxState.visualH >= 50 && boxState.visualH <= 54, boxState.visualH + 'px');
-      // ⚠️ 这一页进页即聚焦，此刻 hero 已经切到「贴顶栏」那一档（高度交还给内容），
+      // ⚠️ 这一段紧接着上面那一下真实点击（Issue #163：进页不聚焦，用户点一下才聚焦），
+      //    此刻 hero 已经切到「贴顶栏」那一档（高度交还给内容），
       //    所以这里量的不再是 hero 的高度，而是**输入框自己**的布局高度 ——
       //    增高仍然长在布局里（视觉 = 布局 = 52px），不是绘制层拉出来的。
       check('iPhone 搜索页：增高长在布局里（一行就是 52px，不是画出来的）',
@@ -1666,10 +1755,24 @@ function check(name, cond, extra) {
       await sp.goto(base + 'search/', { waitUntil: 'load' });
       await new Promise(r => setTimeout(r, 600));
 
-      // ⑥ 这一轮的四态收尾（用户这一轮点名的四句话，逐条量渲染后的位置）：
-      //    · 有内容时失焦 → 框**仍停在页顶**（「当有搜索内容存在时，搜索框停留在页面顶部」）；
-      //    · 清空内容 + 失焦 → 框回到页面中心；
-      //    · 点空白地方 → 候选下拉消失。
+      /* ⑥ 这一轮的收尾（用户点名的几句话，逐条量渲染后的位置）：
+            · 框里有焦点 → 贴顶栏下方；
+            · 焦点走开 → 回本段中心（Issue #163 把「有内容就贴顶」作废了）；
+            · 清空内容 + 失焦 → 同样在中心；
+            · 点空白地方 → 候选下拉消失。
+         ⚠️ 这一步先把**键盘模拟撤掉**：上面几段为了量键盘态，把
+            `visualViewport.height` 改小过（模拟键盘弹出），并且把它留成了
+            「小 336px」那一份。焦点走了但那个假高度还挂着的话，
+            syncHeroState 会照旧判成贴顶（lifted = focused || space > 0）——
+            量到的就是「键盘还弹着」的样子，不是「焦点走开」的样子。
+            真机上这两件事是一起归零的，所以这里一并还原。 */
+      await sp.evaluate(async () => {
+        const vv = window.visualViewport;
+        delete vv.height;
+        vv.dispatchEvent(new Event('resize'));
+        await new Promise(r => setTimeout(r, 300));
+      });
+
       /* ⑦ 本轮（Issue #122）第一条：聚焦后框**上下等距**。
          用户原话：「搜索框和上下元素间隔一致，请以现在下面的间隔为准，
          上面的间隔也缩小到这么多」。
@@ -1680,6 +1783,7 @@ function check(name, cond, extra) {
         const vv = window.visualViewport;
         delete vv.height;                       // 收掉键盘：只留下「聚焦」这一态
         vv.dispatchEvent(new Event('resize'));
+        await new Promise(r => setTimeout(r, 300));   // 让页面把新状态算完再量
         const inp = document.getElementById('gw-search');
         inp.value = '月';
         inp.dispatchEvent(new Event('input', { bubbles: true }));
@@ -1703,11 +1807,17 @@ function check(name, cond, extra) {
         'gap ' + JSON.stringify([evenGap.above, evenGap.below]));
 
       const r1 = await sp.evaluate(async () => {
-        const vv = window.visualViewport;
-        delete vv.height;
-        vv.dispatchEvent(new Event('resize'));
         const inp = document.getElementById('gw-search');
         const hero = document.getElementById('search-hero');
+        // ⚠️ 「居中的框压在这一段的中线上」这个量法**只在这一段的静态摆法里成立**：
+        //    贴顶那一档里 hero 的高度是按内容给的（只剩顶栏到框底那一段），
+        //    hero 的中线跟着框自己走，那个「偏差 ≤ 2px」就成了恒真命题 ——
+        //    于是不管页面上到底摆成什么样，它都会绿。上一版能过，是因为
+        //    旧口径下这一段进来就贴着顶、而 hero 那时还铺满整页。
+        //    现在贴顶与否由焦点决定，量之前必须**先把焦点收干净**，
+        //    否则量到的是贴顶态、hero 也缩成一条，这一条就永远绿。
+        inp.blur();
+        await new Promise(r => setTimeout(r, 400));
         // ⚠️ 前面几条用例可能把关键词清掉或把焦点带走（点结果卡片那一系列
         //    动过 DOM），这里先把「有搜索内容」这个前提坐实：框里有字、
         //    并且它真的被聚焦过 —— 否则后面量的是另一件事。
@@ -1731,22 +1841,21 @@ function check(name, cond, extra) {
             offset: +((ir.top + ir.height / 2) - (hr.top + hr.height / 2)).toFixed(1)
           };
         };
-        inp.focus();
-        await new Promise(r => setTimeout(r, 200));
-        inp.blur();                       // 键盘收起、焦点没了，但框里还有「月」
-        await new Promise(r => setTimeout(r, 500));
-        // ⚠️ 类名要**在这里**就抄下来：hero 是同一个节点，className 是活的值 ——
-        //    等到 return 里再读，读到的已经是「清空之后」那一份了
-        //    （上一版就是这么写的：topWithKeyword 量对了，类名却量的是后一个状态）。
-        const pinned = { cls: hero.className, inputTop: +inp.getBoundingClientRect().top.toFixed(1) };
-        // 再看一眼：清空内容后（仍未聚焦）框应当回到页面中心
+        // 「有内容、没焦点」这一态（下面的第二条断言量的就是它）
+        const withKeyword = {
+          cls: hero.className,
+          top: +inp.getBoundingClientRect().top.toFixed(1),
+          pos: midOf()
+        };
+        // 再看一眼：清空内容后（仍未聚焦）框应当还在页面中心
         inp.value = '';
         inp.dispatchEvent(new Event('input', { bubbles: true }));
         await new Promise(r => setTimeout(r, 300));
         const centered = { cls: hero.className, pos: midOf() };
         return {
-          clsWithKeyword: pinned.cls,
-          topWithKeyword: pinned.inputTop,
+          clsWithKeyword: withKeyword.cls,
+          topWithKeyword: withKeyword.top,
+          offsetWithKeyword: withKeyword.pos.offset,
           clsWhenEmpty: centered.cls,
           topWhenEmpty: centered.pos.inputTop,
           centeredOffset: centered.pos.offset,
@@ -1754,15 +1863,77 @@ function check(name, cond, extra) {
           vh: window.innerHeight
         };
       });
-      check('iPhone 搜索页：有搜索内容时失焦，搜索框仍停在页面顶部',
-        /search-active/.test(r1.clsWithKeyword) && r1.topWithKeyword <= 140,
-        JSON.stringify([r1.clsWithKeyword, r1.topWithKeyword, r1.dbg]));
-      // 「回到页面中心」= 框重新压在 .search-hero 这一段的垂直中线上
-      // （0 表示正中；hero 里框是绝对定位 top: 50% - 半盒高，所以偏差该在 1px 内）
-      check('iPhone 搜索页：清空内容且没有焦点后，搜索框回到页面中心',
+      /* ⚠️ 这两条守的旧口径已在 Issue #163 作废，**换口径不换问题**：
+
+         旧：「有搜索内容 → 框停在页顶（失焦也不回去）」＋「清空 + 没焦点 → 回中心」。
+         新：贴顶只认**框里真的有焦点**（见 js/search.js 的
+             `var lifted = focused || space > 0`）。理由不是审美：iOS 上
+             页面加载后浏览器会把焦点交给第一个可聚焦元素 ——
+             「有内容就贴顶」于是让回填的上次关键词一进页就把框顶上顶栏，
+             接着把键盘也带出来，正是用户说的「一进搜索页键盘就自己出来了」。
+
+         所以这里接着量的仍是**同一个用户问题**（框该待在哪儿），
+         只是把「有内容」这个前提换成「用户真的在框里 / 真的走开了」：
+           · 框里真的有焦点（且框里有字）→ 贴顶栏下方，候选也跟着上去；
+           · 焦点走开（收键盘）→ 回到这一段的静态摆法（居中），
+             哪怕框里还留着上次搜的那个词 —— 回填的词再也不许把框顶上去。
+
+         ⚠️ 这里用 `inp.focus()` 而不是重新点一次：上面那几条已经把
+            「点一下焦点能进框」验过了，这一段要的是**状态机**（聚焦 / 失焦），
+            用真实点击只是把同一条路再走一遍。 */
+
+      /* ① 框里真的有焦点 → 贴顶。
+         ⚠️ 判据用「视口中心」而不是「.search-hero 这一段的中心」：
+            贴顶那一档里 hero 的高度是**按内容给的**（只剩顶栏到框底那一段），
+            hero 的中线跟着框自己走 —— 拿它当中线会得到「框不可能高于自己的中线」
+            这种恒假命题（上一版在旧口径下能过，是因为那时 hero 还铺满整页）。
+            框「贴着顶栏、不再停在页面中央」这件事，对的参照物本来就是视口中心。 */
+      const withFocus = await sp.evaluate(async () => {
+        const inp = document.getElementById('gw-search');
+        const hero = document.getElementById('search-hero');
+        if (!inp.value.trim()) {
+          inp.value = '月';
+          inp.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+        inp.focus();
+        await new Promise(r => setTimeout(r, 300));
+        const ir = inp.getBoundingClientRect();
+        return {
+          cls: hero.className,
+          inputTop: +ir.top.toFixed(1),
+          mid: +((window.innerHeight - ir.height) / 2).toFixed(1),
+          keyword: inp.value
+        };
+      });
+      check('iPhone 搜索页：框里真的有焦点时贴顶（不再停在视口中央）',
+        /search-active/.test(withFocus.cls) &&
+        withFocus.inputTop < withFocus.mid - 40,
+        JSON.stringify([withFocus.cls, withFocus.inputTop, withFocus.mid]));
+
+      /* ② 焦点走开（收键盘）→ 回到静态摆法，**框里仍留着那个词**。
+         这一条量的正是旧口径下会判错的那一态：旧版「有内容就贴顶」，
+         于是「有内容但没焦点」会停在页顶（top 值小、不在中线上）；
+         新口径它必须回中心。 */
+      check('iPhone 搜索页：有搜索内容但焦点走开，框回到页面中心（不再靠内容贴顶）',
+        !/search-active/.test(r1.clsWithKeyword) &&
+        Math.abs(r1.offsetWithKeyword) <= 2 && r1.topWithKeyword > 140,
+        JSON.stringify([r1.clsWithKeyword, r1.offsetWithKeyword, r1.topWithKeyword]));
+
+      /* ③ 清空内容 + 没焦点 → 同样在中心。
+         ⚠️ 旧口径这里还多断一句「清空后框比有内容时低了 100px 以上」——
+            那量的是「从贴顶落回中心」这一趟位移。Issue #163 之后
+            「有内容」不再贴顶，所以「清空」根本不会让框动位置：
+            两条的 top 是同一个数（实测 336.3 / 336.3），那句差额断言
+            量的是旧口径留下的副产品，不是用户看到的问题。
+            真正要守的仍是「清空 + 没焦点 → 框在中心」这一句，
+            由上面两条（class 不在贴顶态、偏差 ≤ 2px、hero 仍铺满一段）
+            完整表达；这里再补一句「它确实没被任何贴顶态碰过」。 */
+      check('iPhone 搜索页：清空内容且没有焦点后，搜索框仍在页面中心',
         !/search-active/.test(r1.clsWhenEmpty) && Math.abs(r1.centeredOffset) <= 2 &&
-        r1.centeredHeroH > 300 && r1.topWhenEmpty > r1.topWithKeyword + 100,
-        JSON.stringify([r1.clsWhenEmpty, r1.centeredOffset, r1.topWhenEmpty, r1.centeredHeroH]));
+        r1.centeredHeroH > 300 &&
+        Math.abs(r1.topWhenEmpty - r1.topWithKeyword) <= 2,
+        JSON.stringify([r1.clsWhenEmpty, r1.centeredOffset, r1.topWhenEmpty,
+          r1.topWithKeyword, r1.centeredHeroH]));
 
       // 点空白收下拉：用户原话「当用户点击空白地方时，下拉列表消失」
       const blank = await sp.evaluate(async () => {
