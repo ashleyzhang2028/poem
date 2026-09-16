@@ -57,7 +57,6 @@
     "export.progress":   { minTier: "free", login: false, quota: null, name: "导出背诵进度 JSON" },
     "collections.many":  { minTier: "pro",  login: true,  quota: null, name: "自选清单 20 个" },
     "sync.multiDevice":  { minTier: "pro",  login: true,  quota: null, name: "跨设备云同步" },
-    "ai.explain":        { minTier: "pro",  login: true,  quota: 50,   name: "AI 讲解 / 背诵纠音" },
     "export.paper":      { minTier: "pro",  login: true,  quota: null, name: "篇目 PDF / 打印页" },
     "profile.family":    { minTier: "pro",  login: true,  quota: null, name: "家庭子档案 3 个" },
     "quiz.review":       { minTier: "pro",  login: true,  quota: null, name: "题库复习（给上句选下句）" },
@@ -69,15 +68,22 @@
        ⚠️ 服务端的 featuresFor() 用的就是这两个键名（有对拍断言守着）； */
     "feihualing":        { minTier: "max",  login: true,  quota: null, name: "飞花令" },
     "exam.paper":        { minTier: "max",  login: true,  quota: null, name: "古诗词大会 · 现场考试" },
-    "ai.explain.big":    { minTier: "max",  login: true,  quota: 500,  name: "AI 讲解 / 背诵纠音（500 次/月）" },
     "collections.unlimited": { minTier: "max", login: true, quota: null, name: "自选清单不限" }
+    /* ⚠️ 这里**没有** `ai.explain` / `ai.explain.big` —— 它们已被**删除**。
+       用户 2026-09-17 裁决：「把需要收我 app 费用的功能删除，我不会去做」。
+       AI 讲解 / 背诵纠音是「每调一次都要真花钱」的那一类（调用 AI 商按次计费），
+       与「本站不收款、层级不是付费凭据」放在一起就是「每被用一次亏一次」。
+       所以不是「暂缓」，是从能力表里**拿掉**：界面不会点亮它、对比表不会列出它、
+       服务端 featuresFor() 不会下发它（两端逐字对拍有断言守着）。
+       ⚠️ 不要以任何名义把它加回来（免费额度也不行）—— 那是同一笔账。 */
   };
 
   /**
    * 层级别名：只用于「同一件事的同一个额度档，名称写法不同」这类情况。
-   * ⚠️ 不许拿它去表达「额度不同」—— `ai.explain`（pro，50 次）与
-   * `ai.explain.big`（max，500 次）曾一度互为别名，结果 pro 也拿到了 500 次档
+   * ⚠️ 不许拿它去表达「额度不同」——曾有一对 `ai.explain`（pro，50 次）与
+   * `ai.explain.big`（max，500 次）互为别名，结果 pro 也拿到了 500 次档
    * （测试里那条「pro 不能蹭 max 的额度」就是这么顶回来的）。
+   * 那一对本身已在用户 2026-09-17 的裁决下**删除**（见 CAPS 末尾那条注释）。
    * 额度不同 = 两条独立的能力，各自带 minTier 与 quota。
    */
   var ALIAS = {};
@@ -470,8 +476,7 @@
          用户点名的就是这种。分组名自己已经说完，注解只留一句还有信息量的。 */
       { key: "free", title: "所有版本都有" },
       { key: "pro", title: "Pro 起" },
-      { key: "max", title: "Max 起",
-        note: "额度更大：AI 讲解 500 次/月" }
+      { key: "max", title: "Max 起" }
     ].forEach(function (g) {
       if (byMin[g.key].length) groups.push({ key: g.key, title: g.title, note: g.note, rows: byMin[g.key] });
     });

@@ -357,9 +357,12 @@ console.log("\n=== 十、3 期那三件：口径写清了，而且**不许偷偷
   const coreSrc = read("api/_lib/core.js");
   chk(/var charge = input\.charge === true;/.test(coreSrc),
     "判分口的计费**默认关着**（charge 只有显式 true 才算）");
-  chk(/3 期还没有定价，这一次\*\*不计入额度\*\*/.test(coreSrc) ||
-    /还没有定价/.test(coreSrc),
-    "不开计费时**如实说明**为什么没计入（不假装扣费）");
+  chk(/免费、不限次\*\*，不计额度/.test(coreSrc),
+    "不开计费时**如实说明**「免费不限次」（本站不收款、没有计费）");
+  /* 用户 2026-09-17：「把需要收我 app 费用的功能删除」。
+     两端能力表都不许再有 ai.* —— 上一节已钉客户端，这里钉服务端。 */
+  chk(!/ai\.explain/.test(coreSrc.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^\s*\/\/.*$/gm, " ")),
+    "服务端 featuresFor() 里没有任何 ai.* 能力（付费功能已删除）");
 
   /* ③ 界面不假装：3 期的功能名**只许出现在该出现的地方** */
   const files = fs.readdirSync(path.join(ROOT, "js")).filter(f => /\.js$/.test(f));
