@@ -301,19 +301,19 @@ console.log('\n=== 七、接线：能力键名两端同源、页面不提前渲�
   const gameSrc = fs.readFileSync(path.join(ROOT, 'js/game.js'), 'utf8');
   const caps = (coreSrc.match(/var GAME_CAP = \{([^}]+)\}/) || [, ''])[1];
   chk(/fly:\s*"feihualing"/.test(caps), '服务端：飞花令那一档写作 feihualing');
-  chk(/paper:\s*"exam\.paper"/.test(caps), '服务端：现场考试那一档写作 exam.paper');
+  chk(/paper:\s*"exam\.paper"/.test(caps), '服务端：试题模拟那一档写作 exam.paper');
   chk(/review:\s*"quiz\.review"/.test(caps), '服务端：题库复习那一档写作 quiz.review');
   ['feihualing', 'exam.paper', 'quiz.review'].forEach(cap => {
     chk(gameSrc.indexOf('"' + cap + '"') >= 0, 'js/game.js 里用的是同一个键名：' + cap);
   });
 
-  /* 用户裁决：飞花令与现场考试归 max、题库归 pro —— 两端必须一致 */
+  /* 用户裁决：飞花令与试题模拟归 max、题库归 pro —— 两端必须一致 */
   const Ent = require(path.join(ROOT, 'js/entitlement.js'));
   const ctx = t => ({ tier: t, signedIn: true });
   chk(!Ent.can('feihualing', ctx('pro')).ok && Ent.can('feihualing', ctx('max')).ok,
     '飞花令：Pro 不可、Max 可（用户裁决）');
   chk(!Ent.can('exam.paper', ctx('pro')).ok && Ent.can('exam.paper', ctx('max')).ok,
-    '现场考试：Pro 不可、Max 可（用户裁决）');
+    '试题模拟：Pro 不可、Max 可（用户裁决）');
   chk(Ent.can('quiz.review', ctx('pro')).ok, '题库复习：Pro 可（用户裁决）');
   chk(!Ent.can('quiz.review', ctx('free')).ok, '题库复习：free 不可');
 

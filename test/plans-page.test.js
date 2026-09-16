@@ -171,23 +171,47 @@ const plansCommentOnly = pageJs;
     'pinyin.helper': '阅读辅助', 'export.progress': '进度导出',
     'collections.many': '自选清单', 'sync.multiDevice': '设备同步',
     'export.paper': 'PDF / 打印', 'profile.family': '家庭档案',
-    'quiz.review': '题库', 'export.all': '课内诗词导出', 'exam.paper': '试题模拟'
+    'quiz.review': '题库', 'export.all': '课内诗词导出',
+    'exam.gathering': '古诗词大会', 'exam.paper': '试题模拟'
   };
   Object.keys(want).forEach(k => {
     const row = cmp.rows.find(r => r.cap === k);
     chk(row && row.name === want[k], k + ' 的名字是「' + want[k] + '」（实际 ' +
       (row ? row.name : '(缺这一行)') + '）');
   });
-  /* 「古诗词大会 / 试题模拟」这一格要**分两行**说两件事 —— 拆写在 JS 里，
-     按 cap 认（不按名字猜），且两行都来自内核给的名字之外的一处常量。 */
-  chk(/TWO_LINE[\s\S]{0,200}exam\.paper/.test(PAGE), 'js/plans.js 里对 exam.paper 有分两行的写法');
-  chk(/古诗词大会/.test(PAGE) && /试题模拟/.test(PAGE), '两行分别是「古诗词大会」与「试题模拟」');
-  chk(/plans-cap-line/.test(PAGE) && /plans-cap-line/.test(css), '两行用 .plans-cap-line 排版（样式也在）');
-  /* ⚠️ 拆的是**显示**：键名 `exam.paper` 一个字都不许动（服务端 featuresFor 对拍）。 */
-  chk(!!Ent.cap('exam.paper'), 'exam.paper 键名照旧（改的是显示，不是键名）');
+  /* ⚠️ 2026-09-19（Issue #163 末条）：用户把「分两行」那个折中**否掉了** ——
+     「是要拆成两个表格行，不是换行 这是两个功能，一个是古诗词大会的集子的
+      访问权限，一个是在线试题模拟的权限」。
+     所以现在判的是**两行、两个钩叉**（不是一个格子里两行字）：
+       · `exam.gathering` →「古诗词大会」—— 那条**集子**的访问权限
+       · `exam.paper`     →「试题模拟」—— 在线出题 · 判分
+     反面判据：页面里不许再有那个「一个格子写两件事」的写法。 */
+  const gRow = cmp.rows.find(r => r.cap === 'exam.gathering');
+  const pRow = cmp.rows.find(r => r.cap === 'exam.paper');
+  chk(!!gRow && !!pRow, '对比表上是**两行**：exam.gathering 与 exam.paper');
+  chk(!/TWO_LINE/.test(PAGE), 'js/plans.js 里不再有「一个格子分两行」的写法（TWO_LINE 已撤）');
+  chk(!/plans-cap-line/.test(PAGE) && !/plans-cap-line/.test(css),
+    '那个只为分两行而生的样式也一并撤了（不留死样式）');
+  chk(gRow.name !== pRow.name, '两行的名字各自独立：「' + gRow.name + '」/「' + pRow.name + '」');
+  /* ⚠️ 拆的是**能力**：`exam.paper` 这个键名一个字都没动（服务端 featuresFor 对拍）。 */
+  chk(!!Ent.cap('exam.paper'), 'exam.paper 键名照旧（拆的是能力，不是键名）');
   /* 表尾改称「合计」：这一格不再借「能用」那个词表态。 */
   chk(/合计/.test(PAGE), '表尾那一格写作「合计」（Issue #163：能用 → 合计）');
   chk(!/['"]能用['"]/.test(PAGE), 'js/plans.js 里不再出现「能用」这个表尾词');
+  /* 那两行的**渲染结果**：各是一行，各有自己的钩叉格子（判的是画出来的东西，
+     不是「源码里有这个词」）。compare() 给的分组里逐行找。 */
+  const rows = cmp.groups.reduce((acc, g) => acc.concat(g.rows.map(r => r.cap)), []);
+  chk(rows.indexOf('exam.gathering') >= 0 && rows.indexOf('exam.paper') >= 0,
+    '两行都在表身里（都参与分段排序）');
+  const marks = r => (r.cells || []).map(c => (c.ok ? '✓' : '✕')).join(',');
+  chk(marks(gRow).indexOf('✓') >= 0 && marks(pRow).indexOf('✓') >= 0,
+    '两行各自有打钩的格子（Max 那两列）：' + marks(gRow) + ' / ' + marks(pRow));
+  chk(gRow.cells && gRow.cells.length === cmp.cols.length,
+    '「古诗词大会」那一行有自己的四个格子（不是一个格子里的两行字）');
+  chk(pRow.cells && pRow.cells.length === cmp.cols.length,
+    '「试题模拟」那一行也是自己的四个格子');
+  chk(marks(gRow) === marks(pRow),
+    '两行同档（都归 Max）—— 但它们是**两行两个钩叉**，各答各的问题');
   chk(/你现在在这/.test(plansCommentOnly), '注释里留了改名的来龙去脉（「你现在这」是从哪来的）');
 }
 

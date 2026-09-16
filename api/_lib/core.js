@@ -250,7 +250,11 @@ function featuresFor(cfg, tier) {
      「自选清单不限 删除，已经被前面的自选清单代替」）——
      Max 的额度由 `collections.many` 的 `quotas.max = 5000` 表达，
      同一个东西不留两条能力（两条必然开始各说各的，客户端 CAPS 同步删除）。 */
-  var max = ["feihualing", "exam.paper"];
+  /* ⚠️ `exam.gathering` 是 2026-09-19（Issue #163）从 `exam.paper` 里**拆出来**的
+     第二条能力：《古诗词大会》那个集子的访问权限。用户原话「是要拆成两个表格行，
+     不是换行 这是两个功能」—— 一个格子的钩叉答不了两个问题。
+     两条都归 Max（沿用户 2026-09-17「现场考试和飞花令归 max 所有」那一档）。*/
+  var max = ["feihualing", "exam.gathering", "exam.paper"];
   /* ⚠️ 这里**没有** ai.explain / ai.explain.big —— 已被删除（用户 2026-09-17：
      「把需要收我 app 费用的功能删除」）。AI 讲解 / 纠音是每调一次都真花钱的
      那一类，与「本站不收款」放在一起就是每用一次亏一次。客户端 CAPS 同步删除，
@@ -917,14 +921,19 @@ function adminRevoke(deps, input) {
  * 古诗词大会的三层能力 —— 与 `js/entitlement.js` 的能力表**同一张表**。
  *
  * ⚠️ 这里的键名必须与 `featuresFor()` 和 `js/entitlement.js` 的 `CAPS` 对得上：
- *    · `feihualing` —— 飞花令（**max**）
- *    · `exam.paper` —— 现场考试（**max**）
- *    · `quiz.review` —— 题库复习（**pro**）
+ *    · `feihualing`     —— 飞花令（**max**）
+ *    · `exam.gathering` —— 《古诗词大会》集子的访问（**max**）
+ *    · `exam.paper`     —— 在线试题模拟 · 判分（**max**）
+ *    · `quiz.review`    —— 题库复习（**pro**）
  *    对不上的症状是「界面说能用、服务端说不能」—— 而两边都觉得自己是对的。
  *
  * ⚠️ 用户 2026-09-17 的裁决：**「现场考试和飞花令归 max 所有，题库归 pro」**。
  *    与 `docs/auth-design.md` §3.5 那句「飞花令 / 古诗文大会 / 考试与题库 pro 起」
  *    相比，飞花令与现场考试被**上收到 max**，题库复习留在 pro —— 以用户裁决为准。
+ *
+ * ⚠️ 2026-09-19（Issue #163）：`exam.gathering` 从 `exam.paper` 里拆出来
+ *    （集子访问 vs 在线模拟考试，两个功能）。判分口仍然只认 `exam.paper` ——
+ *    出题判分是它一直在答的那件事；集子访问不走这个口（它是列表页上的可见性）。
  */
 var GAME_CAP = { fly: "feihualing", paper: "exam.paper", review: "quiz.review" };
 

@@ -94,7 +94,14 @@ console.log('\n=== 三、pro / max 只加不减：层级越高能力单调不减
      与 docs/auth-design.md §3.5 那张老表（「飞花令 / 古诗文大会 / 考试与题库」
      一律 pro 起）相比，这两条**上收到 max** —— 以用户裁决为准。 */
   chk(!E.can('feihualing', pro).ok && E.can('feihualing', max).ok, '飞花令：pro 不可、max 可用（用户指定）');
-  chk(!E.can('exam.paper', pro).ok && E.can('exam.paper', max).ok, '现场考试：pro 不可、max 可用（用户指定）');
+  chk(!E.can('exam.paper', pro).ok && E.can('exam.paper', max).ok, '试题模拟：pro 不可、max 可用（用户指定）');
+  /* ⚠️ Issue #163 末条（2026-09-19）：原先挤在 `exam.paper` 那一格里的两件事
+     被用户裁成**两条能力** ——「古诗词大会的集子的访问权限」与「在线试题模拟的权限」。
+     它们各自有 minTier（都归 Max），对比表上是两行、两个钩叉。 */
+  chk(!!E.cap('exam.gathering'), 'exam.gathering 是**独立的一条**能力（集子访问）');
+  chk(!E.can('exam.gathering', pro).ok && E.can('exam.gathering', max).ok,
+    '古诗词大会集子：pro 不可、max 可用（与试题模拟同一条口径）');
+  chk(E.cap('exam.gathering').name === '古诗词大会', '它的名字就叫「古诗词大会」（一格说一件事）');
   chk(!E.can('quiz.review', free).ok && E.can('quiz.review', pro).ok, '题库复习：free 不可、pro 起');
   chk(!E.can('sync.multiDevice', free).ok && E.can('sync.multiDevice', pro).ok, '跨设备云同步：pro 起');
   /* 用户 2026-09-17：「把需要收我 app 费用的功能删除」——
@@ -126,6 +133,9 @@ console.log('\n=== 三、pro / max 只加不减：层级越高能力单调不减
        家庭子档案（Free 1 / Pro 3 / Max 180） → 家庭档案 /
        题库复习（给上句选下句） → 题库 / 全站课内诗词批量导出 261 首 → 课内诗词导出 /
        古诗词大会 · 现场考试 → 试题模拟 / 自选清单不限 → 删除。
+     2026-09-19 再补一条（同一条 Issue 的末条）：**「古诗词大会」与「试题模拟」
+     拆成两条能力** —— `exam.gathering`（集子访问）与 `exam.paper`（在线模拟考试），
+     原先挤在一个格子里的两行字，一个钩叉答不了两个问题。
      守两件事：① 能力**键名**一个都没动（服务端 featuresFor 靠它对拍）；
               ② 名字不长、括号里的额度搬到 quotas 上。 */
   const renames = {
@@ -133,7 +143,8 @@ console.log('\n=== 三、pro / max 只加不减：层级越高能力单调不减
     'pinyin.helper': '阅读辅助', 'export.progress': '进度导出',
     'collections.many': '自选清单', 'sync.multiDevice': '设备同步',
     'export.paper': 'PDF / 打印', 'profile.family': '家庭档案',
-    'quiz.review': '题库', 'export.all': '课内诗词导出', 'exam.paper': '试题模拟'
+    'quiz.review': '题库', 'export.all': '课内诗词导出',
+    'exam.gathering': '古诗词大会', 'exam.paper': '试题模拟'
   };
   Object.keys(renames).forEach(function (k) {
     eq(E.cap(k).name, renames[k], 'Issue #163 改名：' + k + ' → 「' + renames[k] + '」');

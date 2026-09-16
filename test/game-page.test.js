@@ -166,7 +166,7 @@ function click(el) {
 }
 
 (async function main() {
-  console.log('\n=== 三、未登录：三张卡都锁着，如实说要哪一层 ===');
+  console.log('\n=== 三、未登录：集子那一条先拦（登录），三张玩法卡也锁着 ===');
   {
     const { w, d } = boot({});
     await wait(60);
@@ -180,9 +180,24 @@ function click(el) {
     chk(host.hidden === true, '那一层默认收着（点才铺上来）');
     eq(host.innerHTML, '', '收着时里面一个字都没有（不提前渲染）');
 
+    /* ⚠️ Issue #163 末条：入口那颗键先是**集子访问**的闸（`exam.gathering`）——
+       未登录时点它不给进，而是就地铺一张如实说要先登录的卡。 */
     click(entry);
     await wait(60);
-    chk(host.hidden === false, '点一下铺开那一层（就地，地址栏不动）');
+    chk(host.hidden === false, '点入口铺开一张说明卡（就地，地址栏不动）');
+    chk(/古诗词大会/.test(host.textContent), '那张卡上写着《古诗词大会》这个名字');
+    chk(/登录/.test(host.textContent), '未登录时它说的是「先登录」（不是「层级不够」）');
+    eq(host.querySelectorAll('[data-game-mode]').length, 0,
+      '没过集子那道闸时，三张玩法卡一个字都不提前渲染');
+    eq(w.location.pathname, '/poems/', '地址栏仍是 /poems/（就地叠层，不是跳走）');
+
+    /* 收掉这张卡，再走「页面自己 open()」那条路看三张玩法卡（Pro / Max 那两节
+       测的是同一个形状）—— 这里直接调 open()，与上一版读的是同一批节点。 */
+    click(host.querySelector('[data-game-close]'));
+    await wait(30);
+    chk(host.hidden === true, '「返回诗词列表」收掉这一层');
+    w.PoemGame.open();
+    await wait(60);
     chk(host.textContent.indexOf('**') < 0, '铺开后的文字里也没有 `**`（同一条防线）');
     eq(w.location.pathname, '/poems/', '地址栏仍是 /poems/（就地叠层，不是跳走）');
     chk(d.querySelector('[data-poems-view="list"]').hidden === true,
@@ -191,7 +206,7 @@ function click(el) {
     const modes = [...host.querySelectorAll('[data-game-mode]')];
     eq(modes.length, 3, '三个玩法都列出来了');
     eq(modes.map(m => m.getAttribute('data-game-mode')).join(','), 'fly,paper,review',
-      '顺序是 飞花令 → 现场考试 → 题库复习');
+      '顺序是 飞花令 → 试题模拟 → 题库复习');
     eq(modes.filter(m => m.getAttribute('data-locked')).length, 3,
       '未登录时三张卡都锁着');
     chk(modes.every(m => m.getAttribute('data-locked')), '锁着的那三张都带 data-locked（点了不给开）');
@@ -210,8 +225,8 @@ function click(el) {
     chk(!!host.querySelector('[data-game-mode]'), '点锁着的卡不给开局（还在选玩法那一屏）');
 
     /* 页顶那一行：铺开时换成本页的页名与说明，且动作位是「返回诗词列表」 */
-    chk(/古诗词大会/.test(d.querySelector('.topbar').textContent),
-      '页顶那一行换成了本页的页名（就地叠层，不是跳走）');
+    chk(/试题模拟/.test(d.querySelector('.topbar').textContent),
+      '页顶那一行换成了这一层的页名「试题模拟」（就地叠层，不是跳走）');
     const backBtn = d.querySelector('.topbar [data-back], .topbar button');
     chk(!!backBtn, '右上角有一颗返回键');
 
@@ -224,7 +239,7 @@ function click(el) {
       '页名换回「课内古诗词」');
   }
 
-  console.log('\n=== 四、Pro：题库复习能开，飞花令与现场考试仍锁着 ===');
+  console.log('\n=== 四、Pro：题库复习能开，飞花令与试题模拟仍锁着 ===');
   {
     const { w, d } = boot({});
     await wait(60);
@@ -236,7 +251,7 @@ function click(el) {
     const locked = [...host.querySelectorAll('[data-game-mode][data-locked]')]
       .map(m => m.getAttribute('data-game-mode'));
     eq(locked.sort().join(','), 'fly,paper',
-      'Pro 时锁着的是飞花令与现场考试（用户裁决：归 Max）');
+      'Pro 时锁着的是飞花令与试题模拟（用户裁决：归 Max）');
     const open = [...host.querySelectorAll('[data-game-mode]')]
       .filter(m => !m.getAttribute('data-locked'))
       .map(m => m.getAttribute('data-game-mode'));
@@ -256,16 +271,23 @@ function click(el) {
     chk(/对了。|这一题答案是：/.test(host.textContent), '选完当场给一次反馈（对 / 错都说得清）');
   }
 
-  console.log('\n=== 五、Max：三个玩法全开 ===');
+  console.log('\n=== 五、Max：集子那道闸放行，三个玩法全开 ===');
   {
     const { w, d } = boot({});
     await wait(60);
     chk(signIn(w, 'max'), '造出一个 Max 的已登录会话');
     const host = d.querySelector('[data-poems-view="game"]');
-    w.PoemGame.open();
+    /* 集子那道闸（`exam.gathering`）在 Max 上放行：点入口直接铺出三张玩法卡，
+       不再出现那张「要哪一层」的说明卡。 */
+    click(d.querySelector('[data-game-open]'));
     await wait(80);
+    eq(host.querySelectorAll('[data-game-mode]').length, 3,
+      'Max 时点入口直接进（集子那道闸放行，不弹说明卡）');
     eq(host.querySelectorAll('[data-game-mode][data-locked]').length, 0,
       'Max 时三张卡都解锁');
+    /* 试题模拟那一张卡上写的是「试题模拟」（与对比页那一行同名同义） */
+    const paper = host.querySelector('[data-game-mode="paper"]');
+    chk(/试题模拟/.test(paper.textContent), '那一张玩法卡叫「试题模拟」：' + paper.textContent.trim());
     chk(host.textContent.indexOf('**') < 0, 'Max 屏的说明文字里也没有 `**`');
 
     /* 飞花令：**看答案之前一个句子都不给**（不是拿 CSS 遮住） */
