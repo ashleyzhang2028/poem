@@ -695,8 +695,9 @@ chk(Buffer.compare(norm, any) !== 0, 'maskable 图标与普通图标是两份不
    /settings/recite/  背诵（学段 / 年级 / 学期 / 范围 / 数量）+ 复习算法
    /settings/lists/   我的清单（自选背诵的增删改查）
    /settings/reader/  朗读（注音 + 五档连读方式）
-   下面的断言按这一结构读源码：分组判据仍是原来那六组、顺序不变，
-   只是要「合起来看」——拆页不该顺手改分类。 */
+   下面的断言按这一结构读源码：分组判据是精简后的**五组**（Issue #163
+   把「阅读辅助 + 朗读播放」并成一组「朗读」），只是要「合起来看」——
+   拆页不该顺手改分类。 */
 const settingsHtml = read('settings/index.html');
 const SETTINGS_HTML = [
   'settings/general/index.html',

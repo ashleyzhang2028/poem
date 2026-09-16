@@ -2,7 +2,8 @@
  * 二级设置页专项测试（Issue #132 后续）
  * ==========================================================================
  * 为什么设置要拆页：一页里已经堆了六组（#114 分组、#132 账号 / 头像 /
- * 复习算法 / 朗读播放）。再往上加只会更长，于是每一组摊成一页：
+ * 复习算法 / 朗读播放；#163 又把最后两组并成一组「朗读」，现在是五组）。
+ * 再往上加只会更长，于是每一组摊成一页：
  *
  *   /settings/          主页：四个入口 + 版权与法务链接（不加载 js/settings.js）
  *   /settings/general/  通用     —— 用户名 / 头像印记 / 账号 / 数据管理
@@ -11,7 +12,7 @@
  *   /settings/reader/   朗读     —— 自动注音 + 五档连读方式
  *
  * 这一层守三件事（都是「拆页会静默出错」的那类）：
- *   一、结构：四张页合起来仍是原来那六组、每件控件**只在一页**上
+ *   一、结构：四张页合起来是精简后的五组、每件控件**只在一页**上
  *   二、返回：二级页的返回键回设置主页，不回背诵首页
  *   三、离线：新页面与新脚本都进了 sw.js 的预缓存清单，且版本号跟着提
  * 跑法：`node test/settings-nav.test.js`（纯 Node，不联网、不装依赖）
@@ -55,7 +56,7 @@ const NAV = read('js/settings-nav.js');
   // 入口清单由数据生成，HTML 里不手写一遍（加一组只改一处）
   chk(/renderIndex\(\)/.test(NAV) && /#settings-index/.test(NAV),
     '入口清单由 js/settings-nav.js 按数据渲染进 #settings-index');
-  chk(/settings-index/.test(SRC.index), '主页有一块空的入口清单容器（不在 HTML 里手写六组）');
+  chk(/settings-index/.test(SRC.index), '主页有一块空的入口清单容器（不在 HTML 里手写分组）');
   chk(!/href="\/settings\/(general|recite|lists|reader)\/"/.test(SRC.index),
     '主页 HTML 里不写死入口地址（避免两处各写一份，加一组漏一页）');
   chk(/settings-nav\.js/.test(SRC.index), '主页加载 js/settings-nav.js');
