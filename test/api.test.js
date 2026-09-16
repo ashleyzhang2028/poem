@@ -41,7 +41,9 @@ function boot(envVars) {
     // （症状：「出厂时短信关闭」那条断言在单独跑时绿、连跑时红）
     "SMS_ENABLED", "SMS_TRANSPORT", "SMS_RESEND_COOLDOWN_MS",
     // Issue #197：口令与两张令牌表的 TTL 也是 env，不清就会漏
-    "PASSWORD_MIN", "PASSWORD_MAX", "VERIFY_TTL_MS", "RESET_TTL_MS", "SITE_URL"
+    "PASSWORD_MIN", "PASSWORD_MAX", "VERIFY_TTL_MS", "RESET_TTL_MS", "SITE_URL",
+    // Issue #197 后半段：邮箱确认闸也是 env，不清就会从上个用例漏进下一个
+    "REQUIRE_EMAIL_VERIFIED"
   ];
   keys.forEach(k => { saved[k] = process.env[k]; });
 
@@ -84,6 +86,7 @@ function serve() {
     "POST /api/login": require("../api/auth/login.js"),
     "POST /api/verify-email": require("../api/auth/verify-email.js"),
     "POST /api/resend-verification": require("../api/auth/resend-verification.js"),
+    "POST /api/resend-verification-by-email": require("../api/auth/resend-verification-by-email.js"),
     "POST /api/reset-request": require("../api/auth/reset-request.js"),
     "POST /api/reset-confirm": require("../api/auth/reset-confirm.js"),
     "POST /api/admin/accounts": require("../api/admin/accounts.js")
@@ -111,9 +114,13 @@ function serve() {
 }
 
 /** 极简请求器：**不引 supertest / node-fetch**，Node 18+ 有全局 fetch */
-async function call(base, method, p, body, cookie) {
+async function call(base, method, p, body, cookie, extraHeaders) {
   const init = { method, headers: { "Content-Type": "application/json" } };
   if (cookie) init.headers.Cookie = cookie;
+  /* Issue #197 后半段：新加了一节要**换 deviceId** 实测（设备档是分开的账）。
+     多一个可选参数，比那一节自己再造一个请求器好 —— 造一个就意味着
+     「Cookie 头怎么带、JSON 怎么编」这些细节出现第二份实现。 */
+  if (extraHeaders) Object.assign(init.headers, extraHeaders);
   if (body !== undefined) init.body = JSON.stringify(body);
   const res = await fetch(base + p, init);
   const text = await res.text();
@@ -123,6 +130,67 @@ async function call(base, method, p, body, cookie) {
 }
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+/**
+ * **走真 HTTP** 把一个账号的邮箱确认掉（`confirmForTest` 的网络版）。
+ *
+ * 为什么两版都要有：内核版测的是「逻辑对不对」，网络版测的是
+ * 「这条路由挂上了没有、方法对不对、状态码是什么」。
+ * 而「匿名重发」这条路**只有一个网络入口**（界面上那颗键点下去就是它）——
+ * 一条没挂上的出路等于把用户彻底锁在门外，而内核版测不到它。
+ *
+ * ⚠️ 它要求调用方那一档开着 `ALLOW_CODE_ECHO=1`（明文令牌只在冒烟档回）。
+ *    没开就返回 false —— 调用方据此 `chk(...)` 出声，而不是静默跳过。
+ *
+ * @param {string} base       `serve()` 给的 base
+ * @param {string} email      要确认的邮箱
+ * @param {Function} call     `call()`（本文件里那个极简请求器）
+ * @returns {Promise<boolean>}
+ */
+async function confirmViaHttp(base, email, call) {
+  const r = await call(base, "POST", "/api/resend-verification-by-email", { email: email });
+  if (r.status !== 200 || !r.body || !r.body.devVerifyToken) return false;
+  const store = require("../api/_lib/store.js").getStore(require("../api/_lib/config.js"));
+  const vid = Object.keys(store._db.verifications)
+    .filter(k => !store._db.verifications[k].consumed_at)
+    .sort((a, b) => store._db.verifications[b].issued_at - store._db.verifications[a].issued_at)[0];
+  if (!vid) return false;
+  const v = await call(base, "POST", "/api/verify-email", { vid: vid, token: r.body.devVerifyToken });
+  return v.status === 200;
+}
+
+/**
+ * 把一个账号的邮箱确认掉 —— **Issue #197 后半段之后，这件事在测试里
+ * 成了几乎所有「要真登录」的用例的前置条件**（没确认就登不进来）。
+ *
+ * 为什么做成一个函数而不是各节各写一遍：
+ *   · 那段过程有**四处**容易写错（换 core 内部那一份 mail、把冷却调小、
+ *     从邮件那一头取令牌、再判一次状态），抄五遍必然抄漏一处；
+ *   · 而抄漏的症状是「这一节以一个无关的 TypeError 崩掉」——
+ *     报错指向 `v.body.account.uid`，与真正的原因隔着十万八千里。
+ *
+ * ⚠️ 冷却（60 秒）挡着同一个邮箱的第二次重发，而测试里 `now()` 常常是
+ *    钉死的常量 —— 所以这里显式把冷却调成 0（那一条限制在别处有断言）。
+ *
+ * @param {object} core   `api/_lib/core.js`
+ * @param {object} d      deps（cfg / store / limiter / now / ip）
+ * @param {string} email  要确认的那个邮箱
+ * @returns {Promise<boolean>} 确认成功为 true
+ */
+async function confirmForTest(core, d, email) {
+  const mailMod = core.__mail;
+  let cap = null;
+  const real = mailMod.confirm;
+  mailMod.confirm = function (c, o) { cap = o; return Promise.resolve({ delivered: false, transport: "console" }); };
+  try {
+    await core.resendVerificationByEmail(
+      Object.assign({}, d, { cfg: Object.assign({}, d.cfg, { resendCooldownMs: 0 }) }),
+      { email: email, deviceId: "confirm-" + email, ip: d.ip || "1.1.1.1" });
+  } finally { mailMod.confirm = real; }
+  if (!cap) return false;
+  const r = await core.verifyEmail(d, { vid: cap.vid, token: cap.token });
+  return r.status === 200;
+}
 
 /** 读一份源码（路径别名，避免每处都写 path.join） */
 function readCoreSendCode() {
@@ -336,17 +404,129 @@ async function main() {
     eq(w1.body.code, "E_CODE_WRONG", "错码的错误码正确");
     eq(w1.body.remaining, 4, "错码回剩余次数 4");
 
-    // 正确码
-    const v1 = await core.verifyCode(d, { codeId: r1.body.codeId, code: "111111" });
-    eq(v1.status, 200, "正确码通过");
+    /* ------------------------------------------------------------------
+       正确码，但**邮箱还没确认** → 不让进（Issue #197 后半段）
+       ------------------------------------------------------------------
+       ⚠️ 这一节原先直接在下面那一步断言「正确码通过」——那守的是旧口径
+          （「不确认也能用」）。口径反过来之后，这一节必须先把
+          「**没确认就进不去**」这条钉住，再走确认那一步。
+          两条断言都在这里，而且**顺序不能换**：先证「被拦」，
+          再证「确认之后放行」——反过来写的话，「拦」这一条就成了
+          「反正最后都进来了」的陪衬，拦没拦根本测不出来。
+       ------------------------------------------------------------------ */
+    const gated = await core.verifyCode(d, { codeId: r1.body.codeId, code: "111111" });
+    eq(gated.status, 403, "**码对的、但邮箱没确认 → 403**（这是这一节的核心口径）");
+    eq(gated.body.code, "E_EMAIL_UNVERIFIED", "码是 E_EMAIL_UNVERIFIED");
+    chk(/确认/.test(gated.body.message), "文案里说了要去点确认（这是用户唯一的下一步）");
+    chk(!!gated.body.emailMask, "带出掩码，界面据此回显「发往哪儿」");
+    chk(gated.cookies === undefined, "**一枚 Cookie 都不发**（判在前、签在后）");
+    /* ⚠️ 那一枚码在判闸之前就已被消费（见 core.verifyCode 里那段顺序说明）。
+       这一条必须钉住：不消费的话「确认完再回来填这一枚码」就成了另一条路，
+       而界面上会写出「刚才那枚码还能用」这种不该有的承诺。 */
+    eq((await core.verifyCode(d, { codeId: r1.body.codeId, code: "111111" })).body.code, "E_CODE_USED",
+      "被拦那一次**已经把码消费掉了**（不留「回头再填一次」这条路）");
+
+    /* ------------------------------------------------------------------
+       老账号（**发码那条路**建的）怎么走出去：匿名「重新发一封确认邮件」
+       ------------------------------------------------------------------
+       这一条是「没确认就不让登录」这整套里唯一真正的死结风险所在：
+       发码那条路建的账号**根本没有确认邮件发过**（它连口令都没有）。
+       界面上那一屏「重新发一封」走的就是这个匿名接口 —— 所以它必须
+       在**未登录**的情况下真的能把一封信发出来。
+       ⚠️ 顺带钉住匿名口的**防枚举**：不存在的邮箱与存在的邮箱
+          必须在响应上分不开（否则它就是全站用户名单的查询口）。
+       ⚠️ 匿名口与发码共用同一套四层频控（email / device / ip / global），
+          而这一节前面已经发过好几次码 —— `email` 档判的是**同一个邮箱**，
+          于是「存在的那个邮箱」会先撞上频控（一小时 5 次），
+          而那与本节要测的「防枚举」是两件事。
+          所以这里**换一个还没被用过的邮箱**，并且把账号先建出来
+          （发码那条路也建号 —— 这正是「老账号」的形状）。
+       ⚠️ 冷却（60 秒）也还压着同一个邮箱，所以两个邮箱各用各的键。
+       ------------------------------------------------------------------ */
+    const ghost = await core.resendVerificationByEmail(d, { email: "nobody@example.com", deviceId: "dev-ghost", ip: "9.9.9.1" });
+    eq(ghost.status, 200, "不存在的邮箱：匿名重发口也回 200（**不是 404**）");
+    chk(ghost.body.verifySent === false, "不存在的邮箱 verifySent:false（确实没发）");
+    /* 先用发码那条路建一个**还没有口令、也没确认过**的账号（就是「老账号」） */
+    const legacyCode = await core.sendCode(d, { email: "legacy@example.com", ip: "9.9.9.3", code: "333333" });
+    eq(legacyCode.status, 200, "（前置）发码那条路建的账号没有口令、也没确认过");
+    const realOne = await core.resendVerificationByEmail(d, { email: "legacy@example.com", deviceId: "dev-real", ip: "9.9.9.2" });
+    eq(realOne.status, 200, "存在的那个邮箱：回 200");
+    /* ⚠️ 这两条响应的**字段集合**必须一样 —— 差别只在 `verifySent` 的真假，
+       而那个差别**不代表邮箱存在与否**：console 发信商下「存在且发不出去」
+       与「不存在」都是 false（这一档上两者逐字相同，正是这条断言的意义）。 */
+    eq(Object.keys(ghost.body).sort().join(","), Object.keys(realOne.body).sort().join(","),
+      "**两种情形回同一组字段**（匿名 + 发信 = 必须防邮箱枚举）");
+    chk(!!realOne.body.emailMask, "带出掩码供界面回显");
+    eq(realOne.body.verifySent, false, "console 发信商下 verifySent 为 false（发信是事实，不是「尽力了」）");
+
+    /* 拿那封信里的令牌把邮箱确认掉。
+       ⚠️ 这一节**没开 ALLOW_CODE_ECHO**（`boot({})`），所以响应里不会有
+          明文令牌 —— 那是刻意的：明文令牌只该走「邮件」这一条出口。
+          于是这里像真用户那样**从邮件那一头**取：`mail.confirm()` 的
+          返回里有它（`api/_lib/mail/index.js` 的 console 通道把整封信
+          交给发信层，令牌是调用方传进去的那个）。
+          这一条顺带钉住「令牌确实进了那封信」——只测响应的人测不到它。 */
+    const vrec1 = Object.keys(store._db.verifications)
+      .filter(k => !store._db.verifications[k].consumed_at)
+      .sort((a, b) => store._db.verifications[b].issued_at - store._db.verifications[a].issued_at)[0];
+    chk(!!vrec1, "库里落了一条未消费的确认记录");
+    /* ⚠️ 冷却压着同一个邮箱（上面 `realOne` 那一下已经落过一笔账），
+       而这一节要测的是「**令牌确实进了邮件**」，不是冷却。
+       所以把冷却调小 —— 与 `RESEND_COOLDOWN_MS` 那条断言无关
+       （那一条在别处，测的是发码那条路）。 */
+    const cfgNoCool = Object.assign({}, cfg, { resendCooldownMs: 0 });
+    const dNoCool = Object.assign({}, d, { cfg: cfgNoCool });
+    eq(realOne.body.devVerifyToken, undefined,
+      "**没开冒烟开关时响应里没有明文令牌**（它只该从邮件那一头出去）");
+    /* 从邮件那一头取：把 `mail.confirm` 换成一个「记下参数」的替身。
+       ⚠️ 要换的是**核心拿到的那一个引用**（`core.js` 里
+          `var mail = require("./mail")` 在加载时就绑定了），
+          所以这里改的是那个模块对象的属性 —— 换 `require` 缓存里的
+          同名函数不生效（那条路实测过：`captured` 一直是 null）。 */
+    /* ⚠️ 要换的是 **core 内部持有的那一份** `mail`，不是测试自己
+       `require` 到的那一份 —— `boot()` 刚清过 `api/` 的 require 缓存，
+       两个引用在某些调用顺序下**不是同一个对象**。
+       只改错的那一个的下场实测过：`captured` 永远是 null，
+       而报错会指向「链路没走到发信层」——一个与真正原因完全无关的结论。
+       所以核心把那一份显式暴露成 `core.__mail`（见 core.js 里那段说明）。 */
+    const mailMod = core.__mail;
+    chk(!!mailMod, "核心暴露了它内部那一份 mail 模块（测试要替换的正是它）");
+    let captured = null;
+    const realConfirm = mailMod.confirm;
+    mailMod.confirm = function (c, o) { captured = o; return Promise.resolve({ delivered: false, transport: "console" }); };
+    let reSend;
+    try { reSend = await core.resendVerificationByEmail(dNoCool, { email: "legacy@example.com", deviceId: "dev-real2", ip: "9.9.9.4" }); }
+    finally { mailMod.confirm = realConfirm; }
+    chk(!!captured, "重发这一下真的走到了发信那一层（**不是「假装发了」**）");
+    chk(/^[0-9a-f]{64}$/.test(String(captured.token || "")), "那封信里带着明文令牌（形状 64 位 hex）");
+    chk(!!captured.vid, "那封信里也带着 vid（漏掉它的下场是「链接点开永远说不对」）");
+    eq(reSend.body.verifySent, false, "发信层如实回报 console 通道（delivered:false → verifySent:false）");
+    const vok1 = await core.verifyEmail(d, { vid: captured.vid, token: captured.token });
+    eq(vok1.status, 200, "点那条链接就确认了（**不需要登录**：用户可能在另一台设备上收信）");
+
+    /* 确认之后：同一条路上再来一次「码 → 会话」。
+       ⚠️ 用**另一个邮箱**（`legacy@example.com` —— 它刚刚被确认过）：
+          `Parent@Example.com` 在这个 limiter 上已经被发过好几次码，
+          再发会撞上 email 档频控，而那与本节要测的「确认之后放行」
+          是两件事（撞上去的症状是 429，看起来却像「闸没开」）。 */
+    /* ⚠️ 换一副**干净的频控账本**：上面那几发已经把同一条路的
+          device / ip / global 三档都记满了，而这一节要测的是
+          「确认之后闸就开了」，不是「频控怎么算」。
+          用旧的账本会让这一条以 429 红掉 —— 看起来却像「闸没开」。 */
+    const dFresh = Object.assign({}, d, { limiter: core.makeRateLimiter() });
+    const r1b = await core.sendCode(dFresh, { email: "legacy@example.com", ip: "1.2.3.5", code: "111111" });
+    eq(r1b.status, 200, "（前置）确认之后重新发一枚码");
+    const v1 = await core.verifyCode(dFresh, { codeId: r1b.body.codeId, code: "111111" });
+    eq(v1.status, 200, "**确认之后同一枚码就能换到会话了**（拦的是「没确认」，不是「用码登录」这件事）");
     chk(!!v1.body.account.uid, "回账号信息");
     eq(v1.body.account.plan.tier, "free", "回 free 层级");
-    chk(v1.body.account.mask === "p***@example.com", "回的是掩码，不是明文邮箱");
+    chk(v1.body.account.mask === "l***@example.com", "回的是掩码，不是明文邮箱");
+    chk(v1.body.account.emailVerified === true, "响应如实说「邮箱已确认」");
     chk(Array.isArray(v1.cookies) && v1.cookies.length === 1, "签发了一枚 Cookie");
     chk(v1.cookies[0].indexOf("HttpOnly") > 0, "那枚 Cookie 是 HttpOnly");
 
     // 单次使用
-    const v2 = await core.verifyCode(d, { codeId: r1.body.codeId, code: "111111" });
+    const v2 = await core.verifyCode(d, { codeId: r1b.body.codeId, code: "111111" });
     eq(v2.body.code, "E_CODE_USED", "同一个码不能用第二次");
 
     // 过期
@@ -362,7 +542,27 @@ async function main() {
     const r4 = await core.sendCode(d, { email: "c@example.com", ip: "5.6.7.8", code: "444444" });
     const v4 = await core.verifyCode(d, { codeId: r3.body.codeId, code: "333333" });
     eq(v4.body.code, "E_CODE_USED", "发新码后旧码作废，用旧码被拒");
-    const v5 = await core.verifyCode(d, { codeId: r4.body.codeId, code: "444444" });
+    /* ⚠️ 走到这一步时，`c@example.com` 这个账号**还没确认邮箱**，
+       于是「最新的码可用」在新口径下会回 403。
+       先把确认那一步补上 —— 这一节想测的是「发新码作废旧码」，
+       不是那道闸（闸在第四节已经钉过了）。
+       用匿名重发口真发一封、再从信里取令牌（这条链路本身就是一条断言）。 */
+    const mailMod5 = core.__mail;
+    let cap5 = null;
+    const realConfirm5 = mailMod5.confirm;
+    mailMod5.confirm = function (c, o) { cap5 = o; return Promise.resolve({ delivered: false, transport: "console" }); };
+    try {
+      await core.resendVerificationByEmail(Object.assign({}, d, { cfg: Object.assign({}, cfg, { resendCooldownMs: 0 }) }),
+        { email: "c@example.com", deviceId: "c-dev", ip: "5.6.7.9" });
+    } finally { mailMod5.confirm = realConfirm5; }
+    chk(!!cap5, "（前置）确认邮件真的发出去了（拿得到里面的令牌）");
+    eq((await core.verifyEmail(d, { vid: cap5.vid, token: cap5.token })).status, 200, "（前置）邮箱已确认");
+
+    /* ⚠️ 一节里换一副干净的频控账本：上面那几发已经把三档都记满了，
+       而这一条要测的是「最新的码可用」，不是频控 */
+    const d5 = Object.assign({}, d, { limiter: core.makeRateLimiter() });
+    const r4b = await core.sendCode(d5, { email: "c@example.com", ip: "5.6.7.8", code: "444444" });
+    const v5 = await core.verifyCode(d5, { codeId: r4b.body.codeId, code: "444444" });
     eq(v5.status, 200, "最新的码可用");
   }
 
@@ -507,7 +707,22 @@ async function main() {
     // 造一个账号
     const d = { cfg, store, limiter, now: () => t, ip: "1.1.1.1" };
     const r = await core.sendCode(d, { email: "me@example.com", ip: "1.1.1.1", code: "777777" });
+    /* ⚠️ Issue #197 后半段：新口径下「没确认就登不进来」，
+       所以这一节造账号也得把确认那一步走完 —— 否则这里拿到的是 403，
+       而报错会指向下面那句 `v.body.account.uid`（一个与真正原因
+       完全无关的地方）。这一节要测的是 /api/me，不是那道闸。 */
+    const mailMe = core.__mail;
+    let capMe = null;
+    const realMe = mailMe.confirm;
+    mailMe.confirm = function (c, o) { capMe = o; return Promise.resolve({ delivered: false, transport: "console" }); };
+    try {
+      await core.resendVerificationByEmail(Object.assign({}, d, { cfg: Object.assign({}, cfg, { resendCooldownMs: 0 }) }),
+        { email: "me@example.com", deviceId: "me-dev", ip: "1.1.1.1" });
+    } finally { mailMe.confirm = realMe; }
+    chk(!!capMe, "（前置）确认邮件发得出去（这一节需要它把账号确认掉）");
+    eq((await core.verifyEmail(d, { vid: capMe.vid, token: capMe.token })).status, 200, "（前置）邮箱已确认");
     const v = await core.verifyCode(d, { codeId: r.body.codeId, code: "777777" });
+    eq(v.status, 200, "（前置）确认之后码能换到会话");
     const uid = v.body.account.uid;
     const acc = store.getAccount(uid);
 
@@ -574,7 +789,10 @@ async function main() {
        （闸要查库，查不到就 401），补闸之后它立刻红。 */
     const d0 = { cfg, store, limiter, now: () => t, ip: "1.1.1.1" };
     const reg = await core.sendCode(d0, { email: "sync@example.com", ip: "1.1.1.1", code: "333333" });
+    /* ⚠️ 先确认邮箱：新口径下没确认就换不到会话（见 `confirmForTest` 的说明） */
+    chk(await confirmForTest(core, d0, "sync@example.com"), "（前置）sync@example.com 的邮箱已确认");
     const ver = await core.verifyCode(d0, { codeId: reg.body.codeId, code: "333333" });
+    eq(ver.status, 200, "（前置）确认之后码能换到会话");
     const uid = ver.body.account.uid;
     const acc = store.getAccount(uid);
     acc.plan = "pro";
@@ -677,7 +895,9 @@ async function main() {
     const d = { cfg, store, limiter, now: () => t, ip: "1.1.1.1" };
 
     const r = await core.sendCode(d, { email: "bye@example.com", ip: "1.1.1.1", code: "888888" });
+    chk(await confirmForTest(core, d, "bye@example.com"), "（前置）注销那一节：邮箱已确认");
     const v = await core.verifyCode(d, { codeId: r.body.codeId, code: "888888" });
+    eq(v.status, 200, "（前置）确认之后码能换到会话");
     const uid = v.body.account.uid;
     /* 注销要导出云端那份，所以这一节也得先过一次层级闸（同第九节）。 */
     const acc = store.getAccount(uid);
@@ -708,8 +928,13 @@ async function main() {
 
     // 再登录是全新账号（uid 不回收）
     t += 61000;
+    /* ⚠️ 注销把那一行**连同确认状态一起删了** —— 所以新账号又是一个
+       「未确认」的新账号，登录前得再走一次确认（新口径的必然结果：
+       身份是全新的，凭据也必须是全新的）。 */
     const r2 = await core.sendCode(d, { email: "bye@example.com", ip: "1.1.1.1", code: "999999" });
+    chk(await confirmForTest(core, d, "bye@example.com"), "（前置）新账号的邮箱也确认掉");
     const v2 = await core.verifyCode(d, { codeId: r2.body.codeId, code: "999999" });
+    eq(v2.status, 200, "（前置）确认之后码能换到会话");
     chk(v2.body.account.uid !== uid, "注销后重新登录拿到全新的 uid（uid 不回收）");
     eq(store.listProgress(v2.body.account.uid, "", 0).length, 0, "新账号里没有旧进度");
   }
@@ -779,6 +1004,34 @@ async function main() {
         eq(s1.status, 202, "发码回 202（契约里写的就是 202）");
         chk(/^\d{6}$/.test(s1.body.devCode), "冒烟模式下能拿到明文码（生产默认关）");
         eq(s1.body.store, "memory", "没配 Supabase 时如实回报 store=memory");
+
+        /* ------------------------------------------------------------------
+           先确认邮箱（Issue #197 后半段：没确认就换不到会话）
+           ------------------------------------------------------------------
+           ⚠️ 这一段刻意走**真 HTTP**，而不是像别的节那样直接调内核：
+              「匿名重发」这条路的**路由**（`/api/resend-verification-by-email`
+              有没有被挂上、是不是 POST、回什么码）只有走网络才测得到，
+              而它是「没确认就不让登录」那套里**唯一的出路**——
+              一条没挂上的出路等于把用户彻底锁在门外。
+           ⚠️ 邮件里那条链接的令牌：真 HTTP 拿不到（它只从「邮件」那一头出去）。
+              所以这里**只**验「这一发真的出去了、回的形状对」；
+              拼出完整链接那一半以内核那一节为准（用 `core.__mail` 取令牌）。
+           ------------------------------------------------------------------ */
+        const resend1 = await call(sv2.base, "POST", "/api/resend-verification-by-email", { email: "http@example.com" });
+        eq(resend1.status, 200, "匿名重发确认邮件：路由挂上了、回 200（这是那条唯一的出路）");
+        eq(resend1.body.alreadyVerified, false, "还没确认 → alreadyVerified:false");
+        eq(resend1.body.verifySent, false, "console 发信商下 verifySent 如实为 false（**不是「已发出」**）");
+        eq(resend1.body.emailMask, "h***@example.com", "带出掩码供界面回显");
+        /* 冒烟档下会带令牌（ALLOW_CODE_ECHO=1），这里就用它把链路走通 */
+        chk(/^[0-9a-f]{64}$/.test(String(resend1.body.devVerifyToken || "")),
+          "（冒烟档）匿名重发也回明文令牌 —— 这里用它走完确认，才能继续测登录链路");
+        const storeHttp = require("../api/_lib/store.js").getStore(require("../api/_lib/config.js"));
+        const vidHttp = Object.keys(storeHttp._db.verifications)
+          .filter(k => !storeHttp._db.verifications[k].consumed_at)
+          .sort((a, b) => storeHttp._db.verifications[b].issued_at - storeHttp._db.verifications[a].issued_at)[0];
+        const vEmail = await call(sv2.base, "POST", "/api/verify-email",
+          { vid: vidHttp, token: resend1.body.devVerifyToken });
+        eq(vEmail.status, 200, "点邮件里那条链接就确认了（**不需要登录**）");
 
         const v1 = await call(sv2.base, "POST", "/api/verify-code", {
           codeId: s1.body.codeId, code: s1.body.devCode
@@ -1458,9 +1711,13 @@ async function main() {
       eq(anon.status, 401, "没有会话时回 401（不是 403、不是 500）");
       eq(anon.body.code, "E_NO_SESSION", "码是 E_NO_SESSION");
 
-      /* 先建一个**普通用户**会话（收码 → 校验），然后拿他的 Cookie 打发放接口 */
+      /* 先建一个**普通用户**会话（收码 → 校验），然后拿他的 Cookie 打发放接口。
+         ⚠️ 新口径下「没确认就登不进来」，所以中间多一步**匿名重发 + 点链接** ——
+            走的是真 HTTP，顺带把那条唯一出路的网络形状也测了。 */
       const u1 = await POST("/api/send-code", { email: "plain@example.com" });
       eq(u1.status, 202, "普通用户收到码");
+      chk(await confirmViaHttp(sv.base, "plain@example.com", call),
+        "（前置）普通用户的邮箱已确认（走真 HTTP 的匿名重发那条路）");
       const c1 = await POST("/api/verify-code", { codeId: u1.body.codeId, code: u1.body.devCode });
       eq(c1.status, 200, "普通用户登入成功");
       const plainCookie = String(c1.setCookie || "").split(";")[0];
@@ -1628,9 +1885,13 @@ async function main() {
       const anon = await POST("/api/game/answer", { kind: "review", poemId: "xx1-01", chosen: "鹅" });
       eq(anon.status, 401, "没有会话时回 401（不是 403、不是 500）");
 
-      /* 造一个 free 账号：判分口应当回 403 而不是「能用」 */
+      /* 造一个 free 账号：判分口应当回 403 而不是「能用」。
+         ⚠️ 新口径下要先确认邮箱（见 `confirmViaHttp`）；这一档开着
+            ALLOW_CODE_ECHO，所以那条路能走通。 */
       const u = await POST("/api/send-code", { email: "player@example.com" });
+      chk(await confirmViaHttp(sv.base, "player@example.com", call), "（前置）玩家的邮箱已确认");
       const c = await POST("/api/verify-code", { codeId: u.body.codeId, code: u.body.devCode });
+      eq(c.status, 200, "（前置）确认之后码能换到会话");
       const cookie = String(c.setCookie || "").split(";")[0];
       chk(/^kbsid=/.test(cookie), "拿到了玩家会话 Cookie");
 
@@ -1845,12 +2106,25 @@ async function main() {
       eq(bad.body.code, "E_LOGIN_FAIL", "码是 E_LOGIN_FAIL");
       eq(bad.body.message, "邮箱或密码不对", "文案是那一句统一的话");
 
+      /* ⚠️ Issue #197 后半段：口令对了也**必须先确认邮箱**。
+         这一条现在分两步 —— 先证「没确认就 403」，再证「确认之后放行」。
+         顺序不能换：反过来写的话，「拦」就成了「反正最后都进来了」的陪衬。 */
+      const gatedPw = await core.loginWithPassword(d, { email: "pw@example.com", password: SECRET_PW });
+      eq(gatedPw.status, 403, "**口令对的、邮箱没确认 → 403**（不签发会话）");
+      eq(gatedPw.body.code, "E_EMAIL_UNVERIFIED", "码是 E_EMAIL_UNVERIFIED");
+      chk(!gatedPw.cookies, "被拦时不发 Cookie");
+      /* ⚠️ 这一条尤其要钉住：**「口令错」与「没确认」是两种不同的回答** ——
+         前者是统一的那一句（防枚举），后者才说「去点确认」。
+         两者要是说得一样，用户就永远不知道该做什么。 */
+      chk(gatedPw.body.message !== bad.body.message, "「没确认」的文案与「口令不对」**不是同一句**");
+
+      chk(await confirmForTest(core, d, "pw@example.com"), "（前置）邮箱已确认");
       const okpw = await core.loginWithPassword(d, { email: "pw@example.com", password: SECRET_PW });
       eq(okpw.status, 200, "对的口令能登进来");
       chk(!!okpw._session && !!okpw.cookies, "签发了会话与会话 Cookie");
       chk(!JSON.stringify(okpw.body).includes(SECRET_PW), "登录响应里也没有明文口令");
       chk(okpw.body.account.password_hash === undefined, "**响应里没有 password_hash**");
-      chk(okpw.body.account.emailVerified === false, "响应如实说「邮箱还没确认」");
+      chk(okpw.body.account.emailVerified === true, "响应如实说「邮箱已确认」");
       eq(okpw.body.account.email, "pw@example.com", "响应里有明文邮箱（给自己看的那一份）");
     }
 
@@ -1863,6 +2137,7 @@ async function main() {
       const d = { cfg, store, limiter: core.makeRateLimiter(), now: () => Date.now(), deviceId: "d2", ip: "1.1.1.1" };
 
       await core.register(d, { email: "  Parent@Example.COM  ", password: "hunter2hunter" });
+      chk(await confirmForTest(core, d, "Parent@Example.COM"), "（前置）大小写那一节：邮箱已确认");
       const row = Object.keys(store._db.accounts).map(k => store._db.accounts[k])[0];
       eq(row.email, "Parent@Example.COM", "落库的明文保留用户填的大小写（只 trim + 去零宽）");
       eq(row.email_mask, "p***@example.com", "掩码仍然全是小写（那是给人认的，不是给人看的原文）");
@@ -1950,6 +2225,7 @@ async function main() {
       const d = { cfg, store, limiter: core.makeRateLimiter(), now: () => Date.now(), deviceId: "d5", ip: "1.1.1.1" };
 
       const reg = await core.register(d, { email: "r@example.com", password: "old-password-1" });
+      chk(await confirmForTest(core, d, "r@example.com"), "（前置）忘记密码那一节：邮箱已确认");
       const uid = reg.body.uid;
       /* 每次登录换一个 deviceId：设备档（20 次/小时）会先于别的东西触发，
          而这一节测的是**令牌与吊销**，不是设备档 */
@@ -2023,8 +2299,42 @@ async function main() {
       /* 新口令生效、旧口令失效 */
       eq((await L("old-password-1")).status, 401, "旧口令登不进去了");
       eq((await L("brand-new-99")).status, 200, "新口令能登进来");
-      /* ⚠️ 重设口令**不顺手确认邮箱** —— 收到重设邮件不等于邮箱已确认 */
-      eq(store._db.accounts[uid].email_verified_at, null, "重设口令不写 email_verified_at（两件事各写各的）");
+      /* ⚠️ 重设口令**不顺手确认邮箱，也不顺手抹掉确认** ——
+         收到重设邮件不等于邮箱已确认；反过来，重设也不该把**已经确认过的**
+         状态清掉（那是完全另一件事，两件事各写各的）。
+         这一节的前置里邮箱是确认过的（新口径下不确认就登不进来，
+         而本节要好几次登录），所以这里钉的是「**重设之后它还在**」。
+         原先那条断言写的是 `=== null`（守「不顺手确认」），
+         在新口径下它已经不可能成立 —— 而照旧写着它的下场是
+         「这一条红了，看起来像重设把确认状态搞坏了」。 */
+      chk(store._db.accounts[uid].email_verified_at != null,
+        "重设口令**不抹掉**已经确认的状态（两件事各写各的，谁也不动谁）");
+      eq(rc.body.emailVerified, true, "重设响应如实回 emailVerified:true（已确认的人）");
+
+      /* ------------------------------------------------------------------
+         反面那一格：**没确认的人走完重设流程，仍然登不进去**
+         ------------------------------------------------------------------
+         这是这条口径下最容易变成用户投诉的一处：他走完一整套
+         （收信 / 点链接 / 填新口令 / 看到「请用新密码登录」），
+         回去一登 —— 403。他会以为新口令没生效，于是再来一遍。
+         所以响应里必须**说出还有一步**，而且**不许顺手把确认状态改掉**
+         （能收到重设邮件 ≠ 点过确认链接；两件事各写各的）。
+         ------------------------------------------------------------------ */
+      const regU = await core.register(d, { email: "unverified-reset@example.com", password: "old-pw-12345" });
+      const rrU = await core.resetRequest(d, { email: "unverified-reset@example.com", deviceId: "du1" });
+      eq(rrU.status, 200, "（前置）没确认的人也能走「忘记密码」第一步（否则他连信都收不到）");
+      const ridU = Object.keys(store._db.resets)
+        .filter(k => !store._db.resets[k].consumed_at)
+        .sort((a, b) => store._db.resets[b].issued_at - store._db.resets[a].issued_at)[0];
+      const rcU = await core.resetConfirm(d, { rid: ridU, token: rrU.body.devResetToken, password: "new-pw-99999" });
+      eq(rcU.status, 200, "重设成功（这一件事本身是做成了的）");
+      eq(rcU.body.emailVerified, false, "**如实回 emailVerified:false**（这个人还是登不进去）");
+      chk(/还没确认|确认/.test(rcU.body.note), "那一句 note 里说了「还有一步」（实际「" + rcU.body.note.slice(0, 60) + "…」）");
+      eq(store._db.accounts[regU.body.uid].email_verified_at, null,
+        "**重设不顺手动确认状态**（收到了重设邮件 ≠ 点过确认链接）");
+      const stillBlocked = await core.loginWithPassword(d, { email: "unverified-reset@example.com", password: "new-pw-99999", deviceId: "du2" });
+      eq(stillBlocked.status, 403, "新口令对了，但**仍然登不进去**（这正是界面必须说出来的那一格）");
+      eq(stillBlocked.body.code, "E_EMAIL_UNVERIFIED", "码还是那一个（用户的下一步没变：去点确认）");
     }
 
     /* ---- ⑦ 口令连续失败锁号，成功一次把窗口清空 ---- */
@@ -2169,7 +2479,15 @@ async function main() {
     try {
       const POST = (p, b, cookie) => call(sv3.base, "POST", p, b, cookie);
       const regA = await POST("/api/register", { email: "owner@example.com", password: "hunter2hunter" });
+      /* ⚠️ 新口径：没确认就登不进来。所以这里也必须先确认 ——
+         而这一节**顺带**钉住另一条：注册那一屏的 `verifySent` 是**事实**
+         （console 发信商下为 false），而确认邮件确实发出去了
+         （走 `confirmViaHttp` 拿到令牌就是证据）。 */
+      eq(regA.body.verifySent, false, "console 发信商下注册回 verifySent:false（如实说没发出去）");
+      eq(regA.body.requiresVerification, true, "如实回 requiresVerification:true（说明默认要拦）");
+      chk(await confirmViaHttp(sv3.base, "owner@example.com", call), "（前置）owner 的邮箱已确认");
       const lgA = await POST("/api/login", { email: "owner@example.com", password: "hunter2hunter" });
+      eq(lgA.status, 200, "（前置）确认之后能登录");
       const cA = String(lgA.setCookie || "").split(";")[0];
 
       const asUser = await POST("/api/admin/accounts", {}, cA);
@@ -2275,6 +2593,171 @@ async function main() {
     /* 重设页必须**如实说**会吊销别的设备（那是这一件事的一半含义） */
     const resetSrc = fs.readFileSync(path.join(ROOT, "reset/index.html"), "utf8");
     chk(/其它设备|其他设备/.test(resetSrc), "重设页写明「其它设备上的登录会全部退出」");
+    /* Issue #197 后半段：重设**不动**确认状态，所以没确认的人走完这一套
+       仍然登不进去 —— 那一格必须在页面上说出来，并指出那一步在哪儿 */
+    chk(/id="reset-ok-hint"/.test(resetSrc), "重设成功那一屏留了「邮箱还没确认」的位置");
+    chk(/emailVerified/.test(fs.readFileSync(path.join(ROOT, "js/reset.js"), "utf8")),
+      "js/reset.js 按服务端回的 emailVerified 填那一句（不是自己猜的）");
+    const resetJsSrc = fs.readFileSync(path.join(ROOT, "js/reset.js"), "utf8");
+    chk(/重新发一封确认邮件/.test(resetJsSrc), "那一句指出了唯一那一步的入口在哪儿");
+  }
+
+  /* ==================================================================
+     廿四、Issue #197 后半段：**邮箱没确认就不让登录**
+
+     这一节是那一条口径的**总闸**。前面几节各钉了一小块（第四节钉了
+     「码对的但不放行」，第二节钉了「口令对的但不放行」），这一节把
+     「这件事作为一个整体成不成立」测一遍 —— 因为这条口径最容易以
+     「某一条路忘了加」的形式漏掉，而漏掉之后**其余断言全是绿的**。
+
+     五件事：
+       ① 两条登录路都拦（口令 / 随机码）—— 只堵一条等于没堵
+       ② 老账号（发码那条路建的、没确认过）也有出路（匿名重发）
+       ③ 确认之后两条路都放行
+       ④ 应急闸门 `REQUIRE_EMAIL_VERIFIED=0` 能关掉它，且**关掉时界面看得出来**
+       ⑤ 源码口径：闸只写一处、界面不写旧的「不确认也能用」
+     ================================================================== */
+  {
+    /* ---- ① / ② / ③：走真 HTTP 的两条路 ---- */
+    boot({ ALLOW_CODE_ECHO: "1" });
+    const sv = await serve();
+    try {
+      const POST = (p, b, cookie) => call(sv.base, "POST", p, b, cookie);
+
+      /* 一个**全新注册**的人：口令对的、码也对的，但两次都不该放行 */
+      const reg = await POST("/api/register", { email: "gate@example.com", password: "hunter2hunter" });
+      eq(reg.status, 202, "注册回 202");
+      eq(reg.body.requiresVerification, true, "如实回 requiresVerification:true（默认口径是拦）");
+
+      const pwBlocked = await POST("/api/login", { email: "gate@example.com", password: "hunter2hunter" });
+      eq(pwBlocked.status, 403, "**口令登录：邮箱没确认 → 403**");
+      eq(pwBlocked.body.code, "E_EMAIL_UNVERIFIED", "码是 E_EMAIL_UNVERIFIED");
+      chk(!pwBlocked.setCookie, "被拦时**一枚 Cookie 都不发**（403 不是「按你一下但还是进来了」）");
+
+      /* 随机码那条路：换个页签就能进来的话，这道闸等于没做 */
+      const sc = await POST("/api/send-code", { email: "gate@example.com" });
+      eq(sc.status, 202, "随机码照常发得出去（发码那条路不受影响）");
+      const codeBlocked = await POST("/api/verify-code", { codeId: sc.body.codeId, code: sc.body.devCode });
+      eq(codeBlocked.status, 403, "**随机码登录：邮箱没确认 → 403**（两条路是同一件事的两半）");
+      eq(codeBlocked.body.code, "E_EMAIL_UNVERIFIED", "同一个码、同一句话");
+
+      /* 「口令错」与「没确认」必须是**两种不同的回答** */
+      const wrong = await POST("/api/login", { email: "gate@example.com", password: "definitely-wrong-1" });
+      eq(wrong.body.code, "E_LOGIN_FAIL", "口令错走的是统一的那一句（防枚举）");
+      chk(wrong.body.message !== pwBlocked.body.message,
+        "**「口令不对」与「没确认」不是同一句话** —— 说成一样，用户就不知道该做什么");
+
+      /* 老账号（**发码那条路**建的：没有口令、也没发过确认邮件）的出路 */
+      const legacy = await POST("/api/send-code", { email: "legacy-gate@example.com" });
+      eq(legacy.status, 202, "（前置）老账号：发码那条路建的，未确认");
+      const legacyBlocked = await POST("/api/verify-code", { codeId: legacy.body.codeId, code: legacy.body.devCode });
+      eq(legacyBlocked.status, 403, "老账号同样被拦（口径对**所有**未确认账号一视同仁）");
+      chk(!!legacyBlocked.body.emailMask, "被拦时带出掩码，界面据此回显发往哪儿");
+      eq(legacyBlocked.body.verifySent, false,
+        "**登录这条路被拦时不顺手发信**（否则拿一个已知的未确认邮箱反复点登录即可给人发垃圾邮件）");
+
+      /* 界面上那一屏的出路：匿名重发（**不需要登录** —— 这条路上的人登不进来） */
+      const resend = await POST("/api/resend-verification-by-email", { email: "legacy-gate@example.com" });
+      eq(resend.status, 200, "匿名重发那条路走得通（它是这条口径下**唯一的出路**）");
+      chk(/^[0-9a-f]{64}$/.test(String(resend.body.devVerifyToken || "")), "（冒烟档）拿到了确认令牌");
+      const storeG = require("../api/_lib/store.js").getStore(require("../api/_lib/config.js"));
+      const vidG = Object.keys(storeG._db.verifications)
+        .filter(k => !storeG._db.verifications[k].consumed_at)
+        .sort((a, b) => storeG._db.verifications[b].issued_at - storeG._db.verifications[a].issued_at)[0];
+      const vokG = await POST("/api/verify-email", { vid: vidG, token: resend.body.devVerifyToken });
+      eq(vokG.status, 200, "点邮件里那条链接就确认了（同样**不需要登录**）");
+
+      /* 确认之后：随机码那条路放行。
+         ⚠️ 这里发的是**刚确认过的那一个邮箱**，所以还要过一遍
+            `send-code` 的 60 秒冷却 —— 上一枚码是几十毫秒前发的。
+            冷却挡的是「连点重发」，不是这条口径，所以用一枚**没被用过的**
+            码：`legacy-gate@example.com` 上一枚码已经在「被拦」那一步消费掉了
+            （闸判在消费之后），于是这里必须**重新发一枚** ——
+            而它撞上冷却。故换一个邮箱做这一步：`legacy-ok@example.com`，
+            它走完整条「未确认 → 被拦 → 匿名重发 → 确认 → 放行」的链路。 */
+      const sc2 = await POST("/api/send-code", { email: "legacy-ok@example.com" });
+      eq(sc2.status, 202, "（前置）再建一个老账号");
+      const blocked2 = await POST("/api/verify-code", { codeId: sc2.body.codeId, code: sc2.body.devCode });
+      eq(blocked2.status, 403, "（前置）它同样被拦");
+      chk(await confirmViaHttp(sv.base, "legacy-ok@example.com", call), "（前置）走那条唯一的出路把它确认掉");
+      /* ⚠️ 这里**不再发第二枚码** —— 上一枚已经消费掉了，而
+         `send-code` 的**邮箱档冷却（60 秒）** 会挡住紧接着的第二次
+         （撞上它同样是 429，看起来却像「确认之后还是不让发码」，
+          而实际原因与这道闸毫无关系）。
+         改走**口令那条路**来证「确认之后放行」—— 那才是这一节要证的
+         方向（两条路都放行），而且口令那条没有冷却。
+         ⚠️ 前面用 `gate@example.com` 注册过、并把口令补上了，
+            所以这里直接用它登录即可。 */
+      chk(await confirmViaHttp(sv.base, "gate@example.com", call), "（前置）把 gate@example.com 也确认掉");
+      const lgOk = await POST("/api/login", { email: "gate@example.com", password: "hunter2hunter" });
+      eq(lgOk.status, 200, "**确认之后口令那条路放行**（403 变 200）");
+      chk(/kbsid=/.test(String(lgOk.setCookie || "")), "签发了会话 Cookie");
+      const vOk = lgOk;
+
+      /* 已确认的人**重新注册**：不再发确认邮件，且状态不被退回未确认 */
+      const pwOk = await POST("/api/register", { email: "legacy-ok@example.com", password: "hunter2hunter" });
+      eq(pwOk.body.emailVerified, true, "已确认的人重新注册：如实回 emailVerified:true");
+      eq(pwOk.body.verifySent, false, "已确认的人重新注册**不再发确认邮件**（省一封垃圾邮件）");
+      const pwOkLogin = await POST("/api/login", { email: "legacy-ok@example.com", password: "hunter2hunter" });
+      eq(pwOkLogin.status, 200, "重新注册补了口令之后，口令那条路也能进（确认状态没被退回）");
+
+      /* 方法校验：新那条接口也是 POST */
+      for (const p of ["/api/resend-verification-by-email"]) {
+        const g = await call(sv.base, "GET", p);
+        eq(g.status, 405, "GET " + p + " 回 405");
+      }
+    } finally { await sv.close(); }
+
+    /* ---- ④ 应急闸门：REQUIRE_EMAIL_VERIFIED=0 ---- */
+    boot({ ALLOW_CODE_ECHO: "1", REQUIRE_EMAIL_VERIFIED: "0" });
+    const svOff = await serve();
+    try {
+      const POST = (p, b) => call(svOff.base, "POST", p, b);
+      const reg = await POST("/api/register", { email: "nocap@example.com", password: "hunter2hunter" });
+      eq(reg.body.requiresVerification, false,
+        "**关掉闸时如实回 requiresVerification:false**（界面据此改口，不许还写着「确认才能登录」）");
+      const lg = await POST("/api/login", { email: "nocap@example.com", password: "hunter2hunter" });
+      eq(lg.status, 200, "闸关掉之后，没确认也能登录（这是**运维显式选的口径**，不是默认）");
+      chk(/kbsid=/.test(String(lg.setCookie || "")), "照常签发会话");
+    } finally { await svOff.close(); }
+
+    /* ---- ⑤ 源码口径 ---- */
+    {
+      const coreSrc = fs.readFileSync(path.join(ROOT, "api/_lib/core.js"), "utf8");
+      /* ⚠️ 闸**只许有一处定义**。三处各写一遍 `if (!acc.email_verified_at)`
+         的下场是「其中一处忘了加」，而漏掉的那一处恰好是唯一能被直接打的接口。 */
+      const defs = (coreSrc.match(/function emailGate\(/g) || []).length;
+      eq(defs, 1, "**闸的判据只写一处**（`emailGate()`），不是三处各写一遍");
+      const reads = (coreSrc.match(/emailGate\(deps, acc\)/g) || []).length;
+      /* ⚠️ 三处：口令那条路的**判**、随机码那条路的**判**、
+         以及 `emailGate` 自己的签名（`function emailGate(deps, acc)`）。
+         写成「等于 2」会在加了第三处判（比如将来短信那条路）时红掉 ——
+         而那时候红得对，因为**新加的那一处也必须一并想清楚**。
+         这里显式写成 3 并附上这三处各是谁，比一个魔数好读。 */
+      eq(reads, 3, "闸的读取处数对得上（口令路 + 随机码路 + 函数签名）：" + reads);
+
+      /* 界面不许再写旧口径那句「不确认也能用」 */
+      ["login/index.html", "terms/index.html", "README.md", "docs/architecture.md"].forEach(f => {
+        const src = fs.readFileSync(path.join(ROOT, f), "utf8");
+        chk(!/不确认也能用|不确认也照常|不确认也能正常使用/.test(src),
+          f + " 里不再有旧口径那句「不确认也能用」");
+      });
+      chk(/确认之后才能登录|点开那条链接之后才能登录|确认后才能登录/.test(
+        fs.readFileSync(path.join(ROOT, "login/index.html"), "utf8")),
+        "登录页写明「确认之后才能登录」（用户得知道下一步是什么）");
+      /* 那一屏上的键必须真的能做得到那件事 */
+      const loginHtml = fs.readFileSync(path.join(ROOT, "login/index.html"), "utf8");
+      chk(/id="btn-unverified-resend"/.test(loginHtml),
+        "登录页有「重新发一封确认邮件」那颗键（这条路上的人**登不进来**，只能在这儿发）");
+      chk(!/id="btn-verify-later"[^>]*>\s*先去用/.test(loginHtml),
+        "**不再有**「先去用，稍后再确认」那颗键（新口径下那颗键点下去是 403，是一句做不到的话）");
+      const loginJsSrc = fs.readFileSync(path.join(ROOT, "js/login.js"), "utf8");
+      chk(/E_EMAIL_UNVERIFIED/.test(loginJsSrc), "登录页脚本认 E_EMAIL_UNVERIFIED 这个码");
+      chk(/resendVerificationByEmail/.test(loginJsSrc), "登录页脚本调的是**匿名**那条重发接口");
+      /* 服务端自报的两项：界面据此说准，不许猜 */
+      chk(/emailGate: cfg.requireEmailVerified === true/.test(coreSrc),
+        "服务端自报 channel.emailGate（界面据它决定说不说「确认才能登录」）");
+    }
   }
 
   console.log(fails === 0 ? "\n🎉 服务端账号接口测试全部通过" : "\n❌ " + fails + " 项失败");

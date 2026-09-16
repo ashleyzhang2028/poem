@@ -4,6 +4,7 @@
  * req  { codeId, code, deviceId }
  * res  200 { account:{uid,nickname,plan,features,mask} } + Set-Cookie: kbsid=...
  *      400 { code:"E_CODE_WRONG|E_CODE_EXPIRED|E_CODE_USED|E_CODE_VOID", remaining }
+ *      403 { code:"E_EMAIL_UNVERIFIED", emailMask }   ← 码对的、邮箱没确认
  *      423 { code:"E_LOCKED", retryAfter }
  *
  * ⚠️ 校验**不看 channel** —— 码的摘要里带 uid + purpose，通道只决定它怎么送到你手上。
@@ -11,6 +12,11 @@
  *
  * ⚠️ 会话是 **HttpOnly + Secure + SameSite=Lax** 的签名 Cookie（docs §2.4）；
  *    localStorage 里不出现任何长寿命 token。
+ *
+ * ⚠️ Issue #197 后半段：**码验对了但邮箱没确认时同样不签发会话**（403）。
+ *    只堵口令那条路的后果是「注册了不确认的人换一个页签就长驱直入」——
+ *    而界面上还写着「确认之后才能登录」。判据与口令那条**同一处**
+ *    （`core.emailGate()`），不是各写一遍。
  *
  * Ref: docs/architecture.md §4.3
  */

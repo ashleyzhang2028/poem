@@ -251,13 +251,38 @@
    *   ③ 「重发」那颗键调 `/api/resend-verification`（**要登录**），
    *      回来之后如实说发出去没有 —— 发信商没配时写「没能发出去」，
    *      绝不写「已发出」。
+   *
+   * ⚠️ Issue #197 后半段：默认口径改成「**没确认就不让登录**」之后，
+   *    这一行能出现的机会其实很少（未确认的人多半登不进来）。
+   *    但它必须留着，而且必须**说对话**：这条口径之后还能站在这一页上、
+   *    邮箱却未确认的，只有两种人 ——
+   *      · 站长把闸关掉的实例上的用户（那台服务器没拦）
+   *      · 「确认完又被清掉」这种运维侧的状态
+   *    所以这一行的文案**不再写**「确认后才能用它找回密码」
+   *    （那是旧口径的说法，暗示「不确认也能用」），改由 `renderVerifyState`
+   *    按服务器自报的 `channel.emailGate` 说两种情况中的一种。
    */
   function renderVerifyState(info) {
     var row = $("verify-row");
     if (!row) return;
     if (!info || info.emailVerified) { hide(row); return; }
     var el = $("verify-state");
-    if (el) el.textContent = "邮箱还没确认。确认后才能用它找回密码。";
+    /* 这一行能出现在页面上，说明**这个人是登录着的、邮箱却没确认** ——
+       在默认口径（拦）下这只可能是「站长把闸关掉的实例」。
+       所以文案照着服务器自报的 `channel.emailGate` 说，
+       而不是照着「本页默认是拦着的」猜。 */
+    var ch = acct() && acct().channel ? acct().channel() : null;
+    var gated = ch && ch.emailGate === true;
+    var deliverable = ch && ch.emailDeliverable === true;
+    if (el) {
+      if (gated && !deliverable) {
+        el.textContent = "邮箱还没确认。这台服务器现在是**要求确认后才能登录**的，但它没能把确认邮件发出去（发信商还没配好）——点下面那颗重发试试，或者让站长先把发信商配好。";
+      } else if (gated) {
+        el.textContent = "邮箱还没确认。默认口径是「确认之后才能登录」；你能站在这里，说明这台服务器当前**没有**拦它。";
+      } else {
+        el.textContent = "邮箱还没确认。这台服务器**没有**拦「没确认就不让登录」，确认只影响将来找回密码。";
+      }
+    }
     show(row);
   }
 
