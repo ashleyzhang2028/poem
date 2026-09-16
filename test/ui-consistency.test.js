@@ -165,13 +165,23 @@ chk(/width:\s*var\(--item-icon\)/.test(readSvg) && /width:\s*var\(--item-icon\)/
 chk(!/width:\s*15px/.test(reciteSvg) && !/width:\s*16px/.test(readSvg),
   '两枚圆键的图标框都不再写死 px（写死就与直径脱钩）');
 
-/* 序号圆与条目标题同高：两处都读 --item-num，不同源就会「圆比字大一圈」 */
+/* 序号圆与条目标题同高：两处都读同一个数，不同源就会「圆比字大一圈」。
+   ⚠️ 判据是**两处相等**、不是「等于 16.5」：Issue #163 第四轮把标题那一档
+      从 16.5px 提到 17px（与设置页的卡片主标题、集子卷名同一句），
+      序号圆跟着一起走 —— 写死一个数字的守卫会在改口径时变成假红，
+      而它真正要守的是「圆与字永远同高」这件事。 */
 const numRule = ruleOf(cssCode, '.item-num');
-chk(/--item-num:\s*16\.5px/.test(numRule),
-  '序号圆直径走 --item-num（与条目标题 16.5px 同源，不是各写一个数）');
 const titleRule = ruleOf(cssCode, '.item-title');
-chk(/font-size:\s*16\.5px/.test(titleRule),
-  '条目标题 16.5px 与序号圆同一档');
+const pxOfTitle = (src, prop) => {
+  const m = new RegExp(prop + ':\\s*([\\d.]+)px').exec(src);
+  return m ? m[1] : '';
+};
+const titleSize = pxOfTitle(titleRule, 'font-size');
+chk(/--item-num:\s*[\d.]+px/.test(numRule),
+  '序号圆直径走 --item-num（不是各写一个数）');
+chk(!!titleSize && new RegExp('--item-num:\\s*' + titleSize).test(numRule),
+  '序号圆的直径就是条目标题的字号（实际 ' +
+  (numRule.match(/--item-num:\s*([\d.]+px)/) || [0, ''])[1] + ' / ' + titleSize + '）');
 
 /* 余下的圆键档（26 / 30px）—— 每一档都写在**同一个文件**里，
    不允许某一页给同名控件另开一个尺寸。
@@ -404,6 +414,142 @@ chk(/\.settings-group\s*\{[^}]*max-width:\s*calc\(50% - 18px\)/s.test(cssCode),
 chk(/\.settings-item\.wide\s*\{[^}]*max-width:\s*100%/s.test(cssCode),
   '「我的清单」那一项跨列（清单面板与两排按钮挤在半栏里会折行）');
 
+/* ==========================================================================
+   四之三、平板 / 桌面版式：留白与栅格（Issue #163 第四轮）
+   --------------------------------------------------------------------------
+   用户原话：
+     「你用桌面浏览器测试过吗？目前的界面 UI 在桌面浏览器下显示得一塌糊涂，
+       完全没达到响应式布局在平板在桌面的哪怕是正常的显示效果，
+       需要为平板和桌面端进行重新设计，CSS only」
+
+   前面几节守的是**重排**（一列纸放宽、篇目两列→三列、设置分组三列、
+   入口页 3 × 2、日历一屏放全）。这一节守另一件事：**留白与「一整块多宽」**。
+
+   手机上「一行一条 14px 内边距的卡片、块与块之间 14px」这套节奏，
+   被原样拉伸到 1808px 的一列纸上时，整页会变成一片糊在一起的横带：
+   卡片 1808px 宽、100px 高，块距与行距同值（14px）——
+   距离不再表达「这是一块」（见 css/style.css「平板 / 桌面版式」那一段的说明）。
+
+   四条判据，每条都对应桌面上能看见的一件事：
+     · 卡片与卡片之间 26px，比条目之间（10~14px）大一档以上；
+     · 一列纸仍铺满屏幕（--col-w 不动），但**每一块内容**封顶 --block-w；
+     · 首页三块在桌面那一档各有各的位置（grid-template-areas，DOM 顺序不变）；
+     · 卡片内的左右内边距随断点升档（14 → 22 → 26px）。
+   ========================================================================== */
+{
+  /* ⚠️ 判据一律对着 `cssCode`（**已剥注释**的样式表）跑，而且**不拍平 @media**：
+     本仓库的注释很长、还带 `{}` 与代码块，按裸源码取规则块时会把注释里的
+     `{` 当成规则边界（`.switch-input` 那五条假红就是这么来的）。
+     拍平 @media 也不行：`.card` 这条选择器在 ≥768px 与 ≥1024px 各有一条，
+     拍平之后前一条的 `}` 与后一条的 `@media … {` 之间会留下一段**没有选择器
+     的 `{`**，`ruleSegments` 的 `([^{}]+)\{` 会把后一条一并吞掉、量不到 ——
+     那正是这一节先前 4 条假红的第二个来源。所以这里直接对着「剥了注释、
+     仍带 @media 外壳」的源码取，判据写成「哪一档里有什么」。 */
+  /* ① 块距与行距分开：手机 14px → 平板 22px → 桌面 26px，块距 26px */
+  chk(/@media \(min-width:\s*768px\)\s*\{[\s\S]{0,600}\.card \{ padding: 22px; margin-bottom: 26px; \}/.test(cssCode),
+    '平板那一档卡片内边距 22px、块距 26px（手机上 14px）');
+  chk(/@media \(min-width:\s*1024px\)\s*\{[\s\S]{0,600}\.card \{ padding: 26px; margin-bottom: 26px; \}/.test(cssCode),
+    '桌面那一档卡片内边距提到 26px（一列纸跟视口走，卡片里的呼吸也要跟着长）');
+  chk(!/@media \(min-width:\s*(768|1024)px\)[\s\S]{0,400}\.card \{[^}]*margin-bottom: 14px/.test(cssCode),
+    '宽屏两档里卡片的下边距都不再是手机的 14px（块距与行距由此分开）');
+  chk(!/@media \(min-width:\s*1024px\)[\s\S]{0,200}\.list\s*\{[^}]*row-gap:\s*(3[0-9]|[4-9][0-9])px/s.test(cssCode),
+    '条目之间的行距仍收在 30px 以内（行距跟块距一起放大，就分不出「一块 / 一组」了）');
+
+  /* ② --block-w：宽屏上「一整块内容」的宽度上限，且**只在 ≥768px 定义**
+        （手机上不需要它：720px 的一列纸本来就在这一档里） */
+  const blockTok = /@media \(min-width:\s*768px\)[\s\S]{0,400}--block-w:\s*(\d+)px/.exec(cssCode);
+  chk(!!blockTok, '--block-w（宽屏上「一整块内容」的上限）在 ≥768px 那一档定义');
+  if (blockTok) {
+    const w = Number(blockTok[1]);
+    chk(w >= 800 && w <= 1100,
+      '--block-w = ' + w + 'px：落在「比一行字宽、又不到 1600+」这一档' +
+      '（1024px 窗口下不缩，1808px 下每张卡不至于拉成一条横幅）');
+  }
+  // ⚠️ 只**收内容**、不动一列纸：--col-w 的三档口径由本节上面那几条钉着，
+  //    这里反向确认「没有把 --col-w 收成 --block-w」（那会让页面两侧空一大片，
+  //    正是 Issue #135 用户反对的「明信片」）。
+  chk(!/--col-w:\s*var\(--block-w\)/.test(cssCode),
+    '一列纸仍铺满屏幕（没有把 --col-w 换成 --block-w —— 那是「明信片」那一版）');
+  /* ⚠️ .progress-main（进度页）与 #gw-list（集子页）住在 css/classic.css ——
+     两张表都会加载，但**各守各的**：混着查会把「写在哪张表里」这件事弄丢
+     （上次就是查 cssCode 查不到 classic.css 的规则，判成假红）。 */
+  /* 三处都在 css/style.css 的「平板 / 桌面版式」那一档里（进度页那一条
+     跟着它们一起落在这张表）—— 别去 classic.css 找：`.progress-main` 在
+     那张表里只有「两列排布」那一段，没有 max-width。 */
+  ['settings-groups', 'legal', 'progress-main'].forEach(sel => {
+    const src = cssCode;
+    /* ⚠️ 窗口开到 2000：桌面那一档里 `.settings-groups` 前面还有
+       `.card` / `.today-bar` / 首页那一段 grid —— 窗口取小了会漏到上一档去
+       （那一档里没有 --block-w，判据就成了「查不到」的假红）。 */
+    chk(new RegExp('@media \\(min-width:\\s*1024px\\)[\\s\\S]{0,2000}\\.' + sel +
+      '\\s*\\{[^}]*max-width:\\s*var\\(--block-w\\)').test(src),
+      '「.' + sel + '」在桌面那一档收进 --block-w（整块不铺满 1808px）');
+  });
+
+  /* ③ 首页三块在桌面上各有位置：进度条 / 今日 / 全部。
+        判据是「真的排了 grid 区域」，不是「某个像素等于多少」——
+        换一种并排方式（例如 grid-template-columns 写死列宽）也照样成立。 */
+  const homeGrid = /@media \(min-width:\s*1024px\)[\s\S]{0,900}body\[data-nav="home"\]\s*\.app\s*\{([\s\S]{0,400}?)\}/.exec(cssCode);
+  chk(!!homeGrid, '首页在桌面那一档给 .app 排了栅格（三块不再各自一条通栏横带）');
+  if (homeGrid) {
+    chk(/grid-template-areas/.test(homeGrid[1]),
+      '首页三块用 grid-template-areas 定位（不改 DOM 顺序：读屏与 Tab 的次序不变）');
+    chk(/today/.test(homeGrid[1]) && /card/.test(homeGrid[1]) && /all/.test(homeGrid[1]),
+      '三个区域名对应首页那三块（今日进度 / 今日列表 / 全部诗词）');
+  }
+  // 三块真的认领了各自那一格
+  ['today-bar', 'today-list', 'all-section'].forEach(sel => {
+    chk(new RegExp('body\\[data-nav="home"\\] \\.' + sel + ' \\{ grid-area:').test(cssCode),
+      '首页的 .' + sel + ' 认领了自己那一格（只写容器不写子元素等于没排）');
+  });
+  // 首页今日那一块在 DOM 上真的是一张卡（宽屏上要看出「这是一块」）
+  chk(/class="card today-list"/.test(read('index.html')),
+    '首页「今日」那一块是一张卡（手机上单条 .item 自带纸底，看不出差别；宽屏上它是分界线）');
+
+  /* ④ 集子页的卷次卡：卡与卡之间也要分开（它们同样能长到 1808px 宽） */
+  chk(/#gw-list > \.group-card \{\s*margin-bottom: \d+px;/.test(cssCode.replace(/\/\*[\s\S]*?\*\//g, ' ')),
+    '集子页的卷次卡有卡距（否则 1040~1808px 里一张卡就是一条通栏长条）');
+
+  /* ④之二、**块距只有一个节奏**：全站「一张卡挨着另一张卡」的间距都取同一档
+     （桌面 22~26px）。分页各写一个数（12 / 16 / 22 / 26）时，同一个用户
+     在几页之间来回走会觉得「有的页松、有的页紧」—— 那说不清哪里不对的感觉，
+     正是 Issue #163 要治的那一类。
+     ⚠️ 判据是「落在这个区间里」，不是「等于某个像素」：22 与 26 差 4px 是
+        刻意的（账号页的卡里只有两行字，比首页整块内容轻一档）。 */
+  /* ⚠️ 取值要用**捕获组**：`[\s\S]{0,300}?` 里那个 `(\d+)` 会被抹平，
+     按 `match(/(\d+)px/)` 取到的第一个数字其实是 `1024`（@media 的宽度）——
+     这条判据刚写出来时就是这么量出「1024px / 1024px」的。 */
+  const deskSrc = cssCode + '\n' + strip(accountCss);
+  const deskCardGap = [...deskSrc.matchAll(
+    /@media \(min-width: 1024px\)[\s\S]{0,300}?\.(?:card|account-card) \{[^}]*margin-bottom: (\d+)px/g)]
+    .map(m => Number(m[1]));
+  chk(deskCardGap.length >= 2 && deskCardGap.every(n => n >= 20 && n <= 30),
+    '桌面那一档的块距都收在 20~30px 这一档（首页/设置 .card 与账号页 .account-card，' +
+    '实际 ' + deskCardGap.join(' / ') + 'px）—— 全站「一块 / 另一块」只有一个节奏');
+
+  /* ④之三、设置页的「行距」只有一个来源：容器的 row-gap。
+     `.settings-group` 自己也曾写过一条 `margin-top: 22px`（两列 / 三列那一档），
+     两边都写的话行与行之间是 22 + 26 = 48px，而列与列之间只有 36px ——
+     同一个页面里横竖两种间距。这里反向钉住「组自己那条不许长回来」。 */
+  chk(/@media \(min-width:\s*768px\)\s*\{[\s\S]{0,400}\.settings-groups \{[^}]*row-gap: \d+px/.test(cssCode),
+    '设置分组的行距写在容器上（≥768px 那一档的 row-gap），不是各组分担');
+  /* ⚠️ 「不许写」判的是**宽屏那一档里**那条 —— 手机上 `.settings-group`
+     仍有 `margin-top: 26px`（一列到底时，组与组之间的距离就该由组自己给，
+     容器没有 row-gap 可言）。所以判据要带上下文，不能全表扫一遍。 */
+  chk(!/@media \(min-width:\s*768px\)\s*\{[\s\S]{0,900}\.settings-group \{[^}]*margin-top/.test(cssCode),
+    '宽屏那一档里分组不再写 margin-top（与容器 row-gap 叠加会让行距变成列距的两倍）');
+  chk(/\.settings-group \{ margin-top: 26px; \}/.test(cssCode),
+    '手机那一档的组距仍由分组自己给（一列到底时容器没有 row-gap 可言）');
+
+  /* ⑤ 反向样本：这一层有牙 —— 拿一份「被人改坏」的源码跑上面那条判据，
+        它**必须**变红。只判「条件为真」是不够的：那种写法改坏了也绿。 */
+  const brokenCard = cssCode.replace('.card { padding: 22px; margin-bottom: 26px; }',
+    '.card { padding: 14px; }');
+  chk(brokenCard !== cssCode &&
+    !/@media \(min-width:\s*768px\)\s*\{[\s\S]{0,600}\.card \{ padding: 22px; margin-bottom: 26px; \}/.test(brokenCard),
+    '这一层有牙：把平板那一档的 22px 改回 14px 时，上面那条「按断点升档」会红');
+}
+
 /* 进度页：四张卡排两列，概览那张整行 */
 chk(/@media \(min-width:\s*768px\)[\s\S]{0,400}\.progress-main\s*\{[^}]*flex-wrap:\s*wrap/s.test(classicCode),
   '进度页四张卡在 ≥768px 排成两列');
@@ -552,19 +698,28 @@ chk(/background:\s*var\(--card\)/.test(linkRule),
 chk(/border-radius:\s*var\(--radius-md\)/.test(linkRule),
   '入口卡片的圆角走 --radius-md（与 .trans-box / .library-card 同一档）');
 /* 标题那三个值（字号 / 字重 / 颜色）在 css/style.css 里**只写一次**：
-   `.settings-group-title, .settings-link-title` 共用一个声明块。
-   下面这两个取值的函数就按这个共用块取 —— 单取 .settings-link-title 会
-   拿到「只有 font-family」的那一块（Issue #163 之前正是这么写的，
-   于是 11px 的分组标题在断言里看不见）。 */
-const sharedTitleRule = (code) =>
-  ((code.match(/\.settings-group-title,\s*\n?\.settings-link-title\s*\{([\s\S]{0,400}?)\}/) || [0, ''])[1]) || '';
+   `.settings-group-title, .settings-link-title, .account-entry-name, .item-title`
+   共用一个声明块。下面取值的函数就按这个共用块取 —— 单取 `.settings-link-title`
+   会拿到「只有 font-family」的那一块（Issue #163 之前正是这么写的，
+   于是 11px 的分组标题在断言里看不见）。
+   ⚠️ 判据写成「共用块存在 + 这四角都在里面 + 与集子卷名同值」，
+      而不是「选择器列表恰好等于某几个字符串」：以后再加一角（例如入口页的书名）
+      不该让这一条变红 —— 它要守的是「只有一个来源」，不是「只许三处」。 */
+const SHARED_TITLE_SELECTORS = ['.settings-group-title', '.settings-link-title',
+  '.account-entry-name', '.item-title'];
+const sharedTitleRule = (code) => {
+  const m = code.match(/\.settings-group-title,[\s\S]{0,200}?\{([\s\S]{0,400}?)\}/);
+  if (!m) return '';
+  const block = m[0].slice(0, m[0].indexOf('{'));
+  // 四角必须都在这条选择器列表里，否则「同一档」只是巧合
+  return SHARED_TITLE_SELECTORS.every(sel => block.indexOf(sel) !== -1) ? m[1] : '';
+};
 const groupNameRule = ruleOf(classicCode, '.group-name');
 const sizeOf = r => (r.match(/font-size:\s*([\d.]+)px/) || [0, ''])[1];
 const weightOf = r => (r.match(/font-weight:\s*(\d+)/) || [0, ''])[1];
 chk(sizeOf(sharedTitleRule(cssCode)) !== '',
-  '卡片主标题的大小 / 字重 / 颜色只在共用块里写一次（分组标题与入口标题同一句）');
-[['.settings-group-title', sharedTitleRule(cssCode)],
- ['.settings-link-title', sharedTitleRule(cssCode)]].forEach(function (pair) {
+  '卡片主标题的大小 / 字重 / 颜色只在一个共用块里写一次（四角都在这条列表里）');
+SHARED_TITLE_SELECTORS.map(sel => [sel, sharedTitleRule(cssCode)]).forEach(function (pair) {
   chk(sizeOf(pair[1]) === sizeOf(groupNameRule),
     pair[0] + ' 与集子卷名的字号是同一个值（实际 ' + sizeOf(pair[1]) +
     ' / ' + sizeOf(groupNameRule) + '）');
@@ -598,8 +753,14 @@ chk(/class="progress-main"/.test(read('progress/index.html')),
   '进度页真的套了 .progress-main');
 chk(/class="card progress-card wide"/.test(read('progress/index.html')),
   '进度概览那张卡真的带了 .wide');
-chk(/class="today-list"/.test(read('index.html')),
-  '首页今日列表套了容器（两列只作用在 .list 的直接子元素上）');
+/* 首页「今日」那一块：外层是一张卡（Issue #163 第四轮补的 .card），
+   容器自己带 .today-list —— 分栏只作用在 .list 的直接子元素上，
+   而且这一层在宽屏上要被排进「今日」那一格（见 .app 的 grid-template-areas）。
+   ⚠️ 判据是「这层真实存在且带 .card」，不是「class 恰好等于 today-list」：
+      手机上看不出多一层 .card（条目自己就带纸底），宽屏上却是
+      「一组条目」与「一张卡」的分界。 */
+chk(/class="card today-list"/.test(read('index.html')),
+  '首页今日列表套了容器（两列只作用在 .list 的直接子元素上，宽屏上它是一张卡）');
 
 /* iOS 横屏「按宽度放大文字」的默认行为要关掉，否则同一段说明
    在竖屏 / 横屏下字号不同（这与台式机的响应式不是一件事） */

@@ -573,16 +573,29 @@ setTimeout(() => {
   const numBlock = /(^|\n)\.item-num \{([\s\S]*?)\}/.exec(styleCssText);
   // 同理先剥注释：.item-num 的注释里也提到过尺寸与字号
   const numDecls = numBlock[2].replace(/\/\*[\s\S]*?\*\//g, ' ');
-  chk(!!numBlock && /--item-num:\s*16\.5px;/.test(numDecls),
-    '序号圆直径走 --item-num: 16.5px（与 .item-title 的字号同一个数）');
+  /* ⚠️ 判据从「等于 16.5px」翻成「等于标题字号」：Issue #163 第四轮把
+     「一页里最大的那颗标题」这一档从 16.5px 提到 17px（与设置页的卡片主标题、
+     集子卡头卷名同一句），序号圆跟着一起走。写死一个数字的守卫会在改口径时
+     变成假红 —— 而它真正要守的是「圆与字永远同高」这件事（下面那一条）。 */
+  chk(!!numBlock && /--item-num:\s*[\d.]+px;/.test(numDecls),
+    '序号圆直径走 --item-num（与 .item-title 的字号同一个数）');
   chk(!!numBlock && /width:\s*var\(--item-num\)/.test(numDecls) && /height:\s*var\(--item-num\)/.test(numDecls),
     '序号圆的宽高同源（同一个变量），永远是正圆');
-  const titleFontSize = parseFloat((titleDecls.match(/font-size:\s*([\d.]+)px/) || [, '0'])[1]);
+  /* 标题字号现在写在文件中部那条共用块里（`.settings-group-title,
+     .settings-link-title, .account-entry-name, .item-title`），
+     `.item-title` 自己那条只管排布 —— 所以这里从共用块取。 */
+  const sharedTitleBlock = /\.settings-group-title,[\s\S]{0,200}?\{([\s\S]{0,400}?)\}/.exec(styleCssText);
+  const sharedTitleDecls = sharedTitleBlock
+    ? sharedTitleBlock[1].replace(/\/\*[\s\S]*?\*\//g, ' ') : '';
+  const titleFontSize = parseFloat((sharedTitleDecls.match(/font-size:\s*([\d.]+)px/) || [, '0'])[1]);
+  chk(titleFontSize >= 17,
+    '篇名与设置页的卡片主标题同一档（≥17px，实际 ' + titleFontSize + 'px）—— ' +
+    '用户眼里的「诗词标题」就是这一档（Issue #163 第四轮）');
   const numSize = parseFloat((numDecls.match(/--item-num:\s*([\d.]+)px/) || [, '0'])[1]);
   chk(titleFontSize === numSize,
     '圆的直径与标题字号相等（' + numSize + 'px = ' + titleFontSize + 'px）');
   chk(!!numBlock && /font-size:\s*11px;/.test(numDecls),
-    '圆里的序号字号单列一档 11px（16.5px 会顶满圆边，两位数也挤）');
+    '圆里的序号字号单列一档 11px（17px 会顶满圆边，两位数也挤）');
   // 需求（Issue #55 后续）：序号圆去掉淡绿底色，改为与序号同色的 1px 圆形描边，
   // 圈里的数字水平 + 垂直居中。
   chk(!!numBlock && /(^|\s)background:\s*none;/.test(numDecls),

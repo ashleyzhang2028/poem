@@ -441,7 +441,13 @@
      卡头歪出半格，下面的基准线断言会红。 */
   padding: 12px 8px 8px 12px;
 }
-.group-name { font-size: 14px; font-weight: 700; color: var(--ink); }
+/* 卷名（卡头那颗「唐诗三百首」）：走全站唯一那一档「一页里最大的标题」——
+   与设置页的卡片主标题、列表里的篇名同字号。那一档的完整口径写在
+   css/style.css 中部的「卡片主标题」那一段（:root 变量跨不过样式表边界，
+   所以这里是一对**平的约定**，由 test/theme.test.js 绑住）。
+   ⚠️ 只写 font-size / font-weight / color 三样，与那边逐位相同；
+      想调这一档就两边一起调，别在这里单独改一个数。 */
+.group-name { font-size: 17px; font-weight: 700; color: var(--ink); }
 .group-count { font-size: 11.5px; color: var(--ink-2); }
 /* 分组右侧的「随机连读」：同一枚圆形播放键的小号档
    --------------------------------------------------------------------------
