@@ -246,6 +246,20 @@ echo "=== 开通自检 / 配置清单（2C：2D 那一步做成可执行的，Is
 node test/ops.test.js
 
 echo ""
+echo "=== 古诗词大会 · 出题内核（3 期：飞花令 / 题库 / 现场考试，纯 Node）==="
+echo "    守的是三件事：断句与令字候选**从语料现算**（不写死字表）；"
+echo "    干扰项的三条规矩（长度档 / 不重字过半 / 不同篇）；"
+echo "    判分是纯比对（同样输入同样输出，客户端与服务端同源）。"
+node test/game.test.js
+
+echo ""
+echo "=== 古诗词大会 · 页面层（3 期 · /poems/ 上就地叠层，jsdom）==="
+echo "    入口挂在课内索引页上（底部四个页签一个都不加），"
+echo "    未登录 / 层级不够时只显示「要哪一层」，"
+echo "    飞花令的答案点开才生成（不是拿 CSS 遮住）。"
+node test/game-page.test.js
+
+echo ""
 echo "=== 用户名设置测试 ==="
 node test/username.test.js
 

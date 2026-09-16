@@ -65,8 +65,13 @@ console.log('\n=== 三、pro / max 只加不减：层级越高能力单调不减
       prev = now;
     }
   });
-  chk(!E.can('feihualing', free).ok && E.can('feihualing', pro).ok, '飞花令：free 不可、pro 可用（用户指定）');
-  chk(!E.can('exam.paper', free).ok && E.can('exam.paper', pro).ok, '古诗文大会 / 考试与题库：pro 起');
+  /* ⚠️ 用户 2026-09-17 的裁决（Issue #159）：
+     「现场考试和飞花令归 max 所有，题库归 pro.」
+     与 docs/auth-design.md §3.5 那张老表（「飞花令 / 古诗文大会 / 考试与题库」
+     一律 pro 起）相比，这两条**上收到 max** —— 以用户裁决为准。 */
+  chk(!E.can('feihualing', pro).ok && E.can('feihualing', max).ok, '飞花令：pro 不可、max 可用（用户指定）');
+  chk(!E.can('exam.paper', pro).ok && E.can('exam.paper', max).ok, '现场考试：pro 不可、max 可用（用户指定）');
+  chk(!E.can('quiz.review', free).ok && E.can('quiz.review', pro).ok, '题库复习：free 不可、pro 起');
   chk(!E.can('sync.multiDevice', free).ok && E.can('sync.multiDevice', pro).ok, '跨设备云同步：pro 起');
   chk(E.can('ai.explain', pro).ok, 'AI 讲解：pro 可用（额度 50/月）');
   chk(!E.can('ai.explain', free).ok, 'AI 讲解：free 不可');
@@ -149,7 +154,10 @@ console.log('\n=== 七、身份合成：只认 AuthCore 会话，不认页面自
   eq(g.tier, 'free', '游客层级是 free');
   eq(g.can('read.aloud').ok, false, '游客不能语音播放');
   eq(g.hint('feihualing'), '登录后即可使用（免费）', '游客看付费功能：先提示登录（登录是硬条件）');
-  eq(E.denyReason('feihualing', free), 'Pro 起可用', '已登录的 free 看付费功能：提示 Pro 起可用');
+  /* 拦住用户的那句话由 denyReason() 出，且**按能力自己的门槛**说 ——
+     飞花令现在归 Max，句子里的层级名必须跟着变（写死「Pro 起」就是假话）。 */
+  eq(E.denyReason('feihualing', free), 'Max 起可用', '已登录的 free 看飞花令：提示 Max 起可用');
+  eq(E.denyReason('quiz.review', free), 'Pro 起可用', '已登录的 free 看题库复习：提示 Pro 起可用');
 
   // 本机登录一个账号
   const req = A.requestCode(authStore, { channel: 'email', value: 'zhangmin@163.com' }, 'login', { code: '246810' });
@@ -161,13 +169,15 @@ console.log('\n=== 七、身份合成：只认 AuthCore 会话，不认页面自
   eq(id.can('read.aloud').ok, true, '登录的 free 可以语音播放');
   eq(id.mask, 'z***@163.com', '身份里带回邮箱掩码（供名单匹配）');
 
-  // 管理员按掩码发 pro → 同一台设备立刻生效
-  E.putGrant(b, { emailMask: id.mask, tier: 'pro' });
+  // 管理员按掩码发 max → 同一台设备立刻生效
+  E.putGrant(b, { emailMask: id.mask, tier: 'max' });
   const id2 = E.identity({ authStore: authStore, backing: b });
-  eq(id2.tier, 'pro', '发放名单命中后层级升到 pro');
-  eq(id2.can('feihualing').ok, true, 'pro 拿到飞花令');
+  eq(id2.tier, 'max', '发放名单命中后层级升到 max');
+  /* 飞花令归 max（用户 2026-09-17 裁决）—— 发到 max 才拿得到；
+     pro 拿不到这一条（上面那条「pro 不可、max 可用」已经钉过）。 */
+  eq(id2.can('feihualing').ok, true, '发了 max 之后拿到飞花令');
   eq(id2.can('read.aloud').ok, true, 'pro 的语音播放当然还在（只加不减）');
-  eq(id2.label, 'Pro', '标签显示 Pro');
+  eq(id2.label, 'Max', '标签显示 Max');
 
   // 层级缓存也能单独生效（服务端下发那条路的预演）
   A.signOut(authStore);

@@ -60,9 +60,15 @@
     "ai.explain":        { minTier: "pro",  login: true,  quota: 50,   name: "AI 讲解 / 背诵纠音" },
     "export.paper":      { minTier: "pro",  login: true,  quota: null, name: "篇目 PDF / 打印页" },
     "profile.family":    { minTier: "pro",  login: true,  quota: null, name: "家庭子档案 3 个" },
-    "feihualing":        { minTier: "pro",  login: true,  quota: null, name: "飞花令" },
-    "exam.paper":        { minTier: "pro",  login: true,  quota: null, name: "古诗文大会 / 考试与题库" },
+    "quiz.review":       { minTier: "pro",  login: true,  quota: null, name: "题库复习（给上句选下句）" },
     "export.all":        { minTier: "max",  login: true,  quota: null, name: "全站批量导出" },
+    /* 古诗词大会的两项 —— **归 Max**（用户 2026-09-17 裁决：
+       「现场考试和飞花令归 max 所有，题库归 pro」）。
+       ⚠️ 与 docs/auth-design.md §3.5 那张老表（「飞花令 / 古诗文大会 / 考试与题库」
+          一律 pro 起）相比，这两条**上收到 max**，以用户裁决为准。
+       ⚠️ 服务端的 featuresFor() 用的就是这两个键名（有对拍断言守着）； */
+    "feihualing":        { minTier: "max",  login: true,  quota: null, name: "飞花令" },
+    "exam.paper":        { minTier: "max",  login: true,  quota: null, name: "古诗词大会 · 现场考试" },
     "ai.explain.big":    { minTier: "max",  login: true,  quota: 500,  name: "AI 讲解 / 背诵纠音（500 次/月）" },
     "collections.unlimited": { minTier: "max", login: true, quota: null, name: "自选清单不限" }
   };

@@ -221,11 +221,30 @@ function planTier(acc) {
   return p;
 }
 
-/** 与 js/entitlement.js 的能力表同源。1A 只把「层级」接通，清单按同一张表给 */
+/**
+ * 能力清单：与 `js/entitlement.js` 的 `CAPS` **同一张表**。
+ *
+ * ⚠️ 键名必须逐字一致（`test/api.test.js` 有对拍断言）。
+ *    原先这里写的是 `game.flyingFlower` / `game.exam`，而客户端那一份写的是
+ *    `feihualing` / `exam.paper` —— 两边**各自都觉得对**，症状是
+ *    「界面把飞花令点亮了，服务端判分口回 403」。这正是 2A 那两个洞的形状：
+ *    限制写在 A 处、读取在 B 处，谁也不报错。
+ *
+ * ⚠️ 用户 2026-09-17 的裁决在这里落地：**飞花令与现场考试归 Max，题库复习归 Pro**。
+ *    Max 是「Pro 之上再加」，所以那两条只进 max 那一档（不是 pro）。
+ */
 function featuresFor(cfg, tier) {
-  var base = ["recite.daily", "library.read", "helper.pinyin", "export.json", "speech.read"];
-  var pro = ["sync.multiDevice", "game.flyingFlower", "game.exam", "ai.explain"];
-  var max = ["export.siteWide", "ai.explain.quota.large"];
+  /* 逐字对齐 js/entitlement.js 的 CAPS 键名（有对拍断言守着）。
+     · free 那一档五项与客户端完全同一个名字（原先这里是 recite.daily /
+       library.read / helper.pinyin / export.json / speech.read 五个别名，
+       与客户端的 recite.basic / library.all / pinyin.helper / export.progress /
+       read.aloud **一一对不上** —— 接口照常回 200，界面照着做，谁也发现不了）。
+     · quiz.review 是 3 期新增的那一档（题库复习，归 Pro）。 */
+  var base = ["recite.basic", "library.all", "read.aloud", "pinyin.helper", "export.progress"];
+  var pro = ["collections.many", "sync.multiDevice", "ai.explain", "export.paper",
+             "profile.family", "quiz.review"];
+  var max = ["export.all", "ai.explain.big", "collections.unlimited",
+             "feihualing", "exam.paper"];
   var out = base.slice();
   if (tier === "pro" || tier === "max") out = out.concat(pro);
   if (tier === "max") out = out.concat(max);
@@ -823,6 +842,159 @@ function adminRevoke(deps, input) {
   });
 }
 
+/* ------------------------------------------------- 古诗词大会（3 期 · 不花钱） */
+
+/**
+ * 古诗词大会的三层能力 —— 与 `js/entitlement.js` 的能力表**同一张表**。
+ *
+ * ⚠️ 这里的键名必须与 `featuresFor()` 和 `js/entitlement.js` 的 `CAPS` 对得上：
+ *    · `feihualing` —— 飞花令（**max**）
+ *    · `exam.paper` —— 现场考试（**max**）
+ *    · `quiz.review` —— 题库复习（**pro**）
+ *    对不上的症状是「界面说能用、服务端说不能」—— 而两边都觉得自己是对的。
+ *
+ * ⚠️ 用户 2026-09-17 的裁决：**「现场考试和飞花令归 max 所有，题库归 pro」**。
+ *    与 `docs/auth-design.md` §3.5 那句「飞花令 / 古诗文大会 / 考试与题库 pro 起」
+ *    相比，飞花令与现场考试被**上收到 max**，题库复习留在 pro —— 以用户裁决为准。
+ */
+var GAME_CAP = { fly: "feihualing", paper: "exam.paper", review: "quiz.review" };
+
+/** 这一档能力在给定层级下开不开（与 featuresFor 同源，不另写一套矩阵） */
+function gameAllowed(cfg, tier, cap) {
+  return featuresFor(cfg, tier).indexOf(cap) >= 0;
+}
+
+/**
+ * 判分（`POST /api/game/answer`）。
+ *
+ * 三件事，一件都不许省：
+ *
+ * ① **能力闸在服务端** —— `featuresFor()` 判，与界面置灰用的是同一张表。
+ *    客户端的置灰不是安全边界：直接的 HTTP 请求照样打得到这里。
+ *    403 与 401 **分开回**：前者是「你确实没这个权限」，后者是「你还没登录」——
+ *    用户看到的下一步动作完全不同，合并成一句「失败」等于什么也没说。
+ *
+ * ② **题目由服务端重建** —— 请求只带 `bankId` / `poemId` 与 `chosen`。
+ *    客户端传上来的 `answer` / `options` 一律忽略（见 api/_lib/game.js）。
+ *    重建不出来（题库里没这一条）→ 如实回 400 E_STALE，
+ *    **不猜一个」** —— 猜的下场是「服务端判了另一道题，用户答对了却显示错」。
+ *
+ * ③ **计费只如实报，不假装** —— `charge` 默认 false（3 期没有定价）。
+ *    打开它时按下 uid 真计数（`gameCharge`），并如实回 `counted:true`。
+ *    在定价定下来之前，这里一个字都不许写成「已计入额度」。
+ */
+function gameAnswer(deps, input, extra) {
+  var cfg = deps.cfg, t = deps.now();
+  var game = (extra && extra.game) || require("./game");
+
+  var kind = String((input && input.kind) || "review").toLowerCase();
+  var cap = GAME_CAP[kind];
+  if (!cap) return Promise.resolve(err(400, "E_KIND", "不认识的题型（只认 fly / paper / review）"));
+  if (!deps.account) {
+    return Promise.resolve(err(401, "E_NO_SESSION", "这一项要登录后才能用"));
+  }
+
+  return Promise.resolve(deps.store.getAccount(deps.account.uid)).then(function (me) {
+    if (!me || me.status === "deleted") return err(401, "E_NO_SESSION", "还没有登录");
+    var tier = planTier(me);
+    if (!gameAllowed(cfg, tier, cap)) {
+      return err(403, "E_TIER", "这一项要 " + (cap === "quiz.review" ? "Pro" : "Max") + " 才能用（当前：" + tier + "）", { cap: cap, tier: tier });
+    }
+
+    /* 频控：判分是写接口（它会计数），走设备档 —— 与同步 / 发放同档同写法，
+       不新开一档（新开一档就要新开一张表，而「表写在 A 处、读取在 B 处」
+       正是 2A 那两个洞的形状）。 */
+    var device = String(deps.deviceId || input.deviceId || "unknown");
+    var g = deps.limiter.check(cfg, "device", "game:" + device, t);
+    if (!g.ok) return err(429, "E_RATE_DEVICE", "答题太频繁了，请稍后再试", { retryAfter: g.retryAfter });
+    deps.limiter.hit("device", "game:" + device, t);
+
+    /* 飞花令是一支独立的分支：它判的不是「四个选项里哪一条」，而是
+       「你说的这一句在不在语料里」。见 api/_lib/game.js 的 checkFly()。 */
+    if (kind === "fly") {
+      var fly = game.checkFly(input);
+      if (fly.bad) return err(400, fly.bad, fly.message);
+      return ok({
+        /* ⚠️ `ok` 与 `found` **两个都回**：`ok` 是「这一答算不算对」（与选择题同一个字段，
+           客户端不必分两支读），`found` 是「这一句在不在合集里」（飞花令特有的那件事）。
+           只回一个的话，界面就得自己判断「哪种题型看哪个字段」——
+           那正是「两处各写一遍」的开头。 */
+        kind: "fly", ok: fly.found, found: fly.found,
+        why: fly.found ? "ok" : "notfound",
+        chars: fly.chars, said: fly.said, poemId: fly.poemId, title: fly.title,
+        total: fly.total, tier: tier,
+        counted: false,
+        note: "这一句" + (fly.found ? "在合集里对上了" : "没在合集里找到") +
+          "；对上的共 " + fly.total + " 句。判分是逐字比对，不涉及 AI。"
+      });
+    }
+
+    var q = game.rebuild(input);
+    if (!q) return err(400, "E_STALE", "题库里没有这一条（前端缓存可能旧了一版，刷新之后重来）");
+    /* ⚠️ 答案从**服务端重建出来的那一份**取，绝不读 input.answer。
+       这一行就是「客户端改不了答案」的全部实现 —— 少了它，
+       前面那些重建都是白做的。 */
+    var r = game.quiz().grade(q, input.chosen);
+
+    var charge = input.charge === true;
+
+    /** 回执：`counted` 只在这个函数里写，别处不许拼一份 */
+    function reply(counted) {
+      return ok({
+        kind: kind, ok: r.ok, why: r.why,
+        bankId: q.id, poemId: q.poemId, answer: q.answer,
+        tier: tier, cap: cap,
+        counted: !!counted,
+        note: charge
+          ? (counted ? "这一次已计入额度。" : "这次没记上（存储不可用），如实告诉您。")
+          : "3 期还没有定价，这一次**不计入额度**（不假装扣费）。"
+      });
+    }
+
+    /* ⚠️ 计费是**异步**的，必须等它回来才回执 —— 写成
+       `if (charge) counted = gameCharge(...)` 会拿到一个 Promise，
+       于是 `counted` 永远是假值（而响应里那个字段就永远是 false）。
+       这是「写了但没接上」的又一处：接口照样回 200，界面照样显示，
+       只有账单上什么都没有。 */
+    if (!charge) return reply(false);
+    return Promise.resolve(gameCharge(deps, me.uid, cap, t)).then(reply);
+  });
+}
+
+/**
+ * 额度计数：**按 uid** 存在 `progress` 表里的一条特殊记录上。
+ * 返回 Promise<boolean>（true = 这次真的记上了）。
+ *
+ * 为什么不新开一张表：额度就是「这个 uid 这个月用了几次」，
+ * 而 `progress(uid, poem_id, payload)` 本来就是「按 uid 存一条 JSON」的形状。
+ * 新开一张表就要再写一套两个实现（memory / supabase），
+ * 而「两个实现键集合不一致 → 静默失效」正是 2.2 那条教训。
+ *
+ * ⚠️ 月份是**日历月**（`dayKey` 的月档），不是「最近 30 天」——
+ *    用户看的账单与日历对得上，才说得清「这个月还剩几次」。
+ */
+function gameCharge(deps, uid, cap, t) {
+  var store = deps.store;
+  if (!store || !store.listProgress || !store.putProgress) return false;
+  var month = new Date(t).toISOString().slice(0, 7);     // YYYY-MM
+  var rowId = "game-quota:" + cap;
+  var used = 0;
+  return Promise.resolve(store.listProgress(uid, 0)).then(function (rows) {
+    (rows || []).forEach(function (r) {
+      if (r && r.poem_id === rowId && r.payload && r.payload.month === month) {
+        used = Number(r.payload.used) || 0;
+      }
+    });
+    store.putProgress(uid, [{
+      poem_id: rowId,
+      payload: { v: 1, cap: cap, month: month, used: used + 1 },
+      updated_at: t,
+      deleted: false
+    }]);
+    return true;
+  })["catch"](function () { return false; });
+}
+
 /* -------------------------------------------------------- 注销 */
 
 /**
@@ -878,6 +1050,9 @@ module.exports = {
   syncPull: syncPull,
   syncPush: syncPush,
   accountDelete: accountDelete,
+  gameAnswer: gameAnswer,
+  gameAllowed: gameAllowed,
+  GAME_CAP: GAME_CAP,
   adminGrant: adminGrant,
   adminGrants: adminGrants,
   adminRevoke: adminRevoke,

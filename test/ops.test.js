@@ -303,48 +303,73 @@ console.log("\n=== 八、/api/me 如实自报开通状态（界面才配自称�
   has(fn, "cfg.hasDb()", "channelFacts 走 cfg.hasDb()");
 }
 
-console.log("\n=== 十、3 期「不花钱的那三件」设计：口径写清了，但**不许提前开工** ===");
+console.log("\n=== 十、3 期那三件：口径写清了，而且**不许偷偷接 AI / 收钱** ===");
 {
-  /* 用户 2026-09-18 在 Issue #159 里定下的层级口径：
-     飞花令与现场考试归 Max、题库复习归 Pro。设计落在 docs/architecture.md §4.15，
-     它同时是一条**刹车**：口径改了，界面仍然一个字都不许渲染。
-     这一节守的就是这条刹车 —— 文档里的层级口径、以及「三件都不接 AI 商」。 */
+  /* 用户 2026-09-17 在 Issue #159 里定下的层级口径：
+     飞花令与现场考试归 Max、题库复习归 Pro。
+     设计落在 docs/architecture.md §4.15（先落设计），实现落在 §5.0.1（后落代码）。
+
+     ⚠️ 这一节原先守的是「**不许提前开工**」（当时只有设计、没有代码）。
+        代码落地之后那条刹车已经**不成立了** —— 现在守的是它真正想守的几件事：
+        ① 文档里的层级口径与**内核表**一致（口径与代码不许各说各话）；
+        ② 三件**一行 AI 都不接**、**一分钱都不收**（charge 默认关着）；
+        ③ 界面**不假装**（不写「即将上线」，也不假装扣费）。
+     把「已经做完」硬当成「不许做」来断言，只会让下一个人把真话改成假话。 */
   const arch = read("docs/architecture.md");
   const readme = read("README.md");
 
   chk(/### 4\.15 3 期「不花钱的那三件」设计方案/.test(arch),
-    "docs/architecture.md 有 §4.15（3 期的设计方案）");
+    "docs/architecture.md 有 §4.15（三件的设计方案）");
+  chk(/### 5\.0\.1 三件不花钱的：\*\*设计已定（§4\.15），并且已落地\*\*/.test(arch),
+    "docs/architecture.md 有 §5.0.1（落地记录）");
   const sec = arch.slice(arch.indexOf("### 4.15"), arch.indexOf("## 5. 排期与顺序"));
 
   ["飞花令", "题库", "现场考试"].forEach(k => has(sec, k, "§4.15 里写到了「" + k + "」"));
-  chk(/飞花令[\s\S]{0,200}Max/.test(sec), "飞花令归 Max（用户 2026-09-18 口径）");
+  chk(/飞花令[\s\S]{0,200}Max/.test(sec), "飞花令归 Max（用户口径）");
   chk(/现场考试[\s\S]{0,200}Max/.test(sec), "现场考试归 Max（同上）");
   chk(/题库[\s\S]{0,160}Pro/.test(sec), "题库复习归 Pro（同上）");
 
-  /* 这一版**与现在的内核表不一致**（飞花令现为 pro、exam.paper 现为 pro），
-     文档必须把这件事写在明面上，否则下一个人会以为代码写错了 */
-  has(sec, "js/entitlement.js", "§4.15 指出了与 js/entitlement.js 现有口径不一致");
-  has(sec, "test/entitlement.test.js", "§4.15 指出了要同步改哪条断言");
-  has(sec, "一个字都不渲染", "§4.15 重申「不提前渲染 3 期界面」这条刹车");
-
-  /* 三件都**不调任何 AI 商** —— 这是「不花钱」的准确含义 */
+  /* 文档里那两条「不」：不接 AI 商、不建额度表 */
   has(sec, "不接任何 AI 商", "§4.15 写明不接 AI 商");
-  has(sec, "纯逻辑", "§4.15 写明判据是纯逻辑（含不含字 / 在不在库 / 说不说过）");
+  has(sec, "纯逻辑", "§4.15 写明判据是纯逻辑（含不含字 / 在不在库 / 说没说过）");
   has(sec, "检索", "§4.15 写明先做纯检索版（AI 对句降为可选的一层）");
 
-  /* README 的「下一步」与文档同一口径（两处漂移 = 下一个人读哪份都错） */
-  has(readme, "飞花令与现场考试归 Max，题库复习归 Pro", "README 与 §4.15 同一口径");
+  /* README 与文档同一口径（两处漂移 = 下一个人读哪份都错） */
+  has(readme, "现场考试和飞花令归 max 所有，题库归 pro", "README 引用了用户的原话（层级口径）");
   has(readme, "§4.15", "README 指向 §4.15");
 
-  /* ⚠️ 刹车本身：代码侧一行都不许动 —— 这三件的界面文案不许提前出现 */
-  ["js/app.js", "js/settings.js", "js/profile.js", "index.html"].forEach(f => {
-    const src = read(f);
-    chk(!/飞花令|现场考试/.test(src), f + " 里不提前出现 3 期的功能名（口径改了，界面仍不渲染）");
+  /* ① 文档里的层级口径与**内核表**一致 —— 这两处各说各话正是本轮修掉的那个坑 */
+  const E = require(path.join(ROOT, "js/entitlement.js"));
+  const ctx = t => ({ tier: t, signedIn: true });
+  chk(!E.can("feihualing", ctx("pro")).ok && E.can("feihualing", ctx("max")).ok,
+    "内核表：飞花令 pro 不可、max 可（与 §4.15 一致）");
+  chk(!E.can("exam.paper", ctx("pro")).ok && E.can("exam.paper", ctx("max")).ok,
+    "内核表：现场考试 pro 不可、max 可（与 §4.15 一致）");
+  chk(!E.can("quiz.review", ctx("free")).ok && E.can("quiz.review", ctx("pro")).ok,
+    "内核表：题库复习 pro 起（与 §4.15 一致）");
+
+  /* ② 一分钱都不收、一行 AI 都不接：判分口与内核里不许出现任何 AI 商名 / SDK */
+  const aiVendors = /openai|anthropic|claude|gpt|gemini|qwen|deepseek|moonshot|智谱|通义|文心|kimi/i;
+  ["js/quiz.js", "js/game.js", "api/_lib/game.js", "api/game/answer.js"].forEach(f => {
+    const src = read(f).replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^\s*\/\/.*$/gm, " ");
+    chk(!aiVendors.test(src), f + " 里不出现任何 AI 商名 / SDK（三件不花钱）");
   });
+  const coreSrc = read("api/_lib/core.js");
+  chk(/var charge = input\.charge === true;/.test(coreSrc),
+    "判分口的计费**默认关着**（charge 只有显式 true 才算）");
+  chk(/3 期还没有定价，这一次\*\*不计入额度\*\*/.test(coreSrc) ||
+    /还没有定价/.test(coreSrc),
+    "不开计费时**如实说明**为什么没计入（不假装扣费）");
+
+  /* ③ 界面不假装：3 期的功能名**只许出现在该出现的地方** */
   const files = fs.readdirSync(path.join(ROOT, "js")).filter(f => /\.js$/.test(f));
-  const leaked = files.filter(f => /飞花令|现场考试|题库/.test(read("js/" + f)));
-  eq(leaked.join(","), "entitlement.js",
-    "js/ 下提到这三件事的只有内核能力表（页面一个字都不渲染）");
+  const holders = files.filter(f => /飞花令|现场考试|题库/.test(read("js/" + f)));
+  eq(holders.sort().join(","), "entitlement.js,game.js,quiz.js",
+    "js/ 下提到这三件事的只有内核能力表 + 那一层页面 + 出题内核（其余页面一个字都不渲染）");
+  const gameSrc = read("js/game.js").replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^\s*\/\/.*$/gm, " ");
+  chk(!/即将上线|敬请期待/.test(gameSrc), "js/game.js 里不写「即将上线」这类提前承诺");
+  /* 未登录时先提登录，不提层级 —— 「未登录」与「层级不够」是两回事 */
+  has(gameSrc, "Ent.denyReason(", "拦住用户的那句话由 Entitlement.denyReason() 出");
 }
 
 console.log("\n=== 九、客户端收下这一份，但**不参与判权**、**不落盘** ===");

@@ -433,6 +433,49 @@
       }).catch(function () { return { ok: false, reason: REASON.UNAVAILABLE }; });
     }
 
+    /**
+     * 让服务端判一道题（3 期 · 古诗词大会）。
+     *
+     * 与 `grantChannel()` 同一条口径：**单独判通道，不并进 `usable()`**。
+     * 老缓存里的旧脚本没有 `gameAnswer()`，并进去的症状是
+     * 「整个 /api/me 都问不到了」—— 那是拿一个新功能废掉既有功能。
+     *
+     * ⚠️ 判分**不返回 `ok:false` 之外的任何降级动作**：
+     *    连不上就是连不上，由调用方决定「本机判分 + 如实标注」。
+     *    这一层不做那个决定 —— 它有可能会做错（把 403 也当成连不上），
+     *    而 403 是「你确实没这个权限」，与连不上是两回事。
+     */
+    function gameAnswer(input) {
+      var o = input || {};
+      if (!hasLocalSession()) {
+        return Promise.resolve({ ok: false, reason: REASON.GUEST, status: 401, code: "E_NO_SESSION" });
+      }
+      var ch = usable(D.api) || (D.make ? safeCreate(D.make) : null);
+      if (!ch || typeof ch.gameAnswer !== "function") {
+        return Promise.resolve({ ok: false, reason: REASON_NO_CHANNEL, status: 0, code: "E_NO_CHANNEL" });
+      }
+      return ch.gameAnswer({
+        kind: o.kind, bankId: o.bankId, poemId: o.poemId,
+        chosen: o.chosen, chars: o.chars, said: o.said, charge: o.charge === true
+      }).then(function (r) {
+        if (r && r.ok) return { ok: true, status: 200, body: r };
+        var code = (r && r.code) || "E_OFFLINE";
+        if (code === "E_NOT_CONFIGURED") return { ok: false, reason: REASON.NOT_CONFIGURED, status: 503, code: code };
+        if (code === "E_NO_SESSION") return { ok: false, reason: REASON.GUEST, status: 401, code: code };
+        /* 403（层级不够）与 429（太频繁）都**不是**「连不上」——
+           回给调用方时带上状态码，它才知道该不该回落本机判分。
+           403 绝不回落：回落等于把服务端那道闸绕过去了。 */
+        if (code === "E_TIER" || code === "E_FORBIDDEN") {
+          return { ok: false, reason: REASON.OK, status: 403, code: code, message: r && r.message, tier: r && r.tier };
+        }
+        if (code === "E_RATE_DEVICE") return { ok: false, reason: REASON.OK, status: 429, code: code };
+        if (code === "E_STALE") return { ok: false, reason: REASON.OK, status: 400, code: code, message: r && r.message };
+        return { ok: false, reason: REASON.UNAVAILABLE, status: 0, code: code };
+      })["catch"](function () {
+        return { ok: false, reason: REASON.UNAVAILABLE, status: 0, code: "E_OFFLINE" };
+      });
+    }
+
     return {
       /* 只读出口：给测试与界面看「上一轮问了什么」，不参与判权 */
       last: function () { return { reason: last.reason, at: last.at }; },
@@ -449,7 +492,10 @@
       /* 权威发放（2.2）：**只有 /admin/ 页调**。不判权限 —— 判权限在服务端。 */
       adminGrant: adminGrant,
       adminGrants: adminGrants,
-      adminRevoke: adminRevoke
+      adminRevoke: adminRevoke,
+      /* 古诗词大会的判分（3 期）：**只有 js/game.js 调**。
+         它判的是「这一答对不对」，判权在服务端 —— 这一层不重算一遍。 */
+      gameAnswer: gameAnswer
     };
   }
 
@@ -497,6 +543,10 @@
     adminGrant: function (o) { return boundOnce(o).adminGrant(o); },
     adminGrants: function (o) { return boundOnce(o).adminGrants(o); },
     adminRevoke: function (o) { return boundOnce(o).adminRevoke(o); },
+    /* 古诗词大会的判分（3 期）。**刻意不走 boundOnce 的 globalBound 闸** ——
+       那个闸是给「同一份 /api/me 答案」用的，而判分每次都不同（每题的答案不一样），
+       并进去的症状是「第二题之后全都拿第一题的结果判」。 */
+    gameAnswer: function (o) { return (globalBound || (globalBound = bind(o))).gameAnswer(o); },
     applyMe: function (o) { return boundOnce(o).applyMe(o); },
     clearServerTier: function (o) { return boundOnce(o).clearServerTier(o); },
     hasLocalSession: function (o) { return boundOnce(o).hasLocalSession(o); },

@@ -13,6 +13,7 @@ var CONFIG = require("./config");
 var storeMod = require("./store");
 var session = require("./session");
 var core = require("./core");
+var game = require("./game");
 var H = require("./http");
 
 /* 单实例内的频控器：Serverless 实例存活期间有效（见 core.js 的说明） */
@@ -93,5 +94,6 @@ module.exports = {
   CONFIG: CONFIG,
   store: storeMod,
   core: core,
+  game: game,
   http: H
 };
