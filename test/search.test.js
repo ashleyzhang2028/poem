@@ -571,13 +571,10 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(/keyboardVisible/.test(searchJs) && /--kb-visible/.test(searchJs),
     'js/search.js 把 visualViewport.height 实测成 --kb-visible' +
     '（键盘上沿那片可视区：下拉的百分数与硬边界都按它算，不再靠 svh 猜）');
-  chk(/focusInput/.test(searchJs) && /search-hero-focus/.test(searchHtml),
-    '进页即聚焦：焦点先落在 hero 里的替身输入框上（键盘应声弹出，且不触发 iOS 自行滚动）');
-  const ghostBlock = (/[^}]*\.search-hero-focus \{([^}]*)\}/.exec(classicCss) || ['', ''])[1];
-  chk(!!ghostBlock && /width:\s*1px/.test(ghostBlock) && /height:\s*1px/.test(ghostBlock) &&
-    !/display:\s*none|visibility:\s*hidden|opacity:\s*0/.test(ghostBlock),
-    '替身输入框是一枚真的 1×1 输入框（display: none / visibility: hidden 的元素' +
-    '拿不到焦点，iOS 就不会弹键盘）');
+  /* ⚠️ Issue #163 把这一条**反过来**了：进页**不再**自动聚焦。
+     用户原话是「进入搜索页时不要立刻聚焦，手机键盘自动弹出来了，烦人」。
+     所以这里守的不再是「替身输入框长得对不对」，而是「自动聚焦这条路有没有被
+     偷偷修回来」—— 见下面「八、进页不聚焦」那一节，那一段是这一条的正主。 */
   chk(/alignEmptyState/.test(searchJs) && /#gw-list \.search-empty/.test(classicCss),
     '空态与结果列表左对齐（搜索框在左、列表也在左，空态不该孤零零居中在页面中间）');
 
@@ -708,8 +705,9 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(/--hero-top:\s*\d+px/.test(classicCss),
     '贴顶那一段高度是一个具名变量（--hero-top），不是散落的魔数');
   chk(/syncHeroState/.test(searchJs) &&
-    /classList\.toggle\("search-active",\s*hasKeyword\(\) \|\| lifted\)/.test(searchJs),
-    '「有焦点」与「有内容」合成同一个类（两者的落位一模一样，分成两个类要写两遍数值）');
+    /classList\.toggle\("search-active",\s*lifted\)/.test(searchJs),
+    '贴顶只认「框里真的有焦点 / 键盘真的弹着」（Issue #163：按内容贴顶会让' +
+    '回填的上次关键词一进页就把框顶上顶栏，接着把键盘也带出来 —— 见第八节）');
   chk(/classList\.toggle\("kb-open",\s*lifted\)/.test(searchJs),
     'kb-open 只在键盘真的弹出来时加（贴顶的落位与 search-active 共用）');
   // 聚焦与失焦都必须**走同一个函数**：否则「清空 + 失焦回中央」这条会被漏掉
@@ -781,7 +779,107 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(!/body\[data-nav="search"\][^,{}]*\.search-input:focus-visible\s*\{[^}]*outline:\s*2px/.test(cssCode),
     '没有「:focus / :focus-visible 各画一条 outline」的写法（两条特异相同，后者必然翻盘）');
 
-  /* ---------- 八、法务页与设置页的口径一致 ---------- */
+  /* ---------- 八、进搜索页**不聚焦**（Issue #163） ----------
+     用户原话：「进入搜索页时不要立刻聚焦，手机键盘自动弹出来了，烦人」。
+
+     这一节守三件事，缺一不可 —— 只删掉「聚焦那一行」是不够的：
+       ① 进页不再有任何自动聚焦的通道（脚本里没有对输入框的 focus 调用、
+          HTML 里也没有 autofocus / 替身输入框）；
+       ② 焦点**不会被间接带出来**：iOS 上页面加载后浏览器会把焦点给第一个
+          可聚焦元素 —— 而搜索页早前是「一进来就贴顶 + 列表在下面」，
+          用户点哪都可能落到框上；所以进页必须停在「静止态」（框居中），
+          贴顶的判据只能是「框里真的有焦点 / 键盘真的弹着」；
+       ③ 不聚焦不等于进来一片空白：上一次搜的词要从**设备域**读回来、
+          填进框里并把结果列好 —— 这才是「进来先看见上次的结果」的实现。 */
+
+  // ① 自动聚焦：删干净，且不许换个写法长回来
+  chk(!/\.focus\(/.test(searchJs.replace(/input\.focus\(\)\)?/g, ''))
+    || !/focus\(\{\s*preventScroll/.test(searchJs.split('bindSlashKey')[0]),
+    '进页那一段里没有任何「把焦点塞给输入框」的调用（上一版的 focusInput 已删）');
+  // ⚠️ 判「节点在不在」，不是判「源码里有没有这几个字」：注释里提一句
+  //    「这里曾经有一枚替身输入框」是留给后来人的说明，它不该被判红。
+  chk(d.querySelector('#search-hero-focus') === null && !/\.search-hero-focus\s*\{/.test(classicCss),
+    '替身输入框连同它的样式一并撤掉（DOM 里没有这个节点、样式表里没有这条规则）');
+  // ⚠️ 行内注释也一并剥掉：那两处提到 focusInput 的地方正是「上一版撤了什么」的说明
+  const searchBare = searchJs
+    .replace(/\/\*[\s\S]*?\*\//g, ' ')
+    .replace(/^\s*\/\/.*$/gm, '')
+    .replace(/^\s*\*.*$/gm, ' ');
+  chk(!/focusInput/.test(searchBare),
+    'JS 里不再有 focusInput 那套动作（先聚焦替身、80ms 后交接焦点）');
+  chk(!/autofocus/i.test(searchHtml),
+    '输入框上没有 autofocus（属性式自动聚焦同样是「一进来键盘就弹」）');
+  chk(!/searchJs[\s\S]{0,0}/.test(''), '（占位：保持断言组整齐）');
+  // JS 里唯一允许出现的 focus 调用只有「用户敲 / 」这一条
+  const jsFocusCalls = (searchJs.match(/\.focus\(/g) || []).length;
+  chk(jsFocusCalls === 1,
+    'js/search.js 里只剩一处 .focus()（敲 / 进搜索框那条），实际 ' + jsFocusCalls + ' 处');
+
+  // ② 贴顶的判据收成一条：焦点 / 键盘
+  chk(/var lifted = focused \|\| space > 0/.test(searchJs),
+    '贴顶 = 框里真的有焦点（或软键盘真的弹着）—— 不再把「有内容」算进去');
+  chk(!/hasKeyword\(\) \|\| lifted/.test(searchJs),
+    '没有「有内容就贴顶」的残留（那一条会让回填的上次关键词一进页就把框顶上去）');
+
+  // ③ 上次搜的词：读回来、填进去、列出来
+  chk(/readKeyword/.test(searchJs) && /noteKeyword/.test(searchJs) &&
+    /onLiftLost/.test(searchJs),
+    '上次搜的关键词有具名的一处读、一处写，以及「离开时补写」那一条（readKeyword / noteKeyword / onLiftLost）');
+  chk(!/localStorage/.test(searchJs) && !/poem_search_kw_v1/.test(searchJs),
+    '读写走上层存储（window.Storage 的 getSearchKeyword / setSearchKeyword），' +
+    '页面自己不碰 localStorage、也不自己拼键名（键名只在 progress-store 里有一份）');
+  chk(/window\.Storage/.test(searchJs) && /getSearchKeyword/.test(searchJs) &&
+    /setSearchKeyword/.test(searchJs),
+    '走的是 Storage 的两个具名入口（不是 get/set 那对「按 id 取一篇进度」的方法）');
+  // ⚠️ 光在页面里调还不够：**这一页得真的加载了转发层**。
+  //    search/index.html 此前只加载 progress-store.js、没加载 js/storage.js，
+  //    于是 window.Storage 一直是 undefined，调用点静默退化成「读不到」。
+  chk(/<script src="js\/storage\.js"><\/script>/.test(searchHtml),
+    'search/index.html 加载了 js/storage.js（引擎在、转发层不在时，读法是空的且不报错）');
+  const psIdx = searchHtml.indexOf('<script src="js/progress-store.js"');
+  const syncIdx = searchHtml.indexOf('<script src="js/sync-store.js"');
+  const stIdx = searchHtml.indexOf('<script src="js/storage.js"');
+  chk(psIdx > -1 && syncIdx > psIdx && stIdx > syncIdx,
+    '三层的顺序是 progress-store → sync-store → storage（转发层认前两个）');
+  chk(/var last = readKeyword\(\);[\s\S]{0,200}input\.value = last/.test(searchJs),
+    '进页把上次的词放回输入框（不聚焦：键盘不出来，结果先列好）');
+  chk(/KEYWORD_HOLD_DELAY/.test(searchJs) && /setTimeout\(function \(\) \{[\s\S]{0,400}\}, KEYWORD_HOLD_DELAY\)/.test(searchJs),
+    '关键词防抖落盘（敲一个字写一次盘太吵）');
+  chk(/pagehide/.test(searchJs),
+    '离开这一页时把还没落盘的关键词写完（防抖窗口里切页是常事）');
+  // 设备域：这一页仍然不写任何一部的已读（下面第四节另有一条，这里守「连新键也归设备域」）
+  // ⚠️ 先剥掉注释再看：文件头那段「搜索页不写任何已读键」的说明里
+  //    正举着 poem_classic_read_v1 当例子，直接对整份源码做正则会命中它。
+  const searchCode = searchJs.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/^\s*\/\/.*$/gm, '');
+  chk(!/poem_classic_read_v1|poem_tangshi_read_v1|poem_songci_read_v1|poem_guwen_read_v1|poem_zhaoming_read_v1/.test(searchCode),
+    '「上次搜的词」没有顺手写成任何一部的已读键');
+  chk(!/readStore:\s*"[^"]+"/.test(searchCode.replace(/readStore:\s*""/g, '')) ||
+    /readStore:\s*""/.test(searchJs),
+    '那个新键是设备域的阅读偏好，不是某一部分的已读（readStore 仍是空串）');
+  // 设备域：引擎那边把这把键列进 scopes 且 local: true（同步层不许碰）
+  const psJs = read('js/progress-store.js');
+  chk(/search:\s*"poem_search_kw_v1"/.test(psJs) &&
+    /\{ key: KEYS\.search, domain: "device", local: true \}/.test(psJs),
+    'progress-store 把这把键归到**设备域**且 local: true（换台机器看「上次搜的词」没有意义）');
+  chk(/searchKeyword: searchKeyword/.test(psJs) && /setSearchKeyword: setSearchKeyword/.test(psJs),
+    '设备域的两个具名入口导出到 ProgressStore（页面不自己拼键名）');
+  chk(/getSearchKeyword/.test(read('js/storage.js')) && /setSearchKeyword/.test(read('js/storage.js')),
+    '转发层 js/storage.js 把这两件事透出去（缺了它，旧缓存里没加载引擎的页面会读不到）');
+
+  // ④ 桌面上的退路：敲 / 直接进搜索框（用户自己发起，键盘弹出是应答）
+  chk(/bindSlashKey/.test(searchJs) && /SLASH_KEYS/.test(searchJs),
+    '电脑上敲 / 直接进搜索框（进页不聚焦之后，桌面上仍要有一条不点鼠标的入口）');
+  chk(/ctrlKey \|\| e\.metaKey \|\| e\.altKey/.test(searchJs),
+    '带修饰键的 / 不动（那是浏览器的快捷键，如 Cmd+/）');
+  chk(/t === input\) return/.test(searchJs),
+    '焦点已经在输入框里时不动它（那一下 / 就是要打一个斜杠）');
+  chk(/search-slash/.test(searchHtml) && /search-slash/.test(classicCss),
+    '那枚 / 提示页面上有、样式里也有');
+  chk(/@media \(pointer: fine\) \{\s*\.search-slash \{ display: inline-flex/.test(classicCss) &&
+    /\.search-slash \{[\s\S]*?display: none/.test(classicCss),
+    '提示只画给有实体键盘的设备（手机上 / 这个动作不成立，别留一枚看不懂的徽章）');
+
+  /* ---------- 九、法务页与设置页的口径一致 ---------- */
   chk(read('js/chrome.js').indexOf('古诗词') === -1 ||
     !/label: "古诗词"/.test(read('js/chrome.js')),
     '页签里不再有名为「古诗词」的那一格');
