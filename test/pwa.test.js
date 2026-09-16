@@ -1262,10 +1262,34 @@ function check(name, cond, extra) {
       /* 用户这一轮的反馈：「搜索页面，当用户 focus 在搜索框，请把搜索框向上挪到
          标题栏下方。下拉列表也跟着上去。……焦点在搜索框时，现在框 border 是黑色，
          不好看，请调整。」
-         —— 进页即聚焦，所以这一段量的就是「聚焦态」本身。
-         三件事：框在顶栏下方（不是视口中央）、候选下拉紧跟着框（不是留在原处）、
-         描边是天青主色（不是浏览器默认那支近黑的 ring）。 */
+         ⚠️ Issue #163 之后进页**不再**自动聚焦（用户原话：「进入搜索页时不要
+            立刻聚焦，手机键盘自动弹出来了，烦人」）—— 现在量的是「静止态」：
+            框压在页面中心、不聚焦、不贴顶。想让框升上去，得**用户自己**聚焦
+            （敲 `/` 或点一下框），所以这里先坐实静止态，再显式聚焦去量聚焦态。 */
       {
+        const restState = await sp.evaluate(() => {
+          const inp = document.querySelector('.search-hero .search-input');
+          const hero = document.getElementById('search-hero');
+          const hr = hero.getBoundingClientRect();
+          const ir = inp.getBoundingClientRect();
+          return {
+            cls: hero.className,
+            focused: document.activeElement === inp,
+            inputTop: +ir.top.toFixed(1),
+            // 「居中」是相对**这一段**（.search-hero）说的，不是相对整屏：
+            // 那一段的上下还有顶栏与底部页签，它们不参与居中。
+            offset: +((ir.top + ir.height / 2) - (hr.top + hr.height / 2)).toFixed(1)
+          };
+        });
+        check('iPhone 搜索页：进页停在静止态（不自动聚焦、框压在页面中心）',
+          !restState.focused && !/search-active/.test(restState.cls) &&
+          Math.abs(restState.offset) <= 2 && restState.inputTop > 200,
+          JSON.stringify([restState.cls, restState.focused, restState.inputTop, restState.offset]));
+
+        // 用户自己发起的聚焦（点一下框 / 敲 /）—— 这才是「聚焦态」的正主
+        await sp.focus('#gw-search');
+        await new Promise(r => setTimeout(r, 300));
+
         const focusState = await sp.evaluate(() => {
           const inp = document.querySelector('.search-hero .search-input');
           const bar = document.querySelector('.topbar');
@@ -1667,9 +1691,10 @@ function check(name, cond, extra) {
       await sp.goto(base + 'search/', { waitUntil: 'load' });
       await new Promise(r => setTimeout(r, 600));
 
-      // ⑥ 这一轮的四态收尾（用户这一轮点名的四句话，逐条量渲染后的位置）：
-      //    · 有内容时失焦 → 框**仍停在页顶**（「当有搜索内容存在时，搜索框停留在页面顶部」）；
-      //    · 清空内容 + 失焦 → 框回到页面中心；
+      // ⑥ 这一轮的状态收尾（用户这一轮点名的几句话，逐条量渲染后的位置）：
+      //    · 聚焦 → 框升到顶栏下方（用户自己点框 / 敲 `/`，见 #163：不再自动聚焦）；
+      //    · 失焦 → 框回到页面中心（⚠️ #163 作废了「有内容就停在页顶」那一条）；
+      //    · 清空内容 + 失焦 → 仍回到页面中心；
       //    · 点空白地方 → 候选下拉消失。
       /* ⑦ 本轮（Issue #122）第一条：聚焦后框**上下等距**。
          用户原话：「搜索框和上下元素间隔一致，请以现在下面的间隔为准，
@@ -1732,22 +1757,28 @@ function check(name, cond, extra) {
             offset: +((ir.top + ir.height / 2) - (hr.top + hr.height / 2)).toFixed(1)
           };
         };
+        // ① 用户聚焦 → 贴顶（此刻框里有「月」，但那不是贴顶的原因）
         inp.focus();
         await new Promise(r => setTimeout(r, 200));
-        inp.blur();                       // 键盘收起、焦点没了，但框里还有「月」
+        const focused = { cls: hero.className, inputTop: +inp.getBoundingClientRect().top.toFixed(1) };
+        // ② 失焦 → 键盘收起、焦点没了 —— ⚠️ Issue #163 之后**有内容也不再贴顶**：
+        //    「有内容就贴顶」那一半已作废（它会让回填的上次关键词一进页就把框顶上
+        //    顶栏、接着把键盘带出来），所以此刻框该落回页面中心，而不是停在页顶。
+        inp.blur();
         await new Promise(r => setTimeout(r, 500));
         // ⚠️ 类名要**在这里**就抄下来：hero 是同一个节点，className 是活的值 ——
-        //    等到 return 里再读，读到的已经是「清空之后」那一份了
-        //    （上一版就是这么写的：topWithKeyword 量对了，类名却量的是后一个状态）。
-        const pinned = { cls: hero.className, inputTop: +inp.getBoundingClientRect().top.toFixed(1) };
-        // 再看一眼：清空内容后（仍未聚焦）框应当回到页面中心
+        //    等到 return 里再读，读到的已经是「清空之后」那一份了。
+        const blurred = { cls: hero.className, inputTop: +inp.getBoundingClientRect().top.toFixed(1) };
+        // ③ 再看一眼：清空内容后（仍未聚焦）框仍应在页面中心（与 ② 同一个落位）
         inp.value = '';
         inp.dispatchEvent(new Event('input', { bubbles: true }));
         await new Promise(r => setTimeout(r, 300));
         const centered = { cls: hero.className, pos: midOf() };
         return {
-          clsWithKeyword: pinned.cls,
-          topWithKeyword: pinned.inputTop,
+          clsFocused: focused.cls,
+          topFocused: focused.inputTop,
+          clsBlurred: blurred.cls,
+          topBlurred: blurred.inputTop,
           clsWhenEmpty: centered.cls,
           topWhenEmpty: centered.pos.inputTop,
           centeredOffset: centered.pos.offset,
@@ -1755,14 +1786,22 @@ function check(name, cond, extra) {
           vh: window.innerHeight
         };
       });
-      check('iPhone 搜索页：有搜索内容时失焦，搜索框仍停在页面顶部',
-        /search-active/.test(r1.clsWithKeyword) && r1.topWithKeyword <= 140,
-        JSON.stringify([r1.clsWithKeyword, r1.topWithKeyword, r1.dbg]));
+      check('iPhone 搜索页：聚焦时框贴到页面顶部（贴顶只认焦点，不认内容）',
+        /search-active/.test(r1.clsFocused) && r1.topFocused <= 140,
+        JSON.stringify([r1.clsFocused, r1.topFocused]));
       // 「回到页面中心」= 框重新压在 .search-hero 这一段的垂直中线上
       // （0 表示正中；hero 里框是绝对定位 top: 50% - 半盒高，所以偏差该在 1px 内）
+      // ⚠️ Issue #163：失焦即回中，**框里还有没有内容都一样** —— 有内容时
+      //    也回中（旧断言守的「有内容仍停在页顶」正是被 #163 作废的那一条）。
+      check('iPhone 搜索页：失焦后搜索框回到页面中心（有内容也不再停在页顶）',
+        !/search-active/.test(r1.clsBlurred) &&
+        r1.topBlurred > r1.topFocused + 100 &&
+        Math.abs(r1.centeredOffset) <= 2 && r1.centeredHeroH > 300,
+        JSON.stringify([r1.clsBlurred, r1.topBlurred, r1.topFocused, r1.centeredOffset, r1.centeredHeroH]));
+      // 清空内容 + 仍未聚焦：与 ② 同一个落位（框里有没有字都不影响居中）
       check('iPhone 搜索页：清空内容且没有焦点后，搜索框回到页面中心',
         !/search-active/.test(r1.clsWhenEmpty) && Math.abs(r1.centeredOffset) <= 2 &&
-        r1.centeredHeroH > 300 && r1.topWhenEmpty > r1.topWithKeyword + 100,
+        r1.centeredHeroH > 300 && r1.topWhenEmpty > r1.topFocused + 100,
         JSON.stringify([r1.clsWhenEmpty, r1.centeredOffset, r1.topWhenEmpty, r1.centeredHeroH]));
 
       // 点空白收下拉：用户原话「当用户点击空白地方时，下拉列表消失」
