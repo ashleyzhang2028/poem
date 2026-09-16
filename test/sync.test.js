@@ -76,7 +76,7 @@ function harness(o) {
   const net = opt.net || {};
 
   const Sync = require(path.join(ROOT, "js/sync-store.js"));
-  Sync.use({
+  const depsUsed = {
     ProgressStore: PS,
     base: opt.noBase ? null : (opt.base === undefined ? "/api" : opt.base),
     deviceId: opt.device || "d_deadbeef",
@@ -94,7 +94,19 @@ function harness(o) {
       if (!handler) return Promise.reject(new Error("no route: " + url));
       return handler({ url, body, clock });
     }
-  });
+  };
+  Sync.use(depsUsed);
+
+  /**
+   * 换掉权益内核（不改动别的依赖）。
+   * ⚠️ 用 `Sync.use()` 时**必须把原来的 deps 一起带上**（它是**整体替换**）——
+   *    只传 `{Entitlement}` 会把 fetch / base / signedIn 一起抹掉，
+   *    症状是「闸看起来没生效」而其实是同步层整体废了。
+   */
+  function setEnt(E) {
+    Sync.use(Object.assign({}, depsUsed, { Entitlement: E }));
+    return Sync;
+  }
 
   /** 换掉网络行为（不改动别的依赖）—— 用例中途要换「后端挂了」时用它 */
   function setNet(next) {
@@ -102,7 +114,7 @@ function harness(o) {
   }
 
   return {
-    PS, Sync, backing, calls, events, setNet,
+    PS, Sync, backing, calls, events, setNet, setEnt,
     /** 推进时钟（模拟「过一会儿用户又背了一首」） */
     tick(ms) { clock += (ms === undefined ? 1000 : ms); return clock; },
     now() { return clock; },
@@ -149,6 +161,27 @@ async function page(rel, storage) {
   return w;
 }
 
+/**
+ * 在 jsdom 窗口里造一个**登录着的 Pro**（页面测试用）。
+ *
+ * ⚠️ 每一步都不能省：
+ *   · `poem_plan_v1` 是权益层读层级的那把键（`source:"server"` 与 /api/me 同形）
+ *   · 会话走真的 `AuthCore` —— 手搓一份 `poem_auth_v1` 的话，
+ *     将来内部形状一改，种子还「像」是对的，测试却已经在验假数据了
+ */
+async function signInPro(w, email) {
+  const A = w.AuthCore;
+  const store = A.makeStore(w.localStorage);
+  const rc = A.requestCode(store, { channel: "email", value: email || "pro@example.com" }, "login");
+  const v = A.verifyCode(store, rc.codeId, rc.code, "login");
+  if (!v || !v.ok) throw new Error("造 Pro 会话失败：" + ((v && v.code) || "未知"));
+  w.localStorage.setItem("poem_plan_v1",
+    JSON.stringify({ v: 1, tier: "pro", until: null, source: "server" }));
+  w.document.dispatchEvent(new w.Event("DOMContentLoaded"));
+  await new Promise(r => setTimeout(r, 40));
+  return w;
+}
+
 /* ==================================================================== 开始 */
 
 async function main() {
@@ -168,10 +201,16 @@ async function main() {
     chk(r && r.skipped === true, "关着时 now() 直接跳过");
     eq(calls.length, 0, "关着时**一个请求都没发**（这是「默认本地」的字面含义）");
 
-    // 开
-    eq(Sync.setEnabled(true), true, "能打开开关");
+    /* ⚠️ `setEnabled()` 的返回值在补层级闸那一轮**从布尔换成了对象**
+       `{ok, enabled, code, hint}`。换形状的理由：布尔说不出**为什么**没打开 ——
+       「层级不够」与「存储写不进」是两件事，用户动作完全不同
+       （一个去找管理员发 Pro，一个换浏览器 / 关无痕）。
+       合并成 `false` 的下场是页面只能说「打不开」，等于让人白试一遍。 */
+    const on1 = Sync.setEnabled(true);
+    eq(on1.ok, true, "能打开开关（层级够）");
+    eq(on1.enabled, true, "回执里如实说现在是开着的");
     eq(Sync.enabled(), true, "打开后 enabled() 为 true");
-    eq(Sync.status(), "ready", "登录 + 开着 → ready");
+    eq(Sync.status(), "ready", "登录 + 开着 + 层级够 → ready");
 
     // 关回去
     Sync.setEnabled(false);
@@ -179,8 +218,76 @@ async function main() {
 
     // 隐私模式（没有存储）：开关落不了盘，但**也不假装落上了**
     PS.useStore(null);
-    eq(Sync.setEnabled(true), false, "没有存储时开关写不进（返回 false，不假装成功）");
+    const noStore = Sync.setEnabled(true);
+    eq(noStore.ok, false, "没有存储时开关写不进（不假装成功）");
+    eq(noStore.code, "E_STORAGE", "错因是存储写不进（不是层级不够）—— 两件事必须分得开");
+    eq(Sync.enabled(), false, "写不进时 enabled() 仍是 false（不离线停在用户点出来的位置）");
     ok(true, "隐私模式下开关落不了盘 —— 这一点由返回值如实告知，不靠猜");
+  }
+
+  /* ==================================================================
+     一之二、层级闸：`sync.multiDevice` 要 Pro 起
+     ==================================================================
+
+     ⚠️ 这一节补的是一条**长期是假话的公开宣称**：`/plans/` 的对比表是当场问
+        内核算出来的，而 `CAPS` 里写着 `sync.multiDevice: minTier "pro"` ——
+        页面对用户宣称「跨设备云同步 = Pro」，而在这一轮之前全站 **0 处**
+        真的拿它拦过谁。于是 free 用户白用、Pro 用户白收了一道本该有的门。
+
+     四条判据，各自对应一种「不这么写就出别的错」：
+       ① free 打不开，且**错因是层级**（不是「打不开」）
+       ② Pro / Max 打得开
+       ③ **Pro 过期之后仍然关得掉** —— 关掉不过闸（否则「同步一直在传、关不掉」）
+       ④ **拿不到权益内核时不拦** —— 宁可不判，也不误拦（同 collections.limit()）
+     */
+  {
+    const h = harness({ recs: { p1: { level: 1 } } });
+    const { Sync } = h;
+
+    /* 一个可控的假权益内核：只回答 can("sync.multiDevice") */
+    let tier = "free";
+    const fakeEnt = {
+      identity: () => ({
+        can: (cap) => (cap === "sync.multiDevice" && tier !== "free")
+          ? { ok: true, reason: "ok" }
+          : { ok: false, reason: "tier", minTier: "pro", name: "跨设备云同步" },
+        hint: () => "Pro 起可用"
+      })
+    };
+
+    // ① free：打不开，且说的是层级，不是「打不开」
+    h.setEnt(fakeEnt);
+    tier = "free";
+    const deny = Sync.setEnabled(true);
+    eq(deny.ok, false, "free 打不开跨设备同步");
+    eq(deny.code, "E_TIER", "错因是 E_TIER（不是 E_STORAGE —— 两件事不许混）");
+    eq(deny.hint, "Pro 起可用", "如实说出门槛（页面直接用它当提示，不自造文案）");
+    eq(Sync.enabled(), false, "没打开就是没打开，不假装落上了");
+    eq(Sync.status(), "off", "关着就是 off（没开时不该说「要 Pro」）");
+    eq(Sync.allowed().ok, false, "allowed() 单独问也一样（供界面置灰前问一次）");
+
+    // ② pro / max：放行
+    tier = "pro";
+    eq(Sync.setEnabled(true).ok, true, "Pro 打得开");
+    eq(Sync.enabled(), true, "Pro 打开后 enabled() 为 true");
+    eq(Sync.allowed().ok, true, "allowed() 对 Pro 也是 ok");
+
+    // ③ **Pro 过期之后仍然关得掉** —— 这是这一节最要紧的一条
+    tier = "free";
+    eq(Sync.status(), "tier", "层级过期后 status 如实说 tier，不说 ready（那会是假话）");
+    const off = Sync.setEnabled(false);
+    eq(off.ok, true, "关掉**不过闸**（Pro 过期之后仍然关得掉）");
+    eq(Sync.enabled(), false, "真的关掉了");
+    eq(Sync.status(), "off", "关掉之后是 off");
+
+    /* ④ 拿不到权益内核时不拦 —— 见 `collections.limit()` 的同款兜底：
+       脚本顺序不对 / 老缓存时若按 free 拦，症状是「本来有 Pro 的人突然
+       同步打不开」，且用户无法自查。宁可不判，也不误拦。 */
+    h.setEnt(null);
+    eq(Sync.allowed().ok, true, "没有权益层时不拦（宁可不判，也不误拦）");
+    eq(Sync.setEnabled(true).ok, true, "没有权益层时也打得开");
+    Sync.setEnabled(false);
+    ok(true, "关掉仍然成功");
   }
 
   /* ==================================================================
@@ -787,7 +894,16 @@ async function main() {
   if (!JSDOM) {
     console.log("\n(未安装 jsdom，跳过真页面一节 —— run.sh 会先装好它)");
   } else {
+    /* ⚠️ 页面里的用户必须是 **登录着的 Pro**，两件事都要：
+         · 层级 —— 跨设备云同步是 `sync.multiDevice`（Pro 起）。闸补上之前
+           这一节用的是一个没登录的页面也能点开（那正是那个洞）；
+         · 登录 —— 那条能力带 `login:true`，没登录时 `can()` 回的是
+           `login`（文案「登录可用」），一样打不开。
+       `poem_plan_v1` 写 `source:"server"`，与 `/api/me` 下发同形；
+       会话用真的 `AuthCore` 走一遍发码 / 验证（不是手搓一份 `poem_auth_v1`，
+       免得将来内部形状变了这里的种子还是个假的）。 */
     const w = await page("settings/general", {});
+    await signInPro(w);
 
     const input = w.document.getElementById("toggle-sync");
     chk(!!input, "设置 · 通用里有同步开关那颗控件");
@@ -842,9 +958,10 @@ async function main() {
        这一条纯数据层测不出来 —— 那边是显式 `use({ProgressStore})`，
        而页面里靠的是模块自己现取 window.ProgressStore。 */
     const w2 = await page("settings/general", {});
+    await signInPro(w2, "pro2@example.com");
     const S = w2.SyncStore;
     chk(!!S, "页面里 SyncStore 挂在 window 上");
-    S.setEnabled(true);
+    eq(S.setEnabled(true).ok, true, "这页是登录着的 Pro，开关打得开（层级闸放行）");
     w2.Storage.set("p_probe", { level: 1 });
     /* ⚠️ 3 期 P1 起进度键**带子档案后缀**（多孩子各背各的）—— 键名由引擎算，
        这里问它一次，而不是自己拼「poem_recite_progress_v1」。

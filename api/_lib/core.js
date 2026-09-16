@@ -564,11 +564,64 @@ function me(deps) {
 /* -------------------------------------------------------- 同步 */
 
 /**
+ * 跨设备云同步的**能力闸**（`sync.multiDevice`，Pro 起）。
+ *
+ * ## 为什么这条闸必须补
+ *
+ * `/plans/` 的对比表是**当场问内核**算出来的，而 `CAPS` 里写着
+ * `sync.multiDevice: minTier "pro"` —— 于是页面上公开对用户宣称「跨设备云同步 = Pro」。
+ * 但在这一轮之前，**全站 0 处**真的拿这条能力拦过任何人：一个 free 用户
+ * 把设置页那颗开关打开，进度就真的推上去了。
+ *
+ * 也就是说：那条公开宣称是**假话**，而且是对 free 用户**白送**、对 Pro 用户
+ * **白收了一道本该有的门**。这与 2A 那两个洞、2.2 的断链、③ 的 `export.all`
+ * 是同一个形状 —— 限制写在 A 处（能力表）、读取在别处（没有读取点）。
+ *
+ * ## 闸拦在哪一层：**服务端**，不是按钮
+ *
+ * 客户端的开关置灰**不是**安全边界（§3.4 从 1A 起就这么写着）：
+ * 直接的 HTTP 请求照样打得到 `/api/sync/push`。所以这一条与 `gameAnswer` 同款 ——
+ * 拿账号落库的 `plan` 现判一次，不够就 **403 E_TIER**。
+ *
+ * ## 401 与 403 分开回
+ *
+ * 前者是「你还没登录」，后者是「你确实没这个权限」—— 用户看到的下一步动作
+ * 完全不同（一个去登录、一个去找管理员发层级）。合并成一句「失败」等于什么也没说。
+ *
+ * ⚠️ **拉与推都要判**，不是只判推。只判推的话，「关掉同步」这件事仍然做得成，
+ *    但一个 free 用户照样能把云端**已有的**那份拉下来（那是别人的进度）。
+ */
+function syncTierGate(deps, input) {
+  var store = deps.store, cfg = deps.cfg;
+  if (!deps.account) return Promise.resolve(err(401, "E_NO_SESSION", "还没有登录"));
+  return Promise.resolve(store.getAccount(deps.account.uid)).then(function (me) {
+    if (!me || me.status === "deleted") return err(401, "E_NO_SESSION", "还没有登录");
+    var tier = planTier(me);
+    if (!gameAllowed(cfg, tier, "sync.multiDevice")) {
+      return err(403, "E_TIER", "跨设备云同步要 Pro 起才能用（当前：" + tier + "）。进度在本机一字不少，背诵不受影响。",
+        { cap: "sync.multiDevice", tier: tier, minTier: "pro" });
+    }
+    return null;
+  });
+}
+
+/**
  * pull：增量拉。
  * `since` 是客户端上次拿到的服务端时间（`serverTime`），不是「自己最后修改时间」——
  * 用服务端时间做游标，才不会被客户端时钟误差拖出「永远拉不到 / 拉到重复」。
+ *
+ * ⚠️ 权限闸（`syncTierGate`）在**频控之前**判：不够层级的人反复重试也不该
+ *    占掉别人的频控额度，而且他看到的必须是「你没这个权限」而不是「太频繁了」——
+ *    后者会让他一直重试（那是完全不同的两件事）。
  */
 function syncPull(deps, input) {
+  var store = deps.store, cfg = deps.cfg, t = deps.now();
+  var gate = syncTierGate(deps, input);
+  if (gate) return Promise.resolve(gate).then(function (bad) { return bad || syncPullInner(deps, input); });
+  return syncPullInner(deps, input);
+}
+
+function syncPullInner(deps, input) {
   var store = deps.store, cfg = deps.cfg, t = deps.now();
   if (!deps.account) return Promise.resolve(err(401, "E_NO_SESSION", "还没有登录"));
   var since = Number(input.since) || 0;
@@ -593,6 +646,12 @@ function syncPull(deps, input) {
  * 服务端只做「能确定的合并」，判不了的如实上报。
  */
 function syncPush(deps, input) {
+  var gate = syncTierGate(deps, input);
+  if (gate) return Promise.resolve(gate).then(function (bad) { return bad || syncPushInner(deps, input); });
+  return syncPushInner(deps, input);
+}
+
+function syncPushInner(deps, input) {
   var store = deps.store, cfg = deps.cfg, t = deps.now();
   if (!deps.account) return Promise.resolve(err(401, "E_NO_SESSION", "还没有登录"));
 
