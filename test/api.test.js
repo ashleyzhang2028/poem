@@ -1557,7 +1557,12 @@ async function main() {
       eq(pro1.status, 200, "Pro 打题库复习回 200");
       eq(pro1.body.cap, "quiz.review", "回的是它自己那一档能力");
       eq(pro1.body.counted, false, "3 期没有定价：**如实回 counted:false**（不假装扣费）");
-      chk(/不计入额度|定价/.test(pro1.body.note), "note 里说清为什么没计费");
+      /* ⚠️ 这一条 2026-09-17 随用户裁决改了口径：原先要 note 里说
+         「3 期还没有定价，不计入额度」，现在本站**不收款**（4 期整期取消），
+         所以该说的是「免费、不限次」而不是「还没有定价」——
+         仍要守住那句实质：**不许写成「已计入额度」**（那是假话）。 */
+      chk(/免费/.test(pro1.body.note) && !/已计入/.test(pro1.body.note),
+        "note 里说清「免费、不限次」，且不许说成已计入额度");
 
       const proFly = await POST("/api/game/answer", { kind: "fly", chars: ["月"], said: "日月之行" }, cookie);
       eq(proFly.status, 403, "Pro 打飞花令仍然 403（用户裁决：飞花令归 Max）");

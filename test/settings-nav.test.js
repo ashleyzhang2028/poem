@@ -77,11 +77,13 @@ const NAV = read('js/settings-nav.js');
         '控件 ' + sel + ' 只在「' + owner + '」页（实际：' + (pagesWithIt.join(',') || '哪一页都没有') + '）');
     });
   });
-  // 分组：四张页合起来仍是原来那六组，分类与顺序一个字没改
+  // 分组：四张页合起来是原来那六组 + 3 期新增的「打印」一组，分类与顺序一个字没改。
+  // ⚠️ `print` 那一组是**新增**的（篇目打印页，Pro · `export.paper`），
+  //    它长在「我的清单」页上 —— 要打印的正是这份清单，分两页等于让人来回搬东西。
   const titles = ['general', 'recite', 'lists', 'reader']
     .flatMap(k => [...SRC[k].matchAll(/aria-labelledby="grp-([a-z]+)"/g)].map(m => m[1]));
-  chk(titles.join(',') === 'general,recite,algo,lists,reader,play',
-    '四张页合起来仍是原六组、原顺序（实际 ' + titles.join(',') + '）');
+  chk(titles.join(',') === 'general,recite,algo,lists,print,reader,play',
+    '四张页合起来是原六组 + 打印、原顺序（实际 ' + titles.join(',') + '）');
   // 主页不再是「一堆控件里的一页」：它没有分组，只有入口清单
   chk(!/aria-labelledby="grp-/.test(SRC.index), '主页不再有设置分组（只有入口清单）');
   chk(!/id="input-username"|id="seg-stage"|id="seg-play"|id="collections-list"/.test(SRC.index),

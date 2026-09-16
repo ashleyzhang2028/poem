@@ -706,3 +706,117 @@ thead .plans-th-cap {
 .game-opt[disabled] { cursor: default; opacity: 1; }
 .game-nav { display: flex; gap: 8px; }
 .game-nav .account-btn { flex: 1 1 0; margin-top: 0; }
+
+/* ==========================================================================
+   篇目打印页（Pro · `export.paper`）
+   --------------------------------------------------------------------------
+   入口在 /settings/lists/ 的自选清单下面，与诗词详情页的工具条上（「这一篇打出来」）。
+   它是一层**就地叠层**（与古诗词大会同一套），不是新的一页 ——
+   这一件事没有自己的状态，用的就是「哪一份清单」。
+
+   ⚠️ 下面那一段 `@media print` 是这一层真正在干的事。
+      它只做三件：把页面外壳（顶栏 / 页签 / 页脚 / 按钮 / 说明字）收起来、
+      把预览那一层原样交出去、把颜色去掉（省墨，且彩色打印机上不会糊）。
+      **不重排**：纸面上的断行就是预览里的断行，也就是原文的断行。
+   ========================================================================== */
+
+.print-sheet {
+  margin-top: 10px;
+  padding: 14px 12px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+}
+/* 预览块之间画一条虚线：**这是预览的辅助线，不打印**（打印样式表里删掉它），
+   否则纸面上每一篇之间会多一道谁也不想要的横线。 */
+.print-block + .print-block {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--line-2);
+}
+.print-block-title { margin: 0; font-size: 14px; font-weight: 600; color: var(--ink); }
+.print-block-meta { margin: 2px 0 6px; font-size: 11.5px; color: var(--ink-3); }
+.print-block-body { display: block; }
+.print-row { display: block; font-size: 13.5px; line-height: 1.9; color: var(--ink); }
+.print-row-pinyin { font-size: 11.5px; line-height: 1.55; color: var(--ink-3); }
+.print-row-translation { margin-top: 6px; font-size: 12.5px; color: var(--ink-2); }
+/* 注释格线：**空行是真的空行**（行高与正文同），不是一条 1px 的下划线。
+   一条线只有 1px 高，一行手写要三四倍 —— 那种「格线」写了等于没写。 */
+.print-blank { display: block; font-size: 13.5px; line-height: 1.9; }
+
+/* 三个块开关：与设置页的开关同一套（`.print-opt` 是 `.switch` 的同一个形状） */
+.print-opt {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 10px 0;
+  cursor: pointer;
+  min-height: 32px;
+  -webkit-tap-highlight-color: transparent;
+}
+.print-opt + .print-opt { border-top: 1px solid var(--line-2); }
+.print-opt-main { display: block; min-width: 0; }
+.print-opt-name { display: block; font-size: 13.5px; font-weight: 500; color: var(--ink-2); }
+.print-opt-desc { display: block; margin-top: 3px; font-size: 11.5px; color: var(--ink-3); line-height: 1.6; }
+.print-opt-box { flex: none; }
+.print-opt .switch-track { pointer-events: none; }
+.print-blank-lines { margin-top: 10px; }
+.print-blank-lines .account-input { max-width: 120px; }
+.print-paper { justify-content: flex-start; }
+.print-paper button { flex: 0 1 auto; padding: 5px 12px; }
+.print-actions { display: flex; gap: 8px; }
+.print-actions .account-btn { flex: 1 1 0; margin-top: 0; }
+
+/* --------------------------------------------------------------- 打印 */
+
+@media print {
+  /* ① 页面外壳全部收起来：顶栏、页签、页脚、按钮、提示。
+        判据是「屏幕上那些**不是内容**的东西一件都不许上纸」——
+        判在元素上，不判在 `.app` 的某一条上（改一次结构就会漏）。 */
+  .topbar, .dock, .foot, .toast, .modal,
+  .account-btn, .account-card-title, .account-hint, .account-lead,
+  .seg, .settings-index, .account-entry-card,
+  .print-actions, .print-opt, .print-blank-lines, .print-paper,
+  .settings-groups > .settings-group > .settings-item > label,
+  .collections-panel, .poems-game-entry, .game-back, .reader-actions,
+  .gw-play, .item-recite, .item-read, .item-remove {
+    display: none !important;
+  }
+
+  /* ② 纸上只留预览那一层，且不加任何装饰（边框 / 底色 / 圆角都不省墨） */
+  html, body { background: #fff !important; margin: 0 !important; padding: 0 !important; }
+  body { color: #000; }
+  .app, .settings-page, main { display: block !important; margin: 0 !important; padding: 0 !important; max-width: none !important; }
+  .account-card {
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    break-inside: auto;
+  }
+  .print-sheet {
+    border: 0 !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  /* 预览的辅助虚线**不上纸**：它是给人看「这里是一块」的，
+     纸面上每篇之间的那一道横线只会让人以为要撕下来。 */
+  .print-block + .print-block { border-top: 0 !important; padding-top: 0 !important; margin-top: 10mm !important; }
+  .print-row, .print-blank { color: #000; }
+  .print-row-pinyin { color: #444; }
+  .print-row-translation { color: #333; }
+  .print-block-title { color: #000; }
+  .print-block-meta { color: #555; }
+
+  /* ③ 一块（一篇）**尽量不跨页**：跨页时至少要留下标题与头两行，
+        否则会出现「上一页末尾一个孤零零的标题、续页全是正文」。 */
+  .print-block { break-inside: avoid; page-break-inside: avoid; }
+  .print-block-title { break-after: avoid; page-break-after: avoid; }
+}
+
+/* 篇目打印页那一层（就地叠层，与 .poems-game 同一条规矩） */
+.poems-print { padding: 4px 0 14px; }
+.poems-print[hidden] { display: none; }

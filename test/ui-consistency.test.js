@@ -64,17 +64,38 @@ const legalCode = strip(legalCss);
  *   而 `#app` 那条里也有 max-width —— 用包含匹配就会张冠李戴。
  * 做法：先把 @media 外壳剥掉、把里面的规则提到顶层（只关心「某档是否存在这条声明」），
  * 再按顺序把「选择器组里恰好含这一条」的规则块累加。
+ *
+ * ⚠️ 同名属性只保留**最后一条**（这一步不能省）。原先的版本把每一段的声明
+ *   原样拼起来，于是 `.switch-track` 的 `width` 同时是 40px（旧段：那是轨道）
+ *   与 18px（新段：那是滑块）—— 断言按累积读，读到的是**先写的那条**，
+ *   而浏览器用的是后写的那条。真踩过：同一份样式表里出现两段同名规则之后，
+ *   「滑块 18px」的断言去读了轨道那一段的 40px，接着按 40 算行程，算出一个负数。
+ *   症状是**测试红、页面却完全正常** —— 比漏判更难查，因为没人会去怀疑读数。
+ *   留最后一条之后，「哪个值真生效」与浏览器一致，这类断言才是在判页面。
  */
 function ruleOf(src, sel) {
   const flat = src.replace(/@media[^{]+\{/g, '{');
-  let acc = '';
+  /* 全部命中片段的注释先去掉：注释里常带 `width: 40×24` 这类说明文字，
+     按 `;` 取最后一条会把注释里的半句当成声明。 */
+  const decls = [];
   const re = /([^{}]+)\{([^}]*)\}/g;
   let m;
   while ((m = re.exec(flat))) {
     const sels = m[1].split(',').map(x => x.trim());
-    if (sels.includes(sel)) acc += ';' + m[2];
+    if (!sels.includes(sel)) continue;
+    m[2].split(';').forEach(d => {
+      if (d.trim()) decls.push(d.trim());
+    });
   }
-  return acc;
+  /* 同属性留最后一条，且**保持各属性首次出现的顺序**（可读性，不影响判定） */
+  const last = new Map();
+  const order = [];
+  decls.forEach(d => {
+    const name = d.split(':')[0].trim().toLowerCase();
+    if (!last.has(name)) order.push(name);
+    last.set(name, d);
+  });
+  return order.map(n => last.get(n)).join(';');
 }
 
 /* ==========================================================================
@@ -1285,18 +1306,32 @@ PAGE_FILES.forEach(f => {
   chk(noneWriters.length <= 1,
     '除全局那条外，各页面文件里不再各写一遍 text-decoration: none（实际 ' + noneWriters.length + ' 条）');
 
-  // ③ 同步开关：HTML 用到的三个类名，样式表里必须真的存在
-  ['switch-row', 'switch-track', 'switch-input', 'switch-label'].forEach(cls => {
+  // ③ 同步开关：HTML 用到的类名，样式表里必须真的存在。
+  // ⚠️ Issue #163 之后只有**这一套**：`.switch`（整行 label）+
+  //    `.switch-input` / `.switch-track`（控制器本体）。旧的
+  //    `.switch-row` / `.switch-label` 是「透明覆盖层 + 写着关/开的状态字」
+  //    那一版的类名，HTML 里已经删掉 —— 样式表里留着只会让人以为
+  //    「还有一套控件在用它们」，下一次改尺寸就不知道该改哪一段。
+  ['switch', 'switch-track', 'switch-input'].forEach(cls => {
     chk(new RegExp('\\.' + cls + '\\s*[,{]').test(cssCode),
       '开关的 .' + cls + ' 在样式表里有规则（HTML 写了就得画出来）');
   });
+  // 反向：旧两套类名不许再出现在样式表里（注释里的名字不算）
+  chk(!/^\s*\.switch-row\s*[,{]/m.test(strip(cssCode)) &&
+      !/^\s*\.switch-label\s*[,{]/m.test(strip(cssCode)),
+    '旧的 .switch-row / .switch-label 规则已从样式表里清掉（同一个控件只剩一套类名）');
   chk(/input:checked\s*\+\s*\.switch-track/.test(cssCode),
     '开关的「开」态由 :checked + .switch-track 表达（不是靠原生 checkbox）');
   chk(/input:disabled\s*\+\s*\.switch-track/.test(cssCode),
     '开关的「未开放」态也有样式（置灰，不是原生 disabled 的样子）');
-  // 真实输入框留着（键盘 / 读屏要用），只是透明
-  chk(/opacity:\s*0/.test(ruleOf(cssCode, '.switch-input')),
-    '.switch-input 是透明覆盖层（不删 input，键盘与读屏照旧）');
+  // 真实输入框留着（键盘 / 读屏要用）——自绘版里它就是**可见的胶囊本体**
+  //（appearance: none 之后由我们自己画），所以这里判的是「不许把它藏掉」：
+  //  藏 form 控件的三种常见手法（display:none / visibility:hidden / width:0）
+  //  任一出现，键盘与读屏就一起没了。
+  const swIn = ruleOf(cssCode, '.switch-input');
+  chk(!/display:\s*none/.test(swIn) && !/visibility:\s*hidden/.test(swIn) &&
+      !/opacity:\s*0(?![.\d])/.test(swIn),
+    '.switch-input 没有被藏掉（不删 input，键盘与读屏照旧）');
   // 透明输入框与轨道必须**同尺寸**：不同尺寸就意味着「看得见的开关」与
   // 「真正接住点击 / 焦点的那块」错位 —— 点上去没反应，或焦点框画在轨道外面。
   // 判的是「两处声明的 宽 与 高 相等」，不是「等于某个具体像素」：换尺寸照样成立。
@@ -1308,8 +1343,14 @@ PAGE_FILES.forEach(f => {
   };
   const inp = sizeOf(cssCode, '.switch-input');
   const trk = sizeOf(cssCode, '.switch-track');
-  chk(!!inp.w && inp.w === trk.w && inp.h === trk.h,
-    '透明输入框与开关轨道同尺寸（' + inp.w + '×' + inp.h + '）—— 点哪儿就是哪儿');
+  /* ⚠️ 这两条判的不是「等于某个像素」，而是**「画开关的那块」与「接住点击
+     与焦点的那块」是同一个矩形**。自绘版里 `.switch-input` 本身就是轨道
+     （它画胶囊、滑块是它的紧邻兄弟 span），所以这条只剩「两者都定了宽高」
+     一个意义；上一版（透明覆盖层盖在轨道上）它守的是「两层不错位」。
+     尺寸的**同源**由旁边那条 `.switch > input { flex: none }` + 第 十 段
+     的行程断言一起守。 */
+  chk(!!inp.w && !!inp.h && !!trk.w && !!trk.h,
+    '开关的 input 与滑块都定了宽高（' + inp.w + '×' + inp.h + ' / ' + trk.w + '×' + trk.h + '）');
 }
 
 /* ==========================================================================
@@ -1383,10 +1424,14 @@ if (JSDOM) {
     { url: 'https://local.test/settings/general/' }).window.document;
   const input = doc.getElementById('toggle-sync');
   const track = doc.querySelector('.switch-track');
-  const label = doc.querySelector('.switch-label');
-  chk(!!input && !!track && !!label, '开关的 input / 轨道 / 状态字三样都在 DOM 里');
-  chk(!!doc.querySelector('label.switch-row'),
-    '三者包在同一个 <label> 里（点轨道任意处都切得动，iOS 上也是）');
+  /* Issue #163 之后开关是**一颗 input 自己画出来的**（胶囊 = input 本体、
+     滑块 = 它的紧邻兄弟 span），不再有「状态字」那一颗 span ——
+     所以这里判的是「input 与滑块两样都在 DOM 里、且真在一个 label 里」。 */
+  chk(!!input && !!track, '开关的 input / 滑块两样都在 DOM 里（状态由是否选中表达）');
+  chk(!!doc.querySelector('label.switch') &&
+      doc.querySelector('label.switch').contains(input) &&
+      doc.querySelector('label.switch').contains(track),
+    '两者包在同一个 <label.switch> 里（点轨道任意处都切得动，iOS 上也是）');
   // 顺序：input → 轨道 → 状态字。CSS 的 `input:checked + .switch-track` 靠的就是它
   chk(input.nextElementSibling === track,
     'input 紧邻轨道（`:checked + .switch-track` 这条相邻选择器才对得上）');

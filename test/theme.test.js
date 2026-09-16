@@ -750,20 +750,25 @@ chk(/data-back="\/settings\/"/.test(read('settings/general/index.html')),
 //   复习算法  决定「下次什么时候复习」（四张模型 4 选 1）
 //   阅读辅助  打开一篇时看不看得到拼音（注音总开关）
 //   朗读播放  连读时怎么念（五档档位）
-chk((SETTINGS_HTML.match(/class="settings-group"/g) || []).length === 6,
-  '四张设置页合起来仍是六组：通用 / 背诵 / 复习算法 / 我的清单 / 阅读辅助 / 朗读播放');
+/* ⚠️ 原先是六组；3 期新增了「打印」（篇目打印页，Pro · `export.paper`），
+   所以现在是**七组**。新增那一组长在「我的清单」页上 —— 要打印的正是这份清单，
+   分两页等于让用户在两张页之间来回搬东西（见 docs §5.2 与 js/print.js）。 */
+chk((SETTINGS_HTML.match(/class="settings-group"/g) || []).length === 7,
+  '四张设置页合起来是七组：通用 / 背诵 / 复习算法 / 我的清单 / 打印 / 阅读辅助 / 朗读播放');
 chk(/settings-group-title[^>]*>复习算法</.test(SETTINGS_HTML), '有「复习算法」分组标题');
 chk(/settings-group-title[^>]*>通用</.test(SETTINGS_HTML), '有「通用」分组标题');
 chk(/settings-group-title[^>]*>背诵</.test(SETTINGS_HTML), '有「背诵」分组标题');
 chk(/settings-group-title[^>]*>我的清单</.test(SETTINGS_HTML), '有「我的清单」分组标题');
 chk(/settings-group-title[^>]*>阅读辅助</.test(SETTINGS_HTML), '有「阅读辅助」分组标题');
 chk(/settings-group-title[^>]*>朗读播放</.test(SETTINGS_HTML), '有「朗读播放」分组标题');
+chk(/settings-group-title[^>]*>打印</.test(SETTINGS_HTML), '有「打印」分组标题（3 期新增）');
 // 分组的**顺序**也是分类的一部分：清单紧跟在「背诵」之后
-//（自选篇目就是跟着背诵走的），阅读 / 朗读两个偏好排在最后
+//（自选篇目就是跟着背诵走的），打印紧跟清单（打的就是这份清单），
+//阅读 / 朗读两个偏好排在最后
 {
   const order = [...SETTINGS_HTML.matchAll(/aria-labelledby="grp-([a-z]+)"/g)].map(m => m[1]);
-  chk(order.join(',') === 'general,recite,algo,lists,reader,play',
-    '六组的先后顺序为 通用 → 背诵 → 复习算法 → 我的清单 → 阅读辅助 → 朗读播放（实际 ' + order.join(',') + '）');
+  chk(order.join(',') === 'general,recite,algo,lists,print,reader,play',
+    '七组的先后顺序为 通用 → 背诵 → 复习算法 → 我的清单 → 打印 → 阅读辅助 → 朗读播放（实际 ' + order.join(',') + '）');
 }
 // 分组要真的装对东西：只给背诵用的选项不能落在「通用」里
 const generalBlock = (SETTINGS_HTML.match(/aria-labelledby="grp-general"[\s\S]*?<\/section>/) || [''])[0];
