@@ -2047,18 +2047,26 @@ function check(name, cond, extra) {
      判的都是「滑块**相对轨道**」的关系（不是绝对坐标，那会随滚动变），
      以及两态之间**真的动过**。
 
-     ⚠️ **「点得动」这件事要先满足两件与几何无关的前提**（缺了它这五条必红，
-        而红的原因与滑块位置毫无关系 —— 修过一轮才发现）：
-        · 这台设备上必须**登录着**（`sync.multiDevice` 带 `login:true`）
-        · 层级至少 **pro**（`minTier:"pro"`）
-        不满足时 `SyncStore.setEnabled(true)` 回 `E_TIER`，`bindSync()` 把勾
-        回滚（`input.checked = enabled()`），于是「点轨道真的把它打开了」永远
-        是 false、「换成深青实底」「滑块右移」跟着一起红。
-        `test/sync.test.js` 那一节是**显式 `signInPro()` 之后**才点开关的；
-        这里原先漏了这一步，种子身份是游客 free —— 一行代码没坏，断言却在
-        戳一个它自己没准备好的前提。
-        下面直接借用页面自己的 `AuthCore` 造一份真会话（不手搓
-        `poem_auth_v1`：内部形状一改，假种子还「像」是对的）。 */
+     ⚠️ **「点得动」这件事有两个前提，都不是几何问题**（缺了它们这几条必红，
+        而红的原因与滑块画在哪毫无关系 —— 修过两轮才理清）：
+
+       ① **这台设备上必须登录着、且至少 pro**（`sync.multiDevice` 带
+          `login:true` + `minTier:"pro"`）。不满足时 `SyncStore.setEnabled(true)`
+          回 `E_TIER`，`bindSync()` 把勾回滚（`input.checked = enabled()`），
+          于是「点轨道真的把它打开了」永远是 false、「换成深青实底」「滑块右移」
+          跟着一起红。`test/sync.test.js` 那一节是**显式 `signInPro()` 之后**才点
+          开关的；这里原先漏了这一步，种子身份是游客 free —— 一行代码没坏，
+          断言却在戳一个它自己没准备好的前提。下面借用页面自己的 `AuthCore`
+          造一份真会话（不手搓 `poem_auth_v1`：内部形状一改，假种子还「像」是对的）。
+
+       ② **点之前得把这颗开关从底部页签底下滑出来**。登录后「账号」那一栏多一行
+          「还差：…」，整页因此变长；而这一颗开关就在它下面 —— 页面一长，
+          开关就可能落进 `.dock`（`position:fixed`）底下。`page.click` 按元素
+          **几何中心**派发鼠标事件，中心落在页签上时接住事件的是 `.dock-inner`：
+          开关一次都没被点到，而这一刻几何断言**全绿**（滑块确实画在轨道里，
+          只是点不着）。真人用拇指是先滑上来再点的 —— 下面用 `scrollIntoView`
+          还原那一下，并单判一条命中测试盯着它（别指望开关恰好停在页签上方：
+          「还差」那句话多折一行，它就整体下移一格）。 */
   {
     const { page } = await freshPage();
     await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
@@ -2150,10 +2158,43 @@ function check(name, cond, extra) {
         off.knob.dx === 0, '位移 ' + off.knob.dx + 'px');
     }
 
+    /* ⚠️ **先把开关从底部页签底下挪出来**。登录之后「账号」那一栏多一行
+       「还差：…」，整页因此长高，而这一颗开关正好在它下面 ——
+       页面一长，开关就可能落到 `.dock`（`position:fixed`，屏幕底部）下面。
+       `page.click` 是按元素**几何中心**派发鼠标事件的：中心落在页签上时，
+       接住事件的是 `.dock-inner`，开关一次都没被点到（实测
+       `elementFromPoint` 回 `dock-inner`，而这一刻几何断言全绿 ——
+       滑块确实画在轨道里，只是**点不着**）。
+       真人用拇指是先把页面滑上来再点的，这里用 `scrollIntoView` 还原那一下。
+       ⚠️ 这一条依赖「页面上方那一行说明有多长」：将来能力表多一条、「还差」
+         那句话多折一行，开关就会再往下走一格。所以**不能**靠它恰好停在页签
+         上方，得显式滚上来 —— 见下面那条命中测试。
+       ⚠️ 别用 `{ force: true }` 绕过 —— 那等于把「点不到」从断言里删掉，
+         而这一节要守的恰恰是「这颗开关真的点得动」。 */
+    await page.evaluate(() => {
+      const t = document.querySelector('.switch-toggle');
+      if (t) t.scrollIntoView({ block: 'center' });
+    });
+    await new Promise(r => setTimeout(r, 300));
+
     // 真点一下（滑块是伪元素，点的是轨道那颗 span），再量一次
     /* ⚠️ 点到就说明轨道真的画出来了；点不到（选择器落空）本身就是回归 ——
        上一版的病根正是「轨道不是那颗 span」，所以这里不能让它抛出去把
-       整个文件打断：判红，然后继续跑完剩下的检查。 */
+       整个文件打断：判红，然后继续跑完剩下的检查。
+       ⚠️ 另外先单独判一次**命中测试**：几何中心必须真的落在轨道上。
+          「被底部页签盖住」那种情况会在这里现形（回的是别的元素），
+          不必等 `page.click` 点不动了再去猜是为什么 —— 上面那一滚就是为它准备的。 */
+    const hit = await page.evaluate(() => {
+      const t = document.querySelector('.switch-toggle');
+      if (!t) return null;
+      const r = t.getBoundingClientRect();
+      const el = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
+      return { y: Math.round(r.y), hitCls: el ? (el.className || el.tagName) : null };
+    });
+    check('同步开关：轨道几何中心没有被别的元素盖住（点得着）',
+      !!hit && /switch-toggle/.test(String(hit.hitCls)),
+      hit ? ('轨道 y=' + hit.y + '，命中 ' + hit.hitCls) : 'no switch');
+
     let clicked = true;
     try { await page.click('.switch-toggle', { timeout: 5000 }); }
     catch (e) { clicked = false; }
