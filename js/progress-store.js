@@ -14,6 +14,26 @@
  * | 设备域 | `poem_device_prefs_v1` ｜ 字号 / 对齐 / 连读档 / 播放模式 / iOS 引导条 | ❌ |
  * | 已读域 | 六部集子各一把 `poem_*_read_v1` | ✅ |
  *
+ * ## 子档案（Issue #159 · 用户 2026-09-17 裁「进度也分家」「Free 档给 1 个昵称」）
+ *
+ * 上面那张表回答「哪些数据跨设备一致」，**没有回答「哪一份进度是谁的」**。
+ * 一个家长两个孩子的场景（同一台平板上午小明读、下午小红读）到了之后，
+ * 需要第二把尺子：**哪些数据属于「孩子自己的东西」**。
+ *
+ * | 跟子档案走 | 不跟 |
+ * |---|---|
+ * | 进度域 / 账号域（含设置）/ 已读域 | 设备域（字号 / 对齐 / 连读档 / 注音开关 / 上次搜的词） |
+ *
+ * 落地方式是**改 `Physical.raw` 一处**：所有读盘（进度、设置、设备、搜索词、
+ * 六把已读键）都经它，于是「换成哪个孩子的键」只在一处决定 ——
+ * 而不是在 500 行调用点里各判一次。键的映射规则在 `js/family.js`（唯一一处）。
+ *
+ * ⚠️ 三个不许含糊的边界：
+ *    1. **没分家时物理键一个字节都不变** —— 只用一个档案的用户，
+ *       升级前后盘上完全一样（`Family.currentId()` 取不到 → 无后缀）
+ *    2. **设备域不换键** —— 给小红调了字号、切回小明又变回去，那是错的
+ *    3. **引擎缺席时不报错、按老键读写** —— 老缓存里的旧页面照常能背书
+ *
  * ⚠️ `grade/term/scope/dailyCount/algo` **仍在老键 `poem_recite_settings_v1` 里** ——
  * 用户裁决它们属账号域，而账号域正好沿用这个旧键名（最小改动、不动 500 行调用点）。
  * 这一期动的**只有 `helper` 一件**：它从设置对象搬到 `poem_device_prefs_v1`
@@ -99,13 +119,25 @@
     backing = null; // 隐私模式下取 localStorage 本身就会抛
   }
 
+  /**
+   * **读盘唯一入口** —— 子档案分家就落在这里。
+   *
+   * `key` 是逻辑键（进度 / 账号 / 设备 / 已读六把之一）；
+   * 返回的是**当前子档案的那一份**。设备域与认不出来的键原样返回
+   * （判据只有一处：`Family.isPerChild()`，本文件不再抄一份清单）。
+   */
   function raw(key) {
     if (!backing) return null;
     try {
-      return backing.getItem(key);
+      return backing.getItem(kk(key));
     } catch (e) {
       return null;
     }
+  }
+
+  /** **写盘的时候**那把物理键是什么（与 `raw` 同一套规则，写成一处才不会漂移） */
+  function physKey(key) {
+    return kk(key);
   }
 
   /**
@@ -115,7 +147,7 @@
   function put(key, text) {
     if (!backing) return false;
     try {
-      backing.setItem(key, text);
+      backing.setItem(physKey(key), text);
       return true;
     } catch (e) {
       return false;
@@ -125,7 +157,7 @@
   function drop(key) {
     if (!backing) return false;
     try {
-      backing.removeItem(key);
+      backing.removeItem(physKey(key));
       return true;
     } catch (e) {
       return false;
@@ -154,7 +186,14 @@
 
   /**
    * 把共享键拼成「当前这个孩子自己的键」。
+   *
    * 拼法只有一处（`Family.keyFor`）—— 本文件只转发，不自己实现。
+   *
+   * ⚠️ **只许在 `raw` / `physKey` 这一层调用**：那两处是读写的唯一入口，
+   *    其余所有方法（`allProgress` / `saveProgress` / `readMap` / `setRead`…）
+   *    一律交**逻辑键**，由入口统一换算。
+   *    在调用点再拼一次的症状不是报错，是**静默写进一把双后缀的键**
+   *    （`…_v1::f-x::f-x`）—— 读的时候用的是单后缀那把，于是「写了但读不到」。
    */
   function kk(key) {
     var F = familyMod();
@@ -207,11 +246,11 @@
      所以它不能是「通用 KV」，得收在这里一处 */
 
   function allProgress() {
-    return readObject(kk(KEYS.progress));
+    return readObject(KEYS.progress);
   }
 
   function saveProgress(map) {
-    return put(kk(KEYS.progress), JSON.stringify(map || {}));
+    return put(KEYS.progress, JSON.stringify(map || {}));
   }
 
   function pruneUnknown(knownIds) {
@@ -233,7 +272,7 @@
     /* 账号域设置**跟着孩子分家**（一年级和三年级的年级/数量显然不同）。
        兼容读：本机那份找不到时，回落到「没有子档案时」那一份 ——
        否则老用户升级后猛然变成「一年级 · 5 首」，而他明明设过三年级。 */
-    var stored = readObject(kk(KEYS.settings));
+    var stored = readObject(KEYS.settings);
     if (!Object.keys(stored).length) stored = readObject(KEYS.settings);
     var out = pick(stored, FIELDS.settings, DEFAULTS);
     /* 兼容读：老键里那份 `username` 仍是各页在读的镜像，照旧透出（见 js/avatar.js） */
@@ -256,7 +295,7 @@
       clean.helper = s.helper;                      // 镜像：老键里留一份
       put(KEYS.device, JSON.stringify({ v: 1, helper: s.helper }));
     }
-    return put(kk(KEYS.settings), JSON.stringify(clean));
+    return put(KEYS.settings, JSON.stringify(clean));
   }
 
   /** 改其中几个字段（读改写） */
@@ -293,7 +332,7 @@
     /* helper() 读老键时用的是 readObject(KEYS.settings).helper —— 这里改的是同一个字段 */
     var legacy = readObject(KEYS.settings);
     legacy.helper = v;
-    put(KEYS.settings, JSON.stringify(legacy));
+    put(KEYS.settings, JSON.stringify(legacy));   // 走 physKey：镜像落在**当前子档案**的设置里
     return ok;
   }
 
@@ -416,7 +455,7 @@
         把别的孩子的进度一起清掉，是同一个老 bug 换了个形状
         （症状：「我只想清小明的，小红的也没了」）。 */
   function clearProgress() {
-    return drop(kk(KEYS.progress));
+    return drop(KEYS.progress);
   }
 
   window.ProgressStore = {
@@ -464,26 +503,31 @@
     /* 已读域：六把键**不合并不改名**，这里只是读写一处收敛。
        ⚠️ 多子档案之后**按当前孩子拼后缀**（读没读过是孩子自己的事）——
           拼法仍然只有一处（kk → Family.keyFor），调用点一个字都不用改。 */
-    readMap: function (key) { return readObject(kk(key)); },
+    readMap: function (key) { return readObject(key); },
+    /** 整份写回（`js/reader-core.js` 的已读用它 —— 它先读整张 map、改一条、写回）。
+        与 `setRead` 是同一个语义的两个粒度：单条改、整份改。 */
+    setReadMap: function (key, map) { return put(key, JSON.stringify(map || {})); },
     setRead: function (key, id, val) {
-      var k = kk(key);
-      var m = readObject(k);
+      var m = readObject(key);
       if (val) m[id] = true; else delete m[id];
-      return put(k, JSON.stringify(m));
+      return put(key, JSON.stringify(m));
     },
 
     /* 备份 */
     exportJSON: exportJSON,
     importJSON: importJSON,
 
-    /* 注入存储：只为测试（node 里没有 window.localStorage）。传 null 复位 */
+    /* 子档案（Issue #159）：当前那个孩子的键长什么样。
+       ⚠️ 这是给**测试与诊断**用的读数，页面不许拿它拼键名（键映射只有 family.js 一处）。 */
+    physKey: physKey,
+
+    /* 注入：存储（测试用；传 null 复位） */
     useStore: function (store) { backing = store || null; },
     reset: function () {
       try { backing = typeof window !== "undefined" ? window.localStorage : null; } catch (e) { backing = null; }
     },
     /** 当前挂着的存储（测试用；也是「隐私模式下不可用」的判据） */
     store: function () { return backing; },
-
     /* 家庭子档案（3 期 P1）：这一层只提供「当前该读哪把键」的出口，
        名册 / 切换 / 上限一律在 js/family.js —— 这里不实现第二套。 */
     childId: childId,

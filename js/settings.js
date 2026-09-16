@@ -86,6 +86,9 @@
     saveSettings();
     const A = window.Avatar;
     if (A && typeof A.saveNickname === "function") {
+      /* ⚠️ 名册是正主：`Avatar.saveNickname` 自己会把名字收进**当前子档案**
+         （`write` → `saveToChild` → `Family.rename`）。本页不再自己收一遍 ——
+         收两遍的时机一旦对不上，症状是「切回来名字退回改名之前那个」。 */
       try { A.saveNickname(window.localStorage, clean); } catch (e) { /* 隐私模式：老键已写 */ }
     }
   }
@@ -1381,7 +1384,10 @@
       return;
     }
     renderAvatar();
-    // 顶栏那枚印是 chrome.js 一次画好的，不重画就要刷新页面才看得到
+    /* ⚠️ 印跟着当前子档案走：`Avatar.setAvatar` 自己会把它收进名册
+       （`saveToChild` → `Family.setAvatar`，见 avatar.js 文件头）——
+       本页不再自己写第二遍，也不自己拼键名。
+       顶栏那枚印是 chrome.js 一次画好的，不重画就要刷新页面才看得到 */
     if (window.SiteChrome && window.SiteChrome.refreshUser) window.SiteChrome.refreshUser();
     showToast("头像印记已更新");
   }

@@ -358,8 +358,13 @@ console.log('\n=== 七、设置页接线与收口 ===');
   const psSrc = read('js/progress-store.js');
   chk(/F\.keyFor\(key, pid\)/.test(psSrc), 'progress-store 的拼键走 Family.keyFor（不自己拼）');
   chk(/function kk\(key\)/.test(psSrc), '引擎只有一个 kk() 出口在拼键');
-  chk(/clearProgress[\s\S]{0,300}drop\(kk\(KEYS\.progress\)\)/.test(psSrc),
-    'clearProgress 只清**当前孩子**那一份');
+  /* ⚠️ 断言的是**语义**（只清进度那一把键），不是字面写法：
+     `kk()` 只在 `raw` / `physKey` 这两个读写入口调用一次，
+     调用点一律交**逻辑键** —— 在调用点再拼一次会写成双后缀键
+     （`…_v1::f-x::f-x`），症状是「写了但读不到」（同步的 updatedAt 那条顶回来的）。 */
+  chk(/clearProgress[\s\S]{0,200}drop\(KEYS\.progress\)/.test(psSrc),
+    'clearProgress 只清**当前孩子**那一份（清的是逻辑键，后缀由读写入口统一拼）');
+  chk(!/kk\(kk\(/.test(psSrc), '引擎里没有双拼（kk(kk(...))）—— 后缀只拼一次');
 }
 
 /* ==========================================================================

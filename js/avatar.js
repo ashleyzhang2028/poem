@@ -357,6 +357,44 @@
       ' title="' + esc(d.label) + '"' + size + '>' + esc(d.char) + "</span>";
   }
 
+  /**
+   * 画**指定一份**档案的印（不是盘上那一份）。
+   *
+   * 为什么需要它：子档案列表要一次画 N 枚印，而 `display()` 读的是「当前那份」——
+   * 用它画出来会 N 枚全一样（都是当前那个孩子的印）。
+   * 回落顺序与 `display()` 逐条一致：选的字 → 昵称首字 → 默认「诗」；
+   * 色：存的色 → 默认朱砂。
+   */
+  function displayOf(prof, opts) {
+    var o = opts || {};
+    var p = prof && typeof prof === "object" ? prof : {};
+    var av = normAvatar(p.avatar);
+    var nick = String(p.nickname == null ? "" : p.nickname).trim().slice(0, 12);
+    var fromNick = firstCharOf(nick);
+    var char = av.char || fromNick || DEFAULT_CHAR;
+    var source = av.char ? "chosen" : (fromNick ? "nickname" : "default");
+    var ink = av.ink || DEFAULT_INK;
+    var srcText = source === "chosen" ? "你选的字"
+      : (source === "nickname" ? "取自昵称首字" : "默认字");
+    return {
+      char: char, ink: ink, source: source, nickname: nick,
+      isDefaultName: !nick,
+      bg: INKS[ink].bg, fg: INKS[ink].fg,
+      label: (o.labelPrefix || "头像：") + char + "字印 · " + INKS[ink].name + "（" + srcText + "）"
+    };
+  }
+
+  /** 把一份档案的印渲染成 HTML（与 `html()` 同结构，只是数据源不是盘上那份） */
+  function htmlFor(prof, opts) {
+    var o = opts || {};
+    var d = displayOf(prof, o);
+    var cls = "seal-avatar" + (o.cls ? " " + String(o.cls) : "");
+    var size = o.size ? ' style="--seal-size:' + Number(o.size) + 'px;background:' + d.bg + ';color:' + d.fg + '"'
+      : ' style="background:' + d.bg + ';color:' + d.fg + '"';
+    return '<span class="' + cls + '" role="img" aria-label="' + esc(d.label) + '"' +
+      ' title="' + esc(d.label) + '"' + size + '>' + esc(d.char) + "</span>";
+  }
+
   function esc(s) {
     return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
@@ -384,7 +422,7 @@
     nickname: nickname, setNickname: setNickname,
     saveNickname: saveNickname, clearLegacyNickname: clearLegacyNickname,
     avatar: avatar, setAvatar: setAvatar, resetAvatar: resetAvatar,
-    display: display, html: html, esc: esc,
+    display: display, displayOf: displayOf, html: html, htmlFor: htmlFor, esc: esc,
     defaultBacking: defaultBacking
   };
 });

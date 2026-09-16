@@ -482,8 +482,19 @@
      ⚠️ 剩下的 readMap / isRead / setRead 是**存储**，与这枚读数无关，照旧保留
         （列表的已读标记、/progress/ 总览、同步都读它）。 */
 
-  /* ---------------- 进度存储（每部集子一份，互不干扰） ---------------- */
+  /* ---------------- 进度存储（每部集子一份，互不干扰） ----------------
+   *
+   * ⚠️ 读写**经 `ProgressStore`**（而不是直接 `localStorage`）：已读是「孩子自己的东西」，
+   *    要跟着**子档案**分家（Issue #159：一个家长多个孩子各背各的）。
+   *    键的映射只在 `js/family.js` 一处决定，本文件只交出逻辑键名 `W.readStore`。
+   *    引擎缺席（老缓存 / 隐私模式）时退回直接读写那一把键 —— 行为与分家前一致。 */
+  function RS() {
+    return typeof window !== "undefined" && window.ProgressStore ? window.ProgressStore : null;
+  }
+
   function readMap() {
+    var ps = RS();
+    if (ps) { try { return ps.readMap(W.readStore) || {}; } catch (e) { /* 退回直接读 */ } }
     try {
       var v = JSON.parse(localStorage.getItem(W.readStore) || "{}");
       return v && typeof v === "object" ? v : {};
@@ -504,7 +515,9 @@
     } else {
       delete map[id];
     }
-    localStorage.setItem(W.readStore, JSON.stringify(map));
+    var ps = RS();
+    if (ps && ps.setReadMap) ps.setReadMap(W.readStore, map);
+    else localStorage.setItem(W.readStore, JSON.stringify(map));
     // 各挂载点各自维护一份内存里的已读快照：同时挂载的其它集子（搜索页）
     // 才能在自己重绘时拿到最新结果，而不必回头再读一遍 localStorage。
     window.dispatchEvent(new CustomEvent("reader-read-change", { detail: { store: W.readStore, id: id, read: !!val } }));

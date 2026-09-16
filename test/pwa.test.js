@@ -1262,17 +1262,39 @@ function check(name, cond, extra) {
       /* 用户这一轮的反馈：「搜索页面，当用户 focus 在搜索框，请把搜索框向上挪到
          标题栏下方。下拉列表也跟着上去。……焦点在搜索框时，现在框 border 是黑色，
          不好看，请调整。」
-         三件事：框在顶栏下方（不是视口中央）、候选下拉紧跟着框（不是留在原处）、
-         描边是天青主色（不是浏览器默认那支近黑的 ring）。
-         ⚠️ 这三件事的前缀都是「聚焦时」，所以这一段必须**先真的聚焦**再量。
-            上一版这里靠的是页面自己「进页即聚焦」，但那一条后来按用户要求撤了
-            （Issue #163：「进搜索页不要立刻聚焦，手机键盘自动弹出来了，烦人」），
-            而撤它的那次改动没有同步改这一段 —— 于是这里量的仍是「没聚焦的静止态」：
-            框顶落在页面中心（336px）、描边是没聚焦时的边框色，
-            两条断言便一直红着（与贴顶 / 描边的实现本身无关）。
-            现在把「聚焦」显式写出来：那正是用户这句话的前提，
-            也让这一段不再依赖「页面是否自动聚焦」这个会变的产品决定。 */
+         ⚠️ Issue #163 之后进页**不再**自动聚焦（用户原话：「进入搜索页时不要
+            立刻聚焦，手机键盘自动弹出来了，烦人」）—— 现在量的是「静止态」：
+            框压在页面中心、不聚焦、不贴顶。想让框升上去，得**用户自己**聚焦
+            （敲 `/` 或点一下框），所以这里先坐实静止态，再显式聚焦去量聚焦态。 */
       {
+        const restState = await sp.evaluate(() => {
+          const inp = document.querySelector('.search-hero .search-input');
+          const hero = document.getElementById('search-hero');
+          const hr = hero.getBoundingClientRect();
+          const ir = inp.getBoundingClientRect();
+          return {
+            cls: hero.className,
+            focused: document.activeElement === inp,
+            inputTop: +ir.top.toFixed(1),
+            // 「居中」是相对**这一段**（.search-hero）说的，不是相对整屏：
+            // 那一段的上下还有顶栏与底部页签，它们不参与居中。
+            offset: +((ir.top + ir.height / 2) - (hr.top + hr.height / 2)).toFixed(1)
+          };
+        });
+        check('iPhone 搜索页：进页停在静止态（不自动聚焦、框压在页面中心）',
+          !restState.focused && !/search-active/.test(restState.cls) &&
+          Math.abs(restState.offset) <= 2 && restState.inputTop > 200,
+          JSON.stringify([restState.cls, restState.focused, restState.inputTop, restState.offset]));
+
+        // 用户自己发起的聚焦（点一下框 / 敲 /）—— 这才是「聚焦态」的正主。
+        // ⚠️ 这一段量三件事：框在顶栏下方（不是视口中央）、候选下拉紧跟着框
+        //    （不是留在原处）、描边是天青主色（不是浏览器默认那支近黑的 ring）。
+        //    三件事的前缀都是「聚焦时」，所以必须**先真的聚焦**再量。
+        //    上一版靠的是页面自己「进页即聚焦」，那一条后来按用户要求撤了
+        //    （Issue #163：「进搜索页不要立刻聚焦，手机键盘自动弹出来了，烦人」），
+        //    而撤它的那次改动没同步改这一段 —— 于是这里量的仍是「没聚焦的静止态」，
+        //    两条断言便一直红着（与贴顶 / 描边的实现本身无关）。
+        //    现在把「聚焦」显式写出来：那正是用户这句话的前提。
         await sp.focus('#gw-search');
         await new Promise(r => setTimeout(r, 250));
         const focusState = await sp.evaluate(() => {
@@ -1679,9 +1701,10 @@ function check(name, cond, extra) {
       await sp.goto(base + 'search/', { waitUntil: 'load' });
       await new Promise(r => setTimeout(r, 600));
 
-      // ⑥ 这一轮的四态收尾（用户这一轮点名的四句话，逐条量渲染后的位置）：
-      //    · 有内容时失焦 → 框**仍停在页顶**（「当有搜索内容存在时，搜索框停留在页面顶部」）；
-      //    · 清空内容 + 失焦 → 框回到页面中心；
+      // ⑥ 这一轮的状态收尾（用户这一轮点名的几句话，逐条量渲染后的位置）：
+      //    · 聚焦 → 框升到顶栏下方（用户自己点框 / 敲 `/`，见 #163：不再自动聚焦）；
+      //    · 失焦 → 框回到页面中心（⚠️ #163 作废了「有内容就停在页顶」那一条）；
+      //    · 清空内容 + 失焦 → 仍回到页面中心；
       //    · 点空白地方 → 候选下拉消失。
       /* ⑦ 本轮（Issue #122）第一条：聚焦后框**上下等距**。
          用户原话：「搜索框和上下元素间隔一致，请以现在下面的间隔为准，
@@ -1787,6 +1810,12 @@ function check(name, cond, extra) {
         JSON.stringify([r1.clsFocused, r1.topFocused, r1.focusedFlag]));
       // 「回到页面中心」= 框重新压在 .search-hero 这一段的垂直中线上
       // （0 表示正中；hero 里框是绝对定位 top: 50% - 半盒高，所以偏差该在 1px 内）
+      // ⚠️ Issue #163：贴顶只认「框里真的有焦点」，清空 + 失焦就回中，
+      //    **框里还有没有内容都一样**（旧断言守的「有内容仍停在页顶」
+      //    正是被 #163 作废的那一条）。
+      // ⚠️ 这一段与上一个 focus 块是**同一次 evaluate**：这里的
+      //    `clsWhenEmpty` / `topWhenEmpty` 就是「清空 + 失焦」那一刻的读数，
+      //    不必再做一遍 blur —— 所以只有一个回中断言，不重复。
       check('iPhone 搜索页：清空内容且没有焦点后，搜索框回到页面中心',
         !/search-active/.test(r1.clsWhenEmpty) && !r1.focusedWhenEmpty &&
         Math.abs(r1.centeredOffset) <= 2 &&
