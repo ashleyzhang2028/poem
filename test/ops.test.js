@@ -376,7 +376,7 @@ console.log("\n=== 十、3 期那三件：口径写清了，而且**不许偷偷
 }
 
 console.log("\n=== 九、客户端收下这一份，但**不参与判权**、**不落盘** ===");
-{
+const section9 = (async () => {
   const M = require(path.join(ROOT, "js/account-api.js"));
   const E = require(path.join(ROOT, "js/entitlement.js"));
   const A = require(path.join(ROOT, "js/auth-core.js"));
@@ -408,7 +408,8 @@ console.log("\n=== 九、客户端收下这一份，但**不参与判权**、**�
 
   M.reset();
   const beforeKeys = Object.keys(backing.raw()).slice().sort();
-  return api.refreshMe().then(res => {
+  const res = await api.refreshMe();
+  {
     eq(res.ok, true, "refreshMe 拿到答案");
     const ch = api.channel();
     chk(!!ch, "开通状态被如实收下");
@@ -421,12 +422,80 @@ console.log("\n=== 九、客户端收下这一份，但**不参与判权**、**�
     chk(dumped.indexOf("sendgrid") < 0, "开通状态**没有落盘**（缓存一份必然与服务端真实状态漂移）");
     eq(E.identity({ backing: backing, authStore: store }).tier, "pro", "层级照旧落到权益层（与开通状态无关）");
     eq(E.identity({ backing: backing, authStore: store }).tierSource, "server", "来源仍是「服务器判定」");
+  }
+})().catch(e => {
+  /* 异步块自己出错时只记一次失败（退出码同样留到最末统一出） */
+  console.error("测试自身抛异常（通常是环境问题）：", e);
+  fails++;
+});
 
-    console.log("");
-    if (fails) { console.log("❌ 开通自检 / 配置清单测试 " + fails + " 项失败"); process.exit(1); }
-    console.log("🎉 开通自检 / 配置清单测试全部通过");
-  }).catch(e => {
-    console.error("测试自身抛异常（通常是环境问题）：", e);
-    process.exit(1);
-  });
+
+console.log("\n=== 十一、待做清单（docs/todo.md）是唯一一处「现在不做、以后做」 ===");
+{
+  /* 用户 2026-09-18 在 Issue #159 里定：
+       「把短信登录放在 docs/todo.md, 现在不做。
+        任何以后做的都放这里，包括微信小程序版等等。」
+
+     这一节守的就是那件字面上的事：**那份文件真的存在、真的记了那两条、
+     而且不许被写成排期承诺**（写成「即将上线」正是本项目最恨的假话）。
+     同一条纪律的另一半：**已经裁掉的事不许搬进去** ——
+     搬进去就成了「以后要做」的另一种说法（收费 / AI 讲解 / 集子整本导出都不许出现）。 */
+  const exists = fs.existsSync(path.join(ROOT, "docs/todo.md"));
+  chk(exists, "docs/todo.md 存在（唯一一处记「以后做」的文件）");
+
+  if (exists) {
+    const todo = read("docs/todo.md");
+
+    /* ① 用户点名要放进去的两条，一条都不许少 */
+    has(todo, "短信登录", "记了「短信登录」");
+    has(todo, "微信小程序", "记了「微信小程序版」");
+
+    /* ② 「现在不做」这件事要写明白 —— 不是「即将上线」。
+       ⚠️ 判据要落在**条目表**（第 1 节）上，不能整篇正则扫：
+       本文档正文里**必然出现**这几个词（它正是在写「不许这么说」这条纪律），
+       整篇一扫就会把「引用禁语」判成「用了禁语」—— 那是测试自己读数错。 */
+    const secRows = todo.slice(todo.indexOf("## 1. 待做条目"), todo.indexOf("## 2. 明确**不在**这份文件里的"));
+    chk(!/即将上线|敬请期待|马上就来|马上就好/.test(secRows),
+      "待做条目表里不写「即将上线」这类提前承诺（它是「不做」，不是「在做」）");
+    has(todo, "现在不做", "todo.md 写明当下的状态是「现在不做」");
+    has(todo, "没有日期、没有工期", "todo.md 写明这里的条目没有日期、没有工期");
+
+    /* ③ 那条最容易被写丢的纪律：这里没有日期、没有工期 */
+    chk(!/\d{4}-\d{2}-\d{2}\s*[~至到]\s*\d{4}/.test(todo),
+      "todo.md 不给条目排日期（排期是 §5 的事，这里只记状态）");
+
+    /* ④ 已裁掉的事不许搬进来（搬进来 = 「以后要做」的另一种说法） */
+    const sec1 = secRows;
+    chk(sec1.indexOf("收费标准") < 0 && !/^\|\s*\d+\s*\|[^|]*收费/m.test(sec1),
+      "「收费」不在待做条目表里（4 期整期取消，不许当成以后要做）");
+    chk(sec1.indexOf("AI 讲解") < 0 && sec1.indexOf("纠音") < 0,
+      "「AI 讲解 / 纠音」不在待做条目表里（已从能力表删除）");
+    chk(!/整本导出|全站批量导出/.test(sec1),
+      "集子整本导出不在待做条目表里（产品判断：不做）");
+
+    /* ⑤ 两份主文档都要指向它 —— 三处口径只有一处是状态源 */
+    ["docs/architecture.md", "docs/auth-design.md"].forEach(f => {
+      has(read(f), "docs/todo.md", f + " 指向 docs/todo.md");
+    });
+    has(read("docs/auth-design.md").slice(0, 4000), "docs/todo.md",
+      "auth-design.md 头部就指向（别让人翻到 §8 才看见）");
+    has(read("docs/architecture.md").slice(0, 4000), "docs/todo.md",
+      "architecture.md 头部就指向");
+
+    /* ⑥ 短信那一节自身也要挂上这条指引（它是最容易被当成「欠着」的一节） */
+    has(read("docs/auth-design.md"), "todo.md) 第 1 条",
+      "auth-design.md §8 短信那一节挂上了 todo.md 的指引");
+
+    /* ⑦ 不是 SW 预缓存资源：它是给人看的文档，不是给浏览器下载的页面 */
+    const sw = read("sw.js");
+    chk(sw.indexOf("docs/todo.md") < 0, "todo.md 不进 sw.js 预缓存");
+  }
+
 }
+
+/* 末节收口：此刻所有同步断言都已跑完，等 §九 那个异步块收尾再出退出码 */
+section9.then(() => {
+  console.log("");
+  if (fails) { console.log("❌ 开通自检 / 配置清单测试 " + fails + " 项失败"); process.exit(1); }
+  console.log("🎉 开通自检 / 配置清单测试全部通过");
+});

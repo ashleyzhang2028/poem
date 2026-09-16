@@ -132,7 +132,9 @@ python3 -m http.server 8080  # 或 Python 3
 │   └── _lib/                           # 业务内核（core.js）+ 配置 / 存储 / 会话 /
 │                                       #   身份 / 发信适配层 / schema.sql
 ├── docs/                   # 设计文档（architecture.md：最终架构与 0/1 期排期；
-│                           #   auth-design.md：账号 / 登录 / 权益分层）
+│                           #   auth-design.md：账号 / 登录 / 权益分层；
+│                           #   todo.md：**现在不做、以后做**的唯一一处，
+│                           #   短信登录 / 微信小程序版等都记在那里）
 ├── .env.example            # 服务端环境变量模板（**由清单生成**，见「开通自检」）
 └── test/                   # 测试（见下）
 ```
@@ -512,7 +514,8 @@ npm run env:example > .env.example    # 生成可直接粘贴的模板
 
 架构与排期的全文在 `docs/architecture.md`；「用邮箱登录」的流程细节在
 `docs/auth-design.md`，配套的纯逻辑内核是 `js/auth-core.js`（零 DOM 依赖，
-可在 Node 里直接跑）。
+可在 Node 里直接跑）。**「现在不做、以后做」的条目另有一份 `docs/todo.md`**
+（短信登录真开通、微信小程序版等）—— 那是唯一一处，别把「以后做」读成「快好了」。
 
 | 地址 | 页名 | 做什么 |
 |---|---|---|
