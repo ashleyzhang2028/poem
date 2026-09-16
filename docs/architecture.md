@@ -5,7 +5,7 @@
 > 结论压成**一张架构图 + 一份排期表 + 一组不可退让的边界**。
 >
 > 关联：Issue #132、`docs/auth-design.md`（账号与邮箱登录，细节不在此重复）。
-> 当前 SW 缓存版本：`poem-app-v134`。
+> 当前 SW 缓存版本：`poem-app-v135`。
 > **「现在不做、以后做」的条目另有一份**：[`docs/todo.md`](todo.md) ——
 > 那是唯一一处（短信登录真开通、微信小程序版、微信登录、
 > 头像上云、国内 CDN、额度真限额）。本文写的是**已排期**的顺序，两者别混。
@@ -1054,13 +1054,31 @@ C 只影响「这一件」（发不出真信），D 是**可用性兜底**（不
 所以 D 的两条定时任务写在 `.cnb.yml`（`crontab:`，最小间隔 5 分钟，
 时区 `Asia/Shanghai`），探活的判定口径不变（必须打到数据库、必须每 5 天）。
 
+**探活的请求头（2026-09-17 修）**：`apikey` 头要填的是**密钥本身**，不是
+`SUPABASE_URL`。原先写的是 `-H "apikey: $SUPABASE_URL"` —— 把一个 URL 当 key
+发出去，Supabase 一律回 **401**。这条的杀伤力不在「探活红」，在**它看起来像
+密钥仓库没配好**：症状是「密钥明明注入了，探活却天天 401」，于是下一个人会
+反复去查密钥仓库，而真正要改的是这一行。PostgREST 认两个头，同一个
+service_role key 两处都要带：
+
+```
+-H "apikey: $SUPABASE_SERVICE_KEY" -H "Authorization: Bearer $SUPABASE_SERVICE_KEY"
+```
+
+**备份还要第三个值 `SUPABASE_DB_URL`**：它**不能在控制台直接复制** ——
+去 Project Settings → Database → Connection string 取模板，再把
+`[YOUR-PASSWORD]` 整体换成数据库密码（那串明文只在建项目时出现过一次，
+忘了就 Reset database password）。密码里含 `@ : / # ?` 时必须百分号编码
+（`@` → `%40`），否则 `pg_dump` 会把密码里那一段当成主机名，报
+`could not translate host name` —— 看着像 DNS 坏了，其实是密码没转义。
+
 #### ④ 验收：配完之后「怎么确认它真的成了」
 
 B 的判据与 E 的第 ① 条指向**同一条命令** —— **它只回答事实，每一步都有一个明确结论**：
 
 ```
 curl -sS -o /dev/null -w '%{http_code}\n' "$SUPABASE_URL/rest/v1/accounts?select=uid&limit=1" \
-  -H "apikey: $SUPABASE_URL" -H "Authorization: Bearer $SUPABASE_SERVICE_KEY"   # 期望 200
+  -H "apikey: $SUPABASE_SERVICE_KEY" -H "Authorization: Bearer $SUPABASE_SERVICE_KEY"   # 期望 200
 curl -sS "$SITE_URL/api/me" | head -c 200                                        # 期望 401 E_NO_SESSION（不是 503 E_NOT_CONFIGURED）
 POST /api/send-code → {"codeId":…,"delivered":true,"transport":"<你配的那家>"}    # delivered 必须是 true
 curl -sS -o /dev/null -w '%{http_code}\n' -X DELETE "$SITE_URL/api/account"     # 期望 401（不是 500）
@@ -2747,3 +2765,100 @@ postgres:  progress 表  primary key (uid, poem_id)
 已把那处注释改成「js 目录下」，并在这一节里写明「拍平 `@media` 之后
 `ruleSegments` 会吞掉下一条规则」，判据改成对着「剥了注释、仍带 `@media` 外壳」
 的源码取（带上下文的正则）。
+
+---
+
+### 5.7 D 步探活的两处真 bug（2026-09-17 · 回答 Issue #159）
+
+用户在 Issue #159 报：密钥仓库 `poem-secrets/supabase.yml` 按文档配好了，
+但 `supabase-keepalive` 天天红，回 **401**，问「到底该建私有仓库还是密钥仓库，
+还是有别的 bug」。回答是：**仓库类型没错（密钥仓库是对的），红是代码里两处
+真 bug**，与密钥仓库无关。这一节把两处都记下来。
+
+#### ① 「apikey」填成了 URL —— 401 的直接原因
+
+`.cnb.yml` 的探活脚本原先写的是：
+
+```
+-H "apikey: $SUPABASE_URL" \
+-H "Authorization: Bearer $SUPABASE_SERVICE_KEY"
+```
+
+`apikey` 头要的是**密钥本身**，这里却把 `SUPABASE_URL`（一个 `https://…` 的
+地址）当 key 发了出去 —— Supabase 一律回 **401**。
+
+这条的杀伤力不在「探活红」本身，在**它看起来像密钥仓库没配好**：症状是
+「密钥明明注入了，探活却天天 401」，于是下一轮排查会反复去查密钥仓库
+（新建 / 改名 / 重新注入），而真正要改的只是这一行。
+
+PostgREST 认两个头，同一个 service_role key 两处都要带：
+
+```
+-H "apikey: $SUPABASE_SERVICE_KEY" -H "Authorization: Bearer $SUPABASE_SERVICE_KEY"
+```
+
+⚠️ 服务端代码里本来就是对的（`api/_lib/store.js` 的 `supabaseStore` 写的是
+`apikey: KEY`）—— 错的只有**流水线里那条抄出来的命令**，以及它被
+`api/_lib/ops.js` 的 `VERIFY_DB` 抄去的第二份、文档里的第三份。
+三处一起改，并由 `test/ops.test.js` 钉住「apikey 后面不是 URL」。
+
+#### ② 备份要的第三个值 `SUPABASE_DB_URL` 没人说怎么来
+
+`supabase-backup` 需要 `SUPABASE_DB_URL`，而这一步原先只有一个变量名：
+
+```
+: "${SUPABASE_DB_URL:?SUPABASE_DB_URL 未注入，请检查密钥仓库 supabase.yml}"
+```
+
+那个值**不能在控制台直接复制** —— 它只能去 Project Settings → Database →
+Connection string 取模板，再把 `[YOUR-PASSWORD]` 整体换成数据库密码
+（那串明文只在建项目时出现过一次，忘了就 Reset database password）。
+密码里含 `@ : / # ?` 时必须**百分号编码**（`@` → `%40`）：不编码时
+`pg_dump` 会把密码里那一段当成主机名，报
+`could not translate host name "…@db.<ref>.supabase.co"` —— 看着像 DNS 坏了，
+其实只是密码没转义。
+
+这一步现在写进了 `ops.js` 的 D 步（`node scripts/doctor.js --steps` 看得见），
+由 `test/ops.test.js` 断言「D 步写了 DB URL / 写了那个占位符 / 指明了去哪取 /
+写了百分号编码」。
+
+#### ③ 顺带修掉的一个真 bug：桌面首页的顶栏被挤成 369px
+
+查上面两条时把 `bash test/run.sh` 跑了一遍，CI 的 PWA 那一层有 **3 条红**：
+
+```
+✗ {"顶栏":[56,425],"正文":[0,1920]}      桌面 1920px：顶栏与正文列左右同缘
+✗ {"顶栏":[56,425],"正文":[0,1440]}      桌面 1440px：顶栏与正文列左右同缘
+✗ {"顶栏":[56,425],"正文":[0,1280]}      桌面 1280px：顶栏与正文列左右同缘
+```
+
+顶栏宽 **369px**、停在页面正中偏左那一小截。两个原因叠在一起：
+
+1. **`.topbar` 没认领 grid 那一行**。桌面那一档首页的 `.app` 是
+   `grid-template-columns: minmax(0, 340px) minmax(0, 1fr)`，而 `.topbar`
+   是 `.app` 的**第一个子元素** —— 不认领格子就会被自动放置塞进**第一列**
+   （340px）里。CSS 里那句「顶栏与页脚各自是「一整行」」只是一句**声明**，
+   没有任何规则实现它。
+2. **`.topbar` 只写了 `max-width`、没写 `width: 100%`**。块级盒子只给
+   `max-width` 时仍是「收缩到内容宽」的，那个 `max-width` 只是天花板。
+   手机 / 平板那两档看不出来（`.app` 内容盒宽 692 / 724px，与顶栏的
+   `max-width` 同值，收缩出来的结果碰巧与 100% 相等）；桌面那一档
+   `.app` 变成 `100vw`（1808px 的内容盒）之后两者就分叉了。
+
+改法与 `.dock-inner` 同一条写法：`width: 100%` 负责撑满那一格、
+`max-width: var(--content-w)` 负责不许比内容区更宽、`margin: 0 auto` 居中；
+再加上 `body[data-nav="home"] .topbar { grid-area: bar; }`。
+
+#### 验证
+
+- `bash test/run.sh` 全绿、0 失败（PWA 那一层 **256 项全过**）
+- `test/pwa.test.js` 那 3 条由红转绿（真 Chrome 量 1920 / 1440 / 1280 三档）
+- `test/ops.test.js` 新增：`.cnb.yml` 的 `apikey` 不是 URL、两个头带同一个 key、
+  `ops.js` 里那条验收命令同样不是 URL、D 步写了 `SUPABASE_DB_URL` /
+  `[YOUR-PASSWORD]` / `Connection string` / `%40`、
+  `.cnb.yml` 的备份真的校验这个变量
+- `test/ui-consistency.test.js` 新增：区域图里有 `bar` 那一行、
+  `.topbar` 真的认领了、区域图里每个名字都有元素认领
+- `test/theme.test.js` 新增：`.topbar` 有 `width: 100%`
+  （并把那条正则的窗口从 600 开到 1400 —— 600 装不下新加的说明，会假红）
+- `sw.js` v134 → **v135**

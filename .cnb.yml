@@ -86,9 +86,15 @@ main:
             : "${SUPABASE_URL:?SUPABASE_URL 未注入，请检查密钥仓库 supabase.yml}"
             : "${SUPABASE_SERVICE_KEY:?SUPABASE_SERVICE_KEY 未注入，请检查密钥仓库 supabase.yml}"
             echo "探活：打一次真查询（不打印任何密钥，也不打印响应体）"
+            # ⚠️ apikey 头必须是**密钥本身**，不是 SUPABASE_URL。
+            #    原先这里写的是 `apikey: $SUPABASE_URL` —— 把一个 URL 当 key 发出去，
+            #    Supabase 一律回 401。症状正好是「密钥明明注入了，探活却天天红」，
+            #    于是这一条会被误读成「密钥仓库没配好」而反复去查密钥仓库。
+            #    PostgREST 认两个头：apikey 给的是 key（这里用 service_role），
+            #    Authorization 给的是 Bearer token —— 同一个 key 两处都要带。
             CODE=$(curl -sS -o /dev/null -w '%{http_code}' \
               "$SUPABASE_URL/rest/v1/accounts?select=uid&limit=1" \
-              -H "apikey: $SUPABASE_URL" \
+              -H "apikey: $SUPABASE_SERVICE_KEY" \
               -H "Authorization: Bearer $SUPABASE_SERVICE_KEY")
             echo "HTTP $CODE"
             # 失败必须红：探活静默挂掉三个月，会以「某天用户突然登不上」的形式暴露

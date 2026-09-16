@@ -502,6 +502,24 @@ chk(/\.settings-item\.wide\s*\{[^}]*max-width:\s*100%/s.test(cssCode),
     chk(new RegExp('body\\[data-nav="home"\\] \\.' + sel + ' \\{ grid-area:').test(cssCode),
       '首页的 .' + sel + ' 认领了自己那一格（只写容器不写子元素等于没排）');
   });
+  /* ③之二、**顶栏也必须认领整行**（2026-09-17 修的真 bug）
+     ------------------------------------------------------------------
+     `.topbar` 是 `.app` 的第一个子元素，而桌面那一档 `.app` 是个两列 grid。
+     它不认领格子就会被自动放置塞进**第一列**（340px）里 —— 真机量到
+     1920px 屏上 .topbar 宽 369px、停在页面正中偏左那一小截。
+     CSS 里原先那句「顶栏与页脚各自是「一整行」」只是**声明**：没有一条
+     规则实现它。这条断言把「声明」与「规则」绑在一起 —— 两者少一个都红。 */
+  chk(/grid-template-areas/.test(homeGrid ? homeGrid[1] : '') &&
+      /"bar\s+bar"/.test(homeGrid ? homeGrid[1] : ''),
+    '首页栅格给顶栏留了一整行（区域图里要有 bar 那一行）');
+  chk(/body\[data-nav="home"\] \.topbar \{ grid-area: bar; \}/.test(cssCode),
+    '顶栏真的认领了那一行（只写区域图不写 grid-area，顶栏仍会掉进第一列）');
+  /* ⚠️ 这条同时守住「区域图里的每个名字都有人认领」：写了名字没人认领，
+     那一行就是空的、下面三块整体上移一格 —— 比不写更难查。 */
+  ['bar', 'today', 'card', 'all'].forEach(name => {
+    chk(new RegExp('\\{ grid-area: ' + name + '; \\}').test(cssCode),
+      '区域图里的「' + name + '」有一个元素真的认领了（没人认领 = 留下一个空格子）');
+  });
   // 首页今日那一块在 DOM 上真的是一张卡（宽屏上要看出「这是一块」）
   chk(/class="card today-list"/.test(read('index.html')),
     '首页「今日」那一块是一张卡（手机上单条 .item 自带纸底，看不出差别；宽屏上它是分界线）');
