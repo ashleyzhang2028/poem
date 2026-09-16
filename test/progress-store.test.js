@@ -301,6 +301,18 @@ console.log('\n=== 十一、源码扫描：加载了 storage.js 的页面必须�
   });
   chk(withStorage >= 12, '至少 12 张页在读设置 / 进度（实际 ' + withStorage + ' 张）');
 
+  /* ⚠️ 反向那一条（Issue #163）：**加载了引擎的页面也必须加载转发层**。
+     六部集子页与搜索 / 课外入口页此前只加载 progress-store.js、没加载
+     js/storage.js —— 页面上 window.Storage 一直是 undefined，
+     凡走它的地方都静默退化成「读不到」。这条不是「少数据」，是「整层不在」，
+     却同样不报错：搜索页接上「上次搜的词」时才被翻出来。 */
+  pages.forEach(p => {
+    const html = fs.readFileSync(path.join(ROOT, p), 'utf8');
+    if (!/js\/progress-store\.js/.test(html)) return;
+    chk(/js\/storage\.js/.test(html),
+      p + ' 加载了 progress-store.js，也加载了它的转发层 js/storage.js');
+  });
+
   /* 六部集子页与设置页**直接**读 helper / 已读键，它们不经过 storage.js ——
      但 reader-core.js 里那段读写必须与引擎同源，不能各写各的字面量 */
   const rc = fs.readFileSync(path.join(ROOT, 'js/reader-core.js'), 'utf8');

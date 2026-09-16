@@ -485,32 +485,63 @@ chk(/--col-side:\s*var\(--safe\)/.test(cssCode) === false &&
   /\.app\s*\{[^}]*padding-left:\s*calc\(var\(--col-side\)/.test(cssCode),
   '左右内边距读同一档 --col-side（不再有一处写死 14px 把三档一起盖掉）');
 
-/* 设置主页的四条入口：一张卡 + 标题与集子索引页的分组名同档（Issue #147）
+/* 设置主页的四条入口 + 二级页的六颗分组名：一张卡 + 与集子卷名同一档字号
    --------------------------------------------------------------------------
-   用户原话：「设置页首页，四个卡片是不是应该有背景色？另外四个标题字号需要变大，
-   可以和其他索引页页面例如集子的标题字号一样大。」
+   用户原话（Issue #147）：「设置页首页，四个卡片是不是应该有背景色？
+   另外四个标题字号需要变大，可以和其他索引页页面例如集子的标题字号一样大。」
+   用户原话（Issue #163）：「设置页首页 通用 我的清单这些卡片主标题之前希望
+   字号和其他页面一样大 还没修复。」
+
+   后一条点的正是 #147 只改了一半的地方：主页那四张入口卡改了，
+   **二级页里那六颗分组名没跟上**（还是更早一轮压下去的 11px / 400 / 淡墨）——
+   于是同一个设置模块里两套字号。现在三处读同一句：
+
+     .settings-group-title  （二级页的分组名）
+     .settings-link-title   （设置主页的入口标题）
+     .group-name            （集子索引页的卷名）
 
    两件事各自都要有一个**可判的**落点，否则改完只是「看着像」：
      · 背景色 = 走全站那一条 --card（不新开一个色值）；
-     · 标题字号 = 与集子索引页的卷名 .group-name 同一个值。
-       这一条是本文件里唯一一处「跨两张表」的约定：设置入口在 css/style.css，
-       集子卷名在 css/classic.css。两条规则各在一张表里，只能靠这对断言绑住 ——
-       改一边就会红，谁也加不进第三个近似值（14.5px 那档就是这么来的）。 */
+     · 标题字号 / 字重 = 与集子索引页的卷名 .group-name 同一个值。
+       这一条是本文件里唯一一处「跨两张表」的约定：设置页那两条在
+       css/style.css，集子卷名在 css/classic.css。只能靠这组断言绑住 ——
+       改一边就会红，谁也加不进第三个近似值（11px / 14.5px 那两档就是这么来的）。 */
 const linkRule = ruleOf(cssCode, '.settings-link');
 chk(/background:\s*var\(--card\)/.test(linkRule),
   '设置主页的四条入口有底色（走全站 --card，不新开色值）');
 chk(/border-radius:\s*var\(--radius-md\)/.test(linkRule),
   '入口卡片的圆角走 --radius-md（与 .trans-box / .library-card 同一档）');
-const linkTitleRule = ruleOf(cssCode, '.settings-link-title');
+/* 标题那三个值（字号 / 字重 / 颜色）在 css/style.css 里**只写一次**：
+   `.settings-group-title, .settings-link-title` 共用一个声明块。
+   下面这两个取值的函数就按这个共用块取 —— 单取 .settings-link-title 会
+   拿到「只有 font-family」的那一块（Issue #163 之前正是这么写的，
+   于是 11px 的分组标题在断言里看不见）。 */
+const sharedTitleRule = (code) =>
+  ((code.match(/\.settings-group-title,\s*\n?\.settings-link-title\s*\{([\s\S]{0,400}?)\}/) || [0, ''])[1]) || '';
 const groupNameRule = ruleOf(classicCode, '.group-name');
 const sizeOf = r => (r.match(/font-size:\s*([\d.]+)px/) || [0, ''])[1];
 const weightOf = r => (r.match(/font-weight:\s*(\d+)/) || [0, ''])[1];
-chk(sizeOf(linkTitleRule) !== '' && sizeOf(linkTitleRule) === sizeOf(groupNameRule),
-  '设置入口标题与集子卷名的字号是同一个值（实际 ' + sizeOf(linkTitleRule) +
-  ' / ' + sizeOf(groupNameRule) + '）');
-chk(weightOf(linkTitleRule) !== '' && weightOf(linkTitleRule) === weightOf(groupNameRule),
-  '设置入口标题与集子卷名的字重也是同一个值（实际 ' + weightOf(linkTitleRule) +
-  ' / ' + weightOf(groupNameRule) + '）');
+chk(sizeOf(sharedTitleRule(cssCode)) !== '',
+  '卡片主标题的大小 / 字重 / 颜色只在共用块里写一次（分组标题与入口标题同一句）');
+[['.settings-group-title', sharedTitleRule(cssCode)],
+ ['.settings-link-title', sharedTitleRule(cssCode)]].forEach(function (pair) {
+  chk(sizeOf(pair[1]) === sizeOf(groupNameRule),
+    pair[0] + ' 与集子卷名的字号是同一个值（实际 ' + sizeOf(pair[1]) +
+    ' / ' + sizeOf(groupNameRule) + '）');
+  chk(weightOf(pair[1]) === weightOf(groupNameRule),
+    pair[0] + ' 与集子卷名的字重也是同一个值（实际 ' + weightOf(pair[1]) +
+    ' / ' + weightOf(groupNameRule) + '）');
+});
+/* 入口标题那条**自己写**的规则里不许再出现字号 / 字重 / 颜色
+   （那就是第二个来源：上一版分组标题被压成 11px 时，抄过去的那三个值
+   跟着一起降级了）。
+   ⚠️ 判的是「`.settings-link-title` 单独成组的那条规则」，
+      不是 ruleOf() 的累加结果 —— 累加会连共用块一起算进来。 */
+const ownLinkTitle = (cssCode.match(/[^{}]*\.settings-link-title\s*\{([^}]*)\}/g) || [])
+  .filter(sel => sel.split('{')[0].split(',').map(x => x.trim()).join(',') === '.settings-link-title')
+  .map(sel => sel.slice(sel.indexOf('{') + 1)).join(';');
+chk(!!ownLinkTitle && !/font-size|font-weight|color:/.test(ownLinkTitle),
+  '入口标题自己的那条规则只有字体族兜底，不再另写字号 / 字重 / 颜色');
 chk(/position:\s*absolute/.test(ruleOf(cssCode, '.settings-link-go')),
   '入口卡片右侧那颗箭头绝对定位在卡里（不让它参与这一行的排布，落点恒定）');
 
@@ -1061,14 +1092,21 @@ PAGE_FILES.forEach(f => {
    白底、灰勾、圆角 2px —— 与全站的纸面 / 描金细线 / 深绿实底是两套语言；
    状态还要靠旁边一颗写着「关」/「开」的文字来表达。
 
-   新样子是自绘的胶囊开关：深天青实底 = 开着（与「年级」那些药丸同一句
-   「实底 + 米白 + 金线」）、纸底描边 = 关着、圆滑块在轨道里走。
+   新样子是自绘的胶囊开关：**.switch-input 自己就是那颗 40×24 的胶囊**
+   （appearance:none 自绘轨道 + 米白/淡墨色圆滑块由 .switch-track 画）。
+   深天青实底 = 开着（与「年级」那些药丸同一句「实底 + 米白 + 金线」）、
+   纸底描边 = 关着。
 
    这一节守三件事：
      ① 外观自绘（appearance: none），不吃各浏览器默认样式；
-     ② 尺寸只有一份（轨道 40×24 / 滑块 18 / 左 2），**且行程是按这三个值算的**——
-        写死一个 translateX 而不跟着尺寸走，改一次尺寸滑块就会越界；
-     ③ 真渲染出来确实是这个尺寸、滑块确实在轨道里（不是只在源码里写着）。
+     ② 轨道（= .switch-input）与滑块（= .switch-track）的尺寸只有一个来源，
+        **且行程是照这几个值算出来的** —— 写死一个 translateX 而不跟着尺寸走，
+        改一次尺寸滑块就会越界或走不到位；
+     ③ 真渲染出来确实是这个尺寸、滑块确实落在轨道里（不是只在源码里写着）。
+
+   ⚠️ 「轨道」在这一版里就是 .switch-input 本身，不是 .switch-track ——
+      .switch-track 是**滑块**（40×24 的胶囊里那枚 18px 圆点）。
+      两个类名的字面意思与实际职责是反着的（历史遗留），下面一律按实际职责判。
    ========================================================================== */
 {
   const box = ruleOf(cssCode, '.switch-input');
@@ -1092,7 +1130,9 @@ PAGE_FILES.forEach(f => {
 
   /* 行程 = 轨道宽 − 边框×2 − 滑块宽 − 起点×2。
      开着时滑块应当走到「右端对齐」——写死 16px 而尺寸一改就越界，
-     所以这里判的是**算出来的值**，不是源码里有没有 16 这个数字。 */
+     所以这里判的是**算出来的值**，不是源码里有没有 16 这个数字。
+     ⚠️ :checked 那一句改的是**滑块**（.switch-track）的 translateX，
+        不是 .switch-input 自己 —— 判据要取在滑块那条规则上。 */
   const onKnob = ruleOf(cssCode, '.switch-input:checked + .switch-track');
   const shift = (/-?translateX\((\d+)px\)/.exec(onKnob) || [])[1];
   const borderW = Number((/border:\s*([\d.]+)px/.exec(box) || [])[1]);
@@ -1115,19 +1155,26 @@ PAGE_FILES.forEach(f => {
   chk(/cursor:\s*not-allowed/.test(offTrack) && /background:/.test(offTrack),
     '置灰态有自己的一句（不可点的开关与「关着但能点」必须看得出不同）');
 
-  /* 原生结构：轨道是 input 的**紧邻兄弟**（CSS 用 `+` 找它，不用 :has()——
-     :has() 在老的安卓 WebView 上会静默失效，失效后开关就变成一块空轨） */
+  /* 原生结构：滑块是 input 的**紧邻兄弟**（CSS 用 `+` 找它，不用 :has()——
+     :has() 在老的安卓 WebView 上会静默失效，失效后开关就变成一颗不掉下来的点） */
   chk(!/:has\(/.test(box) && !/:has\(/.test(knob),
     '开关的样式不依赖 :has()（老 WebView 上会静默失效）');
 
-  /* 页面结构：同样的 HTML 也只有一个来源 —— 设置页那一项 */
+  /* 页面结构：同样的 HTML 也只有一个来源 —— 设置页那一项。
+     ⚠️ 外层是 <label.switch>（不是一个从不存在的 .switch-row），
+        input 带 role="switch"，旧那颗「关/开」文字标签（#sync-label）已删。 */
   const genHtml = read('settings/general/index.html');
   chk(/class="switch"[\s\S]{0,400}class="switch-input"[\s\S]{0,200}class="switch-track"/.test(genHtml),
-    '设置页的开关是 <label.switch> 包着 input 与轨道（点文字 = 点开关）');
+    '设置页的开关是 <label.switch> 包着 input 与滑块（点文字 = 点开关）');
   chk(/id="toggle-sync"[\s\S]{0,200}role="switch"/.test(genHtml),
     '开关带 role="switch"（读屏念得出「开关」，而不是「复选框」）');
   chk(!/id="sync-label"/.test(genHtml),
     '旧的那颗「关」/「开」文字标签已经拿掉（状态由开关本体表达）');
+  // 反向：那个只存在于 CSS 里的 .switch-row / .switch-label 不许再回来
+  //（Issue #163 两轮改动各写了一套开关，旧的 .switch-row 那一套被后写的覆盖，
+  //  留下的是一整段「谁都没用」的死样式 —— 死样式会误导下一个改开关的人）
+  chk(!/\.switch-row\s*[,{]/.test(cssCode) && !/\.switch-label\s*[,{]/.test(cssCode),
+    '样式表里没有 .switch-row / .switch-label 的死规则（HTML 从不使用这两个类名）');
 
   /* 真渲染：把样式表挂进去，量一遍画出来的结果 —— 上面全是源码断言，
      换一种写法（例如给 track 一条 margin）源码看不出来，用户看到的却不对。 */
@@ -1148,7 +1195,7 @@ PAGE_FILES.forEach(f => {
         '轨道是胶囊（画出来的圆角 999px，不是方框）');
       const knobEl = input.nextElementSibling;
       chk(!!knobEl && knobEl.classList.contains('switch-track'),
-        '轨道是 input 的紧邻兄弟（CSS 的 `+` 才找得到它）');
+        '滑块是 input 的紧邻兄弟（CSS 的 `+` 才找得到它）');
       if (knobEl) {
         const kcs = win.getComputedStyle(knobEl);
         chk(kcs.width === knobW + 'px', '滑块也是声明尺寸（' + kcs.width + '）');
@@ -1218,7 +1265,8 @@ PAGE_FILES.forEach(f => {
 
      1. 页脚与正文之间不再画那条 `border-top`；
      2. 全站**所有** <a> 都不长下划线（不是某一处去掉、另一处忘了写）；
-     3. 同步开关那三个类名真的被样式表接管了（不许只有 HTML 没有 CSS）。
+     3. 同步开关那套类名（.switch / .switch-input / .switch-track）真的
+        被样式表接管了 —— 且**只此一套**，不许留着上一版的死类名。
    ========================================================================== */
 {
   // ① 页脚上面的横线：.settings-foot 不许再声明 border-top
@@ -1254,100 +1302,124 @@ PAGE_FILES.forEach(f => {
   chk(noneWriters.length <= 1,
     '除全局那条外，各页面文件里不再各写一遍 text-decoration: none（实际 ' + noneWriters.length + ' 条）');
 
-  // ③ 同步开关：HTML 里写的类名，样式表里必须真的存在
-  //
-  // ⚠️ HTML 只用 .switch（整行，含 <label> 语义）/ .switch-input（真实输入框）
-  //    / .switch-track（可见的胶囊轨道）三个 —— 后两者由最后的「开关（跨设备同步）」
-  //    那一节定义，**各只有一条规则**。
-  //    原先这里还钉着 .switch-row 与 .switch-label：这两个类名在 HTML 里早已
-  //    无人使用（它们属于旧版「并排的轨道 + 关/开 文字标签」），样式表里却
-  //    还留着一整节 —— 于是 .switch-input / .switch-track 被先后定义两遍
-  //    （CSS 层叠取后者），真实几何与源码里量到的不一致。那一节既已删除，
-  //    这两条断言也就失去了对象。
-  ['switch', 'switch-track', 'switch-input'].forEach(cls => {
+  // ③ 同步开关：HTML 真正用到的那套类名，样式表里必须真的存在。
+  //    ⚠️ 这份清单与 settings/general/index.html 里的结构一一对应：
+  //       .switch = 整行；.switch-input = 那颗 40×24 的胶囊本体
+  //       （真实 input，appearance:none 自绘，可点 / 可聚焦 / 可读屏）；
+  //       .switch-track = 滑块（胶囊里那枚 18px 圆点）。
+  //       上一版那套 .switch-row / .switch-label 已被 Issue #163 的第二轮
+  //       改动取代（HTML 里一个字都不再用），所以**不进这份清单** ——
+  //       反过来还要判它们没有被留下来当死样式（见下一行）。
+  ['switch', 'switch-input', 'switch-track'].forEach(cls => {
     chk(new RegExp('\\.' + cls + '\\s*[,{]').test(cssCode),
       '开关的 .' + cls + ' 在样式表里有规则（HTML 写了就得画出来）');
   });
-  // 旧结构（并排的「关 / 开」文字标签）的遗留类名：结构已在 1B 期换成
-  // .switch > input + .switch-track，样式与类名一起删干净 ——
-  // 留着无人使用的规则，下一个改样式的人会以为它还在某页上画着。
+  // 反向：上一版的 .switch-row / .switch-label 不许再出现在样式表里 ——
+  // 「HTML 已经不用的类名却还留着一整段规则」会让下一个改开关的人找不到北。
   ['switch-row', 'switch-label'].forEach(cls => {
     chk(!new RegExp('\\.' + cls + '\\s*[,{]').test(cssCode),
-      '样式表里不再留 .' + cls + ' 规则（没人用的类名不留僵尸规则）');
+      '上一版的 .' + cls + ' 已从样式表里清掉（HTML 不用的类名不留死规则）');
   });
-  // 「开」/「未开放」两态：CSS 用相邻兄弟选择器 `.switch-input:checked + .switch-track`
-  // 与 `.switch-input:disabled + .switch-track`（不用 :has()，老 WebView 上会静默失效）。
-  // ⚠️ 正则里要带上 `.switch-input` 这个**宿主类名**：只写 `input:checked + ...`
-  //    会连 `body[data-x] input:checked + .switch-track` 那种别的写法一起放过，
-  //    判不出这条相邻选择器找的到底是不是这颗开关。
-  chk(/\.switch-input:checked\s*\+\s*\.switch-track\s*\{/.test(cssCode),
-    '开关的「开」态由 .switch-input:checked + .switch-track 表达（不是靠原生 checkbox）');
-  chk(/\.switch-input:disabled\s*\+\s*\.switch-track/.test(cssCode),
+  chk(/input:checked\s*\+\s*\.switch-track/.test(cssCode),
+    '开关的「开」态由 :checked + .switch-track 表达（不是靠原生 checkbox）');
+  chk(/input:disabled\s*\+\s*\.switch-track/.test(cssCode),
     '开关的「未开放」态也有样式（置灰，不是原生 disabled 的样子）');
-  // 真实输入框留着（键盘 / 读屏要用），只是不再是**看得见的那只盒子**。
-  // ⚠️ 「不可见」有两种成立写法：`opacity: 0`（透明覆盖层），或
-  //    `appearance: none` 之后自己把背景 / 边框收掉再画。这里判的是结果，
-  //    只钉 `opacity: 0` 会把「自绘但保留 input」的实现误判为回归。
-  {
-    const inpDecl = ruleOf(cssCode, '.switch-input');
-    chk(/opacity:\s*0\b/.test(inpDecl) ||
-        (/appearance:\s*none/.test(inpDecl) && /background:/.test(inpDecl)),
-      '.switch-input 不再是看得见的那只盒子（透明覆盖层，或外观自绘）—— 不删 input，键盘与读屏照旧');
-  }
-  // 两只盒子各自把 width / height 写全 ——
-  // ⚠️ 判的是「两侧的盒子都量得出来」，**不是**「两者同尺寸」：
-  //    旧版里 .switch-input 自己就是可见的轨道本体、透明层是另一只 span，
-  //    所以当时要求两者同值；现在可见的轨道是 .switch-track，
-  //    .switch-input 只剩 opacity:0 + position:absolute（不参与布局），
-  //    再要求同值就是拿旧形状的尺子量新结构。
-  const sizeOf = (code, sel) => {
-    const decl = ruleOf(code, sel);
-    const w = /(?:^|[;{\s])width:\s*([^;]+)/.exec(decl);
-    const h = /(?:^|[;{\s])height:\s*([^;]+)/.exec(decl);
-    return { w: w ? w[1].trim() : '', h: h ? h[1].trim() : '' };
+  // 真实输入框留着（键盘 / 读屏要用），自绘成胶囊本体
+  chk(/appearance:\s*none/.test(ruleOf(cssCode, '.switch-input')),
+    '.switch-input 是自绘胶囊本体（appearance:none，不删 input，键盘与读屏照旧）');
+  // 滑块必须画在胶囊里：左起点 + 滑块宽 ≤ 轨道宽 —— 越界就是「画歪了」。
+  // 判的是**声明之间的关系**，不是某个具体像素：换尺寸照样成立。
+  const numOf = (code, sel, prop) => {
+    const m = new RegExp(prop + ':\\s*([\\d.]+)px').exec(ruleOf(code, sel));
+    return m ? Number(m[1]) : NaN;
   };
-  const trk = sizeOf(cssCode, '.switch-track');
-  chk(!!trk.w && !!trk.h,
-    '可见的轨道 .switch-track 把尺寸写全（' + trk.w + '×' + trk.h + '）—— 点哪儿就是哪儿');
+  const capW = numOf(cssCode, '.switch-input', 'width');
+  const knobW = numOf(cssCode, '.switch-track', 'width');
+  const knobL = numOf(cssCode, '.switch-track', 'left');
+  chk(capW > 0 && knobW > 0 && knobL + knobW <= capW,
+    '滑块落在胶囊里（起点 ' + knobL + ' + 滑块 ' + knobW + ' ≤ 轨道 ' + capW + '）');
+}
+
+/* ==========================================================================
+   十一之二、卡片主标题真的和其他页一样大（Issue #163，真实渲染）
+   --------------------------------------------------------------------------
+   用户原话：「设置页首页 通用 我的清单这些卡片主标题之前希望字号和其他页面
+   一样大 还没修复。」
+
+   上面第 ⑪ 段判的是**源码里的值**：共用块与 .group-name 同为 14px / 700。
+   这一段判的是**渲染出来的结果** —— jsdom 把真页面 + 两张样式表挂上，
+   量二级页「通用」那颗 <h2> 与设定主页四张入口卡的标题。
+
+   ⚠️ 为什么非要有这一段：源码值对、渲染值不对是踩过的坑。
+      上一版 .settings-link-title 自己写了一遍 font-size / font-weight，
+      .settings-group-title 那边被压成 11px 时它跟着一起降级了（抄出来的值）。
+      现在三个值只在共用块里写一次，这一段就是「真的画出来是这么大」的闭环。
+   ========================================================================== */
+if (JSDOM) {
+  const sheet = '<style>' + cssCode + '</style><style>' + classicCode + '</style>';
+  const px = (json) => json.fontSize;
+
+  // 二级页：分组名
+  ['settings/general/index.html', 'settings/recite/index.html',
+   'settings/lists/index.html', 'settings/reader/index.html'].forEach(function (f) {
+    const d = new JSDOM(read(f), { url: 'https://local.test/' + f.replace('index.html', '') });
+    d.window.document.head.insertAdjacentHTML('beforeend', sheet);
+    const t = d.window.document.querySelector('.settings-group-title');
+    const sz = t ? d.window.getComputedStyle(t).fontSize : '';
+    chk(sz === sizeOf(groupNameRule) + 'px',
+      f + ' 的分组标题画出来和集子卷名同号（' + sz + '）');
+  });
+
+  // 设置主页：四张入口卡的标题（由 js/settings-nav.js 画出来）
+  const d2 = new JSDOM(read('settings/index.html'),
+    { url: 'https://local.test/settings/', runScripts: 'dangerously' });
+  d2.window.document.head.insertAdjacentHTML('beforeend', sheet);
+  const sc = d2.window.document.createElement('script');
+  sc.textContent = read('js/settings-nav.js');
+  d2.window.document.body.appendChild(sc);
+  d2.window.document.dispatchEvent(new d2.window.Event('DOMContentLoaded'));
+  const titles = [...d2.window.document.querySelectorAll('.settings-link-title')];
+  chk(titles.length > 0 &&
+    titles.every(el => d2.window.getComputedStyle(el).fontSize === sizeOf(groupNameRule) + 'px'),
+    '设置主页四张入口卡的标题画出来也是同一号（' +
+    (titles[0] ? d2.window.getComputedStyle(titles[0]).fontSize : '未取到') + '）');
+  /* 两个页面之间不再有第二档字号：主页与二级页的标题画出来必须**同一个字符串** */
+  const d3 = new JSDOM(read('settings/general/index.html'), { url: 'https://local.test/settings/general/' });
+  d3.window.document.head.insertAdjacentHTML('beforeend', sheet);
+  const grp = d3.window.document.querySelector('.settings-group-title');
+  chk(titles.length > 0 && grp &&
+    d2.window.getComputedStyle(titles[0]).fontSize === d3.window.getComputedStyle(grp).fontSize,
+    '设置主页入口标题与二级页分组名画出来一样大（同名同号，不再两套）');
+} else {
+  console.log('- (未安装 jsdom，跳过卡片主标题的真实渲染一节)');
 }
 
 /* ==========================================================================
    十二、开关真的画出来了（Issue #163，真实渲染几何）
    --------------------------------------------------------------------------
    用户原话：「跨设备同步选择框太丑了，改进。」
-   丑的根因是**没有样式**：HTML 从 1B 起就用 .switch-row / .switch-track /
-   .switch-label 三个类名写着结构，样式表里却一条都没有 ——
-   于是那颗 <input type=checkbox> 一直以浏览器原生的样子露在纸面上。
+   丑的根因是**没有样式**：HTML 一直写着 .switch 那一套类名，
+   样式表里却一条都没有 —— 于是那颗 <input type=checkbox> 以浏览器原生的
+   样子露在纸面上（浅灰方块 + 系统蓝勾），与整页的米纸 / 天青是两套语言。
 
-   上面第 ⑨ 段判的是「样式表里有没有这几条规则」；这一段判的是**画出来的结果**：
-   那三个 span 真的被挂上、真的在一个 flex 行里、真的不是 display:none。
-   两段合起来才闭环 —— 只判源码，把 display:none 写进去也是绿的。
+   上面那一节判的是「样式表里有没有这几条规则」；这一节判的是**画出来的结果**：
+   轨道真的被挂上、真的画成胶囊、真的不是 display:none。
+   两节合起来才闭环 —— 只判源码，把 display:none 写进去也是绿的。
    ========================================================================== */
 if (JSDOM) {
   const doc = new JSDOM(read('settings/general/index.html'),
     { url: 'https://local.test/settings/general/' }).window.document;
-  // 结构（对照 settings/general/index.html）：
-  //   <label class="switch"><span class="settings-label" id="switch-sync-name">名字</span>
-  //     <input class="switch-input" id="toggle-sync">  <span class="switch-track"></span>
-  //   </label>
-  // ⚠️ 项名写在 input **之前**、轨道写在 input **之后**，所以三样不是连成一串。
-  //    原先这里按「input → 轨道 → 状态字」的顺序判、又要求状态字是
-  //    `<span class="switch-label">` —— 那是旧版「名字 + 轨道 + 关/开 文字」的
-  //    形状；状态字已撤（状态由开关本体表达），项名改用 .settings-label。
-  const box = doc.querySelector('.switch');
   const input = doc.getElementById('toggle-sync');
   const track = doc.querySelector('.switch-track');
-  chk(!!box && !!input && !!track, '开关的 input / 轨道两样都在 DOM 里');
-  const name = doc.getElementById('switch-sync-name');
-  chk(!!name && !!name.textContent.trim(), '开关的项名在 DOM 里（读屏靠 aria-labelledby 取它）');
-  chk(!!box && box.tagName === 'LABEL',
-    '两样包在同一个 <label.switch> 里（点名字与轨道任意处都切得动，iOS 上也是）');
-  chk(!!box && box.contains(name) && box.contains(input) && box.contains(track),
-    '项名 / input / 轨道在同一个 .switch 行里（不是散在页面上）');
-  // 相邻：input 的下一个兄弟节点就是轨道 ——
-  // CSS 的 `.switch-input:checked + .switch-track` 靠的就是这个相邻关系。
+  chk(!!input && !!track, '开关的 input 与滑块两样都在 DOM 里');
+  chk(!!doc.querySelector('label.switch'),
+    '两者包在同一个 <label> 里（点文字 / 点滑块都切得动，iOS 上也是）');
+  // 顺序：input → 滑块。CSS 的 `input:checked + .switch-track` 靠的就是它
   chk(!!input && input.nextElementSibling === track,
-    'input 紧邻轨道（`:checked + .switch-track` 这条相邻选择器才对得上）');
+    '滑块是 input 的紧邻兄弟（`:checked + .switch-track` 这条相邻选择器才对得上）');
+  // 反向：上一版的 .switch-row / .switch-label 结构不许再回到 HTML 里
+  chk(!doc.querySelector('.switch-row') && !doc.querySelector('.switch-label'),
+    'HTML 里不再有上一版的 .switch-row / .switch-label（开关只此一套结构）');
 } else {
   console.log('- (未安装 jsdom，跳过开关的真实渲染几何一节)');
 }

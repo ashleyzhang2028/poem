@@ -705,6 +705,15 @@ const SETTINGS_HTML = [
   'settings/reader/index.html'
 ].map(read).join('\n');
 const settingsJs = read('js/settings.js');
+
+/* 分组标题与入口标题共用一个声明块（`.settings-group-title, .settings-link-title`）——
+   字号 / 字重 / 颜色三个值只写一次。这里把它取出来，
+   下面的层级断言与 ui-consistency 那一对约定都从这一个来源读。 */
+function sharedTitleRule(code) {
+  const m = code.match(/\.settings-group-title,\s*\n?\.settings-link-title\s*\{([\s\S]{0,400}?)\}/);
+  return m ? m[1] : '';
+}
+
 const pwaJs = read('js/pwa.js');
 
 // 需求：设置不再向上弹卡片，而是全新的整页
@@ -805,23 +814,29 @@ chk(!/seq-origin|shuffle-trans/.test(settingsJs),
   '设置页 JS 里不再出现模式 id 字面量（避免与阅读器错开）');
 // 设置页不加载 reader-core（那是集子页的引擎），档位只能走 play-modes.js
 chk(!/js\/reader-core\.js/.test(SETTINGS_HTML), '设置页不加载阅读器引擎（只引档位定义）');
-// 分组标题的样式：与选项药丸区分开，且靠一条细线收尾
-chk(/\.settings-group-title\s*\{[\s\S]{0,300}?letter-spacing/.test(css),
-  '分组标题用字距拉开，与组内选项区分（命中 .settings-group-title 样式）');
-chk(/\.settings-group-title::after/.test(css), '分组标题右侧有收尾细线（::after）');
-// 需求（本次）：分组标题必须「确实小于页面顶部的大标题」，且三重降级
-// （字号 / 字重 / 颜色），否则仍会被读成又一个标题。
+// 分组标题的样式：与组内选项药丸区分开（字距 + 主标题档字号）
+// 需求（Issue #44 一轮 · 本次改口径）：分组标题**不再是 11px 的辅助标签**，
+// 而是与其他页卡片主标题同一档（Issue #163：『通用』『我的清单』这些
+// 卡片主标题要和设置主页那四张卡、集子卷名一样大）。
+// 与「页面顶部大标题」的层级关系不变：仍必须小于顶栏应用名（19px）。
 const titleSize = (css.match(/\.settings-group-title\s*\{([\s\S]{0,600}?)\}/) || ['', ''])[1];
-const fsMatch = titleSize.match(/font-size:\s*([\d.]+)px/);
+chk(/letter-spacing/.test(titleSize) || /letter-spacing/.test(sharedTitleRule(css)),
+  '分组标题有自己的字距（与组内选项区分，不是一列裸字）');
+// 字号 / 字重 / 颜色三个值现在与入口标题共用同一句，从共用块里取
+const sharedTitle = sharedTitleRule(css);
+const fsMatch = sharedTitle.match(/font-size:\s*([\d.]+)px/);
 const titleFs = fsMatch ? parseFloat(fsMatch[1]) : NaN;
-chk(!!fsMatch && titleFs <= 11,
-  '分组标题字号足够小（≤11px，实际 ' + (fsMatch ? fsMatch[1] + 'px' : '未取到') + '）');
-chk(!/font-weight:\s*(600|700|bold)/.test(titleSize),
-  '分组标题不再用半粗字重（不与选项文字抢眼）');
-chk(/color:\s*var\(--ink-3\)/.test(titleSize),
-  '分组标题用最淡的辅助色 --ink-3，弱于组内选项');
-// 与「页面顶部大标题」的层级关系：顶栏应用名 19px，分组标题必须明显小于它，
-// 也要小于组内选项文字 13.5px。三条一起锁住，避免以后又被调回去。
+chk(!!fsMatch && titleFs >= 14,
+  '分组标题是卡片主标题档（≥14px，实际 ' + (fsMatch ? fsMatch[1] + 'px' : '未取到') + '）');
+chk(/font-weight:\s*(600|700|bold)/.test(sharedTitle),
+  '分组标题用主标题的字重（与集子卷名 / 入口标题同为 700）');
+chk(/color:\s*var\(--ink\)/.test(sharedTitle),
+  '分组标题用正文主色 --ink（与集子卷名同一档）');
+// 与「页面顶部大标题」的层级关系：顶栏应用名 19px，分组标题必须小于它。
+// ⚠️ 这里**只**锁「小于顶栏应用名」这一条。原先还锁了「小于组内选项文字
+//    13.5px」—— Issue #163 之后这条不再成立：分组标题是卡片主标题（14px），
+//    与选项文字（13.5px）刻意同档，主次靠字重（700 对 500）与颜色
+//    （--ink 对 --ink-2）分，不靠把字号压小（那正是被点名的那一版）。
 //
 // 注意：同一个选择器可能在样式表里出现多次（如 .brand-name-row 先随一组
 // 只声明 font-family，后面才单独给 font-size:19px）。所以这里把所有匹配块
@@ -841,8 +856,9 @@ const brandFs = maxFontSize(/\.brand-name-row\s*\{([\s\S]{0,500}?)\}/g);
 const optFs = maxFontSize(/\.settings-page \.seg button,[\s\S]{0,60}?\{([\s\S]{0,500}?)\}/g);
 chk(brandFs >= 17 && titleFs < brandFs,
   '分组标题（' + titleFs + 'px）小于页面顶部大标题（' + brandFs + 'px）');
-chk(optFs >= 13 && titleFs < optFs,
-  '分组标题（' + titleFs + 'px）小于组内选项文字（' + optFs + 'px）');
+// 反向：分组标题也不许把选项文字盖过去 —— 差的必须是字重与颜色，不是字号
+chk(optFs >= 13 && Math.abs(titleFs - optFs) <= 1,
+  '分组标题（' + titleFs + 'px）与组内选项文字（' + optFs + 'px）同一档，主次靠字重与颜色分');
 chk(!/\.settings-group-desc/.test(css), '样式里不再保留二级描述 .settings-group-desc');
 chk(!/settings-group-desc/.test(SETTINGS_HTML), '设置页 HTML 里不再有二级描述节点');
 

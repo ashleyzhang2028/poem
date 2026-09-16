@@ -269,6 +269,14 @@
        必须在 js/storage.js 之前 —— 它的 touch() 要给每条记录打标，
        而页面只认识 Storage/ProgressStore 这两个入口。 -->
   <script src="js/sync-store.js"></script>
+  <!-- 分域读法的**转发层**：页面各处的 Storage.get / getSettings 都落在这里，
+       实现是上面那份 progress-store。上面那段注释一直写着「读法由 js/storage.js
+       转发」——但这一页此前**只加载了引擎、没加载转发层**，于是这些页面上
+       window.Storage 一直是 undefined，凡走它的地方都静默退化成「读不到」。
+       Issue #163 把搜索页「上次搜的词」接到这一层时暴露了它：搜索页原来
+       读不到任何存储，只是因为它从不读。顺序：progress-store → sync-store →
+       storage（后者才认前两个）。 -->
+  <script src="js/storage.js"></script>
   <script src="js/collections.js"></script>
   <!-- 课内诗词一至高三：这一页读的是选本，但「正文收归主表、以课本为主」的
        裁定要查课内那一份正文与译文（见 data/canonical-texts.js / 作品主表）——
