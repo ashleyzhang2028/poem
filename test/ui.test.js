@@ -272,14 +272,24 @@ setTimeout(() => {
     '「通用」页只有一组，且正文不再重复写组名（实际标题「' + groupTitlesOf(sgeneral).join('/') + '」）');
   chk(groupsOf(srecite).length === 2 && groupTitlesOf(srecite).join('/') === '背诵/复习算法',
     '「背诵」页是两组：背诵 + 复习算法（实际 ' + groupTitlesOf(srecite).join('/') + '）');
-  chk(groupsOf(slists).length === 1 && groupTitlesOf(slists).join('/') === '',
-    '「我的清单」页只有一组，且正文不再重复写组名');
+  /* ⚠️ 「我的清单」这一页现在是**两组**：清单本身 + 打印。
+     打印（Pro · export.paper）就长在它下面 —— 要打印的正是这份清单，
+     分开两页等于让用户在两张页之间来回搬东西（见 docs §5.2 与 js/print.js）。
+     ---- Issue #163（第三轮）：一页只有一组时**正文顶部不再重复写组名**
+     （它已经写在顶栏页名上），所以「通用」「朗读」两页 0 颗标题，
+     「我的清单」页只留「打印」那一颗（前一组的名字仍是顶栏页名）。 */
+  chk(groupsOf(sgeneral).length === 1 && groupTitlesOf(sgeneral).join('/') === '',
+    '「通用」页只有一组，且正文不再重复写组名（实际标题「' + groupTitlesOf(sgeneral).join('/') + '」）');
+  chk(groupsOf(slists).length === 2 && groupTitlesOf(slists).join('/') === '/打印',
+    '「我的清单」页两组，正文只留「打印」那一颗组标题（实际 ' + groupTitlesOf(slists).join('/') + '）');
   chk(groupsOf(sreader).length === 1 && groupTitlesOf(sreader).join('/') === '',
     '「朗读」页只有一组（Issue #163：原「阅读辅助 + 朗读播放」并成「朗读」），正文不重复写组名');
+  chk(groupsOf(srecite).length === 2 && groupTitlesOf(srecite).join('/') === '背诵/复习算法',
+    '「背诵」页是两组：背诵 + 复习算法（实际 ' + groupTitlesOf(srecite).join('/') + '）');
   // 四张页合起来：组数与顺序不变 —— 拆页不该顺手改分类。
   const allGroupCount = [sgeneral, srecite, slists, sreader]
     .reduce((n, doc) => n + groupsOf(doc).length, 0);
-  chk(allGroupCount === 5, '四张二级页合起来仍是五组（实际 ' + allGroupCount + '）');
+  chk(allGroupCount === 6, '四张二级页合起来是六组（实际 ' + allGroupCount + '）');
   // 页名就是「组名」的唯一一处：单组页的组名写在顶栏页名上，一个字没少。
   ['通用', '背诵', '我的清单', '朗读'].forEach((n, i) => {
     const doc = [sgeneral, srecite, slists, sreader][i];

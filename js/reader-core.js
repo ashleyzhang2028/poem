@@ -1000,6 +1000,12 @@
       // 第二行要再补一次（chrome:ready 那套不会为它触发）。
       paintSub();
     }
+    /* 「这一篇打出来」那颗键（`data-print-open` + `data-print-poem`）——
+       把当前这一篇的 id 写到那颗键上，打印那一层据此取篇目。
+       ⚠️ **一处写、一处读**：打印层只从属性上取 id，不自己猜「现在在读哪一篇」
+          （猜的话，从列表开出来的与从阅读器翻页翻到的会取到两篇不一样的）。 */
+    var printBtn = document.querySelector("[data-print-open]");
+    if (printBtn) printBtn.setAttribute("data-print-poem", p.id || "");
     window.scrollTo(0, 0);
   }
 

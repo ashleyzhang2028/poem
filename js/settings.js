@@ -499,6 +499,10 @@
         '<span class="collection-count">' + col.items.length + " 篇</span>" +
         '<button type="button" class="collection-act" data-rename="' + esc(col.id) + '" title="重命名" aria-label="重命名 ' + esc(col.name) + '">改名</button>' +
         '<button type="button" class="collection-act" data-export="' + esc(col.id) + '" title="导出成文本，可发给别的家长" aria-label="导出集合 ' + esc(col.name) + '">导出</button>' +
+        /* 「打印」这一颗是 3 期 Pro 的能力（`export.paper`）。**它不判权限、
+           也不置灰** —— 点开那一层自己会说清「这一项要 Pro」（`js/print.js`），
+           判据只有 `Entitlement.can()` 一处（docs §3.4：把入口藏起来不是边界）。 */
+        '<button type="button" class="collection-act" data-print="' + esc(col.id) + '" title="把这份清单排成一页纸，打印或存成 PDF" aria-label="打印集合 ' + esc(col.name) + '">打印</button>' +
         '<button type="button" class="collection-act danger" data-drop="' + esc(col.id) + '" title="删除集合" aria-label="删除集合 ' + esc(col.name) + '">删除</button>' +
         "</div>" +
         '<div class="collection-body"></div>';
@@ -627,12 +631,20 @@
         if (moved) renderCollections();
         return;
       }
-      const t = e.target.closest ? e.target.closest("[data-rename], [data-drop], [data-export]") : null;
+      const t = e.target.closest ? e.target.closest("[data-rename], [data-drop], [data-export], [data-print]") : null;
       if (!t || !window.ReciteCollections) return;
       e.stopPropagation();
       const rid = t.getAttribute("data-rename");
       const did = t.getAttribute("data-drop");
       const eid = t.getAttribute("data-export");
+      const pid = t.getAttribute("data-print");
+      if (pid) {
+        /* 打印（Pro · `export.paper`）：把这一本清单交给打印那一层。
+           ⚠️ 这里**一个字都不判权限** —— 入口照旧可点，那一层自己会说清
+              「这一项要 Pro」（docs §3.4：把入口藏起来不是边界）。 */
+        if (window.PrintPage) window.PrintPage.open({ collectionId: pid });
+        return;
+      }
       if (eid) {
         const col = window.ReciteCollections.get(eid);
         if (!col) return;
