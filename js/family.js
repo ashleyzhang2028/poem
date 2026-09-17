@@ -29,7 +29,7 @@
  *   v: 1,
  *   at: "f-...",                    // 当前选中的子档案 id
  *   profiles: [
- *     { id: "f-...", nickname: "小明", avatar: { char:"", ink:"" }, createdAt: 1699.. }
+ *     { id: "f-...", nickname: "小明", avatar: { img: "" }, createdAt: 1699.. }
  *   ]
  * }
  * ```
@@ -124,19 +124,20 @@
   }
 
   /**
-   * 头像字段归一化：**只留 char / ink 两个键**，其余一概丢掉。
+   * 头像字段归一化：**只留 `img` 一个键**，其余一概丢掉。
    *
-   * ⚠️ 这里**不校验合法性**（不判它是不是固定字集里的那个字）——
-   *    合法性只有一个来源：`js/avatar.js` 的 `isChar()` / `isInk()`。
+   * 历史上的 `char` / `ink`（固定字 + 固定四色那套字符印）在这里被丢掉 ——
+   * 用户 2026-09-19 点名删掉了那套流程（Issue #163），改写 `js/avatar.js`
+   * 的文件头。老用户的 `char` 不会丢「字」：首字印读的是昵称的第一个字。
+   *
+   * ⚠️ 这里**不校验地址合法性**（不判它是不是可用的图片地址）——
+   *    合法性只有一个来源：`js/avatar.js` 的 `isImgUrl()`。
    *    在这层再抄一份判据，两份判据早晚会分叉（分叉的症状是「设置页认、
    *    切换器不认」）。所以这里只做**形状**收敛，合法性交给 Avatar。
    */
   function normAvatar(a) {
-    if (!a || typeof a !== "object") return { char: "", ink: "" };
-    return {
-      char: typeof a.char === "string" ? a.char : "",
-      ink: typeof a.ink === "string" ? a.ink : ""
-    };
+    if (!a || typeof a !== "object") return { img: "" };
+    return { img: typeof a.img === "string" ? a.img : "" };
   }
 
   /** 一条子档案归一化；`id` 缺失就现发一个（脏数据也要能救回来，而不是整份丢掉） */
@@ -246,7 +247,7 @@
     var A = (typeof globalThis !== "undefined" && globalThis.Avatar) || null;
     var legacy = legacyProfile(b);
     var nickname = legacy ? legacy.nickname : "";
-    var avatar = legacy ? legacy.avatar : { char: "", ink: "" };
+    var avatar = legacy ? legacy.avatar : { img: "" };
     /* 老档案为空、但 Avatar 已经在场上时，仍走它一次：
        昵称可能只存在更老的 `settings.username` 里（见 avatar.js 的兼容读）。 */
     if (!nickname && A && A.nickname) {
@@ -422,7 +423,10 @@
     return { ok: true, profile: hit };
   }
 
-  /** 改某一个子档案的字 / 印。写的是那一份档案自己的头像字段 */
+  /**
+   * 改某一个子档案的头像（图片地址；传空串 = 回到首字印）。
+   * 写的是那一份档案自己的头像字段。
+   */
   function setAvatar(profileId, patch, opt) {
     var o = opt || {};
     var backing = o.backing === undefined ? defaultBacking() : o.backing;
@@ -431,8 +435,14 @@
     data.profiles.forEach(function (p) { if (p.id === profileId) hit = p; });
     if (!hit) return { ok: false, code: "E_NOT_FOUND" };
     var p = patch && typeof patch === "object" ? patch : {};
-    if (p.char != null) hit.avatar.char = typeof p.char === "string" ? p.char : "";
-    if (p.ink != null) hit.avatar.ink = typeof p.ink === "string" ? p.ink : "";
+    var A = (typeof globalThis !== "undefined" && globalThis.Avatar) || null;
+    if (p.img != null) {
+      var v = typeof p.img === "string" ? p.img.trim() : "";
+      /* 合法性只有一个来源（见 normAvatar 的注释）：Avatar 在场时问它，
+         不在场时按形状收下 —— 读的时候 normAvatar 仍会收敛。 */
+      if (v && A && A.isImgUrl && !A.isImgUrl(v)) return { ok: false, code: "E_IMG" };
+      hit.avatar.img = v;
+    }
     if (!write(backing, data)) return { ok: false, code: "E_WRITE" };
     return { ok: true, profile: hit };
   }

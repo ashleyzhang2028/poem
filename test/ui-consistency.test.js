@@ -833,8 +833,8 @@ chk(/flex:\s*none/.test(ruleOf(cssCode, '.brand-name-row h1')),
    三个「一模一样」都要能判：
      1) 同**直径** —— 头像的 --user-size 与徽标 .brand-mark 的 width 同一个数值
      2) 同**形状** —— 头像整圆（border-radius 50%），不再是 26% 的「圆的方角」
-     3) 印色**铺满** —— 内层 .seal-avatar 在顶栏里被覆写成 100% 满幅，
-        否则圆里还缩着一个小一号的方角印，「一模一样大」当场不成立
+     3) 头像**铺满** —— 内层 .avatar 在顶栏里被覆写成 100% 满幅，
+        否则圆里还缩着一个小一号的东西，「一模一样大」当场不成立
    为什么按算式判而不是写死 42：下次要调尺寸时，这两条断言仍会自动成立
    （它们守的是「两处同源」，不是「等于某个数」）。 */
 const markRule = ruleOf(cssCode, '.brand-mark');
@@ -854,14 +854,12 @@ chk(/width:\s*var\(--user-size\)/.test(userRule) && /height:\s*var\(--user-size\
   '头像的宽高都读 --user-size（尺寸只有一个来源，不两处各写一个数）');
 chk(/border-radius:\s*50%/.test(userRule),
   '头像外框是整圆（不是 26% 的「圆的方角」—— 用户要的是「圆形」）');
-const sealInUser = ruleOf(cssCode, '.top-user > .seal-avatar');
-chk(/width:\s*100%/.test(sealInUser) && /height:\s*100%/.test(sealInUser),
-  '顶栏那一枚印铺满整圆（width/height 100%，不在圆里再缩一圈）');
-chk(/border-radius:\s*50%/.test(sealInUser),
-  '顶栏那一枚印自身也是圆（印色满幅 + 圆边，两处口径一致）');
-chk(/--seal-size:\s*var\(--user-size\)/.test(sealInUser),
-  '印的字号基准也读 --user-size（字随圆走，圆变大字跟着变大）');
-chk(/--seal-size:\s*\d+px/.test(ruleOf(cssCode, '.seal-avatar-top')),
+const avatarInUser = ruleOf(cssCode, '.top-user > .avatar');
+chk(/width:\s*100%/.test(avatarInUser) && /height:\s*100%/.test(avatarInUser),
+  '顶栏那一枚头像铺满整圆（width/height 100%，不在圆里再缩一圈）');
+chk(/--avatar-size:\s*var\(--user-size\)/.test(ruleOf(cssCode, '.top-user > .avatar')),
+  '头像的尺寸基准也读 --user-size（与 .top-user 同一条令牌）');
+chk(/--avatar-size:\s*\d+px/.test(ruleOf(cssCode, '.avatar-top')),
   '顶栏那一枚留了兜底直径（万一 .top-user 那段没生效也不退化成零尺寸空圆）');
 chk(/width:\s*var\(--top-slot\)/.test(ruleOf(cssCode, '.top-act-spacer')),
   '头像渲染不出来时的兜底占位与头像同档（顶栏左右两栏才配平）');

@@ -228,8 +228,8 @@ async function main() {
         family: {
           v: 1, at: "f-ming",
           profiles: [
-            { id: "f-ming", nickname: "小明", avatar: { char: "小", ink: "#336699" }, createdAt: 100 },
-            { id: "f-hong", nickname: "小红", avatar: { char: "红", ink: "#aa0000" }, createdAt: 200 }
+            { id: "f-ming", nickname: "小明", avatar: { img: "https://x.supabase.co/a.jpg" }, createdAt: 100 },
+            { id: "f-hong", nickname: "小红", avatar: { img: "" }, createdAt: 200 }
           ]
         }
       });
@@ -246,7 +246,13 @@ async function main() {
       const got = await core.familyGet(d);
       eq(got.body.family.profiles.length, 2, "读回来是两个孩子");
       eq(got.body.family.profiles[0].nickname, "小明", "昵称保住了");
-      eq(got.body.family.profiles[0].avatar.ink, "#336699", "头像颜色保住了");
+      eq(got.body.family.profiles[0].avatar.img, "https://x.supabase.co/a.jpg", "头像地址保住了");
+      /* ⚠️ 反向：上一版的 char / ink 是**自造的固定字 + 固定四色**，
+         Issue #163 用户点名删掉，白名单里已经不认它们 —— 一台设备推一份老形状
+         上来，另一台也不许拿它去画（否则两边画出来的头像是两回事）。 */
+      eq(got.body.family.profiles[0].avatar.char, undefined, "上一版的字不再进白名单（两边都画首字印）");
+      eq(got.body.family.profiles[0].avatar.ink, undefined, "上一版的色不再进白名单");
+      eq(got.body.family.profiles[1].avatar.img, "", "没传图的孩子地址是空串（回落首字印）");
       eq(got.body.family.at, "f-ming", "选中的那个也保住了");
 
       /* 名册走 push 也能推（服务端两个入口都收它）—— 时间戳要**比上一次新**，
@@ -436,8 +442,8 @@ async function main() {
       const cloud = {
         v: 1, at: "f-cloud-b",
         profiles: [
-          { id: "f-cloud-a", nickname: "云A", avatar: { char: "云", ink: "#123456" }, createdAt: 100 },
-          { id: "f-cloud-b", nickname: "云B", avatar: { char: "B", ink: "#654321" }, createdAt: 200 }
+          { id: "f-cloud-a", nickname: "云A", avatar: { img: "https://x.supabase.co/a.jpg" }, createdAt: 100 },
+          { id: "f-cloud-b", nickname: "云B", avatar: { img: "" }, createdAt: 200 }
         ]
       };
       /* 假服务端**如实回它判给了谁**（真实服务端就是这么回的）——
