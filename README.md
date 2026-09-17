@@ -147,14 +147,14 @@ python3 -m http.server 8080  # 或 Python 3
 ├── css/                    # style.css（全站）/ classic.css（阅读器）/ legal.css（法务页）
 ├── js/                     # 应用脚本（progress-store.js：分域引擎；
 │                           #   sync-store.js：跨设备同步，storage.js 是前者的转发层）
-├── api/                    # Vercel Serverless：**1 个函数**（[...path].js 收口，
+├── api/                    # Vercel Serverless：**1 个函数**（index.js 收口，
 │                           #   _routes/ 是 19 条路由的实现，_lib/ 是可在 Node 里直接测的内核）
 ├── fonts/                  # 自托管中文 Web Font（思源宋体 / 黑体，子集化）
 ├── icons/                  # 矢量图标 + 各尺寸 PNG
 ├── data/                   # 诗词语料与索引（见下）
 ├── scripts/                # 本地服务器、数据生成脚本，以及 doctor.js（开通自检）
 ├── api/                    # 服务端（Vercel Serverless，1 期 1A 已落地）
-│   ├── [...path].js                    # **唯一那个函数**：按内表把 /api/* 转给下面
+│   ├── index.js                        # **唯一那个函数**：/api 目录的兜底，按内表转发
 │   ├── _routes/                        # 19 条路由的实现（一个业务一个文件）
 │   │   ├── send-code.js verify-code.js me.js account.js
 │   │   ├── sync/pull.js sync/push.js
@@ -253,7 +253,7 @@ bash test/run.sh   # 全部测试（等价于 npm test）
 ```
 
 测试分多层，覆盖调度算法、各页面端到端（jsdom）、数据完整性、主题、注音朗读、法务页、
-服务端 19 条路由（真 http，不联网；线上由 `api/[...path].js` **一个函数**收口）、
+服务端 19 条路由（真 http，不联网；线上由 `api/index.js` **一个函数**收口）、
 头像上传（裸字节 + 客户端压缩裁切）、
 账号接线、权威发放、开通自检等。其中 PWA 一层需要真实浏览器
 （`puppeteer`），未安装则跳过。
@@ -329,13 +329,21 @@ Serverless 函数，而上面这 19 条路由按「一个文件 = 一个函数�
 deployment on the hobby plan`）。所以：
 
 - 19 条路由的实现放在 `api/_routes/`（`_` 开头的目录 Vercel 不当函数）；
-- `api/[...path].js` 是**唯一那个函数**，按 `api/_lib/routes.js` 那张
-  **唯一的路由表**把请求转发给对应的 handler；
-- `vercel.json` 一条 rewrite `/api/:path*` → `/api/handler/:path*` 把外部地址接进去。
+- `api/index.js` 是**唯一那个函数**（`/api` 目录的兜底），按 `api/_lib/routes.js`
+  那张**唯一的路由表**把请求交给对应的 handler。
 
 **外部 URL 一个都没变**（`/api/me` 还是 `/api/me`），客户端、文档、`npm run doctor`
-的 curl 全部照旧。档位若不是 Hobby，把 `vercel.json` 那条 rewrite 去掉即可，
-一行代码不用改 —— 这是**唯一一处**平台档位与代码的耦合点。
+的 curl 全部照旧。
+
+⚠️ **这条收口不靠 `vercel.json`**（2026-09-17 的教训，见 `docs/architecture.md` §2.2.1）：
+上一版是 `api/[...path].js` **加**一条 rewrite `/api/:path*` → `/api/handler/:path*`，
+而**那条 rewrite 线上从来没生效** —— 全站 `/api/*` 回 Vercel 平台层的 404
+（`The page could not be found`），静态页面照旧 200，本地测试还全绿（测试挂的是模块，
+rewrite 那一层在测试里不存在）。现在收口只靠**文件位置**，`vercel.json` 里
+**不许有任何 rewrite**（`test/api.test.js` 末节守着这一条）。
+
+**验收这一条**（第 E 步第 ⑥ 条）：`curl -sS "$SITE_URL/api/config"` 期望 **200**；
+回 404 且正文是 `The page could not be found` = 打到了平台层，`/api/*` 没接到函数上。
 
 **四条硬规矩**：明文验证码不进任何日志（`api/_lib/http.js` 的 `log()` 会把 `code` 之类一律抹掉）；
 权益只从 `/api/me` 来，请求体里的 `plan` 一律忽略；所有写接口都有频控；
@@ -432,7 +440,9 @@ Vercel 的环境变量**只在新部署里生效**（这是「我明明配了」
 curl -sS -o /dev/null -w '%{http_code}\n' "$SUPABASE_URL/rest/v1/accounts?select=uid&limit=1" \
   -H "apikey: $SUPABASE_SERVICE_KEY" -H "Authorization: Bearer $SUPABASE_SERVICE_KEY"  # 期望 200
 curl -sS "$SITE_URL/api/me" | head -c 200                      # 期望 401（回 503 就是 SESSION_SECRET 没生效）
-curl -sS "$SITE_URL/api/config"                                # 期望 turnstile.enabled:true 且带 siteKey
+curl -sS "$SITE_URL/api/config"                                # 期望 200 + turnstile.enabled:true 且带 siteKey
+# ⚠️ 若上面两条回 404 且正文是「The page could not be found」，那是 **Vercel 平台层**
+#    报的（本站的 404 形状是 {"code":"E_404",...}）—— 意思是 /api/* 没接到函数上
 # 发一次码：delivered 必须是 true，transport 要是你配的那一家
 ```
 

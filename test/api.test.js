@@ -6,7 +6,7 @@
  *   · 数据库走 `memoryStore`（进程内 Map），不需要真 Supabase
  *   · 发信走 `console` 通道（只打日志，不出网）
  *   · HTTP 层用 Node 的 `http` 起一个**只监听 127.0.0.1:0** 的真服务器，
- *     把 `api/[...path].js` 这个**唯一入口**（Issue #205：Hobby 档上限 12 个
+ *     把 `api/index.js` 这个**唯一入口**（Issue #205：Hobby 档上限 12 个
  *     函数，而我们有 19 条路由）挂上去 ——
  *     这样测的是**真的请求-响应链**，
  *     包括 Cookie 头、状态码、JSON 形状，而不是「直接调内核」。
@@ -71,8 +71,8 @@ function boot(envVars) {
 /**
  * 起一个真 HTTP 服务器，**按线上那一套路由**把请求交出去。
  *
- * Issue #205 之后线上不再是一个文件一个函数：`/api/*` 由 `api/[...path].js`
- * 这**一个** catch-all 收口（Vercel Hobby 档上限 12 个函数，而我们有 19 个
+ * Issue #205 之后线上不再是一个文件一个函数：`/api/*` 由 `api/index.js`
+ * 这**一个**兜底函数收口（Vercel Hobby 档上限 12 个函数，而我们有 19 个
  * 路由）。所以这里也不再自己抄一份路由表 —— 那样抄出来的是一张**第二实现**：
  * 线上加了接口而测试没跟上时，症状是「测试全绿、线上 404」，反过来则是
  * 「测试里能打到、线上根本没有」。
@@ -85,7 +85,7 @@ function boot(envVars) {
  * 这一条现在也在 `api/_lib/routes.js` 里（`methodAllowed:false`）。
  */
 function serve() {
-  const entry = require("../api/[...path].js");
+  const entry = require("../api/index.js");
   /* 另一条断言口：路由表本身。用它检查「表里的条目与 handler 真能对上」 */
   const routes = require("../api/_lib/routes.js");
   const server = http.createServer(entry);
@@ -3249,12 +3249,19 @@ async function main() {
 
      Vercel Hobby 档一个部署最多 12 个 Serverless 函数，而 `api/` 下被
      「一个文件 = 一个函数」这条目录约定数出了 19 个。收口的办法是
-     `/api/*` 只暴露一个 catch-all（`api/[...path].js`），`vercel.json`
-     用一条 rewrite 把外部地址转进去。
+     `/api/*` 只暴露一个兜底函数（`api/index.js`）。
+
+     ⚠️ 2026-09-17：上一版的收口方式是 `api/[...path].js` **加**一条
+        `vercel.json` rewrite（`/api/:path*` → `/api/handler/:path*`），
+        而那条 rewrite **线上从来没生效** —— 全站 `/api/*` 回 Vercel 平台层
+        的 404，静态页面照旧 200。本地测试抓不到它，因为测试挂的是**模块
+        本身**，rewrite 那一层在测试里根本不存在。所以这里的断言改成：
+        **不许有任何 rewrite**（收口只靠文件位置，少一处能坏的地方），
+        并把「平台层那一层」用一条真的走 `api/index.js` 的请求钉住。
 
      于是这一节守三件事 —— 每一件都能单独把线上弄坏，而且**都不会被别处测到**：
        ① 函数数**真的**降到了 12 以下（数错了，改动就是白做，构建照样红）
-       ② `vercel.json` 那条 rewrite 存在、且方向对（写歪了 = 全站 /api 404）
+       ② `vercel.json` 里**没有** rewrite（有 = 又回到了那个坏形状）
        ③ 路由表与 `api/` 下的文件**逐条对得上**（少一条 = 那个接口静默消失）
      ================================================================== */
   fs.writeFileSync("/tmp/m205.txt", "REACHED-205\n");
@@ -3281,16 +3288,19 @@ async function main() {
     })(apiDir);
 
     eq(entries.length, 1, "api/ 下只有 **1 个** Serverless 函数入口（Hobby 上限 12）");
-    chk(entries[0] === "[...path].js", "那一个入口就是 catch-all（实际 " + entries[0] + "）");
+    chk(entries[0] === "index.js",
+      "那一个入口就是 /api 目录的兜底函数 api/index.js（实际 " + entries[0] + "）");
     chk(entries.length <= 12, "函数数没有超过 Hobby 档的 12（实际 " + entries.length + "）");
 
-    /* ② vercel.json 的 rewrite */
+    /* ② vercel.json **不许**再有 rewrite —— 它就是坏掉的那一层。
+       上一版靠 rewrite 把 /api/* 转到 /api/handler/*，线上那条从来没生效
+       （全站 /api 404）。收口改回「文件位置」之后，rewrite 是一条**回归**：
+       谁再加一条，这里就红。 */
     const vercel = JSON.parse(fs.readFileSync(path.join(ROOT, "vercel.json"), "utf8"));
-    const rw = (vercel.rewrites || []).find(r => r.source === "/api/:path*");
-    chk(!!rw, "vercel.json 里有一条 `/api/:path*` 的 rewrite");
-    eq(rw && rw.destination, "/api/handler/:path*",
-      "那条 rewrite 转到 catch-all 的内部前缀（与 routes.js 的 PREFIX 同一处约定）");
-    eq(routesMod.PREFIX, "/api/handler", "routes.js 的 PREFIX 与 vercel.json 的 destination 对得上");
+    eq((vercel.rewrites || []).length, 0,
+      "vercel.json 里没有任何 rewrite（/api/* 的收口靠 api/index.js 的文件位置，不靠配置）");
+    eq(routesMod.PREFIX, "/api/handler",
+      "routes.js 仍认历史上那个内部前缀（兼容旧书签），但它**不再**来自 vercel.json");
 
     /* ③ 路由表 ↔ 文件 */
     Object.keys(routesMod.ROUTES).forEach(key => {
@@ -3330,6 +3340,51 @@ async function main() {
     /* 同义地址归一：末尾斜杠与重复斜杠都当同一条 */
     chk(!!routesMod.resolve("GET", "/api/me/"), "/api/me/ 与 /api/me 同一条（末尾斜杠不另开一条）");
     chk(!!routesMod.resolve("GET", "//api//me"), "重复斜杠不影响命中");
+
+    /* ④ **用户看到的地址**真的能打到 handler（Issue #197 复盘的形状）
+       --------------------------------------------------------------
+       上面 ③ 断的是「表与文件对得上」——**模块层面**。它拦不住真正的坏法：
+       上一版 rewrite 失效时，模块层一切正常、本地全绿，线上 `/api/me`
+       却是平台层的 404。所以这里再补一条**地址层**的断言：
+       直接挂 `api/index.js`，按用户看到的那种地址（`/api/...`，不带任何
+       内部前缀）打一次，必须打到 handler（401 / 503 这种「业务自己回的」，
+       而**不是** 404 E_404 那种「本站说没有这个接口」）。
+
+       ⚠️ 为什么不是再起一个服务器：下面那一段就是同一个函数、同一种地址。
+          这里用 `http.get` 直连，正是为了**不经过任何 rewrite 替身**。 */
+    {
+      const srv = http.createServer(require("../api/index.js"));
+      await new Promise(r => srv.listen(0, "127.0.0.1", r));
+      const port = srv.address().port;
+      const hit = (method, p) => new Promise(resolve => {
+        const req = http.request({ host: "127.0.0.1", port: port, method: method, path: p },
+          res => {
+            let buf = "";
+            res.on("data", d => { buf += d; });
+            res.on("end", () => resolve({ status: res.statusCode, raw: buf }));
+          });
+        req.on("error", e => resolve({ status: 0, raw: String(e && e.message) }));
+        req.end(method === "POST" ? JSON.stringify({}) : undefined);
+      });
+
+      const me = await hit("GET", "/api/me");
+      chk(me.status === 200 || me.status === 401 || me.status === 503,
+        "用户地址 GET /api/me 打到的是本站 handler，不是 404（实际 " + me.status + "）");
+      chk(me.raw.indexOf("E_404") < 0,
+        "GET /api/me 不是「本站说没有这个接口」（那就是路由没接上）");
+
+      const cfg = await hit("GET", "/api/config");
+      chk(cfg.status === 200, "用户地址 GET /api/config 是 200（实际 " + cfg.status + "）");
+      chk(cfg.raw.indexOf("turnstile") >= 0, "/api/config 真的回的是配置，不是别的什么东西");
+
+      /* 反面：表里没有的路径仍然要回本站的 404 形状（这一条**必须**是 404，
+         否则它就成了「什么都放行」，上面两条就失去意义了） */
+      const nope = await hit("GET", "/api/nope");
+      eq(nope.status, 404, "表里没有的路径回 404");
+      chk(nope.raw.indexOf("E_404") >= 0, "而且回的是**本站**那个 404 形状（不是平台层的 NOT_FOUND）");
+
+      await new Promise(r => srv.close(r));
+    }
   }
 
 
