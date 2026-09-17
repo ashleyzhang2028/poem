@@ -3452,8 +3452,21 @@ html, body {
   box-sizing: border-box;
   flex: 0 0 auto;
 }
-.modal-box .reader-actions .seg.mini { padding: 3px; }
-.modal-box .reader-actions .seg.mini button { font-size: 12.5px; padding: 6px 10px; border-radius: 8px; }
+/* 「选中按钮与组合框共用边框」（Issue #205）：组合框不再留内边距，
+   内层按钮铺满它，与框共用同一条 1px 边。全局那套分段规则写在 css/classic.css 里，
+   首页只引 style.css，所以这里要按同样的口径再写一遍（这一页的尺寸是 38px 那一档）。 */
+.modal-box .reader-actions .seg.mini { padding: 0; }
+.modal-box .reader-actions .seg.mini button {
+  font-size: 12.5px;
+  padding: 6px 10px;
+  border-radius: 0;
+  flex: 1 1 0;
+}
+.modal-box .reader-actions .seg.mini button:first-child { border-radius: var(--radius-sm) 0 0 var(--radius-sm); }
+.modal-box .reader-actions .seg.mini button:last-child { border-radius: 0 var(--radius-sm) var(--radius-sm) 0; }
+.modal-box .reader-actions .seg.mini button + button,
+.modal-box .reader-actions .seg.mini button.active + button { border-left: 1px solid var(--line); }
+.modal-box .reader-actions .seg.mini button.active { box-shadow: none; }
 /* 对齐 / 字号：图标与字母都居中，两段之间一条界行细线 */
 .modal-box .reader-actions .icon-seg button {
   display: inline-flex;
@@ -3513,7 +3526,7 @@ html, body {
    字号与内边距各收一档，必要时允许整行横向滑动，绝不换行错位。 */
 @media (max-width: 380px) {
   .modal-box .reader-actions { gap: 5px; }
-  .modal-box .reader-actions .seg.mini { padding: 2px; }
+  .modal-box .reader-actions .seg.mini { padding: 0; }
   .modal-box .reader-actions .seg.mini button,
   .modal-box .reader-actions .icon-seg button,
   .modal-box .reader-actions .font-seg button { padding: 6px 6px; font-size: 11.5px; }
