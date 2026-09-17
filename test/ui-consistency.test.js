@@ -490,28 +490,29 @@ chk(/\.settings-item\.wide\s*\{[^}]*max-width:\s*100%/s.test(cssCode),
         判据是「真的排了 grid 区域」，不是「某个像素等于多少」——
         换一种并排方式（例如 grid-template-columns 写死列宽）也照样成立。 */
   const homeGrid = /@media \(min-width:\s*1024px\)[\s\S]{0,900}body\[data-nav="home"\]\s*\.app\s*\{([\s\S]{0,400}?)\}/.exec(cssCode);
-  /* ⚠️ Issue #209：原先这里说的是「**三**块不再各自一条通栏横带」——
-     「全部诗词」那张卡撤掉之后首页只剩**两**块（今日进度 / 今日列表），
-     栅格那一节跟着收掉了一行（见 css/style.css 的 grid-template-areas）。
-     判据从「三块」改成「两块」，其余口径一字未动。 */
-  chk(!!homeGrid, '首页在桌面那一档给 .app 排了栅格（两块不再各自一条通栏横带）');
+  /* ⚠️ Issue #209 那一轮把「全部诗词」那张卡误删了，这条当时从「三块」
+     收成「两块」。第二轮用户点名要求整张卡恢复（「#210 搞错了 请把背诵首页的
+     「全部诗词」整张卡（折叠头 + 统计行 + 篇目列表）恢复！」），于是口径
+     **回到三块** —— 那一行格子必须有人认领，否则卡片会掉进第一列（340px）。 */
+  chk(!!homeGrid, '首页在桌面那一档给 .app 排了栅格（三块不再各自一条通栏横带）');
   if (homeGrid) {
     chk(/grid-template-areas/.test(homeGrid[1]),
-      '首页两块用 grid-template-areas 定位（不改 DOM 顺序：读屏与 Tab 的次序不变）');
-    chk(/today/.test(homeGrid[1]) && /card/.test(homeGrid[1]),
-      '两个区域名对应首页那两块（今日进度 / 今日列表）');
-    /* 「全部诗词」那一格必须**真的没了**：留着 `"all all"` 就是一个永远空着
-       的格子 —— 它不报错，只是让第一行到第二行之间多出一截谁也说不清的空白。 */
-    chk(!/\ball\b/.test(homeGrid[1].replace(/[a-z-]*align[a-z-]*/g, '')),
-      '区域图里不再有 all 那一行（那张卡撤了，别留一个没人认领的空格子）');
+      '首页三块用 grid-template-areas 定位（不改 DOM 顺序：读屏与 Tab 的次序不变）');
+    ['bar', 'today', 'card', 'all'].forEach(name => {
+      chk(new RegExp('"?' + name + '\\s+' + name + '"|\\b' + name + '\\b').test(homeGrid[1]),
+        '区域图里有「' + name + '」那一格');
+    });
   }
-  // 两块真的认领了各自那一格
-  ['today-bar', 'today-list'].forEach(sel => {
-    chk(new RegExp('body\\[data-nav="home"\\] \\.' + sel + ' \\{ grid-area:').test(cssCode),
+  // 三块真的认领了各自那一格
+  /* 「今日」那一格由 `#today-list`（裸的 .list）认领 —— 用户第二轮要求撤掉
+     包着 5 张卡片的那层壳，所以认领者从 `.today-list` 换成了 `#today-list`。 */
+  ['today-bar', 'all-section'].forEach(sel => {
+    chk(new RegExp('body\\[data-nav="home"\\] \\.' + sel +
+      '(?:[^{}]*)?\\{ grid-area:').test(cssCode),
       '首页的 .' + sel + ' 认领了自己那一格（只写容器不写子元素等于没排）');
   });
-  chk(!/body\[data-nav="home"\] \.all-section/.test(cssCode),
-    '首页不再有 .all-section 认领格子（那一块整块撤了）');
+  chk(/body\[data-nav="home"\] #today-list \{ grid-area: card; \}/.test(cssCode),
+    '今日那一格由 #today-list 自己认领（它不再套一层卡，认领者随之改口）');
   /* ③之二、**顶栏也必须认领整行**（2026-09-17 修的真 bug）
      ------------------------------------------------------------------
      `.topbar` 是 `.app` 的第一个子元素，而桌面那一档 `.app` 是个两列 grid。
@@ -530,9 +531,10 @@ chk(/\.settings-item\.wide\s*\{[^}]*max-width:\s*100%/s.test(cssCode),
     chk(new RegExp('\\{ grid-area: ' + name + '; \\}').test(cssCode),
       '区域图里的「' + name + '」有一个元素真的认领了（没人认领 = 留下一个空格子）');
   });
-  // 首页今日那一块在 DOM 上真的是一张卡（宽屏上要看出「这是一块」）
-  chk(/class="card today-list"/.test(read('index.html')),
-    '首页「今日」那一块是一张卡（手机上单条 .item 自带纸底，看不出差别；宽屏上它是分界线）');
+  // 首页今日那 5 条在 DOM 上各自是一张卡（不再被一张卡包住）
+  chk(/class="list" id="today-list"/.test(read('index.html')) &&
+    !/class="card today-list"/.test(read('index.html')),
+    '首页「今日」那 5 条直接列成 5 张独立卡片（没有外包的那层壳）');
 
   /* ④之零、**卷次卡不是「一条篇目」**（2026-09-17 修的真 bug）
      ----------------------------------------------------------------------
@@ -804,14 +806,18 @@ chk(/class="progress-main"/.test(read('progress/index.html')),
   '进度页真的套了 .progress-main');
 chk(/class="card progress-card wide"/.test(read('progress/index.html')),
   '进度概览那张卡真的带了 .wide');
-/* 首页「今日」那一块：外层是一张卡（Issue #163 第四轮补的 .card），
-   容器自己带 .today-list —— 分栏只作用在 .list 的直接子元素上，
-   而且这一层在宽屏上要被排进「今日」那一格（见 .app 的 grid-template-areas）。
-   ⚠️ 判据是「这层真实存在且带 .card」，不是「class 恰好等于 today-list」：
-      手机上看不出多一层 .card（条目自己就带纸底），宽屏上却是
-      「一组条目」与「一张卡」的分界。 */
-chk(/class="card today-list"/.test(read('index.html')),
-  '首页今日列表套了容器（两列只作用在 .list 的直接子元素上，宽屏上它是一张卡）');
+/* 首页「今日」那一块：容器就是 `.list` 自己，**不再套一层 .card**。
+   --------------------------------------------------------------------------
+   用户 2026-09-17 第二轮原话：「现在5首诗词各自是个卡片，但他们5个被
+   一张卡片包住了，我不需要这个包的卡片，直接列出5个卡片！」
+   （这层壳是 Issue #163 第四轮为「宽屏并排时看得出这是一批」补的，
+     用户的判读是「多一层壳、没多一条信息」——以用户看到的为准，撤。）
+   ⚠️ 判据反之：HTML 里**不许**再出现包着 #today-list 的 `.card`，
+      且 #today-list 真的直接挂在 .app 下。 */
+chk(/class="list" id="today-list"/.test(read('index.html')),
+  '首页今日列表就是裸的 .list（外层那层 .card 壳已撤）');
+chk(!/class="card today-list"/.test(read('index.html')),
+  '首页不再有包住今日 5 条的卡片（.card today-list 已撤）');
 
 /* iOS 横屏「按宽度放大文字」的默认行为要关掉，否则同一段说明
    在竖屏 / 横屏下字号不同（这与台式机的响应式不是一件事） */

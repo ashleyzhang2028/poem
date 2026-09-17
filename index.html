@@ -78,18 +78,27 @@
     </section>
 
     <!-- 今日 5 首列表。
-         ⚠️ 外层这一层是给平板/桌面那一档的：分栏只作用在 .list 的直接子元素上
-            （见 css/style.css 的平板那一档），这里包一层「今日」自己的**卡**，
-            免得今日几首与下面折叠卡里的全部篇目排进同一个多列流。
-         ⚠️ Issue #163 第四轮：这一层补上 `.card`（原来是裸的 `<div>`）——
-            手机上看不出来（里面每条 .item 自己就带纸底 + 圆角 + 阴影），
-            可一旦按下面那张表在宽屏上排成两列，条目之间的行距会把
-            「一张卡」读成「两张卡」。裹一张纸，读者才看得出这是「今天这一批」。
-            `id="today-list"` 仍在**内层**（js/app.js 按这个 id 取容器），
-            所以引擎一行都不用改。 -->
-    <section class="card today-list" id="today-card">
-      <div class="list" id="today-list"></div>
-    </section>
+         ⚠️ Issue #209 后续（用户第二轮原话）：
+            「现在5首诗词各自是个卡片，但他们5个被一张卡片包住了，
+              我不需要这个包的卡片，直接列出5个卡片！」
+
+            这里原先（Issue #163 第四轮起）套着一层 `<section class="card
+            today-list" id="today-card">`，理由写在当时那段注释里：
+            宽屏上今日这 5 条要排成两列，裹一张纸才看得出「这是今天这一批」。
+            那条理由在**宽屏并排**那个前提下成立，而用户看的是手机 /
+            自己那一屏：他看到的是一张卡片把 5 张卡片包住 —— 多一层壳，
+            没有多一条信息（「今日背诵 共 5 首」那一条已经说了这是哪一批）。
+
+            于是把**这层壳撤掉**，`.list` 直接当 .app 的子元素，
+            5 条 .item 各自是一张纸（纸底 + 圆角 + 阴影仍是每条自己的，
+            与集子页、搜索页那些列表同款）——
+            首页从此真的只有两件事：一条进度、五张独立卡片。
+
+            ⚠️ 引擎一个字都没动：`id="today-list"` 仍在 `.list` 自己身上
+               （js/app.js 按这个 id 取容器），只是它的父元素从那张卡变成了 .app。
+            ⚠️ 撤掉的是**这层壳**，不是今日那 5 条：它们照旧按遗忘曲线排、
+               照旧各带播放键与掌握度条。 -->
+    <div class="list" id="today-list"></div>
 
     <!-- 自选背诵不在这里：导入 / 导出 / 改名 / 删除 / 整组移出 / 上移下移
          都搬去了设置整页（/settings/ 的「我的清单」一组，Issue #114 第二条）。
@@ -103,18 +112,40 @@
          **管理入口**，不是这些篇目的背诵 —— 该背的照旧在今日列表里背。
          两页读的是同一份 localStorage 键 poem_recite_collections_v1。 -->
 
-    <!-- 「全部诗词」那张卡片**整块撤掉了**（Issue #209）。
-         用户 2026-09-17 原话：「现在背诵首页的5首诗词下面多了个大卡片，
-         这个不需要的，首页就是古诗独立卡片设计。」
+    <!-- 全部诗词（可折叠）
+         ⚠️ 这张卡 Issue #209 被我（CodeBuddy）误删了一轮：用户当时说
+            「背诵首页的5首诗词下面多了个大卡片」，指的是**今日那 5 条外面
+            包着的那张卡**，我判成了「本年级本学期全部诗词」这一张。
+            用户 2026-09-17 第二轮原话：「#210 搞错了 请把背诵首页的
+            「全部诗词」整张卡（折叠头 + 统计行 + 篇目列表）恢复！」
 
-         撤掉的是这一整张卡（折叠头 + 统计行 + 篇目列表），不是那些篇目的背诵 ——
-         它们照旧按遗忘曲线排在今日任务里；要看整册目录去 /poems/ 索引页，
-         要按册次翻去 /library/ 的「课内诗词」那一部。撤掉之后首页只剩两件事：
-         今天背哪几首、背到哪一步了。
-
-         ⚠️ 原先这张卡在桌面那一档认领 grid 的第三行（`grid-area: all`），
-            这一块没了之后那一行也就空了 —— CSS 那边同步收掉了（见
-            css/style.css 的 grid-template-areas）。 -->
+            所以这里**原样恢复**（撤之前的 DOM 一字不差），另外那层误判的壳
+            在今日列表那边撤掉了（见上面那段注释）。 -->
+    <section class="card all-section">
+      <button class="collapse-head" id="btn-all">
+        <span class="collapse-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 5.2A1.2 1.2 0 0 1 5.2 4H10v16H5.2A1.2 1.2 0 0 1 4 18.8Z" />
+            <path d="M10 4h4.8A1.2 1.2 0 0 1 16 5.2V20h-6Z" />
+            <path d="M16 8h2.8A1.2 1.2 0 0 1 20 9.2V20h-4" />
+          </svg>
+        </span>
+        <span id="all-label">本年级本学期全部诗词</span>
+        <span id="all-count" class="badge">0</span>
+        <!-- 折叠箭头：空心描边三角（与列表右侧「›」同一套描边语言）。
+             收起时朝下、展开时朝上，由 .collapse-head.open 只旋转不换图，
+             笔画粗细和「›」一致，不再是实心 ▾ 那种另一套风格。 -->
+        <span class="arrow" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6.6 9.8 12 15.2l5.4-5.4" />
+          </svg>
+        </span>
+      </button>
+      <div class="collapse-body" id="all-body" hidden>
+        <div class="stats-row" id="stats-row"></div>
+        <div class="list" id="all-list"></div>
+      </div>
+    </section>
 
     <!-- 版权 + 用户协议 / 隐私条款已挪到设置整页（/settings/）底部 -->
   </div>

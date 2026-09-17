@@ -119,6 +119,7 @@
     syncPinyinBtn();
   }
 
+
   /* ---------------- 工具 ---------------- */
   function todayKeyStr() {
     const d = new Date();
@@ -366,6 +367,7 @@
     invalidatePlan();
     todayPlan = buildTodayPlan();
     renderToday();
+    renderAll();
   }
 
   function buildTodayPlan() {
@@ -628,20 +630,55 @@
     return out.join("");
   }
 
-  /* ⚠️ 「全部诗词」那张卡的渲染（renderAll）**整块撤掉了**（Issue #209）。
-     用户 2026-09-17 原话：「现在背诵首页的5首诗词下面多了个大卡片，
-     这个不需要的，首页就是古诗独立卡片设计。」
+  /* ---------------- 渲染：全部诗词 ---------------- */
+  function renderAll() {
+    const scope = scopeInfo();
+    const poems = currentScopePoems();
+    $("#all-count").textContent = poems.length;
 
-     撤掉的是那一整张卡（折叠头 + 统计行 + 篇目列表），也就是这里的
-     `renderAll()` 与下面 bindEvents 里 `#btn-all` 那一颗折叠键。
-     那些篇目的背诵**一字未动**：它们照旧按遗忘曲线排进今日任务
-     （`buildTodayPlan()` 读的还是 `currentScopePoems()`）。
-     要看整册目录去 `/poems/` 索引页，要按册次翻去 `/library/` 的课内那一部。
+    const label = $("#all-label");
+    if (label) label.textContent = scope.random ? scope.scopeName + "全部诗词" : "本年级本学期全部诗词";
 
-     ⚠️ 为什么整段删掉而不是留一个「取不到 #all-list 就跳过」的空壳：
-        那种写法在这里已经有先例（`if (label)` 之类），但它的代价是**每次
-        改动都要重新确认一遍这一页没有那个 id** —— 而这张卡是明确不要了，
-        留着只会让下一个人以为「首页还有一块全部诗词，只是暂时没显示」。 */
+    const st = Scheduler.stats(poems, getRecord);
+    $("#stats-row").innerHTML =
+      '<div class="stat"><b>' + st.total + "</b><span>诗词总数</span></div>" +
+      '<div class="stat"><b>' + st.learned + "</b><span>已学</span></div>" +
+      '<div class="stat"><b>' + st.mastered + "</b><span>较牢固</span></div>" +
+      '<div class="stat review"><b>' + st.dueToday + "</b><span>待复习</span></div>";
+
+    const box = $("#all-list");
+    box.innerHTML = "";
+    if (!poems.length) {
+      box.innerHTML = '<div class="empty">暂无数据</div>';
+      return;
+    }
+    poems.forEach(function (p, i) {
+      const rec = getRecord(p.id);
+      const el = document.createElement("div");
+      el.className = "item";
+      el.innerHTML =
+        '<div class="item-main">' +
+        // 同上：序号圆在标题行内，排在篇名前面
+        '<h3 class="item-title"><span class="item-num">' + (i + 1) + "</span>" + esc(p.title) + "</h3>" +
+        '<div class="item-meta">' +
+        metaLine([p.dynasty, p.author].concat(
+          // ⚠️ 年级 / 掌握度这两栏是**无条件**跟着的（各带一个前置「·」），
+          // 所以 metaLine 里那些「空值即不渲染分隔符」的规矩到第一栏之后就得让位 ——
+          // 这里把后面的尾巴拼成一段「整串」，再交给 metaLine 排在末尾：
+          // 朝代一空时只省掉它自己，不会把「· 二年级上」那一截也吞掉。
+          [scope.random ? gradeName(p.grade) + termName(p.term) : "",
+           rec && rec.learned ? Scheduler.levelName(rec.level, rec) : "未学过"]
+            .filter(Boolean).join(" · "))) +
+        "</div>" +
+        (rec && rec.learned ? '<div class="mbar"><i style="width:' + Scheduler.mastery(rec) + '%"></i></div>' : "") +
+        "</div>" +
+        '<div class="item-arrow">' + arrowGlyph() + "</div>";
+      el.addEventListener("click", function () {
+        openPoem(p, null);
+      });
+      box.appendChild(el);
+    });
+  }
 
   /**
    * 篇名显示名：去掉语料内部用来区分同名词作的「其一 / 其二 / 其三」。
@@ -662,6 +699,23 @@
       return window.ReciteCollections.displayTitle(title);
     }
     return title;
+  }
+
+  /**
+   * 自选篇目 → 详情弹层认的篇目对象。
+   *
+   * 详情弹层（openPoem）读 `p.grade` / `p.term` 显示年级学期，自选篇目没有；
+   * 补 `custom: true` 让那一格改显示集子名（见 openPoem）。
+   * 译文来源口径也一并带上，详情页底部的来源注脚才出得来。
+   */
+  function customPoem(p, repId, entryId) {
+    const src = (window.SITE_INDEX || []).filter(function (x) { return x.id === (entryId || repId); })[0];
+    return Object.assign({}, p, {
+      id: repId,
+      custom: true,
+      bookName: (src && src.bookName) || p.bookName || "",
+      translationSource: (src && src.translationSource) || p.translationSource
+    });
   }
 
   /**
@@ -1355,6 +1409,7 @@
     });
     closeModal();
     renderToday();
+    renderAll();
   }
 
   /* ---------------- 刷新 ---------------- */
@@ -1363,6 +1418,7 @@
     if (rebuild) invalidatePlan();
     renderGradeChips();
     rebuildToday();
+    renderAll();
   }
 
   function rebuildToday() {
@@ -1479,6 +1535,13 @@
       setTimeout(syncTodayReadBtn, 60);
     });
 
+    const btnAll = $("#btn-all");
+    if (btnAll) btnAll.addEventListener("click", function () {
+      const body = $("#all-body");
+      body.hidden = !body.hidden;
+      this.classList.toggle("open", !body.hidden);
+    });
+
     $$("#seg-scope button").forEach(function (b) {
       b.addEventListener("click", function () {
         settings.scope = b.dataset.scope;
@@ -1501,6 +1564,7 @@
         Storage.clear();
         invalidatePlan();
         rebuildToday();
+        renderAll();
         showToast("进度已清空");
       }
     });
@@ -1535,6 +1599,7 @@
           applyAppName();
           renderGradeChips();
           rebuildToday();
+          renderAll();
           showToast("备份导入成功");
         } catch (err) {
           showToast("导入失败：" + err.message);
@@ -1561,6 +1626,7 @@
       resetPinyinMode();
       invalidatePlan();
       rebuildToday();
+      renderAll();
       return settings;
     }
   };
@@ -1600,6 +1666,7 @@
     if (pruned.length) invalidatePlan();
     renderGradeChips();
     rebuildToday();
+    renderAll();
     bindEvents();
     backfillSnapshots();
     // 深链接：`/?poem=<id>`（「背诵进度总览」里那份到期清单指回来的地址）——
@@ -1662,6 +1729,7 @@
       renderGradeChips();
       invalidatePlan();
       rebuildToday();
+      renderAll();
     }
   }
 
