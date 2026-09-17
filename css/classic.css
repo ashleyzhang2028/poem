@@ -1054,6 +1054,63 @@ body.reader-open .dock { display: none; }
 }
 .font-seg button + button { border-left: 1px solid var(--line); }
 
+/* 分段组合「选中按钮与组合框共用一条边框」（Issue #205）
+   --------------------------------------------------------------------------
+   用户原话：
+     「组合按钮里面的按钮的边框和组合框上下有 4 个像素左右的间隔，我不太想要这个间隔，
+       我希望选中的按钮和组合框共用边框。中间 A+ A- 按钮的 A+ 按钮左侧边框是圆形，
+       也很奇怪，应该是直线。」
+
+   病根是一条**几何**上的事，不在配色：组合框（.seg.mini）自己有 1px 描边 + 3px 内边距，
+   选中态又是「白底 + 8px 圆角的小卡」浮在框里 ——
+   小卡与框之间必然隔着那 3px，上下各一处，看着就是「4px 左右的缝」。
+
+   改法是把这一组做成**真分段控件**（两块共用一条界，与设置页那一组同一做法）：
+     ① 组合框不再有内边距（padding: 0）—— 内层按钮直接铺满框，
+        上下左右都由**框那一条 1px 边**收口，选中按钮与框从此共用边框；
+     ② 内层按钮全部方角；「同一行里只有相邻两块的贴合处」才要圆角 ——
+        首块左上 / 左下、末块右上 / 右下，
+        选中态也不再加圆角（`:not(.active)` 那半截的必要性写在下面那条注释里）；
+     ③ 两条竖界：块与块之间 1px（`+ button` 的 border-left），
+        以及「选中块与它后面那块」之间再补一条（`.active + button`）。
+        选中块自己不加 border（`border: 0`）—— 否则它那 1px 会被算进宽度，
+        选中时整组要宽出 1px，而末尾的 A＋ 又已经改方角，一行三组会跳。
+
+   ⚠️ 为什么要写成 `:not(.active)` 那一半：选中态由全站那条
+      `.seg button.active { background: var(--card); … }` 给（style.css），
+      这里若只写 `button:first-child`，两边同为 0-2-1 特异性、**后出现的那张表赢**
+      —— classic.css 排在 style.css 后面，才压得住。
+      即便如此也不能只写无 `:not()` 的那半：把 `.active` 再排除一次，
+      是为了让「选中态永远不加圆角」这件事写在同一条规则里，一眼看得见。
+
+   ⚠️ 反面教材（改了会退回原样）：给内层按钮写圆角 + 给外框写内边距。
+      这一组「看着有缝」只有一个来源 —— 框与块之间垫了 3px。 */
+.seg.mini {
+  padding: 0;
+  gap: 0;
+  align-items: stretch;
+}
+/* 三段（不注音 / 生字 / 全文）等宽：三块都 flex: 1 时，字数多的那块更宽，
+   中间的竖界就不在正中间；`flex: 1 1 0` 让三块按**同一条基准宽**分这一行。 */
+.seg.mini button { flex: 1 1 0; }
+/* ⚠️ 圆角这几条**必须写成 `.seg.mini button:first-child` 这个形状（0-3-1）**：
+   只写 `.seg.mini button`（0-1-1）时，会被阅读器那条
+   `.reader-actions .seg.mini button { border-radius: 8px }`（0-2-1）按特异性压回去
+   —— 真机上就是这么退回原样的（框的 padding 归零了，块却还是各自 8px 圆角）。
+   写成同一个 0-3-1，两页才都说了算（classic.css 排在 style.css 后面）。
+   与 :not(.active) 那半合起来的原因见上方那段总说明。 */
+.seg.mini button,
+.seg.mini button:not(.active),
+.reader-actions .seg.mini button { border-radius: 0; }
+.seg.mini button:first-child { border-radius: var(--radius-sm) 0 0 var(--radius-sm); }
+.seg.mini button:last-child { border-radius: 0 var(--radius-sm) var(--radius-sm) 0; }
+/* 界行：相邻两块之间一条。选中块自己不带边，所以「选中块 → 它后面那块」
+   少一条 —— 补在这一条里。 */
+.seg.mini button + button,
+.seg.mini button.active + button { border-left: 1px solid var(--line); }
+/* 选中块的下划线撤掉：选中态已经由白底 + 字色说清楚了，多一条线反而像错位 */
+.seg.mini button.active { box-shadow: none; }
+
 .reader-text {
   /* 正文字体由 --font-poem 统一指定（思源宋体，缺字回退系统宋体） */
   font-family: var(--font-poem);
@@ -1138,11 +1195,18 @@ body.reader-open .dock { display: none; }
 .reader-nav button {
   flex: 1;
   min-width: 0;
-  border: 1px solid var(--line);
-  background: var(--card);
+  /* 需求（Issue #205）：页底这两枚翻篇键**不再是一枚按钮的样子** ——
+     去掉圆形边框、去掉底色，左右内边距也归零。
+     它们是「读完直接翻」的两个方向，贴在两端的正文宽度上，
+     画一个框反而把读者的注意力从正文抢到控件上。
+     ⚠️ 这里写 `border: none` 而不是 `border: 0 solid transparent`：
+     「没有边框」只有一种写法，别留下一条看不见的 1px 缝（它会撑高这一排）。
+     ⚠️ 背景必须是 `transparent`，不能省 —— 省掉时浏览器默认按钮底色（灰）会露出来。 */
+  border: none;
+  background: transparent;
   color: var(--green);
-  border-radius: var(--radius-sm);
-  padding: 11px 12px;
+  border-radius: 0;
+  padding: 11px 0;
   font-size: 13.5px;
   font-weight: 600;
   cursor: pointer;
@@ -1153,6 +1217,8 @@ body.reader-open .dock { display: none; }
 }
 .reader-nav button.next { justify-content: flex-end; text-align: right; }
 .reader-nav button:disabled { opacity: .42; cursor: not-allowed; }
+/* 翻篇键按下态：没有底色可压，用字色深浅给一点反馈（只在能点时生效） */
+.reader-nav button:not(:disabled):active { opacity: .72; }
 .reader-nav .nav-label {
   font-size: 11px;
   color: var(--ink-3);
@@ -1283,18 +1349,24 @@ body.reader-open .dock { display: none; }
 @keyframes wavePulse { 0%, 100% { opacity: .3 } 50% { opacity: 1 } }
 .mini-btn:disabled { opacity: .5; cursor: not-allowed; }
 
-/* 阅读器内的注音档位：复用全局 .seg.mini，这里只压一下字号便于窄屏并排 */
-.reader-actions .seg.mini { padding: 2px; }
+/* 阅读器内的注音档位：复用全局 .seg.mini，这里只压一下字号便于窄屏并排。
+   ⚠️ 内边距这一条**整条撤掉**（Issue #205）：全局已经改成 padding: 0（共用边框），
+      这里再压一个 2px 就又垫出一条缝来 —— 这一档的「缝」正是用户指的那 4px。 */
+.reader-actions .seg.mini { padding: 0; }
 .reader-actions .seg.mini button {
   font-size: 12.5px;
   padding: 5px 9px;
-  border-radius: 8px;
+  /* ⚠️ 这里**不写** border-radius。写了 8px（原样）会把全局那套
+     「块与块贴合处才圆角」整条压回去 —— 它比 `.seg.mini button` 多一个类，
+     特异性更高，真机上就是这么退回原样的（框的 padding 归零了，块却还是 8px 圆角）。
+     写了 0 也只是与上面那条重复；这一档的圆角只有一个来源：
+     `.seg.mini button:first-child / :last-child`（见 Issue #205）。 */
 }
 /* 窄屏（iPhone SE 一类 320~380px）：两组控件要挤进同一行，
    字号与内边距各收一档，必要时整行横向滑动，绝不换行错位。 */
 @media (max-width: 380px) {
   .reader-actions { gap: 5px; }
-  .reader-actions .seg.mini { padding: 2px; }
+  .reader-actions .seg.mini { padding: 0; }
   .reader-actions .seg.mini button { padding: 5px 7px; font-size: 11.5px; }
   .icon-seg button svg { width: 15px; height: 15px; }
   .icon-row > .mini-btn { width: 36px; min-height: 0; height: 36px; }

@@ -1096,6 +1096,62 @@ setTimeout(() => {
   //    写成「整条等于 26px 0 calc(…)」的话，桌面那一档的居中就永远过不了。
   chk(!!navBlock && /margin:\s*26px (auto|0) calc\(118px \+ var\(--safe-bottom\)\)/.test(navBlock[2]),
     '阅读器底部导航预留 118px + 安全区，不被底栏压住');
+  // 需求（Issue #205）：翻篇键不再是「一枚按钮」的样子 —— 去边框、去底色、左右内边距归零。
+  // 用户原话：「把页底上一篇 下一篇两个按钮去除圆形边框，去除背景色，
+  //           按钮内部左右padding 也去掉」。
+  // ⚠️ 断言按**值**判，不按「有没有这条规则」判：
+  //    写成 `border: 1px solid transparent` 也是「看不见」，但它仍占 1px 高度，
+  //    这一排会比正文边缘高出一条缝 —— 所以只认 `border: none`。
+  const navBtnBlock = /(\.reader-nav button \{)([\s\S]*?)\}/.exec(actionsCss);
+  chk(!!navBtnBlock && /border:\s*none;/.test(navBtnBlock[2]),
+    '翻篇键去掉边框（写 none，不留一条看不见的 1px 缝）');
+  chk(!!navBtnBlock && /background:\s*transparent;/.test(navBtnBlock[2]),
+    '翻篇键去掉底色（不写 transparent 时浏览器默认按钮底色会露出来）');
+  chk(!!navBtnBlock && /padding:\s*11px 0;/.test(navBtnBlock[2]),
+    '翻篇键左右内边距归零（贴齐正文两端）');
+  chk(!!navBtnBlock && /border-radius:\s*0;/.test(navBtnBlock[2]),
+    '翻篇键圆角归零（没有边框与底色，圆角已无意义）');
+
+  // 需求（Issue #205）：分段组合「选中按钮与组合框共用一条边框」。
+  // 用户原话：「组合按钮里面的按钮的边框和组合框上下有 4 个像素左右的间隔，
+  //           我不太想要这个间隔，我希望选中的按钮和组合框共用边框。
+  //           中间 A+ A- 按钮的 A+ 按钮左侧边框是圆形，也很奇怪，应该是直线。」
+  // 病根是一条几何关系：组合框有 1px 描边 + 3px 内边距，选中态又是「白底 + 8px 圆角
+  // 的小卡浮在框里」——小卡与框之间必然隔着那 3px，上下各一处就是那「4px 左右」。
+  // 所以这里守三件事：① 框没有内边距；② 块与块之间不留缝；③ 只有贴合处才圆角。
+  const miniSegBlock = /(^|\n)\.seg\.mini \{([\s\S]*?)\}/.exec(actionsCss);
+  chk(!!miniSegBlock && /padding:\s*0;/.test(miniSegBlock[2]),
+    '组合框内边距归零 —— 内层按钮铺满框，与框共用同一条 1px 边（不再垫出 4px 的缝）');
+  chk(!!miniSegBlock && /gap:\s*0;/.test(miniSegBlock[2]),
+    '组合框 gap 归零（块与块之间只留那一条 1px 界行）');
+  // ⚠️ 下面这几条必须连**限定形状**一起判：只写 `.seg.mini button`（0-1-1）时，
+  //    阅读器那条 `.reader-actions .seg.mini button`（0-2-1）会把圆角压回去——
+  //    真机上就是这么退回原样的（框的 padding 归零了，块却还是各自 8px 圆角）。
+  chk(/\.seg\.mini button:first-child \{ border-radius: var\(--radius-sm\) 0 0 var\(--radius-sm\); \}/.test(actionsCss),
+    '首块只在左侧两个角取圆（右侧留给与下一块共用的那条界行）');
+  chk(/\.seg\.mini button:last-child \{ border-radius: 0 var\(--radius-sm\) var\(--radius-sm\) 0; \}/.test(actionsCss),
+    '末块只在右侧两个角取圆 —— A＋ 左侧是直线（用户点名的那处）');
+  chk(/\.seg\.mini button,\s*\n\.seg\.mini button:not\(\.active\),\s*\n\.reader-actions \.seg\.mini button \{ border-radius: 0; \}/.test(actionsCss),
+    '除首末块外一律方角（含 .reader-actions 那一份，压过更具体的旧规则）');
+  chk(/\.seg\.mini button \+ button,\s*\n\.seg\.mini button\.active \+ button \{ border-left: 1px solid var\(--line\); \}/.test(actionsCss),
+    '界行两条：相邻块之间，以及「选中块 → 它后面那块」（选中块自己不带边）');
+  chk(/\.seg\.mini button\.active \{ box-shadow: none; \}/.test(actionsCss),
+    '选中块的下划线撤掉（选中态由白底 + 字色说清楚，多一条线反而像错位）');
+  // 内边距这几处旧值必须**撤干净**，留一个就会把缝垫回来
+  chk(!/\.reader-actions \.seg\.mini \{ padding: 2px; \}/.test(actionsCss) &&
+    !/\.reader-actions \.seg\.mini \{ padding: 3px; \}/.test(actionsCss),
+    '阅读器内那一组的旧内边距（2px / 3px）已撤掉，不再把缝垫回来');
+  // 只扫真规则，不扫注释（上方说明里引用了那行旧写法，注释不该被判成「还在」）
+  const cssNoComments = actionsCss.replace(/\/\*[\s\S]*?\*\//g, '');
+  chk(!/\.reader-actions \.seg\.mini button \{[^}]*border-radius: 8px/.test(cssNoComments),
+    '阅读器里那条 8px 圆角已删（它正是把「共用边框」压回去的那一条）');
+  // 首页诗词详情页只引 style.css，同一套口径要在那儿也有一份
+  const styleSheetText = fs.readFileSync(path + 'css/style.css', 'utf8');
+  chk(/\.modal-box \.reader-actions \.seg\.mini button:first-child \{/.test(styleSheetText) &&
+    /\.modal-box \.reader-actions \.seg\.mini button:last-child \{/.test(styleSheetText),
+    '首页诗词详情页（只引 style.css）同样只给首末块留圆角');
+  chk(/\.modal-box \.reader-actions \.seg\.mini \{ padding: 0; \}/.test(styleSheetText),
+    '首页诗词详情页的组合框同样不留内边距');
   const readerBlock = /(^|\n)\.reader \{([\s\S]*?)\}/.exec(actionsCss);
   chk(!!readerBlock && /z-index:\s*66/.test(readerBlock[2]),
     '阅读器 z-index（66）高于底部页签（65），页签不浮在正文之上');
