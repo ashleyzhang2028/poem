@@ -370,7 +370,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(dock.map(b => b.querySelector('.dock-label').textContent).join('/') === '背诵/课外/搜索/我的',
     '页签名为 背诵 / 课外 / 搜索 / 我的（实际 ' +
     dock.map(b => b.querySelector('.dock-label').textContent).join(' / ') + '）');
-  chk(dock.map(b => b.getAttribute('data-nav-go')).join('/') === 'home/library/search/settings',
+  chk(dock.map(b => b.getAttribute('data-nav-go')).join('/') === 'home/library/search/mine',
     '四格的去向正确');
   chk(dock.every(b => b.querySelector('.dock-icon svg')), '四格图标都是内联 SVG');
   chk(dock.every(b => b.querySelectorAll(':scope > *').length === 2),

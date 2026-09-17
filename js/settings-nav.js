@@ -6,7 +6,7 @@
       key: "general",
       href: "/settings/general/",
       title: "通用",
-      desc: "用户名、头像、账号、数据备份"
+      desc: "用户名、账号、数据备份"
     },
     {
       key: "recite",
@@ -29,7 +29,7 @@
     }
   ];
 
-  var APP_VERSION = "1.0 (v151)";
+  var APP_VERSION = "1.0 (v152)";
 
   function esc(s) {
     return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
@@ -86,43 +86,6 @@
       "</div>";
   }
 
-  function renderAccountEntry() {
-    var box = document.querySelector("#settings-index");
-    if (!box) return;
-
-    var g = typeof globalThis !== "undefined" ? globalThis : null;
-    var A = g && g.AuthCore;
-    var E = g && g.Entitlement;
-    if (!A || !E) return;
-
-    var backing = null;
-    try { backing = g.localStorage; } catch (e) { backing = null; }
-
-    var id = null;
-    try { id = E.identity({ backing: backing }); } catch (e) { id = null; }
-    if (!id) return;
-
-    var badge = '<span class="tier-badge tier-' + esc(id.tier) + '">' +
-      esc(E.tierLabel(id.tier)) + "</span>";
-
-    var el;
-    if (id.signedIn) {
-
-      var av = g.Avatar;
-      var d = av && av.display ? av.display(backing) : { nickname: "" };
-      var name = (d && d.nickname) || "未起名";
-      el = row(esc(name) + badge, "标签 · 登录状态 · 退出",
-        { id: "btn-entry-profile", key: "account", href: "/profile/" });
-    } else {
-
-      el = row("个人中心" + badge, "标签 · 登录 · 层级",
-        { id: "btn-entry-login", key: "account", href: "/login/" });
-    }
-
-    if (box.firstChild) box.insertBefore(el, box.firstChild);
-    else box.appendChild(el);
-  }
-
   function go() {
     return '<span class="settings-link-go" aria-hidden="true">' +
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" ' +
@@ -132,7 +95,6 @@
 
   function init() {
     renderIndex();
-    renderAccountEntry();
     renderAbout();
   }
 
@@ -145,7 +107,6 @@
   window.SettingsNav = {
     GROUPS: GROUPS,
     renderIndex: renderIndex,
-    renderAccountEntry: renderAccountEntry,
     renderAbout: renderAbout,
     hrefFor: function (key) {
       for (var i = 0; i < GROUPS.length; i += 1) {

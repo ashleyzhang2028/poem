@@ -38,6 +38,11 @@
       '<circle cx="10.6" cy="10.6" r="6.2"/>' +
       '<path d="M15.2 15.2 20.4 20.4"/></svg>',
 
+    gear:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<circle cx="12" cy="12" r="3.1"/>' +
+      '<path d="M12 3.4v2.2M12 18.4v2.2M20.6 12h-2.2M5.6 12H3.4M18.08 5.92l-1.56 1.56M7.48 16.52l-1.56 1.56M18.08 18.08l-1.56-1.56M7.48 7.48 5.92 5.92"/></svg>',
+
     tabMine:
       '<svg viewBox="0 0 24 24" aria-hidden="true">' +
       '<circle cx="12" cy="12" r="10" fill="currentColor" stroke="none"/>' +
@@ -68,6 +73,7 @@
     guwen: "/guwen/",
     zhaoming: "/zhaoming/",
     search: "/search/",
+    mine: "/mine/",
     settings: "/settings/",
     login: "/login/",
     profile: "/profile/",
@@ -102,6 +108,7 @@
     if (/^\/songci\/?$/.test(p) || /^\/songci\/index\.html$/.test(p)) return "songci";
     if (/^\/guwen\/?$/.test(p) || /^\/guwen\/index\.html$/.test(p)) return "guwen";
     if (/^\/zhaoming\/?$/.test(p) || /^\/zhaoming\/index\.html$/.test(p)) return "zhaoming";
+    if (/^\/mine\/?$/.test(p) || /^\/mine\/index\.html$/.test(p)) return "mine";
     if (/^\/settings\/?$/.test(p) || /^\/settings\/index\.html$/.test(p)) return "settings";
     if (/^\/progress\/?$/.test(p) || /^\/progress\/index\.html$/.test(p)) return "progress";
 
@@ -186,6 +193,12 @@
         '<button type="button" class="top-act" id="top-act">' +
         '<span class="top-act-icon" aria-hidden="true">' + GLYPHS.back + "</span>" +
         '<span class="sr-only">' + pageAction.label + "</span></button>";
+    } else if (key !== "home" && pageTopAction()) {
+
+      rightKey =
+        '<a class="top-act" id="top-act-link" href="' + pageTopAction().href + '"' +
+        ' title="' + escapeHtml(pageTopAction().label) + '" aria-label="' + escapeHtml(pageTopAction().label) + '">' +
+        '<span class="top-act-icon" aria-hidden="true">' + pageTopAction().glyph + "</span></a>";
     } else if (key !== "home") {
 
       rightKey =
@@ -218,6 +231,12 @@
     return el || null;
   }
 
+  function pageTopAction() {
+    var v = bodyData("top-action");
+    if (v === "settings") return { href: routeHref("settings"), label: "设置", glyph: GLYPHS.gear };
+    return null;
+  }
+
   function pageBackHref() {
     var back = bodyData("back");
     if (back && /^\/[^\/\s]/.test(back)) return back;
@@ -232,6 +251,7 @@
     var k = pageKey();
     if (k === "library") return "课外阅读";
     if (k === "poems") return "课内古诗词";
+    if (k === "mine") return "我的";
     if (k === "search") return "搜索";
     if (k === "classic") return "小古文";
     if (k === "tangshi") return "唐诗三百首";
@@ -251,10 +271,11 @@
     { key: "home", href: "/", icon: GLYPHS.tabPoem, label: "背诵", desc: "课内古诗词，按当前复习算法安排复习" },
     { key: "library", href: "/library/", icon: GLYPHS.tabLibrary, label: "课外", desc: "课内诗词 / 小古文 / 唐诗 / 宋词 / 古文观止 / 昭明文选" },
     { key: "search", href: "/search/", icon: GLYPHS.tabSearch, label: "搜索", desc: "全站篇目一次搜遍" },
-    { key: "settings", href: "/settings/", icon: GLYPHS.tabMine, label: "我的", desc: "个人中心 / 通用 / 背诵 / 清单 / 朗读 / 关于" }
+    { key: "mine", href: "/mine/", icon: GLYPHS.tabMine, label: "我的", desc: "头像 / 昵称 / 账号 / 本机数据" }
   ];
 
   function dockKey(key) {
+    if (key === "settings") return "mine";
     if (key === "classic" || key === "tangshi" || key === "songci" || key === "guwen" ||
         key === "zhaoming") return "library";
 
@@ -271,7 +292,7 @@
     items.forEach(function (it) {
       var on = key === it.key;
 
-      var tag = it.key === "settings" ? "a" : "button";
+      var tag = it.key === "mine" ? "a" : "button";
       html +=
         "<" + tag + ' ' + (tag === "a" ? 'href="' + it.href + '"' : 'type="button"') +
         ' class="dock-item' + (on ? " active" : "") + '"' +

@@ -220,16 +220,16 @@ const SESSION = JSON.stringify({
     chk(!/<input/.test(src), "js/auth-api.js 不碰文件选择框");
   }
 
-  console.log("\n=== 七、真页面：/settings/general/ 点一遍（jsdom） ===");
+  console.log("\n=== 七、真页面：/mine/ 点一遍（jsdom） ===");
   {
     const hasJsdom = (function () { try { require.resolve("jsdom"); return true; } catch (e) { return false; } })();
     if (!hasJsdom) {
       console.log("(未安装 jsdom，跳过「真页面上跑一遍」一节 —— npm i jsdom 可启用)");
     } else {
       const { JSDOM } = require("jsdom");
-      const html = read("settings/general/index.html");
+      const html = read("mine/index.html");
       const order = html.match(/<script src="([^"]+)"><\/script>/g).map(s => s.match(/src="([^"]+)"/)[1]);
-      const dom = new JSDOM(html, { runScripts: "dangerously", url: "https://local.test/settings/general/", pretendToBeVisual: true });
+      const dom = new JSDOM(html, { runScripts: "dangerously", url: "https://local.test/mine/", pretendToBeVisual: true });
       const w = dom.window;
       w.confirm = () => true;
       order.forEach(f => {
@@ -257,7 +257,7 @@ const SESSION = JSON.stringify({
       w.Avatar.setAvatar(w.localStorage, { img: "https://x.supabase.co/a.jpg" });
       w.SiteChrome && w.SiteChrome.refreshUser && w.SiteChrome.refreshUser();
 
-      const u = $("input-username");
+      const u = $("input-nickname");
       u.value = "小明";
       u.dispatchEvent(new w.Event("input", { bubbles: true }));
       chk(!$("btn-avatar-clear").hidden, "有图时「删除头像」出现");

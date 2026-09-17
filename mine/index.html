@@ -4,8 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#2f6055" />
-  <title>个人中心 · 跬步</title>
-  <meta name="description" content="跬步个人中心：昵称与头像印记、本机账号与订阅层级、权限清单、本机数据概览，以及退出登录与注销账号。" />
+  <title>我的 · 跬步</title>
+  <meta name="description" content="跬步「我的」：头像与昵称、登录状态与本机层级、本机背诵进度概览，以及注销账号。设置整页在小齿轮后面。" />
   <meta name="format-detection" content="telephone=no" />
   <meta name="robots" content="noindex, follow" />
 
@@ -21,15 +21,51 @@
   <link rel="stylesheet" href="css/account.css" />
 </head>
 
-<body data-nav="profile" data-dock="off" data-back="/mine/" data-page="个人中心" data-sub="昵称 · 账号 · 权限">
+<body data-nav="mine" data-page="我的" data-sub="头像 · 昵称 · 账号 · 本机数据" data-top-action="settings">
   <div class="app">
     <header class="topbar"></header>
 
-    <main class="account-page" id="profile-page">
+    <main class="account-page" id="mine-page">
 
       <section class="account-card">
         <div class="identity-row" id="identity-row"></div>
         <p class="account-hint" id="identity-hint"></p>
+
+        <div class="settings-item">
+          <label for="input-nickname">昵称</label>
+          <div class="name-row">
+            <input id="input-nickname" class="settings-input" type="text" maxlength="12"
+                   placeholder="Ashley" autocomplete="off" enterkeyhint="done" />
+          </div>
+        </div>
+
+        <div class="avatar-row" id="avatar-row">
+          <span id="avatar-slot" class="avatar-slot" aria-hidden="true"></span>
+          <div class="avatar-acts">
+            <button class="btn ghost-btn" id="btn-avatar-pick" type="button">上传图片</button>
+            <button class="btn ghost-btn" id="btn-avatar-clear" type="button" hidden>删除头像</button>
+          </div>
+        </div>
+
+        <input id="avatar-file" class="sr-only" type="file" accept="image/*"
+               aria-label="选择头像图片" />
+        <div class="settings-hint" id="avatar-hint"></div>
+
+        <div class="crop-layer" id="crop-layer" hidden>
+          <div class="crop-card" role="dialog" aria-modal="true" aria-label="裁切头像">
+            <div class="crop-box" id="crop-box">
+              <img class="crop-img" id="crop-img" alt="" />
+              <span class="crop-grid" aria-hidden="true"></span>
+            </div>
+            <input class="crop-zoom" id="crop-zoom" type="range" min="0" max="1"
+                   step="0.01" value="0" aria-label="放大缩小" />
+            <div class="crop-btns">
+              <button class="btn ghost-btn" id="btn-crop-cancel" type="button">取消</button>
+              <button class="btn" id="btn-crop-ok" type="button">用这张</button>
+            </div>
+            <p class="crop-hint" id="crop-hint">拖动图片调整位置，双指或滑杆缩放</p>
+          </div>
+        </div>
 
         <div class="account-actions" id="identity-actions">
           <button class="account-btn" id="btn-account-entry" type="button"></button>
@@ -45,38 +81,14 @@
         <div class="kv-list" id="stats-list"></div>
       </section>
 
-      <section class="account-card">
-        <h2 class="account-card-title">关于</h2>
-        <div class="kv-list">
-          <div class="kv-row"><span class="kv-k">应用</span><span class="kv-v">跬步 · 古诗词背诵</span></div>
-          <div class="kv-row"><span class="kv-k">用户协议</span><span class="kv-v"><a href="/terms/">查看</a></span></div>
-          <div class="kv-row"><span class="kv-k">隐私条款</span><span class="kv-v"><a href="/privacy/">查看</a></span></div>
-          <div class="kv-row"><span class="kv-k">离线缓存</span><span class="kv-v" id="about-cache"></span></div>
-        </div>
+      <section class="account-card" id="family-item">
+        <h2 class="account-card-title">子用户</h2>
+        <div class="family-panel" id="family-panel"></div>
+        <p class="settings-hint" id="family-hint"></p>
+      </section>
 
-        <label class="switch sync-row" id="sync-row">
-          <span class="settings-label" id="sync-name">跨设备同步</span>
-
-          <input id="toggle-sync" class="switch-input" type="checkbox"
-                 role="switch" aria-labelledby="sync-name" />
-          <span class="switch-toggle" aria-hidden="true"></span>
-        </label>
-        <p class="switch-hint" id="sync-hint"></p>
-
-        <div id="sync-conflict" hidden>
-          <p class="account-hint" id="conflict-lead"></p>
-          <div class="settings-btns">
-            <button class="account-btn" id="btn-keep-local" type="button">保留本机</button>
-            <button class="account-btn ghost" id="btn-keep-remote" type="button">保留账号</button>
-            <button class="account-btn ghost" id="btn-export-first" type="button">先导出再决定</button>
-          </div>
-          <p class="account-msg" id="msg-conflict"></p>
-        </div>
-        <div class="account-actions">
-          <button class="account-btn ghost" id="btn-go-admin" type="button" hidden>管理后台</button>
-        </div>
-
-        <div class="kv-list" id="account-list" hidden></div>
+      <section class="account-card" id="account-card">
+        <div class="kv-list" id="account-list"></div>
 
         <div id="verify-row" hidden>
           <p class="account-msg" id="verify-state"></p>
@@ -84,9 +96,13 @@
             <button class="account-btn ghost" id="btn-resend-verify" type="button">重发确认邮件</button>
           </div>
         </div>
+
+        <div class="settings-btns">
+          <button class="account-btn ghost" id="btn-go-admin" type="button" hidden>管理后台</button>
+        </div>
       </section>
 
-      <section class="account-card danger-zone" id="danger-card" hidden>
+      <section class="account-card danger-zone" id="danger-card">
         <h2 class="account-card-title danger-title">注销账号</h2>
         <p class="account-lead">
           注销会删掉账号与服务器上的云端进度（云端那份先导给你留档），<strong>不动本机背诵进度</strong>。想连本机一起清，去「设置 · 通用」。
@@ -133,6 +149,7 @@
   <script src="/js/account-api.js"></script>
 
   <script src="/js/family.js"></script>
+  <script src="/js/family-ui.js"></script>
   <script src="/js/progress-store.js"></script>
 
   <script src="/js/sync-store.js"></script>
@@ -152,7 +169,9 @@
   <script src="/data/poems-12.js"></script>
   <script src="/data/index.js"></script>
   <script src="/js/avatar.js"></script>
-  <script src="/js/profile.js"></script>
+  <script src="/js/avatar-image.js"></script>
+  <script src="/js/avatar-edit.js"></script>
+  <script src="/js/mine.js"></script>
   <script src="/js/chrome.js"></script>
   <script src="/js/pwa.js"></script>
 </body>

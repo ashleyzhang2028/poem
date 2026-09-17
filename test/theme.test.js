@@ -577,7 +577,8 @@ const pwaJs = read('js/pwa.js');
 
 chk(html.indexOf('settings-modal') === -1, '首页不再有向上弹出的设置卡片（settings-modal 已删除）');
 
-chk(/href:\s*"\/settings\/"/.test(read('js/chrome.js')), '底部页签「设置」指向设置整页（目录化路径）');
+chk(/href:\s*"\/mine\/"/.test(read('js/chrome.js')), '底部页签「我的」指向 /mine/（目录化路径）');
+chk(/settings:\s*"\/settings\/"/.test(read('js/chrome.js')), 'ROUTES 里仍有 /settings/（齿轮那一颗的落点）');
 chk(html.indexOf('btn-settings') === -1, '首页顶栏不再有设置齿轮（入口收敛到页签）');
 chk(/data-nav="settings"/.test(settingsHtml), '设置主页声明自己是「设置」页签');
 chk(/js\/chrome\.js/.test(settingsHtml), '设置页与首页共用同一套顶栏与底部页签');

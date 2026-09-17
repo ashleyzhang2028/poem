@@ -201,9 +201,10 @@ jobs:
 ┌──────────────────────────────────────────────────────────────────┐
 │  浏览器（静态 PWA · kuibu.app · Vercel）                          │
 │                                                                  │
-│  ┌─ 视图层（13 个 index.html，不动）────────────────────────┐    │
-│  │  首页 /poems/ /library/ 六部集子 /search/ /progress/ /settings/ │
-│  │  设置再拆二级页：/settings/{general,recite,lists,reader}/        │
+│  ┌─ 视图层（14 个 index.html，不动）────────────────────────┐    │
+│  │  首页 /poems/ /library/ 六部集子 /search/ /progress/ /mine/      │
+│  │  设置整页 /settings/，再拆二级页 /settings/{general,          │
+│  │  recite,lists,reader}/（入口是 /mine/ 右上角那颗齿轮）        │
 │  └────────────────────────┬───────────────────────────────┘    │
 │                           │ 只认 window.ProgressStore            │
 │  ┌─ 存储层（0 期新增 js/progress-store.js）─────────────────┐    │
@@ -4144,3 +4145,113 @@ chk(/var\(--nav-h\)/.test(settingsPad) && !/var\(--nav-h\)\s*-/.test(settingsPad
 - **反向验证**：只把 CSS 还原成旧写法（判据不动），
   `test/theme.test.js` 立刻红 2 条 —— 新判据不是摆设；
 - `sw.js` v143 → **v144**（`css/style.css` 改了）；合并 #218 后统一为 **v146**。
+
+---
+
+### 4.24 「我的」页与设置整页分开：齿轮当入口（2026-09-17 · 回答 Issue #205）
+
+> 「检查 我的 页面内容 …… 关于个人信息页面 上传头像 分级登录等等入口应该
+>  怎么处理最合适 现在我的被设置列表占了很多 我想在我的页面放个小齿轮作为
+>  设置的入口 其他还是应该放个人的全部内容」
+> —— 用户 2026-09-17，Issue #205
+
+#### 一、病因：一页装了两件事
+
+`/settings/` 当时是**六行 + 一块只读信息**，而每一行还得再点进去一次：
+
+| 行 | 内容 | 点了去哪 |
+|---|---|---|
+| 1 | 个人中心（昵称 + 层级徽章） | `/profile/` |
+| 2 | 通用 | `/settings/general/` ← **头像、用户名、账号、数据备份都在这** |
+| 3–6 | 背诵 / 清单 / 朗读 / 关于 | 各自那张页 |
+
+两个真实问题：
+
+1. **「个人中心」只是个名字** —— 头像、昵称、登录层级这些「个人信息」全在
+   **通用**里，点进「个人中心」看到的却是身份卡 + 本机数据 + 同步 + 危险区，
+   头像反而要退出来再进「通用」。
+2. **六行全是设置**，只有第 1 行跟「我」有关。
+
+#### 二、裁决：两页各答一件事
+
+```
+我的（/mine/，底部最后一格）
+├─ 右上角：一颗齿轮 → /settings/            ← 设置整页（四组入口一行不减）
+├─ 身份卡：印 + 昵称 + 掩码 + 层级徽章
+│    · 昵称输入框（就地改）
+│    · 头像（上传 / 删除，就地做）
+│    · 一行操作键：登录 / 管理登录状态 · 退出登录 · 权限对比
+├─ 本机数据（有记录 / 已开始记忆 / 今天到期 / 平均掌握度）
+├─ 子用户（名册 + 增删改切）
+└─ 危险区（注销账号）单占一张卡
+```
+
+**路由一个都没动**：`/settings/` 继续当设置整页（齿轮的落点），
+新增 `/mine/` 当「我的」页，`data-back="/settings/"` 那四处一处没改。
+反过来做（`/settings/` 变成我的、设置挪去 `/settings/all/`）会更省页面，
+但要把现有四个二级页的返回键全部改一遍 —— 收益为零。
+
+#### 三、三处搬迁（各自的理由）
+
+| 搬什么 | 从 | 到 | 为什么 |
+|---|---|---|---|
+| 头像（`#avatar-slot` / `#btn-avatar-pick` / 裁切层） | `settings/general/` | `mine/` | 头像答的是「我是谁」，不是「怎么调机器」 |
+| 昵称输入框 | `settings/general/`（`#input-username`） | `mine/`（`#input-nickname`） | 同上；`poem_profile_v1` 那个键一个字节没改 |
+| 子用户那一块 | 只有 `/settings/general/` 有 | 两页都有 | 「一个家长多个小孩」是身份名册，两处都讲得通 |
+
+昵称改名的落盘口径**一个字没改**：仍是 `ProgressStore.patch({ username })`
+（`poem_recite_settings_v1`）→ `Avatar.saveNickname()`（`poem_profile_v1`）。
+`js/mine.js` 走的是同一个 `ProgressStore.patch`，不是自己拼键名。
+
+#### 四、两个新脚本，不为分层而分层
+
+头像上传 / 裁切那 260 行原先长在 `js/settings.js` 里。两页要共用它，
+**要么把整份 `settings.js` 拖进「我的」页（它管的是学段 / 数量 / 清单 / 打印），
+要么抽出来**。同理子用户那一块 130 行。于是：
+
+| 新文件 | 装什么 | 谁用 |
+|---|---|---|
+| `js/avatar-edit.js` | 上传 → 裁切 → 压缩 → 先本机后服务端 → 清地址 | `/mine/` |
+| `js/family-ui.js` | 名册渲染 + 增 / 改名 / 删 / 切换 | `/mine/` 与 `/settings/general/` |
+| `js/mine.js` | 身份行 / 操作键 / 本机数据 / 注销 | `/mine/` |
+
+`js/settings.js` 相应瘦身：删掉 avatar 那一段与 family 那一整块，
+保留 `renderControls()` 与 `__reloadSettingsControls()` 给 `family-ui.js` 回调。
+
+#### 五、齿轮怎么长出来的
+
+不给每个页面各写一遍顶栏，而是给 `js/chrome.js` 加**一个值**：
+
+```html
+<body data-top-action="settings">   <!-- 只有 /mine/ 写这一句 -->
+```
+
+`headerHtml()` 里那颗键的优先级是：
+`#top-act`（阅读器叠加层）→ `pageAction`（JS 设的）→ **`data-top-action`（新）**
+→ `#top-back`（默认返回键）。`/mine/` 是页签落点，**本来就没有返回键**
+（`pageKey()` 判到 `mine` 时不会画 `#top-back`），所以右端是干净的。
+
+`GLYPHS.gear` 是新加的图形；Issue #209 那一轮删掉的那枚齿轮是**页签图标**
+（`.dock-icon`），两者不冲突 —— `test/settings-nav.test.js` 里
+「页签图标里不再有 path」那条断言守的是页签，没动。
+
+#### 六、动线（改完之后的完整一张图）
+
+```
+底部「我的」页签 ──► /mine/  ──齿轮──► /settings/ ──► /settings/{general,…}/
+                      │                     ▲                    │
+                      │                     └──── data-back ─────┘
+                      ├─ 账号入口 ──► /login/ ──成功──► /profile/
+                      │                    ▲              │
+                      │                    └── data-back ─┘（/profile/ → /mine/）
+                      ├─ 权限对比 ──► /plans/
+                      └─ 注销（危险区，就地两步）
+```
+
+#### 七、验证
+
+- `bash test/run.sh`：**7039 条断言全绿**（44 层，零回归）
+- 真机（Chrome，430×932）量过四张页：`/mine/`（未登录 / 已登录）、
+  `/settings/`、`/settings/general/` —— 齿轮点得动、返回键落点正确、
+  头像与子用户在两张页上长得一模一样
+- `docs/todo.md` 一个字没动（这一轮没有把任何「以后做」提前）

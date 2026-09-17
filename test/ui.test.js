@@ -5,6 +5,7 @@ const path = __dirname + '/../';
 const html = fs.readFileSync(path + 'index.html', 'utf8');
 
 const SETTINGS_PAGE = {
+  'mine/index.html': '/mine/',
   'settings/index.html': '/settings/',
   'settings/general/index.html': '/settings/general/',
   'settings/recite/index.html': '/settings/recite/',
@@ -82,16 +83,30 @@ setTimeout(() => {
 
   const spAvatar = bootSettingsPage(null);
   const spBar = spAvatar.doc.querySelector('.topbar');
-  chk([...spBar.querySelectorAll('#top-back, #top-user')].map(e => e.id).join('/') === 'top-back',
+  chk([...spBar.querySelectorAll('#top-back, #top-user, #top-act-link, #top-act')].map(e => e.id).join('/') === 'top-back',
     '深页顶栏右端只有「返回键」这一颗（实际 ' +
-    [...spBar.querySelectorAll('#top-back, #top-user')].map(e => e.id).join('/') + '）');
+    [...spBar.querySelectorAll('#top-back, #top-user, #top-act-link, #top-act')].map(e => e.id).join('/') + '）');
   chk(spBar.querySelectorAll('.top-user').length === 0, '深页顶栏也没有头像（同一套 chrome，一处改全站改）');
+
+  chk(spBar.querySelector('#top-back').getAttribute('href') === '/mine/',
+    '「设置」整页的返回键回「我的」页（层级：我的 → 设置）');
+
+  const spMine = bootSettingsPage(null, 'mine/index.html');
+  const mineBar = spMine.doc.querySelector('.topbar');
+  const gear = mineBar.querySelector('#top-act-link');
+  chk(!!gear && gear.getAttribute('href') === '/settings/',
+    '「我的」页顶栏右端是齿轮，点了去设置整页（实际 ' +
+    (gear ? gear.getAttribute('href') : '缺失') + '）');
+  chk(!!gear && !!gear.querySelector('svg'),
+    '齿轮是一枚内联 SVG（不是字符 / emoji）');
+  chk(!mineBar.querySelector('#top-back'),
+    '「我的」页顶栏没有返回键（它是页签落点，顶上没有上一层）');
 
   const spSeal = bootSettingsPage({
     poem_profile_v1: JSON.stringify({ v: 1, nickname: '玥玥', avatar: { img: '' } })
-  }, 'settings/general/index.html');
+  }, 'mine/index.html');
   const sealSlot = spSeal.doc.querySelector('#avatar-slot .avatar');
-  chk(!!sealSlot && sealSlot.textContent === '玥', '「通用」页那枚头像与档案同源（昵称首字是「玥」就画「玥」，实际 ' +
+  chk(!!sealSlot && sealSlot.textContent === '玥', '「我的」页那枚头像与档案同源（昵称首字是「玥」就画「玥」，实际 ' +
     (sealSlot ? sealSlot.textContent : '缺失') + '）');
 
   chk(d.querySelector('.app > .foot') === null, '首页不再挂页脚（法务链接已挪到设置页底部）');
@@ -153,7 +168,7 @@ setTimeout(() => {
 
   chk(dockItems.map(b => b.querySelector('.dock-label').textContent).join('/') === '背诵/课外/搜索/我的',
     '页签名称为 背诵 / 课外 / 搜索 / 我的');
-  chk(dockItems.map(b => b.dataset.navGo).join('/') === 'home/library/search/settings', '页签跳转目标正确');
+  chk(dockItems.map(b => b.dataset.navGo).join('/') === 'home/library/search/mine', '页签跳转目标正确');
   chk(dockItems[0].classList.contains('active') && dockItems[0].getAttribute('aria-current') === 'page',
     '当前页（背诵）页签为选中态');
   chk(dockItems.every(b => b.querySelector('.dock-icon svg')), '四个页签图标均为内联 SVG');
@@ -163,7 +178,7 @@ setTimeout(() => {
   chk(dockItems.every(b => b.querySelectorAll(':scope > *').length === 2),
     '每个页签只有图标 + 文字两个子元素，没有额外的划线装饰');
 
-  const settingsItem = dock.querySelector('.dock-item[data-nav-go="settings"]');
+  const settingsItem = dock.querySelector('.dock-item[data-nav-go="mine"]');
   chk(settingsItem.tagName === 'A', '「我的」页签是 <a>（因此必须显式去掉链接默认下划线）');
 
   const mineIcon = settingsItem.querySelector('.dock-icon svg');
@@ -181,7 +196,7 @@ setTimeout(() => {
     '占位符 __CHAR__ 已被真的首字替换（不留模板残渣）');
 
   chk(d.querySelector('.topbar .back-icon') === null, '顶栏不再有各页自造的返回箭头');
-  chk(!!dock.querySelector('[data-nav-go="settings"]'), '「设置」是页签之一，不再只藏在右上角');
+  chk(!!dock.querySelector('[data-nav-go="mine"]'), '「我的」是页签之一，设置整页藏在它右上角那颗齿轮后面');
   chk(!/📖|⚙|📚/.test(d.querySelector('.app').innerHTML), '页面不再使用 📖 ⚙️ 📚 emoji 图标');
 
   const allArrow = d.querySelector('#btn-all .arrow svg');
@@ -295,8 +310,8 @@ setTimeout(() => {
   chk(grpOf(srecite, '#seg-algo') === '复习算法', '复习算法选择归到「复习算法」组');
 
   const generalItems = sgeneral.querySelector('#settings-page .settings-group').querySelectorAll('.settings-item');
-  chk(generalItems.length === 7,
-    '「通用」组是用户名 / 头像印记 / 子用户 / 账号 / 跨设备同步 / 数据管理 / 课内诗词导出七项（实际 ' + generalItems.length + '）');
+  chk(generalItems.length === 6,
+    '「通用」组是用户名 / 子用户 / 账号 / 跨设备同步 / 数据管理 / 课内诗词导出六项（头像搬去「我的」页，实际 ' + generalItems.length + '）');
   chk(!!sgeneral.querySelector('#btn-export-poems'),
     '「通用」里有课内诗词导出（Issue #159：只导课本那 261 首）');
   chk(grpOf(sgeneral, '#btn-export-poems') === '通用',
@@ -306,12 +321,18 @@ setTimeout(() => {
 
   chk(!sgeneral.querySelector('#seal-chars') && !sgeneral.querySelector('#seal-inks'),
     '那四个色点与字集选择器都不在了（用户点名删掉的自造流程）');
-  chk(!!sgeneral.querySelector('#btn-avatar-pick') && !!sgeneral.querySelector('#avatar-file'),
-    '「通用」里有头像上传的入口与文件选择框');
-  chk(grpOf(sgeneral, '#btn-avatar-pick') === '通用', '头像归到「通用」（账号域的身份设置）');
+  chk(!sgeneral.querySelector('#btn-avatar-pick') && !sgeneral.querySelector('#avatar-file'),
+    '头像上传已从「通用」搬走（那一组不再混入「我是谁」的控件）');
+
+  const smine = bootSettingsPage(null, 'mine/index.html').doc;
+  chk(!!smine.querySelector('#btn-avatar-pick') && !!smine.querySelector('#avatar-file'),
+    '「我的」页有头像上传的入口与文件选择框');
+  chk(!!smine.querySelector('#input-nickname'), '「我的」页有昵称输入框');
+  chk(!!smine.querySelector('#stats-list'), '「我的」页有本机数据那几行');
+  chk(!!smine.querySelector('#danger-card'), '「我的」页有注销那一张危险区卡');
 
   const OWNER_OF = {
-    '#input-username': [sgeneral], '#btn-avatar-pick': [sgeneral], '#account-panel': [sgeneral],
+    '#input-username': [sgeneral], '#account-panel': [sgeneral],
     '#family-panel': [sgeneral],
     '#btn-export': [sgeneral], '#btn-import': [sgeneral], '#btn-reset': [sgeneral],
     '#seg-stage': [srecite], '#grade-chips': [srecite], '#seg-term': [srecite],
@@ -357,9 +378,9 @@ setTimeout(() => {
   chk(d.querySelector('.dock-item[data-nav-go="library"]').getAttribute('data-href') === '/library/',
     '「课外」页签指向 /library/ 入口页');
 
-  const dockSettings = d.querySelector('.dock-item[data-nav-go="settings"]');
-  chk(dockSettings.tagName === 'A' && dockSettings.getAttribute('href') === '/settings/',
-    '底部页签「设置」指向设置整页（实际 ' + dockSettings.tagName + ' ' + dockSettings.getAttribute('href') + '）');
+  const dockSettings = d.querySelector('.dock-item[data-nav-go="mine"]');
+  chk(dockSettings.tagName === 'A' && dockSettings.getAttribute('href') === '/mine/',
+    '底部页签「我的」指向 /mine/（实际 ' + dockSettings.tagName + ' ' + dockSettings.getAttribute('href') + '）');
   chk(d.querySelectorAll('#today-list .item').length === 5, '今日列表渲染 5 首（实际 ' + d.querySelectorAll('#today-list .item').length + '）');
   chk(d.querySelector('#ring-text').textContent === '0/5', '环形进度 0/5');
 
@@ -541,11 +562,12 @@ setTimeout(() => {
   chk(srecite.querySelector('#scope-hint').textContent === '当前：本学期及之前',
     '切回「本册及之前」→ 设置页回显「当前：本学期及之前」');
 
-  const uInput = sgeneral.querySelector('#input-username');
-  chk(uInput.value === '', '用户名初始为空（使用默认名 Ashley）');
+  const spMineN = bootSettingsPage(null, 'mine/index.html');
+  const uInput = spMineN.doc.querySelector('#input-nickname');
+  chk(uInput.value === '', '昵称初始为空（使用默认名 Ashley）');
   uInput.value = '小明';
-  uInput.dispatchEvent(new spGeneral.window.Event('input', { bubbles: true }));
-  window.localStorage.setItem('poem_recite_settings_v1', spGeneral.window.localStorage.getItem('poem_recite_settings_v1'));
+  uInput.dispatchEvent(new spMineN.window.Event('input', { bubbles: true }));
+  window.localStorage.setItem('poem_recite_settings_v1', spMineN.window.localStorage.getItem('poem_recite_settings_v1'));
   window.PoemApp.reloadSettings();
   chk(d.title === '跬步 · 小明的背诵 · 跬步', '填了用户名后标题为「小明的背诵 · 跬步」（实际 ' + d.title + '）');
 
@@ -556,11 +578,11 @@ setTimeout(() => {
     '填了用户名后不再走淡墨（是自己填的名字）');
   chk(d.querySelector('meta[name="apple-mobile-web-app-title"]').getAttribute('content') === '跬步 · 小明的背诵',
     'iOS 桌面名随用户名变化');
-  chk(JSON.parse(spGeneral.window.localStorage.getItem('poem_recite_settings_v1')).username === '小明', '用户名已持久化');
+  chk(JSON.parse(spMineN.window.localStorage.getItem('poem_recite_settings_v1')).username === '小明', '昵称已持久化');
 
   uInput.value = '   ';
-  uInput.dispatchEvent(new spGeneral.window.Event('input', { bubbles: true }));
-  window.localStorage.setItem('poem_recite_settings_v1', spGeneral.window.localStorage.getItem('poem_recite_settings_v1'));
+  uInput.dispatchEvent(new spMineN.window.Event('input', { bubbles: true }));
+  window.localStorage.setItem('poem_recite_settings_v1', spMineN.window.localStorage.getItem('poem_recite_settings_v1'));
   window.PoemApp.reloadSettings();
   chk(d.title === '跬步 · Ashley的背诵 · 跬步',
     '用户名留空时回到默认名 Ashley（实际 ' + d.title + '）');

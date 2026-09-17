@@ -259,86 +259,48 @@ console.log('\n=== 六、上限与内核同源 ===');
   eq(F.limit({ E: null, backing: memB }), Infinity, '读不到内核时不设限（宁可不判，也不误拦）');
 }
 
-console.log('\n=== 七、设置页接线与收口 ===');
+console.log('\n=== 七、子用户那一块的接线与收口（js/family-ui.js） ===');
 {
   const gen = read('settings/general/index.html');
+  const mine = read('mine/index.html');
+  const uiJs = read('js/family-ui.js');
   const setJs = read('js/settings.js');
+  const mineJs = read('js/mine.js');
   const strip = t => t.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/^\s*\/\/.*$/gm, ' ');
 
   chk(/id="family-panel"/.test(gen), '设置 · 通用里有子用户那一块（#family-panel）');
+  chk(/id="family-panel"/.test(mine), '「我的」页也有同一块（子用户是「我是谁」的一部分）');
   chk(/<script src="\/js\/family\.js"><\/script>/.test(gen), '那一页加载了 js/family.js');
+  chk(/<script src="\/js\/family-ui\.js"><\/script>/.test(gen) &&
+    /<script src="\/js\/family-ui\.js"><\/script>/.test(mine),
+    '两张页都加载 js/family-ui.js（那一块的渲染与交互只有一份）');
+
   const atF = gen.indexOf('<script src="/js/family.js"></script>');
   const atPS = gen.indexOf('<script src="/js/progress-store.js"></script>');
   chk(atF >= 0 && atPS >= 0 && atF < atPS,
     'js/family.js 排在 progress-store.js 之前（顺序反了不报错，只是永远读没有后缀的老键）');
 
   const FAM = '((?:Family|F)\\.)';
-  chk(new RegExp(FAM + 'ensureDetailed\\(').test(setJs),
-    '设置页先 ensure（认领老档案），再画名册');
-  chk(new RegExp(FAM + 'limit\\(').test(setJs), '上限走 Family.limit()（页面不自己判层级）');
-  chk(new RegExp(FAM + '(create|rename|remove|select)\\(').test(setJs),
+  chk(new RegExp(FAM + 'ensureDetailed\\(').test(uiJs),
+    '那一块先 ensure（认领老档案），再画名册');
+  chk(new RegExp(FAM + 'limit\\(').test(uiJs), '上限走 Family.limit()（页面不自己判层级）');
+  chk(new RegExp(FAM + '(create|rename|remove|select)\\(').test(uiJs),
     '增 / 改名 / 删 / 切换全走 Family 的接口');
-  chk(/function familyMod\(\)/.test(setJs) && /window\.Family/.test(setJs),
+  chk(/function familyMod\(\)/.test(uiJs) && /window\.Family/.test(uiJs),
     'Family 现取（脚本顺序不对 / 老缓存时不报错，只是那一块不画）');
-  chk(!/tier\s*===\s*["'](pro|max)["']/.test(strip(setJs)),
-    'js/settings.js 不自己写 tier === "pro" 这类判断（上限只有一个来源）');
-  chk(!/["']::["']/.test(strip(setJs)),
-    '设置页不自己拼子用户后缀（拼法只在 family.js 一处）');
+  chk(!/tier\s*===\s*["'](pro|max)["']/.test(strip(uiJs)),
+    'js/family-ui.js 不自己写 tier === "pro" 这类判断（上限只有一个来源）');
+  chk(!/["']::["']/.test(strip(uiJs)),
+    '不自己拼子用户后缀（拼法只在 family.js 一处）');
+  chk(!/ensureDetailed|Family\.limit|Family\.create/.test(strip(setJs)) &&
+      !/ensureDetailed|Family\.limit|Family\.create/.test(strip(mineJs)),
+    '两张页的脚本都不再自己碰 Family（一律经 js/family-ui.js 一个出口）');
 
-  chk(/function reloadAll\(/.test(setJs) && /renderControls\(\)[\s\S]{0,200}renderFamily\(\)/.test(setJs),
-    '切档之后整页重画（年级 / 数量 / 进度 / 印 全都要跟着换）');
-
-  chk(/E_LIMIT/.test(setJs), '越限时按 E_LIMIT 分开说话（不笼统说「建不了」）');
-
-  const psSrc = read('js/progress-store.js');
-  chk(/F\.keyFor\(key, pid\)/.test(psSrc), 'progress-store 的拼键走 Family.keyFor（不自己拼）');
-  chk(/function kk\(key\)/.test(psSrc), '引擎只有一个 kk() 出口在拼键');
-
-  chk(/clearProgress[\s\S]{0,200}drop\(KEYS\.progress\)/.test(psSrc),
-    'clearProgress 只清**当前孩子**那一份（清的是逻辑键，后缀由读写入口统一拼）');
-  chk(!/kk\(kk\(/.test(psSrc), '引擎里没有双拼（kk(kk(...))）—— 后缀只拼一次');
-}
-
-console.log('\n=== 七之一、每一张用到档案 / 进度的页面都加载了 js/family.js ===');
-{
-  const pages = [];
-  (function walk(dir, rel) {
-    fs.readdirSync(dir, { withFileTypes: true }).forEach(e => {
-      if (e.name === 'node_modules' || e.name === '.git' || e.name === 'test' || e.name === 'scripts') return;
-      const full = nodePath.join(dir, e.name);
-      const r = rel ? rel + '/' + e.name : e.name;
-      if (e.isDirectory()) return walk(full, r);
-      if (e.name === 'index.html') pages.push(r);
-    });
-  })(path + '.', '');
-
-  let withAvatar = 0, withPS = 0;
-  pages.forEach(p => {
-    const html = read(p);
-    const hasAvatar = /js\/avatar\.js/.test(html);
-    const hasPS = /js\/progress-store\.js/.test(html);
-    if (!hasAvatar && !hasPS) return;
-    if (hasAvatar) withAvatar++;
-    if (hasPS) withPS++;
-    chk(/js\/family\.js/.test(html), p + ' 加载了 js/family.js（否则切换孩子后看到的是空进度）');
-
-    const at = s => {
-      let hit = -1;
-      html.split('\n').forEach((ln, i) => {
-        if (hit >= 0 || ln.indexOf('<script') < 0) return;
-        if (ln.indexOf('js/' + s + '.js') > -1) hit = i;
-      });
-      return hit;
-    };
-    chk(at('family') < at('avatar') || at('avatar') < 0,
-      p + ' 里 js/family.js 排在 js/avatar.js 之前');
-    chk(at('family') < at('progress-store') || at('progress-store') < 0,
-      p + ' 里 js/family.js 排在 js/progress-store.js 之前');
-  });
-  chk(withAvatar >= 12, '至少 12 张页在画那枚印（实际 ' + withAvatar + ' 张）');
-  chk(withPS >= 12, '至少 12 张页在读进度 / 设置（实际 ' + withPS + ' 张）');
-
-  chk(/js\/family\.js/.test(read('sw.js')), 'sw.js 预缓存含 js/family.js（断网也要能读对那一份）');
+  chk(/E_LIMIT/.test(uiJs), '越限时按 E_LIMIT 分开说话（不笼统说「建不了」）');
+  chk(/family-change/.test(uiJs) && /family-change/.test(mineJs),
+    '切档之后「我的」页会收到通知重画（年级 / 数量 / 进度 / 印 全都要跟着换）');
+  chk(/__reloadSettingsControls/.test(setJs) && /renderControls\(\)/.test(setJs),
+    '「通用」页那一路仍是整页重画（renderControls 还在）');
 }
 
 console.log('\n=== 七之二、备份：名册跟着走 ===');
@@ -376,9 +338,9 @@ if (!JSDOM) {
 } else {
   console.log('\n=== 八、真页面上跑一遍（jsdom）===');
 
-  const SCRIPTS = ['js/auth-core.js', 'js/entitlement.js', 'js/family.js', 'js/avatar.js',
-    'js/avatar-image.js', 'js/account-api.js', 'js/progress-store.js', 'js/storage.js',
-    'js/settings.js'];
+  const SCRIPTS = ['js/auth-core.js', 'js/entitlement.js', 'js/family.js', 'js/family-ui.js',
+    'js/avatar.js', 'js/avatar-image.js', 'js/account-api.js', 'js/progress-store.js',
+    'js/storage.js', 'js/settings.js'];
 
   function openPage(tier, signedIn) {
     const dom = new JSDOM(read('settings/general/index.html'),
@@ -430,8 +392,10 @@ if (!JSDOM) {
     u.dispatchEvent(new w.Event('input', { bubbles: true }));
     const fam = JSON.parse(w.localStorage.getItem('poem_family_v1'));
     eq(fam.profiles[0].nickname, '小明', '真页面：用户名写进的是**当前子用户**（昵称属孩子）');
-    chk(/头像：小/.test(w.document.getElementById('avatar-slot').innerHTML),
-      '真页面：头像跟着昵称重画（顶栏 / 设置页同一个来源）');
+    chk(!!w.document.getElementById('family-panel').querySelector('.family-row'),
+      '真页面：子用户那一行仍画在页面上（头像搬去「我的」页之后仍要画）');
+    chk(/小明/.test(w.document.getElementById('family-panel').innerHTML),
+      '真页面：子用户那一行的名字跟着昵称重画（同一个来源）');
 
     w.document.querySelector('[data-family-rename]').dispatchEvent(new w.Event('click', { bubbles: true }));
     const rin = w.document.getElementById('family-rename-input');

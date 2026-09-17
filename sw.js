@@ -1,4 +1,4 @@
-const CACHE_NAME = "poem-app-v151";
+const CACHE_NAME = "poem-app-v152";
 
 const PRECACHE = [
   "./",
@@ -11,6 +11,7 @@ const PRECACHE = [
   "./fonts/NotoSansSC-400.woff2",
   "./fonts/NotoSansSC-600.woff2",
   "./classic/",
+  "./mine/",
   "./settings/",
   "./settings/general/",
   "./settings/recite/",
@@ -35,6 +36,9 @@ const PRECACHE = [
   "./js/print.js",
   "./js/settings.js",
   "./js/settings-nav.js",
+  "./js/family-ui.js",
+  "./js/mine.js",
+  "./js/avatar-edit.js",
   "./js/play-modes.js",
   "./terms/",
   "./privacy/",

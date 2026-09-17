@@ -515,7 +515,7 @@ const iconRule = lastRuleOf(cssCode, '.icon-btn');
 chk(/border-radius:\s*50%/.test(iconRule) && /border:\s*1px solid var\(--line\)/.test(iconRule),
   '别处的同类按钮 .icon-btn 仍是圆钮（用户点名的只有右上角那一颗）');
 
-chk(/DOCK_ITEMS\s*=\s*\[[\s\S]*?key:\s*"home"[\s\S]*?key:\s*"library"[\s\S]*?key:\s*"search"[\s\S]*?key:\s*"settings"/.test(chromeJs) &&
+chk(/DOCK_ITEMS\s*=\s*\[\s*\{[\s\S]*?key:\s*"home"[\s\S]*?key:\s*"library"[\s\S]*?key:\s*"search"[\s\S]*?key:\s*"mine"/.test(chromeJs) &&
   /label:\s*"我的"/.test(chromeJs),
   '页签四格（背诵 / 课外 / 搜索 / 我的）只在 js/chrome.js 定义一次');
 

@@ -269,6 +269,14 @@ echo "=== 二级设置页（Issue #132 · 主页 + 四张二级页 / 返回上�
 node test/settings-nav.test.js
 
 echo ""
+echo "=== 「我的」页（Issue #205 · 头像 / 昵称 / 身份 / 本机数据 / 注销；齿轮去设置）==="
+echo "    守四件事：这一页只回答「我是谁」（头像、昵称、身份行、本机数据、子用户、"
+echo "    危险区都在这儿），设置整页只回答「怎么调机器」（四组入口一行不减）；"
+echo "    齿轮那一颗由 body 上的 data-top-action 长出来（不给每页各写一遍顶栏）；"
+echo "    头像那一套控件与昵称落盘只有一个来源（js/avatar-edit.js / ProgressStore.patch）。"
+node test/mine-page.test.js
+
+echo ""
 echo "=== 账号接线（2 期「补洞 + 2A」：/api/me 下发 · 注销自助，Issue #132）==="
 node test/account-bind.test.js
 
