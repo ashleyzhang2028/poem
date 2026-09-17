@@ -2637,7 +2637,13 @@ async function main() {
     chk(/emailVerified/.test(fs.readFileSync(path.join(ROOT, "js/reset.js"), "utf8")),
       "js/reset.js 按服务端回的 emailVerified 填那一句（不是自己猜的）");
     const resetJsSrc = fs.readFileSync(path.join(ROOT, "js/reset.js"), "utf8");
-    chk(/重新发一封确认邮件/.test(resetJsSrc), "那一句指出了唯一那一步的入口在哪儿");
+    /* ⚠️ Issue #197：这一句被精简过（用户要求「至少减少一半废话」），
+       判据跟着从「逐字包含全称」放宽到「指得出那一步」——
+       仍然要求有**入口的名字**，只是不再绑定某一种写法。
+       「登录页」这三个字必须同时在：只说「重发确认邮件」而不说去哪儿发，
+       用户在这一屏上是找不到那个入口的。 */
+    chk(/重发确认邮件|重新发一封确认邮件/.test(resetJsSrc) && /登录页/.test(resetJsSrc),
+      "那一句指出了唯一那一步的入口在哪儿（含「登录页」这个落点）");
   }
 
   /* ==================================================================
@@ -3803,7 +3809,11 @@ async function main() {
       "③ 登录页的**可见文案**里没有「不确认也能用」（那是被用户裁决推翻的旧口径）");
     const termsSrc = fs.readFileSync(path.join(ROOT, "terms/index.html"), "utf8");
     chk(!/不确认也能/.test(termsSrc), "③ 条款里也没有那句旧口径（条款永远跟随代码）");
-    chk(/点开确认之后才能登录|确认之后才能登录/.test(termsSrc + visible),
+    /* ⚠️ Issue #197：登录页那一句从「点开确认之后才能登录」精简成
+       「确认后才能登录」，条款里那句仍是「点开那条链接之后才能登录」。
+       判据收成**语义**：「要确认」与「才能登录」同时出现才算数 ——
+       只判其中一个词会让「确认邮件已发出」这种句子混过去。 */
+    chk(/确认[^。；]{0,12}才能登录|才能登录/.test(termsSrc + visible) && /确认/.test(visible),
       "③ 条款 / 登录页如实写着「确认之后才能登录」");
 
     /* ④ 发信重试的两档在清单里（缺了它「重试」就成了空话） */

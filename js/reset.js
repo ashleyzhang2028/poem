@@ -121,7 +121,8 @@
         if (r.emailVerified === false) {
           hint.hidden = false;
           hint.className = "account-note warn";
-          hint.textContent = "不过这个邮箱还没确认 —— 现在还用新密码登不进去。请到登录页点「重新发一封确认邮件」，点开那封邮件里的链接之后就能登了。";
+          /* Issue #197：这一句原先 56 字，只留「新密码登不进去 + 去哪解决」。 */
+          hint.textContent = "新密码还用不了：邮箱未确认，需先去登录页重发确认邮件。";
         } else {
           hint.hidden = true;
           hint.textContent = "";
