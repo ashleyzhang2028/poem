@@ -1079,12 +1079,151 @@ verifyReason:  "network"      ← 为什么没成（网络层 / http_5xx / …�
 | 文档层 | `api/_lib/store.js` | 两张新表的方法（memory / supabase **两个实现键集合必须一致**） |
 | 邮件 | `api/_lib/mail/index.js` | `buildConfirm` / `buildReset`（与验证码邮件共用同一个 `transports` 出口）；**`withRetry`（退避重试 + 只重试可自愈的错）** |
 | 接口 | `api/auth/*.js`、`api/admin/accounts.js` | 六个 202/200 与错误口径（含 403 `E_EMAIL_UNVERIFIED`）；`resend-verification` 与 `resend-verification-by-email` 两条路由都进同一个内核函数 |
-| 传输 | `js/auth-api.js` | **八个**方法（注册 / 登录 / 确认 / 两条重发 / 两步重设 / 名录） |
+| 传输 | `js/auth-api.js` | **八个**方法（注册 / 登录 / 确认 / 两条重发 / 两步重设 / 名录）+ `config()`（取人机校验的公开配置） |
+| 人机校验 | `api/_lib/turnstile.js`、`js/turnstile.js` | 服务端 siteverify（fail-closed + hostname 校验）与前端 widget 渲染；挂载点与顺序在 `core.humanGuard` 一处 |
 | 接线 | `js/account-api.js` | `resendVerification` / `resendVerificationByEmail` / `adminAccounts` / 账号自助信息（明文邮箱 + 确认状态 + `channel.emailGate`） |
 | 页面 | `login/`、`verify/`、`reset/`、`profile/`、`admin/` | 四屏登录页 + **一屏「等确认」**（那颗「重新发一封」走匿名口）、两张邮件落地页、个人中心的确认状态、管理后台的名录 |
-| 测试 | `test/api.test.js` 第廿二 / 廿三 / **廿四** / **廿六**节 | 上述每一条口径都有断言；第廿四节是「没确认就不让登录」的总闸，第廿六节是 **Issue #197 复审**（账号接管、匿名重发、IP 档、发信重试） |
+| 测试 | `test/api.test.js` 第廿二 / 廿三 / **廿四** / **廿六** / **廿八**节 | 上述每一条口径都有断言；第廿四节是「没确认就不让登录」的总闸，第廿六节是 **Issue #197 复审**（账号接管、匿名重发、IP 档、发信重试），第廿八节是**人机校验**（默认关 / 挂载点 / fail-closed / 不回 error-codes） |
 
 ---
+
+### 4.4.12 【Issue #197 后续】人机校验：Cloudflare Turnstile
+
+用户原话（2026-09-17）：
+
+> 「用户登录，注册，密码找回，密码，发送随机码重置等页面添加 Cloudflare
+> Turnstile 支持，并且说明在文档中 Cloudflare Turnstile 的配置步骤」
+
+#### 为什么是 Turnstile，而不是图形验证码 / 滑块
+
+三件与本站既有口径对得上的事：
+
+1. **不花钱、不备案也能跑**（§1 第 1 条）。Turnstile 免费档
+   **每月 100 万次**校验，对本站来说是「用不完」。
+2. **不打断真用户**。它默认**不弹**任何需要点的东西（无感校验），
+   只有判不准时才出一小块勾选框 —— 图形验证码那种「看图选字」
+   对一个面向小朋友的背诗应用是明确的伤害。
+3. **不需要自己实现服务端**。一根 siteverify 的往返（§4.4.12 下详），
+   而不是自己维护一套「难 / 中 / 易」的题库 + 图片服务。
+
+#### 它挡在哪儿：四条匿名可写的口子（**清单只写一处**）
+
+| 挂闸 | 为什么 |
+|---|---|
+| `POST /api/send-code` | 匿名可调、**会发信**。刷子拿它当免费的邮件炮台 |
+| `POST /api/register` | 匿名可调、**会建号 + 会发信** |
+| `POST /api/reset-request` | 匿名可调、**会往任意邮箱发信** |
+| `POST /api/resend-verification`（含匿名那条） | 全站唯一「不登录也能让本站往外发信」的接口 |
+
+**不挂**的几条，理由是「它们本来就有凭据」：
+
+| 不挂 | 为什么 |
+|---|---|
+| `POST /api/login` | 口令得**猜中**才能过；加人机校验只是多打扰真用户 |
+| `POST /api/verify-code` | 同上，随机码得猜中 |
+| `POST /api/reset-confirm` | 用户是**点邮件里那条链接**进来的，那一步已证明邮箱可达 |
+| `POST /api/verify-email` | 同上 |
+
+⚠️ **加在哪几条、用什么顺序，只写在 `core.humanGuard()` 一个函数里**。
+把 `turnstile.guard(...)` 抄进四个函数开头也能跑，但那样就有四处
+「要不要校验」的判断 —— 将来改一处（比如加「登录态的人免校验」），
+就会出现「三条接口改了、第一条没改」，而**没改的那一条会静默地不校验**。
+
+#### 顺序：**先人机校验、后频控**
+
+两个都要，而且顺序是刻意的：**被 Turnstile 挡掉的那一次不占频控额度**。
+反过来（先频控）的下场是刷子可以用无效 token 把「一小时 5 封」那本账刷满，
+于是**真正的用户被挤掉** —— 一种不需要猜口令就能做的 DoS。
+
+#### 三条口径
+
+1. **默认关**（`TURNSTILE_ENABLED` 缺省 `0`）。理由与 `SMS_ENABLED` 逐字同源：
+   没配好密钥时打开它 = **谁也别想登录**。开关是给运维的，不是给代码猜的。
+2. **没配就如实降级，不假装拦着**。`turnstileReady(cfg)` 为 false 时服务端
+   **跳过**校验，并把这件事自报在 `/api/me` 的 `channel.turnstile` 与
+   `/api/config` 的 `turnstile.enabled` 里 —— 与 `mail: "console"`
+   「真实用户收不到信」是同一种「如实说这台服务器的状态」。
+3. **失败一律 400 + `E_TURNSTILE`**，且**不回 Cloudflare 的 `error-codes`**
+   （那些码会把「密钥配错了」这类服务端配置问题暴露给调用方）。
+   只进服务端日志（`api.turnstile_blocked`，经 `redact`）。
+
+#### 两处判据必须只写一份
+
+- `api/_lib/turnstile.js` 的 `turnstileReady(cfg)` —— 「开关 + 密钥 + 非旁路」
+  三个条件。写成让调用方各自 `if (cfg.x && cfg.y)` 的形状，
+  漏一处就是「那个接口不校验」而谁也不报错。
+- `core.humanGuard(deps, input)` —— 挂载点与顺序。
+
+#### fail-closed：连不上 Cloudflare 时**不放行**
+
+这一条是刻意选的**难那一侧**：
+
+| 选择 | 后果 |
+|---|---|
+| fail-open（连不上就放行） | **拔网线 = 绕过人机校验**，而且没有任何紧急开关能补救一个已经被刷穿的窗口 |
+| **fail-closed（连不上就拒）** | Cloudflare 抖动时登录短暂不可用 —— 但这一层本来就是**可关的应急闸**（`TURNSTILE_ENABLED=0` 一行就绕开） |
+
+⚠️ 但**没配密钥**那一档**不是**网络失败：那是运维明示的「这台没开」，
+走 `skipped`（**不拦**）。两件事不许混为一谈 ——
+把「没配」按 fail-closed 处理，等于在一个没人机校验的实例上用一句假话锁门。
+
+#### hostname 校验
+
+核过的 token 必须属于**本站**（防「拿别人站点的 token 来糊弄我们」）：
+响应里的 `hostname` 与 `cfg.siteUrl` 的 host 比一次，对不上按拒绝处理。
+
+#### 前端那半边（`js/turnstile.js`）：只在「省一次请求」，不判安全
+
+| 前端做 | 前端**不**做 |
+|---|---|
+| 渲染 widget、把 token 交给 `js/auth-api.js` | 判「校验过没过」—— 那在服务端 |
+| 提交前 `gate()` 拦一下（省一次必然失败的请求） | 自己拼 siteKey（由 `/api/config` 下发） |
+| 提交后 `reset()`（token 一次性） | 在没配的实例上拦用户（那等于用假话锁门） |
+
+⚠️ **没配时一个字节都不发给 Cloudflare**：不渲染 widget、连它的脚本都不加载，
+页面上的挂载点一直是 `hidden` —— 绝不摆一个空壳让人以为「本站有人机校验」。
+
+#### 配置步骤（与 `npm run doctor -- --steps` 第 F 步同一份数据）
+
+⚠️ 这一节的文字与 `api/_lib/ops.js` 的 `STEPS`（第 F 步）是**同一件事的两种呈现**，
+改一处要改两处；「哪几个变量、缺了会怎样」的**权威**在 `ENTRY` / `check()` 里。
+
+1. **Cloudflare 控制台 → Turnstile → Add site** → 填本站域名（`kuibu.app` 那种，
+   **不带** `https://`）→ Create
+2. 建完那一页给你**两个 key**，它们是一对，**缺一个都跑不起来**：
+   - **Site Key** —— 公开值，由 `/api/config` 下发给浏览器渲染 widget
+   - **Secret Key** —— 保密，只在服务端核 token 时用
+3. **托管平台**（Vercel / CNB / 自建 → 项目 → Settings → Environment Variables）
+   建**三个**：
+
+   ```
+   TURNSTILE_ENABLED    = 1                                   # 开关（默认 0/关）
+   TURNSTILE_SITE_KEY   = 0x4AAAAAAA...                        # 上面那一对里的 Site Key
+   TURNSTILE_SECRET_KEY = 0x4AAAAAAA...                        # 上面那一对里的 Secret Key
+   ```
+
+   ⚠️ **填在托管平台的环境变量里，不是 Cloudflare、也不是 Supabase。**
+   理由与「Resend 密钥填哪」逐字同源（README 那一节写得很细）：
+   Cloudflare 那边只是「允许你用它的服务」，锁在**跑着本站服务端的那台机器**上。
+4. **重新部署一次** —— 环境变量**只在新部署里生效**，光改不重新部署 = 没改
+5. **回来验**（四条，每条一个明确结论）：
+   - `curl -sS "$SITE_URL/api/config"` → `{"turnstile":{"enabled":true,"siteKey":"0x…"}}`
+   - 打开 `/login/`，密码那一屏下方应当出现 Cloudflare 的方框
+   - 故意不勾就点「注册」→ 前端就地提示「请先完成人机校验」，**不发请求**
+   - 把 widget 删掉再点（模拟绕过前端）→ 服务端回 `400 E_TURNSTILE`
+     —— **这一条才证明闸在服务端**
+
+⚠️ 三条容易踩的：
+
+- **两个 key 是一对**：只填 Site Key（前端渲染了）而缺 Secret Key，
+  服务端 `turnstileReady()` 为 false → **跳过校验**（看着像开着，实际没拦）；
+  只填 Secret Key 而缺 Site Key，前端不渲染 → **每次登录都被服务端拒**。
+  `npm run doctor` 的 notes 会把这两档分别点破。
+- **本地开发 / CI** 不想真接 Cloudflare，用 `TURNSTILE_BYPASS=1`。
+  它**只在服务端读**、**绝不随任何响应下发**，所以生产开着它时客户端无从察觉
+  —— 也正因如此，`npm run doctor` 会为它单独喊一条警告。
+- **widget 要允许本站域名**：Cloudflare 那边 Add site 时填的域名与
+  实际访问的域名不一致时，widget 会渲染失败（浏览器控制台看得见）。
 
 ## 5. 随机码规则（安全核心）
 

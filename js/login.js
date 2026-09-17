@@ -38,6 +38,13 @@
 
   var A = window.AuthCore;
   var Ent = window.Entitlement;
+  /* 人机校验（Cloudflare Turnstile，Issue #197 后续）。
+     ⚠️ 它可能是 `undefined`（老 WebView 没加载到、或这一页是按老 HTML 打开的）——
+        下面的每一处都按「没有它也能跑」写：**真闸在服务端**，
+        前端这里少一个模块只意味着「这一次没带 token」，服务端会如实回答。
+        ⚠️ 绝不在这里现编一个空对象假装它有接口 —— 那会让 `T.mount` 这类
+           调用静默地什么都不做，而症状是「人机校验一片空白还以为配好了」。 */
+  var TS = window.Turnstile || null;
 
   /* 存储：内核的标准配件。隐私模式下内核会自己降级为内存会话 */
   var backing = null;
@@ -81,6 +88,13 @@
   function passwordNeedsServer() {
     return isLocal();
   }
+
+  /* 人机校验的配置（从 `GET /api/config` 来；**出厂是「没配」** ——
+     拿不到那一条时的表现与「服务端没配」逐字一致：不渲染、不拦。
+     ⚠️ 这不是「默认放行」的安全洞：真闸在服务端（`core.humanGuard`），
+        前端这里拿不到 siteKey 只意味着「这一次没带 token」，
+        服务端会按它自己的配置如实回答。 */
+  var tsConfig = { enabled: false, siteKey: "" };
 
   /* 本页状态（**不进 localStorage**：它只是「这一屏画到哪一步」） */
   var state = {
@@ -160,6 +174,72 @@
       (masked ? "这一步只能由运维做，所以 " + masked + " 现在收不到信。" : "");
   }
 
+  /* ------------------------------------------------------------ 人机校验 */
+
+  /**
+   * 六个挂载点 → 哪一屏用哪一块（Issue #197 后续）。
+   *
+   * ⚠️ 为什么**一个屏幕一块**而不是全局共用一块 widget：
+   *    Turnstile 的 widget 只能住在**一个** DOM 位置上，而本页是
+   *    「一次只显示一件动作」（见文件头那段）。共用一块的话，
+   *    切屏时要么把 widget 搬来搬去（Cloudflare 不允许直接移动 iframe），
+   *    要么让它留在一个已经 `hidden` 的屏里 —— 后者会让用户
+   *    「看不见、但必须勾」而死在这一步。
+   *
+   * ⚠️ 六块**按需**渲染（切到哪一屏渲染哪一块），不是一次全渲染：
+   *    一次渲染六个 widget = 六次第三方请求，而其中五个用户根本走不到。
+   */
+  var TS_SLOTS = {
+    pw: "ts-pw",
+    code: "ts-code",
+    register: "ts-reg",
+    forgot: "ts-forgot",
+    verify: "ts-verify",
+    unverified: "ts-unverified"
+  };
+  /* 挂过的不重复挂（Cloudflare 第二次 render 到同一个容器会叠一个） */
+  var tsMounted = {};
+
+  /**
+   * 把某一屏的人机校验挂上去（幂等）。
+   *
+   * 没配 siteKey 时 `TS.mount` 会**立刻 resolve 而不做任何事**，
+   * 于是这里的 `show(slot)` 也不会发生 —— 页面上那块一直是 `hidden`。
+   * 这正是「不许摆一个空壳让人以为有人机校验」的落点。
+   */
+  function mountTurnstile(slotKey) {
+    if (!TS || !TS.mount || !slotKey) return;
+    var slotId = TS_SLOTS[slotKey];
+    var el = slotId ? $(slotId) : null;
+    if (!el) return;
+    TS.mount(el, { siteKey: tsConfig.siteKey, enabled: tsConfig.enabled }).then(function (st) {
+      /* ⚠️ 只在**真的渲染了**的时候摘掉 hidden —— 判据是 `configured`
+         （拿到 siteKey 了），不是 `ready`（token 拿到了没有：
+         用户可能还没勾，那是 `ready:false` 而 widget 已经在屏幕上了）。 */
+      if (st && st.configured) show(el);
+    });
+  }
+
+  /** 这一屏的人机校验必须先过（没过就返回 true，且已就地提示） */
+  function turnstileBlocked(msgId) {
+    if (!TS || !TS.gate) return false;
+    var why = TS.gate();
+    if (!why) return false;
+    msg(msgId, why, "warn");
+    return true;
+  }
+
+  /**
+   * 每一次提交之后重置（无论成没成）。
+   *
+   * ⚠️ Turnstile 的 token **一次性**：不重置的下场是「第二次点按钮必失败」，
+   *    而用户看到的是「人机校验没通过」—— 他会以为是自己做错了什么，
+   *    然后一遍遍点，一遍遍失败。
+   */
+  function turnstileReset() {
+    if (TS && TS.reset) { try { TS.reset(); } catch (e) { /* 没有 widget：空操作 */ } }
+  }
+
   /**
    * 一屏一屏地切。**这是本页唯一的「画到哪一步」出口** ——
    * 别在别处直接 `hide/show` 面板，那种写法必然漏掉一两块（然后留下一个
@@ -190,6 +270,11 @@
     if (mode === "done") show($("step-done")); else hide($("step-done"));
     if (mode === "unverified") show($("step-unverified")); else hide($("step-unverified"));
     if (mode === "code") { show($("step-email")); hide($("step-code")); }
+    /* 切到哪一屏，就把那一屏的人机校验挂上去（幂等；没配时它什么都不做）。
+       ⚠️ `unverified` 那一屏不是 pane（它住在 .account-step 里），
+          所以这里单独判一次 —— 漏掉它的症状是「那一屏的『重新发一封』
+          永远过不了校验」，而用户正卡在那个死结里。 */
+    if (TS && mode !== "done") mountTurnstile(mode);
   }
 
   function esc(s) {
@@ -368,9 +453,16 @@
     if (!pw) { msg("msg-reg", ch.messageOf("E_PW_EMPTY") || "请先填密码", "warn"); return; }
     if (pw.length < 8) { msg("msg-reg", "密码至少 8 位", "warn"); return; }
     if (pw !== pw2) { msg("msg-reg", "两次填的密码不一样", "warn"); return; }
+    /* 人机校验：**在客户端先判一次**，只为省掉一次必然失败的请求。
+       ⚠️ 它**不是**安全边界 —— 真判在服务端（`POST /api/register` 会再核一遍）。
+          token 还没拿到的情形分两档：没配（放行）与「用户没勾」（拦住），
+          这个区分由 `TS.gate()` 一处给出（见 js/turnstile.js 的 `gate`）。 */
+    if (turnstileBlocked("msg-reg")) return;
 
     msg("msg-reg", "");
     return ch.register({ email: email, password: pw }).then(function (r) {
+      /* token 一次性：无论成没成都作废（见 turnstileReset 的说明）。 */
+      turnstileReset();
       // 口令这一栏用完就清 —— 它不该在屏幕上多留一秒
       if ($("input-reg-pw")) $("input-reg-pw").value = "";
       if ($("input-reg-pw2")) $("input-reg-pw2").value = "";
@@ -447,8 +539,14 @@
       return;
     }
     if (!pw) { msg("msg-pw", ch.messageOf("E_PW_EMPTY") || "请先填密码", "warn"); return; }
+    /* ⚠️ 口令登录**服务端不挂人机校验**（它本来就有凭据：口令猜中才能过）。
+       但页面上那一块 widget 是渲染着的（用户看得见），所以这里仍然
+       判一次、也仍然重置 —— 界面上看得见的东西与它有没有被用上
+       必须是同一件事，否则用户会问「我勾了这个为什么没用」。 */
+    if (turnstileBlocked("msg-pw")) return;
     msg("msg-pw", "");
     return ch.login({ email: email, password: pw }).then(function (r) {
+      turnstileReset();
       if ($("input-pw")) $("input-pw").value = "";
       if (!r.ok) {
         /* ⚠️ `E_LOGIN_FAIL` 的文案**原样用服务端那句**（「邮箱或密码不对」）。
@@ -493,8 +591,10 @@
       msg("msg-forgot", email ? A.ERR.E_EMAIL_FORMAT : A.ERR.E_EMAIL_EMPTY, "warn");
       return;
     }
+    if (turnstileBlocked("msg-forgot")) return;
     msg("msg-forgot", "");
     return ch.resetRequest({ email: email }).then(function (r) {
+      turnstileReset();
       if (!r.ok) { msg("msg-forgot", r.message, "warn"); return null; }
       /* ⚠️ 这一句是**刻意的措辞**：「如果这个邮箱在本站注册过」。
          服务端回的也是同一个响应（不区分存在与否）—— 客户端要是写成
@@ -543,7 +643,11 @@
 
   /** 服务端那条路 */
   function sendCodeRemote(purpose, email, msgId) {
+    /* ⚠️ 人机校验只挂在**服务端那条路**上：本机体验版没有服务端，
+       也就没有人机校验可谈（它的「码」本来就在本机生成）。 */
+    if (turnstileBlocked(msgId)) return Promise.resolve(null);
     return api.sendCode({ email: email, purpose: purpose }).then(function (r) {
+      turnstileReset();
       if (!r.ok) {
         if (r.code === "E_NOT_CONFIGURED" || r.code === "E_OFFLINE" || r.code === "E_TIMEOUT") {
           msg(msgId, r.message, "warn");
@@ -800,8 +904,10 @@
       msg("msg-unverified", "请回到登录那一屏填上邮箱，再点这颗键", "warn");
       return;
     }
+    if (turnstileBlocked("msg-unverified")) return;
     msg("msg-unverified", "");
     return ch.resendVerificationByEmail({ email: email }).then(function (r) {
+      turnstileReset();
       if (!r.ok) { msg("msg-unverified", r.message, "warn"); return null; }
       /* ⚠️ 文案与 `reset-request` 同一条纪律：**不说这个邮箱注册过没有**。
          服务端回的也是同一个形状（存在与否都一样）。 */
@@ -849,8 +955,10 @@
       msg("msg-verify", "请先填邮箱", "warn");
       return;
     }
+    if (turnstileBlocked("msg-verify")) return;
     msg("msg-verify", "");
     return ch.resendVerification(signedIn ? {} : { email: email }).then(function (r) {
+      turnstileReset();
       if (!r.ok) { msg("msg-verify", r.message, "warn"); return null; }
       if (r.alreadyVerified) {
         msg("msg-verify", "这个邮箱已经确认过了，不用再发。", "ok");
@@ -938,6 +1046,21 @@
       return;
     }
     renderTrust();
+
+    /* ---- 先把「要不要人机校验」问清楚（Issue #197 后续）----
+       ⚠️ 它在**任何一次挂载之前**跑，而且失败**不拦**：
+          拿不到配置 = 与「服务端没配」同样的表现（不渲染、不拦），
+          真闸在服务端。把「拉配置失败」做成一个错误弹窗的下场是
+          一次 CDN 抖动就让登录页看起来坏掉了。 */
+    if (TS && api && api.config) {
+      api.config().then(function (r) {
+        if (!r || !r.ok || !r.turnstile) return;
+        tsConfig.enabled = r.turnstile.enabled === true;
+        tsConfig.siteKey = r.turnstile.siteKey || "";
+        /* 配置一到就补挂当前那一屏（init 里 setMode 可能跑在它前面） */
+        if (tsConfig.enabled) mountTurnstile(state.mode);
+      }, function () { /* 拿不到就保持「没配」那一档 */ });
+    }
 
     // 页签：切动作，不跳页
     $("tab-pw").addEventListener("click", function () { setMode("pw"); msg("msg-pw", ""); });

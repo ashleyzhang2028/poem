@@ -101,6 +101,18 @@
   padding: 9px 11px;
 }
 
+/* ---------- 一之二、人机校验位（Issue #197 后续 · Cloudflare Turnstile） ----------
+   这一块在**没配**的实例上 `hidden`（js/turnstile.js 连脚本都不加载），
+   配了才由 JS 摘掉 hidden 并把 widget 塞进来。
+
+   ⚠️ `min-height` **不给**：Cloudflare 的 widget 自己撑开（交互式那档约 65px），
+      给一个固定高度会在「它比预期矮」时留一块空白，
+      而那一块空白会被读成「这里坏了」。 */
+.turnstile-slot { margin: 4px 0 10px; }
+.turnstile-slot[hidden] { display: none; }
+/* 有些主题下 Cloudflare 的 iframe 会带一条默认边距，抹平它 */
+.turnstile-slot iframe { display: block; }
+
 /* ---------- 二、表单 ---------- */
 .account-field { margin-bottom: 12px; }
 .account-field:last-child { margin-bottom: 0; }

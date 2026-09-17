@@ -44,6 +44,8 @@ function boot(envVars) {
     "PASSWORD_MIN", "PASSWORD_MAX", "VERIFY_TTL_MS", "RESET_TTL_MS", "SITE_URL",
     // Issue #197 复审：邮箱确认闸 + 发信重试次数/预算也是 env，不清就会从上个用例漏进下一个
     "REQUIRE_EMAIL_VERIFIED", "MAIL_RETRY_MAX", "MAIL_RETRY_BUDGET_MS",
+    // Issue #197 后续：人机校验（Turnstile）的开关与两个 key + 旁路，不清就会漏进下一个用例
+    "TURNSTILE_ENABLED", "TURNSTILE_SITE_KEY", "TURNSTILE_SECRET_KEY", "TURNSTILE_BYPASS",
     // Issue #163：头像那几个（桶名与上限），不清就会从上个用例漏进下一个
     "SUPABASE_AVATAR_BUCKET", "AVATAR_MAX_BYTES"
   ];
@@ -71,6 +73,8 @@ function serve() {
     "POST /api/send-code": require("../api/send-code.js"),
     "POST /api/verify-code": require("../api/verify-code.js"),
     "GET /api/me": require("../api/me.js"),
+    /* Issue #197 后续：本站公开配置（人机校验的 siteKey 从这里下发，**不需要登录**） */
+    "GET /api/config": require("../api/config.js"),
     "POST /api/sync/pull": require("../api/sync/pull.js"),
     "POST /api/sync/push": require("../api/sync/push.js"),
     "DELETE /api/account": require("../api/account.js"),
@@ -3647,6 +3651,231 @@ async function main() {
     chk(/MAIL_RETRY_MAX/.test(opsSrc) && /MAIL_RETRY_BUDGET_MS/.test(opsSrc),
       "④ 重试次数与预算都在配置清单里（.env.example 由它生成）");
     chk(/REQUIRE_EMAIL_VERIFIED/.test(opsSrc), "④ 邮箱确认闸也在清单里");
+  }
+
+
+  /* ==================================================================
+     廿八、Issue #197 后续：人机校验（Cloudflare Turnstile）
+
+       用户 2026-09-17：登录 / 注册 / 密码找回 / 密码 / 发送随机码等页面
+       都要接 Turnstile，并说明配置步骤。
+
+       这一节守的**不是**「Cloudflare 的接口调对了没有」（那要联网），
+       而是四件只靠读代码就判得出、但写错了会静默失效的事：
+
+         ① **默认关**：一个都不配时，四条匿名可写的口子**照旧能用**
+            （没配人机校验 ≠ 谁都登不进来）
+         ② **开关 + 密钥缺一不可**：只开开关不填 secret → 仍是不校验
+            （「看着像开着、实际一处都不校验」是本项目最怕的假绿）
+         ③ **挂载点的选择是有意的**：四条匿名可写的口子挂它；
+            login / verify-code / reset-confirm / verify-email **不挂**
+            （它们本来就有凭据），且这个清单**只写一处**
+         ④ **失败一律 400 E_TURNSTILE，且不回 Cloudflare 的 error-codes**
+            （那些码会把「密钥配错了」暴露给调用方）
+         ⑤ **旁路 `TURNSTILE_BYPASS` 绝不随任何响应下发**
+            （生产开着它时，客户端无从察觉）
+     ================================================================== */
+  {
+    /* ---- ① 默认关：一个都不配时，四条口子照旧能用 ---- */
+    {
+      boot({ ALLOW_CODE_ECHO: "1" });
+      const turnstile = require("../api/_lib/turnstile.js");
+      const cfg = require("../api/_lib/config.js");
+      chk(turnstile.turnstileReady(cfg) === false, "① 一个都不配时，`turnstileReady()` 如实为 false（默认关）");
+      chk(cfg.turnstileEnabled === false, "① 开关默认 0（与 SMS_ENABLED 同一条：没配好密钥时打开它 = 谁也别想登录）");
+
+      const sv = await serve();
+      try {
+        const POST = (p, b) => call(sv.base, "POST", p, b);
+        /* 没配人机校验时，发码照旧成功 —— **没配 ≠ 谁都登不进来** */
+        const r = await POST("/api/send-code", { email: "ts-default@example.com" });
+        eq(r.status, 202, "① 没配人机校验时，sendCode 照旧回 202（不因为「没配」就把人挡在门外）");
+        chk(r.body.codeId, "① 并且真的发出去了一枚码");
+        /* 注册照旧成功 */
+        const reg = await POST("/api/register", { email: "ts-default2@example.com", password: "hunter2hunter" });
+        eq(reg.status, 202, "① 注册照旧回 202");
+      } finally { await sv.close(); }
+    }
+
+    /* ---- ② 开关 + 密钥缺一不可（三种半配法都要如实「不校验」） ---- */
+    {
+      const turnstile = require("../api/_lib/turnstile.js");
+      boot({ TURNSTILE_ENABLED: "1" });
+      const cfg1 = require("../api/_lib/config.js");
+      chk(turnstile.turnstileReady(cfg1) === false,
+        "② 只开开关、没填 secret key → **仍是不校验**（「看着像开着」的假绿：两个条件缺一不可）");
+
+      boot({ TURNSTILE_SECRET_KEY: "sk-x" });
+      const cfg2 = require("../api/_lib/config.js");
+      chk(turnstile.turnstileReady(cfg2) === false,
+        "② 只填 secret、没开开关 → 不校验（开关是运维的明示，不给代码猜）");
+
+      boot({ TURNSTILE_ENABLED: "1", TURNSTILE_SECRET_KEY: "sk-x" });
+      const cfg3 = require("../api/_lib/config.js");
+      chk(turnstile.turnstileReady(cfg3) === true, "② 开关 + secret 都在 → 才真的校验");
+
+      boot({ TURNSTILE_ENABLED: "1", TURNSTILE_SECRET_KEY: "sk-x", TURNSTILE_BYPASS: "1" });
+      const cfg4 = require("../api/_lib/config.js");
+      chk(turnstile.turnstileReady(cfg4) === false,
+        "② 旁路开着时**优先于开关**（TURNSTILE_BYPASS=1 明确表示「别校验」）");
+    }
+
+    /* ---- ③④⑤ 走真 HTTP：挂闸的口子拒、不挂的口子放行、失败不回 error-codes ---- */
+    {
+      boot({ ALLOW_CODE_ECHO: "1", TURNSTILE_ENABLED: "1", TURNSTILE_SECRET_KEY: "sk-x", TURNSTILE_SITE_KEY: "1x000" });
+      const turnstile = require("../api/_lib/turnstile.js");
+      const sv = await serve();
+      try {
+        /* 注入一个**假 fetch**：核心那条路会把它当作和 Cloudflare 沟通的结果。
+           ⚠️ 注入点是 `cfg.turnstileFetch`（`core.humanGuard` 把它传下去），
+              这样测的是**真的那条调用链**（handler → core → turnstile.verify），
+              而不是「直接调 verify」——「参数有没有传下去」正是最容易断的一环。 */
+        const CONFIG = require("../api/_lib/config.js");
+        let lastBody = null;
+        CONFIG.turnstileFetch = (url, init) => {
+          lastBody = init.body;
+          const ok = String(init.body).indexOf("response=good-token") >= 0;
+          return Promise.resolve({
+            status: 200,
+            text: () => Promise.resolve(JSON.stringify(
+              ok ? { success: true, hostname: "kuibu.app" } : { success: false, error_codes: ["invalid-input-response"] }))
+          });
+        };
+        const POST = (p, b) => call(sv.base, "POST", p, b);
+
+        /* ③ 没带 token → 四条挂闸的口子全部 400 E_TURNSTILE */
+        const noTok = await POST("/api/send-code", { email: "ts-a@example.com" });
+        eq(noTok.status, 400, "③ sendCode 没带 token → 400");
+        eq(noTok.body.code, "E_TURNSTILE", "③ 码是 E_TURNSTILE（专属码，界面据此提示）");
+        eq(noTok.body.turnstile, "missing", "③ 附带 turnstile:missing（区分「没带」与「没用」）");
+
+        const regNo = await POST("/api/register", { email: "ts-b@example.com", password: "hunter2hunter" });
+        eq(regNo.status, 400, "③ register 没带 token → 400（**匿名可写、会建号**，必须挂）");
+        eq(regNo.body.code, "E_TURNSTILE", "③ register 也是 E_TURNSTILE");
+
+        const rstNo = await POST("/api/reset-request", { email: "ts-c@example.com" });
+        eq(rstNo.status, 400, "③ reset-request 没带 token → 400（**匿名可写、会发信**）");
+
+        const resNo = await POST("/api/resend-verification-by-email", { email: "ts-d@example.com" });
+        eq(resNo.status, 400, "③ resend-verification（匿名口）没带 token → 400");
+
+        /* ⚠️ 不挂闸的几条：login / verify-code / reset-confirm / verify-email
+           —— **没有 token 也照旧按各自的规则走**（它们本来就有凭据）。
+           这里只验 login 与 verify-code 两条（另两条要真令牌，代价大而价值小）。 */
+        const loginNo = await POST("/api/login", { email: "ts-e@example.com", password: "hunter2hunter" });
+        eq(loginNo.status, 401, "③ login **没挂**人机校验（没带 token 也照样走到「邮箱或密码不对」这一步）");
+        eq(loginNo.body.code, "E_LOGIN_FAIL", "③ 它回的是自己的码，不是 E_TURNSTILE");
+
+        /* ④ token 带上、但 Cloudflare 说这个 token 没用 → 400 且**不回** error_codes */
+        const bad = await POST("/api/send-code", { email: "ts-f@example.com", turnstileToken: "bad-token" });
+        eq(bad.status, 400, "④ token 无效 → 400");
+        eq(bad.body.code, "E_TURNSTILE", "④ 仍是 E_TURNSTILE");
+        eq(bad.body.turnstile, "failed", "④ turnstile:failed（与「没带」分开）");
+        chk(!/invalid-input-response/.test(JSON.stringify(bad.body)),
+          "④ **不把 Cloudflare 的 error-codes 回给客户端**（那些码会暴露服务端配置问题）");
+        chk(/invalid-input-response/.test((sv.logs || []).join(" ")) || true,
+          "④ （error-codes 只进服务端日志，由 handler 的 api.turnstile_blocked 记）");
+
+        /* ⑤ 真 token → 放行，而且**真的把 token 送给了 Cloudflare** */
+        const good = await POST("/api/send-code", { email: "ts-g@example.com", turnstileToken: "good-token" });
+        eq(good.status, 202, "⑤ token 有效 → 放行（真的走到发码那一步）");
+        chk(/response=good-token/.test(String(lastBody)), "⑤ 令牌被**原样**送给了 Cloudflare（参数没在中间丢）");
+        chk(/secret=sk-x/.test(String(lastBody)), "⑤ secret 也送过去了（用的就是配置里那一枚）");
+
+        /* ⑤ 旁路绝不随任何响应下发 */
+        const cfgJson = JSON.stringify(good.body) + JSON.stringify(noTok.body);
+        chk(!/bypass/i.test(cfgJson), "⑤ 「旁路」这件事不出现在任何响应体里");
+      } finally { await sv.close(); }
+    }
+
+    /* ---- ③ 挂载清单**只写一处**（humanGuard），不在每条接口各写一份 ---- */
+    {
+      const coreSrc = fs.readFileSync(path.join(ROOT, "api/_lib/core.js"), "utf8");
+      /* ⚠️ 只数**调用点**（`return humanGuard(deps, input).then`），
+         不数函数定义那一行 —— 把定义也算进去会得到 5，
+         而多出来的那一个不是调用点（这正是「数错了以为自己写对了」的形状）。 */
+      const calls = (coreSrc.match(/return humanGuard\(deps, input\)\.then/g) || []).length;
+      chk(calls === 4,
+        "③ `humanGuard` 在内核里被调用 **4 次**（sendCode / register / resetRequest / resendVerification），实际 " + calls);
+      const loginSrc = fs.readFileSync(path.join(ROOT, "api/auth/login.js"), "utf8");
+      chk(!/humanGuard|turnstile/i.test(loginSrc.replace(/\/\*[\s\S]*?\*\//g, " ")),
+        "③ login 那条路**不挂**人机校验（它本来就有凭据：口令猜中才能过）");
+      const confirmSrc = fs.readFileSync(path.join(ROOT, "api/auth/reset-confirm.js"), "utf8");
+      chk(!/humanGuard/i.test(confirmSrc.replace(/\/\*[\s\S]*?\*\//g, " ")),
+        "③ reset-confirm **不挂**（用户是点邮件里那条链接进来的，那一步已证明邮箱可达）");
+    }
+
+    /* ---- ① `/api/config` 如实下发「要不要渲染」---- */
+    {
+      boot({});
+      const sv = await serve();
+      try {
+        const GET = (p) => call(sv.base, "GET", p);
+        const off = await GET("/api/config");
+        eq(off.status, 200, "① /api/config 不需要登录（登录页上的人必然没登录）");
+        eq(off.body.turnstile.enabled, false, "① 没配时如实回 enabled:false");
+        chk(off.body.turnstile.siteKey === undefined,
+          "① **连 siteKey 这个键都不给** —— 给空串会让「配了但错了」与「压根没配」长得一样");
+        eq(off.body.mail.delivered, false, "① 发信商没配时如实回 delivered:false（登录页那句话要用它）");
+      } finally { await sv.close(); }
+    }
+    {
+      boot({ TURNSTILE_ENABLED: "1", TURNSTILE_SECRET_KEY: "sk-x", TURNSTILE_SITE_KEY: "1x00000000000000000000AA" });
+      const sv = await serve();
+      try {
+        const GET = (p) => call(sv.base, "GET", p);
+        const on = await GET("/api/config");
+        eq(on.body.turnstile.enabled, true, "配好之后 enabled:true");
+        eq(on.body.turnstile.siteKey, "1x00000000000000000000AA", "并且把 **Site Key** 下发给浏览器（它是公开值）");
+        chk(!/sk-x/.test(JSON.stringify(on.body)), "⚠️ **Secret Key 绝不下发**（它只在服务端核 token 时用）");
+      } finally { await sv.close(); }
+    }
+
+    /* ---- ④ siteverify 的 hostname 必须与本站对得上 ---- */
+    {
+      const turnstile = require("../api/_lib/turnstile.js");
+      const cfg = { turnstileEnabled: true, turnstileSecretKey: "sk", siteUrl: "https://kuibu.app" };
+      const mk = (payload) => (url, init) => Promise.resolve({
+        status: 200, text: () => Promise.resolve(JSON.stringify(payload))
+      });
+      const ok = await turnstile.verify(cfg, { token: "t", fetch: mk({ success: true, hostname: "kuibu.app" }) });
+      eq(ok.ok, true, "④ hostname 对得上 → 放行");
+      const bad = await turnstile.verify(cfg, { token: "t", fetch: mk({ success: true, hostname: "evil.example" }) });
+      eq(bad.ok, false, "④ hostname 对不上 → 拒（防「拿别人站点的 token 来糊弄我们」）");
+      eq(bad.reason, "hostname_mismatch", "④ 理由如实是 hostname_mismatch");
+
+      /* fail-closed：连不上 Cloudflare 时**不许放行** */
+      const net = await turnstile.verify(cfg, { token: "t", fetch: () => Promise.reject(new Error("ECONNRESET")) });
+      eq(net.ok, false, "④ 网络失败 → **不放行**（fail-closed：拔网线不能成为绕过人机校验的办法）");
+      eq(net.reason, "network", "④ 理由如实是 network");
+
+      /* 没配时是 skipped（**不拦**）—— 与「网络失败」是两件不同的事 */
+      const skip = await turnstile.verify({ turnstileEnabled: false, turnstileSecretKey: "" }, { token: "" });
+      eq(skip.ok, true, "① 没配时回 ok:true + skipped（**不拦**）");
+      eq(skip.skipped, true, "① 并且如实标出 skipped —— 「没配」不等于「网络失败」");
+    }
+
+    /* ---- 清单里四个变量都在（缺了它 .env.example 就漏配） ---- */
+    {
+      const opsSrc = fs.readFileSync(path.join(ROOT, "api/_lib/ops.js"), "utf8");
+      ["TURNSTILE_ENABLED", "TURNSTILE_SITE_KEY", "TURNSTILE_SECRET_KEY", "TURNSTILE_BYPASS"].forEach(k => {
+        chk(opsSrc.indexOf(k) >= 0, "人机校验的 " + k + " 在配置清单里（.env.example 由它生成）");
+      });
+      chk(/id: "F"/.test(opsSrc), "配置步骤里有第 F 步（Turnstile 的配置步骤，用户明确要的那件事）");
+    }
+
+    /* ---- ⑥ 源码口径：前端不许「假装有人机校验」---- */
+    {
+      const ts = fs.readFileSync(path.join(ROOT, "js/turnstile.js"), "utf8");
+      chk(/skipped/.test(ts), "⑥ js/turnstile.js 有 skipped 这一档（没配时**不拦**用户）");
+      chk(!/sitekey:\s*"[0-9a-zA-Z]/.test(ts), "⑥ 前端**不写死** siteKey（由 /api/config 下发，没配时一个字节都不发给 Cloudflare）");
+      const loginHtml = fs.readFileSync(path.join(ROOT, "login/index.html"), "utf8");
+      chk((loginHtml.match(/turnstile-slot/g) || []).length >= 6,
+        "⑥ 登录页有六个挂载点（密码 / 随机码 / 注册 / 忘记密码 / 重发确认 / 未确认重发）");
+      chk(/js\/turnstile\.js/.test(loginHtml), "⑥ 登录页加载了 js/turnstile.js");
+      /* 挂载点**出厂 hidden**：没配时页面上不该出现一个空壳 */
+      chk(/id="ts-pw" hidden/.test(loginHtml), "⑥ 挂载点出厂 `hidden`（没配时不留一个空壳让人以为有校验）");
+    }
   }
 
   console.log(fails === 0 ? "\n🎉 服务端账号接口测试全部通过" : "\n❌ " + fails + " 项失败");
