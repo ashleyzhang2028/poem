@@ -295,6 +295,7 @@ Vercel Serverless，**同源、无 CORS**：
 | `POST /api/send-code` | 邮箱归一化 → 四层频控 → 生成 6 位码 → 哈希落库 → 发信 |
 | `POST /api/verify-code` | 校验码 → 建/取账号 → 签发 **HttpOnly Cookie** 会话 |
 | `GET  /api/me` | 权益的唯一来源：`{uid, nickname, plan, features[], mask, channel}` |
+| `GET  /api/config` | 本站**公开**配置（**不需要登录**）：人机校验的 `turnstile.{enabled,siteKey}` 与发信 `mail.delivered` |
 | `POST /api/sync/pull` | 增量拉云端进度（游标是**服务端时间**，不是客户端时钟） |
 | `POST /api/sync/push` | 按条合并写回；载荷白名单化，时间戳老的盖不掉新的 |
 | `DELETE /api/account` | 注销：**先导出、再删行**，并清掉会话 |
@@ -336,7 +337,8 @@ Vercel Serverless，**同源、无 CORS**：
 `/api/me` 还会**如实自报这台服务器开通到哪一步**：
 
 ```jsonc
-"channel": { "mail": "sendgrid"|"console", "delivered": true, "db": "db"|"memory", "sms": false }
+"channel": { "mail": "sendgrid"|"console", "delivered": true, "db": "db"|"memory", "sms": false,
+             "turnstile": true|false, "emailGate": true|false, "rate": "instance" }
 ```
 
 `mail` 是 `console` 就是「真实用户收不到信」、`db` 是 `memory` 就是「重启即丢」——
@@ -351,7 +353,7 @@ Vercel Serverless，**同源、无 CORS**：
 ```bash
 npm run doctor                        # 缺哪个、缺了会怎样、怎么补（退出码 = 体检结论）
 npm run doctor -- --json              # 程序看的形状（CI / 部署前检查）
-npm run doctor -- --steps             # 怎么补：A~E 五步（配 Supabase / 发信商 / 探活 / 验收）
+npm run doctor -- --steps             # 怎么补：六步（配 Supabase / 发信商 / Turnstile / 探活 / 验收）
 npm run doctor -- --steps --check     # 同上，外加「据当前环境变量，走到第几步了」
 npm run env:example > .env.example    # 生成可直接粘贴的模板
 ```
@@ -367,6 +369,7 @@ npm run env:example > .env.example    # 生成可直接粘贴的模板
 | **这一件需要** | `SENDGRID_API_KEY` | 发不出真邮件，落到 `console`（只写服务端日志） |
 | **可选** | `MAIL_TRANSPORT`、`MAIL_FROM`、`SITE_URL`、`COOKIE_NAME`、`SMS_*`、`ALLOW_CODE_ECHO`、`MAIL_RETRY_MAX`、`MAIL_RETRY_BUDGET_MS`、`PASSWORD_MIN`/`PASSWORD_MAX`、`VERIFY_TTL_MS`、`RESET_TTL_MS` | 用默认值 |
 | **默认开** | `REQUIRE_EMAIL_VERIFIED` | 邮箱没确认就不让登录；**只在没配好发信商的实例上**显式设 `0` 关掉（关掉时界面会如实说「这台服务器没有拦确认」） |
+| **默认关** | `TURNSTILE_ENABLED` / `TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY` | 人机校验（Cloudflare Turnstile）。**没配好两个 key 就别打开开关**（否则谁也别想登录）；本地开发 / CI 用 `TURNSTILE_BYPASS=1`（**只在服务端读**，生产绝不许开） |
 
 ⚠️ 其中两个要留意：
 - `REQUIRE_EMAIL_VERIFIED` **默认 `1` = 邮箱没确认就不让登录**（用户裁决）。
@@ -381,13 +384,14 @@ npm run env:example > .env.example    # 生成可直接粘贴的模板
 
 `test/ops.test.js` 拿三个假密钥钉死「不报值」，并断言清单与 `config.js` **双向同源**。
 
-**五步是按顺序走的**（`--steps` 打的就是这五步）：
+**六步是按顺序走的**（`--steps` 打的就是这六步；F 是本轮加的人机校验）：
 
 | 步 | 做什么 | 判据 |
 |---|---|---|
 | **A** | 生成 `SESSION_SECRET`（`openssl rand -hex 32`） | 自检里它从「未设置」变「已设置」 |
 | **B** | 建 Supabase 项目 → 跑 `api/_lib/schema.sql` → 拿 URL + **service_role**（不是 anon） | 自检「最低线已过」；`rest/v1/accounts` 回 **200** |
 | **C** | 注册 **Resend**（主选）→ 建 key → **验发信子域 + SPF/DKIM/DMARC 三条 DNS** | 自检里发信通道不再是 `console`；真发一封信 `delivered:true` |
+| **F** | **Cloudflare → Turnstile → Add site** → 拿一对 key（Site / Secret）→ 填进托管平台三个变量（见下节） | `/api/config` 回 `turnstile.enabled:true`；不勾提交时服务端回 `400 E_TURNSTILE` |
 | **D** | 上探活与备份（`.cnb.yml` 里两条 `crontab`）；备份另需 `SUPABASE_DB_URL` | 流水线列表里看得见；手动触发探活成功 |
 | **E** | 配完当场验收四步 | `/api/me` 回 **401**（回 503 就是 A 没生效）、发码 `delivered:true`、注销回 **401** |
 
@@ -433,6 +437,60 @@ MAIL_FROM      = noreply@mail.你的域  # 必须是 Resend 里**验过的那个
 不必填 `MAIL_TRANSPORT=resend` 的前提是「**只有** Resend 一枚密钥」。
 哪天又填了 `SENDGRID_API_KEY`，缺省推断会**挑 SendGrid**（推断顺序里它在前面），
 这时必须显式写 `MAIL_TRANSPORT=resend` —— `npm run doctor` 会主动点破这一条。
+
+#### 人机校验在哪配：**Cloudflare 拿 key、托管平台填环境变量**
+
+登录 / 注册 / 密码找回 / 发送随机码这几条**匿名可写、会发信、会建号**的口子
+可以加一道**人机校验**（Cloudflare Turnstile）。设计与「挡在哪几条、为什么不挡另几条」
+见 `docs/auth-design.md` §4.4.12；这里只写**在哪配、怎么配、怎么知道配成了**。
+
+⚠️ 与发信商那一节同一条纪律：**Cloudflare 那边只是「允许你用它的服务」，
+锁在跑着本站服务端的那台机器的环境变量上。**
+
+四步（`npm run doctor -- --steps` 的第 F 步就是这四步）：
+
+1. **Cloudflare 控制台 → Turnstile → Add site** → 填本站域名（`kuibu.app` 这种，
+   **不带** `https://`）→ Create
+2. 建完那一页给你**两个 key**，它们是一对，**缺一个都跑不起来**：
+   - **Site Key** —— 公开值（由 `/api/config` 下发给浏览器渲染 widget）
+   - **Secret Key** —— 保密（只在服务端核 token 时用）
+3. **托管平台 → 项目 → Settings → Environment Variables** → 建**三个**：
+
+   ```
+   TURNSTILE_ENABLED    = 1                      # 开关（默认 0 / 关）
+   TURNSTILE_SITE_KEY   = 0x4AAAAAAA...          # Add site 那一页的 Site Key
+   TURNSTILE_SECRET_KEY = 0x4AAAAAAA...          # 同一页的 Secret Key
+   ```
+4. **重新部署一次** —— 环境变量**只在新部署里生效**，光改不重新部署 = 没改
+
+**怎么知道配成了**（四条，每条一个明确结论）：
+
+```bash
+curl -sS "$SITE_URL/api/config"      # 期望 {"turnstile":{"enabled":true,"siteKey":"0x…"}}
+```
+
+- 打开 `/login/`，密码那一屏下方应当出现 Cloudflare 的方框
+- 故意不勾就点「注册」→ 前端就地提示「请先完成人机校验」，**不发请求**
+- 把 widget 删掉再点（模拟绕过前端）→ 服务端回 **`400 E_TURNSTILE`**
+  —— **这一条才证明闸在服务端**（前端那一道只省一次必然失败的请求）
+
+⚠️ 四条容易踩的：
+
+- **两个 key 是一对，缺一个都是坏的**：只填 Site Key（前端渲染了）而缺 Secret Key，
+  服务端视为「没开」→ **跳过校验**（看着像开着，实际没拦）；
+  只填 Secret Key 而缺 Site Key，前端不渲染 → **每次登录都被服务端拒**。
+  `npm run doctor` 的提醒会把这两档分别点破。
+- **`TURNSTILE_SECRET_KEY` 只在服务端**：不进浏览器、不进仓库、不写进 `.env.example`。
+  而 `TURNSTILE_SITE_KEY` 相反 —— 它**必须**进浏览器，这是它的设计。
+- **本地开发 / CI** 用 `TURNSTILE_BYPASS=1`（**只在服务端读**，绝不随任何响应下发）。
+  也正因如此，生产开着它时客户端无从察觉 —— `npm run doctor` 会为它单独喊一条警告。
+- **widget 要允许本站域名**：Add site 时填的域名与实际访问域名不一致时，
+  widget 会渲染失败（浏览器控制台看得见）。
+
+⚠️ **没配就如实降级**：`turnstileReady()` 为 false 时服务端**跳过**校验，
+并自报在 `/api/config`（`turnstile.enabled:false`）与 `/api/me` 的 `channel.turnstile` 里。
+前端**一个字节都不发给 Cloudflare**（不渲染、连脚本都不加载）——
+绝不摆一个空壳让人以为「本站有人机校验」（与 `mail: "console"` 同一条纪律）。
 
 ### 古诗词大会 / 试题模拟（3 期「不花钱的那三件」，已落地）
 
@@ -648,6 +706,21 @@ MAIL_FROM      = noreply@mail.你的域  # 必须是 Resend 里**验过的那个
 忘记密码（发重设邮件）、重设密码（设新密码 → 踢掉其它设备）。
 这四条都**住在登录页的两个页签旁边**（文字链进去的那两屏 + 两张独立落地页），
 一次只显示一件事：一页只有**一件主动作**（实心按钮），其余动作收成文字链。
+
+**人机校验（Cloudflare Turnstile，可选）**：配上之后，登录页的四条主动作
+（密码登录 / 发送随机码 / 注册 / 忘记密码）以及两处「重发确认邮件」
+各会多一块 Cloudflare 的方框。「配在哪几条、为什么不配另几条」见
+`docs/auth-design.md` §4.4.12。三条口径：
+
+- **默认关**，且**没配就一个字节都不发给 Cloudflare**（不渲染、连脚本都不加载）——
+  页面上不会出现一个空壳让人以为「本站有人机校验」（与 `mail: "console"` 同一条纪律）
+- **真闸在服务端**：前端那一道只省一次必然失败的请求；绕过前端直接打接口
+  会拿到 `400 E_TURNSTILE`
+- **失败一律一句话**（「人机校验没通过，请刷新页面再试一次」），
+  不回 Cloudflare 的 `error-codes`（那些码会把「密钥配错了」暴露给调用方）——
+  它只进服务端日志（`api.turnstile_blocked`）
+
+配置步骤见上一节「**人机校验在哪配**」（四步 + 四条自检）。
 
 **口令与随机码并存是刻意的，不是过渡状态**：家长群体记不住密码
 （「忘记密码是最高频的求助」），所以「不想记口令的人」必须还有得走；

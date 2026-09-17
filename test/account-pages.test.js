@@ -615,6 +615,169 @@ const LOGIN = strip(loginJs), PROFILE = strip(profileJs), ADMIN = strip(adminJs)
 }
 
 
+/* ============ 十五、人机校验（Cloudflare Turnstile，Issue #197 后续） ============
+   用户 2026-09-17：登录 / 注册 / 密码找回 / 密码 / 发送随机码等页面都要接 Turnstile。
+
+   这一节守的是**前端那半边**（服务端那半边在 test/api.test.js 第廿八节）。
+
+   ⚠️ 它放在**这里**（而不是塞进第十三/十四节的异步链里），是因为那两节
+      各自跑在 `setTimeout` 里，而**第十三节一跑完就 `process.exit`** ——
+      往那里面塞断言，症状是「有时候跑得到、有时候被前面的 exit 掐掉」。
+      这一整节**纯同步**（不碰 jsdom、不等网络），所以放在模块顶层最稳。
+      ⑤b 那一小段要真跑 DOM，单独用一个 setTimeout，且**不依赖** 13/14 节。 */
+{
+  /* ==============================================================
+     第十五节 · 人机校验（Cloudflare Turnstile，Issue #197 后续）
+         --------------------------------------------------------------
+         用户 2026-09-17：登录 / 注册 / 密码找回 / 密码 / 发送随机码
+         等页面都要接 Turnstile。
+
+         这一节守的是**前端那半边**（服务端那半边在 test/api.test.js 第廿八节）：
+
+           ① **没配就不许装样子**：`js/turnstile.js` 在没 siteKey 时
+              连 Cloudflare 的脚本都不加载，`gate()` **放行**
+              （在一个没人机校验的实例上拦住用户 = 用一句假话锁门）
+           ② **配了才拦**：拿不到 token 时 `gate()` 给出那句提示
+           ③ **token 一次性**：`reset()` 清掉（不重置 = 第二次必失败）
+           ④ **页面上六块挂载点、出厂 `hidden`**（没配时不留空壳）
+           ⑤ **登录页的每一次提交都先问一次 gate**（漏掉一处 =
+              那一屏「永远过不了校验」，而它与「密钥配错了」长得一样）
+         ============================================================== */
+      {
+        const T = require(path + 'js/turnstile.js');
+        T._resetForTest();
+        chk(T.state().skipped === true, '① 出厂（还没 configure）时 skipped:true —— 没配就**不拦**');
+
+        T.configure({ siteKey: '' });
+        chk(T.required() === false, '① 没 siteKey → required() 为 false（这一路请求**不带** token）');
+        chk(T.gate() === null, '① 没配时 gate() **放行**（这是最要紧的一条：别用一句假话把所有人锁在门外）');
+
+        T._resetForTest();
+        T.configure({ siteKey: '1x00000000000000000000AA' });
+        chk(T.required() === true, '② 配了 siteKey → required() 为 true');
+        chk(T.token() === '' && typeof T.gate() === 'string',
+          '② 还没拿到 token 时 gate() 给出那句提示（省一次必然失败的请求）');
+        chk(/人机校验/.test(T.gate()), '② 提示里说的是「人机校验」（不是「验证码」这类会混淆的话）');
+
+        /* ③ reset 是**安全的空操作**（没渲染时也能无条件调） */
+        T.reset();
+        chk(T.token() === '', '③ reset() 清掉 token（token 一次性，提交后必调）');
+
+        /* ⑤ 源码口径：六块挂载点 + 出厂 hidden + 登录页加载了它 */
+        const LH = read('login/index.html');
+        ['ts-pw', 'ts-code', 'ts-reg', 'ts-forgot', 'ts-verify', 'ts-unverified'].forEach(id => {
+          chk(new RegExp('id="' + id + '" hidden').test(LH),
+            '④ 挂载点 #' + id + ' 在、且出厂 `hidden`（没配时不留一个空壳让人以为有校验）');
+        });
+        chk(/<script src="\/js\/turnstile\.js"><\/script>/.test(LH), '⑤ 登录页加载 js/turnstile.js');
+        chk(LH.indexOf('/js/turnstile.js') < LH.indexOf('/js/auth-api.js'),
+          '⑤ 它排在 auth-api **之前**（auth-api 发请求时要向它取 token）');
+
+        const LJS = read('js/login.js');
+        const gates = (LJS.match(/turnstileBlocked\(/g) || []).length;
+        chk(gates >= 6,
+          '⑤ 登录页的每一次提交都先问一次 gate（密码/注册/忘记密码/发码/重发确认×2），实际 ' + gates + ' 处');
+        chk(/turnstileReset\(\)/.test(LJS), '⑤ 提交之后重置（token 一次性）');
+        chk(/api\.config\(\)/.test(LJS), '⑤ 配置从 GET /api/config 来（**不写死** siteKey）');
+
+        const RJS = read('js/reset.js');
+        chk(/ts-reset/.test(read('reset/index.html')), '⑤ 重设页也有一个挂载点');
+        chk(/api\.config\(\)/.test(RJS), '⑤ 重设页同样从服务端问配置');
+
+        /* ⑥ 前端**不许盲写一个 siteKey**（那会让「没配」也看着像配了） */
+        const tsSrc = read('js/turnstile.js');
+        chk(!/["']0x[0-9A-Za-z]{20,}["']/.test(tsSrc) && !/sitekey:\s*["'][^"']+["']/.test(tsSrc.replace(/sitekey:\s*siteKeyValue/,'')),
+          '⑥ js/turnstile.js 里没有写死的 siteKey（由 /api/config 下发）');
+        chk(/skipped/.test(tsSrc), '⑥ 有 skipped 这一档（「没配」与「没通过」是两件不同的事）');
+
+        /* ------------------------------------------------------------
+           ⑤b **真的点一遍**：把 /login/ 在 jsdom 里跑起来，
+               服务端说「配了人机校验」，且**令牌一直不给** ——
+               这时点「注册」必须**就地拦住、且不发请求**。
+               ⚠️ 这一节测的是「接线真的通」：源码里写了 `turnstileBlocked(...)`
+                  不等于它挂在了按钮上（前面第十二/十三节踩过同类坑）。
+               ------------------------------------------------------------ */
+        {
+          const sdom2 = new JSDOM(read('login/index.html'),
+            { runScripts: 'dangerously', url: 'https://x.test/login/', base: 'https://x.test/login/' });
+          const w2 = sdom2.window;
+          const hits = [];
+          w2.fetch = (url, init) => {
+            const p2 = String(url).replace('https://x.test', '');
+            hits.push(p2);
+            const reply = (status, obj) => Promise.resolve({
+              status, text: () => Promise.resolve(JSON.stringify(obj)), headers: { get: () => null }
+            });
+            /* 服务端说：人机校验开着，siteKey 是这一个 */
+            if (p2 === '/api/config') {
+              return reply(200, { turnstile: { enabled: true, siteKey: '1x00000000000000000000AA' }, mail: { delivered: true } });
+            }
+            return reply(200, {});
+          };
+          /* ⚠️ 注入一个**假的 Cloudflare 全局**：真脚本要从 CDN 拉，
+             离线测试里拉不到。给一个只记「render 被调过」的桩 ——
+             这样测的是本站的接线，而不是 Cloudflare 的 CDN。 */
+          w2.turnstile = {
+            _rendered: 0,
+            render: function (el) { this._rendered++; el.dataset.rendered = '1'; return 'wid-1'; },
+            reset: function () {}
+          };
+          ['js/auth-core.js', 'js/turnstile.js', 'js/auth-api.js', 'js/entitlement.js',
+            'js/avatar.js', 'js/family.js', 'js/progress-store.js'].forEach(f => {
+            const el = w2.document.createElement('script');
+            el.textContent = read(f);
+            w2.document.body.appendChild(el);
+          });
+          const s3 = w2.document.createElement('script');
+          s3.textContent = read('js/login.js');
+          w2.document.body.appendChild(s3);
+          w2.document.dispatchEvent(new w2.Event('DOMContentLoaded', { bubbles: true }));
+
+          const d2 = w2.document;
+          const $2 = (id) => d2.getElementById(id);
+          const shown2 = (id) => { const e = $2(id); return !!(e && !e.hidden); };
+
+          const finishTs = () => {
+            try {
+              /* 配置一到，当前那一屏（密码登录）的挂载点应当被摘掉 hidden */
+              chk(shown2('ts-pw'), '⑤b 服务端说「配了」→ 密码那一屏的挂载点被摘掉 hidden（widget 真的渲染了）');
+              chk(($2('ts-pw') || {}).dataset && $2('ts-pw').dataset.rendered === '1',
+                '⑤b 而且真的调了 Cloudflare 的 render（不是只把块显示出来）');
+              chk(!shown2('ts-reg'), '⑤b 其余几屏的挂载点仍收着（按需渲染，不是一次全渲染）');
+
+              /* 切到注册屏 → 那一块也应当被挂上。
+                 ⚠️ 这一段的延时只有 20ms 级：第十三/十四节各自的链子跑完就
+                    `process.exit`，而本节的链子若比它们慢，最后一条断言
+                    就会被掐掉（**症状是「有时候跑得到、有时候没有」**）。
+                    20ms 对「Promise 微任务 + 一次同步渲染」是够的。 */
+              $2('btn-go-register').click();
+              setTimeout(() => {
+                try {
+                  chk(shown2('ts-reg'), '⑤b 切到注册屏 → 注册那一块也挂上了');
+
+                  /* 核心：**令牌没拿到**（用户没勾）时点「注册」，必须拦住且不发请求 */
+                  hits.length = 0;
+                  $2('input-reg-email').value = 'a@b.com';
+                  $2('input-reg-pw').value = 'hunter2hunter';
+                  $2('input-reg-pw2').value = 'hunter2hunter';
+                  $2('btn-register').click();
+                  setTimeout(() => {
+                    try {
+                      chk(hits.indexOf('/api/register') < 0,
+                        '⑤b 令牌没拿到时点「注册」→ **一个请求都没发出去**（前端那一道省掉了必然失败的一次）');
+                      chk(/人机校验/.test($2('msg-reg').textContent),
+                        '⑤b 并且就地提示说的是「人机校验」（实际「' + $2('msg-reg').textContent + '」）');
+                    } catch (e) { console.log('✗ 第十五节（瞬时）自身抛异常：' + e.message); process.exit(1); }
+                  }, 20);
+                } catch (e) { console.log('✗ 第十五节自身抛异常：' + e.message); process.exit(1); }
+              }, 20);
+            } catch (e) { console.log('✗ 第十五节自身抛异常：' + e.message); process.exit(1); }
+          };
+          setTimeout(finishTs, 20);
+        }
+      }
+}
+
 /* ================= 十三、Issue #197：四屏真的切得动（jsdom 真跑一遍） ================= */
 {
   /* 用户要的是一整套登录流程（注册 / 确认 / 登录 / 忘记密码 / 重设）。

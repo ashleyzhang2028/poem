@@ -75,6 +75,12 @@
               <button class="pw-eye" id="btn-pw-eye" type="button" aria-label="显示密码">显示</button>
             </div>
           </div>
+          <!-- 人机校验（Cloudflare Turnstile，Issue #197 后续）。
+               ⚠️ 这一块**空着出厂**：没配 siteKey 的实例上，js/turnstile.js
+                  连 Cloudflare 的脚本都不加载，这里就是一个零高度的空 div。
+                  绝不摆一个空壳让别人以为「本站有人机校验」——
+                  与「console 发信商」那件事是同一条纪律。 -->
+          <div class="turnstile-slot" id="ts-pw" hidden></div>
           <button class="account-btn" id="btn-login" type="button">登录</button>
           <p class="account-msg" id="msg-pw"></p>
 
@@ -95,6 +101,7 @@
                      autocomplete="email" spellcheck="false" enterkeyhint="send"
                      placeholder="you@example.com" maxlength="120" />
             </div>
+            <div class="turnstile-slot" id="ts-code" hidden></div>
             <button class="account-btn" id="btn-send" type="button">发送随机码</button>
             <p class="account-msg" id="msg-email"></p>
             <p class="account-hint">不记密码也能用：随机码发到邮箱，填进来即登录。</p>
@@ -155,6 +162,7 @@
                    autocomplete="new-password" spellcheck="false" enterkeyhint="go"
                    placeholder="两次要一样" maxlength="72" />
           </div>
+          <div class="turnstile-slot" id="ts-reg" hidden></div>
           <button class="account-btn" id="btn-register" type="button">注册</button>
           <p class="account-msg" id="msg-reg"></p>
           <p class="account-hint">注册后我们发一封确认邮件，<strong>点开确认之后才能登录</strong>（这是为了保护你的账号）；确认链接 24 小时内有效。没收到就回上一屏点「重新发一封」，<strong>不需要先登录</strong>。</p>
@@ -173,6 +181,7 @@
                    autocomplete="email" spellcheck="false" enterkeyhint="send"
                    placeholder="you@example.com" maxlength="120" />
           </div>
+          <div class="turnstile-slot" id="ts-verify" hidden></div>
           <button class="account-btn" id="btn-resend-verify" type="button">重发确认邮件</button>
           <!-- ⚠️ 这一颗原先是那种「稍后再确认、先拿去用」的键。默认口径改成
                「没确认就不让登录」之后，它成了一句**照做也走不通**的话
@@ -200,6 +209,7 @@
                    autocomplete="email" spellcheck="false" enterkeyhint="send"
                    placeholder="you@example.com" maxlength="120" />
           </div>
+          <div class="turnstile-slot" id="ts-forgot" hidden></div>
           <button class="account-btn" id="btn-forgot-send" type="button">发送重设邮件</button>
           <p class="account-msg" id="msg-forgot"></p>
           <p class="account-hint">没收到先看看垃圾邮件。也可以直接用「快捷登录」的随机码进来。</p>
@@ -220,6 +230,7 @@
         <div class="account-step" id="step-unverified" hidden>
           <p class="account-lead" id="unverified-lead"></p>
           <div class="account-note" id="unverified-note" hidden></div>
+          <div class="turnstile-slot" id="ts-unverified" hidden></div>
           <button class="account-btn" id="btn-unverified-resend" type="button">重新发一封确认邮件</button>
           <button class="account-btn ghost" id="btn-unverified-back" type="button">返回登录</button>
           <p class="account-msg" id="msg-unverified"></p>
@@ -262,6 +273,10 @@
   <!-- 脚本顺序：auth-core（内核）→ auth-api/account-api（通道）→ entitlement（权益）
        → avatar（印）→ login（本页）→ chrome（顶栏）→ pwa -->
   <script src="/js/auth-core.js"></script>
+  <!-- 人机校验（Issue #197 后续）：**在 auth-api 之前** ——
+       auth-api 发请求时要向它取 token；顺序反了的话，第一次提交会因为
+       「模块还没挂上」而少一个字段，而症状是「人机校验总是失败」。 -->
+  <script src="/js/turnstile.js"></script>
   <script src="/js/auth-api.js"></script>
   <script src="/js/entitlement.js"></script>
   <script src="/data/text-master.js"></script>

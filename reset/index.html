@@ -53,6 +53,12 @@
                    autocomplete="new-password" spellcheck="false" enterkeyhint="go"
                    placeholder="两次要一样" maxlength="72" />
           </div>
+          <!-- 人机校验（Issue #197 后续）：重设口令这一屏**也摆**，
+               但**服务端不挂它** —— 这个人是点邮件里那条链接进来的，
+               那一步已经证明了邮箱可达（详见 api/_lib/core.js 的 humanGuard
+               里那张「挂什么、不挂什么」的清单）。摆它是因为**用户看得见**：
+               界面上一块 widget 若与真实校验无关，用户会以为「我做了这一步」。 -->
+          <div class="turnstile-slot" id="ts-reset" hidden></div>
           <button class="account-btn" id="btn-reset-confirm" type="button">重设密码</button>
           <p class="account-msg" id="msg-reset"></p>
           <!-- ⚠️ 这一句必须写：重设口令会**吊销全部会话**，用户得先知道 -->
@@ -96,6 +102,7 @@
   <div class="toast" id="toast" hidden></div>
 
   <script src="/js/auth-core.js"></script>
+  <script src="/js/turnstile.js"></script>
   <script src="/js/auth-api.js"></script>
   <script src="/js/entitlement.js"></script>
   <script src="/js/family.js"></script>

@@ -70,10 +70,37 @@ function make(name, methods, run) {
         return withSession(req, d).then(function (d2) {
           return run(d2, body || {}, req);
         }).then(function (out) {
-          var headers = null;
+          /* ⚠️ `out.headers` 是**可选的**额外响应头（目前只有 /api/config 用它下
+             Cache-Control）。写成 null 起步是为了保持既有行为一字不改：
+             不返回 headers 的接口，响应头与从前完全一样。 */
+          var headers = out.headers || null;
           if (out.cookies && out.cookies.length) {
             // 多枚 Cookie 必须用数组（setHeader 传数组才会写多条 Set-Cookie）
             res.setHeader("Set-Cookie", out.cookies);
+          }
+          /* ------------------------------------------------------------------
+             人机校验失败要**进服务端日志**（Issue #197 后续）
+             ------------------------------------------------------------------
+             为什么必须记：Turnstile 失败在用户那边永远只看到一句
+             「人机校验没通过，请刷新页面再试一次」——**刻意的**（不把
+             Cloudflare 的 error-codes 暴露给调用方）。但这也意味着
+             「密钥配错了」与「真的是脚本在刷」在客户端看起来一模一样。
+             判这两件事的唯一材料就是这份服务端日志，所以必须留下。
+
+             ⚠️ `_codes` 是 Cloudflare 回的 error-codes（如
+                invalid-input-secret / timeout-or-duplicate / invalid-input-response）。
+                它是**服务端配置与风控的诊断信息**，不是用户数据。
+                经 `redact()` 之后进日志 —— 与「明文码不进日志」同一条纪律：
+                所有日志都从这个出口过。
+             ⚠️ 它**只在 status 为 400 且体内带 code E_TURNSTILE 时**记，
+                不然每一条 400 都会试图去读一个不存在的字段。
+             ------------------------------------------------------------------ */
+          if (out.body && out.body.code === "E_TURNSTILE") {
+            H.log("api.turnstile_blocked", {
+              api: name,
+              reason: out.body.turnstile,
+              codes: out._codes || []
+            });
           }
           H.log("api.ok", { api: name, status: out.status });
           H.json(res, out.status, out.body, headers);

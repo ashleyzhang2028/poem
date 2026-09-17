@@ -19,6 +19,7 @@
 var id = require("./identity");
 var mail = require("./mail");
 var session = require("./session");
+var turnstile = require("./turnstile");
 
 var DAY = 86400000;
 
@@ -362,6 +363,20 @@ function channelFacts(cfg) {
        `requireVerified(cfg)` 这一个函数（见上面那段）。 */
     requireVerified: !!requireVerified(cfg),
     emailDeliverable: mail !== "console",
+    /* ------------------------------------------------------------------
+       人机校验（Cloudflare Turnstile）当前**到底开没开**（Issue #197 后续）
+       ------------------------------------------------------------------
+       与 `mail: "console"` / `db: "memory"` 同一条纪律：这是一句
+       **关于服务器的事实**，界面据它决定说不说「本站已开启人机校验」。
+
+       ⚠️ 它**不参与判权**，也**不是**「客户端可以拿它来跳过校验」的开关：
+         真闸在服务端（`humanGuard` → `turnstile.verify()`），这里只是如实自报。
+       ⚠️ 名字用 `turnstile`，值是布尔 —— 不给 siteKey（那是另一个字段，
+         而且它是否下发由页面自己决定，不从这里出）。
+       ⚠️ 刻意**不下发原因**（「没配密钥」还是「旁路开着」）：旁路的存在
+         不该出现在任何客户端可见的地方。运维看服务端日志。
+       ------------------------------------------------------------------ */
+    turnstile: turnstileReady(cfg),
     /* ---------------------------------------------------------------
        `rate: "instance"` —— **登录态的频控与猜错封禁只在本实例内有效**
        ---------------------------------------------------------------
@@ -378,6 +393,19 @@ function channelFacts(cfg) {
        --------------------------------------------------------------- */
     rate: "instance"
   };
+}
+
+/**
+ * 人机校验**是否真的开着**（Issue #197 后续）—— 自报用的判据。
+ *
+ * ⚠️ 与 `api/_lib/turnstile.js` 的 `turnstileReady(cfg)` **同一个判据**
+ *    （那边是权威实现，这边只是给 `channelFacts` 用的一句薄壳）：
+ *    借它来判，而不是在这里把三个字段另写一遍 ——
+ *    写第二遍的下场是「自报说开着、真校验却不校验」，且两边都不报错。
+ * ⚠️ 读 `this`（与 `requireVerified` 同一条）：测试里的覆盖必须生效。
+ */
+function turnstileReady(cfg) {
+  return turnstile.turnstileReady(cfg);
 }
 
 /**
@@ -536,6 +564,59 @@ function smsReady(cfg) {
 }
 
 /**
+ * 人机校验（Cloudflare Turnstile）—— 匿名可写那几条路口的**唯一一处闸**。
+ *
+ * ## 它挡的是哪些接口，为什么是这几条
+ *
+ * 挂闸的四条（`send-code` / `register` / `reset-request` /
+ * `resend-verification`）有一条共同的形状：**不登录也能调、而且会产生副作用**
+ * （发一封信、建一行账号、写一行令牌）。它们正是脚本刷子的目标 ——
+ * 而频控只能把「刷多快」压住，压不住「有个真人点一下成本更低」这件事。
+ *
+ * **不挂闸**的几条：`login` / `verify-code` / `reset-confirm` / `verify-email`。
+ * 理由不是「它们不重要」，而是**它们本来就有凭据**：
+ *   · 口令 / 随机码 —— 猜中才能过，加人机校验只是多打扰真用户
+ *   · reset-confirm / verify-email —— 用户是**点邮件里那条链接**进来的，
+ *     那一步已经证明了邮箱可达；在这里弹一个 widget 会让
+ *     「手机上点邮件、电脑上填新口令」这种正常动线变得莫名其妙
+ * 「每条路都加」看起来更安全，实际是把防线摊薄在不需要它的地方 ——
+ * 而真需要它的那四条，反而会被「到处都有」稀释掉注意力。
+ *
+ * ## 为什么判据只写一份（这一条是本函数存在的全部理由）
+ *
+ * 把 `turnstile.guard(cfg, ...)` 直接抄进四个函数的开头也能跑，
+ * 但那样就有四处「要不要校验」的判断。将来改一处（比如加一个
+ * 「登录态的人免校验」）就会出现「三条接口改了、第一条没改」——
+ * 而**没改的那一条会静默地不校验**，谁也不报错。这正是本项目
+ * 反复踩过的形状（`emailGate` 那段注释里写着同一个教训）。
+ *
+ * ## 顺序：**先人机校验、后频控**
+ *
+ * 两个都要，而且顺序是刻意的：被 Turnstile 挡掉的那一次**不占频控额度**。
+ * 否则刷子可以用无效 token 把「一小时 5 封」那本账刷满，
+ * 于是**真正的用户被挤掉**（一种不需要猜口令就能做的 DoS）。
+ *
+ * @param {object} deps
+ * @param {object} input  请求体（读 `turnstileToken` / `cf-turnstile-response`）
+ * @returns {Promise<null|{status,body}>}  null = 放行
+ */
+function humanGuard(deps, input) {
+  var cfg = deps && deps.cfg ? deps.cfg : deps;
+  input = input || {};
+  /* 两种字段名都认：`cf-turnstile-response` 是 Cloudflare 自己往表单里写的
+     那个名字（无 JS 的隐式渲染会用它），`turnstileToken` 是本站前端用的那个。
+     只认一个的下场是「某一种渲染方式下 token 送不到」—— 而症状是
+     「校验总是失败」，看着像密钥配错了。 */
+  var token = input.turnstileToken != null ? input.turnstileToken : input["cf-turnstile-response"];
+  return turnstile.guard(cfg, {
+    token: token,
+    ip: deps && deps.ip,
+    fetch: cfg && cfg.turnstileFetch,   // 注入用（测试给假 fetch，不联网）
+    now: deps && deps.now
+  });
+}
+
+/**
  * 发码：**响应与请求一律不看账号是否存在**（第 4 条 checklist）。
  * 新老账号走同一条路径，同一个 status、同一个 body 形状。
  *
@@ -553,6 +634,31 @@ function sendCode(deps, input) {
   var purpose = input.purpose === "reset" ? "reset" : "login";
   var device = String(input.deviceId || "unknown").slice(0, 40);
   var ip = String(input.ip || "unknown");
+
+  /* ---- 人机校验（Turnstile，Issue #197 后续）----
+     ⚠️ 它判在**频控之前**（见 humanGuard 里那段「顺序」的说明）：
+        被挡掉的那一次不占频控额度 —— 否则刷子能用无效 token
+        把「一小时 5 封」刷满，把真正的用户挤掉（一种不需要猜口令的 DoS）。
+     ⚠️ 短信那条路也走它：短信要花钱，比邮箱更该有这一道。 */
+  return humanGuard(deps, input).then(function (blocked) {
+    if (blocked) return blocked;
+    return sendCodeAfterGuard(deps, input, who, isSms, purpose, device, ip);
+  });
+}
+
+/**
+ * `sendCode` 在**过了人机校验之后**的那一段（Issue #197 后续：拆出来只为
+ * 让 `humanGuard` 的 `then` 有一个落点，逻辑一个字节都没改）。
+ *
+ * ⚠️ 拆函数的代价是「多了一个只被调用一次的函数名」，所以这里写清为什么：
+ *    人机校验是**异步**的（要往 Cloudflare 打一次 HTTP），而 `sendCode`
+ *    原先是一路同步走到 `findOrCreateAccount` 的。把 `humanGuard` 的
+ *    `then` 包在整段外面，比在每个 `return` 前面插一个 `await` 更不容易漏 ——
+ *    漏掉任一个 `return` 就是「有一条早退路径不校验」，
+ *    而那正是本项目踩过的那种形状（`emailGate` 的注释里写着同一个教训）。
+ */
+function sendCodeAfterGuard(deps, input, who, isSms, purpose, device, ip) {
+  var cfg = deps.cfg, store = deps.store, limiter = deps.limiter, t = deps.now();
 
   /* ---- 短信口子：没开通就**如实拒绝**，且不做任何副作用 ---- */
   if (isSms && !smsReady(cfg)) {
@@ -1173,6 +1279,16 @@ function findAccountByEmail(store, email) {
  * 于是产生一个必须说清的中间态：**已建号、邮箱待确认**。
  */
 function register(deps, input) {
+  var cfg = deps.cfg;
+  /* ---- 人机校验：**匿名可写、会建号、会发信**的那条口子（见 humanGuard） ---- */
+  return humanGuard(deps, input).then(function (blocked) {
+    if (blocked) return blocked;
+    return registerAfterGuard(deps, input);
+  });
+}
+
+/** `register` 过了人机校验之后的那一段（逻辑一字未改，只为给 then 一个落点） */
+function registerAfterGuard(deps, input) {
   var cfg = deps.cfg, store = deps.store, limiter = deps.limiter, t = deps.now();
   var email = id.normalizeEmailForStore(input.email != null ? input.email : input.value);
   if (!id.isEmailShape(email)) {
@@ -1556,6 +1672,16 @@ function loginWithPassword(deps, input) {
  *    区别只有一个：不发信。而那件事用户看不见（他去看自己的收件箱）。
  */
 function resetRequest(deps, input) {
+  var cfg = deps.cfg;
+  /* ---- 人机校验：**匿名可写、会往任意邮箱发信**的那条口子 ---- */
+  return humanGuard(deps, input).then(function (blocked) {
+    if (blocked) return blocked;
+    return resetRequestAfterGuard(deps, input);
+  });
+}
+
+/** `resetRequest` 过了人机校验之后的那一段（逻辑一字未改） */
+function resetRequestAfterGuard(deps, input) {
   var cfg = deps.cfg, store = deps.store, limiter = deps.limiter, t = deps.now();
   var email = id.normalizeEmailForStore(input.email != null ? input.email : input.value);
   var device = String(input.deviceId || "unknown");
@@ -1769,6 +1895,18 @@ function resetConfirm(deps, input) {
  * 同一个状态、同一个 body、同一句条件句。
  */
 function resendVerification(deps, input) {
+  var cfg = deps.cfg;
+  /* ---- 人机校验：**匿名**那条入口是全站唯一「不登录也能让本站往外发信」
+     的接口（见 humanGuard 里那张「挂闸四条」的清单）。
+     ⚠️ 登录态那条入口**也走它** —— 判据只写一处，不为两条入口各写一份。 ---- */
+  return humanGuard(deps, input).then(function (blocked) {
+    if (blocked) return blocked;
+    return resendVerificationAfterGuard(deps, input);
+  });
+}
+
+/** `resendVerification` 过了人机校验之后的那一段（逻辑一字未改） */
+function resendVerificationAfterGuard(deps, input) {
   var cfg = deps.cfg, store = deps.store, limiter = deps.limiter, t = deps.now();
   var device = String(input.deviceId || "unknown");
   var ip = String(input.ip || "unknown");
@@ -2789,6 +2927,9 @@ module.exports = {
   normalizeGrants: normalizeGrants,
   sanitizePayload: sanitizePayload,
   makeRateLimiter: makeRateLimiter,
+  /* Issue #197 后续：人机校验（Cloudflare Turnstile）*/
+  humanGuard: humanGuard,
+  turnstileReady: turnstileReady,
   rateCode: rateCode,
   RATE_MSG: RATE_MSG,
   uniqueId: uniqueId,
