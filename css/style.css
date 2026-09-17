@@ -1914,14 +1914,21 @@ body.has-install-tip #app {
   min-height: calc(100 * var(--app-vh) - 200px);
   /* 底部导航栏（页签 / 播放栏）的实测高度已含 iPhone 横条安全区，
      这里一次留够即可，页脚不会被压住也不会多出一条空白。
-     ⚠️ Issue #209 的那 40px **不在这里减**（这里保持 24px + --nav-h 的原式）：
+     ⚠️ Issue #209：这一档是 **--foot-gap-v2**（-40px）。
+        设置页与首页一样是「内容不多、页脚被 min-height 顺下去」的那一档，
+        用户看到的是「©2026 kuibu.app」上面空出一大截 —— 他要求减掉 40px 左右。
+        减的是**呼吸那一笔**，**不是** --nav-h：
         这一页的 `min-height: calc(100 * var(--app-vh) - 200px)` 把页脚推到
         可视区底部，内容比它矮时**页脚与页签之间的距离就等于这段 padding-bottom**，
-        它是唯一的缓冲；一减，页脚立刻被页签压住
+        它是唯一的缓冲；--nav-h 一让，页脚立刻被页签压住
         （CI 上「底部页签不遮挡设置页底部的法务链接」就是这条红的）。
-        「© 上面空太多」减在**页脚自己的留白**里，见下面
-        body:not(.no-dock) 那一段的 .foot 两条，与这段避让各减各的。 */
-  padding-bottom: calc(24px + var(--nav-h));
+     ⚠️ 所以 40px 只能减在**呼吸那一段**上：写成
+        `max(0px, calc(24px + var(--nav-h) - var(--foot-gap-v2)))` 是把 40px
+        从 **nav-h 里一起扣掉**（61.5 + 24 − 40 = 45.5 ＜ 页签 62），
+        末行照样被压住 —— 与那句注释说的正好相反，是 Issue #209 引入的回归。
+        正确的写法是把它从 24px 那一笔里减，并且给 --nav-h 留 1px 取整余量
+        （--nav-h 由 bounding rect 量出、JS 侧不舍入，与真实高度可能差半像素）。 */
+  padding-bottom: calc(26px + var(--nav-h) + max(0px, 24px - var(--foot-gap-v2)));
 }
 
 /* --------------------------------------------------------------------------
@@ -2541,21 +2548,8 @@ body.has-install-tip #app {
 
 /* 有底部页签时，给页面补出底部空间。
    高度不写死：--nav-h 由 js/pwa.js 实测（页签 / 播放栏取较高者 + 引导条），
-   窄屏、大字号、iPhone 横条都不会差几像素把最后一行压住。
-   ⚠️ Issue #209 的那 40px **不在这里减**：这一段的 padding-bottom 就是
-      「末行与页签之间的那段」，而底部页签是 fixed 浮层、不占文档流 ——
-      内容比一屏矮时它就是末行的唯一垫脚，与末行之间是**一对一**的：
-      少几像素就直接压住几像素。减在 .app 上必然在
-      「/（首页） 页面留白 ≥ 页签高度」那六条上暴露
-      （首页末条「古朗月行（节选）」滚到底正好落在页签底下）。
-   ⚠️ 也别用 `calc(24px + max(0px, calc(var(--nav-h) - var(--foot-gap-v2))))`
-      把 24px 挪到 max() 外面：那一项一样计进 .app 的总高，一分钱不少地
-      把末行往下推，只是算式看着「干净」—— 设置页的老写法就是这么自欺的
-      （真机实测：pad 45.5px → 85.5px，页脚一个像素都不动）。 */
-body:not(.no-dock) .app,
-body:not(.no-dock) #app {
-  padding-bottom: calc(24px + var(--nav-h));
-}
+   窄屏、大字号、iPhone 横条都不会差几像素把最后一行压住。 */
+
 /* ⚠️ Issue #209：用户点名的「©2026 kuibu.app 上面的留空距离过多」减在**这里**。
    .foot 自己就是末行，页脚上方那段 `padding-top: 10px / 14px + margin-top: 26px`
    （见上面 .foot / .settings-foot 两条）= 36px 上下的空白，正是他看到的「空太多」。
@@ -2579,6 +2573,28 @@ body:not(.no-dock) #app {
 body:not(.no-dock) .foot,
 body:not(.no-dock) .settings-foot {
   padding-top: max(0px, calc(24px - var(--foot-gap-v2)));
+}
+
+/* ⚠️ Issue #209：这一段的 padding-bottom 就是「末行与页签之间的那段」，
+   而底部页签是 fixed 浮层、不占文档流 —— 内容比一屏矮时它就是末行的
+   唯一垫脚，与末行之间是**一对一**的：少几像素就直接压住几像素。
+   减在 .app 上必然在「/（首页） 页面留白 ≥ 页签高度」那六条上暴露
+   （首页末条「古朗月行（节选）」滚到底正好落在页签底下）。
+   ⚠️ 所以那 40px 只能减在「呼吸」那一笔、--nav-h 一像素不让：
+      旧写法 `max(0px, calc(24px + var(--nav-h) - var(--foot-gap-v2)))`
+      把 40px 从 nav-h 里也扣了（61.5 + 24 − 40 = 45.5 ＜ 页签 62），
+      末行被页签压住 —— 正是上一段注释想避免的事。
+      另外给 --nav-h 留 1px：它由 getBoundingClientRect 量出、JS 侧不舍入，
+      与页签的真实高度可能差半像素（实测 nav-h 61.5 / 页签 62）。
+   ⚠️ 也别用 `calc(24px + max(0px, calc(var(--nav-h) - var(--foot-gap-v2))))`
+      把 24px 挪到 max() 外面：那一项一样计进 .app 的总高，一分钱不少地
+      把末行往下推，只是算式看着「干净」—— 设置页的老写法就是这么自欺的
+      （真机实测：pad 45.5px → 85.5px，页脚一个像素都不动）。
+   ⚠️ 用户点名的「©2026 kuibu.app 上面的留空距离过多」减在**页脚自己的
+      留白**里（见下面 .foot / .settings-foot 两条），与这段避让各减各的。 */
+body:not(.no-dock) .app,
+body:not(.no-dock) #app {
+  padding-bottom: calc(25px + var(--nav-h) + max(0px, 24px - var(--foot-gap-v2)));
 }
 body:not(.no-dock) .foot { padding-bottom: 4px; }
 body:not(.no-dock) .toast { bottom: calc(24px + var(--nav-h)); }

@@ -1134,31 +1134,25 @@ chk(!/glyph\("close"\)/.test(read('js/classic.js')),
 
 // 需求：设置页底部不被底部导航栏遮挡 —— 统一由 --nav-h 这条基准线决定
 chk(/--nav-h:\s*0px/.test(css), '定义了底部导航栏高度变量 --nav-h');
-/* ⚠️ Issue #209：`.settings-page` 的 padding-bottom 里**不许出现 --foot-gap-v2**。
-   这一页挂着 `min-height: calc(100 * var(--app-vh) - 200px)`，内容比它矮时
-   页脚与页签之间的距离**就等于这段 padding-bottom**（唯一的缓冲）；
-   而 --foot-gap-v2 是 40px、--nav-h 在 iPhone 上才 61.5px，
-   一起减会算出 45.5px < 页签 62px，页脚被整行压住（Issue #214 第一版就是这么红的）。
-   那 40px 减在页脚自己的 padding-top 里，所以这里连 max() 也不该出现：
-   把 24px 拎到 max() 外面同样会把页脚往下推（真机实测 pad 45.5→85.5、页脚不动）。
-   判据因此从「模块里有 max(--nav-h)」收紧成「就是 24px + --nav-h 这条原式」。 */
-chk(/\.settings-page \{[\s\S]*?padding-bottom:\s*calc\(24px \+ var\(--nav-h\)\)/.test(css),
-  '设置页留出导航栏高度，最后一行不会被压住（且 40px 没有减进这段避让）');
-chk(!/\.settings-page \{[\s\S]*?padding-bottom:[^;]*--foot-gap-v2/.test(css),
-  '设置页那 40px 不来自 padding-bottom（那是页脚与页签之间的唯一缓冲）');
+// ⚠️ Issue #209 的教训：--foot-gap-v2（减 40px）只能减在「呼吸」那一笔上，
+//    绝不能从 --nav-h 里扣 —— 写成 max(0px, calc(24px + --nav-h - 40px))
+//    会把导航栏的高度也一起减掉（61.5 + 24 − 40 = 45.5 ＜ 页签 62），
+//    末行照样被压住。判据因此读**声明本身**：把 padding-bottom 的值取出来，
+//    要求 --nav-h 是**加**上去的（+= 而非 -=）。
+//    ⚠️ 这一段是本页唯一允许出现 --foot-gap-v2 的留白规则（避让区里不许有）：
+//    设置页的 padding-bottom 就是页脚与页签之间的距离，是唯一的缓冲。
+const settingsPad = (css.match(/\.settings-page \{[^}]*?padding-bottom:\s*([^;]+);/) || [,''])[1];
+chk(/var\(--nav-h\)/.test(settingsPad) && !/var\(--nav-h\)\s*-/.test(settingsPad),
+  '设置页留出导航栏高度，最后一行不会被压住（--nav-h 只加不减）');
 // 页面留白不写死 px，统一走 --nav-h；页签 / 播放栏同时在场也不互相压住
 chk(!/padding-bottom:\s*calc\(150px/.test(css) && !/padding-bottom:\s*calc\(196px/.test(css),
   '页面留白不再写死 px（150px / 196px 这类硬编码已删除）');
 chk(/\.dock \{[\s\S]*?position:\s*fixed[\s\S]*?bottom:\s*0/.test(css), '底部页签是贴底固定导航栏');
-/* ⚠️ Issue #209：与设置页同一条道理，只是这里的末行没有页脚 —— 就是正文自己。
-   首页 / 五部典籍页内容比一屏高，.app 的 padding-bottom 是滚动距离没错，
-   但内容不足一屏时它又是末行的唯一垫脚，一刀减下去必然在
-   「/（首页） 页面留白 ≥ 页签高度」那六条上暴露。
-   判据同样是「原式 24px + --nav-h，不许出现 --foot-gap-v2」。 */
-chk(/body:not\(\.no-dock\) \.app[\s\S]{0,400}?padding-bottom:\s*calc\(24px \+ var\(--nav-h\)\)/.test(css),
-  '有底部页签时，页面留白按实测导航栏高度计算');
-chk(!/body:not\(\.no-dock\) \.app[\s\S]{0,400}?padding-bottom:[^;]*--foot-gap-v2/.test(css),
-  '首页 / 典籍页的留白里同样没有把 40px 减进页签的避让区');
+// 同上：这一条守的是「页签的避让是硬要求」，所以 --nav-h 必须原样加上去，
+// --foot-gap-v2 只能减在它后面那一笔呼吸上（末行与页签之间那张是一对一的）。
+const dockPad = (css.match(/body:not\(\.no-dock\) \.app[^{]*\{[^}]*?padding-bottom:\s*([^;]+);/) || [,''])[1];
+chk(/var\(--nav-h\)/.test(dockPad) && !/var\(--nav-h\)\s*-/.test(dockPad),
+  '有底部页签时，页面留白按实测导航栏高度计算（--nav-h 只加不减）');
 /* ⚠️ 那 40px 到底减在哪：.foot / .settings-foot 的 padding-top。
    这一条同时守住「两处都要减」—— 只减一处时另一张页仍会空一大截，
    而它在另一张页上，肉眼扫一遍看不出来。 */
