@@ -315,6 +315,13 @@ console.log("\n=== 七之二、2D 的六个步骤（配置与真开通，docs §
   has(ev, "503", "并给出反面：503 就是 SESSION_SECRET 没生效（两种状态不许合并成「失败」）");
   has(ev, "delivered:true", "E 步验真发信，判据是 delivered:true");
   has(ev, "DELETE", "E 步验注销接口可达");
+  /* 2026-09-17：线上全站 /api/* 404（Vercel rewrite 没生效）那一课。
+     E 步必须有一条**对着线上打**、且能分辨「平台层 404」与「本站 404」的判据 ——
+     否则「接口没了」会被误读成「路由表少了一条」。 */
+  has(ev, "/api/config", "E 步验「接口真的活着」（/api/config）");
+  has(ev, "The page could not be found", "并点明平台层 404 长什么样（与本站的 E_404 区分开）");
+  has(ev, "E_404", "同时给出**本站** 404 的形状，两种不许混成一句「404」");
+  has(ev, "rewrite", "并写明这条坏法的来由（rewrite 那一层）");
   /* ⚠️ 这句话本身就是那条规矩的**声明**（「不做『应该没问题』这类判断」），
      所以先把它抠掉再扫 —— 拿裸词去扫必然误判，与账户页那条
      「btn-resend 不是 Resend」是同一类坑。 */

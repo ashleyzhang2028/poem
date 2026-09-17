@@ -554,7 +554,7 @@ var STEPS = [
   },
   {
     id: "E",
-    title: "配完当场验收（五步，每步一个明确结论）",
+    title: "配完当场验收（六步，每步一个明确结论）",
     level: "required",
     where: "本机终端（对着已部署的站点）",
     why: "「配完了」和「配对了」是两件事。这一段把前者变成后者 —— 只回答事实，不做「应该没问题」这类判断",
@@ -568,12 +568,26 @@ var STEPS = [
          所以这一步必须点出「这一版线上只有 1 个函数入口」这件事，
          并且给出一条**本机就能数**的判据 —— 不必等构建跑完。 */
       "⑤ 部署形态：本条与「环境变量」无关，但它是同一类问题（配了才会好）。" +
-      "线上 `api/` 下**只有 1 个** Serverless 函数入口（`api/[...path].js`），" +
-      "19 条路由的实现都在 `api/_routes/`（`_` 开头 = 平台不当函数）。" +
+      "线上 `api/` 下**只有 1 个** Serverless 函数入口（`api/index.js`，" +
+      "它就是 `/api` 目录的兜底函数），19 条路由的实现都在 `api/_routes/`" +
+      "（`_` 开头 = 平台不当函数）。" +
       "本机判据：`find api -name '*.js' -not -path 'api/_*' -not -path 'api/_*/*'`" +
-      " 应只回一行 `api/[...path].js`。见 docs/architecture.md §2.2.1"
+      " 应只回一行 `api/index.js`。见 docs/architecture.md §2.2.1",
+      /* ⚠️ 这一条是 2026-09-17 真事：上一版靠 `vercel.json` 一条 rewrite 把" +
+         " `/api/*` 转到 `/api/handler/*`，**那条 rewrite 线上从来没生效** ——" +
+         " 全站 `/api/*` 回平台层的 404（NOT_FOUND），而静态页面照旧 200。" +
+         " 本地测试全绿也抓不到它（测试挂的是模块，rewrite 那一层不在测试里）。" +
+         " 所以这一步要有一条**对着线上打**的判据。 */
+      "⑥ **接口真的活着**：`curl -sS -o /dev/null -w '%{http_code}\\n' \"$SITE_URL/api/config\"`" +
+      " 期望 **200**；`curl -sS \"$SITE_URL/api/me\"` 期望 401 E_NO_SESSION。" +
+      "**回 404 且正文是 `The page could not be found`，那是 Vercel 平台层报的" +
+      "（不是本站：本站的 404 形状是 `{\"code\":\"E_404\",\"message\":\"没有这个接口。\"}`）** ——" +
+      " 意思是 `/api/*` 压根没接到函数上，站点看着正常、整套账号体系是死的。" +
+      " 本站那种 404 才是「路径不在路由表里」，要查 api/_lib/routes.js。" +
+      " 上一版是靠 `vercel.json` 一条 rewrite 把 /api/* 转进函数的，而它线上" +
+      " **从来没生效**；现在收口只靠 `api/index.js` 的文件位置（见 docs/architecture.md §2.2.1.1）。"
     ],
-    check: "五条全对：① 200 ② 401 ③ delivered=true ④ 401 ⑤ 函数入口只有 1 个。任何一条不对，回到它上面那一步"
+    check: "六条全对：① 200 ② 401 ③ delivered=true ④ 401 ⑤ 函数入口只有 1 个 ⑥ /api/config 回 200（不是平台层的 404）。任何一条不对，回到它上面那一步"
   }
 ];
 
@@ -604,7 +618,7 @@ function stepsReport(cfg) {
   lines.push("   第 C 步（真发信）：" + (r.mail === "console" ? "未过（发信通道是 console）" : "已过（" + r.mail + "）"));
   lines.push("   第 F 步（人机校验）：" + (r.turnstile ? "已过（Cloudflare Turnstile）" : "未过（默认关；要开就照着第 F 步走）"));
   lines.push("   第 D 步（探活与备份）：不在环境变量里，看仓库 .cnb.yml 的两条 crontab");
-  lines.push("   第 E 步（验收）：上面四条命令，本机跑");
+  lines.push("   第 E 步（验收）：上面六条命令，对着**线上**跑");
   lines.push("");
   lines.push("短信不在五步里：要先签商 + 模板报备（3~7 工作日，**日历时间不是人日**），");
   lines.push("再实现 transports.<商名>，最后才开 SMS_ENABLED=1。开了但不接商，仍是 503 E_SMS_NOT_OPEN。");

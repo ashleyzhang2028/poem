@@ -9,17 +9,24 @@
  *
  * 解法是让**业务边界**与**部署形态**各归各位：
  * 业务仍然一个业务一个文件（放在 `api/_routes/`），但整个 `/api/*`
- * 只暴露成**一个函数**（`api/[...path].js`），`vercel.json` 一条 rewrite 兜住：
+ * 只暴露成**一个函数**（`api/index.js` —— `/api` 目录的兜底函数）：
  *
- *     /api/me       →  /api/handler/me        （rewrite，外部地址一字不变）
- *     /api/sync/pull→  /api/handler/sync/pull
+ *     /api/me        →  api/index.js → routes.resolve("GET","/api/me")
+ *     /api/sync/pull →  api/index.js → routes.resolve("POST","/api/sync/pull")
+ *
+ * ⚠️ 上一版是 `api/[...path].js` + `vercel.json` 的一条 rewrite
+ *    （`/api/:path*` → `/api/handler/:path*`）。**那条 rewrite 线上从来没生效**，
+ *    症状是全站 `/api/*` 404（Vercel 平台层的 NOT_FOUND，不是本站回的），
+ *    而静态页面照旧 200。所以现在**不依赖 rewrite**：`api/index.js` 收到的
+ *    `req.url` 就是用户看到的地址（`/api/me`），本文件直接认。
+ *    下面那些 `/api/handler` 形状仍然认，只为兼容旧书签与本地直调。
  *
  * 于是：
  *   · 函数数 **19 → 1**（Hobby 上限 12，留 11 个余量）；
  *   · 外部 URL **一个都没变**（客户端、文档、doctor 的 curl 全部照旧）；
  *   · 被测的仍然是 `api/_routes/me.js` 那一份 handler，测试与线上同形；
- *   · 部署档位将来若不是 Hobby，把 `vercel.json` 里那条 rewrite 去掉、
- *     把 `_routes/` 挪回 `api/` 即可 —— 一行业务代码不用改。
+ *   · 部署档位将来若不是 Hobby，把 `_routes/` 挪回 `api/` 即可
+ *     —— 一行业务代码不用改（现在没有 rewrite 要收拾）。
  *
  * ## 为什么放在 `api/_lib/`
  *
@@ -80,7 +87,13 @@ var ROUTES = {
   "POST /reset-confirm": "./../_routes/auth/reset-confirm.js"
 };
 
-/** 路径前缀：`/api/handler/...` 里的 handler 那一段（见 vercel.json 的 rewrite） */
+/**
+ * 历史内部前缀：上一版靠 rewrite 把 `/api/*` 转成 `/api/handler/*`。
+ * 那条 rewrite 线上从来没生效（见文件头），现在不再需要它 —— 但**仍然认**
+ * 这个形状：旧书签、手写 curl、issue 里的老命令不至于突然 404。
+ * ⚠️ 它**不再**来自 `vercel.json`（那里现在是空壳），所以它是一段
+ *    兼容入参，不是一条配置。测试里也照旧用它当「内部地址」用。
+ */
 var PREFIX = "/api/handler";
 
 /** 去重后的路径清单（一个文件挂两个方法时只出现一次） */
