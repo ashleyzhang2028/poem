@@ -159,6 +159,29 @@
       : "层级本机登记，改一行存储就能改。";
   }
 
+  /**
+   * 还没登录时补一句「登录到底能多出什么」—— 一句话，不摆按钮。
+   *
+   * ⚠️ Issue #209 之前这里并排挂着一颗「建一个账号」（去 /login/）与下面另一张卡
+   *    上的「看我的权限」（去 /profile/）。用户 2026-09-17 点名两颗都多余：
+   *    这一页自己已经回答了「我在哪一格」，「谁能用什么」上面那张表四列并排，
+   *    两颗键点出来还是回到他刚刚看完的东西。于是键撤了，**信息留下** ——
+   *    「不登录只有语音朗读不能用」这句话是这一页唯一还没说出口的事实。
+   *
+   * ⚠️ 文案仍走 `Entitlement.denyReason()`（`read.aloud` 的门槛口径只有那一处），
+   *    不在这里手写「语音朗读」四个字：将来登录的门槛变了，这句跟着变。
+   */
+  function renderLoginHint(id) {
+    var el = $("plans-me-hint");
+    if (!el) return;
+    if (id.signedIn) { el.hidden = true; el.textContent = ""; return; }
+    var why = Ent.denyReason("read.aloud", id) || "";
+    el.hidden = false;
+    /* 一句话说完：门槛那句由 `denyReason()` 给（「登录可用」），
+       剩下的部分解释「差的就是这一条」—— 两个分句之间用逗号，句尾一个句号。 */
+    el.textContent = why ? "未登录，只差这一条：" + why : "";
+  }
+
   /* ------------------------------------------------------------ 四、我在哪一格 */
 
   /**
@@ -181,13 +204,7 @@
         '</span><span class="kv-v">' + esc(r[1]) + "</span></div>";
     }).join("");
 
-    // 登录按钮：已经登录的人不需要再看到它
-    if (id.signedIn) hide($("btn-go-login")); else show($("btn-go-login"));
-
-    var hint = $("plans-me-hint");
-    if (hint) {
-      hint.textContent = id.signedIn ? "" : "不登录只有语音朗读不能用。";
-    }
+    renderLoginHint(id);
   }
 
   /* ------------------------------------------------------------ 初始化 */
@@ -234,10 +251,10 @@
       })["catch"](function () { /* 问不到就算了，页面已经是可用状态 */ });
     }
 
-    var login = $("btn-go-login");
-    if (login) login.addEventListener("click", function () { location.href = "/login/"; });
-    var prof = $("btn-go-profile");
-    if (prof) prof.addEventListener("click", function () { location.href = "/profile/"; });
+    /* ⚠️ 这里原先接的是「建一个账号」与「看我的权限」两颗键的跳转 ——
+       Issue #209 之后那两颗键连同各自那张卡一并撤掉（用户原话：
+       「纯属多余，这俩卡片也全部删除」），于是这一页现在**一颗按钮都没有**。
+       留着这条注释是为了让下一次想加键的人先看到「这一页刻意不给动作」。 */
   }
 
   if (document.readyState === "loading") {

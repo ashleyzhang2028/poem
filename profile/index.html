@@ -54,11 +54,19 @@
              身份    印 + 昵称 + 邮箱 + 层级，下面**一行**操作键
                      （登录（已登录时是「管理登录状态」）/ 退出 / 权限对比）
              本机数据 这台设备上有什么（只读）
-             同步    同步到哪一步了 + 「同步设置」，需要你裁决时再铺冲突面板
-             关于    应用 / 法务两页 / 离线缓存，附同步设置与管理后台两条入口
+             关于    应用 / 法务两页 / 离线缓存 + 跨设备同步那一行（开关在行尾），
+                     需要你裁决同步冲突时再就地铺开面板
 
            ⚠️ 「注销账号」那一块仍**单独占一张卡**（朱砂描边的危险区）：
               它是不可逆动作，与别的键并列会让人误按 —— 这一条是刻意不合并的。
+           ⚠️ Issue #209：「跨设备同步」原先**自己一张卡**（一行状态 + 一行只读回显 +
+              一颗「同步设置」键）。用户 2026-09-17 原话：「跨设备同步单独弄了张
+              卡片，下面还额外有个同步设置按钮，点完其实是进入到通用页面，
+              还需要点击跨设备同步选项。只保留设置里的跨设备同步选项就可以了啊。
+              能像 iphone 那样把开关放到同一行的最右侧吗」——
+              于是整张卡撤掉，只剩「关于」卡里的**一行**开关（见下方 #sync-row），
+              与「设置 · 通用」里那一项共用同一条接线。那三张卡的注释留在
+              js/profile.js 的 renderSync() 上（那里的口径变了，注释跟着改）。
            ================================================================== -->
 
       <!-- ---------- 一、身份 ---------- -->
@@ -90,26 +98,6 @@
         <div class="kv-list" id="stats-list"></div>
       </section>
 
-      <!-- ---------- 三、同步：状态 + 需要用户裁决的冲突 ----------
-           同步的开关在「设置 · 通用」里（那是「调机器」的地方）；
-           这里只回答两件事：现在同步到哪一步了、有没有要你选的。 -->
-      <section class="account-card" id="sync-card">
-        <h2 class="account-card-title">跨设备同步</h2>
-        <div class="kv-list" id="sync-list"></div>
-        <!-- 冲突面板：**只在真的判不出来源时出现**（docs §4.4 D 项）。
-             默认隐藏，不给没有冲突的人看一个空面板。 -->
-        <div id="sync-conflict" hidden>
-          <p class="account-hint" id="conflict-lead"></p>
-          <div class="settings-btns">
-            <button class="account-btn" id="btn-keep-local" type="button">保留本机</button>
-            <button class="account-btn ghost" id="btn-keep-remote" type="button">保留账号</button>
-            <button class="account-btn ghost" id="btn-export-first" type="button">先导出再决定</button>
-          </div>
-          <p class="account-msg" id="msg-conflict"></p>
-        </div>
-        <p class="account-hint" id="sync-hint"></p>
-      </section>
-
       <!-- ---------- 四、关于 + 两条入口 ----------
            这一张卡把原先三张卡的**只读信息**与**两条「去别处」的键**收在一起：
              · 应用 / 用户协议 / 隐私条款 / 离线缓存（原来各自一张卡）
@@ -132,8 +120,43 @@
           <div class="kv-row"><span class="kv-k">隐私条款</span><span class="kv-v"><a href="/privacy/">查看</a></span></div>
           <div class="kv-row"><span class="kv-k">离线缓存</span><span class="kv-v" id="about-cache"></span></div>
         </div>
+
+        <!-- ---------- 跨设备同步：一行，开关在最右（Issue #209） ----------
+             用户原话：「个人中心页面，跨设备同步单独弄了张卡片，下面还额外有个
+             同步设置按钮，点完其实是进入到通用页面，还需要点击跨设备同步选项。
+             只保留设置里的跨设备同步选项就可以了啊。能像 iphone 那样把开关放到
+             同一行的最右侧吗」
+
+             于是这一项从「自己一张卡 + 一行状态 + 一行只读回显 + 一颗『同步设置』键」
+             收成**一行**：左边项名，右边就是那颗能拨的开关，说明在下面一行。
+             开关与「设置 · 通用」里的那颗**共用同一条接线**（`SyncStore.setEnabled`），
+             所以两处拨哪一处都算数，不会再出现「个人中心说开着、通用页说关着」。
+
+             ⚠️ 开关本身**不置灰**：层级不够时点下去得到一句「Pro 起」（与全站
+                同一句 `denyReason`），比一颗点不动的东西更容易看懂差在哪。
+             ⚠️ 只读回显（原来那枚「开 / 关」药丸）**撤掉了**：它旁边就是开关本体，
+                同一件事说两遍。 -->
+        <label class="switch sync-row" id="sync-row">
+          <span class="settings-label" id="sync-name">跨设备同步</span>
+          <!-- 顺序不能反：css/style.css 用 `input:checked + .switch-toggle` 找轨道。
+               真实复选框留在 DOM 里（键盘 / 读屏 / 原生 toggle 都走它），画成 0 尺寸。 -->
+          <input id="toggle-sync" class="switch-input" type="checkbox"
+                 role="switch" aria-labelledby="sync-name" />
+          <span class="switch-toggle" aria-hidden="true"></span>
+        </label>
+        <p class="switch-hint" id="sync-hint"></p>
+        <!-- 冲突面板：**只在真的判不出来源时出现**（docs §4.4 D 项）。
+             默认隐藏，不给没有冲突的人看一个空面板。 -->
+        <div id="sync-conflict" hidden>
+          <p class="account-hint" id="conflict-lead"></p>
+          <div class="settings-btns">
+            <button class="account-btn" id="btn-keep-local" type="button">保留本机</button>
+            <button class="account-btn ghost" id="btn-keep-remote" type="button">保留账号</button>
+            <button class="account-btn ghost" id="btn-export-first" type="button">先导出再决定</button>
+          </div>
+          <p class="account-msg" id="msg-conflict"></p>
+        </div>
         <div class="account-actions">
-          <button class="account-btn ghost" id="btn-go-sync" type="button">同步设置</button>
           <button class="account-btn ghost" id="btn-go-admin" type="button" hidden>管理后台</button>
         </div>
         <!-- 账号那一行（状态 / 邮箱 / 层级 / 本次登录）由 js/profile.js 填。

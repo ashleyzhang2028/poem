@@ -249,8 +249,19 @@ chk(decorated.length === 0, '没有任何一处再引用纹样变量铺图案');
 chk(!/@supports not/.test(css), '纹样移除后不再需要 @supports not 的遮罩兜底');
 chk(!/祥云/.test(css.replace(/\/\*[\s\S]*?\*\//g, '')), '样式代码里不再残留「祥云」图案');
 chk(/祥云纹/.test(css), '注释里写明被移除的宋「祥云纹」底纹，避免被误加回来');
-// 按钮分级
-chk(/\.btn\.primary\s*\{[^}]*linear-gradient/.test(css), '一级按钮为实底渐变（主操作）');
+/* 按钮分级（Issue #209 扁平化之后判据翻面）
+   --------------------------------------------------------------------------
+   用户原话：「页面中所有的按钮请进行扁平化设计。」「设置，登录和个人中心
+   所有页面的主按钮和普通按钮主要应该只有这两种形态，需要保持一致性。」
+
+   原先这条守的是「一级按钮为实底**渐变**」—— 那正是扁平化要去掉的东西。
+   现在判据反过来：一级按钮是**一个平色块 + 一条描边**，且
+   **全站任何按钮上都不许再有渐变 / 描金内边 / 外投影 / 按下缩放**。
+   色值与分级一个字没改，改的是质感。 */
+chk(/\.btn\.primary\s*\{[^}]*background:\s*var\(--green\)/.test(css),
+  '一级按钮是平色实底（不再是三段渐变）');
+chk(/\.btn\.primary\s*\{[^}]*border-color:\s*var\(--green-dark\)/.test(css),
+  '一级按钮仍有一条深天青描边（分级靠描边，不靠立体感）');
 chk(/\.ghost-btn\s*\{[\s\S]{0,200}?border:\s*1px solid var\(--line\)/.test(css), '次级按钮为纸底描边');
 // 需求（Issue #122 → Issue #163）：设置页「进度总览」那枚按钮是 <a>（指去 /progress/），
 // 浏览器默认给链接文字加下划线 —— 用户看到的那条线就是这么来的。
@@ -282,7 +293,10 @@ chk(!!progressRow, '设置页有「进度总览」这一项（标签已由「背
 chk(!/背诵进度<\/label>/.test(settingsSrc), '设置页不再有「背诵进度」这枚标签（同一件事只说一遍）');
 chk(!/看进度总览/.test(settingsSrc), '设置页不再出现「看进度总览」这串旧文案');
 chk(/\.danger-btn\s*\{[\s\S]{0,200}?color:\s*var\(--red\)/.test(css), '危险按钮用朱砂色，仅用于不可逆操作');
-chk(/\.btn\.good\s*\{[^}]*inset 0 0 0 1px rgba\(240, 205, 124/.test(css), '「记住」按钮补上描金内边，与一级按钮同族');
+/* 「记住」也扁平了：它是**实底那一颗**（这一档评价里的主按钮），
+   与 `.btn.primary` 一样只有平色 + 描边，没有描金内边（Issue #209）。 */
+chk(/\.btn\.good\s*\{[^}]*background:\s*var\(--green\)/.test(css),
+  '「记住」是平色实底，与一级按钮同族（不再补描金内边）');
 // 导航样式
 chk(/\.dock\s*\{[^}]*position:\s*fixed/.test(css), '底部导航栏固定定位');
 chk(/\.dock-item\.active/.test(css), '页签有选中态样式');
@@ -364,19 +378,29 @@ chk(/\.item-arrow svg \{ display: block; width: 18px; height: 18px; \}/.test(css
 chk(!/\.item-arrow \{[^}]*font-size:\s*18px/.test(css),
   '列表右侧箭头不再靠 font-size 定大小');
 // 两处尺寸同源：都是 18×18，才能保证「大小一致」
+/* ⚠️ 原先这条要求「列表箭头与折叠箭头**两处**都取到」—— 首页折叠卡撤掉之后
+   折叠箭头在页面上没有落点，但**样式里那两条规则仍在**（集子页 / 小古文页
+   将来还要用同一套语言），所以判据从「至少两处」改成「取到的那几处一致」，
+   并另给一条「折叠箭头那一条规则还在」把口径留在样式层。 */
 const arrowSvgBlocks = css.match(/\.(?:item-arrow|collapse-head \.arrow) svg \{[^}]*\}/g) || [];
-chk(arrowSvgBlocks.length >= 2 &&
+chk(arrowSvgBlocks.length >= 1 &&
   arrowSvgBlocks.every(b => /width:\s*18px/.test(b) && /height:\s*18px/.test(b)),
-  '列表箭头与折叠箭头同为 18×18（' + arrowSvgBlocks.length + ' 处）');
+  '列表箭头（与仍在样式里的折叠箭头）同为 18×18（' + arrowSvgBlocks.length + ' 处）');
+chk(/\.collapse-head \.arrow svg \{ display: block; width: 18px/.test(css),
+  '折叠箭头那一条样式仍在（首页撤的是卡，不是这套图标语言）');
 // 首页与小古文页三处箭头都改用同一枚 SVG：页面源码里不再留文本字符「›」
 chk(!/<div class="item-arrow">›<\/div>/.test(read('js/app.js')) &&
   !/<div class="item-arrow">›<\/div>/.test(read('js/reader-core.js')),
   '列表箭头改由 arrowGlyph() 输出内联 SVG（不再写死「›」字符）');
 chk(/function arrowGlyph\(\)/.test(read('js/app.js')) && /function arrowGlyph\(\)/.test(read('js/reader-core.js')),
   '首页与古籍页各自用同一枚 arrowGlyph() 画箭头');
-// 折叠箭头的笔画宽度与列表箭头一致（同为 1.8）
-chk(/class="arrow"[\s\S]{0,260}?stroke-width="1\.8"/.test(html),
-  '首页折叠箭头笔画宽度 1.8（与列表箭头同一套描边）');
+/* ⚠️ Issue #209：首页那张「本年级本学期全部诗词」折叠卡整块撤掉了，
+   这条原先读 HTML 里那颗箭头的 `stroke-width="1.8"` 的断言**没有落点**了
+   （首页不再有折叠键）。同一条口径（折叠箭头与列表箭头同一枚描边）改成
+   反过来守：首页 HTML 里不许再出现折叠头，那枚箭头现在只由
+   css/style.css 的 `.collapse-head .arrow` 一族规则定义（上面几条已守）。 */
+chk(!/class="arrow"/.test(html),
+  '首页不再有折叠箭头（全部诗词那张折叠卡已撤，Issue #209）');
 chk(/\.collapse-head\.open \.arrow \{ transform: rotate\(180deg\); \}/.test(css),
   '展开时箭头旋转 180° 朝上');
 chk(/\.collapse-head \.arrow[\s\S]{0,200}?color:\s*#9db3a9/.test(css),

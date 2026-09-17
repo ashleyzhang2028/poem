@@ -103,32 +103,18 @@
          **管理入口**，不是这些篇目的背诵 —— 该背的照旧在今日列表里背。
          两页读的是同一份 localStorage 键 poem_recite_collections_v1。 -->
 
-    <!-- 全部诗词（可折叠） -->
-    <section class="card all-section">
-      <button class="collapse-head" id="btn-all">
-        <span class="collapse-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 5.2A1.2 1.2 0 0 1 5.2 4H10v16H5.2A1.2 1.2 0 0 1 4 18.8Z" />
-            <path d="M10 4h4.8A1.2 1.2 0 0 1 16 5.2V20h-6Z" />
-            <path d="M16 8h2.8A1.2 1.2 0 0 1 20 9.2V20h-4" />
-          </svg>
-        </span>
-        <span id="all-label">本年级本学期全部诗词</span>
-        <span id="all-count" class="badge">0</span>
-        <!-- 折叠箭头：空心描边三角（与列表右侧「›」同一套描边语言）。
-             收起时朝下、展开时朝上，由 .collapse-head.open 只旋转不换图，
-             笔画粗细和「›」一致，不再是实心 ▾ 那种另一套风格。 -->
-        <span class="arrow" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M6.6 9.8 12 15.2l5.4-5.4" />
-          </svg>
-        </span>
-      </button>
-      <div class="collapse-body" id="all-body" hidden>
-        <div class="stats-row" id="stats-row"></div>
-        <div class="list" id="all-list"></div>
-      </div>
-    </section>
+    <!-- 「全部诗词」那张卡片**整块撤掉了**（Issue #209）。
+         用户 2026-09-17 原话：「现在背诵首页的5首诗词下面多了个大卡片，
+         这个不需要的，首页就是古诗独立卡片设计。」
+
+         撤掉的是这一整张卡（折叠头 + 统计行 + 篇目列表），不是那些篇目的背诵 ——
+         它们照旧按遗忘曲线排在今日任务里；要看整册目录去 /poems/ 索引页，
+         要按册次翻去 /library/ 的「课内诗词」那一部。撤掉之后首页只剩两件事：
+         今天背哪几首、背到哪一步了。
+
+         ⚠️ 原先这张卡在桌面那一档认领 grid 的第三行（`grid-area: all`），
+            这一块没了之后那一行也就空了 —— CSS 那边同步收掉了（见
+            css/style.css 的 grid-template-areas）。 -->
 
     <!-- 版权 + 用户协议 / 隐私条款已挪到设置整页（/settings/）底部 -->
   </div>

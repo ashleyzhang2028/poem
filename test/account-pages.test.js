@@ -512,9 +512,17 @@ const LOGIN = strip(loginJs), PROFILE = strip(profileJs), ADMIN = strip(adminJs)
 
      改之前是**六张卡、六颗各占一整行的按钮**。判据取的是「几张卡」与
      「有几行操作键」，不是某个 id 在不在 —— id 改名换姓之后这两条仍成立。 */
+  /* ⚠️ Issue #209：用户 2026-09-17 原话——
+       「个人中心页面，跨设备同步单独弄了张卡片，下面还额外有个同步设置按钮，
+        点完其实是进入到通用页面，还需要点击跨设备同步选项。只保留设置里的
+        跨设备同步选项就可以了啊。能像 iphone 那样把开关放到同一行的最右侧吗」
+     「跨设备同步」那张卡因此整块撤掉（开关并进「关于」卡里的一行），
+     卡片数由**五**变**四**：身份 / 本机数据 / 关于 / 危险区。
+     「操作键收成两行」那条也少了一行 —— 「同步设置」那颗键随之撤掉，
+     只剩下身份卡那一行。 */
   const cards = [...SRC.profile.matchAll(/<section class="account-card/g)].length;
-  chk(cards === 5,
-    '个人中心是五张卡（身份 / 本机数据 / 同步 / 关于 / 危险区，实际 ' + cards + '）');
+  chk(cards === 4,
+    '个人中心是四张卡（身份 / 本机数据 / 关于 / 危险区，实际 ' + cards + '）');
   const actionRows = [...SRC.profile.matchAll(/class="account-actions"/g)].length;
   chk(actionRows === 2,
     '操作键收成两行（身份卡那一行 + 「关于」卡那一行，实际 ' + actionRows + ' 行）');
@@ -526,8 +534,18 @@ const LOGIN = strip(loginJs), PROFILE = strip(profileJs), ADMIN = strip(adminJs)
   const idActions = (SRC.profile.match(/id="identity-actions"[\s\S]*?<\/div>/) || [''])[0];
   chk(/id="btn-account-entry"[\s\S]*?id="btn-sign-out"[\s\S]*?id="btn-go-plans"/.test(idActions),
     '登录 / 退出 / 权限对比三颗键真的在同一行里（顺序也在）');
-  chk(/id="btn-go-sync"/.test(SRC.profile),
-    '「同步设置」仍在「关于」卡那一行（它属于「去别处调同步」，与登录不同类）');
+  /* ⚠️ 原先这里守的是「『同步设置』那颗键仍在关于卡那一行」—— Issue #209
+     之后那颗键**撤掉了**：它点出去就是「设置 · 通用 → 跨设备同步」两步，
+     而开关本身已经搬到这一页的那一行上（用户原话「只保留设置里的跨设备同步
+     选项就可以了啊」）。这一条改守**反面** + 那个开关真的在那一行里。 */
+  chk(!/id="btn-go-sync"/.test(SRC.profile),
+    '「同步设置」那颗键撤掉了（点了还是要去通用页再点一次，纯属多余）');
+  chk(/id="sync-row"/.test(SRC.profile) && /id="toggle-sync"/.test(SRC.profile),
+    '跨设备同步在「关于」卡里是**一行**：项名 + 开关（#sync-row / #toggle-sync）');
+  chk(/<label class="switch sync-row"[\s\S]{0,400}?id="toggle-sync"[\s\S]{0,200}?switch-toggle/.test(SRC.profile),
+    '开关排在那一行的最右（label 包着 input + 轨道，由 .switch 的 space-between 推过去）');
+  chk(/id="sync-conflict"/.test(SRC.profile),
+    '需要你裁决时那个冲突面板仍留着（有冲突才铺开）');
   chk(!/id="btn-go-plans"[\s\S]{0,400}?id="btn-go-sync"/.test(SRC.profile),
     '「权限对比」已从「关于」卡挪走（同一颗键不在两处）');
   chk(/class="account-card danger-zone"/.test(SRC.profile),

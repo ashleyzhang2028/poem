@@ -40,7 +40,9 @@ const bootSettings = seed => bootIn(settingsHtml, 'settings/general/', seed);
   let r = await boot(null);
   chk(r.d.title === '跬步 · Ashley的背诵 · 跬步',
     '全新用户标题用默认名 Ashley（实际 ' + r.d.title + '）');
-  chk(r.d.querySelector('#all-count').textContent === '5', '全新用户计划正常');
+  /* ⚠️ 这条原先读「全部诗词」卡上的 `#all-count`（Issue #209 那张卡撤掉了）。
+     它守的是「全新用户打开就有计划」—— 那个数字在首页就写在今日那一行上。 */
+  chk(/共 5 首/.test(r.d.querySelector('#today-sub').textContent), '全新用户计划正常');
 
   // 2. 老版本设置（无 username 字段，兼容性）
   r = await boot({ poem_recite_settings_v1: JSON.stringify({ grade: 2, term: 2, dailyCount: 3 }) });

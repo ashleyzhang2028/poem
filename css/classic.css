@@ -2124,7 +2124,17 @@ body[data-nav="search"] #gw-list .empty[data-empty="idle"] { padding: 0; }
   border-left: 3px solid var(--green);
   border-radius: var(--radius-md);
   color: inherit;
-  transition: background .18s, border-color .18s;
+  /* 一层纸阴影 —— 与背诵首页那一条条独立卡片（.item）**同一句**（Issue #209）。
+     用户原话：「课外阅读，和设置首页列表卡片请借鉴背诵首页的卡片阴影设计。」
+     这几张卡原先只有描边、没有阴影，与首页那一条条卡片的「纸张厚度」不是一套；
+     补上 --shadow 之后，全站「一张卡」的说法只剩这一处令牌
+     （.card / .item / .account-card / .group-card 读的都是它）。
+     ⚠️ 描边**留着**：首页那条 .item 也有 1px 界行边（它的 border-left 是彩条，
+        四边那条来自 .card / 别处）—— 描边 + 阴影一起才是「一张放在纸面上的卡」。
+     ⚠️ transition 里补 box-shadow：hover 换底色时阴影不动，但加进来是为了
+        与全站卡片同一套过渡（谁都不许让阴影突跳）。 */
+  box-shadow: var(--shadow);
+  transition: background .18s, border-color .18s, box-shadow .18s;
 }
 .library-card[data-book="tangshi"] { border-left-color: var(--gold); }
 .library-card[data-book="songci"] { border-left-color: var(--blue); }
