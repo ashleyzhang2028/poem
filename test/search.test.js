@@ -452,8 +452,8 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   await sleep(250);
   const dock = [...wHome.document.querySelectorAll('.dock-item')];
   chk(dock.length === 4, '底部页签为四格（实际 ' + dock.length + '）');
-  chk(dock.map(b => b.querySelector('.dock-label').textContent).join('/') === '背诵/课外/搜索/设置',
-    '页签名为 背诵 / 课外 / 搜索 / 设置（实际 ' +
+  chk(dock.map(b => b.querySelector('.dock-label').textContent).join('/') === '背诵/课外/搜索/我的',
+    '页签名为 背诵 / 课外 / 搜索 / 我的（实际 ' +
     dock.map(b => b.querySelector('.dock-label').textContent).join(' / ') + '）');
   chk(dock.map(b => b.getAttribute('data-nav-go')).join('/') === 'home/library/search/settings',
     '四格的去向正确');

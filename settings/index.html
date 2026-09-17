@@ -4,8 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#2f6055" />
-  <title>设置 · 跬步</title>
-  <meta name="description" content="跬步设置：用户名与头像、数据备份，背诵的学段年级学期与范围数量、复习算法，自选背诵清单的管理，自动注音与连读方式。" />
+  <title>我的 · 跬步</title>
+  <meta name="description" content="跬步「我的」：个人中心与本机账号，通用设置与数据备份，背诵的学段年级学期与范围数量、复习算法，自选清单的管理，自动注音与连读方式，以及关于与法务。" />
   <meta name="format-detection" content="telephone=no" />
 
   <!-- iOS（苹果手机 / iPad）支持 -->
@@ -19,47 +19,42 @@
   <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
   <link rel="stylesheet" href="css/style.css" />
 </head>
-<body data-nav="settings" data-page="设置" data-sub="通用 · 背诵 · 清单 · 朗读">
+<body data-nav="settings" data-page="我的" data-sub="个人中心 · 通用 · 背诵 · 清单 · 朗读 · 关于">
   <div class="app">
     <!-- 顶部栏：由 js/chrome.js 统一渲染（全站同一套 logo + 跬步 + 页面名） -->
     <header class="topbar"></header>
 
     <main class="settings-page" id="settings-page">
       <!-- ==================================================================
-           设置主页（Issue #132 后续 · 二级设置页）
+           「我的」那一页（路由仍 /settings/，底部那格的名字已改成「我的」）
            ------------------------------------------------------------------
-           一页里已经堆了五组（#114 分组、#132 账号 / 头像 / 算法 / 朗读），
-           再往上加只会更长。于是每**一组**摊成一页二级页：
-             通用        → /settings/general/
-             背诵        → /settings/recite/     （含复习算法）
-             我的清单    → /settings/lists/
-             朗读        → /settings/reader/     （注音 + 五档连读方式）
-           这一页只留四条入口 + 账号那一行 + 版权与法务链接。
+           用户 2026-09-17（Issue #209）原话：
+             「将右下角设置改成 我的 …… 用户点击我的之后，转到我的页面，
+               显示之前四个设置项，包括 通用 背诵 我的清单 朗读，
+               把我的清单改成 清单，另外在通用上面加一个 个人中心，
+               最下面加一个 关于」
 
-           ⚠️ 入口清单由 js/settings-nav.js 的 GROUPS 生成、账号那一行由
-              renderAccountEntry 追加，**都不在 HTML 里手写**：加一组只改
-              那一处。所以下面这块容器是空的。
-           ⚠️ URL 一律目录化（不带 .html），与 js/chrome.js 的 ROUTES 同一约定。
+           于是这一页的清单从「四组 + 账号一行」变成**六行**，顺序是：
+             个人中心 / 通用 / 背诵 / 清单 / 朗读 / 关于
+
+           ⚠️ 整张清单由 js/settings-nav.js 生成（renderIndex → 四组，
+              renderAccountEntry → 个人中心插到第一条，renderAbout → 关于追加到最后）
+              —— **HTML 里不手写任何一行**：加一行只改那一处。
+
+           ⚠️ 「关于」不是第三条二级页，是这一页最底下的**一块只读信息**
+              （应用 / 版本 / 离线缓存 / 法务两页），由 renderAbout 渲染进
+              #settings-about。它不是「一张要进去的页」，摆成一行入口反而要多点一次。
+
+           ⚠️ 这里曾经还有一段长长的注释，逐条解释「为什么账号那一行在自己的卡上 /
+              又为什么搬进清单」。那段沿革已随 Issue #209 收口（账号那一行现在就是
+              第一条「个人中心」），口径写在 js/settings-nav.js 的文件头上。
            ================================================================== -->
       <div class="settings-groups settings-index" id="settings-index"></div>
 
-      <!-- ==================================================================
-           账号那一行（Issue #132 · A→B→C→D 的 D，Issue #163 收进清单）
-           ------------------------------------------------------------------
-           它原先是一张**自己一张卡**、架在四组入口**上面**。用户 2026-09-16
-           的原话：「另外把这个按钮和其他按钮放一起啊」—— 于是它进清单**里面**，
-           与「通用」等四行同宽同高、同一个右箭头，只是内容换成账号那一档：
-             · 未登录  → 「登录」那行，落在 /login/（只有标题，无说明行，
-                          Issue #209 删掉「差语音朗读」那一行）
-             · 已登录  → 「昵称 + 层级徽章」那行，落在 /profile/
-           两行都由 js/settings-nav.js 的 renderAccountEntry 追加进
-           #settings-index 这张清单里 —— 所以这里**不再有**独立的容器。
-           ⚠️ 它读的判据一律走 Entitlement / AuthCore，
-              **不在页面里自己拼 plan / tier**。
-           ================================================================== -->
+      <!-- 关于：这一页最底下那一条（只读信息 + 法务两页入口） -->
+      <section class="settings-about" id="settings-about"></section>
     </main>
 
-    <!-- 版权 + 用户协议 / 隐私条款：整页设置的最底部（页面内容不足时也贴底） -->
     <footer class="foot settings-foot">
       <span class="foot-copy">&copy;2026 kuibu.app 积跬步, 至千里</span>
       <span class="foot-links">

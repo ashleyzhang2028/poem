@@ -107,9 +107,14 @@ const LOGIN = strip(loginJs), PROFILE = strip(profileJs), ADMIN = strip(adminJs)
   chk(/login: "\/login\/"/.test(chromeJs), 'js/chrome.js 的 ROUTES 里有 /login/');
   chk(/profile: "\/profile\/"/.test(chromeJs), 'js/chrome.js 的 ROUTES 里有 /profile/');
   chk(/admin: "\/admin\/"/.test(chromeJs), 'js/chrome.js 的 ROUTES 里有 /admin/');
-  // 头像落点：/profile/ 建好之后就不该再退回设置页
-  chk(/return p \|\| ROUTES\.profile;/.test(chromeJs),
-    '顶栏头像的落点是 /profile/（个人中心建好之后不再退回设置页）');
+  /* ⚠️ Issue #209（用户 2026-09-17）：「所有页面右上角的头像全部删除」——
+     顶栏那枚头像连同它的落点（/profile/）一起撤了。
+     所以这一条从「头像落在哪」翻面成「头像不再回来，而去个人中心那条路仍在」：
+       · 顶栏不再画顶栏头像（userAvatarHtml / avatar-top 都删了）；
+       · 「去个人中心」这条动线改由「我的」页第一条承担（见 account-entry）。 */
+  chk(!/userAvatarHtml|ROUTES\.profile/.test(chromeJs),
+    '顶栏不再画头像，那条 /profile/ 的落点也随之撤掉（转由「我的」页第一条承担）');
+  chk(/profile: "\/profile\/"/.test(chromeJs), 'ROUTES 里仍有 /profile/（那一页还在）');
 }
 
 /* ================= 三、收口：页面不许自己拼 plan / tier ================= */

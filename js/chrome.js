@@ -73,15 +73,28 @@
       '<circle cx="10.6" cy="10.6" r="6.2"/>' +
       '<path d="M15.2 15.2 20.4 20.4"/></svg>',
 
-    /* 页签：设置（齿轮）——齿形按几何生成，8 齿均分、左右上下都对称：
-       齿顶圆 r9.4 / 齿根圆 r6.9 / 轴孔 r3.2。原先那枚手工描的齿轮
-       齿距不匀、整体重心偏右，视觉上「摇」，这里换成真正画正的齿轮。 */
-    tabGear:
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-      '<path d="M9.63 5.52L10.78 2.68L13.22 2.68L14.37 5.52L14.64 5.63L14.91 5.74L17.73 4.55L19.45 6.27L18.26 9.09L18.37 9.36L18.48 9.63L21.32 10.78L21.32 13.22L18.48 14.37L18.37 14.64L18.26 14.91L19.45 17.73L17.73 19.45L14.91 18.26L14.64 18.37L14.37 18.48L13.22 21.32L10.78 21.32L9.63 18.48L9.36 18.37L9.09 18.26L6.27 19.45L4.55 17.73L5.74 14.91L5.63 14.64L5.52 14.37L2.68 13.22L2.68 10.78L5.52 9.63L5.63 9.36L5.74 9.09L4.55 6.27L6.27 4.55L9.09 5.74L9.36 5.63Z"/>' +
-      '<circle cx="12" cy="12" r="3.2"/></svg>',
+    /* 页签：我的（**圆形用户头像**）—— Issue #209（用户 2026-09-17）：
+       「将右下角设置改成 我的 并将齿轮图标换成圆形用户头像」。
 
-    /* 顶栏右侧：返回上一页（法务页、深页用它替代「设置」） */
+       这不是一枚通用的人形剪影，而是**一个整圆 + 圆里那个人自己的首字**：
+       首字由调用方（dockHtml）按当前档案现算并塞进 `<text>`，所以
+         · 昵称是「玥玥」→ 圆里就是「玥」；
+         · 没起名 → 圆里是默认字「诗」（与 App 图标正中那枚同源）。
+       与头像（js/avatar.js 那两档：图片 / 首字印）**不共用一份实现**，理由是
+       分寸：页签图标是界面的一部分，不该为它去读一次档案、画一张图 ——
+       也不该在用户传了图之后把页签那颗 22px 的圆变成一张缩略图。
+       它要的只是「这一格是『我』」。
+
+       ⚠️ 圆是 `fill="currentColor"` 的实底、首字是纸色：这样选中态
+          （`.dock-item.active` 把 currentColor 换成天青）自动带着整圆一起走，
+          不必为「选中时那颗圆换不换色」再写一条规则。 */
+    tabMine:
+      '<svg viewBox="0 0 24 24" aria-hidden="true">' +
+      '<circle cx="12" cy="12" r="10" fill="currentColor" stroke="none"/>' +
+      '<text x="12" y="12" text-anchor="middle" dominant-baseline="central" ' +
+      'font-size="11" font-weight="600" fill="var(--card)" stroke="none">__CHAR__</text></svg>',
+
+    /* 顶栏右侧：返回上一页（法务页、深页用它替代「我的」） */
     back:
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
       '<path d="M14.4 5.4 7.8 12l6.6 6.6"/></svg>',
@@ -249,12 +262,6 @@
      与 headerStack 分开：一个管阅读器那一层，一个管页面这一层，
      合并起来太绕（阅读器的开 / 关与页面的进 / 退是两件独立的事）。 */
   var pageAction = null;
-  /* 这一页有没有「就地叠层」的动作位（setPageAction 设过 —— 哪怕现在传的是 null）。
-     常设之后，页面那条顶栏在阅读器开着时画的是**占位符**而不是默认的
-     「回首页」返回键：在集子索引这一层，「回首页」是个错误的落点
-     （点它直接跳去背诵首页，正是 Issue #122 报的那个现象）。 */
-  var pageActionHint = false;
-
   /** 有没有阅读器那一层开着（开着时页面那条顶栏不画动作键，见 headerHtml） */
   function readerLayerOpen() {
     var boxes = document.querySelectorAll(".reader");
@@ -295,94 +302,70 @@
     // 页面那条还有一个「暂时不画」的中间态：这一页有 setPageAction 的动作，
     // 但此刻阅读器那一层开着（动作位归阅读器）—— 那时**既不该画动作键，
     // 也不该落回默认的「回首页」**：那一颗在索引层上是错的落点（点它跳首页）。
-    // 所以给它占位符，保持两栏对齐，也免得阅读器关掉时左右跳一下。
-    var pageActionHeld = !isReader && !readerLayerOpen() && !pageAction && !!pageActionHint;
+    // Issue #209 之后这里**什么都不画**（原先留一枚空槽保两栏对齐，
+    // 而头像撤掉之后右侧簇只剩这一颗键，空槽就是顶栏右边一块空白）。
     var action = isReader ? topAction() : (readerLayerOpen() ? null : pageAction);
     var right;
 
-    // 右侧簇（Issue #132 · 2026-09-15）：顶栏右端从「一个动作位」升级成
-    // 「一枚恒定锚点 + 右侧若干颗」。头像永远在最右，返回键在它**左边**。
+    // 右侧簇（Issue #147 · 2026-09-15；Issue #209 收敛成**一颗返回键**）
+    // ----------------------------------------------------------------------
+    //     ┌──────────────────────────────────────┐
+    //     │ (徽标42) 跬步 · 页名        〔 返回 42 〕 │
+    //     └──────────────────────────────────────┘
+    //      品牌区（可收缩，走 ellipsis）    ↑ 固定圆槽（顶到最右）
     //
-    // 为什么头像固定最右、返回键浮动（不是反过来）：
-    //   返回键的落点会变（有时没有、有时换文案），头像的落点不能变 ——
-    //   用户点头像是靠肌肉记忆（「右上角那枚印」），它必须每页都在同一个像素位上。
+    // 这一行**只剩一颗键**：返回槽。用户 2026-09-17（Issue #209）原话：
+    //   「所有页面右上角的头像全部删除，这个位置现在有后退键代替」
+    // 于是原「恒定锚点（头像 / 不可见占位）」整件撤掉，返回键自己顶到最右。
     //
-    // 为什么阅读器里不画头像：阅读器是全屏沉浸层，那一条顶栏只留「合上」。
-    //   把身份入口压在正文上，会把「读诗」拉回「管账号」。
-    // 右侧簇（Issue #132 · 2026-09-15；气泡化重排 Issue #147 · 2026-09-15）：
-    //     ┌────────────────────────────────────────┐
-    //     │ (徽标42) 跬步 · 页名   〔  返回 42  〕(头像42) │
-    //     └────────────────────────────────────────┘
-    //      品牌区（可收缩，走 ellipsis）  ↑ 固定圆槽      ↑ 固定锚点
+    // 三条跟着来的结论，都不是「顺手」而是**必须**：
+    //   ① 返回槽的宽高不再写 var(--top-slot)：那一枚 42px 是**头像的直径**
+    //      （与徽标同径，见 css/style.css 的那一段）。锚点走掉之后，
+    //      槽再读这条令牌就是「一个为别人量身的尺寸」—— 槽与键现在同径 40px，
+    //      尺寸只有一个来源 `--top-key`。
+    //   ② 判断「这一页有没有返回键」的口径变了：原先首页没有返回键也**留一枚
+    //      42px 空槽**（保两栏对齐，免得阅读器一开一合箭头横跳）。现在右侧簇
+    //      只有这一颗键，留一枚空槽就是顶栏右边一块空白 —— 没有键就什么都不画。
+    //   ③ 阅读器的「合上」与页面的返回键**天然落在同一个像素位**了：
+    //      两条顶栏渲染的都是同一件、同一个尺寸，不必再靠占位去对齐。
     //
-    // **两颗都是固定位**：返回键住在一枚 42px 的圆形槽里（与徽标、头像同径），
-    // 槽钉在右侧簇里（`.top-slot` 的 `margin-left: auto`），头像钉在最右。
-    // 于是返回键与头像的像素位**与页名长短完全无关** —— 上一版把返回键直接
-    // 跟在品牌区后面（整行 `justify-content: space-between`），页名一短
-    // 返回键就左移：搜索页「跬步 · 搜索」比「课外阅读」短，那一颗箭头
-    // 比别页左偏 36~46px（用户 2026-09-15 报的正是这个）。
-    //
-    // 同一条规矩也管到阅读器：阅读器那条顶栏是一个**全屏沉浸层**，
-    // 那里不画头像（不该把「管账号」压在正文上）；若把它的返回键摆到最右，
-    // 正文一开一合那颗箭头就横跳 50px。所以阅读器里由一枚同径的
-    // **不可见占位（`.top-act-spacer`）占住头像的像素位**，
-    // 阅读器的「合上」稳稳落在页面返回键那一个像素位上 —— 一页之内也不横跳。
-    var leftOfCluster = "";
+    // ⚠️ 全页只剩两种 id：`#top-act`（动作位 / 阅读器的合上）与 `#top-back`
+    //    （页面自己的返回键），且**永远只有一枚**。不再有 `#top-user`：
+    //    仓库里那条「全页只有一枚」的断言因此也少一类要照顾的对象。
+    var rightKey = "";
     if (isReader) {
       // 阅读器那条顶栏：只有「合上」这一颗。
       // 动作是「关闭阅读器」这类「合上 / 撤回上一层」的语义，一律画成返回箭头：
-      // 同一种行为在全站只能是同一个图标（顶栏右侧那颗与底部页签「回首页」各司其职）。
-      // 曾经这里换成 ✕，结果阅读器里同时出现「底部页签回首页」与「右上角 ✕」，
-      // 两个出口语义重叠，✕ 还比全站的箭头多长了一个形状。
+      // 同一种行为在全站只能是同一个图标。
       if (action) {
-        leftOfCluster =
+        rightKey =
           '<button type="button" class="top-act" id="top-act">' +
           '<span class="top-act-icon" aria-hidden="true">' + GLYPHS.back + "</span>" +
           '<span class="sr-only">' + action.label + "</span></button>";
       }
-    } else if (pageActionHeld) {
-      // 这一页有「就地叠层」的动作，但此刻动作位归阅读器那一层
-      // （阅读器开着，事务栈的栈顶是「合上」）—— **既不该画动作键、
-      // 也不该落回默认的「回首页」**：那一颗在索引层上是错的落点
-      // （点它跳首页）。留空槽，保持两栏对齐，也免得阅读器关掉时左右跳一下。
-      // ⚠️ 槽还在（`.top-slot` 由下面的模板统一给），只是里头没有键 ——
-      //    这正是「返回键的位置与有没有返回键无关」的另一半。
-    } else if (action) {
+    } else if (readerLayerOpen()) {
+      // 阅读器开着：页面那条顶栏的动作位也归阅读器那一层（全页只能有一枚
+      // #top-act）。这里什么都不画，而不是落回默认的「回首页」——
+      // 那一颗在集子索引这一层上是错的落点（点它直接跳去背诵首页）。
+    } else if (pageAction) {
       // 页面自己挂的动作（课外阅读入口页「就地叠层」时用）→ 撤回上一层
-      leftOfCluster =
+      rightKey =
         '<button type="button" class="top-act" id="top-act">' +
         '<span class="top-act-icon" aria-hidden="true">' + GLYPHS.back + "</span>" +
-        '<span class="sr-only">' + action.label + "</span></button>";
-    } else if (!isReader && key !== "home") {
+        '<span class="sr-only">' + pageAction.label + "</span></button>";
+    } else if (key !== "home") {
       // 子页面（搜索、小古文、设置、法务页）—— 同一颗「返回」，指向 pageBackHref()。
       // 返回键统一由这里渲染，各页不要自造一颗：曾出现「页面自己手写返回、
       // 与重建后的顶栏同时冒出来」的问题。文案只给读屏软件，可见的只有一个箭头。
-      leftOfCluster =
+      rightKey =
         '<a class="top-act" id="top-back" href="' + pageBackHref() + '"' +
         ' title="返回" aria-label="返回">' +
         '<span class="top-act-icon" aria-hidden="true">' + GLYPHS.back + "</span></a>";
     }
-
-    // 右侧簇 = 〔返回槽〕+ 恒定锚点。
-    //   · 页面那条顶栏的锚点是**头像**（点它看自己，靠肌肉记忆，一像素都不许动）；
-    //   · 阅读器那条的锚点是一枚**不可见的占位**（同上一个宽度）。
-    // 首页右上角不再放设置齿轮：底部最后一个页签就是「设置」，
-    // 两个入口指向同一面板，右上角那个纯属重复。首页也不放返回键（没有上一层），
-    // 槽留空 —— 头像仍在最右，四个页签根页的顶栏右端因此完全一致。
-    //
-    // ⚠️ 阅读器那一条**不再画任何图标**（Issue #147 后续 · 用户 2026-09-15 二次确认：
-    //    「删除详情页中右上角书一样的图标」）。原先那里是一枚「翻开的这一册」
-    //    （.top-slot-mark），用户看着像一本多余的书，要求撤掉。
-    //    但**像素位不能跟着撤**：阅读器是全屏沉浸层，那一条顶栏没有头像，
-    //    右侧簇若只剩返回槽，`margin-left: auto` 会把「合上」推到最右边缘，
-    //    正文一开一合就横跳 50px（头像 42 + 间距 8）。
-    //    所以这里留一枚**不可见的占位**（.top-act-spacer，同一枚 --top-slot 的尺寸
-    //    与同一条 --top-gap 的间距）—— 书没了，位置一个像素都不动。
-    var anchor = isReader
-      ? '<span class="top-act-spacer" aria-hidden="true"></span>'
-      : userAvatarHtml();
-    right =
-      '<span class="top-slot">' + leftOfCluster + "</span>" + anchor;
+    // ⚠️ 首页（背诵）没有上一层，因此**一颗键都没有** —— 顶栏右端是空的。
+    //    这不等同于「留一枚看不见的槽」：`.topbar` 自己是 `space-between`，
+    //    左边品牌区照样靠左，右边空着就是空着。
+    var right = rightKey;
 
     // 品牌：徽标 + 「跬步 · 当前页名」——同一行、同一字体，读起来是一句话
     // 页面名由页面用 data-page 给出（首页由 app.js 写成「XX的古诗词」）
@@ -404,78 +387,16 @@
   }
 
   /**
-   * 右侧簇里**最靠左**的那一颗（页面小件要插在它左边）。
+   * 顶栏右端那一颗键（页面小件要插在它左边）。
    *
-   * 挑的是右侧簇里**最靠左**的那一颗，候选顺序即视觉顺序 ——
-   * 页面动作键 `#top-act` → 返回键 `#top-back` → 头像 `.top-user` → 占位符。
-   * 首页没有返回键时，小件就落在头像左边（那也是唯一正确的落点）。
-   *
-   * ⚠️ Issue #147 之后右侧簇已经**整个包在 `.top-slot` 里**
-   * （返回键住一枚 42px 的固定圆槽，头像钉在最右）—— 小件落在槽**左**边，
-   * 即「品牌区 ｜ 小件 ｜ 返回槽 ｜ 头像」，与重排之前的视觉顺序一致。
-   * 这里仍逐个变量找锚点，不直接取 `.top-slot`：万一将来某一处
-   * 不按这个模板渲染（例如别处复用的顶栏），逐个候选仍能找到正确的落点。
+   * 顶栏右端现在**只有一颗**：返回键（或阅读器的「合上」）—— 头像那一枚
+   * 恒定锚点已随 Issue #209 撤掉（「所有页面右上角的头像全部删除」）。
+   * 因此这里的候选只剩一个，取不到就是这一页右端本来就没有键
+   * （首页 / 阅读器开着时的页面那条顶栏），小件直接落到行尾。
    */
   function firstActAnchor(bar) {
-    var list = bar.querySelectorAll(".top-act, .top-user, .top-act-spacer");
-    return list.length ? list[0] : null;
-  }
-
-  /**
-   * 顶栏右上角那枚头像（Issue #132 · 2026-09-15 / Issue #163 · 2026-09-19）。
-   *
-   * 三个刻意的取舍：
-   *   · **未登录也画**：未登录时是一枚「默认印（昵称首字 / 诗）」，它不是账号入口的
-   *     伪装，而是一个恒定的身份锚点 —— 点了去 `/profile/`（未登录时那一页
-   *     自己会变成引导页，见 js/profile.js）。空着反而让用户以为「右上角什么都没有」。
-   *   · **独立的 id / 类名**：`id="top-user"` / `.top-user`，**不复用 `#top-act`
-   *     与 `#top-back`**。仓库里有一条硬断言「全页只有一枚 #top-act / #top-back」，
-   *     顺手写进同一个 id 会让它变红；且 jsdom ≥27 下 `querySelector('#top-act')`
-   *     只认第一枚，会把阅读器的按钮绑错（这个坑仓库里踩过并写进了注释）。
-   *   · **渲染走 Avatar.html()**：全站唯一画头像的地方，页面不许自己拼一份
-   *     （`test/avatar.test.js` 有源码扫描守着）。
-   *
-   * 没有 Avatar 模块时（老缓存 / 脚本顺序不对）退回不可见占位，宁可不画也不报错：
-   * 顶栏是每一页都跑的东西，这里抛一次就是全站白屏。
-   */
-  function userAvatarHtml() {
-    var A = (typeof globalThis !== "undefined" && globalThis.Avatar) || null;
-    var inner;
-    if (A && typeof A.html === "function") {
-      try {
-        // ⚠️ 必须显式传 localStorage：传 null 会读不到 `poem_profile_v1`，
-        //    顶栏永远画默认的「诗」字印 —— 用户选了梅、首页也显示梅，
-        //    只有顶栏还是诗，是最难解释的那类不一致（不报错、只是画错）。
-        var backing = (typeof globalThis !== "undefined" && globalThis.localStorage) || null;
-        // ⚠️ **不传 size**：直径由 CSS 统一给（`.top-user` 的 `--user-size: 42px`，
-        //    与 `.brand-mark` 的徽标同径 —— 用户 2026-09-15 要求「和 logo
-        //    一模一样大小的圆形」）。在这里再写一个数字就是第二个尺寸来源，
-        //    那个数字早晚会和样式表里那个不一致。
-        inner = A.html(backing, { cls: "avatar-top" });
-      } catch (e) { inner = ""; }
-    }
-    // 没有 Avatar 模块时退回不可见占位。宽度走同一条 `--top-slot` 口径
-    // （见 css/style.css），不再单独写一个 42 —— 顶栏右侧的每一件都是
-    // 同一枚圆槽的尺寸，写第二处数字就是下一次走散的种子。
-    if (!inner) return '<span class="top-act-spacer" aria-hidden="true"></span>';
-    // 骨架是 <a>：一个真实链接（可右键 / 可键盘 / 可读屏），不是「点了没反应」的装饰。
-    // 落点是 `/profile/` —— 那一页建好之后，这里就不再退回设置页了：
-    // 「点头像 → 看自己」是肌肉记忆，中间隔一层设置页就不叫锚点了。
-    return '<a class="top-user" id="top-user" href="' + userHref() + '"' +
-      ' aria-label="个人中心" title="个人中心">' + inner + "</a>";
-  }
-
-  /**
-   * 头像的落点 = `/profile/`。
-   *
-   * 曾经先指设置页（那时 `/profile/` 还没建，指一个 404 不如指一个能改头像的地方）。
-   * 现在那一页有了，就回到「点头像看自己」这个唯一正确的语义上 ——
-   * 保留 `__AVATAR_PAGE__` 这个覆盖口是给「同一套 chrome 渲染到别处」的情形用的
-   * （测试与将来的多入口），不是给页面自己改跳转的。
-   */
-  function userHref() {
-    var p = (typeof globalThis !== "undefined" && globalThis.__AVATAR_PAGE__) || "";
-    return p || ROUTES.profile;
+    var el = bar.querySelector(".top-act");
+    return el || null;
   }
 
   /**
@@ -532,7 +453,13 @@
    *   2. 「古诗词」这个名字也不准：那一页管的是课内背诵与遗忘曲线复习，
    *      与「课外读」是两回事。
    * 现在改成：背诵（课内，按遗忘曲线安排复习）｜课外（集子入口）
-   * ｜搜索（全站篇目）｜设置。四格在窄屏上仍是一行放得下（每格 ≥75px）。
+   * ｜搜索（全站篇目）｜我的。四格在窄屏上仍是一行放得下（每格 ≥75px）。
+   *
+   * ⚠️ 最后一格 Issue #209 之前叫「设置」（齿轮）—— 用户 2026-09-17 原话：
+   *    「将右下角设置改成 我的 并将齿轮图标换成圆形用户头像」。
+   *    改的是**这一格的名字与图标**；它指向的路由一个字没动（仍是 /settings/），
+   *    所以全站所有 `href="/settings/"` 与 `data-back="/settings/"` 都不必改。
+   *    页签的 key 仍叫 `settings`（那一格的身份没变，变的是它叫什么、画成什么）。
    *
    * 页签与「当前页」的对应关系（pageKey）：
    *   /            → home
@@ -547,7 +474,7 @@
     { key: "home", href: "/", icon: GLYPHS.tabPoem, label: "背诵", desc: "课内古诗词，按当前复习算法安排复习" },
     { key: "library", href: "/library/", icon: GLYPHS.tabLibrary, label: "课外", desc: "课内诗词 / 小古文 / 唐诗 / 宋词 / 古文观止 / 昭明文选" },
     { key: "search", href: "/search/", icon: GLYPHS.tabSearch, label: "搜索", desc: "全站篇目一次搜遍" },
-    { key: "settings", href: "/settings/", icon: GLYPHS.tabGear, label: "设置", desc: "用户名 / 年级 / 音量" }
+    { key: "settings", href: "/settings/", icon: GLYPHS.tabMine, label: "我的", desc: "个人中心 / 通用 / 背诵 / 清单 / 朗读 / 关于" }
   ];
 
   /** 五部选集页都算「课外」这一格：它们共用同一个入口，也该共用同一个选中态 */
@@ -581,7 +508,7 @@
     var html = '<nav class="dock" id="site-dock" aria-label="主导航"><div class="dock-inner">';
     items.forEach(function (it) {
       var on = key === it.key;
-      // 每个页签都指向真实页面：设置也是独立整页（/settings/），不再是弹层卡片
+      // 每个页签都指向真实页面：那一格也是独立整页（/settings/），不再是弹层卡片
       // 地址统一走目录化路由，不带 .html
       var tag = it.key === "settings" ? "a" : "button";
       html +=
@@ -590,11 +517,38 @@
         ' data-nav-go="' + it.key + '" data-href="' + it.href + '"' +
         (on ? ' aria-current="page"' : "") +
         ' title="' + it.desc + '">' +
-        '<span class="dock-icon" aria-hidden="true">' + it.icon + "</span>" +
+        '<span class="dock-icon" aria-hidden="true">' + dockIcon(it) + "</span>" +
         '<span class="dock-label">' + it.label + "</span>" +
         "</button>";
     });
     return html + "</div></nav>";
+  }
+
+  /**
+   * 页签图标：把 `__CHAR__` 换成**这一格里那个人自己的首字**。
+   *
+   * 用户 2026-09-17（Issue #209）：「将齿轮图标换成圆形用户头像」。
+   * 「头像」在这里的意思是「一枚圆 + 里头的首字」，与全站那枚真正的头像
+   * （js/avatar.js：图片 / 昵称首字两档）**不同一件事**：
+   *   · 页签这一枚是**界面的一部分**，不进档案、不读上传的图 ——
+   *     用户传了照片也不会让这格 22px 的圆变成一张缩略图；
+   *   · 首字只在**渲染这一次**读一次档案（Avatar.display 是唯一那份口径），
+   *     拿不到就回落默认字 —— 页签不许因为档案读不到而整格空白。
+   *
+   * ⚠️ 只有 `tabMine` 带占位符；其余三枚原样返回（它们没有「人」可放）。
+   * ⚠️ 首字要**转义**再塞进 SVG 文本节点：昵称是用户自己填的，
+   *    直接把 `<` 拼进去就是一处自伤（`.dock-icon` 的 innerHTML 会把它当标签）。
+   */
+  function dockIcon(it) {
+    if (it.icon.indexOf("__CHAR__") < 0) return it.icon;
+    var char = "";
+    try {
+      var A = (typeof globalThis !== "undefined" && globalThis.Avatar) || null;
+      var backing = (typeof globalThis !== "undefined" && globalThis.localStorage) || null;
+      var d = A && A.display ? A.display(backing) : null;
+      char = (d && d.char) || (A && A.DEFAULT_CHAR) || "诗";
+    } catch (e) { char = "诗"; }
+    return it.icon.replace("__CHAR__", escapeHtml(char));
   }
 
   /**
@@ -623,9 +577,8 @@
     }
     bar.innerHTML = headerHtml(isReaderBar(bar));
     if (!keep) return;
-    // 锚点是右侧簇里**最靠左**的那一颗：簇里有时是「返回键 + 头像」两颗、
-    // 有时只有头像一颗，按单颗找（`querySelector` 认第一枚）本来也对 ——
-    // 但候选必须把 `.top-user` 也列进去，否则小件会插到头像**后面**。
+    // 锚点＝顶栏右端那一颗键（见 firstActAnchor）。这一页右端没有键时
+    // （首页、或阅读器开着时的页面那条顶栏）小件直接落到行尾。
     var act = firstActAnchor(bar);
     keep.forEach(function (el) {
       if (act) bar.insertBefore(el, act);
@@ -823,7 +776,6 @@
      */
     setPageAction: function (action) {
       pageAction = action || null;
-      if (action) pageActionHint = true;
       // 重绘页面那条（页面小件由 renderBar 按枚搬回，与别处同一条路），
       // 再把动作绑上去 —— 重绘会把它清掉，顺序不能反。
       var bars = readBars();
@@ -884,11 +836,14 @@
       });
     },
     /**
-     * 重画顶栏那枚头像印（`poem_profile_v1` 改了之后调用）。
+     * 重画页面那条顶栏（`poem_profile_v1` 改了之后调用）。
      *
-     * 为什么要有这个入口：用户可在设置页改「印」的字与色，而顶栏是 chrome.js
-     * 一次画好的。不重画的话，改完要刷新页面才看得到 —— 那正是「改了个设置却像是没生效」。
-     * 只重绘**页面那条**顶栏（阅读器那条本来就没有头像），与 setPageAction 同一路径。
+     * ⚠️ Issue #209 之后顶栏上**已经没有头像**了（「所有页面右上角的头像全部删除」），
+     *    所以这个名字叫 refreshUser 的口子当下不做任何「重画头像」的事 ——
+     *    保留它是给**页面**留一条「档案改了，把页面那条顶栏重绘一次」的路
+     *    （js/settings.js 改昵称后仍在调它），实现退化成一次空重绘。
+     *    刻意**不删**：删掉会让调用方多一处 `if (SiteChrome.refreshUser)` 分支，
+     *    而那几处调用本身没有错。
      */
     refreshUser: function () {
       readBars().forEach(function (bar) {

@@ -79,35 +79,40 @@ setTimeout(() => {
     '页面名与「跬步」共用同一套字体样式（.brand-name-row）');
   chk(!/积跬步古诗词/.test(d.documentElement.outerHTML), '页面不出现「积跬步古诗词」旧名');
 
-  /* ---------- 顶栏右上角的头像印（Issue #132 · 2026-09-15） ---------- */
-  // 头像永远在最右（身份锚点，落点不能变），返回键在它左边；
-  // 首页本来右上角是空占位，正好把占位换成头像 —— 顺手补上「四页签根页进不了 profile」的缺口。
-  const tuHome = d.querySelector('.topbar #top-user');
-  chk(!!tuHome, '首页顶栏有头像入口 #top-user（此前是空占位）');
-  chk(tuHome && tuHome.tagName === 'A', '头像是一个真实链接（可键盘、可读屏、不是点了没反应的装饰）');
-  chk(!!tuHome.querySelector('.avatar'), '头像里画的是 .avatar（首字 / 图片两档共用同一枚）');
-  chk(tuHome.querySelector('.avatar').textContent.length > 0, '没传图时头像里永远有一个字，不会是空白圆');
-  chk(d.querySelectorAll('.topbar #top-back').length === 0, '首页没有返回键（本来就无处可退），只有头像');
-  chk(d.querySelectorAll('#top-user').length === 1, '全页只有一枚 #top-user（不复用 #top-act / #top-back 的 id）');
-  chk(d.querySelectorAll('#top-act').length === 0 && d.querySelectorAll('#top-back').length === 0,
-    '头像没有顺手写进 #top-act / #top-back（否则会与「全页只有一枚」那条断言打架）');
+  /* ---------- 顶栏右上角：**一枚返回键，没有头像**（Issue #209 第二轮） ----------
+     用户 2026-09-17 原话：
+       「所有页面右上角的头像全部删除，这个位置现在有后退键代替，
+         另外，右上角后退键去除圆形边框，去除背景色」
 
-  // 深页（设置页）：返回键 + 头像都在，且头像在最右
+     于是顶栏右端只剩一颗返回键（首页连它都没有 —— 没有上一层）。
+     这一节判的是「**没有**头像」与「返回键还是同一颗 #top-back」，
+     而不是「头像长什么样」：那一件已经不存在了。 */
+  chk(d.querySelectorAll('.topbar .top-user').length === 0,
+    '顶栏上一枚头像都没有（含首页：右端是空的）');
+  chk(d.querySelectorAll('.topbar .avatar-top').length === 0,
+    '顶栏也不再画 .avatar-top 那一档头像');
+  chk(/\.top-user\s*\{/.test(fs.readFileSync(path + 'css/style.css', 'utf8')) === false,
+    '样式表里不再留 .top-user 规则（顶栏没有头像了，留着是僵尸）');
+  chk(d.querySelectorAll('.topbar #top-back').length === 0,
+    '首页没有返回键（本来就无处可退），顶栏右端因此是空的');
+  chk(d.querySelectorAll('.topbar #top-act').length === 0 && d.querySelectorAll('.topbar #top-user').length === 0,
+    '首页顶栏不出现任何顶栏 id（#top-act / #top-back / #top-user 都没有）');
+
+  // 深页（设置页）：只有返回键，且它落在顶栏右端
   const spAvatar = bootSettingsPage(null);
   const spBar = spAvatar.doc.querySelector('.topbar');
-  const spIds = [...spBar.querySelectorAll('#top-back, #top-user')].map(e => e.id);
-  chk(spIds.join('/') === 'top-back/top-user', '深页右端依次是「返回键 · 头像」，头像在最右（实际 ' + spIds.join('/') + '）');
+  chk([...spBar.querySelectorAll('#top-back, #top-user')].map(e => e.id).join('/') === 'top-back',
+    '深页顶栏右端只有「返回键」这一颗（实际 ' +
+    [...spBar.querySelectorAll('#top-back, #top-user')].map(e => e.id).join('/') + '）');
+  chk(spBar.querySelectorAll('.top-user').length === 0, '深页顶栏也没有头像（同一套 chrome，一处改全站改）');
 
-  // 顶栏那枚头像读的是同一份档案：昵称是「玥玥」，顶栏就得画「玥」（不能偷偷回落成「诗」）
+  // 档案仍旧是档案：设置页里那枚头像与本页的昵称同源（撤掉的只是**顶栏**那一枚）
   const spSeal = bootSettingsPage({
     poem_profile_v1: JSON.stringify({ v: 1, nickname: '玥玥', avatar: { img: '' } })
   }, 'settings/general/index.html');
-  const sealTop = spSeal.doc.querySelector('.topbar #top-user .avatar');
-  chk(!!sealTop && sealTop.textContent === '玥', '顶栏的头像与档案同源（昵称首字是「玥」就画「玥」，实际 ' +
-    (sealTop ? sealTop.textContent : '缺失') + '）');
-  chk(/玥/.test(sealTop.getAttribute('aria-label')), '头像的读屏标签也写清了是谁');
   const sealSlot = spSeal.doc.querySelector('#avatar-slot .avatar');
-  chk(!!sealSlot && sealSlot.textContent === '玥', '「通用」页那枚头像与顶栏是同一枚');
+  chk(!!sealSlot && sealSlot.textContent === '玥', '「通用」页那枚头像与档案同源（昵称首字是「玥」就画「玥」，实际 ' +
+    (sealSlot ? sealSlot.textContent : '缺失') + '）');
   // 需求：版权 + 用户协议 / 隐私条款 从首页挪到设置整页底部
   chk(d.querySelector('.app > .foot') === null, '首页不再挂页脚（法务链接已挪到设置页底部）');
   const spEarly = bootSettingsPage(null);
@@ -176,8 +181,11 @@ setTimeout(() => {
   chk(!!dock, '首页有底部导航栏');
   const dockItems = [...dock.querySelectorAll('.dock-item')];
   chk(dockItems.length === 4, '底部导航为四个页签（实际 ' + dockItems.length + '）');
-  chk(dockItems.map(b => b.querySelector('.dock-label').textContent).join('/') === '背诵/课外/搜索/设置',
-    '页签名称为 背诵 / 课外 / 搜索 / 设置');
+  /* ⚠️ Issue #209（用户 2026-09-17）：「将右下角设置改成 我的」——
+     最后一格的名字从「设置」变成「我的」（图标也从齿轮换成圆形用户头像）。
+     改的是**名字与图标**，它指向的路由（/settings/）与 `data-nav-go` 一个字没变。 */
+  chk(dockItems.map(b => b.querySelector('.dock-label').textContent).join('/') === '背诵/课外/搜索/我的',
+    '页签名称为 背诵 / 课外 / 搜索 / 我的');
   chk(dockItems.map(b => b.dataset.navGo).join('/') === 'home/library/search/settings', '页签跳转目标正确');
   chk(dockItems[0].classList.contains('active') && dockItems[0].getAttribute('aria-current') === 'page',
     '当前页（背诵）页签为选中态');
@@ -193,19 +201,24 @@ setTimeout(() => {
   // 显式 text-decoration: none 之后四个页签外观才一致（样式断言见 theme.test.js，
   // 这里补一条结构断言：设置页签确实是 <a>，所以这条样式不是可有可无的）。
   const settingsItem = dock.querySelector('.dock-item[data-nav-go="settings"]');
-  chk(settingsItem.tagName === 'A', '「设置」页签是 <a>（因此必须显式去掉链接默认下划线）');
-  // 需求（本次）：设置齿轮原先手工描线、齿距不匀看着「歪」，换成按几何生成的 8 齿对称齿轮
-  const gear = d.querySelector('.dock-item[data-nav-go="settings"] .dock-icon svg');
-  chk(!!gear, '设置页签有齿轮图标');
-  const gearD = gear.querySelector('path').getAttribute('d');
-  const gearPts = gearD.match(/-?\d+\.\d+ -?\d+\.\d+/g).map(x => x.split(' ').map(Number));
-  const xs = gearPts.map(p => p[0]), ys = gearPts.map(p => p[1]);
-  chk(Math.abs(Math.min(...xs) + Math.max(...xs) - 24) < 0.05 &&
-      Math.abs(Math.min(...ys) + Math.max(...ys) - 24) < 0.05,
-    '齿轮左右 / 上下都关于圆心 (12,12) 对称（不偏不歪）');
-  chk(Math.abs(Math.min(...xs) - 2.68) < 0.02 && Math.abs(Math.max(...xs) - 21.32) < 0.02,
-    '齿轮首齿正对 12 点钟方向，齿顶圆半径一致（齿距均分）');
-  chk(gear.querySelector('circle').getAttribute('r') === '3.2', '齿轮轴孔为整圆 r3.2，居中不动');
+  chk(settingsItem.tagName === 'A', '「我的」页签是 <a>（因此必须显式去掉链接默认下划线）');
+  /* 需求（Issue #209，用户 2026-09-17）：
+     「将齿轮图标换成圆形用户头像」——
+     换成**一枚整圆 + 圆里那个人自己的首字**，不再是齿轮。
+     这里判三件事：圆在、首字在、默认字与全站头像同源（「诗」）。 */
+  const mineIcon = settingsItem.querySelector('.dock-icon svg');
+  chk(!!mineIcon, '「我的」页签有图标');
+  chk(!mineIcon.querySelector('path'), '它不再是齿轮（没有那条齿形 path）');
+  const mineCircle = mineIcon.querySelector('circle');
+  chk(!!mineCircle && mineCircle.getAttribute('cx') === '12' &&
+    mineCircle.getAttribute('cy') === '12' && mineCircle.getAttribute('r') === '10',
+    '它是一枚居中的整圆（圆心 12,12 · r10 = 圆形头像）');
+  const mineChar = mineIcon.querySelector('text');
+  chk(!!mineChar && mineChar.textContent.trim() === '诗',
+    '圆里是那个人自己的首字；没起名时回落默认字「诗」（与全站头像同源，实际「' +
+    (mineChar ? mineChar.textContent : '缺失') + '」）');
+  chk(!/__CHAR__/.test(settingsItem.innerHTML),
+    '占位符 __CHAR__ 已被真的首字替换（不留模板残渣）');
   // 页面切换统一走底部页签，顶栏不再各页一套返回键
   chk(d.querySelector('.topbar .back-icon') === null, '顶栏不再有各页自造的返回箭头');
   chk(!!dock.querySelector('[data-nav-go="settings"]'), '「设置」是页签之一，不再只藏在右上角');
