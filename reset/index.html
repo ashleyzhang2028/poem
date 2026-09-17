@@ -61,6 +61,13 @@
 
         <div id="reset-ok" hidden>
           <p class="account-lead" id="reset-ok-lead"></p>
+          <!-- ⚠️ 「邮箱还没确认」那一格（Issue #197 后半段）：新口径下
+               没确认就登不进来，而重设口令**不动**确认状态（两件事各写各的）。
+               于是走完这一整套流程的人有可能**仍然登不进去** ——
+               那时必须在这里说清「还有一步」，并指出那一步在哪儿。
+               内容由 js/reset.js 按服务端回的 emailVerified 填；
+               出厂收着，**不预置**一句可能反过来错的话。 -->
+          <div class="account-note warn" id="reset-ok-hint" hidden></div>
           <div class="account-actions">
             <button class="account-btn" id="btn-reset-login" type="button">用新密码登录</button>
           </div>

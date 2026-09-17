@@ -136,13 +136,38 @@
   }
 
   /**
+   * 「发信商没配好」只有一个说法 —— **一处定义，三处引用**。
+   *
+   * 为什么必需：这一句在三个地方要说（注册完那一屏 / 快捷登录发了码 /
+   * 忘记密码发了重设信），而它们原先各写各的。漂移的后果不是错别字，
+   * 是**用户看到三种不同的解释**，然后来问「到底哪个是真的」——
+   * 这正是 Issue #197 里用户问的那一句：「我在 resend 配了，还要去哪配？」
+   *
+   * ⚠️ 这句话回答的是**运维**（去哪把发信商接上），不是用户能做的事。
+   *    所以它必须能被看懂，又不能被误读成「你哪里填错了」。
+   *    真正的用户动作只有一件：找运维要码 / 等发信商配好。
+   */
+  function mailNotConfiguredNote(masked) {
+    /* ⚠️ 文案里刻意**不写那个密钥的变量名** —— 页面是**任何访客都能读到的源码**，
+       而「服务端密钥名不进前端」这一条有测试守着（test/api.test.js 那一节，
+       闸门是拿这几个**名字本身**去扫全部前端文件的）。
+       变量名不是密钥，但那条闸的价值正在于「一个名字都不许漏出来」；
+       指路指到 doctor 的第 C 步已经足够具体。 */
+    return "这台服务器还没接上发信商（现在是 console 通道：只往服务端日志写一行，不往外发信）。" +
+      "要收信得请运维在托管平台的环境变量里补上发信密钥 —— 步骤：在终端跑 " +
+      "`npm run doctor -- --steps`，第 C 步写的就是它" +
+      "（托管平台环境变量填密钥 + 在 Resend 后台验发信子域 SPF/DKIM/DMARC 三条 DNS）。" +
+      (masked ? "这一步只能由运维做，所以 " + masked + " 现在收不到信。" : "");
+  }
+
+  /**
    * 一屏一屏地切。**这是本页唯一的「画到哪一步」出口** ——
    * 别在别处直接 `hide/show` 面板，那种写法必然漏掉一两块（然后留下一个
    * 「上一步的提示还挂在屏幕上」的鬼影）。
    *
    * @param {string} mode  pw | code | register | verify | forgot | done
    */
-  var MODES = ["pw", "code", "register", "verify", "forgot", "done"];
+  var MODES = ["pw", "code", "register", "verify", "unverified", "forgot", "done"];
   function setMode(mode) {
     if (MODES.indexOf(mode) < 0) mode = "pw";
     state.mode = mode;
@@ -161,8 +186,9 @@
       if (!el) return;
       if (k === mode) show(el); else hide(el);
     });
-    // 「已登录，补昵称」那一屏住在 .account-step 里（不是页签之一）
+    // 「已登录，补昵称」与「等你点确认」两屏住在 .account-step 里（不是页签之一）
     if (mode === "done") show($("step-done")); else hide($("step-done"));
+    if (mode === "unverified") show($("step-unverified")); else hide($("step-unverified"));
     if (mode === "code") { show($("step-email")); hide($("step-code")); }
   }
 
@@ -358,18 +384,48 @@
       /* ⚠️ 「已发往」与「发出去了」是两件事。发信商没配（console 通道）时
          `verifySent` 为 false —— 那时**必须**如实写「没能发出去」，
          并把「重发」那颗按钮显眼地摆出来（§12 总原则：不许跑在代码前面）。 */
-      if (r.verifySent) {
+      /* ------------------------------------------------------------------
+         注册完这一屏说什么，**取决于服务端拦不拦确认**（Issue #197 后半段）
+         ------------------------------------------------------------------
+         默认拦（用户 2026-09-16 裁决）：那这一屏的第一句话必须是
+         「去收件箱点链接」，而不是任何形式的「先去用」——
+         后者是一句用户照做会被 403 挡回来的假话。
+         实测过的那种翻车正是这一处：界面上写「现在就可以回密码登录」，
+         用户回过去，得到的是一句「邮箱还没确认」。
+         ------------------------------------------------------------------ */
+      var gated = r.requiresVerification === true;
+      if (!gated) {
+        /* 运维在这台服务器上关掉了闸（没配好发信商时的应急口径）。
+           ⚠️ 这时**必须说出来**，否则用户以为自己已经通过了确认这套流程，
+              而实际上这台服务器根本没有拦。与「如实标注」是同一条纪律。 */
+        if (r.verifySent) {
+          note("verify-fail-note", "这台服务器现在**没有**拦「邮箱没确认」——不点也能登录，确认只是为了将来能找回密码。", "warn");
+          text($("verify-lead"), "确认邮件已发往 " + state.regEmail + "。");
+        } else {
+          text($("verify-lead"), "账号建好了。但这台服务器现在**没能把确认邮件发出去**（发信商还没配好）。");
+          note("verify-fail-note", "这台服务器也没拦「邮箱没确认」：现在就可以回「密码登录」用刚才那个密码进来。", "warn");
+        }
+      } else if (r.verifySent) {
         note("verify-fail-note", "", "");
         text($("verify-lead"), "确认邮件已发往 " + state.regEmail + "。点开那条链接之后就能登录。");
+        note("verify-fail-note", "**邮箱确认之后才能登录**：请现在去收件箱点开那条链接。", "warn");
       } else {
-        /* ⚠️ 试了几次、为什么没成 —— 服务端如实带上（`verifyAttempts` / `verifyReason`）。
-           带上它用户才知道「等一下再点重发」还是「这台服务器根本没配发信商」。 */
+        /* 最糟的一格：既拦着，又发不出去。必须一次把两件事都说清 ——
+           只说「账号建好了」等于把用户锁在门外还不告诉他门在哪。
+           ⚠️ 两个分支在这里各改了一半，必须**同时**保留（Issue #197 前半 + 后半）：
+              ① 这台服务器是**拦**确认的 → 不许写「不确认也能用」（那是被推翻的旧口径）；
+              ② 发信商没配好 → 必须把**去哪补**说出来，否则用户只知道「发不出去」，
+                 却不知道该找谁、改哪里。
+           两句合起来才是这一格该说的话：「现在是拦着的 + 信发不出去 +
+           钥匙要去哪插 + 唯一那条出路在下面那颗键」。
+           ⚠️ 试了几次、为什么没成 —— 服务端如实带上（`verifyAttempts` / `verifyReason`）：
+              带上它用户才知道「等一下再点重发」还是「这台服务器根本没配发信商」。 */
         var tries = Number(r.verifyAttempts) || 1;
         text($("verify-lead"), "账号建好了。但这台服务器现在**没能把确认邮件发出去**（已试 "
           + tries + " 次）。");
-        note("verify-fail-note",
-          "点下面的「重发确认邮件」再试一次。如果一直不行，多半是这台服务器还没配好发信商 —— 联系管理员。",
-          "warn");
+        note("verify-fail-note", "而这台服务器**要求邮箱确认之后才能登录**。" +
+          mailNotConfiguredNote(state.regEmail) +
+          " 请稍后点下面那颗「重发确认邮件」，或者联系站长先把发信商配好。", "warn");
       }
       showToast(r.created ? "账号已建好" : "账号信息已更新");
       setMode("verify");
@@ -395,21 +451,14 @@
     return ch.login({ email: email, password: pw }).then(function (r) {
       if ($("input-pw")) $("input-pw").value = "";
       if (!r.ok) {
-        /* ⚠️ 「邮箱还没确认」**不是**普通的登录失败：它不是「口令不对」，
-           而是一件**有出路**的事 —— 去收件箱，或点「重新发一封」。
-           所以这里把它切到那一屏，并且**预填邮箱**（那颗键在匿名口上仍然能用）。
-           只说一句「还没确认」而不给出路，用户会一直回来点登录。 */
-        if (r.code === "E_EMAIL_UNVERIFIED") {
-          var vi = $("input-verify-email");
-          if (vi) vi.value = email;
-          text($("verify-lead"), "这个邮箱还没确认：" + A.maskEmail(email) + "。");
-          note("verify-fail-note", "先去收件箱点开那封确认邮件。没收到就点下面的「重发确认邮件」。", "warn");
-          setMode("verify");
-          return null;
-        }
         /* ⚠️ `E_LOGIN_FAIL` 的文案**原样用服务端那句**（「邮箱或密码不对」）。
            在客户端改写成「这个邮箱没注册过」就等于把全站用户名单
            变成可查询的事实 —— 这正是服务端刻意只说一句话的原因。 */
+        /* ⚠️ `E_EMAIL_UNVERIFIED` **不走这一行** —— 它要的是一整屏
+           「去点确认」（那一屏上有「重新发一封」的键），而不是输入框
+           旁边一行小字。把它当普通错误处理的后果实测过：
+           用户停在登录页反复点「登录」，因为屏幕上没有任何办法把信再来一封。 */
+        if (r.code === "E_EMAIL_UNVERIFIED") { showUnverified(r); return null; }
         msg("msg-pw", r.message, "warn");
         return null;
       }
@@ -424,11 +473,10 @@
         remote: true,
         emailVerified: r.account.emailVerified === true
       });
-      /* 邮箱没确认时**顺手给他留一句**（不拦他进去，只让他知道）。
-         不在这里弹一次确认：「先去用，稍后再确认」是这一页明确给的路。 */
-      if (r.account.emailVerified !== true) {
-        showToast("登录成功；邮箱还没确认（确认后才能找回密码）");
-      }
+      /* ⚠️ 这里**不再有**「邮箱没确认也放进来了」那个分支 —— 默认口径下
+         服务端不会让这种会话签发（走上面那个 403 分支）。
+         留着它等于留一条「万一服务端放行了，界面也装作没事」的暗路；
+         而一个「点不点确认都一样」的界面，正是这道闸最容易被无声撤销的地方。 */
       return r;
     }, function () {
       msg("msg-pw", "连不上服务器，请稍后再试", "warn");
@@ -453,6 +501,13 @@
          「重设邮件已发往 xxx」，就等于替服务端回答了那个问题。
          那一句话把「谁是本站用户」变成可查询的事实（邮箱枚举）。 */
       msg("msg-forgot", "如果这个邮箱在本站注册过，重设链接已经发出去了。", "ok");
+      /* ⚠️ 但「发出去了」有个前提：这台服务器得接上了发信商。
+         没接上时上面那句话对**所有人**都是空的（谁都收不到），
+         所以必须当场说出来 —— 措辞仍不许泄露邮箱存不存在，
+         因为这条讲的完全是服务器的事。 */
+      if (r.mailConfigured === false) {
+        msg("msg-forgot", mailNotConfiguredNote(email), "warn");
+      }
       showToast("请查收邮件");
       return r;
     }, function () {
@@ -622,6 +677,11 @@
           startTick(codeBoxes);
           return;
         }
+        /* 码对的、邮箱没确认（Issue #197 后半段）→ 同样一整屏说清。
+           ⚠️ 这一条**必须在 `E_CODE_*` 那一支之前判**：它是 403、不是 400，
+              走到下面那一支会把「去点确认」说成「验证码不对」，而用户
+              会一直在那儿重填那六位数字。 */
+        if (r.code === "E_EMAIL_UNVERIFIED") { showUnverified(r); return; }
         msg("msg-code", r.message, "warn");
         if (r.code === "E_CODE_VOID" || r.code === "E_CODE_USED") state.cooldown = 0;
         startTick(codeBoxes);
@@ -679,6 +739,85 @@
     location.href = "/profile/";
   }
 
+  /* ------------------------------------------------------------ 邮箱没确认 */
+
+  /**
+   * 「口令对了 / 码也对了，但邮箱还没确认」——**切到「等确认」那一屏**。
+   *
+   * ## 为什么不是输入框旁边一行字
+   * 这条路的下一步**不在这一页**（去收件箱），而且屏幕上必须有一个
+   * 「信还是没收到」的出路（那颗「重新发一封」）。做成一行小字的后果
+   * 实测过：用户停在登录页反复点「登录」，因为没有任何别的可点。
+   *
+   * ## 为什么是一个独立状态而不是复用 setMode("verify")
+   * `setMode("verify")` 是**注册完**那一屏，它的文案里全是「账号建好了…」
+   * ——对「回来登录但没确认」的人说「账号建好了」是一句错话（他早就建好了）。
+   * 所以走 `.account-step` 里单独一块 `step-unverified`，与 `step-done` 同级。
+   *
+   * ⚠️ 进去时**停下倒计时**（`stopTick`）：这一屏与那个码没关系了，
+   *    留着一个每秒跳动的「有效 3:12」会让人以为还要填什么。
+   *
+   * @param {object} r 服务端那一份响应（`message` / `emailMask` / `verifySent`）
+   */
+  function showUnverified(r) {
+    stopTick();
+    setMode("unverified");
+    text($("unverified-lead"), r.message || "邮箱还没确认：请点开注册时那封确认邮件里的链接。");
+    /* ⚠️ 「刚才这一下有没有真发出去」必须分开说 —— 实测过的那句翻车话是
+       「确认邮件已发出」，而发信商是 console（真实用户收不到）。
+       服务端把事实放在 `verifySent` 里，这里照它说。 */
+    if (r.verifySent === true) {
+      note("unverified-note", "我们又发了一封，发往 " + (r.emailMask || "你的邮箱") + "。", "ok");
+    } else if (r.verifySent === false) {
+      note("unverified-note", "这一次没有重复发信 —— 稍后点下面那颗「重新发一封」即可。", "");
+    } else {
+      note("unverified-note", "", "");
+    }
+    msg("msg-unverified", "");
+    var lead = $("unverified-lead");
+    if (lead) lead.focus && lead.focus();
+  }
+
+  /**
+   * 那一屏的「重新发一封」。
+   *
+   * ⚠️ 它**必须能在没登录的情况下用**（这一屏上的人不可能登录着 ——
+   *    登录正是被这道闸挡下来的那件事）。所以它走
+   *    `POST /api/resend-verification` 之外的一条**匿名**路：
+   *    服务端 `send-code` 那条「无论邮箱是否存在，响应完全一致」的纪律
+   *    在 `resend` 上也必须成立，否则这里就成了一个邮箱枚举口
+   *    （「没注册过 / 已确认过」两种回答能筛出全站用户名单）。
+   */
+  function onUnverifiedResend() {
+    var ch = passwordChannel("msg-unverified");
+    if (!ch) return;
+    if (!ch.resendVerificationByEmail) {
+      msg("msg-unverified", "这个页面是旧缓存，刷新一下再试", "warn");
+      return;
+    }
+    var email = (($("input-pw-email") || {}).value || (($("input-email") || {}).value || "")).trim();
+    if (!A.isEmailShape(A.normalizeEmail(email))) {
+      msg("msg-unverified", "请回到登录那一屏填上邮箱，再点这颗键", "warn");
+      return;
+    }
+    msg("msg-unverified", "");
+    return ch.resendVerificationByEmail({ email: email }).then(function (r) {
+      if (!r.ok) { msg("msg-unverified", r.message, "warn"); return null; }
+      /* ⚠️ 文案与 `reset-request` 同一条纪律：**不说这个邮箱注册过没有**。
+         服务端回的也是同一个形状（存在与否都一样）。 */
+      if (r.alreadyVerified) {
+        msg("msg-unverified", "这个邮箱已经确认过了，直接回「密码登录」进来即可。", "ok");
+      } else if (r.verifySent) {
+        msg("msg-unverified", "确认邮件已发往 " + (r.emailMask || "你的邮箱") + "。", "ok");
+      } else {
+        msg("msg-unverified", "这台服务器现在没能把邮件发出去（发信商还没配好），稍后再试。", "warn");
+      }
+      return r;
+    }, function () {
+      msg("msg-unverified", "连不上服务器，请稍后再试", "warn");
+    });
+  }
+
   /* ------------------------------------------------------------ 重发确认邮件 */
 
   /**
@@ -719,11 +858,16 @@
       }
       /* ⚠️ 这里同样不许写「已发出」—— 只写「发往哪」+ 如实标出成没成。
          ⚠️ 匿名口回的 `verifySent` 与生俱来就是 false（服务端刻意不泄露
-         「有没有这个人」），所以这里**不能说「发信商没配好」** ——
-         那是一个我们不知道的结论。正确的说法是那句条件句。 */
+         「有没有这个人」），所以那一支里**不能说「发信商没配好」** ——
+         那是一个我们**不知道**的结论（「不存在」与「存在但没配好」回话逐字相同）。
+         正确的说法是那三档分别对应的那一句话：
+           真发了 / 没发（而且我们知道自己是谁）/ 不知道（匿名）。
+         ⚠️ 判据是「登录态」而不是「`verifySent` 的真假」—— 后者会把
+            匿名那一支错说成「发信商没配好」。 */
       if (signedIn && r.verifySent) {
         msg("msg-verify", "确认邮件已发往 " + (r.emailMask || state.regEmail) + "。", "ok");
       } else if (signedIn) {
+        /* ⚠️ 试了几次 —— 服务端如实带上（`verifyAttempts`）。 */
         msg("msg-verify", "这台服务器现在没能把邮件发出去（已试 " + (Number(r.verifyAttempts) || 1)
           + " 次）。稍后再试。", "warn");
       } else {
@@ -804,11 +948,18 @@
     $("btn-register").addEventListener("click", onRegister);
     $("btn-forgot-send").addEventListener("click", onForgotSend);
     $("btn-resend-verify").addEventListener("click", onResendVerify);
+    $("btn-unverified-resend").addEventListener("click", onUnverifiedResend);
+    $("btn-unverified-back").addEventListener("click", function () { setMode("pw"); });
     $("btn-go-register").addEventListener("click", function () { setMode("register"); msg("msg-reg", ""); });
     $("btn-forgot").addEventListener("click", function () { setMode("forgot"); msg("msg-forgot", ""); });
     $("btn-back-login").addEventListener("click", function () { setMode("pw"); });
     $("btn-back-login2").addEventListener("click", function () { setMode("pw"); });
     $("btn-back-login3").addEventListener("click", function () { setMode("pw"); });
+    /* 「等确认」那一屏左下那颗**返回登录**。⚠️ 它**不再**是「先去用」——
+       默认口径下不确认就是登不进来，摆一颗点进去被 403 挡回来的按钮
+       等于教用户去做一件做不到的事（见 login/index.html 里那段注释）。 */
+    var later = $("btn-verify-later");
+    if (later) later.addEventListener("click", function () { setMode("pw"); });
     bindEye("btn-pw-eye", "input-pw");
     bindEye("btn-reg-eye", "input-reg-pw");
 

@@ -54,7 +54,12 @@
 
         <div id="verify-ok" hidden>
           <p class="account-lead" id="verify-ok-lead"></p>
-          <p class="account-hint">确认之后，忘记密码时就能用它重设密码了。</p>
+          <!-- ⚠️ 这句话在新口径下有两重含义，按服务器自报的那两项说：
+               默认口径（拦确认）下它就是「你可以去登录了」；
+               站长关掉闸的实例上则是「找回密码时用它」。
+               两句话都由 js/verify.js 按 `/api/me` 的事实填进来，
+               这里只留一个空位，**不预置一句可能反过来错的话**。 -->
+          <p class="account-hint" id="verify-ok-hint"></p>
           <div class="account-actions">
             <button class="account-btn" id="btn-verify-login" type="button">去登录</button>
           </div>

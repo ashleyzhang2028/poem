@@ -321,12 +321,12 @@ function publicAccount(cfg, acc) {
 /**
  * 服务端当前**开通到哪一步**（2C）。
  *
- * 为什么要把这三件事下发到界面：docs §4.9 第 2 条那条「不假装」——
+ * 为什么要把这几件事下发到界面：docs §4.9 第 2 条那条「不假装」——
  * 说了「由服务器判定」，就得让用户看得见**这台服务器是什么状态**。
- * 三个字段全部取自既有的判定函数（`cfg.mail()` / `cfg.hasDb()`），
+ * 各项全部取自既有的判定函数（`cfg.mail()` / `cfg.hasDb()`）与配置项本身，
  * 这里**不重算一份**（重算的下场见 config.mail() 那段注释：假绿且不报错）。
  *
- * ⚠️ 未登录时 `/api/me` 回 401，因此这三项**不会**给到未授权的人。
+ * ⚠️ 未登录时 `/api/me` 回 401，因此这几项**不会**给到未授权的人。
  */
 function channelFacts(cfg) {
   var mail = typeof cfg.mail === "function" ? cfg.mail() : "console";
@@ -336,10 +336,32 @@ function channelFacts(cfg) {
     delivered: mail !== "console",                  // console 发的信真实用户收不到
     db: hasDb ? "db" : "memory",                    // memory = 重启即丢，如实标出来
     sms: !!(cfg.smsEnabled && cfg.smsTransport),    // 与 2B 的 503 同口径
-    /* 这台实例拦不拦「未确认邮箱」的登录（§5.5 的应急闸门）。
-       默认 true（拦）。只有**发信真的通不了**的实例才该关掉 ——
-       关掉时界面必须如实标注，否则用户会以为「没确认就进不来」。 */
-    requireVerified: requireVerified(cfg),
+    /* ------------------------------------------------------------------
+       这台服务器拦不拦「邮箱没确认」这件事（Issue #197 后半段）
+       ------------------------------------------------------------------
+       与 `delivered` 同一条纪律：这是一句**关于服务器的事实**，不是一个
+       给界面用的开关。界面据它决定说不说「确认之后才能登录」——
+       而没有配好发信商的实例上，那句话是假话（信根本送不到），
+       界面上必须改口成「这台服务器现在**没有**拦确认」。
+       ⚠️ 它**不参与判权**，也不该被客户端拿去绕任何东西：
+         真闸在服务端（`emailGate`），这里只是如实自报。
+       ⚠️ 只有当「拦」和「能把信送出去」**同时成立**时，界面才可以说
+         「去收件箱点确认」，否则那是一句用户照做也走不通的指引。
+       ⚠️ 名字用 `emailGate` 而不是 `requireVerified`：闸门的判据在
+          `emailGate()` 一处（`api/_lib/core.js`），这个字段只是它的镜像；
+          叫 `requireVerified` 会让读的人以为「这里也是一个独立开关」。
+       ------------------------------------------------------------------ */
+    emailGate: !!requireVerified(cfg),
+    /* ⚠️ `requireVerified` 是 `emailGate` 的**别名** —— 同一个值，
+       取两个名字只有一个理由：合并时两边的调用点各叫各的
+       （界面 `js/*.js` 读 `emailGate`；第廿六节那几条断言读
+       `requireVerified`）。让它们**各自读到同一个源**，
+       比把某一侧的调用点统统改一遍要稳 —— 改调用点的下场是「漏改一处」，
+       而漏改的那一处会以 `undefined` 静默地当成「不拦」。
+       ⚠️ 两个名字**永远不许**出现不同的值：它们的来源都只有
+       `requireVerified(cfg)` 这一个函数（见上面那段）。 */
+    requireVerified: !!requireVerified(cfg),
+    emailDeliverable: mail !== "console",
     /* ---------------------------------------------------------------
        `rate: "instance"` —— **登录态的频控与猜错封禁只在本实例内有效**
        ---------------------------------------------------------------
@@ -902,12 +924,26 @@ function verifyCode_(deps, input) {
       .then(function () { return store.getAccount(rec.uid); })
       .then(function (acc) {
         if (!acc || acc.status === "deleted") return err(400, "E_CODE_VOID", "请用最新收到的验证码");
-        /* ⚠️ 邮箱确认闸 —— **紧随口令/码校验之后**（见 verifyGate 的说明）。
-           这道闸原先只写在口令那一条路上，随机码那条路压根没看账号状态，
-           于是「不确认就不让登录」只要换个页签就绕过去了。
-           判在这里而不是上面早退，是为了不把「注册过没确认」变成可查询的事实。 */
-        var gate = verifyGate(cfg, acc);
-        if (gate) return gate;
+        /* ------------------------------------------------------------------
+           码验对了，但邮箱没确认 → 同样不让进（与口令那条路同一处判据）
+           ------------------------------------------------------------------
+           ⚠️ 这一条**不是可选的补充**，它与口令那条是同一件事的两半：
+              只堵口令那条路的话，「注册了不确认」的人换一个页签
+              就能用随机码长驱直入 —— 那这道闸等于没做，而界面上
+              还写着「确认后才能登录」。限制写在 A 处、绕过在 B 处，
+              正是本项目反复踩过的那个形状。
+           ⚠️ 顺序：**先把码消费掉再判闸**（上面那一句 patchCode 就是）。
+              反过来的话，「没确认」的人每一次都能拿同一枚码再试（码没消费），
+              而那一枚码会一直有效到过期 —— 于是「确认完再回来填那枚码」
+              也变成一条路，界面上就会写出「刚才那枚码还能用」这种不该有的承诺。
+           ⚠️ 这一处**不**顺手发确认邮件（同 emailGate 的说明）：码这条路
+              每次被拦都发一封，就等于任何人拿一个已知的未确认邮箱
+              反复刷登录即可给机主发垃圾邮件。
+           ⚠️ 判据只有一处（`emailGate`），本文件里三条路各读它一次：
+              口令登录 / 随机码登录 / 「等确认」那一屏的出路。
+           ------------------------------------------------------------------ */
+        var gate = emailGate(deps, acc);
+        if (gate) return Promise.resolve(gate);
         acc.last_login_at = t;
         return Promise.resolve(store.putAccount(acc)).then(function (saved) {
           var s = session.issue(cfg, acc.uid, t);
@@ -942,11 +978,22 @@ function verifyCode_(deps, input) {
       「忘记密码是最高频的求助」），所以「不想记口令的人」必须还有得走。
       两条路签发的会话完全一样（同一个 `session.issue`）。
 
-   ② **不确认邮箱也能用，但界面如实说「待确认」**。
-      把「没点确认邮件」做成「登不进去」是拿用户当人质（§1 第 2 条：
-      不拿任何现有功能当人质）。确认的价值是「找回口令 / 换设备时的凭据」，
-      不是「进门资格」。确认与否落成 `status='pending'|'active'` 与时间戳两处，
-      界面读 `emailVerified`。
+   ② **不确认邮箱就不让登录**（用户 2026-09-16 在 Issue #197 裁决，
+      推翻了本节前一版「不确认也能用」的口径）。
+      这一条只落在**账号那条路**上（注册 / 口令登录 / 快捷码登录），
+      而且是三件事一起做的，缺一件就等于没做：
+        · `emailGate()` —— 统一判据，登录那一侧**读**它
+        · 注册时**立刻发第二封确认邮件** —— 因为「注册完不能登录」
+          这条路上，那封信是用户唯一的出路，丢了就彻底卡住
+        · 老账号（这条口径之前建的、没确认过的）在**注册路径**上补一封，
+          并在前端一屏「去点确认」里给他一个「重新发一封」的键
+      ⚠️ 它**不是**「拿功能当人质」：确认之前**一个字都不需要账号** ——
+         /login/ 的「快捷登录 · 本地体验版」、全部背诵、全部进度照旧可用
+        （`docs/auth-design.md` §1 第 2 条讲的是**现有功能**，不是注册）。
+      ⚠️ 应急闸门 `cfg.requireEmailVerified`：没配好发信商的实例上由运维
+        显式关掉（默认开）。关掉时界面**如实说明这台服务器没拦确认** —— 
+         不许让用户以为「没确认就进不来」。
+      确认与否落成 `status='pending'|'active'` 与时间戳两处，界面读 `emailVerified`。
 
    ③ **明文口令一秒钟都不落任何地方**。库里只有
       `scrypt$N$r$p$salt$hash`（见 `identity.hashPassword`）。
@@ -978,7 +1025,24 @@ function checkPassword(cfg, pw) {
 }
 
 /**
- * 邮箱确认闸（Issue #197 复审）—— **两条登录路都读它**，只此一处。
+ * 应急闸门 `REQUIRE_EMAIL_VERIFIED` 的读处 —— **只在这里读一次**。
+ *
+ * 返回 `true` = 拦（默认）。
+ *
+ * ⚠️ 读 `this`（与 `cfg.mail()` / `cfg.hasSession()` 同一条纪律）：
+ *    测试里 `Object.assign({}, CONFIG, {...})` 这类覆盖必须生效。
+ * ⚠️ 判据是 `!== false` 而不是 `=== true`：漏配一项时**拦**是安全的那一侧；
+ *    要关掉它必须显式写 `0` / `false`，不打折扣。
+ */
+function requireVerified(cfg) {
+  if (!cfg) return true;
+  return cfg.requireEmailVerified !== false;
+}
+
+/**
+ * 邮箱确认闸（Issue #197）—— **「不确认就不让登录」这条口径的唯一判定点**。
+ *
+ * 返回 `null` 表示放行，否则是一个已经成形的 403 响应。
  *
  * ## 它为什么必须存在，而且必须只写一处
  *
@@ -989,6 +1053,11 @@ function checkPassword(cfg, pw) {
  *   · 走口令路同样可拿；（见 test/api.test.js 第廿六节 ①）
  * 也就是说「邮箱确认」这件事在服务端**一处都没生效过**：
  * 随机码那条路是更早的 1A 就有的、签会话时压根不看账号状态。
+ *
+ * 这条闸在**口令登录**与**快捷码登录**两条路上生效（两者各读它一次）。
+ * 两处各写一遍 `if (!acc.email_verified_at) …` 的下场是「其中一处忘了加」——
+ * 而漏掉的那一处恰好就是唯一能被直接打的那个接口（手改客户端即可）。
+ * 所以判据、错误码、文案、附带字段全部只在这里写一份。
  *
  * ## 判据为什么落在「口令/码校验之后」
  *
@@ -1008,37 +1077,65 @@ function checkPassword(cfg, pw) {
  * **发信商没配（console 通道）时，确认邮件送不到真人的收件箱。**
  * 在那台实例上开着这道闸，等于谁也别想注册。所以判据是
  * 「拦，且**只在那台实例发信通不了时才允许关**」—— 关掉时界面必须看得出来
- * （`/api/me` 与注册响应都自报 `requireVerified:false`），
+ * （`/api/me` 的 `channel.emailGate` 与注册响应的 `requiresVerification` 都自报），
  * 不然用户会以为「没确认就进不来」而实际上进得来。
- */
-function requireVerified(cfg) {
-  /* 读 `this`：与 cfg.mail() / cfg.hasSession() 同一条纪律 ——
-     测试里 `Object.assign({}, CONFIG, {...})` 这类覆盖必须生效。 */
-  if (!cfg) return true;
-  return cfg.requireEmailVerified !== false;
-}
-
-/**
- * 账号是否「可以登录」。返回 null 表示放行，否则是一个 `{status, code, message, extra}`
- * 形状的拒绝 —— 与 err() 同形，便于调用处直接返回。
  *
- * ⚠️ 只判**邮箱确认**这一件事。`locked`（猜错封禁）在各自的路上另有判据
- *    （因为两者的「下一步动作」不同：一个去收件箱，一个等时间）。
+ * ## ⚠️ 老账号不倒扣（这一条是从上一版 `verifyGate` 学来的，别删）
+ *
+ * `status === 'pending'` 才是「流程内如实标着『待确认』」的那一档。
+ * Issue #197 之前建的账号没有 `email_verified_at`，但它们**曾经是能用的**：
+ * 把它们一并拦下，等于在旧实例上升级一次就锁死全部老用户 ——
+ * 而他们连「重发确认邮件」那颗键都找不到（那颗键要登录）。
+ * 所以：
+ *   · `status === 'pending'` 且没确认 → 拦
+ *   · 其余（老行没有这个状态、或 active）→ 放行，但**不假装已确认**
+ *     （`publicAccount().emailVerified` 仍如实为 false）
+ * 这条不是「网开一面」，是「不把口径变更倒扣到已经存在的账号上」。
+ *
+ * ## ⚠️ 注册那条路**不读它**
+ *
+ * 注册要的恰恰是「还没确认的人也走得通」：它的下一步是发一封确认邮件
+ * （`core.register`），不是把人挡回去。把闸也加到注册上，就成了一条死循环：
+ * 没确认 → 不让注册 → 发不出信 → 永远确认不了。
+ * 其余需要登录的接口（`/api/me` / 同步 / 注销 / 重发确认）**也不读它**：
+ * 那些接口的会话是登录那一刻签出来的，而登录那一刻已经过闸 ——
+ * 在每一处再查一遍不会更安全，只会让「改主邮箱」这类将来的动作
+ * 多出一堆要同步修改的地方。
+ *
+ * ⚠️ 它**不顺手重发确认邮件**：判据里发信 = 每一次失败的登录都烧一封邮件，
+ *    而「重发」必须是用户自己的动作（那颗键在界面上）。
+ *    也绝不因为「发不出去」就放行 —— 那是拿安全换顺畅。
  */
-function verifyGate(cfg, acc) {
+function emailGate(deps, acc) {
+  var cfg = deps && deps.cfg ? deps.cfg : deps;
   if (!requireVerified(cfg)) return null;
-  /* ⚠️ 老账号（Issue #197 之前建的）没有 `email_verified_at`，
-     但它们**曾经是能用的**。把它们一并拦下，等于在旧实例上升级一次
-     就锁死全部老用户 —— 而他们连「重发确认邮件」那颗键都找不到
-     （那颗键要登录）。所以：
-       · `status === 'pending'`（流程内如实标着「待确认」）→ 拦
-       · 其余（老行没有这个状态、或 active）→ 放行，但**不假装已确认**
-         （`publicAccount().emailVerified` 仍如实为 false）
-     这条不是「网开一面」，是「不把口径变更倒扣到已经存在的账号上」。 */
-  if (acc && acc.status === "pending" && acc.email_verified_at == null) {
-    return err(403, "E_EMAIL_UNVERIFIED", "邮箱还没确认，先去收件箱点开那封确认邮件（登录页有一颗「重新发一封」）");
-  }
-  return null;
+  if (acc && acc.email_verified_at != null) return null;
+  /* 老账号（`status` 不是 `pending`）放行 —— 见上面那段「老账号不倒扣」。 */
+  if (!(acc && acc.status === "pending")) return null;
+  return err(403, "E_EMAIL_UNVERIFIED",
+    "邮箱还没确认：请点开注册时那封确认邮件里的链接。没收到就点「重新发一封」。",
+    {
+      /* ⚠️ 掩码**不是**明文邮箱：它给界面回显「发往哪儿」，而明文只在
+         `/api/me`（「你自己」那两条）里出现。 */
+      emailMask: (acc && acc.email_mask) || "***",
+      /* ------------------------------------------------------------------
+         `verifySent` / `verifyTransport` 在这里**恒为 false / null**
+         ------------------------------------------------------------------
+         为什么不干脆不带这两个字段：界面那两处（登录页「等确认」那一屏、
+         `js/auth-api.js` 的错误对象）是**同一条渲染**，它按
+         `verifySent === true` / `=== false` / 缺省 三档说三句话
+         （真发了 / 没发 / 不知道）。缺字段会让「不知道」那一档
+         与「确实没发」混成同一个样子 —— 而两者该说的话不一样。
+         为什么恒为 false：**这条路上刻意不发信**（见上面那段说明）。
+         真正会临时为 true 的地方是**注册**那条路（`core.register` 里
+         `verifySent: v.sent` 来自 `issueVerification` 的实测结果）。
+         ⚠️ 留成常量是**故意的**：这个字段表示「**刚刚**有没有发」，
+            不是「曾经发过没有」。一个「曾经发过」的字段到了界面上
+            会变成一句错的现在时（「已经发往…」），而信可能早就过期了。
+         ------------------------------------------------------------------ */
+      verifySent: false,
+      verifyTransport: null
+    });
 }
 
 /** 一次性令牌的形状校验：64 位 hex。形状不对**不进库**（省一次查询，也少一条脏数据） */
@@ -1046,7 +1143,16 @@ function isTokenShape(t) {
   return /^[0-9a-f]{64}$/.test(String(t || ""));
 }
 
-/** 按明文邮箱查账号（`email` 那一列）。**只给管理员路径之外的两处用** */
+/**
+ * 按**明文**邮箱那一列查账号。
+ *
+ * ⚠️ 这是一次 `listAccounts()` 全表扫描 —— 只给**不需要按摘要命中**的少数
+ *    几处用（匿名重发确认邮件、管理路径）。登录/注册那种「按摘要查一行」的
+ *    路径走 `store.getAccountByHash`，不要用这一条。
+ * ⚠️ 这一条**必须与摘要那条路给出同一个答案**：明文列是老行补上的，
+ *    所以这里没有「按 hash 兜底」的第二段 —— 老行（没有明文列）本来就
+ *    不该走匿名重发口（那封信当年也没发过）。
+ */
 function findAccountByEmail(store, email) {
   var want = id.normalizeEmailForStore(email);
   return Promise.resolve(store.listAccounts()).then(function (rows) {
@@ -1055,9 +1161,6 @@ function findAccountByEmail(store, email) {
       if (hit || !a || a.status === "deleted") return;
       if (String(a.email || "") === want) hit = a;
     });
-    /* ⚠️ 退一步：老行没有明文那一列时按 hash 找。这一步是**过渡期**用的，
-       不是长久的兜底 —— 老数据回填之后它自然不再命中。 */
-    if (!hit) return null;
     return hit;
   });
 }
@@ -1144,13 +1247,45 @@ function register(deps, input) {
       acc.status = "pending";
     }
     return Promise.resolve(store.putAccount(acc)).then(function (saved) {
-      return issueVerification(deps, saved || acc).then(function (v) {
+      var cur = saved || acc;
+      /* ------------------------------------------------------------------
+         要不要在这儿再发一封确认邮件
+         ------------------------------------------------------------------
+         口径（Issue #197 后半段）：**只要邮箱还没确认，注册这条路就发信**，
+         不管这是全新注册还是老账号重新注册。
+
+         为什么这一条不能省：确认邮件是「没确认就不让登录」这条路上用户
+         **唯一的出路**。少发一封的下场是——用户在注册页填完邮箱与口令，
+         看到「账号已建好」，然后发现自己**既登不进去、又没有任何办法
+         让那封信再来**（重发确认邮件那颗键在个人中心里，而个人中心要登录）。
+         那就是一个死结，而且是用户自己造不出来的死结。
+
+         已经确认过的人**不再发**：他不是走不通，是回来重新注册而已
+         （保留旧口令 + 保留确认状态，见上面那一段）。
+         少发一封也顺手省掉一封垃圾邮件，并且让 `verifySent` 这个字段
+         仍然说真话（「这一封是新发的」而不是「顺手又发了一封」）。
+         ------------------------------------------------------------------ */
+      if (cur.email_verified_at != null) {
+        var masked = cur.email_mask || id.maskEmail(email);
         return ok({
-          uid: (saved || acc).uid,
+          uid: cur.uid,
           registerRequested: true,
           created: r.created,
           store: store.kind,
-          /* ⚠️ 这三个字段是**给界面说实话用的**，不是给用户看的：
+          emailVerified: true,
+          emailMask: masked,
+          verifySent: false,
+          verifyTransport: null,
+          note: "邮箱已经在确认过了 —— 这次只更新了密码，确认状态保持不变。"
+        });
+      }
+      return issueVerification(deps, cur).then(function (v) {
+        return ok({
+          uid: cur.uid,
+          registerRequested: true,
+          created: r.created,
+          store: store.kind,
+          /* ⚠️ 这两个字段是**给界面说实话用的**，不是给用户看的：
              `verifySent` 为 false（console 发信商）时界面必须写
              「本次没能把确认邮件发出去」，绝不写「确认邮件已发出」。 */
           verifySent: v.sent,
@@ -1159,14 +1294,22 @@ function register(deps, input) {
              不带它的话用户只有「没能发出」一句，不知道该等一下还是该找运维。 */
           verifyAttempts: v.attempts || 1,
           verifyReason: v.reason || null,
+          /* ⚠️ 确认之前**登不进去**（默认口径），所以界面必须把话说全：
+             下一步是去收件箱点链接，不是回登录页。 */
+          emailVerified: false,
+          emailMask: cur.email_mask || id.maskEmail(email),
           /* 服务端把「这台实例拦不拦未确认邮箱」**如实自报** ——
              运维为了应急关掉闸门（REQUIRE_EMAIL_VERIFIED=0）时，
-             界面必须看得出来，否则用户会以为「没确认就进不来」。 */
-          requireVerified: requireVerified(cfg),
+             界面必须看得出来，否则用户会以为「没确认就进不来」。
+             ⚠️ 与 `/api/me` 的 `channel.emailGate` **同一处来源**（`emailGate()`），
+                不重算一份：两处各写一遍的下场是某天只改了一处。 */
+          requiresVerification: !!requireVerified(cfg),
           /* 冒烟自测口子：与发码的 devCode 同一条纪律 ——
              只有显式开 ALLOW_CODE_ECHO 才回明文令牌，默认关。 */
           devVerifyToken: cfg.allowCodeEcho ? v.token : undefined,
-          note: "邮箱只在你自己主动填时收集；已在库中记下，供你确认与找回密码。"
+          note: cfg.requireEmailVerified
+            ? "邮箱只在你自己主动填时收集；已在库中记下。**邮箱确认之后才能登录**，请去收件箱点那条链接。"
+            : "邮箱只在你自己主动填时收集；已在库中记下，供你确认与找回密码。"
         });
       }).then(function (out) {
         // 发信失败不该让「注册」这件事整体失败：账号已经建好了，
@@ -1373,11 +1516,22 @@ function loginWithPassword(deps, input) {
         return err(401, GREY.code, GREY.message, { remaining: Math.max(0, 10 - fails) });
       }
 
-      /* ⚠️ 邮箱确认闸：判在**口令校验成功之后**（见 verifyGate 的说明）。
-         判在之前的话，「这个邮箱注册过但没确认」与「这个邮箱压根不存在」
-         会给出两种不同的回答 —— 那就成了邮箱枚举口。 */
-      var gatePw = verifyGate(cfg, acc);
-      if (gatePw) return gatePw;
+      /* ------------------------------------------------------------------
+         口令对了，但邮箱没确认 → **仍然不让进**（Issue #197 后半段）
+         ------------------------------------------------------------------
+         ⚠️ 闸必须在**口令校验之后**判，这一处顺序是有讲究的：
+             · 判在前面（拿到账号就判）——「这个邮箱注册过但没确认」
+               会与「这个邮箱压根不存在」给出**两种不同的响应**，
+               等于把「谁是本站用户」变成可查询的事实（邮箱枚举）。
+             · 判在后面（口令对了才判）—— 攻击者先得猜中口令，
+               那时他本来就已经是账号主人了，多说一句「去确认邮箱」
+               不泄露任何他还不知道的东西。
+         这一条与「口令错 / 账号不存在」那句统一文案是同一条纪律的两半：
+         在**没有凭据**的时候一个字都不多给，在**有凭据**的时候把路说清。
+         ⚠️ 判据只有一处（`emailGate`）—— 随机码那条路读的是同一个函数。
+         ------------------------------------------------------------------ */
+      var gatePw = emailGate(deps, acc);
+      if (gatePw) return Promise.resolve(gatePw);
 
       /* 成功：清掉失败窗口（否则「错九次、对一次、再错一次」就锁号了） */
       if (limiter.clearFails) limiter.clearFails("login", "uid:" + acc.uid);
@@ -1410,7 +1564,14 @@ function resetRequest(deps, input) {
     requested: true,
     store: store.kind,
     ttlSeconds: Math.round((cfg.resetTtlMs || 3600000) / 1000),
-    note: "如果这个邮箱在本站注册过，我们已经把重设链接发了出去。"
+    note: "如果这个邮箱在本站注册过，我们已经把重设链接发了出去。",
+    /* ⚠️ 这一条是**事实**（与 register 的 verifySent 同一条纪律），
+       而且它**不泄露「这个邮箱注册过没有」** —— 它说的是
+       「本站的发信商配好了没有」，那是这台服务器的属性，
+       与请求里那个邮箱是谁无关。所以对**不存在的邮箱**它也必须在这里：
+       否则「没这一条 = 注册过、有这一条 = 没注册过」就成了新的枚举口
+       （`test/api.test.js` 有断言钉着这条：存在与不存在回同一个形状）。 */
+    mailConfigured: cfg.mail() !== "console"
   };
   if (!id.isEmailShape(email)) return Promise.resolve(err(400, "E_EMAIL_FORMAT", "这个邮箱看起来不太对，再检查一下"));
 
@@ -1556,7 +1717,22 @@ function resetConfirm(deps, input) {
               reset: true,
               emailMask: acc.email_mask || "***",
               sessionsRevoked: true,
-              note: "密码已重设。为了安全，其它设备上的登录已全部退出，请用新密码重新登录。"
+              /* ------------------------------------------------------------------
+                 邮箱还没确认时，**必须**在这一句里说出来
+                 ------------------------------------------------------------------
+                 否则就是那个最难查的用户投诉：他走完「忘记密码」整套流程
+                 （收信、点链接、填新口令、看到「请用新密码重新登录」），
+                 回去一登 —— 403「邮箱还没确认」。
+                 他会以为自己刚设的密码没生效，于是再来一遍。
+                 ⚠️ 这里**不顺手把他的确认状态改成已确认**（同上面那段：
+                    能收到重设邮件 ≠ 点过确认链接；两件事各写各的）。
+                    能做的只有「如实告诉他还有一步」——
+                    而那一步的入口就在登录页那一刻（那颗「重新发一封」）。
+                 ------------------------------------------------------------------ */
+              emailVerified: acc.email_verified_at != null,
+              note: acc.email_verified_at != null
+                ? "密码已重设。为了安全，其它设备上的登录已全部退出，请用新密码重新登录。"
+                : "密码已重设。为了安全，其它设备上的登录已全部退出。**但这个邮箱还没确认，暂时登录不了** —— 请到登录页点「重新发一封确认邮件」，点开那封邮件里的链接之后再用新密码登录。"
             });
           });
       });
@@ -1689,6 +1865,29 @@ function resendVerification(deps, input) {
     });
   }
   return Promise.resolve(store.getAccountByHash(id.emailHash(email, pepperOf(cfg)))).then(act);
+}
+
+/**
+ * 匿名重发确认邮件（`POST /api/resend-verification-by-email`）。
+ *
+ * ## 为什么有这一条，而它不是第三份实现
+ *
+ * 上一轮（PR #199 那一支）把匿名口做成了一个**独立函数**，与要登录那条
+ * 各写一遍闸、各写一遍 `SAME`。两条各写一遍的下场正是本仓库反复踩过的形状：
+ * 某天改了一句文案 / 加了一档频控，只有一条被改到。所以现在
+ * **判据、频控、冷区、反枚举响应全部只住在 `resendVerification` 里** ——
+ * 这一条只是「强制走匿名分支」的那一个薄壳。
+ *
+ * ⚠️ 它**不接受 `deps.account`**：这一条的语义就是「我登不进来」。
+ *    带着会话调它，应当走要登录那条（那样能回得更细，也是调用方的本意）。
+ * ⚠️ 保留它是为了**兼容既有调用点**（`/api/resend-verification-by-email`
+ *    那条路由与前端 `js/auth-api.js` 的 `resendVerificationByEmail`）。
+ *    新代码请直接用 `resendVerification`：它两条入口都认。
+ */
+function resendVerificationByEmail(deps, input) {
+  var anonDeps = Object.assign({}, deps);
+  delete anonDeps.account;      // 「匿名」这件事由**这一条**保证，不由调用方
+  return resendVerification(anonDeps, input || {});
 }
 
 /* ---------------------------------------------------------- /me */
@@ -2540,6 +2739,14 @@ function accountDelete(deps, input) {
 
 module.exports = {
   ok: ok,
+  /* ⚠️ **只为测试**：把核心拿到的那一份 mail 模块暴露出来。
+     为什么需要它：`test/api.test.js` 的 `boot()` 会清 `api/` 的 require 缓存
+     再重新 require，于是「测试文件自己 require 到的那一份」与
+     「core 内部持有的那一份」在某些调用顺序下**不是同一个对象**——
+     替换其中一个的 `confirm()` 不生效，而症状是「链路没走到发信层」
+     这样一个与真正原因完全无关的结论（这个坑实测踩过一次）。
+     暴露它是为了**只替换真正被调用的那一个**。生产代码不用它。 */
+  __mail: mail,
   err: err,
   sendCode: sendCode,
   verifyCode: verifyCode_,
@@ -2556,6 +2763,7 @@ module.exports = {
   register: register,
   loginWithPassword: loginWithPassword,
   verifyEmail: verifyEmail,
+  resendVerificationByEmail: resendVerificationByEmail,
   resendVerification: resendVerification,
   resetRequest: resetRequest,
   resetConfirm: resetConfirm,

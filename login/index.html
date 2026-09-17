@@ -157,7 +157,7 @@
           </div>
           <button class="account-btn" id="btn-register" type="button">注册</button>
           <p class="account-msg" id="msg-reg"></p>
-          <p class="account-hint">注册后我们发一封确认邮件，<strong>点开确认之后才能登录</strong>。没收到就回上一屏点「重新发一封」。</p>
+          <p class="account-hint">注册后我们发一封确认邮件，<strong>点开确认之后才能登录</strong>（这是为了保护你的账号）；确认链接 24 小时内有效。没收到就回上一屏点「重新发一封」，<strong>不需要先登录</strong>。</p>
           <p class="auth-links"><button class="link-btn" id="btn-back-login" type="button">返回登录</button></p>
         </div>
 
@@ -174,6 +174,11 @@
                    placeholder="you@example.com" maxlength="120" />
           </div>
           <button class="account-btn" id="btn-resend-verify" type="button">重发确认邮件</button>
+          <!-- ⚠️ 这一颗原先是那种「稍后再确认、先拿去用」的键。默认口径改成
+               「没确认就不让登录」之后，它成了一句**照做也走不通**的话
+               （点进去还是被 403 挡回来）。改成「返回登录」——
+               这一屏不要摆一颗做不到的键。 -->
+          <button class="account-btn ghost" id="btn-verify-later" type="button">返回登录</button>
           <p class="account-msg" id="msg-verify"></p>
           <p class="account-hint">确认链接 24 小时内有效。没收到就点上面那颗重发 ——
             <strong>没登录也能点</strong>（确认之后才能登录，所以这里不能要你先登录）。</p>
@@ -201,6 +206,24 @@
           <p class="account-hint"><strong>邮箱还没确认</strong>的话，先去登录页点「重新发一封确认邮件」——
             没确认的账号暂时登不进去。</p>
           <p class="auth-links"><button class="link-btn" id="btn-back-login2" type="button">返回登录</button></p>
+        </div>
+
+        <!-- ==================================================================
+             口令对了 / 码也对了，但**邮箱还没确认**（Issue #197 后半段）
+             ------------------------------------------------------------------
+             ⚠️ 这一屏**不复用**上面「注册完那一屏」：那边开头一句是
+                「账号建好了」，而对回来登录的人来说那是**一句错话**。
+             ⚠️ 这一屏上的人**必然是未登录**的（登录正是被这道闸挡下来的
+                那件事），所以「重新发一封」走的是一条匿名接口 ——
+                而那条接口对「没注册过 / 已确认过」必须回同一个形状。
+             ================================================================== -->
+        <div class="account-step" id="step-unverified" hidden>
+          <p class="account-lead" id="unverified-lead"></p>
+          <div class="account-note" id="unverified-note" hidden></div>
+          <button class="account-btn" id="btn-unverified-resend" type="button">重新发一封确认邮件</button>
+          <button class="account-btn ghost" id="btn-unverified-back" type="button">返回登录</button>
+          <p class="account-msg" id="msg-unverified"></p>
+          <p class="account-hint">确认之前，本站的背诵功能照旧完全可用（走「快捷登录」的本地体验版）——被拦住的只有云端账号。</p>
         </div>
 
         <!-- ---------- 登录后：补昵称 ---------- -->
