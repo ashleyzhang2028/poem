@@ -1,19 +1,31 @@
 /**
- * 字符印头像测试（Issue #132 · 用户 2026-09-15 裁决「头像听你的」）
+ * 头像测试（Issue #163 · 2026-09-19 用户裁决）
+ * ==========================================================================
+ * 用户原话：
  *
- * 纯 Node、不联网、不装新依赖 —— 被测文件 js/avatar.js 零 DOM 依赖。
+ *   「头像印记设置和传统用户头像流程不符，让人困惑，直接删除这个功能，
+ *     四个颜色背景选择全部删除。直接用用户名的第一个字母或者汉字显示在头像里。
+ *     允许用户上传图片作为头像，在上传前进行本地压缩，支持用户进行方形裁切，
+ *     放大缩小裁切，然后再上传裁切后的图片作为头像到 supabase 的文件或者图像存储。」
  *
- * 这里守的是五件事：
- *   1. **合规**：不收集任何东西 —— 只有「从固定集合里挑的一个索引」，
- *      不弹文件框、不存 base64、不请求任何接口、不用邮箱首字母
- *   2. **永不空**：三档回落（用户选的字 → 昵称首字 → 默认「诗」），任何脏值都不出裂图
- *   3. **分域正确**：头像与昵称住 `poem_profile_v1`（账号域），
- *      **不写** `poem_device_prefs_v1`（设备域）、**不写** `poem_recite_progress_v1`
- *   4. **兼容读**：昵称取值 `poem_profile_v1` → 老 `settings.username` → 空串；
- *      写昵称一律写新键并清掉老字段（幂等）
- *   5. **非枚举值不生效**：自由输入的字 / 任意色值一律拒收（不写盘），不静默变默认
+ * 于是这里守的是七件事：
+ *   1. **那套自造的流程真的没了**：固定字集、固定四色、`.seal-*` 全部不在代码里
+ *   2. **首字回落**：昵称的第一个字母 / 汉字（英文大写），昵称为空才回落到默认「诗」
+ *   3. **地址是白名单**：只认 https / /api/avatar/ / data:image（导入的备份）；
+ *      `javascript:` 与任意 `http:` 一律拒收（那是 XSS 口子，不是「图不显示」）
+ *   4. **分域正确**：云端地址住账号域 `poem_profile_v1`，**本机那份图**住
+ *      设备域 `poem_avatar_local_v1` —— 后者不上云、不进导出（几十 KB 的 base64）
+ *   5. **不用邮箱首字母**：那等于把邮箱摘要的一半画在屏幕上
+ *   6. **纯几何**：方形裁切的换算（cropRect / zoomRange / clampOffset）在
+ *      Node 里对拍，不依赖 canvas
+ *   7. **老数据零感知**：上一版的 `avatar:{char,ink}` 读进来不炸，
+ *      只是回到「昵称首字」那一档
+ *
+ * 另有一节扫源码：页面不许自己拼一份头像 HTML、不许再把 .seal-* 长回来。
  */
+const fs = require('fs');
 const A = require('../js/avatar.js');
+const AI = require('../js/avatar-image.js');
 
 let fails = 0;
 const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else console.log('✓ ' + m); };
@@ -31,168 +43,265 @@ function mem(init) {
   };
 }
 
-console.log('=== 一、三档回落：任何情况下都有一枚印，绝不空 ===');
+console.log('=== 一、首字印：昵称的第一个字母 / 汉字，永远画得出来 ===');
 {
   const b = mem();
   let d = A.display(b);
-  eq(d.char, '诗', '全新用户 → 默认「诗」字');
-  eq(d.source, 'default', '来源如实标为「默认字」');
-  eq(d.ink, 'seal', '默认印色是朱砂');
-  chk(d.char.length > 0 && d.bg && d.fg, '默认印有字、有底色、有字色（不是空白圆）');
+  eq(d.char, '诗', '没昵称 → 默认「诗」字');
+  eq(d.source, 'default', '来源如实标为默认');
+  eq(d.hasImage, false, '没有图');
 
   A.setNickname(b, '玥玥');
-  d = A.display(b);
-  eq(d.char, '玥', '没选过字时，取昵称首字');
-  eq(d.source, 'nickname', '来源如实标为「取自昵称首字」');
+  eq(A.display(b).char, '玥', '中文取第一个汉字');
+  eq(A.display(b).source, 'nickname', '来源如实标为「用户名首字」');
 
-  A.setAvatar(b, { char: '梅' });
-  d = A.display(b);
-  eq(d.char, '梅', '选过字后，以用户选的为准（昵称变了也不跟着变）');
-  eq(d.source, 'chosen', '来源如实标为「你选的字」');
+  A.setNickname(b, 'ashley');
+  eq(A.display(b).char, 'A', '拉丁字母取首字母并大写');
 
-  A.setNickname(b, '');
-  eq(A.display(b).char, '梅', '清空昵称后，已选的字仍在（印不跟着昵称一起丢）');
+  A.setNickname(b, '🐟鱼');
+  eq(A.display(b).char, '🐟', 'emoji 整个取出（charAt(0) 会劈成半个代理对）');
+
+  A.setNickname(b, '   ');
+  eq(A.display(b).char, '诗', '全是空白 → 回落到默认字');
 }
 
-console.log('\n=== 二、脏值一律回落，绝不抛、绝不留空 ===');
+console.log('\n=== 二、上一版那套「固定字 + 固定四色」真的删干净了 ===');
 {
-  eq(A.display(mem({ poem_profile_v1: 'not-json' })).char, '诗', '档案不是 JSON → 回落默认');
-  eq(A.display(mem({ poem_profile_v1: '[1,2]' })).char, '诗', '档案不是对象 → 回落默认');
-  eq(A.normAvatar(null).char, '', 'normAvatar(null) 回落到空（由 display 兜底）');
-  eq(A.normAvatar({ char: '龘' }).char, '', '字不在固定集合里 → 归一化为空');
-  eq(A.normAvatar({ ink: '#ff0000' }).ink, '', '任意色值 → 归一化为空');
-  const dirty = mem({ poem_profile_v1: JSON.stringify({ avatar: { char: 42, ink: {} } }) });
-  eq(A.display(dirty).char, '诗', '非字符串的字 → 走上位兜底');
-  eq(A.display(dirty).ink, 'seal', '非字符串的色 → 朱砂');
+  const src = fs.readFileSync('js/avatar.js', 'utf8');
+  ['CHARS', 'INKS', 'INK_KEYS', 'isChar', 'isInk', 'DEFAULT_INK'].forEach(function (k) {
+    chk(!new RegExp(k).test(src), 'js/avatar.js 里不再有 ' + k + '（用户点名删掉的那套）');
+  });
+  chk(typeof A.CHARS === 'undefined' && typeof A.INKS === 'undefined',
+    '模块出口也不再有字集 / 印色');
+  chk(!/seal/i.test(src), '源码里不再出现 seal 字样');
+  /* 页面与样式表里也不许长回来 */
+  ['settings/general/index.html', 'css/style.css', 'js/settings.js'].forEach(function (f) {
+    const t = fs.readFileSync(f, 'utf8');
+    chk(!/seal-chars|seal-inks|seal-chip|seal-ink|btn-seal-reset/.test(t),
+      f + ' 里没有留下那四个色点 / 字集的残骸');
+  });
 }
 
-console.log('\n=== 三、固定集合：自由输入的字 / 任意色一律拒收（不写盘） ===');
+console.log('\n=== 三、图片地址：白名单，不是黑名单 ===');
+{
+  chk(A.isImgUrl('https://x.supabase.co/storage/v1/object/public/avatars/ab/abc/avatar.jpg'),
+    'https 的 Storage 公开地址放行');
+  chk(A.isImgUrl('https://x.supabase.co/a.jpg?v=123'), '带破缓存参数的 https 放行');
+  chk(A.isImgUrl('/api/avatar/u/avatar.jpg'), '本站自己的头像口放行');
+  chk(A.isImgUrl('data:image/jpeg;base64,AAAA'), '导入备份里的 data URL 放行');
+  chk(!A.isImgUrl('javascript:alert(1)'), 'javascript: 拒收（这是 XSS 口子，不是「图不显示」）');
+  chk(!A.isImgUrl('data:text/html;base64,AAAA'), 'data:text/html 拒收（同一条 XSS 口子）');
+  chk(!A.isImgUrl('http://evil.test/a.jpg'), '明文 http 拒收');
+  chk(!A.isImgUrl('blob:https://x/abc'), 'blob: 拒收（它只在这一台设备上有效）');
+  chk(!A.isImgUrl(''), '空串拒收');
+  chk(!A.isImgUrl('https://x/' + 'a'.repeat(600)), '超长地址拒收（不许撑爆存储）');
+  eq(A.normAvatar({ img: 'javascript:alert(1)' }).img, '', '归一化时脏地址落空');
+  eq(A.normAvatar({ char: '梅', ink: 'pine' }).img, '', '上一版的 char/ink 形状归一化后是空（它们不再是头像）');
+}
+
+console.log('\n=== 四、写脏值当场回绝，写不进去不抛 ===');
 {
   const b = mem();
-  const r1 = A.setAvatar(b, { char: '龘' });
-  eq(r1.ok, false, '集合外的字拒收');
-  eq(r1.code, 'E_CHAR', '给出可读的错误码');
-  eq(A.display(b).char, '诗', '拒收后盘上仍是默认，没有被悄悄改成脏值');
+  const r = A.setAvatar(b, { img: 'javascript:alert(1)' });
+  eq(r.ok, false, '脏地址拒收（不写盘）');
+  eq(r.code, 'E_IMG', '给出可读的错误码');
+  eq(A.display(b).img, '', '拒收后盘上仍是空');
 
-  const r2 = A.setAvatar(b, { ink: 'gold' });
-  eq(r2.ok, false, '集合外的色拒收');
-  eq(r2.code, 'E_INK', '给出可读的错误码');
+  const ok = A.setAvatar(b, { img: 'https://x.supabase.co/a.jpg' });
+  eq(ok.ok, true, '合法地址写成功');
+  eq(A.display(b).source, 'image', '有图就是图片那一档');
+  eq(A.display(b).img, 'https://x.supabase.co/a.jpg', '地址读得回来');
 
-  A.CHARS.forEach(function (c) { chk(A.isChar(c), '可选字集合里有「' + c + '」'); });
-  A.INK_KEYS.forEach(function (k) { chk(A.isInk(k), '可选印色里有 ' + k + '（' + A.INKS[k].name + '）'); });
-  eq(A.CHARS.length, 12, '固定 12 个字（不弹键盘、杜绝生僻字与真名）');
-  eq(A.INK_KEYS.length, 4, '固定 4 色，全部取自传统色');
-  chk(A.CHARS.indexOf('诗') >= 0, '默认字「诗」在集合里（与 App 图标同源）');
+  /* 清空 = 回到首字印 */
+  A.resetAvatar(b);
+  eq(A.display(b).hasImage, false, '重置之后回到首字印');
+  eq(A.setAvatar(null, { img: 'https://x/a.jpg' }).ok, false, '没有存储时 ok:false，不抛');
+
+  const throwing = {
+    getItem: () => { throw new Error('隐私模式'); },
+    setItem: () => { throw new Error('QuotaExceeded'); },
+    removeItem: () => { throw new Error('nope'); }
+  };
+  eq(A.display(throwing).char, '诗', '取用即抛的存储 → 仍回落默认印，不抛');
+  eq(A.setAvatar(throwing, { img: 'javascript:x' }).code, 'E_IMG', '脏值优先于写失败被拒（顺序稳定）');
 }
 
-console.log('\n=== 四、合规：不收集、不上传、不存图 ===');
+console.log('\n=== 五、分域：地址进账号域，**本机那份图**进设备域 ===');
 {
   const b = mem();
-  A.setAvatar(b, { char: '竹', ink: 'pine' });
   A.setNickname(b, '小明');
+  A.setAvatar(b, { img: 'https://x.supabase.co/a.jpg' });
+  A.setLocalImage(b, 'data:image/jpeg;base64,AAAA');
+  const keys = b.keys();
+  chk(keys.indexOf(A.NS) >= 0, '云端地址写进了账号域 ' + A.NS);
+  chk(keys.indexOf(A.LOCAL_NS) >= 0, '本机那份图写进了设备域 ' + A.LOCAL_NS);
+  eq(keys.indexOf('poem_recite_progress_v1'), -1, '没碰进度域');
+  eq(keys.indexOf('poem_plan_grant_v1'), -1, '没碰发放名单');
+
   const stored = b.raw()[A.NS];
-  chk(stored.length < 120, '盘上只存一个索引，字节数极小（实际 ' + stored.length + ' 字节）');
-  chk(!/data:image|base64|blob:/i.test(stored), '绝不存 base64 图片（不撑爆 localStorage、不污染导出备份）');
-  const parsed = JSON.parse(stored);
-  eq(parsed.avatar.char, '竹', '存的是字');
-  eq(parsed.avatar.ink, 'pine', '存的是色名，不是色值（换主色不改用户的选择）');
+  chk(stored.length < 700, '账号域那一份很小（只有地址，实际 ' + stored.length + ' 字节）');
+  chk(!/base64/.test(stored), '账号域里绝不存 base64（它要被同步与导出）');
+  chk(/base64/.test(A.localImage(b)), '本机那份是 data URL（断网时照旧画得出来）');
 
-  // 关键：不用邮箱首字母 —— 那等于把邮箱摘要的一半画在屏幕上
-  const mail = mem({ poem_auth_v1: JSON.stringify({ profile: { nickname: '' } }) });
-  eq(A.display(mail).char, '诗', '没有昵称时不会去抠邮箱首字母，而是回默认字');
+  /* display 的两档回落：本机那份**优先**于云端地址（刚裁完还没传上去时也是新图） */
+  eq(A.display(b).src, 'data:image/jpeg;base64,AAAA', '本机那份优先（离线也画得出）');
+  A.clearLocalImage(b);
+  eq(A.display(b).src, 'https://x.supabase.co/a.jpg', '本机那份没了就回落到云端地址');
 
-  // 渲染出来的 HTML 里不许有任何外部地址
-  const html = A.html(b);
-  chk(!/https?:\/\//.test(html), '渲染出的 HTML 不含任何外部地址（零请求）');
-  chk(!/<img/i.test(html), '渲染的是字符，不是 <img>（断网也画得出）');
-  chk(/seal-avatar/.test(html), '带统一的类名（三处显示共用一套样式）');
+  /* 上传那条路：**刚裁完、云端地址还没回来**（img 是空串）时，本机那份必须还在。
+     这一条是有牙的：把 setAvatar 写成「空串顺手清本机」时它会红 ——
+     而那个 bug 的症状是「用户裁完点了确定，图当场没了」，只在真机上看得出来。 */
+  A.setLocalImage(b, 'data:image/jpeg;base64,CCCC');
+  A.setAvatar(b, { img: '' });
+  eq(A.localImage(b), 'data:image/jpeg;base64,CCCC', '写空地址**不清**本机那份（那是「上传还没回来」，不是「删除」）');
+  eq(A.display(b).source, 'image', '于是刚裁完时界面立刻就是新图（不用等网络）');
+
+  /* 删头像（走 resetAvatar）要把本机那份也清掉，否则「删了还在显示」 */
+  A.setAvatar(b, { img: 'https://x.supabase.co/a.jpg' });
+  A.setLocalImage(b, 'data:image/jpeg;base64,BBBB');
+  A.resetAvatar(b);
+  eq(A.localImage(b), '', '删头像（resetAvatar）顺手清掉本机那份（不然「删了还显示」）');
+  eq(A.display(b).source, 'nickname', '删完回到首字印');
 }
 
-console.log('\n=== 五、分域：头像属账号域，不碰设备域与进度域 ===');
+console.log('\n=== 六、渲染：图片走 <img>，首字走文字，两档都不带外链脚本 ===');
 {
   const b = mem();
   A.setNickname(b, '玥玥');
-  A.setAvatar(b, { char: '云', ink: 'celadon' });
-  const keys = b.keys();
-  chk(keys.indexOf(A.NS) >= 0, '写进了账号域 ' + A.NS);
-  eq(keys.indexOf('poem_device_prefs_v1'), -1, '没写设备域 poem_device_prefs_v1（手机与电脑同一枚印）');
-  eq(keys.indexOf('poem_recite_progress_v1'), -1, '没写进度域（改头像不影响背诵进度）');
-  eq(keys.indexOf('poem_plan_grant_v1'), -1, '没写发放名单（头像与权益是两件事）');
+  const h1 = A.html(b);
+  chk(/class="avatar"/.test(h1), '带统一的类名（几处显示共用一套样式）');
+  eq(h1.indexOf('玥') >= 0, true, '没图时画的是首字');
+  chk(!/<img/i.test(h1), '没图时不画 <img>（断网也画得出）');
+  chk(/aria-label="头像：玥/.test(h1), '带可读的无障碍标签（读屏软件念得出）');
+
+  A.setAvatar(b, { img: 'https://x.supabase.co/a.jpg?v=1' });
+  const h2 = A.html(b);
+  chk(/<img[^>]+class="avatar-img"/.test(h2), '有图时画的是 <img>');
+  chk(/loading="lazy"/.test(h2), '图片带 lazy（子档案名册一次画好几枚）');
+  chk(/referrerpolicy="no-referrer"/.test(h2), '跨域图不带 referrer（别把本站地址送出去）');
+  chk(/alt=""/.test(h2), '图片本身 alt 空（外层 role=img 已经说了「这是谁的头像」）');
+  chk(!/onerror|onload=/i.test(h2), '不带任何内联事件');
+
+  const h3 = A.html(b, { size: 52 });
+  chk(/--avatar-size:52px/.test(h3), '显式传 size 时才内联那一个值');
+  chk(!/--avatar-size/.test(A.html(mem())), '不传 size 时由 CSS 兜底');
+
+  /* 画「指定一份档案」—— 名册里 N 个孩子各画各的 */
+  const p1 = A.displayOf({ nickname: '小明', avatar: { img: '' } });
+  const p2 = A.displayOf({ nickname: '小红', avatar: { img: 'https://x/a.jpg' } });
+  eq(p1.char, '小', '指定档案取它自己的首字');
+  eq(p2.source, 'image', '指定档案有它自己的图');
+  chk(A.htmlFor({ nickname: '小明' }).indexOf('小') >= 0, 'htmlFor 画的是那一份档案');
 }
 
-console.log('\n=== 六、兼容读：老 `settings.username` 仍认，镜像写两处一致 ===');
+console.log('\n=== 七、本地压缩 + 方形裁切的几何（纯函数，不依赖 canvas） ===');
+{
+  /* cropRect：正方形、取短边、放大 = 框变小 */
+  let r = AI.cropRect(4000, 3000, 1, 0.5, 0.5);
+  eq(r.sw, 3000, '不放大时框取短边');
+  eq(r.sh, 3000, '框是正方形');
+  eq(r.sx, 500, '居中（4000 宽里取中间 3000）');
+  eq(r.sy, 0, '纵向顶到边');
+
+  r = AI.cropRect(4000, 3000, 2, 0.5, 0.5);
+  eq(r.sw, 1500, '放大 2 倍 → 框边长减半（看到的细节更多）');
+  eq(r.sx, 1250, '放大后仍居中');
+
+  r = AI.cropRect(4000, 3000, 1, 0, 0);
+  eq(r.sx, 0, '中心点拉到左上角 → 框贴左上（不越界）');
+  eq(r.sy, 0, '同一件事在纵向也成立');
+
+  r = AI.cropRect(4000, 3000, 1, 1, 1);
+  eq(r.sx, 1000, '中心点拉到右下角 → 框贴右下');
+  eq(r.sy, 0, '纵向已经贴边（短边撑满）');
+
+  /* 竖图反过来 */
+  r = AI.cropRect(3000, 4000, 1, 0.5, 0.5);
+  eq(r.sw, 3000, '竖图仍取短边（宽）');
+  eq(r.sy, 500, '竖图纵向居中');
+
+  /* 极小的原图 / 脏值都不许出 0 尺寸（drawImage 的 sw=0 是全黑） */
+  r = AI.cropRect(1, 1, 1, 0.5, 0.5);
+  chk(r.sw >= 1 && r.sh >= 1, '1×1 的图也画得出（不会 0 尺寸）');
+  r = AI.cropRect(0, 0, 0, 0, 0);
+  chk(r.sw >= 1 && r.sh >= 1, '全是脏值也不出 0 尺寸');
+  r = AI.cropRect(100, 100, 1e9, 0.5, 0.5);
+  chk(r.sw >= 1, '放大到离谱也不出 0 尺寸');
+
+  /* zoomRange / clampZoom */
+  const zr = AI.zoomRange(4000, 3000);
+  eq(zr.min, 1, '缩放下限是 1（小于 1 就是「把图缩小、方框里露纸底」，不是裁切）');
+  eq(zr.max, 3000 / 32, '上限按「框不小于 32 原图像素」推');
+  eq(AI.clampZoom(4000, 3000, 0.2), 1, 'zoom 小于下限 → 夹到 1');
+  eq(AI.clampZoom(4000, 3000, 1e9), zr.max, 'zoom 大于上限 → 夹到上限');
+  eq(AI.clampZoom(4000, 3000, NaN), 1, 'NaN → 1（不抛）');
+
+  /* clampOffset：拖到边界时中心点也必须夹回去，否则下一次拖动会从对不上的地方接着走 */
+  let o = AI.clampOffset(4000, 3000, 1, 0, 0);
+  eq(o.ox, 0.375, '横向能拖的范围是 [0.375, 0.625]');
+  eq(o.oy, 0.5, '纵向短边撑满 → 只能居中');
+  o = AI.clampOffset(4000, 3000, 1, 5, -5);
+  eq(o.ox, 0.625, '超出的 ox 夹回上界');
+  eq(o.oy, 0.5, '超出的 oy 夹回居中');
+  o = AI.clampOffset(100, 100, 1, 0.5, 0.5);
+  eq(o.ox, 0.5, '正方形图只能居中（没有可拖的余地）');
+
+  /* PNG / JPEG 的选择：按原图类型判，不猜 */
+  chk(AI.wantsPng('image/png'), 'PNG 原图要存 PNG（透明不能被填成黑边）');
+  chk(AI.wantsPng('image/webp'), 'WebP 原图同上');
+  chk(!AI.wantsPng('image/jpeg'), 'JPEG 原图存 JPEG（照片存 PNG 会大 5~10 倍）');
+
+  /* 挑文件的三条拒绝各说各的话 */
+  eq(AI.checkFile(null).code, 'E_NO_FILE', '没选文件');
+  eq(AI.checkFile({ type: 'image/heic', size: 10 }).code, 'E_TYPE', '不支持的格式（按 MIME 判，不按扩展名）');
+  eq(AI.checkFile({ type: 'image/jpeg', size: 99 * 1024 * 1024 }).code, 'E_TOO_BIG', '太大');
+  eq(AI.checkFile({ type: 'image/jpeg', size: 1024 }).ok, true, '正常文件放行');
+  eq(AI.OUT_SIZE, 256, '输出是 256×256（顶栏画 42px，视网膜 2x 也只到 84）');
+}
+
+console.log('\n=== 八、老数据零感知：上一版的 char / ink 不会让它炸 ===');
 {
   const b = mem({
-    poem_recite_settings_v1: JSON.stringify({ grade: 2, term: 1, username: '玥玥' })
+    poem_profile_v1: JSON.stringify({
+      v: 1, nickname: '小明', avatar: { char: '梅', ink: 'pine' }
+    })
   });
-  eq(A.nickname(b), '玥玥', '老用户只在设置里存过用户名，仍读得到（不会忽然变成默认名）');
-  eq(A.display(b).char, '玥', '老用户的印也随之取到昵称首字');
+  const d = A.display(b);
+  eq(d.char, '小', '老用户的字印自然回到「昵称首字」');
+  eq(d.hasImage, false, '老数据没有图');
+  eq(d.nickname, '小明', '昵称一个字都没丢');
+  eq(A.nickname(b), '小明', '读得回来');
 
-  // 镜像写：新键与老键一起更新，且不动老键里的其它设置
-  A.saveNickname(b, '新名字');
-  const legacy = JSON.parse(b.raw()['poem_recite_settings_v1']);
-  eq(legacy.username, '新名字', '老键被镜像更新（各页仍在读它，不能只写新键）');
-  eq(legacy.grade, 2, '镜像写不动老键里的其它设置（年级还在）');
-  eq(JSON.parse(b.raw()[A.NS]).nickname, '新名字', '新键也写到了账号域');
-  eq(A.nickname(b), '新名字', '两个键一致，读回来是新名字');
-
-  // 幂等：连写两次结果一致
-  A.saveNickname(b, '新名字');
-  eq(A.nickname(b), '新名字', '连写两次结果一致（幂等）');
-  eq(JSON.parse(b.raw()[A.NS]).v, 1, '档案带版本号 v1（供将来迁移）');
-
-  // 清老字段这一动作本轮不调用，但实现要在（阶段 0 的迁移用它）
-  eq(typeof A.clearLegacyNickname, 'function', '提供 clearLegacyNickname 供阶段 0 迁移调用');
-  eq(A.nickname(b), '新名字', '阶段 0 之前老字段仍在（不清 = 老代码零改动）');
-}
-
-console.log('\n=== 七、昵称首字按码点取，不劈开 emoji ===');
-{
-  eq(A.firstCharOf('玥玥'), '玥', '中文取第一个字');
-  eq(A.firstCharOf('  Ashley '), 'A', '两侧空白先 trim');
-  eq(A.firstCharOf('🐟鱼'), '🐟', 'emoji 整个取出（charAt(0) 会劈成半个代理对）');
-  eq(A.firstCharOf('   '), '', '全空白 → 空（由 display 兜底为默认字）');
-  eq(A.firstCharOf(null), '', 'null 不抛');
-  const b = mem();
-  A.setNickname(b, '🐟');
-  eq(A.display(b).char, '🐟', 'emoji 昵称的印是整个 emoji，不是乱码方块');
-}
-
-console.log('\n=== 八、还原默认印不动昵称 ===');
-{
-  const b = mem();
-  A.setNickname(b, '小明');
-  A.setAvatar(b, { char: '菊', ink: 'ochre' });
-  const r = A.resetAvatar(b);
-  eq(r.ok, true, '还原成功');
-  eq(A.display(b).char, '小', '还原后回到三档回落的起点：取昵称首字「小」…');
-  chk(A.display(b).source === 'nickname', '…且来源如实标为「取自昵称首字」');
-  eq(A.nickname(b), '小明', '还原默认印不动昵称');
-  eq(A.avatar(b).ink, '', '盘上不再存色（回到三档回落的起点，不是「用户选了朱砂」）');
-  eq(A.display(b).ink, 'seal', '显示出来是默认朱砂');
-}
-
-console.log('\n=== 九、没有存储也不许抛（隐私模式 / 无 localStorage） ===');
-{
+  eq(A.display(mem({ poem_profile_v1: 'not-json' })).char, '诗', '档案不是 JSON → 回落默认');
+  eq(A.display(mem({ poem_profile_v1: '[1,2]' })).char, '诗', '档案不是对象 → 回落默认');
   eq(A.display(null).char, '诗', '没有存储 → 默认印');
-  eq(A.nickname(null), '', '没有存储 → 空昵称');
-  eq(A.setNickname(null, 'x'), false, '写不进去时返回 false，不抛');
-  eq(A.setAvatar(null, { char: '山' }).ok, false, '写不进去时 ok:false，不抛');
-  const throwing = {
-    getItem: () => { throw new Error('QuotaExceeded / 隐私模式'); },
-    setItem: () => { throw new Error('QuotaExceeded'); }
-  };
-  eq(A.display(throwing).char, '诗', '取用即抛的存储 → 仍回落到默认印');
-  eq(A.nickname(throwing), '', '取用即抛的存储 → 昵称空串');
+  /* 昵称不是字符串时 `String(42)` = "42" —— 首字是 "4"，仍然画得出（不裂图） */
+  const dirty = mem({ poem_profile_v1: JSON.stringify({ nickname: 42, avatar: { img: 42 } }) });
+  eq(A.display(dirty).char, '4', '脏昵称也能画出首字（不裂图）');
+  eq(A.display(dirty).hasImage, false, '脏图片地址一律当没有');
+  eq(A.display(mem({ poem_profile_v1: JSON.stringify({ nickname: '', avatar: null }) })).char, '诗',
+    '空昵称 → 回落默认字');
+  chk(!/base64/.test(mem({ poem_avatar_local_v1: '{"img":"https://evil/a.jpg"}' }).raw()[A.LOCAL_NS] || ''),
+    '本机那份只认 data:image（脏值当没有）');
+  eq(A.localImage(mem({ poem_avatar_local_v1: '{"img":"https://evil/a.jpg"}' })), '',
+    '本机那份里混进 https 地址 → 当没有（它本来就不该存地址）');
+}
+
+console.log('\n=== 九、不用邮箱首字母（与 /privacy/ 的口径一致） ===');
+{
+  const b = mem({ poem_auth_v1: JSON.stringify({ profile: { nickname: '' } }) });
+  eq(A.display(b).char, '诗', '没有昵称时不会去抠邮箱首字母，而是回默认字');
+  const src = fs.readFileSync('js/avatar.js', 'utf8');
+  chk(!/email|mail/i.test(src.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/^\s*\/\/.*$/gm, '')),
+    'js/avatar.js 的实现里根本读不到邮箱');
 }
 
 console.log('\n=== 十、每张加载了顶栏的页面都加载了 js/avatar.js ===');
 {
-  const fs = require('fs');
-  const glob = require('path');
+  const path = require('path');
   const pages = ['index.html'].concat(
     fs.readdirSync('.').filter(function (f) {
-      try { return fs.statSync(glob.join(f, 'index.html')).isFile(); } catch (e) { return false; }
+      try { return fs.statSync(path.join(f, 'index.html')).isFile(); } catch (e) { return false; }
     }).map(function (d) { return d + '/index.html'; })
   );
   const withChrome = pages.filter(function (f) {
@@ -202,10 +311,6 @@ console.log('\n=== 十、每张加载了顶栏的页面都加载了 js/avatar.js
   withChrome.forEach(function (f) {
     const src = fs.readFileSync(f, 'utf8');
     chk(/<script src="\/?js\/avatar\.js"><\/script>/.test(src), f + ' 加载了 js/avatar.js');
-    // 顺序：avatar.js 的 <script> 必须在 chrome.js 的 <script> **之前** ——
-    // chrome.js 渲染顶栏时要读它。⚠️ 按 <script> 标签位置比，不按子串第一次出现比：
-    // 各页顶部的 HTML 注释里就写了「由 js/chrome.js 统一渲染」，
-    // 拿 indexOf 比会永远判成「chrome 在前」（那是注释，不是脚本）。
     const atAvatar = src.indexOf('<script src="js/avatar.js"></script>') >= 0
       ? src.indexOf('<script src="js/avatar.js"></script>')
       : src.indexOf('<script src="/js/avatar.js"></script>');
@@ -217,15 +322,11 @@ console.log('\n=== 十、每张加载了顶栏的页面都加载了 js/avatar.js
   });
 }
 
-console.log('\n=== 十之二、顶栏那一枚＝与 logo 同径的整圆 ===');
+console.log('\n=== 十之一、顶栏那一枚＝与 logo 同径的整圆 ===');
 {
-  const fs = require('fs');
   const css = fs.readFileSync('css/style.css', 'utf8').replace(/\/\*[\s\S]*?\*\//g, ' ');
   const chrome = fs.readFileSync('js/chrome.js', 'utf8').replace(/\/\*[\s\S]*?\*\//g, ' ')
     .replace(/^\s*\/\/.*$/gm, '');
-  // 与 test/ui-consistency.test.js 同一套取法：**选择器组整条相等**才算命中
-  //（`.brand-mark, .brand-icon { … }` 是一条规则，用 indexOf 找 `.brand-mark {`
-  //  会找不到；用「包含」又会张冠李戴）。
   const cssRule = (function (sel) {
     const flat = css.replace(/@media[^{]+\{/g, '{');
     let acc = '';
@@ -237,10 +338,6 @@ console.log('\n=== 十之二、顶栏那一枚＝与 logo 同径的整圆 ===');
     return acc;
   });
 
-  // 与 logo 同径：守的是「同源」，不是「等于某个数」。
-  // ⚠️ Issue #147：顶栏右侧簇整个重排之后，这一条从「两个数值相等」升级成
-  //    「**同一条令牌**」—— 徽标写 42px 是令牌的定义，头像读 --top-slot。
-  //    两处相等因此是 structural 的（改一处两处一起走），比抄数字更难写错。
   const markW = (cssRule('.brand-mark').match(/width:\s*(\d+)px/) || [])[1];
   const slotTok = (cssRule(':root').match(/--top-slot:\s*(\d+)px/) || [])[1];
   chk(!!markW && !!slotTok && markW === slotTok,
@@ -248,42 +345,36 @@ console.log('\n=== 十之二、顶栏那一枚＝与 logo 同径的整圆 ===');
     markW + 'px vs :root --top-slot ' + slotTok + 'px）');
   chk(/--user-size:\s*var\(--top-slot\)/.test(cssRule('.top-user')),
     '顶栏头像直径读 --top-slot（与徽标同一条令牌，不再两处各写一个数）');
-
-  // 整圆 + 满幅
   chk(/border-radius:\s*50%/.test(cssRule('.top-user')), '顶栏头像是整圆');
-  chk(/width:\s*100%/.test(cssRule('.top-user > .seal-avatar')) &&
-      /height:\s*100%/.test(cssRule('.top-user > .seal-avatar')),
-    '顶栏那一枚印铺满整圆（不在圆里再缩一圈方角印）');
+  chk(/width:\s*100%/.test(cssRule('.top-user > .avatar')) &&
+      /height:\s*100%/.test(cssRule('.top-user > .avatar')),
+    '顶栏那一枚铺满整圆（不在圆里再缩一圈）');
+  chk(/object-fit:\s*cover/.test(cssRule('.avatar-img')), '图片铺满整圆且不变胖');
 
-  // chrome.js 不再自带一个 size 数字：尺寸只有一个来源（CSS）
   chk(!/size:\s*\d+/.test(chrome),
     'js/chrome.js 不自己写死头像尺寸（尺寸只在 css/style.css 的 --user-size 一处）');
-  chk(/A\.html\(backing, \{ cls: "seal-avatar-top" \}\)/.test(chrome),
+  chk(/A\.html\(backing, \{ cls: "avatar-top" \}\)/.test(chrome),
     '顶栏渲染仍只传类名（cls），尺寸交给样式表');
-
-  // avatar.js 的 size 选项仍然是「显式传才生效」：不传就由 CSS 定
-  const htmlNoSize = A.html(mem());
-  chk(!/--seal-size/.test(htmlNoSize), '不传 size 时 HTML 里不出现 --seal-size（由 CSS 兜底）');
-  chk(/--seal-size:48px/.test(A.html(mem(), { size: 48 })), '显式传 size 时才内联那一个值');
 }
 
-console.log('\n=== 十一、源码扫描：页面不许自己拼一套印 ===');
+console.log('\n=== 十一、源码扫描：页面不许自己拼一份头像 ===');
 {
-  const fs = require('fs');
-  const files = ['js/chrome.js', 'js/app.js', 'js/settings.js', 'js/reader-core.js'];
+  const files = ['js/chrome.js', 'js/app.js', 'js/settings.js', 'js/reader-core.js', 'js/profile.js'];
   files.forEach(function (f) {
     const src = fs.readFileSync(f, 'utf8')
       .replace(/\/\*[\s\S]*?\*\//g, '')
       .replace(/^\s*\/\/.*$/gm, '');
-    chk(!/linear-gradient\(150deg/.test(src), f + ' 没自己复制一份印色渐变（一律走 Avatar.html）');
+    chk(!/class="avatar"/.test(src), f + ' 没自己拼一份头像 HTML（一律走 Avatar.html / htmlFor）');
+    chk(!/linear-gradient\(150deg/.test(src), f + ' 没自己复制一份头像底色');
   });
   const html = A.html(mem());
-  chk(/linear-gradient/.test(html), '渐变只由 Avatar 这一处画出来');
+  chk(/linear-gradient/.test(fs.readFileSync('css/style.css', 'utf8')),
+    '底色只由样式表给（头像没有颜色可选了）');
 }
 
 console.log('');
 if (fails) {
-  console.log('✗ 字符印头像测试失败 ' + fails + ' 项');
+  console.log('✗ 头像测试失败 ' + fails + ' 项');
   process.exit(1);
 }
-console.log('🎉 字符印头像测试全部通过');
+console.log('🎉 头像测试全部通过');

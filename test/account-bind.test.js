@@ -327,11 +327,22 @@ async function main() {
     chk(sw.indexOf('"./js/account-api.js"') >= 0, "sw.js 预缓存里有 js/account-api.js");
     /* plans/index.html 是 2.1 新增的接线页：它问 `/api/me` 只为一件事 ——
        「关于这些层级」那一段得如实说清层级**是谁定的**。 */
+    /* ⚠️ 顺序按 **<script> 标签的位置**比，不按子串第一次出现比：
+       页面顶部的 HTML 注释里就会写「层级徽章读 js/entitlement.js」，
+       拿 indexOf 比会命中那条注释（Issue #163 换头像那一轮实测踩到过：
+       把 avatar 的脚本挪到 entitlement 之前，注释里的字样反而让断言假绿）。 */
+    const at = (src, file) => {
+      const m = src.match(new RegExp('<script src="\\/?' + file.replace(/[./]/g, "\\$&") + '"><\\/script>'));
+      return m ? src.indexOf(m[0]) : -1;
+    };
     ["profile/index.html", "settings/general/index.html", "plans/index.html"].forEach(f => {
       const s = read(f);
-      chk(/js\/account-api\.js/.test(s), f + " 加载了 js/account-api.js");
-      chk(s.indexOf("js/auth-api.js") >= 0, f + " 加载了 js/auth-api.js（接线层的传输依赖）");
-      chk(s.indexOf("entitlement.js") < s.indexOf("account-api.js"),
+      const aApi = at(s, "js/account-api.js");
+      const authApi = at(s, "js/auth-api.js");
+      const ent = at(s, "js/entitlement.js");
+      chk(aApi >= 0, f + " 加载了 js/account-api.js");
+      chk(authApi >= 0, f + " 加载了 js/auth-api.js（接线层的传输依赖）");
+      chk(ent >= 0 && ent < aApi,
         f + " 里 entitlement 排在 account-api 之前（要先把权益层装上）");
     });
     // 预缓存清单里的路径都得真实存在

@@ -83,6 +83,27 @@
    *    照抄通用文案的下场是实测到的这个：服务端连不上时界面上写着
    *    「已切回本机体验版」，而用户什么都做不了 —— 一句当场被自己推翻的话。
    */
+  /**
+   * 头像那一条路的失败文案（Issue #163）。
+   *
+   * ⚠️ 与 `PASSWORD_ERR` 分开的理由同源：通用那一份会说
+   *    「已切回本机体验版」，而头像是**真的**会切回本机（本机那份图还在，
+   *    顶栏照旧画得出来）—— 但用户还得知道**云端那份没成**，
+   *    否则他换台设备就发现头像没了，却不知道为什么。
+   */
+  var AVATAR_ERR = {
+    E_NOT_CONFIGURED: "这台服务器还没开放云端账号，头像只存在本机",
+    E_OFFLINE: "连不上服务端，头像已存在本机、还没同步到服务器",
+    E_TIMEOUT: "传得太慢了，头像已存在本机、还没同步到服务器",
+    E_NO_SESSION: "登录之后才能把头像同步到其它设备",
+    E_TYPE: "只支持 PNG / JPG 图片",
+    E_TOO_BIG: "图片太大了（请选 1MB 以内的）",
+    E_NO_BODY: "没有收到图片数据，请重选一次",
+    E_UPSTREAM: "头像没能传上去，请稍后再试",
+    E_NO_BUCKET: "服务器上的图片存储还没建好，头像暂时只存在本机",
+    E_RATE_DEVICE: "换头像太频繁了，请稍后再试"
+  };
+
   var PASSWORD_ERR = {
     E_NOT_CONFIGURED: "这台服务器还没开放云端账号，暂时不能注册或改密码",
     E_OFFLINE: "连不上服务器，暂时不能注册或改密码",
@@ -136,6 +157,34 @@
     }
 
     function call(path, method, body, errs) {
+      return send(path, method, errs, function (init) {
+        init.headers["Content-Type"] = "application/json";
+        if (body !== undefined && body !== null) init.body = JSON.stringify(body);
+      });
+    }
+
+    /**
+     * 原始字节那一条（Issue #163：头像上传）。
+     *
+     * 与 `call()` 共用同一套「回包归一化」—— 那一段是**唯一**把 HTTP 变成
+     * `{ok, code, message}` 的地方，复制一份到别处必然漂移（先是 503 的判法
+     * 不一样，接着是 401 的判法不一样）。
+     * 差别只有两处：`Content-Type` 由调用方给（image/jpeg），body 是原始字节。
+     *
+     * ⚠️ 超时按**字节数**放宽：手机上 20KB 的图 + 弱网，15 秒是够的，
+     *    但这一条路本来就可能被用户用在大图上（1MB 上限），
+     *    沿用同一个 15 秒会出现「明明传得上去却老是超时」。
+     */
+    function callBinary(path, method, bytes, type, errs) {
+      var size = (bytes && bytes.length) || (bytes && bytes.size) || 0;
+      var limit = TIMEOUT_MS + Math.min(45000, Math.round(size / 1024) * 300);
+      return send(path, method, errs, function (init) {
+        init.headers["Content-Type"] = type || "application/octet-stream";
+        if (bytes !== undefined && bytes !== null) init.body = bytes;
+      }, limit);
+    }
+
+    function send(path, method, errs, shape, timeoutMs) {
       var em = errs
         ? function (c) { return errs[c] || messageOf(c); }
         : messageOf;
@@ -145,17 +194,17 @@
         return Promise.resolve({ ok: false, code: "E_OFFLINE", message: em("E_OFFLINE") });
       }
       var ctrl = typeof AbortController === "function" ? new AbortController() : null;
-      var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, TIMEOUT_MS) : null;
+      var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, timeoutMs || TIMEOUT_MS) : null;
 
       var init = {
         method: method,
         // ⚠️ 会话是 HttpOnly Cookie —— 必须带 credentials，
         //    而 "same-origin"（不是 "include"）能确保只有同源才发 Cookie
         credentials: "same-origin",
-        headers: { "Content-Type": "application/json" }
+        headers: {}
       };
       if (deviceId) init.headers["x-kb-device"] = deviceId;
-      if (body !== undefined && body !== null) init.body = JSON.stringify(body);
+      if (shape) shape(init);
       if (ctrl) init.signal = ctrl.signal;
 
       return doFetch(base + path, init).then(function (res) {
@@ -343,6 +392,21 @@
       /** GET /api/me —— 权益的唯一来源（服务端判定层级与角色都在这一条上） */
       me: function () { return call("/me", "GET"); },
 
+      /* ------------------------------------------------- 头像（Issue #163）
+         ⚠️ 传输层只把**已经压好、裁好**的字节送出去 —— 压缩与裁切在
+            `js/avatar-image.js`（本地 canvas），这一层不碰 canvas、
+            不碰文件选择框。分开的理由是那两件事的测试环境完全不同：
+            这一层在 Node 里就能对拍，而 canvas 只有浏览器有。 */
+
+      /** POST /api/avatar —— 上传头像字节（body 是裸字节，不是 JSON） */
+      uploadAvatar: function (input) {
+        input = input || {};
+        return callBinary("/avatar", "POST", input.blob, input.type, AVATAR_ERR);
+      },
+
+      /** DELETE /api/avatar —— 删掉云端那一张 */
+      deleteAvatar: function () { return call("/avatar", "DELETE", { deviceId: deviceId }, AVATAR_ERR); },
+
       /** POST /api/sync/pull */
       pull: function (input) {
         input = input || {};
@@ -418,6 +482,7 @@
     passwordMessageOf: passwordMessageOf,
     TRANSPORT_ERR: TRANSPORT_ERR,
     PASSWORD_ERR: PASSWORD_ERR,
+    AVATAR_ERR: AVATAR_ERR,
     BASE: BASE,
     TIMEOUT_MS: TIMEOUT_MS
   };

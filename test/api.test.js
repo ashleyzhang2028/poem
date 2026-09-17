@@ -43,7 +43,9 @@ function boot(envVars) {
     // Issue #197：口令与两张令牌表的 TTL 也是 env，不清就会漏
     "PASSWORD_MIN", "PASSWORD_MAX", "VERIFY_TTL_MS", "RESET_TTL_MS", "SITE_URL",
     // Issue #197 复审：邮箱确认闸 + 发信重试次数/预算也是 env，不清就会从上个用例漏进下一个
-    "REQUIRE_EMAIL_VERIFIED", "MAIL_RETRY_MAX", "MAIL_RETRY_BUDGET_MS"
+    "REQUIRE_EMAIL_VERIFIED", "MAIL_RETRY_MAX", "MAIL_RETRY_BUDGET_MS",
+    // Issue #163：头像那几个（桶名与上限），不清就会从上个用例漏进下一个
+    "SUPABASE_AVATAR_BUCKET", "AVATAR_MAX_BYTES"
   ];
   keys.forEach(k => { saved[k] = process.env[k]; });
 
@@ -89,7 +91,11 @@ function serve() {
     "POST /api/resend-verification-by-email": require("../api/auth/resend-verification-by-email.js"),
     "POST /api/reset-request": require("../api/auth/reset-request.js"),
     "POST /api/reset-confirm": require("../api/auth/reset-confirm.js"),
-    "POST /api/admin/accounts": require("../api/admin/accounts.js")
+    "POST /api/admin/accounts": require("../api/admin/accounts.js"),
+    /* Issue #163：头像图片（上传 / 删除）。请求体是**裸字节**，
+       所以这一节自己拼请求，走不了 call() 那个 JSON 请求器。 */
+    "POST /api/avatar": require("../api/avatar/index.js"),
+    "DELETE /api/avatar": require("../api/avatar/index.js")
   };
   const server = http.createServer((req, res) => {
     const pathname = req.url.split("?")[0];
@@ -2979,6 +2985,197 @@ async function main() {
         "⑥ /api/me 如实自报「频控只在本实例内有效」（配了库也一样 —— 账本在进程内存里）");
       chk(facts.rate === "instance" && facts.db === "memory" || facts.rate === "instance",
         "⑥ 这一条与 db 那条是**两件事**：db 说数据活多久，rate 说限流在几台机器上算数");
+    }
+
+    /* ------------------------------------------------ ⑥ 头像上传（Issue #163） */
+    {
+      /* 一次真实的 HTTP 往返：裸字节进、URL 出。
+         ⚠️ 这一节**必须走真 HTTP**：头像那条路的两个要害（请求体是裸字节、
+            按 magic number 判类型）在「直接调内核」的测法里一个都测不到。
+         ⚠️ 也**不配 SUPABASE_URL**：配了它 store 会变成 supabase 实现，
+            send-code 就会真的出网（本层是「不联网」的纯 Node 测试）。
+            这里测的是**接口那一层的行为**（401 / 400 / 429 / 字节判定），
+            而对象存储那一段（地址怎么拼、x-upsert）在下面单独对拍。 */
+      const JPEG = Buffer.concat([Buffer.from([0xFF, 0xD8, 0xFF, 0xE0]), Buffer.alloc(600, 7)]);
+      const PNG = Buffer.concat([Buffer.from([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]), Buffer.alloc(600, 3)]);
+
+      const raw = (base, method, headers, body) => fetch(base + "/api/avatar", {
+        method: method, headers: headers, body: body
+      });
+
+      boot({ ALLOW_CODE_ECHO: "1", AVATAR_MAX_BYTES: "1024" });
+      const sv3 = await serve();
+      try {
+        /* 没登录 → 401（不是「假装上传了」）—— 这条**先测**，因为它不需要会话 */
+        const anon = await raw(sv3.base, "POST", { "Content-Type": "image/jpeg" }, JPEG);
+        eq(anon.status, 401, "⑥ 没登录上传 → 401（如实回，不假装）");
+        eq((await anon.json()).code, "E_NO_SESSION", "⑥ 回的是 E_NO_SESSION");
+        chk(/先登录/.test((await (await raw(sv3.base, "POST", { "Content-Type": "image/jpeg" }, JPEG)).json()).message),
+          "⑥ 这句话告诉用户下一步做什么（不是笼统的「失败」）");
+
+        /* 登录拿会话。
+           ⚠️ Issue #197 后半段之后，「真登录」多了一道**邮箱确认**的前置
+              （没确认就登不进来）—— 头像这一节当初是在老口径下写的，
+              合并时只解了字面上的冲突，这一句会以一个无关的 403 崩掉
+              （症状是下面 `v1.body.account.uid` 报 TypeError，指向的地方
+              与真正的原因隔着十万八千里）。改用与别节同一套前置。 */
+        const POST3 = (p, b) => call(sv3.base, "POST", p, b);
+        const ck = await loginByHttp(POST3, "avatar@example.com");
+        chk(/^kbsid=/.test(ck), "⑥ 拿到了会话 Cookie（登录成功 —— 头像接口的前置）");
+        /* ⚠️ `/api/me` 下发的账号是**摊平**的（`uid` 直接挂在顶层，不是
+           `body.account.uid`）—— 与登录响应的形状不同。读错了的症状是
+           下面每一处用到 uid 的地方都报同一个 TypeError。 */
+        const me3 = await call(sv3.base, "GET", "/api/me", undefined, ck);
+        eq(me3.status, 200, "⑥ /api/me 认这个会话");
+        const uid = me3.body.uid;
+        chk(!!uid, "⑥ 从 /api/me 拿到 uid（上传接口要用它拼路径）");
+
+        /* 裸字节 + JPEG magic → 200，回一个地址 */
+        const up = await raw(sv3.base, "POST",
+          { "Content-Type": "image/jpeg", Cookie: ck, "x-kb-device": "d-avatar" }, JPEG);
+        eq(up.status, 200, "⑥ 上传成功（裸字节真的被读进来了，没有被 JSON 解析拦下）");
+        const upBody = await up.json();
+        chk(typeof upBody.url === "string" && upBody.url.length > 0, "⑥ 回了一个地址：" + String(upBody.url).slice(0, 60));
+        eq(upBody.bytes, JPEG.length, "⑥ 如实回字节数");
+        chk(/保留/.test(upBody.note || ""), "⑥ 说明里写明本机那份副本仍保留（断网照旧显示）");
+
+        /* 一个写着 image/jpeg 的 HTML → 400 E_TYPE（**按字节判，不看头部声明**） */
+        const html = Buffer.from("<html><script>alert(1)</script></html>                              ");
+        const bad = await raw(sv3.base, "POST",
+          { "Content-Type": "image/jpeg", Cookie: ck, "x-kb-device": "d-avatar" }, html);
+        eq(bad.status, 400, "⑥ 冒牌 JPEG 被拒（这是 XSS 口子，不是「图不显示」）");
+        eq((await bad.json()).code, "E_TYPE", "⑥ 回 E_TYPE");
+
+        /* 超过上限 → 400 E_TOO_BIG（上限这一轮配的是 1024 字节） */
+        const huge = Buffer.concat([Buffer.from([0xFF, 0xD8, 0xFF, 0xE0]), Buffer.alloc(4000, 1)]);
+        const big = await raw(sv3.base, "POST",
+          { "Content-Type": "image/jpeg", Cookie: ck, "x-kb-device": "d-avatar" }, huge);
+        eq(big.status, 400, "⑥ 超过上限 → 400");
+        eq((await big.json()).code, "E_TOO_BIG", "⑥ 回 E_TOO_BIG");
+
+        /* 空体 → 400（不写一个 0 字节的对象上去） */
+        const empty = await raw(sv3.base, "POST",
+          { "Content-Type": "image/jpeg", Cookie: ck, "x-kb-device": "d-avatar" }, "");
+        eq(empty.status, 400, "⑥ 空体 → 400（不写一个 0 字节的对象上去）");
+        eq((await empty.json()).code, "E_NO_BODY", "⑥ 回 E_NO_BODY");
+
+        /* PNG 也收（透明头像不能被拒） */
+        const p2 = await raw(sv3.base, "POST",
+          { "Content-Type": "image/png", Cookie: ck, "x-kb-device": "d-avatar" }, PNG);
+        eq(p2.status, 200, "⑥ PNG 也收（透明头像不能被拒）");
+
+        /* 频控：换头像是个写接口，必须落账（这一轮 1 小时 10 次） */
+        let last = p2;
+        for (let i = 0; i < 12; i++) {
+          last = await raw(sv3.base, "POST",
+            { "Content-Type": "image/jpeg", Cookie: ck, "x-kb-device": "d-avatar" }, JPEG);
+          if (last.status === 429) break;
+        }
+        eq(last.status, 429, "⑥ 连着换头像会被频控拦下（写接口都有频控 —— checklist 第 3 条）");
+        chk(!!(await last.json()).retryAfter, "⑥ 429 带 retryAfter（界面能说「多久之后」）");
+
+        /* DELETE → 200，且地址清空 */
+        const del = await raw(sv3.base, "DELETE",
+          { Cookie: ck, "x-kb-device": "d-avatar2", "Content-Type": "application/json" },
+          JSON.stringify({ deviceId: "d-avatar2" }));
+        eq(del.status, 200, "⑥ 删除成功（换个设备号，避开上一段的频控）");
+        const delBody = await del.json();
+        eq(delBody.deleted, true, "⑥ 如实回 deleted:true");
+        eq(delBody.url, "", "⑥ 回来的地址是空串（不然另一台设备还会去拉一张不存在的图）");
+
+        /* 方法闸：PUT 不许（405） */
+        const put = await raw(sv3.base, "PUT", { Cookie: ck }, JPEG);
+        eq(put.status, 405, "⑥ PUT 回 405（只有 POST / DELETE 两条路）");
+        chk(/POST/.test(put.headers.get("allow") || "") && /DELETE/.test(put.headers.get("allow") || ""),
+          "⑥ 405 带 Allow 头，列出真正支持的两个方法");
+      } finally { await sv3.close(); }
+
+      /* 连会话都签不起来（缺 SESSION_SECRET）→ 503，**不是** 500。
+         ⚠️ 这一条与「没登录 → 401」是**两件事**，界面上说的话也完全不同：
+            「服务端还没开放」vs「请先登录」。合并成一句的下场是
+            用户拿着一个永远好不了的提示去反复重试。 */
+      const savedSecret = process.env.SESSION_SECRET;
+      delete process.env.SESSION_SECRET;
+      Object.keys(require.cache).forEach(k => {
+        if (k.startsWith(path.join(ROOT, "api"))) delete require.cache[k];
+      });
+      const sv0 = await serve();
+      try {
+        const r = await raw(sv0.base, "POST", { "Content-Type": "image/jpeg" }, JPEG);
+        eq(r.status, 503, "⑥ 服务端还没配好 → 503（不是 500：这不是「出了点问题」）");
+        eq((await r.json()).code, "E_NOT_CONFIGURED", "⑥ 回 E_NOT_CONFIGURED");
+      } finally {
+        await sv0.close();
+        process.env.SESSION_SECRET = savedSecret;
+        Object.keys(require.cache).forEach(k => {
+          if (k.startsWith(path.join(ROOT, "api"))) delete require.cache[k];
+        });
+      }
+    }
+
+    /* ------------------------------------------------ ⑥b 对象存储那一段（对着假 fetch 拍） */
+    {
+      boot({ SUPABASE_URL: "https://demo.supabase.co", SUPABASE_SERVICE_KEY: "svc" });
+      const cfg = require("../api/_lib/config.js");
+      const AS = require("../api/_lib/avatar-store.js");
+
+      /* 地址由服务端拼 —— 客户端只说「这是我的字节」 */
+      const url = cfg.avatarPublicUrl("u_abcdefgh");
+      eq(url, "https://demo.supabase.co/storage/v1/object/public/avatars/u_/u_abcdefgh/avatar.jpg",
+        "⑥ 公开地址：<项目>/storage/v1/object/public/<桶>/<uid 前两位>/<uid>/avatar.jpg");
+      eq(cfg.avatarPath("a"), "", "⑥ uid 太短时不拼路径（宁可不传，也不拼一个越界的键）");
+      eq(cfg.avatarPath("u_abc/../x"), "u_/u_abcx/avatar.jpg", "⑥ uid 里的斜杠被剔掉（不许跳目录）");
+      eq(cfg.avatarPublicUrl(""), "", "⑥ 配不全时回空串（界面据此如实说「还不支持头像」）");
+
+      /* 真的发一个 PUT 出去，看头部 —— 用假 fetch 收下它 */
+      const AScalls = [];
+      const realFetch = globalThis.fetch;
+      globalThis.fetch = (u, init) => {
+        AScalls.push({ url: String(u), method: init.method, headers: init.headers, body: init.body });
+        return Promise.resolve({ ok: true, status: 200, text: () => Promise.resolve("") });
+      };
+      const store = AS.supabaseAvatar(cfg);
+      return store.put("u_abcdefgh", "image/jpeg", Buffer.from([0xFF, 0xD8, 0xFF, 0xE0, 1, 2, 3])).then(r => {
+        globalThis.fetch = realFetch;
+        eq(r.ok, true, "⑥ 上传成功");
+        eq(AScalls.length, 1, "⑥ 只发一个请求（覆盖式上传，不先删旧的）");
+        eq(AScalls[0].method, "POST", "⑥ 用 POST + x-upsert 做覆盖（PUT 不带它会 409 Duplicate）");
+        eq(AScalls[0].headers["x-upsert"], "true", "⑥ 带上 x-upsert（改一次头像之后再改不动就是漏了它）");
+        eq(AScalls[0].headers["Content-Type"], "image/jpeg", "⑥ Content-Type 用**按字节判**出来的那个");
+        chk(/\/storage\/v1\/object\/avatars\/u_\/u_abcdefgh\/avatar\.jpg$/.test(AScalls[0].url),
+          "⑥ 打的是 Storage 的对象口（不是 PostgREST）：" + AScalls[0].url);
+
+        /* 上游 404（桶没建）→ 如实回 E_NO_BUCKET，不吞成「成功」 */
+        const calls2 = [];
+        globalThis.fetch = (u, init) => {
+          calls2.push(u);
+          return Promise.resolve({ ok: false, status: 404, text: () => Promise.resolve('{"error":"Bucket not found"}') });
+        };
+        return store.put("u_abcdefgh", "image/jpeg", Buffer.alloc(10, 1)).then(r2 => {
+          globalThis.fetch = realFetch;
+          eq(r2.ok, false, "⑥ 桶不存在时**不许假装成功**");
+          eq(r2.code, "E_NO_BUCKET", "⑥ 回 E_NO_BUCKET（界面据此说「存储桶还没建好」）");
+
+          /* 连不上 → E_OFFLINE（与 5xx 分开：一个是没网，一个是上游坏了） */
+          globalThis.fetch = () => Promise.reject(new Error("ENOTFOUND"));
+          return store.put("u_abcdefgh", "image/jpeg", Buffer.alloc(10, 1)).then(r3 => {
+            globalThis.fetch = realFetch;
+            eq(r3.code, "E_OFFLINE", "⑥ 连不上 → E_OFFLINE（接口那层据此回 503，不是 502）");
+            /* 源码扫描：路径只由服务端拼、按字节判类型 */
+            const st = fs.readFileSync(path.join(ROOT, "api/_lib/avatar-store.js"), "utf8");
+            chk(/cfg\.avatarPath\(uid\)/.test(st), "⑥ 路径由服务端算（不让客户端给路径，否则能覆盖别人的头像）");
+            chk(/sniffImage/.test(st), "⑥ 按 magic number 判类型（不看客户端声明的 Content-Type）");
+            chk(!/[^a-zA-Z]image\/svg/.test(st), "⑥ 不收 SVG（它里面能带脚本，且画在别人屏幕上）");
+            const av = fs.readFileSync(path.join(ROOT, "api/avatar/index.js"), "utf8");
+            chk(/sniffImage/.test(av), "⑥ 上传接口真的用了那个判据");
+            chk(!/req\.headers\[.content-type.\]\s*===/.test(av), "⑥ 没有拿 Content-Type 当判据");
+            chk(/rawBody: true/.test(av), "⑥ 声明了 rawBody（否则外壳会把图片当 JSON 解析）");
+            const c2 = fs.readFileSync(path.join(ROOT, "api/_lib/config.js"), "utf8");
+            chk(/AVATAR_MAX_BYTES/.test(c2), "⑥ 单张上限可配（写死的那个数早晚不够用）");
+            chk(/SUPABASE_AVATAR_BUCKET/.test(c2), "⑥ 桶名可配（写死时控制台里换个名字就全失败）");
+          });
+        });
+      });
     }
 
     /* ------------------------------------------------ ⑤b 走真 HTTP：续期只在后半段发生 */

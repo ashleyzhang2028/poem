@@ -317,8 +317,8 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-/* 头像那一枚印在账号页要更大一号（这里是「看自己」的地方） */
-.identity-row .seal-avatar { --seal-size: 52px; }
+/* 头像在账号页要更大一号（这里是「看自己」的地方） */
+.identity-row .avatar { --avatar-size: 52px; }
 
 /* ---------- 七、层级徽章 ---------- */
 .tier-badge {

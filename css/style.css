@@ -1383,73 +1383,92 @@ textarea:focus {
 /* 说明文字：开关下面单独一行（旧版是与开关并排、还要兼作「关」/「开」标签） */
 .switch-hint { font-size: 11.5px; color: var(--ink-3); margin-top: 6px; }
 
-/* ---------- 头像印记（Issue #132 · 2026-09-15） ----------
-   设置页「用户名」那一行左侧的印 + 下方「头像印记」选择器。
-   印本身（.seal-avatar）在文件上半段的顶栏右侧簇那里定义，三处显示共用。
-   这里只管「在设置页里怎么排」。 */
-.name-row {
+/* ---------- 头像（Issue #132 / #163 · 2026-09-19） ----------
+   两档：没传图 = 用户名首字（`.avatar` 里的文字），传了图 = `.avatar-img`。
+   上一版那套「固定字集 + 四色」的小方块已随功能整块删掉（用户 2026-09-19）。 */
+.avatar-row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   min-width: 0;
 }
-/* 印不参与收缩（与顶栏同一条口径）；输入框照原样 width:100% 跟着栏走 */
+/* 头像不参与收缩（与顶栏同一条口径）；右半那些键跟着栏走 */
 .avatar-slot { flex: none; display: inline-flex; align-items: center; }
+.avatar-acts { display: flex; flex-wrap: wrap; gap: 8px; min-width: 0; }
 
-.settings-item .seal-picker {
+/* ---------- 裁切层（Issue #163） ----------
+   选完图**就地铺上来**：方形预览 + 拖动 + 缩放，底下那张纸变暗。
+   走全站弹层那一套（fixed + 安全区 + --nav-h 避让），不新造一层。 */
+.crop-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
-}
-.seal-chars,
-.seal-inks {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-/* 可选字：小方印的样子 —— 用户点的是「印面」，不是一个普通按钮 */
-.seal-chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.seal-chip {
-  width: 32px;
-  height: 32px;
-  flex: none;
-  border: 1px solid var(--line);
-  border-radius: 26%;
-  background: var(--card);
-  color: var(--ink-2);
-  font-family: var(--font-poem);
-  font-size: 17px;
-  line-height: 1;
-  cursor: pointer;
-  display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: transform .12s, border-color .15s, color .15s;
+  padding: calc(16px + var(--safe-top)) 16px calc(16px + var(--safe-bottom));
+  background: rgba(40, 32, 20, .52);
+  backdrop-filter: blur(2px);
 }
-.seal-chip:hover { border-color: var(--green); color: var(--green); }
-.seal-chip:active { transform: scale(.94); }
-.seal-chip.active {
-  border-color: var(--green);
-  color: var(--green);
-  background: #fffdf6;
-  box-shadow: inset 0 0 0 1px rgba(47, 96, 85, .28);
+.crop-layer[hidden] { display: none; }
+.crop-card {
+  width: 100%;
+  max-width: 330px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg, 14px);
+  box-shadow: 0 18px 46px rgba(74, 58, 38, .28);
+  padding: 16px;
+  animation: popIn .18s cubic-bezier(.2, .8, .3, 1);
 }
-/* 印色：四个圆点，选中的加一圈同色淡环 */
-.seal-ink {
-  width: 26px;
-  height: 26px;
-  flex: none;
-  border: none;
+/* 方框：正方形、溢出裁掉 —— 用户看到的正是最后会画出来的那一块 */
+.crop-box {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
   border-radius: 50%;
-  cursor: pointer;
-  padding: 0;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .34);
-  transition: transform .12s, box-shadow .15s;
+  background: var(--bg);
+  touch-action: none;              /* 拖动时不许页面跟着滚 */
+  cursor: grab;
+  user-select: none;
 }
-.seal-ink:hover { transform: scale(1.06); }
-.seal-ink:active { transform: scale(.94); }
-.seal-ink.active { box-shadow: 0 0 0 3px rgba(165, 92, 25, .22); }
+.crop-box:active { cursor: grabbing; }
+.crop-img {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 0 0;
+  will-change: transform;
+  pointer-events: none;            /* 手势归方框，不给图 —— 否则 drag 会断 */
+  -webkit-user-drag: none;
+}
+/* 井字格 + 圆环：告诉用户「圆外面那块会被切掉」 */
+.crop-grid {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgba(252, 250, 243, .55);
+  background:
+    linear-gradient(to right, transparent 33.33%, rgba(252, 250, 243, .22) 33.33%,
+      rgba(252, 250, 243, .22) calc(33.33% + 1px), transparent calc(33.33% + 1px)),
+    linear-gradient(to bottom, transparent 33.33%, rgba(252, 250, 243, .22) 33.33%,
+      rgba(252, 250, 243, .22) calc(33.33% + 1px), transparent calc(33.33% + 1px));
+  pointer-events: none;
+}
+.crop-zoom {
+  width: 100%;
+  margin: 14px 0 4px;
+  accent-color: var(--green);
+}
+.crop-btns { display: flex; gap: 10px; margin-top: 8px; }
+.crop-btns .btn { flex: 1; }
+.crop-hint {
+  font-size: 11.5px;
+  color: var(--ink-3);
+  margin: 8px 0 0;
+  text-align: center;
+}
 
 /* --------------------------------------------------------------------------
    家庭子档案（3 期 P1）：名册 + 切换 + 增删
@@ -1497,6 +1516,8 @@ textarea:focus {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* 名册里那一枚小头像（每个孩子自己的） */
+.family-pick .avatar { --avatar-size: 26px; }
 .family-now {
   flex: none;
   font-size: 11px;
@@ -2316,15 +2337,13 @@ body.has-install-tip #app {
    于是顶栏那一枚的规格与品牌区那枚徽标（.brand-mark）**逐位对齐**：
      · 同一个直径 —— 42px（此前是 40px 的点击区里放 32px 的方角印）
      · 同一个圆心 —— 品牌标在左、头像在右，两枚同高同径，顶栏左右才配平
-     · 同一个圆 —— border-radius 50%（此前 .seal-avatar 是 26% 的「圆的方角」）
+     · 同一个圆 —— border-radius 50%（上一版是 26% 的「圆的方角」，已删）
 
    为什么整圆不是「方角印缩成 40px」：圆形的视觉直径比同边长的方角小两圈，
    要让它看着与 logo 一般大，就必须**真的同径**（42px），并且让印色**铺满**
-   —— 所以顶栏这一枚不再留 .seal-avatar 的 26% 圆角与内缩，而是由
-   `.top-user > .seal-avatar` 覆写成 100% 满幅的圆。
+   —— 所以顶栏这一枚由 `.top-user > .avatar` 覆写成 100% 满幅的圆。
 
-   底色 / 字色仍由 js/avatar.js 内联给出（色值来自用户选择，样式表穷举不了），
-   这里只管尺寸、圆角、字族与呼吸感。 */
+   底色与首字由 js/avatar.js 给出（传了图就是那张图），这里只管尺寸与呼吸感。 */
 .top-user {
   /* --user-size 就是槽的 42px：两枚同径是同一条口径，
      写死两处必然有一天只改了一处（尺寸漂移在顶栏上格外显眼）。 */
@@ -2338,9 +2357,9 @@ body.has-install-tip #app {
   border-radius: 50%;
   transition: transform .15s, box-shadow .18s;
 }
-/* 顶栏那一枚整圆：印色铺满，与左侧 logo 的圆「同一个圆」 */
-.top-user > .seal-avatar {
-  --seal-size: var(--user-size);
+/* 顶栏那一枚整圆：铺满，与左侧 logo 的圆「同一个圆」 */
+.top-user > .avatar {
+  --avatar-size: var(--user-size);
   width: 100%;
   height: 100%;
   border-radius: 50%;
@@ -2349,32 +2368,45 @@ body.has-install-tip #app {
 .top-user:hover { box-shadow: 0 0 0 3px rgba(165, 92, 25, .18); }
 .top-user:active { transform: scale(.94); }
 
-/* 印本身（三处显示共用：顶栏 / 设置页昵称旁 / 将来的档案区） */
-.seal-avatar {
-  --seal-size: 34px;
-  width: var(--seal-size);
-  height: var(--seal-size);
+/* 头像本体（三处显示共用：顶栏 / 设置页 / 个人中心 / 子档案名册）
+   --------------------------------------------------------------------------
+   两档长同一个「圆」：
+     · 没传图 → 印底是**深天青实底 + 米白首字**（与全站的选中态同一句）
+     · 传了图 → `.avatar-img` 铺满整圆（`object-fit: cover`，方形已由
+                 js/avatar-image.js 裁好，这里只负责不发胖）
+   为什么底色取深天青而不是随机色：头像没有颜色可选了（用户删掉了那套），
+   于是它必须与全站的「身份色」一致 —— 顶栏、设置页、个人中心画出来是同一枚。 */
+.avatar {
+  --avatar-size: 34px;
+  width: var(--avatar-size);
+  height: var(--avatar-size);
   flex: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  /* 圆的方角：既不像正方那么硬，也比正圆更像一枚「印」 */
-  border-radius: 26%;
+  overflow: hidden;
+  border-radius: 50%;
+  background: linear-gradient(150deg, #6e97a1, #4d7580);
+  color: #f7fbfa;
   font-family: var(--font-poem);
-  font-size: calc(var(--seal-size) * .56);
+  font-size: calc(var(--avatar-size) * .5);
   line-height: 1;
   font-weight: 600;
-  /* 字略微上提一点点，视觉上落在印面正中（汉字基线偏下） */
-  padding-bottom: calc(var(--seal-size) * .04);
   box-sizing: border-box;
   user-select: none;
-  /* 印面一圈极细的高光，像印泥压在纸上的边沿 */
+  /* 圆边一圈极细的高光，与描金细线同一档 */
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .34);
 }
-/* 顶栏里那一枚：直径由 .top-user 的 --user-size 统一给（与 logo 同径 42px）。
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+/* 顶栏那一枚：直径由 .top-user 的 --user-size 统一给（与 logo 同径 42px）。
    这里只保留一个兜底值 —— 万一 .top-user 的样式没生效（老缓存里少了那一段），
-   印也不会退化成零尺寸的空圆。 */
-.seal-avatar-top { --seal-size: 42px; }
+   头像也不会退化成零尺寸的空圆。 */
+.avatar-top { --avatar-size: 42px; }
 
 /* ---------- 底部页签 ---------- */
 .dock {
