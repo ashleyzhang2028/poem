@@ -69,7 +69,15 @@
           那会让用户一直重试登录，而他要做的是去收件箱。
        文案里那两句（去收件箱点确认 / 没收到就点「重新发一封」）是
        **唯一有用**的下一步，别删。 */
-    E_EMAIL_UNVERIFIED: "邮箱还没确认：请点开注册时那封确认邮件里的链接。没收到就点「重新发一封」。"
+    E_EMAIL_UNVERIFIED: "邮箱还没确认：请点开注册时那封确认邮件里的链接。没收到就点「重新发一封」。",
+    /* Issue #197 后续：人机校验（Cloudflare Turnstile）没过。
+       ⚠️ 这一条**只有一句话**，而且刻意**不说为什么** ——
+          服务端也不告诉客户端（`error-codes` 只进服务端日志）。
+          「没通过」对用户是同一件事：刷新页面、再点一次。
+          区分「token 过期」与「没勾」只会让人去修一个他修不了的东西。
+       ⚠️ 它**不是降级**（服务端是通的），所以 PASSWORD_ERR 那张表**不收它** ——
+          口令那几条路也会有这一条错，而「已切回本机体验版」在那儿是假话。 */
+    E_TURNSTILE: "人机校验没通过，请刷新页面再试一次"
   };
 
   /**
@@ -118,6 +126,24 @@
   /** 口令那几条路的传输失败文案（见 `PASSWORD_ERR` 那段说明） */
   function passwordMessageOf(code, fallback) {
     return PASSWORD_ERR[code] || messageOf(code, fallback);
+  }
+
+  /**
+   * 人机校验的 token —— **只有一处取它**（Issue #197 后续）。
+   *
+   * ⚠️ 为什么单独一个函数而不是在每个 `post()` 里写 `window.Turnstile.token()`：
+   *    · 有些调用点（Node 里跑测试、老 WebView）**压根没有** window 上的那个模块 ——
+   *      直接读会抛，而抛在发请求之前 = 「什么都没发生」，比失败更难查
+   *    · 取 token 的字段名（`turnstileToken`）只该出现一次
+   * @returns {string}  token；拿不到就是空串（服务端据此如实回答）
+   */
+  function turnstileToken() {
+    try {
+      var g = (typeof globalThis !== "undefined") ? globalThis : null;
+      var T = g ? g.Turnstile : null;
+      if (T && typeof T.token === "function") return String(T.token() || "");
+    } catch (e) { /* 没有就没有 —— 服务端会说 */ }
+    return "";
   }
 
   /** 有 fetch 才谈得上云端；没有就整体不可用（老 WebView） */
@@ -295,6 +321,13 @@
           purpose: input.purpose || "login",
           deviceId: deviceId
         };
+        /* ⚠️ 这三条（send-code / register / reset-request）是**匿名可写、
+           会发信**的口子 —— 服务端挂的就是这几条的人机校验（见
+           `core.humanGuard` 里那张清单）。token 由**这里**统一带上，
+           而不是让每个页面自己拼字段：漏拼一处的症状是「那个页面
+           永远过不了校验」，而它与「密钥配错了」长得一模一样。 */
+        if (input.turnstileToken != null) body.turnstileToken = input.turnstileToken;
+        else body.turnstileToken = turnstileToken();
         return post("/send-code", body);
       },
 
@@ -320,7 +353,8 @@
         return post("/register", {
           email: input.email,
           password: input.password,
-          deviceId: deviceId
+          deviceId: deviceId,
+          turnstileToken: input.turnstileToken != null ? input.turnstileToken : turnstileToken()
         }, PASSWORD_ERR);
       },
 
@@ -353,6 +387,7 @@
         input = input || {};
         var body = { deviceId: deviceId };
         if (input.email) body.email = input.email;
+        body.turnstileToken = input.turnstileToken != null ? input.turnstileToken : turnstileToken();
         return post("/resend-verification", body, PASSWORD_ERR);
       },
 
@@ -366,13 +401,21 @@
        */
       resendVerificationByEmail: function (input) {
         input = input || {};
-        return post("/resend-verification-by-email", { email: input.email, deviceId: deviceId }, PASSWORD_ERR);
+        return post("/resend-verification-by-email", {
+          email: input.email,
+          deviceId: deviceId,
+          turnstileToken: input.turnstileToken != null ? input.turnstileToken : turnstileToken()
+        }, PASSWORD_ERR);
       },
 
       /** POST /api/reset-request —— 忘记密码第一步：发重设邮件 */
       resetRequest: function (input) {
         input = input || {};
-        return post("/reset-request", { email: input.email, deviceId: deviceId }, PASSWORD_ERR);
+        return post("/reset-request", {
+          email: input.email,
+          deviceId: deviceId,
+          turnstileToken: input.turnstileToken != null ? input.turnstileToken : turnstileToken()
+        }, PASSWORD_ERR);
       },
 
       /** POST /api/reset-confirm —— 忘记密码第二步：真正换掉口令 */
@@ -392,6 +435,14 @@
       /** GET /api/me —— 权益的唯一来源（服务端判定层级与角色都在这一条上） */
       me: function () { return call("/me", "GET"); },
 
+      /**
+       * GET /api/config —— 本站的公开配置（Issue #197 后续）。
+       *
+       * ⚠️ 目前只用来回答「要不要渲染人机校验、siteKey 是哪一个」。
+       *    它**不需要登录**（登录页上的人必然没登录），
+       *    而且服务端刻意只下发那一组字段（见 api/config.js 的说明）。
+       */
+      config: function () { return call("/config", "GET"); },
       /* ------------------------------------------------- 头像（Issue #163）
          ⚠️ 传输层只把**已经压好、裁好**的字节送出去 —— 压缩与裁切在
             `js/avatar-image.js`（本地 canvas），这一层不碰 canvas、
@@ -478,6 +529,7 @@
   return {
     create: create,
     supported: supported,
+    turnstileToken: turnstileToken,
     messageOf: messageOf,
     passwordMessageOf: passwordMessageOf,
     TRANSPORT_ERR: TRANSPORT_ERR,

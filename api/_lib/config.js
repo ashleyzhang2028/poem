@@ -62,6 +62,35 @@ var CONFIG = {
   /* ---- 站点 ---- */
   siteUrl: env("SITE_URL", "https://kuibu.app"),
 
+  /* ---- 人机校验（Cloudflare Turnstile，Issue #197 后续）----
+     用户 2026-09-17：登录 / 注册 / 密码找回 / 密码 / 发送随机码等页面
+     都要加 Turnstile。
+
+     ⚠️ **两个变量，缺一不可**，而它们的语义是分开的：
+       · `TURNSTILE_SITE_KEY` —— **公开**的那一个，要进浏览器（渲染 widget）。
+         它不是密钥，写进页面是它的设计（与其它 `*_KEY` 不同）
+       · `TURNSTILE_SECRET_KEY` —— **保密**的那一个，只在服务端核 token 时用
+
+     ⚠️ 还有一个真正的开关 `TURNSTILE_ENABLED`，**默认 0（关）**。
+        理由与 `SMS_ENABLED` 逐字同源：**没配好密钥时打开它 = 谁也别想登录**。
+        唯一的例外是本地开发 / CI：那时给 `TURNSTILE_BYPASS=1`
+        （它**只在服务端读**，绝不随响应下发，也绝不该出现在生产环境）。
+
+     ⚠️ 判据**只有一处**：`turnstileReady(cfg)`（api/_lib/turnstile.js）。
+        在这里再写一遍 `enabled && key` 的形状，就会出现「接口 A 校验、
+        接口 B 不校验」而谁也不报错。 */
+  turnstileEnabled: env("TURNSTILE_ENABLED", "0") === "1",
+  turnstileSiteKey: env("TURNSTILE_SITE_KEY"),
+  turnstileSecretKey: env("TURNSTILE_SECRET_KEY"),
+  /* ⚠️ 旁路：给测试与本地联调。它与 `ALLOW_CODE_ECHO` 是**两件事**，
+     刻意分开（冒烟是「回明文码」，与「要不要做人机校验」无关）。 */
+  turnstileBypass: env("TURNSTILE_BYPASS", "0") === "1",
+  /* ⚠️ `turnstileFetch` **不是环境变量**：它是测试注入用的口子
+     （`test/api.test.js` 往 CONFIG 上挂一个假 fetch，让「核 token」那次
+     HTTP 不出网）。生产环境这个字段是 `undefined`，`turnstile.verify()`
+     会去用全局的 `fetch`。**刻意不从 env 读它** —— 一个能配 fetch 实现的
+     环境变量等于「谁改得了环境变量谁就能把校验换掉」。 */
+
   /* ---- 注册与口令（Issue #197：完整登录流程）----
      ⚠️ 这几项**没有一项是开关**：注册 / 登录 / 忘记密码 / 重设口令
         都是本流程的组成部分，开关一开一半就成了「某些用户走不通」。
@@ -167,6 +196,24 @@ var CONFIG = {
 
   // 冒烟/自测模式：显式打开才允许把明文码回给调用方（**绝不在生产开**）
   allowCodeEcho: env("ALLOW_CODE_ECHO", "0") === "1"
+};
+
+/**
+ * 人机校验（Turnstile）当前是否**真的**开着 —— **判据只有这一处**。
+ *
+ * 三个条件必须同时成立：开关打开 + 有 secret key + **没有**打开旁路。
+ *
+ * ⚠️ 读 `this`（与 `cfg.mail()` / `cfg.hasSession()` 同一条纪律）：
+ *    测试里 `Object.assign({}, CONFIG, {...})` 这类覆盖必须生效 ——
+ *    写成读模块级 CONFIG 的症状是「明明给了密钥却仍不校验」，且**不报任何错**。
+ * ⚠️ 与 `api/_lib/turnstile.js` 的 `turnstileReady(cfg)` 是**同一个判据**，
+ *    那边读 cfg 的字段、这边是 CONFIG 上的便捷入口；两处都只读这三个字段，
+ *    不各自维护一份逻辑。
+ */
+CONFIG.turnstileReady = function () {
+  var c = (this && this.turnstileEnabled !== undefined) ? this : CONFIG;
+  if (c.turnstileBypass === true) return false;
+  return c.turnstileEnabled === true && String(c.turnstileSecretKey || "").length > 0;
 };
 
 /**

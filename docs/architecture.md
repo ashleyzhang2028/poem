@@ -368,6 +368,7 @@ jobs:
 | 权益来源 | **只有 `/api/me`**，客户端一切 `plan` 字段都是显示用的缓存；唯一能写它的地方是 `POST /api/admin/grant`（2.2 已落地，见 §4.14） |
 | 权益由谁写 | 服务端：`accounts.plan` / `plan_until`。**不在客户端**，也不在本机名单里（本机那份降级为兜底，见 §4.14） |
 | 短信 | 只留口子（`channel` 枚举已就位），不实现 |
+| 人机校验 | **可选**（Cloudflare Turnstile，Issue #197 后续）。默认**关**；开了才挡在四条匿名可写、会发信/建号的口子前面（`send-code` / `register` / `reset-request` / `resend-verification`）。判据只有一处（`turnstileReady()` = 开关 + 密钥 + 非旁路），`/api/config` 与 `/api/me` 的 `channel.turnstile` 如实自报。详见 `docs/auth-design.md` §4.4.12 |
 | 儿童 | 只允许成年人建号，孩子只是展示昵称；不做家庭子档案（1 期不做） |
 
 > ⚠️ **这一条与 `docs/auth-design.md` §3.4 有冲突，以本文为准**：

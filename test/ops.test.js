@@ -263,15 +263,18 @@ console.log("\n=== 七、自检脚本：能跑、能出 JSON、退出码如实 =
   has(full.out, "最低线已过", "并明说「能真跑」");
 }
 
-console.log("\n=== 七之二、2D 的五个步骤（配置与真开通，docs §4.12） ===");
+console.log("\n=== 七之二、2D 的六个步骤（配置与真开通，docs §4.12） ===");
 {
   /* 这一节守的是**「怎么补」那一段本身**：它与清单同源（都在 ops.js 里），
-     所以这里断言的是「五步都在、每步都能落地」——
+     所以这里断言的是「六步都在、每步都能落地」——
      而不是「文档里写了没写」（那一条由另一条断言守着：
-     文档若与命令分叉，就是本节要拦的下一件事故）。 */
-  chk(Array.isArray(ops.STEPS) && ops.STEPS.length === 5, "五步齐备（实际 " + (ops.STEPS || []).length + "）");
+     文档若与命令分叉，就是本节要拦的下一件事故）。
+     ⚠️ Issue #197 后续加了第 F 步（Cloudflare Turnstile）：它排在 C（发信商）
+        之后、D/E（探活 / 验收）之前，因为「配完再验」这件事必须留在**最后**，
+        而人机校验与发信商同属「第三方服务」。 */
+  chk(Array.isArray(ops.STEPS) && ops.STEPS.length === 6, "六步齐备（实际 " + (ops.STEPS || []).length + "）");
   const ids = ops.STEPS.map(s2 => s2.id).join("");
-  eq(ids, "ABCDE", "五步的编号是 A~E，顺序稳定（顺序错了会把「可选」的一步排在「必须」前面）");
+  eq(ids, "ABCFDE", "六步的编号稳定（A/B/C/F 是「配什么」，D/E 是「配完怎么兜与怎么验」 —— F 不许排到 E 后面）");
   ops.STEPS.forEach(st => {
     chk(!!st.title && !!st.where && !!st.why && !!st.check,
       "第 " + st.id + " 步四句话都写全了（叫什么 / 在哪配 / 为什么 / 判据）");
@@ -280,7 +283,7 @@ console.log("\n=== 七之二、2D 的五个步骤（配置与真开通，docs §
       "第 " + st.id + " 步的档位是三种之一（复用清单那三档，不另立一套）");
   });
 
-  const A2 = ops.STEPS[0], B2 = ops.STEPS[1], C2 = ops.STEPS[2], D2 = ops.STEPS[3], E2 = ops.STEPS[4];
+  const A2 = ops.STEPS[0], B2 = ops.STEPS[1], C2 = ops.STEPS[2], F2 = ops.STEPS[3], D2 = ops.STEPS[4], E2 = ops.STEPS[5];
   has(A2.how.join(" "), "openssl rand -hex 32", "A 步给的是可照抄的命令，不是「生成一个随机串」");
   has(A2.how.join(" "), "SESSION_SECRET", "A 步说清这一串填到哪个变量里");
   has(B2.how.join(" "), "api/_lib/schema.sql", "B 步的建表指向仓库里那份真 schema（不另抄一份 SQL）");
@@ -373,7 +376,7 @@ console.log("\n=== 七之二、2D 的五个步骤（配置与真开通，docs §
   has(cnbCode, "apikey: $SUPABASE_SERVICE_KEY", ".cnb.yml 的 apikey 头用的是 service key");
   /* 同一个 key 两个头都要带：apikey 给的是 key，Authorization 给的是 token */
   has(cnb, "Authorization: Bearer $SUPABASE_SERVICE_KEY", "Authorization 那一头也带着同一个 key");
-  const vdb = ops.STEPS[4].how.join("\n") + "\n" + ops.STEPS[1].check;
+  const vdb = ops.STEPS.filter(x => x.id === "E")[0].how.join("\n") + "\n" + ops.STEPS[1].check;
   chk(vdb.indexOf("apikey: $SUPABASE_URL") < 0,
     "ops.js 里那条验收命令（B 的判据 / E 的第①条）同样不是 SUPABASE_URL");
   has(vdb, "apikey: $SUPABASE_SERVICE_KEY", "ops.js 里那条命令用的是 service key");
@@ -382,7 +385,7 @@ console.log("\n=== 七之二、2D 的五个步骤（配置与真开通，docs §
      得去 Connection string 取模板再替换 [YOUR-PASSWORD]。这一步不写出来，
      下一个人只会拿到一个含占位符的串，然后看着
      「could not translate host name」以为 DNS 坏了。 */
-  const stepD = ops.STEPS[3].how.join("\n");
+  const stepD = ops.STEPS.filter(x => x.id === "D")[0].how.join("\n");
   has(stepD, "SUPABASE_DB_URL", "D 步写明了备份还要第三个值");
   has(stepD, "[YOUR-PASSWORD]", "D 步写明了那个占位符要整体替换掉");
   has(stepD, "Connection string", "D 步指明了去哪里取模板");

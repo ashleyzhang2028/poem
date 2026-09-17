@@ -55,6 +55,9 @@ var ROUTES = {
   "POST /send-code": "./../_routes/send-code.js",
   "POST /verify-code": "./../_routes/verify-code.js",
   "GET /me": "./../_routes/me.js",
+  /* Issue #197 后续（人机校验）：本站**公开**配置。它必须**匿名可打** ——
+     需要它的两页（`/login/`、`/reset/`）上，用户必然还没登录。 */
+  "GET /config": "./../_routes/config.js",
   "POST /sync/pull": "./../_routes/sync/pull.js",
   "POST /sync/push": "./../_routes/sync/push.js",
   "DELETE /account": "./../_routes/account.js",

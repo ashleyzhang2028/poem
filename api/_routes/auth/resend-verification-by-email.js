@@ -35,6 +35,11 @@ module.exports = handler.make("auth.resend-verification-by-email", ["POST"], fun
     email: body.email,
     value: body.value,
     deviceId: body.deviceId || d.deviceId,
+    /* Issue #197 后续：人机校验的 token 必须**原样送到内核** —— 内核里
+       `humanGuard` 读它（`turnstileToken` / `cf-turnstile-response` 两个名字都认）。
+       ⚠️ 这一层只做「把参数送到」，**不判**校验过没过：
+          判在服务端内核那一处（`core.humanGuard`），在这里再判一遍就是两处规则。 */
+    turnstileToken: body.turnstileToken != null ? body.turnstileToken : body["cf-turnstile-response"],
     ip: d.ip
   });
 });

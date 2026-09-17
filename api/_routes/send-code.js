@@ -31,6 +31,11 @@ module.exports = handler.make("send-code", ["POST"], function (d, body) {
     phone: body.phone,
     purpose: body.purpose,
     deviceId: body.deviceId || d.deviceId,
+    /* Issue #197 后续：人机校验的 token 必须**原样送到内核** —— 内核里
+       `humanGuard` 读它（`turnstileToken` / `cf-turnstile-response` 两个名字都认）。
+       ⚠️ 这一层只做「把参数送到」，**不判**校验过没过：
+          判在服务端内核那一处（`core.humanGuard`），在这里再判一遍就是两处规则。 */
+    turnstileToken: body.turnstileToken != null ? body.turnstileToken : body["cf-turnstile-response"],
     ip: d.ip
   }).then(function (r) {
     // 契约写的是 202（docs §4.3），内核回 200 —— 这里对齐契约

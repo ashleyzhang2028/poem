@@ -16,6 +16,10 @@
   "use strict";
 
   var api = (window.AuthApi && window.AuthApi.supported()) ? window.AuthApi.create({}) : null;
+  /* 人机校验（Issue #197 后续）。**可能是 undefined** —— 每一处都按
+     「没有它也能跑」写：真闸在服务端，这里少一个模块只意味着少一次前置判断。 */
+  var TS = window.Turnstile || null;
+  var tsConfig = { enabled: false, siteKey: "" };
 
   function $(id) { return document.getElementById(id); }
   function show(el) { if (el) el.hidden = false; }
@@ -54,6 +58,25 @@
 
   var rid = "";
 
+  /**
+   * 人机校验的空壳（**没配时什么都不做**）。
+   *
+   * ⚠️ 本页与 /login/ 那一份的差别只有一处：这里**没有**把「没过就拦住」
+   *    做成硬拦 —— 重设口令这条路**服务端不挂校验**（见 api/_lib/core.js
+   *    的 humanGuard），所以在客户端拦下来等于凭空多出一道谁也绕不过的门。
+   *    判据仍走 `TS.gate()`（那一个函数决定「没配」要不要放行），
+   *    只是**只在服务端真的挂了校验时才拦** —— 而这一页无从知道服务端挂没挂，
+   *    所以它**不拦**，只把 token 带上（服务端要不要它，由那边决定）。
+   */
+  function mountTurnstile() {
+    if (!TS || !TS.mount) return;
+    var el = $("ts-reset");
+    if (!el) return;
+    TS.mount(el, { siteKey: tsConfig.siteKey, enabled: tsConfig.enabled }).then(function (st) {
+      if (st && st.configured) show(el);
+    });
+  }
+
   function confirmReset() {
     if (!api) { msg("连不上服务器，请稍后再试", "warn"); return; }
     var pw = ($("input-new-pw") || {}).value || "";
@@ -69,6 +92,8 @@
       // 口令用完就清（无论成没成）
       if ($("input-new-pw")) $("input-new-pw").value = "";
       if ($("input-new-pw2")) $("input-new-pw2").value = "";
+      /* 人机校验的 token 也是一次性的（提交即废） */
+      if (TS && TS.reset) { try { TS.reset(); } catch (e) { /* 没有 widget：空操作 */ } }
       if (!r.ok) {
         /* 「链接过期 / 用过 / 不对」三种情形要**换一屏**说（那是链接的问题，
            不是表单填错了）。而「密码太短」留在这张表单上就地提示。 */
@@ -135,6 +160,16 @@
       if (!el) return;
       el.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); confirmReset(); } });
     });
+
+    /* 人机校验：先问「要不要」，再挂（与 /login/ 同一套；失败不拦） */
+    if (TS && api && api.config) {
+      api.config().then(function (r) {
+        if (!r || !r.ok || !r.turnstile) return;
+        tsConfig.enabled = r.turnstile.enabled === true;
+        tsConfig.siteKey = r.turnstile.siteKey || "";
+        if (tsConfig.enabled) mountTurnstile();
+      }, function () { /* 拿不到就保持「没配」那一档 */ });
+    }
 
     if (!rid || !resetToken) { state("none"); return; }
     /* ⚠️ 地址栏里的令牌**先不抹** —— 这一页要等用户填完两次口令才发请求，

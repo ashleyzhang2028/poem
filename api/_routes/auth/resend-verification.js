@@ -36,6 +36,11 @@ module.exports = handler.make("auth.resend-verification", ["POST"], function (d,
     email: body.email,
     value: body.value,
     deviceId: body.deviceId || d.deviceId,
+    /* Issue #197 后续：人机校验的 token 必须**原样送到内核** —— 内核里
+       `humanGuard` 读它（`turnstileToken` / `cf-turnstile-response` 两个名字都认）。
+       ⚠️ 这一层只做「把参数送到」，**不判**校验过没过：
+          判在服务端内核那一处（`core.humanGuard`），在这里再判一遍就是两处规则。 */
+    turnstileToken: body.turnstileToken != null ? body.turnstileToken : body["cf-turnstile-response"],
     /* ⚠️ 出口 IP 必须传下去 —— 这一条以前只按设备档记账，
        deviceId 是客户端自己给的，每天换一个就绕过了。 */
     ip: d.ip

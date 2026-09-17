@@ -238,6 +238,46 @@ var ENTRY = [
     missing: "没有实现可指：只开开关不接商，请求**仍然是 503 E_SMS_NOT_OPEN**（2B 的核心口径）",
     how: "先签商 + 模板报备，再实现 transports.<商名>；在此之前这一项**不填**"
   },
+  /* ---- 人机校验（Cloudflare Turnstile，Issue #197 后续）----
+     ⚠️ 三个变量，其中**只有一个是密钥**（secret key），另外两个是公开值/开关。
+        这一点与本文件里其它项不同 —— 把 siteKey 标成 secret 会让
+        「只报已设置 / 未设置」这条纪律误伤它（它是**要进浏览器**的那个）。 */
+  {
+    key: "TURNSTILE_ENABLED",
+    level: "optional",
+    group: "人机校验",
+    secret: false,
+    what: "是否开启人机校验（Cloudflare Turnstile）。默认 0 / 关",
+    missing: "默认关。**没配好密钥时开着它 = 谁也别想登录**（与 SMS_ENABLED 同一条理由）",
+    how: "在 Cloudflare 后台建好 widget、拿到两个 key 之后，设成 1；本地开发 / CI 用 TURNSTILE_BYPASS=1 绕开（**那条只在服务端读**，绝不能上生产）"
+  },
+  {
+    key: "TURNSTILE_SITE_KEY",
+    level: "optional",
+    group: "人机校验",
+    secret: false,
+    what: "Turnstile 的 **Site Key**（公开值，由 /api/config 下发给浏览器渲染 widget）",
+    missing: "缺它时前端**一个字节都不发给 Cloudflare**（不渲染 widget、连脚本都不加载），如实自报「本站没开人机校验」",
+    how: "Cloudflare 控制台 → Turnstile → Add site → 填本站域名 → 复制 **Site Key**（⚠️ 它是公开的，进浏览器是它的设计；别与 Secret Key 弄混）"
+  },
+  {
+    key: "TURNSTILE_SECRET_KEY",
+    level: "optional",
+    group: "人机校验",
+    secret: true,
+    what: "Turnstile 的 **Secret Key**（**只在服务端**，核 token 时用）",
+    missing: "缺它时服务端不校验（`turnstileReady()` 为 false）—— 与没开开关是同一档",
+    how: "与 Site Key 同一页 → 复制 **Secret Key** → 填进托管平台的环境变量（⚠️ 绝不进仓库、不进浏览器）"
+  },
+  {
+    key: "TURNSTILE_BYPASS",
+    level: "optional",
+    group: "人机校验",
+    secret: false,
+    what: "**绕过**人机校验（只给本地开发 / 测试 / CI）",
+    missing: "默认 0 / 不绕过",
+    how: "只在本地与 CI 设 1。⚠️ **生产绝不许开** —— 它等于把人机校验整个关掉，而且**不经过 TURNSTILE_ENABLED**（后者至少还在配置清单里看得见）。它刻意**不随任何响应下发**，生产环境无从察觉它开着"
+  },
   {
     key: "ALLOW_CODE_ECHO",
     level: "optional",
@@ -307,6 +347,9 @@ function check(cfg) {
   var mail = typeof cfg.mail === "function" ? cfg.mail() : "console";
   var smsEnabled = cfg.smsEnabled === true;
   var smsTransport = isSet(cfg.smsTransport) ? cfg.smsTransport : null;
+  /* 人机校验的判定一律**问 config 自己的函数**（与 mail / sms 同一条纪律：
+     在这里重算一遍就会「自检说开着、真校验却不校验」）。 */
+  var turnstile = typeof cfg.turnstileReady === "function" ? !!cfg.turnstileReady() : false;
 
   var notes = [];
   if (!hasSession) notes.push("缺 SESSION_SECRET：所有 /api/* 会回 503 —— 本站仍可完全离线使用（这是设计好的降级，不是坏掉）");
@@ -321,6 +364,20 @@ function check(cfg) {
       "想用 Resend 就显式写 MAIL_TRANSPORT=resend，或把 SENDGRID_API_KEY 去掉");
   }
   if (smsEnabled && !smsTransport) notes.push("SMS_ENABLED=1 但没接短信商：请求仍是 503 E_SMS_NOT_OPEN（这是 2B 定死的口径，不是 bug）");
+  /* ---- 人机校验（Turnstile）的三档如实提示 ----
+     ⚠️ 这三条各自说的是**不同的事**，合成一条会让用户不知道该怎么办：
+       · 旁路开着（最危险，且生产无从察觉）
+       · 开关开着但缺 secret（看着像开着、实际不校验 → 「假绿」）
+       · 开关关着（默认，不是错） */
+  if (isSet(cfg.turnstileBypass) && cfg.turnstileBypass === true) {
+    notes.push("⚠️ TURNSTILE_BYPASS=1：**人机校验被整个绕开了**，而且这件事不随任何响应下发 —— 生产环境绝不许开它");
+  } else if (cfg.turnstileEnabled === true && !isSet(cfg.turnstileSecretKey)) {
+    notes.push("TURNSTILE_ENABLED=1 但没填 TURNSTILE_SECRET_KEY：**看着像开着，实际一处都不校验** —— " +
+      "判据是 `turnstileReady()`（开关 + 密钥**两者都要**），请补上密钥或把开关改回 0");
+  } else if (turnstile && !isSet(cfg.turnstileSiteKey)) {
+    notes.push("人机校验在服务端开着，但没填 TURNSTILE_SITE_KEY：**前端不会渲染 widget**（一个字节都不发给 Cloudflare），" +
+      "于是**每一次登录/注册都会被服务端拒**（E_TURNSTILE）。这两个 key 是一对，缺一个都跑不起来");
+  }
   if (smsTransport) notes.push("SMS_TRANSPORT 指向了 " + smsTransport + "：请确认 api/_lib/mail/index.js 里真的实现了它，否则投递会以 E_SMS_FAIL 失败");
 
   return {
@@ -329,6 +386,8 @@ function check(cfg) {
     hasDb: hasDb,
     mail: mail,
     smsReady: !!(smsEnabled && smsTransport),
+    /* 人机校验真的在跑吗（与 `channelFacts().turnstile` 同源） */
+    turnstile: turnstile,
     items: items,
     missing: missing,
     blocking: blocking,
@@ -350,6 +409,7 @@ function report(cfg) {
   lines.push("");
   lines.push("发信通道：" + r.mail + (r.mail === "console" ? "（用户收不到信，只写服务端日志）" : ""));
   lines.push("短信通道：" + (r.smsReady ? "已接商 " + cfg.smsTransport : "未开通（如实回 503，不假装发短信）"));
+  lines.push("人机校验：" + (r.turnstile ? "已开启（Cloudflare Turnstile）" : "未开启（前端不渲染 widget，服务端也不校验）"));
   lines.push("");
   lines.push("-- 已设置的项 --");
   r.items.filter(function (i) { return i.set; }).forEach(function (i) {
@@ -443,6 +503,31 @@ var STEPS = [
     check: "自检里「发信通道」从 console 变成你配的那一家；发一封真信，delivered 为 true"
   },
   {
+    id: "F",
+    title: "接上人机校验（Cloudflare Turnstile）",
+    level: "optional",
+    where: "Cloudflare 控制台 + 托管平台的环境变量（两个 key + 一个开关）",
+    why: "登录 / 注册 / 密码找回 / 发送随机码这几条**匿名可写、会发信、会建号**的口子，"
+      + "光靠频控只能压住「刷多快」，压不住「脚本批量打」。人机校验把「你是不是真人」"
+      + "这件事挡在这些口子的前面。**默认关** —— 没配好两个 key 就打开它 = 谁也别想登录",
+    how: [
+      "① Cloudflare 控制台 → **Turnstile** → Add site → 填本站域名（`kuibu.app` 那种，不带 https）→ Create",
+      "② 建完那一页给你**两个 key**，它们是一对，缺一个都跑不起来：**Site Key**（公开，进浏览器渲染 widget）与 **Secret Key**（保密，只在服务端核 token）",
+      "③ 托管平台 → 项目 → Settings → Environment Variables → 建**三个**：`TURNSTILE_ENABLED=1`、`TURNSTILE_SITE_KEY=<Site Key>`、`TURNSTILE_SECRET_KEY=<Secret Key>`",
+      "④ **重新部署一次** —— Vercel 的环境变量**只在新部署里生效**，光改不重新部署 = 没改（这是「我明明配了」里最常见的一种）",
+      "⑤ 回来验：终端 `curl -sS \"$SITE_URL/api/config\"` 应当回 `{\"turnstile\":{\"enabled\":true,\"siteKey\":\"0x…\"}}`；打开 `/login/` 应当看见那个方框",
+      "⚠️ 本地开发 / CI 不想真接 Cloudflare，就给 `TURNSTILE_BYPASS=1`（**只在服务端读**，生产绝不许开）"
+    ],
+    verify: [
+      "GET /api/config 回 `turnstile.enabled:true` 且带 `siteKey`（没带 = 开关开了但缺 Site Key）",
+      "打开 /login/，密码那一屏下方应当出现 Cloudflare 的方框；不出现就看浏览器控制台（多半是 Site Key 填错或域名没加进 widget 的允许列表）",
+      "故意不勾就点「注册」：前端会就地提示「请先完成人机校验」，**不会**发出那次请求",
+      "把 widget 删掉再点「注册」（模拟绕过前端）：服务端回 400 `E_TURNSTILE` —— **这才证明闸在服务端**",
+      "服务端日志里搜 `api.turnstile_blocked`：它带着 Cloudflare 的 error-codes（如 invalid-input-secret），是排查「密钥配错了」的唯一材料"
+    ],
+    check: "GET /api/config 的 turnstile.enabled 为 true 且带 siteKey；不勾提交时服务端回 400 E_TURNSTILE；`npm run doctor` 里「人机校验」那一行从「未开启」变「已开启」"
+  },
+  {
     id: "D",
     title: "上探活与备份（可用性兜底，不是可靠性方案）",
     level: "optional",
@@ -495,7 +580,7 @@ var STEPS = [
 /** 步骤渲染成给人看的文字（`doctor.js --steps` 与 Issue 评论用同一份） */
 function stepsReport(cfg) {
   var lines = [];
-  lines.push("跬步 · 配置与真开通（2D：Supabase + 发信商 + 会话密钥 + 探活）");
+  lines.push("跬步 · 配置与真开通（2D：Supabase + 发信商 + 会话密钥 + 探活 + 人机校验）");
   lines.push("=".repeat(60));
   lines.push("五步，按顺序做。每一步做完都有一条**本机就能跑的判据**，不必先部署。");
   lines.push("真值进托管平台的环境变量，**不进仓库**（.env 被 .gitignore 挡着）。");
@@ -517,6 +602,7 @@ function stepsReport(cfg) {
   var r = check(cfg);
   lines.push("   第 A/B 步（最低线）：" + (r.ok ? "已过" : "未过（缺 " + r.blocking.map(function (i) { return i.key; }).join("、") + "）"));
   lines.push("   第 C 步（真发信）：" + (r.mail === "console" ? "未过（发信通道是 console）" : "已过（" + r.mail + "）"));
+  lines.push("   第 F 步（人机校验）：" + (r.turnstile ? "已过（Cloudflare Turnstile）" : "未过（默认关；要开就照着第 F 步走）"));
   lines.push("   第 D 步（探活与备份）：不在环境变量里，看仓库 .cnb.yml 的两条 crontab");
   lines.push("   第 E 步（验收）：上面四条命令，本机跑");
   lines.push("");
