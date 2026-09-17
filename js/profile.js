@@ -126,38 +126,11 @@
     if (out) out.hidden = !id.signedIn;
     if (hint) hint.hidden = !id.signedIn;
 
-    /* 未登录时补一句「登录还差什么」：只写**还差的那件事**，不写理由。
-       文案由权益层出自己的口径（`hint`），这里不手拼「登录可用」这类字样 ——
-       全站「登录取向说什么」只有 denyReason() 一处。
-       ⚠️ 未登录那颗键就叫「登录」，「差语音朗读」这件事在它底下的说明行里说：
-         按钮写事、说明写差别，两处分工不与全站别处冲突。 */
-    var loginHint = $("login-hint");
-    if (loginHint) {
-      loginHint.hidden = id.signedIn;
-      loginHint.textContent = id.signedIn ? "" : diffLine(id);
-    }
-  }
-
-  /**
-   * 未登录与 Free 之间**只差的那一条**（当前是语音朗读）。
-   *
-   * 数出「差几条」，再从权益层取那一条的中文名 —— 不把「语音朗读」四个字
-   * 写死在这里：将来 Free 只差的那一条变成别的（或不止一条），
-   * 这一行会自己跟着变，而不是悄悄地开始说假话。
-   */
-  function diffLine(id) {
-    if (!Ent || typeof Ent.capNames !== "function") return "";
-    var freeCtx = { tier: "free", signedIn: true };
-    var diff = Ent.capNames().filter(function (key) {
-      /* 只看真能力（别名指回同一张表，列两遍是同一件事） */
-      if (typeof Ent.cap === "function" && !Ent.cap(key)) return false;
-      return id.can(key).ok !== Ent.can(key, freeCtx).ok;
-    });
-    if (!diff.length) return "";
-    if (diff.length > 1) return "差 " + diff.length + " 项。";
-    var c = Ent.cap(diff[0]);
-    var name = c && c.name ? String(c.name).split("（")[0] : diff[0];
-    return "差" + name + "。";
+    /* ⚠️ Issue #209（用户 2026-09-17）：原先未登录时底下还补一句
+       「差语音朗读。」（`#login-hint`，文案由下面的 diffLine() 现算）。
+       用户原话：「删除 差语音朗读。」—— 整句删掉。这一颗键叫「登录」就已经
+       说清了它要做的事；「登录能多出什么」上面那张层级对比表逐条列着，
+       不必在这儿再数一遍。于是挂点、渲染、diffLine() 一并撤掉（不留死代码）。 */
   }
 
   /* ------------------------------------------------------------ 二、本机数据概览 */

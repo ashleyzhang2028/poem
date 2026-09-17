@@ -222,7 +222,12 @@ const plansCommentOnly = pageJs;
     'js/plans.js 不自己写 tier === "pro" 这类判断');
   chk(!/plan\s*===/.test(PAGE), 'js/plans.js 不自己比对 plan');
   chk(/Ent\.identity\(/.test(PAGE), '「你现在的身份」走 Entitlement.identity()（页面不自己读会话）');
-  chk(/Ent\.tierLabel\(/.test(PAGE), '层级文案一律由 Entitlement.tierLabel() 出');
+  /* ⚠️ Issue #209：原先这条判的是 `renderMe()` 里那一行「层级」——
+     那张卡撤掉之后，本页唯一还要说层级名的地方是个人中心那行徽章，
+     而它由 js/settings-nav.js 走 `Ent.tierLabel()`。本页改为判
+     「列名 / 层级名一律不手写」（四列表头由 compare() 的 cols 出）。 */
+  chk(/renderHead/.test(PAGE) && !/>\s*(Free|Pro|Max)\s*</.test(stripHtml(pageHtml)),
+    '层级 / 列名一律由 Entitlement 出，js/plans.js 与 HTML 都不手写');
   chk(!/poem_plan_v1|poem_plan_grant_v1|poem_owner_v1/.test(PAGE),
     'js/plans.js 不碰任何权益存储键（键名只在 entitlement.js 里）');
   chk(!/AuthCore\.|window\.AuthCore/.test(PAGE),
@@ -273,6 +278,39 @@ const plansCommentOnly = pageJs;
     '两种状态各只留一句（实际：' + aboutBranches.join(' / ') + '）');
   /* 反向：不许只留一句、不许两态说反 */
   chk(pageJs.indexOf('renderAbout(id)') > 0, '初始化时真的调了 renderAbout(id)');
+}
+
+/* ====== 五之三、Issue #209：「现在」那张卡整张撤掉 ======
+   用户 2026-09-17 原话：
+     「现在 / 身份 / 游客（本机） / 层级 / Free / 落在哪一列 / 游客 /
+       层级本机登记，改一行存储就能改。/ 未登录，只差这一条：登录可用
+       …… 上面这张卡片没有任何存在的意义，删除」
+
+   他点的是**整张卡**，所以这一节判四件事：
+     ① 挂点没了（HTML 里 `#plans-me` / `#plans-me-hint` 都不在，
+        连空壳容器也不留）；
+     ② 渲染函数没了（`renderMe()` / `renderLoginHint()` 连同 `diffLine` 那类
+        孤儿函数一起撤 —— 挂点没了还留函数就是「静默跳过」的死代码）；
+     ③ paint() 不再调它们；
+     ④ 「我现在在哪一格」这件事仍有**唯一**一处答案：对比表的列头角标
+        （`plans-col-me`），不是「哪都没说」。
+   ⚠️ 「关于这些层级」（`#plans-about`）**留着** —— 那是别处没说过的事实：
+      层级是谁定的。第五之二那一节继续守着它。 */
+{
+  chk(!/plans-me\b/.test(pageHtml) && !/plans-me-hint/.test(pageHtml),
+    '「现在」那张卡在 HTML 里没有残留挂点（#plans-me / #plans-me-hint 都不在）');
+  chk(!/kv-list/.test(pageHtml), '那三行「身份 / 层级 / 落在哪一列」的容器也一并撤了');
+  chk(/id="plans-about"/.test(pageHtml) && /\$\("plans-about"\)/.test(pageJs),
+    '「关于这些层级」那一句留着（挂点 + 渲染都在）');
+  chk(!/renderMe\s*\(/.test(PAGE), 'js/plans.js 不再有 renderMe()（连定义带调用）');
+  chk(!/renderLoginHint\s*\(/.test(PAGE), 'js/plans.js 不再有 renderLoginHint()');
+  chk(!/plans-me-hint/.test(PAGE) && !/plans-me\b/.test(PAGE),
+    'js/plans.js 不再提那两个（已撤掉的）挂点');
+  /* 判**可见文字**，不判注释：注释里留着用户原话（来龙去脉），
+     页面画出来的字里不许再有这一句。 */
+  chk(!/只差这一条/.test(stripHtml(pageHtml)), '页面可见文字里不再有「只差这一条：登录可用」那句');
+  chk(/plans-col-me/.test(PAGE) && /plans-col-me/.test(css),
+    '「你在哪一格」仍有一处答案：对比表的列头角标（不是哪都没说）');
 }
 
 /* ============ 六、只读：这一页一个字节都不写盘 ============ */
@@ -332,7 +370,7 @@ const plansCommentOnly = pageJs;
   chk(sw.indexOf('"./plans/"') >= 0, 'sw.js 预缓存里有 ./plans/（断网也进得去）');
   chk(sw.indexOf('"./js/plans.js"') >= 0, 'sw.js 预缓存里有 js/plans.js');
   const ver = parseInt((sw.match(/poem-app-v(\d+)/) || [0, '0'])[1], 10);
-  chk(ver >= 132, '缓存版本已跟着提（本轮 Issue #163 改了本页 / 内核 / 数据层，实际 v' + ver + '）');
+  chk(ver >= 141, '缓存版本已跟着提（本轮 Issue #209 改了本页 / 设置 / 个人中心 / 登录页，实际 v' + ver + '）');
   const list = [...sw.matchAll(/"(\.\/[^"]+)"/g)].map(m => m[1]);
   const missing = list.filter(u => {
     if (u === './') return false;

@@ -104,7 +104,11 @@
             <div class="turnstile-slot" id="ts-code" hidden></div>
             <button class="account-btn" id="btn-send" type="button">发送随机码</button>
             <p class="account-msg" id="msg-email"></p>
-            <p class="account-hint">不记密码也能用：随机码发到邮箱，填进来即登录。</p>
+            <!-- ⚠️ Issue #209（用户 2026-09-17）：这里原先还有一句
+                 「不记密码也能用：随机码发到邮箱，填进来即登录。」
+                 用户原话：「删除 不记密码也能用：随机码发到邮箱，填进来即登录。」
+                 —— 这一页的页签名就叫「随机码」，输入框与那颗「发送随机码」
+                 按钮已经把这件事说完；这句是同一件事再说一遍，整句删掉。 -->
           </div>
 
           <div class="account-step" id="step-code" hidden>
