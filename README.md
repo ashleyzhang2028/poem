@@ -421,6 +421,27 @@ npm run env:example > .env.example    # 生成可直接粘贴的模板
 **这一步 AI 做不了**：注册 Supabase / 发信商都要本人邮箱与手机号。能自动化的部分是
 **「步骤本身」与「判据本身」**（都在 `api/_lib/ops.js` 的 `STEPS` 里，与清单同一份数据）。
 
+#### 环境变量都填完了，下一步是什么
+
+**不要照着这张表再念一遍步骤，而是拿判据去问那台实例**：
+「配好了」与「配对了吗」是两件事，而**「配了」这件事本身也可能没生效** ——
+Vercel 的环境变量**只在新部署里生效**（这是「我明明配了」里最常见的一种）。
+按 E 步的四条判据逐条打一遍，每一条都有一个明确结论：
+
+```
+curl -sS -o /dev/null -w '%{http_code}\n' "$SUPABASE_URL/rest/v1/accounts?select=uid&limit=1" \
+  -H "apikey: $SUPABASE_SERVICE_KEY" -H "Authorization: Bearer $SUPABASE_SERVICE_KEY"  # 期望 200
+curl -sS "$SITE_URL/api/me" | head -c 200                      # 期望 401（回 503 就是 SESSION_SECRET 没生效）
+curl -sS "$SITE_URL/api/config"                                # 期望 turnstile.enabled:true 且带 siteKey
+# 发一次码：delivered 必须是 true，transport 要是你配的那一家
+```
+
+⚠️ 其中**最容易被跳过、也最容易假绿**的一条是**发信**：
+`delivered:true` 才算真发出了去了。旧的界面在**没配成**时会照着说
+「重设链接已经发出去了 / 确认邮件已经发出了去了」—— 现在这三处落点都读了
+同一份事实（`/api/config` 的 `mail.delivered`），发信不通时当场改口成
+「这台服务器还没接上发信商」并指路第 C 步。设计与全部口径见 `docs/architecture.md` §5.11。
+
 #### 发信商到底在哪配：**托管平台的环境变量**，不是 Resend、也不是 Supabase
 
 这一条被问过好几次，所以写死在这里：
