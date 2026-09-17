@@ -250,8 +250,8 @@ console.log('\n=== 七、身份合成：只认 AuthCore 会话，不认页面自
   eq(g.hint('feihualing'), '登录可用', '游客看付费功能：先提示登录（登录是硬条件）');
   /* 拦住用户的那句话由 denyReason() 出，且**按能力自己的门槛**说 ——
      飞花令现在归 Max，句子里的层级名必须跟着变（写死「Pro 起」就是假话）。 */
-  eq(E.denyReason('feihualing', free), 'Max 起可用', '已登录的 free 看飞花令：提示 Max 起可用');
-  eq(E.denyReason('quiz.review', free), 'Pro 起可用', '已登录的 free 看题库复习：提示 Pro 起可用');
+  eq(E.denyReason('feihualing', free), 'Max 起', '已登录的 free 看飞花令：提示 Max 起');
+  eq(E.denyReason('quiz.review', free), 'Pro 起', '已登录的 free 看题库复习：提示 Pro 起');
 
   // 本机登录一个账号
   const req = A.requestCode(authStore, { channel: 'email', value: 'zhangmin@163.com' }, 'login', { code: '246810' });

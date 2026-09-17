@@ -415,13 +415,18 @@
     return { ok: true, reason: "ok", minTier: c.minTier, quota: c.quota, name: c.name };
   }
 
-  /** 拦住用户时该说的话 —— 页面不自造文案，保证全站口径一致 */
+  /** 拦住用户时该说的话 —— 页面不自造文案，保证全站口径一致
+   *
+   *  ⚠️ 门槛那两句是「**Pro 起**」/「**Max 起**」（用户 2026-09-17 点名）——
+   *     原文案是「Pro 起可用」/「Max 起可用」，「可用」二字是废话：
+   *     这句话本身就只在「不能用」时说，再补一句「可用」既绕口又容易
+   *     被读成「开通后就能用了」以外的意思。这里只留门槛，不加尾巴。 */
   function denyReason(name, ctx) {
     var r = can(name, ctx);
     if (r.ok) return "";
     if (r.reason === "unknown") return "这个功能暂不可用";
     if (r.reason === "login") return "登录可用";
-    return r.minTier === "max" ? "Max 起可用" : "Pro 起可用";
+    return r.minTier === "max" ? "Max 起" : "Pro 起";
   }
 
   /** 分层徽章文案，供 /profile/ 顶部展示 */

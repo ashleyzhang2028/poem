@@ -490,18 +490,28 @@ chk(/\.settings-item\.wide\s*\{[^}]*max-width:\s*100%/s.test(cssCode),
         判据是「真的排了 grid 区域」，不是「某个像素等于多少」——
         换一种并排方式（例如 grid-template-columns 写死列宽）也照样成立。 */
   const homeGrid = /@media \(min-width:\s*1024px\)[\s\S]{0,900}body\[data-nav="home"\]\s*\.app\s*\{([\s\S]{0,400}?)\}/.exec(cssCode);
-  chk(!!homeGrid, '首页在桌面那一档给 .app 排了栅格（三块不再各自一条通栏横带）');
+  /* ⚠️ Issue #209：原先这里说的是「**三**块不再各自一条通栏横带」——
+     「全部诗词」那张卡撤掉之后首页只剩**两**块（今日进度 / 今日列表），
+     栅格那一节跟着收掉了一行（见 css/style.css 的 grid-template-areas）。
+     判据从「三块」改成「两块」，其余口径一字未动。 */
+  chk(!!homeGrid, '首页在桌面那一档给 .app 排了栅格（两块不再各自一条通栏横带）');
   if (homeGrid) {
     chk(/grid-template-areas/.test(homeGrid[1]),
-      '首页三块用 grid-template-areas 定位（不改 DOM 顺序：读屏与 Tab 的次序不变）');
-    chk(/today/.test(homeGrid[1]) && /card/.test(homeGrid[1]) && /all/.test(homeGrid[1]),
-      '三个区域名对应首页那三块（今日进度 / 今日列表 / 全部诗词）');
+      '首页两块用 grid-template-areas 定位（不改 DOM 顺序：读屏与 Tab 的次序不变）');
+    chk(/today/.test(homeGrid[1]) && /card/.test(homeGrid[1]),
+      '两个区域名对应首页那两块（今日进度 / 今日列表）');
+    /* 「全部诗词」那一格必须**真的没了**：留着 `"all all"` 就是一个永远空着
+       的格子 —— 它不报错，只是让第一行到第二行之间多出一截谁也说不清的空白。 */
+    chk(!/\ball\b/.test(homeGrid[1].replace(/[a-z-]*align[a-z-]*/g, '')),
+      '区域图里不再有 all 那一行（那张卡撤了，别留一个没人认领的空格子）');
   }
-  // 三块真的认领了各自那一格
-  ['today-bar', 'today-list', 'all-section'].forEach(sel => {
+  // 两块真的认领了各自那一格
+  ['today-bar', 'today-list'].forEach(sel => {
     chk(new RegExp('body\\[data-nav="home"\\] \\.' + sel + ' \\{ grid-area:').test(cssCode),
       '首页的 .' + sel + ' 认领了自己那一格（只写容器不写子元素等于没排）');
   });
+  chk(!/body\[data-nav="home"\] \.all-section/.test(cssCode),
+    '首页不再有 .all-section 认领格子（那一块整块撤了）');
   /* ③之二、**顶栏也必须认领整行**（2026-09-17 修的真 bug）
      ------------------------------------------------------------------
      `.topbar` 是 `.app` 的第一个子元素，而桌面那一档 `.app` 是个两列 grid。
@@ -516,7 +526,7 @@ chk(/\.settings-item\.wide\s*\{[^}]*max-width:\s*100%/s.test(cssCode),
     '顶栏真的认领了那一行（只写区域图不写 grid-area，顶栏仍会掉进第一列）');
   /* ⚠️ 这条同时守住「区域图里的每个名字都有人认领」：写了名字没人认领，
      那一行就是空的、下面三块整体上移一格 —— 比不写更难查。 */
-  ['bar', 'today', 'card', 'all'].forEach(name => {
+  ['bar', 'today', 'card'].forEach(name => {
     chk(new RegExp('\\{ grid-area: ' + name + '; \\}').test(cssCode),
       '区域图里的「' + name + '」有一个元素真的认领了（没人认领 = 留下一个空格子）');
   });
@@ -1398,8 +1408,14 @@ PAGE_FILES.forEach(f => {
   const onTrack = ruleOf(strip(css), '.switch-input:checked + .switch-toggle');
   chk(/background:\s*var\(--green\)/.test(onTrack),
     '开着 = 深青实底（与全站选中态同一个令牌）');
-  chk(/box-shadow:\s*inset[^;]*240,\s*205,\s*124/.test(onTrack),
-    '开着时带描金内边（与药丸 / 主按钮同一手法）');
+  /* ⚠️ Issue #209 扁平化：原先这条守的是「开着时带描金内边（与主按钮同一手法）」。
+     全站按钮扁平化之后那一圈内边**两边一起去掉了**，这一条跟着翻面：
+     开着与关着的区分必须**只靠实底**（这正是上面那条 `background: var(--green)`
+     与下面「关着是纸底」两条合起来说的事），不许再借金属收边。
+     为什么值得单独守一条：开关与按钮住在同一屏里，留着那一圈会让它成为
+     页面上唯一带立体感的东西。 */
+  chk(!/box-shadow:\s*inset/.test(onTrack),
+    '开着时不带描金内边（扁平化后「开 / 关」只靠实底与纸底区分）');
   chk(/background:\s*var\(--card\)/.test(track),
     '关着 = 纸底（不是浏览器默认的白底方框）');
   const offTrack = ruleOf(strip(css), '.switch-input:disabled + .switch-toggle');
@@ -1802,32 +1818,135 @@ if (JSDOM) {
   chk(!/display:\s*flex/.test(ruleOf(noCenter, '#login-page')),
     '反面样本：抹掉 #login-page 那段之后，这把尺子立刻判它没有 flex（断言不是空的）');
 
-  /* ---------- ② 账号页那颗主按钮 = 全站一级按钮 ---------- */
+  /* ---------- ② 账号页那颗主按钮 = 全站一级按钮（Issue #209 扁平化后翻面） ----------
+     ------------------------------------------------------------------
+     Issue #163 当时这条守的是「两处都带描金内边 / 都走三段渐变」——
+     那是照着「一级按钮是立体的」这句话抄的。Issue #209 用户要求
+     「页面中所有的按钮请进行扁平化设计」，那套立体做法**两边一起去掉**，
+     所以这一条判据跟着翻面：从「逐条一样的质感」改成「逐条一样的**没有**质感」。
+
+     要守的其实一条也没变：**两处画出来必须一模一样**（同一个平色块、
+     同一条描边、同一个按下反馈），因为用户说的另一句是
+     「设置，登录和个人中心所有页面的主按钮和普通按钮主要应该只有这两种形态，
+      需要保持一致性」。 */
   const acctPrimary = ruleOf(strip(accountCss), '.account-btn');
   const sitePrimary = ruleOf(cssCode, '.btn.primary');
-  const goldenLine = /rgba\(\s*240,\s*205,\s*124/;      // 描金线：全站只有这一个来源
-  chk(goldenLine.test(sitePrimary) && goldenLine.test(acctPrimary),
-    '两处的一级按钮都带描金内边（inset 0 0 0 1px rgba(240,205,124,…)）—— ' +
-    '少的就是这一圈，「发黑」正是它缺席的观感');
-  chk(/linear-gradient\(180deg/.test(acctPrimary),
-    '账号页主按钮走三段渐变（描金细边 + 顶部高光）—— 不再是平铺一个色值的实心块');
-  chk(!/background:\s*var\(--green\)\s*;/.test(acctPrimary),
-    '它不再是一块平铺的 --green（平铺 = 米纸底上一块没有收边的深色块）');
-  chk(/border:\s*1px solid var\(--green-dark\)/.test(acctPrimary),
+  const threeDee = /linear-gradient|rgba\(\s*240,\s*205,\s*124|0 2px 10px|transform:\s*scale/;
+  chk(!threeDee.test(acctPrimary) && !threeDee.test(sitePrimary),
+    '两处的一级按钮都是扁平的（无渐变 / 无描金内边 / 无外投影）—— 有一处偷偷立体就判红');
+  chk(/background:\s*var\(--green\)/.test(acctPrimary) &&
+      /background:\s*var\(--green\)/.test(sitePrimary),
+    '两处的一级按钮都是同一个平色块（var(--green)）—— 并排看是同一颗键');
+  chk(/border:\s*1px solid var\(--green-dark\)/.test(acctPrimary) &&
+      /border-color:\s*var\(--green-dark\)/.test(sitePrimary),
     '描边读 --green-dark（与全站一级按钮同一条边）');
-  // 按下反馈：两处都只留描金内边、去掉外投影 —— 同一个动作不许两副脸
+  // 按下反馈：两处都**只用颜色**（压深一档底色），不许缩放 / 投影
   const acctActive = ruleOf(strip(accountCss), '.account-btn:active');
   const siteActive = ruleOf(cssCode, '.btn.primary:active');
-  chk(goldenLine.test(acctActive) && !/0 2px 10px/.test(acctActive),
-    '账号页主按钮按下时只留描金内边、去掉外投影（与 .btn.primary:active 同一条）');
-  chk(/inset/.test(siteActive),
-    '（对照）全站一级按钮的按下态也是「只留描金内边」—— 两处口径一致');
+  chk(!threeDee.test(acctActive) && !threeDee.test(siteActive),
+    '两处主按钮的按下态都只用颜色（没有缩放 / 描金内边 / 投影）');
+  chk(/background/.test(acctActive) && /background/.test(siteActive),
+    '两处的按下反馈都写在 background 上（同一种说法：压深一档底色）');
   chk(/font-size:\s*15px/.test(acctPrimary) && /font-size:\s*15px/.test(ruleOf(cssCode, '.btn')),
     '两处主按钮的字号同一档（15px）—— 并排看不会一大一小');
   // 反向：账号页不许自己造一个绿色 / 金色字面量（调色板只有一份）
   const acctCode = strip(accountCss).replace(/^\s*:root\s*\{[\s\S]*?\}/m, '');
   chk(!/#2f6055|#234b42|#4f7a6e|#f0cd7c/i.test(acctCode),
     'account.css 里不出现天青 / 缃色的字面量（一律读 css/style.css 的 :root 令牌）');
+}
+
+/* ==========================================================================
+   十五、按钮**扁平化**：全站找不到一颗立体的按钮（Issue #209）
+   --------------------------------------------------------------------------
+   用户原话：「页面中所有的按钮请进行扁平化设计。」
+
+   这一条与前一条不同：前一条只看两处一级按钮，这一条**扫全站**。
+   扁平化最容易失守的方式不是「有人把主按钮改回去」，而是
+   「有人在别处新加一颗写着自己那套渐变的按钮」—— 那种漏网只能靠扫。
+
+   判据：凡是**按钮类规则**（类名里带 btn 的那几条，以及 .account-btn /
+   .pw-eye / .auth-tab / .game-mode / .game-opt / .tier-pick button 这些
+   长得就是按钮的自绘控件）里，不许出现：
+     · linear-gradient / radial-gradient（立体感的头号来源）
+     · 描金内边 rgba(240,205,124,…)（与渐变配对的金属收边）
+     · transform: scale(...) 写在 :active 上（按下去了一块实体的物理隐喻）
+   ⚠️ 卡片（.card / .account-card / .library-card）自己的 box-shadow **不在此列**：
+      那是「一张纸」的厚度，与按钮是不是平的无关 —— 只扫按钮选择器。
+   ⚠️ `transform: scale` 也允许出现在**非 :active** 的地方（卡片按下反馈
+      .item:active / .library-card:active 不在这一条的范围内，
+      因为它们不是按钮；这条只挑类名里带 btn 的以及上面列的那几个控件）。
+   ========================================================================== */
+{
+  const btnSel = /\.(?:[a-z-]*btn[a-z-]*|account-btn|pw-eye|auth-tab|game-mode|game-opt|tier-pick|switch-toggle|icon-btn|mini-btn|seg-toggle|code-resend|link-btn|grant-del)\b/;
+  const blocks = [...strip(cssCode + '\n' + strip(accountCss))
+    .matchAll(/([^{}]*)\{([^}]*)\}/g)]
+    .map(m => ({ sel: m[1].trim(), body: m[2] }));
+  const btnBlocks = blocks.filter(b => btnSel.test(b.sel.split(',').join(' ')));
+  chk(btnBlocks.length >= 8, '扫到按钮类规则 ' + btnBlocks.length + ' 条（尺子有牙）');
+  const bad = btnBlocks.filter(b => /linear-gradient|radial-gradient|rgba\(\s*240,\s*205,\s*124/.test(b.body));
+  chk(bad.length === 0,
+    '全站按钮里没有一处渐变或描金内边（立体感的两个来源都要没有；实际：' +
+    bad.map(b => b.sel).join(' | ') + '）');
+  const scaleActive = btnBlocks.filter(b => /:active/.test(b.sel) && /transform:\s*scale/.test(b.body));
+  chk(scaleActive.length === 0,
+    '全站按钮的按下态不再缩放（扁平按钮的按下只用颜色；实际：' +
+    scaleActive.map(b => b.sel).join(' | ') + '）');
+}
+
+/* ==========================================================================
+   十六、列表卡片的阴影同源（Issue #209）
+   --------------------------------------------------------------------------
+   用户原话：「课外阅读，和设置首页列表卡片请借鉴背诵首页的卡片阴影设计。」
+
+   三处「一列卡片」：背诵首页那条条独立卡片（.item）、课外阅读那几张集子卡
+   （.library-card）、设置主页那四条入口（.settings-link）——
+   它们要读**同一个** `--shadow` 令牌，不许任何一处自己写一个 rgba。
+
+   为什么要机器守：「阴影差一点点」是最难被说清、却一眼看得出来的那类不一致
+   （深浅、扩散、偏色三个维度都能各差一档）。三处各写一个 rgba 之后，
+   下一次调阴影必然只调一处 —— 而用户下一轮看到的还是「有的页深浅不一样」。
+   ========================================================================== */
+{
+  const cs = strip(cssCode);
+  const cc = strip(accountCss);
+  const classicCss = fs.readFileSync(path + 'css/classic.css', 'utf8');
+  const cstrip = classicCss.replace(/\/\*[\s\S]*?\*\//g, ' ');
+
+  /* 三处都读同一个令牌 */
+  const itemRule = ruleOf(cs, '.item');
+  chk(/box-shadow:\s*var\(--shadow\)/.test(itemRule),
+    '背诵首页那条条独立卡片（.item）读 --shadow 令牌');
+  /* ⚠️ 抽 `.library-card` 那条规则时要**跳过 @media 里的同名规则**
+     （两处响应式断点里也各有一条 `.library-card { flex: … }`，
+      用「第一个 match」取到的其实是平板那一档那条，与阴影无关）。
+     做法：按「至少一个换行 + 选择器紧跟花括号」这一形态筛，并挑**含 background**
+     的那一条（外层那条是唯一定义纸底与阴影的）。 */
+  const libBlocks = [...cstrip.matchAll(/(?:^|\n)[ \t]*\.library-card\s*\{([^}]*)\}/g)].map(m => m[1]);
+  const libRule = libBlocks.filter(b => /background/.test(b)).join(';');
+  chk(libBlocks.length >= 1 && /box-shadow:\s*var\(--shadow\)/.test(libRule),
+    '课外阅读那几张集子卡（.library-card）读的是**同一个** --shadow（借鉴首页那条）');
+  const linkBlocks = [...cs.matchAll(/(?:^|\n)[ \t]*\.settings-link\s*\{([^}]*)\}/g)].map(m => m[1]);
+  const linkRule = linkBlocks.join(';');
+  chk(/box-shadow:\s*var\(--shadow\)/.test(linkRule),
+    '设置主页那四条入口（.settings-link）读的也是同一个 --shadow');
+
+  /* 反向：这三处不许自己写一个阴影字面量（写了就一定有第二套深浅） */
+  ['library-card', 'settings-link', 'collection-card'].forEach(cls => {
+    const src = cls === 'settings-link' ? cs : cstrip;
+    const blocks = [...src.matchAll(new RegExp('(?:^|\\n)[ \\t]*\\.' + cls + '\\s*\\{([^}]*)\\}', 'g'))].map(m => m[1]);
+    const badShadow = blocks.filter(b => /box-shadow:/.test(b) && !/box-shadow:\s*var\(--shadow\)/.test(b));
+    chk(blocks.length >= 1 && badShadow.length === 0,
+      '.' + cls + ' 的阴影只许读 var(--shadow)（不自己写 rgba 深浅；实际 ' +
+      badShadow.length + ' 条越界）');
+  });
+
+  /* 「我的清单」那张集合卡（.collection-card）是 .library-card 的同族
+     （它复用那一套描边 / 圆角 / 纸底），阴影自然跟着同源。 */
+  const collBlocks = [...cstrip.matchAll(/(?:^|\n)[ \t]*\.collection-card\s*\{([^}]*)\}/g)].map(m => m[1]);
+  chk(collBlocks.length >= 1 && collBlocks.every(b => !/box-shadow/.test(b)),
+    '「我的清单」那张集合卡不自己再写一遍阴影（它复用 .library-card 那一套）');
+  chk(/box-shadow:\s*var\(--shadow\)/.test(ruleOf(cs, '.card')),
+    '（对照）全站 .card 读的也是这一份令牌 —— 三处 + 卡片层，全站只有一个来源');
 }
 
 console.log(fails === 0 ? '\n🎉 UI 一致性 / 响应式守卫全部通过' : '\n❌ ' + fails + ' 项失败');

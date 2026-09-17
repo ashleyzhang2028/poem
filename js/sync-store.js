@@ -182,14 +182,14 @@
     try { id = typeof E.identity === "function" ? E.identity() : E.guestIdentity(); } catch (e) { id = null; }
     if (!id || typeof id.can !== "function") return { ok: true, hint: "" };
     var r = id.can("sync.multiDevice");
-    return { ok: !!r.ok, hint: r.ok ? "" : (id.hint ? id.hint("sync.multiDevice") : "Pro 起可用") };
+    return { ok: !!r.ok, hint: r.ok ? "" : (id.hint ? id.hint("sync.multiDevice") : "Pro 起") };
   }
 
   /**
    * 开关。
    *
    * @returns {{ok:boolean, enabled:boolean, code?:string, hint?:string}}
-   *   `code` = "E_TIER" 时是**层级不够**（不是坏掉）—— 界面据此说「Pro 起可用」，
+   *   `code` = "E_TIER" 时是**层级不够**（不是坏掉）—— 界面据此说「Pro 起」，
    *   而不是说「打不开」。错因说错 = 让用户白试一遍。
    *
    * ⚠️ **打开要过闸，关掉不过闸**。关掉不过闸是刻意的：

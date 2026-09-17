@@ -251,7 +251,7 @@ async function main() {
         can: (cap) => (cap === "sync.multiDevice" && tier !== "free")
           ? { ok: true, reason: "ok" }
           : { ok: false, reason: "tier", minTier: "pro", name: "跨设备云同步" },
-        hint: () => "Pro 起可用"
+        hint: () => "Pro 起"
       })
     };
 
@@ -261,7 +261,7 @@ async function main() {
     const deny = Sync.setEnabled(true);
     eq(deny.ok, false, "free 打不开跨设备同步");
     eq(deny.code, "E_TIER", "错因是 E_TIER（不是 E_STORAGE —— 两件事不许混）");
-    eq(deny.hint, "Pro 起可用", "如实说出门槛（页面直接用它当提示，不自造文案）");
+    eq(deny.hint, "Pro 起", "如实说出门槛（页面直接用它当提示，不自造文案）");
     eq(Sync.enabled(), false, "没打开就是没打开，不假装落上了");
     eq(Sync.status(), "off", "关着就是 off（没开时不该说「要 Pro」）");
     eq(Sync.allowed().ok, false, "allowed() 单独问也一样（供界面置灰前问一次）");
@@ -985,27 +985,55 @@ async function main() {
     const lead = w3.document.getElementById("conflict-lead").textContent;
     ok(/1 篇/.test(lead), "面板里写明争的是几篇（不让用户在不知代价的情况下选）");
     ok(/快照/.test(lead), "面板里写明「保留账号」之前会留快照（后悔药先说清）");
-    eq((w3.document.getElementById("sync-state") || {}).textContent, "需要你选一下",
-      "状态如实写「需要你选一下」，不写「已同步」");
+    /* ⚠️ Issue #209：原先这里读的是「状态」那一行（`#sync-state`）——
+       用户 2026-09-17 把个人中心那张同步卡整个撤了（「只保留设置里的跨设备
+       同步选项就可以了啊。能像 iphone 那样把开关放到同一行的最右侧吗」）。
+       冲突那件事的**读数**因此从「状态那一行」挪到下面那一行的说明上，
+       口径一字未动：有冲突就说「需要你选一下」，绝不说「已同步」。 */
+    ok(/需要你选一下/.test(w3.document.getElementById("sync-hint").textContent),
+      "说明行如实写「需要你选一下」，不写「已同步」（实际：" +
+      w3.document.getElementById("sync-hint").textContent + "）");
 
-    /* 个人中心那行「开关」是**只读回显**：文字换成了一枚药丸，
-       但读出来仍是「开」/「关」两个字，且**不许**变成能点的控件
-       （开关本体只有设置 · 通用里那一颗 —— 两个入口会各说各话）。 */
-    const pillOff = w3.document.getElementById("sync-switch");
-    chk(!!pillOff && /tier-badge/.test(pillOff.className),
-      "个人中心的「开 / 关」是一枚药丸（不再是裸文字，Issue #163）");
-    chk(!!pillOff && (pillOff.textContent === "开" || pillOff.textContent === "关"),
-      "那枚药丸读出来仍是「开」/「关」两个字（没说别的话）");
-    chk(!!pillOff && !/input|button/i.test(pillOff.tagName),
-      "它是只读回显（span），不是第二个开关 —— 开关本体只在设置 · 通用里");
-    /* 「开着」与「关着」必须是两种样子：实底药丸只属于开着那一种，
-       否则用户扫一眼看不出开没开，与旧版那颗写着「关」的字是同一种毛病 */
-    const onPillCss = (() => {
-      const m = /(\.tier-badge\.on\s*\{[^}]*\})/.exec(cssCode);
-      return m ? m[1] : "";
-    })();
-    chk(/background:\s*var\(--green\)/.test(onPillCss),
-      "「开」那枚药丸是深天青实底（与设置页开关的选中态同一句：实底 = 开着）");
+    /* 个人中心那一行：**开关本体就在那儿**（Issue #209 之后它不再只是回显）。
+       这一条守的是「像 iphone 那样」——那一行里真的有一颗能拨的开关，
+       且它与设置 · 通用里那一颗**共用同一条接线**（同一份 SyncStore 状态）。
+
+       ⚠️ 原先这里守的是「个人中心那颗是**只读回显**（span 药丸），
+          开关本体只在设置 · 通用里 —— 两个入口会各说各话」。
+          那条口径随 Issue #209 一起翻面了：用户明确要的就是「在个人中心
+          直接拨」。两条**仍要守**的旧纪律换了个落点：
+            · 不许出现「一处写着开、另一处写着关」→ 两处读的是同一个
+              `SyncStore.enabled()`（下面断言两页的 checked 一致）；
+            · 开关的可见本体仍是 `.switch-toggle` 那颗胶囊（不是 UA 的勾）。 */
+    const pInput = w3.document.getElementById("toggle-sync");
+    chk(!!pInput && pInput.tagName === "INPUT" && pInput.type === "checkbox",
+      "个人中心那一行的开关是一颗真的 checkbox（键盘 / 读屏 / 原生 toggle 都走它）");
+    chk(!!w3.document.querySelector(".switch .switch-toggle"),
+      "它的可见本体仍是那颗自绘胶囊（.switch-toggle）");
+    eq(pInput.checked, false,
+      "没开同步的人落到这一页：开关就是关着的（读的是同一份 SyncStore 状态）");
+
+    /* **两页不许各说各话** —— 这一条是 Issue #209 之后最要紧的一条：
+       开关现在在个人中心与设置 · 通用里**各有一次出现**，
+       两边读的必须是同一个 SyncStore。做法：在设置页把开关打开，
+       再打开个人中心，看它是不是也跟着是开的。 */
+    const wSet = await page("settings/general", {});
+    await signInPro(wSet, "same@example.com");
+    wSet.SyncStore.setEnabled(true);
+    const wShare = await page("profile", { "poem_sync_pref_v1": wSet.localStorage.getItem("poem_sync_pref_v1") });
+    eq(wShare.document.getElementById("toggle-sync").checked, true,
+      "在「设置 · 通用」里打开之后，个人中心那一行也是开着的（两页同一份状态）");
+    /* 反向：在个人中心拨关，设置页读出来也是关的 */
+    const pInp = wShare.document.getElementById("toggle-sync");
+    pInp.checked = false;
+    pInp.dispatchEvent(new wShare.Event("change", { bubbles: true }));
+    await new Promise(r => setTimeout(r, 30));
+    eq(wShare.SyncStore.enabled(), false,
+      "在个人中心拨关：引擎里真的关上了（写的是同一条接线）");
+    eq(JSON.parse(wShare.localStorage.getItem("poem_sync_pref_v1")).enabled, false,
+      "落盘的也是同一个键（不是另一份只在个人中心生效的偏好）");
+    chk(/只存本机/.test(wShare.document.getElementById("sync-hint").textContent),
+      "关掉之后那一行如实改口「进度只存本机」（不留在「开启中」）");
 
     /* 没有冲突的人**不该看到一个空面板** */
     const w4 = await page("profile", {});

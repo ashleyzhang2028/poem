@@ -549,7 +549,11 @@
     $("btn-delete-start").addEventListener("click", onDeleteStart);
     $("btn-delete-cancel").addEventListener("click", onDeleteCancel);
     $("btn-delete-confirm").addEventListener("click", onDeleteConfirm);
-    $("btn-go-sync").addEventListener("click", function () { location.href = "/settings/general/"; });
+    /* 跨设备同步那一行的开关。接在 paint() **之前**同理（见上面那条注释）：
+       paint() 里 renderSync() 一跑，这颗复选框就已经可点了。
+       ⚠️ 用 change 而不是 click：label 包着 input，点文字也走原生 change，
+          click 会在「点标签文字」那条路上漏掉一次。 */
+    $("toggle-sync").addEventListener("change", onToggleSync);
     $("btn-keep-local").addEventListener("click", function () { onResolve("keepLocal"); });
     $("btn-keep-remote").addEventListener("click", function () { onResolve("keepRemote"); });
     $("btn-export-first").addEventListener("click", function () { onResolve("exportFirst"); });
@@ -560,27 +564,42 @@
   function syncMod() { return window.SyncStore || null; }
 
   /**
-   * 同步这一卡。**各状态各说各的话**，而且**都不许出现「已同步」这种笼统话** ——
-   * 1A 立的那条「不假装」的纪律在这里同样成立：没同步上就直说没同步上。
+   * 跨设备同步那一行（Issue #209）。
    *
-   * ⚠️ 跨设备云同步是 **Pro 起**（能力表 `sync.multiDevice`）。
-   *    层级不够时这一卡说的是「要 Pro 起」，**不说**「开启中」——
-   *    开关可能还留在「开」的位置上（层级过期、或者从别处传过来的存储），
-   *    照抄那一位显示「开启中」就是一句假话。
+   * **这里现在是一颗真的开关**（`#toggle-sync`），不再是一枚只读回显药丸：
+   * 用户 2026-09-17 原话：「个人中心页面，跨设备同步单独弄了张卡片，
+   * 下面还额外有个同步设置按钮，点完其实是进入到通用页面，还需要点击
+   * 跨设备同步选项。只保留设置里的跨设备同步选项就可以了啊。能像 iphone
+   * 那样把开关放到同一行的最右侧吗」。
+   *
+   * 于是这一项：
+   *   · 与「设置 · 通用」里那颗**共用同一条接线** —— `SyncStore.enabled()` 读、
+   *     `SyncStore.setEnabled()` 写。两处是同一件事的两种视角，
+   *     不会再出现「这里写开着、那里写关着」；
+   *   · 开关**不置灰**：层级不够时点下去得到一句「Pro 起」（`SyncStore` 给的
+   *     `E_TIER` hint，与全站同一句 `denyReason`），比一个点不动的东西更容易
+   *     看懂差在哪（与设置页那条纪律一致）；
+   *   · 原来那两行只读文案（状态 / 开关）**撤掉了** —— 「开 / 关」由开关本体表达，
+   *     剩下的信息（同步到哪一步、为什么同步不了）全在下面那一行说明里。
+   *
+   * ⚠️ 各状态各说各的话，而且**都不许出现「已同步」这种笼统话** ——
+   *    1A 立的那条「不假装」的纪律在这里同样成立：没同步上就直说没同步上。
+   * ⚠️ 跨设备云同步是 **Pro 起**（能力表 `sync.multiDevice`）。层级不够时这一行
+   *    说的是「Pro 起」，**不说**「开启中」—— 开关可能还留在「开」的位置上
+   *    （层级过期、或者从别处传过来的存储），照抄那一位显示「开启中」就是一句假话。
    *
    * 冲突面板只在 `SyncStore.conflicts()` 非空时出现，且**必须同时显示两边**
    * 「篇数 / 截至时间」（docs §4.4 D 项）—— 不让用户在不知代价的情况下选。
    */
   function renderSync() {
-    var list = $("sync-list");
-    var S = syncMod();
-    if (!list) return;
+    var input = $("toggle-sync");
     var hint = $("sync-hint");
+    if (!input || !hint) return;
+    var S = syncMod();
 
     if (!S) {
-      list.innerHTML = '<div class="kv-row"><span class="kv-k">状态</span>' +
-        '<span class="kv-v" id="sync-state">不可用</span></div>';
-      if (hint) hint.textContent = "同步层没加载成功，刷新页面重试（背诵不受影响）。";
+      input.disabled = true;
+      hint.textContent = "同步层没加载成功，刷新页面重试（背诵不受影响）。";
       hide($("sync-conflict"));
       return;
     }
@@ -588,44 +607,62 @@
     var st = S.status();
     var on = S.enabled();
     var n = S.conflicts().length;
+    input.checked = on;
+    /* 只有「本站没开放同步」才置灰 —— 那是真的没有这个功能；
+       层级不够（tier）**不置灰**：点下去会得到一句「Pro 起」。 */
+    input.disabled = (st === "unavailable");
+
     /* ⚠️ 冲突**最先说**：它是一件「欠着用户一个决定」的事，
-       不该被「开关关着」盖过去 —— 面板摆出来了、状态却写「已关闭」，
+       不该被「开关关着」盖过去 —— 面板摆出来了、说明却写「已关闭」，
        用户会以为那个面板是个残留物。关掉开关也一样要他把这一篇选完。 */
-    var stateText = n ? "需要你选一下"
-      : st === "unavailable" ? "未开放"
-      : st === "tier" ? "要 Pro 起"
-      : st === "off" ? "已关闭"
-      : st === "signin" ? "等登录"
-      : "开启中";
-
-    /* 「开 / 关」用与层级徽章同一枚药丸（.tier-badge）：这里是**只读回显**，
-       不是开关本体（开关在设置 · 通用里，这里连点都不给点）。
-       ⚠️ 开着才用深天青那枚 —— 与设置页开关的选中色同一句「实底 = 开着」，
-          两处说的是同一件事，不该一处绿一处灰。 */
-    var swPill = on
-      ? '<span class="tier-badge on" id="sync-switch">开</span>'
-      : '<span class="tier-badge" id="sync-switch">关</span>';
-    list.innerHTML =
-      '<div class="kv-row"><span class="kv-k">状态</span>' +
-      '<span class="kv-v" id="sync-state">' + esc(stateText) + "</span></div>" +
-      '<div class="kv-row"><span class="kv-k">开关</span>' +
-      '<span class="kv-v">' + swPill + "</span></div>";
-
-    if (hint) {
-      hint.textContent = n
-        ? "有 " + n + " 篇需要你选一下（下面），选完之前不会自动合并。"
-        : st === "unavailable"
-        ? "本站未开放同步，进度只存本机。"
-        : st === "tier"
-          ? "跨设备云同步要 Pro 起可用（当前没到这一层）。进度仍在本机、一字不少。"
-          : st === "off"
-            ? "关闭中：进度只存本机。开关在「设置 · 通用」里。"
-            : st === "signin"
-              ? "已开启，登录后才会真的同步。"
-              : "进度与账号设置会同步；本机那份始终完整，断网照常背。";
-    }
+    hint.textContent = n
+      ? "有 " + n + " 篇需要你选一下（下面），选完之前不会自动合并。"
+      : st === "unavailable"
+      ? "本站未开放同步，进度只存本机。"
+      : st === "tier"
+        ? "跨设备云同步要 Pro 起（当前没到这一层）。进度仍在本机、一字不少。"
+        : st === "off"
+          ? "关闭中：进度只存本机。"
+          : st === "signin"
+            ? "已开启，登录后才会真的同步。"
+            : "开启中：进度与账号设置会同步；本机那份始终完整，断网照常背。";
 
     renderConflict(S, !!sess());
+  }
+
+  /**
+   * 拨这一颗开关 —— 与「设置 · 通用」里那颗**同一条接线**（`SyncStore.setEnabled`）。
+   *
+   * 失败时**按错因分开说**（与设置页同一口径）：
+   *   · 层级不够（E_TIER）  → 说「Pro 起」
+   *   · 存储写不进          → 说「浏览器不允许保存设置」
+   * 合并成一句「打不开」= 让人白试一遍。
+   * 没落盘就把复选框拨回真实值（不假装落上了）。
+   */
+  function onToggleSync() {
+    var input = $("toggle-sync");
+    var S = syncMod();
+    if (!input || !S) return;
+    var r = S.setEnabled(input.checked);
+    if (!r || !r.ok) {
+      input.checked = !!S.enabled();
+      showToast(r && r.code === "E_TIER"
+        ? (r.hint || "跨设备云同步要 Pro 起")
+        : "浏览器不允许保存设置，这次改动没生效");
+      renderSync();
+      return;
+    }
+    renderSync();
+    if (input.checked) {
+      /* 开启那一刻就跑一轮：用户拨了开关却要等下次打开页面才同步，会以为坏了 */
+      try {
+        var first = S.firstSync();
+        if (first && first.then) first.then(function () { renderSync(); }, function () { /* 静默 */ });
+      } catch (e) { /* 静默 */ }
+      showToast(S.status() === "signin" ? "已开启，登录后才会真的同步" : "已开启跨设备同步");
+    } else {
+      showToast("已关闭同步，进度仍在本机");
+    }
   }
 
   function sess() {
