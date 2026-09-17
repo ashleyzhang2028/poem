@@ -6,7 +6,8 @@
  *   · 数据库走 `memoryStore`（进程内 Map），不需要真 Supabase
  *   · 发信走 `console` 通道（只打日志，不出网）
  *   · HTTP 层用 Node 的 `http` 起一个**只监听 127.0.0.1:0** 的真服务器，
- *     把 `api/*.js` 那些 handler（九个：1A 的六个 + 2.2 的三个）挂上去 ——
+ *     把 `api/[...path].js` 这个**唯一入口**（Issue #205：Hobby 档上限 12 个
+ *     函数，而我们有 19 条路由）挂上去 ——
  *     这样测的是**真的请求-响应链**，
  *     包括 Cookie 头、状态码、JSON 形状，而不是「直接调内核」。
  *
@@ -65,53 +66,38 @@ function boot(envVars) {
   return { restore: () => { keys.forEach(k => { if (saved[k] === undefined) delete process.env[k]; else process.env[k] = saved[k]; }); } };
 }
 
-/** 起一个真 HTTP 服务器，把 9 个 handler 按路由挂上 */
+/**
+ * 起一个真 HTTP 服务器，**按线上那一套路由**把请求交出去。
+ *
+ * Issue #205 之后线上不再是一个文件一个函数：`/api/*` 由 `api/[...path].js`
+ * 这**一个** catch-all 收口（Vercel Hobby 档上限 12 个函数，而我们有 19 个
+ * 路由）。所以这里也不再自己抄一份路由表 —— 那样抄出来的是一张**第二实现**：
+ * 线上加了接口而测试没跟上时，症状是「测试全绿、线上 404」，反过来则是
+ * 「测试里能打到、线上根本没有」。
+ *
+ * 这里直接挂真入口，地址形状与线上逐字一致（`/api/handler/...`），
+ * 于是「rewrite 有没有写歪」「routes.js 那张表对不对」也一并被测到。
+ *
+ * 保留的一条老行为：**路径对、方法不对**时把请求交给那个路径的 handler，
+ * 让它自己回 405 —— Vercel 的路由正是「方法由 handler 判」。
+ * 这一条现在也在 `api/_lib/routes.js` 里（`methodAllowed:false`）。
+ */
 function serve() {
-  const routes = {
-    "POST /api/send-code": require("../api/send-code.js"),
-    "POST /api/verify-code": require("../api/verify-code.js"),
-    "GET /api/me": require("../api/me.js"),
-    "POST /api/sync/pull": require("../api/sync/pull.js"),
-    "POST /api/sync/push": require("../api/sync/push.js"),
-    "DELETE /api/account": require("../api/account.js"),
-    /* 2.2：权威发放。**第一条能改别人数据的写接口** —— 它必须走真 HTTP 测，
-       因为要测的正是「角色闸在服务端」（直接打接口，不经任何界面）。 */
-    "POST /api/admin/grant": require("../api/admin/grant.js"),
-    "DELETE /api/admin/grant": require("../api/admin/grant.js"),
-    "POST /api/admin/grants": require("../api/admin/grants.js"),
-    /* 3 期（不花钱的那一层）：古诗词大会的判分口。
-       它**不调任何 AI、不引入任何依赖**，判分用的是 js/quiz.js ——
-       与客户端同一份代码。见 api/game/answer.js 的文件头。 */
-    "POST /api/game/answer": require("../api/game/answer.js"),
-    /* Issue #197：完整登录流程（注册 / 口令登录 / 确认邮箱 / 重发确认 / 忘记密码两步） */
-    "POST /api/register": require("../api/auth/register.js"),
-    "POST /api/login": require("../api/auth/login.js"),
-    "POST /api/verify-email": require("../api/auth/verify-email.js"),
-    "POST /api/resend-verification": require("../api/auth/resend-verification.js"),
-    "POST /api/resend-verification-by-email": require("../api/auth/resend-verification-by-email.js"),
-    "POST /api/reset-request": require("../api/auth/reset-request.js"),
-    "POST /api/reset-confirm": require("../api/auth/reset-confirm.js"),
-    "POST /api/admin/accounts": require("../api/admin/accounts.js"),
-    /* Issue #163：头像图片（上传 / 删除）。请求体是**裸字节**，
-       所以这一节自己拼请求，走不了 call() 那个 JSON 请求器。 */
-    "POST /api/avatar": require("../api/avatar/index.js"),
-    "DELETE /api/avatar": require("../api/avatar/index.js")
-  };
-  const server = http.createServer((req, res) => {
-    const pathname = req.url.split("?")[0];
-    const h = routes[req.method + " " + pathname];
-    if (h) { h(req, res); return; }
-    /* 路径对、方法不对 → 交给那个路径的 handler，让它自己回 405。
-       这里若直接 404，就永远测不到「方法校验」那一条 —— 而 Vercel 的路由
-       正是按文件路径进 handler、方法由 handler 判的，测试必须与线上同形。 */
-    const anyMethod = Object.keys(routes).filter(k => k.endsWith(" " + pathname))[0];
-    if (anyMethod) { routes[anyMethod](req, res); return; }
-    res.writeHead(404, { "Content-Type": "application/json" }).end('{"code":"E_404"}');
-  });
+  const entry = require("../api/[...path].js");
+  /* 另一条断言口：路由表本身。用它检查「表里的条目与 handler 真能对上」 */
+  const routes = require("../api/_lib/routes.js");
+  const server = http.createServer(entry);
   return new Promise(resolve => {
     server.listen(0, "127.0.0.1", () => {
       const port = server.address().port;
       resolve({
+        /* ⚠️ `base` 就是**站点根**（不带 `/api`）—— 与线上逐字一致：
+           测试里那 200 多处调用写的是 `/api/me` 这种**用户看到的地址**，
+           由 `wirePath()` 在发请求那一刻换成内部地址（`/api/handler/me`），
+           与 `vercel.json` 那一条 rewrite 是同一个映射（只在这一处实现）。
+           ⚠️ 这里**不许**再自己拼一层 `/api` 或 `/api/handler`：两处都拼的
+              下场是 `/api/handler/api/handler/me`（线上不存在），
+              而症状只是「整节 404」，看着像路由表写错了。 */
         base: "http://127.0.0.1:" + port,
         close: () => new Promise(r => server.close(r))
       });
@@ -195,6 +181,27 @@ async function loginByHttpDetailed(POST, email) {
 }
 
 /** 极简请求器：**不引 supertest / node-fetch**，Node 18+ 有全局 fetch */
+/**
+ * `/api/me` 这种**外部地址** → 线上真正的内部地址。
+ *
+ * Issue #205 之后 `base` 是 `/api/handler` 前缀，而全文件那 200 多处调用写的
+ * 都是 `/api/...` —— 那正是**用户看到的地址**，不该改。于是这里用线上那一套
+ * rewrite 规则（`api/_lib/routes.js` 的 `PREFIX`）把它接上：
+ *
+ *   `call(base, "GET", "/api/me")`  → 发往 `/api/handler/me`
+ *
+ * 这一条与 `vercel.json` 里那份 rewrite 是**同一个映射**（只在这一处实现），
+ * 所以「rewrite 写歪了」这件事在测试里就能露出来。
+ */
+function wirePath(p) {
+  const prefix = require("../api/_lib/routes.js").PREFIX;
+  const s = String(p);
+  if (s === prefix || s.indexOf(prefix + "/") === 0) return s;
+  if (s === "/api") return prefix;
+  if (s.indexOf("/api/") === 0) return prefix + s.slice("/api".length);
+  return s;
+}
+
 async function call(base, method, p, body, cookie, extraHeaders) {
   const init = { method, headers: { "Content-Type": "application/json" } };
   if (cookie) init.headers.Cookie = cookie;
@@ -203,7 +210,7 @@ async function call(base, method, p, body, cookie, extraHeaders) {
      「Cookie 头怎么带、JSON 怎么编」这些细节出现第二份实现。 */
   if (extraHeaders) Object.assign(init.headers, extraHeaders);
   if (body !== undefined) init.body = JSON.stringify(body);
-  const res = await fetch(base + p, init);
+  const res = await fetch(base + wirePath(p), init);
   const text = await res.text();
   let json = null;
   try { json = text ? JSON.parse(text) : null; } catch (e) { json = null; }
@@ -998,7 +1005,7 @@ async function main() {
       eq(me401.body.code, "E_NO_SESSION", "401 带 E_NO_SESSION");
 
       // 非法 JSON → 400
-      const badJson = await fetch(sv.base + "/api/verify-code", {
+      const badJson = await fetch(sv.base + wirePath("/api/verify-code"), {
         method: "POST", headers: { "Content-Type": "application/json" }, body: "{oops"
       });
       eq(badJson.status, 400, "非法 JSON 回 400");
@@ -1277,8 +1284,8 @@ async function main() {
     chk(!JSON.stringify(H.redact([{ code: "888888" }])).includes("888888"), "redact 抹掉数组里的码");
 
     // 新建的文件都在
-    ["api/send-code.js", "api/verify-code.js", "api/me.js", "api/sync/pull.js",
-      "api/sync/push.js", "api/account.js", "api/_lib/schema.sql", "js/auth-api.js"].forEach(f => {
+    ["api/_routes/send-code.js", "api/_routes/verify-code.js", "api/_routes/me.js", "api/_routes/sync/pull.js",
+      "api/_routes/sync/push.js", "api/_routes/account.js", "api/_lib/schema.sql", "js/auth-api.js"].forEach(f => {
         chk(fs.existsSync(path.join(ROOT, f)), f + " 存在");
       });
 
@@ -3135,7 +3142,12 @@ async function main() {
         return Promise.resolve({ ok: true, status: 200, text: () => Promise.resolve("") });
       };
       const store = AS.supabaseAvatar(cfg);
-      return store.put("u_abcdefgh", "image/jpeg", Buffer.from([0xFF, 0xD8, 0xFF, 0xE0, 1, 2, 3])).then(r => {
+      /* ⚠️ 这里**必须是 await**，不许写成 `return store.put(...)`。
+         `⑥b` 这一块是在 **main() 体内**（不是在一个自己的异步函数里），
+         所以裸 `return` 会把整个 main() 结束掉 —— 后面那些节一概不跑，
+         而症状只是「后面的断言全都不见了」，测试照样绿。
+         （Issue #205 之前它是最后一块，症状看不出来；末节一加上去就露了。） */
+      await store.put("u_abcdefgh", "image/jpeg", Buffer.from([0xFF, 0xD8, 0xFF, 0xE0, 1, 2, 3])).then(async r => {
         globalThis.fetch = realFetch;
         eq(r.ok, true, "⑥ 上传成功");
         eq(AScalls.length, 1, "⑥ 只发一个请求（覆盖式上传，不先删旧的）");
@@ -3151,14 +3163,14 @@ async function main() {
           calls2.push(u);
           return Promise.resolve({ ok: false, status: 404, text: () => Promise.resolve('{"error":"Bucket not found"}') });
         };
-        return store.put("u_abcdefgh", "image/jpeg", Buffer.alloc(10, 1)).then(r2 => {
+        await store.put("u_abcdefgh", "image/jpeg", Buffer.alloc(10, 1)).then(async r2 => {
           globalThis.fetch = realFetch;
           eq(r2.ok, false, "⑥ 桶不存在时**不许假装成功**");
           eq(r2.code, "E_NO_BUCKET", "⑥ 回 E_NO_BUCKET（界面据此说「存储桶还没建好」）");
 
           /* 连不上 → E_OFFLINE（与 5xx 分开：一个是没网，一个是上游坏了） */
           globalThis.fetch = () => Promise.reject(new Error("ENOTFOUND"));
-          return store.put("u_abcdefgh", "image/jpeg", Buffer.alloc(10, 1)).then(r3 => {
+          await store.put("u_abcdefgh", "image/jpeg", Buffer.alloc(10, 1)).then(r3 => {
             globalThis.fetch = realFetch;
             eq(r3.code, "E_OFFLINE", "⑥ 连不上 → E_OFFLINE（接口那层据此回 503，不是 502）");
             /* 源码扫描：路径只由服务端拼、按字节判类型 */
@@ -3166,7 +3178,7 @@ async function main() {
             chk(/cfg\.avatarPath\(uid\)/.test(st), "⑥ 路径由服务端算（不让客户端给路径，否则能覆盖别人的头像）");
             chk(/sniffImage/.test(st), "⑥ 按 magic number 判类型（不看客户端声明的 Content-Type）");
             chk(!/[^a-zA-Z]image\/svg/.test(st), "⑥ 不收 SVG（它里面能带脚本，且画在别人屏幕上）");
-            const av = fs.readFileSync(path.join(ROOT, "api/avatar/index.js"), "utf8");
+            const av = fs.readFileSync(path.join(ROOT, "api/_routes/avatar/index.js"), "utf8");
             chk(/sniffImage/.test(av), "⑥ 上传接口真的用了那个判据");
             chk(!/req\.headers\[.content-type.\]\s*===/.test(av), "⑥ 没有拿 Content-Type 当判据");
             chk(/rawBody: true/.test(av), "⑥ 声明了 rawBody（否则外壳会把图片当 JSON 解析）");
@@ -3178,6 +3190,7 @@ async function main() {
       });
     }
 
+    fs.writeFileSync("/tmp/m5b.txt", "REACHED-5B\n");
     /* ------------------------------------------------ ⑤b 走真 HTTP：续期只在后半段发生 */
     boot({ ALLOW_CODE_ECHO: "1" });
     const sv = await serve();
@@ -3223,6 +3236,100 @@ async function main() {
         "「配发信」与「签会话」是两件事，各有各的变量");
     } finally { await sv2.close(); }
   }
+
+  /* ==================================================================
+     末节、**路由与函数数**（Issue #205）
+     ------------------------------------------------------------------
+     这一节的由来是一个真实的构建失败：
+
+         No more than 12 serverless functions can be added to a deployment on
+         the hobby plan
+
+     Vercel Hobby 档一个部署最多 12 个 Serverless 函数，而 `api/` 下被
+     「一个文件 = 一个函数」这条目录约定数出了 19 个。收口的办法是
+     `/api/*` 只暴露一个 catch-all（`api/[...path].js`），`vercel.json`
+     用一条 rewrite 把外部地址转进去。
+
+     于是这一节守三件事 —— 每一件都能单独把线上弄坏，而且**都不会被别处测到**：
+       ① 函数数**真的**降到了 12 以下（数错了，改动就是白做，构建照样红）
+       ② `vercel.json` 那条 rewrite 存在、且方向对（写歪了 = 全站 /api 404）
+       ③ 路由表与 `api/` 下的文件**逐条对得上**（少一条 = 那个接口静默消失）
+     ================================================================== */
+  fs.writeFileSync("/tmp/m205.txt", "REACHED-205\n");
+  console.log("\n=== 末节、路由与函数数（Issue #205：Hobby 档 12 个函数上限） ===");
+  {
+    const routesMod = require("../api/_lib/routes.js");
+
+    /* ① 函数数 */
+    const apiDir = path.join(ROOT, "api");
+    /* Vercel 的算法：`api/**` 下的**入口**文件（`.js`）各算一个函数；
+       `_` 开头的目录/文件是私有代码，**不**算函数。 */
+    const entries = [];
+    (function walk(dir) {
+      fs.readdirSync(dir, { withFileTypes: true }).forEach(e => {
+        const full = path.join(dir, e.name);
+        if (e.isDirectory()) {
+          if (e.name.charAt(0) === "_") return;
+          walk(full);
+          return;
+        }
+        if (e.name.charAt(0) === "_") return;
+        if (/\.js$/.test(e.name)) entries.push(path.relative(apiDir, full));
+      });
+    })(apiDir);
+
+    eq(entries.length, 1, "api/ 下只有 **1 个** Serverless 函数入口（Hobby 上限 12）");
+    chk(entries[0] === "[...path].js", "那一个入口就是 catch-all（实际 " + entries[0] + "）");
+    chk(entries.length <= 12, "函数数没有超过 Hobby 档的 12（实际 " + entries.length + "）");
+
+    /* ② vercel.json 的 rewrite */
+    const vercel = JSON.parse(fs.readFileSync(path.join(ROOT, "vercel.json"), "utf8"));
+    const rw = (vercel.rewrites || []).find(r => r.source === "/api/:path*");
+    chk(!!rw, "vercel.json 里有一条 `/api/:path*` 的 rewrite");
+    eq(rw && rw.destination, "/api/handler/:path*",
+      "那条 rewrite 转到 catch-all 的内部前缀（与 routes.js 的 PREFIX 同一处约定）");
+    eq(routesMod.PREFIX, "/api/handler", "routes.js 的 PREFIX 与 vercel.json 的 destination 对得上");
+
+    /* ③ 路由表 ↔ 文件 */
+    Object.keys(routesMod.ROUTES).forEach(key => {
+      const file = routesMod.ROUTES[key];
+      const abs = path.resolve(apiDir, "_lib", file);
+      chk(fs.existsSync(abs), "路由 " + key + " 指向的文件真的在：" + file);
+      const mod = require(abs);
+      chk(typeof mod === "function", "路由 " + key + " 的那个文件导出的是一个 handler");
+    });
+
+    /* 每一条路由的**方法**都能被 handler 认下来（不是 405）——这正是
+       「一个文件收两个方法」最容易被写歪的地方。 */
+    [
+      ["GET", "/api/me", 401],
+      ["POST", "/api/send-code", 503],
+      ["DELETE", "/api/account", 503],
+      ["POST", "/api/avatar", 503],
+      ["GET", "/api/family", 503],
+      ["POST", "/api/admin/accounts", 503]
+    ].forEach(([m, p]) => {
+      const hit = routesMod.resolve(m, p);
+      chk(!!hit && hit.methodAllowed, m + " " + p + " 在路由表里（且方法认下来了）");
+    });
+
+    /* 反向：路径对、方法不对 → **不算 404**，交给 handler 自己回 405 */
+    const wrong = routesMod.resolve("GET", "/api/account");
+    chk(!!wrong && wrong.methodAllowed === false,
+      "GET /api/account 命中了那个文件但方法不对（交回 405，不是 404）");
+
+    /* 反向：表里没有的路径一律 404（不许自己拼路径去 require） */
+    eq(routesMod.resolve("GET", "/api/nope"), null, "表里没有的路径回 null（404）");
+    eq(routesMod.resolve("GET", "/api/../_lib/store.js"), null,
+      "路径穿越打不到 _lib（表是**精确匹配**，不是拼字符串）");
+    eq(routesMod.resolve("GET", "/api/handler/_lib/core.js"), null,
+      "_lib 不在表里（它是被 require 的代码，不是一条路由）");
+
+    /* 同义地址归一：末尾斜杠与重复斜杠都当同一条 */
+    chk(!!routesMod.resolve("GET", "/api/me/"), "/api/me/ 与 /api/me 同一条（末尾斜杠不另开一条）");
+    chk(!!routesMod.resolve("GET", "//api//me"), "重复斜杠不影响命中");
+  }
+
 
   /* ==================================================================
      廿六、Issue #197 复审：完整登录流程的安全审计（第三轮）

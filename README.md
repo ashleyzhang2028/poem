@@ -147,19 +147,23 @@ python3 -m http.server 8080  # 或 Python 3
 ├── css/                    # style.css（全站）/ classic.css（阅读器）/ legal.css（法务页）
 ├── js/                     # 应用脚本（progress-store.js：分域引擎；
 │                           #   sync-store.js：跨设备同步，storage.js 是前者的转发层）
-├── api/                    # Vercel Serverless：18 个路由文件（_lib/ 是可在 Node 里直接测的内核）
+├── api/                    # Vercel Serverless：**1 个函数**（[...path].js 收口，
+│                           #   _routes/ 是 19 条路由的实现，_lib/ 是可在 Node 里直接测的内核）
 ├── fonts/                  # 自托管中文 Web Font（思源宋体 / 黑体，子集化）
 ├── icons/                  # 矢量图标 + 各尺寸 PNG
 ├── data/                   # 诗词语料与索引（见下）
 ├── scripts/                # 本地服务器、数据生成脚本，以及 doctor.js（开通自检）
 ├── api/                    # 服务端（Vercel Serverless，1 期 1A 已落地）
-│   ├── send-code.js verify-code.js me.js account.js
-│   ├── sync/pull.js sync/push.js
-│   ├── avatar/index.js                 # 18 个路由文件，Vercel 按文件路径路由
-│   ├── admin/grant.js admin/grants.js  #   （admin/* 是 2.2 的**权威发放**；
-│   │                                   #     avatar/ 是 #163 的头像上传）
+│   ├── [...path].js                    # **唯一那个函数**：按内表把 /api/* 转给下面
+│   ├── _routes/                        # 19 条路由的实现（一个业务一个文件）
+│   │   ├── send-code.js verify-code.js me.js account.js
+│   │   ├── sync/pull.js sync/push.js
+│   │   ├── avatar/index.js             # #163 的头像上传
+│   │   ├── auth/*.js                   # #197 完整登录流程（注册 / 口令 / 确认 / 重设）
+│   │   └── admin/*.js                  # 2.2 的**权威发放**与名录
 │   └── _lib/                           # 业务内核（core.js）+ 配置 / 存储 / 会话 /
-│                                       #   身份 / 发信适配层 / schema.sql
+│                                       #   身份 / 发信适配层 / routes.js（唯一路由表）
+│                                       #   / schema.sql
 ├── docs/                   # 设计文档（architecture.md：最终架构与 0/1 期排期；
 │                           #   auth-design.md：账号 / 登录 / 权益分层；
 │                           #   todo.md：**现在不做、以后做**的唯一一处，
@@ -249,7 +253,8 @@ bash test/run.sh   # 全部测试（等价于 npm test）
 ```
 
 测试分多层，覆盖调度算法、各页面端到端（jsdom）、数据完整性、主题、注音朗读、法务页、
-服务端 18 个路由（真 http，不联网）、头像上传（裸字节 + 客户端压缩裁切）、
+服务端 19 条路由（真 http，不联网；线上由 `api/[...path].js` **一个函数**收口）、
+头像上传（裸字节 + 客户端压缩裁切）、
 账号接线、权威发放、开通自检等。其中 PWA 一层需要真实浏览器
 （`puppeteer`），未安装则跳过。
 
@@ -316,6 +321,20 @@ Vercel Serverless，**同源、无 CORS**：
 
 业务内核全在 `api/_lib/core.js`（handler 只做「读请求 → 调内核 → 写响应」），
 所以能在 Node 里直接测 —— `test/api.test.js` 用**真 http 请求**跑完整链路。
+
+**函数数：线上只有 1 个，不是 19 个。** Vercel Hobby 档一个部署最多 **12 个**
+Serverless 函数，而上面这 19 条路由按「一个文件 = 一个函数」数就是 19 个
+（构建直接失败：`No more than 12 serverless functions can be added to a
+deployment on the hobby plan`）。所以：
+
+- 19 条路由的实现放在 `api/_routes/`（`_` 开头的目录 Vercel 不当函数）；
+- `api/[...path].js` 是**唯一那个函数**，按 `api/_lib/routes.js` 那张
+  **唯一的路由表**把请求转发给对应的 handler；
+- `vercel.json` 一条 rewrite `/api/:path*` → `/api/handler/:path*` 把外部地址接进去。
+
+**外部 URL 一个都没变**（`/api/me` 还是 `/api/me`），客户端、文档、`npm run doctor`
+的 curl 全部照旧。档位若不是 Hobby，把 `vercel.json` 那条 rewrite 去掉即可，
+一行代码不用改 —— 这是**唯一一处**平台档位与代码的耦合点。
 
 **四条硬规矩**：明文验证码不进任何日志（`api/_lib/http.js` 的 `log()` 会把 `code` 之类一律抹掉）；
 权益只从 `/api/me` 来，请求体里的 `plan` 一律忽略；所有写接口都有频控；

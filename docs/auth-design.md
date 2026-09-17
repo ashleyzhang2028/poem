@@ -269,7 +269,7 @@ code   : 会话由服务端在 verify 成功时签发，scope = "account"
 > 所以上面那张表里的「飞花令 / 现场考试（今名「试题模拟」· 2026-09-19 另拆出
 > 「古诗词大会集子」`exam.gathering`）」是 **Max** 起，题库复习是 **Pro** 起 ——
 > 与本文早先那句「至少 pro」相比是一次**上收**，以用户裁决为准。
-> 落地见 `docs/architecture.md` §5.0.1、`js/game.js` 与 `api/game/answer.js`。
+> 落地见 `docs/architecture.md` §5.0.1、`js/game.js` 与 `api/_routes/game/answer.js`。
 > 「我建议未登录用户不能使用全部语音播放功能，登录的 free 用户可以使用。」
 
 落地为 `js/entitlement.js`（纯逻辑、零 DOM、零网络），三条规矩：
@@ -944,7 +944,7 @@ verifyReason:  "network"      ← 为什么没成（网络层 / http_5xx / …�
 
 > 「不确认就不让登录」
 
-**这是一次口径推翻，不是补充。** 本节前一版（以及 `api/auth/register.js`
+**这是一次口径推翻，不是补充。** 本节前一版（以及 `api/_routes/auth/register.js`
 的文件头、`login/index.html` 的提示、`/terms/` 的条款）写的是
 「**不确认也能用**，确认是为了将来能找回密码」。那一条现在**不成立**了。
 
@@ -1078,7 +1078,7 @@ verifyReason:  "network"      ← 为什么没成（网络层 / http_5xx / …�
 | 口令 | `api/_lib/identity.js` | `hashPassword` / `verifyPassword` / `newToken` / `tokenHash` / `normalizeEmailForStore` |
 | 文档层 | `api/_lib/store.js` | 两张新表的方法（memory / supabase **两个实现键集合必须一致**） |
 | 邮件 | `api/_lib/mail/index.js` | `buildConfirm` / `buildReset`（与验证码邮件共用同一个 `transports` 出口）；**`withRetry`（退避重试 + 只重试可自愈的错）** |
-| 接口 | `api/auth/*.js`、`api/admin/accounts.js` | 六个 202/200 与错误口径（含 403 `E_EMAIL_UNVERIFIED`）；`resend-verification` 与 `resend-verification-by-email` 两条路由都进同一个内核函数 |
+| 接口 | `api/_routes/auth/*.js`、`api/_routes/admin/accounts.js` | 六个 202/200 与错误口径（含 403 `E_EMAIL_UNVERIFIED`）；`resend-verification` 与 `resend-verification-by-email` 两条路由都进同一个内核函数 |
 | 传输 | `js/auth-api.js` | **八个**方法（注册 / 登录 / 确认 / 两条重发 / 两步重设 / 名录） |
 | 接线 | `js/account-api.js` | `resendVerification` / `resendVerificationByEmail` / `adminAccounts` / 账号自助信息（明文邮箱 + 确认状态 + `channel.emailGate`） |
 | 页面 | `login/`、`verify/`、`reset/`、`profile/`、`admin/` | 四屏登录页 + **一屏「等确认」**（那颗「重新发一封」走匿名口）、两张邮件落地页、个人中心的确认状态、管理后台的名录 |
@@ -1240,7 +1240,7 @@ emailMask = "a***@b.com"                          // 用于界面回显
 > `deviceId` 是**客户端自己给的**（`x-kb-device` 头或请求体），
 > 每天换一个就绕过了设备档；邮箱更是攻击者自己挑的。
 > 所以 `/api/verify-code` 与 `/api/send-code` 都必须把 IP 传给内核
-> （`api/verify-code.js` 里那一行 `ip: d.ip` 就是它）——
+> （`api/_routes/verify-code.js` 里那一行 `ip: d.ip` 就是它）——
 > 漏传的后果不是报错，而是**那一档永远落在 `"unknown"` 这一个桶里**：
 > 桶被刷满时**所有用户一起被拒**（DoS），而真正的攻击者换个网络就走了。
 
@@ -1284,7 +1284,7 @@ emailMask = "a***@b.com"                          // 用于界面回显
 
 > ⚠️ **服务端这一条也翻过一次车（Issue #197）。**
 > 设计里那句「剩余 < 15 天时静默续到 30 天」是**有条件的**，
-> 而 `api/verify-code.js` 原先做的是「每一次登录都签一枚新 Cookie」——
+> 而 `api/_routes/verify-code.js` 原先做的是「每一次登录都签一枚新 Cookie」——
 > 那等于**无上限的滑动窗口**：用户只要别空过 30 天，
 > 这一枚会话就能活 60 天、90 天、无限期，而库里那一行 `sessions`
 > 的 `exp` 还停在最初那一刻（续期从不落库）。
@@ -1332,7 +1332,8 @@ emailMask = "a***@b.com"                          // 用于界面回显
 > ✅ **已实现**（2026-09-15）。落地时路径从设计里的 `/auth/*` 改成 `/api/*` ——
 > Vercel Serverless 的目录约定就是 `api/`，用 `/auth/*` 要多配一层 rewrite，
 > 而 rewrite 会让「哪个文件对应哪个接口」变得不可见。六个接口的实现在
-> `api/{send-code,verify-code,me,account}.js` 与 `api/sync/{pull,push}.js`，
+> `api/_routes/{send-code,verify-code,me,account}.js` 与 `api/_routes/sync/{pull,push}.js`
+> （Issue #205 之后实现都在 `_routes/` 下，线上由 `api/[...path].js` 一个函数收口），
 > 业务内核全在 `api/_lib/core.js`（这样才写得了测试），
 > 客户端的 `transport` 是 `js/auth-api.js`。
 > 上面「本期的做法」（本地发码 + 用户自送）**保留为降级路径**：
@@ -1879,7 +1880,7 @@ code   : 会话由服务端在 verify 成功时签发，scope = "account"
 > 所以上面那张表里的「飞花令 / 现场考试（今名「试题模拟」· 2026-09-19 另拆出
 > 「古诗词大会集子」`exam.gathering`）」是 **Max** 起，题库复习是 **Pro** 起 ——
 > 与本文早先那句「至少 pro」相比是一次**上收**，以用户裁决为准。
-> 落地见 `docs/architecture.md` §5.0.1、`js/game.js` 与 `api/game/answer.js`。
+> 落地见 `docs/architecture.md` §5.0.1、`js/game.js` 与 `api/_routes/game/answer.js`。
 > 「我建议未登录用户不能使用全部语音播放功能，登录的 free 用户可以使用。」
 
 落地为 `js/entitlement.js`（纯逻辑、零 DOM、零网络），三条规矩：
@@ -2439,7 +2440,7 @@ signedIn ──deletingAccount(二次确认)──▶ signedOut+erased
 | 口令 | `api/_lib/identity.js` | `hashPassword` / `verifyPassword` / `newToken` / `tokenHash` / `normalizeEmailForStore` |
 | 文档层 | `api/_lib/store.js` | 两张新表的方法（memory / supabase **两个实现键集合必须一致**） |
 | 邮件 | `api/_lib/mail/index.js` | `buildConfirm` / `buildReset`（与验证码邮件共用同一个 `transports` 出口） |
-| 接口 | `api/auth/*.js`、`api/admin/accounts.js` | 六个 202/200 与四个错误口径 |
+| 接口 | `api/_routes/auth/*.js`、`api/_routes/admin/accounts.js` | 六个 202/200 与四个错误口径 |
 | 传输 | `js/auth-api.js` | 七个方法（注册 / 登录 / 确认 / 重发 / 两步重设 / 名录） |
 | 接线 | `js/account-api.js` | `resendVerification` / `adminAccounts` / 账号自助信息（明文邮箱 + 确认状态） |
 | 页面 | `login/`、`verify/`、`reset/`、`profile/`、`admin/` | 四屏登录页、两张邮件落地页、个人中心的确认状态、管理后台的名录 |
@@ -2601,7 +2602,7 @@ emailMask = "a***@b.com"                          // 用于界面回显
 > `deviceId` 是**客户端自己给的**（`x-kb-device` 头或请求体），
 > 每天换一个就绕过了设备档；邮箱更是攻击者自己挑的。
 > 所以 `/api/verify-code` 与 `/api/send-code` 都必须把 IP 传给内核
-> （`api/verify-code.js` 里那一行 `ip: d.ip` 就是它）——
+> （`api/_routes/verify-code.js` 里那一行 `ip: d.ip` 就是它）——
 > 漏传的后果不是报错，而是**那一档永远落在 `"unknown"` 这一个桶里**：
 > 桶被刷满时**所有用户一起被拒**（DoS），而真正的攻击者换个网络就走了。
 
@@ -2645,7 +2646,7 @@ emailMask = "a***@b.com"                          // 用于界面回显
 
 > ⚠️ **服务端这一条也翻过一次车（Issue #197）。**
 > 设计里那句「剩余 < 15 天时静默续到 30 天」是**有条件的**，
-> 而 `api/verify-code.js` 原先做的是「每一次登录都签一枚新 Cookie」——
+> 而 `api/_routes/verify-code.js` 原先做的是「每一次登录都签一枚新 Cookie」——
 > 那等于**无上限的滑动窗口**：用户只要别空过 30 天，
 > 这一枚会话就能活 60 天、90 天、无限期，而库里那一行 `sessions`
 > 的 `exp` 还停在最初那一刻（续期从不落库）。

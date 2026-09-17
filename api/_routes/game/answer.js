@@ -39,7 +39,7 @@
  */
 "use strict";
 
-var handler = require("../_lib/handler");
+var handler = require("../../_lib/handler");
 
 module.exports = handler.make("game.answer", ["POST"], function (d, body) {
   if (d.cfg && !d.cfg.hasSession()) {

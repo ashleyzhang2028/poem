@@ -317,7 +317,7 @@ async function main() {
     chk(/role:/.test(pub), "publicAccount 下发 role（2 期「补洞」之前这条链路是断的）");
     chk(/"owner", "admin", "user"/.test(pub) || /\["owner", "admin", "user"\]/.test(pub),
       "role 取值做过白名单校验（脏值一律回落 user）");
-    const meJs = read("api/me.js");
+    const meJs = read("api/_routes/me.js");
     chk(/role/.test(meJs), "/api/me 的注释里写明会下发 role");
   }
 
