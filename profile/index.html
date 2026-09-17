@@ -86,9 +86,11 @@
           <button class="account-btn ghost" id="btn-sign-out" type="button" hidden>退出登录</button>
           <button class="account-btn ghost" id="btn-go-plans" type="button">权限对比</button>
         </div>
-        <!-- 「登录」那一颗未登录时底下补一句它还差什么（语音朗读）——
-             未登录用户唯一真的用不了的现有功能；已登录时这一句收起。 -->
-        <p class="account-hint" id="login-hint" hidden></p>
+        <!-- ⚠️ Issue #209（用户 2026-09-17）：这一行原先未登录时写「差语音朗读。」
+             （`#login-hint`，文案由 js/profile.js 的 diffLine() 现算）。
+             用户原话：「删除 差语音朗读。」—— 整句删掉、挂点一并撤，
+             js/profile.js 里那个 diffLine() 也删了（不留「没有挂点就静默跳过」
+             的孤儿渲染函数）。 -->
         <p class="account-hint" id="signout-hint" hidden>退出不删进度；注销在下面「危险区」。</p>
       </section>
 

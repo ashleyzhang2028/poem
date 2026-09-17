@@ -159,53 +159,29 @@
       : "层级本机登记，改一行存储就能改。";
   }
 
-  /**
-   * 还没登录时补一句「登录到底能多出什么」—— 一句话，不摆按钮。
-   *
-   * ⚠️ Issue #209 之前这里并排挂着一颗「建一个账号」（去 /login/）与下面另一张卡
-   *    上的「看我的权限」（去 /profile/）。用户 2026-09-17 点名两颗都多余：
-   *    这一页自己已经回答了「我在哪一格」，「谁能用什么」上面那张表四列并排，
-   *    两颗键点出来还是回到他刚刚看完的东西。于是键撤了，**信息留下** ——
-   *    「不登录只有语音朗读不能用」这句话是这一页唯一还没说出口的事实。
-   *
-   * ⚠️ 文案仍走 `Entitlement.denyReason()`（`read.aloud` 的门槛口径只有那一处），
-   *    不在这里手写「语音朗读」四个字：将来登录的门槛变了，这句跟着变。
-   */
-  function renderLoginHint(id) {
-    var el = $("plans-me-hint");
-    if (!el) return;
-    if (id.signedIn) { el.hidden = true; el.textContent = ""; return; }
-    var why = Ent.denyReason("read.aloud", id) || "";
-    el.hidden = false;
-    /* 一句话说完：门槛那句由 `denyReason()` 给（「登录可用」），
-       剩下的部分解释「差的就是这一条」—— 两个分句之间用逗号，句尾一个句号。 */
-    el.textContent = why ? "未登录，只差这一条：" + why : "";
-  }
-
   /* ------------------------------------------------------------ 四、我在哪一格 */
 
   /**
-   * 「你现在的身份」：如实告诉用户他落在哪一列。
-   * 判据只走 `Entitlement.identity()` —— 本页不自己读会话、不自己拼 ctx。
+   * ⚠️ Issue #209（用户 2026-09-17）：**这一节整节撤掉了**。
+   *
+   * 原先这里有两段：「你现在的身份」三行（身份 / 层级 / 落在哪一列，挂
+   * `#plans-me`）和未登录时补的一句「未登录，只差这一条：登录可用」
+   * （挂 `#plans-me-hint`，文案走 `Entitlement.denyReason("read.aloud")`）。
+   *
+   * 用户原话：
+   *   「现在 / 身份 / 游客（本机） / 层级 / Free / 落在哪一列 / 游客 /
+   *     层级本机登记，改一行存储就能改。/ 未登录，只差这一条：登录可用
+   *     …… 上面这张卡片没有任何存在的意义，删除」
+   *
+   * 他点的是**整张卡**（不是卡上的某一句话）：这三行回答的「我现在在哪一格」
+   * 上面那张对比表已经用**列头角标**（`renderHead()` 里的「你现在在这」）
+   * 指出来了；「只差这一条」里的那一条，在同一张表的**游客列**上就是那个叉。
+   * 一页里说三遍同一件事，砍到一遍。
+   *
+   * ⚠️ 因此 `plans/index.html` 里 `#plans-me` / `#plans-me-hint` 两个挂点也一并
+   *    撤了，这里**不许**再长出「没有挂点就静默跳过」的孤儿渲染函数。
+   *    守卫：`test/plans-page.test.js` 第廿一节。
    */
-  function renderMe(id) {
-    var box = $("plans-me");
-    if (!box) return;
-    var rows = [
-      ["身份", id.signedIn ? "已登录 · " + (id.mask || "（无邮箱）") : "游客（本机）"],
-      ["层级", Ent.tierLabel(id.tier)],
-      /* 列名只说一次：`columnLabel()` 是那张表的列名（游客 / Free / Pro / Max），
-         这里再手写一遍就会出现「表头写游客、这一行写未登录」的两套叫法。 */
-      ["落在哪一列", Ent.columnLabel(
-        id.signedIn ? { tier: id.tier, guest: false } : { tier: id.tier, guest: true })]
-    ];
-    box.innerHTML = rows.map(function (r) {
-      return '<div class="kv-row"><span class="kv-k">' + esc(r[0]) +
-        '</span><span class="kv-v">' + esc(r[1]) + "</span></div>";
-    }).join("");
-
-    renderLoginHint(id);
-  }
 
   /* ------------------------------------------------------------ 初始化 */
 
@@ -224,7 +200,6 @@
     renderHead(cmp, current);
     renderBody(cmp, current);
     renderFoot(cmp);
-    renderMe(id);
     renderAbout(id);
   }
 

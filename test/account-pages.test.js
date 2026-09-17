@@ -565,18 +565,19 @@ const LOGIN = strip(loginJs), PROFILE = strip(profileJs), ADMIN = strip(adminJs)
     '删掉「不建账号也照旧用全部功能，只有语音朗读要登录（免费）。」');
   chk(!/guest-card/.test(SRC.profile),
     '那块「未登录引导」整块撤掉（不留空壳容器）');
-  /* 但**事实**一条都没少，只是换了说法（Issue #163 用户：
-     「登录可用语音朗读？？？登录就登录，写那么多废话干什么」）：
-     按钮就叫「登录」，它差的那件事写在同一行底下（#login-hint）。 */
+  /* 按钮就叫「登录」，理由不写在按钮上（Issue #163 用户：
+     「登录可用语音朗读？？？登录就登录，写那么多废话干什么」）。 */
   chk(/btn\.textContent = id\.signedIn \? "管理登录状态" : "登录"/.test(PROFILE),
     '未登录那颗键就叫「登录」（不把理由写在按钮上）');
-  chk(/id="login-hint"/.test(SRC.profile) && /diffLine/.test(PROFILE),
-    '「还差什么」写在同一行底下的说明里（#login-hint，由 diffLine 现算）');
-  chk(/Ent\.capNames\(\)\.filter/.test(PROFILE) &&
-    /Ent\.can\(key, freeCtx\)\.ok/.test(PROFILE),
-    '那一行是**数出来**的（未登录 vs 登录的 free 逐条比 can()），不是写死「语音朗读」四个字');
+  /* ⚠️ Issue #209（用户 2026-09-17）：「删除 差语音朗读。」——
+     这句话连同 `#login-hint` 挂点、`diffLine()` 一起撤了。
+     所以判据从「那一行在不在」翻成「那一行与它的渲染函数都不在」：
+     挂点没了还留函数，就是「没有挂点就静默跳过」的死代码。 */
+  chk(!/id="login-hint"/.test(stripHtml(SRC.profile)) &&
+    !/login-hint/.test(PROFILE) && !/diffLine/.test(PROFILE),
+    '「差语音朗读」那一行撤干净（挂点、渲染、diffLine 都不留）');
   chk(!/语音朗读/.test(strip(stripHtml(SRC.profile))),
-    '个人中心的**可见文字里**不再出现「语音朗读」四个字（只剩布局注释里提它）');
+    '个人中心的**可见文字里**没有「语音朗读」四个字（只剩布局注释里提它）');
   // 「账号」不再自成一卡：状态行挂在身份卡里说
   chk(!/id="account-card"/.test(SRC.profile),
     '「账号」不再独占一张卡（它回答的「我是谁」与身份卡重合）');
@@ -615,9 +616,10 @@ const LOGIN = strip(loginJs), PROFILE = strip(profileJs), ADMIN = strip(adminJs)
     '未登录时那一行里是「登录」+「权限对比」两颗（实际 ' + ids.join(',') + '）');
   chk(W.document.getElementById('btn-account-entry').textContent === '登录',
     '那颗键上只有一个词：登录（实际「' + W.document.getElementById('btn-account-entry').textContent + '」）');
-  const lh = W.document.getElementById('login-hint');
-  chk(!lh.hidden && lh.textContent === '差语音朗读。',
-    '它底下的说明只写还差的那件事（实际「' + lh.textContent + '」）');
+  /* Issue #209：「差语音朗读。」那一行整句删掉 —— 未登录时它底下**不再有**说明行。 */
+  chk(W.document.getElementById('login-hint') === null,
+    '它底下不再有「差语音朗读」那一行（挂点撤了，实际 ' +
+    (W.document.getElementById('login-hint') ? '还在' : 'null') + '）');
 
   // 已登录：三颗键同一行
   W = boot();
@@ -630,8 +632,8 @@ const LOGIN = strip(loginJs), PROFILE = strip(profileJs), ADMIN = strip(adminJs)
   const ids2 = [...row.querySelectorAll('button')].filter(b => !b.hidden).map(b => b.id);
   chk(ids2.join(',') === 'btn-account-entry,btn-sign-out,btn-go-plans',
     '已登录时三颗键（管理登录状态 / 退出 / 权限对比）在同一行（实际 ' + ids2.join(',') + '）');
-  chk(W.document.getElementById('login-hint').hidden,
-    '已登录时「差语音朗读」那一句收起（同一件事不说两遍）');
+  chk(W.document.getElementById('login-hint') === null,
+    '已登录时那一行同样不在（这件事已经不再说了）');
   chk(W.document.getElementById('btn-account-entry').textContent === '管理登录状态',
     '已登录时那颗键换成「管理登录状态」（仍落在 /login/，不是死路）');
 }
