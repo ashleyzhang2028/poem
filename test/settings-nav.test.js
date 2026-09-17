@@ -44,17 +44,16 @@ const NAV = read('js/settings-nav.js');
   chk(!/id="account-entry"/.test(SRC.index),
     '主页不再有独立的账号卡容器（那一行已在清单里）');
 
-  chk(/querySelector\("#settings-index"\)/.test(NAV) &&
-    /insertBefore\(el, box\.firstChild\)/.test(NAV),
-    '账号那一行仍进**同一张清单**，且插在**第一条**（用户点名的位置）');
-  chk(/renderIndex\(\);\s*\n\s*renderAccountEntry\(\);\s*\n\s*renderAbout\(\);/.test(NAV),
-    '三步顺序：renderIndex → renderAccountEntry → renderAbout（反了就被清单重画抹掉）');
+  chk(!/renderAccountEntry/.test(NAV) && !/"\/login\/"/.test(NAV),
+    '设置整页不再画账号那一行（它是「我是谁」，归「我的」页 /mine/）');
+  chk(/renderIndex\(\);\s*\n\s*renderAbout\(\);/.test(NAV),
+    '两步顺序：renderIndex → renderAbout（反了就被清单重画抹掉）');
 }
 
 {
   const OWNER = {
 
-    general: ['#input-username', '#btn-avatar-pick', '#avatar-file', '#account-panel',
+    general: ['#input-username', '#account-panel',
       '#btn-export', '#btn-import', '#btn-reset'],
     recite: ['#seg-stage', '#grade-chips', '#seg-term', '#seg-scope', '#seg-count', '#seg-algo'],
     lists: ['#collections-list', '#btn-collections-import', '#collections-tip'],
@@ -104,7 +103,8 @@ const NAV = read('js/settings-nav.js');
     chk(/data-back="\/settings\/"/.test(SRC[k]),
       PAGES[k] + ' 声明上一层是设置主页（从阅读页返回不该一脚踢去背诵首页）');
   });
-  chk(!/data-back=/.test(SRC.index), '主页自己就是最上面那一层，不声明 data-back');
+  chk(/data-back="\/mine\/"/.test(SRC.index),
+    '设置整页的上一层是「我的」页（齿轮点进来，返回键点回去）');
 }
 
 {
@@ -125,7 +125,7 @@ const NAV = read('js/settings-nav.js');
   const pageNames = ['index', 'general', 'recite', 'lists', 'reader']
     .map(k => (SRC[k].match(/data-page="([^"]+)"/) || [])[1]);
 
-  chk(pageNames.join(',') === '我的,通用,背诵,我的清单,朗读',
+  chk(pageNames.join(',') === '设置,通用,背诵,我的清单,朗读',
     '五张页的页名各不相同且如实：' + pageNames.join(' / '));
   chk(new Set(pageNames).size === 5, '五张页的页名不重复（否则「返回上一页」会让人分不清层）');
 }
@@ -169,11 +169,14 @@ const NAV = read('js/settings-nav.js');
   const chrome = read('js/chrome.js');
   const code = (t) => t.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/^\s*\/\/.*$/gm, ' ');
 
-  chk(/label:\s*"我的"/.test(code(chrome)), '底部最后一格写「我的」（用户点名的改名）');
-  chk(!/label:\s*"设置"/.test(code(chrome)), '不再有一格叫「设置」（改了名，不是又加一格）');
+  chk(/label:\s*"我的"/.test(code(chrome)), '底部最后一格写「我的」');
+  const dockBlock = code(chrome).slice(code(chrome).indexOf("DOCK_ITEMS"), code(chrome).indexOf("function dockKey"));
+  chk(!/label:\s*"设置"/.test(dockBlock), '底部页签里没有一格叫「设置」（设置整页藏在齿轮后面）');
 
-  chk(/key:\s*"settings",\s*href:\s*"\/settings\/"/.test(chrome),
-    '那一格的路由仍是 /settings/（全站所有链接与返回落点因此都不必改）');
+  chk(/key:\s*"mine",\s*href:\s*"\/mine\/"/.test(chrome),
+    '那一格的路由是 /mine/（「我的」页；设置整页在它右上角那颗齿轮后面）');
+  chk(/function pageTopAction\(/.test(code(chrome)) && /GLYPHS\.gear/.test(chrome),
+    'js/chrome.js 认识页面上的齿轮入口（data-top-action="settings" → /settings/）');
 
   const glyph = chrome.slice(chrome.indexOf('tabMine:'), chrome.indexOf('/* 顶栏右侧：返回上一页'));
   chk(/<circle[^>]*r="10"/.test(glyph), '那一格的图标是一枚**整圆**（圆形用户头像）');

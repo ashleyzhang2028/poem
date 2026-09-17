@@ -493,7 +493,7 @@ async function main() {
           recs: []
         }));
       };
-      ["js/auth-core.js", "js/entitlement.js", "js/family.js", "js/avatar.js",
+      ["js/auth-core.js", "js/entitlement.js", "js/family.js", "js/family-ui.js", "js/avatar.js",
         "js/progress-store.js", "js/sync-store.js", "js/storage.js", "js/settings.js"].forEach(f => {
         const el = w.document.createElement("script");
         el.textContent = read(f);

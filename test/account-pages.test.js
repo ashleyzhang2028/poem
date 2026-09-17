@@ -74,7 +74,7 @@ const LOGIN = strip(loginJs), PROFILE = strip(profileJs), ADMIN = strip(adminJs)
 
   chk(/data-back="\/profile\/"/.test(SRC.login),
     '登录页的上一层是个人中心（登录是身份的事，落回设置页等于多绕一层）');
-  chk(/data-back="\/settings\/"/.test(SRC.profile), '个人中心的上一层是设置页');
+  chk(/data-back="\/mine\/"/.test(SRC.profile), '个人中心的上一层是「我的」页（账号动线的上一层）');
   chk(/data-back="\/profile\/"/.test(SRC.admin), '管理后台的上一层是个人中心（不是设置页）');
 
   chk(/login: "\/login\/"/.test(chromeJs), 'js/chrome.js 的 ROUTES 里有 /login/');

@@ -11,15 +11,18 @@ const strip = t => t.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/^\s*\/\/.*$/gm, 
 const stripHtml = t => t.replace(/<!--[\s\S]*?-->/g, ' ');
 
 const SETTINGS_HOME = 'settings/index.html';
+const MINE_HOME = 'mine/index.html';
 const PROFILE = 'profile/index.html';
 const LOGIN = 'login/index.html';
 
 const SRC = {
   home: read(SETTINGS_HOME),
+  mine: read(MINE_HOME),
   profile: read(PROFILE),
   login: read(LOGIN)
 };
 const NAV = read('js/settings-nav.js');
+const MINE_JS = read('js/mine.js');
 const PROFILE_JS = read('js/profile.js');
 const LOGIN_JS = read('js/login.js');
 const CHROME = read('js/chrome.js');
@@ -90,85 +93,80 @@ function repaint(p) {
 {
   chk(!/id="account-entry"/.test(SRC.home),
     '不再有独立的账号卡容器（#account-entry 整块撤了，不留空壳）');
-  chk(/settings-nav\.js/.test(SRC.home), '「我的」页加载 js/settings-nav.js（这一页唯一的脚本）');
-  chk(/renderAccountEntry/.test(NAV), '账号那一行由 js/settings-nav.js 的 renderAccountEntry 画');
-  chk(/renderIndex\(\);\s*\n\s*renderAccountEntry\(\);\s*\n\s*renderAbout\(\);/.test(NAV),
-    'init() 三步顺序：renderIndex → renderAccountEntry → renderAbout');
-  chk(/insertBefore\(el, box\.firstChild\)/.test(NAV) && /querySelector\("#settings-index"\)/.test(NAV),
-    '账号那一行是**插进 #settings-index 这张清单的头一条**（用户点名的位置）');
-  chk(/a\.className = "settings-item settings-link"/.test(NAV),
-    '与「通用」等四行同一个类名（同一套卡片 / 内边距 / hover / 右箭头）');
+  chk(/settings-nav\.js/.test(SRC.home), '设置整页加载 js/settings-nav.js（四组入口的唯一来源）');
+  chk(!/renderAccountEntry/.test(NAV) && !/"\/login\/"/.test(NAV),
+    '设置整页不再画账号那一行（「我是谁」归「我的」页，不归设置清单）');
+  chk(/renderIndex\(\);\s*\n\s*renderAbout\(\);/.test(NAV),
+    'init() 两步顺序：renderIndex → renderAbout');
 
-  chk(!/href="\/login\/"/.test(stripHtml(SRC.home)), '页面 HTML 里不写死 /login/（地址只在 JS 一处）');
-  chk(/"\/login\/"/.test(NAV) && /"\/profile\/"/.test(NAV),
-    '那一行的两个落点（/login/ 与 /profile/）都在 js/settings-nav.js 里');
+  chk(/mine\.js/.test(SRC.mine), '「我的」页加载 js/mine.js（账号那一行的唯一来源）');
+  chk(/renderActions/.test(MINE_JS) && /btn-account-entry/.test(SRC.mine),
+    '账号那一行由 js/mine.js 的 renderActions 画');
+  chk(!/href="\/login\/"/.test(stripHtml(SRC.mine)), '页面 HTML 里不写死 /login/（地址只在 JS 一处）');
+  chk(/"\/login\/"/.test(MINE_JS), '账号入口的落点（/login/）写在 js/mine.js 里');
 }
 
 {
-  const URL_HOME = 'https://local.test/settings/';
+  const URL_MINE = 'https://local.test/mine/';
 
-  const rowsOf = (p) => [...p.doc.querySelectorAll('#settings-index > .settings-link')];
-  const firstRow = (p) => rowsOf(p)[0];
+  const entryBtn = (p) => p.doc.getElementById('btn-account-entry');
+  const actionsRow = (p) => p.doc.getElementById('identity-actions');
+  const shownIds = (p) => [...actionsRow(p).querySelectorAll('button')]
+    .filter(b => !b.hidden).map(b => b.id);
 
-  let p = boot(SETTINGS_HOME, URL_HOME, {});
+  let p = boot(MINE_HOME, URL_MINE, {});
   const E = p.window.Entitlement, A = p.window.AuthCore;
-  chk(!!E && !!A, '「我的」页上 Entitlement 与 AuthCore 都在（第一条要读它们）');
-  let rows = rowsOf(p);
+  chk(!!E && !!A, '「我的」页上 Entitlement 与 AuthCore 都在（那颗入口要读它们）');
+  chk(!!entryBtn(p), '账号那一行的入口就在「我的」页上（#btn-account-entry）');
 
-  chk(rows.length === 5, '清单里是五条：个人中心 + 四组入口（实际 ' + rows.length + '）');
-  chk(!!p.doc.querySelector('#settings-about .kv-list'), '末尾还有「关于」那一块（只读信息 + 法务）');
-  chk(p.doc.querySelectorAll('.settings-index').length === 1,
-    '全页只有一张清单（不是「一张卡 + 一张清单」两处）');
+  chk(E.tierLabel(E.identity({ backing: p.window.localStorage }).tier) === 'Free',
+    '未登录也是 Free 徽章（文案由 Entitlement.tierLabel 出，不自己拼）');
 
-  chk(firstRow(p).id === 'btn-entry-login' &&
-    firstRow(p).getAttribute('href') === '/login/',
-    '未登录时第一条给的是去 /login/ 的入口（实际 ' + firstRow(p).id + '）');
-  chk(firstRow(p).getAttribute('data-group-link') === 'account',
-    '第一条标着 data-group-link="account"（它为「我是谁」这一档，不是第五组设置）');
-  const out = stripHtml(firstRow(p).outerHTML);
+  chk(entryBtn(p).textContent === '登录',
+    '未登录时那颗键上只有一个词：登录（实际「' + entryBtn(p).textContent + '」）');
+  chk(shownIds(p).join(',') === 'btn-account-entry,btn-go-plans',
+    '未登录时那一行里是「登录」+「权限对比」两颗（实际 ' + shownIds(p).join(',') + '）');
 
-  chk(/个人中心/.test(out), '第一条的标题是「个人中心」（这一页的主语）');
-  chk(!/btn-entry-profile/.test(out), '未登录时那条路指向 /login/，不是 /profile/');
-  chk(/Free/.test(out), '未登录也是 Free 徽章（徽章文案由 Entitlement.tierLabel 出，不自己拼）');
-  chk(!/登录可用/.test(out), '那一行不出现「登录可用……」这一串理由（Issue #163 已删）');
-  chk(!/语音朗读/.test(out), '这一行也不写「差语音朗读」（Issue #209 整句删除）');
+  const identityText = stripHtml(p.doc.getElementById('identity-row').outerHTML);
+  chk(/未起名/.test(identityText), '身份行主标题是昵称（还没起名时如实写「未起名」）');
+  chk(/本机游客 · 未登录/.test(identityText), '未登录时如实说「本机游客 · 未登录」');
+  chk(!/语音朗读/.test(identityText), '这一行不写「差语音朗读」（Issue #209 整句删除）');
 
-  p = boot(SETTINGS_HOME, URL_HOME, {});
+  p = boot(MINE_HOME, URL_MINE, {});
   signIn(p.window, 'belem@example.com');
   repaint(p);
-  rows = rowsOf(p);
-  chk(rows.length === 5, '已登录时清单仍是五条（第一条换内容，不新增一行）');
-  const inn = stripHtml(firstRow(p).outerHTML);
-  chk(/btn-entry-profile/.test(inn) &&
-    firstRow(p).getAttribute('href') === '/profile/',
-    '已登录时第一条给的是去 /profile/ 的「个人中心」（实际 ' + firstRow(p).id + '）');
-  chk(!/btn-entry-login/.test(inn),
-    '已登录时**不**再摆「去登录」（再摆一次是自相矛盾的）');
-  chk(/未起名|belem/.test(inn), '已登录时第一条的主标题是昵称（还没起名时如实写「未起名」）：' +
-    stripHtml(firstRow(p).innerHTML));
-  chk(!/belem@example\.com/.test(inn), '页面上不出现明文邮箱（掩码之外一个字符都不露）');
+
+  chk(entryBtn(p).textContent === '管理登录状态',
+    '已登录时那颗键换成「管理登录状态」（实际「' + entryBtn(p).textContent + '」）');
+  chk(shownIds(p).join(',') === 'btn-account-entry,btn-sign-out,btn-go-plans',
+    '已登录时三颗键（管理登录状态 / 退出 / 权限对比）在同一行（实际 ' + shownIds(p).join(',') + '）');
+  const innText = stripHtml(p.doc.getElementById('identity-row').outerHTML);
+  chk(/belem/.test(innText) || /未起名/.test(innText), '已登录时身份行写着昵称或「未起名」');
+  chk(!/belem@example\.com/.test(innText), '页面上不出现明文邮箱（掩码之外一个字符都不露）');
+  chk(/已登录 · b\*\*\*/.test(innText), '已登录时如实写掩码（实际「' +
+    (innText.match(/已登录[^<]*/) || [''])[0] + '」）');
 
   const E2 = p.window.Entitlement;
   E2.writeTier(p.window.localStorage, 'max');
   repaint(p);
-  const inn2 = stripHtml(firstRow(p).outerHTML);
-  const badge = (inn2.match(/tier-badge[^>]*>([^<]*)/) || ['', ''])[1];
-  chk(/Max/.test(badge), '层级改成 max 后徽章跟着变（实际「' + badge + '」）');
-  chk(/Free/.test(out) && !/Free/.test(inn2), '徽章的取数随盘上层级走，不是页面里写死的');
+  const badge = stripHtml(p.doc.getElementById('identity-row').outerHTML)
+    .match(/tier-badge[^>]*>([^<]*)/);
+  const badgeText = badge ? badge[1] : (stripHtml(p.doc.getElementById('identity-row').innerHTML)
+    .match(/(Max|Pro|Free)/) || [''])[0];
+  chk(/Max/.test(badgeText), '层级改成 max 后徽章跟着变（实际「' + badgeText + '」）');
 
   ['poem_plan_v1', 'poem_plan_grant_v1'].forEach(k => {
     chk(strip(NAV).indexOf(k) < 0, 'js/settings-nav.js 不出现权益存储键名 ' + k);
   });
 
-  const navCode = strip(NAV);
-  chk(!/plan\s*===/.test(navCode) && !/tier\s*===\s*["']/.test(navCode),
-    'js/settings-nav.js 不自己比对 plan / tier（一律走 Entitlement）');
-  chk(/E\.identity\(/.test(navCode) && /E\.tierLabel\(/.test(navCode),
-    '第一条的登录态与徽章文案都取自 Entitlement');
+  const mineCode = strip(MINE_JS);
+  chk(!/plan\s*===/.test(mineCode) && !/tier\s*===\s*["']/.test(mineCode),
+    'js/mine.js 不自己比对 plan / tier（一律走 Entitlement）');
+  chk(/Ent\.tierLabel\(/.test(mineCode), '那一行的徽章文案取自 Entitlement.tierLabel()');
 
-  const about = p.doc.querySelector('#settings-about');
+  const about = boot(SETTINGS_HOME, 'https://local.test/settings/', {}).doc.querySelector('#settings-about');
   const aboutText = stripHtml(about ? about.innerHTML : '');
-  chk(/跬步/.test(aboutText), '「关于」里写着应用名');
+  chk(/跬步/.test(aboutText), '「关于」里写着应用名（在设置整页上）');
   chk(/\/terms\//.test(aboutText) && /\/privacy\//.test(aboutText),
     '「关于」里有用户协议与隐私条款两条入口');
   chk(/离线/.test(aboutText), '「关于」里有离线缓存那一行（读 Service Worker 的真实状态）');
@@ -177,8 +175,8 @@ function repaint(p) {
 {
   chk(/data-back="\/profile\/"/.test(SRC.login),
     '登录页的返回落点是个人中心（登录是身份的事，落回设置页等于又多绕一层）');
-  chk(/data-back="\/settings\/"/.test(SRC.profile),
-    '个人中心的返回落点仍是设置主页');
+  chk(/data-back="\/mine\/"/.test(SRC.profile),
+    '个人中心的返回落点仍是「我的」页（账号动线的上一层');
   chk(!/data-back="\/settings\/"/.test(SRC.login), '登录页不再退回设置页（两处落点会打架）');
 
   chk(/location\.href = "\/profile\/"/.test(LOGIN_JS),
@@ -192,9 +190,9 @@ function repaint(p) {
 {
 
   chk(/location\.href = "\/login\/"/.test(PROFILE_JS), '路一：/profile/ → /login/');
-  chk(/"\/login\//.test(NAV), '路二：「我的」页清单第一条 → /login/');
+  chk(/"\/login\//.test(MINE_JS), '路二：「我的」页那颗账号入口 → /login/');
 
-  ['login', 'profile', 'admin', 'settings', 'settings/general'].forEach(f => {
+  ['login', 'profile', 'admin', 'settings', 'settings/general', 'mine'].forEach(f => {
     chk(fs.existsSync(path + f + '/index.html'), '落点真的有那张页：/' + f + '/');
   });
 
@@ -284,7 +282,9 @@ function repaint(p) {
 
 {
   chk(/\.\/settings\//.test(SW) && /\.\/js\/settings-nav\.js/.test(SW),
-    '设置主页与 js/settings-nav.js 都在预缓存清单里');
+    '设置整页与 js/settings-nav.js 都在预缓存清单里');
+  chk(/\.\/mine\//.test(SW) && /\.\/js\/mine\.js/.test(SW),
+    '「我的」页与 js/mine.js 都在预缓存清单里（断网也进得去）');
   const ver = parseInt((SW.match(/poem-app-v(\d+)/) || [0, '0'])[1], 10);
   chk(ver >= 143, '缓存版本跟着提（本轮改了 3 份 js + css，实际 v' + ver + '）');
   const design = read('docs/auth-design.md');

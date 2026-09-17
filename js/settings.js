@@ -115,7 +115,8 @@
   }
 
   function appTitle() {
-    return APP_NAME + " · 设置";
+    var page = document.body ? document.body.getAttribute("data-page") : "";
+    return page ? APP_NAME + " · " + page : APP_NAME + " · 设置";
   }
 
   function applyAppName() {
@@ -170,8 +171,6 @@
     const uInput = $("#input-username");
     if (uInput) uInput.value = String(settings.username == null ? "" : settings.username);
 
-    renderAvatar();
-    renderFamily();
     renderAccount();
     renderSync();
     renderAlgos();
@@ -696,473 +695,10 @@
     if (m) showToast("连读方式已改为「" + m.label + "」");
   }
 
-  function familyMod() {
-    return window.Family || null;
-  }
-
-  function renderFamily() {
-    const box = $("#family-panel");
-    const hint = $("#family-hint");
-    if (!box) return;
-    const F = familyMod();
-    const AV = avatarMod();
-    if (!F) { box.innerHTML = ""; if (hint) hint.textContent = ""; return; }
-
-    const data = F.ensureDetailed({ backing: window.localStorage });
-    const list = data.data.profiles;
-    const at = data.data.at;
-    const lim = F.limit({ backing: window.localStorage, E: entitlementMod() });
-    const unlimited = lim === Infinity;
-
-    box.innerHTML = "";
-    list.forEach(function (p) {
-      const row = document.createElement("div");
-      row.className = "family-row" + (p.id === at ? " current" : "");
-      row.dataset.familyId = p.id;
-      const name = p.nickname || "未起名";
-      row.innerHTML =
-        '<button class="family-pick" type="button" data-family-pick="' + esc(p.id) + '"' +
-        (p.id === at ? ' aria-current="true"' : "") + ">" +
-
-        (AV ? AV.htmlFor(p, {}) : "") +
-        '<span class="family-name">' + esc(name) + "</span>" +
-        (p.id === at ? '<span class="family-now">当前</span>' : "") +
-        "</button>" +
-        '<span class="family-acts">' +
-        '<button class="family-act" type="button" data-family-rename="' + esc(p.id) + '" ' +
-        'aria-label="重命名">改名</button>' +
-        (list.length > 1
-          ? '<button class="family-act danger" type="button" data-family-remove="' + esc(p.id) +
-            '" aria-label="删除">删除</button>'
-          : "") +
-        "</span>";
-      box.appendChild(row);
-    });
-
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "family-add";
-    btn.id = "btn-family-add";
-    btn.textContent = unlimited ? "再建一个" : "再建一个（还可建 " + F.remaining({ backing: window.localStorage, E: entitlementMod() }) + " 个）";
-    box.appendChild(btn);
-
-    if (hint) {
-      hint.textContent = unlimited
-        ? "当前 " + list.length + " 个"
-        : "当前 " + list.length + " / " + lim + " 个";
-    }
-  }
-
-  function switchFamily(id) {
-    const F = familyMod();
-    if (!F) return;
-    const r = F.select(id, { backing: window.localStorage });
-    if (!r.ok) { showToast("这个子用户已经不在名册里了"); return; }
-    const p = F.current({ backing: window.localStorage });
-    showToast("已切到「" + ((p && p.nickname) || "未起名") + "」");
-
-    reloadAll();
-  }
-
-  function addFamily() {
-    const F = familyMod();
-    if (!F) return;
-    const r = F.create("", { backing: window.localStorage, E: entitlementMod() });
-    if (!r.ok) {
-
-      if (r.code === "E_LIMIT") {
-        const name = entitlementMod() && entitlementMod().CAPS["profile.family"]
-          ? entitlementMod().CAPS["profile.family"].name : "家庭子用户";
-        showToast("子用户已达上限（" + name + "）");
-      } else {
-        showToast("这一台设备上写不进去（隐私模式？）");
-      }
-      return;
-    }
-
-    F.select(r.profile.id, { backing: window.localStorage });
-    renderFamily();
-    showToast("建好了，顺手切了过来。给它起个名字。");
-    const inp = $("#family-rename-input");
-    if (inp) inp.focus();
-  }
-
-  function startRenameFamily(id) {
-    const F = familyMod();
-    if (!F) return;
-    const row = document.querySelector('.family-row[data-family-id="' + id + '"]');
-    if (!row) return;
-    const p = F.list({ backing: window.localStorage }).filter(function (x) { return x.id === id; })[0];
-    if (!p) return;
-    row.innerHTML =
-      '<input class="family-rename" id="family-rename-input" type="text" maxlength="' +
-      F.NAME_MAX + '" value="' + esc(p.nickname || "") + '" placeholder="Ashley" ' +
-      'aria-label="子用户名称" enterkeyhint="done" />' +
-      '<span class="family-acts"><button class="family-act" type="button" ' +
-      'data-family-rename-cancel="1">取消</button></span>';
-    const inp = $("#family-rename-input");
-    if (!inp) return;
-    inp.focus();
-    inp.select();
-    const commit = function () {
-      const r = F.rename(id, inp.value, { backing: window.localStorage });
-      if (r.ok) {
-        renderFamily();
-
-        const F2 = familyMod();
-        const cur = F2.current({ backing: window.localStorage });
-        if (cur && cur.id === id) {
-          const u = $("#input-username");
-          if (u) u.value = cur.nickname || "";
-          renderAvatar();
-        }
-        showToast("名字改好了");
-      } else {
-        showToast("这个子用户已经不在名册里了");
-        renderFamily();
-      }
-    };
-    inp.addEventListener("keydown", function (e) {
-      if (e.key === "Enter") { e.preventDefault(); commit(); }
-      if (e.key === "Escape") { e.preventDefault(); renderFamily(); }
-    });
-    inp.addEventListener("blur", function () { commit(); });
-  }
-
-  function removeFamily(id) {
-    const F = familyMod();
-    if (!F) return;
-    const p = F.list({ backing: window.localStorage }).filter(function (x) { return x.id === id; })[0];
-    const name = (p && p.nickname) || "未起名";
-    if (!confirm("删除子用户「" + name + "」？\n\n名册里不再有它；它背过的进度数据仍留在本机（不会连带删除）。")) return;
-    const r = F.remove(id, { backing: window.localStorage });
-    if (!r.ok) {
-      if (r.code === "E_LAST") showToast("至少要留一个子用户");
-      else showToast("这个子用户已经不在名册里了");
-      renderFamily();
-      return;
-    }
-    showToast("已从名册里删掉「" + name + "」");
-
-    reloadAll();
-  }
-
-  function reloadAll() {
+  window.__reloadSettingsControls = function () {
     renderControls();
-    renderFamily();
     if (window.SiteChrome && window.SiteChrome.refreshUser) window.SiteChrome.refreshUser();
-  }
-
-  function bindFamily() {
-    const box = $("#family-panel");
-    if (!box) return;
-    box.addEventListener("click", function (e) {
-      const pick = e.target.closest("[data-family-pick]");
-      if (pick) { switchFamily(pick.dataset.familyPick); return; }
-      const rn = e.target.closest("[data-family-rename]");
-      if (rn) { startRenameFamily(rn.dataset.familyRename); return; }
-      if (e.target.closest("[data-family-rename-cancel]")) { renderFamily(); return; }
-      const rm = e.target.closest("[data-family-remove]");
-      if (rm) { removeFamily(rm.dataset.familyRemove); return; }
-      if (e.target.closest("#btn-family-add")) { addFamily(); return; }
-    });
-  }
-
-  function avatarMod() { return window.Avatar || null; }
-  function avatarImageMod() { return window.AvatarImage || null; }
-  function accountApiMod() { return window.AccountApi || null; }
-
-  var crop = { file: null, url: "", w: 0, h: 0, zoom: 1, ox: 0.5, oy: 0.5, drag: null };
-
-  function renderAvatar() {
-    const A = avatarMod();
-    const slot = $("#avatar-slot");
-    if (!A || !slot) return;
-    let html = "";
-    try { html = A.html(window.localStorage, { size: 44 }); } catch (e) { html = ""; }
-    slot.innerHTML = html;
-    if (html) slot.removeAttribute("aria-hidden");
-    else slot.setAttribute("aria-hidden", "true");
-
-    const d = (function () { try { return A.display(window.localStorage); } catch (e) { return null; } })();
-    const clear = $("#btn-avatar-clear");
-    if (clear) clear.hidden = !(d && d.hasImage);
-    renderAvatarHint(d);
-  }
-
-  function renderAvatarHint(d) {
-    const hint = $("#avatar-hint");
-    if (!hint || !d) return;
-    if (!d.hasImage) hint.textContent = "";
-    else if (d.img) hint.textContent = "已同步到服务器";
-    else hint.textContent = "已存在本机，还没同步到服务器";
-  }
-
-  function onPickFile(input) {
-    const AI = avatarImageMod();
-    if (!AI) return;
-    const file = input && input.files && input.files[0];
-    if (!file) return;
-    const chk = AI.checkFile(file);
-    if (!chk.ok) { showToast(chk.message); input.value = ""; return; }
-
-    AI.decode(file).then(function (src) {
-      crop.file = file;
-      crop.w = src.width || src.naturalWidth || 0;
-      crop.h = src.height || src.naturalHeight || 0;
-      crop.zoom = 1; crop.ox = 0.5; crop.oy = 0.5;
-
-      crop.url = (window.URL && URL.createObjectURL) ? URL.createObjectURL(file) : "";
-      AI.release(src);
-      openCrop();
-      input.value = "";
-    }).catch(function () {
-      showToast("这张图片打不开，请换一张");
-      input.value = "";
-    });
-  }
-
-  function openCrop() {
-    const layer = $("#crop-layer");
-    const img = $("#crop-img");
-    if (!layer || !img) return;
-    img.src = crop.url;
-    const z = $("#crop-zoom");
-    if (z) { z.value = "0"; z.disabled = false; }
-    layer.hidden = false;
-    document.body.classList.add("crop-open");
-    drawCrop();
-  }
-
-  function closeCrop() {
-    const layer = $("#crop-layer");
-    if (layer) layer.hidden = true;
-    document.body.classList.remove("crop-open");
-    const img = $("#crop-img");
-    if (img) img.removeAttribute("src");
-    if (crop.url && window.URL && URL.revokeObjectURL) URL.revokeObjectURL(crop.url);
-    crop.file = null; crop.url = ""; crop.drag = null;
-  }
-
-  function drawCrop() {
-    const img = $("#crop-img");
-    const box = $("#crop-box");
-    if (!img || !box || !crop.w || !crop.h) return;
-    const side = box.clientWidth || 260;
-
-    const base = side / Math.min(crop.w, crop.h);
-    const k = base * crop.zoom;
-    const dispW = crop.w * k;
-    const dispH = crop.h * k;
-
-    let left = side / 2 - crop.ox * dispW;
-    let top = side / 2 - crop.oy * dispH;
-    left = Math.min(0, Math.max(side - dispW, left));
-    top = Math.min(0, Math.max(side - dispH, top));
-    img.style.width = dispW + "px";
-    img.style.height = dispH + "px";
-    img.style.transform = "translate(" + left + "px," + top + "px)";
-  }
-
-  function onCropDrag(dx, dy) {
-    const box = $("#crop-box");
-    if (!box || !crop.w || !crop.h) return;
-    const side = box.clientWidth || 260;
-    const base = side / Math.min(crop.w, crop.h);
-    const k = base * crop.zoom;
-    const dispW = crop.w * k;
-    const dispH = crop.h * k;
-    crop.ox -= dx / dispW;
-    crop.oy -= dy / dispH;
-    const AI = avatarImageMod();
-    if (AI && AI.clampOffset) {
-      const c = AI.clampOffset(crop.w, crop.h, crop.zoom, crop.ox, crop.oy);
-      crop.ox = c.ox; crop.oy = c.oy;
-    } else {
-      crop.ox = Math.min(1, Math.max(0, crop.ox));
-      crop.oy = Math.min(1, Math.max(0, crop.oy));
-    }
-    drawCrop();
-  }
-
-  function setZoomFromSlider(v) {
-    const AI = avatarImageMod();
-    if (!AI) return;
-    const r = AI.zoomRange(crop.w, crop.h);
-    const t = Math.min(1, Math.max(0, Number(v) || 0));
-
-    crop.zoom = r.min * Math.pow(r.max / r.min, t);
-    const c = AI.clampOffset(crop.w, crop.h, crop.zoom, crop.ox, crop.oy);
-    crop.ox = c.ox; crop.oy = c.oy;
-    drawCrop();
-  }
-
-  function confirmCrop() {
-    const AI = avatarImageMod();
-    const A = avatarMod();
-    const btn = $("#btn-crop-ok");
-    if (!AI || !A || !crop.file) return;
-    if (btn) { btn.disabled = true; btn.textContent = "处理中…"; }
-    const view = { zoom: crop.zoom, ox: crop.ox, oy: crop.oy };
-    AI.process(crop.file, view).then(function (blob) {
-      return AI.blobToDataUrl(blob).then(function (dataUrl) {
-        return { blob: blob, dataUrl: dataUrl };
-      });
-    }).then(function (out) {
-
-      A.setLocalImage(window.localStorage, out.dataUrl);
-      closeCrop();
-      renderAvatar();
-      refreshUserChrome();
-      return uploadAvatar(out.blob);
-    }).then(function () {
-      if (btn) { btn.disabled = false; btn.textContent = "用这张"; }
-    }).catch(function () {
-      if (btn) { btn.disabled = false; btn.textContent = "用这张"; }
-      showToast("这张图片处理不了，请换一张");
-    });
-  }
-
-  function uploadAvatar(blob) {
-    const Api = accountApiMod();
-    if (!Api || !Api.uploadAvatar) return Promise.resolve(false);
-    return Api.uploadAvatar({ blob: blob, type: blob.type }).then(function (r) {
-      renderAvatar();
-      if (r && r.ok) {
-        refreshUserChrome();
-        showToast("头像已保存");
-        return true;
-      }
-      if (r && r.reason === "guest") showToast("头像已存在本机，登录后才会同步到其它设备");
-      else if (r && r.reason === "not-configured") showToast("头像已存在本机（服务器还没开放）");
-      else showToast((r && r.message) || "头像已存在本机，还没同步到服务器");
-      return false;
-    });
-  }
-
-  function clearAvatar() {
-    const Api = accountApiMod();
-    if (!confirm("删除头像？之后显示用户名首字。")) return;
-    const done = function () { renderAvatar(); refreshUserChrome(); };
-    if (!Api || !Api.deleteAvatar) {
-      const A = avatarMod();
-      if (A) A.resetAvatar(window.localStorage);
-      done(); return;
-    }
-    Api.deleteAvatar().then(function (r) {
-      done();
-      if (r && r.remote === "skipped") showToast("本机头像已删除，服务器那份还没删掉");
-      else showToast("头像已删除");
-    });
-  }
-
-  function refreshUserChrome() {
-    if (window.SiteChrome && window.SiteChrome.refreshUser) window.SiteChrome.refreshUser();
-  }
-
-  function bindCrop() {
-    const layer = $("#crop-layer");
-    const box = $("#crop-box");
-    const zoom = $("#crop-zoom");
-    if (!layer) return;
-    if (zoom) zoom.addEventListener("input", function () { setZoomFromSlider(zoom.value); });
-    const ok = $("#btn-crop-ok");
-    if (ok) ok.addEventListener("click", confirmCrop);
-    const cancel = $("#btn-crop-cancel");
-    if (cancel) cancel.addEventListener("click", closeCrop);
-    if (!box) return;
-
-    var pointers = {};
-    var pinchDist = 0;
-
-    box.addEventListener("pointerdown", function (e) {
-      pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
-      if (box.setPointerCapture) { try { box.setPointerCapture(e.pointerId); } catch (err) {  } }
-      var n = Object.keys(pointers).length;
-      if (n === 1) {
-        crop.drag = { x: e.clientX, y: e.clientY };
-      } else if (n === 2) {
-
-        crop.drag = null;
-        pinchDist = distOf(pointers);
-      }
-      e.preventDefault();
-    });
-
-    box.addEventListener("pointermove", function (e) {
-      if (!pointers[e.pointerId]) return;
-      pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
-      var n = Object.keys(pointers).length;
-      if (n >= 2) {
-        var d = distOf(pointers);
-        if (pinchDist > 0 && d > 0) applyZoomFactor(d / pinchDist);
-        pinchDist = d;
-        return;
-      }
-      if (!crop.drag) return;
-      var dx = e.clientX - crop.drag.x;
-      var dy = e.clientY - crop.drag.y;
-      crop.drag.x = e.clientX; crop.drag.y = e.clientY;
-      onCropDrag(dx, dy);
-    });
-
-    var stop = function (e) {
-      if (e && e.pointerId !== undefined) delete pointers[e.pointerId];
-      if (Object.keys(pointers).length === 0) { crop.drag = null; pinchDist = 0; }
-      else if (Object.keys(pointers).length === 1) {
-
-        crop.drag = null;
-        pinchDist = 0;
-      }
-    };
-    box.addEventListener("pointerup", stop);
-    box.addEventListener("pointercancel", stop);
-    box.addEventListener("pointerleave", stop);
-
-    box.addEventListener("wheel", function (e) {
-      e.preventDefault();
-      var step = e.shiftKey ? 0.24 : 0.12;
-      applyZoomFactor(1 + (e.deltaY < 0 ? step : -step));
-    }, { passive: false });
-  }
-
-  function distOf(pointers) {
-    var keys = Object.keys(pointers);
-    if (keys.length < 2) return 0;
-    var a = pointers[keys[0]];
-    var b = pointers[keys[1]];
-    return Math.hypot(a.x - b.x, a.y - b.y);
-  }
-
-  function applyZoomFactor(f) {
-    const AI = avatarImageMod();
-    if (!AI || !crop.w) return;
-    const r = AI.zoomRange(crop.w, crop.h);
-    crop.zoom = AI.clampZoom(crop.w, crop.h, crop.zoom * f);
-    const t = Math.log(crop.zoom / r.min) / Math.log(r.max / r.min || 1);
-    const z = $("#crop-zoom");
-    if (z) z.value = String(Math.min(1, Math.max(0, t)));
-    const c = AI.clampOffset(crop.w, crop.h, crop.zoom, crop.ox, crop.oy);
-    crop.ox = c.ox; crop.oy = c.oy;
-    drawCrop();
-  }
-
-  function bindAvatar() {
-    const pick = $("#btn-avatar-pick");
-    const file = $("#avatar-file");
-    if (pick && file) {
-      pick.addEventListener("click", function () { file.click(); });
-      file.addEventListener("change", function () { onPickFile(file); });
-    }
-    const clear = $("#btn-avatar-clear");
-    if (clear) clear.addEventListener("click", clearAvatar);
-    bindCrop();
-
-    window.addEventListener("resize", function () {
-      const layer = $("#crop-layer");
-      if (layer && !layer.hidden) drawCrop();
-    });
-  }
+  };
 
   function authMod() {
     return window.AuthCore || null;
@@ -1404,25 +940,28 @@
 
       const commit = function () {
         commitNickname(uInput.value);
-        applyAppName();
       };
       uInput.addEventListener("input", function () {
         commitNickname(uInput.value);
-        applyAppName();
       });
       uInput.addEventListener("change", function () {
         commit();
         uInput.value = settings.username;
       });
 
-      uInput.addEventListener("input", function () { renderAvatar(); });
-      uInput.addEventListener("change", function () { renderAvatar(); });
       uInput.addEventListener("keydown", function (e) {
         if (e.key === "Enter") {
           e.preventDefault();
           commit();
           uInput.blur();
         }
+      });
+
+      uInput.addEventListener("input", function () {
+        if (window.FamilyUi) window.FamilyUi.render();
+      });
+      uInput.addEventListener("change", function () {
+        if (window.FamilyUi) window.FamilyUi.render();
       });
     }
 
@@ -1533,8 +1072,6 @@
     renderControls();
     bindEvents();
     bindCollections();
-    bindAvatar();
-    bindFamily();
     bindAccount();
     bindSync();
     refreshServerIdentity();
