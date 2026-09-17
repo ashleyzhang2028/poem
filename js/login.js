@@ -645,9 +645,9 @@
             少一处就退回如实那句（宁可多说一次「没接上」，也不许让人白等一封信）。 */
       var mailOk = (r.mailConfigured !== false) && mailDelivered !== false;
       if (mailOk) {
-        msg("msg-forgot", "如果这个邮箱在本站注册过，重设链接已经发出去了。", "ok");
+        msg("msg-forgot", "若该邮箱已注册，重设链接已发出。", "ok");
       } else {
-        msg("msg-forgot", mailOutcome("如果这个邮箱在本站注册过，重设链接已经发出去了。", email), "warn");
+        msg("msg-forgot", mailOutcome("若该邮箱已注册，重设链接已发出。", email), "warn");
       }
       showToast("请查收邮件");
       return r;
@@ -812,7 +812,9 @@
           /* 与口令那条路同一个出口：这不是「码不对」，是「有出路的一件事」。
              界面上给出一颗「重发确认邮件」（匿名口，不需要登录）。 */
           text($("verify-lead"), "这个邮箱还没确认。");
-          note("verify-fail-note", "先去收件箱点开那封确认邮件。没收到就点下面的「重发确认邮件」。", "warn");
+          /* ⚠️ Issue #197：这句话三处各写一份会漂移，收成一句。
+             用户要的是**下一步动作**，「先去收件箱点开」这半句是描述不是动作。 */
+          note("verify-fail-note", "去收件箱点开确认邮件；没收到就点下面那颗重发。", "warn");
           setMode("verify");
           return;
         }
@@ -1028,7 +1030,7 @@
            但只有在如实知道「这台服务器发不出信」时才改口。 */
         msg("msg-verify", mailDelivered === false
           ? mailNotConfiguredNote("")
-          : "如果这个邮箱在本站注册过而且还没确认，确认邮件已经发出去了。请查收。",
+          : "若该邮箱已注册且未确认，确认邮件已发出。",
           mailDelivered === false ? "warn" : "ok");
       }
       return r;

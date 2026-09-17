@@ -307,6 +307,36 @@ function check(name, cond, extra) {
     check('iPhone: 播放栏不遮挡设置页底部的法务链接', !playAndMeasure.covered,
       JSON.stringify(playAndMeasure));
 
+    /* ---- 设置整页：那 40px 只从「呼吸」里减，避让区一寸不动 ----
+       Issue #209 让页底留白减 40px。第一次提测时减错了对象 —— 把
+       `24px + var(--nav-h)` 整条算式一起减，iPhone 上算出 45.5px < 页签 62px。
+       CSS 静态断言（test/theme.test.js）只能守住「算式里别出现 --foot-gap-v2」，
+       算式到底够不够高，只有真机几何量得出来：把呼吸按 24px 扣掉 40px 之后
+       算出来的那个值，仍要 ≥ 页签高度。
+       这样即使以后有人改 24 / 40 / --foot-gap-v2 这几个数，
+       这条断言也会按**真实几何**而不是按算式写法判红绿。 */
+    const breath = await page.evaluate(() => {
+      const root = getComputedStyle(document.documentElement);
+      const page = document.querySelector('.settings-page');
+      const dock = document.getElementById('site-dock');
+      const pad = parseFloat(getComputedStyle(page).paddingBottom);
+      const navH = parseFloat(root.getPropertyValue('--nav-h')) || 0;
+      const gapV2 = parseFloat(root.getPropertyValue('--foot-gap-v2')) || 0;
+      return {
+        pad: pad,
+        // 留白里「本该是呼吸」的那截：避让区之外的余数
+        breath: Math.round((pad - Math.max(0, navH - gapV2)) * 10) / 10,
+        dockH: Math.round(dock.getBoundingClientRect().height * 10) / 10,
+        navH: navH, gapV2: gapV2,
+        dockHidden: getComputedStyle(dock).visibility === 'hidden'
+      };
+    });
+    // 页签在场时它是「被量到的那一层」，避让区 = 让出的 40px 之外的部分，
+    // 所以「留白 − 那 40px」剩下的那截必须还够页签用
+    check('iPhone: 减掉 40px 之后剩下的呼吸仍 ≥ 页签高度（40px 没减进避让区）',
+      breath.dockHidden || breath.breath >= breath.dockH - 1,
+      JSON.stringify(breath));
+
     /* ---- 底部页签（全站导航栏）同样不得压住页面最后一行 ---- */
     await page.goto(base + 'settings/', { waitUntil: 'networkidle0' });
     await new Promise(r => setTimeout(r, 900));
@@ -2373,6 +2403,79 @@ function check(name, cond, extra) {
       check('/poems/ @' + vw + 'px：「古诗词大会」那颗键整个落在屏幕内（点得着）',
         m.btnRight !== null && m.btnRight <= m.vw,
         '键右缘 ' + m.btnRight + ' / 视口 ' + m.vw);
+    }
+    await page.close();
+  }
+
+  /* ============ 登录页：页脚一屏可见、卡片真居中、矮屏仍可滚 ============
+     用户原话（Issue #197，2026-09-17）：
+       「登录页面登录卡片上下留空稍微多了一点，导致 ©2026 kuibu.app …
+         用户协议 · 隐私条款 需要下拉滚动条才能显示」
+
+     真浏览器逐档量到的根因：`#login-page` 的 `min-height: calc(100vh - 200px)`
+     **少算了页脚自己顶上那 26px 的 margin-top**，于是
+     69(顶栏) + 652(min-height) + 26(foot margin) + 63(页脚) + 48(.app) = 858，
+     比 852 视口多出 **6px** —— 恒定 6px，与屏宽无关，
+     所以每一档都「差一点点」，都得下拉一下才看得到法务链接。
+
+     这一节量三件事（都只有真浏览器量得出来）：
+       ① 页面不溢出（`scrollHeight ≤ innerHeight`）且页脚**不滚动就完整可见**
+       ② 卡片仍是**垂直居中**的（上下两段空白大致相等）——
+          修短留白不许把「居中」一起修掉，那是 Issue #163 专门要的
+       ③ 矮屏 / 横屏上卡片**顶端不被裁掉**（`margin: auto` 该退回贴顶、可滚）
+
+     ⚠️ ② 写成**相对关系**（两段空白之差 ≤ 一个呼吸值），不写死像素：
+        卡片高会随文案长短变，写死就会在下次改文案时误红。
+     ⚠️ ③ 是这一节真正的反面守卫：只判 `overflow === 0` 的话，
+        把 `min-height` 直接删掉也能过 —— 那时短屏上卡片会被顶出屏幕。 */
+  {
+    const { page } = await freshPage();
+    const LOGIN = base.replace(/\/$/, '') + '/login/';
+    for (const [vw, vh, label] of [[320, 568, 'iPhone SE1'], [360, 640, '安卓小屏'],
+      [393, 852, 'iPhone 14'], [768, 1024, 'iPad 竖屏'], [1024, 768, 'iPad 横屏'],
+      [1440, 900, '桌面'], [1920, 1080, '大屏桌面']]) {
+      await page.setViewport({ width: vw, height: vh, deviceScaleFactor: 1 });
+      await page.goto(LOGIN, { waitUntil: 'networkidle0' });
+      await new Promise(r => setTimeout(r, 700));
+      const m = await page.evaluate(() => {
+        const de = document.documentElement;
+        const card = document.querySelector('#login-page > .account-card');
+        const foot = document.querySelector('.foot');
+        const cr = card.getBoundingClientRect();
+        const fr = foot.getBoundingClientRect();
+        const tb = document.querySelector('.topbar').getBoundingClientRect();
+        return {
+          vw: de.clientWidth, vh: window.innerHeight,
+          overflow: de.scrollHeight - window.innerHeight,
+          cardTop: Math.round(cr.top), cardBottom: Math.round(cr.bottom),
+          footTop: Math.round(fr.top), footBottom: Math.round(fr.bottom),
+          /* 上下两段空白，量的是**卡片到顶栏 / 卡片到页脚**的距离 ——
+             ⚠️ 不能拿「卡片顶到视口顶」当上面那段：顶栏与页脚各占一行，
+                拿视口边当基准会把两张卡片之外那两行算进一边，
+                于是「居中」永远判不过（哪怕卡片在自己那一层里分毫不差）。
+                要判的是「顶栏与卡片之间」和「卡片与页脚之间」是否相当。 */
+          above: Math.round(cr.top - tb.bottom),
+          below: Math.round(fr.top - cr.bottom)
+        };
+      });
+      check('登录页 @' + vw + '×' + vh + '（' + label + '）：页面不溢出',
+        m.overflow <= 0, '溢出 ' + m.overflow + 'px');
+      /* 页脚必须**不滚动就完整可见** —— 这正是用户报的那一条。
+         ⚠️ 用「页脚底 ≤ 视口底」而不是「页脚在视口里」：
+            后者在页脚被截掉一半时也成立（top 还在视口内）。 */
+      check('登录页 @' + vw + '×' + vh + '（' + label + '）：页脚不滚动就完整可见',
+        m.footBottom <= m.vh && m.footTop >= 0,
+        '页脚 ' + m.footTop + '~' + m.footBottom + ' / 视口 ' + m.vh);
+      /* 卡片顶端不许被裁（矮屏上 margin: auto 该退化成 0） */
+      check('登录页 @' + vw + '×' + vh + '（' + label + '）：卡片顶端没被顶出屏幕',
+        m.cardTop >= 0, '卡片顶 ' + m.cardTop + 'px');
+      /* 卡片仍垂直居中：上下两段空白相差不超过 60px
+         （60 是「顶栏 69 与页脚 63 的差 + 一点呼吸」，手机与桌面都在这一档内） */
+      if (m.above >= 0) {
+        check('登录页 @' + vw + '×' + vh + '（' + label + '）：卡片仍垂直居中（上下留白相当）',
+          Math.abs(m.above - m.below) <= 60,
+          '上 ' + m.above + ' / 下 ' + m.below);
+      }
     }
     await page.close();
   }

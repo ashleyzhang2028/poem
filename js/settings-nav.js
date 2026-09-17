@@ -80,7 +80,7 @@
 
   /** 与 sw.js 的 CACHE_NAME 同步的版本号（页面读不到 SW 作用域里的常量）。
    *  ⚠️ 改了 sw.js 的 CACHE_NAME 就改它一处 —— test/settings-nav.test.js 有断言守着。 */
-  var APP_VERSION = "1.0 (v143)";
+  var APP_VERSION = "1.0 (v145)";
 
   function esc(s) {
     return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {

@@ -1042,11 +1042,32 @@ chk(/body\.reader-open \.dock \{ display: none; \}/.test(classicCss),
   '阅读器打开时页签同样是「让路」而不是被压住（两处口径一致）');
 
 // (3) 没有底部页签的法务页：页脚那行小字原先正好贴屏底（iPhone 上被横条压半行）
-/* ⚠️ Issue #209：这一档外面又套了一层 max(0px, calc(...))（再减 --foot-gap-v2 = 40px），
-   所以判据从「一行 calc」放宽成「模块里含 --safe-bottom」—— 守的仍是那件事：
-   留白按安全区给，页脚不贴屏底。 */
-chk(/body\.no-dock \.app,[\s\S]{0,200}?padding-bottom:\s*max\([\s\S]{0,200}?--safe-bottom/.test(css),
+/* ⚠️ Issue #209：这一档**没有**再减 --foot-gap-v2。
+   用户要减的是「页脚上面那段留空」（改在 .foot 自己的 padding-top 上），
+   不是这一档的收尾 —— 这里减掉只会让末行重新贴到屏底。判据回到原来那条。 */
+chk(/body\.no-dock \.app,[\s\S]{0,600}?padding-bottom:\s*calc\([\s\S]{0,200}?--safe-bottom/.test(css),
   '无页签页面（法务页）底部留出安全区，页脚不再贴屏底');
+
+/* (3b) 三张样式表的注释块必须闭合 —— 这一条是从一次真事故里长出来的：
+   改 .foot 留白时注释里多写了一个注释闭合符，注释提前闭合、后面几行变成
+   「野 CSS 文本」，于是**紧随其后的整条规则连同下文一起被解析器丢掉** ——
+   页脚那 40px 静默失效，页面上一眼看不出，只有 test/pwa.test.js 的几何断言红了。
+   ⚠️ 这类错误不让浏览器报错、也不让样式表整份失效，只会「少掉一块」，
+      正是本仓库反复记着的那种「不报错的少东西」。
+   判据：开注释符与闭注释符个数相等，且从左往右扫不会先出现孤立的闭注释符。 */
+for (const f of ['css/style.css', 'css/classic.css', 'css/legal.css']) {
+  const src = read(f);
+  let depth = 0, stray = false;
+  for (let i = 0; i < src.length - 1; i++) {
+    if (src[i] === '/' && src[i + 1] === '*') { depth++; i++; }
+    else if (src[i] === '*' && src[i + 1] === '/') {
+      if (depth === 0) { stray = true; break; }
+      depth--; i++;
+    }
+  }
+  chk(!stray && depth === 0,
+    f + ' 的注释块闭合（多一个注释闭合符会把它后面那条规则静默吃掉）');
+}
 
 // (4) iOS 输入框防缩放此前是「死规则」：被 .settings-input 的 font-size 压回去了。
 //     现在按类名精确命中，并且整段挪到样式表末尾。
@@ -1113,14 +1134,36 @@ chk(!/glyph\("close"\)/.test(read('js/classic.js')),
 
 // 需求：设置页底部不被底部导航栏遮挡 —— 统一由 --nav-h 这条基准线决定
 chk(/--nav-h:\s*0px/.test(css), '定义了底部导航栏高度变量 --nav-h');
-chk(/\.settings-page \{[\s\S]*?padding-bottom:\s*max\([\s\S]{0,200}?--nav-h/.test(css),
-  '设置页留出导航栏高度，最后一行不会被压住');
+/* ⚠️ Issue #209：`.settings-page` 的 padding-bottom 里**不许出现 --foot-gap-v2**。
+   这一页挂着 `min-height: calc(100 * var(--app-vh) - 200px)`，内容比它矮时
+   页脚与页签之间的距离**就等于这段 padding-bottom**（唯一的缓冲）；
+   而 --foot-gap-v2 是 40px、--nav-h 在 iPhone 上才 61.5px，
+   一起减会算出 45.5px < 页签 62px，页脚被整行压住（Issue #214 第一版就是这么红的）。
+   那 40px 减在页脚自己的 padding-top 里，所以这里连 max() 也不该出现：
+   把 24px 拎到 max() 外面同样会把页脚往下推（真机实测 pad 45.5→85.5、页脚不动）。
+   判据因此从「模块里有 max(--nav-h)」收紧成「就是 24px + --nav-h 这条原式」。 */
+chk(/\.settings-page \{[\s\S]*?padding-bottom:\s*calc\(24px \+ var\(--nav-h\)\)/.test(css),
+  '设置页留出导航栏高度，最后一行不会被压住（且 40px 没有减进这段避让）');
+chk(!/\.settings-page \{[\s\S]*?padding-bottom:[^;]*--foot-gap-v2/.test(css),
+  '设置页那 40px 不来自 padding-bottom（那是页脚与页签之间的唯一缓冲）');
 // 页面留白不写死 px，统一走 --nav-h；页签 / 播放栏同时在场也不互相压住
 chk(!/padding-bottom:\s*calc\(150px/.test(css) && !/padding-bottom:\s*calc\(196px/.test(css),
   '页面留白不再写死 px（150px / 196px 这类硬编码已删除）');
 chk(/\.dock \{[\s\S]*?position:\s*fixed[\s\S]*?bottom:\s*0/.test(css), '底部页签是贴底固定导航栏');
-chk(/body:not\(\.no-dock\) \.app[\s\S]{0,120}?padding-bottom:\s*max\([\s\S]{0,200}?--nav-h/.test(css),
+/* ⚠️ Issue #209：与设置页同一条道理，只是这里的末行没有页脚 —— 就是正文自己。
+   首页 / 五部典籍页内容比一屏高，.app 的 padding-bottom 是滚动距离没错，
+   但内容不足一屏时它又是末行的唯一垫脚，一刀减下去必然在
+   「/（首页） 页面留白 ≥ 页签高度」那六条上暴露。
+   判据同样是「原式 24px + --nav-h，不许出现 --foot-gap-v2」。 */
+chk(/body:not\(\.no-dock\) \.app[\s\S]{0,400}?padding-bottom:\s*calc\(24px \+ var\(--nav-h\)\)/.test(css),
   '有底部页签时，页面留白按实测导航栏高度计算');
+chk(!/body:not\(\.no-dock\) \.app[\s\S]{0,400}?padding-bottom:[^;]*--foot-gap-v2/.test(css),
+  '首页 / 典籍页的留白里同样没有把 40px 减进页签的避让区');
+/* ⚠️ 那 40px 到底减在哪：.foot / .settings-foot 的 padding-top。
+   这一条同时守住「两处都要减」—— 只减一处时另一张页仍会空一大截，
+   而它在另一张页上，肉眼扫一遍看不出来。 */
+chk(/body:not\(\.no-dock\) \.foot,[\s\S]{0,120}?\.settings-foot\s*\{[\s\S]{0,200}?padding-top:\s*max\(0px, calc\(24px - var\(--foot-gap-v2\)\)\)/.test(css),
+  '页脚上方那 40px 减在 .foot / .settings-foot 自己的 padding-top 里（两处都有）');
 chk(/sw\.js/.test('sw.js') && /js\/pwa\.js/.test(read('settings/index.html')) && /js\/pwa\.js/.test(read('classic/index.html')),
   '所有页都加载 js/pwa.js，--nav-h 每页都会实测');
 chk(/\.ios-install-tip \{[\s\S]*?bottom:\s*calc\(12px \+ var\(--nav-h\)\)/.test(css),

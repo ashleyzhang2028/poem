@@ -169,7 +169,10 @@
           <div class="turnstile-slot" id="ts-reg" hidden></div>
           <button class="account-btn" id="btn-register" type="button">注册</button>
           <p class="account-msg" id="msg-reg"></p>
-          <p class="account-hint">注册后我们发一封确认邮件，<strong>点开确认之后才能登录</strong>（这是为了保护你的账号）；确认链接 24 小时内有效。没收到就回上一屏点「重新发一封」，<strong>不需要先登录</strong>。</p>
+          <!-- ⚠️ Issue #197：这一句原先 78 字，用户点名为「婆婆妈妈」。
+               现在 34 字，只留三件用户必须知道的事：要确认才登得进、
+               链接 24 小时内有效、没收到去哪点。**且点进去就能重发**。 -->
+          <p class="account-hint">注册后发一封确认邮件，<strong>确认后才能登录</strong>。链接 24 小时内有效，没收到就点「重新发一封」。</p>
           <p class="auth-links"><button class="link-btn" id="btn-back-login" type="button">返回登录</button></p>
         </div>
 
@@ -193,8 +196,10 @@
                这一屏不要摆一颗做不到的键。 -->
           <button class="account-btn ghost" id="btn-verify-later" type="button">返回登录</button>
           <p class="account-msg" id="msg-verify"></p>
-          <p class="account-hint">确认链接 24 小时内有效。没收到就点上面那颗重发 ——
-            <strong>没登录也能点</strong>（确认之后才能登录，所以这里不能要你先登录）。</p>
+          <!-- ⚠️ 「没登录也能点」原先要在括号里解释一整句 —— 那说明这句话本身
+               就是在替一颗按钮道歉。按钮上直接写「重发确认邮件」就够了，
+               这一行只留「多久有效」。 -->
+          <p class="account-hint">链接 24 小时内有效，没收到就点上面那颗重发。</p>
           <p class="auth-links"><button class="link-btn" id="btn-back-login3" type="button">返回登录</button></p>
         </div>
 
@@ -206,7 +211,7 @@
                 「这个邮箱没注册过」就等于把全站用户名单变成可查询的事实。
              ================================================================== -->
         <div class="auth-pane" id="pane-forgot" role="tabpanel" hidden>
-          <p class="account-lead">填注册时用的邮箱，我们把重设链接发过去。</p>
+          <p class="account-lead">填注册时的邮箱，我们发一条重设链接。</p>
           <div class="account-field">
             <label class="account-label" for="input-forgot-email">邮箱</label>
             <input id="input-forgot-email" class="account-input" type="email" inputmode="email"
@@ -216,9 +221,13 @@
           <div class="turnstile-slot" id="ts-forgot" hidden></div>
           <button class="account-btn" id="btn-forgot-send" type="button">发送重设邮件</button>
           <p class="account-msg" id="msg-forgot"></p>
-          <p class="account-hint">没收到先看看垃圾邮件。也可以直接用「快捷登录」的随机码进来。</p>
-          <p class="account-hint"><strong>邮箱还没确认</strong>的话，先去登录页点「重新发一封确认邮件」——
-            没确认的账号暂时登不进去。</p>
+          <!-- ⚠️ 原先两段小字共 4 行。合起来只有两条出路，各一句：
+               1. 收不到信 → 垃圾邮件 / 改用随机码进来
+               2. 邮箱未确认 → 重设也登不进去，要先去确认
+               「没确认的账号暂时登不进去」是**结论**，用户真正要做的是
+               「去点重新发一封」—— 句子直接给动作，不给解释。 -->
+          <p class="account-hint">没收到先看垃圾邮件；或改用「快捷登录」的随机码。</p>
+          <p class="account-hint">邮箱未确认的重设也登不进去 —— 先去登录页点「重新发一封确认邮件」。</p>
           <p class="auth-links"><button class="link-btn" id="btn-back-login2" type="button">返回登录</button></p>
         </div>
 
@@ -238,7 +247,7 @@
           <button class="account-btn" id="btn-unverified-resend" type="button">重新发一封确认邮件</button>
           <button class="account-btn ghost" id="btn-unverified-back" type="button">返回登录</button>
           <p class="account-msg" id="msg-unverified"></p>
-          <p class="account-hint">确认之前，本站的背诵功能照旧完全可用（走「快捷登录」的本地体验版）——被拦住的只有云端账号。</p>
+          <p class="account-hint">确认前只有云端登录被拦，背诵功能照旧可用。</p>
         </div>
 
         <!-- ---------- 登录后：补昵称 ---------- -->
