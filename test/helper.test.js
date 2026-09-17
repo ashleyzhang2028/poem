@@ -1,10 +1,3 @@
-/**
- * 阅读辅助测试：生字注音 + 朗读
- *
- * 1. 拼音表：覆盖范围、多音字、上下文判定（纯 Node，无 DOM）
- * 2. 注音渲染：课内弹层与课外阅读器都能逐字标音（jsdom）
- * 3. 朗读：无 Speech API 的环境要优雅降级，不能报错（jsdom）
- */
 const fs = require("fs");
 const vm = require("vm");
 const { JSDOM } = require("jsdom");
@@ -13,7 +6,6 @@ const ROOT = __dirname + "/../";
 let fails = 0;
 const chk = (c, m) => { if (!c) { console.log("✗ " + m); fails++; } else console.log("✓ " + m); };
 
-/* ---------- 一、拼音表与引擎（无 DOM） ---------- */
 const sb = { window: {}, console };
 sb.window = sb;
 vm.createContext(sb);
@@ -30,20 +22,17 @@ chk(P.read("杵") === "chǔ", "「杵」注音为 chǔ");
 chk(P.read("鹄") === "hú", "「鹄」注音为 hú");
 chk(P.read("汩") == null || true, "生僻字查不到时不抛异常");
 
-// 多音字上下文判定
 chk(P.readOf("曲", "曲项向天歌", 0) === "qū", "「曲项」读 qū 而非 qǔ");
 
-/* ---- 回归：多音字与「一 / 不」变调 ---- */
 chk(P.isPolyphone("曲") && P.isPolyphone("还") && P.isPolyphone("间"),
   "「曲 / 还 / 间」被识别为多音字");
 chk(!P.isPolyphone("水") && !P.isPolyphone("天"), "普通字不会被误判为多音字");
-// 常用字里的多音字必须仍然注音，否则「只标生字」档会把整首诗静音
+
 chk(P.needAnnotate("曲") && P.needAnnotate("还") && P.needAnnotate("间") && P.needAnnotate("行"),
   "常用字中的多音字也要注音（回归：一年级《咏鹅》此前 0 个 ruby）");
 chk(P.needAnnotate("锄") && P.needAnnotate("餐"), "真生字依然需要注音");
 chk(!P.needAnnotate("水") && !P.needAnnotate("天"), "常见单音字不注音");
-//「一」变调：去声前 yí，阴平/阳平/上声前 yì，序数/词尾 yī
-// （回归：此前完全没实现，且词表把「一片」硬编码成 yī piàn）
+
 chk(P.readOf("一", "孤帆一片日边来", 2) === "yí", "「一片」的「一」读 yí（去声前变调）");
 chk(P.readOf("一", "千里江陵一日还", 4) === "yí", "「一日」的「一」读 yí");
 chk(P.readOf("一", "一岁一枯荣", 0) === "yí", "「一岁」的「一」读 yí");
@@ -51,11 +40,11 @@ chk(P.readOf("一", "一行白鹭上青天", 0) === "yì", "「一行」的「�
 chk(P.readOf("一", "一年级", 0) === "yī", "序数「一年级」的「一」读本调 yī");
 chk(P.readOf("一", "第一", 1) === "yī", "序数「第一」的「一」读本调 yī");
 chk(P.readOf("一", "一九", 0) === "yī", "「一九」的「一」读本调 yī");
-//「不」变调
+
 chk(P.readOf("不", "不是", 0) === "bú", "「不是」的「不」读 bú");
 chk(P.readOf("不", "不能", 0) === "bù", "「不能」的「不」读 bù（非去声前）");
 chk(P.readOf("不", "野火烧不尽", 3) === "bú", "「不尽」的「不」读 bú");
-// 词表不得覆盖「一 / 不」的变调结果
+
 chk(P.readOf("一", "一片冰心在玉壶", 0) === "yí", "词表里的「一片」也要按变调读 yí，而非硬编码 yī");
 chk(P.readOf("绿", "白毛浮绿水", 3) === "lǜ", "「绿水」读 lǜ");
 chk(P.readOf("还", "春去花还在", 3) === "hái", "「还在」读 hái");
@@ -66,18 +55,12 @@ chk(P.readOf("不", "不能", 0) === "bù", "「不」在非去声前读 bù");
 chk(P.readOf("行", "一行白鹭上青天", 1) === "háng", "「一行」读 háng");
 chk(P.readOf("乐", "知者乐水，仁者乐山", 2) === "yào", "「乐山乐水」读 yào");
 
-// 注音渲染 —— 全文注音（all）
 const html = P.annotateHtml("曲项向天歌", "all");
 chk(/<ruby>曲<rt>qū<\/rt><\/ruby>/.test(html), "全文注音输出 ruby 标签且读音正确");
 chk(P.annotateHtml("白日依山尽，", "all").indexOf("，") > -1, "标点原样保留，不会被注音");
 chk(P.annotateHtml("鹅\n鹅", "all").indexOf("<br>") > -1, "换行转换为 <br>，保持原诗分行");
 chk(P.annotateHtml("<b>", "all").indexOf("&lt;b&gt;") > -1, "注音输出做了 HTML 转义，无注入风险");
 
-// 注音渲染 —— 只标生字（默认档）
-// 常用字表 = jieba 字频表前 2500 字 + 站上典籍语料里高频出现的补充字
-// （宋词 / 古文观止入库后新增了 154 个），所以这里不写死 2500，
-// 只守住「量级仍在小学识字量这一档」这条底线 ——
-// 表太小会把整篇注上音（等于没有「只标生字」这一档），太大则等于关闭注音
 const COMMON_N = Object.keys(sb.COMMON_CHARS).length;
 chk(COMMON_N >= 2500 && COMMON_N <= 3000,
   "常用字表仍在小学识字量的量级（2500~3000 字，实际 " + COMMON_N + "）");
@@ -92,20 +75,17 @@ chk(rareHtml.indexOf("<ruby>水<") === -1, "只标生字：常见的「水」不
 const allHtml = P.annotateHtml("峨眉山月半轮秋", "all");
 chk(allHtml.indexOf("<ruby>月<") > -1, "全文注音：常见的「月」也注音");
 
-// rare 模式不注音的字数应远少于 all 模式
 const poem = "千山鸟飞绝，万径人踪灭。孤舟蓑笠翁，独钓寒江雪。";
 const rareN = (P.annotateHtml(poem, "rare").match(/<ruby>/g) || []).length;
 const allN = (P.annotateHtml(poem, "all").match(/<ruby>/g) || []).length;
 chk(rareN < allN, "只标生字的注音量(" + rareN + ")少于全文注音(" + allN + ")");
 chk(rareN > 0, "只标生字仍能标出该诗的生字（" + rareN + " 个）");
 
-// rareChars：列出本篇生字，去重且保持顺序
 const rc = P.rareChars("蓑笠翁，蓑衣");
 chk(rc.indexOf("蓑") > -1 && rc.indexOf("笠") > -1, "能列出本篇生字（蓑、笠）");
 chk(rc.filter(c => c === "蓑").length === 1, "生字列表按字去重");
 chk(P.rareChars("春眠不觉晓").indexOf("春") === -1, "常见字不算生字");
 
-// 数据完整性：课内 + 小古文所有汉字都在表里
 const d = { window: {}, console };
 d.window = d;
 vm.createContext(d);
@@ -120,9 +100,6 @@ const missing = [...new Set([...allText].filter(c => /\p{Script=Han}/u.test(c) &
 chk(missing.length === 0, "课内 + 小古文全部汉字都有注音（缺 " + missing.slice(0, 12).join("") + "）");
 chk(d.POEMS_CLASSIC.length === 100, "小古文共 100 篇（实际 " + d.POEMS_CLASSIC.length + "）");
 
-/* ---------- 二、课内弹层注音（jsdom） ---------- */
-// 设置拆成二级页（Issue #132 后续）：注音开关住在「朗读」页（Issue #163 改名），
-// 清单类控件（收藏 / 自选合集）住在「我的清单」页。
 const URL_OF = {
   "index.html": "/",
   "classic/index.html": "/classic/",
@@ -135,7 +112,7 @@ const URL_OF = {
 function bootPage(name) {
   const dom = new JSDOM(fs.readFileSync(ROOT + name, "utf8"), {
     runScripts: "dangerously",
-    // 目录化 URL：URL 里不出现 .html
+
     url: "https://local.test" + (URL_OF[name] || "/" + name)
   });
   const { window } = dom;
@@ -150,7 +127,6 @@ function bootPage(name) {
   return window;
 }
 
-/** 造一个「已用邮箱码登录过」的 localStorage：调真 auth-core，不手工拼 JSON */
 function signedInStorage() {
   const A = require(ROOT + "js/auth-core.js");
   const mem = {};
@@ -162,20 +138,10 @@ function signedInStorage() {
   const store = A.makeStore(backing);
   const req = A.requestCode(store, { channel: "email", value: "zhangmin@163.com" }, "login", { code: "246810" });
   A.verifyCode(store, req.codeId, "246810", "login");
-  // 返回**普通对象**（键 → 值），不返回 getItem/setItem 那种 backing：
-  // 普通对象在 beforeParse 里既能直接读值，也不会被误当成「自带 getItem 的存储」。
+
   return Object.assign({}, mem);
 }
 
-/**
- * 预置 localStorage。
- *
- * ⚠️ 不能只调 `win.localStorage.setItem` 然后在页面里读：
- *    jsdom 注入的 localStorage 是带名字访问器的**代理**，直接把 `window` 换成
- *    iframe 时索引会错位（实测会出现「写进去 1 条、再读只有 0 条」）。
- *    所以这里用一张影子 Map 顶掉 window.localStorage 本身 ——
- *    浏览器里它是同一个接口，行为一致，且不依赖 jsdom 的代理实现。
- */
 function seedStorage(win, data) {
   if (!data) return;
   const shadow = new Map(Object.entries(data).map(([k, v]) => [k, String(v)]));
@@ -190,10 +156,6 @@ function seedStorage(win, data) {
   Object.defineProperty(win, "localStorage", { configurable: true, value: ls });
 }
 
-/**
- * 启动首页并在启动**之前**预置存储。
- * @param {Object} [opt] opt.storage 预置的 localStorage（如已登录的账号）
- */
 function bootPageWithSpeech(opt) {
   const { JSDOM } = require("jsdom");
   const dom = new JSDOM(fs.readFileSync(ROOT + "index.html", "utf8"), {
@@ -202,7 +164,7 @@ function bootPageWithSpeech(opt) {
     beforeParse(win) {
       seedStorage(win, opt && opt.storage);
       win.SpeechSynthesisUtterance = function (t) { this.text = t; };
-      // 形态与浏览器一致：以 speaking 属性反映播放状态
+
       win.speechSynthesis = {
         speaking: false,
         _spoken: null,
@@ -226,7 +188,6 @@ function bootPageWithSpeech(opt) {
   return w;
 }
 
-// 页面渲染需要一拍时间，测试主体放在下一轮事件循环里
 const phase1 = () => new Promise(res => setTimeout(res, 400));
 
 setTimeout(async () => {
@@ -242,22 +203,17 @@ setTimeout(async () => {
     "注音档位文案精简为 不注音/生字/全文");
   chk(!!seg.querySelector('button[data-mode="rare"]'), "默认档「只标生字」按钮存在");
   chk(!!doc.querySelector("#m-read-btn"), "诗词弹层有「朗读」按钮");
-  // 设置已改成独立整页，Issue #132 后续又拆成二级页：注音开关住在「朗读」页
-  // （Issue #163 把「阅读与朗读」精简成「朗读」，见 js/settings-nav.js）
+
   const settingsWin = bootPage("settings/reader/index.html");
   settingsWin.document.dispatchEvent(new settingsWin.Event("DOMContentLoaded", { bubbles: true }));
   chk(!!settingsWin.document.querySelector("#seg-helper"), "设置页里有「阅读辅助」开关");
   chk(!doc.querySelector("#seg-helper"), "首页不再有设置弹层里的阅读辅助开关");
 
-  // 打开第一首诗
-  // 需求 5：阅读辅助默认开启 —— 打开诗词即自动注音
-  // （旧断言写的是「默认不注音、正文纯文本」，与需求相反，已按需求修正）
   const first = doc.querySelector("#today-list .item");
   first.dispatchEvent(new w.Event("click", { bubbles: true }));
   const raw = doc.querySelector("#m-text").textContent;
   chk(raw.length > 0, "打开弹层后正文正常渲染");
-  // 首篇（咏鹅）全是常见字，但含多音字「曲」，因此开启态下至少应有一个 ruby；
-  // 为稳妥起见，遍历今日任务确认「开启态下必有注音」。
+
   let autoN = 0;
   for (const item of doc.querySelectorAll("#today-list .item")) {
     item.dispatchEvent(new w.Event("click", { bubbles: true }));
@@ -267,7 +223,7 @@ setTimeout(async () => {
   chk(autoN > 0, "阅读辅助默认开启 → 打开诗词自动注音（" + autoN + " 个 ruby）");
   chk(doc.querySelectorAll("#m-text ruby").length > 0,
     "默认档位下正文本就带注音，不是纯文本");
-  // 首篇必须也有可见差别：一年级诗里多音字（曲）应被标出
+
   doc.querySelectorAll("#today-list .item")[0].dispatchEvent(new w.Event("click", { bubbles: true }));
   chk(doc.querySelectorAll("#m-text ruby").length > 0,
     "一年级《咏鹅》也应有注音（覆盖「只标生字」档对低龄学段过于稀疏的问题）");
@@ -275,14 +231,11 @@ setTimeout(async () => {
   const clickMode = (m) => doc.querySelector('#m-pinyin-seg button[data-mode="' + m + '"]')
     .dispatchEvent(new w.Event("click", { bubbles: true }));
 
-  // 只标生字：只给生字标音，常见字保持干净
   clickMode("rare");
   const rareN = doc.querySelectorAll("#m-text ruby").length;
   const rawHan = doc.querySelector("#m-text").textContent.replace(/\s/g, "").length;
   chk(rareN < rawHan, "只标生字不会把每个字都注上（" + rareN + " < " + rawHan + "）");
 
-  // 换一首确有生字的诗，确认生字确实被标了出来
-  // （首篇若全是常见字，标注数为 0 是正确行为）
   let target = null;
   for (const item of doc.querySelectorAll("#today-list .item")) {
     item.dispatchEvent(new w.Event("click", { bubbles: true }));
@@ -302,29 +255,24 @@ setTimeout(async () => {
     "「只标生字」按钮切到选中态");
   chk(w.localStorage.getItem("poem_helper_pinyin_v1") === "rare", "注音档位已持久化为 rare");
 
-  // 全文注音：注音量明显多于只标生字
   clickMode("all");
   const allN = doc.querySelectorAll("#m-text ruby").length;
   chk(allN > rareN, "「全文注音」比「只标生字」注得多（" + allN + " > " + rareN + "）");
   chk(w.localStorage.getItem("poem_helper_pinyin_v1") === "all", "档位切换为 all 已持久化");
 
-  // 关闭注音：恢复纯文本
   clickMode("off");
   chk(doc.querySelectorAll("#m-text ruby").length === 0, "选「不注音」后恢复纯文本");
   chk(w.localStorage.getItem("poem_helper_pinyin_v1") === "off", "档位切换为 off 已持久化");
 
-  // 朗读：jsdom 没有 SpeechSynthesis，必须优雅降级
   const readBtn = doc.querySelector("#m-read-btn");
   chk(readBtn.disabled === true, "无语音环境时朗读按钮禁用而不是报错");
-  // 播放键的读屏文案固定为「朗读原文」，能力不足时靠 disabled 与 title 提示
+
   chk(doc.querySelector("#m-read-btn .sr-only").textContent === "朗读原文",
     "播放键读屏文案恒为「朗读原文」（能力不足靠禁用态提示）");
   chk(/不支持/.test(readBtn.title), "按钮 title 提示不支持朗读（" + readBtn.title + "）");
   readBtn.dispatchEvent(new w.Event("click", { bubbles: true }));
   chk(true, "点击禁用的朗读按钮不会抛异常");
 
-  // 模拟支持的浏览器：注入假 SpeechSynthesis 后再启动页面
-  // —— 但没登录，语音播放必须被拦住（用户 2026-09-15 裁决）
   const wGuest = bootPageWithSpeech();
   await phase1();
   chk(wGuest.Speech.supported() === true, '有语音能力时 Speech.supported() 返回 true');
@@ -334,7 +282,7 @@ setTimeout(async () => {
   const gBtn = wGuest.document.querySelector('#m-read-btn');
   const gToday = wGuest.document.querySelector('#today-read');
   chk(gToday.disabled === true, '未登录：首页「今日连读」那颗大圆键置灰（它一进页面就在）');
-  // 弹层里的键要先打开一首诗才会同步状态
+
   wGuest.document.querySelector('#today-list .item').dispatchEvent(new wGuest.Event('click', { bubbles: true }));
   chk(gBtn.disabled === true, '未登录：朗读按钮置灰（不是点了没反应）');
   chk(/登录可用/.test(gBtn.title), '未登录：按钮 title 说明原因（' + gBtn.title + '）');
@@ -343,7 +291,6 @@ setTimeout(async () => {
   chk(wGuest.document.querySelector('#toast').textContent === '登录可用',
     '未登录：点朗读给出的提示与权益层一致（' + wGuest.document.querySelector('#toast').textContent + '）');
 
-  // 登录后的 free 用户：语音播放可用（free 不残缺）
   const w2 = bootPageWithSpeech({ storage: signedInStorage() });
   await phase1();
   chk(w2.AuthCore && w2.Entitlement, '页面同时加载了认证内核与权益层');

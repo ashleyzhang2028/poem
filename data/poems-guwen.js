@@ -1,40 +1,3 @@
-/* ==========================================================================
-   古文观止（全十二卷 · 167 篇全收）
-   --------------------------------------------------------------------------
-   顺序与清代吴楚材、吴调侯选编《古文观止》的十二卷篇目一一对应
-   （数组顺序即选本篇次）。与《课外必背小古文》《唐诗三百首》《宋词三百首》
-   同一套「索引页 + 详情页」引擎（见 js/reader-core.js、js/guwen.js）。
-
-   字段：id / title / source / dynasty / author / selection / gradeGroup
-         / excerpt / text / translation / translationSource
-   gradeGroup 承担「卷次分组」：卷一 周文、卷二 周文 …… 卷十二 明文；
-   source 记这一篇**真正的出处** —— 《左传》《国语》《战国策》《史记》
-          《震川先生集》《李太白集》等，即用户清单里那一列；
-   selection 才是「从哪本选里读到」——《古文观止》本身是一本选集，
-          不是这些文章的成书之处，所以它退到括注位置（Issue #69 收尾）。
-   excerpt 是这一篇的**名句摘句**（古文篇幅长，列表里需要一眼认得出的句子）。
-
-   收录状态：**十二卷 167 篇全部收齐**，每篇都有原文、白话译文与名句摘句。
-     · 原文据通行本《古文观止》笔录；
-     · 白话译文为据公认注本（杨伯峻《春秋左传注》、王伯祥《史记选》、
-       《古文观止》通行译注本等）整理的白话直译，属公有领域古籍的现代整理，
-       故 translationSource 统一标 public-domain；
-     · 译文一律照原文顺序逐段对译，不做节译、不加原作没有的评语。
-
-     · 与通篇本目录逐条比对后，补入 11 篇漏收的文章（Issue #69 收尾）：
-       卷一《齐桓晋文之事》（《孟子》），卷三《春王正月》《宋人及楚人平》
-       《吴子使札来聘》（《公羊传》）、《虞师晋师灭夏阳》（《谷梁传》）、
-       《晋献公杀世子申生》《曾子易箦》《有子之言似夫子》《公子重耳对秦客》
-       《杜蒉扬觯》《晋献文子成室》（《礼记》），现共 166 篇；
-       后又补回卷八《送孟东野序》（韩愈，见下条），现共 167 篇。
-
-   ⚠️ 早先的「待补」机制仍然保留在引擎与样式里（见 js/reader-core.js 的
-      pendingText / pendingTranslation、css/classic.css 的 .item-reason.pending、
-      data/site-index.js 里「待补不进搜索索引」那一条）：
-      新增集子或后来补录篇目时，把 text / translation / excerpt 留空的条目
-      仍会照常列出并标注「待补」，点开有明确说明而不是白屏。
-      本集目前已无待补条目，这三处不因此删除 —— 它们是给下一部集子留的。
-   ========================================================================== */
 window.POEMS_GUWEN = [
   {
     textRef: "guwen-gwj-1",
@@ -1876,14 +1839,9 @@ window.POEMS_GUWEN = [
   }
 ];
 
-/* 索引：按 id 查、按卷查 */
 (function () {
   window.GUWEN_ALL = window.POEMS_GUWEN;
-  /** 按 id 取一篇。
-      ⚠️ 正文收归主表后，条目上只剩 textRef —— 这里按 textRef 把正文取回来再返回，
-         调用方拿到的仍是「一篇完整的文章」（与 guwenDoneCount 同一口径）。
-         返回**原始条目**的话，`getGuwenById(id).text` 会是 undefined：
-         不报错，只是所有读 `.text` 的调用方（测试、外部集成）静默拿到空值。 */
+
   window.getGuwenById = function (id) {
     var raw = window.POEMS_GUWEN.filter(function (p) { return p.id === id; })[0] || null;
     if (!raw) return null;
@@ -1900,9 +1858,7 @@ window.POEMS_GUWEN = [
     });
     return groups;
   };
-  /** 已收录（有正文与译文）的篇数。
-      正文收归主表后，条目只存归属、正文在 data/text-master.js——
-      数之前先按 textRef 取回，否则会把已收录的算成「待补」。 */
+
   window.guwenDoneCount = function () {
     return window.POEMS_GUWEN.filter(function (raw) {
       var p = (typeof window.masterTextOf === "function")

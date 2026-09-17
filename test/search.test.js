@@ -1,11 +1,3 @@
-// 全站搜索页（/search/）+ 课外阅读入口页（/library/）+ 底栏导航变更
-// 端到端测试：六部合一的索引 + 输入才出结果 + 候选下拉 + 阅读器 + 不写已读
-//
-// 要验的四件事：
-//   1. 搜索页确实**搜遍六部**（不是只搜某一部），且候选 / 结果两处口径一致；
-//   2. 搜索页**输入之前一条都不列**，输入之后才列，且字数越多命中越少；
-//   3. 搜索页**不碰任何一部的已读**（点开一篇、点「标记已读」都不该写 localStorage）；
-//   4. 页签由三格改成四格、名字也改对了，五部集子从入口页进得去。
 const { JSDOM } = require('jsdom');
 const fs = require('fs');
 const vm = require('vm');
@@ -15,16 +7,6 @@ const read = f => fs.readFileSync(path + f, 'utf8');
 let fails = 0;
 const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else console.log('✓ ' + m); };
 
-/**
- * 起一个页面：把 <script src> 逐个 eval 进 jsdom。
- *
- * ⚠️ 必须等 jsdom 把文档解析完（readyState 不再是 'loading'）再插脚本。
- * 解析中插入的 script 会挂到**临时的** body 上，等真正的 <body> 解析出来
- * 就被整个丢掉 —— 现象是「脚本明明跑了、window 上也确实有值，
- * 但页面里的列表是空的」，最难查的那种半死不活。
- * 其余几层测的页面脚本少、DOMContentLoaded 恰好赶在前面，
- * 所以没暴露这个问题；搜索页要加载的脚本最多，顺序就翻了。
- */
 function boot(file, url) {
   const html = read(file);
   const dom = new JSDOM(html, {
@@ -58,12 +40,11 @@ function boot(file, url) {
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 (async () => {
-  /* ---------- 一、数据层：总索引确实是六部合起来的一张表 ---------- */
+
   const sandbox = { window: {}, console };
   sandbox.window = sandbox;
   vm.createContext(sandbox);
-  // 正文存储主表：被主表收编的条目只存归属（textRef），正文要按它取回 ——
-  // loadData 会把 data/text-master.js 排到最前（data/index.js 聚合时就要用它）。
+
   const { loadData, resolve } = require('./master-env');
   loadData(sandbox, ['data/poems-1.js', 'data/poems-2.js', 'data/poems-3.js', 'data/poems-4.js',
    'data/poems-5.js', 'data/poems-6.js', 'data/poems-7.js', 'data/poems-8.js',
@@ -73,7 +54,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
    'data/site-index.js', 'data/works-map.js', 'data/works-index.js']);
 
   const IDX = sandbox.SITE_INDEX;
-  // 五部集子各自按 textRef 展开（与页面里引擎取到的一致），再数「有正文的篇数」
+
   const books = [
     resolve(sandbox, sandbox.POEMS_CLASSIC, 'classic'),
     resolve(sandbox, sandbox.POEMS_TANGSHI, 'tangshi'),
@@ -82,10 +63,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     resolve(sandbox, sandbox.POEMS_ZHAOMING, 'zhaoming')
   ];
   const BOOK_IDS = ['classic', 'tangshi', 'songci', 'guwen', 'zhaoming'];
-  // 昭明文选的译文已全部补齐（480 篇），进索引的条数因此等于它自己的篇数。
-  // 那层「待补不进索引」的过滤仍然保留在 data/site-index.js 里（给下一部集子用的），
-  // 所以这里照 `text && translation` 算，而不是直接拿全量 —— 哪一天又有新部集子
-  // 带「待补」条目进来，这一行会自动跟上，不必再改。
+
   const zmIndexed = books[4].filter(p => p.text && p.translation).length;
 
   chk(IDX.length === sandbox.POEMS_ALL.length +
@@ -97,7 +75,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   });
   chk(IDX.filter(x => x.isBook).length === 6,
     '集子自身也各有一条（搜「唐诗三百首」能直接进那一页）');
-  // id 全站唯一：六部各自从 1 排起，必然撞——所以每条都带集子前缀
+
   const ids = new Set();
   let dup = 0;
   IDX.forEach(x => { if (ids.has(x.id)) dup++; ids.add(x.id); });
@@ -108,37 +86,23 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(IDX.every(x => x.book && x.bookName && x.page),
     '每条结果都带「出自哪一部」与「该去哪一页」');
 
-  /* ---------- 二、入口页：六部集子都进得去，篇数实时算 ---------- */
   const wLib = boot('library/index.html', '/library/');
   await wLib.__ready;
   await sleep(200);
   const ld = wLib.document;
   const cards = [...ld.querySelectorAll('.library-card')];
-  // 六部 = 课内诗词 + 五部选集。
-  // 课内不是「课外」，但它也该从这张目录进得去 —— 用户在这一页看到的是
-  // 「站上有哪几部、各多少篇」的完整账，而不是缺了课内的一份残表。
-  // ⚠️ 课内那张卡指 /poems/**索引页**，不是首页（/）—— 首页是「今日背诵」，
-  //    点进去看到的是今天那几首，不是「课内都收着哪些诗」（Issue #114 第一条）。
-  //    六张卡的行为因此完全一致：点卡 → 索引页 → 再点一篇 → 详情页。
+
   chk(cards.length === 6, '入口页列出六部（课内 + 五部选集，实际 ' + cards.length + '）');
   chk(cards.map(c => c.getAttribute('data-book')).join('/') ===
     'poems/classic/tangshi/songci/guwen/zhaoming',
     '六部的顺序与出处正确');
-  // 六张卡点下去都到「自己那一部的索引」，但**实现不同**（Issue #122）：
-  //   · 课内诗词 —— <a href="/poems/">：它有自己的索引页，跳过去；
-  //   · 其余五部 —— <button>：把那一部的索引**就地**铺在这一页上（地址栏不动）。
-  //     为什么改成就地：跳去 /tangshi/ 的话，再点一篇进去，按右上角返回只能
-  //     把阅读器那层收掉，接着就落回 /library/ 的集子目录 ——
-  //     用户看到的是「直接退到了背诵首页」。就地叠层后「正文 → 索引 → 目录」
-  //     三层在同一页里，返回键一层退一层。
-  // ⚠️ 五部仍然各有自己的页面（/tangshi/ 等）：直接访问、贴地址、中键新开
-  //    那一版照旧可用 —— 下面单独验一遍，别让「就地」把那一版悄悄弄丢。
+
   chk(cards.map(c => c.tagName).join('/') === 'A/BUTTON/BUTTON/BUTTON/BUTTON/BUTTON',
     '六张卡：课内是链接（跳 /poems/），其余五部是按钮（就地铺索引；实际 ' +
     cards.map(c => c.tagName).join('/') + '）');
   chk(cards[0].getAttribute('href') === '/poems/',
     '课内那张仍指自己的索引页（实际 ' + cards[0].getAttribute('href') + '）');
-  // page 地址写在 js/library.js 的 ENTRIES 里（HTML 只有挂载点）
+
   const libSrcForPages = read('js/library.js');
   const bookPages = { classic: '/classic/', tangshi: '/tangshi/', songci: '/songci/',
     guwen: '/guwen/', zhaoming: '/zhaoming/' };
@@ -149,9 +113,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     (missingPage.join('/') || '无') + '）');
   chk(cards.slice(1).every(c => c.querySelector('.library-card-go')),
     '五张按钮卡与课内那张一样带「进去」的箭头（外观逐项一致）');
-  // 篇数与各集子**自己的数据**一致（不写死数字：日后增补篇目，卡片跟着变）
-  // ⚠️ 卡片上那个数字不能拿搜索索引来数 —— 索引按约定不收「待补」条目，
-  // 拿它来数会出现「卡片写 480 篇、索引里只有几十条」。见 js/library.js 的 countOf()。
+
   const CARD_VARS = { poems: 'POEMS_ALL', classic: 'POEMS_CLASSIC', tangshi: 'POEMS_TANGSHI',
     songci: 'POEMS_SONGCI', guwen: 'POEMS_GUWEN', zhaoming: 'POEMS_ZHAOMING' };
   const CARD_UNITS = { poems: '首', classic: '篇', tangshi: '首',
@@ -168,17 +130,12 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(!/\[object|undefined/.test(ld.querySelector('#library-grid').textContent),
     '卡片文案没有渲染异常（无 undefined / [object]）');
 
-  // 需求（Issue #69 后续）：入口页的说明改走顶栏第二行，正文里那段重复文字删掉。
-  // 断两层：
-  //   1) body 上给出了 data-sub（顶栏第二行由 js/chrome.js 按它渲染）；
-  //   2) 那张挂在顶栏外的说明段落（.library-hint）在页面里已经不存在。
   const libSrc = read('library/index.html');
   chk(/data-sub="课本之外的经典，按部就班读下去"/.test(libSrc),
     '入口页的说明写在 body 的 data-sub 上（顶栏第二行）');
   chk(!/library-hint/.test(libSrc),
     '正文里那段与顶栏重复的说明已删（不再渲染 .library-hint）');
-  // 只认**可见正文**里那句：<meta name="description"> 里仍保留同义的文案
-  // （那是给搜索引擎与分享卡片读的一句话，不属于页面正文，用户没要求删）。
+
   const libBody = libSrc.slice(libSrc.indexOf('<body'));
   chk(!/每篇都有原文、生字注音、语音朗读与白话译文/.test(libBody),
     '被点名删除的那整句已不在页面正文里（meta description 保留）');
@@ -186,19 +143,13 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(!/^\s*\.library-hint\s*\{/m.test(libCss),
     '样式表里不再留 .library-hint 的死规则（元素删了，规则也一起删）');
 
-  /* ---------- 三、搜索页：搜遍六部 ---------- */
   const w = boot('search/index.html', '/search/');
   await w.__ready;
   await sleep(250);
   const d = w.document;
   const api = w.ReaderEngine.current;
   chk(!!api, '搜索页挂上了引擎实例');
-  // 输入之前列表里**一条都没有**（用户要求：默认不铺全部列表，加载也更快）。
-  // 所以实例的 total() 此刻是 0 —— 它是「当前这份集合的条数」，
-  // 关键词一进来就会被 setItems 换成全量（下面 type('王维') 之后再验）。
-  // 搜索页按**作品**去重（同一篇只列一条，见 js/search.js 的 allItems）：
-  // 课内《静夜思》与唐诗《夜思》是同一篇，结果里不该出现两条。
-  // 所以这里算的「全站篇数」也是去重后的 —— 与页面上进度牌报的数字同口径。
+
   const seenWid = new Set();
   const ALL = IDX.filter(x => !x.isBook).filter(x => {
     const wid = sandbox.WorksIndex.widOf(x.id);
@@ -208,13 +159,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   }).length;
   chk(api.total() === 0, '没输入关键词时实例里没有篇目（实际 ' + api.total() + '）');
   chk(d.querySelectorAll('#gw-list .item').length === 0, '没输入关键词时列表里一条都不列');
-  // 用户要求删掉「输入篇名、作者或诗句，即可搜遍六部集子」这段文字：
-  // 空列表**一个字都不显示**（视觉上只剩一段留白，见 css/classic.css 的
-  // `#gw-list .empty[data-empty="idle"]`）。
-  // 这里守两层：
-  //   ① 节点仍在、且被标成 idle —— 它是列表容器的状态位，清空后还要能被替换；
-  //   ② 文本里**不能**出现那句已撤的引导语，也**不能**是「没有找到匹配的篇目」
-  //      （后者只在「输入过但没命中」时才允许出现）。
+
   const idleEmpty = d.querySelector('#gw-list .empty');
   chk(!!idleEmpty && idleEmpty.dataset.empty === 'idle',
     '空列表的 .empty 被标成 idle（没输入关键词）');
@@ -224,16 +169,13 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(!/输入篇名、作者或诗句/.test(d.querySelector('#gw-list').textContent) &&
     !/没有找到匹配的篇目/.test(d.querySelector('#gw-list').textContent),
     '空列表现场既没有旧的引导语，也没有误报「没有找到匹配的篇目」');
-  // Issue #147：搜索页顶栏那枚「共 N 篇」也一并撤了 —— 它是「当前筛出多少条」，
-  // 与集子页的「读了 N / M」不是一回事，窄屏上同样挤占品牌区。
-  // 其后追加一轮：连详情页状态栏那一枚读数也撤了，全站不再有这类「N / M」读数。
+
   chk(d.querySelector('#gw-count') === null,
     '页顶那一行不再挂「共 N 篇」进度牌（实际「' +
     (d.querySelector('#gw-count') ? d.querySelector('#gw-count').textContent : '无') + '」）');
   chk(!d.querySelector('#gw-filter-seg'), '搜索框右侧的「全部 / 未读」整栏已删除');
   chk(!d.querySelector('#search-book-seg'), '集子筛选药丸整栏已删除（默认就是全部）');
 
-  // 重复 id 防线（新增两页，一并纳入）
   ['search/index.html', 'library/index.html'].forEach(f => {
     const doc = new JSDOM(read(f)).window.document;
     const seen = {};
@@ -250,13 +192,12 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     input.dispatchEvent(new w.Event('input', { bubbles: true }));
   };
 
-  // 搜作者：六部都要能搜到（不是只搜某一部）
   type('王维');
   await sleep(30);
   chk(api.total() === ALL, '一输入关键词，实例里就换上全站篇目（' + api.total() + '）');
   chk(d.querySelector('#gw-count') === null,
     '敲字前后页顶都不再有那枚读数（命中条数由列表自己说）');
-  // 去重：同一篇作品只列一条（《静夜思》课内 + 唐诗《夜思》正文一致）
+
   type('静夜思');
   await sleep(30);
   const jys = [...d.querySelectorAll('#gw-list .item')];
@@ -265,8 +206,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     '去重后留下的是课内那一条（教材是主线，带年级学期）');
   type('王维');
   await sleep(30);
-  // 说明文字整段已撤（#76 删掉元素、这一版删掉显隐逻辑）：
-  // 页面上不该再出现那一行，敲字前后都不该有
+
   chk(d.querySelector('#search-hint') === null, '那段说明文字在页面上已不存在');
   const wangwei = [...d.querySelectorAll('#gw-list .item')];
   chk(wangwei.length > 0, '搜「王维」有结果（' + wangwei.length + ' 条）');
@@ -277,7 +217,6 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(wwBooks.has('poems') && wwBooks.has('tangshi'),
     '搜「王维」能同时搜到课内与课外（命中 ' + [...wwBooks].join('/') + '）');
 
-  // 搜正文 / 译文（只有正文命中才说明「搜遍全站」是真的（六部各抽一篇））
   type('先天下之忧而忧');
   await sleep(30);
   const byBody = [...d.querySelectorAll('#gw-list .item')];
@@ -285,11 +224,6 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(byBody.some(el => el.dataset.id === 'guwen-gwj-114'),
     '搜到的是《岳阳楼记》（guwen-gwj-114）');
 
-  // 六部都要「搜得进正文」—— 尤其昭明文选：它是最后加的一部，也是唯一
-  // 一部「一部集子里同时有诗、又有散文」的，句型与其余五部都不同。
-  // 抽它的一篇正文原句，确认这一部的语料确实进了搜索索引。
-  // 抽一句**只在昭明这一篇里出现**的原文（取 10 个连续汉字，去库里确认唯一），
-  // 否则「多处命中」会让结果列表里未必列得到这一条 —— 那是抽样问题，不是覆盖问题。
   const zmAll = IDX.filter(x => x.book === 'zhaoming' && !x.isBook);
   chk(zmAll.length === 480, '总索引里昭明文选 480 篇都在（实际 ' + zmAll.length + '）');
   const freq = {};
@@ -318,7 +252,6 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(!!zmSample && zmHit.some(el => el.dataset.id === zmSample.id),
     '昭明文选也搜得进正文（搜独有原句「' + zmQuery + '」命中 ' + (zmSample && zmSample.id) + '）');
 
-  // 候选下拉
   type('月');
   await sleep(30);
   const box = d.querySelector('#search-suggest');
@@ -329,9 +262,6 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(items.every(el => el.querySelector('.suggest-title') && el.querySelector('.suggest-meta')),
     '每条候选都有篇名与「朝代 · 作者 · 集子」');
 
-  // 候选右侧那一行**按有哪栏排哪栏**：昭明文选的 145 条题署只有作者的字、
-  // 朝代留空（见 data/poems-zhaoming.js 文件头），朝代一空不能渲染成
-  // 「 · 徐陵」这种以分隔符开头的残句。
   type('古诗十九首');
   await sleep(30);
   const zmSuggest = [...box.querySelectorAll('.suggest-item')]
@@ -343,7 +273,6 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(zmSuggest.every(t => t.indexOf('东汉') < 0),
     '留空朝代的候选，右侧那行不再出现「东汉」（实际：' + JSON.stringify(zmSuggest) + '）');
 
-  // 结果列表里也不该出现「· 佚名」这类残句
   const zmMeta = [...d.querySelectorAll('#gw-list .item')]
     .filter(el => el.dataset.id.indexOf('zhaoming-') === 0)
     .map(el => el.querySelector('.item-meta').textContent);
@@ -352,14 +281,13 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 
   type('月');
   await sleep(30);
-  // 候选与结果**同一套匹配**：候选里每一条都必须能在结果列表里找到
+
   const resultIds = new Set([...d.querySelectorAll('#gw-list .item')].map(el => el.dataset.id));
   chk(items.every(el => {
     const id = JSON.parse(box.dataset.items)[Number(el.dataset.suggest)];
     return resultIds.has(id);
   }), '候选里的每一条都在结果列表里（两处口径一致，不会出现「候选有、结果没有」）');
 
-  // 键盘：下键高亮、回车进阅读器
   input.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
   await sleep(20);
   chk(box.querySelectorAll('.suggest-item.active').length === 1, '下键高亮第一条候选');
@@ -372,16 +300,11 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   const openedTitle = d.querySelector('#rd-title').textContent;
   chk(openedTitle.length > 0, '阅读器里是选中的那一篇：' + openedTitle);
 
-  // 阅读器里读得出来（正文 + 译文都写进去了）
   const plain = d.querySelector('#rd-text').textContent
     .replace(/[a-zāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜüńňǹ·]+/g, '').replace(/\s/g, '');
   chk(plain.length > 4, '正文写入阅读器（' + plain.length + ' 字）');
   chk(d.querySelector('#rd-trans-text').textContent.length > 10, '译文写入阅读器');
 
-  // ⚠️ 事件绑定不能被「这一刻集合是不是空的」挡住。
-  //    搜索页 mount 时 items 是空的，早先 init() 一见空集合就 return，
-  //    绑定整段被跳过 —— 现象是搜索框打不进字、翻篇键与工具条一概没反应，
-  //    页面「看起来加载完了但全是死的」。这里在真事件里逐颗验一遍。
   const nextTitleBefore = d.querySelector('#rd-title').textContent;
   d.querySelector('#rd-next').dispatchEvent(new w.MouseEvent('click', { bubbles: true }));
   await sleep(30);
@@ -396,27 +319,22 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   await sleep(20);
   chk(d.querySelector('#rd-trans').hidden === false, '阅读器「译文开关」点得动（译文框出来了）');
 
-  /* ---------- 四、搜索页不碰任何一部的已读 ---------- */
   chk(Object.keys(w.localStorage).filter(k => /read_v1/.test(k)).length === 0,
     '打开一篇之后，搜索页没有写任何一部的已读键（实际写了：' +
     Object.keys(w.localStorage).filter(k => /read_v1/.test(k)).join(',') + '）');
   const doneBtn = d.querySelector('#gw-done');
   chk(!!doneBtn && doneBtn.hidden === true,
     '「标记已读」在搜索页整颗藏起来（它是「查东西」的地方，不该改任何一部的进度）');
-  // 隐藏了也不该在那儿偷偷写键：直接派一次点击
+
   doneBtn.dispatchEvent(new w.Event('click', { bubbles: true }));
   chk(Object.keys(w.localStorage).filter(k => /read_v1/.test(k)).length === 0,
     '点了隐藏的「标记已读」也不写已读键（实际写入了：' +
     Object.keys(w.localStorage).filter(k => /read_v1/.test(k)).join(',') + '）');
   api.close();
 
-  // 列表里也不出现「已读」小标
   chk(d.querySelectorAll('#gw-list .item-reason.read').length === 0,
     '搜索页列表里不出现「已读」小标');
 
-  /* ---------- 五、字越多、命中越少；清空输入回到空列表 ---------- */
-  // 这是用户这一轮的核心诉求：「用户填入文字后，下面再列出匹配的古诗词列表，
-  // 文字越多，匹配内容越少」。逐字加长，命中数必须单调不增。
   const counts = [];
   for (const kw of ['月', '明月', '明月几时有']) {
     type(kw);
@@ -427,7 +345,6 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     '「月 → 明月 → 明月几时有」命中数逐级减少（' + counts.join(' → ') + '）');
   chk(counts[2] > 0, '最长的那一次仍然搜得到（' + counts[2] + ' 条）');
 
-  // 清空输入：列表收干净，且不再有任何条目留在 DOM 里
   type('');
   await sleep(30);
   chk(d.querySelectorAll('#gw-list .item').length === 0, '清空输入后列表里一条都不留');
@@ -437,7 +354,6 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     '空列表又回到「不写字」的 idle 空态（不是停在「没有找到匹配的篇目」上）');
   chk(w.SiteSearch.keyword() === '', 'SiteSearch.keyword() 为空（没有残留关键词）');
 
-  // 一次只敲一个字的「重活」：全站命中不会把列表撑到上千条后再也不收
   type('的');
   await sleep(30);
   const heavy = d.querySelectorAll('#gw-list .item').length;
@@ -446,7 +362,6 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(heavy > 0 && d.querySelectorAll('#gw-list .item').length === 0,
     '大命中量（' + heavy + ' 条）之后清空，列表同样能收干净');
 
-  /* ---------- 六、底栏导航：三格改四格、名字改对 ---------- */
   const wHome = boot('index.html', '/');
   await wHome.__ready;
   await sleep(250);
@@ -462,13 +377,12 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     '每格仍是 图标 + 文字 两个子元素，没有多加装饰');
   chk(dock.filter(b => b.getAttribute('data-nav-go') === 'classic').length === 0,
     '五部集子不再各自占一格（「小古文」旧页签已撤）');
-  // 首页标题措辞：「XX的古诗词」→「XX的背诵」
+
   chk(/的背诵/.test(wHome.document.querySelector('#brand-page-text').textContent),
     '首页顶栏页面名改为「XX的背诵」（实际 ' +
     wHome.document.querySelector('#brand-page-text').textContent + '）');
   chk(!/的古诗词/.test(wHome.document.title), '标题里不再写「的古诗词」（实际 ' + wHome.document.title + '）');
 
-  // 五部集子页：页签高亮落在「课外」这一格
   for (const [page, url] of [['classic/index.html', '/classic/'],
     ['tangshi/index.html', '/tangshi/'], ['songci/index.html', '/songci/'],
     ['guwen/index.html', '/guwen/'], ['zhaoming/index.html', '/zhaoming/']]) {
@@ -481,28 +395,19 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
       (on ? on.getAttribute('data-nav-go') : '无') + '）');
   }
 
-  /* ---------- 七、搜索页的结构与样式（源码级防线） ---------- */
   const searchHtml = read('search/index.html');
   const classicCss = read('css/classic.css');
-  // ⚠️ 样式断言一律拿**剥掉注释**的正文来判：
-  //    本仓库的 CSS 注释里大量引用旧写法（「上一版是 scaleY(1.3)」这类），
-  //    直接对整张表做正则会命中说明文字，把已经改对的东西判成没改。
+
   const cssCode = classicCss.replace(/\/\*[\s\S]*?\*\//g, ' ');
-  // 搜索框整块居中：HTML 里只有它一个（.search-hero），CSS 走 flex 居中 +
-  // 视口高度减去顶栏与底栏 —— 「垂直 + 水平居中」是这条规则的唯一来源
+
   chk(/class="search-hero"/.test(searchHtml),
     '搜索框包在一块 .search-hero 里（居中的载体）');
   chk(!/filter-seg|data-filter|search-book-seg|book-seg/.test(searchHtml),
     '搜索框右栏（全部 / 未读）与集子药丸都不在这份 HTML 里了');
   chk(!/data-book=/.test(searchHtml), '页面里没有任何集子筛选按钮');
-  // 默认态（没焦点、没内容）：搜索框在视口**中央** —— 用户这一轮的原话是
-  // 「如果用户清除搜索框内容且没有焦点在搜索框，搜索框则回到页面中心」。
-  // 竖向由「视口 − 顶栏 − 底栏」这一段高度 + 搜索框压在中线负责
-  // （.search-hero 的 height 算式 + .search-toolbar 的 top: 50%），
-  // 横向由整行的 left: 50% + translateX(-50%) 负责。
+
   const heroBlock = /(?:^|\n)\.search-hero \{([\s\S]*?)\}/.exec(classicCss);
-  // 搜索框「增高」是**真实高度**（52px，不再用 scaleY 拉伸绘制层），
-  // 于是布局高度与视觉高度一致，半盒高就是 26px。
+
   const heroMid = /--hero-box-h:\s*52px/.test(classicCss);
   const heroCenter = /justify-content:\s*center/.test(classicCss) &&
     /top:\s*50%/.test(classicCss) &&
@@ -512,22 +417,14 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(!!heroBlock && /height:/.test(heroBlock[1]) && /--nav-h/.test(heroBlock[1]),
     'hero 的垂直空间按视口减去顶栏与实测底栏算（不是写死一个高度）');
   chk(!/\.book-seg/.test(classicCss), '集子药丸的样式整块删除（CSS 里不再留死代码）');
-  // 空关键词就是「没有结果」：引擎侧靠 setItems([]) 表达，
-  // 所以配置里必须允许空集合（否则 mount 直接返回 null，整页挂不上）
+
   chk(/allowEmpty:\s*true/.test(read('js/search.js')),
     '搜索页声明 allowEmpty（空关键词时确实要挂一块空列表）');
   chk(/allowEmpty/.test(read('js/reader-core.js')),
     'reader-core 支持 allowEmpty（空集合默认仍不挂）');
 
-  /* ---------- 七之二、机上的可用性（Issue #69） ----------
-     用户在机上反馈三件事：键盘一弹候选下拉就被盖住、候选离搜索框太远、
-     这一页的搜索框该再高一点。三条改动都落在这一页的 HTML / CSS / JS 里，
-     真正的验证在 test/pwa.test.js（真浏览器量渲染后的盒子），
-     这里守的是源码级的几道防线 —— 改动不依赖某个数字，而是依赖一组关系。 */
   const heroFocus = doc => doc;
-  // ① 搜索框增高：走**真实高度**，不再用 transform 拉伸
-  //    （拉伸会把 12px 的圆角压成椭圆、把提示字纵向拉长 —— 用户反馈的
-  //      「四个圆角不太正常 / placeholder 有点压扁」正是它）
+
   chk(!/transform:\s*scaleY/.test(cssCode),
     '全站不再用 scaleY 在绘制层拉伸任何控件（圆角与字形都不再被压扁）');
   chk(/\.search-hero \.search-toolbar \{[^}]*--toolbar-h:\s*52px/.test(classicCss) ||
@@ -535,7 +432,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     '搜索页把工具栏行高覆写为 52px（搜索框的真实高度，只对本页生效）');
   chk(!/(?:^|\n)\.search-input\s*\{[^}]*height:\s*5[0-9]px/.test(classicCss),
     '增高只发生在搜索页：全站的 .search-input 高度仍走 --toolbar-h（索引页那一排不许跟着长）');
-  // 圆角必须仍是同一个变量：四个角就是同一个半径的圆弧，没有被单独拉伸过
+
   chk(/\.search-hero \.search-input\s*\{[^}]*border-radius:\s*var\(--radius-sm\)/.test(classicCss) ||
     /(?:^|\n)\.search-input \{[^}]*border-radius:\s*var\(--radius-sm\)/.test(classicCss),
     '搜索页搜索框的圆角仍是 var(--radius-sm) 一个值（四个角同半径，不再是椭圆角）');
@@ -543,7 +440,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     '没有给搜索页的搜索框单独写「横 / 竖两个半径」的圆角（那正是椭圆角的写法）');
   chk(/\.search-hero \.search-input::placeholder \{[^}]*transform:\s*none/.test(classicCss),
     '提示字不再需要位移补偿（框不拉伸了，字落在同一条基线上）');
-  // ② 候选下拉贴住搜索框 / 不透明度 / 层级
+
   chk(/\.suggest \{[^}]*top:\s*calc\(100% \+ 4px\)/.test(classicCss),
     '候选下拉只留 4px 间隙（用户反馈的「离搜索框太远」的反面）');
   chk(/\.suggest \{[^}]*background:\s*#fffefa/.test(classicCss),
@@ -555,14 +452,11 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(/\.search-hero \.search-toolbar \{[^}]*z-index:\s*1/.test(classicCss),
     '搜索整行有自己的层级（.search-wrap 的 transform 新建了层叠上下文，' +
     '整行不进正层级的话，结果列表会从下拉上面压过去）');
-  // ⚠️ 整行是**唯一**进正层级的元素：hero 自己一旦写了 z-index，就会新建一层
-  //    层叠上下文，把下拉的 30 关在里头 —— 结果列表在 hero 外面、DOM 里更靠后，
-  //    于是整个 hero（含下拉）都压不过它，两层文字糊在一起（真机上量到过：
-  //    候选正中央的 elementFromPoint 命中的是结果卡片 .item）。
+
   const heroZ = (/(?:^|\n)\.search-hero \{([\s\S]*?)\}/.exec(cssCode) || ['', ''])[1];
   chk(!/(?:^|[;{\s])z-index:\s*\d/.test(heroZ),
     'hero 自己不写 z-index（写了就会把候选下拉关进新层叠上下文里，压不过结果列表）');
-  // ③ 屏上键盘 / 聚焦：贴顶的状态都由 JS 加类、CSS 表现
+
   chk(/kb-open/.test(classicCss) && /search-active/.test(classicCss),
     '「键盘弹出」与「有焦点或有内容」两个状态都有对应的样式（整块贴到顶栏下方）');
   const searchJs = read('js/search.js');
@@ -571,32 +465,18 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(/keyboardVisible/.test(searchJs) && /--kb-visible/.test(searchJs),
     'js/search.js 把 visualViewport.height 实测成 --kb-visible' +
     '（键盘上沿那片可视区：下拉的百分数与硬边界都按它算，不再靠 svh 猜）');
-  /* ⚠️ Issue #163 把这一条**反过来**了：进页**不再**自动聚焦。
-     用户原话是「进入搜索页时不要立刻聚焦，手机键盘自动弹出来了，烦人」。
-     所以这里守的不再是「替身输入框长得对不对」，而是「自动聚焦这条路有没有被
-     偷偷修回来」—— 见下面「八、进页不聚焦」那一节，那一段是这一条的正主。 */
+
   chk(/alignEmptyState/.test(searchJs) && /#gw-list \.search-empty/.test(classicCss),
     '空态与结果列表左对齐（搜索框在左、列表也在左，空态不该孤零零居中在页面中间）');
 
-  /* ---------- 七之三、这一轮的三条机上反馈（Issue #69 后续·再续）----------
-     用户在机上又提了三件事，逐条落到源码层面各守一道：
-       ① 搜索框四个圆角不正常、placeholder 压扁 → 增高不再用 scaleY 拉伸；
-       ② 「输入篇名、作者或诗句，即可搜遍六部集子」这段删掉 → 空态不写字；
-       ③ 下拉下面几条被键盘盖住 + 要能关掉下拉去点结果卡片 → 高度三重约束。
-     真正量渲染后盒子的是 test/pwa.test.js，这里守的是「改动依赖哪一组关系」。 */
-
-  // ① 圆角与字形：见上面「增高走真实高度」那几条 —— 再补一道「圆角不被单侧拉伸」的防线。
-  //    椭圆角的写法是 `border-radius: 12px / 15.6px` 或 `border-radius: 12px 12px`，
-  //    两者都出现在横 / 竖半径分开给的场合；这里确认搜索页没有这类声明。
   const heroInputBlock = (/\.search-hero \.search-input \{([^}]*)\}/.exec(cssCode) || ['', ''])[1];
   chk(!/border-radius:[^;}]*\//.test(heroInputBlock),
     '搜索页搜索框没有「横半径 / 竖半径」两个值的圆角（那是椭圆角）');
   chk(!/scaleY|rotateX/.test(heroInputBlock),
     '搜索页搜索框不在绘制层做纵向量变（圆角与字形都不再被压扁）');
 
-  // ② 空态不写字：JS 侧「没输入时不写文案」+ CSS 侧「idle 那一支不显示文字」
-  chk(/data-empty/.test(searchJs) && /EMPTY_MISS/.test(searchJs),
-    'js/search.js 用 data-empty 区分两种空态（idle 不写字、miss 才报「没找到」）');
+  chk(/dataset\.empty/.test(searchJs) && /EMPTY_MISS/.test(searchJs),
+    'js/search.js 用 dataset.empty 区分两种空态（DOM 上是 data-empty：idle 不写字、miss 才报「没找到」）');
   chk(/empty\.textContent = q \? EMPTY_MISS : ""/.test(searchJs),
     '没输入关键词时列表里**不写任何文字**（那段引导语已按用户要求撤掉）');
   chk(!/search-hero\.search-focus ~ #gw-list|#search-hint/.test(searchHtml),
@@ -609,25 +489,14 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     /#gw-list \.search-empty/.test(cssCode),
     '「没找到」那一支走通用的 .search-empty 左对齐，没有再单开一套');
 
-  // ③ 下拉的高度：三重约束（400px / 可视区的四成 / 键盘上沿）
   const suggestBlock = (/(?:^|\n)\.suggest \{([\s\S]*?)\n\}/.exec(cssCode) || ['', ''])[1];
-  // ⚠️ 本轮（Issue #122 第二条）把口径改成**两层**：外层 max()、里层 min()。
-  //    里层仍是原来那三项上限（380/320px、可视区四成、(可视区−键盘) 六成），
-  //    外层是新增的**下限**：至少看得见 --suggest-rows 行（默认 5 行）。
-  //    用户反馈「键盘弹出时下拉高度变得极小，甚至只有一行」——
-  //    那正是只有上限时的必然结果：可视区被键盘压到 250px，四成只剩 100px。
+
   chk(/max-height:\s*max\(/.test(suggestBlock) && /min\(/.test(suggestBlock),
     '候选下拉的高度 = max(至少 5 行, min(三项上限))：行数是承诺，比例只是分寸');
   chk(/--suggest-rows/.test(suggestBlock) && /--suggest-row-h/.test(suggestBlock),
     '「至少几行 / 一行多高」走 --suggest-rows / --suggest-row-h 两个变量' +
     '（JS 只报这两个事实值，高度仍由 CSS 算）');
-  // ⚠️ 口径（定稿）：三项取最小，且比例与硬边界两项都按 **JS 实测的可视区** 算 ——
-  //    「可视区」不能写 svh：svh 量的是「视口最小时的高度」，它**不认软键盘**
-  //    （键盘是覆盖层、不改视口），部分内核 / 无头环境里甚至与 vh 相等
-  //    （实测 393×852 那一档 svh 与 vh 都是 852）。那样「可视区的四成」在
-  //    键盘弹着时按整屏算，候选一路铺到键盘上沿，把下方结果卡片全吃掉。
-  //    现在按 --kb-visible / --kb-space 算（js/search.js 的 keyboardVisible() /
-  //    keyboardSpace() 把 visualViewport 的两个数实测写进去）。
+
   chk(/380px/.test(suggestBlock) && /--kb-visible/.test(suggestBlock) &&
     /--kb-space/.test(suggestBlock) &&
     /\*\s*\.4\b/.test(suggestBlock) && /\*\s*\.6\b/.test(suggestBlock),
@@ -646,11 +515,9 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     '不再用 vh / svh 算可视区（它们不认软键盘；60% 那一档在手机上实测也太松 —— ' +
     '候选铺到可视区下沿前 30px，底下只剩一条缝，「给结果卡片留一片」等于没留）');
 
-  // 下拉可滚动：条数被限住之后，剩下的要靠滚动看，滚动位置每次换关键词都回到顶部
   chk(/overflow-y:\s*auto/.test(suggestBlock) && /box\.scrollTop = 0/.test(searchJs),
     '候选下拉可滚动，且每换一次关键词回到顶部（新关键词的第一条不能停在中间）');
-  // ④ 「怎么把下拉关掉」不能只留 Escape / 退输入 / blur 三条触屏上会落空的路：
-  //     滚结果列表 → 收；点结果区 → 先收且不穿过去开篇
+
   chk(/bindSuggestDismiss/.test(searchJs) && /addEventListener\("scroll"/.test(searchJs),
     '手指开始滚结果列表就收起候选下拉（滚 = 用户已经在看下面的东西了）');
   chk(/e\.stopPropagation\(\);[\s\S]{0,80}e\.preventDefault\(\)/.test(searchJs),
@@ -661,28 +528,10 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(/min-height:\s*44px/.test(rowBlock),
     '候选行高不低于 iOS 建议的 44px（「少露几条」只能靠限高 + 滚动，不许压行高 —— ' +
     '把行高压到 30px 同样能多塞几条，代价是点不准）');
-  // 候选的「最多 8 条」是结果集的口径（SUGGEST_MAX），不是高度公式推出来的：
-  // 高度受限时靠滚动看全，而不是悄悄少给几条
+
   chk(/SUGGEST_MAX\s*=\s*8/.test(searchJs),
     '候选最多 8 条仍是结果集的口径（限高只影响「一次看得见几条」，不影响「给几条」）');
 
-  /* ---------- 七之四、这一轮的搜索框三态（Issue #69 后续·再续）----------
-     用户这一轮的六句话，落在四处：
-       ① 聚焦 → 框挪到标题栏下方，下拉跟着上去；
-       ② 有搜索内容 → 框停在页面顶部（失焦也不回中间）；
-       ③ 清了内容且没焦点 → 框回到页面中心；
-       ④ 点空白地方 → 下拉消失；
-       ⑤ 结果卡片列表不要和搜索框有那么多间距；
-       ⑥ 聚焦时那圈黑 border 不好看。
-     真浏览器里量的在 test/pwa.test.js，这里守「改动依赖哪一组关系」。 */
-
-  // ① 三态：CSS 侧两个类共一组落位，JS 侧一处写进去
-  //    贴顶那一块（body[data-nav="search"] .search-hero.search-active, .kb-open）
-  //    同时管三件事：竖向落位、整行由绝对定位改普通流、以及 sticky。
-  //    直接按「选择器 + 大括号」切出那两块：正则里那一串 [data-nav="search"]
-  //    转义穿两层（Python 写、JS 读）太容易错，这里改成先定位再切。
-  //    按「选择器 + {」整体找（不能只 indexOf 前缀：`… .search-active ~ #gw-list`
-  //    那一条也以同一个前缀开头，会先被找到）
   const cut = (sel) => {
     const re = new RegExp(sel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
       .replace(/\s+/g, '\\s*') + '\\s*\\{([^}]*)\\}');
@@ -702,7 +551,8 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     /transform:\s*none/.test(pinToolbar),
     '贴顶态把整行的绝对定位复位（top / margin-top / transform 都要松掉，' +
     '否则框仍按「中线」摆，一贴顶就偏出半行）');
-  chk(/--hero-top:\s*\d+px/.test(classicCss),
+
+  chk(/--hero-top:\s*[^;}]+;/.test(cssCode),
     '贴顶那一段高度是一个具名变量（--hero-top），不是散落的魔数');
   chk(/syncHeroState/.test(searchJs) &&
     /classList\.toggle\("search-active",\s*lifted\)/.test(searchJs),
@@ -710,7 +560,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     '回填的上次关键词一进页就把框顶上顶栏，接着把键盘也带出来 —— 见第八节）');
   chk(/classList\.toggle\("kb-open",\s*lifted\)/.test(searchJs),
     'kb-open 只在键盘真的弹出来时加（贴顶的落位与 search-active 共用）');
-  // 聚焦与失焦都必须**走同一个函数**：否则「清空 + 失焦回中央」这条会被漏掉
+
   chk(/addEventListener\("focus"[\s\S]{0,240}syncHeroState\(\)/.test(searchJs) &&
     /addEventListener\("blur"[\s\S]{0,600}syncHeroState\(\)/.test(searchJs),
     '聚焦与失焦都调 syncHeroState（焦点 / 内容 / 键盘三件事只有一个出口）');
@@ -721,7 +571,6 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(/hasKeyword/.test(searchJs),
     '「有没有内容」有一个具名判据（只看非空白字符，与结果 / 候选判空同一口径）');
 
-  // ② 点空白收下拉
   chk(/bindBlankTapDismiss/.test(searchJs) && /document\.addEventListener\("mousedown"/.test(searchJs),
     '点页面任何一处空白都收起下拉（挂在 document 上，不挑元素挂 —— 挑着挂必然漏）');
   chk(/wrap\.contains\(t\)/.test(searchJs) && /#search-suggest/.test(searchJs),
@@ -731,14 +580,9 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(/mousedown", onTap, true/.test(searchJs) && /touchstart", onTap, true/.test(searchJs),
     '鼠标与触屏两个入口都听（capture 阶段，先于一切 click 处理）');
 
-  // ③ 搜索框 → 结果列表：正常间隔
   chk(/body\[data-nav="search"\] #gw-list \{ padding-top: var\(--search-list-gap/.test(cssCode),
     '「框 → 列表」的间距在搜索页有一个具名变量（正常间隔，不再靠一段大留白撑）');
-  // ⚠️ 本轮（Issue #122 第一条）改口径：贴顶态**不再**把间距收成 0。
-  //    用户原话是「搜索框和上下元素间隔一致，以现在下面的间隔为准，
-  //    上面的间隔也缩小到这么多」—— 上一版框上 8px、框下 0，上下不对称。
-  //    现在两处取同一个变量：hero 的 padding-top（--hero-top）与 #gw-list 的
-  //    padding-top 都读 --search-list-gap。
+
   chk(/body\[data-nav="search"\] \.search-hero\.search-active ~ #gw-list,\s*\nbody\[data-nav="search"\] \.search-hero\.kb-open ~ #gw-list \{ padding-top: var\(--search-list-gap/.test(cssCode),
     '框一贴顶（聚焦 / 有内容 / 键盘弹着），框下仍是那一段正常间隔（与框上同值）');
   chk(/--hero-top:\s*var\(--search-list-gap/.test(cssCode),
@@ -751,27 +595,18 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(!/max-width: 700px\) \{\s*body\[data-nav="search"\] #gw-list \.empty\[data-empty="idle"\]/.test(cssCode),
     '手机上不再单独写一套空态高度（桌面那一档已经足够小）');
 
-  // ④ 焦点描边：不再有 UA 给的黑框
-  //    全站 .search-input 那一条只保留「天青描边」，本页再补底与光晕；
-  //    键盘操作另留一圈 focus-visible 的 ring（无障碍要求：焦点要看得见）
   const focusBlock = (/(?:^|\n)\.search-input:focus \{([^}]*)\}/.exec(cssCode) || ['', ''])[1];
   chk(/border-color:\s*var\(--green\)/.test(focusBlock) && /outline:\s*none/.test(focusBlock),
     '聚焦时描边落到天青（--green），并关掉浏览器默认的 focus ring ——' +
     '用户看到的「黑框」就是它，不是我们写的任何一条');
-  // ⚠️ 这两支选择器**共用一条规则**（:focus 与 :focus-visible 的
-  //    特异性完全相同，各自写一条时后者必然盖掉前者的 outline: none）——
-  //    所以这里按「两支都写在一起」的那一条来认。
+
   const searchFocus = (/body\[data-nav="search"\] \.search-hero \.search-input:focus,\s*\nbody\[data-nav="search"\] \.search-hero \.search-input:focus-visible \{([^}]*)\}/.exec(cssCode) || ['', ''])[1];
   chk(/border-color:\s*var\(--green\)/.test(searchFocus) &&
     /box-shadow:/.test(searchFocus) && /outline:\s*none/.test(searchFocus),
     '搜索页的聚焦态（两支选择器共用一条）：天青描边 + 淡天青光晕 + outline: none');
   chk(!/border-color:\s*#000|border:\s*[^;}]*\bblack\b/i.test(cssCode),
     '全站没有把输入框的焦点描边写成黑色（黑色的来源已在源头上关掉）');
-  // ⚠️ 曾经有个坑：搜索页那条 `:focus-visible` 规则与 `:focus` 规则
-  //    特异性完全相同（0,4,1），写在后面就把 `outline: none` 整个盖回去 ——
-  //    真机上 outline 又变成 2px solid，用户看到的黑框等于没修。
-  //    这里守两条：搜索页不再有第二条 outline 口径；带 outline 的聚焦规则
-  //    必须同时把 outline 关掉（两支选择器共用一条规则，顺序不影响结果）。
+
   const searchFocusOutlines = (cssCode.match(
     /body\[data-nav="search"\][^{}]*\.search-input[^{}]*:focus(?:-visible)?[^{}]*\{([^}]*)\}/g) || []);
   chk(searchFocusOutlines.every(block => !/outline:\s*(?!none)\d/.test(block)),
@@ -779,28 +614,13 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(!/body\[data-nav="search"\][^,{}]*\.search-input:focus-visible\s*\{[^}]*outline:\s*2px/.test(cssCode),
     '没有「:focus / :focus-visible 各画一条 outline」的写法（两条特异相同，后者必然翻盘）');
 
-  /* ---------- 八、进搜索页**不聚焦**（Issue #163） ----------
-     用户原话：「进入搜索页时不要立刻聚焦，手机键盘自动弹出来了，烦人」。
-
-     这一节守三件事，缺一不可 —— 只删掉「聚焦那一行」是不够的：
-       ① 进页不再有任何自动聚焦的通道（脚本里没有对输入框的 focus 调用、
-          HTML 里也没有 autofocus / 替身输入框）；
-       ② 焦点**不会被间接带出来**：iOS 上页面加载后浏览器会把焦点给第一个
-          可聚焦元素 —— 而搜索页早前是「一进来就贴顶 + 列表在下面」，
-          用户点哪都可能落到框上；所以进页必须停在「静止态」（框居中），
-          贴顶的判据只能是「框里真的有焦点 / 键盘真的弹着」；
-       ③ 不聚焦不等于进来一片空白：上一次搜的词要从**设备域**读回来、
-          填进框里并把结果列好 —— 这才是「进来先看见上次的结果」的实现。 */
-
-  // ① 自动聚焦：删干净，且不许换个写法长回来
   chk(!/\.focus\(/.test(searchJs.replace(/input\.focus\(\)\)?/g, ''))
     || !/focus\(\{\s*preventScroll/.test(searchJs.split('bindSlashKey')[0]),
     '进页那一段里没有任何「把焦点塞给输入框」的调用（上一版的 focusInput 已删）');
-  // ⚠️ 判「节点在不在」，不是判「源码里有没有这几个字」：注释里提一句
-  //    「这里曾经有一枚替身输入框」是留给后来人的说明，它不该被判红。
+
   chk(d.querySelector('#search-hero-focus') === null && !/\.search-hero-focus\s*\{/.test(classicCss),
     '替身输入框连同它的样式一并撤掉（DOM 里没有这个节点、样式表里没有这条规则）');
-  // ⚠️ 行内注释也一并剥掉：那两处提到 focusInput 的地方正是「上一版撤了什么」的说明
+
   const searchBare = searchJs
     .replace(/\/\*[\s\S]*?\*\//g, ' ')
     .replace(/^\s*\/\/.*$/gm, '')
@@ -810,18 +630,16 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(!/autofocus/i.test(searchHtml),
     '输入框上没有 autofocus（属性式自动聚焦同样是「一进来键盘就弹」）');
   chk(!/searchJs[\s\S]{0,0}/.test(''), '（占位：保持断言组整齐）');
-  // JS 里唯一允许出现的 focus 调用只有「用户敲 / 」这一条
+
   const jsFocusCalls = (searchJs.match(/\.focus\(/g) || []).length;
   chk(jsFocusCalls === 1,
     'js/search.js 里只剩一处 .focus()（敲 / 进搜索框那条），实际 ' + jsFocusCalls + ' 处');
 
-  // ② 贴顶的判据收成一条：焦点 / 键盘
   chk(/var lifted = focused \|\| space > 0/.test(searchJs),
     '贴顶 = 框里真的有焦点（或软键盘真的弹着）—— 不再把「有内容」算进去');
   chk(!/hasKeyword\(\) \|\| lifted/.test(searchJs),
     '没有「有内容就贴顶」的残留（那一条会让回填的上次关键词一进页就把框顶上去）');
 
-  // ③ 上次搜的词：读回来、填进去、列出来
   chk(/readKeyword/.test(searchJs) && /noteKeyword/.test(searchJs) &&
     /onLiftLost/.test(searchJs),
     '上次搜的关键词有具名的一处读、一处写，以及「离开时补写」那一条（readKeyword / noteKeyword / onLiftLost）');
@@ -831,9 +649,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(/window\.Storage/.test(searchJs) && /getSearchKeyword/.test(searchJs) &&
     /setSearchKeyword/.test(searchJs),
     '走的是 Storage 的两个具名入口（不是 get/set 那对「按 id 取一篇进度」的方法）');
-  // ⚠️ 光在页面里调还不够：**这一页得真的加载了转发层**。
-  //    search/index.html 此前只加载 progress-store.js、没加载 js/storage.js，
-  //    于是 window.Storage 一直是 undefined，调用点静默退化成「读不到」。
+
   chk(/<script src="js\/storage\.js"><\/script>/.test(searchHtml),
     'search/index.html 加载了 js/storage.js（引擎在、转发层不在时，读法是空的且不报错）');
   const psIdx = searchHtml.indexOf('<script src="js/progress-store.js"');
@@ -847,19 +663,14 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     '关键词防抖落盘（敲一个字写一次盘太吵）');
   chk(/pagehide/.test(searchJs),
     '离开这一页时把还没落盘的关键词写完（防抖窗口里切页是常事）');
-  // 设备域：这一页仍然不写任何一部的已读（下面第四节另有一条，这里守「连新键也归设备域」）
-  // ⚠️ 先剥掉注释再看：文件头那段「搜索页不写任何已读键」的说明里
-  //    正举着 poem_classic_read_v1 当例子，直接对整份源码做正则会命中它。
+
   const searchCode = searchJs.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/^\s*\/\/.*$/gm, '');
   chk(!/poem_classic_read_v1|poem_tangshi_read_v1|poem_songci_read_v1|poem_guwen_read_v1|poem_zhaoming_read_v1/.test(searchCode),
     '「上次搜的词」没有顺手写成任何一部的已读键');
   chk(!/readStore:\s*"[^"]+"/.test(searchCode.replace(/readStore:\s*""/g, '')) ||
     /readStore:\s*""/.test(searchJs),
     '那个新键是设备域的阅读偏好，不是某一部分的已读（readStore 仍是空串）');
-  // 设备域：引擎那边把这把键列进 scopes 且 local: true（同步层不许碰）
-  // ⚠️ 表里还多一个 `perChild: false` —— 家庭子用户之后 scopes 的每一行都带这一档：
-  //    「上次搜的词」是设备的，不跟孩子走（与本文件另一处「设备域」判据同一口径）。
-  //    所以这里只钉「归到设备域 + local: true」，不钉整行的字面量。
+
   const psJs = read('js/progress-store.js');
   chk(/search:\s*"poem_search_kw_v1"/.test(psJs) &&
     /\{ key: KEYS\.search, domain: "device", local: true[^}]*\}/.test(psJs),
@@ -869,7 +680,6 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(/getSearchKeyword/.test(read('js/storage.js')) && /setSearchKeyword/.test(read('js/storage.js')),
     '转发层 js/storage.js 把这两件事透出去（缺了它，旧缓存里没加载引擎的页面会读不到）');
 
-  // ④ 桌面上的退路：敲 / 直接进搜索框（用户自己发起，键盘弹出是应答）
   chk(/bindSlashKey/.test(searchJs) && /SLASH_KEYS/.test(searchJs),
     '电脑上敲 / 直接进搜索框（进页不聚焦之后，桌面上仍要有一条不点鼠标的入口）');
   chk(/ctrlKey \|\| e\.metaKey \|\| e\.altKey/.test(searchJs),
@@ -882,20 +692,16 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     /\.search-slash \{[\s\S]*?display: none/.test(classicCss),
     '提示只画给有实体键盘的设备（手机上 / 这个动作不成立，别留一枚看不懂的徽章）');
 
-  /* ---------- 九、法务页与设置页的口径一致 ---------- */
   chk(read('js/chrome.js').indexOf('古诗词') === -1 ||
     !/label: "古诗词"/.test(read('js/chrome.js')),
     '页签里不再有名为「古诗词」的那一格');
   chk(/class="search-hero"/.test(searchHtml) ===
     /(?:^|\n)\.search-hero \{/.test(classicCss),
     'CSS 与 HTML 的 .search-hero 口径一致（HTML 里有它，样式里也有它）');
-  // 搜索页的说明文字已撤（main 上的 #76 删掉了它，这一版又撤掉了只服务它的
-  // 显隐逻辑）：源码里不该再有 #search-hint / .search-hint 的死引用
+
   chk(!/search-hint/.test(searchHtml) && !/search-hint/.test(read('js/search.js')),
     '「一次搜遍……也搜正文与译文里的字句」那段说明与其显隐逻辑都已删除');
-  // 版本号只验下界：搜索页改版与「出处」修正都把缓存抬到 v42，
-  // 若写死具体版本，下次任何一次改动 css/js 都会把这条测试判红。
-  // 真正要守的是「改了 css/js 就得抬版本」，所以只比 v41 的下界。
+
   const swVer = (/poem-app-v(\d+)/.exec(read('sw.js')) || [])[1];
   chk(Number(swVer) >= 41, 'sw.js 缓存版本不低于 v41（实际 v' + swVer + '）');
   ['"./search/"', '"./js/search.js"', '"./library/"', '"./js/library.js"'].forEach(needle => {

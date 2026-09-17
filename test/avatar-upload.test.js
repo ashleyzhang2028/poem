@@ -1,23 +1,3 @@
-/**
- * 头像上传：客户端那一条线（Issue #163 · 2026-09-19）
- * ==========================================================================
- * 用户原话：「允许用户上传图片作为头像，在上传前进行本地压缩，支持用户进行
- * 方形裁切，放大缩小裁切，然后再上传裁切后的图片作为头像到 supabase 的
- * 文件或者图像存储。」
- *
- * 这一层守的是**客户端那条线**（服务端在 `test/api.test.js` 第六节）：
- *
- *   1. **先本机、后服务端** —— 压缩完立刻把图存进设备域、界面马上是新图；
- *      上传成功才把云端地址写进账号域。顺序反了就会先写一条指向不存在文件的
- *      地址（裂图），而用户以为换好了
- *   2. **失败不假装** —— 没登录 / 服务器没开放 / 连不上，三种**各说各的话**，
- *      且都不许把本机那份删掉（它正是「传不上去时还能看」的那一份）
- *   3. **删头像先清地址、再删对象** —— 反过来会留一只裂图，而用户以为删了
- *   4. **裸字节上传** —— 传的是 Blob（不是 base64 字符串），Content-Type 跟着它
- *
- * 跑两半：纯逻辑那一半直接对拍 `AccountApi.uploadAvatar`；
- * 真页面那一半用 jsdom 把 `/settings/general/` 装起来，验「点了会发生什么」。
- */
 "use strict";
 
 const fs = require("fs");
@@ -29,7 +9,6 @@ let fails = 0;
 const chk = (c, m) => { if (!c) { console.log("✗ " + m); fails++; } else console.log("✓ " + m); };
 const eq = (a, b, m) => chk(a === b, m + "（实际 " + JSON.stringify(a) + "）");
 
-/** 内存 localStorage */
 function mem(init) {
   const m = Object.assign({}, init || {});
   return {
@@ -41,14 +20,6 @@ function mem(init) {
   };
 }
 
-/**
- * 一枚「已登录」的本机会话（`AccountApi.hasLocalSession()` 认它）。
- *
- * ⚠️ 形状照抄 `js/auth-core.js` 的 `emptyState()`：`sessions` 是**对象**
- *    （键是 sid），而且 `accounts` 里必须有那条 uid —— 只写一个
- *    `account: {...}`（没有 accounts）时 `session(store)` 回 null，
- *    症状是「明明置了会话，却怎么都判成未登录」，且不报任何错。
- */
 const SESSION = JSON.stringify({
   v: 1,
   accounts: {
@@ -70,7 +41,7 @@ const SESSION = JSON.stringify({
   console.log("=== 一、没登录：地址不写、图留着，如实说「登录后才同步」 ===");
   {
     AccountApi.reset();
-    const b = mem();                                    // 没有会话
+    const b = mem();
     Avatar.setNickname(b, "小明");
     Avatar.setLocalImage(b, "data:image/jpeg;base64,AAAA");
     const r = await AccountApi.uploadAvatar({
@@ -128,7 +99,6 @@ const SESSION = JSON.stringify({
     eq(Avatar.display(b).img, "", "地址没写（传失败就不该有一条指向不存在文件的地址）");
     eq(Avatar.display(b).src, "data:image/jpeg;base64,AAAA", "本机那份图一个字都没动 —— 这正是「传不上去时还能看」的那一份");
 
-    /* 服务器压根没开放（503）→ 另一种 reason，界面要说另一种话 */
     AccountApi.reset();
     const b2 = mem({ poem_auth_v1: SESSION });
     const api2 = {
@@ -147,7 +117,7 @@ const SESSION = JSON.stringify({
   {
     AccountApi.reset();
     const b = mem({ poem_auth_v1: SESSION });
-    /* 有 me / deleteAccount（所以 usable 认它），但没有 uploadAvatar */
+
     const api = {
       create: () => ({
         me: () => Promise.resolve({ ok: true, plan: { tier: "free" }, role: "user" }),
@@ -156,7 +126,7 @@ const SESSION = JSON.stringify({
     };
     const r = await AccountApi.uploadAvatar({ blob: { size: 10 }, backing: b, A: AuthCore, AV: Avatar, E: null, api: api });
     eq(r.reason, "no-channel", "缺 uploadAvatar → reason 是 no-channel（刷新即可）");
-    /* ⚠️ 关键：me 那条路**仍然通**（并进 usable() 就会一起废掉 —— 那正是这条注释的由来） */
+
     const me = await AccountApi.refreshMe({ backing: b, A: AuthCore, AV: Avatar, E: null, api: api, force: true });
     eq(me.reason, "ok", "me 那条路照样通（没有拿新功能废掉既有功能）");
   }
@@ -184,7 +154,6 @@ const SESSION = JSON.stringify({
     eq(Avatar.display(b).hasImage, false, "回到首字印");
     eq(Avatar.localImage(b), "", "本机那份图也清掉了（不然「删了还在显示」）");
 
-    /* 连不上的那一次：本机清了，但云端还在 —— **不许说「已经删干净了」** */
     AccountApi.reset();
     const b2 = mem({ poem_auth_v1: SESSION });
     const api2 = {
@@ -222,7 +191,6 @@ const SESSION = JSON.stringify({
     eq(calls[0].init.headers["x-kb-device"], "d1", "带上设备号（频控分桶要用）");
     chk(!/json/i.test(calls[0].init.headers["Content-Type"]), "**不是** application/json（否则服务端会当 JSON 解析）");
 
-    /* 503（没配好）如实回 E_NOT_CONFIGURED，且不假装成功 */
     const ch2 = AuthApi.create({
       deviceId: "d1",
       fetch: () => Promise.resolve({
@@ -234,12 +202,10 @@ const SESSION = JSON.stringify({
     eq(r2.code, "E_NOT_CONFIGURED", "503 → E_NOT_CONFIGURED（**不是** ok:true）");
     eq(ch2.degraded(), true, "标记成降级（界面据此说「只存在本机」）");
 
-    /* 连不上 → E_OFFLINE */
     const ch3 = AuthApi.create({ deviceId: "d1", fetch: () => Promise.reject(new Error("ENOTFOUND")) });
     const r3 = await ch3.uploadAvatar({ blob: blob, type: "image/jpeg" });
     eq(r3.code, "E_OFFLINE", "连不上 → E_OFFLINE");
 
-    /* AVATAR_ERR 那张表的文案**不许**说「已切回本机体验版」那种假话 */
     chk(!!AuthApi.AVATAR_ERR, "另有一张 AVATAR_ERR 文案表");
     chk(!/体验版/.test(JSON.stringify(AuthApi.AVATAR_ERR)),
       "头像那条路的文案不提「体验版」（它要么成了，要么如实说「只存在本机」）");
@@ -249,7 +215,6 @@ const SESSION = JSON.stringify({
     chk(/1MB/.test(AuthApi.AVATAR_ERR.E_TOO_BIG), "上限那条把数字写出来（用户知道该压到多小）");
     chk(/登录/.test(AuthApi.AVATAR_ERR.E_NO_SESSION), "没登录那条告诉用户下一步是登录");
 
-    /* 源码扫描：传输层不碰 canvas / 文件选择框（那两件事在 avatar-image.js） */
     const src = read("js/auth-api.js").replace(/\/\*[\s\S]*?\*\//g, "");
     chk(!/createElement\("canvas"\)/.test(src), "js/auth-api.js 不碰 canvas（压缩在 avatar-image.js）");
     chk(!/<input/.test(src), "js/auth-api.js 不碰文件选择框");
@@ -281,22 +246,17 @@ const SESSION = JSON.stringify({
       eq($("avatar-file").accept, "image/*", "只让挑图片（accept 收窄选择器，不是安全边界）");
       chk($("crop-layer").hidden, "裁切层默认藏着（没选图时不铺上来）");
       chk($("btn-avatar-clear").hidden, "没图时「删除头像」不出现（摆一颗点了没反应的灰键更糟）");
-      /* ⚠️ Issue #209：没图那一档的说明**整句删掉**（用户点名）。
-         原先写「未上传时显示用户名首字」—— 它说的是「不传图会怎样」，
-         而这一点在界面上本来就看得见（左边那枚印画的正是用户名首字）。
-         现在没图时这一行是空的；有图那两档（已同步 / 只在本机）照旧。 */
+
       eq($("avatar-hint").textContent, "", "没图时不再写说明（那件事左边那枚印自己看得见）");
 
-      /* 点了「上传图片」→ 转发到那个隐藏的文件框（不可见但真实可点） */
       let clicked = 0;
       $("avatar-file").addEventListener("click", e => { clicked++; });
       $("btn-avatar-pick").dispatchEvent(new w.Event("click", { bubbles: true }));
       eq(clicked, 1, "点「上传图片」转发给文件选择框（不是自己造一个假弹窗）");
 
-      /* 盘上已经有图 → 那一行说明换成「已同步到服务器」，「删除」出现 */
       w.Avatar.setAvatar(w.localStorage, { img: "https://x.supabase.co/a.jpg" });
       w.SiteChrome && w.SiteChrome.refreshUser && w.SiteChrome.refreshUser();
-      /* 直接调页面自己的重画口（它是 settings.js 的私有函数，这里通过改昵称触发） */
+
       const u = $("input-username");
       u.value = "小明";
       u.dispatchEvent(new w.Event("input", { bubbles: true }));
@@ -305,7 +265,6 @@ const SESSION = JSON.stringify({
         "有云端地址时如实说「已同步到服务器」（实际「" + $("avatar-hint").textContent + "」）");
       chk(/<img[^>]+avatar-img/.test($("avatar-slot").innerHTML), "有图时槽里画的是 <img>");
 
-      /* 点「删除头像」→ 地址清空、本机那份也清掉 */
       $("btn-avatar-clear").dispatchEvent(new w.Event("click", { bubbles: true }));
       await new Promise(r => setTimeout(r, 50));
       eq(w.Avatar.display(w.localStorage).img, "", "删完账号域那个地址空了");

@@ -13,8 +13,6 @@
   <meta name="apple-mobile-web-app-title" content="课内古诗词" />
   <meta name="mobile-web-app-capable" content="yes" />
 
-  <!-- 目录化 URL：页面住在 /classic/ 里，但资源引用仍按站点根算（./css/... 就是 /css/...），
-       这样相对路径与搬家前完全一致，不必改成 ../ ，避免漏改一处就白屏 -->
   <base href="/" />
   <link rel="icon" href="./icons/icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
@@ -23,19 +21,9 @@
   <link rel="stylesheet" href="css/account.css" />
 </head>
 <body data-nav="poems" data-page="课内古诗词">
-  <!-- 挂载点：一段 data-gw-root 对应一份「索引页 + 阅读器」实例，
-       数据由 js/poems.js 交进来（见 js/reader-core.js 的 mount()）。
-       把整块内容包起来，是为了让「这一页的列表 / 搜索框 / 进度牌」
-       与「那一页的同名元素」在 JS 里天然分开 —— 六个页面共用一份引擎，
-       靠的就是这个边界，而不是从头到尾写出的六个不同 id。 -->
+
   <div class="app" data-gw-root>
-    <!-- 页顶这一行：由 js/chrome.js 统一渲染（全站同一套 徽标 + 跬步 · 页面名 + 副标题 + 右侧动作位）。
-         顺序：徽标 · 跬步 · 课内古诗词 /「按年级分册，想读哪首点哪首」｜〔返回键〕
-         —— 页顶这一行**不挂任何读数**（Issue #147）：原先那枚「0 / 100 篇」在品牌区与返回键
-         之间，窄屏上会与品牌区抢地方（页名被收成省略号）；它先挪去详情页状态栏，后来连那一枚
-         也一起撤了（「删除所有详情页中的 0 / 167 篇及类似的」）。「读了多少」只在列表页每条
-         自己的已读标记与 /progress/ 总览上看。
-         这一行整行 align-items: center，徽标 / 两行文字 / 40px 返回键共用同一条中轴。 -->
+
     <header class="topbar">
     </header>
     <div class="toolbar">
@@ -52,13 +40,7 @@
         <button type="button" data-filter="all" class="active" aria-pressed="true">全部</button>
         <button type="button" data-filter="unread" aria-pressed="false">未读</button>
       </div>
-      <!-- 工具栏「连读」= 一枚圆形播放键，与首页「今日背诵」右侧那颗同一个组件：
-           同一颗键上 ▶ / ⏸ 两态（播放中原地换成暂停），不配可见文字 ——
-           它管的是「整页随机连读」这件事，说明放在 title 与读屏文案里。
-           用 <button> 而非 <a>：读屏报「按钮」、Enter / 空格都能触发。
-           里面那颗 ▶ 的 stroke-width 由 2.4 改成 1（Issue #55 本轮）：
-           所有播放键的三角边框都收成「1px」，各档图标框对应的取值见
-           css/classic.css 顶部的换算表 —— 改一处前先看那张表。 -->
+
       <button class="gw-play gw-play-main" id="gw-random-read" data-gw="random" type="button" data-on="0"
         aria-pressed="false" title="随机连读：随机抽一首开读，读完自动跳下一篇">
         <span class="play-glyph" aria-hidden="true">
@@ -69,17 +51,7 @@
         </span>
         <span class="sr-only" id="gw-random-read-text">随机连读</span>
       </button>
-      <!-- 「古诗词大会」：这一页上的第二件事（第一件是「按册次翻目录」）。
-           它是**就地叠层**，不是跳走 —— 与 /library/ 上那五部集子的索引同一套：
-           地址栏不动，页顶换成本页的页名与说明，右上角那颗返回键一层退一层。
-           ⚠️ 这里只留一个空槽位与一个 data 标记：那一层的全部逻辑在 js/game.js 里，
-              这一页自己一个字都不写（页面只管它自己的列表与阅读器）。
-           ⚠️ 「古诗词大会」是**集子**（`exam.gathering`），点进去之后那三个玩法
-              是另一条能力「试题模拟」（`exam.paper`）—— 两件事各有自己的钩叉。
-           ⚠️ 未登录 / 层级不够时它**照旧看得见**（不许把入口藏起来当成权限边界，
-              那是 docs §3.4 明写禁止的）—— 点进去是一张如实说明「要哪一层」的卡。 -->
-      <!-- 集子访问那一条权限（`exam.gathering`）的落点。点它之前 js/game.js 先
-           判一次 —— 没过闸就地铺一张如实说明的卡（入口本身照旧看得见）。 -->
+
       <button class="poems-game-entry" type="button" data-game-open="1"
         title="古诗词大会：试题模拟 · 飞花令 · 题库复习">
         <span class="poems-game-name">古诗词大会</span>
@@ -89,31 +61,19 @@
 
     <div class="list" id="gw-list" data-gw="list" data-poems-view="list"></div>
 
-    <!-- 古诗词大会那一层：**就地**铺在同一个 .app 里（不套 .app，见 Issue #149）。
-         默认 hidden，点工具条上那颗键才铺上来；铺上来时上面的列表那一段收起。
-         ⚠️ 与 /library/ 那两层同一条规矩：嵌在 .app 里面再套一层 .app，
-            「一列纸」的宽度与两侧的边就会被算两遍（卡片看着莫名变窄）。 -->
     <div class="poems-game" data-poems-view="game" hidden></div>
 
-    <!-- 篇目打印页那一层：同样就地铺在 .app 里，与古诗词大会同一套「一层退一层」。
-         点详情页工具条上那颗「打印」才铺上来。 -->
     <div class="poems-print" data-print-view="sheet" hidden></div>
 
-    <!-- 页底不再挂版权与法务链接：这一页只留列表，版权 + 用户协议 / 隐私条款只在设置整页底部 -->
   </div>
 
-  <!-- 诗词详情：整页阅读（长诗可滚动，不再是卡片弹窗） -->
   <div class="reader" id="gw-reader" data-gw="reader" hidden>
-    <!-- 阅读器顶栏：不另造一套，直接复用全站顶栏的 .topbar（徽标 + 跬步 · 课内古诗词 +
-         右侧 40px 圆形返回键）。原先这里是自制的 .reader-bar —— 左侧返回、中间居中进度，
-         比全站顶栏少一个徽标、页名位置也完全不同，从列表点进正文时整行导航会「换一张脸」。
-         现在品牌区与列表页完全对齐；顶栏右侧只剩那颗 40px 圆形返回键 ——
-顶栏里**没有、也不该有**任何读数（Issue #147：页顶与详情页的读数都已撤除）。 -->
+
     <header class="topbar"></header>
     <div class="reader-body">
       <h2 class="rd-title" id="rd-title"></h2>
       <div class="meta rd-meta" id="rd-meta"></div>
-      <!-- 阅读辅助工具条（第一行）：对齐 / 字号 / 注音 —— 字号必须始终可见（曾因合并丢掉整条工具条） -->
+
       <div class="reader-actions" id="rd-actions-main">
         <div class="seg mini icon-seg" id="rd-align-seg" data-gw="align-seg" role="group" aria-label="正文对齐方式">
           <button type="button" data-gw="align" data-align="left" aria-pressed="false" title="左对齐" aria-label="左对齐">
@@ -137,11 +97,7 @@
           <button type="button" data-gw="pinyin" data-mode="all" aria-pressed="false">全文</button>
         </div>
       </div>
-      <!-- 阅读辅助工具条（第二行）：原文一个播放键 + 译文开关 + 标记已读。
-           原先这一行并排两个播放键（原文一个、译文一个），一篇文章出现两个播放信号，
-           像多长了一个按钮；而译文本身还带一个朗读键，又叠了一层。
-           现在只留原文这一颗 ▶ / ⏸（同一位置切换，不并排），
-           译文的朗读键挪到译文标题旁，跟着译文框一起出现。 -->
+
       <div class="reader-actions icon-row" id="rd-actions-icons">
         <button type="button" class="mini-btn" id="rd-read-btn" data-gw="read" data-on="0" aria-pressed="false" title="朗读原文：标题、朝代、作者与正文">
           <span class="btn-icon play-glyph" aria-hidden="true">
@@ -170,12 +126,7 @@
           </span>
           <span class="sr-only" id="rd-trans-toggle-text">显示译文</span>
         </button>
-        <!-- 「加入背诵」：把这一篇放进**用户自己的清单**（自选集合），
-             进了清单就由遗忘曲线安排复习 —— 与课内 261 首同一套排程。
-             与「标记已读」是两回事：已读只记录这一部集子里的进度，
-             加入背诵才是「这一篇我要跟着一起背」。
-             按下去弹集合选择器：勾选放进哪个集合，或新建一个。
-             自选集合不分卷次不分词牌（用户原话「集合没有必要添加分组了」）。 -->
+
         <button type="button" class="mini-btn recite-btn" id="gw-recite" data-gw="recite" data-on="0" aria-pressed="false" title="加入自选集合">
           <span class="btn-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -192,12 +143,7 @@
           </span>
           <span class="sr-only" id="gw-done-text">标记已读</span>
         </button>
-        <!-- 「这一篇打出来」（Pro · export.paper）：把**当前这一篇**交给打印那一层。
-             它挂在详情页工具条上（不是列表里）—— 打印的对象是「我正在读的这一篇」。
-             ⚠️ 入口照旧看得见：未登录 / 层级不够时点进去是一张如实说明「要 Pro」的卡
-                （docs §3.4：把入口藏起来不是权限边界）。
-             ⚠️ `data-print-poem` 由 js/poems.js / 引擎在打开某一篇时写上去 ——
-                这一页只放槽位，那一层的逻辑全在 js/print.js 里。 -->
+
         <button type="button" class="mini-btn" id="gw-print" data-print-open="1" data-print-poem="" title="这一篇打出来（打印或存 PDF）">
           <span class="btn-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -213,8 +159,7 @@
       <section class="trans-box" id="rd-trans" data-gw="trans" hidden>
         <div class="trans-head">
           <h3>白话译文</h3>
-          <!-- 译文朗读键：跟着译文框一起出现，只在译文标题这一处，
-               与正文那颗朗读键不同时出现在同一行 -->
+
           <button type="button" class="trans-read" id="rd-trans-read" data-gw="trans-read" data-on="0" aria-pressed="false" disabled title="朗读白话译文">
             <span class="btn-icon play-glyph" aria-hidden="true">
               <svg viewBox="0 0 24 24"><path d="M8.4 6.1 18.3 12 8.4 17.9Z" fill="none" stroke="currentColor" stroke-width="1" stroke-linejoin="round" stroke-linecap="round" /></svg>
@@ -226,11 +171,10 @@
           </button>
         </div>
         <p class="rd-trans-text" id="rd-trans-text"></p>
-        <!-- 译文来源注脚：与首页详情页同一套，见 data/index.js 的 TRANSLATION_SOURCES -->
+
         <p class="trans-src rd-trans-src" id="rd-trans-src"></p>
       </section>
 
-      <!-- 上一篇 / 下一篇：读完直接翻，不用退回索引页 -->
       <nav class="reader-nav" id="rd-nav">
         <button type="button" class="prev" id="rd-prev" data-gw="prev">
           <span aria-hidden="true">‹</span>
@@ -250,8 +194,6 @@
     </div>
   </div>
 
-
-  <!-- 设置弹层：与首页同一套选项（用户名 / 阅读辅助），顶栏与底部页签都能打开 -->
   <div class="modal" id="settings-modal" hidden>
     <div class="modal-mask" data-settings-close="1"></div>
     <div class="modal-box small" role="dialog" aria-modal="true" aria-label="设置">
@@ -278,17 +220,8 @@
 
   <div class="toast" id="toast" hidden></div>
 
-  <!-- ==========================================================================
-       这一页的脚本也是「课内 12 册 + 全站共用件」，与首页（/）同一份语料：
-       首页是「今日背诵 + 遗忘曲线」，这一页是「按年级分册的目录」。
-       正文 / 译文 / 注音 / 朗读都取同一份，两页看到的字不会不一样。
-       ========================================================================== -->
-
-  <!-- 分组顺序总表（年级 / 卷次 / 词牌 / 文体）：页面与作品主表共用同一份顺序 -->
   <script src="data/group-order.js"></script>
-  <!-- 课内 12 册：一至高三的教材诗词。data/index.js 把 poems-1..12 汇成
-       window.POEMS_ALL 并补上 grade / term，必须排在最后。
-       首页也是同一串、同一顺序 —— 两页的语料完全一致。 -->
+
   <script src="data/poems-1.js"></script>
   <script src="data/poems-2.js"></script>
   <script src="data/poems-3.js"></script>
@@ -301,64 +234,38 @@
   <script src="data/poems-10.js"></script>
   <script src="data/poems-11.js"></script>
   <script src="data/poems-12.js"></script>
-  <!-- 正文存储主表：同一篇作品的正文 / 译文只落一份，课内条目里被收编的那些
-       退化成只存归属（textRef 指过来，见 data/text-master.js 文件头）。
-       须排在 data/index.js 之前 —— 它汇成 POEMS_ALL 时就要按 textRef 取回正文。
-       译文来源口径文案（data/index.js 的 TRANSLATION_SOURCES）也在那一份里。 -->
+
   <script src="data/text-master.js"></script>
   <script src="data/index.js"></script>
-  <!-- 同篇对照表 + 作品主表：「这首是不是已经在课外某部集子里背过了」靠它判重。
-       首页排每日任务、这一页点「加入背诵」，两边读的是同一张表。 -->
+
   <script src="data/works-map.js"></script>
   <script src="data/works-index.js"></script>
   <script src="data/pinyin-table.js"></script>
   <script src="data/common-chars.js"></script>
   <script src="js/pinyin.js"></script>
-  <!-- 权益总闸：全站唯一的「能不能用某功能」出口。必须排在 speech.js 之前 ——
-       语音播放要求登录（free 即可用），判据由它出，speech.js 里那道门与它同源。 -->
-  <!-- 认证内核：会话是谁、邮箱码在哪台设备上验证过。纯逻辑、零网络，
-       与权益层一样属于「引擎」，不是页面。必须在 entitlement.js 之前 ——
-       identity() 要靠它读会话，顺序反了就永远判成游客。 -->
+
   <script src="js/auth-core.js"></script>
   <script src="js/entitlement.js"></script>
   <script src="js/speech.js"></script>
   <script src="js/reader.js"></script>
-  <!-- 自选集合（用户自己加背的篇目）：阅读器里的「加入背诵」读它。
-       课内这 261 首本来就在每日任务里，所以列表上不挂「加入背诵」圆键
-       （见 js/poems.js 的 reciteList: false）—— 引擎里那套仍然可用。 -->
-  <!-- 分域引擎（Issue #132 阶段 0）：进度 / 账号 / 设备三域的唯一一份定义，
-       读法由 js/storage.js 转发。**必须排在 js/storage.js 之前** ——
-       缺了它 storage 只是退化成兜底读法，不会报错（那种「不报错的少数据」最难查）。 -->
+
   <script src="js/family.js"></script>
   <script src="js/progress-store.js"></script>
-  <!-- 同步层（Issue #132 · 1B）：进度 / 账号域设置 / 已读的跨设备同步。
-       必须在 js/storage.js 之前 —— 它的 touch() 要给每条记录打标，
-       而页面只认识 Storage/ProgressStore 这两个入口。 -->
+
   <script src="js/sync-store.js"></script>
-  <!-- 分域读法的**转发层**：页面各处的 Storage.get / getSettings 都落在这里，
-       实现是上面那份 progress-store。上面那段注释一直写着「读法由 js/storage.js
-       转发」——但这一页此前**只加载了引擎、没加载转发层**，于是这些页面上
-       window.Storage 一直是 undefined，凡走它的地方都静默退化成「读不到」。
-       Issue #163 把搜索页「上次搜的词」接到这一层时暴露了它：搜索页原来
-       读不到任何存储，只是因为它从不读。顺序：progress-store → sync-store →
-       storage（后者才认前两个）。 -->
+
   <script src="js/storage.js"></script>
   <script src="js/collections.js"></script>
-  <!-- 古籍阅读库（索引页 + 详情页的引擎）：必须排在 js/poems.js 之前 -->
-  <!-- 朗读档位（五档模式 / 存储键 / 出厂档的唯一一份定义）：reader-core 与设置页共用 -->
+
   <script src="js/play-modes.js"></script>
   <script src="js/reader-core.js"></script>
-  <!-- 账号接线层（2.1 / 3 期）：试题模拟的判分要走 /api/game/answer。
-       顺序固定：entitlement → auth-api → account-api（前者是后者的前置）。
-       缺任何一个都不会报错 —— js/game.js 会退化为「本机判分」并如实标注。 -->
+
   <script src="js/auth-api.js"></script>
   <script src="js/account-api.js"></script>
-  <!-- 试题模拟的出题内核（纯逻辑、零 DOM、零网络）：飞花令 / 试题模拟 / 题库复习
-       三件共用它。它必须排在 js/game.js 之前。 -->
+
   <script src="js/quiz.js"></script>
   <script src="js/game.js"></script>
-  <!-- 篇目打印页（Pro）：版面内核 + 那一层。与试题模拟那一层同一条路子 ——
-       就地叠层，不是新的一页。print-core 必须排在 print.js 之前。 -->
+
   <script src="js/print-core.js"></script>
   <script src="js/print.js"></script>
   <script src="js/avatar.js"></script>

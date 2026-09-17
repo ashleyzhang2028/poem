@@ -1,25 +1,3 @@
-/**
- * 认证的服务端通道（1 期 1A 期新增）—— `js/auth-core.js` 的 `transport` 实现。
- * ==========================================================================
- * 现状（0 期 / 1A 期之前）：`js/auth-core.js` 是纯本机内核 —— 码由浏览器生成、
- * 会话也只在本机，那条路**不能承载真实的账号**（换设备就没了）。
- * 本文件补上的就是这一步：把同一套流程接到 `/api/*` 上。
- *
- * 三条边界（沿用 docs/auth-design.md §1，与内核逐条对齐）：
- *   1. **未登录用户的体验与今天逐字一致** —— 后端没配好、挂了、断网，
- *      一律静默降级为「本地体验版」，不弹窗、不打断背诵
- *   2. **不假装有服务器** —— 请求失败时如实说「连不上服务端」，
- *      绝不把本机生成的码说成「已发送」
- *   3. **token 不进 localStorage** —— 会话是服务端签发的 HttpOnly Cookie
- *      （`credentials: "same-origin"`），JS 读不到它，这正是它安全的原因
- *
- * ⚠️ 本文件**不 import 任何东西**、不碰 `document`（除 fetch 与 location），
- *    因此可以在 Node 里 require（见 test/api.test.js）。
- *
- * 用法（页面里）：
- *   var api = window.AuthApi.create();          // 默认 fetch + 同源
- *   api.sendCode({ email, purpose, deviceId })   // → { ok, codeId, ... } | { ok:false, code, message }
- */
 (function (root, factory) {
   if (typeof module === "object" && module.exports) module.exports = factory();
   else root.AuthApi = factory();
@@ -27,31 +5,20 @@
   "use strict";
 
   var BASE = "/api";
-  var TIMEOUT_MS = 15000;      // 超过就当作「连不上」，走降级
+  var TIMEOUT_MS = 15000;
 
-  /* 错误码 → 给用户看的话。**内核返回什么就说什么**，
-     本文件只兜「内核没覆盖到的传输层错误」——重写一份必然与内核漂移。 */
   var TRANSPORT_ERR = {
     E_NOT_CONFIGURED: "这个站点还没开放云端账号，当前是本机体验版",
     E_OFFLINE: "连不上服务端，已切回本机体验版",
     E_TIMEOUT: "服务端响应太慢，已切回本机体验版",
     E_INTERNAL: "服务端出了点问题，稍后再试；期间本站仍可完全离线使用",
-    /* 2B：短信通道没开通。**这一条不是「降级」** ——
-       服务端是通的、只是短信没接商，所以不许像 E_OFFLINE 那样
-       偷偷切回本机体验版（本机版也发不出短信，切过去只是换个说法骗人）。
-       界面拿到它应当**如实显示**「还没开通」。 */
+
     E_SMS_NOT_OPEN: "短信登录还没开通（需要先签短信商并完成模板报备）",
-    /* 2.2 权威发放。**这三条都不是「降级」**：服务端是通的，只是这件事没成。
-       E_FORBIDDEN 尤其不许被说成「连不上」—— 它是「你确实没这个权限」，
-       而用户看到「连不上」会一直重试。 */
+
     E_FORBIDDEN: "这一条只对管理员开放",
     E_TIER: "层级只认 Free / Pro / Max",
     E_MASK: "邮箱掩码形状不对（形如 a***@qq.com，与账号页上显示的那串一致）",
 
-    /* ---- Issue #197：完整登录流程那五条 ----
-       ⚠️ 这一组**没有一条是「降级」**：服务端是通的，只是这件事没成。
-          尤其 E_LOGIN_FAIL —— 它必须原样说「邮箱或密码不对」，
-          客户端不许把它改写成更具体的任何一种（那就成了邮箱枚举）。 */
     E_LOGIN_FAIL: "邮箱或密码不对",
     E_PW_EMPTY: "请先填密码",
     E_PW_SHORT: "密码太短了（至少 8 位）",
@@ -63,42 +30,12 @@
     E_TOKEN_EXPIRED: "链接已过期，请重新发一封邮件",
     E_VERIFY_MAIL_FAIL: "确认邮件没能发出去，请稍后再试",
     E_RESET_MAIL_FAIL: "重设邮件没能发出去，请稍后再试",
-    /* Issue #197 后半段：**邮箱没确认就不让登录**。
-       ⚠️ 这一条**不是传输层错误**，也不是降级：服务端是通的、口令也是对的，
-          只是这一步没成。**绝不**把它说成「连不上服务端」——
-          那会让用户一直重试登录，而他要做的是去收件箱。
-       文案里那两句（去收件箱点确认 / 没收到就点「重新发一封」）是
-       **唯一有用**的下一步，别删。 */
+
     E_EMAIL_UNVERIFIED: "邮箱还没确认：请点开注册时那封确认邮件里的链接。没收到就点「重新发一封」。",
-    /* Issue #197 后续：人机校验（Cloudflare Turnstile）没过。
-       ⚠️ 这一条**只有一句话**，而且刻意**不说为什么** ——
-          服务端也不告诉客户端（`error-codes` 只进服务端日志）。
-          「没通过」对用户是同一件事：刷新页面、再点一次。
-          区分「token 过期」与「没勾」只会让人去修一个他修不了的东西。
-       ⚠️ 它**不是降级**（服务端是通的），所以 PASSWORD_ERR 那张表**不收它** ——
-          口令那几条路也会有这一条错，而「已切回本机体验版」在那儿是假话。 */
+
     E_TURNSTILE: "人机校验没通过，请刷新页面再试一次"
   };
 
-  /**
-   * **口令那几条路专用**的传输失败文案（Issue #197）。
-   *
-   * ⚠️ 必须与 `TRANSPORT_ERR` 分开，而且这一分是**非做不可的**：
-   *    通用那一份写的是「已切回本机体验版」—— 对随机码那条路是**真的**
-   *    （它确实会回落到本机内核），但对注册 / 密码登录 / 忘记密码 / 重设
-   *    **是假的**：那四件事压根没有本机版本（口令摘要要有服务端 pepper、
-   *    要落库，在浏览器里存一份等于把「谁都改得动」的东西当凭据）。
-   *    照抄通用文案的下场是实测到的这个：服务端连不上时界面上写着
-   *    「已切回本机体验版」，而用户什么都做不了 —— 一句当场被自己推翻的话。
-   */
-  /**
-   * 头像那一条路的失败文案（Issue #163）。
-   *
-   * ⚠️ 与 `PASSWORD_ERR` 分开的理由同源：通用那一份会说
-   *    「已切回本机体验版」，而头像是**真的**会切回本机（本机那份图还在，
-   *    顶栏照旧画得出来）—— 但用户还得知道**云端那份没成**，
-   *    否则他换台设备就发现头像没了，却不知道为什么。
-   */
   var AVATAR_ERR = {
     E_NOT_CONFIGURED: "这台服务器还没开放云端账号，头像只存在本机",
     E_OFFLINE: "连不上服务端，头像已存在本机、还没同步到服务器",
@@ -123,61 +60,34 @@
     return TRANSPORT_ERR[code] || fallback || "操作没成功，请稍后再试";
   }
 
-  /** 口令那几条路的传输失败文案（见 `PASSWORD_ERR` 那段说明） */
   function passwordMessageOf(code, fallback) {
     return PASSWORD_ERR[code] || messageOf(code, fallback);
   }
 
-  /**
-   * 人机校验的 token —— **只有一处取它**（Issue #197 后续）。
-   *
-   * ⚠️ 为什么单独一个函数而不是在每个 `post()` 里写 `window.Turnstile.token()`：
-   *    · 有些调用点（Node 里跑测试、老 WebView）**压根没有** window 上的那个模块 ——
-   *      直接读会抛，而抛在发请求之前 = 「什么都没发生」，比失败更难查
-   *    · 取 token 的字段名（`turnstileToken`）只该出现一次
-   * @returns {string}  token；拿不到就是空串（服务端据此如实回答）
-   */
   function turnstileToken() {
     try {
       var g = (typeof globalThis !== "undefined") ? globalThis : null;
       var T = g ? g.Turnstile : null;
       if (T && typeof T.token === "function") return String(T.token() || "");
-    } catch (e) { /* 没有就没有 —— 服务端会说 */ }
+    } catch (e) {  }
     return "";
   }
 
-  /** 有 fetch 才谈得上云端；没有就整体不可用（老 WebView） */
   function supported() {
     return typeof fetch === "function";
   }
 
-  /**
-   * 造一个通道。
-   *
-   * @param {object} opts
-   *   · fetch  — 注入用（测试里给假 fetch）；默认用全局那个
-   *   · deviceId — 设备标识，随请求带上做频控分桶
-   *   · base   — 默认 "/api"
-   */
   function create(opts) {
     opts = opts || {};
     var doFetch = opts.fetch || (typeof fetch === "function" ? fetch.bind(typeof globalThis !== "undefined" ? globalThis : this) : null);
     var base = opts.base || BASE;
     var deviceId = opts.deviceId || "";
     var state = {
-      /* 最近一次调用是不是「服务端没配好 / 连不上」——
-         界面据此展示「本机体验版」，而不是把失败当成功能坏了 */
+
       degraded: false,
       lastError: null
     };
 
-    /**
-     * @param {string} path
-     * @param {object} body
-     * @param {object|null} errs  这一条路自己的**传输失败文案表**。
-     *   不传就用通用那一份（会说「已切回本机体验版」）。
-     *   口令那几条必须传 `PASSWORD_ERR` —— 理由见那张表的注释。
-     */
     function post(path, body, errs) {
       return call(path, "POST", body, errs);
     }
@@ -189,18 +99,6 @@
       });
     }
 
-    /**
-     * 原始字节那一条（Issue #163：头像上传）。
-     *
-     * 与 `call()` 共用同一套「回包归一化」—— 那一段是**唯一**把 HTTP 变成
-     * `{ok, code, message}` 的地方，复制一份到别处必然漂移（先是 503 的判法
-     * 不一样，接着是 401 的判法不一样）。
-     * 差别只有两处：`Content-Type` 由调用方给（image/jpeg），body 是原始字节。
-     *
-     * ⚠️ 超时按**字节数**放宽：手机上 20KB 的图 + 弱网，15 秒是够的，
-     *    但这一条路本来就可能被用户用在大图上（1MB 上限），
-     *    沿用同一个 15 秒会出现「明明传得上去却老是超时」。
-     */
     function callBinary(path, method, bytes, type, errs) {
       var size = (bytes && bytes.length) || (bytes && bytes.size) || 0;
       var limit = TIMEOUT_MS + Math.min(45000, Math.round(size / 1024) * 300);
@@ -224,8 +122,7 @@
 
       var init = {
         method: method,
-        // ⚠️ 会话是 HttpOnly Cookie —— 必须带 credentials，
-        //    而 "same-origin"（不是 "include"）能确保只有同源才发 Cookie
+
         credentials: "same-origin",
         headers: {}
       };
@@ -242,15 +139,13 @@
             state.lastError = "E_INTERNAL";
             return { ok: false, code: "E_INTERNAL", message: em("E_INTERNAL"), status: res.status };
           }
-          /* 503 = 服务端没配好：这不是错误，是「本期还没开放」，
-             据实标成降级，界面据此继续用本机体验版 */
+
           if (res.status === 503 || data.code === "E_NOT_CONFIGURED") {
             state.degraded = true;
             state.lastError = "E_NOT_CONFIGURED";
             return { ok: false, code: "E_NOT_CONFIGURED", message: em("E_NOT_CONFIGURED"), status: res.status };
           }
-          /* 401 = 没有会话。**不是错误**：未登录是本来的正常状态，
-             前端据此保持 local 模式，不弹窗、不打断背诵 */
+
           if (res.status === 401) {
             state.degraded = false;
             return { ok: false, code: data.code || "E_NO_SESSION", message: messageOf(data.code, data.message), status: 401 };
@@ -269,19 +164,7 @@
             message: messageOf(data.code, data.message),
             retryAfter: data.retryAfter,
             remaining: data.remaining,
-            /* ------------------------------------------------------------------
-               `E_EMAIL_UNVERIFIED` 那三个附带字段（Issue #197 后半段）
-               ------------------------------------------------------------------
-               它们是**给界面说实话用的**，不是给界面做判断用的：
-                 · emailMask      —— 回显「发往哪个邮箱」（掩码，不是明文）
-                 · verifySent     —— 刚才这一下**真的**又发了一封没有
-                 · verifyTransport—— 走的是哪个通道（console = 真实用户收不到）
-               不把这些带出来的下场实测过：界面只能写一句笼统的
-               「邮箱还没确认」——而用户最需要知道的恰恰是
-               「信到底发出去了没有／这台服务器发不发得出去」。
-               ⚠️ 别把它们与「这条错误是不是降级」混在一起：
-                  它仍然是一条**实打实的失败**（ok:false）。
-               ------------------------------------------------------------------ */
+
             emailMask: data.emailMask,
             verifySent: data.verifySent,
             verifyTransport: data.verifyTransport,
@@ -293,7 +176,7 @@
       }).catch(function (e) {
         if (timer) clearTimeout(timer);
         var code = (e && e.name === "AbortError") ? "E_TIMEOUT" : "E_OFFLINE";
-        // 连不上 = 降级，**不是**错误弹窗 —— docs §10「会话过期静默降级」
+
         state.degraded = true;
         state.lastError = code;
         return { ok: false, code: code, message: em(code) };
@@ -303,16 +186,9 @@
     return {
       degraded: function () { return state.degraded; },
       lastError: function () { return state.lastError; },
-      /** 这台设备的标识（随请求带给服务端做频控分桶；拿不到就是空串） */
+
       deviceId: function () { return deviceId; },
 
-      /** POST /api/send-code */
-      /**
-       * POST /api/send-code
-       * ⚠️ 通道由 `channel` 表达（缺省 "email"，与 1A 的老调用点兼容）：
-       *    `value` 是那一通道的标识（邮箱或手机号）。
-       *    老字段 `email` 仍然接受，服务端也保留了这个兼容口。
-       */
       sendCode: function (input) {
         input = input || {};
         var body = {
@@ -321,17 +197,12 @@
           purpose: input.purpose || "login",
           deviceId: deviceId
         };
-        /* ⚠️ 这三条（send-code / register / reset-request）是**匿名可写、
-           会发信**的口子 —— 服务端挂的就是这几条的人机校验（见
-           `core.humanGuard` 里那张清单）。token 由**这里**统一带上，
-           而不是让每个页面自己拼字段：漏拼一处的症状是「那个页面
-           永远过不了校验」，而它与「密钥配错了」长得一模一样。 */
+
         if (input.turnstileToken != null) body.turnstileToken = input.turnstileToken;
         else body.turnstileToken = turnstileToken();
         return post("/send-code", body);
       },
 
-      /** POST /api/verify-code —— 成功后服务端会 Set-Cookie */
       verifyCode: function (input) {
         input = input || {};
         return post("/verify-code", {
@@ -341,13 +212,6 @@
         });
       },
 
-      /* ------------------------------------------------ 完整登录流程（Issue #197）
-         六条路：注册 / 口令登录 / 确认邮箱 / 重发确认 / 忘记密码两步。
-         ⚠️ 传输层只做一件事：把参数送到，把 `{ok, code, message}` 带回来。
-            业务规则（口令多长、令牌怎么校验）全在服务端内核里，
-            这一层**一条都不新造** —— 造一条就是两处规则开始漂移。 */
-
-      /** POST /api/register —— 注册（邮箱 + 口令）。**注册完还要确认邮件** */
       register: function (input) {
         input = input || {};
         return post("/register", {
@@ -358,7 +222,6 @@
         }, PASSWORD_ERR);
       },
 
-      /** POST /api/login —— 邮箱 + 口令登录（与随机码那条路签发同一枚会话） */
       login: function (input) {
         input = input || {};
         return post("/login", {
@@ -368,21 +231,11 @@
         }, PASSWORD_ERR);
       },
 
-      /** POST /api/verify-email —— 点邮件里那条链接确认邮箱（不需要登录） */
       verifyEmail: function (input) {
         input = input || {};
         return post("/verify-email", { vid: input.vid, token: input.token }, PASSWORD_ERR);
       },
 
-      /**
-       * POST /api/resend-verification —— 重发确认邮件。
-       *
-       * ⚠️ **两条入口**（与服务端 `core.resendVerification` 对应）：
-       *   · 登录着（Cookie）→ 不带 `email`，服务端认会话里的 uid
-       *   · **没登录**（被「不确认就不让登录」拦在门外的人）→ 带上 `email`，
-       *     走匿名口。这是那种用户**唯一**的出路，所以必须支持。
-       * 两条回复的形状在服务端是**逐字相同**的（防邮箱枚举）。
-       */
       resendVerification: function (input) {
         input = input || {};
         var body = { deviceId: deviceId };
@@ -391,14 +244,6 @@
         return post("/resend-verification", body, PASSWORD_ERR);
       },
 
-      /**
-       * POST /api/resend-verification-by-email —— 重发确认邮件（**匿名**）。
-       *
-       * ⚠️ 为什么要有一条匿名的：默认口径是「没确认就不让登录」，
-       *    而**登不进来的人正是最需要重发那封信的人**。
-       *    只留要登录那一条的话，界面上那颗「重新发一封」是一颗
-       *    点了必然 401 的假键 —— 比不摆它更糟（用户会以为是自己点错了）。
-       */
       resendVerificationByEmail: function (input) {
         input = input || {};
         return post("/resend-verification-by-email", {
@@ -408,7 +253,6 @@
         }, PASSWORD_ERR);
       },
 
-      /** POST /api/reset-request —— 忘记密码第一步：发重设邮件 */
       resetRequest: function (input) {
         input = input || {};
         return post("/reset-request", {
@@ -418,7 +262,6 @@
         }, PASSWORD_ERR);
       },
 
-      /** POST /api/reset-confirm —— 忘记密码第二步：真正换掉口令 */
       resetConfirm: function (input) {
         input = input || {};
         return post("/reset-confirm", {
@@ -429,53 +272,29 @@
         }, PASSWORD_ERR);
       },
 
-      /** POST /api/admin/accounts —— 列出全部账号（只读，**回明文邮箱**） */
       accounts: function () { return post("/admin/accounts", { deviceId: deviceId }); },
 
-      /** GET /api/me —— 权益的唯一来源（服务端判定层级与角色都在这一条上） */
       me: function () { return call("/me", "GET"); },
 
-      /**
-       * GET /api/config —— 本站的公开配置（Issue #197 后续）。
-       *
-       * ⚠️ 目前只用来回答「要不要渲染人机校验、siteKey 是哪一个」。
-       *    它**不需要登录**（登录页上的人必然没登录），
-       *    而且服务端刻意只下发那一组字段（见 api/config.js 的说明）。
-       */
       config: function () { return call("/config", "GET"); },
-      /* ------------------------------------------------- 头像（Issue #163）
-         ⚠️ 传输层只把**已经压好、裁好**的字节送出去 —— 压缩与裁切在
-            `js/avatar-image.js`（本地 canvas），这一层不碰 canvas、
-            不碰文件选择框。分开的理由是那两件事的测试环境完全不同：
-            这一层在 Node 里就能对拍，而 canvas 只有浏览器有。 */
 
-      /** POST /api/avatar —— 上传头像字节（body 是裸字节，不是 JSON） */
       uploadAvatar: function (input) {
         input = input || {};
         return callBinary("/avatar", "POST", input.blob, input.type, AVATAR_ERR);
       },
 
-      /** DELETE /api/avatar —— 删掉云端那一张 */
       deleteAvatar: function () { return call("/avatar", "DELETE", { deviceId: deviceId }, AVATAR_ERR); },
 
-      /** POST /api/sync/pull */
       pull: function (input) {
         input = input || {};
         return post("/sync/pull", { since: input.since || 0, deviceId: deviceId });
       },
 
-      /** POST /api/sync/push */
       push: function (input) {
         input = input || {};
         return post("/sync/push", { recs: input.recs || [], deviceId: deviceId });
       },
 
-      /* ---------------------------------------------------- 权威发放（2.2）
-         这三条**只有管理员用得上**，但传输层不判权限 —— 权限在服务端
-         （`accounts.role`）。客户端把入口藏起来不是安全边界（docs §3.5）。
-         传输层只做一件事：把参数送到，把 `{ok, code, message}` 带回来。 */
-
-      /** POST /api/admin/grant —— 发放层级（服务端权威名单） */
       grant: function (input) {
         input = input || {};
         return post("/admin/grant", {
@@ -486,7 +305,6 @@
         });
       },
 
-      /** DELETE /api/admin/grant —— 收回（等价于发一个 free） */
       revoke: function (input) {
         input = input || {};
         return call("/admin/grant", "DELETE", {
@@ -495,21 +313,13 @@
         });
       },
 
-      /** POST /api/admin/grants —— 列出服务端那一份权威名单（只读） */
       grants: function () { return post("/admin/grants", { deviceId: deviceId }); },
 
-      /** DELETE /api/account —— 注销（服务端先导出再删行） */
       deleteAccount: function (input) {
         input = input || {};
         return call("/account", "DELETE", { confirm: input.confirm === true, deviceId: deviceId });
       },
 
-      /* ---------------------------------------------------- 古诗词大会（3 期）
-         判分口。**它不判权限** —— 权限在服务端（`featuresFor`）。
-         这里只把「哪一道题、选了哪一条」送到，把答案带回来。
-         ⚠️ 刻意**不传**客户端手上那份答案：传上去也不会被采信
-            （服务端从自己的语料重建），传它只会让人误以为「服务端看了客户端的答案」。
-            js/game.js 里那一处显式传 `answer` 是**故意留的反例**（有断言守着）。 */
       gameAnswer: function (input) {
         input = input || {};
         return post("/game/answer", {

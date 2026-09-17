@@ -24,36 +24,13 @@
     <header class="topbar"></header>
 
     <main class="account-page" id="admin-page">
-      <!-- ==================================================================
-           管理后台（Issue #132 · A→B→C→D 的 C）
-           ------------------------------------------------------------------
-           ⚠️ 三条必须说清的诚实口径（写进界面、也写进文档 §3.5 / §4.14）：
-             1. **本页有两份名单，它们不是一回事。**
-                · 「服务端名单」（2.2 新增）**是权威**：写进服务端 `accounts.plan`，
-                  由 /api/me 下发，对方改一行存储改不动它。
-                  ⚠️ 它的**前提是对方先登录过一次** —— 库里得先有那一行，
-                  才可能按掩码找得到人（发的时候会如实回「命中几条」）。
-                · 「本机名单」是 1 期之前那套「手工发邀请码的本机版」：
-                  写在本机存储里，要**对方自己导入**才生效，改一行存储就能改。
-                  ⚠️ 它**仍然不是权威**，谁也不许把它说成权威。
-                · 两份**不自动同步**：服务端发了一条，对方那台机器的本机名单
-                  不会跟着多一条。本机那一份只在「没配服务端 / 连不上」时兜底。
-             2. **对方改一行存储就能升级**（本机那一份）—— 所以它**不是收费凭据、
-                也不是安全边界**。服务端那一份改不动，但**同样不是收费凭据**：
-                本站**不收款**（用户 2026-09-17：不做收费，也不做支付通道）。
-             3. **服务端的角色闸在服务端**，不在这一页 —— 把入口藏起来不是安全边界
-                （`accounts.role` 不是 owner / admin 时，接口如实回 403）。
-           界面上一句都不含糊，免得日后被当成「已经能收费了」。
-           ================================================================== -->
 
-      <!-- ---------- 非管理员：整页如实拒绝（且不渲染下面任何一块） ---------- -->
       <section class="account-card" id="deny-card" hidden>
         <h2 class="account-card-title danger-title">没有权限</h2>
         <p class="account-lead" id="deny-lead"></p>
         <button class="account-btn ghost" id="btn-back-profile" type="button">回到个人中心</button>
       </section>
 
-      <!-- ---------- 一、发放 ---------- -->
       <section class="account-card" id="grant-card" hidden>
         <h2 class="account-card-title">发放层级（服务端权威）</h2>
         <p class="account-lead">
@@ -84,7 +61,6 @@
         <p class="account-msg" id="msg-grant"></p>
       </section>
 
-      <!-- ---------- 二、服务端权威名单（2.2） ---------- -->
       <section class="account-card" id="server-card" hidden>
         <h2 class="account-card-title">服务端名单（权威）</h2>
         <p class="account-lead">
@@ -100,15 +76,6 @@
         <p class="account-msg" id="msg-server"></p>
       </section>
 
-      <!-- ---------- 二之二、全部账号（名录，Issue #197） ----------
-           与上面那张「服务端名单」**不是一张表**：
-             · 上面那张是**台账**（`plan !== free`，只列发过东西的），它只回掩码；
-             · 这一张是**名录**（注册过的全部账号），它**回明文邮箱**——
-               因为只有明文才认得出是谁（掩码 a***@qq.com 认不出来）。
-           用户原话：「要求用户邮箱必须记录到数据库，用户名等也要。」
-                    「我还是要看到这些用户。」——这一块就是那件事。
-           ⚠️ 它**只读**：这里不给发放键（发放在上面那张卡上，按掩码发）。
-              把「看」与「发」混在一张表上，迟早有人点错行。 -->
       <section class="account-card" id="accounts-card" hidden>
         <h2 class="account-card-title">全部账号（名录）</h2>
         <p class="account-lead">
@@ -124,7 +91,6 @@
         <p class="account-msg" id="msg-accounts"></p>
       </section>
 
-      <!-- ---------- 三、本机发放名单（降级路径，仍然不是权威） ---------- -->
       <section class="account-card" id="list-card" hidden>
         <h2 class="account-card-title">本机发放名单</h2>
         <p class="account-lead">
@@ -144,7 +110,6 @@
         <p class="account-msg" id="msg-list"></p>
       </section>
 
-      <!-- ---------- 三、模拟身份（本期后台最有用的功能） ---------- -->
       <section class="account-card" id="sim-card" hidden>
         <h2 class="account-card-title">模拟身份</h2>
         <div class="sim-row">
@@ -156,7 +121,6 @@
         </p>
       </section>
 
-      <!-- ---------- 四、危险区 ---------- -->
       <section class="account-card danger-zone" id="danger-card" hidden>
         <h2 class="account-card-title danger-title">危险区</h2>
         <p class="account-lead">
@@ -185,8 +149,6 @@
     </footer>
   </div>
 
-  <!-- 导入名单的对话框：与「我的清单」导入同一套 .modal / .text-modal 组件，
-       不另起一套弹层。textarea 里粘 JSON，确定即导入。 -->
   <div class="modal text-modal" id="text-dialog" hidden>
     <div class="modal-mask" data-close="1"></div>
     <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="text-dialog-title">
@@ -205,9 +167,6 @@
 
   <div class="toast" id="toast" hidden></div>
 
-  <!-- 脚本顺序：auth-core → entitlement → auth-api → account-api → avatar → 本页 → chrome → pwa
-       account-api.js 必须排在 entitlement.js 之后（要先把权益层装上，它才写得进去）；
-       admin-page.js 排在 account-api.js 之后（发放走它，本页不自己 fetch）。 -->
   <script src="/js/auth-core.js"></script>
   <script src="/js/entitlement.js"></script>
   <script src="/js/auth-api.js"></script>

@@ -1,28 +1,3 @@
-/**
- * 头像测试（Issue #163 · 2026-09-19 用户裁决）
- * ==========================================================================
- * 用户原话：
- *
- *   「头像印记设置和传统用户头像流程不符，让人困惑，直接删除这个功能，
- *     四个颜色背景选择全部删除。直接用用户名的第一个字母或者汉字显示在头像里。
- *     允许用户上传图片作为头像，在上传前进行本地压缩，支持用户进行方形裁切，
- *     放大缩小裁切，然后再上传裁切后的图片作为头像到 supabase 的文件或者图像存储。」
- *
- * 于是这里守的是七件事：
- *   1. **那套自造的流程真的没了**：固定字集、固定四色、`.seal-*` 全部不在代码里
- *   2. **首字回落**：昵称的第一个字母 / 汉字（英文大写），昵称为空才回落到默认「诗」
- *   3. **地址是白名单**：只认 https / /api/avatar/ / data:image（导入的备份）；
- *      `javascript:` 与任意 `http:` 一律拒收（那是 XSS 口子，不是「图不显示」）
- *   4. **分域正确**：云端地址住账号域 `poem_profile_v1`，**本机那份图**住
- *      设备域 `poem_avatar_local_v1` —— 后者不上云、不进导出（几十 KB 的 base64）
- *   5. **不用邮箱首字母**：那等于把邮箱摘要的一半画在屏幕上
- *   6. **纯几何**：方形裁切的换算（cropRect / zoomRange / clampOffset）在
- *      Node 里对拍，不依赖 canvas
- *   7. **老数据零感知**：上一版的 `avatar:{char,ink}` 读进来不炸，
- *      只是回到「昵称首字」那一档
- *
- * 另有一节扫源码：页面不许自己拼一份头像 HTML、不许再把 .seal-* 长回来。
- */
 const fs = require('fs');
 const A = require('../js/avatar.js');
 const AI = require('../js/avatar-image.js');
@@ -31,7 +6,6 @@ let fails = 0;
 const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else console.log('✓ ' + m); };
 const eq = (a, b, m) => chk(a === b, m + '（实际 ' + JSON.stringify(a) + '）');
 
-/** 假 localStorage */
 function mem(init) {
   const m = Object.assign({}, init || {});
   return {
@@ -74,7 +48,7 @@ console.log('\n=== 二、上一版那套「固定字 + 固定四色」真的删�
   chk(typeof A.CHARS === 'undefined' && typeof A.INKS === 'undefined',
     '模块出口也不再有字集 / 印色');
   chk(!/seal/i.test(src), '源码里不再出现 seal 字样');
-  /* 页面与样式表里也不许长回来 */
+
   ['settings/general/index.html', 'css/style.css', 'js/settings.js'].forEach(function (f) {
     const t = fs.readFileSync(f, 'utf8');
     chk(!/seal-chars|seal-inks|seal-chip|seal-ink|btn-seal-reset/.test(t),
@@ -112,7 +86,6 @@ console.log('\n=== 四、写脏值当场回绝，写不进去不抛 ===');
   eq(A.display(b).source, 'image', '有图就是图片那一档');
   eq(A.display(b).img, 'https://x.supabase.co/a.jpg', '地址读得回来');
 
-  /* 清空 = 回到首字印 */
   A.resetAvatar(b);
   eq(A.display(b).hasImage, false, '重置之后回到首字印');
   eq(A.setAvatar(null, { img: 'https://x/a.jpg' }).ok, false, '没有存储时 ok:false，不抛');
@@ -143,20 +116,15 @@ console.log('\n=== 五、分域：地址进账号域，**本机那份图**进设
   chk(!/base64/.test(stored), '账号域里绝不存 base64（它要被同步与导出）');
   chk(/base64/.test(A.localImage(b)), '本机那份是 data URL（断网时照旧画得出来）');
 
-  /* display 的两档回落：本机那份**优先**于云端地址（刚裁完还没传上去时也是新图） */
   eq(A.display(b).src, 'data:image/jpeg;base64,AAAA', '本机那份优先（离线也画得出）');
   A.clearLocalImage(b);
   eq(A.display(b).src, 'https://x.supabase.co/a.jpg', '本机那份没了就回落到云端地址');
 
-  /* 上传那条路：**刚裁完、云端地址还没回来**（img 是空串）时，本机那份必须还在。
-     这一条是有牙的：把 setAvatar 写成「空串顺手清本机」时它会红 ——
-     而那个 bug 的症状是「用户裁完点了确定，图当场没了」，只在真机上看得出来。 */
   A.setLocalImage(b, 'data:image/jpeg;base64,CCCC');
   A.setAvatar(b, { img: '' });
   eq(A.localImage(b), 'data:image/jpeg;base64,CCCC', '写空地址**不清**本机那份（那是「上传还没回来」，不是「删除」）');
   eq(A.display(b).source, 'image', '于是刚裁完时界面立刻就是新图（不用等网络）');
 
-  /* 删头像（走 resetAvatar）要把本机那份也清掉，否则「删了还在显示」 */
   A.setAvatar(b, { img: 'https://x.supabase.co/a.jpg' });
   A.setLocalImage(b, 'data:image/jpeg;base64,BBBB');
   A.resetAvatar(b);
@@ -186,7 +154,6 @@ console.log('\n=== 六、渲染：图片走 <img>，首字走文字，两档都�
   chk(/--avatar-size:52px/.test(h3), '显式传 size 时才内联那一个值');
   chk(!/--avatar-size/.test(A.html(mem())), '不传 size 时由 CSS 兜底');
 
-  /* 画「指定一份档案」—— 名册里 N 个孩子各画各的 */
   const p1 = A.displayOf({ nickname: '小明', avatar: { img: '' } });
   const p2 = A.displayOf({ nickname: '小红', avatar: { img: 'https://x/a.jpg' } });
   eq(p1.char, '小', '指定档案取它自己的首字');
@@ -196,7 +163,7 @@ console.log('\n=== 六、渲染：图片走 <img>，首字走文字，两档都�
 
 console.log('\n=== 七、本地压缩 + 方形裁切的几何（纯函数，不依赖 canvas） ===');
 {
-  /* cropRect：正方形、取短边、放大 = 框变小 */
+
   let r = AI.cropRect(4000, 3000, 1, 0.5, 0.5);
   eq(r.sw, 3000, '不放大时框取短边');
   eq(r.sh, 3000, '框是正方形');
@@ -215,12 +182,10 @@ console.log('\n=== 七、本地压缩 + 方形裁切的几何（纯函数，不�
   eq(r.sx, 1000, '中心点拉到右下角 → 框贴右下');
   eq(r.sy, 0, '纵向已经贴边（短边撑满）');
 
-  /* 竖图反过来 */
   r = AI.cropRect(3000, 4000, 1, 0.5, 0.5);
   eq(r.sw, 3000, '竖图仍取短边（宽）');
   eq(r.sy, 500, '竖图纵向居中');
 
-  /* 极小的原图 / 脏值都不许出 0 尺寸（drawImage 的 sw=0 是全黑） */
   r = AI.cropRect(1, 1, 1, 0.5, 0.5);
   chk(r.sw >= 1 && r.sh >= 1, '1×1 的图也画得出（不会 0 尺寸）');
   r = AI.cropRect(0, 0, 0, 0, 0);
@@ -228,7 +193,6 @@ console.log('\n=== 七、本地压缩 + 方形裁切的几何（纯函数，不�
   r = AI.cropRect(100, 100, 1e9, 0.5, 0.5);
   chk(r.sw >= 1, '放大到离谱也不出 0 尺寸');
 
-  /* zoomRange / clampZoom */
   const zr = AI.zoomRange(4000, 3000);
   eq(zr.min, 1, '缩放下限是 1（小于 1 就是「把图缩小、方框里露纸底」，不是裁切）');
   eq(zr.max, 3000 / 32, '上限按「框不小于 32 原图像素」推');
@@ -236,7 +200,6 @@ console.log('\n=== 七、本地压缩 + 方形裁切的几何（纯函数，不�
   eq(AI.clampZoom(4000, 3000, 1e9), zr.max, 'zoom 大于上限 → 夹到上限');
   eq(AI.clampZoom(4000, 3000, NaN), 1, 'NaN → 1（不抛）');
 
-  /* clampOffset：拖到边界时中心点也必须夹回去，否则下一次拖动会从对不上的地方接着走 */
   let o = AI.clampOffset(4000, 3000, 1, 0, 0);
   eq(o.ox, 0.375, '横向能拖的范围是 [0.375, 0.625]');
   eq(o.oy, 0.5, '纵向短边撑满 → 只能居中');
@@ -246,12 +209,10 @@ console.log('\n=== 七、本地压缩 + 方形裁切的几何（纯函数，不�
   o = AI.clampOffset(100, 100, 1, 0.5, 0.5);
   eq(o.ox, 0.5, '正方形图只能居中（没有可拖的余地）');
 
-  /* PNG / JPEG 的选择：按原图类型判，不猜 */
   chk(AI.wantsPng('image/png'), 'PNG 原图要存 PNG（透明不能被填成黑边）');
   chk(AI.wantsPng('image/webp'), 'WebP 原图同上');
   chk(!AI.wantsPng('image/jpeg'), 'JPEG 原图存 JPEG（照片存 PNG 会大 5~10 倍）');
 
-  /* 挑文件的三条拒绝各说各的话 */
   eq(AI.checkFile(null).code, 'E_NO_FILE', '没选文件');
   eq(AI.checkFile({ type: 'image/heic', size: 10 }).code, 'E_TYPE', '不支持的格式（按 MIME 判，不按扩展名）');
   eq(AI.checkFile({ type: 'image/jpeg', size: 99 * 1024 * 1024 }).code, 'E_TOO_BIG', '太大');
@@ -275,7 +236,7 @@ console.log('\n=== 八、老数据零感知：上一版的 char / ink 不会让�
   eq(A.display(mem({ poem_profile_v1: 'not-json' })).char, '诗', '档案不是 JSON → 回落默认');
   eq(A.display(mem({ poem_profile_v1: '[1,2]' })).char, '诗', '档案不是对象 → 回落默认');
   eq(A.display(null).char, '诗', '没有存储 → 默认印');
-  /* 昵称不是字符串时 `String(42)` = "42" —— 首字是 "4"，仍然画得出（不裂图） */
+
   const dirty = mem({ poem_profile_v1: JSON.stringify({ nickname: 42, avatar: { img: 42 } }) });
   eq(A.display(dirty).char, '4', '脏昵称也能画出首字（不裂图）');
   eq(A.display(dirty).hasImage, false, '脏图片地址一律当没有');
@@ -324,14 +285,7 @@ console.log('\n=== 十、每张加载了顶栏的页面都加载了 js/avatar.js
 
 console.log('\n=== 十之一、顶栏右端：没有头像，只有一颗裸箭头（Issue #209 第二轮）===');
 {
-  /* 用户 2026-09-17 原话：
-       「所有页面右上角的头像全部删除，这个位置现在有后退键代替，
-         另外，右上角后退键去除圆形边框，去除背景色」
 
-     于是这一节从「顶栏那一枚＝与 logo 同径的整圆」**翻面**成
-     「顶栏上一枚头像都没有」。翻面之后要守的反而更多，因为
-     「删干净」比「改对」难：留一条 `.top-user` 规则、留一枚 `--top-slot`、
-     留一行 `avatar-top` 的渲染调用，都会让下一个人以为那里还有一枚印。 */
   const css = fs.readFileSync('css/style.css', 'utf8').replace(/\/\*[\s\S]*?\*\//g, ' ');
   const chrome = fs.readFileSync('js/chrome.js', 'utf8').replace(/\/\*[\s\S]*?\*\//g, ' ')
     .replace(/^\s*\/\/.*$/gm, ' ');
@@ -351,7 +305,6 @@ console.log('\n=== 十之一、顶栏右端：没有头像，只有一颗裸箭�
   chk(!/size:\s*\d+/.test(chrome),
     'js/chrome.js 里没有任何写死的头像尺寸（顶栏不再画头像）');
 
-  /* 头像本体（印 / 图片两档）仍在：设置页、个人中心、子用户名册还要用 */
   const cssRule = (function (sel) {
     const flat = css.replace(/@media[^{]+\{/g, '{');
     let acc = '';

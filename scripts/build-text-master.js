@@ -1,53 +1,8 @@
-/**
- * 生成 data/text-master.js（正文存储主表）
- * ==========================================================================
- * 口径（Issue #69 收尾）：**同一篇作品的正文与译文在存储层只留一份**。
- *
- * 为什么还要一张「存储主表」（与 data/canonical-texts.js 什么关系）：
- *   · data/canonical-texts.js 是**显示层**的裁定 —— 各集子照旧各存一份正文，
- *     显示时才替成主条目那一份。它解决了「学生读到两种写法」，
- *     但没解决「同一篇正文在磁盘上存了五份」。
- *   · 这一份是**存储层**的主表 —— 同一篇作品的正文 / 译文只落一份，
- *     其余集子的条目退化成**只存归属**（`textRef` 指向主条目），
- *     正文由引擎按 `textRef` 取。两份表口径一致（都以课内条目为主条目），
- *     一起重跑。
- *
- * ## 谁进主表（终态：凡在册且带正文的条目，一律进）
- *     ① 「在两部及以上集子里重复出现」的作品 —— 自动收（与 data/works-map.js 同口径）；
- *     ② 其余**全部**单篇 —— 不再按部点名，全收。
- *
- *   ⚠️ FULL_BOOKS 是**历史产物**：那五部是「按部推进」时期逐个点名收归的
- *   （昭明文选 480 → 古文观止 167 → 宋词三百首 283 → 唐诗三百首 301 →
- *   小古文 100），五部收齐之后它已不再决定收谁 —— 现在由上面这段
- *   「全量扫描」决定，清单只保留为**范围声明**（当初收的是这五部）与
- *   测试对账的锚点。换句话说：**清单空着也照样全收**，
- *   日后新增一部集子不必回来改这里。
- *
- *   另一面是「谁不该进」：**在册却还带内联正文**的条目即为异常，
- *   页下列出的「内联正文残留」就是这件事的**亮红报告**（本脚本与
- *   test/canonical.test.js 各查一遍，谁也不能漏一份副本在磁盘上）。
- *
- * ## 主条目取谁的正文
- *   与 data/canonical-texts.js 完全一致：**课内条目优先**（教材口径），
- *   没有课内条目的纯课外篇目取它自己。
- *
- * ## 各集子怎么「退化成只存归属」
- *   本脚本只产出主表；条目的 `textRef` 与内联正文的剥离由
- *   `scripts/apply-text-master.js` 完成（分离成两步：先算表、再改语料，
- *   diff 看得清，也便于回滚）。
- *
- * 什么时候要重跑：
- *   · 某一部集子增补 / 订正了篇目（同篇关系变了）
- *   · data/works-index.js 的判重键（dedupKey）改了
- * 用法：node scripts/build-text-master.js
- */
 const fs = require('fs');
 const vm = require('vm');
 const path = require('path');
 const ROOT = path.join(__dirname, '..');
 
-// ⚠️ data/text-master.js 排最前：各集子条目只存归属（textRef），
-//    正文要按它取回 —— 判重（去标点比正文）没有正文就判不出任何一组。
 const LOAD = [
   'data/text-master.js',
   'data/poems-1.js', 'data/poems-2.js', 'data/poems-3.js', 'data/poems-4.js',
@@ -69,26 +24,8 @@ const byId = {};
 sandbox.SITE_INDEX.forEach(function (p) { byId[p.id] = p; });
 const WI = sandbox.WorksIndex;
 
-/* ---------------- 「按部推进」时期的清单（历史声明，不再决定收谁） ----------------
-   五部集子当初是一个 PR 收一部地收过来的，这份清单就是那五部的名单。
-   五部收齐之后「哪些部收、哪些部不收」这个问题已不存在 —— 现在**凡在册且带
-   正文的条目一律进主表**（见下面的全量扫描）。清单留着有三个用处：
-
-     · 范围声明：让人一眼看出「收归是从这五部开始的、现已收齐」；
-     · 测试锚点：test/canonical.test.js / test/dedup.test.js 拿它核
-       「主表里的单篇条目来自哪几部」；
-     · 排除集外条目：全量扫描只扫清单点名的部（`p.book` 在这个集合里）。
-
-   ⚠️ 也就是说：**往清单里加一部 = 把那一部纳入收归范围**，而不是「让它也进主表」——
-      全量扫描本来就主张「在册就该收」。清单为空时下面那段扫描不生效，
-      但主表仍会把判重表覆盖的作品收齐（那是第 ① 类，与清单无关）。 */
 const FULL_BOOKS = ['zhaoming', 'guwen', 'songci', 'tangshi', 'classic'];
 
-/* 已有的主表：改语料重跑时的**正文兜底**。
-   ⚠️ 各集子条目在「收归」之后已摘掉内联正文（只留 textRef），
-      若此时重跑本脚本而不带上旧主表，算出来的主表会是一片空文 ——
-      「主表是空的」这种错不会报错，只会让全站那一批篇目正文空白，
-      正是最难查的一种。所以：内联正文没了就取旧主表那一份。 */
 const prev = {};
 try {
   const prevSandbox = { window: {}, console };
@@ -97,13 +34,8 @@ try {
   vm.runInContext(fs.readFileSync(path.join(ROOT, 'data/text-master.js'), 'utf8'),
     prevSandbox, { filename: 'data/text-master.js' });
   (prevSandbox.TEXT_MASTER || []).forEach(function (m) { if (m && m.id) prev[m.id] = m; });
-} catch (e) { /* 首次生成：还没有旧表，正常 */ }
+} catch (e) {  }
 
-/**
- * 取这一条要收进主表的正文 / 译文。
- * 优先用条目内联的那一份；内联已被摘掉（只留 textRef）时，
- * 从旧主表里取 —— 取不到就返回空，由下面的断言拦下，不静默产出空文。
- */
 function textOfEntry(entry, masterId) {
   if (entry && (entry.text || entry.translation)) {
     return { text: entry.text || "", translation: entry.translation || "",
@@ -117,15 +49,8 @@ function textOfEntry(entry, masterId) {
   return { text: "", translation: "", translationSource: "" };
 }
 
-/** 正文是否逐字相同（只忽略空白与换行 —— 断行方式不属于文本差异） */
 const sig = function (t) { return String(t || '').replace(/\s+/g, ''); };
 
-/**
- * 一张主表：文本只落一份。
- * key 为**主条目的站点索引 id**（课内条目优先），也即 data/canonical-texts.js
- * 的 ofEntry 口径；value 是正文 / 译文，另记 `work` 与 `entries`
- * （这一份文本服务了哪些条目，供核对与测试）。
- */
 const master = [];
 WI.works.forEach(function (w) {
   if (w.entries.length < 2) return;
@@ -135,9 +60,9 @@ WI.works.forEach(function (w) {
   const t = textOfEntry(repEntry, rep);
   master.push({
     work: w.wid,
-    id: rep,                       // 主条目（课内优先）
+    id: rep,
     title: repEntry.title,
-    entries: w.entries.slice(),    // 收录这一篇的全部条目（含主条目自己）
+    entries: w.entries.slice(),
     text: t.text,
     translation: t.translation,
     translationSource: t.translationSource
@@ -145,13 +70,6 @@ WI.works.forEach(function (w) {
 });
 master.sort(function (a, b) { return a.id < b.id ? -1 : 1; });
 
-/* ---------------- 在册的单篇也进主表（清单制收口后的终态） ----------------
-   上面那一段只收「两部及以上重复出现」的作品（判重表里成组的）。
-   这一段把**清单点名的部里其余全部单篇**也收进主表 ——
-   它们的「作品」就是它自己（只有一条条目），主条目也取它自己。
-
-   已经收过的（跨集重复的那些条目）在 `seen` 里，跳过：
-   同一条目不得在主表里出现两次（否则 map()[textRef] 谁赢谁输没有定义）。 */
 const seen = {};
 master.forEach(function (m) { (m.entries || []).forEach(function (e) { seen[e] = true; }); });
 
@@ -159,14 +77,12 @@ const fullBooksReport = [];
 const FULL_BOOK_SET = {};
 FULL_BOOKS.forEach(function (b) { FULL_BOOK_SET[b] = true; });
 
-/* 按站点索引顺序过一遍 —— 顺序稳定，重跑 diff 才不会抖 */
 sandbox.SITE_INDEX.forEach(function (p) {
   if (!p || p.isBook || !p.id) return;
-  /* 只扫清单点名的部：集子之外还有课内 261 首与「自选」这类条目，
-     它们各有各的归属（课内本就在册，自选不是语料），不在这张表的范围内 */
+
   if (!FULL_BOOK_SET[p.book]) return;
   if (seen[p.id]) return;
-  if (!p.text && !p.translation) return;   // 空条目（待补）不进主表
+  if (!p.text && !p.translation) return;
   const t = textOfEntry(p, p.id);
   master.push({
     work: 'w-' + p.id,
@@ -184,21 +100,11 @@ sandbox.SITE_INDEX.forEach(function (p) {
 });
 master.sort(function (a, b) { return a.id < b.id ? -1 : 1; });
 
-/* ---------------- 终态断言：清单点名的部，一条都不许漏 ----------------
-   上面那段扫描只收清单点名的部；这里再按同一口径核一遍「该收的都收了」，
-   漏一条就是「那一篇的正文没进主表」（页面上的表现是正文空白或两份不一致）。
-
-   ⚠️ 口径要划清：**课内 261 首不在这条断言的范围内**。它们当中
-      只有「与集子重复」的那 60 条进主表（主条目就是课内那一条），
-      其余 201 首的正文本来就应该内联在 data/poems-1..12.js 里 ——
-      那是全站唯一一份，进主表反而是把同一份正文搬到别处。
-      主表是「同一篇存了多份」的解药，不是「全站正文都集中一处」，
-      所以这里只扫清单点名的五部。 */
 const notInMaster = [];
 sandbox.SITE_INDEX.forEach(function (p) {
   if (!p || p.isBook || !p.id) return;
-  if (!FULL_BOOK_SET[p.book]) return;      // 清单之外的部（含课内 261）不在此列
-  if (!p.text && !p.translation) return;   // 待补条目没有正文，不进主表是对的
+  if (!FULL_BOOK_SET[p.book]) return;
+  if (!p.text && !p.translation) return;
   if (seen[p.id]) return;
   notInMaster.push(p.id + '（' + (p.book || '?') + '）');
 });
@@ -209,13 +115,6 @@ if (notInMaster.length) {
   process.exit(1);
 }
 
-/* ---------------- 终态断言之二：内联正文残留（这就是「带内联正文就亮红」） ----------------
-   与上面互补的另一侧：语料里**带内联 text / translation 的条目**，
-   要么是主条目（它自己就是那一份正文，见 data/poems-1..12 与各集子的主条目），
-   要么就是**漏摘的副本** —— 一条正文在磁盘上存了两份。
-
-   这一步只看数据文件本身（不加载进去，免得 data/index.js 又把正文展开回来），
-   与 test/canonical.test.js 的那一段同一口径、同一「至少一格缩进」的切条目写法。 */
 const BOOK_FILES = [
   'data/poems-1.js', 'data/poems-2.js', 'data/poems-3.js', 'data/poems-4.js',
   'data/poems-5.js', 'data/poems-6.js', 'data/poems-7.js', 'data/poems-8.js',
@@ -226,8 +125,7 @@ const BOOK_FILES = [
 const inlineCopies = [];
 BOOK_FILES.forEach(function (f) {
   const src = fs.readFileSync(path.join(ROOT, f), 'utf8');
-  /* ⚠️ 切条目不能按「恰好两格缩进的 {」切：data/poems-guwen.js 里有一条
-     （《齐桓晋文之事》）起头是顶格的 `{` —— 缩进一律放宽成「至少一格」。 */
+
   src.split(/\n(?=\s*\{)/).forEach(function (blk) {
     const refM = blk.match(/textRef:\s*"([^"]+)"/);
     if (!refM) return;
@@ -245,31 +143,10 @@ if (inlineCopies.length) {
   process.exit(1);
 }
 
-/* 报告：各部这一轮各收了多少条（清单空着时全 0，属正常） */
 void fullBooksReport;
 
-/* ---------------- 近重复对：同篇但字有出入，**故意不合并** ----------------
-   判重键是「正文去标点后逐字相同」。可文献里常见的是一字之差的两种文本：
-
-     《将进酒》  课内「但愿长醉不愿醒」 vs 唐诗「但愿长醉不复醒」      一字
-     《岳阳楼记》古文观止「霪雨霏霏」   vs 课内「淫雨霏霏」（课本通行字） 一字
-     《天香》    宋词「剪春灯」         vs 宋词「翦春灯」（籀文正体）    一字
-     《北山移文》古文观止「比洁」       vs 昭明「比絜」（选本用本字）      一字
-     《宋玉对楚王问》古文观止「凤凰」   vs 昭明「凤皇」（《文选》作皇）    一字
-
-   这些**不是录入出错**，是两条并列的文本传统（选本原貌 vs 教材 / 通行字），
-   见 data/works-index.js 的裁定：「课内以教材文本为准，选集以选本原貌为准，
-   冲突时分成两条并列的作品，各背各的」。所以主表**不去合并它们** ——
-   合并就是把一种写法盖在另一种上，谁对谁错没人能裁。
-
-   那为什么还要在这张**存储**主表里列出这一份清单：因为它们正是「同一篇
-   却存了两份正文」的残余。哪些是真异文、哪些本就是两篇，必须逐条写下来、
-   由测试逐条守着 —— 否则日后有人看见「差不多的两篇」，顺手一合并，
-   又回到「学生读到两种《岳阳楼记》」的老问题上。
-
-   ⚠️ 这一节**只登记事实**，不产出文本、不参与 textRef 的落位。 */
 const NEAR_BY_KEY = {};
-/* 判重再走一步：把常见异体字**归一后**若逐字相同，那就是一篇的两个版本 */
+
 const VARIANT = [
   ["惟", "唯"], ["霪", "淫"], ["蘋", "苹"], ["翦", "剪"], ["皇", "凰"],
   ["懃", "勤"], ["絜", "洁"], ["岀", "出"], ["閒", "闲"], ["彊", "强"]
@@ -279,11 +156,7 @@ function loose(t) {
   VARIANT.forEach(function (p) { s = s.split(p[0]).join(p[1]); });
   return s;
 }
-/* 从**全站**扫描、而不是只扫作品表里的那 57 组：像《岳阳楼记》那样
-   「课内 + 古文观止」的一字之差，在判重表里根本没成组 —— 正因为没成组，
-   才要用归一后的写法把它们翻出来（扫作品表就恰好漏掉这一批）。
 
-   只算正文，不比对译文：译文各家各写，比对不上是常态、说明不了任何事。 */
 sandbox.SITE_INDEX.forEach(function (p) {
   if (!p || p.isBook || !p.text || !p.id) return;
   const k = loose(p.text);
@@ -294,7 +167,7 @@ sandbox.SITE_INDEX.forEach(function (p) {
 const nearPairs = [];
 Object.keys(NEAR_BY_KEY).forEach(function (k) {
   const ids = NEAR_BY_KEY[k];
-  /* 只剩一条的说明这一组已经严格同文（前面 master 里收过），不是异文对 */
+
   const loose2strict = {};
   ids.forEach(function (id) {
     const strict = sig(byId[id].text);
@@ -304,7 +177,7 @@ Object.keys(NEAR_BY_KEY).forEach(function (k) {
   if (variants.length < 2) return;
   nearPairs.push({
     entries: ids.slice(),
-    /* 只有正文逐字相同的那些才轮得到主表收归；字面有出入的归上面那一节守 */
+
     reason: variants.length === 1
       ? "正文在标点 / 断行上不同，字面相同"
       : "一字之差的两条文本传统（选本原貌 vs 教材 / 通行字），并列而不合并"
@@ -312,8 +185,6 @@ Object.keys(NEAR_BY_KEY).forEach(function (k) {
 });
 nearPairs.sort(function (a, b) { return a.entries[0] < b.entries[0] ? -1 : 1; });
 
-/* 断言：主表是「唯一一份正文」，算出空文就是致命的 —— 宁可中断也不产出空表。
-   （重跑顺序错（先摘后算）会让这里亮红，比全站正文空白之后再回查便宜得多。） */
 const empty = master.filter(function (m) { return !m.text; });
 if (empty.length) {
   console.error('✗ 有 ' + empty.length + ' 条主表条目的正文为空：' +
@@ -323,7 +194,6 @@ if (empty.length) {
   process.exit(1);
 }
 
-/* ---------------- 产出 ---------------- */
 const BT = '`';
 let out = '';
 out += '/* ==========================================================================\n';

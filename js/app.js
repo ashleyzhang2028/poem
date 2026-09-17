@@ -1,6 +1,3 @@
-/**
- * 背诵 App 主逻辑（课内古诗词 · 按所选算法安排复习）
- */
 (function () {
   "use strict";
 
@@ -17,71 +14,43 @@
     high: { name: "高中", grades: [10, 11, 12] }
   };
 
-  // 应用正式名称（固定，不随用户名变化）
   const APP_NAME = "跬步";
 
-  /* 字号六档：古诗词默认比小古文再小一号（19 → 17），长诗一屏能多读两行；
-     最小的 13px 是 Issue #55 追加的一档 —— 默认档不动，A－ 在最细处多点一次仍有效果 */
   const FONT_KEY = "poem_font_v1";
   const FONT_SIZES = [13, 15, 17, 19, 21, 23];
   const DEFAULT_FONT = 17;
 
-  /* 正文对齐两档：left / center，默认居中（与小古文详情页一致）
-     文章一律横排，右对齐没有使用场景，故不设。 */
   const ALIGN_KEY = "poem_align_v1";
   const ALIGNS = ["left", "center"];
   const DEFAULT_ALIGN = "center";
 
-  // 注音档位：off 关闭 ｜ rare 只标生字（默认）｜ all 全文注音
   const PINYIN_KEY = "poem_helper_pinyin_v1";
   const PINYIN_MODES = ["off", "rare", "all"];
-  const DEFAULT_PINYIN_MODE = "rare"; // 新版默认「只标生字」
+  const DEFAULT_PINYIN_MODE = "rare";
 
   let settings = Storage.getSettings();
 
-  /* 阅读辅助属**设备域**（Issue #132 阶段 0）：`Storage.getSettings()` 出来的
-     那份里已经不带它了，现读一次引擎写进本地快照 —— 少了这一句，启动读到的
-     `settings.helper` 是 undefined，`helperEnabled()` 判成「开着」，
-     于是在关掉了阅读辅助的机器上照样注音（而设置页显示的是「关闭」）。
-     引擎缺席时（老缓存 / 脚本顺序不对）保持原样，退到老键那一份镜像。 */
   function adoptHelperFromDevice() {
     if (!window.ProgressStore || typeof window.ProgressStore.helper !== "function") return;
-    try { settings.helper = window.ProgressStore.helper(); } catch (e) { /* 保持原样 */ }
+    try { settings.helper = window.ProgressStore.helper(); } catch (e) {  }
   }
   adoptHelperFromDevice();
 
   let todayPlan = [];
   let currentPoem = null;
   let todayKey = "";
-  /** 组合播放键当前读的是哪一段：「原文」/「译文」 */
+
   let speakingTarget = "原文";
 
-  /* ---------------- 阅读辅助：注音 / 朗读 ---------------- */
-  /**
-   * 「阅读辅助」是全局开关，开启与关闭有**可见差别**：
-   *   开启 —— 打开任意一首诗，正文自动逐字注音（可随时手动关掉）
-   *   关闭 —— 打开诗词是纯文本，需要时才手动点「标注拼音」
-   * 朗读按钮两种状态下都可用（它需要用户手势，本就不做自动播放）。
-   */
   function helperEnabled() {
     return settings.helper !== "off";
   }
 
-  /**
-   * 当前注音档位。
-   *
-   * 关键：总开关是「权威」。
-   *   关闭 —— 无论此前存过什么档位，一律返回 off，
-   *           否则会出现「阅读辅助 = 关闭」却仍然满屏拼音，开关形同失效；
-   *   开启 —— 用用户手动选过的档位，没选过就用出厂档位「只标生字」。
-   *
-   * 兼容旧版布尔开关：旧值 "1" ⇒ 只标生字（新版默认），"0" ⇒ 视为未选。
-   */
   function pinyinMode() {
-    // 总开关关闭 → 一律不注音（权威）
+
     if (!helperEnabled()) return "off";
     const v = localStorage.getItem(PINYIN_KEY);
-    // 手动选过的档位优先（「不注音」会同步把总开关关掉，不会走到这里）
+
     if (PINYIN_MODES.indexOf(v) > -1) return v;
     return DEFAULT_PINYIN_MODE;
   }
@@ -89,7 +58,7 @@
   function setPinyinMode(mode) {
     const m = PINYIN_MODES.indexOf(mode) > -1 ? mode : "off";
     localStorage.setItem(PINYIN_KEY, m);
-    // 两处状态必须一致：选「不注音」= 关掉阅读辅助；选「生字/全文」= 打开阅读辅助
+
     const want = m !== "off";
     if (helperEnabled() !== want) {
       settings.helper = want ? "on" : "off";
@@ -98,35 +67,25 @@
     }
   }
 
-  /** 是否处于注音状态（rare / all 都算开启） */
   function pinyinOn() {
     return pinyinMode() !== "off";
   }
 
-  /** 传给 Pinyin.annotateHtml 的模式："all" 或 "rare" */
   function pinyinRenderMode() {
     return pinyinMode() === "all" ? "all" : "rare";
   }
 
-  /**
-   * 切换「阅读辅助」全局开关后，让差别当场可见：
-   *   开启 —— 回到默认档位「只标生字」；关闭 —— 回到「不注音」。
-   * 手动选过的档位不跨开关保留，避免开关看起来没反应。
-   */
   function resetPinyinMode() {
     localStorage.setItem(PINYIN_KEY, helperEnabled() ? DEFAULT_PINYIN_MODE : "off");
     if (currentPoem) renderPoemText(currentPoem);
     syncPinyinBtn();
   }
 
-
-  /* ---------------- 工具 ---------------- */
   function todayKeyStr() {
     const d = new Date();
     return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate();
   }
 
-  /** 用户名：留空时用默认名称「Ashley」，顶栏与标题都按它显示 */
   const DEFAULT_USER = "Ashley";
 
   function userName() {
@@ -134,87 +93,48 @@
     return n || DEFAULT_USER;
   }
 
-  /**
-   * 改昵称（Issue #132 · 2026-09-15）。
-   *
-   * 昵称属**账号域**（跨设备一致，`docs/auth-design.md` §2.3.1）：
-   * 除老键 `poem_recite_settings_v1` 外，还要镜像到 `poem_profile_v1` ——
-   * 头像与昵称住同一份档案，这是「同一枚印、同一个名字」的前提。
-   * 镜像实现收在 `Avatar.saveNickname` 一处，各页不许各拼两处 setItem
-   * （拼两处必然有一天只改了一处，出现「首页新名字、设置页旧名字」的漂移）。
-   */
   function commitNickname(value) {
     const clean = String(value == null ? "" : value).trim().slice(0, 12);
     settings.username = clean;
     Storage.saveSettings(settings);
     const A = window.Avatar;
     if (A && typeof A.saveNickname === "function") {
-      try { A.saveNickname(window.localStorage, clean); } catch (e) { /* 隐私模式：老键已写 */ }
+      try { A.saveNickname(window.localStorage, clean); } catch (e) {  }
     }
   }
 
-  /**
-   * 页面主标题：应用正式名固定为「跬步」，用户名永远显示
-   * → 「跬步 · Ashley的背诵」（用户没填名字时用默认名，不留一段空白）
-   *
-   * 措辞：「XX的古诗词」→「XX的背诵」。这一页管的是
-   * 「按记忆算法安排复习、今天背这一首」这件事，名字上就该说清 ——
-   * 「古诗词」是体裁（站上还有小古文、唐诗、宋词、古文观止），
-   * 「背诵」才是这一页在干的事。
-   */
   function appTitle() {
     return APP_NAME + " · " + userName() + "的背诵";
   }
 
-  /**
-   * 把应用名同步到页面标题、顶栏「跬步 · XX的背诵」、iOS 桌面名与 PWA 清单。
-   *
-   * 顶栏第一行是「跬步 · 当前页名」：首页写「XX的背诵」，
-   * 其余页面由各页自己给页名（见 js/chrome.js 的 data-page）。
-   * 用户名留空时用默认名 Ashley，不留空档。
-   */
   function applyAppName() {
     const title = appTitle();
-    // <title>：「XX的背诵 · 跬步」—— 应用名在后，与其余各页同一口径。
-    // 曾写「跬步 · XX的古诗词 · 古诗词背诵」，同一句话里出现两次「背诵」、
-    // 应用名还前后各一份，读起来像三条不同的信息。
+
     document.title = title + " · " + APP_NAME;
     const h1 = $("#brand-name");
     if (h1) h1.textContent = APP_NAME;
-    // 第一行页面名：首页是「XX的古诗词」，与「跬步」同字体、同一行
+
     syncBrandPage();
-    // 顶栏第二行：首页写「按 XX 复习」，XX 随用户选的复习算法变
+
     applyAlgoSub();
 
     $$('meta[name="apple-mobile-web-app-title"]').forEach(function (m) {
       m.setAttribute("content", title);
     });
 
-    // 安装后的应用名（安卓 / iOS 桌面）与页面标题同源：清单里那份也改成同一个名字。
-    //
-    // 这里只把「叫什么」交给 js/manifest-loader.js，不自己判断清单读没读完 ——
-    // 换 href 的时机由它一处决定（清单读盘完成才换），因此不受脚本加载快慢影响。
-    // 原先这段代码就在本函数里读 window.__manifest，读到才换：
-    // 于是「清单 XHR」与「chrome:ready」谁先到，决定了 href 是静态文件还是 Blob，
-    // 同一页面在不同机器上会落到两种状态（CI 与本地不一致）。
     if (window.ManifestSync && typeof window.ManifestSync.apply === "function") {
       window.ManifestSync.apply(title);
     }
 
   }
 
-  /**
-   * 顶栏第一行的页面名：首页写「XX的背诵」，排在「跬步」右侧。
-   * js/chrome.js 渲染完顶栏会派发 chrome:ready，收到后再写一次，
-   * 否则刷新页面时 app.js 先跑、DOM 里还没有 #brand-page-text，用户名就丢了。
-   */
   function syncBrandPage() {
     const el = $("#brand-page-text");
     const page = $("#brand-page");
     if (!el) return;
     el.textContent = userName() + "的背诵";
     if (page) page.hidden = false;
-    // 默认名 Ashley 与用户自己的名字在视觉上要做区分：默认名走淡墨
+
     el.classList.toggle("is-default", !String(settings.username || "").trim());
   }
 
@@ -236,40 +156,21 @@
     return window.getPoemsByGradeTerm(grade, term);
   }
 
-  /** 当前背诵范围配置（见 js/scheduler.js 的 SCOPES） */
   function scopeKey() {
     return Scheduler.SCOPES[settings.scope] ? settings.scope : Scheduler.DEFAULT_SCOPE;
   }
 
-  /**
-   * 当前复习调度算法（见 js/review-models.js）。
-   *
-   * 认不出来的一律退回出厂默认「遗忘曲线」—— 本机存了个野生值时，
-   * **界面上说的**与**引擎真正用的**必须是同一个（否则用户看到「按 FSRS 复习」，
-   * 排出来的却是固定间隔表）。
-   */
   function algoKey() {
     if (!window.ReviewModels) return "ebbinghaus";
     return window.ReviewModels.known(settings.algo) ? settings.algo : window.ReviewModels.DEFAULT_KEY;
   }
 
-  /** 当前算法的简称（用户看得懂的那种叫法），用于正文里的说法 */
   function algoShort() {
     return window.ReviewModels
       ? window.ReviewModels.describe(algoKey()).short
       : "遗忘曲线";
   }
 
-  /**
-   * 顶栏第二行 = 「按 X 复习」，跟着当前算法走。
-   *
-   * 需求原话：「背诵页面现在的副标题是『按遗忘曲线复习』，以后用户选择哪种，
-   * 就显示哪种，例如『按 SM-2 复习』，或者『按 FSRS 复习』」。
-   *
-   * ⚠️ 普通 DOM 赋值 + 在 chrome:ready 之后再写一次 —— 顶栏是 js/chrome.js
-   *    重建的，它读的是 `<body data-sub>`。所以顺手把 data-sub 也改掉：
-   *    这样即便顶栏晚一步重建（或用户切页签回来），也还是当前算法那句。
-   */
   function applyAlgoSub() {
     const sub = window.ReviewModels
       ? window.ReviewModels.subFor(algoKey())
@@ -283,7 +184,6 @@
     return Scheduler.scopeOf(scopeKey());
   }
 
-  /** 「全部诗词」面板当前展示的诗词（跟随背诵范围） */
   function currentScopePoems() {
     const scope = scopeInfo();
     if (scope.random) {
@@ -309,17 +209,6 @@
     }, 1800);
   }
 
-  /* ---------------- 今日任务缓存 ---------------- */
-  /**
-   * 自选集合的「版本号」：集合内容一变就跟着变。
-   *
-   * 为什么要把它编进缓存键：当天计划是缓存在 sessionStorage 里的
-   * （`poem_plan_...`），原先靠「改动时主动 invalidatePlan()」清缓存，
-   * 只在**监听得到事件的那些入口**有效 —— 集子页点了「加入背诵」后
-   * 直接刷新首页、或另开一个标签页，这份缓存还在，刚加的那一篇当天就不出现。
-   * 把「集合里有哪些篇、各在哪几个集合」压成一个短串编进键里，
-   * 缓存自然跟着失效，不再依赖「谁记得清缓存」。
-   */
   function collectionsKey() {
     if (!window.ReciteCollections) return "0";
     try {
@@ -343,26 +232,16 @@
     return (
       "poem_plan_" + todayKeyStr() + "_" + settings.grade + "_" + settings.term + "_" +
       scopeKey() + "_" + settings.dailyCount + "_" + collectionsKey() +
-      // 复习算法也要进键：换了算法，同一天重排出来的到期篇目会不一样，
-      // 缓存键不带它就会拿着旧算法的计划当新计划的
+
       "_algo-" + algoKey()
     );
   }
 
-  /**
-   * 自选集合交给调度器的篇目（js/collections.js）。
-   *
-   * 只存引用、不存正文，正文从站点索引取；站点索引在这里一定齐备
-   * （首页加载了六部数据，见 index.html 的 script 顺序）。
-   * 与课内同篇的会并到课内那一份进度上（poemIdFor → WorksIndex.repOf），
-   * 所以「在唐诗页把《静夜思》加入背诵」不会让它与课内那一条各背一遍。
-   */
   function extraPoems() {
     if (!window.ReciteCollections) return [];
     return window.ReciteCollections.scheduleItems(window.SITE_INDEX || []);
   }
 
-  /** 自选集合变化时重排今日任务（用户刚加一篇，今天就该排上） */
   function invalidateAndRefreshPlan() {
     invalidatePlan();
     todayPlan = buildTodayPlan();
@@ -371,7 +250,7 @@
   }
 
   function buildTodayPlan() {
-    // 同一天同一配置下计划保持稳定，避免刷新后跳变
+
     const key = planCacheKey();
     const cached = sessionStorage.getItem(key);
     if (cached) {
@@ -381,7 +260,7 @@
         window.POEMS_ALL.forEach(function (p) {
           map[p.id] = p;
         });
-        // 自选篇目不在 POEMS_ALL 里，回填时也要认它们
+
         extraPoems().forEach(function (p) {
           map[p.id] = p;
         });
@@ -394,7 +273,7 @@
           });
         if (restored.length === ids.length) return restored;
       } catch (e) {
-        /* ignore */
+
       }
     }
 
@@ -429,7 +308,6 @@
       });
   }
 
-  /* ---------------- 渲染：年级选择 ---------------- */
   function renderGradeChips() {
     const stage = stageOf(settings.grade);
     const grades = STAGES[stage].grades;
@@ -475,7 +353,6 @@
     }
   }
 
-  /* ---------------- 渲染：今日列表 ---------------- */
   function renderToday() {
     const list = $("#today-list");
     list.innerHTML = "";
@@ -489,8 +366,7 @@
       const p = item.poem;
       const rec = getRecord(p.id);
       const done = !!(rec && rec.learned && Scheduler.isDue(rec) === false && rec.lastReviewAt && sameDay(rec.lastReviewAt, Date.now()));
-      // 自选集合的篇目不在教材里，没有年级学期 —— 出处改成它所在的集子名
-      // （「唐诗三百首 · 卷一 五言古诗」这种），不能让 gradeName(undefined) 露出来。
+
       const metaTail = p.custom
         ? esc((p.bookName || "自选") + (p.source && p.source !== p.bookName ? " · " + p.source : ""))
         : esc(gradeName(p.grade) + termName(p.term));
@@ -500,18 +376,14 @@
       el.dataset.id = p.id;
       el.innerHTML =
         '<div class="item-main">' +
-        // 序号圆挪进标题行、排在篇名前面（不再是独占一列的 30px 圆）：
-        // 标题行的起点就是圆的起点，圆形与字号同高，一屏能多读几行字（Issue #55 第三条）
+
         '<h3 class="item-title"><span class="item-num">' + (idx + 1) + "</span>" + esc(p.custom ? showTitle(p.title) : p.title) +
         '<span class="item-reason ' + (item.reason === "review" ? "review" : "") + '">' +
         (item.reason === "review" ? "复习 · 第" + (item.reviewRound || 1) + "轮"
           : item.reason === "extra" ? "巩固"
           : item.reason === "optional" ? "自选" : "新学") +
         "</span></h3>" +
-        // 「作者 · 朝代 · 出处」按**有哪栏排哪栏**拼（见下方 metaLine）——
-        // 自选集合里可能有《昭明文选》的篇目，而文选题署只给作者的字、
-        // 不留朝代（见 data/poems-zhaoming.js 文件头），
-        // 写死位置会渲染出以「·」开头的残句。
+
         '<div class="item-meta">' + metaLine([p.author, p.dynasty, metaTail]) + "</div>" +
         (rec && rec.learned
           ? '<div class="mbar"><i style="width:' + Scheduler.mastery(rec) + '%"></i></div>'
@@ -531,7 +403,6 @@
       list.appendChild(el);
     });
 
-    // 顶部进度
     const doneCount = todayPlan.filter(function (it) {
       const rec = getRecord(it.poem.id);
       return rec && rec.lastReviewAt && sameDay(rec.lastReviewAt, Date.now());
@@ -548,22 +419,6 @@
     syncTodayReadBtn();
   }
 
-  /**
-   * 列表项右侧的播放键图标（内联 SVG，跨设备一致）
-   * 播放中换成「暂停」两竖条：一眼就能看出点它可以停
-   *
-   * ▶ 是**空心描边三角**（Issue #55 后续）：只留轮廓、不填色，
-   * 描边色即外层圆键的 `color`（currentColor）—— 圆环与三角同色，
-   * 与「列表序号空心圆」「折叠箭头空心三角」同一套空心描边语言。
-   *
-   * 描边宽 1.5（Issue #55 本轮，原 2.4）：用户要求「所有播放键里面的三角形
-   * 边框宽度只允许 1px」。描边写在 24 的 viewBox 里、会跟着图标框一起缩放，
-   * 所以「屏幕上 1px」要看这一档的图标框：列表项圆键是 16px，
-   * 1px → stroke-width = 1 × 24 ÷ 16 = 1.5。全站各档的取值与换算过程
-   * 统一记在 css/classic.css 顶部那张表里，改这里前先看它。
-   * ⚠️ 改这里必须同步 js/classic.js、js/reader.js 与两个 index.html ——
-   * 全站播放键共用同一枚三角。
-   */
   function playGlyph() {
     return (
       '<span class="play-glyph" aria-hidden="true">' +
@@ -575,15 +430,6 @@
     );
   }
 
-  /**
-   * 列表项右侧的「向右」箭头（内联 SVG，与折叠箭头同一枚图标）
-   * 需求（Issue #55）：小古文列表的「›」、首页古诗词列表的「›」、
-   * 首页「全部诗词」的展开 / 收缩箭头，三处大小必须一致。
-   * 原先前两处是文本字符「›」（font-size 18px，字形只有约 9px 高），
-   * 第三处是 18×18 的 SVG 三角 —— 摆在一起一胖一瘦、一深一浅。
-   * 现在三处统一用同一枚 18×18 描边箭头：尺寸与笔画都来自同一份定义，
-   * 不会再随字体、字号或系统字体回退而变样。
-   */
   function arrowGlyph() {
     return (
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" ' +
@@ -606,19 +452,6 @@
     });
   }
 
-  /**
-   * 列表条目那一行「朝代 · 作者 · 出处」。
-   *
-   * ⚠️ 每一栏都可能为空 —— 不是「大概不会空」，是**确定会有空值**：
-   *    自选集合里能加进《昭明文选》的篇目，而《文选》的题署只给作者的字、
-   *    不留朝代（那朝代是后人按人名表推的，已按「补出来的信息一律留空」清掉，
-   *    见 data/poems-zhaoming.js 文件头）。早前这里把 `p.dynasty` 直接塞进模板，
-   *    空值会渲染成「 · 徐陵」这种以分隔符开头的残句。
-   *
-   * 规矩：**空值连同它那一枚分隔符一起不渲染**，最后把剩下的用「·」串起来。
-   * 传进来的值按原样转义 —— 有的栏本身就是拼好的 HTML 片段（如出处那一段），
-   * 转义与否由调用方决定，这里只做「排布」这一件事。
-   */
   function metaLine(parts) {
     const out = [];
     (parts || []).forEach(function (v) {
@@ -630,7 +463,6 @@
     return out.join("");
   }
 
-  /* ---------------- 渲染：全部诗词 ---------------- */
   function renderAll() {
     const scope = scopeInfo();
     const poems = currentScopePoems();
@@ -658,14 +490,11 @@
       el.className = "item";
       el.innerHTML =
         '<div class="item-main">' +
-        // 同上：序号圆在标题行内，排在篇名前面
+
         '<h3 class="item-title"><span class="item-num">' + (i + 1) + "</span>" + esc(p.title) + "</h3>" +
         '<div class="item-meta">' +
         metaLine([p.dynasty, p.author].concat(
-          // ⚠️ 年级 / 掌握度这两栏是**无条件**跟着的（各带一个前置「·」），
-          // 所以 metaLine 里那些「空值即不渲染分隔符」的规矩到第一栏之后就得让位 ——
-          // 这里把后面的尾巴拼成一段「整串」，再交给 metaLine 排在末尾：
-          // 朝代一空时只省掉它自己，不会把「· 二年级上」那一截也吞掉。
+
           [scope.random ? gradeName(p.grade) + termName(p.term) : "",
            rec && rec.learned ? Scheduler.levelName(rec.level, rec) : "未学过"]
             .filter(Boolean).join(" · "))) +
@@ -680,20 +509,6 @@
     });
   }
 
-  /**
-   * 篇名显示名：去掉语料内部用来区分同名词作的「其一 / 其二 / 其三」。
-   *
-   * 用户原话「去掉自选集合中其一其二这些你不清楚的」——那个编号是整理宋词时
-   * 按目录次序补的序号（同一作者同一词牌好几首，清单里没有首句可以分辨），
-   * 不是选本原名：「木兰花·其二」看不出是哪一首，反像漏了半句。
-   * 只改**显示**，集合里存的仍是完整 id（`tangshi-ts-1` / `-2` 分得清）。
-   *
-   * ⚠️ 这一份留在首页是**因为首页要用**，不是因为自选清单还在这儿：
-   *    今日任务里混着自选篇目（它们与课内 261 首一起排），
-   *    列表、弹层标题、朗读文案都要用显示名 —— 见下面四处 `p.custom ? showTitle(...)`。
-   *    自选清单本身的增删改查已经搬到设置整页（/settings/ 的「我的清单」），
-   *    那一份在 js/settings.js 里，与这里同口径。
-   */
   function showTitle(title) {
     if (window.ReciteCollections && window.ReciteCollections.displayTitle) {
       return window.ReciteCollections.displayTitle(title);
@@ -701,13 +516,6 @@
     return title;
   }
 
-  /**
-   * 自选篇目 → 详情弹层认的篇目对象。
-   *
-   * 详情弹层（openPoem）读 `p.grade` / `p.term` 显示年级学期，自选篇目没有；
-   * 补 `custom: true` 让那一格改显示集子名（见 openPoem）。
-   * 译文来源口径也一并带上，详情页底部的来源注脚才出得来。
-   */
   function customPoem(p, repId, entryId) {
     const src = (window.SITE_INDEX || []).filter(function (x) { return x.id === (entryId || repId); })[0];
     return Object.assign({}, p, {
@@ -718,20 +526,6 @@
     });
   }
 
-  /**
-   * 首页只加载课内 12 册（约 52KB），五部集子那 4.4MB 不加载，
-   * 自选篇目的正文只能靠加入时存的快照。
-   *
-   * 「加入背诵」那一刻存下的快照是**当时**的语料：集子里那一篇后来订正了
-   * （标题改了、正文改了、译文补上了），首页若一直不再打开那一页，
-   * 快照就一直是旧的 —— 显示的还是旧题名，或「暂未收录译文」。
-   * 集子页 / 搜索页会就地刷新快照，但**用户不再打开那一页**这条路走不到。
-   *
-   * 所以在首页启动时补一道刷新：
-   *   · 课内那几篇（首页索引里查得到）直接就地更新；
-   *   · 课外那几篇首页拿不到新语料，标成 `stale`，等下次进集子页时再刷新 ——
-   *     这一趟不派发 change 事件，免得与「集合变化 → 重排今日任务」打转。
-   */
   function backfillSnapshots() {
     if (!window.ReciteCollections) return;
     const C = window.ReciteCollections;
@@ -739,27 +533,6 @@
     if (C.markStale) C.markStale(window.SITE_INDEX || []);
   }
 
-  /* ---------------- 语料订正后的漂移自动刷新 ----------------
-     上一轮补的是「首页启动时刷一次快照 + 标 stale」：课内那几篇当场更新，
-     课外那几篇（首页不加载那几部集子）留一个标记，等下次进集子页 / 搜索页再刷。
-
-     这条路的缺口在于：**集子页 / 搜索页是另一个页面**，用户在首页停留的整个
-     会话里都不会经过它。于是「加了自选、语料后来订正过」这一篇，可能连着
-     好几天显示的还是旧题名或「暂未收录译文」—— 除非他恰好又打开那一页。
-
-     所以这里补一条**按需拉取**：首页启动时若发现还有 `stale` 标记的条目，
-     就把它所属那一部集子的**数据文件**取回来（那是一个普通 JS 文件，
-     与页面里 <script> 加载的是同一份），用它刷新快照。三条约束：
-
-       · **只拉真正需要的**：一部都没涉及就不发请求；
-       · **一次只拉一部**：`book → 数据文件 → 全局变量名` 的对应写死在
-         BOOK_SOURCES，拉回来的文件按全局名取值，不 eval 任何东西；
-       · **拉不到就算了**：离线、文件被改坏、网络不通都不影响用 ——
-         老快照照常显示，`stale` 标记留着，下次再试。
-     拉完只派发一次集合变化事件（走的是 refreshSnapshots 里那套），
-     今日任务与自选列表跟着重画一遍。
-     ------------------------------------------------------------------ */
-  /** 集子 id → 数据文件与它挂在 window 上的全局名（与各页面 <script> 一致） */
   const BOOK_SOURCES = {
     classic: { file: "data/poems-classic.js", global: "POEMS_CLASSIC" },
     tangshi: { file: "data/poems-tangshi.js", global: "POEMS_TANGSHI" },
@@ -768,10 +541,6 @@
     zhaoming: { file: "data/poems-zhaoming.js", global: "POEMS_ZHAOMING" }
   };
 
-  /**
-   * 还有哪些条目的快照是旧的、各自属于哪一部集子。
-   * @returns {Object} { bookId: [条目 id, ...] }
-   */
   function staleByBook() {
     const out = {};
     const C = window.ReciteCollections;
@@ -782,10 +551,9 @@
       (col.items || []).forEach(function (it) {
         if (!it || typeof it !== "object" || !it.stale || !it.id) return;
         const p = idx[it.id];
-        // 站点索引里查得到的（课内那几篇）由 refreshSnapshots 就地更新，
-        // 走不到这一支；真要走到也用不着拉文件。
+
         if (p) return;
-        // 快照里记着 book（哪一部集子），没有就按条目 id 前缀猜一次
+
         const book = (it.snap && it.snap.book) || guessBook(it.id);
         if (!book || !BOOK_SOURCES[book]) return;
         (out[book] = out[book] || []).push(it.id);
@@ -794,7 +562,6 @@
     return out;
   }
 
-  /** 条目 id 前缀 → 集子 id（快照里没记 book 时的兜底） */
   function guessBook(entryId) {
     const m = String(entryId).match(/^([a-z]+)-/);
     if (!m) return "";
@@ -802,14 +569,6 @@
     return BOOK_SOURCES[pre] ? pre : "";
   }
 
-  /**
-   * 按需拉回某一部集子的数据文件，刷新快照。返回拉了几篇（0 表示没成）。
-   *
-   * ⚠️ 手动 `document.createElement("script")` 而不是 fetch + eval：
-   *    与页面里那些 <script> 走**同一条路**（同一个 Service Worker 缓存、
-   *    同一套相对路径解析），不必自己处理「解析出来的文本怎么变成数据」，
-   *    也就不会出现「页面上是对的、这里解析错」的分叉。
-   */
   function pullBook(bookId) {
     const src = BOOK_SOURCES[bookId];
     if (!src) return Promise.resolve(0);
@@ -830,12 +589,10 @@
     });
   }
 
-  /** 拿刚加载进来的那一部数据，按站点索引的口径刷新快照 */
   function refreshFromGlobal(bookId, src) {
     const list = window[src.global];
     if (!Array.isArray(list) || !list.length) return 0;
-    // 复用站点索引那一套构造（同一份 buildSiteIndex 口径）：
-    // 直接调它比在这里重抄一遍字段映射可靠 —— 抄一遍就会与搜索页的口径分叉
+
     let idx = [];
     if (window.buildSiteIndex) {
       const extra = {};
@@ -848,16 +605,11 @@
     return window.ReciteCollections.refreshSnapshots(idx);
   }
 
-  /**
-   * 启动时跑一次：把还旧着的快照按集子拉回最新的语料刷新。
-   * 返回拉了几篇（0 = 没有需要拉的，或拉失败）。
-   */
   function refreshStaleSnapshots() {
     const need = staleByBook();
     const books = Object.keys(need);
     if (!books.length) return Promise.resolve(0);
-    // 一部一部来：首页日常只涉及一两部，逐个串行能少发请求，
-    // 也免得几部大集子（昭明 480 篇、几 MB）同时进来把首屏拖慢。
+
     return books.reduce(function (chain, book) {
       return chain.then(function (n) {
         return pullBook(book).then(function (k) {
@@ -868,27 +620,6 @@
     }, Promise.resolve(0));
   }
 
-  /* ---------------- 深链接：/?poem=<id> ----------------
-     「背诵进度总览」（/progress/）里那一份「全部到期篇目」的篇名是指回首页的
-     链接（`/?poem=<id>`）—— 日历回答「哪天忙」、清单回答「那天是哪些」，
-     点进去才是「就读这一篇」。
-
-     ⚠️ 这一节是 #119 断了的那一头：上一轮把「日历点得进清单」做通了，
-     清单里也挂了链接，但**全站没有一处读 `?poem=`** —— 链接指过来，
-     首页照常画「今日背诵」，用户点下去只觉得「没反应」（不报错、测试全过、
-     因为它验的只是链接形态）。所以这里把它接上。
-
-     口径三条：
-       · **只做「落地」不做「状态」**：读完 `?poem=` 就把地址栏那一截抹掉
-         （`replaceState`，不新增一条历史）。留在地址栏里的话，用户随手刷新
-         又弹一次、返回键也回不到「干净的首页」。
-       · **只认首页自己的篇目**：课内 261 首与自选集合里的篇目都能打开
-         （自选篇目走 quickPoem 的快照，与自选列表点开是同一套）；
-         查不到的 id 一律安静放过 —— 旧链接、手改错的 id 都不该弹同一个黄条。
-       · **沿用同一个详情弹层**：`openPoem()` 那一套（正文 / 译文 / 朗读 /
-         三个掌握度按钮）照旧，不在这一页另造一个阅读器。
-         `planItem` 传 null（它不在今日计划里，底部提示按「背诵后点按钮」走）。 */
-  /** 从 `?poem=` / `#poem=` 里取要打开的篇目 id（没有签则返回空串） */
   function deepLinkId() {
     var q = "";
     try {
@@ -898,7 +629,7 @@
     }
     var m = /(?:^|[?&])poem=([^&]+)/.exec(q);
     if (!m) {
-      // 兜底认一次 hash：有些分享渠道会把 ? 吃掉
+
       var h = "";
       try { h = (window.location && window.location.hash) || ""; } catch (e2) { h = ""; }
       m = /(?:^|[#&])poem=([^&]+)/.exec(h);
@@ -908,49 +639,35 @@
     try {
       id = decodeURIComponent(id.replace(/\+/g, " "));
     } catch (e3) {
-      /* 解不开就按原样认一次：宁可查不到，也不要让首页报错 */
+
     }
     return String(id || "").trim();
   }
 
-  /** 把地址栏里那一截 `?poem=` 抹掉，不新增历史记录（刷新不再弹、返回键照旧） */
   function clearDeepLink() {
     try {
       if (!window.history || !window.history.replaceState) return;
       var url = window.location.pathname + window.location.hash;
       window.history.replaceState(null, "", url);
     } catch (e) {
-      /* 某些内嵌 WebView 禁用 history：抹不掉也不影响打开那一篇 */
+
     }
   }
 
-  /**
-   * 首页的深链接落地：`/?poem=<id>` → 直接打开那一篇的详情弹层。
-   * 启动时调一次；`storage` 之类的事件不该重放它（同一次打开只落地一次）。
-   */
   function openDeepLink() {
     var id = deepLinkId();
     if (!id) return false;
-    // 地址栏先清干净 —— 无论下面找不找得到，这一截都不该留
+
     clearDeepLink();
 
     var poem = coursePoem(id) || optionalPoem(id);
     if (!poem || !poem.title) return false;
 
-    // 今日列表先画出来：弹层叠在一张画好的首页上，
-    // 关掉之后回到的是「今天背这 5 首」，而不是半张白纸。
     if (!todayPlan.length) buildTodayPlan();
     openPoem(poem, null);
     return true;
   }
 
-  /**
-   * 课内 261 首里按 id 取一篇。
-   *
-   * ⚠️ 不用 `poemForEntry()` —— 那个只查站点索引（SITE_INDEX），而首页
-   * 只加载课内 12 册；课内篇目在 POEMS_ALL 里一定有，绕开索引更稳，
-   * 也免得「索引里的 id 写法与 POEMS_ALL 不一致」时静默打不开。
-   */
   function coursePoem(id) {
     var all = window.POEMS_ALL || [];
     for (var i = 0; i < all.length; i += 1) {
@@ -959,14 +676,6 @@
     return null;
   }
 
-  /**
-   * 自选集合里按篇目 id 取一篇（课外的那些）。
-   *
-   * 走 `ReciteCollections.scheduleItems()` —— 与自选列表、今日任务排程
-   * 是**同一个出口**，正文 / 译文取不到索引里那份时自动回落到加入时的快照，
-   * 返回的对象也自带 `custom: true`（弹层那一格才改显示集子名）。
-   * 另起一个查询就会与列表那边分叉：列表点得开、深链接点不开。
-   */
   function optionalPoem(id) {
     if (!window.ReciteCollections || !window.ReciteCollections.scheduleItems) return null;
     var items = window.ReciteCollections.scheduleItems(window.SITE_INDEX || []);
@@ -976,28 +685,22 @@
     return null;
   }
 
-  /* ---------------- 弹层 ---------------- */
   function openPoem(p, planItem) {
     currentPoem = p;
     const rec = getRecord(p.id);
-    // 自选篇目的篇名去掉「其一 / 其二」（见 showTitle）——
-    // 课内那 261 首一个字不动：那里的「其一」是教材原名
+
     $("#m-title").textContent = p.custom ? showTitle(p.title) : p.title;
-    // 朝代可能为空：《昭明文选》的题署只给作者的字、不留朝代
-    // （那朝代是后人按人名表推的，已按「补出来的信息一律留空」清掉，见
-    //   data/poems-zhaoming.js 文件头）。空值不渲染这一枚标签 ——
-    // 否则会露出一对「〔〕」空括号，像是数据坏了。
+
     const dynEl = $("#m-dynasty");
     dynEl.textContent = p.dynasty ? "〔" + p.dynasty + "〕" : "";
     dynEl.hidden = !p.dynasty;
     $("#m-author").textContent = p.author;
-    // 自选篇目没有年级学期，这一格改显示它所在的集子；
-    // 否则会露出「undefined年级 undefined学期」。
+
     $("#m-grade").textContent = p.custom
       ? (p.bookName || "自选篇目")
       : gradeName(p.grade) + " " + termName(p.term);
     $("#m-trans-text").textContent = hasTranslation(p) ? p.translation : "（暂未收录译文）";
-    // 译文来源注脚：与译文正文同进同退，没标注就留空（.trans-src:empty 不占位）
+
     const srcEl = $("#m-trans-src");
     if (srcEl) {
       srcEl.textContent = hasTranslation(p) && window.translationSourceText
@@ -1038,7 +741,6 @@
     syncBottomGap();
   }
 
-  /** 弹层正文：按注音档位渲染。关闭时为纯文本，保证原有测试与排版不变 */
   function renderPoemText(p) {
     const box = $("#m-text");
     if (pinyinOn() && window.Pinyin) {
@@ -1049,8 +751,6 @@
       box.classList.remove("with-pinyin");
     }
   }
-
-  /* ---------------- 正文字号 / 对齐（与小古文详情页同一套） ---------------- */
 
   function fontIdx() {
     const v = Number(localStorage.getItem(FONT_KEY));
@@ -1076,7 +776,6 @@
     return ALIGNS.indexOf(v) > -1 ? v : DEFAULT_ALIGN;
   }
 
-  /** data-align 交给 CSS 决定 text-align；块本身的居中由 fit-content + margin auto 保证 */
   function applyAlign() {
     const box = $("#m-text");
     if (box) box.dataset.align = alignMode();
@@ -1098,7 +797,6 @@
     showToast(mode === "left" ? "正文左对齐" : "正文居中对齐");
   }
 
-  /* ---------------- 白话译文 ---------------- */
   function showTransBox(show) {
     const btn = $("#m-trans-toggle");
     const box = $("#m-trans");
@@ -1111,8 +809,7 @@
       const t = $("#m-trans-toggle-text");
       if (t) t.textContent = show ? "隐藏译文" : "显示译文";
     }
-    // 译文框一开一合，译文那颗播放键跟着出现 / 消失，
-    // 顺带把它的上一态清掉，避免收起再展开时残留「正在播放」
+
     if (!show) speakingTarget = speakingTarget === "译文" ? "原文" : speakingTarget;
     syncReadBtn();
   }
@@ -1121,7 +818,6 @@
     return !!(p && p.translation && String(p.translation).trim());
   }
 
-  /** 同步弹层的注音档位按钮（关闭 / 只标生字 / 全文注音） */
   function syncPinyinBtn() {
     const seg = $("#m-pinyin-seg");
     if (!seg) return;
@@ -1131,7 +827,7 @@
       b.classList.toggle("active", on);
       b.setAttribute("aria-pressed", on ? "true" : "false");
     });
-    // 兼容性：保留一个可读状态，供旧测试与无障碍读取
+
     seg.dataset.on = mode === "off" ? "0" : "1";
   }
 
@@ -1144,42 +840,28 @@
     );
   }
 
-  /* ---------------- 自动朗读（不看手机也能听） ---------------- */
-
   function speechOk() {
     return !!(window.Speech && window.Speech.supported());
   }
 
-  /**
-   * 播放能力的真实判据：浏览器支持 **且** 权益允许。
-   *
-   * 未登录（游客）不能用语音播放 —— 用户 2026-09-15 裁决。
-   * 判据只有 js/entitlement.js 一处，这里只读结果，不自己拼 plan。
-   * 所有「按能不能播」置灰按钮的地方都改用它，于是按钮状态与
-   * js/speech.js 内部那道门**同源**，不会出现「按钮亮着但点了没声音」。
-   */
   function speechReady() {
     if (!speechOk()) return false;
     return !!(window.Speech.allowed && window.Speech.allowed().ok);
   }
 
-  /** 不能播放时该说的话（登录后可用 / 浏览器不支持，两种分开说） */
   function speechHint() {
     if (!speechOk()) return "当前浏览器不支持语音朗读";
     const a = window.Speech.allowed ? window.Speech.allowed() : { ok: true, hint: "" };
-    /* 兜底不再写「登录可用语音朗读」那半句理由（Issue #163）：
-       真实理由由权益层的 denyReason() 出 —— 它给的就是「登录可用」三个字。 */
+
     return a.hint || "登录可用";
   }
 
-  /** 一首诗的朗读文本：标题 + 朝代 + 作者 + 正文 */
   function speechText(p) {
-    // 自选篇目读显示名：念出「木兰花其二」会让人以为漏了半句（见 showTitle）
+
     const head = [(p.custom ? showTitle(p.title) : p.title), p.dynasty, p.author].filter(Boolean).join("，");
     return head + "。" + p.text;
   }
 
-  /** 朗读当天全部：依次读标题、朝代、作者与正文 */
   function readTodayAll() {
     if (!speechReady()) {
       showToast(speechHint());
@@ -1187,7 +869,6 @@
     }
     if (!todayPlan.length) return;
 
-    // 从控制条 / 弹层停止朗读时，也要把「正在朗诵」的高亮与按钮状态复位
     if (window.ReaderPlayer && window.ReaderPlayer.onStop) {
       window.ReaderPlayer.onStop(function () {
         clearHighlight();
@@ -1221,7 +902,6 @@
     setTimeout(syncTodayReadBtn, 80);
   }
 
-  /** 朗读单首：再点一次停止 */
   function readOne(p, btn) {
     if (!speechReady()) {
       showToast(speechHint());
@@ -1247,8 +927,7 @@
     if (!btn) return;
     const ok = speechReady();
     btn.disabled = !ok;
-    // 「今日 5 首」不再显示，播放栏会直接报出当前这一首，
-    // 所以这里只区分「是否有队列在跑」，用来切换圆形播放键的 ▶ / ⏸
+
     const on = ok && !!(window.ReaderPlayer && window.ReaderPlayer.isRunning && window.ReaderPlayer.isRunning());
     btn.dataset.on = on ? "1" : "0";
     btn.title = ok ? "依次朗读今天要背的每一首" : speechHint();
@@ -1257,14 +936,12 @@
     if (text) text.textContent = on ? "播放中" : "播放";
   }
 
-  /** 高亮 / 取消高亮列表里的朗诵条 */
   function highlightItem(id) {
     $$("#today-list .item").forEach(function (el) {
       el.classList.toggle("reading", el.dataset.id === id);
     });
   }
 
-  /** 取消高亮：顺便把「标记已读后整行半透明」的 .done 类清理干净 */
   function clearHighlight() {
     $$("#today-list .item").forEach(function (el) { el.classList.remove("reading"); });
   }
@@ -1276,14 +953,6 @@
     });
   }
 
-  /**
-   * 同步两颗播放键（原文 / 译文）。
-   *
-   * 两颗键各自只占一个位置，靠 data-on 在同一处切换 ▶ / ⏸：
-   * 播放中显示暂停，停下回到播放，不会同时并排出现两个图标。
-   * 「译文」那颗跟着译文框走 —— 译文框收着的时候它根本不在页面上，
-   * 所以一篇诗里任何时候只看得到一个播放信号。
-   */
   function syncReadBtn() {
     const ok = speechReady();
     const playing = ok && !!window.Speech.speaking();
@@ -1307,15 +976,13 @@
       btn.dataset.on = on ? "1" : "0";
       btn.setAttribute("aria-pressed", on ? "true" : "false");
     });
-    // #m-read-text 是给读屏软件的固定文案（.sr-only），不随能力/播放态替换文字，
-    // 状态一律由 data-on 切换 ▶ / ⏸ 与 aria-pressed 表达
+
     const tLabel = $("#m-trans-read-text");
     if (tLabel) {
       tLabel.textContent = playing && speakingTarget === "译文" ? "停止朗读" : "朗读译文";
     }
   }
 
-  /** 原文键：朗读原文（标题 + 朝代 + 作者 + 正文） */
   function toggleRead() {
     if (!currentPoem) return;
     if (!speechReady()) {
@@ -1335,7 +1002,6 @@
     setTimeout(syncReadBtn, 300);
   }
 
-  /** 译文键：只读白话译文，不读原文；译文框没展开时顺手展开 */
   function toggleTransRead() {
     if (!currentPoem) return;
     if (!speechReady()) {
@@ -1365,35 +1031,21 @@
     $("#modal").hidden = true;
     document.body.style.overflow = "";
     currentPoem = null;
-    // 关闭弹层后重新量一次底部留白（播放栏可能刚结束）
+
     syncBottomGap();
   }
 
-  /* ---------------- 底部留白：不被底部导航栏遮挡 ---------------- */
-  /**
-   * 把「一条底部导航栏的高度」写进 --nav-h（CSS 变量），
-   * 所有「fixed 贴底」的元素（播放栏、iOS 引导条、吐司）都按它算避让距离，
-   * 页面主体则按它补底部留白 —— 于是：
-   *   · 有播放栏时，正文最后一行与 copyright / 法务链接不会被压住
-   *   · 没有播放栏时，留白回到 0，页脚贴底且不留空白条
-   * 数值由 js/pwa.js 的 syncBottomGap() 统一测量与同步。
-   */
   function syncBottomGap() {
     if (window.PWA && window.PWA.syncBottomGap) window.PWA.syncBottomGap();
   }
 
-  /* ---------------- 复习结果处理 ---------------- */
   function handleResult(result) {
     if (!currentPoem) return;
     const rec = Storage.get(currentPoem.id) || Scheduler.createRecord();
-    // 按当前选定的算法排下一次（见 js/review-models.js）：换模型之后新复习的
-    // 按新模型算，旧记录不做静默改写（换算发生在切模型那一刻，见 adopt()）
+
     const next = Scheduler.review(rec, result, algoKey());
     Storage.set(currentPoem.id, next);
 
-    /* 结果提示也说当前模型的话：原先写死「12 小时 / 30 分钟」两句其实各模型一致，
-       但「记住了！下次复习：X」里那个 X 是新模型算出来的日期 ——
-       提示文案统一从模型层取，免得这里再抄一份口径。 */
     showToast(window.ReviewModels
       ? window.ReviewModels.resultHint(algoKey(), result, next)
       : {
@@ -1402,7 +1054,6 @@
         bad: "没关系，30 分钟后再复习一次"
       }[result]);
 
-    // 更新该首在当前计划中的状态
     todayPlan = todayPlan.map(function (it) {
       if (it.poem.id === currentPoem.id) it.reviewRound = next.level + 1;
       return it;
@@ -1412,7 +1063,6 @@
     renderAll();
   }
 
-  /* ---------------- 刷新 ---------------- */
   function saveAndRefresh(rebuild) {
     Storage.saveSettings(settings);
     if (rebuild) invalidatePlan();
@@ -1426,10 +1076,8 @@
     renderToday();
   }
 
-  /* ---------------- 事件绑定 ---------------- */
   function bindEvents() {
-    // 学段 / 年级 / 学期 / 数量 / 范围 / 阅读辅助 / 小古文入口都住在设置整页
-    // （/settings/ + js/settings.js）；首页保留同款监听只为向后兼容，取不到就跳过
+
     $$("#seg-stage button").forEach(function (b) {
       b.addEventListener("click", function () {
         const stage = b.dataset.stage;
@@ -1446,7 +1094,6 @@
       });
     });
 
-    // 用户名输入：即时生效，失焦/回车时兜底保存
     const uInput = $("#input-username");
     if (uInput) {
       uInput.addEventListener("input", function () {
@@ -1510,7 +1157,7 @@
         settings.helper = b.dataset.helper === "on" ? "on" : "off";
         Storage.saveSettings(settings);
         renderGradeChips();
-        // 让开关立刻体现差别：重新渲染当前打开的诗
+
         resetPinyinMode();
         showToast(helperEnabled() ? "阅读辅助已开启：打开诗词自动注音" : "阅读辅助已关闭：打开诗词为纯文本");
       });
@@ -1610,19 +1257,14 @@
     });
   }
 
-  /**
-   * 供设置整页（/settings/）等外部页面调用：
-   * 设置写在 localStorage 里，同窗口内的其他脚本可以据此重新读一次并刷新界面
-   * （同一浏览器标签里做「改完设置立刻生效」用得到；跨页面跳转时本就是重新启动）
-   */
   window.PoemApp = {
     reloadSettings: function () {
       settings = Storage.getSettings();
-      /* 阅读辅助属设备域，别在这一步丢掉它 —— 见文件顶上 adoptHelperFromDevice */
+
       adoptHelperFromDevice();
       applyAppName();
       renderGradeChips();
-      // 阅读辅助开关变了要立刻体现：开启回「只标生字」，关闭回「不注音」
+
       resetPinyinMode();
       invalidatePlan();
       rebuildToday();
@@ -1631,13 +1273,12 @@
     }
   };
 
-  /* ---------------- 启动 ---------------- */
   function init() {
     if (!window.POEMS_ALL || !window.POEMS_ALL.length) {
       document.body.innerHTML = '<div class="empty" style="padding:60px 20px">诗词数据加载失败</div>';
       return;
     }
-    // 按日期自动重建计划
+
     todayKey = todayKeyStr();
     setInterval(function () {
       if (todayKeyStr() !== todayKey) {
@@ -1648,20 +1289,15 @@
     }, 60 * 1000);
 
     applyAppName();
-    // 顶栏由 js/chrome.js 渲染，渲染完成后要再同步一次第二行
+
     document.addEventListener("chrome:ready", function () {
       applyAppName();
     });
-    // 清单是异步读进来的：读完那一刻再同步一次应用名（见 js/manifest-loader.js）。
-    // 少了这一句，先跑到这里的页面就只同步了标题、没同步清单里的应用名 ——
-    // 而「先跑到」与否取决于网络快慢，正是上一版状态飘的根源。
+
     document.addEventListener("manifest:ready", function () {
       applyAppName();
     });
-    // 清理已删条目留下的孤儿背诵进度（课内 12 组自身重复去重后的旧键）：
-    // 这动的是用户的本地进度，所以口径写死（见 js/storage.js 的 pruneUnknown）、
-    // 且在**启动时只做一次** —— 每改一次设置、每排一次任务都扫一遍
-    // 既没有必要，也把「什么时候会动用户的进度」这件事变得说不清。
+
     var pruned = Storage.pruneUnknown((window.POEMS_ALL || []).map(function (p) { return p.id; }));
     if (pruned.length) invalidatePlan();
     renderGradeChips();
@@ -1669,19 +1305,11 @@
     renderAll();
     bindEvents();
     backfillSnapshots();
-    // 深链接：`/?poem=<id>`（「背诵进度总览」里那份到期清单指回来的地址）——
-    // 落在**首屏画好之后**，用户先看到一张正常的首页，弹层再叠上去；
-    // 关掉弹层回到的就是这一张首页，而不是半张白纸。
+
     openDeepLink();
-    // 语料订正过的自选篇目：把还旧着的快照按需拉回来刷新（拉不到就留着 stale，
-    // 下次再试）。放在这里而不是 document.ready 之后立刻做 —— 首屏先画出来，
-    // 拉取在后台进行，失败也不影响用。
-    refreshStaleSnapshots().catch(function () { /* 离线 / 拉取失败：老快照照常显示 */ });
-    // 自选集合在别的页面增删之后回到首页：今日任务要立刻跟着变 ——
-    // 不补这一条，刚加的一篇要等刷新才排上。
-    // 增删的入口有三处：集子索引页 / 搜索页的书签，以及**设置整页的「我的清单」**
-    // （Issue #114 第二条把管理入口从首页搬到了那儿，改完回首页就得排上）。
-    // 三处派发的都是同一个 recite-collections-change 事件，这里一视同仁。
+
+    refreshStaleSnapshots().catch(function () {  });
+
     window.addEventListener("recite-collections-change", function () {
       invalidatePlan();
       rebuildToday();
@@ -1694,33 +1322,26 @@
     syncBottomGap();
     window.addEventListener("resize", syncBottomGap);
     window.addEventListener("orientationchange", syncBottomGap);
-    /* 跨设备同步（Issue #132 · 1B）：只在**关掉同步 / 没登录 / 服务端没配好**之外的
-       情况下才发请求，且失败一律静默 —— 背诵功能不受它影响（docs §4.6 第 8 条）。
-       刻意**不 await**：排程与首屏先画出来，同步在后台跑。 */
+
     startSync();
   }
 
-  /* ---------------- 跨设备同步（1B） ----------------
-     ① 未登录 / 开关关着 / 服务端没配好 → 一个请求都不发（status() 说了算）
-     ② 页面隐藏时再跑一轮：用户背完切走，是「该把这一轮推上去」的自然时刻
-     ③ 云端有新东西落盘 → 重排今日任务（账号域设置也可能跟着变了） */
   function startSync() {
     const S = window.SyncStore;
     if (!S) return;
     try {
       const first = S.firstSync();
-      if (first && first.then) first.then(afterSync, function () { /* 同步失败不打断背诵 */ });
-    } catch (e) { /* 同上：同步层的任何异常都不许冒到启动流程里 */ }
+      if (first && first.then) first.then(afterSync, function () {  });
+    } catch (e) {  }
 
     document.addEventListener("visibilitychange", function () {
       if (document.visibilityState !== "hidden") return;
-      try { S.now({ pull: false }); } catch (e) { /* 同上 */ }
+      try { S.now({ pull: false }); } catch (e) {  }
     });
   }
 
   function afterSync(r) {
-    // 只有真的从云端落了东西（或出现了需要用户裁决的冲突）才重绘 ——
-    // 每轮都 rebuildToday() 会把用户正在看的那一屏抖一下，而多数轮次是无事发生
+
     if (!r || r.skipped) return;
     if (r.pulled || (r.conflicts && r.conflicts)) {
       settings = Storage.getSettings();

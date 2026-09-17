@@ -1,70 +1,3 @@
-/**
- * 自选集合（给自己加背的篇目）
- * ==========================================================================
- * 「中小学古诗词」那一套（每日 5 首、按遗忘曲线复习）只认教材里的 261 首。
- * 孩子想多背一篇《木兰诗》、家长想让孩子加背《论语》里的一段，
- * 现在没有地方放。这一份文件就是那个地方。
- *
- * ## 与「唐诗三百首」「古文观止」那几部集子不是一回事
- *
- * 那几部是**既定的选本**：篇目、卷次、词牌都照着书排，一个字不能改。
- * 自选集合是**用户自己的清单**：想加就加、想删就删，随时改名，
- * 一部集子里挑两篇、另一部挑三篇，混在一个集合里也完全可以 ——
- * 所以集合里**不分卷次、不分词牌、不分任何组**，就是一串篇目。
- * （用户原话：「集合没有必要添加分组了」。）
- *
- * ## 存的是什么：引用 + 一份小快照
- *
- * 主体是**引用**：条目 id 用 data/site-index.js 的口径
- * （`tangshi-ts-12` / `songci-sc-4` / `classic-ck-3` …），那是全站唯一键。
- *
- * 但**光有引用不够**：首页要排每日任务、要显示「自选背诵」清单，
- * 而首页只加载课内 12 册的数据（不加载五部集子那 4.4MB）。
- * 若首页拿不到正文，今日任务里那一篇就是空壳。
- * 所以「加入背诵」时**顺手存一份最小快照**（题名 / 作者 / 朝代 / 出处 /
- * 集子名与页址 / 正文 / 译文 / 译文来源）—— 只存用户**主动加进来**的那些，
- * 几十条的量级，不是把整部集子抄一遍。
- * 哪个页面加载了完整索引（集子页 / 搜索页），就把这些快照**就地刷新一次**，
- * 让老快照跟上语料订正。
- *
- * 判重按**作品**（data/works-index.js 的 wid）：课内《静夜思》与唐诗《夜思》
- * 正文一致、是同一篇，只要在其中任一条上点过「加入背诵」，
- * 另一条也会显示「已在背诵」；每日任务里也只会出现一次。
- * 正文有出入的（教材本与选本原貌不同）本就是两篇作品，两条可以各自加入。
- *
- * ## 顺序 / 整组移出 / 导入导出（Issue #69 后续）
- *
- * 集合里的顺序 = 数组里的顺序：**用户自己排的，不由系统重排**。
- * 新建加入的排在末尾；「上移 / 下移」就地交换两项；「整组移出」把某一组
- * 一次挑出来（按同一部集子 / 同一个卷次文体分），不必逐篇点。
- *
- * 导入导出是**纯文本**：一整个集合就是一串条目 id，一行一条（`#` 开头是
- * 注释行，导出时写进集合名与篇名，方便家长之间对对清单）。
- * 文本只有几 KB，微信 / 短信里直接发得出去；也接受只贴 id 的裸清单。
- *
- * ## 显示的篇名不带「其一 / 其二」
- *
- * 宋词里同一作者同一词牌有好几首（晏殊三个《木兰花》、贺连两个《蝶恋花》），
- * 原始清单没有首句可以分辨，整理时按目录先后标了「其一 / 其二 / 其三」。
- * 用户的原话是「去掉自选集合中其一其二这些你不清楚的」——
- * 那个编号**只作语料内部的条目区分**，不是选本原名，不该端到用户面前。
- *
- * 所以自选集合这一块显示篇名时，一律用 displayTitle() 去掉这个尾巴。
- * 集合里存的仍是**完整的原 id**，`tangshi-ts-1` 与 `tangshi-ts-2` 分得清；
- * 去掉的只是「给人看的那一行字」。
- *
- * ## 存储
- *
- * localStorage · `poem_recite_collections_v1`
- *   {
- *     version: 1,
- *     collections: [
- *       { id: "c-...", name: "我要背的", createdAt: 1699.., items: ["tangshi-ts-12", ...] }
- *     ]
- *   }
- * 一个集合是一张清单；同一篇可以同时属于多个集合（各存一份引用），
- * 排每日任务时按 wid 去重，不会因此多背一遍。
- * ========================================================================== */
 (function () {
   "use strict";
 
@@ -72,27 +5,8 @@
   var NAME_MAX = 12;
   var DEFAULT_NAME = "我要背的";
 
-  /**
-   * 集合数量上限 —— **全站唯一一处**回答「这个用户能建几个集合」。
-   *
-   * 为什么在这里而不是在设置页：上限是**存储层的不变量**（用户手改存储、
-   * 或从别处调用 create 都绕不过），写在页面里就只能拦按钮、拦不住数据。
-   * 与 `Entitlement.can()` 同一条纪律 —— 界面的置灰不是边界。
-   *
-   * 三个数字（用户 2026-09-18 裁决，Issue #163）：
-   *   「自选清单 Free 10 个，pro 100 个，max 5000 个，直接在各列列出数字，
-   *     这个需要改功能代码或者数据」
-   * → Free 由 1 提到 **10**、Pro 由 20 提到 **100**、Max 由「不限」改成 **5000**。
-   *
-   * ⚠️ 这三个数是**从内核读的**（`CAPS["collections.many"].quotas`），不是在这里
-   *    再抄一份 —— 对比表上写的数字与实际能建几个必须是同一个数：两边各写一份，
-   *    改了这头忘了那头，用户就成了「表上说 100 个，建到 20 个就建不动」。
-   *    兜底（读不到内核 / 内核里没写 quotas）仍有一份字面量，
-   *    与 entitlement.js 那边**同值**，`test/collections.test.js` 有断言钉住。
-   */
   var FALLBACK = { free: 10, pro: 100, max: 5000 };
 
-  /** 从内核拿这一档的上限；拿不到就回落到与内核同值的兜底 */
   function limitFor(E, tier) {
     var n = null;
     if (E && typeof E.quotaFor === "function" && E.CAPS) {
@@ -104,25 +18,15 @@
 
   function limit() {
     var E = (typeof window !== "undefined" && window.Entitlement) || null;
-    /* ⚠️ 拿不到权益内核时**不设限**（返回 Infinity），不是按 free 算。
-       理由：这一层是**产品分层**，不是安全边界（用户手改存储就能改层级，
-       docs §2.4 已写明）；页面脚本顺序不对 / 老缓存时把内核读成 null，
-       若此时按 free 卡 10 个，症状就是「本来能建 100 个的人突然建不了第 11 个」——
-       一个由加载顺序引起的、用户无法自查的功能倒退。
-       「宁可不判，也不误拦」与 entitlement 里 `isOwner` 无存储时的兜底同一条口径。 */
+
     if (!E || !E.identity) return Infinity;
     var id = null;
     try { id = E.identity({ backing: window.localStorage }); } catch (e) { id = null; }
     if (!id) return Infinity;
-    /* ⚠️ 按 **tier** 判，不按 `can()` 判。
-       那条能力带 `login:true`，走 `can()` 时「登录过了但会话刚过期」
-       会被判成 free —— 症状是「昨天还能建 100 个，今天一刷新只剩 10 个」。
-       而这里只是产品分层的软限（真正的边界是服务端），按已发放的层级判更稳。
-       能力表仍是同一个来源：数字取自 CAPS 的 quotas，不另抄一份。 */
+
     return limitFor(E, id.tier);
   }
 
-  /** 还能建几个（Infinity 表示不限） */
   function remaining() {
     return Math.max(0, limit() - read().collections.length);
   }
@@ -149,29 +53,23 @@
 
   function write(data) {
     localStorage.setItem(KEY, JSON.stringify(data));
-    // 排程缓存（sessionStorage 里的当天计划）按「有没有加过篇目」失效：
-    // 加了新篇目当天就要出现在今日任务里，不能等明天。
+
     try {
       Object.keys(sessionStorage)
         .filter(function (k) { return k.indexOf("poem_plan_") === 0; })
         .forEach(function (k) { sessionStorage.removeItem(k); });
-    } catch (e) { /* 无 sessionStorage 的环境（部分隐私模式）忽略 */ }
+    } catch (e) {  }
     window.dispatchEvent(new CustomEvent("recite-collections-change", {
       detail: { collections: data.collections }
     }));
   }
 
-  /** 名称规范化：去首尾空白、限长；空名回落默认名 */
   function cleanName(name) {
     var s = String(name == null ? "" : name).trim().replace(/\s+/g, " ");
     if (!s) s = DEFAULT_NAME;
     return s.slice(0, NAME_MAX);
   }
 
-  /**
-   * 从站点索引里给这一条摘一份最小快照（首页排每日任务、显示自选清单要用）。
-   * 索引里没有（该页没加载这一部）就返回 null，入库存 null，日后再补。
-   */
   function snapshotOf(entryId, index) {
     var list = index || window.SITE_INDEX || [];
     var p = null;
@@ -188,41 +86,23 @@
     };
   }
 
-  /**
-   * 篇目的**显示名**：去掉语料内部用来区分同名词作的「其一 / 其二 / 其三」。
-   *
-   * 用户原话「去掉自选集合中其一其二这些你不清楚的」——
-   * 那个编号是整理宋词时按目录次序补的序号（同一作者同一词牌好几首，
-   * 原始清单里没有首句可以分辨），不是选本原名，对用户没有意义：
-   * 「木兰花·其二」看不出是哪一首，反而像漏了前半句。
-   *
-   * 只去尾巴：`感遇·其一` → `感遇`、`木兰花·其二` → `木兰花`；
-   * 句中出现的「其一」不动（`四时田园杂兴（其二）` 另有括号形态，一并去）。
-   *
-   * ⚠️ 目录里**不改名** —— 集合存的仍是完整 id（`tangshi-ts-1` / `-2` 仍分得清），
-   *    去编号只发生在这里，是「给人看的那一行字」。
-   */
   function displayTitle(title) {
     var t = String(title == null ? "" : title);
-    // 「·其一」「其一」「（其一）」「(其一)」四种写法在语料里都出现过
+
     t = t.replace(/[·・]?其[一二三四五六七八九十]\s*$/, "");
     t = t.replace(/[（(]\s*其[一二三四五六七八九十]\s*[）)]\s*$/, "");
     return t.replace(/[·・\s]+$/, "");
   }
 
-  /** 条目 id → 作品 id（没有主表时回落自身，判重退化成按条目） */
   function widOf(entryId) {
     if (window.WorksIndex && window.WorksIndex.widOf) return window.WorksIndex.widOf(entryId) || entryId;
     return entryId;
   }
 
-  /** 集合里的条目 → 其 id（兼容早期只存字符串的写法） */
   function itemId(it) { return typeof it === "string" ? it : (it && it.id) || ""; }
 
-  /** 条目 → 它的快照（没有则 null） */
   function itemSnap(it) { return (it && typeof it === "object" && it.snap) ? it.snap : null; }
 
-  /** 这一篇（作品）加在哪些集合里 */
   function collectionsOf(entryId) {
     var wid = widOf(entryId);
     return read().collections.filter(function (c) {
@@ -230,18 +110,10 @@
     });
   }
 
-  /** 这一篇（作品）是否已在某个自选集合里 */
   function has(entryId) {
     return collectionsOf(entryId).length > 0;
   }
 
-  /**
-   * 加入背诵。
-   * @param {string} entryId  站点条目 id
-   * @param {string} [collectionId] 目标集合；不给则放进第一个集合，
-   *   一个集合都没有就新建一个
-   * @returns {{collection: Object, added: boolean, created: boolean}}
-   */
   function add(entryId, collectionId) {
     if (!entryId) return null;
     var data = read();
@@ -269,7 +141,6 @@
     return { collection: col, added: !exists, created: created };
   }
 
-  /** 从某个集合移出这一篇（作品）；返回是否真的移掉了 */
   function remove(entryId, collectionId) {
     var data = read();
     var wid = widOf(entryId);
@@ -284,7 +155,6 @@
     return true;
   }
 
-  /** 从全部集合里移出这一篇（作品） */
   function removeEverywhere(entryId) {
     var data = read();
     var wid = widOf(entryId);
@@ -298,12 +168,6 @@
     return hit;
   }
 
-  /**
-   * 新建一个集合。**超上限时不建**，如实回原因（不抛、不静默截断）。
-   * @returns {Object} 成功回集合对象（带 `id`）；超限回
-   *   `{ error:"E_LIMIT", limit, count }` —— 用带错误码的对象而不是 null，
-   *   是为了让调用方能说清「为什么不给建」（`null` 说不清是上限还是别的原因）。
-   */
   function create(name) {
     var data = read();
     var lim = limit();
@@ -334,14 +198,6 @@
     return true;
   }
 
-  // ---------------- 顺序：上移 / 下移 / 移到指定位置 ----------------
-
-  /**
-   * 把集合里的第 i 项挪到第 j 项的位置（其余顺次让位）。
-   *
-   * 只动这一条数组 —— 集合的顺序就是数组顺序，不另存一份「排序字段」，
-   * 免得日后两份顺序各说各话。越界时原样返回，调用方不必先自己夹一遍。
-   */
   function moveItem(collectionId, from, to) {
     var data = read();
     var col = data.collections.filter(function (c) { return c.id === collectionId; })[0];
@@ -356,29 +212,10 @@
     return true;
   }
 
-  /** 上移一位（已经在最前就不动） */
   function moveUp(collectionId, index) { return moveItem(collectionId, index, index - 1); }
 
-  /** 下移一位（已经在最后就不动） */
   function moveDown(collectionId, index) { return moveItem(collectionId, index, index + 1); }
 
-  // ---------------- 整组移出 ----------------
-
-  /**
-   * 把某个集合里「同一组」的篇目一次移出。
-   *
-   * 「组」= 这一篇所在的集子 + 卷次 / 词牌 / 文体（`book + "|" + group`），
-   * 与集子页上的分组是同一个口径。用户从唐诗里挑了几十篇，想整卷拿掉时，
-   * 不必逐篇点。
-   *
-   * `groupOf` 由调用方给（首页把站点索引的字段取出来），这一层不猜结构；
-   * 给不出组的（索引里查不到的旧快照）算作「未分组」，也能整组移出。
-   *
-   * @param {string} collectionId
-   * @param {string} group  组的键，见 groupKeyOf()
-   * @param {Function} groupOf 条目 id → 组键
-   * @returns {number} 实际移出的篇数
-   */
   function removeGroup(collectionId, group, groupOf) {
     var data = read();
     var col = data.collections.filter(function (c) { return c.id === collectionId; })[0];
@@ -393,14 +230,6 @@
     return removed;
   }
 
-  /**
-   * 组的键：集子 + 卷次 / 词牌 / 文体。
-   *
-   * 首页只加载课内 12 册，课外那些篇目查不到站点索引，只有一个最小快照
-   * （快照里记了 book / bookName，够认出是哪一部集子）。这时按「集子」成组，
-   * 卷次那一段拿不到 —— 用户在这儿看到的就是「唐诗三百首」这一组，
-   * 点「整组移出」移的是这一部，与列表上显示的分组一致（不多不少）。
-   */
   function groupKeyOf(entryId, groupOf) {
     if (typeof groupOf === "function") {
       var k = groupOf(entryId);
@@ -409,22 +238,6 @@
     return "未分组";
   }
 
-  // ---------------- 导入 / 导出 ----------------
-
-  /**
-   * 导出一个集合为纯文本。
-   *
-   * 一整个集合就是一串条目 id —— 导出时顺手写上集合名与篇名当注释，
-   * 家长之间互传时对方看得懂；导入时 `#` 行会被跳过。
-   *
-   *   # 跬步 · 自选集合：我要背的（12 篇）
-   *   # 导入方法：跬步首页 → 自选背诵 → 导入
-   *   # 唐诗三百首 卷一 五言古诗 感遇·其一
-   *   tangshi-ts-1
-   *
-   * @param {string} collectionId
-   * @param {Object} [labels] 条目 id → 一行说明（篇名 / 集子），可省
-   */
   function exportText(collectionId, labels) {
     var col = read().collections.filter(function (c) { return c.id === collectionId; })[0];
     if (!col) return "";
@@ -443,23 +256,8 @@
     return lines.join("\n") + "\n";
   }
 
-  /**
-   * 从纯文本导入，返回**新建**的集合。
-   *
-   * 宽松解析：`#` 开头的行、空行都跳过；每行取第一个字段（兼容
-   * 「id 空格 篇名」这种从别处抄来的写法）。认不出的行不算数，
-   * 导入完把「收了几条 / 丢了几条」一并返回，让界面如实告诉用户。
-   *
-   * 导入**总是新建一个集合**，不往已有集合里塞 —— 家长传来的清单
-   * 与自己的那几份混在一起，事后没人分得清哪条是谁的。
-   *
-   * @param {string} text
-   * @param {string} [name] 新集合名；空则用文件名之外的一个默认名
-   * @param {Array}  [index] 站点索引：有它才认得出哪些 id 真的存在
-   */
   function importText(text, name, index) {
-    /* 超上限时**不导入**：与 create 同一条不变量。用户手上一串清单导不进来，
-       要如实说清「是数量上限拦的」，不能悄悄丢一半。 */
+
     if (read().collections.length >= limit()) {
       return { collection: null, added: 0, dropped: 0,
                error: "E_LIMIT", limit: limit() };
@@ -476,12 +274,10 @@
     var dropped = 0;
     src.forEach(function (line) {
       var t = String(line).trim();
-      if (!t || t.charAt(0) === "#") return;      // 说明行 / 空行
+      if (!t || t.charAt(0) === "#") return;
       var id = t.split(/\s+/)[0];
       if (!id) return;
-      // 索引齐备时只收真实存在的条目：贴错一个 id 不该凭空多出一条
-      // 「没有正文的空壳」在今日任务里占位。索引不在（首页之外的页面）
-      // 只能照收 —— 那几页拿不到全站 id 清单。
+
       if (known && !known[id]) { dropped += 1; return; }
       if (seen[id]) return;
       seen[id] = true;
@@ -503,11 +299,6 @@
     return { collection: col, added: col.items.length, dropped: dropped };
   }
 
-  /**
-   * 全部自选篇目的**作品**去重清单：排每日任务用这个。
-   * 同一篇在多个集合里只算一次。
-   * @returns {Array<{wid, entryId}>} 代表条目取先出现的那一个
-   */
   function allEntries() {
     var data = read();
     var seen = {};
@@ -524,25 +315,13 @@
     return out;
   }
 
-  /** 自选篇目的总数（按作品去重） */
   function count() { return allEntries().length; }
 
-  /** 一篇作品的**排程代表条目 id**：与课内同篇就并到课内那一份进度上 */
   function poemIdFor(entryId) {
     if (window.WorksIndex && window.WorksIndex.repOf) return window.WorksIndex.repOf(entryId);
     return entryId;
   }
 
-  /**
-   * 交给遗忘曲线排程用的篇目对象。
-   *
-   * 一条 = 一篇作品（去重后的），`id` 是**排程代表条目 id**：
-   * 与课内同篇的并到课内那一份（老进度一条不丢），纯课外篇目用它自己。
-   * 正文等字段从站点索引取；站点索引里没有的（集子页没加载全站索引）就地跳过 ——
-   * 宁可这一篇今天不排，也不能拿一个没有正文的空壳去排。
-   *
-   * @param {Array} [index] 站点索引，缺省用 window.SITE_INDEX
-   */
   function scheduleItems(index) {
     var idx = index || window.SITE_INDEX || [];
     var byId = {};
@@ -554,18 +333,14 @@
       var repEntry = poemIdFor(it.entryId);
       var wid = widOf(it.entryId);
       if (seen[wid]) return;
-      // 正文以「代表条目」为准：与课内同篇时取课内文本（教材口径）。
-      // 索引里没有这一条时（首页只加载课内 12 册，不加载五部集子那 4.4MB）
-      // 回落到加入时存下的**快照** —— 有快照就排得上、显示得出，
-      // 免得「加入背诵」在首页变成一条空壳。
+
       var p = byId[repEntry] || byId[it.entryId];
       var snap = it.snapshot || {};
       if (!p && !snap.text) return;
       seen[wid] = true;
       out.push({
         id: repEntry,
-        // 排程代表条目与用户加入的那一条不是同一条时，记下原始条目：
-        // 列表里要显示「你加的这一条」，而不是替他换成课内那一条
+
         sourceEntryId: it.entryId,
         wid: wid,
         title: (p && p.title) || snap.title || "",
@@ -589,7 +364,7 @@
     KEY: KEY,
     DEFAULT_NAME: DEFAULT_NAME,
     NAME_MAX: NAME_MAX,
-    /* 与内核同值的兜底（`test/collections.test.js` 拿它对着 CAPS 的 quotas 判） */
+
     FREE_COLLECTIONS: FALLBACK.free,
     PRO_COLLECTIONS: FALLBACK.pro,
     MAX_COLLECTIONS: FALLBACK.max,
@@ -604,7 +379,7 @@
     remove: drop,
     add: add,
     removeItem: remove,
-    // 顺序（Issue #69 后续）：集合的顺序就是数组顺序，用户自己排
+
     moveItem: moveItem,
     moveUp: moveUp,
     moveDown: moveDown,
@@ -616,12 +391,9 @@
     has: has,
     allEntries: allEntries,
     snapshotOf: snapshotOf,
-    // 显示名去掉「其一 / 其二」（只改显示，不改 id）
+
     displayTitle: displayTitle,
-    /**
-     * 用当前页加载到的站点索引刷新所有快照（集子页 / 搜索页六部齐备时调用）。
-     * 语料订正过（比如某篇标题改了）之后，老快照能跟着更新。
-     */
+
     refreshSnapshots: function (index) {
       var list = index || window.SITE_INDEX || [];
       if (!list.length) return 0;
@@ -633,11 +405,10 @@
           if (wasStr) it = { id: it, snap: null };
           var fresh = snapshotOf(it.id, list);
           if (!fresh) return it;
-          // 拿到真语料了：顺手清掉「快照待刷新」的标记（见 markStale）
+
           var hadStale = !!it.stale;
           if (hadStale) delete it.stale;
-          // 只在内容真的变了时才写库 —— 否则每次进页面都写一次并派发事件，
-          // 会与「集合变化 → 重排今日任务」的事件打转。
+
           if (wasStr || hadStale || JSON.stringify(it.snap) !== JSON.stringify(fresh)) {
             it.snap = fresh;
             n += 1;
@@ -646,32 +417,17 @@
         });
       });
       if (n) write(data);
-      // 写库时 write() 已经派发过「集合内容变了」；这一条是**另一种**通知：
-      // 「快照刷新过了」。两者的处理不同 —— 内容变了要重排今日任务，
-      // 只刷了快照则不必（题目没换、篇目没增删，排期一个字都不用动），
-      // 但列表仍要重画，否则屏幕上还是旧题名（Issue #69 后续）。
+
       if (n) {
         try {
           window.dispatchEvent(new CustomEvent("recite-snapshots-refresh", {
             detail: { refreshed: n }
           }));
-        } catch (e) { /* 无 CustomEvent 的环境忽略 */ }
+        } catch (e) {  }
       }
       return n;
     },
-    /**
-     * 把「这一篇的快照还是旧的」标出来（首页启动时调用一次）。
-     *
-     * 首页只加载课内 12 册，五部集子那 4.4MB 不加载 —— 课外那些自选篇目
-     * 拿不到新语料，只能知道「我手里这份快照是哪一次存的」。
-     * 于是把 `stale` 记下来（只记状态，不改任何正文）：
-     *   · 课内那几条首页索引里查得到，refreshSnapshots 已经就地把它们刷新了，
-     *     不会走到这一支；
-     *   · 课外那几条标 `stale: true`，等下次进集子页 / 搜索页时由
-     *     refreshSnapshots 用真语料覆盖并清掉这个标记。
-     * 这一趟**不派发 change 事件**（标状态不算集合内容变化），
-     * 否则会与「集合变化 → 重排今日任务」那个监听打转。
-     */
+
     markStale: function (index) {
       var list = index || window.SITE_INDEX || [];
       var byId = {};
@@ -682,8 +438,7 @@
         c.items.forEach(function (it) {
           if (!it || typeof it !== "object" || !it.id || !it.snap) return;
           var fresh = byId[it.id];
-          // 首页索引里查得到（课内）→ 上面那一步已经刷过了，没标 stale 的必要；
-          // 查不到（课外）→ 这一份快照来路不明，标上等下次刷新
+
           var stale = !fresh;
           if (!!it.stale !== stale) {
             if (stale) it.stale = true; else delete it.stale;
@@ -692,9 +447,8 @@
         });
       });
       if (n) {
-        // 直接落库、不派发事件：stale 只是「快照待刷新」的标记，
-        // 不是集合内容变化，不需要重排今日任务
-        try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (e) { /* 隐私模式 */ }
+
+        try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (e) {  }
       }
       return n;
     },

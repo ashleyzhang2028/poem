@@ -1,16 +1,3 @@
-/**
- * 服务端配置：**只从环境变量读**，代码里不写任何密钥。
- *
- * 1A 期的口径（docs/architecture.md §4）：
- *   · 后端是 Vercel Serverless 函数，同一项目的 /api/* 下，同源、无 CORS
- *   · 发信通道写在同一个 transport 接口后面，换商不改业务代码
- *   · 数据库是 Supabase（service key **只在服务端**）
- *
- * ⚠️ 这个文件可以在 Node 里直接 require（见 test/api.test.js），因此：
- *   · 不 import 任何第三方包
- *   · 不碰 process.env 之外的东西
- *   · 启动时校验通过即可用，缺配置时**给出降级路径**（见 isConfigured）
- */
 "use strict";
 
 function env(name, fallback) {
@@ -27,137 +14,58 @@ function intEnv(name, fallback) {
 }
 
 var CONFIG = {
-  /* ---- 数据库 ---- */
-  // Supabase 项目 URL 与 service key。**service key 绝不进浏览器**。
+
   supabaseUrl: env("SUPABASE_URL"),
   supabaseServiceKey: env("SUPABASE_SERVICE_KEY"),
 
-  /* ---- 会话签名 ---- */
-  // 没有它就无法签名 Cookie，此时会话功能整体降级（见 session.js）
   sessionSecret: env("SESSION_SECRET"),
 
-  /* ---- 发信 ---- */
-  // 'sendgrid' | 'resend' | 'console'；console 只在无密钥时兜底（把码打到服务端日志）
   mailTransport: env("MAIL_TRANSPORT", null),
   sendgridKey: env("SENDGRID_API_KEY"),
   resendKey: env("RESEND_API_KEY"),
   mailFrom: env("MAIL_FROM", "noreply@mail.kuibu.app"),
   mailFromName: env("MAIL_FROM_NAME", "跬步"),
 
-  /* ---- 会话签名密钥（另一条路：给测试与自建部署用）---- */
-  // 与 SESSION_SECRET 同时存在时**以 SESSION_SECRET 为准**，见下方 hasSession()。
-  // ⚠️ 存在的理由：会话的签名密钥与「发码」用的 pepper 原先串在同一个变量上，
-  //    于是「把发信配起来」这件事天生带不上会话（README 里那条
-  //    「`npm run doctor` 会告诉你缺哪个」也就对不上）。分成两个变量之后，
-  //    「谁负责发信」与「谁负责签会话」可以各自配置、各自轮换。
   sessionKey: env("SESSION_KEY"),
 
-  /* ---- 短信通道（2B：只留口子，**默认关闭**）----
-     ⚠️ 这里没有「密钥」可配 —— 因为**还没有签短信商**。smsEnabled 默认 false，
-        打开它也需要同时实现 smsTransport（见 mail/index.js 的口子），
-        否则请求会以 E_CHANNEL_NOT_OPEN 被如实拒掉，而不是假装发了短信。 */
   smsEnabled: env("SMS_ENABLED", "0") === "1",
   smsTransport: env("SMS_TRANSPORT", null),
 
-  /* ---- 站点 ---- */
   siteUrl: env("SITE_URL", "https://kuibu.app"),
 
-  /* ---- 人机校验（Cloudflare Turnstile，Issue #197 后续）----
-     用户 2026-09-17：登录 / 注册 / 密码找回 / 密码 / 发送随机码等页面
-     都要加 Turnstile。
-
-     ⚠️ **两个变量，缺一不可**，而它们的语义是分开的：
-       · `TURNSTILE_SITE_KEY` —— **公开**的那一个，要进浏览器（渲染 widget）。
-         它不是密钥，写进页面是它的设计（与其它 `*_KEY` 不同）
-       · `TURNSTILE_SECRET_KEY` —— **保密**的那一个，只在服务端核 token 时用
-
-     ⚠️ 还有一个真正的开关 `TURNSTILE_ENABLED`，**默认 0（关）**。
-        理由与 `SMS_ENABLED` 逐字同源：**没配好密钥时打开它 = 谁也别想登录**。
-        唯一的例外是本地开发 / CI：那时给 `TURNSTILE_BYPASS=1`
-        （它**只在服务端读**，绝不随响应下发，也绝不该出现在生产环境）。
-
-     ⚠️ 判据**只有一处**：`turnstileReady(cfg)`（api/_lib/turnstile.js）。
-        在这里再写一遍 `enabled && key` 的形状，就会出现「接口 A 校验、
-        接口 B 不校验」而谁也不报错。 */
   turnstileEnabled: env("TURNSTILE_ENABLED", "0") === "1",
   turnstileSiteKey: env("TURNSTILE_SITE_KEY"),
   turnstileSecretKey: env("TURNSTILE_SECRET_KEY"),
-  /* ⚠️ 旁路：给测试与本地联调。它与 `ALLOW_CODE_ECHO` 是**两件事**，
-     刻意分开（冒烟是「回明文码」，与「要不要做人机校验」无关）。 */
-  turnstileBypass: env("TURNSTILE_BYPASS", "0") === "1",
-  /* ⚠️ `turnstileFetch` **不是环境变量**：它是测试注入用的口子
-     （`test/api.test.js` 往 CONFIG 上挂一个假 fetch，让「核 token」那次
-     HTTP 不出网）。生产环境这个字段是 `undefined`，`turnstile.verify()`
-     会去用全局的 `fetch`。**刻意不从 env 读它** —— 一个能配 fetch 实现的
-     环境变量等于「谁改得了环境变量谁就能把校验换掉」。 */
 
-  /* ---- 注册与口令（Issue #197：完整登录流程）----
-     ⚠️ 这几项**没有一项是开关**：注册 / 登录 / 忘记密码 / 重设口令
-        都是本流程的组成部分，开关一开一半就成了「某些用户走不通」。
-        唯一一个真正的开关是 ALLOW_CODE_ECHO（冒烟用），它不在这一段。 */
-  /* ⚠️ Issue #197（后续）：**邮箱没确认就不让登录**（用户 2026-09-16 裁决）。
-     这是本文件里**极少数真正的开关**之一，而且默认 **1（开着）**：
-     注册流程发了确认邮件，那封信就得有分量 —— 一个「点不点都一样」的
-     开关等于没做。
-     ⚠️ 为什么要有这个开关而不是写死：它是**针对发信商现状的应急闸门**。
-        没有配好发信商（`MAIL_TRANSPORT=console`）时，确认邮件根本送不到
-        真人的收件箱，此时开着这道闸就是「谁也别想用」。
-        所以口径是：**默认开；只在没配好发信商的实例上由运维显式关掉**，
-        并且在界面上如实说明「这台服务器现在没拦确认」。
-        （详见 docs/auth-design.md §4.4.9 与 README 的运维清单） */
+  turnstileBypass: env("TURNSTILE_BYPASS", "0") === "1",
+
   requireEmailVerified: env("REQUIRE_EMAIL_VERIFIED", "1") !== "0",
   passwordMin: intEnv("PASSWORD_MIN", 8),
   passwordMax: intEnv("PASSWORD_MAX", 72),
-  verifyTtlMs: intEnv("VERIFY_TTL_MS", 24 * 60 * 60 * 1000),     // 确认邮件 24 小时
-  resetTtlMs: intEnv("RESET_TTL_MS", 60 * 60 * 1000),            // 重设链接 1 小时
-  // 这两张的频控档：与发码同源的 [[窗口毫秒, 上限]] 形状，
-  // 让 limiter.check(cfg, bucket, key, t) 一套代码量到底（不另写一套判断）
+  verifyTtlMs: intEnv("VERIFY_TTL_MS", 24 * 60 * 60 * 1000),
+  resetTtlMs: intEnv("RESET_TTL_MS", 60 * 60 * 1000),
+
   rateVerify: [[3600000, 5], [86400000, 10]],
   rateReset: [[3600000, 5], [86400000, 10]],
   rateLogin: [[3600000, 20], [86400000, 60]],
 
-  /* ---- 数值：与文档定死的一致，改这里就要改文档 ---- */
-  codeLength: intEnv("CODE_LENGTH", 6),            // 6 位纯数字
-  codeTtlMs: intEnv("CODE_TTL_MS", 10 * 60 * 1000), // 10 分钟
-  codeMaxAttempts: intEnv("CODE_MAX_ATTEMPTS", 5),  // 单码失败上限
+  codeLength: intEnv("CODE_LENGTH", 6),
+  codeTtlMs: intEnv("CODE_TTL_MS", 10 * 60 * 1000),
+  codeMaxAttempts: intEnv("CODE_MAX_ATTEMPTS", 5),
   resendCooldownMs: intEnv("RESEND_COOLDOWN_MS", 60 * 1000),
-  // 短信重发冷却：docs §8 定的是 60 秒，与邮箱同值但**独立成键** ——
-  // 将来要单独收紧（比如 120 秒）不必动邮箱那条
+
   smsResendCooldownMs: intEnv("SMS_RESEND_COOLDOWN_MS", 60 * 1000),
   sessionDays: intEnv("SESSION_DAYS", 30),
   cookieName: env("COOKIE_NAME", "kbsid"),
 
-  /* ---- 发信重试（Issue #197 复审：用户问「收不到邮件时重试机制怎么设计」）----
-     `mailRetryMax` 是**重试次数**（不含第一次），默认 2 → 最多共 3 次尝试。
-     退避是指数 + 抖动：第 1 次失败后约 400ms，第 2 次约 1200ms。
-     `mailRetryBudgetMs` 是**这一次请求内**的总预算，默认 6 秒 ——
-     压在 Serverless 函数超时（Vercel 默认 10s）之前收手，
-     免得「为了重试把整个注册请求拖成 504」。
-     ⚠️ 它**不是**一个后台补发队列。Serverless 里没有常驻进程，
-        「过五分钟再试一次」需要一个真队列（Redis / 云任务），那是另一件事。
-        所以这一层的承诺只有一句：**这一次请求内尽力重试，且如实回报**。 */
   mailRetryMax: intEnv("MAIL_RETRY_MAX", 2),
   mailRetryBudgetMs: intEnv("MAIL_RETRY_BUDGET_MS", 6000),
 
-  /* ---- 邮箱确认闸（Issue #197 复审）----
-     用户 2026-09-16 裁决「不确认就不让登录」。默认为 1（拦）。
-     ⚠️ 允许关掉**只有一个理由**：发信商没配（MAIL_TRANSPORT=console）时，
-        确认邮件送不到真人的收件箱 —— 那种实例上开着这道闸等于谁也别想注册。
-        所以口径是：**默认拦；只有在 console 发信商的实例上**才由运维关掉，
-        且关掉时界面必须看得出来（服务端把它自报在 `channel.requireVerified` 里）。
-     ⚠️ 它不是「把确认邮件这件事变成可有可无」——那是**反过来的**。
-        它只是「发信真的通不了时，别把全部用户挡在门外」的应急口。 */
   requireEmailVerified: env("REQUIRE_EMAIL_VERIFIED", "1") !== "0",
 
-  /* ---- 连续猜错封禁（docs/auth-design.md §5.5）----
-     判据是**整轮失败**：发一枚码 → 一次都没对 → 才算一轮。
-     连续 `E_WRONG_ROUNDS_LIMIT` 轮 → 锁 24 小时。
-     ⚠️ 之所以按「轮」而不是按「次」：单枚码本身就能错 5 次，
-        按次计会把正常用户手抖三次锁一天（这条教训文档里写着）。 */
   wrongRoundsLimit: intEnv("WRONG_ROUNDS_LIMIT", 3),
   lockMs: intEnv("ACCOUNT_LOCK_MS", 24 * 3600 * 1000),
 
-  /* ---- 频控四层（docs §4.6 第 4 条：邮箱 / 设备 / 全局 / 单账号）---- */
   rate: {
     email: [[3600000, 5], [86400000, 10]],
     device: [[3600000, 10], [86400000, 30]],
@@ -165,147 +73,65 @@ var CONFIG = {
     global: [[3600000, 200], [86400000, 800]]
   },
 
-  /**
-   * 短信通道的频控档（docs/auth-design.md §8：「比邮箱**更严**」）。
-   *
-   * 为什么必须更严：一条短信是真金白银（0.04 元），而邮箱成本近似为零 ——
-   * 邮箱那套「一小时 5 封」放到短信上就是「一小时能烧 0.2 元／人」，
-   * 被刷一晚就是几百上千元（§8 明写「短信接口是黑产重点目标」）。
-   * 因此短信档对齐 §8 定下的三条：60 秒 1 次、日 5 次、月 15 次。
-   */
   rateSms: {
     phone: [[3600000, 2], [86400000, 5], [2592000000, 15]]
   },
 
-
-
-  /* ---- 头像存储（Supabase Storage，Issue #163 · 2026-09-19）----
-     同一个 Supabase 项目里另开一个 **public** bucket。三个口径：
-
-     · **bucket 名可配**，默认 `avatars`。写死一个名字的后果是
-       「控制台里叫别的名字」时接口全部失败，而报错是那句最难查的
-       `supabase 404: {"error":"Bucket not found"}`。
-     · **URL 由服务端拼**（`CONFIG.avatarBucketUrl`），不下发给客户端去拼：
-       桶名、项目地址、路径规则只有一处，换桶不用改前端。
-     · 图片是**公开可读**的（`/object/public/...`）—— 头像本来就要画在
-       每一页顶栏上，走签名 URL 会让每一页多一次请求、且离线时全是裂图。
-       路径里带 32 位随机 uid，不是用户名，猜不到别人那一条。 */
   avatarBucket: env("SUPABASE_AVATAR_BUCKET", "avatars"),
-  avatarMaxBytes: intEnv("AVATAR_MAX_BYTES", 1024 * 1024),      // 单张上限 1MB
+  avatarMaxBytes: intEnv("AVATAR_MAX_BYTES", 1024 * 1024),
   rateAvatar: [[3600000, 10], [86400000, 30]],
 
-  // 冒烟/自测模式：显式打开才允许把明文码回给调用方（**绝不在生产开**）
   allowCodeEcho: env("ALLOW_CODE_ECHO", "0") === "1"
 };
 
-/**
- * 人机校验（Turnstile）当前是否**真的**开着 —— **判据只有这一处**。
- *
- * 三个条件必须同时成立：开关打开 + 有 secret key + **没有**打开旁路。
- *
- * ⚠️ 读 `this`（与 `cfg.mail()` / `cfg.hasSession()` 同一条纪律）：
- *    测试里 `Object.assign({}, CONFIG, {...})` 这类覆盖必须生效 ——
- *    写成读模块级 CONFIG 的症状是「明明给了密钥却仍不校验」，且**不报任何错**。
- * ⚠️ 与 `api/_lib/turnstile.js` 的 `turnstileReady(cfg)` 是**同一个判据**，
- *    那边读 cfg 的字段、这边是 CONFIG 上的便捷入口；两处都只读这三个字段，
- *    不各自维护一份逻辑。
- */
 CONFIG.turnstileReady = function () {
   var c = (this && this.turnstileEnabled !== undefined) ? this : CONFIG;
   if (c.turnstileBypass === true) return false;
   return c.turnstileEnabled === true && String(c.turnstileSecretKey || "").length > 0;
 };
 
-/**
- * 头像是否可用：数据库配好了（要拿 service key 上传）。
- *
- * ⚠️ 与 `hasDb()` 一样读模块级 CONFIG 还是读 this 的问题见下方 hasSession 的注释 ——
- *    这里刻意调 `this.hasDb`，让 `Object.assign({}, CONFIG, {...})` 的覆盖生效。
- */
 CONFIG.hasAvatarStore = function () {
   return !!(this.hasDb ? this.hasDb() : CONFIG.hasDb());
 };
 
-/**
- * 某个头像的公开地址。**服务端这一份是全站唯一拼它的地方**。
- *
- * 路径规则：`<bucket>/<uid 前 2 位>/<uid>/avatar.jpg`
- *   · 一级两位前缀 —— 同一个桶里条目多了以后，平坦目录在控制台里翻不动
- *   · 文件名固定 `avatar.jpg` —— 改头像就是**覆盖同一个对象**，
- *     不需要「删旧的」（删旧的要再发一个请求，而它失败时用户头像不变、
- *     桶里却多一份垃圾）。图片是同一条 URL，浏览器缓存也在下一轮自然失效
- *     （前端拼一个 `?v=<时间戳>` 破缓存，见 js/account-api.js）。
- */
 CONFIG.avatarPath = function (uid) {
   var u = String(uid || "").replace(/[^A-Za-z0-9_-]/g, "");
   if (u.length < 2) return "";
   return u.slice(0, 2) + "/" + u + "/avatar.jpg";
 };
 
-/** 前缀（`https://xxx.supabase.co/storage/v1/object/public/`），末尾不带斜杠 */
 CONFIG.avatarBucketUrl = function () {
   var base = String(CONFIG.supabaseUrl || "").replace(/\/+$/, "");
   if (!base) return "";
   return base + "/storage/v1/object/public/" + String(CONFIG.avatarBucket || "avatars");
 };
 
-/** 某个 uid 的公开头像地址（配不全时回空串 —— 界面据此如实说「还不支持头像」） */
 CONFIG.avatarPublicUrl = function (uid) {
   var b = CONFIG.avatarBucketUrl();
   var p = CONFIG.avatarPath(uid);
   return (b && p) ? b + "/" + p : "";
 };
 
-/** 数据库是否配好（没配就整体走内存降级，见 store.js） */
 CONFIG.hasDb = function () {
   return !!(CONFIG.supabaseUrl && CONFIG.supabaseServiceKey);
 };
 
-/**
- * 会话签名密钥（**只有一处读**）：显式配的 SESSION_SECRET 优先，
- * 否则退到 SESSION_KEY。两条都没有就不签会话。
- *
- * ⚠️ 与 config.mail() 同一条纪律：必须读 **this**（调用它的那一个 cfg 对象），
- *    不能读模块级 CONFIG —— 否则测试里 `Object.assign({}, CONFIG, {...})`
- *    这类覆盖完全不生效，症状是「明明给了密钥却仍然落到默认」。
- */
 CONFIG.sessionKeyOf = function () {
   var c = (this && (this.sessionSecret !== undefined || this.sessionKey !== undefined)) ? this : CONFIG;
   var v = c.sessionSecret || c.sessionKey || "";
   return String(v);
 };
 
-/** 发信是否真的配好了（有密钥，且**不是** console 那条只写日志的通道） */
 CONFIG.hasMail = function () {
-  // ⚠️ 读 **this**，与 CONFIG.mail() 同一个理由：写成 CONFIG.mail() 时
-  //    `Object.assign({}, CONFIG, { resendKey })` 这类覆盖完全不生效
+
   var c = (this && this.mailTransport !== undefined) ? this : CONFIG;
   return c.mail() !== "console";
 };
 
-/** 会话是否可签名（没配就**不签发会话**，而不是签发一个假的） */
 CONFIG.hasSession = function () {
   return CONFIG.sessionKeyOf.call(this).length >= 16;
 };
 
-/**
- * 选中的发信通道：显式指定的优先，否则按「有哪个密钥用哪个」推。
- *
- * ⚠️ 这个「用哪个」的顺序（SendGrid 在前）是 **2026-09-16 之前** 的口径。
- *    那天用户在 Issue #159 报「SendGrid 现在已经限时收费了，所以我用的 Resend」——
- *    于是「哪个是主选」从**代码里的顺序**变成了**用户填的那个变量**：
- *    · 只填 RESEND_API_KEY（现在的推荐做法）→ 推断出 resend，无需 MAIL_TRANSPORT
- *    · 两个都填 → 推断仍是 sendgrid（顺序没改，改了会动到既有的断言）
- *      → 这时**必须显式写 MAIL_TRANSPORT=resend**，否则你以为在用 Resend，
- *        实际花的是 SendGrid 那笔钱 —— 而两边都不报错
- *    这条「不报错的错」现在由 `ops.check()` 的 notes 主动提示（见 ops.js）。
- *
- * ⚠️ 必须读 **this**（也就是调用它的那一个 cfg 对象），不能读模块级 CONFIG。
- *    写成 CONFIG.xxx 的后果很隐蔽：`Object.assign({}, CONFIG, { sendgridKey })`
- *    这类覆盖**完全不生效** —— 函数还是照着原来的 CONFIG 判，
- *    症状是「明明给了密钥却仍落到 console」，而且不报任何错。
- *    test/api.test.js 有一条「显式指定的通道优先」就是为这个写的。
- */
 CONFIG.mail = function () {
   var c = (this && this.mailTransport !== undefined) ? this : CONFIG;
   if (c.mailTransport) return c.mailTransport;

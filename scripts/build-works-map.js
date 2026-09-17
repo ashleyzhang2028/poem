@@ -1,28 +1,8 @@
-/**
- * 生成 data/works-map.js（同篇对照表）
- * ==========================================================================
- * 口径：**正文去标点后一致 = 同一篇作品**，只登记「在两部及以上集子里
- * 重复出现」的那些组。单条的作品不必登记 —— 条目 id 自己就是作品 id。
- *
- * 为什么是离线生成的静态表，而不是每页现算：
- *   现算要先备齐六部集子的全部数据（约 3MB）。集子索引页只加载自己那一部，
- *   它也要判重（「这篇是不是已经在课内背过了」），现算得到的是残表。
- *   这一份 8KB，任何页面都能引，判重口径全站一致。
- *
- * 什么时候要重跑：
- *   · 某一部集子增补 / 订正了篇目（正文变了，判重结果就变）
- *   · data/works-index.js 的判重键（dedupKey）改了
- * 跑完记得看 git diff：新多出来的组、消失的组，都该能从改动里解释清楚。
- *
- * 用法：node scripts/build-works-map.js
- */
 const fs = require('fs');
 const vm = require('vm');
 const path = require('path');
 const ROOT = path.join(__dirname, '..');
 
-// ⚠️ data/text-master.js 排最前：各集子条目只存归属（textRef），
-//    正文要按它取回 —— 判重（去标点比正文）没有正文就判不出任何一组。
 const LOAD = [
   'data/text-master.js',
   'data/poems-1.js', 'data/poems-2.js', 'data/poems-3.js', 'data/poems-4.js',
@@ -36,8 +16,7 @@ const LOAD = [
 const sandbox = { window: {}, console };
 sandbox.window = sandbox;
 vm.createContext(sandbox);
-// works-index 依赖 data/works-map.js（有则用、无则空）——
-// 生成器自己不必读它，直接现算全量即可
+
 LOAD.forEach(function (f) {
   vm.runInContext(fs.readFileSync(path.join(ROOT, f), 'utf8'), sandbox, { filename: f });
 });
@@ -50,7 +29,6 @@ const groups = WI.works
   });
 groups.sort(function (a, b) { return a.entries[0] < b.entries[0] ? -1 : 1; });
 
-/* 站点索引：近重复清单要用它的正文与条目 id（与判重同口径） */
 const byId = {};
 (sandbox.SITE_INDEX || []).forEach(function (p) { if (p && p.id) byId[p.id] = p; });
 
@@ -107,27 +85,6 @@ groups.forEach(function (g, i) {
 });
 out += '];\n';
 
-/* ---------------- 近重复对：像同一篇却**不合并**的那些 ----------------
-   判重键是「正文去标点后逐字相同」。可文献里常见的是一字之差的两种文本：
-
-     《将进酒》  课内「但愿长醉不愿醒」 vs 唐诗「但愿长醉不复醒」      一字
-     《岳阳楼记》古文观止「霪雨霏霏」   vs 课内「淫雨霏霏」              一字
-     《天香》    宋词「剪春灯」         vs 宋词「翦春灯」（籀文正体）    一字
-     《北山移文》古文观止「比洁」       vs 昭明「比絜」（选本用本字）      一字
-     《宋玉对楚王问》古文观止「凤凰」   vs 昭明「凤皇」（《文选》作皇）    一字
-     《黄鹤楼送孟浩然之广陵》教材「唯见」 vs 唐诗「惟见」                 一字
-
-   这些**不是录入出错**，是两条并列的文本传统（选本原貌 vs 教材 / 通行字），
-   按上面那条规则应当**分成两条并列的作品、各背各的**。
-
-   可它们却是最容易被「顺手合并」的一批：正文差不多、题名往往只差一点、
-   搜出来还并排站着。合并的后果不是报错，而是**学生背的那一份被悄悄换掉** ——
-   课本作「淫雨霏霏」，页面上却成了「霪雨霏霏」，正是最难发现的那种错。
-
-   所以这一份清单与上面的判重表放在同一处：上面写「哪些是一篇」，
-   这里写「哪些**看着像一篇、但不是**」，判重时两处一起看。
-
-   ⚠️ 只登记事实，不改任何一份正文；单条的作品不进这里（没有第二个版本）。 */
 const VARIANT = [
   ['惟', '唯'], ['霪', '淫'], ['蘋', '苹'], ['翦', '剪'], ['皇', '凰'],
   ['懃', '勤'], ['絜', '洁'], ['岀', '出'], ['閒', '闲'], ['彊', '强']
@@ -148,7 +105,7 @@ const nearPairs = [];
 Object.keys(NEAR).forEach(function (k) {
   const ids = NEAR[k];
   if (ids.length < 2) return;
-  /* 严格判重已经把它们认成一组的（只剩一种写法），说明是同一篇，归上面那张表管 */
+
   const strict = {};
   ids.forEach(function (id) {
     const t = String((byId[id] || {}).text || '').replace(/\s+/g, '');
@@ -161,7 +118,6 @@ Object.keys(NEAR).forEach(function (k) {
   });
 });
 nearPairs.sort(function (a, b) { return a.entries[0] < b.entries[0] ? -1 : 1; });
-
 
 out += '/* ==========================================================================\n';
 out += '   近重复对（看着像同一篇、**故意不合并**的那些）\n';

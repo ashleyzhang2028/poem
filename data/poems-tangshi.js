@@ -1,16 +1,3 @@
-/* ==========================================================================
-   唐诗三百首（301 首）
-   --------------------------------------------------------------------------
-   顺序与清代蘅塘退士选编《唐诗三百首》的流传卷次一一对应（数组顺序即卷次顺序）：
-     卷一 五言古诗 / 卷二 七言古诗 / 卷三 五言乐府 / 卷四 七言乐府
-     卷五 五言律诗 / 卷六 七言律诗 / 卷七 五言绝句 / 卷八 七言绝句
-   与《课外必背小古文》同一套「索引页 + 详情页」引擎（见 js/reader-core.js、
-   js/tangshi.js），每首含：标题 / 出处 / 朝代 / 作者 / 原文 / 白话译文。
-
-   字段：id / title / source / dynasty / author / gradeGroup / text / translation
-         / translationSource
-   gradeGroup 在这里承担「卷次分组」：卷一 五言古诗、卷三 五言乐府……
-   ========================================================================== */
 window.POEMS_TANGSHI = [
   {
     textRef: "tangshi-ts-1",
@@ -2723,7 +2710,6 @@ window.POEMS_TANGSHI = [
   },
 ];
 
-/* 索引：按 id 查、按卷查 */
 (function () {
   window.TANGSHI_ALL = window.POEMS_TANGSHI;
   window.getTangshiById = function (id) {

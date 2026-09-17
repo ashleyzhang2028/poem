@@ -1,21 +1,5 @@
 #!/usr/bin/env node
-/**
- * 零依赖本地静态服务器：node scripts/serve.js
- * 手机测试：连同一 Wi-Fi，访问 http://<电脑IP>:8080
- *
- * URL 与线上保持一致：目录化路由，不带 .html
- *   /            首页
- *   /classic/    小古文
- *   /tangshi/    唐诗三百首
- *   /settings/   设置
- *   /terms/      用户协议
- *   /privacy/    隐私条款
- * 各页面的真实文件是对应目录下的 index.html。
- *
- * 另外兼容两种老写法，避免老书签 / 老缓存直接 404：
- *   /classic.html        → 301 到 /classic/
- *   /classic            → 301 到 /classic/
- */
+
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
@@ -36,18 +20,12 @@ const TYPES = {
   ".txt": "text/plain; charset=utf-8"
 };
 
-/**
- * 把请求路径解析成磁盘上的真实文件。
- * 返回 { file } 或 { redirect }（需要 301 到目录形式）。
- */
 function resolve(urlPath) {
   const rel = decodeURIComponent(urlPath).replace(/^\/+/, "");
   const abs = path.resolve(ROOT, rel);
 
-  // 目录穿越保护：解析后必须仍在站点根目录内
   if (abs !== ROOT && !abs.startsWith(ROOT + path.sep)) return { status: 403 };
 
-  // /classic.html → /classic/（目录化之后老链接的兜底）
   if (rel && abs.endsWith(".html")) {
     const dir = abs.slice(0, -".html".length);
     if (fs.existsSync(path.join(dir, "index.html"))) {
@@ -60,7 +38,6 @@ function resolve(urlPath) {
     return { file: path.join(abs, "index.html") };
   }
 
-  // /classic（无末尾斜杠、也不是文件）→ /classic/
   if (rel && fs.existsSync(abs) && fs.statSync(abs).isDirectory()) {
     return { redirect: "/" + rel + "/" };
   }

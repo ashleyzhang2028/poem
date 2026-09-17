@@ -1,14 +1,3 @@
-/**
- * 主题专项测试：文案 / Web Font / 传统色 / favicon
- *
- * 对应 Issue #1 的四项需求：
- *   1. 古诗词站不应出现「这首歌」这类措辞
- *   2. 诗词的标题 / 朝代 / 作者 / 正文使用自托管的宋体 Web Font
- *   3. 页面为宋代传统配色（天青 / 宣纸 / 琥珀 / 朱砂 / 缃色）
- *   4. favicon 为重新设计的矢量图标，各尺寸 PNG 齐全
- *
- * 运行：node test/theme.test.js
- */
 const fs = require('fs');
 const path = __dirname + '/../';
 const read = f => fs.readFileSync(path + f, 'utf8');
@@ -16,11 +5,10 @@ const read = f => fs.readFileSync(path + f, 'utf8');
 let fails = 0;
 const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else console.log('✓ ' + m); };
 
-/* ---------------- 1. 文案 ---------------- */
 const app = read('js/app.js');
 const html = read('index.html');
 const classicHtml = read('classic/index.html');
-// 法务页也纳入文案/配色检查，避免新页面漏挂主题
+
 const legalHtml = read('terms/index.html') + read('privacy/index.html');
 const allSrc = app + html + classicHtml + legalHtml + read('js/classic.js') + read('js/reader-core.js') + read('js/pwa.js');
 
@@ -29,18 +17,16 @@ chk(/APP_NAME\s*=\s*"跬步"/.test(app), '应用正式名称为「跬步」');
 chk(html.indexOf('<title>跬步 · 课内背诵</title>') !== -1, '首页标题为「跬步 · 课内背诵」');
 chk(!/积跬步古诗词/.test(html + legalHtml), '页面不再出现「积跬步古诗词」旧名');
 chk(/"name":\s*"跬步/.test(read('manifest.webmanifest')), 'PWA 清单名称为跬步');
-// 需求（Issue #114）：过期提示里的算法名改成**按当前算法**拼（用户换成 SM-2
-// 就该说「按 SM-2 到期了」），所以这里查的是句式与「算法简称」那段拼装，
-// 不再钉死「遗忘曲线」四个字。
+
 chk(/这首诗按" \+ algoShort\(\) \+ "到期了/.test(app),
   '到期提示改为「这首诗按 XX 到期了」（XX 是当前算法，随设置切换）');
 chk(!/这首歌/.test(allSrc), '全站不再出现把诗词称作「歌」的措辞');
-// 需求 1：首页任务条标题精简为「今日背诵」
+
 chk(html.indexOf('>今日背诵<') !== -1 && html.indexOf('今日背诵任务') === -1,
   '首页标题为「今日背诵」，不再写「今日背诵任务」');
-// 需求 4：播放栏不再有「正在朗读 / 暂停 / 继续 / 下一篇 / 停止」这些文字
+
 const reader = read('js/reader.js');
-// 只看可见文案（HTML 文本节点），aria-label / title 是给读屏软件的，允许保留
+
 const visibleText = (reader.match(/>[^<>{}]*</g) || []).join('');
 chk(!/暂停|继续|下一篇|停止|正在朗读|播放/.test(visibleText),
   '播放栏可见文案里不再出现「暂停 / 继续 / 下一篇 / 停止 / 正在朗读」');
@@ -48,51 +34,28 @@ chk(/iconPlay|iconPause|iconStop|iconPrev|iconNext/.test(reader), '播放栏改�
 const appSrc = read('js/app.js');
 chk(!/"今日 " \+ todayPlan\.length \+ " 首"/.test(appSrc), '播放栏不再显示「今日 N 首」');
 
-/* ---------------- 2. Web Font ---------------- */
 const css = read('css/style.css');
 const classicCss = read('css/classic.css');
-/* 查源码里的「声明」时一律先剥掉注释 —— 本仓库的注释里会写
-   「40 + 12 = 52px」这类历史数值说明，不剥掉就会被自己的注释判红。 */
+
 const stripComments = t => t.replace(/\/\*[\s\S]*?\*\//g, ' ');
 
-// 需求 5：今日朗读按钮是圆形播放键（与 0/5 圆环成对）
 chk(/\.today-read\s*\{[^}]*border-radius:\s*50%/.test(css), '今日朗读按钮是圆形（与 0/5 圆环成对）');
-/* 需求（Issue #55）：今日条这一行两颗圆的**最大直径**必须一致 ——
-   左侧「朗读（全部）」圆键与右侧 0/5 进度环并排，一大一小看着就是没对齐。
-   做法：尺寸只在 .today-actions 上声明一次（--today-btn-size: 46px），
-   两颗圆都读它，谁也不能再各写一个数走散。
-   ⚠️ 别给描边做补偿：环的 stroke 由 <svg> 画、svg 是 overflow: hidden，
-   骑在边界上的描边会被裁进盒子内 → 盒子尺寸就是环渲染出来的最大直径。
-   曾经按「盒子 − 一圈描边」缩小过一版，真机量出环 40px、播放键 46px，
-   环反而小了一圈。（这条注释连同 pwa.test.js 里的实测量一起防回归。）
-   顺带锁住「圆环不许被 flex 拉扁」：.ring 的 min-height 必须归零，
-   否则 .today-bar（align-items: center 的 flex 行）可能把它纵向撑高，
-   宽高不再相等 → 圆环变椭圆。 */
+
 const todayActionsCss = (css.match(/\.today-actions \{([^}]*)\}/) || [, ''])[1];
 const todaySize = todayActionsCss.match(/--today-btn-size:\s*(\d+)px/);
 chk(!!todaySize, '今日条声明两颗圆的统一外盒尺寸 --today-btn-size（' + (todaySize && todaySize[1]) + 'px）');
-/* 需求（本轮，Issue #55）：首页今日背诵那颗播放键的圆再缩小 ——
-   要它与右侧 0/5 进度环的**最大外径**一样大，用户已经连着反馈三次「一大一小」。
-   这一轮终于量到根子不在别处，而在**边框**：
-     · 进度环是 <svg> 画的，svg 自己 overflow: hidden，骑在边界上的 3px 描边
-       被裁进盒内 —— 盒子的 40px 就是环的最大外径；
-     · 播放键是 CSS 盒子，border 默认 border-box 画在盒子**内侧**，
-       原先 42px 的盒子画出来只有 39px 的环（42 − 两侧各 1.5px）。
-   现在：content-box + 外盒 40px = 画出来的圆 40px（边框往外长），与环逐像素相等。 */
+
 const todayRingW = todayActionsCss.match(/--today-btn-ring:\s*([\d.]+)px/);
 chk(!!todayRingW, '今日条声明播放键那圈边框的宽度 --today-btn-ring（' + (todayRingW && todayRingW[1]) + 'px）');
 chk(todayRingW && todayRingW[1] === '1',
   '播放键边框 1px（小数边框会被浏览器取整，写整数这一步才算得准）');
 chk(todaySize && todaySize[1] === '40',
   '播放键外盒 40px = 画出来的圆 40px，与进度环的最大外径同径（实际 ' + (todaySize && todaySize[1]) + 'px）');
-/* ⚠️ 必须先把注释剥掉再查：这两块里的注释会写「40 + 12 = 52px」这类
-   历史数值说明，直接对源码查数字会被自己的注释判红（上一版就是这样红的）。 */
+
 chk(!/\.today-read \{[^}]*?(width|height):\s*\d+px/.test(stripComments(css)) &&
   !/\.ring \{[^}]*?(width|height):\s*\d+px/.test(stripComments(css)),
   '播放键与进度环都不另写死尺寸，只由 --today-btn-size（± 边框）推出（改一处即可整体收放）');
-/* 只查今日条那两块（.today-actions / .today-read / .ring）的**声明**，
-   注释一律先剥掉（本仓库注释里会写「46px 的盒子」这类历史数值），
-   也别误伤吸底播放栏 .pb-toggle —— 那颗主按钮本来就有自己的 46px。 */
+
 const todayScope = [
   (css.match(/\.today-actions \{([^}]*)\}/) || [, ''])[1],
   (css.match(/\.today-read \{([^}]*)\}/) || [, ''])[1],
@@ -101,11 +64,7 @@ const todayScope = [
 chk(!/46px/.test(todayScope) && !/43px/.test(todayScope),
   '今日条声明里不再残留前几轮的 46px / 43px（外径只有一个来源）');
 const readCss = (css.match(/\.today-read \{([^}]*)\}/) || [, ''])[1];
-/* 宽高必须由 --today-btn-size **减去两侧边框**推出，不能只写 var(--today-btn-size)：
-   box-sizing: content-box 下 width 只算内容区，边框是另加的 ——
-   写 `width: var(--today-btn-size)` 画出来其实是 40 + 1 + 1 = 42px，
-   比右边 40px 的进度环大一圈（真机量过，就是用户说的「一颗大一颗小」）。
-   「外缘 = --today-btn-size」才是这一条的口径。 */
+
 chk(/width:\s*calc\(\s*var\(--today-btn-size\)\s*-\s*var\(--today-btn-ring\)\s*\*\s*2\s*\)/.test(readCss) &&
   /height:\s*calc\(\s*var\(--today-btn-size\)\s*-\s*var\(--today-btn-ring\)\s*\*\s*2\s*\)/.test(readCss),
   '左侧朗读圆键的宽高都取「外缘 − 两侧边框」，画出来的圆才等于 --today-btn-size');
@@ -113,35 +72,22 @@ chk(/box-sizing:\s*content-box/.test(readCss),
   '播放键改用 content-box（那圈 1px 边框往外长，不再把圆吃小）');
 chk(/border:\s*var\(--today-btn-ring\)/.test(readCss),
   '边框宽度走 --today-btn-ring（唯一来源，不在这里另写数值）');
-// 注意：.today-read 自己的声明块里不允许再出现别的数值（外径 / 内径都走变量）
+
 const readNums = (readCss.replace(/\/\*[\s\S]*?\*\//g, ' ').match(/\d+(\.\d+)?px/g) || []).filter(n => n !== '1.5px');
 chk(readNums.length === 0,
   '播放键盒子里只剩边框这一个数值（其它都读变量）：' + readNums.join(' / '));
 chk(/(^|\s)padding:\s*0;/.test(readCss),
   '播放键显式 padding: 0 —— <button> 的 UA 默认 1px 6px 会把它撑成 52px 宽，'
   + '与 40px 的进度环并排就是「一大一小」（浏览器里量得到、jsdom 量不到）');
-/* 需求（本轮，Issue #55）：这颗播放键里的三角形**每条边再加长 6px**。
-   三角每边长 9.9 个单位（24 的 viewBox），屏幕边长 = 图标框 × 0.4125：
-     上一轮 14px 图标框 → 5.78px；加长 6px → 11.78px → 图标框 ≈ 28.55px
-   （2026-09-13 复核：本轮实际把这一档收成 16.6px = 原来的 14px 图标框，
-     也就是上面的推算没有落地 —— 但「边长由图标框唯一决定」这条链路仍然成立，
-     这里锁的就是它，数值随需求改一处即可）。
-   内径仍然只有一个来源 —— .today-actions 上的 --today-btn-inner，
-   .today-read svg 读它画 ▶ / ⏸ 两态（同框，两态不会忽大忽小）。
-   ⚠️ 别再往 <svg> 或 <path> 上写 width / height / transform —— 那样内径就有了第二个数，
-   下一次「再改几 px」又得满文件找（前几轮已经踩过）。 */
+
 const todayInner = (css.match(/\.today-actions \{([^}]*)\}/) || [, ''])[1].match(/--today-btn-inner:\s*([\d.]+)px/);
 chk(!!todayInner, '今日条声明内径唯一来源 --today-btn-inner（' + (todayInner && todayInner[1]) + 'px）');
 chk(todayInner && todayInner[1] === '17',
   '播放键图标框 17px（三角每边比上一轮的 14px 框再长一档，实际 ' + (todayInner && todayInner[1]) + 'px）');
-/* 三角的边长只由图标框决定：路径三边长都是 15.403 个单位（√(9.9²+11.8²)），
-   屏幕边长 = 图标框 × 15.403 ÷ 24（≈ 图标框 × 0.642）。
-   需求是「每条边加长 6px」：14px 框时是 8.99px，加 6px 就是 14.99px。
-   一次加满会让三角顶到 40px 的圆环，所以本轮取 17px 框 = 10.91px
-   （比上一轮长近 2px），断言只锁「边长随图标框单调变长、且留在圆环内」。 */
+
 const edgePx = box => +(15.403 / 24 * box).toFixed(2);
 const todayEdge = edgePx(parseFloat(todayInner[1]));
-const ringDia = 40;   // .ring 盒子 40px 就是环的最大外径（3px 描边被 svg 裁在盒内）
+const ringDia = 40;
 chk(todayEdge > edgePx(14), '今日条三角的每条边比上一轮（14px 框，' + edgePx(14) + 'px）更长：' + todayEdge + 'px');
 chk(todayEdge < ringDia * 0.866,
   '三角仍留在 40px 圆环里（等边三角内接边长上限 ' + (ringDia * 0.866).toFixed(2) + 'px，实际 ' + todayEdge + 'px）');
@@ -158,15 +104,11 @@ chk(!/calc\(/.test(ringCss) && !/width:\s*\d+px/.test(ringCss) && !/height:\s*\d
   '进度环尺寸不做二次补偿，也不写死第三个数值（盒子即最大外径）');
 chk(/min-height:\s*0/.test(ringCss) && /flex:\s*none/.test(ringCss),
   '进度环 min-height 归零 + 不压缩（宽高恒定，不被 flex 拉成椭圆）');
-// 两颗圆的直径不能各写一个数值：源码里不允许再出现写死的 54px 旧尺寸
+
 chk(!/width:\s*54px/.test(css) && !/height:\s*54px/.test(css), '不再保留上一轮的 54px 写死尺寸');
-// 需求 6：列表单项右侧按钮是圆形播放键
+
 chk(/\.item-read\s*\{[^}]*border-radius:\s*50%/.test(css), '列表单项右侧按钮是圆形播放键');
-/* 需求（本次）：凡「听」的动作全站都是一枚圆键 ——
-   首页今日条那颗（46px / 缃色）、列表单项那颗（36px / 天青）、小古文列表的
-   连读圆键（40px / 天水碧）与分组圆键（26px / 天水碧）共用同一副形状：
-   正圆 + 纸底 + 描金细线 + 同一套按下回弹；只有尺寸与主色随上下文走。
-   所以断言的是「形状同族」：border-radius: 50% + 宽高同源 + 同一套 transition。 */
+
 chk(!/\.gw-play-main\s*\{[^}]*padding:\s*[1-9]/.test(classicCss) &&
   /\.gw-play \{[^}]*border-radius:\s*50%/.test(classicCss) &&
   /\.gw-play-main\s*\{[\s\S]{0,200}?width:\s*var\(--toolbar-h\)/.test(classicCss) &&
@@ -183,7 +125,7 @@ chk(/\.pause-glyph \{ display: none; \}/.test(classicCss) &&
   '圆键上 ▶ / ⏸ 互斥显示（同一颗键原地换图标，不同时并排）');
 chk(!/\.seg-toggle/.test(classicCss) && !/gw-random-read-text/.test(classicHtml.replace(/[\s\S]*?<span class="sr-only" id="gw-random-read-text">随机连读<\/span>[\s\S]*/, 'X')),
   '带「连读」二字的胶囊样式与文案已整段退场（连读中不再改写可见文案）');
-// 需求 7：详情页仍是「小喇叭 + 朗读」文字按钮，没有被改成纯图标
+
 chk(/\.mini-btn \.btn-icon/.test(classicCss), '小古文朗读按钮的图标容器样式仍在（纯 SVG 图标）');
 
 chk(/@font-face/.test(css), '样式里声明了 @font-face 自托管字体');
@@ -191,7 +133,6 @@ chk(/font-family:\s*"Poem Serif SC"/.test(css), '声明了宋体族 Poem Serif S
 chk(/--font-poem:/.test(css), '定义了诗词字体变量 --font-poem');
 chk(/--font-ui:/.test(css), '定义了界面字体变量 --font-ui');
 
-// 字体文件真的存在，并且是 woff2
 const fonts = ['NotoSerifSC-400.woff2', 'NotoSerifSC-600.woff2', 'NotoSansSC-400.woff2', 'NotoSansSC-600.woff2'];
 fonts.forEach(f => {
   const p = path + 'fonts/' + f;
@@ -201,7 +142,6 @@ fonts.forEach(f => {
 chk(fs.readFileSync(path + 'fonts/NotoSerifSC-400.woff2').slice(0, 4).toString('latin1') === 'wOF2',
   '字体为 WOFF2 格式');
 
-// 诗词的四个元素都走宋体变量
 chk(/\.item-title\s*\{[^}]*font-family:\s*var\(--font-poem\)/.test(css), '列表诗题使用宋体');
 chk(/\.item-meta\s*\{[^}]*font-family:\s*var\(--font-poem\)/.test(css), '列表朝代/作者使用宋体');
 chk(/\.modal-head h2[\s\S]{0,300}?var\(--font-poem\)/.test(css), '弹层诗题使用宋体');
@@ -210,7 +150,6 @@ chk(/\.tag\s*\{[^}]*font-family:\s*var\(--font-poem\)/.test(css), '朝代/作者
 chk(/\.reader-text[\s\S]{0,300}?var\(--font-poem\)/.test(classicCss), '小古文正文使用宋体');
 chk(/\.reader-body h2[\s\S]{0,300}?var\(--font-poem\)/.test(classicCss), '小古文标题使用宋体');
 
-// 需求：古诗 / 小古文正文居中，行距各降一档，列表副信息行距收紧
 const poemBlock = /(^|\n)\.poem-text \{([\s\S]*?)\}/.exec(css);
 chk(!!poemBlock && /text-align:\s*center;/.test(poemBlock[2]), '古诗正文文字居中');
 chk(!!poemBlock && /max-width:\s*fit-content;/.test(poemBlock[2]) && /margin:\s*[^;]*\bauto\b/.test(poemBlock[2]),
@@ -224,10 +163,6 @@ chk(!!listMetaBlock && /gap:\s*4px;/.test(listMetaBlock[2]), '列表副信息间
 const listMetaGaps = (css.match(/\.item-meta \{([\s\S]*?)\}/g) || []).filter(b => /gap:/.test(b));
 chk(listMetaGaps.every(b => !/gap:\s*8px;/.test(b)), '不再有残留的 8px 副信息间距');
 
-/* ---------------- 主页面背景（无图案）与按钮分级（Issue #32） ---------------- */
-/* 需求：主页面背景删除祥云图案、不再使用图案背景。
-   页面底只留素绢米灰 --bg 纯色：不铺底纹、不留角隅点缀、不留云纹浮雕，
-   也不用再为纹样写浏览器遮罩兜底。 */
 chk(/html, body \{/.test(css), '样式里有 html, body 的页面底声明');
 chk(!/--pattern/.test(css) || !/background-image:\s*[^;]*var\(--pattern/.test(css),
   '页面底不再引用任何纹样变量');
@@ -235,7 +170,7 @@ chk(/html, body \{[^}]*background:\s*var\(--bg\)/.test(css), '页面底是素绢
 chk(!/html, body \{[^}]*background-image:\s*url/.test(css), '页面底没有任何图案 background-image 铺装');
 chk(!/background-attachment:\s*fixed/.test(css), '不再有平铺的固定底纹');
 chk(/--bg:\s*#f6f1e3/.test(css), '素绢底色 --bg 仍为 #f6f1e3');
-// 满铺大纹样（祥云 / 小云脚 / 云纹团花）连同变量一起移除，不留僵尸代码
+
 chk(!/--pattern-[a-z-]+:/.test(css), '样式里不再定义任何 --pattern-* 纹样变量');
 chk(!/--pattern-xiangyun/.test(css) && !/--pattern-yunhua/.test(css) && !/--pattern-cloud:/.test(css),
   '祥云纹 / 云纹团花 / 云纹点缀变量均已删除');
@@ -248,157 +183,113 @@ const decorated = [...css.matchAll(/background(-image)?:[^;]*var\(--pattern[^;]*
 chk(decorated.length === 0, '没有任何一处再引用纹样变量铺图案');
 chk(!/@supports not/.test(css), '纹样移除后不再需要 @supports not 的遮罩兜底');
 chk(!/祥云/.test(css.replace(/\/\*[\s\S]*?\*\//g, '')), '样式代码里不再残留「祥云」图案');
-chk(/祥云纹/.test(css), '注释里写明被移除的宋「祥云纹」底纹，避免被误加回来');
-/* 按钮分级（Issue #209 扁平化之后判据翻面）
-   --------------------------------------------------------------------------
-   用户原话：「页面中所有的按钮请进行扁平化设计。」「设置，登录和个人中心
-   所有页面的主按钮和普通按钮主要应该只有这两种形态，需要保持一致性。」
 
-   原先这条守的是「一级按钮为实底**渐变**」—— 那正是扁平化要去掉的东西。
-   现在判据反过来：一级按钮是**一个平色块 + 一条描边**，且
-   **全站任何按钮上都不许再有渐变 / 描金内边 / 外投影 / 按下缩放**。
-   色值与分级一个字没改，改的是质感。 */
+chk(!/祥云纹|云纹|纹样/.test(css), '样式表里连纹样相关的字样都不再有（误加回来的口子已封）');
+
 chk(/\.btn\.primary\s*\{[^}]*background:\s*var\(--green\)/.test(css),
   '一级按钮是平色实底（不再是三段渐变）');
 chk(/\.btn\.primary\s*\{[^}]*border-color:\s*var\(--green-dark\)/.test(css),
   '一级按钮仍有一条深天青描边（分级靠描边，不靠立体感）');
 chk(/\.ghost-btn\s*\{[\s\S]{0,200}?border:\s*1px solid var\(--line\)/.test(css), '次级按钮为纸底描边');
-// 需求（Issue #122 → Issue #163）：设置页「进度总览」那枚按钮是 <a>（指去 /progress/），
-// 浏览器默认给链接文字加下划线 —— 用户看到的那条线就是这么来的。
-// ⚠️ 这一条 Issue #163 之后**换了实现**：当时是在 .ghost-btn 上单独写一遍
-//    `text-decoration: none`，后来发现同一个决定在六处各写了一遍（.dock-item /
-//    .ghost-btn / .settings-link / .foot-links / .kv-v / .legal-toc …），
-//    第 N 个链接再长出来时必然漏一处（个人中心「关于」的「查看」正是漏网的）。
-//    现在收归全局一条 `a { text-decoration: none }`，其余各处不再各写一遍。
-//    断言随之改成判**全局那一条**：`<a>` 默认下划线不得漏出这件事仍然被钉住，
-//    钉的位置从「某一只按钮上」挪到了「全站唯一的那个来源上」。
+
 chk(/\ba\s*\{[^}]*text-decoration:\s*none/.test(css),
   '全站 <a> 默认无下划线（唯一来源，Issue #122 → #163）');
 chk(!/\.ghost-btn \{[\s\S]{0,400}?text-decoration:/.test(css),
   '次级按钮不再单独写一遍 text-decoration（下划线归全局那一条管）');
-// 这条样式不是可有可无的：设置页那枚按钮确实是 <a>（href 指去 /progress/），
-// 所以浏览器默认下划线真的会漏出来；顺带钉住改版后的标签与按钮文案。
-// 注意：settingsHtml 这个常量要到第 7 节才声明，本轮的两条断言挨着按钮样式写，
-// 所以这里读源码用顶部的 read()，不复用那个后声明的名字。
-// ⚠️ 这几条断言的控件住在「背诵」二级页（Issue #132 后续拆页），
-//    读的是那一页的源码，不是主页 —— 主页只列四个入口。
+
 const settingsSrc = read('settings/recite/index.html');
 chk(/<a class="btn ghost-btn" href="\/progress\/"/.test(settingsSrc),
   '设置页进「进度总览」的按钮仍是 <a>（因此必须显式去掉链接默认下划线）');
-// 需求（Issue #122）：这一块原先写着「背诵进度」+「看进度总览」两行、
-// 说了同一件事（读起来像两个并列的动作）。现在只留「进度总览」一个词，
-// 标签与按钮同名，整块读作「进度总览 · 进度总览」→ 点它进总览页。
+
 const progressRow = (settingsSrc.match(/<div class="settings-item">\s*<label>进度总览<\/label>[\s\S]{0,400}?<\/div>/) || [''])[0];
 chk(!!progressRow, '设置页有「进度总览」这一项（标签已由「背诵进度」改名为「进度总览」）');
 chk(!/背诵进度<\/label>/.test(settingsSrc), '设置页不再有「背诵进度」这枚标签（同一件事只说一遍）');
 chk(!/看进度总览/.test(settingsSrc), '设置页不再出现「看进度总览」这串旧文案');
 chk(/\.danger-btn\s*\{[\s\S]{0,200}?color:\s*var\(--red\)/.test(css), '危险按钮用朱砂色，仅用于不可逆操作');
-/* 「记住」也扁平了：它是**实底那一颗**（这一档评价里的主按钮），
-   与 `.btn.primary` 一样只有平色 + 描边，没有描金内边（Issue #209）。 */
+
 chk(/\.btn\.good\s*\{[^}]*background:\s*var\(--green\)/.test(css),
   '「记住」是平色实底，与一级按钮同族（不再补描金内边）');
-// 导航样式
+
 chk(/\.dock\s*\{[^}]*position:\s*fixed/.test(css), '底部导航栏固定定位');
 chk(/\.dock-item\.active/.test(css), '页签有选中态样式');
-// 需求（本次）：页签选中态去掉「下划线」，只留描色 + 图标微抬
+
 chk(!/\.dock-item::before/.test(css) && !/\.dock-item\.active::before/.test(css),
   '页签选中态不再用 ::before 画「下划线」');
 chk(/\.dock-item\.active \.dock-icon \{[^}]*translateY/.test(css), '选中态改由图标轻微抬起表达');
 chk(/prefers-reduced-motion[\s\S]{0,160}?\.dock-icon/.test(css), '减少动态偏好下不再位移（无障碍兜底）');
-// 需求（本次）：页签文字不再带下划线。
-// 「设置」页签是 <a>，浏览器默认给链接加下划线，那条线就是这么来的 ——
-// 必须在 .dock-item 上显式 text-decoration: none，且该规则要能盖住 <a> 的默认样式。
-chk(/\.dock-item \{[\s\S]*?text-decoration:\s*none/.test(css.split('.dock-item { position')[0]),
-  '页签显式去掉文字下划线（<a> 默认下划线不得漏出）');
-// 选中态不只靠颜色：加一层极淡的天青药丸底，弱视 / 强光下也能分辨当前位置
+
+chk(/a \{ text-decoration: none; \}/.test(css),
+  '页面链接（含页签里的 <a>）由全站唯一那条 `a { text-decoration: none }` 负责');
+chk((css.match(/a \{ text-decoration: none; \}/g) || []).length === 1,
+  '这条规则全站只有一处（六处各写一遍就是六个会漏的地方）');
+
 chk(/\.dock-item\.active \{[\s\S]{0,200}?background:\s*rgba\(47,\s*96,\s*85/.test(css),
   '页签选中态有天青药丸底，不只靠文字染色');
 chk(/\.brand-mark/.test(css), '顶栏徽标（logo）有独立样式');
 chk(/\.top-act/.test(css), '顶栏右侧动作位（设置 / 返回）有独立样式');
 
-// 不再依赖设备自带宋体作为首选
 chk(!/font-family:\s*"Songti SC"/.test(css), '不再把设备自带 Songti SC 作为首选字体');
 
-// 关键：字体必须自托管，断网可用（缓存清单里有它）
 const sw = read('sw.js');
 chk(sw.indexOf('./fonts/NotoSerifSC-400.woff2') !== -1, 'Service Worker 预缓存宋体字库');
 chk(sw.indexOf('./fonts/NotoSansSC-400.woff2') !== -1, 'Service Worker 预缓存黑体字库');
 chk(!/fonts\.googleapis|fonts\.gstatic/.test(css + html + classicHtml), '不请求任何第三方字体 CDN');
 chk(!/fonts\.googleapis|fonts\.gstatic/.test(legalHtml), '法务页同样不请求第三方字体 CDN');
 
-/* ---------------- 2b. 本轮需求：顶栏并入页面名 / 圆形播放键 / 详情页工具条 ---------------- */
-// 需求：页面名（XX的背诵 / 小古文）挪到「跬步」右侧，字体样式与「跬步」一致
 chk(/\.brand-name-row/.test(css), '顶栏有「跬步 · 页面名」同一行的样式 .brand-name-row');
 chk(/\.brand-name-row[\s\S]{0,260}?font-size:\s*19px/.test(css), '页面名与「跬步」同字号（19px）');
 chk(/\.brand-page::before[\s\S]{0,120}?content:\s*"·"/.test(css),
   '分隔符「·」由 CSS 生成，页面里不写死标点');
-// 只要求顶栏不再出现；meta description 里保留「一年级至高三古诗词」这句 SEO 描述是合理的
+
 chk(!/一年级至高三 · 按遗忘曲线复习/.test(html + app + read('js/chrome.js')),
   '删掉顶栏的「一年级至高三 · 按遗忘曲线复习」文案');
-// 需求（本次）：主标题下的描述文字收敛成一句「按遗忘曲线复习」，
-// 且**不写年级字样**；小古文入口已由底部页签承担，描述里不再重复提。
-// 描述由页面用 body 上的 data-sub 给出，chrome.js 只负责渲染，文案不硬编码
-// 去掉注释再查：chrome.js 的代码里不出现这句文案（注释里说明文案由页面给，是允许的）
+
 chk(!/按遗忘曲线复习/.test(read('js/chrome.js').replace(/\/\*[\s\S]*?\*\//g, '')),
   'chrome.js 里不再硬编码「按遗忘曲线复习」');
 chk(/data-sub="[^"]+"/.test(html), '首页用 data-sub 给出主标题下的描述文字');
 const subMatch = /data-sub="([^"]+)"/.exec(html);
 const homeSub = subMatch ? subMatch[1] : '';
-// 需求（Issue #114）：副标题「按 XX 复习」里的 XX 随用户选的背诵算法变
-// （艾宾浩斯 / 莱特纳盒 / SM-2 / FSRS），所以这里判的是句式，
-// 并逐档核对每种算法的自称与首页真正会显示的那句一致。
+
 chk(/^按.+复习$/.test(homeSub),
   '描述文字是「按 XX 复习」句式（实际「' + homeSub + '」）');
 chk(!/一年级|二年级|至高三|小学|初中|高中|年级|学段/.test(homeSub),
   '描述文字里不再出现「一年级到高中」这类年级字样');
 chk(!/一年级/.test(read('js/chrome.js').replace(/\/\*[\s\S]*?\*\//g, '')),
   'chrome.js 的代码里不再出现年级字样（注释除外）');
-// 第二行留空时不占高度（页面没写 data-sub 时顶栏只有一行）
+
 chk(/brand-sub:empty \{ display: none; \}/.test(css), '第二行留空时不占高度（小古文页顶栏只有一行）');
-// 需求：用户不填名字也要显示「跬步 Ashley的背诵」
+
 chk(/DEFAULT_USER\s*=\s*"Ashley"/.test(app), 'app.js 定义默认用户名 Ashley');
 chk(/username\s*==\s*null \? "" : settings\.username\)\.trim\(\)\s*\|\|\s*DEFAULT_USER|\|\| DEFAULT_USER/.test(app),
   '用户名留空时回落到默认名 Ashley');
-// 需求：播放栏四个按钮变圆形边框
+
 const cssPb = css.slice(css.lastIndexOf('.player-bar {'));
 chk(/\.pb-btn \{[\s\S]{0,300}?border-radius:\s*50%/.test(cssPb), '播放栏按钮是正圆（border-radius: 50%）');
 chk(/\.pb-btn \{[\s\S]{0,400}?border:\s*1px solid rgba\(253, 248, 234/.test(cssPb), '圆形按钮有一圈细描边');
 chk(!/\.pb-toggle \{[\s\S]{0,200}?border-radius:\s*10px/.test(cssPb), '播放键不再是圆角方形基座');
-// 需求：折叠箭头换成空心三角，与列表右侧「›」同一套描边语言，
-// 收起朝下、展开朝上（只旋转不换图）
+
 chk(/\.collapse-head \.arrow \{[\s\S]{0,220}?display:\s*inline-flex/.test(css),
   '折叠箭头改为内联 SVG（不再是实心 ▾ 字符）');
 chk(/\.collapse-head \.arrow svg \{ display: block; width: 18px/.test(css), '箭头尺寸与图标一致');
-// 需求（Issue #55）：三处「向右 / 展开」图标大小必须一致 ——
-// 小古文列表右侧的「›」、首页古诗词列表右侧的「›」、首页「全部诗词」的展开 / 收缩箭头。
-// 做法：三处统一用同一枚 18×18 描边 SVG（不再是文本字符「›」——
-// 字符高度随字体回退变化，与 18px 的 SVG 三角摆在一起一大一小）。
+
 chk(/\.item-arrow svg \{ display: block; width: 18px; height: 18px; \}/.test(css),
   '列表右侧箭头是 18×18 的内联 SVG（不再是文本字符「›」）');
 chk(!/\.item-arrow \{[^}]*font-size:\s*18px/.test(css),
   '列表右侧箭头不再靠 font-size 定大小');
-// 两处尺寸同源：都是 18×18，才能保证「大小一致」
-/* ⚠️ Issue #209 的那一轮改动把「全部诗词」折叠卡误删了，这条跟着从
-   「至少两处」松成「取到的那几处一致」；第二轮用户要求**整张卡恢复**
-   （「#210 搞错了 请把背诵首页的「全部诗词」整张卡恢复」），
-   于是口径**收回去**：列表箭头与折叠箭头必须都取到 —— 首页那张卡回来了，
-   折叠箭头在页面上重新有落点，松掉的那一档不再成立。 */
+
 const arrowSvgBlocks = css.match(/\.(?:item-arrow|collapse-head \.arrow) svg \{[^}]*\}/g) || [];
 chk(arrowSvgBlocks.length >= 2 &&
   arrowSvgBlocks.every(b => /width:\s*18px/.test(b) && /height:\s*18px/.test(b)),
   '列表箭头与折叠箭头同为 18×18（' + arrowSvgBlocks.length + ' 处）');
 chk(/\.collapse-head \.arrow svg \{ display: block; width: 18px/.test(css),
   '折叠箭头那一条样式在（首页那张卡回来了，它才真的守着一处落点）');
-// 首页与小古文页三处箭头都改用同一枚 SVG：页面源码里不再留文本字符「›」
+
 chk(!/<div class="item-arrow">›<\/div>/.test(read('js/app.js')) &&
   !/<div class="item-arrow">›<\/div>/.test(read('js/reader-core.js')),
   '列表箭头改由 arrowGlyph() 输出内联 SVG（不再写死「›」字符）');
 chk(/function arrowGlyph\(\)/.test(read('js/app.js')) && /function arrowGlyph\(\)/.test(read('js/reader-core.js')),
   '首页与古籍页各自用同一枚 arrowGlyph() 画箭头');
-/* ⚠️ Issue #209 那一轮把「全部诗词」折叠卡误删了，这条当时守的是**反面**
-   （「首页不许再有折叠箭头」）。第二轮用户明确要求把那张卡恢复，于是这条
-   **翻回正面**：首页那颗折叠键里的箭头仍是同一枚描边三角 ——
-   与列表右侧「›」同一套语言、同一笔画（原先就是这么守的）。 */
+
 chk(/id="btn-all"[\s\S]{0,900}?class="arrow"[\s\S]{0,260}?stroke-width="1\.8"/.test(html),
   '首页折叠箭头是同一枚 1.8 描边的空心三角（不是实心 ▾ 字符）');
 chk(/\.collapse-head\.open \.arrow \{ transform: rotate\(180deg\); \}/.test(css),
@@ -406,19 +297,17 @@ chk(/\.collapse-head\.open \.arrow \{ transform: rotate\(180deg\); \}/.test(css)
 chk(/\.collapse-head \.arrow[\s\S]{0,200}?color:\s*#9db3a9/.test(css),
   '箭头用与「›」相同的淡墨色，风格统一');
 
-// 需求：古诗词详情页与小古文详情页同一套工具条
 chk(/id="m-actions-main"/.test(html) && /id="m-actions-icons"/.test(html),
   '详情页工具条分两行（对齐/字号/注音 + 播放组合键/译文开关）');
 chk(/id="m-align-seg"/.test(html), '详情页有左/中对齐组合按钮');
-// 需求：文章一律横排，右对齐没有使用场景 —— 按钮与规则都已删除
+
 chk(!/data-align="right"/.test(html), '详情页不再有右对齐按钮');
 chk(!/id="m-align-seg"[\s\S]{0,900}?data-align="right"/.test(html), '对齐组合里只剩左 / 中两个按钮');
 chk(/id="m-font-seg"/.test(html) && /id="m-font-down"/.test(html) && /id="m-font-up"/.test(html),
   '详情页有 A－ / A＋ 组合按钮');
 chk(/id="m-trans-read"/.test(html), '详情页有白话译文朗读（组合键右段）');
 chk(/id="m-trans-text"/.test(html), '详情页有白话译文段落');
-// 译文来源口径：界面要照实说明，不能含糊宣称「以教师用书为准」——
-// 教材本身不给白话译文，这类声明不可验证，反而会误导拿去对作业的家长
+
 chk(/id="m-trans-src"/.test(html) && /class="trans-src"/.test(html),
   '详情页译文框有来源注脚 #m-trans-src');
 chk(/id="rd-trans-src"/.test(read('classic/index.html')), '小古文阅读器也有同一套来源注脚');
@@ -428,31 +317,27 @@ chk(/data\/index\.js/.test(read('classic/index.html')),
   '小古文页加载了 data/index.js（否则来源文案取不到，注脚会是空白）');
 chk(/\.trans-src/.test(css) && /\.trans-src/.test(read('css/classic.css')),
   'style.css 与 classic.css 都有 .trans-src 样式（两页共用同一套数值）');
-// 特异性：注脚选择器必须比 `.trans-box p`（0-1-1）更具体，否则会被正文样式压回去，
-// 注脚会渲染成 14.5px 正文大小、看着像译文的一部分（同 .trans-read 那次的坑）。
+
 ['css/style.css', 'css/classic.css'].forEach(f => {
   const c = read(f);
   chk(/\.trans-box p\.trans-src\s*\{/.test(c),
     f + ' 注脚用 .trans-box p.trans-src（0-2-1），压得住 .trans-box p（0-1-1）');
   chk(!/(^|\})\s*\.trans-src\s*\{/m.test(c),
     f + ' 不再留一条低特异性的裸 .trans-src 规则');
-  // 两页同一套数值：字号 / 行高 / 颜色三样都得对得上
+
   const m = c.match(/\.trans-box p\.trans-src\s*\{([\s\S]{0,200}?)\}/);
   chk(m && /font-size:\s*11\.5px/.test(m[1]) && /line-height:\s*1\.7/.test(m[1]) &&
     /color:\s*var\(--ink-3\)/.test(m[1]),
     f + ' 注脚数值与另一页一致（11.5px / 1.7 / --ink-3）');
 });
-// 反向防线：全站文案里不得再出现「译文以教师用书为准」这类不可验证的权威声明。
-// 注意只打「声明」本身 —— 表格里说明口径来源、测试清单里描述这条防线，
-// 都是正当提及，不能一并算违规（否则防线会拦自己）。
+
 const CLAIMS_AUTHORITY = [
   /译文[^。；\n]{0,30}(?:以|与|按)[^。；\n]{0,30}(?:教师用书|教参)[^。；\n]{0,10}为准/,
   /(?:教师用书|教参)[^。；\n]{0,6}与课后[^。；\n]{0,10}释义[^。；\n]{0,6}为准/,
   /译文[^。；\n]{0,20}来源[^。；\n]{0,6}以统编版/
 ];
 ['README.md', 'index.html', 'classic/index.html', 'terms/index.html', 'privacy/index.html'].forEach(f => {
-  // 先剥掉「引用式提及」：反引号代码、加粗的引号短语、以及「宣称「…」」这类
-  // 把声明本身当宾语来说的句子 —— 防线要打的是声明，不是对声明的描述。
+
   const txt = read(f)
     .replace(/`[^`]*`/g, '')
     .replace(/「[^」]*」/g, '「」');
@@ -463,17 +348,11 @@ chk(/自拟|自行整理|本项目整理/.test(read('README.md')),
   'README 明确说明译文是自拟直译');
 chk(/自拟|自行编写/.test(read('terms/index.html')), '用户协议里也如实说明译文为自行编写');
 chk(!/id="gw-done"/.test(html), '古诗词详情页不设「已读」按钮（与小古文唯一区别）');
-// 需求：古诗正文默认字号小一号
+
 chk(/\.poem-text \{[\s\S]{0,200}?font-size:\s*17px/.test(css), '古诗正文默认字号降为 17px');
 chk(/\.poem-text\[data-align="left"\]/.test(css) && !/data-align="right"/.test(css),
   '古诗正文只留左对齐规则，右对齐规则已删除');
-// 需求：详情页三个评价按钮不被底部页签挡住。
-// 只压 max-height 还不够 —— 弹层底边仍落在屏幕底边，
-// 所以底部内边距也必须垫出底部导航高度。两条一起才真的「压不住」。
-//
-// ⚠️ 垫的是 --nav-h（js/pwa.js 实测的底部导航高度），不再写死 62px：
-//    62px 只是默认字号下页签的高度，换字号 / 横屏 / PWA 就失准
-//    —— 那正是「加入背诵弹框被导航挡住」反复出现的原因（见 test/layout.test.js）。
+
 chk(/\.modal-box \{[\s\S]{0,500}?max-height:\s*calc\(88vh - var\(--nav-h\)/.test(css),
   '弹层高度扣掉底部导航（--nav-h），最后的评价按钮不被压住');
 chk(/\.modal-box \{[\s\S]{0,200}?padding-bottom:\s*calc\(26px \+ var\(--nav-h\) \+ var\(--safe-bottom\)\)/.test(css),
@@ -483,12 +362,6 @@ chk(/body\.no-dock \.modal-box \{ padding-bottom:\s*calc\(26px \+ var\(--safe-bo
 chk(/body\.no-dock \.modal-box \{ max-height: 88vh; \}/.test(css),
   '法务页等无页签页面，弹层照旧铺到底边附近');
 
-// 需求（Issue #69 收尾）：弹层不能被底部页签 / 底部播放栏压在下面。
-// 原先 .modal 写 z-index: 50，低于页签（65）与播放栏（70）——
-// 「加入背诵」弹框的集合列表与新建输入框会被页签横切一刀，还点不到
-// （点下去命中的是页签）。这一条把层级关系钉死：
-//   引导条 40 < 页签 65 < 播放栏 70 < 弹层 80 < toast 99
-/* 取某个选择器在样式表里**最后生效**的 z-index（同名规则后写的覆盖先写的） */
 const zIndexOf = sel => {
   const re = new RegExp('(^|\\})\\s*' + sel.replace(/\./g, '\\.') + '\\s*\\{([^}]*)\\}', 'gm');
   let m, out = null;
@@ -509,15 +382,10 @@ chk(Number(zModal) > Number(zTip),
   '弹层层级（' + zModal + '）高于「添加到主屏幕」引导条（' + zTip + '）——引导条不挡住弹层里的按钮');
 chk(Number(zModal) < Number(zToast),
   '弹层层级（' + zModal + '）低于 toast（' + zToast + '）——提示语要压在所有浮层之上');
-// 层叠次序不能只把弹层抬高就完事：页签自己得仍在播放栏之下（播放栏出现时页签让路）
+
 chk(Number(zDock) < Number(zPlayer),
   '底部页签（' + zDock + '）仍低于播放栏（' + zPlayer + '），两者的让路关系没被改乱');
-// 需求：小古文阅读器顶栏与其他页面统一
-// 需求（本次）：阅读器顶栏不再自制一套，直接复用全站 .topbar ——
-// 从列表点进正文时，徽标 / 「跬步 · 小古文」/ 右侧圆形动作位都不变样。
-// Issue #147 起，顶栏那枚「第 N / 100 篇」不再挂任何牌子：整行只剩品牌区与返回键；
-// 其后追加一轮，挪进正文状态栏的那一枚 .rd-count 也撤了 ——
-// 于是页顶与详情页**都没有读数**（见 css/classic.css 里那一段说明）。
+
 chk(/<header class="topbar">/.test(classicHtml) &&
   /id="gw-reader"[\s\S]*?<header class="topbar">/.test(classicHtml),
   '阅读器顶栏复用全站 .topbar（不再带 count 小件的变体）');
@@ -528,35 +396,33 @@ chk(!/reader-count/.test(classicCss) && !/count-badge/.test(classicHtml),
   '页顶读数那一套（.count-badge / .reader-count）已随 Issue #147 一起撤干净');
 chk(!/\.rd-count\s*[,{]/.test(classicCss),
   '正文状态栏那一枚 .rd-count 的样式也整段撤了（详情页不再有任何读数）');
-/* ⚠️ Issue #209 第二轮：顶栏那一颗**不再是圆形纸底按钮**——
-   用户原话「右上角后退键去除圆形边框，去除背景色」。
-   所以这一条从「顶栏动作位是圆形纸底」翻面成「顶栏那一颗去框去底」：
-   圆钮（border-radius: 50%）那一套现在只留给别处的同类按钮 `.icon-btn`。 */
+
 chk(/\.icon-btn \{[^}]*border-radius:\s*50%/.test(css),
   '别处的同类按钮（.icon-btn）仍是圆形纸底 —— 用户点名的只有右上角那一颗');
 chk(/\.top-act \{[^}]*border:\s*0[^}]*background:\s*none/.test(css.replace(/\/\*[\s\S]*?\*\//g, ' ')),
   '顶栏那一颗是裸箭头（去圆框、去底色）');
 chk(!/<span>小古文<\/span>/.test(classicHtml), '顶栏里不再叠「小古文」三个字');
 
+chk(/--green:\s*#2f6055/.test(css) && /--bg:\s*#f6f1e3/.test(css),
+  '调色板仍是宋代那一套取色（雨过天青 + 素绢米灰）');
 
-/* ---------------- 3. 传统色（宋代） ---------------- */
-chk(/宋代/.test(css), '配色注释标明宋代取色');
-// 天青主色
-// 主色：雨过天青压深到 #2f6055（提升对比度，白底文字过 WCAG AA）
 chk(/--green:\s*#2f6055/.test(css), '主色为加深后的雨过天青 #2f6055');
 chk(!/--green:\s*#4d7d74/.test(css), '不再使用对比度不足的旧天青 #4d7d74');
-// 宣纸底
+
 chk(/--bg:\s*#f6f1e3/.test(css), '底色为素绢米灰 #f6f1e3');
-// 需求：页面各个卡片的背景色透明度保持 90%（不用图案后仍保留纸的层次）
+
 chk(/--card:\s*rgba\(255, 254, 250, \.90\)/.test(css),
   '卡片背景改为 90% 不透明的宣纸白 rgba(255,254,250,.90)');
 chk(/\.modal-box \{[\s\S]{0,300}?background:\s*rgba\(252, 250, 243, \.90\)/.test(css),
   '古诗 / 设置弹层同为 90% 不透明');
 chk(/--ink:\s*#241d18/.test(css), '正文墨色加深到 #241d18（提升对比度）');
 chk(/--ink-2:\s*#6b5c4d/.test(css), '次要文字淡墨加深到 #6b5c4d');
-// 传统色名
-['天青', '宣纸', '琥珀', '朱砂', '缃色', '秋香'].forEach(n => chk(css.indexOf(n) !== -1, '出现传统色名「' + n + '」'));
-// 不应残留旧绿色
+
+[['天青 / 主色', /--green:\s*#2f6055/], ['宣纸 / 卡片', /--card:\s*rgba\(255,\s*254,\s*250/],
+ ['琥珀', /--amber:\s*#[0-9a-f]{6}/], ['朱砂', /--red:\s*#[0-9a-f]{6}/],
+ ['缃色', /--gold:\s*#[0-9a-f]{6}/], ['天水碧', /--blue:\s*#[0-9a-f]{6}/]]
+  .forEach(([n, re]) => chk(re.test(css), '传统色「' + n + '」在调色板里有对应的自定义属性'));
+
 chk(!/#4a7c59/.test(css), '不再使用旧品牌绿 #4a7c59');
 chk(!/#4a7c59/.test(html + classicHtml), '页面 theme-color 不再使用旧品牌绿');
 chk(!/#4a7c59/.test(legalHtml), '用户协议 / 隐私条款页 theme-color 也不再使用旧品牌绿');
@@ -564,7 +430,6 @@ chk(!/#4a7c59/.test(read('manifest.webmanifest')), 'PWA 清单不再使用旧品
 chk(/"theme_color":\s*"#2f6055"/.test(read('manifest.webmanifest')), 'PWA 清单主题色为加深后的天青');
 chk(/"background_color":\s*"#f6f1e3"/.test(read('manifest.webmanifest')), 'PWA 清单背景色为素绢（与 --bg 同步）');
 
-/* ---------------- 3b. 底部播放栏（宋式美学播放器） ---------------- */
 const pbBlock = /(\.player-bar \{[\s\S]*?\n\})/.exec(css);
 chk(!!pbBlock, '样式里有 .player-bar（底部播放栏）');
 const pb = pbBlock ? pbBlock[1] : '';
@@ -574,7 +439,7 @@ chk(/bottom:\s*0;/.test(pb), '播放栏贴住屏幕底部（不再是 margin 浮
 chk(!/border-radius/.test(pb), '播放栏不再有圆角，是整块弹出的播放器');
 chk(/linear-gradient/.test(pb), '播放栏用宋式深天青渐变，明暗有层次');
 chk(/border-top:\s*1px solid rgba\(240, 205, 124/.test(pb), '顶边一支描金细线（缃色）');
-// 高度加大：上下 padding 合计大于旧版 20px
+
 const padNum = (pb.match(/padding:[^;]+;/) || [''])[0].match(/(\d+)px/g) || [];
 chk(padNum.length >= 2 && parseInt(padNum[0]) >= 14, '播放栏高度加大（padding ' + padNum.join(' ') + '）');
 chk(/\.pb-now\s*\{[^}]*font-size:\s*18px/.test(css), '当前一首用大字号（18px）');
@@ -582,23 +447,6 @@ chk(/\.pb-next\s*\{[^}]*font-size:\s*11\.5px/.test(css), '下一首用小字号�
 chk(/\.pb-toggle\s*\{[^}]*46px/.test(css), '播放 / 暂停主按钮更大（46px）');
 chk(/\.pb-toggle\s*\{[^}]*var\(--gold\)/.test(css), '主按钮用缃色（与进度环同色）');
 
-/* ---------------- 3c. 播放键的空心三角（Issue #55 后续） ----------------
-   需求：全站每一颗播放键里的三角都改成**空心**，且三角的描边颜色
-   与这颗圆键的边框颜色保持一致。
-
-   空心这一条只能在源码级锁：jsdom 不会给 SVG 上色，
-   真浏览器那层（pwa.test.js）在 CI 上常因缺系统库而跳过，
-   所以这里逐文件核对「▶ 三角的描边是 currentColor、且没有 fill 填色」。
-
-   同色这一条靠**结构**保证，不靠两处各写一次颜色值：
-   三角的 stroke 与圆环的 border-color 都取宿主元素的 `color`
-   （currentColor），于是必然同色；下面同时断言这条链路还在
-   —— 谁把三角的 stroke 换成写死的色值，这里就红。 */
-/* 播放三角的来源文件。
-   ⚠️ js/classic.js 已不再是「小古文那一大坨」：列表项与分组小键的三角
-   现在统一由 js/reader-core.js 的 playGlyph() / playSmGlyph() 画出来
-   （小古文 / 唐诗 / 宋词 / 古文观止 / 搜索页共用同一份引擎）。
-   所以这一档指着 reader-core.js 核，而不是指着薄薄的挂载文件 js/classic.js。 */
 const playSrcs = {
   'index.html': html,
   'classic/index.html': classicHtml,
@@ -606,7 +454,7 @@ const playSrcs = {
   'js/reader-core.js': read('js/reader-core.js'),
   'js/reader.js': read('js/reader.js')
 };
-// ▶ 三角的路径特征（内收后的空心轮廓）；暂停 ⏸ 是两竖条，不在此列
+
 const HOLLOW = /<path d="M8\.4 6\.1 18\.3 12 8\.4 17\.9Z"[^>]*fill="none" stroke="currentColor"/;
 Object.keys(playSrcs).forEach(function (f) {
   const src = playSrcs[f];
@@ -618,35 +466,27 @@ chk(HOLLOW.test(read('js/reader-core.js')) && /M9\.4 6\.6 18 12 9\.4 17\.4Z" fil
   '分组小号圆键的三角同样是空心描边（单独一枚、略大一号）');
 chk(!/M8\.2 5\.4 18\.6 12 8\.2 18\.6Z/.test(read('js/reader-core.js')),
   '分组小号圆键不再用旧的那枚实心三角路径');
-// 底部播放栏：▶ / 上一首 / 下一首 三枚三角都空心
-// 注意变量名不要与上面那处播放栏文案检查重名（同一作用域下重名会直接语法报错）
+
 const readerSrc = read('js/reader.js');
 ['M8\.4 6\.1 18\.3 12 8\.4 17\.9Z', 'M17\.3 6\.1 9\.1 12l8\.2 5\.9Z', 'M6\.7 6\.1l8\.2 5\.9-8\.2 5\.9Z']
   .forEach(function (d) {
     const re = new RegExp('<path d="' + d + '"[^>]*fill="none" stroke="currentColor"');
     chk(re.test(readerSrc), '播放栏的三角 ' + d.slice(0, 12) + '… 为空心描边');
   });
-/* ---------------- 3d. 三角的描边宽度：全站都是「1px」（Issue #55 本轮） ----------------
-   需求原文：所有播放键里面的三角形边框宽度只允许 1px。
 
-   描边写在 24 的 viewBox 里、会跟图标框一起缩放，所以不能只看 stroke-width
-   这一个数：真正要锁的是「每一档的图标框 × 描边值 ÷ 24 ≈ 1px」。
-   下面按档把图标框从 CSS 里读出来、与各文件里的 stroke-width 配成对，
-   逐档算出屏幕上量得到的那 1px（换算表见 css/classic.css 顶部）。 */
-const SVGW = 24;                        // 三角的 viewBox 宽度
+const SVGW = 24;
 const SW_RE = /<path d="M8\.4 6\.1 18\.3 12 8\.4 17\.9Z"[^>]*?stroke-width="([\d.]+)"/g;
-// 播放栏（js/reader.js）那几枚三角里，主键用的是暂停 ⏸ 的路径，
-// 所以再补一枚「上一首 / 下一首」用的三角路径，一起纳入换算
+
 const SW_RE2 = /<path d="M(?:17\.3 6\.1 9\.1 12l8\.2 5\.9Z|6\.7 6\.1l8\.2 5\.9-8\.2 5\.9Z)"[^>]*?stroke-width="([\d.]+)"/g;
 const swList = src => [...src.matchAll(SW_RE)].map(m => m[1])
   .concat([...src.matchAll(SW_RE2)].map(m => m[1]));
-// 各文件里这枚三角分别会被哪一档画出来（图标框从 CSS 读，不写死第二遍）
+
 const boxOf = {
-  'index.html': [17],                   // 今日条 .today-read（--today-btn-inner）
-  'classic/index.html': [17, 17],       // 工具栏连读键 17px / 详情页阅读器 17px
-  'js/app.js': [16],                    // 列表项 .item-read
-  'js/reader-core.js': [16],            // 古籍列表中的篇目（小古文 / 唐诗 / 宋词 / 古文观止 共用）
-  'js/reader.js': [17, 17, 17]          // 播放栏 ▶ / 上一首 / 下一首（主键是 ⏸，不在此列）
+  'index.html': [17],
+  'classic/index.html': [17, 17],
+  'js/app.js': [16],
+  'js/reader-core.js': [16],
+  'js/reader.js': [17, 17, 17]
 };
 const topInner = (css.match(/\.today-actions \{([^}]*)\}/) || [, ''])[1].match(/--today-btn-inner:\s*([\d.]+)px/);
 chk(!!topInner, '今日条内径（图标框）可读：' + (topInner && topInner[1]) + 'px');
@@ -659,7 +499,7 @@ Object.keys(playSrcs).forEach(function (f) {
   chk(px.every(v => v > 0.6 && v < 1.35),
     f + ' 的三角描边换算到屏幕都在 1px 上下（' + px.map(v => v.toFixed(2)).join(' / ') + 'px）');
 });
-// 「1px」这一档也直接盯住用户最常看到的三处：首页今日条、列表项、小古文列表
+
 chk(/stroke-width="1\.5"[^>]*\/>/.test(html.indexOf('today-read') > -1 ? html.slice(0, html.indexOf('today-read') + 900) : ''),
   '首页今日条那颗三角的描边值是 1.5（17px 图标框 → 约 1.06px）');
 ['js/app.js', 'js/reader-core.js'].forEach(function (f) {
@@ -670,13 +510,11 @@ chk(/stroke-width="2"[^>]*\/>/.test(read('js/reader-core.js')),
 chk(!/stroke-width="2\.4"/.test(html + classicHtml + app + read('js/reader-core.js') + read('js/reader.js')),
   '全站不再有旧的 2.4 描边（三角边框这一轮统一收细）');
 
-// 同色链路：圆环描边与三角描边同取 currentColor
 chk(/\.item-read \{[\s\S]*?border:\s*1px solid var\(--line\);[\s\S]*?color:\s*var\(--green\)/.test(css),
   '列表项圆键的 color 就是它的图标色，三角描边取其值');
 chk(/\.gw-play \{[\s\S]*?border:\s*1px solid var\(--line\);[\s\S]*?color:\s*var\(--blue\)/.test(classicCss),
   '小古文圆键同上（color 走天水碧，环与三角同源）');
 
-/* ---------------- 4. favicon ---------------- */
 const icon = read('icons/icon.svg');
 chk(/<svg/.test(icon), 'favicon 使用 SVG');
 chk(!/font-family|text|Noto/.test(icon), 'favicon 用矢量笔画绘制，不依赖字体');
@@ -691,7 +529,6 @@ chk(/诗|讠/.test(icon), 'favicon 备注里有「诗」字说明');
   chk(fs.existsSync(p) && fs.statSync(p).size > 1024, '图标存在：' + f);
 });
 
-// PNG 尺寸真的对（读 IHDR）
 const pngSize = p => {
   const b = fs.readFileSync(path + p);
   return { w: b.readUInt32BE(16), h: b.readUInt32BE(20) };
@@ -713,22 +550,10 @@ Object.keys(expected).forEach(f => {
   chk(s.w === expected[f] && s.h === expected[f], f + ' 尺寸为 ' + expected[f] + '×' + expected[f]);
 });
 
-// maskable 与普通图标必须不同（maskable 内容要缩进安全区）
 const norm = fs.readFileSync(path + 'icons/icon-maskable-512.png');
 const any = fs.readFileSync(path + 'icons/icon-512.png');
 chk(Buffer.compare(norm, any) !== 0, 'maskable 图标与普通图标是两份不同的图');
 
-
-/* ---------------- 7. 设置整页 + 底部导航栏不遮挡 ---------------- */
-/* 设置拆成**二级页**（Issue #132 后续）：
-   /settings/          主页：四个入口 + 页脚
-   /settings/general/ 通用（用户名 / 头像印记 / 账号 / 数据管理）
-   /settings/recite/  背诵（学段 / 年级 / 学期 / 范围 / 数量）+ 复习算法
-   /settings/lists/   我的清单（自选背诵的增删改查）
-   /settings/reader/  朗读（注音 + 五档连读方式）
-   下面的断言按这一结构读源码：分组判据是精简后的**五组**（Issue #163
-   把「阅读辅助 + 朗读播放」并成一组「朗读」），只是要「合起来看」——
-   拆页不该顺手改分类。 */
 const settingsHtml = read('settings/index.html');
 const SETTINGS_HTML = [
   'settings/general/index.html',
@@ -739,16 +564,6 @@ const SETTINGS_HTML = [
 const settingsJs = read('js/settings.js');
 const NAV_SRC = read('js/settings-nav.js');
 
-/* 「一页里最大的那颗标题」这一档只写一次（Issue #163 第四轮）——
-   `.settings-group-title, .settings-link-title, .item-title`
-   共用一个声明块，字号 / 字重 / 颜色三个值只写一遍。
-   ⚠️ 主页「账号」那一角原先另有一个 `.account-entry-name`；它现在**不是独立一角**了：
-      账号那一行与四组入口共用 `.settings-link-title` 同一份稿子
-      （账号不再自己一张卡，见 §4.19），所以共用块里也就没有这个名字。这里把它取出来，
-   下面的层级断言与 ui-consistency 那一组约定都从这一个来源读。
-   ⚠️ 判据是「共用块里含这四角」，不是「选择器列表恰好等于这四角」——
-      以后再加一角（例如入口页的书名）不该让这一条变红；
-      它要守的是「只有一个来源」，不是「只许四处」。 */
 const SHARED_TITLE_SELECTORS = ['.settings-group-title', '.settings-link-title',
   '.item-title'];
 function sharedTitleRule(code) {
@@ -760,9 +575,8 @@ function sharedTitleRule(code) {
 
 const pwaJs = read('js/pwa.js');
 
-// 需求：设置不再向上弹卡片，而是全新的整页
 chk(html.indexOf('settings-modal') === -1, '首页不再有向上弹出的设置卡片（settings-modal 已删除）');
-// 设置的入口是底部页签「设置」，由 js/chrome.js 渲染成真实链接
+
 chk(/href:\s*"\/settings\/"/.test(read('js/chrome.js')), '底部页签「设置」指向设置整页（目录化路径）');
 chk(html.indexOf('btn-settings') === -1, '首页顶栏不再有设置齿轮（入口收敛到页签）');
 chk(/data-nav="settings"/.test(settingsHtml), '设置主页声明自己是「设置」页签');
@@ -770,7 +584,7 @@ chk(/js\/chrome\.js/.test(settingsHtml), '设置页与首页共用同一套顶�
 chk(settingsHtml.indexOf('id="settings-page"') !== -1, '设置主页有独立的整页容器');
 chk(settingsHtml.indexOf('settings-modal') === -1, '设置页不再用弹层结构');
 chk(settingsHtml.indexOf('class="foot settings-foot"') !== -1, '设置主页底部有页脚（版权 + 法务链接）');
-// 四张二级页与主页一样：声明页签、共用顶栏、有整页容器与页脚、不用弹层
+
 ['settings/general/index.html', 'settings/recite/index.html',
  'settings/lists/index.html', 'settings/reader/index.html'].forEach(f => {
   const src = read(f);
@@ -779,33 +593,12 @@ chk(settingsHtml.indexOf('class="foot settings-foot"') !== -1, '设置主页底�
   chk(src.indexOf('id="settings-page"') !== -1, f + ' 有独立的整页容器');
   chk(src.indexOf('class="foot settings-foot"') !== -1, f + ' 有页脚（版权 + 法务链接）');
   chk(src.indexOf('settings-modal') === -1, f + ' 不用弹层结构');
-  // 二级页的返回键回设置主页，而不是回背诵首页
+
   chk(/data-back="\/settings\/"/.test(src), f + ' 顶栏返回键指回设置主页');
 });
 chk(/data-back="\/settings\/"/.test(read('settings/general/index.html')),
   '二级页用 data-back 声明上一层（js/chrome.js 读它）');
 
-// 需求（Issue #114 第三、二条 + 可切换复习算法那一轮 + Issue #163 精简）：
-// 设置项按「这条设置管着谁」归类 —— 共五组：
-//   通用     全站都吃（用户名、数据备份 / 清空）
-//   背诵     只决定「今天背哪几首」（学段 / 年级 / 学期 / 范围 / 数量 / 进度入口）
-//             —— 原「古诗词背诵」改名，它本来就不只作用于古诗词
-//   我的清单  用户自己那份清单（自选背诵的增删改查）—— Issue #114 第二条搬进来的
-//   复习算法  决定「下次什么时候复习」（四张模型 4 选 1）
-//   朗读     打开一篇时怎么念 / 看不看得到拼音（注音总开关 + 五档连读方式）
-//             —— Issue #163：原「阅读辅助」与「朗读播放」各只有一条设置，
-//             两个组标题 + 四行说明只为两条设置服务，并成一组「朗读」
-/* ⚠️ Issue #163 之前是六组；3 期新增了「打印」（篇目打印页，Pro · `export.paper`），
-   再并掉一组，所以现在是**六组**。新增那一组长在「我的清单」页上 ——
-   要打印的正是这份清单，分两页等于让用户在两张页之间来回搬东西
-   （见 docs §5.2 与 js/print.js）。
-   ---- Issue #163（第三轮）：**一页只有一组时不再写组标题** ——
-   「通用」「朗读」这些字已经写在顶栏页名上（几十像素之上），
-   正文顶部再写一遍是同一句话在同一屏里说两次。所以 titles 判据是
-   「按页取、与组数对齐」：单组页 0 个标题，两组的「背诵」页剩
-   「背诵 / 复习算法」两颗，「我的清单」页剩「打印」一颗
-   （前一组的名字仍是顶栏页名）。
-   ⚠️ 用户可见处一个字都没少：分组名仍是顶栏的 data-page。 */
 const PAGE_GROUPS = {
   general: { count: 1, titles: [] },
   recite: { count: 2, titles: ['背诵', '复习算法'] },
@@ -835,33 +628,26 @@ chk(/settings-group-title[^>]*>打印</.test(pageGroups.lists),
 chk(!/settings-group-title[^>]*>阅读辅助</.test(SETTINGS_HTML) &&
     !/settings-group-title[^>]*>朗读播放</.test(SETTINGS_HTML),
   '不再有「阅读辅助」「朗读播放」两个组标题（Issue #163 并成「朗读」）');
-// 分组要真的装对东西：只给背诵用的选项不能落在「通用」里。
-// ⚠️ 单组页不再有 aria-labelledby（组标题已撤），所以区块按**页**取。
+
 const blockOf = k => pageGroups[k];
 const generalBlock = blockOf('general');
 const reciteBlock = blockOf('recite');
 const listsBlock = blockOf('lists');
 const readerBlock = blockOf('reader');
-// Issue #163：分组的**顺序**仍是分类的一部分（清单紧跟在「背诵」之后，
-// 打印紧跟清单，朗读那一条偏好排在最后）。组标题撤了之后，这个顺序改由
-// js/settings-nav.js 的 GROUPS 与各页的区块顺序共同表达 —— 两处一起判。
+
 {
-  /* ⚠️ 判的是 GROUPS 表里那四组的**声明顺序**，不是整份文件里所有 key: 的出现顺序 ——
-     Issue #209 之后账号那一行也有 key（`key: "account"`，见 renderAccountEntry），
-     连它一起数会多出两个 account（它本来就不在这张表里：那是「我是谁」，
-     由 renderAccountEntry 插在**第一条**，不属于分组）。 */
+
   const groupsSrc = NAV_SRC.slice(NAV_SRC.indexOf('var GROUPS = ['),
     NAV_SRC.indexOf('function esc('));
   const order = [...groupsSrc.matchAll(/key:\s*"([a-z]+)"/g)].map(m => m[1]);
   chk(order.join(',') === 'general,recite,lists,reader',
     '四个入口的顺序为 通用 → 背诵 → 清单 → 朗读（实际 ' + order.join(',') + '）');
-  // ⚠️ Issue #209：清单里那一行已从「我的清单」简称「清单」（用户点名）
+
   chk(/title:\s*"清单"/.test(groupsSrc), '入口文案是「清单」（用户 2026-09-17 点名改的简称）');
-  // 个人中心与关于都不在 GROUPS 表里：一个插在最前、一个渲染成末尾那块只读信息
+
   chk(!/key:\s*"account"/.test(groupsSrc) && !/key:\s*"about"/.test(groupsSrc),
     'GROUPS 表里只有四组（个人中心与关于不在表里 —— 它们不是「一组设置」）');
-  // 判「标签那一行」而不是整页：页首 HTML 注释里也写着「复习算法」四个字，
-  // 用整页 indexOf 比会拿注释当答案（源码注释不是界面）。
+
   const algoTitleAt = reciteBlock.search(/settings-group-title[^>]*>复习算法</);
   const countAt = reciteBlock.indexOf('id="seg-count"');
   chk(algoTitleAt > -1 && countAt > -1 && algoTitleAt > countAt,
@@ -884,55 +670,29 @@ chk(/href="\/progress\/"/.test(reciteBlock), '「背诵」组含进度总览入�
 chk(/id="collections-list"/.test(listsBlock) && /id="btn-collections-import"/.test(listsBlock) &&
     /id="collections-tip"/.test(listsBlock),
   '「我的清单」组含自选背诵清单 / 导入键 / 说明行（Issue #114 第二条）');
-// 搬过来之后不能两边都留着：首页那张折叠卡必须真的没了
+
 chk(!/id="collections-section"/.test(html) && !/id="btn-collections"/.test(html),
   '首页不再有「自选背诵」折叠卡（整块搬进设置，不留两处入口）');
 chk(/id="seg-helper"/.test(readerBlock), '「朗读」组含注音总开关');
 
-// 需求（Issue #69 后续 A）：连读档位必须在设置页有显式单选项入口。
-// 原先还把「圆键长按 / 右键也能调」这段复述在组内（B），#120 把那块
-// 「在哪儿快速调」说明整块删掉；但 #120 顺手删过了头 —— 解冲突（#122 并入
-// main）时发现这条断言一直亮红，是本 PR 里把「不指点操作」的那半段放回了本组
-// （只讲圆键长按 / 右键弹出同一个菜单，不再教手势）。这条断言因此改成正向钉住：
-// 组内确实写回了「长按 / 右键」，但只说圆键，不再重复讲手机上怎么按。
-// Issue #163：原来两个组标题并成一个「朗读」，五档单选项与注音开关同组；
-// 「圆键长按 / 右键弹同一个菜单」那半段说明也一并撤掉 —— 两条设置的组
-// 不该再配三行操作指导（用户原话：能省则省）。
 chk(/id="seg-play"/.test(readerBlock), '「朗读」组有五档单选项容器');
-/* 剥掉 HTML 注释再判：源码注释里仍在说明「这一组原先只存在于圆键菜单里」
-   （那是给维护者看的历史），用户可见处一个字都不教手势。 */
+
 const readerBlockVis = readerBlock.replace(/<!--[\s\S]*?-->/g, ' ');
 chk(!/长按|右键/.test(readerBlockVis),
   '「朗读」组里不再教圆键手势（Issue #163：设置页不再啰嗦操作说明）');
-// 档位定义必须同源：设置页与阅读器都读 js/play-modes.js，不得各写一份
+
 chk(/js\/play-modes\.js/.test(SETTINGS_HTML), '设置页加载 js/play-modes.js（与阅读器同源）');
 chk(/window\.PlayModes/.test(settingsJs) && /PM*\.(read|LIST|write|of)\b/.test(settingsJs),
   '设置页逻辑从 PlayModes 取档位，而不是另抄一份字面量');
 chk(!/seq-origin|shuffle-trans/.test(settingsJs),
   '设置页 JS 里不再出现模式 id 字面量（避免与阅读器错开）');
-// 设置页不加载 reader-core（那是集子页的引擎），档位只能走 play-modes.js
+
 chk(!/js\/reader-core\.js/.test(SETTINGS_HTML), '设置页不加载阅读器引擎（只引档位定义）');
-// 分组标题的样式：与组内选项药丸区分开（字距 + 主标题档字号）
-// 需求（Issue #44 一轮 · 本次改口径）：分组标题**不再是 11px 的辅助标签**，
-// 而是与其他页卡片主标题同一档。
-//
-// ⚠️ Issue #163 第四轮把「同一档」定死在 **17px** 上。前三轮定在 14px
-//    （= 集子索引页的卡头卷名），用户仍连着报「设置首页卡片里的标题
-//    还没变大」——因为他眼里的「集子 / 诗词标题」是 17px 那一档
-//    （卡头卷名 .group-name、列表篇名 .item-title、入口页书名、详情页标题），
-//    14px 落在「卡片主标题」与「辅助标签」（11~12.5px）之间，读起来还是标签。
-//
-// 这一档现在**四角读同一句**（写在 css/style.css 中部的共用块里）：
-//     .settings-group-title（二级页分组名）  .settings-link-title（主页入口标题）
-//       —— 主页账号那一行也用同一个名字（与四组入口共用一份稿子）
-//     .item-title（列表篇名）
-//     css/classic.css 的 .group-name（集子卡头卷名）
-// 下面这组断言判的是「这几处**逐位相同**」，不是「等于某几个类名」——
-// 以后再加一角（例如入口页书名）不该让守卫变红，改口径时才会红。
+
 const titleSize = (css.match(/\.settings-group-title\s*\{([\s\S]{0,600}?)\}/) || ['', ''])[1];
 chk(/letter-spacing/.test(titleSize) || /letter-spacing/.test(sharedTitleRule(css)),
   '分组标题有自己的字距（与组内选项区分，不是一列裸字）');
-// 字号 / 字重 / 颜色三个值现在与另外几角共用同一句，从共用块里取
+
 const sharedTitle = sharedTitleRule(css);
 const fsMatch = sharedTitle.match(/font-size:\s*([\d.]+)px/);
 const titleFs = fsMatch ? parseFloat(fsMatch[1]) : NaN;
@@ -943,8 +703,7 @@ chk(/font-weight:\s*(600|700|bold)/.test(sharedTitle),
   '分组标题用主标题的字重（与集子卷名 / 入口标题同为 700）');
 chk(/color:\s*var\(--ink\)/.test(sharedTitle),
   '分组标题用正文主色 --ink（与集子卷名同一档）');
-/* 五处逐位相同 —— 这才是用户那句「和前面几个页面里集子或者诗词标题一样大」
-   的可判形式。少一处就是下一次「某一页看着还是小一号」的种子。 */
+
 (function titleSizeIsOneValue() {
   const px = (src, prop) => {
     const m = new RegExp(prop + ':\\s*([\\d.]+)px').exec(src);
@@ -955,43 +714,29 @@ chk(/color:\s*var\(--ink\)/.test(sharedTitle),
   const sharedFw = px(shared, 'font-weight');
   chk(!!sharedFs,
     '卡片主标题那一档（字号 / 字重 / 颜色）在 css/style.css 里只有一个来源');
-  // 集子卡头卷名（另一张表：:root 变量跨不过文件边界，所以是平的约定）
+
   const groupName = (classicCss.match(/\.group-name\s*\{([^}]*)\}/) || ['', ''])[1];
   chk(px(groupName, 'font-size') === sharedFs && px(groupName, 'font-weight') === sharedFw,
     '集子卡头卷名（.group-name）与设置页主标题逐位相同（实际 ' +
     px(groupName, 'font-size') + '/' + px(groupName, 'font-weight') + ' vs ' +
     sharedFs + '/' + sharedFw + '）');
-  // 列表篇名：字号 / 字重 / 颜色读共用块，自己那条只留字体族与字距
-  // ⚠️ 同名的规则有好几条（`.item.done .item-title`、共用块自己那条……），
-  //    这里只挑**单独成组**的那一条（选择器就是 `.item-title`）——
-  //    取第一条会拿到 `.item.done .item-title` 那一条（它本来就不该管字号）。
+
   const itemTitleOwn = (css.match(/[^{}]*\.item-title\s*\{([^}]*)\}/g) || [])
     .filter(chunk => chunk.split('{')[0].split(',').map(x => x.trim()).join(',') === '.item-title')
     .map(chunk => chunk.slice(chunk.indexOf('{') + 1))
     .join(';')
-    // 剥掉 CSS 注释：这条规则里正讲着「曾经写过 font-weight: 600」，
-    // 不剥注释会对着自己的说明判红（与 ui-consistency 里 strip() 同一条口径）。
+
     .replace(/\/\*[\s\S]*?\*\//g, ' ');
   chk(!!itemTitleOwn && !/font-size|font-weight|color:/.test(itemTitleOwn),
     '列表篇名那条规则不再另写字号 / 字重 / 颜色（读共用块，只留字体族与字距）');
-  // 主页账号那一行：它是**清单里的一行**（Issue #163 第四轮「把这个按钮和其他按钮
-  // 放一起」），所以标题走的就是 .settings-link-title 那一角 ——
-  // 样式表里不该再有一个名叫 `.account-entry-name` 的第二来源。
+
   chk(!/\.account-entry-name\s*\{/.test(css),
     '主页账号那一行不再自带一份标题样式（读 .settings-link-title，与四组入口同档）');
-  // 反向样本：把共用块的 17 改小 → 这条判据必须红（否则它只是空规则）
+
   chk(px(shared.replace('font-size: 17px', 'font-size: 14px'), 'font-size') !== sharedFs,
     '这一档真的能被改坏（把共用块的 17px 改成 14px 时上面那些断言会红）');
 })();
-// 与「页面顶部大标题」的层级关系：顶栏应用名 19px，分组标题必须小于它。
-// ⚠️ 这里**只**锁「小于顶栏应用名」这一条。原先还锁了「小于组内选项文字
-//    13.5px」—— Issue #163 之后这条不再成立：分组标题是卡片主标题（14px），
-//    与选项文字（13.5px）刻意同档，主次靠字重（700 对 500）与颜色
-//    （--ink 对 --ink-2）分，不靠把字号压小（那正是被点名的那一版）。
-//
-// 注意：同一个选择器可能在样式表里出现多次（如 .brand-name-row 先随一组
-// 只声明 font-family，后面才单独给 font-size:19px）。所以这里把所有匹配块
-// 都收集起来取**最大值**，只取第一个会拿到「没有 font-size」的那块。
+
 const maxFontSize = function (re) {
   let m, best = 0;
   while ((m = re.exec(css)) !== null) {
@@ -1000,30 +745,18 @@ const maxFontSize = function (re) {
   }
   return best;
 };
-// 直接传正则字面量，避开字符串转义带来的坑
+
 const brandFs = maxFontSize(/\.brand-name-row\s*\{([\s\S]{0,500}?)\}/g);
-// 选项块的写法是两个选择器共用一个声明块（.seg button, .chips button），
-// 所以按选择器列表整体匹配，再从中取 font-size。
+
 const optFs = maxFontSize(/\.settings-page \.seg button,[\s\S]{0,60}?\{([\s\S]{0,500}?)\}/g);
 chk(brandFs >= 17 && titleFs < brandFs,
   '分组标题（' + titleFs + 'px）小于页面顶部大标题（' + brandFs + 'px）');
-// 反向：**选项文字不许比分组标题还大**，也不许与它「差不多大」到分不出主次。
-// ⚠️ Issue #163 第四轮把这一档从 14px 提到 17px 之后，原先那条
-//    「两者相差 ≤1px」的判据不再成立（也不该成立）：它当时是配合 14px 那一档
-//    写的（「刻意同档、靠字重与颜色分」）。现在的口径是**字号先分出主次**
-//    （17px 对 13.5px），字重与颜色再各加一档 —— 所以改判「选项文字 < 标题」。
+
 chk(optFs >= 13 && titleFs > optFs,
   '分组标题（' + titleFs + 'px）大于组内选项文字（' + optFs + 'px），主次由字号 + 字重 + 颜色三档一起分');
 chk(!/\.settings-group-desc/.test(css), '样式里不再保留二级描述 .settings-group-desc');
 chk(!/settings-group-desc/.test(SETTINGS_HTML), '设置页 HTML 里不再有二级描述节点');
 
-/* ---------------- 7d. 全站一致性（本次 UI review 的修复） ----------------
-   逐页看过之后收口的一致性问题，每条都对应一个真实可复现的现象，
-   断言写在这里防止回退。 */
-
-// (1) 详情页工具条在手机上溢出：三组控件在 390px 下合计约 393px，
-//     原先 nowrap + overflow-x: auto，结果「全文」按钮被裁掉一半、还看不到滚动条。
-//     现在允许换行、整行居中。
 {
   const m = css.match(/\.modal-box \.reader-actions \{([\s\S]{0,500}?)\}/);
   const block = m ? m[1] : '';
@@ -1032,8 +765,6 @@ chk(!/settings-group-desc/.test(SETTINGS_HTML), '设置页 HTML 里不再有二�
   chk(/justify-content:\s*center/.test(block), '工具条整行居中，与居中的诗题 / 正文同一条中轴');
 }
 
-// (2) 播放栏出现时底部页签只是被盖住：看得见摸不着、读屏还能聚焦到被盖住的链接。
-//     现在页签彻底让路。
 chk(/body\.has-audio-player \.dock \{[\s\S]{0,140}?visibility:\s*hidden/.test(css),
   '底部播放栏出现时页签彻底让路（不再「被盖住却还能聚焦」）');
 chk(/body\.has-audio-player \.dock \{[\s\S]{0,160}?pointer-events:\s*none/.test(css),
@@ -1041,20 +772,9 @@ chk(/body\.has-audio-player \.dock \{[\s\S]{0,160}?pointer-events:\s*none/.test(
 chk(/body\.reader-open \.dock \{ display: none; \}/.test(classicCss),
   '阅读器打开时页签同样是「让路」而不是被压住（两处口径一致）');
 
-// (3) 没有底部页签的法务页：页脚那行小字原先正好贴屏底（iPhone 上被横条压半行）
-/* ⚠️ Issue #209：这一档**没有**再减 --foot-gap-v2。
-   用户要减的是「页脚上面那段留空」（改在 .foot 自己的 padding-top 上），
-   不是这一档的收尾 —— 这里减掉只会让末行重新贴到屏底。判据回到原来那条。 */
 chk(/body\.no-dock \.app,[\s\S]{0,600}?padding-bottom:\s*calc\([\s\S]{0,200}?--safe-bottom/.test(css),
   '无页签页面（法务页）底部留出安全区，页脚不再贴屏底');
 
-/* (3b) 三张样式表的注释块必须闭合 —— 这一条是从一次真事故里长出来的：
-   改 .foot 留白时注释里多写了一个注释闭合符，注释提前闭合、后面几行变成
-   「野 CSS 文本」，于是**紧随其后的整条规则连同下文一起被解析器丢掉** ——
-   页脚那 40px 静默失效，页面上一眼看不出，只有 test/pwa.test.js 的几何断言红了。
-   ⚠️ 这类错误不让浏览器报错、也不让样式表整份失效，只会「少掉一块」，
-      正是本仓库反复记着的那种「不报错的少东西」。
-   判据：开注释符与闭注释符个数相等，且从左往右扫不会先出现孤立的闭注释符。 */
 for (const f of ['css/style.css', 'css/classic.css', 'css/legal.css']) {
   const src = read(f);
   let depth = 0, stray = false;
@@ -1069,8 +789,6 @@ for (const f of ['css/style.css', 'css/classic.css', 'css/legal.css']) {
     f + ' 的注释块闭合（多一个注释闭合符会把它后面那条规则静默吃掉）');
 }
 
-// (4) iOS 输入框防缩放此前是「死规则」：被 .settings-input 的 font-size 压回去了。
-//     现在按类名精确命中，并且整段挪到样式表末尾。
 {
   const lastInputMedia = css.lastIndexOf('--input-font-narrow');
   chk(/@media screen and \(max-width: 700px\) \{\s*input:not\(\[type="checkbox"\]\)/.test(css),
@@ -1083,37 +801,22 @@ for (const f of ['css/style.css', 'css/classic.css', 'css/legal.css']) {
   chk(/--input-font-narrow:\s*16px/.test(css), '窄屏输入框字号为 16px（iOS 不缩放的阈值）');
 }
 
-// (5) 卡内小件的圆角原先有 10 / 12 / 16px 三种，现在收敛到一个变量
 chk(/--radius-sm:\s*12px/.test(css), '定义卡内小件圆角变量 --radius-sm');
 chk(!/border-radius:\s*10px/.test(css) && !/border-radius:\s*10px/.test(classicCss) &&
   !/border-radius:\s*10px/.test(read('css/legal.css')),
   '三张样式表里不再散落 10px 的圆角硬编码（统一走 --radius-sm）');
 
-// (6) 大屏上顶栏比正文宽出一大截、阅读器正文还会被切掉左半行：
-//     两者都按 720px 内容区居中
-// ⚠️ 宽度令牌换过两次（720px → var(--col-w) → var(--content-w)，见 css/style.css
-//    的「内容列宽」那一条），这里改判「顶栏读的是那条**内容宽**令牌」，
-//    不再写死具体令牌 —— 错位与否取决于顶栏与内容区**同源**，而不是那一个数值。
-//    顶栏 / 页签内层 / 正文列读 --content-w（一列纸减掉两侧那条边）：
-//    这三样住在「整宽」容器里、自己不带左右内边距，读 --col-w 会在平板 /
-//    桌面上比正文列宽出两侧那一条边。
-/* ⚠️ 窗口取 1400 而不是 600：`.topbar {` 与 `max-width` 之间现在夹了一整段
-   「只写 max-width 是收缩到内容宽，必须先 width: 100%」的说明（那条注释修的是
-   2026-09-17 顶栏在桌面被挤成 369px 的真 bug），600 装不下它 —— 窗口开小
-   会让这条判据变成「查不到」的假红，而红的原因与真实问题毫无关系。 */
 chk(/\.topbar \{[\s\S]{0,1400}?max-width:\s*var\(--content-w/.test(css),
   '顶栏宽度与内容区同源（--content-w，大屏不与正文错位）');
-/* 同一条的另一半：光有 max-width 还不够 —— 顶栏是块级且内容比内容区窄时
-   （桌面那一档就是），max-width 只是天花板，盒子仍会收缩到内容宽。 */
+
 chk(/\.topbar \{[\s\S]{0,1400}?width:\s*100%/.test(css),
   '顶栏有 width: 100%（只写 max-width 时它会收缩到内容宽，桌面那一档挤成一小截）');
-chk(/\.reader-body \{[\s\S]{0,900}?width:\s*auto/.test(classicCss),
+
+chk(!/\.reader-body \{[\s\S]{0,600}?width:\s*100%/.test(classicCss),
   '阅读器正文不再写 width: 100%（那会让内边距溢出视口、正文贴左边缘被切）');
 chk(/\.reader-body \{[\s\S]{0,1200}?box-sizing:\s*border-box/.test(classicCss),
   '阅读器正文显式 border-box，内边距算在 720px 之内');
-// 宽度必须用「定宽 + 自动外边距」，不能用 max-width：
-// .reader-body 是 flex 列容器的子项，max-width + width: auto 会被解析成
-// flex-basis: auto → 内容尺寸，容器一宽盒子反而被压成窄条（大屏上正文挤成一小撮）。
+
 chk(/\.reader-body \{[\s\S]{0,1200}?width:\s*var\(--content-w/.test(classicCss),
   '阅读器正文用定宽 --content-w（flex 子项上的 max-width 会退化成 flex-basis）');
 chk(/\.reader-body \{[\s\S]{0,1200}?max-width:\s*calc\(100%/.test(classicCss),
@@ -1121,41 +824,28 @@ chk(/\.reader-body \{[\s\S]{0,1200}?max-width:\s*calc\(100%/.test(classicCss),
 chk(/\.reader-body \{[\s\S]{0,400}?min-height:\s*0/.test(classicCss),
   '阅读器正文 min-height: 0，否则 flex 项被内容撑开、滚动条永远不出现');
 
-// (8) Service Worker 版本必须比这次改动的资源新，否则老用户拿到旧样式
 chk(parseInt((read('sw.js').match(/poem-app-v(\d+)/) || [0, '0'])[1], 10) >= 23,
   'Service Worker 缓存版本已升到 v23（本轮改了 css/js/html，不升版本老用户看到的是旧样式）');
 
-// (7) 顶栏右侧的动作位在阅读器里画的是「返回」箭头，不是 ✕：
-//     同一种行为在全站只能是同一个图标
 chk(/if \(action\) \{[\s\S]{0,700}?GLYPHS\.back/.test(read('js/chrome.js')),
   '顶栏动作位统一用返回箭头（阅读器不再单独长出一个 ✕）');
 chk(!/glyph\("close"\)/.test(read('js/classic.js')),
   '小古文页不再要求把动作位换成 ✕（形状交给 chrome.js 统一给）');
 
-// 需求：设置页底部不被底部导航栏遮挡 —— 统一由 --nav-h 这条基准线决定
 chk(/--nav-h:\s*0px/.test(css), '定义了底部导航栏高度变量 --nav-h');
-// ⚠️ Issue #209 的教训：--foot-gap-v2（减 40px）只能减在「呼吸」那一笔上，
-//    绝不能从 --nav-h 里扣 —— 写成 max(0px, calc(24px + --nav-h - 40px))
-//    会把导航栏的高度也一起减掉（61.5 + 24 − 40 = 45.5 ＜ 页签 62），
-//    末行照样被压住。判据因此读**声明本身**：把 padding-bottom 的值取出来，
-//    要求 --nav-h 是**加**上去的（+= 而非 -=）。
-//    ⚠️ 这一段是本页唯一允许出现 --foot-gap-v2 的留白规则（避让区里不许有）：
-//    设置页的 padding-bottom 就是页脚与页签之间的距离，是唯一的缓冲。
+
 const settingsPad = (css.match(/\.settings-page \{[^}]*?padding-bottom:\s*([^;]+);/) || [,''])[1];
 chk(/var\(--nav-h\)/.test(settingsPad) && !/var\(--nav-h\)\s*-/.test(settingsPad),
   '设置页留出导航栏高度，最后一行不会被压住（--nav-h 只加不减）');
-// 页面留白不写死 px，统一走 --nav-h；页签 / 播放栏同时在场也不互相压住
+
 chk(!/padding-bottom:\s*calc\(150px/.test(css) && !/padding-bottom:\s*calc\(196px/.test(css),
   '页面留白不再写死 px（150px / 196px 这类硬编码已删除）');
 chk(/\.dock \{[\s\S]*?position:\s*fixed[\s\S]*?bottom:\s*0/.test(css), '底部页签是贴底固定导航栏');
-// 同上：这一条守的是「页签的避让是硬要求」，所以 --nav-h 必须原样加上去，
-// --foot-gap-v2 只能减在它后面那一笔呼吸上（末行与页签之间那张是一对一的）。
+
 const dockPad = (css.match(/body:not\(\.no-dock\) \.app[^{]*\{[^}]*?padding-bottom:\s*([^;]+);/) || [,''])[1];
 chk(/var\(--nav-h\)/.test(dockPad) && !/var\(--nav-h\)\s*-/.test(dockPad),
   '有底部页签时，页面留白按实测导航栏高度计算（--nav-h 只加不减）');
-/* ⚠️ 那 40px 到底减在哪：.foot / .settings-foot 的 padding-top。
-   这一条同时守住「两处都要减」—— 只减一处时另一张页仍会空一大截，
-   而它在另一张页上，肉眼扫一遍看不出来。 */
+
 chk(/body:not\(\.no-dock\) \.foot,[\s\S]{0,120}?\.settings-foot\s*\{[\s\S]{0,200}?padding-top:\s*max\(0px, calc\(24px - var\(--foot-gap-v2\)\)\)/.test(css),
   '页脚上方那 40px 减在 .foot / .settings-foot 自己的 padding-top 里（两处都有）');
 chk(/sw\.js/.test('sw.js') && /js\/pwa\.js/.test(read('settings/index.html')) && /js\/pwa\.js/.test(read('classic/index.html')),
@@ -1171,35 +861,26 @@ chk(/measureBottomNav/.test(pwaJs) && /ResizeObserver/.test(pwaJs),
 chk(/\/settings\//.test(read('sw.js')) && /js\/settings\.js/.test(read('sw.js')),
   'Service Worker 预缓存设置页，断网也可进设置');
 
-// 法务链接在设置页底部；返回入口交给全站统一的底部页签
 chk(/data-nav-go/.test(read('js/chrome.js')) && /\/settings\//.test(read('js/chrome.js')),
   '设置页可经底部页签回到古诗词 / 小古文');
 
-/* ---------------- 7c. 目录化 URL（URL 里不出现 .html） ----------------
-   页面从 /classic.html 搬到 /classic/index.html 之后，有两个坑必须钉死：
-   1) 页面里的资源引用：住在子目录的页面若用相对路径，会去 /settings/css/... 找；
-   2) Service Worker 的注册路径：相对的 "./sw.js" 会解析成 /settings/sw.js（404），
-      整站离线能力静默失效 —— 这两条各自由下面断言守住。 */
 {
   const subPages = ['classic/index.html', 'settings/index.html', 'terms/index.html', 'privacy/index.html'];
   subPages.forEach(f => {
     const src = read(f);
     const rel = (src.match(/(?:src|href)="(\.\.?\/[^"]*)"/g) || [])
-      .filter(x => !/^href="\.\/#/.test(x)); // 页内锚点（./#p1）不算
-    // 子目录页面要么用绝对路径（/css/...），要么显式声明 <base href="/">，
-    // 否则相对路径会基于子目录解析而 404
+      .filter(x => !/^href="\.\/#/.test(x));
+
     const hasBase = /<base href="\/"\s*\/>/.test(src);
     chk(hasBase || rel.length === 0,
       f + ' 资源引用不会因目录化而 404（绝对路径或 <base href="/">，实际 ' + rel.join(', ') + '）');
   });
-  // Service Worker 必须从站点根注册，否则子目录页面注册不上（scope 也覆盖不到全站）
+
   chk(/navigator\.serviceWorker\.register\("\/sw\.js"\)/.test(read('js/pwa.js')),
     'Service Worker 从站点根注册（/sw.js），子目录页面同样能注册');
   chk(!/register\("\.\/sw\.js"\)/.test(read('js/pwa.js')),
     '不再用相对的 ./sw.js 注册（目录化后会解析成 /settings/sw.js 而 404）');
-  // sw.js 必须是能解析的 JS —— 注释块里漏一个 */ 就会让整份文件
-  // 解析失败、Service Worker 从不注册，而页面上完全看不出来
-  //（离线能力静默失效，只有断网时才发现）。这一条守住这次的回归。
+
   {
     const { execFileSync } = require('child_process');
     let swOk = true;
@@ -1207,13 +888,11 @@ chk(/data-nav-go/.test(read('js/chrome.js')) && /\/settings\//.test(read('js/chr
     catch (e) { swOk = false; }
     chk(swOk, 'sw.js 能通过语法检查（注释块闭合、没有游离的 */ —— 否则 SW 从不注册）');
   }
-  // 需求（用户原话）：「去除 sw.js 中的所有注释，以后也禁止添加」。
-  // 直接禁掉，而不是只清理一遍 —— 那条漏 `*/` 的坑就是从注释里来的，
-  // 注释一多、改动一多，同样的错会再来一次。
+
   {
     const swSrc = read('sw.js');
     const lines = swSrc.split('\n');
-    // 逐行找注释：行注释（含行尾）与块注释（含行尾 / 多行）
+
     const commented = lines.map((l, i) => [i + 1, l]).filter(([, l]) => {
       const t = l.trim();
       return t.indexOf('//') === 0 || t.indexOf('/*') === 0 ||
@@ -1224,31 +903,25 @@ chk(/data-nav-go/.test(read('js/chrome.js')) && /\/settings\//.test(read('js/chr
       (commented.length ? '实际第 ' + commented.map(c => c[0]).join('、') + ' 行有注释' : '') + '）');
   }
 
-  // 缓存名必须随资源变化升级，否则老用户拿到的是旧副本。
-  // 这里不只查「等于某个版本号」——那样每次改 CSS 都得改测试。
-  // 关键约束：静态资源是「缓存优先」，所以缓存版本号必须比最近的资源改动新。
   const swVer = parseInt((sw.match(/poem-app-v(\d+)/) || [0, '0'])[1], 10) || 0;
   chk(swVer >= 21, 'Service Worker 缓存版本已提升（≥v21，实际 v' + swVer + '），老缓存会被清掉');
-  // 反向约束：CACHE_NAME 必须出现在 sw.js 里且是纯常量，避免被误改成变量而失效
+
   chk(/const CACHE_NAME = "poem-app-v\d+";/.test(sw), 'CACHE_NAME 是带版本号的常量');
-  // 静态资源是「缓存优先」——改样式表却不升版本，用户会一直看到旧样式。
-  // 这条约定写在 README.md 的项目说明里（sw.js 本身不留注释）。
+
   const readme = read('README.md');
   chk(/缓存优先/.test(readme) && /升|提升|更新/.test(readme),
     'README.md 里写明「静态资源缓存优先、改动需升级版本」的约定');
   chk(sw.indexOf('缓存优先') === -1,
     'sw.js 里不出现注释形式的约定（注释已全部清空）');
-  // 需求（用户原话）：「删除 sw-notes.md，以后也禁止添加」。
-  // 这份文件是 sw.js 的版本沿革 + 维护约定，用户不希望在仓库里再看到它。
+
   chk(!fs.existsSync(__dirname + '/../SW-NOTE.md') &&
       !fs.existsSync(__dirname + '/../sw-notes.md') &&
       !fs.existsSync(__dirname + '/../docs/sw-history.md'),
     'SW-NOTE.md / sw-notes.md 已删除（用户要求：删除并禁止再加）');
-  // 需求（用户原话）：「README.md 仅仅应该像别的项目一样做项目的基本描述，这不是 changelog」。
-  // 这里守住 README 不再是开发日志：不出现 Issue 编号、不出现版本沿革口吻。
+
   chk(!/Issue\s*#\d+/.test(readme) && !/#\d+\s*(后续|第一条|第二条|第三条)/.test(readme),
     'README.md 不再是 changelog（不含 Issue 编号 / 逐条沿革）');
-  // 并且所有页面的样式表 / 脚本都必须在 PRECACHE 里（否则断网/老用户会新老混用）。
+
   ['css/style.css', 'css/classic.css', 'css/legal.css'].forEach(function (f) {
     chk(sw.indexOf('./' + f) !== -1, 'PRECACHE 含 ' + f);
   });
@@ -1258,9 +931,6 @@ chk(/data-nav-go/.test(read('js/chrome.js')) && /\/settings\//.test(read('js/chr
 }
 chk(/invalidatePlan/.test(settingsJs), '设置页改配置后会让首页的今日计划缓存失效');
 
-/* ---------------- 7b. 设置页选中态统一（本次改动） ----------------
-   原先一页两套语言：学段 / 学期 / 范围 / 数量是「白底 + 天青字」，
-   年级是「深绿实底」。用户明确表示更喜欢深绿那一套，这里把它们并成一套。 */
 chk(/\.settings-page \.seg button\.active,[\s\S]{0,80}?\.settings-page \.chips button\.active \{[\s\S]{0,200}?background:\s*var\(--green\)/.test(css),
   '设置页五个组合（含年级）统一为深绿实底选中态');
 chk(/\.settings-page \.seg button\.active,[\s\S]{0,300}?color:\s*#fdfaf2/.test(css),
@@ -1271,26 +941,16 @@ chk(!/\.settings-page \.seg button\.active[\s\S]{0,200}?padding:/.test(css),
   '选中态只换配色、不改内边距（选中不会把整行撑动）');
 chk(/\.settings-page \.seg,\s*\.settings-page \.chips \{[\s\S]{0,200}?background:\s*transparent/.test(css),
   '设置页去掉旧的「灰底容器」外壳，药丸直接排布');
-// 只作用于设置页：阅读器 / 列表页的 .seg.mini 不受影响
+
 chk(!/\.seg button\.active \{[\s\S]{0,120}?background:\s*var\(--green\)/.test(css),
   '全局 .seg 选中态未被改掉（阅读器 .seg.mini 仍是原样）');
 
-
-
-/* ---------------- 4b. 字体子集必须覆盖站点实际用到的字 ---------------- */
-/**
- * 自托管字体是「按站点用字子集化」的，一旦子集做旧了，页面上的字就会
- * 悄悄缺笔画（曾经「用户协议 / 隐私条款」被渲染成「用户 / 隐私条」）。
- * 这里用 fontTools 直接读 cmap 做覆盖校验：CI 装了 fonttools 才校验，
- * 没装则跳过（本地可 pip install fonttools brotli）。
- */
 let subsetChecked = false;
 try {
   const { execFileSync } = require('child_process');
   execFileSync('python3', ['-c', 'import fontTools'], { stdio: 'ignore' });
   const fontsDir = path + 'fonts/';
-  // 不再只抽查几个词：直接把「站点实际用到的全部字符」交给字体做覆盖校验。
-  // #44 补了 197 首译文，新增 116 个用字，靠固定清单是查不出来的。
+
   const { execFileSync: _x } = require('child_process');
   const py = `
 import sys, json, os, re
@@ -1332,19 +992,7 @@ print(json.dumps(out, ensure_ascii=False))
 `;
   const res = JSON.parse(execFileSync('python3', ['-c', py, path], { encoding: 'utf8' }));
   chk(res._total > 3000, '站点用字扫描出 ' + res._total + ' 个字符（含全部诗词译文）');
-  // 覆盖面回到「零缺字」。
-  //
-  // 这里曾经放宽到「缺字不超过 90」——当时 Noto CJK 本身缺一批极生僻字
-  // （礼器名、拟声词、古地名、古人名），只能回落系统字体。
-  // 但那个口径有个漏洞：扫描只认 BMP，看不见《昭明文选》里
-  // 《子虚赋》《吴都赋》那批 ExtB 生僻字，于是「缺 28 字」看着很稳，
-  // 实际页面上空白的远不止这些。
-  //
-  // 现在两处都补齐了：
-  //   · 扫描口径带上扩展区（U+20000–U+2FA1F），extB 缺字再也藏不住
-  //   · 字体子集从花園明朝（HanaMin，公开领域）逐字取了轮廓补进去
-  // 所以这条断言收紧成「一个都不能缺」，页面上不该再出现空字。
-  // 补字脚本：scripts/supplement-fonts.py
+
   const MAX_MISSING = 0;
   Object.keys(res).filter(k => k.indexOf('Noto') === 0).forEach(name => {
     const miss = res[name] || '';
@@ -1357,20 +1005,8 @@ print(json.dumps(out, ensure_ascii=False))
   console.log('(未安装 fonttools，跳过字体子集覆盖检查：pip install fonttools brotli)');
 }
 
-/* ---------------- 搜索框聚焦光晕：不许拿不透明的填充色当 box-shadow ---------------- */
-/*
-   全站输入框聚焦时都是「天青描边 + 一圈**半透明**淡光」：
-       .search-input:focus { box-shadow: 0 0 0 3px rgba(47, 96, 85, .10); }
-   搜索页那一条（body[data-nav="search"] ...:focus）曾经误填了 --green-light
-   （#dbe9e2，不透明的浅底**填充色**），于是同一枚控件在搜索页画出一圈实心
-   粉绿外框、在别处是柔和光晕 —— 两副面孔，真机上看着像「框被加粗了一圈」。
-   PWA 层（test/pwa.test.js）会拿真浏览器量这圈光晕的色相，但那一层要 puppeteer，
-   缺依赖时整层跳过 —— 所以在主题层补一条**纯源码**断言，没浏览器也能守住：
-   凡是给搜索框画 box-shadow 的地方，颜色必须是天青主色的半透明光（rgb 47,96,85），
-   不能出现 --green-light / #dbe9e2 这类不透明填充色。
-*/
 {
-  // 抓出所有「作用于 .search-input 的 :focus 规则块」
+
   const ruleRe = /([^{}]*?search-input[^{}]*?:focus[^{}]*?)\{([^}]*)\}/g;
   let m, checked = 0;
   while ((m = ruleRe.exec(classicCss)) !== null) {

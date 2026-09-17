@@ -1,19 +1,5 @@
 #!/usr/bin/env node
-/**
- * 译文体检工具
- *
- * 全库逐首检查白话译文是否齐全、是否疑似漏写或敷衍：
- *   1. 缺译文（translation 为空 / 只有空白）
- *   2. 译文过短（相对原文长度低于阈值，疑似没写完）
- *   3. 译文与原文完全相同（粘贴错误）
- *   4. 没标来源口径（translationSource 缺失）
- *   5. 来源口径取值不认识（不在 data/index.js 的四类里）
- *   6. 统计各学段、各年级的覆盖率，给出总覆盖率
- *
- * 用法：
- *   node scripts/audit-translations.js            # 体检报告，有不达标项时退出码 1
- *   node scripts/audit-translations.js --json     # 输出 JSON，便于接进 CI
- */
+
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
@@ -21,7 +7,6 @@ const vm = require('vm');
 const ROOT = path.join(__dirname, '..');
 const GRADES = 12;
 
-/** 装载 data/poems-N.js，返回全部诗词（grade 由文件序号回填） */
 function loadPoems() {
   const sandbox = { window: {}, console };
   sandbox.window = sandbox;
@@ -34,14 +19,12 @@ function loadPoems() {
   return sandbox;
 }
 
-/** 相对原文长度的最低译文比（正文越短，留的余量越大） */
 function minRatio(textLen) {
-  if (textLen <= 40) return 0.9;    // 五绝一类的短诗，译文不该比原文还短
-  if (textLen <= 120) return 0.85;  // 律诗、中调词
-  return 0.7;                        // 长词、文言文
+  if (textLen <= 40) return 0.9;
+  if (textLen <= 120) return 0.85;
+  return 0.7;
 }
 
-/** 允许的译文来源口径（与 data/index.js 的 TRANSLATION_SOURCES 一一对应） */
 const SOURCES = ['academic', 'school', 'public-domain', 'modern'];
 
 const plain = s => String(s || '').replace(/\s/g, '');
@@ -49,7 +32,6 @@ const sandbox = loadPoems();
 const poems = [];
 for (let i = 1; i <= GRADES; i++) poems.push(...(sandbox[`POEMS_${i}`] || []));
 
-// 小古文同样体检：它也是「译文」，来源标注不能只有课内诗词有
 const classicFile = path.join(ROOT, 'data', 'poems-classic.js');
 vm.runInContext(fs.readFileSync(classicFile, 'utf8'), sandbox, { filename: classicFile });
 const classics = sandbox.POEMS_CLASSIC || [];
@@ -65,15 +47,13 @@ poems.forEach(p => {
   if (plain(tr) === plain(p.text)) problems.sameAsText.push(p);
 });
 
-// 来源标注：译文与原文都齐了，还得说得清「这段译文是怎么来的」
 poems.concat(classics).forEach(p => {
-  if (!String(p.translation || '').trim()) return; // 缺译文的已单独报
+  if (!String(p.translation || '').trim()) return;
   const src = p.translationSource;
   if (!src) problems.noSource.push(p);
   else if (SOURCES.indexOf(src) < 0) problems.badSource.push({ p, src });
 });
 
-// 分年级覆盖率
 const byGrade = {};
 poems.forEach(p => {
   byGrade[p.grade] = byGrade[p.grade] || { total: 0, done: 0 };
@@ -84,7 +64,6 @@ const total = poems.length;
 const done = total - problems.missing.length;
 const coverage = total ? done / total : 1;
 
-// 来源口径分布（含小古文），报告里亮出来，读者一眼能看到「各占多少」
 const sourceDist = {};
 poems.concat(classics).forEach(p => {
   const k = p.translationSource || '(未标)';

@@ -1,29 +1,3 @@
-/**
- * 课内自身重复去重 + 《静夜思》教材文本裁定（Issue #69 收尾）
- *
- * 需求原话：
- *   · 「课内 12 组自身重复 以低年级版本为准，去重」
- *   · 「静夜思以床前明月光为准，教材为准」
- *
- * 背景：课内 12 组篇目在**两个年级**各收了一份（同一首诗的正文一字不差），
- * 属于逐页录入时留下的自身重复 —— 与「课内 ↔ 选集」的跨集重复不同，
- * 它连出处都不一样，纯粹是同一份教材内容存了两遍：
- *
- *   跨学段：绝句（二年级下 / 三年级下）、望洞庭（三年级上 / 四年级下）、
- *           四时田园杂兴（四年级下 / 五年级下）、天净沙·秋思（六年级下 / 七年级上）
- *   高中段：师说、静女、书愤、临安春雨初霁、李凭箜篌引
- *   另有 3 组同时跨到选集（登高 / 念奴娇·赤壁怀古 / 永遇乐·京口北固亭怀古），
- *   它们的课内两份也一并收敛。
- *
- * 裁定：**以低年级版本为准，去重** —— 保留低年级那一条（学生先学到它），
- * 删掉高年级重复的那一条；作品主表里这一篇的条目数随之减一。
- *
- * 这一层验四件事：
- *   1. 课内 12 组自身重复已消失（data/poems-*.js 与 works-map 两条路径都不得再出现）
- *   2. 保留的是低年级那一条，且正文 / 译文没被改动
- *   3. 《静夜思》课内与唐诗三百首正文都等于教材文本「床前明月光……」
- *   4. 总数、年级分布、排程 / 搜索去重结果与去重后的语料一致
- */
 const fs = require('fs');
 const vm = require('vm');
 
@@ -40,8 +14,7 @@ const DATA = [
   'data/poems-tangshi.js', 'data/poems-songci.js', 'data/poems-guwen.js', 'data/poems-zhaoming.js',
   'data/site-index.js', 'data/works-map.js', 'data/works-index.js'
 ];
-// 正文存储主表：被主表收编的条目只存归属（textRef），正文要按它取回 ——
-// loadData 会把 data/text-master.js 排到最前（data/index.js 聚合时就要用它）。
+
 const { loadData } = require('./master-env');
 loadData(sb, DATA);
 const ALL = sb.POEMS_ALL;
@@ -49,15 +22,11 @@ const byId = {};
 ALL.forEach(p => { byId[p.id] = p; });
 const WI = sb.WorksIndex;
 
-/** 去掉标点空白，只比文字（与 works-index 的判重键同口径） */
 const norm = t => String(t || '').replace(/[\s\u3000]+/g, '')
   .replace(/[，。！？；：、,.!?;:"'“”‘’「」『』《》〈〉（）()\[\]【】—－\-…·~～]/g, '');
 
-/* ============ 一、12 组自身重复已消失 ============ */
-
 chk(ALL.length === 261, '课内诗词总数 261（去重前 273，删掉 12 条重复条目；实际 ' + ALL.length + '）');
 
-// 每条被删的高年级条目，现在都不该再出现在数据里
 const REMOVED = [
   ['xx3-10', '绝句', '三年级下', 'poems-xx2-12', '二年级下'],
   ['xx4-14', '望洞庭', '四年级下', 'poems-xx3-07', '三年级上'],
@@ -79,7 +48,7 @@ const PROSE_BY_ID = {};
   const src = fs.readFileSync(__dirname + '/../' + f, 'utf8');
   const m = src.match(/window\.POEMS_(\d+) = (\[[\s\S]*\]);/);
   const arr = vm.runInNewContext('(' + m[2] + ')');
-  // 被主表收编的条目只存归属（textRef），正文要按它取回，才谈得上「逐字未改」
+
   arr.forEach(p => { PROSE_BY_ID[p.id] = sb.masterTextOf ? sb.masterTextOf(p, 'poems') : p; });
 });
 
@@ -88,8 +57,6 @@ chk(missing.length === 0, '被删的高年级重复条目已从课内数据里�
   (missing.map(r => r[0]).join('、') || '无') + '）');
 const kept = REMOVED.filter(r => !PROSE_BY_ID[r[3].replace('poems-', '')]);
 chk(kept.length === 0, '低年级版本全部保留（误删：' + (kept.map(r => r[3]).join('、') || '无') + '）');
-
-/* ============ 二、保留的是低年级那一条，正文未改 ============ */
 
 const KEPT_TEXT = {
   'poems-xx2-12': '迟日江山丽，春风花草香。泥融飞燕子，沙暖睡鸳鸯。',
@@ -108,15 +75,11 @@ const KEPT_TEXT = {
 const textBad = Object.keys(KEPT_TEXT).filter(id => !PROSE_BY_ID[id.replace('poems-', '')] || norm(PROSE_BY_ID[id.replace('poems-', '')].text) !== norm(KEPT_TEXT[id]));
 chk(textBad.length === 0, '保留条目的正文逐字未改（异常：' + (textBad.join('、') || '无') + '）');
 
-// 保留的低年级条目都在课内主表里，且年级确实更低
 const allById = {};
 ALL.forEach(p => { allById[p.id] = p; });
 const notInAll = Object.keys(KEPT_TEXT).filter(id => !allById[id.replace('poems-', '')]);
 chk(notInAll.length === 0, '保留的低年级条目仍能通过 POEMS_ALL 取到（缺：' + (notInAll.join('、') || '无') + '）');
 
-/* ============ 三、课内自身重复：数据层与主表层都为 0 ============ */
-
-// 数据层：同一首（正文一致）在课内只应有一条
 const courseKey = {};
 const selfDup = [];
 ALL.forEach(p => {
@@ -127,12 +90,10 @@ ALL.forEach(p => {
 });
 chk(selfDup.length === 0, '课内数据里没有正文相同的两条（残留：' + (selfDup.join('、') || '无') + '）');
 
-// 主表层：同一作品不该有两条及以上课内条目
 const dupGroups = WI.works.filter(w => w.entries.filter(e => e.indexOf('poems-') === 0).length > 1);
 chk(dupGroups.length === 0, '作品主表里没有「课内自身重复」的组（残留 ' + dupGroups.length +
   ' 组：' + dupGroups.map(w => w.title).join('、') + '）');
 
-// 去重前是 12 组，回归防线：这 12 篇现在各自只剩一条课内条目
 const 只有一条 = REMOVED.every(r => {
   const p = allById[r[3].replace('poems-', '')];
   if (!p) return false;
@@ -141,23 +102,14 @@ const 只有一条 = REMOVED.every(r => {
 });
 chk(只有一条, '12 篇去重后各只剩一条课内条目');
 
-// 跨集重复（课内 ↔ 选集）仍在，没有被误伤
 chk(WI.same('poems-xx1-09', 'tangshi-ts-231'), '「课内 ↔ 选集」的跨集判重未受影响（《静夜思》仍与唐诗《夜思》同篇）');
 chk(WI.same('poems-gz10-05', 'tangshi-ts-190'), '《登高》课内与唐诗三百首仍判为同一篇（课内只删自身重复那份）');
 chk(WI.same('poems-gz10-07', 'songci-sc-67'), '《念奴娇·赤壁怀古》课内与宋词三百首仍判为同一篇');
 chk(WI.same('poems-gz10-08', 'songci-sc-183'), '《永遇乐·京口北固亭怀古》课内与宋词三百首仍判为同一篇');
 
-/* 作品主表组数：课内 12 组自身重复去重后由 66 降到 57；
-   这一轮近重复合并进来 3 组（《黄鹤楼送孟浩然之广陵》《夜上受降城闻笛》《将进酒》，
-   都是「课内 ↔ 唐诗三百首」）→ 57 + 3 = 60。
-   （《蝶恋花》那组两条同在宋词三百首，并成一条后不再需要登记跨集组。） */
 chk(sb.WORKS_GROUPS.length === 60, '同篇对照表 66 → 57（自身重复去重）→ 60（近重复合并 +3）（实际 ' +
   sb.WORKS_GROUPS.length + '）');
 
-/* ============ 四、《静夜思》以教材文本为准 ============ */
-
-// 教材（统编版一年级下册）通行文本就是「床前明月光」，不是宋人刻本的「床前看月光」。
-// 课内这条是教材口径，唐诗三百首那条正文与它一致（已合并为同一篇）。
 const jys = byId['xx1-09'];
 chk(!!jys, '课内《静夜思》在库（课内条目 xx1-09）');
 chk(norm(jys.text) === norm('床前明月光，疑是地上霜。举头望明月，低头思故乡。'),
@@ -166,23 +118,17 @@ chk(jys.text.indexOf('看月光') < 0, '课内《静夜思》不含宋人刻本�
 chk(jys.title === '静夜思', '课内题名作《静夜思》');
 chk(jys.grade === 1 && jys.term === 2, '《静夜思》归一年级下册（统编版）');
 
-// 唐诗那条也只存归属了，正文按 textRef 取回
 const ytRaw = sb.POEMS_TANGSHI.filter(p => p.id === 'ts-231')[0];
 const yt = sb.masterTextOf ? sb.masterTextOf(ytRaw, 'tangshi') : ytRaw;
 chk(!!yt, '唐诗三百首《夜思》在库（ts-231）');
 chk(norm(yt.text) === norm(jys.text), '唐诗三百首那条正文与教材逐字一致（同一文本才并为一篇）');
 chk(yt.text.indexOf('看月光') < 0, '唐诗三百首那条同样不含「床前看月光」');
 
-// 全站不许再有「床前看月光」这一宋人文本混进来
 const stale = sb.SITE_INDEX.filter(p => String(p.text || '').indexOf('看月光') >= 0);
 chk(stale.length === 0, '全站索引里没有「床前看月光」的残留条目（' + stale.map(p => p.id).join('、') + '）');
 
-/* ============ 五、搜索去重与排程一致 ============ */
-
-// 搜《静夜思》只出一条（同一篇作品不重复列），条目是课内那条（代表条目优先课内）
 chk(WI.repOf('tangshi-ts-231') === 'poems-xx1-09', '同一篇的代表条目优先课内那一条（唐诗《夜思》→ 课内《静夜思》）');
 
-// 去重后的课内篇目数：年级分布必须与数据一致
 const cnt = {};
 ALL.forEach(p => { cnt[p.grade] = (cnt[p.grade] || 0) + 1; });
 const primary = [1, 2, 3, 4, 5, 6].map(g => cnt[g] || 0).reduce((a, b) => a + b, 0);
@@ -194,37 +140,18 @@ chk(cnt[3] === 17 && cnt[4] === 23 && cnt[5] === 23, '三 / 四 / 五年级各�
 chk(cnt[10] === 24 && cnt[11] === 19 && cnt[12] === 18, '高一 / 高二 / 高三为 24 / 19 / 18（实际 ' +
   [cnt[10], cnt[11], cnt[12]].join(' / ') + '）');
 
-// 逐条抽查：12 篇被去重的作品，全站索引里各只剩一条课内条目
 const thinCourse = REMOVED.filter(r => {
   const base = PROSE_BY_ID[r[3].replace('poems-', '')];
   return sb.SITE_INDEX.filter(x => x.book === 'poems' && norm(x.text) === norm(base.text)).length !== 1;
 });
 chk(thinCourse.length === 0, '全站索引里 12 篇各只剩一条课内条目（异常：' + thinCourse.map(r => r[1]).join('、') + '）');
 
-/* ============ 六、一字之差的近重复：**已按口径合并** ============ */
-
-/* 判重键是「正文去标点后逐字相同」。另有一批只有一字之差、看着像同一篇、
-   题名也常常只差一点，最容易被顺手合并 —— 上一轮（PR #100）把它们登记成
-   `WORKS_NEAR_DUP` 却**并列不合并**，理由是「选本原貌 vs 教材 / 通行字」
-   两条文本传统谁对谁错没人能裁。
-
-   用户这一轮给了口径（原话）：
-
-     「近重复的那批，合并，以教材为准，没有教材的，以简体字为准，
-       无法裁决的，自行判断并合并」
-
-   于是分三档裁：有教材以教材为准 → 没教材以简体字为准 → 都裁不了的自行判断。
-   裁定表在 `scripts/near-dup-merge.js` 的 `MERGES`，本节逐组守着：
-   用字确实按口径统一了、两条确实被判成同一篇、选本那一部的列表没缺条目。 */
-
-/* ---- 6.0 裁定表：三档口径都写明了，且每一组都确实「只差一字」---- */
 const { MERGES } = require('../scripts/near-dup-merge.js');
 chk(MERGES.length === 4, '近重复合并共 4 组（实际 ' + MERGES.length + '）');
 chk(MERGES.every(m => m.word && m.fromWord && m.note),
   '每组都写明裁定后的用字、原用字与依据');
 chk(MERGES.every(m => m.word !== m.fromWord), '裁定的用字与原用字确实不同（否则无所谓合并）');
 
-/* 档位：第 1、2 组有教材 → 以教材为准；第 3 组没教材 → 以简体字为准 */
 const BY_RULE = {};
 MERGES.forEach(m => { (BY_RULE[m.rule] = BY_RULE[m.rule] || []).push(m); });
 chk((BY_RULE.course || []).length === 3, '「有教材 → 以教材为准」3 组（实际 ' +
@@ -233,24 +160,20 @@ chk((BY_RULE.simplified || []).length === 1, '「没有教材 → 以简体字�
   ((BY_RULE.simplified || []).length) + '）');
 chk(MERGES.some(m => m.keep === 'poems-gz11-06' && m.drop === 'tangshi-ts-78'),
   '《将进酒》也登记进来了（「不愿醒」/「不复醒」，上一轮漏登的一组）');
-/* 课内那两组，留下的必须是**课内条目**（教材口径），删掉的必须是选本那一条 */
+
 chk((BY_RULE.course || []).every(m => m.keep.indexOf('poems-') === 0 &&
   m.drop.indexOf('poems-') !== 0),
   '「以教材为准」的两组都留下课内条目、并入选本那一条');
 
-/* ---- 6.1 用字统一：留下那一条的正文已经是裁定的写法 ---- */
 const SITE_BY_ID = {};
 sb.SITE_INDEX.forEach(p => { SITE_BY_ID[p.id] = p; });
-/* 正文按 textRef 取回（被主表收编后条目只剩 textRef），与页面里引擎一致 */
+
 const txtOf = function (id) {
   const p = SITE_BY_ID[id];
   if (!p) return '';
   return sb.masterTextOf ? sb.masterTextOf(p, p.book).text : p.text;
 };
-/* 逐组核对**留下那一条**的正文：裁定后的写法在、原写法不在。
-   ⚠️ 不能拿单个字去 `indexOf` ——《将进酒》里「复」在「不复回」「还复来」
-      两处是合法的（两条共有），只有第三处「不愿醒」才是两种写法之别。
-      所以比的是**裁定处那一段上下文**。 */
+
 const KEEP_CONTEXT = {
   'poems-xx4-23': ['唯见长江', '惟见长江'],
   'poems-cz7-08': ['回乐烽前', '回乐峰前'],
@@ -266,10 +189,9 @@ MERGES.forEach(function (m) {
   chk(t.indexOf(pair[1]) < 0, m.title + ' 留下的那一条已不含原写法「' + pair[1] + '」');
 });
 
-/* ---- 6.2 两条确实合成了同一篇（`same()` 为真）---- */
 MERGES.forEach(function (m) {
   if (m.remove) {
-    /* 同集子那组：并进来那条已从语料里删掉，不必也不该再判重 */
+
     chk(!SITE_BY_ID[m.drop], m.title + ' 同集子重复条目已删（' + m.drop + ' 不在索引里）');
     return;
   }
@@ -280,7 +202,6 @@ chk(WI.repOf('tangshi-ts-259') === 'poems-xx4-23',
 chk(WI.repOf('tangshi-ts-270') === 'poems-cz7-08',
   '唐诗《夜上受降城闻笛》的代表条目归到课内那一条');
 
-/* ---- 6.3 全站索引里，两组各自只剩一份正文（合并的意义）---- */
 const twoIds = [['poems-xx4-23', 'tangshi-ts-259', '黄鹤楼送孟浩然之广陵', '唯见长江'],
   ['poems-cz7-08', 'tangshi-ts-270', '夜上受降城闻笛', '回乐烽前'],
   ['poems-gz11-06', 'tangshi-ts-78', '将进酒', '但愿长醉不愿醒']];
@@ -290,26 +211,19 @@ twoIds.forEach(function (row) {
   chk(a.indexOf(row[3]) >= 0, row[2] + ' 取的是教材写法（含「' + row[3] + '」）');
 });
 
-/* ---- 6.4 近重复清单已清空：这批已经并了，不再挂「并列而不合并」---- */
 chk((sb.WORKS_NEAR_DUP || []).length === 0,
   'WORKS_NEAR_DUP 已清空（这一批已合并，不再并列；实际 ' +
   (sb.WORKS_NEAR_DUP || []).length + ' 组）');
 chk((sb.TEXT_NEAR_DUP || []).length === 0,
   'TEXT_NEAR_DUP 已清空（实际 ' + (sb.TEXT_NEAR_DUP || []).length + ' 组）');
 
-/* ---- 6.5 全站扫描：不许再有「只差一字」的两条并存 ---- */
-/* 上一轮这条断言是「清单之外不许有一字之差的两条，有则须登记进近重复清单」；
-   这一轮口径变成「一个字都不许差」—— 差一个字的都得按三档裁定并掉。
-   扫描口径也扩到**单字编辑距离**（不只是那张异体字表），
-   因为《夜上受降城闻笛》的「烽 / 峰」就不在那张表里 ——
-   上一轮正是漏了它（清单里只 2 组，实际 3 组）。 */
 const seat = [];
 sb.SITE_INDEX.forEach(function (p) {
   if (!p || p.isBook || !p.id) return;
   const t = norm(txtOf(p.id));
   if (t) seat.push({ id: p.id, t: t });
 });
-/** 只差一字（替换 / 增 / 删一个字符）返回 true */
+
 function oneCharApart(a, b) {
   if (a === b || Math.abs(a.length - b.length) > 1) return false;
   let i = 0;
@@ -328,16 +242,13 @@ for (let i = 0; i < seat.length; i++) {
 chk(nearLeft.length === 0,
   '全站没有「只差一字」的两条并存（残留：' + (nearLeft.slice(0, 5).join('；') || '无') + '）');
 
-/* ---- 6.6 判重表与存储主表口径一致 ---- */
 const masterEntries = {};
 (sb.TEXT_MASTER || []).forEach(m => (m.entries || []).forEach(e => { masterEntries[e] = m.id; }));
 const uncov = [];
 (sb.WORKS_GROUPS || []).forEach(g => g.entries.forEach(e => { if (!masterEntries[e]) uncov.push(e); }));
 chk(uncov.length === 0,
   '判重表 59 组的每一条条目都在存储主表里（未覆盖：' + (uncov.slice(0, 6).join('、') || '无') + '）');
-/* ⚠️ 主表里的条目除了判重表认的，还有「**全量收归的部**」的单篇：
-   那是按部推进（Issue #69）把整个集子的正文都搬进主表的，与判重无关。
-   口径与 scripts/build-text-master.js 的 FULL_BOOKS 一致。 */
+
 const FULL_BOOKS = ['zhaoming', 'guwen', 'songci', 'tangshi', 'classic'];
 const inFullBooks = e => FULL_BOOKS.some(b => e.indexOf(b + '-') === 0);
 const masterInGroups = [];
@@ -349,13 +260,10 @@ chk(masterInGroups.length === 0,
   '存储主表里没有判重表不认的条目（全量收归部的单篇除外；多出的：' +
   (masterInGroups.slice(0, 6).join('、') || '无') + '）');
 
-/* ---- 6.7 合并进来的两组都进了存储主表（正文只落一份）---- */
 MERGES.forEach(function (m) {
   const hit = (sb.TEXT_MASTER || []).filter(x => x.entries.indexOf(m.keep) >= 0)[0];
   if (m.remove) {
-    /* 同集子那组：并进来那条已删，主表里不该再出现它；
-       留下那条要么自成一条（entries 只含自己），要么因别的原因进主表 —— 
-       总之不得把已删的 id 带进来。 */
+
     const stray = [];
     (sb.TEXT_MASTER || []).forEach(x => (x.entries || []).forEach(e => {
       if (e === m.drop) stray.push(x.id);
@@ -369,7 +277,6 @@ MERGES.forEach(function (m) {
     m.title + ' 两条条目都在同一份主表里（正文只落一份）');
 });
 
-/* ---- 6.7b 合并脚本可重复运行（幂等）：语料改过之后再跑一遍不该再动什么 ---- */
 {
   const { execFileSync } = require('child_process');
   const before = require('fs').readFileSync(__dirname + '/../data/poems-tangshi.js', 'utf8');
@@ -385,9 +292,6 @@ MERGES.forEach(function (m) {
     (out.split('\n').filter(l => l.indexOf('·') === 0).length) + ' 行跳过提示）');
 }
 
-/* ---- 6.8 各组子列表的条目数：删掉的只少该少的那一条 ---- */
-/* 《宋词三百首》删了一条自拟编号的重复条目（284 → 283）；
-   唐诗、课内的条目一条没少（并进去的那条仍在各自的选本列表里）。 */
 chk((sb.POEMS_SONGCI || []).length === 283,
   '《宋词三百首》284 → 283（并掉自拟编号的那一条；实际 ' + (sb.POEMS_SONGCI || []).length + '）');
 chk((sb.POEMS_TANGSHI || []).length === 301,

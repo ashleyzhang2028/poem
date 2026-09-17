@@ -1,93 +1,54 @@
 :root {
-  /* ==========================================================================
-     中国传统色 · 以宋代（汝窑 / 官窑 / 《营造法式》五彩遍装）取色
-     命名方式：传统色名 + 用途
-     ========================================================================== */
 
-  /* 底色：宣德纸 / 素绢。刻意用「暖白」而非纯白：
-     宋版书用纸偏暖，长时间读诗不刺眼，也有别于现代 UI 的冷白。 */
-  --bg: #f6f1e3;            /* 米灰底（素绢） */
-  --bg-soft: #fcfaf3;       /* 浅一层（生宣） */
-  /* 卡片：宣纸高光面。90% 不透明，既有纸的厚度，
-     又不至于把底下的素绢底色压成死白。 */
+  --bg: #f6f1e3;
+  --bg-soft: #fcfaf3;
+
   --card: rgba(255, 254, 250, .90);
-  --card-2: #f7f1e1;        /* 次级卡片 */
+  --card-2: #f7f1e1;
 
-  /* 主色：雨过天青（汝窑）。原色 #4d7d74 在米底上对比度不足，
-     这里压深到 #2f6055，白字/浅底都过 WCAG AA。 */
-  --green: #2f6055;         /* 天青（主色，沿用变量名以兼容既有样式） */
-  --green-dark: #234b42;    /* 深天青 */
-  --green-light: #dbe9e2;   /* 淡天青（浅底） */
-  --celadon: #4f7a6e;       /* 汝窑青 */
+  --green: #2f6055;
+  --green-dark: #234b42;
+  --green-light: #dbe9e2;
+  --celadon: #4f7a6e;
 
-  /* 点缀：琥珀 / 秋香 / 朱砂 / 缃色，均为宋代常用色（同样加深过） */
-  --amber: #a55c19;         /* 琥珀（复习） */
+  --amber: #a55c19;
   --amber-light: #f7e6d0;
-  --autumn: #8a7327;        /* 秋香色 */
-  --red: #a83b32;           /* 朱砂（忘记） */
+  --autumn: #8a7327;
+  --red: #a83b32;
   --red-light: #f7e5e1;
-  --blue: #3d6379;          /* 天水碧（小古文） */
+  --blue: #3d6379;
   --blue-light: #dee9ef;
-  --gold: #f0cd7c;          /* 缃色（进度环，压在深天青上） */
+  --gold: #f0cd7c;
 
-  --ink: #241d18;           /* 墨（正文） */
-  --ink-2: #6b5c4d;         /* 淡墨（次要文字）：原 #7b6d5e 偏浅 */
-  --ink-3: #8a7a68;         /* 更淡的辅助文字（说明 / 页脚） */
-  --line: #d6c8ad;          /* 界行（描金细线） */
-  --line-2: #ece3d2;        /* 更淡的一条界行：同一容器**内部**的分隔线
-                               （候选下拉里相邻两条之间）。比 --line 淡一档 ——
-                               容器自己的边框与内部的分隔线不该一样重，否则
-                               整个下拉看着像一个格子表，而不是一层浮出的候选。 */
-  --radius: 16px;           /* 卡片圆角 */
-  --radius-sm: 12px;        /* 卡片内的小件（按钮组 / 输入框 / 次级面板）圆角 */
-  --radius-md: 14px;        /* 卡片与卡片之间的中间一档（入口页那四张卡、阅读器译文框） */
-  /* 危险色（清空进度 / 注销账号这类不可逆动作）：全站唯一一份。
-     设置页的 .danger-btn 与账号页的 .account-btn.danger 都读它 ——
-     否则同一种动作会长出两种底色，改色时也一定会漏一处。 */
-  --danger-bg: #fbeae7;     /* 危险按钮的淡朱砂底 */
-  --danger-line: #ecd2cd;   /* 危险按钮的朱砂描边 */
-  /* 输入框字号：窄屏取 16px —— iOS 上小于 16px 的输入框一聚焦就会把整页放大。
-     桌面 / 平板用 14px，与界面文字的层级一致。这个值只在这里定义一次。 */
+  --ink: #241d18;
+  --ink-2: #6b5c4d;
+  --ink-3: #8a7a68;
+  --line: #d6c8ad;
+  --line-2: #ece3d2;
+  --radius: 16px;
+  --radius-sm: 12px;
+  --radius-md: 14px;
+
+  --danger-bg: #fbeae7;
+  --danger-line: #ecd2cd;
+
   --input-font: 14px;
-  --input-font-narrow: 16px;   /* ≤700px 时的输入框字号（iOS 防缩放阈值） */
-  /* 列表条目右侧圆键的统一直径与图标框（「加入背诵」书签键 · 播放键读同一对值）——
-     用户要求两枚键一样大，所以尺寸只能有一个来源。
-     直径 36px、图标框 16px 是**一对**：三角的 stroke 写在 24 的 viewBox 里（1.5），
-     缩到 16px 后屏幕上正好 1px（换算表见 css/classic.css 顶部）。
-     ⚠️ 改直径时图标框要一起动，否则那 1px 就没了。 */
+  --input-font-narrow: 16px;
+
   --item-btn: 36px;
   --item-icon: 16px;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --shadow: 0 2px 14px rgba(74, 58, 38, 0.10);
   --shadow-up: 0 -2px 16px rgba(74, 58, 38, 0.12);
-  /* iOS 横屏有一个「按宽度放大文字」的默认行为（与台式机的响应式不是一件事）：
-     它会按视口宽度乘一个倍数，同一段说明在竖屏 / 横屏下字号不同。
-     这里按标准做法关掉，字号只由样式表决定。 */
+
   -webkit-text-size-adjust: 100%;
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-/* --------------------------------------------------------------------------
-   链接：全站一条规则 —— **不给下划线**，靠颜色分「可点」与「不可点」
-   --------------------------------------------------------------------------
-   这条是补的缺，不是新设计：在此之前样式表里没有任何一条全局 `a` 规则，
-   于是每一个没被类名接管的链接都按浏览器默认渲染（蓝紫色 + 下划线）。
-   已经踩过的三个例子都以「单独给某一处写 text-decoration: none」收场 ——
-   .dock-item（页签）、.ghost-btn（按钮样的 <a>）、.settings-link（设置入口）。
-   第 N 个链接再长出来时，那一条就漏了（个人中心「关于」里的「查看」正是漏网的）。
-
-   所以这里把它变成**唯一的一条默认**：所有 <a> 默认无下划线、颜色继承所在容器
-   （正文里的外链由 .legal a / .mail-link 这类有语义的类自己上调一档天青）。
-   加下划线从此是需要显式声明的事，而不是「忘了写就自动长出来」。
-   ⚠️ 只写 text-decoration，不写 color：默认颜色一旦钉死，正文里的绿色链接、
-      页脚里的淡墨链接都会被它盖住（那两处各有一条更具体的规则）。
-   -------------------------------------------------------------------------- */
 a { text-decoration: none; }
 
-/* 原生表单控件默认用系统 UI 字体（Windows/安卓上常被解析成 Arial），
-   显式继承页面字体，保证中文字形一致、不跳出主题字体 */
 button,
 input,
 select,
@@ -99,124 +60,37 @@ html, body {
   margin: 0;
   padding: 0;
   background: var(--bg);
-  /* 底色即素绢一色（--bg），不再铺任何图案：页面只有一层米灰纸色，
-     没有祥云、没有暗花，诗句该有一张干净的纸。 */
+
   color: var(--ink);
   font-family: var(--font-ui);
   line-height: 1.6;
 }
 
-/* 内容列宽：全站唯一的「一列纸」宽度
-   --------------------------------------------------------------------------
-   顶栏（.topbar）、页签内层（.dock-inner）、阅读器（.reader-body）、
-   正文列（.app）全是这一条，改一处必须全站一起改。
-
-   三档，判据是「这屏是什么设备」，不是「能塞下几列」：
-     · 手机        —— 720px，两侧各 14px 呼吸
-     · ≥768px 平板 —— 1040px，两侧各 22px
-     · ≥1024px 桌面 —— 跟着视口走，两侧各留 56px，正文行宽另外封顶
-
-   ⚠️ 为什么手机 / 平板是**固定值**、桌面却跟着视口走：
-   720px 与 1040px 不是「排版好看」挑出来的，是握在手里的屏幕宽度决定的 ——
-   手机竖屏 393px、平板竖屏 768~820px，一列纸占掉大部分、两侧留一条边，
-   这是**满屏**的一种写法。桌面是另一回事：1920px 的屏上写死 1040px，
-   两侧就各空 440px（占屏 46%），一屏里近一半是空白，
-   页面看着像被塞进了一张贴在墙正中的明信片。
-   桌面上的窗口宽度本来就是用户自己拉的，不该由样式表钉死。
-
-   ⚠️ 行宽（35~40 个汉字）那条上限**没有被取消**，只是挪到了它真正该管的
-   两个地方去（见下面 --read-w 与 css/classic.css 的 .reader-body / .cal / .bars）：
-   一列纸可以铺满屏，但一「行」字、一条进度条轨道、一格日历不该跟着铺满屏 ——
-   那是「一行读下来太累」的问题，与「页面两侧要不要留白」是两个问题。
-   原先把两件事都塞给了同一个 720px：结果页面被压窄了，行宽也没真正统一
-   （阅读器正文、日历、进度条各自抄了一份 720px，下文保留的正是那三处）。
-   ⚠️ 三档之间**没有**给桌面那一档再编一个宽度数值：它接手的是「列宽从哪来」
-      这件事本身 —— 平板是握在手里的固定屏宽（一个数值），
-      桌面是用户自己拉的窗口（跟着视口走）。见下面那一档。 */
-/* ⚠️ 这里只定宽与居中，**不写内边距**：左右边由下面那条
-   `.app {` 的 padding-left/right: calc(var(--col-side) + var(--safe-*)) 统一给，
-   底部由 padding-bottom: calc(40px + var(--safe-bottom)) 给。
-   在这一条里再写一次左内边距，会被那两条后出现的同特异性规则盖掉 ——
-   留下的只是一句与真实值不符的声明（原先的 14px 就是这么藏住的）。 */
 .app, #app {
   max-width: var(--col-w);
   margin: 0 auto;
 }
 
-/* 「一列纸」的宽度：全站唯一来源（顶栏 / 页签内层 / 正文列都读它）。
-   ⚠️ 顶栏（.topbar）、页签内层（.dock-inner）、阅读器正文（.reader-body）
-      都写 var(--col-w)，不要再出现第二处 720px —— 改一处必须全站一起改。
-   ⚠️ --content-w 是 calc() 而不是在每条规则里各写一遍算式：顶栏 / 页签内层 /
-      阅读器正文四处的「一列纸减掉两侧的边」只写这一次，
-      改 --col-side 时四处一起动（上一轮它们各抄一份，于是各偏了一条边）。 */
 :root {
   --col-w: 720px;
-  /* 桌面那一档两侧留的边（顶栏 / 页签内层 / 正文列一起读它） */
+
   --col-side: 14px;
-  /* 「内容宽」= 一列纸减掉两侧那条边。顶栏 / 页签内层 / 正文列都读这一条 ——
-     这三样都住在「整宽」的容器里（.app 的 padding 之外、或 body 直下），
-     自己不带左右内边距，所以要自己减掉那两条边才能真正与正文对齐。
-     ⚠️ 必须与 --col-side 成对出现：只改其中一个会让三样东西各偏一条边。 */
+
   --content-w: calc(var(--col-w) - 2 * var(--col-side));
-  /* 「一行字」的宽度上限：正文段落、日历、进度条轨道用这一条。
-     它**不跟着一列纸变宽** —— 屏幕上放得下 1920px 的一列纸，
-     不等于一行该排 100 个汉字（阅读行宽的经验上限是 35~40 个汉字，
-     720px 约 38 字，正是手机那一档）。 */
+
   --read-w: 720px;
 }
 
-/* 平板（≥768px）：把「一列纸」放宽一档
-   --------------------------------------------------------------------------
-   720px → 1040px。与这一档配套的还有：篇目列表两列、入口页三列、
-   设置页满两列、进度条与日历各占一栏 —— 一条一条见各自那条注释。 */
 @media (min-width: 768px) {
-  /* ⚠️ --col-w 取 min(1040px, 100vw)：1040px 是「握在手里的平板」那一档宽度，
-     但 1024px 的 iPad Pro 竖屏 / 分屏窗口**比它窄** —— 直接写 1040px 会让
-     一列纸比视口还宽，两侧的边被吃掉、顶栏与正文对不齐（真机量到过）。
-     取 min() 之后：768~1040px 之间内容 = 视口 − 44px，1040px 以上收在 1040px。
-     ⚠️ 这一档与桌面那一档在 1024px 交接：两侧的边从 22px 换成 56px
-        （桌面窗口该有更多留白），内容于是先收一下、再随窗口变宽一路长上去 ——
-        见下面桌面那一档的说明。 */
+
   :root { --col-w: min(1040px, 100vw); --col-side: 22px; }
-  /* ⚠️ 只给左右：底部留白由后面那条 padding-bottom（40px + 安全区）管，
-     这里再写一次也盖不过它，只会留一句骗人的声明。 */
+
   .app, #app { padding-left: var(--col-side); padding-right: var(--col-side); }
 }
 
-/* 桌面（≥1024px）：一列纸跟着视口走，两侧只留 56px
-   --------------------------------------------------------------------------
-   这一档**没有**在平板那一档上再加宽度数值，而是把「列宽跟视口走」这件事
-   交给桌面：1280px 的窗口得到 1168px 的一列，1920px 得到 1808px。
-   两侧各 56px 是固定的「呼吸」，与视口宽度无关 ——
-   窗口越宽，内容越宽，两侧那条边不变，这才叫布满屏幕。
-   ⚠️ 断点 1024px 取「桌面窗口」而不是 1280px：1024 已经是笔记本与
-      平板横屏的分界，且这一档的判据是「这是台电脑，窗口宽度由用户拉」——
-      握在手里的平板没有可拉的窗口，所以停在上一档。
-   ⚠️ 56px 不与上面 --col-side 合并：那一档的边是「握在手里的屏幕边」，
-      这一档的边是桌面窗口的留白，两件事只是碰巧都叫 padding。
-   ⚠️ 页签内层（.dock-inner）与顶栏（.topbar）读同一条 --col-w ——
-      页签四格在 1920px 上每格 452px（1808 / 4），
-      不再需要 PR #133 那条「内层限宽 720px」的兜底（它把四格压在正文
-      两缘之内；现在正文两缘就是屏幕两边各 56px，四格本来就落在里面）。 */
 @media (min-width: 1024px) {
   :root {
-    /* ⚠️ 桌面这一档内容是**跟着窗口走**的，两件事一起说才说得清：
-         · --col-side（两侧那条边）固定 56px —— 与窗口宽度无关，
-           窗口越宽内容越宽，两侧那条边不变，这才叫「布满屏幕」；
-         · --col-w 就是视口宽（.app 是 border-box，内边距算在里面），
-           即内容宽 = 100vw − 112px。
-       一开始写的是「--col-w: max(1040px, 100vw - 112px)」—— 真机上量到一个
-       1px 的断崖：1023px 窗口下内容 979px（平板那档 1040 减两侧 22，
-       而容器只有 1023，--col-w 反而比视口还宽）→ 1024px 一跨过来掉到 912px
-       （max() 取到 1040 下限再减 112）：窗口宽了 1px、内容窄了 67px。
-       ⚠️ 1023px → 1024px 那一步内容会从 979px 掉到 912px：两组数一起变了
-          （两侧的边 22 → 56，两条边的差值正好是 68），不是算式写错。
-          这是「换成桌面了、窗口两边该有更多留白」这一步本身，跨过一次就没了：
-          1024px 之后内容是「视口 − 112」这条斜线，一路单调变宽（1040 → 1808）。
-          两边各退一步的做法（边用 max() 让路、内容用 max() 兜底）试过，
-          结果是内容永远卡在 1040px、大屏上白铺一块 —— 比这一步更糟。
-       ⚠️ 平板那一档的 --col-w 取 min(1040px, 100vw)：1040px 是握在手里的平板
-          那一档，但 iPad Pro 竖屏 / 分屏窗口比它窄，写死会让一列纸比视口还宽。 */
+
     --col-w: 100vw;
     --col-side: 56px;
   }
@@ -237,7 +111,6 @@ html, body {
 }
 .icon-btn svg { width: 21px; height: 21px; }
 
-/* 卡片 */
 .card {
   background: var(--card);
   border-radius: var(--radius);
@@ -246,7 +119,6 @@ html, body {
   margin-bottom: 14px;
 }
 
-/* 选择器 */
 .selector-row {
   display: flex;
   align-items: center;
@@ -289,7 +161,7 @@ html, body {
   box-shadow: 0 1px 4px rgba(0, 0, 0, .08);
 }
 .seg.small button { font-size: 13px; padding: 6px 8px; }
-/* 弹层内的注音档位：小尺寸，三档并排不抢正文空间 */
+
 .seg.mini {
   flex: 0 0 auto;
   border: 1px solid var(--line);
@@ -324,12 +196,11 @@ html, body {
   font-weight: 600;
 }
 
-/* 今日进度条 */
 .today-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  /* 雨过天青：汝窑主色渐变 */
+
   background: linear-gradient(135deg, #1f443c 0%, #2f6055 50%, #4f7a6e 100%);
   color: #fffdf8;
   box-shadow: 0 3px 18px rgba(35, 75, 66, .30);
@@ -339,16 +210,7 @@ html, body {
 .today-title { font-size: 16px; font-weight: 600; }
 .today-sub { font-size: 12.5px; opacity: .88; }
 .ring {
-  /* 直径（渲染出来的最大外径）与左侧「朗读（全部）」圆形播放键完全相等 —— Issue #55。
-     尺寸只在 .today-actions 上声明一次，两颗圆都读 --today-btn-size，
-     谁也不能再各写一个数走散（前两轮 56 → 54 →「同径」改的就是这个数）。
-     ⚠️ 描边不要补偿：右上角这枚环的 stroke 由 <svg> 画，svg 自身会 overflow: hidden，
-     骑在边界上的描边会被**裁进盒子内**，所以盒子尺寸就是环的最大直径。
-     曾经想当然按「盒子 − 一圈描边」缩小，结果环真的比播放键小了一大圈
-     （真机量出 40 vs 46），这条注释就是留给下一个人的路标。
-     ⚠️ min-height 归零：.today-bar 是 align-items: center 的 flex 行，
-     「下限 + height」在 jsdom / 真实浏览器里都可能被内容或行高拉高，
-     那样宽高不再相等，圆环会被压成椭圆（与 .icon-row 那枚圆键同一条教训）。 */
+
   position: relative;
   flex: none;
   width: var(--today-btn-size, 40px);
@@ -369,24 +231,8 @@ html, body {
   font-weight: 700;
 }
 
-/* 列表 */
 .list { display: flex; flex-direction: column; gap: 10px; }
-/* 平板（≥768px）：篇目列表排成两列
-   --------------------------------------------------------------------------
-   全站最长的列表就是首页「今日背诵 / 全部篇目」（261 首）与各集子目录页
-   （唐诗 301 / 宋词 255 …）。手机上一列是对的：一行一篇、序号在左、指头一路
-   往下划。但同一列搬到平板上，1040px 里一行横向排开 900 多 px 只放「序号 +
-   篇名 + 作者 + 一个按钮」—— 每行右边的空白比字还宽，一屏只能看 8 行，
-   而屏幕明明放得下两倍。
-   两列后每行约 505px，与手机上一条卡片的视觉宽度同档，
-   序号 / 篇名 / 作者 / 播放键的相对位置一个都不变（行内部本来就是两端对齐的 flex）。
 
-   ⚠️ 用 flex + flex-basis 而不是 grid：条目数量是数据驱动的，
-      哪天多一类少一类都不用改样式；换列时条目自动流过去。
-   ⚠️ 10px 是行距（gap）——列距比行距大（22px），两块之间才分得开：
-      flex 的 column-gap 与 row-gap 各给一个值。
-   ⚠️ 这里只做**视觉**上的两列：DOM 顺序仍是 1 2 3 4 …，
-      读屏与 Tab 键的次序不变（没有用 order / 分桶去重排 DOM）。 */
 @media (min-width: 768px) {
   .list {
     flex-direction: row;
@@ -396,25 +242,11 @@ html, body {
   }
   .list > .item {
     flex: 1 1 calc(50% - 11px);
-    /* 同上：flex-basis 的百分比算的是容器宽度，不减掉半个 column-gap，
-       两列一加就溢出 22px。 */
+
     max-width: calc(50% - 11px);
   }
 }
 
-/* 桌面（≥1024px）：篇目列表再排一档 —— 两列 → 三列
-   --------------------------------------------------------------------------
-   一列纸在 1280px 的窗口上是 1168px、在 1920px 上是 1808px。
-   两列在 1168px 里每行 573px（还好），在 1808px 里每行 893px ——
-   「序号 + 篇名 + 作者 + 圆键」一行又拉回那种「中间空一大片」的样子，
-   一屏还是只看得见十几行，而屏幕明明放得下三倍。
-   三列后 1808px 里每行 588px、1168px 里每行 375px，都在「手机上一条卡片」
-   的这一档附近（手机 393px 屏上一条约 351px）。
-   ⚠️ 仍是 flex + flex-basis：三列时 100% 里减掉两个 column-gap，每个占一半
-      （半个 gap 是两列时代的算式，三列要减掉整整两个 gap 的三分之一 ——
-      这里直接照 flex-wrap 的实测算式写 1/3）。
-   ⚠️ 只在 ≥1024px 生效：1168px 是本档最窄的窗口，375px 一条仍排得下
-      「序号 + 篇名 + 作者 + 圆键」四件；再窄（平板那一档）保持两列。 */
 @media (min-width: 1024px) {
   .list > .item {
     flex: 1 1 calc(33.333% - 14.667px);
@@ -442,61 +274,30 @@ html, body {
 
 .item-main { flex: 1; min-width: 0; }
 .item-title {
-  /* ⚠️ 这里**不再写** font-size / font-weight / color：篇名与设置页的卡片主标题
-     是同一档「一页里最大的那颗标题」（见文件中部「卡片主标题」那一段的
-     `.item-title` 一角）。自己再抄一遍三个值，就是下一次「改了一处、
-     另一处没跟上」的种子 —— Issue #163 报了三轮的正是这种缺口。
-     这一段只管篇名这一行的**排布**。 */
+
   margin: 0;
   display: flex;
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
-  /* 序号圆与下方正文左对齐（Issue #55 后续）----
-     序号圆已挪进标题行、排在篇名前面（结构见 js 目录下的 .item-num）。
-     此前这里用 `margin-left: -12px` 把整个标题行（连同序号圆）左移 12px，
-     圆「领先」正文基线、挂在条目左边缘 —— 代价是**圆周左缘比下方那行
-     「朝代 · 作者 · 年级」少缩进了 12px**：一眼看去序号圆戳在内容块左边之外，
-     与下面的正文、以及条目左内边距都不成一条竖线（用户反馈的正是这一点）。
-     现在把负外边距收掉：标题行与 .item-meta 同起于条目内容左缘，
-     圆周左缘 = 正文左缘，圆、篇名、下方两行共用同一条左基准线。
-     圆仍排在篇名之前，只是不再往左「探出」内容块。 */
+
   margin-left: 0;
 }
-/* 列表项序号：一枚与首行字号同高的**空心**圆，排在标题**前面**（同一行）
-   --------------------------------------------------------------------------
-   原先序号是第一列的 30px 圆（.item-index），独占一列宽度，标题只能从第二列起排；
-   圆形按固定 30px 走，与标题字号也不同高，横竖两处都不齐。
-   此前圆是淡绿 / 淡青的**实心底**，一百条排下来就是一百块色斑，先看到色块再看篇名。
-   现在：
-     · 圆挪到标题行内，成为标题的兄弟节点 —— 标题行的起点就是圆的起点；
-     · 圆的直径 = 标题字号（走同一个变量 --item-num，两处同源、永远相等）；
-     · **去掉底色，改 1px 圆形描边**：边框色走 currentColor，与圆里的数字同色，
-       换主题色只需改 color 一处；圆外径仍锁在 box-sizing: border-box 里，
-       描边不会把圆撑大到 18.5px；
-     · 圆的字号单列一档 11px：装 17px 的数字会顶满圆边，11px 才留得出四周留白，
-       也照顾到两位数（第 10 篇起）不挤。
-   标题行因此只剩「圆 + 篇名 + 状态标签」三样，篇名可用的宽度多出 40 余像素。 */
+
 .item-num {
-  /* 圆的直径 = 标题字号。标题那一档在文件中部「卡片主标题」那一段
-     （17px，与设置页的卡片主标题同一句）—— 这里跟它对齐，
-     序号圆与篇名首行因此永远等高，圆不会显得「比字小一圈」。 */
+
   --item-num: 17px;
   flex: none;
-  /* 圆描边占住盒子的内外：圆外径 = --item-num，与标题字号同高。
-     不加 box-sizing 的话，1px 边框会落在圆径之外，圆会比标题字大两像素，
-     与标题、与左边那枚短竖条就对不齐了（尺寸断言也会挂）。 */
+
   box-sizing: border-box;
   width: var(--item-num);
   height: var(--item-num);
   border-radius: 50%;
-  /* 空心圆：不铺底色，只留 1px 同色描边；圈里的数字用同一个颜色 */
+
   background: none;
   border: 1px solid currentColor;
   color: var(--green);
-  /* 数字水平 + 垂直居中：圆是弹性盒子，横竖都用 center 对位。
-     行内弹性盒的基线不再参与行盒计算（line-height: 1 只是兜底），
-     padding 归零，圆心就是数字盒的中线。 */
+
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -525,9 +326,7 @@ html, body {
   font-weight: 500;
 }
 .item-reason.review { background: var(--amber-light); color: var(--amber); }
-/* 列表项右侧的「向右」箭头：与首页折叠箭头同一枚 18×18 描边 SVG
-   （需求 Issue #55：三处图标大小一致 —— 不再用文本字符「›」，
-   字符高度随字体回退变化，与 18px 的 SVG 三角摆在一起一大一小） */
+
 .item-arrow {
   flex: none;
   display: inline-flex;
@@ -538,7 +337,6 @@ html, body {
 }
 .item-arrow svg { display: block; width: 18px; height: 18px; }
 
-/* 进度条小 */
 .mbar {
   height: 4px;
   border-radius: 2px;
@@ -554,16 +352,8 @@ html, body {
   transition: width .3s;
 }
 
-/* 全部诗词折叠。
-   ⚠️ 这一条 Issue #209 被误删过一轮（连它与首页那张折叠卡一起）：
-      用户那句「5首诗词下面多了个大卡片」指的其实是**今日那 5 条外面包的壳**。
-      卡片与这条 margin 于第二轮原样恢复 —— 别再无凭据地删它。 */
 .all-section { margin-top: 14px; }
 
-/* 自选背诵（除教材之外，用户自己加进来要背的篇目）----------------------
-   与「全部诗词」同一张卡、同一个折叠头，位置在它上面：
-   自选是「我今天额外要背的」，比「本册全部诗词」更该先看到。
-   条目与「全部诗词」同款，只是序号圆改由书签图标占位（见下 .item-remove）。 */
 .collections-section { margin-top: 14px; }
 .collections-tip {
   margin: 0 0 10px;
@@ -571,20 +361,14 @@ html, body {
   line-height: 1.7;
   color: var(--ink-3);
 }
-/* 集合卡头：名字 + 篇数在左，改名 / 导出 / 删除在右。
-   ---- Issue #163：这一行原先长在**面板**上（`.collection-head` 一行行隔断），
-   现在长在**卡片**上（`.collection-card` 的卡头），与「课外阅读」入口页那张
-   `.library-card` 是同一套：卡头一行、卡身是内容、整卡一条描边 + 圆角。
-   字号 / 字重 / 颜色都照 .library-card-name 那一档，不再自己开一套。 */
+
 .collection-head {
   display: flex;
   align-items: center;
   gap: 8px;
-  /* 折行：卡头上的三颗动作键（改名 / 导出 / 删除）在窄屏上允许折到第二行，
-     篇数跟着名字走，三颗键整组靠右。 */
+
   flex-wrap: wrap;
-  /* 卡头与卡身之间那条线由卡身第一行给（见 .collection-body .item:first-of-type
-     的 border-top: none）—— 这里不另画，免得卡头下面顶着两道横线。 */
+
   padding: 14px 16px 12px;
 }
 .collection-name {
@@ -594,13 +378,12 @@ html, body {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  /* 字体与「课外阅读」那六张卡的书名同一档（--font-poem 在后面才定义，
-     所以这里显式写一遍作兜底，与 .settings-link-title 同一条口径）。 */
+
   font-family: var(--font-poem);
   letter-spacing: .5px;
 }
 .collection-count { font-size: 12px; color: var(--ink-3); }
-/* 卡头上的三颗动作键：改名 / 导出 / 删除，整组靠右 */
+
 .collection-act {
   margin-left: auto;
   border: 1px solid var(--line);
@@ -617,8 +400,6 @@ html, body {
 .collection-act:hover { border-color: var(--green); color: var(--green); }
 .collection-act.danger:hover { border-color: var(--red, #b4553c); color: var(--red, #b4553c); }
 
-/* 自选条目的圆形「移出」键：与集子页的「加入背诵」（书签）形状相反 ——
-   一条横杠，一眼看出是「拿掉它」 */
 .item-remove {
   display: inline-flex;
   align-items: center;
@@ -638,20 +419,13 @@ html, body {
 .item-remove svg { width: 15px; height: 15px; display: block; }
 .item-remove:hover { border-color: var(--red, #b4553c); color: var(--red, #b4553c); }
 
-/* 自选集合：导入 / 导出整条工具行，与折叠体同宽、靠右 ——
-   「导入清单」一颗键常驻（一个集合都没有时也要有：家长发来一串清单，
-   第一件事就是导进来，不该先逼他建一个集合）；每个集合头上的「导出」在它自己那行。 */
 .collections-tools {
   display: flex;
   gap: 8px;
   justify-content: flex-end;
   margin-bottom: 6px;
 }
-/* 集合里的分组行：同一部集子 / 同一个卷次文体连在一起，段头给「整组移出」。
-   分组只为「一次拿掉一组」，不改变集合顺序（顺序仍是用户自己排的）。
-   ---- Issue #163：这些分组头原先长在**面板**上（左右各 2px 内边距），
-   现在长在**卡片**里，左右内边距跟卡内条目对齐（14 / 16px），
-   段头的名字与下面篇目的篇名落在同一条基准线上。 */
+
 .collection-group {
   display: flex;
   align-items: center;
@@ -687,8 +461,7 @@ html, body {
   cursor: pointer;
 }
 .collection-group-drop:hover { border-color: var(--red, #b4553c); color: var(--red, #b4553c); }
-/* 上移 / 下移两颗小箭头：与「移出」同一颗圆键的语言，只是没有圆底。
-   顺序是用户自己排的，所以给箭头而不是「按某某排序」。 */
+
 .item-move {
   display: inline-flex;
   align-items: center;
@@ -706,7 +479,7 @@ html, body {
 .item-move svg { width: 15px; height: 15px; display: block; }
 .item-move:hover:not(:disabled) { color: var(--green); }
 .item-move:disabled { opacity: .3; cursor: default; }
-/* 自选条目左侧色条走蓝色：与课内（绿）、古文条目同属外围辨识色 */
+
 .item.optional { border-left-color: var(--blue, #3f7f9e); }
 .item-reason.optional { background: var(--blue-light, #eaf3f7); color: var(--blue, #3f7f9e); }
 .collapse-head {
@@ -732,15 +505,14 @@ html, body {
   border-radius: 999px;
   font-weight: 600;
 }
-/* 折叠箭头：空心描边三角，与列表右侧「›」同色同笔画；
-   收起朝下、展开朝上（只旋转，不换图，动作连续不跳） */
+
 .collapse-head .arrow {
   margin-left: auto;
   display: inline-flex;
   color: #9db3a9;
   transition: transform .2s;
 }
-/* 折叠箭头与列表右侧「›」同尺寸：18×18、同一枚图标、同一笔画宽度 */
+
 .collapse-head .arrow svg { display: block; width: 18px; height: 18px; }
 .collapse-head.open .arrow { transform: rotate(180deg); }
 .collapse-head:hover .arrow { color: var(--green); }
@@ -762,15 +534,6 @@ html, body {
 .stat.review b { color: var(--amber); }
 .stat span { font-size: 11.5px; color: var(--ink-2); }
 
-/* 弹层 */
-/* ⚠️ 弹层的层级必须**高于底部页签（65）与底部播放栏（70）**，否则弹层会被它们压在下面：
-   页签浮在弹层上方，弹层的下缘（「加入背诵」的集合列表与新建输入框、
-   首页诗词弹层的「忘记 / 模糊 / 记住」整排）既看不全、也点不到 ——
-   点下去的其实是页签。原先写 50（低于 65 / 70），
-   靠给 .modal-box 垫 62px 内边距把内容顶到页签上方，治标不治本：
-   内容躲开了，遮罩与弹层边框仍然被页签横切一刀。
-   这里取 80：高于页签与播放栏，低于 toast（99，提示语要压在所有浮层之上），
-   也高于「添加到主屏幕」引导条（40）—— 引导条不能盖住弹层里的按钮。 */
 .modal { position: fixed; inset: 0; z-index: 80; display: flex; align-items: flex-end; justify-content: center; }
 .modal[hidden] { display: none; }
 .modal-mask {
@@ -782,18 +545,11 @@ html, body {
 }
 .modal-box {
   position: relative;
-  /* 弹层也是一张「卡片」：与全站卡片同为 90% 不透明 */
+
   background: rgba(252, 250, 243, .90);
   width: 100%;
   max-width: 640px;
-  /* 底部导航是浮层（页签 65 / 播放栏 70），弹层若铺到屏幕底边，最下面的
-     「忘记 / 模糊 / 记住」会落进那两条导航横带里。这里把弹层整体上收：
-     高度扣掉**实测**的底部导航高度与安全区，底边正好落在导航上方。
-     （页签本身已被弹层（z-index 80）压在遮罩之下、点不到，
-     这一条管的是**观感**：整排按钮不落在页签那道浮层横带里，
-     免得与页签图标在视觉上叠成一团。）
-     ⚠️ 垫的是 --nav-h（js/pwa.js 实测），不写死 62px：页签高度随字号 /
-        横屏 / 是否为 PWA 而变，写死的值一失准就会「差几像素」又叠上一点。 */
+
   max-height: calc(88vh - var(--nav-h) - var(--safe-bottom));
   overflow-y: auto;
   border-radius: 22px 22px 0 0;
@@ -802,14 +558,12 @@ html, body {
   box-shadow: 0 -6px 30px rgba(0, 0, 0, .18);
 }
 .modal-box.small { border-radius: 22px; max-width: 420px; margin: auto; animation: pop .2s; }
-/* 但设置面板走的是「内容自适应高度 + 超出滚动」，
-   不做整层垫高（垫了会把面板顶得过高、上下都不好按）——
-   它的避让规则在下面 PWA 一节里，按 --nav-h 统一给出。 */
+
 @media (min-width: 700px) {
   .modal { align-items: center; }
   .modal-box { border-radius: 22px; max-height: calc(86vh - var(--nav-h) - var(--safe-bottom)); }
 }
-/* 法务页等深页没有页签，弹层照旧铺到接近底边 */
+
 body.no-dock .modal-box { max-height: 88vh; }
 @media (min-width: 700px) {
   body.no-dock .modal-box { max-height: 86vh; }
@@ -831,10 +585,10 @@ body.no-dock .modal-box { max-height: 88vh; }
   margin: 0 0 8px;
   font-size: 23px;
   letter-spacing: 1px;
-  /* 与正文同一条中轴 */
+
   text-align: center;
 }
-/* 朝代 / 作者标签跟着正文居中（正文居中后标题行再左对齐会显得歪） */
+
 .modal-head .meta { justify-content: center; }
 .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
 .tag {
@@ -848,17 +602,15 @@ body.no-dock .modal-box { max-height: 88vh; }
 .tag.ghost { background: var(--bg); color: var(--ink-2); }
 
 .poem-text {
-  /* 默认字号比小古文再小一号（19 → 17），由 JS 按用户字号覆盖 */
+
   font-size: 17px;
   line-height: 1.5;
   white-space: pre-wrap;
   word-break: break-word;
-  /* 正文块自身居中：pre 默认盒宽会吃满容器，max-width: fit-content + margin auto 后整块居中 */
+
   max-width: fit-content;
   margin: 16px auto;
-  /* 行内文字也居中：诗句不满一行（如绝句的起承转合）时按最长句对齐；
-     用户可在工具条上改成左对齐（data-align 覆盖）。
-     文章一律横排，右对齐没有使用场景，故不设。 */
+
   text-align: center;
   color: #22302a;
   letter-spacing: 1.5px;
@@ -887,13 +639,7 @@ body.no-dock .modal-box { max-height: 88vh; }
 }
 .actions .btn .btn-icon { display: inline-flex; }
 .actions .btn .btn-icon svg { width: 17px; height: 17px; }
-/* ⚠️ 扁平化（Issue #209，用户原话：「页面中所有的按钮请进行扁平化设计。」）
-   原先这里写的是 `transition: all .15s` + `:active { transform: scale(.97) }`
-   —— 按下时整颗按钮缩一下，那是「按下去了一块实体」的物理隐喻，
-   扁平按钮不要它：按下**只用颜色**（下面几条各自把底色压深一档）。
-   ⚠️ 顺带把 `transition: all` 收成具名几条：`all` 会把将来加的任何属性
-      （布局 / 阴影）一起做成动画，而这里只该动颜色。
-   底下 `.btn.good` 那条渐变的立体做法见文件末尾「按钮分级」那一节（同样已扁平化）。 */
+
 .btn {
   flex: 1;
   border: 1px solid var(--line);
@@ -906,7 +652,7 @@ body.no-dock .modal-box { max-height: 88vh; }
   transition: background .15s, border-color .15s, color .15s;
   color: var(--ink);
 }
-/* 按下：压一档底色（不再缩放）。具体到每一级的底色在下面各自那一条里。 */
+
 .btn:active { background: var(--bg-soft); }
 .btn.bad { color: var(--red); border-color: var(--danger-line); background: var(--red-light); }
 .btn.bad:active { background: var(--danger-line); }
@@ -917,9 +663,6 @@ body.no-dock .modal-box { max-height: 88vh; }
 
 .hint { font-size: 12px; color: var(--ink-2); margin-top: 12px; text-align: center; }
 
-/* 导入 / 导出清单的纯文本对话框（自选集合，Issue #69 后续）——
-   走的是同一套 .modal 层级（80），所以不会被底部页签 / 播放栏压住；
-   这里只管内容：说明一行 + 一个等宽文本框 + 两颗键。 */
 .text-modal .modal-box { display: flex; flex-direction: column; }
 .text-dialog-tip {
   margin: 0 0 10px;
@@ -937,9 +680,9 @@ body.no-dock .modal-box { max-height: 88vh; }
   background: var(--card);
   color: var(--ink);
   padding: 10px 12px;
-  /* 用等宽字体：这份文本是要被复制、对行数的，字宽一致才看得清 */
+
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  /* 16px 是 iOS 不缩放的最小输入字号（与小古文搜索框同一条约定） */
+
   font-size: 16px;
   line-height: 1.6;
   margin-bottom: 12px;
@@ -957,21 +700,6 @@ body.no-dock .modal-box { max-height: 88vh; }
   font-weight: 500;
 }
 
-/* --------------------------------------------------------------------------
-   设置页的选中态：全页统一成「深绿实底 + 米白字」，与「年级」那些深绿药丸同一套语言
-   --------------------------------------------------------------------------
-   原先同一个页面里有两套选中语言，读起来像两个控件库拼在一起：
-     · 学段 / 学期 / 背诵范围 / 每日数量（.seg.small）→ 白底 + 天青字 + 细投影
-     · 年级（.chips）                              → 深绿实底 + 米白字
-   用户明显更认后者：实底一眼能看出「现在选的是它」，白底那块在暖白纸面上
-   几乎与容器融成一片、要凑近才看得清。
-   现在五个组合（含阅读辅助）全部统一为深绿实底，做到：
-     · 选中 = 实底 + 米白字 + 描金内边（宋器口沿的金线，与主按钮同一手法）
-     · 未选中 = 纸底 + 细描边 + 淡墨字（不再「裸」在容器里，边界清楚）
-     · 同一行内所有按钮等高、间距一致，选中的那一颗不会比邻居胖一圈
-   注：这一块只作用于 settings.html（.settings-page 作用域），
-   阅读器 / 列表页的 .seg.mini 组合不受影响。
-   -------------------------------------------------------------------------- */
 .settings-page .seg,
 .settings-page .chips {
   display: flex;
@@ -981,9 +709,7 @@ body.no-dock .modal-box { max-height: 88vh; }
   background: transparent;
   overflow: visible;
 }
-/* 一颗选项 = 纸底描边的药丸，宽度跟着文字走（不再被 flex 拉成等分的长条：
-   两个选项的那几行会被拉成两根几乎通栏的板子，与「年级」的药丸完全不像）；
-   行末剩余的第二个选项再自动补满一行，窄屏读起来仍然整齐。 */
+
 .settings-page .seg button,
 .settings-page .chips button {
   flex: 0 1 auto;
@@ -997,8 +723,7 @@ body.no-dock .modal-box { max-height: 88vh; }
   padding: 9px 18px;
   box-shadow: none;
 }
-/* 选中态：深绿实底 + 米白字。描金内边沿用主按钮的手法，
-   但只留一层（不做外投影），在暖白纸面上干净、不糊边。 */
+
 .settings-page .seg button.active,
 .settings-page .chips button.active {
   background: var(--green);
@@ -1007,7 +732,7 @@ body.no-dock .modal-box { max-height: 88vh; }
   font-weight: 600;
   box-shadow: inset 0 0 0 1px rgba(240, 205, 124, .42);
 }
-/* 触摸反馈：未选中的按下时先淡淡染一层天青，点起来有回应 */
+
 .settings-page .seg button:active,
 .settings-page .chips button:active { transform: scale(.97); }
 .settings-page .seg button:not(.active):active,
@@ -1016,33 +741,15 @@ body.no-dock .modal-box { max-height: 88vh; }
   border-color: var(--celadon);
   color: var(--green);
 }
-/* 「每日背诵数量」的文字都短，让它们等分铺满，四档一眼看全 */
+
 .settings-page #seg-count button { flex: 1 1 0; }
 
-/* --------------------------------------------------------------------------
-   朗读：五档连读方式
-   --------------------------------------------------------------------------
-   五档连读，每档后面还带一句「选它会发生什么」（无译文跳过等），所以
-   放在药丸里会挤成两行、长短参差。这里改用**竖排单选项**：
-   一行一档、名字在左、说明在下，选中同样用「深绿实底 + 米白字 + 描金内边」
-   这一套页面统一的选中语言（与年级药丸、学段药丸一致），
-   不再引入第三种选中样式。
-   -------------------------------------------------------------------------- */
 .play-modes {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
-/* 平板 / 桌面：五档连读方式排成两列
-   --------------------------------------------------------------------------
-   与上面「复习算法」那一栏同一套处理：卡片式单选项在窄屏一行一档，
-   宽屏一行两档 —— 一档占满 692px 时，右边半张卡全是空白，
-   五档竖着排下来又白占一屏高度。
-   两列后每张约 340px，与「我的清单」里的条目同宽，
-   「名字一行 + 说明一行」正好排得下，说明也不会被挤成三行。
-   ⚠️ 与 #seg-algo 的差别只在最小宽度：这一栏的说明更长（「打乱后一篇接一篇」），
-      200px 会折成两行，所以这里给到 260px。
-   ⚠️ 断点同样是 560px（平板竖屏起）：再窄的屏两列会把说明挤碎。 */
+
 @media (min-width: 560px) {
   #seg-play {
     flex-direction: row;
@@ -1051,19 +758,11 @@ body.no-dock .modal-box { max-height: 88vh; }
   #seg-play .play-mode-opt {
     flex: 1 1 calc(50% - 4px);
     min-width: 260px;
-    /* 奇数张时最后一张独占一行 —— 收住宽度，让它与上排同宽、左对齐。
-       不收的话 flex-grow 会把它撑满 692px，比上面四张宽一倍，
-       看着像「这一档特别重要」，而它只是因为没人跟它配对。
-       ⚠️ 必须写 max-width 而不是 width：flex-basis 与固定 width 同用时后者胜，
-          格子会又回到定宽、右边照样留白。 */
+
     max-width: calc(50% - 4px);
   }
 }
-/* 「复习算法」那一栏（Issue #114）：与五档连读方式共用同一套卡片式单选样式，
-   只在宽屏下排成两列 —— 四张模型每张都带一行年份与取舍，窄屏一行一档，
-   平板 / 桌面一行两档更省纵向空间，也不至于让每张的说明被挤成两行以上。
-   注：这一栏的按钮类名里带 .algo-opt（与 .play-mode-opt 并用），
-   两栏各自成组、选中的判定互不干扰。 */
+
 @media (min-width: 560px) {
   #seg-algo {
     flex-direction: row;
@@ -1072,7 +771,7 @@ body.no-dock .modal-box { max-height: 88vh; }
   #seg-algo .algo-opt {
     flex: 1 1 calc(50% - 4px);
     min-width: 200px;
-    /* 同上：四张正好两行两列，这条是给「将来加到 5 张」兜底 */
+
     max-width: calc(50% - 4px);
   }
 }
@@ -1102,15 +801,14 @@ body.no-dock .modal-box { max-height: 88vh; }
   font-weight: 600;
   box-shadow: inset 0 0 0 1px rgba(240, 205, 124, .42);
 }
-/* 选中项里的那行说明也要跟着变成浅色，否则深绿底上糊成一团黑 */
+
 .play-mode-opt.active .play-mode-note { color: rgba(253, 250, 242, .82); }
 .play-mode-opt:not(.active):active {
   background: var(--green-light);
   border-color: var(--celadon);
   color: var(--green);
 }
-/* 圆形记号：五档里当前选中的那一档，右侧点亮一枚实心圆点，
-   与圆键菜单里的勾选记号同一套语言（不必只靠底色辨认） */
+
 .play-mode-opt { position: relative; }
 .play-mode-opt::after {
   content: "";
@@ -1128,13 +826,7 @@ body.no-dock .modal-box { max-height: 88vh; }
   border-color: #f0cd7c;
   background: #f0cd7c;
 }
-/* --------------------------------------------------------------------------
-   复习算法（设置页）：一行一张模型卡
-   --------------------------------------------------------------------------
-   与「连读方式」那一组同一套语言（一行一张、选中深绿实底 + 描金内边），
-   只是这里每张还要多说两句（名字 + 年份一行，取舍说明一行），
-   所以行距与说明字号略作区分。选中记号同样是右侧那枚实心圆点。
-   -------------------------------------------------------------------------- */
+
 .algo-modes {
   display: flex;
   flex-direction: column;
@@ -1197,7 +889,6 @@ body.no-dock .modal-box { max-height: 88vh; }
   background: #f0cd7c;
 }
 
-/* 窄屏：药丸再收一档内边距，7 个「背诵范围」才不会挤成两行以上 */
 @media (max-width: 400px) {
   .settings-page .seg button,
   .settings-page .chips button { padding: 9px 13px; font-size: 13px; }
@@ -1208,8 +899,7 @@ body.no-dock .modal-box { max-height: 88vh; }
   box-sizing: border-box;
   padding: 9px 12px;
   border: 1px solid var(--line);
-  /* 与「导出备份 / 清空进度」那一排同级：设置页里的输入框与按钮用同一个圆角，
-     不再出现「输入框 10px、旁边按钮 10px、再过一行按钮 12px」的三种弧度 */
+
   border-radius: var(--radius-sm);
   background: var(--card);
   color: var(--ink);
@@ -1218,54 +908,21 @@ body.no-dock .modal-box { max-height: 88vh; }
   outline: none;
   transition: border-color .15s, background .15s;
 }
-/* 聚焦态：天青描边 + 一圈极淡的天青光晕（与全站搜索框同一个值）
-   --------------------------------------------------------------------------
-   用户要求：「搜索框聚焦后外层那圈浅浅的光晕，设置页的用户名输入框也加上，
-   所有页面的输入框都带这样的效果」。
-   光晕是描边**之外**的柔和扩散（box-shadow），不挤占布局、也不像 UA 默认的
-   focus ring 那样生硬 —— 上一版这里只换了 border-color，浏览器给 <input>
-   的默认 outline 于是与天青描边同时画在框上。
-   ⚠️ 光晕的值必须与 `.search-input:focus` 那条**逐位相同**
-      （rgba(47, 96, 85, .10)），两边都别图省事换成 --green-light：
-      那是不透明的浅底填充色，当 box-shadow 用会画出一圈实心粉绿外框。
-   ⚠️ 本次把 **CSS 变量之外的「所有页面输入框」** 一并覆盖（见下面那条
-      `input/select/textarea` 的 :focus）—— 单独挑 .settings-input 改，
-      日后新加的输入框又只有描边、没有光晕。 */
+
 .settings-input:focus {
   border-color: var(--green);
   background: #fffdf6;
   outline: none;
   box-shadow: 0 0 0 3px rgba(47, 96, 85, .10);
 }
-/* 全站输入控件的聚焦口径：同一个描边色 + 同一圈光晕
-   --------------------------------------------------------------------------
-   为什么用元素选择器而不是再列一遍类名：页面上还有搜索弹层、自选集合命名
-   这类「临时长出来的」输入框（.modal 里的 input），逐个补类名必然漏。
-   这里只补**聚焦表现**，不动字号 / 内边距 / 底色 —— 那是各组件自己的事。
-   ⚠️ outline: none 必须有：不关掉 UA 那条近黑的 focus ring，
-      用户看到的仍是「黑框 + 青晕」两层叠着。
-   ⚠️ 放在组件样式**之后**、且带上元素选择器（特异性 0,1,1）：
-      `.search-input:focus`（0,2,0）与 `body[data-nav="search"] …`（更高）
-      那几条仍然按自己的值赢 —— 搜索页那颗 52px 的大框不会被这条压回去。 */
+
 input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):focus,
 select:focus,
 textarea:focus {
   outline: none;
   box-shadow: 0 0 0 3px rgba(47, 96, 85, .10);
 }
-/* 桌面（≥1024px）：单行输入框不再跟着栏宽一起拉长
-   --------------------------------------------------------------------------
-   输入框写的是 width: 100%（跟着所在栏走），这在手机上是对的 ——
-   一行就是输入框那一行。但桌面的分组栏在 1808px 里宽 578px、
-   在 1168px 里也有 365px，而「用户名」「清单名」这类值通常只有几个字：
-   输入框拉到 578px 宽，框里三个字、右边 500px 全是空的，
-   与列表卡那种「空白比内容还宽」是同一件事。
-   这里封一个 320px：与手机上输入框一整行的宽度同档
-   （393px 屏减掉两侧 14px 与卡片内边距，约 337px）。
-   ⚠️ 只收**单行、且值很短**的这一类（.settings-input）。
-      「清空进度」那排按钮、下拉、自选集合里那些由内容撑开的输入框都不受影响。
-   ⚠️ 不自适应内容宽度（field-sizing / 按 value 长度算）：值会随用户输入变长
-      —— 框宽跟着字走会让整栏在打字时左右抖。固定上限最稳。 */
+
 @media (min-width: 1024px) {
   .settings-input {
     max-width: 320px;
@@ -1274,52 +931,18 @@ textarea:focus {
 .settings-input::placeholder { color: #9c8d7b; }
 .settings-hint { font-size: 11.5px; color: var(--ink-3); margin-top: 6px; }
 
-/* ---------- 开关行（Issue #163 · 跨设备同步那一项） ----------
-   用户原话：「跨设备同步选择框太丑了，改进。」
-   用户第二次原话（上一版上线后）：「现在这个选择项你是认真的吗？
-   奇丑无比，你哪怕设计成 iPhone 设置里的选项开关一样也行啊。」
-
-   第一版是浏览器默认的 <input type=checkbox>：一颗 13px 的方框（白底 /
-   灰勾 / 圆角 2px），旁边还挂一颗写着「关」「开」的文字标签。方框与全站
-   纸面 / 描金细线 / 深青实底是两套语言；那颗文字既像状态又像按钮。
-
-   第二版（上一版）改成自绘胶囊，但**画出来是错的**：轨道是那颗
-   appearance:none 的 input 自己，滑块是可以出现在 DOM 任何位置的
-   <span class="switch-track">。两者要靠「absolute 定位」叠在一起，
-   而 absolute 的落点是**最近一个非 static 祖先** —— 而
-   .switch / .settings-item / .settings-group / .app … 一路到 <body>
-   全是 static，于是滑块直接以**文档**为坐标：left:2px / top:2px 让它
-   落在页面左上角（实测 y = -415px，在屏幕外），:checked 那句
-   translateX(16px) 只是把它从页面 x=2 挪到 x=18。用户看到的因此是
-   「一颗空药丸」—— 开着只有深青底，关着只有一圈描边，**滑块一次都没出现**。
-
-   ⚠️ 上一轮的五条守卫全绿而界面仍然是错的，因为那些断言查的是**源码字符串**
-      （「有没有 appearance:none」「尺寸是不是 40/24」「translateX 是不是算出来的 16」）
-      —— 源码看着全对，画出来全错。这一版把滑块**放进轨道元素里**，
-      并补上真渲染的几何断言（见 test/ui-consistency.test.js §13）。
-
-   现在这一版（手机系统开关那一路）：
-     · 一颗 <span class="switch-toggle"> 同时是**轨道**与滑块的 containing block
-       （position: relative，轨道与滑块因此不可能再分家）
-     · 轨道 40×24 胶囊：关 = 纸底 + 界行描边 + 淡墨滑块靠左；
-       开 = 深青实底 + 描金内边 + 米白滑块靠右（全站「选中」同一句）
-     · 位移 180ms、轨道换色 220ms：与 .seg / .chips 的选中过渡同一档，
-       整页的动效不该有两种速度
-     · 真实 <input type=checkbox> 仍在 DOM 里（键盘 / 读屏 / 焦点都用它），
-       只是画成 0 尺寸 —— 焦点态由 :focus-visible 画在**轨道**上 */
 .switch {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 14px;
-  /* 整行都是热区：点文字也能开（label 包着 input 的原生行为） */
+
   cursor: pointer;
-  /* 触屏上指肚按得着（与 .ghost-btn 同一档的最小高度） */
+
   min-height: 32px;
   -webkit-tap-highlight-color: transparent;
 }
-/* 左侧的项名：字号 / 颜色与页面上其他项名（.settings-item > label）逐字一致，
-   否则同一页里会出现「有的项名 13.5px、有的 14px」那种看着说不出哪不对的偏差 */
+
 .settings-label {
   font-size: 13.5px;
   font-weight: 500;
@@ -1327,12 +950,9 @@ textarea:focus {
   min-width: 0;
 }
 
-/* 轨道：这一颗 span 是**开关的可见本体**，同时是滑块的包含块。
-   开关那三个尺寸（轨道宽 / 轨道高 / 滑块直径）只此一份 ——
-   滑块起点与行程都由它们算出来，别处不许再写一遍。 */
 .switch-toggle {
   flex: none;
-  position: relative;          /* ⚠️ 就是这一句把滑块留在轨道里 */
+  position: relative;
   display: inline-block;
   box-sizing: border-box;
   width: 40px;
@@ -1341,10 +961,10 @@ textarea:focus {
   border-radius: 999px;
   background: var(--card);
   cursor: pointer;
-  /* 220ms 与 .seg / .chips 的选中过渡同一档：整页的动效不该有两种速度 */
+
   transition: background .22s ease, border-color .22s ease, box-shadow .22s ease;
 }
-/* 滑块：18px 圆 + 左 2px 的起始落点 = 轨道内高 22px 减上下各 2px */
+
 .switch-toggle::after {
   content: "";
   position: absolute;
@@ -1357,30 +977,24 @@ textarea:focus {
   box-shadow: 0 1px 2px rgba(74, 58, 38, .28);
   transition: transform .18s ease, background .22s ease;
 }
-/* 开着：深青实底 + 米白滑块（与「年级」「复习算法」的选中是同一句：实底 = 开着）
-   ⚠️ Issue #209 扁平化：原先这里还多一圈 `inset 0 0 0 1px rgba(240,205,124,.42)`
-      —— 描金内边，与全站按钮一起撤了。开关不是按钮，但它与按钮住在同一屏里，
-      留着这一圈会让它成为页面上唯一带金属收边的东西（用户那句话要的是「所有的
-      按钮」，但一致性这件事不会只停在按钮上）。开关「开 / 关」的区分靠实底本身，
-      不靠金属收边 —— 那正是原来那条注释里的前半句「实底 = 开着」。 */
+
 .switch-input:checked + .switch-toggle {
   background: var(--green);
   border-color: var(--green-dark);
 }
-/* 40 - 18 - 2 - 2 - 2（两侧边框）= 16px 的行程 */
+
 .switch-input:checked + .switch-toggle::after {
   transform: translateX(16px);
   background: #fdfaf2;
 }
-/* 置灰（服务端未开放同步时）：轨道与滑块一起退到淡墨，且不给 hover 反馈 */
+
 .switch-input:disabled + .switch-toggle {
   cursor: not-allowed;
   background: var(--card-2);
   border-color: var(--line-2);
 }
 .switch-input:disabled + .switch-toggle::after { background: var(--line); }
-/* 真实输入框留在 DOM 里（键盘 / 读屏 / 原生 toggle 都走它），但不占位：
-   一格 0 尺寸的盒子 —— 焦点环改画在轨道上（下一句） */
+
 .switch-input {
   position: absolute;
   width: 0;
@@ -1390,33 +1004,26 @@ textarea:focus {
   opacity: 0;
   pointer-events: none;
 }
-/* 键盘：焦点光晕与全站输入框同一个值（rgba(47, 96, 85, .10)）
-   ⚠️ 画在**轨道**上，不是画在那颗 0 尺寸的 input 上（那样等于看不见） */
+
 .switch-input:focus-visible + .switch-toggle {
   box-shadow: 0 0 0 3px rgba(47, 96, 85, .10);
 }
 .switch-input:checked:focus-visible + .switch-toggle {
   box-shadow: 0 0 0 3px rgba(47, 96, 85, .10);
 }
-/* 说明文字：开关下面单独一行（旧版是与开关并排、还要兼作「关」/「开」标签） */
+
 .switch-hint { font-size: 11.5px; color: var(--ink-3); margin-top: 6px; }
 
-/* ---------- 头像（Issue #132 / #163 · 2026-09-19） ----------
-   两档：没传图 = 用户名首字（`.avatar` 里的文字），传了图 = `.avatar-img`。
-   上一版那套「固定字集 + 四色」的小方块已随功能整块删掉（用户 2026-09-19）。 */
 .avatar-row {
   display: flex;
   align-items: center;
   gap: 12px;
   min-width: 0;
 }
-/* 头像不参与收缩（与顶栏同一条口径）；右半那些键跟着栏走 */
+
 .avatar-slot { flex: none; display: inline-flex; align-items: center; }
 .avatar-acts { display: flex; flex-wrap: wrap; gap: 8px; min-width: 0; }
 
-/* ---------- 裁切层（Issue #163） ----------
-   选完图**就地铺上来**：方形预览 + 拖动 + 缩放，底下那张纸变暗。
-   走全站弹层那一套（fixed + 安全区 + --nav-h 避让），不新造一层。 */
 .crop-layer {
   position: fixed;
   inset: 0;
@@ -1439,7 +1046,7 @@ textarea:focus {
   padding: 16px;
   animation: popIn .18s cubic-bezier(.2, .8, .3, 1);
 }
-/* 方框：正方形、溢出裁掉 —— 用户看到的正是最后会画出来的那一块 */
+
 .crop-box {
   position: relative;
   width: 100%;
@@ -1447,7 +1054,7 @@ textarea:focus {
   overflow: hidden;
   border-radius: 50%;
   background: var(--bg);
-  touch-action: none;              /* 拖动时不许页面跟着滚 */
+  touch-action: none;
   cursor: grab;
   user-select: none;
 }
@@ -1458,10 +1065,10 @@ textarea:focus {
   top: 0;
   transform-origin: 0 0;
   will-change: transform;
-  pointer-events: none;            /* 手势归方框，不给图 —— 否则 drag 会断 */
+  pointer-events: none;
   -webkit-user-drag: none;
 }
-/* 井字格 + 圆环：告诉用户「圆外面那块会被切掉」 */
+
 .crop-grid {
   position: absolute;
   inset: 0;
@@ -1488,16 +1095,6 @@ textarea:focus {
   text-align: center;
 }
 
-/* --------------------------------------------------------------------------
-   家庭子用户（3 期 P1）：名册 + 切换 + 增删
-   --------------------------------------------------------------------------
-   一个家长多个小孩。整块只有一行一行的「名字 · 当前 · 改名 · 删除」，
-   与「我的清单」那一组同一套排版语言（.settings-link 那一档），
-   不新造一套视觉 —— 同一页里两种列表样式正是用户点过的「看着说不出哪不对」。
-
-   ⚠️ 「当前」那一档只用**文字 + 实底**表达，不靠颜色单独承载语义：
-      色盲用户与黑白打印时也得读得出「现在是哪一个」。
-   -------------------------------------------------------------------------- */
 .family-panel { display: flex; flex-direction: column; gap: 6px; }
 .family-row {
   display: flex;
@@ -1512,7 +1109,7 @@ textarea:focus {
   border-color: var(--green);
   box-shadow: inset 0 0 0 1px rgba(47, 96, 85, .22);
 }
-/* 点名字 = 切到它。整颗键占满左侧，热区够大（触屏上指肚按得着） */
+
 .family-pick {
   flex: 1;
   min-width: 0;
@@ -1534,7 +1131,7 @@ textarea:focus {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-/* 名册里那一枚小头像（每个孩子自己的） */
+
 .family-pick .avatar { --avatar-size: 26px; }
 .family-now {
   flex: none;
@@ -1557,7 +1154,7 @@ textarea:focus {
 }
 .family-act:hover { color: var(--green); }
 .family-act.danger:hover { color: var(--ink); }
-/* 「再建一个」：虚线框的一行，与上面的实线行区分开（它是动作，不是条目） */
+
 .family-add {
   border: 1px dashed var(--line-2);
   border-radius: var(--radius);
@@ -1571,7 +1168,7 @@ textarea:focus {
   transition: border-color .15s, color .15s;
 }
 .family-add:hover { border-color: var(--green); color: var(--green); }
-/* 原地改名用的输入框：与 .settings-input 同一档（同一页里两种输入框是两种语言） */
+
 .family-rename {
   flex: 1;
   min-width: 0;
@@ -1585,76 +1182,37 @@ textarea:focus {
 }
 .family-rename:focus { outline: none; border-color: var(--green); }
 
-/* --------------------------------------------------------------------------
-   设置页里的「我的清单」（自选背诵）
-   --------------------------------------------------------------------------
-   这一整块原先长在**首页**底部那张「自选背诵」折叠卡里（Issue #114 第二条）：
-   「所有导入，导出，重命名，删除等等应该全部在设置中进行」。
-   搬过来时按「面板」而不是「卡片」来做，Issue #163 用户又提了一次：
-
-     「我的清单卡片设计最好和 课外阅读 页面的卡片设计保持一致，
-       里面没有绿色竖线，横着的项目用边框颜色一样的线隔开。」
-
-   所以现在**一张集合一张卡**，与 «课外阅读» 入口页那六张卡（.library-card）
-   逐项对齐 —— 同一套描边 + 圆角 + 纸底，卡头一行（清单名 + 篇数 + 三颗动作键），
-   卡身是篇目。这一块只负责「卡片与卡身」的细节；
-   .library-card 自己的那一套（宽度 / 描边 / 圆角 / hover）原样复用，不另写一遍。
-
-   卡内条目：与集子页卡内条目同一口径 —— 去掉各自的白底 / 圆角 / 阴影，
-   只留一条分隔线；**没有竖色条**（全站 .item 的 border-left 在这里清零），
-   分隔线的颜色与卡片边框同一个 --line。
-   -------------------------------------------------------------------------- */
 .collections-panel .collections-tip { margin: 0 0 10px; }
 .collections-panel .empty { padding: 10px 2px 16px; }
 
-/* 清单容器：一张集合一张卡，竖着排。间距与 «课外阅读» 那一页的 .library-grid
-   同一档（12px）—— 两处的「几张卡排一列」看着是同一种东西。
-   ⚠️ 但**不跟着那一页分两列 / 三列**（.library-grid 在 ≥560px / ≥1024px
-      有那两档）：那一页每张卡里只有「书名 + 篇数 + 一句说明」，
-      而这里的卡里是**一列篇目** —— 卡一分栏，篇目就跟着挤成两根细条。
-      所以这里把列数与卡片宽度都收回单列（宽度交给 .settings-item.wide）。 */
 .collections-panel #collections-list { gap: 12px; }
 .collections-panel #collections-list .collection-card {
   flex: 0 0 auto;
   max-width: none;
 }
 
-/* 卡：描边 / 圆角 / 纸底 / 去竖线那几条在 css/classic.css 的 .collection-card 里
-   （与 .library-card 写在一起，一眼看得出是同一套卡）。这里只补一个
-   「卡内内容不越出圆角」—— 卡头与卡身各自带底色，溢出会把圆角切掉。 */
 .collection-card { overflow: hidden; }
-/* 卡身（篇目）：最后一条不贴着卡片下缘，与 .group-card 的 10px 同一档 */
+
 .collection-body { padding-bottom: 6px; }
 
-/* 卡内条目：与集子页卡内条目同一套处理（见 css/classic.css 的 .group-card .item）——
-   同底、无圆角、无阴影、无竖色条，只留一条与卡边同色的分隔线。 */
 .collection-body .item {
   background: transparent;
   border-radius: 0;
   box-shadow: none;
-  /* ⚠️ 必须显式写 border-left（而不是只写 border: none）：
-     `border-top` 与 `border-left` 特异度相同、按位置后者胜出，
-     条目之间那条分隔线才不会被顺手抹掉。这一句治的就是用户说的「绿色竖线」——
-     全站 .item 的 4px 左色条（.optional 那档是蓝色）在卡里连成一道大竖线。 */
+
   border-left: none;
   border-top: 1px solid var(--line);
   padding: 12px 14px 12px 16px;
-  /* 条目本身不再可点（这一页只管增删改查，点一条没有去处），
-     所以不给按下缩放那一下反馈 —— 反馈只落在真正能点的键上。 */
+
   cursor: default;
 }
 .collection-body .item:active { transform: none; }
-/* 卡身第一行：与卡头之间也要有一条线，但**更淡一档** ——
-   与集子页卡内条目的处理同一个手法（见 css/classic.css 的
-   `.group-card .item:first-of-type`）：卡头已经用 12px 下内边距与它拉开了距离，
-   这一条只是让「卡头 / 卡身」上下两段的层次仍读得出来。
-   注意选择器写 `:first-child` 而不是 `:first-of-type`：卡身里可能先来一行
-   分组头（.collection-group，也是 div），`first-of-type` 那时会落空。 */
+
 .collection-body > .item:first-child,
 .collection-body > .collection-group:first-child + .item {
   border-top-color: color-mix(in srgb, var(--line) 55%, transparent);
 }
-/* 分组头前面若已有条目（多组连排），它自己带一条实色分隔线 */
+
 .collection-body > .item + .collection-group { border-top: 1px solid var(--line); }
 .collection-body > .item + .item { border-top: 1px solid var(--line); }
 
@@ -1672,17 +1230,13 @@ textarea:focus {
 }
 
 .foot { text-align: center; font-size: 11.5px; color: var(--ink-3); padding: 10px 0 0; }
-/* 版权 + 用户协议 / 隐私条款链接：两行居中，窄屏不挤在一起 */
+
 .foot-copy { display: block; }
 .foot-links { display: inline-flex; gap: 6px; margin-top: 6px; }
-/* ⚠️ 页脚链接**始终没有下划线**，hover 也不给「再画一条线」当反馈 ——
-   之前写的是「常态去掉、hover 加回来」，于是鼠标一过那条下划线就蹦出来。
-   反馈改用颜色一档（淡墨 → 天青），与 .dock-item / .settings-link 同一套口径：
-   全站的链接一律靠颜色区分，不靠下划线。
-   （下划线本身已由文件顶部那条全局 `a` 规则去掉，这里只管颜色。） */
+
 .foot-links a { color: var(--ink-3); }
 .foot-links a:hover { color: var(--green); }
-/* hover 的颜色差在触屏 / 强光下也读得出，这里补一条按下反馈：不画线，只加深一档 */
+
 .foot-links a:active { color: var(--green-dark); }
 .foot-sep { color: #c8bcaa; }
 
@@ -1711,113 +1265,45 @@ textarea:focus {
 @keyframes slideUp { from { transform: translateY(30px); opacity: .4 } to { transform: none; opacity: 1 } }
 @keyframes pop { from { transform: scale(.94); opacity: .4 } to { transform: none; opacity: 1 } }
 
-/* ==========================================================================
-   iOS / PWA 适配
-   ========================================================================== */
-
 :root {
-  /* 安全区：iPhone 刘海屏、灵动岛、底部横条。
-     非 iOS 设备上 env() 为 0，不影响原有布局。 */
+
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-left: env(safe-area-inset-left, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
-  /* 由 js/pwa.js 在 iOS 上写入，修正地址栏收起/展开导致的 100vh 抖动 */
+
   --app-vh: 1vh;
-  /* 底部导航栏（播放栏 + iOS 引导条）的实测高度，由 js/pwa.js 的 syncBottomGap()
-     写入。页面留白与所有贴底固定元素都按这一条基准线避让，杜绝「被导航栏压住一点」 */
+
   --nav-h: 0px;
-  /* 页脚与正文之间的收尾留白，**再减 40px**（Issue #209 · 用户原话：
-     「页底 ©2026 kuibu.app 积跬步, 至千里 上面的留空距离过多了，
-      稍微减掉一些，例如减 40px 大概？？？」）。
-     ----------------------------------------------------------------------
-     ⚠️⚠️ 这个变量表达的是「页脚上方那段呼吸让出多少」，**只作用在减得动的地方**：
-           .app / .settings-page 的 padding-bottom 看着是「页面底部的留白」，
-           但它同时承担第二个职责 —— 末行与底部页签之间的**避让区**。
-           两者的关系是分段的，段里段外差别很大：
 
-             情形 A（内容比一屏矮）：.app 的总高由 padding-bottom 顶起来，
-                                     末行就贴在 padding 的上沿 —— padding 每少一像素，
-                                     末行就往页签里多走一像素。**这一档是硬约束。**
-             情形 B（内容比一屏高）：.app 的高度由内容自己决定，padding 与页签
-                                     之间是滚动距离 —— **这一档才减得动。**
-
-     ⚠️ 踩过的坑（Issue #214 第一次提测 CI 8 项红，全是这一条）：
-        原先写成 `padding-bottom: max(0px, calc(24px + var(--nav-h) - var(--foot-gap-v2)))`
-        —— 呼吸与避让**放在同一个算式里一起减 40px**，而它落在情形 A 那一档：
-        iPhone 上实测 --nav-h = 61.5px，算出 45.5px < 页签 62px，于是
-          · 首页 / 五部典籍页：滚到底，末条篇目落在页签底下（「页面留白 ≥ 页签高度」红）；
-          · 设置页：页脚「用户协议 · 隐私条款」被压住（elementFromPoint 命中的是
-            页签，不是 .foot-copy —— 「底部页签不遮挡设置页底部的法务链接」红）；
-          · 播放栏 82px 时留白 66px，连播放栏本身都避不开。
-
-        ⚠️ 把 24px 拎到 max() 外面（`calc(24px + max(0px, calc(var(--nav-h) -
-           var(--foot-gap-v2))))`）**解决不了**：在情形 A 里 .app 总高 = 内容 +
-           (24 + max(0, navH - 40))，那 24px 也是 padding，也把末行往下推。
-           设置页就是这一档 —— 它挂着 `min-height: calc(100 * var(--app-vh) - 200px)`，
-           内容比它矮时**页脚的位置完全由页面的 padding-bottom 决定**，
-           外面的 24px 一样把页脚推进页签（真机实测：pad 45.5px → 85.5px，
-           页脚一个像素都不动）。「拎到 max() 外面就安全」是个假象。
-
-     ⚠️ 正确的对象是**页脚自己的留白**（见下面 body:not(.no-dock) 那一段的 .foot 两条）：
-        与其动 .app（情形 A 里那是末行与页签之间的**唯一**缓冲，一减就压住），
-        不如减 .foot —— 页脚是末行本身，它上方那段
-        `padding-top: 10px + margin-top: 26px` 才是用户看到的「©上面空太多」，
-        而它又在避让区之外，两笔账各减各的，互不牵连。
-        ⚠️ 所以本变量**只出现**在 .foot / .settings-foot 的 padding-top 里，
-           .app / .settings-page 的 padding-bottom 里**一处都不许有**。
-        ⚠️ 也别把 --nav-h 调小去凑：--nav-h 是实测值，它一变，
-           所有读它的贴底固定元素（吐司 / 引导条 / 弹层）一起跟着错位。 */
   --foot-gap-v2: 40px;
 }
 
-/* 让左右内容避开横屏时的圆角/刘海
-   --------------------------------------------------------------------------
-   左右内边距取 --col-side（手机 14 / 平板 22 / 桌面 56，见上面「内容列宽」那一条）——
-   ⚠️ 原先这里写死 14px，于是上面那两档媒体查询里的 padding 被这两条
-      **后出现、同特异性**的规则整条盖掉：真机上量到平板 / 桌面的 .app 仍是
-      左右各 14px，顶栏与正文列的左缘差出几十 px（1918px 屏上顶栏左移 42px）。
-      写成 var(--col-side) 之后，三档的左右边只有一个来源。 */
 .app {
   padding-left: calc(var(--col-side) + var(--safe-left));
   padding-right: calc(var(--col-side) + var(--safe-right));
 }
 
-/* 底部留出横条高度，否则最后一项会被 Home Indicator 压住 */
 .app {
   padding-bottom: calc(40px + var(--safe-bottom));
 }
 
-/* 底部弹层避开 iPhone 底部横条 + 底部导航。
-   `.modal-box` 这条规则与上面的 `.modal-box { padding: ... }` 是同一优先级、
-   晚出现，所以它说了算：底部内边距 = 底部导航实测高度 + 一段呼吸留白。
-   这样一来，弹层最下面的「忘记 / 模糊 / 记住」整排落在页签上方那道横带之外。
-   ⚠️ 用 --nav-h（实测）而不是写死 62px：写死的是「默认字号下的页签高度」，
-      换字号 / 横屏 / PWA 就不准了 —— 那正是「差几像素又压住一点」的成因。 */
 .modal-box {
   padding-bottom: calc(26px + var(--nav-h) + var(--safe-bottom));
 }
 body.no-dock .modal-box { padding-bottom: calc(26px + var(--safe-bottom)); }
 
-/* 中间弹出的弹层（设置 / 集合选择器）也留安全边距。
-   它有自适应的 max-height，内容永远滚得上来，所以不必像底部弹层那样垫得那么高；
-   但仍要按底部导航避让：这一类的最后一行是「新建集合」的输入框与按钮
-   （见 js/reader-core.js 的 openRecitePicker），正好落在导航那道横带的位置 ——
-   层级上它已高于页签（z-index 80），视觉上却仍会与页签图标叠成一团。 */
 .modal-box.small {
-  /* 高度扣掉底部导航（--nav-h）：小弹层内容不高，但「加入背诵」那一屏
-     折叠键盘 / 大字号时会顶到导航那道横带，扣掉它才滚得上来 */
+
   max-height: calc(86 * var(--app-vh) - var(--nav-h));
   padding-bottom: calc(26px + var(--nav-h) + var(--safe-bottom));
   margin-bottom: calc(12px + var(--nav-h) + var(--safe-bottom));
 }
 
-/* 吐司提示上移，避免被横条遮挡 */
 .toast {
   bottom: calc(76px + var(--safe-bottom));
 }
 
-/* 防止 iOS 上长按选中文字/弹出放大镜，影响小朋友点击 */
 button,
 .seg,
 .chips {
@@ -1826,14 +1312,12 @@ button,
   -webkit-touch-callout: none;
 }
 
-/* 允许正文可复制（家长可能想复制诗句） */
 .poem-text,
 .modal-head h2 {
   -webkit-user-select: text;
   user-select: text;
 }
 
-/* ---------- 「添加到主屏幕」引导条 ---------- */
 .ios-install-tip {
   position: fixed;
   left: calc(12px + var(--safe-left));
@@ -1877,171 +1361,68 @@ button,
 }
 .ios-tip-close:active { opacity: .82; }
 
-/* 已安装到桌面后（standalone）隐藏引导，由 JS 保证，这里兜底 */
 @media (display-mode: standalone) {
   .ios-install-tip { display: none !important; }
 }
 
-/* 横屏小高度时压缩顶部留白，让内容更早出现 */
 @media (max-height: 480px) and (orientation: landscape) {
   .topbar { padding-top: calc(8px + var(--safe-top)); }
 }
 
-/* 引导条不能盖住弹层里的操作按钮：
-   弹层 z-index 为 80，引导条需低于它，否则「忘记/模糊/记住」会被挡住点不到 */
 .ios-install-tip {
   z-index: 40;
 }
 
-/* 引导条是 fixed 的，会盖住页面最后一行（版权 + 用户协议 / 隐私条款）。
-   出现时按实测高度补留白，保证两个法务链接不会被压住、始终可点。 */
 body.has-install-tip .app,
 body.has-install-tip #app {
   padding-bottom: calc(24px + var(--nav-h));
 }
 
-/* ==========================================================================
-   设置整页（settings.html）
-   --------------------------------------------------------------------------
-   设置不再是「从底部向上弹出的卡片」，而是一个独立页面：
-     · 与首页共用同一套顶栏 / 底部页签（js/chrome.js），只是当前页签不同
-     · 页面主体撑满可视高度，内容不足时页脚（版权 + 法务链接）压在最底部
-     · 底部留白统一由 --nav-h 决定，底部导航栏压不到最后一行
-   ========================================================================== */
 .settings-page {
-  /* 顶部栏之外的可视区域：内容不足时由页脚占住最底部 */
+
   min-height: calc(100vh - 200px);
   min-height: calc(100 * var(--app-vh) - 200px);
-  /* 底部导航栏（页签 / 播放栏）的实测高度已含 iPhone 横条安全区，
-     这里一次留够即可，页脚不会被压住也不会多出一条空白。
-     ⚠️ Issue #209：这一档是 **--foot-gap-v2**（-40px）。
-        设置页与首页一样是「内容不多、页脚被 min-height 顺下去」的那一档，
-        用户看到的是「©2026 kuibu.app」上面空出一大截 —— 他要求减掉 40px 左右。
-        减的是**呼吸那一笔**，**不是** --nav-h：
-        这一页的 `min-height: calc(100 * var(--app-vh) - 200px)` 把页脚推到
-        可视区底部，内容比它矮时**页脚与页签之间的距离就等于这段 padding-bottom**，
-        它是唯一的缓冲；--nav-h 一让，页脚立刻被页签压住
-        （CI 上「底部页签不遮挡设置页底部的法务链接」就是这条红的）。
-     ⚠️ 所以 40px 只能减在**呼吸那一段**上：写成
-        `max(0px, calc(24px + var(--nav-h) - var(--foot-gap-v2)))` 是把 40px
-        从 **nav-h 里一起扣掉**（61.5 + 24 − 40 = 45.5 ＜ 页签 62），
-        末行照样被压住 —— 与那句注释说的正好相反，是 Issue #209 引入的回归。
-        正确的写法是把它从 24px 那一笔里减，并且给 --nav-h 留 1px 取整余量
-        （--nav-h 由 bounding rect 量出、JS 侧不舍入，与真实高度可能差半像素）。 */
+
   padding-bottom: calc(26px + var(--nav-h) + max(0px, 24px - var(--foot-gap-v2)));
 }
 
-/* --------------------------------------------------------------------------
-   设置分组：功能多了以后，把「只给古诗词背诵用」的选项与「全站通用」的选项分开
-   --------------------------------------------------------------------------
-   分组标题沿用纸张质感：小字号 + 字距拉开 + 一条淡金细线收尾，
-   视觉上像册页的「卷次」，不与组内选项的深绿药丸抢眼。
-   -------------------------------------------------------------------------- */
 .settings-group { margin-top: 26px; }
 .settings-group:first-of-type { margin-top: 4px; }
-/* 平板（≥768px）：设置分组排成两列
-   --------------------------------------------------------------------------
-   上一轮（PR #133）把「连读方式」「复习算法」两栏**内部**改成了两列，
-   但**分组之间**仍是一列：1040px 里纵向堆五组，每组只用掉 1040px 的宽度
-   去放一行「标签 + 一档选项」，组与组之间隔着一整屏的空白 ——
-   设置页在平板上就是一条又长又空的单列。
-   这里让分组自己流进两列：一屏能看到两组，滚动距离减半。
-   与「我的清单」那种**跨列**的组（自己一个面板、要整行）分开处理：
-   它用下面的 .settings-item.wide 占满两列，不被挤成半栏。 */
+
 @media (min-width: 768px) {
   .settings-groups {
     display: flex;
     flex-wrap: wrap;
     align-items: flex-start;
     column-gap: 36px;
-    /* 行距与列距同档：iPad 竖屏（两列）与桌面（三列）都靠这一条把
-       「行」与「行」分开 —— 组自己那条 margin-top 已按上面那条注释撤掉。 */
+
     row-gap: 26px;
   }
-  /* ⚠️ 行距交给容器的 row-gap（下面那一条），组自己**不再写 margin-top** ——
-     两边都写的话行与行之间是「22 + 26 = 48px」，而列与列之间只有 36px：
-     同一个页面里横竖两种间距，读者会以为纵向那是「另一段」。 */
+
   .settings-group {
     flex: 1 1 calc(50% - 18px);
     max-width: calc(50% - 18px);
   }
-  /* 跨列的那一项：一行独占（宽度 100%），并按整行的宽度重新切自己的两列 */
+
   .settings-item.wide {
     flex: 1 1 100%;
     max-width: 100%;
   }
-  /* ⚠️ 「我的清单」那边**不再**跟着 .list 排两列（Issue #163）：
-     它现在是一张集合一张卡（.collection-card），卡里是一列篇目 ——
-     卡内条目不再按栏宽分列，否则一张卡里会并排两篇，读起来像是两列表。
-     这里刻意留一句「不再有 .list 的那些规则」，免得下次有人顺手加回来。 */
+
 }
 
-/* 桌面（≥1024px）：设置分组排成三列
-   --------------------------------------------------------------------------
-   一列纸在桌面上跟视口走：1280px 窗口 → 1168px，1920px → 1808px。
-   两列在 1808px 里每栏 886px —— 一栏只放一行「标签 + 一档选项」，
-   剩下的 400 多 px 全是空白，与平板上「一条又长又空的单列」是同一个毛病
-   （那一轮是从一列改两列解决的）。
-   三列后 1808px 里每栏 578px、1168px 里每栏 365px，
-   与平板上那一档（1040px 两栏 → 502px）同档而略窄，排得下最长的那一行
-   （「复习范围」七颗药丸会自己折行，见 .settings-item .seg 的 flex-wrap）。
-   ⚠️ 仍是 flex + flex-basis：分组数量随功能增删，不写死列数。
-   ⚠️ 列距仍 36px（三列时减掉的是一又三分之一栏，算式见下面的 1/3 与 gap）。 */
 @media (min-width: 1024px) {
   .settings-group {
     flex: 1 1 calc(33.333% - 24px);
     max-width: calc(33.333% - 24px);
   }
-  /* 清单那一段仍是**单列**：卡里是一列篇目，分三栏会把篇名挤断
-     （那一页 six 张卡分栏是因为每张卡里只有两行字，见 .library-grid 的说明）。 */
+
   .settings-item.wide .collections-panel #collections-list {
     display: flex;
     flex-direction: column;
   }
 }
 
-/* --------------------------------------------------------------------------
-   卡片主标题 —— 一整站唯一的一档「一页里最大的那颗标题」
-   --------------------------------------------------------------------------
-   用户原话（Issue #147）：「设置页首页，四个卡片是不是应该有背景色？
-   另外四个标题字号需要变大，可以和其他索引页页面例如集子的标题字号一样大。」
-   用户原话（Issue #163，报了三次）：「设置页首页 通用 我的清单这些卡片主标题
-   之前希望字号和其他页面一样大，还没修复。」
-   用户原话（Issue #163 · 第四轮）：「设置首页卡片里的标题让你变大，变得和
-   前面几个页面里集子或者诗词标题一样大，至今未修改。」
-
-   三次都指向同一件事，而前两次的落地都没修对 —— 根因有二：
-
-   一、**「跟谁一样大」当时没定下来。** 前两轮把它定在「集子索引页每一卷的
-      卷名」上，那一颗只有 14px；而用户眼里的「诗词标题」「集子标题」是
-      17px 那一档（集子页卡头的卷名、首页/集子页的篇名 .item-title、
-      入口页的书名 .library-card-name、详情页标题 23px）。14px 落在
-      「卡片主标题」与「辅助标签」（11~12.5px）之间，读起来仍像一条标签 ——
-      所以用户每次看都觉得「没改」。
-
-   二、**设置主页那四张入口卡的标题根本没被这条规则命中。** 这一段的注释一直
-      写着「四张入口卡读这一句」，但它写的是 `.settings-link-title`
-      （<span>），`js/settings-nav.js` 画出来的也确实是这个类 —— 那一条是成立的。
-      失守的是**入口卡里的另外两层**：`.settings-link-desc` 12.5px 与
-      `.account-entry-name` 14.5px，它们与标题挤在同一张卡里，整张卡看上去
-      仍是「一行小字 + 一行更小的字」。这一轮把三者一起拉到同一档。
-
-   所以现在只有一个值，**五处读同一句**（字号 17px / 字重 700 / 正文墨色）：
-
-     · 设置主页四张入口卡的标题   .settings-link-title   （本文件）
-     · 设置主页账号卡上的名字     .account-entry-name   （本文件）
-     · 设置二级页的分组名         .settings-group-title （本文件）
-     · 集子索引页每张卡头的卷名   .group-name           （css/classic.css）
-     · 列表里的篇名（诗词标题）   .item-title           （本文件）
-
-   ⚠️ 为什么是扁平的类名而不是 `:root` 的令牌：`--title-size` 只能跨「同一张
-      样式表里、且写在它后面」的选择器；`.group-name` / `.library-card-name`
-      住在 css/classic.css，两张表各有一份 :root，谁也不知道谁。所以这一档
-      是一个**约定**，由 test/theme.test.js 那一组断言绑住 ——
-      把任一处的数值改成另一个数（14px / 15px / 16px 那几档都试过）就红。
-   ⚠️ 17px 也在「一页最大」的层级里说得通：它仍小于顶栏应用名「跬步」19px
-      （那是全站最大的一档），而大于卡片里所有次要文字（13.5px 及以下）。
-   ⚠️ 主次不靠把标题压小，靠字重与颜色：700 / --ink 对 500 / --ink-2。 */
 .settings-group-title,
 .settings-link-title,
 .account-entry-name,
@@ -2057,77 +1438,47 @@ body.has-install-tip #app {
   gap: 10px;
   margin: 0;
   letter-spacing: .02em;
-  /* 字号上到 17px 之后，标题自己的行盒比原来高 —— 这一条把它左右两边
-     那点行内留白收掉，标题左缘与下面每一条项名的左缘落在同一条竖线上。 */
+
   padding: 0;
 }
-/* --------------------------------------------------------------------------
-   设置主页：六个二级页入口（Issue #132 后续）
-   --------------------------------------------------------------------------
-   设置项多了以后把每一组摊成一页二级页，主页只留入口。
-   入口沿用 .settings-item 的间距与纸张语言（外框已由 .settings-item 给），
-   但整体是一枚 **<a>**：可右键、可新开、可键盘 —— 所以必须显式去掉
-   链接默认下划线（与 .dock-item / .ghost-btn 上处理的是同一件事）。
-   -------------------------------------------------------------------------- */
+
 .settings-link {
   display: flex;
   align-items: center;
   gap: 12px;
-  /* 与 .settings-item 是同一档间距，但主语换成了「可点的整行」：
-     左右内边距让 hover 的纸底不贴边，整行都是热区（不是只有文字可点） */
+
   margin: 14px 0;
   padding: 14px 16px;
-  /* ⚠️ 这四个值的来历（Issue #147）：右上角那颗箭头是 absolute 定位，
-     多出来的那 4px 是给它的落点留出的空间（右侧内边距 16 + 4）；
-     上下的 14px 与 .settings-item 同一档 —— 四个入口现在是四张卡，
-     与二级页里的「一项」不该是两个厚度。 */
+
   padding-right: 46px;
-  /* 一张卡：底色 + 描边 + 圆角，与阅读器译文框（.trans-box）、
-     入口页那六张卡同一档 —— 设置主页原先的四条入口是「裸在纸面上的一行字」，
-     既看不出是一块可点的东西，也与下面那张账号卡（一块深底纸）不像一套。
-     ⚠️ 圆角走 --radius-md：与 .trans-box / .library-card 同为
-        「卡片与卡片之间」的中间档，不新开一个数值。 */
+
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
   color: inherit;
-  /* 一层纸阴影 —— 与背诵首页那一条条独立卡片（.item）**同一句**（Issue #209）。
-     用户原话：「课外阅读，和设置首页列表卡片请借鉴背诵首页的卡片阴影设计。」
-     设置主页这四条入口原先只有描边 + 纸底，是「贴在纸面上的一行」，没有厚度；
-     补上 --shadow 之后与首页那一条条卡片、与 /library/ 那几张卡是同一套「一张纸」
-     的说法。⚠️ 全站这一档**只有一份令牌**（:root 的 --shadow）：要调就调它，
-        不许在这里另写一个 rgba —— 那样首页与设置页又会各走一套。 */
+
   box-shadow: var(--shadow);
   transition: background .16s ease, border-color .16s ease, box-shadow .16s ease;
-  /* 右侧那颗箭头绝对定位在卡片里（见 .settings-link-go） */
+
   position: relative;
 }
-/* 按下 / 悬停：换成首页那些「分类卡」的浅天青底（--green-light），
-   不再只是压一层半透明色 —— 卡片有了底色，反馈也该是同一个色系的一档。 */
+
 .settings-link:hover,
 .settings-link:focus-visible { background: var(--green-light); border-color: var(--celadon); }
 .settings-link:active { transform: scale(.995); }
 .settings-link-main { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1; }
-/* 入口标题：字号 / 字重来自上面那条「卡片主标题」口径（与 .settings-group-title 同一句）。
-   ⚠️ **不再自己写 font-size / font-weight / color**：那张约表在设置页分组标题那一段，
-      这里再抄一遍就是「同一个决定有两个地方在说」——
-      真出过一次：分组标题当时是 11px / 400 / --ink-3，抄过来的三个值跟着一起降级了。
-   留 font-family 是**兜底**，不是第二个来源：--font-poem 那几条规则都住在
-   :root 之后（本文件 2084 行起），而这条规则在它前面，光靠继承拿不到。
-   （实测过：jsdom 里不写这行，标题会渲染成 serif 默认体。） */
+
 .settings-link-title {
   font-family: var(--font-poem);
-  /* 宋体一行四字比黑体略宽一点，标题不必跟着换行（卡右侧还有一颗箭头） */
+
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .settings-link-desc { font-size: 11.5px; color: var(--ink-3); line-height: 1.5; }
-/* 「复习算法」这类并进另一页的项：只说存在，不喧宾夺主 */
+
 .settings-link-extra { color: var(--ink-3); }
-/* 右侧那颗箭头：绝对定位在卡片的右边中线上（与集子卡 .library-card-go 同一手法）——
-   它不参与这一行的排布，卡片变宽变窄都由右侧内边距兜着，落点恒定。
-   ⚠️ 上面 .settings-link 的 padding-right 里那 4px 就是给它留的。 */
+
 .settings-link-go {
   position: absolute;
   right: 16px;
@@ -2142,25 +1493,11 @@ body.has-install-tip #app {
 }
 .settings-link-go svg { width: 16px; height: 16px; }
 
-/* 设置主页只有入口清单，不需要二级页那种「第一项紧贴标题」的例外 */
 .settings-index { margin-top: 4px; }
 
-/* --------------------------------------------------------------------------
-   设置主页清单里的「账号」那一行（Issue #132 · A→B→C→D 的 D）
-   --------------------------------------------------------------------------
-   ⚠️ Issue #163：它原先是一张**自己一张卡**（#account-entry + .account-entry-card，
-      印 38px、昵称 14.5px、一行说明、一颗 ghost 按钮），架在四组入口上面。
-      用户原话「另外把这个按钮和其他按钮放一起啊」之后，那一套结构整个撤了 ——
-      这一行现在与「通用」等四行**共用 .settings-link 的同一份稿子**
-      （卡片 / 圆角 / 内边距 / hover / 右箭头全都是同一套），
-      所以这里**不再有**账号专属的卡与按钮样式，只剩下行内的两处小件：
-        · .settings-link-title 里的层级徽章（与 /profile/ 那枚同一份文案）
-        · 已登录那一行的昵称与徽章之间留一点间距
-   -------------------------------------------------------------------------- */
 .settings-link-desc .tier-badge { margin-left: 6px; }
 .settings-link-title .tier-badge { margin-left: 6px; }
 
-/* 账号那一项（二级页「通用」）：登录状态 + 层级徽章 + 权限清单 */
 .account-line {
   display: flex;
   align-items: center;
@@ -2198,16 +1535,8 @@ body.has-install-tip #app {
 .account-cap.off .cap-name { color: var(--ink-3); }
 .account-cap .cap-hint { color: var(--ink-3); font-size: 11.5px; }
 
-/* 组的第一项紧贴标题，别再多出一截空白 */
-/* ⚠️ 标题是 14px 的卡片主标题（不是 11px 的辅助标签），与第一项之间仍留 14px：
-   标题自带行高，这一档间距读起来是「一组」而不是「标题贴在选项上」。 */
 .settings-group > .settings-item:first-of-type { margin-top: 14px; }
 
-/* 页脚：推到页面最底，且与正文之间留一段呼吸间距。
-   ⚠️ **没有上边框**：原先这里有一条 `border-top: 1px solid var(--line)`，
-   于是每张页面的「©2026 kuibu.app 积跬步, 至千里」上面都顶着一条横线。
-   页脚与正文之间本来就隔着 26px 的空白，那条线只是多画了一道道子
-   （用户点名的「上面的横线删除」就是它）。间距改用留白表达。 */
 .settings-foot {
   margin-top: 26px;
   padding-top: 14px;
@@ -2215,21 +1544,13 @@ body.has-install-tip #app {
 .settings-foot .foot-copy,
 .settings-foot .foot-links { font-size: 12px; }
 
-/* 设置里的多行说明 */
 .settings-tip p { margin: 0; }
 .settings-tip p + p { margin-top: 6px; }
 
-/* ==========================================================================
-   弹层正文的阅读辅助：注音 / 朗读
-   ========================================================================== */
-
-/* 详情页的工具条样式见文件末尾「古诗词详情页的阅读辅助工具条」一节 */
-
-/* 注音正文 */
 .poem-text.with-pinyin {
   line-height: 2.3;
   letter-spacing: 1.6px;
-  /* 注音渲染成 ruby + <br>，改成 normal 才不会因为保留空白把居中挤歪 */
+
   white-space: normal;
 }
 .poem-text ruby { ruby-align: center; }
@@ -2241,18 +1562,6 @@ body.has-install-tip #app {
   letter-spacing: 0;
   line-height: 1.05;
 }
-
-/* ==========================================================================
-   字体 · 中文 Web Font
-   --------------------------------------------------------------------------
-   古诗词的「标题 / 朝代 / 作者 / 正文」统一使用 Noto Serif SC（思源宋体）：
-   宋体本就源于宋代刻本，笔画顿挫、横细竖粗，最贴合线装书里的诗。
-   字体文件用 fontTools 按本应用实际用到的 3016 个字形做了子集化后自托管
-   （fonts/ 目录，共约 790 KB），因此：
-     - 断网可用（不请求任何第三方 CDN）
-     - 苹果 / 安卓 / Windows / Linux 渲染一致，不依赖设备自带中文字体
-   其余界面文字用 Noto Sans SC（思源黑体）打头，系统自带黑体兜底。
-   ========================================================================== */
 
 @font-face {
   font-family: "Poem Sans SC";
@@ -2284,15 +1593,14 @@ body.has-install-tip #app {
 }
 
 :root {
-  /* 诗词：标题 / 作者 / 朝代 / 正文 —— 宋体（思源宋体） */
+
   --font-poem: "Poem Serif SC", "Noto Serif SC", "Source Han Serif SC",
     "Songti SC", "STSong", "SimSun", "Songti TC", "PMingLiU", serif;
-  /* 界面：按钮、标签、说明文字 —— 黑体（系统自带即可） */
+
   --font-ui: "Poem Sans SC", "Noto Sans SC", -apple-system, BlinkMacSystemFont,
     "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
 }
 
-/* 页面标题 / 列表诗题 / 朝代作者 / 正文：统一走宋体（--font-poem） */
 .brand-name-row,
 .modal-head h2,
 .poem-text,
@@ -2302,13 +1610,9 @@ body.has-install-tip #app {
   font-family: var(--font-poem);
 }
 .brand-name-row { font-weight: 600; }
-/* 列表里的诗题 / 朝代 / 作者 */
+
 .item-title {
-  /* ⚠️ 这里**只有字体族与字距**：字号 / 字重 / 颜色读文件中部「卡片主标题」
-     那一档（`.item-title` 是那一句里的第四角）。曾经这里还写着
-     `font-weight: 600`，与那一档的 700 打架 —— 谁写在后面谁赢，
-     于是「篇名」比「设置页的卡片主标题」轻一档，两处看着不像同一档标题。
-     同一个决定只许有一个地方在说。 */
+
   font-family: var(--font-poem);
   letter-spacing: .6px;
 }
@@ -2317,30 +1621,12 @@ body.has-install-tip #app {
   letter-spacing: .4px;
 }
 
-/* 「本年级本学期全部诗词」等折叠标题也保持宋体，风格统一 */
 .collapse-head,
 .group-name {
   font-family: var(--font-poem);
   letter-spacing: .6px;
 }
 
-/* ---------- 顶栏右端：一颗裸箭头（Issue #209 第二轮） ----------
-   用户 2026-09-17 原话：「右上角后退键去除圆形边框，去除背景色」。
-
-   ⚠️ **这一段里不许再出现注释符号本身**（斜杠加星号那一对）：本仓库的样式是有测试
-      按 `选择器{声明}` 逐段读的（普通的区间匹配，不认注释），一条注释夹在
-      选择器与花括号之间，整段规则就会读不出来 —— 上面这一段说明因此放在这里，
-      而不是散在下面各条规则之间。
-   ⚠️ 顶栏那一颗**不再与 `.icon-btn` 共用一段**：两者现在长得不一样
-      （前者裸箭头，后者圆钮）。共用一段时「去框去底」只能靠后写的那段去盖，
-      而 `.top-act` 的属性会从 `.icon-btn` 那一段里被读到 —— 最难查的那类覆盖。
-      共用只留「排布 / 指针 / 过渡」三条，尺寸与皮肤各写各的。
-   ⚠️ 尺寸只有一个来源 `--top-key`（40px）：顶栏右侧现在只有这一件。
-      `--top-slot: 42px`（那一枚是**头像的直径**，与 logo 徽标同径）连同
-      `.top-user` / `.top-slot` / `.top-act-spacer` 一起删了 ——
-      留着一条没人在用的尺寸，就是下一次读错它的种子。 */
-
-/* 共用：排布、指针、过渡（尺寸与皮肤不在这里写） */
 .top-act,
 .icon-btn {
   display: inline-flex;
@@ -2350,8 +1636,6 @@ body.has-install-tip #app {
   transition: background .15s, color .18s, border-color .18s;
 }
 
-/* 顶栏那一颗：裸箭头 —— 无边框、无底色、无圆角。
-   40px 的点击区就是它自己的盒子（顶栏那一行高 48px，装得下）。 */
 .top-act {
   flex: none;
   width: var(--top-key);
@@ -2364,8 +1648,6 @@ body.has-install-tip #app {
   margin-left: auto;
 }
 
-/* 别处的同类按钮（工具条 / 列表行）：仍是圆钮，保持原样 ——
-   用户点名的只有「右上角后退键」，不许把这个口径顺手扩大到全站。 */
 .icon-btn {
   width: 40px;
   height: 40px;
@@ -2382,30 +1664,10 @@ body.has-install-tip #app {
 .top-act:active { color: var(--green-dark); }
 .icon-btn:active { background: var(--bg-soft); }
 
-/* ---------- 顶栏右侧的尺寸令牌（Issue #209 第二轮） ----------
-   ┌──────────────────────────────────────┐
-   │ (徽标42) 跬步 · 页名        〔  ↩ 40 〕 │
-   └──────────────────────────────────────┘
-    品牌区（可收缩，走 ellipsis）   ↑ 顶到右缘
-
-   用户原话：「所有页面右上角的头像全部删除，这个位置现在有后退键代替」。
-   于是顶栏右端只有**一件**：那一颗返回键；跟着撤掉的是头像那一条整套
-   （`.top-user` / `.top-slot` / `--top-slot` / `.top-act-spacer`）。
-   ⚠️ 首页（背诵）没有上一层，右端**一件都没有**：原先留一枚 42px 空槽保两栏
-      对齐，而那一枚槽的全部理由就是「头像的位置恒在」—— 头像没了，
-      空槽只是顶栏右边一块空白。 */
 :root {
   --top-key: 40px;
 }
 
-/* 头像本体（三处显示共用：顶栏 / 设置页 / 个人中心 / 子用户名册）
-   --------------------------------------------------------------------------
-   两档长同一个「圆」：
-     · 没传图 → 印底是**深天青实底 + 米白首字**（与全站的选中态同一句）
-     · 传了图 → `.avatar-img` 铺满整圆（`object-fit: cover`，方形已由
-                 js/avatar-image.js 裁好，这里只负责不发胖）
-   为什么底色取深天青而不是随机色：头像没有颜色可选了（用户删掉了那套），
-   于是它必须与全站的「身份色」一致 —— 顶栏、设置页、个人中心画出来是同一枚。 */
 .avatar {
   --avatar-size: 34px;
   width: var(--avatar-size);
@@ -2424,7 +1686,7 @@ body.has-install-tip #app {
   font-weight: 600;
   box-sizing: border-box;
   user-select: none;
-  /* 圆边一圈极细的高光，与描金细线同一档 */
+
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .34);
 }
 .avatar-img {
@@ -2433,15 +1695,9 @@ body.has-install-tip #app {
   object-fit: cover;
   display: block;
 }
-/* `.avatar-top` 那一档（顶栏专用）已随 Issue #209 撤掉 ——
-   顶栏上**没有头像了**（「所有页面右上角的头像全部删除」），
-   于是 `.avatar` 的 34px 默认直径在设置页 / 个人中心 / 子用户名册上就是最终值，
-   不需要再有一档 42px 的「顶栏专用尺寸」。
-   ⚠️ 顶栏那一档的**兜底直径**留在这里：`.avatar-top` 这个类名可能还出现在
-      老缓存页面的 DOM 里（老 sw 缓存 + 新样式表），有这一条就不会退化成零尺寸的空圆。 */
+
 .avatar-top { --avatar-size: 42px; }
 
-/* ---------- 底部页签 ---------- */
 .dock {
   position: fixed;
   left: 0;
@@ -2457,24 +1713,7 @@ body.has-install-tip #app {
   box-shadow: 0 -6px 22px rgba(74, 58, 38, .10);
   animation: dockIn .26s cubic-bezier(.2, .8, .3, 1);
 }
-/* 页签的内层容器：宽屏下不让四个格子摊满整块屏幕
-   --------------------------------------------------------------------------
-   页签本身必须整宽贴底（那条描金细线与渐变底是「页面底边」的一部分），
-   但四格不该跟着视口一起变宽：1920px 屏上每格 477px，
-   一颗 22px 的图标孤零零挂在 477px 的正中间，「背诵」两个字离它老远 ——
-   页签看着像四块巨大的空白板子，而不是一排按钮。
 
-   这里加一层 `.dock-inner`：外层照旧整宽（底纹不断），内层限宽居中，
-   四个格子只在这个限宽里等分。限宽值取与内容区同一档的 720px ——
-   页签四格正好落在正文两缘之内，页面上所有东西共用一条竖轴。
-   ⚠️ 内层不能省：直接给 .dock 写 max-width + margin auto 的话，
-      固定定位的底线会被一起收掉，屏幕左右两侧露出「没有页签」的空白。
-   ⚠️ 底部安全区（--safe-bottom）留在**外层**的 padding 里，不能挪进内层 ——
-      iPhone 横条的避让按屏幕底边算，与内层多宽无关。
-   ⚠️ 断点 768px 是「握在手里的平板」这一档，不是「桌面窗口够宽」那一档 ——
-      见下面 .app 那条。
-   ⚠️ 注意 .dock-item 是内层的直接子元素，`.dock-inner > .dock-item` 的
-      flex: 1 才能让四格等分内层。 */
 .dock-inner {
   display: flex;
   align-items: stretch;
@@ -2483,7 +1722,7 @@ body.has-install-tip #app {
   margin: 0 auto;
 }
 @keyframes dockIn { from { transform: translateY(12px); opacity: .4 } to { transform: none; opacity: 1 } }
-/* 顶边描金细线，与底部播放栏同一语言 */
+
 .dock::before {
   content: "";
   position: absolute;
@@ -2510,30 +1749,19 @@ body.has-install-tip #app {
   letter-spacing: .6px;
   cursor: pointer;
   transition: color .18s, background .18s;
-  /* ⚠️ 下划线这一件事**不在这里写**了：全站由 css/style.css 顶部那条
-     `a { text-decoration: none }` 统一管（Issue #163 之后的唯一来源）。
-     这里再写一遍，就是「同一个决定有两个地方在说」。 */
+
   -webkit-user-select: none;
   user-select: none;
 }
 .dock-icon { display: inline-flex; }
 .dock-icon svg { width: 22px; height: 22px; display: block; }
-/* 「我的」那一格圆里的首字（SVG <text>）：字体与字重只有一个来源。
-   ⚠️ SVG 里的文字**不会**自动继承页面正文的字体族 —— 它继承的是
-      `font-family` 这条 CSS 属性，而 `.dock-item` 上是有的；但那条链要经过
-      `svg` → `text` 两级，且部分 WebView 对 SVG 只认 `font-family` 的字面值。
-      所以这里显式给一次，别让那一格里出现一枚「认不出的字」。 */
+
 .dock-icon svg text { font-family: var(--font-poem); }
 .dock-label { line-height: 1; }
 .dock-item:active { background: rgba(47, 96, 85, .07); }
 
-/* 选中态只靠两样东西表达：图标与文字一起转为天青，图标轻微抬起。
-   （原先文字上方那弯 26×2 的缃色短线读起来像「设置」被加了条下划线，
-   已整段移除；页签自身用 position: relative，方便以后加别的定位元素） */
 .dock-item { position: relative; }
-/* 选中态：天青文字 + 极淡的天青药丸底 + 图标轻抬。
-   三层一起给，即便在弱视 / 强光下也能一眼看出「我在哪一页」，
-   比只把文字染色更稳（那条被误读成下划线的缃色短线已整段移除）。 */
+
 .dock-item.active {
   color: var(--green);
   background: rgba(47, 96, 85, .09);
@@ -2546,52 +1774,11 @@ body.has-install-tip #app {
   .dock-item.active .dock-icon { transform: none; }
 }
 
-/* 有底部页签时，给页面补出底部空间。
-   高度不写死：--nav-h 由 js/pwa.js 实测（页签 / 播放栏取较高者 + 引导条），
-   窄屏、大字号、iPhone 横条都不会差几像素把最后一行压住。 */
-
-/* ⚠️ Issue #209：用户点名的「©2026 kuibu.app 上面的留空距离过多」减在**这里**。
-   .foot 自己就是末行，页脚上方那段 `padding-top: 10px / 14px + margin-top: 26px`
-   （见上面 .foot / .settings-foot 两条）= 36px 上下的空白，正是他看到的「空太多」。
-   减它不动 .app 与页签之间的避让，两笔账各减各的：
-     · 页脚上方：24 - 40 → 用 max(0px, ...) 夹住，别算出负的 padding；
-     · 末行与页签之间：还是 24px + --nav-h，一像素不少。
-   ⚠️ 两处都要减（.foot 首页 / .settings-foot 设置页）：只减一处时另一处
-      仍会「空一大截」，而它在另一张页上，肉眼扫一遍看不出来。
-   ⚠️ 算式是 `max(0px, calc(24px - var(--foot-gap-v2)))`：24px 是两档页脚
-      padding-top 的**上限**，40px 比它还大，所以页脚上方被压到 0、
-      只剩 margin-top 的 26px —— 这不会贴到一起：`.foot-copy` 是 block、
-      `.foot-links` 单独一行，两行小字自己的行高就撑出了视觉间隔。
-      若日后把 26px 也调小，记得回来把这两个 max() 的下限一起看一眼。
-   ⚠️ 首页 .foot 与设置页 .settings-foot 的 padding-top 并不相同（10px / 24px），
-      这里用同一个上限 24px 是**刻意**的：用户要减的是「留空过多」这个观感，
-      两页收尾落在同一位置比「各减各的 40px」更重要（原来就只差 14px）。
-   ⚠️ 改这一段前留意：注释里别原样打出注释闭合符 —— 多写一个会把注释提前
-      闭合，后面几行变成「野 CSS 文本」，**不报错**，但会让紧随其后的
-      整条规则连同下文一起被解析器丢掉（页脚那 40px 于是静默失效，
-      页面上一眼看不出）。test/theme.test.js 有注释块闭合断言守着这一条。 */
 body:not(.no-dock) .foot,
 body:not(.no-dock) .settings-foot {
   padding-top: max(0px, calc(24px - var(--foot-gap-v2)));
 }
 
-/* ⚠️ Issue #209：这一段的 padding-bottom 就是「末行与页签之间的那段」，
-   而底部页签是 fixed 浮层、不占文档流 —— 内容比一屏矮时它就是末行的
-   唯一垫脚，与末行之间是**一对一**的：少几像素就直接压住几像素。
-   减在 .app 上必然在「/（首页） 页面留白 ≥ 页签高度」那六条上暴露
-   （首页末条「古朗月行（节选）」滚到底正好落在页签底下）。
-   ⚠️ 所以那 40px 只能减在「呼吸」那一笔、--nav-h 一像素不让：
-      旧写法 `max(0px, calc(24px + var(--nav-h) - var(--foot-gap-v2)))`
-      把 40px 从 nav-h 里也扣了（61.5 + 24 − 40 = 45.5 ＜ 页签 62），
-      末行被页签压住 —— 正是上一段注释想避免的事。
-      另外给 --nav-h 留 1px：它由 getBoundingClientRect 量出、JS 侧不舍入，
-      与页签的真实高度可能差半像素（实测 nav-h 61.5 / 页签 62）。
-   ⚠️ 也别用 `calc(24px + max(0px, calc(var(--nav-h) - var(--foot-gap-v2))))`
-      把 24px 挪到 max() 外面：那一项一样计进 .app 的总高，一分钱不少地
-      把末行往下推，只是算式看着「干净」—— 设置页的老写法就是这么自欺的
-      （真机实测：pad 45.5px → 85.5px，页脚一个像素都不动）。
-   ⚠️ 用户点名的「©2026 kuibu.app 上面的留空距离过多」减在**页脚自己的
-      留白**里（见下面 .foot / .settings-foot 两条），与这段避让各减各的。 */
 body:not(.no-dock) .app,
 body:not(.no-dock) #app {
   padding-bottom: calc(25px + var(--nav-h) + max(0px, 24px - var(--foot-gap-v2)));
@@ -2600,72 +1787,30 @@ body:not(.no-dock) .foot { padding-bottom: 4px; }
 body:not(.no-dock) .toast { bottom: calc(24px + var(--nav-h)); }
 body:not(.no-dock) .ios-install-tip { bottom: calc(12px + var(--nav-h)); }
 
-/* 没有底部页签的页面（法务页等）也要留出底部呼吸空间。
-   页面留白本身是 40px，看着够；但页脚是一整行小字，末行「用户协议 · 隐私条款」
-   正好贴到屏幕底边（iPhone 上还会被 Home Indicator 的横条压住半行）。
-   这里按安全区再多留一截，两页的收尾在同一位置，翻到最底不用眯着眼找。 */
 body.no-dock .app,
 body.no-dock #app {
-  /* ⚠️ Issue #209：这一档**不动**（原式）。
-     这一档本来就没有底部导航（.no-dock），这 48px 是页面贴屏底时的收尾，
-     不存在「页签会压上来」的避让问题；减它只会让末行贴到屏底
-     （iPhone 上还会被 Home Indicator 的横条压住半行 —— 那正是当初写这一条的原因）。
-     40px 减在页脚自己的 padding-top 里，见下面 body.no-dock .foot 那条。 */
+
   padding-bottom: calc(40px + var(--safe-bottom) + 8px);
 }
 body.no-dock .foot { padding-bottom: 4px; }
-/* ⚠️ Issue #209：法务页（用户协议 / 隐私条款）的页脚同样是末行，
-   同样减这 40px —— 判据与上面 body:not(.no-dock) 那条一致，
-   只是这一档没有 --nav-h 可避让，算式里因此没有它。 */
+
 body.no-dock .foot,
 body.no-dock .settings-foot {
   padding-top: max(0px, calc(24px - var(--foot-gap-v2)));
 }
 body.no-dock .ios-install-tip { bottom: calc(12px + var(--safe-bottom)); }
-/* --------------------------------------------------------------------------
-   底部播放栏出现时，页签不只是「被盖住」，而是**彻底让路**
-   --------------------------------------------------------------------------
-   播放栏（z-index 70）比页签（65）高，会整条压在页签上面。原先只把页签的描金细线
-   调淡一点，页签本身仍在原地：视觉上看不见，点上去却会被播放栏接住 ——
-   用户以为「底部那排图标还能点」，实际点不动；对读屏 / 键盘用户更糟，
-   焦点还能落到被盖住的链接上。
-   这里直接把页签收起来：播放栏自己带「上一首 / 暂停 / 下一首 / 停止」，
-   小古文阅读器另有阅读器内的返回与翻页，不需要同时挂两套底部导航。
-   `visibility: hidden` 会让元素退出无障碍树与命中测试，正好是我们要的「让路」。
-   （与 `body.reader-open .dock { display: none }` 同一套思路，两处保持一致。） */
+
 body.has-audio-player .dock {
   visibility: hidden;
   pointer-events: none;
 }
 
-/* 页面底：只留素绢一色，不铺任何图案（底色见 :root 的 --bg）。
-   曾经铺过落花流水纹 / 球路纹 / 如意云头纹 / 宋「祥云纹」，
-   逐版调淡也仍有「花纸」感，与读诗需要的安静相冲，故整体移除：
-   纹样变量、html, body 的多层 background-image 铺装、卡片角隅纹样、
-   今日背诵条的云纹浮雕，以及随纹样出现的浏览器遮罩兜底规则，
-   连同注释一并删掉，不留「留着不用」的僵尸代码。
-   底色改由 --bg 单点控制，全站统一。 */
 html, body {
   background-image: none;
 }
 
-/* 卡片：只留纸的底色与投影，角落不叠加任何纹样装饰。
-   卡片需要定位上下文（弹层 / 折叠面板等子元素会用到），这一条保留。 */
 .card { position: relative; }
 
-/* ==========================================================================
-   按钮分级（宋式：以「描金线 + 纸底」分主次，不靠大色块）
-   --------------------------------------------------------------------------
-   一级 .btn.primary　　 天青实底，描金细边 —— 一次只该出现一个
-   二级 .btn.secondary　 宣纸底 + 天青描边 —— 常规操作
-   三级 .btn.ghost-btn　 只留一条界行细线 —— 次要操作（导出 / 导入）
-   危险 .btn.danger-btn　 朱砂，仅用于「清空进度」这类不可逆操作
-   ========================================================================== */
-
-/* 通用：所有按钮共用一套过渡，手感一致
-   ⚠️ Issue #209 扁平化：原先这里还有一句 `.btn:active { transform: scale(.97) }`
-      （按下缩放）—— 那与「扁平」直接冲突，已撤。过渡里也把 transform 收掉：
-      一个不再缩放的按钮留着 transform 过渡，只会让颜色反馈慢半拍。 */
 .btn,
 .mini-btn,
 .seg-toggle,
@@ -2675,22 +1820,6 @@ html, body {
   transition: background .18s, border-color .18s, color .18s;
 }
 
-/* ---------- 按钮分级（Issue #209 起：两级，且都扁平） ----------
-   用户原话：「设置，登录和个人中心所有页面的主按钮和普通按钮主要应该只有
-   这两种形态，需要保持一致性。页面中所有的按钮请进行扁平化设计。」
-
-   一级 .btn.primary　　 天青**平色**实底 + 深天青描边 + 米白字 —— 一次只该出现一个
-   二级 .btn.good / .ghost-btn / 默认 .btn　　纸底 + 界行描边 + 墨字 —— 其余都是它
-   危险 .btn.danger-btn 朱砂纸底 + 朱砂描边（仍属二级那一档：描边的）
-   ⚠️ 三档评价（记住 / 模糊 / 忘记）沿用旧配色，但**不再有立体感**：
-      「记住」是这一档里的实底那颗（green），另两颗是纸底（amber / red-light）。
-
-   ⚠️ 扁平化删掉的四样（原先都在这些规则里）：
-        linear-gradient(...)          三段渐变 = 「凸起」
-        inset 0 0 0 1px 描金内边       金属收边 = 与渐变配对的质感
-        0 2px 10px 外投影              浮在纸面上的意思
-        scale(.97) 按下缩放            按下去了一块实体的物理隐喻
-      色值一个都没改 —— 动的只是质感，调色板仍是那一套宋代传统色。 */
 .btn.primary {
   color: #fdfaf2;
   background: var(--green);
@@ -2698,7 +1827,7 @@ html, body {
 }
 .btn.primary:hover { background: var(--celadon); }
 .btn.primary:active { background: var(--green-dark); }
-/* 记住 / 忘记 / 模糊：三档评价沿用旧配色，只是都变成平色块 */
+
 .btn.good {
   background: var(--green);
   border-color: var(--green-dark);
@@ -2715,7 +1844,7 @@ html, body {
   border-color: var(--danger-line);
 }
 .btn.bad:active { background: var(--danger-line); }
-/* 二 / 三级按钮：纸底描边，按下去的反馈比主按钮轻一档 */
+
 .ghost-btn {
   background: var(--card);
   border: 1px solid var(--line);
@@ -2724,8 +1853,7 @@ html, body {
   font-weight: 600;
 }
 .ghost-btn:hover { border-color: var(--green); background: var(--card); }
-/* 按下：只压一档底色 —— 主按钮压深、普通按钮压浅，两级的方向不同，
-   但都只用颜色说「按下去了」（扁平的一条纪律：不许再靠缩放 / 投影）。 */
+
 .ghost-btn:active { background: var(--bg-soft); }
 .danger-btn {
   background: var(--danger-bg);
@@ -2735,15 +1863,12 @@ html, body {
   font-weight: 600;
 }
 .danger-btn:active { background: var(--danger-line); }
-/* 圆形图标按钮（列表里的播放键）：按下时天青实底，与播放栏同一语言 */
+
 .item-read,
 .today-read,
 .toolbar .seg-toggle { will-change: transform; }
 .item-read:active { box-shadow: inset 0 0 0 1px rgba(47, 96, 85, .25); }
 
-/* 全局 .seg / .chips 的选中态只留最轻的一档层次；
-   设置页那一组由文件上方的 .settings-page 规则整段接管（深绿实底），
-   阅读器里的 .seg.mini 另有自己的配色。 */
 .seg button.active {
   box-shadow: inset 0 0 0 1px rgba(165, 92, 25, .18), 0 1px 4px rgba(0, 0, 0, .06);
 }
@@ -2751,43 +1876,20 @@ html, body {
   box-shadow: inset 0 0 0 1px rgba(240, 205, 124, .38), 0 2px 8px rgba(35, 75, 66, .18);
 }
 
-/* ==========================================================================
-   全站导航：两行式顶栏
-   --------------------------------------------------------------------------
-   原先三页各写一份顶栏，标题 / 返回键 / 右侧按钮都不一样，用户容易迷路。
-   现在统一成同一套：
-     第一行  〔徽标〕 跬步 · 小古文        ← logo + 「跬步 · 当前页名」同一行、同一字体
-     第二行  （留白时的补充说明，可空）
-   右侧一个动作位（内页是回首页 / 阅读器打开时是关闭），与徽标等高居中；
-   页面之间的跳转交给底部页签（背诵 / 课外 / 搜索 / 设置）。
-   ========================================================================== */
 .topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  /* 加上刘海 / 灵动岛高度，左右两栏共用同一条中轴；
-     宽度与 .app 的内容区对齐，大屏上不会比正文宽出一大截 */
+
   padding: calc(14px + var(--safe-top)) 2px 12px;
-  /* ⚠️ 必须先 width: 100% 再 max-width —— 只写 max-width 时，
-     顶栏是一个「收缩到内容宽」的块级盒子（shrink-to-fit），宽度由品牌区
-     与动作位的自然宽之和决定（真机上是 369px），max-width 只是给它一个天花板。
-     手机 / 平板那两档看不出来：那时 .app 的内容盒宽 692 / 724px，与顶栏的
-     max-width（--content-w）同值，收缩出来的结果碰巧与 100% 相等。
-     桌面那一档 .app 变成 100vw（1808px 的内容盒）之后两者就分叉了：
-     顶栏拿到 1808px 的天花板，却仍只长到 369px，margin: 0 auto 把它
-     摆在 1808px 的正中 —— 1920px 屏上顶栏停在 775~1145px。
-     与 .dock-inner 同一条写法：width: 100% 负责「撑满这一格」，
-     max-width 负责「不许比内容区更宽」，margin: 0 auto 负责居中。 */
+
   width: 100%;
   max-width: var(--content-w);
   margin: 0 auto;
   box-sizing: border-box;
 }
-/* 品牌区：可以压窄，但不许把顶栏顶宽。
-   min-width: 0 是 flex 项参与收缩的前提（默认值是 auto，等于「不收到内容以下」）；
-   overflow: hidden 保证即使内部有谁不肯收，也不会把宽度「漏」给顶栏 ——
-   顶栏自己已经钉住 100% 宽，漏出来的部分会溢出到屏幕外。 */
+
 .brand {
   display: flex;
   align-items: center;
@@ -2796,7 +1898,6 @@ html, body {
   overflow: hidden;
 }
 
-/* 徽标：篆意「步」字印，压在描金细圈的圆形「瓷盘」上 */
 .brand-mark,
 .brand-icon {
   width: 42px;
@@ -2815,17 +1916,12 @@ html, body {
 }
 .brand-icon svg { width: 27px; height: 27px; }
 
-/* 品牌区：logo +「跬步 · 页面名」排在同一行基线上。
-   页面名与「跬步」同字号、同字重、同字距（不再是小一号的副标题），
-   分隔符「·」由 ::before 生成，字号小一号、颜色淡一档。
-   只有「跬步」两个字时，整行自然收敛到左侧，不再留一段突兀的空档。 */
 .brand-text {
   display: flex;
   flex-direction: column;
   justify-content: center;
   min-width: 0;
-  /* 「跬步 · 页名」那一行与下面那行说明一起收缩：这里不设 flex-grow，
-     多出来的宽度留给品牌区右侧的空档，页名不会被无谓地拉长。 */
+
   flex: 0 1 auto;
 }
 .brand-name-row {
@@ -2852,9 +1948,7 @@ html, body {
   align-items: baseline;
   min-width: 0;
 }
-/* 「跬步」那两个字不许被压窄（应用名永远是完整的两个字），
-   要收就收页名那一段 —— 两段一起按比例缩时，「跬步」会被压成「跬」。
-   它的自然宽只有 42px，钉住不参与收缩即可。 */
+
 .brand-name-row h1 { flex: none; }
 .brand-page::before {
   content: "·";
@@ -2867,18 +1961,10 @@ html, body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  /* 页名这一段的宽度由**顶栏剩下的地方**决定，不再自己按视口比例写死。
-     原先这里是 max-width: 46vw：一个与顶栏结构无关的数 —— 顶栏右边还有
-     进度牌与返回键两件固定宽的东西，46vw 的页名一旦与它们相加超过一行，
-     被挤出去的就是最右边的返回键（见 css/classic.css 里 .reader > .topbar
-     那段：阅读器顶栏曾因此顶出屏幕）。
-     现在这一段的宽度交给 flex：min-width: 0 允许它被压窄，
-     压窄之后由 text-overflow: ellipsis 收成「唐诗三…」，右侧两件原地不动。
-     ⚠️ 不能再留一个 max-width 兜底 —— 任何固定上限都会在某些屏宽下
-     重新把顶栏顶宽，那正是这一条要修掉的东西。 */
+
   min-width: 0;
 }
-/* 第二行：留白时不占高度（顶栏永远只有一行，除非页面自己填了说明） */
+
 .brand-text p,
 .brand-sub {
   margin: 0;
@@ -2888,26 +1974,13 @@ html, body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  /* 与页名同一条口径：宽度交给顶栏里剩下的地方，不按 52vw 写死。
-     52vw 在窄屏上比顶栏实际能给的还宽（顶栏还要留出进度牌 + 返回键），
-     于是它会连同上一行一起把顶栏顶出去。 */
+
   max-width: 100%;
   min-width: 0;
   flex: 0 1 auto;
 }
 .brand-sub:empty { display: none; }
 
-/* ==========================================================================
-   底部播放栏（首页 / 小古文页共用）
-   --------------------------------------------------------------------------
-   视觉取向：宋式美学的「音乐播放器」
-    · 贴底占满整宽（不再用 margin 浮起、不再有圆角），像底部弹出的播放器
-    · 配色沿用汝窑天青 + 缃色（进度环同色），深色底 + 极细描金分隔线
-    · 四个控制键统一为**圆形环**，与列表播放键、今日播放键同一语言
-      （主键缃色实底，其余细环描边），不再是圆角方形基座
-    · 不用「正在朗读 / 暂停 / 继续 / 下一篇 / 停止」文字，状态全交给图标：
-      主信息是当前这一首，下一首降一级显示
-   ========================================================================== */
 .player-bar {
   position: fixed;
   left: 0;
@@ -2917,7 +1990,7 @@ html, body {
   display: flex;
   align-items: center;
   gap: 10px;
-  /* 高度加大：底栏更从容，手指也好按；底部垫上 iPhone 横条安全区 */
+
   padding: 14px calc(18px + var(--safe-left)) calc(16px + var(--safe-bottom)) calc(18px + var(--safe-right));
   background: linear-gradient(180deg, #26514a 0%, #1c3f38 100%);
   color: #f6f1e3;
@@ -2927,7 +2000,6 @@ html, body {
 }
 .player-bar[hidden] { display: none; }
 
-/* 左侧信息区：模式一行小字，当前一首大字，下一首小字 */
 .pb-info {
   flex: 1;
   min-width: 0;
@@ -2935,10 +2007,7 @@ html, body {
   flex-direction: column;
   gap: 2px;
 }
-/* 首行播放模式（如「原文 · 顺序」）——只有从组合播放键开出来的连读才有。
-   11px 是这三行里最轻的一档：它说明的是「怎么放」，不是「在放什么」，
-   抢了大字标题的注意力就把主次颠倒了。缃色是底栏进度环 / 主键同一支色，
-   一行小字用它刚好点出「这轮是按模式连读」。 */
+
 .pb-mode {
   font-size: 11px;
   line-height: 1.2;
@@ -2970,7 +2039,6 @@ html, body {
 }
 .pb-next[hidden] { display: none; }
 
-/* 四个控制键与页面其它播放键同一语言：正圆 + 一圈细环 */
 .pb-btn {
   flex: none;
   width: 38px;
@@ -2983,23 +2051,17 @@ html, body {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  /* ⚠️ Issue #209 扁平化：过渡里原先还带着 `transform .14s`，按下会缩一下。
-     下面 `.pb-btn:active` 已改成只压一档底色，这一条跟着收掉 transform。 */
+
   transition: background .18s, color .18s, border-color .18s;
 }
-.pb-btn svg { display: block; width: 17px; height: 17px; margin: auto; }  /* 17px 框 → 三角实际描边 6×17/24 ≈ 1.06px */
-/* 底栏里的 ▶ / 上一首 / 下一首三角同样是空心描边，色取本条目的 `color`：
-   主键暂停态把 color 压成深天青，三角跟着一起变深 —— 与圆底同色。 */
+.pb-btn svg { display: block; width: 17px; height: 17px; margin: auto; }
+
 .pb-glyph { display: inline-flex; align-items: center; justify-content: center; }
-/* 按下：只压一档底色（不再缩放）—— 扁平按钮的一条纪律 */
+
 .pb-btn:active { background: rgba(253, 248, 234, .20); }
 .pb-btn:disabled { opacity: .3; cursor: not-allowed; }
 .pb-btn:disabled:active { background: rgba(253, 248, 234, .07); }
 
-/* 播放 / 暂停：主按钮，缃色实底圆环，一眼看出「按这里」 */
-/* ⚠️ Issue #209 扁平化：原先这里还有 `box-shadow: 0 3px 12px rgba(240,205,124,.26)`
-   —— 一颗浮起来的缃色圆钮。按钮不许有投影，这一条撤掉了；
-   「按这里」这件事由实底缃色本身说（与全站一级按钮同一条：平色块 = 主操作）。 */
 .pb-toggle {
   width: 46px;
   height: 46px;
@@ -3007,20 +2069,19 @@ html, body {
   background: var(--gold);
   color: #234b42;
 }
-.pb-toggle svg { width: 21px; height: 21px; }  /* 21px 图标框 → 三角实际描边 6×21/24 ≈ 1.05px ≈ 1px */
-/* 暂停态：换成宣纸底色，仍是一圈缃色环 */
+.pb-toggle svg { width: 21px; height: 21px; }
+
 .pb-toggle[data-paused="1"] {
   background: #f6f1e3;
   color: #234b42;
   border-color: #f6f1e3;
 }
-/* 停止键：朱砂细环，这是「终止」应有的分量 */
+
 .pb-stop {
   border-color: rgba(232, 141, 128, .55);
   color: #f4d9d4;
 }
 
-/* 播放中：当前一首左侧亮起一缕缃色游标 */
 .player-bar:not([data-paused="1"]) .pb-now::before {
   content: "";
   display: inline-block;
@@ -3034,73 +2095,26 @@ html, body {
 }
 @keyframes pbPulse { 0%, 100% { opacity: .35 } 50% { opacity: 1 } }
 
-/* 吸底元素统一贴着「导航栏基准线」往上排（见文件上方 .dock 一节） */
-
-/* 今日任务条里的「朗读（全部）」按钮：圆形播放键，与右侧 0/5 圆环同族 */
 .today-actions {
   display: flex;
   align-items: center;
   gap: 12px;
   flex: none;
-  /* 这一行两颗圆的统一尺寸（Issue #55，本轮再改一次）：
-     左侧播放键与右侧进度环**画出来的最大外径**必须相等，所以尺寸只在这里
-     声明一次，两边都读同一个变量 —— 想再调整时只改这一处，不会再走散。
 
-     本轮用户再次反馈「一颗大一颗小」，量下来差在**边框**上，不再是外盒：
-       · 进度环是 <svg> 画的，svg 自己 overflow: hidden，骑在边界上的那圈
-         3px 描边被裁进盒内 —— 盒子 40px 就是环的最大外径；
-       · 左侧播放键是 CSS 盒子，那圈 1.5px 边框按 border-box 画在盒子**内侧** ——
-       42px 的盒子量出来只有 40px 的圆（42 − 两侧各 1px，1.5px 会被浏览器
-       取整成 1px），与「环 40px + 中线对齐」并排时仍差一点点。
-       前三轮改的都是外径，方向不对，量到边框才对上。
-     现在：`box-sizing: content-box` + `padding: 0` + 外盒 40px = 画出来的圆 40px
-     （那圈 1px 边框往外长，环的外缘仍是 40px），与右侧进度环的最大外径逐像素相等。
-     ⚠️ padding: 0 不能省：`<button>` 的 UA 默认内边距是 `1px 6px`，
-     只给 width 会把盒子撑到 52px 宽（浏览器里量得到，jsdom 里量不到）。
-     ⚠️ 别把 43px 与 40px 各写一处 —— 「外径」仍然是这一个变量，
-     边框宽度只从 --today-btn-ring 取一次，两个数都在这一行里看得见。 */
   --today-btn-size: 40px;
   --today-btn-ring: 1px;
-  /* 内径：▶ 三角形 / ⏸ 两竖条的外接圆直径（17px，占 40px 圆的 42%）。
-     需求（本轮）：三角每条边再加长 6px。三角三边长都是 15.403 个单位
-     （√(9.9² + 11.8²)），屏幕边长 = 图标框 × 15.403 ÷ 24（≈ 0.642）：
-       上一轮 14px 图标框 → 8.99px；加长 6px → 14.99px → 图标框 ≈ 23.4px
-     一次跳到 23px 会让三角几乎顶到 40px 的圆环，所以本轮先取 17px 这一档
-     （边长 10.91px，比原来长近 2px），并把它写进断言防回退。
-     17px 这一档同时是「描边 1px」的档位：三角描边 1.5 × 17 ÷ 24 ≈ 1.06px。
-     需求「所有播放键里的三角形边框宽度只允许 1px」的全站换算表在
-     css/classic.css 顶部。 */
+
   --today-btn-inner: 17px;
 }
 .today-read {
-  /* 外盒 40px；
-     ⚠️ 这里**必须显式写 padding: 0**（同 .gw-play）：
-     `<button>` 的 UA 默认内边距是 `1px 6px`，只给 width / height 的话，
-     盒子会被撑到 40 + 12 = 52px 宽 —— 与右侧 40px 的进度环并排，
-     就是用户连着报了几轮的「一大一小」。browser 里量得到，jsdom 量不到。 */
+
   padding: 0;
-  /* 圆画多大：以「**画出来的圆的外缘**」为准，不是以盒子为准
-     --------------------------------------------------------------------------
-     这里与右侧进度环比的是**画出来的直径**，两颗圆并排不该差一像素。
-     ⚠️ content-box 下 `width: 40px` 加一圈 1px 边框，外缘是 40 + 1 + 1 = **42px**
-        （上一版写在这里的注释说「外缘正好 40px」，那是算错了 —— 真机量出来的
-        42px，正是用户反馈「一颗大一颗小」的最后一档）。content-box 的 width
-        只算内容区，边框是**另加**的，不会往里挤。
-     所以：外缘 = --today-btn-size，内容区 = 外缘 − 两侧边框。
-     保留 content-box（不改成 border-box）是因为这一颗的宽度由变量给出，
-     用 `calc(var(--today-btn-size) - var(--today-btn-ring) * 2)` 表达最直白：
-     「盒子小一圈、加上边框整好是 40px」，两边各写一遍也不会走散。
-     ⚠️ 内径（--today-btn-inner，▶ 图标框）与这里无关 —— 图标框是内容的尺寸，
-        不算边框，写多少就是多少。 */
+
   box-sizing: content-box;
   width: calc(var(--today-btn-size) - var(--today-btn-ring) * 2);
   height: calc(var(--today-btn-size) - var(--today-btn-ring) * 2);
   border-radius: 50%;
-  /* ⚠️ 边框三件套必须写全。只用 `border-color` 覆盖颜色（简写里缺 style）
-     是**无效声明**，整条会被丢掉，于是回落到 UA 的 `border: 1px outset`：
-     圆外缘带上一圈系统描边、宽度也不再受控。
-     取 1px 而不是 1.5px：浏览器把小数边框取整成整数像素（1.5px → 1px，
-     实测于 Chrome 153），写 1px 才能让「外盒 = 圆外缘」这一步算得准。 */
+
   border: var(--today-btn-ring) solid rgba(240, 205, 124, .62);
   background: rgba(253, 248, 234, .12);
   color: #f6f1e3;
@@ -3116,27 +2130,9 @@ html, body {
   align-items: center;
   justify-content: center;
 }
-/* 内径（Issue #55，本轮再改一次）：▶ / ⏸ 图形本身的大小，仍是上一条
-   「尺寸只声明一次」的延续 —— 外径（--today-btn-size）与内径各有一个唯一来源，
-   图中量哪一层都不会走散。
 
-   本轮需求：三角每条边再加长 6px。内径因此由上一轮的 14px 放大到 17px
-   —— 三角形三边长都是 15.403/24，乘上图标框尺寸就是它在屏幕上的实际边长：
-   14px×0.642 ≈ 8.99px → 17px×0.642 ≈ 10.91px（三角随图标框等比缩放，
-   不能只加在边上）。
-
-   1px 描边：三角路径的 stroke-width 是 1.5，缩到 17px 图标框后实际笔画
-   1.5 × 17/24 ≈ 1.06px —— 就是用户要的「三角形边框 1px」；全站每一档图标框
-   都按同一条比例配好了描边值（见 css/classic.css 顶部那张换算表），
-   所以任何一处播放键的三角描边都在 1px 上下。
-
-   空心三角：这里放大的只是**图标框**，▶ 本身只画轮廓、不填色，
-   它的描边色 = 本键的 `color`，也就是上面那圈描边用的**同一个色值** ——
-   圆环什么颜色，三角就什么颜色，两者永远同色。悬停 / 按下只改这个 `color`，
-   圆环与三角于是同步换色，不会出现「环绿了三角还是白的」。
-   ⚠️ 别在这里给三角单独指定颜色，也别把它改回 fill。 */
 .today-read svg { display: block; width: var(--today-btn-inner, 17px); height: var(--today-btn-inner, 17px); margin: auto; }
-/* 未播放显示 ▶，播放中显示 ⏸：一个圆形播放键说清全部状态，不再配文字 */
+
 .today-read .pause-glyph { display: none; }
 .today-read[data-on="1"] .play-glyph { display: none; }
 .today-read[data-on="1"] .pause-glyph { display: inline-flex; }
@@ -3144,7 +2140,6 @@ html, body {
 .today-read[data-on="1"] { background: var(--gold); border-color: var(--gold); color: #234b42; }
 .today-read:disabled { opacity: .5; cursor: not-allowed; }
 
-/* 无障碍：只给读屏软件的文字，视觉上不可见 */
 .sr-only {
   position: absolute;
   width: 1px;
@@ -3157,13 +2152,6 @@ html, body {
   border: 0;
 }
 
-/* 列表项右侧的「播放这一首」按钮：圆形播放键。
-   直径读全站那颗 `--item-btn` —— 同一行里「加入背诵」书签键
-   （css/classic.css 的 .item-recite）读的是同一个变量，两枚并排的圆键
-   因此永远同大（用户原话：「将各个索引页卡片中的播放按钮调整得和
-   添加到自定义背诵按钮一样大小」）。改大小只改 --item-btn 这一处。
-   ⚠️ `flex: none` + width/height 同值：min-height 只是下限，
-      行内容一高就会被 flex 拉成椭圆（见 css/classic.css 里圆键那段的老坑）。 */
 .item-read {
   flex: none;
   width: var(--item-btn);
@@ -3178,128 +2166,38 @@ html, body {
   cursor: pointer;
   transition: transform .14s, background .18s, color .18s;
 }
-/* 图标 block 化去掉行内基线留白，flex 里才算真正居中。
-   图标框读 --item-icon（与书签键同一个值）；
-   三角描边写在 24 的 viewBox 里（1.5），缩到 16px 后实际笔画正好 1px
-   （换算表见 css/classic.css 顶部）。
-   ⚠️ 盒子尺寸与路径描边是一对比例，改一个就毁掉「1px」这件事 —— 两处一起动。 */
+
 .item-read svg { display: block; width: var(--item-icon); height: var(--item-icon); margin: auto; }
 .item-read .play-glyph,
 .item-read .pause-glyph { display: inline-flex; align-items: center; justify-content: center; }
-/* 空心三角同上：描边色取自本条目的 `color`，与圆环描边同源 */
+
 .item-read .pause-glyph { display: none; }
 .item-read[data-on="1"] .play-glyph { display: none; }
 .item-read[data-on="1"] .pause-glyph { display: inline-flex; }
 .item-read:active { transform: scale(.94); }
 .item-read[data-on="1"] { background: var(--green); border-color: var(--green); color: #fffdf8; }
 
-/* ==========================================================================
-   平板 / 桌面版式（Issue #163 第四轮）
-   --------------------------------------------------------------------------
-   用户原话：
-     「你用桌面浏览器测试过吗？目前的界面 UI 在桌面浏览器下显示得一塌糊涂，
-       完全没达到响应式布局在平板在桌面的哪怕是正常的显示效果，
-       需要为平板和桌面端进行重新设计，CSS only」
-
-   「一塌糊涂」不是没有断点 —— 断点早就有了（≥560 / ≥768 / ≥1024 三档，
-   散在文件各处）。真正的问题是**重排与留白是两件事，前面几轮只做了重排**：
-
-     · 重排（已有）：一列纸放宽（720 → 1040 → 跟视口走）、篇目两列→三列、
-       设置分组两列→三列、入口页六张卡 3 × 2、日历 14 格一屏放全……
-       —— 这些都在，而且是对的。
-     · 留白（缺的）：手机上「一行一条 14px 内边距的卡片、块与块之间 14px」
-       这套节奏，被**原样**拉伸到 1808px 宽的一列纸上。于是桌面上看到的是：
-         首页   四件（今日条 / 今日卡 / 全部诗词卡）各自 1808px 宽、
-                高度只有 80~120px —— 四条又扁又长的横带，行距 14px 贴着，
-                块与块的边界没了，整页读起来是一整片糊在一起的白。
-         设置   分组虽然排了三列，**分组之间**没有行距、组里第一项的
-                「第一颗药丸」也贴在一列纸最左缘（卡都没了的话就没有基线）。
-         集子   卷次卡（.group-card）**不参与**主页 `#gw-list` 那些分栏，
-                1040~1808px 里一张卡就是一条通栏长条。
-         进度   四张卡两列排得对，但卡片自己在 1808px 里铺成一条长横带。
-
-   所以这一档做的全是**留白与栅格**（纯 CSS，一个断点一套量），四件事：
-
-   一、**给宽屏定一个上限**。此前桌面那一档刻意「跟视口走」（`--col-w: 100vw`），
-       理由是「1920px 屏上写死 1040px，两侧各空 440px，像一张贴在墙正中的
-       明信片」。那条理由今天仍成立，但它只该管**一行字**，不该管「一张卡」——
-       1808px 宽、100px 高的卡片不是明信片，是一条横幅。
-       两条线分开：一列纸仍跟视口走（页面**铺满**屏幕），但纸上的
-       **每一张卡**封顶 --block-w（940px）。三列 / 两列的栅格仍然是三列 / 两列，
-       只是整块收在中间。
-
-   二、**行距与块距分开**。卡片与卡片之间 26px（手机上 14px），
-       组内条目之间仍是 10~12px —— 距离本身就在说「这是两块」还是「这是一组」。
-
-   三、**首页给「今日」三块各一个位置**（最高优先，见下面那一档）。
-
-   四、**卡片基线统一**：一列纸放宽之后，卡片左右内边距从 14px 提到 26px，
-       与行距同一档，卡片里的文字与卡片边缘之间才有呼吸。
-
-   ⚠️ 这一档**不动**手机上的一分一毫：所有规则都写在 ≥768px（平板起）与
-      ≥1024px（桌面）里，手机取到的仍是原来那一套。
-   ⚠️ 也不动任何断点数值、不动 --col-w / --col-side / --read-w 的既有口径 ——
-      那几条由 test/ui-consistency.test.js 第三、四节钉着（列宽三档、
-      行宽三档都是 720px、桌面列宽 = 视口宽）。
-   ========================================================================== */
-
-/* ---------- 平板（≥768px）：卡片基线 + 块距 ---------- */
 @media (min-width: 768px) {
-  /* 「一张卡」的宽度上限：桌面那一档的主栅格（下面三段）都收在它里面。
-     ⚠️ 只在 ≥768px 生效，且**不**改 --col-w —— 页面的纸面仍铺满屏幕，
-        收窄的是纸上那几块内容，这正是「布满屏幕」与「一行太长」的和解。 */
+
   :root { --block-w: 940px; }
 
-  /* 卡片基线与块距：左右内边距 22px（手机 14px，与 --col-side 同一档 ——
-     卡片里的文字距卡片边缘的呼吸，与「纸距屏幕边」的呼吸一样宽），
-     卡片与卡片之间 26px（手机 14px，比条目之间的 10~12px 大一倍以上：
-     距离自己会说「这是一块」还是「这是一组」）。 */
   .card { padding: 22px; margin-bottom: 26px; }
-  /* 今日条自己也在 1808px 里铺成一条长横带：内边距跟着宽屏档走，
-     左右两端不至于把「今日背诵 / 共 5 首」与两颗圆键顶到屏幕两边。 */
+
   .today-bar { padding: 22px; }
 
-  /* 列表（首页今日 / 全部诗词 / 各页条目）：块距 26px、行距 14px 分开给。
-     ⚠️ 手机上 .list 是 `flex-direction: column; gap: 10px`，
-        下面那一档改成 row + wrap 之后，`gap` 会被行列各写一份取代。 */
   .list { column-gap: 22px; row-gap: 14px; }
-  /* 分栏之后的条目不再各自是一张独立卡片吗？仍是 —— 但行距 14px 与卡距 26px
-     差得够开，「一组条目」与「两块内容」一眼分得清。 */
+
 }
 
-/* ---------- 桌面（≥1024px）：同一套留白再升一档 ---------- */
 @media (min-width: 1024px) {
-  /* 一列纸在桌面上跟视口走（1808px），卡片的左右内边距再升一档 ——
-     26px 就是这一档的「块距」，卡片内部第一行文字距卡片边缘的呼吸取同一档。 */
+
   .card { padding: 26px; margin-bottom: 26px; }
   .today-bar { padding: 26px; }
 
-  /* ---------- 首页：三块各自的位置 ----------
-     手机上一列到底是对的：今日进度 → 今日 5 首 → 全部诗词，滚着看。
-     桌面上这一列被拉到 1808px 之后，三块各自变成一条通栏横带 ——
-     「今日 5 首」在 1808px 里一行放得下 4 条，于是桌面上看到的是
-     「一条进度条 + 一屏 4 条并排 + 一条折叠头」，页面上没有第二条信息。
-
-     这一档给它们一个**并排**的位置（纯 CSS，DOM 顺序一字不改）：
-       第一行  顶栏（跨整行 —— 它排在 .app 最前，不认领就会被挤进第一列）
-       第二行  今日进度条（左，340px）｜ 今日 5 首（右，内部两列）
-       第三行  全部诗词（跨整行：它本来就是可折叠的「全部」，合起来最省地方）
-     ⚠️ 用 `grid-template-areas` 而不是改 DOM 顺序：读屏与 Tab 的次序
-        仍是「进度 → 今日 → 全部」，与手机上完全一致。
-     ⚠️ 只让**首页**（body[data-nav="home"]）这样排：别的页 .app 里没有
-        这三个盒子，写了也命不中；限定一下更稳，也免得日后别页复用同名类。
-     ⚠️ 顶栏（.topbar）是这个 grid 的第**一**个子元素，必须与那三块一起
-        认领格子（见下面那条 `grid-area: bar`）—— 不认领它会按自动放置
-        掉进第一列（340px）里，顶栏于是缩成页面中间的一小截。 */
   body[data-nav="home"] .app {
     display: grid;
     grid-template-columns: minmax(0, 340px) minmax(0, 1fr);
-    /* ⚠️ 第三行是「全部诗词」那一整张卡（`"all all"`）：那本来就是可折叠的
-       「全部」，合起来最省地方，所以跨整行单独一行。
-       ⚠️ 它 Issue #209 被误删过一轮（见 index.html 那张卡的注释）——
-          于这张区域图里，删掉这一行**不会报错**，只会让那一张卡按自动放置
-          掉进第一列（340px）的格子里，卡里 261 条篇目挤成一根竖条。
-          改这一节之前先读 index.html 首页那两段注释。 */
+
     grid-template-areas:
       "bar   bar"
       "today card"
@@ -3307,129 +2205,52 @@ html, body {
     align-items: start;
     column-gap: 26px;
   }
-  /* ⚠️ 顶栏必须显式认领整行 —— 这一条漏了整整一轮，而 CSS 里那句
-     「顶栏与页脚各自是「一整行」」只是**声明**，没有任何规则实现它。
-     失配的症状不是「顶栏窄一点」，是**顶栏被塞进第一列的 340px 里**：
-     1920px 屏上真机量到 .topbar 宽 369px（340 + 两列间距 26 + 2px 内边距），
-     于是品牌区在 56px 处、动作位停在 425px —— 页面正中偏左的一小截。
-     页脚（.foot）与 iOS 引导条（.ios-install-tip，position: fixed）都在
-     .app 之外或脱离文档流，所以只有 .topbar 一个真正受影响。
-     ⚠️ 用 grid-area: bar 而不是 grid-column: 1 / -1：与那三块写在同一处
-        命名里，下一个人一眼看得出「这是第四块，跨整行」。 */
+
   body[data-nav="home"] .topbar { grid-area: bar; }
-  /* 今日 5 首：桌面上一列到底太长，排成两列。
-     ⚠️ 列宽**不按容器的百分比算**，而是给每一条一个**宽度区间**
-        （`minmax(340px, 460px)`）—— 这一条是 2026-09-17 修的真 bug：
-        原先写的是 `flex: 1 1 calc(50% - 11px)`（等分容器），于是
-          · 1024px 屏：今日那几张只分到 546px，每条被压到 236px ——
-            「悯农（其二）」这类篇名折成两行，一条从 78px 涨到 155~182px，
-            五条一屏放不下（真机度量，见下面那条守卫）；
-          · 1920px 屏：每条反而涨到 684px，又变成「空白比字宽」
-            （与「篇目列表」那一档想避免的是同一件事）。
-        改成区间之后，1264px 以上恒为 2 列 × ~440px、1024~1263px 自动落到
-        1 列 × 容器的宽度（每条仍 ≥340px），两种屏上都「一行一条、不折行」。
-     ⚠️ 它是**自己一套**（不跟着页面上那条 grid 走，也不跟「全部诗词」那一块
-        走）：今日这块通常只有 4~5 条 —— 下面「篇目列表」那一档会把 .list
-        换成 auto-fill 栅格，那时这一条按「后写胜出」把它收回来。
-     ⚠️ 选择器是 `#today-list` 而不是「套在 .card 里的那个 .list」：
-        今日那 5 条**不再套一层卡**（用户第二轮：「5个被一张卡片包住了，
-        我不需要这个包的卡片，直接列出5个卡片」），.list 直接是 .app 的子元素。
-        判据落在 id 上，将来多一层少一层壳都不影响这一条。 */
+
   body[data-nav="home"] #today-list {
     display: grid;
-    /* ⚠️ 列数是**算出来的**，不是写死 2 列：卡片宽度在 1024px 屏上只有
-       546px，写死 2 列会把每条压回 236px（那正是要修的 bug）。
-       用 `auto-fit` + `minmax(340px, 1fr)`：容器够宽就并成 2 列（每列等分，
-       1024px 上 1 列、1264px 起 2 列），每条**永远 ≥ 340px**。
-       ⚠️ 不用 `auto-fill`：它在「放得下 2 列但第二列取不到最小值」时会
-          退回 1 列（实测 910px 容器 + minmax(340,460) → 只有 1 列、
-          右边空出一大片），`auto-fit` 没有这个回退。
-       ⚠️ 上限交给 `.item` 自己的 max-width（见下），不在列宽算式里叠一层。 */
+
     grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
     gap: 14px 22px;
     justify-content: start;
   }
   body[data-nav="home"] #today-list > .item {
     flex: none;
-    /* 每条封顶 460px：1920px 屏上可排区域宽 1442px 时，两条各 710px 又回到
-       「空白比字宽」；460px 与手机上那一整条同档（真机度量过）。 */
+
     max-width: 460px;
   }
-  /* 三块各认领自己那一格。
-     ⚠️ 不认领的话它们会按 DOM 顺序自动流进 grid 单元 —— 那正是
-        「进度条占一格、今日卡挤在它右边」的错位版，看着比一列到底更糟。 */
+
   body[data-nav="home"] .today-bar { grid-area: today; }
-  /* ⚠️ 今日那 5 条**不再套一层卡**（用户第二轮：「5个被一张卡片包住了，
-     我不需要这个包的卡片」），所以这里认领「今日」那一格的是 `.list` 自己。
-     它仍是 .app 的直接子元素，栅格照样排得对。 */
+
   body[data-nav="home"] #today-list { grid-area: card; }
   body[data-nav="home"] .all-section { grid-area: all; }
-  /* 并排之后，两块之间靠 .app 的 column-gap 给 26px —— 卡片自己的下边距
-     会把下一行往上顶一份，「今日条」与「全部诗词」那两张卡在这里抵消掉。
-     ⚠️ `#today-list` 不在这条里：它不是一张卡，下边距要留给下一行（全部诗词）。 */
+
   body[data-nav="home"] .today-bar,
   body[data-nav="home"] .all-section { margin-bottom: 0; }
 
-  /* ---------- 篇目列表：列宽封顶，整块收进 --block-w ----------
-     首页「全部诗词」、集子页与搜索页的结果列表都已经排成两列 / 三列，
-     但**每一列**仍会跟着一列纸一起变宽（1808px / 3 = 594px 一条）。
-     这里把每一列的宽度钉在 280~320px 之间，列数由 auto-fill 自己算：
-     940px 里 3 列、1808px 里 5 列 —— 每一条的观感与手机上那一整条同档，
-     而屏幕越宽看到的条数越多（这才是「响应式」，不是「把一列拉宽」）。
-     ⚠️ 只在**桌面**这一档换 grid：平板那一档（768~1023px）的 `.list`
-        是三列 flex，量出来的列宽本来就在 300px 上下，不必动。
-     ⚠️ 用 grid 之后，旧那条 `flex: 1 1 calc(33.333% - …)` 不再生效
-        （flex 属性只在 flex 容器里有意义），所以不必去删它 ——
-        但下面那两条 `flex-basis` 的档位也一并让位，免得日后有人以为
-        它们还在管列数。 */
   .list {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 320px));
-    /* 列距 22px 与行距 14px：两列之间要分得开，上下之间是「一组里的下一条」 */
+
     gap: 14px 22px;
     justify-content: space-between;
   }
-  /* grid 里的条目：不再需要 flex-basis 与 max-width —— 宽度由列宽给。
-     ⚠️ 这里显式写 `flex: none`：`.item` 自己带着 `flex: 1 1 …`，
-        在 grid 里它是无意义的属性（不影响排布），但留着会让下一个改样式的人
-        以为列数还由它决定。 */
+
   .list > .item {
     flex: none;
     max-width: none;
   }
-  /* ⚠️ **卷次卡不是「一条篇目」**：集子页的 .list 里装的是 .group-card
-     （一卷一张卡），卡里才装 .item。上面那条 auto-fill 栅格一律按
-     「直接子元素 = 一条篇目」算列宽（280~320px），于是**卡片本身**被当成
-     320px 的一格 —— 卡里的篇目再按 33.333% 三分，实测每条只剩 91px 宽：
-     篇名一个汉字一行，整页从 2000 余 px 炸到 15000~39000px（真机截图里
-     就是「一篇竖着排成一列字」）。
-     这里把卡片重新钉回「整行、一条一列」：栅格仍是栅格（列数不受影响），
-     卡片横跨**全部**列，卡内的篇目列数由它自己那一档（2 / 3 列）说了算。
-     ⚠️ 判据落在 `.group-card` 这个类上，不是「某些页面」——
-        集子页与 /library/ 的第二层共用同一份引擎、同一条 .list，
-        按页去排除一定会漏掉一条路径。
-     ⚠️ `grid-column: 1 / -1` 是「跨全列」的通用写法：换列宽 / 换列数时
-        都成立，不需要跟着 auto-fill 算出来的列数改写。 */
+
   .list > .group-card {
     grid-column: 1 / -1;
     justify-self: stretch;
   }
-  /* ---------- 集子页的卷次卡：卡与卡之间 22px ----------
-     集子页的骨架是「一列 .group-card」，每张卡里是「卡头 + 若干 .item」。
-     手机上一条卡就是一屏，对；1040~1808px 里就成了一条通栏长条，
-     卡内的篇目已经排了三列，卡片自己却还是「一整行的宽度」。
-     卡内的分栏已经把它拆开了，这里只把**卡片之间**的距离
-     从「贴着」提到 22px —— 两块之间才分得开。 */
+
   #gw-list > .group-card {
     margin-bottom: 22px;
   }
 
-  /* ---------- 进度页 / 设置页 / 法务页：整块收进 --block-w ----------
-     这三处的栅格（四张卡两列、设置分组三列、正文一段）都已经排对了，
-     缺的是「一整块别铺满 1808px」。
-     ⚠️ .settings-groups 同时补一条 row-gap：分组两列 / 三列排布之后，
-        行与行之间靠的是 `.settings-group` 自己的 margin-top（22px），
-        而它只把「第一行」撑开一档；给容器一条 row-gap，行距与列距同一档。 */
   .progress-main {
     max-width: var(--block-w);
     margin-left: auto;
@@ -3439,54 +2260,25 @@ html, body {
     max-width: var(--block-w);
     margin-left: auto;
     margin-right: auto;
-    /* 行距在平板那一档已给（26px，与列距 36px 同一档的量级）——
-       这里不再重复写一遍：同一个值两个地方说，改一处就会走散。 */
+
   }
   .legal { max-width: var(--block-w); margin-left: auto; margin-right: auto; }
 }
 
-/* ---------- 登录 / 个人中心 / 管理后台 / 层级对比：块距 ----------
-   这四页的**宽度**早就有安排了（css/account.css 在 ≥1024px 里把
-   .account-page 收在 560px，是「一列表单」的口径，比 --block-w 更窄、更对），
-   缺的是**块距**：卡片之间 12px 一张贴着排，桌面上一整屏看上去像一张
-   被横线切开的表格，而不是「几张卡片」。这里只把块距提到 22px ——
-   与首页/设置页的 26px 同一档，全站的「一块 / 另一块」从此只有一个节奏。
-   ⚠️ 只动 margin，不动宽度：宽度那一条在 account.css 里，
-      两张表各管各的（改宽度要连窄屏那一档一起想，属于另一件事）。 */
 @media (min-width: 1024px) {
   .account-card { margin-bottom: 22px; }
 }
 
-/* 隐私 / 协议页的「极简速览」 */
 .legal-mini { margin: 0; padding-left: 1.1em; }
 .legal-mini li { margin-bottom: 4px; }
 
-/* 自动朗读时高亮当前这首 */
 #today-list .item.reading {
   border-left-color: var(--green);
   box-shadow: 0 0 0 2px var(--green-light), var(--shadow);
 }
 
-/* 顶栏页面名用默认名（Ashley）时走淡墨，与用户自己填的名字区分开 */
 .brand-page-text.is-default { color: var(--ink-2); }
 
-/* ==========================================================================
-   古诗词详情页的阅读辅助工具条
-   --------------------------------------------------------------------------
-   与小古文详情页同一套控件、同一顺序、同一尺寸；只把边距按弹层收紧一点。
-   ＝ 第一行：正文对齐（左/中 SVG）· A－/A＋ 组合 · 不注音/生字/全文
-   ＝ 第二行：朗读组合键（原文 / 译文）+ 译文开关
-   ========================================================================== */
-/* 工具条（第一行）：对齐 / 字号 / 注音
-   --------------------------------------------------------------------------
-   这里必须允许**换行**，不能只靠横向滚动。
-   三组控件在 390px 宽的手机上合计约 393px，比弹层内容区（350px）还宽一点点 ——
-   原先写的是 `flex-wrap: nowrap` + `overflow-x: auto`，于是：
-     · 超出的一小截（「全文」按钮的一半）被裁掉，看着就是个错位的半截按钮；
-     · 触屏上横向滚动条不可见，用户根本不知道右边还有东西。
-   现在改成 `flex-wrap: wrap` + 整行居中：排得下就是一条整齐的工具条，
-   排不下就自动折成两行（「对齐+字号」一行、「注音」一行），
-   每一行的按钮仍然居中、间距一致。overflow 交给外层弹层，不再出现两层滚动。 */
 .modal-box .reader-actions {
   display: flex;
   gap: 8px;
@@ -3515,9 +2307,7 @@ html, body {
   box-sizing: border-box;
   flex: 0 0 auto;
 }
-/* 「选中按钮与组合框共用边框」（Issue #205）：组合框不再留内边距，
-   内层按钮铺满它，与框共用同一条 1px 边。全局那套分段规则写在 css/classic.css 里，
-   首页只引 style.css，所以这里要按同样的口径再写一遍（这一页的尺寸是 38px 那一档）。 */
+
 .modal-box .reader-actions .seg.mini { padding: 0; }
 .modal-box .reader-actions .seg.mini button {
   font-size: 12.5px;
@@ -3530,7 +2320,7 @@ html, body {
 .modal-box .reader-actions .seg.mini button + button,
 .modal-box .reader-actions .seg.mini button.active + button { border-left: 1px solid var(--line); }
 .modal-box .reader-actions .seg.mini button.active { box-shadow: none; }
-/* 对齐 / 字号：图标与字母都居中，两段之间一条界行细线 */
+
 .modal-box .reader-actions .icon-seg button {
   display: inline-flex;
   align-items: center;
@@ -3545,13 +2335,7 @@ html, body {
   min-width: 0;
 }
 .modal-box .reader-actions .font-seg button + button { border-left: 1px solid var(--line); }
-/* 纯图标键（Play / 译文开关）：圆形环，与播放栏的圆键同一语言。
-   ⚠️ 这里必须显式声明「height: 38px」，光有 width: 38px + min-height: 38px 不够：
-   基础规则 `min-height: 38px` 是**下限**，本行加高（如标题换行、正文太长）时
-   会被 flex 拉伸到 40 多 px，而宽被 width 钉死在 38px ——
-   于是圆环纵向被拉成椭圆，看着就是「不够圆、纵向有点扁」。
-   顺手把 min-height 归零、由 height 一锤定音，宽高永远相等；flex-shrink 也禁掉，
-   窄屏排不下时宁可整行横向滑动，也不允许把圆压扁。 */
+
 .modal-box .reader-actions.icon-row > .mini-btn {
   padding: 0;
   width: 38px;
@@ -3564,29 +2348,18 @@ html, body {
 .modal-box .reader-actions.icon-row > .mini-btn svg,
 .modal-box .reader-actions.icon-row > .mini-btn .btn-icon {
   display: block;
-  /* 17px = 三角描边 1px 对应的图标框（路径描边 6×17/24 ≈ 1.06px）——
-     与全站其它档同一套比例，见 css/classic.css 顶部的 --glyph-*-px 说明。 */
+
   width: 17px;
   height: 17px;
   margin: 0 auto;
 }
-/* 工具条上只有正文这一颗播放键（原来并排的「原文 / 译文」组合键已拆掉），
-   译文那颗挪去译文标题右侧。两段朗读不再并排，一篇文章只有一个播放信号。 */
-/* 状态全靠图标：▶ 未朗读、⏸ 朗读中；译文开关「划掉文档」= 收起译文。
-   同一颗键上 ▶ / ⏸ 互斥，永远只显示一个。
 
-   ⚠️ 这里的选择器必须带上 `.icon-row > .mini-btn`，把特异度压到 0-5-0 以上。
-   上面那条 `... > .mini-btn .btn-icon { display: block }` 是 0-5-0，
-   早先这里只写 `.modal-box .reader-actions .pause-glyph`（0-3-0），
-   被它盖掉 —— 于是 ▶ 与 ⏸ **两个图标同时显示**。别再改回去。 */
 .modal-box .reader-actions.icon-row > .mini-btn .btn-icon.pause-glyph { display: none; }
 .modal-box .reader-actions.icon-row > .mini-btn[data-on="1"] .btn-icon.play-glyph { display: none; }
 .modal-box .reader-actions.icon-row > .mini-btn[data-on="1"] .btn-icon.pause-glyph { display: inline-flex; }
 .modal-box .reader-actions .mini-btn[data-on="1"] { background: var(--green); border-color: var(--green); color: #fdfaf2; }
 .modal-box .reader-actions .mini-btn:disabled { opacity: .5; cursor: not-allowed; }
 
-/* 窄屏（iPhone SE 一类 320~380px）：两组控件要挤进同一行，
-   字号与内边距各收一档，必要时允许整行横向滑动，绝不换行错位。 */
 @media (max-width: 380px) {
   .modal-box .reader-actions { gap: 5px; }
   .modal-box .reader-actions .seg.mini { padding: 0; }
@@ -3597,16 +2370,6 @@ html, body {
   .modal-box .reader-actions.icon-row > .mini-btn { width: 36px; height: 36px; }
 }
 
-/* ==========================================================================
-   白话译文框（诗词详情页 + 小古文阅读器共用）
-   --------------------------------------------------------------------------
-   这一块原先只写在 css/classic.css 里，而首页 index.html 只引 style.css、
-   不引 classic.css —— 于是首页诗词详情页的译文框与「朗读译文」键**完全没有样式**：
-   译文键退回浏览器默认按钮，▶ 与 ⏸ 两个图标还并排同时显示
-   （.trans-read[data-on] 那套互斥规则在首页根本没加载）。
-   译文是两页共用的组件，样式就该在两页都会加载的 style.css 里，
-   这里补齐，并与 classic.css 保持同一套数值。
-   ========================================================================== */
 .trans-box {
   background: var(--bg);
   border-radius: 14px;
@@ -3626,11 +2389,6 @@ html, body {
   color: var(--ink-2);
 }
 
-/* 译文来源注脚：贴在译文正文下方的一行小字。
-   不抢正文视线，只回答「这段译文是怎么来的」。
-   选择器写 `.trans-box p.trans-src`（0-2-1）而不是光 `.trans-src`（0-1-0）——
-   否则会被上面那条 `.trans-box p { … }`（0-1-1）按「同特异性、后写胜出」压回
-   14.5px 正文样式，注脚会跟译文正文一样大，看着像正文的一部分。 */
 .trans-box p.trans-src {
   margin: 8px 0 0;
   font-size: 11.5px;
@@ -3639,8 +2397,6 @@ html, body {
 }
 .trans-box p.trans-src:empty { display: none; }
 
-/* 译文朗读键：贴在译文标题右侧，纯文字 + ▶ / ⏸（同一位置切换），
-   没有第二颗并排；展开译文才出现，收起即消失。 */
 .trans-head {
   display: flex;
   align-items: center;
@@ -3662,40 +2418,19 @@ html, body {
   align-items: center;
   gap: 5px;
   white-space: nowrap;
-  /* 胶囊键：高度固定、纵向不再被拉伸。
-     .trans-head 是 `align-items: center` 的 flex 行，默认 `align-items: stretch`
-     的旧写法会把按钮拉到与标题同高 —— 译文标题一旦换行，胶囊就变高变扁。
-     这里 flex: none + 固定行高，宽由内容撑开，呈标准圆角胶囊。 */
+
   flex: none;
   line-height: 1.5;
 }
 .trans-read .btn-icon { display: inline-flex; align-items: center; justify-content: center; flex: none; }
 .trans-read .btn-icon svg { display: block; width: 14px; height: 14px; margin: 0; }
-/* ▶ / ⏸ 互斥。选择器要多带一个 `.btn-icon`（0-3-0），否则会被上面那条
-   `.trans-read .btn-icon { display: inline-flex }`（0-2-0）
-   按「同特异性、后写胜出」压回去 —— 表现就是两个图标并排同时显示。 */
+
 .trans-read .btn-icon.pause-glyph { display: none; }
 .trans-read[data-on="1"] .btn-icon.play-glyph { display: none; }
 .trans-read[data-on="1"] .btn-icon.pause-glyph { display: inline-flex; }
 .trans-read[data-on="1"] { background: var(--green); border-color: var(--green); color: #fffdf8; }
 .trans-read:disabled { opacity: .5; cursor: not-allowed; }
 
-/* ==========================================================================
-   iOS 输入控件防缩放（必须放在样式表最后）
-   --------------------------------------------------------------------------
-   早先这里写的是 `@media (max-width: 700px) { input, select, textarea { font-size: 16px } }`，
-   用来挡住 iOS 聚焦时自动放大页面。但它**从来没生效过**：论特异性，它比
-   `.settings-input { font-size: 14px }`（带类名，再加上一行后写的
-   `@media screen and (max-width: 700px) { input, select, textarea { font-size: 16px } }`）
-   低，被压回去了 —— 设置页 / 小古文设置弹层里的输入框量出来一直是 14px，
-   在 iPhone 上聚焦就会把整页放大。
-   现在：
-     · 字号抽成变量 --input-font-narrow（16px），只在这一处定义；
-     · 规则按类名精确命中，特异性压过组件自身的 `font-size`；
-     · **整段挪到样式表末尾** —— 组件样式散落在文件各处，只要有一条写在它后面，
-       同特异性下就会翻盘。
-   桌面 / 平板不受影响，仍是 14px，与界面文字的层级一致。
-   ========================================================================== */
 @media screen and (max-width: 700px) {
   input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
   select,

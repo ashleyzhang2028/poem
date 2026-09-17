@@ -20,70 +20,13 @@
   <link rel="stylesheet" href="css/classic.css" />
 </head>
 <body data-nav="library" data-page="课外阅读" data-sub="课本之外的经典，按部就班读下去">
-  <!-- 课外阅读入口页：两层，都在这一页里。
-     ------------------------------------------------------------------------
-     第一层「集子目录」：六张卡片，点一部进第二层。
-     第二层「某部的索引」：唐诗三百首 / 宋词三百首 / 古文观止 / 昭明文选
-       小古文 —— 与 /tangshi/ 等页面同一套引擎（js/reader-core.js）、
-       同一份 HTML 结构，只是**就地**铺在这一页上（地址栏不动）。
-       再点一篇，阅读器叠在最上面。
-
-     为什么改成「就地叠层」而不是跳到 /tangshi/（Issue #122）：
-       按浏览器的习惯，进入下一层（索引）再进下一层（一篇正文），
-       返回键要一层一层退：正文 → 索引 → 集子目录 → 课外阅读首页。
-       跳到 /tangshi/ 的话，中间那层索引住在**另一个地址**上，
-       而阅读器是同一页里的一个层 —— 按返回只能把层收掉，
-       接着就落回 /library/ 的集子目录（用户看到的正是「直接退到了背诵首页」）。
-       就地叠层之后，正文、索引、目录三层是同一页里的三层，
-       返回键按一层退一层，与用户的预期一致。
-
-     课内诗词（/poems/）仍走跳转：它有自己的索引页，
-     在那里返回就是回首页 —— 见 js/library.js 的注释。
-
-     ⚠️ id 前缀的规矩（六个页面共用同一份引擎，靠这个天然分开）：
-       这一页的索引层元素一律 `lib-` 前缀（lib-gw-list / lib-gw-search…），
-       阅读器层与其它集子页一样是全局的 `gw-reader` / `rd-*`。
-       参数名也不再是 data-gw（那是「引擎自己的挂载点」），
-       改成 data-lib-part —— 引擎按参数名 rd() 取元素，
-       reader-core 才不会把这一层的列表 / 搜索框认成自己的。
-       阅读器那一段的 data-gw 参数名照旧不动（引擎本来就要找它）。
-  -->
 
   <div class="app">
-    <!-- 页顶这一行由 js/chrome.js 统一渲染。集子目录这一层是：徽标 · 跬步 ·
-         课外阅读 /「课本之外的经典，按部就班读下去」｜〔返回键〕；
-         铺上某一部的索引之后，第一行的页名与第二行的说明换成那一部的
-         （见 js/library.js 的 enterBook）。 -->
+
     <header class="topbar"></header>
 
-    <!-- 第一层：集子目录。六张卡片由 js/library.js 自己的清单渲染，
-         篇数实时算，不写死 —— 哪一部日后增补了篇目，这里跟着变。 -->
     <div class="library-grid" data-lib-view="grid" id="library-grid"></div>
-    <!-- 第二层：某部的索引。结构与 /tangshi/ 等页面逐项相同（同一套引擎），
-         默认 hidden，点一部集子才铺上来；铺上来时页顶那一行（外层那一条 topbar）
-         由 js/library.js 换成本集的页名 / 说明 / 进度牌。
-        ⚠️ 这一层是**就地**铺上来的集子索引（不是跳去 /tangshi/）：
-           地址栏还是 /library/，第二层的 DOM 就是下面这一块，
-           再点一篇则阅读器叠在最上面。返回键一层退一层（见 js/library.js）。
-        ⚠️ id 前缀的规矩（六个页面共用同一份引擎，靠这个天然分开）：
-           索引层元素一律 `lib-` 前缀（lib-gw-list / lib-gw-search…），
-           阅读器层与其它集子页一样是全局的 `gw-reader` / `rd-*`
-           （index.html 那一层不再有同名元素，所以不撞）。
-           参数名也不再是 data-gw（那是「引擎自己的挂载点」的意思），
-           改成 data-lib-part —— 引擎按参数名取元素，
-           才不会把这一层的列表 / 搜索框认成自己的。
-         ⚠️ 这一层不带自己的 topbar：页顶那一行是外层那一条（全站共用一条，
-            阅读器那条除外），免得同一页出现两条顶栏 —— chrome.js 会把它们
-            一起重绘，多出来的一条反而打架。
-         ⚠️ 这一层**也不再套 .app**（Issue #147）：原先它写的是
-            <div class="app" data-lib-view="book">，而 .app 是全站「一列纸」的
-            宽度来源（max-width: --col-w + 左右各一条 --col-side 的边）。
-            它套在外层 .app **里面**，于是这 720px 的宽度被算了两次、
-            两侧的边也被算了两次：索引层的搜索框与卷次卡比上面的顶栏
-            左右各窄 28px（「和上面的搜索框行一起左右变窄」正是这个）。
-            同页的课内诗词索引页（/poems/）里没有这一层嵌套，
-            所以只有它看着是对的。DOM 上少一层，.app 的宽度就只有一个来源。
-    -->
+
     <div data-lib-view="book" hidden>
     <div class="toolbar">
       <div class="search-wrap">
@@ -99,13 +42,7 @@
         <button type="button" data-filter="all" class="active" aria-pressed="true">全部</button>
         <button type="button" data-filter="unread" aria-pressed="false">未读</button>
       </div>
-      <!-- 工具栏「连读」= 一枚圆形播放键，与首页「今日背诵」右侧那颗同一个组件：
-           同一颗键上 ▶ / ⏸ 两态（播放中原地换成暂停），不配可见文字 ——
-           它管的是「整页随机连读」这件事，说明放在 title 与读屏文案里。
-           用 <button> 而非 <a>：读屏报「按钮」、Enter / 空格都能触发。
-           里面那颗 ▶ 的 stroke-width 由 2.4 改成 1（Issue #55 本轮）：
-           所有播放键的三角边框都收成「1px」，各档图标框对应的取值见
-           css/classic.css 顶部的换算表 —— 改一处前先看那张表。 -->
+
       <button class="gw-play gw-play-main" id="lib-gw-random-read" data-lib-part="random" type="button" data-on="0"
         aria-pressed="false" title="随机连读：随机抽一篇开读，读完自动跳下一篇">
         <span class="play-glyph" aria-hidden="true">
@@ -120,21 +57,15 @@
 
     <div class="list" id="lib-gw-list" data-lib-part="list"></div>
 
-    <!-- 页底不再挂版权与法务链接：小古文页只留列表，版权 + 用户协议 / 隐私条款只在设置整页底部 -->
   </div>
 
-<!-- 古文详情：整页阅读（长文可滚动，不再是卡片弹窗） -->
 <div class="reader" id="lib-gw-reader" data-gw="reader" hidden>
-  <!-- 阅读器顶栏：不另造一套，直接复用全站顶栏的 .topbar（徽标 + 跬步 · 小古文 +
-       右侧 40px 圆形返回键）。原先这里是自制的 .reader-bar —— 左侧返回、中间居中进度，
-       比全站顶栏少一个徽标、页名位置也完全不同，从列表点进正文时整行导航会「换一张脸」。
-       现在品牌区与列表页完全对齐；顶栏右侧只剩那颗 40px 圆形返回键 ——
-顶栏里**没有、也不该有**任何读数（Issue #147：页顶与详情页的读数都已撤除）。 -->
+
   <header class="topbar"></header>
   <div class="reader-body">
     <h2 class="rd-title" id="rd-title"></h2>
     <div class="meta rd-meta" id="rd-meta"></div>
-    <!-- 阅读辅助工具条（第一行）：对齐 / 字号 / 注音 —— 字号必须始终可见（曾因合并丢掉整条工具条） -->
+
     <div class="reader-actions" id="rd-actions-main">
       <div class="seg mini icon-seg" id="rd-align-seg" data-gw="align-seg" role="group" aria-label="正文对齐方式">
         <button type="button" data-gw="align" data-align="left" aria-pressed="false" title="左对齐" aria-label="左对齐">
@@ -158,11 +89,7 @@
         <button type="button" data-gw="pinyin" data-mode="all" aria-pressed="false">全文</button>
       </div>
     </div>
-    <!-- 阅读辅助工具条（第二行）：原文一个播放键 + 译文开关 + 标记已读。
-         原先这一行并排两个播放键（原文一个、译文一个），一篇文章出现两个播放信号，
-         像多长了一个按钮；而译文本身还带一个朗读键，又叠了一层。
-         现在只留原文这一颗 ▶ / ⏸（同一位置切换，不并排），
-         译文的朗读键挪到译文标题旁，跟着译文框一起出现。 -->
+
     <div class="reader-actions icon-row" id="rd-actions-icons">
       <button type="button" class="mini-btn" id="rd-read-btn" data-gw="read" data-on="0" aria-pressed="false" title="朗读原文：标题、朝代、作者与正文">
         <span class="btn-icon play-glyph" aria-hidden="true">
@@ -191,12 +118,7 @@
         </span>
         <span class="sr-only" id="rd-trans-toggle-text">显示译文</span>
       </button>
-      <!-- 「加入背诵」：把这一篇放进**用户自己的清单**（自选集合），
-           进了清单就由遗忘曲线安排复习 —— 与课内 261 首同一套排程。
-           与「标记已读」是两回事：已读只记录这一部集子里的进度，
-           加入背诵才是「这一篇我要跟着一起背」。
-           按下去弹集合选择器：勾选放进哪个集合，或新建一个。
-           自选集合不分卷次不分词牌（用户原话「集合没有必要添加分组了」）。 -->
+
       <button type="button" class="mini-btn recite-btn" id="lib-gw-recite" data-gw="recite" data-on="0" aria-pressed="false" title="加入自选集合">
         <span class="btn-icon" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -218,8 +140,7 @@
     <section class="trans-box" id="rd-trans" data-gw="trans" hidden>
       <div class="trans-head">
         <h3>白话译文</h3>
-        <!-- 译文朗读键：跟着译文框一起出现，只在译文标题这一处，
-             与正文那颗朗读键不同时出现在同一行 -->
+
         <button type="button" class="trans-read" id="rd-trans-read" data-gw="trans-read" data-on="0" aria-pressed="false" disabled title="朗读白话译文">
           <span class="btn-icon play-glyph" aria-hidden="true">
             <svg viewBox="0 0 24 24"><path d="M8.4 6.1 18.3 12 8.4 17.9Z" fill="none" stroke="currentColor" stroke-width="1" stroke-linejoin="round" stroke-linecap="round" /></svg>
@@ -231,11 +152,10 @@
         </button>
       </div>
       <p class="rd-trans-text" id="rd-trans-text"></p>
-      <!-- 译文来源注脚：与首页详情页同一套，见 data/index.js 的 TRANSLATION_SOURCES -->
+
       <p class="trans-src rd-trans-src" id="rd-trans-src"></p>
     </section>
 
-    <!-- 上一篇 / 下一篇：读完直接翻，不用退回索引页 -->
     <nav class="reader-nav" id="rd-nav">
       <button type="button" class="prev" id="rd-prev" data-gw="prev">
         <span aria-hidden="true">‹</span>
@@ -269,8 +189,7 @@
   <script src="data/poems-10.js"></script>
   <script src="data/poems-11.js"></script>
   <script src="data/poems-12.js"></script>
-  <!-- data/index.js 先把 poems-1..12 汇成 window.POEMS_ALL，
-       站点总索引（最后一行）才读得到课内那一部 —— 顺序不能调换 -->
+
   <script src="data/index.js"></script>
   <script src="data/poems-classic.js"></script>
   <script src="data/poems-tangshi.js"></script>
@@ -278,8 +197,7 @@
   <script src="data/poems-guwen.js"></script>
   <script src="data/poems-zhaoming.js"></script>
   <script src="data/site-index.js"></script>
-  <!-- 正文存储主表 + 收归主表的裁定表：与各集子页同一套，
-       必须在 js/reader-core.js 之前加载（挂载时就要按它取回正文） -->
+
   <script src="data/text-master.js"></script>
   <script src="data/canonical-texts.js"></script>
   <script src="data/group-order.js"></script>
@@ -288,38 +206,22 @@
   <script src="data/pinyin-table.js"></script>
   <script src="data/common-chars.js"></script>
   <script src="js/pinyin.js"></script>
-  <!-- 权益总闸：全站唯一的「能不能用某功能」出口。必须排在 speech.js 之前 ——
-       语音播放要求登录（free 即可用），判据由它出，speech.js 里那道门与它同源。 -->
-  <!-- 认证内核：会话是谁、邮箱码在哪台设备上验证过。纯逻辑、零网络，
-       与权益层一样属于「引擎」，不是页面。必须在 entitlement.js 之前 ——
-       identity() 要靠它读会话，顺序反了就永远判成游客。 -->
+
   <script src="js/auth-core.js"></script>
   <script src="js/entitlement.js"></script>
   <script src="js/speech.js"></script>
   <script src="js/reader.js"></script>
-  <!-- 自选集合：阅读器里的「加入背诵」要读它（与各集子页同一份，
-       必须排在 js/reader-core.js 之前） -->
-  <!-- 分域引擎（Issue #132 阶段 0）：进度 / 账号 / 设备三域的唯一一份定义，
-       读法由 js/storage.js 转发。**必须排在 js/storage.js 之前** ——
-       缺了它 storage 只是退化成兜底读法，不会报错（那种「不报错的少数据」最难查）。 -->
+
   <script src="js/family.js"></script>
   <script src="js/progress-store.js"></script>
-  <!-- 同步层（Issue #132 · 1B）：进度 / 账号域设置 / 已读的跨设备同步。
-       必须在 js/storage.js 之前 —— 它的 touch() 要给每条记录打标，
-       而页面只认识 Storage/ProgressStore 这两个入口。 -->
+
   <script src="js/sync-store.js"></script>
-  <!-- 分域读法的**转发层**：页面各处的 Storage.get / getSettings 都落在这里，
-       实现是上面那份 progress-store。上面那段注释一直写着「读法由 js/storage.js
-       转发」——但这一页此前**只加载了引擎、没加载转发层**，于是这些页面上
-       window.Storage 一直是 undefined，凡走它的地方都静默退化成「读不到」。
-       Issue #163 把搜索页「上次搜的词」接到这一层时暴露了它：搜索页原来
-       读不到任何存储，只是因为它从不读。顺序：progress-store → sync-store →
-       storage（后者才认前两个）。 -->
+
   <script src="js/storage.js"></script>
   <script src="js/collections.js"></script>
   <script src="js/play-modes.js"></script>
   <script src="js/reader-core.js"></script>
-  <!-- 五部集子的挂载配置（与 /tangshi/ 等页面各自那一份**是同一份**） -->
+
   <script src="js/tangshi.js"></script>
   <script src="js/songci.js"></script>
   <script src="js/guwen.js"></script>

@@ -1,40 +1,10 @@
-/**
- * 全站统一的顶栏 + 底部导航（宋式样）
- * ==========================================================================
- * 为什么要有这个文件：
- *   首页、小古文页、法务页原先各自写了一份顶栏，标题、返回键、右侧按钮
- *   各不一样，用户「不知道自己站在哪、下一层能去哪」。这里把全站的
- *   导航收敛成同一套：
- *
- *   ┌──────────────────────────────────┐
- *   │  〔徽标〕 跬步 · 课外阅读     [↩] │  ← 同一行、同一字体：应用名 · 当前页名
- *   ├──────────────────────────────────┤
- *   │  …页面内容…                      │
- *   ├──────────────────────────────────┤
- *   │  背诵    课外    搜索    设置    │  ← 底部四页签：页面身份的锚点
- *   └──────────────────────────────────┘
- *
- * 设计取向（宋式美学）：
- *   · 徽标 = 双鱼纹（宋瓷、宋锦上最常见的「鱼」谐音「余」，也呼应「跬步」的耐心）
- *   · 分隔 = 描金细线 + 器物口沿的「子母口」双线，不做投影式的现代卡片感
- *   · 点缀 = 极淡的云纹浮雕，只在角落出现，不抢内容
- *
- * 关键：所有标记用 data- 属性驱动，样式在 css/style.css 里，逻辑只做渲染。
- */
 (function () {
   "use strict";
 
-  /* ---------------- 内联 SVG 图标（不请求任何外部资源） ----------------
-     页面背景不使用任何图案（纹样已在 css/style.css 里整段移除），
-     这里只提供界面自身的图标，全部内联 SVG，不请求图片、断网也在：
-     1) 印章徽标　篆意「步」字印，外一圈宋器口沿的细弦。
-     2) 页签 / 按钮图标　书本、古卷、设置、播放键等。
-  ------------------------------------------------------------------------- */
   var SVG_HEAD = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">';
 
   var GLYPHS = {
-    /* 徽标：篆意「步」字印 —— 上「止」下反「止」，两枚足迹一前一后，
-       正是「一步一止、积跬步」的本义；外一圈宋器口沿的细弦，像宋瓷底款。 */
+
     mark:
       '<svg viewBox="0 0 32 32" fill="none" aria-hidden="true">' +
       '<circle cx="16" cy="16" r="13.4" stroke="currentColor" stroke-width="1" stroke-opacity=".3"/>' +
@@ -45,21 +15,17 @@
       '<circle cx="16" cy="16" r="1.15" fill="currentColor" fill-opacity=".5" stroke="none"/>' +
       '</svg>',
 
-    /* 页签：古诗词（翻开的一册） */
     tabPoem:
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
       '<path d="M12 6.6C10.3 5.2 8.1 4.6 5.4 4.6v12.6c2.7 0 4.9.6 6.6 1.9 1.7-1.3 3.9-1.9 6.6-1.9V4.6c-2.7 0-4.9.6-6.6 2Z"/>' +
       '<path d="M12 6.6V19.1"/></svg>',
 
-    /* 页签：小古文（展开的古卷） */
     tabClassic:
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
       '<path d="M5.4 4.6h5.2v14.8H5.4A1.4 1.4 0 0 1 4 18V6a1.4 1.4 0 0 1 1.4-1.4Z"/>' +
       '<path d="M10.6 4.6h8A1.4 1.4 0 0 1 20 6v12a1.4 1.4 0 0 1-1.4 1.4h-8"/>' +
       '<path d="M13.2 9.2h4.2M13.2 13h4.2"/></svg>',
 
-    /* 页签：课外阅读（叠着的两册书，与「背诵」那册翻开的不同：
-       这一枚是立着排的几册，表示「还有好几部可以读」） */
     tabLibrary:
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
       '<rect x="3.6" y="4.4" width="5.4" height="15.2" rx="1"/>' +
@@ -67,75 +33,31 @@
       '<path d="M16.4 4.9l3.2.85a1.1 1.1 0 0 1 .78 1.35l-3.4 12.7"/>' +
       '<path d="M5.6 8.4h1.4M11.6 8.4h1.4"/></svg>',
 
-    /* 页签：全站搜索（放大镜） */
     tabSearch:
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
       '<circle cx="10.6" cy="10.6" r="6.2"/>' +
       '<path d="M15.2 15.2 20.4 20.4"/></svg>',
 
-    /* 页签：我的（**圆形用户头像**）—— Issue #209（用户 2026-09-17）：
-       「将右下角设置改成 我的 并将齿轮图标换成圆形用户头像」。
-
-       这不是一枚通用的人形剪影，而是**一个整圆 + 圆里那个人自己的首字**：
-       首字由调用方（dockHtml）按当前档案现算并塞进 `<text>`，所以
-         · 昵称是「玥玥」→ 圆里就是「玥」；
-         · 没起名 → 圆里是默认字「诗」（与 App 图标正中那枚同源）。
-       与头像（js/avatar.js 那两档：图片 / 首字印）**不共用一份实现**，理由是
-       分寸：页签图标是界面的一部分，不该为它去读一次档案、画一张图 ——
-       也不该在用户传了图之后把页签那颗 22px 的圆变成一张缩略图。
-       它要的只是「这一格是『我』」。
-
-       ⚠️ 圆是 `fill="currentColor"` 的实底、首字是纸色：这样选中态
-          （`.dock-item.active` 把 currentColor 换成天青）自动带着整圆一起走，
-          不必为「选中时那颗圆换不换色」再写一条规则。 */
     tabMine:
       '<svg viewBox="0 0 24 24" aria-hidden="true">' +
       '<circle cx="12" cy="12" r="10" fill="currentColor" stroke="none"/>' +
       '<text x="12" y="12" text-anchor="middle" dominant-baseline="central" ' +
       'font-size="11" font-weight="600" fill="var(--card)" stroke="none">__CHAR__</text></svg>',
 
-    /* 顶栏右侧：返回上一页（法务页、深页用它替代「我的」） */
     back:
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
       '<path d="M14.4 5.4 7.8 12l6.6 6.6"/></svg>',
 
-    /* 顶栏右侧：关闭（弹层 / 阅读器用） */
     close:
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
       '<path d="M6.4 6.4 17.6 17.6M17.6 6.4 6.4 17.6"/></svg>',
 
-    /* 页签：跬步标识（首页页签用徽标，保持与顶栏一致） */
     daily:
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
       '<path d="M4 18.6h16"/>' +
       '<path d="M7.2 18.6V13l2.8-2 2.6 2 2.4-3.2L18.4 11v7.6"/></svg>'
   };
 
-  /* ---------------- 页面路由表 ---------------- */
-  /**
-   * 全站唯一的一份「页面住哪」。
-   *
-   * URL 一律目录化，不带 .html：
-   *   /            首页（背诵）：今日背诵 + 遗忘曲线
-   *   /poems/      课内古诗词索引页（一至高三 261 首，按年级分册的目录）
-   *   /library/    课外阅读（集子入口页：课内诗词 + 五部选集）
-   *   /classic/    课外必背小古文
-   *   /tangshi/    唐诗三百首
-   *   /songci/     宋词三百首
-   *   /guwen/      古文观止
-   *   /zhaoming/   昭明文选
-   *   /search/     全站搜索
-   *   /settings/   设置
-   *   /terms/      用户协议
-   *   /privacy/    隐私条款
-   *
-   * 五部选集不再各自占一个页签（页签只有两三个字，装不下书名），
-   * 而是统一从 /library/ 进；页面名仍按各页 body 上的 data-page 显示，
-   * 所以从入口页点进《古文观止》，顶栏第一行照样写「跬步 · 古文观止」。
-   *
-   * 各页面真实文件都是该目录下的 index.html。
-   * 这里也兼容直接访问 /classic/index.html 的情形（等价于 /classic/）。
-   */
   var ROUTES = {
     home: "/",
     poems: "/poems/",
@@ -155,23 +77,12 @@
     privacy: "/privacy/"
   };
 
-  /** 路由 → 跳转地址 */
   function routeHref(key) {
     return ROUTES[key] || ROUTES.home;
   }
 
-  /* ---------------- 页面身份 ---------------- */
   var APP_NAME = "跬步";
-  /* 顶栏第二行 = 页面自己的说明（页面用 body 上的 data-sub 给）。
-     应用名与页面名已经在第一行，这里只放「这个页面是干什么的」：
-       · 首页 —— 「按 XX 复习」（XX 是用户选的背诵算法，如 SM-2 / FSRS；
-         文案由 js/app.js 按当前算法写进顶栏，此处只做说明，不硬编码算法名）
-       · 课外阅读入口页 —— 「课本之外的经典，按部就班读下去」
-       · 小古文页 —— 「100 篇 · 想读哪篇点哪篇」
-     刻意不再写「一年级至高三」这类学段字样：首页能选年级学期，
-     固定写死一个学段反而让非该学段的用户觉得不是给自己用的。
-     同理也不写死某一种算法的名字 —— 算法是用户能换的（见设置页「背诵算法」）。
-     留空则第二行不占高度（.brand-sub:empty）。 */
+
   var DEFAULT_SUB = "";
 
   function bodyData(key) {
@@ -179,7 +90,6 @@
     return el ? el.getAttribute("data-" + key) : null;
   }
 
-  /** 当前页页签：body 上的 data-nav 说了算（缺省按路径猜） */
   function pageKey() {
     var v = bodyData("nav");
     if (v) return v;
@@ -194,36 +104,24 @@
     if (/^\/zhaoming\/?$/.test(p) || /^\/zhaoming\/index\.html$/.test(p)) return "zhaoming";
     if (/^\/settings\/?$/.test(p) || /^\/settings\/index\.html$/.test(p)) return "settings";
     if (/^\/progress\/?$/.test(p) || /^\/progress\/index\.html$/.test(p)) return "progress";
-    // 账号三页：登录 / 个人中心 / 管理后台（Issue #132 · A→B→C→D 的 B / C）
+
     if (/^\/login\/?$/.test(p) || /^\/login\/index\.html$/.test(p)) return "login";
     if (/^\/profile\/?$/.test(p) || /^\/profile\/index\.html$/.test(p)) return "profile";
     if (/^\/admin\/?$/.test(p) || /^\/admin\/index\.html$/.test(p)) return "admin";
-    // 层级对比页（/plans/）：从个人中心的「权限」进，看完就走的小页
+
     if (/^\/plans\/?$/.test(p) || /^\/plans\/index\.html$/.test(p)) return "plans";
     return "home";
   }
 
-  /** 页名的临时覆盖（见 setPage；空串 = 用 body 上的 data-page） */
   var pageOverride = "";
 
-  /** 当前页副标题：由页面在 body 上给出，避免把各页文案硬编码在这里 */
   function pageSub() {
     if (subOverride) return subOverride;
     return bodyData("sub") || DEFAULT_SUB;
   }
 
-  /** 副标题的临时覆盖（与 pageOverride 同出一辙，见 setPage / setSub） */
   var subOverride = "";
 
-  /**
-   * 写（或还原）页顶第二行那句说明。
-   *
-   * 各页的说明本来走 body 上的 data-sub，由 headerHtml 一次画好；
-   * 但「就地换一层」的页面（课外阅读入口页铺一层集子索引）要临时改写它，
-   * 而 headerHtml 只在整行重绘时读一次 —— 所以这里直接落到 #brand-sub 上，
-   * 并把它记成覆盖值，免得下一次重绘（例如打开阅读器）又翻回旧文案。
-   * 传空串 = 还回 body 上的 data-sub。
-   */
   function paintSubText(text) {
     subOverride = text == null ? "" : String(text);
     var bars = readBars();
@@ -235,20 +133,11 @@
     });
   }
 
-  /** 是否显示底部页签（法务页等深页不显示，改用顶栏返回键） */
   function dockEnabled() {
     return bodyData("dock") !== "off";
   }
 
-  /* 顶栏右侧动作：JS 可覆盖（阅读器打开时要变成「返回上一级」）。
-     用**栈**而不是一个变量：阅读器可以叠着开 —— 课外阅读入口页
-     （/library/）就是一例，它把一部集子的索引页**就地**铺上来
-     （见 js/library.js），索引页上再点一篇又叠一层阅读器。
-     一个变量的话，开第二层就把第一层的动作冲掉，合上第二层只能落到 null，
-     底下那层露出「回首页」的返回键 —— 就是 Issue #122 那个「点开一首诗，
-     再点右上角返回，直接退到了背诵首页」。
-     栈底那一枚（动作从无到有的第一次）只当锚点，合到最后仍走原来的 null 分支。 */
-  var headerStack = []; // 每项 {icon, label, href, onclick}
+  var headerStack = [];
 
   function topAction() {
     return headerStack.length > 1 ? headerStack[headerStack.length - 1] : null;
@@ -258,11 +147,8 @@
     return GLYPHS.mark;
   }
 
-  /* 页面自己那条顶栏的动作位（默认 null = 画各页默认的「回首页」返回键）。
-     与 headerStack 分开：一个管阅读器那一层，一个管页面这一层，
-     合并起来太绕（阅读器的开 / 关与页面的进 / 退是两件独立的事）。 */
   var pageAction = null;
-  /** 有没有阅读器那一层开着（开着时页面那条顶栏不画动作键，见 headerHtml） */
+
   function readerLayerOpen() {
     var boxes = document.querySelectorAll(".reader");
     for (var i = 0; i < boxes.length; i++) {
@@ -271,72 +157,21 @@
     return false;
   }
 
-  /** 这条顶栏是不是阅读器里的那条（动作位归它，页面顶部那条不参与） */
   function isReaderBar(bar) {
     return !!(bar && bar.parentNode && bar.parentNode.classList &&
       bar.parentNode.classList.contains("reader"));
   }
 
-  /* ---------------- 渲染：顶栏 ---------------- */
-  /**
-   * 顶栏右端那一个动作位。
-   *
-   * isReader 为 true 时（阅读器那条顶栏）才走 topAction()（动作栈的栈顶）；
-   * 页面自己那条顶栏即使阅读器开着，也照旧显示「回首页」的返回键 ——
-   * 否则页面顶栏与阅读器顶栏会同时渲染出 `id="top-act"`，
-   * 一个页面里出现两个同名 id：HTML 不合法，且 `element.querySelector('#top-act')`
-   * 在部分 DOM 实现（jsdom ≥27）里只认第一枚，阅读器那条会查不到按钮。
-   * 顺带也修掉「顶栏整行连着两个『小古文』」：页面顶栏本该是「跬步 · 小古文 ｜ 返回」，
-   * 不该把阅读器的动作文案「返回小古文列表」也挂上来。
-   */
   function headerHtml(isReader) {
     var key = pageKey();
     var sub = pageSub();
-    // 动作位归谁：
-    //   · 阅读器那条（isReader）—— 归 setHeaderAction（阅读器开着时它盖在最上面）；
-    //   · 页面那条 —— 归 setPageAction，但**只在没有阅读器开着的时候**：
-    //     阅读器一开，它那条顶栏就盖在最上面、动作位也归它了，
-    //     页面那条若还画一颗 #top-act，同一页就有两枚同名 id
-    //     （HTML 不合法，且作用域查询只认第一枚 —— jsdom ≥27 的经典翻车姿势）。
-    //     阅读器合上时页面那条会自动重新露出它那一颗（重绘由 hideReader 触发）。
-    // 页面那条还有一个「暂时不画」的中间态：这一页有 setPageAction 的动作，
-    // 但此刻阅读器那一层开着（动作位归阅读器）—— 那时**既不该画动作键，
-    // 也不该落回默认的「回首页」**：那一颗在索引层上是错的落点（点它跳首页）。
-    // Issue #209 之后这里**什么都不画**（原先留一枚空槽保两栏对齐，
-    // 而头像撤掉之后右侧簇只剩这一颗键，空槽就是顶栏右边一块空白）。
+
     var action = isReader ? topAction() : (readerLayerOpen() ? null : pageAction);
     var right;
 
-    // 右侧簇（Issue #147 · 2026-09-15；Issue #209 收敛成**一颗返回键**）
-    // ----------------------------------------------------------------------
-    //     ┌──────────────────────────────────────┐
-    //     │ (徽标42) 跬步 · 页名        〔 返回 42 〕 │
-    //     └──────────────────────────────────────┘
-    //      品牌区（可收缩，走 ellipsis）    ↑ 固定圆槽（顶到最右）
-    //
-    // 这一行**只剩一颗键**：返回槽。用户 2026-09-17（Issue #209）原话：
-    //   「所有页面右上角的头像全部删除，这个位置现在有后退键代替」
-    // 于是原「恒定锚点（头像 / 不可见占位）」整件撤掉，返回键自己顶到最右。
-    //
-    // 三条跟着来的结论，都不是「顺手」而是**必须**：
-    //   ① 返回槽的宽高不再写 var(--top-slot)：那一枚 42px 是**头像的直径**
-    //      （与徽标同径，见 css/style.css 的那一段）。锚点走掉之后，
-    //      槽再读这条令牌就是「一个为别人量身的尺寸」—— 槽与键现在同径 40px，
-    //      尺寸只有一个来源 `--top-key`。
-    //   ② 判断「这一页有没有返回键」的口径变了：原先首页没有返回键也**留一枚
-    //      42px 空槽**（保两栏对齐，免得阅读器一开一合箭头横跳）。现在右侧簇
-    //      只有这一颗键，留一枚空槽就是顶栏右边一块空白 —— 没有键就什么都不画。
-    //   ③ 阅读器的「合上」与页面的返回键**天然落在同一个像素位**了：
-    //      两条顶栏渲染的都是同一件、同一个尺寸，不必再靠占位去对齐。
-    //
-    // ⚠️ 全页只剩两种 id：`#top-act`（动作位 / 阅读器的合上）与 `#top-back`
-    //    （页面自己的返回键），且**永远只有一枚**。不再有 `#top-user`：
-    //    仓库里那条「全页只有一枚」的断言因此也少一类要照顾的对象。
     var rightKey = "";
     if (isReader) {
-      // 阅读器那条顶栏：只有「合上」这一颗。
-      // 动作是「关闭阅读器」这类「合上 / 撤回上一层」的语义，一律画成返回箭头：
-      // 同一种行为在全站只能是同一个图标。
+
       if (action) {
         rightKey =
           '<button type="button" class="top-act" id="top-act">' +
@@ -344,31 +179,23 @@
           '<span class="sr-only">' + action.label + "</span></button>";
       }
     } else if (readerLayerOpen()) {
-      // 阅读器开着：页面那条顶栏的动作位也归阅读器那一层（全页只能有一枚
-      // #top-act）。这里什么都不画，而不是落回默认的「回首页」——
-      // 那一颗在集子索引这一层上是错的落点（点它直接跳去背诵首页）。
+
     } else if (pageAction) {
-      // 页面自己挂的动作（课外阅读入口页「就地叠层」时用）→ 撤回上一层
+
       rightKey =
         '<button type="button" class="top-act" id="top-act">' +
         '<span class="top-act-icon" aria-hidden="true">' + GLYPHS.back + "</span>" +
         '<span class="sr-only">' + pageAction.label + "</span></button>";
     } else if (key !== "home") {
-      // 子页面（搜索、小古文、设置、法务页）—— 同一颗「返回」，指向 pageBackHref()。
-      // 返回键统一由这里渲染，各页不要自造一颗：曾出现「页面自己手写返回、
-      // 与重建后的顶栏同时冒出来」的问题。文案只给读屏软件，可见的只有一个箭头。
+
       rightKey =
         '<a class="top-act" id="top-back" href="' + pageBackHref() + '"' +
         ' title="返回" aria-label="返回">' +
         '<span class="top-act-icon" aria-hidden="true">' + GLYPHS.back + "</span></a>";
     }
-    // ⚠️ 首页（背诵）没有上一层，因此**一颗键都没有** —— 顶栏右端是空的。
-    //    这不等同于「留一枚看不见的槽」：`.topbar` 自己是 `space-between`，
-    //    左边品牌区照样靠左，右边空着就是空着。
+
     var right = rightKey;
 
-    // 品牌：徽标 + 「跬步 · 当前页名」——同一行、同一字体，读起来是一句话
-    // 页面名由页面用 data-page 给出（首页由 app.js 写成「XX的古诗词」）
     var page = pageTitle();
     var pageHtml =
       '<span class="brand-page" id="brand-page">' +
@@ -386,41 +213,19 @@
     );
   }
 
-  /**
-   * 顶栏右端那一颗键（页面小件要插在它左边）。
-   *
-   * 顶栏右端现在**只有一颗**：返回键（或阅读器的「合上」）—— 头像那一枚
-   * 恒定锚点已随 Issue #209 撤掉（「所有页面右上角的头像全部删除」）。
-   * 因此这里的候选只剩一个，取不到就是这一页右端本来就没有键
-   * （首页 / 阅读器开着时的页面那条顶栏），小件直接落到行尾。
-   */
   function firstActAnchor(bar) {
     var el = bar.querySelector(".top-act");
     return el || null;
   }
 
-  /**
-   * 当前页的返回目标。
-   *
-   * 默认：子页面回首页（首页自己不留返回键，用占位保持两栏对齐）。
-   * 例外：页面可以用 body 上的 `data-back` 指定上一层 —— 设置拆成二级页之后
-   * （Issue #132 后续），四张二级页的上一层是**设置主页**而不是背诵首页：
-   * 从「朗读」返回背诵首页，等于把用户从设置里一脚踢出来。
-   *
-   * ⚠️ 只认站内绝对路径（`/` 开头）：`data-back` 是页面自己写的属性，
-   *    写成 `javascript:` 或外站地址就等于给了页面一个开放跳转。
-   */
   function pageBackHref() {
     var back = bodyData("back");
     if (back && /^\/[^\/\s]/.test(back)) return back;
     return ROUTES.home;
   }
 
-  /** 第一行里的页面名：首页是「「用户名」的古诗词」，其余页用 data-page */
   function pageTitle() {
-    // 页名可以被页面临时改掉（课外阅读入口页铺上一层集子索引时，
-    // 第一行要从「课外阅读」变成「唐诗三百首」，见 setPage）。
-    // ⚠️ 覆盖只影响**这一行**，body 上的 data-page 不动，清掉覆盖就还原。
+
     if (pageOverride) return pageOverride;
     var v = bodyData("page");
     if (v != null) return v;
@@ -442,34 +247,6 @@
     });
   }
 
-  /* ---------------- 渲染：底部页签 ---------------- */
-  /**
-   * 底部四个页签。
-   *
-   * 上一版是三个：「古诗词 / 小古文 / 设置」。问题有两处 ——
-   *   1. 当年只有小古文一部集子，页签写「小古文」还算如实；
-   *      唐诗、宋词、古文观止、昭明文选做完之后，它们**一个入口都没有**，
-   *      只能靠手敲地址进。
-   *   2. 「古诗词」这个名字也不准：那一页管的是课内背诵与遗忘曲线复习，
-   *      与「课外读」是两回事。
-   * 现在改成：背诵（课内，按遗忘曲线安排复习）｜课外（集子入口）
-   * ｜搜索（全站篇目）｜我的。四格在窄屏上仍是一行放得下（每格 ≥75px）。
-   *
-   * ⚠️ 最后一格 Issue #209 之前叫「设置」（齿轮）—— 用户 2026-09-17 原话：
-   *    「将右下角设置改成 我的 并将齿轮图标换成圆形用户头像」。
-   *    改的是**这一格的名字与图标**；它指向的路由一个字没动（仍是 /settings/），
-   *    所以全站所有 `href="/settings/"` 与 `data-back="/settings/"` 都不必改。
-   *    页签的 key 仍叫 `settings`（那一格的身份没变，变的是它叫什么、画成什么）。
-   *
-   * 页签与「当前页」的对应关系（pageKey）：
-   *   /            → home
-   *   /library/    → library
-   *   /classic/ /tangshi/ /songci/ /guwen/ /zhaoming/ → 都算「课外」这一格选中
-   *   课内诗词索引页（/poems/）也算「课外」这一格：入口页第一张卡就指过去，
-   *   用户是从那一页进来的，页签理应停在那一格（而不是跳到「背诵」）。
-   *   /search/     → search
-   *   /settings/   → settings
-   */
   var DOCK_ITEMS = [
     { key: "home", href: "/", icon: GLYPHS.tabPoem, label: "背诵", desc: "课内古诗词，按当前复习算法安排复习" },
     { key: "library", href: "/library/", icon: GLYPHS.tabLibrary, label: "课外", desc: "课内诗词 / 小古文 / 唐诗 / 宋词 / 古文观止 / 昭明文选" },
@@ -477,39 +254,23 @@
     { key: "settings", href: "/settings/", icon: GLYPHS.tabMine, label: "我的", desc: "个人中心 / 通用 / 背诵 / 清单 / 朗读 / 关于" }
   ];
 
-  /** 五部选集页都算「课外」这一格：它们共用同一个入口，也该共用同一个选中态 */
   function dockKey(key) {
     if (key === "classic" || key === "tangshi" || key === "songci" || key === "guwen" ||
         key === "zhaoming") return "library";
-    // 课内诗词索引页（/poems/）算「课外」这一格：它就是课外阅读入口页
-    // 第一张卡的去处 —— 用户是从那一页点进来的，页签该留在那一格上。
-    // （首页 / 仍是「背诵」那一格：那是另一件事，见 DOCK_ITEMS 第一条。）
+
     if (key === "poems") return "library";
-    // 背诵进度页（/progress/）算「背诵」这一格：它讲的就是课内背诵那本账
-    // （到期日历 / 掌握度），不是独立的一站，也只是从设置页进得去的小页。
+
     if (key === "progress") return "home";
     return key;
   }
 
-  /**
-   * 底部四页签。
-   *
-   * 结构是「外层整宽 + 内层限宽」两层（见 css/style.css 的 .dock-inner）：
-   *   外层 .dock —— 整宽贴底，底纹 / 描金细线 / 底部安全区都在它身上；
-   *   内层 .dock-inner —— 限宽 720px 居中，四格在这个宽度里等分。
-   * 不这么分的话，1920px 屏上每格会被拉到 477px，一颗 22px 的图标
-   * 孤零零挂在格子正中，页签看着像四块空白板子。
-   * ⚠️ 两层都不能省：把 max-width 直接写在外层，固定定位的底线会一起收掉，
-   *    屏幕左右两侧露出「没有页签」的空白。
-   */
   function dockHtml() {
     var key = dockKey(pageKey());
     var items = DOCK_ITEMS;
     var html = '<nav class="dock" id="site-dock" aria-label="主导航"><div class="dock-inner">';
     items.forEach(function (it) {
       var on = key === it.key;
-      // 每个页签都指向真实页面：那一格也是独立整页（/settings/），不再是弹层卡片
-      // 地址统一走目录化路由，不带 .html
+
       var tag = it.key === "settings" ? "a" : "button";
       html +=
         "<" + tag + ' ' + (tag === "a" ? 'href="' + it.href + '"' : 'type="button"') +
@@ -524,21 +285,6 @@
     return html + "</div></nav>";
   }
 
-  /**
-   * 页签图标：把 `__CHAR__` 换成**这一格里那个人自己的首字**。
-   *
-   * 用户 2026-09-17（Issue #209）：「将齿轮图标换成圆形用户头像」。
-   * 「头像」在这里的意思是「一枚圆 + 里头的首字」，与全站那枚真正的头像
-   * （js/avatar.js：图片 / 昵称首字两档）**不同一件事**：
-   *   · 页签这一枚是**界面的一部分**，不进档案、不读上传的图 ——
-   *     用户传了照片也不会让这格 22px 的圆变成一张缩略图；
-   *   · 首字只在**渲染这一次**读一次档案（Avatar.display 是唯一那份口径），
-   *     拿不到就回落默认字 —— 页签不许因为档案读不到而整格空白。
-   *
-   * ⚠️ 只有 `tabMine` 带占位符；其余三枚原样返回（它们没有「人」可放）。
-   * ⚠️ 首字要**转义**再塞进 SVG 文本节点：昵称是用户自己填的，
-   *    直接把 `<` 拼进去就是一处自伤（`.dock-icon` 的 innerHTML 会把它当标签）。
-   */
   function dockIcon(it) {
     if (it.icon.indexOf("__CHAR__") < 0) return it.icon;
     var char = "";
@@ -551,25 +297,9 @@
     return it.icon.replace("__CHAR__", escapeHtml(char));
   }
 
-  /**
-   * 重建顶栏内容。
-   *
-   * 页面可以往顶栏里挂自己的小件（class="count-badge"），它们不在 headerHtml() 里，
-   * 所以重建前先出栈、重建后插回**品牌区之后、右侧动作位之前**：
-   * 顺序固定为　品牌区 ｜ 页面小件 ｜ 返回键（或阅读器里的关闭键）。
-   * 漏掉这一步，阅读器一打开（动作位换成「关闭」）小件就会整块消失。
-   * 注意是「全部小件」而不是「第一枚」—— 万一两条顶栏各挂一枚，只搬第一枚就丢一枚。
-   *
-   * ⚠️ 全站**一处读数都不挂了**（Issue #147）：原先各集子页在顶栏挂一枚
-   *    「0 / 100 篇」已读进度牌，那一枚先挪去详情页状态栏、后连状态栏那一枚
-   *    也一起撤了（用户要的是「删掉所有详情页里的 0 / 167 篇及类似的」）。
-   *    现在页顶与详情页都没有读数。这一处的搬迁能力仍然留着 ——
-   *    renderBar 是通用的，将来哪一页要在顶栏挂小件照样挂得上。
-   */
   function renderBar(bar) {
     var keep = null;
-    // 小件可能不止一枚（同款 .count-badge 挂在两条顶栏上）。一律全量收集、
-    // 原序插回品牌区之后 —— 只搬第一枚时，另一条顶栏的小件就没了。
+
     var extras = bar.querySelectorAll(":scope > .count-badge");
     if (extras.length) {
       keep = [].slice.call(extras);
@@ -577,8 +307,7 @@
     }
     bar.innerHTML = headerHtml(isReaderBar(bar));
     if (!keep) return;
-    // 锚点＝顶栏右端那一颗键（见 firstActAnchor）。这一页右端没有键时
-    // （首页、或阅读器开着时的页面那条顶栏）小件直接落到行尾。
+
     var act = firstActAnchor(bar);
     keep.forEach(function (el) {
       if (act) bar.insertBefore(el, act);
@@ -586,9 +315,8 @@
     });
   }
 
-  /* ---------------- 挂载 ---------------- */
   function mount() {
-    // 顶栏：页面里已有 .topbar 就地复用（保住既有测试与结构），没有则插到最前
+
     var bar = document.querySelector(".topbar");
     var made = false;
     if (!bar) {
@@ -596,7 +324,7 @@
       bar.className = "topbar";
       made = true;
     }
-    // 清空重建，保证三页顶栏结构完全一致（页面自己的小件由 renderBar 保住）
+
     renderBar(bar);
     if (made) {
       var app = document.querySelector(".app");
@@ -604,7 +332,6 @@
     }
     bindHeader();
 
-    // 底部页签
     if (!dockEnabled()) {
       document.body.classList.add("no-dock");
     } else {
@@ -618,30 +345,15 @@
       bindDock(dock);
     }
 
-    // 顶栏把「本站应用名」先落到第一行，之后各页面再补第二行。
-    // 注意脚本顺序：app.js 在本脚本之前执行，它改顶栏时 DOM 里还没有 #brand-sub，
-    // 所以这里渲染完要发一个事件，让页面把第二行重新写一遍（否则用户名 / 页面名会丢）。
     var ev = document.createEvent("Event");
     ev.initEvent("chrome:ready", true, true);
     document.dispatchEvent(ev);
   }
 
   function bindHeader() {
-    // 顶栏动作位现在是「返回」或自定义动作（阅读器 → 关闭）；
-    // 首页不再放设置齿轮（底部页签已承担），因此这里无需绑定设置按钮。
-    // 保留空函数是为了 mount() 的调用结构稳定，后续加顶栏动作位时从这里接手。
+
   }
 
-  /**
-   * 全站所有的顶栏元素（通常两条：页面顶部那条 + 阅读器里那条）。
-   *
-   * 小古文阅读器是全屏 fixed 层，里面**也有**一条同样结构的顶栏 ——
-   * 从列表点进正文时，徽标、「跬步 · 小古文」、右侧圆形动作位都不该变样。
-   *
-   * 两条顶栏会被**一起**重绘（品牌区与页面小件按枚迁回，所以进正文时页面顶部不闪），
-   * 但动作位只在阅读器那条上生效（见 headerHtml 的 isReader 与 isReaderBar）：
-   * 页面那条仍显示「回首页」，不会跟着变成按钮，也不会冒出一枚重复的 id="top-act"。
-   */
   function readBars() {
     var list = [];
     var page = document.querySelector(".app > .topbar");
@@ -649,7 +361,7 @@
     document.querySelectorAll(".reader > .topbar").forEach(function (el) {
       if (list.indexOf(el) === -1) list.push(el);
     });
-    // 兜底：别的页面若把顶栏直接挂在 .app 外，也一并纳入
+
     if (!list.length) {
       var any = document.querySelector(".topbar");
       if (any) list.push(any);
@@ -657,15 +369,6 @@
     return list;
   }
 
-  /**
-   * 页面顶栏的「返回上一层」动作：事件委托，绑一次就够。
-   *
-   * 为什么要委托：这一条顶栏会被整行重绘多次（renderBar 换 innerHTML），
-   * 逐次 addEventListener 会在每一次重绘后失效 —— 表现正是
-   * 「按钮画出来了、点了没反应」，而且只在第二次之后再点才发生，最难查。
-   * 委托绑在顶栏节点上（那个节点本身不换），一次绑好、终身有效；
-   * 只有**页面自己那条**顶栏会响应（阅读器那条走 setHeaderAction 直接绑）。
-   */
   function bindPageAction() {
     var bar = document.querySelector(".app > .topbar");
     if (!bar || bar.dataset.pageActionBound) return;
@@ -685,7 +388,7 @@
       e.preventDefault();
       var dest = btn.getAttribute("data-nav-go");
       var want = routeHref(dest);
-      // 已经在这一页：回到顶部，不再重复导航
+
       if (currentRoute() === dest) {
         window.scrollTo({ top: 0, behavior: "smooth" });
         return;
@@ -694,14 +397,12 @@
     });
   }
 
-  /** 当前路径（去掉结尾多余的 /，统一成不含末尾斜杠的形式；根路径归一成 "/"） */
   function currentPath() {
     var p = location.pathname.replace(/\/index\.html$/, "/");
     p = p.replace(/\/+$/, "");
     return p || "/";
   }
 
-  /** 当前页所在路由 key：用于判断「已在本页」（同时容忍 /classic 与 /classic/ 两种写法） */
   function currentRoute() {
     var p = currentPath();
     for (var key in ROUTES) {
@@ -716,31 +417,17 @@
     return v || "/";
   }
 
-  /** 打开设置整页（保留给页面内其他入口调用：直接跳转，不再弹卡片） */
   function openSettings() {
     location.href = "/settings/";
   }
 
-  /* ---------------- 页面可调用的接口 ---------------- */
   window.SiteChrome = {
     glyph: function (name) {
       return GLYPHS[name] || "";
     },
-    /**
-     * 顶栏右侧换成自定义动作（阅读器 → 关闭；法务页 → 返回）。
-     * 所有顶栏一起重绘（品牌区与页面小件不动，所以「进正文」时页面顶部不会闪一下），
-     * 但**只有阅读器那条**的动作位变成这颗按钮：
-     *  · 页面自己那条照旧是「回首页」的返回键（id="top-back"），
-     *    否则同一页面会出现两枚 id="top-act" —— HTML 不合法，
-     *    且 `#top-act` 这种作用域查询在部分 DOM 实现里只认第一枚，
-     *    阅读器那条会查不到按钮（jsdom ≥27 的经典翻车姿势）；
-     *  · 页面顶栏也不必挂上「返回小古文列表」这句话，免得整行连出两个「小古文」。
-     */
+
     setHeaderAction: function (action) {
-      // null = 「这一层合上了」：弹掉栈顶一层；栈空了就是全合上。
-      // 传对象 = 「又开了一层」：压栈。
-      // 压栈时若底下还是空的，先垫一枚空锚点，让「合到最后」仍落回 null 分支
-      // （否则最后一层合上会弹空栈，页面上留下一个错误的默认返回键）。
+
       if (action) {
         if (!headerStack.length) headerStack.push(null);
         headerStack.push(action);
@@ -753,7 +440,7 @@
       bars.forEach(function (bar) {
         renderBar(bar);
         bindHeader();
-        // 动作只落在阅读器那条顶栏上；页面那条交给它自己的 href 兜底
+
         if (!isReaderBar(bar) || !action || !action.onclick) return;
         var btn = bar.querySelector("#top-act");
         if (!btn) return;
@@ -761,55 +448,28 @@
         btn.addEventListener("click", action.onclick);
       });
     },
-    /** 写 / 还原页顶第二行那句说明（见 paintSubText） */
+
     setSub: function (text) { paintSubText(text); },
-    /**
-     * 页面自己那条顶栏的右侧动作位换成「返回上一层」。
-     *
-     * 与 setHeaderAction 的分工（两者都画成同一颗返回箭头，位置也一样）：
-     *   · setHeaderAction —— **阅读器那条**顶栏的动作位（阅读器开着时它盖在最上面）；
-     *   · setPageAction   —— **页面顶部那条**顶栏的动作位，页面里没有阅读器
-     *     可挂动作时用（课外阅读入口页把某部的索引**就地**铺上来，那一层
-     *     就是页面本身，没有另一条顶栏，见 js/library.js）。
-     * 两条各画各的，同一时刻只有一条看得见 —— 所以全页仍然只有一枚 #top-act。
-     * 传 null 还原成各页默认那颗「回首页」。
-     */
+
     setPageAction: function (action) {
       pageAction = action || null;
-      // 重绘页面那条（页面小件由 renderBar 按枚搬回，与别处同一条路），
-      // 再把动作绑上去 —— 重绘会把它清掉，顺序不能反。
+
       var bars = readBars();
       bars.forEach(function (bar) {
         if (isReaderBar(bar)) return;
         renderBar(bar);
       });
       if (!pageAction || !pageAction.onclick) return;
-      // ⚠️ 用**事件委托**绑在顶栏上，不再逐次给那一颗按钮 addEventListener：
-      //    这一条顶栏会被反复整行重绘（换集子、开合阅读器都会），逐次绑就得
-      //    每次重绘后重绑一遍 —— 漏一次，按钮就成了一颗按不动的装饰：
-      //    「画出来了、点了没反应」，而且只在第二次之后再点才发生，最难查。
-      //    委托绑在顶栏节点上（那个节点本身不换），一次绑好、终身有效。
+
       bindPageAction();
     },
-    /**
-     * 页顶那一行里的「页面小件」（class="count-badge"）。
-     *
-     * ⚠️ 各集子页**不再用它挂已读进度牌**（Issue #147）：那一枚先挪去详情页的
-     *    状态栏，后来连状态栏那一枚也一起撤了；页顶同样一个读数都没有。
-     *    这个口子留给**页顶确实需要一枚读数**的场合 —— 当下没有页面用它，能力保留。
-     * 小件**不是** chrome.js 渲染的
-     * （它是各页自己挂在顶栏里的「页面小件」，见 renderBar），
-     * 所以这里只提供「取到那一枚」与「整行重绘后别丢」两件事：
-     *   · 取：返回页顶那条顶栏里的 .count-badge（没有就 null）；
-     *   · 保：整行重绘会把小件出栈再插回，调用方不必自己搬。
-     * 页面自己设文案与 textContent，chrome.js 不猜它的口径。
-     */
+
     badge: function () {
       var bar = document.querySelector(".app > .topbar") || document.querySelector(".topbar");
       if (!bar) return null;
       var el = bar.querySelector(":scope > .count-badge");
       if (el) return el;
-      // 还没有：造一枚插到品牌区之后、动作位之前（与 renderBar 的插回位置同一处）
+
       el = document.createElement("span");
       el.className = "count-badge";
       var act = firstActAnchor(bar);
@@ -817,16 +477,9 @@
       else bar.appendChild(el);
       return el;
     },
-    /** 打开设置（页签与顶栏按钮共用） */
+
     openSettings: openSettings,
-    /**
-     * 改第一行的页名（默认取 body 上的 data-page）。
-     *
-     * 给课外阅读入口页用：它把某一部的索引**就地**铺上来时，页顶那一行
-     * 要跟着换成那一部的名字（「课外阅读」→「唐诗三百首」，见 js/library.js）。
-     * 不传 / 传空串就还回 body 上的 data-page。
-     * 只改这一行，不动 DOM 里的其它东西；页名是纯文本，走 textContent，不拼 HTML。
-     */
+
     setPage: function (name) {
       pageOverride = name == null ? "" : String(name);
       var bars = readBars();
@@ -835,16 +488,7 @@
         if (el) el.textContent = pageTitle();
       });
     },
-    /**
-     * 重画页面那条顶栏（`poem_profile_v1` 改了之后调用）。
-     *
-     * ⚠️ Issue #209 之后顶栏上**已经没有头像**了（「所有页面右上角的头像全部删除」），
-     *    所以这个名字叫 refreshUser 的口子当下不做任何「重画头像」的事 ——
-     *    保留它是给**页面**留一条「档案改了，把页面那条顶栏重绘一次」的路
-     *    （js/settings.js 改昵称后仍在调它），实现退化成一次空重绘。
-     *    刻意**不删**：删掉会让调用方多一处 `if (SiteChrome.refreshUser)` 分支，
-     *    而那几处调用本身没有错。
-     */
+
     refreshUser: function () {
       readBars().forEach(function (bar) {
         if (isReaderBar(bar)) return;

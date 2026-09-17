@@ -1,26 +1,3 @@
-/**
- * 账号接线专项测试（Issue #132 · 2 期「补洞 + 2A」）
- * ==========================================================================
- * 1A/1B 把服务端建好了，但前端有**两根线一直没接**：
- *
- *   ① `GET /api/me` 从没有页面调用过 —— 服务端判定的层级与角色
- *      因此没有下发到界面，Pro/Max 的唯一合法挂载点空着。
- *   ② `DELETE /api/account` 写好了但没人调 —— 个人中心注销时走的仍是
- *      本机内核那个版本，**云端那一行还在**（合规问题，删除权）。
- *
- * 这一层守的就是这两条接线，以及接线时必须守住的四条边界：
- *   1. 失败不打断任何事（断网 / 503 / 401 / 超时，一律只是「这一轮没问成」）
- *   2. 不假装（拉不到就说「本机登记」，不许说成「服务器判定」）
- *   3. 不清用户数据（拉不到 `/api/me` **不删**本机那份层级缓存）
- *   4. 不做无谓请求（没登录一个请求都不发；同会话只问一次）
- *
- * 另加两条结构口径：
- *   · 平台口径的唯一性：页面不许自己 `fetch("/api/me")`、
- *     不许自己读 Cookie、不许自己写 `poem_plan_v1`
- *   · `/api/me` 必须真的下发 `role`（否则「服务端角色优先」只是注释）
- *
- * 跑法：`node test/account-bind.test.js`（纯 Node + 假 fetch，不联网、不装依赖）
- */
 "use strict";
 
 const fs = require("fs");
@@ -32,19 +9,12 @@ let fails = 0;
 const chk = (c, m) => { if (!c) { console.log("✗ " + m); fails++; } else console.log("✓ " + m); };
 const eq = (a, b, m) => chk(a === b, m + "（实际 " + JSON.stringify(a) + "）");
 
-/* ------------------------------------------------------------------ 装配 */
-
 const E = require(path.join(ROOT, "js/entitlement.js"));
 const A = require(path.join(ROOT, "js/auth-core.js"));
 const M = require(path.join(ROOT, "js/account-api.js"));
 
-/* ⚠️ 必须显式对接：`identity()` 要从会话里取账号，靠的就是这个显式注入，
-   不是「读完两个文件就自动连上」。少这一步的症状正是「盘上明明有会话、
-   盘上明明有 Pro，却永远判成没登录」—— 与 test/entitlement.test.js
-   里那条跨 realm 的坑同源（也是这一轮「补洞」最该防的假绿）。 */
 E.setAuthCore(A);
 
-/** 内存存储：够用即可，测的是回落行为不是浏览器兼容 */
 function mem(init) {
   const m = Object.assign({}, init || {});
   return {
@@ -55,7 +25,6 @@ function mem(init) {
   };
 }
 
-/** 造一个「有会话」的盘（并返回 store） */
 function signedInStore(backing, email) {
   const store = A.makeStore(backing);
   const r = A.requestCode(store, { channel: "email", value: email || "zhangmin@163.com" }, "login", { code: "246810" });
@@ -64,7 +33,6 @@ function signedInStore(backing, email) {
   return { store, mask: v.account.identities[0].mask };
 }
 
-/** 假通道：直接给 /api/me 与 DELETE /api/account 的答案 */
 function fakeApi(answers) {
   const a = answers || {};
   const calls = [];
@@ -75,22 +43,17 @@ function fakeApi(answers) {
       calls.push("delete");
       return Promise.resolve(a.del || { ok: false, code: "E_OFFLINE" });
     },
-    /* 2.2 权威发放的三条。**故意不并进上面两条的闸**（见 account-api.js 的
-       `grantChannel()`）：老缓存里的旧 AuthApi 没有它们，那不该让 refreshMe 失效。 */
+
     grant: function (input) { calls.push("grant"); return Promise.resolve(a.grant || { ok: false, code: "E_OFFLINE" }); },
     revoke: function (input) { calls.push("revoke"); return Promise.resolve(a.revoke || { ok: false, code: "E_OFFLINE" }); },
     grants: function () { calls.push("grants"); return Promise.resolve(a.grants || { ok: false, code: "E_OFFLINE" }); }
   };
 }
 
-/** 只有 me / deleteAccount 的旧通道（**没有** admin 三条）—— 用来钉住「不相关的新功能
-    不许废掉既有功能」这条。 */
 function legacyApi(answers) {
   const full = fakeApi(answers);
   return { calls: full.calls, me: full.me, deleteAccount: full.deleteAccount };
 }
-
-/* ==================================================================== 一 */
 
 async function main() {
 
@@ -110,16 +73,14 @@ async function main() {
     eq(id.tier, "pro", "服务端判定的 pro 真的落到了权益层（「补洞」那一件）");
     eq(id.label, "Pro", "徽章文案跟着变");
     eq(id.tierSource, "server", "层级来源标成「服务器判定」（不标的话本机那份会被读成权威）");
-    /* ⚠️ 「Pro 能力真的开了」用**题库复习**来验，不用飞花令 ——
-       用户 2026-09-17 的裁决（Issue #159）把飞花令上收到了 Max，
-       这里判的是「服务端那份 pro 落没落到权益层」，与哪一条能力归哪一层无关。 */
+
     eq(E.can("quiz.review", id.ctx).ok, true, "于是 Pro 能力真的开了（题库复习）");
     eq(E.can("feihualing", id.ctx).ok, false, "而 Max 的飞花令没跟着开（层级没被抬高）");
   }
 
   console.log("\n=== 二、角色（role）也是服务端优先，本机兜底只在没有服务端答案时生效 ===");
   {
-    // 本机「谁打开谁是主人」的兜底：全新盘 → owner
+
     const b1 = mem();
     const a1 = M.bind({ api: fakeApi({ me: { ok: true, plan: { tier: "free" }, role: "user" } }), E: E, A: A, backing: b1 });
     const { store: s1 } = signedInStore(b1);
@@ -128,7 +89,6 @@ async function main() {
     eq(E.identity({ backing: b1, authStore: s1 }).role, "user",
       "服务端说 role=user 时，本机那个「谁打开谁是主人」的兜底让位（否则清空存储就能当管理员）");
 
-    // 反过来：服务端说 owner，本机标记是 member
     const b2 = mem({ [E.OWNER_NS]: "member" });
     const a2 = M.bind({ api: fakeApi({ me: { ok: true, plan: { tier: "free" }, role: "owner" } }), E: E, A: A, backing: b2 });
     const { store: s2 } = signedInStore(b2);
@@ -136,7 +96,6 @@ async function main() {
     await a2.refreshMe();
     eq(E.identity({ backing: b2, authStore: s2 }).role, "owner", "服务端说 owner 时以服务端为准（两向都验）");
 
-    // role 与 tier 正交：管理员不是 VIP
     const id = E.identity({ backing: b2, authStore: s2 });
     eq(id.role, "owner", "管理员身份成立");
     eq(id.tier, "free", "…但层级仍是 free —— 店长不是 VIP（不许折叠成一条轴）");
@@ -144,7 +103,7 @@ async function main() {
 
   console.log("\n=== 三、没登录：一个请求都不发 ===");
   {
-    const b = mem();                                  // 空盘 = 没会话
+    const b = mem();
     const fake = fakeApi({});
     const api = M.bind({ api: fake, E: E, A: A, backing: b });
     const r = await api.refreshMe();
@@ -157,7 +116,7 @@ async function main() {
   {
     const b = mem();
     const { store } = signedInStore(b);
-    E.writeTier(b, "pro");                            // 本机登记了一份 pro（管理员发的）
+    E.writeTier(b, "pro");
     const api = M.bind({ api: fakeApi({ me: { ok: false, code: "E_NOT_CONFIGURED" } }), E: E, A: A, backing: b });
     const r = await api.refreshMe();
     eq(r.reason, M.REASON.NOT_CONFIGURED, "reason 是 not-configured（与「连不上」分开说）");
@@ -176,7 +135,7 @@ async function main() {
     eq(r.ok, false, "连不上时 refreshMe 回 ok:false（不抛）");
     eq(r.reason, M.REASON.UNAVAILABLE, "reason 是 unavailable");
     eq(E.readTier(b), "max", "本机那份层级仍然在（**边界第 3 条**：不清用户数据）");
-    // 没有通道（老 WebView 连 fetch 都没有）
+
     const api2 = M.bind({ api: null, make: null, E: E, A: A, backing: b });
     const r2 = await api2.refreshMe();
     eq(r2.reason, M.REASON.NOT_CONFIGURED, "连通道都造不出来时按「未开放」处理，不抛");
@@ -186,7 +145,7 @@ async function main() {
   {
     const b = mem({ "poem_recite_progress_v1": JSON.stringify({ p1: { level: 3 } }) });
     const { store, mask } = signedInStore(b);
-    E.putGrant(b, { emailMask: mask, tier: "pro" });        // 本机发放名单
+    E.putGrant(b, { emailMask: mask, tier: "pro" });
     const api = M.bind({ api: fakeApi({ me: { ok: true, plan: { tier: "pro", until: null }, role: "owner" } }), E: E, A: A, backing: b });
     await api.refreshMe();
     eq(E.readServerTier(b), "pro", "服务端那份先落下来了");
@@ -203,7 +162,7 @@ async function main() {
   console.log("\n=== 七、只清服务端那一份：本机发放名单不许被退出登录抹掉 ===");
   {
     const b = mem();
-    E.writeTier(b, "free");                              // 本机登记（无 source）
+    E.writeTier(b, "free");
     const api = M.bind({ api: fakeApi({}), E: E, A: A, backing: b });
     eq(api.clearServerTier(), false, "没有服务端那一份时 clearServerTier 什么都不做（返回 false 如实）");
     eq(E.readTier(b), "free", "本机那一份仍在");
@@ -236,7 +195,7 @@ async function main() {
       me: () => Promise.resolve({ ok: false, code: "E_NO_SESSION" }),
       deleteAccount: function () {
         order.push("remote");
-        /* 服务端那一步要会话 Cookie —— 用「本机会话还在不在」来断言顺序 */
+
         const still = !!A.session(A.makeStore(b));
         return Promise.resolve({ ok: true, export: { recs: [{ id: "p1" }], still: still } });
       }
@@ -317,20 +276,19 @@ async function main() {
     chk(/role:/.test(pub), "publicAccount 下发 role（2 期「补洞」之前这条链路是断的）");
     chk(/"owner", "admin", "user"/.test(pub) || /\["owner", "admin", "user"\]/.test(pub),
       "role 取值做过白名单校验（脏值一律回落 user）");
-    const meJs = read("api/_routes/me.js");
-    chk(/role/.test(meJs), "/api/me 的注释里写明会下发 role");
+
+    const coreSrc2 = read("api/_lib/core.js");
+    const meStart = coreSrc2.indexOf("function me(deps)");
+    const meFn = coreSrc2.slice(meStart, coreSrc2.indexOf("\n}\n", meStart) + 3);
+    chk(/publicAccount\(cfg, acc\)/.test(meFn),
+      "/api/me 的响应体由 publicAccount() 产出 —— role 因此随 /api/me 一起下发");
   }
 
   console.log("\n=== 十五、结构：接线层进了预缓存，三张页都加载了它 ===");
   {
     const sw = read("sw.js");
     chk(sw.indexOf('"./js/account-api.js"') >= 0, "sw.js 预缓存里有 js/account-api.js");
-    /* plans/index.html 是 2.1 新增的接线页：它问 `/api/me` 只为一件事 ——
-       「关于这些层级」那一段得如实说清层级**是谁定的**。 */
-    /* ⚠️ 顺序按 **<script> 标签的位置**比，不按子串第一次出现比：
-       页面顶部的 HTML 注释里就会写「层级徽章读 js/entitlement.js」，
-       拿 indexOf 比会命中那条注释（Issue #163 换头像那一轮实测踩到过：
-       把 avatar 的脚本挪到 entitlement 之前，注释里的字样反而让断言假绿）。 */
+
     const at = (src, file) => {
       const m = src.match(new RegExp('<script src="\\/?' + file.replace(/[./]/g, "\\$&") + '"><\\/script>'));
       return m ? src.indexOf(m[0]) : -1;
@@ -345,7 +303,7 @@ async function main() {
       chk(ent >= 0 && ent < aApi,
         f + " 里 entitlement 排在 account-api 之前（要先把权益层装上）");
     });
-    // 预缓存清单里的路径都得真实存在
+
     const list = [...sw.matchAll(/"(\.\/[^"]+)"/g)].map(m => m[1]);
     const missing = list.filter(u => {
       if (u === "./") return false;
@@ -360,9 +318,7 @@ async function main() {
 
   console.log("\n=== 十六、真页面：注销真的发出 DELETE，云端那一份给到用户（jsdom） ===");
   {
-    /* 这一节是整层里**唯一看得见「只在真页面上才炸」那类坑的地方**：
-       接线层自身的单元测试全绿，而页面里可能根本没加载它、脚本顺序错、
-       或者点了按钮没接上。jsdom 缺席时整节跳过（与别层同口径）。 */
+
     let JSDOM = null;
     try { JSDOM = require("jsdom").JSDOM; } catch (e) { JSDOM = null; }
 
@@ -380,7 +336,6 @@ async function main() {
       chk(!!sess, "用例里的登录建立成功");
       okLine(doc.getElementById("account-list").textContent, "层级那一行如实标注来源");
 
-      /* 点注销：先「我要注销」，再重输邮箱，最后确认 */
       doc.getElementById("btn-delete-start").click();
       eq(doc.getElementById("delete-step-2").hidden, false, "两步确认：第二步露出来了");
       doc.getElementById("input-delete-email").value = "zhangmin@163.com";
@@ -398,11 +353,7 @@ async function main() {
 
   console.log("\n=== 十七、2.2 权威发放：只送服务端、四种失败各说各的话、绝不拿本机名单顶替 ===");
   {
-    /* 这一节守的是 2.2 那条接线的**边界**：
-       发放是本项目第一条「能改别人数据」的写接口，前端这层**不判权限** ——
-       但每一条失败都必须如实分开说，且**绝不回落成「本机名单发放」**。 */
 
-    // ① 没登录：一个请求都不发
     {
       const b = mem();
       const fake = fakeApi({});
@@ -413,7 +364,6 @@ async function main() {
       eq(fake.calls.length, 0, "没登录时**一个请求都不发**");
     }
 
-    // ② 发成功：参数原样送到，回执如实带回
     {
       const b = mem();
       const { store, mask } = signedInStore(b);
@@ -425,7 +375,6 @@ async function main() {
       eq(fake.calls.join(","), "grant", "只调了 grant 一条");
     }
 
-    // ③ **命中 0 条**：不是失败 —— ok:true + changed:false
     {
       const b = mem();
       signedInStore(b);
@@ -436,7 +385,6 @@ async function main() {
       eq(r.changed, false, "changed 为 false —— 界面上据此说「对方还没登录过」，不说「发放失败」");
     }
 
-    // ④ 403：服务端明确回绝，**不是降级**，原样把服务端的话带上去
     {
       const b = mem();
       signedInStore(b);
@@ -449,11 +397,10 @@ async function main() {
       eq(r.message, "这一条只对管理员开放", "文案直接用服务端那句，不自己改写一份");
     }
 
-    // ⑤ 连不上：说清「这一轮没发出任何东西」，且**不碰本机名单**
     {
       const b = mem();
       const { store, mask } = signedInStore(b);
-      E.putGrant(b, { emailMask: mask, tier: "free" });           // 本机名单里有一条
+      E.putGrant(b, { emailMask: mask, tier: "free" });
       const boom = { me: () => Promise.reject(new Error("down")), deleteAccount: () => Promise.reject(new Error("down")),
         grant: () => Promise.reject(new Error("down")), revoke: () => Promise.reject(new Error("down")), grants: () => Promise.reject(new Error("down")) };
       const api = M.bind({ api: boom, E: E, A: A, backing: b });
@@ -465,7 +412,6 @@ async function main() {
       eq(E.readGrants(b).grants[0].tier, "free", "也没有被改（发放失败不该有任何副作用）");
     }
 
-    // ⑥ 服务端没配好：503 → not-configured，界面据此提示可以用本机那份兜底
     {
       const b = mem();
       signedInStore(b);
@@ -475,7 +421,6 @@ async function main() {
       eq(r.reason, M.REASON.NOT_CONFIGURED, "reason 是 not-configured（与「连不上」分开说）");
     }
 
-    // ⑦ 老缓存里的旧通道（没有 grant）：如实回 no-channel，**且不影响 refreshMe**
     {
       const b = mem();
       signedInStore(b);
@@ -489,7 +434,6 @@ async function main() {
       eq(E.readServerTier(b), "pro", "…而且服务端那份判定照旧落盘");
     }
 
-    // ⑧ 三条路径都走接线层（同一组边界）
     {
       const b = mem();
       signedInStore(b);
@@ -517,19 +461,16 @@ async function main() {
       chk(!!w.AccountApi, "/admin/ 里 AccountApi 挂在 window 上（接线层真的被加载了）");
       chk(!!w.AuthCore.session(w.AuthCore.makeStore(w.localStorage)), "用例里的登录建立成功");
 
-      /* 两份名单**两块不同的卡**，各有各的列表 */
       eq(doc.getElementById("server-card").hidden, false, "服务端那一块渲染出来了");
       eq(doc.getElementById("list-card").hidden, false, "本机那一块也渲染出来了");
       await sleep(60);
 
-      /* 服务端名单来自**接口**，不是本机存储 */
       const srv = doc.getElementById("server-list").textContent;
       chk(/s\*\*\*@qq\.com/.test(srv), "服务端名单渲染的是**接口回的**那条掩码（实际：" + srv.replace(/\s+/g, " ").slice(0, 80) + "）");
       const local = doc.getElementById("grant-list").textContent;
       chk(/l\*\*\*@qq\.com/.test(local), "本机名单渲染的是**本机存储**的那一条（两份分开）");
       chk(!/s\*\*\*@qq\.com/.test(local), "本机那一块里**没有**服务端那条（两块不混）");
 
-      /* 发放：填表 → 点「发放到服务端」 → 真的发了 POST，且不再多看一眼本机名单 */
       doc.getElementById("input-mask").value = "x***@qq.com";
       doc.getElementById("btn-grant").click();
       await sleep(60);
@@ -539,7 +480,6 @@ async function main() {
       eq(page.calls.grantBody.emailMask, "x***@qq.com", "带上填的掩码（表单读法只有一份）");
       okLine(doc.getElementById("msg-grant").textContent, "发放成功的回执如实说出「已写进服务端」");
 
-      /* 「只发到本机名单」：一条网络请求都不发，本机名单多一条 */
       const before = page.calls.count;
       doc.getElementById("input-mask").value = "y***@qq.com";
       doc.getElementById("btn-grant-local").click();
@@ -548,7 +488,6 @@ async function main() {
       chk(/y\*\*\*@qq\.com/.test(doc.getElementById("grant-list").textContent),
         "本机名单多了一条（那条路仍然是可用的降级）");
 
-      /* 收回：服务端名单里那颗按钮真的发 DELETE */
       const revokeBtn = doc.querySelector('#server-list button[data-revoke]');
       chk(!!revokeBtn, "服务端名单每行有一颗「收回」");
       revokeBtn.click();
@@ -563,24 +502,13 @@ async function main() {
   console.log("🎉 账号接线测试全部通过");
 }
 
-/* ------------------------------------------------------- 真页面（jsdom） */
-
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-/** 一句「文案里必须有某个意思」的软断言（找不到就把实际值打出来，便于定位） */
 function okLine(text, what) {
   const t = String(text || "");
   chk(t.length > 0, what + "：" + t.replace(/\s+/g, " ").slice(0, 120));
 }
 
-/**
- * 起一张真页：按 HTML 里声明的顺序执行本地脚本，
- * 并把 `fetch` 换成假的（想让它成功就给数据，想让它挂就 reject）。
- *
- * ⚠️ 假 fetch 必须**活得比页面久**：页面里的 `refreshMe()` 是被 promise 链
- *    驱动的，冲掉太早会得到「什么都没发生」的假绿。所以这里把调过的次数与
- *    方法名都记在返回的对象上，供用例断言。
- */
 async function bootPage(rel, url, answers) {
   const JSDOM = require("jsdom").JSDOM;
   const html = read(rel);
@@ -604,11 +532,10 @@ async function bootPage(rel, url, answers) {
     if (!src) return;
     const p = path.join(ROOT, src.replace(/^\//, ""));
     if (!fs.existsSync(p)) return;
-    /* 页面脚本自身的问题在别的层里报，这里只管接线那一块 */
+
     try { w.eval(fs.readFileSync(p, "utf8")); } catch (e) { }
   });
 
-  /* 内核之间显式对接（`identity()` 要从会话里取账号，靠的就是这一下） */
   if (w.Entitlement && w.Entitlement.setAuthCore) w.Entitlement.setAuthCore(w.AuthCore);
 
   if (w.AuthCore) {
@@ -621,13 +548,6 @@ async function bootPage(rel, url, answers) {
   return { window: w, doc: w.document, calls: calls };
 }
 
-/**
- * 起一张**真的 /admin/ 页**：脚本按 HTML 里的顺序执行，`fetch` 换成假的。
- *
- * 这一张页与别的页不同：它要**同时**看得见两份名单 ——
- * 一份来自接口（服务端），一份来自本机存储。因此这个用例的假 fetch
- * 必须按路径分别作答，并且把「发了什么」全记下来供断言。
- */
 async function bootAdminPage() {
   const JSDOM = require("jsdom").JSDOM;
   const html = read("admin/index.html");
@@ -673,7 +593,6 @@ async function bootAdminPage() {
   });
   if (w.Entitlement && w.Entitlement.setAuthCore) w.Entitlement.setAuthCore(w.AuthCore);
 
-  /* 本机那一份名单里先放一条（与服务端那条**掩码不同**，才能验「两块不混」） */
   if (w.Entitlement) {
     w.Entitlement.putGrant(w.localStorage, { emailMask: "l***@qq.com", tier: "pro" });
   }
@@ -687,7 +606,6 @@ async function bootAdminPage() {
   return { window: w, doc: w.document, calls: calls };
 }
 
-/** 一个「像 Response」的东西：被测代码只用到 status / ok / headers / text() */
 function jsonRes(status, body) {
   return {
     status: status, ok: status >= 200 && status < 300,
@@ -696,7 +614,6 @@ function jsonRes(status, body) {
   };
 }
 
-/** 造一个「像 Response」的东西：被测代码只用到 status 与 text() */
 function resOf(a) {
   if (!a) return { status: 503, text: () => Promise.resolve(JSON.stringify({ code: "E_NOT_CONFIGURED" })) };
   if (a.ok) return { status: 200, ok: true, text: () => Promise.resolve(JSON.stringify(a.body || {})) };

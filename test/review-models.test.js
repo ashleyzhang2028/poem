@@ -1,23 +1,3 @@
-/**
- * 复习调度算法（可切换）测试
- *
- * 需求（Issue #114 后续，用户原话）：
- *   「背诵功能增强，目前默认使用的是斯宾浩斯遗忘曲线，但市面上还有一些其他的……
- *     请帮忙研究有哪些是适用于古诗词和古文背诵的，应用到项目中，
- *     并且允许用户在设置页面进行切换。
- *     背诵页面现在的副标题是『按遗忘曲线复习』，以后用户选择哪种，就显示哪种，
- *     例如『按 SM-2 复习』，或者『按 FSRS 复习』」
- *
- * 这一层验五件事：
- *   1. 模型注册表：四张模型（遗忘曲线 / Leitner / SM-2 / FSRS）齐备，
- *      出厂默认仍是遗忘曲线（**加法**，不是替换）；SM-17~20 明说不做；
- *   2. 每张模型的核心公式各自对得上（固定表 / 盒号 / EF / R=2^(−t/S)）；
- *   3. 三条评价语义跨模型一致（good 推进、fuzzy 12 小时、bad 30 分钟 + 计一次遗忘）；
- *   4. 换模型**不清进度**：adopt() 换算后 level / learned / reviewCount 一条不丢，
- *      且换算出的状态是新模型认得的（换个模型接着背，不是从头再来）；
- *   5. 设置页能切、切换真的写进设置并把已有进度换算过去；
- *      首页副标题跟着当前算法变（「按 FSRS 复习」这类）。
- */
 const { JSDOM } = require('jsdom');
 const fs = require('fs');
 const vm = require('vm');
@@ -28,7 +8,6 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
 
 const DAY = 86400000;
 
-/* ================= 一、模型注册表与纯公式（vm，无 DOM） ================= */
 const sb = { window: {}, console };
 sb.window = sb;
 vm.createContext(sb);
@@ -48,11 +27,9 @@ chk(!RM.known('sm17') && !RM.known('sm20') && !RM.known('hlr'),
 chk(RM.known('') === false && RM.modelOf('不存在').key === 'ebbinghaus',
   '认不出来的键一律退回出厂默认（绝不返回 null）');
 
-/* 每张模型的「自我介绍」齐备：名字 / 副标题 / 出处 / 一句话取舍 */
 RM.keys().forEach(k => {
   const d = RM.describe(k);
-    // blurb 是「一句取舍」：精简后长度收到一句以内（> 8 字才叫说明，> 40 字就又是散文）。
-  // 长度上限那一半在 test/account-pages.test.js 的文案守卫里也钉了一遍。
+
   chk(d.name && d.sub && d.years && d.blurb.length > 8 && d.blurb.length <= 40,
     '「' + k + '」的说明齐备且只有一句（' + d.name + ' · ' + d.years + '）');
 });
@@ -62,7 +39,6 @@ chk(RM.subFor('ebbinghaus') === '按遗忘曲线复习' &&
   RM.subFor('leitner') === '按 Leitner 盒复习',
   '副标题就是「按 X 复习」那一句，四个模型各说各的');
 
-/* ---- 1. 遗忘曲线：固定间隔表，行为与旧实现逐条一致 ---- */
 chk(JSON.stringify(RM.EBBINGHAUS_INTERVALS) === JSON.stringify([0, 1, 2, 4, 7, 15, 30, 60, 120, 240]),
   '遗忘曲线的间隔表没被动过（0/1/2/4/7/15/30/60/120/240）');
 let eb = null;
@@ -75,7 +51,6 @@ const targetEb = (function () {
 chk(Math.abs(eb.nextReviewAt - targetEb) < 1000,
   '遗忘曲线：阶段 3 的下一次是 4 天后的 09:00（与旧实现同一个落点）');
 
-/* ---- 2. Leitner：答对往后挪一盒、答错退回第一盒 ---- */
 let ln = null;
 for (let i = 0; i < 3; i += 1) ln = S.review(ln, 'good', 'leitner');
 chk(ln.box === 3 && ln.algo === 'leitner',
@@ -91,7 +66,6 @@ chk(lnTop.box === 4, 'Leitner：盒号封顶在第 5 盒（box 最大 4，实际
 chk(RM.modelOf('leitner').stageName(ln) === '4 号盒 · 8 天后',
   'Leitner 的阶段名说「几号盒 · 几天后」（实际「' + RM.modelOf('leitner').stageName(ln) + '」）');
 
-/* ---- 3. SM-2：EF 公式、间隔 × EF、3 分算通过 ---- */
 const sm2 = RM.modelOf('sm2');
 chk(sm2.DEFAULT_EF === 2.5 && sm2.MIN_EF === 1.3, 'SM-2 的出厂 EF 2.5、下限 1.3（原版口径）');
 chk(Math.abs(sm2.efAfter(2.5, 5) - 2.6) < 1e-9, 'SM-2：质量 5 → EF +0.1（实际 ' + sm2.efAfter(2.5, 5) + '）');
@@ -112,7 +86,6 @@ const smFuzzy = S.review(sm, 'fuzzy', 'sm2');
 chk(smFuzzy.interval === sm.interval && smFuzzy.ef < sm.ef,
   'SM-2：「模糊」算通过但 EF 下调（间隔不动、EF ' + sm.ef + '→' + smFuzzy.ef + '）');
 
-/* ---- 4. FSRS 简化版：R = 2^(−t/S)、间隔由 S 推、D 随对错升降 ---- */
 const fsrs = RM.modelOf('fsrs');
 chk(Math.abs(fsrs.retrievability(10, 0) - 1) < 1e-9, 'FSRS：刚复习完 R=1');
 chk(Math.abs(fsrs.retrievability(10, 10) - 0.5) < 1e-9,
@@ -135,7 +108,6 @@ chk(fzBad.difficulty > fz.difficulty, 'FSRS：忘了 → 难度抬高');
 chk(/^稳定 [\d.]+ 天 · 难度 [\d.]+$/.test(fsrs.stageName(fz)),
   'FSRS 的阶段名说「稳定 N 天 · 难度 N」（实际「' + fsrs.stageName(fz) + '」）');
 
-/* ---- 5. 三条评价语义：跨模型一致 ---- */
 RM.keys().forEach(k => {
   const f = S.review(null, 'fuzzy', k);
   const bad = S.review(null, 'bad', k);
@@ -147,14 +119,12 @@ RM.keys().forEach(k => {
   chk(S.review(null, 'fuzzy', k).level === S.review(null, 'fuzzy', k).level,
     '「' + k + '」：模糊不推进「连续记住」的计数（不虚报掌握）');
 });
-/* 模糊 / 忘记不改动模型自己的状态 */
+
 const lnKeep = S.review(ln, 'fuzzy', 'leitner');
 chk(lnKeep.box === ln.box, 'Leitner：模糊不动盒号');
 const sm2Keep = S.review(sm, 'bad', 'sm2');
 chk(sm2Keep.ef <= sm.ef, 'SM-2：忘记时 EF 下调（判错）');
 
-/* ================= 二、换模型不清进度（adopt 的换算） ================= */
-/* 造一条「背到场次较深、还忘过两次」的真实进度 */
 let deep = null;
 for (let i = 0; i < 7; i += 1) deep = S.review(deep, 'good', 'ebbinghaus');
 deep = S.review(deep, 'bad', 'ebbinghaus');
@@ -172,7 +142,7 @@ RM.keys().forEach(k => {
     '换算到「' + k + '」复习次数与遗忘次数原样保留');
   chk(nw.level === before.level, '换算到「' + k + '」阶段号原样保留（掌握度那把尺子不变）');
 });
-/* 每张模型认自己那几个量 */
+
 const lnAdopt = RM.adopt(deep, 'leitner');
 chk(typeof lnAdopt.box === 'number' && lnAdopt.box >= 0 && lnAdopt.box <= 4,
   '换算到 Leitner 会给出合法盒号（实际 ' + lnAdopt.box + '）');
@@ -185,7 +155,7 @@ chk(typeof fzAdopt.stability === 'number' && fzAdopt.stability > 0 &&
   fzAdopt.difficulty > fsrs.params.initD,
   '换算到 FSRS 会给出稳定天数与偏高的难度（S=' + fzAdopt.stability +
   '、D=' + fzAdopt.difficulty + '）');
-/* 换算之后**接着背**：下一次复习是照着新模型算出来的，不是退回第一天 */
+
 RM.keys().forEach(k => {
   const nw = RM.review(RM.adopt(deep, k), 'good', k);
   const days = (nw.nextReviewAt - Date.now()) / DAY;
@@ -193,18 +163,15 @@ RM.keys().forEach(k => {
     Math.round(days * 10) / 10 + ' 天）—— 不是从头再来');
   chk(nw.reviewCount === before.reviewCount + 1, '「' + k + '」换算后复习次数接着往上加');
 });
-/* 换算不改原记录、不改「何时到期」 */
+
 chk(JSON.stringify(deep) === JSON.stringify(before), 'adopt() 不改动原记录（返回新对象）');
 chk(RM.adopt(deep, 'fsrs').nextReviewAt === before.nextReviewAt,
   '换算不动 nextReviewAt —— 用户已经排好的到期时间不该被顺手挪走');
-/* 未学过的记录换模型仍然保持未学 */
+
 const never = RM.adopt({ level: 0, learned: false, reviewCount: 0, lapses: 0 }, 'fsrs');
 chk(never.learned === false && never.level === 0,
   '从没背过的记录换算后仍是未学过（不会被算成学过）');
 
-/* ================= 三、页面层：设置页能切、副标题跟着变 =================
-   ⚠️ Issue #132 后续把设置拆成二级页：复习算法住在「背诵」页
-      （/settings/recite/），与「今天背哪几首」是同一件事。 */
 const settingsHtml = fs.readFileSync(path + 'settings/recite/index.html', 'utf8');
 const homeHtml = fs.readFileSync(path + 'index.html', 'utf8');
 
@@ -221,7 +188,6 @@ chk(hOrder.indexOf('js/review-models.js') < hOrder.indexOf('js/scheduler.js'),
 chk(hOrder.indexOf('js/review-models.js') < hOrder.indexOf('js/app.js'),
   '首页脚本顺序：review-models 先于 app（副标题要读它）');
 
-/* 起一个设置页，切一把算法 */
 class RepoLoader {
   constructor() { this._userAgent = 'jsdom-test'; this._strictSSL = true; this._proxy = undefined; }
   fetch(url) {
@@ -239,13 +205,7 @@ const sdom = new JSDOM(settingsHtml, {
   runScripts: 'dangerously', resources: new RepoLoader(), url: 'https://local.test/settings/recite/'
 });
 const sd = sdom.window.document;
-// ⚠️ jsdom 解析完 HTML 后会触发一次 DOMContentLoaded，但**那时脚本还没取回来**
-//    （`<script src>` 由 RepoLoader 异步取、取到才执行）。脚本自己会判断
-//    `document.readyState === "loading"` 再挂 DOMContentLoaded 监听 ——
-//    在那个时点上它确实是 loading，于是监听挂上了、之后谁都不再补事件，
-//    init() 永远不跑（表现正是「四张模型卡一张都没画出来」）。
-//    这里在脚本取完（readyState 变 complete）之后补一次事件，与各页手工注入
-//    脚本那一套的收尾是同一条路（见 test/ui.test.js 的 bootSettingsPage）。
+
 function bootSettled() {
   if (sd.readyState === 'loading') return setTimeout(bootSettled, 30);
   sd.dispatchEvent(new sdom.window.Event('DOMContentLoaded', { bubbles: true }));
@@ -271,7 +231,6 @@ function body() {
   chk([...opts].every(o => o.getAttribute('role') === 'radio'),
     '每张卡都是 role=radio（读屏能听出「四选一」）');
 
-  /* 切到 FSRS：设置写进去、间隔说明跟着换 */
   const before = sd.querySelector('#seg-algo [aria-checked="true"]').dataset.algo;
   sd.querySelector('#seg-algo [data-algo="fsrs"]').dispatchEvent(
     new sdom.window.Event('click', { bubbles: true }));
@@ -283,7 +242,6 @@ function body() {
     '「复习间隔」那一行跟着换成 FSRS 的口径（实际「' +
     sd.querySelector('#algo-interval').textContent + '」）');
 
-  /* 换算法时把已有进度换算过去（不清进度） */
   const prog = {};
   prog['xx1-01'] = { level: 5, learned: true, nextReviewAt: Date.now() + 3 * DAY,
     lastReviewAt: Date.now() - DAY, reviewCount: 6, lapses: 1, history: [], algo: 'ebbinghaus' };
@@ -301,7 +259,6 @@ function body() {
   chk(typeof after['xx1-01'].interval === 'number' && typeof after['xx1-01'].ef === 'number',
     '换算后带上 SM-2 自己的两个量（interval / ef）');
 
-  /* 首页副标题跟着当前算法走 */
   const homeDom = new JSDOM(homeHtml, {
     runScripts: 'dangerously', resources: new RepoLoader(), url: 'https://local.test/'
   });
@@ -316,7 +273,6 @@ function body() {
     chk(hd.body.getAttribute('data-sub').indexOf('遗忘曲线') === -1,
       '换成 FSRS 后不再写「遗忘曲线」');
 
-    /* 认不出来的算法键：界面与引擎都得落在出厂默认上，不能各说各的 */
     const wildDom = new JSDOM(homeHtml, {
       runScripts: 'dangerously', resources: new RepoLoader(), url: 'https://local.test/'
     });

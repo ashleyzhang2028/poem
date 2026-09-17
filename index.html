@@ -8,21 +8,17 @@
   <meta name="description" content="跬步：一年级至高三古诗词，按选定记忆算法安排复习。手机、平板、电脑都能用，可添加到主屏幕当 App。" />
   <meta name="format-detection" content="telephone=no" />
 
-  <!-- ===== iOS（苹果手机 / iPad）支持 ===== -->
-  <!-- 全屏运行：从主屏幕启动时不显示 Safari 地址栏 -->
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <!-- 状态栏样式：default 为白底黑字 -->
+
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <!-- 添加到主屏幕后的应用名 -->
+
   <meta name="apple-mobile-web-app-title" content="跬步" />
-  <!-- 兼容旧版 iOS -->
+
   <meta name="mobile-web-app-capable" content="yes" />
 
-  <!-- PWA 清单 -->
   <link rel="manifest" id="app-manifest" href="./manifest.webmanifest" />
   <link rel="icon" href="./icons/icon.svg" type="image/svg+xml" />
 
-  <!-- 主屏幕图标：覆盖 iPhone / iPad / iPad Pro 各代尺寸，缺尺寸会显示模糊截图 -->
   <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
   <link rel="apple-touch-icon" sizes="120x120" href="./icons/icon-120.png" />
   <link rel="apple-touch-icon" sizes="152x152" href="./icons/icon-152.png" />
@@ -31,29 +27,19 @@
 
   <link rel="stylesheet" href="css/style.css" />
 </head>
-<!-- data-sub 是**算法层缺席时**的兜底文案；正常显示什么由 js/app.js 按当前
-       背诵算法改写（「按遗忘曲线复习」/「按 SM-2 复习」/「按 FSRS 复习」……），
-       用户改算法后当场跟着换。这里不再写死某一种算法的名字。 -->
+
 <body data-nav="home" data-page="的古诗词" data-sub="按记忆曲线复习">
   <div class="app" id="app">
-    <!-- 顶部栏：由 js/chrome.js 统一渲染（logo + 跬步 + 页面名 + 动作位） -->
+
     <header class="topbar"></header>
 
-    <!-- 今日进度 -->
     <section class="card today-bar">
       <div class="today-left">
         <div class="today-title">今日背诵</div>
         <div class="today-sub" id="today-sub">共 5 首</div>
       </div>
       <div class="today-actions">
-        <!-- 朗读全部：把当天几首的标题、朝代、作者与正文依次读出来，不看屏幕也能听。
-             这一颗的 ▶ 与别处同一枚路径，只是两项数值随它这一档走（Issue #55 本轮）：
-               · stroke-width 1.5 —— 描在 24 的 viewBox 里、跟着一起缩放：
-                 1.5 × 17/24 ≈ 1.06px，就是屏幕上那 1px 的边框；
-               · 图标框 17px（css/style.css 的 --today-btn-inner）—— 三角每边比
-                 上一轮的 14px 框再加长一档。
-             这两项的换算过程都写在 css/classic.css 顶部那张表里，改前先看它。
-             别单独调这里的 path：三角的「1px 描边」是描边值与图标框的一对比例。 -->
+
         <button class="today-read" id="today-read" data-on="0" aria-label="依次朗读今天要背的每一首" title="依次朗读今天要背的每一首">
           <span class="play-glyph" aria-hidden="true">
             <svg viewBox="0 0 24 24">
@@ -77,50 +63,8 @@
       </div>
     </section>
 
-    <!-- 今日 5 首列表。
-         ⚠️ Issue #209 后续（用户第二轮原话）：
-            「现在5首诗词各自是个卡片，但他们5个被一张卡片包住了，
-              我不需要这个包的卡片，直接列出5个卡片！」
-
-            这里原先（Issue #163 第四轮起）套着一层 `<section class="card
-            today-list" id="today-card">`，理由写在当时那段注释里：
-            宽屏上今日这 5 条要排成两列，裹一张纸才看得出「这是今天这一批」。
-            那条理由在**宽屏并排**那个前提下成立，而用户看的是手机 /
-            自己那一屏：他看到的是一张卡片把 5 张卡片包住 —— 多一层壳，
-            没有多一条信息（「今日背诵 共 5 首」那一条已经说了这是哪一批）。
-
-            于是把**这层壳撤掉**，`.list` 直接当 .app 的子元素，
-            5 条 .item 各自是一张纸（纸底 + 圆角 + 阴影仍是每条自己的，
-            与集子页、搜索页那些列表同款）——
-            首页从此真的只有两件事：一条进度、五张独立卡片。
-
-            ⚠️ 引擎一个字都没动：`id="today-list"` 仍在 `.list` 自己身上
-               （js/app.js 按这个 id 取容器），只是它的父元素从那张卡变成了 .app。
-            ⚠️ 撤掉的是**这层壳**，不是今日那 5 条：它们照旧按遗忘曲线排、
-               照旧各带播放键与掌握度条。 -->
     <div class="list" id="today-list"></div>
 
-    <!-- 自选背诵不在这里：导入 / 导出 / 改名 / 删除 / 整组移出 / 上移下移
-         都搬去了设置整页（/settings/ 的「我的清单」一组，Issue #114 第二条）。
-         首页是「今天背哪几首」的地方 —— 管理的那些键摆在这儿，
-         既与背诵无关，又每一条都带一颗「删除」「移出」，
-         翻到今日列表末尾容易误触。现在首页只留背诵本身。
-
-         为什么自选篇目仍会出现在首页：它们本来就跟课内 261 首一起
-         按遗忘曲线排每日任务（js/scheduler.js），排上了就混在今日列表里、
-         与课内那几首长得一样（出处那一栏写集子名）。所以「搬走」的只是
-         **管理入口**，不是这些篇目的背诵 —— 该背的照旧在今日列表里背。
-         两页读的是同一份 localStorage 键 poem_recite_collections_v1。 -->
-
-    <!-- 全部诗词（可折叠）
-         ⚠️ 这张卡 Issue #209 被我（CodeBuddy）误删了一轮：用户当时说
-            「背诵首页的5首诗词下面多了个大卡片」，指的是**今日那 5 条外面
-            包着的那张卡**，我判成了「本年级本学期全部诗词」这一张。
-            用户 2026-09-17 第二轮原话：「#210 搞错了 请把背诵首页的
-            「全部诗词」整张卡（折叠头 + 统计行 + 篇目列表）恢复！」
-
-            所以这里**原样恢复**（撤之前的 DOM 一字不差），另外那层误判的壳
-            在今日列表那边撤掉了（见上面那段注释）。 -->
     <section class="card all-section">
       <button class="collapse-head" id="btn-all">
         <span class="collapse-icon" aria-hidden="true">
@@ -132,9 +76,7 @@
         </span>
         <span id="all-label">本年级本学期全部诗词</span>
         <span id="all-count" class="badge">0</span>
-        <!-- 折叠箭头：空心描边三角（与列表右侧「›」同一套描边语言）。
-             收起时朝下、展开时朝上，由 .collapse-head.open 只旋转不换图，
-             笔画粗细和「›」一致，不再是实心 ▾ 那种另一套风格。 -->
+
         <span class="arrow" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
             <path d="M6.6 9.8 12 15.2l5.4-5.4" />
@@ -147,10 +89,8 @@
       </div>
     </section>
 
-    <!-- 版权 + 用户协议 / 隐私条款已挪到设置整页（/settings/）底部 -->
   </div>
 
-  <!-- 诗词详情弹层 -->
   <div class="modal" id="modal" hidden>
     <div class="modal-mask" data-close="1"></div>
     <div class="modal-box" role="dialog" aria-modal="true">
@@ -163,9 +103,7 @@
           <span id="m-grade" class="tag ghost"></span>
         </div>
       </div>
-      <!-- 阅读辅助工具条（第一行）：对齐 / 字号 / 注音
-           与小古文详情页同一套控件、同一顺序，用户在两个页面不用重新学一遍。
-           「已读」是小古文专有的进度标记，古诗词这边由「忘记 / 模糊 / 记住」承担，故不设。 -->
+
       <div class="reader-actions" id="m-actions-main">
         <div class="seg mini icon-seg" id="m-align-seg" role="group" aria-label="正文对齐方式">
           <button type="button" data-align="left" aria-pressed="false" title="左对齐" aria-label="左对齐">
@@ -189,12 +127,9 @@
           <button data-mode="all" aria-pressed="false">全文</button>
         </div>
       </div>
-      <!-- 阅读辅助工具条（第二行）：原文一个播放键 + 译文开关。
-           不用再并排放「原文 / 译文」两个朗读键 —— 译文展开后，
-           译文标题旁会出现它自己的那颗朗读键，一篇文章同时只看到一个播放信号。 -->
+
       <div class="reader-actions icon-row" id="m-actions-icons">
-        <!-- 原文：▶ 与 ⏸ 是同一个按钮的两种状态（播放中原地换成暂停），
-             绝不同时并排出现两个图标 -->
+
         <button type="button" class="mini-btn" id="m-read-btn" data-on="0" aria-pressed="false" title="朗读原文：标题、朝代、作者与正文">
           <span class="btn-icon play-glyph" aria-hidden="true">
             <svg viewBox="0 0 24 24"><path d="M8.4 6.1 18.3 12 8.4 17.9Z" fill="none" stroke="currentColor" stroke-width="1" stroke-linejoin="round" stroke-linecap="round" /></svg>
@@ -224,11 +159,11 @@
         </button>
       </div>
       <pre class="poem-text" id="m-text"></pre>
-      <!-- 白话译文：与小古文详情页同一套译文框 -->
+
       <section class="trans-box" id="m-trans" hidden>
         <div class="trans-head">
           <h3>白话译文</h3>
-          <!-- 译文朗读键：译文展开后才出现，只在译文标题这一处，不与原文键并排 -->
+
           <button type="button" class="trans-read" id="m-trans-read" data-on="0" aria-pressed="false" disabled title="朗读白话译文">
             <span class="btn-icon play-glyph" aria-hidden="true">
               <svg viewBox="0 0 24 24"><path d="M8.4 6.1 18.3 12 8.4 17.9Z" fill="none" stroke="currentColor" stroke-width="1" stroke-linejoin="round" stroke-linecap="round" /></svg>
@@ -240,7 +175,7 @@
           </button>
         </div>
         <p id="m-trans-text"></p>
-        <!-- 译文来源注脚：告诉用户这段白话直译是怎么来的，不做弹窗 -->
+
         <p class="trans-src" id="m-trans-src"></p>
       </section>
       <div class="modal-progress" id="m-progress"></div>
@@ -274,8 +209,6 @@
     </div>
   </div>
 
-  <!-- 导入 / 导出清单的纯文本对话框：与诗词弹层同一套 .modal（层级 80），
-       所以不会被底部页签（65）/ 播放栏（70）压住 -->
   <div class="modal text-modal" id="text-dialog" hidden>
     <div class="modal-mask" data-close="1"></div>
     <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="text-dialog-title">
@@ -295,7 +228,6 @@
   <input type="file" id="file-import" accept="application/json" hidden />
   <div class="toast" id="toast" hidden></div>
 
-  <!-- iOS「添加到主屏幕」引导条：仅 iPhone/iPad 且未安装时出现 -->
   <div class="ios-install-tip" id="ios-install-tip" hidden>
     <span class="ios-tip-icon" aria-hidden="true">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
@@ -321,55 +253,32 @@
   <script src="data/poems-11.js"></script>
   <script src="data/poems-12.js"></script>
   <script src="data/index.js"></script>
-  <!-- 同篇对照表 + 作品主表：判断「这篇是不是已经在别处背过了」。
-       两片都必须在 storage / scheduler / app 之前加载 ——
-       加自选集合时要按作品判重（课内《静夜思》与唐诗《夜思》是同一篇）。 -->
+
   <script src="data/works-map.js"></script>
   <script src="data/works-index.js"></script>
-  <!-- 分组顺序总表（卷次 / 词牌 / 文体）：页面与作品主表共用同一份顺序 -->
+
   <script src="data/group-order.js"></script>
-  <!-- 站点总索引：自选集合的快照刷新要用它认条目（也用它兜底判重）。
-       原先首页没加载它 —— app.js 那一串 `window.SITE_INDEX || []` 于是**静默为空**：
-       「加入背诵」时存不下快照、首页启动刷不了课内那几条，
-       表上都看不出来（现象是「自选那一篇在首页显示不出来」，而不是报错）。
-       文件本身只做拼装（六部数据在各自页面按需加载），在这里加载不增重。 -->
-  <!-- 正文存储主表：同一篇作品的正文 / 译文只落一份，各集子条目退化成只存归属
-       （textRef 指过来，见 data/text-master.js 文件头）。
-       须排在 js/reader-core.js 之前 —— 引擎挂载时就要按它取回正文。 -->
+
   <script src="data/text-master.js"></script>
   <script src="data/site-index.js"></script>
-  <!-- 正文收归主表：同一篇作品在几部集子里各存一份正文时，用主条目（课内优先）
-       那一份 —— 学生背的是课本上那一篇，在别的集子里读到同一篇不该是另一种写法。
-       由 scripts/build-canonical-texts.js 算出，必须在 js/reader-core.js 之前加载。 -->
+
   <script src="data/canonical-texts.js"></script>
   <script src="data/pinyin-table.js"></script>
   <script src="data/common-chars.js"></script>
   <script src="js/pinyin.js"></script>
-  <!-- 权益总闸：全站唯一的「能不能用某功能」出口。必须排在 speech.js 之前 ——
-       语音播放要求登录（free 即可用），判据由它出，speech.js 里那道门与它同源。 -->
-  <!-- 认证内核：会话是谁、邮箱码在哪台设备上验证过。纯逻辑、零网络，
-       与权益层一样属于「引擎」，不是页面。必须在 entitlement.js 之前 ——
-       identity() 要靠它读会话，顺序反了就永远判成游客。 -->
+
   <script src="js/auth-core.js"></script>
   <script src="js/entitlement.js"></script>
   <script src="js/speech.js"></script>
   <script src="js/reader.js"></script>
-  <!-- 自选集合（用户自己加背的篇目）：必须在 app.js 之前，
-       遗忘曲线排程要读它取候选池 -->
-  <!-- 分域引擎（Issue #132 阶段 0）：进度 / 账号 / 设备三域的唯一一份定义，
-       读法由 js/storage.js 转发。**必须排在 js/storage.js 之前** ——
-       缺了它 storage 只是退化成兜底读法，不会报错（那种「不报错的少数据」最难查）。 -->
+
   <script src="js/family.js"></script>
   <script src="js/progress-store.js"></script>
-  <!-- 同步层（Issue #132 · 1B）：进度 / 账号域设置 / 已读的跨设备同步。
-       必须在 js/storage.js 之前 —— 它的 touch() 要给每条记录打标，
-       而页面只认识 Storage/ProgressStore 这两个入口。 -->
+
   <script src="js/sync-store.js"></script>
   <script src="js/collections.js"></script>
   <script src="js/storage.js"></script>
-  <!-- 复习调度算法（可切换）：必须在 scheduler.js 之前 ——
-       scheduler.review() 一进来就转交给它（见 js/review-models.js 文件头）。
-       缺了它 scheduler 会退回到只认「遗忘曲线」那一套的旧行为。 -->
+
   <script src="js/review-models.js"></script>
   <script src="js/scheduler.js"></script>
   <script src="js/app.js"></script>

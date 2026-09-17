@@ -21,18 +21,7 @@
     <header class="topbar"></header>
 
     <main class="settings-page" id="settings-page">
-      <!-- ==================================================================
-           设置 · 通用（二级页）
-           ------------------------------------------------------------------
-           这一组是「全站都吃」的身份与数据设置：
-             · 用户名      账号域的展示名（古诗词与小古文共用）
-             · 头像        用户名首字，或自己传的一张图（本地压缩 + 裁切后上传）
-             · 子用户      一个家长多个孩子各背各的（进度 / 年级 / 已读分家）
-             · 账号        本机账号的登录状态 / 层级 / 权限，可退出
-             · 数据管理    导出备份 / 导入备份 / 清空进度
-           ⚠️ 与本页无关的控件（学段 / 范围 / 算法 / 连读 / 清单）在别页，
-              但都跑同一份 js/settings.js —— 它取不到某个 id 就跳过那一段。
-           ================================================================== -->
+
       <div class="settings-groups">
         <section class="settings-group">
 
@@ -46,14 +35,7 @@
 
           <div class="settings-item">
             <label>头像</label>
-            <!-- 头像两档（Issue #163 · 用户 2026-09-19 裁决）：
-                   ① 没传图 → 昵称的第一个字母 / 汉字（默认，一定画得出来）
-                   ② 传了图 → 那张图；**选文件 → 本地压缩 → 方形裁切 → 上传**
-                 上一版那套「固定字集 + 固定四色」整块删掉了 —— 用户原话
-                 「头像印记设置和传统用户头像流程不符，让人困惑，直接删除这个功能，
-                   四个颜色背景选择全部删除」。
-                 压缩与裁切在 js/avatar-image.js（本地 canvas，一个字节都不出去），
-                 上传在 js/account-api.js（先服务端、后本机）。见 docs/architecture.md §4.21。 -->
+
             <div class="avatar-row">
               <span id="avatar-slot" class="avatar-slot" aria-hidden="true"></span>
               <div class="avatar-acts">
@@ -61,24 +43,15 @@
                 <button class="btn ghost-btn" id="btn-avatar-clear" type="button" hidden>删除头像</button>
               </div>
             </div>
-            <!-- 文件选择框：**视觉上不存在**（.sr-only），点「上传图片」调它的 click()。
-                 ⚠️ 用真 <input type="file"> 而不是自绘一个：手机上它会直接给
-                    「拍照 / 从相册选」两个系统选项，自绘的拿不到这个（且拿不到文件）。
-                 ⚠️ 按钮与它**分开**（不是 <label for>）：那颗按钮要能按状态
-                    enable/disable（正在处理时），label 做不到。 -->
+
             <input id="avatar-file" class="sr-only" type="file" accept="image/*"
                    aria-label="选择头像图片" />
             <div class="settings-hint" id="avatar-hint"></div>
           </div>
 
-          <!-- 裁切层（Issue #163）：选完图就地铺上来，方形预览 + 拖动 + 缩放。
-               就地在同一页而不是另开一页：用户手上就一件事（把这张图框好），
-               换页会让他以为「刚才选的那张图没了」，而重选一次就是重新解码一张
-               几 MB 的大图。 -->
           <div class="crop-layer" id="crop-layer" hidden>
             <div class="crop-card" role="dialog" aria-modal="true" aria-label="裁切头像">
-              <!-- 方框：里面那张图按 view 缩放平移，被方框裁掉的部分看不见。
-                   用 CSS transform 而不是每帧重画 canvas —— 手机上后者在拖动时掉帧。 -->
+
               <div class="crop-box" id="crop-box">
                 <img class="crop-img" id="crop-img" alt="" />
                 <span class="crop-grid" aria-hidden="true"></span>
@@ -94,15 +67,7 @@
           </div>
 
           <div class="settings-item" id="family-item">
-            <!-- 家庭子用户（3 期 P1 · profile.family）：一个家长多个小孩，
-                 每个孩子各背各的。孩子**不建独立账号**（只是账号下的一个展示名），
-                 所以这里既没有「邀请」也没有「孩子登录」——只有一份名册 + 一个切换。
 
-                 ⚠️ 切换是**账号域**的事：换孩子 = 换一套进度 / 年级 / 已读
-                    （同一台平板上字号不会跟着变，那是设备域，见 js/family.js）。
-                 ⚠️ 名册为空时**不画**这一块（而不是画一个空框）：老用户升级后
-                    第一次进这一页，认领会把它变成「子用户 1」，界面上不出现
-                    一个「一个孩子都没有」的中间态。 -->
             <label>子用户</label>
             <div class="family-panel" id="family-panel"></div>
             <p class="settings-hint" id="family-hint"></p>
@@ -110,36 +75,12 @@
 
           <div class="settings-item">
             <label>账号</label>
-            <!-- 本机账号（/privacy/ 口径：只存在本机，不上传、不云同步）。
-                 层级徽章与权限清单读 js/entitlement.js，本页不自己拼 plan。 -->
+
             <div class="account-panel" id="account-panel"></div>
           </div>
 
           <div class="settings-item">
-            <!-- 跨设备同步：一行「左标签 · 右开关」，说明文字在开关下面一行。
 
-                 结构是**手机系统开关**那一路（Issue #163 第三轮）：
-                   · <input class=switch-input>  真实复选框 —— 键盘 / 读屏 / 原生 toggle 都走它，
-                                                画成 0 尺寸（不占位），只当状态与焦点用
-                   · <span class=switch-toggle>  可见的那颗轨道 + 滑块（滑块是它的 ::after）
-
-                 ⚠️ 滑块画在**轨道内部**（.switch-toggle 是 position:relative 的包含块）。
-                    上一版滑块是可以出现在 DOM 任何位置的 <span class=switch-track>，
-                    靠 absolute 定位去叠 —— 而它一路上没有非 static 祖先，于是以**文档**
-                    为坐标落在页面左上角（实测在屏幕外），用户看到的是一颗空药丸。
-                    现在轨道与滑块是同一个元素的「盒子 + ::after」，画不到一起去都难。
-                 ⚠️ 顺序不能反：CSS 用 `input:checked + .switch-toggle` 找轨道。
-                 ⚠️ 开关**出厂关着**（用户裁决：默认本地，docs §4.2 第 2 条）。
-                    关掉即完全退回 0 期行为：不发一个请求、不留一处云端痕迹。
-                 ⚠️ 它管的是「要不要把进度上传」—— 与「有没有登录」是两件事：
-                    没登录的人这一项按 signin 说明，不是按 off。
-                 ⚠️ **跨设备云同步是 Pro 起**（能力表 `sync.multiDevice`）。
-                    闸在 `js/sync-store.js` 的 `gate()`（界面这一层）**与**
-                    `/api/sync/push` / `/api/sync/pull` 的 `E_TIER`（真正的边界）两处。
-                    开关**不置灰**：点下去得到一句「Pro 起」，
-                    比一个点不动的东西更容易看懂差在哪。
-                 ⚠️ 标签是显式的 <span>，不用 <label for>：整行已由外层 <label> 包着，
-                    再套一层 for 会让「点一下文字」触发两次 toggle 又立刻翻回去。 -->
             <label class="switch">
               <span class="settings-label" id="switch-sync-name">跨设备同步</span>
               <input id="toggle-sync" class="switch-input" type="checkbox"
@@ -158,20 +99,6 @@
             </div>
                       </div>
 
-          <!-- 课内诗词整体导出（Pro）。
-               ⚠️ 这一块的口径被用户改过一次（2026-09-16，Issue #159）：
-                  原先能力表上写的是「全站批量导出（Max，含六部集子 1592 篇）」，
-                  用户点名不要那种「把站点内容整本拷走」的导出，
-                  只保留**学校课本部分**（课内 261 首），且门槛降到 **Pro**。
-               ⚠️ 按钮**不隐藏**：层级不够时点它得到的是「Pro 起」（与全站
-                  同一句 denyReason），把入口藏起来从来不是权限边界（docs §3.4）。
-               ⚠️ Issue #209：说明行**整行删掉**，按钮文案从「导出课内 261 首」
-                  收成「导出」—— 这一项自己的标题已经写着「课内诗词导出」，
-                  底下再写一遍「把课内 261 首（一年级至高三）整份导出成一个
-                  文本文件…」是同页两遍；层级不够时那一句「Pro 起，现在导出的是
-                  课内诗词，六部集子不做整本导出」也一并去掉。
-               ⚠️ 拦在**数据层**：范围表只认「课内」这一部（js/export-core.js 的
-                  SCOPES），按钮之外直接调用那一层也一样导不出集子。 -->
           <div class="settings-item">
             <label>课内诗词导出</label>
             <div class="settings-btns">
@@ -211,8 +138,6 @@
   <div class="toast" id="toast" hidden></div>
   <input type="file" id="file-import" accept="application/json" hidden />
 
-  <!-- 这一页只读**站点总索引**，不读五部集子的 4.4MB 语料。
-       data/text-master.js 必须排在 data/index.js 之前（课内条目只存 textRef）。 -->
   <script src="/data/text-master.js"></script>
   <script src="/data/poems-1.js"></script>
   <script src="/data/poems-2.js"></script>
@@ -229,46 +154,30 @@
   <script src="/data/index.js"></script>
   <script src="/data/site-index.js"></script>
 
-  <!-- 账号与权益：设置页的「账号」一项由它们出判据（顺序与全站一致） -->
   <script src="/js/auth-core.js"></script>
   <script src="/js/auth-api.js"></script>
   <script src="/js/entitlement.js"></script>
-  <!-- 账号接线层（Issue #132 · 2 期「补洞」）：/api/me 的下发只在它里面接一次。
-       本页据此把「当前层级」标成「服务器判定」或「本机登记」——
-       不标出来的话，本机登记那份会被读成权威判定（docs §3.4）。 -->
+
   <script src="/js/account-api.js"></script>
-  <!-- 分域引擎（Issue #132 阶段 0）：进度 / 账号 / 设备三域的唯一一份定义，
-       设置页的读法由 js/storage.js 转发。**必须排在 js/storage.js 之前**。 -->
-  <!-- 家庭子用户（3 期 P1）：**必须排在 progress-store 之前** ——
-       引擎按当前孩子拼键名（js/family.js 是唯一的拼接处），
-       顺序反了不会报错，只是永远读「没有后缀」那把老键，症状是「切换孩子后进度为空」。 -->
+
   <script src="/js/family.js"></script>
-  <!-- 头像两档（Issue #163）：js/avatar.js 画，js/avatar-image.js 本地压缩 + 裁切。
-       ⚠️ 三条顺序约束（都有断言钉着，别随手挪）：
-         · `js/family.js` 在 `js/avatar.js` **之前** —— avatar 会现取 Family
-           问「现在是哪个孩子」（顺序反了症状是「顶栏是小明的、设置页是小红的」）
-         · `js/avatar-image.js` 紧随其后（settings.js 现取它做压缩与裁切）
-         · `js/entitlement.js` 在 `js/account-api.js` 之前（接线层现取权益层） -->
+
   <script src="/js/avatar.js"></script>
   <script src="/js/avatar-image.js"></script>
 
   <script src="/js/progress-store.js"></script>
-  <!-- 同步层（Issue #132 · 1B）：进度 / 账号域设置 / 已读的跨设备同步。
-       必须在 js/storage.js 之前 —— 它要给每条记录打标（云端谁更新），
-       而页面只认识 Storage / ProgressStore 这两个入口。 -->
+
   <script src="/js/sync-store.js"></script>
   <script src="/js/storage.js"></script>
   <script src="/js/scheduler.js"></script>
-  <!-- 导出内核（纯逻辑，零 DOM）：课内 261 首整份导出成文本。
-       它**只认范围表**（SCOPES 里只有「课内」）—— 六部集子不做一次性整本导出，
-       是用户 2026-09-16 的裁决（Issue #159），那一条拦在内核里、不拦在按钮上。 -->
+
   <script src="/js/export-core.js"></script>
   <script src="/js/manifest-loader.js"></script>
   <script src="/js/play-modes.js"></script>
   <script src="/js/review-models.js"></script>
   <script src="/js/collections.js"></script>
   <script src="/js/settings.js"></script>
-  
+
   <script src="/js/chrome.js"></script>
   <script src="/js/pwa.js"></script>
 </body>

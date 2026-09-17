@@ -1,31 +1,12 @@
-/**
- * 家庭子用户专项测试（3 期 P1 · `profile.family`）
- * ==========================================================================
- * 用户原话（Issue #159）：「子用户 Max 180 个」。
- *
- * 这一件问的其实是**同一台设备上几套各自独立的背诵进度**，不是「多个昵称随便切」。
- * 所以这一层守五件事：
- *
- *   一、名册：增 / 改名 / 删 / 切换 / 上限，全部拦在**数据层**
- *   二、老用户零感知：`poem_profile_v1` 那份昵称 + 印被认领成第一个子用户，
- *       且**进度 / 设置 / 已读也一并搬过去**（不然升级后进度看着就空了）
- *   三、分家的边界：进度 / 账号域设置 / 已读**跟着孩子走**，设备域**不跟**
- *       （字号是设备的：给小红调了字号，切回小明不该变回去）
- *   四、拼键只有一处（`Family.keyFor`），各处不许自己拼 `::` 后缀
- *   五、上限与内核同源：Free 1 / Pro 3 / **Max 180**（两端逐字对拍）
- *
- * 跑法：`node test/family.test.js`（纯 Node，不联网、不装依赖）
- */
 const fs = require('fs');
 const path = __dirname + '/../';
-const nodePath = require('path');            // 上面那个 `path` 是仓库根前缀（沿用同目录其它测试的写法）
+const nodePath = require('path');
 const read = f => fs.readFileSync(path + f, 'utf8');
 
 let fails = 0;
 const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else console.log('✓ ' + m); };
 const eq = (a, b, m) => chk(a === b, m + '（实际 ' + JSON.stringify(a) + '）');
 
-/* 内存存储替身：形状与 localStorage 一致（含 raw()，好让认领那一步扫得出键名） */
 function mem(init) {
   const m = Object.assign({}, init || {});
   return {
@@ -36,12 +17,6 @@ function mem(init) {
   };
 }
 
-/**
- * 在一个干净的 window 上装 Family + Avatar + ProgressStore（顺序与页面一致）。
- *
- * ⚠️ progress-store 是挂在 `window` 上的单例，所以每个用例都要**清一次 require 缓存**
- *    —— 与 `test/sync.test.js` 同款。不清的话第二个用例拿到的还是上一个的存储。
- */
 function install() {
   global.window = global;
   ['family.js', 'avatar.js', 'progress-store.js'].forEach(f => {
@@ -53,7 +28,6 @@ function install() {
   return { F: global.Family, A: global.Avatar, PS: global.ProgressStore };
 }
 
-/** 装一套：注入内存存储，返回 {b, F, A, PS} */
 function sandbox(seed) {
   const b = mem(seed);
   const m = install();
@@ -61,9 +35,6 @@ function sandbox(seed) {
   return { b: b, F: m.F, A: m.A, PS: m.PS };
 }
 
-/* ==========================================================================
-   一、名册：增 / 改名 / 删 / 切换 / 上限
-   ========================================================================== */
 console.log('=== 一、名册：增 / 改名 / 删 / 切换 / 上限 ===');
 {
   const { F, b, PS } = sandbox();
@@ -75,7 +46,6 @@ console.log('=== 一、名册：增 / 改名 / 删 / 切换 / 上限 ===');
   const e2 = F.ensureDetailed({ backing: b });
   eq(e2.created, 0, 'ensure() 幂等：第二次不再建（否则每开一次页面多一个孩子）');
 
-  // 上限：拿不到 Entitlement 时不设限（宁可不判，也不误拦）
   eq(F.limit({ backing: b }), Infinity, '读不到 Entitlement 时不设限（与 collections 同一条兜底）');
 
   const E = t => ({ identity: () => ({ tier: t }) });
@@ -83,7 +53,6 @@ console.log('=== 一、名册：增 / 改名 / 删 / 切换 / 上限 ===');
   eq(F.limit({ backing: b, E: E('pro') }), 3, 'Pro：3 个');
   eq(F.limit({ backing: b, E: E('max') }), 180, 'Max：**180 个**（用户 2026-09-17 裁决）');
 
-  // Max 建到正好 180 就停
   let okCount = 0, limited = 0;
   for (let i = 0; i < 190; i++) {
     const r = F.create('k' + i, { backing: b, E: E('max') });
@@ -100,14 +69,12 @@ console.log('=== 一、名册：增 / 改名 / 删 / 切换 / 上限 ===');
   chk(!Object.keys(b.raw()).some(k => /再多一个/.test(b.raw()[k])),
     '被拦的那一条**一个字节都没写盘**（不是「写进去再删掉」）');
 
-  /* 改名：空名允许（与用户名同口径，界面回落「Ashley」）；不存在的 id 如实回 E_NOT_FOUND */
   const first = F.list({ backing: b })[0];
   eq(F.rename(first.id, '  小明  ', { backing: b }).ok, true, '改名成功（去首尾空白）');
   eq(F.current({ backing: b }).nickname, '小明', '改名落到那一条上');
   eq(F.rename(first.id, '', { backing: b }).ok, true, '空名允许（用户名那一栏同样允许留空）');
   eq(F.rename('f-不存在', 'x', { backing: b }).code, 'E_NOT_FOUND', '改一个不存在的 id：E_NOT_FOUND');
 
-  /* 切换：不存在的 id **拒绝**（不回落到第一条——那是静默改行为） */
   const secondId = F.list({ backing: b })[1].id;
   eq(F.select(secondId, { backing: b }).ok, true, '切到第二条：成功');
   eq(F.currentId({ backing: b }), secondId, '当前选中跟着换');
@@ -116,9 +83,6 @@ console.log('=== 一、名册：增 / 改名 / 删 / 切换 / 上限 ===');
 
 }
 
-/* ==========================================================================
-   二、删：最后一个不许删，且不动那一份进度
-   ========================================================================== */
 console.log('\n=== 二、删：最后一个不许删，且不动进度数据 ===');
 {
   const { F, PS, b } = sandbox();
@@ -134,7 +98,6 @@ console.log('\n=== 二、删：最后一个不许删，且不动进度数据 ===
   eq(F.count({ backing: b }), 1, '有两个时可以删掉一个');
   chk(!!PS.get('p1'), '删名册**不动进度数据**（误删还能当场看出来，连带清进度不可逆）');
 
-  /* 删掉「当前」那一个 → 自动落到第一条，而不是留一个悬空的 at */
   F.create('小红', { backing: b }).ok && F.select(F.list({ backing: b })[1].id, { backing: b });
   const curId = F.currentId({ backing: b });
   F.remove(curId, { backing: b });
@@ -142,9 +105,6 @@ console.log('\n=== 二、删：最后一个不许删，且不动进度数据 ===
     '删掉的正是当前那一个 → 当前选中落到剩下那一条（不留悬空 id）');
 }
 
-/* ==========================================================================
-   三、老用户零感知：昵称 + 印 + **进度 / 设置 / 已读** 一并认领
-   ========================================================================== */
 console.log('\n=== 三、老用户零感知：老档案与老数据一并认领 ===');
 {
   const b = mem({
@@ -157,7 +117,6 @@ console.log('\n=== 三、老用户零感知：老档案与老数据一并认领 
   const F = m3.F, PS = m3.PS;
   PS.useStore(b);
 
-  // 认领前：还没有子用户 → 引擎读老键（0 期行为一字不动）
   eq(PS.childId(), '', '认领前没有子用户（引擎按 0 期老键读）');
   eq(PS.get('tangshi-ts-1').level, 3, '认领前进度照常读得到（老用户不受影响）');
 
@@ -175,13 +134,11 @@ console.log('\n=== 三、老用户零感知：老档案与老数据一并认领 
   chk(!('poem_tangshi_read_v1' in b.raw()), '已读键也搬走（读没读过是孩子自己的事）');
   chk(Object.keys(b.raw()).some(k => /^poem_tangshi_read_v1::/.test(k)), '已读键搬到了带子用户后缀的那把');
 
-  /* 幂等：再认领一次不重复搬、也不把数据搬回去 */
   const keysAfter = Object.keys(b.raw()).slice().sort();
   F.ensure({ backing: b });
   eq(JSON.stringify(Object.keys(b.raw()).slice().sort()), JSON.stringify(keysAfter),
     '认领幂等：第二次不再动盘上任何一个键');
 
-  /* 老档案为空时也要认领出一个（否则「新建」的那套上限判断没有起点） */
   const b2 = mem();
   PS.useStore(b2);
   const d2 = F.ensureDetailed({ backing: b2 });
@@ -189,9 +146,6 @@ console.log('\n=== 三、老用户零感知：老档案与老数据一并认领 
   eq(d2.data.profiles[0].nickname, '', '认领出来的第一个昵称为空（界面回落「Ashley」）');
 }
 
-/* ==========================================================================
-   四、分家的边界：进度 / 设置 / 已读跟着孩子，设备域不跟
-   ========================================================================== */
 console.log('\n=== 四、分家的边界：谁跟着孩子走，谁不跟 ===');
 {
   const { F, PS, b } = sandbox();
@@ -200,19 +154,16 @@ console.log('\n=== 四、分家的边界：谁跟着孩子走，谁不跟 ===');
   const rb = F.create('小红', { backing: b });
   const c = rb.profile.id;
 
-  // 进度：各背各的
   F.select(a, { backing: b }); PS.set('p1', { level: 1 });
   F.select(c, { backing: b }); PS.set('p1', { level: 9 });
   F.select(a, { backing: b }); eq(PS.get('p1').level, 1, '切到小明：看到小明那份进度');
   F.select(c, { backing: b }); eq(PS.get('p1').level, 9, '切到小红：看到小红那份进度');
 
-  // 账号域设置（年级 / 数量）：跟着分家
   F.select(a, { backing: b }); PS.saveSettings({ grade: 1, dailyCount: 5 });
   F.select(c, { backing: b }); PS.saveSettings({ grade: 3, dailyCount: 9 });
   F.select(a, { backing: b }); eq(PS.settings().grade, 1, '一年级的孩子：年级 = 1');
   F.select(c, { backing: b }); eq(PS.settings().grade, 3, '三年级的孩子：年级 = 3（同一台设备，各是各的）');
 
-  // 已读：跟着分家
   F.select(a, { backing: b }); PS.setRead('poem_tangshi_read_v1', 'tangshi-ts-1', true);
   F.select(c, { backing: b }); eq(PS.readMap('poem_tangshi_read_v1')['tangshi-ts-1'], undefined,
     '已读跟着孩子走：小明读过的，小红那边没有');
@@ -220,12 +171,10 @@ console.log('\n=== 四、分家的边界：谁跟着孩子走，谁不跟 ===');
   F.select(a, { backing: b }); eq(PS.readMap('poem_tangshi_read_v1')['tangshi-ts-2'], undefined,
     '反向也成立：小红读过的，小明那边没有');
 
-  // 设备域：**不分家**（字号是设备的）
   F.select(a, { backing: b }); PS.setHelper(false);
   F.select(c, { backing: b }); eq(PS.helper(), 'off', '设备域的阅读辅助开关两孩子共用（同一台平板）');
   F.select(a, { backing: b }); eq(PS.helper(), 'off', '切回来还是那一个值（没被复制成两份）');
 
-  // 判据本身
   eq(F.isPerChild('poem_recite_progress_v1'), true, 'isPerChild：进度域 → 分家');
   eq(F.isPerChild('poem_recite_settings_v1'), true, 'isPerChild：账号域设置 → 分家');
   eq(F.isPerChild('poem_device_prefs_v1'), false, 'isPerChild：设备域 → **不**分家');
@@ -234,7 +183,6 @@ console.log('\n=== 四、分家的边界：谁跟着孩子走，谁不跟 ===');
   eq(F.isPerChild('poem_whatever_new_v1'), true,
     '认不出的键按「分家」处理（安全的一侧：多开一份只是多占几 KB，混在一起是数据串了）');
 
-  // 清空进度只清**当前这个孩子**那一条
   F.select(a, { backing: b });
   PS.clearProgress();
   eq(JSON.stringify(PS.all()), '{}', '清空进度：当前孩子那份空了');
@@ -242,9 +190,6 @@ console.log('\n=== 四、分家的边界：谁跟着孩子走，谁不跟 ===');
   eq(PS.get('p1').level, 9, '**另一个孩子的进度一根毫毛都没动**（老 bug 换了个形状）');
 }
 
-/* ==========================================================================
-   五、拼键只有一处；Family 缺席时退化成 0 期行为
-   ========================================================================== */
 console.log('\n=== 五、拼键只有一处；Family 缺席时退化 ===');
 {
   const F = require(path + 'js/family.js');
@@ -259,14 +204,6 @@ console.log('\n=== 五、拼键只有一处；Family 缺席时退化 ===');
   eq(km.keys.progress, 'poem_recite_progress_v1::f-x', 'keyMap 给得出进度键');
   eq(km.keys.device, 'poem_device_prefs_v1', 'keyMap 里设备键不带后缀');
 
-  /* 源码：拼 `::` 后缀的地方**必须逐一列出来**，不许悄悄多一处。
-     ⚠️ 这条断言原先写「只有 family.js」。5.3 之后**多了一处**：
-        `js/sync-store.js` 的记账表（`poem_sync_seen_v1`）——
-        它**不在** `ProgressStore.KEYS` 里（那是同步层自己的簿记，不是六把域键之一），
-        所以走不了 `Family.keyFor` 的转发，只能在那一层里显式拼一次。
-        判据因此从「只有一个文件」改成「**就是这两个文件**」：
-        名单是白名单，多一个文件就红一次 —— 那正是这条断言要守的
-        （防的是「各处各拼一遍」，不是「一个字都不许拼」）。 */
   const files = fs.readdirSync(path + 'js').filter(f => /\.js$/.test(f));
   const splicers = files.filter(f => {
     const src = read('js/' + f).replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/^\s*\/\/.*$/gm, ' ');
@@ -275,7 +212,6 @@ console.log('\n=== 五、拼键只有一处；Family 缺席时退化 ===');
   eq(splicers.sort().join(','), 'family.js,sync-store.js',
     'js/ 下拼 `::` 后缀的只有 family.js 与 sync-store.js 的记账表（多一处就红）');
 
-  /* 有子用户时写的是带后缀那把键 / Family 缺席时按老键读 */
   const sb5 = sandbox();
   sb5.F.ensure({ backing: sb5.b });
   sb5.PS.set('p1', { level: 1 });
@@ -283,7 +219,6 @@ console.log('\n=== 五、拼键只有一处；Family 缺席时退化 ===');
   chk(!!saved, '有子用户时写的是带后缀那把键');
   chk(!('poem_recite_progress_v1' in sb5.b.raw()), '同一份数据不会同时落在两把键上（不做第二份真相）');
 
-  /* Family 缺席：把 window.Family 摘掉，引擎必须**退回老键**而不是读空表 */
   const sb6 = sandbox();
   sb6.F.ensure({ backing: sb6.b });
   sb6.PS.set('p1', { level: 2 });
@@ -296,9 +231,6 @@ console.log('\n=== 五、拼键只有一处；Family 缺席时退化 ===');
   install();
 }
 
-/* ==========================================================================
-   六、上限与内核同源：Free 1 / Pro 3 / Max 180（两端逐字对拍）
-   ========================================================================== */
 console.log('\n=== 六、上限与内核同源 ===');
 {
   const F = require(path + 'js/family.js');
@@ -307,36 +239,26 @@ console.log('\n=== 六、上限与内核同源 ===');
   chk(!!cap, '内核能力表里有 profile.family');
   eq(cap.minTier, 'pro', 'minTier = pro（Free 那一个不算「能力」，是保底）');
   eq(cap.login, true, '要求登录（层级要登录才拿得到）');
-  /* Issue #163：名字里的括号摘掉了（「家庭子用户（Free 1 / Pro 3 / Max 180）」
-     →「子用户」）—— 三档数字改由 **`quotas`** 承担（对比页在各列直接列出数字，
-     不再把三个数字塞进功能名里撑宽那一列）。
-     所以判据从「能力名里有没有这三个数」翻成「quotas 里的数与 family.js 同值」。 */
+
   eq(E.quotaFor(cap, 'free'), F.FREE_PROFILES, '内核 quotas.free 与 family.js 同值');
   eq(E.quotaFor(cap, 'pro'), F.PRO_PROFILES, '内核 quotas.pro 与 family.js 同值');
   eq(E.quotaFor(cap, 'max'), F.MAX_PROFILES, '内核 quotas.max 与 family.js 同值');
   eq(cap.name, '子用户', '能力名收成「子用户」（额度归 quotas，不写在名字里）');
   chk(!/（/.test(cap.name), '名字里不再带括号（那是三个数字的旧住处）');
 
-  /* 服务端 featuresFor：max 是 pro 的超集，profile.family 只在 pro 那一档列一次 */
   const core = read('api/_lib/core.js');
   chk(/profile\.family/.test(core), '服务端 featuresFor 里有 profile.family');
   chk(!/profile\.family[^\]]*\]/.test(core.replace(/\/\*[\s\S]*?\*\//g, ' ')) ||
       /"profile\.family"/.test(core), '服务端键名与客户端逐字一致（写错就是「界面点亮、服务端 403」）');
 
-  /* 上限拦在数据层：Family.create 自己判，不靠按钮 */
   eq(F.FREE_PROFILES, 1, 'Free 1 个：第一次自动认领的那一份永远放得下');
   eq(F.PRO_PROFILES, 3, 'Pro 3 个');
   eq(F.MAX_PROFILES, 180, 'Max 180 个');
 
-  /* ⚠️ 拿不到内核时**不设限**（返回 Infinity，与 collections 同一条纪律）——
-     否则一次加载顺序错误就是「本来有 3 个子用户的人突然只剩 1 个」。 */
   const memB = { getItem: () => null, setItem: () => {}, removeItem: () => {} };
   eq(F.limit({ E: null, backing: memB }), Infinity, '读不到内核时不设限（宁可不判，也不误拦）');
 }
 
-/* ==========================================================================
-   七、源码扫描：设置页接上了，且上限不许写死在页面里
-   ========================================================================== */
 console.log('\n=== 七、设置页接线与收口 ===');
 {
   const gen = read('settings/general/index.html');
@@ -350,8 +272,6 @@ console.log('\n=== 七、设置页接线与收口 ===');
   chk(atF >= 0 && atPS >= 0 && atF < atPS,
     'js/family.js 排在 progress-store.js 之前（顺序反了不报错，只是永远读没有后缀的老键）');
 
-  /* 设置页里 Family 是通过家族别名调用的（`const F = familyMod()`），
-     所以判据写「`F.` 或 `Family.` 调到了那几个方法」—— 认名字不认写法。 */
   const FAM = '((?:Family|F)\\.)';
   chk(new RegExp(FAM + 'ensureDetailed\\(').test(setJs),
     '设置页先 ensure（认领老档案），再画名册');
@@ -365,32 +285,20 @@ console.log('\n=== 七、设置页接线与收口 ===');
   chk(!/["']::["']/.test(strip(setJs)),
     '设置页不自己拼子用户后缀（拼法只在 family.js 一处）');
 
-  /* 切档必须**整页重画**：只重画那一块会留下「名字换了、年级还是上一个孩子的」 */
   chk(/function reloadAll\(/.test(setJs) && /renderControls\(\)[\s\S]{0,200}renderFamily\(\)/.test(setJs),
     '切档之后整页重画（年级 / 数量 / 进度 / 印 全都要跟着换）');
 
-  /* 上限被拦时要说清「是上限拦的」 */
   chk(/E_LIMIT/.test(setJs), '越限时按 E_LIMIT 分开说话（不笼统说「建不了」）');
 
-  /* 引擎那边：拼键只有一处，且 core 键名不被改 */
   const psSrc = read('js/progress-store.js');
   chk(/F\.keyFor\(key, pid\)/.test(psSrc), 'progress-store 的拼键走 Family.keyFor（不自己拼）');
   chk(/function kk\(key\)/.test(psSrc), '引擎只有一个 kk() 出口在拼键');
-  /* ⚠️ 断言的是**语义**（只清进度那一把键），不是字面写法：
-     `kk()` 只在 `raw` / `physKey` 这两个读写入口调用一次，
-     调用点一律交**逻辑键** —— 在调用点再拼一次会写成双后缀键
-     （`…_v1::f-x::f-x`），症状是「写了但读不到」（同步的 updatedAt 那条顶回来的）。 */
+
   chk(/clearProgress[\s\S]{0,200}drop\(KEYS\.progress\)/.test(psSrc),
     'clearProgress 只清**当前孩子**那一份（清的是逻辑键，后缀由读写入口统一拼）');
   chk(!/kk\(kk\(/.test(psSrc), '引擎里没有双拼（kk(kk(...))）—— 后缀只拼一次');
 }
 
-/* ==========================================================================
-   七之一、每一张用到档案 / 进度的页面都加载了 js/family.js（且排在前面）
-   --------------------------------------------------------------------------
-   漏了这一步的症状**不报错**：引擎读的是「没有后缀」那把老键，于是
-   「切换孩子后进度为空」。所以这里逐页核对，而不是靠人记得。
-   ========================================================================== */
 console.log('\n=== 七之一、每一张用到档案 / 进度的页面都加载了 js/family.js ===');
 {
   const pages = [];
@@ -413,10 +321,7 @@ console.log('\n=== 七之一、每一张用到档案 / 进度的页面都加载�
     if (hasAvatar) withAvatar++;
     if (hasPS) withPS++;
     chk(/js\/family\.js/.test(html), p + ' 加载了 js/family.js（否则切换孩子后看到的是空进度）');
-    /* 顺序：family 必须排在 avatar 与 progress-store **之前** ——
-       后两者都要问它「当前是谁」。顺序反了不报错，只是永远读老键。
-       ⚠️ 只在 **`<script src>` 行**里找（注释里也会提到 js/family.js，
-          拿整份 HTML 去 indexOf 会命中那段说明，判出来的位置是错的）。 */
+
     const at = s => {
       let hit = -1;
       html.split('\n').forEach((ln, i) => {
@@ -433,13 +338,9 @@ console.log('\n=== 七之一、每一张用到档案 / 进度的页面都加载�
   chk(withAvatar >= 12, '至少 12 张页在画那枚印（实际 ' + withAvatar + ' 张）');
   chk(withPS >= 12, '至少 12 张页在读进度 / 设置（实际 ' + withPS + ' 张）');
 
-  /* sw.js 预缓存里有 family.js，否则断网时它缺席 —— 而缺席的表现就是「读空进度」 */
   chk(/js\/family\.js/.test(read('sw.js')), 'sw.js 预缓存含 js/family.js（断网也要能读对那一份）');
 }
 
-/* ==========================================================================
-   七之二、备份：名册跟着走，数据落到对的孩子名下
-   ========================================================================== */
 console.log('\n=== 七之二、备份：名册跟着走 ===');
 {
   const { F, PS, b } = sandbox();
@@ -455,7 +356,6 @@ console.log('\n=== 七之二、备份：名册跟着走 ===');
   eq(dump.family.at, ids[1], '备份里记住「当前是哪一个」');
   eq(dump.progress.p1.level, 9, '备份里的进度是**当前那个孩子**的');
 
-  /* 导到一台空设备 */
   const b2 = mem();
   PS.useStore(b2);
   PS.importJSON(JSON.stringify(dump));
@@ -465,12 +365,6 @@ console.log('\n=== 七之二、备份：名册跟着走 ===');
   eq(F.list({ backing: b2 }).length, 2, '名册两条都在');
 }
 
-/* ==========================================================================
-   八、真页面上跑一遍（jsdom）：名册真的画得出来，切换真的换进度
-   --------------------------------------------------------------------------
-   上面七节判的都是**源码与内核**。这一节把 `settings/general/index.html` 真跑起来，
-   量一遍「用户看到的东西」—— 源码全都对、页面却画不出来，正是这一层要挡的事。
-   ========================================================================== */
 let JSDOM = null;
 try { JSDOM = require('jsdom').JSDOM; } catch (e) { JSDOM = null; }
 
@@ -482,14 +376,10 @@ if (!JSDOM) {
 } else {
   console.log('\n=== 八、真页面上跑一遍（jsdom）===');
 
-  /* ⚠️ 脚本顺序**照抄页面**（settings/general/index.html 的 <script> 顺序）：
-     多一个 / 少一个 / 顺序不同，这一层就变成「测一个不存在的环境」——
-     第三期它就因为漏了 avatar-image.js 而在 renderAvatar 上静默失败。 */
   const SCRIPTS = ['js/auth-core.js', 'js/entitlement.js', 'js/family.js', 'js/avatar.js',
     'js/avatar-image.js', 'js/account-api.js', 'js/progress-store.js', 'js/storage.js',
     'js/settings.js'];
 
-  /** 起一张真的设置页（按真实顺序注入脚本、按需预置层级与会话） */
   function openPage(tier, signedIn) {
     const dom = new JSDOM(read('settings/general/index.html'),
       { runScripts: 'dangerously', url: 'https://local.test/settings/general/', pretendToBeVisual: true });
@@ -504,9 +394,7 @@ if (!JSDOM) {
         sessions: [{ sid: 's1', exp: 9e15 }], deviceId: 'd1'
       }));
     }
-    /* 删除要过 confirm()：jsdom 没实现它，会往控制台丢一条 not-implemented。
-       这里**显式替成「用户点了取消」** —— 于是那一条断言验的正是
-       「没确认时什么都没发生」，而不是靠 jsdom 的沉默。 */
+
     w.confirm = () => false;
     SCRIPTS.forEach(f => {
       const el = w.document.createElement('script');
@@ -519,7 +407,7 @@ if (!JSDOM) {
   const wait = () => new Promise(r => setTimeout(r, 250));
 
   (async function run() {
-    /* ---- Free（未登录）：只有 1 个，且再建会被**如实拦住** ---- */
+
     const wf = openPage(null, false);
     await wait();
     eq(wf.document.querySelectorAll('.family-row').length, 1, '真页面：Free 一进来就有 1 个子用户（认领出来的）');
@@ -531,14 +419,12 @@ if (!JSDOM) {
     chk(!!toast && /已达上限/.test(toast.textContent),
       '真页面：拦住时**如实说是上限**（不笼统说「建不了」）：' + (toast ? toast.textContent : '(没有提示)'));
 
-    /* ---- Max（已登录）：180 的上限、真的画得出来、改名与切换都落盘 ---- */
     const w = openPage('max', true);
     await wait();
     eq(w.document.querySelectorAll('.family-row').length, 1, '真页面：Max 也是从 1 个开始');
     chk(/当前 1 \/ 180 个/.test(w.document.getElementById('family-hint').textContent),
       '真页面：Max 的上限如实写 180');
 
-    /* 用户名那一栏写进去 → 落到**当前子用户**（不是那份老档案） */
     const u = w.document.getElementById('input-username');
     u.value = '小明';
     u.dispatchEvent(new w.Event('input', { bubbles: true }));
@@ -547,7 +433,6 @@ if (!JSDOM) {
     chk(/头像：小/.test(w.document.getElementById('avatar-slot').innerHTML),
       '真页面：头像跟着昵称重画（顶栏 / 设置页同一个来源）');
 
-    /* 改名：点「改名」→ 原地长输入框 → 回车落盘 */
     w.document.querySelector('[data-family-rename]').dispatchEvent(new w.Event('click', { bubbles: true }));
     const rin = w.document.getElementById('family-rename-input');
     chk(!!rin, '真页面：点「改名」原地长出输入框（不用 prompt()）');
@@ -558,14 +443,12 @@ if (!JSDOM) {
         '真页面：回车即落盘');
     }
 
-    /* 建第二个 → 自动切过去 → 切换回来看到各自的进度 */
     w.document.getElementById('btn-family-add').dispatchEvent(new w.Event('click', { bubbles: true }));
     eq(w.document.querySelectorAll('.family-row').length, 2, '真页面：又建了一个');
     const ids = Array.from(w.document.querySelectorAll('[data-family-pick]')).map(e => e.dataset.familyPick);
     eq(JSON.parse(w.localStorage.getItem('poem_family_v1')).at, ids[1],
       '真页面：新档案建好就**顺手切过去**（不然用户以为没建成功）');
 
-    /* 在各自身份下写一条进度，切回来各自都还在 */
     w.ProgressStore.set('p1', { level: 7 });
     w.document.querySelector('[data-family-pick="' + ids[0] + '"]')
       .dispatchEvent(new w.Event('click', { bubbles: true }));
@@ -576,13 +459,11 @@ if (!JSDOM) {
     w.ProgressStore.set('p1', { level: 3 });
     eq(w.ProgressStore.get('p1').level, 3, '真页面：在这个身份下写的进度读得回来');
 
-    /* 删：只剩一个时那颗「删除」键根本不该出现 */
     const rows = Array.from(w.document.querySelectorAll('.family-row'));
     eq(rows.length, 2, '（前置）现在有两个');
     Array.from(w.document.querySelectorAll('[data-family-remove]')).length &&
       w.document.querySelector('[data-family-remove]').dispatchEvent(new w.Event('click', { bubbles: true }));
-    /* 真页面上删除要先过 confirm()，jsdom 里 confirm 默认返回 false ——
-       所以这一下**不该**删掉任何东西。这正是「不可逆动作要二次确认」的证据。 */
+
     eq(w.document.querySelectorAll('.family-row').length, 2,
       '真页面：删除要过 confirm()，用户没确认时**什么都没发生**');
 

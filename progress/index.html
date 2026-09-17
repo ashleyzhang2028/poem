@@ -8,7 +8,6 @@
   <meta name="description" content="跬步背诵进度总览：到期日历与全部到期篇目（接下来两周哪天该背哪几篇）、掌握度分布。" />
   <meta name="format-detection" content="telephone=no" />
 
-  <!-- iOS（苹果手机 / iPad）支持 -->
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="背诵进度" />
@@ -21,32 +20,17 @@
   <link rel="stylesheet" href="css/classic.css" />
 </head>
 <body data-nav="progress" data-page="背诵进度" data-sub="到期日历与全部到期篇目">
-  <!-- 这一页只读**本机已经留下的进度**，不改任何一篇的排期：
-       「下次何时到期」原先只在每首诗的详情弹层里看得到（第几轮 / 掌握度 / 下次复习），
-       看不到整体 —— 有 261 首时，「接下来两周哪几天要背几篇」只能一天天点开猜。
-       这里把全量摊成三块：到期日历（未来 14 天）、**全部到期篇目**（哪天该背哪几篇）、
-       掌握度分布。
-
-       日历与「全部到期篇目」是同一本账的两面：日历回答「哪天忙」，
-       篇目清单回答「那天具体是哪些」—— 先前只有前者，日历时看着一格 3 篇，
-       却点不进去、也不知道是哪三篇，还得回首页一页页翻。 -->
-
 
   <div class="app">
     <header class="topbar"></header>
 
-    <!-- 四块内容（总览 / 到期日历 / 到期篇目 / 掌握度与阶段）。
-         平板（≥768px）上这里换成两列并排：见 css/classic.css 的 .progress-main -->
     <div class="progress-main">
-      <!-- 总览四格：已学 / 待复习 / 平均掌握度 / 尚未学过
-           ⚠️ .wide 是给平板那一档的：这一块内容只有一行数字，
-              平板上占满整行（见 css/classic.css 的 .progress-main） -->
+
       <section class="card progress-card wide">
         <div class="stats-row" id="progress-stats"></div>
         <p class="progress-tip" id="progress-tip"></p>
       </section>
 
-      <!-- 到期日历：未来 14 天每天到期的篇数；点某一格 → 下方清单滚到那一天 -->
       <section class="card progress-card">
         <div class="progress-head">
           <h2>到期日历</h2>
@@ -56,22 +40,16 @@
         <p class="progress-note" id="calendar-note"></p>
       </section>
 
-      <!-- 全部到期篇目：日历上「哪天几篇」摊开成「哪天是**哪几篇**」。
-           日历是形状（一眼看忙不忙），这里是清单（要背的时候照着背）。
-           两处同一本账、同一套归档规则（逾期并进「今天」、
-           逾期超过一周的在今天那一档里单列一截），数不对就是 bug。 -->
       <section class="card progress-card">
         <div class="progress-head">
           <h2>全部到期篇目</h2>
           <span class="progress-sub" id="duelist-sub"></span>
         </div>
-        <!-- 默认只展开「今天」那一档：每天真正会看的往往就是今天这几篇，
-             其余各天折起来，一页不至于长到要找 -->
+
         <div class="duelist" id="progress-duelist"></div>
         <p class="progress-note" id="duelist-note"></p>
       </section>
 
-      <!-- 掌握度分布：分五档，每档多少篇 -->
       <section class="card progress-card">
         <div class="progress-head">
           <h2>掌握度分布</h2>
@@ -80,7 +58,6 @@
         <div class="bars" id="progress-mastery"></div>
       </section>
 
-      <!-- 记忆阶段分布：第几轮各有多少篇（原先只看得见单篇的「第 N 轮」） -->
       <section class="card progress-card">
         <div class="progress-head">
           <h2>记忆阶段</h2>
@@ -105,23 +82,17 @@
   <script src="data/poems-10.js"></script>
   <script src="data/poems-11.js"></script>
   <script src="data/poems-12.js"></script>
-  <!-- data/index.js 先把 poems-1..12 汇成 window.POEMS_ALL，
-       这一页读的正是它 —— 顺序不能调换 -->
+
   <script src="data/index.js"></script>
   <script src="data/works-map.js"></script>
   <script src="data/works-index.js"></script>
-  <!-- 分域引擎（Issue #132 阶段 0）：进度 / 账号 / 设备三域的唯一一份定义，
-       读法由 js/storage.js 转发。**必须排在 js/storage.js 之前** ——
-       缺了它 storage 只是退化成兜底读法，不会报错（那种「不报错的少数据」最难查）。 -->
+
   <script src="js/family.js"></script>
   <script src="js/progress-store.js"></script>
-  <!-- 同步层（Issue #132 · 1B）：进度 / 账号域设置 / 已读的跨设备同步。
-       必须在 js/storage.js 之前 —— 它的 touch() 要给每条记录打标，
-       而页面只认识 Storage/ProgressStore 这两个入口。 -->
+
   <script src="js/sync-store.js"></script>
   <script src="js/storage.js"></script>
-  <!-- 复习调度算法：scheduler.levelName() 要按当前模型说阶段名
-       （「3 号盒 · 4 天后」/「稳定 12.3 天 · 难度 5.2」），故排在 scheduler 之前 -->
+
   <script src="js/review-models.js"></script>
   <script src="js/scheduler.js"></script>
   <script src="js/progress.js"></script>

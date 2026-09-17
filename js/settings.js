@@ -1,31 +1,3 @@
-/**
- * 设置页逻辑（/settings/）
- *
- * 设置从「首页向上弹出的卡片」改为**独立整页**：
- *   · 首页齿轮 → 跳转到本页（/settings/），不再有弹层
- *   · 页底常驻「版权 + 用户协议 / 隐私条款」，且不被底部导航栏（播放栏 / 引导条）遮挡
- *   · 仍然与首页共用同一份存储（poem_recite_settings_v1），改完即生效
- *
- * 二级设置页（Issue #132 后续）：
- *   设置项多了以后，各组摊成四张二级页，本文件仍是**各页共用**的那一份逻辑：
- *     /settings/general/  通用     —— 用户名 / 头像 / 本机账号 / 数据管理
- *     /settings/recite/   背诵     —— 学段 / 年级 / 学期 / 范围 / 数量
- *                                     + 复习算法 + 进度总览入口
- *     /settings/lists/    我的清单 —— 自选背诵：导入 / 导出 / 改名 / 删除 / 整组移出 / 顺顺序
- *     /settings/reader/   朗读     —— 自动注音 + 五档连读方式
- *   主页（/settings/）只列入口 + 法务链接，不加载本文件。
- *
- *   ⚠️ 本文件**一页一实例**：每张页只放自己那几组控件，
- *      所有回显 / 写值都走「取不到就跳过」（`$()` 返回 null 时直接 return），
- *      所以同一份逻辑在四张页上都跑得对，不靠「哪张页必须有哪几个 id」的假设。
- *   ⚠️ 分组的容器仍是 .settings-group / .settings-groups，
- *      本文件不关心分组，只按 id 回显与写值。
- *
- * 「我的清单」那一组（Issue #114 第二条）原先是**首页**底部那张「自选背诵」折叠卡，
- * 用户原话：「所有导入，导出，重命名，删除等等应该全部在设置中进行」。
- * 搬过来的是**管理入口** —— 自选篇目照旧跟课内 261 首一起排每日任务，
- * 首页该背的还在今日列表里（见 index.html 里那段说明）。
- */
 (function () {
   "use strict";
 
@@ -42,19 +14,14 @@
     high: { name: "高中", grades: [10, 11, 12] }
   };
 
-  // 应用正式名称（固定，不随用户名变化），与 js/app.js 保持一致
   const APP_NAME = "跬步";
   const SETTINGS_KEY = "poem_recite_settings_v1";
-  // 计划缓存按天 + 配置缓存，改了学段/年级/范围就需要失效，否则首页还是旧计划
+
   const PLAN_PREFIX = "poem_plan_";
 
-  // 与 Scheduler.SCOPES 的默认值保持一致；本页不加载调度器（省流量），只做回显
-  /* ⚠️ 出厂范围从 `term`（本年级本学期）改成 `upto`（本册及之前）——
-     Issue #209 用户点名删掉「本年级本学期」那一档，删掉之后 `term` 在界面上
-     不再有对应的按钮；常量与 KNOWN_SCOPES 里**原样留着**，只是不再当出厂值。 */
   const DEFAULT_SCOPE = "upto";
   const KNOWN_SCOPES = ["term", "upto", "primary", "middle", "primary_middle", "high", "all"];
-  // 「背诵范围」的读法：与 js/scheduler.js 的 SCOPES[].scopeName 保持一致（本页不加载调度器）
+
   const SCOPE_NAMES = {
     term: "本学期",
     upto: "本学期及之前",
@@ -72,31 +39,23 @@
     scope: DEFAULT_SCOPE,
     helper: "off",
     dailyCount: 5,
-    // 复习调度算法，见 js/review-models.js（键名即模型名）
+
     algo: "ebbinghaus"
   };
 
   let settings = null;
 
-  /**
-   * 改昵称（Issue #132 · 2026-09-15）：老键 + 账号域新键一起写。
-   * 镜像实现收在 `Avatar.saveNickname` 一处（与首页 js/app.js 同源），
-   * 本页不许自己拼两处 setItem。
-   */
   function commitNickname(value) {
     const clean = String(value == null ? "" : value).trim().slice(0, 12);
     settings.username = clean;
     saveSettings();
     const A = window.Avatar;
     if (A && typeof A.saveNickname === "function") {
-      /* ⚠️ 名册是正主：`Avatar.saveNickname` 自己会把名字收进**当前子用户**
-         （`write` → `saveToChild` → `Family.rename`）。本页不再自己收一遍 ——
-         收两遍的时机一旦对不上，症状是「切回来名字退回改名之前那个」。 */
-      try { A.saveNickname(window.localStorage, clean); } catch (e) { /* 隐私模式：老键已写 */ }
+
+      try { A.saveNickname(window.localStorage, clean); } catch (e) {  }
     }
   }
 
-  /** 读取设置：以 js/storage.js 为准，本页兜底，避免首页/设置页字段漂移 */
   function loadSettings() {
     let raw = null;
     if (window.Storage && window.Storage.getSettings) {
@@ -115,14 +74,12 @@
     Object.keys(raw || {}).forEach(function (k) {
       merged[k] = raw[k];
     });
-    /* 阅读辅助属**设备域**（Issue #132 阶段 0，见 js/progress-store.js）——
-       从 `Storage.getSettings()` 出来的那份里已经不带它了，这里现读一次引擎，
-       免得界面显示的是老键里那份可能的旧值（两处打架时以设备域为准）。 */
+
     if (window.ProgressStore && typeof window.ProgressStore.helper === "function") {
       merged.helper = window.ProgressStore.helper();
     }
     if (KNOWN_SCOPES.indexOf(merged.scope) === -1) merged.scope = DEFAULT_SCOPE;
-    // 认不出来的算法键一律退回出厂默认 —— 界面说的与引擎用的必须是同一个
+
     if (!algoModels() || !algoModels().known(merged.algo)) merged.algo = DEFAULTS.algo;
     if (!STAGES[stageOf(merged.grade)]) merged.grade = DEFAULTS.grade;
     return merged;
@@ -157,23 +114,16 @@
     }, 1800);
   }
 
-  /** 页面标题：与首页同一条命名规则（跬步 · 设置） */
   function appTitle() {
     return APP_NAME + " · 设置";
   }
 
-  /**
-   * 顶栏由 js/chrome.js 统一渲染（第一行固定「跬步」，右侧是页面名）。
-   * 这里只负责页面标题与 iOS 桌面名，顶栏文字交给 chrome.js，
-   * 用户名改动后同步刷新一次顶栏右侧的页面名（若是首页语义则跟随用户名）。
-   */
   function applyAppName() {
     document.title = appTitle() + " · " + APP_NAME;
     const meta = $('meta[name="apple-mobile-web-app-title"]');
     if (meta) meta.setAttribute("content", appTitle());
   }
 
-  /** 改了配置就让首页的「今日计划」重新生成，否则回到首页仍是旧计划 */
   function invalidatePlan() {
     Object.keys(sessionStorage)
       .filter(function (k) {
@@ -184,7 +134,6 @@
       });
   }
 
-  /* ---------------- 回显 ---------------- */
   function renderControls() {
     const stage = stageOf(settings.grade);
     const grades = STAGES[stage].grades;
@@ -215,7 +164,6 @@
     mark("#seg-count", "count", settings.dailyCount);
     mark("#seg-helper", "helper", settings.helper === "on" ? "on" : "off");
 
-    // 「背诵范围」下方回显当前范围：设置页此前是空的一块，回首页才知道选了什么
     const scopeHint = $("#scope-hint");
     if (scopeHint) scopeHint.textContent = "当前：" + (SCOPE_NAMES[settings.scope] || SCOPE_NAMES[DEFAULT_SCOPE]);
 
@@ -231,37 +179,8 @@
     renderCollections();
   }
 
-  /* ---------------- 课内诗词整体导出（Pro） ----------------
-
-     用户 2026-09-16（Issue #159）把这一条的口径改了一次，原话：
-
-       「为啥要有全站批量导出功能？这不是这个网站的核心资产吗？
-        顶多支持学校课本部分的全部导出。这个 pro 用户就行。」
-
-     于是：**能力名字、门槛、内容三处一起改**（见 js/entitlement.js 的 CAPS
-     与 js/export-core.js 的文件头）。落在这里的就是那个「内容」：
-     只导**课内 261 首**，六部集子不做一次性整本导出。
-
-     ⚠️ 三道关口，缺一不可：
-       ① 能力表（`export.all`，Pro 起）—— 「谁能用」
-       ② 范围表（js/export-core.js 的 SCOPES，只有「课内」）—— 「能导什么」
-       ③ 这一层只做「问一次、给一次」，不自己判层级、不自己拼门槛文案
-     把①的入口藏起来不是边界（docs §3.4）：所以按钮**照旧可见**，
-     点了层级不够就照实说「Pro 起」。
-     ------------------------------------------------------------------ */
-
-  /** 导出内核（脚本顺序不保证：现取，不在模块加载时缓存） */
   function exportMod() { return window.ExportCore || null; }
 
-  /* ⚠️ Issue #209：这一项底下原先有一行说明（「把课内 261 首（一年级至高三）
-     整份导出成一个文本文件…」／层级不够时「Pro 起；现在导出的是课内诗词…」），
-     用户**点名整段删掉** —— 标题「课内诗词导出」已经说清这是什么。
-     于是连 renderExportPoems() 一起撤了：一个只往一行说明里写字、
-     而那一行已经不存在的函数，留着就是一段永远不生效的代码。
-     层级不够时**照旧有回话**（exportPoems() 里那句 denyReason 的 toast），
-     所以「不假装能用」这条口径一字未改。 */
-
-  /** 按范围取篇目（课内 = 站点索引里 poems 那一部，按册次排序） */
   function exportItems(scope) {
     const C = exportMod();
     const idx = window.SITE_INDEX || [];
@@ -269,28 +188,19 @@
     return C.order(C.pick(idx, scope), scope);
   }
 
-  /**
-   * 真的导一次。
-   *
-   * @param {boolean} [asCopy] true = 弹纯文本对话框（手机上更好用），
-   *                           false/缺省 = 直接落一个 .txt
-   */
   function exportPoems(asCopy) {
     const C = exportMod();
     const E = entitlementMod();
     const ident = currentIdentity();
     if (!C || !E || !ident) { showToast("导出组件没有加载成功，请刷新页面重试"); return; }
-    /* 闸**在这里也要判一次**：按钮之外还能从控制台调到这里。
-       「拦在数据层」指的是范围表（SCOPES）—— 但门槛这件事本身也得在这一层拦，
-       否则「藏入口」就成了事实上的边界。 */
+
     if (!E.can("export.all", ident).ok) { showToast(E.denyReason("export.all", ident)); return; }
 
     const items = exportItems("poems");
     if (!items.length) { showToast("课内诗词数据没加载出来，请刷新页面重试"); return; }
 
     const r = C.build({ items: items, scope: "poems", now: new Date() });
-    /* ⚠️ 有篇目但没正文时**如实报出来**：悄悄少一篇比多导一篇更难发现。
-       目前课内 261 首全部有正文，这一支是给日后新增篇目留的（与打印页同一条纪律）。 */
+
     const skip = r.skipped ? "（另有 " + r.skipped + " 首没有正文，没有写进去）" : "";
 
     if (asCopy) {
@@ -312,23 +222,6 @@
     showToast("已导出 " + r.count + " 首" + skip);
   }
 
-  /* ---------------- 我的清单：自选背诵（Issue #114 第二条） ----------------
-     除教材之外，用户自己加进来要背的篇目（见 js/collections.js）。
-
-     ⚠️ 这一块原先长在**首页**底部（那张「自选背诵」折叠卡）。搬过来的是
-        **管理入口**，不是这些篇目的背诵：自选篇目本来就跟课内 261 首一起
-        按遗忘曲线排每日任务，排上了就混在首页的今日列表里。
-        两页读同一份 localStorage 键 poem_recite_collections_v1，改完即生效。
-
-     ⚠️ 与首页那边同一套逻辑、同一套 DOM id（#collections-list / #collections-tools /
-        #btn-collections-import / data-rename / data-export / data-drop /
-        data-up / data-down / data-group）—— 两处不是各写一份实现，
-        只是各有一套同名的 DOM。上次搬家时按这个口径搬，下次再动时才找得到。
-     ------------------------------------------------------------------ */
-
-  /** 篇名显示名：去掉语料内部用来区分同名词作的「其一 / 其二 / 其三」。
-     用户原话「去掉自选集合中其一其二这些你不清楚的」——那个编号只是整理
-     宋词时按目录次序补的序号，不是选本原名。只改**显示**，存的是完整 id。 */
   function showTitle(title) {
     if (window.ReciteCollections && window.ReciteCollections.displayTitle) {
       return window.ReciteCollections.displayTitle(title);
@@ -336,15 +229,12 @@
     return title;
   }
 
-  /** 条目 id → 篇目对象（站点索引优先；本页只加载了课内与站点索引，
-      课外那些篇目靠加入时存下的**快照**兜底，见 renderCollections） */
   function poemForEntry(entryId) {
     const repId = window.ReciteCollections.poemIdFor(entryId);
     const idx = window.SITE_INDEX || [];
     return idx.filter(function (x) { return x.id === entryId || x.id === repId; })[0] || null;
   }
 
-  /** 条目 id → 导出时的注释行（「集子 · 卷次 篇名」这种，家长看得懂） */
   function collectionLabelOf(entryId) {
     const p = poemForEntry(entryId);
     if (!p) return entryId;
@@ -352,16 +242,6 @@
     return bits.filter(Boolean).join(" · ") || entryId;
   }
 
-  /**
-   * 自选篇目的「组」：集子 + 卷次 / 词牌 / 文体（与集子页上的分组同一口径）。
-   *
-   * ⚠️ 回落要拿到**快照**：本页只加载课内与站点索引，五部集子那 4.4MB 语料
-   *    没有；唐诗 / 宋词 那些篇目在站点索引里查不到，只有一个加入时存下的
-   *    最小快照（里面有 bookName / gradeGroup）。不读快照的话这些篇目会
-   *    一律算「未分组」—— 组名与「整组移出」的范围就对不上了
-   *    （列表上写着「唐诗三百首 · 卷一 五言古诗」，移的却是「未分组」）。
-   *    所以这里与 renderCollections 走**同一条取数路径**：先索引、后快照。
-   */
   function groupInfoOf(item) {
     const entryId = typeof item === "string" ? item : item.id;
     const snap = (item && typeof item === "object" && item.snap) || {};
@@ -371,15 +251,6 @@
     return { id: entryId, group: group };
   }
 
-  /**
-   * 条目 id → 分组名（`removeGroup` 比对时逐条回调它，传进来的是**条目 id**）。
-   *
-   * ⚠️ 这里收的只有 id 一个字串，拿不到那一条的快照 —— 而本页认不出的
-   *    课外篇目（唐诗 / 宋词 ……）恰恰只能靠快照认出分组。所以先从当前
-   *    加载的清单里把那一条**原样**找回来，再走 groupInfoOf：
-   *    否则「整组移出」会按「未分组」比对，用户看着「唐诗三百首 · 卷一 五言古诗」
-   *    这一组点了移出，实际一篇都没动（或者动了别的组）。
-   */
   function collectionGroupOf(entryId) {
     const id = String(entryId == null ? "" : entryId);
     if (!window.ReciteCollections) return groupInfoOf(id).group;
@@ -393,7 +264,6 @@
     return groupInfoOf(id).group;
   }
 
-  /** 与首页同款的分隔线拼接（空值即省掉分隔符） */
   function metaLine(parts) {
     const out = [];
     (parts || []).forEach(function (v) {
@@ -411,7 +281,6 @@
     });
   }
 
-  /** 一篇的背诵档案（掌握度那一栏要用）。本页不加载调度器，取不到就显示「未学过」。 */
   function getRecord(id) {
     if (window.Storage && window.Storage.get) return window.Storage.get(id);
     return null;
@@ -429,7 +298,6 @@
     return 0;
   }
 
-  /** 下载一段文本（手机浏览器会把 .txt 存进「文件」里，可再转发） */
   function downloadText(filename, text) {
     try {
       const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
@@ -446,9 +314,6 @@
     }
   }
 
-  /* ---- 纯文本对话框（导入 / 导出用） ----
-     设置页此前没有这一件，随「我的清单」一起搬过来：
-     结构与首页那一套完全一致（.modal.text-modal），样式也共用同一份 CSS。 */
   function textDialog(opts) {
     const box = $("#text-dialog");
     if (!box) return;
@@ -462,7 +327,7 @@
     $("#text-dialog-cancel").textContent = opts.cancelText || "关闭";
     box.hidden = false;
     textDialog._onOk = opts.onOk || null;
-    // 导出时全选，用户少按一次 —— 手机上「全选 → 复制」本就是两步
+
     if (opts.readOnly) {
       setTimeout(function () { ta.focus(); ta.select(); }, 30);
     }
@@ -474,7 +339,6 @@
     textDialog._onOk = null;
   }
 
-  /** 导出一个集合：先落一段文本，再让用户复制（也支持下载成 .txt） */
   function exportCollection(col) {
     const labels = {};
     col.items.forEach(function (it) {
@@ -496,7 +360,6 @@
     });
   }
 
-  /** 导入：粘贴文本 → 新建一个集合 */
   function importCollection() {
     textDialog({
       title: "导入清单",
@@ -511,8 +374,7 @@
         }
         const res = window.ReciteCollections.importText(text, "", window.SITE_INDEX || []);
         closeTextDialog();
-        /* 超上限时**如实说清是上限拦的**（不说「没认出篇目」那种错因）——
-           E_LIMIT 与「清单里全是认不出的行」是两件完全不同的事。 */
+
         if (res.error === "E_LIMIT") {
           const lim = res.limit === Infinity ? "不限" : res.limit + " 个";
           showToast("自选清单已达上限（当前层级最多 " + lim + "）—— " +
@@ -530,13 +392,6 @@
     });
   }
 
-  /**
-   * 画一遍「我的清单」。
-   *
-   * 集合里的每一篇：先查站点索引（本页加载了课内 + 站点索引），
-   * 查不到就回落到加入时存下的**快照** —— 快照里带着题名 / 作者 / 朝代 / 集子名，
-   * 足够把这一行画出来（正文要读的话，点进去由首页那套弹层按快照显示）。
-   */
   function renderCollections() {
     const box = $("#collections-list");
     if (!box || !window.ReciteCollections) return;
@@ -544,18 +399,12 @@
     const cols = window.ReciteCollections.list();
     const total = window.ReciteCollections.count();
 
-    /* 说明行**只在清单还空着的时候**说一句话（怎么加第一篇）——
-       Issue #163 用户原话：「删除 与课内诗词一起排进每日任务；↑↓ 调顺序。」
-       有篇目之后那一行整句撤掉：每日任务与两条箭头当场就看得见，
-       不必先用文字念一遍；空的容器也一并藏起来，不留一行空行。 */
     const tip = $("#collections-tip");
     if (tip) {
       tip.hidden = total > 0;
       if (!total) tip.textContent = "到任一集子页或搜索页点篇目右边的书签即可加进来。";
     }
 
-    // 一个集合都没有时也留着「导入」—— 家长发来一串清单，
-    // 第一件事就是导进来，不该先逼他建一个集合。
     const tools = $("#collections-tools");
     if (tools) tools.hidden = false;
 
@@ -564,20 +413,13 @@
       return;
     }
 
-    // 站点索引 + 快照两条取数路径（与首页那一套一致）
     const map = {};
     (window.SITE_INDEX || []).forEach(function (p) { map[p.id] = p; });
     (window.POEMS_ALL || []).forEach(function (p) { if (!map[p.id]) map[p.id] = p; });
 
     box.innerHTML = "";
     cols.forEach(function (col) {
-      /* 一张集合一张卡：结构与「课外阅读」入口页那六张卡（.library-card）
-         逐项对齐 —— 卡头是「清单名 + 篇数 + 改名 / 导出 / 删除」，
-         卡身是篇目，篇与篇之间只隔一条与卡边同色的细线。
-         Issue #163 用户原话：「我的清单卡片设计最好和 课外阅读 页面的卡片
-         设计保持一致，里面没有绿色竖线，横着的项目用边框颜色一样的线隔开。」
-         改之前它是「一行集合名 + 一列各自带纸底的条目」（每条还挂一道
-         4px 蓝色竖条），与课外那六张卡是两套语言。 */
+
       const card = document.createElement("div");
       card.className = "library-card collection-card";
       card.setAttribute("data-col", col.id);
@@ -587,9 +429,7 @@
         '<span class="collection-count">' + col.items.length + " 篇</span>" +
         '<button type="button" class="collection-act" data-rename="' + esc(col.id) + '" title="重命名" aria-label="重命名 ' + esc(col.name) + '">改名</button>' +
         '<button type="button" class="collection-act" data-export="' + esc(col.id) + '" title="导出成文本，可发给别的家长" aria-label="导出集合 ' + esc(col.name) + '">导出</button>' +
-        /* 「打印」这一颗是 3 期 Pro 的能力（`export.paper`）。**它不判权限、
-           也不置灰** —— 点开那一层自己会说清「这一项要 Pro」（`js/print.js`），
-           判据只有 `Entitlement.can()` 一处（docs §3.4：把入口藏起来不是边界）。 */
+
         '<button type="button" class="collection-act" data-print="' + esc(col.id) + '" title="把这份清单排成一页纸，打印或存成 PDF" aria-label="打印集合 ' + esc(col.name) + '">打印</button>' +
         '<button type="button" class="collection-act danger" data-drop="' + esc(col.id) + '" title="删除集合" aria-label="删除集合 ' + esc(col.name) + '">删除</button>' +
         "</div>" +
@@ -597,9 +437,6 @@
       const body = card.querySelector(".collection-body");
       box.appendChild(card);
 
-      // 按组切段：同一部集子 / 同一个卷次文体连在一起，段头上给「整组移出」。
-      // 分组只为「让用户一次拿掉一组」，不改变集合的顺序 ——
-      // 顺序仍是 col.items 的顺序，用户自己排的。
       let lastGroup = null;
       col.items.forEach(function (it, index) {
         const entryId = typeof it === "string" ? it : it.id;
@@ -608,8 +445,6 @@
         const p = map[repId] || map[entryId] || Object.assign({ id: repId }, snap);
         if (!p || !p.title) return;
 
-        // 分组：先站点索引、后快照（与 groupInfoOf 同一条取数路径，
-        // 「整组移出」按同一口径数篇数 —— 两边各算一遍迟早算出两个数）
         const group = groupInfoOf(it).group;
         if (group !== lastGroup) {
           lastGroup = group;
@@ -631,14 +466,12 @@
           '<h3 class="item-title">' + esc(showTitle(p.title)) + "</h3>" +
           '<div class="item-meta">' +
           metaLine([esc(p.author || ""), esc(p.dynasty || ""), esc(p.bookName || ""),
-            // 掌握度那一栏无条件跟着（空值也显示「未学过」），
-            // 所以它不参与「空值即省分隔符」的排布，直接拼成一段尾巴
+
             rec && rec.learned ? levelName(rec) : "未学过"]) +
           "</div>" +
           (rec && rec.learned ? '<div class="mbar"><i style="width:' + mastery(rec) + '%"></i></div>' : "") +
           "</div>" +
-          // 上移 / 下移：集合里只有它自己排的草稿顺序，没有卷次词牌可依，
-          // 所以给的是两颗小箭头，而不是「按某某排序」
+
           '<button type="button" class="item-move" data-up="' + index + '" data-col="' + esc(col.id) + '"' +
           (index === 0 ? " disabled" : "") +
           ' title="上移一位" aria-label="把 ' + esc(showTitle(p.title)) + ' 上移一位">' +
@@ -664,7 +497,6 @@
     });
   }
 
-  /** 「我的清单」那一组的事件（与首页那一套逐条对应） */
   function bindCollections() {
     const importBtn = $("#btn-collections-import");
     if (importBtn) importBtn.addEventListener("click", importCollection);
@@ -674,7 +506,7 @@
       tdOk.addEventListener("click", function () {
         const fn = textDialog._onOk;
         if (typeof fn === "function") {
-          if (fn() === false) return;   // 回调里校验不过就留着对话框
+          if (fn() === false) return;
         }
         closeTextDialog();
       });
@@ -690,15 +522,14 @@
     const colBox = $("#collections-list");
     if (!colBox) return;
     colBox.addEventListener("click", function (e) {
-      // 整组移出挂在分组行上（不在条目里），单独先认一遍
+
       const gbtn = e.target.closest ? e.target.closest("[data-group]") : null;
       if (gbtn && window.ReciteCollections) {
         e.stopPropagation();
         const col = window.ReciteCollections.get(gbtn.getAttribute("data-col"));
         if (!col) return;
         const group = gbtn.getAttribute("data-group");
-        // 与列表上的分组走**同一条取数路径**（先索引、后快照），
-        // 否则「整组移出」数的篇数与用户看到的那一组对不上
+
         const n = col.items.filter(function (it) { return groupInfoOf(it).group === group; }).length;
         if (!n) return;
         if (!window.confirm("把「" + group + "」这一组的 " + n + " 篇整组移出「" + col.name + "」？")) return;
@@ -707,7 +538,7 @@
         showToast("已整组移出 " + removed + " 篇");
         return;
       }
-      // 上移 / 下移：就地换两位，刷新列表让顺序当场可见
+
       const mv = e.target.closest ? e.target.closest("[data-up], [data-down]") : null;
       if (mv && window.ReciteCollections && !mv.disabled) {
         e.stopPropagation();
@@ -727,9 +558,7 @@
       const eid = t.getAttribute("data-export");
       const pid = t.getAttribute("data-print");
       if (pid) {
-        /* 打印（Pro · `export.paper`）：把这一本清单交给打印那一层。
-           ⚠️ 这里**一个字都不判权限** —— 入口照旧可点，那一层自己会说清
-              「这一项要 Pro」（docs §3.4：把入口藏起来不是边界）。 */
+
         if (window.PrintPage) window.PrintPage.open({ collectionId: pid });
         return;
       }
@@ -757,21 +586,16 @@
 
   }
 
-  /* ---------------- 复习算法（四张模型） ----------------
-     选项定义在 js/review-models.js，与首页 / 进度页同源：
-     这里只负责「画出来、标上当前那张、写回 poem_recite_settings_v1」，
-     不把各模型的说明另抄一份 —— 抄一份就会与首页副标题分叉。 */
   function algoModels() {
     return (typeof window !== "undefined" && window.ReviewModels) || null;
   }
 
-  /** 画一遍四张模型，并把当前那张标成选中 */
   function renderAlgos() {
     const RM = algoModels();
     const box = $("#seg-algo");
     if (!box) return;
     if (!RM) {
-      // 脚本没加载（或顺序错）时不要留一块空白：明说一句，别让人以为是没做完
+
       box.innerHTML = '<div class="settings-hint">复习算法加载失败：请刷新页面重试。</div>';
       return;
     }
@@ -789,41 +613,21 @@
     const m = RM.describe(cur);
     const hint = $("#algo-hint");
     if (hint) {
-      /* ⚠️ Issue #209：后半句「换算法不清进度」删掉（用户点名）。
-         它是真的，但「换了进度还在不在」这件事不该靠一行小字先声明 ——
-         真换了之后进度确实一条不少，用户自己看得见。 */
+
       hint.textContent = "当前：" + m.name;
     }
     const iv = $("#algo-interval");
     if (iv) iv.textContent = intervalText(cur);
   }
 
-  /**
-   * 「复习间隔」那一行的说明：每张模型的口径不同，**照实说**。
-   * ⚠️ 不把所有模型都写成同一句「当天 → 1 → 2 → 4 …天」——
-   *    那是遗忘曲线那一张的表，Leitner / SM-2 / FSRS 的间隔是走出来的，
-   *    不是一张固定表；写错比不写更误导。
-   */
   function intervalText(key) {
     if (key === "leitner") return "五个盒子：1 / 2 / 4 / 8 / 16 天";
     if (key === "sm2") return "1 → 3 → 7 天，之后每次乘简易度";
     if (key === "fsrs") return "按稳定天数算：越稳固间隔越长";
-    /* ⚠️ Issue #209：原先写「当天 → 1 → 2 → 4 → … 天」。**单位只留末尾那一个**：
-       「当天」是第 0 档、后面每一档的数字本来就是天数，逐档带「天」是同义重复。 */
+
     return "当天 → 1 → 2 → 4 → 7 → 15 → 30 → 60 → 120 → 240 天";
   }
 
-  /**
-   * 把已有进度**换算**到新算法上（不清进度）。
-   *
-   * 这一步在切算法时做一次、且只做一次：已经把每条记录的状态换算成新模型的
-   * 落点（见 ReviewModels.adopt），之后新做的评价就按新模型算。
-   * 为什么不留给首页懒换算：用户换完算法可能先去看进度总览，
-   * 那时记录还挂着旧模型的状态，阶段名会说成旧模型的话。
-   *
-   * ⚠️ 换算**不动** nextReviewAt —— 「什么时候到期」是用户已经排好的事，
-   *    换一套算「以后怎么排」的公式，不该顺手把他今天的任务也挪了。
-   */
   function adoptProgress(key) {
     const RM = algoModels();
     const S = window.Storage;
@@ -839,7 +643,6 @@
     return list.length;
   }
 
-  /** 换算法：写进设置，并把已有进度换算到新模型（不清零） */
   function setAlgo(key) {
     const RM = algoModels();
     if (!RM || !RM.known(key) || key === settings.algo) {
@@ -854,30 +657,22 @@
     showToast("复习算法已改为「" + m.name + "」" + (n ? "，已换算 " + n + " 篇的进度" : ""));
   }
 
-  /* ---------------- 朗读（五档连读方式） ----------------
-     这一组的选项**不写进 poem_recite_settings_v1**，而是写进朗读偏好自己的
-     poem_play_mode_v1 —— 与集子页那颗圆键菜单是同一份。理由是它本来就是
-     「播放档位」，跨集子共用；若塞进背诵设置，导出备份就会把两件事混在一起，
-     而且集子页（不加载本页脚本）也读不到。
-     档位定义取自 js/play-modes.js，与阅读器同源，不在本文件里另抄一份。 */
   function playModes() {
     return (typeof window !== "undefined" && window.PlayModes) || null;
   }
 
-  /** 当前档位（本机存值；缺 js/play-modes.js 时退回出厂档，不猜） */
   function currentPlayMode() {
     const PM = playModes();
     if (!PM) return "";
     return PM.read();
   }
 
-  /** 画一遍五档单选项，并把当前档位标成选中 */
   function renderPlayModes() {
     const PM = playModes();
     const box = $("#seg-play");
     if (!box) return;
     if (!PM) {
-      // 脚本没加载（或顺序错）时**不要留一块空白**：明确说出来，别让人以为是没做完
+
       box.innerHTML = '<div class="settings-hint">播放档位加载失败：请刷新页面重试。</div>';
       return;
     }
@@ -890,12 +685,8 @@
         "</button>";
     }).join("");
 
-    /* ⚠️ 档位下方**不再回显一句「当前：原文 · 顺序」**（Issue #209 用户点名删掉）：
-       选中的那一档自己就是实底高亮的（`.play-mode-opt.active`），
-       再在旁边写一遍「当前是哪一档」是同页两遍。 */
   }
 
-  /** 改档位：与集子页同一条路 —— 走 PlayModes.write 再通知 */
   function setPlayMode(id) {
     const PM = playModes();
     if (!PM || !PM.write(id)) return;
@@ -905,26 +696,10 @@
     if (m) showToast("连读方式已改为「" + m.label + "」");
   }
 
-  /* ---------------- 家庭子用户（3 期 P1 · profile.family） ----------------
-     一个家长多个小孩。**孩子不建独立账号** —— 只是账号下的一个展示名 + 一份自己的进度
-     （`docs/auth-design.md` §2.1 的裁决：未成年人实名/同意合规成本高，且无产品收益）。
-
-     这一块只做三件事，全部走 `js/family.js` 的接口（名册 / 切换 / 上限都在那里）：
-       · 列出名册，标出**当前那一个**；
-       · 切换（换孩子 = 换一套进度 / 年级 / 已读）；
-       · 增 / 改名 / 删 —— 上限按 tier，越限时**如实说是上限拦的**。
-
-     ⚠️ 权限判断只走 `Family.limit()` / `Entitlement.identity()` ——
-        本页不出现 `tier === "pro"` 这类判断（与账号那一块同一条纪律）。
-     ⚠️ **切换之后要重画全页**：年级 / 每日数量 / 进度都是从「当前孩子」的键读的，
-        只重画这一块会让用户看到「名字换了、年级还是上一个孩子的」。
-     ------------------------------------------------------------------ */
-
   function familyMod() {
     return window.Family || null;
   }
 
-  /** 画名册：一行一个孩子，当前那个打标；行尾两颗小键（改名 / 删除） */
   function renderFamily() {
     const box = $("#family-panel");
     const hint = $("#family-hint");
@@ -933,8 +708,6 @@
     const AV = avatarMod();
     if (!F) { box.innerHTML = ""; if (hint) hint.textContent = ""; return; }
 
-    /* 先认领：名册为空时把老档案（昵称 + 头像）搬成第一个 —— 老用户零感知。
-       认领是幂等的，且只在名册为空时发生。 */
     const data = F.ensureDetailed({ backing: window.localStorage });
     const list = data.data.profiles;
     const at = data.data.at;
@@ -950,9 +723,7 @@
       row.innerHTML =
         '<button class="family-pick" type="button" data-family-pick="' + esc(p.id) + '"' +
         (p.id === at ? ' aria-current="true"' : "") + ">" +
-        /* 每行一个孩子都带他自己的头像（首字 / 上传的图）——
-           `Avatar.htmlFor()` 画的是**那一份档案**，不是盘上「当前那份」，
-           否则 N 枚印全一样。 */
+
         (AV ? AV.htmlFor(p, {}) : "") +
         '<span class="family-name">' + esc(name) + "</span>" +
         (p.id === at ? '<span class="family-now">当前</span>' : "") +
@@ -968,8 +739,6 @@
       box.appendChild(row);
     });
 
-    /* 「再建一个」：超限时**不藏按钮**（把入口藏起来不是边界，也让人以为坏了）——
-       点了如实回一句话，说清「是上限拦的」以及「怎么才能更多」。 */
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "family-add";
@@ -977,9 +746,6 @@
     btn.textContent = unlimited ? "再建一个" : "再建一个（还可建 " + F.remaining({ backing: window.localStorage, E: entitlementMod() }) + " 个）";
     box.appendChild(btn);
 
-    /* ⚠️ Issue #209：说明只留「当前 N / M 个」。原先后面还跟着一句
-       「切到哪一个，看到的背诵进度、年级与已读就是那一个的。」—— 用户点名删掉：
-       切一下就知道的事，不必先念一遍。 */
     if (hint) {
       hint.textContent = unlimited
         ? "当前 " + list.length + " 个"
@@ -987,7 +753,6 @@
     }
   }
 
-  /** 切换：换孩子 = 换一套进度 / 年级 / 已读。**切换之后整页重画** */
   function switchFamily(id) {
     const F = familyMod();
     if (!F) return;
@@ -995,18 +760,16 @@
     if (!r.ok) { showToast("这个子用户已经不在名册里了"); return; }
     const p = F.current({ backing: window.localStorage });
     showToast("已切到「" + ((p && p.nickname) || "未起名") + "」");
-    /* 整页重画：年级 / 每日数量 / 进度 / 已读全都换了主人。
-       只重画 family 那一块会留下「名字换了、年级还是上一个孩子的」这种半换状态。 */
+
     reloadAll();
   }
 
-  /** 增：空名也允许（与用户名同口径，界面回落「Ashley」） */
   function addFamily() {
     const F = familyMod();
     if (!F) return;
     const r = F.create("", { backing: window.localStorage, E: entitlementMod() });
     if (!r.ok) {
-      /* 上限拦的，**如实说上限**（不笼统说「建不了」—— 错因说错等于让人白试一遍） */
+
       if (r.code === "E_LIMIT") {
         const name = entitlementMod() && entitlementMod().CAPS["profile.family"]
           ? entitlementMod().CAPS["profile.family"].name : "家庭子用户";
@@ -1016,7 +779,7 @@
       }
       return;
     }
-    /* 新档案建好就切过去 —— 建完还停在旧孩子身上，用户会以为没建成功 */
+
     F.select(r.profile.id, { backing: window.localStorage });
     renderFamily();
     showToast("建好了，顺手切了过来。给它起个名字。");
@@ -1024,11 +787,6 @@
     if (inp) inp.focus();
   }
 
-  /**
-   * 改名。**用页面里的文本框而不是 prompt()**：prompt 在 iOS 上样式不可控、
-   * 在部分安卓 WebView 里还会被拦，且它挡不住 XSS 之外的任何东西。
-   * 这里原地长出一个输入框，回车 / 失焦即写盘。
-   */
   function startRenameFamily(id) {
     const F = familyMod();
     if (!F) return;
@@ -1050,7 +808,7 @@
       const r = F.rename(id, inp.value, { backing: window.localStorage });
       if (r.ok) {
         renderFamily();
-        /* 名字可能同时是「用户名」那一栏在显示的那一个 —— 重画印与用户名 */
+
         const F2 = familyMod();
         const cur = F2.current({ backing: window.localStorage });
         if (cur && cur.id === id) {
@@ -1071,7 +829,6 @@
     inp.addEventListener("blur", function () { commit(); });
   }
 
-  /** 删。**不动那一份进度数据** —— 界面如实说明，别让人以为连带清了进度 */
   function removeFamily(id) {
     const F = familyMod();
     if (!F) return;
@@ -1086,11 +843,10 @@
       return;
     }
     showToast("已从名册里删掉「" + name + "」");
-    /* 删掉的如果是**当前**那一个，引擎已经落到第一条 —— 整页重画才对得上 */
+
     reloadAll();
   }
 
-  /** 名册变化后整页重画（年级 / 数量 / 进度 / 印 全都要跟着换） */
   function reloadAll() {
     renderControls();
     renderFamily();
@@ -1112,28 +868,12 @@
     });
   }
 
-  /* ---------------- 头像（Issue #163 · 2026-09-19） ----------------
-     用户裁决：上一版那套「固定字集 + 固定四色」的字符印**整块删掉**
-     （「头像印记设置和传统用户头像流程不符，让人困惑」）。现在是两档：
-
-       ① 没传图 → 昵称的第一个字母 / 汉字（由 js/avatar.js 画）
-       ② 传了图 → 那张图。**选文件 → 本地压缩 → 方形裁切 → 上传**
-
-     三件事的落点各在各处，这一层只做「串起来 + 说人话」：
-       · 画头像      js/avatar.js（唯一画它的地方）
-       · 压缩 / 裁切 js/avatar-image.js（本地 canvas，纯几何那半在 Node 里可测）
-       · 上传        js/account-api.js（先服务端、后本机）
-     ------------------------------------------------------------------ */
-
-  /** 取 Avatar / AvatarImage / AccountApi（脚本顺序不对或老缓存时返回 null） */
   function avatarMod() { return window.Avatar || null; }
   function avatarImageMod() { return window.AvatarImage || null; }
   function accountApiMod() { return window.AccountApi || null; }
 
-  /** 裁切层的临时状态（只在这一次选择里有效，**不落盘**） */
   var crop = { file: null, url: "", w: 0, h: 0, zoom: 1, ox: 0.5, oy: 0.5, drag: null };
 
-  /** 重画设置页那枚头像（昵称变了、换图了、删图了都要重画） */
   function renderAvatar() {
     const A = avatarMod();
     const slot = $("#avatar-slot");
@@ -1144,24 +884,12 @@
     if (html) slot.removeAttribute("aria-hidden");
     else slot.setAttribute("aria-hidden", "true");
 
-    /* 「删除头像」只在**真有图**时出现：没图时摆一颗灰键（点了什么都不发生）
-       比不摆更让人困惑。 */
     const d = (function () { try { return A.display(window.localStorage); } catch (e) { return null; } })();
     const clear = $("#btn-avatar-clear");
     if (clear) clear.hidden = !(d && d.hasImage);
     renderAvatarHint(d);
   }
 
-  /**
-   * 头像底下那句说明 —— **只写这一页答不出来的那一件事**。
-   *
-   * ⚠️ Issue #209：**没传图那一档整句删掉**（用户原话「删除 未上传时显示
-   *    用户名首字」）。它说的是「不传图会怎样」，而这一点在界面上看得见 ——
-   *    左边那枚印画的就是用户名首字。
-   *    剩下两档（已同步 / 只在本机）**留着**：它们说的是「服务器那份有没有」，
-   *    这件事在页面上看不出来，删掉就没人替用户说了。
-   *    仍然不许把「没登录」并进来说明：同步与否由开关决定，与登录状态是两件事。
-   */
   function renderAvatarHint(d) {
     const hint = $("#avatar-hint");
     if (!hint || !d) return;
@@ -1170,7 +898,6 @@
     else hint.textContent = "已存在本机，还没同步到服务器";
   }
 
-  /** 图片选择框 → 裁切层 */
   function onPickFile(input) {
     const AI = avatarImageMod();
     if (!AI) return;
@@ -1178,18 +905,17 @@
     if (!file) return;
     const chk = AI.checkFile(file);
     if (!chk.ok) { showToast(chk.message); input.value = ""; return; }
-    /* 先解码拿到原图尺寸，才知道缩放的范围与初始框 */
+
     AI.decode(file).then(function (src) {
       crop.file = file;
       crop.w = src.width || src.naturalWidth || 0;
       crop.h = src.height || src.naturalHeight || 0;
       crop.zoom = 1; crop.ox = 0.5; crop.oy = 0.5;
-      /* 预览用 blob URL：**不把原图 base64 读进来**（一张 4MB 的图
-         变成 base64 就是 5.4MB 的字符串，手机上会卡住） */
+
       crop.url = (window.URL && URL.createObjectURL) ? URL.createObjectURL(file) : "";
       AI.release(src);
       openCrop();
-      input.value = "";                    // 同一张图连选两次也要能触发 change
+      input.value = "";
     }).catch(function () {
       showToast("这张图片打不开，请换一张");
       input.value = "";
@@ -1218,27 +944,17 @@
     crop.file = null; crop.url = ""; crop.drag = null;
   }
 
-  /**
-   * 把裁切状态画到预览上。
-   *
-   * 用 CSS transform 缩放平移**那一张原图**，而不是每帧重画 canvas ——
-   * 手机上后者在拖动时会掉帧，而前者是合成器干的活。
-   *
-   * 换算：方框里「铺满」的那一档（zoom = 1）对应原图短边贴住方框边。
-   * 于是显示尺寸 = 方框边长 × zoom × (原图对应比例)，
-   * 位置 = 让 (ox, oy) 那个点落在方框中心。
-   */
   function drawCrop() {
     const img = $("#crop-img");
     const box = $("#crop-box");
     if (!img || !box || !crop.w || !crop.h) return;
     const side = box.clientWidth || 260;
-    /* 短边铺满：先把原图缩到「短边 = side」，再乘用户的 zoom */
+
     const base = side / Math.min(crop.w, crop.h);
     const k = base * crop.zoom;
     const dispW = crop.w * k;
     const dispH = crop.h * k;
-    /* 让归一化中心点落在方框中心；再夹回「不出界」的范围 */
+
     let left = side / 2 - crop.ox * dispW;
     let top = side / 2 - crop.oy * dispH;
     left = Math.min(0, Math.max(side - dispW, left));
@@ -1248,7 +964,6 @@
     img.style.transform = "translate(" + left + "px," + top + "px)";
   }
 
-  /** 拖动：按位移反算归一化中心点（手指往右拖 = 看左边那块 → ox 减小） */
   function onCropDrag(dx, dy) {
     const box = $("#crop-box");
     if (!box || !crop.w || !crop.h) return;
@@ -1270,26 +985,18 @@
     drawCrop();
   }
 
-  /** 滑杆（0~1）→ zoom（几何下限 1，上限由原图短边推） */
   function setZoomFromSlider(v) {
     const AI = avatarImageMod();
     if (!AI) return;
     const r = AI.zoomRange(crop.w, crop.h);
     const t = Math.min(1, Math.max(0, Number(v) || 0));
-    /* 对数刻度：放大两倍与放大八倍的手感一致（线性刻度下后半段几乎不动） */
+
     crop.zoom = r.min * Math.pow(r.max / r.min, t);
     const c = AI.clampOffset(crop.w, crop.h, crop.zoom, crop.ox, crop.oy);
     crop.ox = c.ox; crop.oy = c.oy;
     drawCrop();
   }
 
-  /**
-   * 确认裁切：本地压成 256×256 → **先存本机**再上传。
-   *
-   * 顺序是刻意的（与 `AccountApi.deleteAccount` 的「先服务端、后本机」相反）：
-   * 头像的**展示**不依赖云端，所以本机那份先落地 —— 于是「还在传」的这几秒里
-   * 顶栏已经是新图。上传成功了才把云端地址写进账号域（那一步在 AccountApi 里）。
-   */
   function confirmCrop() {
     const AI = avatarImageMod();
     const A = avatarMod();
@@ -1302,11 +1009,7 @@
         return { blob: blob, dataUrl: dataUrl };
       });
     }).then(function (out) {
-      /* ① 本机那份先落地 —— 断网也看得见，而且**上传还没回来时界面就该是新图**。
-         ⚠️ 顺序不能反：先 setLocalImage 再清云端地址（`setAvatar({img:""})` 会顺手
-            清掉本机那份，它是「删头像」那条路上的语义 —— 见 avatar.js）。
-            反过来写的话，用户刚裁完的那张图当场被清掉，界面回到首字印，
-            看着像「点了确定什么都没发生」。 */
+
       A.setLocalImage(window.localStorage, out.dataUrl);
       closeCrop();
       renderAvatar();
@@ -1320,12 +1023,6 @@
     });
   }
 
-  /**
-   * 上传到服务端。
-   *
-   * 四种结果各说各的话（未登录 / 服务器没开放 / 连不上 / 成了）——
-   * 合并成一句「失败」的话，用户不知道下一步该做什么。
-   */
   function uploadAvatar(blob) {
     const Api = accountApiMod();
     if (!Api || !Api.uploadAvatar) return Promise.resolve(false);
@@ -1343,7 +1040,6 @@
     });
   }
 
-  /** 删头像：**先清地址、再删对象**（理由见 account-api.js 的 deleteAvatar） */
   function clearAvatar() {
     const Api = accountApiMod();
     if (!confirm("删除头像？之后显示用户名首字。")) return;
@@ -1364,19 +1060,6 @@
     if (window.SiteChrome && window.SiteChrome.refreshUser) window.SiteChrome.refreshUser();
   }
 
-  /**
-   * 绑事件：**三档输入归到同一组状态**（`crop.zoom` / `crop.ox` / `crop.oy`）。
-   *
-   *   · 单指 / 鼠标拖 → 平移
-   *   · 双指捏合 → 缩放（手机上唯一的自然手势）
-   *   · 滚轮 / 滑杆 → 缩放（桌面与键盘、以及「手势不好使」的兜底）
-   *
-   * ⚠️ 用 Pointer Events 一套吃下鼠标与触摸（不再各写一份 touchstart / mousedown）：
-   *    两份实现的下场是「手机上能拖、桌面拖不动」，而那是**只在一边测得到**的 bug。
-   * ⚠️ 捏合的判定放在**同一个 pointerdown 里**（按活跃指针数分流），
-   *    而不是再挂第二个 pointerdown —— 两个监听器都改 `crop.drag`，
-   *    症状是两指按下时图会先跳一下再缩。
-   */
   function bindCrop() {
     const layer = $("#crop-layer");
     const box = $("#crop-box");
@@ -1389,18 +1072,17 @@
     if (cancel) cancel.addEventListener("click", closeCrop);
     if (!box) return;
 
-    /* 活跃指针表：1 个 = 拖、2 个 = 捏合。第三根手指按下时忽略（不取平均） */
     var pointers = {};
     var pinchDist = 0;
 
     box.addEventListener("pointerdown", function (e) {
       pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
-      if (box.setPointerCapture) { try { box.setPointerCapture(e.pointerId); } catch (err) { /* 老浏览器 */ } }
+      if (box.setPointerCapture) { try { box.setPointerCapture(e.pointerId); } catch (err) {  } }
       var n = Object.keys(pointers).length;
       if (n === 1) {
         crop.drag = { x: e.clientX, y: e.clientY };
       } else if (n === 2) {
-        /* 变两指：**立刻停掉平移**（否则缩的同时还在挪，看着像抖） */
+
         crop.drag = null;
         pinchDist = distOf(pointers);
       }
@@ -1428,8 +1110,7 @@
       if (e && e.pointerId !== undefined) delete pointers[e.pointerId];
       if (Object.keys(pointers).length === 0) { crop.drag = null; pinchDist = 0; }
       else if (Object.keys(pointers).length === 1) {
-        /* 从两指回到一指：不要接着平移（那时手指位置与图已经对不上了），
-           等用户抬起再按下 —— 宁可少一次拖动，也不要图「忽然跳一下」 */
+
         crop.drag = null;
         pinchDist = 0;
       }
@@ -1438,7 +1119,6 @@
     box.addEventListener("pointercancel", stop);
     box.addEventListener("pointerleave", stop);
 
-    /* 滚轮缩放（桌面）：一次一格 1.12 倍，按住 shift 更快 */
     box.addEventListener("wheel", function (e) {
       e.preventDefault();
       var step = e.shiftKey ? 0.24 : 0.12;
@@ -1446,7 +1126,6 @@
     }, { passive: false });
   }
 
-  /** 两指之间的距离（>2 根手指时取**前两根**，不取平均 —— 平均值会让图乱跳） */
   function distOf(pointers) {
     var keys = Object.keys(pointers);
     if (keys.length < 2) return 0;
@@ -1455,7 +1134,6 @@
     return Math.hypot(a.x - b.x, a.y - b.y);
   }
 
-  /** 按倍率改 zoom，并把滑杆同步过去（滑杆是 zoom 的**对数刻度**回显） */
   function applyZoomFactor(f) {
     const AI = avatarImageMod();
     if (!AI || !crop.w) return;
@@ -1479,25 +1157,13 @@
     const clear = $("#btn-avatar-clear");
     if (clear) clear.addEventListener("click", clearAvatar);
     bindCrop();
-    /* 窗口尺寸变了要重算显示尺寸（方框边长跟着走） */
+
     window.addEventListener("resize", function () {
       const layer = $("#crop-layer");
       if (layer && !layer.hidden) drawCrop();
     });
   }
 
-  /* ---------------- 本机账号（Issue #132 · 二级页「通用」） ----------------
-     本期没有服务端：账号记录（`poem_auth_v1`）与学习进度一样只存在本机，
-     `/privacy/` 里那句「不上传、不云同步」仍然成立。
-     这一块只做**只读展示 + 退出**：
-       · 层级徽章与「当前权限」清单读 js/entitlement.js（全站唯一判据），
-         本页不自己拼 plan / tier（有源码扫描守着）；
-       · 「退出」只清会话，绝不碰任何进度数据（AuthCore.signOut 的口径）；
-       · 注销账号要求重输一次邮箱 —— 但那一步依赖 `/profile/`（还没建），
-         所以这里只给退出，并如实写明「注销在 /profile/ 里做」，不假装有。
-     ------------------------------------------------------------------ */
-
-  /** 取 AuthCore / Entitlement（脚本顺序不对或老缓存时返回 null，宁可不画也不报错） */
   function authMod() {
     return window.AuthCore || null;
   }
@@ -1505,7 +1171,6 @@
     return window.Entitlement || null;
   }
 
-  /** 当前身份（会话 + 本机名单合成）：页面上只准用它，不自己拼 ctx */
   function currentIdentity() {
     const E = entitlementMod();
     if (!E) return null;
@@ -1516,7 +1181,6 @@
     }
   }
 
-  /** 画「账号」这一项：已登录 / 未登录两种形态，文案如实 */
   function renderAccount() {
     const box = $("#account-panel");
     if (!box) return;
@@ -1533,11 +1197,7 @@
       E.tierLabel(ident.tier) + "</span>";
 
     if (!ident.signedIn) {
-      /* ⚠️ Issue #209 用户点名两处改动：
-           · 「未登录（游客）」收成「游客」—— 用户原话「未登录（游客）修改为 游客」；
-             与 /plans/ 那张表的第一列同口径（那边 2026-09-18 就写作「游客」）。
-           · 底下那句「进度只存在本机，清缓存就没了。登录只为不丢。」**删掉** ——
-             它说的两件事（本地存储、登录是干什么的）在别处已经各说了一次。 */
+
       box.innerHTML =
         '<p class="account-line"><span class="account-state" id="account-state">游客</span>' +
         badge + "</p>" +
@@ -1545,10 +1205,6 @@
       return;
     }
 
-    /* Issue #163：这一段原先把**全部** 15 条能力列一遍（能用的打钩、不能用的
-       写门槛）—— 与个人中心那份清单、与 /plans/ 那张四列表说的是同一件事，
-       三处各说一遍。现在只留一句还有信息量的：**你还差哪几项**（没有就一句
-       「全都能用」）。「我能用什么」去 /plans/ 那张表看，一列到底。 */
     const lacks = E.matrix(ident).filter(function (m) { return !m.ok; });
     const rows = lacks.length
       ? '<p class="settings-hint">还差：' + lacks.map(function (m) {
@@ -1564,14 +1220,11 @@
       '<a class="btn ghost-btn" id="btn-goprofile" href="/profile/">个人中心</a>' +
       '<button class="btn ghost-btn" id="btn-signout" type="button">退出登录</button></div>' +
       '<p class="settings-hint">退出不删进度；注销在个人中心。</p>' +
-      /* 层级是**谁定的** —— 如实标出来。服务端判定那份改不了，
-         本机登记那份改一行存储就能改，两者在用户眼里的分量完全不同
-         （docs §3.4 的口径）。 */
+
       '<p class="settings-hint" id="account-tier-src">层级来源：' +
       esc(ident.tierSource === "server" ? "服务器" : "本机登记") + "</p>";
   }
 
-  /** 「退出登录」：只清会话，不碰进度 */
   function bindAccount() {
     const btn = $("#btn-signout");
     if (!btn) return;
@@ -1581,18 +1234,14 @@
       const S = syncMod();
       try {
         if (A && A.makeStore) A.signOut(A.makeStore(window.localStorage));
-      } catch (e) { /* 存储不可用：至少把界面还原成未登录 */ }
-      /* 清掉同步的记账（见过的云端时间戳）—— 那是「这次登录」的上下文。
-         但**绝不动进度数据**，也**不改开关**：用户关掉同步的意愿与登录状态无关。 */
-      try { if (S) S.forget(); } catch (e) { /* 同上 */ }
-      /* 服务端下发的那一份层级/角色也清掉 —— 否则一个刚退出的人还顶着
-         「由服务器判定」的 Pro 徽章，而那正是「不假装」要拦的事。
-         ⚠️ 只清 `source:"server"` 那一份：本机发放名单与服务端判定无关，
-            退出登录不该把管理员的名单抹掉（`clearServerTier` 里判的就是这条）。 */
+      } catch (e) {  }
+
+      try { if (S) S.forget(); } catch (e) {  }
+
       try {
         const M = window.AccountApi;
         if (M && M.clearServerTier) M.clearServerTier({ backing: window.localStorage, E: entitlementMod() });
-      } catch (e) { /* 同上 */ }
+      } catch (e) {  }
       renderAccount();
       renderSync();
       showToast("已退出登录，进度都还在这台设备上");
@@ -1601,31 +1250,6 @@
 
   function syncMod() { return window.SyncStore || null; }
 
-  /**
-   * 画「跨设备同步」那一项。**五种状态各说各的话**（`SyncStore.status()`）：
-   *
-   *   off        开关关着（出厂状态）—— 这一项可点，能开
-   *   tier       开关开着但**层级不够**（`sync.multiDevice` 要 Pro 起）——
-   *              如实说「Pro 起」，**不说「打不开」**（错因说错 = 让人白试一遍），
-   *              并写明本机进度一字不少、背诵不受影响
-   *   signin     开关开着但没登录 —— 开关可点，但说明「要登录才能同步」
-   *   unavailable 本站还没开放云端同步（服务端没配好）—— 开关置灰，如实说明
-   *   ready      可以同步 —— 开关可点，说明「本机那份始终完整」
-   *
-   * ⚠️ 五种状态里，**只有真的在同步（ready + 开启）那一支**才说「会上传到服务器」；
-   *    其余四支各自说清「现在没有上传」——
-   *    一句笼统的「已同步」会让人以为自己的进度已经在云上了（docs §1 第 3 条：
-   *    不假装）。
-   *
-   * ⚠️ **开关本身不置灰，只有提示分状态**。层级不够时把开关置灰，
-   *    用户看到的是一个点不动的东西、不知道差在哪；而开关点下去会得到
-   *    「Pro 起」这句话（`bindSync` 里那颗 toast）。与自选清单上限、
-   *    导出按钮同一条纪律：**入口不藏，点了如实说差什么**。
-   *
-   * ⚠️ Issue #163 之后**没有「关」/「开」那枚文字标签了**：状态由开关本体表达
-   *    （深天青实底 = 开着、纸底描边 = 关着），一行说明照旧在下面。
-   *    原先那颗文字既要表述状态、又长得像一颗可点的按钮，两处都不清不楚。
-   */
   function renderSync() {
     const input = $("#toggle-sync");
     const hint = $("#sync-hint");
@@ -1649,9 +1273,7 @@
       hint.textContent = "跨设备云同步要 Pro 起（当前没到这一层）。进度仍在本机、一字不少。";
       return;
     }
-    /* ⚠️ Issue #209：这一支原先写「关闭中：进度只存本机。」（外加「想同步请先登录」）。
-       用户点名删掉 —— 开关关着这件事本身就看得见（开关是关着的），
-       底下再说一遍只是重复一遍状态。 */
+
     if (!on) {
       hint.textContent = "";
       return;
@@ -1663,7 +1285,6 @@
     hint.textContent = "开启中：进度与账号设置会同步；本机那份始终完整，断网照常背。";
   }
 
-  /** 开 / 关同步：**关掉只停上传**，绝不删本机数据 */
   function bindSync() {
     const input = $("#toggle-sync");
     if (!input) return;
@@ -1672,11 +1293,8 @@
       if (!S) return;
       const r = S.setEnabled(input.checked);
       if (!r || !r.ok) {
-        input.checked = !!S.enabled();       // 没落盘就别停在用户点出来的那个位置
-        /* ⚠️ **按错因分开说**。两件事的用户动作完全不同：
-             · 层级不够 → 去找管理员 / 自己去发一次 Pro，说「Pro 起」
-             · 存储写不进 → 换个浏览器 / 关无痕模式，说「浏览器不允许保存」
-           合并成一句「打不开」= 让人白试一遍。 */
+        input.checked = !!S.enabled();
+
         if (r && r.code === "E_TIER") showToast(r.hint || "跨设备云同步要 Pro 起");
         else showToast("浏览器不允许保存设置，这次改动没生效");
         renderSync();
@@ -1685,11 +1303,11 @@
       renderSync();
       renderAccount();
       if (input.checked) {
-        // 开启那一刻就跑一轮：用户点了开关却要等下一次打开页面才同步，会以为坏了
+
         try {
-          const first = S.firstSync();       // ⚠️ 别叫 r：上面那颗回执就叫 r，重名会遮蔽
-          if (first && first.then) first.then(function () { renderSync(); }, function () { /* 静默 */ });
-        } catch (e) { /* 静默 */ }
+          const first = S.firstSync();
+          if (first && first.then) first.then(function () { renderSync(); }, function () {  });
+        } catch (e) {  }
         showToast(S.status() === "signin" ? "已开启，登录后才会真的同步" : "已开启跨设备同步");
       } else {
         showToast("已关闭同步，进度仍在本机");
@@ -1697,14 +1315,13 @@
     });
   }
 
-  /* ---------------- 事件 ---------------- */
   function bindEvents() {
     $$("#seg-stage button").forEach(function (b) {
       b.addEventListener("click", function () {
         const stage = b.dataset.stage;
         const grades = STAGES[stage] ? STAGES[stage].grades : null;
         if (!grades) return;
-        // 换学段时年级要跟着落在该学段内，否则会停在「高中 · 一年级」这种组合
+
         if (grades.indexOf(settings.grade) === -1) settings.grade = grades[0];
         saveSettings();
         invalidatePlan();
@@ -1784,8 +1401,7 @@
 
     const uInput = $("#input-username");
     if (uInput) {
-      // 昵称属账号域：除老键外还要镜像到 poem_profile_v1（头像与昵称同一份档案），
-      // 收在 commitNickname 一处 —— 见 docs/auth-design.md §2.3.1
+
       const commit = function () {
         commitNickname(uInput.value);
         applyAppName();
@@ -1798,7 +1414,7 @@
         commit();
         uInput.value = settings.username;
       });
-      // 改昵称 → 印要跟着重画（印的兜底是「昵称首字」，昵称变了印也变）
+
       uInput.addEventListener("input", function () { renderAvatar(); });
       uInput.addEventListener("change", function () { renderAvatar(); });
       uInput.addEventListener("keydown", function (e) {
@@ -1824,7 +1440,7 @@
             .forEach(function (k) {
               localStorage.removeItem(k);
             });
-          // 清空进度不该顺手把设置也抹掉，这里按首页的行为补回设置
+
           saveSettings();
         }
         invalidatePlan();
@@ -1850,9 +1466,6 @@
       });
     }
 
-    /* 课内诗词整体导出（Pro）。**按住 Shift 点** = 先弹文本对话框（手机上便于复制）——
-       直接点是「落一个 .txt」，那是最常见的用法；对话框留着是因为
-       手机浏览器对下载文件的处理各不相同（存进「文件」里、或直接打开）。 */
     const poemsBtn = $("#btn-export-poems");
     if (poemsBtn) {
       poemsBtn.addEventListener("click", function (e) {
@@ -1889,12 +1502,6 @@
     }
   }
 
-  /* ---------------- 底部留白：不被底部导航栏遮挡 ---------------- */
-  /**
-   * 底部导航栏 = 播放栏（.player-bar，z-index 70，fixed 贴底）；
-   * iOS 引导条（.ios-install-tip，z-index 40）出现时会压住页面最后一行的法务链接。
-   * 两者都收在 js/pwa.js / js/reader.js 里统一同步，这里只负责告诉它们「先算上完整导航栏高度」。
-   */
   function syncNavGap() {
     document.documentElement.style.setProperty("--nav-h", "0px");
     document.body.classList.add("no-player");
@@ -1906,14 +1513,6 @@
     }
   }
 
-  /**
-   * 「补洞」（Issue #132 · 2 期）：问一次 `/api/me`，把服务端判定的层级与角色落到权益层。
-   *
-   * ⚠️ **只在本页有账号面板时才问** —— 别页（背诵 / 清单 / 阅读）不关心层级，
-   *    多问一次只是白白多一个请求；而那些页面里 `#account-panel` 根本不在。
-   * ⚠️ 问完之后只重画**受它影响的那两块**（账号 + 同步），不整页重画 ——
-   *    整页重画会把用户正在输入的框（用户名、清单名）清掉。
-   */
   function refreshServerIdentity() {
     const M = window.AccountApi;
     const box = $("#account-panel");
@@ -1923,9 +1522,9 @@
       A: authMod(),
       E: entitlementMod()
     })).then(function (r) {
-      if (!r || !r.ok) return;          // 连不上 / 没登录：本机那份照旧，不重画
+      if (!r || !r.ok) return;
       renderAccount();
-    })["catch"](function () { /* 问不到就算了，本页已经是可用状态 */ });
+    })["catch"](function () {  });
   }
 
   function init() {
@@ -1939,8 +1538,7 @@
     bindAccount();
     bindSync();
     refreshServerIdentity();
-    // 另一个标签页改了播放档位（集子页那颗圆键）时，本页单选项跟着变 ——
-    // storage 事件只在「别的标签页」触发，正是这里需要的方向。
+
     window.addEventListener("storage", function (e) {
       const PM = playModes();
       if (!PM || e.key !== PM.KEY) return;
@@ -1949,10 +1547,7 @@
     if (window.PlayModes && window.PlayModes.subscribe) {
       window.PlayModes.subscribe(function () { renderPlayModes(); });
     }
-    // 自选集合在**别处**变了（集子页 / 搜索页点了「加入背诵」，或另一个标签页
-    // 改了同一份键）时，这一页的清单跟着重画 —— 与首页监听同一个事件。
-    // 本页自己那套增删改查是「先改数据、再 renderCollections()」，
-    // 这里兜的是外部来源：不补这一条，别处加过一篇回到这一页就看不到。
+
     window.addEventListener("recite-collections-change", function () { renderCollections(); });
     window.addEventListener("storage", function (e) {
       if (window.ReciteCollections && e.key === window.ReciteCollections.KEY) renderCollections();
