@@ -322,11 +322,36 @@ console.log('\n=== 十、每张加载了顶栏的页面都加载了 js/avatar.js
   });
 }
 
-console.log('\n=== 十之一、顶栏那一枚＝与 logo 同径的整圆 ===');
+console.log('\n=== 十之一、顶栏右端：没有头像，只有一颗裸箭头（Issue #209 第二轮）===');
 {
+  /* 用户 2026-09-17 原话：
+       「所有页面右上角的头像全部删除，这个位置现在有后退键代替，
+         另外，右上角后退键去除圆形边框，去除背景色」
+
+     于是这一节从「顶栏那一枚＝与 logo 同径的整圆」**翻面**成
+     「顶栏上一枚头像都没有」。翻面之后要守的反而更多，因为
+     「删干净」比「改对」难：留一条 `.top-user` 规则、留一枚 `--top-slot`、
+     留一行 `avatar-top` 的渲染调用，都会让下一个人以为那里还有一枚印。 */
   const css = fs.readFileSync('css/style.css', 'utf8').replace(/\/\*[\s\S]*?\*\//g, ' ');
   const chrome = fs.readFileSync('js/chrome.js', 'utf8').replace(/\/\*[\s\S]*?\*\//g, ' ')
-    .replace(/^\s*\/\/.*$/gm, '');
+    .replace(/^\s*\/\/.*$/gm, ' ');
+
+  chk(!/\.top-user\s*[,{]/.test(css),
+    '样式表里不再留 .top-user 规则（顶栏那一枚头像已删）');
+  chk(!/--top-slot/.test(css) && !/\.top-slot\s*[,{]/.test(css),
+    '--top-slot 与 .top-slot（头像的直径 / 圆槽）也一并删了');
+  chk(!/--user-size/.test(css),
+    '--user-size（顶栏头像专用的尺寸来源）也删了 —— 顶栏没有头像了');
+  chk(!/\.top-act-spacer\s*[,{]/.test(css),
+    '阅读器里那枚「不可见占位」也删了（它占的是头像的像素位）');
+  chk(!/class="avatar-top"|avatar-top/.test(fs.readFileSync('js/chrome.js', 'utf8')),
+    'js/chrome.js 不再画顶栏那一档头像（avatar-top 的渲染调用整条撤掉）');
+  chk(!/userAvatarHtml|userHref|__AVATAR_PAGE__/.test(chrome),
+    '画顶栏头像与它的落点那两件事整件删掉（连带 __AVATAR_PAGE__ 覆盖口）');
+  chk(!/size:\s*\d+/.test(chrome),
+    'js/chrome.js 里没有任何写死的头像尺寸（顶栏不再画头像）');
+
+  /* 头像本体（印 / 图片两档）仍在：设置页、个人中心、子用户名册还要用 */
   const cssRule = (function (sel) {
     const flat = css.replace(/@media[^{]+\{/g, '{');
     let acc = '';
@@ -337,24 +362,8 @@ console.log('\n=== 十之一、顶栏那一枚＝与 logo 同径的整圆 ===');
     }
     return acc;
   });
-
-  const markW = (cssRule('.brand-mark').match(/width:\s*(\d+)px/) || [])[1];
-  const slotTok = (cssRule(':root').match(/--top-slot:\s*(\d+)px/) || [])[1];
-  chk(!!markW && !!slotTok && markW === slotTok,
-    '顶栏右侧的直径令牌 --top-slot 与 logo 徽标同径（.brand-mark ' +
-    markW + 'px vs :root --top-slot ' + slotTok + 'px）');
-  chk(/--user-size:\s*var\(--top-slot\)/.test(cssRule('.top-user')),
-    '顶栏头像直径读 --top-slot（与徽标同一条令牌，不再两处各写一个数）');
-  chk(/border-radius:\s*50%/.test(cssRule('.top-user')), '顶栏头像是整圆');
-  chk(/width:\s*100%/.test(cssRule('.top-user > .avatar')) &&
-      /height:\s*100%/.test(cssRule('.top-user > .avatar')),
-    '顶栏那一枚铺满整圆（不在圆里再缩一圈）');
-  chk(/object-fit:\s*cover/.test(cssRule('.avatar-img')), '图片铺满整圆且不变胖');
-
-  chk(!/size:\s*\d+/.test(chrome),
-    'js/chrome.js 不自己写死头像尺寸（尺寸只在 css/style.css 的 --user-size 一处）');
-  chk(/A\.html\(backing, \{ cls: "avatar-top" \}\)/.test(chrome),
-    '顶栏渲染仍只传类名（cls），尺寸交给样式表');
+  chk(/object-fit:\s*cover/.test(cssRule('.avatar-img')), '头像本体仍是「图片铺满整圆且不变胖」');
+  chk(/border-radius:\s*50%/.test(cssRule('.avatar')), '头像本体仍是整圆（只是不再出现在顶栏）');
 }
 
 console.log('\n=== 十一、源码扫描：页面不许自己拼一份头像 ===');

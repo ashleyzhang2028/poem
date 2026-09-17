@@ -5,16 +5,26 @@
  * 复习算法 / 朗读播放；#163 又把最后两组并成一组「朗读」，现在是五组）。
  * 再往上加只会更长，于是每一组摊成一页：
  *
- *   /settings/          主页：四个入口 + 版权与法务链接（不加载 js/settings.js）
- *   /settings/general/  通用     —— 用户名 / 头像印记 / 账号 / 数据管理
+ *   /settings/          「我的」：个人中心 + 四组入口 + 关于 + 版权与法务链接
+ *                                （不加载 js/settings.js）
+ *   /settings/general/  通用     —— 用户名 / 头像 / 账号 / 数据管理
  *   /settings/recite/   背诵     —— 学段 / 年级 / 学期 / 范围 / 数量 + 复习算法
  *   /settings/lists/    我的清单 —— 自选背诵的增删改查
  *   /settings/reader/   朗读     —— 自动注音 + 五档连读方式
  *
- * 这一层守三件事（都是「拆页会静默出错」的那类）：
+ * ⚠️ Issue #209（用户 2026-09-17）：「将右下角设置改成 我的 并将齿轮图标
+ *    换成圆形用户头像 …… 用户点击我的之后，转到我的页面，显示之前四个设置项，
+ *    包括 通用 背诵 我的清单 朗读，把我的清单改成 清单，另外在通用上面加一个
+ *    个人中心，最下面加一个 关于」
+ *    —— 路由 `/settings/` 一个字没动（全站所有 `href="/settings/"` 与
+ *    `data-back="/settings/"` 因此都不必改），变的是**这一页叫什么**
+ *    （顶栏页名「我的」、底部最后一格也叫「我的」）与**清单的六行**。
+ *
+ * 这一层守四件事（都是「拆页会静默出错」的那类）：
  *   一、结构：四张页合起来是精简后的五组、每件控件**只在一页**上
- *   二、返回：二级页的返回键回设置主页，不回背诵首页
+ *   二、返回：二级页的返回键回「我的」页，不回背诵首页
  *   三、离线：新页面与新脚本都进了 sw.js 的预缓存清单，且版本号跟着提
+ *   四、页签：最后一格叫「我的」（不是「设置」），图标是圆形用户头像
  * 跑法：`node test/settings-nav.test.js`（纯 Node，不联网、不装依赖）
  */
 const { JSDOM } = require('jsdom');
@@ -66,10 +76,16 @@ const NAV = read('js/settings-nav.js');
      它排最后一个」，而不是「有没有那一行」。 */
   chk(!/id="account-entry"/.test(SRC.index),
     '主页不再有独立的账号卡容器（那一行已在清单里）');
-  chk(/querySelector\("#settings-index"\)/.test(NAV) && /appendChild\(row\)/.test(NAV),
-    '账号那一行被**追加进同一张清单**（#settings-index），不是另起一处');
-  chk(/renderIndex\(\);\s*\n\s*renderAccountEntry\(\);/.test(NAV),
-    'append 排在 renderIndex 之后（反了就被清单重画抹掉，那一行会凭空消失）');
+  /* ⚠️ Issue #209（用户 2026-09-17）：「在通用上面加一个 个人中心」——
+     账号那一行从「清单最后一条」挪到**第一条**，所以判据从 appendChild
+     改成 insertBefore(firstChild)。两件事必须同时成立：
+       · 它仍进的是**同一张清单**（#settings-index），不是另起一处；
+       · 它排在其他四组**前面**。 */
+  chk(/querySelector\("#settings-index"\)/.test(NAV) &&
+    /insertBefore\(el, box\.firstChild\)/.test(NAV),
+    '账号那一行仍进**同一张清单**，且插在**第一条**（用户点名的位置）');
+  chk(/renderIndex\(\);\s*\n\s*renderAccountEntry\(\);\s*\n\s*renderAbout\(\);/.test(NAV),
+    '三步顺序：renderIndex → renderAccountEntry → renderAbout（反了就被清单重画抹掉）');
 }
 
 /* ================= 二、每张页只放自己那一组，控件不重复 ================= */
@@ -157,7 +173,11 @@ const NAV = read('js/settings-nav.js');
   // 页面名各自不同：用户得知道自己在哪一层
   const pageNames = ['index', 'general', 'recite', 'lists', 'reader']
     .map(k => (SRC[k].match(/data-page="([^"]+)"/) || [])[1]);
-  chk(pageNames.join(',') === '设置,通用,背诵,我的清单,朗读',
+  /* ⚠️ Issue #209：顶页从「设置」改名成「我的」（底部那格也一起改了）——
+     用户原话「将右下角设置改成 我的 …… 用户点击我的之后，转到我的页面」。
+     二级页的页名一个字没改：它们仍是各自那一组。
+     ⚠️ 「我的清单」那一张仍是「我的清单」（页名），只是在**清单里**简称「清单」。 */
+  chk(pageNames.join(',') === '我的,通用,背诵,我的清单,朗读',
     '五张页的页名各不相同且如实：' + pageNames.join(' / '));
   chk(new Set(pageNames).size === 5, '五张页的页名不重复（否则「返回上一页」会让人分不清层）');
 }
@@ -170,7 +190,7 @@ const NAV = read('js/settings-nav.js');
     '四张二级页都在预缓存清单里（断网也进得去）');
   chk(/\.\/js\/settings-nav\.js/.test(sw), 'js/settings-nav.js 在预缓存清单里');
   const ver = parseInt((sw.match(/poem-app-v(\d+)/) || [0, '0'])[1], 10);
-  chk(ver >= 116, '缓存版本已跟着提（本轮改了 css / js / 新增 5 张页面，实际 v' + ver + '）');
+  chk(ver >= 143, '缓存版本已跟着提（本轮改了 css / js / 数据，实际 v' + ver + '）');
   // 预缓存清单里的路径必须真的存在，否则 install 时静默失败
   const list = [...sw.matchAll(/"(\.\/[^"]+)"/g)].map(m => m[1]);
   const missing = list.filter(u => {
@@ -198,6 +218,43 @@ const NAV = read('js/settings-nav.js');
   // 主页不加载 settings.js：它只管「进哪一页」，不该顺手把整页设置逻辑拖进来
   chk(!/<script src="[^"]*js\/settings\.js"><\/script>/.test(SRC.index),
     '主页不加载 js/settings.js（只有 js/settings-nav.js）');
+}
+
+/* ================= 七、底部最后一格＝「我的」（Issue #209） ================= */
+{
+  const chrome = read('js/chrome.js');
+  const code = (t) => t.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/^\s*\/\/.*$/gm, ' ');
+
+  // 页签文案：「设置」→「我的」
+  chk(/label:\s*"我的"/.test(code(chrome)), '底部最后一格写「我的」（用户点名的改名）');
+  chk(!/label:\s*"设置"/.test(code(chrome)), '不再有一格叫「设置」（改了名，不是又加一格）');
+  // 路由一个字没动：改的是名字与图标，不是地址
+  chk(/key:\s*"settings",\s*href:\s*"\/settings\/"/.test(chrome),
+    '那一格的路由仍是 /settings/（全站所有链接与返回落点因此都不必改）');
+  // 图标：圆形用户头像，不是齿轮
+  const glyph = chrome.slice(chrome.indexOf('tabMine:'), chrome.indexOf('/* 顶栏右侧：返回上一页'));
+  chk(/<circle[^>]*r="10"/.test(glyph), '那一格的图标是一枚**整圆**（圆形用户头像）');
+  chk(!/M9\.63 5\.52/.test(code(chrome)),
+    '齿轮那枚图标连同定义一起删掉（不留没人用的图形）');
+  chk(/__CHAR__/.test(glyph) && /dockIcon\(/.test(chrome),
+    '圆里的首字由渲染时现算（占位符 + dockIcon 两处配套）');
+  chk(/A\.display\(backing\)/.test(code(chrome)),
+    '首字取自 Avatar.display（全站唯一那份「我是谁」的口径），不另读一遍档案');
+
+  // 「关于」那一块：只读信息 + 两条法务入口 + 离线状态
+  const nav = read('js/settings-nav.js');
+  chk(/function renderAbout\(/.test(nav), 'js/settings-nav.js 有 renderAbout()');
+  chk(/settings-about/.test(read('settings/index.html')),
+    '「我的」页 HTML 里有 #settings-about 那块容器');
+  chk(/serviceWorker/.test(nav), '「关于」里的离线状态读 Service Worker 的真实状态（不假装）');
+  /* ⚠️ 版本号与 sw.js 的 CACHE_NAME **必须同步**：页面读不到 Service Worker
+     作用域里的常量，所以那一串是手写的。两处一旦走散，用户看到的版本号
+     就会与真正生效的缓存对不上 —— 这类「只差一点点的谎」最难被发现。 */
+  const swVer = (read('sw.js').match(/poem-app-v(\d+)/) || [0, '0'])[1];
+  const pageVer = (nav.match(/APP_VERSION = "[^"]*v(\d+)/) || [0, '0'])[1];
+  chk(!!swVer && swVer === pageVer,
+    '「关于」里的版本号与 sw.js 的 CACHE_NAME 同一个数（实际 v' + pageVer + ' / v' + swVer + '）');
+  chk(/离线缓存/.test(read('js/settings-nav.js')), '「关于」里写得出「离线缓存」这一行');
 }
 
 console.log('\n' + (fails ? '❌ ' + fails + ' 项失败' : '🎉 二级设置页测试全部通过'));

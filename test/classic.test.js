@@ -129,28 +129,28 @@ setTimeout(() => {
     d.querySelectorAll('.topbar > .count-badge').length + ' 枚）');
   chk(fs.readFileSync(path + 'classic/index.html', 'utf8').indexOf('count-badge') < 0,
     '页面里连 count-badge 这个类名都不再出现（不留死节点）');
-  // 页顶那一行留下的只有「品牌区 · 返回键 · 头像」三件，次序不变。
-  // Issue #147 之后返回键**住在右侧簇那枚固定圆槽里**（.top-slot）——
-  // 顶端两件仍是 brand / 槽，槽里才是返回键，槽右边才是头像；
-  // 逐层数下来次序与「品牌区 · 返回键 · 头像」完全一致。
+  // 页顶那一行留下的只有「品牌区 · 返回键」两件（Issue #209 第二轮）。
+  // 用户 2026-09-17 原话：「所有页面右上角的头像全部删除，这个位置现在有
+  // 后退键代替，另外，右上角后退键去除圆形边框，去除背景色」
+  // —— 头像那一枚恒定锚点（含圆槽）整件撤掉，返回键自己顶到最右。
   const topbar = d.querySelector('.topbar');
-  const rightSlot = topbar.querySelector(':scope > .top-slot');
-  chk([...topbar.children].map(e => e.className.split(' ')[0]).join('/') === 'brand/top-slot/top-user',
-    '页顶一行是「品牌区 · 〔返回键槽〕 · 头像」（实际 ' +
+  chk([...topbar.children].map(e => e.className.split(' ')[0]).join('/') === 'brand/top-act',
+    '页顶一行是「品牌区 · 返回键」（实际 ' +
     [...topbar.children].map(e => e.className).join('/') + '）');
-  chk(!!rightSlot && !!rightSlot.querySelector(':scope > #top-back') &&
-    [...rightSlot.children].map(e => e.className.split(' ')[0]).join('/') === 'top-act',
-    '返回键就在右侧簇那枚固定圆槽里（槽里只有它一件）');
-  // ⚠️ 这一条是 Issue #147 的正题：**返回键与头像的位置不许随页名长短移动**。
+  chk(topbar.querySelectorAll(':scope > .top-slot, :scope > .top-user').length === 0,
+    '顶栏 HTML 里没有槽、也没有头像（结构只出 chrome.js 一处，且都撤了）');
+  // ⚠️ 这一条是 Issue #147 的正题：**返回键的位置不许随页名长短移动**。
   //    上一版返回键直接跟在品牌区后面（整行 space-between），搜索页页名短，
-  //    那一颗箭头就比别页左偏 —— 用户的报障正是这个。位置由固定的槽 + 恒定锚点
-  //    决定，所以这里守「顶栏右端两件的次序与尺寸都由 .top-slot 一套口径给」。
+  //    那一颗箭头就比别页左偏 —— 用户的报障正是这个。
+  //    Issue #209 之后位置改由「两栏 + 这一颗自己的 margin-left: auto」保证：
+  //    它永远贴右缘，与品牌区多宽、页名多长都无关。
   const cssAll = fs.readFileSync(path + 'css/style.css', 'utf8');
-  chk(/\.top-slot \{[^}]*margin-left:\s*auto/.test(cssAll),
-    '返回槽由 margin-left: auto 钉在右侧（不随左边品牌区的宽度浮动）');
-  chk(/\.top-slot \{[^}]*width:\s*var\(--top-slot\)/.test(cssAll) &&
-    /\.top-user \{[^}]*--user-size:\s*var\(--top-slot\)/.test(cssAll),
-    '返回槽与头像取同一枚 --top-slot（顶栏右侧每一件只有一个尺寸来源）');
+  chk(/\.top-act \{[^}]*margin-left:\s*auto/.test(cssAll),
+    '返回键由 margin-left: auto 钉在右缘（不随左边品牌区的宽度浮动）');
+  chk(!/\.top-slot\s*[,{]/.test(cssAll.replace(/\/\*[\s\S]*?\*\//g, ' ')),
+    '样式表里不再留 .top-slot 规则（那一枚圆槽是头像的，头像撤了它也没了）');
+  chk(/\.top-act \{[^}]*width:\s*var\(--top-key\)/.test(cssAll),
+    '顶栏那一颗的尺寸只有一个来源 --top-key（顶栏右端现在只有这一件）');
   const backBtn2 = topbar.querySelector('#top-back');
   chk(!!backBtn2 && backBtn2.tagName === 'A' && backBtn2.getAttribute('href') === '/',
     '返回键统一由 chrome.js 渲染（回首页），页面不再自造一颗');
@@ -190,12 +190,11 @@ setTimeout(() => {
   // （`.top-slot-mark`），用户看着像一本多余的书，要求撤掉 —— 于是换成一枚
   // **不可见的占位**（`.top-act-spacer`）：书没了，像素位一个都不动，
   // 阅读器的「合上」仍与页面返回键同处一个像素位。
-  chk([...rBar.children].map(e => e.className.split(' ')[0]).join('/') === 'brand/top-slot/top-act-spacer',
-    '阅读器顶栏是「品牌区 · 〔返回键槽〕 · 不可见占位」，**不含头像 / 篇号牌 / 任何图标**（实际 ' +
+  chk([...rBar.children].map(e => e.className.split(' ')[0]).join('/') === 'brand/top-act',
+    '阅读器顶栏是「品牌区 · 返回键」，**不含头像 / 篇号牌 / 任何图标**（实际 ' +
     [...rBar.children].map(e => e.className).join('/') + '）');
-  const rSlot = rBar.querySelector(':scope > .top-slot');
-  chk(!!rSlot && !!rSlot.querySelector(':scope > #top-act'),
-    '阅读器的「合上」也住在同一枚固定圆槽里（与页面那条同一个像素位）');
+  chk(!!rBar.querySelector(':scope > #top-act'),
+    '阅读器的「合上」就是那颗键本体（与页面那条同一个尺寸，不必再靠占位对齐）');
   chk(d.querySelectorAll('.reader .topbar .top-user').length === 0,
     '阅读器里确实一枚头像都没有（让位给正文）');
   // 反向防线：那枚「书」连同它的样式规则一起清掉，不许留下僵尸
@@ -203,10 +202,8 @@ setTimeout(() => {
     '样式表里不再留 `.top-slot-mark` 规则（留着下一个人会以为阅读器里还有一枚图标）');
   chk(!/\.top-slot-mark/.test(fs.readFileSync(path + 'js/chrome.js', 'utf8').replace(/\/\/[^\n]*/g, ' ')),
     '引擎的代码里也不再生成 `.top-slot-mark`');
-  chk(/\.top-act-spacer \{[^}]*width:\s*var\(--top-slot\)/.test(cssAll),
-    '那枚占位与头像同径（--top-slot），所以返回键原地不动');
-  chk(/\.top-slot \+ \.top-user,[\s\S]{0,120}\.top-act-spacer/.test(cssAll),
-    '槽与恒定锚点之间的间距只有一个来源（--top-gap）');
+  chk(!/\.top-act-spacer\s*[,{]/.test(cssAll.replace(/\/\*[\s\S]*?\*\//g, ' ')),
+    '那枚「不可见占位」也随头像一起撤了（顶栏右端只剩一颗键，没有要对齐的第二件）');
   chk(rBar.querySelector('.brand-page-text').textContent === '课外必背小古文',
     '阅读器里的页名同样是「课外必背小古文」，与列表页一致');
   // 回归防线：整个页面里 #top-act 只能有一枚 —— 只有阅读器那条顶栏才是动作位。
@@ -217,15 +214,15 @@ setTimeout(() => {
   chk(d.querySelectorAll('#top-act').length === 1,
     '全页只有一枚 #top-act（动作位只归阅读器那条顶栏，实际 ' +
     d.querySelectorAll('#top-act').length + ' 枚）');
-  chk(d.querySelectorAll('#top-back').length === 1,
-    '全页只有一枚 #top-back（阅读器那条合上时不再跟着渲染第二枚返回键，实际 ' +
+  /* ⚠️ Issue #209 之后阅读器**开着**时页面那条顶栏一颗键都不画：
+     动作位归阅读器那一层，全页只能有一枚 #top-act（这是那条硬断言的来历）。
+     原先它落回默认的「回首页」返回键会得到两枚 #top-back，
+     而两枚同名 id 在 jsdom ≥27 里只会命中第一枚。 */
+  chk(d.querySelectorAll('#top-back').length === 0,
+    '阅读器开着时页面那条顶栏不画返回键（动作位归阅读器，全页不出现第二枚顶栏 id，实际 ' +
     d.querySelectorAll('#top-back').length + ' 枚）');
-  // 页面顶部那条顶栏不该被阅读器的动作「换脸」：它仍是「回首页」的返回键
-  const appBarBack = d.querySelector('.app > .topbar #top-back');
-  chk(!!appBarBack && appBarBack.getAttribute('href') === '/',
-    '阅读器打开时，页面顶部那条顶栏仍是「回首页」的返回键（不跟着变成动作按钮）');
   const rBack = rBar.querySelector('#top-act');
-  chk(!!rBack && !!rBack.querySelector('svg'), '阅读器返回键走全站动作位（同一颗圆形按钮）');
+  chk(!!rBack && !!rBack.querySelector('svg'), '阅读器返回键走全站动作位（同一颗按钮）');
   // ⚠️ 后面要用这枚按钮做交互，先确认它真的在：曾经 top-act 选不到（当场为 null）时
   // 直接往下跑，下一句对 null 调 dispatchEvent，整层测试以 TypeError 崩掉 ——
   // 报错指向测试代码，真正的病根（顶栏没渲染出动作位）反而被埋掉了。
@@ -241,6 +238,10 @@ setTimeout(() => {
     // 收起来，后面的用例仍从列表页开始
     rBack.dispatchEvent(new window.MouseEvent('click', { bubbles: true, cancelable: true }));
     chk(d.querySelector('#gw-reader').hidden === true, '阅读器返回键能合上阅读器');
+    // 阅读器**合上**之后，页面那条顶栏该把它那一颗露回来（此前那颗无占位也不再需要）
+    const appBarBack = d.querySelector('.app > .topbar #top-back');
+    chk(!!appBarBack && appBarBack.getAttribute('href') === '/',
+      '合上阅读器后，页面顶部那条顶栏露出「回首页」的返回键');
   }
 
   // 回归：顶栏第二行是「每次重绘后补一次」的，不是一次性的初始化 ——
@@ -360,8 +361,9 @@ setTimeout(() => {
   const dock = d.querySelector('#site-dock');
   chk(!!dock, '小古文页有底部导航栏');
   const dockItems = [...dock.querySelectorAll('.dock-item')];
-  chk(dockItems.map(b => b.querySelector('.dock-label').textContent).join('/') === '背诵/课外/搜索/设置',
-    '底部页签与首页一致（背诵/课外/搜索/设置）');
+  // ⚠️ Issue #209：最后一格从「设置」改名成「我的」（图标换成圆形用户头像）。
+  chk(dockItems.map(b => b.querySelector('.dock-label').textContent).join('/') === '背诵/课外/搜索/我的',
+    '底部页签与首页一致（背诵/课外/搜索/我的）');
   chk(dockItems[1].classList.contains('active') && dockItems[1].getAttribute('aria-current') === 'page',
     '小古文页签为选中态');
   chk(d.querySelector('#classic-entry') === null, '本页不再自造「返回古诗词」入口（回首页交给页签）');

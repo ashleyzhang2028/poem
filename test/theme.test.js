@@ -528,7 +528,14 @@ chk(!/reader-count/.test(classicCss) && !/count-badge/.test(classicHtml),
   '页顶读数那一套（.count-badge / .reader-count）已随 Issue #147 一起撤干净');
 chk(!/\.rd-count\s*[,{]/.test(classicCss),
   '正文状态栏那一枚 .rd-count 的样式也整段撤了（详情页不再有任何读数）');
-chk(/\.top-act,[\s\S]{0,300}?border-radius:\s*50%/.test(css), '全站顶栏动作位是圆形纸底（返回键与它同款）');
+/* ⚠️ Issue #209 第二轮：顶栏那一颗**不再是圆形纸底按钮**——
+   用户原话「右上角后退键去除圆形边框，去除背景色」。
+   所以这一条从「顶栏动作位是圆形纸底」翻面成「顶栏那一颗去框去底」：
+   圆钮（border-radius: 50%）那一套现在只留给别处的同类按钮 `.icon-btn`。 */
+chk(/\.icon-btn \{[^}]*border-radius:\s*50%/.test(css),
+  '别处的同类按钮（.icon-btn）仍是圆形纸底 —— 用户点名的只有右上角那一颗');
+chk(/\.top-act \{[^}]*border:\s*0[^}]*background:\s*none/.test(css.replace(/\/\*[\s\S]*?\*\//g, ' ')),
+  '顶栏那一颗是裸箭头（去圆框、去底色）');
 chk(!/<span>小古文<\/span>/.test(classicHtml), '顶栏里不再叠「小古文」三个字');
 
 
@@ -839,9 +846,20 @@ const readerBlock = blockOf('reader');
 // 打印紧跟清单，朗读那一条偏好排在最后）。组标题撤了之后，这个顺序改由
 // js/settings-nav.js 的 GROUPS 与各页的区块顺序共同表达 —— 两处一起判。
 {
-  const order = [...NAV_SRC.matchAll(/key:\s*"([a-z]+)"/g)].map(m => m[1]);
+  /* ⚠️ 判的是 GROUPS 表里那四组的**声明顺序**，不是整份文件里所有 key: 的出现顺序 ——
+     Issue #209 之后账号那一行也有 key（`key: "account"`，见 renderAccountEntry），
+     连它一起数会多出两个 account（它本来就不在这张表里：那是「我是谁」，
+     由 renderAccountEntry 插在**第一条**，不属于分组）。 */
+  const groupsSrc = NAV_SRC.slice(NAV_SRC.indexOf('var GROUPS = ['),
+    NAV_SRC.indexOf('function esc('));
+  const order = [...groupsSrc.matchAll(/key:\s*"([a-z]+)"/g)].map(m => m[1]);
   chk(order.join(',') === 'general,recite,lists,reader',
-    '四个入口的顺序为 通用 → 背诵 → 我的清单 → 朗读（实际 ' + order.join(',') + '）');
+    '四个入口的顺序为 通用 → 背诵 → 清单 → 朗读（实际 ' + order.join(',') + '）');
+  // ⚠️ Issue #209：清单里那一行已从「我的清单」简称「清单」（用户点名）
+  chk(/title:\s*"清单"/.test(groupsSrc), '入口文案是「清单」（用户 2026-09-17 点名改的简称）');
+  // 个人中心与关于都不在 GROUPS 表里：一个插在最前、一个渲染成末尾那块只读信息
+  chk(!/key:\s*"account"/.test(groupsSrc) && !/key:\s*"about"/.test(groupsSrc),
+    'GROUPS 表里只有四组（个人中心与关于不在表里 —— 它们不是「一组设置」）');
   // 判「标签那一行」而不是整页：页首 HTML 注释里也写着「复习算法」四个字，
   // 用整页 indexOf 比会拿注释当答案（源码注释不是界面）。
   const algoTitleAt = reciteBlock.search(/settings-group-title[^>]*>复习算法</);

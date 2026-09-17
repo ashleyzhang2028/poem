@@ -2282,136 +2282,79 @@ body.has-install-tip #app {
   letter-spacing: .6px;
 }
 
-/* 顶栏右侧动作：圆形纸底按钮，与徽标同族。
-   ⚠️ 顶栏里那一颗的直径走 --top-key（40px），它由 `.top-slot` 那枚 42px
-      的圆槽居中托住（见上）；`.icon-btn` 是别处（工具条、列表行）的同类按钮，
-      沿用 40px。两者同值但**不同来源**：槽里那颗要跟着 --top-slot 一起走，
-      所以它的尺寸从槽那一段继承下来，不再在这里写第二个数字。
-      这里保留 40px 作为 .icon-btn 的口径，并由下面那条把顶栏里的那颗
-      显式改写成 var(--top-key) —— 一条规则管一处，不许两处各写一半。 */
-/* ⚠️ Issue #209 扁平化：原先这里是
-     `box-shadow: inset 0 0 0 1px rgba(214,200,173,.7), var(--shadow)`
-   —— 描金内边 + 外投影，一颗「凸起的圆钮」。用户要求「页面中所有的按钮
-   请进行扁平化设计」之后，这两样一起去掉，只留一层纸底与那条 1px 界行描边
-   （`border` 从 `none` 改成实描边）—— 圆钮仍有轮廓，但不再有厚度。
-   按下反馈也从 `transform: scale(.94)` 改成只压一档底色。 */
+/* ---------- 顶栏右端：一颗裸箭头（Issue #209 第二轮） ----------
+   用户 2026-09-17 原话：「右上角后退键去除圆形边框，去除背景色」。
+
+   ⚠️ **这一段里不许再出现注释符号本身**（斜杠加星号那一对）：本仓库的样式是有测试
+      按 `选择器{声明}` 逐段读的（普通的区间匹配，不认注释），一条注释夹在
+      选择器与花括号之间，整段规则就会读不出来 —— 上面这一段说明因此放在这里，
+      而不是散在下面各条规则之间。
+   ⚠️ 顶栏那一颗**不再与 `.icon-btn` 共用一段**：两者现在长得不一样
+      （前者裸箭头，后者圆钮）。共用一段时「去框去底」只能靠后写的那段去盖，
+      而 `.top-act` 的属性会从 `.icon-btn` 那一段里被读到 —— 最难查的那类覆盖。
+      共用只留「排布 / 指针 / 过渡」三条，尺寸与皮肤各写各的。
+   ⚠️ 尺寸只有一个来源 `--top-key`（40px）：顶栏右侧现在只有这一件。
+      `--top-slot: 42px`（那一枚是**头像的直径**，与 logo 徽标同径）连同
+      `.top-user` / `.top-slot` / `.top-act-spacer` 一起删了 ——
+      留着一条没人在用的尺寸，就是下一次读错它的种子。 */
+
+/* 共用：排布、指针、过渡（尺寸与皮肤不在这里写） */
 .top-act,
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background .15s, color .18s, border-color .18s;
+}
+
+/* 顶栏那一颗：裸箭头 —— 无边框、无底色、无圆角。
+   40px 的点击区就是它自己的盒子（顶栏那一行高 48px，装得下）。 */
+.top-act {
+  flex: none;
+  width: var(--top-key);
+  height: var(--top-key);
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: var(--ink-2);
+  margin-left: auto;
+}
+
+/* 别处的同类按钮（工具条 / 列表行）：仍是圆钮，保持原样 ——
+   用户点名的只有「右上角后退键」，不许把这个口径顺手扩大到全站。 */
 .icon-btn {
   width: 40px;
   height: 40px;
-  flex: none;
   border-radius: 50%;
   border: 1px solid var(--line);
   background: var(--card);
   color: var(--ink-2);
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: background .15s, color .18s, border-color .18s;
 }
-/* 不可见占位（头像渲染不出来时的兜底）：尺寸走同一条 --top-slot 口径。
-   顶栏右侧的每一件都是同一枚圆槽的尺寸 —— 写死第二个数字就是下一次走散的种子。 */
-.top-act-spacer { width: var(--top-slot); height: var(--top-slot); flex: none; }
-/* 槽里那颗返回键的直径走 --top-key：圆槽 → 圆环 → 头像三枚同一套口径 */
-.top-slot > .top-act { width: var(--top-key); height: var(--top-key); }
+
 .top-act .top-act-icon { display: inline-flex; }
 .top-act svg, .icon-btn svg { width: 20px; height: 20px; display: block; }
-.top-act:hover, .icon-btn:hover { color: var(--green); border-color: var(--green); }
-/* 按下：只压一档底色（不再缩放）—— 扁平按钮的一条纪律 */
-.top-act:active, .icon-btn:active { background: var(--bg-soft); }
+.top-act:hover { color: var(--green); }
+.icon-btn:hover { color: var(--green); border-color: var(--green); }
+.top-act:active { color: var(--green-dark); }
+.icon-btn:active { background: var(--bg-soft); }
 
-/* ---------- 顶栏右侧簇（Issue #132 · 2026-09-15；气泡化重排 Issue #147 · 2026-09-15） ----------
-   顶栏从头到尾只有两栏，靠 `justify-content: space-between` 分列两端 ——
-   **右侧簇是一个整体**，它内部怎么排，与左边品牌区的页名长短完全无关：
+/* ---------- 顶栏右侧的尺寸令牌（Issue #209 第二轮） ----------
+   ┌──────────────────────────────────────┐
+   │ (徽标42) 跬步 · 页名        〔  ↩ 40 〕 │
+   └──────────────────────────────────────┘
+    品牌区（可收缩，走 ellipsis）   ↑ 顶到右缘
 
-   ┌────────────────────────────────────────────────┐
-   │ (徽标42) 跬步 · 页名          〔  ↩42  〕 (头像42) │
-   └────────────────────────────────────────────────┘
-     品牌区（可收缩，走 ellipsis）   ↑ 固定圆槽     ↑ 恒定锚点
-                                    (.top-slot)
-
-   ⚠️ 这一段是 Issue #147 的正题。上一版把返回键直接跟在品牌区后面，整行
-      space-between 一分摊 —— 页名**短**的时候返回键就跟着往左跑：
-      搜索页「跬步 · 搜索」比「课外阅读」短，那一颗箭头比别页左偏 36~46px；
-      首页「Ashley的背诵」更长，位置又变一次。用户原话：
-        「搜索页面后退按钮离 profile 头像太远了，他俩应该靠近并固定位置，
-          所有页面都应该如此，而不是因为搜索页面标题太短，位置就可以左移。」
-      现在返回键**住在一枚固定圆槽里**：槽由 `margin-left: auto` 钉在右侧簇
-      左端、槽本身不参与收缩；头像是恒定锚点，钉在最右。两颗的像素位
-      只由「两栏 + 槽宽 + 间距」决定，与页名无关。
-
-   三条硬规矩：
-   1. **头像永远在最右，返回键在它左边的固定槽里** —— 返回键的落点会变
-      （有的页没有、有的页换文案），但**位置不变**；头像更不能变：
-      用户点头像是靠肌肉记忆（「右上角那枚印」），它必须每页都在同一个像素位上。
-   2. **这一簇不收缩**（簇里每一件都是 `flex: none`）—— 窄屏时只允许左边的
-      品牌区被压窄，徽标 / 返回槽 / 头像一个像素都不许缩。
-   3. **尺寸只有一个来源 `--top-slot`**：徽标、头像、返回槽、阅读器里那枚
-      「这一册的印」、以及头像渲染失败时的兜底占位，全部读它。
-      上一版徽标 / 头像走 42px、返回键走 40px、槽另写一个 42 ——
-      三处数字，改一处就会漂一处。 */
+   用户原话：「所有页面右上角的头像全部删除，这个位置现在有后退键代替」。
+   于是顶栏右端只有**一件**：那一颗返回键；跟着撤掉的是头像那一条整套
+   （`.top-user` / `.top-slot` / `--top-slot` / `.top-act-spacer`）。
+   ⚠️ 首页（背诵）没有上一层，右端**一件都没有**：原先留一枚 42px 空槽保两栏
+      对齐，而那一枚槽的全部理由就是「头像的位置恒在」—— 头像没了，
+      空槽只是顶栏右边一块空白。 */
 :root {
-  /* 顶栏右侧每一枚的直径（= .brand-mark 的 42px「和 logo 一模一样大」） */
-  --top-slot: 42px;
-  /* 簇内两件之间的间距：返回槽与头像之间那一条 */
-  --top-gap: 8px;
-  /* 返回键自己那颗按钮的直径。它比槽小 2px，是**刻意的**：
-     视觉直径 40px 的圆环摆在 42px 的槽心里，圆环与徽标 / 头像的圆心同轴，
-     三枚放在一行上「一样大」，而返回键仍比另两枚轻一档（它是个动作，不是身份）。 */
   --top-key: 40px;
 }
-/* 右侧簇：由两件固定宽的东西组成，整体不收缩。
-   `margin-left: auto` 在槽上 —— 品牌区与槽之间那条弹性空档由此生成，
-   顶栏那一行就只剩「左栏 + 右栏」两件事，不再靠 space-between 去分摊。 */
-.top-slot {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: none;
-  margin-left: auto;
-  width: var(--top-slot);
-  height: var(--top-slot);
-}
-.top-slot + .top-user,
-.top-slot + .top-act-spacer { margin-left: var(--top-gap); }
-
-/* 头像：**与 logo 一模一样大的圆形**，印色铺满整圆（Issue #132 · 用户 2026-09-15）。
-   --------------------------------------------------------------------------
-   用户原话：「右上角方形圆角还是替换成和 logo 一模一样大小的圆形吧。」
-   于是顶栏那一枚的规格与品牌区那枚徽标（.brand-mark）**逐位对齐**：
-     · 同一个直径 —— 42px（此前是 40px 的点击区里放 32px 的方角印）
-     · 同一个圆心 —— 品牌标在左、头像在右，两枚同高同径，顶栏左右才配平
-     · 同一个圆 —— border-radius 50%（上一版是 26% 的「圆的方角」，已删）
-
-   为什么整圆不是「方角印缩成 40px」：圆形的视觉直径比同边长的方角小两圈，
-   要让它看着与 logo 一般大，就必须**真的同径**（42px），并且让印色**铺满**
-   —— 所以顶栏这一枚由 `.top-user > .avatar` 覆写成 100% 满幅的圆。
-
-   底色与首字由 js/avatar.js 给出（传了图就是那张图），这里只管尺寸与呼吸感。 */
-.top-user {
-  /* --user-size 就是槽的 42px：两枚同径是同一条口径，
-     写死两处必然有一天只改了一处（尺寸漂移在顶栏上格外显眼）。 */
-  --user-size: var(--top-slot);
-  width: var(--user-size);
-  height: var(--user-size);
-  flex: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  transition: transform .15s, box-shadow .18s;
-}
-/* 顶栏那一枚整圆：铺满，与左侧 logo 的圆「同一个圆」 */
-.top-user > .avatar {
-  --avatar-size: var(--user-size);
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-}
-
-.top-user:hover { box-shadow: 0 0 0 3px rgba(165, 92, 25, .18); }
-.top-user:active { transform: scale(.94); }
 
 /* 头像本体（三处显示共用：顶栏 / 设置页 / 个人中心 / 子用户名册）
    --------------------------------------------------------------------------
@@ -2448,9 +2391,12 @@ body.has-install-tip #app {
   object-fit: cover;
   display: block;
 }
-/* 顶栏那一枚：直径由 .top-user 的 --user-size 统一给（与 logo 同径 42px）。
-   这里只保留一个兜底值 —— 万一 .top-user 的样式没生效（老缓存里少了那一段），
-   头像也不会退化成零尺寸的空圆。 */
+/* `.avatar-top` 那一档（顶栏专用）已随 Issue #209 撤掉 ——
+   顶栏上**没有头像了**（「所有页面右上角的头像全部删除」），
+   于是 `.avatar` 的 34px 默认直径在设置页 / 个人中心 / 子用户名册上就是最终值，
+   不需要再有一档 42px 的「顶栏专用尺寸」。
+   ⚠️ 顶栏那一档的**兜底直径**留在这里：`.avatar-top` 这个类名可能还出现在
+      老缓存页面的 DOM 里（老 sw 缓存 + 新样式表），有这一条就不会退化成零尺寸的空圆。 */
 .avatar-top { --avatar-size: 42px; }
 
 /* ---------- 底部页签 ---------- */
@@ -2530,6 +2476,12 @@ body.has-install-tip #app {
 }
 .dock-icon { display: inline-flex; }
 .dock-icon svg { width: 22px; height: 22px; display: block; }
+/* 「我的」那一格圆里的首字（SVG <text>）：字体与字重只有一个来源。
+   ⚠️ SVG 里的文字**不会**自动继承页面正文的字体族 —— 它继承的是
+      `font-family` 这条 CSS 属性，而 `.dock-item` 上是有的；但那条链要经过
+      `svg` → `text` 两级，且部分 WebView 对 SVG 只认 `font-family` 的字面值。
+      所以这里显式给一次，别让那一格里出现一枚「认不出的字」。 */
+.dock-icon svg text { font-family: var(--font-poem); }
 .dock-label { line-height: 1; }
 .dock-item:active { background: rgba(47, 96, 85, .07); }
 

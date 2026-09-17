@@ -119,11 +119,11 @@ python3 -m http.server 8080  # 或 Python 3
 | 昭明文选 | `/zhaoming/` |
 | 全站搜索 | `/search/` |
 | 背诵进度总览 | `/progress/` |
-| 设置主页 | `/settings/` |
-| 设置 · 通用 | `/settings/general/` |
-| 设置 · 背诵 | `/settings/recite/` |
-| 设置 · 我的清单 | `/settings/lists/` |
-| 设置 · 朗读 | `/settings/reader/` |
+| 我的 | `/settings/` |
+| 我的 · 通用 | `/settings/general/` |
+| 我的 · 背诵 | `/settings/recite/` |
+| 我的 · 清单 | `/settings/lists/` |
+| 我的 · 朗读 | `/settings/reader/` |
 | 用户协议 | `/terms/` |
 | 隐私条款 | `/privacy/` |
 
@@ -139,8 +139,8 @@ python3 -m http.server 8080  # 或 Python 3
 ├── classic/index.html      # 小古文学习库，对应 /classic/
 ├── tangshi/ songci/ guwen/ zhaoming/   # 五部选集页面
 ├── search/ progress/                   # 搜索 / 背诵进度总览
-├── settings/                           # 设置主页（四个入口 + 法务链接）
-│   ├── general/ recite/ lists/ reader/ # 四张二级页：通用 / 背诵 / 我的清单 / 朗读
+├── settings/                           # 「我的」页（个人中心 / 四组入口 / 关于）
+│   ├── general/ recite/ lists/ reader/ # 四张二级页：通用 / 背诵 / 清单 / 朗读
 ├── terms/ privacy/         # 用户协议 / 隐私条款
 ├── manifest.webmanifest    # PWA 清单
 ├── sw.js                   # Service Worker：离线缓存
@@ -658,11 +658,16 @@ curl -sS "$SITE_URL/api/config"      # 期望 {"turnstile":{"enabled":true,"site
 
 | 地址 | 页名 | 装什么 |
 |---|---|---|
-| `/settings/` | 设置 | 四个入口 + 版权与法务链接 |
+| `/settings/` | 我的 | 个人中心 + 四组入口 + 关于 + 版权与法务链接 |
 | `/settings/general/` | 通用 | 用户名、头像、账号、数据管理 |
 | `/settings/recite/` | 背诵 | 学段 / 年级 / 学期 / 范围 / 数量 + 复习算法 |
 | `/settings/lists/` | 我的清单 | 自选背诵的增删改查 + 篇目打印（Pro）|
 | `/settings/reader/` | 朗读 | 自动注音 + 五档连读方式 |
+
+底部最后一个页签的**名字是「我的」**（路由仍是 `/settings/`）：用户
+2026-09-17 的要求 ——「将右下角设置改成 我的…… 用户点击我的之后，转到我的页面」。
+二级页的页名一个字没改（它们仍是各自那一组）；「我的清单」只是在
+「我的」页的清单里简称「清单」。
 
 三条口径：
 
@@ -675,18 +680,20 @@ curl -sS "$SITE_URL/api/config"      # 期望 {"turnstile":{"enabled":true,"site
   有两段的那两张页仍留分组名（「背诵」页的 `背诵` / `复习算法`、
   「我的清单」页的 `打印`）—— 它们分的是页里两段，仍有信息量
 - **一份逻辑跑五张页**：`js/settings.js` 仍是每张页共用的那一份，控件取不到就跳过；
-  主页只加载 `js/settings-nav.js`（四个入口的唯一来源），不把整页设置逻辑拖进来
-- **二级页的返回键回设置主页**：由页面在 `body` 上写 `data-back="/settings/"`，
+  「我的」页只加载 `js/settings-nav.js`（这一页清单的唯一来源），不把整页设置逻辑拖进来
+- **二级页的返回键回「我的」页**：由页面在 `body` 上写 `data-back="/settings/"`，
   `js/chrome.js` 只认站内绝对路径 —— 从「朗读」返回背诵首页，等于把用户一脚踢出设置
 
 新页面与新脚本都进了 `sw.js` 的预缓存清单，断网也能进设置。
-`test/settings-nav.test.js`（96 条）守着「控件只在一页」「入口不写死两处」
-「返回落点」「离线清单里的文件都真的存在」。
+`test/settings-nav.test.js`（119 条）守着「控件只在一页」「入口不写死两处」
+「返回落点」「离线清单里的文件都真的存在」，以及**底部最后一格叫「我的」**
+（图标是圆形用户头像）与「关于」里那个版本号与 `sw.js` 同步。
 
-设置主页那四条入口是**四张卡**（`--card` 底 + 描边 + `--radius-md` 圆角）。
+「我的」页那四条分组入口是**四张卡**（`--card` 底 + 描边 + `--radius-md` 圆角）；
+「个人中心」那一条与它们同宽同高、同一个右箭头。
 
-**卡片主标题全站只有一档字号**（17px / 700）：设置主页那四张入口卡的标题、
-主页账号卡上的名字、二级页里还写着的那几颗分组名（背诵 / 复习算法 / 打印）、
+**卡片主标题全站只有一档字号**（17px / 700）：「我的」页那四张入口卡的标题、
+第一条「个人中心」上的名字、二级页里还写着的那几颗分组名（背诵 / 复习算法 / 打印）、
 以及列表里的篇名，读的是 `css/style.css` 里同一个声明块；集子索引页每张卡头的
 卷名 `.group-name` 在 `css/classic.css`，与它同一个值 —— 五处各在一张样式表里，
 所以是一对**约定**，`test/theme.test.js` 与 `test/ui-consistency.test.js` 里各有一组
@@ -789,11 +796,11 @@ curl -sS "$SITE_URL/api/config"      # 期望 {"turnstile":{"enabled":true,"site
 |---|---|---|
 | 顶栏右上角那枚**印** | **每一页、每一状态**（未登录也画） | `/profile/` |
 | 个人中心身份卡里那行操作键 | 总是 | `/login/` |
-| 设置主页**清单里账号那一行** | 四组入口之下，同一列 | 未登录 → `/login/`；已登录 → `/profile/` |
+| 「我的」页**清单里的第一条** | 四组入口之上，同一列 | 未登录 → `/login/`；已登录 → `/profile/` |
 
-返回落点：`/login/` → 个人中心 → 设置主页；登录**成功之后**也回 `/profile/`
+返回落点：`/login/` → 个人中心 → 「我的」页；登录**成功之后**也回 `/profile/`
 （「我去哪一层」那一行在那里）。**已登录时不再摆「去登录」**（自相矛盾），
-设置主页那一行会换成「昵称 + 层级徽章 + 个人中心」。详情见
+「我的」页那一行会换成「昵称 + 层级徽章」。详情见
 `docs/auth-design.md` §3.6.2。
 
 **服务端不可用时哪几屏会说实话**（两类动作分开）：
