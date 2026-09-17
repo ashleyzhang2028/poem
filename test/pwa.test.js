@@ -307,6 +307,36 @@ function check(name, cond, extra) {
     check('iPhone: 播放栏不遮挡设置页底部的法务链接', !playAndMeasure.covered,
       JSON.stringify(playAndMeasure));
 
+    /* ---- 设置整页：那 40px 只从「呼吸」里减，避让区一寸不动 ----
+       Issue #209 让页底留白减 40px。第一次提测时减错了对象 —— 把
+       `24px + var(--nav-h)` 整条算式一起减，iPhone 上算出 45.5px < 页签 62px。
+       CSS 静态断言（test/theme.test.js）只能守住「算式里别出现 --foot-gap-v2」，
+       算式到底够不够高，只有真机几何量得出来：把呼吸按 24px 扣掉 40px 之后
+       算出来的那个值，仍要 ≥ 页签高度。
+       这样即使以后有人改 24 / 40 / --foot-gap-v2 这几个数，
+       这条断言也会按**真实几何**而不是按算式写法判红绿。 */
+    const breath = await page.evaluate(() => {
+      const root = getComputedStyle(document.documentElement);
+      const page = document.querySelector('.settings-page');
+      const dock = document.getElementById('site-dock');
+      const pad = parseFloat(getComputedStyle(page).paddingBottom);
+      const navH = parseFloat(root.getPropertyValue('--nav-h')) || 0;
+      const gapV2 = parseFloat(root.getPropertyValue('--foot-gap-v2')) || 0;
+      return {
+        pad: pad,
+        // 留白里「本该是呼吸」的那截：避让区之外的余数
+        breath: Math.round((pad - Math.max(0, navH - gapV2)) * 10) / 10,
+        dockH: Math.round(dock.getBoundingClientRect().height * 10) / 10,
+        navH: navH, gapV2: gapV2,
+        dockHidden: getComputedStyle(dock).visibility === 'hidden'
+      };
+    });
+    // 页签在场时它是「被量到的那一层」，避让区 = 让出的 40px 之外的部分，
+    // 所以「留白 − 那 40px」剩下的那截必须还够页签用
+    check('iPhone: 减掉 40px 之后剩下的呼吸仍 ≥ 页签高度（40px 没减进避让区）',
+      breath.dockHidden || breath.breath >= breath.dockH - 1,
+      JSON.stringify(breath));
+
     /* ---- 底部页签（全站导航栏）同样不得压住页面最后一行 ---- */
     await page.goto(base + 'settings/', { waitUntil: 'networkidle0' });
     await new Promise(r => setTimeout(r, 900));
