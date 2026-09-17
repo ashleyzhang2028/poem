@@ -24,8 +24,8 @@
  */
 "use strict";
 
-var handler = require("./_lib/handler");
-var session = require("./_lib/session");
+var handler = require("../_lib/handler");
+var session = require("../_lib/session");
 
 module.exports = handler.make("verify-code", ["POST"], function (d, body, req) {
   if (!d.cfg.hasSession()) {

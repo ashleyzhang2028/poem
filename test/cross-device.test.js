@@ -531,7 +531,7 @@ async function main() {
     const schema = read("api/_lib/schema.sql");
     const sync = read("js/sync-store.js");
     const family = read("js/family.js");
-    const endpoint = read("api/family/index.js");
+    const endpoint = read("api/_routes/family/index.js");
 
     chk(/function childId\(/.test(core), "core 有唯一的 childId() 入口（收窄只在这一处）");
     chk(/function sanitizeFamily\(/.test(core), "名册有自己的一份白名单（不与进度共用）");

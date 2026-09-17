@@ -554,7 +554,7 @@ var STEPS = [
   },
   {
     id: "E",
-    title: "配完当场验收（四步，每步一个明确结论）",
+    title: "配完当场验收（五步，每步一个明确结论）",
     level: "required",
     where: "本机终端（对着已部署的站点）",
     why: "「配完了」和「配对了」是两件事。这一段把前者变成后者 —— 只回答事实，不做「应该没问题」这类判断",
@@ -562,9 +562,18 @@ var STEPS = [
       "① 库连通：期望回 200 —— " + VERIFY_DB,
       "② 会话可签：curl -sS \"$SITE_URL/api/me\" | head -c 200 —— 期望 401 E_NO_SESSION；**回 503 E_NOT_CONFIGURED 就是 SESSION_SECRET 没生效**",
       "③ 真发信：POST /api/send-code → delivered:true 且 transport 是你配的那一家（console 通道**永远**是 false，这是 2C 定的，2D 不改）",
-      "④ 注销可达：curl -sS -o /dev/null -w '%{http_code}\\n' -X DELETE \"$SITE_URL/api/account\" —— 期望 401（不是 500）"
+      "④ 注销可达：curl -sS -o /dev/null -w '%{http_code}\\n' -X DELETE \"$SITE_URL/api/account\" —— 期望 401（不是 500）",
+      /* Issue #205：函数数撞 Hobby 档上限时，症状是**构建失败**，
+         而报错（`No more than 12 serverless functions…`）读起来像「代码坏了」。
+         所以这一步必须点出「这一版线上只有 1 个函数入口」这件事，
+         并且给出一条**本机就能数**的判据 —— 不必等构建跑完。 */
+      "⑤ 部署形态：本条与「环境变量」无关，但它是同一类问题（配了才会好）。" +
+      "线上 `api/` 下**只有 1 个** Serverless 函数入口（`api/[...path].js`），" +
+      "19 条路由的实现都在 `api/_routes/`（`_` 开头 = 平台不当函数）。" +
+      "本机判据：`find api -name '*.js' -not -path 'api/_*' -not -path 'api/_*/*'`" +
+      " 应只回一行 `api/[...path].js`。见 docs/architecture.md §2.2.1"
     ],
-    check: "四条全对：① 200 ② 401 ③ delivered=true ④ 401。任何一条不对，回到它上面那一步"
+    check: "五条全对：① 200 ② 401 ③ delivered=true ④ 401 ⑤ 函数入口只有 1 个。任何一条不对，回到它上面那一步"
   }
 ];
 

@@ -23,7 +23,7 @@
  */
 "use strict";
 
-var handler = require("../_lib/handler");
+var handler = require("../../_lib/handler");
 
 module.exports = handler.make("family", ["GET", "POST"], function (d, body, req) {
   if (!d.cfg.hasSession()) {

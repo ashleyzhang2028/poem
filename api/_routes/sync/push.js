@@ -18,7 +18,7 @@
  */
 "use strict";
 
-var handler = require("../_lib/handler");
+var handler = require("../../_lib/handler");
 
 module.exports = handler.make("sync.push", ["POST"], function (d, body) {
   if (!d.cfg.hasSession()) {

@@ -16,7 +16,7 @@
  */
 "use strict";
 
-var handler = require("./_lib/handler");
+var handler = require("../_lib/handler");
 
 module.exports = handler.make("send-code", ["POST"], function (d, body) {
   // 没配 SESSION_SECRET 就不签会话、也不发码 —— 如实回 503，

@@ -18,7 +18,7 @@
  */
 "use strict";
 
-var handler = require("../_lib/handler");
+var handler = require("../../_lib/handler");
 
 module.exports = handler.make("admin.grants", ["POST"], function (d) {
   if (d.cfg && !d.cfg.hasSession()) {

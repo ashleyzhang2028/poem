@@ -66,7 +66,7 @@ function make(name, methods, run, opts) {
     /* ⚠️ **裸字节那一条路不走 `readBody()`**（Issue #163 的头像上传）：
        `readBody()` 会把请求体当 JSON 解，图片字节一进去就是 `E_BAD_BODY` ——
        而它的症状是「传头像永远 400」，看着像前端坏了。
-       `rawBody` 的 handler 自己去读流（见 api/avatar/index.js 的 readBytes）。 */
+       `rawBody` 的 handler 自己去读流（见 api/_routes/avatar/index.js 的 readBytes）。 */
     var wantBody = m !== "GET" && !rawBody;
     Promise.resolve(wantBody ? H.readBody(req) : {})
       .then(function (body) {

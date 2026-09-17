@@ -90,7 +90,7 @@ console.log('\n=== 二、离线：新脚本都进预缓存，版本号跟着提 
   });
   chk(missing.length === 0, '预缓存清单里的文件都存在（实际缺 ' + missing.join(',') + '）');
   // 服务端那一条路由也在（判分口）
-  chk(fs.existsSync(path + 'api/game/answer.js'), 'api/game/answer.js 存在（判分口）');
+  chk(fs.existsSync(path + 'api/_routes/game/answer.js'), 'api/_routes/game/answer.js 存在（判分口）');
 }
 
 /* ================= 三、页面层：锁着 → 解锁，一层退一层 ================= */

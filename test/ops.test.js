@@ -538,7 +538,7 @@ console.log("\n=== 十、3 期那三件：口径写清了，而且**不许偷偷
 
   /* ② 一分钱都不收、一行 AI 都不接：判分口与内核里不许出现任何 AI 商名 / SDK */
   const aiVendors = /openai|anthropic|claude|gpt|gemini|qwen|deepseek|moonshot|智谱|通义|文心|kimi/i;
-  ["js/quiz.js", "js/game.js", "api/_lib/game.js", "api/game/answer.js"].forEach(f => {
+  ["js/quiz.js", "js/game.js", "api/_lib/game.js", "api/_routes/game/answer.js"].forEach(f => {
     const src = read(f).replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^\s*\/\/.*$/gm, " ");
     chk(!aiVendors.test(src), f + " 里不出现任何 AI 商名 / SDK（三件不花钱）");
   });

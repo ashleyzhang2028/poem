@@ -33,7 +33,7 @@
  */
 "use strict";
 
-var handler = require("./_lib/handler");
+var handler = require("./../_lib/handler");
 
 module.exports = handler.make("config", ["GET"], function (d) {
   var cfg = d.cfg;

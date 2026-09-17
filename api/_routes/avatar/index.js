@@ -31,9 +31,9 @@
  */
 "use strict";
 
-var handler = require("../_lib/handler");
-var H = require("../_lib/http");
-var avatarStore = require("../_lib/avatar-store");
+var handler = require("../../_lib/handler");
+var H = require("../../_lib/http");
+var avatarStore = require("../../_lib/avatar-store");
 
 /** 裸字节日志会很长：只记长度，**绝不记内容** */
 function byteLength(buf) { return buf && buf.length ? buf.length : 0; }
