@@ -2231,6 +2231,145 @@ function check(name, cond, extra) {
     await page.close();
   }
 
+  /* ============ 平板 / 桌面：卷次卡与工具条不塌、不溢出 ============
+     用户原话（Issue #197）：「帮我检查和修复平板和桌面是否还有 UI 显示问题」
+
+     这一节把 2026-09-17 真机量到的三条钉住。它们有一个共同的形状：
+     **声明写在注释里，屏幕上却是另一回事** —— 只看源码永远看不出来。
+
+     ① 集子页的卷次卡被 .list 的 auto-fill 栅格当成「一条篇目」
+        ≥1024px 那一条 `.list { display: grid; grid-template-columns:
+        repeat(auto-fill, minmax(280px, 320px)) }` 是按「.list 的直接子元素
+        就是一条篇目」写的（首页 / 搜索页是这样），但集子页的 .list 里装的是
+        .group-card，卡里才装 .item。于是卡片被当成 320px 的一格、卡内篇目再按
+        33.333% 三分 —— 实测每条只剩 91px：**篇名一个汉字一行**，
+        整页 2000 余 px 炸到 15000~39000px。
+     ② 首页「今日」那几条在 1024px 上被等分压到 236px（篇名折两行），
+        在 1920px 上又被拉成 684px —— 两头都不对。
+     ③ /poems/ 的工具条在手机窄屏整行溢出（320px 溢出 72px），
+        而 body 是 overflow-x: hidden：不出现滚动条、不报错，只是最右边
+        那颗「古诗词大会」被裁掉一截、点不着。
+
+     ⚠️ 判据都写成**区间 / 相对关系**，不写死像素：
+        「条目足够宽不折行」用「标题高度 ≈ 单行」判，
+        「卡片不是窄条」用「卡片宽度 ≥ 一列纸的一半」判。
+     ⚠️ 只在真浏览器里量得出来（jsdom 不算布局）。 */
+  {
+    const { page } = await freshPage();
+    const SHELF = [
+      ['/poems/', 'poems'],
+      ['/tangshi/', 'tangshi'],
+      ['/classic/index.html', 'classic'],
+      ['/guwen/', 'guwen'],
+      ['/songci/', 'songci'],
+      ['/zhaoming/', 'zhaoming']
+    ];
+    /* ① 集子页：卡片横跨整行、卡内条目够宽（篇名不折成竖排） */
+    for (const vw of [1024, 1280, 1440, 1920]) {
+      await page.setViewport({ width: vw, height: 900, deviceScaleFactor: 1 });
+      for (const [url, name] of SHELF) {
+        await page.goto(base.replace(/\/$/, '') + url, { waitUntil: 'load' });
+        await new Promise(r => setTimeout(r, 700));
+        const m = await page.evaluate(() => {
+          const card = document.querySelector('.group-card');
+          const item = card && card.querySelector('.item');
+          const title = item && item.querySelector('.item-title');
+          if (!card || !item) return null;
+          const app = document.querySelector('.app');
+          /* ⚠️ 比的是**内容宽**（纸减掉两侧的边），不是 .app 的外框宽：
+             `.app` 是 border-box 且左右各有 --col-side 的内边距，
+             拿外框宽当基准会把「卡片正常」判成「卡片窄了一条边」。 */
+          const acs = getComputedStyle(app);
+          const contentW = app.getBoundingClientRect().width
+            - parseFloat(acs.paddingLeft) - parseFloat(acs.paddingRight);
+          return {
+            cardW: Math.round(card.getBoundingClientRect().width),
+            contentW: Math.round(contentW),
+            itemW: Math.round(item.getBoundingClientRect().width),
+            titleH: Math.round(title.getBoundingClientRect().height),
+            lineH: Math.round(parseFloat(getComputedStyle(title).lineHeight)
+              || parseFloat(getComputedStyle(title).fontSize) * 1.4),
+            // 篇名一个汉字一行时，标题会是一个「又窄又高」的竖条
+            titleW: Math.round(title.getBoundingClientRect().width),
+            /* 篇名占的**横向宽度**：竖排时它会被压成十几像素宽的一条 */
+            minTitleW: Math.min(...[...card.querySelectorAll('.item-title')]
+              .map(t => t.getBoundingClientRect().width))
+          };
+        });
+        if (!m) { check('集子页 ' + name + ' @' + vw + '：量得到一张卷次卡', false, 'no card'); continue; }
+        check('集子页 ' + name + ' @' + vw + '：卷次卡横跨整行（没被 auto-fill 栅格当成一条篇目）',
+          m.cardW >= m.contentW - 2,
+          '卡 ' + m.cardW + ' / 内容宽 ' + m.contentW);
+        /* ⚠️ 判「竖排」不能按「行数」判 —— 有的篇名**本来就长**：
+           《自河南经乱关内阻饥兄弟离散各在一处因望月有感聊书所怀寄上浮梁大兄
+           …兼示符离及下邽弟妹》是 52 个字的真实标题，三列排布下它占 3~5 行
+           是**对的**（真机截图里核对过）。竖排的判据是**横向宽度**：
+           塌成 91px 时，每一个标题都被压成十几像素宽的一条 ——
+           那时 `minTitleW` 会掉到条目宽度的两成以下。 */
+        check('集子页 ' + name + ' @' + vw + '：卡内篇名不折成竖排（标题有正常的横向宽度）',
+          m.minTitleW > m.itemW * 0.4,
+          '条目 ' + m.itemW + ' / 最窄的标题 ' + m.minTitleW + 'px（首条 '
+            + m.titleW + '×' + m.titleH + '，行高 ' + m.lineH + '）');
+      }
+    }
+
+    /* ② 首页「今日」：条目宽度落在「不折行、又不至于空白比字宽」的区间 */
+    for (const vw of [1024, 1280, 1440, 1920]) {
+      await page.setViewport({ width: vw, height: 900, deviceScaleFactor: 1 });
+      await page.goto(base, { waitUntil: 'load' });
+      await new Promise(r => setTimeout(r, 800));
+      const m = await page.evaluate(() => {
+        const items = [...document.querySelectorAll('.today-list .item')];
+        if (!items.length) return null;
+        const cs = getComputedStyle(items[0].querySelector('.item-title'));
+        const lh = parseFloat(cs.lineHeight) || parseFloat(cs.fontSize) * 1.4;
+        return {
+          ws: items.map(i => Math.round(i.getBoundingClientRect().width)),
+          hs: items.map(i => Math.round(i.getBoundingClientRect().height)),
+          lineH: Math.round(lh)
+        };
+      });
+      if (!m) { check('首页今日 @' + vw + '：量得到今日条目', false, 'none'); continue; }
+      const minW = Math.min(...m.ws), maxW = Math.max(...m.ws);
+      check('首页今日 @' + vw + '：每条都够宽（≥300px，篇名不折行）',
+        minW >= 300, '最窄 ' + minW + 'px');
+      check('首页今日 @' + vw + '：每条都没被拉成一条长横带（≤480px）',
+        maxW <= 480, '最宽 ' + maxW + 'px');
+      // 单行条目 = 标题一行 + 下面一行出处，实测 78px 上下；折行会翻倍
+      check('首页今日 @' + vw + '：条目仍是一行一条（高度没被折行撑起来）',
+        Math.max(...m.hs) <= m.lineH * 3.5,
+        '最高 ' + Math.max(...m.hs) + 'px（行高 ' + m.lineH + '）');
+    }
+
+    /* ③ /poems/ 工具条在窄屏不溢出（body 是 overflow-x: hidden，溢出看不见） */
+    for (const vw of [320, 360, 375, 393, 414]) {
+      await page.setViewport({ width: vw, height: 800, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+      await page.goto(base.replace(/\/$/, '') + '/poems/', { waitUntil: 'load' });
+      await new Promise(r => setTimeout(r, 700));
+      const m = await page.evaluate(() => {
+        const de = document.documentElement;
+        const btn = document.querySelector('.poems-game-entry');
+        const tb = document.querySelector('.toolbar');
+        const out = [];
+        if (tb) [...tb.children].forEach(c => out.push({ cls: c.className.split(' ')[0], r: Math.round(c.getBoundingClientRect().right) }));
+        return {
+          overflow: de.scrollWidth - de.clientWidth,
+          btnRight: btn ? Math.round(btn.getBoundingClientRect().right) : null,
+          vw: de.clientWidth,
+          toolbarRight: tb ? Math.round(tb.getBoundingClientRect().right) : null,
+          kids: out
+        };
+      });
+      check('/poems/ @' + vw + 'px：工具条不横向溢出',
+        m.overflow <= 0,
+        '溢出 ' + m.overflow + 'px' + (m.kids.length ? ' / 最右 ' + JSON.stringify(m.kids[m.kids.length - 1]) : ''));
+      check('/poems/ @' + vw + 'px：「古诗词大会」那颗键整个落在屏幕内（点得着）',
+        m.btnRight !== null && m.btnRight <= m.vw,
+        '键右缘 ' + m.btnRight + ' / 视口 ' + m.vw);
+    }
+    await page.close();
+  }
+
   await browser.close();
 
   console.log('\n=== iOS / 多端兼容检查 ===\n');

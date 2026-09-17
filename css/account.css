@@ -755,6 +755,53 @@ thead .plans-th-cap {
 .poems-game-name { font-size: 13px; font-weight: 600; letter-spacing: .5px; }
 .poems-game-sub { font-size: 10.5px; color: var(--ink-3); white-space: nowrap; }
 
+/* 窄屏（≤460px）：入口键收成只要「古诗词大会」四个字
+   --------------------------------------------------------------------------
+   用户报的现场：/poems/ 的工具条在这一档**整行溢出**——
+   搜索框 + 「全部 / 未读」+ 连读圆键 + 「古诗词大会」，四样加起来
+   比 320~393px 的屏还宽（实测 320px 溢出 72px、375px 溢出 17px、
+   393px 溢出 3px），而 body 是 `overflow-x: hidden`：既不出现横向滚动条、
+   也不报错，只是最右边那颗键被裁掉一截、点不着 —— 与顶栏那颗返回键
+   被裁是同一类「看不见的溢出」。
+
+   病根是那颗键**自己不肯收**：`flex: 0 0 auto` + 副标题
+   `white-space: nowrap`（「试题模拟 · 飞花令 · 题库复习」一行 14 个字），
+   于是它的宽度只由内容决定，屏再窄也不缩。
+   这里按屏宽收两档，**只动这一颗**（搜索框与那两颗控件保持原样）：
+     · ≤460px：副标题换成 `sr-only` 式的视觉隐藏（读屏仍念得到，
+               点击后的那一层里也有完整说明），键宽随之落到 ~88px；
+     · ≤340px：主标题再收一档字号与内边距。
+   ⚠️ 隐藏副标题**不是**隐藏信息：完整说明在那一层的卡里
+      （js/game.js 铺上来的「古诗词大会」页首），以及按钮自己的 title。
+      这与全站「入口不许藏」那条纪律不冲突 —— 藏的只是行内的一行摘要。
+   ⚠️ 两个断点都写在 `max-width` 上：宽屏（平板 / 桌面）一个字都不动，
+      那一档四样并排本来就放得下。 */
+@media (max-width: 460px) {
+  .poems-game-entry {
+    /* 允许它在极端窄屏上再收一点，但仍不与搜索框抢空间 */
+    flex: 0 1 auto;
+    min-width: 0;
+    margin-left: 6px;
+    padding: 4px 8px;
+  }
+  /* 副标题改为「视觉隐藏、读屏可读」：不再参与这一行的宽度计算 */
+  .poems-game-sub {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+  }
+}
+@media (max-width: 340px) {
+  .poems-game-entry { padding: 4px 6px; margin-left: 4px; }
+  .poems-game-name { font-size: 12px; letter-spacing: 0; }
+}
+
 /* 那一层本身：与列表同一列宽，只是换一屏内容 */
 .poems-game { padding: 4px 0 14px; }
 .poems-game[hidden] { display: none; }
