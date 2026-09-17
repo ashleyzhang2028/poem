@@ -5,7 +5,7 @@
 > 结论压成**一张架构图 + 一份排期表 + 一组不可退让的边界**。
 >
 > 关联：Issue #132、`docs/auth-design.md`（账号与邮箱登录，细节不在此重复）。
-> 当前 SW 缓存版本：`poem-app-v140`。
+> 当前 SW 缓存版本：`poem-app-v142`。
 > **「现在不做、以后做」的条目另有一份**：[`docs/todo.md`](todo.md) ——
 > 那是唯一一处（短信登录真开通、微信小程序版、微信登录、
 > 国内 CDN、额度真限额）。本文写的是**已排期**的顺序，两者别混。
@@ -3811,3 +3811,65 @@ body[data-nav="home"] .today-list .list > .item { max-width: 460px; }
   反向验证：把上面两处 CSS 改动撤掉，这一节**立刻红 56 条**（症状逐条对得上）。
 - `bash test/run.sh` **44 层全绿，零回归**
 - `sw.js` v139 → **v140**（两张样式表的内容都改了，即使可见行为没变也要升）
+
+---
+
+### 5.13 首页「全部诗词」那张卡恢复 + 撤掉包着今日 5 条的壳（2026-09-17 · 回答 Issue #209）
+
+用户原话（第二轮）：
+
+> @CodeBuddy #210 搞错了 请把背诵首页的「全部诗词」整张卡（折叠头 + 统计行 + 篇目列表）恢复！
+> 我之前说的背诵首页的5首诗词下面多了个大卡片，我说的是现在5首诗词各自是个卡片，
+> 但他们5个被一张卡片包住了，我不需要这个包的卡片，直接列出5个卡片！
+
+#### 判错在哪里
+
+第一轮（PR #210）把用户那句「背诵首页的5首诗词**下面**多了个大卡片」
+读成了「今日列表**之后**那张『本年级本学期全部诗词』折叠卡」，于是把
+`index.html` 里那一整块（折叠头 + 统计行 + 篇目列表）、`js/app.js` 的
+`renderAll()` 与 `#btn-all` 折叠键、`css/style.css` 的 `.all-section` 与
+桌面栅格第三行一并删了。
+
+用户说的其实是「**今日那 5 条外面包着的那层壳**」—— 那层
+`<section class="card today-list" id="today-card">` 是 Issue #163 第四轮
+为「宽屏并排时看得出这是一批」补的。用户的判读是「多一层壳、没有多一条信息」，
+以用户看到的为准。
+
+#### 这一轮做的两件事
+
+1. **恢复**「全部诗词」整张卡：与撤之前**逐字一致**（`git diff 1f39a66^ -- js/app.js`
+   为空，即 `js/app.js` 回到误删前的字节），`css/style.css` 的
+   `.all-section { margin-top: 14px }` 与桌面栅格 `"all   all"` 那一行一并回位。
+2. **撤掉**包着今日 5 条的 `.card` 壳：`#today-list` 直接是 `.app` 的子元素，
+   5 条 `.item` 各自是一张纸。
+
+#### 改动的落点（撤壳那部分）
+
+| 地方 | 改动 |
+| --- | --- |
+| `index.html` | `<section class="card today-list" id="today-card"><div class="list" id="today-list"></div></section>` → `<div class="list" id="today-list"></div>` |
+| `css/style.css` 桌面档 | 认领「今日」那一格的从 `.today-list` 换成 `#today-list`（判据落在 id 上，多一层少一层壳都不受影响） |
+| `css/style.css` 今日两列 | 选择器 `body[data-nav="home"] .today-list .list` → `body[data-nav="home"] #today-list` |
+| `css/style.css` 块距 | `.today-bar` 与 `.today-list` 抵消下边距 → `.today-bar` 与 `.all-section`（`#today-list` 不是卡，下边距要留给下一行） |
+
+⚠️ **引擎一行未动**：`id="today-list"` 仍在 `.list` 自己身上
+（`js/app.js` 按这个 id 取容器），只是它的父元素从那张卡变成了 `.app`。
+
+⚠️ 撤壳之后，桌面档「今日」那一格的高度由那条 `.list` 的内容决定，
+而栅格是 `align-items: start` —— 今日条不会跟着列高被拉长，与撤壳前一致
+（真机 1280px 与 1920px 两档截图核对过）。
+
+#### 验证
+
+- `bash test/run.sh` **44 层全绿，零回归**（改的断言逐条有说明：
+  `test/theme.test.js` 的箭头一组从「至少一处」收回「两处都要有」；
+  `test/ui.test.js` 那张卡从「不存在」翻回「折叠头 + 徽章 + 统计行 + 篇目列表全在，
+  点一下展开 / 再点收起」，另加「今日那 5 条不许再被包住」；
+  `test/ui-consistency.test.js` 的桌面栅格从「两块」收回「三块」）
+- `node test/pwa.test.js`（真浏览器）**326 项全绿**：iPhone 场景、离线、
+  六部集子 × 4 档、首页 × 4 档、`/poems/` × 5 档全过。
+  其中首页那一节的选择器从 `.today-list .item` 改成 `#today-list .item`
+  （那一层壳没了，类名跟着没了 —— 判据换成 id，与样式层同一条口径）。
+- 真机（390 宽手机 / 1280 宽桌面）截图核对：今日 5 张独立卡片 + 下面那张
+  「本年级本学期全部诗词」折叠卡，两档都对；展开后统计四格 + 篇目列表都在。
+- `sw.js` v141 → **v142**（`index.html` 与两张样式表的内容都改了）

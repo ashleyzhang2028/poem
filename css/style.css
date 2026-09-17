@@ -554,9 +554,11 @@ html, body {
   transition: width .3s;
 }
 
-/* ⚠️ 原先这里有 `.all-section { margin-top: 14px }` —— 首页那张
-   「本年级本学期全部诗词」折叠卡整块撤掉了（Issue #209），这一条跟着走。
-   桌面那一档认领的 `grid-area: all`（在文件末尾）也一并收掉了。 */
+/* 全部诗词折叠。
+   ⚠️ 这一条 Issue #209 被误删过一轮（连它与首页那张折叠卡一起）：
+      用户那句「5首诗词下面多了个大卡片」指的其实是**今日那 5 条外面包的壳**。
+      卡片与这条 margin 于第二轮原样恢复 —— 别再无凭据地删它。 */
+.all-section { margin-top: 14px; }
 
 /* 自选背诵（除教材之外，用户自己加进来要背的篇目）----------------------
    与「全部诗词」同一张卡、同一个折叠头，位置在它上面：
@@ -3248,13 +3250,16 @@ html, body {
   body[data-nav="home"] .app {
     display: grid;
     grid-template-columns: minmax(0, 340px) minmax(0, 1fr);
-    /* ⚠️ 第三行（「全部诗词」，原先的 `"all all"`）**撤掉了**（Issue #209）——
-       那一整张卡不在了，留着这一行就是一个永远空着的格子：
-       它不会报错，只会让「今日」那两块的上下留白比看着该有的多一截。
-       现在首页只有两行：顶栏一整行、今日进度条与今日 5 首并排一行。 */
+    /* ⚠️ 第三行是「全部诗词」那一整张卡（`"all all"`）：那本来就是可折叠的
+       「全部」，合起来最省地方，所以跨整行单独一行。
+       ⚠️ 它 Issue #209 被误删过一轮（见 index.html 那张卡的注释）——
+          于这张区域图里，删掉这一行**不会报错**，只会让那一张卡按自动放置
+          掉进第一列（340px）的格子里，卡里 261 条篇目挤成一根竖条。
+          改这一节之前先读 index.html 首页那两段注释。 */
     grid-template-areas:
       "bar   bar"
-      "today card";
+      "today card"
+      "all   all";
     align-items: start;
     column-gap: 26px;
   }
@@ -3272,17 +3277,21 @@ html, body {
      ⚠️ 列宽**不按容器的百分比算**，而是给每一条一个**宽度区间**
         （`minmax(340px, 460px)`）—— 这一条是 2026-09-17 修的真 bug：
         原先写的是 `flex: 1 1 calc(50% - 11px)`（等分容器），于是
-          · 1024px 屏：今日卡只有 546px，每条被压到 236px ——
+          · 1024px 屏：今日那几张只分到 546px，每条被压到 236px ——
             「悯农（其二）」这类篇名折成两行，一条从 78px 涨到 155~182px，
             五条一屏放不下（真机度量，见下面那条守卫）；
           · 1920px 屏：每条反而涨到 684px，又变成「空白比字宽」
             （与「篇目列表」那一档想避免的是同一件事）。
         改成区间之后，1264px 以上恒为 2 列 × ~440px、1024~1263px 自动落到
         1 列 × 容器的宽度（每条仍 ≥340px），两种屏上都「一行一条、不折行」。
-     ⚠️ 它是**自己一套**（不跟着页面上那条 grid 走）：这一块住在 .card 里，
-        卡里只有 4~5 条 —— 下面「篇目列表」那一档会把 .list 换成 auto-fill
-        栅格，那时这一条按「后写胜出」把它收回来。 */
-  body[data-nav="home"] .today-list .list {
+     ⚠️ 它是**自己一套**（不跟着页面上那条 grid 走，也不跟「全部诗词」那一块
+        走）：今日这块通常只有 4~5 条 —— 下面「篇目列表」那一档会把 .list
+        换成 auto-fill 栅格，那时这一条按「后写胜出」把它收回来。
+     ⚠️ 选择器是 `#today-list` 而不是「套在 .card 里的那个 .list」：
+        今日那 5 条**不再套一层卡**（用户第二轮：「5个被一张卡片包住了，
+        我不需要这个包的卡片，直接列出5个卡片」），.list 直接是 .app 的子元素。
+        判据落在 id 上，将来多一层少一层壳都不影响这一条。 */
+  body[data-nav="home"] #today-list {
     display: grid;
     /* ⚠️ 列数是**算出来的**，不是写死 2 列：卡片宽度在 1024px 屏上只有
        546px，写死 2 列会把每条压回 236px（那正是要修的 bug）。
@@ -3296,9 +3305,9 @@ html, body {
     gap: 14px 22px;
     justify-content: start;
   }
-  body[data-nav="home"] .today-list .list > .item {
+  body[data-nav="home"] #today-list > .item {
     flex: none;
-    /* 每条封顶 460px：1920px 屏上卡宽 1442px 时，两条各 710px 又回到
+    /* 每条封顶 460px：1920px 屏上可排区域宽 1442px 时，两条各 710px 又回到
        「空白比字宽」；460px 与手机上那一整条同档（真机度量过）。 */
     max-width: 460px;
   }
@@ -3306,11 +3315,16 @@ html, body {
      ⚠️ 不认领的话它们会按 DOM 顺序自动流进 grid 单元 —— 那正是
         「进度条占一格、今日卡挤在它右边」的错位版，看着比一列到底更糟。 */
   body[data-nav="home"] .today-bar { grid-area: today; }
-  body[data-nav="home"] .today-list { grid-area: card; }
-  /* 并排之后，两张卡之间靠 .app 的 column-gap 给 26px —— 卡片自己的下边距
-     会把第二行（全部诗词）往上顶一份，这里抵消掉。 */
+  /* ⚠️ 今日那 5 条**不再套一层卡**（用户第二轮：「5个被一张卡片包住了，
+     我不需要这个包的卡片」），所以这里认领「今日」那一格的是 `.list` 自己。
+     它仍是 .app 的直接子元素，栅格照样排得对。 */
+  body[data-nav="home"] #today-list { grid-area: card; }
+  body[data-nav="home"] .all-section { grid-area: all; }
+  /* 并排之后，两块之间靠 .app 的 column-gap 给 26px —— 卡片自己的下边距
+     会把下一行往上顶一份，「今日条」与「全部诗词」那两张卡在这里抵消掉。
+     ⚠️ `#today-list` 不在这条里：它不是一张卡，下边距要留给下一行（全部诗词）。 */
   body[data-nav="home"] .today-bar,
-  body[data-nav="home"] .today-list { margin-bottom: 0; }
+  body[data-nav="home"] .all-section { margin-bottom: 0; }
 
   /* ---------- 篇目列表：列宽封顶，整块收进 --block-w ----------
      首页「全部诗词」、集子页与搜索页的结果列表都已经排成两列 / 三列，

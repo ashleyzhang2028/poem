@@ -378,29 +378,29 @@ chk(/\.item-arrow svg \{ display: block; width: 18px; height: 18px; \}/.test(css
 chk(!/\.item-arrow \{[^}]*font-size:\s*18px/.test(css),
   '列表右侧箭头不再靠 font-size 定大小');
 // 两处尺寸同源：都是 18×18，才能保证「大小一致」
-/* ⚠️ 原先这条要求「列表箭头与折叠箭头**两处**都取到」—— 首页折叠卡撤掉之后
-   折叠箭头在页面上没有落点，但**样式里那两条规则仍在**（集子页 / 小古文页
-   将来还要用同一套语言），所以判据从「至少两处」改成「取到的那几处一致」，
-   并另给一条「折叠箭头那一条规则还在」把口径留在样式层。 */
+/* ⚠️ Issue #209 的那一轮改动把「全部诗词」折叠卡误删了，这条跟着从
+   「至少两处」松成「取到的那几处一致」；第二轮用户要求**整张卡恢复**
+   （「#210 搞错了 请把背诵首页的「全部诗词」整张卡恢复」），
+   于是口径**收回去**：列表箭头与折叠箭头必须都取到 —— 首页那张卡回来了，
+   折叠箭头在页面上重新有落点，松掉的那一档不再成立。 */
 const arrowSvgBlocks = css.match(/\.(?:item-arrow|collapse-head \.arrow) svg \{[^}]*\}/g) || [];
-chk(arrowSvgBlocks.length >= 1 &&
+chk(arrowSvgBlocks.length >= 2 &&
   arrowSvgBlocks.every(b => /width:\s*18px/.test(b) && /height:\s*18px/.test(b)),
-  '列表箭头（与仍在样式里的折叠箭头）同为 18×18（' + arrowSvgBlocks.length + ' 处）');
+  '列表箭头与折叠箭头同为 18×18（' + arrowSvgBlocks.length + ' 处）');
 chk(/\.collapse-head \.arrow svg \{ display: block; width: 18px/.test(css),
-  '折叠箭头那一条样式仍在（首页撤的是卡，不是这套图标语言）');
+  '折叠箭头那一条样式在（首页那张卡回来了，它才真的守着一处落点）');
 // 首页与小古文页三处箭头都改用同一枚 SVG：页面源码里不再留文本字符「›」
 chk(!/<div class="item-arrow">›<\/div>/.test(read('js/app.js')) &&
   !/<div class="item-arrow">›<\/div>/.test(read('js/reader-core.js')),
   '列表箭头改由 arrowGlyph() 输出内联 SVG（不再写死「›」字符）');
 chk(/function arrowGlyph\(\)/.test(read('js/app.js')) && /function arrowGlyph\(\)/.test(read('js/reader-core.js')),
   '首页与古籍页各自用同一枚 arrowGlyph() 画箭头');
-/* ⚠️ Issue #209：首页那张「本年级本学期全部诗词」折叠卡整块撤掉了，
-   这条原先读 HTML 里那颗箭头的 `stroke-width="1.8"` 的断言**没有落点**了
-   （首页不再有折叠键）。同一条口径（折叠箭头与列表箭头同一枚描边）改成
-   反过来守：首页 HTML 里不许再出现折叠头，那枚箭头现在只由
-   css/style.css 的 `.collapse-head .arrow` 一族规则定义（上面几条已守）。 */
-chk(!/class="arrow"/.test(html),
-  '首页不再有折叠箭头（全部诗词那张折叠卡已撤，Issue #209）');
+/* ⚠️ Issue #209 那一轮把「全部诗词」折叠卡误删了，这条当时守的是**反面**
+   （「首页不许再有折叠箭头」）。第二轮用户明确要求把那张卡恢复，于是这条
+   **翻回正面**：首页那颗折叠键里的箭头仍是同一枚描边三角 ——
+   与列表右侧「›」同一套语言、同一笔画（原先就是这么守的）。 */
+chk(/id="btn-all"[\s\S]{0,900}?class="arrow"[\s\S]{0,260}?stroke-width="1\.8"/.test(html),
+  '首页折叠箭头是同一枚 1.8 描边的空心三角（不是实心 ▾ 字符）');
 chk(/\.collapse-head\.open \.arrow \{ transform: rotate\(180deg\); \}/.test(css),
   '展开时箭头旋转 180° 朝上');
 chk(/\.collapse-head \.arrow[\s\S]{0,200}?color:\s*#9db3a9/.test(css),

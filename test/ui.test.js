@@ -131,23 +131,40 @@ setTimeout(() => {
   chk(!/小古文想读哪篇点哪篇/.test(d.querySelector('.topbar').textContent),
     '顶栏不再出现「小古文想读哪篇点哪篇」');
   chk(d.querySelectorAll('.brand-icon svg').length === 1, '顶栏徽标是内联 SVG');
-  /* ⚠️ Issue #209：首页那张「本年级本学期全部诗词」折叠卡**整块撤掉**了
-     （用户 2026-09-17 原话：「现在背诵首页的5首诗词下面多了个大卡片，
-     这个不需要的，首页就是古诗独立卡片设计。」）。
-     自选背诵那张折叠卡更早一步搬去了设置整页（Issue #114 第二条）。
-     于是首页**一张折叠卡都没有**了 —— 这一节从「只剩一张」翻成「一张都不许有」：
-     再长出任何 .collapse-head 都说明有人把卡片加回来了。 */
+  /* ⚠️ Issue #209 **那一轮改错了**，这里两处口径都要看仔细：
+     ① 用户说「背诵首页的5首诗词下面多了个大卡片」——「下面」指的是
+        **今日那 5 条外面包着的那张壳**，把它判成「本年级本学期全部诗词」
+        那一张卡是误判，所以那张卡**恢复**了（用户第二轮原话：「#210 搞错了
+        请把背诵首页的「全部诗词」整张卡（折叠头 + 统计行 + 篇目列表）恢复！」）；
+     ② 用户第二轮又说「5首诗词各自是个卡片，但他们5个被一张卡片包住了，
+        我不需要这个包的卡片，直接列出5个卡片！」—— 所以撤掉的是**包着
+        今日 5 条的那层壳**，今日那 5 条本身一条都不少。
+     自选背诵那张折叠卡更早一步搬去了设置整页（Issue #114 第二条），不动。 */
   const collapseHeads = d.querySelectorAll('.collapse-head');
-  chk(collapseHeads.length === 0,
-    '首页不再有折叠卡（全部诗词那张卡已撤，实际 ' + collapseHeads.length + ' 张）');
-  chk(d.querySelector('#all-label') === null && d.querySelector('#all-list') === null,
-    '「全部诗词」那一整块（标签 / 列表 / 统计行）在 DOM 里不存在了');
+  chk(collapseHeads.length === 1,
+    '首页有且只有一张折叠卡（全部诗词，实际 ' + collapseHeads.length + ' 张）');
+  chk(!!d.querySelector('#btn-all') && !!d.querySelector('#all-label') &&
+    !!d.querySelector('#all-count') && !!d.querySelector('#all-body') &&
+    !!d.querySelector('#stats-row') && !!d.querySelector('#all-list'),
+    '「全部诗词」整张卡都在：折叠头 + 徽章 + 统计行 + 篇目列表');
+  chk(d.querySelector('#all-label').textContent.length > 0 &&
+    +d.querySelector('#all-count').textContent > 0,
+    '那张卡的标题与篇目数都画出来了（' + d.querySelector('#all-label').textContent +
+    ' · ' + d.querySelector('#all-count').textContent + ' 首）');
   chk(d.querySelector('#collections-section') === null && d.querySelector('#btn-collections') === null,
     '首页不再有「自选背诵」折叠卡（已搬去设置整页）');
-  /* 首页只剩两件事：今天背哪几首、背到哪一步了。
-     今日那一批仍是一张卡（宽屏上要与左边的进度条并排），条目仍是独立卡片。 */
-  chk(!!d.querySelector('#today-card.card') && !!d.querySelector('#today-list'),
-    '首页仍在：今日那一批还套在一张卡里，容器仍是 #today-list');
+  /* 今日那 5 条**不再套一层卡**：容器是裸的 .list（它自己认领桌面栅格那一格），
+     5 条 .item 各自是一张纸。再套回 `.card` 就是把那张壳又包了回去。 */
+  chk(d.querySelector('#today-card') === null,
+    '今日 5 条不再被一张卡片包住（#today-card 那层壳已撤）');
+  const todayList = d.querySelector('#today-list');
+  chk(!!todayList && todayList.tagName === 'DIV' && todayList.classList.contains('list'),
+    '今日列表的容器就是 #today-list 自己的 .list（父元素是 .app）');
+  chk(!!todayList && todayList.parentElement.classList.contains('app'),
+    '今日列表直接挂在 .app 下（中间不再夹一层卡）');
+  chk(d.querySelectorAll('#today-list > .item').length === 5 &&
+    [...d.querySelectorAll('#today-list > .item')].every(el => el.classList.contains('item')),
+    '直接列出的就是 5 张独立卡片（.item），不是一组裹在一张卡里');
   // 需求：首页右上角的「设置」齿轮删除（底部页签本身就有设置，两个入口重复）
   chk(d.querySelector('.topbar #btn-settings') === null, '首页右上角不再有设置齿轮（交给底部页签）');
   chk(d.querySelector('.topbar .icon-btn') === null, '顶栏不再有圆形图标按钮（设置入口已删）');
@@ -193,10 +210,14 @@ setTimeout(() => {
   chk(d.querySelector('.topbar .back-icon') === null, '顶栏不再有各页自造的返回箭头');
   chk(!!dock.querySelector('[data-nav-go="settings"]'), '「设置」是页签之一，不再只藏在右上角');
   chk(!/📖|⚙|📚/.test(d.querySelector('.app').innerHTML), '页面不再使用 📖 ⚙️ 📚 emoji 图标');
-  /* ⚠️ 原先这里有一条「折叠箭头与列表右侧「›」风格一致」的断言（读 #btn-all
-     里的 SVG）。那张折叠卡撤掉之后（Issue #209）首页没有折叠键可查 ——
-     同一条口径（空心描边三角、不用实心 ▾ / ▴ 字符）改在样式层守着，
-     见 test/theme.test.js 的 `.collapse-head .arrow` 那一组。 */
+  /* 折叠箭头与列表右侧「›」风格一致（读 #btn-all 里的那枚 SVG）——
+     ⚠️ 中间有过一轮把这张卡删掉的改动（Issue #209 的误判），断言在那一轮
+        被挪去了样式层；第二轮卡恢复，这条也回到**这里**来判：
+        判据是那颗键里真有一枚 18×18、1.8 描边的空心三角。 */
+  const allArrow = d.querySelector('#btn-all .arrow svg');
+  chk(!!allArrow && allArrow.getAttribute('stroke-width') === '1.8' &&
+    /viewBox="0 0 24 24"/.test(allArrow.outerHTML),
+    '折叠箭头是空心描边三角（不是实心 ▾ / ▴ 字符）');
   chk(!/▾|▴/.test(d.querySelector('.app').textContent), '首页不再用实心 ▾ / ▴ 字符');
   chk(!d.querySelector('.selector.card'), '年级/学期选择不再常驻首页');
   // 设置是独立整页（不是弹层）：相关内容在 settings.html 里校验
@@ -399,9 +420,9 @@ setTimeout(() => {
     '设置里不再有「首页小古文入口」选项（入口已删）');
   chk(![sindex, sgeneral, srecite, slists, sreader].some(doc => /首页小古文入口/.test(doc.body.textContent)),
     '设置页文案里不再出现「首页小古文入口」');
-  /* ⚠️ 这一条原先读的是「全部诗词」卡上的 `#all-count`（Issue #209 那张卡撤了）。
-     它要守的其实是**件数**：今日任务仍是 5 首，小古文一篇都没混进来。
-     改成直接从今日列表数 —— 读数变了，口径一字未动。 */
+  /* 这一条守的是**件数**：今日任务仍是 5 首，小古文一篇都没混进来。
+     （原先把那句「本学期诗词数」的读数从 #all-count 挪走了一轮，
+        第二轮卡恢复，两处读数仍然一致 —— 见下面那条。） */
   chk(d.querySelectorAll('#today-list .item').length === 5, '小古文不会混进古诗词列表（仍为 5 首）');
   // 底部页签的「课外」是四部集子的统一入口，指向入口页（不再是某一部直连）
   const dockLibraryCount = [...dock.querySelectorAll('.dock-item')].filter(b => b.dataset.navGo === 'library').length;
@@ -432,9 +453,9 @@ setTimeout(() => {
   // 需求 6：列表单项右侧是播放键
   chk(d.querySelectorAll('#today-list .item-read .play-glyph').length === 5,
     '今日每首右侧都是 ▶ 播放键');
-  /* ⚠️ 「本学期诗词数」原先从「全部诗词」卡的 `#all-count` 读（Issue #209 撤卡）。
-     那个数字的**同一份口径**现在只在设置页「背诵」那一页上（`#scope-hint`），
-     所以这里改成按设置页读 —— 读数换了，口径一字未动。 */
+  /* 「本学期诗词数」的同一份口径现在有两处：首页「全部诗词」卡上的 `#all-count`
+     （Issue #209 误删、第二轮已恢复）与设置页「背诵」那一页的 `#scope-hint`。
+     这里读设置页那处 —— 它俩说的是同一件事。 */
   /* ⚠️ Issue #209：界面上删掉了「本年级本学期」那一档（用户点名），出厂范围
      改成「本册及之前」（`upto`）。所以这里守的读数从「当前：本年级本学期」
      翻成「当前：本学期及之前」—— 口径没变，只是出厂那一档换了。 */
@@ -559,13 +580,26 @@ setTimeout(() => {
   }
   chk(d.querySelector('#ring-text').textContent === '5/5', '全部完成 5/5（实际 ' + d.querySelector('#ring-text').textContent + '）');
 
-  /* ⚠️ 这里原先是「展开全部诗词」三条（#btn-all / #all-body / #all-list）——
-     Issue #209 把那整张卡撤掉了（用户原话：「现在背诵首页的5首诗词下面多了
-     个大卡片，这个不需要的，首页就是古诗独立卡片设计」），于是首页不再有
-     折叠键可点、也不再有#stats-row 统计条。要按册次看整册目录去 /poems/ 索引页。
-     这一条改守**反面**：那张卡真的不在 DOM 里，且不留下任何空壳。 */
-  chk(d.querySelector('#today-card') !== null && d.querySelectorAll('#today-list .item').length === 5,
-    '首页现在只有今日那一批（不再有「全部诗词」折叠卡）');
+  /* 展开「全部诗词」：折叠键点得动、统计条与篇目列表都铺出来
+     —— 这三样 Issue #209 被误删过一轮，第二轮用户点名要求恢复，所以这里
+        判的是**正面**：点一下就展开、再点一下收起来，且内容真的在。 */
+  {
+    const body = d.querySelector('#all-body');
+    const btn = d.querySelector('#btn-all');
+    chk(body.hidden === true, '「全部诗词」默认是收起的');
+    btn.dispatchEvent(new window.Event('click', { bubbles: true }));
+    chk(body.hidden === false && btn.classList.contains('open'), '点折叠头展开（箭头朝上）');
+    chk(d.querySelectorAll('#stats-row .stat').length === 4,
+      '展开后有四格统计（总数 / 已学 / 较牢固 / 待复习，实际 ' +
+      d.querySelectorAll('#stats-row .stat').length + ' 格）');
+    chk(+d.querySelector('#all-count').textContent === d.querySelectorAll('#all-list .item').length,
+      '篇目列表的条数与徽章上的数字一致（' +
+      d.querySelectorAll('#all-list .item').length + ' 条）');
+    btn.dispatchEvent(new window.Event('click', { bubbles: true }));
+    chk(body.hidden === true && !btn.classList.contains('open'), '再点一下收起');
+  }
+  chk(d.querySelectorAll('#today-list > .item').length === 5,
+    '今日那 5 张独立卡片与「全部诗词」那张卡各是各的（不互相包）');
   // 需求：详情页工具条与小古文对齐一致；标签行、按钮整行居中，底部不被页签压住
   chk(d.querySelectorAll('#m-actions-main > *').length === 3, '详情页第一行：对齐 / 字号 / 注音 三组');
   chk(d.querySelectorAll('#m-actions-icons > *').length === 2, '详情页第二行：正文播放键 + 译文开关');
@@ -591,12 +625,16 @@ setTimeout(() => {
   chk(srecite.querySelector('#seg-scope button.active').dataset.scope === 'upto', '默认选中「本册及之前」');
   setOn('scope', 'primary', '#seg-scope button', 'scope');
   chk(srecite.querySelector('#seg-scope button.active').dataset.scope === 'primary', '切换后按钮高亮跟随');
-  /* ⚠️ 「切换范围 → #all-count / #all-label 跟着变」那三条原先是**从那张
-     「全部诗词」卡上读的**（Issue #209 整块撤掉）。范围这件事的读数改成
-     设置页自己的回显（`#scope-hint` 的「当前：…」），那是搬卡之后仍在的、
-     且本来就为「你现在选的是什么范围」而写的一行。 */
+  /* 「切换范围 → 首页那张卡与设置页回显都跟着变」：
+     设置页读 `#scope-hint` 的「当前：…」，首页读那张「全部诗词」卡的
+     `#all-count` / `#all-label`（Issue #209 误删、第二轮已恢复）——
+     两处说的是同一件事，两条一起判。 */
   chk(srecite.querySelector('#scope-hint').textContent === '当前：小学阶段',
     '小学随机范围 → 设置页回显「当前：小学阶段」（实际 ' + srecite.querySelector('#scope-hint').textContent + '）');
+  chk(/小学阶段/.test(d.querySelector('#all-label').textContent),
+    '小学随机范围 → 首页那张卡的标题跟着变成「' + d.querySelector('#all-label').textContent + '」');
+  chk(+d.querySelector('#all-count').textContent > 5,
+    '小学随机范围 → 那张卡的篇目数跟着变（' + d.querySelector('#all-count').textContent + ' 首）');
   chk(d.querySelectorAll('#today-list .item').length === 5, '随机范围下仍按每日数量出计划');
   chk(JSON.parse(spRecite.window.localStorage.getItem('poem_recite_settings_v1')).scope === 'primary', '背诵范围已持久化');
   setOn('scope', 'high', '#seg-scope button', 'scope');

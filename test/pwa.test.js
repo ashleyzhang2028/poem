@@ -38,6 +38,9 @@ function check(name, cond, extra) {
   }
 
   const browser = await puppeteer.launch({
+    // 本地验证用：环境里已有 Chromium 时按 PUPPETEER_EXECUTABLE_PATH / 系统路径接上，
+    // 不改变 CI 的既有行为（那里没有这两个变量，仍走 puppeteer 自带的那份）。
+    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
     args: ['--no-sandbox', '--disable-dev-shm-usage', '--disable-gpu']
   });
   const base = process.env.BASE_URL || 'http://localhost:8080/';
@@ -2319,7 +2322,11 @@ function check(name, cond, extra) {
       await page.goto(base, { waitUntil: 'load' });
       await new Promise(r => setTimeout(r, 800));
       const m = await page.evaluate(() => {
-        const items = [...document.querySelectorAll('.today-list .item')];
+        /* ⚠️ 选择器写 `#today-list .item` 而不是 `.today-list .item`：
+           用户第二轮要求撤掉包着今日 5 条的那层 `.card` 壳
+           （「5个被一张卡片包住了，我不需要这个包的卡片」），
+           `.today-list` 这个类因此不再存在 —— 容器回到 `#today-list` 自己。 */
+        const items = [...document.querySelectorAll('#today-list .item')];
         if (!items.length) return null;
         const cs = getComputedStyle(items[0].querySelector('.item-title'));
         const lh = parseFloat(cs.lineHeight) || parseFloat(cs.fontSize) * 1.4;
