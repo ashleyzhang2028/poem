@@ -201,7 +201,16 @@
         mail: typeof me.channel.mail === "string" ? me.channel.mail : null,
         delivered: me.channel.delivered === true,
         db: typeof me.channel.db === "string" ? me.channel.db : null,
-        sms: me.channel.sms === true
+        sms: me.channel.sms === true,
+        /* Issue #197 后半段：**这台服务器拦不拦「邮箱没确认」**，
+           以及它发的确认信真不真能到人手上。
+           ⚠️ 只在能确认是布尔时收下（老缓存里没有这两个字段 → 留 null），
+              界面据此**要么说准、要么不说** —— 缺字段时编一个 false 出来
+              会让界面说出「这台服务器没拦确认」这种可能完全相反的结论。
+           ⚠️ 这两个值**不参与任何判断**：真闸在服务端，
+              客户端拿到它们只是为了把文案说对（见 js/profile.js）。 */
+        emailGate: me.channel.emailGate === true ? true : (me.channel.emailGate === false ? false : null),
+        emailDeliverable: me.channel.emailDeliverable === true ? true : (me.channel.emailDeliverable === false ? false : null)
       } : null;
 
       lastAccount = (me && typeof me === "object") ? {
@@ -607,8 +616,12 @@
             ok: true, reason: REASON.OK,
             alreadyVerified: r.alreadyVerified === true,
             /* ⚠️ `verifySent` 是**事实**：发信商没配时它是 false，
-               界面据此写「没能发出去」而不是「已发出」。 */
+               界面据此写「没能发出去」而不是「已发出」。
+               `verifyAttempts` 同一条：试了几次 —— 只写「没能发出」
+               用户不知道该等一下还是该找运维。 */
             verifySent: r.verifySent === true,
+            verifyAttempts: Number(r.verifyAttempts) || 1,
+            verifyReason: r.verifyReason || null,
             emailMask: r.emailMask || ""
           };
         }

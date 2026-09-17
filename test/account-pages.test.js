@@ -477,13 +477,18 @@ const LOGIN = strip(loginJs), PROFILE = strip(profileJs), ADMIN = strip(adminJs)
           · 重设密码会踢掉其它设备 → 必须写明，否则用户会觉得被莫名登出
         所以上限调高，而不是把那几件事删掉。**调高的是数字，不是纪律**：
         没有这几件事的时候，谁也别把这个数字再往上抬。
+     ⚠️ 2026-09-16 再调一档（1250 → 1330）：用户裁决「不确认就不让登录」，
+        那一条必须写进条款 —— 它是**用户能不能用**这件事，含糊过去就是
+        条款落后于代码（「不确认也能用」那句现在反过来了，
+        留着它等于条款里写着一条已经不成立的承诺）。
+        同样，调高的是数字，不是纪律。
      ⚠️ Issue #163（2026-09-19）又调了一次：**图片头像上云**这件事本身
         必须在条款里（上一版写的是「不收集」那套口径，而现在用户传的图
         真的会存到服务器、地址公开可访问）。加的是这一件，上限跟着它走一档。 */
   const legalLen = (f) => read(f).replace(/<!--[\s\S]*?-->/g, "")
     .replace(/<[^>]+>/g, "").replace(/\s+/g, "").length;
-  chk(legalLen('terms/index.html') < 1250,
-    '用户协议正文 < 1250 字（实际 ' + legalLen('terms/index.html') + '）');
+  chk(legalLen('terms/index.html') < 1330,
+    '用户协议正文 < 1330 字（实际 ' + legalLen('terms/index.html') + '）');
   chk(legalLen('privacy/index.html') < 1670,
     '隐私条款正文 < 1670 字（实际 ' + legalLen('privacy/index.html') + '）');
   /* 反向：这几件事**必须**在条款里（少一件就是条款落后于代码） */
@@ -492,6 +497,11 @@ const LOGIN = strip(loginJs), PROFILE = strip(profileJs), ADMIN = strip(adminJs)
   chk(/不会保存明文/.test(priv), '隐私条款写明密码不存明文');
   chk(/全部退出/.test(priv), '隐私条款写明改密码会踢掉其它设备');
   chk(/别用真人照片/.test(priv), '隐私条款写明头像会上传到服务器、别用真人照片（Issue #163 起图片头像真的上云）');
+  /* Issue #197 后半段：条款必须跟着代码改口 —— 那句「不确认也能用」现在不成立了 */
+  const terms = read('terms/index.html');
+  chk(!/不确认也能/.test(terms), '用户协议里不再写「不确认也能用」（口径已经是拦）');
+  chk(/确认.*才能登录/.test(terms), '用户协议写明「确认之后才能登录」（实际「' +
+    (terms.match(/[^。；]{0,30}才能登录[^。；]{0,20}/) || [''])[0] + '」）');
 }
 
 /* ============ 十三、个人中心：一张卡一件事、操作键攒成一行（Issue #163 第三轮） ============ */
@@ -719,8 +729,43 @@ const LOGIN = strip(loginJs), PROFILE = strip(profileJs), ADMIN = strip(adminJs)
           chk(!/已切回本机体验版/.test(String(read('js/auth-api.js').match(/PASSWORD_ERR\s*=\s*\{[\s\S]*?\};/) || '')),
             'PASSWORD_ERR 那张表里没有「已切回本机体验版」这类假话');
 
-          console.log('\n' + (fails ? '❌ ' + fails + ' 项失败' : '🎉 账号三页测试全部通过'));
-          process.exit(fails ? 1 : 0);
+          /* ----------------------------------------------------------
+             Issue #197 复审：「邮箱还没确认」被拦下来时，那一屏必须有出路
+             ----------------------------------------------------------
+             ⚠️ 这一条守的是**一个真实存在过的死结**：
+                「不确认就不让登录」落地之后，没确认的人登不进来，
+                而重发确认邮件原先只在个人中心（要登录）。
+                于是屏幕上没有任何可点的东西 —— 用户和我都解不开。
+             判据：① 被拦后切到「等确认」那一屏（不是只留一句提示）
+                   ② 那一屏有一颗「重发」键，而且**不要求登录**
+                   ③ 邮箱框被预填（省得用户再打一遍） */
+          $('tab-pw').click();
+          $('input-pw-email').value = 'stuck@example.com';
+          $('input-pw').value = 'hunter2hunter';
+          $('btn-login').click();
+          setTimeout(() => {
+            try {
+              /* 服务端连不上 → 这一页如实说「暂时不能注册或改密码」，
+                 不会切到「等确认」那一屏。所以这里只断言**那一屏的结构**存在，
+                 以及它在被拦时**确实是那一屏会显示**（由 API 测试的第廿六节钉住
+                 内核层，这里钉界面层）。 */
+              chk(!!$('pane-verify'), '「等确认」那一屏在页面上（未确认的人唯一的落点）');
+              chk(!!$('btn-resend-verify'), '那一屏有一颗「重发确认邮件」');
+              chk(!!$('input-verify-email'), '那一屏有邮箱输入框（匿名口要它，登录态留空）');
+              const verifyHtml = read('login/index.html');
+              const visibleVerify = verifyHtml.replace(/<!--[\s\S]*?-->/g, ' ');
+              chk(/没登录也能点/.test(visibleVerify),
+                '那一屏**写明了「没登录也能点」** —— 否则用户会以为要先登录（而死结正在这里）');
+              chk(!/先去用，稍后再确认/.test(visibleVerify),
+                '「先去用，稍后再确认」那颗键**已经撤掉**（新口径下它点下去就是 403，是一句做不到的话）');
+
+                  console.log('\n' + (fails ? '❌ ' + fails + ' 项失败' : '🎉 账号三页测试全部通过'));
+              process.exit(fails ? 1 : 0);
+            } catch (e) {
+              console.log('✗ 第十三节自身抛异常：' + e.message);
+              process.exit(1);
+            }
+          }, 60);
         } catch (e) {
           console.log('✗ 第十三节自身抛异常：' + e.message);
           process.exit(1);
@@ -728,6 +773,126 @@ const LOGIN = strip(loginJs), PROFILE = strip(profileJs), ADMIN = strip(adminJs)
       }, 60);
     } catch (e) {
       console.log('✗ 第十三节自身抛异常：' + e.message);
+      process.exit(1);
+    }
+  }, 60);
+}
+
+/* ================= 十四、Issue #197 后半段：「没确认就不让登录」那一屏 ================= */
+{
+  /* 用户原话（2026-09-16）：「不确认就不让登录」。
+     这一节只测**那一屏本身**（服务端那半边在 test/api.test.js 第廿四节）：
+       ① 「口令对了 / 码也对了，但邮箱没确认」时，界面切的是一整屏
+          **专门的**「等确认」屏 —— 不是输入框旁边一行小字
+       ② 那一屏上那颗「重新发一封」走的是**匿名**接口
+          （这条路上的人登不进来，要登录那条接口在这儿必然 401）
+       ③ `verifySent` 的三个取值各说各的话（真发了 / 没发 / 不知道）
+       ④ 旧口径那句「先去用，稍后再确认」不许再出现在页面上 ——
+          新口径下那颗键点下去是 403，是一句做不到的话
+       ⑤ 注册完那一屏按 `requiresVerification` 分开说（拦 / 不拦） */
+
+  const html = read('login/index.html');
+  const sdom = new JSDOM(html, { runScripts: 'dangerously', url: 'https://x.test/login/', base: 'https://x.test/login/' });
+  const w = sdom.window;
+
+  /* 造一个「服务端可用」的假 fetch：登录回 403 E_EMAIL_UNVERIFIED */
+  const calls = [];
+  w.fetch = (url, init) => {
+    const path = String(url).replace('https://x.test', '');
+    const body = init && init.body ? JSON.parse(init.body) : {};
+    calls.push({ path, body });
+    const reply = (status, obj) => Promise.resolve({
+      status, text: () => Promise.resolve(JSON.stringify(obj)), headers: { get: () => null }
+    });
+    if (path === '/api/login') {
+      return reply(403, {
+        code: 'E_EMAIL_UNVERIFIED',
+        message: '邮箱还没确认：请点开注册时那封确认邮件里的链接。没收到就点「重新发一封」。',
+        emailMask: 'k***@example.com', verifySent: false, verifyTransport: null
+      });
+    }
+    if (path === '/api/resend-verification-by-email') {
+      return reply(200, { alreadyVerified: false, emailMask: 'k***@example.com', verifySent: true, verifyTransport: 'sendgrid' });
+    }
+    return reply(401, { code: 'E_NO_SESSION' });
+  };
+
+  ['js/auth-core.js', 'js/auth-api.js', 'js/entitlement.js', 'js/avatar.js',
+    'js/family.js', 'js/progress-store.js'].forEach(f => {
+    const el = w.document.createElement('script');
+    el.textContent = read(f);
+    w.document.body.appendChild(el);
+  });
+  const s2 = w.document.createElement('script');
+  s2.textContent = read('js/login.js');
+  w.document.body.appendChild(s2);
+  w.document.dispatchEvent(new w.Event('DOMContentLoaded', { bubbles: true }));
+
+  const doc = w.document;
+  const $ = (id) => doc.getElementById(id);
+  const shown = (sel) => { const e = doc.querySelector(sel); return !!(e && !e.hidden); };
+
+  chk(!!w.LoginPage, '（第十四节）登录页脚本跑起来了');
+  chk(!shown('#step-unverified'), '出厂时那一屏收着（不摆一个还没发生的结果）');
+
+  $('input-pw-email').value = 'k@example.com';
+  $('input-pw').value = 'hunter2hunter';
+  $('btn-login').click();
+
+  const finish = (msg, code) => {
+    chk(msg, code);
+    console.log('\n' + (fails ? '❌ ' + fails + ' 项失败' : '🎉 账号三页测试全部通过'));
+    process.exit(fails ? 1 : 0);
+  };
+
+  setTimeout(() => {
+    try {
+      chk(shown('#step-unverified'), '「口令对了但没确认」→ 切到**专门的**那一屏');
+      chk(!shown('#pane-pw'), '不再停在密码那一屏（那儿没有出路，只有重复点登录）');
+      chk(!shown('#pane-verify'),
+        '**不复用**「注册完」那一屏 —— 那边开头一句是「账号建好了」，对回来登录的人是一句错话');
+      chk(/确认/.test($('unverified-lead').textContent),
+        '那一屏说的是「确认」（实际「' + $('unverified-lead').textContent + '」）');
+      chk($('input-pw').value === '', '口令栏用完就清（不在屏幕上多留一秒）');
+
+      /* verifySent:false 时**不许**说「已发出」—— 那是最恨的那种假话 */
+      chk($('unverified-note').hidden || !/已发出|已发往/.test($('unverified-note').textContent),
+        'verifySent:false 时不说「已发往 / 已发出」（发信是事实，不是「尽力了」）');
+
+      /* 那颗「重新发一封」：走匿名接口（要登录那条在这一屏上必然 401） */
+      calls.length = 0;
+      chk(!$('btn-unverified-resend').disabled, '那一屏上有「重新发一封」这颗键');
+      $('btn-unverified-resend').click();
+      setTimeout(() => {
+        try {
+          const hit = calls.filter(c => c.path === '/api/resend-verification-by-email');
+          chk(hit.length === 1, '它打的是**匿名**重发口 /api/resend-verification-by-email');
+          chk(hit[0] && hit[0].body.email === 'k@example.com', '带上了用户在登录屏填的那个邮箱');
+          chk(calls.every(c => c.path !== '/api/resend-verification'),
+            '**没有**去打要登录那条（打它必然 401 —— 这一屏上的人登不进来）');
+          chk(/已发往/.test($('msg-unverified').textContent),
+            'verifySent:true 时如实说「已发往 …」（实际「' + $('msg-unverified').textContent + '」）');
+
+          /* 源码那一半：旧口径那颗键与旧那句话说辞都不许留着 */
+          const loginHtml = read('login/index.html');
+          chk(/id="btn-unverified-resend"/.test(loginHtml), 'login/index.html 里有那颗匿名重发的键');
+          chk(!/先去用，稍后再确认/.test(loginHtml),
+            '**旧口径那句「先去用，稍后再确认」不见了**（新口径下那颗键点下去是 403，是一句做不到的话）');
+          chk(!/不确认也能用/.test(loginHtml.replace(/<!--[\s\S]*?-->/g, ' ')),
+            '注册那一屏不再写「不确认也能用」');
+          const loginJs = read('js/login.js');
+          chk(/requiresVerification/.test(loginJs),
+            '注册完那一屏按 requiresVerification 分开说（拦 / 不拦各说各的话）');
+          chk(/emailGate/.test(read('js/profile.js')),
+            '个人中心那一行按服务器自报的 channel.emailGate 说（不猜）');
+          finish('（第十四节）新口径那一屏的断言全过', true);
+        } catch (e) {
+          console.log('✗ 第十四节自身抛异常：' + e.message);
+          process.exit(1);
+        }
+      }, 60);
+    } catch (e) {
+      console.log('✗ 第十四节自身抛异常：' + e.message);
       process.exit(1);
     }
   }, 60);

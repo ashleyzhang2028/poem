@@ -272,7 +272,9 @@ node test/pwa.test.js
   哪些数据跨设备一致、哪些只属于这台设备，有一份可枚举的清单（见文末「存储分域」）。
 - **不注册也能用全部功能**；可自愿用**邮箱 + 密码**注册账号，也可以不记密码、
   每次用邮箱收一串**随机码**登录（两条路签发的是同一枚会话）。
-  注册后我们会发一封**确认邮件**（不确认也能照常用，确认是为了将来能找回密码）。
+  注册后我们会发一封**确认邮件**，**点开那条链接之后才能登录**
+  （没确认就登不进来 —— 这是为了保护账号；确认之前本站的背诵功能照旧完全可用，
+  被拦住的只有云端账号那一部分）。
   账号域数据（背诵档案、年级学期、背诵范围、昵称印记）会上传到服务器
   以便跨设备同步，**设备偏好（字号 / 对齐 / 注音开关 / 连读档）不上云**；
   可在「设置 · 通用 · 账号」关掉云端同步退回只存本机，注销即删除服务器上的数据。
@@ -304,11 +306,12 @@ Vercel Serverless，**同源、无 CORS**：
 | `DELETE /api/admin/grant` | 2.2 收回：等价于发一个 `free`，不删账号、不删进度 |
 | `POST /api/admin/grants` | 2.2 看权威名单（只回掩码，只列**发过层级**的那几条） |
 | `POST /api/register` | 注册：邮箱 + 密码 → **立刻建号**（待确认）+ 发确认邮件 |
-| `POST /api/login` | 邮箱 + 密码登录 → 签发**同一枚** HttpOnly Cookie 会话 |
+| `POST /api/login` | 邮箱 + 密码登录 → 签发**同一枚** HttpOnly Cookie 会话（**没确认回 403**） |
 | `POST /api/verify-email` | 点邮件里那条链接确认邮箱（**不需要登录**） |
 | `POST /api/resend-verification` | 重发确认邮件（**要登录**，否则任何人都能拿别人邮箱刷） |
+| `POST /api/resend-verification-by-email` | 重发确认邮件（**匿名**）—— 「没确认就不让登录」这条路上，**登不进来的人正是最需要那封信的人** |
 | `POST /api/reset-request` | 忘记密码第一步：发重设邮件（**不泄露邮箱是否存在**） |
-| `POST /api/reset-confirm` | 忘记密码第二步：换新密码 + **吊销全部会话** |
+| `POST /api/reset-confirm` | 忘记密码第二步：换新密码 + **吊销全部会话** + 如实回 `emailVerified`（未确认的人仍然登不进去，那一句必须说出来） |
 | `POST /api/admin/accounts` | 账号名录：列出**全部注册账号**（含**明文邮箱**），只读 |
 
 业务内核全在 `api/_lib/core.js`（handler 只做「读请求 → 调内核 → 写响应」），
@@ -366,7 +369,15 @@ npm run env:example > .env.example    # 生成可直接粘贴的模板
 |---|---|---|
 | **必须** | `SESSION_SECRET`（或 `SESSION_KEY`，二选一，前者优先）、`SUPABASE_URL`、`SUPABASE_SERVICE_KEY` | 接口整体 503 / 只用内存存储（重启即丢） |
 | **这一件需要** | `SENDGRID_API_KEY` | 发不出真邮件，落到 `console`（只写服务端日志） |
-| **可选** | `MAIL_TRANSPORT`、`MAIL_FROM`、`SITE_URL`、`COOKIE_NAME`、`SMS_*`、`ALLOW_CODE_ECHO` | 用默认值 |
+| **可选** | `MAIL_TRANSPORT`、`MAIL_FROM`、`SITE_URL`、`COOKIE_NAME`、`SMS_*`、`ALLOW_CODE_ECHO`、`MAIL_RETRY_MAX`、`MAIL_RETRY_BUDGET_MS`、`PASSWORD_MIN`/`PASSWORD_MAX`、`VERIFY_TTL_MS`、`RESET_TTL_MS` | 用默认值 |
+| **默认开** | `REQUIRE_EMAIL_VERIFIED` | 邮箱没确认就不让登录；**只在没配好发信商的实例上**显式设 `0` 关掉（关掉时界面会如实说「这台服务器没有拦确认」） |
+
+⚠️ 其中两个要留意：
+- `REQUIRE_EMAIL_VERIFIED` **默认 `1` = 邮箱没确认就不让登录**（用户裁决）。
+  只在**发信真的通不了**的实例上才写 `0` —— 那时确认邮件送不到收件箱，
+  开着这道闸等于谁也别想注册。关掉时界面会如实标注。
+- `MAIL_RETRY_*` 是发信失败时的**退避重试**（默认重试 2 次、总预算 6 秒）。
+  ⚠️ 它不是后台补发队列 —— Serverless 里没有常驻进程，「过五分钟再试」需要真队列。
 
 **一个都不配也照样能完全离线使用** —— 自检把这句话写在报告里，免得「未配置」被读成「坏掉」。
 ⚠️ 报告里**只出现变量名、绝不出现值**（连长度都不报），因为这段文字就是给人贴进 Issue 的。
@@ -386,6 +397,46 @@ npm run env:example > .env.example    # 生成可直接粘贴的模板
 
 **这一步 AI 做不了**：注册 Supabase / 发信商都要本人邮箱与手机号。能自动化的部分是
 **「步骤本身」与「判据本身」**（都在 `api/_lib/ops.js` 的 `STEPS` 里，与清单同一份数据）。
+
+#### 发信商到底在哪配：**托管平台的环境变量**，不是 Resend、也不是 Supabase
+
+这一条被问过好几次，所以写死在这里：
+
+| 你做了什么 | 它管什么 | 它**不管**什么 |
+|---|---|---|
+| 在 **Resend** 后台建 key / 验域名 | Resend 那一家**允许**你用它的服务发信 | 我们的代码不知道有这枚 key |
+| 在 **Supabase** 建项目 / 跑 `schema.sql` | 账号与进度**存哪**（数据库） | 与发信**完全无关**（Supabase 的邮件是它自己的注册信，不是本站的验证码） |
+| 在 **托管平台**（Vercel / CNB / 自建）配环境变量 | 把上面那枚 key **交给本站的服务端** | — |
+
+所以：**Resend 配好只是「钥匙配好了」，还得把钥匙插到这把锁上** ——
+那把锁就是**跑着本站服务端的那台机器**的环境变量。本站的 `api/*` 是 Vercel
+Serverless 函数（`docs/architecture.md` §4.1），所以那台机器就是**Vercel 这个项目**：
+Vercel → 你的项目 → Settings → Environment Variables。
+
+要填的就是这一枚（`MAIL_TRANSPORT` 不必填 —— 只填 Resend 一枚时推断就是它）：
+
+```
+RESEND_API_KEY = re_xxxxxxxx        # Resend → API Keys → 建一枚（Sending access 即可）
+MAIL_FROM      = noreply@mail.你的域  # 必须是 Resend 里**验过的那个子域**里的地址
+```
+
+顺序只能这样走，**倒过来不行**：
+
+1. Resend → Domains → 加一个发信子域（如 `mail.kuibu.app`），按提示加 **SPF / DKIM / DMARC** 三条 DNS 记录，等到状态是 **Verified**
+2. Resend → API Keys → 建一枚 key（**Sending access** 就够，别给 Full access）
+3. **Vercel → 项目 → Settings → Environment Variables** → 建 `RESEND_API_KEY`（值填第 2 步那枚 key），`MAIL_FROM` 填第 1 步验过的子域里的地址
+4. **重新部署一次**：Vercel 的环境变量**只在新部署里生效**，光改不重新部署 = 没改（这是最常见的「我明明配了」）
+5. 回来验：终端里 `curl -sS "$SITE_URL/api/me"` 那段照 `npm run doctor -- --steps` 的第 E 步走，或直接在 `/login/` 发一次码 —— `delivered:true` 才算成了。`npm run doctor` 里「发信通道」那一行从 `console` 变成 `resend` 是同一件事的另一种看法
+
+⚠️ 三条容易踩的：
+
+- **只验域名不够**：SPF / DKIM / DMARC 缺一条，QQ / 163 会直接判垃圾邮件或拒收。先看垃圾箱，再看 Resend 的投递日志（那里会说 ISP 为什么拒）
+- **`MAIL_FROM` 必须落在验过的子域里**：`noreply@gmail.com` 这类会被发信商直接拒（你不是那个域的主人）
+- **`RESEND_API_KEY` 只在服务端**：它是密钥，不进浏览器、不进仓库、不写进 `.env.example`
+
+不必填 `MAIL_TRANSPORT=resend` 的前提是「**只有** Resend 一枚密钥」。
+哪天又填了 `SENDGRID_API_KEY`，缺省推断会**挑 SendGrid**（推断顺序里它在前面），
+这时必须显式写 `MAIL_TRANSPORT=resend` —— `npm run doctor` 会主动点破这一条。
 
 ### 古诗词大会 / 试题模拟（3 期「不花钱的那三件」，已落地）
 

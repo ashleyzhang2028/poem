@@ -32,6 +32,7 @@ module.exports = handler.make("auth.reset-confirm", ["POST"], function (d, body)
     rid: body.rid,
     token: body.token,
     password: body.password,
-    deviceId: body.deviceId || d.deviceId
+    deviceId: body.deviceId || d.deviceId,
+    ip: d.ip
   });
 });

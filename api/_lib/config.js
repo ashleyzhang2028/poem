@@ -66,6 +66,17 @@ var CONFIG = {
      ⚠️ 这几项**没有一项是开关**：注册 / 登录 / 忘记密码 / 重设口令
         都是本流程的组成部分，开关一开一半就成了「某些用户走不通」。
         唯一一个真正的开关是 ALLOW_CODE_ECHO（冒烟用），它不在这一段。 */
+  /* ⚠️ Issue #197（后续）：**邮箱没确认就不让登录**（用户 2026-09-16 裁决）。
+     这是本文件里**极少数真正的开关**之一，而且默认 **1（开着）**：
+     注册流程发了确认邮件，那封信就得有分量 —— 一个「点不点都一样」的
+     开关等于没做。
+     ⚠️ 为什么要有这个开关而不是写死：它是**针对发信商现状的应急闸门**。
+        没有配好发信商（`MAIL_TRANSPORT=console`）时，确认邮件根本送不到
+        真人的收件箱，此时开着这道闸就是「谁也别想用」。
+        所以口径是：**默认开；只在没配好发信商的实例上由运维显式关掉**，
+        并且在界面上如实说明「这台服务器现在没拦确认」。
+        （详见 docs/auth-design.md §4.4.9 与 README 的运维清单） */
+  requireEmailVerified: env("REQUIRE_EMAIL_VERIFIED", "1") !== "0",
   passwordMin: intEnv("PASSWORD_MIN", 8),
   passwordMax: intEnv("PASSWORD_MAX", 72),
   verifyTtlMs: intEnv("VERIFY_TTL_MS", 24 * 60 * 60 * 1000),     // 确认邮件 24 小时
@@ -86,6 +97,28 @@ var CONFIG = {
   smsResendCooldownMs: intEnv("SMS_RESEND_COOLDOWN_MS", 60 * 1000),
   sessionDays: intEnv("SESSION_DAYS", 30),
   cookieName: env("COOKIE_NAME", "kbsid"),
+
+  /* ---- 发信重试（Issue #197 复审：用户问「收不到邮件时重试机制怎么设计」）----
+     `mailRetryMax` 是**重试次数**（不含第一次），默认 2 → 最多共 3 次尝试。
+     退避是指数 + 抖动：第 1 次失败后约 400ms，第 2 次约 1200ms。
+     `mailRetryBudgetMs` 是**这一次请求内**的总预算，默认 6 秒 ——
+     压在 Serverless 函数超时（Vercel 默认 10s）之前收手，
+     免得「为了重试把整个注册请求拖成 504」。
+     ⚠️ 它**不是**一个后台补发队列。Serverless 里没有常驻进程，
+        「过五分钟再试一次」需要一个真队列（Redis / 云任务），那是另一件事。
+        所以这一层的承诺只有一句：**这一次请求内尽力重试，且如实回报**。 */
+  mailRetryMax: intEnv("MAIL_RETRY_MAX", 2),
+  mailRetryBudgetMs: intEnv("MAIL_RETRY_BUDGET_MS", 6000),
+
+  /* ---- 邮箱确认闸（Issue #197 复审）----
+     用户 2026-09-16 裁决「不确认就不让登录」。默认为 1（拦）。
+     ⚠️ 允许关掉**只有一个理由**：发信商没配（MAIL_TRANSPORT=console）时，
+        确认邮件送不到真人的收件箱 —— 那种实例上开着这道闸等于谁也别想注册。
+        所以口径是：**默认拦；只有在 console 发信商的实例上**才由运维关掉，
+        且关掉时界面必须看得出来（服务端把它自报在 `channel.requireVerified` 里）。
+     ⚠️ 它不是「把确认邮件这件事变成可有可无」——那是**反过来的**。
+        它只是「发信真的通不了时，别把全部用户挡在门外」的应急口。 */
+  requireEmailVerified: env("REQUIRE_EMAIL_VERIFIED", "1") !== "0",
 
   /* ---- 连续猜错封禁（docs/auth-design.md §5.5）----
      判据是**整轮失败**：发一枚码 → 一次都没对 → 才算一轮。
