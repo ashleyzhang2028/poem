@@ -331,16 +331,16 @@ setTimeout(() => {
   chk(grpOf(sreader, '#seg-play') === '朗读', '连读档位归到「朗读」组');
   chk(grpOf(srecite, '#seg-algo') === '复习算法', '复习算法选择归到「复习算法」组');
   // 只给背诵用的选项不能再出现在「通用」组里（这才是这次需求的重点）
-  // 「通用」组的七项：用户名 / 头像印记 / 子档案 / 账号 / 跨设备同步 / 数据管理 /
+  // 「通用」组的七项：用户名 / 头像印记 / 子用户 / 账号 / 跨设备同步 / 数据管理 /
   // 课内诗词导出
   // （Issue #132 · 用户名旁多了头像印记、二级页补上「账号」、1B 又补上同步开关；
-  //  3 期 P1 再补上「子档案」（Issue #159 的 ④）；
+  //  3 期 P1 再补上「子用户」（Issue #159 的 ④）；
   //  Issue #159 · 最后补上「课内诗词导出」——用户点名只要课本那一部分，
   //  且门槛是 Pro。它们都是账号域的身份与数据设置）。
   // 这里守的仍是原来那条重点：**只给背诵用的选项不许混进「通用」**。
   const generalItems = sgeneral.querySelector('#settings-page .settings-group').querySelectorAll('.settings-item');
   chk(generalItems.length === 7,
-    '「通用」组是用户名 / 头像印记 / 子档案 / 账号 / 跨设备同步 / 数据管理 / 课内诗词导出七项（实际 ' + generalItems.length + '）');
+    '「通用」组是用户名 / 头像印记 / 子用户 / 账号 / 跨设备同步 / 数据管理 / 课内诗词导出七项（实际 ' + generalItems.length + '）');
   chk(!!sgeneral.querySelector('#btn-export-poems'),
     '「通用」里有课内诗词导出（Issue #159：只导课本那 261 首）');
   chk(grpOf(sgeneral, '#btn-export-poems') === '通用',
@@ -376,14 +376,20 @@ setTimeout(() => {
     chk(!!doc.querySelector('#settings-page'), '每一张设置页都有独立的整页容器');
     chk(!!doc.querySelector('.settings-foot'), '每一张设置页都有页脚（版权 + 法务链接）');
   });
-  // 「背诵范围」下回显当前范围（此前设置页留空一块）
-  chk(!!srecite.querySelector('#scope-hint') && /^当前：/.test(srecite.querySelector('#scope-hint').textContent),
+  /* 「背诵范围」下回显当前范围（此前设置页留空一块）。
+     ⚠️ Issue #209：出厂那一档从「本年级本学期」改成「本册及之前」，
+        所以回显的字从「当前：本年级本学期」变成「当前：本学期及之前」。 */
+  chk(!!srecite.querySelector('#scope-hint') &&
+      srecite.querySelector('#scope-hint').textContent === '当前：本学期及之前',
     '背诵范围下回显当前范围（实际「' + (srecite.querySelector('#scope-hint') || {}).textContent + '」）');
-  // 账号那一项：未登录时如实写「未登录」+ 一段「只存在本机」的口径
-  chk(/未登录/.test(sgeneral.querySelector('#account-panel').textContent),
-    '「账号」一项在未登录时如实写「未登录」');
-  chk(/只存在本机/.test(sgeneral.querySelector('#account-panel').textContent),
-    '「账号」一项写明数据只存在本机（与 /privacy/ 口径一致）');
+  /* 账号那一项：Issue #209 起未登录那一档写作**「游客」**（用户点名：
+     「未登录（游客）修改为 游客」），底下的 sync/登录口径不再是这条断言的对象 ——
+     「进度只存在本机」那一句被用户点名删掉，只剩「用邮箱登录」那颗键。
+     断言的落点因此从「有没有写未登录」翻成「有没有写游客 + 有没有登录入口」。 */
+  chk(sgeneral.querySelector('#account-state').textContent === '游客',
+    '「账号」一项未登录时写「游客」（实际「' + sgeneral.querySelector('#account-state').textContent + '」）');
+  chk(/用邮箱登录/.test(sgeneral.querySelector('#account-panel').textContent),
+    '「账号」一项仍有进 /login/ 的入口（删的是那段解释，不是入口）');
   // 需求：首页下方的「小古文」入口卡片删除（底部页签已承担入口，卡片重复）
   chk(d.querySelector('#classic-entry') === null, '首页不再有小古文入口卡片');
   chk(d.querySelector('.classic-entry') === null, '首页不再有小古文入口卡片（classic-entry 已删）');
@@ -429,8 +435,11 @@ setTimeout(() => {
   /* ⚠️ 「本学期诗词数」原先从「全部诗词」卡的 `#all-count` 读（Issue #209 撤卡）。
      那个数字的**同一份口径**现在只在设置页「背诵」那一页上（`#scope-hint`），
      所以这里改成按设置页读 —— 读数换了，口径一字未动。 */
-  chk(srecite.querySelector('#scope-hint').textContent === '当前：本年级本学期',
-    '本学期范围回显正确（实际 ' + srecite.querySelector('#scope-hint').textContent + '）');
+  /* ⚠️ Issue #209：界面上删掉了「本年级本学期」那一档（用户点名），出厂范围
+     改成「本册及之前」（`upto`）。所以这里守的读数从「当前：本年级本学期」
+     翻成「当前：本学期及之前」—— 口径没变，只是出厂那一档换了。 */
+  chk(srecite.querySelector('#scope-hint').textContent === '当前：本学期及之前',
+    '出厂范围回显正确（实际 ' + srecite.querySelector('#scope-hint').textContent + '）');
 
   /* 年级 / 学期 / 学段 / 范围 / 数量的切换现在都发生在设置整页：
      设置页写的是同一份 localStorage，改完让首页重读一次设置即可生效 */
@@ -446,14 +455,14 @@ setTimeout(() => {
   // 年级切换（一年级 → 二年级）
   setOn('grade', 2, '#grade-chips button', 'grade');
   chk(String(srecite.querySelector('#grade-chips button.active').dataset.grade) === '2', '设置页年级高亮切到二年级（实际 ' + (srecite.querySelector('#grade-chips button.active') ? srecite.querySelector('#grade-chips button.active').textContent : '无') + '）');
-  chk(srecite.querySelector('#scope-hint').textContent === '当前：本年级本学期',
-    '切到二年级上学期：范围回显仍是「本年级本学期」');
+  chk(srecite.querySelector('#scope-hint').textContent === '当前：本学期及之前',
+    '切到二年级上学期：范围回显仍是「本学期及之前」');
   chk(d.querySelectorAll('#today-list .item').length === 5, '切换后仍是 5 首计划');
 
   // 学期切换
   setOn('term', 2, '#seg-term button', 'term');
   chk(srecite.querySelector('#chip-grade')
-      ? srecite.querySelector('#scope-hint').textContent === '当前：本年级本学期'
+      ? srecite.querySelector('#scope-hint').textContent === '当前：本学期及之前'
       : true, '二年级下学期：范围回显一致');
 
   // 学段切换：年级必须落在新学段内
@@ -462,8 +471,8 @@ setTimeout(() => {
   chk(['10', '11', '12'].indexOf(String(srecite.querySelector('#grade-chips button.active').dataset.grade)) > -1,
     '换学段后年级落在新学段内');
   setOn('grade', 12, '#grade-chips button', 'grade');
-  chk(srecite.querySelector('#scope-hint').textContent === '当前：本年级本学期',
-    '高三下学期：范围回显仍是「本年级本学期」');
+  chk(srecite.querySelector('#scope-hint').textContent === '当前：本学期及之前',
+    '高三下学期：范围回显仍是「本学期及之前」');
 
   /* 需求：古诗词详情页与小古文详情页功能对齐（对齐 / 字号 / 译文 / 播放组合键）。
      先单独验一遍，验完把页面状态恢复成「高三下」，不干扰后面的断言。 */
@@ -576,9 +585,10 @@ setTimeout(() => {
   chk(srecite.querySelector('#seg-term button.active').dataset.term === '2', '设置页回显当前学期下学期');
   chk(srecite.querySelector('#grade-chips button.active').dataset.grade === '12', '设置页回显当前年级高三');
 
-  // 背诵范围：7 个选项，切换后每日计划跟随
-  chk(srecite.querySelectorAll('#seg-scope button').length === 7, '设置页含 7 个背诵范围选项');
-  chk(srecite.querySelector('#seg-scope button.active').dataset.scope === 'term', '默认选中「本册」');
+  /* 背诵范围：Issue #209 起 6 个选项（用户点名删掉「本册」= 本年级本学期那一档），
+     出厂选中「本册及之前」。 */
+  chk(srecite.querySelectorAll('#seg-scope button').length === 6, '设置页含 6 个背诵范围选项');
+  chk(srecite.querySelector('#seg-scope button.active').dataset.scope === 'upto', '默认选中「本册及之前」');
   setOn('scope', 'primary', '#seg-scope button', 'scope');
   chk(srecite.querySelector('#seg-scope button.active').dataset.scope === 'primary', '切换后按钮高亮跟随');
   /* ⚠️ 「切换范围 → #all-count / #all-label 跟着变」那三条原先是**从那张
@@ -592,9 +602,9 @@ setTimeout(() => {
   setOn('scope', 'high', '#seg-scope button', 'scope');
   chk(srecite.querySelector('#scope-hint').textContent === '当前：高中阶段',
     '高中随机范围 → 设置页回显「当前：高中阶段」');
-  setOn('scope', 'term', '#seg-scope button', 'scope');
-  chk(srecite.querySelector('#scope-hint').textContent === '当前：本年级本学期',
-    '切回「本册」→ 设置页回显「当前：本年级本学期」');
+  setOn('scope', 'upto', '#seg-scope button', 'scope');
+  chk(srecite.querySelector('#scope-hint').textContent === '当前：本学期及之前',
+    '切回「本册及之前」→ 设置页回显「当前：本学期及之前」');
 
   // 用户名：在「通用」二级页输入后，首页标题与品牌名同步变化
   const uInput = sgeneral.querySelector('#input-username');

@@ -963,7 +963,7 @@ async function main() {
     chk(!!S, "页面里 SyncStore 挂在 window 上");
     eq(S.setEnabled(true).ok, true, "这页是登录着的 Pro，开关打得开（层级闸放行）");
     w2.Storage.set("p_probe", { level: 1 });
-    /* ⚠️ 3 期 P1 起进度键**带子档案后缀**（多孩子各背各的）—— 键名由引擎算，
+    /* ⚠️ 3 期 P1 起进度键**带子用户后缀**（多孩子各背各的）—— 键名由引擎算，
        这里问它一次，而不是自己拼「poem_recite_progress_v1」。
        自己拼音的症状是：明明写盘成功，测试却说「updatedAt 是 undefined」。 */
     const progKey = w2.ProgressStore.childProgressKey();
@@ -1032,8 +1032,12 @@ async function main() {
       "在个人中心拨关：引擎里真的关上了（写的是同一条接线）");
     eq(JSON.parse(wShare.localStorage.getItem("poem_sync_pref_v1")).enabled, false,
       "落盘的也是同一个键（不是另一份只在个人中心生效的偏好）");
-    chk(/只存本机/.test(wShare.document.getElementById("sync-hint").textContent),
-      "关掉之后那一行如实改口「进度只存本机」（不留在「开启中」）");
+    /* ⚠️ Issue #209：关着的时候那一行「关闭中：进度只存本机。」被用户点名删掉 ——
+       开关关着这件事本身就看得见，底下再说一遍是重复一遍状态。
+       要守的是**它不再是「开启中」那句**（两页不许各说各话），null/空串都算通过。 */
+    chk(!/开启中/.test(wShare.document.getElementById("sync-hint").textContent || ""),
+      "关掉之后那一行不再留在「开启中」（实际「" +
+        wShare.document.getElementById("sync-hint").textContent + "」）");
 
     /* 没有冲突的人**不该看到一个空面板** */
     const w4 = await page("profile", {});

@@ -1,13 +1,13 @@
 /**
- * 家庭子档案专项测试（3 期 P1 · `profile.family`）
+ * 家庭子用户专项测试（3 期 P1 · `profile.family`）
  * ==========================================================================
- * 用户原话（Issue #159）：「子档案 Max 180 个」。
+ * 用户原话（Issue #159）：「子用户 Max 180 个」。
  *
  * 这一件问的其实是**同一台设备上几套各自独立的背诵进度**，不是「多个昵称随便切」。
  * 所以这一层守五件事：
  *
  *   一、名册：增 / 改名 / 删 / 切换 / 上限，全部拦在**数据层**
- *   二、老用户零感知：`poem_profile_v1` 那份昵称 + 印被认领成第一个子档案，
+ *   二、老用户零感知：`poem_profile_v1` 那份昵称 + 印被认领成第一个子用户，
  *       且**进度 / 设置 / 已读也一并搬过去**（不然升级后进度看着就空了）
  *   三、分家的边界：进度 / 账号域设置 / 已读**跟着孩子走**，设备域**不跟**
  *       （字号是设备的：给小红调了字号，切回小明不该变回去）
@@ -69,7 +69,7 @@ console.log('=== 一、名册：增 / 改名 / 删 / 切换 / 上限 ===');
   const { F, b, PS } = sandbox();
 
   const d0 = F.ensureDetailed({ backing: b });
-  eq(d0.created, 1, 'ensure() 名册为空时认领出第一个子档案');
+  eq(d0.created, 1, 'ensure() 名册为空时认领出第一个子用户');
   eq(F.count({ backing: b }), 1, '认领之后名册里正好一条');
 
   const e2 = F.ensureDetailed({ backing: b });
@@ -126,7 +126,7 @@ console.log('\n=== 二、删：最后一个不许删，且不动进度数据 ===
   const one = F.list({ backing: b })[0];
   PS.set('p1', { level: 1, stage: 2 });
 
-  eq(F.remove(one.id, { backing: b }).code, 'E_LAST', '最后一个子档案不许删（0 个档案没有意义）');
+  eq(F.remove(one.id, { backing: b }).code, 'E_LAST', '最后一个子用户不许删（0 个档案没有意义）');
   eq(F.count({ backing: b }), 1, '被拒之后名册原样');
 
   const r2 = F.create('小红', { backing: b });
@@ -157,23 +157,23 @@ console.log('\n=== 三、老用户零感知：老档案与老数据一并认领 
   const F = m3.F, PS = m3.PS;
   PS.useStore(b);
 
-  // 认领前：还没有子档案 → 引擎读老键（0 期行为一字不动）
-  eq(PS.childId(), '', '认领前没有子档案（引擎按 0 期老键读）');
+  // 认领前：还没有子用户 → 引擎读老键（0 期行为一字不动）
+  eq(PS.childId(), '', '认领前没有子用户（引擎按 0 期老键读）');
   eq(PS.get('tangshi-ts-1').level, 3, '认领前进度照常读得到（老用户不受影响）');
 
   const d = F.ensureDetailed({ backing: b });
-  eq(d.data.profiles[0].nickname, '小明', '昵称被认领进第一个子档案');
+  eq(d.data.profiles[0].nickname, '小明', '昵称被认领进第一个子用户');
   eq(d.data.profiles[0].avatar.img, 'https://x.supabase.co/a.jpg', '头像（图片地址）一并认领');
 
   PS.useStore(b);
-  eq(PS.childId(), d.data.profiles[0].id, '认领之后引擎认到了当前子档案');
+  eq(PS.childId(), d.data.profiles[0].id, '认领之后引擎认到了当前子用户');
   eq(PS.get('tangshi-ts-1').level, 3, '**进度被搬到新键上**（不然升级后看着就空了）');
   eq(PS.settings().grade, 4, '账号域设置跟着搬（年级 / 学期不丢）');
   eq(PS.settings().dailyCount, 7, '每日数量跟着搬');
   chk(!('poem_recite_progress_v1' in b.raw()), '老进度键搬完就删掉（不让它成为第二份真相）');
   chk(!('poem_recite_settings_v1' in b.raw()), '老设置键同理');
   chk(!('poem_tangshi_read_v1' in b.raw()), '已读键也搬走（读没读过是孩子自己的事）');
-  chk(Object.keys(b.raw()).some(k => /^poem_tangshi_read_v1::/.test(k)), '已读键搬到了带子档案后缀的那把');
+  chk(Object.keys(b.raw()).some(k => /^poem_tangshi_read_v1::/.test(k)), '已读键搬到了带子用户后缀的那把');
 
   /* 幂等：再认领一次不重复搬、也不把数据搬回去 */
   const keysAfter = Object.keys(b.raw()).slice().sort();
@@ -185,7 +185,7 @@ console.log('\n=== 三、老用户零感知：老档案与老数据一并认领 
   const b2 = mem();
   PS.useStore(b2);
   const d2 = F.ensureDetailed({ backing: b2 });
-  eq(d2.created, 1, '完全没有老数据时，也认领出一个空子档案');
+  eq(d2.created, 1, '完全没有老数据时，也认领出一个空子用户');
   eq(d2.data.profiles[0].nickname, '', '认领出来的第一个昵称为空（界面回落「Ashley」）');
 }
 
@@ -249,11 +249,11 @@ console.log('\n=== 五、拼键只有一处；Family 缺席时退化 ===');
 {
   const F = require(path + 'js/family.js');
   eq(F.keyFor('poem_recite_progress_v1', 'f-abc'), 'poem_recite_progress_v1::f-abc',
-    'keyFor：拼法就是「原键::子档案 id」');
+    'keyFor：拼法就是「原键::子用户 id」');
   eq(F.keyFor('poem_device_prefs_v1', 'f-abc'), 'poem_device_prefs_v1',
     'keyFor：设备域的键**原样返回**（不拼后缀）');
   eq(F.keyFor('poem_recite_progress_v1', ''), 'poem_recite_progress_v1',
-    'keyFor：没有当前子档案时返回原键（0 期形状一字不动）');
+    'keyFor：没有当前子用户时返回原键（0 期形状一字不动）');
 
   const km = F.keyMap({ backing: F.defaultBacking(), profileId: 'f-x' });
   eq(km.keys.progress, 'poem_recite_progress_v1::f-x', 'keyMap 给得出进度键');
@@ -275,12 +275,12 @@ console.log('\n=== 五、拼键只有一处；Family 缺席时退化 ===');
   eq(splicers.sort().join(','), 'family.js,sync-store.js',
     'js/ 下拼 `::` 后缀的只有 family.js 与 sync-store.js 的记账表（多一处就红）');
 
-  /* 有子档案时写的是带后缀那把键 / Family 缺席时按老键读 */
+  /* 有子用户时写的是带后缀那把键 / Family 缺席时按老键读 */
   const sb5 = sandbox();
   sb5.F.ensure({ backing: sb5.b });
   sb5.PS.set('p1', { level: 1 });
   const saved = sb5.b.raw()['poem_recite_progress_v1::' + sb5.F.currentId({ backing: sb5.b })];
-  chk(!!saved, '有子档案时写的是带后缀那把键');
+  chk(!!saved, '有子用户时写的是带后缀那把键');
   chk(!('poem_recite_progress_v1' in sb5.b.raw()), '同一份数据不会同时落在两把键上（不做第二份真相）');
 
   /* Family 缺席：把 window.Family 摘掉，引擎必须**退回老键**而不是读空表 */
@@ -307,14 +307,14 @@ console.log('\n=== 六、上限与内核同源 ===');
   chk(!!cap, '内核能力表里有 profile.family');
   eq(cap.minTier, 'pro', 'minTier = pro（Free 那一个不算「能力」，是保底）');
   eq(cap.login, true, '要求登录（层级要登录才拿得到）');
-  /* Issue #163：名字里的括号摘掉了（「家庭子档案（Free 1 / Pro 3 / Max 180）」
-     →「家庭档案」）—— 三档数字改由 **`quotas`** 承担（对比页在各列直接列出数字，
+  /* Issue #163：名字里的括号摘掉了（「家庭子用户（Free 1 / Pro 3 / Max 180）」
+     →「子用户」）—— 三档数字改由 **`quotas`** 承担（对比页在各列直接列出数字，
      不再把三个数字塞进功能名里撑宽那一列）。
      所以判据从「能力名里有没有这三个数」翻成「quotas 里的数与 family.js 同值」。 */
   eq(E.quotaFor(cap, 'free'), F.FREE_PROFILES, '内核 quotas.free 与 family.js 同值');
   eq(E.quotaFor(cap, 'pro'), F.PRO_PROFILES, '内核 quotas.pro 与 family.js 同值');
   eq(E.quotaFor(cap, 'max'), F.MAX_PROFILES, '内核 quotas.max 与 family.js 同值');
-  eq(cap.name, '家庭档案', '能力名收成「家庭档案」（额度归 quotas，不写在名字里）');
+  eq(cap.name, '子用户', '能力名收成「子用户」（额度归 quotas，不写在名字里）');
   chk(!/（/.test(cap.name), '名字里不再带括号（那是三个数字的旧住处）');
 
   /* 服务端 featuresFor：max 是 pro 的超集，profile.family 只在 pro 那一档列一次 */
@@ -329,7 +329,7 @@ console.log('\n=== 六、上限与内核同源 ===');
   eq(F.MAX_PROFILES, 180, 'Max 180 个');
 
   /* ⚠️ 拿不到内核时**不设限**（返回 Infinity，与 collections 同一条纪律）——
-     否则一次加载顺序错误就是「本来有 3 个子档案的人突然只剩 1 个」。 */
+     否则一次加载顺序错误就是「本来有 3 个子用户的人突然只剩 1 个」。 */
   const memB = { getItem: () => null, setItem: () => {}, removeItem: () => {} };
   eq(F.limit({ E: null, backing: memB }), Infinity, '读不到内核时不设限（宁可不判，也不误拦）');
 }
@@ -343,7 +343,7 @@ console.log('\n=== 七、设置页接线与收口 ===');
   const setJs = read('js/settings.js');
   const strip = t => t.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/^\s*\/\/.*$/gm, ' ');
 
-  chk(/id="family-panel"/.test(gen), '设置 · 通用里有子档案那一块（#family-panel）');
+  chk(/id="family-panel"/.test(gen), '设置 · 通用里有子用户那一块（#family-panel）');
   chk(/<script src="\/js\/family\.js"><\/script>/.test(gen), '那一页加载了 js/family.js');
   const atF = gen.indexOf('<script src="/js/family.js"></script>');
   const atPS = gen.indexOf('<script src="/js/progress-store.js"></script>');
@@ -363,7 +363,7 @@ console.log('\n=== 七、设置页接线与收口 ===');
   chk(!/tier\s*===\s*["'](pro|max)["']/.test(strip(setJs)),
     'js/settings.js 不自己写 tier === "pro" 这类判断（上限只有一个来源）');
   chk(!/["']::["']/.test(strip(setJs)),
-    '设置页不自己拼子档案后缀（拼法只在 family.js 一处）');
+    '设置页不自己拼子用户后缀（拼法只在 family.js 一处）');
 
   /* 切档必须**整页重画**：只重画那一块会留下「名字换了、年级还是上一个孩子的」 */
   chk(/function reloadAll\(/.test(setJs) && /renderControls\(\)[\s\S]{0,200}renderFamily\(\)/.test(setJs),
@@ -477,7 +477,7 @@ try { JSDOM = require('jsdom').JSDOM; } catch (e) { JSDOM = null; }
 if (!JSDOM) {
   console.log('\n(未安装 jsdom，跳过「真页面上跑一遍」一节 —— npm i jsdom 可启用)');
   console.log('');
-  console.log(fails === 0 ? '🎉 家庭子档案测试全部通过' : '❌ 家庭子档案测试 ' + fails + ' 项失败');
+  console.log(fails === 0 ? '🎉 家庭子用户测试全部通过' : '❌ 家庭子用户测试 ' + fails + ' 项失败');
   process.exit(fails === 0 ? 0 : 1);
 } else {
   console.log('\n=== 八、真页面上跑一遍（jsdom）===');
@@ -522,7 +522,7 @@ if (!JSDOM) {
     /* ---- Free（未登录）：只有 1 个，且再建会被**如实拦住** ---- */
     const wf = openPage(null, false);
     await wait();
-    eq(wf.document.querySelectorAll('.family-row').length, 1, '真页面：Free 一进来就有 1 个子档案（认领出来的）');
+    eq(wf.document.querySelectorAll('.family-row').length, 1, '真页面：Free 一进来就有 1 个子用户（认领出来的）');
     chk(/当前 1 \/ 1 个/.test(wf.document.getElementById('family-hint').textContent),
       '真页面：如实写「1 / 1 个」（上限只有一个来源）');
     wf.document.getElementById('btn-family-add').dispatchEvent(new wf.Event('click', { bubbles: true }));
@@ -538,12 +538,12 @@ if (!JSDOM) {
     chk(/当前 1 \/ 180 个/.test(w.document.getElementById('family-hint').textContent),
       '真页面：Max 的上限如实写 180');
 
-    /* 用户名那一栏写进去 → 落到**当前子档案**（不是那份老档案） */
+    /* 用户名那一栏写进去 → 落到**当前子用户**（不是那份老档案） */
     const u = w.document.getElementById('input-username');
     u.value = '小明';
     u.dispatchEvent(new w.Event('input', { bubbles: true }));
     const fam = JSON.parse(w.localStorage.getItem('poem_family_v1'));
-    eq(fam.profiles[0].nickname, '小明', '真页面：用户名写进的是**当前子档案**（昵称属孩子）');
+    eq(fam.profiles[0].nickname, '小明', '真页面：用户名写进的是**当前子用户**（昵称属孩子）');
     chk(/头像：小/.test(w.document.getElementById('avatar-slot').innerHTML),
       '真页面：头像跟着昵称重画（顶栏 / 设置页同一个来源）');
 
@@ -587,8 +587,8 @@ if (!JSDOM) {
       '真页面：删除要过 confirm()，用户没确认时**什么都没发生**');
 
     console.log('');
-    if (fails) { console.log('❌ 家庭子档案测试 ' + fails + ' 项失败'); process.exit(1); }
-    console.log('🎉 家庭子档案测试全部通过');
+    if (fails) { console.log('❌ 家庭子用户测试 ' + fails + ' 项失败'); process.exit(1); }
+    console.log('🎉 家庭子用户测试全部通过');
     process.exit(0);
   })();
 }

@@ -167,11 +167,14 @@
          这里只保住**有默认值兜底**的那几个字段 —— 完整字段表在引擎里一份，
          不在这里再抄一遍（抄两份迟早有一天只改了一处）。 */
       var raw = read(SETTINGS_KEY, {}) || {};
-      var out = { grade: 1, term: 1, dailyCount: 5, scope: "term", algo: "ebbinghaus", helper: "on" };
+      /* ⚠️ 出厂范围 `upto`（Issue #209）：与 js/scheduler.js 的 DEFAULT_SCOPE、
+         js/progress-store.js 的 DEFAULTS.scope、以及设置页的 DEFAULT_SCOPE
+         **四处同值** —— 三缺一就会出现「引擎按 A 排、界面写着 B」。 */
+      var out = { grade: 1, term: 1, dailyCount: 5, scope: "upto", algo: "ebbinghaus", helper: "on" };
       Object.keys(raw).forEach(function (k) { out[k] = raw[k]; });
       Object.keys(out).forEach(function (k) {
         if (out[k] === undefined || out[k] === null || out[k] === "") {
-          out[k] = { grade: 1, term: 1, dailyCount: 5, scope: "term", algo: "ebbinghaus", helper: "on" }[k];
+          out[k] = { grade: 1, term: 1, dailyCount: 5, scope: "upto", algo: "ebbinghaus", helper: "on" }[k];
         }
       });
       return out;

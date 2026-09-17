@@ -23,7 +23,7 @@ module.exports = handler.make("sync.pull", ["POST"], function (d, body) {
   return handler.core.syncPull(d, {
     since: body.since,
     deviceId: body.deviceId || d.deviceId,
-    /* 子档案（5.3 跨设备分档案）：空串 = 第一个孩子那一份 —— 不传就是它，
+    /* 子用户（5.3 跨设备分档案）：空串 = 第一个孩子那一份 —— 不传就是它，
        于是**老客户端**（不认识 child）的行为与分家之前逐字相同。 */
     child: body.child
   });

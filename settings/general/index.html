@@ -27,7 +27,7 @@
            这一组是「全站都吃」的身份与数据设置：
              · 用户名      账号域的展示名（古诗词与小古文共用）
              · 头像        用户名首字，或自己传的一张图（本地压缩 + 裁切后上传）
-             · 子档案      一个家长多个孩子各背各的（进度 / 年级 / 已读分家）
+             · 子用户      一个家长多个孩子各背各的（进度 / 年级 / 已读分家）
              · 账号        本机账号的登录状态 / 层级 / 权限，可退出
              · 数据管理    导出备份 / 导入备份 / 清空进度
            ⚠️ 与本页无关的控件（学段 / 范围 / 算法 / 连读 / 清单）在别页，
@@ -42,8 +42,7 @@
               <input id="input-username" class="settings-input" type="text" maxlength="12"
                      placeholder="Ashley" autocomplete="off" enterkeyhint="done" />
             </div>
-            <div class="settings-hint">留空显示「Ashley」；头像取第一个字</div>
-          </div>
+                      </div>
 
           <div class="settings-item">
             <label>头像</label>
@@ -95,16 +94,16 @@
           </div>
 
           <div class="settings-item" id="family-item">
-            <!-- 家庭子档案（3 期 P1 · profile.family）：一个家长多个小孩，
+            <!-- 家庭子用户（3 期 P1 · profile.family）：一个家长多个小孩，
                  每个孩子各背各的。孩子**不建独立账号**（只是账号下的一个展示名），
                  所以这里既没有「邀请」也没有「孩子登录」——只有一份名册 + 一个切换。
 
                  ⚠️ 切换是**账号域**的事：换孩子 = 换一套进度 / 年级 / 已读
                     （同一台平板上字号不会跟着变，那是设备域，见 js/family.js）。
                  ⚠️ 名册为空时**不画**这一块（而不是画一个空框）：老用户升级后
-                    第一次进这一页，认领会把它变成「子档案 1」，界面上不出现
+                    第一次进这一页，认领会把它变成「子用户 1」，界面上不出现
                     一个「一个孩子都没有」的中间态。 -->
-            <label>子档案</label>
+            <label>子用户</label>
             <div class="family-panel" id="family-panel"></div>
             <p class="settings-hint" id="family-hint"></p>
           </div>
@@ -157,8 +156,7 @@
               <button class="btn ghost-btn" id="btn-import">导入备份</button>
               <button class="btn danger-btn" id="btn-reset">清空进度</button>
             </div>
-            <div class="settings-hint">含全部设置与背诵进度</div>
-          </div>
+                      </div>
 
           <!-- 课内诗词整体导出（Pro）。
                ⚠️ 这一块的口径被用户改过一次（2026-09-16，Issue #159）：
@@ -167,14 +165,18 @@
                   只保留**学校课本部分**（课内 261 首），且门槛降到 **Pro**。
                ⚠️ 按钮**不隐藏**：层级不够时点它得到的是「Pro 起」（与全站
                   同一句 denyReason），把入口藏起来从来不是权限边界（docs §3.4）。
+               ⚠️ Issue #209：说明行**整行删掉**，按钮文案从「导出课内 261 首」
+                  收成「导出」—— 这一项自己的标题已经写着「课内诗词导出」，
+                  底下再写一遍「把课内 261 首（一年级至高三）整份导出成一个
+                  文本文件…」是同页两遍；层级不够时那一句「Pro 起，现在导出的是
+                  课内诗词，六部集子不做整本导出」也一并去掉。
                ⚠️ 拦在**数据层**：范围表只认「课内」这一部（js/export-core.js 的
                   SCOPES），按钮之外直接调用那一层也一样导不出集子。 -->
           <div class="settings-item">
             <label>课内诗词导出</label>
             <div class="settings-btns">
-              <button class="btn ghost-btn" id="btn-export-poems">导出课内 261 首</button>
+              <button class="btn ghost-btn" id="btn-export-poems">导出</button>
             </div>
-            <div class="settings-hint" id="export-poems-hint"></div>
           </div>
         </section>
       </div>
@@ -237,7 +239,7 @@
   <script src="/js/account-api.js"></script>
   <!-- 分域引擎（Issue #132 阶段 0）：进度 / 账号 / 设备三域的唯一一份定义，
        设置页的读法由 js/storage.js 转发。**必须排在 js/storage.js 之前**。 -->
-  <!-- 家庭子档案（3 期 P1）：**必须排在 progress-store 之前** ——
+  <!-- 家庭子用户（3 期 P1）：**必须排在 progress-store 之前** ——
        引擎按当前孩子拼键名（js/family.js 是唯一的拼接处），
        顺序反了不会报错，只是永远读「没有后缀」那把老键，症状是「切换孩子后进度为空」。 -->
   <script src="/js/family.js"></script>

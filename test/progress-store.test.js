@@ -78,7 +78,9 @@ console.log('\n=== 三、设置域拆家：账号域字段留下，helper 归设
 {
   const b = mem();
   PS.useStore(b);
-  eq(JSON.stringify(PS.settings().scope), '"term"', '什么盘都没有时给出厂默认（term）');
+  /* Issue #209：出厂范围从「本年级本学期」（term）改成「本册及之前」（upto）——
+     界面上删掉了 term 那一档，出厂值再留着它会落在一个选不中的范围上。 */
+  eq(JSON.stringify(PS.settings().scope), '"upto"', '什么盘都没有时给出厂默认（upto）');
   eq(PS.settings().grade, 1, '默认年级 1');
   eq(PS.helper(), 'on', 'helper（设备域）的出厂默认是「阅读辅助开着」');
   eq(PS.settings().helper, undefined, '设置对象里不再出现 helper —— 它已搬去设备域');
@@ -309,7 +311,7 @@ console.log('\n=== 十一、源码扫描：加载了 storage.js 的页面必须�
   /* ⚠️ 这一条只看**真的用了 Storage 这个门面的页面**（regex 认 script 标签，
      不认注释 —— 放行注释的话「某页到底有没有转发层」就没人知道了）。
      `login / plans / admin / settings` 主页只有顶栏那一枚印读昵称，
-     走的是 `avatar.js` 与「当前子档案」（js/family.js），**不碰进度与设置** ——
+     走的是 `avatar.js` 与「当前子用户」（js/family.js），**不碰进度与设置** ——
      它们本来就既没有 progress-store.js 也没有 storage.js（见下一条正向断言）。 */
   pages.forEach(p => {
     const html = fs.readFileSync(path.join(ROOT, p), 'utf8');
@@ -320,7 +322,7 @@ console.log('\n=== 十一、源码扫描：加载了 storage.js 的页面必须�
     }
     chk(/<script[^>]+js\/storage\.js/.test(html),
       p + ' 加载了 progress-store.js，也加载了它的转发层 js/storage.js');
-    /* 子档案层（Issue #159）必须排在引擎**之前**：引擎每次读盘都要问它
+    /* 子用户层（Issue #159）必须排在引擎**之前**：引擎每次读盘都要问它
        「当前是哪个档案」——顺序反了不报错，症状是**静默串档**。
        ⚠️ 这一条的正主在 `test/family.test.js` 第七节（它逐页扫，且只认
           `<script src>` 行，不会被注释里的说明骗到）；这里只顺带确认

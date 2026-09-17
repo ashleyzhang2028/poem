@@ -1,5 +1,5 @@
 /**
- * GET / POST /api/family —— 子档案名册（跨设备分档案，Issue #159 · todo.md 第 4 条）。
+ * GET / POST /api/family —— 子用户名册（跨设备分档案，Issue #159 · todo.md 第 4 条）。
  *
  * GET  200 { family:{v,at,profiles:[]}, updatedAt, serverTime }
  *      401 { code:"E_NO_SESSION" }

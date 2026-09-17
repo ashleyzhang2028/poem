@@ -177,7 +177,7 @@ console.log('\n=== 六、渲染：图片走 <img>，首字走文字，两档都�
   A.setAvatar(b, { img: 'https://x.supabase.co/a.jpg?v=1' });
   const h2 = A.html(b);
   chk(/<img[^>]+class="avatar-img"/.test(h2), '有图时画的是 <img>');
-  chk(/loading="lazy"/.test(h2), '图片带 lazy（子档案名册一次画好几枚）');
+  chk(/loading="lazy"/.test(h2), '图片带 lazy（子用户名册一次画好几枚）');
   chk(/referrerpolicy="no-referrer"/.test(h2), '跨域图不带 referrer（别把本站地址送出去）');
   chk(/alt=""/.test(h2), '图片本身 alt 空（外层 role=img 已经说了「这是谁的头像」）');
   chk(!/onerror|onload=/i.test(h2), '不带任何内联事件');

@@ -74,10 +74,12 @@
                            quotas: { free: 10, pro: 100, max: 5000 } },
     "sync.multiDevice":  { minTier: "pro",  login: true,  quota: null, name: "设备同步" },
     "export.paper":      { minTier: "pro",  login: true,  quota: null, name: "PDF / 打印" },
-    /* 家庭子档案 —— 用户 2026-09-17 裁决「子档案 Max 180 个」，
+    /* 家庭子用户 —— 用户 2026-09-17 裁决「子用户 Max 180 个」，
        2026-09-18 又把名字里的括号摘掉（Issue #163：「在各列列出支持的数字」）：
-       三档数字与自选清单走同一套 `quotas`，表格里才有一列可对齐。 */
-    "profile.family":    { minTier: "pro",  login: true,  quota: null, name: "家庭档案",
+       三档数字与自选清单走同一套 `quotas`，表格里才有一列可对齐。
+       ⚠️ Issue #209：名字一度是「子用户」，与设置页那一块的标签「子档案」
+          对不上。用户点名「档案」这个词没人懂 → 两处一起收成**子用户**。 */
+    "profile.family":    { minTier: "pro",  login: true,  quota: null, name: "子用户",
                            quotas: { free: 1, pro: 3, max: 180 } },
 
     "quiz.review":       { minTier: "pro",  login: true,  quota: null, name: "题库" },
@@ -543,7 +545,7 @@
         var ctx = { tier: col.tier, signedIn: !col.guest };
         if (now !== undefined) ctx.now = now;
         var r = can(k, ctx);
-        /* 额度：`quotas` 逐档写着数字的能力（自选清单 / 家庭档案 / 课内诗词导出）
+        /* 额度：`quotas` 逐档写着数字的能力（自选清单 / 子用户 / 课内诗词导出）
            直接报**这一档的数字**；`quota` 那种「每月 N 次」的限制照旧。
            额度的读法只有这一处 —— 页面不自己挑字段、也不自己拼「个 / 次」。 */
         var amount = quotaFor(c, col.tier);
