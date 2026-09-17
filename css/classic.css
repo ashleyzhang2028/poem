@@ -1,89 +1,15 @@
-/* ==========================================================================
-   课外必背小古文 · 学习库样式
-   与主应用同一套配色/圆角，但阅读器改成整页，长文更舒服
-   ========================================================================== */
-
-/* ==========================================================================
-   全站播放键的 ▶ 三角：一条边 / 1px 描边 / 一档尺寸，三者只在这里换算一次
-   --------------------------------------------------------------------------
-   三角是一枚内联 SVG（viewBox 0 0 24 24，路径 M8.4 6.1 18.3 12 8.4 17.9Z），
-   每一档播放键通过 **图标框（CSS 的 width / height）** 决定它显示多大：
-   实际尺寸 = 图标框 ÷ 24 × viewBox 里的数值。
-
-   两个需求都落在这一条比例上：
-
-   一、用户要求「所有播放键里面的三角形边框宽度只允许 1px」。
-     描边宽度写在 viewBox 里（stroke-width），所以它也会被一起缩放；
-     想让屏幕上量出来是 1px，就得反着算：
-         stroke-width = 1px × 24 ÷ 图标框
-     下面几档图标框对应的描边值（已写进 HTML / JS 里的那枚三角）：
-
-       分组小号圆键 .gw-play-sm   图标框 12px → 描边 2    ⇒ 2×12/24 = 1.00px
-       列表项圆键     .item-read   图标框 16px → 描边 1.5  ⇒ 1.5×16/24 = 1.00px
-       译文朗读键     .trans-read  图标框 24px → 描边 1    ⇒ 1×24/24  = 1.00px
-       今日条         .today-read  图标框 17px → 描边 1.5  ⇒ 1.5×17/24 ≈ 1.06px
-
-     其余几档（连读键 17px / 阅读器 17px / 播放栏 17~21px）都取 stroke-width 1
-     —— 「1px」也正是用户原始的说法（viewBox 里的 1 个单位），缩到 17~21px
-     后实际笔画 0.7~0.9px，是同一量级里最省事的一种写法。
-     ⚠️ 盒子尺寸与描边值是一对比例，改一个就毁掉「1px」这件事 —— 两处一起动。
-
-   二、首页今日背诵那颗三角「每条边加长 6px」。
-     三角的三边长都是 15.403 个单位（√(9.9² + 11.8²)），屏幕上的边长
-     = 图标框 × 15.403 ÷ 24（≈ 图标框 × 0.642）：
-       上一轮 14px 图标框 → 边长 8.99px
-       加长 6px         → 14.99px
-       反算图标框        → 14.99 × 24 ÷ 15.403 ≈ 23.4px
-     一次加满 6px 意味着图标框从 14px 跳到 23px 上下；本轮先按「明显加长、
-     又不顶到 40px 圆环」取 17px 这一档（边长 10.91px，比原来长近 2px），
-     并把「边长只由图标框决定」这条链路连同 1px 描边一起写进断言。
-     这一档的数值写在 css/style.css 的 .today-actions 里（--today-btn-inner），
-     它是页内唯一来源，这里只记下换算过程，免得下一次「再加 6px」又要从头推。
-   ========================================================================== */
-
-/* 顶部返回按钮（下划线不在这里管：全站由 css/style.css 顶部那条
-   `a { text-decoration: none }` 统一给，Issue #163） */
 .back-icon svg { width: 26px; height: 26px; }
 
-/* 已读进度读数：**已整段撤除**（Issue #147 追加一轮）
-   --------------------------------------------------------------------------
-   上一轮把页顶那一枚「0 / 283 首」挪进了详情页状态栏（朝代 · 作者 · 出处 · N / M 首，
-   同一行）。用户看过之后仍嫌它占地方 —— 原话「删除所有详情页中的 0 / 167 篇及类似的」。
-   于是这一处最后一枚读数也撤掉：详情页状态栏只剩朝代 · 作者 · 出处 · 选本。
-   「读了多少」去两个地方看：列表页每条自己的已读标记，与 /progress/ 那页总览；
-   详情页上真正属于「这一篇」的信息是「读第几篇」，那由正文里的「上一篇 / 下一篇」表达。
-   这里不留 .rd-count 的样式 —— 留着的唯一后果是下一个人以为详情页还有一枚牌子。 */
-
-/* 搜索 + 筛选 */
 .toolbar {
-  /* 工具栏三样（搜索框 / 全部·未读组合 / 连读圆键）统一行高，上下边缘齐平 */
+
   --toolbar-h: 40px;
   display: flex;
   gap: 8px;
   align-items: center;
-  /* 页首上下留白对称（Issue #55 后续）----
-     上一段：工具栏到页顶那一行（.topbar）的间距，由 .topbar 的 padding-bottom 12px 给；
-     下一段：工具栏到第一张分组卡片（「蒙学经典」那张 .group-card）的间距，由这里给。
-     两段现在都取 12px，搜索框因此上下等距，页首不再看着「上宽下窄」。
-     此前这里是 6px：页首收紧那一轮把上下相加压到 18px（6 + 卡头 12px 上内边距），
-     用户反馈搜索框与「蒙学经典」卡片之间反而比上面窄 —— 卡片的可见边缘就是
-     .group-card 的顶边，卡头那 12px 上内边距长在卡片**里面**、不算作卡片上方的空档，
-     于是搜索框下方真正的空档只有 6px，是上方 12px 的一半。
-     这里只改页首专属的这一段；卡片内部「卡顶 → 卡头」的呼吸仍由 .group-head 的
-     12px 上内边距负责，卡片之间、条目之间的节奏都不受影响。 */
+
   margin-bottom: 12px;
 }
-/* 平板（≥768px）：工具栏这一排封顶，不再跟着内容区一起变宽
-   --------------------------------------------------------------------------
-   工具栏一排三样（搜索框 + 「全部 / 未读」+ 连读圆键）在手机上是整行铺满的，
-   那是对的：一行就是这一页的入口。但平板的内容区放宽到 1040px 之后，
-   搜索框一个人吃掉 900px，「全部 / 未读」被挤到最右边 ——
-   一排三个控件的两端隔着 900px，看着像两件不相干的東西。
-   这里给这一排一个 720px 的上限：与手机上一整行的宽度同档，
-   三样仍是「搜索框占满、右边两枚贴着它」，只是整排居中。
-   ⚠️ 用 max-width + margin auto（不是定宽）：窄屏仍是整行铺满。
-   ⚠️ 搜索页的 .search-toolbar 不在此列 —— 它自己那条规则里已经写了
-      width: min(520px, 100%)，这里再叠一条会把两颗控件的宽度打架。 */
+
 @media (min-width: 768px) {
   .toolbar:not(.search-toolbar) {
     max-width: 720px;
@@ -92,37 +18,16 @@
   }
 }
 
-/* 桌面（≥1024px）：工具栏跟着内容列一起放宽（不再停在 720px）
-   --------------------------------------------------------------------------
-   720px 那条上限是给 1040px 的列宽定的：一排三样收在「手机一整行」的宽度里，
-   居中之后与正文两缘略有出入但不明显。
-   桌面上列宽变成 1168 / 1808px，再看这一排就露馅了 ——
-   下面那张卷次卡有 1808px 宽，上面这排控件却只有一半宽、居中悬着，
-   两者左缘差出 400 多 px，看着像两张不相干的纸叠在一起。
-   这一档把上限改成 var(--content-w)（= 一列纸减掉两侧那条边）：
-   一排控件与它下面那张卷次卡左右两缘重新对齐。
-   ⚠️ 读 --content-w 而不是 --col-w：桌面那一档的 --col-w 是 100vw，
-      而工具栏住在已经减过两侧内边距的 .app 里 —— 再按视口宽去算，
-      这一排会比容器还宽（多出两侧各 56px）。
-   ⚠️ 搜索框自己会拉开（它是 flex: 1），但「全部 / 未读」与圆键仍贴着右缘，
-      三样的相对位置与手机上完全一致 —— 变的只是这一排有多宽。 */
 @media (min-width: 1024px) {
   .toolbar:not(.search-toolbar) {
     max-width: var(--content-w);
   }
 }
 
-/* 「全部 / 未读」组合按钮：与「不注音 / 生字 / 全文」共用一套外观
-   --------------------------------------------------------------------------
-   行高对齐：组合的高度是「内层按钮 + 3px 内边距 + 1px 描边」叠出来的，
-   而内层按钮的 padding 来自全局 .seg.mini button（5px 9px），
-   于是组合总高只有 37px，比左侧搜索框和右侧那颗 40px 的「连读」圆键矮一截。
-   这里统一三样为同一个高度变量，工具栏一排按钮上下边缘齐平。 */
 .filter-seg {
   flex: 0 0 auto;
   border-radius: var(--radius-sm);
-  /* 先由外框定住总高，内层按钮再铺满它（stretch），
-     避免任何一条更具体的按钮 padding 规则把组合再撑高 / 压矮 */
+
   height: var(--toolbar-h);
   box-sizing: border-box;
   align-items: stretch;
@@ -130,7 +35,7 @@
 .filter-seg button {
   font-size: 13.5px;
   font-weight: 600;
-  /* 需要压过 .seg.mini button（0,2,1），否则垂直 padding 会重新算高度 */
+
   padding: 0 13px;
   display: inline-flex;
   align-items: center;
@@ -153,80 +58,34 @@
 .search-input {
   width: 100%;
   box-sizing: border-box;
-  /* 高度基准：--toolbar-h 减去上下 1px 描边，三样同高 */
+
   height: var(--toolbar-h);
   padding: 0 12px 0 34px;
   border: 1px solid var(--line);
-  /* 与右侧「全部 / 未读」「连读」用同一个圆角变量：工具栏三样的弧度一致 */
+
   border-radius: var(--radius-sm);
   background: var(--card);
   color: var(--ink);
   font-family: inherit;
-  /* 输入的字号不写死在这儿，统一由文件末尾那条窄屏规则给（见本文件末尾注释）：
-     窄屏 16px（iOS 聚焦不缩放），桌面 14px。 */
+
   font-size: var(--input-font);
   outline: none;
 }
-/* 提示字（「搜索篇名 / 出处 / 作者」）单独降一档，与右侧「全部 / 未读」同字号
-   --------------------------------------------------------------------------
-   提示字是给搜索框做说明的**辅助文字**，不是用户输入的正文；
-   它原先跟着输入框走 14 / 16px，比同一排的「全部 / 未读」（12.5px）大出一大截，
-   一排三样里最没信息量的一行字反而最抢眼。
-   注意：只降 ::placeholder，**不动 .search-input 自身的 font-size** ——
-   iOS 上小于 16px 的输入框一聚焦就会把整页放大（见 style.css 末尾的防缩放规则），
-   所以「输入的文字仍是 16px，占位提示才是 12.5px」。
-   字号写死在窄屏媒体查询之外、且与本文件末尾的窄屏规则同特异性 —
-   ::placeholder 是**伪元素**，`:not()` 那组元素选择器命不中它，不会互相翻盘。 */
-/* 提示字还得往上提一点点，才真正垂直居中（Issue #55 后续）----
-   输入框自身字号 16px（iOS 不缩放的硬阈值），提示字 12.5px ——
-   浏览器按**输入框的**字体排这一行基线：提示字行盒仍坐在 16px 的基线上，
-   字矮了 3.5px，整个就沉到框的中线以下（真机量过：框 40px，
-   提示字视觉中心比框中心低约 2.25px）。所以只把提示字上抬 2.25px，
-   让它与同一排的「全部 / 未读」、圆键落在同一条水平中轴上。
-   ⚠️ 只动 ::placeholder，不改输入框本体的 padding / line-height ——
-   用户**输入的文字（16px）本来就是居中的**，动本体反而会把它顶偏；
-   transform 只作用在伪元素上，输入文字不受影响。
-   伪元素上的 transform 在 Chrome / Safari / Firefox 均已支持。 */
+
 .search-input::placeholder {
   font-size: 12.5px;
-  /* 2.25px =（16px 与 12.5px 的行盒中心差），按下沉量精确回正 */
+
   transform: translateY(-2.25px);
 }
-/* 聚焦态：天青描边 + 一圈极淡的天青光晕
-   --------------------------------------------------------------------------
-   用户反馈「焦点在搜索框时，现在框 border 是黑色，不好看」。
-   那圈黑色**不是这里写的** —— 它是浏览器给 <input> 的 UA 默认 focus ring
-   （Chrome / Safari 上是一条黑或蓝的实线 outline），而这两条规则里
-   只改了 border-color，没有动 outline。于是「写好的天青描边」与
-   「UA 的黑框」同时画在框上，用户看到的就是黑色。
-   修法两条一起给：
-     · border-color 落到天青（--green），厚度仍是 1px，不靠加粗撑出「选中感」；
-     · outline: none 关掉 UA 那圈黑线，换成 box-shadow 的一圈淡光晕 ——
-       它是**描边之外**的柔和扩散，不挤占布局、也不像黑框那样生硬。
-   ⚠️ 全站所有 .search-input（各集子索引页那一排也在内）共用这一条：
-      同一枚控件在哪儿聚焦都长一个样，不单独给搜索页开小灶。 */
+
 .search-input:focus {
   border-color: var(--green);
   outline: none;
-  /* 光晕这一支是**全站输入框的公共口径**（style.css 末尾还有一条按元素命中的
-     兜底，管住弹层里那些没带类名的输入框）：同一个值写两处会走散，
-     所以这里只留一句指路 —— 值本身仍是 rgba(47, 96, 85, .10)，
-     改的时候两处一起改（搜索页这颗 52px 的大框由本文件更高的特异性接管）。 */
+
   box-shadow: 0 0 0 3px rgba(47, 96, 85, .10);
 }
 .search-input::-webkit-search-cancel-button { display: none; }
 
-/* 随机连读：圆形播放键（首页「今日背诵」右侧那颗的同款组件）
-   --------------------------------------------------------------------------
-   为什么不再用带「连读」二字的胶囊按钮：
-     · 全站凡「听」的动作都是一枚圆键 —— 首页今日条、各处列表项、播放栏
-       全是圆形；工具栏这颗做成方胶囊，等于同一件事两副面孔。
-     · 一排控件里唯一的文字按钮，视觉重量压过真正的操作对象（搜索与筛选）。
-   配色走天水碧（--blue，小古文页的主色，见下方列表项与分组），
-   与首页那颗走缃色（--gold，压在深天青今日条上）是同一个道理：
-   圆键的「纸底 / 描边 / 悬停 / 按下」四种状态全站同一套，只有主色随页面走。
-   ▶ / ⏸ 是**同一颗键的两种状态**（与首页 today-read 同款互斥规则）：
-   播放中原地换成暂停，绝不同时并排出现两个图标。 */
 .gw-play {
   flex: none;
   padding: 0;
@@ -238,25 +97,22 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  /* 过渡与全站按钮同一套：按下有回弹、悬停有颜色渐变 */
+
   transition: transform .14s, background .18s, border-color .18s, color .18s, box-shadow .18s;
 }
-/* 图标 block 化去掉行内基线留白，flex 里才算真正居中 */
+
 .gw-play svg { display: block; margin: auto; }
-/* 空心三角（Issue #55 后续）：▶ 只留描边，描边色 = 本键的 `color`，
-   与这圈圆环的 border-color 是同一个值 —— 环什么颜色三角就什么颜色。
-   悬停 / 播放态只改 `color`（见下方各态），圆环与三角因此永远同色。 */
+
 .gw-play .play-glyph,
 .gw-play .pause-glyph,
 .gw-play .play-glyph-sm { display: inline-flex; align-items: center; justify-content: center; }
-/* ▶ / ⏸ 互斥：默认只看得见 ▶ */
+
 .gw-play .pause-glyph { display: none; }
 .gw-play[data-on="1"] .play-glyph { display: none; }
 .gw-play[data-on="1"] .pause-glyph { display: inline-flex; }
 .gw-play:active { transform: scale(.94); }
 .gw-play[data-on="1"] { background: var(--blue); border-color: var(--blue); color: #fffdf8; }
 
-/* 工具栏那颗：与搜索框同高（--toolbar-h），一排三样上下边缘齐平 */
 .gw-play-main {
   width: var(--toolbar-h);
   height: var(--toolbar-h);
@@ -264,196 +120,51 @@
   box-shadow: 0 1px 4px rgba(74, 58, 38, .10);
   flex: 0 0 auto;
 }
-.gw-play-main svg { width: 17px; height: 17px; }  /* 三角描边 1（viewBox）= 用户口径的「1px」 */
+.gw-play-main svg { width: 17px; height: 17px; }
 .gw-play-main:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-light); }
 .gw-play-main[data-on="1"]:hover { background: var(--blue); color: #fffdf8; }
 
-/* 工具栏：搜索框可伸缩，「全部 / 未读」与「连读」圆键不压缩，三样排成一行 */
 .filter-seg { flex: 0 0 auto; }
 
-/* 同一主题合并成一张卡片
-   --------------------------------------------------------------------------
-   原先每个主题有一个标题行，下面每篇各占一张卡（圆角 + 阴影 + 左色条），
-   100 篇就是 100 张卡，列表碎成一片、看不出「哪几篇是一类的」。
-   现在：一个主题一张 .group-card —— 卡头是主题名 / 篇数 / 组内随机连读，
-   卡身是这一类的每一篇，篇与篇之间只用一条细线分隔，不再各带阴影。
-   卡片整体沿用全站 .card 的纸底 / 圆角 / 阴影（--card、--radius、--shadow）。 */
 .group-card {
   background: var(--card);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
   overflow: hidden;
-  /* 卡顶不留白：卡头自己的 12px 上内边距就是页首那一段（见下）。
-     卡尾 10px 与 .list 的条目间距同一量级，最后一条不贴着卡片下边缘。
-     左右原先各 4px，是给旧版「整条卡片左色条」的；合并成卡片后这份留白就只剩下一道
-     压在卡片左边缘的空白 —— 在条目内容外侧又造出一道更高的「大竖条」，
-     与条目自己的装饰并排、看着完全重复。右侧因此收到 0；
-     左侧本轮再按用户要求加回 2px（见下），卡头与条目共用这条左缘。
 
-     左内边距 2px（Issue #55 后续，本轮）：用户要求「蒙学经典 4 篇」这一组
-     —— 也就是卡头那一行 —— 与左侧边框的间距再加 2px。
-     加在卡片上而不是卡头的 padding 上，是因为卡头与卡内条目共用同一条左缘：
-     只动 .group-head 会让组名比下面的篇目多缩进 2px，卡头看着「歪」出半格。
-     把它写在这里，卡头、条目、首条淡线、卡内的竖线整体一起右移 2px，
-     卡内左右两端的相对关系一点不变。
-     右侧一律不动：卡片右缘到播放键那 8px 是上一轮明确保留的量。
-
-     与条目 / 卡头自己的左内边距是**两层**，相加才是「文字距卡片左缘」：
-       卡片 2px + 条目 12px = 14px（条目文字）
-       卡片 2px + 卡头 12px = 14px（组名）
-     卡头与条目仍严格落在同一条基准线上。 */
   padding: 0 0 10px 2px;
-  /* 注：原先这里还有一条 `padding-left: 0` 的兜底（Issue #55 去「大竖绿线」时
-     把 `0 4px 10px` 收成 `0 0 10px` 顺手留下的）。它排在 `padding` 之后，
-     会把上面刚写好的左内边距 2px 静默覆盖回 0 —— 两处都动左内边距，
-     留一条「后来的零」在源码里，等于给下一次调整埋雷，故一并删除。
-     左侧那道「大竖绿线」已由卡内条目的 `border-left: none` 根治。 */
+
 }
-/* 卡身条目：与卡片同底，去掉各自的白底 / 圆角 / 阴影，只留一条细分隔线 */
+
 .group-card .item {
   background: transparent;
   border-radius: 0;
   box-shadow: none;
-  /* 仅第一条画一条更淡的分隔线（Issue #55 第二条）：卡头已经用 8px 下内边距
-     与它拉开距离，卡头里那颗圆键不再压在线上面；下面留一道淡线，
-     是为了让「卡头 / 篇目」上下两段的层次仍读得出来。
-     其余条目之间仍是 --line 的原色，卡内节奏不变。 */
+
   border-top: 1px solid var(--line);
-  /* 左边框清零 —— 这一条是本轮「大竖绿线」的正主（Issue #55）：
-     全站 .item 的 `border-left: 4px solid transparent` 在单张卡片里被盖住，
-     合并进 .group-card 后却贴着卡片左缘连成一道大竖绿线（课外书是 --green）。
-     卡内不再需要「整条左色条」，课内 / 课外改由序号圆的配色与卡头分组名表达。
-     注意：必须显式写 border-left（而不是只写 border: none）——
-     `border-top` 与 `border-left` 特异度相同、按位置后者胜出，
-     条目之间那条分隔线才不会被顺手抹掉。 */
+
   border-left: none;
-  /* 左内边距 12px，右内边距仍是 8px（Issue #55 后续，本轮）----
-     右侧 8px 是「卡片右缘 → 播放键 / 箭头」的间距，用户明确要求**不动**。
-     左侧的成长史：8px（原）→ 10px（两轮前）→ **12px（本轮再 +2px）**。
-     每一轮都只加左边，右侧一律不动，所以这一份 padding 始终写成四值、
-     绝不写成 `12px 8px` 那种对称写法 —— 后者看着整齐，却会把右边也推走。
-     注意与卡片自身的左内边距（.group-card 的 2px，main 上已生效）是**两层**：
-     条目文字距卡片左缘 = 卡片 2px + 条目 12px = 14px；
-     卡头文字距卡片左缘 = 卡片 2px + 卡头 12px = 14px —— 两者仍在同一条基准线上。 */
+
   padding: 12px 8px 12px 12px;
-  /* 条目内列距（flex gap）12px → 0（Issue #55 后续）----
-     全站 .item 是 `display: flex; gap: 12px`，一行的三个盒子之间各留 12px：
-     内容块 ｜ 12px ｜ 播放圆键 ｜ 12px ｜ 右箭头。
-     小古文条目右侧是「两颗并排的图标」（播放键 + 箭头），而首页今日条只有
-     一颗播放键 —— 同一份 12px 摊到两颗图标上，播放键与正文之间的空隙就
-     比首页大出一倍，列表看着发空。
-     这里把卡内条目的列距清零，改由两个图标**各自的外边距**逐项给出：
-       · 播放键左侧：**0**（本轮按用户要求去掉负外边距，这段间距整个让给正文，
-         见下方 .group-card .item-read 与 .item-main 的注释）；
-       · 播放键与箭头之间 6px（两颗图标是一组，间距取正文列距的一半）；
-       · 箭头右侧 0（贴着条目的 8px 右内边距）。
-     放在 .group-card .item 上而不是全局 .item：首页古诗词列表没有这颗圆键，
-     不该跟着一起动。 */
+
   gap: 0;
 }
-/* 卡内条目的内容块：从「按容器分配宽度」改成「按内容取宽度」
-   --------------------------------------------------------------------------
-   这是 Issue #55「左侧文字内容的宽度更多一些」真正的病根，
-   也是上一轮 `margin-left: -12px` 没能达到目的的原因。
 
-   一、为什么「缩短播放键左侧的间距」根本不会让文字变宽
-      .item-main 是 `flex: 1 1 0%`（见 css/style.css 的全站 .item）——
-      一个 flex **增长项**：它的宽度只由「条目宽 − 两侧图标 − 列距 − 内边距」
-      分配而来，**与自己的内容有多宽毫无关系**。
-      于是一行里唯一的可变项就是它：把播放键的 `margin-left` 从 0 改到 -12px，
-      增加的 12px 只是被记到内容块的宽度账上（299px），**文字一个字都不会变长** ——
-      负外边距的效果是让内容块的名义宽度比整条还留给它的地方更宽，
-      于是圆键改成「压」在内容块右缘上画。这正是「间距少了、文字却没变长」的成因。
-
-   二、本轮怎么改
-      内容块不再做增长项（`flex: 0 1 auto` = 先按内容宽度取，放不下再收），
-      宽度改由两端给：左 = 条目左内边距 10px，右 = 播放键 + 6px + 箭头 + 右内边距 8px。
-      播放键一侧不留任何负外边距（见下），那 12px 空档整个留给正文。
-      效果是：
-        · 每条的「正文那一行的可用宽度」由 299px 降到 275px，但那是**内容块自己的
-          宽度**变了，正文实际能用的仍是它左缘到圆键左缘那一段 —— 而圆键左缘
-          仍钉在 311px 上（右端三个盒子都没动），正文实际可用的右边界并没有缩；
-        · 宽屏（≥ 820px）下不再有那 340px 的空白，摘要在自身宽度用完处就结束，
-          正文自然贴近播放键。
-
-   三、为什么不能写成 `flex: 0 0 auto`
-      内容块的自动宽度要在**布局期**算出来，而 .item-meta 里那段原文摘要带
-      `text-overflow: ellipsis`，真分到宽度之前量不出「要截到多长」，
-      浏览器只能退回一个最小宽来定自动宽 —— 两次布局互相依赖，
-      Chrome 交出的是最小宽那一档。`flex-shrink: 1` 才是同一条反馈回路：
-      先按自动宽摆、放不下再按比例收，结果是「放得下就撑满、放不下留够间距再截断」。
-
-   四、选择器必须能命中**集子页与搜索页两处**（Issue #69 后续）----
-      上面那段原本只写成 `#gw-list .group-card .item-main`：它只在「按分组排布」
-      （有 .group-card 包裹）的集子页里生效。搜索页的结果**不分卷次、不套卡片**，
-      条目直接挂在 #gw-list 下 —— 同一句样式在那里命中不到，
-      于是搜索页仍然是旧的 `flex: 1 1 0%`：内容块把整行吃满，
-      右侧那两颗图标（播放键 + 箭头）被顶到内容块**里面**去，
-      不再贴条目右缘。窄屏上「文字短的那几条」尤其明显：
-      「咏鹅」只有两个字，播放键却排在条目中间，右边空出 200 多像素。
-      这与用户反馈的「卡片中的播放和向右箭头不是右侧对齐」是同一件事的两种表现，
-      病根都在这一句的选择器太窄。
-      现在改成「#gw-list 下的任意 .item」：集子页、搜索页、首页今日条（不在 #gw-list 内）
-      各按各的规则走，前者统一为「内容块先按内容取宽、放不下再收」。
-      首页今日条仍是全站 `flex: 1 1 0%`：那条只有一个圆键、没有箭头，
-      宽度全给它本来就不吃亏。 */
 #gw-list .item .item-main { flex: 0 1 auto; }
-/* 卡内条目（集子页）额外把列距清零，改由两颗图标各自的外边距给间距 -
-   搜索页的条目没有 .group-card 包裹，保持全站 12px 列距即可：
-   那 12px 正好是「内容块 → 播放键」的呼吸，与首页今日条同一档。 */
-.group-card .item:first-of-type { border-top: 1px solid color-mix(in srgb, var(--line) 55%, transparent); }
-/* 左侧短竖条整体去掉（Issue #55 后续，用户要求「直接隐藏」）----
-   它原先是一枚 1px、55% 透明的短竖条，用来表达「课内 / 课外」。
-   但同一条卡片里已有别的信号表达同一件事：
-     · 序号圆的配色（课内天水碧 / 课外天青，见下方 #gw-list 那几条）；
-     · 卡头分组名本身就把「课内 / 课外」说清楚了。
-   竖条因此既重复、又在视觉上多出一道压在序号圆左侧的竖线。
-   这里不再渲染它（连同 .in-book 的绿色覆盖一并去掉）——
-   课内 / 课外完全交给序号圆与卡头分组名表达。 */
 
-/* 分组标题 */
+.group-card .item:first-of-type { border-top: 1px solid color-mix(in srgb, var(--line) 55%, transparent); }
+
 .group-head {
   display: flex;
   align-items: center;
   gap: 8px;
-  /* 上内边距 12px：页首那一段由它给（与 .toolbar 的 margin-bottom 6px 合计 18px，
-     见 .toolbar 的注释），也是合并成卡片后「卡顶 → 卡头」的呼吸。
-     下内边距 8px（Issue #55 第二条）：卡头不再与下方的条目线紧贴。
-     先前是 0 —— 「蒙学经典 4 篇」与右侧那颗圆键直接落在首条的分隔线上，
-     像被线拦腰截住。8px 与条目的 12px 内边距相加，卡头到首条文字留出 20px，
-     圆键（26px 高）上下的呼吸大致相等，整块卡头也因此**上抬**离开基线。
 
-     本轮（Issue #55 后续）左内边距 8 → 12px，只加左侧，右 / 上 / 下不动。
-     写成四值而不写 `12px 8px 8px`，就是为了让「只加左边」在源码里看得见：
-     对称写法会把卡头行右侧那颗 26px 圆键一起往里推 4px，
-     而卡片右缘到那颗圆键的 8px 是前几轮明确保留的量，不该被顺手改掉。
-     需求原话是「卡头那一行多 4px」——「行」指的就是这一行整体：
-     左边多出 4px 后，组名与右端圆键之间收窄 4px，右侧内缘仍在 8px 上。
-
-     【合并 main 后的口径】main 上另有「卡片左内边距 +2px」（.group-card 的 2px），
-     那条走的是**卡片层**：卡头 / 条目 / 首条淡线整体右移，卡内相对关系不变。
-     两条合起来才是「文字距卡片左缘」：
-       卡片 2px + 卡头 12px = 14px（组名）
-       卡片 2px + 条目 12px = 14px（条目文字）
-     两处左内边距仍同为 12px，卡头文字与条目文字严格落在同一条基准线上 ——
-     这正是需求要的「卡头那一行只多 4px」的相对关系（相对上一轮的 8px）。
-     若有人把卡头改成 14px 去「补」卡片的 2px，组名会比篇目多缩进 2px、
-     卡头歪出半格，下面的基准线断言会红。 */
   padding: 12px 8px 8px 12px;
 }
-/* 卷名（卡头那颗「唐诗三百首」）：走全站唯一那一档「一页里最大的标题」——
-   与设置页的卡片主标题、列表里的篇名同字号。那一档的完整口径写在
-   css/style.css 中部的「卡片主标题」那一段（:root 变量跨不过样式表边界，
-   所以这里是一对**平的约定**，由 test/theme.test.js 绑住）。
-   ⚠️ 只写 font-size / font-weight / color 三样，与那边逐位相同；
-      想调这一档就两边一起调，别在这里单独改一个数。 */
+
 .group-name { font-size: 17px; font-weight: 700; color: var(--ink); }
 .group-count { font-size: 11.5px; color: var(--ink-2); }
-/* 分组右侧的「随机连读」：同一枚圆形播放键的小号档
-   --------------------------------------------------------------------------
-   26px —— 与组名（14px 粗体）同一行的视觉重量差不多，不再像原先那样
-   一颗带字的胶囊把整行压向右边。只画 ▶，不带文字（键义在 title / 读屏文案里），
-   所以中间那颗三角比 40px 档略小一号，圆环与箭头之间留白才匀。 */
+
 .gw-play-sm {
   margin-left: auto;
   width: 26px;
@@ -461,24 +172,11 @@
   box-sizing: border-box;
 }
 .gw-play-sm svg { width: 12px; height: 12px; }
-/* 三角一档：图标框 12px + 描边 2（24 的 viewBox）→ 实际边长约 5px、笔画 1.00px
-   （与全站其余播放键的三角描边同宽，见本文件顶部的换算表）。 */
+
 .gw-play-sm .play-glyph-sm svg { width: 12px; height: 12px; }
 .gw-play-sm:hover { border-color: var(--blue); background: var(--blue-light); }
 .gw-play-sm[data-menu="1"] { border-color: var(--blue); background: var(--blue-light); }
 
-/* 卡头这颗是**组合播放键**（点一下连读本组，长按 / 右键挑模式）
-   --------------------------------------------------------------------------
-   形状仍是全站那枚圆键的小号档（26px 正圆 + 空心 ▶），只在 ▶ 的右下角
-   缀一枚 **3.5px 实心小点** —— 全站唯一的「这颗键不止一种用法」记号。
-   ⚠️ 这一档**不写模式名**（别把它当文字标签用）：
-     卡头一行已经有组名（14px 粗体）与篇数，再塞一行模式名会把三样挤成
-     一行小字、看不出主次；而且「随机 / 顺序」几个字会长到把 40px 的箭头
-     推到行外。模式名交给播放栏首行与 title / 读屏文案，圆键只留一个记号。
-   （引擎仍会往 .play-mode 里写当前模式名 —— **但那是给读屏与测试读的**：
-     见下方 `.play-mode` 一条 —— 视觉上、`textContent` 里都只剩一个空记号。）
-   小点用 absolute 钉在右下角：它不参与 ▶ 的居中（用 flex 会把三角顶偏），
-   也不占圆键内部宽度。 */
 .play-mode {
   position: absolute;
   right: 5px;
@@ -488,34 +186,15 @@
   border-radius: 50%;
   background: currentColor;
   pointer-events: none;
-  /* 小点本身的文字是**空的** —— 模式名一个字符都不许留在里面（Issue #69 本轮口径修正）----
-     原先这里写的是 `font-size: 0`：字看不见了，模式名却仍留在文本树里，
-     于是圆键在 **`textContent`** 层面成了一句「原文 · 顺序 + 连续播放原文 +
-     连续播放白话译文 + …」。两个后果：
-       · 点「分组圆键没有可见文字」的 `textContent.trim() === ''` 量到的就是
-         这串 38 字的模式名 —— test/pwa.test.js 在 CI 上失败；
-       · 菜单项就长在这颗按钮里，读屏念按钮名时会先把五个模式念一遍。
-     病根不在断言：圆键的可见文字本来就该是**空的**，菜单项的文字属于菜单。
-     模式名仍要有人「说」出来 —— 那是按钮自己的 `aria-label` / `title`
-     （见 js/reader-core.js 的 syncPlayBtn：`连续播放原文，当前：原文 · 顺序`），
-     读屏用户靠它知道点下去怎么放，不依赖这颗小点。
-     所以这里不写文字：引擎只往 `.play-mode` 里写**模式记号**（短名），
-     由本节点渲染成那枚小点。`color: transparent` 是兜底 ——
-     万一哪天内联又漏进一个字符，也是看不见的，不会再冒出一行模式名。 */
+
   color: transparent;
   font-size: 0;
   line-height: 0;
   overflow: hidden;
 }
-/* 这一行是绝对定位的参考框：圆键自身的定位上下文 */
+
 .gw-play-sm { position: relative; }
 
-/* 模式菜单（长按 / 右键弹出）
-   --------------------------------------------------------------------------
-   五个模式是**互斥**的一组（同一时刻只有一种），所以用 menuitemradio 而不是
-   普通菜单项；选中态用左侧一枚实心点 + 加深的文字色表达，不做整条高亮 ——
-   菜单是浮在列表上的小卡片，整条高亮会像「这一行被选中了」而不是「模式是它」。
-   弹出位置：贴着圆键右下角向外展开，不遮住组名与篇数。 */
 .gw-menu {
   position: absolute;
   top: calc(100% + 6px);
@@ -551,8 +230,7 @@
   cursor: pointer;
 }
 .gw-menu-item:hover { background: var(--blue-light); }
-/* 选中记号：一枚 6px 空心点，选中后实心 —— 与序号圆同一套「空心 / 实心」语言，
-   不额外引入对勾图标（对勾表达的是「已完成」，模式没有完成之说）。 */
+
 .gw-menu-tick {
   flex: none;
   width: 6px;
@@ -564,74 +242,15 @@
 .gw-menu-item.active { color: var(--blue); font-weight: 600; }
 .gw-menu-item.active .gw-menu-tick { background: var(--blue); border-color: var(--blue); }
 
-/* 两颗图标钉在条目右缘（Issue #69 后续）----
-   内容块改成「按内容取宽」之后，条目里就空出一大段余量：播放键与箭头仍排在
-   内容块后面，于是整组图标停在**条目中间**，右端留白 —— 这正是用户看到的
-   「卡片中的播放和向右箭头不是右侧对齐」。
-   内容块已经在最左（左内边距 12px / 14px 处），余量只能落在它右边，
-   所以给箭头加一个 margin-left: auto 就够：它把箭头（连同前面 6px 处的播放键）
-   整个推到条目右缘，右端固定留出条目的右内边距。
-   只写 .item-arrow：全站 12px 列距在搜索页 / 首页仍是「内容块 → 播放键」的呼吸，
-   集子页那 6px（播放键 ↔ 箭头）写在下面的 .group-card .item-read 上，一律不动。
-   ⚠️ 两颗图标的间距 6px 只能写在**播放键的 margin-right** 上（见下），
-   不能写成箭头的任何一侧：箭头带 auto 时，auto 会把箭头前**所有外边距**一起吃掉，
-   写成箭头的 margin-left 会被吞掉、两颗图标贴成 0px；写成箭头的 padding / border
-   又会被全站的 border-box 算进盒宽、把箭头右缘往里推 6px（实测 8px 变 14px）。 */
 .item-arrow { margin-left: auto; }
-/* 卡内条目右侧的「播放键 + 箭头」：两颗图标各自的外边距（卡内列距已清零）
-   --------------------------------------------------------------------------
-   先是「播放键离正文太远」这一问题（Issue #55 后续）：全站列距 12px 在首页
-   只隔开「正文 ↔ 一颗圆键」，这里却要同时隔开「正文 ↔ 键 ↔ 箭头」两颗图标，
-   播放键于是被推得比首页远一倍。改成逐项给间距后：
-     正文 … 圆键 … 6px … 箭头 …（条目 8px 右内边距）
-   合起来是一条规矩：**两颗图标永远钉在条目右缘，正文从左边一直排到图标跟前**。
-   圆键左缘与内容块右缘之间不留空档（间距 0），那一段让给正文 ——
-   见上方 #gw-list .item .item-main 那条（内容块按内容取宽）。
 
-   上一轮这里写的是 `margin-left: -12px`：意图是「把圆键左侧这段整个抹掉，
-   圆键左缘贴上内容块右缘」。它**没有**让文字多出宽度 —— 原因见上方
-   .item-main 那段注释（内容块是增长项，宽度按容器分配；负外边距只把圆键
-   压在正文上画，正文该多长还是多长）。本轮按用户要求把它去掉。
-
-   去掉之后，播放键左侧一律为 0：它左边那一段不再是「正文与圆键之间的空档」，
-   而是**正文自己占用的宽度**（因为内容块改成了按内容取宽，见上方 .item-main）。
-   圆键左缘仍落在原处（右端三件套一个没动），正文因此能一直排到圆键跟前。
-   只写 margin-left：右侧留给箭头的那 6px 与箭头贴边一律不动。 */
-/* 平板（≥768px）：集子目录页的**篇目清单**排成两列
-   --------------------------------------------------------------------------
-   这一页的结构与首页不同，很容易看错，先把它写清楚：
-     #gw-list（.list，主列表）
-       └─ .group-card × N     ← 一卷 / 一类一张，卡头是卷名 + 篇数 + 组内连读圆键
-            ├─ .group-head
-            └─ .item × M      ← 篇目**直接挂在卡片上**（引擎 appendChild 到卡上，
-                                不是挂在卡内某个 .list 里 —— 没有这一层）
-   手机上主列表与卡内篇目都是一列，是对的：一屏一卷，滚着读。
-   但平板上一张卡 530px 宽去放「① 感遇·其一 / 唐·张九龄 ·《唐诗三百首》· 孤鸿海上来…」，
-   右边的空白比字还宽（真机截图里一卷 33 首排了 2500px 长）。
-   这里把**卡内的篇目清单**切成两列，卡本身仍是一列一张（卡头要占满整卡）。
-
-   ⚠️ 选择器必须写 `.group-card > .item`：
-      条目是卡片的**直接子元素**，所以「卡内的篇目」就是「卡片的 .item 子元素」。
-      早先误写成 `.group-card .list > .item` —— 卡里根本没有 .list 这一层，
-      那条规则命中不了任何东西（同一处写成 `.group-card .list` 的还更糟：
-      它把卡片自己当成了清单，给卡加上了 flex-direction: row）。
-   ⚠️ 与首页 .list 那一档同一套算式（半个列距要从 50% 里减掉）：
-      505px 里放得下「序号 + 篇名 + 分类·作者·出处·摘句 + 书签 + 播放 + 箭头」，
-      再窄就开始折行。
-   ⚠️ 搜索页的 #gw-list 没有 .group-card（结果不分卷次、不套卡），
-      所以这里的选择器只命中集子页，搜索页仍是全站那一条。 */
 @media (min-width: 768px) {
-  /* ⚠️ 卡片自己先变成 flex 行容器：条目是卡片的直接子元素，
-      不把卡改成 flex，下面给条目的 flex-basis 无从生效（block 布局里
-      宽度由内容决定，两列排不出来）。
-      .group-head（卡头）用 width: 100% 独占第一行，篇目在它下面两两一行。 */
+
   .group-card {
     display: flex;
     flex-wrap: wrap;
     column-gap: 22px;
-    /* 行距 0：条目之间那条分隔线本来就是相邻贴合着画的（见下面
-       .group-card .item:first-of-type），一加行距，两列之间的「折行处」
-       就会露出一个没有线的豁口。 */
+
     row-gap: 0;
   }
   .group-card > .group-head {
@@ -642,28 +261,13 @@
     flex: 1 1 calc(50% - 11px);
     max-width: calc(50% - 11px);
   }
-  /* 两列下「第一条不画线」这条要按**每一列的第一条**算：
-     原来的 :first-of-type 只认整张卡里的第一条（也就是左列的第一条），
-     右列的第一条会照旧画线 —— 那条线上面并没有内容，看着像凭空多了一道横线。
-     这里把第 1、2 条都当「各列的第一条」（卡头占第一位，所以是 2、3 个孩子）。 */
+
   .group-card > .item:nth-of-type(2),
   .group-card > .item:nth-of-type(3) {
     border-top: none;
   }
 }
 
-/* 桌面（≥1024px）：卡内篇目再排一档 —— 两列 → 三列
-   --------------------------------------------------------------------------
-   一列纸在 1280px 窗口上是 1168px，每列 573px；
-   在 1920px 上是 1808px，两列各 893px —— 一行里「序号 + 篇名 + 分类·作者·
-   出处·摘句 + 书签 + 播放 + 箭头」七件，两头拉开近 900px，
-   与首页那条「空白比字还宽」是同一件事（首页已在同一档改成三列）。
-   三列后 1808px 里每列 588px、1168px 里每列 375px，
-   与手机上一条卡片的视觉宽度同档。
-   ⚠️ 卡头 .group-head 仍是 100%（独占第一行），规则在本档之上不动。
-   ⚠️ 「第一条不画线」这条要按**每一列的第一条**算：三列之后是第 1、2、3 条
-      （卡头占第一位，所以是 2、3、4 个孩子）。只写 2、3 的话第三列第一条
-      会凭空多出一道横线 —— 与上一档（两列）踩过的是同一个坑。 */
 @media (min-width: 1024px) {
   .group-card > .item {
     flex: 1 1 calc(33.333% - 14.667px);
@@ -678,28 +282,19 @@
 
 .group-card .item-read {
   margin-left: 0;
-  /* 右侧那 6px 写在**播放键**这一侧，不能挪到箭头上去：
-     箭头带 margin-left: auto 时会吃掉自己前面所有外边距
-     （写成箭头的 margin-left 会被吞成 0），
-     padding / border 又会被全站的 border-box 算进盒宽、把箭头右缘往里推。
-     见上方 .item-arrow 那条的说明。 */
+
   margin-right: 6px;
 }
 
-/* 列表项：古文条目左侧用蓝色区分于古诗词 */
 #gw-list .item { border-left-color: var(--blue); }
 #gw-list .item.in-book { border-left-color: var(--green); }
 #gw-list .item.done { opacity: .62; }
 #gw-list .item.done .item-title { text-decoration: none; }
-/* 序号圆（已挪进标题行）：小古文走天水碧，课外必背走天青 —— 与短竖条同色系。
-   空心圆：不铺底色，1px 边框走 currentColor，所以只改 color 即可换圈线颜色 */
+
 #gw-list .item-num { color: var(--blue); }
 #gw-list .item.in-book .item-num { color: var(--green); }
 #gw-list .item-reason.read { background: var(--green-light); color: var(--green); }
-/* 「待补」标记（《古文观止》目录里尚未整理正文 / 译文的篇目）：
-   用最淡的墨色与描边，与「已读」的实底绿点分得开 ——
-   它不是状态，只是「这一篇还没有内容」的说明，不该抢眼。
-   条目名也跟着转淡，一眼能看出整段是空档。 */
+
 #gw-list .item-reason.pending {
   background: transparent;
   color: var(--ink-3);
@@ -707,13 +302,10 @@
   font-weight: 400;
 }
 #gw-list .item.pending .item-title { color: var(--ink-3); }
-/* 列表项右侧播放键：与首页同款圆形播放器按钮，配色走天水碧（小古文主色） */
+
 #gw-list .item-read { color: var(--blue); }
 #gw-list .item-read[data-on="1"] { background: var(--blue); border-color: var(--blue); color: #fffdf8; }
 
-/* 随机连读时高亮当前篇，用户随时能接管。
-   条目已并入卡片，不再是独立浮起的卡片 —— 用底色高亮代替外发光
-   （卡片 overflow: hidden 会把 box-shadow 裁掉），左色条同时点亮。 */
 #gw-list .item.reading {
   background: var(--blue-light);
 }
@@ -724,26 +316,19 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-/* 所属选本（《古文观止》这类）：真实出处后面跟一个淡色括注。
-   出处讲「这一篇出自哪部书」（《左传》《震川先生集》），
-   选本讲「从哪本选里读到的」（《古文观止》）—— 两者不是一回事，
-   所以出处照常显示，选本只在后面补一句、不抢出处的位。 */
+
 #gw-list .item-meta .item-selection {
   color: var(--muted, #9a9a92);
 }
 
-/* ---------------- 整页阅读器 ---------------- */
 body.reader-open { overflow: hidden; }
-/* 阅读器打开时收起底部页签：页签与「上一篇 / 下一篇」抢同一块底部空间，
-   留着只会把导航压住。阅读器自己有返回键，不愁回不去。 */
-body.reader-open .dock { display: none; }
 
+body.reader-open .dock { display: none; }
 
 .reader {
   position: fixed;
   inset: 0;
-  /* 必须高于底部页签（z-index 65）：否则阅读器打开时页签会浮在正文与
-     「上一篇 / 下一篇」上方，把导航压掉一截、点不着 */
+
   z-index: 66;
   background: var(--bg-soft);
   display: flex;
@@ -753,53 +338,22 @@ body.reader-open .dock { display: none; }
 .reader[hidden] { display: none; }
 @keyframes readerIn { from { opacity: .4; transform: translateY(14px) } to { opacity: 1; transform: none } }
 
-/* 阅读器顶栏直接复用全站 .topbar（结构由 js/chrome.js 渲染）：
-   原先这里有一套自制的 .reader-bar（返回键在左、进度居中、右侧等宽占位），
-   与列表页 / 设置页的顶栏结构完全不同，从列表点进正文时整行导航会「换一张脸」。
-   现在品牌区（徽标 + 跬步 · 小古文）与列表页逐像素对齐，返回键落在全站统一的
-   右侧动作位，两者中间**不挂任何小件**（Issue #147：篇号牌与已读读数都已撤除，
-   详见上面那一段注释）。
-   另补背景色：.reader 是整屏 fixed 的滚动区，顶栏若透明，正文会从它下面透出来。 */
 .reader > .topbar {
   background: var(--bg-soft);
   border-bottom: 1px solid var(--line);
-  /* 宽度必须显式定住：.reader 是 flex 列容器（见上），而 .topbar 是它的
-     flex 项 —— 交叉轴（横向）上 flex 项默认按内容取宽，不是撑满容器。
-     列表页那一条顶栏住在 .app（块级）里，块级子元素天然占满一行，所以
-     从没露过这个问题；阅读器这一条一到这里就退化成「按内容取宽」。
-     于是「跬步」+ 页名 + 返回键加起来有多宽，顶栏就有多宽：
-     手机上《昭明文选》量到 427px（视口 393px），《课外必背小古文》424px、
-     《唐诗三百首》389px（视口 320px）—— 顶栏直接顶出屏幕右缘，
-     右边那颗返回键被裁掉一半、点不着；body 是 overflow: hidden，
-     所以既不出现横向滚动条，也不会有任何报错，只是「右边的字/键不见了」。
-     width: 100% 把它钉回容器宽度，max-width: 720px 仍然管宽屏上限。
-     min-width: 0 是同一件事的另一半：flex 项默认 min-width: auto，
-     长页名会把整个顶栏顶宽，这一行不许它参与「撑宽」这件事。 */
+
   width: 100%;
   min-width: 0;
 }
 
 .reader-body {
-  /* 高度：占满 .reader 的剩余空间并自己纵向滚动。
-     overflow 生效的前提是 min-height: 0 —— flex 项默认 min-height: auto
-     会被内容撑开，那样滚动条永远不会出现。 */
+
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   padding: 20px calc(18px + var(--safe-right)) calc(40px + var(--safe-bottom)) calc(18px + var(--safe-left));
-  /* 正文列宽走全站那一条「内容宽」--content-w（css/style.css 的 :root）——
-     与顶栏、页签内层同一条：三样东西落在同一条竖轴上。
-     ⚠️ 这里用的是「定宽 + 自动外边距」，不是 max-width：在 flex 列容器里，
-     max-width + width: auto 会被解析成 flex-basis: auto → 内容尺寸，
-     于是容器一宽，盒子反而被压成一个窄条（大屏上正文挤在中间一小撮）。
-     定宽 + `margin: 0 auto` 才是我们要的：窄屏自动收成满宽（外边距变 0），
-     宽屏稳定居中，跟顶栏的内容区落在同一条竖线上。
-     box-sizing: border-box 让这条宽度把左右内边距一起算进去。
-     ⚠️ 三档下它依次是 692 / 996 / 一列纸减 112px：手机 692 与原来那条
-        720 减两侧各 14 是同一个数，观感不变；平板起跟着放宽 ——
-        但正文**仍是一列**：诗句的行宽由 .reader-text 自己封顶 --read-w
-        （见那条 max-width），放宽的是页面里那些能并排的部分（目录卡片、选项、日历）。 */
+
   width: var(--content-w, 692px);
   max-width: calc(100% - var(--safe-left) - var(--safe-right));
   margin: 0 auto;
@@ -812,37 +366,22 @@ body.reader-open .dock { display: none; }
   font-size: 25px;
   font-weight: 600;
   letter-spacing: 1.5px;
-  /* 与正文同一条中轴 */
+
   text-align: center;
-  /* 长标题必须能折行（Issue #69 后续）----
-     《唐诗三百首》里有一首的题目长达 150 字（《自河南经乱关内阻饥……弟妹》），
-     《古文观止》《宋词》里也有一批 20 字以上的篇名。
-     标题是 <h2>，**块级**元素：不给它换行的话，浏览器按「一行放不下就溢出」
-     处理 —— 列表页那份 .brand-page-text 有 ellipsis 兜着，阅读器这里没有，
-     于是整段标题直接压出 720px 的内容列，手机上把正文挤成横向滚动、
-     右端被裁掉一半（用户看到的「详情页直接把页面撑出去了」）。
-     折行 + anywhere 是两头都要的：
-       · overflow-wrap: anywhere —— 中文虽可在字间断行，但路径 / 数字 / 书名号
-         那类「一整个 token」仍会把盒子顶宽，anywhere 让它在必要时逐字符断；
-       · word-break: normal —— 不能写 break-all：那会把英文单词也从中间劈开。
-     标题与元信息、正文一样永远落在 .reader-body 的定宽列里，不越界。 */
+
   overflow-wrap: anywhere;
   word-break: normal;
 }
-/* 出处 / 朝代 / 作者标签跟着正文居中 */
+
 .reader-body .meta { justify-content: center; }
-/* 阅读辅助工具条：两行，每行都排成一行不换行，且两行都整行居中
-   （与居中的诗题、正文共用同一条中轴）
-   ＝ 第一行：正文对齐（左/中 SVG）· A－/A＋ 组合 · 不注音/生字/全文
-   ＝ 第二行：朗读组合键（原文 / 译文）+ 译文开关 + 标记已读，纯 SVG 图标，文案走屏幕阅读器
-   尺寸与古诗词详情页完全一致，用户在两个页面不用重新学一遍。 */
+
 .reader-actions {
   display: flex;
   gap: 8px;
   margin: 14px 0 0;
   flex-wrap: nowrap;
   align-items: center;
-  /* 两行工具条都整行居中：与居中的诗题、正文共用同一条中轴 */
+
   justify-content: center;
   overflow-x: auto;
   scrollbar-width: none;
@@ -856,7 +395,7 @@ body.reader-open .dock { display: none; }
 }
 .mini-btn,
 .reader-actions .seg.mini {
-  /* 统一高度与圆角，四组按钮排在一起像同一条工具条（弧度走全站变量） */
+
   min-height: 34px;
   border: 1px solid var(--line);
   background: var(--card);
@@ -873,16 +412,7 @@ body.reader-open .dock { display: none; }
 }
 .mini-btn.ghost { color: var(--ink-2); }
 .mini-btn[data-on="1"] { background: var(--green); border-color: var(--green); color: #fdfaf2; }
-/* 译文开关 / 标记已读：圆形纯图标键，与播放栏的圆形环同一语言。
-   这里同时用了「flex 居中 + line-height: 0」，因为 SVG 默认是行内元素，
-   行盒的基线留白会把图标顶偏 —— 这正是此前三个图标看着不居中的原因。 */
-/* ⚠️ 宽高都要写死成同一个值，圆才是圆：
-   只写 `width: 38px` + `min-height: 38px`，min-height 只是下限，
-   该行内容一高（标题换行、正文太长）就被 flex 拉伸到 40 多 px，
-   而宽被 width 钉死在 38px —— 圆环纵向被拉长成椭圆，
-   看着就是「不够圆、纵向有点扁」。
-   这里 min-height 归零、改由 height 一锤定音，并禁止 flex-shrink，
-   窄屏排不下时整行横向滑动，绝不把圆压扁。 */
+
 .icon-row > .mini-btn {
   padding: 0;
   width: 38px;
@@ -895,14 +425,12 @@ body.reader-open .dock { display: none; }
 .icon-row > .mini-btn svg,
 .icon-row > .mini-btn .btn-icon {
   display: block;
-  /* 17px 图标框 + 描边 1（viewBox）→ 三角实际笔画约 0.7px，
-     与首页各档同量级（换算见本文件顶部）。 */
+
   width: 17px;
   height: 17px;
   margin: 0 auto;
 }
-/* 状态全靠图标表达：▶ 未开始 / 朗读中、⏸ 播放中、译文开关「划掉文档」= 收起译文。
-   同一颗键上 ▶ 与 ⏸ 是互斥的两种状态，永远只显示其中一个。 */
+
 #rd-read-btn .pause-glyph,
 #rd-trans-toggle .pause-glyph { display: none; }
 #rd-read-btn[data-on="1"] .play-glyph,
@@ -910,33 +438,12 @@ body.reader-open .dock { display: none; }
 #rd-read-btn[data-on="1"] .pause-glyph,
 #rd-trans-toggle[data-on="1"] .pause-glyph { display: inline-flex; }
 
-/* --------------------------------------------------------------------------
-   朗读按钮：一篇文章只有一个播放信号
-   --------------------------------------------------------------------------
-   原先「原文」「译文」并排并进一颗胶囊，看着仍像两个按钮；
-   译文本身又带一个朗读键，页面上一度出现三个播放信号。
-   现在：
-     · 工具条上只有正文这一颗 ▶ / ⏸（data-on 原地切换，不并排）；
-     · 译文那颗挪到译文标题右侧，跟着译文框一起出现 / 消失。
-   两颗键的图标族、圆角、字号完全一致，位置不同、形态相同。
-   -------------------------------------------------------------------------- */
-/* 「标记已读」：点亮前是描边勾，已读后整颗高亮 */
 .done-btn { color: var(--ink-2); }
 .done-btn.is-done { background: var(--green); border-color: var(--green); color: #fdfaf2; }
-/* 「加入背诵」：一枚书签。未加入时是淡墨描边，已加入时整个高亮 ——
-   与「标记已读」（勾）分得开：勾是「读过了」，书签是「这一篇我要背」。
-   两者都在工具条第二行，形态同款、颜色语义不同：已读走绿、加入背诵走蓝，
-   与列表里「已读」小标（绿）和条目左侧蓝条（古文）是同一套区分。 */
+
 .recite-btn { color: var(--ink-2); }
 .recite-btn.is-in { background: var(--blue); border-color: var(--blue); color: #fffdf8; }
 
-/* --------------------------------------------------------------------------
-   自选集合：集合选择器（点「加入背诵」后弹出）
-   --------------------------------------------------------------------------
-   与设置弹层同一套 .modal 语言（纸底、圆角、遮罩），只是内容是「勾选集合」。
-   一个集合一行，勾选态在左、名字居中偏左、篇数在右 ——
-   与列表条目的读法一致：先看自己勾没勾，再看名字，最后看有多少篇。
-   -------------------------------------------------------------------------- */
 .recite-sub {
   margin-top: 4px;
   font-size: 12.5px;
@@ -995,21 +502,6 @@ body.reader-open .dock { display: none; }
 }
 .recite-new .settings-input { flex: 1 1 auto; }
 
-/* 列表条目右侧的两枚圆键（「加入背诵」书签 · 播放）
-   --------------------------------------------------------------------------
-   用户原话：「将各个索引页卡片中的播放按钮调整得和添加到自定义背诵按钮一样大小」。
-
-   病根是两枚键**各写一套尺寸**：播放键来自 css/style.css 的 `.item-read`
-   （36px + 16px 图标），书签来自这里的 `.item-recite`（30px + 15px 图标）——
-   两枚并排的圆键量出来一个大一个小。尺寸本身没有对错，错在写了两个数。
-
-   现在两枚键读**同一个直径** `--item-btn` 与同一个图标框 `--item-icon`
-   （都定义在 css/style.css 的 :root），两枚键从此永远同大。
-   ⚠️ 改大小时改那一对变量，不要再往任一枚键上写 width / height。
-
-   ⚠️ 与播放键的间距 6px 写在**它自己的** margin-right 上（播放键那侧不动）：
-   箭头带 margin-left:auto，任何写在箭头左侧的 margin 都会被 auto 吃掉。
-   左内边距照旧为 0：那一段要让给正文（见上方 .group-card .item-read 的说明）。 */
 .item-recite {
   display: inline-flex;
   align-items: center;
@@ -1026,17 +518,14 @@ body.reader-open .dock { display: none; }
   cursor: pointer;
   line-height: 0;
 }
-/* 图标框与播放键读同一个 --item-icon（16px，原来是各自的 15px）。
-   ⚠️ 书签不是三角：它没有「1px 描边」这条约束（描边落在 24 的 viewBox 里，
-      1.8 ÷ 24 × 16 = 1.2px，是单笔画轮廓里正常的粗细）。
-      这里跟播放键同值，只是因为两枚圆键一样大、图标也该一样大。 */
+
 .item-recite svg {
   width: var(--item-icon);
   height: var(--item-icon);
   display: block;
 }
 .item-recite[data-on="1"] { background: var(--blue); border-color: var(--blue); color: #fffdf8; }
-/* 对齐组合按钮：两个 SVG 图标（左 / 中），选中态与注音档位一致 */
+
 .icon-seg button {
   display: inline-flex;
   align-items: center;
@@ -1045,7 +534,6 @@ body.reader-open .dock { display: none; }
 }
 .icon-seg button svg { display: block; width: 16px; height: 16px; }
 
-/* 字号组合按钮：A－ / A＋ 同宽，与注音档位同款 */
 .font-seg button {
   font-size: 12.5px;
   font-weight: 700;
@@ -1054,79 +542,39 @@ body.reader-open .dock { display: none; }
 }
 .font-seg button + button { border-left: 1px solid var(--line); }
 
-/* 分段组合「选中按钮与组合框共用一条边框」（Issue #205）
-   --------------------------------------------------------------------------
-   用户原话：
-     「组合按钮里面的按钮的边框和组合框上下有 4 个像素左右的间隔，我不太想要这个间隔，
-       我希望选中的按钮和组合框共用边框。中间 A+ A- 按钮的 A+ 按钮左侧边框是圆形，
-       也很奇怪，应该是直线。」
-
-   病根是一条**几何**上的事，不在配色：组合框（.seg.mini）自己有 1px 描边 + 3px 内边距，
-   选中态又是「白底 + 8px 圆角的小卡」浮在框里 ——
-   小卡与框之间必然隔着那 3px，上下各一处，看着就是「4px 左右的缝」。
-
-   改法是把这一组做成**真分段控件**（两块共用一条界，与设置页那一组同一做法）：
-     ① 组合框不再有内边距（padding: 0）—— 内层按钮直接铺满框，
-        上下左右都由**框那一条 1px 边**收口，选中按钮与框从此共用边框；
-     ② 内层按钮全部方角；「同一行里只有相邻两块的贴合处」才要圆角 ——
-        首块左上 / 左下、末块右上 / 右下，
-        选中态也不再加圆角（`:not(.active)` 那半截的必要性写在下面那条注释里）；
-     ③ 两条竖界：块与块之间 1px（`+ button` 的 border-left），
-        以及「选中块与它后面那块」之间再补一条（`.active + button`）。
-        选中块自己不加 border（`border: 0`）—— 否则它那 1px 会被算进宽度，
-        选中时整组要宽出 1px，而末尾的 A＋ 又已经改方角，一行三组会跳。
-
-   ⚠️ 为什么要写成 `:not(.active)` 那一半：选中态由全站那条
-      `.seg button.active { background: var(--card); … }` 给（style.css），
-      这里若只写 `button:first-child`，两边同为 0-2-1 特异性、**后出现的那张表赢**
-      —— classic.css 排在 style.css 后面，才压得住。
-      即便如此也不能只写无 `:not()` 的那半：把 `.active` 再排除一次，
-      是为了让「选中态永远不加圆角」这件事写在同一条规则里，一眼看得见。
-
-   ⚠️ 反面教材（改了会退回原样）：给内层按钮写圆角 + 给外框写内边距。
-      这一组「看着有缝」只有一个来源 —— 框与块之间垫了 3px。 */
 .seg.mini {
   padding: 0;
   gap: 0;
   align-items: stretch;
 }
-/* 三段（不注音 / 生字 / 全文）等宽：三块都 flex: 1 时，字数多的那块更宽，
-   中间的竖界就不在正中间；`flex: 1 1 0` 让三块按**同一条基准宽**分这一行。 */
+
 .seg.mini button { flex: 1 1 0; }
-/* ⚠️ 圆角这几条**必须写成 `.seg.mini button:first-child` 这个形状（0-3-1）**：
-   只写 `.seg.mini button`（0-1-1）时，会被阅读器那条
-   `.reader-actions .seg.mini button { border-radius: 8px }`（0-2-1）按特异性压回去
-   —— 真机上就是这么退回原样的（框的 padding 归零了，块却还是各自 8px 圆角）。
-   写成同一个 0-3-1，两页才都说了算（classic.css 排在 style.css 后面）。
-   与 :not(.active) 那半合起来的原因见上方那段总说明。 */
+
 .seg.mini button,
 .seg.mini button:not(.active),
 .reader-actions .seg.mini button { border-radius: 0; }
 .seg.mini button:first-child { border-radius: var(--radius-sm) 0 0 var(--radius-sm); }
 .seg.mini button:last-child { border-radius: 0 var(--radius-sm) var(--radius-sm) 0; }
-/* 界行：相邻两块之间一条。选中块自己不带边，所以「选中块 → 它后面那块」
-   少一条 —— 补在这一条里。 */
+
 .seg.mini button + button,
 .seg.mini button.active + button { border-left: 1px solid var(--line); }
-/* 选中块的下划线撤掉：选中态已经由白底 + 字色说清楚了，多一条线反而像错位 */
+
 .seg.mini button.active { box-shadow: none; }
 
 .reader-text {
-  /* 正文字体由 --font-poem 统一指定（思源宋体，缺字回退系统宋体） */
+
   font-family: var(--font-poem);
-  font-size: 19px;   /* 由 JS 按用户字号覆盖；默认档见 js/classic.js 的 DEFAULT_FONT */
-  /* 古文正文行距降一档：2.2 → 2.0 → 1.8，段落更紧凑、一屏多读几行 */
+  font-size: 19px;
+
   line-height: 1.8;
-  /* 正文块自身居中：max-width: fit-content + margin auto，短文不会贴着左边缘 */
+
   max-width: fit-content;
   margin: 18px auto 22px;
-  /* 行内文字也居中：小古文多为短句，逐句居中更像碑帖 */
+
   text-align: center;
   letter-spacing: 1.4px;
 }
-/* 对齐方式交给用户选（工具条上的两个 SVG 图标）：
-   古诗居中好看；《少年中国说》一类长古文左对齐更好读。
-   文章一律横排，右对齐没有使用场景，故不设。 */
+
 .reader-body .reader-text[data-align="left"] { text-align: left; }
 
 .trans-box {
@@ -1148,11 +596,6 @@ body.reader-open .dock { display: none; }
   color: var(--ink-2);
 }
 
-/* 译文来源注脚：贴在译文正文下方的一行小字。
-   不抢正文视线，只回答「这段译文是怎么来的」。
-   选择器写 `.trans-box p.trans-src`（0-2-1）而不是光 `.trans-src`（0-1-0）——
-   否则会被上面那条 `.trans-box p { … }`（0-1-1）按「同特异性、后写胜出」压回
-   14.5px 正文样式，注脚会跟译文正文一样大，看着像正文的一部分。 */
 .trans-box p.trans-src {
   margin: 8px 0 0;
   font-size: 11.5px;
@@ -1168,23 +611,10 @@ body.reader-open .dock { display: none; }
   color: var(--ink-3);
 }
 
-/* 上一篇 / 下一篇：读完直接翻，不必退回索引页。
-   阅读器是整屏 fixed 的滚动区，底部播放栏（约 84px）与底部页签会浮在内容之上，
-   导航若不留白就会被压掉三成、点不着，所以底部留足 118px。 */
 .reader-nav {
   display: flex;
   gap: 10px;
-  /* ⚠️ 上下那两段留白（上方 26px、下方 118px 给播放栏与页签避让）写在
-     margin 这一条**全部四个值**里，不另外拆 margin-top / margin-bottom ——
-     桌面那一档要给它加左右 auto 才能居中，而 margin 简写会把后写的
-     margin-left/right 一起重置回 0（媒体查询不加特异性，后出现的简写说了算）。
-     所以居中这件事只能写在这条简写里：
-       · ≤1023px：左右 0（整行铺满，与手机上一致）；
-       · ≥1024px：左右 auto + 下面那条 max-width，把这一排收进 --read-w ——
-         一列纸在桌面上跟视口走（1920px → 1808px），而正文仍封在 720px，
-         这一排不一起收的话，「上一篇」与「下一篇」会被推到屏幕两端、
-         隔着 1800px（与集子页工具栏同一条毛病）。
-         三条线（标题 / 正文 / 翻页）落在同一条竖轴上。 */
+
   margin: 26px auto calc(118px + var(--safe-bottom));
 }
 @media (min-width: 1024px) {
@@ -1195,13 +625,7 @@ body.reader-open .dock { display: none; }
 .reader-nav button {
   flex: 1;
   min-width: 0;
-  /* 需求（Issue #205）：页底这两枚翻篇键**不再是一枚按钮的样子** ——
-     去掉圆形边框、去掉底色，左右内边距也归零。
-     它们是「读完直接翻」的两个方向，贴在两端的正文宽度上，
-     画一个框反而把读者的注意力从正文抢到控件上。
-     ⚠️ 这里写 `border: none` 而不是 `border: 0 solid transparent`：
-     「没有边框」只有一种写法，别留下一条看不见的 1px 缝（它会撑高这一排）。
-     ⚠️ 背景必须是 `transparent`，不能省 —— 省掉时浏览器默认按钮底色（灰）会露出来。 */
+
   border: none;
   background: transparent;
   color: var(--green);
@@ -1217,7 +641,7 @@ body.reader-open .dock { display: none; }
 }
 .reader-nav button.next { justify-content: flex-end; text-align: right; }
 .reader-nav button:disabled { opacity: .42; cursor: not-allowed; }
-/* 翻篇键按下态：没有底色可压，用字色深浅给一点反馈（只在能点时生效） */
+
 .reader-nav button:not(:disabled):active { opacity: .72; }
 .reader-nav .nav-label {
   font-size: 11px;
@@ -1233,7 +657,6 @@ body.reader-open .dock { display: none; }
   max-width: 100%;
 }
 
-/* 译文朗读按钮：贴在译文标题右侧 */
 .trans-head {
   display: flex;
   align-items: center;
@@ -1242,8 +665,7 @@ body.reader-open .dock { display: none; }
   margin-bottom: 8px;
 }
 .trans-head h3 { margin: 0; }
-/* 译文朗读键：贴在译文标题右侧。它是**纯文字 + ▶ / ⏸**（同一位置切换），
-   不是组合键，也没有第二颗并排；展开译文才出现，收起即消失。 */
+
 .trans-read {
   border: 1px solid var(--line);
   background: var(--card);
@@ -1257,18 +679,13 @@ body.reader-open .dock { display: none; }
   align-items: center;
   gap: 5px;
   white-space: nowrap;
-  /* 胶囊键：高度固定、纵向不再被拉伸。
-     .trans-head 是 `align-items: center` 的 flex 行，默认 `align-items: stretch`
-     的旧写法会把按钮拉到与标题同高 —— 译文标题一旦换行，胶囊就变高变扁。
-     这里 flex: none + 固定行高，宽由内容撑开，呈标准圆角胶囊。 */
+
   flex: none;
   line-height: 1.5;
 }
 .trans-read .btn-icon { display: inline-flex; align-items: center; justify-content: center; flex: none; }
-.trans-read .btn-icon svg { display: block; width: 24px; height: 24px; margin: 0; }  /* 24px 框 → 三角描边 1×24/24 = 1.00px */
-/* ▶ / ⏸ 互斥。选择器要多带一个 `.btn-icon`（0-3-0），
-   否则会被上面那条 `.trans-read .btn-icon { display: inline-flex }`（0-2-0）
-   按「同特异性、后写胜出」压回去 —— 表现就是两个图标并排同时显示。 */
+.trans-read .btn-icon svg { display: block; width: 24px; height: 24px; margin: 0; }
+
 .trans-read .btn-icon.pause-glyph { display: none; }
 .trans-read[data-on="1"] .btn-icon.play-glyph { display: none; }
 .trans-read[data-on="1"] .btn-icon.pause-glyph { display: inline-flex; }
@@ -1277,35 +694,19 @@ body.reader-open .dock { display: none; }
 @media (min-width: 700px) {
   .reader-body { padding-top: 28px; }
 }
-/* 平板（≥768px）：正文列封顶
-   --------------------------------------------------------------------------
-   .reader-body 的宽度走 --col-w（平板 1040px），但**诗句不该跟着变宽**：
-   一行 1040px 能排 55 个汉字，远超「一行 35~40 字」的阅读上限 ——
-   眼睛从左到右扫完一行要花很大力气，还容易串行。
-   这里把正文本身封在 720px（也就是手机上的那一档，这个值经过所有既有页面），
-   居中放在更宽的阅读栏里。
-   ⚠️ .reader-text 自己已有 `max-width: fit-content`（短文块居中）——
-      它取的是**内容**宽度，宽栏里照样能长到 1000px，所以正文封顶必须落在
-      它身上（下面这条），不能只封 .reader-body。 */
+
 @media (min-width: 768px) {
   .reader-text {
-    /* 封顶用「最宽的段落 720px」，而不是把整块钉死 720px：
-       fit-content 会先按内容取宽，再用这条上限收住 —— 短文仍是居中的窄块，
-       长段落最多 720px（一行约 38 个汉字，正好是阅读上限那一档）。 */
+
     max-width: var(--read-w, 720px);
   }
 }
 
-/* ==========================================================================
-   阅读辅助：生字注音 + 朗读
-   ========================================================================== */
-
-/* 注音正文：ruby 让拼音压在汉字上方，行高留足避免遮挡 */
 .reader-text.with-pinyin {
-  /* 注音档同步降一档：2.9 → 2.7 → 2.5，仍留足空间不压到拼音 */
+
   line-height: 2.5;
   letter-spacing: 1.8px;
-  /* 注音渲染成 ruby + <br>，改成 normal 才不会因为保留空白把居中挤歪 */
+
   white-space: normal;
 }
 .reader-text ruby,
@@ -1320,12 +721,10 @@ body.reader-open .dock { display: none; }
   font-weight: 400;
   color: var(--ink-3);
   letter-spacing: 0;
-  /* rt 默认会撑高行距，这里压一下，保证与未注音版本视觉密度接近 */
+
   line-height: 1.05;
 }
 
-/* 朗读按钮：图标 + 文字，播放中高亮 */
-/* 喇叭图标与文字同在按钮里：用 flex 居中，不再靠 vertical-align 硬偏移 */
 .mini-btn .btn-icon {
   display: inline-flex;
   align-items: center;
@@ -1349,21 +748,13 @@ body.reader-open .dock { display: none; }
 @keyframes wavePulse { 0%, 100% { opacity: .3 } 50% { opacity: 1 } }
 .mini-btn:disabled { opacity: .5; cursor: not-allowed; }
 
-/* 阅读器内的注音档位：复用全局 .seg.mini，这里只压一下字号便于窄屏并排。
-   ⚠️ 内边距这一条**整条撤掉**（Issue #205）：全局已经改成 padding: 0（共用边框），
-      这里再压一个 2px 就又垫出一条缝来 —— 这一档的「缝」正是用户指的那 4px。 */
 .reader-actions .seg.mini { padding: 0; }
 .reader-actions .seg.mini button {
   font-size: 12.5px;
   padding: 5px 9px;
-  /* ⚠️ 这里**不写** border-radius。写了 8px（原样）会把全局那套
-     「块与块贴合处才圆角」整条压回去 —— 它比 `.seg.mini button` 多一个类，
-     特异性更高，真机上就是这么退回原样的（框的 padding 归零了，块却还是 8px 圆角）。
-     写了 0 也只是与上面那条重复；这一档的圆角只有一个来源：
-     `.seg.mini button:first-child / :last-child`（见 Issue #205）。 */
+
 }
-/* 窄屏（iPhone SE 一类 320~380px）：两组控件要挤进同一行，
-   字号与内边距各收一档，必要时整行横向滑动，绝不换行错位。 */
+
 @media (max-width: 380px) {
   .reader-actions { gap: 5px; }
   .reader-actions .seg.mini { padding: 0; }
@@ -1371,50 +762,17 @@ body.reader-open .dock { display: none; }
   .icon-seg button svg { width: 15px; height: 15px; }
   .icon-row > .mini-btn { width: 36px; min-height: 0; height: 36px; }
   .mini-btn { font-size: 12.5px; }
-  /* 工具栏圆键在窄屏同收一档（36px），与「全部 / 未读」组合、搜索框继续齐平 */
+
   .toolbar { --toolbar-h: 36px; }
-  /* 分组圆键不再等比缩：26px 已是「比一行字略大」的下限，再小就点不准了 */
+
 }
 
-/* 搜索框字号必须排在最后
-   --------------------------------------------------------------------------
-   同一条「iOS 聚焦不缩放」的规矩在 style.css 末尾也有一份（按类名精确命中的
-   `.search-input { font-size: var(--input-font-narrow) }`）。两张表都会加载，
-   **谁写在后面谁生效** —— 放在这里是为了让「小古文页的输入框字号」这件事
-   在本文件里也能一眼查到，而不是只能翻到另一张表去找。
-   桌面 / 平板仍是 14px（--input-font），与界面文字同一层级；
-   窄屏 16px 是 iOS 不肯缩放的阈值，不是设计偏好，不能为了「看起来小一点」压它。
-   真正要小的是提示字 —— 见上面 `.search-input::placeholder` 那条（12.5px，
-   与右侧「全部 / 未读」同字号），且它用的是伪元素，不受这条影响。 */
 @media screen and (max-width: 700px) {
   .search-input { font-size: var(--input-font-narrow); }
 }
 
-/* ==========================================================================
-   全站搜索页（/search/）与课外阅读入口页（/library/）
-   --------------------------------------------------------------------------
-   两页都沿用本文件已有的工具栏 / 卡片语言，只补两样它没有的：
-     · 搜索区（.search-hero + 候选下拉 .suggest）—— 整块居中，
-       输入框下方浮出候选那一层
-     · 入口页的四张卡片（.library-card）
-   配角（「全部 / 未读」组合、集子筛选药丸）都已随搜索页的改版撤掉 ——
-   搜索页只留一个输入框，样式也一并不留死代码。
-   配色与圆角一律走既有变量，不新开一套。
-   ========================================================================== */
-
-/* ---------------- 搜索页 ---------------- */
-/* 搜索框与候选下拉必须同属一个定位上下文（.search-wrap 已是 position: relative），
-   否则下拉会相对整页定位、跑到别处去。 */
 .search-wrap { position: relative; }
 
-/* 「敲 / 直接进搜索框」的那枚提示（Issue #163）
-   --------------------------------------------------------------------------
-   进页不再自动聚焦，桌面用户于是多一步「把鼠标移到框上」。这一枚告诉他
-   不用移 —— 敲 / 就行。它是 <kbd>，不是按钮：没有去处、点它不该发生任何事。
-   · 只画给**有实体键盘**的设备（pointer: fine）：手机上有键盘的是屏幕里那一块，
-     / 这个动作在那里不成立，留着只是一枚看不懂的小徽章；
-   · 位置由 .search-wrap（position: relative）给，贴在框的右内侧；
-   · 视觉是「纸面 + 细描边 + 中性字」的一枚小键帽，不抢 placeholder 的注意力。 */
 .search-slash {
   position: absolute;
   top: 50%;
@@ -1440,81 +798,27 @@ body.reader-open .dock { display: none; }
   .search-slash { display: inline-flex; }
 }
 
-/* 搜索区：整块在标题栏下方**垂直 + 水平居中**，页面上只有它一个
-   --------------------------------------------------------------------------
-   垂直居中靠这一条算式：把「搜索框以外的那些高度」从视口里减掉，
-   剩下的空间由 flex 居中。要减的三样都是**已知量**，不必去量 DOM：
-     · --safe-top    刘海那一档（顶栏自己垫的）
-     · --nav-h       底部页签（js/pwa.js 实测，本身已含底部横条与余量）
-     · 200px         顶栏本体 + 页面上下两段呼吸留白 + 页面底部那一点余量
-   水平居中在搜索框自己身上（见下面 .search-toolbar 那条）。
-
-   ⚠️ 两个子元素都是**绝对定位**（替身输入框与整行搜索框），hero 自己
-      不产生任何内容高度 —— 它的高度必须由**它自己**拿着，否则「居中」无从谈起
-      （CSS 里没有「垂直居中一个绝对定位子元素」的直接写法：绝对定位的子元素
-      不参与 flex 的居中，`justify-content: center` 对它一概无效）。
-      做法：hero 自己 height = 视口 − 200px，那一行搜索框再压在这条高度的
-      垂直中线上（top: 50% - 半行高），两者合起来就是「垂直居中」。
-      另有两种「不在中线」的摆法，各自换一组数值（见下面的 .search-hero 三态）：
-      · 贴顶（有焦点 / 有内容）—— height 交还给内容、顶到 padding-top 上去；
-      · 键盘弹着（.kb-open）—— 同上，另外把框到结果列表那段留白压到最小。
-      三种摆法都精确到像素，不会因为搜索框长得高一点就少算 12px、
-      把框的下沿送到键盘底下。 */
 .search-hero {
-  /* 定位上下文：替身输入框与搜索框整行都压在它身上 */
+
   position: relative;
-  /* ⚠️ 这里**不给 z-index**（一个都不给）：
-     给了就会新建一个层叠上下文，把里头的候选下拉（z-index: 30）关在
-     「hero 这一层」里 —— 而结果列表在 hero **外面**、且 DOM 里排在它后面，
-     于是整个 hero（含下拉）都压不过列表：下拉上的候选与下面的结果卡片
-     叠在一起，两层文字糊成一团（真机上就是这样）。
-     要让下拉压住列表，就得让两者落在**同一个**层叠上下文里比大小：
-     hero 交给它自己的内容（见下一条 .search-hero .search-toolbar 的 z-index），
-     不改 hero 自己的层级 —— position: relative 只借它当定位基准，
-     z-index: auto 不建上下文，正是我们要的。 */
+
   z-index: auto;
-  /* 顶栏之上、内容之下的一个「带」：放不下 52px 的框时按内容收，
-     放得下就按这一段高度居中 —— 两种摆法都不会把框挤出去。 */
+
   min-height: calc(var(--hero-box-h) + 4px);
-  /* 这一页的搜索框比别处高：它是这一页唯一的主角。
-     --hero-input-h 是它的**真实高度**（52px），--hero-box-h 是布局高度 ——
-     两者相等：高度就该长在布局里，见下面 .search-hero .search-toolbar 那条。 */
+
   --hero-input-h: 52px;
   --hero-box-h: 52px;
-  /* 贴顶时：框顶到页顶的距离（这一段 = 顶栏 + --hero-top 那段呼吸 + 52px 框）。
-     ⚠️ 这个值与「框 → 列表」那一段是**同一个来源**（--search-list-gap）：
-        两者相等，框上下才对称，见下面「搜索框上下间隔一致」那一节。 */
+
   --hero-top: var(--search-list-gap, 12px);
   display: flex;
   flex-direction: column;
   justify-content: center;
   height: calc(100vh - var(--hero-chrome, 200px));
   height: calc(100svh - var(--hero-chrome, 200px) - var(--safe-top) - var(--nav-h));
-  /* 搜索框压在 hero 的垂直中线上（上下内边距各分一半余量）。
-     这里**不再留「框 → 结果列表」的间距** —— 那一段现在由 #gw-list 的
-     padding-top 给（见下面「搜索框 → 结果列表」那一节），并且只在「框居中」时有值：
-     搜索框浮在页面中间时，框与第一张卡片之间有这一段呼吸（两条内容分开）；
-     框一贴顶（聚焦 / 有内容），列表紧跟着回到正常间隔（用户反馈的
-     「下面的搜索结果卡片列表也不要和搜索框有那么多间距了」）。
-     ⚠️ 不再由 js/search.js 写行内 padding-bottom：居中态与贴顶态各归 CSS 管，
-        JS 只负责加类，不再碰样式（谁写行内样式，另一个状态就得反过来擦掉它）。 */
+
   padding-bottom: 0;
 }
-/* 搜索框在 hero 里居中：整行只放它一样。
-   宽度交给绝对定位（left: 50% + translateX(-50%)）+ 上限 520px —— 不用
-   flex 居中，是因为「键盘弹出 / 有内容时整块要换一种摆法」（见下面三态那条）：
-   hero 一旦切到 flex-start，居中的算法就会连同宽度一起重算 ——
-   键盘弹出来时搜索框跳一下，肉眼很扎眼。绝对定位下 hero 怎么变都不影响它。
-   ⚠️ 宽度写 min(520px, 100%)：hero 的 100% 就是 .app 的 720px 内容区，
-      窄屏上 min() 取到的自然是可用宽度（左右各 14px 的呼吸由 .app 给）。 */
-/* 平板（≥768px）：hero 这一整块封顶，别拉成整屏宽的一条
-   --------------------------------------------------------------------------
-   hero 的高度算式里减的是 --nav-h 与 --safe-top，这两样都不随宽度变；
-   而 .app 在平板上有 1040px 宽 —— 于是「框 + 它的候选下拉」横跨整屏，
-   竖着看是一条又扁又长的横带。
-   这里封顶 520px：与搜索框自己的 520px 同宽，下拉也就跟着一起收住
-   （下拉是 .search-wrap 里的绝对定位子元素，宽度是 100%）。
-   ⚠️ 手机（<768px）不封顶：窄屏上它本来就是整行。 */
+
 @media (min-width: 768px) {
   .search-hero {
     max-width: 520px;
@@ -1526,242 +830,38 @@ body.reader-open .dock { display: none; }
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
-  /* 压在「这一段的垂直中线上」：居中态下这一段就是 hero 自己，
-     贴顶态下它是「页顶（含顶栏）到框底」的那一段。
-     ⚠️ 两种摆法共用这一个算式（不写死 top: 44px）—— 见上面三态那条。 */
+
   top: 50%;
   margin-top: calc(var(--hero-box-h) / -2);
   width: min(520px, 100%);
-  /* ⚠️ 这一行**不能给 z-index**：它自己带着 transform（translateX(-50%)），
-     transform 会新建层叠上下文 —— 一旦新建，里头候选下拉的 z-index: 30
-     就只在**这一行内部**排序，跟外面的结果列表成了两套编号，
-     谁在上面全看 DOM 顺序：结果列表排在 hero 后面，于是压过了下拉，
-     候选与结果卡片叠成一团（真机上看到的就是「两层文字糊在一起」）。
-     抬层级只能落在下面单独那条 .search-hero .search-toolbar { z-index: 1 }
-     上（它写在 hero 之下、不建上下文的 hero 让整行跟在根上下文里比大小）。 */
+
 }
-/* hero 里的搜索框不再跟任何横向控件并排，圆角仍是全站那一档 */
+
 .search-hero .search-wrap { flex: 1 1 auto; }
-/* ⚠️ .search-toolbar 是**整条链上唯一**进正层级的元素，也是下拉能压住列表的原因：
-   链上有两处会新建层叠上下文 —— .search-wrap 的 transform: translateY(-2px)，
-   以及 .search-toolbar 自己的 transform: translateX(-50%)。层叠上下文一旦新建，
-   里头的 z-index 就只在**那一层内部**排序，跟外面的结果列表成了「两套编号」，
-   谁在上面全看 DOM 顺序 —— 而结果列表排在 hero 后面，于是压过了下拉。
-   抬整行：它自己虽然也因 transform 建了上下文，但它**直接挂在 hero 下**，
-   不建上下文的 hero 又在根上下文里 —— 于是 z-index: 1 是真的拿根上下文里的
-   结果列表（auto）比大小：1 > auto，整行（含下拉）稳稳在上面。
-   这一条必须与下面 .suggest 的 z-index 成对看：下拉仍是 30，
-   整行 1 就够把它抬到列表之上。
-   ⚠️ hero 自己**不能**写 z-index（写了就又开一层，整行与列表回到两套编号）——
-      见 .search-hero 那条的说明。 */
+
 .search-hero .search-toolbar { z-index: 1; }
 
-/* 搜索框的三种摆法（Issue #69 后续·再续）
-   --------------------------------------------------------------------------
-   用户这一轮要求：聚焦时把搜索框挪到标题栏下方、下拉跟着上去；点空白收下拉；
-   有搜索内容时框停在页顶；清空内容且没有焦点时回到页面中心。
-   三个状态就是一个「框该待在哪儿」的优先级，写在 hero 的两个类上
-   （js/search.js 的 syncHeroState 负责加，这里只负责表现）：
-
-     ① 居中（默认，一个类都没有）
-        框压在这一段的垂直中线上，页面中心 —— 进这一页时的样子。
-     ② .search-active —— 输入框有焦点，**或**框里有内容
-        贴顶栏下方：hero 交出高度（height: auto），自己只留
-        顶栏之下的一段呼吸（padding-top）+ 一行框高。
-        ⚠️ 焦点与内容合成一个类，而不是两个：两者的落位完全相同，
-           分成两个类就要把同一组数值写两遍，日后改一处忘一处。
-     ③ .kb-open —— 软键盘真的弹出来了
-        落位同 ②，只多一件事：键盘占着半屏，框到结果列表那段留白再收一档。
-
-   ⚠️ 贴顶那一段高度（--hero-top: 44px）只负责「框顶到页顶」的距离 ——
-      用 hero 自己的 padding-top 表达，比给框写一个绝对 top 更稳：
-      框仍是「压在这一段的垂直中线上」，两种摆法共用同一个定位算式，
-      只是「这一段」自己换了个高度。
-   ⚠️ 与顶栏的关系：hero 排在 .topbar 之后，所以「贴顶栏下方」就是
-      页顶 + 顶栏高度 + 又一段呼吸；顶栏自带 padding-top 与刘海，
-      这里只要给一个纯呼吸值（44px ≈ 顶栏底边之下 44px），
-      桌面 / 手机、有刘海 / 无刘海都是同一个相对位置。 */
-/* 贴顶那两条规则见下面「贴顶态」那一块 —— 那里同时管竖向落位与 sticky，
-   不在这里另写一套，免得同一件事两处各写一半。 */
-
-/* 搜索框「增高」——但**不在绘制层动手脚**
-   --------------------------------------------------------------------------
-   用户反馈：这一页以搜索为主，搜索框该再高一些；随后又反馈
-   「搜索框四个圆角不太正常，里面的 placeholder 文字有点压扁的感觉」——
-   后者正是前者的做法带来的。
-
-   一、压扁是怎么来的
-      上一版把 40px 的框用 `transform: scaleY(1.3)` 拉到视觉 52px，
-      高度只长在**绘制层**、文档流里仍按 40px 占位。于是：
-        · 本来按 12px 圆角画出来的四个角，被纵向拉伸 1.3 倍 ——
-          上下两个角的竖向半径变成 15.6px、横向仍是 12px，**圆角成了椭圆**，
-          横向曲率比竖向曲率更「急」，四个角看着就不对了（用户说的
-          「圆角不太正常」）；
-        · 框里的文字（占位提示是绝对主角）跟着被纵向拉长，字形被压扁成
-          52/40 = 1.3 倍高；上一版还专门给提示字写了 -1.25px 的位移去补
-          基线差 —— 那是在给「拉伸」打补丁，字本身仍是变形的。
-      这种「先用 40px 画、再拉长」的做法还有一个隐性代价：框的视觉下沿
-      比定位上下文低 6px，候选下拉的 top 只能靠常量去追那个差值。
-
-   二、现在：52px 是真高度
-      `--toolbar-h: 52px`（只在本页覆写），border-radius 保持 `var(--radius-sm)`
-      这一个圆角值 —— 圆角不被拉伸，四个角就是同一个半径的圆弧；
-      字号也回到正常比例，不必再用位移 / 变形去凑垂直居中。
-      与之配套的三处数值一起改（都写在这条注释附近，免得日后走散）：
-        · --hero-box-h: 52px —— 居中的中线、候选下拉的定位基准；
-        · .search-wrap 的 translateY(-2px) —— 只把整行的圆心从「中线」挪到
-          「视觉中轴」，幅度是 2px（原来为拉伸补偿要挪 6px）；
-        · .suggest 的 top: calc(100% + 4px) —— 框底之下 4px。
-      为什么是 52px：它是「以搜索为主角」这一页的既有设计值（上一版的视觉高度
-      也是 52px），也是 iOS 建议的 44px 最小可点面积之上的一档。 */
 .search-hero .search-toolbar { --toolbar-h: 52px; }
 .search-hero .search-input { --toolbar-h: 52px; }
-/* 提示字：仍是辅助文字，比输入的文字小一档（13.5px）。
-   ⚠️ 不再需要任何 transform 修正 —— 框本身不再被拉伸，
-      浏览器按 15px 的字排基线，13.5px 的提示字落在同一条基线上，
-      视觉上就是居中的（真实浏览器里量出来偏差在 1px 内）。 */
+
 .search-hero .search-input::placeholder {
   font-size: 13.5px;
   transform: none;
 }
-/* 定位基准回正：只挪竖向的 2px（横向一个字都不能写 ——
-   外层的 .search-toolbar 已经用 translateX(-50%) 把整行摆正了，
-   这一层再来一次 -50% 就会把搜索框整个推出屏幕左边）。 */
+
 .search-hero .search-wrap { transform: translateY(-2px); }
 
-/* 屏幕键盘与聚焦：整块贴到顶栏下方
-   --------------------------------------------------------------------------
-   这一条规则**已经并入上面「搜索框的三种摆法」**（.search-hero.search-active /
-   .search-hero.kb-open）—— 那里是唯一的出处，这里只留一句话指路。
-
-   历史（值得留着，免得再踩）：这条规则一度在改成「52px 真实高度」时被误删，
-   而 js/search.js 仍在加类、test/pwa.test.js 仍在量 —— 于是机上「贴顶」静默失效：
-   hero 回到「视口 − 200px 的居中盒」，搜索框下沿停在 388px 处，
-   而键盘弹起后可视区只到 516px，下面 271px 的留白把结果列表整段推到键盘之外。
-   教训是：规则、类、断言三者同生共死，删一个就必须删另外两个。
-
-   ⚠️ 贴顶的落位见上面「搜索框的三种摆法」（--hero-top 那一组）——
-      这里**不再重复一套 justify-content: flex-start / min-height: 56px**：
-      同一件事两处写，就是下一次「改一处忘一处」的种子。 */
-
-/* 搜索说明：这一行小字整段已撤（用户要求删除「输入篇名、作者或诗句……」）。
-   这里不再留 .search-hint 的样式死规则 —— 元素删了，规则也一起删。 */
-
-/* 搜索框 → 结果列表：正常间隔（Issue #69 后续·再续）
-   --------------------------------------------------------------------------
-   用户反馈「下面的搜索结果卡片列表也不要和搜索框有那么多间距了，
-   只保留正常间隔即可」。
-   那一段「那么多间距」有两处来源：
-     · hero 自己拿着的 12px 收尾留白（搜索框浮在页面中间时，那是必要的呼吸）；
-     · 更主要的，是**框居中**时它与列表之间天然的半屏空白 —— 框在中线，
-       列表紧贴在它下面，两者之间必然隔着「中线下方的整段余量」。
-     改动落在两处，各管一半：
-       · 居中态（没焦点、没内容）—— 那半屏空白是本来的版式（框就是主角），
-         只在列表顶上补一小段间距（--search-list-gap: 12px），
-         让「框 → 第一张卡片」有 12px 呼吸，而不是贴着框；
-       · 聚焦 / 有内容 —— 框贴顶，列表紧跟其后，**同样只留这一段**
-         （上一版把这一档收成 0，框下贴着卡片、框上离顶栏还有一截，
-          上下不对称，正是用户这一轮反馈的「上面的间隔没跟上」）。
-   ⚠️ 只针对搜索页（body[data-nav="search"]）：集子索引页那一排搜索框
-     在工具栏里，本来就没有这个问题，不该被这条规则连带改掉。
-   ⚠️ 贴顶态的 padding-top（= --hero-top = --search-list-gap）与本条相加，
-      对「框上」与「框下」两段一视同仁：两处都取这一个变量，
-      写死数字会让两边再次走散（上一版就是这么差出 8 / 12 的）。 */
 body[data-nav="search"] #gw-list { padding-top: var(--search-list-gap, 12px); }
 body[data-nav="search"] .search-hero.search-active ~ #gw-list,
 body[data-nav="search"] .search-hero.kb-open ~ #gw-list { padding-top: var(--search-list-gap, 12px); }
 
-/* 搜索结果的条目内边距，收成与集子页一致（Issue #69 后续）----
-   集子页的条目走 `.group-card .item { padding: 12px 8px 12px 12px }`，
-   右内边距 8px；搜索页的条目没有 .group-card 包裹，落回全站 `.item { padding: 14px }`，
-   右内边距反而是 14px。于是同一个「箭头 → 条目右缘」的量，两页差 6px，
-   两页并排看会觉得搜索页的箭头往里缩了一截 —— 用户反馈的「右侧对齐」
-   正是这种跨页对不齐。这里把搜索页也收到 8px，只动右内边距，
-   左 / 上 / 下仍走全站的那一档（14px）：左侧多出的 2px 正好抵掉
-   集子页卡片自身那 2px 的左内边距，两页正文左缘因此仍在同一条线上。 */
 body[data-nav="search"] #gw-list .item { padding: 14px 8px 14px 14px; }
 
-/* 命中上下文：正文 / 译文里命中关键词时，在元信息行后补一句摘出的上下文。
-   用最淡的墨色 —— 它是「为什么会搜到这一条」的说明，不是内容本身。 */
 #gw-list .item-hit {
   color: var(--ink-3);
   font-style: normal;
 }
 
-/* 候选下拉
-   --------------------------------------------------------------------------
-   绝对定位在输入框正下方、与输入框同宽（left/right: 0）。
-   背景与描边沿用卡片那一套；不用投影式的现代浮层感，
-   只加一圈淡描边 + 极轻的一层阴影，够把它与列表区分开即可。
-   ⚠️ 下拉「贴不贴住输入框」，由三条一起决定（缺一条就会有一条缝或一层叠字）：
-     · 定位上下文是 .search-wrap（它的盒子就是那 52px 的框）；
-     · .search-wrap 有 translateY(-2px)：整行（框 + 下拉）**一起**上移 2px ——
-       下拉相对框的位置因此不受影响，只是整组与「视觉中轴」对齐；
-     · top: calc(100% + 4px)：框底之下 4px。
-   4px 的间隙：候选里第一条就是用户要找的那一篇，中间不该留出一段空白
-   （用户反馈「搜索候选列表离搜索框太远」，那说的正是输入框与候选之间的缝）。
-   ⚠️ 它不要写成 0 或负数：那会让第一条候选的底色连进输入框，
-      看着像输入框的一部分。
-
-   ⚠️ max-height 的算式有三项，取最小者（可读性优先，不是「写死多少条」）：
-       1. 380px —— 桌面 / 平板上 8 条候选的大致高度（44px × 8 是 352px，
-          加边框与一点呼吸取 380px）。这是「最多列出 SUGGEST_MAX=8 条」
-          在设计上的上限；再往上留高度没有意义，第 9 条本来就不会出现。
-       2. 40%（40vh / 40svh）—— 让候选**永远给下面的结果卡片留出可见的一片**
-          （用户要求「也要预留空间让用户关闭下拉框，然后去点击搜索到的卡片列表」）。
-          ⚠️ 这一档上一版是 60%，手机上实测下来太松：键盘弹着时可视区只剩
-            516px，60% 是 310px —— 候选一路铺到可视区下沿前 30px，
-            底下只剩一条缝，那「一片可见的结果区」等于没留。
-            40% 把候选收在 5 条上下（约 220px），下拉下面留出六成可视区：
-            用户既看得见结果卡片，也点得到它（点它即收起下拉）。
-       3. 「键盘上方那片地方」的六成 —— 硬边界，候选绝不能伸进键盘底下
-          （用户反馈的「下拉框下面几条被键盘覆盖了」），
-          同时把键盘上方另外四成留给结果卡片（用户反馈的「也要预留空间让用户
-          关闭下拉框，然后去点击搜索到的卡片列表」）。
-          ⚠️ 分母是「可视区 − 键盘」而不是可视区：键盘弹着时，真正属于内容的
-            只有键盘上方那一片；按整个可视区切比例，等于把键盘遮住的那半
-            也算成了「可以拿来放候选的地方」。
-          ⚠️ 写成百分比而不是「减去一个固定量」：减固定量（上一版是减 86px）
-            等于假定「框下沿到页顶」总那么高，桌面 / 手机 / 横竖屏各差一截。
-          ⚠️ 「可视区」不是 svh / vh，而是 **JS 实测的 visualViewport.height**
-            （写进 --kb-visible）：键盘是覆盖层，只改 visualViewport、
-            不改 vh / svh；svh 在部分内核 / 无头环境里还与 vh 相等。
-            见下面 max-height 那条的说明。
-          ⚠️ 这一项在手机上常被上面那 320px 先压住（键盘 336px 时，
-            (852 − 336) × 0.6 ≈ 310px，与 320px 只差一点点）——
-            那正是我们要的：两项都管「别越过键盘、也别占满」，谁更紧听谁的。
-     三项都用 min() 取小，比写死一个 320px 准 —— 写死的高度在 iPhone 上
-     会伸进键盘底下：用户看到 6 条就以为是全部，其实第 7、8 条被键盘盖住了。 */
-/* 候选下拉的高度口径：**先保证看得见的条数，再谈比例**
-   --------------------------------------------------------------------------
-   用户这一轮的原话：「手机键盘弹出时，搜索框下拉提示列表的高度变得极小，
-   甚至只有一行？请调整，搜索框上提后我觉得可以显示5行吧？」
-
-   为什么会只剩一行：上一版把「可视区的四成」当硬指标（为了下拉下方留出
-   看得见的结果区），而**手机键盘弹着时可视区只剩 516px** ——
-   四成 = 206px 还算能看；可只要再叠上地址栏 / 输入法工具条把可视区压到
-   250~300px，四成就是 100~120px，扣掉内边距**只剩一行多一点**。
-   比例口径的问题在于：屏幕越矮、给候选的地方越少 —— 而恰恰是屏幕矮的时候
-   更需要「多看见几行」。
-
-   所以改成两层口径，**第一层是硬指标、第二层才轮到比例**：
-     · 硬指标（下限）：候选至少放得下 --suggest-rows 行（默认 5 行）。
-       一行 = --suggest-row-h（12 + 12 内边距 + 20 行高 = 44px，也是 iOS 的
-       最小可点面积），5 行 = 220px，再加 2px 描边。键盘弹着时这是**必须**
-       给到的：够不着的那几行等于不存在。
-     · 上限（比例）：仍然要「下拉下方留得下一张结果卡片」，所以上限继续按
-       可视区 / 键盘算（原来的三项 min()），只是不再允许它把候选压到 5 行以下。
-   ⚠️ 下限只在「有键盘」时才可能顶到上限之上 —— 没有键盘时可视区整屏，
-      220px 远比四成小，等于不生效（桌面 852px 时四成 = 340px）。
-   ⚠️ 键盘上方那一片至少要有 242px（220px 候选 + 22px 结果区 / 框）这条硬
-      下限才有地方落 —— 这是 iPhone 的现实值：852px 屏、336px 键盘、
-      52px 框 + 12px 呼吸之后，键盘上方还剩约 450px，够。
-      若某台机器的可视区小到连 242px 都没有，候选**必须**宁可伸到键盘底下
-      —— 所以下限写在 max() 里、不在 max-height 里（见下面那条）。
-
-   ⚠️ 这两个变量在 .suggest 与 hero 上都写一遍（与 --kb-visible / --kb-space
-      同一处理）：键盘弹起会让 .search-toolbar 重排，那条链上的**继承值**
-      不会因此重算。 */
 .suggest {
   --suggest-rows: 5;
   --suggest-row-h: 44px;
@@ -1774,34 +874,9 @@ body[data-nav="search"] #gw-list .item { padding: 14px 8px 14px 14px; }
   border-radius: var(--radius-sm);
   box-shadow: 0 8px 20px rgba(74, 58, 38, .10);
   overflow: hidden;
-  /* ⚠️ 背景必须是**不透的**：全站卡片用的是 --card（90% 不透明的宣纸色），
-     用在列表里没问题（底下是同一张纸），但候选下拉是**浮层** ——
-     下层的结果列表会整段透上来，候选篇名与结果篇名叠在一起，
-     看起来像文字花了。这里取 --card 的实色底：同一张纸，不透明。 */
+
   background: #fffefa;
-  /* 高度取三者里最小，三项各自的来由：
-     · 380px —— 8 条候选的上限（手机 320px，见下面的窄屏那一档）；
-     · 可视区的四成 —— 候选下面**必须留得下看得见的结果卡片**
-       （用户要求能先关掉下拉、再去点结果卡片），所以留的比给的多；
-     · (可视区 − 键盘) 的六成 —— 硬边界：键盘弹着时候选整条落在键盘上方，
-       并且键盘上方那一片里还要留出四成给结果卡片。
-     ⚠️ 「可视区」一律取 **JS 实测值**（--kb-visible，由 syncHeroState 写入）：
-        svh 只认地址栏的收放、**不认软键盘**（键盘是覆盖层，不改视口），
-        部分内核 / 无头环境里更会等于 vh —— 那一项于是虚高，
-        候选一路铺到键盘上沿，把下方结果卡片全吃掉。
-        实测过：svh 与 vh 都等于 852，候选高 340.8px，可视区只剩 516px。
-        fallback 100vh 给「JS 还没跑起来」的那一瞬间兜底。
-     ⚠️ 「可视区 − 键盘」才是键盘弹着时真正属于内容的那一片：
-        分母取整个可视区，等于把键盘遮住的那半也算成能放候选的地方。
-     ⚠️ 两个变量都由 js/search.js 写入（hero 与 .suggest 各写一遍，
-        见 syncHeroState）：--kb-visible 是可视高度、--kb-space 是键盘占的高度
-        （没有键盘时是 0px）。各写两遍是因为键盘弹起会让 .search-toolbar 重排，
-        那条链上的**继承值**不会因此重算 —— 只写 hero 的话下拉会照旧按整屏铺。 */
-  /* ⚠️ 外层是 max()、里层是 min() —— 顺序不能反：
-     「至少 5 行」是承诺（用户要的是**看得见几行**），
-     「最多占几成」是分寸。两者冲突时（可视区被键盘压得极矮）
-     必须让承诺赢，否则又回到「只剩一行」。
-     下限里的 +2px 是上下两道描边（.suggest 是 border-box）。 */
+
   max-height: max(
     calc(var(--suggest-rows, 5) * var(--suggest-row-h, 44px) + 2px),
     min(
@@ -1811,10 +886,9 @@ body[data-nav="search"] #gw-list .item { padding: 14px 8px 14px 14px; }
     )
   );
   overflow-y: auto;
-  /* 候选与输入框之间不留视觉缝：间隙已在 top 里给过（4px），
-     这里再加外边距只会让它看着悬空 */
+
   margin-top: 0;
-  /* iOS 拖动候选时带一点「跟手」的惯性，滚动到底会露白而不是回弹整块 */
+
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
 }
@@ -1828,26 +902,24 @@ body[data-nav="search"] #gw-list .item { padding: 14px 8px 14px 14px; }
   align-items: baseline;
   justify-content: space-between;
   gap: 10px;
-  /* 候选行也随「以搜索为主」一起抬高：44px 上下，
-     手指（iOS 建议 44px）与鼠标都够得着，8 条以内仍是紧凑的一列 */
+
   min-height: 44px;
   padding: 12px 14px;
   text-align: left;
   font-family: inherit;
   cursor: pointer;
-  /* 相邻候选之间一条淡分隔线，最后一条不画（读起来才收得住） */
+
   border-bottom: 1px solid var(--line-2);
 }
 .suggest-item:last-child { border-bottom: none; }
-/* 键盘上下键与鼠标悬停共用同一个高亮态：用户在键盘 / 鼠标之间切换时，
-   高亮不会「跳」到另一套样式上。 */
+
 .suggest-item.active,
 .suggest-item:hover { background: var(--green-light); }
 .suggest-title {
   font-size: 14.5px;
   font-weight: 600;
   color: var(--ink);
-  /* 篇名很长时（「自河南经乱关内阻饥兄弟离散…」）截断，不把候选撑成两行 */
+
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1859,28 +931,16 @@ body[data-nav="search"] #gw-list .item { padding: 14px 8px 14px 14px; }
   color: var(--ink-3);
   white-space: nowrap;
 }
-/* 候选右侧那行里，集子名用 <em> 标出来（「唐 · 李白 · 唐诗三百首」）——
-   与朝代、作者区分开：前两者是作品本身的属性，最后那个是「收在哪一部里」。
-   em 默认是斜体，中文斜体不好看，这里只靠颜色与字重区分。 */
+
 .suggest-meta em {
   font-style: normal;
   color: var(--green);
   font-weight: 600;
 }
-/* 窄屏（≤700px）：候选列表在手机上再收一档。
-   --------------------------------------------------------------------------
-   手机的可视区本来就只够「搜索框 + 几条候选 + 几条结果卡片」。
-   这里把上限从 380px 收到 320px（约 6 条）——手机上一条候选 44px，
-   320px 已经是「一屏看得过来的几行」；再高就是靠滚动看，
-   而滚动不如图片式地收窄一档更省地方。
-   ⚠️ 四成 / 六成那两项与桌面同值：它们是「下拉下面必须留出可见的结果区」
-      这条硬指标，不是设备相关的偏好，不因为屏幕窄就放宽。
-   ⚠️ 与桌面那条同一个来源：可视区取 --kb-visible、键盘取 --kb-space
-      （都是 JS 实测值，不用 svh）—— 见上面 .suggest 那条的说明。 */
+
 @media screen and (max-width: 700px) {
   .suggest {
-    /* 手机上「5 行」与桌面同一个口径（44px 一行），上限收一档到 320px；
-       下限仍然优先 —— 键盘把可视区压到 300px 以下时，5 行照样给满 */
+
     max-height: max(
       calc(var(--suggest-rows, 5) * var(--suggest-row-h, 44px) + 2px),
       min(
@@ -1892,23 +952,6 @@ body[data-nav="search"] #gw-list .item { padding: 14px 8px 14px 14px; }
   }
 }
 
-/* 搜索页的空态
-   --------------------------------------------------------------------------
-   两条口径，按 js/search.js 写在节点上的 data-empty 分：
-     · data-empty="idle"（还没输入关键词）—— **一个字都不显示**。
-       用户要求删掉「输入篇名、作者或诗句，即可搜遍六部集子」这一句：
-       空列表就是空列表。这里只留一段**留白**，页面「下半截」仍在，
-       只是不出声。
-       留多少：它现在**就是**「搜索框 → 结果列表」的那一段间距
-       （见 #gw-list 那条的 --search-list-gap）—— 空列表时没有条目，
-       那 12px 的 padding-top 之外再补一小段，让框下方不至于是刀切似的空白。
-       ⚠️ 上一版这里是 44px / 手机 8px：那时列表顶上没有间距，
-          全靠这一段留白撑出「框 → 列表」的距离；现在那件事已由
-          #gw-list 的 padding-top 明说，这里只补一层极小的余量。
-       ⚠️ 不走 display: none：段落还是要占一点高度，
-          而且被 display: none 掉的节点日后想恢复文案得连样式一起改回来。
-     · data-empty="miss"（输入了但没命中）—— 正常显示「没有找到匹配的篇目」，
-       与结果列表一样左对齐（不再是一段居中的说明文字孤零零挂在页面中间）。 */
 body[data-nav="search"] #gw-list .empty[data-empty="idle"] {
   font-size: 0;
   line-height: 0;
@@ -1918,47 +961,17 @@ body[data-nav="search"] #gw-list .empty[data-empty="idle"] {
   color: transparent;
   user-select: none;
 }
-/* 贴顶态（有焦点 / 有内容 / 键盘弹着）：搜索框连同候选下拉一起升到顶栏之下
-   --------------------------------------------------------------------------
-   这一页此刻以搜索为主，搜索区就该停在顶栏下沿那一行：
-     · 有焦点 —— 正在打字，框跟着手指走，不被键盘顶走；
-     · 有内容 —— 结果就摊在下面，滚动看结果时框一直看得见（sticky 语义）；
-     · 键盘弹着 —— 可视区只剩一半，框必须在最上面，候选与结果才有地方。
-   触屏上的点击会先聚焦（再取焦），所以「点一下框」与「手指离开、内容还在」
-   这两种情况都落在上面三条里，行为是连续的。
 
-   两个类管三件事（.search-active 覆盖「有焦点**或**有内容」，.kb-open 是键盘），
-   js/search.js 的 syncHeroState 唯一写入：
-     ① 竖向落位 —— 高度交还给内容（height: auto）、顶到 --hero-top；
-     ② 横向与定位 —— 整行由绝对定位改为**普通流**（position: static + 复位
-        top / margin-top / transform），这样它才跟着 hero 的 padding 走；
-     ③ sticky —— 往下翻结果时整块钉在视口最上沿（top: 0），
-        顶栏自己会滚走，框于是始终看得见。
-   ⚠️ 静止态（居中）下整行是绝对定位的（left: 50% / top: 50% / margin-top 那一套），
-      这一块必须把 top / margin-top / transform 一起复位 —— 否则框仍按「中线」摆，
-      一贴顶就偏出半行。
-   ⚠️ justify-content 也要一起改成 flex-start：静止态的 center 是给「框压在中线」
-      用的；贴顶时这一段只剩 --hero-top + 一行框，再 center 会把框压在那一小段的
-      中线上而不是顶上。
-   ⚠️ 三个状态走**两个类**，不再另挂 .search-focus、也不用
-      :has(:not(:placeholder-shown)) 去猜 —— 判据收在 js 的 hasKeyword() 一处，
-      同一件事一处写清，避免「两处各管一半」。 */
 body[data-nav="search"] .search-hero.search-active,
 body[data-nav="search"] .search-hero.kb-open {
   height: auto;
   justify-content: flex-start;
-  /* 顶栏本体由 .topbar 排到英雄区之上，这一段就是「框顶与它上面那一条之间」
-     的间隔 —— 取值与「框 → 列表」相同（--search-list-gap），上下对称。
-     ⚠️ 上一版这里是 8px、而下面列表那条是 12px，框下比框上松 4px；
-        用户的要求是「以现在下面的间隔为准，上面的间隔也缩小到这么多」，
-        于是两处不再各写一个数，改由这一个变量同时供给（列在 .search-hero 里） */
+
   padding-top: var(--hero-top);
-  /* 这一行只剩 0：框到列表的那一段间距已由下面 #gw-list 的 padding-top 统一给
-     （贴顶态同样是 var(--search-list-gap)），这里再留 8px 就会重复叠加 */
+
   padding-bottom: 0;
   position: sticky;
-  /* 顶栏自己会滚走，贴住它必须让整块留在视口最上沿（top: 0）——
-     非 sticky 时 top 不生效，滚动后才会有区别。 */
+
   top: 0;
   z-index: 20;
   background: var(--bg);
@@ -1970,18 +983,10 @@ body[data-nav="search"] .search-hero.kb-open .search-toolbar {
   margin-top: 0;
   transform: none;
   width: auto;
-  /* 框与下拉都压在背景之上（sticky 的底色给了整块，候选下拉仍是浮层，
-      层级不能掉）。⚠️ 整行仍是这条链上唯一进正层级的元素 —— hero 自己不写。 */
+
   z-index: 30;
 }
 
-/* 窄屏（≤700px）：贴顶之后框与结果的左右呼吸收一档
-   --------------------------------------------------------------------------
-   静止态（居中）时框是可点面积的主角，左右留 14px 的呼吸更从容；而贴顶之后
-   它已经顶着顶栏、下面就是结果卡片，同样 14px 会显得「框比卡片窄一圈」——
-   卡片是列表容器的内边距决定的，框是 .app 的内边距决定的，两者在贴顶态下
-   并排看就差了这一档。这里只收**贴顶这一档**的左右内边距：
-   框缘与卡片缘对齐，列表看上去是「一张卡接一张卡」而不是错开一格。 */
 @media screen and (max-width: 700px) {
   body[data-nav="search"] .search-hero.search-active,
   body[data-nav="search"] .search-hero.kb-open {
@@ -1990,39 +995,8 @@ body[data-nav="search"] .search-hero.kb-open .search-toolbar {
   }
 }
 
-/* 焦点态下候选下拉要**贴着框**，与静止态同一个 4px —— 这一条同时盖住
-   .search-wrap 的 translateY(-2px)：那个位移是为了让静止态的框压在
-   「视觉中轴」上，贴上顶之后不需要它，留着只会让下拉与框之间多 2px。 */
 body[data-nav="search"] .search-hero.search-active .search-wrap,
 body[data-nav="search"] .search-hero.kb-open .search-wrap { transform: none; }
-
-/* 聚焦态的描边：**不再用纯黑**，也不再有第二条 ring
-   --------------------------------------------------------------------------
-   用户反馈「焦点在搜索框时，框 border 是黑色，不好看」。那圈黑不是这里写的，
-   它是浏览器给 <input> 的 UA 默认 focus ring（Chrome 的
-   -webkit-focus-ring-color，深灰近黑）；.search-input 只把 outline 关掉、
-   又没替它画一个自己的，于是「写好的天青描边」与「UA 的黑框」同时画在框上，
-   用户看到的就是黑色。
-
-   现在与全站输入框（.settings-input）统一：聚焦时天青描边 + 纸色底，
-   外圈只留一道极淡的天青光晕（box-shadow，不挤占布局）。
-
-   ⚠️ 光晕必须与全站 .search-input:focus 用**同一个值**
-      （rgba(47, 96, 85, .10) 那圈半透明淡光），不能图省事填 --green-light ——
-      后者是不透明的浅底**填充色**（#dbe9e2），直接当 box-shadow 用会画出一圈
-      实心粉绿外框，与「描边之外的一层柔和扩散」不是一回事，
-      全站输入框的聚焦态也随之为成两样（这一条曾 CI 红过）。
-
-   ⚠️ 这里**不能再写 :focus-visible 的第二条描边**（曾经写过，CI 红在这一条上）。
-      `body[data-nav="search"] .search-hero .search-input:focus` 与
-      同名再加 `:focus-visible` 的**特异性完全相同**（都是 0,4,1：一个属性选择器
-      + 三个类/伪类 + 一个类型），特异性相同就比**书写顺序** ——
-      `:focus-visible` 写在后，它的 `outline: 2px` 就把前一条的 `outline: none`
-      整个盖掉。而这一页进页即自动聚焦，Chrome 判定这次聚焦来自脚本/触屏输入，
-      会命中 `:focus-visible`，于是真机上量到的 `outline-style` 是 `solid`
-      而不是 `none`：用户看到的黑框没修掉，反倒多画了一道天青实线。
-      「看得见焦点」这条无障碍要求由 box-shadow 那圈光晕满足（它随聚焦出现、
-      也是唯一的一支描边口径），不需要再叠一层 outline。 */
 
 body[data-nav="search"] .search-hero .search-input {
   border-color: var(--line);
@@ -2033,24 +1007,17 @@ body[data-nav="search"] .search-hero .search-input:focus,
 body[data-nav="search"] .search-hero .search-input:focus-visible {
   border-color: var(--green);
   background: #fffdf6;
-  /* 两支选择器共用**一条**规则：鼠标 / 触屏点出来的聚焦与键盘 Tab 出来的
-     聚焦，长的是同一支描边 —— 不再各画一条、也不是一黑一青叠在一个框上。
-     （特异性相同，若拆成两条则由书写顺序定胜负，:focus-visible 会把
-      :focus 的 outline: none 盖回去，真机上黑框等于没修。） */
+
   box-shadow: 0 0 0 3px rgba(47, 96, 85, .10);
   outline: none;
   outline-offset: 0;
 }
 
-/* 键盘弹着 / 输入框有焦点时，连那几像素留白也不要 —— 这一刻列表区里
-   要么是候选下方的结果卡片，要么就真的空着，没有「过渡留白」的位置。
-   ⚠️ 类名跟着三态走：.search-active（有焦点或有内容）与 .kb-open ——
-      这个仓库里已经没有 .search-focus 这个类了（它并入 .search-active）。 */
 body[data-nav="search"] .search-hero.kb-open ~ #gw-list .empty[data-empty="idle"],
 body[data-nav="search"] .search-hero.search-active ~ #gw-list .empty[data-empty="idle"] {
   height: 0;
 }
-/* 空态（无论哪种）与结果列表一样左对齐 */
+
 #gw-list .search-empty {
   text-align: left;
   padding: 6px 2px 0;
@@ -2058,65 +1025,24 @@ body[data-nav="search"] .search-hero.search-active ~ #gw-list .empty[data-empty=
   line-height: 1.9;
   color: var(--ink-3);
 }
-/* idle 那一支上面已把字号归零、内边距归零，别被这条通用左对齐规则顶回来 */
+
 body[data-nav="search"] #gw-list .empty[data-empty="idle"] { padding: 0; }
 
-/* ---------------- 课外阅读入口页 ---------------- */
-/* 这一页的说明文字已挪进顶栏第二行（body 的 data-sub，由 js/chrome.js 渲染）——
-   原先正文里那一段（.library-hint）与顶栏那行说同一件事，已删。
-   所以这里不再留 .library-hint 的样式：留着就是一条指向不存在元素的死规则。 */
 .library-grid {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
-/* 两层「就地叠」的显示开关（Issue #122）----
-   第一层是集子目录（.library-grid），第二层是某一部的索引（[data-lib-view="book"]）。
-   两层的显隐由 js/library.js 切 hidden 属性，这里**不写 display** ——
-   写了就会把 hidden 顶掉（作者样式里的 display 比 hidden 的默认规则更具体，
-   元素明明 hidden 了还看得见）。只保证被 hidden 时确实不占位。 */
+
 .library-grid[hidden],
 [data-lib-view="book"][hidden] {
   display: none !important;
 }
-/* 第二层（某部的索引）不套 .app，也不自带左右内边距（Issue #147）
-   --------------------------------------------------------------------------
-   现象（用户报的）：「唐诗三百首以及其他卡片宽度都莫名奇妙和上面的搜索框行
-   一起左右变窄了，我希望都像课内诗词那样。」
 
-   病根在 DOM：这一层原先是 `<div class="app" data-lib-view="book">`，
-   而 .app 就是全站「一列纸」的宽度来源（max-width: --col-w + 左右各一条
-   --col-side 的边，见 css/style.css 的「内容列宽」那一条）。它套在外层
-   .app **里面**，于是这一层把列宽与两侧的边各算了两遍 ——
-   搜索框与卷次卡落在 28px 缩进的那一圈里（手机 14 + 14，桌面 56 + 56），
-   而页顶那条顶栏仍在外层 .app 的宽度上 —— 两者左右各差一条边。
-
-   这一层本来就住在 .app 里，宽度由外层那一条给：它只负责「铺上来」，
-   不负责「多宽」。下面的 margin 收归 0 是**防御**：这一层不是 .app，
-   任何地方再给它一条左右边距，都会立刻重演 #147。
-   ⚠️ 与之配套的是 `> .` —— 只对「这一层自己的直接子元素」生效。
-      用后代选择器会把 .group-card 内部那些自带 padding 的元素一并归零，
-      卡片里就再也排不出两列 / 三列（引擎挂上来的条目全靠它们）。 */
 [data-lib-view="book"] { margin-left: 0; margin-right: 0; padding-left: 0; padding-right: 0; }
 [data-lib-view="book"] > .toolbar,
 [data-lib-view="book"] > .list { padding-left: 0; padding-right: 0; }
 
-/* 平板 / 桌面：六张卡排成两列
-   --------------------------------------------------------------------------
-   手机上六张卡竖着排（一屏一张多一点，滚动就是「一部接一部」），是对的；
-   但 720px 的列宽在平板 / 桌面上也竖着排六张，就变成六条又长又空的横条 ——
-   每张卡里只有「书名 + 篇数」与一句说明，两端的空白比内容还宽。
-
-   这里只在 ≥560px（平板竖屏起）排两列：卡宽约 350px，
-   正好与手机上一张卡的视觉宽度同档，「书名 — 篇数 — 箭头」三样的相对位置
-   都不变（卡片内部本来就是左右两端对齐的 flex 行）。
-   ⚠️ 用 flex + flex-basis 而不是 grid：卡片数量是数据驱动的（js/library.js），
-      将来增删一部也不用改样式；gap 与竖排时同一个 12px，节奏一致。
-   ⚠️ flex: 1 1 calc(50% - 6px) 里的 6px 是 gap 的一半 ——
-      flex-basis 百分比算的是容器宽度，不减掉这一半，两列一加就溢出。
-   ⚠️ 最后一张卡（奇数张时）自动占满一行：flex-grow 会把它撑到 100%，
-      宽度与上面两张不同，所以下面用 :last-child 的 max-width 收住，
-      让它保持与上排同一档宽度、左对齐（不居中、不拉长）。 */
 @media (min-width: 560px) {
   .library-grid {
     flex-direction: row;
@@ -2127,16 +1053,7 @@ body[data-nav="search"] #gw-list .empty[data-empty="idle"] { padding: 0; }
     max-width: calc(50% - 6px);
   }
 }
-/* 平板（≥768px）：六张卡排成三列
-   --------------------------------------------------------------------------
-   上一档（≥560px）两列是给「小平板 / 大手机」用的：卡宽约 350px。
-   到了平板（列宽 1040px）两列就变成每张 514px —— 卡里还是只有「书名 +
-   篇数」与一句说明，两端的空白又比内容宽了，六张卡依然要滚两屏。
-   三列后每张约 332px，与前一档同档的视觉宽度，六张卡一屏看完（两行三列）。
-   ⚠️ 仍是 flex + flex-basis：集子数量是数据驱动的（js/library.js），
-      将来加一部（第七张）也只多一行，不用改样式。
-   ⚠️ 不排四列：332px → 249px 时，「唐诗三百首」这种六个字的书名加篇数
-      会在 249px 里折行，卡片高度跟着参差。 */
+
 @media (min-width: 768px) {
   .library-card {
     flex: 1 1 calc(33.333% - 8px);
@@ -2144,23 +1061,6 @@ body[data-nav="search"] #gw-list .empty[data-empty="idle"] { padding: 0; }
   }
 }
 
-/* 桌面（≥1024px）：**三列栅格**，每张卡自己不再决定它多宽
-   --------------------------------------------------------------------------
-   六部集子排成 3 × 2 是这一页的目标形状（平板上已经是三列了）。
-   上一版想在 flex 里守住它：flex-basis 写三分之一 + max-width 收在上限。
-   真机上量到的结果是一行 **4** 张、第二行 2 张 —— 因为 max-width 一收，
-   容器里就还放得下第 4 张（4 × 392 + 36 = 1604 ≤ 1696），flex 于是顺着填。
-   「六张卡排成 4 + 2」看着像漏了一张，是这一条要治的东西。
-   这里换成 grid + repeat(3, 1fr)：列数是**说出来的**，
-   不再由卡宽与容器宽的除法决定。
-   ⚠️ 不给列再加上限（一开始写了 minmax(0, 392px)）：上限一收，整排就只剩
-      左边一段，右边空出半屏 —— 这一页本来就只有这六件事，
-      三张卡各占三分之一行，比「三张挤在左边、右边空着」更像「布满屏幕」。
-   ⚠️ 只在桌面这一档换 grid：平板那一档（768~1023px，列宽 1040px）用 flex
-      三列正好，不必动；手机 / 小平板那一档（≥560px 两列）同样不动。
-   ⚠️ 卡里的那句说明在 1fr（1920px 屏上约 557px 一列）里会不会抻成一整行：
-      不会 —— 说明文字自己换行，两行封顶，与平板三列那一档同一个观感。
-   ⚠️ grid 的 column-gap 与 flex 那一档同一个 12px，节奏与上面两档一致。 */
 @media (min-width: 1024px) {
   .library-grid {
     display: grid;
@@ -2173,13 +1073,7 @@ body[data-nav="search"] #gw-list .empty[data-empty="idle"] { padding: 0; }
     max-width: none;
   }
 }
-/* 一张卡 = 一部集子。整张卡点哪儿都进得去（不是只有标题能点），
-   所以卡片本身要有 active / focus 反馈，不能只在标题上下 300ms 的功夫。
-   ⚠️ 课内诗词那张是 <a href="/poems/">（跳转，可中键新开），
-      另外五张是 <button>（点了在这一页就地铺开索引，见 js/library.js 的 enterBook）。
-      所以这里的宽度 / 字体 / 颜色要同时对两者成立 —— <button> 自带
-      font: inherit 之外的默认样式（字体、字号、对齐、背景），
-      一条都不能少写，否则五张卡会比课内那张「长得不一样」。 */
+
 .library-card {
   position: relative;
   display: block;
@@ -2192,19 +1086,11 @@ body[data-nav="search"] #gw-list .empty[data-empty="idle"] { padding: 0; }
   padding: 16px 40px 16px 16px;
   background: var(--card);
   border: 1px solid var(--line);
-  /* 左侧短竖条：与列表里的条目同一套语言，颜色按部走（与各集子索引页一致） */
+
   border-left: 3px solid var(--green);
   border-radius: var(--radius-md);
   color: inherit;
-  /* 一层纸阴影 —— 与背诵首页那一条条独立卡片（.item）**同一句**（Issue #209）。
-     用户原话：「课外阅读，和设置首页列表卡片请借鉴背诵首页的卡片阴影设计。」
-     这几张卡原先只有描边、没有阴影，与首页那一条条卡片的「纸张厚度」不是一套；
-     补上 --shadow 之后，全站「一张卡」的说法只剩这一处令牌
-     （.card / .item / .account-card / .group-card 读的都是它）。
-     ⚠️ 描边**留着**：首页那条 .item 也有 1px 界行边（它的 border-left 是彩条，
-        四边那条来自 .card / 别处）—— 描边 + 阴影一起才是「一张放在纸面上的卡」。
-     ⚠️ transition 里补 box-shadow：hover 换底色时阴影不动，但加进来是为了
-        与全站卡片同一套过渡（谁都不许让阴影突跳）。 */
+
   box-shadow: var(--shadow);
   transition: background .18s, border-color .18s, box-shadow .18s;
 }
@@ -2213,18 +1099,7 @@ body[data-nav="search"] #gw-list .empty[data-empty="idle"] { padding: 0; }
 .library-card[data-book="guwen"] { border-left-color: var(--ink-3); }
 .library-card:hover { background: var(--green-light); }
 .library-card:active { transform: scale(.995); }
-/* 「我的清单」那张集合卡（Issue #163）----
-   用户原话：「我的清单卡片设计最好和 课外阅读 页面的卡片设计保持一致，
-   里面没有绿色竖线，横着的项目用边框颜色一样的线隔开。」
-   那六张卡上正好有一道 3px 左色条，而这句要求的恰恰是**不要**竖线。
-   所以这不是「再加一种卡」，而是那六张卡上的一条装饰在这边不成立：
-   集合是一个清单容器，不是「一部集子」这一个入口，没有「属于哪一部」可分。
-   ---- 具体做法：
-   · 描边 / 圆角 / 纸底沿用上面那套（同一个视觉）；
-   · 左色条清零并补齐左边框宽度（两条都写，免得只清颜色留下一道缝）；
-   · hover 不变的底色 —— 整张卡不可点（里面才是可点的键），
-     跟着变底会让人以为点卡能进哪儿。
-   ⚠️ 这一段放在 .library-card 之后，所以不必提高特异度。 */
+
 .collection-card {
   cursor: default;
   padding: 0;
@@ -2245,7 +1120,7 @@ body[data-nav="search"] #gw-list .empty[data-empty="idle"] { padding: 0; }
   color: var(--ink);
   letter-spacing: .5px;
 }
-/* 篇数：与搜索页的药丸同口径 —— 次要信息，跟着标题右边对齐 */
+
 .library-card-count {
   flex: none;
   font-size: 12px;
@@ -2258,7 +1133,7 @@ body[data-nav="search"] #gw-list .empty[data-empty="idle"] { padding: 0; }
   line-height: 1.8;
   color: var(--ink-3);
 }
-/* 右侧箭头：与列表条目那颗同一枚描边三角（不用字符「›」） */
+
 .library-card-go {
   position: absolute;
   right: 14px;
@@ -2269,23 +1144,8 @@ body[data-nav="search"] #gw-list .empty[data-empty="idle"] { padding: 0; }
 }
 .library-card-go svg { width: 16px; height: 16px; display: block; }
 
-/* ==========================================================================
-   背诵进度页（/progress/）—— 到期日历 + 掌握度分布
-   ==========================================================================
-   这一页把「下次何时到期」从**单篇**的详情弹层里搬出来，摊成两张图：
-   左边那张是未来两周每天要复习几篇（日历），右边是掌握度都堆在哪一档。
-   两张图都只用 CSS 画（竖条 / 横条），不引图表库 ——
-   全站不请求任何外部资源，这一页也不例外。 */
-
 .progress-card { margin-top: 14px; }
-/* 平板（≥768px）：进度页的四张卡排成两列
-   --------------------------------------------------------------------------
-   这一页四块（概览 / 到期日历 / 到期篇目 / 掌握度与阶段）在手机上纵着排，
-   一屏一块、滚着看，是对的；平板上 1040px 一张卡放一行「日历 + 一行说明」，
-   四块要滚三屏，而屏幕明明能并排两块。
-   两列后：概览与掌握度各自成块，日历与到期篇目并排 —— 语义上本来就分两组。
-   ⚠️ 与设置页同一套算式（半个列距从 50% 里减掉）。
-   ⚠️ 奇数块（4 块是偶数，但将来可能加）时最后一块不撑满一行：max-width 收住。 */
+
 @media (min-width: 768px) {
   .progress-main {
     display: flex;
@@ -2297,7 +1157,7 @@ body[data-nav="search"] #gw-list .empty[data-empty="idle"] { padding: 0; }
     flex: 1 1 calc(50% - 10px);
     max-width: calc(50% - 10px);
   }
-  /* 概览那张（statistics 三大格）本身就只有一行数字，占满整行更好看 */
+
   .progress-card.wide {
     flex: 1 1 100%;
     max-width: 100%;
@@ -2328,26 +1188,20 @@ body[data-nav="search"] #gw-list .empty[data-empty="idle"] { padding: 0; }
 }
 .progress-tip { margin: 12px 0 0; text-align: center; }
 
-/* ---- 到期日历：一格一天，竖条越高那天越忙 ----
-   一格同时放四样东西：篇数（数字）/ 竖条 / 星期 / 日期。
-   格子窄（手机上 14 格一行放不下，所以横向滚动），四样一律居中、
-   字号压到 10-11px —— 这是张「一眼看形状」的图，不是表格。 */
 .cal {
   display: flex;
   gap: 4px;
   overflow-x: auto;
   padding-bottom: 4px;
-  /* 手机上 14 格会超宽：允许横滑，且滑动手感贴近原生 */
+
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
-  /* 横滑时的左右内边距：格子自己有底色，贴着卡片边缘会显得「切掉半格」，
-     两侧各留一格的最低呼吸；宽屏下这一档归零（见下面那条媒体查询） */
+
   padding-left: 2px;
   padding-right: 2px;
 }
 .cal-cell {
-  /* 手机：34px 定宽（14 格 = 528px，超宽就横滑，见上面的 overflow-x）。
-     宽屏：下面用 flex: 1 让 14 格均分列宽，一屏看全、不用滑。 */
+
   flex: 0 0 auto;
   width: 34px;
   display: flex;
@@ -2358,17 +1212,7 @@ body[data-nav="search"] #gw-list .empty[data-empty="idle"] { padding: 0; }
   border-radius: var(--radius-sm);
   background: var(--bg);
 }
-/* 平板 / 桌面：14 格一屏排得下，就不再横滑
-   --------------------------------------------------------------------------
-   720px 的列宽减去卡片左右内边距（14 × 2）还有 692px，14 格 × 34px = 476px ——
-   完全放得下，却因为手机上那条 overflow-x 与定宽 34px，在桌面上排成
-   左边一溜格子、右边一大片空白（还留着一条不必要的横向滚动条）。
 
-   这里在 ≥700px 时把格子改成可伸缩（flex: 1 1 0 + min-width: 0），
-   14 格均分整列宽：格子更宽，日期数字也更从容，一条竖轴排齐。
-   上限给 64px：再宽下去每格 80 多像素又变成另一头的「空格子」。
-   ⚠️ 上限要写 max-width，不能写 width —— flex-basis: 0 与固定 width 打架时，
-      浏览器按 width 走，格子又回到定宽、右边照样留白。 */
 @media (min-width: 700px) {
   .cal {
     overflow-x: visible;
@@ -2382,16 +1226,7 @@ body[data-nav="search"] #gw-list .empty[data-empty="idle"] { padding: 0; }
     max-width: 64px;
   }
 }
-/* 平板（≥768px）：日历 14 格**不再均分整栏**，收到手机上那一档的格子宽
-   --------------------------------------------------------------------------
-   上一档（≥700px）把 14 格改成「均分整列宽、上限 64px」，那是按 692px 的列宽
-   算的：14 × 49px = 692px，一屏放全，正好。
-   平板的内容区放宽到 1040px 之后，同样的均分算式把每格撑到 64px 上限，
-   14 格 + 13 条列距 = 974px —— 格子被拉成又宽又扁的方块（56px 高的竖条轨道
-   摆在 64px 宽的格子里，左右各空一片），日期数字孤零零挂在正中。
-   这里把「日历」整块也收进与正文同一档的宽度（720px），
-   格子仍是均分 + 上限 64px，回到上一档的观感。
-   ⚠️ 只收日历与它自己的说明：卡片仍占满整栏，标题 / 副标题与正文左对齐。 */
+
 @media (min-width: 768px) {
   .cal,
   .progress-note {
@@ -2399,9 +1234,7 @@ body[data-nav="search"] #gw-list .empty[data-empty="idle"] { padding: 0; }
     margin-left: auto;
     margin-right: auto;
   }
-  /* 掌握度 / 记忆阶段那几条进度条同为「一行 = 标签 + 轨道 + 计数」，
-     宽栏里轨道能长到 900px —— 一条只走 20% 的进度条会被读成「几乎满」。
-     同样收进 720px。 */
+
   .bars {
     max-width: var(--read-w, 720px);
     margin-left: auto;
@@ -2409,11 +1242,10 @@ body[data-nav="search"] #gw-list .empty[data-empty="idle"] { padding: 0; }
   }
 }
 
-/* 今天这一格描一道边：用户第一眼要找到「我站在这儿」 */
 .cal-cell.today { background: var(--green-light); }
 .cal-cell.today .cal-day { color: var(--green); font-weight: 600; }
 .cal-count { font-size: 11.5px; font-weight: 600; color: var(--green); min-height: 15px; }
-/* 竖条轨道固定高 56px：不给它定高的话，「0 篇」那几格会把整行压得参差不齐 */
+
 .cal-bar {
   display: flex;
   align-items: flex-end;
@@ -2430,15 +1262,11 @@ body[data-nav="search"] #gw-list .empty[data-empty="idle"] { padding: 0; }
   background: var(--green);
   transition: height .25s;
 }
-/* 没有到期的那几天不画条，也不显数字（空着才是「这天没事」） */
+
 .cal-cell:not(.has) .cal-count { color: var(--ink-3); }
 .cal-day { font-size: 10.5px; color: var(--ink-3); }
 .cal-date { font-size: 10px; color: var(--ink-3); opacity: .8; }
 
-/* ---- 横条分布：掌握度五档 / 记忆阶段十档 ----
-   一行一档：档名在左（定宽，各行的条起点才对齐）、条居中、篇数在右。
-   条长按「最多的一档」归一 —— 归一才能看出形状（都堆在「刚起步」还是
-   已经有一批「牢固」），不归一的话每档都短得看不出差别。 */
 .bars { display: flex; flex-direction: column; gap: 8px; }
 .bar-row {
   display: flex;
@@ -2470,26 +1298,22 @@ body[data-nav="search"] #gw-list .empty[data-empty="idle"] { padding: 0; }
 }
 .bar-count { flex: 0 0 auto; width: 28px; text-align: right; font-variant-numeric: tabular-nums; }
 .bar-row.zero { opacity: .45; }
-/* 掌握度五档：由浅到深，一眼看出「堆在哪一头」 */
+
 .bar-row.m0 .bar-track i { background: var(--amber); }
 .bar-row.m1 .bar-track i { background: #b9a06a; }
 .bar-row.m2 .bar-track i { background: #7fa08c; }
 .bar-row.m3 .bar-track i { background: var(--green); }
 .bar-row.m4 .bar-track i { background: #24564c; }
-/* 记忆阶段十档：同一色系，最后一档「已牢固」压深一档 */
+
 .bar-row.lv-last .bar-track i { background: #24564c; }
 
-/* ---- 全部到期篇目：日历那一格的展开 ----
-   日历是形状（哪天忙），这里是清单（那天是哪几篇）。
-   一行一篇：篇名在左、阶段与掌握度在中、逾期/还有几天在右。
-   篇名可点，回首页去背 —— 这一页只读，不在原地改进度。 */
 .duelist { display: flex; flex-direction: column; gap: 12px; }
 .duelist-empty { padding: 18px 0; text-align: center; color: var(--ink-3); font-size: 12.5px; }
 .duelist-day {
   border-radius: var(--radius-sm);
   background: var(--bg);
   padding: 8px 10px 6px;
-  /* 点日历跳过来时闪一下，用户才知道自己被带到了哪一档 */
+
   transition: box-shadow .3s;
 }
 .duelist-day.flash { box-shadow: 0 0 0 2px var(--green-light), 0 0 0 4px var(--green); }
@@ -2513,7 +1337,7 @@ body[data-nav="search"] #gw-list .empty[data-empty="idle"] { padding: 0; }
   padding: 7px 0;
   font-size: 12.5px;
   color: inherit;
-  /* 条目之间画一条头发丝细的分隔线（最后一条不画） */
+
   border-top: 1px solid rgba(47, 96, 85, .08);
 }
 .duelist-item:first-child { border-top: none; }
@@ -2544,13 +1368,12 @@ body[data-nav="search"] #gw-list .empty[data-empty="idle"] { padding: 0; }
   font-size: 11.5px;
   font-variant-numeric: tabular-nums;
 }
-/* 已逾期的用暖色点出来：它比「还有几天」更该先看 */
+
 .duelist-due.late { color: var(--amber); }
-/* 日历格子可点：给一个「能按」的提示（指针 + 轻微抬起） */
+
 .cal-cell { cursor: pointer; }
 .cal-cell:focus-visible { outline: 2px solid var(--green); outline-offset: 1px; }
 
-/* 「逾期超过一周」那一截：与今天的篇目同处一档，但要看得出是另一类 */
 .duelist-overdue-head {
   margin-top: 6px;
   padding: 6px 0 2px;

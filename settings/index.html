@@ -8,7 +8,6 @@
   <meta name="description" content="跬步「我的」：个人中心与本机账号，通用设置与数据备份，背诵的学段年级学期与范围数量、复习算法，自选清单的管理，自动注音与连读方式，以及关于与法务。" />
   <meta name="format-detection" content="telephone=no" />
 
-  <!-- iOS（苹果手机 / iPad）支持 -->
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="跬步" />
@@ -21,37 +20,13 @@
 </head>
 <body data-nav="settings" data-page="我的" data-sub="个人中心 · 通用 · 背诵 · 清单 · 朗读 · 关于">
   <div class="app">
-    <!-- 顶部栏：由 js/chrome.js 统一渲染（全站同一套 logo + 跬步 + 页面名） -->
+
     <header class="topbar"></header>
 
     <main class="settings-page" id="settings-page">
-      <!-- ==================================================================
-           「我的」那一页（路由仍 /settings/，底部那格的名字已改成「我的」）
-           ------------------------------------------------------------------
-           用户 2026-09-17（Issue #209）原话：
-             「将右下角设置改成 我的 …… 用户点击我的之后，转到我的页面，
-               显示之前四个设置项，包括 通用 背诵 我的清单 朗读，
-               把我的清单改成 清单，另外在通用上面加一个 个人中心，
-               最下面加一个 关于」
 
-           于是这一页的清单从「四组 + 账号一行」变成**六行**，顺序是：
-             个人中心 / 通用 / 背诵 / 清单 / 朗读 / 关于
-
-           ⚠️ 整张清单由 js/settings-nav.js 生成（renderIndex → 四组，
-              renderAccountEntry → 个人中心插到第一条，renderAbout → 关于追加到最后）
-              —— **HTML 里不手写任何一行**：加一行只改那一处。
-
-           ⚠️ 「关于」不是第三条二级页，是这一页最底下的**一块只读信息**
-              （应用 / 版本 / 离线缓存 / 法务两页），由 renderAbout 渲染进
-              #settings-about。它不是「一张要进去的页」，摆成一行入口反而要多点一次。
-
-           ⚠️ 这里曾经还有一段长长的注释，逐条解释「为什么账号那一行在自己的卡上 /
-              又为什么搬进清单」。那段沿革已随 Issue #209 收口（账号那一行现在就是
-              第一条「个人中心」），口径写在 js/settings-nav.js 的文件头上。
-           ================================================================== -->
       <div class="settings-groups settings-index" id="settings-index"></div>
 
-      <!-- 关于：这一页最底下那一条（只读信息 + 法务两页入口） -->
       <section class="settings-about" id="settings-about"></section>
     </main>
 
@@ -67,8 +42,6 @@
 
   <div class="toast" id="toast" hidden></div>
 
-  <!-- 顶栏 + 页签 + 入口清单。这一页**不加载** js/settings.js ——
-       表单控件都搬到各二级页了，主页只为「进哪一页」负责。 -->
   <script src="/js/settings-nav.js"></script>
   <script src="/js/family.js"></script>
   <script src="/js/avatar.js"></script>

@@ -1,17 +1,3 @@
-/**
- * 正文收归主表 + 孤儿进度清理（Issue #69 收尾）
- *
- * 需求原话三条：
- *   「静夜思全部改成 床前明月光，疑是地上霜。举头望明月，低头思故乡。目的是不干扰学生学习和困惑」
- *   「课内 12 组自身重复：用哪一条的进度？合并进度，暂时用户极少，可以删掉进度，清理无效数据」
- *   「正文收归主表，以课本为主，去重」
- *
- * 这一层验四件事：
- *   1. 裁定表 data/canonical-texts.js 与语料逐条对得上（没有影子条目、口径与主表一致）
- *   2. 引擎按裁定表把正文 / 译文换成主条目那一份（传进来的数据没被就地改写）
- *   3. 同一篇作品在**任何一部**集子里读到的正文逐字相同 —— 学生不会读到两种《桃花源记》
- *   4. 已删条目的旧背诵进度会被清掉；未删的不动；拿不到语料时一个都不删
- */
 const { JSDOM } = require('jsdom');
 const fs = require('fs');
 const vm = require('vm');
@@ -21,16 +7,14 @@ const read = f => fs.readFileSync(path + f, 'utf8');
 let fails = 0;
 const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else console.log('✓ ' + m); };
 
-// 判重键与生成器同一口径：只去空白（标点、断行不属于「正文不同」）
 const norm = t => String(t || '').replace(/\s+/g, '');
 const sig = norm;
 
-/* ================= 一、存储层：正文只落一份 ================= */
 const sb = { window: {}, console, document: { readyState: 'complete', addEventListener() {}, querySelector() { return null; } } };
 sb.window = sb;
 vm.createContext(sb);
 const { loadData } = require('./master-env');
-// 正文存储主表须排最前：各集子条目只存归属（textRef），正文按它取回。
+
 loadData(sb, [
   'data/poems-1.js', 'data/poems-2.js', 'data/poems-3.js', 'data/poems-4.js', 'data/poems-5.js',
   'data/poems-6.js', 'data/poems-7.js', 'data/poems-8.js', 'data/poems-9.js', 'data/poems-10.js',
@@ -46,24 +30,10 @@ const WI = sb.WorksIndex;
 const byId = {};
 sb.SITE_INDEX.forEach(p => { byId[p.id] = p; });
 
-/* ---- 1.0 「已全量收归的部」清单（与 scripts/build-text-master.js 同源） ----
-   五部集子当初是一个 PR 收一部地收过来的，这份清单就是那五部的名单；
-   收齐之后它已不再是「收谁不收谁」的开关（现在凡在册且带正文的一律收），
-   只保留为**范围声明**与下面几条对账的锚点。 */
 const FULL_BOOKS = ['zhaoming', 'guwen', 'songci', 'tangshi', 'classic'];
 const FULL_BOOK_SET = {};
 FULL_BOOKS.forEach(b => { FULL_BOOK_SET[b] = true; });
 
-/* ---- 1.1 主表本身 ---- */
-/* 60（跨集重复的作品：
-     57 课内自身重复去重后的跨集重复 + 3 近重复合并进来的
-     《黄鹤楼送孟浩然之广陵》《夜上受降城闻笛》《将进酒》）
-   + FULL_BOOKS 各部的**单篇**条目 —— 按部推进，点名的部全收：
-       昭明文选 480 → 古文观止 167 → 宋词三百首 283 → 唐诗三百首 301 →
-       小古文 99（本轮；《课外必背小古文》100 篇里《答谢中书书》早已由判重表收归）。
-     ⚠️ 这里**不写死单篇的条数**：那个数字每收一部就变，写死等于每部都要回来改一行，
-        而真正要守的是「单篇条目恰好来自清单点名的那些部」——
-        多一个少一个都由下面两条断言按清单核，不靠数总数。 */
 const multiEntries = MASTER.filter(m => m.entries.length >= 2);
 const singleEntries = MASTER.filter(m => m.entries.length === 1);
 chk(multiEntries.length === 60,
@@ -93,20 +63,19 @@ chk(MASTER.every(m => m.text && m.translation),
   '每条都有正文与译文（主表是唯一一份正文，不许有空文）');
 chk(multiEntries.every(m => m.id.indexOf('poems-') === 0),
   '跨集重复的主条目一律是课内条目（教材口径优先）—— 与作品主表同口径');
-// 全量收归部的单篇，主条目就是它自己：id 必须带**自己那一部**的前缀
+
 chk(singleEntries.every(m => FULL_BOOKS.some(b => m.id.indexOf(b + '-') === 0)),
   '全量收归部的单篇：主条目 id 带自己那一部的前缀');
 chk(multiEntries.every(m => WI.repOf(m.entries[0]) === m.id),
   '跨集重复的 id 就是这一篇的主条目（与 data/works-index.js 同口径）');
-// 主表里的 id 必须都是站点索引里真实存在的条目 —— 拼错一个就会静默丢一份正文
+
 chk(MASTER.every(m => byId[m.id]), '主表 id 全部能在站点索引里找到（没有拼错的影子条目）');
-// 主表的文本是**全站唯一一份**：正文逐字等于主条目在站点索引里的那一份
+
 chk(MASTER.every(m => norm(byId[m.id].text) === norm(m.text)),
   '主表里的正文与主条目在站点索引里的正文逐字相同');
 
-/* ---- 1.3 textRef 能取回正文，且与主表逐字相同 ---- */
 const resolveOne = (raw, book) => (sb.masterTextOf ? sb.masterTextOf(raw, book) : raw);
-// 抽查五个集子各一条
+
 const SPOT = [
   ['classic', sb.POEMS_CLASSIC, 'gw-60'],
   ['tangshi', sb.POEMS_TANGSHI, 'ts-6'],
@@ -125,9 +94,6 @@ SPOT.forEach(row => {
     book + ' 的 ' + id + ' 按 textRef 取回主表那一份正文');
 });
 
-/* ---- 1.4 同一篇在**任何一部**集子里读到的正文逐字相同 ---- */
-// 这是「学生不会读到两种《桃花源记》」这条线 —— 存储层把它从「显示时替换」
-// 变成「本来就只有一份」，所以每一部集子页读出来的都必须一致。
 const mismatch = [];
 MASTER.forEach(m => {
   const books = m.entries.map(e => e.split('-')[0]);
@@ -150,14 +116,9 @@ MASTER.forEach(m => {
 chk(mismatch.length === 0,
   '60 篇作品在六部集子里读到的正文逐字相同（不一致：' + (mismatch.slice(0, 5).join('、') || '无') + '）');
 
-/* ---- 1.4b 主表收齐了「同一篇的重复条目」全集 ---- */
-/* 主表登记的全部条目 id（1.4 / 1.2 两段都要用） */
 const masterFlat = [];
 MASTER.forEach(m => (m.entries || []).forEach(e => masterFlat.push(e)));
 
-/* 1.4 说的是「收进来的都对」；这一条说的是「该收的一条都没漏」——
-   漏一条的表现不是报错，而是**那一篇的正文在磁盘上又存了一份**，
-   日后改一处、漏一处，正是这一层要根除的东西。 */
 const byDedupeKey = {};
 sb.SITE_INDEX.forEach(p => {
   if (!p || p.isBook || !p.text || !p.id) return;
@@ -178,10 +139,6 @@ chk(uncovered.length === 0,
 chk(dupEntries.length === 120,
   '重复条目恰为 120 条（60 篇 × 2；实际 ' + dupEntries.length + '）');
 
-/* 主表的收归范围**两头都要挡**：
-     · 收多了 = 把没点名的部的单篇也搬了（那一条的正文会从自己数据文件里消失）
-     · 收少了 = 点名的部里有条目还内联着正文
-   所以判据不是数总数，而是「主表登记的条目 = 判重条目全集 ∪ FULL_BOOKS 各部条目」。 */
 const expectFlat = dupEntries.slice();
 fullExpected.forEach(id => { if (expectFlat.indexOf(id) < 0) expectFlat.push(id); });
 const sortJoin = arr => arr.slice().sort().join('|');
@@ -189,8 +146,6 @@ chk(sortJoin(masterFlat) === sortJoin(expectFlat),
   '主表登记的条目 = 判重条目全集 + FULL_BOOKS 各部条目（主表 ' + masterFlat.length +
   ' 条，应收 ' + expectFlat.length + ' 条）');
 
-/* 每一的主条目都在自己那一组里，且组内条目互不重叠 ——
-   重叠了就是同一条被两篇作品认领，正文取谁的都会有人读错。 */
 const seenOnce = {};
 let overlapped = [];
 masterFlat.forEach(e => {
@@ -201,38 +156,26 @@ chk(overlapped.length === 0, '没有条目被两篇作品同时登记（重叠�
 chk(MASTER.every(m => m.entries.indexOf(m.id) >= 0),
   '每条主表的 entries 里都有它自己（否则那一篇的正文谁也取不到）');
 
-/* ---- 1.1b 清单制收口：终态断言（清单点名的部，一条都不许漏） ----
-   上面几条说的是「收进来的都对」；这一段说的是「清单点名的部一条都没漏」。
-
-   ⚠️ 口径要小心：**课内 261 首不属于清单点名的部，它们本来就该内联** ——
-      主表只收它们当中「与集子重复」的那 60 条（主条目是课内那一条），
-      其余 201 首的正文就存在 data/poems-1..12.js 里，**没有第二份副本**，
-      进主表反而是把同一份正文搬到别处（见 README「正文收归主表」一节：
-      主表是「同一篇存了多份」的解药，不是「全站正文都要集中一处」）。
-      所以下面这条断言的候选池是**五部集子 + 那 60 条重复条目**，
-      不是「站点索引里所有带正文的条目」。 */
 const inScope = sb.SITE_INDEX.filter(p => p && !p.isBook && p.id &&
   (p.text || p.translation) && FULL_BOOK_SET[p.book]);
 const missingFromMaster = inScope.filter(p => !masterFlat.some(e => e === p.id));
 chk(missingFromMaster.length === 0,
   '清单点名的五部里，有正文的 ' + inScope.length + ' 条条目全部登记进了主表（未登记：' +
   (missingFromMaster.slice(0, 6).map(p => p.id).join('、') || '无') + '）');
-/* 课内那 261 首：要么在册进了主表（60 条跨集重复的），要么自己那份内联正文还在 */
+
 const keNei = sb.SITE_INDEX.filter(p => p && !p.isBook && p.book === 'poems' && p.id);
 const keNeiLostText = keNei.filter(p => !p.text && !p.translation);
 chk(keNeiLostText.length === 0,
   '课内 ' + keNei.length + ' 首都有正文（主表里那一份，或自己内联的那一份；' +
   '实际缺：' + (keNeiLostText.slice(0, 6).map(p => p.id).join('、') || '无') + '）');
-/* 反向：主表登记的条目不许是「语料里根本没有的」—— 有了就是影子条目（1.1 已核 id 存在），
-   这里补一条「主表条目必定来自站点索引的在册条目」 */
+
 chk(masterFlat.every(id => byId[id] && !byId[id].isBook),
   '主表登记的每一条都是站点索引里的真实篇目（不是书本身、不是拼错的 id）');
-/* 清单点名的五部 —— 终态下它们必须**全部**在册（少一部说明语料被搬走了） */
+
 chk(FULL_BOOKS.every(b => sb.SITE_INDEX.some(p => p.book === b)),
   'FULL_BOOKS 点名的五部在站点索引里都在册（实际：' +
   FULL_BOOKS.filter(b => !sb.SITE_INDEX.some(p => p.book === b)).join('、') + '）');
 
-/* ---- 1.2 各集子条目「只存归属」：不再内联正文 ---- */
 const BOOK_VARS = {
   poems: ['data/poems-1.js', 'data/poems-2.js', 'data/poems-3.js', 'data/poems-4.js',
     'data/poems-5.js', 'data/poems-6.js', 'data/poems-7.js', 'data/poems-8.js',
@@ -243,28 +186,18 @@ const BOOK_VARS = {
   guwen: ['data/poems-guwen.js'],
   zhaoming: ['data/poems-zhaoming.js']
 };
-// 各集子数据文件里，被主表收编的条目应**只剩 textRef**，不得再存 text / translation。
-// 直接从源码里数 —— 走 window 变量的话，data/index.js 之类已经把它们展开回来了。
+
 const stripped = [];
 const leftover = [];
 Object.keys(BOOK_VARS).forEach(book => {
   BOOK_VARS[book].forEach(f => {
     const src = read(f);
-    // 逐个条目看：带 textRef 的条目不得同时带 text:
-    // ⚠️ 切条目**不能按「恰好两格缩进的 {」切**：data/poems-guwen.js 里有一条
-    //    （《齐桓晋文之事》）起头是顶格的 `{` —— 用 `/\n(?=  \{)/` 切，
-    //    它会粘在上一条的块里，于是「上一条同时有 textRef 和 text」这条断言
-    //    会**误报**，而真正的问题（那一条压根没被摘）反而被掩过去。
-    //    缩进一律放宽成「至少一格」，与 scripts/apply-text-master.js 同口径。
+
     const entries = src.split(/\n(?=\s*\{)/);
     entries.forEach(blk => {
       const refM = blk.match(/textRef:\s*"([^"]+)"/);
       if (!refM) return;
-      // ⚠️ 记的是**条目自己**的 id，不是 textRef 的值 ——
-      //    textRef 存的是**主条目**的 id：跨集重复时两者不同
-      //    （唐诗的 ts-102 指向课内的 poems-cz7-03）。按 textRef 的值登记，
-      //    等于把这 46 条重复条目记成了「课内那些条」，下面逐条对账就会
-      //    把它们全判成「漏摘」—— 而真正漏摘的那一条反而淹在里面。
+
       const idM = blk.match(/\bid:\s*"([^"]+)"/);
       if (!idM) return;
       const key = book + ':' + idM[1];
@@ -275,18 +208,13 @@ Object.keys(BOOK_VARS).forEach(book => {
     });
   });
 });
-/* 「该摘的条目」= 主表登记的全部条目（跨集重复 120 条 + FULL_BOOKS 各部条目）。
-   ⚠️ 这里刻意**不再按「120 + 各部条目数」数总数** —— 那样只要任一条漏摘，
-      报出来的只是「实际 764」，看不出少的是哪一条。改成从主表出发逐条对，
-      漏摘的那一条能被点名。 */
+
 const expectStripped = masterFlat.length;
 const strippedSet = {};
 stripped.forEach(k => { strippedSet[k] = 1; });
 const notStripped = masterFlat.filter(id => {
   const book = Object.keys(BOOK_VARS).filter(b => id.indexOf(b + '-') === 0)[0];
-  // ⚠️ 站点索引 id 带集子前缀（`guwen-gwj-1`），语料里的条目 id 不带（`gwj-1`）——
-  //    拼对账键时要把前缀**去掉**，否则永远拼成 `guwen:guwen-gwj-1`、
-  //    一个都对不上，断言会把 765 条全判成「漏摘」。
+
   return !book || !strippedSet[book + ':' + id.slice(book.length + 1)];
 });
 chk(stripped.length === expectStripped && notStripped.length === 0,
@@ -297,17 +225,10 @@ chk(leftover.length === 0,
   '带 textRef 的条目里不再内联 text / translation（残留：' +
   (leftover.slice(0, 8).join('、') || '无') + '）');
 
-
-/* ---- 1.5 显示层裁定表：正文已收归存储层，不再需要替换 ---- */
-// data/canonical-texts.js 是「显示时把正文换成主条目那一份」的裁定表。
-// 存储层收归之后，各集子的正文本来就取自主表，**不再存在两种写法** ——
-// 这张表因此变成空表。保留它（与引擎里的机制）是给日后真出现异文时用的；
-// 一旦它又非空，说明有语料绕过了主表，这里要亮红提醒。
 chk(Array.isArray(CANON) && CANON.length === 0,
   'data/canonical-texts.js 已收敛为空表（存储层收归后不再有需要替换的条目；' +
   '实际 ' + (CANON || []).length + ' 条）');
 
-/* ---- 1.6 《静夜思》：课内与唐诗都等于教材文本 ---- */
 const jys = sb.POEMS_ALL.filter(p => p.id === 'xx1-09')[0];
 const ytRaw = sb.POEMS_TANGSHI.filter(p => p.id === 'ts-231')[0];
 const yt = resolveOne(ytRaw, 'tangshi');
@@ -317,7 +238,6 @@ chk(norm(yt.text) === norm(JYS), '唐诗三百首《夜思》正文 = 同一份�
 chk(sb.SITE_INDEX.filter(p => String(p.text || '').indexOf('看月光') >= 0).length === 0,
   '全站没有「床前看月光」的残留');
 
-/* ================= 二、引擎层：页面能按 textRef 取回正文 ================= */
 const html = read('classic/index.html');
 const order = html.match(/<script src="([^"]+)"><\/script>/g).map(s => s.match(/src="([^"]+)"/)[1]);
 chk(order.indexOf('data/text-master.js') >= 0, '集子页加载了正文存储主表');
@@ -342,7 +262,7 @@ const strip2 = t => norm(String(t || '')).replace(/[a-zāáǎàēéěèīíǐì�
 setTimeout(() => {
   const api = w.ReaderEngine.current;
   chk(!!api, '小古文页挂上了引擎实例');
-  // 打开被主表收编的《答谢中书书》（gw-60）：条目里已没有正文，引擎须按 textRef 取回
+
   const repInPage = w.POEMS_ALL.filter(p => p.id === 'cz8-02')[0];
   const rd = w.document.querySelector('#gw-reader');
   api.open('gw-60');
@@ -353,14 +273,11 @@ setTimeout(() => {
   chk(norm(trans) === norm(repInPage.translation),
     '译文同样由主表取回（同一篇不该给学生两段不同的白话）');
 
-  // 主表取数入口的行为（数据层）：没有 textRef 原样返回、查不到也原样返回 ——
-  // 宁可留空，也不猜、不拼（空文一眼可见，取错一篇却看着正常）。
   const noRef = { id: 'x', title: '没有 textRef 的条目' };
   chk(sb.masterTextOf(noRef, 'classic') === noRef, '没有 textRef 的条目原样返回（不是主表的活）');
   const badRef = { id: 'y', textRef: '根本不存在的-id' };
   chk(sb.masterTextOf(badRef, 'classic') === badRef, 'textRef 查不到时原样返回（不猜一篇顶上）');
 
-  /* ---- 每一部集子页都按 textRef 取回（不止小古文） ---- */
   const PAGES = [
     ['guwen/index.html', '/guwen/', 'POEMS_GUWEN', 'guwen'],
     ['songci/index.html', '/songci/', 'POEMS_SONGCI', 'songci'],
@@ -386,9 +303,7 @@ setTimeout(() => {
       setTimeout(function () {
         const api2 = wp.ReaderEngine.current;
         chk(!!api2, page + ' 挂上了引擎实例');
-        // 这一部里被主表收编的条目：打开它，正文须等于主表那一份。
-        // ⚠️ 主表条目的 id 一律是**课内**条目（poems- 开头），要找的是
-        //    「entries 里有这一部的条目」的那一条。
+
         const m = MASTER.filter(x => (x.entries || []).some(e => e.indexOf(book + '-') === 0))[0];
         if (!m) { chk(false, page + ' 里找不到被主表收编的条目（测试用例要跟着语料改）'); resolve(); return; }
         const eid = m.entries.filter(e => e.indexOf(book + '-') === 0)[0];
@@ -409,7 +324,7 @@ setTimeout(() => {
   })();
 
   function afterPages() {
-  /* ================= 三、孤儿背诵进度清理 ================= */
+
   const home = read('index.html');
   const hOrder = home.match(/<script src="([^"]+)"><\/script>/g).map(x => x.match(/src="([^"]+)"/)[1]);
   chk(hOrder.indexOf('js/storage.js') >= 0, '首页加载了 js/storage.js（进度库）');
@@ -419,8 +334,7 @@ setTimeout(() => {
   const domH = new JSDOM(home, {
     runScripts: 'dangerously', url: 'https://local.test/',
     beforeParse(win) {
-      // 埋一份「12 组自身重复」的旧进度：被删掉的高年级那一条留着，
-      // 保留的那一条与一篇真实课内篇目也各留一份。
+
       win.localStorage.setItem('poem_recite_progress_v1', JSON.stringify({
         'gz12-06': { level: 3, learned: true, nextReviewAt: Date.now() - 1000, reviewCount: 4, lapses: 0 },
         'gz12-12': { level: 2, learned: true, nextReviewAt: Date.now() - 1000, reviewCount: 3, lapses: 0 },
@@ -436,17 +350,15 @@ setTimeout(() => {
     wh.document.body.appendChild(el);
   });
 
-  // 首页的 init() 在 DOMContentLoaded 之后跑（我们插的脚本晚于解析），
-  // 孤儿清理挂在 init 里 —— 等一拍再读进度库。
   setTimeout(function () {
     const prog = JSON.parse(wh.localStorage.getItem('poem_recite_progress_v1') || '{}');
-    // 用户原话：「合并进度，暂时用户极少，可以删掉进度，清理无效数据」→ 删掉孤儿键。
+
     chk(!prog['gz12-06'], '已删的高年级重复条目（gz12-06）的孤儿进度被清掉');
     chk(!prog['gz12-12'], '已删的高年级重复条目（gz12-12）的孤儿进度被清掉');
     chk(!!prog['xx1-09'], '真实篇目的进度一个字没动（《静夜思》仍在）');
     chk(prog['xx1-09'].level === 1 && prog['xx1-09'].reviewCount === 1,
       '真实篇目的进度内容也原样保留（轮次 / 复习次数都没改）');
-    // 拿不到语料时一个都不删 —— 这条是「宁可留孤儿也别误删」的防线
+
     const keep = { 'gz12-06': { level: 1 } };
     wh.localStorage.setItem('poem_recite_progress_v1', JSON.stringify(keep));
     wh.Storage.pruneUnknown([]);

@@ -20,26 +20,14 @@
   <link rel="stylesheet" href="css/style.css" />
   <link rel="stylesheet" href="css/account.css" />
 </head>
-<!-- data-dock="off"：这是一段「做完就走」的流程（与登录页同款）。
-     返回落点指 /login/ —— 用户确认完邮箱最可能的下一件事就是去登录。
-     ==================================================================
-     为什么确认邮箱要有**独立一页**，而不是塞进登录页
-     ------------------------------------------------------------------
-     邮件里那条链接点开时，用户可能压根没在登录页（在另一台设备、
-     在另一个 App 里）。把处理逻辑挂在登录页上的话，
-     点开链接只会落到一个「空白的登录页」，用户完全不知道发生了什么。
-     独立一页恰好一件事：读出 URL 里的 vid + token，确认，说清结果。 -->
+
 <body data-nav="verify" data-dock="off" data-back="/login/" data-page="确认邮箱" data-sub="邮件里的那条链接">
   <div class="app">
     <header class="topbar"></header>
 
     <main class="account-page" id="verify-page">
       <section class="account-card">
-        <!-- 三种状态各占一块，由 js/verify.js 逐个显示：
-             none = URL 里没带齐参数（多半是用户手抄了一半）
-             busy = 正在确认
-             ok   = 成了
-             bad  = 没成（过期 / 用过 / 不对）—— 结果文案由**服务端**给 -->
+
         <div id="verify-none" hidden>
           <p class="account-lead">这条链接不完整。</p>
           <p class="account-hint">请直接点邮件里那颗按钮，或者把整条链接完整地打开一次。</p>
@@ -54,11 +42,7 @@
 
         <div id="verify-ok" hidden>
           <p class="account-lead" id="verify-ok-lead"></p>
-          <!-- ⚠️ 这句话在新口径下有两重含义，按服务器自报的那两项说：
-               默认口径（拦确认）下它就是「你可以去登录了」；
-               站长关掉闸的实例上则是「找回密码时用它」。
-               两句话都由 js/verify.js 按 `/api/me` 的事实填进来，
-               这里只留一个空位，**不预置一句可能反过来错的话**。 -->
+
           <p class="account-hint" id="verify-ok-hint"></p>
           <div class="account-actions">
             <button class="account-btn" id="btn-verify-login" type="button">去登录</button>

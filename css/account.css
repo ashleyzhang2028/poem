@@ -1,103 +1,7 @@
-/* ==========================================================================
-   账号页样式（Issue #132 · /login/ 与 /profile/、/admin/）
-   --------------------------------------------------------------------------
-   与主应用同一套配色（宋代传统色）与圆角 —— 本文件的调色板以 css/style.css
-   的 :root 变量为准，**不另起一套颜色**。
-
-   三种页共用一张表，是因为它们回答的是同一类问题：
-     /login/    我是谁（进来）
-     /profile/  我是谁（看自己、退出、注销）
-     /admin/    谁能管理（发放层级）
-   表单控件的圆角 / 内边距 / 聚焦光晕一律沿用 .settings-input 那一套口径，
-   不在这里重新发明一套 —— 账号页的输入框和设置页的输入框必须是同一个样子。
-   ========================================================================== */
-
-/* ---------- 页容器：与设置页同一档宽度 ---------- */
 .account-page {
   padding: 4px 0 14px;
 }
 
-/* ---------- 页容器之二：登录页那一张卡**垂直居中**（Issue #163） ----------
-   用户原话：「登录页面的登录卡片能垂直居中吗」
-
-   病根不在卡片自己，在**页面容器**：`.account-page` 只有顶栏到页脚之间那一块高，
-   内容不足时整块贴着顶栏排，卡片就挂在上半屏，底下空一大片。
-   （`.settings-page` 早就有 `min-height: calc(100vh - 200px)` 这一手，
-   账号页这几张页当初没跟上 —— 于是同一套壳子的页，只有它不居中。）
-
-   ⚠️ 之所以只给**登录页**（`#login-page`），不给 `.account-page` 全体：
-      个人中心 / 管理后台是「一叠卡」的**清单页**，内容本来就比一屏长，
-      居中那一条在它们身上永远不生效，只会多一句没人验证的声明；
-      而这两页的卡一旦变少（注销之后只剩两张），还会被推到屏幕中间，
-      像一张贴在墙正中的明信片。
-      **账号三页共用一份样式表，但「居不居中」是登录页自己的事。**
-
-   ⚠️ 高度算在「视口减掉顶栏那一行与页脚」上，不用 `height: 100%`：
-      `.app` 的高度是内容撑出来的，`100%` 无从算起（等于没写）。
-   ⚠️ 这一档**不按顶栏 / 页脚各写一个变量**：那两个盒子的高度在手机上就是
-      两百出头、全局也就这一处在算，写两个变量只会让下一个人以为它们各自会动。
-      宽屏那一档再补一条 —— 顶栏与页脚在那一档更厚，见文件末尾「宽屏」一节。
-    ⚠️ 用法是 `display: flex` + 子项 `margin: auto`，**不用**
-      `justify-content: center`：卡片比容器高时，`center` 会把卡片顶端顶到
-      容器外（顶栏那一段被裁掉、滚不到），`auto` 外边距在溢出时退化成 0，
-      顶端仍贴得住 —— 短屏幕 / 横屏 / 大字号下这才是对的。
-
-   ==========================================================================
-   Issue #197（2026-09-17）：**「200」这个数少算了页脚，页脚因此永远差一截**
-   --------------------------------------------------------------------------
-   用户原话：「登录页面登录卡片上下留空稍微多了一点，导致 ©2026 kuibu.app …
-   用户协议 · 隐私条款 需要下拉滚动条才能显示」。
-
-   真浏览器逐档量过（320 / 360 / 393 / 768 / 1024），溢出**恒为 6px**：
-
-       69  顶栏
-     + 852 − 200 = 652   #login-page 的 min-height
-     + 26  .settings-foot 的 margin-top（这一截**在 min-height 之外**）
-     + 63  页脚自己的高
-     + 48  .app 的 padding-bottom
-     = 858  ＞ 视口 852  →  差 6px
-
-   根因是那 200 里的**页脚只算了 63px 的盒子、没算它顶上那 26px 的
-   margin-top**。@media (min-width: 1024px) 那一档的 230 同病（桌面实测
-   恰好不溢，只因顶栏与页脚各自更厚、凑巧把 6px 抹平了）。
-
-   改法分两半，缺一半都还是错的：
-
-   **① 页脚不再「叠在容器之外」，而是被 `.app` 这一列收进去**
-      （见下面 `body[data-nav="login"] .app`）：`.app` 排成一列 flex，
-      页脚的 `margin-top: auto` 让它去吃掉剩余空间 —— 空间够时页脚贴着
-      屏幕底边，空间不够时它退化成 0，不再凭空多推 26px。
-      ⚠️ **页脚本来就不是 `#login-page` 的子元素**（它是 `.account-page`
-         后面的兄弟），所以这一条写在 `.app` 上而不是这里。
-
-   **② `min-height` 减去的是「顶栏 + 页脚 + 页面底部的收尾空白」**
-
-      ① 让页脚进了 `.app` 这一列之后，`#login-page` 的高度决定的是
-      **卡片那一段**有多高；页脚在它下面单独占一行的位置。
-      页面上一共就这几笔，各自量得出来（手机 393×852 实测）：
-
-         69  `.topbar`
-       + 63  `.foot`（两行小字 + 它自己 10px 上内边距 + 4px 下内边距）
-       + 48  `.app` 的下内边距（`body.no-dock` 那条 40px + 安全区 + 8px）
-       + 20  顶上那一点呼吸（`.account-page` 自己的 `padding-top` 附近）
-       = 200
-
-      ⚠️ **200 这个数因此回到它原本的值**，一处都不用改 ——
-        变的不是这个数，是**页脚现在真的被安排进了页面**：
-        过去页脚被拦在 `min-height` 之外、又被 `.settings-foot` 那 26px
-        往下推，所以它永远差一截；现在 `margin-top: auto` 让它在剩余空间里
-        自己落位，200 这个数就正好把「顶栏 + 页脚 + 收尾」都让开了。
-      ⚠️ 试过把它收成 152（只减顶栏 + 页脚，不减 `.app` 那 48px）——
-        结果是溢出 14px：`.app` 的下内边距**真的**会占高度，
-        它不属于「页脚与卡片之间」，但属于**视口**。
-        算式要按「视口里一共几个盒子」算，不按「哪两笔看着像一组」算。
-      ⚠️ 这一条与 ① 是一对：只做 ①，卡片偏上（页脚占的位置没从
-        min-height 里让出来）；只做 ②，页脚仍被那 26px 推出屏幕。
-        两条都有真浏览器守卫（test/pwa.test.js「卡片仍垂直居中」那几项）。
-      ⚠️ 200 里的页脚那一笔是**手机上量到的 63px**：换字号 / 换语言会让
-        它变，但这一条本来就不是像素级精确的居中 ——
-        守卫判的是「上下留白相差 ≤ 60px」，不是「一分不差」。
-   ========================================================================== */
 #login-page {
   display: flex;
   flex-direction: column;
@@ -105,55 +9,21 @@
   min-height: calc(100 * var(--app-vh) - 200px);
 }
 #login-page > .account-card {
-  /* 上下都 auto：卡片在剩余空间里居中；空间不够时自动退回「贴顶、可滚」 */
+
   margin-top: auto;
   margin-bottom: auto;
 }
 
-/* ---------- 页脚：登录页让 `.app` 变成一列、页脚吃掉剩余空间 ----------
-   `.settings-foot` 全站写着 `margin-top: 26px`（正文与页脚之间的呼吸），
-   那一条在**内容比一屏长**的页面上完全正确 —— 页脚本来就该在正文之后，
-   隔着 26px 跟上。
-
-   但登录页不是那种页面：它只有一张卡，`min-height` 把容器撑到一屏，
-   卡片居中、底下全是空的。此时再叠 26px 的固定间距，就是**把页脚往下推
-   26px**，而这一截落在 `min-height` 之外，页脚于是永远差一截、要下拉才看得全
-   （Issue #197 量到的 6px 溢出就是它减掉页脚高度之后剩下的部分）。
-
-   ⚠️ **页脚不是 `#login-page` 的子元素**（它是 `.account-page` 后面的兄弟，
-      两者都在 `.app` 里，见 login/index.html 的结构）—— 所以这里改的是
-      **`.app` 自己**：让它成为一列 flex，把剩余空间交给页脚。
-      「页脚就排在 #login-page 后面」这件事在 HTML 里写着，这里照它排。
-   ⚠️ 判据用 `margin-top: auto` 而不是「把 26px 改成 0」：
-      `auto` 在**剩余空间足够**时给出「推到底」的效果（页脚贴着页面底边），
-      在**空间不够**时退化成 0（页脚紧贴卡片，不额外制造溢出）——
-      大字号 / 横屏 / 屏幕特别矮这三种情况下，0 比 26px 是对的。
-   ⚠️ 卡片那一侧的 `margin: auto` 仍然只在 `#login-page` 里（见上面）：
-      两个 `auto` 分居两层，卡片在**自己那一层**里居中，页脚在**整页**里贴底 ——
-      这正是真机截图里的样子，也是 Issue #163 要的「卡片垂直居中」。
-
-   ⚠️ 只给登录页（`body[data-nav="login"]`），不给 `.app` 全体：
-      个人中心与管理后台是「一叠卡」的清单页，页脚在正文之后跟着走才是对的；
-      把 `.app` 改成 flex 列会让那两页的块距口径整体变形。
-   ⚠️ `padding-top` 一并收掉：那 14px 与 `.foot` 自己的 `padding: 10px 0 0`
-      是同一样东西（页脚与上方内容之间的呼吸），两处各写一份的结果是
-      页脚上面凭空多出 14px。 */
 body[data-nav="login"] .app {
   display: flex;
   flex-direction: column;
-  /* ⚠️ 下内边距**不动**（仍是 css/style.css 那条 40px + 安全区，或
-     `body:not(.no-dock)` 的 24px + --nav-h）—— Issue #197 试过把它一起
-     收到 24px，结果是卡片在垂直方向上被挤得偏上：
-     这一截高度本来就在 `min-height` 那条算式里算过（见上面那 200），
-     再改一次就是同一件事说两遍。
-     ⚠️ 这里**只做一件事**：把 `.app` 排成一列，让页脚去吃掉剩余空间。 */
+
 }
 body[data-nav="login"] .app > .foot {
   margin-top: auto;
   padding-top: 0;
 }
 
-/* ---------- 一、卡片（与设置页 .settings-group 同一视觉语言） ---------- */
 .account-card {
   background: var(--card);
   border-radius: var(--radius);
@@ -181,7 +51,7 @@ body[data-nav="login"] .app > .foot {
   line-height: 1.7;
   color: var(--ink-3);
 }
-/* 如实标注「本地体验版」的那一条：要显眼，不许含糊 */
+
 .account-note {
   margin: 10px 0 0;
   font-size: 12px;
@@ -193,19 +63,11 @@ body[data-nav="login"] .app > .foot {
   padding: 9px 11px;
 }
 
-/* ---------- 一之二、人机校验位（Issue #197 后续 · Cloudflare Turnstile） ----------
-   这一块在**没配**的实例上 `hidden`（js/turnstile.js 连脚本都不加载），
-   配了才由 JS 摘掉 hidden 并把 widget 塞进来。
-
-   ⚠️ `min-height` **不给**：Cloudflare 的 widget 自己撑开（交互式那档约 65px），
-      给一个固定高度会在「它比预期矮」时留一块空白，
-      而那一块空白会被读成「这里坏了」。 */
 .turnstile-slot { margin: 4px 0 10px; }
 .turnstile-slot[hidden] { display: none; }
-/* 有些主题下 Cloudflare 的 iframe 会带一条默认边距，抹平它 */
+
 .turnstile-slot iframe { display: block; }
 
-/* ---------- 二、表单 ---------- */
 .account-field { margin-bottom: 12px; }
 .account-field:last-child { margin-bottom: 0; }
 .account-label {
@@ -214,7 +76,7 @@ body[data-nav="login"] .app > .foot {
   color: var(--ink-2);
   margin-bottom: 6px;
 }
-/* 输入框与设置页 .settings-input 同档；圆角 / 聚焦光晕沿用全站那条 */
+
 .account-input {
   width: 100%;
   box-sizing: border-box;
@@ -235,40 +97,9 @@ body[data-nav="login"] .app > .foot {
   box-shadow: 0 0 0 3px rgba(47, 96, 85, .10);
 }
 .account-input::placeholder { color: #9c8d7b; }
-/* 邮箱要走系统键盘的邮箱布局；验证码走数字键盘（手机上这一步差别很大） */
+
 .account-input[type="email"] { letter-spacing: .2px; }
 
-/* 实底那颗（一级按钮）：与全站 `.btn.primary` **同一个样子**（Issue #163）
-   --------------------------------------------------------------------------
-   用户原话：「发送随机码的按钮是黑色的？和其他页面主按钮色不一致？」
-
-   「发黑」的根因是**少了一条描金细边**，不是色值写错了 —— 两处读的都是
-   `--green`。见文件末尾「主按钮」那一节的完整说明与算式。
-   这一条放在 `.account-btn` 上（它是账号三页**唯一**的实心底按钮类），
-   所以三页的主按钮一次改完；`.danger` / `.ghost` / `[disabled]` / `.on`
-   各自在后面把背景盖回去，它们不受影响。 */
-/* ⚠️ **扁平化**（Issue #209，用户原话：「页面中所有的按钮请进行扁平化设计。」）
-   --------------------------------------------------------------------------
-   扁平化在这里 = **去掉一切立体感**，只留「颜色 + 一条边」：
-
-     删掉的                        为什么
-     ──────────────────────────    ──────────────────────────────────────
-     `linear-gradient(...)`        三段渐变是「凸起 / 有厚度」的那句话；
-                                    扁平的意思正好相反 —— 一个平色块。
-     `inset 0 0 0 1px 描金内边`     描金内边是「金属收边」的质感，
-                                    与渐变是一对，一起去。
-     `0 2px 10px 外投影`            投影是「浮在纸面上」的意思。
-     按下时的 `scale(.985)`         缩放是「按下去了一块实体」的物理隐喻；
-                                    扁平按钮的按下反馈**只用颜色**（压深一档）。
-
-   留下来的两样，也正是用户说的「主按钮和普通按钮主要应该只有这两种形态」：
-     · **主按钮**（实底）：天青实底 + 米白字，一颗一次
-     · **普通按钮**（描边）：纸底 + 界行描边 + 墨字，其余都是它
-
-   ⚠️ 色值一个字没改（`--green` / `--line` / 那个米白还是那几个）：
-      扁平化动的是**质感**，不是配色 —— 全站那套宋代传统色仍是唯一的调色板。
-   ⚠️ transition 里那条 `transform` 一并撤掉：没有 scale 了，留着它只会
-      让「有没有按下」变得比颜色反馈更慢半拍。 */
 .account-btn {
   width: 100%;
   box-sizing: border-box;
@@ -280,19 +111,14 @@ body[data-nav="login"] .app > .foot {
   font-weight: 600;
   cursor: pointer;
   transition: background .15s, border-color .15s, color .15s;
-  /* ⚠️ 高度与全站 `.btn` 落在同一档：两边都是 `padding: 12px` + `1px` 边框，
-     所以上下都是 25px、画出来一样高。`box-sizing: border-box`（全局那一条）
-     已经把边框算进内边距里，不必再为它减一个像素。
-     改这一处就要连 `.btn` 一起改 —— 见下面「主按钮」那一节。 */
+
   border: 1px solid var(--green-dark);
   background: var(--green);
 }
-/* 悬停 / 按下：**只用颜色**，不缩放、不投影（扁平的一条纪律） */
+
 .account-btn:hover { background: var(--celadon); border-color: var(--green-dark); }
 .account-btn:active { background: var(--green-dark); }
-/* ⚠️ 原先这里还有一条 `.account-btn:active { box-shadow: inset ... }` ——
-   扁平化之后按钮上已经没有 box-shadow 了，那一条会**给按下的瞬间重新画上
-   一圈描金内边**（点一下冒出一层金边，比不扁平还怪）。一并撤掉。 */
+
 .account-btn[disabled] {
   background: var(--line);
   border-color: var(--line);
@@ -308,17 +134,6 @@ body[data-nav="login"] .app > .foot {
 .account-btn.danger:hover { background: var(--red-light); }
 .account-btn + .account-btn { margin-top: 8px; }
 
-/* ---------- 二之二、操作键那一行（Issue #163） ----------
-   用户原话：「个人页面一个卡片一个按钮，不能让这些需要操作的按钮组合在一张
-   卡片吗，其他描述部分重新整理组合。」
-
-   改之前每张卡底下挂一颗**满宽**的按钮，四张卡就是四颗各占一整行 ——
-   一屏里四道一样长的实心条，看不出哪颗是主要动作、哪颗只是「去别处看看」。
-   现在同一类动作（都是「去别处 / 换个状态」）并成一行：
-   横排、等分、可折行；窄屏放不下时自己换成两行，按钮不缩成一根细条。
-
-   ⚠️ 这一行里的 `.account-btn + .account-btn { margin-top: 8px }`（上一句）
-      要在这里清掉：那是给「上下叠着的两颗」用的，横排时它会顶歪整行。 */
 .account-actions {
   display: flex;
   gap: 8px;
@@ -326,19 +141,16 @@ body[data-nav="login"] .app > .foot {
   margin-top: 12px;
 }
 .account-actions .account-btn,
-/* 下一条选择器与 `.account-btn + .account-btn`（第 122 行）**同特异度**，
-   靠写在它后面取胜 —— 用 !important 会把整份表的口径搞乱，
-   而这里要的只是「横排时别把上一颗的下外边距算进来」。 */
+
 .account-actions .account-btn + .account-btn {
-  /* 等分：三颗键的宽度由容器除以条数决定，不按文字长短参差 */
+
   flex: 1 1 0;
   width: auto;
   min-width: 104px;
-  /* 上下叠着的那两颗才需要 8px 间隔；横排由 gap 给，这里清零 */
+
   margin-top: 0;
 }
 
-/* 就地提示：格式错 / 频控 / 码错，都在输入框下方出现，不弹窗 */
 .account-msg {
   margin: 8px 0 0;
   font-size: 12.5px;
@@ -350,7 +162,6 @@ body[data-nav="login"] .app > .foot {
 .account-msg.warn { color: var(--red); }
 .account-msg.ok { color: var(--green); }
 
-/* ---------- 三、六格验证码 ---------- */
 .code-row {
   display: flex;
   gap: 8px;
@@ -385,7 +196,6 @@ body[data-nav="login"] .app > .foot {
 }
 .code-box.filled { border-color: var(--green); }
 
-/* ---------- 四、倒计时 / 重发那一行 ---------- */
 .code-meta {
   display: flex;
   align-items: center;
@@ -404,18 +214,13 @@ body[data-nav="login"] .app > .foot {
   font-weight: 600;
   cursor: pointer;
   padding: 2px 0;
-  /* ⚠️ 与全站链接同一条口径（Issue #163）：**不画下划线**。
-     它是 <button> 不是 <a>，但长相与旁边的「重新发送 / 换个邮箱」是同一族，
-     一条下划线会让它在整页里显得是另一种控件。
-     「可点」这点靠天青 + 加粗（比旁边的说明文字重一档）与 hover 说清。 */
+
 }
 .code-resend:hover { color: var(--green-dark); }
 .code-resend[disabled] { color: var(--ink-3); font-weight: 400; cursor: default; }
 
-/* ---------- 五、步骤切换：同屏递进，不跳页 ---------- */
 .account-step[hidden] { display: none; }
 
-/* ---------- 六、身份一览（profile 顶部 / 管理员发放表） ---------- */
 .identity-row {
   display: flex;
   align-items: center;
@@ -439,10 +244,9 @@ body[data-nav="login"] .app > .foot {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-/* 头像在账号页要更大一号（这里是「看自己」的地方） */
+
 .identity-row .avatar { --avatar-size: 52px; }
 
-/* ---------- 七、层级徽章 ---------- */
 .tier-badge {
   display: inline-flex;
   align-items: center;
@@ -459,11 +263,7 @@ body[data-nav="login"] .app > .foot {
 }
 .tier-badge.tier-pro { background: var(--amber-light); color: var(--amber); border-color: var(--line); }
 .tier-badge.tier-max { background: var(--green-light); color: var(--green); border-color: var(--line); }
-/* 「开着」的那一枚（个人中心 · 跨设备同步的只读回显，Issue #163）
-   --------------------------------------------------------------------------
-   与设置页那颗开关说同一句「实底 = 开着」：深天青实底 + 米白字 + 描金内边。
-   ⚠️ 单独一个修饰类，不去改 .tier-max —— 层级徽章是**身份**、这里是**开关状态**，
-      两者共用一个浅底药丸的壳可以，语义色不该互相牵连。 */
+
 .tier-badge.on {
   background: var(--green);
   color: #fdfaf2;
@@ -471,7 +271,6 @@ body[data-nav="login"] .app > .foot {
   box-shadow: inset 0 0 0 1px rgba(240, 205, 124, .42);
 }
 
-/* ---------- 九、键值行（账号 / 设备 / 时间） ---------- */
 .kv-list { margin: 0; }
 .kv-row {
   display: flex;
@@ -490,15 +289,10 @@ body[data-nav="login"] .app > .foot {
   min-width: 0;
   word-break: break-all;
 }
-/* ⚠️ 值里的链接（个人中心「关于」→ 用户协议 / 隐私条款 的「查看」）：
-   这两个 <a> 没有任何类名，此前靠浏览器默认渲染 —— 蓝紫色 + 下划线，
-   在整页米纸天青里是最扎眼的两处。这里给它们本页的口径：
-   天青一色、无下划线，hover 加深一档（与 .foot-links a 同一套「只用颜色做反馈」）。
-   全局那条 `a { text-decoration: none }` 在 css/style.css 里，这里是配色。 */
+
 .kv-v a { color: var(--green); }
 .kv-v a:hover { color: var(--green-dark); }
 
-/* ---------- 十、发放名单 ---------- */
 .grant-list { list-style: none; margin: 0; padding: 0; }
 .grant-row {
   display: flex;
@@ -543,13 +337,11 @@ body[data-nav="login"] .app > .foot {
   box-shadow: inset 0 0 0 1px rgba(47, 96, 85, .28);
 }
 
-/* ---------- 十一、危险区 ---------- */
 .account-card.danger-zone { border: 1px solid var(--danger-line); }
 .danger-title { color: var(--red); }
 .confirm-row { display: flex; gap: 8px; }
 .confirm-row .account-btn { margin-top: 0; }
 
-/* ---------- 十二、管理员页的「模拟身份」 ---------- */
 .sim-row {
   display: flex;
   align-items: center;
@@ -559,69 +351,36 @@ body[data-nav="login"] .app > .foot {
 }
 .sim-row .settings-hint { margin: 0; }
 
-/* ---------- 十三、窄屏 ----------
-   六格验证码在 320px 屏上会各自缩到 40px 出头 —— 仍然点得着（>=40px 是
-   移动端可点面积的下限），不额外做分隔符或换行。 */
 @media (max-width: 340px) {
   .code-row { gap: 5px; }
   .code-box { font-size: 19px; }
 }
-/* ---------- 十四、宽屏：单列不拉满整屏（与全站 --content-w 同一条口径） ---------- */
+
 @media (min-width: 1024px) {
   .account-page { max-width: 560px; }
-  /* 登录卡在宽屏上除了水平居中，还要**垂直居中**（Issue #163）：这一档的
-     顶栏与页脚比手机上各厚一档，手机那一档的 `226` 跟着放宽到 `256`。
-     ⚠️ 只放宽 `#login-page`：`.account-page` 那张 560px 的宽度上限是给
-        三张账号页共用的（个人中心 / 管理后台也是「一列纸」）。
-     ⚠️ 这个数比上面那 200 大、而不是把它换掉 —— 上面那一条是**兜底**，
-        它管的是 js 还没量过视高、或者 `--app-vh` 拿不到的那些情况。
-     ⚠️ 这一档仍是 230：多出来的 30px 是**顶栏与页脚在桌面上各厚一档**
-        那一点（真机实测顶栏 70、页脚 66），不是把页脚再减一遍 ——
-        页脚已经在 200 里算过了。
-        同样有真浏览器守卫（同一节，1440 / 1920 两档都判居中）。 */
+
   #login-page {
     min-height: calc(100vh - 230px);
     min-height: calc(100 * var(--app-vh) - 230px);
   }
 }
 
-/* ==========================================================================
-   层级对比表（/plans/，Issue #132）
-   --------------------------------------------------------------------------
-   四列表格，最左一列是对比项，右边四格分别打钩 / 打叉。
-
-   手机上四列会挤，所以这张表**横向可滚**（外层 .plans-scroll），
-   第一列（功能名）**粘在左边不跟着滚** —— 不然滚到第三列就不知道在看哪一行了。
-   不把表拆成四张卡片，是因为「对比」的全部价值就在于同一行能横向看齐。
-
-   ⚠️ Issue #163（用户原话：「功能列，减少一半的宽度，让右侧四列尽可能多的
-      显示进屏幕」）：功能名那一列从 150px 收到 ~92px，四列各让出一点，
-      于是「手机不滚就能看全四列」从奢望变成默认。收窄靠三件事，缺一不可：
-        · 列宽改由**内容 + 四列最小宽**定（`.plans-cell` 给 `min-width`），
-          不再由 `.plans-table` 的 `min-width` 顶 —— 后者一写死就必然要横滚；
-        · 功能名允许换行（`line-height` 收到 1.35），长名最多占两行；
-        · padding 收到 4px 级 —— 左右各 4px 乘 6 列 = 48px，够放下半列字。
-   ========================================================================== */
-
 .plans-scroll {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
-  /* 只在需要时才出现滚动条，且不占高度 */
+
   scrollbar-width: thin;
 }
 
 .plans-table {
   width: 100%;
-  /* ⚠️ 不再是 468px 那种「先声明一个总宽、放不下就横滚」。四列的宽度由
-     `.plans-cell` 的 `min-width` 定，功能名那一列只吃剩下的 —— 于是
-     「四列能不能进屏」由**四列自己的最小宽**回答，不是被一个总数挡住。 */
+
   min-width: 0;
   border-collapse: collapse;
   font-size: 12.5px;
   color: var(--ink);
 }
 
-/* 表格不给屏幕阅读器讲一遍视觉说明（下面另有一段文字口径） */
 .plans-caption {
   caption-side: top;
   text-align: left;
@@ -630,7 +389,6 @@ body[data-nav="login"] .app > .foot {
   padding: 0 0 8px;
 }
 
-/* ---------- 第一列：对比项（左侧粘住） ---------- */
 .plans-th-cap {
   position: sticky;
   left: 0;
@@ -643,14 +401,12 @@ body[data-nav="login"] .app > .foot {
   background: var(--card);
   padding: 8px 6px 8px 0;
   border-bottom: 1px solid var(--line-2);
-  /* 功能列：能窄则窄（Issue #163 点名「减少一半的宽度」）。
-     不写死 min-width —— 写死就等于把四列挤出去；这里只给一个上限口径，
-     真正的宽度由 table-layout 与四列的最小宽一起算。 */
+
   width: 34%;
   max-width: 132px;
   line-height: 1.35;
 }
-/* 表头那一格是「功能」二字，另给一档颜色 */
+
 thead .plans-th-cap {
   font-size: 11.5px;
   letter-spacing: .6px;
@@ -659,7 +415,6 @@ thead .plans-th-cap {
   padding-top: 0;
 }
 
-/* ---------- 表头四列 ---------- */
 .plans-table thead th {
   padding: 0 6px 9px;
   text-align: center;
@@ -674,10 +429,9 @@ thead .plans-th-cap {
   letter-spacing: .4px;
   white-space: nowrap;
 }
-/* 表头里只有「未登录」三字更宽，允许它折一行 */
+
 .plans-table thead th:first-of-type + th .plans-col-label { white-space: nowrap; }
 
-/* 「你现在在这」的高亮列 —— 整列淡淡的底色，比给每格加边框安静 */
 .plans-col-me { background: var(--bg); }
 .plans-table td.plans-col-me { background: var(--bg); }
 .plans-you {
@@ -693,7 +447,6 @@ thead .plans-th-cap {
   white-space: nowrap;
 }
 
-/* ---------- 分组标题行 ---------- */
 .plans-group th {
   text-align: left;
   font-size: 11.5px;
@@ -716,7 +469,6 @@ thead .plans-th-cap {
   color: var(--ink-3);
 }
 
-/* ---------- 表身 ---------- */
 .plans-table tbody th {
   font-weight: 400;
 }
@@ -726,15 +478,11 @@ thead .plans-th-cap {
   padding: 8px 4px;
   border-bottom: 1px solid var(--line-2);
   vertical-align: top;
-  /* ⚠️ 四列的**唯一宽度来源**（Issue #163）。42px + 左右各 4px padding
-     = 50px 一格：够放「✓」「5000 个」，四格 200px，加上功能列
-     132px 与卡片两条边，360px 的机器不滚也能看全四列。
-     括号里的数字是这三条一起算出来的，改一条就得三条一起看。 */
+
   min-width: 42px;
 }
 .plans-v { display: block; line-height: 1.2; }
 
-/* 打钩 / 打叉：一枚 18px 的圆底符号，不是裸字 */
 .plans-mark {
   display: inline-block;
   width: 18px;
@@ -748,7 +496,6 @@ thead .plans-th-cap {
 .plans-mark.ok { color: #fff; background: var(--green); }
 .plans-mark.no { color: var(--ink-3); background: var(--green-light); }
 
-/* 不能用的那一格：门槛文案（「Pro 起」）跟在叉下面 */
 .plans-cell-hint {
   display: block;
   margin-top: 3px;
@@ -765,7 +512,6 @@ thead .plans-th-cap {
   color: var(--ink-3);
 }
 
-/* ---------- 表尾：每列能用几项 ---------- */
 .plans-table tfoot th,
 .plans-sum {
   padding: 10px 4px 0;
@@ -785,21 +531,15 @@ thead .plans-th-cap {
 .plans-sum { font-weight: 600; color: var(--ink); }
 .plans-sum-of { font-weight: 400; font-size: 11px; color: var(--ink-3); margin-left: 2px; }
 
-/* 表格自己已经说明白了，页脚那句图例要小一号 */
 .account-hint .plans-mark { vertical-align: -2px; margin: 0 2px; }
 
-/* ---------- 对比表的两档收边 ----------
-   Issue #163 之后**默认就不横滚**（功能列收窄 + 四列各 42px），
-   这两档只做「更小 / 更大时各让一步」：
-   窄机（≤360px）：功能名再收一档，四列仍然进屏。
-   平板 / 桌面（≥768px）：功能列放宽到 200px，长名一行放得下，不必再折两行。 */
 @media (max-width: 400px) {
   .plans-table { font-size: 12px; }
   .plans-th-cap { width: 30%; max-width: 104px; padding-right: 4px; }
   .plans-v { line-height: 1.15; }
 }
 @media (max-width: 360px) {
-  /* 再窄一档：功能名与四列同时收，字小到 11.5px 也还读得清 */
+
   .plans-table { font-size: 11.5px; }
   .plans-th-cap { width: 28%; max-width: 92px; }
   .plans-cell { min-width: 38px; padding-left: 2px; padding-right: 2px; }
@@ -809,22 +549,6 @@ thead .plans-th-cap {
   .plans-table { font-size: 13px; }
 }
 
-/* ==========================================================================
-   危险动作：按钮与全站同一条颜色来源
-   --------------------------------------------------------------------------
-   用户原话：「保持页面元素的统一，ui 一致性等等。」
-
-   在这条之前，账号三页的危险按钮走 `.account-btn.danger`（淡朱砂底 + 朱砂字），
-   而设置页的「清空进度」走 `.btn.danger-btn` —— 两处**各自写了一遍相同的色值**
-   （var(--red-light) / var(--red) / #ecd2cd）。同一种「不可逆」的动作长着两副脸：
-   一处实底、一处描边，一处在卡片里、一处在表单里，改色时也一定会漏一处。
-
-   现在两侧都读全站那一条危险色令牌：
-     `--danger-bg` / `--danger-line`（见 css/style.css 的 :root），
-   于是「改一处，两处一起走」是结构性的，不靠人抄对。
-   ⚠️ 本文件不再出现字面量色值 —— test/account-pages.test.js 有一条
-     「account.css 不许新造调色板里没有的颜色」守着这件事。
-   ========================================================================== */
 .account-btn.danger {
   background: var(--danger-bg);
   color: var(--red);
@@ -832,20 +556,6 @@ thead .plans-th-cap {
 }
 .account-btn.danger:hover { background: var(--red-light); }
 
-/* ==========================================================================
-   古诗词大会（3 期 · /poems/ 上就地铺开的那一层）
-   --------------------------------------------------------------------------
-   三个玩法（飞花令 / 试题模拟 / 题库复习）共用这一套。与账号页共用同一张
-   `.account-card` —— 它们回答的是同一类问题：「我现在能用什么、怎么用」。
-   调色板全部走 css/style.css 的 :root 变量，本文件不新造颜色
-   （test/account-pages.test.js 有一条守着这件事）。
-
-   ⚠️ 飞花令的「看答案」是**点开才给内容**（内容先不生成，不是拿 CSS 遮住）：
-      `hidden` 的节点不渲染，读屏也念不到 —— 这是真的「先自己想」，
-      与「用一张不透明遮罩盖住底下那行字」不是一回事。
-   ========================================================================== */
-
-/* 索引页工具条上那颗入口键：与搜索框、连读键同一行 */
 .poems-game-entry {
   flex: 0 0 auto;
   display: flex;
@@ -868,36 +578,15 @@ thead .plans-th-cap {
 .poems-game-name { font-size: 13px; font-weight: 600; letter-spacing: .5px; }
 .poems-game-sub { font-size: 10.5px; color: var(--ink-3); white-space: nowrap; }
 
-/* 窄屏（≤460px）：入口键收成只要「古诗词大会」四个字
-   --------------------------------------------------------------------------
-   用户报的现场：/poems/ 的工具条在这一档**整行溢出**——
-   搜索框 + 「全部 / 未读」+ 连读圆键 + 「古诗词大会」，四样加起来
-   比 320~393px 的屏还宽（实测 320px 溢出 72px、375px 溢出 17px、
-   393px 溢出 3px），而 body 是 `overflow-x: hidden`：既不出现横向滚动条、
-   也不报错，只是最右边那颗键被裁掉一截、点不着 —— 与顶栏那颗返回键
-   被裁是同一类「看不见的溢出」。
-
-   病根是那颗键**自己不肯收**：`flex: 0 0 auto` + 副标题
-   `white-space: nowrap`（「试题模拟 · 飞花令 · 题库复习」一行 14 个字），
-   于是它的宽度只由内容决定，屏再窄也不缩。
-   这里按屏宽收两档，**只动这一颗**（搜索框与那两颗控件保持原样）：
-     · ≤460px：副标题换成 `sr-only` 式的视觉隐藏（读屏仍念得到，
-               点击后的那一层里也有完整说明），键宽随之落到 ~88px；
-     · ≤340px：主标题再收一档字号与内边距。
-   ⚠️ 隐藏副标题**不是**隐藏信息：完整说明在那一层的卡里
-      （js/game.js 铺上来的「古诗词大会」页首），以及按钮自己的 title。
-      这与全站「入口不许藏」那条纪律不冲突 —— 藏的只是行内的一行摘要。
-   ⚠️ 两个断点都写在 `max-width` 上：宽屏（平板 / 桌面）一个字都不动，
-      那一档四样并排本来就放得下。 */
 @media (max-width: 460px) {
   .poems-game-entry {
-    /* 允许它在极端窄屏上再收一点，但仍不与搜索框抢空间 */
+
     flex: 0 1 auto;
     min-width: 0;
     margin-left: 6px;
     padding: 4px 8px;
   }
-  /* 副标题改为「视觉隐藏、读屏可读」：不再参与这一行的宽度计算 */
+
   .poems-game-sub {
     position: absolute;
     width: 1px;
@@ -915,11 +604,9 @@ thead .plans-th-cap {
   .poems-game-name { font-size: 12px; letter-spacing: 0; }
 }
 
-/* 那一层本身：与列表同一列宽，只是换一屏内容 */
 .poems-game { padding: 4px 0 14px; }
 .poems-game[hidden] { display: none; }
 
-/* ---------- 三个玩法的选择卡 ---------- */
 .game-mode {
   display: block;
   width: 100%;
@@ -934,7 +621,7 @@ thead .plans-th-cap {
   cursor: pointer;
 }
 .game-mode:last-child { margin-bottom: 0; }
-/* ⚠️ Issue #209 扁平化：按下不再缩放，改成压一档底色（与全站按钮同一条纪律） */
+
 .game-mode:active { background: var(--card-2); }
 .game-mode[data-locked] { opacity: .62; background: var(--bg-soft); }
 .game-mode-main { display: flex; align-items: baseline; gap: 8px; }
@@ -950,11 +637,9 @@ thead .plans-th-cap {
 .game-mode[data-locked] .game-mode-tier { color: var(--ink-3); background: var(--line); }
 .game-mode-desc { display: block; margin-top: 4px; font-size: 12px; color: var(--ink-3); line-height: 1.7; }
 
-/* 锁着时那张说明卡：为什么不能用、怎么才能用 */
 .game-gate { margin-top: 4px; }
 .game-gate-why { margin: 0 0 8px; font-size: 13px; color: var(--ink-2); line-height: 1.8; }
 
-/* ---------- 飞花令 ---------- */
 .game-head { position: relative; }
 .game-back { margin-bottom: 10px; }
 .game-chars { display: flex; align-items: flex-end; gap: 14px; margin: 2px 0 8px; }
@@ -967,7 +652,7 @@ thead .plans-th-cap {
   color: var(--green);
   font-weight: 600;
 }
-/* 令字的注音由 js/pinyin.js 给出（生字 / 多音字才会有）—— 不另写一份读音表 */
+
 .game-char-py { font-size: 12px; color: var(--ink-3); font-weight: 400; letter-spacing: .5px; }
 
 .game-lines { margin-top: 10px; }
@@ -987,7 +672,6 @@ thead .plans-th-cap {
 .game-line-src { font-size: 11px; color: var(--ink-3); }
 .game-hit { background: transparent; color: var(--red); font-weight: 600; }
 
-/* ---------- 考试 / 题库 ---------- */
 .game-stem { font-size: 17px; line-height: 1.9; color: var(--ink); margin-bottom: 6px; }
 .game-opts { display: flex; flex-direction: column; gap: 8px; margin: 10px 0 4px; }
 .game-opt {
@@ -1011,19 +695,6 @@ thead .plans-th-cap {
 .game-nav { display: flex; gap: 8px; }
 .game-nav .account-btn { flex: 1 1 0; margin-top: 0; }
 
-/* ==========================================================================
-   篇目打印页（Pro · `export.paper`）
-   --------------------------------------------------------------------------
-   入口在 /settings/lists/ 的自选清单下面，与诗词详情页的工具条上（「这一篇打出来」）。
-   它是一层**就地叠层**（与古诗词大会同一套），不是新的一页 ——
-   这一件事没有自己的状态，用的就是「哪一份清单」。
-
-   ⚠️ 下面那一段 `@media print` 是这一层真正在干的事。
-      它只做三件：把页面外壳（顶栏 / 页签 / 页脚 / 按钮 / 说明字）收起来、
-      把预览那一层原样交出去、把颜色去掉（省墨，且彩色打印机上不会糊）。
-      **不重排**：纸面上的断行就是预览里的断行，也就是原文的断行。
-   ========================================================================== */
-
 .print-sheet {
   margin-top: 10px;
   padding: 14px 12px;
@@ -1031,8 +702,7 @@ thead .plans-th-cap {
   border-radius: var(--radius-sm);
   background: var(--card);
 }
-/* 预览块之间画一条虚线：**这是预览的辅助线，不打印**（打印样式表里删掉它），
-   否则纸面上每一篇之间会多一道谁也不想要的横线。 */
+
 .print-block + .print-block {
   margin-top: 14px;
   padding-top: 12px;
@@ -1044,11 +714,9 @@ thead .plans-th-cap {
 .print-row { display: block; font-size: 13.5px; line-height: 1.9; color: var(--ink); }
 .print-row-pinyin { font-size: 11.5px; line-height: 1.55; color: var(--ink-3); }
 .print-row-translation { margin-top: 6px; font-size: 12.5px; color: var(--ink-2); }
-/* 注释格线：**空行是真的空行**（行高与正文同），不是一条 1px 的下划线。
-   一条线只有 1px 高，一行手写要三四倍 —— 那种「格线」写了等于没写。 */
+
 .print-blank { display: block; font-size: 13.5px; line-height: 1.9; }
 
-/* 三个块开关：与设置页的开关同一套（`.print-opt` 是 `.switch` 的同一个形状） */
 .print-opt {
   display: flex;
   align-items: center;
@@ -1072,12 +740,8 @@ thead .plans-th-cap {
 .print-actions { display: flex; gap: 8px; }
 .print-actions .account-btn { flex: 1 1 0; margin-top: 0; }
 
-/* --------------------------------------------------------------- 打印 */
-
 @media print {
-  /* ① 页面外壳全部收起来：顶栏、页签、页脚、按钮、提示。
-        判据是「屏幕上那些**不是内容**的东西一件都不许上纸」——
-        判在元素上，不判在 `.app` 的某一条上（改一次结构就会漏）。 */
+
   .topbar, .dock, .foot, .toast, .modal,
   .account-btn, .account-card-title, .account-hint, .account-lead,
   .seg, .settings-index,
@@ -1088,7 +752,6 @@ thead .plans-th-cap {
     display: none !important;
   }
 
-  /* ② 纸上只留预览那一层，且不加任何装饰（边框 / 底色 / 圆角都不省墨） */
   html, body { background: #fff !important; margin: 0 !important; padding: 0 !important; }
   body { color: #000; }
   .app, .settings-page, main { display: block !important; margin: 0 !important; padding: 0 !important; max-width: none !important; }
@@ -1106,8 +769,7 @@ thead .plans-th-cap {
     padding: 0 !important;
     margin: 0 !important;
   }
-  /* 预览的辅助虚线**不上纸**：它是给人看「这里是一块」的，
-     纸面上每篇之间的那一道横线只会让人以为要撕下来。 */
+
   .print-block + .print-block { border-top: 0 !important; padding-top: 0 !important; margin-top: 10mm !important; }
   .print-row, .print-blank { color: #000; }
   .print-row-pinyin { color: #444; }
@@ -1115,66 +777,18 @@ thead .plans-th-cap {
   .print-block-title { color: #000; }
   .print-block-meta { color: #555; }
 
-  /* ③ 一块（一篇）**尽量不跨页**：跨页时至少要留下标题与头两行，
-        否则会出现「上一页末尾一个孤零零的标题、续页全是正文」。 */
   .print-block { break-inside: avoid; page-break-inside: avoid; }
   .print-block-title { break-after: avoid; page-break-after: avoid; }
 }
 
-/* 篇目打印页那一层（就地叠层，与 .poems-game 同一条规矩） */
 .poems-print { padding: 4px 0 14px; }
 .poems-print[hidden] { display: none; }
 
-/* ==========================================================================
-   主按钮：账号页那颗实心键与全站 `.btn.primary` 是同**一级**（Issue #163 / #209）
-   --------------------------------------------------------------------------
-   用户原话（Issue #163）：「发送随机码的按钮是黑色的？和其他页面主按钮色不一致？」
-   用户原话（Issue #209）：「设置，登录和个人中心所有页面的主按钮和普通按钮
-   主要应该只有这两种形态，需要保持一致性。页面中所有的按钮请进行扁平化设计。」
-
-   这两句话合起来是**一个**口径：全站按钮只有两级，两级都扁平。
-
-   一、这一层与全站 `.btn.primary` 是同一级，但不是「同一个样子」——
-       #163 时两处都画成「三段渐变 + 描金内边 + 外投影」，那是照着一句话抄的；
-       #209 要求扁平化之后，那套立体做法**两边一起去掉**（见上面 `.account-btn`
-       那一段注释里的删除清单）。判决标准因此从「逐条一样的质感」改成
-       「逐条一样的**没有**质感」：
-
-         主按钮（这一层）  `background: var(--green)` + `--green-dark` 描边
-         主按钮（.btn.primary）  同上（见 css/style.css「按钮分级」那一节）
-
-       同一个平色块、同一条描边 —— 两处画出来仍然一模一样，
-       只是这个「一样」从「一样的渐变」变成了「一样没有渐变」。
-
-   二、为什么不做成两个类名互相 `@extend` 或合并成一个 `.primary`：
-       账号三页与全站按钮的**语义不同**（账号页那颗是「发码 / 确定 / 完成」，
-       全站那颗是「记住 / 确定」），而两张样式表各有一份 `:root`、
-       跨不过文件边界。所以维持「两处各写一遍、用断言绑住」的既有口径 ——
-       与「卡片主标题三个值跨两张表」是同一套办法
-       （见 test/ui-consistency.test.js 的那一组断言：改一边就红）。
-
-   ⚠️ 色值一个字都不许改成字面量：本文件不新造调色板
-      （test/account-pages.test.js 有一条守着这件事）。
-   ========================================================================== */
-
-/* ==========================================================================
-   Issue #197：完整登录流程的四个页签
-   --------------------------------------------------------------------------
-   用户要的是一整套流程（注册 / 确认 / 登录 / 忘记密码 / 重设 / 快捷码）。
-   摊成一页长条的后果上一轮已经被点过名（「重复的注册按钮」），
-   所以这里用**页签**：一次只显示一件动作，页签只切动作、不跳页。
-
-   ⚠️ 这一节刻意**不引任何新色值**：页签的选中态用朱砂下划线（`--seal`）,
-      与全站「当前项」的表达（底栏页签、设置清单的行）同一条口径。
-      引一个新色会让这一页在全站里显得是另一套东西。
-   ========================================================================== */
-
-/* ---------- 页签条 ---------- */
 .auth-tabs {
   display: flex;
   gap: 4px;
   margin-bottom: 16px;
-  /* 一条底线把两个页签串起来 —— 选中态那条下划线压在它上面 */
+
   border-bottom: 1px solid var(--line);
 }
 
@@ -1183,7 +797,7 @@ thead .plans-th-cap {
   background: none;
   border: 0;
   border-bottom: 2px solid transparent;
-  /* 负的 1px 让下划线正好压在容器那条底线上（不压就是两根线） */
+
   margin-bottom: -1px;
   padding: 8px 12px 9px;
   font-family: inherit;
@@ -1205,12 +819,8 @@ thead .plans-th-cap {
   border-radius: 4px 4px 0 0;
 }
 
-/* ---------- 面板：同屏切换，不跳页 ---------- */
 .auth-pane[hidden] { display: none; }
 
-/* ---------- 密码那一格 + 「显示」键 ----------
-   ⚠️ 「显示」是 <button> 不是 <a>：它不做跳转，只是切换 input 的 type。
-      这一点在触屏上尤其重要 —— 它必须是能聚焦、能被读屏念出状态的那种元素。 */
 .pw-row {
   display: flex;
   align-items: stretch;
@@ -1234,10 +844,6 @@ thead .plans-th-cap {
 
 .pw-eye:hover { color: var(--green); border-color: var(--green); }
 
-/* ---------- 文字链那一行（注册 / 忘记密码） ----------
-   ⚠️ 一页只有**一件主动作**（实心按钮），其余动作收成文字链。
-      把它们也做成实心按钮的后果是「一屏里三颗一样重的按钮」，
-      用户不知道先点哪一颗 —— 这正是上一轮被点名的那个形状。 */
 .auth-links {
   margin: 14px 0 0;
   text-align: center;
@@ -1256,16 +862,10 @@ thead .plans-th-cap {
   cursor: pointer;
 }
 
-/* ⚠️ 与全站同一条口径（test/ui-consistency.test.js 有反向断言守着）：
-   反馈**只走颜色一档**，不把下划线加回来。按钮样的「重新发送」也是这么做的。 */
 .link-btn:hover { color: var(--green-dark); font-weight: 600; }
 
 .link-sep { margin: 0 6px; color: var(--line); }
 
-/* ---------- 提示块的三种语气 ----------
-   `.account-note` 是「说明」（中灰底），下面两个是**结果**：
-   ok = 真的成了，warn = 没成 / 要注意。两者都不许用「红得吓人」的色 ——
-   「确认邮件没发出去」不是事故，是发信商没配，用户重发一次即可。 */
 .account-note.ok {
   background: var(--green-light);
   border-left: 3px solid var(--green);
@@ -1281,15 +881,6 @@ thead .plans-th-cap {
 @media (max-width: 420px) {
   .auth-tab { padding: 8px 9px 9px; font-size: 13.5px; }
 }
-
-/* ==========================================================================
-   Issue #197：管理后台那张「全部账号」名录
-   --------------------------------------------------------------------------
-   与服务端名单（`.grant-row`）**刻意长得不一样**：
-   那张是「一行一条发放记录」（掩码 + 层级 + 到期 + 收回键），
-   这张是「一行一个人」（邮箱 + 昵称 + 时间 + 三个状态标）。长得像的后果
-   是管理员点错行 —— 而在这一页上点错行的意思是「改了别人不该改的东西」。
-   ========================================================================== */
 
 .account-list {
   list-style: none;
@@ -1308,9 +899,6 @@ thead .plans-th-cap {
 
 .acct-row:last-child { border-bottom: 0; }
 
-/* 左边那一列：邮箱 + 一行小字（昵称 / 注册 / 最后登录）。
-   ⚠️ `min-width: 0` 是必需的：flex 子项默认 `min-width: auto`，
-   而长邮箱会把整行撑破（`.acct-mail` 自己带 `overflow-wrap`）。 */
 .acct-main {
   display: flex;
   flex-direction: column;
@@ -1319,7 +907,6 @@ thead .plans-th-cap {
   flex: 1 1 auto;
 }
 
-/* 邮箱：**明文**。长邮箱要能断行 —— 不断行的下场是整页横向滚动 */
 .acct-mail {
   font-size: 13.5px;
   color: var(--ink);
@@ -1333,7 +920,6 @@ thead .plans-th-cap {
 
 .acct-none { color: var(--ink-3); font-style: normal; }
 
-/* 右边那一列：层级徽章 + 三个状态标。**允许换行**（窄屏上五枚标签放不下） */
 .acct-tags {
   display: flex;
   flex-wrap: wrap;
@@ -1357,7 +943,6 @@ thead .plans-th-cap {
 .acct-tag.warn { background: var(--amber-light); color: var(--amber); }
 .acct-tag.muted { color: var(--ink-3); }
 
-/* 名单拉不到时那一行说明（与 `.account-hint` 同族，但语气更明确） */
 .account-hint.warn-hint { color: var(--red); }
 
 @media (max-width: 420px) {
@@ -1365,31 +950,12 @@ thead .plans-th-cap {
   .acct-tags { max-width: 100%; justify-content: flex-start; }
 }
 
-/* ---------- 十五、跨设备同步那一行（Issue #209） ----------
-   用户原话：「个人中心页面，跨设备同步单独弄了张卡片，下面还额外有个同步设置
-   按钮，点完其实是进入到通用页面，还需要点击跨设备同步选项。只保留设置里的
-   跨设备同步选项就可以了啊。能像 iphone 那样把开关放到同一行的最右侧吗」
-
-   于是它从「自己一张卡 + 一行状态 + 一行只读回显 + 一颗键」收成**一行**：
-   左边项名、右边开关。开关本体（轨道 / 滑块 / 三种状态）与「设置 · 通用」
-   那一颗**共用同一份样式**（css/style.css 的 .switch*），这里只补这一页
-   自己的两处摆放口径：
-
-   · 与上面的信息行（.kv-row）之间要有一条分隔线 —— 它住在「关于」卡里，
-     上下都是键值行，中间不加线就会读成「上一条的续行」；
-     颜色与 .kv-row 的 --line-2 同一条，不新造一道深颜色的横杠。
-   · 开关那一颗不参与收缩（与顶栏「跛步」同一条口径）：
-     窄屏上先挤项名，开关始终是一颗完整的胶囊。
-   ⚠️ 「推到最右边」那件事**由 .switch 自己完成**（css/style.css 里
-     `justify-content: space-between`），这里不再写一遍 ——
-     两处都写「谁靠右」，将来改一处就会出现「个人中心靠右、通用页不靠右」。 */
 .sync-row {
   margin-top: 12px;
   padding-top: 12px;
   border-top: 1px solid var(--line-2);
 }
-/* 行里的项名：与 .kv-k 同一档字号与颜色（这一张卡里上下都是键值行，
-   旁边突然换一套字号就会显得是「另一块」） */
+
 .sync-row .settings-label {
   font-size: 13px;
   color: var(--ink-2);

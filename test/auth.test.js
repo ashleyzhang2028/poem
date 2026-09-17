@@ -1,23 +1,9 @@
-/**
- * 账号与邮箱随机码认证测试（Issue #132）
- *
- * 纯 Node、不联网、不装新依赖 —— 因为被测文件 js/auth-core.js 本身零 DOM 依赖。
- *
- * 这里守的不是「功能跑通」，而是设计文档里那几条不能破的规矩：
- *   1. 明文验证码绝不落盘、绝不出现在存储字符串里
- *   2. 单次使用 / 十分钟过期 / 错 5 次作废
- *   3. 频控三层各管各的，且换大小写绕不过锁定
- *   4. 系统时间被改早，已过期的码不能复活
- *   5. 注销 / 退出不碰背诵进度；uid 不回收
- *   6. 存储不可用（隐私模式）时降级为内存会话，而不是抛异常
- */
 const A = require('../js/auth-core.js');
 
 let fails = 0;
 const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else console.log('✓ ' + m); };
 const eq = (a, b, m) => chk(a === b, m + '（实际 ' + JSON.stringify(a) + '）');
 
-/* 每个用例一套干净的「假存储 + 可控时钟」，互不串味 */
 function env(startTs) {
   let t = startTs || 1757900000000;
   const mem = {};
@@ -121,7 +107,7 @@ console.log('\n=== 四、校验：成功、过期、错码、作废 ===');
   for (let i = 0; i < 5; i++) last = A.verifyCode(e3.store, r3.codeId, '000000', 'login');
   eq(last.code, 'E_CODE_VOID', '第 5 次错码当场作废该码');
   const voided = A.verifyCode(e3.store, r3.codeId, '333333', 'login');
-  // 码已作废，正确码也不再认；此处返回作废（未触发锁定）或锁定（已触发），都必须拦住
+
   chk(!voided.ok, '作废后正确码也不再认（必须重发）');
   chk(A.requestCode(e3.store, { channel: 'email', value: 'd@163.com' }, 'login').ok === false,
       '该轮结束后仍在发码冷却中，不能立刻重发');
@@ -152,7 +138,6 @@ console.log('\n=== 五、锁定：按 uid 计，换大小写绕不过 ===');
   const alt = A.requestCode(e.store, { channel: 'email', value: 'F@163.COM' }, 'login', { code: '000000' });
   eq(alt.code, 'E_RATE_EMAIL', '换个大小写同样被拦（按身份摘要不按字符串）');
 
-  // 设备层独立：换一个邮箱，仍受设备档限制
   const e5 = env();
   let devBlocked = false;
   for (let i = 0; i < 12 && !devBlocked; i++) {
@@ -161,7 +146,6 @@ console.log('\n=== 五、锁定：按 uid 计，换大小写绕不过 ===');
   }
   chk(devBlocked, '设备档一小时内 10 次上限独立生效（换邮箱也拦）');
 
-  // 整轮失败 3 轮 → 锁 24 小时
   const e2 = env();
   const rounds = [];
   for (let i = 0; i < 3; i++) {
@@ -183,7 +167,7 @@ console.log('\n=== 六、时间倒退：过期码不能复活 ===');
   const e = env(1757900000000);
   const r = A.requestCode(e.store, { channel: 'email', value: 'h@163.com' }, 'login', { code: '777777' });
   e.advance(11 * 60 * 1000);
-  e.set(1757900000000 - 3600 * 1000);                 // 把系统时间改早一小时
+  e.set(1757900000000 - 3600 * 1000);
   const back = A.verifyCode(e.store, r.codeId, '777777', 'login');
   chk(!back.ok, '时间被改早后，已过期的码被作废，不能登录');
   chk(back.code === 'E_CODE_USED' || back.code === 'E_CODE_VOID' || back.code === 'E_CODE_EXPIRED',
@@ -214,7 +198,7 @@ console.log('\n=== 八、会话：过期与静默续期 ===');
   const r = A.requestCode(e.store, { channel: 'email', value: 'j@163.com' }, 'login', { code: '101010' });
   A.verifyCode(e.store, r.codeId, '101010', 'login');
   const first = A.session(e.store).exp;
-  e.advance(20 * 86400000);                            // 剩 10 天 → 触发静默续期
+  e.advance(20 * 86400000);
   const renewed = A.session(e.store);
   chk(renewed && renewed.exp > first, '临近过期时静默续期');
   e.advance(31 * 86400000);
@@ -299,10 +283,7 @@ console.log('\n=== 十一、降级：存储不可用 / 脏数据 / 写满 ===');
 
 console.log('\n=== 十二、退化随机源不能变成死循环 ===');
 {
-  // 事故现场：codeId / uid 曾写成 `do { x = rand() } while (撞了)`，
-  // 一旦随机源恒定（测试注入源、被 hook 的环境），那就是死循环 ——
-  // 表现为「第一次发码正常，第二次调用整个线程卡死」，且没有任何报错。
-  // 这条用例就是钉住它：随机源恒定下连续发码 / 建号 / 开会话都要正常返回。
+
   const e = env();
   const ids = [];
   for (let i = 0; i < 5; i++) {
@@ -343,10 +324,6 @@ console.log('\n=== 十三、边界规矩 ===');
   const sv = A.verifyCode(e9.store, sms.codeId, '151515', 'login');
   chk(sv.ok, '短信码校验复用同一套 verifyCode');
 
-  /* ------------------------------------------------------------------
-     2B：短信口子的具体口径
-     ------------------------------------------------------------------ */
-  // 归一化在多语言输入下都要收敛到同一个裸 11 位
   ['13800138000', '138 0013 8000', '138-0013-8000', '+8613800138000',
     '008613800138000', '(138)0013.8000'].forEach(v => {
     eq(A.normalizePhone(v), '13800138000', '手机号归一化收敛：' + JSON.stringify(v));
@@ -357,18 +334,15 @@ console.log('\n=== 十三、边界规矩 ===');
   eq(A.maskPhone('+86 138-0013-8000'), '138****8000', '掩码前先归一化（去掉 +86）');
   eq(A.maskPhone('abcdefghijk'), '***', '非手机号形态掩成 ***（不截字母）');
 
-  // 形状不对的短信请求就地拒绝，**不消耗**本机状态
   const e10 = env();
   const badPhone = A.requestCode(e10.store, { channel: 'sms', value: '123' }, 'login', {});
   eq(badPhone.ok, false, '手机号形状不对：拒绝');
   eq(badPhone.code, 'E_PHONE_FORMAT', '错误码 E_PHONE_FORMAT');
   chk(!!A.ERR.E_PHONE_FORMAT, '错误码有对应文案');
 
-  // 未知 channel 明确拒绝，不静默当邮箱
   const badCh = A.requestCode(e10.store, { channel: 'wechat', value: 'x' }, 'login', {});
   eq(badCh.code, 'E_CHANNEL', '未知 channel 回 E_CHANNEL（不静默当邮箱）');
 
-  // 独立且更严的短信频控档
   chk(A.RATE_SMS && A.RATE_SMS.phone && A.RATE_SMS.phone.length >= 3, '短信有独立的频控档（三档：时/日/月）');
   const e11 = env();
   const s1 = A.requestCode(e11.store, { channel: 'sms', value: '13900139000' }, 'login', { code: '111111' });

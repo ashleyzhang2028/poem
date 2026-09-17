@@ -1,18 +1,3 @@
-/**
- * ProgressStore 分域测试（Issue #132 阶段 0 / `docs/architecture.md` §3）
- *
- * 纯 Node、不联网、不装新依赖。被测文件 js/progress-store.js 用 `useStore()`
- * 注入内存存储，与 js/avatar.js 的测试同一套路。
- *
- * 这一层守的是**三件比接口更要紧的事**：
- *   1. **分域隔离**：改字号不写进度、改昵称不写设备域、清进度不删账号与设备偏好
- *      （「清空背诵进度顺手把昵称删了」是今天真实存在的 bug 形状）
- *   2. **设置域拆家**：`helper` 搬到 `poem_device_prefs_v1`（设备域），
- *      而 `grade/term/scope/dailyCount/algo` 仍在老键（账号域，跨设备一致）；
- *      对外**仍返回同一个扁平对象**，老代码一行不用改
- *   3. **网页端接线**：正文里出现 `js/progress-store.js` 的每一页，
- *      它都必须**排在 js/storage.js 之前**（顺序反了不报错，只是少数据）
- */
 const fs = require('fs');
 const path = require('path');
 const ROOT = path.join(__dirname, '..');
@@ -25,7 +10,6 @@ let fails = 0;
 const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else console.log('✓ ' + m); };
 const eq = (a, b, m) => chk(a === b, m + '（实际 ' + JSON.stringify(a) + '）');
 
-/** 假 localStorage */
 function mem(init) {
   const m = Object.assign({}, init || {});
   return {
@@ -36,7 +20,7 @@ function mem(init) {
     raw: () => m
   };
 }
-/** 写满的存储：setItem 一律抛 QuotaExceeded，读得到旧值 */
+
 function full(init) {
   const inner = mem(init);
   return Object.assign({}, inner, {
@@ -78,8 +62,7 @@ console.log('\n=== 三、设置域拆家：账号域字段留下，helper 归设
 {
   const b = mem();
   PS.useStore(b);
-  /* Issue #209：出厂范围从「本年级本学期」（term）改成「本册及之前」（upto）——
-     界面上删掉了 term 那一档，出厂值再留着它会落在一个选不中的范围上。 */
+
   eq(JSON.stringify(PS.settings().scope), '"upto"', '什么盘都没有时给出厂默认（upto）');
   eq(PS.settings().grade, 1, '默认年级 1');
   eq(PS.helper(), 'on', 'helper（设备域）的出厂默认是「阅读辅助开着」');
@@ -94,14 +77,12 @@ console.log('\n=== 三、设置域拆家：账号域字段留下，helper 归设
     'helper 在老键里仍留一份镜像（六部集子页还在读它，只写新键会两边打架）');
   eq(JSON.parse(b.raw()[K.device] || '{}').helper, 'off', 'helper 同时写进设备域新键');
 
-  /* 白名单：不在表里的字段一律不落盘 */
   PS.saveSettings({ grade: 2, helper: 'on', 野生字段: 1, plan: 'max' });
   const acct2 = JSON.parse(b.raw()[K.settings] || '{}');
   eq(acct2.野生字段, undefined, '认不出的字段不写盘（导入脏备份也进不来）');
   eq(acct2.plan, undefined, 'plan 这类权益字段不属于设置域，不写盘');
   eq(acct2.grade, 2, '白名单里的字段照写');
 
-  /* patch：读改写 */
   PS.patch({ dailyCount: 10 });
   eq(PS.settings().dailyCount, 10, 'patch 改得进');
   eq(PS.settings().grade, 2, 'patch 不动别的字段');
@@ -146,7 +127,6 @@ console.log('\n=== 五、分域隔离：改一处不许碰另一处 ===');
   eq(JSON.parse(afterHelper[K.profile]).nickname, '玥玥', '改注音开关不动账号域档案');
   eq(JSON.parse(afterHelper[K.settings]).grade, 3, '改注音开关不动账号域其他字段（读改写不整份覆盖）');
 
-  // 反向：写设置不许碰设备域与进度域
   PS.useStore(mem({ [K.settings]: JSON.stringify({}), [K.profile]: JSON.stringify({ nickname: '小明' }) }));
   const b2 = PS.store();
   PS.saveSettings({ grade: 5, helper: 'on' });
@@ -155,7 +135,6 @@ console.log('\n=== 五、分域隔离：改一处不许碰另一处 ===');
     '写设置不把 username 带进去（它住 poem_profile_v1，见 js/avatar.js）');
   eq(JSON.parse(b2.raw()[K.profile]).nickname, '小明', '写设置不动档案');
 
-  // 清进度：只清进度域
   const b3 = mem({
     [K.progress]: JSON.stringify({ p1: { level: 1 } }),
     [K.settings]: JSON.stringify({ grade: 3 }),
@@ -198,7 +177,6 @@ console.log('\n=== 七、导出 / 导入：宽进严出，老版本也读得懂 
   eq(data.settings.grade, 6, '导出带账号域设置');
   eq(data.settings.helper, 'off', '导出的 settings 里补上 helper —— 老版本导入后才不会把它变回默认');
 
-  /* 导入到一份干净盘：每件数据各回各的域 */
   const b2 = mem();
   PS.useStore(b2);
   PS.importJSON(json);
@@ -207,14 +185,12 @@ console.log('\n=== 七、导出 / 导入：宽进严出，老版本也读得懂 
   eq(JSON.parse(b2.raw()[K.device]).helper, 'off', '导入把 helper 写回设备域（没有写进设置对象）');
   eq(PS.helper(), 'off', '导入后读出来的阅读辅助就是备份里那一档');
 
-  /* 老备份（没有 device 域，helper 混在 settings 里） */
   const b3 = mem();
   PS.useStore(b3);
   PS.importJSON(JSON.stringify({ progress: { p9: { level: 1 } }, settings: { helper: 'on', grade: 2 } }));
   eq(JSON.parse(b3.raw()[K.device]).helper, 'on', '老备份里的 helper 也迁到设备域');
   eq(PS.settings().grade, 2, '老备份里的账号域字段照收');
 
-  /* 脏备份：认不出的域静默忽略，格式错才抛 */
   const b4 = mem();
   PS.useStore(b4);
   PS.importJSON(JSON.stringify({ progress: 'not-an-object', settings: { grade: 7 }, 未来字段: 1 }));
@@ -291,7 +267,7 @@ console.log('\n=== 十一、源码扫描：加载了 storage.js 的页面必须�
     if (!/js\/storage\.js/.test(html)) return;
     withStorage++;
     chk(/js\/progress-store\.js/.test(html), p + ' 加载了 progress-store.js（storage.js 是它的转发层）');
-    /* 只看 <script src> 行 —— 行号差直接比会踩到注释里那句「必须排在 storage.js 之前」 */
+
     const order = [];
     html.split('\n').forEach((ln, i) => {
       if (ln.indexOf('<script') === -1) return;
@@ -303,16 +279,6 @@ console.log('\n=== 十一、源码扫描：加载了 storage.js 的页面必须�
   });
   chk(withStorage >= 12, '至少 12 张页在读设置 / 进度（实际 ' + withStorage + ' 张）');
 
-  /* ⚠️ 反向那一条（Issue #163）：**加载了引擎的页面也必须加载转发层**。
-     六部集子页与搜索 / 课外入口页此前只加载 progress-store.js、没加载
-     js/storage.js —— 页面上 window.Storage 一直是 undefined，
-     凡走它的地方都静默退化成「读不到」。这条不是「少数据」，是「整层不在」，
-     却同样不报错：搜索页接上「上次搜的词」时才被翻出来。 */
-  /* ⚠️ 这一条只看**真的用了 Storage 这个门面的页面**（regex 认 script 标签，
-     不认注释 —— 放行注释的话「某页到底有没有转发层」就没人知道了）。
-     `login / plans / admin / settings` 主页只有顶栏那一枚印读昵称，
-     走的是 `avatar.js` 与「当前子用户」（js/family.js），**不碰进度与设置** ——
-     它们本来就既没有 progress-store.js 也没有 storage.js（见下一条正向断言）。 */
   pages.forEach(p => {
     const html = fs.readFileSync(path.join(ROOT, p), 'utf8');
     if (!/<script[^>]+js\/progress-store\.js/.test(html)) {
@@ -322,11 +288,7 @@ console.log('\n=== 十一、源码扫描：加载了 storage.js 的页面必须�
     }
     chk(/<script[^>]+js\/storage\.js/.test(html),
       p + ' 加载了 progress-store.js，也加载了它的转发层 js/storage.js');
-    /* 子用户层（Issue #159）必须排在引擎**之前**：引擎每次读盘都要问它
-       「当前是哪个档案」——顺序反了不报错，症状是**静默串档**。
-       ⚠️ 这一条的正主在 `test/family.test.js` 第七节（它逐页扫，且只认
-          `<script src>` 行，不会被注释里的说明骗到）；这里只顺带确认
-          加载了引擎的页面也把 family.js 带上了。 */
+
     if (!/js\/family\.js/.test(html)) return;
     const at = html.indexOf('js/family.js');
     const eng = html.indexOf('js/progress-store.js');
@@ -334,8 +296,6 @@ console.log('\n=== 十一、源码扫描：加载了 storage.js 的页面必须�
       p + ' 里 family.js 排在 progress-store.js 之前（反了就不报错、只是永远读没有后缀的老键）');
   });
 
-  /* 六部集子页与设置页**直接**读 helper / 已读键，它们不经过 storage.js ——
-     但 reader-core.js 里那段读写必须与引擎同源，不能各写各的字面量 */
   const rc = fs.readFileSync(path.join(ROOT, 'js/reader-core.js'), 'utf8');
   chk(/ProgressStore/.test(rc), 'js/reader-core.js 的阅读偏好走 ProgressStore（不自己拼键名）');
   chk(/ProgressStore\.helper\(\)/.test(rc), '集子页的「阅读辅助」开关就是引擎里那一份（同源）');

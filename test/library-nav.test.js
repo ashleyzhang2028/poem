@@ -1,30 +1,3 @@
-/**
- * 课外阅读「一层退一层」导航测试（Issue #122）
- * ==========================================================================
- * 用户报的现象（原话）：
- *   「课外阅读首页，点击唐诗三百首，再点击进入详情页，这时点击右上角的后退，
- *     直接退到了背诵首页。期望结果是回到唐诗三百首索引页，再后退，
- *     回到课外阅读首页。课外阅读的其他集子也是这样的问题。」
- *
- * 病根不在阅读器那一刻，而在**入口页把用户送去了哪**：
- *   /library/ 上点「唐诗三百首」原来是 `location.href = "/tangshi/"` ——
- *   索引住在另一个地址上，而阅读器只是那一页里的一个层。
- *   从索引点进一首诗，按右上角返回只能把层收掉；层没了，
- *   底下就是那一页自己的页面顶栏，那颗默认的键是「回首页」——
- *   用户看到的就是「直接退到了背诵首页」。
- *
- * 现在改成**就地叠层**：索引铺在 /library/ 这一页上（地址栏不动），
- * 阅读器再叠在最上面。三层在同一页里，返回键一层退一层：
- *   正文 → 索引 → 集子目录。
- *
- * 这一层验五件事：
- *   1. 点卡片不再跳走（就地铺开）；课内诗词仍走 /poems/ 那一页；
- *   2. 三层各自的返回键去向正确（正文→索引、索引→目录），且**只有一枚**
- *      看得见的 #top-act（同名 id 在 jsdom ≥27 里只认第一枚，会绑错按钮）；
- *   3. 页顶那一行跟着换（页名 / 说明 / 进度牌），退出时还原；
- *   4. 换部能换干净（篇数 / 页名 / 搜索框与筛选都不带上一部的残留）；
- *   5. 直接访问 /tangshi/ 等页面照旧可用（就地叠层没把那一版弄丢）。
- */
 const { JSDOM } = require('jsdom');
 const fs = require('fs');
 const path = __dirname + '/../';
@@ -33,7 +6,6 @@ const read = f => fs.readFileSync(path + f, 'utf8');
 let fails = 0;
 const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else console.log('✓ ' + m); };
 
-/** 起一个页面：把 <script src> 逐个 eval 进 jsdom（等文档解析完再插，见 search.test.js） */
 function boot(file, url) {
   const html = read(file);
   const dom = new JSDOM(html, { runScripts: 'dangerously', url: 'https://local.test' + url,
@@ -65,19 +37,16 @@ function boot(file, url) {
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 (async () => {
-  /* ================= 一、源码口径：卡片与三层的落点 ================= */
+
   const libHtml = read('library/index.html');
   const libJs = read('js/library.js');
   chk(/data-lib-view="grid"/.test(libHtml) && /data-lib-view="book"/.test(libHtml),
     '入口页有两层 DOM：集子目录（grid）+ 就地铺上来的索引（book）');
   chk(/data-lib-view="book"[^>]*hidden/.test(libHtml),
     '第二层默认 hidden（没点卡片之前不占位）');
-  // 就地铺开那一层的元素用 lib- 前缀，阅读器那一套用全局的 gw-/rd-
-  // ——同一页里两套 id 必须分得开（引擎按 data-gw 找元素，
-  //   参数名若也叫 data-gw，索引层就会把自己的列表认成阅读器的）
+
   chk(/data-lib-part="list"/.test(libHtml), '索引层的列表用 data-lib-part（引擎的 data-gw 让给阅读器）');
-  // ⚠️ 不套 .app（Issue #147）—— 见 test/ui-consistency.test.js 那一段的完整说明。
-  //    这里只看结构本身：入口页全页只有一个 .app，第二层住在它里面。
+
   {
     const bare = libHtml.replace(/<!--[\s\S]*?-->/g, ' ');
     chk((bare.match(/class="app"/g) || []).length === 1 &&
@@ -97,7 +66,6 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(/openFrom/.test(read('js/reader-core.js')),
     '引擎支持「这一篇是从哪一层开出来的」（openFrom）——阅读器的返回键不再写死成 closeReader');
 
-  /* ================= 二、三层来回走一遍 ================= */
   const w = boot('library/index.html', '/library/');
   await w.__ready;
   await sleep(250);
@@ -116,7 +84,6 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     d.querySelectorAll('.library-card').length + '）');
   chk(!gridHidden() && railHidden(), '初始状态：目录可见、索引层隐藏');
 
-  // 点「唐诗三百首」——不该跳走，就地铺开
   click(d.querySelector('.library-card[data-book="tangshi"]'));
   await sleep(350);
   chk(pageName() === '唐诗三百首', '点卡片后页名换成「唐诗三百首」（实际 ' + pageName() + '）');
@@ -125,9 +92,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(gridHidden() && !railHidden(), '目录收起、索引铺开（同一页里的两层）');
   chk(d.querySelectorAll('#lib-gw-list .item').length === 301,
     '索引层列出 301 首（实际 ' + d.querySelectorAll('#lib-gw-list .item').length + '）');
-  // Issue #147（两轮）：页顶那一行不再挂已读进度牌 —— 它原先在这里按集子换数
-  //（「0 / 301 首」）；那一枚先挪去详情页状态栏、后连状态栏那一枚也撤了。
-  // 于是这一层里（页顶 + 索引）一处读数都没有。
+
   chk(d.querySelector('.app > .topbar .count-badge') === null,
     '页顶那一行不再挂已读进度牌（实际 ' +
     (d.querySelector('.app > .topbar .count-badge') ?
@@ -138,7 +103,6 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(topActs() === 1 && !!actionBtn() && actionBtn().getAttribute('type') === 'button',
     '索引这一层只有一枚返回键（页面那条顶栏上的 #top-act）');
 
-  // 点一篇 → 阅读器
   click(d.querySelector('#lib-gw-list .item'));
   await sleep(200);
   chk(!readerHidden(), '点一首诗，阅读器那一层打开');
@@ -148,7 +112,6 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   const readerBack = d.querySelector('#lib-gw-reader #top-act');
   chk(!!readerBack, '阅读器那条顶栏上有返回键');
 
-  // 返回 ①：应回到唐诗索引，不是一路退到集子目录
   click(readerBack);
   await sleep(200);
   chk(readerHidden(), '按返回，阅读器那一层收起来');
@@ -158,7 +121,6 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(d.querySelectorAll('#lib-gw-list .item').length === 301, '索引仍是完整 301 首');
   chk(topActs() === 1, '退回索引层后仍只有一枚可见的返回键（实际 ' + topActs() + '）');
 
-  // 返回 ②：应回到集子目录
   const back2 = actionBtn();
   chk(!!back2, '索引层有返回键');
   click(back2);
@@ -170,8 +132,6 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(d.querySelectorAll('.library-card').length === 6, '六张卡片仍在（退回来时没有把目录清掉）');
   chk(topActs() === 0, '目录这一层不再有返回键（恢复各页默认的「回首页」；实际 ' + topActs() + '）');
 
-  /* ================= 三、换一部：数据与残留都要换干净 ================= */
-  // 先在唐诗里留一点「痕迹」：搜索框敲字 + 切到「未读」筛选
   const gs = d.querySelector('[data-lib-part="search"]');
   const gseg = d.querySelector('[data-lib-part="filter-seg"] button[data-filter="unread"]');
   chk(!!gs && !!gseg, '索引层有搜索框与「全部 / 未读」筛选');
@@ -188,7 +148,6 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(d.querySelector('[data-lib-part="search"]').value === '',
     '换到另一部时搜索框是空的（上一部敲过的字不带过来）');
 
-  // 换回来：唐诗仍是 301 首（同一块 DOM 上重挂，不是复用旧实例）
   click(d.querySelector('.app > .topbar #top-act'));
   await sleep(200);
   click(d.querySelector('.library-card[data-book="tangshi"]'));
@@ -196,15 +155,12 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(d.querySelectorAll('#lib-gw-list .item').length === 301,
     '换回唐诗仍是完整 301 首（同一块挂载点上重新挂，不复用上一部的实例）');
 
-  /* ================= 四、课内诗词仍走自己的索引页 ================= */
   click(d.querySelector('.app > .topbar #top-act'));
   await sleep(200);
   const poemsCard = d.querySelector('.library-card[data-book="poems"]');
   chk(poemsCard.tagName === 'A' && poemsCard.getAttribute('href') === '/poems/',
     '课内诗词那张仍是链接、仍指 /poems/（它有自己的索引页，不必在这一页里铺）');
 
-  /* ================= 五、各集子自己的页面照旧可用 ================= */
-  // 「就地叠层」只是入口页的走法；直接访问 /tangshi/ 等页面必须一模一样地能用。
   for (const [f, url, n, name] of [
     ['tangshi/index.html', '/tangshi/', 301, '唐诗三百首'],
     ['songci/index.html', '/songci/', 283, '宋词三百首'],

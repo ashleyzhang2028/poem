@@ -1,24 +1,5 @@
 #!/usr/bin/env node
-/**
- * 译文来源标注工具（可重复执行 / 幂等）
- *
- * 背景：白话译诗没有法定教科书版本，本库译文是「自拟白话直译」。
- * 与其含糊宣称「以教师用书为准」（不可验证），不如逐首标出可考证的真实来源，
- * 让用户知道自己在看什么：是公共注本口径、教材篇目口径，还是现代作品。
- *
- * 字段：`translationSource`，取值四类（文案见 data/index.js 的 TRANSLATION_SOURCES）
- *
- *   academic       学术工具书，据《唐诗鉴赏辞典》《宋词鉴赏辞典》等通行讲法
- *   school          课内篇目，据统编版教材与教师用书课后释义自拟直译
- *   public-domain  公有领域，据公认注本与通行译注文字自拟直译
- *   modern          现代作品，据现行通用选本与通行讲法自拟直译
- *
- * 已有的标注一律保留，不覆盖 —— 只补缺的，所以可以直接反复跑。
- *
- * 用法：
- *   node scripts/tag-translation-source.js --dry     # 只看会改哪些，不落盘
- *   node scripts/tag-translation-source.js           # 写回数据文件
- */
+
 const fs = require('fs');
 const path = require('path');
 
@@ -30,7 +11,6 @@ const SOURCE_SCHOOL = 'school';
 const SOURCE_PUBLIC = 'public-domain';
 const SOURCE_MODERN = 'modern';
 
-/** 鉴赏辞典类工具书收录的名家名篇：译注主要参考这两部书的通行讲法 */
 const ACADEMIC_TITLES = new Set([
   '短歌行', '观沧海', '龟虽寿', '归园田居（其一）', '饮酒（其五）',
   '蜀道难', '梦游天姥吟留别', '将进酒', '行路难（其一）', '春夜洛城闻笛',
@@ -54,16 +34,6 @@ const ACADEMIC_TITLES = new Set([
   '山坡羊·骊山怀古', '天净沙·秋思', '朝天子·咏喇叭'
 ]);
 
-/**
- * 在 JS 数组字面量里补字段：逐行扫描，认出每个条目的 `id` / `title` /
- * `dynasty` / `translation`，在该条目的 translation 之后插入 `translationSource`。
- * 不做整体重新序列化，原有换行、缩进、注释一个字不动。
- */
-/**
- * 在一行式条目里，把 `translationSource` 插到 `translation: "..."` 那个字符串之后。
- * `translation` 的值里可能带转义引号（如 \"），所以逐字符找真正的收尾引号，
- * 不能简单 indexOf('",')。返回新行；定位不到时返回 null（由调用方记账，不静默丢）。
- */
 function insertAfterTranslation(line, source) {
   const at = line.indexOf('translation:');
   if (at < 0) return null;
@@ -74,14 +44,14 @@ function insertAfterTranslation(line, source) {
     if (line[i] !== '"') continue;
     let bs = 0;
     for (let j = i - 1; j >= 0 && line[j] === '\\'; j--) bs++;
-    if (bs % 2 === 1) continue; // 被转义的反斜杠，不是收尾引号
-    end = i;                     // 真正的收尾引号
+    if (bs % 2 === 1) continue;
+    end = i;
     break;
   }
   if (end < 0) return null;
-  const head = line.slice(0, end + 1);   // ...translation: "译文"
-  const tail = line.slice(end + 1);      // 剩下的 , } 等
-  // head 后面补逗号，再插字段；tail 原样保留（它自己那逗号还在）
+  const head = line.slice(0, end + 1);
+  const tail = line.slice(end + 1);
+
   const needsComma = !/^\s*,/.test(tail);
   return head + (needsComma ? ',' : '') + ' translationSource: "' + source + '"' + tail;
 }
@@ -91,24 +61,20 @@ function tagFile(file, resolveSource, idRe) {
   const lines = src.split('\n');
   const out = [];
   const skipped = [];
-  let cur = null; // 当前条目
+  let cur = null;
   let kept = 0;
 
   const flush = () => {
     if (!cur || !cur.source || cur.translationEndIdx == null) { cur = null; return; }
     const idx = cur.translationEndIdx;
-    // 旧行结尾可能已经带逗号（多行译文那一支），带就带，不带我们补上；
-    // 新插进去的 translationSource 后面必须跟逗号，否则下一条目语法就断了
+
     if (!/,\s*$/.test(out[idx])) out[idx] = out[idx] + ',';
     out.splice(idx + 1, 0, '    translationSource: "' + cur.source + '"' + ',');
     cur = null;
   };
 
   lines.forEach(line => {
-    // --- 单行写法 ---
-    // `{ id: "xx1-98", title: "…", …, translation: "…" },` 整条挤在一行。
-    // poems-1..6 是一行一字段，poems-7..12 与用户手加的简写都是这种写法，必须支持，
-    // 否则会出现「有的条目悄悄没标注」——比报错更难发现。
+
     const rawId = (line.match(/\bid:\s*"([^"]+)"/) || [])[1];
     if (rawId && idRe.test(rawId) && /\btranslation:/.test(line) && !/\btranslationSource:/.test(line)) {
       const title = (line.match(/\btitle:\s*"([^"]+)"/) || [])[1] || '';
@@ -121,7 +87,6 @@ function tagFile(file, resolveSource, idRe) {
       return;
     }
 
-    // id 可能单起一行，也可能与 title/author 挤在同一行，所以不锚行首
     const idM = line.match(/\bid:\s*"([^"]+)"/);
     if (idM && idRe.test(idM[1])) {
       flush();
@@ -141,7 +106,7 @@ function tagFile(file, resolveSource, idRe) {
       if (tM && !/\bid:/.test(line)) cur.title = tM[1];
       if (/\btranslationSource:/.test(line)) { kept++; cur = null; out.push(line); return; }
       if (/\btranslation:/.test(line)) {
-        // 译文可能跨多行：收尾那一行才带引号闭合
+
         cur.translationEndIdx = /",?\s*$/.test(line) ? out.length : null;
       } else if (cur.source && cur.translationEndIdx == null) {
         if (/",?\s*$/.test(line)) cur.translationEndIdx = out.length;
@@ -166,9 +131,6 @@ function tagFile(file, resolveSource, idRe) {
   return added;
 }
 
-/** 小学课内的毛泽东诗词（卜算子·咏梅 / 七律·长征）：译文只讲字面，
-    不涉及创作背景与评价，与小学课本口径一致，所以按课内标 school；
-    初高中那几首才需要通行的创作背景与讲法，标 modern。 */
 const MODERN_TITLES = new Set(['沁园春·雪', '我爱这土地', '乡愁', '沁园春·长沙']);
 
 const poemSource = p => {

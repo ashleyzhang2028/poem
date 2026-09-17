@@ -1,14 +1,5 @@
-/* ==========================================================================
-   用户协议 / 隐私条款 页面样式
-   与主应用同一套配色（宋代传统色）与圆角，正文用可读性更好的字号与行距。
-   注意：本文件的调色板以 css/style.css 的 :root 变量为准，不另起一套颜色。
-   ========================================================================== */
-
-/* ⚠️ 下划线不在这里管：全站统一由 css/style.css 顶部那条 `a { text-decoration: none }`
-   （Issue #163 之后它是唯一来源 —— 六处各写一遍，就是六个会漏的地方）。 */
 .back-icon svg { width: 26px; height: 26px; }
 
-/* 更新日期：原先进顶栏副标题，顶栏统一后单独一行，仍然精确到年月日 */
 .legal-updated {
   margin: -2px 0 12px;
   font-size: 12px;
@@ -27,7 +18,6 @@
 }
 .legal-nav-link:hover { background: var(--green-light); filter: brightness(.97); }
 
-/* 目录：小屏也能一眼看到有哪些章节 */
 .legal-toc {
   display: flex;
   flex-wrap: wrap;
@@ -44,7 +34,6 @@
 }
 .legal-toc a:hover { color: var(--green); border-color: var(--green); }
 
-/* 正文：条款是给人读的，用宋体 + 宽松行距，长时间看也不累 */
 .legal {
   background: var(--card);
   border-radius: var(--radius);
@@ -81,9 +70,7 @@
   border-radius: 4px;
   padding: 1px 5px;
 }
-/* 正文里的外链：全局默认已去掉下划线（见 css/style.css 的 `a`），
-   这里只上调一档天青 —— 与正文的黑墨分得开，又不至于像浏览器默认那样跳出来。
-   hover 加深一档（与 .foot-links a / .kv-v a 同一套反馈）。 */
+
 .legal a { color: var(--green); }
 .legal a:hover { color: var(--green-dark); }
 
@@ -100,7 +87,7 @@
   word-break: break-all;
 }
 .mail-link:hover { filter: brightness(.97); }
-/* 剪贴板不可用时的兜底：直接展示可长按复制的地址 */
+
 .mail-plain {
   display: inline-block;
   font-size: 13.5px;
@@ -118,11 +105,6 @@
   margin: 6px 0 0;
 }
 
-/* ==========================================================================
-   法务页精简版：只讲关键信息
-   --------------------------------------------------------------------------
-   协议与隐私各自压到一屏可读完，重复内容合并、去掉婆婆妈妈的免责长句。
-   ========================================================================== */
 .legal-lead {
   border-left: 3px solid var(--green);
 }

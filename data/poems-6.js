@@ -1,4 +1,3 @@
-/* 小学 六年级（统编版/人教版）古诗 */
 window.POEMS_6 = [
   {
     textRef: "poems-xx6-01",

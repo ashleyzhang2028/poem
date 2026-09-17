@@ -1,14 +1,3 @@
-/**
- * 用户协议 / 隐私条款 页面测试
- *
- * 必须成立的事：
- *   1. 两个页面真实存在，首页与小古文页页脚常驻入口（不漏挂、不缺链）；
- *   2. 文案覆盖「学生保护」与「网站所有者免责」两类必要条款；
- *   3. 邮箱 kuibuapp@163.com 不出现在 HTML / JS 静态源码里，
- *      只能由 js/contact.js 在运行时拼装出来（防搜索引擎抓取）；
- *   4. 更新时间精确到「年月日」，且与 <time datetime> 一致；
- *   5. **不**存在访问统计：admin 页与统计脚本已删除，条款里也不得再提（不能偷偷统计）。
- */
 const { JSDOM } = require('jsdom');
 const fs = require('fs');
 const path = __dirname + '/../';
@@ -19,7 +8,6 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
 const read = f => fs.readFileSync(path + f, 'utf8');
 const MAIL = 'kuibuapp@163.com';
 
-/* ---------- 一、静态源码里不能有明文邮箱 ---------- */
 ['index.html', 'classic/index.html', 'settings/index.html', 'settings/general/index.html',
  'settings/recite/index.html', 'settings/lists/index.html', 'settings/reader/index.html',
  'terms/index.html', 'privacy/index.html', 'js/contact.js', 'js/chrome.js', 'js/settings-nav.js', 'js/settings.js', 'sw.js']
@@ -29,18 +17,16 @@ const MAIL = 'kuibuapp@163.com';
     chk(!/@163\.com/.test(src), f + ' 源码不含 @163.com 片段');
   });
 
-/* 全站扫描：任何被 git 跟踪的文本文件都不应出现明文邮箱 */
 const vm = require('vm');
 const { execFileSync } = require('child_process');
 const tracked = execFileSync('git', ['ls-files'], { cwd: path }).toString().trim().split('\n')
-  // 本测试文件自身需要写出邮箱来断言，跳过
+
   .filter(f => f && f !== 'test/legal.test.js');
 const leaked = tracked.filter(f => {
   try { return fs.readFileSync(path + f, 'utf8').includes(MAIL); } catch (e) { return false; }
 });
 chk(leaked.length === 0, '仓库内无任何明文邮箱泄漏（' + (leaked.join(', ') || '无') + '）');
 
-/* ---------- 二、页面层 ---------- */
 function load(file, urlPath) {
   const html = read(file);
   const dom = new JSDOM(html, { runScripts: 'dangerously', url: 'https://local.test/' + (urlPath || file) });
@@ -55,19 +41,16 @@ function load(file, urlPath) {
   return { dom, window, doc: window.document };
 }
 
-/* 目录化 URL：页面真实文件在各目录的 index.html，
-   但页内资源一律用绝对路径（/css/...、/js/...），所以这里按目录地址加载即可 */
 const terms = load('terms/index.html', 'terms/');
 const privacy = load('privacy/index.html', 'privacy/');
 const index = load('index.html');
-// 设置拆成二级页后，页脚（法务入口 + 版权）**每一页都有**，
-// 这里把主页与四张二级页一起加载，逐页守一遍。
+
 const settingsPages = ['settings/index.html', 'settings/general/index.html',
   'settings/recite/index.html', 'settings/lists/index.html', 'settings/reader/index.html']
   .map(f => Object.assign({ f: f }, load(f, f.replace(/index\.html$/, ''))));
 
 setTimeout(() => {
-  /* --- 用户协议 --- */
+
   {
     const d = terms.doc;
     chk(/用户协议/.test(d.title), '用户协议页标题正确（' + d.title + '）');
@@ -80,7 +63,7 @@ setTimeout(() => {
     chk(!/本站对.{0,10}承担全部责任/.test(t), '没有把责任无限兜给本站的表述');
     chk(/仍可能有疏漏|仍可能存在疏漏/.test(t) && /以孩子学校所用教材/.test(t),
       '说明了内容/拼音可能出错，以教材为准');
-    // 需求：语音合成（机器朗读）要把「设备系统自带」讲清，并对多音字朗读出错免责
+
     chk(/设备系统自带|系统自带/.test(t), '朗读说明写明由设备系统自带的语音合成完成');
     chk(/音色/.test(t) && /断句/.test(t), '朗读说明写明音色与断句由系统决定');
     chk(/不(存储|保存)(任何)?音频文件/.test(t), '明确声明不存储任何音频文件');
@@ -90,39 +73,25 @@ setTimeout(() => {
     chk(/以语文教材|教材/.test(t) && /老师/.test(t), '读音以教材与老师所教为准');
     chk(!/绝对正确|保证读|不会读错/.test(t), '没有「朗读绝对正确」这类过度承诺');
     chk(d.querySelectorAll('.legal-toc a').length >= 4, '目录锚点齐全（' + d.querySelectorAll('.legal-toc a').length + ' 项）');
-    // 账号与层级（Issue #132 · A→B→C→D 的 B/C 落地之后补的口径）：
-    // 按「条款永远跟随代码」，站上有了账号页与层级，协议就必须说到这两件事。
+
     chk(/账号/.test(t) && /注销/.test(t), '协议写明了账号与注销');
     chk(/不删(本机)?(背诵)?进度|都不会删掉背诵进度/.test(t),
       '写明退出/注销不删本机背诵进度（进度与账号是两回事）');
-    // 1 期（1A）之后：注销会删掉**服务器上**那一份，并把云端那一份先导给用户。
-    // 这两件事必须同时说到 —— 只说「不删进度」会让人以为云端数据还在。
+
     chk(/注销[^。]{0,40}(删除|一起删)/.test(t) && /导给你|导出/.test(t),
       '写明注销会删除服务器上的数据、并把云端那一份导出给用户');
     chk(/不是付费凭据/.test(t), '写明本机层级**不是付费凭据**（不许让它看起来像收费凭据）');
     chk(/不收款|无支付入口|没有任何支付入口/.test(t), '写明本应用不收款、无支付入口');
-    // 需求 2：协议要保持精简，不再长篇大论
-    //
-    // ⚠️ 这条上限**上调过两次（1400 → 1500 → 1700）**，理由都不是「写不下了」：
-    //    第一次：/login/ /profile/ /admin/ 落地后，协议里多出两件**必须**如实
-    //            写明的事 ——「账号可退出/注销、注销不删进度」与「Free/Pro/Max
-    //            不是付费凭据、本应用不收款」；
-    //    第二次：1 期 1A 落地（真的有了服务端与云端同步），「数据保管」那一条
-    //            必须从「只存本机、不上传」改写成「默认只存本机；开启同步才上传，
-    //            可随时关掉；注销即删除并把云端那一份导给你」——
-    //            不写清这三层，就等于站上出现了「会往服务器传数据却只字不提」
-    //            的空白，那比多 200 个字糟得多。
-    //    上限本身是「一屏读得完」的代理指标，不是目的。
+
     chk(t.length < 1700, '用户协议精简到一屏可读完（' + t.length + ' 字）');
-    // 需求：删掉顶部「一句话版本」速览块
+
     chk(d.querySelector('.legal-summary') === null, '顶部已移除「一句话版本」速览块');
-    // 需求：删掉「相关文件：…」行（含与邮箱之间的间隔线）
+
     chk(d.querySelector('.legal-foot') === null, '用户协议页已移除「相关文件」行');
-    // 需求：删掉「或权利主张」表述
+
     chk(!/或权利主张/.test(t), '用户协议页不再出现「或权利主张」');
     chk(/疑问、纠错，欢迎发邮件/.test(t), '保留「疑问、纠错，欢迎发邮件」');
 
-    // 需求 6：更新时间精确到年月日（不能再只写年份）
     const up = d.querySelector('#terms-updated');
     chk(!!up, '用户协议页有更新时间元素');
     chk(/^2026 年 \d{1,2} 月 \d{1,2} 日$/.test(up.textContent.trim()),
@@ -132,17 +101,10 @@ setTimeout(() => {
     chk(!/更新于 2026 年$/.test(d.querySelector('.brand-sub').textContent),
       '页首不再只写「更新于 2026 年」');
 
-    // 需求：访问统计已整体删除，协议里不得再出现相关描述
     chk(!/访问统计|匿名访问|匿名编号/.test(t), '用户协议不再出现访问统计相关描述');
-    /* ⚠️ 措辞在 Issue #197 里换成「不注册也能使用」——
-       事实没变（不建账号一样能用全部功能），改的是说法：
-       「不注册即可使用」容易被读成「本站没有注册功能」，
-       而这一期恰恰把注册做成了完整流程（邮箱 + 密码 + 确认邮件）。 */
+
     chk(/不注册也能使用|不注册即可使用|无需注册/.test(t), '用户协议写明「不注册也能使用」');
-    // ⚠️ 下面两条在本轮（1A）**从反向断言翻成了正向断言**。
-    //    它们原先正确地拦着「文案跑在代码前面」；代码这次真的改了，
-    //    于是「变绿」正是条款改到位的信号（docs/architecture.md §4.5 明写了这件事，
-    //    并提醒「别把它们当障碍删掉」）。
+
     chk(/默认只存本机/.test(t), '用户协议如实写明「进度默认只存本机」');
     chk(/开启云端同步|云端同步开启|保持云端同步开启/.test(t),
       '用户协议如实写明「开启云端同步时才上传」（不许笼统写「不上传」）');
@@ -152,13 +114,12 @@ setTimeout(() => {
     chk(d.title === '跬步 · 用户协议', '用户协议页标题为「跬步 · 用户协议」（实际 ' + d.title + '）');
   }
 
-  /* --- 隐私条款 --- */
   {
     const d = privacy.doc;
     chk(/隐私条款/.test(d.title), '隐私条款页标题正确（' + d.title + '）');
     const t = d.querySelector('.legal').textContent;
     chk(/localStorage/.test(t), '说明数据存在本机 localStorage');
-    // 1A 之后：这三条从反向翻成正向（同上，docs §4.5）
+
     chk(!/不上传、不云同步/.test(t), '不再出现「不上传、不云同步」（代码已经不这么做）');
     chk(!/无服务器/.test(t) && !/没有任何服务端/.test(t),
       '不再出现「无服务器」（代码已经有服务端了）');
@@ -168,23 +129,14 @@ setTimeout(() => {
     chk(/注销即删除/.test(t), '写明注销即删除服务器上的数据');
     chk(/Supabase/.test(t) && /Resend/.test(t),
       '列明实际的数据处理者（数据库与发信服务）');
-    /* ⚠️ 这一条 2026-09-17 从「Supabase|SendGrid|Resend」**收紧**成具名两项。
-       原因：SendGrid 已于 2026-09-16 转向收费、本站改用 Resend（Issue #159），
-       条款里那句「由 SendGrid（主）或 Resend（备）发送」**已经不成立**。
-       放宽的写法（三选一命中即可）会放过这种漂移 —— 它只要求「提到了某一家」，
-       而条款说的是「in fact 谁在处理」。所以这里改成正向点名 Resend。 */
+
     chk(!/SendGrid/.test(t),
       '条款里不再出现 SendGrid（已停用，写了就是假的第三方处理者）');
     chk(!/出境|跨境|数据跨境/.test(t), '全篇不出现「出境 / 跨境」字样（本站不以国内限定为前提）');
-    /* ⚠️ 这一条在 Issue #197 里**换了措辞判据**（事实没变）。
-       原先它要的是「无需注册」这四个字；现在页面上写的是
-       「不注册也能用全部功能」—— 同一个意思，而且更准
-       （「无需注册」容易被读成「本站没有注册功能」，而 Issue #197
-        恰恰把注册做成了完整流程：邮箱 + 密码 + 确认邮件）。
-       判的是**那件事**（不建账号也能用），不是某一版措辞。 */
+
     chk(/不注册也能用|无需注册/.test(t), '如实写明「不注册也能用」');
     chk(/账号/.test(t), '如实写明「可选建账号」');
-    /* Issue #197：邮箱真的落库了，条款必须跟上（「条款跟随代码」） */
+
     chk(/邮箱/.test(t) && /保存到服务器/.test(t),
       '如实写明「邮箱会保存到服务器」（Issue #197 起明文确实落库）');
     chk(!/明文不离开设备/.test(t),
@@ -200,49 +152,43 @@ setTimeout(() => {
       '条款不含尚未实现的说法（文案不许跑在代码前面）');
     chk(/Service Worker|离线缓存/.test(t), '说明离线缓存与托管平台日志的边界');
     chk(/导出备份/.test(t) && /清空进度/.test(t), '给出导出与删除数据的路径');
-    // 需求：朗读条与用户协议口径一致 —— 系统语音合成 / 不留音频文件
+
     chk(/朗读/.test(t) && /设备系统自带|系统自带/.test(t), '朗读说明写明系统自带语音合成');
     chk(/不(会)?(存储|保存)[^；。]{0,6}音频文件/.test(t), '明确不保存任何音频文件');
     chk(d.querySelector('.legal-summary') === null, '顶部已移除「一句话版本」速览块');
     chk(d.querySelector('.legal-foot') === null, '隐私条款页已移除「相关文件」行');
     chk(!/相关文件/.test(t), '隐私条款页正文不再出现「相关文件」');
-    // 上限同样上调（1600 → 2400）：1A 落地后必须如实写明
-    // 「默认只存本机 / 开启同步才上传 / 可关 / 注销即删除 / 谁在处理」这五层，
-    // 而「谁在处理」那一层在旧口径下根本不存在（那时没有第三方）。
+
     chk(t.length < 2400, '隐私条款精简到可读完的一屏多一点（' + t.length + ' 字）');
-    // 层级：1A 之后由服务器下发（建账号后才拿到），不再是「只在本机登记」
+
     chk(/层级|名额/.test(t), '隐私条款提到了层级/名额（新增了订阅层级这件事）');
     chk(/服务器/.test(t) && !/层级[^。]{0,60}只存在本机/.test(t),
       '层级的存放位置如实写（建账号后由服务器下发，不再宣称「只在本机」）');
     chk(/没有任何收款能力|不收款|没有任何支付/.test(t),
       '写明目前没有任何收款能力（免得层级被当成「已经能买」）');
 
-    // 需求 6：更新时间精确到月日
     const up = d.querySelector('#privacy-updated');
     chk(!!up && /^2026 年 \d{1,2} 月 \d{1,2} 日$/.test(up.textContent.trim()),
       '隐私条款更新精确到月日：' + (up ? up.textContent.trim() : '缺失'));
     chk(!!up && /^\d{4}-\d{2}-\d{2}$/.test(up.getAttribute('datetime')),
       '隐私条款 <time datetime> 完整');
 
-    // 需求：访问统计相关条款整段删除，且前后表述不再自相矛盾
     chk(!/访问统计|匿名访问|匿名编号|统计存放/.test(t), '隐私条款不再出现访问统计相关描述');
     chk(/无统计脚本/.test(t), '明确声明无统计脚本');
     chk(d.title === '跬步 · 隐私条款', '隐私条款页标题为「跬步 · 隐私条款」（实际 ' + d.title + '）');
   }
 
-  /* --- 邮箱：运行时才出现，且点击可复制 --- */
   [['用户协议', terms], ['隐私条款', privacy]].forEach(([name, page]) => {
     const link = page.doc.querySelector('[data-mail-slot]');
     chk(!!link, name + '页有邮箱入口占位');
     chk(link.getAttribute('href') === 'mailto:' + MAIL, name + '页运行时还原 mailto（' + link.getAttribute('href') + '）');
     chk(link.textContent.trim() === '显示邮箱地址', name + '页默认只显示「显示邮箱地址」，不直接暴露邮箱');
     chk(link.getAttribute('rel') === 'nofollow', name + '页邮箱链接带 rel=nofollow');
-    // 渲染后的 DOM 才允许出现邮箱
+
     chk(page.doc.querySelector('.legal').textContent.includes(MAIL) === false,
       name + '页正文默认不出现邮箱文本');
   });
 
-  /* --- 页脚入口：设置页（版权 + 法务链接的新家）/ 法务页互链 --- */
   const footCases = [['用户协议页', terms.doc, '/terms/', '/privacy/']]
     .concat(settingsPages.map(sp => [sp.f, sp.doc, '/terms/', '/privacy/']));
   footCases.forEach(([name, d, termsHref, privacyHref]) => {
@@ -251,7 +197,7 @@ setTimeout(() => {
     chk(hrefs.includes(termsHref) && hrefs.includes(privacyHref),
       name + '页脚同时含用户协议与隐私条款链接（' + hrefs.join(', ') + '）');
   });
-  // 需求：版权与两个法务入口从首页挪到设置页底部
+
   chk(!index.doc.querySelector('.foot'), '首页不再挂页脚（版权与法务链接已挪到设置页底部）');
   settingsPages.forEach(sp => {
     chk(/©2026 kuibu\.app/.test(sp.doc.querySelector('.foot').textContent),
@@ -259,9 +205,9 @@ setTimeout(() => {
     chk(/href="\/terms\/"/.test(read(sp.f)) && /href="\/privacy\/"/.test(read(sp.f)),
       sp.f + ' 挂了两个法务链接（目录化路径）');
   });
-  // 需求：全站 URL 目录化，页面之间不再出现 .html
+
   {
-    // 只看可执行代码：注释与正则里的 index.html 是「兼容老地址」用的，不算页面地址
+
     const code = read('js/chrome.js')
       .replace(/\/\*[\s\S]*?\*\//g, '')
       .replace(/^\s*\/\/.*$/gm, '');
@@ -271,14 +217,13 @@ setTimeout(() => {
       /start_url/.test('start_url') && /"start_url": "\.\/"/.test(read('manifest.webmanifest')),
       '页签地址与 PWA start_url 均为目录化路径');
   }
-  // 需求：小古文页底不再挂版权与法务链接（用户要求删除），法务入口只在设置整页底部
+
   chk(!/class="foot/.test(read('classic/index.html')), '小古文页已移除页底页脚（版权 + 法务链接）');
   chk(/\/terms\//.test(read('sw.js')) && /\/privacy\//.test(read('sw.js')),
     'Service Worker 预缓存了两个法务页（断网也能打开）');
   chk(/\/settings\//.test(read('sw.js')) && /js\/settings\.js/.test(read('sw.js')),
     'Service Worker 也预缓存了设置整页（断网也能改设置）');
 
-  /* --- 访问统计：整体删除，不留残骸 --- */
   {
     ['admin.html', 'js/admin.js', 'js/stats.js', 'css/admin.css', 'data/visits.json']
       .forEach(f => chk(!fs.existsSync(path + f), '访问统计相关文件已删除：' + f));

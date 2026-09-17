@@ -1,4 +1,3 @@
-// 唐诗三百首（/tangshi/ 页）端到端测试：数据完整性 + 卷次分组 + 列表/搜索 + 阅读器
 const { JSDOM } = require('jsdom');
 const fs = require('fs');
 const vm = require('vm');
@@ -7,11 +6,10 @@ const path = __dirname + '/../';
 let fails = 0;
 const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else console.log('✓ ' + m); };
 
-/* ---------- 一、数据层（纯 vm，无 DOM） ---------- */
 const sandbox = { window: {}, console };
 sandbox.window = sandbox;
 vm.createContext(sandbox);
-// 正文存储主表：被主表收编的条目只存归属（textRef），正文要按它取回
+
 const { loadData, resolve } = require('./master-env');
 loadData(sandbox, ['data/poems-classic.js', 'data/poems-tangshi.js', 'data/site-index.js']);
 
@@ -25,9 +23,7 @@ chk(dup === 0, '唐诗 id 无重复（重复 ' + dup + ' 个）');
 
 chk(TS.every(p => p.title && p.source && p.dynasty && p.author && p.text && p.translation),
   '每首都有 标题/出处/朝代/作者/原文/译文');
-// 译文来源：唐诗原文属公有领域，据通行译注整理 → public-domain。
-// ⚠️ 例外：与课内同篇的那几条，正文收归主表后译文取自课本口径，来源是 school ——
-//    译文确实换成了教材那一份，标 school 才对（不是漏标，也不是标注漂移）。
+
 const TS_SRC_OK = ['public-domain', 'school', 'academic', 'modern'];
 chk(TS.every(p => TS_SRC_OK.indexOf(p.translationSource) >= 0),
   '301 首唐诗都标了译文来源且取值在允许范围（异常 ' +
@@ -38,7 +34,6 @@ chk(TS.every(p => p.source === '《唐诗三百首》'), '出处统一为《唐�
 chk(TS.every(p => p.dynasty === '唐'), '朝代统一为唐');
 chk(TS.some(p => p.text.length > 200), '含长篇（>200 字）唐诗，验证长文场景');
 
-// 卷次分组：卷一至卷八，八卷齐备，各卷篇数与选本卷次相符
 const groups = sandbox.getTangshiGroups();
 chk(groups.length === 8, '按卷次聚合出 8 组（实际 ' + groups.length + '）');
 chk(groups.reduce((n, g) => n + g.items.length, 0) === 301, '各组篇目合计 301');
@@ -51,7 +46,6 @@ groups.forEach(g => { got[g.name] = g.items.length; });
 chk(Object.keys(want).every(k => got[k] === want[k]),
   '八卷篇数与选本一致（' + JSON.stringify(got) + '）');
 
-// 需求清单抽查：名家名篇必须在库中
 const need = ['感遇·其一', '月下独酌', '望岳', '梦游天姥吟留别', '将进酒', '蜀道难', '长恨歌',
   '琵琶行·并序', '游子吟', '山居秋暝', '春望', '登高', '黄鹤楼', '锦瑟', '江雪', '寻隐者不遇',
   '登鹳雀楼', '春晓', '夜思', '早发白帝城', '枫桥夜泊', '赤壁', '泊秦淮', '夜雨寄北', '九月九日忆山东兄弟'];
@@ -59,10 +53,8 @@ const titles = TS.map(p => p.title);
 const missing = need.filter(t => !titles.includes(t));
 chk(missing.length === 0, '需求清单名篇齐备（缺 ' + missing.join('/') + '）');
 
-// 不能污染古诗词主库与每日计划
 chk(sandbox.POEMS_ALL === undefined, '唐诗不写入 POEMS_ALL，不影响每日计划');
 
-// 站点总索引：唐诗已并入，且带集子前缀不撞 id
 const IDX = sandbox.SITE_INDEX;
 chk(IDX.some(x => x.book === 'tangshi' && x.id === 'tangshi-ts-1'),
   '站点总索引已含唐诗（带 tangshi- 前缀）');
@@ -70,7 +62,6 @@ chk(IDX.some(x => x.book === 'tangshi' && x.isBook && x.page === '/tangshi/'),
   '总索引里唐诗集子自身指向 /tangshi/');
 chk(IDX.every(x => x.id !== 'ts-1' || x.book), '唐诗条目都带集子归属');
 
-/* ---------- 二、页面层（jsdom） ---------- */
 const html = fs.readFileSync(path + 'tangshi/index.html', 'utf8');
 chk(html.indexOf('/tangshi/ 里') >= 0 || html.indexOf('tangshi') >= 0, '页面标注了 /tangshi/ 目录');
 const scriptOrder = html.match(/<script src="([^"]+)"><\/script>/g).map(s => s.match(/src="([^"]+)"/)[1]);
@@ -91,7 +82,6 @@ scriptOrder.forEach(f => {
 setTimeout(() => {
   const d = w.document;
 
-  // 重复 id 防线
   ['tangshi/index.html', 'classic/index.html'].forEach(f => {
     const doc = new JSDOM(fs.readFileSync(path + f, 'utf8')).window.document;
     const seen = {};
@@ -107,12 +97,10 @@ setTimeout(() => {
   chk(d.querySelector('#gw-count') === null,
     '页顶那一行不再挂已读进度牌（Issue #147：读数已撤，页顶与详情页都没有）');
 
-  // 挂载点对外接口：用量与卷次
   const api = w.ReaderEngine.current;
   chk(!!api, '引擎挂上了唐诗实例');
   chk(api.total() === 301, '实例 total() 为 301');
 
-  // 已读键：唐诗与小古文各存各的
   const tsrc = fs.readFileSync(path + 'js/tangshi.js', 'utf8');
   chk(/readStore:\s*"poem_tangshi_read_v1"/.test(tsrc),
     '唐诗用独立的已读键 poem_tangshi_read_v1');
@@ -120,11 +108,9 @@ setTimeout(() => {
   chk(tsReadKey === 'poem_tangshi_read_v1',
     '唐诗挂载时只设自己的已读键（实际 ' + tsReadKey + '）');
 
-  // 卷次顺序表必须在挂载脚本里显式给出
   chk(/卷一 五言古诗/.test(tsrc) && /卷八 七言绝句/.test(tsrc),
     '挂载脚本给出了卷一至卷八的卷次顺序');
 
-  // 打开一首：标题 / 作者 / 正文写入阅读器
   api.open('ts-6');
   const title = d.querySelector('#rd-title').textContent;
   chk(title === '望岳', '可打开指定篇目（ts-6 → ' + title + '）');
@@ -133,16 +119,10 @@ setTimeout(() => {
     /齐鲁青未了/.test(d.querySelector('#rd-text').textContent), '正文已写入阅读器');
   chk(/泰山/.test(d.querySelector('#rd-trans-text').textContent), '白话译文已写入阅读器');
 
-  // 搜索：按作者筛，且只筛唐诗这一部
   api.setKeyword('李白');
   const nLi = d.querySelectorAll('#gw-list .item').length;
   chk(nLi > 0 && nLi < 301, '按作者「李白」搜索得到子集（' + nLi + ' 首）');
 
-  // 需求（Issue #69 后续）：长标题不能在详情页把页面撑出去。
-  // 库里有 150 字的题目（《自河南经乱关内阻饥兄弟离散…弟妹》），
-  // 详情页标题是块级 h2，不折行就会按「一行放不下」溢出内容列 ——
-  // 手机上表现为正文横向滚动、右端被裁。这里只查源码里那两条兜底属性有没有丢：
-  //   jsdom 不算布局，真正的「有没有溢出」交给 test/pwa.test.js 在真浏览器里量。
   api.open('ts-212');
   const longTitle = d.querySelector('#rd-title').textContent;
   chk(longTitle === '自河南经乱关内阻饥兄弟离散各在一处因望月有感聊书所怀寄上浮梁大兄於潜七兄乌江十五兄兼示符离及下邽弟妹',

@@ -1,15 +1,8 @@
-/**
- * 用户名设置专项测试（刷新持久化 / 旧版设置兼容 / 注入防护）
- *
- * 这些场景 jsdom 单页测试覆盖不到：需要「带初始 localStorage 重新启动应用」，
- * 因此这里每个用例都新起一个 JSDOM 实例。
- */
 const { JSDOM } = require('jsdom');
 const fs = require('fs');
 const path = __dirname + '/../';
 const html = fs.readFileSync(path + 'index.html', 'utf8');
-// 设置从「首页弹层」改成了独立整页，Issue #132 后续又拆成二级页 ——
-// 用户名输入框现在住在「通用」页（/settings/general/）。
+
 const settingsHtml = fs.readFileSync(path + 'settings/general/index.html', 'utf8');
 
 function bootIn(pageHtml, file, seed) {
@@ -27,58 +20,50 @@ function bootIn(pageHtml, file, seed) {
   return new Promise(r => setTimeout(() => r({ window, d: window.document }), 400));
 }
 
-/** 首页：应用名联动 / 计划生效 / 入口显隐 */
 const boot = seed => bootIn(html, '', seed);
-/** 设置「通用」页：用户名输入框回填与输入 —— URL 走目录化地址 /settings/general/ */
+
 const bootSettings = seed => bootIn(settingsHtml, 'settings/general/', seed);
 
 (async () => {
   let fails = 0;
   const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else console.log('✓ ' + m); };
 
-  // 1. 全新用户（无 settings）
   let r = await boot(null);
   chk(r.d.title === '跬步 · Ashley的背诵 · 跬步',
     '全新用户标题用默认名 Ashley（实际 ' + r.d.title + '）');
-  /* ⚠️ 这条原先读「全部诗词」卡上的 `#all-count`（Issue #209 那张卡撤掉了）。
-     它守的是「全新用户打开就有计划」—— 那个数字在首页就写在今日那一行上。 */
+
   chk(/共 5 首/.test(r.d.querySelector('#today-sub').textContent), '全新用户计划正常');
 
-  // 2. 老版本设置（无 username 字段，兼容性）
   r = await boot({ poem_recite_settings_v1: JSON.stringify({ grade: 2, term: 2, dailyCount: 3 }) });
   chk(r.d.title === '跬步 · Ashley的背诵 · 跬步', '旧版设置无 username 时不报错，用默认名 Ashley');
   chk(r.d.querySelector('#today-sub').textContent.includes('共 3 首'), '旧版设置 grade/term/count 仍生效: ' + r.d.querySelector('#today-sub').textContent);
   let s1 = await bootSettings({ poem_recite_settings_v1: JSON.stringify({ grade: 2, term: 2, dailyCount: 3 }) });
   chk(s1.d.querySelector('#input-username').value === '', '旧版设置无 username 时设置页输入框为空（代表用默认名）');
-  // ⚠️ 每日数量住在「背诵」页了（Issue #132 后续拆页），这一条第 2 小项
-  //    改由 test/ui.test.js 在「背诵」页上守；这里只验与用户名同一页的那几项。
+
   chk(s1.d.querySelector('#brand-name').textContent === '跬步', '设置页顶栏应用名固定为「跬步」');
   chk(/通用/.test(s1.d.querySelector('#brand-page-text').textContent),
     '「通用」页顶栏页面名为「通用」（二级页各自报自己的名字，用户知道站在哪一层）');
 
-  // 3. 已有用户名 → 刷新后保持
   r = await boot({
     poem_recite_settings_v1: JSON.stringify({ grade: 1, term: 1, dailyCount: 5, username: '玥玥' })
   });
   chk(r.d.title === '跬步 · 玥玥的背诵 · 跬步', '刷新后标题保持（实际 ' + r.d.title + '）');
-  // 顶栏第一行固定应用名，用户名写在右侧的页面名里（只做纯文本）
+
   chk(r.d.querySelector('#brand-name').textContent === '跬步', '刷新后品牌名保持为「跬步」，应用名不随用户名变');
   chk(/玥玥/.test(r.d.querySelector('#brand-page-text').textContent), '刷新后用户名仍写在「跬步」右侧');
-  // 设置页已改成独立整页，用户名输入框住在 /settings/
+
   s1 = await bootSettings({ poem_recite_settings_v1: JSON.stringify({ grade: 1, term: 1, dailyCount: 5, username: '玥玥' }) });
   chk(s1.d.querySelector('#input-username').value === '玥玥', '刷新后设置页输入框回填 玥玥');
 
-  // 4. XSS 防护：用户名写入应作为纯文本
   r = await boot({
     poem_recite_settings_v1: JSON.stringify({ grade: 1, term: 1, dailyCount: 5, username: '<b>坏</b>' })
   });
   const brand = r.d.querySelector('#brand-page-text');
   chk(brand.querySelectorAll('b').length === 0, '用户名不会注入 HTML（未生成 b 元素）');
   chk(r.d.title.indexOf('的背诵') > -1, '页面未崩溃且标题正常');
-  // 用户名原样文本渲染，不被当成 HTML 解析执行
+
   chk(brand.textContent === '<b>坏</b>的背诵', '用户名按纯文本渲染（textContent 保留原始字符）');
 
-  // 5. 需求：首页小古文入口卡片已删除，旧的 classicEntry 设置也不再影响页面
   r = await boot({ poem_recite_settings_v1: JSON.stringify({ grade: 1, term: 1, dailyCount: 5, classicEntry: 'hide' }) });
   chk(r.d.querySelector('#classic-entry') === null, '首页已无小古文入口卡片（旧设置不再需要）');
   chk(!!r.d.querySelector('.dock-item[data-nav-go="library"]'),

@@ -21,20 +21,7 @@
     <header class="topbar"></header>
 
     <main class="settings-page" id="settings-page">
-      <!-- ==================================================================
-           设置 · 背诵（二级页）
-           ------------------------------------------------------------------
-           这一组只决定「今天背哪几首」，只作用于首页（/）：
-             学段 / 年级 / 学期  → 哪一册
-             背诵范围            → 从哪一册里取
-             每日数量            → 取几首
-             复习算法            → 下次什么时候复习（原「复习算法」那一组
-                                   只有一条，并入本页，读起来才是一件事）
-             进度总览            → 这本账的入口
-           ⚠️ 课外的五部集子不受这一组影响（它们各按卷次 / 词牌 / 文体排）；
-              自选背诵也不在「范围」里选 —— 它排在自己的清单里，
-              与课内 261 首一起进每日任务（见「我的清单」那一页）。
-           ================================================================== -->
+
       <div class="settings-groups">
         <section class="settings-group" aria-labelledby="grp-recite">
           <h2 class="settings-group-title" id="grp-recite">背诵</h2>
@@ -92,14 +79,6 @@
           </div>
         </section>
 
-        <!-- ==================================================================
-             复习算法：决定「下次什么时候复习」
-             ------------------------------------------------------------------
-             原先只有一套固定间隔表（「遗忘曲线」），用户没得选。
-             这一栏给出四张模型：遗忘曲线（默认）/ 莱特纳盒 / SM-2 / FSRS。
-             选项定义在 js/review-models.js，本页不另抄一份 —— 加模型只改那一处。
-             换模型**不清进度**：已有记录按最接近的落点换算，接着走。
-             ================================================================== -->
         <section class="settings-group" aria-labelledby="grp-algo">
           <h2 class="settings-group-title" id="grp-algo">复习算法</h2>
 
@@ -164,19 +143,16 @@
 
   <script src="/js/auth-core.js"></script>
   <script src="/js/entitlement.js"></script>
-  <!-- 分域引擎（Issue #132 阶段 0）：进度 / 账号 / 设备三域的唯一一份定义，
-       设置页的读法由 js/storage.js 转发。**必须排在 js/storage.js 之前**。 -->
+
   <script src="/js/family.js"></script>
   <script src="/js/progress-store.js"></script>
-  <!-- 同步层（Issue #132 · 1B）：进度 / 账号域设置 / 已读的跨设备同步。
-       必须在 js/storage.js 之前 —— 它的 touch() 要给每条记录打标，
-       而页面只认识 Storage/ProgressStore 这两个入口。 -->
+
   <script src="/js/sync-store.js"></script>
   <script src="/js/storage.js"></script>
   <script src="/js/scheduler.js"></script>
   <script src="/js/manifest-loader.js"></script>
   <script src="/js/play-modes.js"></script>
-  <!-- 复习算法清单（与首页同源）：本页只做回显与写值，不另抄一份定义 -->
+
   <script src="/js/review-models.js"></script>
   <script src="/js/collections.js"></script>
   <script src="/js/settings.js"></script>

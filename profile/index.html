@@ -20,100 +20,31 @@
   <link rel="stylesheet" href="css/style.css" />
   <link rel="stylesheet" href="css/account.css" />
 </head>
-<!-- data-dock="off"：个人中心是「看自己」的一页，不是第四个页签的去处；
-     返回落点由 data-back 指回设置页（入口在设置 · 通用里）。 -->
+
 <body data-nav="profile" data-dock="off" data-back="/settings/" data-page="个人中心" data-sub="昵称 · 账号 · 权限">
   <div class="app">
     <header class="topbar"></header>
 
     <main class="account-page" id="profile-page">
-      <!-- ==================================================================
-           个人中心（Issue #132 · A→B→C→D 的 C）
-           ------------------------------------------------------------------
-           为什么必须**独立于设置页**：
-             设置页 5 组（通用 / 背诵 / 复习算法 / 我的清单 / 朗读），
-             再塞账号 + 同步 = 7 组一长条。而且设置是「调机器」，
-             个人中心是「看人」，语义不同。两者之间只放一个跳转链接。
 
-           未登录时整页仍是**可用页**（不是 403、不是空页）：
-           印与昵称照旧显示，身份那一行如实写「本机游客 · 未登录」，
-           操作键那一行给一颗「登录」。
-           ================================================================== -->
-
-      <!-- ==================================================================
-           这一页的排布（Issue #163）：**一张卡一件事，操作键攒在一行**
-           ------------------------------------------------------------------
-           用户原话：「个人页面一个卡片一个按钮，不能让这些需要操作的按钮
-           组合在一张卡片吗，其他描述部分重新整理组合。」
-
-           改之前是六张卡、每张卡底下挂一颗按钮（身份 / 账号 / 同步 / 权限 /
-           管理 / 危险区），一屏里五颗孤零零的按钮各占一行，
-           而它们里有三颗其实是同一类事：「去别处看 / 去别处调」。
-           现在收成四张卡：
-
-             身份    印 + 昵称 + 邮箱 + 层级，下面**一行**操作键
-                     （登录（已登录时是「管理登录状态」）/ 退出 / 权限对比）
-             本机数据 这台设备上有什么（只读）
-             关于    应用 / 法务两页 / 离线缓存 + 跨设备同步那一行（开关在行尾），
-                     需要你裁决同步冲突时再就地铺开面板
-
-           ⚠️ 「注销账号」那一块仍**单独占一张卡**（朱砂描边的危险区）：
-              它是不可逆动作，与别的键并列会让人误按 —— 这一条是刻意不合并的。
-           ⚠️ Issue #209：「跨设备同步」原先**自己一张卡**（一行状态 + 一行只读回显 +
-              一颗「同步设置」键）。用户 2026-09-17 原话：「跨设备同步单独弄了张
-              卡片，下面还额外有个同步设置按钮，点完其实是进入到通用页面，
-              还需要点击跨设备同步选项。只保留设置里的跨设备同步选项就可以了啊。
-              能像 iphone 那样把开关放到同一行的最右侧吗」——
-              于是整张卡撤掉，只剩「关于」卡里的**一行**开关（见下方 #sync-row），
-              与「设置 · 通用」里那一项共用同一条接线。那三张卡的注释留在
-              js/profile.js 的 renderSync() 上（那里的口径变了，注释跟着改）。
-           ================================================================== -->
-
-      <!-- ---------- 一、身份 ---------- -->
       <section class="account-card">
         <div class="identity-row" id="identity-row"></div>
         <p class="account-hint" id="identity-hint"></p>
 
-        <!-- 身份卡底下**一行**操作键：
-             未登录 → 「登录」、「权限对比」（去 /login/、/plans/）
-             已登录 → 「管理登录状态」、「退出登录」、「权限对比」
-             Issue #163 用户原话：「把这个按钮和其他按钮放一起啊」——
-             动手的两颗键（登录 / 退出）与「去看看」的那颗键**同一行**，
-             不再一颗独占一行、另两颗缩在第四张卡里。
-             按钮文案与显隐都由 js/profile.js 按登录态写，本页不写死两处。 -->
         <div class="account-actions" id="identity-actions">
           <button class="account-btn" id="btn-account-entry" type="button"></button>
           <button class="account-btn ghost" id="btn-sign-out" type="button" hidden>退出登录</button>
           <button class="account-btn ghost" id="btn-go-plans" type="button">权限对比</button>
         </div>
-        <!-- ⚠️ Issue #209（用户 2026-09-17）：这一行原先未登录时写「差语音朗读。」
-             （`#login-hint`，文案由 js/profile.js 的 diffLine() 现算）。
-             用户原话：「删除 差语音朗读。」—— 整句删掉、挂点一并撤，
-             js/profile.js 里那个 diffLine() 也删了（不留「没有挂点就静默跳过」
-             的孤儿渲染函数）。 -->
+
         <p class="account-hint" id="signout-hint" hidden>退出不删进度；注销在下面「危险区」。</p>
       </section>
 
-      <!-- ---------- 二、本机数据概览 ---------- -->
       <section class="account-card" id="stats-card">
         <h2 class="account-card-title">本机数据</h2>
         <div class="kv-list" id="stats-list"></div>
       </section>
 
-      <!-- ---------- 四、关于 + 两条入口 ----------
-           这一张卡把原先三张卡的**只读信息**与**两条「去别处」的键**收在一起：
-             · 应用 / 用户协议 / 隐私条款 / 离线缓存（原来各自一张卡）
-             · 权限对比（原来那张卡只剩一行「身份」+ 一颗按钮）
-             · 管理后台（仅 owner 可见，原来也占一整张卡）
-
-           ⚠️ 「我去哪一层、谁能用什么」的答案**只有 /plans/ 一处**
-              （Issue #163 用户原话：「权限那个章节说了一堆，直接链接到
-              对比页面不就行了吗」），本页不再复述清单。
-           ⚠️ 原先「账号」那一张卡（状态 / 邮箱 / 层级 / 本次登录）并进这一张：
-              只留两行（账号掩码 + 本次登录还剩几天），层级与「它由谁定」在
-              身份卡上说（徽章 + `#identity-hint`）—— 同一个人不必介绍两遍。
-           ⚠️ 原先那张「权限」卡也撤了：它当时只剩「一行身份 + 一颗进对比页的键」，
-              而那一行身份就是身份卡上的层级徽章。谁能用什么**只有 /plans/ 一处**。 -->
       <section class="account-card">
         <h2 class="account-card-title">关于</h2>
         <div class="kv-list">
@@ -123,32 +54,15 @@
           <div class="kv-row"><span class="kv-k">离线缓存</span><span class="kv-v" id="about-cache"></span></div>
         </div>
 
-        <!-- ---------- 跨设备同步：一行，开关在最右（Issue #209） ----------
-             用户原话：「个人中心页面，跨设备同步单独弄了张卡片，下面还额外有个
-             同步设置按钮，点完其实是进入到通用页面，还需要点击跨设备同步选项。
-             只保留设置里的跨设备同步选项就可以了啊。能像 iphone 那样把开关放到
-             同一行的最右侧吗」
-
-             于是这一项从「自己一张卡 + 一行状态 + 一行只读回显 + 一颗『同步设置』键」
-             收成**一行**：左边项名，右边就是那颗能拨的开关，说明在下面一行。
-             开关与「设置 · 通用」里的那颗**共用同一条接线**（`SyncStore.setEnabled`），
-             所以两处拨哪一处都算数，不会再出现「个人中心说开着、通用页说关着」。
-
-             ⚠️ 开关本身**不置灰**：层级不够时点下去得到一句「Pro 起」（与全站
-                同一句 `denyReason`），比一颗点不动的东西更容易看懂差在哪。
-             ⚠️ 只读回显（原来那枚「开 / 关」药丸）**撤掉了**：它旁边就是开关本体，
-                同一件事说两遍。 -->
         <label class="switch sync-row" id="sync-row">
           <span class="settings-label" id="sync-name">跨设备同步</span>
-          <!-- 顺序不能反：css/style.css 用 `input:checked + .switch-toggle` 找轨道。
-               真实复选框留在 DOM 里（键盘 / 读屏 / 原生 toggle 都走它），画成 0 尺寸。 -->
+
           <input id="toggle-sync" class="switch-input" type="checkbox"
                  role="switch" aria-labelledby="sync-name" />
           <span class="switch-toggle" aria-hidden="true"></span>
         </label>
         <p class="switch-hint" id="sync-hint"></p>
-        <!-- 冲突面板：**只在真的判不出来源时出现**（docs §4.4 D 项）。
-             默认隐藏，不给没有冲突的人看一个空面板。 -->
+
         <div id="sync-conflict" hidden>
           <p class="account-hint" id="conflict-lead"></p>
           <div class="settings-btns">
@@ -161,14 +75,9 @@
         <div class="account-actions">
           <button class="account-btn ghost" id="btn-go-admin" type="button" hidden>管理后台</button>
         </div>
-        <!-- 账号那一行（状态 / 邮箱 / 层级 / 本次登录）由 js/profile.js 填。
-             它只在**已登录**时出现 —— 未登录时身份那一行已经把该说的说完了，
-             再列一遍「未登录」是同一件事说两次。 -->
+
         <div class="kv-list" id="account-list" hidden></div>
-        <!-- 邮箱确认状态（Issue #197）：**只在待确认时出现**。
-             确认过的人不需要看到一行「已确认」—— 那是噪音。
-             未确认的人需要的是一颗「重发确认邮件」的键，
-             而不是一句「你的邮箱还没确认」然后没有下文。 -->
+
         <div id="verify-row" hidden>
           <p class="account-msg" id="verify-state"></p>
           <div class="settings-btns">
@@ -176,10 +85,6 @@
           </div>
         </div>
       </section>
-
-      <!-- ---------- 五、危险区：注销账号（二次确认 + 重输邮箱） ----------
-           刻意**自己一张卡**、朱砂描边（.danger-zone）：它是不可逆动作，
-           与上面那些「去别处看看」的键并列，迟早有人误按。 -->
 
       <section class="account-card danger-zone" id="danger-card" hidden>
         <h2 class="account-card-title danger-title">注销账号</h2>
@@ -200,9 +105,7 @@
             <button class="account-btn ghost" id="btn-delete-cancel" type="button">取消</button>
           </div>
           <p class="account-msg" id="msg-delete"></p>
-          <!-- 云端那一份的导出：注销时服务端会先导出再删行，那份数据**直接给到用户**
-               （本期没有对象存储放下载链接，所以就地生成一个文件）。
-               没有云端账号的人这一颗不出现。 -->
+
           <div id="delete-export" hidden>
             <button class="account-btn ghost" id="btn-delete-export" type="button">下载云端那一份</button>
             <p class="account-hint">注销时从服务器导出，存好它 —— 服务器上已经没有了。</p>
@@ -226,16 +129,12 @@
   <script src="/js/auth-core.js"></script>
   <script src="/js/auth-api.js"></script>
   <script src="/js/entitlement.js"></script>
-  <!-- 账号接线层（Issue #132 · 2 期「补洞 + 2A」）：/api/me 的下发与
-       /api/account 的注销都只在这里接一次。须排在 entitlement 之后 ——
-       它要把服务端判定的层级与角色写进权益层。 -->
+
   <script src="/js/account-api.js"></script>
-  <!-- 分域引擎（Issue #132 阶段 0）：本机数据概览读的就是它。须排在 js/storage.js 之前。 -->
+
   <script src="/js/family.js"></script>
   <script src="/js/progress-store.js"></script>
-  <!-- 同步层（Issue #132 · 1B）：进度 / 账号域设置 / 已读的跨设备同步。
-       必须在 js/storage.js 之前 —— 它要给每条记录打标（云端谁更新），
-       而页面只认识 Storage / ProgressStore 这两个入口。 -->
+
   <script src="/js/sync-store.js"></script>
   <script src="/js/storage.js"></script>
   <script src="/js/scheduler.js"></script>

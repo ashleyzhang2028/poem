@@ -20,16 +20,7 @@
   <link rel="stylesheet" href="css/style.css" />
   <link rel="stylesheet" href="css/account.css" />
 </head>
-<!-- data-dock="off"：登录页是一段「专心做完」的流程，不留底部页签免得误触跳走。
-     返回落点指**个人中心**：进来的人两种（设置主页那张「账号」卡 / 首页那枚印），
-     后者是主要动线；而「点账号 → 看自己是谁」比「点账号 → 落回一页设置」更顺。
-     ==== Issue #197：页面从一个表单改成**四个页签** ====
-     用户要的是一整套完整流程（注册 / 确认 / 登录 / 忘记密码 / 重设 / 快捷码），
-     摊在一页里必然变成「一张卡接一张卡」的长条（上一轮已经因为「重复的表单」
-     被用户点过名，见 test/account-pages.test.js 第十一节）。
-     所以：**一次只显示一件动作，页签只切动作、不跳页**。
-     页签只有两个是「主动作」（密码登录 / 快捷登录），
-     注册与忘记密码是**藏在文字链后面的另外两屏**（它们本来就是少数路径）。 -->
+
 <body data-nav="login" data-dock="off" data-back="/profile/" data-page="登录" data-sub="邮箱 · 密码 · 随机码">
   <div class="app">
     <header class="topbar"></header>
@@ -37,20 +28,12 @@
     <main class="account-page" id="login-page">
       <section class="account-card">
 
-        <!-- ---------- 信任期：信任期内一点即入，不发码 ---------- -->
         <div id="trust-panel" hidden>
           <button class="account-btn" id="btn-trust" type="button"></button>
           <button class="account-btn ghost" id="btn-trust-other" type="button">用别的邮箱</button>
           <p class="account-hint">信任期 30 天。换设备或换邮箱，点上面那颗。</p>
         </div>
 
-        <!-- ==================================================================
-             主动作页签：密码登录 / 随机码登录
-             ------------------------------------------------------------------
-             ⚠️ 两个页签是**两条并行的路**，不是「先密码、密码不行再换」。
-                随机码那条路一个字都没改（无密码也能进），
-                口令是加出来的一条路 —— 家长群体记不住密码，两条都得在。
-             ================================================================== -->
         <div class="auth-tabs" id="auth-tabs" role="tablist" aria-label="登录方式">
           <button class="auth-tab" id="tab-pw" type="button" role="tab"
                   aria-selected="true" aria-controls="pane-pw" data-pane="pw">密码登录</button>
@@ -58,7 +41,6 @@
                   aria-selected="false" aria-controls="pane-code" data-pane="code">快捷登录</button>
         </div>
 
-        <!-- ---------- 页签一：邮箱 + 密码 ---------- -->
         <div class="auth-pane" id="pane-pw" role="tabpanel" aria-labelledby="tab-pw">
           <div class="account-field">
             <label class="account-label" for="input-pw-email">邮箱</label>
@@ -75,16 +57,11 @@
               <button class="pw-eye" id="btn-pw-eye" type="button" aria-label="显示密码">显示</button>
             </div>
           </div>
-          <!-- 人机校验（Cloudflare Turnstile，Issue #197 后续）。
-               ⚠️ 这一块**空着出厂**：没配 siteKey 的实例上，js/turnstile.js
-                  连 Cloudflare 的脚本都不加载，这里就是一个零高度的空 div。
-                  绝不摆一个空壳让别人以为「本站有人机校验」——
-                  与「console 发信商」那件事是同一条纪律。 -->
+
           <div class="turnstile-slot" id="ts-pw" hidden></div>
           <button class="account-btn" id="btn-login" type="button">登录</button>
           <p class="account-msg" id="msg-pw"></p>
 
-          <!-- 少数路径藏在这两行文字链后面：一页只有一件主动作 -->
           <p class="auth-links">
             <button class="link-btn" id="btn-go-register" type="button">还没有账号？注册</button>
             <span class="link-sep">·</span>
@@ -92,7 +69,6 @@
           </p>
         </div>
 
-        <!-- ---------- 页签二：随机码快捷登录（原有的那条路） ---------- -->
         <div class="auth-pane" id="pane-code" role="tabpanel" aria-labelledby="tab-code" hidden>
           <div class="account-step" id="step-email">
             <div class="account-field">
@@ -104,11 +80,7 @@
             <div class="turnstile-slot" id="ts-code" hidden></div>
             <button class="account-btn" id="btn-send" type="button">发送随机码</button>
             <p class="account-msg" id="msg-email"></p>
-            <!-- ⚠️ Issue #209（用户 2026-09-17）：这里原先还有一句
-                 「不记密码也能用：随机码发到邮箱，填进来即登录。」
-                 用户原话：「删除 不记密码也能用：随机码发到邮箱，填进来即登录。」
-                 —— 这一页的页签名就叫「随机码」，输入框与那颗「发送随机码」
-                 按钮已经把这件事说完；这句是同一件事再说一遍，整句删掉。 -->
+
           </div>
 
           <div class="account-step" id="step-code" hidden>
@@ -136,14 +108,6 @@
           </div>
         </div>
 
-        <!-- ==================================================================
-             注册（藏在「还没有账号？注册」后面的一屏）
-             ------------------------------------------------------------------
-               ⚠️ 注册**不是**「登录」的另一种说法：它要多一个口令、少一个随机码，
-                  而注册完还有「去邮箱点确认链接」这一步。
-                  把它做进登录页签里（「密码留空就是注册」那种聪明），
-                  用户永远搞不清自己刚才到底做了什么。
-             ================================================================== -->
         <div class="auth-pane" id="pane-register" role="tabpanel" hidden>
           <div class="account-field">
             <label class="account-label" for="input-reg-email">邮箱</label>
@@ -169,16 +133,11 @@
           <div class="turnstile-slot" id="ts-reg" hidden></div>
           <button class="account-btn" id="btn-register" type="button">注册</button>
           <p class="account-msg" id="msg-reg"></p>
-          <!-- ⚠️ Issue #197：这一句原先 78 字，用户点名为「婆婆妈妈」。
-               现在 34 字，只留三件用户必须知道的事：要确认才登得进、
-               链接 24 小时内有效、没收到去哪点。**且点进去就能重发**。 -->
+
           <p class="account-hint">注册后发一封确认邮件，<strong>确认后才能登录</strong>。链接 24 小时内有效，没收到就点「重新发一封」。</p>
           <p class="auth-links"><button class="link-btn" id="btn-back-login" type="button">返回登录</button></p>
         </div>
 
-        <!-- ==================================================================
-             注册完那一屏：等你去邮箱点确认
-             ================================================================== -->
         <div class="auth-pane" id="pane-verify" role="tabpanel" hidden>
           <p class="account-lead" id="verify-lead"></p>
           <div class="account-note" id="verify-fail-note" hidden></div>
@@ -190,26 +149,14 @@
           </div>
           <div class="turnstile-slot" id="ts-verify" hidden></div>
           <button class="account-btn" id="btn-resend-verify" type="button">重发确认邮件</button>
-          <!-- ⚠️ 这一颗原先是那种「稍后再确认、先拿去用」的键。默认口径改成
-               「没确认就不让登录」之后，它成了一句**照做也走不通**的话
-               （点进去还是被 403 挡回来）。改成「返回登录」——
-               这一屏不要摆一颗做不到的键。 -->
+
           <button class="account-btn ghost" id="btn-verify-later" type="button">返回登录</button>
           <p class="account-msg" id="msg-verify"></p>
-          <!-- ⚠️ 「没登录也能点」原先要在括号里解释一整句 —— 那说明这句话本身
-               就是在替一颗按钮道歉。按钮上直接写「重发确认邮件」就够了，
-               这一行只留「多久有效」。 -->
+
           <p class="account-hint">链接 24 小时内有效，没收到就点上面那颗重发。</p>
           <p class="auth-links"><button class="link-btn" id="btn-back-login3" type="button">返回登录</button></p>
         </div>
 
-        <!-- ==================================================================
-             忘记密码：输邮箱 → 收重设邮件
-             ------------------------------------------------------------------
-             ⚠️ 这一屏**不许**回答「这个邮箱注册过没有」—— 服务端回的也是
-                同一个响应（`resetRequest` 里那条注释）。界面上多写一句
-                「这个邮箱没注册过」就等于把全站用户名单变成可查询的事实。
-             ================================================================== -->
         <div class="auth-pane" id="pane-forgot" role="tabpanel" hidden>
           <p class="account-lead">填注册时的邮箱，我们发一条重设链接。</p>
           <div class="account-field">
@@ -221,25 +168,12 @@
           <div class="turnstile-slot" id="ts-forgot" hidden></div>
           <button class="account-btn" id="btn-forgot-send" type="button">发送重设邮件</button>
           <p class="account-msg" id="msg-forgot"></p>
-          <!-- ⚠️ 原先两段小字共 4 行。合起来只有两条出路，各一句：
-               1. 收不到信 → 垃圾邮件 / 改用随机码进来
-               2. 邮箱未确认 → 重设也登不进去，要先去确认
-               「没确认的账号暂时登不进去」是**结论**，用户真正要做的是
-               「去点重新发一封」—— 句子直接给动作，不给解释。 -->
+
           <p class="account-hint">没收到先看垃圾邮件；或改用「快捷登录」的随机码。</p>
           <p class="account-hint">邮箱未确认的重设也登不进去 —— 先去登录页点「重新发一封确认邮件」。</p>
           <p class="auth-links"><button class="link-btn" id="btn-back-login2" type="button">返回登录</button></p>
         </div>
 
-        <!-- ==================================================================
-             口令对了 / 码也对了，但**邮箱还没确认**（Issue #197 后半段）
-             ------------------------------------------------------------------
-             ⚠️ 这一屏**不复用**上面「注册完那一屏」：那边开头一句是
-                「账号建好了」，而对回来登录的人来说那是**一句错话**。
-             ⚠️ 这一屏上的人**必然是未登录**的（登录正是被这道闸挡下来的
-                那件事），所以「重新发一封」走的是一条匿名接口 ——
-                而那条接口对「没注册过 / 已确认过」必须回同一个形状。
-             ================================================================== -->
         <div class="account-step" id="step-unverified" hidden>
           <p class="account-lead" id="unverified-lead"></p>
           <div class="account-note" id="unverified-note" hidden></div>
@@ -250,7 +184,6 @@
           <p class="account-hint">确认前只有云端登录被拦，背诵功能照旧可用。</p>
         </div>
 
-        <!-- ---------- 登录后：补昵称 ---------- -->
         <div class="account-step" id="step-done" hidden>
           <p class="account-lead" id="done-lead"></p>
           <div class="account-field">
@@ -263,12 +196,6 @@
         </div>
       </section>
 
-      <!-- ==================================================================
-           短信通道的占位（**2B：口子已接好，界面仍不渲染**）
-           开通后才允许取消注释，且必须同时配 SMS_ENABLED=1 + SMS_TRANSPORT，
-           以及前置人机校验（图形/滑块）—— 短信接口是黑产重点目标（§8）。
-           ================================================================== -->
-      <!-- <button class="account-btn ghost" data-channel="sms">用手机号登录</button> -->
     </main>
 
     <footer class="foot settings-foot">
@@ -283,12 +210,8 @@
 
   <div class="toast" id="toast" hidden></div>
 
-  <!-- 脚本顺序：auth-core（内核）→ auth-api/account-api（通道）→ entitlement（权益）
-       → avatar（印）→ login（本页）→ chrome（顶栏）→ pwa -->
   <script src="/js/auth-core.js"></script>
-  <!-- 人机校验（Issue #197 后续）：**在 auth-api 之前** ——
-       auth-api 发请求时要向它取 token；顺序反了的话，第一次提交会因为
-       「模块还没挂上」而少一个字段，而症状是「人机校验总是失败」。 -->
+
   <script src="/js/turnstile.js"></script>
   <script src="/js/auth-api.js"></script>
   <script src="/js/entitlement.js"></script>

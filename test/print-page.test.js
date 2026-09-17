@@ -1,20 +1,3 @@
-/**
- * 篇目打印页 · 页面层测试（3 期 · Pro）
- * ==========================================================================
- * 这一层验**真页面**（jsdom 里把 /settings/lists/ 整页跑起来），守五件事：
- *
- *   1. **入口在「我的清单」页上，底部页签一个都不加** ——
- *      这一件事没有自己的状态，用的就是「哪一份清单」；
- *   2. **未登录 / 层级不够时只显示「要哪一层」**，绝不写「即将上线」，
- *      而入口那颗键**照旧看得见**（把入口藏起来不是权限边界）；
- *   3. **判权一律走 Entitlement.can("export.paper")** —— 页面不自己比 tier；
- *   4. **预览与打印是同一份内容** —— 屏幕上有几行，纸上就有几行
- *      （三个块开关改了，预览行数与「约几张」一起变）；
- *   5. **打印样式表只做「收外壳」与「去颜色」两件事**，
- *      不重排、不给纸面上添横线。
- *
- * 跑法：`node test/print-page.test.js`（需要 jsdom；没有就跳过）
- */
 const fs = require('fs');
 const path = __dirname + '/../';
 
@@ -30,7 +13,6 @@ try { JSDOM = require('jsdom').JSDOM; } catch (e) {
 
 const read = f => fs.readFileSync(path + f, 'utf8');
 
-/* ================= 一、结构：入口在设置里，页签一个都不加 ================= */
 console.log('=== 一、结构：入口在「我的清单」页上，底部页签一个都不加 ===');
 {
   const html = read('settings/lists/index.html');
@@ -39,26 +21,22 @@ console.log('=== 一、结构：入口在「我的清单」页上，底部页签
 
   chk(/data-print-view="sheet"/.test(html), '/settings/lists/ 里有这一层的挂载点');
   chk(/data-print-open/.test(html), '/settings/lists/ 上有进这一层的键');
-  /* ⚠️ 判据是「那个 div 的**标签之间**没有东西」—— 说明写在它头顶的注释里，
-     注释里的字不渲染，也不是提前渲染。 */
+
   const slot = html.replace(/<!--[\s\S]*?-->/g, '')
     .match(/<div[^>]*data-print-view="sheet"[^>]*>([\s\S]*?)<\/div>/);
   chk(!!slot, '那一层的挂载点是个 div');
   eq((slot ? slot[1] : 'x').trim(), '',
     '那一层是空容器（内容全部由 js/print.js 渲染，HTML 里不写死一句话）');
 
-  /* 详情页那一颗：打印的对象是「我正在读的这一篇」 */
   chk(/data-print-open/.test(poems) && /data-print-poem/.test(poems),
     '/poems/ 详情页工具条上有「这一篇打出来」那颗键（带 data-print-poem）');
   chk(/data-print-view="sheet"/.test(poems), '/poems/ 上也有这一层的挂载点');
 
-  // 底部页签仍是四个，一个都不加
   const items = (chrome.match(/var DOCK_ITEMS = \[([\s\S]*?)\];/) || [, ''])[1];
   const n = (items.match(/\{ key:/g) || []).length;
   eq(n, 4, '底部仍是四个页签（打印不占页签位）');
   chk(!/print|打印/.test(items), '页签里没有「打印」这一格');
 
-  /* 脚本顺序：版面内核排在页面层之前（页面层读它） */
   const order = html.match(/<script src="([^"]+)"><\/script>/g)
     .map(s => s.match(/src="([^"]+)"/)[1]);
   const at = f => order.indexOf(f);
@@ -69,7 +47,6 @@ console.log('=== 一、结构：入口在「我的清单」页上，底部页签
   chk(/css\/account\.css/.test(html), '本页加载了 css/account.css（这一层与账号页共用卡片）');
 }
 
-/* ================= 二、离线：新脚本都进预缓存 ================= */
 console.log('\n=== 二、离线：新脚本都进预缓存，版本号跟着提 ===');
 {
   const sw = read('sw.js');
@@ -89,17 +66,12 @@ console.log('\n=== 二、离线：新脚本都进预缓存，版本号跟着提 
   chk(missing.length === 0, '预缓存清单里的文件都存在（实际缺 ' + missing.join(',') + '）');
 }
 
-/* ============== 三、打印样式表：只收外壳与去颜色，不重排 ============== */
 console.log('\n=== 三、打印样式表：收外壳、去颜色，不给纸面上添东西 ===');
 {
   const css = read('css/account.css');
-  /* 取 @media print 那一整块：从它开头到**它自己那一层**的收尾 `}`。
-     用大括号配平来找，不靠「一定要在文件末尾」—— 同一条规则写在中间也要认。 */
+
   function blockOf(src, at) {
-    /* ⚠️ 先把注释剥掉：`@media print` 这几个字在**说明注释里**也出现过
-       （就在它头顶那一段），不剥就会从注释里那个位置开始配大括号，
-       配出来的是后面某一条普通规则 —— 于是「顶栏在纸上收起来」这类断言
-       全部对着一段不相干的规则判，红得莫名其妙。 */
+
     const stripped = src.replace(/\/\*[\s\S]*?\*\//g, ' ');
     const start = stripped.indexOf(at);
     if (start < 0) return '';
@@ -121,19 +93,15 @@ console.log('\n=== 三、打印样式表：收外壳、去颜色，不给纸面�
     '顶栏在纸上收起来');
   chk(/\.dock/.test(block) && /\.foot/.test(block),
     '页签与页脚在纸上收起来（屏幕上不是内容的东西一件都不上纸）');
-  /* ⚠️ 预览里的辅助虚线**不上纸**：纸面上每篇之间多一道横线，
-     只会让人以为要撕下来。这条是**反向**断言（纸张上必须没有它）。 */
+
   chk(/\.print-block \+ \.print-block[^{]*\{[^}]*border-top:\s*0\s*!important/.test(block),
     '预览的辅助虚线在纸上被删掉（纸面上不添横线）');
   chk(/\{[\s\S]*?background:\s*#fff\s*!important/.test(block) || /background:\s*#fff\s*!important/.test(block),
     '底色改白（省墨；彩色打印机上也不会糊）');
-  /* 那一块里**不许**出现任何「改字号重排」的声明：
-     纸面上的断行就是原文的断行，重排就是改字。 */
+
   chk(!/font-size/.test(block), '打印样式表里一条 font-size 都没有（不重排、不改字号）');
   chk(!/column-count|columns:/.test(block), '打印样式表里不自己分栏（栏数由版面参数给）');
 }
-
-/* ================ 四、页面层：锁着 → 解锁，预览跟着开关走 ================ */
 
 function boot(opts) {
   const o = opts || {};
@@ -172,7 +140,6 @@ function click(el) {
   el.dispatchEvent(new el.ownerDocument.defaultView.MouseEvent('click', { bubbles: true }));
 }
 
-/** 造一个真的已登录会话 + 指定的层级（与 game-page 同一套做法） */
 function signIn(w, tier) {
   const A = w.AuthCore;
   const st = A.makeStore(w.localStorage);
@@ -188,14 +155,6 @@ function signIn(w, tier) {
   return !!A.session(st);
 }
 
-/**
- * 一份两篇的自选清单。
- *
- * ⚠️ 条目 id 用的是**站点索引里那一条的 id**（`poems-xx1-01`，带集子前缀），
- *    不是原始数据 id —— 索引里全站避重时加了前缀，而打印这一层是从
- *    索引取篇目的。写原始 id 的话取不到任何一篇，症状是「预览一片空白」，
- *    看起来像打印坏了。
- */
 const FIXTURE = {
   poem_recite_collections_v1: JSON.stringify({
     version: 1,
@@ -232,7 +191,6 @@ const FIXTURE = {
     chk(text.indexOf('**') < 0, '文字里没有裸 `**`（进 innerHTML 的那段不许写 Markdown 加粗）');
     chk(!d.querySelector('[data-print-paper]'), '锁着时一个纸型键都不画');
 
-    /* 「我的清单」那一页原本的活儿一件都没坏 */
     chk(!!d.querySelector('#collections-list'), '自选清单照旧渲染（这一层不抢它的活）');
   }
 
@@ -257,7 +215,6 @@ const FIXTURE = {
     chk(!!host.querySelector('[data-print-run]'), 'Pro 有「打印 / 存 PDF」那颗键');
     eq(host.querySelectorAll('[data-print-paper]').length, 3, '三种纸型都列出来了');
 
-    /* 判权只走那一个出口 —— 页面不自己比 tier */
     const js = read('js/print.js');
     chk(/Ent\.can\(CAP/.test(js), '判权走 Entitlement.can()（不是自己比 tier）');
     chk(!/tier\s*===\s*["']pro|tier\s*===\s*["']max/.test(js), '本文件里没有一处自己比 tier');
@@ -295,14 +252,12 @@ const FIXTURE = {
     chk(host.querySelectorAll('.print-row-translation').length > 0,
       '开译文：预览里真的多出译文行');
 
-    /* 纸型切换：换了纸型「约几张」跟着重算（同一批篇目、不同纸，页数可能不同） */
     const wide = host.querySelector('[data-print-paper="a4wide"]');
     click(wide);
     await wait(40);
     chk(!!host.querySelector('[data-print-paper="a4wide"].active') ||
         /A4 横向/.test(host.textContent), '点一下换纸型，界面跟着重画');
 
-    /* 点打印：真的调到 window.print()（不自己生成 PDF —— 浏览器「另存为 PDF」就是这一步） */
     click(host.querySelector('[data-print-run]'));
     await wait(40);
     eq(w.__printed, 1, '点「打印 / 存 PDF」真的调了浏览器的打印（不假装生成文件）');
@@ -323,13 +278,12 @@ const FIXTURE = {
 
     const printed = [...host.querySelectorAll('.print-row-text')].map(e => e.textContent);
     chk(printed.length > 0, '预览里有正文行');
-    /* 每一行都要在**站点索引的原文**里逐字找得到 —— 这是「不转写、不改字」的判据 */
+
     const idx = w.SITE_INDEX || [];
     const all = idx.map(p => p.text || '').join('\n');
     const bad = printed.filter(t => all.indexOf(t.trim()) < 0);
     eq(bad.length, 0, '预览里每一行都能在原文里逐字找到（没有一行是重排出来的）');
 
-    /* 标点照排：切出来的行**不许**以标点开头（那说明断行断错了位置） */
     const lead = printed.filter(t => /^[，。、；：？！]/.test(t.trim()));
     eq(lead.length, 0, '没有一行以标点开头（断行位置正确）');
   }

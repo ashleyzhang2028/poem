@@ -1,52 +1,8 @@
-/**
- * 生成 data/canonical-texts.js（正文收归主表）
- * ==========================================================================
- * ⚠️ 存储层收归之后，这张表**通常是空的**（见下「与 text-master 的分工」）。
- *    它的机制仍在，留给「日后真出现异文」的那一天。
- *
- * 口径（Issue #69 收尾，用户原话「正文收归主表，以课本为主，去重」）：
- *
- *   · 课内与选集**同一篇作品**（正文去标点后一致）时，正文只留一份；
- *   · 那一份取**主条目**的正文 —— 主条目 = 课内条目（教材口径优先），
- *     没有对应课内条目的纯课外篇目取它自己；
- *   · 译文同样如此：古文观止与课内同篇时，用课内那一份译文
- *     （用户在同一句里的「以课本为主」，也是对译文的裁定 ——
- *      同一篇给学生读两段不同的白话，只会让人来问「到底哪个对」）；
- *   · 其余各集子（含课内自身）的正文就是主条目那一份，不必登记。
- *
- * 为什么落成一份静态数据而不是改各部数据文件：
- *   选本原貌该不该保留、教材文本该不该覆盖选本，是**主表的裁定**，
- *   不是某一部集子的语料。把它们混写进 data/poems-tangshi.js，
- *   日后重新生成那一部就会把裁定覆盖掉，而且「哪些条目被改过」再也看不出来。
- *   这一份单独列清：哪个条目、用的哪一篇的正文，一目了然，也便于回归。
- *
- * 什么时候要重跑：
- *   · 某一部增补 / 订正了篇目（正文变了，同篇关系就变）
- *   · data/works-index.js 的判重键（dedupKey）改了
- *
- * ## 与 data/text-master.js 的分工（存储层 vs 显示层）
- *
- *   这张表（canonical-texts.js）是**显示层**的裁定：各集子照旧各存一份正文，
- *   显示时才替成主条目那一份。它解决了「学生读到两种写法」，
- *   但没解决「同一篇正文在磁盘上存了五份」。
- *
- *   正文收归主表的**存储层**（data/text-master.js）做完之后，
- *   同一篇的正文本来就只剩一份、各集子条目只存归属（textRef）——
- *   两种写法不复存在，这一张显示层裁定表也就**自然收敛为空表**。
- *   （跑一次本脚本，若输出「0 条」即说明语料里已无绕开主表的异文。）
- *
- *   一旦这张表又非空，说明有某部语料没走主表、自己又存了一份正文 ——
- *   那正是该去查的地方，而不是补进这张表里盖住。
- *
- * 用法：node scripts/build-canonical-texts.js
- */
 const fs = require('fs');
 const vm = require('vm');
 const path = require('path');
 const ROOT = path.join(__dirname, '..');
 
-// ⚠️ data/text-master.js 排最前：各集子条目只存归属（textRef），
-//    正文要按它取回 —— 判重（去标点比正文）没有正文就判不出任何一组。
 const LOAD = [
   'data/text-master.js',
   'data/poems-1.js', 'data/poems-2.js', 'data/poems-3.js', 'data/poems-4.js',
@@ -68,11 +24,10 @@ const WI = sandbox.WorksIndex;
 const byId = {};
 sandbox.SITE_INDEX.forEach(function (p) { byId[p.id] = p; });
 
-/** 正文是否逐字相同（只忽略空白与换行 —— 断行方式不属于文本差异） */
 const textOf = function (p) { return String((p && p.text) || ''); };
 const sig = function (t) { return t.replace(/\s+/g, ''); };
 
-const entries = [];   // { id, of, text, translation } —— 只登记「用别人的正文」的条目
+const entries = [];
 GI: for (var i = 0; i < WI.works.length; i++) {
   var w = WI.works[i];
   if (w.entries.length < 2) continue;
@@ -90,11 +45,7 @@ GI: for (var i = 0; i < WI.works.length; i++) {
     if (!needText && !needTrans) continue;
     entries.push({
       id: id,
-      // of 记**集子内 id**（去掉集子前缀）：两类页面都要能命中 ——
-      //   · 集子页里的条目 id 不带前缀（`gw-60`）；
-      //   · 首页 / 搜索页里的条目 id 带前缀（`classic-gw-60`，站点索引口径）。
-      // id 这一栏仍按站点索引口径（与 data/works-map.js 一致），
-      // 引擎查表时两种键都认（见 js/reader-core.js 的 canonicalRuleFor）。
+
       of: rep.replace(/^[a-z]+-/, ''),
       ofEntry: rep,
       text: needText,

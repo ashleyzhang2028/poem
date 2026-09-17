@@ -1,42 +1,3 @@
-/**
- * 篇目 PDF / 打印页
- * ==========================================================================
- * 「把我挑的这几十篇排成一页纸，打出来。」—— 这一层只干这一件事。
- *
- * ## 它长在哪儿、为什么长在这儿
- *
- * 入口在 `/settings/lists/`（我的清单）—— **就在自选清单下面**，
- * 因为要打印的正是这份清单。第二入口在 `/poems/` 的详情页工具条上：
- * 「这一篇打出来」。
- *
- * 为什么不新开一页 `/print/`：底部四个页签已经满了（背诵 / 课外 / 搜索 / 设置），
- * 而这一件事**没有自己的状态** —— 它用的就是「哪一份清单」
- * （自选清单 / 当前这一篇）。单开一页等于让用户在两个页面之间来回搬东西。
- * 所以它与「古诗词大会」同一条路子：**就地叠层**，地址栏不动，
- * 返回键一层退一层（见 js/game.js 的文件头）。
- *
- * ## 三条口径
- *
- * 1. **页数说得出来，而且只用一份数字** —— 版面的全部参数在
- *    `js/print-core.js`（纯逻辑、可断言）。页面上写的是「**约** N 张」，
- *    不是「正好 N 张」：真正的字形宽度只有渲染时才知道，
- *    不同设备的中文字体差得很远。去掉「约」就是一句早晚会变假的话。
- *
- * 2. **打的是原文，一个标点都不改** —— 不重排、不转写、不加注音以外的任何东西。
- *    只有两种行会被合并：空行、只有标点的行（数据里的换行留下的）。
- *    拼音与译文是**开关**：关掉它们，纸面上就真的没有那几行
- *    （页数跟着变，所以「约几张」当场就要跟着重算）。
- *
- * 3. **打不出来的东西如实说** —— 没有正文的篇目不排进这一份，
- *    并在界面上写明「另有 N 篇没有正文」。悄悄少一篇比多打一张纸更难发现。
- *
- * ## 与层级的关系（Pro）
- *
- * 能力键是 `export.paper`（Pro）。**入口照旧看得见**：未登录 / 层级不够时
- * 点进来是一张如实说明「这一项要 Pro、怎么才能拿到」的卡 ——
- * 与「古诗词大会」同一套写法。判据一律走 `Entitlement.can()`，
- * 这一层不自己比 tier（有源码扫描守着）。
- */
 (function () {
   "use strict";
 
@@ -47,7 +8,7 @@
 
   var state = {
     open: false,
-    scope: "collection",   // collection（这一份清单）| poem（就这一篇）
+    scope: "collection",
     collectionId: "",
     poemId: "",
     paper: "a4",
@@ -57,8 +18,8 @@
     blankLines: 3
   };
 
-  var host = null;      // 挂载点
-  var entryUrl = null;  // 叠层之前的地址（关掉时还原滚动位置用）
+  var host = null;
+  var entryUrl = null;
 
   function $(sel, base) { return (base || host || document).querySelector(sel); }
   function esc(s) {
@@ -76,18 +37,11 @@
     try { return Ent.identity({ backing: backing() }); } catch (e) { return null; }
   }
 
-  /** 能不能开 —— **全站唯一那个出口**，本页不自己比 tier */
   function allowed(id) {
     if (!Ent) return { ok: false };
     return Ent.can(CAP, { tier: (id && id.tier) || "free", signedIn: !!(id && id.signedIn) });
   }
 
-  /* ------------------------------------------------------------ 取篇目 */
-
-  /**
-   * 站点索引 —— 与首页 / 集子页同一份（`data/site-index.js`）。
-   * 索引里的条目**不带正文**（正文在主表里），所以还要走 `masterTextOf`。
-   */
   function index() { return window.SITE_INDEX || []; }
 
   function byId(id) {
@@ -98,14 +52,6 @@
     return null;
   }
 
-  /**
-   * 给一条索引条目补上正文 —— **走全站同一份主表**（`data/text-master.js`）。
-   *
-   * ⚠️ 正文只在主表里有一份（docs §2.4：各集子条目只存 `textRef`）。
-   *    所以这里不读 `p.text`（那是快照，可能是旧版），一律走 `masterTextOf()`
-   *    —— 「排版用的正文」与「阅读器里读的正文」必须是同一份，
-   *    否则打印出来的与屏幕上读到的会出现两个版本。
-   */
   function withText(p) {
     if (!p) return null;
     if (typeof window.masterTextOf === "function") {
@@ -127,14 +73,6 @@
     return p;
   }
 
-  /**
-   * 这一份要打的篇目。
-   *
-   * `collection` 走自选清单的**作品去重**口径（`allEntries()`）——
-   * 与每日任务同一份，所以「打出来的就是我在背的那些」。
-   * 清单里查不到正文的条目（站点索引里没有）**照旧排**，
-   * 靠加入时存下的快照；快照里也没有正文的会被 `layout()` 报进 `empty`。
-   */
   function poemsFor() {
     if (state.scope === "poem") {
       var one = withText(byId(state.poemId));
@@ -147,7 +85,6 @@
       : null;
     var items = col ? col.items : null;
 
-    /* 没有指定集合时打**全部自选**（按作品去重，与每日任务一致） */
     if (!items) {
       return C.allEntries().map(function (e) {
         var p = withText(byId(e.entryId) || byId(e.wid));
@@ -183,15 +120,11 @@
     return out;
   }
 
-  /* -------------------------------------------------------------- 排版 */
-
   function layoutNow() {
     if (!PC) return null;
     return PC.layout(poemsFor(), {
       paper: state.paper,
-      /* ⚠️ 拼音与译文的开关**按篇目手上有没有数据**再收一道：
-         没有注音数据的篇目不会因为开关打开就凭空多出一行
-         （`layout()` 自己判 `p.pinyin` 有没有，这里传的是用户的意愿）。 */
+
       pinyin: state.pinyin,
       translation: state.translation,
       blank: state.blank,
@@ -199,9 +132,6 @@
     });
   }
 
-  /* -------------------------------------------------------------- 渲染 */
-
-  /** 要哪一层、怎么拿到 —— 与 /plans/ 那一页同口径，文案走 denyReason() */
   function gateCard(id) {
     var why = (Ent && Ent.denyReason)
       ? Ent.denyReason(CAP, { tier: id.tier, signedIn: id.signedIn })
@@ -213,7 +143,7 @@
       ? '<p class="account-hint">层级由管理员按邮箱掩码发放。四种身份的对照见 ' +
         '<a href="/plans/">四种身份对比</a>。</p>'
       : '<button class="account-btn" type="button" data-print-go="/login/">用邮箱建一个账号</button>';
-    /* ⚠️ 不写「即将上线」—— 它就是**做完了**，只是要 Pro（2A 立的规矩） */
+
     html += "</section>";
     return html;
   }
@@ -238,7 +168,6 @@
       '<p class="account-hint" id="print-summary">' + esc(PC.summary(lay)) + "</p>" +
       "</section>";
 
-    /* 纸型与内容：三张纸 + 三个块开关 */
     html += '<section class="account-card"><h2 class="account-card-title">纸型</h2>' +
       '<div class="seg mini print-paper" id="print-paper" role="group" aria-label="纸型">' +
       PC.ORDER.map(function (k) {
@@ -263,8 +192,6 @@
         : "") +
       "</section>";
 
-    /* 预览：**屏幕上看到的就是纸上那些内容**（同一份数据、同一个断行），
-       但字号与换页是浏览器打印时才定的 —— 所以这里不假装是「所见即所得」 */
     html += '<section class="account-card"><h2 class="account-card-title">预览</h2>' +
       '<p class="account-hint">下面是纸上会有的字。字号与换页由浏览器打印时决定，' +
       "这里只保证内容一致。</p>" +
@@ -295,7 +222,6 @@
       "</label>";
   }
 
-  /** 预览里的一块 = 纸上一张卡片。与 print-core 的 `blockOf()` 同一份数据 */
   function renderBlock(b) {
     var rows = b.rows.map(function (r) {
       if (r.kind === "blank") return '<span class="print-blank" aria-hidden="true">　</span>';
@@ -308,8 +234,6 @@
       '<div class="print-block-body">' + rows + "</div>" +
       "</article>";
   }
-
-  /* -------------------------------------------------------------- 交互 */
 
   function bind() {
     if (!host) return;
@@ -339,13 +263,6 @@
     };
   }
 
-  /**
-   * 打印。
-   *
-   * ⚠️ **不自己生成 PDF** —— 本站没有 PDF 库（引一个就是几百 KB，
-   *    而浏览器的打印对话框里「另存为 PDF」本来就是同一件事，且各平台都有）。
-   *    界面上写的就是这一步，不写「导出 PDF」（那会让人以为点了就落一个文件）。
-   */
   function runPrint() {
     var lay = layoutNow();
     if (!lay || !lay.count) {
@@ -357,8 +274,6 @@
       if (window.showToast) window.showToast("这个浏览器不允许直接打印，请用菜单里的「打印」");
     }
   }
-
-  /* -------------------------------------------------------- 与页面的衔接 */
 
   function paintHeader() {
     var C = window.SiteChrome;
@@ -374,12 +289,6 @@
     C.setPageAction({ label: "返回上一页", onclick: function () { close(); } });
   }
 
-  /**
-   * 打开这一层。
-   * @param {Object} [opt] { collectionId, poemId }
-   *   给了 `poemId` 就是「就这一篇」（从诗词详情页进）；
-   *   给了 `collectionId` 就是「这一份清单」；都不给就是「全部自选」。
-   */
   function open(opt) {
     if (!host) return;
     var o = opt || {};
@@ -405,7 +314,6 @@
     window.scrollTo(0, 0);
   }
 
-  /** 打开这一层的那颗键装在哪儿 —— 由各页面自己放槽位，这里只绑它 */
   function bindEntry() {
     var entry = document.querySelector("[data-print-open]");
     if (!entry) return;
@@ -440,7 +348,7 @@
     close: close,
     isOpen: function () { return !!state.open; },
     state: function () { return state; },
-    /* 测试用：不点界面直接取这一份的篇目与排版 */
+
     poems: poemsFor,
     layout: layoutNow
   };

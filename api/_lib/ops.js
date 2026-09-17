@@ -1,44 +1,5 @@
-/**
- * 开通自检与配置清单（Issue #132 · 2 期 2C）
- * ==========================================================================
- * 2A 把 `/api/me` 与注销接上、2B 把短信 channel 的口子做成真能跑的代码。
- * 于是「能不能真的发信 / 真的同步」只剩一件事：**环境变量配上没有**。
- * 那一件事在本项目里是唯一「没有业务代码可写」的一步（docs/architecture.md §4.10
- * 「下一步（2D：配置与真开通，代码一个字不用改）」）—— 但**没有代码可写 ≠ 没有东西可做**。
- *
- * 这个文件做的是那一件事的**可执行版本**：
- *
- *   1. 把「哪些变量、各自什么用、缺了会怎样」写成一份**代码里的清单**——
- *      清单和校验读的是**同一份数据**，所以「文档说缺 X、程序说缺 Y」这种
- *      分叉不可能发生（文档在本项目里已经漂移过好几次，见 docs/auth-design.md
- *      里那些「已落地 / 未落地」的标注）。
- *   2. 给出一份 `.env.example` 的**唯一来源**：脚本生成，不手抄。
- *   3. 让「现在到底缺哪几个」可以在**不部署**的情况下问出来（`./scripts/doctor.sh`）。
- *
- * ## 三条口径（与 1A 立的边界同源）
- *
- * 1. **只报「缺」与「怎么补」，不报密码** —— 输出里不许出现任何密钥的值。
- *    这一条是硬性的：自检脚本最容易被贴进 Issue 或聊天窗口。
- * 2. **区分「必须」与「可选」** —— 缺 `SESSION_SECRET` 是**必须**（不配则接口整体 503）；
- *    缺 `SENDGRID_API_KEY` 只是「发不出真信」，本站照样能跑（console 兜底）。
- *    把两类混成一张「缺 6 项」的表，用户会以为不配齐就用不了。
- * 3. **不假装** —— 检查只回答事实，不做「已尽力」这类判断。
- *    `ok:false` 就是 `ok:false`，与 2B 的 `E_SMS_NOT_OPEN` 是同一条纪律。
- *
- * ⚠️ 本文件不 import 任何第三方包，可在 Node 里直接 require（见 test/api.test.js）。
- */
 "use strict";
 
-/**
- * 每一项配置的说明。
- *
- * `level` 三种取值：
- *   · "required" —— 缺了就**起不来**（接口整体 503 / 会话签不出来）
- *   · "needed"   —— 缺了「这一件事」做不成，但别的事照常（例：不发真信）
- *   · "optional" —— 有它更好，没有也行（例：改站名）
- *
- * `secret: true` 的项在**任何输出**里都不出现值，只出现「已设置 / 未设置」。
- */
 var ENTRY = [
   {
     key: "SESSION_SECRET",
@@ -139,10 +100,7 @@ var ENTRY = [
     missing: "用默认值",
     how: "填你自己的域名"
   },
-  /* ---- Issue #197：完整登录流程那几档 ----
-     ⚠️ 这几项**没有一项是开关**：注册 / 确认 / 登录 / 忘记密码 / 重设
-        都是本流程的组成部分，开关一开一半就成了「某些用户走不通」。
-        所以它们全在 `optional` 那一档（有合理默认值，能覆盖绝大多数场景）。 */
+
   {
     key: "PASSWORD_MIN",
     level: "optional",
@@ -238,10 +196,7 @@ var ENTRY = [
     missing: "没有实现可指：只开开关不接商，请求**仍然是 503 E_SMS_NOT_OPEN**（2B 的核心口径）",
     how: "先签商 + 模板报备，再实现 transports.<商名>；在此之前这一项**不填**"
   },
-  /* ---- 人机校验（Cloudflare Turnstile，Issue #197 后续）----
-     ⚠️ 三个变量，其中**只有一个是密钥**（secret key），另外两个是公开值/开关。
-        这一点与本文件里其它项不同 —— 把 siteKey 标成 secret 会让
-        「只报已设置 / 未设置」这条纪律误伤它（它是**要进浏览器**的那个）。 */
+
   {
     key: "TURNSTILE_ENABLED",
     level: "optional",
@@ -301,14 +256,12 @@ var ENTRY = [
   }
 ];
 
-/** 出厂口径：`hasDb` / `hasSession` / `mail()` 是**唯一的**判定处（见 config.js） */
 var TIER_TEXT = {
   required: "必须",
   needed: "这一件需要",
   optional: "可选"
 };
 
-/** 一个值算不算「设了」（空串与纯空格都不算 —— 托管平台的空变量很常见） */
 function isSet(v) {
   return !(v === undefined || v === null || String(v).trim() === "");
 }
@@ -318,16 +271,6 @@ function valueOf(cfg, key) {
   return cfg[key];
 }
 
-/**
- * 体检：只回答「哪些设了、哪些没设、缺了会怎样」，**不出现任何值**。
- *
- * @param {object} cfg   CONFIG（或测试里造的同形状对象）
- * @returns {object}     { ok, groups, missing, blocking, notes }
- *   · ok       —— 达到「能真跑」的最低线：会话可签 + 有库
- *   · missing  —— 没设的项（**只给 key 与说明，不给值**）
- *   · blocking —— 其中会把功能挡死的（required）
- *   · delivery —— 发信这一件到底能不能成（派生口径，与 config.mail() 同源）
- */
 function check(cfg) {
   var items = ENTRY.map(function (e) {
     var set = isSet(valueOf(cfg, e.key));
@@ -340,35 +283,26 @@ function check(cfg) {
   var missing = items.filter(function (i) { return !i.set; });
   var blocking = missing.filter(function (i) { return i.level === "required"; });
 
-  /* 派生口径一律**问 config 自己的函数**，不在这里重算一遍 —— 重算一份的后果是
-     「自检说能发、真跑起来落到 console」这类假绿（config.mail() 的注释里写着同一条教训）。 */
   var hasSession = typeof cfg.hasSession === "function" ? !!cfg.hasSession() : isSet(cfg.sessionSecret);
   var hasDb = typeof cfg.hasDb === "function" ? !!cfg.hasDb() : (isSet(cfg.supabaseUrl) && isSet(cfg.supabaseServiceKey));
   var mail = typeof cfg.mail === "function" ? cfg.mail() : "console";
   var smsEnabled = cfg.smsEnabled === true;
   var smsTransport = isSet(cfg.smsTransport) ? cfg.smsTransport : null;
-  /* 人机校验的判定一律**问 config 自己的函数**（与 mail / sms 同一条纪律：
-     在这里重算一遍就会「自检说开着、真校验却不校验」）。 */
+
   var turnstile = typeof cfg.turnstileReady === "function" ? !!cfg.turnstileReady() : false;
 
   var notes = [];
   if (!hasSession) notes.push("缺 SESSION_SECRET：所有 /api/* 会回 503 —— 本站仍可完全离线使用（这是设计好的降级，不是坏掉）");
   if (hasSession && !hasDb) notes.push("会话可签但没配库：账号与进度只活在**当前实例的内存**里，重启即丢");
   if (mail === "console") notes.push("当前发信通道是 console：真实用户**收不到**验证码邮件（本地开发与 CI 正是靠它跑完整链路）");
-  /* 两个密钥都填、又没显式指定通道 —— 缺省推断会挑 SendGrid。
-     而 SendGrid 已经转向收费，于是这一档的后果是「你以为在用免费的 Resend，
-     账单走的是 SendGrid」，**两侧都不报错**。这条提醒就是为这种错写的。 */
+
   if (!cfg.mailTransport && isSet(cfg.sendgridKey) && isSet(cfg.resendKey)) {
     notes.push("SENDGRID_API_KEY 与 RESEND_API_KEY **都填了**，又没设 MAIL_TRANSPORT：" +
       "缺省选中的是 sendgrid（推断顺序里它在前面）—— 你以为在用 Resend，实际走的是 SendGrid。" +
       "想用 Resend 就显式写 MAIL_TRANSPORT=resend，或把 SENDGRID_API_KEY 去掉");
   }
   if (smsEnabled && !smsTransport) notes.push("SMS_ENABLED=1 但没接短信商：请求仍是 503 E_SMS_NOT_OPEN（这是 2B 定死的口径，不是 bug）");
-  /* ---- 人机校验（Turnstile）的三档如实提示 ----
-     ⚠️ 这三条各自说的是**不同的事**，合成一条会让用户不知道该怎么办：
-       · 旁路开着（最危险，且生产无从察觉）
-       · 开关开着但缺 secret（看着像开着、实际不校验 → 「假绿」）
-       · 开关关着（默认，不是错） */
+
   if (isSet(cfg.turnstileBypass) && cfg.turnstileBypass === true) {
     notes.push("⚠️ TURNSTILE_BYPASS=1：**人机校验被整个绕开了**，而且这件事不随任何响应下发 —— 生产环境绝不许开它");
   } else if (cfg.turnstileEnabled === true && !isSet(cfg.turnstileSecretKey)) {
@@ -386,7 +320,7 @@ function check(cfg) {
     hasDb: hasDb,
     mail: mail,
     smsReady: !!(smsEnabled && smsTransport),
-    /* 人机校验真的在跑吗（与 `channelFacts().turnstile` 同源） */
+
     turnstile: turnstile,
     items: items,
     missing: missing,
@@ -395,12 +329,6 @@ function check(cfg) {
   };
 }
 
-/**
- * 渲染成给**人看**的一小段文字（自检脚本与 Issue 评论都用它）。
- *
- * ⚠️ 只输出 key 与「已设置 / 未设置」，`secret` 项连长度都不报 ——
- *    长度是密钥信息的一半。这段文字是可以直接贴进 Issue 的，这条规矩就是为那件事定的。
- */
 function report(cfg) {
   var r = check(cfg);
   var lines = [];
@@ -431,26 +359,6 @@ function report(cfg) {
   return lines.join("\n");
 }
 
-/**
- * 「配置与真开通」的**步骤清单**（2D 的唯一来源）。
- * ==========================================================================
- * 2C 把「缺哪个变量」做成了可执行的（`doctor.js`），但**「照着补」这件事本身**
- * 还散在三处：文档一句「去 Supabase 建项目」、`.env.example` 一句
- * 「Project Settings → API」、以及只有做过的人才知道的坑
- * （service_role 不是 anon、SPF/DKIM/DMARC 三条 DNS、探活为什么每 5 天）。
- *
- * 这一份把那三处收成一处，`doctor.js --steps` 直接打印它。
- * 与 ENTRY 的关系是**互补而不是重复**：
- *   · ENTRY 回答「每个变量缺了会怎样」
- *   · STEPS 回答「为了让它不缺，先做什么、在哪做、做完了怎么知道成了」
- * 两步各有一句 `check`（判据），与 `ops.check()` 是**同一个函数**，不重算一遍。
- *
- * ⚠️ 与 ENTRY 同一条纪律：**不出现任何密钥的值**（连长度都不报）。
- *    这份文字同样是可以直接贴进 Issue 的。
- * ⚠️ 本文件仍不 import 任何第三方包（Node 里可直接 require）。
- */
-
-/** 一段可直接粘进终端的验收命令（`$VAR` 由用户自己的 shell 展开） */
 var VERIFY_DB = 'curl -sS -o /dev/null -w \'%{http_code}\\n\' "$SUPABASE_URL/rest/v1/accounts?select=uid&limit=1" -H "apikey: $SUPABASE_SERVICE_KEY" -H "Authorization: Bearer $SUPABASE_SERVICE_KEY"';
 
 var STEPS = [
@@ -563,21 +471,14 @@ var STEPS = [
       "② 会话可签：curl -sS \"$SITE_URL/api/me\" | head -c 200 —— 期望 401 E_NO_SESSION；**回 503 E_NOT_CONFIGURED 就是 SESSION_SECRET 没生效**",
       "③ 真发信：POST /api/send-code → delivered:true 且 transport 是你配的那一家（console 通道**永远**是 false，这是 2C 定的，2D 不改）",
       "④ 注销可达：curl -sS -o /dev/null -w '%{http_code}\\n' -X DELETE \"$SITE_URL/api/account\" —— 期望 401（不是 500）",
-      /* Issue #205：函数数撞 Hobby 档上限时，症状是**构建失败**，
-         而报错（`No more than 12 serverless functions…`）读起来像「代码坏了」。
-         所以这一步必须点出「这一版线上只有 1 个函数入口」这件事，
-         并且给出一条**本机就能数**的判据 —— 不必等构建跑完。 */
+
       "⑤ 部署形态：本条与「环境变量」无关，但它是同一类问题（配了才会好）。" +
       "线上 `api/` 下**只有 1 个** Serverless 函数入口（`api/index.js`，" +
       "它就是 `/api` 目录的兜底函数），19 条路由的实现都在 `api/_routes/`" +
       "（`_` 开头 = 平台不当函数）。" +
       "本机判据：`find api -name '*.js' -not -path 'api/_*' -not -path 'api/_*/*'`" +
       " 应只回一行 `api/index.js`。见 docs/architecture.md §2.2.1",
-      /* ⚠️ 这一条是 2026-09-17 真事：上一版靠 `vercel.json` 一条 rewrite 把" +
-         " `/api/*` 转到 `/api/handler/*`，**那条 rewrite 线上从来没生效** ——" +
-         " 全站 `/api/*` 回平台层的 404（NOT_FOUND），而静态页面照旧 200。" +
-         " 本地测试全绿也抓不到它（测试挂的是模块，rewrite 那一层不在测试里）。" +
-         " 所以这一步要有一条**对着线上打**的判据。 */
+
       "⑥ **接口真的活着**：`curl -sS -o /dev/null -w '%{http_code}\\n' \"$SITE_URL/api/config\"`" +
       " 期望 **200**；`curl -sS \"$SITE_URL/api/me\"` 期望 401 E_NO_SESSION。" +
       "**回 404 且正文是 `The page could not be found`，那是 Vercel 平台层报的" +
@@ -591,7 +492,6 @@ var STEPS = [
   }
 ];
 
-/** 步骤渲染成给人看的文字（`doctor.js --steps` 与 Issue 评论用同一份） */
 function stepsReport(cfg) {
   var lines = [];
   lines.push("跬步 · 配置与真开通（2D：Supabase + 发信商 + 会话密钥 + 探活 + 人机校验）");
@@ -625,10 +525,6 @@ function stepsReport(cfg) {
   return lines.join("\n");
 }
 
-/**
- * `.env.example` 的**唯一来源** —— 脚本 `scripts/env-example.js` 生成它，不手抄。
- * 手抄一份的下场：某天加了一个变量，文档还是老样子，用户照文档配完发现「还是不对」。
- */
 function envExample() {
   var out = [
     "# 跬步 · 服务端环境变量（由 `node scripts/env-example.js` 生成，**不要手改**）",

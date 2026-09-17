@@ -1,34 +1,6 @@
-/**
- * 全站 UI 一致性 / 响应式守卫（Issue #122）
- * ==========================================================================
- * 用户原话：
- *   「对所有页面的 UI 组件等等进行审核，确保一致性和没有任何界面问题，
- *     大小不一致，行为不统一等等尽量避免。
- *     目前主要是手机端，请同样考虑平板和桌面端的响应式布局及显示问题的修复。」
- *
- * 这一层守着三类事（每一类都是「不靠肉眼看截图」能判的）：
- *
- *   一、同一套组件在不同页面上**长得一样**
- *       —— 圆角 / 内边距 / 字号 / 尺寸都只有一个来源（变量或同一条规则），
- *          某一页单独写死一个数值，就是下一次「两页并排看着不一样」的种子。
- *
- *   二、「画出来的尺寸」必须等于声明的尺寸
- *       —— box-sizing 与边框的关系最容易算错（content-box 下边框是另加的）。
- *          今日条那颗播放键就栽在这里：CSS 写 40px、真机画出来 42px，
- *          与旁边 40px 的进度环并排差 2px。这里按**算式**判，
- *          而不是按「某个数值等于 40」判 —— 换尺寸时算式仍成立。
- *
- *   三、宽屏（平板 / 桌面）不许把组件拉变形
- *       —— 页签四格、入口页卡片、设置页选项、进度日历这几处，
- *          窄屏是竖排 / 横滑，宽屏必须换一种排布（均分 / 两列 / 一屏放全）。
- *          守着「宽屏那一档的媒体查询真的存在」，而不是守具体像素。
- *
- * 运行：node test/ui-consistency.test.js
- */
 const fs = require('fs');
 const path = __dirname + '/../';
-// ⚠️ jsdom 只用于下面「真实渲染几何」那一段（按需加载、失败即跳过）。
-//    本层其余断言都是纯正则 + 文件读取，没有 jsdom 也必须能跑完。
+
 let JSDOM = null;
 try { JSDOM = require('jsdom').JSDOM; } catch (e) { JSDOM = null; }
 const read = f => fs.readFileSync(path + f, 'utf8');
@@ -42,41 +14,16 @@ const legalCss = read('css/legal.css');
 const accountCss = read('css/account.css');
 const chromeJs = read('js/chrome.js');
 
-/** 注释一律先剥掉：注释里会写历史数值（「40 + 12 = 52px」），
-    不剥掉就会对着自己的说明判红，也会把注释里的 `{` `}` 当成规则边界。
-    ⚠️ 下面所有断言一律对着 `*Code`（已剥注释）版本，
-      不要再拿原始源码去跑正则 —— 那样注释里的括号会把规则切歪。 */
 const strip = t => t.replace(/\/\*[\s\S]*?\*\//g, ' ');
-/** 剥 HTML 注释：注释里会写「这条结构不许写死」的说明 */
+
 const stripHtml = t => t.replace(/<!--[\s\S]*?-->/g, ' ');
 const cssCode = strip(css);
 const classicCode = strip(classicCss);
 const legalCode = strip(legalCss);
 
-/**
- * 取某个选择器**累积**的声明（同名规则后写的覆盖先写的，与浏览器一致）。
- *
- * ⚠️ 不能只取「最后一条匹配」：同一个选择器常写在好几处
- *   （`.app` 的 max-width 在文件中部、padding 在 PWA 一节），
- *   只取最后一条会漏掉前一条里真正想查的声明。
- * ⚠️ 选择器要**整条**相等才算命中，不能用「包含」：
- *   `.app` 与 `.app, #app` 是两条不同的选择器组，
- *   而 `#app` 那条里也有 max-width —— 用包含匹配就会张冠李戴。
- * 做法：先把 @media 外壳剥掉、把里面的规则提到顶层（只关心「某档是否存在这条声明」），
- * 再按顺序把「选择器组里恰好含这一条」的规则块累加。
- *
- * ⚠️ 同名属性只保留**最后一条**（这一步不能省）。原先的版本把每一段的声明
- *   原样拼起来，于是 `.switch-track` 的 `width` 同时是 40px（旧段：那是轨道）
- *   与 18px（新段：那是滑块）—— 断言按累积读，读到的是**先写的那条**，
- *   而浏览器用的是后写的那条。真踩过：同一份样式表里出现两段同名规则之后，
- *   「滑块 18px」的断言去读了轨道那一段的 40px，接着按 40 算行程，算出一个负数。
- *   症状是**测试红、页面却完全正常** —— 比漏判更难查，因为没人会去怀疑读数。
- *   留最后一条之后，「哪个值真生效」与浏览器一致，这类断言才是在判页面。
- */
 function ruleOf(src, sel) {
   const flat = src.replace(/@media[^{]+\{/g, '{');
-  /* 全部命中片段的注释先去掉：注释里常带 `width: 40×24` 这类说明文字，
-     按 `;` 取最后一条会把注释里的半句当成声明。 */
+
   const decls = [];
   const re = /([^{}]+)\{([^}]*)\}/g;
   let m;
@@ -87,7 +34,7 @@ function ruleOf(src, sel) {
       if (d.trim()) decls.push(d.trim());
     });
   }
-  /* 同属性留最后一条，且**保持各属性首次出现的顺序**（可读性，不影响判定） */
+
   const last = new Map();
   const order = [];
   decls.forEach(d => {
@@ -98,13 +45,6 @@ function ruleOf(src, sel) {
   return order.map(n => last.get(n)).join(';');
 }
 
-/**
- * 某个选择器**单独**出现在几段规则里。
- *
- * 与 `ruleOf()` 配套：那个函数按累积读（同一个选择器写在好几处时把声明拼起来），
- * 这个函数数「拼了几段」—— 段数 > 1 且两段里写的是**同一族**的尺寸时，
- * 累积读法就会读到前一段那个作废的值，算出来的结论与浏览器里画出来的相反。
- */
 function ruleSegments(src, sel) {
   const flat = src.replace(/@media[^{]+\{/g, '{');
   const out = [];
@@ -117,30 +57,10 @@ function ruleSegments(src, sel) {
   return out;
 }
 
-/* ==========================================================================
-   一、同一套组件在六个集子页 + 搜索页上共用同一条声明
-   ========================================================================== */
-
-/* 六个集子索引页（poems / classic / tangshi / songci / guwen / zhaoming）
-   与搜索页共用同一份引擎 js/reader-core.js、同一张样式表 css/classic.css。
-   所以「同一枚控件各页尺寸一致」不需要逐页断言 —— 只要它不是靠
-   页面级选择器（body[data-nav=...]）各写一份数值就行。
-   搜索页那一排（.search-hero 里的 52px 大框）是**有意**不同的唯一例外，
-   它由 body[data-nav="search"] 明确接管，独立成档。 */
 const itemRead = ruleOf(classicCode, '.item-read');
 chk(!/body\[data-nav/.test(itemRead),
   '列表播放键 .item-read 不按页面分叉（六部集子共用同一条声明）');
 
-/* 列表条目右侧那两枚圆键（「加入背诵」书签 · 播放）必须一样大
-   --------------------------------------------------------------------------
-   用户原话：「将各个索引页卡片中的播放按钮调整得和添加到自定义背诵按钮一样大小」。
-   原先两枚键**各写一套尺寸**：.item-read 36px（css/style.css）、
-   .item-recite 30px（css/classic.css），并排量出来一大一小。
-
-   现在两枚键都读全站唯一那颗 `--item-btn`，且**不许**再写死 width / height ——
-   写死的那一刻，这条「一样大」就靠两处数值巧合维持着了。
-   ⚠️ 判的是「两个选择器是否读同一个变量」，不是「两个数值是否都等于 36px」：
-      后者在换尺寸的那天仍会一起变，前者才是这一轮真正的意图。 */
 chk(/--item-btn:\s*36px/.test(ruleOf(cssCode, ':root')),
   '圆键直径 --item-btn: 36px 在 :root 里定义（全站唯一来源）');
 const readRule = ruleOf(cssCode, '.item-read');
@@ -151,11 +71,7 @@ chk(/width:\s*var\(--item-btn\)/.test(reciteRule) && /height:\s*var\(--item-btn\
   '「加入背诵」键 .item-recite 的宽高读同一个 --item-btn（与播放键同大）');
 chk(!/width:\s*\d+px/.test(readRule) && !/width:\s*\d+px/.test(reciteRule),
   '两枚圆键都不再写死直径（写死就退回「两处数值各自巧合相等」）');
-/* 图标框与直径是**一对**（三角的 1px 描边就靠这个配对，见 css/classic.css 顶部），
-   两枚圆键读同一个 --item-icon。
-   ⚠️ 不写成「直径 − 6px」：那不是这条比例的含义 —— 三角的 1px 由
-      「图标框 16px ↔ viewBox 里的 stroke 1.5」算出来（1.5 ÷ 24 × 16 = 1px），
-      跟直径差几像素没有关系。 */
+
 const readSvg = ruleOf(cssCode, '.item-read svg');
 const reciteSvg = ruleOf(classicCode, '.item-recite svg');
 chk(/--item-icon:\s*16px/.test(ruleOf(cssCode, ':root')),
@@ -165,11 +81,6 @@ chk(/width:\s*var\(--item-icon\)/.test(readSvg) && /width:\s*var\(--item-icon\)/
 chk(!/width:\s*15px/.test(reciteSvg) && !/width:\s*16px/.test(readSvg),
   '两枚圆键的图标框都不再写死 px（写死就与直径脱钩）');
 
-/* 序号圆与条目标题同高：两处都读同一个数，不同源就会「圆比字大一圈」。
-   ⚠️ 判据是**两处相等**、不是「等于 16.5」：Issue #163 第四轮把标题那一档
-      从 16.5px 提到 17px（与设置页的卡片主标题、集子卷名同一句），
-      序号圆跟着一起走 —— 写死一个数字的守卫会在改口径时变成假红，
-      而它真正要守的是「圆与字永远同高」这件事。 */
 const numRule = ruleOf(cssCode, '.item-num');
 const titleRule = ruleOf(cssCode, '.item-title');
 const pxOfTitle = (src, prop) => {
@@ -183,36 +94,11 @@ chk(!!titleSize && new RegExp('--item-num:\\s*' + titleSize).test(numRule),
   '序号圆的直径就是条目标题的字号（实际 ' +
   (numRule.match(/--item-num:\s*([\d.]+px)/) || [0, ''])[1] + ' / ' + titleSize + '）');
 
-/* 余下的圆键档（26 / 30px）—— 每一档都写在**同一个文件**里，
-   不允许某一页给同名控件另开一个尺寸。
-   （列表条目那两枚键已不再是「写死的档位」：它们读 --item-btn，见上。） */
 ["30px", "26px"].forEach(sz => {
   chk(new RegExp('width:\\s*' + sz).test(cssCode) || new RegExp('width:\\s*' + sz).test(classicCode),
     '圆键的 ' + sz + ' 这一档由样式表统一定义（各页不另写尺寸）');
 });
 
-/* 课外阅读入口页的两层结构（Issue #147）
-   --------------------------------------------------------------------------
-   用户原话：「在课外阅读页面内，除了课内诗词索引页的卡片宽度没问题之外，
-   其他例如唐诗三百首以及其他卡片宽度都莫名奇妙和上面的搜索框行一起
-   左右变窄了，我希望都像课内诗词那样。」
-
-   病根在 DOM 而不是在宽度数值上：入口页是**同一页里的两层**（集子目录 +
-   就地铺上来的某一部的索引），而第二层原先套的是 <div class="app" ...> ——
-   .app 正是全站「一列纸」的宽度来源（max-width: --col-w + 左右各一条
-   --col-side 的边）。它套在**外层那个 .app 里面**，于是这一层把列宽与
-   两侧的边各算了两遍：里面那张卷次卡与搜索框落在又缩进一条边的位置上
-   （手机 14+14=28px、桌面 56+56=112px），而页顶那条顶栏仍在外层的宽度上 ——
-   两者左右各差一条边，看着就是「卡片和上面的搜索框行一起变窄了」。
-
-   守着两件事，一在 HTML、一在 CSS：
-     · 第二层不再套 .app（宽度只有一个来源）；
-     · 第二层的左右内边距一并归 0，且 **> .** 只落到它自己的直接子元素上
-       （后代选择器会把卷次卡内部那些自带 padding 的元素一起归零，
-        卡片里就再也排不出两列 / 三列）。 */
-// ⚠️ 先剥掉 HTML 注释：上面那段说明里就写着老写法
-//    （`<div class="app" data-lib-view="book">`）作为反面参照，
-//    不剥就会把注释当成真的 DOM，断言反过来判红。
 const libHtml43 = read('library/index.html').replace(/<!--[\s\S]*?-->/g, ' ');
 chk(/<div data-lib-view="book" hidden>/.test(libHtml43) &&
   !/<div class="app"[^>]*data-lib-view="book"/.test(libHtml43),
@@ -227,8 +113,6 @@ chk(/\[data-lib-view="book"\]\s*>\s*\.toolbar/.test(classicCode),
 chk(!/\[data-lib-view="book"\]\s+\.group-card/.test(classicCode),
   '没有用后代选择器去清理第二层内部的卡（卡内两列 / 三列靠那些 padding）');
 
-/* 卡片圆角：全站只走 --radius / --radius-sm / --radius-md 三个变量，
-   不许某一页写死一个 px（写死的那一页日后换主题就跟不上） */
 const cardRule = ruleOf(cssCode, '.card');
 chk(/border-radius:\s*var\(--radius\)/.test(cardRule),
   '.card 圆角走 --radius 变量（不写死 px）');
@@ -236,21 +120,10 @@ const libCardRule = ruleOf(classicCode, '.library-card');
 chk(/border-radius:\s*var\(--radius-md\)/.test(libCardRule),
   '入口页卡片圆角走 --radius-md（与译文框同一档，同是「卡片与卡片之间」的中间档）');
 
-/* 法务页的 .legal 与全站 .card 同为「一张纸」：圆角、阴影都该同源 */
 const legalRule = ruleOf(legalCode, '.legal');
 chk(/border-radius:\s*var\(--radius\)/.test(legalRule) && /box-shadow:\s*var\(--shadow\)/.test(legalRule),
   '法务页正文那张纸与全站 .card 同圆角同阴影（不另起一套）');
 
-/* ==========================================================================
-   二、「画出来的尺寸」必须等于声明的尺寸
-   ========================================================================== */
-
-/* 今日条那颗播放键：box-sizing: content-box 下，
-   **画出来的圆外缘 = 内容区 + 两侧边框**。所以 width 必须是
-   `calc(var(--today-btn-size) - var(--today-btn-ring) * 2)`。
-   只写 `var(--today-btn-size)` 会画出 42px（40 + 1 + 1），
-   与右边 40px 的进度环差 2px —— 用户连着报了几轮「一大一小」。
-   ⚠️ 这里判的是**算式**而不是数值：换成 44px 也照样成立。 */
 const todayRead = ruleOf(cssCode, '.today-read');
 const sizeExpr = 'calc\\(\\s*var\\(--today-btn-size\\)\\s*-\\s*var\\(--today-btn-ring\\)\\s*\\*\\s*2\\s*\\)';
 chk(new RegExp('width:\\s*' + sizeExpr).test(todayRead),
@@ -262,8 +135,6 @@ chk(/box-sizing:\s*content-box/.test(todayRead),
 chk(/padding:\s*0/.test(todayRead),
   '播放键显式 padding: 0 —— <button> 的 UA 默认 1px 6px 会把它撑宽 12px');
 
-/* 进度环那一枚：svg overflow: hidden 会把骑在边界的描边裁进盒内，
-   所以盒子的 --today-btn-size 就是画出来的最大直径，不能做任何补偿 */
 const ringRule = ruleOf(cssCode, '.ring');
 chk(/width:\s*var\(--today-btn-size/.test(ringRule) &&
   /height:\s*var\(--today-btn-size/.test(ringRule),
@@ -271,21 +142,11 @@ chk(/width:\s*var\(--today-btn-size/.test(ringRule) &&
 chk(/min-height:\s*0/.test(ringRule),
   '进度环 min-height 归零 —— 否则 flex 行会把它纵向撑高、圆变椭圆');
 
-/* 三角播放键：图标框与描边值是一对比例（描边写在 24 的 viewBox 里会一起缩放），
-   「屏幕上量到 1px」靠的是两者配对。这里只锁「各档的图标框都在样式表里有出处」。 */
 ["17px", "16px", "15px", "12px"].forEach(sz => {
   const hit = new RegExp('width:\\s*' + sz).test(cssCode) || new RegExp('width:\\s*' + sz).test(classicCode);
   chk(hit, '播放键图标框的 ' + sz + ' 这一档有出处（换算表在 css/classic.css 顶部）');
 });
 
-/* ==========================================================================
-   三、宽屏（平板 / 桌面）不许把组件拉变形
-   ========================================================================== */
-
-/* 页签：外层整宽（底纹 / 描金线 / 安全区），内层限宽居中（四格不被拉成巨板）。
-   1920px 屏上不限定内层，每格会宽到 477px，一颗 22px 图标孤零零挂在正中。 */
-/* 列宽走**一个令牌** --col-w：顶栏 / 页签内层 / 正文列都读它。
-   令牌本身在 :root 里定义一次（手机 720px），平板那一档覆写成更宽的一档（见下）。 */
 chk(/:root\s*\{[^}]*--col-w:\s*720px/s.test(cssCode),
   '「一列纸」的宽度只有 --col-w 一个来源（手机档 720px）');
 chk(/\.dock-inner\s*\{[^}]*max-width:\s*var\(--content-w/s.test(cssCode),
@@ -294,25 +155,22 @@ chk(/\.dock-inner\s*\{[^}]*margin:\s*0 auto/s.test(cssCode),
   '页签内层居中（与内容区共用一条竖轴）');
 chk(/\.dock-inner\s*\{[^}]*width:\s*100%/s.test(cssCode),
   '页签内层占满外层宽度（窄屏上仍是整宽四格）');
-/* 外层必须保持整宽：给 .dock 自己写 max-width 会把固定定位的底线一起收掉，
-   屏幕左右两侧露出「没有页签」的空白 */
+
 const dockRule = ruleOf(cssCode, '.dock');
 chk(!/max-width/.test(dockRule),
   '页签外层不写 max-width（写了会连底线一起收掉，两侧露白）');
-/* 底部安全区必须留在外层：iPhone 横条按屏幕底边算，与内层多宽无关 */
+
 chk(/--safe-bottom/.test(dockRule),
   '底部安全区留在页签外层（按屏幕底边算，不随内层宽度走）');
-/* 结构上真的套了两层：JS 渲染时就要带 .dock-inner，只写 CSS 是空规则 */
+
 chk(/class="dock"[\s\S]{0,80}dock-inner/.test(chromeJs),
   'js/chrome.js 渲染页签时带了 .dock-inner 这一层（不是只写了一条 CSS）');
 
-/* 入口页六张卡：窄屏竖排、宽屏两列 */
 chk(/@media \(min-width:\s*560px\)[\s\S]{0,400}\.library-grid\s*\{[^}]*flex-direction:\s*row/s.test(classicCode),
   '入口页卡片在 ≥560px 排成两列（竖排的六条长横条在宽屏上太空）');
 chk(/\.library-card\s*\{[^}]*max-width:\s*calc\(50% - 6px\)/s.test(classicCode),
   '入口页卡片在宽屏收住宽度（奇数张时最后一张不撑满一行）');
 
-/* 设置页两栏选项：连读方式五档、复习算法四张卡 */
 chk(/@media \(min-width:\s*560px\)[\s\S]{0,400}#seg-play\s*\{[^}]*flex-direction:\s*row/s.test(cssCode),
   '设置页「连读方式」在 ≥560px 排成两列（一行一档时右边半张卡全是空白）');
 chk(/@media \(min-width:\s*560px\)[\s\S]{0,400}#seg-algo\s*\{[^}]*flex-direction:\s*row/s.test(cssCode),
@@ -322,7 +180,6 @@ chk(/#seg-play \.play-mode-opt\s*\{[^}]*max-width:\s*calc\(50% - 4px\)/s.test(cs
 chk(/#seg-algo \.algo-opt\s*\{[^}]*max-width:\s*calc\(50% - 4px\)/s.test(cssCode),
   '复习算法的奇数张不撑满一行');
 
-/* 进度日历：手机 14 格横滑，宽屏一屏放全 */
 chk(/@media \(min-width:\s*700px\)[\s\S]{0,400}\.cal\s*\{[^}]*overflow-x:\s*visible/s.test(classicCode),
   '进度日历在 ≥700px 不再横滑（14 格 × 34px 只有 476px，692px 的列宽放得下）');
 chk(/\.cal-cell\s*\{[^}]*flex:\s*1 1 0/s.test(classicCode),
@@ -330,44 +187,19 @@ chk(/\.cal-cell\s*\{[^}]*flex:\s*1 1 0/s.test(classicCode),
 chk(/\.cal-cell\s*\{[^}]*max-width:\s*64px/s.test(classicCode),
   '日历格子有宽度上限（均分后每格 80 多像素又变成另一头的「空格子」）');
 
-/* 内容列宽：全站只有一个 720px 来源。
-   顶栏、阅读器正文列、页签内层都是它 —— 三处必须同值，
-   否则「内容与顶栏对不齐」这类错位会一处一处冒出来。 */
 const appRule = ruleOf(cssCode, '.app');
 chk(/max-width:\s*var\(--col-w/.test(appRule), '内容区列宽走 --col-w');
-/* ⚠️ 顶栏 / 页签内层 / 阅读器正文读的是 --content-w（= --col-w 减掉两侧的
-   --col-side），不是 --col-w 本身：这三样住在「整宽」的容器里（.app 的
-   padding 之外，或 body 直下），自己不带左右内边距 —— 直接读 --col-w 的话
-   在平板 / 桌面上会比正文列宽出两侧那一条边（实测 1918px 屏上顶栏左移 42px）。
-   这四条是「四样东西落在同一条竖轴上」的唯一保障，不许只改其中一条。 */
+
 chk(/max-width:\s*var\(--content-w/.test(ruleOf(cssCode, '.topbar')),
   '顶栏列宽与内容区同源（--content-w）');
 chk(/width:\s*var\(--content-w/.test(ruleOf(classicCode, '.reader-body')),
   '阅读器正文列宽与内容区同源（--content-w）');
 chk(/max-width:\s*var\(--content-w/.test(ruleOf(cssCode, '.dock-inner')),
   '页签内层与内容区同源（--content-w）');
-/* 令牌只能有**两档**：手机 720px、平板一档。写死第三处 720px 就是下次走散的种子。 */
+
 chk(!/max-width:\s*720px/.test(cssCode) || /max-width:\s*720px/.test(ruleOf(cssCode, '.cal')),
   '样式表里不再有第二处写死的 max-width: 720px（一律走 --col-w）');
 
-/* ==========================================================================
-   四、平板（≥768px）—— 不是把手机布局拉宽，而是换一种排布
-   --------------------------------------------------------------------------
-   用户原话（Issue #122 后续）：
-     「不仅仅是简单的修复，我们更应该考虑的是平板里桌面环境的排版设计，
-       需要以他们的屏幕大小进行重新设计，而不是完全照搬手机布局。」
-
-   判据不是「某个像素等于多少」，而是**平板那一档有没有换排布**：
-     · 列宽从 720px 变宽（多出来的每一寸都有人用）；
-     · 长列表 / 卡片组 / 设置分组 / 进度卡在这些宽度上**排成两列**；
-     · 正文列反而**收窄**（行宽不跟着屏幕走）。
-   守着「这一档的媒体查询真的存在、且换的是排布而不是数值」。
-   ========================================================================== */
-
-/* 列宽令牌：手机 720px、平板一档更宽、桌面跟着视口走。
-   ⚠️ 平板那一档写的是 min(1040px, 100vw)：1040px 是握在手里的平板那一档，
-      但 iPad Pro 竖屏 / 分屏窗口比它窄，写死会让一列纸比视口还宽
-      （真机上量到过：顶栏被挤出屏幕、与正文对不齐）。 */
 const tabletRoot = /@media \(min-width:\s*768px\)\s*\{[^@]*:root\s*\{[^}]*--col-w:\s*min\(\s*(\d+)px/s.exec(cssCode);
 chk(!!tabletRoot, '平板（≥768px）那一档把 --col-w 放宽了一档（不是把手机那一列拉宽）');
 if (tabletRoot) {
@@ -378,25 +210,14 @@ if (tabletRoot) {
     '平板列宽取 min(固定值, 100vw)：比那一档还窄的窗口（iPad Pro 竖屏 / 分屏）下不会比视口宽');
 }
 
-/* 篇目列表：手机一列、平板两列 */
 chk(/@media \(min-width:\s*768px\)[\s\S]{0,400}\.list\s*\{[^}]*flex-direction:\s*row/s.test(cssCode),
   '篇目列表在 ≥768px 排成两列（1040px 里一行只放一篇，右边的空白比字还宽）');
 chk(/\.list\s*>\s*\.item\s*\{[^}]*max-width:\s*calc\(50%/s.test(cssCode),
   '两列的条目收住宽度（flex-basis 百分比不减掉半个列距就溢出）');
 
-/* 入口页：≥560px 两列，平板三列 */
 chk(/@media \(min-width:\s*768px\)[\s\S]{0,400}\.library-card\s*\{[^}]*33\.333%/s.test(classicCode),
   '入口页六张卡在 ≥768px 排成三列（两列时每张 514px，空白比内容宽）');
 
-/* 集子目录页：卡内篇目清单两列。
-   ⚠️ 这里守着两件事，都是**踩过的坑**，不是审美：
-     ① 条目是 .group-card 的**直接子元素**（引擎 appendChild 到卡上，
-        卡里没有 .list 这一层）—— 所以两列必须落在这条关系上，
-        选择器要写 `>`。写成 `.group-card .list` 既命不中任何一篇
-        （卡里没有 .list），又会把 .group-card .list 当成容器去排 ——
-        真机上量到过后果：卡被排成横向、卡内条目被压成 102px 一条、
-        卡片高度从 1752px 炸到 2511px。
-     ② 卡自己要先成为 flex 行容器，否则给条目的 flex-basis 不生效。 */
 chk(/@media \(min-width:\s*768px\)[\s\S]{0,600}\.group-card\s*>\s*\.item\s*\{[^}]*max-width:\s*calc\(50%/s.test(classicCode),
   '集子目录页的篇目在 ≥768px 排成两列（选择器落在「卡 → 条目」这条真实关系上）');
 chk(/@media \(min-width:\s*768px\)[\s\S]{0,600}\.group-card\s*\{[^}]*flex-wrap:\s*wrap/s.test(classicCode),
@@ -406,7 +227,6 @@ chk(!/^\.group-card \.list/sm.test(classicCode),
 chk(/\.group-card\s*>\s*\.group-head\s*\{[^}]*flex:\s*1 1 100%/s.test(classicCode),
   '卡头在两列排布里独占整行（卷名 / 篇数 / 连读圆键不该被挤进半栏）');
 
-/* 设置页：分组之间排两列；跨列的那一项自己占满一行 */
 chk(/@media \(min-width:\s*768px\)[\s\S]{0,400}\.settings-groups\s*\{[^}]*flex-wrap:\s*wrap/s.test(cssCode),
   '设置页的分组在 ≥768px 排成两列（纵向堆五组，每组只用掉一行的宽度）');
 chk(/\.settings-group\s*\{[^}]*max-width:\s*calc\(50% - 18px\)/s.test(cssCode),
@@ -414,38 +234,8 @@ chk(/\.settings-group\s*\{[^}]*max-width:\s*calc\(50% - 18px\)/s.test(cssCode),
 chk(/\.settings-item\.wide\s*\{[^}]*max-width:\s*100%/s.test(cssCode),
   '「我的清单」那一项跨列（清单面板与两排按钮挤在半栏里会折行）');
 
-/* ==========================================================================
-   四之三、平板 / 桌面版式：留白与栅格（Issue #163 第四轮）
-   --------------------------------------------------------------------------
-   用户原话：
-     「你用桌面浏览器测试过吗？目前的界面 UI 在桌面浏览器下显示得一塌糊涂，
-       完全没达到响应式布局在平板在桌面的哪怕是正常的显示效果，
-       需要为平板和桌面端进行重新设计，CSS only」
-
-   前面几节守的是**重排**（一列纸放宽、篇目两列→三列、设置分组三列、
-   入口页 3 × 2、日历一屏放全）。这一节守另一件事：**留白与「一整块多宽」**。
-
-   手机上「一行一条 14px 内边距的卡片、块与块之间 14px」这套节奏，
-   被原样拉伸到 1808px 的一列纸上时，整页会变成一片糊在一起的横带：
-   卡片 1808px 宽、100px 高，块距与行距同值（14px）——
-   距离不再表达「这是一块」（见 css/style.css「平板 / 桌面版式」那一段的说明）。
-
-   四条判据，每条都对应桌面上能看见的一件事：
-     · 卡片与卡片之间 26px，比条目之间（10~14px）大一档以上；
-     · 一列纸仍铺满屏幕（--col-w 不动），但**每一块内容**封顶 --block-w；
-     · 首页三块在桌面那一档各有各的位置（grid-template-areas，DOM 顺序不变）；
-     · 卡片内的左右内边距随断点升档（14 → 22 → 26px）。
-   ========================================================================== */
 {
-  /* ⚠️ 判据一律对着 `cssCode`（**已剥注释**的样式表）跑，而且**不拍平 @media**：
-     本仓库的注释很长、还带 `{}` 与代码块，按裸源码取规则块时会把注释里的
-     `{` 当成规则边界（`.switch-input` 那五条假红就是这么来的）。
-     拍平 @media 也不行：`.card` 这条选择器在 ≥768px 与 ≥1024px 各有一条，
-     拍平之后前一条的 `}` 与后一条的 `@media … {` 之间会留下一段**没有选择器
-     的 `{`**，`ruleSegments` 的 `([^{}]+)\{` 会把后一条一并吞掉、量不到 ——
-     那正是这一节先前 4 条假红的第二个来源。所以这里直接对着「剥了注释、
-     仍带 @media 外壳」的源码取，判据写成「哪一档里有什么」。 */
-  /* ① 块距与行距分开：手机 14px → 平板 22px → 桌面 26px，块距 26px */
+
   chk(/@media \(min-width:\s*768px\)\s*\{[\s\S]{0,600}\.card \{ padding: 22px; margin-bottom: 26px; \}/.test(cssCode),
     '平板那一档卡片内边距 22px、块距 26px（手机上 14px）');
   chk(/@media \(min-width:\s*1024px\)\s*\{[\s\S]{0,600}\.card \{ padding: 26px; margin-bottom: 26px; \}/.test(cssCode),
@@ -455,8 +245,6 @@ chk(/\.settings-item\.wide\s*\{[^}]*max-width:\s*100%/s.test(cssCode),
   chk(!/@media \(min-width:\s*1024px\)[\s\S]{0,200}\.list\s*\{[^}]*row-gap:\s*(3[0-9]|[4-9][0-9])px/s.test(cssCode),
     '条目之间的行距仍收在 30px 以内（行距跟块距一起放大，就分不出「一块 / 一组」了）');
 
-  /* ② --block-w：宽屏上「一整块内容」的宽度上限，且**只在 ≥768px 定义**
-        （手机上不需要它：720px 的一列纸本来就在这一档里） */
   const blockTok = /@media \(min-width:\s*768px\)[\s\S]{0,400}--block-w:\s*(\d+)px/.exec(cssCode);
   chk(!!blockTok, '--block-w（宽屏上「一整块内容」的上限）在 ≥768px 那一档定义');
   if (blockTok) {
@@ -465,35 +253,20 @@ chk(/\.settings-item\.wide\s*\{[^}]*max-width:\s*100%/s.test(cssCode),
       '--block-w = ' + w + 'px：落在「比一行字宽、又不到 1600+」这一档' +
       '（1024px 窗口下不缩，1808px 下每张卡不至于拉成一条横幅）');
   }
-  // ⚠️ 只**收内容**、不动一列纸：--col-w 的三档口径由本节上面那几条钉着，
-  //    这里反向确认「没有把 --col-w 收成 --block-w」（那会让页面两侧空一大片，
-  //    正是 Issue #135 用户反对的「明信片」）。
+
   chk(!/--col-w:\s*var\(--block-w\)/.test(cssCode),
     '一列纸仍铺满屏幕（没有把 --col-w 换成 --block-w —— 那是「明信片」那一版）');
-  /* ⚠️ .progress-main（进度页）与 #gw-list（集子页）住在 css/classic.css ——
-     两张表都会加载，但**各守各的**：混着查会把「写在哪张表里」这件事弄丢
-     （上次就是查 cssCode 查不到 classic.css 的规则，判成假红）。 */
-  /* 三处都在 css/style.css 的「平板 / 桌面版式」那一档里（进度页那一条
-     跟着它们一起落在这张表）—— 别去 classic.css 找：`.progress-main` 在
-     那张表里只有「两列排布」那一段，没有 max-width。 */
+
   ['settings-groups', 'legal', 'progress-main'].forEach(sel => {
     const src = cssCode;
-    /* ⚠️ 窗口开到 2000：桌面那一档里 `.settings-groups` 前面还有
-       `.card` / `.today-bar` / 首页那一段 grid —— 窗口取小了会漏到上一档去
-       （那一档里没有 --block-w，判据就成了「查不到」的假红）。 */
+
     chk(new RegExp('@media \\(min-width:\\s*1024px\\)[\\s\\S]{0,2000}\\.' + sel +
       '\\s*\\{[^}]*max-width:\\s*var\\(--block-w\\)').test(src),
       '「.' + sel + '」在桌面那一档收进 --block-w（整块不铺满 1808px）');
   });
 
-  /* ③ 首页三块在桌面上各有位置：进度条 / 今日 / 全部。
-        判据是「真的排了 grid 区域」，不是「某个像素等于多少」——
-        换一种并排方式（例如 grid-template-columns 写死列宽）也照样成立。 */
   const homeGrid = /@media \(min-width:\s*1024px\)[\s\S]{0,900}body\[data-nav="home"\]\s*\.app\s*\{([\s\S]{0,400}?)\}/.exec(cssCode);
-  /* ⚠️ Issue #209 那一轮把「全部诗词」那张卡误删了，这条当时从「三块」
-     收成「两块」。第二轮用户点名要求整张卡恢复（「#210 搞错了 请把背诵首页的
-     「全部诗词」整张卡（折叠头 + 统计行 + 篇目列表）恢复！」），于是口径
-     **回到三块** —— 那一行格子必须有人认领，否则卡片会掉进第一列（340px）。 */
+
   chk(!!homeGrid, '首页在桌面那一档给 .app 排了栅格（三块不再各自一条通栏横带）');
   if (homeGrid) {
     chk(/grid-template-areas/.test(homeGrid[1]),
@@ -503,9 +276,7 @@ chk(/\.settings-item\.wide\s*\{[^}]*max-width:\s*100%/s.test(cssCode),
         '区域图里有「' + name + '」那一格');
     });
   }
-  // 三块真的认领了各自那一格
-  /* 「今日」那一格由 `#today-list`（裸的 .list）认领 —— 用户第二轮要求撤掉
-     包着 5 张卡片的那层壳，所以认领者从 `.today-list` 换成了 `#today-list`。 */
+
   ['today-bar', 'all-section'].forEach(sel => {
     chk(new RegExp('body\\[data-nav="home"\\] \\.' + sel +
       '(?:[^{}]*)?\\{ grid-area:').test(cssCode),
@@ -513,63 +284,28 @@ chk(/\.settings-item\.wide\s*\{[^}]*max-width:\s*100%/s.test(cssCode),
   });
   chk(/body\[data-nav="home"\] #today-list \{ grid-area: card; \}/.test(cssCode),
     '今日那一格由 #today-list 自己认领（它不再套一层卡，认领者随之改口）');
-  /* ③之二、**顶栏也必须认领整行**（2026-09-17 修的真 bug）
-     ------------------------------------------------------------------
-     `.topbar` 是 `.app` 的第一个子元素，而桌面那一档 `.app` 是个两列 grid。
-     它不认领格子就会被自动放置塞进**第一列**（340px）里 —— 真机量到
-     1920px 屏上 .topbar 宽 369px、停在页面正中偏左那一小截。
-     CSS 里原先那句「顶栏与页脚各自是「一整行」」只是**声明**：没有一条
-     规则实现它。这条断言把「声明」与「规则」绑在一起 —— 两者少一个都红。 */
+
   chk(/grid-template-areas/.test(homeGrid ? homeGrid[1] : '') &&
       /"bar\s+bar"/.test(homeGrid ? homeGrid[1] : ''),
     '首页栅格给顶栏留了一整行（区域图里要有 bar 那一行）');
   chk(/body\[data-nav="home"\] \.topbar \{ grid-area: bar; \}/.test(cssCode),
     '顶栏真的认领了那一行（只写区域图不写 grid-area，顶栏仍会掉进第一列）');
-  /* ⚠️ 这条同时守住「区域图里的每个名字都有人认领」：写了名字没人认领，
-     那一行就是空的、下面三块整体上移一格 —— 比不写更难查。 */
+
   ['bar', 'today', 'card'].forEach(name => {
     chk(new RegExp('\\{ grid-area: ' + name + '; \\}').test(cssCode),
       '区域图里的「' + name + '」有一个元素真的认领了（没人认领 = 留下一个空格子）');
   });
-  // 首页今日那 5 条在 DOM 上各自是一张卡（不再被一张卡包住）
+
   chk(/class="list" id="today-list"/.test(read('index.html')) &&
     !/class="card today-list"/.test(read('index.html')),
     '首页「今日」那 5 条直接列成 5 张独立卡片（没有外包的那层壳）');
 
-  /* ④之零、**卷次卡不是「一条篇目」**（2026-09-17 修的真 bug）
-     ----------------------------------------------------------------------
-     用户原话（Issue #197）：「帮我检查和修复平板和桌面是否还有 UI 显示问题」。
-
-     现场（真浏览器量出来的，见 test/pwa.test.js 那一节）：
-     ≥1024px 那一条 `.list { display: grid; grid-template-columns:
-     repeat(auto-fill, minmax(280px, 320px)) }` 是按「**.list 的直接子元素
-     就是一条篇目**」写的 —— 首页 / 搜索页确实如此，但**集子页不是**：
-     集子页的 .list 里装的是 .group-card（一卷一张卡），卡里才装 .item。
-     于是**卡片本身**被当成 320px 的一格，卡里的篇目再按 33.333% 三分，
-     实测每条只剩 91px 宽：篇名一个汉字一行，整页从 2000 余 px 炸到
-     15000~39000px（/library/ 的第二层更狠，39000px）。
-
-     ⚠️ 这一条守的是**关系**而不是某个数值：「卡片横跨整行」这件事
-        必须有一条规则实现它。只写注释说明、或只在某一页上打补丁，
-        换一条路径（集子页 → /library/ 第二层）就会重新长回来。
-     ⚠️ 判据落在 `.group-card` 这个类上，不数「哪几个页面」——
-        两个入口共用同一份引擎、同一条 .list。 */
   chk(/\.list\s*>\s*\.group-card\s*\{[^}]*grid-column:\s*1\s*\/\s*-1/s.test(cssCode.replace(/\/\*[\s\S]*?\*\//g, ' ')),
     '桌面那一档给 .list > .group-card 一条「横跨全列」（否则卡片被当成 320px 的一格，卡内篇目塌成 91px 宽）');
 
-  /* ④ 集子页的卷次卡：卡与卡之间也要分开（它们同样能长到 1808px 宽） */
   chk(/#gw-list > \.group-card \{\s*margin-bottom: \d+px;/.test(cssCode.replace(/\/\*[\s\S]*?\*\//g, ' ')),
     '集子页的卷次卡有卡距（否则 1040~1808px 里一张卡就是一条通栏长条）');
 
-  /* ④之二、**块距只有一个节奏**：全站「一张卡挨着另一张卡」的间距都取同一档
-     （桌面 22~26px）。分页各写一个数（12 / 16 / 22 / 26）时，同一个用户
-     在几页之间来回走会觉得「有的页松、有的页紧」—— 那说不清哪里不对的感觉，
-     正是 Issue #163 要治的那一类。
-     ⚠️ 判据是「落在这个区间里」，不是「等于某个像素」：22 与 26 差 4px 是
-        刻意的（账号页的卡里只有两行字，比首页整块内容轻一档）。 */
-  /* ⚠️ 取值要用**捕获组**：`[\s\S]{0,300}?` 里那个 `(\d+)` 会被抹平，
-     按 `match(/(\d+)px/)` 取到的第一个数字其实是 `1024`（@media 的宽度）——
-     这条判据刚写出来时就是这么量出「1024px / 1024px」的。 */
   const deskSrc = cssCode + '\n' + strip(accountCss);
   const deskCardGap = [...deskSrc.matchAll(
     /@media \(min-width: 1024px\)[\s\S]{0,300}?\.(?:card|account-card) \{[^}]*margin-bottom: (\d+)px/g)]
@@ -578,22 +314,14 @@ chk(/\.settings-item\.wide\s*\{[^}]*max-width:\s*100%/s.test(cssCode),
     '桌面那一档的块距都收在 20~30px 这一档（首页/设置 .card 与账号页 .account-card，' +
     '实际 ' + deskCardGap.join(' / ') + 'px）—— 全站「一块 / 另一块」只有一个节奏');
 
-  /* ④之三、设置页的「行距」只有一个来源：容器的 row-gap。
-     `.settings-group` 自己也曾写过一条 `margin-top: 22px`（两列 / 三列那一档），
-     两边都写的话行与行之间是 22 + 26 = 48px，而列与列之间只有 36px ——
-     同一个页面里横竖两种间距。这里反向钉住「组自己那条不许长回来」。 */
   chk(/@media \(min-width:\s*768px\)\s*\{[\s\S]{0,400}\.settings-groups \{[^}]*row-gap: \d+px/.test(cssCode),
     '设置分组的行距写在容器上（≥768px 那一档的 row-gap），不是各组分担');
-  /* ⚠️ 「不许写」判的是**宽屏那一档里**那条 —— 手机上 `.settings-group`
-     仍有 `margin-top: 26px`（一列到底时，组与组之间的距离就该由组自己给，
-     容器没有 row-gap 可言）。所以判据要带上下文，不能全表扫一遍。 */
+
   chk(!/@media \(min-width:\s*768px\)\s*\{[\s\S]{0,900}\.settings-group \{[^}]*margin-top/.test(cssCode),
     '宽屏那一档里分组不再写 margin-top（与容器 row-gap 叠加会让行距变成列距的两倍）');
   chk(/\.settings-group \{ margin-top: 26px; \}/.test(cssCode),
     '手机那一档的组距仍由分组自己给（一列到底时容器没有 row-gap 可言）');
 
-  /* ⑤ 反向样本：这一层有牙 —— 拿一份「被人改坏」的源码跑上面那条判据，
-        它**必须**变红。只判「条件为真」是不够的：那种写法改坏了也绿。 */
   const brokenCard = cssCode.replace('.card { padding: 22px; margin-bottom: 26px; }',
     '.card { padding: 14px; }');
   chk(brokenCard !== cssCode &&
@@ -601,23 +329,14 @@ chk(/\.settings-item\.wide\s*\{[^}]*max-width:\s*100%/s.test(cssCode),
     '这一层有牙：把平板那一档的 22px 改回 14px 时，上面那条「按断点升档」会红');
 }
 
-/* 进度页：四张卡排两列，概览那张整行 */
 chk(/@media \(min-width:\s*768px\)[\s\S]{0,400}\.progress-main\s*\{[^}]*flex-wrap:\s*wrap/s.test(classicCode),
   '进度页四张卡在 ≥768px 排成两列');
 chk(/\.progress-card\.wide\s*\{[^}]*max-width:\s*100%/s.test(classicCode),
   '进度概览那一块占满整行（它只有一行数字，挤在半栏里更难读）');
 
-/* 阅读器：栏变宽了，**正文反而收窄** —— 行宽 35~40 字是阅读上限。
-   令牌是 --read-w（= 手机那一档 720px，也是「一行字」的唯一来源，
-   见 css/style.css 的 :root）：一列纸在桌面上跟视口走，
-   但一行字 / 一条进度条轨道 / 一格日历不跟 —— 那是「读一行太累」的问题。 */
 chk(/@media \(min-width:\s*768px\)[\s\S]{0,400}\.reader-text\s*\{[^}]*max-width:\s*var\(--read-w/s.test(classicCode),
   '阅读器正文列在 ≥768px 封顶 --read-w（栏宽了，一行字数不跟着涨）');
 
-/* 页内工具栏与搜索区：宽栏里封顶居中，不被拉成一整条横带。
-   ⚠️ 工具栏那一档在桌面上从 720px 改成 var(--col-w)：一排控件必须与它下面
-      那张卡片左右同缘，否则前者居中 720px、后者 1808px，左缘差出 400 多 px
-      （见 css/classic.css 的 toolbar 桌面那一档）。 */
 chk(/@media \(min-width:\s*768px\)[\s\S]{0,400}\.toolbar:not\(\.search-toolbar\)\s*\{[^}]*max-width:\s*720px/s.test(classicCode),
   '集子页工具栏在 ≥768px 封顶居中（搜索框一个人吃掉 900px，右边两枚隔着半屏）');
 chk(/@media \(min-width:\s*1024px\)[\s\S]{0,400}\.toolbar:not\(\.search-toolbar\)\s*\{[^}]*max-width:\s*var\(--content-w/s.test(classicCode),
@@ -625,37 +344,11 @@ chk(/@media \(min-width:\s*1024px\)[\s\S]{0,400}\.toolbar:not\(\.search-toolbar\
 chk(/@media \(min-width:\s*768px\)[\s\S]{0,400}\.search-hero\s*\{[^}]*max-width:\s*520px/s.test(classicCode),
   '搜索页 hero 在 ≥768px 封顶 520px（竖屏高度按视口算，横着拉满就成一条横带）');
 
-/* 进度日历与进度条：均分上限只在手机那一档成立，平板起要收回来 */
 chk(/@media \(min-width:\s*768px\)[\s\S]{0,400}\.cal,[\s\S]{0,80}max-width:\s*var\(--read-w/s.test(classicCode),
   '进度日历在 ≥768px 收回 --read-w（14 格均分 1040px 会把格子拉成 64px 的宽方块）');
 chk(/@media \(min-width:\s*768px\)[\s\S]{0,600}\.bars\s*\{[^}]*max-width:\s*var\(--read-w/s.test(classicCode),
   '掌握度进度条在 ≥768px 收回 --read-w（轨道 900px 长时，走两成也像快满了）');
 
-/* ==========================================================================
-   四之二、桌面（≥1024px）—— 一列纸跟视口走，其余东西收在「一行」的宽度里
-   --------------------------------------------------------------------------
-   用户原话（Issue #135 后续）：
-     「桌面端特别是满屏桌面端一般是 1920 的宽度，这种情况下页面有限宽吗，
-       我更喜欢布满屏幕的设计，顶多左右留有 margin 或者 padding，
-       而不是限定 max-width 到 960px 或者类似的这种设计。」
-
-   原先桌面与平板共用同一档：一列纸写死 1040px —— 1920px 屏上两侧各空
-   440px（占屏 46%），一屏里近一半是空白。
-   这一档换掉的是「一列纸的宽度从哪来」：平板是握在手里的固定屏宽（给一个
-   数值），桌面是用户自己拉的窗口（跟着视口走，两侧只留一条边）。
-
-   ⚠️ 这一档**不是**把「行宽上限」取消掉。两件事原先都塞给了同一个 720px：
-     · 页面两侧要不要留白 —— 由一列纸决定（桌面：跟视口走）；
-     · 一行字该有多长 —— 由 --read-w 决定（三档都是 720px，永远不跟视口走）。
-    守着「桌面那一档真的换了列宽来源」，同时守着「行宽令牌没有被顺手拉宽」。
-   ========================================================================== */
-
-/* 桌面那一档的列宽由视口算出来（不是又一个写死的数值）：
-   --col-w 就是视口宽，.app 是 border-box，两侧由 --col-side 的 padding 收 ——
-   于是内容宽 = 100vw − 112px，窗口一宽就宽。
-   ⚠️ 写过 max(1040px, 100vw - 112px)：真机上 1023 → 1024 那一步内容从 979
-      掉到 912（max() 取到 1040 下限再减 112），窗口宽 1px、内容窄 67px。
-      写成 100vw 之后 1024px 起内容是一条单调斜线（1040 → 1808）。 */
 const deskRoot = /@media \(min-width:\s*1024px\)\s*\{[^@]*:root\s*\{([^}]*)\}/s.exec(cssCode);
 chk(!!deskRoot, '桌面（≥1024px）那一档真的存在（不是把平板那一列当桌面用）');
 if (deskRoot) {
@@ -667,12 +360,10 @@ if (deskRoot) {
   chk(!/--col-w:\s*max\(\s*\d+px/.test(block),
     '桌面列宽不再用 max(固定值, …) 兜底（真机上那会在 1024px 处造出一个 1px 断崖）');
 }
-/* 两侧那条边必须是一个值（不是 max()/min() 算式）：算式会让内容被永久卡在
-   上限上 —— 真机上量到过「1920px 屏内容仍是 1040px、两侧各空 440px」。 */
+
 chk(/--col-side:\s*56px/.test(cssCode) && !/--col-side:\s*(max|min)\(/.test(cssCode),
   '--col-side 是固定值，不是算式（算式会与 max-width 打架、把内容卡死）');
 
-/* 「一行字」的宽度是全站唯一来源 --read-w，且三档都是 720px */
 chk(/--read-w:\s*720px/.test(cssCode),
   '「一行字」的宽度令牌 --read-w 只定义一次，取手机那一档 720px（约 38 个汉字）');
 chk(!/--read-w:\s*calc\(100vw/.test(cssCode),
@@ -680,91 +371,47 @@ chk(!/--read-w:\s*calc\(100vw/.test(cssCode),
 chk(!/@media[^{]*\{[^@]*--read-w:\s*(?!720px)/.test(cssCode),
   '--read-w 在任何一档里都不被改写（三档同一个值：手机 / 平板 / 桌面一行字一样长）');
 
-/* 桌面上的排布：长列表 / 卡内篇目 / 设置分组都再排一档（两列 → 三列） */
 chk(/@media \(min-width:\s*1024px\)[\s\S]{0,400}\.list\s*>\s*\.item\s*\{[^}]*33\.333%/s.test(cssCode),
   '篇目列表在 ≥1024px 再排一档（两列时 1808px 里每行 893px，又是「空白比字宽」）');
 chk(/@media \(min-width:\s*1024px\)[\s\S]{0,600}\.group-card\s*>\s*\.item\s*\{[^}]*33\.333%/s.test(classicCode),
   '集子页卡内篇目在 ≥1024px 排成三列（与首页同一档，同一条「空白比字宽」的理由）');
 chk(/@media \(min-width:\s*1024px\)[\s\S]{0,400}\.settings-group\s*\{[^}]*33\.333%/s.test(cssCode),
   '设置分组在 ≥1024px 排成三列（一列纸 1808px 时两列每栏 886px，一行选项又是一片空白）');
-/* 三列时「每列第一条不画线」要按**每一列**算：卡头占第一位 →
-   孩子序号 2 / 3 / 4。只写 2、3 的话第三列第一条会凭空多一道横线。 */
+
 chk(/.group-card\s*>\s*\.item:nth-of-type\(4\)[\s\S]{0,60}border-top:\s*none/s.test(classicCode),
   '三列时第三列的第一条也不画线（nth-of-type 只写到 3 的话会漏一列）');
 
-/* 输入框：桌面不跟着栏宽拉长（一个「用户名」值只有几个字，框却有 578px 宽） */
 chk(/@media \(min-width:\s*1024px\)[\s\S]{0,200}\.settings-input\s*\{[^}]*max-width:\s*320px/s.test(cssCode),
   '桌面上的单行输入框封顶 320px（与手机上一整行同档，不跟着栏宽拉长）');
 
-/* 入口页六张卡：桌面换成**三列栅格**，列数是说出来的、不由卡宽与容器宽的
-   除法决定。真机上踩过：flex-basis 三分之一 + max-width 收上限的结果是
-   一行 4 张、第二行 2 张（收窄之后容器里还放得下第 4 张）。 */
 chk(/@media \(min-width:\s*1024px\)[\s\S]{0,900}\.library-grid\s*\{[^}]*grid-template-columns:\s*repeat\(3/s.test(classicCode),
   '桌面入口页换成三列栅格（六张卡排成 3 × 2，不是 4 + 2）');
 
-/* 翻页那一排与正文同宽。
-   ⚠️ 居中必须写在 .reader-nav 的 margin 简写里（`26px auto …`），
-      不能另写一条 media query 只加 margin-left/right auto ——
-      margin 简写会把后写的左右值重置回 0，媒体查询又不加特异性。
-      真机上踩过：max-width 生效了（720px），但整排贴在正文左缘、没有居中。 */
 chk(/@media \(min-width:\s*1024px\)[\s\S]{0,300}\.reader-nav\s*\{[^}]*max-width:\s*var\(--read-w/s.test(classicCode),
   '阅读器「上一篇 / 下一篇」在 ≥1024px 收进 --read-w（不然两枚按钮被推到屏幕两端）');
 chk(/\.reader-nav\s*\{[^}]*margin:\s*26px auto\s+calc\(118px/s.test(classicCode),
   '翻页那一排的左右 auto 写在 margin 简写里（另写一条会被简写重置回 0）');
 
-/* 三样东西必须读同一条「内容宽」令牌，而不是各自读 --col-w ——
-   见上面第三段那四条断言（顶栏 / 页签内层 / 正文列 / 阅读器正文）。 */
 chk(/--content-w:\s*calc\(var\(--col-w\)\s*-\s*2\s*\*\s*var\(--col-side\)\)/.test(cssCode),
   '「内容宽」= 一列纸减掉两侧那条边，只定义一次（顶栏 / 页签内层 / 正文列都读它）');
-/* 左右内边距只能有一个来源：真机上曾因为后出现的 .app{padding-left:14px}
-   把三档的 --col-side 整条盖掉（1918px 屏上顶栏左移 42px、与正文对不齐）。 */
+
 chk(/--col-side:\s*var\(--safe\)/.test(cssCode) === false &&
   /\.app\s*\{[^}]*padding-left:\s*calc\(var\(--col-side\)/.test(cssCode),
   '左右内边距读同一档 --col-side（不再有一处写死 14px 把三档一起盖掉）');
 
-/* 设置主页的四条入口 + 二级页的六颗分组名：一张卡 + 与集子卷名同一档字号
-   --------------------------------------------------------------------------
-   用户原话（Issue #147）：「设置页首页，四个卡片是不是应该有背景色？
-   另外四个标题字号需要变大，可以和其他索引页页面例如集子的标题字号一样大。」
-   用户原话（Issue #163）：「设置页首页 通用 我的清单这些卡片主标题之前希望
-   字号和其他页面一样大 还没修复。」
-
-   后一条点的正是 #147 只改了一半的地方：主页那四张入口卡改了，
-   **二级页里那六颗分组名没跟上**（还是更早一轮压下去的 11px / 400 / 淡墨）——
-   于是同一个设置模块里两套字号。现在三处读同一句：
-
-     .settings-group-title  （二级页的分组名）
-     .settings-link-title   （设置主页的入口标题）
-     .group-name            （集子索引页的卷名）
-
-   两件事各自都要有一个**可判的**落点，否则改完只是「看着像」：
-     · 背景色 = 走全站那一条 --card（不新开一个色值）；
-     · 标题字号 / 字重 = 与集子索引页的卷名 .group-name 同一个值。
-       这一条是本文件里唯一一处「跨两张表」的约定：设置页那两条在
-       css/style.css，集子卷名在 css/classic.css。只能靠这组断言绑住 ——
-       改一边就会红，谁也加不进第三个近似值（11px / 14.5px 那两档就是这么来的）。 */
 const linkRule = ruleOf(cssCode, '.settings-link');
 chk(/background:\s*var\(--card\)/.test(linkRule),
   '设置主页的四条入口有底色（走全站 --card，不新开色值）');
 chk(/border-radius:\s*var\(--radius-md\)/.test(linkRule),
   '入口卡片的圆角走 --radius-md（与 .trans-box / .library-card 同一档）');
-/* 标题那三个值（字号 / 字重 / 颜色）在 css/style.css 里**只写一次**：
-   `.settings-group-title, .settings-link-title, .item-title`
-   共用一个声明块。
-   ⚠️ 主页「账号」那一行不再是独立一角：它与四组入口共用 `.settings-link-title`
-      同一份稿子（账号不再自己一张卡，见 docs/architecture.md §4.19）。下面取值的函数就按这个共用块取 —— 单取 `.settings-link-title`
-   会拿到「只有 font-family」的那一块（Issue #163 之前正是这么写的，
-   于是 11px 的分组标题在断言里看不见）。
-   ⚠️ 判据写成「共用块存在 + 这四角都在里面 + 与集子卷名同值」，
-      而不是「选择器列表恰好等于某几个字符串」：以后再加一角（例如入口页的书名）
-      不该让这一条变红 —— 它要守的是「只有一个来源」，不是「只许三处」。 */
+
 const SHARED_TITLE_SELECTORS = ['.settings-group-title', '.settings-link-title',
   '.item-title'];
 const sharedTitleRule = (code) => {
   const m = code.match(/\.settings-group-title,[\s\S]{0,200}?\{([\s\S]{0,400}?)\}/);
   if (!m) return '';
   const block = m[0].slice(0, m[0].indexOf('{'));
-  // 四角必须都在这条选择器列表里，否则「同一档」只是巧合
+
   return SHARED_TITLE_SELECTORS.every(sel => block.indexOf(sel) !== -1) ? m[1] : '';
 };
 const groupNameRule = ruleOf(classicCode, '.group-name');
@@ -780,11 +427,7 @@ SHARED_TITLE_SELECTORS.map(sel => [sel, sharedTitleRule(cssCode)]).forEach(funct
     pair[0] + ' 与集子卷名的字重也是同一个值（实际 ' + weightOf(pair[1]) +
     ' / ' + weightOf(groupNameRule) + '）');
 });
-/* 入口标题那条**自己写**的规则里不许再出现字号 / 字重 / 颜色
-   （那就是第二个来源：上一版分组标题被压成 11px 时，抄过去的那三个值
-   跟着一起降级了）。
-   ⚠️ 判的是「`.settings-link-title` 单独成组的那条规则」，
-      不是 ruleOf() 的累加结果 —— 累加会连共用块一起算进来。 */
+
 const ownLinkTitle = (cssCode.match(/[^{}]*\.settings-link-title\s*\{([^}]*)\}/g) || [])
   .filter(sel => sel.split('{')[0].split(',').map(x => x.trim()).join(',') === '.settings-link-title')
   .map(sel => sel.slice(sel.indexOf('{') + 1)).join(';');
@@ -793,9 +436,6 @@ chk(!!ownLinkTitle && !/font-size|font-weight|color:/.test(ownLinkTitle),
 chk(/position:\s*absolute/.test(ruleOf(cssCode, '.settings-link-go')),
   '入口卡片右侧那颗箭头绝对定位在卡里（不让它参与这一行的排布，落点恒定）');
 
-/* 结构：两列排布要靠 HTML 里的容器才生效，只写 CSS 是空规则 */
-// ⚠️ Issue #132 后续把设置拆成二级页：主页套 .settings-groups（入口清单），
-//    「我的清单」那一条 .wide 住在它自己的二级页上。
 chk(/class="settings-groups/.test(read('settings/index.html')),
   '设置主页真的套了 .settings-groups（不是只写了一条 CSS）');
 chk(/class="settings-item wide"/.test(read('settings/lists/index.html')),
@@ -806,42 +446,15 @@ chk(/class="progress-main"/.test(read('progress/index.html')),
   '进度页真的套了 .progress-main');
 chk(/class="card progress-card wide"/.test(read('progress/index.html')),
   '进度概览那张卡真的带了 .wide');
-/* 首页「今日」那一块：容器就是 `.list` 自己，**不再套一层 .card**。
-   --------------------------------------------------------------------------
-   用户 2026-09-17 第二轮原话：「现在5首诗词各自是个卡片，但他们5个被
-   一张卡片包住了，我不需要这个包的卡片，直接列出5个卡片！」
-   （这层壳是 Issue #163 第四轮为「宽屏并排时看得出这是一批」补的，
-     用户的判读是「多一层壳、没多一条信息」——以用户看到的为准，撤。）
-   ⚠️ 判据反之：HTML 里**不许**再出现包着 #today-list 的 `.card`，
-      且 #today-list 真的直接挂在 .app 下。 */
+
 chk(/class="list" id="today-list"/.test(read('index.html')),
   '首页今日列表就是裸的 .list（外层那层 .card 壳已撤）');
 chk(!/class="card today-list"/.test(read('index.html')),
   '首页不再有包住今日 5 条的卡片（.card today-list 已撤）');
 
-/* iOS 横屏「按宽度放大文字」的默认行为要关掉，否则同一段说明
-   在竖屏 / 横屏下字号不同（这与台式机的响应式不是一件事） */
 chk(/-webkit-text-size-adjust:\s*100%/.test(cssCode),
   '关掉了 iOS 的横屏文字自动放大（字号只由样式表决定）');
 
-/* ==========================================================================
-   五、顶栏在任何容器里都必须占满容器宽（不许被内容顶宽）
-   --------------------------------------------------------------------------
-   现象（用户报的）：详情页标题栏溢出。
-   根因不在「标题会不会折行」——是顶栏**自己**的宽度失控：
-     · 列表页那条顶栏住在 .app（块级）里，块级子元素天然占满一行，
-       所以从来没露过这个问题；
-     · 阅读器那条顶栏住在 .reader 里，而 .reader 是 `display: flex;
-       flex-direction: column`。顶栏作为 flex 项，**交叉轴（横向）默认按
-       内容取宽**，不是撑满容器。于是「跬步 · 页名 + 进度牌 + 返回键」
-       四件加起来多宽，顶栏就多宽 —— 手机上量到 427px（视口 393px）。
-     · body 是 `overflow: hidden`，所以既不出现横向滚动条、也没有报错，
-       只是最右边那颗返回键被屏幕裁掉一半、点不着。
-   判据写成**结构 + 声明**两半（jsdom 不算布局，真浏览器那一半在 pwa.test.js）：
-     1) 阅读器顶栏显式定住宽度；
-     2) 品牌区 / 页名 / 说明都允许被压窄（min-width: 0），
-        且页名不再按视口比例写死上限（那条上限与顶栏结构无关）。
-   ========================================================================== */
 const readerBar = ruleOf(classicCode, '.reader > .topbar');
 chk(/width:\s*100%/.test(readerBar),
   '阅读器顶栏定住 width: 100%（flex 列容器里不靠内容取宽）');
@@ -864,25 +477,6 @@ chk(!/max-width:\s*\d+vw/.test(ruleOf(cssCode, '.brand-sub')),
 chk(/flex:\s*none/.test(ruleOf(cssCode, '.brand-name-row h1')),
   '「跬步」两字钉住不参与收缩（要收就收页名，不许把应用名压成「跬」）');
 
-/* ---------- 顶栏右端：**一颗裸箭头，没有头像**（Issue #209 第二轮） ----------
-   用户 2026-09-17 原话：
-     「所有页面右上角的头像全部删除，这个位置现在有后退键代替，
-       另外，右上角后退键去除圆形边框，去除背景色」
-
-   三件事一起撤/一起改，缺一条都会以「右上角还留着一块东西」的形式复发：
-     ① 头像那一枚**恒定锚点**（`.top-user` / `--user-size`）整件删掉；
-     ② 返回键**去圆框、去底色**（不再是圆钮，只剩箭头本体）；
-     ③ 尺寸只有一个来源 `--top-key`（40px）—— 顶栏右端现在只有这一件，
-        连 `--top-slot: 42px`（那一枚是**头像的直径**）也一并删掉。
-
-   为什么「删令牌」也算一条：留着一条没人在用的尺寸，就是下一次读错它的种子
-   （它是 42、而顶栏那一颗是 40，谁抄谁错一档）。 */
-/**
- * `ruleOf()` **累积**同名选择器的所有片段（见它的注释）—— 而 `.top-act`
- * 与 `.icon-btn` 现在住在**两段**里（顶栏那一颗去框去底、别处的同类按钮不变），
- * 累积读会把两段拼起来，于是 `.top-act` 会「读到」`.icon-btn` 的圆角与描边。
- * 这里按**最后一段**读：判「顶栏那一颗长什么样」需要的是它自己那一段。
- */
 const lastRuleOf = (src, sel) => {
   const flat = src.replace(/@media[^{]+\{/g, '{');
   const parts = [];
@@ -902,117 +496,45 @@ chk(/width:\s*var\(--top-key\)/.test(actRule) && /height:\s*var\(--top-key\)/.te
   '顶栏那一颗的宽高读 --top-key（顶栏右侧不出现第二个尺寸来源）');
 chk(/--top-key:\s*40px/.test(ruleOf(cssCode, ':root')),
   ':root 里 --top-key 是 40px（顶栏那一颗的点击区）');
-// ⚠️ 顺序不能反：先把注释剥掉再判 —— 本文件下面几段注释里正讲着
-//    「--top-slot 为什么删」，按裸源码匹配会把说明文字当成没删干净。
+
 chk(!/--top-slot/.test(cssCode),
   '--top-slot 那枚令牌已删（它是头像的直径，与 logo 同径；头像撤了它没有第二个用户）');
 chk(!/\.top-user\s*[,{]/.test(cssCode) && !/\.top-act-spacer\s*[,{]/.test(cssCode),
   '样式表里不再留 .top-user / .top-act-spacer 规则（顶栏右端只剩一颗键，没有要对齐的第二件）');
 chk(!/\.top-slot\s*[,{]/.test(cssCode),
   '样式表里不再留 .top-slot 规则（那一枚圆槽是给头像托底的）');
-// 去圆框、去底色：顶栏那一颗是裸箭头
+
 chk(!/border-radius/.test(actRule) || /border-radius:\s*0\s*;/.test(actRule),
   '顶栏那一颗不再是圆钮（圆角归零，不是 50% 那种圆钮）');
 chk(/border:\s*0/.test(actRule),
   '顶栏那一颗去掉了圆形边框（border: 0）');
 chk(/background:\s*none/.test(actRule),
   '顶栏那一颗去掉了背景色（background: none）');
-// 反向：别处的同类按钮（.icon-btn）仍是圆钮 —— 用户点名的只是「右上角后退键」
+
 const iconRule = lastRuleOf(cssCode, '.icon-btn');
 chk(/border-radius:\s*50%/.test(iconRule) && /border:\s*1px solid var\(--line\)/.test(iconRule),
   '别处的同类按钮 .icon-btn 仍是圆钮（用户点名的只有右上角那一颗）');
 
-/* ==========================================================================
-   六、各页顶栏结构一致（同一套 chrome 渲染）
-   ==========================================================================
-
-const pages = ['index.html', 'poems/index.html', 'library/index.html', 'classic/index.html',
-  'tangshi/index.html', 'songci/index.html', 'guwen/index.html', 'zhaoming/index.html',
-  'search/index.html', 'settings/index.html', 'progress/index.html',
-  'terms/index.html', 'privacy/index.html'];
-pages.forEach(f => {
-  const html = read(f);
-  chk(/<header class="topbar/.test(html) || /class="topbar[^"]*"/.test(html),
-    f + ' 有顶栏挂载点（由 js/chrome.js 统一渲染，不自造一套）');
-  chk(/<script src="[^"]*js\/chrome\.js"><\/script>/.test(html),
-    f + ' 加载了 js/chrome.js（顶栏 + 页签的唯一来源）');
-  chk(/data-nav="/.test(html), f + ' body 上标了 data-nav（页签选中态按它定）');
-});
-
-/* 页签四格的图标与文字：全站一套，不按页分叉 */
-/* ⚠️ 最后一格的**名字** Issue #209 之后是「我的」（`key` 仍是 settings ——
-   那一格的身份没变，变的是它叫什么、画成什么）。判据因此认 `key: "settings"`。 */
 chk(/DOCK_ITEMS\s*=\s*\[[\s\S]*?key:\s*"home"[\s\S]*?key:\s*"library"[\s\S]*?key:\s*"search"[\s\S]*?key:\s*"settings"/.test(chromeJs) &&
   /label:\s*"我的"/.test(chromeJs),
   '页签四格（背诵 / 课外 / 搜索 / 我的）只在 js/chrome.js 定义一次');
 
-/* ==========================================================================
-   六、「一列纸」的两条边只允许被算一次（Issue #147，真实渲染几何）
-   --------------------------------------------------------------------------
-   上面第 一 段守的是「源码里没有第二层 .app」；这一段守的是**画出来的结果**，
-   两者不是一件事：换一种写法（例如给第二层写一条 margin）源码断言抓不到，
-   而用户看到的仍然是「卡片比顶栏窄一条边」。
-
-   做法：用 jsdom 把页面挂起来，然后在**从 body 往下的一串祖先**里找
-   「有没有哪一个盒子又额外缩进了一圈」—— 也就是那种「只缩进、不撑宽」的块级
-   容器（左右各留了内边距 / 外边距或收窄了宽度）。全站只有 .app 这一个盒子
-   有权这么做，而它全站只有一层。
-
-   ⚠️ 判据刻意写成「数一数有几层缩进」，而不是「量一下宽不等于多少 px」：
-      前者换断点 / 换列宽数值都照样成立，后者是硬编码的像素。
-   ========================================================================== */
 if (!JSDOM) {
   console.log('(未安装 jsdom，跳过「一列纸只缩进一次」的真实渲染断言 —— npm i jsdom 可启用)');
 } else {
-  /* 造一份带样式的真页面：**必须把样式表真的挂进去**。
-     --------------------------------------------------------------------
-     ⚠️ 这是这一层先前失效的地方（既有失败 3 项的根因）：
-        jsdom 的 `getComputedStyle` 在**没有样式表**时，`width` / `max-width`
-        一律返回空串（`''`），而不是 `'auto'` / `'none'`。
-        原先的判据写的是 `cs.width === 'auto' ? 'auto' : 'set'` ——
-        于是「宽度收窄」这一支对**每一个元素**都成立，
-        整把尺子退化成「数一数 DOM 套了几层」：
 
-          · 真页面上，内容比顶栏多套一层（library 的 data-lib-view、
-            settings 的 .settings-page），就判红 —— 而它们在水平方向
-            一个像素都没缩进（.settings-page 只有 padding-bottom；
-            [data-lib-view="book"] 的左右内边距已被清零）；
-          · 反过来，真正该抓的「第二层 .app」（max-width: var(--col-w)）
-            反而抓不到 —— 合成样本里根本没挂样式表。
-
-        现在两条都修：样式表挂进去（`styled()`），判据改成「真的能算出来的
-        那种收窄」—— 左右内边距 / 左右外边距，或者**声明过**的
-        max-width / width。jsdom 只对「没声明」的取空串，
-        对 `max-width: var(--col-w)` 会原样返回那个字符串，
-        所以这一条既能判、也不会误伤。
-     -------------------------------------------------------------------- */
-
-  /* 样式表的唯一一份挂载入口：jsdom 默认不去取 `<link>` 的外链，
-     所以**必须**把 css/style.css、css/legal.css、css/classic.css 的内容
-     手动插进 head，`getComputedStyle` 才算得出宽度 / 内边距。 */
   const SHEETS = [css, legalCss, classicCss]
     .map(t => '<style>' + t.replace(/<\/style>/gi, '') + '</style>')
     .join('\n');
-  /** 挂一份带样式的真页面（文件 → JSDOM 实例）。 */
+
   const styled = (markupOrFile, url) => {
-    // 传进来的是文件名（真页面）时读文件；否则当成一段 HTML（合成样本）。
+
     const html = /^[\w./-]+\.html$/.test(markupOrFile) ? read(markupOrFile) : markupOrFile;
     const d0 = new JSDOM(html, { url: 'https://local.test' + url });
     d0.window.document.head.insertAdjacentHTML('beforeend', SHEETS);
     return d0;
   };
 
-  /**
-   * 数一数：从 body 到 el 之间，有几层**真的在水平方向上又缩进了一圈**的容器。
-   *
-   * 判据（任何一条成立即算一层）：
-   *   · 盒子有左右内边距 —— 孩子可用的宽度因此比盒子窄；
-   *   · 盒子有左右外边距 —— 盒子自己比父亲窄；
-   *   · 盒子**声明过** max-width / width（收窄自己，例如 .app 的
-   *     `max-width: var(--col-w)`）。
-   * ⚠️ 第三条只在「声明过」时算：jsdom 对没声明的取空串，
-   *    拿 `cs.width !== 'auto'` 当判据会把每个元素都数进来。
-   */
   const insets = (win, doc, el) => {
     let n = 0;
     for (let p = el; p && p !== doc.body; p = p.parentElement) {
@@ -1025,21 +547,6 @@ if (!JSDOM) {
     return n;
   };
 
-  /* --------------------------------------------------------------------
-     另一把尺（两版合并时保留下来的那个口径）：数一数这条路径上有几个 `.app`。
-     --------------------------------------------------------------------
-     ⚠️ 两版的判据各修了对方的一个盲点，所以这里**两把都留**：
-        · `insets`（宽度 / 内边距那一支）—— 真机上「卡片比顶栏窄一条边」
-          量到的就是这条边，写法换成 margin 也照样抓得住；
-        · `appCountOf` —— `.app` 这个**类**在 DOM 里，与布局引擎无关，
-          在任何 jsdom 里都量得准，是 `insets` 失效时的安全带。
-     它们各守一句，两句都不是空的（下面每条断言都配了反面样本）。
-     -------------------------------------------------------------------- */
-
-  /* 数一数：从 body 到 el 之间套了几层 `.app`（「一列纸」的唯一载体）。
-     ⚠️ 判据刻意用 `.app` 这个**类**、而不是量出来的宽度 / 内边距：
-        前者在 DOM 里，量得准；后者要靠布局引擎，而 jsdom 只对**声明过的**
-        宽度 / 内边距给得出值（没声明的取空串），量出来会漂。 */
   const appCountOf = (ddoc, el) => {
     let n = 0;
     for (let p = el; p && p !== ddoc.body; p = p.parentElement) {
@@ -1048,22 +555,6 @@ if (!JSDOM) {
     return n;
   };
 
-  // 造一份「页面那条顶栏 + 一列纸 + 纸里的内容」的最小结构（与全站约定一致）。
-  // ⚠️ 顶栏里要**真的**放上品牌区与右侧簇（品牌区 + `.top-slot` + 恒定锚点）——
-  //    这就是 chrome.js 的 headerHtml 渲染出来的那一行。少了右侧簇，
-  //    jsdom 里盒模型虽然算不出宽度，但「同一把尺子量到底」的前提就丢了：
-  //    量点与被量点必须处在同一份真实结构上，否则这条断言问的不是它想问的事。
-  // ⚠️ 合成样本里**顶栏与纸是兄弟**（都住在同一个 `.app` 里），这不是笔误：
-  //      · `bar`（`.topbar`）自己就带一层 —— `max-width: var(--content-w)`；
-  //      · `paper`（纸里的内容）不带，它那「一层」来自**共同的祖先** `.app`
-  //        （`max-width: var(--col-w)` + 左右各一条 `--col-side` 的边）。
-  //    所以两者数出来必然是「2 / 1」—— 差的就是顶栏自己那一条 --content-w。
-  //    这一层想问的**不是**让这两个数相等，而是问「`paper` 那 1 层是不是
-  //    **正好**就是 `--col-w` 那一层、没有再套第二层」——见下面 `paperN`。
-  // ⚠️ 反面样本 `nested` 是在 `paper` 里**再套一层 `.app`**：这正是 #147
-  //    的复发形态。`--col-w` / 左右各一条边会被算第二遍，必须被数出来。
-  //    样本**必须挂上与真页面同一份样式表**（`styled()`），否则
-  //    `max-width: var(--col-w)` 在 jsdom 里取到空串，宽度那一支就是哑的。
   const sample = styled('<div class="app">' +
     '<header class="topbar"><div class="brand"></div>' +
     '<span class="top-slot"></span><span class="top-user"></span></header>' +
@@ -1072,13 +563,11 @@ if (!JSDOM) {
     '</div>', '/library/');
   const sd = sample.window.document;
   const sw = sample.window;
-  const bar = sd.querySelector('.topbar');           // 页顶那一行（自带 --content-w）
-  const paper = sd.querySelector('.paper');          // 纸里的内容（不该再缩进一次）
-  const leaf = sd.querySelector('.app');        // 一列纸那一层（缩进的唯一正当来源）
-  const nested = sd.querySelector('.nested > .app');  // 误写的那种：又套一层 .app
+  const bar = sd.querySelector('.topbar');
+  const paper = sd.querySelector('.paper');
+  const leaf = sd.querySelector('.app');
+  const nested = sd.querySelector('.nested > .app');
 
-  // ⚠️ 判据是「纸里的内容**正好**等于一列纸那一层」，不是与顶栏相等 ——
-  //    顶栏天然多一层（它自己那条 --content-w），拿相等当判据是错的前提。
   chk(insets(sw, sd, paper) === insets(sw, sd, leaf),
     '纸里的内容正好只缩进一列纸那一层（实际 ' +
     insets(sw, sd, paper) + ' / ' + insets(sw, sd, leaf) + '）—— ' +
@@ -1087,35 +576,22 @@ if (!JSDOM) {
     '页顶那一行自带的 --content-w 不算「多套一层」（实际 ' +
     insets(sw, sd, bar) + ' > ' + insets(sw, sd, paper) + '）—— ' +
     '它是顶栏自己的列宽，不是纸里被算了两遍的那条边');
-  // ⚠️ 上面那条是**相等**，而顶栏自己就带一层（max-width + margin: auto）——
-  //    所以「真页面」那几条写成 `<=` 时，纸里多套一层也能凑出 2 <= 2 蒙混过去。
-  //    真页面过的这把尺要更严：内容的缩进层数必须**正好**等于一列纸那一层，
-  //    多出来的任何一层都是 #147。
-  // ⚠️ 两版这一条都写着「反面样本必须被数出来」，只是**量法相反**：
-  //    一边用 `insets`（宽度 / 内边距），一边用 `.app` 层数（DOM）。
-  //    两把尺子管两件事，所以两条都留下，各自配自己的反面样本：
-  //      · `insets` 那一支：样本挂了样式表，`.app` 的
-  //        `max-width: var(--col-w)` 在 jsdom 里真的量得出来 ——
-  //        「再套一层会多算一层」这句话在这一支上是真的；
-  //      · `appCountOf` 那一支：与布局引擎无关，所以在任何 jsdom 里
-  //        都量得准，是上一支**万一**又变哑时的安全带。
-  // 反面样本一：纸里再套一层 .app（max-width: var(--col-w) 又算一遍）
+
   chk(insets(sw, sd, nested) > insets(sw, sd, paper),
     '纸里再套一层 .app 会被数出来（实际 ' +
     insets(sw, sd, nested) + ' > ' + insets(sw, sd, paper) + '）—— ' +
     '这条是 #147 的复发线，量不出来这层守卫就是空的');
-  // 反面样本二：同一件事换算 `.app` 层数，必须正好多一个
+
   chk(appCountOf(sd, nested) === appCountOf(sd, paper) + 1,
     '反面样本换个口径也对得上：纸里多套一层 .app → 多算一个（实际 ' +
     appCountOf(sd, nested) + ' / ' + appCountOf(sd, paper) + '）—— ' +
     '这一支与布局引擎无关，保证上面那把尺子不是哑的');
-  // 同一路径上的两个量点必须落在同一份结构上（顶栏住在纸里，不在纸外）
+
   chk(appCountOf(sd, bar) === appCountOf(sd, paper),
     '页顶那一行与纸里的内容处在同一层 .app 上（实际 ' +
     appCountOf(sd, bar) + ' / ' + appCountOf(sd, paper) + '）—— ' +
     '量点与被量点共用一个祖先，两个数才可比');
 
-  // 真正的页面也要过同一把尺
   for (const [file, url, sel] of [
     ['library/index.html', '/library/', '.toolbar'],
     ['poems/index.html', '/poems/', '.toolbar'],
@@ -1124,14 +600,10 @@ if (!JSDOM) {
     const d2 = styled(file, url);
     const dd = d2.window.document;
     const box = dd.querySelector(sel);
-    // 两把尺子都量：「宽度 / 内边距缩进」（insets）与 `.app` 层数（appCountOf）。
-    // ⚠️ 原先这里量的是「宽度 / 内边距缩进」，而那把尺子在**没挂样式表**的
-    //    jsdom 里量不到任何东西（详见 `insets` 的注释）。现在样本走 `styled()`
-    //    把样式表真的挂进去了，两把尺子才都量得准 —— 于是两条都留下来，
-    //    一条守「缩进正好等于一列纸那一层」，一条守「一个 `.app` 都没多套」。
+
     const n = insets(d2.window, dd, box);
     const m = insets(d2.window, dd, dd.querySelector('.topbar'));
-    // 一列纸（.app）那一层：全站唯一一个有权收窄宽度的盒子
+
     const paperN = insets(d2.window, dd, dd.querySelector('.app'));
     const na = appCountOf(dd, box);
     const ma = appCountOf(dd, dd.querySelector('.topbar'));
@@ -1141,49 +613,22 @@ if (!JSDOM) {
     chk(n === paperN,
       file + ' 里 ' + sel + ' 的缩进层数正好等于一列纸那一层（实际 ' + n + ' / ' + paperN + '）—— ' +
       '多出来的一层就是第二层 .app，卡片会比顶栏窄一条边（#147）');
-    // 同一件事换算 `.app` 层数：页顶上下的内容必须套一样多的纸
+
     chk(na === ma,
       file + ' 里 ' + sel + ' 套的 .app 与页顶那一行一样多（实际 ' + na + ' / ' + ma + '）—— ' +
       '多出来的一层 .app 就是把「一列纸」的宽度算了两次（#147）');
-    // ⚠️ 反面样本：给内容自己再套一层 .app（源码断言抓不到的那种写法），
-    //    上面两条必须变红 —— 否则它们只是「数出来总是 1」的空规则。
-    //    （2026-09-15：上一版恒红正是因为判据把每个元素都数成一层，
-    //      红与绿都与 DOM 无关；这里把「这把尺子真的有牙」写进断言。）
+
     const probe = dd.createElement('div');
     probe.className = 'app';
     box.appendChild(probe);
     chk(appCountOf(dd, probe) === ma + 1,
       file + ' 的反面样本被数出来了（给内容多套一层 .app → ' + appCountOf(dd, probe) +
       ' / 页顶 ' + ma + '）—— 这把尺子不是空的');
-    // ⚠️ 探针只加不改：量完就摘掉，别把被测页面留在改动过的状态里。
+
     probe.remove();
   }
 }
 
-/* ==========================================================================
-   十、顶栏右端是**固定位**：返回键不随页名长短移动（Issue #147 / #209）
-   --------------------------------------------------------------------------
-   用户原话（2026-09-15）：
-     「搜索页面后退按钮离 profile 头像太远了，他俩应该靠近并固定位置，
-       所有页面都应该如此，而不是因为搜索页面标题太短，位置就可以左移。」
-
-   病根在**排版方式**，不在某个数值：顶栏是 `justify-content: space-between`
-   的两栏，而返回键原先直接跟在**品牌区**后面（`.brand` 之后的第一个 flex 项）。
-   页名一短，左右两栏一分摊，那一颗箭头就跟着往左跑。
-
-   修法是把「位置」这件事从**内容流**里拿出来：那一颗自己带
-   `margin-left: auto`，永远贴右缘；品牌区可收缩，右端那一件不收缩。
-
-   Issue #209 又往前收了一步：右端的「恒定锚点（头像）」整件撤掉，
-   于是右端**只有这一颗** —— 位置因此更简单，但那条口径一个字没变：
-   **它不许随页名长短移动**。
-
-   这一层守四件事，缺一条都会以「某个页面上箭头位置又不对了」的形式复发：
-     ① 那一颗钉得住（`margin-left: auto`）、不收缩（`flex: none`）；
-     ② 尺寸只有一个来源：`--top-key`（`--top-slot` 连同头像一起删了）；
-     ③ 每个页面都走同一份模板，右端恒为「若有返回键，就它一件」；
-     ④ 阅读器那条顶栏同样只有这一颗 —— 合上与返回天然落在同一个像素位。
-   ========================================================================== */
 {
   const actRule2 = lastRuleOf(cssCode, '.top-act');
   chk(/margin-left:\s*auto/.test(actRule2),
@@ -1193,14 +638,13 @@ if (!JSDOM) {
   chk(/--top-key:\s*40px/.test(ruleOf(cssCode, ':root')) &&
     /width:\s*var\(--top-key\)/.test(actRule2),
     '顶栏那一颗的直径读 --top-key（顶栏右侧只有一个尺寸来源）');
-  // ⚠️ 这两条 Issue #209 之后**翻面**了：原先守的是「头像与占位同径、槽与锚点
-  //    之间的间距只有一个来源」；现在头像与占位都撤了，该守的是「它们不再回来」。
+
   const spacerRule = ruleOf(cssCode, '.top-act-spacer');
   chk(!/width:\s*var\(--top-slot\)/.test(spacerRule),
     '阅读器里那枚「不可见占位」不再读 --top-slot（它与头像一起撤了）');
   chk(!/\.top-slot \+ \.top-user/.test(cssCode) && !/--top-gap/.test(cssCode),
     '槽与锚点之间的间距令牌 --top-gap 也一并删掉（没有第二件要跟它对间距了）');
-  // 阅读器那条顶栏的「恒定锚点」也撤掉：那枚占位是给头像占位的
+
   chk(!/isReader[\s\S]{0,300}'<span class="top-act-spacer"/.test(chromeJs),
     '阅读器那条顶栏不再补那枚不可见占位（它占的是头像的像素位）');
   chk(!/\.top-slot-mark/.test(cssCode),
@@ -1208,14 +652,13 @@ if (!JSDOM) {
   chk(!/GLYPHS\.reader/.test(chromeJs.replace(/\/\/[^\n]*/g, ' ')),
     '那枚「书」图标（GLYPHS.reader）连同定义一起删掉，不留没人用的图形');
 
-  // ③ 结构：右端恒为「若有返回键，就它一件」，页名与它无关（只有品牌区可收缩）
   const headerCode = strip(chromeJs.slice(chromeJs.indexOf('function headerHtml'),
     chromeJs.indexOf('function firstActAnchor'))).replace(/\/\/[^\n]*/g, ' ');
   chk(!/justify-content/.test(headerCode),
     '右侧簇的位置不由 JS 排（分列两端交给 CSS 的 .topbar，JS 只管渲染结构）');
   chk(/var right = rightKey;/.test(headerCode),
     '右端就是那一颗键本身（不再有「槽 + 恒定锚点」—— 头颅那一枚撤了）');
-  // 每一页都真的能起出顶栏，且都不自己另写一套
+
   const PAGES = [
     ['index.html', '/'],
     ['search/index.html', '/search/'],
@@ -1233,31 +676,13 @@ if (!JSDOM) {
     chk(!/class="top-slot"|class="top-user"/.test(stripHtml(read(file))),
       file + ' 的 HTML 里不写死右侧簇（结构只出 chrome.js 一处）');
   });
-  // 被守的页名长短要真的不同 —— 否则这一层看着绿，其实什么都没区分开
+
   const pageNames = ['搜索', '课外阅读', '唐诗三百首', '课外必背小古文'];
   chk(new Set(pageNames.map(n => n.length)).size > 1,
     '被守的页名长短确实不同（' + pageNames.map(n => n.length).join('/') + ' 字）—— ' +
     '上一版正是长度差异把返回键推到了不同位置');
 }
 
-/* ==========================================================================
-   十一、详情页里不许再冒出「读了 N / M 篇 / 首」这类读数
-   --------------------------------------------------------------------------
-   用户原话（2026-09-15）：「删除所有详情页中的 0 / 167 篇及类似的」。
-
-   这一枚数在 Issue #147 里走过两站：先由**页顶那一行**挪进**详情页状态栏**
-   （朝代 · 作者 · 出处 · N / M 首，同一行），用户看过之后仍嫌它占地方，
-   于是连状态栏那一枚也一起撤了。读了多少改在两处看：列表页每条自己的已读标记，
-   与 /progress/ 那页总览；详情页上真正属于「这一篇」的是「读第几篇」，
-   由正文里的「上一篇 / 下一篇」表达。
-
-   这一段守的是**源码层面**的那条线，三件事：
-     ① 引擎不再生成 .rd-count 节点；
-     ② 样式表里不再留 .rd-count 规则（留着的唯一后果是下一个人以为还有一枚）；
-     ③ 真页面的 HTML 里 #rd-meta 那一段不再写死任何读数。
-   —— 与各集子测试里那几条「渲染出来没有这一枚」的断言合起来，
-      源码与渲染两头都堵上：只堵一头的话，换一种写法就漏了。
-   ========================================================================== */
 const PAGE_FILES = ['classic/index.html', 'guwen/index.html', 'songci/index.html',
   'tangshi/index.html', 'zhaoming/index.html', 'poems/index.html',
   'library/index.html', 'search/index.html'];
@@ -1267,18 +692,18 @@ chk(!/<span class="rd-count"/.test(engineJs) && !/createElement\("span"\)[\s\S]{
   '引擎不再生成 .rd-count 那一枚已读读数（详情页里没有这一枚了）');
 chk(!/\.rd-count\s*[,{]/.test(classicCss),
   '样式表里不再留 .rd-count 规则（不是「留着但没人用」）');
-// 反向样本：判据本身得是有牙的 —— 拿一段真的写着读数的 HTML 试一下
+
 chk(/\d\s*\/\s*\d+\s*(篇|首)/.test('<span class="rd-count">0 / 167 篇</span>'),
   '那段正则真的能抓到「0 / 167 篇」（这把尺子不是空的）');
 PAGE_FILES.forEach(f => {
   const html = read(f);
-  // 只取详情页状态栏那一段（#rd-meta 所在的那个 div），别把整页正文误伤
+
   const m = /<div class="meta rd-meta" id="rd-meta">([^]*?)<\/div>/.exec(html);
   chk(!!m, f + ' 的详情页状态栏节点还在（撤的是读数，不是这一行本身）');
   chk(!!m && !/\d\s*\/\s*\d+\s*(篇|首)/.test(m[1]),
     f + ' 的详情页状态栏里不写死任何「N / M 篇 / 首」读数（实际「' + (m ? m[1] : '') + '」）');
 });
-// 页顶那一条也不许冒出来 —— 六部集子 + 课外阅读入口页 + 搜索页
+
 ['classic/index.html', 'guwen/index.html', 'songci/index.html', 'tangshi/index.html',
  'zhaoming/index.html', 'poems/index.html', 'library/index.html', 'search/index.html'].forEach(f => {
   const m = /<header class="topbar">([^]*?)<\/header>/.exec(read(f));
@@ -1286,35 +711,8 @@ PAGE_FILES.forEach(f => {
     f + ' 的页顶那一行不挂任何读数（Issue #147 撤干净，不留死节点）');
 });
 
-/* ==========================================================================
-   十二、顶栏返回键**不能全删**：这三处它是唯一的出口
-   --------------------------------------------------------------------------
-   Issue #147 里用户问：「我后来想，手机界面我们需要标题栏中的后退按钮吗？
-   如果不需要，是不是可以全部删除？」
-   答案是不能全删 —— 有一条硬性的结构约束把它钉住，且**只有三处**：
-
-     · 阅读器是全屏沉浸层（position: fixed; inset: 0; z-index: 66），
-       比底部页签（z-index: 65）高一层。开着阅读器时，页签整个被盖住点不到，
-       于是顶栏那颗「合上」就是**唯一**的出口；
-     · 阅读器**不写 history**（全站无 pushState / #read），
-       所以手机的浏览器返回手势在 PWA 独立窗口里回不到「列表」这一层；
-       桌面还能按 Esc，手机没有 Esc。
-     · 另外六页刻意关掉页签（body data-dock="off"）：登录 / 个人中心 /
-       管理后台 / 层级对比 / 用户协议 / 隐私条款 —— 它们没有页签可回，
-       顶栏那颗「返回」是唯一的上一层。
-
-   反过来，**有页签的页**（首页 / 课外阅读 / 六个集子 / 搜索 / 设置 / 进度）
-   返回键确实与页签重复 —— 但保留它有三个理由，所以这一轮**不动**：
-     · 深一层的地方它指向的不是页签那一格（设置的四张二级页 data-back 回设置主页，
-       不是回首页）；
-     · 手机上的拇指够不到页签时，右上角那颗仍是最短的退路；
-     · 删掉它要同时改「右侧簇只放头像」的布局口径，收益不抵风险。
-
-   这一节**不测「有没有返回键」**（那是功能选择），只把上面那几条
-   **结构约束**钉住：约束一旦被改（阅读器不再全屏 / 页签不再被盖 /
-   那六页重新装上页签），这条结论就该被重新评估 —— 那时这几条断言会先红。 */
 (function backButtonIsIndispensable() {
-  // ① 阅读器全屏且高于页签：开着时页签点不到，「合上」是唯一出口
+
   const readerRule = ruleOf(classicCode, '.reader');
   chk(/position:\s*fixed/.test(readerRule) && /inset:\s*0/.test(readerRule),
     '阅读器是全屏层（fixed + inset:0）—— 所以它必须自带一枚出口');
@@ -1325,65 +723,29 @@ PAGE_FILES.forEach(f => {
     (dockZ ? dockZ[1] : '?') + '）之上 —— 页签在阅读器里点不到，' +
     '顶栏那颗「合上」是唯一的出口');
 
-  // ② 阅读器不写 history：手机的浏览器返回手势回不到列表那一层
   const readerJs = read('js/reader-core.js');
   chk(!/pushState|replaceState/.test(readerJs.replace(/\/\/[^\n]*/g, ' ')),
     '阅读器不往 history 里压栈（没有浏览器返回键可关它）—— 所以要用界面上的那一颗');
   chk(/keydown[\s\S]{0,200}Escape/.test(readerJs),
     '桌面还能按 Esc 合上（手机没有 Esc —— 这正是手机更要那颗按钮的原因）');
 
-  // ③ 六页刻意关掉页签：它们没有页签可回，返回键是唯一的上一层
   const DOCKLESS = ['login/index.html', 'profile/index.html', 'admin/index.html',
     'plans/index.html', 'terms/index.html', 'privacy/index.html'];
   DOCKLESS.forEach(f => {
     chk(/data-dock="off"/.test(stripHtml(read(f))),
       f + ' 关着底部页签（data-dock="off"）—— 它只能靠顶栏那颗返回键上一层');
   });
-  // 反向：有页签的页不该关页签，否则「页签是退路」这条前提也塌了
+
   ['search/index.html', 'settings/index.html', 'library/index.html'].forEach(f => {
     chk(!/data-dock="off"/.test(stripHtml(read(f))),
       f + ' 有页签（页签是它的退路之一）');
   });
 })();
 
-/* ==========================================================================
-   十三、开关：长得像手机系统开关，且**滑块真的在轨道里**（Issue #163）
-   --------------------------------------------------------------------------
-   用户原话（第一次）：「跨设备同步选择框太丑了，改进。」
-   用户原话（第二次，上一版上线之后）：
-     「现在这个选择项你是认真的吗？奇丑无比，
-       你哪怕设计成 iPhone 设置里的选项开关一样也行啊。」
-
-   第一版是浏览器默认的 checkbox（13px 方框 + 一颗写着「关」/「开」的文字）。
-
-   第二版把外观自绘成胶囊，却**画出来是错的**：轨道是那颗 appearance:none 的
-   input，滑块是可以长在 DOM 任何位置的 <span class="switch-track"> ——
-   两者靠 absolute 定位去叠，而 .switch / .settings-item / .settings-group /
-   .app / body 一路上全是 static，absolute 于是以**文档**为包含块：
-   left:2px / top:2px 让滑块落在页面左上角（真机实测 y = -415px，在屏幕外），
-   :checked 那句 translateX(16px) 只是把它从页面 x=2 挪到 x=18。
-   用户看到的是一颗**空药丸** —— 开着只有深青底、关着只有一圈描边，
-   滑块一次都没出现过。
-
-   ⚠️ 而当时那五条守卫**全绿**。它们查的是源码字符串：「有没有 appearance:none」
-     「尺寸是不是 40/24」「translateX 是不是按尺寸算出来的」——
-     源码看着一条不错，画出来全错。教训是这一节现在的写法：
-
-       ① **几何断言必须量渲染结果**（滑块相对轨道的落点），不能只量源码里的数字；
-       ② 结构上让「画不到一起去」变成不可能 —— 滑块改成轨道的 ::after，
-          轨道自己是 position:relative 的包含块，父子关系由选择器钉死；
-       ③ 源码断言只留「只有一个来源」这一类（尺寸别处不许再写一遍）。
-
-   现在这一版（手机系统开关那一路）：
-     <input class="switch-input">  真实复选框 —— 键盘 / 读屏 / 原生 toggle 都走它，
-                                   画成 0 尺寸不占位，只当状态与焦点用
-     <span class="switch-toggle">  可见的轨道；滑块是它的 ::after
-   ========================================================================== */
 {
   const genHtml = read('settings/general/index.html');
   const usedHtml = stripHtml(genHtml);
 
-  /* ---------- 一、结构：滑块画在轨道**里面**，不靠 absolute 去叠 ---------- */
   chk(/class="switch"[\s\S]{0,400}class="switch-input"[\s\S]{0,200}class="switch-toggle"/.test(usedHtml),
     '设置页的开关是 <label.switch> 包着 input 与轨道（点文字 = 点开关）');
   chk(/id="toggle-sync"[\s\S]{0,200}role="switch"/.test(usedHtml),
@@ -1392,15 +754,12 @@ PAGE_FILES.forEach(f => {
     '开关用 aria-labelledby 指向左侧项名（读屏念得出「跨设备同步，开关」）');
   chk(!/id="sync-label"/.test(usedHtml),
     '旧的那颗「关」/「开」文字标签已经拿掉（状态由开关本体表达）');
-  /* 反向：上一版那颗可以到处跑的独立滑块不许再回来 ——
-     这是「滑块落在页面左上角」那件事的结构根因。
-     ⚠️ 判据读的是**剥掉 HTML 注释**后的源码：注释里会点名说明它为什么被删。 */
+
   chk(!/switch-track/.test(usedHtml),
     'HTML 里不再有独立滑块 .switch-track（上一版它靠 absolute 叠在 input 上）');
   chk(!/\.switch-track\s*[,{]/.test(strip(css)),
     '样式表里也不再留 .switch-track 的规则（结构没了，规则就是僵尸）');
 
-  /* ---------- 二、尺寸只有一个来源，别处不许再写一遍 ---------- */
   const track = ruleOf(strip(css), '.switch-toggle');
   chk(/position:\s*relative/.test(track),
     '.switch-toggle 自己是定位包含块（position: relative）—— 滑块跑不出去就靠这一句');
@@ -1418,19 +777,15 @@ PAGE_FILES.forEach(f => {
   chk(knobW > 0 && knobH > 0,
     '滑块有声明尺寸（' + knobW + '×' + knobH + '）');
 
-  /* 滑块必须在轨道里：宽高两个方向都要放得下（含两侧 1px 边框） */
   chk(knobW + 2 * left + 2 * borderW <= trackW,
     '滑块横向落在轨道内（起点 ' + left + ' + 滑块 ' + knobW + ' + 边框 ' +
     borderW + '×2 ≤ 轨道 ' + trackW + '）');
   chk(knobH + 2 * top + 2 * borderW <= trackH,
     '滑块纵向落在轨道内（起点 ' + top + ' + 滑块 ' + knobH + ' + 边框 ' +
     borderW + '×2 ≤ 轨道 ' + trackH + '）');
-  /* 开关的滑块是圆的：轨道是胶囊，滑块是正圆 —— 宽高不等就是画歪了 */
+
   chk(knobW === knobH, '滑块是正圆（宽 ' + knobW + ' = 高 ' + knobH + '）');
 
-  /* 行程 = 轨道宽 − 边框×2 − 滑块宽 − 起点×2。
-     开着时滑块应当走到「右端对齐」—— 写死一个数而尺寸一改就越界，
-     所以判的是**算出来的值**，不是源码里有没有 16 这个数字。 */
   const onKnob = ruleOf(strip(css), '.switch-input:checked + .switch-toggle::after');
   const shift = (/-?translateX\((\d+)px\)/.exec(onKnob) || [])[1];
   const expect = trackW - 2 * borderW - knobW - 2 * left;
@@ -1438,16 +793,10 @@ PAGE_FILES.forEach(f => {
     '滑块的行程与尺寸同源（轨道 ' + trackW + ' − 边框 ' + borderW + '×2 − 滑块 ' +
     knobW + ' − 起点 ' + left + '×2 = ' + expect + '，源码写的 ' + shift + '）');
 
-  /* ---------- 三、三态各说各的话 ---------- */
   const onTrack = ruleOf(strip(css), '.switch-input:checked + .switch-toggle');
   chk(/background:\s*var\(--green\)/.test(onTrack),
     '开着 = 深青实底（与全站选中态同一个令牌）');
-  /* ⚠️ Issue #209 扁平化：原先这条守的是「开着时带描金内边（与主按钮同一手法）」。
-     全站按钮扁平化之后那一圈内边**两边一起去掉了**，这一条跟着翻面：
-     开着与关着的区分必须**只靠实底**（这正是上面那条 `background: var(--green)`
-     与下面「关着是纸底」两条合起来说的事），不许再借金属收边。
-     为什么值得单独守一条：开关与按钮住在同一屏里，留着那一圈会让它成为
-     页面上唯一带立体感的东西。 */
+
   chk(!/box-shadow:\s*inset/.test(onTrack),
     '开着时不带描金内边（扁平化后「开 / 关」只靠实底与纸底区分）');
   chk(/background:\s*var\(--card\)/.test(track),
@@ -1458,8 +807,6 @@ PAGE_FILES.forEach(f => {
   chk(/background:\s*var\(--line\)/.test(ruleOf(strip(css), '.switch-input:disabled + .switch-toggle::after')),
     '置灰时滑块也一并退到淡墨（不是轨道灰了、圆点还亮着）');
 
-  /* 真实输入框留着（键盘 / 读屏 / 原生 toggle 都用它），只是画成 0 尺寸。
-     ⚠️ 反面：它若还占位（40×24）就会把轨道挤到旁边去 —— 一颗开关画成两颗。 */
   const inpRule = ruleOf(strip(css), '.switch-input');
   chk(px(inpRule, 'width') === 0 && px(inpRule, 'height') === 0,
     '.switch-input 画成 0 尺寸（真实复选框留着，但不占位）');
@@ -1467,14 +814,10 @@ PAGE_FILES.forEach(f => {
     '真实复选框透明且脱流（视觉交给轨道那颗 span）');
   chk(/focus-visible/.test(css) && /\.switch-input:focus-visible\s*\+\s*\.switch-toggle\s*[,{]/.test(strip(css)),
     '焦点环画在**轨道**上（画在那颗 0 尺寸的 input 上等于看不见）');
-  /* 键盘焦点不能靠 :focus（鼠标点一下也亮环）；必须限 :focus-visible */
+
   chk(!/\.switch-input:focus\s*\{/.test(strip(css)),
     '焦点态只走 :focus-visible（鼠标点轨道不该留下键盘才有的光晕）');
 
-  /* 反向：开关这几个类名在同一份样式表里不许出现两段以上的规则。
-     上面那些断言都是「按累积读声明」的（见 ruleOf 的注释），而累积读法有个
-     代价：同名两段时，读到的是**前一段**里那个早已作废的值 ——
-     上一版的五条假绿就是这么来的。 */
   ['switch', 'switch-input', 'switch-toggle', 'switch-hint'].forEach(cls => {
     const seg = ruleSegments(css, '.' + cls);
     chk(seg.length <= 1,
@@ -1483,11 +826,6 @@ PAGE_FILES.forEach(f => {
   chk(!/\.switch-row\s*[,{]/.test(strip(css)) && !/\.switch-label\s*[,{]/.test(strip(css)),
     '样式表里没有 .switch-row / .switch-label 的死规则（HTML 从不使用这两个类名）');
 
-  /* ---------- 四、真渲染：滑块**几何上**落在轨道里（这一节的核心） ----------
-     上面全是源码断言。上一版正是「源码一条不错、画出来全错」：
-     所以这一段必须量 getBoundingClientRect 与 ::after 的实际落点。
-     ⚠️ 判的是「滑块相对轨道的偏移」，不是绝对坐标 —— 绝对坐标随页面滚动变，
-        写进去只会得到一条风湿预报。 */
   if (!JSDOM) {
     console.log('(未安装 jsdom，跳过「开关真的画得出来」的真实渲染断言 —— npm i jsdom 可启用)');
   } else {
@@ -1510,44 +848,17 @@ PAGE_FILES.forEach(f => {
         chk(bcs.borderRadius === '999px',
           '轨道是胶囊（画出来的圆角 999px，不是方框）');
 
-        /* 滑块（::after）：JSDOM 不给伪元素布局，所以量的是**计算样式**，
-           再用轨道自己的矩形核对落点。这一条正是上一版缺的那一条：
-           上一版滑块是独立元素，getBoundingClientRect 落在 (2, -415)，
-           与轨道 (126, 705) 毫无关系 —— 而当时的断言只看它的 width。 */
-        /* 输入框**真的**是 0 尺寸（不是只在源码里写了个 0）——
-           它若占位就会把轨道挤到旁边，一颗开关画成两颗。
-           ⚠️ 这一条必须量真元素：JSDOM 支持元素本身的布局，只是不支持伪元素。 */
         const ics = win.getComputedStyle(input);
         chk(parseFloat(ics.width) === 0 && parseFloat(ics.height) === 0,
           '画出来的 .switch-input 是 0 尺寸（' + ics.width + '×' + ics.height + '，不占位）');
-        /* ⚠️ 滑块的几何落点**这一层判不了**：JSDOM 不支持
-           getComputedStyle(el, '::after') —— 它把**父元素**的样式原样返回
-           （实测：.switch-toggle::after 的 position 读出 relative、
-           width 读出 40px，全是轨道的值）。拿它量滑块等于什么也没量。
-           滑块落点由下面「真浏览器（Chromium）」那一段判 ——
-           上一版栽的正是「只量源码、没量渲染」，所以那一段是必须有的，
-           不是可选的锦上添花。 */
+
       }
     }
   }
 }
 
-/* ==========================================================================
-   七、页脚 + 危险按钮：一处定义、全站一样（Issue #163）
-   --------------------------------------------------------------------------
-   用户原话：
-     「我看到设置里无数啰啰嗦嗦的段落及解释，无法容忍。我看到重复的发邮件框，
-       发现重复的注册按钮…… 保持页面元素的统一，ui 一致性等等。」
-
-   这一段守的是「统一」那一半里**能判的两类**：
-     · 页脚：版权 + 法务链接的样式只有一个来源 ——
-       原先法务两页写的是 `.foot`、其余九页写的是 `.foot settings-foot`，
-       同一个组件两种写法，改一处另一处不会跟着走；
-     · 危险色：不可逆动作（清空进度 / 注销账号）的底色与描边只有一个来源 ——
-       原先 .danger-btn 与 .account-btn.danger 各自写了一遍相同色值。
-   ========================================================================== */
 {
-  // ① 页脚：十一张挂页脚的页面用同一个类名（不允许再出现裸 .foot）
+
   const FOOT_PAGES = ['settings/index.html', 'settings/general/index.html',
     'settings/recite/index.html', 'settings/lists/index.html', 'settings/reader/index.html',
     'login/index.html', 'profile/index.html', 'admin/index.html', 'plans/index.html',
@@ -1559,77 +870,50 @@ PAGE_FILES.forEach(f => {
   chk(!/<footer class="foot">/.test(read('terms/index.html') + read('privacy/index.html')),
     '法务两页不再用裸 .foot（与其余九页同一条规则）');
 
-  // ② 危险色：只有一个来源，两处按钮都读它
   const rootRule = ruleOf(cssCode, ':root');
   chk(/--danger-bg:\s*#[0-9a-f]{6}/.test(rootRule) && /--danger-line:\s*#[0-9a-f]{6}/.test(rootRule),
     '危险色令牌 --danger-bg / --danger-line 在 :root 里定义（全站唯一来源）');
   chk(/var\(--danger-line\)/.test(ruleOf(cssCode, '.danger-btn')) &&
       /var\(--danger-bg\)/.test(ruleOf(cssCode, '.danger-btn')),
     '设置页的 .danger-btn 读危险色令牌（不再写死 #ecd2cd）');
-  // ⚠️ 与上面同一把尺子：account.css 的那条规则夹在大段注释之间，
-  //    不先剥注释就会把注释里的 `{` 当成规则边界（ruleOf 会返回空串）。
+
   chk(/var\(--danger-line\)/.test(ruleOf(strip(accountCss), '.account-btn.danger')) &&
       /var\(--danger-bg\)/.test(ruleOf(strip(accountCss), '.account-btn.danger')),
     '账号页的 .account-btn.danger 读同一条危险色令牌（两种页面同一个底色）');
-  // 反向：两处都不许再写死那一对色值（写死的那一刻，「一处定义」就退回巧合）
+
   const dangerWriters = (cssCode + '\n' + accountCss).replace(/^\s*:root\s*\{[\s\S]*?\}/m, '');
   chk(!/#ecd2cd/.test(dangerWriters.replace(/\/\*[\s\S]*?\*\//g, ' ')),
     '除 :root 外没有第二处写死 #ecd2cd（危险按钮的描边只有一个来源）');
 }
 
-
-/* ==========================================================================
-   Issue #163 续：页脚横线 / 链接下划线 / 开关样式
-   ==========================================================================
-   用户原话：「©2026 kuibu.app 积跬步, 至千里 上面的横线删除，
-   有些页面链接样式不对，甚至还有下划线那么丑。」
-
-   这一段守三件事，每一件都是**「这类元素出现了几次」的判据**，
-   不是「某个 id 在不在」—— 免得哪天换个写法又悄悄长回来：
-
-     1. 页脚与正文之间不再画那条 `border-top`；
-     2. 全站**所有** <a> 都不长下划线（不是某一处去掉、另一处忘了写）；
-     3. 同步开关那套类名（.switch / .switch-input / .switch-toggle）真的
-        被样式表接管了 —— 且**只此一套**，不许留着上一版的死类名。
-   ========================================================================== */
 {
-  // ① 页脚上面的横线：.settings-foot 不许再声明 border-top
+
   chk(!/border-top/.test(ruleOf(cssCode, '.settings-foot')),
     '页脚 .settings-foot 不再画上边框（「©2026 kuibu.app」上面那条横线已删）');
   chk(/padding-top/.test(ruleOf(cssCode, '.settings-foot')),
     '页脚与正文之间的间距改用留白表达（padding-top 还在）');
 
-  // ② 链接下划线：全局唯一一条默认，且是 none
   chk(/a\s*\{[^}]*text-decoration:\s*none/.test(cssCode),
     '全局 `a { text-decoration: none }` 存在（全站唯一一条「不给下划线」的默认）');
-  // 反向：页脚链接 hover 时也不许把下划线加回来（原先就是 hover 加回来的）
+
   const footRule = ruleOf(cssCode, '.foot-links a:hover');
   chk(/text-decoration:\s*none/.test(footRule) || !/text-decoration/.test(footRule),
     '页脚链接 hover 不再把下划线加回来（反馈只走颜色一档）');
-  // 反向：正文里那几个没类名的链接（个人中心「查看」）归了本页的配色规则
-  // ⚠️ 判的是「有自己的颜色」而不是「有 text-decoration: none」——
-  //    下划线那件事现在只有全局一条规则在管，本页再写一遍反而是第二个来源。
+
   chk(/\.kv-v a\s*\{[^}]*color:\s*var\(--green\)/.test(strip(accountCss)),
     '个人中心「关于」里的「查看」链接有自己的配色规则（不再是浏览器默认的蓝紫链接）');
-  // 反向：全站样式表里再没有一条 `text-decoration: underline`
-  //（那条「链接默认长下划线」的行为已由全局规则统一去掉；按钮样的「重新发送」
-  //  也改走加粗 + 天青，与链接同一套语言）
+
   const underlines = (cssCode + '\n' + accountCss + '\n' + legalCode)
     .match(/text-decoration:\s*underline/g) || [];
   chk(underlines.length === 0,
     '全站样式表里没有一条 `text-decoration: underline`（实际 ' + underlines.length + ' 条）');
-  // 反向：六处「各写一遍 text-decoration: none」已收归全局那一条
-  //（这一条守的是「别再长回来」：除全局规则外，其余文件里不许再出现它）
+
   const noneWriters = (cssCode.replace(/^[^\n]*\ba\s*\{[^}]*text-decoration:\s*none[^}]*\}[^\n]*$/m, '')
     + '\n' + strip(classicCss) + '\n' + strip(legalCss) + '\n' + strip(accountCss))
     .match(/text-decoration:\s*none/g) || [];
   chk(noneWriters.length <= 1,
     '除全局那条外，各页面文件里不再各写一遍 text-decoration: none（实际 ' + noneWriters.length + ' 条）');
 
-  // ③ 同步开关：**HTML 里真实用到的**那几个类名，样式表里必须真的存在。
-  //    ⚠️ 这一条从「四个类名都查」改成「查 HTML 里真出现的那几个」——
-  //       `.switch-row` / `.switch-label` 是 1B 期旧写法的名字，Issue #163
-  //       改成自绘胶囊之后**任何 HTML 里都不再出现**，查它们等于守一份不存在的契约。
   const genHtml0 = read('settings/general/index.html');
   const usedSwitchCls = ['switch', 'switch-input', 'switch-toggle'].filter(cls =>
     new RegExp('class="[^"]*\\b' + cls + '\\b').test(stripHtml(genHtml0)));
@@ -1638,11 +922,7 @@ PAGE_FILES.forEach(f => {
     chk(new RegExp('\\.' + cls + '\\s*[,{]').test(cssCode),
       '开关的 .' + cls + ' 在样式表里有规则（HTML 写了就得画出来）');
   });
-  /* 反向：那套旧写法（透明 input 覆盖层 + span 轨道）的类名不许再写进样式表 ——
-     它与自绘那一版**同名两段**，会让「按累积读声明」的断言读到错的那一段
-     （算出来的滑块行程是 -6px，把一条真 bug 的读数教成「旧的、不用管」）。
-     ⚠️ 这条判据读的是**剥掉注释之后**的源码：这两组类名在 style.css 的
-        注释里被点名说明过「已删掉」，按裸源码匹配会把说明文字当成死规则。 */
+
   ['switch-row', 'switch-label', 'switch-track'].forEach(cls => {
     chk(!new RegExp('\\.' + cls + '\\s*[,{]').test(strip(cssCode)),
       '样式表里不再有 .' + cls + '（旧写法的残留，与自绘版冲突）');
@@ -1651,20 +931,14 @@ PAGE_FILES.forEach(f => {
     '开关的「开」态由 :checked + .switch-toggle 表达（不是靠原生 checkbox）');
   chk(/input:disabled\s*\+\s*\.switch-toggle/.test(strip(cssCode)),
     '开关的「未开放」态也有样式（置灰，不是原生 disabled 的样子）');
-  /* 真实输入框留着（键盘 / 读屏 / 原生 toggle 都用它），画成 0 尺寸不占位，
-     视觉交给轨道那颗 <span class="switch-toggle">。
-     ⚠️ 这一条的来历：上一版让 input **自己**当轨道（appearance:none），
-        滑块是另一个独立 span —— 结构上两者可以分家，滑块就这样跑到了页面左上角。
-        现在判的是「输入框不占位 + 轨道另有其人」，而不是「input 自绘得多漂亮」。 */
+
   const inpRule = ruleOf(cssCode, '.switch-input');
   chk(/position:\s*absolute/.test(inpRule) && /opacity:\s*0/.test(inpRule),
     '.switch-input 透明且脱流（真实复选框留着，视觉交给轨道那颗 span）');
-  /* 输入框不许还占着 40×24：那样轨道会被挤到旁边，一颗开关画成两颗 */
+
   chk(/\bwidth:\s*0/.test(inpRule) && /\bheight:\s*0/.test(inpRule),
     '.switch-input 画成 0 尺寸（不占位）');
-  /* 轨道与滑块：**同一个元素**（滑块是轨道的 ::after）——
-     这正是「画不到一起去」那件事的结构解法，所以判的是「伪元素在轨道上」，
-     而不是「两处声明相等」（旧写法需要的对齐断言，现在从根上不需要了）。 */
+
   chk(/\.switch-toggle::after\s*[,{]/.test(strip(cssCode)),
     '滑块是轨道的 ::after（与轨道同一个盒子，不存在两处分家的可能）');
   const trk = ruleOf(cssCode, '.switch-toggle');
@@ -1676,14 +950,6 @@ PAGE_FILES.forEach(f => {
   chk(/focus-visible/.test(cssCode) && new RegExp('\\.switch-input:focus-visible\\s*\\+\\s*\\.switch-toggle\\s*[,{]').test(strip(cssCode)),
     '开关有键盘焦点态（focus-visible）—— 画在轨道上，不许把焦点框一起丢掉');
 
-  /* 反向：**开关这几个类名**在同一份样式表里不许出现两段以上的规则。
-     上面那些断言都是「按累积读声明」的（见 ruleOf 的注释），而累积读法有个
-     代价：同名两段时，读到的是**前一段**里那个早已作废的值，算出来的结论
-     与浏览器里画出来的完全不同 —— 开关那 5 条假失败就是这么来的
-     （.switch-input 的第一段是旧的透明覆盖层，宽 40；真生效的是第二段）。
-     ⚠️ 只查这几个（**不查全表**）：`.app` / `:root` 这类选择器本来就会写在
-        多处（max-width 在中部、padding 在 PWA 一节），那是正常写法，
-        一律禁掉等于把一条正确的写法判成错。 */
   ['switch-input', 'switch-toggle', 'switch', 'switch-hint'].forEach(cls => {
     const seg = ruleSegments(cssCode, '.' + cls);
     chk(seg.length <= 1,
@@ -1691,44 +957,22 @@ PAGE_FILES.forEach(f => {
   });
 }
 
-
-/* ==========================================================================
-   十一之二、卡片主标题真的和其他页一样大（Issue #163，真实渲染）
-   --------------------------------------------------------------------------
-   用户原话：「设置页首页 通用 我的清单这些卡片主标题之前希望字号和其他页面
-   一样大 还没修复。」
-
-   上面第 ⑪ 段判的是**源码里的值**：共用块与 .group-name 同为 14px / 700。
-   这一段判的是**渲染出来的结果** —— jsdom 把真页面 + 两张样式表挂上，
-   量二级页「通用」那颗 <h2> 与设定主页四张入口卡的标题。
-
-   ⚠️ 为什么非要有这一段：源码值对、渲染值不对是踩过的坑。
-      上一版 .settings-link-title 自己写了一遍 font-size / font-weight，
-      .settings-group-title 那边被压成 11px 时它跟着一起降级了（抄出来的值）。
-      现在三个值只在共用块里写一次，这一段就是「真的画出来是这么大」的闭环。
-   ========================================================================== */
 if (JSDOM) {
   const sheet = '<style>' + cssCode + '</style><style>' + classicCode + '</style>';
   const px = (json) => json.fontSize;
 
-  /* 二级页：还写着的那几颗分组名。
-     ⚠️ Issue #163 第三轮：**一页只有一组时不再写组标题**（组名只在顶栏页名上），
-        所以这里判的是「页面上**凡有**分组名，画出来都是这一号」——
-        没有的那几页不参与（它们由 test/theme.test.js 与 test/settings-nav.test.js
-        按页守着「不该有标题」）。 */
   ['settings/general/index.html', 'settings/recite/index.html',
    'settings/lists/index.html', 'settings/reader/index.html'].forEach(function (f) {
     const d = new JSDOM(read(f), { url: 'https://local.test/' + f.replace('index.html', '') });
     d.window.document.head.insertAdjacentHTML('beforeend', sheet);
     const all = [...d.window.document.querySelectorAll('.settings-group-title')];
-    if (!all.length) return;                       // 单组页：组名只在顶栏，这里没有可量的
+    if (!all.length) return;
     const bad = all.filter(el => d.window.getComputedStyle(el).fontSize !== sizeOf(groupNameRule) + 'px');
     chk(bad.length === 0,
       f + ' 的分组名画出来和集子卷名同号（实际 ' +
       all.map(el => d.window.getComputedStyle(el).fontSize).join('/') + '）');
   });
 
-  // 设置主页：四张入口卡的标题（由 js/settings-nav.js 画出来）
   const d2 = new JSDOM(read('settings/index.html'),
     { url: 'https://local.test/settings/', runScripts: 'dangerously' });
   d2.window.document.head.insertAdjacentHTML('beforeend', sheet);
@@ -1741,9 +985,7 @@ if (JSDOM) {
     titles.every(el => d2.window.getComputedStyle(el).fontSize === sizeOf(groupNameRule) + 'px'),
     '设置主页四张入口卡的标题画出来也是同一号（' +
     (titles[0] ? d2.window.getComputedStyle(titles[0]).fontSize : '未取到') + '）');
-  /* 两个页面之间不再有第二档字号：主页入口标题与二级页**凡有**的分组名
-     画出来必须**同一个字符串**。「背诵」页仍有两颗（背诵 / 复习算法），
-     用这两颗是最合适的量尺 —— 单组页现在不写标题，量不到东西。 */
+
   const d3 = new JSDOM(read('settings/recite/index.html'), { url: 'https://local.test/settings/recite/' });
   d3.window.document.head.insertAdjacentHTML('beforeend', sheet);
   const grp = d3.window.document.querySelector('.settings-group-title');
@@ -1753,19 +995,7 @@ if (JSDOM) {
 } else {
   console.log('- (未安装 jsdom，跳过卡片主标题的真实渲染一节)');
 }
-/* ==========================================================================
-   十二、开关的 DOM 结构与顺序（Issue #163）
-   --------------------------------------------------------------------------
-   上一版的问题是**结构**：轨道与滑块是两个各自定位的元素，能不能叠在一起
-   全看绝对定位能不能找到同一个包含块 —— 而它一路上没有非 static 祖先，
-   于是滑块落到了页面左上角（真机实测 y = -415px，屏幕外）。
 
-   这一节只判 DOM 关系（谁在谁旁边、谁包着谁）；几何落点由上一节与下面
-   「真浏览器」那一段判。三段合起来才闭环：
-     · 结构对 → 不该分家；
-     · 源码只有一个来源 → 尺寸不会两边不一致；
-     · 真渲染落点在轨道内 → 前面两条真的一起成立了。
-   ========================================================================== */
 if (JSDOM) {
   const doc = new JSDOM(read('settings/general/index.html'),
     { url: 'https://local.test/settings/general/' }).window.document;
@@ -1776,53 +1006,27 @@ if (JSDOM) {
       doc.querySelector('label.switch').contains(input) &&
       doc.querySelector('label.switch').contains(track),
     '两者包在同一个 <label.switch> 里（点轨道任意处都切得动，iOS 上也是）');
-  /* 顺序：input → 轨道。CSS 的 `input:checked + .switch-toggle` 靠的就是它 */
+
   chk(!!input && input.nextElementSibling === track,
     '轨道是 input 的紧邻兄弟（`:checked + .switch-toggle` 这条相邻选择器才对得上）');
-  /* 反向：滑块不许再作为独立元素出现 —— 这是「跑到页面左上角」的结构根因 */
+
   chk(!doc.querySelector('.switch-track'),
     'HTML 里不再有独立滑块 .switch-track（滑块现在是轨道的 ::after）');
-  // 反向：上一版的 .switch-row / .switch-label 结构不许再回到 HTML 里
+
   chk(!doc.querySelector('.switch-row') && !doc.querySelector('.switch-label'),
     'HTML 里不再有 1B 期的 .switch-row / .switch-label（开关只此一套结构）');
 } else {
   console.log('- (未安装 jsdom，跳过开关的 DOM 结构一节)');
 }
 
-/* ==========================================================================
-   Issue #163 续（第二轮）：登录卡垂直居中 · 账号页主按钮与全站同一颗
-   --------------------------------------------------------------------------
-   用户原话：
-     「登录页面的登录卡片能垂直居中吗 发送随机码的按钮是黑色的？
-       和其他页面主按钮色不一致？」
-
-   〓〓〓 这两条为什么必须落成断言，而不是「改完看一眼」 〓〓〓
-
-   ① **垂直居中**这件事：它改的是一条 `min-height` 上的算式
-      （`100vh − 顶栏 − 页脚`）。这一屏在手机上恰好是「内容不足一屏」，
-      于是它看着生效了；到了大字号 / 横屏 / 平板那一档，算式里的常数一旦
-      离谱，卡片就会被推到屏幕外或者贴顶 —— 而**没人会去那个尺寸再看一遍**。
-      断言守的是「算式与页面拿得到的东西同源」「只给登录页」「没有 justify-content」
-      这三件，换数值时它们仍成立。
-   ② **主按钮**这件事：两处的色值**本来就一样**，是描金细边少了一条。
-      也就是说「用户报的不一致」在源码里长得和人眼看到的原因不一样 ——
-      只比对 background 会判绿，而屏幕上依旧是两副脸。所以这里判的是
-      **一整个观感**（背景 / 描边 / 描金内边 / 按下反馈），
-      并把「不是平铺一个色值」也钉住（平铺正是那个「一块黑」的成因）。
-   ========================================================================== */
 {
-  /* ---------- ① 登录卡垂直居中（Issue #163） ---------- */
+
   const loginPageRule = ruleOf(strip(accountCss), '#login-page');
   chk(/display:\s*flex/.test(loginPageRule),
     '登录页那一列是 flex 容器（居中要靠它算剩余空间，不是靠外边距拍一个数）');
   chk(/min-height:\s*calc\(100\s*\*\s*var\(--app-vh\)/.test(loginPageRule),
     '容器高度按实测视口算（--app-vh 是 js/pwa.js 量出来的，不是 100vh 在 iOS 上的跳变值）');
-  /* ⚠️ 兜底那条（`calc(100vh - Npx)`）**不能**用 `ruleOf('#login-page')` 去读：
-     `ruleOf()` 按「**同名属性留最后一条**」累积，而 `min-height` 正是同名属性 ——
-     宽屏那一档写的 `min-height: calc(100 * var(--app-vh) - 240px)` 是**后一条**，
-     于是它把兜底整条盖掉了。源码里明明写着兜底，这把尺子却判红（踩过一次）。
-     兜底与实测那一条是**成对**出现在每一档里的，所以判「成对出现的档数」：
-     两档 = 两对 = 各 2 条；少一条就说明某一档只剩了一条腿。 */
+
   const vhFallbacks = (strip(accountCss).match(/min-height:\s*calc\(100vh\s*-\s*\d+px\)/g) || []).length;
   const vhMeasured = (strip(accountCss).match(/min-height:\s*calc\(100 \* var\(--app-vh\)\s*-\s*\d+px\)/g) || []).length;
   chk(vhFallbacks >= 1 && vhFallbacks === vhMeasured,
@@ -1830,16 +1034,14 @@ if (JSDOM) {
     ' 条）—— 没有 js 量过视高的那一档也照样算得出高度');
   chk(vhMeasured >= 2,
     '手机与桌面两档各给自己留了一对（实际 ' + vhMeasured + ' 对 —— 大字号 / 横屏那一档也得算得对）');
-  // 卡片靠 auto 外边距居中，**不是** justify-content: center
+
   const loginCardRule = ruleOf(strip(accountCss), '#login-page > .account-card');
   chk(/margin-top:\s*auto/.test(loginCardRule) && /margin-bottom:\s*auto/.test(loginCardRule),
     '卡片上下外边距都是 auto（卡片比容器高时退化成 0，顶端仍贴得住 —— ' +
     'justify-content: center 会把顶端顶到容器外，顶栏那一段滚不回来）');
   chk(!/justify-content/.test(loginPageRule),
     '不用 justify-content 居中（溢出时会把卡片顶端推出容器）');
-  // 反向：这三条只给登录页，不许按 .account-page 一锅端 ——
-  // 个人中心 / 管理后台是一叠卡的长清单页，居中在它们身上永远不生效；
-  // 而卡一变少（注销之后），它们会被推到屏幕正中，像一张贴墙的明信片。
+
   const plainPage = ruleOf(strip(accountCss), '.account-page');
   chk(!/min-height/.test(plainPage) && !/display:\s*flex/.test(plainPage),
     '只有登录页垂直居中（.account-page 那一档既不定高也不改排布 —— ' +
@@ -1847,22 +1049,11 @@ if (JSDOM) {
   chk(/#login-page\s*\{/.test(strip(accountCss)) &&
     /<main class="account-page" id="login-page">/.test(read('login/index.html')),
     '那一列真的有 #login-page 这个钩子（HTML 与 CSS 对得上，不是一条空规则）');
-  /* 反向样本：把居中那两行拿掉，判据必须变红 —— 有牙的尺子才叫断言 */
+
   const noCenter = strip(accountCss).replace(/#login-page[^}]*\}/, '');
   chk(!/display:\s*flex/.test(ruleOf(noCenter, '#login-page')),
     '反面样本：抹掉 #login-page 那段之后，这把尺子立刻判它没有 flex（断言不是空的）');
 
-  /* ---------- ② 账号页那颗主按钮 = 全站一级按钮（Issue #209 扁平化后翻面） ----------
-     ------------------------------------------------------------------
-     Issue #163 当时这条守的是「两处都带描金内边 / 都走三段渐变」——
-     那是照着「一级按钮是立体的」这句话抄的。Issue #209 用户要求
-     「页面中所有的按钮请进行扁平化设计」，那套立体做法**两边一起去掉**，
-     所以这一条判据跟着翻面：从「逐条一样的质感」改成「逐条一样的**没有**质感」。
-
-     要守的其实一条也没变：**两处画出来必须一模一样**（同一个平色块、
-     同一条描边、同一个按下反馈），因为用户说的另一句是
-     「设置，登录和个人中心所有页面的主按钮和普通按钮主要应该只有这两种形态，
-      需要保持一致性」。 */
   const acctPrimary = ruleOf(strip(accountCss), '.account-btn');
   const sitePrimary = ruleOf(cssCode, '.btn.primary');
   const threeDee = /linear-gradient|rgba\(\s*240,\s*205,\s*124|0 2px 10px|transform:\s*scale/;
@@ -1874,7 +1065,7 @@ if (JSDOM) {
   chk(/border:\s*1px solid var\(--green-dark\)/.test(acctPrimary) &&
       /border-color:\s*var\(--green-dark\)/.test(sitePrimary),
     '描边读 --green-dark（与全站一级按钮同一条边）');
-  // 按下反馈：两处都**只用颜色**（压深一档底色），不许缩放 / 投影
+
   const acctActive = ruleOf(strip(accountCss), '.account-btn:active');
   const siteActive = ruleOf(cssCode, '.btn.primary:active');
   chk(!threeDee.test(acctActive) && !threeDee.test(siteActive),
@@ -1883,33 +1074,12 @@ if (JSDOM) {
     '两处的按下反馈都写在 background 上（同一种说法：压深一档底色）');
   chk(/font-size:\s*15px/.test(acctPrimary) && /font-size:\s*15px/.test(ruleOf(cssCode, '.btn')),
     '两处主按钮的字号同一档（15px）—— 并排看不会一大一小');
-  // 反向：账号页不许自己造一个绿色 / 金色字面量（调色板只有一份）
+
   const acctCode = strip(accountCss).replace(/^\s*:root\s*\{[\s\S]*?\}/m, '');
   chk(!/#2f6055|#234b42|#4f7a6e|#f0cd7c/i.test(acctCode),
     'account.css 里不出现天青 / 缃色的字面量（一律读 css/style.css 的 :root 令牌）');
 }
 
-/* ==========================================================================
-   十五、按钮**扁平化**：全站找不到一颗立体的按钮（Issue #209）
-   --------------------------------------------------------------------------
-   用户原话：「页面中所有的按钮请进行扁平化设计。」
-
-   这一条与前一条不同：前一条只看两处一级按钮，这一条**扫全站**。
-   扁平化最容易失守的方式不是「有人把主按钮改回去」，而是
-   「有人在别处新加一颗写着自己那套渐变的按钮」—— 那种漏网只能靠扫。
-
-   判据：凡是**按钮类规则**（类名里带 btn 的那几条，以及 .account-btn /
-   .pw-eye / .auth-tab / .game-mode / .game-opt / .tier-pick button 这些
-   长得就是按钮的自绘控件）里，不许出现：
-     · linear-gradient / radial-gradient（立体感的头号来源）
-     · 描金内边 rgba(240,205,124,…)（与渐变配对的金属收边）
-     · transform: scale(...) 写在 :active 上（按下去了一块实体的物理隐喻）
-   ⚠️ 卡片（.card / .account-card / .library-card）自己的 box-shadow **不在此列**：
-      那是「一张纸」的厚度，与按钮是不是平的无关 —— 只扫按钮选择器。
-   ⚠️ `transform: scale` 也允许出现在**非 :active** 的地方（卡片按下反馈
-      .item:active / .library-card:active 不在这一条的范围内，
-      因为它们不是按钮；这条只挑类名里带 btn 的以及上面列的那几个控件）。
-   ========================================================================== */
 {
   const btnSel = /\.(?:[a-z-]*btn[a-z-]*|account-btn|pw-eye|auth-tab|game-mode|game-opt|tier-pick|switch-toggle|icon-btn|mini-btn|seg-toggle|code-resend|link-btn|grant-del)\b/;
   const blocks = [...strip(cssCode + '\n' + strip(accountCss))
@@ -1927,34 +1097,16 @@ if (JSDOM) {
     scaleActive.map(b => b.sel).join(' | ') + '）');
 }
 
-/* ==========================================================================
-   十六、列表卡片的阴影同源（Issue #209）
-   --------------------------------------------------------------------------
-   用户原话：「课外阅读，和设置首页列表卡片请借鉴背诵首页的卡片阴影设计。」
-
-   三处「一列卡片」：背诵首页那条条独立卡片（.item）、课外阅读那几张集子卡
-   （.library-card）、设置主页那四条入口（.settings-link）——
-   它们要读**同一个** `--shadow` 令牌，不许任何一处自己写一个 rgba。
-
-   为什么要机器守：「阴影差一点点」是最难被说清、却一眼看得出来的那类不一致
-   （深浅、扩散、偏色三个维度都能各差一档）。三处各写一个 rgba 之后，
-   下一次调阴影必然只调一处 —— 而用户下一轮看到的还是「有的页深浅不一样」。
-   ========================================================================== */
 {
   const cs = strip(cssCode);
   const cc = strip(accountCss);
   const classicCss = fs.readFileSync(path + 'css/classic.css', 'utf8');
   const cstrip = classicCss.replace(/\/\*[\s\S]*?\*\//g, ' ');
 
-  /* 三处都读同一个令牌 */
   const itemRule = ruleOf(cs, '.item');
   chk(/box-shadow:\s*var\(--shadow\)/.test(itemRule),
     '背诵首页那条条独立卡片（.item）读 --shadow 令牌');
-  /* ⚠️ 抽 `.library-card` 那条规则时要**跳过 @media 里的同名规则**
-     （两处响应式断点里也各有一条 `.library-card { flex: … }`，
-      用「第一个 match」取到的其实是平板那一档那条，与阴影无关）。
-     做法：按「至少一个换行 + 选择器紧跟花括号」这一形态筛，并挑**含 background**
-     的那一条（外层那条是唯一定义纸底与阴影的）。 */
+
   const libBlocks = [...cstrip.matchAll(/(?:^|\n)[ \t]*\.library-card\s*\{([^}]*)\}/g)].map(m => m[1]);
   const libRule = libBlocks.filter(b => /background/.test(b)).join(';');
   chk(libBlocks.length >= 1 && /box-shadow:\s*var\(--shadow\)/.test(libRule),
@@ -1964,7 +1116,6 @@ if (JSDOM) {
   chk(/box-shadow:\s*var\(--shadow\)/.test(linkRule),
     '设置主页那四条入口（.settings-link）读的也是同一个 --shadow');
 
-  /* 反向：这三处不许自己写一个阴影字面量（写了就一定有第二套深浅） */
   ['library-card', 'settings-link', 'collection-card'].forEach(cls => {
     const src = cls === 'settings-link' ? cs : cstrip;
     const blocks = [...src.matchAll(new RegExp('(?:^|\\n)[ \\t]*\\.' + cls + '\\s*\\{([^}]*)\\}', 'g'))].map(m => m[1]);
@@ -1974,8 +1125,6 @@ if (JSDOM) {
       badShadow.length + ' 条越界）');
   });
 
-  /* 「我的清单」那张集合卡（.collection-card）是 .library-card 的同族
-     （它复用那一套描边 / 圆角 / 纸底），阴影自然跟着同源。 */
   const collBlocks = [...cstrip.matchAll(/(?:^|\n)[ \t]*\.collection-card\s*\{([^}]*)\}/g)].map(m => m[1]);
   chk(collBlocks.length >= 1 && collBlocks.every(b => !/box-shadow/.test(b)),
     '「我的清单」那张集合卡不自己再写一遍阴影（它复用 .library-card 那一套）');
