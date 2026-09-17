@@ -1024,7 +1024,10 @@ chk(/body\.reader-open \.dock \{ display: none; \}/.test(classicCss),
   '阅读器打开时页签同样是「让路」而不是被压住（两处口径一致）');
 
 // (3) 没有底部页签的法务页：页脚那行小字原先正好贴屏底（iPhone 上被横条压半行）
-chk(/body\.no-dock \.app,[\s\S]{0,120}?padding-bottom:\s*calc\([^)]*--safe-bottom/.test(css),
+/* ⚠️ Issue #209：这一档外面又套了一层 max(0px, calc(...))（再减 --foot-gap-v2 = 40px），
+   所以判据从「一行 calc」放宽成「模块里含 --safe-bottom」—— 守的仍是那件事：
+   留白按安全区给，页脚不贴屏底。 */
+chk(/body\.no-dock \.app,[\s\S]{0,200}?padding-bottom:\s*max\([\s\S]{0,200}?--safe-bottom/.test(css),
   '无页签页面（法务页）底部留出安全区，页脚不再贴屏底');
 
 // (4) iOS 输入框防缩放此前是「死规则」：被 .settings-input 的 font-size 压回去了。
@@ -1092,13 +1095,13 @@ chk(!/glyph\("close"\)/.test(read('js/classic.js')),
 
 // 需求：设置页底部不被底部导航栏遮挡 —— 统一由 --nav-h 这条基准线决定
 chk(/--nav-h:\s*0px/.test(css), '定义了底部导航栏高度变量 --nav-h');
-chk(/\.settings-page \{[\s\S]*?padding-bottom:\s*calc\([^)]*--nav-h/.test(css),
+chk(/\.settings-page \{[\s\S]*?padding-bottom:\s*max\([\s\S]{0,200}?--nav-h/.test(css),
   '设置页留出导航栏高度，最后一行不会被压住');
 // 页面留白不写死 px，统一走 --nav-h；页签 / 播放栏同时在场也不互相压住
 chk(!/padding-bottom:\s*calc\(150px/.test(css) && !/padding-bottom:\s*calc\(196px/.test(css),
   '页面留白不再写死 px（150px / 196px 这类硬编码已删除）');
 chk(/\.dock \{[\s\S]*?position:\s*fixed[\s\S]*?bottom:\s*0/.test(css), '底部页签是贴底固定导航栏');
-chk(/body:not\(\.no-dock\) \.app[\s\S]{0,80}?padding-bottom:\s*calc\([^)]*--nav-h/.test(css),
+chk(/body:not\(\.no-dock\) \.app[\s\S]{0,120}?padding-bottom:\s*max\([\s\S]{0,200}?--nav-h/.test(css),
   '有底部页签时，页面留白按实测导航栏高度计算');
 chk(/sw\.js/.test('sw.js') && /js\/pwa\.js/.test(read('settings/index.html')) && /js\/pwa\.js/.test(read('classic/index.html')),
   '所有页都加载 js/pwa.js，--nav-h 每页都会实测');

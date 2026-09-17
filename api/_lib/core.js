@@ -2041,7 +2041,7 @@ function me(deps) {
 }
 
 /**
- * 名册（子档案清单）—— **账号域，本该跨设备**。
+ * 名册（子用户清单）—— **账号域，本该跨设备**。
  *
  * ## 它为什么在服务端有一份
  *
@@ -2079,7 +2079,7 @@ function familyGet(deps) {
  * 写名册（`POST /api/family`）—— 与 `sync/push` **同一把闸**（Pro 起）。
  *
  * ⚠️ 不能绕开 `syncTierGate`：它写的就是云端那份进度表里的一行。
- *    两把闸不同的下场是「界面说 Free 也能跨设备」（因为家庭档案那一项写着 Pro）
+ *    两把闸不同的下场是「界面说 Free 也能跨设备」（因为子用户那一项写着 Pro）
  *    而实际推得上去 —— 正是反复踩过的「限制写在 A 处、读取在 B 处」。
  */
 function familyPut(deps, input) {
@@ -2101,14 +2101,14 @@ function familyPut(deps, input) {
   return inner();
 }
 
-/* -------------------------------------------------- 子档案（跨设备分档案） */
+/* -------------------------------------------------- 子用户（跨设备分档案） */
 
 /**
- * 子档案 id 的**服务端口径**（`docs/architecture.md` §5.5 / §5.2 ④）。
+ * 子用户 id 的**服务端口径**（`docs/architecture.md` §5.5 / §5.2 ④）。
  *
  * ## 名字为什么叫 child 而不是 profile
  *
- * 客户端那边这东西叫「子档案」（`js/family.js`），库这一列叫 `child_id`。
+ * 客户端那边这东西叫「子用户」（`js/family.js`），库这一列叫 `child_id`。
  * 两个名字指的是同一件事：**账号下的一个孩子 + 一份自己的进度**。
  * 孩子**不建独立账号**（`docs/auth-design.md` §2.1）—— 只是展示名，
  * 因此这里**不做任何权限判定**：它不是身份，是「哪一份数据」。
@@ -2829,7 +2829,7 @@ function gameCharge(deps, uid, cap, t) {
      额度是「这个账号这个月用了几次」的账，不是孩子背了多少首。
      记进当前孩子那一份的下场：换个孩子接着刷，额度跟着清零。
      这一条与「不新开一张表」那条判断同源：它借的是 progress 表的位置，
-     但**归属是账号级的**，于是这里显式写死空串，不跟着子档案走。 */
+     但**归属是账号级的**，于是这里显式写死空串，不跟着子用户走。 */
   return Promise.resolve(store.listProgress(uid, "", 0)).then(function (rows) {
     (rows || []).forEach(function (r) {
       if (r && r.poem_id === rowId && r.payload && r.payload.month === month) {

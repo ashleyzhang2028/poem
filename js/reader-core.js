@@ -485,7 +485,7 @@
   /* ---------------- 进度存储（每部集子一份，互不干扰） ----------------
    *
    * ⚠️ 读写**经 `ProgressStore`**（而不是直接 `localStorage`）：已读是「孩子自己的东西」，
-   *    要跟着**子档案**分家（Issue #159：一个家长多个孩子各背各的）。
+   *    要跟着**子用户**分家（Issue #159：一个家长多个孩子各背各的）。
    *    键的映射只在 `js/family.js` 一处决定，本文件只交出逻辑键名 `W.readStore`。
    *    引擎缺席（老缓存 / 隐私模式）时退回直接读写那一把键 —— 行为与分家前一致。 */
   function RS() {
@@ -1409,7 +1409,10 @@
    */
   function playBtnAria(mode) {
     var m = mode || playModeInfo();
-    return m.label + "，当前：" + m.short + (m.note ? "；" + m.note : "");
+    /* ⚠️ 中间那句「，当前：原文 · 顺序」**去掉了**（Issue #209 用户原话：
+       「删除 当前：原文 · 顺序」）。它与 mode.label 说的是同一件事 ——
+       「连续播放原文」就是「原文 · 顺序」，读屏用户会连着听两遍同一个模式名。 */
+    return m.label + (m.note ? "；" + m.note : "");
   }
 
   function setPlayMode(id) {

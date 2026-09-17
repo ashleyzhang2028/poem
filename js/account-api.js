@@ -88,7 +88,7 @@
       E: d.E || (g && g.Entitlement) || null,
       A: d.A || (g && g.AuthCore) || null,
       /* 头像内核（Issue #163）：上传成功后要把云端地址写进档案 ——
-         走 `Avatar.setAvatar()`（它才知道当前是哪一份档案：有子档案名册时
+         走 `Avatar.setAvatar()`（它才知道当前是哪一份档案：有子用户名册时
          写的是**当前孩子**那一份）。测试里可注入。 */
       AV: d.AV || (g && g.Avatar) || null,
       backing: d.backing || (g && g.localStorage) || null,
@@ -434,7 +434,7 @@
       return Promise.resolve(ch.uploadAvatar({ blob: o.blob, type: o.type })).then(function (r) {
         if (r && r.ok && r.url) {
           /* 地址写进账号域 —— 走 Avatar 那一层（它才知道当前是哪一份档案：
-             有子档案名册时写的是**当前孩子**的那一份）。 */
+             有子用户名册时写的是**当前孩子**的那一份）。 */
           var AV = D.AV;
           if (AV && AV.setAvatar) {
             try { AV.setAvatar(D.backing, { img: r.url }); } catch (e) { /* 写不进去时界面会下一轮读到旧的 */ }

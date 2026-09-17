@@ -1489,7 +1489,7 @@ textarea:focus {
 }
 
 /* --------------------------------------------------------------------------
-   家庭子档案（3 期 P1）：名册 + 切换 + 增删
+   家庭子用户（3 期 P1）：名册 + 切换 + 增删
    --------------------------------------------------------------------------
    一个家长多个小孩。整块只有一行一行的「名字 · 当前 · 改名 · 删除」，
    与「我的清单」那一组同一套排版语言（.settings-link 那一档），
@@ -1727,6 +1727,15 @@ textarea:focus {
   /* 底部导航栏（播放栏 + iOS 引导条）的实测高度，由 js/pwa.js 的 syncBottomGap()
      写入。页面留白与所有贴底固定元素都按这一条基准线避让，杜绝「被导航栏压住一点」 */
   --nav-h: 0px;
+  /* 页脚与正文之间的收尾留白，**再减 40px**（Issue #209 · 用户原话：
+     「页底 ©2026 kuibu.app 积跬步, 至千里 上面的留空距离过多了，
+      稍微减掉一些，例如减 40px 大概？？？」）。
+     ⚠️ 只作用在**页面底部那段**（.app / .settings-page 的 padding-bottom 里减去），
+        **不是**把 --nav-h 调小：底部页签 / 播放栏的避让是硬要求，
+        少了就会压住末行（见上面那句与下面 body:not(.no-dock) 那两条）。
+     ⚠️ 用 max(0px, calc(...)) 夹住：小屏 + 大字号时 24px + nav-h 可能还不到 40px，
+        不夹会算出负的 padding（浏览器直接当 0，但那是一条「说了不算」的声明）。 */
+  --foot-gap-v2: 40px;
 }
 
 /* 让左右内容避开横屏时的圆角/刘海
@@ -1871,8 +1880,13 @@ body.has-install-tip #app {
   min-height: calc(100vh - 200px);
   min-height: calc(100 * var(--app-vh) - 200px);
   /* 底部导航栏（页签 / 播放栏）的实测高度已含 iPhone 横条安全区，
-     这里一次留够即可，页脚不会被压住也不会多出一条空白 */
-  padding-bottom: calc(24px + var(--nav-h));
+     这里一次留够即可，页脚不会被压住也不会多出一条空白。
+     ⚠️ Issue #209：这一档是 **--foot-gap-v2**（-40px）。
+        设置页与首页一样是「内容不多、页脚被 min-height 顺下去」的那一档，
+        用户看到的是「©2026 kuibu.app」上面空出一大截 —— 他要求减掉 40px 左右。
+        减的是**这一条**（页脚与正文之间那段），**不是** --nav-h：
+        底部导航的避让是硬要求（压住末行就是 bug），少一像素都不行。 */
+  padding-bottom: max(0px, calc(24px + var(--nav-h) - var(--foot-gap-v2)));
 }
 
 /* --------------------------------------------------------------------------
@@ -2399,7 +2413,7 @@ body.has-install-tip #app {
 .top-user:hover { box-shadow: 0 0 0 3px rgba(165, 92, 25, .18); }
 .top-user:active { transform: scale(.94); }
 
-/* 头像本体（三处显示共用：顶栏 / 设置页 / 个人中心 / 子档案名册）
+/* 头像本体（三处显示共用：顶栏 / 设置页 / 个人中心 / 子用户名册）
    --------------------------------------------------------------------------
    两档长同一个「圆」：
      · 没传图 → 印底是**深天青实底 + 米白首字**（与全站的选中态同一句）
@@ -2540,10 +2554,13 @@ body.has-install-tip #app {
 
 /* 有底部页签时，给页面补出底部空间。
    高度不写死：--nav-h 由 js/pwa.js 实测（页签 / 播放栏取较高者 + 引导条），
-   窄屏、大字号、iPhone 横条都不会差几像素把最后一行压住。 */
+   窄屏、大字号、iPhone 横条都不会差几像素把最后一行压住。
+   ⚠️ Issue #209：这一段再减 --foot-gap-v2（40px）——
+      用户点的是「页脚上面那段空白太多」。减在**这里**而不是 --nav-h：
+      页签的避让是硬要求，页脚那段呼吸才是可以商量的。 */
 body:not(.no-dock) .app,
 body:not(.no-dock) #app {
-  padding-bottom: calc(24px + var(--nav-h));
+  padding-bottom: max(0px, calc(24px + var(--nav-h) - var(--foot-gap-v2)));
 }
 body:not(.no-dock) .foot { padding-bottom: 4px; }
 body:not(.no-dock) .toast { bottom: calc(24px + var(--nav-h)); }
@@ -2555,7 +2572,9 @@ body:not(.no-dock) .ios-install-tip { bottom: calc(12px + var(--nav-h)); }
    这里按安全区再多留一截，两页的收尾在同一位置，翻到最底不用眯着眼找。 */
 body.no-dock .app,
 body.no-dock #app {
-  padding-bottom: calc(40px + var(--safe-bottom) + 8px);
+  /* ⚠️ Issue #209：同样减掉 --foot-gap-v2（见上面 --foot-gap-v2 那句）。
+     这里的 48px 本来就是「40 + 8」，减 40 之后剩下的正是那 8px 安全区收尾。 */
+  padding-bottom: max(0px, calc(40px + var(--safe-bottom) + 8px - var(--foot-gap-v2)));
 }
 body.no-dock .foot { padding-bottom: 4px; }
 body.no-dock .ios-install-tip { bottom: calc(12px + var(--safe-bottom)); }

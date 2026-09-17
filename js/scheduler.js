@@ -231,8 +231,10 @@
 
   /**
    * 背诵范围选项（设置里的「背诵范围」）
-   *   term          本年级本学期（默认）
-   *   upto          本年级本学期及之前学过的全部内容
+   *   term          本年级本学期（**界面上已不再提供这一档**，Issue #209：
+   *                 用户点名删掉「本年级本学期」，但常量留着 —— 老用户的盘上
+   *                 还存着 `term`，删掉常量会让它当场变成野值）
+   *   upto          本年级本学期及之前学过的全部内容（出厂默认）
    *   primary       小学阶段随机
    *   middle        初中阶段随机
    *   primary_middle 小学 + 初中随机
@@ -240,8 +242,8 @@
    *   all           全部阶段随机
    */
   const SCOPES = {
-    term: { label: "本册", scopeName: "本年级本学期", terms: false, random: false, stages: ["current"] },
-    upto: { label: "本册及之前", scopeName: "本年级本学期及之前", terms: false, random: false, stages: ["upto"] },
+    term: { label: "本册", scopeName: "本学期", terms: false, random: false, stages: ["current"] },
+    upto: { label: "本册及之前", scopeName: "本学期及之前", terms: false, random: false, stages: ["upto"] },
     primary: { label: "小学随机", scopeName: "小学阶段", terms: true, random: true, stages: ["primary"] },
     middle: { label: "初中随机", scopeName: "初中阶段", terms: true, random: true, stages: ["middle"] },
     primary_middle: { label: "小学+初中随机", scopeName: "小学及初中阶段", terms: true, random: true, stages: ["primary", "middle"] },
@@ -249,7 +251,11 @@
     all: { label: "全部随机", scopeName: "全部阶段", terms: true, random: true, stages: ["primary", "middle", "high"] }
   };
 
-  const DEFAULT_SCOPE = "term";
+  /* ⚠️ 出厂范围 = `upto`（Issue #209）：界面上「本年级本学期」那一档已删掉，
+     把默认值留在 `term` 会让**没有任何设置的新用户**落在一条界面里选不中的范围上
+     （首页写着「本年级本学期」，设置页却没有那一档 —— 用户改不回去）。
+     `term` 的定义**原样保留**：老用户盘上存着的就是它，删掉等于把他的范围吃掉。 */
+  const DEFAULT_SCOPE = "upto";
 
   function scopeOf(key) {
     return SCOPES[key] || SCOPES[DEFAULT_SCOPE];
@@ -326,7 +332,7 @@
    *   opt.grade      当前年级（1-12）
    *   opt.term       当前学期（1/2）
    *   opt.count      每日数量，默认 5
-   *   opt.scope      背诵范围（见 SCOPES），默认本年级本学期
+   *   opt.scope      背诵范围（见 SCOPES），默认「本册及之前」
    *   opt.provider   函数 (grade, term) => 诗词数组
    *   opt.getRecord  函数 (id) => 进度记录
    *   opt.extraPoems 自选集合里「额外想背」的篇目（见 js/collections.js）。

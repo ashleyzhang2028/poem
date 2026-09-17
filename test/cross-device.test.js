@@ -142,7 +142,7 @@ async function main() {
       eq(core.childId(null), "", "null → 空串");
       eq(core.childId(""), "", "空串还是空串");
       eq(core.childId("   "), "", "只有空白 → 空串");
-      eq(core.childId("f-abc_123"), "f-abc_123", "正常的子档案 id 原样通过");
+      eq(core.childId("f-abc_123"), "f-abc_123", "正常的子用户 id 原样通过");
       eq(core.childId("a".repeat(64)), "a".repeat(64), "64 字上限之内通过");
       eq(core.childId("a".repeat(65)), "", "超过 64 字 → 空串（不是报错、也不是截断）");
       eq(core.childId("f-abc'; drop--"), "", "带引号的脏值 → 空串（它进 PostgREST 查询串，必须收窄）");
@@ -154,7 +154,7 @@ async function main() {
       await store.putProgress("u_1", "f-a", [{ poem_id: "p1", payload: { level: 9 }, updated_at: 100 }]);
       eq(store.listProgress("u_1", "", 0).length, 1, "账号那一档只有 1 条");
       eq(store.listProgress("u_1", "", 0)[0].payload.level, 1, "账号那一档读到的 level 是 1");
-      eq(store.listProgress("u_1", "f-a", 0)[0].payload.level, 9, "子档案那一档读到的 level 是 9（同名篇目互不干扰）");
+      eq(store.listProgress("u_1", "f-a", 0)[0].payload.level, 9, "子用户那一档读到的 level 是 9（同名篇目互不干扰）");
       eq(store.listProgress("u_2", "", 0).length, 0, "另一个账号读不到（uid 仍是第一道过滤）");
     } finally { env.restore(); }
   }
@@ -343,7 +343,7 @@ async function main() {
   }
 
   /* ==========================================================================
-     六、客户端：seen / 游标 / 名册按子档案分家
+     六、客户端：seen / 游标 / 名册按子用户分家
      ========================================================================== */
   console.log("\n=== 六、客户端：记账表按孩子分家 ===");
   {
@@ -602,9 +602,9 @@ async function main() {
       w.document.dispatchEvent(new w.Event("DOMContentLoaded", { bubbles: true }));
       await new Promise(r => setTimeout(r, 250));
 
-      /* 页面一进来就该认领出一个子档案（名册非空），且它会被推上去 */
+      /* 页面一进来就该认领出一个子用户（名册非空），且它会被推上去 */
       const rows = w.document.querySelectorAll(".family-row").length;
-      eq(rows, 1, "真页面：认领出 1 个子档案（名册非空 —— 空名册不上云）");
+      eq(rows, 1, "真页面：认领出 1 个子用户（名册非空 —— 空名册不上云）");
       const S = w.SyncStore;
       chk(!!S, "真页面：SyncStore 挂上了");
       await S.pushPending();

@@ -678,8 +678,13 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
       '五档里只有一个是选中态（互斥）');
     chk(sdoc.querySelector('.play-mode-opt[data-play-mode="seq-trans"]').classList.contains('active'),
       '本机存的是「连续播放白话译文」，设置页打开就把它标成选中（读的是同一份本机值）');
-    chk(/当前：白话 · 顺序/.test(sdoc.querySelector('#play-hint').textContent),
-      '档位下方回显当前档（' + sdoc.querySelector('#play-hint').textContent + '）');
+    /* ⚠️ Issue #209：档位下方那句「当前：白话 · 顺序」被用户点名删掉 ——
+       选中的那一档自己就是实底高亮的（.play-mode-opt.active），
+       旁边再写一遍「当前是哪一档」是同页两遍。
+       所以这里判的是**反过来的事**：页面上不再有 #play-hint 这一行，
+       而「当前是哪一档」由 active / aria-checked 表达（上面那两条已经在守）。 */
+    chk(!sdoc.querySelector('#play-hint'),
+      '档位下方不再回显「当前：…」那一行（选中态由 .active / aria-checked 表达）');
 
     // 在设置页改一档：必须写进与阅读器同一个键
     sdoc.querySelector('.play-mode-opt[data-play-mode="shuffle-origin"]')
@@ -690,8 +695,7 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
     chk(sdoc.querySelector('.play-mode-opt[data-play-mode="shuffle-origin"]').classList.contains('active') &&
       sdoc.querySelectorAll('#seg-play .play-mode-opt.active').length === 1,
       '选中态立刻跟着走，且仍只有一个');
-    chk(/当前：原文 · 随机/.test(sdoc.querySelector('#play-hint').textContent),
-      '回显也跟着变（' + sdoc.querySelector('#play-hint').textContent + '）');
+    chk(!sdoc.querySelector('#play-hint'), '改档之后那一行也不会冒出来（它已经整行撤掉）');
 
     // 反向：在集子页用圆键改成别的档，回到设置页要看到新档 ——
     // 两个页面各自 new 一份 DOM，等价于「换标签页」，中间靠 localStorage 传递。
@@ -718,8 +722,8 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
       '本机值不认识时选中项落在出厂档上（显示的就是引擎真正会用的那一档）');
     chk(![...sd3.document.querySelectorAll('#seg-play .play-mode-opt')].some(b => b.dataset.playMode === 'no-such-mode'),
       '那个野生值不会出现在选项里（它是本机脏数据，不是一档模式）');
-    chk(/当前：原文 · 顺序/.test(sd3.document.querySelector('#play-hint').textContent),
-      '本机值不认识时回显出厂档「原文 · 顺序」（实际「' + sd3.document.querySelector('#play-hint').textContent + '」）');
+    chk(!sd3.document.querySelector('#play-hint'),
+      '本机值不认识时也没有那一行 —— 出厂档只由「选中项落在 seq-origin 上」表达');
 
     /* B：设置「朗读」页只装**两条设置**，不教别处的操作手势 —— Issue #163「精简」。
        沿革：#69 在设置页加了一句「集子索引页卡头的圆键长按 / 右键弹出同一个菜单」，
@@ -729,14 +733,19 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
           · 本页的说明文字（settings-hint）一律不超过一句；
           · 全页不再出现手势教学（长按 / 右键 / 半秒）。
        哪天真有必要把入口写回来，那也该是集子页自己的事，本页不加回。 */
+    /* ⚠️ Issue #209 起这一页**一句说明都不剩**：
+         · 「自动注音」底下那句「打开诗词 / 古文即自动注音」——用户点名删掉；
+         · 连读方式底下那句「当前：…」——同样点名删掉（选中的那一档本来就高亮）。
+       守的口径没变，仍是「本页只做设置、不啰嗦」：
+       说明行的**上限**是两条，且每条都短；手势教学一律不许出现。 */
     const readerHints = [...sdoc.querySelectorAll('#settings-page .settings-hint')]
       .map(el => el.textContent.trim());
-    chk(readerHints.length === 2,
-      '「朗读」页两条设置各带一句说明（实际 ' + readerHints.length + ' 句）');
+    chk(readerHints.length <= 2,
+      '「朗读」页的说明行不超过两条（实际 ' + readerHints.length + ' 句）');
     chk(!/长按|右键|半秒/.test(sdoc.querySelector('#settings-page').textContent),
       '设置页不再教别处的手势（长按 / 右键那半段整句撤掉，#163）');
     chk(readerHints.every(t => t.length <= 24),
-      '每条说明控制在一句以内（最长 ' + Math.max(...readerHints.map(t => t.length)) + ' 字）');
+      '每条说明控制在一句以内（最长 ' + (readerHints.length ? Math.max(...readerHints.map(t => t.length)) : 0) + ' 字）');
 
     // 档位定义同源：设置页与集子页读到的模式表必须是同一份
     chk(sd.PlayModes.LIST.map(m => m.id).join(',') === cwin.PlayModes.LIST.map(m => m.id).join(','),

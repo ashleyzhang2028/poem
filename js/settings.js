@@ -49,12 +49,15 @@
   const PLAN_PREFIX = "poem_plan_";
 
   // 与 Scheduler.SCOPES 的默认值保持一致；本页不加载调度器（省流量），只做回显
-  const DEFAULT_SCOPE = "term";
+  /* ⚠️ 出厂范围从 `term`（本年级本学期）改成 `upto`（本册及之前）——
+     Issue #209 用户点名删掉「本年级本学期」那一档，删掉之后 `term` 在界面上
+     不再有对应的按钮；常量与 KNOWN_SCOPES 里**原样留着**，只是不再当出厂值。 */
+  const DEFAULT_SCOPE = "upto";
   const KNOWN_SCOPES = ["term", "upto", "primary", "middle", "primary_middle", "high", "all"];
   // 「背诵范围」的读法：与 js/scheduler.js 的 SCOPES[].scopeName 保持一致（本页不加载调度器）
   const SCOPE_NAMES = {
-    term: "本年级本学期",
-    upto: "本年级本学期及之前",
+    term: "本学期",
+    upto: "本学期及之前",
     primary: "小学阶段",
     middle: "初中阶段",
     primary_middle: "小学及初中阶段",
@@ -86,7 +89,7 @@
     saveSettings();
     const A = window.Avatar;
     if (A && typeof A.saveNickname === "function") {
-      /* ⚠️ 名册是正主：`Avatar.saveNickname` 自己会把名字收进**当前子档案**
+      /* ⚠️ 名册是正主：`Avatar.saveNickname` 自己会把名字收进**当前子用户**
          （`write` → `saveToChild` → `Family.rename`）。本页不再自己收一遍 ——
          收两遍的时机一旦对不上，症状是「切回来名字退回改名之前那个」。 */
       try { A.saveNickname(window.localStorage, clean); } catch (e) { /* 隐私模式：老键已写 */ }
@@ -226,7 +229,6 @@
     renderAlgos();
     renderPlayModes();
     renderCollections();
-    renderExportPoems();
   }
 
   /* ---------------- 课内诗词整体导出（Pro） ----------------
@@ -251,30 +253,13 @@
   /** 导出内核（脚本顺序不保证：现取，不在模块加载时缓存） */
   function exportMod() { return window.ExportCore || null; }
 
-  /**
-   * 画这一项的说明行。**三种状态各说各的话**，不许合并成「失败」：
-   *   · 内核没加载（老缓存）      → 如实说「请刷新」
-   *   · 没登录 / 层级不够          → 照实说拦在哪一层（`denyReason`）
-   *   · 能用                      → 说清导出的是什么、有多少首
-   */
-  function renderExportPoems() {
-    const hint = $("#export-poems-hint");
-    if (!hint) return;
-    const C = exportMod();
-    const E = entitlementMod();
-    const ident = currentIdentity();
-    if (!C || !E || !ident) {
-      hint.textContent = "导出组件没有加载成功，请刷新页面重试（背诵不受影响）。";
-      return;
-    }
-    if (!E.can("export.all", ident).ok) {
-      hint.textContent = E.denyReason("export.all", ident) + "；现在导出的是课内诗词，六部集子不做整本导出。";
-      return;
-    }
-    const items = exportItems("poems");
-    hint.textContent = "把课内 " + items.length + " 首（一年级至高三）整份导出成一个文本文件，" +
-      "按册次排好，可直接打印或存 PDF。六部集子不做整本导出。";
-  }
+  /* ⚠️ Issue #209：这一项底下原先有一行说明（「把课内 261 首（一年级至高三）
+     整份导出成一个文本文件…」／层级不够时「Pro 起；现在导出的是课内诗词…」），
+     用户**点名整段删掉** —— 标题「课内诗词导出」已经说清这是什么。
+     于是连 renderExportPoems() 一起撤了：一个只往一行说明里写字、
+     而那一行已经不存在的函数，留着就是一段永远不生效的代码。
+     层级不够时**照旧有回话**（exportPoems() 里那句 denyReason 的 toast），
+     所以「不假装能用」这条口径一字未改。 */
 
   /** 按范围取篇目（课内 = 站点索引里 poems 那一部，按册次排序） */
   function exportItems(scope) {
@@ -804,7 +789,10 @@
     const m = RM.describe(cur);
     const hint = $("#algo-hint");
     if (hint) {
-      hint.textContent = "当前：" + m.name + " · 换算法不清进度";
+      /* ⚠️ Issue #209：后半句「换算法不清进度」删掉（用户点名）。
+         它是真的，但「换了进度还在不在」这件事不该靠一行小字先声明 ——
+         真换了之后进度确实一条不少，用户自己看得见。 */
+      hint.textContent = "当前：" + m.name;
     }
     const iv = $("#algo-interval");
     if (iv) iv.textContent = intervalText(cur);
@@ -820,6 +808,8 @@
     if (key === "leitner") return "五个盒子：1 / 2 / 4 / 8 / 16 天";
     if (key === "sm2") return "1 → 3 → 7 天，之后每次乘简易度";
     if (key === "fsrs") return "按稳定天数算：越稳固间隔越长";
+    /* ⚠️ Issue #209：原先写「当天 → 1 → 2 → 4 → … 天」。**单位只留末尾那一个**：
+       「当天」是第 0 档、后面每一档的数字本来就是天数，逐档带「天」是同义重复。 */
     return "当天 → 1 → 2 → 4 → 7 → 15 → 30 → 60 → 120 → 240 天";
   }
 
@@ -900,13 +890,9 @@
         "</button>";
     }).join("");
 
-    /* 只回显档位短名 —— mode.note（「无译文的篇目自动跳过」那类）已经印在
-       选项自己身上，这里再说一遍是同页两遍。 */
-    const hint = $("#play-hint");
-    if (hint) {
-      const m = PM.of(cur) || PM.of(PM.DEFAULT);
-      hint.textContent = "当前：" + m.short;
-    }
+    /* ⚠️ 档位下方**不再回显一句「当前：原文 · 顺序」**（Issue #209 用户点名删掉）：
+       选中的那一档自己就是实底高亮的（`.play-mode-opt.active`），
+       再在旁边写一遍「当前是哪一档」是同页两遍。 */
   }
 
   /** 改档位：与集子页同一条路 —— 走 PlayModes.write 再通知 */
@@ -919,7 +905,7 @@
     if (m) showToast("连读方式已改为「" + m.label + "」");
   }
 
-  /* ---------------- 家庭子档案（3 期 P1 · profile.family） ----------------
+  /* ---------------- 家庭子用户（3 期 P1 · profile.family） ----------------
      一个家长多个小孩。**孩子不建独立账号** —— 只是账号下的一个展示名 + 一份自己的进度
      （`docs/auth-design.md` §2.1 的裁决：未成年人实名/同意合规成本高，且无产品收益）。
 
@@ -991,10 +977,13 @@
     btn.textContent = unlimited ? "再建一个" : "再建一个（还可建 " + F.remaining({ backing: window.localStorage, E: entitlementMod() }) + " 个）";
     box.appendChild(btn);
 
+    /* ⚠️ Issue #209：说明只留「当前 N / M 个」。原先后面还跟着一句
+       「切到哪一个，看到的背诵进度、年级与已读就是那一个的。」—— 用户点名删掉：
+       切一下就知道的事，不必先念一遍。 */
     if (hint) {
       hint.textContent = unlimited
-        ? "当前 " + list.length + " 个。切到哪一个，看到的背诵进度、年级与已读就是那一个的。"
-        : "当前 " + list.length + " / " + lim + " 个。切到哪一个，看到的背诵进度、年级与已读就是那一个的。";
+        ? "当前 " + list.length + " 个"
+        : "当前 " + list.length + " / " + lim + " 个";
     }
   }
 
@@ -1003,7 +992,7 @@
     const F = familyMod();
     if (!F) return;
     const r = F.select(id, { backing: window.localStorage });
-    if (!r.ok) { showToast("这个子档案已经不在名册里了"); return; }
+    if (!r.ok) { showToast("这个子用户已经不在名册里了"); return; }
     const p = F.current({ backing: window.localStorage });
     showToast("已切到「" + ((p && p.nickname) || "未起名") + "」");
     /* 整页重画：年级 / 每日数量 / 进度 / 已读全都换了主人。
@@ -1020,8 +1009,8 @@
       /* 上限拦的，**如实说上限**（不笼统说「建不了」—— 错因说错等于让人白试一遍） */
       if (r.code === "E_LIMIT") {
         const name = entitlementMod() && entitlementMod().CAPS["profile.family"]
-          ? entitlementMod().CAPS["profile.family"].name : "家庭子档案";
-        showToast("子档案已达上限（" + name + "）");
+          ? entitlementMod().CAPS["profile.family"].name : "家庭子用户";
+        showToast("子用户已达上限（" + name + "）");
       } else {
         showToast("这一台设备上写不进去（隐私模式？）");
       }
@@ -1050,7 +1039,7 @@
     row.innerHTML =
       '<input class="family-rename" id="family-rename-input" type="text" maxlength="' +
       F.NAME_MAX + '" value="' + esc(p.nickname || "") + '" placeholder="Ashley" ' +
-      'aria-label="子档案名称" enterkeyhint="done" />' +
+      'aria-label="子用户名称" enterkeyhint="done" />' +
       '<span class="family-acts"><button class="family-act" type="button" ' +
       'data-family-rename-cancel="1">取消</button></span>';
     const inp = $("#family-rename-input");
@@ -1071,7 +1060,7 @@
         }
         showToast("名字改好了");
       } else {
-        showToast("这个子档案已经不在名册里了");
+        showToast("这个子用户已经不在名册里了");
         renderFamily();
       }
     };
@@ -1088,11 +1077,11 @@
     if (!F) return;
     const p = F.list({ backing: window.localStorage }).filter(function (x) { return x.id === id; })[0];
     const name = (p && p.nickname) || "未起名";
-    if (!confirm("删除子档案「" + name + "」？\n\n名册里不再有它；它背过的进度数据仍留在本机（不会连带删除）。")) return;
+    if (!confirm("删除子用户「" + name + "」？\n\n名册里不再有它；它背过的进度数据仍留在本机（不会连带删除）。")) return;
     const r = F.remove(id, { backing: window.localStorage });
     if (!r.ok) {
-      if (r.code === "E_LAST") showToast("至少要留一个子档案");
-      else showToast("这个子档案已经不在名册里了");
+      if (r.code === "E_LAST") showToast("至少要留一个子用户");
+      else showToast("这个子用户已经不在名册里了");
       renderFamily();
       return;
     }
@@ -1166,14 +1155,17 @@
   /**
    * 头像底下那句说明 —— **只写这一页答不出来的那一件事**。
    *
-   * 三档各一行（用户原话「所有内容都使用精简的语句」）：
-   *   没图 / 有云端地址 / 只有本机那份。第三档把「正在传」「传失败」
-   *   「没登录」三种情况合起来说一句**真话** —— 它们的现状确实是同一个。
+   * ⚠️ Issue #209：**没传图那一档整句删掉**（用户原话「删除 未上传时显示
+   *    用户名首字」）。它说的是「不传图会怎样」，而这一点在界面上看得见 ——
+   *    左边那枚印画的就是用户名首字。
+   *    剩下两档（已同步 / 只在本机）**留着**：它们说的是「服务器那份有没有」，
+   *    这件事在页面上看不出来，删掉就没人替用户说了。
+   *    仍然不许把「没登录」并进来说明：同步与否由开关决定，与登录状态是两件事。
    */
   function renderAvatarHint(d) {
     const hint = $("#avatar-hint");
     if (!hint || !d) return;
-    if (!d.hasImage) hint.textContent = "未上传时显示用户名首字";
+    if (!d.hasImage) hint.textContent = "";
     else if (d.img) hint.textContent = "已同步到服务器";
     else hint.textContent = "已存在本机，还没同步到服务器";
   }
@@ -1541,10 +1533,14 @@
       E.tierLabel(ident.tier) + "</span>";
 
     if (!ident.signedIn) {
+      /* ⚠️ Issue #209 用户点名两处改动：
+           · 「未登录（游客）」收成「游客」—— 用户原话「未登录（游客）修改为 游客」；
+             与 /plans/ 那张表的第一列同口径（那边 2026-09-18 就写作「游客」）。
+           · 底下那句「进度只存在本机，清缓存就没了。登录只为不丢。」**删掉** ——
+             它说的两件事（本地存储、登录是干什么的）在别处已经各说了一次。 */
       box.innerHTML =
-        '<p class="account-line"><span class="account-state" id="account-state">未登录</span>' +
-        "（游客）" + badge + "</p>" +
-        '<p class="settings-hint">进度只存在本机，清缓存就没了。登录只为不丢。</p>' +
+        '<p class="account-line"><span class="account-state" id="account-state">游客</span>' +
+        badge + "</p>" +
         '<div class="settings-btns"><a class="btn ghost-btn" id="btn-gologin" href="/login/">用邮箱登录</a></div>';
       return;
     }
@@ -1653,8 +1649,11 @@
       hint.textContent = "跨设备云同步要 Pro 起（当前没到这一层）。进度仍在本机、一字不少。";
       return;
     }
+    /* ⚠️ Issue #209：这一支原先写「关闭中：进度只存本机。」（外加「想同步请先登录」）。
+       用户点名删掉 —— 开关关着这件事本身就看得见（开关是关着的），
+       底下再说一遍只是重复一遍状态。 */
     if (!on) {
-      hint.textContent = "关闭中：进度只存本机。" + (st === "signin" ? "想同步请先登录。" : "");
+      hint.textContent = "";
       return;
     }
     if (st === "signin") {

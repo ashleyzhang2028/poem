@@ -77,7 +77,7 @@ const plansCommentOnly = pageJs;
   chk(cmp.rows.every(r => r.cells.every(c => c.ok ? true : !!c.hint)),
     '不能用的格子一定有门槛文案（「登录可用」/「Pro 起」）');
   /* Issue #163：额度数字**长在格子上**（用户原话「直接在各列列出数字」）——
-     自选清单 10 / 100 / 5000、家庭档案 1 / 3 / 180、课内诗词导出 261 首。
+     自选清单 10 / 100 / 5000、子用户 1 / 3 / 180、课内诗词导出 261 首。
      这一条把「数字在表里真的看得见」钉住：改回「都塞进功能名」就红。 */
   const capRow = n => cmp.rows.find(r => r.cap === n);
   chk(capRow('collections.many').cells[1].quota === 10 &&
@@ -87,7 +87,7 @@ const plansCommentOnly = pageJs;
   chk(capRow('profile.family').cells[1].quota === 1 &&
       capRow('profile.family').cells[2].quota === 3 &&
       capRow('profile.family').cells[3].quota === 180,
-    '家庭档案三档在格子上：1 / 3 / 180');
+    '子用户三档在格子上：1 / 3 / 180');
   chk(capRow('export.all').cells[2].quota === 261 && capRow('export.all').cells[3].quota === 261,
     '课内诗词导出：Pro / Max 两列都列出 261 首');
   chk(capRow('export.all').cells[2].hint === '261 个',
@@ -170,7 +170,7 @@ const plansCommentOnly = pageJs;
     'recite.basic': '每日背诵', 'library.all': '课外阅读', 'read.aloud': '语音朗读',
     'pinyin.helper': '阅读辅助', 'export.progress': '进度导出',
     'collections.many': '自选清单', 'sync.multiDevice': '设备同步',
-    'export.paper': 'PDF / 打印', 'profile.family': '家庭档案',
+    'export.paper': 'PDF / 打印', 'profile.family': '子用户',
     'quiz.review': '题库', 'export.all': '课内诗词导出',
     'exam.gathering': '古诗词大会', 'exam.paper': '试题模拟'
   };

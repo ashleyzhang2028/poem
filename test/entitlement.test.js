@@ -130,7 +130,7 @@ console.log('\n=== 三、pro / max 只加不减：层级越高能力单调不减
        语音朗读（原文 / 译文 / 连读） → 语音朗读 / 生字注音与阅读辅助 → 阅读辅助 /
        导出背诵进度 JSON → 进度导出 / 自选清单 20 个 → 自选清单 /
        跨设备云同步 → 设备同步 / 篇目 PDF / 打印页 → PDF / 打印 /
-       家庭子档案（Free 1 / Pro 3 / Max 180） → 家庭档案 /
+       家庭子用户（Free 1 / Pro 3 / Max 180） → 子用户 /
        题库复习（给上句选下句） → 题库 / 全站课内诗词批量导出 261 首 → 课内诗词导出 /
        古诗词大会 · 现场考试 → 试题模拟 / 自选清单不限 → 删除。
      2026-09-19 再补一条（同一条 Issue 的末条）：**「古诗词大会」与「试题模拟」
@@ -142,7 +142,7 @@ console.log('\n=== 三、pro / max 只加不减：层级越高能力单调不减
     'recite.basic': '每日背诵', 'library.all': '课外阅读', 'read.aloud': '语音朗读',
     'pinyin.helper': '阅读辅助', 'export.progress': '进度导出',
     'collections.many': '自选清单', 'sync.multiDevice': '设备同步',
-    'export.paper': 'PDF / 打印', 'profile.family': '家庭档案',
+    'export.paper': 'PDF / 打印', 'profile.family': '子用户',
     'quiz.review': '题库', 'export.all': '课内诗词导出',
     'exam.gathering': '古诗词大会', 'exam.paper': '试题模拟'
   };
@@ -164,9 +164,9 @@ console.log('\n=== 三、pro / max 只加不减：层级越高能力单调不减
   eq(E.quotaFor(E.cap('collections.many'), 'free'), 10, '自选清单 Free 10 个（用户点名）');
   eq(E.quotaFor(E.cap('collections.many'), 'pro'), 100, '自选清单 Pro 100 个（用户点名）');
   eq(E.quotaFor(E.cap('collections.many'), 'max'), 5000, '自选清单 Max 5000 个（用户点名）');
-  eq(E.quotaFor(E.cap('profile.family'), 'free'), 1, '家庭档案 Free 1 个');
-  eq(E.quotaFor(E.cap('profile.family'), 'pro'), 3, '家庭档案 Pro 3 个');
-  eq(E.quotaFor(E.cap('profile.family'), 'max'), 180, '家庭档案 Max 180 个');
+  eq(E.quotaFor(E.cap('profile.family'), 'free'), 1, '子用户 Free 1 个');
+  eq(E.quotaFor(E.cap('profile.family'), 'pro'), 3, '子用户 Pro 3 个');
+  eq(E.quotaFor(E.cap('profile.family'), 'max'), 180, '子用户 Max 180 个');
   eq(E.quotaFor(E.cap('export.all'), 'pro'), 261, '课内诗词导出 Pro 261 首（用户点名「pro 和 max 列列出 261 首」）');
   eq(E.quotaFor(E.cap('export.all'), 'max'), 261, '课内诗词导出 Max 261 首（同上）');
   /* 没有 quotas 的能力回落到 quota（会话里的 TTS 那类「每月 N 次」） */

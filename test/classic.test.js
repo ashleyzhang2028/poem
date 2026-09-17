@@ -295,9 +295,13 @@ setTimeout(() => {
   chk(groupBtns.every(b => [...b.querySelectorAll('.gw-menu-item')].every(
     x => x.textContent.trim().length > 0)),
     '五个模式名分别挂在各自的菜单项上（不是圆键的可见文字）');
+  /* ⚠️ Issue #209：键义里的「，当前：原文 · 顺序」**删掉了**（用户点名）。
+     现在键义只有模式全名一句 —— 「连续播放原文」已经说明了当前是哪一档
+     （两者本来就是同一件事的两种说法，原先读屏会连着念两遍）。
+     所以判据从「有没有『当前：』」翻成「模式名与 title / aria-label 逐字一致」。 */
   chk(groupBtns.every(b => /连续播放原文/.test(b.getAttribute('title') || '') &&
-    /当前：/.test(b.getAttribute('aria-label') || '')),
-    '分组圆键的读屏文案报出「当前是哪种模式」：' + groupBtns[0].getAttribute('aria-label'));
+    b.getAttribute('title') === b.getAttribute('aria-label')),
+    '分组圆键的读屏文案就是当前模式名：' + groupBtns[0].getAttribute('aria-label'));
   chk(groupBtns.every(b => b.parentElement.classList.contains('group-head')),
     '分组圆键就在分组标题那一行里（不另起一行）');
   // 组合键必须有可见的「它不止一种用法」记号：▶ 右下角一枚小点
@@ -679,14 +683,15 @@ setTimeout(() => {
   chk(!/连读中/.test(randomBtn.textContent) && !/连读中/.test(readClsCode) &&
     !/gw-random-read-text/.test(readClsCode),
     '不再有「连读 / 连读中」这类随状态改写的可见文案（状态交给 ▶ / ⏸ 表达）');
-  // 工具栏那颗「整页连读」与卡头组合键是同一档模式，title 里也要带上当前模式：
-  // 「连续播放原文，当前：原文 · 顺序」——读屏用户靠它知道点下去会怎么放。
+  // 工具栏那颗「整页连读」与卡头组合键是同一档模式，title 里也要说清点下去会怎么放：
+  // 「连续播放原文」——读屏用户靠它知道点下去会怎么放（Issue #209 起不再带
+  // 「，当前：原文 · 顺序」那半句，它与模式全名说的是同一件事）。
   // 预置的会话已登录（见文件头 seedSignedIn），所以这里是「登录的 free 用户」那一档。
   d.querySelector('#gw-filter-seg button').dispatchEvent(new window.Event('click', { bubbles: true }));
   chk(randomBtn.disabled === false, '登录的 free 用户：整页连读键可用（free 不残缺）');
   chk(/连续播放原文/.test(randomBtn.getAttribute('title')) &&
-    /当前：/.test(randomBtn.getAttribute('title')),
-    '键义与当前模式都写在 title 里：' + randomBtn.getAttribute('title'));
+    randomBtn.getAttribute('title') === '连续播放原文',
+    '键义就是当前模式名（不再重复「，当前：…」）：' + randomBtn.getAttribute('title'));
   // 反过来：退出登录（清会话）后必须置灰，并说明原因 —— 这是用户明确要的那条规则
   window.AuthCore.signOut(window.AuthCore.makeStore());
   d.querySelector('#gw-filter-seg button').dispatchEvent(new window.Event('click', { bubbles: true }));
