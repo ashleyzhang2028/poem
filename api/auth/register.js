@@ -39,7 +39,8 @@ module.exports = handler.make("auth.register", ["POST"], function (d, body) {
     email: body.email,
     value: body.value,
     password: body.password,
-    deviceId: body.deviceId || d.deviceId
+    deviceId: body.deviceId || d.deviceId,
+    ip: d.ip
   }).then(function (r) {
     return r.status === 200 ? { status: 202, body: r.body } : r;
   });

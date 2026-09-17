@@ -64,10 +64,11 @@
     E_VERIFY_MAIL_FAIL: "确认邮件没能发出去，请稍后再试",
     E_RESET_MAIL_FAIL: "重设邮件没能发出去，请稍后再试",
     /* Issue #197 后半段：**邮箱没确认就不让登录**。
-       ⚠️ 这一条同样**不是降级**：服务端是通的、口令也是对的，
+       ⚠️ 这一条**不是传输层错误**，也不是降级：服务端是通的、口令也是对的，
           只是这一步没成。**绝不**把它说成「连不上服务端」——
           那会让用户一直重试登录，而他要做的是去收件箱。
-       文案里那句「去收件箱点确认」是**唯一有用**的下一步，别删。 */
+       文案里那两句（去收件箱点确认 / 没收到就点「重新发一封」）是
+       **唯一有用**的下一步，别删。 */
     E_EMAIL_UNVERIFIED: "邮箱还没确认：请点开注册时那封确认邮件里的链接。没收到就点「重新发一封」。"
   };
 
@@ -290,9 +291,20 @@
         return post("/verify-email", { vid: input.vid, token: input.token }, PASSWORD_ERR);
       },
 
-      /** POST /api/resend-verification —— 重发确认邮件（**要登录**） */
-      resendVerification: function () {
-        return post("/resend-verification", { deviceId: deviceId }, PASSWORD_ERR);
+      /**
+       * POST /api/resend-verification —— 重发确认邮件。
+       *
+       * ⚠️ **两条入口**（与服务端 `core.resendVerification` 对应）：
+       *   · 登录着（Cookie）→ 不带 `email`，服务端认会话里的 uid
+       *   · **没登录**（被「不确认就不让登录」拦在门外的人）→ 带上 `email`，
+       *     走匿名口。这是那种用户**唯一**的出路，所以必须支持。
+       * 两条回复的形状在服务端是**逐字相同**的（防邮箱枚举）。
+       */
+      resendVerification: function (input) {
+        input = input || {};
+        var body = { deviceId: deviceId };
+        if (input.email) body.email = input.email;
+        return post("/resend-verification", body, PASSWORD_ERR);
       },
 
       /**
