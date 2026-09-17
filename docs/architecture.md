@@ -2170,6 +2170,12 @@ toast 全走它）。`test/entitlement.test.js` 直接钉住这个字串：
 算出负值）。**没有动 `--nav-h`** —— 底部页签 / 播放栏的避让是硬要求，
 少一像素就会压住末行。
 
+> ⚠️ **这一句当时是错的**：算式写成 `max(0px, calc(24px + var(--nav-h) - var(--foot-gap-v2)))`，
+> 那 40px 是从 `--nav-h` 里一起扣掉的 —— 意图与实现相反，
+> 页签于是真的压住了末行（`test/pwa.test.js` 8 项红）。
+> 2026-09-17 修好，见 §5.14。留在这里不改写：**注释说对了、代码做反了**
+> 正是这一类回归的典型形状，值得留着当反例。
+
 #### 验证
 
 - `test/ui.test.js`：出厂范围与回显翻成「本学期及之前」；账号那一档翻成「游客」；
@@ -3952,3 +3958,84 @@ body[data-nav="home"] .today-list .list > .item { max-width: 460px; }
 - `test/account-pages.test.js` 第十二之三节守文案：每段 ≤ 55 字、
   四样事实一件不少、三句旧口径一个字都不回来。
 - `sw.js` v142 → **v143**（`css/account.css` 与 `login/index.html` 内容都改了）。
+
+---
+
+### 5.14 页底留白减 40px 时把 `--nav-h` 也扣掉了（2026-09-17 修 CI · 回归自 Issue #209）
+
+#### 症状
+
+`main` 上 CI 一直红：`test/pwa.test.js` 有 **8 项**失败，
+全是「页签 / 播放栏压住页面最后一行」这一类 —— 与 Issue #209 想要的效果正好相反。
+
+```
+✗ 播放栏 82px，留白 66px  iPhone: 播放栏出现后设置页底部留白随之增大
+✗ {"dockH":62,"navH":"61.5px","appPad":45.5}  iPhone: /（首页） 页面留白 ≥ 页签高度
+✗ …（/classic/ /tangshi/ /songci/ /guwen/ /zhaoming/ 六页同）
+✗ {"dockH":62,"dockTop":791,"footBottom":791}  iPhone: 底部页签不遮挡设置页底部的法务链接
+```
+
+⚠️ 这 8 条**在本 PR 之前就已经红**（`af81d9b` 上同样 8 条，326 项里 8 项失败），
+不是 #216 引入的；但 `main` 是绿的义务，所以在这里修掉。
+
+#### 根因：40px 减到了不该减的那一笔上
+
+Issue #209 新增 `--foot-gap-v2: 40px`，写进了三条 `padding-bottom`：
+
+```css
+/* 有 bug 的写法 */
+padding-bottom: max(0px, calc(24px + var(--nav-h) - var(--foot-gap-v2)));
+```
+
+这个式子里 `--nav-h` 是**被一起减掉**的：
+
+```
+   61.5   --nav-h（页签实测高度）
+ + 24     页脚呼吸
+ − 40     --foot-gap-v2
+ = 45.5   ＜ 页签 62  →  末行被压住 39.5px（保留两位：页脚末行落在页签底下）
+```
+
+而 §4.23 那段注释白纸黑字写着「**没有动 `--nav-h`** —— 底部页签 / 播放栏的
+避让是硬要求，少一像素就会压住末行」。**注释说的是对的，代码做的是反的。**
+这是那种最容易被放过的一类回归：意图写在注释里、算式写在下一行，
+两者不一致时，浏览器只认算式。
+
+#### 改法：40px 只从「呼吸」那一笔里减，`--nav-h` 一像素不让
+
+```css
+/* .settings-page 与 body:not(.no-dock) 的 .app / #app */
+padding-bottom: calc(26px + var(--nav-h) + max(0px, 24px - var(--foot-gap-v2)));
+```
+
+- `max(0px, 24px - 40px)` = `0` —— 用户要的那 40px 照样减掉（呼吸那 24px 收光）；
+- `--nav-h` 原样加上去，页签的避让是硬的；
+- 外面那 **+1px**（25/26 而不是 24）是给 `--nav-h` 的取整余量：
+  它由 `getBoundingClientRect` 量出、JS 侧不舍入（实测 61.5），
+  与页签真实高度（62）可能差半像素 —— 而「是否压住」是按**实际矩形**判的。
+
+⚠️ `body.no-dock` 那一条（法务页）**没有页签**，40px 减的是纯呼吸，
+保持原样不动 —— 那里没有「避让硬要求」这回事。
+
+#### 守卫更新（两条源码形状判据）
+
+`test/theme.test.js` 原先两条判据写的是 `padding-bottom: max(…)` 的形状，
+**形状对了但语义没守**：`max(0px, calc(24px + --nav-h - 40px))` 也满足那个形状。
+改成**取出声明本身再判**：
+
+```js
+const settingsPad = (css.match(/\.settings-page \{[^}]*?padding-bottom:\s*([^;]+);/) || [,''])[1];
+chk(/var\(--nav-h\)/.test(settingsPad) && !/var\(--nav-h\)\s*-/.test(settingsPad),
+  '设置页留出导航栏高度，最后一行不会被压住（--nav-h 只加不减）');
+```
+
+判的是「`--nav-h` 是**加**上去的、后面不跟减号」—— 这才对上注释里那句
+「少一像素都不行」。
+
+#### 验证
+
+- `test/pwa.test.js`：354 项全绿（含原先失败的 8 项）；
+- `test/run.sh`：44 层全绿、7062 条断言，零回归；
+- **反向验证**：只把 CSS 还原成旧写法（判据不动），
+  `test/theme.test.js` 立刻红 2 条 —— 新判据不是摆设；
+- `sw.js` v143 → **v144**（`css/style.css` 改了）。

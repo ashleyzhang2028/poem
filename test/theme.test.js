@@ -1095,14 +1095,23 @@ chk(!/glyph\("close"\)/.test(read('js/classic.js')),
 
 // 需求：设置页底部不被底部导航栏遮挡 —— 统一由 --nav-h 这条基准线决定
 chk(/--nav-h:\s*0px/.test(css), '定义了底部导航栏高度变量 --nav-h');
-chk(/\.settings-page \{[\s\S]*?padding-bottom:\s*max\([\s\S]{0,200}?--nav-h/.test(css),
-  '设置页留出导航栏高度，最后一行不会被压住');
+// ⚠️ Issue #209 的教训：--foot-gap-v2（减 40px）只能减在「呼吸」那一笔上，
+//    绝不能从 --nav-h 里扣 —— 写成 max(0px, calc(24px + --nav-h - 40px))
+//    会把导航栏的高度也一起减掉（61.5 + 24 − 40 = 45.5 ＜ 页签 62），
+//    末行照样被压住。判据因此读**声明本身**：把 padding-bottom 的值取出来，
+//    要求 --nav-h 是**加**上去的（+= 而非 -=）。
+const settingsPad = (css.match(/\.settings-page \{[^}]*?padding-bottom:\s*([^;]+);/) || [,''])[1];
+chk(/var\(--nav-h\)/.test(settingsPad) && !/var\(--nav-h\)\s*-/.test(settingsPad),
+  '设置页留出导航栏高度，最后一行不会被压住（--nav-h 只加不减）');
 // 页面留白不写死 px，统一走 --nav-h；页签 / 播放栏同时在场也不互相压住
 chk(!/padding-bottom:\s*calc\(150px/.test(css) && !/padding-bottom:\s*calc\(196px/.test(css),
   '页面留白不再写死 px（150px / 196px 这类硬编码已删除）');
 chk(/\.dock \{[\s\S]*?position:\s*fixed[\s\S]*?bottom:\s*0/.test(css), '底部页签是贴底固定导航栏');
-chk(/body:not\(\.no-dock\) \.app[\s\S]{0,120}?padding-bottom:\s*max\([\s\S]{0,200}?--nav-h/.test(css),
-  '有底部页签时，页面留白按实测导航栏高度计算');
+// 同上：这一条守的是「页签的避让是硬要求」，所以 --nav-h 必须原样加上去，
+// --foot-gap-v2 只能减在它后面那一笔呼吸上。
+const dockPad = (css.match(/body:not\(\.no-dock\) \.app[^{]*\{[^}]*?padding-bottom:\s*([^;]+);/) || [,''])[1];
+chk(/var\(--nav-h\)/.test(dockPad) && !/var\(--nav-h\)\s*-/.test(dockPad),
+  '有底部页签时，页面留白按实测导航栏高度计算（--nav-h 只加不减）');
 chk(/sw\.js/.test('sw.js') && /js\/pwa\.js/.test(read('settings/index.html')) && /js\/pwa\.js/.test(read('classic/index.html')),
   '所有页都加载 js/pwa.js，--nav-h 每页都会实测');
 chk(/\.ios-install-tip \{[\s\S]*?bottom:\s*calc\(12px \+ var\(--nav-h\)\)/.test(css),

@@ -1885,8 +1885,14 @@ body.has-install-tip #app {
         设置页与首页一样是「内容不多、页脚被 min-height 顺下去」的那一档，
         用户看到的是「©2026 kuibu.app」上面空出一大截 —— 他要求减掉 40px 左右。
         减的是**这一条**（页脚与正文之间那段），**不是** --nav-h：
-        底部导航的避让是硬要求（压住末行就是 bug），少一像素都不行。 */
-  padding-bottom: max(0px, calc(24px + var(--nav-h) - var(--foot-gap-v2)));
+        底部导航的避让是硬要求（压住末行就是 bug），少一像素都不行。
+     ⚠️ 所以 --foot-gap-v2 只能减在**呼吸那一段**上：写成
+        `max(0px, calc(24px + var(--nav-h) - var(--foot-gap-v2)))` 是把 40px
+        从 **nav-h 里一起扣掉**（61.5 + 24 − 40 = 45.5 ＜ 页签 62），
+        末行照样被压住 —— 与这句注释说的正好相反，是 Issue #209 引入的回归。
+        正确的写法是把它从 24px 那一笔里减，并且给 --nav-h 留 1px 取整余量
+        （--nav-h 由 bounding rect 量出、JS 侧不舍入，与真实高度可能差半像素）。 */
+  padding-bottom: calc(26px + var(--nav-h) + max(0px, 24px - var(--foot-gap-v2)));
 }
 
 /* --------------------------------------------------------------------------
@@ -2557,10 +2563,16 @@ body.has-install-tip #app {
    窄屏、大字号、iPhone 横条都不会差几像素把最后一行压住。
    ⚠️ Issue #209：这一段再减 --foot-gap-v2（40px）——
       用户点的是「页脚上面那段空白太多」。减在**这里**而不是 --nav-h：
-      页签的避让是硬要求，页脚那段呼吸才是可以商量的。 */
+      页签的避让是硬要求，页脚那段呼吸才是可以商量的。
+   ⚠️ 「可以商量的」只有 24px 那一笔呼吸，--nav-h 一像素都不能让：
+      旧写法 `max(0px, calc(24px + var(--nav-h) - var(--foot-gap-v2)))`
+      把 40px 从 nav-h 里也扣了（61.5 + 24 − 40 = 45.5 ＜ 页签 62），
+      页脚末行被页签压住 —— 正是这条注释想避免的事。
+      另外给 --nav-h 留 1px：它由 getBoundingClientRect 量出、JS 侧不舍入，
+      与页签的真实高度可能差半像素（实测 nav-h 61.5 / 页签 62）。 */
 body:not(.no-dock) .app,
 body:not(.no-dock) #app {
-  padding-bottom: max(0px, calc(24px + var(--nav-h) - var(--foot-gap-v2)));
+  padding-bottom: calc(25px + var(--nav-h) + max(0px, 24px - var(--foot-gap-v2)));
 }
 body:not(.no-dock) .foot { padding-bottom: 4px; }
 body:not(.no-dock) .toast { bottom: calc(24px + var(--nav-h)); }
