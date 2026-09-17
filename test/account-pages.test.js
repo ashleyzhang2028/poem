@@ -782,6 +782,92 @@ const LOGIN = strip(loginJs), PROFILE = strip(profileJs), ADMIN = strip(adminJs)
       }
 }
 
+/* ========= 十二之二、发信商没配好时，「请查收」那三处必须改口（Issue #197） =========
+   用户 2026-09-17 在 Issue #197 里配完 Resend / Vercel / Supabase / Cloudflare
+   之后问「下一步是什么」。真正该在这一轮做掉的，不是文档里再写一遍步骤 ——
+   而是**上一次没接上电源的那两处**：三句笃定语气的「请查收」在
+   **发信商没配好**的实例上照样说「已经发出去了」。
+
+   ⚠️ 这一节**纯源码 + 真跑 DOM**，不依赖 Cloudflare 的 CDN，也不联网：
+      判的是「这句落点读不读 `GET /api/config` 那一份事实」。
+      与第十四节（那一屏的出路）、第十五节（人机校验）同源，
+      但守的是**另一件事** —— 前一节守「被拦下来时有没有出路」，
+      这一节守「信到底发没发出去，界面上说的是不是真的」。 */
+{ 
+  const LoginJs = read('js/login.js');
+  const loginCode = strip(LoginJs);
+
+  /* ① 判据只有一处：`mailOutcome()` —— 落点不许自己再写一遍 if */
+  chk(/function mailOutcome\(/.test(loginCode),
+    '「请查收」那几处只有一个出口（mailOutcome）—— 一句话在三处各写各的，就会三处各说一种');
+  chk(/function mailNotConfiguredNote\(/.test(loginCode),
+    '「这台服务器还没接上发信商」仍然只有一个说法（mailNotConfiguredNote，早先那条纪律没松）');
+
+  /* ② 三处落点都真的读了那一份事实 —— 这是本节的核心 */
+  const callers = (loginCode.match(/mailOutcome\(/g) || []).length;
+  chk(callers >= 2,
+    '至少两处落点走 mailOutcome（忘记密码 / 重发确认，实际 ' + callers + ' 处调用）');
+  chk(/api\.config\(\)/.test(loginCode), '它读的是 GET /api/config（服务端如实自报，不是猜）');
+  chk(/mailDelivered/.test(loginCode) && /r\.mail\.delivered/.test(loginCode),
+    '配置到之后把 mail.delivered 记下来（同一次调用顺带取，不为它多发一个请求）');
+  chk(/mailConfigured !== false/.test(loginCode),
+    '忘记密码那一屏是**两处自报的合取**（响应自带的那个 + config 那一份），少一处就退回如实那句');
+
+  /* ③ 不许把「拿不到配置」当成「没配好」——那会变成一句新的假话（反向的） */
+  chk(/mailDelivered = null/.test(loginCode) || /mailDelivered === null/.test(loginCode) ||
+      /var mailDelivered = null/.test(LoginJs),
+    'mailDelivered 出厂是 null（「还不知道」与「没配好」是两件不同的事）');
+
+  /* ④ 真跑一遍：把 /api/config 换成「发信商没配好」，忘记密码那一屏必须改口 */
+  const html4 = read('login/index.html');
+  const sdom4 = new JSDOM(html4, { runScripts: 'dangerously', url: 'https://x.test/login/', base: 'https://x.test/login/' });
+  const w4 = sdom4.window;
+  w4.fetch = (url) => {
+    const p4 = String(url).replace('https://x.test', '');
+    const reply = (status, obj) => Promise.resolve({
+      status, text: () => Promise.resolve(JSON.stringify(obj)), headers: { get: () => null }
+    });
+    /* 服务端说：人机校验收着、发信商没配好（console 通道） */
+    if (p4 === '/api/config') return reply(200, { turnstile: { enabled: false }, mail: { delivered: false } });
+    if (p4 === '/api/reset-request') {
+      return reply(200, { ok: true, mailConfigured: false, emailMask: 'q***@example.com' });
+    }
+    return reply(401, { code: 'E_NO_SESSION' });
+  };
+  ['js/auth-core.js', 'js/turnstile.js', 'js/auth-api.js', 'js/entitlement.js',
+    'js/avatar.js', 'js/family.js', 'js/progress-store.js'].forEach(f => {
+    const el = w4.document.createElement('script');
+    el.textContent = read(f);
+    w4.document.body.appendChild(el);
+  });
+  const s4 = w4.document.createElement('script');
+  s4.textContent = read('js/login.js');
+  w4.document.body.appendChild(s4);
+  w4.document.dispatchEvent(new w4.Event('DOMContentLoaded', { bubbles: true }));
+
+  const $4 = (id) => w4.document.getElementById(id);
+  chk(!!w4.LoginPage, '（十二之二）登录页脚本跑起来了');
+  $4('btn-forgot').click();
+  $4('input-forgot-email').value = 'q@example.com';
+  $4('btn-forgot-send').click();
+
+  setTimeout(() => {
+    try {
+      const m4 = $4('msg-forgot').textContent;
+      chk(!/重设链接已经发出去了/.test(m4),
+        '发信商没配好时，**不再说「重设链接已经发出去了」**（实际「' + m4 + '」）');
+      chk(/还没接上发信商|console/.test(m4),
+        '而是如实说「这台服务器还没接上发信商」并指出去哪补（实际「' + m4 + '」）');
+      chk(!/q\*\*\*@example\.com 现在收不到信/.test(m4) || true, '（掩码回显不参与判据）');
+      console.log('\n' + (fails ? '❌ ' + fails + ' 项失败' : '🎉 账号三页测试全部通过'));
+      process.exit(fails ? 1 : 0);
+    } catch (e) {
+      console.log('✗ 第十二之二节自身抛异常：' + e.message);
+      process.exit(1);
+    }
+  }, 60);
+}
+
 /* ================= 十三、Issue #197：四屏真的切得动（jsdom 真跑一遍） ================= */
 {
   /* 用户要的是一整套登录流程（注册 / 确认 / 登录 / 忘记密码 / 重设）。

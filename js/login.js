@@ -96,6 +96,23 @@
         服务端会按它自己的配置如实回答。 */
   var tsConfig = { enabled: false, siteKey: "" };
 
+  /* 出厂**不许假设**发信是通的（下面那三条「请查收」的落点都读它）。
+
+     ⚠️ 这是**一个真出过的坑**：落点上原先写的是一句笃定语气的
+        「重设链接已经发出去了」「确认邮件已经发出去了」——
+        在**发信商没配好**（console 通道）的实例上，那句话对**所有人**
+        都是空的（谁都收不到），而界面又不像别处那样如实改口。
+        用户会去收件箱等一封永远不来的信，然后回来反复点。
+        实测：把 `GET /api/config` 换成一个不含 `mail` 的响应，
+        「忘记密码」那一屏照样写着「已经发出去了」。
+
+     ⚠️ 判据只有一处（`GET /api/config` 的 `mail.delivered`，与登录页上方
+        那句「这台服务器还没接上发信商」、服务端 `/api/me` 的 `channel`
+        同源），这里**不另算一份**。
+     ⚠️ 它**不泄露「这个邮箱注册过没有」**：说的是**这台服务器**的属性，
+        与请求里那个邮箱无关（`api/_lib/routes/config.js` 里写着同一条纪律）。 */
+  var mailDelivered = null;        // null = 还不知道（拿不到配置 ≠ 没配好）
+
   /* 本页状态（**不进 localStorage**：它只是「这一屏画到哪一步」） */
   var state = {
     purpose: "login",        // 只有"login"一种用途，保留以兼容旧断言
@@ -114,6 +131,24 @@
   function show(el) { if (el) el.hidden = false; }
   function hide(el) { if (el) el.hidden = true; }
   function text(el, s) { if (el) el.textContent = s == null ? "" : String(s); }
+
+  /**
+   * 「请查收」这一类落点的**唯一出口** —— 发信成不成，由它一处改口。
+   *
+   * 为什么必须收成一处：这句话原先在**三个地方各写各的**
+   * （忘记密码 / 重发确认邮件 / 等确认那一屏），于是「发信商没配好」
+   * 这件事只在**其中一处**说了出来 —— 另外两处照样让用户去收件箱等信。
+   * 一句话在三处漂移，用户就会看到三种解释（Issue #197 里用户问的
+   * 「到底哪个是真的」正是这样来的）。
+   *
+   * @param {string} sent   发信通了时说的话（含掩码回显）
+   * @param {string} masked 掩码，用于「这一步只能由运维做，所以 a***@b.com 现在收不到信」
+   * @returns {string}
+   */
+  function mailOutcome(sent, masked) {
+    if (mailDelivered === false) return mailNotConfiguredNote(masked);
+    return sent;
+  }
 
   function showToast(msg) {
     var t = $("toast");
@@ -600,13 +635,19 @@
          服务端回的也是同一个响应（不区分存在与否）—— 客户端要是写成
          「重设邮件已发往 xxx」，就等于替服务端回答了那个问题。
          那一句话把「谁是本站用户」变成可查询的事实（邮箱枚举）。 */
-      msg("msg-forgot", "如果这个邮箱在本站注册过，重设链接已经发出去了。", "ok");
       /* ⚠️ 但「发出去了」有个前提：这台服务器得接上了发信商。
          没接上时上面那句话对**所有人**都是空的（谁都收不到），
          所以必须当场说出来 —— 措辞仍不许泄露邮箱存不存在，
-         因为这条讲的完全是服务器的事。 */
-      if (r.mailConfigured === false) {
-        msg("msg-forgot", mailNotConfiguredNote(email), "warn");
+         因为这条讲的完全是服务器的事。
+         ⚠️ 判据取**两处服务端自报的合取**，而不是只看响应里那一个字段：
+            `r.mailConfigured` 是这一条响应自带的，`mailDelivered` 是
+            `GET /api/config` 那一份。两处都说「配好了」才敢写「已经发出去了」——
+            少一处就退回如实那句（宁可多说一次「没接上」，也不许让人白等一封信）。 */
+      var mailOk = (r.mailConfigured !== false) && mailDelivered !== false;
+      if (mailOk) {
+        msg("msg-forgot", "如果这个邮箱在本站注册过，重设链接已经发出去了。", "ok");
+      } else {
+        msg("msg-forgot", mailOutcome("如果这个邮箱在本站注册过，重设链接已经发出去了。", email), "warn");
       }
       showToast("请查收邮件");
       return r;
@@ -973,13 +1014,22 @@
          ⚠️ 判据是「登录态」而不是「`verifySent` 的真假」—— 后者会把
             匿名那一支错说成「发信商没配好」。 */
       if (signedIn && r.verifySent) {
-        msg("msg-verify", "确认邮件已发往 " + (r.emailMask || state.regEmail) + "。", "ok");
+        msg("msg-verify", mailOutcome(
+          "确认邮件已发往 " + (r.emailMask || state.regEmail) + "。",
+          r.emailMask || state.regEmail), mailDelivered === false ? "warn" : "ok");
       } else if (signedIn) {
         /* ⚠️ 试了几次 —— 服务端如实带上（`verifyAttempts`）。 */
         msg("msg-verify", "这台服务器现在没能把邮件发出去（已试 " + (Number(r.verifyAttempts) || 1)
           + " 次）。稍后再试。", "warn");
       } else {
-        msg("msg-verify", "如果这个邮箱在本站注册过而且还没确认，确认邮件已经发出去了。请查收。", "ok");
+        /* ⚠️ 匿名那一支**不许说「发信商没配好」**（上面那一段说明写着同样的理由）：
+           服务端刻意让「存在」与「不存在」回话逐字相同，我们不知道这个邮箱在不在。
+           `mailOutcome` 说的却是**服务器**的事（与邮箱无关），所以这里用它**不泄露**枚举；
+           但只有在如实知道「这台服务器发不出信」时才改口。 */
+        msg("msg-verify", mailDelivered === false
+          ? mailNotConfiguredNote("")
+          : "如果这个邮箱在本站注册过而且还没确认，确认邮件已经发出去了。请查收。",
+          mailDelivered === false ? "warn" : "ok");
       }
       return r;
     }, function () {
@@ -1054,12 +1104,16 @@
           一次 CDN 抖动就让登录页看起来坏掉了。 */
     if (TS && api && api.config) {
       api.config().then(function (r) {
-        if (!r || !r.ok || !r.turnstile) return;
+        if (!r || !r.ok) return;
+        /* 发信商配好了没有 —— 与「人机校验那一个」取自**同一次**调用，
+           不为它多发一个请求（这一条是全局唯一一个匿名可打的读接口）。 */
+        if (r.mail && typeof r.mail.delivered === "boolean") mailDelivered = r.mail.delivered;
+        if (!r.turnstile) return;
         tsConfig.enabled = r.turnstile.enabled === true;
         tsConfig.siteKey = r.turnstile.siteKey || "";
         /* 配置一到就补挂当前那一屏（init 里 setMode 可能跑在它前面） */
         if (tsConfig.enabled) mountTurnstile(state.mode);
-      }, function () { /* 拿不到就保持「没配」那一档 */ });
+      }, function () { /* 拿不到就保持「没配」那一档（也**不许**据此说「发信商没配好」） */ });
     }
 
     // 页签：切动作，不跳页
