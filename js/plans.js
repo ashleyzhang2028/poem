@@ -83,14 +83,6 @@
     foot.innerHTML = html + "</tr>";
   }
 
-  function renderAbout(id) {
-    var box = $("plans-about");
-    if (!box) return;
-    box.textContent = id && id.tierSource === "server"
-      ? "层级由服务器判定，本机改不动。"
-      : "层级本机登记，改一行存储就能改。";
-  }
-
   function currentColumn(id) {
 
     if (!id.signedIn) return "guest";
@@ -105,7 +97,6 @@
     renderHead(cmp, current);
     renderBody(cmp, current);
     renderFoot(cmp);
-    renderAbout(id);
   }
 
   function init() {

@@ -160,6 +160,16 @@
     window.addEventListener("resize", setVH);
   }
 
+  function trackScrollbarWidth() {
+    function setSW() {
+      var v = window.innerWidth - document.documentElement.clientWidth;
+      var w = (v > 0 && v < 40) ? v : 0;
+      document.documentElement.style.setProperty("--scroll-w", w + "px");
+    }
+    setSW();
+    window.addEventListener("resize", setSW);
+  }
+
   function measureBottomNav() {
     var bar = document.querySelector(".player-bar");
     var dock = document.getElementById("site-dock");
@@ -244,6 +254,7 @@
     setupIOSTip();
     setupInstallPrompt();
     fixIOSViewportHeight();
+    trackScrollbarWidth();
     hideTipWhileModalOpen();
     syncBottomGap();
     window.addEventListener("resize", syncBottomGap);
@@ -259,6 +270,7 @@
 
   window.PWA = window.PWA || {};
   window.PWA.syncBottomGap = syncBottomGap;
+  window.PWA.trackScrollbarWidth = trackScrollbarWidth;
   window.PWA.measureBottomNav = measureBottomNav;
 
   if (document.readyState === "loading") {

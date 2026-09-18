@@ -208,29 +208,24 @@ const plansCommentOnly = pageJs;
 
 {
 
-  const rb = pageJs.slice(pageJs.indexOf('function renderAbout'), pageJs.indexOf('function renderAbout') + 1400);
-  chk(!!rb, 'js/plans.js 里有 renderAbout()（那一段的渲染入口）');
-  chk(/tierSource === "server"/.test(rb),
-    'renderAbout() 按 tierSource 分叉（不自己猜、不自己比 tier）');
-  chk(/由服务器判定/.test(rb), '服务端那份：页面上说明层级「由服务器判定」');
-  chk(/本机登记/.test(rb), '本机那份：页面上说明层级是「本机登记」');
-
-  chk(!/无收款|不是付费凭据/.test(rb),
-    '页面不再替本站解释「不收款、不是付费凭据」（层级是什么才是这一页的问题）');
-
-  const aboutBranches = rb.match(/"[^"]*。"/g) || [];
-  chk(aboutBranches.every(b => (b.match(/。/g) || []).length === 1),
-    '两种状态各只留一句（实际：' + aboutBranches.join(' / ') + '）');
-
-  chk(pageJs.indexOf('renderAbout(id)') > 0, '初始化时真的调了 renderAbout(id)');
+  chk(!/renderAbout\s*\(/.test(PAGE),
+    'js/plans.js 不再有 renderAbout()（连定义带调用 —— 「层级谁定的」那两句整段撤了）');
+  chk(pageJs.indexOf('tierSource') < 0,
+    'js/plans.js 不再读 tierSource（那一段是它唯一的读者）');
+  const clean = stripHtml(pageHtml);
+  chk(!/层级本机登记/.test(clean) && !/层级由服务器判定/.test(clean),
+    '页面可见文字里不再有「层级本机登记，改一行存储就能改。」/「层级由服务器判定，本机改不动。」');
+  chk(!/改一行存储/.test(pageJs), 'js/plans.js 里那句文案也删干净了（不留只写在源码里的死话）');
 }
 
 {
   chk(!/plans-me\b/.test(pageHtml) && !/plans-me-hint/.test(pageHtml),
     '「现在」那张卡在 HTML 里没有残留挂点（#plans-me / #plans-me-hint 都不在）');
   chk(!/kv-list/.test(pageHtml), '那三行「身份 / 层级 / 落在哪一列」的容器也一并撤了');
-  chk(/id="plans-about"/.test(pageHtml) && /\$\("plans-about"\)/.test(pageJs),
-    '「关于这些层级」那一句留着（挂点 + 渲染都在）');
+  chk(!/plans-about/.test(pageHtml) && !/plans-about/.test(pageJs),
+    '「关于这些层级」那张卡也整张撤了（挂点 + 渲染都不留）');
+  chk((pageHtml.match(/class="account-card"/g) || []).length === 1,
+    '这一页只剩对比表那一张卡（撤掉「现在」卡与「关于」卡之后不再有空壳）');
   chk(!/renderMe\s*\(/.test(PAGE), 'js/plans.js 不再有 renderMe()（连定义带调用）');
   chk(!/renderLoginHint\s*\(/.test(PAGE), 'js/plans.js 不再有 renderLoginHint()');
   chk(!/plans-me-hint/.test(PAGE) && !/plans-me\b/.test(PAGE),
