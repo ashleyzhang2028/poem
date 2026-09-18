@@ -310,6 +310,16 @@ echo "    ③ 报告里一个密钥都不许出现（值不出现，形状才许
 node test/self-check.test.js
 
 echo ""
+echo "=== 旧形状库上的注册（Issue #225 · 不再 500，如实报降级）==="
+echo "    守的是「用户什么配置都没错，只是库停在旧形状」这一档："
+echo "    ① 建号时 `email_mask` 一定带上（老库那一列是 not null，留空 = 首次注册必炸）；"
+echo "    ② 写账号缺迁移列（email / email_verified_at / password_hash / password_salt）"
+echo "      时**降级重试**、把能写的写进去，绝不把 500 抛给用户；"
+echo "    ③ 降级是**事实**：响应里如实点名哪几列没落库，不假装写成功；"
+echo "    ④ 表是新的这一路一个字段都不许多（别修出个假告警）。"
+node test/register-legacy-db.test.js
+
+echo ""
 echo "=== 家庭子用户（3 期 P1 · profile.family，纯 Node）==="
 echo "    守四件事：名册（增/改名/删/切换/上限）拦在**数据层**；"
 echo "    老用户零感知（昵称 + 印 + 进度/设置/已读一并认领）；"
