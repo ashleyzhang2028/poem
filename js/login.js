@@ -574,6 +574,23 @@
     }
   }
 
+  // 从别的页面被送过来登录的（例如未登录时点「打印清单」），
+  // 登录完要回得去它原来站着的那一页（?next=/settings/lists/）。
+  // 只认本站的站内路径：一个 / 开头、第二个字符不是 /、也不带 '\'，
+  // 防着把 /login/?next=https://别处 当成开放跳板。
+  function nextUrl() {
+    var raw = "";
+    try {
+      raw = (new URLSearchParams(location.search)).get("next") || "";
+    } catch (e) {
+      var m = /[?&]next=([^&#]*)/.exec(location.search || "");
+      try { raw = m ? decodeURIComponent(m[1]) : ""; } catch (e2) { raw = ""; }
+    }
+    if (raw.charAt(0) !== "/") return "";
+    if (raw.charAt(1) === "/" || raw.charAt(1) === "\\") return "";
+    return raw;
+  }
+
   function onFinish() {
     var v = ($("input-nickname") || {}).value || "";
     var clean = String(v).trim().slice(0, 12);
@@ -581,7 +598,7 @@
       try { Avatar.saveNickname(backing, clean); } catch (e) {  }
     }
     if (A.setNickname && store) { try { A.setNickname(store, clean); } catch (e) {  } }
-    location.href = "/profile/";
+    location.href = nextUrl() || "/profile/";
   }
 
   function showUnverified(r) {

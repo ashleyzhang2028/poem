@@ -198,8 +198,12 @@ function repaint(p) {
     '个人中心的返回落点仍是「我的」页（账号动线的上一层');
   chk(!/data-back="\/settings\/"/.test(SRC.login), '登录页不再退回设置页（两处落点会打架）');
 
-  chk(/location\.href = "\/profile\/"/.test(LOGIN_JS),
+  chk(/location\.href = nextUrl\(\) \|\| "\/profile\/"/.test(LOGIN_JS),
     '登录成功后回个人中心（权限那一节就在那里，登录完最该看见的是「我在哪一层」）');
+  chk(/\?next=/.test(read('js/print.js')),
+    '从别的页面被送来登录的，登录完回原来那一页（?next= 只认站内路径，Issue #229）');
+  chk(/raw\.charAt\(0\) !== "\/"/.test(LOGIN_JS) && /raw\.charAt\(1\) === "\/"/.test(LOGIN_JS),
+    'next 只收本站路径：/ 开头、第二个字符不是 /（不当开放跳板）');
   chk(!/\/settings\/general\//.test(LOGIN_JS), '登录页里不再有回设置 · 通用的老落点');
 
   chk(/login: "\/login\/"/.test(CHROME) && /profile: "\/profile\/"/.test(CHROME),
