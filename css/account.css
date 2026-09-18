@@ -271,28 +271,6 @@ body[data-nav="login"] .app > .foot {
   box-shadow: inset 0 0 0 1px rgba(240, 205, 124, .42);
 }
 
-.kv-list { margin: 0; }
-.kv-row {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 9px 0;
-  font-size: 13px;
-  border-bottom: 1px solid var(--line-2);
-}
-.kv-row:last-child { border-bottom: none; }
-.kv-k { color: var(--ink-2); flex: none; }
-.kv-v {
-  color: var(--ink);
-  text-align: right;
-  min-width: 0;
-  word-break: break-all;
-}
-
-.kv-v a { color: var(--green); }
-.kv-v a:hover { color: var(--green-dark); }
-
 .grant-list { list-style: none; margin: 0; padding: 0; }
 .grant-row {
   display: flex;

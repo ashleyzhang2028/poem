@@ -900,8 +900,8 @@ PAGE_FILES.forEach(f => {
   chk(/text-decoration:\s*none/.test(footRule) || !/text-decoration/.test(footRule),
     '页脚链接 hover 不再把下划线加回来（反馈只走颜色一档）');
 
-  chk(/\.kv-v a\s*\{[^}]*color:\s*var\(--green\)/.test(strip(accountCss)),
-    '个人中心「关于」里的「查看」链接有自己的配色规则（不再是浏览器默认的蓝紫链接）');
+  chk(/\.kv-v a\s*\{[^}]*color:\s*var\(--green\)/.test(strip(css)),
+    '「关于」里的「查看」链接有自己的配色规则（不再是浏览器默认的蓝紫链接）');
 
   const underlines = (cssCode + '\n' + accountCss + '\n' + legalCode)
     .match(/text-decoration:\s*underline/g) || [];
@@ -1131,6 +1131,70 @@ if (JSDOM) {
   chk(/box-shadow:\s*var\(--shadow\)/.test(ruleOf(cs, '.card')),
     '（对照）全站 .card 读的也是这一份令牌 —— 三处 + 卡片层，全站只有一个来源');
 }
+
+{
+  const barRule = ruleOf(cssCode, '.topbar');
+  chk(/padding:\s*calc\(14px \+ var\(--safe-top\)\) 0 12px/.test(barRule),
+    '顶栏左右内边距归零（那 2px 是随头像一起撤的那块视觉余量，右端那颗键现在贴边）');
+  chk(!/padding:\s*calc\(14px \+ var\(--safe-top\)\) 2px/.test(barRule),
+    '顶栏不再留右端那 2px（用户 2026-09-17 点名的「后退键右侧的 padding」）');
+
+  chk(/--scroll-w:\s*0px/.test(ruleOf(cssCode, ':root')),
+    ':root 里有 --scroll-w 并且兜底是 0px（手机上不会凭空多出一段空白）');
+  const setPage = ruleOf(cssCode, '.settings-page');
+  chk(/padding-left:\s*calc\(var\(--col-side\) \+ var\(--safe-left\) \+ var\(--scroll-w\)\)/.test(setPage),
+    '全屏设置页的左内边距补上滚动条宽度（右缘才与顶栏、页签、正文同一个 x）');
+  chk(/padding-right:\s*calc\(var\(--col-side\) \+ var\(--safe-right\)\)/.test(setPage),
+    '右内边距与 .app 完全同一份算式（两处各拍一个数就会漂）');
+
+  const appRule = ruleOf(cssCode, '.app');
+  chk(/padding-right:\s*calc\(var\(--col-side\) \+ var\(--safe-right\)\)/.test(appRule),
+    '（对照）.app 的右内边距就是设置页抄的那一份');
+}
+
+{
+  const about = ruleOf(cssCode, '.settings-about');
+  chk(/margin-top:\s*\d+px/.test(about),
+    '「关于」与上面那几组之间有自己的间距（此前一个字都没有，全挤在一起）');
+  const title = ruleOf(cssCode, '.settings-about-title');
+  chk(/font-size:\s*\d+px/.test(title) && /font-weight:/.test(title) && /margin:/.test(title),
+    '「关于」小标题有字号 / 字重 / 外边距（此前是浏览器默认的 h2，最大最粗）');
+  const row = ruleOf(cssCode, '.settings-about .kv-row');
+  chk(/padding:\s*\d+px 0/.test(row),
+    '「关于」那五行有自己的行距（不再靠 .kv-list 的裸默认）');
+
+  const navJs = read('js/settings-nav.js');
+  chk(/settings-about-title/.test(navJs),
+    'js/settings-nav.js 真的给标题挂了这个类名（CSS 与 HTML 两边对得上）');
+
+  const aboutHtml = read('settings/index.html');
+  chk(/class="settings-about"/.test(aboutHtml),
+    '「我的」页真的有 .settings-about 这个容器（样式不是给空气写）');
+
+  chk(/^\.kv-list\s*\{/m.test(cssCode.replace(/\s/g, ' ').replace(/ ?\.kv-list/, '\n.kv-list')),
+    '共享的 .kv-list / .kv-row 一套在 css/style.css 里（「关于」那一块只加载了它）');
+  chk(/^\.kv-row\s*\{/m.test(cssCode.replace(/\s/g, ' ').replace(/ ?\.kv-row/, '\n.kv-row')),
+    '.kv-row 那一套也在 css/style.css（塞进 account.css 的活，设置整页读不到）');
+  chk(!/\.kv-list\s*\{/.test(strip(accountCss)) && !/\.kv-row\s*\{/.test(strip(accountCss)),
+    'css/account.css 里不再各写一遍 .kv-list / .kv-row（同一套规则两处定义必然漂）');
+
+  chk(!/<link[^>]*account\.css/.test(aboutHtml),
+    '（对照）设置整页确实不加载 css/account.css —— 所以那一套必须住在 style.css 里');
+}
+
+{
+  const gearStart = chromeJs.indexOf('gear:');
+  const gear = chromeJs.slice(gearStart, chromeJs.indexOf('tabMine:'));
+  chk(/M19\.4 15a1\.65/.test(gear),
+    '设置那一枚是齿轮（带齿的轮廓），不是一颗太阳');
+  chk(!/M12 3\.4v2\.2M12 18\.4v2\.2/.test(gear),
+    '那枚「一个圆 + 八根等长射线」的太阳画法已删干净（八个方位的星芒正是太阳的特征）');
+  chk((gear.match(/<path/g) || []).length === 1,
+    '齿轮只有一条轮廓路径（不再拆成八根线，拆了就退回成太阳）');
+  chk(!/M12 3\.4v2\.2/.test(chromeJs),
+    'js/chrome.js 里也不留那句射线残留（免得下次又被拼回去）');
+}
+
 
 console.log(fails === 0 ? '\n🎉 UI 一致性 / 响应式守卫全部通过' : '\n❌ ' + fails + ' 项失败');
 process.exit(fails ? 1 : 0);
