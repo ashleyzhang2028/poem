@@ -40,7 +40,7 @@ function boot(envVars) {
 }
 
 function serve() {
-  const entry = require("../api/index.js");
+  const entry = require("../api/[...path].js");
 
   const routes = require("../api/_lib/routes.js");
   const server = http.createServer(entry);
@@ -2509,15 +2509,17 @@ async function main() {
     })(apiDir);
 
     eq(entries.length, 1, "api/ 下只有 **1 个** Serverless 函数入口（Hobby 上限 12）");
-    chk(entries[0] === "index.js",
-      "那一个入口就是 /api 目录的兜底函数 api/index.js（实际 " + entries[0] + "）");
+    chk(entries[0] === "[...path].js",
+      "那一个入口就是 catch-all 的 api/[...path].js（实际 " + entries[0] + "）");
     chk(entries.length <= 12, "函数数没有超过 Hobby 档的 12（实际 " + entries.length + "）");
 
     const vercel = JSON.parse(fs.readFileSync(path.join(ROOT, "vercel.json"), "utf8"));
-    eq((vercel.rewrites || []).length, 0,
-      "vercel.json 里没有任何 rewrite（/api/* 的收口靠 api/index.js 的文件位置，不靠配置）");
+    const rw = (vercel.rewrites || []).find(r => r.source === "/api/:path*");
+    chk(!!rw, "vercel.json 里有一条 `/api/:path*` 的 rewrite（它就是 /api/* 接上函数的那一层）");
+    eq(rw && rw.destination, "/api/handler/:path*",
+      "那条 rewrite 转到 catch-all 的内部前缀（与 routes.js 的 PREFIX 同一处约定）");
     eq(routesMod.PREFIX, "/api/handler",
-      "routes.js 仍认历史上那个内部前缀（兼容旧书签），但它**不再**来自 vercel.json");
+      "routes.js 的 PREFIX 与 vercel.json 的 destination 对得上（写歪一处 = 全站 /api 404）");
 
     Object.keys(routesMod.ROUTES).forEach(key => {
       const file = routesMod.ROUTES[key];
@@ -2553,7 +2555,7 @@ async function main() {
     chk(!!routesMod.resolve("GET", "//api//me"), "重复斜杠不影响命中");
 
     {
-      const srv = http.createServer(require("../api/index.js"));
+      const srv = http.createServer(require("../api/[...path].js"));
       await new Promise(r => srv.listen(0, "127.0.0.1", r));
       const port = srv.address().port;
       const hit = (method, p) => new Promise(resolve => {
@@ -2576,6 +2578,24 @@ async function main() {
       const cfg = await hit("GET", "/api/config");
       chk(cfg.status === 200, "用户地址 GET /api/config 是 200（实际 " + cfg.status + "）");
       chk(cfg.raw.indexOf("turnstile") >= 0, "/api/config 真的回的是配置，不是别的什么东西");
+
+      /* ② **rewrite 之后那一层的形状**（2026-09-18 实测：函数挂在目录根上时
+         平台层根本不把 /api/* 转进来）。
+         --------------------------------------------------------------
+         上面两条断的是「函数**在**的时候能答对」，而线上这一次坏的是
+         **函数压根没被调起来**（Vercel 平台层直接 NOT_FOUND，正文是
+         `The page could not be found`，连函数的日志都没有）。
+         所以这里补一条：把 rewrite 的目标地址（`/api/handler/...`）也真打一次 ——
+         平台层执行 rewrite 之后交到函数手上的就是这串 URL，
+         后面那一层必须逐字认得它。少了这条，改完 rewrite 仍然会是全站 404。 */
+      const viaRw = await hit("GET", "/api/handler/me");
+      chk(viaRw.status === 200 || viaRw.status === 401 || viaRw.status === 503,
+        "rewrite 之后的地址 GET /api/handler/me 也打到 handler（实际 " + viaRw.status + "）");
+      chk(viaRw.raw.indexOf("E_404") < 0,
+        "它不是「本站说没有这个接口」—— 那就是 PREFIX 与 vercel.json 的 destination 对不上");
+      eq(viaRw.status, me.status,
+        "同一个接口，走用户地址与走 rewrite 之后的地址，状态码必须一样（实际 " +
+        viaRw.status + " / " + me.status + "）");
 
       const nope = await hit("GET", "/api/nope");
       eq(nope.status, 404, "表里没有的路径回 404");

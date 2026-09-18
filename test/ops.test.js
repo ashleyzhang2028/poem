@@ -270,6 +270,13 @@ console.log("\n=== 七之二、2D 的六个步骤（配置与真开通，docs §
   has(ev, "The page could not be found", "并点明平台层 404 长什么样（与本站的 E_404 区分开）");
   has(ev, "E_404", "同时给出**本站** 404 的形状，两种不许混成一句「404」");
   has(ev, "rewrite", "并写明这条坏法的来由（rewrite 那一层）");
+  /* 2026-09-18：函数挂在 /api 目录根上（api/index.js 当兜底）**线上不生效**
+     ——全站 /api/* 一律平台层 404、连函数日志都没有。
+     所以 E 步的第 ⑤ 条还要点明「入口是 catch-all + 一条 rewrite」，
+     并给出「rewrite 之后那一层认不认」的那一发 curl。 */
+  has(ev, "[...path].js", "E 步点明函数入口是 catch-all 的 api/[...path].js");
+  has(ev, "/api/handler/me", "并给出「函数认不认 rewrite 之后的地址」那一发 curl");
+  has(ev, "vercel.json", "第 ⑤ 条的判据里要看 vercel.json 里那条 rewrite");
 
   const stepsText = ops.stepsReport(fullCfg()).replace(/不做「应该没问题」这类判断/g, "");
   chk(!/应该|大概|基本/.test(stepsText),
