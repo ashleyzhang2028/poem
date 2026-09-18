@@ -946,6 +946,18 @@
     const exportBtn = $("#btn-export");
     if (exportBtn) {
       exportBtn.addEventListener("click", function () {
+
+        // 「进度导出」自 Issue #229 第二轮起是**登录可用**（层级仍是 free）。
+        // 闸就设在这一处：按钮照旧看得见、点得到，未登录时点它得到的是
+        // Entitlement 出的那句「登录可用」—— 与语音朗读同一套写法
+        // （不隐藏按钮：藏起来的话用户只看到「点了没反应」）。
+        const E = entitlementMod();
+        const ident = currentIdentity();
+        if (E && ident && !E.can("export.progress", ident).ok) {
+          showToast(E.denyReason("export.progress", ident));
+          return;
+        }
+
         const d = new Date();
         const day = d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate();
         const json = window.Storage && window.Storage.exportJSON

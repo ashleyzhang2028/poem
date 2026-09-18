@@ -69,9 +69,13 @@ const plansCommentOnly = pageJs;
     '「语音朗读」在未登录列是叉，且拦它的是「未登录」而不是层级');
   chk(readAloud.cells[1].ok === true, '「语音朗读」在 Free 列是钩（登录后免费可用）');
 
+  // 未登录与 Free 差的是**登录取向**的那几件：语音朗读 + 进度导出
+  // （Issue #229 第二轮：进度导出也改成登录可用）。层级仍是 free，只差登录。
   const diffCaps = cmp.rows.filter(r => r.cells[0].ok !== r.cells[1].ok).map(r => r.cap);
-  chk(diffCaps.join(',') === 'read.aloud',
-    '未登录与 Free 只差一条能力（实际差：' + diffCaps.join(',') + '）');
+  chk(diffCaps.join(',') === 'read.aloud,export.progress',
+    '未登录与 Free 差的是登录取向的两件（实际差：' + diffCaps.join(',') + '）');
+  chk(diffCaps.every(c => cmp.rows.find(r => r.cap === c).cells[0].reason === 'login'),
+    '差的每一条拦它的理由都是「未登录」，不是层级');
 
   chk(cmp.rows.every(r => !(r.cells[0].ok && !r.cells[1].ok)),
     '免费版不缩水：未登录能用的，登录后 Free 一样能用');
@@ -108,8 +112,10 @@ const plansCommentOnly = pageJs;
   const sumOK = cmp.summary.every((s, i) =>
     s.ok === cmp.rows.filter(r => r.cells[i].ok).length && s.total === cmp.rows.length);
   chk(sumOK, '表尾「能用几项 / 共几项」与表身逐格相符');
-  chk(cmp.summary[0].ok === cmp.summary[1].ok - 1,
-    '未登录与 Free 的可用项数只差 1（就是语音朗读那一条）');
+  chk(cmp.summary[0].ok === cmp.summary[1].ok - 2,
+    '未登录与 Free 的可用项数差 2（语音朗读 + 进度导出，两件都是登录才给）');
+  chk(cmp.rows.filter(r => r.cells[0].ok && !r.cells[1].ok).length === 0,
+    '没有「游客能用、登录后反而不能用」的（免费版不缩水仍成立）');
   chk(cmp.summary[3].ok === cmp.summary[3].total,
     'Max 列全绿（最高层没有拿不到的能力）');
 }
@@ -294,7 +300,7 @@ const plansCommentOnly = pageJs;
   chk(sw.indexOf('"./plans/"') >= 0, 'sw.js 预缓存里有 ./plans/（断网也进得去）');
   chk(sw.indexOf('"./js/plans.js"') >= 0, 'sw.js 预缓存里有 js/plans.js');
   const ver = parseInt((sw.match(/poem-app-v(\d+)/) || [0, '0'])[1], 10);
-  chk(ver >= 141, '缓存版本已跟着提（本轮 Issue #209 改了本页 / 设置 / 个人中心 / 登录页，实际 v' + ver + '）');
+  chk(ver >= 160, '缓存版本已跟着提（本轮 Issue #229 第二轮改了本页 / js/plans.js / css/account.css，实际 v' + ver + '）');
   const list = [...sw.matchAll(/"(\.\/[^"]+)"/g)].map(m => m[1]);
   const missing = list.filter(u => {
     if (u === './') return false;
@@ -314,6 +320,74 @@ const plansCommentOnly = pageJs;
     '第一列（对比项）粘在左边不跟着滚 —— 滚到第三列还得知道在看哪一行');
   chk(/\.plans-mark\.ok/.test(css) && /\.plans-mark\.no/.test(css),
     '打钩与打叉各有自己的样子（不是同一个符号换色）');
+
+  // 用户 2026-09-18（Issue #229 第二轮）：
+
+  // 「绿色打钩的图标需要换一个很正的√，现在看上去有点手写的样子。」
+  // 字体里的 ✓ 是各家字体的自由发挥、笔形带手写的歪劲，所以「可用」改用
+  // 一枚 SVG 勾：两条线段按坐标落，任何机器上都是同一个形状。
+  {
+    const at = pageJs.indexOf('function markOkSvg(');
+    chk(at >= 0, 'js/plans.js 里有一个画「可用」记号的 markOkSvg()');
+    const fn = at >= 0 ? pageJs.slice(at, pageJs.indexOf('function nameHtml', at)) : '';
+
+    chk(/<svg/.test(fn), '那颗记号是一枚 <svg>（不是字体里的字符）');
+    chk(/viewBox="0 0 24 24"/.test(fn),
+      '带 viewBox \'0 0 24 24\'：坐标写在 24 的方格上，与字号 / 字体无关');
+    chk(/stroke="currentColor"/.test(fn),
+      '描边走 currentColor（颜色仍由 .plans-mark.ok 的白色给，不另写色值）');
+    chk(/stroke-linecap="round"/.test(fn) && /stroke-linejoin="round"/.test(fn),
+      '两个笔尖与折点都是圆的（与胶囊同一套收口，不是刀切的方头）');
+    chk(/aria-hidden="true"/.test(fn) && /focusable="false"/.test(fn),
+      '装饰性的记号不进无障碍树（可用不可用由格子的文案回答）');
+    chk(!/stroke-width="1"/.test(fn), '有实际的笔画粗细（默认 1 太细，缩到 13px 就看不清）');
+
+    // 路径写在一条具名常量里（表里 / 图例是同一份），markOkSvg() 只是把它套进 <svg>
+    chk(fn.indexOf('CHECK_PATH') >= 0, 'd 取的是那条具名常量 CHECK_PATH（不在两处各写一遍坐标）');
+    const path = (pageJs.match(/CHECK_PATH\s*=\s*"([^"]+)"/) || [0, ''])[1];
+    chk(path.length > 0, '勾的路径写在代码里（实际 CHECK_PATH = "' + path + '"）');
+    const nums = (path.match(/-?\d+(\.\d+)?/g) || []).map(Number);
+    chk(nums.length === 6, '勾是**一条**折线：三个点（起笔 / 折点 / 收笔），共 6 个坐标');
+    if (nums.length === 6) {
+      const [x1, y1, x2, y2, x3, y3] = nums;
+      chk(y2 > y1 && y2 > y3, '折点比两端都低 —— 它在下面，这是一个「勾」不是「∧」');
+      chk(x1 < x2 && x2 < x3, '三个点从左到右（起笔在左、折点居中、收笔在右）');
+      const short = Math.abs(x2 - x1), long = Math.abs(x3 - x2);
+      chk(long > short * 1.2,
+        '收笔那一笔明显比起笔长（实际 ' + long + ' : ' + short + '）——' +
+        '两条等长的斜线拼出来就是手写样，左短右长才是印刷体的正勾');
+      // 两笔大致是 45° 上下（斜率 ≈ 1）：左短笔略平、右长笔略陡，
+      // 斜率飘到 1.5 以上就成了「一根竖线 + 一根斜线」，不是勾。
+      const k1 = Math.abs((y2 - y1) / (x2 - x1));
+      const k2 = Math.abs((y2 - y3) / (x3 - x2));
+      chk(k1 > 0.5 && k1 < 1.4 && k2 > 0.5 && k2 < 1.4,
+        '两笔都大致 45°（实际斜率 ' + k1.toFixed(2) + ' / ' + k2.toFixed(2) +
+        '）—— 陡成一根竖线就不成勾了');
+      chk(Math.min(x1, y1, x3, y3) >= 2 && Math.max(x2, y2, x3, y3) <= 22,
+        '勾落在放大到 24 的方格里、四周留着余白（顶到圆边就贴死了）');
+    }
+  }
+
+  // 反面：字体里的 ✓ 不许再回来（写回字符串就是退回手写样）
+  chk(!/MARK_OK\s*=\s*["']✓["']/.test(pageJs),
+    'js/plans.js 里不再有 MARK_OK = "✓"（那个字符正是手写观感的来源）');
+  chk(!/>\s*✓\s*</.test(pageJs) && !/>\s*✓\s*</.test(stripHtml(pageHtml)),
+    'JS 与 HTML 里都不再把 ✓ 直接写进标签里');
+  chk(!/aria-hidden="true">✓</.test(stripHtml(pageHtml)),
+    '页脚那个图例的「可用」也是一枚 SVG（与表里的那一格同一个形状）');
+
+  // 图例与表里用的是同一条路径 —— 不许两处各画各的
+  const legend = (stripHtml(pageHtml).match(/plans-mark ok[\s\S]{0,400}?<path d="([^"]+)"/) || [0, ''])[1];
+  const body = (pageJs.match(/CHECK_PATH\s*=\s*"([^"]+)"/) || [0, ''])[1];
+  chk(legend && body && legend === body,
+    '图例与表里的勾是同一条路径（实际图例 "' + legend + '" / 表里 "' + body + '"）');
+
+  chk(/\.plans-mark-svg/.test(css), 'css 里那颗 SVG 有自己的一段（.plans-mark-svg）');
+  chk(/\.plans-mark-svg \{[\s\S]{0,200}?width: 13px/.test(css) &&
+      /\.plans-mark-svg \{[\s\S]{0,200}?height: 13px/.test(css),
+    'SVG 是 13px 见方（略小于 18px 的圆，四周留出余白）');
+  chk(/\.plans-mark-svg \{[\s\S]{0,200}?margin: 0 auto/.test(css),
+    'SVG 在圆里水平居中（inline-block 默认贴左，勾会歪到一边）');
   chk(/\.plans-col-me/.test(css), '「你现在在这」那一列有高亮');
 
   chk(/\.plans-th-cap \{[\s\S]{0,400}?max-width: 132px/.test(css),

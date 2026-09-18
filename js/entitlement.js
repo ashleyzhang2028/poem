@@ -20,7 +20,10 @@
 
     "read.aloud":        { minTier: "free", login: true,  quota: null, name: "语音朗读" },
     "pinyin.helper":     { minTier: "free", login: false, quota: null, name: "阅读辅助" },
-    "export.progress":   { minTier: "free", login: false, quota: null, name: "进度导出" },
+    // 进度导出（Issue #229 第二轮）：门槛从「打开即用」收到**登录可用** ——
+    // 层级仍是 free（免费档登录后就给），但未登录不再放行。改这一行要同时改
+    // api/_lib/core.js 的 featuresFor()（两端同源）。
+    "export.progress":   { minTier: "free", login: true,  quota: null, name: "进度导出" },
 
     "collections.many":  { minTier: "pro",  login: true,  quota: null, name: "自选清单",
                            quotas: { free: 10, pro: 100, max: 5000 } },

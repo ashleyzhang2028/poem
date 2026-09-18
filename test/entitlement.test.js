@@ -27,10 +27,21 @@ console.log('=== 一、免费不残缺：今天能用的，free 登录后一键�
   chk(E.can('recite.basic', guest).ok, '游客也能背诵（打开即用，不被登录拦）');
   chk(E.can('library.all', guest).ok, '游客也能读六部集子');
   chk(E.can('pinyin.helper', guest).ok, '游客也能用注音');
-  chk(E.can('export.progress', guest).ok, '游客也能导出进度 JSON（今天就有）');
+
+  // Issue #229 第二轮（用户原话）：「层级页面 进度导出 功能改为登录可用，
+  // 实际功能也按这个修改。」—— 层级仍是 free（登录后免费就给），
+  // 但**未登录不放行**，与语音朗读同一档。
+  const ep = E.can('export.progress', guest);
+  eq(ep.ok, false, '未登录不能导出进度（Issue #229：改为登录可用）');
+  eq(ep.reason, 'login', '被拦的原因是「未登录」，不是层级不够');
+  eq(E.denyReason('export.progress', guest), '登录可用', '拦住游客时说的是「登录可用」');
+  eq(E.cap('export.progress').minTier, 'free', '层级没升：登录后的 free 就给（不是 Pro / Max 的事）');
+  eq(E.cap('export.progress').login, true, 'CAPS 里 login 显式是 true（两端的唯一来源）');
+  chk(E.can('export.progress', free).ok, '登录后的 free 可以导出进度');
+  chk(E.can('export.progress', pro).ok && E.can('export.progress', max).ok, 'pro / max 当然也能用');
 }
 
-console.log('\n=== 二、语音播放：游客不行，登录的 free 可以 ===');
+console.log('\n=== 二、语音播放与进度导出：游客不行，登录的 free 可以 ===');
 {
   const g = E.can('read.aloud', guest);
   eq(g.ok, false, '未登录不能用语音播放');
@@ -38,6 +49,13 @@ console.log('\n=== 二、语音播放：游客不行，登录的 free 可以 ===
   chk(E.can('read.aloud', free).ok, '登录后的 free 可以用语音播放');
   chk(E.can('read.aloud', pro).ok, 'pro 当然也能用');
   eq(E.denyReason('read.aloud', guest), '登录可用', '拦住游客时说的是「登录可用」');
+
+  // 登录取向的那几件现在是两件：语音朗读 + 进度导出（Issue #229）。
+  const loginCaps = E.capNames().filter(function (c) {
+    return E.cap(c).minTier === 'free' && E.cap(c).login;
+  });
+  eq(loginCaps.sort().join(','), 'export.progress,read.aloud',
+    '「免费档但要登录」的恰好是这两件（实际 ' + loginCaps.join(',') + '）');
 
   E.capNames().forEach(function (c) {
     const h = E.denyReason(c, guest);
@@ -198,6 +216,8 @@ console.log('\n=== 七、身份合成：只认 AuthCore 会话，不认页面自
   eq(g.signedIn, false, '没有会话时是游客');
   eq(g.tier, 'free', '游客层级是 free');
   eq(g.can('read.aloud').ok, false, '游客不能语音播放');
+  eq(g.can('export.progress').ok, false, '游客不能导出进度（Issue #229 第二轮）');
+  eq(g.hint('export.progress'), '登录可用', '游客点导出得到的是「登录可用」');
   eq(g.hint('feihualing'), '登录可用', '游客看付费功能：先提示登录（登录是硬条件）');
 
   eq(E.denyReason('feihualing', free), 'Max 起', '已登录的 free 看飞花令：提示 Max 起');
@@ -210,6 +230,7 @@ console.log('\n=== 七、身份合成：只认 AuthCore 会话，不认页面自
   eq(id.signedIn, true, '会话被识别为已登录');
   eq(id.tier, 'free', '新账号仍是 free');
   eq(id.can('read.aloud').ok, true, '登录的 free 可以语音播放');
+  eq(id.can('export.progress').ok, true, '登录的 free 也可以导出进度了');
   eq(id.mask, 'z***@163.com', '身份里带回邮箱掩码（供名单匹配）');
 
   E.putGrant(b, { emailMask: id.mask, tier: 'max' });
@@ -226,6 +247,7 @@ console.log('\n=== 七、身份合成：只认 AuthCore 会话，不认页面自
   eq(id3.signedIn, false, '退出后是游客');
   eq(id3.tier, 'max', '本机层级仍保留（退出不降级，与「退出不动进度」同一口径）');
   eq(id3.can('read.aloud').ok, false, '游客即使有层级也不能语音播放（登录是硬条件）');
+  eq(id3.can('export.progress').ok, false, '进度导出同样：有层级但没登录也不放行');
   E.clearTier(b);
 }
 
@@ -238,6 +260,8 @@ console.log('\n=== 八、能力清单（/profile/ 的「权限」一节）===');
   const g = E.matrix(guest);
   chk(g.filter(x => x.cap === 'read.aloud')[0].ok === false, '游客清单里语音播放是灰的');
   chk(g.filter(x => x.cap === 'read.aloud')[0].hint === '登录可用', '灰掉的理由是「登录可用」');
+  chk(g.filter(x => x.cap === 'export.progress')[0].ok === false, '游客清单里进度导出也是灰的');
+  chk(g.filter(x => x.cap === 'export.progress')[0].hint === '登录可用', '理由同上：登录可用');
   chk(E.matrix(max).every(x => x.ok), 'max 的能力清单全绿（最高层不残留灰条）');
 }
 
@@ -385,7 +409,7 @@ console.log('\n=== 十二、每条付费能力都得**真的有人管**（不许
     'recite.basic': '免费档：打开即用，没有需要拦的地方（第一节断言钉着）',
     'library.all': '免费档：六部集子全文，一律可读',
     'pinyin.helper': '免费档：注音是阅读辅助，不做门槛',
-    'export.progress': '免费档：导出进度 JSON，按钮直接调 Export（无门槛）',
+    'export.progress': '免费档但要登录（Issue #229）：闸在 js/settings.js 的 #btn-export',
     'read.aloud': '语音播放：闸在 js/speech.js 的 gate()（有专门的第九节验它）',
 
     'collections.many': '按 tier 判（js/collections.js 的 limit()），读同一个门槛值',
@@ -422,6 +446,24 @@ console.log('\n=== 十二、每条付费能力都得**真的有人管**（不许
   const srv = sources.filter(function (s) { return s.rel === 'api/_lib/core.js'; })[0];
   chk(!!srv && /syncTierGate/.test(srv.text), '服务端有一条层级闸（core.syncTierGate）');
   chk(!!srv && /"sync\.multiDevice"/.test(srv.text), '服务端那道闸用的就是同一个键名');
+
+  // **免费档但要登录**的那几件（minTier: free + login: true）每一件都得有一处
+  // 真的问 can()。只在台账上写 login: true、界面上不判 —— 那就是一条写着的规矩而已，
+  // 用户点下去照样能用（Issue #229 改的就是这一档）。
+  const freeLogin = E.capNames().filter(function (k) {
+    var c = E.cap(k);
+    return c && c.minTier === 'free' && c.login;
+  });
+  const unGated = freeLogin.filter(function (k) {
+    return !sources.some(function (s) {
+      if (DECL_ONLY.indexOf(s.rel) >= 0) return false;
+      return s.text.indexOf('can("' + k + '"') >= 0 || s.text.indexOf("can('" + k + "'") >= 0;
+    });
+  });
+  chk(unGated.length === 0,
+    '每件「免费但要登录」的能力都有一处真的问 can()（没问的：' + (unGated.join('、') || '无') + '）');
+  chk(freeLogin.sort().join(',') === 'export.progress,read.aloud',
+    '「免费但要登录」的恰好是「进度导出 + 语音朗读」两件（实际 ' + freeLogin.join(',') + '）');
 }
 
 console.log('');

@@ -2541,6 +2541,98 @@ AVATAR_MAX_BYTES       = 1048576    # 单张 1MB（压完实际只有 10~20KB）
 
 ---
 
+### 4.30 进度导出改为登录可用、绿色打钩换成正勾（2026-09-18 · 回答 Issue #229 第二轮）
+
+用户原话（Issue #229）：
+
+> 「层级页面 进度导出 功能改为登录可用，实际功能也按这个修改。
+>  绿色打钩的图标需要换一个很正的√，现在看上去有点手写的样子。」
+
+两件事。
+
+#### 一、`export.progress`：免费档，但要登录
+
+层级**没升**（`minTier` 仍是 `free`），只是从「打开即用」收到「登录可用」——
+与 `read.aloud`（语音朗读）从此同一档。台账里那一行由
+
+```js
+"export.progress": { minTier: "free", login: true, quota: null, name: "进度导出" },
+```
+
+一个布尔回答。`can()` 的判序是**先登录、后层级**：`login && !signedIn` 时
+`reason` 直接是 `login`，`denyReason()` 于是给「登录可用」三个字 ——
+与语音那一条共用同一句理由、同一套写法。
+
+**两处必须一起改**，只改一处就是「表上说要登录、游客照样导」：
+
+| 位置 | 改什么 |
+|---|---|
+| `js/entitlement.js` 的 `CAPS` | `export.progress` 的 `login: false → true`（全站唯一台账） |
+| `api/_lib/core.js` 的 `featuresFor()` | `base` 那一串的**注释**同步（它列的本来就是「登录后免费就给」的几件，所以字面不动，只把口径写清） |
+| `js/settings.js` 的 `#btn-export` | 真正的那道闸：点击时 `E.can("export.progress", ident)`，拦下就 `showToast(E.denyReason(...))` 并 `return` |
+
+**按钮不隐藏。** 藏起来的话用户只看到「设置里没有那一项 / 点了没反应」，
+不知道自己差什么；照旧看得见、点得到，点下去得到那句「登录可用」——
+这与语音朗读那颗键的处置方式统一（§4.19「按钮写事、理由三个字」）。
+
+层级对比页不用改一行代码：那张表每一格都由 `Entitlement.compare()` 当场算，
+台账一变，游客那一列的钩自动变成叉加「登录可用」四个字。**这正是那条
+「这张表不许手抄」的规矩在还债**（README「层级对比页」那一节）。
+
+#### 二、绿色那颗勾：换成几何对齐的正 √
+
+用户点名「有点手写的样子」。病根是那个字符：`✓` 落在**字体**手里，
+各家字体的笔形、开口角度、两笔长短各写各的，屏幕上一放大就是手写的歪劲。
+
+改画一枚 SVG（`js/plans.js` 的 `CHECK_PATH`）：
+
+```
+M5 12.6  10 17.4  19.2 6.2      /* 起笔 → 折点 → 收笔，落在 24 的方格里 */
+stroke-width: 3.2  stroke-linecap: round  stroke-linejoin: round
+```
+
+四条口径：
+
+- **左短右长**：起笔那一笔 5 个单位、收笔那一笔 9.2 个单位（比值 1.84）。
+  两条**等长**的斜线拼出来正是手写感的来源；左短右长才是印刷体的正勾
+- **两笔都大致 45°**（斜率 0.96 / 1.22）：飘到 1.5 以上就是「一根竖线加一根斜线」
+- **笔尖与折点都是圆的**（`stroke-linecap/linejoin: round`）：与全站胶囊、圆键同一套收口，
+  不是刀切的方头
+- **颜色走 `currentColor`**：仍是 `.plans-mark.ok` 那个白，不另写色值
+
+尺寸：`13px` 见方，套在 `18px` 的圆里 —— 四周留 2.5px 余白，
+勾才不会顶到圆边（`css/account.css` 的 `.plans-mark-svg`）。
+表里每一格与页脚那个图例**引用同一条路径**（图例直接写在 HTML 里的 `<svg>`，
+坐标与 `CHECK_PATH` 逐字相同；测试里比一遍，两处各画各的就红）。
+
+「不可用」那颗叉**仍是字体里的 `✕`** —— 它是灰色、不承担「正不正」的观感，
+换它只是多一处要维护的坐标。
+
+#### 三、守卫
+
+- `test/entitlement.test.js`：第一节加「未登录不能导出、`reason` 是 `login`、
+  `minTier` 仍是 `free`、`login` 显式 true」；新增一条「**免费但要登录**的恰好是
+  `export.progress` + `read.aloud` 两件」；第九节末尾新增一条源码扫描 ——
+  **每一件这样的能力都得有一处真的问 `can()`**（只在台账上写 `login: true`、
+  界面上不判，那就是一条写着的规矩而已）
+- `test/export-core.test.js` 新增「七之二」节：读 `js/settings.js` 的 `#btn-export`
+  那一段，钉住「先判后导」「理由由 `denyReason()` 出」「按钮不隐藏」
+  「不自己比 tier」
+- `test/plans-page.test.js`：把「未登录与 Free 只差一条」改成**两条**；
+  新增一组守那颗勾的断言（是 `<svg>`、`viewBox` 是 24、走 `currentColor`、
+  圆头、三个坐标点、折点在两端之下、左短右长、斜率各在 45° 附近、
+  落在方格里留余白），加三条**反面**断言（`MARK_OK = "✓"` 与
+  `>✓<` 都必须找不到），再加「图例与表里是同一条路径」
+- `test/api.test.js`：钉住 `featuresFor(cfg, "free")` 里带着 `export.progress`
+  （有会话才拿得到 features，所以它在 free 的清单里 —— 与内核那一档一致）
+- `test/plans-page.test.js` / `test/export-core.test.js`：缓存版本门槛提到 v160
+
+验证：`bash test/run.sh` 全量**零失败**（纯 Node 43 层）。
+`sw.js` 缓存版本 v159 → **v160**（改了 `plans/index.html`、`css/account.css`、
+`js/plans.js`、`js/settings.js`）。
+
+---
+
 ## 5. 排期与顺序（为什么必须这个顺序）
 
 > ⚠️ **两份文件的分工，别搞混**（用户 2026-09-18 定）：
