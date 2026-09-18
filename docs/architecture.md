@@ -4470,3 +4470,104 @@ PNG 全部用 `icon.svg` 重出（`cairosvg`）：120 / 152 / 167 / 180 / 192 / 
   `.settings-page` 不再自己写左右内边距那两处改成「这一页不许再各写一份」
 
 验证：`bash test/run.sh` 全量 **零失败**。`sw.js` 缓存版本 v154 → **v155**（改了 html / css / js / 图标）。
+
+### 4.28 三条链接的样式找回来了（2026-09-18 · 回答 Issue #209 第三轮）
+
+> 「下面三个链接样式又丢了，丑
+>
+> 权限对比
+>
+> 用户协议
+>
+> 隐私条款」
+> —— 用户 2026-09-18，Issue #209
+
+「又」这个字是准的 —— 这一处**修过一次，然后被下一次改动带走了**。
+
+#### 一、根因：改了形状，没跟着写形状的那条规则
+
+`b5a9cbd`（§4.26）按用户要求把「关于」里那三行从
+
+```
+左格：用户协议          右格：[查看]（右对齐的小绿字）
+```
+
+改成
+
+```
+左格：[用户协议]（左格本身当链接）
+```
+
+形状改了，但 `.kv-v a`（右格链接的规则）**是唯一存在过的链接规则**，
+`.kv-k` 里**从来没有过 `a`**。于是这三处（设置「关于」三行 +
+个人中心「关于」两行）整块退回浏览器默认样子。真浏览器实测：
+
+| | 用户看到的 |
+|---|---|
+| `color` | `rgb(0, 0, 238)` —— 浏览器的默认蓝（页面上唯一一处不是宣纸色系的东西） |
+| `border-bottom` | `0px none` —— 没有那道细线，看不出是链接 |
+| `min-height` | `0px` —— 13px 的裸文字，手指点不准 |
+| `font-size` | 13px（同一个 `.kv-row` 里右边那格是同样 13px 的正文） |
+
+⚠️ 上一轮（§4.25）修的是**同类事故的前半截**：那时 `.settings-about` /
+`.kv-list` / `.kv-row` 一个字都没有，一并补过；但补的是「块」的节奏，
+`.kv-k` 里那个 `a` **没人想到** —— 于是「关于」有了字号与行距，
+三条链接却还是蓝的。**这就是「又」的来历。**
+
+#### 二、改法
+
+**`css/style.css`**
+
+```css
+.kv-k a {
+  display: inline-flex;          /* inline 元素拿不到 min-height */
+  align-items: center;
+  min-height: 30px;              /* 一行 13px 的裸文字 → 一行正经的触达区 */
+  color: var(--green);
+  font-size: 14px;
+  border-bottom: 1px solid var(--celadon);
+}
+.kv-k a:hover,
+.kv-k a:focus-visible { color: var(--green-dark); border-color: var(--green-dark); }
+```
+
+- 颜色走 `--green` / `--celadon`：**不另挑一个色**，就是全站天青那一套
+- 底下那道细线：全站「`a { text-decoration: none }`」不许破，
+  但它是行内文字、不是卡片 —— 所以在这儿放行，用 `border-bottom` 而不是
+  `text-decoration`（前者的位置与粗细可控，也吃得到 hover 的那一档）
+- 30px 触达：与 `.foot-links a` 的 32px 同一个量级
+
+**`profile/index.html`** —— 个人中心那两行也收成同一个形状
+（左格本身当链接）。b5a9cbd 只改了设置那三行，这一页漏了；
+两处形状一样，样式才只有一处要守。
+
+**`css/style.css` · `.kv-v`** —— 顺手修掉一个连带问题。
+`.kv-v` 原本是 `text-align: right` + `word-break: break-all`：后者会把
+「跬步 · 古诗词背诵」逐字符折断。改成弹性列：
+
+```css
+.kv-v { flex: 1 1 auto; text-align: right; min-width: 0;
+        overflow-wrap: break-word; word-break: normal; }
+```
+
+右列因此**永远从左边那格的右缘起排**（老写法的意图保住了），
+窄屏上按词 / 标点换行。真浏览器在 390 / 320 / 1280 三档量过：
+左格链接的宽度与高度三档**一模一样**（56×30），一个字都没被右列挤走。
+
+#### 三、验证
+
+- `bash test/run.sh`：**7237 条断言全绿**（零回归）
+- 新增一组守卫在 `test/ui-consistency.test.js`：左格链接的颜色 / 下划线 /
+  触达高度三件一起判；`.kv-v` 的反面断言（不许再有 `break-all`）；
+  页脚两条的触达高度与 `nowrap`；两处「关于」的形状一致性；
+  以及「样式表里不许写死浏览器默认蓝」
+- **真浏览器（Chrome 153，CDP）**：`/settings/` 与 `/profile/` 各量过
+  `getComputedStyle`，改前 `rgb(0,0,238)` / 0px / 13px，
+  改后 `rgb(47,96,85)` / 1px solid `rgb(79,122,110)` / 30px ——
+  两张页各截了改前改后对照图
+- `sw.js` 缓存版本 v155 → **v156**（改了 css / html / js）
+
+⚠️ 排查时踩的一个坑记在这儿：Chrome 先前被 **Service Worker 缓存**挡住，
+改前改后的截图逐像素一模一样（连 md5 都相同），一度以为改错了地方。
+**看本地改动一律用新 profile 起浏览器**（或先 `unregister()` + 清 `caches`），
+否则量到的是 `sw.js` 里那份老文件。
