@@ -372,7 +372,8 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     dock.map(b => b.querySelector('.dock-label').textContent).join(' / ') + '）');
   chk(dock.map(b => b.getAttribute('data-nav-go')).join('/') === 'home/library/search/mine',
     '四格的去向正确');
-  chk(dock.every(b => b.querySelector('.dock-icon svg')), '四格图标都是内联 SVG');
+  chk(dock.slice(0, 3).every(b => b.querySelector('.dock-icon svg')),
+    '前三格图标都是内联 SVG（最后一格是那人自己的头像，Issue #229 之后归 .avatar 管）');
   chk(dock.every(b => b.querySelectorAll(':scope > *').length === 2),
     '每格仍是 图标 + 文字 两个子元素，没有多加装饰');
   chk(dock.filter(b => b.getAttribute('data-nav-go') === 'classic').length === 0,

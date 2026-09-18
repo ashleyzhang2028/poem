@@ -5,7 +5,7 @@
 > 结论压成**一张架构图 + 一份排期表 + 一组不可退让的边界**。
 >
 > 关联：Issue #132、`docs/auth-design.md`（账号与邮箱登录，细节不在此重复）。
-> 当前 SW 缓存版本：`poem-app-v146`。
+> 当前 SW 缓存版本：`poem-app-v161`。
 > **「现在不做、以后做」的条目另有一份**：[`docs/todo.md`](todo.md) ——
 > 那是唯一一处（短信登录真开通、微信小程序版、微信登录、
 > 国内 CDN、额度真限额）。本文写的是**已排期**的顺序，两者别混。
@@ -4816,6 +4816,97 @@ DOM 节点，焦点与光标位置都会丢（测试里第二次编辑会打在�
 改前改后的截图逐像素一模一样（连 md5 都相同），一度以为改错了地方。
 **看本地改动一律用新 profile 起浏览器**（或先 `unregister()` + 清 `caches`），
 否则量到的是 `sw.js` 里那份老文件。
+
+### 4.30 底栏字小两号、「我的」那一格换成用户头像（2026-09-18 · 回答 Issue #229）
+
+> 「导航栏的 背诵 课外 搜索 我的 字体再小两号，然后 我的上面换成用户上传的头像，
+>  如果用户没有上传，则用现状。用户更新头像后，我的上面要及时更新，
+>  删除头像后也及时回退。」
+
+三件事，前两件是外观，第三件是**时序**——第三件才是真正要设计的那一件。
+
+#### 一、字小两号：11.5px → 10.5px
+
+`.dock-item` 的 `font-size` 从 11.5px 收到 **10.5px**（字距 .6px → .5px 跟着收）。
+「小两号」在浏览器里没有绝对的换算（字号没有「号」这个单位），
+按这一页上下的字号阶梯（19 / 13 / 11.5 / 10.5）取**下两档**，
+既看得出小了，又没小到读不清。
+
+#### 二、「我的」那一格的图标：两档回落，但**只有一个来源**
+
+原先是「圆 + 首字」（`GLYPHS.tabMine`，`__CHAR__` 占位符现算）。
+现在改成 **`Avatar.html(backing, { dock: true })`**，于是那一格自动跟着全站那份
+「我是谁」走：
+
+| 用户的状态 | 那一格画什么 |
+| --- | --- |
+| 传过图（账号域地址 / 设备域本机那份） | 那张图（`.avatar-img`） |
+| 没传图、起过名 | 这人自己的首字（`.avatar-dock` 里的文字） |
+| 没传图、没起名 | 默认字「诗」 |
+
+**关键决定：不自己拼第二份。** 一开始我写的是「有图 → `<img>`、没图 → 圆 + 首字」
+两个模板分叉，结果是**同一件事两处代码**（`js/chrome.js` 一份、`js/avatar.js` 一份），
+两边的回落规则迟早会漂。改成 `A.html(backing, { dock: true })` 一处出，
+`js/chrome.js` 只留「哪个 key 是头像」这一条判断。
+
+尺寸也是同一个道理：`--dock-icon-size: 26px` 一处定义，
+`.dock-icon svg` 与 `.dock-icon .avatar` 共用它。
+（原先 `.dock-icon svg { width: 22px }` 与 `.avatar` 的 `--avatar-size` 是两套，
+把头像放进去会各长各的。）26px 是因为 10.5px 的文字配 22px 的图标会显得头轻脚重。
+
+#### 三、传 / 删之后当场跟上：三条路，一条都不能少
+
+「及时更新」有**三条**不同的路要走，这是这一节真正花时间的地方——
+少一条就会得到「传完要重启才看得见」：
+
+1. **传 / 删的那一刻**：`js/avatar-edit.js` 的 `refreshChrome()` 除了原有的
+   `SiteChrome.refreshUser()`（重画顶栏），再补一次底栏
+   （`#site-dock .dock-icon` 就地换）。这是**最主要**的一条。
+2. **同一页面上、但不是头像控件干的变动**（子用户切换、昵称改完）：
+   `js/mine.js` 挂一个 `MutationObserver` 看 `document.documentElement`
+   的 `src` 属性与子树——`Avatar.html()` 画出来的是 `<img>`，它一现身就说明
+   「我是谁」变了，于是刷新底栏。
+3. **从别的标签页 / 别的设备回来的**：`visibilitychange` 与 `pageshow`
+   各刷一次（用户切出去在另一个标签页删了头像，切回来必须是对的）。
+
+三条路都收在 `SiteChrome.refreshUser()` 一个出口上。
+
+**踩到的两个坑（都留在代码注释里）：**
+
+- `MutationObserver` 在 jsdom 的页面作用域里**不是** `window.MutationObserver`——
+  裸写 `new MutationObserver(...)` 在 jsdom 里是 `undefined`，
+  测试里永远观察不到。所以用一个 `observerApi()` 取 `window.MutationObserver ||
+  window.WebKitMutationObserver`。
+- `refreshDockAvatar()` 一开始用 `ic.innerHTML !== want` 判断要不要重画。
+  **jsdom 会把 `<circle/>` 序列化成 `<circle></circle>`**，
+  于是字符串永远不相等，每次都白写一遍 DOM。改成**按结构判断**
+  （该有图的时候有没有 `img`），既快又不会误判。
+
+另外 `js/chrome.js` 的底栏是在 `DOMContentLoaded` 之前挂上去的
+（`mine.js` 跑的时候 `#site-dock` 还不存在），所以观察器要等 `chrome:ready`
+事件再挂——`watchDockAvatar()` 先盯 `document.body` 等它出现。
+
+#### 四、守卫与验证
+
+- `test/ui.test.js`：新增十三条——两档回落（首字 / 图）、
+  「传完当场变图」「删完当场退回首字」「画的正是刚传的那一张」、
+  「不给裂图」「尺寸只有一个来源」「文字 10.5px」；
+  原「四格图标都是内联 SVG」收窄成「前三格」
+- `test/search.test.js`：「四格图标都是内联 SVG」同样收窄成前三格
+- `test/settings-nav.test.js`：页签图标那三条改成 `__SRC__` 占位符 + `dockIcon`
+  + `Avatar.html(..., { dock: true })` 两处配套
+- `test/ui-consistency.test.js`：齿轮那一刀的下界从 `tabMine:` 改成 `tabMineImg:`
+  （`tabMine` 那个 glyph 已经删了，不改的话它会一直切到文件尾，
+  把后面所有 `<path>` 都算进齿轮里）
+
+验证：`test/run.sh` 44 层全绿；`sw.js` 缓存版本 v160 → **v161**
+（改了 css / js）。`docs/todo.md` 一个字没动。
+
+> 合入前 `main` 先落了 #236 / #237（已占去 `v160`），所以这一档实际占的是
+> **v161** —— `sw.js` 的 `CACHE_NAME` 与 `js/settings-nav.js` 的 `APP_VERSION`
+> 两个数仍旧对齐（`test/settings-nav.test.js` 那条守着）。
+
+---
 
 ### 4.29 自助排查：把「注册报 500」分成四条互斥判据（2026-09-18 · 回答 Issue #225）
 
