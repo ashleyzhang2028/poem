@@ -414,7 +414,8 @@ if (!JSDOM) {
 
     const u = w.document.getElementById('input-nickname');
     u.value = '小明';
-    w.document.getElementById('btn-nickname-save').dispatchEvent(new w.Event('click', { bubbles: true }));
+    u.dispatchEvent(new w.Event('input', { bubbles: true }));
+    u.dispatchEvent(new w.Event('change', { bubbles: true }));
     const fam = JSON.parse(w.localStorage.getItem('poem_family_v1'));
     eq(fam.profiles[0].nickname, '小明', '真页面：昵称写进的是**当前子用户**（昵称属孩子）');
     chk(!!w.document.getElementById('family-panel').querySelector('.family-row'),

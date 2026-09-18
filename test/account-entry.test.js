@@ -127,8 +127,10 @@ function repaint(p) {
   chk(shownIds(p).join(',') === 'btn-account-entry',
     '未登录时那一行里只剩「登录」一颗（实际 ' + shownIds(p).join(',') + '）');
   chk(!/btn-go-plans/.test(SRC.mine) && !/btn-go-plans/.test(MINE_JS),
-    '「权限对比」那颗键整颗撤了（用户 2026-09-18：从这里移出，' +
+    '「层级对比」那颗键整颗撤了（用户 2026-09-18：从这里移出，' +
     '改成设置「关于」里的一行链接）');
+  chk(!/link-plans/.test(SRC.mine) && !/link-plans/.test(MINE_JS),
+    '「层级对比」那张卡也整张撤了（用户 2026-09-18：删除 我的页面的权限对比的卡片）');
 
   const identityText = stripHtml(p.doc.getElementById('identity-row').outerHTML);
   chk(!/未起名/.test(identityText), '身份行不再重复写昵称（它就在旁边的输入框里）');
