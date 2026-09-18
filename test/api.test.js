@@ -502,6 +502,15 @@ async function main() {
     eq(mine.status, 200, "有会话时 /api/me 回 200");
     eq(mine.body.plan.tier, "free", "free 账号回 free");
     chk(mine.body.features.indexOf("read.aloud") >= 0, "free 有 read.aloud（与 js/entitlement.js 同一个键名）");
+
+    // Issue #229 第二轮：export.progress 与内核同步改成「登录可用」。
+    // 这里拿到 features 的**前提就是有会话**（上面刚确认过邮箱），
+    // 所以它仍然在 free 的清单里 —— 与 js/entitlement.js 的
+    // minTier: free + login: true 同一档。
+    chk(mine.body.features.indexOf("export.progress") >= 0,
+      "登录后的 free 有 export.progress（层级仍是 free，只是未登录不放行）");
+    eq(core.featuresFor(cfg, "free").indexOf("export.progress") >= 0, true,
+      "featuresFor 的 base 里带着 export.progress（与内核那一行同源）");
     chk(mine.body.features.indexOf("sync.multiDevice") < 0, "free 没有 sync.multiDevice");
     chk(!/email_hash/.test(JSON.stringify(mine.body)), "响应里不含 email_hash");
 

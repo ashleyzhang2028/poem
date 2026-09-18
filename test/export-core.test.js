@@ -166,6 +166,33 @@ console.log("\n=== 七、范围表不认识的范围：一律空，不抛也不�
   });
 }
 
+console.log("\n=== 七之二、进度导出（导出备份）是登录可用（Issue #229 第二轮）===");
+echo: {
+  // 用户原话：「层级页面 进度导出 功能改为登录可用，实际功能也按这个修改。」
+  // 台账那一行在 js/entitlement.js（CAPS），真正的按钮在 js/settings.js 的
+  // #btn-export —— 两处都得跟着走，否则就是「表上说要登录、实际游客照样导」。
+  const cap = E.cap("export.progress");
+  chk(!!cap, "进度导出这条能力在（键名 export.progress）");
+  eq(cap.login, true, "内核里 export.progress 的 login 是 true");
+  eq(cap.minTier, "free", "层级仍是 free：登录后就给，不是 Pro / Max 的事");
+  eq(E.can("export.progress", { tier: "free", signedIn: false }).reason, "login",
+    "未登录时拦它的是「未登录」");
+  chk(E.can("export.progress", { tier: "free", signedIn: true }).ok,
+    "登录后的 free 放行");
+
+  const js = read("js/settings.js").replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^\s*\/\/.*$/gm, " ");
+  const at = js.indexOf('const exportBtn = $("#btn-export");');
+  chk(at >= 0, "js/settings.js 里有导出备份那颗键（#btn-export）");
+  const block = js.slice(at, js.indexOf('const poemsBtn', at));
+  has(block, 'E.can("export.progress"', "点它之前真的问一次能力表（不是只写在台账里）");
+  has(block, "E.denyReason(", "拦住用户的那句话由 Entitlement.denyReason() 出（页面不自造）");
+  chk(block.indexOf("return") >= 0 && block.indexOf("Storage.exportJSON") > block.indexOf('E.can("export.progress"'),
+    "拦住时当场 return，不落到导出的那几行（先判后导）");
+  chk(!/btn-export[^>]*hidden/.test(read("settings/general/index.html")),
+    "按钮**不隐藏**：游客也看得见它，点一下得到「登录可用」（藏起来就成了点了没反应）");
+  chk(!/=== *["']pro["']|=== *["']max["']/.test(js), "js/settings.js 仍不自己比 tier");
+}
+
 console.log("\n=== 八、接口与页面：拦在数据层，按钮之外也绕不过 ===");
 {
 
@@ -186,7 +213,7 @@ console.log("\n=== 八、接口与页面：拦在数据层，按钮之外也绕�
   const sw = read("sw.js");
   has(sw, '"./js/export-core.js"', "sw.js 预缓存里有 js/export-core.js");
   const ver = parseInt((sw.match(/poem-app-v(\d+)/) || [0, "0"])[1], 10);
-  chk(ver >= 131, "缓存版本已跟着提（实际 v" + ver + "）");
+  chk(ver >= 160, "缓存版本已跟着提（Issue #229 第二轮动了 js/settings.js，实际 v" + ver + "）");
   has(read("settings/general/index.html"), "/js/export-core.js", "设置页加载了导出内核");
 }
 

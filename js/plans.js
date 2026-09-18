@@ -17,7 +17,26 @@
     });
   }
 
-  var MARK_OK = "✓";
+  // 绿色那颗「可用」的记号（Issue #229 第二轮）：**不用字体里的 ✓** ——
+  // 「✓」是各家字体的自由发挥，笔形带一点手写的歪劲（用户点名：「需要换一个
+  // 很正的 √，现在看上去有点手写的样子」）。改画一枚 SVG：两条线段按坐标落，
+  // 任何机器上都是同一个形状，与字号 / 字体无关。
+  //
+  // 三条线段端点在 24 的方格上：起笔 (5,12.6) → 折点 (10,17.4) → 收笔 (19.2,6.2)。
+  // 收笔那一笔比起笔长（7.6 : 2.0 的斜度差），看着才是「一条撇、一条长捺」的
+  // 正勾，不是两条等长的斜线拼出来的手写样。stroke-linecap: round ——
+  // 两个笔尖是圆的，和胶囊一样不是刀切的方头。
+  var CHECK_PATH = "M5 12.6 10 17.4 19.2 6.2";
+
+  function markOkSvg() {
+    return '<svg class="plans-mark-svg" viewBox="0 0 24 24" fill="none" ' +
+      'stroke="currentColor" stroke-width="3.2" stroke-linecap="round" ' +
+      'stroke-linejoin="round" aria-hidden="true" focusable="false">' +
+      '<path d="' + CHECK_PATH + '" /></svg>';
+  }
+
+  // 「不可用」仍是字体里的叉（它是灰色、不承担「正不正」的观感），
+  // 但形状交给同一格：都装进 .plans-mark 那个圆里。
   var MARK_NO = "✕";
 
   function nameHtml(row) {
@@ -57,7 +76,7 @@
           var mine = col.id === current ? " plans-col-me" : "";
 
           var inner = cell.ok
-            ? '<span class="plans-mark ok" aria-hidden="true">' + MARK_OK + "</span>"
+            ? '<span class="plans-mark ok" aria-hidden="true">' + markOkSvg() + "</span>"
             : '<span class="plans-mark no" aria-hidden="true">' + MARK_NO + "</span>";
           var hint = cell.hint
             ? '<span class="plans-cell-hint">' + esc(cell.hint) + "</span>"

@@ -512,6 +512,18 @@ thead .plans-th-cap {
 .plans-mark.ok { color: #fff; background: var(--green); }
 .plans-mark.no { color: var(--ink-3); background: var(--green-light); }
 
+/* 绿色那颗「可用」是一枚 SVG 勾（Issue #229 第二轮）：符号 ✓ 是各家字体
+   的自由发挥、笔形带手写的歪劲，用户点名要「很正的 √」。SVG 按坐标落线，
+   与字号 / 字体无关，任何机器上都是同一个形状。
+   13px 的外框略小于 18px 的圆，四周留出 2.5px 的余白 —— 勾才不会顶到圆边。 */
+.plans-mark-svg {
+  display: block;
+  width: 13px;
+  height: 13px;
+  margin: 0 auto;
+}
+.account-hint .plans-mark .plans-mark-svg { margin: 0; }
+
 .plans-cell-hint {
   display: block;
   margin-top: 3px;

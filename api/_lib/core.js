@@ -199,6 +199,10 @@ function planTier(acc) {
 
 function featuresFor(cfg, tier) {
 
+  // base 是「登录后免费就给」的那几件 —— 这一串列的是**登录后**的能力，
+  // 未登录本来就没有 features（调用方先看 deps.account）。
+  // export.progress 自 Issue #229 第二轮起与 js/entitlement.js 的 CAPS 同步
+  // 改成 login: true（层级仍是 free，只是未登录不放行）。
   var base = ["recite.basic", "library.all", "read.aloud", "pinyin.helper", "export.progress"];
 
   var pro = ["collections.many", "sync.multiDevice", "export.paper",
