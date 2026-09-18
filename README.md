@@ -321,7 +321,7 @@ Vercel Serverless，**同源、无 CORS**：
 | `POST /api/reset-request` | 忘记密码第一步：发重设邮件（**不泄露邮箱是否存在**） |
 | `POST /api/reset-confirm` | 忘记密码第二步：换新密码 + **吊销全部会话** + 如实回 `emailVerified`（未确认的人仍然登不进去，那一句必须说出来） |
 | `POST /api/admin/accounts` | 账号名录：列出**全部注册账号**（含**明文邮箱**），只读 |
-| `GET /api/diag` | 自助排查：会话密钥配没配、库是内存还是 Supabase、六张表逐张的 HTTP、列形状、**写入实跑一次**（插一行标 `__diag__` 的 progress，读完即删）。**只回形状与 HTTP 状态，永不回密钥** |
+| `GET /api/diag` | 自助排查：会话密钥配没配、库是内存还是 Supabase、六张表逐张的 HTTP、列形状、**写入实跑一次**（插一行标 `__diag__` 的 progress，读完即删）、**本次请求里哪几列没写进去**（`degraded`）。**只回形状与 HTTP 状态，永不回密钥** |
 
 业务内核全在 `api/_lib/core.js`（handler 只做「读请求 → 调内核 → 写响应」），
 所以能在 Node 里直接测 —— `test/api.test.js` 用**真 http 请求**跑完整链路。
@@ -667,6 +667,17 @@ curl -sS "$SITE_URL/api/config"      # 期望 {"turnstile":{"enabled":true,"site
 | 表是旧形状（缺列） | HTTP **400**（`42703 column … does not exist`） |
 | key 填成了 anon / 改完没重新部署 | HTTP **401**（`Invalid API key`） |
 | 读得通、写不通 | `写入实跑`：失败 |
+
+**但「表是旧形状」这一档，不该再让用户看到那句话了。** 建号写的是老表认得的列，
+迁移列（`email` / `email_verified_at` / `password_hash` / `password_salt`）
+另发一发去补；哪几列没落库**如实写在响应里**（`storeDegraded`），
+自检再照实说。也就是说：库没迁的后果是「密码暂时登录不了」，
+**不是**「注册时丢一句服务端出了点问题」。
+
+> 为什么值得单独写一段：这处是第一例「用户什么都没做错、配置也没错，
+> 却被自己的兜底 catch 甩了一句 500」。`test/register-legacy-db.test.js`
+> 用一个真 HTTP、真 PostgREST 形状（`PGRST204` / `42703`）的**旧表库**把注册跑穿，
+> 守着两件事：旧表上注册仍是 202 且账号真的落库；新表上一个降级字段都不许冒出来。
 
 两种用法，都不需要终端：
 

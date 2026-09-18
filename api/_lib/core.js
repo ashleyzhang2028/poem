@@ -118,10 +118,15 @@ function makeRateLimiter() {
 }
 
 function accountRow(identityValue, hash, mask, now) {
+  var plain = id.normalizeEmailForStore(identityValue);
+
+  if (!mask) {
+    mask = plain.indexOf("@") > 0 ? id.maskEmail(plain) : "***";
+  }
   return {
     uid: id.newUid(),
 
-    email: id.normalizeEmailForStore(identityValue),
+    email: plain,
     email_hash: hash,
     email_mask: mask,
 
@@ -571,6 +576,24 @@ function findAccountByEmail(store, email) {
   });
 }
 
+function storeDegrade(store) {
+  try {
+    return typeof store.degrade === "function" ? (store.degrade() || []) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function withDegrade(store, body) {
+  var miss = storeDegrade(store);
+  if (!miss.length) return body;
+  body.storeDegraded = miss;
+  body.note = (body.note ? body.note + " " : "") +
+    "⚠️ 这台服务器上的表还停在旧形状，这 " + miss.length +
+    " 列（" + miss.join(" / ") + "）没能写进去 —— 请把 api/_lib/schema.sql 整段重跑一次（幂等），然后重新部署。";
+  return body;
+}
+
 function register(deps, input) {
   var cfg = deps.cfg;
 
@@ -606,7 +629,7 @@ function registerAfterGuard(deps, input) {
     if (acc.status === "locked") return err(423, "E_LOCKED", "为了安全，请稍后再试", { retryAfter: 3600 });
 
     if (!r.created && acc.password_hash) {
-      return ok({
+      return ok(withDegrade(store, {
         uid: acc.uid,
         registerRequested: true,
         created: false,
@@ -614,7 +637,7 @@ function registerAfterGuard(deps, input) {
         existing: true,
         store: store.kind,
         note: "如果这个邮箱已经注册过，请直接用「密码登录」；忘了密码就用「忘记密码」重设。"
-      });
+      }));
     }
 
     var salt = id.newPasswordSalt();
@@ -631,7 +654,7 @@ function registerAfterGuard(deps, input) {
 
       if (cur.email_verified_at != null) {
         var masked = cur.email_mask || id.maskEmail(email);
-        return ok({
+        return ok(withDegrade(store, {
           uid: cur.uid,
           registerRequested: true,
           created: r.created,
@@ -641,10 +664,10 @@ function registerAfterGuard(deps, input) {
           verifySent: false,
           verifyTransport: null,
           note: "邮箱已经在确认过了 —— 这次只更新了密码，确认状态保持不变。"
-        });
+        }));
       }
       return issueVerification(deps, cur).then(function (v) {
-        return ok({
+        return ok(withDegrade(store, {
           uid: cur.uid,
           registerRequested: true,
           created: r.created,
@@ -665,7 +688,7 @@ function registerAfterGuard(deps, input) {
           note: cfg.requireEmailVerified
             ? "邮箱只在你自己主动填时收集；已在库中记下。**邮箱确认之后才能登录**，请去收件箱点那条链接。"
             : "邮箱只在你自己主动填时收集；已在库中记下，供你确认与找回密码。"
-        });
+        }));
       }).then(function (out) {
 
         return out;

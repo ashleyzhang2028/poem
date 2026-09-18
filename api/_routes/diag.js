@@ -147,7 +147,7 @@ var VERDICT_TEXT = {
   db_bad_key: "数据库密钥不对：同上，注册会 500",
   db_no_table: "表还没建：在 Supabase 的 SQL Editor 里整段执行 api/_lib/schema.sql",
   db_no_column: "表是旧形状：跑 api/_lib/schema.sql 里补列（ALTER）的那一段",
-  db_write_fail: "表能读不能写：注册会在写账号那一步失败",
+  db_write_fail: "表能读不能写：注册会在写账号那一步失败（比如 RLS 开了却没给 service_role 权限）",
   api_not_mounted: "本站的 /api/* 没挂到函数上 —— 你访问的这个域名上和 SITE_URL（本应用写进邮件里的地址）对不上，注册请求压根没到本站的服务端。多半是这次部署 `/api/*` 没接上，重新部署一次再看",
   ok: "一路都通：注册出问题就不在配置这一层了，请把本页的「服务端自报」整段贴给 CodeBuddy"
 };
@@ -167,6 +167,7 @@ function verdictOf(r) {
   if (probe.write && probe.write.ok === false) return "db_write_fail";
   if (probe.columns && probe.columns.accounts && probe.columns.accounts.ok === false) return "db_no_column";
   if (probe.columns && probe.columns.progress && probe.columns.progress.ok === false) return "db_no_column";
+  if (r.database.degraded && r.database.degraded.length) return "db_no_column";
   return "ok";
 }
 
@@ -255,6 +256,13 @@ module.exports = handler.make("diag", ["GET"], function (d, body, req) {
     out.serviceKeyShape = r.serviceKeyShape || null;
     out.database = {
       mode: r.database.mode,
+
+      // 写不进去的列（旧形状库）—— 空的才许报「一路都通」。
+      // 这是**服务端自报**，和「上游探针通不通」是两件事：上游全通、
+      // 但注册那一发被 42703 拒掉，正是这次用户遇到的那一档。
+      degraded: (function () {
+        try { return typeof d.store.degrade === "function" ? (d.store.degrade() || []) : []; } catch (e) { return []; }
+      })(),
       target: r.database.target || null,
       reachable: r.database.probe.connect ? r.database.probe.connect.httpStatus : null,
       connect: r.database.probe.connect,

@@ -14,6 +14,8 @@ function memoryStore() {
     },
     getAccount: function (uid) { return db.accounts[uid] || null; },
     putAccount: function (acc) { db.accounts[acc.uid] = acc; return acc; },
+
+    degrade: function () { return []; },
     deleteAccount: function (uid) { delete db.accounts[uid]; return true; },
 
     putCode: function (rec) { db.codes[rec.code_id] = rec; return rec; },
@@ -153,12 +155,109 @@ function supabaseStore(cfg) {
         return r.text().then(function (t) {
           var err = new Error("supabase " + r.status + ": " + String(t).slice(0, 300));
           err.status = r.status;
+          err.upstream = String(t).slice(0, 300);
           throw err;
         });
       }
       var ct = r.headers.get("content-type") || "";
       if (ct.indexOf("json") < 0) return null;
       return r.json();
+    });
+  }
+
+  var degraded = [];
+
+  // 迁移列：库停在旧形状时这三/四列还没有。
+  // 建号**不能**因为它们缺席就整个失败 —— 那正是「首次注册必炸」的成因。
+  var MIGRATED = ["email", "email_verified_at", "password_hash", "password_salt"];
+
+  function isMissingColumn(err) {
+    if (!err || err.status !== 400) return false;
+    var up = String(err.upstream || err.message || "");
+    if (up.indexOf("42703") >= 0) return true;
+    if (up.indexOf("PGRST204") >= 0) return true;
+    return /column .* does not exist/i.test(up);
+  }
+
+  function pick(row, keys) {
+    var out = {};
+    keys.forEach(function (k) {
+      if (row && Object.prototype.hasOwnProperty.call(row, k)) out[k] = row[k];
+    });
+    return out;
+  }
+
+  function refusedColumns(sentKeys) {
+    // PostgREST 一次只点名**第一列**（`Could not find the 'c' column of 'accounts'`），
+    // 所以「哪几列没写进去」要按**这一发真发出去的那几列**来数，不能只认上游那一句 ——
+    // 否则报告里永远只有一列，用户会以为只缺一列。
+    return sentKeys.filter(function (k) { return MIGRATED.indexOf(k) >= 0; });
+  }
+
+  function noteDegrade(cols) {
+    (cols.length ? cols : ["(未能定位列名)"]).forEach(function (c) {
+      if (degraded.indexOf(c) < 0) degraded.push(c);
+    });
+  }
+
+  function sendAccount(row) {
+    return call("/accounts?on_conflict=uid", {
+      method: "POST", body: row, prefer: "resolution=merge-duplicates,return=representation"
+    }).then(function (rows) { return rows && rows[0] ? rows[0] : row; });
+  }
+
+  function readAccount(filter, hash) {
+    return call("/accounts?" + filter + "&select=" + COLS + "&limit=1").then(function (rows) {
+      return rows && rows[0] ? rows[0] : null;
+    })["catch"](function (err) {
+      // 旧形状的库上，`select` 里那几个迁移列不存在 —— 读也读不成。
+      // 「读不出账号」不能变成 500：注册正是**靠这次读**判断是新号还是老号的，
+      // 一炸用户就拿到「服务端出了点问题」。退到老列那份投影，把能读到的读回来。
+      if (!isMissingColumn(err)) throw err;
+      // ⚠️ 这里**只能**列老表真有的那批列。把迁移列写进来，第二发照样 400 ——
+      //    那就等于没退，用户看到的还是 500。
+      var CLS = ["uid", "email_hash", "email_mask", "nickname", "plan", "plan_until", "role",
+        "created_at", "last_login_at", "status"];
+      var second = call("/accounts?" + filter + "&select=" + CLS.join(",") + "&limit=1");
+      // 第二发再被拒（表比第 5、6 节还老）时，也要**如实记降级**再退出，
+      // 否则用户拿到 500、报告里还写着「一路都通」。
+      second["catch"](function (e2) { noteDegrade(MIGRATED); });
+      return second.then(function (rows) {
+          noteDegrade(MIGRATED);
+          return rows && rows[0] ? rows[0] : null;
+        });
+    });
+  }
+
+  function putAccount(acc) {
+    // 第一发：老库认得的那批列。新库里这些列都有，所以这一步永远安全；
+    // 少发列不会丢数据（幂等 upsert 只更新发过去的那几列）。
+    var safeKeys = Object.keys(acc).filter(function (k) { return MIGRATED.indexOf(k) < 0; });
+    var safe = pick(acc, safeKeys);
+    var rest = pick(acc, MIGRATED);
+
+    return sendAccount(safe)["catch"](function (err) {
+      if (!isMissingColumn(err)) throw err;
+
+      // 库是更老的形状（连安全列都缺）：只能降级到建表那批老列，
+      // 并记下「哪几列没写进去」，由 /api/diag 与注册响应如实报出来。
+      noteDegrade(refusedColumns(safeKeys));
+      var CLS = ["uid", "email_hash", "email_mask", "nickname", "plan", "plan_until", "role",
+        "created_at", "last_login_at", "status"];
+      return sendAccount(pick(acc, CLS));
+    }).then(function (saved) {
+      if (!Object.keys(rest).length) return saved;
+
+      // 第二发：补上迁移列。整发被拒（列根本不在）就降级，绝不抛给用户。
+      return call("/accounts?uid=eq." + q(acc.uid), {
+        method: "PATCH", body: rest, prefer: "return=minimal"
+      }).then(function () {
+        return saved;
+      })["catch"](function (err) {
+        if (!isMissingColumn(err)) throw err;
+        noteDegrade(Object.keys(rest));
+        return saved;
+      });
     });
   }
 
@@ -170,18 +269,15 @@ function supabaseStore(cfg) {
     ready: function () { return !!base && !!KEY; },
 
     getAccountByHash: function (hash) {
-      return call("/accounts?email_hash=eq." + q(hash) + "&select=" + COLS + "&limit=1")
-        .then(function (rows) { return rows && rows[0] ? rows[0] : null; });
+      return readAccount("email_hash=eq." + q(hash), hash);
     },
     getAccount: function (uid) {
-      return call("/accounts?uid=eq." + q(uid) + "&select=" + COLS + "&limit=1")
-        .then(function (rows) { return rows && rows[0] ? rows[0] : null; });
+      return readAccount("uid=eq." + q(uid), uid);
     },
     putAccount: function (acc) {
-      return call("/accounts?on_conflict=uid", {
-        method: "POST", body: acc, prefer: "resolution=merge-duplicates,return=representation"
-      }).then(function (rows) { return rows && rows[0] ? rows[0] : acc; });
+      return putAccount(acc);
     },
+    degrade: function () { return degraded.slice(); },
     deleteAccount: function (uid) {
       return call("/accounts?uid=eq." + q(uid), { method: "DELETE", prefer: "return=minimal" }).then(function () { return true; });
     },

@@ -271,7 +271,14 @@ async function diagAt(base) {
   }
 
   {
-    const jsSrc = fs.readFileSync(path.join(ROOT, "js/self-check.js"), "utf8");
+    {
+    const readme = fs.readFileSync(path.join(ROOT, "README.md"), "utf8");
+    chk(/storeDegraded/.test(readme) && /register-legacy-db\.test\.js/.test(readme),
+      "README 里写明了「旧形状库的注册不再 500」这条，并指到守着它的那一层测试");
+    chk(/degraded/.test(readme), "README 里也写了 diag 的 degraded 字段（哪几列没写进去）");
+  }
+
+  const jsSrc = fs.readFileSync(path.join(ROOT, "js/self-check.js"), "utf8");
     chk(/selfcheck-probe@invalid/.test(jsSrc),
       "探针那句写死在代码里是 @invalid（改一个字就会开始建号 —— 这条守着它）");
     chk(/只在服务端读|两个字都不写|一个字都没写|归一化那一步就退回/.test(jsSrc),
