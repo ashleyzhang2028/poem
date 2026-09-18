@@ -66,9 +66,18 @@ async function diagAt(base) {
   chk(/api\/diag/.test(js) && /api\/register/.test(js) && /api\/config/.test(js),
     "前端依次打 /api/diag、/api/config、/api/me、/api/register 四条");
 
+  // 用户 2026-09-18（Issue #229）：入口从「设置 · 通用」那颗按钮改成
+  // 「设置 · 关于」里的一行链接（排在隐私条款下面）。口径没变 ——
+  // 页面上仍得有一条去 /self-check/ 的路，否则用户打不开时根本不知道有这页。
+  const nav = fs.readFileSync(path.join(ROOT, "js/settings-nav.js"), "utf8");
+  chk(/link\("\/self-check\/",\s*"自检"\)/.test(nav) && /\/self-check\//.test(nav),
+    "「设置 · 关于」里有去 /self-check/ 的一行链接「自检」");
+  chk(nav.indexOf("隐私条款") < nav.indexOf("/self-check/"),
+    "它排在隐私条款**下面一行**（用户点名的位置）");
+  chk(!/btn-selfcheck/.test(nav), "入口不再是一颗按钮（用户 2026-09-18：按钮变成链接）");
   const general = fs.readFileSync(path.join(ROOT, "settings/general/index.html"), "utf8");
-  chk(/href="\/self-check\/"/.test(general) && /id="btn-selfcheck"/.test(general),
-    "「设置 · 通用」里有去 /self-check/ 的入口（打不开时也不知道有这个页面）");
+  chk(!/self-check/.test(general),
+    "「设置 · 通用」里那一块整块撤干净（同一件事不在两处各说一遍）");
   const sw = fs.readFileSync(path.join(ROOT, "sw.js"), "utf8");
   chk(/\.\/self-check\//.test(sw) && /\.\/js\/self-check\.js/.test(sw),
     "sw.js 预缓存里收进了 /self-check/ 与它的脚本（离线也要能测）");

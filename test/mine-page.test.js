@@ -116,6 +116,13 @@ const css = read('css/style.css') + read('css/account.css');
   chk(/id="stats-list"/.test(MINE) && /id="stats-card"/.test(MINE), '有「本机数据」那一段');
   chk(/id="link-progress"[^>]*href="\/progress\//.test(MINE),
     '「本机数据」卡里有一条去 /progress/ 的入口（用户 2026-09-18 问：数据/进度页的入口在哪）');
+  chk(/>背诵进度</.test(MINE) && !/背诵进度总览/.test(MINE),
+    '它的文案就叫「背诵进度」（用户 2026-09-18 点名，实际「' +
+    (MINE.match(/>([^<]*背诵进度[^<]*)</) || ['', ''])[1] + '」）');
+  chk(/<a[^>]*id="link-progress"/.test(MINE) && !/<button[^>]*id="link-progress"/.test(MINE) &&
+      !/class="btn[^"]*"[^>]*id="link-progress"/.test(MINE) &&
+      !/id="link-progress"[^>]*class="btn/.test(MINE),
+    '它是一行链接（<a>，且不挂按钮那套 class）—— 用户 2026-09-18：这个按钮改成链接');
   chk(/Scheduler\.isLearned/.test(MINE_JS) && /Scheduler\.isDue/.test(MINE_JS) &&
       /Scheduler\.mastery/.test(MINE_JS),
     '三项都走 Scheduler 的口径（与首页 / 进度页同源）');
@@ -289,6 +296,13 @@ function boot(seed) {
   chk(!!d0.getElementById('link-progress') &&
       d0.getElementById('link-progress').getAttribute('href') === '/progress/',
     '（真页面）「本机数据」卡里有去 /progress/ 的入口（用户问的「数据 / 进度页」入口）');
+  chk(d0.getElementById('link-progress').tagName === 'A' &&
+      d0.getElementById('link-progress').textContent.trim() === '背诵进度',
+    '（真页面）那个入口是链接，写着「背诵进度」（实际「' +
+    d0.getElementById('link-progress').tagName + ' · ' +
+    d0.getElementById('link-progress').textContent.trim() + '」）');
+  chk(!/\bbtn\b/.test(d0.getElementById('link-progress').className),
+    '（真页面）它没有按钮那套 class（挂上就还是画出来一颗键）');
   chk(!!d0.getElementById('avatar-slot') &&
       !!d0.getElementById('avatar-slot').querySelector('.avatar'),
     '（真页面）头像只画一处（#identity-row 里那一枚，卡里不再有第二枚）');

@@ -34,7 +34,7 @@
         <div class="account-actions" id="identity-actions">
           <button class="account-btn" id="btn-account-entry" type="button"></button>
           <button class="account-btn ghost" id="btn-sign-out" type="button" hidden>退出登录</button>
-          <button class="account-btn ghost" id="btn-go-plans" type="button">层级对比</button>
+          <a class="account-link" id="btn-go-plans" href="/plans/">层级对比</a>
         </div>
 
         <p class="account-hint" id="signout-hint" hidden>退出不删进度；注销在下面「危险区」。</p>
@@ -48,10 +48,9 @@
       <section class="account-card">
         <h2 class="account-card-title">关于</h2>
         <div class="kv-list">
-          <div class="kv-row"><span class="kv-k">应用</span><span class="kv-v">跬步 · 古诗词背诵</span></div>
-          <div class="kv-row"><span class="kv-k"><a href="/terms/">用户协议</a></span></div>
-          <div class="kv-row"><span class="kv-k"><a href="/privacy/">隐私条款</a></span></div>
           <div class="kv-row"><span class="kv-k">离线缓存</span><span class="kv-v" id="about-cache"></span></div>
+          <div class="kv-row"><span class="kv-k"><a class="kv-link" href="/terms/">用户协议</a></span><span class="kv-v"></span></div>
+          <div class="kv-row"><span class="kv-k"><a class="kv-link" href="/privacy/">隐私条款</a></span><span class="kv-v"></span></div>
         </div>
 
         <label class="switch sync-row" id="sync-row">

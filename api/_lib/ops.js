@@ -495,7 +495,7 @@ var STEPS = [
       " 结论互斥：`no_secret` / `db_not_configured` / `db_unreachable` / `db_bad_key` /" +
       " `db_no_table` / `db_no_column` / `db_write_fail` / `ok`。" +
       " ⚠️ 它**只回形状与 HTTP 状态，永不回密钥**（主机名脱敏、值一个字都不出现）。" +
-      " 不想敲命令就走页面：设置 · 通用 → 跑一遍自检（/self-check/），" +
+      " 不想敲命令就走页面：设置 → 关于 → 自检（/self-check/），" +
       " 它把同样的结论摊成一页，并给一颗「复制报告」。"
     ],
     check: "七条全对：① 200 ② 401 ③ delivered=true ④ 401 ⑤ 函数入口只有 1 个 ⑥ /api/config 回 200（不是平台层的 404）⑦ /api/diag 的 verdict 回 ok。任何一条不对，回到它上面那一步"

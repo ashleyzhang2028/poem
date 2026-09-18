@@ -23,6 +23,12 @@ const css = read('css/account.css');
 const privacy = read('privacy/index.html');
 const terms = read('terms/index.html');
 
+// 从一整份 CSS 里按选择器取一条规则（"这几行的字到底怎么排的"要看真实规则，
+// 不能只看类名在不在）。
+const CSS = css + read('css/style.css');
+const rule = (sel) => (CSS.match(new RegExp(
+  sel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*\\{[^}]*\\}')) || [''])[0];
+
 const strip = t => t.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/^\s*\/\/.*$/gm, ' ');
 
 const stripHtml = t => t.replace(/<!--[\s\S]*?-->/g, ' ');
@@ -378,7 +384,21 @@ const LOGIN = strip(loginJs), PROFILE = strip(profileJs), ADMIN = strip(adminJs)
 
   const idActions = (SRC.profile.match(/id="identity-actions"[\s\S]*?<\/div>/) || [''])[0];
   chk(/id="btn-account-entry"[\s\S]*?id="btn-sign-out"[\s\S]*?id="btn-go-plans"/.test(idActions),
-    '登录 / 退出 / 层级对比三颗键真的在同一行里（顺序也在）');
+    '登录 / 退出 / 层级对比三件真的在同一行里（顺序也在）');
+
+  // 用户 2026-09-18：这颗「层级对比」改成链接 —— 它是「去别处看一张表」，
+  // 不是「登录 / 退出」那类动作。做成 <a href="/plans/">：不点 JS、
+  // 中键新开、键盘可达、还没脚本时也能走。
+  chk(/<a[^>]*id="btn-go-plans"[^>]*href="\/plans\/"[^>]*>层级对比<\/a>/.test(SRC.profile) ||
+      /<a[^>]*href="\/plans\/"[^>]*id="btn-go-plans"[^>]*>层级对比<\/a>/.test(SRC.profile),
+    '「层级对比」是一个 <a href="/plans/">（用户 2026-09-18：这颗键改成链接）');
+  chk(!/<button[^>]*id="btn-go-plans"/.test(SRC.profile),
+    '它不再是一颗 <button>');
+  chk(!/class="account-btn[^"]*"[^>]*id="btn-go-plans"/.test(SRC.profile) &&
+      !/id="btn-go-plans"[^>]*class="account-btn/.test(SRC.profile),
+    '它也不再挂着按钮那套 class（挂了就还是画出来一颗键）');
+  chk(/\/plans\//.test(SRC.profile) || /location\.href = "\/plans\/"/.test(PROFILE),
+    '去 /plans/ 这条动线仍在（现在是 <a> 自己带着地址）');
 
   chk(!/id="btn-go-sync"/.test(SRC.profile),
     '「同步设置」那颗键撤掉了（点了还是要去通用页再点一次，纯属多余）');
@@ -420,6 +440,28 @@ const LOGIN = strip(loginJs), PROFILE = strip(profileJs), ADMIN = strip(adminJs)
     '「账号」不再独占一张卡（它回答的「我是谁」与身份卡重合）');
   chk(/id="account-list"/.test(SRC.profile) && /\$\("account-list"\)/.test(PROFILE),
     '账号那几行挪进「关于」卡（#account-list），仍由 renderAccount() 画');
+
+  // 用户 2026-09-18：这一页的「关于」不再自己念一遍「应用 / 版本」——
+  // 那两行在「设置 · 关于」里已经说得很清楚，同一件事只说一遍。
+  // 留下的两个法务入口也走同一套排法：左列是链接、右列留空、行高一致。
+  const aboutBlock = SRC.profile.slice(SRC.profile.indexOf('account-card-title">关于'),
+    SRC.profile.indexOf('id="sync-row"'));
+  chk(!/应用<\/span>/.test(aboutBlock) && !/跬步 · 古诗词背诵/.test(aboutBlock),
+    '「关于」卡里不再有「应用」那一行（应用名已撤，用户 2026-09-18：不要与应用/版本一样）');
+  chk(!/版本<\/span>/.test(aboutBlock),
+    '「关于」卡里也没有「版本」那一行（版本号只在「设置 · 关于」里念一次）');
+  chk(/\/terms\//.test(aboutBlock) && /\/privacy\//.test(aboutBlock),
+    '用户协议与隐私条款两条入口仍在「关于」卡里');
+  chk(/<span class="kv-v"><\/span>/.test(aboutBlock),
+    '那两条的右列**留空**（项名自己就是入口，不用再挂一颗「查看」）');
+  chk(!/>查看</.test(aboutBlock), '也不再各挂一个「查看」');
+
+  // 「不画下划线」全站只有一条默认（style.css 顶上的 `a { text-decoration: none }`），
+  // 这条要守的是：没有任何一条规则把下划线加回来。
+  const kvLink = rule('a.kv-link') || rule('.kv-k a');
+  chk(!/text-decoration:\s*underline/.test(kvLink) &&
+      !/border-bottom:\s*1px/.test(kvLink),
+    '条目里的链接不画下划线（与「设置 · 关于」同一套：用户 2026-09-18 不要下划线）');
 }
 
 {
@@ -439,11 +481,19 @@ const LOGIN = strip(loginJs), PROFILE = strip(profileJs), ADMIN = strip(adminJs)
     return W;
   };
 
+  // 那一行里有动作（按钮）也有落点（链接），所以这里按「看得见的东西」数，
+  // 不按标签数 —— 未登录两件、已登录三件，顺序与页面上一样。
+  const shown = (W) => [...W.document.getElementById('identity-actions')
+    .querySelectorAll('button, a')].filter(el => !el.hidden).map(el => el.id);
+
   let W = boot();
   let row = W.document.getElementById('identity-actions');
-  const ids = [...row.querySelectorAll('button')].filter(b => !b.hidden).map(b => b.id);
+  const ids = shown(W);
   chk(ids.join(',') === 'btn-account-entry,btn-go-plans',
-    '未登录时那一行里是「登录」+「层级对比」两颗（实际 ' + ids.join(',') + '）');
+    '未登录时那一行里是「登录」+「层级对比」两件（实际 ' + ids.join(',') + '）');
+  chk(W.document.getElementById('btn-go-plans').tagName === 'A' &&
+      W.document.getElementById('btn-go-plans').getAttribute('href') === '/plans/',
+    '「层级对比」真的画成了链接（tagName 是 A、href 是 /plans/）');
   chk(W.document.getElementById('btn-account-entry').textContent === '登录',
     '那颗键上只有一个词：登录（实际「' + W.document.getElementById('btn-account-entry').textContent + '」）');
 
@@ -457,10 +507,9 @@ const LOGIN = strip(loginJs), PROFILE = strip(profileJs), ADMIN = strip(adminJs)
   const req = A.requestCode(store, { channel: 'email', value: 'zhangmin@163.com' }, 'login');
   A.verifyCode(store, req.codeId, req.code, 'login');
   W.document.dispatchEvent(new W.Event('DOMContentLoaded', { bubbles: true }));
-  row = W.document.getElementById('identity-actions');
-  const ids2 = [...row.querySelectorAll('button')].filter(b => !b.hidden).map(b => b.id);
+  const ids2 = shown(W);
   chk(ids2.join(',') === 'btn-account-entry,btn-sign-out,btn-go-plans',
-    '已登录时三颗键（管理登录状态 / 退出 / 层级对比）在同一行（实际 ' + ids2.join(',') + '）');
+    '已登录时三件（管理登录状态 / 退出 / 层级对比）在同一行（实际 ' + ids2.join(',') + '）');
   chk(W.document.getElementById('login-hint') === null,
     '已登录时那一行同样不在（这件事已经不再说了）');
   chk(W.document.getElementById('btn-account-entry').textContent === '管理登录状态',
