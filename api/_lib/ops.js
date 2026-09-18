@@ -462,7 +462,7 @@ var STEPS = [
   },
   {
     id: "E",
-    title: "配完当场验收（六步，每步一个明确结论）",
+    title: "配完当场验收（七步，每步一个明确结论）",
     level: "required",
     where: "本机终端（对着已部署的站点）",
     why: "「配完了」和「配对了」是两件事。这一段把前者变成后者 —— 只回答事实，不做「应该没问题」这类判断",
@@ -479,6 +479,7 @@ var STEPS = [
       "本机判据：`find api -name '*.js' -not -path 'api/_*' -not -path 'api/_*/*'`" +
       " 应只回一行 `api/index.js`。见 docs/architecture.md §2.2.1",
 
+
       "⑥ **接口真的活着**：`curl -sS -o /dev/null -w '%{http_code}\\n' \"$SITE_URL/api/config\"`" +
       " 期望 **200**；`curl -sS \"$SITE_URL/api/me\"` 期望 401 E_NO_SESSION。" +
       "**回 404 且正文是 `The page could not be found`，那是 Vercel 平台层报的" +
@@ -486,9 +487,18 @@ var STEPS = [
       " 意思是 `/api/*` 压根没接到函数上，站点看着正常、整套账号体系是死的。" +
       " 本站那种 404 才是「路径不在路由表里」，要查 api/_lib/routes.js。" +
       " 上一版是靠 `vercel.json` 一条 rewrite 把 /api/* 转进函数的，而它线上" +
-      " **从来没生效**；现在收口只靠 `api/index.js` 的文件位置（见 docs/architecture.md §2.2.1.1）。"
+      " **从来没生效**；现在收口只靠 `api/index.js` 的文件位置（见 docs/architecture.md §2.2.1.1）。",
+
+      "⑦ **一条命令看全部（Issue #225）**：`curl -sS \"$SITE_URL/api/diag\"` ——" +
+      " 它逐环节回：会话密钥配没配、库是内存还是 Supabase、六张表逐张的 HTTP、" +
+      " 列形状、以及**写入实跑一次**（插一行标 __diag__ 的 progress，读完即删）。" +
+      " 结论互斥：`no_secret` / `db_not_configured` / `db_unreachable` / `db_bad_key` /" +
+      " `db_no_table` / `db_no_column` / `db_write_fail` / `ok`。" +
+      " ⚠️ 它**只回形状与 HTTP 状态，永不回密钥**（主机名脱敏、值一个字都不出现）。" +
+      " 不想敲命令就走页面：设置 · 通用 → 跑一遍自检（/self-check/），" +
+      " 它把同样的结论摊成一页，并给一颗「复制报告」。"
     ],
-    check: "六条全对：① 200 ② 401 ③ delivered=true ④ 401 ⑤ 函数入口只有 1 个 ⑥ /api/config 回 200（不是平台层的 404）。任何一条不对，回到它上面那一步"
+    check: "七条全对：① 200 ② 401 ③ delivered=true ④ 401 ⑤ 函数入口只有 1 个 ⑥ /api/config 回 200（不是平台层的 404）⑦ /api/diag 的 verdict 回 ok。任何一条不对，回到它上面那一步"
   }
 ];
 

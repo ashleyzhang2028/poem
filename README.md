@@ -124,6 +124,7 @@ python3 -m http.server 8080  # 或 Python 3
 | 我的 · 背诵 | `/settings/recite/` |
 | 我的 · 清单 | `/settings/lists/` |
 | 我的 · 朗读 | `/settings/reader/` |
+| 自检（账号 / 云端同步排查） | `/self-check/` |
 | 用户协议 | `/terms/` |
 | 隐私条款 | `/privacy/` |
 
@@ -320,6 +321,7 @@ Vercel Serverless，**同源、无 CORS**：
 | `POST /api/reset-request` | 忘记密码第一步：发重设邮件（**不泄露邮箱是否存在**） |
 | `POST /api/reset-confirm` | 忘记密码第二步：换新密码 + **吊销全部会话** + 如实回 `emailVerified`（未确认的人仍然登不进去，那一句必须说出来） |
 | `POST /api/admin/accounts` | 账号名录：列出**全部注册账号**（含**明文邮箱**），只读 |
+| `GET /api/diag` | 自助排查：会话密钥配没配、库是内存还是 Supabase、六张表逐张的 HTTP、列形状、**写入实跑一次**（插一行标 `__diag__` 的 progress，读完即删）。**只回形状与 HTTP 状态，永不回密钥** |
 
 业务内核全在 `api/_lib/core.js`（handler 只做「读请求 → 调内核 → 写响应」），
 所以能在 Node 里直接测 —— `test/api.test.js` 用**真 http 请求**跑完整链路。
@@ -652,6 +654,41 @@ curl -sS "$SITE_URL/api/config"      # 期望 {"turnstile":{"enabled":true,"site
 > （「即将上线」这类话 `/login/` 里已经明确禁止）；也不把「不收费」
 > 写成「限时免费」这种**暗示将来会收费**的话。
 
+#### 出问题了怎么查
+
+注册（或登录）报一句「服务端出了点问题，稍后再试」时，**不要从日志开始 —— 从自检开始**。
+那句话是 `E_INTERNAL`（HTTP 500），它把**四种互斥**的原因合并成了一句：
+
+| 真实原因 | 自检怎么说 |
+|---|---|
+| 什么库都没配 | 数据存储：**内存**（账号重启即丢） |
+| 库地址错 / 项目被暂停 | `取一行 accounts`：HTTP **0** + `fetch failed` |
+| 建表 SQL 没跑 | HTTP **404**（`PGRST205 Could not find the table`） |
+| 表是旧形状（缺列） | HTTP **400**（`42703 column … does not exist`） |
+| key 填成了 anon / 改完没重新部署 | HTTP **401**（`Invalid API key`） |
+| 读得通、写不通 | `写入实跑`：失败 |
+
+两种用法，都不需要终端：
+
+1. **页面上跑**：「我的 → 设置 → 通用 → 出问题了？跑一遍自检」（`/self-check/`）。
+   它逐条给**过 / 未过 / 无**，外加 `/api/diag` 的服务端结论，还有一颗「复制报告」——
+   报告里只有结论、HTTP 状态与上游原话，**没有密钥**，贴到 Issue 里就能接着往下定。
+2. **一条命令**：`curl -sS "$SITE_URL/api/diag"`。返回的 `verdict` 是互斥的一个值：
+   `no_secret` / `db_not_configured` / `db_unreachable` / `db_bad_key` /
+   `db_no_table` / `db_no_column` / `db_write_fail` / `ok`。
+
+页面**打不开**（多半正是 `/api/*` 没挂上）时，自检页面上还摊着六条 `curl` 判据：
+API 挂上没 / 会话签得出来没 / 库读得动没 / 库写得动没 / 注册真跑一遍 / 日志里搜 `api.error`。
+
+自检那发 `/api/register` 探针**一个字都不写**：它用**形状不合法**的邮箱
+（`selfcheck-probe@invalid`），服务端在归一化那一步就回 400。反之，用合法邮箱
+跑一发在「没配库」的内存模式下**真会建号**（实测 202），所以这一句不许改 ——
+`test/self-check.test.js` 里有一条对照断言守着它。
+
+> `diag` 只回**形状**不回**值**：主机名脱敏成前 3 位 + 后 12 位，
+> 密钥只说「是不是 service_role」。`test/self-check.test.js` 拿一个假 Supabase
+> 把四种坏法逐个跑出来，并断言报告里不出现任何密钥值，也不出现那四个变量名。
+
 ### 二级设置页（已落地）
 
 设置项变多（分组、账号、头像、复习算法、朗读）之后，一页已经不够用了，
@@ -661,10 +698,11 @@ curl -sS "$SITE_URL/api/config"      # 期望 {"turnstile":{"enabled":true,"site
 |---|---|---|
 | `/mine/` | 我的 | 头像与昵称、登录状态与层级、本机数据、子用户、注销；**右上角一颗齿轮** |
 | `/settings/` | 设置 | 四组入口 + 关于 + 版权与法务链接 |
-| `/settings/general/` | 通用 | 用户名、子用户、账号、数据管理 |
+| `/settings/general/` | 通用 | 账号、跨设备同步、**自检入口**、数据管理、课内诗词导出 |
 | `/settings/recite/` | 背诵 | 学段 / 年级 / 学期 / 范围 / 数量 + 复习算法 |
 | `/settings/lists/` | 我的清单 | 自选背诵的增删改查 + 篇目打印（Pro）|
 | `/settings/reader/` | 朗读 | 自动注音 + 五档连读方式 |
+| `/self-check/` | 自检 | 账号与云端同步逐条排查 + 可贴进 Issue 的报告 |
 
 底部最后一个页签的**名字是「我的」，落点是 `/mine/`**：用户
 2026-09-17 的要求 ——「将右下角设置改成 我的…… 用户点击我的之后，转到我的页面」，
