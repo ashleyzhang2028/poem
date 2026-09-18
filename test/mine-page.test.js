@@ -28,7 +28,7 @@ const css = read('css/style.css') + read('css/account.css');
   chk(/id="mine-page"/.test(MINE), '有独立的整页容器');
   chk(/js\/chrome\.js/.test(MINE) && /js\/pwa\.js/.test(MINE),
     '共用顶栏与底部页签，并加载 js/pwa.js（--nav-h 每页都要实测）');
-  chk(/class="foot settings-foot"/.test(MINE), '有页脚（版权 + 法务链接）');
+  chk(!/class="foot/.test(MINE), '没有页底页脚（版权 + 法务链接已删）');
 
   const rel = (MINE.match(/(?:src|href)="(\.\.\/[^"]*)"/g) || []);
   chk(rel.length === 0, '不出现 ../ 相对引用（实际 ' + rel.join(',') + '）');

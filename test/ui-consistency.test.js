@@ -859,16 +859,16 @@ PAGE_FILES.forEach(f => {
 
 {
 
-  const FOOT_PAGES = ['settings/index.html', 'settings/general/index.html',
-    'settings/recite/index.html', 'settings/lists/index.html', 'settings/reader/index.html',
-    'login/index.html', 'profile/index.html', 'admin/index.html', 'plans/index.html',
-    'terms/index.html', 'privacy/index.html'];
-  FOOT_PAGES.forEach(f => {
-    chk(/<footer class="foot settings-foot">/.test(read(f)),
-      f + ' 的页脚是同一套写法（class="foot settings-foot"）');
+  // 页底页脚已全站删除，样式表里也不该留下它的孤儿规则。
+  ['settings/index.html', 'settings/general/index.html',
+   'settings/recite/index.html', 'settings/lists/index.html', 'settings/reader/index.html',
+   'login/index.html', 'profile/index.html', 'admin/index.html', 'plans/index.html',
+   'terms/index.html', 'privacy/index.html', 'mine/index.html', 'self-check/index.html',
+   'reset/index.html', 'verify/index.html'].forEach(f => {
+    chk(!/<footer[^>]*class="[^"]*foot/.test(read(f)), f + ' 已无页底页脚');
   });
-  chk(!/<footer class="foot">/.test(read('terms/index.html') + read('privacy/index.html')),
-    '法务两页不再用裸 .foot（与其余九页同一条规则）');
+  chk(!/\.foot-\w+|\n\.foot ?\{|--foot-gap-v2/.test(cssCode),
+    '样式表里没有 .foot / .settings-foot / --foot-gap-v2 的孤儿规则');
 
   const rootRule = ruleOf(cssCode, ':root');
   chk(/--danger-bg:\s*#[0-9a-f]{6}/.test(rootRule) && /--danger-line:\s*#[0-9a-f]{6}/.test(rootRule),
@@ -888,17 +888,14 @@ PAGE_FILES.forEach(f => {
 
 {
 
-  chk(!/border-top/.test(ruleOf(cssCode, '.settings-foot')),
-    '页脚 .settings-foot 不再画上边框（「©2026 kuibu.app」上面那条横线已删）');
-  chk(/padding-top/.test(ruleOf(cssCode, '.settings-foot')),
-    '页脚与正文之间的间距改用留白表达（padding-top 还在）');
+  chk(ruleOf(cssCode, '.settings-foot') === '',
+    '页脚删了，.settings-foot 的规则一并撤掉（不留空壳）');
 
   chk(/a\s*\{[^}]*text-decoration:\s*none/.test(cssCode),
     '全局 `a { text-decoration: none }` 存在（全站唯一一条「不给下划线」的默认）');
 
-  const footRule = ruleOf(cssCode, '.foot-links a:hover');
-  chk(/text-decoration:\s*none/.test(footRule) || !/text-decoration/.test(footRule),
-    '页脚链接 hover 不再把下划线加回来（反馈只走颜色一档）');
+  chk(ruleOf(cssCode, '.foot-links a:hover') === '',
+    '页脚链接 hover 规则随页脚一起删除');
 
   chk(/\.kv-v a\s*\{[^}]*color:\s*var\(--green\)/.test(strip(css)),
     '「关于」里的「查看」链接有自己的配色规则（不再是浏览器默认的蓝紫链接）');
@@ -1228,14 +1225,10 @@ if (JSDOM) {
   chk(/word-break:\s*normal/.test(ruleOf(cssCode, '.kv-v')),
     '.kv-v 显式声明 word-break: normal（把继承来的 break-all 口径收干净）');
 
-  const footLink = ruleOf(cssCode, '.foot-links a');
-  chk(/min-height:\s*\d+px/.test(footLink) &&
-      parseFloat((footLink.match(/min-height:\s*([\d.]+)px/) || [0, 0])[1], 10) >= 28,
-    '页脚两条法务链接也补上触达高度（此前是一行 12px 的裸文字，手指点不准）');
-  chk(/white-space:\s*nowrap/.test(footLink),
-    '页脚两条法务链接不折行（「用户协议 · 隐私条款」这类四字词该整体换行）');
-  chk(/display:\s*inline-flex/.test(footLink),
-    '页脚链接也用 inline-flex（否则 min-height 在 inline 上不生效）');
+  // 页脚那一对法务链接连同样式一起删了；触达高度这一条现在由「关于」里的
+  // .kv-k a 承担（同样是 32px 起的一行）。
+  chk(ruleOf(cssCode, '.foot-links a') === '',
+    '页脚删除后，.foot-links a 的触达高度规则也一并撤掉（不留孤儿样式）');
 
   /* 三处链接真的落在左边那一格：两处「关于」都写成了 .kv-k a，
      没有任何一处又退回「左格文字 + 右格『查看』」。 */

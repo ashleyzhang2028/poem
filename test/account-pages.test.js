@@ -47,7 +47,7 @@ const LOGIN = strip(loginJs), PROFILE = strip(profileJs), ADMIN = strip(adminJs)
     chk(/js\/avatar\.js/.test(s), f + ' 加载 js/avatar.js（头像只有一处画）');
     chk(/<header class="topbar"/.test(s), f + ' 有顶栏挂载点');
     chk(/data-page="/.test(s), f + ' 声明页名（顶栏第一行写得出「跬步 · 登录」）');
-    chk(/class="foot settings-foot"/.test(s), f + ' 有页脚（版权 + 法务链接）');
+    chk(!/class="foot/.test(s), f + ' 没有页底页脚（应用形态，法务入口收在设置「关于」里）');
 
     chk(/data-dock="off"/.test(s), f + ' 声明 data-dock="off"（深页不挂底部页签）');
   });

@@ -1233,23 +1233,6 @@ textarea:focus {
   margin-top: 16px;
 }
 
-.foot { text-align: center; font-size: 11.5px; color: var(--ink-3); padding: 10px 0 0; }
-
-.foot-copy { display: block; }
-.foot-links { display: inline-flex; gap: 6px; margin-top: 6px; }
-
-.foot-links a {
-  display: inline-flex;
-  align-items: center;
-  min-height: 32px;
-  color: var(--ink-3);
-  white-space: nowrap;
-  transition: color .16s ease;
-}
-.foot-links a:hover { color: var(--green); }
-.foot-links a:active { color: var(--green-dark); }
-.foot-sep { color: #c8bcaa; }
-
 .empty {
   text-align: center;
   color: var(--ink-2);
@@ -1285,8 +1268,6 @@ textarea:focus {
   --app-vh: 1vh;
 
   --nav-h: 0px;
-
-  --foot-gap-v2: 40px;
 }
 
 .app {
@@ -1393,7 +1374,7 @@ body.has-install-tip #app {
   min-height: calc(100vh - 200px);
   min-height: calc(100 * var(--app-vh) - 200px);
 
-  padding-bottom: calc(26px + var(--nav-h) + max(0px, 24px - var(--foot-gap-v2)));
+  padding-bottom: calc(26px + var(--nav-h));
 }
 
 .settings-group { margin-top: 26px; }
@@ -1620,13 +1601,6 @@ body.has-install-tip #app {
 
 .kv-v a { color: var(--green); }
 .kv-v a:hover { color: var(--green-dark); }
-
-.settings-foot {
-  margin-top: 26px;
-  padding-top: 14px;
-}
-.settings-foot .foot-copy,
-.settings-foot .foot-links { font-size: 12px; }
 
 .settings-tip p { margin: 0; }
 .settings-tip p + p { margin-top: 6px; }
@@ -1866,16 +1840,10 @@ body.has-install-tip #app {
   .dock-item.active .dock-icon { transform: none; }
 }
 
-body:not(.no-dock) .foot,
-body:not(.no-dock) .settings-foot {
-  padding-top: max(0px, calc(24px - var(--foot-gap-v2)));
-}
-
 body:not(.no-dock) .app,
 body:not(.no-dock) #app {
-  padding-bottom: calc(25px + var(--nav-h) + max(0px, 24px - var(--foot-gap-v2)));
+  padding-bottom: calc(25px + var(--nav-h));
 }
-body:not(.no-dock) .foot { padding-bottom: 4px; }
 body:not(.no-dock) .toast { bottom: calc(24px + var(--nav-h)); }
 body:not(.no-dock) .ios-install-tip { bottom: calc(12px + var(--nav-h)); }
 
@@ -1883,12 +1851,6 @@ body.no-dock .app,
 body.no-dock #app {
 
   padding-bottom: calc(40px + var(--safe-bottom) + 8px);
-}
-body.no-dock .foot { padding-bottom: 4px; }
-
-body.no-dock .foot,
-body.no-dock .settings-foot {
-  padding-top: max(0px, calc(24px - var(--foot-gap-v2)));
 }
 body.no-dock .ios-install-tip { bottom: calc(12px + var(--safe-bottom)); }
 
