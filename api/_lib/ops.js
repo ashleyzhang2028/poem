@@ -473,21 +473,31 @@ var STEPS = [
       "④ 注销可达：curl -sS -o /dev/null -w '%{http_code}\\n' -X DELETE \"$SITE_URL/api/account\" —— 期望 401（不是 500）",
 
       "⑤ 部署形态：本条与「环境变量」无关，但它是同一类问题（配了才会好）。" +
-      "线上 `api/` 下**只有 1 个** Serverless 函数入口（`api/index.js`，" +
-      "它就是 `/api` 目录的兜底函数），19 条路由的实现都在 `api/_routes/`" +
-      "（`_` 开头 = 平台不当函数）。" +
+      "线上 `api/` 下**只有 1 个** Serverless 函数入口（`api/[...path].js`，" +
+      "catch-all），19 条路由的实现都在 `api/_routes/`" +
+      "（`_` 开头 = 平台不当函数），而整个 `/api/*` 靠 `vercel.json` 的" +
+      " **一条 rewrite**（`/api/:path*` → `/api/handler/:path*`）转进那个函数。" +
       "本机判据：`find api -name '*.js' -not -path 'api/_*' -not -path 'api/_*/*'`" +
-      " 应只回一行 `api/index.js`。见 docs/architecture.md §2.2.1",
+      " 应只回一行 `api/[...path].js`；" +
+      "`cat vercel.json` 里那条 rewrite 的 destination 必须等于" +
+      " `routes.js` 的 PREFIX。见 docs/architecture.md §2.2.1",
 
 
       "⑥ **接口真的活着**：`curl -sS -o /dev/null -w '%{http_code}\\n' \"$SITE_URL/api/config\"`" +
       " 期望 **200**；`curl -sS \"$SITE_URL/api/me\"` 期望 401 E_NO_SESSION。" +
-      "**回 404 且正文是 `The page could not be found`，那是 Vercel 平台层报的" +
-      "（不是本站：本站的 404 形状是 `{\"code\":\"E_404\",\"message\":\"没有这个接口。\"}`）** ——" +
-      " 意思是 `/api/*` 压根没接到函数上，站点看着正常、整套账号体系是死的。" +
+      "**回 404 且正文是 `The page could not be found`（带头 `x-vercel-error: NOT_FOUND`），" +
+      "那是 Vercel 平台层报的 —— 函数压根没被调起来" +
+      "（不是本站：本站的 404 形状是 `{\"code\":\"E_404\",\"message\":\"没有这个接口。\"}`）**。" +
+      " 意思是 `/api/*` 没接到函数上，站点看着正常、整套账号体系是死的。" +
       " 本站那种 404 才是「路径不在路由表里」，要查 api/_lib/routes.js。" +
-      " 上一版是靠 `vercel.json` 一条 rewrite 把 /api/* 转进函数的，而它线上" +
-      " **从来没生效**；现在收口只靠 `api/index.js` 的文件位置（见 docs/architecture.md §2.2.1.1）。",
+      " ⚠️ **2026-09-18 实测：函数不能挂在 `/api` 目录的根上。**" +
+      " 上一版收口用的是「把 `index.js` 直接放在 `api/` 下当目录兜底」——" +
+      " 那个做法线上**从来没生效**，全站 `/api/*` 一律平台层 404、" +
+      " 连函数日志都没有；而静态页面照旧 200、本地测试全绿" +
+      "（测试挂的是模块本身，平台那一层在测试里不存在）。" +
+      " 现在改回 catch-all 文件名 + 一条 rewrite 的经典形状（见 docs/architecture.md §2.2.1.1）。" +
+      " 想只看函数那一层是否认得 rewrite 之后的地址：`curl -sS \"$SITE_URL/api/handler/me\"`" +
+      " 也应回 401，不该回本站的 E_404。",
 
       "⑦ **一条命令看全部（Issue #225）**：`curl -sS \"$SITE_URL/api/diag\"` ——" +
       " 它逐环节回：会话密钥配没配、库是内存还是 Supabase、六张表逐张的 HTTP、" +
@@ -498,7 +508,7 @@ var STEPS = [
       " 不想敲命令就走页面：设置 → 关于 → 自检（/self-check/），" +
       " 它把同样的结论摊成一页，并给一颗「复制报告」。"
     ],
-    check: "七条全对：① 200 ② 401 ③ delivered=true ④ 401 ⑤ 函数入口只有 1 个 ⑥ /api/config 回 200（不是平台层的 404）⑦ /api/diag 的 verdict 回 ok。任何一条不对，回到它上面那一步"
+    check: "七条全对：① 200 ② 401 ③ delivered=true ④ 401 ⑤ 函数入口只有 1 个（且 rewrite 与 routes.js 的 PREFIX 对得上） ⑥ /api/config 回 200（不是平台层的 404）⑦ /api/diag 的 verdict 回 ok。任何一条不对，回到它上面那一步"
   }
 ];
 
@@ -528,7 +538,7 @@ function stepsReport(cfg) {
   lines.push("   第 C 步（真发信）：" + (r.mail === "console" ? "未过（发信通道是 console）" : "已过（" + r.mail + "）"));
   lines.push("   第 F 步（人机校验）：" + (r.turnstile ? "已过（Cloudflare Turnstile）" : "未过（默认关；要开就照着第 F 步走）"));
   lines.push("   第 D 步（探活与备份）：不在环境变量里，看仓库 .cnb.yml 的两条 crontab");
-  lines.push("   第 E 步（验收）：上面六条命令，对着**线上**跑");
+  lines.push("   第 E 步（验收）：上面七条命令，对着**线上**跑");
   lines.push("");
   lines.push("短信不在五步里：要先签商 + 模板报备（3~7 工作日，**日历时间不是人日**），");
   lines.push("再实现 transports.<商名>，最后才开 SMS_ENABLED=1。开了但不接商，仍是 503 E_SMS_NOT_OPEN。");
