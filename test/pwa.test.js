@@ -1588,22 +1588,24 @@ function check(name, cond, extra) {
         const app = r(document.querySelector('.app'));
         const bar = r(document.querySelector('.app > .topbar'));
         const dock = r(document.querySelector('.dock-inner'));
+        const appStyle = getComputedStyle(document.querySelector('.app'));
         return {
           vw: document.documentElement.clientWidth,
           appL: app && +app.left.toFixed(1), appR: app && +app.right.toFixed(1),
           barL: bar && +bar.left.toFixed(1), barR: bar && +bar.right.toFixed(1),
-          dockL: dock && +dock.left.toFixed(1), dockR: dock && +dock.right.toFixed(1)
+          dockL: dock && +dock.left.toFixed(1), dockR: dock && +dock.right.toFixed(1),
+          padL: parseFloat(appStyle.paddingLeft), padR: parseFloat(appStyle.paddingRight)
         };
       });
       const sideL = w.appL, sideR = +(w.vw - w.appR).toFixed(1);
-      check('桌面 ' + vw + 'px：内容铺满屏幕，两侧留白各 ≤ 80px（不是被 max-width 压窄）',
-        sideL <= 80 && sideR <= 80,
+      check('桌面 ' + vw + 'px：内容壳层居中且宽度不超过 1200px',
+        Math.abs(sideL - sideR) < 1.5 && w.appR - w.appL <= 1200,
         JSON.stringify({ 左: sideL, 右: sideR, 视口: w.vw, 内容宽: +(w.appR - w.appL).toFixed(0) }));
       check('桌面 ' + vw + 'px：顶栏与正文列左右同缘（不是各写各的宽度）',
-        Math.abs(w.barL - (w.appL + 56)) < 1.5 && Math.abs(w.barR - (w.appR - 56)) < 1.5,
+        Math.abs(w.barL - (w.appL + w.padL)) < 1.5 && Math.abs(w.barR - (w.appR - w.padR)) < 1.5,
         JSON.stringify({ 顶栏: [w.barL, w.barR], 正文: [w.appL, w.appR] }));
       check('桌面 ' + vw + 'px：页签内层与正文列左右同缘（四格落在正文两缘之内）',
-        Math.abs(w.dockL - (w.appL + 56)) < 1.5 && Math.abs(w.dockR - (w.appR - 56)) < 1.5,
+        Math.abs(w.dockL - (w.appL + w.padL)) < 1.5 && Math.abs(w.dockR - (w.appR - w.padR)) < 1.5,
         JSON.stringify({ 页签: [w.dockL, w.dockR], 正文: [w.appL, w.appR] }));
     }
 
@@ -1627,8 +1629,8 @@ function check(name, cond, extra) {
         });
       }, 900);
     }));
-    check('桌面 1920px：阅读器正文列跟着放宽（一列纸铺满屏幕）',
-      readW && readW.bodyW > 1400,
+    check('桌面 1920px：阅读器正文壳层跟随 1200px 内容上限',
+      readW && readW.bodyW >= 1000 && readW.bodyW <= 1200,
       readW ? String(readW.bodyW) : 'no reader');
     check('桌面 1920px：一行字仍封顶 720px 这一档（不跟着屏幕一起变宽）',
       readW && readW.txtW <= 760,

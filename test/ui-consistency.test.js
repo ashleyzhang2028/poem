@@ -353,15 +353,15 @@ const deskRoot = /@media \(min-width:\s*1024px\)\s*\{[^@]*:root\s*\{([^}]*)\}/s.
 chk(!!deskRoot, '桌面（≥1024px）那一档真的存在（不是把平板那一列当桌面用）');
 if (deskRoot) {
   const block = deskRoot[1];
-  chk(/--col-w:\s*100vw/.test(block),
-    '桌面列宽 = 视口宽（内容宽随之 = 100vw − 两侧的边，跟着窗口走）');
-  chk(/--col-side:\s*56px/.test(block),
-    '桌面两侧留 56px（边固定、内容跟视口走 —— 这才叫「布满屏幕」而不是「拉满」）');
+  chk(/--col-w:\s*min\(1200px,\s*100vw\)/.test(block),
+    '桌面列宽 = min(1200px, 100vw)（超宽屏上内容壳层封顶 1200px，窄窗口仍跟视口走）');
+  chk(/--col-side:\s*32px/.test(block),
+    '桌面两侧留 32px（壳层封顶后这一段就是「边」，不再随视口一起长）');
   chk(!/--col-w:\s*max\(\s*\d+px/.test(block),
     '桌面列宽不再用 max(固定值, …) 兜底（真机上那会在 1024px 处造出一个 1px 断崖）');
 }
 
-chk(/--col-side:\s*56px/.test(cssCode) && !/--col-side:\s*(max|min)\(/.test(cssCode),
+chk(/--col-side:\s*32px/.test(cssCode) && !/--col-side:\s*(max|min)\(/.test(cssCode),
   '--col-side 是固定值，不是算式（算式会与 max-width 打架、把内容卡死）');
 
 chk(/--read-w:\s*720px/.test(cssCode),
@@ -1142,10 +1142,9 @@ if (JSDOM) {
   chk(/--scroll-w:\s*0px/.test(ruleOf(cssCode, ':root')),
     ':root 里有 --scroll-w 并且兜底是 0px（手机上不会凭空多出一段空白）');
   const setPage = ruleOf(cssCode, '.settings-page');
-  chk(/padding-left:\s*calc\(var\(--col-side\) \+ var\(--safe-left\) \+ var\(--scroll-w\)\)/.test(setPage),
-    '全屏设置页的左内边距补上滚动条宽度（右缘才与顶栏、页签、正文同一个 x）');
-  chk(/padding-right:\s*calc\(var\(--col-side\) \+ var\(--safe-right\)\)/.test(setPage),
-    '右内边距与 .app 完全同一份算式（两处各拍一个数就会漂）');
+  chk(setPage !== '' && !/padding-left/.test(setPage) && !/padding-right/.test(setPage),
+    '全屏设置页不再自己写一份左右内边距（右缘因此不会与顶栏 / 页签 / 正文漂开，实际 ' +
+      (setPage ? JSON.stringify(setPage.slice(0, 60)) : '规则整条都不见了') + '）');
 
   const appRule = ruleOf(cssCode, '.app');
   chk(/padding-right:\s*calc\(var\(--col-side\) \+ var\(--safe-right\)\)/.test(appRule),

@@ -129,7 +129,7 @@ setTimeout(() => {
     '顶栏第二行精简为「按遗忘曲线复习」（实际「' + d.querySelector('#brand-sub').textContent + '」）');
   chk(!/小古文想读哪篇点哪篇/.test(d.querySelector('.topbar').textContent),
     '顶栏不再出现「小古文想读哪篇点哪篇」');
-  chk(d.querySelectorAll('.brand-icon svg').length === 1, '顶栏徽标是内联 SVG');
+  chk(d.querySelectorAll('.brand-icon svg, .brand-icon img').length === 1, '顶栏徽标只画一枚（内联 SVG 或位图，实际 ' + d.querySelectorAll('.brand-icon svg, .brand-icon img').length + ' 枚）');
 
   const collapseHeads = d.querySelectorAll('.collapse-head');
   chk(collapseHeads.length === 1,
@@ -159,7 +159,7 @@ setTimeout(() => {
   chk(d.querySelector('.topbar #btn-settings') === null, '首页右上角不再有设置齿轮（交给底部页签）');
   chk(d.querySelector('.topbar .icon-btn') === null, '顶栏不再有圆形图标按钮（设置入口已删）');
 
-  chk(!!d.querySelector('.topbar .brand-icon svg'), '顶栏有 logo（内联 SVG 徽标）');
+  chk(!!d.querySelector('.topbar .brand-icon svg, .topbar .brand-icon img'), '顶栏有 logo（内联 SVG 或位图徽标）');
   chk(d.querySelector('#brand-name').textContent === '跬步', '顶栏第一行固定为「跬步」，不随页面变化');
   const dock = d.querySelector('#site-dock');
   chk(!!dock, '首页有底部导航栏');
