@@ -29,7 +29,8 @@
     }
   ];
 
-  var APP_VERSION = "1.0 (v159)";
+  var APP_VERSION = "1.0 (v161)";
+  var APP_VERSION_NAME = "跬步 · 古诗词背诵";
 
   function esc(s) {
     return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
@@ -75,16 +76,33 @@
       if (nav && nav.serviceWorker && nav.serviceWorker.controller) cached = "已缓存，可离线打开";
     } catch (e) { cached = "未缓存"; }
 
+    // 「关于」这几行是同一套排法：左列写项名（自己当链接的那几行就是入口，
+    // 不用另挂一颗「查看」），右列写值；没有值的那几行右列**留空**。
+    //
+    // 几条入口写成一整行普通文字（蓝色 + 无下划线），行高与「应用 / 版本 /
+    // 离线缓存」完全一致 —— 用户 2026-09-18：不要下划线，间距要和上面几行一样。
+    // 「自检」也走同一套（它原先在「设置 · 通用」里是一颗按钮，用户点名搬到
+    // 这儿、排在最后一行）。
     box.innerHTML =
       '<h2 class="settings-about-title">关于</h2>' +
       '<div class="kv-list">' +
-      '<div class="kv-row"><span class="kv-k">应用</span><span class="kv-v">跬步 · 古诗词背诵</span></div>' +
-      '<div class="kv-row"><span class="kv-k">版本</span><span class="kv-v">' + esc(APP_VERSION) + "</span></div>" +
-      '<div class="kv-row"><span class="kv-k">离线缓存</span><span class="kv-v">' + esc(cached) + "</span></div>" +
-      '<div class="kv-row"><span class="kv-k"><a href="/plans/">层级对比</a></span></div>' +
-      '<div class="kv-row"><span class="kv-k"><a href="/terms/">用户协议</a></span></div>' +
-      '<div class="kv-row"><span class="kv-k"><a href="/privacy/">隐私条款</a></span></div>' +
+      kvRow("应用", esc(APP_VERSION_NAME)) +
+      kvRow("版本", esc(APP_VERSION)) +
+      kvRow("离线缓存", esc(cached)) +
+      kvRow(link("/plans/", "层级对比"), "") +
+      kvRow(link("/terms/", "用户协议"), "") +
+      kvRow(link("/privacy/", "隐私条款"), "") +
+      kvRow(link("/self-check/", "自检"), "") +
       "</div>";
+  }
+
+  function kvRow(k, v) {
+    return '<div class="kv-row"><span class="kv-k">' + k + "</span>" +
+      '<span class="kv-v">' + (v || "") + "</span></div>";
+  }
+
+  function link(href, text) {
+    return '<a class="kv-link" href="' + href + '">' + esc(text) + "</a>";
   }
 
   function go() {

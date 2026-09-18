@@ -139,7 +139,7 @@ function fakeSupabase(opts) {
 }
 
 function serve() {
-  const entry = require("../api/index.js");
+  const entry = require("../api/[...path].js");
   const server = http.createServer(entry);
   return new Promise(resolve => {
     server.listen(0, "127.0.0.1", () => resolve({

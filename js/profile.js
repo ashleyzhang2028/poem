@@ -317,7 +317,6 @@
       })["catch"](function () {  });
     }
 
-    $("btn-go-plans").addEventListener("click", function () { location.href = "/plans/"; });
     $("btn-go-admin").addEventListener("click", function () { location.href = "/admin/"; });
     $("btn-delete-start").addEventListener("click", onDeleteStart);
     $("btn-delete-cancel").addEventListener("click", onDeleteCancel);
