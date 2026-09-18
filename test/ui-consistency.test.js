@@ -1181,6 +1181,75 @@ if (JSDOM) {
     '（对照）设置整页确实不加载 css/account.css —— 所以那一套必须住在 style.css 里');
 }
 
+/* 三条法务 / 权限链接：左格当链接时的样式，以及页脚那两条的触达面积
+   ---------------------------------------------------------------------
+   用户 2026-09-18 原话：「下面三个链接样式又丢了，丑 / 权限对比 / 用户协议 /
+   隐私条款」。丢的根因是 b5a9cbd 把这三行从「左格文字 + 右格『查看』」
+   改成了「左格本身当链接」，而 `.kv-k` 里**从来没有过 a 的规则** ——
+   于是这三处落回浏览器默认样子（蓝紫色，13px，无下划线，0 触达高度）。
+
+   这是一条**正面**守卫：不只判「有没有那条 CSS」，而是判那条 CSS 真的
+   把颜色 / 下划线 / 触达高度三件都给了，免得下次改令牌时又退回默认样子。 */
+{
+  const kLink = ruleOf(cssCode, '.kv-k a');
+  chk(kLink !== '',
+    '.kv-k a 有规则（这三处链接的样式此前一个字都没有，落回浏览器默认的蓝紫色）');
+  chk(/color:\s*var\(--green\)/.test(kLink),
+    '左格链接走天青主色 var(--green)，不是浏览器默认的蓝（实际 ' +
+      (kLink.match(/color:\s*[^;]+/) || ['(无 color)'])[0] + '）');
+  chk(/border-bottom:\s*1px solid/.test(kLink),
+    '左格链接底下有一道细线（全站「不给下划线」的默认在这儿放行，因为它是行内文字）');
+  chk(/min-height:\s*\d+px/.test(kLink) && parseFloat((kLink.match(/min-height:\s*([\d.]+)px/) || [0, 0])[1], 10) >= 28,
+    '左格链接有自己的触达高度（≥ 28px），不是一行 13px 的裸文字');
+  chk(/display:\s*inline-flex/.test(kLink),
+    '左格链接用 inline-flex 撑起那一行高度（inline 元素拿不到 min-height）');
+  chk(/var\(--celadon\)/.test(kLink),
+    '那道细线走 --celadon（与全站天青一套令牌同源，不另挑一个颜色）');
+
+  chk(!/text-align:\s*right/.test(ruleOf(cssCode, '.kv-v')) ||
+      /flex:\s*1 1 auto/.test(ruleOf(cssCode, '.kv-v')),
+    '.kv-v 仍可右对齐，但它是弹性列（右列不再靠 text-align 硬顶，多字长值才不会折成碎词）');
+  chk(!/word-break:\s*break-all/.test(ruleOf(cssCode, '.kv-v')),
+    '.kv-v 不再 word-break: break-all（「跬步 · 古诗词背诵」这类值会被逐字符折断）');
+  chk(/overflow-wrap:\s*break-word/.test(ruleOf(cssCode, '.kv-v')),
+    '.kv-v 改成 overflow-wrap: break-word（只在必要时断，正常按词 / 标点换行）');
+  chk(/word-break:\s*normal/.test(ruleOf(cssCode, '.kv-v')),
+    '.kv-v 显式声明 word-break: normal（把继承来的 break-all 口径收干净）');
+
+  const footLink = ruleOf(cssCode, '.foot-links a');
+  chk(/min-height:\s*\d+px/.test(footLink) &&
+      parseFloat((footLink.match(/min-height:\s*([\d.]+)px/) || [0, 0])[1], 10) >= 28,
+    '页脚两条法务链接也补上触达高度（此前是一行 12px 的裸文字，手指点不准）');
+  chk(/white-space:\s*nowrap/.test(footLink),
+    '页脚两条法务链接不折行（「用户协议 · 隐私条款」这类四字词该整体换行）');
+  chk(/display:\s*inline-flex/.test(footLink),
+    '页脚链接也用 inline-flex（否则 min-height 在 inline 上不生效）');
+
+  /* 三处链接真的落在左边那一格：两处「关于」都写成了 .kv-k a，
+     没有任何一处又退回「左格文字 + 右格『查看』」。 */
+  const settingsNav = read('js/settings-nav.js');
+  const aboutBlock2 = settingsNav.slice(settingsNav.indexOf('function renderAbout('),
+    settingsNav.indexOf('function go()'));
+  ['/plans/', '/terms/', '/privacy/'].forEach(href => {
+    chk(new RegExp('class="kv-k"><a href="' + href + '"').test(aboutBlock2),
+      '设置「关于」里 ' + href + ' 那一行是「左格本身当链接」');
+  });
+  chk(!/class="kv-v"><a/.test(aboutBlock2),
+    '设置「关于」里不再有「右格挂一颗『查看』」那种形状');
+
+  const profileHtml2 = read('profile/index.html');
+  ['/terms/', '/privacy/'].forEach(href => {
+    chk(new RegExp('class="kv-k"><a href="' + href + '"').test(profileHtml2),
+      '个人中心「关于」里 ' + href + ' 那一行也是「左格本身当链接」');
+  });
+  chk(!/<span class="kv-v"><a href="\/(terms|privacy)\//.test(profileHtml2),
+    '个人中心「关于」里不再留「右格『查看』」（两处形状必须一样，否则同一件事两种长相）');
+
+  /* 反向：整份样式表里，三处链接不许再出现任何「浏览器默认蓝」的兜底色值。 */
+  chk(!/#0000ee|#0000ff|rgb\(0,\s*0,\s*238\)/i.test(cssCode),
+    'css/style.css 里不写死浏览器默认蓝（写了就等于承认它会露出来）');
+}
+
 {
   const gearStart = chromeJs.indexOf('gear:');
   const gear = chromeJs.slice(gearStart, chromeJs.indexOf('tabMine:'));

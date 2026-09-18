@@ -1235,9 +1235,15 @@ textarea:focus {
 .foot-copy { display: block; }
 .foot-links { display: inline-flex; gap: 6px; margin-top: 6px; }
 
-.foot-links a { color: var(--ink-3); }
+.foot-links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  color: var(--ink-3);
+  white-space: nowrap;
+  transition: color .16s ease;
+}
 .foot-links a:hover { color: var(--green); }
-
 .foot-links a:active { color: var(--green-dark); }
 .foot-sep { color: #c8bcaa; }
 
@@ -1567,11 +1573,37 @@ body.has-install-tip #app {
 
 .kv-k { color: var(--ink-2); flex: none; }
 
+/* 左边那格自己当链接时，它就是一颗「只少一根下划线」的链接：
+   天青副色 + 底下一道细线 + 一行最小触达高度。
+   不加这条规则的话，它就是一段浏览器默认样子的正文 —— 而那正是
+   「权限对比 / 用户协议 / 隐私条款」这几处（设置「关于」三行、
+   个人中心「关于」两行）看起来「没样式」的原因。 */
+.kv-k a {
+  display: inline-flex;
+  align-items: center;
+
+  min-height: 30px;
+  color: var(--green);
+  font-size: 14px;
+  border-bottom: 1px solid var(--celadon);
+  transition: color .16s ease, border-color .16s ease;
+}
+.kv-k a:hover,
+.kv-k a:focus-visible { color: var(--green-dark); border-color: var(--green-dark); }
+.kv-k a:active { color: var(--green-dark); }
+
+/* 右列改成弹性列：两个短状态（Free / 已缓存，可离线打开）仍靠右，
+   像「跬步 · 古诗词背诵」这种长值改成**自然换行**、不折断单词。
+   原先写死的 text-align: right + word-break: break-all 是为了长值不撞开
+   左列；那一半由 flex 的 min-width: 0 + overflow-wrap 承担 —— 右列永远
+   从左边那格的右缘起排，左列一个字都不会被挤走。 */
 .kv-v {
   color: var(--ink);
+  flex: 1 1 auto;
   text-align: right;
   min-width: 0;
-  word-break: break-all;
+  overflow-wrap: break-word;
+  word-break: normal;
 }
 
 .kv-v a { color: var(--green); }
