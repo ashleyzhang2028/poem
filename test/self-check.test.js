@@ -29,7 +29,7 @@ function boot(envVars, afterSession) {
 }
 
 function serve() {
-  const entry = require("../api/index.js");
+  const entry = require("../api/[...path].js");
   const server = http.createServer(entry);
   return new Promise(resolve => {
     server.listen(0, "127.0.0.1", () => resolve({
@@ -65,6 +65,18 @@ async function diagAt(base) {
     "前端脚本里不发任何密钥头、也不认密钥形状（apikey / Authorization / JWT 前缀都不出现）");
   chk(/api\/diag/.test(js) && /api\/register/.test(js) && /api\/config/.test(js),
     "前端依次打 /api/diag、/api/config、/api/me、/api/register 四条");
+
+  /* Issue #205 第三次：线上整站 /api/* 回**平台层** 404（函数没被调起来）。
+     用户能自己看见的只有「报告里那四条全未过」，而它们**分不出**两种坏法：
+       ① 函数压根不在这次部署里（平台层 404，纯文本）
+       ② 函数在、但平台转进来的地址它不认（本站 E_404，JSON）
+     所以自检多一条：按**平台转进来之后**的那个地址再打一发。 */
+  chk(/api\/handler\/config/.test(js),
+    "自检多打一发 rewrite 之后的地址（/api/handler/config）—— 它专测「函数认不认转进来的形状」");
+  chk(/api2/.test(js), "并且那一条是独立的一行结论（不并进 /api/config 那条里，否则分不出是哪一环）");
+  chk(/对不上/.test(js), "它的不通过文案直说「rewrite 的落点与路由表前缀对不上」");
+  chk(/api\/handler\/me/.test(html),
+    "命令行判据里也备着这一发（页面打不开时照样能查）");
 
   // 用户 2026-09-18（Issue #229）：入口从「设置 · 通用」那颗按钮改成
   // 「设置 · 关于」里的一行链接（排在隐私条款下面）。口径没变 ——

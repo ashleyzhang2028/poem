@@ -26,7 +26,7 @@
     var slot = $("#avatar-slot");
     if (!A || !slot) return;
     var html = "";
-    try { html = A.html(window.localStorage, { size: 46 }); } catch (e) { html = ""; }
+    try { html = A.html(window.localStorage, { dock: true }); } catch (e) { html = ""; }
     slot.innerHTML = html;
     if (html) slot.removeAttribute("aria-hidden");
     else slot.setAttribute("aria-hidden", "true");
@@ -52,7 +52,17 @@
   }
 
   function refreshChrome() {
+
     if (window.SiteChrome && window.SiteChrome.refreshUser) window.SiteChrome.refreshUser();
+    var A = avatarMod();
+    if (!A) return;
+    var d = null;
+    try { d = A.display(window.localStorage); } catch (e) { d = null; }
+    if (!d || !d.hasImage) return;
+
+    var slot = document.querySelector("#site-dock .dock-icon");
+    if (!slot) return;
+    slot.innerHTML = A.html(window.localStorage, { dock: true });
   }
 
   function onPickFile(input) {

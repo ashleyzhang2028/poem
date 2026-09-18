@@ -1,6 +1,10 @@
 (function () {
   "use strict";
 
+  var IMG_ATTRS =
+    'loading="lazy" decoding="async" referrerpolicy="no-referrer" ' +
+    'width="26" height="26"';
+
   var SVG_HEAD = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">';
 
   var GLYPHS = {
@@ -36,11 +40,8 @@
       '<circle cx="12" cy="12" r="3.2"/>' +
       '<path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-.45 3.11 2 2 0 0 1-2.18-.36l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-1.34 1.88 2 2 0 0 1-2.34-.97 2 2 0 0 1-.32-1.11v-.09A1.65 1.65 0 0 0 9 18.98a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-3.11-.45 2 2 0 0 1 .36-2.18l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-1.88-1.34 2 2 0 0 1 .97-2.34 2 2 0 0 1 1.11-.32h.09A1.65 1.65 0 0 0 5.02 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 .45-3.11 2 2 0 0 1 2.18.36l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 1.34-1.88 2 2 0 0 1 2.34.97 2 2 0 0 1 .32 1.11v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 3.11.45 2 2 0 0 1-.36 2.18l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 1.88 1.34 2 2 0 0 1-.97 2.34 2 2 0 0 1-1.11.32h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
 
-    tabMine:
-      '<svg viewBox="0 0 24 24" aria-hidden="true">' +
-      '<circle cx="12" cy="12" r="10" fill="currentColor" stroke="none"/>' +
-      '<text x="12" y="12" text-anchor="middle" dominant-baseline="central" ' +
-      'font-size="11" font-weight="600" fill="var(--card)" stroke="none">__CHAR__</text></svg>',
+    tabMineImg:
+      '<img class="avatar-img" src="__SRC__" alt="" ' + IMG_ATTRS + " />",
 
     back:
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
@@ -264,7 +265,7 @@
     { key: "home", href: "/", icon: GLYPHS.tabPoem, label: "背诵", desc: "课内古诗词，按当前复习算法安排复习" },
     { key: "library", href: "/library/", icon: GLYPHS.tabLibrary, label: "课外", desc: "课内诗词 / 小古文 / 唐诗 / 宋词 / 古文观止 / 昭明文选" },
     { key: "search", href: "/search/", icon: GLYPHS.tabSearch, label: "搜索", desc: "全站篇目一次搜遍" },
-    { key: "mine", href: "/mine/", icon: GLYPHS.tabMine, label: "我的", desc: "头像 / 昵称 / 账号 / 本机数据" }
+    { key: "mine", href: "/mine/", icon: GLYPHS.tabMineImg, label: "我的", desc: "头像 / 昵称 / 账号 / 本机数据" }
   ];
 
   function dockKey(key) {
@@ -289,6 +290,7 @@
       html +=
         "<" + tag + ' ' + (tag === "a" ? 'href="' + it.href + '"' : 'type="button"') +
         ' class="dock-item' + (on ? " active" : "") + '"' +
+        (it.key === "mine" ? ' data-dock-avatar="1"' : "") +
         ' data-nav-go="' + it.key + '" data-href="' + it.href + '"' +
         (on ? ' aria-current="page"' : "") +
         ' title="' + it.desc + '">' +
@@ -299,16 +301,31 @@
     return html + "</div></nav>";
   }
 
-  function dockIcon(it) {
-    if (it.icon.indexOf("__CHAR__") < 0) return it.icon;
-    var char = "";
+  function avatarMod() {
+    return (typeof globalThis !== "undefined" && globalThis.Avatar) || null;
+  }
+
+  function backingStore() {
     try {
-      var A = (typeof globalThis !== "undefined" && globalThis.Avatar) || null;
-      var backing = (typeof globalThis !== "undefined" && globalThis.localStorage) || null;
-      var d = A && A.display ? A.display(backing) : null;
-      char = (d && d.char) || (A && A.DEFAULT_CHAR) || "诗";
-    } catch (e) { char = "诗"; }
-    return it.icon.replace("__CHAR__", escapeHtml(char));
+      return (typeof globalThis !== "undefined" && globalThis.localStorage) || null;
+    } catch (e) { return null; }
+  }
+
+  function avatarNow(backing) {
+    var A = avatarMod();
+    if (!A || !A.display) return null;
+    try { return A.display(backing == null ? backingStore() : backing); } catch (e) { return null; }
+  }
+
+  function dockIcon(it) {
+
+    if (it.icon.indexOf("__SRC__") < 0) return it.icon;
+    var A = avatarMod();
+    if (A && A.html) {
+
+      try { return A.html(backingStore(), { dock: true }); } catch (e) { }
+    }
+    return GLYPHS.tabMineImg.replace("__SRC__", "");
   }
 
   function renderBar(bar) {
@@ -357,6 +374,7 @@
         document.body.appendChild(dock);
       }
       bindDock(dock);
+      mountDockAvatarWatch();
     }
 
     var ev = document.createEvent("Event");
@@ -435,6 +453,30 @@
     location.href = "/settings/";
   }
 
+  function refreshDockAvatar() {
+    if (!dockEnabled()) return;
+    var item = document.querySelector('.dock-item[data-nav-go="mine"]');
+    if (!item) return;
+    var ic = item.querySelector(".dock-icon");
+    if (!ic) return;
+
+    var d = avatarNow();
+    var hasImage = !!(d && d.hasImage);
+    var img = ic.querySelector(".avatar-img");
+
+    if (hasImage === !!img) return;
+    ic.innerHTML = dockIcon(DOCK_ITEMS[3]);
+  }
+
+  function mountDockAvatarWatch() {
+    document.addEventListener("visibilitychange", function () {
+      if (!document.hidden) refreshDockAvatar();
+    });
+    window.addEventListener("pageshow", refreshDockAvatar);
+    window.addEventListener("storage", refreshDockAvatar);
+    window.addEventListener("poem:avatar-change", refreshDockAvatar);
+  }
+
   window.SiteChrome = {
     glyph: function (name) {
       return GLYPHS[name] || "";
@@ -508,6 +550,7 @@
         if (isReaderBar(bar)) return;
         renderBar(bar);
       });
+      refreshDockAvatar();
     },
     appName: APP_NAME
   };

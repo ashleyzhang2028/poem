@@ -1043,6 +1043,11 @@ thead .plans-th-cap {
 
 .identity-row .avatar { --avatar-size: 46px; }
 
+#site-dock .dock-icon .avatar {
+  --avatar-size: var(--dock-icon-size);
+  font-size: calc(var(--dock-icon-size) * .46);
+}
+
 .identity-foot {
   display: flex;
   flex-wrap: wrap;

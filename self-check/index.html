@@ -31,7 +31,7 @@
             <p class="account-hint" id="selfcheck-intro">
               逐条测一遍「这台设备 → 本站服务端 → 数据库」。结论只有三种：
               <strong>过</strong> / <strong>未过</strong> / <strong>无</strong>（这一条当前测不了）。
-              六条前端自测里有一发打到 <code>/api/register</code>，
+              七条前端自测里有一发打到 <code>/api/register</code>，
               但它用的是<strong>形状不合法的邮箱</strong>（<code>@invalid</code>）——
               服务端在归一化那一步就退回，<strong>一个字都不写</strong>。
               唯一会真的写一次的是服务端自报里的「写入实跑」：往 <code>progress</code>
@@ -70,7 +70,7 @@
           <div class="settings-item">
             <label>没有这个页面怎么办</label>
             <div class="settings-btns">
-              <button class="btn ghost-btn" id="btn-selfcheck-steps" type="button">看六条命令行判据</button>
+              <button class="btn ghost-btn" id="btn-selfcheck-steps" type="button">看七条命令行判据</button>
             </div>
             <div class="account-note" id="selfcheck-steps" hidden>
               <p>把 <code>&lt;你的域名&gt;</code> 换掉，逐条跑。每条只有一个结论，不必猜：</p>
@@ -79,6 +79,12 @@
                 回 404 且正文是 <code>The page could not be found</code>，那是<strong>平台层</strong>报的
                 （本站的 404 是 JSON：<code>{"code":"E_404","message":"没有这个接口。"}</code>），
                 意思是 <code>/api/*</code> 压根没接到函数上 —— 重新部署一次。</p>
+              <p><strong>①之二 函数认不认转进来的地址</strong> —— 期望 401<br />
+                <code>curl -sS https://&lt;你的域名&gt;/api/handler/me</code><br />
+                平台层把 <code>/api/*</code> 转成这个形状再交给函数，所以它也必须是 401。
+                若它回的是本站的 <code>E_404</code>（JSON），说明<strong>函数在、但转进来的地址没人认</strong>
+                —— 那是 <code>vercel.json</code> 里那条 rewrite 的落点与路由表的前缀对不上，
+                两处必须同名（见仓库 <code>docs/architecture.md</code> §2.2.1.1）。</p>
               <p><strong>② 会话签得出来没</strong> —— 期望 401<br />
                 <code>curl -sS https://&lt;你的域名&gt;/api/me</code><br />
                 回 503 就是<strong>会话密钥</strong>没生效（改完要<strong>重新部署</strong>才生效 ——

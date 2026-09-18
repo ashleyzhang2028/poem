@@ -118,6 +118,23 @@ function boot(opts) {
   const w = dom.window;
   w.scrollTo = function () {};
   w.print = function () { w.__printed = (w.__printed || 0) + 1; };
+
+  // jsdom 不会真的导航（跳走就是一句 "Not implemented: navigation"），
+  // 而「未登录就跳去登录页」正是这一轮要守的那一条。所以给这一份 jsdom
+  // 配一个记账用的 location：跳哪儿了、带了什么参数，都记在 nav 上，
+  // 测试照旧问 nav.pathname / nav.search。真正的跳转仍由 js/print.js 里
+  // 那句 location.href = ... 发起（见下方对脚本源码的那一处替换）。
+  const nav = {
+    url: 'https://local.test/settings/lists/',
+    pathname: '/settings/lists/',
+    get search() { return new URL(nav.url, 'https://local.test').search; },
+    get href() { return nav.url; },
+    set href(t) {
+      nav.url = String(t);
+      nav.pathname = new URL(nav.url, 'https://local.test').pathname;
+    }
+  };
+  w.__nav = nav;
   w.fetch = function () {
     return Promise.resolve({
       ok: false, status: 503,
@@ -128,11 +145,22 @@ function boot(opts) {
     Object.keys(o.localStorage).forEach(k => { w.localStorage.setItem(k, o.localStorage[k]); });
   }
   order.forEach(function (f) {
+    let src = fs.readFileSync(path + f.replace(/^\//, ''), 'utf8');
+    // jsdom 里 location 是不可换的（换成假的会触发真的导航），而
+    // 「跳去登录页」正是这一轮要守的行为。所以在**这一份 jsdom 副本**里
+    // 只把 location 换成记账用的假货 —— 仓库里的 js/print.js 一个字不动，
+    // 跳转这件事仍然由它自己那句 location.href = ... 发起。
+    src = src.replace(/\bvar Ent = window\.Entitlement;/,
+      'var loc = window.__nav;\n  var Ent = window.Entitlement;');
+    src = src.replace(/location\.href = /g, 'loc.href = ');
+    src = src.replace(/location\.pathname/g, 'loc.pathname');
+    src = src.replace(/if \(!entryUrl\) entryUrl = String\(location\.href\);/,
+      'if (!entryUrl) entryUrl = String(loc.href);');
     const el = w.document.createElement('script');
-    el.textContent = fs.readFileSync(path + f.replace(/^\//, ''), 'utf8');
+    el.textContent = src;
     w.document.body.appendChild(el);
   });
-  return { w: w, d: w.document, dom: dom };
+  return { w: w, d: w.document, dom: dom, nav: nav };
 }
 
 const wait = ms => new Promise(r => setTimeout(r, ms));
@@ -166,9 +194,9 @@ const FIXTURE = {
 };
 
 (async function main() {
-  console.log('\n=== 四、未登录：只说要哪一层，入口照旧看得见 ===');
+  console.log('\n=== 四、未登录：不摆卡片，直接送去登录页（Issue #229）===');
   {
-    const { w, d } = boot({ localStorage: FIXTURE });
+    const { w, d, nav } = boot({ localStorage: FIXTURE });
     await wait(60);
 
     const entry = d.querySelector('[data-print-open]');
@@ -182,14 +210,38 @@ const FIXTURE = {
 
     click(entry);
     await wait(60);
-    chk(host.hidden === false, '点一下铺开那一层（就地，地址栏不动）');
-    eq(w.location.pathname, '/settings/lists/', '地址栏仍是 /settings/lists/（就地叠层，不是跳走）');
 
-    const text = host.textContent;
-    chk(/登录/.test(text), '文案说清「要先登录」（不是「层级不够」）');
-    chk(!/即将上线|敬请期待|稍后开放/.test(text), '不写「即将上线」（2A 立的规矩：不提前渲染）');
-    chk(text.indexOf('**') < 0, '文字里没有裸 `**`（进 innerHTML 的那段不许写 Markdown 加粗）');
-    chk(!d.querySelector('[data-print-paper]'), '锁着时一个纸型键都不画');
+    eq(host.hidden, true, '未登录点入口：那一层仍然收着（不铺卡片、不铺预览）');
+    eq(host.innerHTML, '', '未登录点入口：这一层里一个字都没画出来');
+    eq(nav.pathname, '/login/', '未登录点入口：直接跳到 /login/（jsdom 里 location 换不掉，跳转由这一段记账）');
+    eq(nav.search, '?next=' + encodeURIComponent('/settings/lists/'),
+      '跳转带上回来的路（?next= 当前页路径）');
+    chk(!d.querySelector('[data-print-paper]'), '未登录时一个纸型键都不画');
+    chk(!d.querySelector('[data-print-run]'), '未登录时也没有「打印 / 存 PDF」那颗键');
+
+    // 卡片里的那两句与那颗键都该没了：未登录的人根本走不到这一层
+    const js = read('js/print.js');
+    chk(!/data-print-go/.test(js), 'js/print.js 里没有「去登录」那颗键了（不再摆登录按钮）');
+    chk(!/用邮箱建一个账号/.test(js), 'js/print.js 里没有「用邮箱建一个账号」（注册的活在登录页上）');
+    chk(!/登录可用/.test(read('js/entitlement.js')) || /reason === "login"/.test(read('js/entitlement.js')),
+      '「登录可用」只作为 entitlement 的通用拒绝文案存在，不再被打印页印到卡片上');
+    chk(!/account-btn[\s\S]{0,80}\/login\//.test(js),
+      '这一层的卡片里不再有往登录页去的按钮');
+
+    // 上一步点入口已经跳到 /login/ 了：把记的账放回原页，问它「从这一页
+    // 被送走的话，回来的路是什么」。
+    nav.pathname = '/settings/lists/';
+    nav.url = 'https://local.test/settings/lists/';
+    const lu = w.PrintPage.loginUrl() || '';
+    chk(lu.indexOf('/login/?next=') === 0,
+      'loginUrl() 是 /login/?next=... 的形状（实际 ' + lu + '）');
+    eq(decodeURIComponent(lu.split('next=')[1] || ''),
+      '/settings/lists/', 'loginUrl() 给的 next 就是当前页（未登录时唯一的去处）');
+
+    const opened = w.PrintPage.open({ collectionId: 'c-test' });
+    await wait(40);
+    eq(opened, false, '未登录直接喊 open()：如实返回 false（没打开）');
+    eq(host.innerHTML, '', '未登录直接喊 open()：仍然一个字都不画');
 
     chk(!!d.querySelector('#collections-list'), '自选清单照旧渲染（这一层不抢它的活）');
   }
@@ -203,7 +255,10 @@ const FIXTURE = {
     await wait(60);
     const ft = free.d.querySelector('[data-print-view="sheet"]').textContent;
     chk(/Pro/.test(ft), 'Free 登录后如实说要 Pro（实际含 Pro）');
-    chk(!/登录/.test(ft) || /层级/.test(ft), 'Free 时不再说「去登录」（他已经登录了）');
+    chk(!/登录可用/.test(ft), '那张卡片里没有「登录可用」这句话（他已经登录了）');
+    chk(!/用邮箱建一个账号/.test(ft), '那张卡片里没有创建账号的按钮');
+    chk(!free.d.querySelector('[data-print-go]'), '那张卡片里没有往登录页去的键');
+    chk(/四种身份对比/.test(ft), '只留下如实的一句：层级由管理员发放 + 去哪看对照表');
   }
   {
     const { w, d } = boot({ localStorage: FIXTURE });

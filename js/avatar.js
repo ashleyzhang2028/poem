@@ -16,6 +16,10 @@
 
   var MAX_PX = 512;
 
+  var IMG_ATTRS =
+    'loading="lazy" decoding="async" referrerpolicy="no-referrer" ' +
+    'width="26" height="26"';
+
   function familyMod() {
     var g = typeof globalThis !== "undefined" ? globalThis : null;
     return g && g.Family ? g.Family : null;
@@ -258,6 +262,14 @@
   function renderHtml(d, o) {
     var cls = "avatar" + (o.cls ? " " + String(o.cls) : "");
     var style = o.size ? ' style="--avatar-size:' + Number(o.size) + 'px"' : "";
+
+    if (o.dock) {
+      var dockBody = d.hasImage
+        ? '<img class="avatar-img" src="' + esc(d.src) + '" alt="" ' + IMG_ATTRS + " />"
+        : esc(d.char);
+      return '<span class="avatar avatar-dock" role="img" aria-label="' + esc(d.label) + '"' +
+        ' title="' + esc(d.label) + '">' + dockBody + "</span>";
+    }
     var body = d.hasImage
       ? '<img class="avatar-img" src="' + esc(d.src) + '" alt="" loading="lazy" ' +
         'decoding="async" referrerpolicy="no-referrer" />'

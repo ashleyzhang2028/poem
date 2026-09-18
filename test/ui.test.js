@@ -171,7 +171,10 @@ setTimeout(() => {
   chk(dockItems.map(b => b.dataset.navGo).join('/') === 'home/library/search/mine', '页签跳转目标正确');
   chk(dockItems[0].classList.contains('active') && dockItems[0].getAttribute('aria-current') === 'page',
     '当前页（背诵）页签为选中态');
-  chk(dockItems.every(b => b.querySelector('.dock-icon svg')), '四个页签图标均为内联 SVG');
+  chk(dockItems.slice(0, 3).every(b => b.querySelector('.dock-icon svg')),
+    '前三格页签图标均为内联 SVG（最后一格是那个人自己的头像，见下）');
+  chk(dockItems.slice(0, 3).every(b => !b.querySelector('.dock-icon .avatar')),
+    '前三格不画头像（头像只长在「我的」那一格上）');
 
   chk(!/\.dock-item::before/.test(fs.readFileSync(path + 'css/style.css', 'utf8')),
     '页签选中态的「下划线」已移除（.dock-item::before 不再存在）');
@@ -181,19 +184,17 @@ setTimeout(() => {
   const settingsItem = dock.querySelector('.dock-item[data-nav-go="mine"]');
   chk(settingsItem.tagName === 'A', '「我的」页签是 <a>（因此必须显式去掉链接默认下划线）');
 
-  const mineIcon = settingsItem.querySelector('.dock-icon svg');
-  chk(!!mineIcon, '「我的」页签有图标');
-  chk(!mineIcon.querySelector('path'), '它不再是齿轮（没有那条齿形 path）');
-  const mineCircle = mineIcon.querySelector('circle');
-  chk(!!mineCircle && mineCircle.getAttribute('cx') === '12' &&
-    mineCircle.getAttribute('cy') === '12' && mineCircle.getAttribute('r') === '10',
-    '它是一枚居中的整圆（圆心 12,12 · r10 = 圆形头像）');
-  const mineChar = mineIcon.querySelector('text');
-  chk(!!mineChar && mineChar.textContent.trim() === '诗',
-    '圆里是那个人自己的首字；没起名时回落默认字「诗」（与全站头像同源，实际「' +
-    (mineChar ? mineChar.textContent : '缺失') + '」）');
-  chk(!/__CHAR__/.test(settingsItem.innerHTML),
-    '占位符 __CHAR__ 已被真的首字替换（不留模板残渣）');
+  (function () {
+    const av = settingsItem.querySelector('.dock-icon .avatar');
+    chk(!!av, '「我的」页签上长着一枚真头像（不是自己拼的圆 + 字）');
+    chk(av.textContent.trim() === '诗',
+      '没传图时回落这人自己的首字；没起名时是默认字「诗」（与全站头像同源，实际「' +
+      av.textContent.trim() + '」）');
+    chk(av.classList.contains('avatar-dock'),
+      '这一档头像走 .avatar-dock 那个形状（尺寸由 --dock-icon-size 给）');
+    chk(!/__CHAR__|__SRC__/.test(settingsItem.innerHTML),
+      '占位符 __CHAR__ / __SRC__ 都已被真的值替换（不留模板残渣）');
+  })();
 
   chk(d.querySelector('.topbar .back-icon') === null, '顶栏不再有各页自造的返回箭头');
   chk(!!dock.querySelector('[data-nav-go="mine"]'), '「我的」是页签之一，设置整页藏在它右上角那颗齿轮后面');
@@ -689,8 +690,68 @@ setTimeout(() => {
             '自选篇目的出处那一格显示集子名（不是「undefined年级 undefined学期」；实际「' +
             cd.querySelector('#m-grade').textContent + '」）');
 
-          console.log(fails === 0 ? '\n🎉 UI 测试全部通过' : '\n❌ ' + fails + ' 项失败');
-          process.exit(fails ? 1 : 0);
+  // ---- Issue #229：底栏「我的」那一格的头像，传了 / 删了都要立刻跟上 ----
+  // 守两件事：① 两档回落（没图 = 这人自己的首字，有图 = 图）；
+  // ② 传 / 删之后**不刷新页面**那一格当场换过来（「要重启才看得见」是真正要挡的回归）。
+  const bootMine = () => {
+    const src = fs.readFileSync(path + 'mine/index.html', 'utf8');
+    const mdom = new JSDOM(src, { runScripts: 'dangerously', resources: undefined, url: 'https://local.test/mine/' });
+    src.match(/<script src="([^"]+)"><\/script>/g)
+      .map(x => x.match(/src="([^"]+)"/)[1])
+      .forEach(rel => {
+        const el = mdom.window.document.createElement('script');
+        el.textContent = fs.readFileSync(path + rel.replace(/^\//, ''), 'utf8');
+        mdom.window.document.body.appendChild(el);
+      });
+    return mdom;
+  };
+  const dockIconOf = doc => doc.querySelector('#site-dock .dock-item[data-nav-go="mine"] .dock-icon');
+  const dockPaint = doc => {
+    const ic = dockIconOf(doc);
+    if (!ic) return 'missing';
+    if (ic.querySelector('.avatar-img')) return 'image';
+    return ic.querySelector('.avatar') ? 'char' : 'none';
+  };
+
+  const m1 = bootMine();
+  setTimeout(() => {
+    const md = m1.window.document;
+    const L = m1.window.localStorage;
+
+    chk(dockPaint(md) === 'char', '底栏「我的」那一格还没传图时画的是首字（实际 ' + dockPaint(md) + '）');
+
+    // 传图：avatar-edit.confirmCrop 走的就是这条路（先落本机 → 重画 → 刷底栏）
+    m1.window.Avatar.setLocalImage(L, 'data:image/png;base64,QUJD');
+    m1.window.AvatarEdit.render();
+    setTimeout(() => {
+      chk(dockPaint(md) === 'image', '传完图底栏当场换成那张图（不刷新页面，实际 ' + dockPaint(md) + '）');
+      const im = dockIconOf(md).querySelector('.avatar-img');
+      chk(!!im && im.getAttribute('src') === 'data:image/png;base64,QUJD',
+        '画的正是刚传的那一张（不是别的缓存图）');
+      chk(/avatar-dock/.test(dockIconOf(md).innerHTML),
+        '这一格的头像走 .avatar-dock（尺寸由 --dock-icon-size 一处给）');
+
+      // 删图：avatar-edit.clear 走的就是这条路
+      m1.window.Avatar.resetAvatar(L);
+      m1.window.AvatarEdit.render();
+      setTimeout(() => {
+        chk(dockPaint(md) === 'char', '删完头像底栏当场退回首字（不刷新页面，实际 ' + dockPaint(md) + '）');
+        chk(!/avatar-img/.test(dockIconOf(md).innerHTML), '退回去时不留一张裂图');
+
+        const myCss = fs.readFileSync(path + 'css/style.css', 'utf8');
+        chk(/--dock-icon-size:\s*26px/.test(myCss),
+          '底栏图标尺寸只有一个来源（--dock-icon-size: 26px）');
+        chk(/\.dock-icon svg,\s*\n?\.dock-icon \.avatar \{[^}]*width:\s*var\(--dock-icon-size\)/.test(myCss),
+          '图标与头像共用同一份尺寸（两者的几何不会各长各的）');
+        chk(/\.dock-item \{[^}]*font-size:\s*10\.5px/.test(myCss),
+          '页签文字 11.5px → 10.5px（比原来小两号）');
+
+        console.log(fails === 0 ? '\n🎉 UI 测试全部通过' : '\n❌ ' + fails + ' 项失败');
+        process.exit(fails ? 1 : 0);
+      }, 300);
+    }, 300);
+  }, 500);
+
         }, 300);
       }, 300);
     }, 300);
