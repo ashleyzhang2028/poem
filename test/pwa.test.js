@@ -371,7 +371,7 @@ function check(name, cond, extra) {
       }), sel);
       return Object.assign({ clicked: true, href: link.href }, after);
     };
-    const subGeneral = await enterSub('general', '#input-username');
+    const subGeneral = await enterSub('general', '#toggle-sync');
     check('iPhone: 断网时点「通用」进得去二级页（预缓存里真的有这张页）',
       subGeneral.clicked && subGeneral.href === '/settings/general/' &&
       subGeneral.url === '/settings/general/' &&
@@ -1340,10 +1340,10 @@ function check(name, cond, extra) {
       check('iPhone 搜索页：收起下拉不动关键词（用户接着看结果，不必重打一遍）',
         dismiss.keywordKept.length > 0, '「' + dismiss.keywordKept + '」');
 
-      await sp.goto(base + 'settings/general/', { waitUntil: 'load' });
+      await sp.goto(base + 'mine/', { waitUntil: 'load' });
       await new Promise(r => setTimeout(r, 600));
       const glow = await sp.evaluate(async () => {
-        const inp = document.getElementById('input-username');
+        const inp = document.getElementById('input-nickname');
         inp.focus();
         await new Promise(r => setTimeout(r, 300));
 
@@ -1357,10 +1357,10 @@ function check(name, cond, extra) {
         plain.remove();
         return out;
       });
-      check('iPhone 设置页：用户名输入框聚焦时有淡光晕（与搜索框同一个值）',
+      check('iPhone 我的页：昵称输入框聚焦时有淡光晕（与搜索框同一个值）',
         /rgba\(47, 96, 85, 0\.1\)/.test(glow.shadow) && /3px/.test(glow.shadow),
         glow.shadow);
-      check('iPhone 设置页：没有类名的输入框（弹层里那种）聚焦时也带同一圈光晕',
+      check('iPhone 我的页：没有类名的输入框（弹层里那种）聚焦时也带同一圈光晕',
         /rgba\(47, 96, 85, 0\.1\)/.test(glow.shadow) && glow.outline === 'none',
         JSON.stringify(glow));
       await sp.goto(base + 'search/', { waitUntil: 'load' });
