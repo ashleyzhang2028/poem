@@ -92,13 +92,39 @@ main:
             #    于是这一条会被误读成「密钥仓库没配好」而反复去查密钥仓库。
             #    PostgREST 认两个头：apikey 给的是 key（这里用 service_role），
             #    Authorization 给的是 Bearer token —— 同一个 key 两处都要带。
+            #
+            # ⚠️ 只读**不够**（Issue #225 补的）：注册那个「服务端出了点问题」
+            #    最常见的死法是**写** —— 读得通、写不通，`select uid` 照样回 200。
+            #    所以这里读一次、再写一次（写的那行立刻删掉，不堆垃圾）。
+            AUTH=(-H "apikey: $SUPABASE_SERVICE_KEY" -H "Authorization: Bearer $SUPABASE_SERVICE_KEY")
+
             CODE=$(curl -sS -o /dev/null -w '%{http_code}' \
-              "$SUPABASE_URL/rest/v1/accounts?select=uid&limit=1" \
-              -H "apikey: $SUPABASE_SERVICE_KEY" \
-              -H "Authorization: Bearer $SUPABASE_SERVICE_KEY")
-            echo "HTTP $CODE"
-            # 失败必须红：探活静默挂掉三个月，会以「某天用户突然登不上」的形式暴露
+              "$SUPABASE_URL/rest/v1/accounts?select=uid&limit=1" "${AUTH[@]}")
+            echo "读 accounts：HTTP $CODE"
+            # 读不通就直接红，不必再试写（写那一步的报错会更绕）
             test "$CODE" = "200"
+
+            # 写探针：往 codes 插一行诊断标记，成功或失败都立刻删掉。
+            # code_id 用固定值 + **先删再插**：上一次失败留下的残行会让这次回 409
+            # （主键冲突），而 409 会被误读成「写不通」—— 顺序固定就不会。
+            PROBE_BODY='{"code_id":"keepalive-probe","uid":"u_keepalive","purpose":"keepalive","code_hash":"probe","salt":"probe","created_at":0,"expires_at":0,"consumed_at":null,"attempts":0}'
+            curl -sS -o /dev/null -X DELETE \
+              "$SUPABASE_URL/rest/v1/codes?code_id=eq.keepalive-probe" "${AUTH[@]}" || true
+            WCODE=$(curl -sS -o /dev/null -w '%{http_code}' -X POST \
+              "$SUPABASE_URL/rest/v1/codes" "${AUTH[@]}" \
+              -H "Content-Type: application/json" -H "Prefer: return=minimal" \
+              -d "$PROBE_BODY")
+            echo "写 codes：HTTP $WCODE"
+            # 收尾：把探针那行删掉（成不成功都删；留着会让 admin 名录里多一行假码）
+            curl -sS -o /dev/null -X DELETE \
+              "$SUPABASE_URL/rest/v1/codes?code_id=eq.keepalive-probe" "${AUTH[@]}" || true
+
+            # 失败必须红：探活静默挂掉三个月，会以「某天用户突然登不上」的形式暴露。
+            # 写探针期望 201（PostgREST 建行）；204 也算成（有的网关回 204）。
+            case "$WCODE" in
+              201|204) echo "写入探针通过（读 200 / 写 $WCODE）";;
+              *) echo "写入探针失败：HTTP $WCODE —— 读得通、写不通正是注册 500 的第一大成因" >&2; exit 1;;
+            esac
 
   # 每周备份一次。免费档**没有自动备份**（无 PITR），误删就是永久消失。
   "crontab: 30 4 * * 1":

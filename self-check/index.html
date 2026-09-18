@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#2f6055" />
+  <title>自检 · 跬步</title>
+  <meta name="description" content="跬步自检：账号与云端同步到底卡在哪一环，逐条给你结论（不显示也不上报任何密钥）。" />
+  <meta name="format-detection" content="telephone=no" />
+  <meta name="robots" content="noindex, nofollow" />
+
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="跬步" />
+  <meta name="mobile-web-app-capable" content="yes" />
+
+  <base href="/" />
+  <link rel="icon" href="/icons/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body data-nav="settings" data-back="/settings/general/" data-page="自检" data-sub="账号 · 云端同步">
+  <div class="app">
+    <header class="topbar"></header>
+
+    <main class="settings-page selfcheck-page" id="selfcheck-page">
+
+      <div class="settings-groups">
+        <section class="settings-group">
+          <div class="settings-item">
+            <p class="account-hint" id="selfcheck-intro">
+              逐条测一遍「这台设备 → 本站服务端 → 数据库」。结论只有三种：
+              <strong>过</strong> / <strong>未过</strong> / <strong>无</strong>（这一条当前测不了）。
+              六条前端自测里有一发打到 <code>/api/register</code>，
+              但它用的是<strong>形状不合法的邮箱</strong>（<code>@invalid</code>）——
+              服务端在归一化那一步就退回，<strong>一个字都不写</strong>。
+              唯一会真的写一次的是服务端自报里的「写入实跑」：往 <code>progress</code>
+              插一行标 <code>__diag__</code> 的数据，读完立刻删。
+            </p>
+            <p class="account-hint">
+              本页<strong>不显示、也不上报</strong>任何密钥：主机名脱敏成前 3 位 + 后 12 位，上游原话里不出现 key。
+            </p>
+            <p class="selfcheck-status" id="selfcheck-status">准备中…</p>
+          </div>
+
+          <div class="settings-item">
+            <label>逐条结论</label>
+            <div class="selfcheck-list" id="selfcheck-list" aria-live="polite"></div>
+          </div>
+
+          <div class="settings-item">
+            <label>服务端自报</label>
+            <div class="selfcheck-server" id="selfcheck-server" hidden></div>
+          </div>
+
+          <div class="settings-item">
+            <label>拿去问</label>
+            <div class="settings-btns">
+              <button class="btn ghost-btn" id="btn-selfcheck-again" type="button">重新测一遍</button>
+              <button class="btn ghost-btn" id="btn-selfcheck-report" type="button">复制报告</button>
+            </div>
+            <p class="account-hint">
+              报告里只有结论与「HTTP 状态 + 上游原话」，没有任何密钥。
+              贴到 Issue 里，CodeBuddy 就能定死是哪一环。
+            </p>
+            <textarea class="selfcheck-report" id="selfcheck-report" readonly hidden
+                      aria-label="自检报告"></textarea>
+          </div>
+
+          <div class="settings-item">
+            <label>没有这个页面怎么办</label>
+            <div class="settings-btns">
+              <button class="btn ghost-btn" id="btn-selfcheck-steps" type="button">看六条命令行判据</button>
+            </div>
+            <div class="account-note" id="selfcheck-steps" hidden>
+              <p>把 <code>&lt;你的域名&gt;</code> 换掉，逐条跑。每条只有一个结论，不必猜：</p>
+              <p><strong>① API 挂上了没</strong> —— 期望 200<br />
+                <code>curl -sS -o /dev/null -w '%{http_code}\n' https://&lt;你的域名&gt;/api/config</code><br />
+                回 404 且正文是 <code>The page could not be found</code>，那是<strong>平台层</strong>报的
+                （本站的 404 是 JSON：<code>{"code":"E_404","message":"没有这个接口。"}</code>），
+                意思是 <code>/api/*</code> 压根没接到函数上 —— 重新部署一次。</p>
+              <p><strong>② 会话签得出来没</strong> —— 期望 401<br />
+                <code>curl -sS https://&lt;你的域名&gt;/api/me</code><br />
+                回 503 就是<strong>会话密钥</strong>没生效（改完要<strong>重新部署</strong>才生效 ——
+                环境变量的改动只在新部署里生效，这是「我明明配了」里最常见的一种）。</p>
+              <p><strong>③ 库读得动没</strong> —— 期望 200<br />
+                把下面两条 <code>$库地址</code> / <code>$服务端密钥</code> 换成你自己的两个值
+                （变量名在托管平台的环境变量那一页，本页<strong>不写它们的名字</strong>，免得把密钥名刻进浏览器）：<br />
+                <code>curl -sS -o /dev/null -w '%{http_code}\n' "$库地址/rest/v1/accounts?select=uid&amp;limit=1" -H "apikey: $服务端密钥" -H "Authorization: Bearer $服务端密钥"</code></p>
+              <p><strong>④ 库写得动没</strong> —— 期望 201<br />
+                把 ③ 的 <code>accounts</code> 换成 <code>codes</code>，加上 <code>-X POST</code> 与
+                <code>-H 'Content-Type: application/json' -H 'Prefer: return=minimal'</code> 和
+                <code>-d '{"code_id":"diag-tmp","uid":"u_diag","purpose":"diag","code_hash":"x","salt":"x","created_at":0,"expires_at":0,"consumed_at":null,"attempts":0}'</code>。</p>
+              <p><strong>⑤ 注册真跑一遍</strong><br />
+                <code>curl -sS -i -X POST https://&lt;你的域名&gt;/api/register -H 'Content-Type: application/json' -d '{"email":"you+diag@example.com","password":"diagtest12345","deviceId":"diag"}'</code></p>
+              <p><strong>⑥ 服务端日志里搜</strong><br />
+                Vercel → 项目 → Logs，搜 <code>api.error</code>，把那一行的 <code>error</code> 字段贴回来。
+                四种串互斥：<code>fetch failed</code>（连不上）、<code>supabase 404 PGRST205</code>（表没建）、
+                <code>supabase 401 Invalid API key</code>（key 不对）、<code>supabase 400 42703 column ... does not exist</code>（表是旧形状）。</p>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <footer class="foot settings-foot">
+      <span class="foot-copy">&copy;2026 kuibu.app 积跬步, 至千里</span>
+      <span class="foot-links">
+        <a href="/terms/">用户协议</a>
+        <span class="foot-sep">·</span>
+        <a href="/privacy/">隐私条款</a>
+      </span>
+    </footer>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+
+  <script src="/js/self-check.js"></script>
+  <script src="/js/avatar.js"></script>
+  <script src="/js/chrome.js"></script>
+  <script src="/js/pwa.js"></script>
+</body>
+</html>

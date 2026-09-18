@@ -6,6 +6,7 @@ var ROUTES = {
   "GET /me": "./../_routes/me.js",
 
   "GET /config": "./../_routes/config.js",
+  "GET /diag": "./../_routes/diag.js",
   "POST /sync/pull": "./../_routes/sync/pull.js",
   "POST /sync/push": "./../_routes/sync/push.js",
   "DELETE /account": "./../_routes/account.js",
