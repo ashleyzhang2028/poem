@@ -30,20 +30,12 @@
         <div class="identity-row" id="identity-row"></div>
         <p class="account-hint" id="identity-hint"></p>
 
-        <div class="identity-edit">
-          <label class="sr-only" for="input-nickname">昵称</label>
-          <input id="input-nickname" class="nickname-input" type="text" maxlength="12"
-                 placeholder="起个名字" autocomplete="off" enterkeyhint="done" />
-          <div class="identity-btns">
-            <button class="mini-btn" id="btn-nickname-save" type="button">保存</button>
-            <button class="mini-btn ghost" id="btn-avatar-pick" type="button">上传头像</button>
-          </div>
+        <div class="identity-btns">
+          <button class="mini-btn ghost" id="btn-avatar-pick" type="button">上传头像</button>
+          <button class="mini-btn ghost" id="btn-avatar-clear" type="button" hidden>删除头像</button>
         </div>
 
         <p class="settings-hint" id="avatar-hint"></p>
-        <p class="settings-hint" id="nickname-hint"></p>
-
-        <button class="mini-btn ghost" id="btn-avatar-clear" type="button" hidden>删除头像</button>
 
         <input id="avatar-file" class="sr-only" type="file" accept="image/*"
                aria-label="选择头像图片" />
@@ -76,6 +68,9 @@
       <section class="account-card" id="stats-card">
         <h2 class="account-card-title">本机数据</h2>
         <div class="kv-list" id="stats-list"></div>
+        <div class="settings-btns">
+          <a class="btn ghost-btn" id="link-progress" href="/progress/">背诵进度总览</a>
+        </div>
       </section>
 
       <section class="account-card" id="account-card">
@@ -95,10 +90,6 @@
         </div>
 
         <p class="account-hint" id="signout-hint" hidden>退出不删进度；注销在下面「危险区」。</p>
-      </section>
-
-      <section class="account-card" id="upsell-row" hidden>
-        <button class="account-btn ghost" id="link-plans" type="button">权限对比</button>
       </section>
 
       <section class="account-card danger-zone" id="danger-card">

@@ -32,19 +32,44 @@
     try { return Ent.identity({ backing: backing, authStore: store }); } catch (e) { return null; }
   }
 
-  function renderIdentity(id) {
-    var row = $("identity-row");
-    if (!row || !id) return;
-    var badge = '<span class="tier-badge tier-' + esc(id.tier) + '">' + esc(Ent.tierLabel(id.tier)) + "</span>";
-    var sub = id.signedIn
-      ? "已登录 · " + esc(id.mask || "（无邮箱）")
-      : "游客";
+  function identityRow() { return $("identity-row"); }
+
+  function buildIdentityRow(row) {
     row.innerHTML =
       '<span id="avatar-slot" class="avatar-slot">' +
       (window.Avatar ? Avatar.html(backing) : "") + "</span>" +
       '<span class="identity-main">' +
-      '<span class="identity-sub">' + sub + "</span>" +
-      "</span>" + badge;
+      '<label class="sr-only" for="input-nickname">用户名</label>' +
+      '<input id="input-nickname" class="nickname-input" type="text" maxlength="12"' +
+      ' placeholder="起个名字" autocomplete="off" enterkeyhint="done" />' +
+      '<span class="identity-sub" id="identity-sub"></span>' +
+      "</span>" +
+      '<span class="tier-badge" id="identity-badge"></span>';
+    bindNickname();
+  }
+
+  function renderIdentity(id) {
+    var row = identityRow();
+    if (!row || !id) return;
+    if (!$("input-nickname")) buildIdentityRow(row);
+
+    var slot = $("avatar-slot");
+    if (slot) slot.innerHTML = window.Avatar ? Avatar.html(backing) : "";
+
+    var sub = id.signedIn
+      ? "已登录 · " + (id.mask || "（无邮箱）")
+      : "游客";
+    var subEl = $("identity-sub");
+    if (subEl) subEl.textContent = sub;
+
+    var badge = $("identity-badge");
+    if (badge) {
+      badge.className = "tier-badge tier-" + id.tier;
+      badge.textContent = Ent.tierLabel(id.tier);
+    }
+
+    var input = $("input-nickname");
+    if (input && document.activeElement !== input) input.value = nicknameValue();
 
     var hint = $("identity-hint");
     if (hint) {
@@ -193,25 +218,6 @@
     }
   }
 
-  function renderUpsell() {
-    var box = $("upsell-row");
-    var link = $("link-plans");
-    if (!box) return;
-    var id = identity();
-    if (!id) { hide(box); return; }
-    if (id.signedIn && id.tier !== "free") { hide(box); return; }
-    Ent.markOwner(backing);
-    if (link) {
-      if (!link.dataset.bound) {
-        link.dataset.bound = "1";
-        link.addEventListener("click", function () {
-          location.href = "/plans/";
-        });
-      }
-    }
-    show(box);
-  }
-
   function onSignOut() {
     var r = A.signOut(store);
     if (!r.ok) return;
@@ -344,12 +350,12 @@
   function renderNickname() {
     var input = $("input-nickname");
     if (!input) return;
+    if (document.activeElement === input) return;
     input.value = nicknameValue();
   }
 
   function saveNickname() {
     var input = $("input-nickname");
-    var hint = $("nickname-hint");
     if (!input) return;
     commitNickname(input.value);
     var clean = nicknameValue();
@@ -359,26 +365,25 @@
     if (window.AvatarEdit) window.AvatarEdit.render();
     if (window.SiteChrome && window.SiteChrome.refreshUser) window.SiteChrome.refreshUser();
     renderIdentity(identity());
-    if (hint) {
-      hint.textContent = "昵称已保存";
-      clearTimeout(saveNickname._t);
-      saveNickname._t = setTimeout(function () { hint.textContent = ""; }, 1800);
-    }
-    showToast("昵称已保存");
   }
 
   function bindNickname() {
     var input = $("input-nickname");
-    if (!input) return;
-    var save = $("btn-nickname-save");
+    if (!input || input.dataset.bound) return;
+    input.dataset.bound = "1";
 
     input.addEventListener("input", function () {
+      commitNickname(input.value);
       if (window.AvatarEdit) window.AvatarEdit.render();
       clearTimeout(nicknameTimer);
       nicknameTimer = setTimeout(function () {
         if (window.SiteChrome && window.SiteChrome.refreshUser) window.SiteChrome.refreshUser();
         renderIdentity(identity());
       }, 300);
+    });
+    input.addEventListener("change", function () {
+      clearTimeout(nicknameTimer);
+      saveNickname();
     });
     input.addEventListener("keydown", function (e) {
       if (e.key !== "Enter") return;
@@ -391,10 +396,6 @@
       if (input.value !== nicknameValue()) saveNickname();
       else input.value = nicknameValue();
     });
-    if (save) {
-      save.addEventListener("mousedown", function (e) { e.preventDefault(); });
-      save.addEventListener("click", function () { saveNickname(); });
-    }
   }
 
   function paint(sess) {
@@ -405,7 +406,6 @@
     renderAccount(sess);
     renderNickname();
     renderAdmin(id);
-    renderUpsell();
   }
 
   function init() {

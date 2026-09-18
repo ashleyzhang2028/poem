@@ -568,11 +568,11 @@ setTimeout(() => {
   const uInput = spMineN.doc.querySelector('#input-nickname');
   chk(uInput.value === '', '昵称初始为空（使用默认名 Ashley）');
 
-  chk(!!spMineN.doc.querySelector('#btn-nickname-save'),
-    '昵称旁边那颗「保存」在（用户输完即保存的落点）');
+  chk(!spMineN.doc.querySelector('#btn-nickname-save'),
+    '没有「保存」按钮（用户 2026-09-18：用户在用户名输入框输完自动就保存）');
   uInput.value = '小明';
-  spMineN.doc.querySelector('#btn-nickname-save')
-    .dispatchEvent(new spMineN.window.Event('click', { bubbles: true }));
+  uInput.dispatchEvent(new spMineN.window.Event('input', { bubbles: true }));
+  uInput.dispatchEvent(new spMineN.window.Event('change', { bubbles: true }));
 
   const seeded = spMineN.window.localStorage.getItem('poem_recite_settings_v1');
   chk(!!seeded && JSON.parse(seeded).username === '小明',
@@ -591,8 +591,8 @@ setTimeout(() => {
     'iOS 桌面名随用户名变化');
 
   uInput.value = '   ';
-  spMineN.doc.querySelector('#btn-nickname-save')
-    .dispatchEvent(new spMineN.window.Event('click', { bubbles: true }));
+  uInput.dispatchEvent(new spMineN.window.Event('input', { bubbles: true }));
+  uInput.dispatchEvent(new spMineN.window.Event('change', { bubbles: true }));
   window.localStorage.setItem('poem_recite_settings_v1',
     spMineN.window.localStorage.getItem('poem_recite_settings_v1'));
   window.PoemApp.reloadSettings();

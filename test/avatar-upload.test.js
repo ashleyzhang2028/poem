@@ -263,7 +263,8 @@ const SESSION = JSON.stringify({
       // 先起个名：头像的回落是「昵称首字」，删完之后要看的就是这一个字
       const u = $("input-nickname");
       u.value = "小明";
-      w.document.getElementById("btn-nickname-save").dispatchEvent(new w.Event("click", { bubbles: true }));
+      u.dispatchEvent(new w.Event("input", { bubbles: true }));
+      u.dispatchEvent(new w.Event("change", { bubbles: true }));
 
       chk(!$("btn-avatar-clear").hidden, "有图时「删除头像」出现");
       chk(/未同步/.test($("avatar-hint").textContent) && !/已同步/.test($("avatar-hint").textContent),

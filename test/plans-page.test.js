@@ -279,8 +279,8 @@ const plansCommentOnly = pageJs;
   chk(/Ent\.compare\(/.test(PAGE), '对比表一律由 compare() 生成（清单的唯一一处）');
   chk(!/Ent\.matrix\(/.test(profileJs),
     '个人中心不再自己画一遍能力清单（同一件事只在一页说）');
-  chk(/权限对比/.test(stripHtml(profileHtml)),
-    '按钮文案说清它去哪（「权限对比」—— 这一节的去处只有它）');
+  chk(/层级对比/.test(stripHtml(profileHtml)),
+    '按钮文案说清它去哪（「层级对比」—— 与页名同一个词，用户 2026-09-18 点名）');
 }
 
 {

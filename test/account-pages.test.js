@@ -374,11 +374,11 @@ const LOGIN = strip(loginJs), PROFILE = strip(profileJs), ADMIN = strip(adminJs)
   chk(actionRows === 2,
     '操作键收成两行（身份卡那一行 + 「关于」卡那一行，实际 ' + actionRows + ' 行）');
   chk(/id="identity-actions"/.test(SRC.profile),
-    '登录 / 退出 / 权限对比三颗键并排在同一行（#identity-actions）');
+    '登录 / 退出 / 层级对比三颗键并排在同一行（#identity-actions）');
 
   const idActions = (SRC.profile.match(/id="identity-actions"[\s\S]*?<\/div>/) || [''])[0];
   chk(/id="btn-account-entry"[\s\S]*?id="btn-sign-out"[\s\S]*?id="btn-go-plans"/.test(idActions),
-    '登录 / 退出 / 权限对比三颗键真的在同一行里（顺序也在）');
+    '登录 / 退出 / 层级对比三颗键真的在同一行里（顺序也在）');
 
   chk(!/id="btn-go-sync"/.test(SRC.profile),
     '「同步设置」那颗键撤掉了（点了还是要去通用页再点一次，纯属多余）');
@@ -389,7 +389,7 @@ const LOGIN = strip(loginJs), PROFILE = strip(profileJs), ADMIN = strip(adminJs)
   chk(/id="sync-conflict"/.test(SRC.profile),
     '需要你裁决时那个冲突面板仍留着（有冲突才铺开）');
   chk(!/id="btn-go-plans"[\s\S]{0,400}?id="btn-go-sync"/.test(SRC.profile),
-    '「权限对比」已从「关于」卡挪走（同一颗键不在两处）');
+    '「层级对比」已从「关于」卡挪走（同一颗键不在两处）');
   chk(/class="account-card danger-zone"/.test(SRC.profile),
     '注销仍**单独一张卡**（朱砂描边的危险区，不与那些「去别处」的键并列）');
 
@@ -443,7 +443,7 @@ const LOGIN = strip(loginJs), PROFILE = strip(profileJs), ADMIN = strip(adminJs)
   let row = W.document.getElementById('identity-actions');
   const ids = [...row.querySelectorAll('button')].filter(b => !b.hidden).map(b => b.id);
   chk(ids.join(',') === 'btn-account-entry,btn-go-plans',
-    '未登录时那一行里是「登录」+「权限对比」两颗（实际 ' + ids.join(',') + '）');
+    '未登录时那一行里是「登录」+「层级对比」两颗（实际 ' + ids.join(',') + '）');
   chk(W.document.getElementById('btn-account-entry').textContent === '登录',
     '那颗键上只有一个词：登录（实际「' + W.document.getElementById('btn-account-entry').textContent + '」）');
 
@@ -460,7 +460,7 @@ const LOGIN = strip(loginJs), PROFILE = strip(profileJs), ADMIN = strip(adminJs)
   row = W.document.getElementById('identity-actions');
   const ids2 = [...row.querySelectorAll('button')].filter(b => !b.hidden).map(b => b.id);
   chk(ids2.join(',') === 'btn-account-entry,btn-sign-out,btn-go-plans',
-    '已登录时三颗键（管理登录状态 / 退出 / 权限对比）在同一行（实际 ' + ids2.join(',') + '）');
+    '已登录时三颗键（管理登录状态 / 退出 / 层级对比）在同一行（实际 ' + ids2.join(',') + '）');
   chk(W.document.getElementById('login-hint') === null,
     '已登录时那一行同样不在（这件事已经不再说了）');
   chk(W.document.getElementById('btn-account-entry').textContent === '管理登录状态',

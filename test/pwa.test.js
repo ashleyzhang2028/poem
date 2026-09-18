@@ -1342,6 +1342,41 @@ function check(name, cond, extra) {
 
       await sp.goto(base + 'mine/', { waitUntil: 'load' });
       await new Promise(r => setTimeout(r, 600));
+
+      // 用户 2026-09-18（Issue #229）：用户名输入框在头像右侧、游客上方；
+      // 短（不占满一行）、无边框无底色；没有「保存」按钮。
+      const nick = await sp.evaluate(() => {
+        const row = document.getElementById('identity-row');
+        const av = row.querySelector('.avatar-slot').getBoundingClientRect();
+        const inp = document.getElementById('input-nickname');
+        const ir = inp.getBoundingClientRect();
+        const sub = row.querySelector('.identity-sub').getBoundingClientRect();
+        const card = row.closest('.account-card').getBoundingClientRect();
+        const cs = getComputedStyle(inp);
+        return {
+          avRight: +av.right.toFixed(1), inLeft: +ir.left.toFixed(1),
+          inTop: +ir.top.toFixed(1), inBottom: +ir.bottom.toFixed(1),
+          subTop: +sub.top.toFixed(1), cardRight: +card.right.toFixed(1),
+          cardLeft: +card.left.toFixed(1), inWidth: +ir.width.toFixed(1),
+          border: cs.borderTopWidth + '/' + cs.borderTopStyle,
+          bg: cs.backgroundColor,
+          hasSave: !!document.getElementById('btn-nickname-save'),
+          hasUpsell: !!document.getElementById('upsell-row')
+        };
+      });
+      check('iPhone 我的页：用户名输入框在头像右侧（框左缘 ≥ 头像右缘）',
+        nick.inLeft >= nick.avRight, '头像右 ' + nick.avRight + ' / 框左 ' + nick.inLeft);
+      check('iPhone 我的页：用户名输入框在「游客」那一行上方（框底 ≤ 游客顶）',
+        nick.inBottom <= nick.subTop + 0.5, '框底 ' + nick.inBottom + ' / 游客顶 ' + nick.subTop);
+      check('iPhone 我的页：输入框不是整行宽（收窄到卡片宽的三分之二以内）',
+        nick.inWidth <= (nick.cardRight - nick.cardLeft) * 0.66,
+        '框宽 ' + nick.inWidth + ' / 卡片宽 ' + (nick.cardRight - nick.cardLeft).toFixed(1));
+      check('iPhone 我的页：输入框不画边框、不铺底色',
+        /^0(px)?\/none$/.test(nick.border) && /rgba\(0, 0, 0, 0\)|transparent/.test(nick.bg),
+        nick.border + ' / ' + nick.bg);
+      check('iPhone 我的页：没有「保存」按钮（输完自动保存）', nick.hasSave === false, String(nick.hasSave));
+      check('iPhone 我的页：没有权限对比那张卡', nick.hasUpsell === false, String(nick.hasUpsell));
+
       const glow = await sp.evaluate(async () => {
         const inp = document.getElementById('input-nickname');
         inp.focus();
@@ -1694,6 +1729,18 @@ function check(name, cond, extra) {
         checked: input.checked,
         track: { x: tr.x, y: tr.y, w: tr.width, h: tr.height, radius: tcs.borderRadius, pos: tcs.position },
         input: { w: ir.width, h: ir.height },
+        label: (() => {
+          const lr = track.closest('label').getBoundingClientRect();
+          const lbl = track.closest('label').querySelector('.settings-label').getBoundingClientRect();
+          return {
+            display: getComputedStyle(track.closest('label')).display,
+            justify: getComputedStyle(track.closest('label')).justifyContent,
+            w: +lr.width.toFixed(1),
+            gapRight: +(lr.right - tr.right).toFixed(1),
+            textRight: +lbl.right.toFixed(1),
+            textToTrack: +(tr.x - lbl.right).toFixed(1)
+          };
+        })(),
         knob: {
           w: parseFloat(after.width), h: parseFloat(after.height),
           left: parseFloat(after.left), top: parseFloat(after.top),
@@ -1717,6 +1764,19 @@ function check(name, cond, extra) {
         'input ' + off.input.w + '×' + off.input.h);
       check('同步开关：轨道是定位包含块（滑块只能落在它里面）',
         off.track.pos === 'relative', off.track.pos);
+
+      // 用户 2026-09-18（Issue #229）：一行显示，选项放在最右面 —— iPhone 设置那样。
+      // 之前 `.settings-item label` 的 display:block 盖掉了 `.switch` 的 flex，
+      // 开关被挤到文字右边的紧邻位置（右侧留一大片空白）。
+      check('同步开关：那一行是 flex + space-between（选项能被推到最右）',
+        off.label.display === 'flex' && off.label.justify === 'space-between',
+        off.label.display + ' / ' + off.label.justify);
+      check('同步开关：轨道紧贴卡片右缘（选项在最右面，不在文字旁边）',
+        Math.abs(off.label.gapRight) <= 1,
+        '右侧空出 ' + off.label.gapRight + 'px');
+      check('同步开关：文字与轨道之间是「推过去」的距离（不是紧贴）',
+        off.label.textToTrack > 40,
+        '文字右缘 → 轨道左缘 ' + off.label.textToTrack + 'px');
       check('同步开关：滑块是轨道的 ::after（不是另一个能到处跑的元素）',
         off.knob.position === 'absolute' && off.knob.w > 0,
         'position ' + off.knob.position + ' / ' + off.knob.w + '×' + off.knob.h);
