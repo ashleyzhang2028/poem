@@ -30,6 +30,9 @@
 #   3n. 复习调度算法    —— jsdom + vm，四张模型（遗忘曲线 / Leitner / SM-2 /
 #                          FSRS 简化版）的公式、换模型不清进度、设置页切换
 #                          与首页副标题跟随（Issue #114 后续）
+#   3o2.自助排查        —— 纯 Node + 本机 http，/self-check/ 与 GET /api/diag：
+#                          缺密钥 / 缺库 / 连不上库三种情形给出互斥结论，
+#                          报告里一个密钥都不出现（Issue #225）
 #   3p. 账号与随机码认证 —— 纯 Node，邮箱归一化 / 发码频控 / 单次使用 /
 #                          过期 / 锁定 / 时间倒退 / 退化随机源不死循环（Issue #132）
 #   3v. 服务端账号接口  —— 纯 Node + 本机 http（不联网、不装新依赖）：1A 期的
@@ -297,6 +300,14 @@ echo "=== 开通自检 / 配置清单（2C：2D 那一步做成可执行的，Is
 echo "    兼守 docs/todo.md：那是「现在不做、以后做」的唯一一处"
 echo "    （短信登录 / 微信小程序版记着；不许写成「即将上线」；已裁掉的不许搬进来）。"
 node test/ops.test.js
+
+echo ""
+echo "=== 自助排查（Issue #225 · /self-check/ + GET /api/diag）==="
+echo "    守的是「注册报 500 时用户能自己定位到哪一环」："
+echo "    ① 页面打不开时页面上备着命令行判据（含「搜 api.error」）；"
+echo "    ② 缺密钥 / 缺库 / 连不上库三种情形各自给出**互斥**的结论，且不假装绿；"
+echo "    ③ 报告里一个密钥都不许出现（值不出现，形状才许出现）。"
+node test/self-check.test.js
 
 echo ""
 echo "=== 家庭子用户（3 期 P1 · profile.family，纯 Node）==="
