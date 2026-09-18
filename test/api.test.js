@@ -954,6 +954,14 @@ async function main() {
       "schema.sql 里有口令摘要列（默认空串 = 还没设口令的老账号）");
     chk(/add column if not exists email_verified_at/.test(sql),
       "schema.sql 里有邮箱确认时刻列（确认与否的唯一凭据）");
+
+    // 顶部那段「三条口径」是给人看的导读，最容易在迁移之后忘了改 ——
+    // 它若还写着「不存明文邮箱」，读者会以为库里没有 email 列，
+    // 而实际第 6 节 ① 就把它加上了（#197）。口径必须与实现同一句。
+    chk(!/不存明文邮箱/.test(sql),
+      "schema.sql 顶部不再说「不存明文邮箱」（#197 已推翻，库里就是存明文的）");
+    chk(/邮箱明文是落库的/.test(sql),
+      "schema.sql 顶部**明说**邮箱明文落库（新口径要有一句正向的话，不能只删旧的）");
     ["verifications", "resets"].forEach(t => {
       chk(new RegExp("create table if not exists public\\." + t).test(sql), "schema.sql 建了 " + t + " 表");
       chk(new RegExp("alter table public\\." + t + "\\s+enable row level security").test(sql),
@@ -1232,7 +1240,7 @@ async function main() {
     eq(core.normGrantInput({ emailMask: "a***@qq.com", tier: "PRO" }).tier, "pro", "层级大小写归一成小写");
 
     eq(core.normGrantInput({ emailMask: "zhangmin@163.com", tier: "pro" }).bad, "E_MASK",
-      "**完整邮箱**被拒：只认掩码（库里不存明文，掩码规则只许有一份实现）");
+      "**完整邮箱**被拒：这一节只认掩码（明文库里是有的，但掩码规则只许有一份实现）");
     eq(core.normGrantInput({ emailMask: "", tier: "pro" }).bad, "E_MASK", "空掩码被拒");
     eq(core.normGrantInput({ emailMask: "a***@", tier: "pro" }).bad, "E_MASK", "掩码缺域名被拒");
     eq(core.normGrantInput({ emailMask: "a@b.com", tier: "pro" }).bad, "E_MASK", "没有 *** 的地址被拒");
@@ -1336,7 +1344,7 @@ async function main() {
       eq(listR.body.grants[0].emailMask, "p***@example.com", "只回掩码");
       chk(!/email_hash/.test(JSON.stringify(listR.body)), "名单里**没有摘要**（泄出去等于「这人是不是本站用户」可被查询）");
       chk(!JSON.stringify(listR.body).includes("plain@example.com"),
-        "名单里**没有明文邮箱**（掩码是给人看的，明文从不落库也不回传）");
+        "名单里**没有明文邮箱**（掩码是给人看的；要明文请走 /api/admin/accounts 名录）");
       chk(!/uid/.test(JSON.stringify(listR.body.grants[0])), "名单里连 uid 都不给（掩码已经够用）");
 
       const rev = await call(sv.base, "DELETE", "/api/admin/grant", { emailMask: "p***@example.com" }, plainCookie);
