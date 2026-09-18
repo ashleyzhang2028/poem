@@ -4414,3 +4414,57 @@ hover 只改颜色（全站唯一的「不给下划线」默认不许破）。
   `test/cross-device.test.js`（名册上云那一节改开 `/mine/`）
 - `sw.js` 缓存版本 v153 → **v154**（改了 html / css / js）
 
+### 4.27 从 GitHub 镜像回拉 logo 与桌面栅格（2026-09-18 · 回答 Issue #209 第二轮）
+
+用户 2026-09-18 在 GitHub 侧（`ashleyzhang2028/poem`）自己改了代码，要求同步回本仓。
+方向说明：CNB 是主仓库，`.cnb.yml` 的 `sync-to-github` 每次合并且测试通过后
+`push --force` 到 GitHub —— 也就是说**只在 GitHub 改会随时被下一次合并覆盖**，
+所以这次是「先拉回来、提 PR」，而不是继续单向前推。
+
+拉回来的两笔提交（`4593653` + 合并 `8750a6c`）做了四件事：
+
+| # | GitHub 侧改动 | 落地 |
+|---|---|---|
+| 1 | 顶栏徽标换成位图（`icons/icon.svg`） | `js/chrome.js` 的 `GLYPHS.mark` 由内联 SVG 换成 `<img>`；`css/style.css` 里 `.brand-icon` 撤掉描金内边与 `--shadow` |
+| 2 | 桌面内容壳层封顶 | `--col-w: min(1200px, 100vw)`、`--col-side: 32px`；列表改 `repeat(auto-fit, minmax(min(100%, 280px), 1fr))` |
+| 3 | 新增图标 | `icons/icon.svg` 换成矢量插画（原图）；`android-chrome-192x192.png` / `favicon-16x16.png` / `favicon-32x32.png` / `favicon.ico` 新增 |
+| 4 | 断言跟着翻面 | `test/pwa.test.js` 三条改为「居中且 ≤1200px」；`test/layout.test.js` 补两条桌面栅格守卫 |
+
+#### 一、回拉时发现并修掉的三处
+
+这几处是**在 GitHub 侧改的时候看不见的**（GitHub Pages 的 `/mine/` 会重定向到 `/mine/index.html`，
+浏览器于是按 `/mine/` 解析相对路径，图标照样出得来；而本地 `scripts/serve.js` 与 Vercel 都是
+`/mine/` → `/mine/index.html` **不改基址**）：
+
+1. **顶栏徽标在子目录页面 404。** `GLYPHS.mark` 里的 `src="./icons/icon.svg"` 由 JS 注入，
+   在 `/mine/` `/settings/general/` 这类页面上会拼成 `/mine/icons/icon.svg`（不存在）。
+   改成站根绝对路径 **`/icons/icon.svg`**。
+2. **25 个页面的 `favicon.ico` / `apple-touch-icon` / `manifest.webmanifest` 一起断。**
+   同一件事的另一半，一并收到站根上（`href="/icons/…"`）。
+3. **maskable 图标与普通 512 是同一份字节。** `Buffer.compare()` 判「两份不同的图」当场红了 ——
+   上一轮同步时就如此。maskable 的规矩是**满铺 + 主体落进中心 80% 安全区**，
+   直接拿圆角那张顶上，Android 自适应裁切后四个角会露底色。
+   用 `icon.svg` 重出一份：宣纸底铺满整张，其余内容缩到 80% 居中
+   （`<g transform="translate(256,256) scale(0.8) translate(-256,-256)">`）。
+
+顺带把 `icons/icon.svg` 重置回**本仓原文件** —— 外来的矢量插画把原来那份带 `id` / 注释的
+矢量徽标整个替换掉了，而 `test/theme.test.js` 有六条守着它（天青主色、朱砂印、「诗」字说明、
+不依赖字体）。要换 logo 是一件事，被一次「随便的同步」顺手带走是另一件事，所以分开办。
+
+#### 二、图标一律重新出图
+
+PNG 全部用 `icon.svg` 重出（`cairosvg`）：120 / 152 / 167 / 180 / 192 / 256 / 384 / 512
+八个尺寸 + `apple-touch-icon` + 两个 `favicon-16/32` + `favicon.ico`（16/32/48 三档）。
+`icon-maskable-512.png` 单独按上面那条出。与上一轮的成品逐像素比过：
+**几何完全一致，差异只在 1~2px 的抗锯齿轮廓上**（放大 6 倍的差分图上能看到每条边都有一道细蓝边），
+没有一处在位置上漂。
+
+#### 三、新增的守卫
+
+- `test/layout.test.js`：顶栏徽标必须走站根绝对路径；每个页面的图片 / 图标 / 清单引用
+  都得能落到磁盘上的文件（不再只靠人眼）
+- `test/ui.test.js`：徽标那两条由「必须是内联 SVG」放宽成「内联 SVG **或** 位图，且只有一枚」
+- `test/ui-consistency.test.js`：桌面档由「100vw / 56px」翻面成「min(1200px, 100vw) / 32px」；
+  `.settings-page` 不再自己写左右内边距那两处改成「这一页不许再各写一份」
+
+验证：`bash test/run.sh` 全量 **零失败**。`sw.js` 缓存版本 v154 → **v155**（改了 html / css / js / 图标）。

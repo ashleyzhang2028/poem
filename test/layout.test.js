@@ -85,5 +85,43 @@ chk(/\.reader\s*\{[^}]*z-index:\s*66/s.test(classicCss),
 chk(zModal > zOf('.reader') || zModal > 66,
   '弹层（' + zModal + '）高于阅读器，阅读器里弹出的选择器盖得住正文');
 
+chk(/@media\s*\(min-width:\s*1024px\)[\s\S]*?--col-w:\s*min\(1200px,\s*100vw\)/.test(css),
+  '桌面内容壳层封顶 1200px，避免超宽屏内容散开');
+chk(/grid-template-columns:\s*repeat\(auto-fit,\s*minmax\(min\(100%,\s*280px\),\s*1fr\)\)/.test(css),
+  '桌面列表使用流式等宽列，避免固定卡片宽度产生零散空隙');
+
+const site = read('js/chrome.js');
+const PAGES = fs.readdirSync(__dirname + '/..', { withFileTypes: true })
+  .filter(e => e.isDirectory() && !e.name.startsWith('.') && !['node_modules', 'test', 'scripts'].includes(e.name))
+  .map(e => e.name + '/index.html')
+  .filter(f => fs.existsSync(path + f))
+  .concat(['index.html']);
+{
+  const abs = f => new RegExp('"/(icons|favicon)[^"]*"').test(f);
+  chk(abs(site),
+    '顶栏徽标用站根绝对路径（子目录页面也能取到，实际 ' +
+      (site.match(/src="[^"]*icon\.svg"/) || ['未找到'])[0] + '）');
+
+  const rel = PAGES.filter(f => /"(\.\/)?(icons|favicon)/.test(read(f)));
+  chk(rel.length === 0,
+    '每个页面的图标引用都落在站根上（子目录页面不再拼成 /xxx/icons/…，实际 ' +
+      (rel.length ? rel.join('、') : '全部合格') + '）');
+
+  const bad = [];
+  PAGES.forEach(f => {
+    const dir = f.includes('/') ? f.split('/')[0] + '/' : '';
+    const refs = read(f).match(/(?:src|href)="([^"]+)"/g) || [];
+    refs.forEach(r => {
+      const u = r.match(/"([^"]+)"/)[1];
+      if (!/\.(png|jpg|jpeg|svg|ico|webp|woff2?|webmanifest)$/.test(u)) return;
+      if (/^(https?:|\/\/|data:|\/)/.test(u)) return;
+      if (!fs.existsSync(path + dir + u.replace(/^\.\//, ''))) bad.push(f + ' → ' + u);
+    });
+  });
+  chk(bad.length === 0,
+    '页面里每个图片 / 图标 / 清单引用都能落到磁盘上的文件（实际 ' +
+      (bad.length ? bad.join('；') : '零断链') + '）');
+}
 console.log(fails === 0 ? '\n🎉 布局避让测试全部通过' : '\n❌ ' + fails + ' 项失败');
 process.exit(fails ? 1 : 0);
+

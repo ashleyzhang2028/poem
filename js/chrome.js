@@ -6,14 +6,7 @@
   var GLYPHS = {
 
     mark:
-      '<svg viewBox="0 0 32 32" fill="none" aria-hidden="true">' +
-      '<circle cx="16" cy="16" r="13.4" stroke="currentColor" stroke-width="1" stroke-opacity=".3"/>' +
-      '<path d="M16 6.4v7.2M16 8.6l-3.1 2.5M16 8.6l3.1 2.5M13.4 11.6h5.2" ' +
-      'stroke="currentColor" stroke-width="1.45" stroke-linecap="round" stroke-linejoin="round" fill="none"/>' +
-      '<path d="M16 25.6v-7.2M16 23.4l-3.1-2.5M16 23.4l3.1-2.5M13.4 20.4h5.2" ' +
-      'stroke="currentColor" stroke-width="1.45" stroke-linecap="round" stroke-linejoin="round" fill="none"/>' +
-      '<circle cx="16" cy="16" r="1.15" fill="currentColor" fill-opacity=".5" stroke="none"/>' +
-      '</svg>',
+      '<img src="/icons/icon.svg" alt="" aria-hidden="true" width="44" height="42" style="display:block;width:44px;height:42px;object-fit:contain;">',
 
     tabPoem:
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +

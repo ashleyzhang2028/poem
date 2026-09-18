@@ -29,7 +29,7 @@
     }
   ];
 
-  var APP_VERSION = "1.0 (v154)";
+  var APP_VERSION = "1.0 (v155)";
 
   function esc(s) {
     return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
