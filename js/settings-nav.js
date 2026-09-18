@@ -29,7 +29,7 @@
     }
   ];
 
-  var APP_VERSION = "1.0 (v153)";
+  var APP_VERSION = "1.0 (v154)";
 
   function esc(s) {
     return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
@@ -81,8 +81,9 @@
       '<div class="kv-row"><span class="kv-k">应用</span><span class="kv-v">跬步 · 古诗词背诵</span></div>' +
       '<div class="kv-row"><span class="kv-k">版本</span><span class="kv-v">' + esc(APP_VERSION) + "</span></div>" +
       '<div class="kv-row"><span class="kv-k">离线缓存</span><span class="kv-v">' + esc(cached) + "</span></div>" +
-      '<div class="kv-row"><span class="kv-k">用户协议</span><span class="kv-v"><a href="/terms/">查看</a></span></div>' +
-      '<div class="kv-row"><span class="kv-k">隐私条款</span><span class="kv-v"><a href="/privacy/">查看</a></span></div>' +
+      '<div class="kv-row"><span class="kv-k"><a href="/plans/">权限对比</a></span></div>' +
+      '<div class="kv-row"><span class="kv-k"><a href="/terms/">用户协议</a></span></div>' +
+      '<div class="kv-row"><span class="kv-k"><a href="/privacy/">隐私条款</a></span></div>' +
       "</div>";
   }
 

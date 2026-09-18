@@ -59,20 +59,40 @@
       box.appendChild(row);
     });
 
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "family-add";
-    btn.id = "btn-family-add";
-    btn.textContent = unlimited
-      ? "再建一个"
-      : "再建一个（还可建 " + F.remaining({ backing: window.localStorage, E: entitlementMod() }) + " 个）";
-    box.appendChild(btn);
+    const left = unlimited
+      ? Infinity
+      : F.remaining({ backing: window.localStorage, E: entitlementMod() });
 
-    if (hint) {
-      hint.textContent = unlimited
-        ? "当前 " + list.length + " 个"
-        : "当前 " + list.length + " / " + lim + " 个";
+    if (left > 0) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "family-add";
+      btn.id = "btn-family-add";
+      btn.textContent = unlimited ? "再建一个" : "再建一个（还可建 " + left + " 个）";
+      box.appendChild(btn);
     }
+
+    if (hint) hint.textContent = limitLine(list.length, lim);
+  }
+
+  function quoText(n) {
+    if (n === Infinity) return "不限";
+    if (!(n > 0)) return "不支持";
+    return String(n);
+  }
+
+  function limitLine(count, lim) {
+    const E = entitlementMod();
+    const caps = E && E.CAPS ? E.CAPS["profile.family"] : null;
+    const head = "当前 " + count + " / " + quoText(lim) + " 个";
+    const q = caps && caps.quotas ? caps.quotas : null;
+    if (!q || lim === Infinity) return head;
+    const others = [];
+    if (q.free > lim) others.push("Free 用户可建 " + quoText(q.free) + " 个");
+    if (q.pro > lim) others.push("Pro 用户可建 " + quoText(q.pro) + " 个");
+    if (q.max > lim) others.push("Max 用户可建 " + quoText(q.max) + " 个");
+    if (!others.length) return head;
+    return head + ", " + others.join(", ");
   }
 
   function switchFamily(id) {

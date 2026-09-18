@@ -55,7 +55,7 @@ const css = read('css/style.css') + read('css/account.css');
 }
 
 {
-  ['avatar-slot', 'btn-avatar-pick', 'avatar-file', 'btn-avatar-clear', 'crop-layer',
+  ['btn-avatar-pick', 'avatar-file', 'btn-avatar-clear', 'crop-layer',
    'crop-box', 'crop-img', 'crop-zoom', 'btn-crop-ok', 'btn-crop-cancel'].forEach(id => {
     chk(new RegExp('id="' + id + '"').test(MINE) && AVATAR_EDIT.indexOf('"#' + id + '"') >= 0,
       '头像那一套控件 ' + id + ' 在页面上、也被 js/avatar-edit.js 认');
@@ -71,10 +71,19 @@ const css = read('css/style.css') + read('css/account.css');
 {
   chk(/id="input-nickname"/.test(MINE) && /\$\("input-nickname"\)/.test(MINE_JS),
     '昵称输入框叫 #input-nickname，由 js/mine.js 认');
-  chk(!/id="input-username"/.test(MINE), '「我的」页不叫 #input-username（那是「通用」页那一颗）');
-  chk(/id="input-username"/.test(GENERAL), '「通用」页仍是用户名那一颗（打字进昵称仍在那儿）');
+  chk(!/id="input-username"/.test(MINE), '「我的」页不叫 #input-username（那一颗已整颗撤掉）');
+  chk(!/id="input-username"/.test(GENERAL),
+    '「通用」页不再有用户名输入框（与「我的」页重复了，用户 2026-09-18 点名删）');
+  ['settings/index.html', 'settings/general/index.html', 'settings/recite/index.html',
+   'settings/lists/index.html', 'settings/reader/index.html'].forEach(f => {
+    chk(!/id="input-username"/.test(read(f)), f + ' 里不再有 #input-username（控件只有一个来源）');
+  });
   chk(/ProgressStore[\s\S]{0,200}patch/.test(strip(MINE_JS)),
     '昵称落盘走 ProgressStore.patch（不自己拼存储键）');
+  chk(/id="btn-nickname-save"/.test(MINE) && /btn-nickname-save/.test(MINE_JS),
+    '昵称旁边有一颗「保存」（用户输完即保存，但也要能主动存）');
+  chk(/blur/.test(strip(MINE_JS)) && /saveNickname/.test(strip(MINE_JS)),
+    '失焦也走同一条保存（键盘上那颗「完成」= 保存）');
   chk(/saveNickname/.test(MINE_JS), '同时写 Avatar.saveNickname（邮箱域与档案域两个键同步）');
   chk(!/poem_recite_settings_v1/.test(strip(MINE_JS)) || /patch/.test(strip(MINE_JS)),
     '「我的」页不自己拼设置键名（拼法只在 ProgressStore 一处）');
@@ -89,11 +98,16 @@ const css = read('css/style.css') + read('css/account.css');
 }
 
 {
-  chk(/id="identity-row"/.test(MINE) && /id="identity-actions"/.test(MINE),
-    '身份卡有身份行与操作键那两行');
-  chk(/id="btn-account-entry"/.test(MINE) && /id="btn-sign-out"/.test(MINE) &&
-      /id="btn-go-plans"/.test(MINE),
-    '三颗键（账号入口 / 退出 / 权限对比）都在');
+  chk(/id="identity-row"/.test(MINE), '身份卡有身份行');
+  chk(/id="btn-account-entry"/.test(MINE) && /id="btn-sign-out"/.test(MINE),
+    '账号入口 / 退出两颗键都在（它们长在「账号」卡上，不在首卡里）');
+  chk(!/id="btn-go-plans"/.test(MINE),
+    '首卡里不再有「权限对比」那颗键（用户 2026-09-18：从这里移出，改成设置「关于」里的一行链接）');
+  chk(!/btn-go-plans/.test(strip(MINE_JS)), 'js/mine.js 里也不再有它的接线');
+  chk(/id="link-plans"/.test(MINE) && /location\.href = "\/plans\/"/.test(MINE_JS),
+    '首卡下方仍留一条「权限对比」的入口（Free / 游客才显示；Pro 以上收起来）');
+  chk(/tier !== "free"/.test(strip(MINE_JS)),
+    '那条入口的显隐只看层级是不是 free（不自己另算一套）；写下来是 `tier !== "free"`');
   chk(/id\.signedIn/.test(MINE_JS), '账号入口的文案按 id.signedIn 分两种（不自己另算一遍登录态）');
   chk(/\?\s*"管理登录状态"\s*:\s*"登录"/.test(MINE_JS) || /"登录"\s*:\s*"管理登录状态"/.test(MINE_JS),
     '未登录「登录」/ 已登录「管理登录状态」（实际就是这两句）');
@@ -220,18 +234,54 @@ function boot(seed) {
   const d0 = w0.document;
 
   chk(!!d0.getElementById('identity-row'), '（真页面）身份行画出来了');
-  chk(/未起名/.test(d0.getElementById('identity-row').textContent),
-    '（真页面）没起名时如实写「未起名」（实际「' +
-    d0.getElementById('identity-row').textContent.trim().split('\n')[0] + '」）');
+  chk(/游客/.test(d0.getElementById('identity-row').textContent) &&
+      !/本机游客/.test(d0.getElementById('identity-row').textContent),
+    '（真页面）未登录时身份行写「游客」（用户 2026-09-18：不再写「本机游客」，实际「' +
+    d0.getElementById('identity-row').textContent.trim() + '」）');
+  chk(!!d0.getElementById('input-nickname') &&
+      d0.getElementById('input-nickname').closest('.account-card') ===
+      d0.getElementById('identity-row').closest('.account-card'),
+    '（真页面）昵称输入框与头像在同一张卡里（顶部的昵称已合并进来）');
+  chk(!!d0.getElementById('avatar-slot') &&
+      !!d0.getElementById('avatar-slot').querySelector('.avatar'),
+    '（真页面）头像只画一处（#identity-row 里那一枚，卡里不再有第二枚）');
+  chk(d0.querySelectorAll('.avatar-slot').length === 1,
+    '（真页面）头像槽全页只有一个（用户 2026-09-18：按钮左侧那枚与顶部那枚合并）');
+  chk(/上传头像/.test(d0.getElementById('btn-avatar-pick').textContent),
+    '（真页面）那颗键写「上传头像」（原先叫「上传图片」）');
+  chk(!/上传图片/.test(d0.getElementById('mine-page').textContent),
+    '（真页面）页面上不再出现「上传图片」四个字');
   chk(d0.getElementById('btn-account-entry').textContent === '登录',
     '（真页面）未登录时那颗键写「登录」');
   chk(d0.getElementById('btn-sign-out').hidden, '（真页面）未登录时不摆「退出登录」');
+  chk(d0.getElementById('btn-account-entry').closest('.account-card')
+        !== d0.getElementById('identity-row').closest('.account-card'),
+    '（真页面）登录那颗键已从首卡移出（用户 2026-09-18：与权限对比一起移出这张卡）');
   chk(d0.getElementById('danger-card').hidden, '（真页面）未登录时不摆注销卡（没有账号可注销）');
   chk(d0.getElementById('btn-avatar-clear').hidden,
     '（真页面）没图时「删除头像」不出现（摆一颗点了没反应的灰键更糟）');
   chk(/还没有/.test(d0.getElementById('stats-list').textContent),
     '（真页面）本机数据如实写「还没有」');
-  chk(!!d0.getElementById('btn-family-add'), '（真页面）子用户那一块画出来了（认领出第一个）');
+  chk(!!d0.getElementById('family-panel'), '（真页面）子用户那一块画出来了');
+  chk(!d0.getElementById('btn-family-add'),
+    '（真页面）Free 只剩 0 个名额时**不摆**「再建一个」（摆一颗点不动的键没有意义）');
+  chk(/当前 1 \/ 1 个/.test(d0.getElementById('family-hint').textContent) &&
+      /Pro 用户可建 3 个/.test(d0.getElementById('family-hint').textContent) &&
+      /Max 用户可建 180 个/.test(d0.getElementById('family-hint').textContent),
+    '（真页面）上限那一行如实写出各层的名额（实际「' +
+    d0.getElementById('family-hint').textContent + '」）');
+
+  const order0 = [...d0.querySelectorAll('#mine-page > section')].map(s => s.id);
+  chk(order0.indexOf('family-item') >= 0 && order0.indexOf('family-item') < order0.indexOf('stats-card'),
+    '（真页面）子用户卡在本机数据卡**上方**（实际 ' + order0.join(' → ') + '）');
+  chk(order0.indexOf('upsell-row') > order0.indexOf('account-card') &&
+      order0.indexOf('upsell-row') < order0.indexOf('danger-card'),
+    '（真页面）权限对比那条入口挪到「账号」卡之后');
+  chk(order0.indexOf('danger-card') === order0.length - 1,
+    '（真页面）注销仍是最下面那张卡');
+  const admin = d0.getElementById('btn-go-admin');
+  chk(!!admin && admin.closest('#mine-page') && !admin.closest('.account-card'),
+    '（真页面）管理后台那颗键整张卡都在外面（用户 2026-09-18：从「关于」卡挪出，放到最下面）');
 
   const gear = d0.getElementById('top-act-link');
   chk(!!gear && gear.getAttribute('href') === '/settings/',
@@ -240,13 +290,13 @@ function boot(seed) {
   chk(!!d0.querySelector('.dock-item[data-nav-go="mine"].active'),
     '（真页面）底部「我的」那一格是选中态');
 
-  // 昵称：打字 → 落盘 → 徽章 / 头像 / 页签首字跟着走
+  // 昵称：输完 → 保存 → 落盘 → 徽章 / 头像 / 页签首字跟着走
   const w1 = boot(null);
   await new Promise(r => setTimeout(r, 300));
   const d1 = w1.document;
   const input = d1.getElementById('input-nickname');
   input.value = '玥玥';
-  input.dispatchEvent(new w1.Event('input', { bubbles: true }));
+  d1.getElementById('btn-nickname-save').dispatchEvent(new w1.Event('click', { bubbles: true }));
   await new Promise(r => setTimeout(r, 400));
 
   let saved = null;
@@ -259,7 +309,20 @@ function boot(seed) {
   const st = JSON.parse(w1.localStorage.getItem('poem_recite_settings_v1') || '{}');
   chk(st.username === '玥玥', '（真页面）同时写进设置域那个 username（导出 / 跨设备那一份也对得上）');
   chk(/玥/.test(d1.getElementById('identity-row').textContent),
-    '（真页面）身份行跟着换成新昵称');
+    '（真页面）身份行跟着换成新昵称（头像那枚首字也在里面）');
+
+  // 头像：本机有图且还没传上服务器 → 「未同步」
+  const w2 = boot({
+    poem_avatar_local_v1: JSON.stringify({ v: 1, img: 'data:image/png;base64,iVBORw0KGgo=' })
+  });
+  await new Promise(r => setTimeout(r, 300));
+  const d2 = w2.document;
+  chk(d2.getElementById('avatar-hint').textContent === '未同步',
+    '（真页面）本机有图、服务器上还没有时写「未同步」（用户 2026-09-18 点名的那句，' +
+    '原先写「已存在本机，还没同步到服务器」，实际「' +
+    d2.getElementById('avatar-hint').textContent + '」）');
+  chk(!/已存在本机/.test(d2.getElementById('mine-page').textContent),
+    '（真页面）页面上不再出现「已存在本机」那句长文案');
 
   console.log('\n' + (fails ? '❌ ' + fails + ' 项失败' : '🎉 「我的」页测试全部通过'));
   process.exit(fails ? 1 : 0);

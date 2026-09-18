@@ -100,8 +100,8 @@ function repaint(p) {
     'init() 两步顺序：renderIndex → renderAbout');
 
   chk(/mine\.js/.test(SRC.mine), '「我的」页加载 js/mine.js（账号那一行的唯一来源）');
-  chk(/renderActions/.test(MINE_JS) && /btn-account-entry/.test(SRC.mine),
-    '账号那一行由 js/mine.js 的 renderActions 画');
+  chk(/renderSignOut/.test(MINE_JS) && /btn-account-entry/.test(SRC.mine),
+    '账号那一行由 js/mine.js 的 renderSignOut 画（登录态那两颗键只有这一个来源）');
   chk(!/href="\/login\/"/.test(stripHtml(SRC.mine)), '页面 HTML 里不写死 /login/（地址只在 JS 一处）');
   chk(/"\/login\/"/.test(MINE_JS), '账号入口的落点（/login/）写在 js/mine.js 里');
 }
@@ -110,7 +110,7 @@ function repaint(p) {
   const URL_MINE = 'https://local.test/mine/';
 
   const entryBtn = (p) => p.doc.getElementById('btn-account-entry');
-  const actionsRow = (p) => p.doc.getElementById('identity-actions');
+  const actionsRow = (p) => p.doc.getElementById('account-actions');
   const shownIds = (p) => [...actionsRow(p).querySelectorAll('button')]
     .filter(b => !b.hidden).map(b => b.id);
 
@@ -124,12 +124,16 @@ function repaint(p) {
 
   chk(entryBtn(p).textContent === '登录',
     '未登录时那颗键上只有一个词：登录（实际「' + entryBtn(p).textContent + '」）');
-  chk(shownIds(p).join(',') === 'btn-account-entry,btn-go-plans',
-    '未登录时那一行里是「登录」+「权限对比」两颗（实际 ' + shownIds(p).join(',') + '）');
+  chk(shownIds(p).join(',') === 'btn-account-entry',
+    '未登录时那一行里只剩「登录」一颗（实际 ' + shownIds(p).join(',') + '）');
+  chk(!/btn-go-plans/.test(SRC.mine) && !/btn-go-plans/.test(MINE_JS),
+    '「权限对比」那颗键整颗撤了（用户 2026-09-18：从这里移出，' +
+    '改成设置「关于」里的一行链接）');
 
   const identityText = stripHtml(p.doc.getElementById('identity-row').outerHTML);
-  chk(/未起名/.test(identityText), '身份行主标题是昵称（还没起名时如实写「未起名」）');
-  chk(/本机游客 · 未登录/.test(identityText), '未登录时如实说「本机游客 · 未登录」');
+  chk(!/未起名/.test(identityText), '身份行不再重复写昵称（它就在旁边的输入框里）');
+  chk(/游客/.test(identityText) && !/本机游客/.test(identityText),
+    '未登录时只写「游客」（用户 2026-09-18 点名的那个词）');
   chk(!/语音朗读/.test(identityText), '这一行不写「差语音朗读」（Issue #209 整句删除）');
 
   p = boot(MINE_HOME, URL_MINE, {});
@@ -138,10 +142,10 @@ function repaint(p) {
 
   chk(entryBtn(p).textContent === '管理登录状态',
     '已登录时那颗键换成「管理登录状态」（实际「' + entryBtn(p).textContent + '」）');
-  chk(shownIds(p).join(',') === 'btn-account-entry,btn-sign-out,btn-go-plans',
-    '已登录时三颗键（管理登录状态 / 退出 / 权限对比）在同一行（实际 ' + shownIds(p).join(',') + '）');
+  chk(shownIds(p).join(',') === 'btn-account-entry,btn-sign-out',
+    '已登录时两颗键（管理登录状态 / 退出）在同一行（实际 ' + shownIds(p).join(',') + '）');
   const innText = stripHtml(p.doc.getElementById('identity-row').outerHTML);
-  chk(/belem/.test(innText) || /未起名/.test(innText), '已登录时身份行写着昵称或「未起名」');
+  chk(/游客|已登录/.test(innText), '已登录时身份行仍写着登录态那一句');
   chk(!/belem@example\.com/.test(innText), '页面上不出现明文邮箱（掩码之外一个字符都不露）');
   chk(/已登录 · b\*\*\*/.test(innText), '已登录时如实写掩码（实际「' +
     (innText.match(/已登录[^<]*/) || [''])[0] + '」）');

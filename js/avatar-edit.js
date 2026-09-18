@@ -26,7 +26,7 @@
     var slot = $("#avatar-slot");
     if (!A || !slot) return;
     var html = "";
-    try { html = A.html(window.localStorage, { size: 44 }); } catch (e) { html = ""; }
+    try { html = A.html(window.localStorage, { size: 46 }); } catch (e) { html = ""; }
     slot.innerHTML = html;
     if (html) slot.removeAttribute("aria-hidden");
     else slot.setAttribute("aria-hidden", "true");
@@ -38,12 +38,17 @@
     renderHint(d);
   }
 
+  function synced(backing) {
+    var Api = accountApiMod();
+    var info = Api && Api.account ? Api.account() : null;
+    return !!(info && String(info.nickname || "").trim());
+  }
+
   function renderHint(d) {
     var hint = $("#avatar-hint");
     if (!hint || !d) return;
-    if (!d.hasImage) hint.textContent = "";
-    else if (d.img) hint.textContent = "已同步到服务器";
-    else hint.textContent = "已存在本机，还没同步到服务器";
+    if (!d.hasImage) { hint.textContent = ""; return; }
+    hint.textContent = synced(window.localStorage) ? "已同步" : "未同步";
   }
 
   function refreshChrome() {
@@ -157,7 +162,10 @@
       closeCrop();
       render();
       refreshChrome();
-      return upload(out.blob);
+      return upload(out.blob).then(function (ok) {
+        if (ok) render();
+        return ok;
+      });
     }).then(function () {
       if (btn) { btn.disabled = false; btn.textContent = "用这张"; }
     }).catch(function () {

@@ -254,7 +254,8 @@ const plansCommentOnly = pageJs;
   chk(/<header class="topbar"/.test(pageHtml), '有顶栏挂载点');
   chk(/data-page="层级对比"/.test(pageHtml), '声明页名「层级对比」');
   chk(/data-dock="off"/.test(pageHtml), '声明 data-dock="off"（看完就走的页不挂底部页签）');
-  chk(/data-back="\/profile\/"/.test(pageHtml), '返回落点回个人中心（用户是从「权限」那一节点进来的）');
+  chk(/data-back="\/settings\/"/.test(pageHtml),
+    '返回落点回设置整页「关于」那一段（用户 2026-09-18：入口从「我的」页首卡改成「关于」里的一行链接）');
   chk(/class="foot settings-foot"/.test(pageHtml), '有页脚（版权 + 法务链接）');
 
   const at = n => pageHtml.indexOf('<script src="/js/' + n + '"></script>');

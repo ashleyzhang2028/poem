@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = __dirname + '/../';
 const html = fs.readFileSync(path + 'index.html', 'utf8');
 
-const settingsHtml = fs.readFileSync(path + 'settings/general/index.html', 'utf8');
+const settingsHtml = fs.readFileSync(path + 'mine/index.html', 'utf8');
 
 function bootIn(pageHtml, file, seed) {
   const dom = new JSDOM(pageHtml, { runScripts: 'dangerously', url: 'https://local.test/' + file });
@@ -22,7 +22,7 @@ function bootIn(pageHtml, file, seed) {
 
 const boot = seed => bootIn(html, '', seed);
 
-const bootSettings = seed => bootIn(settingsHtml, 'settings/general/', seed);
+const bootSettings = seed => bootIn(settingsHtml, 'mine/', seed);
 
 (async () => {
   let fails = 0;
@@ -38,11 +38,12 @@ const bootSettings = seed => bootIn(settingsHtml, 'settings/general/', seed);
   chk(r.d.title === '跬步 · Ashley的背诵 · 跬步', '旧版设置无 username 时不报错，用默认名 Ashley');
   chk(r.d.querySelector('#today-sub').textContent.includes('共 3 首'), '旧版设置 grade/term/count 仍生效: ' + r.d.querySelector('#today-sub').textContent);
   let s1 = await bootSettings({ poem_recite_settings_v1: JSON.stringify({ grade: 2, term: 2, dailyCount: 3 }) });
-  chk(s1.d.querySelector('#input-username').value === '', '旧版设置无 username 时设置页输入框为空（代表用默认名）');
+  chk(s1.d.querySelector('#input-nickname').value === '',
+    '旧版设置无 username 时「我的」页那个昵称框为空（代表用默认名）');
 
   chk(s1.d.querySelector('#brand-name').textContent === '跬步', '设置页顶栏应用名固定为「跬步」');
-  chk(/通用/.test(s1.d.querySelector('#brand-page-text').textContent),
-    '「通用」页顶栏页面名为「通用」（二级页各自报自己的名字，用户知道站在哪一层）');
+  chk(/我的/.test(s1.d.querySelector('#brand-page-text').textContent),
+    '「我的」页顶栏页面名为「我的」（昵称现在只在这一页改）');
 
   r = await boot({
     poem_recite_settings_v1: JSON.stringify({ grade: 1, term: 1, dailyCount: 5, username: '玥玥' })
@@ -53,7 +54,8 @@ const bootSettings = seed => bootIn(settingsHtml, 'settings/general/', seed);
   chk(/玥玥/.test(r.d.querySelector('#brand-page-text').textContent), '刷新后用户名仍写在「跬步」右侧');
 
   s1 = await bootSettings({ poem_recite_settings_v1: JSON.stringify({ grade: 1, term: 1, dailyCount: 5, username: '玥玥' }) });
-  chk(s1.d.querySelector('#input-username').value === '玥玥', '刷新后设置页输入框回填 玥玥');
+  chk(s1.d.querySelector('#input-nickname').value === '玥玥',
+    '刷新后「我的」页那个昵称框回填 玥玥（旧设置键仍认得出）');
 
   r = await boot({
     poem_recite_settings_v1: JSON.stringify({ grade: 1, term: 1, dailyCount: 5, username: '<b>坏</b>' })

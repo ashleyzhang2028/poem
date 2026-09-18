@@ -478,8 +478,8 @@ async function main() {
       console.log("(未安装 jsdom，跳过这一节 —— npm i jsdom 可启用)");
     } else {
 
-      const dom = new JSDOM(read("settings/general/index.html"),
-        { runScripts: "dangerously", url: "https://local.test/settings/general/", pretendToBeVisual: true });
+      const dom = new JSDOM(read("mine/index.html"),
+        { runScripts: "dangerously", url: "https://local.test/mine/", pretendToBeVisual: true });
       const w = dom.window;
       w.localStorage.setItem("poem_sync_pref_v1", JSON.stringify({ v: 1, enabled: true }));
       w.localStorage.setItem("poem_plan_v1",
