@@ -354,6 +354,68 @@
     input.value = nicknameValue();
   }
 
+  function chromeRefresh() {
+    if (window.SiteChrome && window.SiteChrome.refreshUser) window.SiteChrome.refreshUser();
+  }
+
+  function observerApi() {
+    var O = window.MutationObserver || window.WebKitMutationObserver;
+    return typeof O === "function" ? O : null;
+  }
+
+  function observerApi() {
+    var O = window.MutationObserver || window.WebKitMutationObserver;
+    return typeof O === "function" ? O : null;
+  }
+
+  function watchDockAvatar() {
+
+    var O = observerApi();
+
+    if (!O || document.querySelector("#site-dock .dock-icon")) return;
+    var body = document.body;
+    if (!body) return;
+    var guard = null;
+    guard = new O(function () {
+      if (!document.querySelector("#site-dock .dock-icon")) return;
+      guard.disconnect();
+      guard = null;
+      watchAvatar();
+    });
+    guard.observe(body, { childList: true, subtree: true });
+  }
+
+  function watchAvatar() {
+
+    var slot = document.querySelector("#site-dock .dock-icon");
+    if (slot) {
+
+      var O = observerApi();
+      if (O) new O(chromeRefresh).observe(slot, { childList: true, subtree: true });
+    }
+    watchProfile();
+  }
+
+  function watchProfile() {
+    var O = observerApi();
+    if (!O || !window.Avatar) return;
+    var A = window.Avatar;
+    var snap = function () {
+      try { return JSON.stringify(A.display(backing)); } catch (e) { return ""; }
+    };
+    var prev = snap();
+    var timer = null;
+    new O(function () {
+      var now = snap();
+      if (now === prev) return;
+      prev = now;
+      clearTimeout(timer);
+      timer = setTimeout(chromeRefresh, 0);
+    }).observe(document.documentElement, {
+      subtree: true, childList: true, attributes: true, attributeFilter: ["src"]
+    });
+  }
+
   function saveNickname() {
     var input = $("input-nickname");
     if (!input) return;
@@ -425,6 +487,15 @@
     if (dConfirm) dConfirm.addEventListener("click", onDeleteConfirm);
 
     bindNickname();
+    if (document.querySelector("#site-dock .dock-icon")) {
+      watchAvatar();
+    } else {
+      watchDockAvatar();
+      document.addEventListener("chrome:ready", function () {
+        watchAvatar();
+        chromeRefresh();
+      }, { once: true });
+    }
     paint(A.session(store));
 
     var M = acct();

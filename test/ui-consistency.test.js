@@ -1265,7 +1265,7 @@ if (JSDOM) {
 
 {
   const gearStart = chromeJs.indexOf('gear:');
-  const gear = chromeJs.slice(gearStart, chromeJs.indexOf('tabMine:'));
+  const gear = chromeJs.slice(gearStart, chromeJs.indexOf('tabMineImg:'));
   chk(/M19\.4 15a1\.65/.test(gear),
     '设置那一枚是齿轮（带齿的轮廓），不是一颗太阳');
   chk(!/M12 3\.4v2\.2M12 18\.4v2\.2/.test(gear),

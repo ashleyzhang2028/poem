@@ -186,14 +186,18 @@ const NAV = read('js/settings-nav.js');
   chk(/function pageTopAction\(/.test(code(chrome)) && /GLYPHS\.gear/.test(chrome),
     'js/chrome.js 认识页面上的齿轮入口（data-top-action="settings" → /settings/）');
 
-  const glyph = chrome.slice(chrome.indexOf('tabMine:'), chrome.indexOf('/* 顶栏右侧：返回上一页'));
-  chk(/<circle[^>]*r="10"/.test(glyph), '那一格的图标是一枚**整圆**（圆形用户头像）');
+  const glyph = chrome.slice(chrome.indexOf('tabMineImg:'), chrome.indexOf('dockKey('));
   chk(!/M9\.63 5\.52/.test(code(chrome)),
     '齿轮那枚图标连同定义一起删掉（不留没人用的图形）');
-  chk(/__CHAR__/.test(glyph) && /dockIcon\(/.test(chrome),
-    '圆里的首字由渲染时现算（占位符 + dockIcon 两处配套）');
-  chk(/A\.display\(backing\)/.test(code(chrome)),
-    '首字取自 Avatar.display（全站唯一那份「我是谁」的口径），不另读一遍档案');
+  chk(/__SRC__/.test(glyph) && /dockIcon\(/.test(chrome),
+    '那一格的头像由渲染时现算（__SRC__ 占位符 + dockIcon 两处配套）');
+
+  chk(/A\.html\(backingStore\(\), \{ dock: true \}\)/.test(code(chrome)),
+    '那一格的头像取自 Avatar.html(..., { dock: true })（全站唯一那份「我是谁」的口径），' +
+    '不另拼一份圆 + 首字');
+
+  chk(/__SRC__/.test(glyph),
+    '那一格的形状是 <img>（Issue #229：用户传了图就画图，没传回落首字由 .avatar-dock 那条路管）');
 
   const nav = read('js/settings-nav.js');
   chk(/function renderAbout\(/.test(nav), 'js/settings-nav.js 有 renderAbout()');
