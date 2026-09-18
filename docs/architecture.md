@@ -4908,6 +4908,90 @@ DOM 节点，焦点与光标位置都会丢（测试里第二次编辑会打在�
 
 ---
 
+### 4.31 删掉整块页底页脚：这是应用，不是网页（2026-09-18 · 回答 Issue #229）
+
+> 「删除所有页底的 `©2026 kuibu.app 积跬步, 至千里 / 用户协议 · 隐私条款`。
+>  尽量让这个 app 作为一个应用形态而不是网页形态，在关于那里保留用户协议和
+>  隐私条款已经够了。」
+
+#### 一、删了什么
+
+15 张页面（`settings` 整页 + 四张二级页、`login` / `verify` / `reset` /
+`profile` / `admin` / `mine` / `plans` / `self-check` / `terms` / `privacy`）
+底部的整个 `<footer class="foot settings-foot">` 连根拔掉，一共 120 行。
+
+`classic/index.html` 早在 Issue #197 那一轮就已经去过页脚了 ——
+这次是**把剩下那 15 张也统一**，从此全站一处页脚都没有。
+
+#### 二、法务入口没丢，只是**收敛到「关于」一处**
+
+用户上一轮（#229 第一轮）已经把「用户协议 / 隐私条款」放进了设置整页的
+「关于」那一段（`js/settings-nav.js` 的 `renderAbout()`）。这次删页面页脚时，
+那一份**一个字都不用动** —— 这也是为什么删得干净：
+
+```
+设置 → 关于
+  应用      跬步 · 古诗词背诵
+  版本      1.0 (v162)
+  离线缓存  已缓存，可离线打开
+  层级对比  /plans/
+  用户协议  /terms/      ← 唯一入口
+  隐私条款  /privacy/    ← 唯一入口
+  自检      /self-check/
+```
+
+`test/legal.test.js` 里那条守卫从「每个页面页脚都有法务链接」改成
+「全站页面都没有页脚 + 关于里仍保留两个法务入口」。
+守卫没弱，只是**换了个地方守** —— 法务入口从「每页都印一遍」变成「一处统一」。
+
+#### 三、样式一并收干净
+
+删掉的那几处样式不是「留着也不碍事」，而是**会误导下一个人**：
+
+| 清掉的 | 为什么 |
+| --- | --- |
+| `.foot` / `.foot-copy` / `.foot-links` / `.foot-sep` | 页脚没了，四条规则无主 |
+| `.settings-foot`（含 `margin-top` / `padding-top`） | 同上 |
+| `--foot-gap-v2: 40px` | Issue #209 那轮为页脚上方的呼吸加的那 40px，随页脚一起退场 |
+| `body[data-nav="login"] .app > .foot { margin-top: auto }` | 登录页靠这条把页脚顶到屏幕底边；现在页脚没了，整条撤掉 |
+| `@media print` 隐藏列表里的 `.foot` | 没页脚可隐藏了 |
+
+`--foot-gap-v2` 退场后，`.app` / `.settings-page` 的 `padding-bottom` 从
+`calc(X + var(--nav-h) + max(0px, 24px - var(--foot-gap-v2)))`
+改回 `calc(X + var(--nav-h))` —— 不再有「减掉一段又加回来」的算式。
+
+#### 四、守卫跟着换锚点（这是这一节最容易出错的地方）
+
+页脚原先被当成「页面最底下那一行」量在各种避让测试里。
+删掉之后再拿 `.settings-foot` 当锚点，测试会拿到 `null` 然后**静默地**
+把「没遮挡」判成通过（`elementFromPoint(null)` 那类写法不会抛）。
+所以逐处换了**新的最末一行**——「关于」里最后那条法务链接：
+
+| 测试 | 原锚点 | 新锚点 |
+| --- | --- | --- |
+| `test/pwa.test.js` 播放栏避让 | `.settings-foot` | `#settings-about .kv-link` 的最后一条 |
+| `test/pwa.test.js` 底部页签避让 | `.settings-foot` | 同上 |
+| `test/pwa.test.js` 断网可见性 | `.settings-foot a[href*="/terms/"]` | `#settings-about a[href*="/terms/"]` |
+| `test/pwa.test.js` 登录页 7 档版式 | `.foot` 的 top/bottom | 卡片下缘到**文档底边**的距离 |
+
+`test/theme.test.js` 与 `test/ui-consistency.test.js` 里那几条原先断言
+「页脚写法一致」「触达高度 ≥ 28px」的，改成断言**样式表里不留孤儿规则**
+（`.foot-*` / `.settings-foot` / `--foot-gap-v2` 一条都不许剩）。
+
+> ⚠️ `test/ui.test.js` 里「设置页有页脚」那 6 条一并改成「没有页脚，
+> 且「关于」里仍有 `/terms/` 与 `/privacy/`」——**两个方向都守**，
+> 否则哪天有人顺手把「关于」那两行也删了，测试不会响。
+
+#### 五、验证
+
+`bash test/run.sh`：除 `test/progress.test.js` 那条**改动前就已红**的
+「课内 261 首批入」（jsdom 资源加载器在本地取不到 `data/*.js`，
+`main` 上是同样一条红）之外全绿。
+`sw.js` 缓存版本 v161 → **v162**（改了 css / js 与 15 张页面），
+`js/settings-nav.js` 的 `APP_VERSION` 同步跟上。
+
+---
+
 ### 4.29 自助排查：把「注册报 500」分成四条互斥判据（2026-09-18 · 回答 Issue #225）
 
 **用户问的原话：**

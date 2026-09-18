@@ -17,11 +17,6 @@
 body[data-nav="login"] .app {
   display: flex;
   flex-direction: column;
-
-}
-body[data-nav="login"] .app > .foot {
-  margin-top: auto;
-  padding-top: 0;
 }
 
 .account-card {
@@ -758,7 +753,7 @@ thead .plans-th-cap {
 
 @media print {
 
-  .topbar, .dock, .foot, .toast, .modal,
+  .topbar, .dock, .toast, .modal,
   .account-btn, .account-card-title, .account-hint, .account-lead,
   .seg, .settings-index,
   .print-actions, .print-opt, .print-blank-lines, .print-paper,

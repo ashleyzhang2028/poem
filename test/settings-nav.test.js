@@ -123,7 +123,7 @@ const NAV = read('js/settings-nav.js');
     chk(/js\/pwa\.js/.test(SRC[k]), PAGES[k] + ' 加载 js/pwa.js（--nav-h 每页都要实测）');
     chk(/<base href="\/"/.test(SRC[k]), PAGES[k] + ' 带 <base href="/">（子目录页面里相对资源才解析得对）');
     chk(/id="settings-page"/.test(SRC[k]), PAGES[k] + ' 有独立的整页容器');
-    chk(/class="foot settings-foot"/.test(SRC[k]), PAGES[k] + ' 有页脚（版权 + 法务链接）');
+    chk(!/class="foot/.test(SRC[k]), PAGES[k] + ' 没有页底页脚（应用形态，版权与法务收在「关于」里）');
     chk(/data-page="/.test(SRC[k]), PAGES[k] + ' 声明页名（顶栏第一行写得出「跬步 · 通用」）');
 
     const rel = (SRC[k].match(/(?:src|href)="(\.\.\/[^"]*)"/g) || []);

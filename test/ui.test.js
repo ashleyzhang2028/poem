@@ -109,18 +109,13 @@ setTimeout(() => {
   chk(!!sealSlot && sealSlot.textContent === '玥', '「我的」页那枚头像与档案同源（昵称首字是「玥」就画「玥」，实际 ' +
     (sealSlot ? sealSlot.textContent : '缺失') + '）');
 
-  chk(d.querySelector('.app > .foot') === null, '首页不再挂页脚（法务链接已挪到设置页底部）');
+  chk(d.querySelector('.app > .foot') === null, '首页不挂页脚（页底版权 + 法务链接整块已删）');
   const spEarly = bootSettingsPage(null);
-  const foot = spEarly.doc.querySelector('.settings-foot');
-  chk(!!foot, '设置页底部有页脚');
-  chk(foot.querySelector('.foot-copy').textContent.trim() === '©2026 kuibu.app 积跬步, 至千里', '页脚版权为 ©2026 kuibu.app 积跬步, 至千里（实际 ' + foot.querySelector('.foot-copy').textContent.trim() + '）');
-
-  const footLinks = [...foot.querySelectorAll('.foot-links a')];
-  chk(footLinks.map(a => a.textContent.trim()).join('/') === '用户协议/隐私条款', '页脚含「用户协议」「隐私条款」链接');
-  chk(footLinks.map(a => a.getAttribute('href')).join(' ') === '/terms/ /privacy/',
-    '页脚两个链接指向目录化的 /terms/ 与 /privacy/（实际 ' + footLinks.map(a => a.getAttribute('href')).join(' ') + '）');
-  chk(!!(spEarly.doc.querySelector('.settings-page').compareDocumentPosition(foot) & window.Node.DOCUMENT_POSITION_FOLLOWING),
-    '页脚排在设置项下方（页面最底部）');
+  chk(spEarly.doc.querySelector('.foot') === null, '设置页不再有页底页脚（©2026 kuibu.app 那一行已删）');
+  const aboutLinks = [...spEarly.doc.querySelectorAll('#settings-about .kv-link')]
+    .map(a => a.getAttribute('href'));
+  chk(aboutLinks.includes('/terms/') && aboutLinks.includes('/privacy/'),
+    '法务入口收在「关于」里（用户协议 + 隐私条款，实际 ' + aboutLinks.join(' ') + '）');
 
   chk(!/一年级至高三/.test(d.querySelector('.topbar').textContent),
     '顶栏第一行不再出现「一年级至高三 · 」，只有「跬步 · XX的背诵」');
@@ -231,7 +226,8 @@ setTimeout(() => {
     '主页不加载 js/settings.js（它只管进哪一页）');
   chk(/<script src="\/js\/settings-nav\.js"><\/script>/.test(fs.readFileSync(path + 'settings/index.html', 'utf8')),
     '主页加载 js/settings-nav.js（四个入口的唯一来源）');
-  chk(!!sindex.querySelector('.settings-foot'), '设置主页底部仍有页脚');
+  chk(sindex.querySelector('.foot') === null, '设置主页底部不再有页脚');
+  chk(!!sindex.querySelector('#settings-about'), '设置主页的「关于」还在（法务入口的落点）');
 
   chk(!sgeneral.querySelector('#input-username'),
     '「通用」页不再有用户名输入框（与「我的」页重复了，用户 2026-09-18 点名删）');
@@ -356,7 +352,7 @@ setTimeout(() => {
 
   [sindex, sgeneral, srecite, slists, sreader].forEach(doc => {
     chk(!!doc.querySelector('#settings-page'), '每一张设置页都有独立的整页容器');
-    chk(!!doc.querySelector('.settings-foot'), '每一张设置页都有页脚（版权 + 法务链接）');
+    chk(doc.querySelector('.foot') === null, '每一张设置页都没有页底页脚（应用形态，不是网页）');
   });
 
   chk(!!srecite.querySelector('#scope-hint') &&

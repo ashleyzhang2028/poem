@@ -8,6 +8,10 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
 const read = f => fs.readFileSync(path + f, 'utf8');
 const MAIL = 'kuibuapp@163.com';
 
+// 「关于」里那几个入口是一行一条 kvRow(link(href, 文案), '')，直接看源码里有没有这行。
+const kvLinkHref = (src, href) =>
+  new RegExp('kvRow\\(link\\(\\s*"' + href.replace(/\//g, '\\/') + '"').test(src);
+
 ['index.html', 'classic/index.html', 'settings/index.html', 'settings/general/index.html',
  'settings/recite/index.html', 'settings/lists/index.html', 'settings/reader/index.html',
  'terms/index.html', 'privacy/index.html', 'js/contact.js', 'js/chrome.js', 'js/settings-nav.js', 'js/settings.js', 'sw.js']
@@ -189,22 +193,27 @@ setTimeout(() => {
       name + '页正文默认不出现邮箱文本');
   });
 
-  const footCases = [['用户协议页', terms.doc, '/terms/', '/privacy/']]
-    .concat(settingsPages.map(sp => [sp.f, sp.doc, '/terms/', '/privacy/']));
-  footCases.forEach(([name, d, termsHref, privacyHref]) => {
-    const links = [...d.querySelectorAll('.foot .foot-links a')];
-    const hrefs = links.map(a => a.getAttribute('href'));
-    chk(hrefs.includes(termsHref) && hrefs.includes(privacyHref),
-      name + '页脚同时含用户协议与隐私条款链接（' + hrefs.join(', ') + '）');
+  // 页底整块（©2026 kuibu.app + 用户协议 · 隐私条款）已全站删除：
+  // 这是个装在手机上的应用，不是网页 —— 法务入口只在设置「关于」里留一份。
+  const noFootPages = [...new Set(['index.html', 'terms/index.html', 'privacy/index.html',
+    'login/index.html', 'mine/index.html', 'profile/index.html', 'admin/index.html',
+    'plans/index.html', 'self-check/index.html', 'reset/index.html', 'verify/index.html']
+    .concat(settingsPages.map(sp => sp.f)))];
+  noFootPages.forEach(f => {
+    chk(!/class="foot/.test(read(f)), f + ' 没有页底页脚（版权 + 法务链接整块已删）');
   });
+  chk(!index.doc.querySelector('.foot'), '首页不挂页脚');
+  chk(!terms.doc.querySelector('.foot') && !privacy.doc.querySelector('.foot'),
+    '法务两页也不挂页脚（正文读完即止）');
 
-  chk(!index.doc.querySelector('.foot'), '首页不再挂页脚（版权与法务链接已挪到设置页底部）');
-  settingsPages.forEach(sp => {
-    chk(/©2026 kuibu\.app/.test(sp.doc.querySelector('.foot').textContent),
-      sp.f + ' 底部保留版权文案');
-    chk(/href="\/terms\/"/.test(read(sp.f)) && /href="\/privacy\/"/.test(read(sp.f)),
-      sp.f + ' 挂了两个法务链接（目录化路径）');
-  });
+  {
+    // 法务入口没有消失，只是收敛：设置「关于」里各留一行。
+    const nav = read('js/settings-nav.js');
+    chk(kvLinkHref(nav, '/terms/') && kvLinkHref(nav, '/privacy/'),
+      '设置「关于」里仍保留用户协议与隐私条款两个入口');
+    chk(!/kuibu\.app/.test(nav.slice(nav.indexOf('renderAbout'), nav.indexOf('function kvRow'))),
+      '「关于」里不再重复印一行 ©2026 kuibu.app（版权文案随页脚一起删）');
+  }
 
   {
 

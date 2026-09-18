@@ -584,7 +584,7 @@ chk(/data-nav="settings"/.test(settingsHtml), '设置主页声明自己是「设
 chk(/js\/chrome\.js/.test(settingsHtml), '设置页与首页共用同一套顶栏与底部页签');
 chk(settingsHtml.indexOf('id="settings-page"') !== -1, '设置主页有独立的整页容器');
 chk(settingsHtml.indexOf('settings-modal') === -1, '设置页不再用弹层结构');
-chk(settingsHtml.indexOf('class="foot settings-foot"') !== -1, '设置主页底部有页脚（版权 + 法务链接）');
+chk(settingsHtml.indexOf('class="foot') === -1, '设置主页底部不再有页脚（版权 + 法务链接已删）');
 
 ['settings/general/index.html', 'settings/recite/index.html',
  'settings/lists/index.html', 'settings/reader/index.html'].forEach(f => {
@@ -592,7 +592,7 @@ chk(settingsHtml.indexOf('class="foot settings-foot"') !== -1, '设置主页底�
   chk(/data-nav="settings"/.test(src), f + ' 声明自己是「设置」页签（页签选中态不漂）');
   chk(/js\/chrome\.js/.test(src), f + ' 共用同一套顶栏与底部页签');
   chk(src.indexOf('id="settings-page"') !== -1, f + ' 有独立的整页容器');
-  chk(src.indexOf('class="foot settings-foot"') !== -1, f + ' 有页脚（版权 + 法务链接）');
+  chk(src.indexOf('class="foot') === -1, f + ' 不再有页脚（版权 + 法务链接已删）');
   chk(src.indexOf('settings-modal') === -1, f + ' 不用弹层结构');
 
   chk(/data-back="\/settings\/"/.test(src), f + ' 顶栏返回键指回设置主页');
@@ -850,8 +850,8 @@ const dockPad = (css.match(/body:not\(\.no-dock\) \.app[^{]*\{[^}]*?padding-bott
 chk(/var\(--nav-h\)/.test(dockPad) && !/var\(--nav-h\)\s*-/.test(dockPad),
   '有底部页签时，页面留白按实测导航栏高度计算（--nav-h 只加不减）');
 
-chk(/body:not\(\.no-dock\) \.foot,[\s\S]{0,120}?\.settings-foot\s*\{[\s\S]{0,200}?padding-top:\s*max\(0px, calc\(24px - var\(--foot-gap-v2\)\)\)/.test(css),
-  '页脚上方那 40px 减在 .foot / .settings-foot 自己的 padding-top 里（两处都有）');
+chk(!/\.foot|\.settings-foot|--foot-gap-v2/.test(css),
+  '页脚删了，样式表里不再留 .foot / .settings-foot / --foot-gap-v2 的孤儿规则');
 chk(/sw\.js/.test('sw.js') && /js\/pwa\.js/.test(read('settings/index.html')) && /js\/pwa\.js/.test(read('classic/index.html')),
   '所有页都加载 js/pwa.js，--nav-h 每页都会实测');
 chk(/\.ios-install-tip \{[\s\S]*?bottom:\s*calc\(12px \+ var\(--nav-h\)\)/.test(css),

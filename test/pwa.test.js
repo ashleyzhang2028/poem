@@ -230,7 +230,8 @@ function check(name, cond, extra) {
 
     const playAndMeasure = await page.evaluate(async () => {
       const app = document.querySelector('.app');
-      const foot = document.querySelector('.settings-foot');
+      // 页底页脚已删，量「关于」最末一行那个法务入口（页面里最靠下的一行）。
+      const foot = [...document.querySelectorAll('#settings-about .kv-link')].pop();
       function covered() {
         const r = foot.getBoundingClientRect();
         const hit = document.elementFromPoint(Math.round(r.left + r.width / 2), Math.round(r.top + r.height / 2));
@@ -264,7 +265,7 @@ function check(name, cond, extra) {
     check('iPhone: 播放栏出现后设置页底部留白随之增大',
       playAndMeasure.appPad >= playAndMeasure.barHeight,
       '播放栏 ' + playAndMeasure.barHeight + 'px，留白 ' + playAndMeasure.appPad + 'px');
-    check('iPhone: 播放栏不遮挡设置页底部的法务链接', !playAndMeasure.covered,
+    check('iPhone: 播放栏不遮挡设置页底部的法务入口', !playAndMeasure.covered,
       JSON.stringify(playAndMeasure));
 
     const breath = await page.evaluate(() => {
@@ -273,13 +274,12 @@ function check(name, cond, extra) {
       const dock = document.getElementById('site-dock');
       const pad = parseFloat(getComputedStyle(page).paddingBottom);
       const navH = parseFloat(root.getPropertyValue('--nav-h')) || 0;
-      const gapV2 = parseFloat(root.getPropertyValue('--foot-gap-v2')) || 0;
       return {
         pad: pad,
 
-        breath: Math.round((pad - Math.max(0, navH - gapV2)) * 10) / 10,
+        breath: Math.round((pad - Math.max(0, navH - 40)) * 10) / 10,
         dockH: Math.round(dock.getBoundingClientRect().height * 10) / 10,
-        navH: navH, gapV2: gapV2,
+        navH: navH,
         dockHidden: getComputedStyle(dock).visibility === 'hidden'
       };
     });
@@ -292,11 +292,11 @@ function check(name, cond, extra) {
     await new Promise(r => setTimeout(r, 900));
     const dockGeom = await page.evaluate(() => {
       const dock = document.getElementById('site-dock');
-      const foot = document.querySelector('.settings-foot');
+      const last = [...document.querySelectorAll('#settings-about .kv-link')].pop();
       window.scrollTo(0, document.body.scrollHeight);
       return new Promise(res => requestAnimationFrame(() => {
         const dr = dock.getBoundingClientRect();
-        const fr = foot.getBoundingClientRect();
+        const fr = last.getBoundingClientRect();
         const hit = document.elementFromPoint(
           Math.round(fr.left + fr.width / 2), Math.round(fr.top + fr.height / 2));
         res({
@@ -305,7 +305,7 @@ function check(name, cond, extra) {
           dockTop: Math.round(dr.top),
           footBottom: Math.round(fr.bottom),
 
-          covered: fr.bottom > dr.top || !(hit && foot.contains(hit)),
+          covered: fr.bottom > dr.top || !(hit && last.contains(hit)),
           hitCls: hit ? (hit.className || hit.tagName) : null
         });
       }));
@@ -313,7 +313,7 @@ function check(name, cond, extra) {
 
     check('iPhone: 设置页底部留白 ≥ 页签高度',
       parseFloat(dockGeom.navH) >= dockGeom.dockH - 1, JSON.stringify(dockGeom));
-    check('iPhone: 底部页签不遮挡设置页底部的法务链接', !dockGeom.covered, JSON.stringify(dockGeom));
+    check('iPhone: 底部页签不遮挡「关于」最末一行的法务入口', !dockGeom.covered, JSON.stringify(dockGeom));
 
     for (const [file, label] of [['', '/（首页）'], ['classic/', '/classic/'],
       ['tangshi/', '/tangshi/'], ['songci/', '/songci/'], ['guwen/', '/guwen/'],
@@ -338,11 +338,11 @@ function check(name, cond, extra) {
     await new Promise(r => setTimeout(r, 900));
     const settingsOffline = await page.evaluate(() => ({
       hasPage: !!document.querySelector('#settings-page'),
-      hasFoot: !!document.querySelector('.settings-foot a[href*="/terms/"]'),
+      hasLaw: !!document.querySelector('#settings-about a[href*="/terms/"]'),
       links: [...document.querySelectorAll('a[data-group-link]')].map(a => a.getAttribute('data-group-link'))
     }));
     check('iPhone: 断网也能打开设置整页',
-      settingsOffline.hasPage && settingsOffline.hasFoot,
+      settingsOffline.hasPage && settingsOffline.hasLaw,
       JSON.stringify(settingsOffline));
     check('iPhone: 断网也能看到设置主页的四个二级页入口',
       settingsOffline.links.join(',') === 'general,recite,lists,reader',
@@ -1960,26 +1960,25 @@ function check(name, cond, extra) {
       const m = await page.evaluate(() => {
         const de = document.documentElement;
         const card = document.querySelector('#login-page > .account-card');
-        const foot = document.querySelector('.foot');
+        // 页底页脚已删：卡片下缘到页面底边就是「下面还剩多少」。
         const cr = card.getBoundingClientRect();
-        const fr = foot.getBoundingClientRect();
         const tb = document.querySelector('.topbar').getBoundingClientRect();
         return {
           vw: de.clientWidth, vh: window.innerHeight,
           overflow: de.scrollHeight - window.innerHeight,
           cardTop: Math.round(cr.top), cardBottom: Math.round(cr.bottom),
-          footTop: Math.round(fr.top), footBottom: Math.round(fr.bottom),
+          pageBottom: de.scrollHeight,
 
           above: Math.round(cr.top - tb.bottom),
-          below: Math.round(fr.top - cr.bottom)
+          below: Math.round(de.scrollHeight - cr.bottom)
         };
       });
       check('登录页 @' + vw + '×' + vh + '（' + label + '）：页面不溢出',
         m.overflow <= 0, '溢出 ' + m.overflow + 'px');
 
-      check('登录页 @' + vw + '×' + vh + '（' + label + '）：页脚不滚动就完整可见',
-        m.footBottom <= m.vh && m.footTop >= 0,
-        '页脚 ' + m.footTop + '~' + m.footBottom + ' / 视口 ' + m.vh);
+      check('登录页 @' + vw + '×' + vh + '（' + label + '）：卡片整张落在视口里',
+        m.cardBottom <= m.vh && m.cardTop >= 0,
+        '卡片 ' + m.cardTop + '~' + m.cardBottom + ' / 视口 ' + m.vh);
 
       check('登录页 @' + vw + '×' + vh + '（' + label + '）：卡片顶端没被顶出屏幕',
         m.cardTop >= 0, '卡片顶 ' + m.cardTop + 'px');
