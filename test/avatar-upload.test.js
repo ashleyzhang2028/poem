@@ -241,7 +241,10 @@ const SESSION = JSON.stringify({
 
       const $ = id => w.document.getElementById(id);
       chk(!!$("avatar-slot"), "页面上那枚头像在");
-      chk(!!$("btn-avatar-pick"), "有「上传图片」那颗键");
+      chk(!!$("btn-avatar-pick") && /上传头像/.test($("btn-avatar-pick").textContent),
+        "有「上传头像」那颗键（用户 2026-09-18：原先叫「上传图片」）");
+      eq(w.document.querySelectorAll(".avatar-slot").length, 1,
+        "头像槽全页只有一枚（按钮左边那枚与顶部那枚已合并）");
       chk(!!$("avatar-file") && $("avatar-file").type === "file", "文件选择框是 input[type=file]");
       eq($("avatar-file").accept, "image/*", "只让挑图片（accept 收窄选择器，不是安全边界）");
       chk($("crop-layer").hidden, "裁切层默认藏着（没选图时不铺上来）");
@@ -252,22 +255,36 @@ const SESSION = JSON.stringify({
       let clicked = 0;
       $("avatar-file").addEventListener("click", e => { clicked++; });
       $("btn-avatar-pick").dispatchEvent(new w.Event("click", { bubbles: true }));
-      eq(clicked, 1, "点「上传图片」转发给文件选择框（不是自己造一个假弹窗）");
+      eq(clicked, 1, "点「上传头像」转发给文件选择框（不是自己造一个假弹窗）");
 
       w.Avatar.setAvatar(w.localStorage, { img: "https://x.supabase.co/a.jpg" });
       w.SiteChrome && w.SiteChrome.refreshUser && w.SiteChrome.refreshUser();
 
+      // 先起个名：头像的回落是「昵称首字」，删完之后要看的就是这一个字
       const u = $("input-nickname");
       u.value = "小明";
-      u.dispatchEvent(new w.Event("input", { bubbles: true }));
+      w.document.getElementById("btn-nickname-save").dispatchEvent(new w.Event("click", { bubbles: true }));
+
       chk(!$("btn-avatar-clear").hidden, "有图时「删除头像」出现");
-      chk(/已同步到服务器/.test($("avatar-hint").textContent),
-        "有云端地址时如实说「已同步到服务器」（实际「" + $("avatar-hint").textContent + "」）");
+      chk(/未同步/.test($("avatar-hint").textContent) && !/已同步/.test($("avatar-hint").textContent),
+        "账号域还没有云端地址时如实说「未同步」" +
+        "（用户 2026-09-18 点名的那句，原先写「已存在本机，还没同步到服务器」，实际「" +
+        $("avatar-hint").textContent + "」）");
       chk(/<img[^>]+avatar-img/.test($("avatar-slot").innerHTML), "有图时槽里画的是 <img>");
+
+      // 服务器把云端地址回填到账号域之后，「未同步」换成「已同步」
+      w.AccountApi.applyMe({
+        uid: "u1", mask: "a***@b.com", email: "a@b.com", emailVerified: true,
+        nickname: "小明", plan: { tier: "pro", until: null }, role: "user"
+      });
+      w.AvatarEdit.render();
+      chk(/已同步/.test($("avatar-hint").textContent) && !/未同步/.test($("avatar-hint").textContent),
+        "云端地址回来之后如实说「已同步」（实际「" + $("avatar-hint").textContent + "」）");
 
       $("btn-avatar-clear").dispatchEvent(new w.Event("click", { bubbles: true }));
       await new Promise(r => setTimeout(r, 50));
       eq(w.Avatar.display(w.localStorage).img, "", "删完账号域那个地址空了");
+
       eq(w.Avatar.localImage(w.localStorage), "", "本机那份也清了");
       chk(/<span[^>]*>小<\/span>/.test($("avatar-slot").innerHTML) || /小/.test($("avatar-slot").innerHTML),
         "回到首字印（昵称首字「小」）");

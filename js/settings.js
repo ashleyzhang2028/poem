@@ -45,17 +45,6 @@
 
   let settings = null;
 
-  function commitNickname(value) {
-    const clean = String(value == null ? "" : value).trim().slice(0, 12);
-    settings.username = clean;
-    saveSettings();
-    const A = window.Avatar;
-    if (A && typeof A.saveNickname === "function") {
-
-      try { A.saveNickname(window.localStorage, clean); } catch (e) {  }
-    }
-  }
-
   function loadSettings() {
     let raw = null;
     if (window.Storage && window.Storage.getSettings) {
@@ -167,9 +156,6 @@
 
     const scopeHint = $("#scope-hint");
     if (scopeHint) scopeHint.textContent = "当前：" + (SCOPE_NAMES[settings.scope] || SCOPE_NAMES[DEFAULT_SCOPE]);
-
-    const uInput = $("#input-username");
-    if (uInput) uInput.value = String(settings.username == null ? "" : settings.username);
 
     renderAccount();
     renderSync();
@@ -932,36 +918,6 @@
         const b = e.target.closest("button[data-algo]");
         if (!b) return;
         setAlgo(b.dataset.algo);
-      });
-    }
-
-    const uInput = $("#input-username");
-    if (uInput) {
-
-      const commit = function () {
-        commitNickname(uInput.value);
-      };
-      uInput.addEventListener("input", function () {
-        commitNickname(uInput.value);
-      });
-      uInput.addEventListener("change", function () {
-        commit();
-        uInput.value = settings.username;
-      });
-
-      uInput.addEventListener("keydown", function (e) {
-        if (e.key === "Enter") {
-          e.preventDefault();
-          commit();
-          uInput.blur();
-        }
-      });
-
-      uInput.addEventListener("input", function () {
-        if (window.FamilyUi) window.FamilyUi.render();
-      });
-      uInput.addEventListener("change", function () {
-        if (window.FamilyUi) window.FamilyUi.render();
       });
     }
 

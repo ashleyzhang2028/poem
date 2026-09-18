@@ -659,7 +659,10 @@ const readerBlock = blockOf('reader');
     '「打印」这一段排在自选清单之后（打的就是这份清单）');
 }
 chk(!!generalBlock && !!reciteBlock && !!listsBlock && !!readerBlock, '各分组自己的区块都能取到');
-chk(/id="input-username"/.test(generalBlock), '「通用」组含用户名');
+chk(!/id="input-username"/.test(generalBlock),
+  '「通用」组不再含用户名（用户 2026-09-18：与「我的」页重复了，整块撤掉）');
+chk(!/family-panel/.test(generalBlock),
+  '「通用」组不再含子用户那一块（整块挪去「我的」页本机数据之上）');
 chk(/id="btn-export"/.test(generalBlock) && /id="btn-import"/.test(generalBlock) && /id="btn-reset"/.test(generalBlock),
   '「通用」组含数据管理（导出 / 导入 / 清空）');
 chk(!/seg-scope|seg-stage|seg-term|grade-chips|seg-count/.test(generalBlock),

@@ -21,35 +21,32 @@
   <link rel="stylesheet" href="css/account.css" />
 </head>
 
-<body data-nav="mine" data-page="我的" data-sub="头像 · 昵称 · 账号 · 本机数据" data-top-action="settings">
+<body data-nav="mine" data-page="我的" data-sub="头像 · 昵称 · 子用户 · 本机数据" data-top-action="settings">
   <div class="app">
     <header class="topbar"></header>
 
     <main class="account-page" id="mine-page">
-
       <section class="account-card">
         <div class="identity-row" id="identity-row"></div>
         <p class="account-hint" id="identity-hint"></p>
 
-        <div class="settings-item">
-          <label for="input-nickname">昵称</label>
-          <div class="name-row">
-            <input id="input-nickname" class="settings-input" type="text" maxlength="12"
-                   placeholder="Ashley" autocomplete="off" enterkeyhint="done" />
+        <div class="identity-edit">
+          <label class="sr-only" for="input-nickname">昵称</label>
+          <input id="input-nickname" class="nickname-input" type="text" maxlength="12"
+                 placeholder="起个名字" autocomplete="off" enterkeyhint="done" />
+          <div class="identity-btns">
+            <button class="mini-btn" id="btn-nickname-save" type="button">保存</button>
+            <button class="mini-btn ghost" id="btn-avatar-pick" type="button">上传头像</button>
           </div>
         </div>
 
-        <div class="avatar-row" id="avatar-row">
-          <span id="avatar-slot" class="avatar-slot" aria-hidden="true"></span>
-          <div class="avatar-acts">
-            <button class="btn ghost-btn" id="btn-avatar-pick" type="button">上传图片</button>
-            <button class="btn ghost-btn" id="btn-avatar-clear" type="button" hidden>删除头像</button>
-          </div>
-        </div>
+        <p class="settings-hint" id="avatar-hint"></p>
+        <p class="settings-hint" id="nickname-hint"></p>
+
+        <button class="mini-btn ghost" id="btn-avatar-clear" type="button" hidden>删除头像</button>
 
         <input id="avatar-file" class="sr-only" type="file" accept="image/*"
                aria-label="选择头像图片" />
-        <div class="settings-hint" id="avatar-hint"></div>
 
         <div class="crop-layer" id="crop-layer" hidden>
           <div class="crop-card" role="dialog" aria-modal="true" aria-label="裁切头像">
@@ -67,13 +64,13 @@
           </div>
         </div>
 
-        <div class="account-actions" id="identity-actions">
-          <button class="account-btn" id="btn-account-entry" type="button"></button>
-          <button class="account-btn ghost" id="btn-sign-out" type="button" hidden>退出登录</button>
-          <button class="account-btn ghost" id="btn-go-plans" type="button">权限对比</button>
-        </div>
+      </section>
 
-        <p class="account-hint" id="signout-hint" hidden>退出不删进度；注销在下面「危险区」。</p>
+      <section class="account-card" id="family-item">
+        <h2 class="account-card-title">子用户</h2>
+        <p class="settings-hint family-lead">一个孩子一份进度，各背各的。</p>
+        <div class="family-panel" id="family-panel"></div>
+        <p class="settings-hint" id="family-hint"></p>
       </section>
 
       <section class="account-card" id="stats-card">
@@ -81,13 +78,8 @@
         <div class="kv-list" id="stats-list"></div>
       </section>
 
-      <section class="account-card" id="family-item">
-        <h2 class="account-card-title">子用户</h2>
-        <div class="family-panel" id="family-panel"></div>
-        <p class="settings-hint" id="family-hint"></p>
-      </section>
-
       <section class="account-card" id="account-card">
+        <h2 class="account-card-title">账号</h2>
         <div class="kv-list" id="account-list"></div>
 
         <div id="verify-row" hidden>
@@ -97,9 +89,16 @@
           </div>
         </div>
 
-        <div class="settings-btns">
-          <button class="account-btn ghost" id="btn-go-admin" type="button" hidden>管理后台</button>
+        <div class="account-actions" id="account-actions">
+          <button class="account-btn" id="btn-account-entry" type="button"></button>
+          <button class="account-btn ghost" id="btn-sign-out" type="button" hidden>退出登录</button>
         </div>
+
+        <p class="account-hint" id="signout-hint" hidden>退出不删进度；注销在下面「危险区」。</p>
+      </section>
+
+      <section class="account-card" id="upsell-row" hidden>
+        <button class="account-btn ghost" id="link-plans" type="button">权限对比</button>
       </section>
 
       <section class="account-card danger-zone" id="danger-card">
@@ -128,6 +127,10 @@
           </div>
         </div>
       </section>
+
+      <div class="admin-slot">
+        <button class="account-btn ghost" id="btn-go-admin" type="button" hidden>管理后台</button>
+      </div>
     </main>
 
     <footer class="foot settings-foot">

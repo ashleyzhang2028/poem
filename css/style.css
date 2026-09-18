@@ -1564,6 +1564,8 @@ body.has-install-tip #app {
   align-items: baseline;
   justify-content: space-between;
   gap: 12px;
+
+  min-height: 42px;
   padding: 9px 0;
   font-size: 13px;
   border-bottom: 1px solid var(--line-2);

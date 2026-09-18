@@ -232,7 +232,10 @@ setTimeout(() => {
     '主页加载 js/settings-nav.js（四个入口的唯一来源）');
   chk(!!sindex.querySelector('.settings-foot'), '设置主页底部仍有页脚');
 
-  chk(!!sgeneral.querySelector('#input-username'), '「通用」页含用户名输入框');
+  chk(!sgeneral.querySelector('#input-username'),
+    '「通用」页不再有用户名输入框（与「我的」页重复了，用户 2026-09-18 点名删）');
+  chk(!sgeneral.querySelector('#family-panel'),
+    '「通用」页不再有子用户那一块（整块挪去「我的」页）');
   chk(!!sgeneral.querySelector('#account-panel'), '「通用」页含账号一项');
   chk(!!srecite.querySelector('#seg-stage'), '学段选择在「背诵」页');
   chk(!!srecite.querySelector('#seg-term'), '学期选择在「背诵」页');
@@ -290,7 +293,6 @@ setTimeout(() => {
     const title = own.querySelector('.settings-group-title');
     return title ? title.textContent : doc.body.getAttribute('data-page');
   };
-  chk(grpOf(sgeneral, '#input-username') === '通用', '用户名归到「通用」（古诗词与小古文共用）');
   chk(grpOf(sgeneral, '#btn-export') === '通用' && grpOf(sgeneral, '#btn-reset') === '通用',
     '数据管理归到「通用」');
   chk(grpOf(srecite, '#seg-stage') === '背诵' && grpOf(srecite, '#grade-chips') === '背诵' &&
@@ -310,8 +312,9 @@ setTimeout(() => {
   chk(grpOf(srecite, '#seg-algo') === '复习算法', '复习算法选择归到「复习算法」组');
 
   const generalItems = sgeneral.querySelector('#settings-page .settings-group').querySelectorAll('.settings-item');
-  chk(generalItems.length === 6,
-    '「通用」组是用户名 / 子用户 / 账号 / 跨设备同步 / 数据管理 / 课内诗词导出六项（头像搬去「我的」页，实际 ' + generalItems.length + '）');
+  chk(generalItems.length === 4,
+    '「通用」组只剩账号 / 跨设备同步 / 数据管理 / 课内诗词导出四项' +
+    '（用户名与子用户整块撤掉 —— 它们都是「我是谁」，归「我的」页；实际 ' + generalItems.length + '）');
   chk(!!sgeneral.querySelector('#btn-export-poems'),
     '「通用」里有课内诗词导出（Issue #159：只导课本那 261 首）');
   chk(grpOf(sgeneral, '#btn-export-poems') === '通用',
@@ -332,8 +335,7 @@ setTimeout(() => {
   chk(!!smine.querySelector('#danger-card'), '「我的」页有注销那一张危险区卡');
 
   const OWNER_OF = {
-    '#input-username': [sgeneral], '#account-panel': [sgeneral],
-    '#family-panel': [sgeneral],
+    '#account-panel': [sgeneral],
     '#btn-export': [sgeneral], '#btn-import': [sgeneral], '#btn-reset': [sgeneral],
     '#seg-stage': [srecite], '#grade-chips': [srecite], '#seg-term': [srecite],
     '#seg-scope': [srecite], '#seg-count': [srecite], '#seg-algo': [srecite],
@@ -565,11 +567,20 @@ setTimeout(() => {
   const spMineN = bootSettingsPage(null, 'mine/index.html');
   const uInput = spMineN.doc.querySelector('#input-nickname');
   chk(uInput.value === '', '昵称初始为空（使用默认名 Ashley）');
+
+  chk(!!spMineN.doc.querySelector('#btn-nickname-save'),
+    '昵称旁边那颗「保存」在（用户输完即保存的落点）');
   uInput.value = '小明';
-  uInput.dispatchEvent(new spMineN.window.Event('input', { bubbles: true }));
-  window.localStorage.setItem('poem_recite_settings_v1', spMineN.window.localStorage.getItem('poem_recite_settings_v1'));
+  spMineN.doc.querySelector('#btn-nickname-save')
+    .dispatchEvent(new spMineN.window.Event('click', { bubbles: true }));
+
+  const seeded = spMineN.window.localStorage.getItem('poem_recite_settings_v1');
+  chk(!!seeded && JSON.parse(seeded).username === '小明',
+    '点「保存」后昵称已落盘（写进设置域那个 username —— ' +
+    '导出 / 标题 / 跨设备那一份读的就是它）');
+  window.localStorage.setItem('poem_recite_settings_v1', seeded);
   window.PoemApp.reloadSettings();
-  chk(d.title === '跬步 · 小明的背诵 · 跬步', '填了用户名后标题为「小明的背诵 · 跬步」（实际 ' + d.title + '）');
+  chk(d.title === '跬步 · 小明的背诵 · 跬步', '保存昵称后标题为「小明的背诵 · 跬步」（实际 ' + d.title + '）');
 
   chk(d.querySelector('.brand-text h1').textContent === '跬步', '顶栏第一行固定为「跬步」，不随用户名变化');
   chk(/小明/.test(d.querySelector('#brand-page').textContent),
@@ -578,11 +589,12 @@ setTimeout(() => {
     '填了用户名后不再走淡墨（是自己填的名字）');
   chk(d.querySelector('meta[name="apple-mobile-web-app-title"]').getAttribute('content') === '跬步 · 小明的背诵',
     'iOS 桌面名随用户名变化');
-  chk(JSON.parse(spMineN.window.localStorage.getItem('poem_recite_settings_v1')).username === '小明', '昵称已持久化');
 
   uInput.value = '   ';
-  uInput.dispatchEvent(new spMineN.window.Event('input', { bubbles: true }));
-  window.localStorage.setItem('poem_recite_settings_v1', spMineN.window.localStorage.getItem('poem_recite_settings_v1'));
+  spMineN.doc.querySelector('#btn-nickname-save')
+    .dispatchEvent(new spMineN.window.Event('click', { bubbles: true }));
+  window.localStorage.setItem('poem_recite_settings_v1',
+    spMineN.window.localStorage.getItem('poem_recite_settings_v1'));
   window.PoemApp.reloadSettings();
   chk(d.title === '跬步 · Ashley的背诵 · 跬步',
     '用户名留空时回到默认名 Ashley（实际 ' + d.title + '）');

@@ -268,15 +268,18 @@ console.log('\n=== 七、子用户那一块的接线与收口（js/family-ui.js�
   const mineJs = read('js/mine.js');
   const strip = t => t.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/^\s*\/\/.*$/gm, ' ');
 
-  chk(/id="family-panel"/.test(gen), '设置 · 通用里有子用户那一块（#family-panel）');
-  chk(/id="family-panel"/.test(mine), '「我的」页也有同一块（子用户是「我是谁」的一部分）');
-  chk(/<script src="\/js\/family\.js"><\/script>/.test(gen), '那一页加载了 js/family.js');
-  chk(/<script src="\/js\/family-ui\.js"><\/script>/.test(gen) &&
+  chk(!/id="family-panel"/.test(gen),
+    '设置 · 通用里**不再**有子用户那一块（用户 2026-09-18：与「我的」页重复了）');
+  chk(!/<script src="\/js\/family\.js"><\/script>/.test(gen) &&
+    !/<script src="\/js\/family-ui\.js"><\/script>/.test(gen),
+    '那一页也不再加载 family / family-ui（控件搬走了，脚本跟着走）');
+  chk(/id="family-panel"/.test(mine), '「我的」页有子用户那一块（子用户是「我是谁」的一部分）');
+  chk(/<script src="\/js\/family\.js"><\/script>/.test(mine) &&
     /<script src="\/js\/family-ui\.js"><\/script>/.test(mine),
-    '两张页都加载 js/family-ui.js（那一块的渲染与交互只有一份）');
+    '「我的」页加载 family + family-ui（那一块的渲染与交互只有一份）');
 
-  const atF = gen.indexOf('<script src="/js/family.js"></script>');
-  const atPS = gen.indexOf('<script src="/js/progress-store.js"></script>');
+  const atF = mine.indexOf('<script src="/js/family.js"></script>');
+  const atPS = mine.indexOf('<script src="/js/progress-store.js"></script>');
   chk(atF >= 0 && atPS >= 0 && atF < atPS,
     'js/family.js 排在 progress-store.js 之前（顺序反了不报错，只是永远读没有后缀的老键）');
 
@@ -301,6 +304,22 @@ console.log('\n=== 七、子用户那一块的接线与收口（js/family-ui.js�
     '切档之后「我的」页会收到通知重画（年级 / 数量 / 进度 / 印 全都要跟着换）');
   chk(/__reloadSettingsControls/.test(setJs) && /renderControls\(\)/.test(setJs),
     '「通用」页那一路仍是整页重画（renderControls 还在）');
+
+  // ---- Issue #209：名额用完了就别摆那颗点不动的键 ----
+  chk(/left > 0/.test(uiJs),
+    '「再建一个」只在下限允许时才画出来（left > 0）—— ' +
+    '只能建 0 个时那颗键没有意义，不如不显示（用户 2026-09-18 点名）');
+  chk(/if \(left > 0\) \{[\s\S]{0,200}btn-family-add/.test(uiJs),
+    '那颗键整块在 left > 0 的分支里（不是在画完之后再拿 CSS 遮住）');
+
+  // ---- Issue #209：上限那一行把各层的名额一并写出来 ----
+  chk(/Pro 用户可建/.test(uiJs) && /Max 用户可建/.test(uiJs),
+    '上限那一行写出 Pro / Max 各能建几个（用户 2026-09-18 要给的那句话）');
+  chk(/CAPS\["profile\.family"\]|CAPS\['profile\.family'\]/.test(uiJs),
+    '名额数字取自 Entitlement.CAPS["profile.family"]（不手抄一份 3 / 180）');
+  chk(!/180/.test(strip(uiJs)) && !/\b3\b/.test(strip(uiJs).replace(/zh-CN|UTF-8/g, '')),
+    'js/family-ui.js 里不出现写死的 3 / 180（数字只有一个来源）');
+  chk(/quotas/.test(uiJs), '它读的是内核能力表里的 quotas 那一栏');
 }
 
 console.log('\n=== 七之二、备份：名册跟着走 ===');
@@ -340,11 +359,12 @@ if (!JSDOM) {
 
   const SCRIPTS = ['js/auth-core.js', 'js/entitlement.js', 'js/family.js', 'js/family-ui.js',
     'js/avatar.js', 'js/avatar-image.js', 'js/account-api.js', 'js/progress-store.js',
-    'js/storage.js', 'js/settings.js'];
+    'js/storage.js', 'js/scheduler.js', 'js/mine.js'];
 
+  // 子用户那一块现在住在「我的」页（Issue #209），所以真页面测试也开在 /mine/ 上。
   function openPage(tier, signedIn) {
-    const dom = new JSDOM(read('settings/general/index.html'),
-      { runScripts: 'dangerously', url: 'https://local.test/settings/general/', pretendToBeVisual: true });
+    const dom = new JSDOM(read('mine/index.html'),
+      { runScripts: 'dangerously', url: 'https://local.test/mine/', pretendToBeVisual: true });
     const w = dom.window;
     if (tier) {
       w.localStorage.setItem('poem_plan_v1',
@@ -373,27 +393,33 @@ if (!JSDOM) {
     const wf = openPage(null, false);
     await wait();
     eq(wf.document.querySelectorAll('.family-row').length, 1, '真页面：Free 一进来就有 1 个子用户（认领出来的）');
-    chk(/当前 1 \/ 1 个/.test(wf.document.getElementById('family-hint').textContent),
-      '真页面：如实写「1 / 1 个」（上限只有一个来源）');
-    wf.document.getElementById('btn-family-add').dispatchEvent(new wf.Event('click', { bubbles: true }));
-    eq(wf.document.querySelectorAll('.family-row').length, 1, '真页面：Free 再建被拦住（名册没变）');
-    const toast = wf.document.querySelector('.toast');
-    chk(!!toast && /已达上限/.test(toast.textContent),
-      '真页面：拦住时**如实说是上限**（不笼统说「建不了」）：' + (toast ? toast.textContent : '(没有提示)'));
+    const freeHint = wf.document.getElementById('family-hint').textContent;
+    chk(/当前 1 \/ 1 个/.test(freeHint), '真页面：如实写「1 / 1 个」（上限只有一个来源）');
+    chk(/Pro 用户可建 3 个/.test(freeHint) && /Max 用户可建 180 个/.test(freeHint),
+      '真页面：同一行写出 Pro / Max 各能建几个（实际「' + freeHint + '」）');
+    chk(!/Free 用户可建/.test(freeHint),
+      '真页面：当前就是 Free，不再重复写一遍「Free 用户可建 1 个」');
+    chk(!wf.document.getElementById('btn-family-add'),
+      '真页面：Free 只剩 0 个时**不摆**「再建一个」（只能建 0 个，那颗键没有意义）');
 
     const w = openPage('max', true);
     await wait();
     eq(w.document.querySelectorAll('.family-row').length, 1, '真页面：Max 也是从 1 个开始');
     chk(/当前 1 \/ 180 个/.test(w.document.getElementById('family-hint').textContent),
       '真页面：Max 的上限如实写 180');
+    chk(!/Max 用户可建/.test(w.document.getElementById('family-hint').textContent),
+      '真页面：当前就是 Max，不再重复写一遍「Max 用户可建 180 个」');
+    chk(!!w.document.getElementById('btn-family-add'),
+      '真页面：还有名额时那颗「再建一个」照旧在');
 
-    const u = w.document.getElementById('input-username');
+    const u = w.document.getElementById('input-nickname');
     u.value = '小明';
-    u.dispatchEvent(new w.Event('input', { bubbles: true }));
+    w.document.getElementById('btn-nickname-save').dispatchEvent(new w.Event('click', { bubbles: true }));
     const fam = JSON.parse(w.localStorage.getItem('poem_family_v1'));
-    eq(fam.profiles[0].nickname, '小明', '真页面：用户名写进的是**当前子用户**（昵称属孩子）');
+    eq(fam.profiles[0].nickname, '小明', '真页面：昵称写进的是**当前子用户**（昵称属孩子）');
     chk(!!w.document.getElementById('family-panel').querySelector('.family-row'),
       '真页面：子用户那一行仍画在页面上（头像搬去「我的」页之后仍要画）');
+    await wait();
     chk(/小明/.test(w.document.getElementById('family-panel').innerHTML),
       '真页面：子用户那一行的名字跟着昵称重画（同一个来源）');
 

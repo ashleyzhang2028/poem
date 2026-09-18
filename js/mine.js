@@ -35,16 +35,14 @@
   function renderIdentity(id) {
     var row = $("identity-row");
     if (!row || !id) return;
-    var d = window.Avatar ? Avatar.display(backing) : { char: "诗", nickname: "", isDefaultName: true, hasImage: false };
-    var name = d.nickname || "未起名";
     var badge = '<span class="tier-badge tier-' + esc(id.tier) + '">' + esc(Ent.tierLabel(id.tier)) + "</span>";
     var sub = id.signedIn
       ? "已登录 · " + esc(id.mask || "（无邮箱）")
-      : "本机游客 · 未登录";
+      : "游客";
     row.innerHTML =
-      (window.Avatar ? Avatar.html(backing) : "") +
+      '<span id="avatar-slot" class="avatar-slot">' +
+      (window.Avatar ? Avatar.html(backing) : "") + "</span>" +
       '<span class="identity-main">' +
-      '<p class="identity-name">' + esc(name) + "</p>" +
       '<span class="identity-sub">' + sub + "</span>" +
       "</span>" + badge;
 
@@ -54,18 +52,20 @@
       hint.textContent = id.signedIn ? "层级" + tierSourceLine(id) + "。" : "";
     }
 
-    renderActions(id);
+    renderSignOut(id);
   }
 
-  function renderActions(id) {
+  function renderSignOut(id) {
+
     var btn = $("btn-account-entry");
-    if (!btn) return;
     var out = $("btn-sign-out");
     var hint = $("signout-hint");
-    btn.textContent = id.signedIn ? "管理登录状态" : "登录";
-    if (!btn.dataset.bound) {
-      btn.dataset.bound = "1";
-      btn.addEventListener("click", function () { location.href = "/login/"; });
+    if (btn) {
+      btn.textContent = id.signedIn ? "管理登录状态" : "登录";
+      if (!btn.dataset.bound) {
+        btn.dataset.bound = "1";
+        btn.addEventListener("click", function () { location.href = "/login/"; });
+      }
     }
     if (out) out.hidden = !id.signedIn;
     if (hint) hint.hidden = !id.signedIn;
@@ -193,6 +193,25 @@
     }
   }
 
+  function renderUpsell() {
+    var box = $("upsell-row");
+    var link = $("link-plans");
+    if (!box) return;
+    var id = identity();
+    if (!id) { hide(box); return; }
+    if (id.signedIn && id.tier !== "free") { hide(box); return; }
+    Ent.markOwner(backing);
+    if (link) {
+      if (!link.dataset.bound) {
+        link.dataset.bound = "1";
+        link.addEventListener("click", function () {
+          location.href = "/plans/";
+        });
+      }
+    }
+    show(box);
+  }
+
   function onSignOut() {
     var r = A.signOut(store);
     if (!r.ok) return;
@@ -317,18 +336,43 @@
     renderIdentity(identity());
   };
 
+  function nicknameValue() {
+    var d = window.Avatar ? Avatar.display(backing) : { nickname: "" };
+    return String((d && d.nickname) || "");
+  }
+
   function renderNickname() {
     var input = $("input-nickname");
     if (!input) return;
-    var d = window.Avatar ? Avatar.display(backing) : { nickname: "" };
-    input.value = String((d && d.nickname) || "");
+    input.value = nicknameValue();
+  }
+
+  function saveNickname() {
+    var input = $("input-nickname");
+    var hint = $("nickname-hint");
+    if (!input) return;
+    commitNickname(input.value);
+    var clean = nicknameValue();
+    input.value = clean;
+
+    if (window.FamilyUi && window.FamilyUi.render) window.FamilyUi.render();
+    if (window.AvatarEdit) window.AvatarEdit.render();
+    if (window.SiteChrome && window.SiteChrome.refreshUser) window.SiteChrome.refreshUser();
+    renderIdentity(identity());
+    if (hint) {
+      hint.textContent = "昵称已保存";
+      clearTimeout(saveNickname._t);
+      saveNickname._t = setTimeout(function () { hint.textContent = ""; }, 1800);
+    }
+    showToast("昵称已保存");
   }
 
   function bindNickname() {
     var input = $("input-nickname");
     if (!input) return;
+    var save = $("btn-nickname-save");
+
     input.addEventListener("input", function () {
-      commitNickname(input.value);
       if (window.AvatarEdit) window.AvatarEdit.render();
       clearTimeout(nicknameTimer);
       nicknameTimer = setTimeout(function () {
@@ -336,16 +380,21 @@
         renderIdentity(identity());
       }, 300);
     });
-    input.addEventListener("change", function () {
-      commitNickname(input.value);
-      input.value = String((window.Avatar ? Avatar.display(backing).nickname : "") || "");
-      if (window.AvatarEdit) window.AvatarEdit.render();
-      if (window.SiteChrome && window.SiteChrome.refreshUser) window.SiteChrome.refreshUser();
-      renderIdentity(identity());
-    });
     input.addEventListener("keydown", function (e) {
-      if (e.key === "Enter") { e.preventDefault(); input.blur(); }
+      if (e.key !== "Enter") return;
+      e.preventDefault();
+      saveNickname();
+      input.blur();
     });
+    input.addEventListener("blur", function () {
+
+      if (input.value !== nicknameValue()) saveNickname();
+      else input.value = nicknameValue();
+    });
+    if (save) {
+      save.addEventListener("mousedown", function (e) { e.preventDefault(); });
+      save.addEventListener("click", function () { saveNickname(); });
+    }
   }
 
   function paint(sess) {
@@ -356,6 +405,7 @@
     renderAccount(sess);
     renderNickname();
     renderAdmin(id);
+    renderUpsell();
   }
 
   function init() {
@@ -365,8 +415,6 @@
     if (out) out.addEventListener("click", onSignOut);
     var resend = $("btn-resend-verify");
     if (resend) resend.addEventListener("click", onResendVerify);
-    var plans = $("btn-go-plans");
-    if (plans) plans.addEventListener("click", function () { location.href = "/plans/"; });
     var admin = $("btn-go-admin");
     if (admin) admin.addEventListener("click", function () { location.href = "/admin/"; });
     var dStart = $("btn-delete-start");

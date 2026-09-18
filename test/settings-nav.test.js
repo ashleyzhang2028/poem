@@ -44,6 +44,14 @@ const NAV = read('js/settings-nav.js');
   chk(!/id="account-entry"/.test(SRC.index),
     '主页不再有独立的账号卡容器（那一行已在清单里）');
 
+  ['#input-username', '#family-panel'].forEach(sel => {
+    const id = sel.replace(/^#/, '');
+    const hit = Object.keys(PAGES).filter(k => new RegExp('id="' + id + '"').test(SRC[k]));
+    chk(hit.length === 0,
+      '控件 ' + sel + ' 已不在设置那几张页上（用户名与子用户都是「我是谁」，' +
+      '归「我的」页 /mine/；实际：' + (hit.join(',') || '哪一页都没有') + '）');
+  });
+
   chk(!/renderAccountEntry/.test(NAV) && !/"\/login\/"/.test(NAV),
     '设置整页不再画账号那一行（它是「我是谁」，归「我的」页 /mine/）');
   chk(/renderIndex\(\);\s*\n\s*renderAbout\(\);/.test(NAV),
@@ -53,7 +61,7 @@ const NAV = read('js/settings-nav.js');
 {
   const OWNER = {
 
-    general: ['#input-username', '#account-panel',
+    general: ['#account-panel',
       '#btn-export', '#btn-import', '#btn-reset'],
     recite: ['#seg-stage', '#grade-chips', '#seg-term', '#seg-scope', '#seg-count', '#seg-algo'],
     lists: ['#collections-list', '#btn-collections-import', '#collections-tip'],
@@ -198,6 +206,29 @@ const NAV = read('js/settings-nav.js');
   chk(!!swVer && swVer === pageVer,
     '「关于」里的版本号与 sw.js 的 CACHE_NAME 同一个数（实际 v' + pageVer + ' / v' + swVer + '）');
   chk(/离线缓存/.test(read('js/settings-nav.js')), '「关于」里写得出「离线缓存」这一行');
+
+  // ---- Issue #209：权限对比 / 用户协议 / 隐私条款 三条链接落在「关于」那几行里 ----
+  //
+  // 三件都住在同一个 .kv-list 里，所以两件事是**一起**要守的：
+  //   ① 长句「查看」不再顶在最右边（用户 2026-09-18：直接变成链接，不需要右边的「查看」）；
+  //   ② 行高必须跟上面那几行一致（行高不一致，一眼就看得出这一块是拼上来的）。
+  const aboutBlock = nav.slice(nav.indexOf('function renderAbout('),
+    nav.indexOf('function go()'));
+  chk(/权限对比/.test(aboutBlock) && /\/plans\//.test(aboutBlock),
+    '「关于」里有「权限对比」这一行，落在 /plans/（它从「我的」页首卡挪到了这儿）');
+  chk(/用户协议/.test(aboutBlock) && /隐私条款/.test(aboutBlock),
+    '「关于」里仍有用户协议与隐私条款两条入口');
+  chk(!/>查看<\/a>/.test(aboutBlock),
+    '那三条不再各挂一个「查看」（链接本身就说清了它是链接）');
+  chk(aboutBlock.indexOf('离线缓存') < aboutBlock.indexOf('/plans/') &&
+      aboutBlock.indexOf('/plans/') < aboutBlock.indexOf('用户协议'),
+    '「权限对比」那一行插在离线缓存与用户协议**中间那一行**（用户点名的位置）');
+  chk(/href="\/plans\/"[^>]*>权限对比<|>权限对比<\/a>/.test(aboutBlock),
+    '左边那格自己就是链接（不是只把右边那颗「查看」做成链接）');
+  chk(/href="\/terms\/"[^>]*>用户协议<|>用户协议<\/a>/.test(aboutBlock),
+    '用户协议左边那格也是链接');
+  chk(/href="\/privacy\/"[^>]*>隐私条款<|>隐私条款<\/a>/.test(aboutBlock),
+    '隐私条款左边那格也是链接');
 }
 
 console.log('\n' + (fails ? '❌ ' + fails + ' 项失败' : '🎉 二级设置页测试全部通过'));

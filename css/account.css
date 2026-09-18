@@ -223,8 +223,8 @@ body[data-nav="login"] .app > .foot {
 
 .identity-row {
   display: flex;
-  align-items: center;
-  gap: 12px;
+  align-items: flex-start;
+  gap: 10px;
 }
 .identity-main { min-width: 0; flex: 1; }
 .identity-name {
@@ -246,6 +246,8 @@ body[data-nav="login"] .app > .foot {
 }
 
 .identity-row .avatar { --avatar-size: 52px; }
+
+.identity-row .tier-badge { margin-top: 2px; }
 
 .tier-badge {
   display: inline-flex;
@@ -938,3 +940,88 @@ thead .plans-th-cap {
   font-size: 13px;
   color: var(--ink-2);
 }
+
+.identity-edit {
+  min-width: 0;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.nickname-input {
+  width: 100%;
+  min-width: 0;
+  padding: 6px 9px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.3;
+  outline: none;
+  transition: border-color .15s, background .15s, box-shadow .15s;
+}
+.nickname-input::placeholder { color: #9c8d7b; }
+.nickname-input:focus {
+  border-color: var(--green);
+  background: #fffdf6;
+  box-shadow: 0 0 0 3px rgba(47, 96, 85, .10);
+}
+
+.identity-btns {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.mini-btn {
+  border: 1px solid var(--green-dark);
+  border-radius: var(--radius-sm);
+  background: var(--green);
+  color: #fdfaf2;
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.2;
+  padding: 4px 9px;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, color .15s;
+}
+.mini-btn:hover { background: var(--celadon); }
+.mini-btn.ghost {
+  background: var(--card);
+  color: var(--ink-2);
+  border-color: var(--line);
+}
+.mini-btn.ghost:hover { color: var(--green); border-color: var(--green); }
+
+.identity-row .avatar { --avatar-size: 46px; }
+
+.identity-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+}
+.identity-foot .settings-hint { margin-top: 2px; }
+.identity-foot .settings-hint:empty { display: none; }
+
+#mine-page #avatar-hint,
+#mine-page #nickname-hint {
+  margin-top: 6px;
+}
+#mine-page #avatar-hint:empty,
+#mine-page #nickname-hint:empty {
+  display: none;
+}
+
+#btn-avatar-clear { margin-top: 10px; }
+
+#upsell-row { text-align: center; }
+#upsell-row .account-btn { width: auto; min-width: 132px; padding: 10px 18px; }
+
+.admin-slot { margin-top: 4px; }
+.admin-slot .account-btn { width: auto; min-width: 132px; padding: 10px 16px; }
+
+.family-lead { margin: 0 0 10px; }
