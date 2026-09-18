@@ -270,11 +270,18 @@ const plansCommentOnly = pageJs;
 
 {
 
-  chk(/btn-go-plans/.test(profileHtml), '个人中心有进对比页的按钮（现在在「关于」卡那一行里）');
-  chk(/class="account-actions"[\s\S]{0,400}?btn-go-plans/.test(profileHtml),
-    '它与「同步设置」并排在同一行操作键里');
-  chk(/btn-go-plans/.test(profileJs), '那颗按钮真的绑了跳转（不是摆着不动的）');
-  chk(/location\.href = "\/plans\/"/.test(profileJs), '按钮跳到 /plans/');
+  chk(/btn-go-plans/.test(profileHtml), '个人中心有进对比页的入口（它在身份卡那一行里）');
+  chk(/id="identity-actions"[\s\S]{0,400}?btn-go-plans/.test(profileHtml),
+    '它跟「登录 / 退出」并排在同一行里');
+
+  // 用户 2026-09-18：这一颗改成链接。<a href="/plans/"> 自己带着地址 ——
+  // 不点 JS、中键新开、键盘可达，还没跑脚本时也走得通。
+  chk(/<a[^>]*id="btn-go-plans"[^>]*href="\/plans\/"/.test(profileHtml) ||
+      /<a[^>]*href="\/plans\/"[^>]*id="btn-go-plans"/.test(profileHtml),
+    '它是一个 <a href="/plans/">（用户 2026-09-18：这颗键改成链接）');
+  chk(!/<button[^>]*id="btn-go-plans"/.test(profileHtml), '它不再是一颗 <button>');
+  chk(!/location\.href = "\/plans\/"/.test(profileJs),
+    'js/profile.js 里不再为它绑一段跳转（地址就写在 <a> 上）');
 
   chk(/Ent\.compare\(/.test(PAGE), '对比表一律由 compare() 生成（清单的唯一一处）');
   chk(!/Ent\.matrix\(/.test(profileJs),

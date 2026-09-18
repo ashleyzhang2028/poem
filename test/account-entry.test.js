@@ -132,6 +132,19 @@ function repaint(p) {
   chk(!/link-plans/.test(SRC.mine) && !/link-plans/.test(MINE_JS),
     '「层级对比」那张卡也整张撤了（用户 2026-09-18：删除 我的页面的权限对比的卡片）');
 
+  // 用户 2026-09-18：这一页去进度页的那个入口叫「背诵进度」（原先「背诵进度总览」），
+  // 而且它是一行链接（一行字，不是一颗键）—— 「去别处看」不必画成按钮。
+  chk(/id="link-progress"/.test(SRC.mine) && /href="\/progress\/"/.test(SRC.mine),
+    '「本机数据」卡里那条入口仍在（落在 /progress/）');
+  chk(/>背诵进度</.test(SRC.mine) && !/背诵进度总览/.test(SRC.mine),
+    '它在页面上的名字就是「背诵进度」（用户 2026-09-18 点名改，实际「' +
+    (SRC.mine.match(/>([^<]*背诵进度[^<]*)</) || ['', ''])[1] + '」）');
+  chk(/<a[^>]*id="link-progress"/.test(SRC.mine) && !/<button[^>]*id="link-progress"/.test(SRC.mine),
+    '它是链接（<a>），不是按钮（用户 2026-09-18：这个按钮改成链接）');
+  chk(!/class="btn[^"]*"[^>]*id="link-progress"/.test(SRC.mine) &&
+      !/id="link-progress"[^>]*class="btn/.test(SRC.mine),
+    '它不再挂着按钮那套 class（挂了就还是画出来一颗键）');
+
   const identityText = stripHtml(p.doc.getElementById('identity-row').outerHTML);
   chk(!/未起名/.test(identityText), '身份行不再重复写昵称（它就在旁边的输入框里）');
   chk(/游客/.test(identityText) && !/本机游客/.test(identityText),

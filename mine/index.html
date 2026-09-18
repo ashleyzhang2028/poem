@@ -68,9 +68,12 @@
       <section class="account-card" id="stats-card">
         <h2 class="account-card-title">本机数据</h2>
         <div class="kv-list" id="stats-list"></div>
-        <div class="settings-btns">
-          <a class="btn ghost-btn" id="link-progress" href="/progress/">背诵进度总览</a>
-        </div>
+        <!-- 去进度页那一行：它是「去别处看」，不是「清空 / 导出」那类动作，
+             所以是一行天青副色的字（无下划线），不是一颗键。
+             用户 2026-09-18：文案改「背诵进度」、按钮改成链接。 -->
+        <p class="settings-link-row">
+          <a class="account-link" id="link-progress" href="/progress/">背诵进度</a>
+        </p>
       </section>
 
       <section class="account-card" id="account-card">

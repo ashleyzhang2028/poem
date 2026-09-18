@@ -312,10 +312,12 @@ setTimeout(() => {
   chk(grpOf(srecite, '#seg-algo') === '复习算法', '复习算法选择归到「复习算法」组');
 
   const generalItems = sgeneral.querySelector('#settings-page .settings-group').querySelectorAll('.settings-item');
-  chk(generalItems.length === 5,
-    '「通用」组是账号 / 跨设备同步 / 自检 / 数据管理 / 课内诗词导出五项' +
+  chk(generalItems.length === 4,
+    '「通用」组是账号 / 跨设备同步 / 数据管理 / 课内诗词导出四项' +
     '（用户名与子用户整块撤掉 —— 它们都是「我是谁」，归「我的」页；' +
-    '自检是 Issue #225 加的：注册报 500 时用户得能自己跑一遍定位到哪一环；实际 ' + generalItems.length + '）');
+    '自检 Issue #225 加过，Issue #229 又搬到设置「关于」当一行链接；实际 ' + generalItems.length + '）');
+  chk(!sgeneral.querySelector('#btn-selfcheck'),
+    '「通用」里不再有自检那颗按钮（用户 2026-09-18：搬到关于、按钮变成链接）');
   chk(!!sgeneral.querySelector('#btn-export-poems'),
     '「通用」里有课内诗词导出（Issue #159：只导课本那 261 首）');
   chk(grpOf(sgeneral, '#btn-export-poems') === '通用',

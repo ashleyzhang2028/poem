@@ -220,15 +220,61 @@ const NAV = read('js/settings-nav.js');
     '「关于」里仍有用户协议与隐私条款两条入口');
   chk(!/>查看<\/a>/.test(aboutBlock),
     '那三条不再各挂一个「查看」（链接本身就说清了它是链接）');
-  chk(aboutBlock.indexOf('离线缓存') < aboutBlock.indexOf('/plans/') &&
-      aboutBlock.indexOf('/plans/') < aboutBlock.indexOf('用户协议'),
+  // 只看**渲染出来的那几行**（box.innerHTML 那一段）：注释里也写着词，
+  // 拿整段搜会把注释当成内容，位置就量不准了。
+  const rowsHtml = aboutBlock.slice(aboutBlock.indexOf("box.innerHTML ="));
+  chk(rowsHtml.indexOf('离线缓存') < rowsHtml.indexOf('/plans/') &&
+      rowsHtml.indexOf('/plans/') < rowsHtml.indexOf('用户协议'),
     '「层级对比」那一行插在离线缓存与用户协议**中间那一行**（用户点名的位置）');
-  chk(/href="\/plans\/"[^>]*>层级对比<|>层级对比<\/a>/.test(aboutBlock),
+  // 这几行的条目都是 link(href, 词) 造出来的 —— 左列就是那个 <a>，
+  // 不另挂「查看」；右列（kvRow 的第二格）是空串。
+  chk(/link\("\/plans\/",\s*"层级对比"\)/.test(rowsHtml),
     '左边那格自己就是链接（不是只把右边那颗「查看」做成链接）');
-  chk(/href="\/terms\/"[^>]*>用户协议<|>用户协议<\/a>/.test(aboutBlock),
+  chk(/link\("\/terms\/",\s*"用户协议"\)/.test(rowsHtml),
     '用户协议左边那格也是链接');
-  chk(/href="\/privacy\/"[^>]*>隐私条款<|>隐私条款<\/a>/.test(aboutBlock),
+  chk(/link\("\/privacy\/",\s*"隐私条款"\)/.test(rowsHtml),
     '隐私条款左边那格也是链接');
+
+  // ---- Issue #229：这几行是同一套（用户 2026-09-18）----
+  //
+  // 上一轮只顾着「别是无样式正文」，给链接加了一道 celadon 下划线 —— 那是错的。
+  // 用户这一轮把口径说全了：不要下划线，而且间距要和「应用 / 版本 / 离线缓存」
+  // 那几行一样（行高不一样，一眼就看得出这块是拼上来的）。办法是让每行的高度
+  // 由 min-height 一家说了算：.kv-row 上下不写 padding，链接那一行就不会被
+  // 自己的行盒撑高。
+  const css = read('css/style.css');
+  const rule = (sel) => (css.match(new RegExp(
+    sel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*\\{[^}]*\\}')) || [''])[0];
+
+  // 「不画下划线」全站只有一条默认（style.css 顶上的 `a { text-decoration: none }`），
+  // 这几行不必再各写一遍 —— 要守的是「没有一条规则把下划线加回来」。
+  const kvLink = rule('.kv-k a');
+  chk(!/text-decoration:\s*underline/.test(kvLink) && !/border-bottom:\s*1px/.test(kvLink),
+    '那几行的链接不画下划线（用户 2026-09-18：不要下划线）');
+  chk(!/--celadon/.test(kvLink),
+    '原先那道 celadon 细线也撤掉（下划线就是它）');
+  chk(/font-size:\s*13px/.test(kvLink),
+    '链接与正文同一个字号（13px）—— 比正文大的词搁在一行里，那一行看着就不齐');
+
+  const kvRowRule = rule('.kv-row');
+  chk(/align-items:\s*center/.test(kvRowRule),
+    '行内按中线对齐（链接与右边那颗值对齐；baseline 会因为字号差把行撑高）');
+  chk(/padding:\s*0/.test(kvRowRule) && !/padding:\s*[1-9]\d*px\s+0/.test(kvRowRule),
+    '行高只由 min-height 定：上下 padding 是 0（写了上下 padding，链接那一行就与上面几行对不上）');
+  chk(/min-height:\s*42px/.test(kvRowRule), '行高仍是 42px（与上面几行同一个数）');
+
+  // 「自检」那一行：用户 2026-09-18 点名从「设置 · 通用」搬来，排在隐私条款下面。
+  chk(/\/self-check\//.test(aboutBlock) && /自检/.test(aboutBlock),
+    '「关于」里有去 /self-check/ 的「自检」一行（它原先在「设置 · 通用」当一颗按钮）');
+  chk(rowsHtml.indexOf('隐私条款') < rowsHtml.indexOf('/self-check/'),
+    '「自检」排在隐私条款下面一行（用户点名的位置）');
+  chk(/link\("\/self-check\/",\s*"自检"\)/.test(rowsHtml),
+    '左边那格自己就是链接（不是一颗按钮）');
+  chk(!/跑一遍自检/.test(aboutBlock) && !/btn-selfcheck/.test(aboutBlock),
+    '文案就叫「自检」（用户 2026-09-18 点名改），也不留那颗按钮的 id');
+  chk(!/btn-selfcheck/.test(read('settings/general/index.html')) &&
+      !/跑一遍自检/.test(read('settings/general/index.html')),
+    '「设置 · 通用」里那一块（按钮 + 说明）整块撤干净，不留空壳');
 }
 
 console.log('\n' + (fails ? '❌ ' + fails + ' 项失败' : '🎉 二级设置页测试全部通过'));

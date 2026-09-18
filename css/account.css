@@ -151,6 +151,42 @@ body[data-nav="login"] .app > .foot {
   margin-top: 0;
 }
 
+/* 同一行里那颗「层级对比」：它去别处看一张表，不是「登录 / 退出」那类动作，
+   所以不画成键 —— 一行天青副色的字，无下划线；高度与旁边两颗键齐平
+   （align-items 让整行对齐，min-height 撑住触达高度）。用户 2026-09-18：
+   这一颗改成链接。 */
+.account-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  flex: 0 0 auto;
+  min-height: 40px;
+  padding: 0 10px;
+
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--green);
+  transition: color .16s ease;
+}
+.account-link:hover,
+.account-link:focus-visible { color: var(--green-dark); }
+.account-link:active { color: var(--green-dark); }
+
+/* 「本机数据」卡底下那一行入口（去 /progress/ 的「背诵进度」）：
+   一行字，左对齐落在卡片文字的左缘上，与上面那几行的第一列同一条竖线。
+   它是这一页唯一带链接的文字行，所以 .account-link 自己居中会把它推偏 ——
+   这里把它按文字行摆（不吸满宽度）。 */
+.settings-link-row {
+  margin: 10px 0 0;
+  padding-left: 2px;
+}
+.settings-link-row .account-link {
+  min-height: 32px;
+  padding: 0;
+  font-weight: 500;
+}
+
 .account-msg {
   margin: 8px 0 0;
   font-size: 12.5px;

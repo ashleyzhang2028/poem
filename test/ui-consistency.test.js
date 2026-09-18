@@ -908,6 +908,9 @@ PAGE_FILES.forEach(f => {
   chk(underlines.length === 0,
     '全站样式表里没有一条 `text-decoration: underline`（实际 ' + underlines.length + ' 条）');
 
+  // 全局那条是唯一一处「不给下划线」的默认。别的份数只要不是把下划线
+  // 重新加回来（text-decoration: underline），就不算破这条口径 ——
+  // 但每多写一条都是同一件事的第二个来源，这里仍按 ≤1 条卡着。
   const noneWriters = (cssCode.replace(/^[^\n]*\ba\s*\{[^}]*text-decoration:\s*none[^}]*\}[^\n]*$/m, '')
     + '\n' + strip(classicCss) + '\n' + strip(legalCss) + '\n' + strip(accountCss))
     .match(/text-decoration:\s*none/g) || [];
@@ -1158,9 +1161,13 @@ if (JSDOM) {
   const title = ruleOf(cssCode, '.settings-about-title');
   chk(/font-size:\s*\d+px/.test(title) && /font-weight:/.test(title) && /margin:/.test(title),
     '「关于」小标题有字号 / 字重 / 外边距（此前是浏览器默认的 h2，最大最粗）');
-  const row = ruleOf(cssCode, '.settings-about .kv-row');
-  chk(/padding:\s*\d+px 0/.test(row),
-    '「关于」那五行有自己的行距（不再靠 .kv-list 的裸默认）');
+  // Issue #229：行距收归 .kv-row 一处 —— 「关于」不再各写一份 padding，
+  // 每一行的高度由 min-height 定（这样左边当链接的那几行不会比上面几行高）。
+  const row = ruleOf(cssCode, '.kv-row');
+  chk(/min-height:\s*\d+px/.test(row) && /padding:\s*0/.test(row),
+    '「关于」那几行的行距有自己的来源（.kv-row 的 min-height，且上下不写 padding）');
+  chk(!/\.settings-about \.kv-row\s*\{/.test(strip(cssCode)),
+    '「关于」不再单独给 .kv-row 补一份 padding（同一件事两处定义必然漂）');
 
   const navJs = read('js/settings-nav.js');
   chk(/settings-about-title/.test(navJs),
@@ -1197,14 +1204,19 @@ if (JSDOM) {
   chk(/color:\s*var\(--green\)/.test(kLink),
     '左格链接走天青主色 var(--green)，不是浏览器默认的蓝（实际 ' +
       (kLink.match(/color:\s*[^;]+/) || ['(无 color)'])[0] + '）');
-  chk(/border-bottom:\s*1px solid/.test(kLink),
-    '左格链接底下有一道细线（全站「不给下划线」的默认在这儿放行，因为它是行内文字）');
+  // 用户 2026-09-18（两轮口径）：上一轮补的是「一道细线」，这一轮明确
+  // **不要下划线**；字号也要和同一行的正文一样（13px），行高才齐。
+  // 「不画下划线」全站只有一条默认（css/style.css 顶上的 `a { text-decoration: none }`），
+  // 这几行不必再各写一遍：它们要守的是「没有一条规则把下划线又加回来」。
+  chk(!/text-decoration:\s*underline/.test(kLink) && !/border-bottom:\s*1px/.test(kLink),
+    '左格链接不画下划线（用户 2026-09-18：不要下划线；另一轮补的那道 celadon 细线已撤）');
+  chk(!/--celadon/.test(kLink), '那道 celadon 细线不再出现在这条规则里');
+  chk(/font-size:\s*13px/.test(kLink),
+    '左格链接与同一行的正文同一个字号（13px）不另挑一档');
   chk(/min-height:\s*\d+px/.test(kLink) && parseFloat((kLink.match(/min-height:\s*([\d.]+)px/) || [0, 0])[1], 10) >= 28,
     '左格链接有自己的触达高度（≥ 28px），不是一行 13px 的裸文字');
   chk(/display:\s*inline-flex/.test(kLink),
     '左格链接用 inline-flex 撑起那一行高度（inline 元素拿不到 min-height）');
-  chk(/var\(--celadon\)/.test(kLink),
-    '那道细线走 --celadon（与全站天青一套令牌同源，不另挑一个颜色）');
 
   chk(!/text-align:\s*right/.test(ruleOf(cssCode, '.kv-v')) ||
       /flex:\s*1 1 auto/.test(ruleOf(cssCode, '.kv-v')),
@@ -1230,16 +1242,17 @@ if (JSDOM) {
   const settingsNav = read('js/settings-nav.js');
   const aboutBlock2 = settingsNav.slice(settingsNav.indexOf('function renderAbout('),
     settingsNav.indexOf('function go()'));
-  ['/plans/', '/terms/', '/privacy/'].forEach(href => {
-    chk(new RegExp('class="kv-k"><a href="' + href + '"').test(aboutBlock2),
+  // 「设置 · 关于」那几行由 link(href, 词) 生成（左格就是那个 <a>），
+  // 「个人中心 · 关于」那两行直接写在 HTML 里（同样的 <a class="kv-link">）。
+  const profileHtml2 = read('profile/index.html');
+  ['/plans/', '/terms/', '/privacy/', '/self-check/'].forEach(href => {
+    chk(new RegExp('link\\("' + href + '",').test(aboutBlock2),
       '设置「关于」里 ' + href + ' 那一行是「左格本身当链接」');
   });
   chk(!/class="kv-v"><a/.test(aboutBlock2),
     '设置「关于」里不再有「右格挂一颗『查看』」那种形状');
-
-  const profileHtml2 = read('profile/index.html');
   ['/terms/', '/privacy/'].forEach(href => {
-    chk(new RegExp('class="kv-k"><a href="' + href + '"').test(profileHtml2),
+    chk(new RegExp('class="kv-k"><a class="kv-link" href="' + href + '"').test(profileHtml2),
       '个人中心「关于」里 ' + href + ' 那一行也是「左格本身当链接」');
   });
   chk(!/<span class="kv-v"><a href="\/(terms|privacy)\//.test(profileHtml2),

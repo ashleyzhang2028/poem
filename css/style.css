@@ -1558,17 +1558,20 @@ body.has-install-tip #app {
 }
 
 .settings-about .kv-list { padding: 0 2px; }
-.settings-about .kv-row { padding: 11px 0; }
 
 .kv-list { margin: 0; }
 .kv-row {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
 
+  /* 行高只由 min-height 定：上下不写 padding。
+     「关于」那几行里有三行左边是链接（<a> 的字体比正文大一点、行盒也更高），
+     原先靠 padding 撑高，链接那一行就比上面几行高出两三个像素 —— 用户
+     2026-09-18 点名的「间距要和上面几行一样」就是这个。 */
   min-height: 42px;
-  padding: 9px 0;
+  padding: 0;
   font-size: 13px;
   border-bottom: 1px solid var(--line-2);
 }
@@ -1576,24 +1579,30 @@ body.has-install-tip #app {
 
 .kv-k { color: var(--ink-2); flex: none; }
 
-/* 左边那格自己当链接时，它就是一颗「只少一根下划线」的链接：
-   天青副色 + 底下一道细线 + 一行最小触达高度。
-   不加这条规则的话，它就是一段浏览器默认样子的正文 —— 而那正是
-   「权限对比 / 用户协议 / 隐私条款」这几处（设置「关于」三行、
-   个人中心「关于」两行）看起来「没样式」的原因。 */
+/* 「关于」这几行的条目链接（层级对比 / 用户协议 / 隐私条款 / 自检）：
+   天青副色 + **一条下划线都不画** —— 只在颜色上说它是可点的。
+   字号与同一行的正文一样（13px），行的对齐与行高都交给 .kv-row
+   （它把 align-items 定成 center、高度只由 min-height 定），
+   所以左边当链接的那几行与上面「应用 / 版本 / 离线缓存」几行完全齐。
+   用户 2026-09-18 两轮口径合起来就是这三件：不要下划线、间距一样、
+   它就是一行普通文字（不是一颗键）。
+   不加这条规则的话它会落回浏览器默认样式的正文 —— 那才是真正的问题。 */
 .kv-k a {
   display: inline-flex;
   align-items: center;
 
   min-height: 30px;
   color: var(--green);
-  font-size: 14px;
-  border-bottom: 1px solid var(--celadon);
-  transition: color .16s ease, border-color .16s ease;
+  font-size: 13px;
+  transition: color .16s ease;
 }
 .kv-k a:hover,
-.kv-k a:focus-visible { color: var(--green-dark); border-color: var(--green-dark); }
+.kv-k a:focus-visible { color: var(--green-dark); }
 .kv-k a:active { color: var(--green-dark); }
+
+/* 右列留空的那些行（项名本身就是入口的那几行）：空 <span> 照样参与
+   space-between，左列因此仍在起点上，与上面几行左对齐。 */
+.kv-v:empty { display: block; }
 
 /* 右列改成弹性列：两个短状态（Free / 已缓存，可离线打开）仍靠右，
    像「跬步 · 古诗词背诵」这种长值改成**自然换行**、不折断单词。
