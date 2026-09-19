@@ -179,13 +179,13 @@
   function algoShort() {
     return window.ReviewModels
       ? window.ReviewModels.describe(algoKey()).short
-      : "遗忘曲线";
+      : "艾宾浩斯遗忘曲线";
   }
 
   function applyAlgoSub() {
     const sub = window.ReviewModels
       ? window.ReviewModels.subFor(algoKey())
-      : "按遗忘曲线复习";
+      : "按艾宾浩斯遗忘曲线复习";
     document.body.setAttribute("data-sub", sub);
     const el = $("#brand-sub");
     if (el) el.textContent = sub;

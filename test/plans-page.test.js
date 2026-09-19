@@ -169,10 +169,10 @@ const plansCommentOnly = pageJs;
   // ---- Issue #229 第五轮：三行改名 + 折行 ----
   {
     const e = cmp.rows.find(r => r.cap === 'algo.ebbinghaus');
-    chk(e.name === '斯宾浩斯遗忘曲线',
-      '「遗忘曲线」那一行的全名是「斯宾浩斯遗忘曲线」（实际 ' + e.name + '）');
+    chk(e.name === '艾宾浩斯遗忘曲线',
+      '「遗忘曲线」那一行的全名是「艾宾浩斯遗忘曲线」（实际 ' + e.name + '）');
     chk(e.breaks && e.breaks[0] === '遗忘曲线',
-      '它在「遗忘曲线」前折行 —— 后半截是整个算法名，第一行留「斯宾浩斯」');
+      '它在「遗忘曲线」前折行 —— 后半截是整个算法名，第一行留「艾宾浩斯」');
 
     const x = cmp.rows.find(r => r.cap === 'export.all');
     chk(x.name === '课内诗词 导出',
