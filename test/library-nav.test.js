@@ -208,7 +208,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     ['guwen/index.html', '/guwen/', null, '古文观止'],
     ['zhaoming/index.html', '/zhaoming/', null, '昭明文选'],
     ['yuanqu/index.html', '/yuanqu/', 30, '元曲三百首'],
-    ['classic/index.html', '/classic/', 100, '课外必背小古文']
+    ['classic/index.html', '/classic/', 102, '课外必背小古文']
   ]) {
     const w2 = boot(f, url);
     await w2.__ready;
