@@ -540,6 +540,7 @@
         "</div>" +
         "</div>" +
 
+        (CFG.dailyList === false ? "" : dailyItemBtn(p)) +
         (CFG.reciteList === false ? "" : reciteItemBtn(p)) +
         '<button type="button" class="item-read" title="播放这一篇" aria-label="播放 ' + esc(p.title) + '">' +
         playGlyph() + "</button>" +
@@ -558,6 +559,14 @@
           startRecite(p);
         });
       }
+      var dailyBtn = el.querySelector(".item-daily");
+      if (dailyBtn) {
+        dailyBtn.addEventListener("click", function (e) {
+          e.stopPropagation();
+          claim(e);
+          toggleDaily(p);
+        });
+      }
       (groupCard || listEl).appendChild(el);
     });
 
@@ -566,6 +575,7 @@
     syncItemPlayBtns();
     syncPlayBtn();
     syncListItemReciteButtons();
+    syncListItemDailyButtons();
   }
 
   function highlightItem(id) {
@@ -648,6 +658,7 @@
     syncReadButtons();
     syncDoneButton();
     syncReciteButtons();
+    syncDailyButton();
     el.hidden = false;
     document.body.classList.add("reader-open");
 
@@ -1296,6 +1307,11 @@
       showToast(now ? "已取消「已读」" : "已标记为已读");
     });
 
+    var dailyBtn = rd("daily");
+    if (dailyBtn) dailyBtn.addEventListener("click", function (e) {
+      if (e && e.preventDefault) e.preventDefault();
+      toggleDaily(current);
+    });
     var reciteBtn = rd("recite");
     if (reciteBtn) reciteBtn.addEventListener("click", function (e) {
       claim(e);
@@ -1376,6 +1392,11 @@
       });
     });
 
+    window.addEventListener("daily-extra-change", function () {
+      mounts.forEach(function (s) {
+        withSession(s, function () { syncDailyButton(); });
+      });
+    });
     window.addEventListener("recite-collections-change", function () {
       mounts.forEach(function (s) {
         withSession(s, function () {
@@ -1636,6 +1657,62 @@
     }
 
     if (session.api && session.api.refreshCanonical) session.api.refreshCanonical();
+  }
+
+  // ---- 「加入今日背诵」（Issue #243）---------------------------------------
+  //
+  // 与「加入自选集合」并排，但两件事：
+  //   集合 = 长期清单（会一直留在「我要背的」里）；
+  //   今日 = 只属于今天，明天自动归零。
+  //
+  // 这里只做「放哪 + 调谁」，图形与文案全在 js/daily-extra-ui.js 一份出。
+  function dailyMod() {
+    return (typeof window !== "undefined" && window.DailyExtraUI) || null;
+  }
+
+  function dailyItemBtn(p) {
+    var U = dailyMod();
+    if (!U) return "";
+    return U.itemBtn(p);
+  }
+
+  function syncListItemDailyButtons() {
+    var U = dailyMod();
+    if (!U) return;
+    $$(".item-daily", listBox()).forEach(function (b) {
+      var id = b.getAttribute("data-daily");
+      var p = itemsById[id];
+      if (!p) return;
+      U.syncOne(b, p);
+    });
+  }
+
+  function syncDailyButton() {
+    var btn = rd("daily");
+    if (btn) {
+      if (!current || !dailyMod()) {
+        btn.hidden = true;
+      } else {
+        btn.hidden = false;
+        dailyMod().syncOne(btn, current);
+      }
+    }
+    // 列表那一排**始终**要同步：详情页那一颗与列表里同一篇是同一件事，
+    // 从哪一颗点的都要一起变（`current` 为空时老早退会把这一句也跳过）。
+    syncListItemDailyButtons();
+  }
+
+  function toggleDaily(p) {
+    if (!p) return;
+    var U = dailyMod();
+    if (!U) {
+      showToast("本机不支持今日加背");
+      return;
+    }
+    var r = U.toggle(p);
+    if (r.message) showToast(r.message);
+    if (r.ok === false) return;
+    syncDailyButton();
   }
 
   function reciteState(p) {
