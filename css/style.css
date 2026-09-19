@@ -92,8 +92,8 @@ html, body {
 
 @media (min-width: 1024px) {
   :root {
-    --col-w: min(1200px, 100vw);
-    --col-side: 32px;
+    --col-w: 100vw;
+    --col-side: 56px;
   }
   .app, #app { padding-left: var(--col-side); padding-right: var(--col-side); }
 }

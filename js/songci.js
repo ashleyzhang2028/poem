@@ -38,7 +38,7 @@
       id: "songci",
       groupOrder: GROUP_ORDER,
       pageTitle: "宋词三百首",
-      pageSub: "想读哪首点哪首",
+      pageSub: "按词牌分组 · 一调之下诸家并列",
       words: {
         list: "宋词",
         unit: "首",

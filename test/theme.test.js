@@ -821,8 +821,8 @@ chk(!/\.reader-body \{[\s\S]{0,600}?width:\s*100%/.test(classicCss),
 chk(/\.reader-body \{[\s\S]{0,1200}?box-sizing:\s*border-box/.test(classicCss),
   '阅读器正文显式 border-box，内边距算在 720px 之内');
 
-chk(/\.reader-body \{[\s\S]{0,1200}?width:\s*var\(--content-w/.test(classicCss),
-  '阅读器正文用定宽 --content-w（flex 子项上的 max-width 会退化成 flex-basis）');
+chk(/\.reader-body \{[\s\S]{0,1200}?width:\s*min\(var\(--content-w/.test(classicCss),
+  '阅读器正文用定宽 --content-w，并收回 --read-w 的阅读上限（flex 子项上的 max-width 会退化成 flex-basis）');
 chk(/\.reader-body \{[\s\S]{0,1200}?max-width:\s*calc\(100%/.test(classicCss),
   '窄屏由 max-width: calc(100% - 安全区) 收成满宽，宽屏稳定居中');
 chk(/\.reader-body \{[\s\S]{0,400}?min-height:\s*0/.test(classicCss),

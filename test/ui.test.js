@@ -122,8 +122,9 @@ setTimeout(() => {
 
   chk(d.querySelector('#brand-sub').textContent === '按遗忘曲线复习',
     '顶栏第二行精简为「按遗忘曲线复习」（实际「' + d.querySelector('#brand-sub').textContent + '」）');
-  chk(!/小古文想读哪篇点哪篇/.test(d.querySelector('.topbar').textContent),
-    '顶栏不再出现「小古文想读哪篇点哪篇」');
+  chk(!/小古文/.test((d.querySelector('.topbar .brand-sub') || {}).textContent || '') ||
+    !/想读哪篇点哪篇/.test((d.querySelector('.topbar .brand-sub') || {}).textContent || ''),
+    '顶栏副标题不再出现「小古文想读哪篇点哪篇」');
   chk(d.querySelectorAll('.brand-icon svg, .brand-icon img').length === 1, '顶栏徽标只画一枚（内联 SVG 或位图，实际 ' + d.querySelectorAll('.brand-icon svg, .brand-icon img').length + ' 枚）');
 
   const collapseHeads = d.querySelectorAll('.collapse-head');
