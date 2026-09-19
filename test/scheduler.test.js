@@ -24,7 +24,7 @@ const { Scheduler, Storage } = sandbox;
 let fails = 0;
 function assert(c, m) { if (!c) { console.log('✗ ' + m); fails++; } else console.log('✓ ' + m); }
 
-assert(sandbox.POEMS_ALL.length === 261, '诗词总数 261（实际 ' + sandbox.POEMS_ALL.length + '）');
+assert(sandbox.POEMS_ALL.length === 251, '诗词总数 251（实际 ' + sandbox.POEMS_ALL.length + '）');
 const ids = new Set();
 sandbox.POEMS_ALL.forEach(p => { if (ids.has(p.id)) throw new Error('重复 id ' + p.id); ids.add(p.id); });
 assert(true, '诗词 id 无重复');
@@ -222,7 +222,7 @@ scopeCases.forEach(c => {
 });
 
 const uptoHigh = Scheduler.poolForScope({ grade: 12, term: 2, scope: 'upto' });
-assert(uptoHigh.length === 261, '本册及之前（高三下）= 全部 261 首（实际 ' + uptoHigh.length + '）');
+assert(uptoHigh.length === 251, '本册及之前（高三下）= 全部 251 首（实际 ' + uptoHigh.length + '）');
 
 let seenGrades = new Set();
 for (let i = 0; i < 30; i++) {

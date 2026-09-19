@@ -106,8 +106,14 @@ chk(withText.every(p => p.excerpt),
   '每一篇都给了列表用摘句（excerpt）');
 chk(withTrans.length === ZM.length,
   '480 篇白话译文全部整理完成，列表里不再有「待补」（实际 ' + withTrans.length + '）');
-chk(withTrans.every(p => p.translationSource === 'public-domain'),
-  '已译的每一篇都标了译文来源 public-domain');
+// 与课内同篇的条目（正文收归主表后，译文随主条目）—— 主条目是课内的那一条，
+// 译文来源自然跟着课内走；这一条例外由 works-map 登记，逐条列在这里。
+const COURSE_LINKED = ['过秦论'];
+const notPublicDomain = withTrans.filter(p =>
+  p.translationSource !== 'public-domain' && COURSE_LINKED.indexOf(p.title) < 0);
+chk(notPublicDomain.length === 0,
+  '已译的每一篇都标了译文来源 public-domain（与课内同篇的 ' + COURSE_LINKED.join('、') +
+  ' 除外；异常：' + notPublicDomain.slice(0, 5).map(p => p.title + '/' + p.translationSource).join('、') + '）');
 chk(withTrans.every(p => p.text),
   '有译文的一定有原文（不会出现「有译无文」的半成品）');
 chk(withTrans.length === sandbox.zhaomingDoneCount(),
@@ -238,8 +244,8 @@ chk(zmIdx.every(x => x.text && x.translation),
   '进索引的每一篇都原文与译文齐备');
 chk(IDX.some(x => x.book === 'zhaoming' && x.isBook),
   '「昭明文选」本身也作为一条结果（搜集子名能直接进那一页）');
-chk(sandbox.SITE_BOOKS.length === 7 && sandbox.SITE_BOOKS.some(b => b.id === 'zhaoming'),
-  '七部集子的清单里含昭明文选（' + sandbox.SITE_BOOKS.length + ' 部）');
+chk(sandbox.SITE_BOOKS.length === 9 && sandbox.SITE_BOOKS.some(b => b.id === 'zhaoming'),
+  '九部集子的清单里含昭明文选（' + sandbox.SITE_BOOKS.length + ' 部）');
 
 const dom = new JSDOM(fs.readFileSync(path + 'zhaoming/index.html', 'utf8'), {
   runScripts: 'dangerously',

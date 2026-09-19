@@ -54,7 +54,7 @@
     // 与设置页那一项同名），breaks 把「导出」顶下去。
     "export.all":        { minTier: "pro",  login: true,  quota: null, name: "课内诗词 导出",
                            breaks: ["导出"],
-                           quotas: { free: 0, pro: 261, max: 261 } },
+                           quotas: { free: 0, pro: 251, max: 251 } },
 
     "feihualing":        { minTier: "max",  login: true,  quota: null, name: "飞花令" },
     // 「古诗词」一行、「大会」一行（Issue #229 第五轮）。

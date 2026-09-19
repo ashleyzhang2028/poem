@@ -60,9 +60,9 @@ const plansCommentOnly = pageJs;
       capRow('profile.family').cells[2].quota === 3 &&
       capRow('profile.family').cells[3].quota === 180,
     '子用户三档在格子上：1 / 3 / 180');
-  chk(capRow('export.all').cells[2].quota === 261 && capRow('export.all').cells[3].quota === 261,
-    '课内诗词导出：Pro / Max 两列都列出 261 首');
-  chk(capRow('export.all').cells[2].hint === '261 个',
+  chk(capRow('export.all').cells[2].quota === 251 && capRow('export.all').cells[3].quota === 251,
+    '课内诗词导出：Pro / Max 两列都列出 251 首');
+  chk(capRow('export.all').cells[2].hint === '251 个',
     '能用的格子里带额度数字（不只是打钩，用户点名要「直接列出数字」）：' + capRow('export.all').cells[2].hint);
   const readAloud = cmp.rows.find(r => r.cap === 'read.aloud');
   chk(readAloud.cells[0].ok === false && readAloud.cells[0].reason === 'login',

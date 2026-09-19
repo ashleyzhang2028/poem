@@ -12,13 +12,22 @@
       desc: "一年级至高三，按年级分册"
     },
     {
-      id: "classic",
-      name: "课外必背小古文",
-      book: "ClassicBook",
-      short: "小古文",
-      page: "/classic/",
+      id: "yuefu",
+      name: "乐府诗选",
+      book: "YuefuBook",
+      short: "乐府",
+      page: "/yuefu/",
+      unit: "首",
+      desc: "汉乐府与南北朝乐府：民歌本色，言浅意深"
+    },
+    {
+      id: "zhaoming",
+      name: "昭明文选",
+      book: "ZhaomingBook",
+      short: "文选",
+      page: "/zhaoming/",
       unit: "篇",
-      desc: "蒙学识字、寓言故事到诸子论道，百字上下，最适合起步"
+      desc: "六十卷按赋、诗、骚、七等三十九类文体编排，现存最早的诗文总集"
     },
     {
       id: "tangshi",
@@ -39,6 +48,15 @@
       desc: "按词牌分组，一调之下诸家并列，可直接比对同调之作"
     },
     {
+      id: "yuanqu",
+      name: "元曲三百首",
+      book: "YuanquBook",
+      short: "元曲",
+      page: "/yuanqu/",
+      unit: "首",
+      desc: "小令与套数按宫调编排，质朴自然，曲白相生"
+    },
+    {
       id: "guwen",
       name: "古文观止",
       book: "GuwenBook",
@@ -48,25 +66,24 @@
       desc: "十二卷自周文至明文，历代文章的选本经典"
     },
     {
-      id: "zhaoming",
-      name: "昭明文选",
-      book: "ZhaomingBook",
-      short: "文选",
-      page: "/zhaoming/",
+      id: "classic",
+      name: "课外必背小古文",
+      book: "ClassicBook",
+      short: "小古文",
+      page: "/classic/",
       unit: "篇",
-      desc: "六十卷按赋、诗、骚、七等三十九类文体编排，现存最早的诗文总集"
+      desc: "蒙学识字、寓言故事到诸子论道，百字上下，最适合起步"
     },
     {
-      id: "yuanqu",
-      name: "元曲三百首",
-      book: "YuanquBook",
-      short: "元曲",
-      page: "/yuanqu/",
+      id: "jinxiandai",
+      name: "近现代诗词",
+      book: "JinxiandaiBook",
+      short: "近现代",
+      page: "/jinxiandai/",
       unit: "首",
-      desc: "小令与套数按宫调编排，质朴自然，曲白相生"
+      desc: "近百年间的志士之诗；原作引用、译文自拟，仅供背诵学习"
     }
   ];
-
   function esc(s) {
     return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
@@ -84,7 +101,9 @@
       songci: "POEMS_SONGCI",
       guwen: "POEMS_GUWEN",
       zhaoming: "POEMS_ZHAOMING",
-      yuanqu: "POEMS_YUANQU"
+      yuanqu: "POEMS_YUANQU",
+      yuefu: "POEMS_YUEFU",
+      jinxiandai: "POEMS_JINXIANDAI"
     };
     var key = VARS[bookId];
     var list = key ? window[key] : null;

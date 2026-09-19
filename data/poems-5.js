@@ -186,15 +186,13 @@ window.POEMS_5 = [
     translationSource: "school",
   },
   {
+    textRef: "poems-xx5-21",
     id: "xx5-21",
     title: "长歌行",
     author: "汉乐府",
     dynasty: "汉",
     grade: 5,
     term: 2,
-    text: "青青园中葵，朝露待日晞。\n阳春布德泽，万物生光辉。\n常恐秋节至，焜黄华叶衰。\n百川东到海，何时复西归？\n少壮不努力，老大徒伤悲。",
-    translation: "园中的葵菜青翠，露水等着太阳晒干。春天洒下恩泽，万物都焕发光芒。常怕秋天到来，花叶枯黄衰败。百川东流入海，什么时候再向西流回？年轻时不努力，年老时只能白白悲伤。",
-    translationSource: "school",
   },
   {
     id: "xx5-22",

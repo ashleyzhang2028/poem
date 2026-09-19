@@ -496,7 +496,7 @@
     }).length;
     const pinnedN = todayPlan.filter(function (it) { return it.reason === "pinned"; }).length;
     $("#today-sub").textContent =
-      "共 " + todayPlan.length + " 首 · 待复习 " + reviewN + " · 新学 " +
+      "共 " + todayPlan.length + " 首 · 复习 " + reviewN + " · 新学 " +
       (todayPlan.length - reviewN - pinnedN) +
       (pinnedN ? " · 加背 " + pinnedN : "");
 
@@ -561,7 +561,7 @@
       '<div class="stat"><b>' + st.total + "</b><span>诗词总数</span></div>" +
       '<div class="stat"><b>' + st.learned + "</b><span>已学</span></div>" +
       '<div class="stat"><b>' + st.mastered + "</b><span>较牢固</span></div>" +
-      '<div class="stat review"><b>' + st.dueToday + "</b><span>待复习</span></div>";
+      '<div class="stat review"><b>' + st.dueToday + "</b><span>复习</span></div>";
 
     const box = $("#all-list");
     box.innerHTML = "";
@@ -624,7 +624,9 @@
     songci: { file: "data/poems-songci.js", global: "POEMS_SONGCI" },
     guwen: { file: "data/poems-guwen.js", global: "POEMS_GUWEN" },
     zhaoming: { file: "data/poems-zhaoming.js", global: "POEMS_ZHAOMING" },
-    yuanqu: { file: "data/poems-yuanqu.js", global: "POEMS_YUANQU" }
+    yuanqu: { file: "data/poems-yuanqu.js", global: "POEMS_YUANQU" },
+    yuefu: { file: "data/poems-yuefu.js", global: "POEMS_YUEFU" },
+    jinxiandai: { file: "data/poems-jinxiandai.js", global: "POEMS_JINXIANDAI" }
   };
 
   function staleByBook() {
