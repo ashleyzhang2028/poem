@@ -120,8 +120,8 @@ setTimeout(() => {
   chk(!/一年级至高三/.test(d.querySelector('.topbar').textContent),
     '顶栏第一行不再出现「一年级至高三 · 」，只有「跬步 · XX的背诵」');
 
-  chk(d.querySelector('#brand-sub').textContent === '按遗忘曲线复习',
-    '顶栏第二行精简为「按遗忘曲线复习」（实际「' + d.querySelector('#brand-sub').textContent + '」）');
+  chk(d.querySelector('#brand-sub').textContent === '按艾宾浩斯遗忘曲线复习',
+    '顶栏第二行精简为「按艾宾浩斯遗忘曲线复习」（实际「' + d.querySelector('#brand-sub').textContent + '」）');
   chk(!/小古文/.test((d.querySelector('.topbar .brand-sub') || {}).textContent || '') ||
     !/想读哪篇点哪篇/.test((d.querySelector('.topbar .brand-sub') || {}).textContent || ''),
     '顶栏副标题不再出现「小古文想读哪篇点哪篇」');
@@ -534,7 +534,7 @@ setTimeout(() => {
     btn.dispatchEvent(new window.Event('click', { bubbles: true }));
     chk(body.hidden === false && btn.classList.contains('open'), '点折叠头展开（箭头朝上）');
     chk(d.querySelectorAll('#stats-row .stat').length === 4,
-      '展开后有四格统计（总数 / 已学 / 较牢固 / 待复习，实际 ' +
+      '展开后有四格统计（总数 / 已学 / 较牢固 / 复习，实际 ' +
       d.querySelectorAll('#stats-row .stat').length + ' 格）');
     chk(+d.querySelector('#all-count').textContent === d.querySelectorAll('#all-list .item').length,
       '篇目列表的条数与徽章上的数字一致（' +
@@ -619,9 +619,9 @@ setTimeout(() => {
   setOn('count', 8, '#seg-count button', 'count');
   chk(d.querySelector('#today-sub').textContent.includes('共 8 首'), '改为每日 8 首生效: ' + d.querySelector('#today-sub').textContent);
 
-  chk(/^共 \d+ 首 · 待复习 \d+ · 新学 \d+$/.test(d.querySelector('#today-sub').textContent),
-    '今日统计精简为「共 N 首 · 待复习 N · 新学 N」（实际 ' + d.querySelector('#today-sub').textContent + '）');
-  chk(!/待复习 \d+ 首/.test(d.querySelector('#today-sub').textContent), '待复习数字后不再带「首」');
+  chk(/^共 \d+ 首 · 复习 \d+ · 新学 \d+$/.test(d.querySelector('#today-sub').textContent),
+    '今日统计精简为「共 N 首 · 复习 N · 新学 N」（实际 ' + d.querySelector('#today-sub').textContent + '）');
+  chk(!/复习 \d+ 首/.test(d.querySelector('#today-sub').textContent), '复习数字后不再带「首」');
   chk(d.querySelectorAll('#today-list .item').length === 8, '今日列表变为 8 首');
 
   chk(!!window.localStorage.getItem('poem_recite_progress_v1'), '进度已写入 localStorage');

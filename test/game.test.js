@@ -20,7 +20,7 @@ loadData(sandbox, [
 ]);
 const ALL = resolve(sandbox, sandbox.POEMS_ALL, 'poems');
 const CLASSIC = resolve(sandbox, sandbox.POEMS_CLASSIC, 'classic');
-chk(ALL.length === 261, '课内语料 261 首（实际 ' + ALL.length + '）');
+chk(ALL.length === 251, '课内语料 251 首（实际 ' + ALL.length + '）');
 
 console.log('\n=== 一、断句：标点切干净、空句丢掉、同篇重复行只留一条 ===');
 {
@@ -105,7 +105,7 @@ console.log('\n=== 二、飞花令：候选从语料现算，命中的字由内�
 console.log('\n=== 三、题库：一篇一条、干扰项三条规矩 ===');
 {
   const bank = Q.buildBank(ALL);
-  chk(bank.length > 0, '课内 261 首建出 ' + bank.length + ' 道题');
+  chk(bank.length > 0, '课内 251 首建出 ' + bank.length + ' 道题');
   chk(bank.every(q => q.stem && q.answer && q.stem !== q.answer),
     '每道题的题干与答案都存在且不相同');
   chk(bank.every(q => q.id.indexOf(q.poemId + '#') === 0), '每道题的 id 是「篇 id # 序号」');
