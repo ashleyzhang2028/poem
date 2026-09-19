@@ -274,6 +274,42 @@
 
       accounts: function () { return post("/admin/accounts", { deviceId: deviceId }); },
 
+      // 用户报告 / 勘误（Issue #243 第四轮）
+      report: function (input) {
+        input = input || {};
+        return post("/report", {
+          kind: input.kind,
+          poemId: input.poemId,
+          poemTitle: input.poemTitle,
+          book: input.book,
+          quote: input.quote,
+          context: input.context,
+          note: input.note,
+          suggestion: input.suggestion,
+          ua: input.ua,
+          deviceId: deviceId
+        });
+      },
+
+      myReports: function (input) {
+        input = input || {};
+        // GET 用查询串，**不发请求体**：`send()` 只在 POST/PATCH 那两条路上
+        // 挂 Content-Type 与 body，而中间那些代理对「GET 带请求体」的处理
+        // 各家不一样（有的直接丢掉）—— 丢掉的下场是「limit 传了等于没传」。
+        var qs = input.limit ? "?limit=" + encodeURIComponent(String(input.limit)) : "";
+        return call("/report" + qs, "GET");
+      },
+
+      adminReports: function (input) {
+        input = input || {};
+        return post("/admin/reports", { status: input.status, poemId: input.poemId, limit: input.limit });
+      },
+
+      adminReportPatch: function (input) {
+        input = input || {};
+        return post("/admin/reports", { rid: input.rid, status: input.status, reply: input.reply });
+      },
+
       me: function () { return call("/me", "GET"); },
 
       config: function () { return call("/config", "GET"); },

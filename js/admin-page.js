@@ -39,6 +39,216 @@
     return Ent.isOwner(backing);
   }
 
+  // ---------------------------------------------------------------------------
+  // 注音勘误（Issue #243 · 《滕王阁序》「长」）
+  // ---------------------------------------------------------------------------
+  // 这一块**不上服务端**：勘误表就是本机 `poem_pinyin_fix_v1` 那一份
+  // （ProgressStore 带 `pinyin_fix:v1` 一行上云，走的是与自选集合同一条路）。
+  // 后台在这里只做三件事：找篇、钉一处、删一处。
+  function fix() { return window.PinyinFix || null; }
+
+  // 全站篇目（课内 12 册 + 各集子）——给「搜一篇」用。
+  // 集子那几部的数据在本页没加载（首屏体积），所以这里列的是**课内**；
+  // 集子里的篇目可以用「篇目 id 直接填」那条路（下面 pickHit 会说明）。
+  function allPoems() {
+    var out = [];
+    try {
+      var base = (window.POEMS_ALL || []).slice();
+      base.forEach(function (p) { if (p && p.id && p.text) out.push(p); });
+    } catch (e) {  }
+    return out;
+  }
+
+  function widOfPoem(p) {
+    var id = (p && p.id) || "";
+    if (!id) return "";
+    if (window.WorksIndex && typeof window.WorksIndex.widOf === "function") {
+      try { return window.WorksIndex.widOf(id) || id; } catch (e) {  }
+    }
+    return id;
+  }
+
+  function searchPoems(kw) {
+    var q = String(kw || "").trim();
+    if (!q) return [];
+    var out = [];
+    allPoems().forEach(function (p) {
+      var hay = (p.title || "") + (p.author || "") + (p.text || "");
+      if (hay.indexOf(q) < 0) return;
+      if (out.length < 8) out.push(p);
+    });
+    return out;
+  }
+
+  function renderHits(list) {
+    var box = $("pf-hits");
+    if (!box) return;
+    if (!list.length) { box.hidden = true; box.innerHTML = ""; return; }
+    box.hidden = false;
+    box.innerHTML = list.map(function (p) {
+      return '<li class="grant-row">' +
+        '<span class="grant-mail">' + esc(p.title || "") + "</span>" +
+        '<span class="grant-when">' + esc(widOfPoem(p)) + "</span>" +
+        '<button class="grant-del" type="button" data-pick="' + esc(p.id) + '">选这一篇</button>' +
+        "</li>";
+    }).join("");
+  }
+
+  function onPinyinSearch() {
+    var kw = (($("pf-wid") || {}).value || "").trim();
+    renderHits(searchPoems(kw));
+  }
+
+  function pickedPoem() {
+    var id = onPinyinSearch._id || "";
+    if (!id) return null;
+    var hit = null;
+    allPoems().forEach(function (p) { if (p.id === id) hit = p; });
+    return hit;
+  }
+
+  function onPinyinPick(e) {
+    var b = e.target.closest ? e.target.closest("button[data-pick]") : null;
+    if (!b) return;
+    var id = b.getAttribute("data-pick");
+    var p = null;
+    allPoems().forEach(function (x) { if (x.id === id) p = x; });
+    if (!p) return;
+    onPinyinSearch._id = id;
+    var w = $("pf-wid");
+    if (w) w.value = p.title || "";
+    renderHits([]);
+    fillLine(p);
+  }
+
+  // 「从篇目里挑一句」：把正文按行摊开，点哪一行就填进「原文里的一句」，
+  // 并自动数出「这一句里第几次出现」那一格（用户在正文里点中哪个字都行 ——
+  // 这里先按第一个字算，用户可以自己改那个数）。
+  function fillLine(p) {
+    var box = $("pf-hits");
+    if (!box || !p || !p.text) return;
+    var lines = String(p.text).split("\n").filter(function (x) { return x.trim(); });
+    box.hidden = false;
+    box.innerHTML = lines.map(function (line) {
+      return '<li class="grant-row">' +
+        '<span class="grant-mail">' + esc(line) + "</span>" +
+        '<button class="grant-del" type="button" data-line="' + esc(line.trim()) + '">用这一句</button>' +
+        "</li>";
+    }).join("");
+  }
+
+  function onPinyinLine(e) {
+    var b = e.target.closest ? e.target.closest("button[data-line]") : null;
+    if (!b) return;
+    var line = b.getAttribute("data-line");
+    var box = $("pf-line");
+    if (box) box.value = line;
+    renderHits([]);
+    previewLine();
+  }
+
+  // 这一句里每个字读什么（用当前引擎 + 当前勘误算一遍）——
+  // 钉之前先让人看清「现在读成什么」，钉之后再看一眼「有没有改对」。
+  function previewLine() {
+    var el = $("pf-picked");
+    if (!el) return;
+    var line = (($("pf-line") || {}).value || "").trim();
+    var P = window.Pinyin;
+    var p = pickedPoem();
+    if (!line || !P) { el.hidden = true; el.textContent = ""; return; }
+    var wid = p ? widOfPoem(p) : "";
+    var html = P.annotatePoem ? P.annotatePoem(wid, line, "all") : P.annotateHtml(line, "all");
+    // 只留「字(读音)」这一层，别把 ruby 标签塞进提示里。
+    var text = html.replace(/<ruby>([^<]*)<rt>([^<]*)<\/rt><\/ruby>/g, "$1($2)")
+                   .replace(/<br>/g, " ");
+    el.innerHTML = "这一句现在这样读：" + esc(text);
+    el.hidden = false;
+  }
+
+  function onPinyinAdd() {
+    var F = fix();
+    if (!F) { msg("msg-pf", "页面脚本版本对不上（刷新一次即可）：这一块现在改不了。", "warn"); return; }
+    var p = pickedPoem();
+    var wid = p ? widOfPoem(p) : "";
+    var line = (($("pf-line") || {}).value || "").trim();
+    var py = (($("pf-py") || {}).value || "").trim();
+    var at = Number((($("pf-at") || {}).value || "1"));
+    if (!wid) { msg("msg-pf", "先在上面搜一篇（点「选这一篇」）。", "warn"); return; }
+    if (!line) { msg("msg-pf", "要填原文里的一句（点「从篇目里挑一句」也行）。", "warn"); return; }
+    if (!py) { msg("msg-pf", "要填应读作什么（带声调，如 cháng）。", "warn"); return; }
+    if (!isFinite(at) || at < 1) at = 1;
+
+    // 那一个字是什么：从这一句里数出第 at 个字（复核用，也让别处不必再翻正文）。
+    var text = line;
+    var ch = "";
+    if (p && p.text) {
+      var hit = String(p.text).split("\n").filter(function (x) { return x.trim() === line; })[0];
+      if (hit) text = hit;
+    }
+    var chs = Array.from(text.trim());
+    ch = chs[Math.min(at - 1, chs.length - 1)] || "";
+
+    var r = F.add({ wid: wid, line: line, at: at, ch: ch, py: py });
+    if (!r.ok) {
+      msg("msg-pf", r.reason === "full" ? ("勘误表满了（上限 " + F.MAX + " 条）。先删几条再钉。") : "这一条填得不全，没存。", "warn");
+      return;
+    }
+    msg("msg-pf", (r.replaced ? "已改写" : "已钉住") + "：" + (p ? p.title : wid) +
+      "「" + line + "」第 " + at + " 个「" + ch + "」读 " + py +
+      "。立刻生效 —— 打开那篇（或刷新）就能看到。", "ok");
+    renderFixList();
+    previewLine();
+  }
+
+  function renderFixList() {
+    var box = $("pf-list");
+    var F = fix();
+    if (!box || !F) return;
+    var list = F.list();
+    var empty = $("pf-empty");
+    if (empty) empty.hidden = list.length > 0;
+    var note = $("pf-note");
+    if (note) {
+      note.hidden = false;
+      note.textContent = list.length
+        ? ("共 " + list.length + " 条（上限 " + F.MAX + "）。这一份随账号同步 —— 换台设备也照它读。")
+        : "";
+    }
+    box.innerHTML = list.map(function (f) {
+      return '<li class="grant-row">' +
+        '<span class="grant-mail">' + esc(f.wid) + "</span>" +
+        '<span class="grant-when">' + esc(f.line) + " · 第" + esc(String(f.at)) +
+          "个「" + esc(f.ch || "?") + "」 → " + esc(f.py) + "</span>" +
+        '<button class="grant-del" type="button" data-unfix="' + esc(F.keyOf(f)) + '">删除</button>' +
+        "</li>";
+    }).join("");
+  }
+
+  function onFixListClick(e) {
+    var b = e.target.closest ? e.target.closest("button[data-unfix]") : null;
+    if (!b) return;
+    var F = fix();
+    if (!F) return;
+    var r = F.remove(b.getAttribute("data-unfix"));
+    msg("msg-pf", r.ok ? "已删除这一条（那一处恢复成机器读音）。" : "这一条已经不在了。", r.ok ? "ok" : "warn");
+    renderFixList();
+    previewLine();
+  }
+
+  function onFixExport() {
+    var F = fix();
+    if (!F) return;
+    var text = JSON.stringify({ v: 1, fixes: F.list() }, null, 2);
+    var done = function () { msg("msg-pf", "勘误表已复制 —— 它可以贴进 PR、也可以发给别人导入。", "ok"); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, function () {
+        msg("msg-pf", "复制失败，请手动抄下：" + text, "warn");
+      });
+      return;
+    }
+    msg("msg-pf", "这个浏览器不给复制，请手动抄下：" + text, "warn");
+  }
+
   function renderTierPick() {
     var box = $("tier-pick");
     if (!box) return;
@@ -264,6 +474,172 @@
     })["catch"](function () { accountsNote("连不上服务端，这一轮没问到。", true); });
   }
 
+  // ---- 用户报告台账（Issue #243 第四轮）----------------------------------
+  //
+  // 这一块与「发层级」那一族是**两条平行的线**：那条线改的是权益，
+  // 这条线只读台账 + 改状态。所以它有自己的一小套 load / render，
+  // 不与 `loadAccounts` 合并 —— 合并的下场是「刷新账号名录顺手把
+  // 报告也重拉一遍」，而报告的读比账号名录重得多。
+  //
+  // 三条口径：
+  //   · **默认只看「还没处理的」**（new）。全站翻到第 500 条不是管理员的日常，
+  //     「今天新来的有几条」才是。所以下拉框默认落在「已收到（还没看）」。
+  //   · **状态是按钮，不是下拉**。一屏里逐条改状态时，下拉要两次点击 + 一次滚动；
+  //     按钮一次。而这里的状态只有五个、且是终点（不会来回切）。
+  //   · **改完就地更新那一行**，不重拉整张表 —— 重拉的下场是「滚到第 30 条
+  //     改了一下，页面跳回顶部」。
+  var currentReports = [];
+
+  function reportsMsg(text, level) {
+    msg("msg-reports", text, level);
+  }
+
+  function reportsNote(text, warn) {
+    var el = $("reports-note");
+    if (!el) return;
+    el.textContent = text || "";
+    el.className = "account-hint" + (warn ? " warn" : "");
+    el.hidden = !text;
+  }
+
+  function loadReports() {
+    var M = acct();
+    var box = $("reports-list");
+    if (!box) return;
+    if (!M || typeof M.adminReports !== "function") {
+      reportsNote("页面脚本版本对不上（刷新一次即可）：这一块现在看不了。", true);
+      return;
+    }
+    var sel = $("report-filter");
+    var status = sel ? sel.value : "all";
+    reportsMsg("正在读取……", "");
+
+    Promise.resolve(M.adminReports({ status: status, backing: backing, A: window.AuthCore, E: Ent }))
+      .then(function (r) {
+        if (r && r.ok) {
+          currentReports = r.reports || [];
+          renderReports(currentReports);
+          renderReportCounts(r.counts || {});
+          reportsMsg("", "");
+          reportsNote("共 " + currentReports.length + " 条（这一屏）。上面那排小字是全站各状态的总数。", false);
+          return;
+        }
+        if (r && r.reason === "guest") { reportsMsg("登录状态已过期，请重新登录后再来。", "warn"); return; }
+        if (r && r.reason === "not-configured") { reportsNote("本站还没开放云端账号（服务端缺密钥）：报告这一块暂时问不到。", true); return; }
+        if (r && r.reason === "no-channel") { reportsNote("页面脚本版本对不上（刷新一次即可）。", true); return; }
+        if (r && r.code === "E_FORBIDDEN") { reportsNote("这一条只对管理员开放（服务端的角色闸）。", true); return; }
+        reportsMsg("连不上服务端，这一轮没问到。", "warn");
+      })["catch"](function () { reportsMsg("连不上服务端，这一轮没问到。", "warn"); });
+  }
+
+  function renderReportCounts(counts) {
+    var host = $("report-counts");
+    if (!host) return;
+    var R = window.Report;
+    var order = ["all"].concat((R && R.STATUS_LABEL) ? Object.keys(R.STATUS_LABEL) : []);
+    var parts = [];
+    order.forEach(function (k) {
+      var n = counts ? counts[k] : undefined;
+      if (typeof n !== "number") return;
+      var label = k === "all" ? "全部" : (R ? R.labelOfStatus(k) : k);
+      parts.push("<span>" + esc(label) + " " + n + "</span>");
+    });
+    host.innerHTML = parts.join("");
+  }
+
+  function renderReports(list) {
+    var box = $("reports-list");
+    if (!box) return;
+    var empty = $("reports-empty");
+    if (empty) empty.hidden = (list || []).length > 0;
+    var R = window.Report;
+    box.innerHTML = (list || []).map(function (r) {
+      var st = String(r.status || "new");
+      var label = R ? R.labelOfStatus(st) : st;
+      var kindLabel = R ? R.labelOfKind(r.kind) : r.kind;
+      return '<li class="report-row admin-report-row report-st-' + esc(st) + '" data-rid="' + esc(r.rid) + '">' +
+        '<div class="report-row-head">' +
+        '<span class="report-kind">' + esc(kindLabel) + "</span>" +
+        '<span class="report-title">' + esc(r.poemTitle || "（未指定篇目）") + "</span>" +
+        '<span class="report-status">' + esc(label) + "</span>" +
+        "</div>" +
+        '<div class="admin-report-who">' + esc(r.emailMask || "（无邮箱）") +
+        (r.nickname ? " · " + esc(r.nickname) : "") +
+        (r.book ? " · " + esc(r.book) : "") +
+        (r.poemId ? " · " + esc(r.poemId) : "") + "</div>" +
+        (r.quote ? '<div class="report-row-quote">「' + esc(r.quote) + "」</div>" : "") +
+        (r.context ? '<div class="report-row-note">' + esc(r.context) + "</div>" : "") +
+        (r.note ? '<div class="report-row-note">' + esc(r.note) + "</div>" : "") +
+        (r.suggestion ? '<div class="report-row-reply">建议：' + esc(r.suggestion) + "</div>" : "") +
+        (r.reply ? '<div class="report-row-reply">回给用户：' + esc(r.reply) + "</div>" : "") +
+        '<div class="report-row-time">' + esc(reportTime(r.createdAt)) + "</div>" +
+        '<div class="admin-report-acts">' +
+        reportAct(r.rid, "read", "已看过", R) +
+        reportAct(r.rid, "accepted", "确认", R) +
+        reportAct(r.rid, "fixed", "标为已修复", R) +
+        reportAct(r.rid, "rejected", "不采纳", R) +
+        "</div>" +
+        "</li>";
+    }).join("");
+  }
+
+  function reportAct(rid, status, label, R) {
+    return '<button type="button" data-report-act="' + esc(status) + '" data-rid="' + esc(rid) + '">' +
+      esc(label) + "</button>";
+  }
+
+  function reportTime(ts) {
+    var t = Number(ts) || 0;
+    if (!t) return "";
+    try {
+      var d = new Date(t);
+      var p = function (n) { return n < 10 ? "0" + n : "" + n; };
+      return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate()) +
+        " " + p(d.getHours()) + ":" + p(d.getMinutes());
+    } catch (e) { return ""; }
+  }
+
+  function onReportsClick(e) {
+    var b = e.target.closest ? e.target.closest("button[data-report-act]") : null;
+    if (!b) return;
+    var rid = b.getAttribute("data-rid");
+    var status = b.getAttribute("data-report-act");
+    var M = acct();
+    if (!M || typeof M.adminReportPatch !== "function") {
+      reportsMsg("页面脚本版本对不上（刷新一次即可）", "warn");
+      return;
+    }
+
+    // 「不采纳」要问一句 —— 那是对用户说「你报的是错的」，
+    // 而用户看得到这个状态（`/settings/reports/` 那一页）。
+    if (status === "rejected" && !window.confirm("标成「未采纳」？用户那一页会显示未采纳。")) return;
+
+    b.disabled = true;
+    reportsMsg("正在改……", "");
+    Promise.resolve(M.adminReportPatch({ rid: rid, status: status, backing: backing, A: window.AuthCore, E: Ent }))
+      .then(function (r) {
+        b.disabled = false;
+        if (r && r.ok) {
+          // 就地更新那一行（不重拉整张表 —— 重拉会把滚动位置打回顶部）。
+          var li = document.querySelector('.admin-report-row[data-rid="' + rid + '"]');
+          var R = window.Report;
+          if (li) {
+            li.className = "report-row admin-report-row report-st-" + status;
+            var s = li.querySelector(".report-status");
+            if (s) s.textContent = R ? R.labelOfStatus(status) : status;
+          }
+          reportsMsg("已改成「" + (window.Report ? window.Report.labelOfStatus(status) : status) + "」", "ok");
+          return;
+        }
+        if (r && r.code === "E_FORBIDDEN") { reportsMsg("服务端说这一条只对管理员开放。", "warn"); return; }
+        if (r && r.code === "E_NO_REPORT") { reportsMsg("这一条已经不在了（可能是另一台服务器发的）。", "warn"); return; }
+        reportsMsg("没改成，稍后再试。", "warn");
+      })["catch"](function () {
+        b.disabled = false;
+        reportsMsg("没改成，稍后再试。", "warn");
+      });
+  }
+
   function renderList() {
     var box = $("grant-list");
     if (!box) return;
@@ -389,6 +765,8 @@
     show($("grant-card"));
     show($("server-card"));
     show($("accounts-card"));
+    show($("reports-card"));
+    show($("pinyin-card"));
     show($("list-card"));
     show($("sim-card"));
     show($("danger-card"));
@@ -403,6 +781,28 @@
     $("server-list").addEventListener("click", onServerListClick);
     $("btn-server-reload").addEventListener("click", loadServerGrants);
     $("btn-accounts-reload").addEventListener("click", loadAccounts);
+    if ($("btn-reports-reload")) $("btn-reports-reload").addEventListener("click", loadReports);
+    if ($("report-filter")) $("report-filter").addEventListener("change", loadReports);
+    if ($("reports-list")) $("reports-list").addEventListener("click", onReportsClick);
+    loadReports();
+
+    var pfWid = $("pf-wid"), pfLine = $("pf-line");
+    if (pfWid) pfWid.addEventListener("input", onPinyinSearch);
+    if (pfLine) pfLine.addEventListener("input", previewLine);
+    $("pf-hits").addEventListener("click", function (e) {
+      if (e.target.closest && e.target.closest("button[data-line]")) onPinyinLine(e);
+      else onPinyinPick(e);
+    });
+    $("btn-pf-add").addEventListener("click", onPinyinAdd);
+    $("btn-pf-fill").addEventListener("click", function () {
+      var p = pickedPoem();
+      if (!p) { msg("msg-pf", "先在上面搜一篇、点「选这一篇」。", "warn"); return; }
+      fillLine(p);
+    });
+    $("pf-list").addEventListener("click", onFixListClick);
+    $("btn-pf-export").addEventListener("click", onFixExport);
+    $("btn-pf-refresh").addEventListener("click", renderFixList);
+    renderFixList();
     $("grant-list").addEventListener("click", onListClick);
     $("btn-export").addEventListener("click", onExport);
     $("btn-import-open").addEventListener("click", onImportOpen);
@@ -430,6 +830,12 @@
   window.AdminPage = {
     isOwner: isOwner, esc: esc,
 
-    readForm: readForm, grantFailed: grantFailed
+    readForm: readForm, grantFailed: grantFailed,
+
+    renderReports: renderReports, loadReports: loadReports, reportTime: reportTime,
+
+    // 注音勘误那一块（测试直接调这几个，不必去点 DOM）。
+    searchPoems: searchPoems,
+    widOfPoem: widOfPoem
   };
 })();

@@ -16,7 +16,7 @@ vm.runInContext(fs.readFileSync(path + 'data/poems-classic.js', 'utf8'), sandbox
 var CLS = sandbox.POEMS_CLASSIC.map(function (raw) {
   return sandbox.masterTextOf ? sandbox.masterTextOf(raw, 'classic') : raw;
 });
-chk(Array.isArray(CLS) && CLS.length === 100, '小古文共 100 篇（实际 ' + (CLS ? CLS.length : 'undefined') + '）');
+chk(Array.isArray(CLS) && CLS.length === 102, '小古文共 102 篇（100 + 千字文 / 百家姓；实际 ' + (CLS ? CLS.length : 'undefined') + '）');
 const ids = new Set();
 CLS.forEach(p => {
   if (ids.has(p.id)) throw new Error('重复 id ' + p.id);
@@ -27,13 +27,13 @@ chk(CLS.every(p => p.title && p.source && p.text && p.translation), '每篇都�
 
 const CLS_SRC_OK = ['public-domain', 'school'];
 chk(CLS.every(p => CLS_SRC_OK.indexOf(p.translationSource) >= 0),
-  '100 篇小古文都标了译文来源且取值在允许范围（异常 ' +
+  '102 篇小古文都标了译文来源且取值在允许范围（异常 ' +
   CLS.filter(p => CLS_SRC_OK.indexOf(p.translationSource) < 0).length + ' 篇）');
-chk(CLS.filter(p => p.translationSource === 'public-domain').length === 99,
-  '其中 99 篇标 public-domain（与课内同篇的 1 篇取自课本口径，标 school）');
+chk(CLS.filter(p => p.translationSource === 'public-domain').length === 101,
+  '其中 101 篇标 public-domain（与课内同篇的 1 篇取自课本口径，标 school）');
 chk(CLS.some(p => p.text.length > 100), '含长篇（>100 字）古文，验证长文场景');
 
-const need = ['人之初', '弟子规（节选）', '司马光', '守株待兔', '精卫填海', '王戎不取道旁李', '囊萤夜读',
+const need = ['三字经', '弟子规', '千字文', '百家姓', '司马光', '守株待兔', '精卫填海', '王戎不取道旁李', '囊萤夜读',
   '铁杵成针', '少年中国说（节选）', '古人谈读书', '自相矛盾', '杨氏之子', '伯牙鼓琴', '书戴嵩画牛', '学弈',
   '两小儿辩日', '盘古开天地', '女娲造人', '夸父逐日', '后羿射日', '曹冲称象', '掩耳盗铃', '画蛇添足',
   '刻舟求剑', '郑人买履', '叶公好龙', '揠苗助长', '滥竽充数', '买椟还珠'];
@@ -44,7 +44,7 @@ chk(missing.length === 0, '需求清单篇目齐备（缺 ' + missing.join('/') 
 chk(sandbox.POEMS_ALL === undefined, '小古文不写入 POEMS_ALL，不影响每日计划');
 const groups = sandbox.getClassicGroups();
 chk(groups.length >= 6, '按主题分组聚合出 ' + groups.length + ' 组');
-chk(groups.reduce((n, g) => n + g.items.length, 0) === 100, '分组内篇目合计 100');
+chk(groups.reduce((n, g) => n + g.items.length, 0) === 102, '分组内篇目合计 102');
 
 const html = fs.readFileSync(path + 'classic/index.html', 'utf8');
 const dom = new JSDOM(html, { runScripts: 'dangerously', url: 'https://local.test/classic/', base: 'https://local.test/classic/' });
@@ -93,7 +93,7 @@ setTimeout(() => {
     chk(dups.length === 0, f + ' 无重复 id（重复：' + dups.join(', ') + '）');
   });
 
-  chk(d.querySelectorAll('#gw-list .item').length === 100, '列表渲染 100 篇（实际 ' + d.querySelectorAll('#gw-list .item').length + '）');
+  chk(d.querySelectorAll('#gw-list .item').length === 102, '列表渲染 102 篇（实际 ' + d.querySelectorAll('#gw-list .item').length + '）');
 
   const clsCss = fs.readFileSync(path + 'css/classic.css', 'utf8');
   chk(d.querySelector('.list-head') === null, '内容区不再有单独的进度行（.list-head 已删除）');
@@ -329,8 +329,9 @@ setTimeout(() => {
 
   const mh = [...d.querySelectorAll('#gw-list .group-head')].find(h => h.querySelector('.group-name').textContent === '蒙学经典');
   chk(!!mh, '有「蒙学经典」分类');
-  chk(/4 篇/.test(mh.querySelector('.group-count').textContent),
-    '「蒙学经典」显示 4 篇（实际 ' + mh.querySelector('.group-count').textContent + '）');
+  chk(/6 篇/.test(mh.querySelector('.group-count').textContent),
+    '「蒙学经典」显示 6 篇（三字经 / 弟子规 / 菊 / 莲 / 千字文 / 百家姓；实际 ' +
+    mh.querySelector('.group-count').textContent + '）');
 
   chk(mh.children.length === 3 && mh.lastElementChild.classList.contains('gw-play-sm'),
     '卡头一行三样：组名 / 篇数 / 随机连读圆键（圆键收在行尾）');
@@ -340,11 +341,11 @@ setTimeout(() => {
     if (node.classList.contains('item')) allGroupItems.push(node);
     node = node.nextElementSibling;
   }
-  chk(allGroupItems.length === 4, '「蒙学经典」下面真的列出 4 篇（实际 ' + allGroupItems.length + '）');
+  chk(allGroupItems.length === 6, '「蒙学经典」下面真的列出 6 篇（实际 ' + allGroupItems.length + '）');
 
   chk(allGroupItems.map(el => el.querySelector('.item-title').textContent.replace('已读', '').trim()
-    .replace(/^\d+/, '')).join('/') === '人之初/弟子规（节选）/菊/莲',
-    '「蒙学经典」四篇连续排列（' + allGroupItems.map(el => el.querySelector('.item-title').textContent).join('/') + '）');
+    .replace(/^\d+/, '')).join('/') === '三字经/弟子规/菊/莲/千字文/百家姓',
+    '「蒙学经典」六篇连续排列（' + allGroupItems.map(el => el.querySelector('.item-title').textContent).join('/') + '）');
 
   const cards = [...d.querySelectorAll('#gw-list .group-card')];
   chk(cards.length === 7, '共 7 张主题卡片（实际 ' + cards.length + '）');
@@ -355,15 +356,15 @@ setTimeout(() => {
   chk(cards.every(c => c.querySelectorAll(':scope > .item').length > 0),
     '每张卡片卡身至少列出一篇（同类文章真的合进了一张卡）');
   const cardItemTotal = cards.reduce((n, c) => n + c.querySelectorAll(':scope > .item').length, 0);
-  chk(cardItemTotal === 100, '7 张卡片合计仍是 100 篇（实际 ' + cardItemTotal + '）');
+  chk(cardItemTotal === 102, '7 张卡片合计仍是 102 篇（实际 ' + cardItemTotal + '）');
 
   const cardNames = cards.map(c => c.querySelector('.group-head .group-name').textContent);
   chk(new Set(cardNames).size === cardNames.length, '同一主题只有一张卡片（不同卡片主题名不重复）');
 
   const mengCard = cards.find(c => c.dataset.group === '蒙学经典');
   chk(!!mengCard, '「蒙学经典」自成一张卡片');
-  chk(mengCard.querySelectorAll(':scope > .item').length === 4,
-    '「蒙学经典」4 篇并列在同一张卡里（实际 ' +
+  chk(mengCard.querySelectorAll(':scope > .item').length === 6,
+    '「蒙学经典」6 篇并列在同一张卡里（实际 ' +
     (mengCard ? mengCard.querySelectorAll(':scope > .item').length : 0) + '）');
 
   const cardCss = /(^|\n)\.group-card \{([\s\S]*?)\}/.exec(fs.readFileSync(path + 'css/classic.css', 'utf8'));
@@ -487,7 +488,7 @@ setTimeout(() => {
     '左右差恰好 4px（左 ' + itemPadL + ' / 右 ' + itemPadR + '）：要加的就是这 4px');
 
   const numEls = [...d.querySelectorAll('#gw-list .item-num')];
-  chk(numEls.length === 100, '每一条都有序号圆（' + numEls.length + ' 个）');
+  chk(numEls.length === 102, '每一条都有序号圆（' + numEls.length + ' 个）');
   chk(d.querySelectorAll('#gw-list .item-index').length === 0, '旧的独占一列的 .item-index 已全部移除');
   chk(numEls.every(el => el.classList.contains('item-title') === false &&
     el.parentElement.classList.contains('item-title')),
@@ -508,8 +509,8 @@ setTimeout(() => {
   chk(!/border-left:\s*4px/.test(itemRules) && !/border-left-color/.test(itemRules),
     '卡内条目规则体里不再出现 4px 左侧色条（注释里提到不算）');
 
-  chk(d.querySelectorAll('#gw-list .item-read').length === 100, '每个列表项都有播放按钮');
-  chk(d.querySelectorAll('#gw-list .item .play-glyph').length === 100, '播放键用的是 ▶ 播放图标');
+  chk(d.querySelectorAll('#gw-list .item-read').length === 102, '每个列表项都有播放按钮');
+  chk(d.querySelectorAll('#gw-list .item .play-glyph').length === 102, '播放键用的是 ▶ 播放图标');
 
   const filterSeg = d.querySelector('#gw-filter-seg');
   chk(!!filterSeg && filterSeg.classList.contains('seg'), '「全部 / 未读」是组合按钮（.seg 分段控件）');
@@ -681,7 +682,7 @@ setTimeout(() => {
   chk(d.querySelectorAll('#gw-list .item').length === 1, '搜索「三字经」命中 1 篇（实际 ' + d.querySelectorAll('#gw-list .item').length + '）');
   search.value = '';
   search.dispatchEvent(new window.Event('input', { bubbles: true }));
-  chk(d.querySelectorAll('#gw-list .item').length === 100, '清空搜索恢复 100 篇');
+  chk(d.querySelectorAll('#gw-list .item').length === 102, '清空搜索恢复 102 篇');
 
   const longItem = [...d.querySelectorAll('#gw-list .item')].find(el => el.textContent.includes('盘古开天地'));
   longItem.dispatchEvent(new window.Event('click', { bubbles: true }));
@@ -721,18 +722,29 @@ setTimeout(() => {
   chk(d.querySelector('#rd-text').style.fontSize === '15px',
     '再点 A－ 可降一级到 15px（实际 ' + d.querySelector('#rd-text').style.fontSize + '）');
 
+  for (const px of ['13px', '11px', '9px']) {
+    d.querySelector('#rd-font-down').dispatchEvent(new window.Event('click', { bubbles: true }));
+    chk(d.querySelector('#rd-text').style.fontSize === px,
+      'A－ 可继续降到 ' + px + '（实际 ' + d.querySelector('#rd-text').style.fontSize + '）');
+  }
+  chk(window.localStorage.getItem('poem_classic_font_v1') === '9', '最细档同样持久化');
   d.querySelector('#rd-font-down').dispatchEvent(new window.Event('click', { bubbles: true }));
-  chk(d.querySelector('#rd-text').style.fontSize === '13px',
-    'A－ 在 15px 之下仍能再降一档到 13px（实际 ' + d.querySelector('#rd-text').style.fontSize + '）');
-  chk(window.localStorage.getItem('poem_classic_font_v1') === '13', '最细档同样持久化');
-  d.querySelector('#rd-font-down').dispatchEvent(new window.Event('click', { bubbles: true }));
-  chk(d.querySelector('#rd-text').style.fontSize === '13px',
-    '到底后继续点 A－ 不再变化，最小字号锁定 13px');
+  chk(d.querySelector('#rd-text').style.fontSize === '9px',
+    '到底后继续点 A－ 不再变化，最小字号锁定 9px（Issue #229）');
 
+  for (let i = 0; i < 8; i++) {
+    d.querySelector('#rd-font-up').dispatchEvent(new window.Event('click', { bubbles: true }));
+  }
+  chk(d.querySelector('#rd-text').style.fontSize === '25px',
+    'A＋ 顶到 25px 就停（实际 ' + d.querySelector('#rd-text').style.fontSize + '）');
   d.querySelector('#rd-font-up').dispatchEvent(new window.Event('click', { bubbles: true }));
-  d.querySelector('#rd-font-up').dispatchEvent(new window.Event('click', { bubbles: true }));
+  chk(d.querySelector('#rd-text').style.fontSize === '25px', '到顶后继续点 A＋ 不再变大');
+
+  for (let i = 0; i < 4; i++) {
+    d.querySelector('#rd-font-down').dispatchEvent(new window.Event('click', { bubbles: true }));
+  }
   chk(d.querySelector('#rd-text').style.fontSize === '17px',
-    'A＋ 回到默认档 17px（实际 ' + d.querySelector('#rd-text').style.fontSize + '）');
+    '从顶档收四档回到默认 17px（实际 ' + d.querySelector('#rd-text').style.fontSize + '）');
 
   d.querySelector('#rd-trans-toggle').dispatchEvent(new window.Event('click', { bubbles: true }));
   chk(d.querySelector('#rd-trans').hidden === false, '点译文图标展开译文');
@@ -763,9 +775,9 @@ setTimeout(() => {
   chk(d.querySelectorAll('#gw-list .item.done').length === 1, '列表中已读条目有已读标记');
 
   d.querySelector('#gw-filter-seg button[data-filter="unread"]').dispatchEvent(new window.Event('click', { bubbles: true }));
-  chk(d.querySelectorAll('#gw-list .item').length === 99, '「未读」筛选剩 99 篇（实际 ' + d.querySelectorAll('#gw-list .item').length + '）');
+  chk(d.querySelectorAll('#gw-list .item').length === 101, '「未读」筛选剩 101 篇（实际 ' + d.querySelectorAll('#gw-list .item').length + '）');
   d.querySelector('#gw-filter-seg button[data-filter="all"]').dispatchEvent(new window.Event('click', { bubbles: true }));
-  chk(d.querySelectorAll('#gw-list .item').length === 100, '切回「全部」恢复 100 篇');
+  chk(d.querySelectorAll('#gw-list .item').length === 102, '切回「全部」恢复 102 篇');
 
   d.querySelector('#gw-list .item').dispatchEvent(new window.Event('click', { bubbles: true }));
   const rdSeg = d.querySelector('#rd-pinyin-seg');
@@ -805,22 +817,25 @@ setTimeout(() => {
     row1.querySelector('#rd-align-seg') && row1.querySelector('#rd-font-seg') && row1.querySelector('#rd-pinyin-seg'),
     '上一行依次是 对齐 / 字号 / 注音 三组按钮');
 
-  chk(row2.children.length === 5 &&
+  chk(row2.children.length === 6 &&
     row2.querySelector('#rd-read-btn') && row2.querySelector('#rd-trans-toggle') &&
-    row2.querySelector('#gw-daily') && row2.querySelector('#gw-done') && row2.querySelector('#gw-recite'),
-    '下一行依次是 正文朗读键 / 译文开关 / 加入今日背诵 / 加入背诵 / 标记已读 五组（实际 ' +
+    row2.querySelector('#gw-daily') && row2.querySelector('#gw-done') &&
+    row2.querySelector('#gw-recite') && row2.querySelector('#gw-report'),
+    '下一行依次是 正文朗读键 / 译文开关 / 加入今日背诵 / 报告错误 / 加入背诵 / 标记已读 六组（实际 ' +
     row2.children.length + '）');
-  // 顺序（Issue #243 用户点名）：「今日背诵」那一颗插在**译文与加入背诵之间**。
+  // 顺序（Issue #243 用户点名）：两颗都在**译文与加入背诵之间** ——
+  // 「今日加背」先插进去（#243 第二轮），「报告错误」插在它与「加入背诵」之间
+  // （#243 第四轮）。两轮都是用户点名的位置，所以这一条断言要看**两颗**都对。
   const iconIds = [...row2.children].map(el => el.id);
-  chk(iconIds.join(',') === 'rd-read-btn,rd-trans-toggle,gw-daily,gw-recite,gw-done',
-    '五颗的先后就是用户点名的位置（实际 ' + iconIds.join(',') + '）');
+  chk(iconIds.join(',') === 'rd-read-btn,rd-trans-toggle,gw-daily,gw-report,gw-recite,gw-done',
+    '六颗的先后就是用户点名的位置（实际 ' + iconIds.join(',') + '）');
   chk(iconIds.indexOf('gw-daily') === iconIds.indexOf('rd-trans-toggle') + 1 &&
-    iconIds.indexOf('gw-daily') === iconIds.indexOf('gw-recite') - 1,
-    '「加入今日背诵」正插在**译文与加入背诵之间**（Issue #243 用户点名的那一格）');
-  chk(row2.querySelectorAll('button > svg, button > span > svg').length >= 5, '图标行的按钮全部是 SVG 图标');
-  chk(row2.querySelectorAll(':scope > button .sr-only').length === 5,
-    '「正文朗读 / 译文开关 / 加入今日背诵 / 标记已读 / 加入背诵」的文案只留给读屏软件（.sr-only）');
-  chk(d.querySelectorAll('.reader-actions .mini-btn, .reader-actions .seg.mini').length === 8,
+    iconIds.indexOf('gw-report') === iconIds.indexOf('gw-recite') - 1,
+    '「加入今日背诵」与「报告错误」都插在**译文与加入背诵之间**（Issue #243 两轮点名的那两格）');
+  chk(row2.querySelectorAll('button > svg, button > span > svg').length >= 6, '图标行的按钮全部是 SVG 图标');
+  chk(row2.querySelectorAll(':scope > button .sr-only').length === 6,
+    '「正文朗读 / 译文开关 / 加入今日背诵 / 报告错误 / 标记已读 / 加入背诵」的文案只留给读屏软件（.sr-only）');
+  chk(d.querySelectorAll('.reader-actions .mini-btn, .reader-actions .seg.mini').length === 9,
     '工具条按钮共用同一套样式类（实际 ' +
     d.querySelectorAll('.reader-actions .mini-btn, .reader-actions .seg.mini').length + '）');
   const actionsCss = fs.readFileSync(path + 'css/classic.css', 'utf8');

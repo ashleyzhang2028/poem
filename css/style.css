@@ -2220,7 +2220,7 @@ html, body {
 }
 
 .today-read svg { display: block; width: var(--today-btn-inner, 17px); height: var(--today-btn-inner, 17px); margin: auto; }
-/* ---- 今日背诵页顶上的「我要加背」（Issue #243；Issue #229 收回 hero 那套）------
+/* ---- 今日背诵页顶上的「今日加背」（Issue #243；Issue #229 收回 hero 那套）------
    与搜索页那一枚**同一套**：.toolbar / .search-wrap / .search-input / .suggest
    全部复用（外观逐项一致是用户点名要的）。差别只有四处：
 
@@ -2543,9 +2543,9 @@ html, body {
   body[data-nav="home"] .today-bar,
   body[data-nav="home"] .all-section { margin-bottom: 0; }
 
-  /* 左列两行之间（今日卡片 → 我要加背 → 今日列表）与 .card 同一个块距 26px ——
+  /* 左列两行之间（今日卡片 → 今日加背 → 今日列表）与 .card 同一个块距 26px ——
      窄屏是 14px，宽屏卡片自己的 margin-bottom 变成 26px，这条跟着走。
-     「今日卡片」到「我要加背」那条缝由 .card 的 margin-bottom 出，
+     「今日卡片」到「今日加背」那条缝由 .card 的 margin-bottom 出，
      所以这里只补下面那一条。 */
   body[data-nav="home"] .today-search { margin-bottom: 26px; }
 
@@ -2912,3 +2912,273 @@ html, body {
   padding: 0 3px;
   word-break: break-all;
 }
+
+/* ==========================================================================
+   报告错误 / 勘误（Issue #243 第四轮）
+   ==========================================================================
+   三件东西的样式，都在这一节：
+     1. 详情页工具栏那一颗小旗（`.mini-btn.report-btn`）—— 与朗读 / 译文同一排
+     2. 正文选中之后那个「报这一段」气泡（`.report-bubble`）
+     3. 弹层里的表单（`.report-modal`）
+     4. 设置页「我的报告」那一列（`.report-list` / `.report-row`）
+     5. 管理端那一张台账（`.admin-report-*`，与 .report-row 同源）
+
+   一条口径：**旗子不抢语义色**。全站只有三个语义色（绿 = 已掌握 / 加入、
+   蓝 = 加入背诵、红 = 危险），报错三者都不占 —— 它是中性动作，
+   走 `--ink-3`（与副标题同一档）。抢了红的下场是「小朋友以为点一下会删东西」。
+   ========================================================================== */
+
+/* --- 1. 详情页那一颗小旗 ------------------------------------------------- */
+.mini-btn.report-btn { color: var(--ink-3); }
+.mini-btn.report-btn:hover { color: var(--green); }
+/* 它在那一排里是**唯一没有状态**的一颗：报一次不改变任何东西。
+   所以不写 [data-on] 相关的规则（写了就会有人去设 data-on）。 */
+
+/* --- 2. 选中之后的气泡 --------------------------------------------------- */
+.report-bubble {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  top: calc(56px + var(--safe-top));
+  z-index: 90;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--green);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  box-shadow: 0 6px 18px rgba(35, 75, 66, .16);
+  cursor: pointer;
+
+  /* 覆盖 `[hidden]` 的默认 display:none 会让它永远显示 —— 所以这一条必须有 */
+}
+.report-bubble[hidden] { display: none; }
+.report-bubble svg { width: 15px; height: 15px; display: block; }
+.report-bubble:active { background: var(--bg-soft); }
+
+/* --- 3. 弹层 ------------------------------------------------------------- */
+.report-modal .modal-box { max-width: 520px; }
+
+.report-sub {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: var(--ink-3);
+  text-align: center;
+  word-break: break-word;
+}
+
+.report-kinds {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 14px;
+}
+.report-kinds button {
+  padding: 7px 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--ink-2);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .16s, border-color .16s, color .16s;
+}
+.report-kinds button.active {
+  background: var(--green);
+  border-color: var(--green-dark);
+  color: #fdfaf2;
+}
+
+.report-quote {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin: 0 0 14px;
+  padding: 9px 12px;
+  border: 1px solid var(--line-2);
+  border-left: 3px solid var(--gold);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+}
+.report-quote[hidden] { display: none; }
+.report-quote-label {
+  flex: none;
+  font-size: 11.5px;
+  color: var(--ink-3);
+  padding-top: 2px;
+}
+.report-quote blockquote {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--ink);
+  word-break: break-word;
+}
+
+.report-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+  min-height: 72px;
+  font-size: 14px;
+  line-height: 1.65;
+
+  /* 输入框里的字体跟随正文字号会很怪 —— 这里固定 14px，与其它弹层输入框一致 */
+}
+
+.report-actions { margin-top: 4px; }
+
+.report-foot {
+  margin: 10px 0 0;
+  text-align: center;
+  min-height: 18px;
+}
+/* 「去登录」那条路：**不给下划线** —— 全站口径是「链接靠颜色认，不靠下划线」
+   （ui-consistency.test.js 有一条守着「样式表里一条 underline 都没有」）。
+   它是这一块里唯一可点的东西，所以加一条 1px 底边把它与说明文字分开。 */
+.report-login-link {
+  display: inline-block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--green);
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 1px;
+}
+.report-login-link:hover { border-bottom-color: var(--green); }
+
+/* --- 4. 设置页「我的报告」------------------------------------------------ */
+.report-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.report-row {
+  padding: 11px 2px;
+  border-bottom: 1px solid var(--line-2);
+}
+.report-row:last-child { border-bottom: 0; }
+
+.report-row-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.report-kind {
+  flex: none;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--green);
+  background: var(--bg-soft);
+  border-radius: 6px;
+  padding: 2px 7px;
+}
+.report-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1 1 auto;
+}
+.report-status {
+  flex: none;
+  font-size: 11.5px;
+  color: var(--ink-3);
+}
+.report-st-fixed .report-status { color: var(--green); font-weight: 600; }
+.report-st-rejected .report-status { color: var(--ink-3); }
+.report-st-accepted .report-status { color: var(--blue, #3f6f9c); font-weight: 600; }
+
+.report-row-quote {
+  margin: 5px 0 0;
+  font-size: 13px;
+  color: var(--ink-2);
+  border-left: 2px solid var(--line);
+  padding-left: 8px;
+  word-break: break-word;
+}
+.report-row-note {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--ink-2);
+  word-break: break-word;
+}
+.report-row-reply {
+  margin: 5px 0 0;
+  font-size: 12.5px;
+  color: var(--green);
+  background: var(--bg-soft);
+  border-radius: 8px;
+  padding: 6px 9px;
+  word-break: break-word;
+}
+.report-row-time {
+  margin: 5px 0 0;
+  font-size: 11.5px;
+  color: var(--ink-3);
+}
+
+/* --- 5. 管理端台账（与 .report-row 同源，只多一列操作）------------------- */
+.admin-report-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin: 0 0 12px;
+}
+.admin-report-tools select {
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  color: var(--ink);
+  font-size: 13px;
+}
+.admin-report-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 12px;
+}
+.admin-report-counts span {
+  font-size: 11.5px;
+  color: var(--ink-3);
+  background: var(--bg);
+  border: 1px solid var(--line-2);
+  border-radius: 999px;
+  padding: 3px 9px;
+}
+.admin-report-who {
+  font-size: 11.5px;
+  color: var(--ink-3);
+}
+.admin-report-row .report-row-head { gap: 6px; }
+.admin-report-acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 8px 0 0;
+}
+.admin-report-acts button {
+  padding: 6px 11px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  color: var(--green);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.admin-report-acts button:hover { border-color: var(--green); }
+.admin-report-acts button[disabled] { opacity: .45; cursor: not-allowed; }
+.admin-report-acts button.danger { color: var(--red, #b4544a); }

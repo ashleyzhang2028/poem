@@ -266,3 +266,74 @@ as $$
   delete from public.verifications where expires_at < now_ms;
   delete from public.resets        where expires_at < now_ms;
 $$;
+
+-- ==========================================================================
+-- 7. 用户报告 / 勘误（Issue #243 第四轮 · 用户原话）
+-- ==========================================================================
+-- 用户原话（2026-09-19）：
+--
+--   「同样允许用户报告错误，勘误，我觉得可以发送到 supabase 数据库，
+--     然后我作为管理员能在管理员看到并纠正，你看看如何设计用户报告错误的
+--     界面，入口，交互等等」
+--
+-- 三件事先说清楚，因为它们是这张表存在的理由：
+--
+--   · **它是一张新表，不是 progress 里的一行**。progress 那一张是
+--     「这个账号学到哪」的**私有**数据，按 uid + child_id 分区、只在本人
+--     设备之间同步。报告是**写给管理员看**的：不分区（与孩子无关）、
+--     不参与同步（用户改了本机那份不该改到管理员的收件箱）、
+--     而且要能按状态检索与回写（progress 的载荷是黑盒 jsonb）。
+--     硬塞进 progress 的下场是「管理员要看报告，得先把全站账号的
+--     progress 全拉下来」。
+--   · **正文与译文的原文一起存**（`quote` / `context`）。用户标的那一段
+--     可能只有两个字（「长」），半年后光看这两个字谁也不知道在说哪一句。
+--     所以落库时带上前后的那一整句 —— 与 `daily_extra` 存快照同一条理由：
+--     「只存 id，打开是空的」。
+--   · **状态机在服务端**（new → accepted → fixed / rejected）。用户端只读，
+--     写状态只走管理端那条闸（`accounts.role` 是 owner / admin）。
+--     用户端能改状态的下场是「报告自己把自己标成已修复」。
+--
+-- 另外两条口径与既有表逐字一致：
+--   · RLS 全开、**不给任何策略**（默认拒绝）—— 漏掉这一段不会报错，
+--     症状是 anon key 能读别人报的错与他的邮箱掩码。
+--   · 「谁报的」用 uid 外键 + 邮箱掩码快照两样都留：uid 用来防刷与回信，
+--     掩码快照用来在账号被注销之后，管理员仍然认得出这条报告是谁提的。
+-- ==========================================================================
+
+create table if not exists public.reports (
+  rid          text primary key,
+  uid          text   not null references public.accounts(uid) on delete cascade,
+  email_mask   text   not null default '',
+  nickname     text   not null default '',
+  kind         text   not null default 'other',
+  status       text   not null default 'new',
+  poem_id      text   not null default '',
+  poem_title   text   not null default '',
+  book         text   not null default '',
+  quote        text   not null default '',
+  context      text   not null default '',
+  note         text   not null default '',
+  suggestion   text   not null default '',
+  device       text   not null default '',
+  ua           text   not null default '',
+  created_at   bigint not null,
+  updated_at   bigint not null,
+  handled_at   bigint,
+  handled_by   text   not null default '',
+  reply        text   not null default ''
+);
+
+-- 管理端默认按「新到旧 + 只看新的」翻，所以这一列建索引
+create index if not exists reports_status_created_idx on public.reports (status, created_at);
+create index if not exists reports_created_idx on public.reports (created_at);
+-- 「这一篇被报过几次」用得到
+create index if not exists reports_poem_idx on public.reports (poem_id) where poem_id <> '';
+-- 按人翻（防刷与水印）
+create index if not exists reports_uid_idx on public.reports (uid);
+
+alter table public.reports enable row level security;
+
+-- 顺手清过期记录那一条也把报告带上？**不带**，并且这不是遗漏。
+-- 报告是**人工处理**的台账：自动删掉一条「用户报的错」就等于把一条
+-- 还没看的反馈丢掉，而它体积很小（每条几 KB 上界，见 core.reportCreate 的截断）。
+-- 留着它，管理端才可能「翻半年前谁报过同一处」。

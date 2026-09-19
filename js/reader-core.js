@@ -192,7 +192,11 @@
 
   function enterLive() { if (live) liveTo(live); }
 
-  const FONT_SIZES = [13, 15, 17, 19, 21, 23];
+  // 级差统一 2px：最小 9px（再小汉字笔画就并在一起了），最大 25px。
+  // 见 docs/architecture.md §4.35 —— 9px 那档是用户 2026-09-19 点名要的。
+  const FONT_SIZES = [9, 11, 13, 15, 17, 19, 21, 23, 25];
+  const FONT_MIN = 9;
+  const FONT_MAX = 25;
   const DEFAULT_FONT = 17;
 
   const ALIGNS = ["left", "center"];
@@ -554,6 +558,7 @@
         "</div>" +
         "</div>" +
 
+        (CFG.reportList === false ? "" : reportItemBtn(p)) +
         (CFG.dailyList === false ? "" : dailyItemBtn(p)) +
         (CFG.reciteList === false ? "" : reciteItemBtn(p)) +
         '<button type="button" class="item-read" title="播放这一篇" aria-label="播放 ' + esc(p.title) + '">' +
@@ -579,6 +584,14 @@
           e.stopPropagation();
           claim(e);
           toggleDaily(p);
+        });
+      }
+      var reportBtn = el.querySelector(".item-report");
+      if (reportBtn) {
+        reportBtn.addEventListener("click", function (e) {
+          e.stopPropagation();
+          claim(e);
+          openReport(p);
         });
       }
       (groupCard || listEl).appendChild(el);
@@ -673,6 +686,7 @@
     syncDoneButton();
     syncReciteButtons();
     syncDailyButton();
+    syncReportButton();
     el.hidden = false;
     document.body.classList.add("reader-open");
 
@@ -718,6 +732,18 @@
     openReader(list[i]);
   }
 
+  // 这一篇的作品 id（勘误表的绑定键）——与 js/app.js 的 pinyinWidOf 同一口径：
+  // 集子页 / 课内页的篇目 id 不同，而同一篇作品常在几部集子里各有一份，
+  // 用 WorksIndex 归并后的 wid 才能「一处勘误、处处生效」。
+  function readerWid(p) {
+    var id = p && p.id ? p.id : "";
+    if (!id) return "";
+    if (window.WorksIndex && typeof window.WorksIndex.widOf === "function") {
+      try { return window.WorksIndex.widOf(id) || id; } catch (e) {  }
+    }
+    return id;
+  }
+
   function renderReaderText() {
     if (!current) return;
     var el = rd("text");
@@ -729,7 +755,11 @@
     }
     var mode = pinyinMode();
     if (mode !== "off" && window.Pinyin) {
-      el.innerHTML = window.Pinyin.annotateHtml(current.text, mode === "all" ? "all" : "rare");
+      // 逐句注音：勘误表是按「某篇某句」绑的，所以要把这一篇的 wid 交进去
+      // （不交的话勘误层一行都不查，输出与改前逐字相同）。
+      el.innerHTML = window.Pinyin.annotatePoem
+        ? window.Pinyin.annotatePoem(readerWid(current), current.text, mode === "all" ? "all" : "rare")
+        : window.Pinyin.annotateHtml(current.text, mode === "all" ? "all" : "rare");
       el.classList.add("with-pinyin");
     } else {
       el.textContent = current.text;
@@ -1204,17 +1234,35 @@
     return s || live;
   }
 
-  function bindEvents() {
-    var search = $('[data-gw="search"]') || $("#gw-search");
-    if (search) {
-      search.addEventListener("input", function (e) {
+  // 集子索引页左上角那颗搜索框（Issue #243 后续）。
+  //
+  // 一颗框绑两次会出事：同一个 input 上挂两个 input 监听，两个都 renderList()，
+  // 敲一个字整张列表重画两遍。所以只认「还没有绑过的那几颗」——
+  // 起手按 body 级节点绑（走 $ 的老口径，保住搜索页上游那套），
+  // 挂载时再按**本挂载点**补一次（js/library.js 那条没有 body 级节点的路）。
+  function bindSearch(scope) {
+    var list = scope && scope.querySelectorAll
+      ? Array.prototype.slice.call(scope.querySelectorAll('[data-gw="search"], #gw-search'))
+      : (scope && scope.querySelector ? [scope] : []);
+    if (!list.length) {
+      var one = $('[data-gw="search"]') || $("#gw-search");
+      if (one) list = [one];
+    }
+    list.forEach(function (el) {
+      if (el.dataset && el.dataset.gwSearchBound === "1") return;
+      if (el.dataset) el.dataset.gwSearchBound = "1";
+      el.addEventListener("input", function (e) {
         var s = claim(e);
 
-        s.keyword = search.value;
-        keyword = search.value;
+        s.keyword = el.value;
+        keyword = el.value;
         renderList();
       });
-    }
+    });
+  }
+
+  function bindEvents() {
+    bindSearch(document);
 
     $$all("[data-filter]").forEach(function (b) {
       b.addEventListener("click", function (e) {
@@ -1333,6 +1381,13 @@
       startRecite(current);
     });
 
+    var reportBtn = rd("report");
+    if (reportBtn) reportBtn.addEventListener("click", function (e) {
+      claim(e);
+      if (!current) return;
+      openReport(current);
+    });
+
     var transToggle = rd("trans-toggle");
     if (transToggle) transToggle.addEventListener("click", function (e) {
       claim(e);
@@ -1363,6 +1418,20 @@
     if (readBtn) readBtn.addEventListener("click", function (e) { claim(e); toggleRead(); });
     var transReadBtn = rd("trans-read");
     if (transReadBtn) transReadBtn.addEventListener("click", function (e) { claim(e); toggleTransRead(); });
+
+    // 正文选区 → 「报这一段」小气泡（见 js/report.js）。
+    // 绑在**正文那一块**上，不绑整页：用户选地址栏、选页脚时不该冒气泡。
+    var textEl = rd("text");
+    var R = reportMod();
+    if (textEl && R && typeof R.bindSelection === "function") {
+      R.bindSelection(textEl, function () {
+        return {
+          poemId: (current && current.id) || "",
+          poemTitle: (current && current.title) || "",
+          book: (current && (current.bookName || current.source || current.book)) || ""
+        };
+      });
+    }
   }
 
   function bindGlobal() {
@@ -1616,7 +1685,14 @@
           syncRandomReadButton();
         });
       },
-      annotate: function () { return withSession(session, function () { return window.Pinyin ? window.Pinyin.annotateHtml(current ? current.text : "") : ""; }); },
+      annotate: function () {
+        return withSession(session, function () {
+          if (!window.Pinyin) return "";
+          return window.Pinyin.annotatePoem
+            ? window.Pinyin.annotatePoem(readerWid(current), current ? current.text : "")
+            : window.Pinyin.annotateHtml(current ? current.text : "");
+        });
+      },
       onSpeechStopped: function () { withSession(session, handleSpeechStopped); },
       root: rootEl,
       box: session.box,
@@ -1651,6 +1727,15 @@
 
     if (!s.domBound) {
       s.domBound = true;
+
+      // 绑定落在**本挂载点的根**上（js/library.js 那种「就在入口页里铺开」的用法
+      // 没有 body 级的 data-gw-root）。⚠️ 这两行必须排在 bindEvents() 之前：
+      // 一个页面同时只有一部集子（挂载点唯一），按根限定反而先把这颗框认住，
+      // 免得上游漏下来的 [data-gw="search"]（挂载点之外的节点，比如搜索页的
+      // 候选框）被顺便认成自己的 —— 认错了就是「敲字没反应」（Issue #243 后续）。
+      if (s.root && s.root.querySelector && s.root.querySelector('[data-gw="search"]')) {
+        bindSearch(s.root);
+      }
       bindEvents();
       bindSettings();
       bindGlobal();
@@ -1671,6 +1756,47 @@
     }
 
     if (session.api && session.api.refreshCanonical) session.api.refreshCanonical();
+  }
+
+  // ---- 「报告错误」（Issue #243 第四轮）------------------------------------
+  //
+  // 图形与文案全在 js/report.js 一份出；这里只做「放哪 + 调谁」。
+  // 它不是「加入背诵」那一类 —— 它**不改任何数据**，只是把一句话送到
+  // 管理员的台账。所以详情页那一颗**没有 data-on / aria-pressed**：
+  // 一个只报一次的动作没有「已报状态」可言（同一处也可能报两次，
+  // 第二次带着更准的描述）。
+  function reportMod() {
+    return (typeof window !== "undefined" && window.Report) || null;
+  }
+
+  function reportItemBtn(p) {
+    var R = reportMod();
+    if (!R || typeof R.itemBtn !== "function") return "";
+    return R.itemBtn(p);
+  }
+
+  // 详情页那一颗：**不是**每次重画 HTML，而是进阅读器时按当前这一篇
+  // 把 `data-report-poem` 改掉（那一颗是 classic/index.html 里写死的）。
+  function syncReportButton() {
+    var btn = rd("report");
+    var R = reportMod();
+    if (!btn) return;
+    if (!current || !R) { btn.hidden = true; return; }
+    btn.hidden = false;
+  }
+
+  function openReport(p, extra) {
+    var R = reportMod();
+    if (!R) { showToast("页面脚本版本对不上（刷新一次即可）"); return; }
+    var o = extra || {};
+    R.open({
+      kind: o.kind || "other",
+      poemId: (p && p.id) || "",
+      poemTitle: (p && p.title) || "",
+      book: (p && (p.bookName || p.source || p.book)) || "",
+      quote: o.quote || "",
+      context: o.context || ""
+    });
   }
 
   // ---- 「加入今日背诵」（Issue #243）---------------------------------------
@@ -1962,7 +2088,12 @@
     isRead: function (id) { return isRead(id); },
     align: function () { return alignMode(); },
     setAlign: function (m) { return setAlign(m); },
-    annotate: function () { return window.Pinyin ? window.Pinyin.annotateHtml(current ? current.text : "") : ""; },
+    annotate: function () {
+      if (!window.Pinyin) return "";
+      return window.Pinyin.annotatePoem
+        ? window.Pinyin.annotatePoem(readerWid(current), current ? current.text : "")
+        : window.Pinyin.annotateHtml(current ? current.text : "");
+    },
 
     onSpeechStopped: handleSpeechStopped
   };

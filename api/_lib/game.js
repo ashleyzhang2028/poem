@@ -16,7 +16,9 @@ var BOOKS = [
   { id: "tangshi",  files: ["data/poems-tangshi.js"],  varName: "POEMS_TANGSHI" },
   { id: "songci",   files: ["data/poems-songci.js"],   varName: "POEMS_SONGCI" },
   { id: "guwen",    files: ["data/poems-guwen.js"],    varName: "POEMS_GUWEN" },
-  { id: "zhaoming", files: ["data/poems-zhaoming.js"], varName: "POEMS_ZHAOMING" }
+  { id: "zhaoming", files: ["data/poems-zhaoming.js"], varName: "POEMS_ZHAOMING" },
+  { id: "yuanqu",   files: ["data/poems-yuanqu.js"],   varName: "POEMS_YUANQU" },
+  { id: "jinxiandai", files: ["data/poems-jinxiandai.js"], varName: "POEMS_JINXIANDAI" }
 ];
 
 var cache = null;
@@ -39,13 +41,17 @@ function corpus() {
   BOOKS.forEach(function (b) {
     var files = b.files.filter(function (f) { return fs.existsSync(path.join(ROOT, f)); });
     if (!files.length) return;
-    // 每一部都要带上正文存储主表（`data/text-master.js`）：集子条目只存
-    // `textRef`，正文由 `masterTextOf()` 现取。少了这一份，取出来的正文是空的 ——
-    // 而空白不报错，只会让飞花令 / 题库悄悄少掉一整部（Issue #244 加乐府集时踩到）。
+
+    // 课内那一部要 index.js 才能汇成 POEMS_ALL；每一部都要带上正文存储主表
+    // （`data/text-master.js`）：集子条目只存 `textRef`，正文由 `masterTextOf()`
+    // 现取。少了这一份，取出来的正文是空的 —— 而空白不报错，只会让飞花令 /
+    // 题库悄悄少掉一整部（Issue #244 加乐府集时踩到）。
     var extra = [];
-    var idx = "data/index.js";
-    if (b.needsIndex && fs.existsSync(path.join(ROOT, idx))) extra.push(idx);
-    extra.push("data/text-master.js");
+    if (b.needsIndex && fs.existsSync(path.join(ROOT, "data/index.js"))) {
+      extra = ["data/index.js"];
+    }
+    extra = extra.concat(["data/text-master.js"]);
+    extra = extra.filter(function (f) { return fs.existsSync(path.join(ROOT, f)); });
     var win = runInSandbox(files.concat(extra));
     var list = (win[b.varName] || []).map(function (p) {
       return (typeof win.masterTextOf === "function") ? win.masterTextOf(p, b.id) : p;

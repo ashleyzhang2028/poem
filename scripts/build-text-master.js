@@ -10,7 +10,7 @@ const LOAD = [
   'data/poems-9.js', 'data/poems-10.js', 'data/poems-11.js', 'data/poems-12.js',
   'data/index.js', 'data/poems-classic.js', 'data/poems-tangshi.js',
   'data/poems-songci.js', 'data/poems-guwen.js', 'data/poems-zhaoming.js', 'data/poems-yuanqu.js',
-  'data/poems-yuefu.js',
+  'data/poems-yuefu.js', 'data/poems-jinxiandai.js',
   'data/site-index.js', 'data/works-map.js', 'data/works-index.js'
 ];
 
@@ -21,11 +21,12 @@ LOAD.forEach(function (f) {
   vm.runInContext(fs.readFileSync(path.join(ROOT, f), 'utf8'), sandbox, { filename: f });
 });
 
-const byId = {};
-sandbox.SITE_INDEX.forEach(function (p) { byId[p.id] = p; });
+
+
+
 const WI = sandbox.WorksIndex;
 
-const FULL_BOOKS = ['zhaoming', 'guwen', 'songci', 'yuanqu', 'tangshi', 'classic', 'yuefu'];
+const FULL_BOOKS = ['zhaoming', 'guwen', 'songci', 'tangshi', 'classic', 'yuanqu', 'yuefu', 'jinxiandai'];
 
 const prev = {};
 try {
@@ -34,7 +35,13 @@ try {
   vm.createContext(prevSandbox);
   vm.runInContext(fs.readFileSync(path.join(ROOT, 'data/text-master.js'), 'utf8'),
     prevSandbox, { filename: 'data/text-master.js' });
-  (prevSandbox.TEXT_MASTER || []).forEach(function (m) { if (m && m.id) prev[m.id] = m; });
+  // 既按 id 索引，也按 entries 索引 —— 与 data/text-master.js 的 map() 同一口径：
+  // 一条主表记录代表「同一篇」的一组条目，正文可能挂在组里任意一个 id 上。
+  (prevSandbox.TEXT_MASTER || []).forEach(function (m) {
+    if (!m) return;
+    if (m.id && !prev[m.id]) prev[m.id] = m;
+    (m.entries || []).forEach(function (e) { if (e && !prev[e]) prev[e] = m; });
+  });
 } catch (e) {  }
 
 function textOfEntry(entry, masterId) {
@@ -50,7 +57,127 @@ function textOfEntry(entry, masterId) {
   return { text: "", translation: "", translationSource: "" };
 }
 
+// 新增一部的**第一次**收归有个先有鸡还是先有蛋的坎：
+// 站点索引里那些条目只留了 textRef，正文要等 text-master 生成后才取得到；
+// 而 LOAD 里 text-master 排在 site-index 之前 —— 于是「这一部还没进过主表」
+// 时，索引组装会把这一部整部当成「没有正文」丢掉，本脚本也就永远收不到它。
+//
+// 这里补一遍：凡在**原始数据文件**里带着 textRef、正文却取不到的条目，
+// 按 textRef 到原始语料里再找一次；找得到就把正文挂到 SITE_INDEX 上。
+// 收过一次之后，这些条目就带着 textRef 进索引了，这一步自然不再补任何东西 ——
+// 但机制留着，日后新增集子不必再踩一次。
+var RAW_ENTRIES = {};
+(function () {
+  var FILES = [
+    { f: 'data/poems-1.js', v: 'POEMS_1' }, { f: 'data/poems-2.js', v: 'POEMS_2' },
+    { f: 'data/poems-3.js', v: 'POEMS_3' }, { f: 'data/poems-4.js', v: 'POEMS_4' },
+    { f: 'data/poems-5.js', v: 'POEMS_5' }, { f: 'data/poems-6.js', v: 'POEMS_6' },
+    { f: 'data/poems-7.js', v: 'POEMS_7' }, { f: 'data/poems-8.js', v: 'POEMS_8' },
+    { f: 'data/poems-9.js', v: 'POEMS_9' }, { f: 'data/poems-10.js', v: 'POEMS_10' },
+    { f: 'data/poems-11.js', v: 'POEMS_11' }, { f: 'data/poems-12.js', v: 'POEMS_12' },
+    { f: 'data/poems-classic.js', v: 'POEMS_CLASSIC' },
+    { f: 'data/poems-tangshi.js', v: 'POEMS_TANGSHI' },
+    { f: 'data/poems-songci.js', v: 'POEMS_SONGCI' },
+    { f: 'data/poems-guwen.js', v: 'POEMS_GUWEN' },
+    { f: 'data/poems-zhaoming.js', v: 'POEMS_ZHAOMING' },
+    { f: 'data/poems-yuanqu.js', v: 'POEMS_YUANQU' },
+    { f: 'data/poems-yuefu.js', v: 'POEMS_YUEFU' },
+    { f: 'data/poems-jinxiandai.js', v: 'POEMS_JINXIANDAI' }
+  ];
+  FILES.forEach(function (o) {
+    var book = o.f.replace('data/poems-', '').replace('.js', '');
+    if (/^\d+$/.test(book)) book = 'poems';
+    (sandbox[o.v] || []).forEach(function (p) {
+      if (!p || !p.id) return;
+      RAW_ENTRIES[book + '-' + p.id] = p;
+    });
+  });
+})();
+var inIndex = {};
+sandbox.SITE_INDEX.forEach(function (p) { if (p && p.id) inIndex[p.id] = true; });
+var BOOTSTRAPPED = [];
+Object.keys(RAW_ENTRIES).forEach(function (id) {
+  if (inIndex[id]) return;
+  var raw = RAW_ENTRIES[id];
+
+  var t = { text: raw.text || '', translation: raw.translation || '',
+    translationSource: raw.translationSource || '' };
+  if (!t.text && raw.textRef) {
+    var up = RAW_ENTRIES[raw.textRef];
+    if (up && up.text) t = { text: up.text || '', translation: up.translation || '',
+      translationSource: up.translationSource || '' };
+  }
+  // 正文也可能只落在上一版存储主表里（那一条自己的 id，或它 textRef 指向的 id）——
+  // 新增集子的条目只存 textRef 时，正文正是这样传下来的。
+  if (!t.text) {
+    var hit = prev[id] || (raw.textRef ? prev[raw.textRef] : null);
+    if (hit) t = { text: hit.text || '', translation: hit.translation || '',
+      translationSource: hit.translationSource || '' };
+  }
+  if (!t.text) return;
+  // 只补「跨集子指向的另一条」：课内自己的单条本来就有一份内联正文、
+  // 也早就在索引里，不该在这里再挂一次。
+  if (id.indexOf('poems-') === 0) return;
+  var book = id.indexOf('poems-') === 0 ? 'poems' : id.split('-')[0];
+  var localId = id.indexOf('poems-') === 0 ? id.slice(6) : id.slice(book.length + 1);
+  sandbox.SITE_INDEX.push({
+    id: id, originId: localId, title: raw.title, author: raw.author || '',
+    authorName: raw.authorName || '', dynasty: raw.dynasty || '',
+    source: raw.source || '', selection: raw.selection || '',
+    gradeGroup: raw.gradeGroup || '', grade: raw.grade, term: raw.term,
+    text: t.text, translation: t.translation, translationSource: t.translationSource,
+    book: book, bookName: book, page: book + '/'
+  });
+  inIndex[id] = true;
+  BOOTSTRAPPED.push(id);
+});
+
+// 课内那些**只留 textRef** 的条目（它们的正文本来在 text-master 里）：
+// 组装 POEMS_ALL 时要按 textRef 取回正文，而取回的表就是本脚本要产出的那一份。
+// 这里先把上一版主表里那一条的正文补回索引（这一条不新增索引项、也不改 id 归属），
+// 好让同篇判重认得它 —— 否则整组的同篇关系会在重算时整批丢掉。
+Object.keys(prev).forEach(function (id) {
+  if (id.indexOf('poems-') !== 0) return;
+  var raw = RAW_ENTRIES[id];
+  if (!raw || raw.text) return;
+  var t = prev[raw.textRef] || prev[id];
+  if (!t || !t.text) return;
+  var exist = sandbox.SITE_INDEX.filter(function (x) { return x.id === id; })[0];
+  if (exist) {
+    if (!exist.text) {
+      exist.text = t.text;
+      exist.translation = t.translation || "";
+      exist.translationSource = t.translationSource;
+    }
+    inIndex[id] = true;
+    return;
+  }
+  sandbox.SITE_INDEX.push({
+    id: id, originId: id.slice(6), title: raw.title, author: raw.author || '',
+    authorName: raw.authorName || '', dynasty: raw.dynasty || '',
+    source: raw.source || '', selection: raw.selection || '',
+    gradeGroup: raw.gradeGroup || '', grade: raw.grade, term: raw.term,
+    text: t.text, translation: t.translation || '',
+    translationSource: t.translationSource, book: 'poems', bookName: 'poems', page: '/'
+  });
+  inIndex[id] = true;
+});
+
+if (BOOTSTRAPPED.length) {
+  console.log('（' + BOOTSTRAPPED.length + ' 条首次进入主表的条目：' +
+    '它们原先只有 textRef、正文取不到，本轮先从原始数据文件那一段补回索引）');
+}
+// 上面往 SITE_INDEX 补了正文（课内 textRef 那批 + 新集子那批），
+// 同篇对照表要按补过之后的索引重算一次 —— 否则 WI.works 还是加载时的旧视图，
+// 整组的同篇关系会整批丢掉。
+sandbox.WorksIndex.rebuild(sandbox.SITE_INDEX);
+
+const byId = {};
+sandbox.SITE_INDEX.forEach(function (p) { byId[p.id] = p; });
+
+
 const sig = function (t) { return String(t || '').replace(/\s+/g, ''); };
+
 
 const master = [];
 WI.works.forEach(function (w) {
@@ -122,7 +249,7 @@ const BOOK_FILES = [
   'data/poems-9.js', 'data/poems-10.js', 'data/poems-11.js', 'data/poems-12.js',
   'data/poems-classic.js', 'data/poems-tangshi.js', 'data/poems-songci.js',
   'data/poems-guwen.js', 'data/poems-zhaoming.js', 'data/poems-yuanqu.js',
-  'data/poems-yuefu.js'
+  'data/poems-yuefu.js', 'data/poems-jinxiandai.js'
 ];
 
 void fullBooksReport;

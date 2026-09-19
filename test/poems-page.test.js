@@ -24,13 +24,13 @@ const libEntries = (function () {
   vm.runInContext(libSrc, sandbox, { filename: 'js/library.js' });
   return sandbox.LibraryPage.entries();
 })();
-chk(libEntries.length === 8, '入口页仍是八张卡（课内 + 七部集子；实际 ' + libEntries.length + '）');
+chk(libEntries.length === 9, '入口页是九张卡（课内 + 八部集子；实际 ' + libEntries.length + '）');
 const courseCard = libEntries.filter(function (e) { return e.id === 'poems'; })[0];
 chk(!!courseCard, '入口页第一张卡是课内诗词');
 chk(courseCard.page === '/poems/', '课内诗词那张卡指向索引页 /poems/（实际 ' + courseCard.page + '）');
 chk(courseCard.page !== '/', '课内诗词那张卡不再指回背诵首页');
 chk(libEntries.every(function (e) { return /^\/[a-z]+\/$/.test(e.page); }),
-  '七张卡的去处都是目录化索引页：' + libEntries.map(function (e) { return e.page; }).join(' '));
+  '九张卡的去处都是目录化索引页：' + libEntries.map(function (e) { return e.page; }).join(' '));
 
 const html = fs.readFileSync(path + 'poems/index.html', 'utf8');
 const order = html.match(/<script src="([^"]+)"><\/script>/g).map(function (s) { return s.match(/src="([^"]+)"/)[1]; });
@@ -66,9 +66,9 @@ loadData(sandbox, [
   'data/index.js'
 ]);
 const ALL = sandbox.POEMS_ALL;
-chk(ALL && ALL.length === 261, '课内一共 261 首（实际 ' + (ALL ? ALL.length : 'undefined') + '）');
+chk(ALL && ALL.length === 251, '课内一共 251 首（实际 ' + (ALL ? ALL.length : 'undefined') + '）');
 chk(resolve(sandbox, ALL, 'poems').every(function (p) { return p.text && p.translation; }),
-  '261 首按 textRef 取回后都带正文与译文（不是空壳）');
+  '251 首按 textRef 取回后都带正文与译文（不是空壳）');
 
 const dom = new JSDOM(html, { runScripts: 'dangerously', url: 'https://local.test/poems/', base: 'https://local.test/poems/' });
 const w = dom.window;
@@ -82,8 +82,8 @@ order.forEach(function (f) {
 setTimeout(function () {
   const d = w.document;
 
-  chk(d.querySelectorAll('#gw-list .item').length === 261,
-    '列表渲染 261 首（实际 ' + d.querySelectorAll('#gw-list .item').length + '）');
+  chk(d.querySelectorAll('#gw-list .item').length === 251,
+    '列表渲染 251 首（实际 ' + d.querySelectorAll('#gw-list .item').length + '）');
   chk(d.querySelector('#gw-count') === null,
     '页顶那一行不再挂已读进度牌（Issue #147：读数已撤，页顶与详情页都没有）');
 
@@ -108,10 +108,10 @@ setTimeout(function () {
   const sumItems = [].slice.call(d.querySelectorAll('#gw-list .group-card')).reduce(function (n, c) {
     return n + c.querySelectorAll('.item').length;
   }, 0);
-  chk(sumItems === 261, '各组条目数合计 261（实际 ' + sumItems + '）');
+  chk(sumItems === 251, '各组条目数合计 251（实际 ' + sumItems + '）');
 
   chk(d.querySelectorAll('#gw-list .item-recite').length === 0,
-    '列表上不挂「加入背诵」圆键（课内 261 首本来就在每日任务里）');
+    '列表上不挂「加入背诵」圆键（课内 251 首本来就在每日任务里）');
   chk(/reciteList:\s*false/.test(fs.readFileSync(path + 'js/poems.js', 'utf8')),
     '挂载脚本里显式写了 reciteList: false');
 
@@ -119,7 +119,7 @@ setTimeout(function () {
     '详情页工具条上的「加入背诵」仍在（只是列表上不挂）');
 
   const api = w.ReaderEngine.current;
-  chk(!!api && api.total() === 261, '引擎挂上了课内实例，total() = 261');
+  chk(!!api && api.total() === 251, '引擎挂上了课内实例，total() = 251');
   api.open('xx1-01');
   chk(d.querySelector('#rd-title').textContent === '咏鹅',
     '可打开指定篇目（xx1-01 → ' + d.querySelector('#rd-title').textContent + '）');
@@ -136,7 +136,7 @@ setTimeout(function () {
   chk(d.querySelectorAll('#rd-meta .rd-count').length === 0,
     '详情页状态栏里也不再有已读读数 .rd-count');
   chk(!/\d\s*\/\s*\d+\s*(篇|首)/.test(d.querySelector('#rd-meta').textContent),
-    '详情页状态栏整行不含「0 / 261 首」这类读数（实际「' +
+    '详情页状态栏整行不含「0 / 251 首」这类读数（实际「' +
     d.querySelector('#rd-meta').textContent + '」）');
 
   api.open('xx1-06');
@@ -145,7 +145,7 @@ setTimeout(function () {
 
   api.setKeyword('李白');
   const nLi = d.querySelectorAll('#gw-list .item').length;
-  chk(nLi > 0 && nLi < 261, '按作者「李白」能筛出子集（' + nLi + ' 首）');
+  chk(nLi > 0 && nLi < 251, '按作者「李白」能筛出子集（' + nLi + ' 首）');
   api.setKeyword('');
 
   const poSrc = fs.readFileSync(path + 'js/poems.js', 'utf8');

@@ -268,7 +268,35 @@
   }
 }
 
-@media (min-width: 1024px) {
+/* 内联圆键**四颗**之后，1024 这一档不能再排三列。
+   一行里除内容块外要放：小旗（报告）/ ＋（加背）/ 加入背诵 / 播放 —— 四颗
+   36px 的圆键各带 6px 右外边距，再加尾部箭头，固定占去 198px。
+   1024 档内容宽 912px 排三列时，一格只剩 289px，扣掉内边距 20px 后
+   内容块只拿到 82.66px —— 而这一段的 min-content 是那颗
+   `white-space: nowrap` 的摘句，它把内容块钉死在这个宽度上，
+   「感遇·其一」于是折成三行、「下终南山过斛斯山人宿置酒」折成五行，
+   正是 `test/pwa.test.js` 那句「卡内篇名不折成竖排」要守的东西。
+   三颗键时这一档是能站住的（内容块 124.66px），第四颗插进来就站不住了 ——
+   「加了一颗键，就得少排一列」，所以 1024~1279 收回两列（一格 444px、
+   内容块 238px），1280 起宽度够了再回三列。 */
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .group-card > .item {
+    flex: 1 1 calc(50% - 11px);
+    max-width: calc(50% - 11px);
+  }
+
+  /* 两列时「隔行一条分隔线」的规则跟着回到 768 档那一条：
+     只有第 2、3 条没有上边框（第 2 条与第 3 条跟第 1 条同排）。 */
+  .group-card > .item:nth-of-type(2),
+  .group-card > .item:nth-of-type(3) {
+    border-top: none;
+  }
+  .group-card > .item:nth-of-type(4) {
+    border-top: 1px solid var(--line);
+  }
+}
+
+@media (min-width: 1280px) {
   .group-card > .item {
     flex: 1 1 calc(33.333% - 14.667px);
     max-width: calc(33.333% - 14.667px);
@@ -531,6 +559,36 @@ body.reader-open .dock { display: none; }
   display: block;
 }
 .item-recite[data-on="1"] { background: var(--blue); border-color: var(--blue); color: #fffdf8; }
+
+/* 列表行里那一颗「报告错误」的小旗（Issue #243 第四轮）。
+   与「加入今日背诵」「加入背诵」同一排，排在**最左** —— 它是这一排里
+   最少用的一颗，日常那两颗（加背 / 加集）应该挨着标题、拇指够得着。
+   颜色走「墨绿」（--ink-3）而不是蓝 / 绿：它不是「加入」那一类动作，
+   而是一个中性、低频、**不该被误点**的入口。 */
+.item-report {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--item-btn);
+  height: var(--item-btn);
+  flex: 0 0 auto;
+  padding: 0;
+  margin: 0 6px 0 0;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--card);
+  color: var(--ink-3);
+  cursor: pointer;
+  line-height: 0;
+  transition: transform .14s, background .18s, border-color .18s, color .18s;
+}
+.item-report svg {
+  width: var(--item-icon);
+  height: var(--item-icon);
+  display: block;
+}
+.item-report:hover { color: var(--green); border-color: var(--green); }
+.item-report:active { transform: scale(.94); }
 
 .icon-seg button {
   display: inline-flex;

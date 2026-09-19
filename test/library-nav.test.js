@@ -80,7 +80,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   const actionBtn = () => d.querySelector('.app > .topbar #top-act');
 
   chk(!!w.LibraryPage, '入口页暴露了 LibraryPage（铺开 / 收起都由它管）');
-  chk(d.querySelectorAll('.library-card').length === 8, '八张卡片都在（实际 ' +
+  chk(d.querySelectorAll('.library-card').length === 9, '九张卡片都在（实际 ' +
     d.querySelectorAll('.library-card').length + '）');
   chk(!gridHidden() && railHidden(), '初始状态：目录可见、索引层隐藏');
 
@@ -125,16 +125,57 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(!!back2, '索引层有返回键');
   click(back2);
   await sleep(200);
-  chk(railHidden() && !gridHidden(), '★ 再按返回，回到七张卡的集子目录');
+  chk(railHidden() && !gridHidden(), '★ 再按返回，回到九张卡的集子目录');
   chk(pageName() === '课外阅读', '页名还原成「课外阅读」（实际 ' + pageName() + '）');
   chk(subText() === '课本之外的经典',
     '副标题还原成入口页那一句（实际 ' + subText() + '）');
-  chk(d.querySelectorAll('.library-card').length === 8, '八张卡片仍在（退回来时没有把目录清掉）');
+  chk(d.querySelectorAll('.library-card').length === 9, '九张卡片仍在（退回来时没有把目录清掉）');
   chk(topActs() === 0, '目录这一层不再有返回键（恢复各页默认的「回首页」；实际 ' + topActs() + '）');
 
   const gs = d.querySelector('[data-lib-part="search"]');
   const gseg = d.querySelector('[data-lib-part="filter-seg"] button[data-filter="unread"]');
   chk(!!gs && !!gseg, '索引层有搜索框与「全部 / 未读」筛选');
+
+  {
+    // ★ 这颗搜索框是纸糊的（Issue #243 后续）：入口页第二层没有 data-gw-root，
+    //   引擎起手按 body 级节点绑监听，落不进这一层。所以这里钉三件事：
+    //   ① 它挂上 data-gw="search"（引擎认的钩子）；② 真的绑上了；
+    //   ③ 敲字之后列表**真的变成子集**。
+    const rail = d.querySelector('[data-lib-view="book"]');
+    chk(gs.getAttribute('data-gw') === 'search',
+      '索引层的搜索框带 data-gw="search"（引擎按这个钩子认它；实际「' +
+      gs.getAttribute('data-gw') + '」）—— 少了这一个属性，它就是个装饰');
+    chk(rail.contains(gs), '★ 搜索框就在挂载点那一层里（引擎 bindSearch(s.root) 才够得着）');
+
+    click(d.querySelector('.library-card[data-book="tangshi"]'));
+    await sleep(350);
+    chk(d.querySelectorAll('#lib-gw-list .item').length === 317, '先回到完整 317 首');
+
+    const input = d.querySelector('[data-lib-part="search"]');
+    chk(input.dataset.gwSearchBound === '1',
+      '★ 引擎真的把输入监听绑到了这一颗上（没有它，敲字一个字都不会进列表）');
+
+    const listEl = d.querySelector('#lib-gw-list');
+    let renders = 0;
+    const obs = new w.MutationObserver(() => { renders++; });
+    obs.observe(listEl, { childList: true });
+    input.value = '李白';
+    input.dispatchEvent(new w.Event('input', { bubbles: true }));
+    await sleep(60);
+    obs.disconnect();
+
+    const hits = d.querySelectorAll('#lib-gw-list .item').length;
+    chk(hits > 0 && hits < 317,
+      '★ 在搜索框里敲「李白」，列表真的收成子集（实际 ' + hits + ' 首）—— 这是 #243 报的那一步');
+    chk(renders === 1,
+      '★ 一个字只重画一次列表（实际 ' + renders + ' 次）—— 绑两遍就会画两遍');
+
+    input.value = '';
+    input.dispatchEvent(new w.Event('input', { bubbles: true }));
+    await sleep(60);
+    chk(d.querySelectorAll('#lib-gw-list .item').length === 317,
+      '清空关键字，317 首全回来（不是只留一个空壳）');
+  }
 
   click(d.querySelector('.library-card[data-book="songci"]'));
   await sleep(350);
@@ -167,7 +208,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     ['guwen/index.html', '/guwen/', null, '古文观止'],
     ['zhaoming/index.html', '/zhaoming/', null, '昭明文选'],
     ['yuanqu/index.html', '/yuanqu/', 30, '元曲三百首'],
-    ['classic/index.html', '/classic/', 100, '课外必背小古文']
+    ['classic/index.html', '/classic/', 102, '课外必背小古文']
   ]) {
     const w2 = boot(f, url);
     await w2.__ready;

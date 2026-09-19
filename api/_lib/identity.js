@@ -145,6 +145,10 @@ function newResetId() {
   return "r_" + crypto.randomBytes(8).toString("hex");
 }
 
+function newReportId() {
+  return "rp_" + crypto.randomBytes(8).toString("hex");
+}
+
 function newSalt() {
   return crypto.randomBytes(8).toString("hex");
 }
@@ -159,6 +163,7 @@ module.exports = {
   tokenHash: tokenHash,
   newVerifyId: newVerifyId,
   newResetId: newResetId,
+  newReportId: newReportId,
   normalizePhone: normalizePhone,
   isPhoneShape: isPhoneShape,
   maskPhone: maskPhone,

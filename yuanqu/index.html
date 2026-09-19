@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#2f6055" />
   <title>跬步 · 元曲三百首</title>
-  <meta name="description" content="跬步元曲三百首：小令与套数 480 篇，按赋、诗、骚、七、诏、册等三十九类文体分组，每篇都有原文、生字注音、语音朗读与白话译文，想读哪篇点哪篇。" />
+  <meta name="description" content="跬步元曲三百首：30 首小令与套数，按黄钟、正宫、中吕、南吕、双调、越调六大宫调分组，每首都有原文、生字注音、语音朗读与白话译文，想读哪首点哪首。" />
   <meta name="format-detection" content="telephone=no" />
 
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -121,7 +121,16 @@
           <span class="sr-only" id="rd-trans-toggle-text">显示译文</span>
         </button>
 
-        <button type="button" class="mini-btn recite-btn" id="gw-recite" data-gw="recite" data-on="0" aria-pressed="false" title="加入自选集合">
+        <button type="button" class="mini-btn report-btn" id="gw-report" data-gw="report" title="报告这一篇的错误">
+          <span class="btn-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 3.6v16.8" />
+              <path d="M6 4.6h11.4l-2.2 3.6 2.2 3.6H6Z" />
+            </svg>
+          </span>
+          <span class="sr-only" id="gw-report-text">报告错误</span>
+        </button>
+<button type="button" class="mini-btn recite-btn" id="gw-recite" data-gw="recite" data-on="0" aria-pressed="false" title="加入自选集合">
           <span class="btn-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
               <path d="M7 4.6h10a1.4 1.4 0 0 1 1.4 1.4v13.4l-6.4-4.1-6.4 4.1V6a1.4 1.4 0 0 1 1.4-1.4Z" />
@@ -235,6 +244,7 @@
   <script src="data/index.js"></script>
   <script src="data/pinyin-table.js"></script>
   <script src="data/common-chars.js"></script>
+  <script src="js/pinyin-edit.js"></script>
   <script src="js/pinyin.js"></script>
 
   <script src="js/auth-core.js"></script>
@@ -243,6 +253,9 @@
   <script src="js/reader.js"></script>
 
   <script src="js/play-modes.js"></script>
+  <script src="js/auth-api.js"></script>
+  <script src="js/account-api.js"></script>
+  <script src="js/report.js"></script>
   <script src="js/reader-core.js"></script>
   <script src="js/avatar.js"></script>
   <script src="js/chrome.js"></script>

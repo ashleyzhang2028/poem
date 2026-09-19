@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#2f6055" />
+  <title>跬步 · 近现代诗词</title>
+  <meta name="description" content="跬步近现代诗词：近百年间的志士之诗 · 原作引用，译文自拟；每篇都有原文、生字注音、语音朗读与白话译文，想读哪篇点哪篇。" />
+  <meta name="format-detection" content="telephone=no" />
+
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="跬步课外阅读 · 近现代诗词：近百年间的志士之诗 · 原作引用，译文自拟。" />
+  <meta name="mobile-web-app-capable" content="yes" />
+
+  <base href="/" />
+  <link rel="icon" href="/icons/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/classic.css" />
+</head>
+<body data-nav="jinxiandai" data-page="近现代诗词">
+
+  <div class="app" data-gw-root>
+
+    <header class="topbar">
+    </header>
+    <div class="toolbar">
+      <div class="search-wrap">
+        <span class="search-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="6.4" />
+            <path d="M15.8 15.8 20 20" />
+          </svg>
+        </span>
+        <input id="gw-search" data-gw="search" class="search-input" type="search" placeholder="搜索篇名 / 出处 / 作者" autocomplete="off" />
+      </div>
+      <div class="seg mini filter-seg" id="gw-filter-seg" role="group" aria-label="筛选">
+        <button type="button" data-filter="all" class="active" aria-pressed="true">全部</button>
+        <button type="button" data-filter="unread" aria-pressed="false">未读</button>
+      </div>
+
+      <button class="gw-play gw-play-main" id="gw-random-read" data-gw="random" type="button" data-on="0"
+        aria-pressed="false" title="随机连读：随机抽一篇开读，读完自动跳下一篇">
+        <span class="play-glyph" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M8.4 6.1 18.3 12 8.4 17.9Z" fill="none" stroke="currentColor" stroke-width="1" stroke-linejoin="round" stroke-linecap="round" /></svg>
+        </span>
+        <span class="pause-glyph" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M8.2 5h2.9v14H8.2Z M12.9 5h2.9v14h-2.9Z" fill="currentColor" stroke="none" /></svg>
+        </span>
+        <span class="sr-only" id="gw-random-read-text">随机连读</span>
+      </button>
+    </div>
+
+    <div class="list" id="gw-list" data-gw="list"></div>
+
+  </div>
+
+  <div class="reader" id="gw-reader" data-gw="reader" hidden>
+
+    <header class="topbar"></header>
+    <div class="reader-body">
+      <h2 class="rd-title" id="rd-title"></h2>
+      <div class="meta rd-meta" id="rd-meta"></div>
+
+      <div class="reader-actions" id="rd-actions-main">
+        <div class="seg mini icon-seg" id="rd-align-seg" data-gw="align-seg" role="group" aria-label="正文对齐方式">
+          <button type="button" data-gw="align" data-align="left" aria-pressed="false" title="左对齐" aria-label="左对齐">
+            <span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round">
+              <path d="M4 6.5h16M4 11h10.5M4 15.5h16M4 20h8" />
+            </svg></span>
+          </button>
+          <button type="button" data-gw="align" data-align="center" class="active" aria-pressed="true" title="居中对齐" aria-label="居中对齐">
+            <span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round">
+              <path d="M4 6.5h16M6.8 11h10.4M4 15.5h16M8 20h8" />
+            </svg></span>
+          </button>
+          <button type="button" data-gw="align" data-align="right" aria-pressed="false" title="右对齐" aria-label="右对齐">
+            <span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round">
+              <path d="M4 6.5h16M9.5 11H20M4 15.5h16M12 20h8" />
+            </svg></span>
+          </button>
+        </div>
+        <div class="seg mini font-seg" id="rd-font-seg" data-gw="font-seg" role="group" aria-label="正文字号">
+          <button type="button" id="rd-font-down" data-gw="font-down" aria-label="缩小字号" title="缩小字号">A－</button>
+          <button type="button" id="rd-font-up" data-gw="font-up" aria-label="放大字号" title="放大字号">A＋</button>
+        </div>
+        <div class="seg mini pinyin-seg" id="rd-pinyin-seg" data-gw="pinyin-seg" data-on="0" role="group" aria-label="注音方式">
+          <button type="button" data-gw="pinyin" data-mode="off" aria-pressed="false">不注音</button>
+          <button type="button" data-gw="pinyin" data-mode="rare" class="active" aria-pressed="true">生字</button>
+          <button type="button" data-gw="pinyin" data-mode="all" aria-pressed="false">全文</button>
+        </div>
+      </div>
+
+      <div class="reader-actions icon-row" id="rd-actions-icons">
+        <button type="button" class="mini-btn" id="rd-read-btn" data-gw="read" data-on="0" aria-pressed="false" title="朗读原文：标题、朝代、作者与正文">
+          <span class="btn-icon play-glyph" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M8.4 6.1 18.3 12 8.4 17.9Z" fill="none" stroke="currentColor" stroke-width="1" stroke-linejoin="round" stroke-linecap="round" /></svg>
+          </span>
+          <span class="btn-icon pause-glyph" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M8.2 5h2.9v14H8.2Z M12.9 5h2.9v14h-2.9Z" fill="currentColor" stroke="none" /></svg>
+          </span>
+          <span class="sr-only" id="rd-read-text">朗读原文</span>
+        </button>
+        <button type="button" class="mini-btn" id="rd-trans-toggle" data-gw="trans-toggle" data-on="0" aria-pressed="false" title="显示译文">
+          <span class="btn-icon play-glyph" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 5.6h9.2a1.4 1.4 0 0 1 1.4 1.4v9.4a1.4 1.4 0 0 1-1.4 1.4H4Z" />
+              <path d="M7 9.4h4.6M7 12.8h3.2" />
+              <path d="M15.4 9.2h3.2a1.4 1.4 0 0 1 1.4 1.4v6.2a1.4 1.4 0 0 1-1.4 1.4h-2.2l-1 1.6-.9-1.6h-.1" />
+            </svg>
+          </span>
+          <span class="btn-icon pause-glyph" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 5.6h9.2a1.4 1.4 0 0 1 1.4 1.4v9.4a1.4 1.4 0 0 1-1.4 1.4H4Z" />
+              <path d="M7 9.4h4.6M7 12.8h3.2" />
+              <path d="M15.4 9.2h3.2a1.4 1.4 0 0 1 1.4 1.4v6.2a1.4 1.4 0 0 1-1.4 1.4h-2.2l-1 1.6-.9-1.6h-.1" />
+              <path d="M20.6 4.2 15.6 20.2" />
+            </svg>
+          </span>
+          <span class="sr-only" id="rd-trans-toggle-text">显示译文</span>
+        </button>
+
+        <button type="button" class="mini-btn recite-btn" id="gw-recite" data-gw="recite" data-on="0" aria-pressed="false" title="加入自选集合">
+          <span class="btn-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M7 4.6h10a1.4 1.4 0 0 1 1.4 1.4v13.4l-6.4-4.1-6.4 4.1V6a1.4 1.4 0 0 1 1.4-1.4Z" />
+            </svg>
+          </span>
+          <span class="sr-only" id="gw-recite-text">加入背诵</span>
+        </button>
+        <button type="button" class="mini-btn done-btn" id="gw-done" data-gw="done">
+          <span class="btn-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 12.5 10 17.5 19.5 7" />
+            </svg>
+          </span>
+          <span class="sr-only" id="gw-done-text">标记已读</span>
+        </button>
+      </div>
+      <pre class="poem-text reader-text" id="rd-text" data-gw="text"></pre>
+      <section class="trans-box" id="rd-trans" data-gw="trans" hidden>
+        <div class="trans-head">
+          <h3>白话译文</h3>
+
+          <button type="button" class="trans-read" id="rd-trans-read" data-gw="trans-read" data-on="0" aria-pressed="false" disabled title="朗读白话译文">
+            <span class="btn-icon play-glyph" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M8.4 6.1 18.3 12 8.4 17.9Z" fill="none" stroke="currentColor" stroke-width="1" stroke-linejoin="round" stroke-linecap="round" /></svg>
+            </span>
+            <span class="btn-icon pause-glyph" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M8.2 5h2.9v14H8.2Z M12.9 5h2.9v14h-2.9Z" fill="currentColor" stroke="none" /></svg>
+            </span>
+            <span id="rd-trans-read-text" class="trans-read-label">朗读</span>
+          </button>
+        </div>
+        <p class="rd-trans-text" id="rd-trans-text"></p>
+
+        <p class="trans-src rd-trans-src" id="rd-trans-src"></p>
+      </section>
+
+      <nav class="reader-nav" id="rd-nav">
+        <button type="button" class="prev" id="rd-prev" data-gw="prev">
+          <span aria-hidden="true">‹</span>
+          <span>
+            <span class="nav-label">上一篇</span>
+            <span class="nav-title" id="rd-prev-title" data-gw="prev-title"></span>
+          </span>
+        </button>
+        <button type="button" class="next" id="rd-next" data-gw="next">
+          <span>
+            <span class="nav-label">下一篇</span>
+            <span class="nav-title" id="rd-next-title" data-gw="next-title"></span>
+          </span>
+          <span aria-hidden="true">›</span>
+        </button>
+      </nav>
+    </div>
+  </div>
+
+  <div class="modal" id="settings-modal" hidden>
+    <div class="modal-mask" data-settings-close="1"></div>
+    <div class="modal-box small" role="dialog" aria-modal="true" aria-label="设置">
+      <button class="modal-close" data-settings-close="1" aria-label="关闭">✕</button>
+      <div class="modal-head"><h2>设置</h2></div>
+      <div class="settings-item">
+        <label for="input-username">用户名</label>
+        <input id="input-username" class="settings-input" type="text" maxlength="12"
+               placeholder="Ashley" autocomplete="off" enterkeyhint="done" />
+      </div>
+      <div class="settings-item">
+        <label>阅读辅助</label>
+        <div class="seg small" id="seg-helper-c">
+          <button type="button" data-helper="off">关闭</button>
+          <button type="button" data-helper="on" class="active">开启</button>
+        </div>
+        <div class="settings-hint">开启后打开即自动注音</div>
+      </div>
+      <div class="settings-tip">
+        <p>其余设置在底部页签「设置」里调整。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+
+  <script src="data/poems-jinxiandai.js"></script>
+
+  <script src="data/works-map.js"></script>
+  <script src="data/works-index.js"></script>
+
+  <script src="data/text-master.js"></script>
+  <script src="data/canonical-texts.js"></script>
+
+  <script src="js/family.js"></script>
+  <script src="js/progress-store.js"></script>
+
+  <script src="js/sync-store.js"></script>
+
+  <script src="js/storage.js"></script>
+  <script src="js/collections.js"></script>
+
+  <script src="data/poems-1.js"></script>
+  <script src="data/poems-2.js"></script>
+  <script src="data/poems-3.js"></script>
+  <script src="data/poems-4.js"></script>
+  <script src="data/poems-5.js"></script>
+  <script src="data/poems-6.js"></script>
+  <script src="data/poems-7.js"></script>
+  <script src="data/poems-8.js"></script>
+  <script src="data/poems-9.js"></script>
+  <script src="data/poems-10.js"></script>
+  <script src="data/poems-11.js"></script>
+  <script src="data/poems-12.js"></script>
+
+  <script src="data/index.js"></script>
+  <script src="data/pinyin-table.js"></script>
+  <script src="data/common-chars.js"></script>
+  <script src="js/pinyin-edit.js"></script>
+  <script src="js/pinyin.js"></script>
+
+  <script src="js/auth-core.js"></script>
+  <script src="js/entitlement.js"></script>
+  <script src="js/speech.js"></script>
+  <script src="js/reader.js"></script>
+
+  <script src="js/play-modes.js"></script>
+  <script src="js/reader-core.js"></script>
+  <script src="js/avatar.js"></script>
+  <script src="js/chrome.js"></script>
+  <script src="js/pwa.js"></script>
+
+  <script src="data/group-order.js"></script>
+  <script src="js/jinxiandai.js"></script>
+</body>
+</html>

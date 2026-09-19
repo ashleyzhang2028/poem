@@ -2,14 +2,14 @@
    同篇对照表（主表裁定规则的静态成果）
    --------------------------------------------------------------------------
    由 scripts/build-works-map.js 离线算出：**正文（去标点后）一致 = 同一篇作品**。
-   只登记「在两部及以上集子里重复出现」的那些作品（共 101 组），
+   只登记「在两部及以上集子里重复出现」的那些作品（共 117 组），
    单条的作品不必登记 —— 它本来就只出现一次，条目 id 自己就是作品 id。
 
    ⚠️ 这是**生成文件**，改动请改 scripts/build-works-map.js 后重跑，
       不要手改这里 —— 下次重新生成会把手工改动覆盖掉。
 
    为什么要单独落成一份**静态数据**而不是每页现算：
-     现算要先备齐七部集子的全部数据（约 3MB）。集子索引页只加载自己那一部，
+     现算要先备齐九部集子的全部数据（约 3MB）。集子索引页只加载自己那一部，
      它也要判重（「这篇是不是已经在课内背过了」），现算就会得到一张残表。
      这一份 8KB，任何页面都能引，判重口径全站一致。
 
@@ -66,6 +66,8 @@ window.WORKS_GROUPS = [
   { wid: "w-poems-cz8-27", title: "送友人", titles: ["送友人"], entries: ["poems-cz8-27","tangshi-ts-107"] },
   { wid: "w-poems-cz8-28", title: "卜算子·黄州定慧院寓居作", titles: ["卜算子·黄州定慧院寓居作","卜算子·黄州定惠院寓居作"], entries: ["poems-cz8-28","songci-sc-70"] },
   { wid: "w-poems-cz8-29", title: "卜算子·咏梅", titles: ["卜算子·咏梅"], entries: ["poems-cz8-29","songci-sc-173"] },
+  { wid: "w-poems-cz9-01", title: "沁园春·雪", titles: ["沁园春·雪"], entries: ["poems-cz9-01","jinxiandai-jxd-07"] },
+  { wid: "w-poems-cz9-05", title: "醉翁亭记", titles: ["醉翁亭记"], entries: ["poems-cz9-05","guwen-gwj-127"] },
   { wid: "w-poems-cz9-07", title: "行路难（其一）", titles: ["行路难（其一）","行路难","行路难·其一"], entries: ["poems-cz9-07","tangshi-ts-77","yuefu-yf-37"] },
   { wid: "w-poems-cz9-10", title: "月夜忆舍弟", titles: ["月夜忆舍弟"], entries: ["poems-cz9-10","tangshi-ts-114"] },
   { wid: "w-poems-cz9-11", title: "长沙过贾谊宅", titles: ["长沙过贾谊宅"], entries: ["poems-cz9-11","tangshi-ts-200"] },
@@ -73,20 +75,33 @@ window.WORKS_GROUPS = [
   { wid: "w-poems-cz9-23", title: "临江仙·夜登小阁忆洛中旧游", titles: ["临江仙·夜登小阁忆洛中旧游","临江仙"], entries: ["poems-cz9-23","songci-sc-147"] },
   { wid: "w-poems-cz9-28", title: "山坡羊·骊山怀古", titles: ["山坡羊·骊山怀古"], entries: ["poems-cz9-28","yuanqu-yq-3"] },
   { wid: "w-poems-cz9-29", title: "朝天子·咏喇叭", titles: ["朝天子·咏喇叭"], entries: ["poems-cz9-29","yuanqu-yq-11"] },
+  { wid: "w-poems-gz10-01", title: "沁园春·长沙", titles: ["沁园春·长沙"], entries: ["poems-gz10-01","jinxiandai-jxd-01"] },
   { wid: "w-poems-gz10-02", title: "短歌行", titles: ["短歌行"], entries: ["poems-gz10-02","yuefu-yf-11"] },
+  { wid: "w-poems-gz10-04", title: "梦游天姥吟留别", titles: ["梦游天姥吟留别"], entries: ["poems-gz10-04","tangshi-ts-41"] },
   { wid: "w-poems-gz10-05", title: "登高", titles: ["登高"], entries: ["poems-gz10-05","tangshi-ts-190"] },
+  { wid: "w-poems-gz10-06", title: "琵琶行并序", titles: ["琵琶行并序","琵琶行·并序"], entries: ["poems-gz10-06","tangshi-ts-59"] },
   { wid: "w-poems-gz10-07", title: "念奴娇·赤壁怀古", titles: ["念奴娇·赤壁怀古"], entries: ["poems-gz10-07","songci-sc-67"] },
   { wid: "w-poems-gz10-08", title: "永遇乐·京口北固亭怀古", titles: ["永遇乐·京口北固亭怀古"], entries: ["poems-gz10-08","songci-sc-183"] },
   { wid: "w-poems-gz10-09", title: "声声慢·寻寻觅觅", titles: ["声声慢·寻寻觅觅","声声慢"], entries: ["poems-gz10-09","songci-sc-249"] },
+  { wid: "w-poems-gz10-12", title: "赤壁赋", titles: ["赤壁赋","前赤壁赋"], entries: ["poems-gz10-12","guwen-gwj-139"] },
   { wid: "w-poems-gz10-13", title: "涉江采芙蓉", titles: ["涉江采芙蓉"], entries: ["poems-gz10-13","yuefu-yf-10"] },
   { wid: "w-poems-gz10-16", title: "虞美人·春花秋月何时了", titles: ["虞美人·春花秋月何时了","虞美人"], entries: ["poems-gz10-16","yuefu-yf-57"] },
   { wid: "w-poems-gz10-18", title: "桂枝香·金陵怀古", titles: ["桂枝香·金陵怀古","桂枝香"], entries: ["poems-gz10-18","songci-sc-47"] },
+  { wid: "w-poems-gz10-19", title: "阿房宫赋", titles: ["阿房宫赋"], entries: ["poems-gz10-19","guwen-gwj-98"] },
+  { wid: "w-poems-gz10-20", title: "谏太宗十思疏", titles: ["谏太宗十思疏"], entries: ["poems-gz10-20","guwen-gwj-91"] },
   { wid: "w-poems-gz10-21", title: "登岳阳楼", titles: ["登岳阳楼"], entries: ["poems-gz10-21","tangshi-ts-119"] },
   { wid: "w-poems-gz11-06", title: "将进酒", titles: ["将进酒"], entries: ["poems-gz11-06","tangshi-ts-78","yuefu-yf-36"] },
   { wid: "w-poems-gz11-07", title: "江城子·乙卯正月二十日夜记梦", titles: ["江城子·乙卯正月二十日夜记梦"], entries: ["poems-gz11-07","songci-sc-75"] },
+  { wid: "w-poems-gz11-08", title: "屈原列传", titles: ["屈原列传"], entries: ["poems-gz11-08","guwen-gwj-70"] },
+  { wid: "w-poems-gz11-09", title: "过秦论", titles: ["过秦论"], entries: ["poems-gz11-09","zhaoming-zm-437"] },
+  { wid: "w-poems-gz11-10", title: "燕歌行并序", titles: ["燕歌行并序","燕歌行·并序"], entries: ["poems-gz11-10","tangshi-ts-72"] },
   { wid: "w-poems-gz11-12", title: "锦瑟", titles: ["锦瑟"], entries: ["poems-gz11-12","tangshi-ts-213"] },
+  { wid: "w-poems-gz11-14", title: "蜀道难", titles: ["蜀道难"], entries: ["poems-gz11-14","tangshi-ts-74","yuefu-yf-35"] },
+  { wid: "w-poems-gz11-15", title: "陈情表", titles: ["陈情表"], entries: ["poems-gz11-15","guwen-gwj-85"] },
+  { wid: "w-poems-gz11-16", title: "归去来兮辞", titles: ["归去来兮辞"], entries: ["poems-gz11-16","guwen-gwj-87"] },
   { wid: "w-poems-gz11-19", title: "扬州慢·淮左名都", titles: ["扬州慢·淮左名都","扬州慢"], entries: ["poems-gz11-19","songci-sc-192"] },
   { wid: "w-poems-gz11-20", title: "客至", titles: ["客至"], entries: ["poems-gz11-20","tangshi-ts-187"] },
+  { wid: "w-poems-gz12-15", title: "滕王阁序", titles: ["滕王阁序"], entries: ["poems-gz12-15","guwen-gwj-93"] },
   { wid: "w-poems-xx1-02", title: "江南", titles: ["江南"], entries: ["poems-xx1-02","yuefu-yf-4"] },
   { wid: "w-poems-xx1-07", title: "春晓", titles: ["春晓"], entries: ["poems-xx1-07","tangshi-ts-230"] },
   { wid: "w-poems-xx1-08", title: "赠汪伦", titles: ["赠汪伦"], entries: ["poems-xx1-08","yuefu-yf-67"] },
@@ -105,6 +120,7 @@ window.WORKS_GROUPS = [
   { wid: "w-poems-xx3-17", title: "滁州西涧", titles: ["滁州西涧"], entries: ["poems-xx3-17","tangshi-ts-263"] },
   { wid: "w-poems-xx4-04", title: "出塞", titles: ["出塞"], entries: ["poems-xx4-04","tangshi-ts-88","yuefu-yf-30"] },
   { wid: "w-poems-xx4-05", title: "凉州词", titles: ["凉州词"], entries: ["poems-xx4-05","tangshi-ts-258","yuefu-yf-29"] },
+  { wid: "w-poems-xx4-11", title: "卜算子·咏梅", titles: ["卜算子·咏梅"], entries: ["poems-xx4-11","jinxiandai-jxd-11"] },
   { wid: "w-poems-xx4-13", title: "独坐敬亭山", titles: ["独坐敬亭山"], entries: ["poems-xx4-13","yuefu-yf-70"] },
   { wid: "w-poems-xx4-17", title: "鹿柴", titles: ["鹿柴"], entries: ["poems-xx4-17","tangshi-ts-222"] },
   { wid: "w-poems-xx4-18", title: "嫦娥", titles: ["嫦娥"], entries: ["poems-xx4-18","tangshi-ts-300"] },
@@ -125,6 +141,7 @@ window.WORKS_GROUPS = [
   { wid: "w-poems-xx6-08", title: "寒食", titles: ["寒食"], entries: ["poems-xx6-08","tangshi-ts-265"] },
   { wid: "w-poems-xx6-14", title: "清平乐·春归何处", titles: ["清平乐·春归何处","清平乐"], entries: ["poems-xx6-14","songci-sc-80"] },
   { wid: "w-poems-xx6-17", title: "过故人庄", titles: ["过故人庄"], entries: ["poems-xx6-17","tangshi-ts-132"] },
+  { wid: "w-poems-xx6-18", title: "七律·长征", titles: ["七律·长征"], entries: ["poems-xx6-18","jinxiandai-jxd-05"] },
   { wid: "w-poems-xx6-20", title: "天净沙·秋思", titles: ["天净沙·秋思"], entries: ["poems-xx6-20","yuanqu-yq-1"] },
   { wid: "w-poems-xx6-26", title: "江畔独步寻花（其六）", titles: ["江畔独步寻花（其六）","江畔独步寻花"], entries: ["poems-xx6-26","yuefu-yf-82"] },
 
@@ -139,7 +156,6 @@ window.WORKS_GROUPS = [
   { wid: "w-yuefu-yf-32", title: "关山月", titles: ["关山月"], entries: ["tangshi-ts-63","yuefu-yf-32"] },
   { wid: "w-yuefu-yf-34", title: "子夜吴歌·秋歌", titles: ["子夜吴歌·秋歌"], entries: ["tangshi-ts-64","yuefu-yf-34"] },
   { wid: "w-yuefu-yf-33", title: "长干行", titles: ["长干行"], entries: ["tangshi-ts-65","yuefu-yf-33"] },
-  { wid: "w-yuefu-yf-35", title: "蜀道难", titles: ["蜀道难"], entries: ["tangshi-ts-74","yuefu-yf-35"] },
   { wid: "w-yuefu-yf-38", title: "长相思", titles: ["长相思","长相思·其一"], entries: ["tangshi-ts-75","yuefu-yf-38"] },
   { wid: "w-yuefu-yf-46", title: "江南曲", titles: ["江南曲"], entries: ["tangshi-ts-91","yuefu-yf-46"] },
   { wid: "w-yuefu-yf-62", title: "玉阶怨", titles: ["玉阶怨"], entries: ["tangshi-ts-93","yuefu-yf-62"] }

@@ -185,6 +185,9 @@
         return false;
       }
       if (id === DAILY_EXTRA_ROW_ID) return false;
+      // 「注音勘误」也不进冲突裁决：它是一份「一个确定结果」的表，
+      // 按时间戳判新旧即可，问「保留本机还是保留账号」是多余的。
+      if (id === PINYIN_FIX_ROW_ID) return false;
       if (id.indexOf(READ_ROW_STAMP) === 0) return false;
       if (readSync() && readSync().isReadRow(id)) return false;
       if (/__at$/.test(id)) return false;
@@ -393,8 +396,9 @@
     var reg = familyRow();
     var extra = dailyExtraRow(seen);
     var cols = collectionsRow(seen);
+    var pfix = pinyinFixRow(seen);
     var reads = readRows(seen);
-    if (!list.length && !reg && !extra && !cols && !reads.length) {
+    if (!list.length && !reg && !extra && !cols && !pfix && !reads.length) {
       return Promise.resolve({ ok: true, applied: 0 });
     }
 
@@ -409,6 +413,7 @@
     if (reg) headRecs.push(reg);
     if (extra) headRecs.push(extra);
     if (cols) headRecs.push(cols);
+    if (pfix) headRecs.push(pfix);
     reads.forEach(function (r) { headRecs.push(r); });
     var head = Promise.resolve({ ok: true });
     if (headRecs.length) {
@@ -468,6 +473,17 @@
       if (row && RS && RS.isReadRow(row.id)) {
         var rv = applyRemoteReads(row);
         if (rv === "applied") { out.applied++; out.reads = true; }
+        return;
+      }
+
+      // 「自选集合」：与普通进度同一条路（谁最后写谁赢），但它**要**记 seen，
+      // 而且合并之后本机那一份的时间戳必须**就是云端那个**（否则每轮同步
+      // 都会把本机重写一遍，首页计划跟着反复重算）。见 applyRemoteCollections。
+      // 「注音勘误」：与自选集合同一条路（整份一份数据、谁最后改谁赢），
+      // 但**不进**冲突裁决 —— 按时间戳判新旧就够了。见 applyRemotePinyinFix。
+      if (row && row.id === PINYIN_FIX_ROW_ID) {
+        var pv = applyRemotePinyinFix(row);
+        if (pv === "applied") { out.applied++; out.pinyinFix = true; }
         return;
       }
 
@@ -565,6 +581,23 @@
     try { return C.cloudRow(seen || readSeen()) || null; } catch (e) { return null; }
   }
 
+  // 「注音勘误」（Issue #243）：一行 progress（`pinyin_fix:v1`），
+  // 与自选集合同路（整份一份数据、谁最后改谁赢）。它**不进冲突裁决** ——
+  // 勘误表是「一个确定的结果」，两边都有旧数据时该按时间戳判新旧，
+  // 而不是弹一次「保留本机还是保留账号」。
+  var PINYIN_FIX_ROW_ID = "pinyin_fix:v1";
+
+  function pinyinFixMod() {
+    var F = typeof window !== "undefined" ? window.PinyinFix : null;
+    return F && typeof F.cloudRow === "function" && typeof F.applyCloud === "function" ? F : null;
+  }
+
+  function pinyinFixRow(seen) {
+    var F = pinyinFixMod();
+    if (!F) return null;
+    try { return F.cloudRow(seen || readSeen()) || null; } catch (e) { return null; }
+  }
+
   // 「集子已读」（Issue #243 后续）：一个集子一行，`reads:<本机键名>`。
   function readSync() {
     var R = typeof window !== "undefined" ? window.ReadSync : null;
@@ -654,6 +687,26 @@
     // 无论合没合上都要记 seen：不记的话下一轮拉取会把它当新东西反复拉，
     // 每次都把本机那一份重写一遍（症状是「已读标记反复闪」）。
     if (cloudTs) markSeen(row.id, cloudTs);
+    return verdict;
+  }
+
+  // 「注音勘误」那一行（`pinyin_fix:v1`）：与自选集合同一套 —— 整份一份数据、
+  // 谁最后改谁赢，合并完把本机的时间戳同步成云端那个（下一轮才判得出「没变」）。
+  function applyRemotePinyinFix(row) {
+    var F = pinyinFixMod();
+    if (!F) return "skip";
+    var seen = readSeen();
+    var rowId = PINYIN_FIX_ROW_ID;
+    var known = norm(seen[rowId]);
+    var cloudTs = norm(row && row.updatedAt);
+    if (cloudTs && known === cloudTs && !row.deleted) return "skip";
+
+    var verdict = "skip";
+    try { verdict = F.applyCloud(row, seen) || "skip"; } catch (e) { verdict = "skip"; }
+    // ⚠️ applyCloud 可能判「本机这一份更新」而一个字都没写 —— 那种情况
+    //    **不能**记 seen（记了就等于承认「云端那一版收下了」，
+    //    于是本机那一版再也推不上去）。只有真收下（applied）才记。
+    if (verdict === "applied" && cloudTs) markSeen(rowId, cloudTs);
     return verdict;
   }
 
@@ -841,6 +894,7 @@
     FAMILY_ROW_ID: FAMILY_ROW_ID,
     DAILY_EXTRA_ROW_ID: DAILY_EXTRA_ROW_ID,
     COLLECTIONS_ROW_ID: COLLECTIONS_ROW_ID,
+    PINYIN_FIX_ROW_ID: PINYIN_FIX_ROW_ID,
     READ_ROW_PREFIX: READ_ROW_PREFIX,
     dailyExtraRow: dailyExtraRow,
     collectionsRow: collectionsRow,
