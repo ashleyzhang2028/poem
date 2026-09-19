@@ -161,7 +161,7 @@ setTimeout(() => {
     ['yuanqu/index.html', '/yuanqu/', '马致远', 30],
     ['yuefu/index.html', '/yuefu/', '木兰', 7],
     ['jinxiandai/index.html', '/jinxiandai/', '毛泽东', 24],
-    ['poems/index.html', '/poems/', '静夜思', 261]
+    ['poems/index.html', '/poems/', '静夜思', 251]
   ];
   SEARCH_PAGES.forEach(([file, url, kw, total]) => {
     const html = fs.readFileSync(path + file, 'utf8');

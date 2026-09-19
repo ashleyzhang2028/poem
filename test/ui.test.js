@@ -463,18 +463,34 @@ setTimeout(() => {
     d.querySelector('#m-font-down').dispatchEvent(new window.Event('click', { bubbles: true }));
     chk(d.querySelector('#m-text').style.fontSize === '17px', 'A－ 收小一级');
 
-    for (const px of ['15px', '13px']) {
+    for (const px of ['15px', '13px', '11px', '9px']) {
       d.querySelector('#m-font-down').dispatchEvent(new window.Event('click', { bubbles: true }));
       chk(d.querySelector('#m-text').style.fontSize === px,
         'A－ 可继续降到 ' + px + '（实际 ' + d.querySelector('#m-text').style.fontSize + '）');
     }
     d.querySelector('#m-font-down').dispatchEvent(new window.Event('click', { bubbles: true }));
-    chk(d.querySelector('#m-text').style.fontSize === '13px', '到底后继续点 A－ 仍停在 13px');
-    for (let i = 0; i < 2; i++) {
+    chk(d.querySelector('#m-text').style.fontSize === '9px',
+      '到底后继续点 A－ 仍停在 9px（Issue #229：比老的 13px 再往下降两档）');
+    for (let i = 0; i < 4; i++) {
       d.querySelector('#m-font-up').dispatchEvent(new window.Event('click', { bubbles: true }));
     }
     chk(d.querySelector('#m-text').style.fontSize === '17px',
       'A＋ 回到默认档 17px（实际 ' + d.querySelector('#m-text').style.fontSize + '）');
+
+    for (let i = 0; i < 8; i++) {
+      d.querySelector('#m-font-up').dispatchEvent(new window.Event('click', { bubbles: true }));
+    }
+    chk(d.querySelector('#m-text').style.fontSize === '25px',
+      'A＋ 顶到 25px 就停（实际 ' + d.querySelector('#m-text').style.fontSize + '）');
+    d.querySelector('#m-font-up').dispatchEvent(new window.Event('click', { bubbles: true }));
+    chk(d.querySelector('#m-text').style.fontSize === '25px', '到顶后继续点 A＋ 不再变大');
+
+    chk(window.localStorage.getItem('poem_font_v1') === '25', '顶档同样持久化');
+    for (let i = 0; i < 4; i++) {
+      d.querySelector('#m-font-down').dispatchEvent(new window.Event('click', { bubbles: true }));
+    }
+    chk(d.querySelector('#m-text').style.fontSize === '17px',
+      '再收四档回到默认 17px（实际 ' + d.querySelector('#m-text').style.fontSize + '）');
 
     chk(d.querySelectorAll('#m-align-seg button').length === 2 &&
       d.querySelectorAll('#m-align-seg button[data-align="right"]').length === 0,
