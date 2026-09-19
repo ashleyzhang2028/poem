@@ -795,14 +795,22 @@ setTimeout(() => {
     row1.querySelector('#rd-align-seg') && row1.querySelector('#rd-font-seg') && row1.querySelector('#rd-pinyin-seg'),
     '上一行依次是 对齐 / 字号 / 注音 三组按钮');
 
-  chk(row2.children.length === 4 &&
+  chk(row2.children.length === 5 &&
     row2.querySelector('#rd-read-btn') && row2.querySelector('#rd-trans-toggle') &&
-    row2.querySelector('#gw-done') && row2.querySelector('#gw-recite'),
-    '下一行依次是 正文朗读键 / 译文开关 / 标记已读 / 加入背诵 四组（实际 ' + row2.children.length + '）');
-  chk(row2.querySelectorAll('button > svg, button > span > svg').length >= 4, '图标行的按钮全部是 SVG 图标');
-  chk(row2.querySelectorAll(':scope > button .sr-only').length === 4,
-    '「正文朗读 / 译文开关 / 标记已读 / 加入背诵」的文案只留给读屏软件（.sr-only）');
-  chk(d.querySelectorAll('.reader-actions .mini-btn, .reader-actions .seg.mini').length === 7,
+    row2.querySelector('#gw-daily') && row2.querySelector('#gw-done') && row2.querySelector('#gw-recite'),
+    '下一行依次是 正文朗读键 / 译文开关 / 加入今日背诵 / 加入背诵 / 标记已读 五组（实际 ' +
+    row2.children.length + '）');
+  // 顺序（Issue #243 用户点名）：「今日背诵」那一颗插在**译文与加入背诵之间**。
+  const iconIds = [...row2.children].map(el => el.id);
+  chk(iconIds.join(',') === 'rd-read-btn,rd-trans-toggle,gw-daily,gw-recite,gw-done',
+    '五颗的先后就是用户点名的位置（实际 ' + iconIds.join(',') + '）');
+  chk(iconIds.indexOf('gw-daily') === iconIds.indexOf('rd-trans-toggle') + 1 &&
+    iconIds.indexOf('gw-daily') === iconIds.indexOf('gw-recite') - 1,
+    '「加入今日背诵」正插在**译文与加入背诵之间**（Issue #243 用户点名的那一格）');
+  chk(row2.querySelectorAll('button > svg, button > span > svg').length >= 5, '图标行的按钮全部是 SVG 图标');
+  chk(row2.querySelectorAll(':scope > button .sr-only').length === 5,
+    '「正文朗读 / 译文开关 / 加入今日背诵 / 标记已读 / 加入背诵」的文案只留给读屏软件（.sr-only）');
+  chk(d.querySelectorAll('.reader-actions .mini-btn, .reader-actions .seg.mini').length === 8,
     '工具条按钮共用同一套样式类（实际 ' +
     d.querySelectorAll('.reader-actions .mini-btn, .reader-actions .seg.mini').length + '）');
   const actionsCss = fs.readFileSync(path + 'css/classic.css', 'utf8');

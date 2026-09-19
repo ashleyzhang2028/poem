@@ -508,6 +508,11 @@
       listEl.addEventListener("click", function (e) {
         var box = suggestBox();
         if (!box || box.hidden) return;
+        // 候选下拉开着时，点结果列表的第一下是「收起下拉」—— 但**行里那几颗
+        // 圆钮不算**：点「＋」/「加入背诵」/「播放」本来就不该先收起下拉再点
+        // 第二下（Issue #243 实测出来的：第一下被吞掉，「点了没反应」）。
+        var t = e.target;
+        if (t && t.closest && t.closest(".item-daily, .item-recite, .item-read")) return;
         hideSuggest();
         e.stopPropagation();
         e.preventDefault();

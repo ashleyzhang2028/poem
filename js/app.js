@@ -242,10 +242,23 @@
   function planCacheKey() {
     return (
       "poem_plan_" + todayKeyStr() + "_" + settings.grade + "_" + settings.term + "_" +
-      scopeKey() + "_" + settings.dailyCount + "_" + collectionsKey() +
+      scopeKey() + "_" + settings.dailyCount + "_" + collectionsKey() + "_" +
+      dailyExtraKey() +
 
       "_algo-" + algoKey()
     );
+  }
+
+  // 今日加背的指纹：加 / 删一篇就换一把缓存键，计划随之重算。
+  // 取的是**今天**那一份（DailyExtra 自己按日期判），所以跨过 0 点指纹
+  // 自己会变 —— 与 todayKeyStr() 那一层双保险。
+  function dailyExtraKey() {
+    if (!window.DailyExtra) return "0";
+    try {
+      return window.DailyExtra.today() + "-" + window.DailyExtra.ids().join(",");
+    } catch (e) {
+      return "0";
+    }
   }
 
   function extraPoems() {
@@ -253,11 +266,62 @@
     return window.ReciteCollections.scheduleItems(window.SITE_INDEX || []);
   }
 
+  // 「今日加背」（js/daily-extra.js）：小朋友今天主动多背的那几篇。
+  // 它**不走** extraPoems 那条路：extraPoems 进的是 scheduler 的候选池，
+  // 池子会被 dailyCount（3/5/8/10）裁掉 —— 用户要的是「点一下，5 首变 6 首」，
+  // 被裁掉就成了一句空话。所以它由 withTodayExtra() 在计划生成**之后**并上，
+  // 数量无条件累加。
+  function todayExtraPoems() {
+    if (!window.DailyExtra) return [];
+    return window.DailyExtra.poems();
+  }
+
   function invalidateAndRefreshPlan() {
     invalidatePlan();
     todayPlan = buildTodayPlan();
     renderToday();
     renderAll();
+  }
+
+  // 把「今日加背」那几篇并进计划**末尾**。
+  //
+  // 三条口径：
+  //   ① 放在末尾 —— 今日背诵列表的第一条永远还是今天该背的那一首
+  //      （顺序变了，小孩会以为计划乱了）；
+  //   ② 按 wid 去重 —— 课内那首《静夜思》已经在计划里时，再从唐诗页
+  //      点一次「加入今日背诵」不会多出重复的一条；
+  //   ③ 数量无条件累加 —— 5 首的档加一篇就是 6 首，不被 dailyCount 裁掉。
+  function withTodayExtra(plan) {
+    const list = (plan || []).slice();
+    const extra = todayExtraPoems();
+    if (!extra.length) return list;
+
+    const seen = {};
+    list.forEach(function (it) {
+      if (!it || !it.poem) return;
+      seen[widOf(it.poem.id)] = true;
+    });
+
+    extra.forEach(function (p) {
+      const wid = widOf(p.id);
+      if (seen[wid]) return;
+      seen[wid] = true;
+      const rec = getRecord(p.id);
+      list.push({
+        poem: p,
+        reason: "pinned",
+        reviewRound: rec && rec.learned ? rec.level + 1 : 1,
+        lastReviewAt: rec ? rec.lastReviewAt : null
+      });
+    });
+    return list;
+  }
+
+  function widOf(id) {
+    if (window.WorksIndex && typeof window.WorksIndex.widOf === "function") {
+      try { return window.WorksIndex.widOf(id) || id; } catch (e) {  }
+    }
+    return id;
   }
 
   function buildTodayPlan() {
@@ -275,6 +339,9 @@
         extraPoems().forEach(function (p) {
           map[p.id] = p;
         });
+        todayExtraPoems().forEach(function (p) {
+          map[p.id] = p;
+        });
         const restored = ids
           .map(function (it) {
             return { poem: map[it.id], reason: it.reason, reviewRound: it.reviewRound, lastReviewAt: it.lastReviewAt };
@@ -282,13 +349,13 @@
           .filter(function (it) {
             return !!it.poem;
           });
-        if (restored.length === ids.length) return restored;
+        if (restored.length === ids.length) return withTodayExtra(restored);
       } catch (e) {
 
       }
     }
 
-    const plan = Scheduler.generateDailyPlan({
+    const plan = withTodayExtra(Scheduler.generateDailyPlan({
       grade: settings.grade,
       term: settings.term,
       count: settings.dailyCount,
@@ -296,7 +363,7 @@
       provider: provider,
       getRecord: getRecord,
       extraPoems: extraPoems()
-    });
+    }));
 
     sessionStorage.setItem(
       key,
@@ -383,15 +450,18 @@
         : esc(gradeName(p.grade) + termName(p.term));
       const el = document.createElement("div");
       el.className = "item " + (item.reason === "review" ? "review" : "new") +
+        (item.reason === "pinned" ? " pinned" : "") +
         (p.custom ? " optional" : "") + (done ? " done" : "");
       el.dataset.id = p.id;
       el.innerHTML =
         '<div class="item-main">' +
 
         '<h3 class="item-title"><span class="item-num">' + (idx + 1) + "</span>" + esc(p.custom ? showTitle(p.title) : p.title) +
-        '<span class="item-reason ' + (item.reason === "review" ? "review" : "") + '">' +
+        '<span class="item-reason ' + (item.reason === "review" ? "review"
+          : item.reason === "pinned" ? "pinned" : "") + '">' +
         (item.reason === "review" ? "复习 · 第" + (item.reviewRound || 1) + "轮"
           : item.reason === "extra" ? "巩固"
+          : item.reason === "pinned" ? "今日加背"
           : item.reason === "optional" ? "自选" : "新学") +
         "</span></h3>" +
 
@@ -424,10 +494,14 @@
     const reviewN = todayPlan.filter(function (it) {
       return it.reason === "review";
     }).length;
+    const pinnedN = todayPlan.filter(function (it) { return it.reason === "pinned"; }).length;
     $("#today-sub").textContent =
-      "共 " + todayPlan.length + " 首 · 待复习 " + reviewN + " · 新学 " + (todayPlan.length - reviewN);
+      "共 " + todayPlan.length + " 首 · 待复习 " + reviewN + " · 新学 " +
+      (todayPlan.length - reviewN - pinnedN) +
+      (pinnedN ? " · 加背 " + pinnedN : "");
 
     syncTodayReadBtn();
+    if (todaySearchUI) todaySearchUI.refresh();
   }
 
   function playGlyph() {
@@ -744,7 +818,9 @@
     $("#m-hint").textContent = planItem
       ? planItem.reason === "review"
         ? "这首诗按" + algoShort() + "到期了，复习后请如实选择掌握程度"
-        : "新学的诗，今天先记一遍"
+        : planItem.reason === "pinned"
+          ? "今天临时加背的，复习后同样按" + algoShort() + "排下次"
+          : "新学的诗，今天先记一遍"
       : "背诵后点击按钮，系统会安排下次复习时间";
 
     $("#modal").hidden = false;
@@ -1087,6 +1163,44 @@
     renderToday();
   }
 
+  let todaySearchUI = null;
+
+  function todayPlanItemOf(id) {
+    const list = todayPlan || [];
+    for (let i = 0; i < list.length; i += 1) {
+      if (list[i].poem && list[i].poem.id === id) return list[i];
+    }
+    return null;
+  }
+
+  // 今日背诵页顶上的「再找一首」——下拉与搜索页一致，多一颗「＋」。
+  function bindTodaySearch() {
+    if (!window.DailyExtraUI) return;
+    const ui = window.DailyExtraUI.bindSuggest({
+      input: "#today-search",
+      box: "#today-suggest",
+      onToast: showToast,
+      onOpen: function (p) {
+        // 点行本身 = 直接打开这一篇（与搜索页同一个手感）。打开前先把它加进
+        // 今天 —— **已经在里面的不许反而被移出**（行与那颗「＋」是两件事：
+        // 「＋」是开关，行是「打开看」）。
+        if (!window.DailyExtraUI.has(p)) addTodayExtra(p, true);
+        const item = todayPlanItemOf(p.id);
+        openPoem(item && item.poem ? item.poem : p,
+          item || { reason: "pinned", reviewRound: 1, lastReviewAt: null });
+      }
+    });
+    if (ui) todaySearchUI = ui;
+  }
+
+  function addTodayExtra(p, quiet) {
+    if (!window.DailyExtraUI || !p) return;
+    const r = window.DailyExtraUI.toggle(p);
+    if (!quiet && r.message) showToast(r.message);
+    if (r.ok === false) return;
+    if (todaySearchUI) todaySearchUI.refresh();
+  }
+
   function bindEvents() {
 
     $$("#seg-stage button").forEach(function (b) {
@@ -1220,6 +1334,7 @@
     if (btnReset) btnReset.addEventListener("click", function () {
       if (confirm("确定要清空全部背诵进度吗？此操作不可恢复。")) {
         Storage.clear();
+        if (window.DailyExtra) window.DailyExtra.clear();
         invalidatePlan();
         rebuildToday();
         renderAll();
@@ -1315,6 +1430,7 @@
     rebuildToday();
     renderAll();
     bindEvents();
+    bindTodaySearch();
     backfillSnapshots();
 
     openDeepLink();
@@ -1324,6 +1440,9 @@
     window.addEventListener("recite-collections-change", function () {
       invalidatePlan();
       rebuildToday();
+    });
+    window.addEventListener("daily-extra-change", function () {
+      invalidateAndRefreshPlan();
     });
     window.addEventListener("storage", function (e) {
       if (!window.ReciteCollections || e.key !== window.ReciteCollections.KEY) return;

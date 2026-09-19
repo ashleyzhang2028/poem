@@ -168,6 +168,7 @@
     renderAlgos();
     renderPlayModes();
     renderCollections();
+    renderDaily();
   }
 
   function exportMod() { return window.ExportCore || null; }
@@ -575,6 +576,127 @@
       }
     });
 
+  }
+
+  // ---- 「今日加背」（Issue #243）-------------------------------------------
+  //
+  // 用户 2026-09-19 的口径：加背的篇目不进自选集合，所以要有一处**看得见、
+  // 删得掉**的地方 —— 就放在「背诵」这张页上（它管的就是「今天背哪几首」）。
+  //
+  // 这一块的多选删除是用户点名的（「供用户随时删除（多选）」）：
+  //   一行一篇 + 行首一个勾选框；「移出选中的」按勾选删，「全部清空」全删。
+  //   只有两三个时也能一篇一篇删 —— 那时勾选只是多一步，所以「一封到底」
+  //   的确认留给「全部清空」那一颗（它会一次删掉好几篇，值得多问一句）。
+  function dailyMod() {
+    return (typeof window !== "undefined" && window.DailyExtra) || null;
+  }
+
+  function dailyItemTitle(it) {
+    var snap = (it && it.snap) || {};
+    var t = snap.title || it.id || "";
+    return window.ReciteCollections && window.ReciteCollections.displayTitle
+      ? window.ReciteCollections.displayTitle(t) : t;
+  }
+
+  function dailyItemMeta(it) {
+    var snap = (it && it.snap) || {};
+    var bits = [snap.dynasty || "", snap.author || ""];
+    var where = snap.bookName || snap.source || "";
+    var out = [];
+    bits.forEach(function (b) { if (b) out.push(esc(b)); });
+    if (where) out.push("<em>" + esc(where) + "</em>");
+    var rec = getRecord(it.id);
+    if (rec && rec.learned) out.push(esc(levelName(rec)));
+    return out.join(" · ");
+  }
+
+  function renderDaily() {
+    var box = $("#daily-list");
+    if (!box) return;
+    var D = dailyMod();
+
+    var tip = $("#daily-tip");
+    var tools = $("#daily-tools");
+    var items = D ? D.list() : [];
+
+    if (tip) {
+      tip.hidden = items.length > 0;
+      if (!items.length) {
+        tip.textContent = "今天还没有加背的。到集子页或搜索页点篇目左边的「＋」即可加进来，"
+          + "也可以直接在首页顶部那一条里搜。";
+      }
+    }
+    if (tools) tools.hidden = !items.length;
+
+    if (!items.length) {
+      box.innerHTML = "";
+      return;
+    }
+
+    box.innerHTML = items.map(function (it) {
+      return '<label class="daily-row">' +
+        '<input type="checkbox" class="daily-pick" value="' + esc(it.entryId || it.id) + '" ' +
+        'aria-label="选中 ' + esc(dailyItemTitle(it)) + '" />' +
+        '<span class="daily-main">' +
+        '<span class="daily-title">' + esc(dailyItemTitle(it)) + "</span>" +
+        '<span class="daily-meta">' + dailyItemMeta(it) + "</span>" +
+        "</span>" +
+        "</label>";
+    }).join("");
+  }
+
+  function pickedDaily() {
+    var box = $("#daily-list");
+    if (!box) return [];
+    return Array.prototype.slice.call(box.querySelectorAll(".daily-pick"))
+      .filter(function (el) { return el.checked; })
+      .map(function (el) { return el.value; });
+  }
+
+  function bindDaily() {
+    var panel = $("#daily-panel");
+    if (!panel) return;
+
+    var pickAll = $("#daily-pick-all");
+    if (pickAll) pickAll.addEventListener("click", function () {
+      Array.prototype.forEach.call(panel.querySelectorAll(".daily-pick"), function (el) {
+        el.checked = true;
+      });
+    });
+    var pickNone = $("#daily-pick-none");
+    if (pickNone) pickNone.addEventListener("click", function () {
+      Array.prototype.forEach.call(panel.querySelectorAll(".daily-pick"), function (el) {
+        el.checked = false;
+      });
+    });
+
+    var drop = $("#daily-remove-picked");
+    if (drop) drop.addEventListener("click", function () {
+      var D = dailyMod();
+      if (!D) return;
+      var ids = pickedDaily();
+      if (!ids.length) {
+        showToast("还没有选中任何一篇");
+        return;
+      }
+      var n = D.removeMany(ids);
+      renderDaily();
+      showToast(n ? "已移出 " + n + " 首" : "这几首已经不在今天的加背里了");
+    });
+
+    var clear = $("#daily-clear");
+    if (clear) clear.addEventListener("click", function () {
+      var D = dailyMod();
+      if (!D) return;
+      var n = D.count();
+      if (!n) return;
+      if (!window.confirm("把今天加背的 " + n + " 首全部移出？今天还没背的那些进度会保留。")) return;
+      D.clear();
+      renderDaily();
+      showToast("今天的加背已清空");
+    });
+
+    window.addEventListener("daily-extra-change", function () { renderDaily(); });
   }
 
   function algoModels() {
@@ -1083,6 +1205,7 @@
     renderControls();
     bindEvents();
     bindCollections();
+    bindDaily();
     bindAccount();
     bindSync();
     refreshServerIdentity();
