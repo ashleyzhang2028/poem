@@ -69,10 +69,8 @@ function check(name, cond, extra) {
 
     const icons = await page.$$eval('link[rel="apple-touch-icon"]', els =>
       els.map(e => ({ sizes: e.getAttribute('sizes'), href: e.getAttribute('href') })));
-    check('iPhone: apple-touch-icon 数量 >= 5', icons.length >= 5, '实际 ' + icons.length);
-    const sizesOk = ['120x120', '152x152', '167x167', '180x180'].every(s =>
-      icons.some(i => i.sizes === s));
-    check('iPhone: 120/152/167/180 四种尺寸齐全', sizesOk);
+    check('iPhone: 只留一条 apple-touch-icon（180，iOS 缺档时自行缩放最接近的）',
+      icons.length === 1 && /apple-touch-icon\.png$/.test(icons[0].href), JSON.stringify(icons));
 
     const iconStatuses = await page.evaluate(async () => {
       const links = Array.from(document.querySelectorAll('link[rel="apple-touch-icon"]'));
@@ -685,6 +683,13 @@ function check(name, cond, extra) {
 
             scrollW: last.scrollWidth,
             clientW: last.clientWidth,
+            // 「有没有被截断」= 文字的自然宽放不进盒宽。
+            // 早先这里写反了（scrollWidth <= clientWidth 才算 1），
+            // 于是「确实溢出了、确实截断了」反而判成失败。
+            // 摘句本身是 overflow:hidden + text-overflow:ellipsis + nowrap，
+            // 被 flex 压窄之后 scrollWidth（155）会**小于**自然宽（219），
+            // 所以判定要看「自然宽 > 盒宽」，而不是拿 scrollWidth 跟 clientWidth 比。
+            trimmed: (spans.length && fullW > last.getBoundingClientRect().width + 1) ? 1 : 0,
             fullW: +fullW.toFixed(2),
             boxW: +boxW.toFixed(2)
           };
@@ -976,29 +981,30 @@ function check(name, cond, extra) {
     const gapState = await page.evaluate(() => {
       const item = document.querySelector('#gw-list .item');
       const main = item.querySelector('.item-main').getBoundingClientRect();
-      const play = item.querySelector('.item-read');
-      const playRect = play.getBoundingClientRect();
-      const between = [...item.children].filter(k => {
-        const r = k.getBoundingClientRect();
-        return r.left >= main.right - 0.5 && r.right <= playRect.left + 0.5;
-      });
+      const play = item.querySelector('.item-read').getBoundingClientRect();
+      const recite = item.querySelector('.item-recite');
+      // 内容块与播放键之间现在可能是**两颗**圆键：「加入今日背诵」＋「加入背诵」。
+      // 两颗按钮由不同的开关各自决定「在不在场」，所以这里按实际渲染出来的圆键
+      // 逐个累加（盒宽 + 各自 margin-right），而不是写死一颗的宽度。
+      const btnBox = el => el
+        ? el.getBoundingClientRect().width + (parseFloat(getComputedStyle(el).marginRight) || 0)
+        : 0;
+      const daily = item.querySelector('.item-daily');
       return {
-        gap: +(playRect.left - main.right).toFixed(2),
-        ids: between.map(k => k.className.split(' ')[0]),
-        n: between.length,
-        sumW: +between.reduce((a, k) => a + k.getBoundingClientRect().width, 0).toFixed(2),
-        sumMr: +between.reduce((a, k) => a + (parseFloat(getComputedStyle(k).marginRight) || 0), 0).toFixed(2),
-        reciteW: +document.querySelector('#gw-list .item .item-recite').getBoundingClientRect().width.toFixed(2),
-        dailyW: (function () {
-          const d = document.querySelector('#gw-list .item .item-daily');
-          return d ? +d.getBoundingClientRect().width.toFixed(2) : null;
-        })(),
-        playW: +playRect.width.toFixed(2)
+        gap: +(play.left - main.right).toFixed(2),
+        reciteW: +recite.getBoundingClientRect().width.toFixed(2),
+        reciteMr: +(parseFloat(getComputedStyle(recite).marginRight) || 0).toFixed(2),
+        // dailyW 供下面「两枚圆键与播放键同径」那条比**本体宽**，所以是纯盒宽（不含外边距）；
+        // 占位求和用 dailyBoxW（本体宽 + margin-right）。
+        dailyW: daily ? +daily.getBoundingClientRect().width.toFixed(2) : null,
+        dailyBoxW: +btnBox(daily).toFixed(2),
+        reciteBoxW: +btnBox(recite).toFixed(2),
+        playW: +play.width.toFixed(2),
+        nBtn: [daily, recite].filter(Boolean).length
       };
     });
-    check('iPhone: 内容块 → 播放键这一段由中间的圆键占着（每枚盒宽 + 6px 累加）',
-      gapState.n >= 1 &&
-      Math.abs(gapState.gap - (gapState.sumW + gapState.sumMr)) <= 0.5,
+    check('iPhone: 内容块 → 播放键这一段由中间那几颗圆键占着（圆键盒宽 + 各自间距）',
+      Math.abs(gapState.gap - (gapState.dailyBoxW + gapState.reciteBoxW)) <= 0.5,
       JSON.stringify(gapState));
     check('iPhone: 中间两枚圆键（加进今天 / 加入背诵）与播放键同径',
       gapState.dailyW != null &&
@@ -1037,8 +1043,7 @@ function check(name, cond, extra) {
     //    同时没有超出「完整自然宽」（超出才是真的溢出到别的盒子上了）。
     const mb = numState.metaBox;
     check('iPhone: 放不下的摘句走截断而不是硬缩（文字没被压窄，是末尾省略）',
-      mb.overflows === 1 && mb.fullW > mb.clientW + 1 &&
-      mb.scrollW > mb.clientW + 1 && mb.scrollW <= mb.fullW + 1,
+      mb.overflows === 1 && mb.trimmed === 1,
       JSON.stringify(mb));
 
     check('iPhone: 内容块宽度不小于标题行的自然宽（标题没被压窄）',

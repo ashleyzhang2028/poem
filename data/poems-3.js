@@ -117,15 +117,13 @@ window.POEMS_3 = [
     translationSource: "school",
   },
   {
+    textRef: "poems-xx3-13",
     id: "xx3-13",
     title: "忆江南",
     author: "白居易",
     dynasty: "唐",
     grade: 3,
     term: 2,
-    text: "江南好，风景旧曾谙。\n日出江花红胜火，春来江水绿如蓝。能不忆江南？",
-    translation: "江南真好，那里的风景我从前就很熟悉。日出时江边的花红得胜过火焰，春天里江水碧绿如蓝草。怎能不怀念江南？",
-    translationSource: "school",
   },
   {
     id: "xx3-14",

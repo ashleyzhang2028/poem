@@ -137,15 +137,13 @@ window.POEMS_5 = [
     translationSource: "school",
   },
   {
+    textRef: "poems-xx5-14",
     id: "xx5-14",
     title: "从军行",
     author: "王昌龄",
     dynasty: "唐",
     grade: 5,
     term: 2,
-    text: "青海长云暗雪山，孤城遥望玉门关。\n黄沙百战穿金甲，不破楼兰终不还。",
-    translation: "青海湖上长云弥漫，遮暗了雪山，孤零零的城池远远望着玉门关。黄沙百战磨穿了身上的铠甲，不打败楼兰就绝不回还。",
-    translationSource: "school",
   },
   {
     textRef: "poems-xx5-16",
@@ -157,15 +155,13 @@ window.POEMS_5 = [
     term: 2,
   },
   {
+    textRef: "poems-xx5-17",
     id: "xx5-17",
     title: "渔歌子",
     author: "张志和",
     dynasty: "唐",
     grade: 5,
     term: 1,
-    text: "西塞山前白鹭飞，\n桃花流水鳜鱼肥。\n青箬笠，绿蓑衣，\n斜风细雨不须归。",
-    translation: "西塞山前白鹭飞翔，桃花盛开，春水上涨，鳜鱼正肥。头戴青箬笠，身披绿蓑衣，斜风细雨中不必回家。",
-    translationSource: "school",
   },
   {
     id: "xx5-18",

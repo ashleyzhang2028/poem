@@ -59,7 +59,7 @@ function ruleSegments(src, sel) {
 
 const itemRead = ruleOf(classicCode, '.item-read');
 chk(!/body\[data-nav/.test(itemRead),
-  '列表播放键 .item-read 不按页面分叉（六部集子共用同一条声明）');
+  '列表播放键 .item-read 不按页面分叉（七部集子共用同一条声明）');
 
 chk(/--item-btn:\s*36px/.test(ruleOf(cssCode, ':root')),
   '圆键直径 --item-btn: 36px 在 :root 里定义（全站唯一来源）');

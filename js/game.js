@@ -65,7 +65,8 @@
     { file: "data/poems-tangshi.js",  v: "POEMS_TANGSHI" },
     { file: "data/poems-songci.js",   v: "POEMS_SONGCI" },
     { file: "data/poems-guwen.js",    v: "POEMS_GUWEN" },
-    { file: "data/poems-zhaoming.js", v: "POEMS_ZHAOMING" }
+    { file: "data/poems-zhaoming.js", v: "POEMS_ZHAOMING" },
+    { file: "data/poems-yuanqu.js",  v: "POEMS_YUANQU" }
   ];
 
   var LOAD_TIMEOUT_MS = 8000;

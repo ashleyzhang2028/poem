@@ -138,13 +138,15 @@ const plansCommentOnly = pageJs;
 {
   const cmp = Ent.compare({});
 
+  // Issue #229 第五轮：三行改名的、以及折行点（breaks）都由内核说了算 ——
+  // name 是台账里的**全名**（读屏 / 搜索都按整句），折行只是表上的一处排版。
   const want = {
     'recite.basic': '每日背诵', 'library.all': '课外阅读', 'read.aloud': '语音朗读',
     'pinyin.helper': '阅读辅助', 'export.progress': '进度导出',
     'collections.many': '自选清单', 'sync.multiDevice': '设备同步',
     'export.paper': 'PDF / 打印', 'profile.family': '子用户',
-    'quiz.review': '题库', 'export.all': '课内诗词导出',
-    'exam.gathering': '古诗词大会', 'exam.paper': '试题模拟'
+    'quiz.review': '题库', 'export.all': '课内诗词 导出',
+    'exam.gathering': '古诗词 大会', 'exam.paper': '试题模拟'
   };
   Object.keys(want).forEach(k => {
     const row = cmp.rows.find(r => r.cap === k);
@@ -163,6 +165,35 @@ const plansCommentOnly = pageJs;
   chk(!!Ent.cap('exam.paper'), 'exam.paper 键名照旧（拆的是能力，不是键名）');
 
   chk(/合计/.test(PAGE), '表尾那一格写作「合计」（Issue #163：能用 → 合计）');
+
+  // ---- Issue #229 第五轮：三行改名 + 折行 ----
+  {
+    const e = cmp.rows.find(r => r.cap === 'algo.ebbinghaus');
+    chk(e.name === '斯宾浩斯遗忘曲线',
+      '「遗忘曲线」那一行的全名是「斯宾浩斯遗忘曲线」（实际 ' + e.name + '）');
+    chk(e.breaks && e.breaks[0] === '遗忘曲线',
+      '它在「遗忘曲线」前折行 —— 后半截是整个算法名，第一行留「斯宾浩斯」');
+
+    const x = cmp.rows.find(r => r.cap === 'export.all');
+    chk(x.name === '课内诗词 导出',
+      '导出那一行的名字是「课内诗词 导出」（实际 ' + x.name + '）');
+    chk(x.breaks && x.breaks[0] === '导出', '「导出」被折到第二行');
+
+    const g = cmp.rows.find(r => r.cap === 'exam.gathering');
+    chk(g.name === '古诗词 大会', '大会那一行的名字是「古诗词 大会」（实际 ' + g.name + '）');
+    chk(g.breaks && g.breaks[0] === '大会', '「大会」被折到第二行');
+
+    // 折行点必须真在名字里，且不是名字的开头（否则第一行是空的）
+    ['algo.ebbinghaus', 'export.all', 'exam.gathering'].forEach(cap => {
+      const r = cmp.rows.find(z => z.cap === cap);
+      const at = r.name.indexOf(r.breaks[0]);
+      chk(at > 0 && at < r.name.length, cap + ' 的折行点落在名字中段（位置 ' + at + '）');
+    });
+
+    // 只是排版：读到的名字仍是一整句（少了字 / 多个空格都是改了名字，不是折行）
+    chk(cmp.rows.every(r => !/\s{2,}/.test(r.name.trim()) || !!r.breaks),
+      '只有带 breaks 的那几行名字里有断字空格 —— 其余的仍是整齐的单句');
+  }
   chk(!/['"]能用['"]/.test(PAGE), 'js/plans.js 里不再出现「能用」这个表尾词');
 
   const rows = cmp.groups.reduce((acc, g) => acc.concat(g.rows.map(r => r.cap)), []);
@@ -260,6 +291,27 @@ const plansCommentOnly = pageJs;
   chk(/js\/plans\.js/.test(pageHtml), '加载 js/plans.js（本页逻辑）');
   chk(/<header class="topbar"/.test(pageHtml), '有顶栏挂载点');
   chk(/data-page="层级对比"/.test(pageHtml), '声明页名「层级对比」');
+
+  // Issue #229 第五轮：卡片顶上那一行（caption）文案收成「功能对比」，
+  // 并按卡片里其它小标题的样子显示（与 .account-card-title 同一套字号 / 字重 / 颜色）。
+  {
+    chk(/<caption class="plans-caption">功能对比<\/caption>/.test(pageHtml),
+      'caption 文案是「功能对比」（不再写一长句「各身份可用功能对照」）');
+    chk(!/各身份可用功能对照/.test(stripHtml(pageHtml)),
+      '旧的长句在页面可见文字里不再出现');
+    chk(/\.plans-caption \{[\s\S]{0,300}?font-size: 13px/.test(css) &&
+        /\.plans-caption \{[\s\S]{0,300}?font-weight: 600/.test(css) &&
+        /\.plans-caption \{[\s\S]{0,300}?letter-spacing: \.8px/.test(css),
+      'caption 的字号 / 字重 / 字距与 .account-card-title 同一套（13px · 600 · .8px）');
+    const title = (css.match(/\.account-card-title \{([\s\S]{0,300}?)\}/) || [0, ''])[1];
+    const cap = (css.match(/\.plans-caption \{([\s\S]{0,300}?)\}/) || [0, ''])[1];
+    ['font-size: 13px', 'font-weight: 600', 'letter-spacing: .8px', 'color: var(--ink-2)']
+      .forEach(rule => {
+        chk(title.indexOf(rule) >= 0 && cap.indexOf(rule) >= 0,
+          'caption 与卡片小标题共用「' + rule + '」');
+      });
+    chk(!/11\.5px/.test(cap), 'caption 不再是 11.5px 的浅色小字');
+  }
   chk(/data-dock="off"/.test(pageHtml), '声明 data-dock="off"（看完就走的页不挂底部页签）');
   chk(/data-back="\/settings\/"/.test(pageHtml),
     '返回落点回设置整页「关于」那一段（用户 2026-09-18：入口从「我的」页首卡改成「关于」里的一行链接）');
@@ -328,20 +380,27 @@ const plansCommentOnly = pageJs;
   // 字体里的 ✓ 是各家字体的自由发挥、笔形带手写的歪劲，所以「可用」改用
   // 一枚 SVG 勾：两条线段按坐标落，任何机器上都是同一个形状。
   {
-    const at = pageJs.indexOf('function markOkSvg(');
-    chk(at >= 0, 'js/plans.js 里有一个画「可用」记号的 markOkSvg()');
+    const at = pageJs.indexOf('function markSvg(');
+    chk(at >= 0, 'js/plans.js 里有一个画记号的 markSvg(path)（勾与叉共用）');
     const fn = at >= 0 ? pageJs.slice(at, pageJs.indexOf('function nameHtml', at)) : '';
 
     chk(/<svg/.test(fn), '那颗记号是一枚 <svg>（不是字体里的字符）');
     chk(/viewBox="0 0 24 24"/.test(fn),
       '带 viewBox \'0 0 24 24\'：坐标写在 24 的方格上，与字号 / 字体无关');
     chk(/stroke="currentColor"/.test(fn),
-      '描边走 currentColor（颜色仍由 .plans-mark.ok 的白色给，不另写色值）');
+      '描边走 currentColor（颜色仍由 .plans-mark.ok / .no 给，不另写色值）');
     chk(/stroke-linecap="round"/.test(fn) && /stroke-linejoin="round"/.test(fn),
       '两个笔尖与折点都是圆的（与胶囊同一套收口，不是刀切的方头）');
     chk(/aria-hidden="true"/.test(fn) && /focusable="false"/.test(fn),
       '装饰性的记号不进无障碍树（可用不可用由格子的文案回答）');
-    chk(!/stroke-width="1"/.test(fn), '有实际的笔画粗细（默认 1 太细，缩到 13px 就看不清）');
+    chk(!/stroke-width="1"/.test(fn), '有实际的笔画粗细（默认 1 太细，缩到 14px 就看不清）');
+
+    // 两条调用各给一条路径：勾走 CHECK_PATH，叉走 CROSS_PATH
+    chk(/function markOkSvg\(\) \{ return markSvg\(CHECK_PATH\); \}/.test(pageJs),
+      'markOkSvg() 把 CHECK_PATH 套进模子');
+    chk(/function markNoSvg\(\) \{ return markSvg\(CROSS_PATH\); \}/.test(pageJs),
+      'markNoSvg() 把 CROSS_PATH 套进同一个模子');
+    chk(!/MARK_NO\s*=/.test(pageJs), '那个字体里的 ✕（MARK_NO）已经交班给它自己的 SVG');
 
     // 路径写在一条具名常量里（表里 / 图例是同一份），markOkSvg() 只是把它套进 <svg>
     chk(fn.indexOf('CHECK_PATH') >= 0, 'd 取的是那条具名常量 CHECK_PATH（不在两处各写一遍坐标）');
@@ -369,26 +428,62 @@ const plansCommentOnly = pageJs;
     }
   }
 
-  // 反面：字体里的 ✓ 不许再回来（写回字符串就是退回手写样）
+  // 反面：字体里的 ✓ / ✕ 不许再回来（写回字符串就是退回手写样 / 歪心样）
   chk(!/MARK_OK\s*=\s*["']✓["']/.test(pageJs),
     'js/plans.js 里不再有 MARK_OK = "✓"（那个字符正是手写观感的来源）');
   chk(!/>\s*✓\s*</.test(pageJs) && !/>\s*✓\s*</.test(stripHtml(pageHtml)),
     'JS 与 HTML 里都不再把 ✓ 直接写进标签里');
-  chk(!/aria-hidden="true">✓</.test(stripHtml(pageHtml)),
-    '页脚那个图例的「可用」也是一枚 SVG（与表里的那一格同一个形状）');
+  chk(!/>\s*✕\s*</.test(pageJs) && !/>\s*✕\s*</.test(stripHtml(pageHtml)),
+    'JS 与 HTML 里都不再把字体里的 ✕ 写进标签里（Issue #229 第五轮：它也换成了 SVG）');
 
-  // 图例与表里用的是同一条路径 —— 不许两处各画各的
-  const legend = (stripHtml(pageHtml).match(/plans-mark ok[\s\S]{0,400}?<path d="([^"]+)"/) || [0, ''])[1];
-  const body = (pageJs.match(/CHECK_PATH\s*=\s*"([^"]+)"/) || [0, ''])[1];
-  chk(legend && body && legend === body,
-    '图例与表里的勾是同一条路径（实际图例 "' + legend + '" / 表里 "' + body + '"）');
+  // 页底那行图例（「√ 可用 · ✕ 不可用」）整行删掉 —— 圆里的图形自己说得清。
+  {
+    const visible = stripHtml(pageHtml).replace(/\s+/g, ' ');
+    chk(!/可用\s*·\s*不可用/.test(visible), '页底不再有「√ 可用 · ✕ 不可用」那行图例');
+    chk(!/account-hint/.test(pageHtml), '图例那个容器（.account-hint）也一并撤了');
+    chk(!/account-hint .plans-mark/.test(css), 'css 里为图例写的那一条（.account-hint .plans-mark）也撤了');
+  }
 
   chk(/\.plans-mark-svg/.test(css), 'css 里那颗 SVG 有自己的一段（.plans-mark-svg）');
-  chk(/\.plans-mark-svg \{[\s\S]{0,200}?width: 13px/.test(css) &&
-      /\.plans-mark-svg \{[\s\S]{0,200}?height: 13px/.test(css),
-    'SVG 是 13px 见方（略小于 18px 的圆，四周留出余白）');
-  chk(/\.plans-mark-svg \{[\s\S]{0,200}?margin: 0 auto/.test(css),
-    'SVG 在圆里水平居中（inline-block 默认贴左，勾会歪到一边）');
+  chk(/\.plans-mark-svg \{[\s\S]{0,200}?width: 14px/.test(css) &&
+      /\.plans-mark-svg \{[\s\S]{0,200}?height: 14px/.test(css),
+    'SVG 是 14px 见方（略小于 18px 的圆，四周留出 2px 余白）');
+
+  // Issue #229 第五轮：圆用 flex 居中 —— 圆心对圆心，不再各自带着字体墨迹盒碰运气。
+  // 先量：✕ 这颗字符按基线坐，圆底要空出一块（用户点名「打叉图标…偏下」）。
+  chk(/\.plans-mark \{[\s\S]{0,300}?display: inline-flex/.test(css) &&
+      /\.plans-mark \{[\s\S]{0,300}?align-items: center/.test(css) &&
+      /\.plans-mark \{[\s\S]{0,300}?justify-content: center/.test(css),
+    '圆是 inline-flex + 双向居中：勾与叉都由圆心定位（不再靠 line-height）');
+  chk(!/\.plans-mark \{[\s\S]{0,300}?line-height: 18px/.test(css),
+    '那一条 line-height: 18px（字符记号的居中方式）已经撤了');
+
+  // 两条路径的外接盒都居中在 24 的方格上 -> 圆里看着就是正的
+  {
+    const box = (p) => {
+      const n = p.match(/-?\d+(\.\d+)?/g).map(Number);
+      const xs = [], ys = [];
+      for (let i = 0; i < n.length; i += 2) { xs.push(n[i]); ys.push(n[i + 1]); }
+      return { x1: Math.min.apply(null, xs), x2: Math.max.apply(null, xs),
+               y1: Math.min.apply(null, ys), y2: Math.max.apply(null, ys) };
+    };
+    [['CHECK_PATH', '勾'], ['CROSS_PATH', '叉']].forEach(([name, label]) => {
+      const p = (pageJs.match(new RegExp(name + '\\s*=\\s*"([^"]+)"')) || [0, ''])[1];
+      chk(p.length > 0, label + '的路径写在具名常量 ' + name + ' 里');
+      if (!p.length) return;
+      const b = box(p);
+      chk(Math.abs((b.x1 + b.x2) / 2 - 12) < 0.01 && Math.abs((b.y1 + b.y2) / 2 - 12) < 0.01,
+        label + '的外接盒中心 = (12,12)，正落在 24 方格的中央（圆里才不偏）');
+      const w = b.x2 - b.x1, h = b.y2 - b.y1;
+      chk(w <= 18 && h <= 18, label + '不顶到圆边（外接盒 ' + w.toFixed(1) + '×' + h.toFixed(1) + '）');
+    });
+    const cross = box((pageJs.match(/CROSS_PATH\s*=\s*"([^"]+)"/) || [0, ''])[1]);
+    const crossNums = (pageJs.match(/CROSS_PATH\s*=\s*"([^"]+)"/) || [0, ''])[1]
+      .match(/-?\d+(\.\d+)?/g).map(Number);
+    chk(crossNums.length === 8, '叉是**两条**直线：四个端点，共 8 个坐标');
+    chk(cross.x1 === cross.y1 && cross.x2 === cross.y2,
+      '叉的两端在同一対角线上（x1=y1、x2=y2）—— 它才是个正叉，不是歪的');
+  }
   chk(/\.plans-col-me/.test(css), '「你现在在这」那一列有高亮');
 
   chk(/\.plans-th-cap \{[\s\S]{0,400}?max-width: 132px/.test(css),

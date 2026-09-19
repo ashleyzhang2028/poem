@@ -175,7 +175,8 @@
     var seen = readSeen();
     return Object.keys(seen).filter(function (id) {
 
-      return id !== CURSOR_KEY && id !== SIG_KEY && id !== FAMILY_ROW_ID && norm(seen[id]) < 0;
+      return id !== CURSOR_KEY && id !== SIG_KEY && id !== FAMILY_ROW_ID &&
+        id !== DAILY_EXTRA_ROW_ID && norm(seen[id]) < 0;
     });
   }
 
@@ -378,14 +379,23 @@
     var seen = readSeen();
     var list = pending(seen);
     var reg = familyRow();
-    if (!list.length && !reg) return Promise.resolve({ ok: true, applied: 0 });
+    var extra = dailyExtraRow(seen);
+    if (!list.length && !reg && !extra) return Promise.resolve({ ok: true, applied: 0 });
 
     var sent = 0;
 
+    // 名册（family:v1）与「今日加背」（daily_extra:v1）都顶着 child_id = ""，
+    // 与第一批**同路**：都不按孩子分家（名册是账号级的，加背只属于「今天」）。
+    var headRecs = [];
+    if (reg) headRecs.push(reg);
+    if (extra) headRecs.push(extra);
     var head = Promise.resolve({ ok: true });
-    if (reg) {
-      head = sendBatch([reg], "").then(function (r) {
-        if (r && r.ok) { sent++; writeSig(cloudSig(reg.payload)); }
+    if (headRecs.length) {
+      head = sendBatch(headRecs, "").then(function (r) {
+        if (r && r.ok) {
+          sent += headRecs.length;
+          if (reg) writeSig(cloudSig(reg.payload));
+        }
         return r;
       });
     }
@@ -421,6 +431,15 @@
         if (fv === "applied") { out.applied++; out.family = true; }
         return;
       }
+
+      // 「今日加背」那一行不进 applyRemote 的「谁最后写谁赢」：它是**按天合并**
+      // 的（两台设备今天各加两首，要并成四首），而且判据是 payload 里的
+      // `date`，与 updatedAt 谁大谁小无关。理由写在 js/daily-extra.js。
+      if (row && row.id === DAILY_EXTRA_ROW_ID) {
+        var dv = applyRemoteDailyExtra(row);
+        if (dv === "applied") { out.applied++; out.dailyExtra = true; }
+        return;
+      }
       var verdict = applyRemote(row);
       if (verdict === "applied") out.applied++;
       else if (verdict === "conflict") out.conflict++;
@@ -452,6 +471,8 @@
 
   var FAMILY_ROW_ID = "family:v1";
 
+  var DAILY_EXTRA_ROW_ID = "daily_extra:v1";
+
   var SIG_KEY = "__family_sig__";
   function cursor() { return norm(readSeen()[CURSOR_KEY]); }
   function setCursor(ts) {
@@ -461,6 +482,24 @@
   function familyMod() {
     var g = typeof window !== "undefined" ? window.Family : null;
     return g && typeof g.list === "function" ? g : null;
+  }
+
+  // 「今日加背」（Issue #243 后续）：它上云，走的是与自选集合同一条路 ——
+  // 作为 progress 里的**一行**（`daily_extra:v1`），不新开表。
+  //
+  // 这一行必须在同步的两个方向上都被照顾到（少照顾一边的症状很隐蔽）：
+  //   · 推送：本机改了要推上去（pushPending）；
+  //   · 拉取：别的设备改了要并进来（applyPull）；
+  //   · 首次合并：两端都有旧数据时不能进「冲突裁决」（见下）。
+  function dailyExtraMod() {
+    var D = typeof window !== "undefined" ? window.DailyExtra : null;
+    return D && typeof D.cloudRow === "function" && typeof D.applyCloud === "function" ? D : null;
+  }
+
+  function dailyExtraRow(seen) {
+    var D = dailyExtraMod();
+    if (!D) return null;
+    try { return D.cloudRow(seen || readSeen()) || null; } catch (e) { return null; }
   }
 
   function familySig() { return String(readSeen()[SIG_KEY] || ""); }
@@ -499,6 +538,31 @@
 
     if (ts <= known) ts = known + 1;
     return { id: FAMILY_ROW_ID, payload: { v: 1, at: at, profiles: list, updatedAt: ts }, updatedAt: ts, deleted: false };
+  }
+
+  // 与 applyRemoteFamily 同一个形状：判词是 "applied" / "skip"。
+  // 不返回 "conflict" —— 加背**不进冲突裁决**：它不是一份「进度」，
+  // 而是「今天加的那几首」；两端的日期不同就以本机为准（在 DailyExtra 里判）。
+  function applyRemoteDailyExtra(row) {
+    var D = dailyExtraMod();
+    if (!D) return "skip";
+    var seen = readSeen();
+    var known = norm(seen[DAILY_EXTRA_ROW_ID]);
+    var cloudTs = norm(row && row.updatedAt);
+
+    // 拉取 -> 读盘 -> 写盘之间隔着一个网络往返，两端可能同时改了同一行。
+    // 这里只在「云端确实比见过的更新」时才动本机（与 applyRemote 同一条守卫）。
+    if (cloudTs && known === cloudTs && !row.deleted) return "skip";
+
+    var verdict = "skip";
+    try { verdict = D.applyCloud(row, seen) || "skip"; } catch (e) { verdict = "skip"; }
+
+    // ⚠️ 无论合没合上都要把「见过」记下来：不记的话，下一轮拉取
+    //    （pull 是按 updated_at 的手表走的）会把这一行当成新东西反复拉，
+    //    而 applyCloud 每次都会把本机盘上那一份重写一遍 —— 症状是
+    //    「每轮同步都触发一次 daily-extra-change，首页计划反复重算」。
+    if (cloudTs) markSeen(DAILY_EXTRA_ROW_ID, cloudTs);
+    return verdict;
   }
 
   function applyRemoteFamily(row) {
@@ -554,7 +618,10 @@
     if (outcome.action === "ask") {
       snapshot();
 
-      var list = outcome.conflict || conflictIds(forCore, remoteRecs2);
+      // 「今日加背」不进冲突裁决：它是**按天合并**的（见 js/daily-extra.js），
+      // 两端都有旧数据时该并起来，而不是弹一次「保留本机还是保留账号」。
+      var list = (outcome.conflict || conflictIds(forCore, remoteRecs2))
+        .filter(function (id) { return id !== DAILY_EXTRA_ROW_ID; });
       list.forEach(function (id) {
         markSeen(id, -1);
       });
@@ -658,6 +725,9 @@
 
   var api = {
     NS: NS, EVT: EVT, CHUNK: CHUNK, TIMEOUT_MS: TIMEOUT_MS,
+    FAMILY_ROW_ID: FAMILY_ROW_ID,
+    DAILY_EXTRA_ROW_ID: DAILY_EXTRA_ROW_ID,
+    dailyExtraRow: dailyExtraRow,
 
     init: init,
 
