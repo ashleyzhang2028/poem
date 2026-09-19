@@ -24,14 +24,14 @@
 
     ebbinghaus: {
       key: "ebbinghaus",
-      name: "遗忘曲线",
+      name: "艾宾浩斯遗忘曲线",
       // 算法按层级开放（Issue #229 第四轮）：游客就这一张，登录后逐层加，
       // Max 四张齐备。minTier/login 与 js/entitlement.js 的 CAPS 逐字同源
       // （那边是唯一台账，这里只是把同一件事写在内核自己身上，供界面回显）。
       minTier: "free",
       login: false,
-      short: "遗忘曲线",
-      sub: "按遗忘曲线复习",
+      short: "艾宾浩斯遗忘曲线",
+      sub: "按艾宾浩斯遗忘曲线复习",
       years: "1885 · 固定间隔",
       blurb: "固定间隔表，记住就往下走一格，短篇最省心",
 

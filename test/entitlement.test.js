@@ -40,11 +40,12 @@ console.log('=== 一、免费不残缺：今天能用的，free 登录后一键�
   chk(E.can('export.progress', free).ok, '登录后的 free 可以导出进度');
   chk(E.can('export.progress', pro).ok && E.can('export.progress', max).ok, 'pro / max 当然也能用');
 
-  // Issue #229 第四轮（用户原话）：「游客可以用斯宾浩斯遗忘曲线 /
+  // Issue #229 第四轮（用户原话，引文里的错字沿原文；第六轮把名字正为
+  //「艾宾浩斯遗忘曲线」）：「游客可以用艾宾浩斯遗忘曲线 /
   // 登录 free 添加莱特纳盒 / pro 添加 SM-2 / max 再添加 FSRS 支持全部」
-  eq(E.cap('algo.ebbinghaus').minTier, 'free', '斯宾浩斯遗忘曲线：免费档，层级写在台账上');
+  eq(E.cap('algo.ebbinghaus').minTier, 'free', '艾宾浩斯遗忘曲线：免费档，层级写在台账上');
   eq(E.cap('algo.ebbinghaus').login, false, '遗忘曲线：游客就能用（登录不是条件）');
-  chk(E.can('algo.ebbinghaus', guest).ok, '游客可以用斯宾浩斯遗忘曲线');
+  chk(E.can('algo.ebbinghaus', guest).ok, '游客可以用艾宾浩斯遗忘曲线');
   eq(E.cap('algo.leitner').minTier, 'free', '莱特纳盒：层级仍是 free');
   eq(E.cap('algo.leitner').login, true, '莱特纳盒：登录才给');
   chk(!E.can('algo.leitner', guest).ok && E.can('algo.leitner', free).ok,
@@ -122,8 +123,10 @@ console.log('\n=== 三、pro / max 只加不减：层级越高能力单调不减
 
   // Issue #229 第五轮：名字是台账里的事实（读屏 / 搜索按整句），
   // 名字里那一个断字空格是对比表的折行点 —— breaks 指的就是空格后那一截。
-  chk(E.cap('algo.ebbinghaus').name === '斯宾浩斯遗忘曲线',
-    '遗忘曲线那条的全名是「斯宾浩斯遗忘曲线」（实际 ' + E.cap('algo.ebbinghaus').name + '）');
+  chk(E.cap('algo.ebbinghaus').name === '艾宾浩斯遗忘曲线',
+    '遗忘曲线那条的全名是「艾宾浩斯遗忘曲线」（实际 ' + E.cap('algo.ebbinghaus').name + '）');
+  chk(E.cap('algo.ebbinghaus').name.indexOf('斯宾浩斯') === -1,
+    '名字里不再有误写的「斯宾浩斯」');
   chk(E.cap('export.all').name === '课内诗词 导出',
     '名字收成「课内诗词 导出」（实际 ' + E.cap('export.all').name + '）');
   [['algo.ebbinghaus', '遗忘曲线'], ['export.all', '导出'], ['exam.gathering', '大会']]

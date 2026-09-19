@@ -120,8 +120,8 @@ setTimeout(() => {
   chk(!/一年级至高三/.test(d.querySelector('.topbar').textContent),
     '顶栏第一行不再出现「一年级至高三 · 」，只有「跬步 · XX的背诵」');
 
-  chk(d.querySelector('#brand-sub').textContent === '按遗忘曲线复习',
-    '顶栏第二行精简为「按遗忘曲线复习」（实际「' + d.querySelector('#brand-sub').textContent + '」）');
+  chk(d.querySelector('#brand-sub').textContent === '按艾宾浩斯遗忘曲线复习',
+    '顶栏第二行精简为「按艾宾浩斯遗忘曲线复习」（实际「' + d.querySelector('#brand-sub').textContent + '」）');
   chk(!/小古文/.test((d.querySelector('.topbar .brand-sub') || {}).textContent || '') ||
     !/想读哪篇点哪篇/.test((d.querySelector('.topbar .brand-sub') || {}).textContent || ''),
     '顶栏副标题不再出现「小古文想读哪篇点哪篇」');
