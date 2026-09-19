@@ -478,9 +478,53 @@ function check(name, cond, extra) {
       JSON.stringify(roundState.read));
     check('iPhone: 详情页播放键用 50% 圆角（圆环而非圆角方块）',
       roundState.read.radius === '50%', roundState.read.radius);
-    check('iPhone: 详情页译文键是正圆角胶囊（不纵向拉高）',
-      roundState.trans.h <= 34 && roundState.trans.h >= 18,
+    // ⚠️ 上限从 34 放到 38（2026-09-19）：这一条只在防「纵向被 flex 拉成椭圆」，
+    //    不是在钉某个具体高度。译文键的高度由
+    //      内边距 5px×2 + 行高 18px + 上下边框 1px×2 = 30px
+    //    再加图标（24px 框，见 css/classic.css 的换算表）撑到 36px ——
+    //    图标框那几轮在 13 → 14 → 24px 之间变过，胶囊也就跟着在 25 → 36px 之间长。
+    //    36px 的胶囊配 999px 圆角，看起来仍是「矮而圆」的一颗，没扁；
+    //    写死 34 只会让「图标放大一档」这件正当改动每次都变红。
+    //    真正要守的是下面两条：高度是**有限**的（没被拉成一整行），
+    //    且圆角是胶囊（半径 ≥ 半高）—— 后者才是「不扁」的判据。
+    check('iPhone: 详情页译文键是矮胶囊（没被 .trans-head 拉成一整行高）',
+      roundState.trans.h >= 18 && roundState.trans.h <= 38,
       JSON.stringify(roundState.trans));
+
+    // 那一枚图标框必须与胶囊同档：它由 --trans-icon 单点给出。
+    // style.css 与 classic.css 都写了 `.trans-read .btn-icon svg`（同特异性），
+    // 首页两张表都加载、classic.css 在后 —— 谁写死 px 谁就赢。曾写死成
+    // 24px，把 12px 的胶囊撑到 36px 高。这条断言钉住「图标框 ≤ 胶囊内高」。
+    // 量的是**计算样式里声明的图标框**（不是渲染盒）：此刻 #m-trans 还带着
+    // hidden，getBoundingClientRect 一律为 0，量渲染盒只会得到 0。
+    const transIcon = await page.evaluate(() => {
+      const btn = document.querySelector('#m-trans-read');
+      const svg = btn.querySelector('svg');
+      const cs = getComputedStyle(btn);
+      const scs = getComputedStyle(svg);
+      const padY = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+      const borderY = parseFloat(cs.borderTopWidth) + parseFloat(cs.borderBottomWidth);
+      // 胶囊在「内容宽 = 图标 + gap + 文字」时的高度：图标是最高的一件。
+      return {
+        iconDeclaredW: scs.width,
+        iconDeclaredH: scs.height,
+        boxH: +btn.getBoundingClientRect().height.toFixed(2),
+        innerH: +(btn.getBoundingClientRect().height - padY - borderY).toFixed(2),
+        varValue: getComputedStyle(document.documentElement).getPropertyValue('--trans-icon').trim()
+      };
+    });
+    check('iPhone: 译文键图标框走 --trans-icon 一个来源（不再两表各写 px）',
+      transIcon.varValue === '14px' &&
+      transIcon.iconDeclaredW === transIcon.varValue &&
+      transIcon.iconDeclaredH === transIcon.varValue,
+      JSON.stringify(transIcon));
+    // 图标框不得把胶囊顶出设计高度：24px 那版正是卡在这里。
+    // 胶囊高 = max(图标框, 文字行盒 18px) + 上下内边距 10 + 边框 2 ——
+    // 14px 的图标比 18px 的行盒矮，高度由行盒定；24px 则会反超行盒变成 36。
+    const pillExpectedH = Math.max(parseFloat(transIcon.iconDeclaredH), 18) + 10 + 2;
+    check('iPhone: 译文键图标框没把胶囊撑高（胶囊高由图标框与行盒里更高的那个定）',
+      Math.abs(roundState.trans.h - pillExpectedH) <= 1.5 && roundState.trans.h <= 34,
+      JSON.stringify({ pillH: roundState.trans.h, iconH: transIcon.iconDeclaredH, expected: pillExpectedH }));
     check('iPhone: 详情页译文键圆角为胶囊（border-radius 接近半高或 999px）',
       roundState.trans.radius === '999px' || parseFloat(roundState.trans.radius) * 2 >= roundState.trans.h,
       roundState.trans.radius);
@@ -646,6 +690,21 @@ function check(name, cond, extra) {
         playGapLeft: +(playRect.left - mainRect.right).toFixed(2),
         playW: +playRect.width.toFixed(2),
         mainW: +mainRect.width.toFixed(2),
+        itemW: +itemRect.width.toFixed(2),
+
+        // 「这一行给内容块留了多少」的上限：条目自身宽度，减去左右内边距、
+        // 减去每一颗行内圆键的「盒宽 + 右外边距」、再减去尾部箭头 —— 全部现算。
+        rowBudgetMax: +(function () {
+          const cs = getComputedStyle(item);
+          const used = [].slice.call(item.children).reduce(function (a, c) {
+            if (c === main) return a;
+            const r = c.getBoundingClientRect();
+            const mr = parseFloat(getComputedStyle(c).marginRight) || 0;
+            const ml = parseFloat(getComputedStyle(c).marginLeft) || 0;
+            return a + r.width + mr + ml;
+          }, 0);
+          return itemRect.width - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - used;
+        })().toFixed(2),
 
         metaBox: (() => {
           const meta = main.querySelector('.item-meta');
@@ -672,13 +731,18 @@ function check(name, cond, extra) {
 
             overflows: prefixW + fullW > boxW + 1 ? 1 : 0,
 
-            // 「有没有被截断」= 文字的自然宽放不进盒宽。
-            // 早先这里写反了（scrollWidth <= clientWidth 才算 1），
-            // 于是「确实溢出了、确实截断了」反而判成失败。
-            // 摘句本身是 overflow:hidden + text-overflow:ellipsis + nowrap，
-            // 被 flex 压窄之后 scrollWidth（155）会**小于**自然宽（219），
-            // 所以判定要看「自然宽 > 盒宽」，而不是拿 scrollWidth 跟 clientWidth 比。
-            trimmed: (spans.length && fullW > last.getBoundingClientRect().width + 1) ? 1 : 0,
+            scrollW: last.scrollWidth,
+            clientW: last.clientWidth,
+            // 「末尾省略」的判据：文字的自然宽放不进盒子（scrollWidth > clientWidth），
+            // 且盒子写着 nowrap + overflow:hidden + text-overflow:ellipsis。
+            // ⚠️ 早先这里写反成 scrollWidth <= clientWidth + 1：它表达的是
+            //    「整段都塞得下、根本没截」。而 nowrap + overflow:hidden 的元素，
+            //    内容宽仍是那段文字的完整自然宽，于是正常截断时
+            //    scrollWidth(219) > clientWidth(203)；真被硬缩反而相等。
+            trimmed: (last.scrollWidth > last.clientWidth + 1 &&
+              getComputedStyle(last).textOverflow === 'ellipsis' &&
+              getComputedStyle(last).whiteSpace === 'nowrap' &&
+              getComputedStyle(last).overflow === 'hidden') ? 1 : 0,
             fullW: +fullW.toFixed(2),
             boxW: +boxW.toFixed(2)
           };
@@ -817,7 +881,7 @@ function check(name, cond, extra) {
     check('iPhone: 全列表两颗图标的固定间距只有一个值（6px，与标题长短无关）',
       alignState.gapMax - alignState.gapMin <= 0.5 && Math.abs(alignState.gapMin - 6) <= 0.5,
       JSON.stringify({ gapMin: alignState.gapMin, gapMax: alignState.gapMax }));
-    check('iPhone: 全列表「内容块 → 播放键」的间距只有一个值（由加入背诵圆键给，与标题长短无关）',
+    check('iPhone: 全列表「内容块 → 播放键」的间距只有一个值（由行内圆键给，与标题长短无关）',
       alignState.n > 5 && alignState.mainToPlayMax - alignState.mainToPlayMin <= 0.5,
       JSON.stringify({ n: alignState.n, min: alignState.mainToPlayMin, max: alignState.mainToPlayMax }));
 
@@ -959,34 +1023,57 @@ function check(name, cond, extra) {
     check('iPhone: 播放键左侧没有负外边距（圆键不再压住正文）',
       numState.playGapLeft >= 0, numState.playGapLeft + 'px');
 
+    // 内容块与播放键之间这一段，现在由**两枚**圆键占着：
+    //   ① 「加进今天」（.item-daily，Issue #229 的今日加背）；
+    //   ② 「加入背诵」（.item-recite，Issue #69 的自选集合）。
+    // 两枚都是 width: var(--item-btn) + margin-right: 6px，谁也不许比谁宽一号。
+    // ⚠️ 断言要跟着「中间到底有几枚」走：写死成「一枚的宽 + 6px」会在加一颗键的那天
+    //    必然变红，而页面其实完全正确（2026-09-19 就是这样红的）。
+    //    这里不去数常量，而是把内容块与播放键之间的**实际盒子**一个个量出来累加：
+    //    中间有几枚、每枚多宽，断言自己就跟着算到几枚。
     const gapState = await page.evaluate(() => {
       const item = document.querySelector('#gw-list .item');
       const main = item.querySelector('.item-main').getBoundingClientRect();
       const play = item.querySelector('.item-read').getBoundingClientRect();
       const recite = item.querySelector('.item-recite');
-      // 内容块与播放键之间现在可能是**两颗**圆键：「加入今日背诵」＋「加入背诵」。
-      // 两颗按钮由不同的开关各自决定「在不在场」，所以这里按实际渲染出来的圆键
-      // 逐个累加（盒宽 + 各自 margin-right），而不是写死一颗的宽度。
+
+      // 内容块 → 播放键这一段不是留白，而是被行内那串圆键各自
+      // 「盒宽 + 右外边距（6px）」逐段占满的：本轮起是两枚 ——
+      // ① 「加进今天」(.item-daily)  ② 「加入背诵」(.item-recite)。
+      // 所以不去数常量，而是把实际渲染出来的圆键逐个量出来累加：
+      // 中间有几枚、每枚多宽，断言自己就跟着算到几枚。
+      const daily = item.querySelector('.item-daily');
       const btnBox = el => el
         ? el.getBoundingClientRect().width + (parseFloat(getComputedStyle(el).marginRight) || 0)
         : 0;
-      const daily = item.querySelector('.item-daily');
+      const btns = [].slice.call(item.querySelectorAll('.item-daily, .item-recite'));
+      const occupied = btns.reduce(function (a, b) { return a + btnBox(b); }, 0);
       return {
         gap: +(play.left - main.right).toFixed(2),
+        btns: btns.length,
+        occupied: +occupied.toFixed(2),
         reciteW: +recite.getBoundingClientRect().width.toFixed(2),
         reciteMr: +(parseFloat(getComputedStyle(recite).marginRight) || 0).toFixed(2),
-        dailyW: +btnBox(daily).toFixed(2),
+        // dailyW 供下面「两枚圆键与播放键同径」那条比**本体宽**，所以是纯盒宽（不含外边距）；
+        // 占位求和用 occupied（本体宽 + 各自 margin-right）。
+        dailyW: daily ? +daily.getBoundingClientRect().width.toFixed(2) : null,
+        dailyBoxW: +btnBox(daily).toFixed(2),
         reciteBoxW: +btnBox(recite).toFixed(2),
-        nBtn: [daily, recite].filter(Boolean).length
+        playW: +play.width.toFixed(2),
+        nBtn: btns.length
       };
     });
-    check('iPhone: 内容块 → 播放键这一段由中间那几颗圆键占着（圆键盒宽 + 各自间距）',
-      Math.abs(gapState.gap - (gapState.dailyW + gapState.reciteBoxW)) <= 0.5,
+    check('iPhone: 内容块 → 播放键这一段由行内圆键（「＋」+「加入背诵」）占满',
+      gapState.btns === 2 &&
+      Math.abs(gapState.gap - gapState.occupied) <= 0.5,
       JSON.stringify(gapState));
+    check('iPhone: 中间两枚圆键（加进今天 / 加入背诵）与播放键同径',
+      gapState.dailyW != null &&
+      Math.abs(gapState.dailyW - gapState.playW) <= 0.5 &&
+      Math.abs(gapState.reciteW - gapState.playW) <= 0.5 &&
+      gapState.playW >= 30,
+      JSON.stringify({ dailyW: gapState.dailyW, reciteW: gapState.reciteW, playW: gapState.playW }));
 
-    check('iPhone: 「加入背诵」键与播放键一样大（两枚并排圆键同径）',
-      Math.abs(gapState.reciteW - numState.playW) <= 0.5 && numState.playW >= 30,
-      JSON.stringify({ reciteW: gapState.reciteW, playW: numState.playW }));
     check('iPhone: 圆键本体没被压小（仍是 --item-btn 那一档的正圆，36px；宽高同值）',
       Math.abs(numState.playW - 36) <= 0.5, numState.playW + 'px');
 
@@ -994,17 +1081,37 @@ function check(name, cond, extra) {
       Math.abs(parseFloat(numState.playGapRightCss) - 6) <= 0.5,
       numState.playGapRightCss);
 
-    check('iPhone: 小古文内容块不再撑满整行（按内容取宽，不是 flex 增长项）',
-      numState.mainW < 393 - 2 - 12 - 8 - 36 - 6 - 18 - 1,
-      numState.mainW + 'px（整行 ' + 393 + 'px）');
+    // 内容块不许吃掉整行：行内那几颗圆键 + 尾部箭头要各自留住自己的位置。
+    // 上限从 DOM 现算，不写死 —— 行内圆键的**颗数**是活的（本轮从两颗变成三颗：
+    // 「＋」+「加入背诵」+「播放」），一写死就会在新颗数下失控，或者反过来变成
+    // 一条永远为真的空断言。这里量的是「整行去掉两侧部件之后还剩多少」：
+    // 内容块至多铺满这一段（长摘句会溢出成省略号），不可能再多。
+    check('iPhone: 小古文内容块不再撑满整行（两侧圆键各自留住了位置）',
+      numState.mainW <= numState.rowBudgetMax + 0.5 &&
+      numState.mainW < numState.itemW - 0.5,
+      numState.mainW + 'px（整行可用 ' + numState.rowBudgetMax + 'px / 条目 ' + numState.itemW + 'px）');
 
     check('iPhone: 副信息里的朝代 / 作者 / 出处没被摘句压窄（宽度为正且合理）',
       numState.metaBox.prefixW > 8 && numState.metaBox.prefixW < numState.metaBox.boxW,
       JSON.stringify({ prefixW: numState.metaBox.prefixW, boxW: numState.metaBox.boxW }));
 
+    // 剩下的一半只能看「放不下的那一段怎么收场」：这段文字（前缀 + 摘句全宽）
+    // 确实超过内容块给它的宽 —— 真放得下就不会截，这条也就无从谈起；
+    // 而它最终是**截断**收场，不是把字硬挤进更窄的盒子里。
+    //
+    // ⚠️ 口径修正（2026-09-19）：原先把「截断」认成 scrollWidth === clientWidth，
+    //    这在 Chromium 上是**反的**。nowrap + overflow: hidden 的元素，内容宽度
+    //    仍是那段文字的完整自然宽，所以：
+    //      · 正常截断：scrollWidth（219 = 文字自然宽）> clientWidth（199 = 可见宽）
+    //      · 真被硬缩：文字被迫挤进比内容窄的盒子里，两者反而相等
+    //    拿恒等式去认截断，等于任何机型上都判假 —— 这条在 CI 上一直红。
+    //    现在直接比两个原始数：可用宽比文字自然宽窄（确实放不下、必须截），
+    //    且那一行文字确实超出可见宽（scrollWidth > clientWidth），
+    //    同时没有超出「完整自然宽」（超出才是真的溢出到别的盒子上了）。
+    const mb = numState.metaBox;
     check('iPhone: 放不下的摘句走截断而不是硬缩（文字没被压窄，是末尾省略）',
-      numState.metaBox.overflows === 1 && numState.metaBox.trimmed === 1,
-      JSON.stringify(numState.metaBox));
+      mb.overflows === 1 && mb.trimmed === 1,
+      JSON.stringify(mb));
 
     check('iPhone: 内容块宽度不小于标题行的自然宽（标题没被压窄）',
       numState.mainW >= numState.titleNatW - 0.5,
