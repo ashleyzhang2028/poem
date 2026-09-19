@@ -1960,17 +1960,27 @@ function check(name, cond, extra) {
       const m = await page.evaluate(() => {
         const de = document.documentElement;
         const card = document.querySelector('#login-page > .account-card');
-        // 页底页脚已删：卡片下缘到页面底边就是「下面还剩多少」。
+        // ⚠️ 页脚删掉之后，「下面还剩多少」不能再量 scrollHeight：
+        // 登录页不溢出，scrollHeight 就等于视口高 —— 那样算出来的是
+        // 「卡片下缘到视口底」，`margin: auto` 把卡片顶到上半屏之后它
+        // 永远是上面那侧的近两倍（852 上量得 上 150 / 下 290），
+        // 与卡片居不居中无关。
+        //
+        // 居中这件事真正的两侧留白是：**上** = 顶栏下缘 → 卡片上缘，
+        // **下** = 卡片下缘 → 内容盒（`.app` 去掉它自己那条 padding）下缘。
+        // 两侧都由 `#login-page` 的 `min-height` 与 `margin: auto` 决定，
+        // 卡片居中时两处相当。
         const cr = card.getBoundingClientRect();
         const tb = document.querySelector('.topbar').getBoundingClientRect();
+        const ab = document.querySelector('.app').getBoundingClientRect();
+        const padB = parseFloat(getComputedStyle(document.querySelector('.app')).paddingBottom) || 0;
         return {
           vw: de.clientWidth, vh: window.innerHeight,
           overflow: de.scrollHeight - window.innerHeight,
           cardTop: Math.round(cr.top), cardBottom: Math.round(cr.bottom),
-          pageBottom: de.scrollHeight,
 
           above: Math.round(cr.top - tb.bottom),
-          below: Math.round(de.scrollHeight - cr.bottom)
+          below: Math.round(ab.bottom - padB - cr.bottom)
         };
       });
       check('登录页 @' + vw + '×' + vh + '（' + label + '）：页面不溢出',
