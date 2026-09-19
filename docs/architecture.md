@@ -5379,3 +5379,45 @@ RM.allowedKey(want, ctx)   // 想要的能用就用它，不然从高往低退�
 清空 / 空态提示）→ 源码级守卫（`withTodayExtra` 是「先生成再并」、
 `extraPoems` 里**没有**混进加背、清空进度时也清加背、两个新脚本进预缓存、
 每张详情页那颗钮的位置）。
+---
+
+### 4.33 删掉重复的小尺寸图标，favicon 只留 svg（2026-09-19 · 回答 Issue #229）
+
+#### 一、为什么它们是可以删的
+
+`icons/` 里躺着三组**从来没人读**的文件，加起来 9 个、约 111 KB：
+
+| 组 | 文件 | 真实引用 |
+|---|---|---|
+| 重复档 | `icon-120` / `icon-152` / `icon-167` / `icon-180` | 只有**首页**写了四条 `sizes` 的 `apple-touch-icon`，其余 24 张页面只写一条 `apple-touch-icon.png` |
+| favicon 三件套 | `favicon.ico` / `favicon-16x16` / `favicon-32x32` | **0 处引用** |
+| 生成器残留 | `android-chrome-192x192.png` | **0 处引用**（与 `icon-192.png` 是同一张图） |
+
+- **重复档**：iOS 挑主屏图标时，`sizes` 里没有正好匹配的就**按最接近的一张缩放** ——
+  这是官方行为，不是兜底。留 180 那一张，主屏上不会有任何肉眼差别。
+- **favicon 三件套**：`favicon.ico` 靠「浏览器默认去 `/favicon.ico` 找」这条隐含约定活着，
+  而站点根目录是仓库根，`/icons/favicon.ico` **不在根上**，这条约定本来就没生效；
+  现代浏览器一律优先读 `<link rel="icon">`（我们写的是 svg）。
+  至于「极老浏览器」这个理由 —— 这是个 PWA，IE11 连清单都不认，进不来。
+- **`android-chrome-192x192.png`**：favicon 生成器的产物，manifest 里走的是 `icon-192.png`。
+
+顺带一个巧合值得记：`icon-180.png` 与 `apple-touch-icon.png` **是同一份字节**（都是 180），
+所以留下的那张 180 连图都不用重出。
+
+#### 二、改哪几处
+
+- 删 8 个文件（`git rm`），`icons/` 从 15 个减到 7 个
+- `index.html`：撤掉四条带 `sizes` 的 `apple-touch-icon`，只留一条（全站 25 张页面从此口径一致）
+- `manifest.webmanifest`：图标清单去掉 120/152/167/180 四条，剩 192 / 256 / 384 / 512 / maskable / svg
+- `sw.js`：预缓存清单同步去掉四条；缓存版本 v168 → **v169**
+- `test/theme.test.js`：图标存在性与尺寸清单跟着收窄，并补四条**反向断言**
+  （这 8 个文件不许回来、首页不许再逐档列尺寸、首页只留一条、manifest 与 sw 里不许再出现这四个名字）
+- `test/pwa.test.js`：`apple-touch-icon 数量 >= 5` + 「120/152/167/180 四种尺寸齐全」
+  两条**翻面**成「只留一条，且是 180 那张」
+
+保留：`icon.svg`（25 页的 `<link rel="icon">`）、`apple-touch-icon.png`（iOS 加主屏）、
+`icon-192` / `icon-512`（manifest 必填档）、`icon-maskable-512`（安卓自适应）、
+`icon-256` / `icon-384`（中间档，留给高分屏挑）。
+
+`test/layout.test.js` 那条「页面里每个引用都落在磁盘上」继续守着 —— 这次改名单里
+每一条都在它的射程内，删错了它会红。
