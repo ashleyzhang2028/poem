@@ -91,8 +91,15 @@ console.log('\n=== 三、打印样式表：收外壳、去颜色，不给纸面�
 
   chk(/\.topbar[^{]*\{[\s\S]{0,200}display:\s*none\s*!important/.test(block),
     '顶栏在纸上收起来');
-  chk(/\.dock/.test(block) && /\.foot/.test(block),
-    '页签与页脚在纸上收起来（屏幕上不是内容的东西一件都不上纸）');
+  /* ⚠️ 页脚（`<footer class="foot settings-foot">`）已在上一轮全站删除，
+     纸面上要收的只剩页签那一条。原先这条是「`.dock` 与 `.foot` 都在」，
+     页脚一走它就永远判假 —— 不是「纸面漏了页脚」，是它找的那件东西
+     已经不存在了。改成**正向**只认 `.dock`，并加一条**反向**守：
+     样式表里不许再冒出 `.foot` 的孤儿规则（页脚回来了也得先过这条）。 */
+  chk(/\.dock/.test(block),
+    '页签在纸上收起来（屏幕上不是内容的东西一件都不上纸）');
+  chk(!/\.foot\b/.test(block),
+    '纸面上不再为已删除的页脚留规则（页脚全站已删）');
 
   chk(/\.print-block \+ \.print-block[^{]*\{[^}]*border-top:\s*0\s*!important/.test(block),
     '预览的辅助虚线在纸上被删掉（纸面上不添横线）');
