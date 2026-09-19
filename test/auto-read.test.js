@@ -280,7 +280,7 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
   c.querySelector('#rd-trans-read').dispatchEvent(new w2.Event('click', { bubbles: true }));
   await sleep(30);
   const ts = w2.speechSynthesis._spoken.text;
-  chk(!/人之初/.test(ts), '译文朗读只读译文，不读原文');
+  chk(!/人之初/.test(ts), '译文朗读只读译文，不读原文（原文首句「人之初」不出现）');
   chk(ts.length > 20, '译文朗读内容正常（' + ts.slice(0, 20) + '…）');
   w2.Speech.stop();
 
@@ -353,7 +353,7 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
   chk(/白话/.test(c.querySelector('#rp-mode').textContent),
     '播放栏首行报出当前模式：' + c.querySelector('#rp-mode').textContent);
   const transText = w2.speechSynthesis._spoken.text;
-  chk(!/人之初，宋，王应麟/.test(transText),
+  chk(!/三字经，宋，王应麟/.test(transText),
     '「白话」模式读的是译文而不是原文（' + transText.slice(0, 14) + '…）');
   await stopAll();
 
@@ -411,7 +411,7 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
   await sleep(20);
   c.querySelector('#gw-list .item').dispatchEvent(new w2.Event('click', { bubbles: true }));
   await sleep(30);
-  chk(c.querySelector('#rd-title').textContent === '人之初', '回到第一篇「人之初」再验证组合键');
+  chk(c.querySelector('#rd-title').textContent === '三字经', '回到第一篇「三字经」再验证组合键');
 
   c.querySelector('#rd-trans-toggle').dispatchEvent(new w2.Event('click', { bubbles: true }));
   await sleep(20);
@@ -576,7 +576,7 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
     d5.querySelector('#rd-read-btn').dispatchEvent(new w5.Event('click', { bubbles: true }));
     await sleep(30);
     let spoken = String(w5.speechSynthesis._spoken.text);
-    chk(spoken.indexOf('人之初') === 0, '正在读译文时点正文键会切去读正文（实际 ' + spoken.slice(0, 12) + '…）');
+    chk(spoken.indexOf('三字经') === 0, '正在读译文时点正文键会切去读正文（实际 ' + spoken.slice(0, 12) + '…）');
     chk(d5.querySelector('#rd-read-btn').dataset.on === '1' && transBtn.dataset.on === '0',
       '切到正文后只有正文键是 ⏸，译文键复位');
 

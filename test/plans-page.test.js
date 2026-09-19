@@ -482,7 +482,7 @@ const plansCommentOnly = pageJs;
       .match(/-?\d+(\.\d+)?/g).map(Number);
     chk(crossNums.length === 8, '叉是**两条**直线：四个端点，共 8 个坐标');
     chk(cross.x1 === cross.y1 && cross.x2 === cross.y2,
-      '叉的两端在同一対角线上（x1=y1、x2=y2）—— 它才是个正叉，不是歪的');
+      '叉的两端在同一对角线上（x1=y1、x2=y2）—— 它才是个正叉，不是歪的');
   }
   chk(/\.plans-col-me/.test(css), '「你现在在这」那一列有高亮');
 

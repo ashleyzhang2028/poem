@@ -20,7 +20,7 @@ loadData(sb, [
   'data/poems-6.js', 'data/poems-7.js', 'data/poems-8.js', 'data/poems-9.js', 'data/poems-10.js',
   'data/poems-11.js', 'data/poems-12.js', 'data/index.js', 'data/poems-classic.js',
   'data/poems-tangshi.js', 'data/poems-songci.js', 'data/poems-guwen.js', 'data/poems-zhaoming.js', 'data/poems-yuanqu.js',
-  'data/poems-yuefu.js', 'data/poems-jinxiandai.js',
+  'data/poems-yuefu.js', 'data/poems-jinxiandai.js', 'data/poems-classic.js',
   'data/site-index.js', 'data/works-map.js', 'data/works-index.js',
   'data/canonical-texts.js'
 ]);
@@ -37,8 +37,8 @@ FULL_BOOKS.forEach(b => { FULL_BOOK_SET[b] = true; });
 
 const multiEntries = MASTER.filter(m => m.entries.length >= 2);
 const singleEntries = MASTER.filter(m => m.entries.length === 1);
-chk(multiEntries.length === 92,
-  '主表里有 92 条「跨集重复」的作品（长文补全后与选集同篇 + 乐府 / 近现代与课内同篇，实际 ' +
+chk(multiEntries.length === 89,
+  '主表里有 89 条「跨集重复」的作品（长文补全后与选集同篇 + 乐府 / 近现代与课内同篇，实际 ' +
   multiEntries.length + '）');
 const fullExpected = [];
 FULL_BOOKS.forEach(book => {
@@ -138,8 +138,8 @@ const uncovered = dupEntries.filter(e => !covered[e]);
 chk(uncovered.length === 0,
   '「同篇判重键下有两条及以上」的条目共 ' + dupEntries.length + ' 条，全部收进了主表（未收：' +
   (uncovered.slice(0, 6).join('、') || '无') + '）');
-chk(dupEntries.length === 185,
-  '重复条目恰为 185 条（92 篇：多数 × 2，少数 × 3；实际 ' + dupEntries.length + '）');
+chk(dupEntries.length === 179,
+  '重复条目恰为 179 条（89 篇：多数 × 2，少数 × 3；实际 ' + dupEntries.length + '）');
 
 const expectFlat = dupEntries.slice();
 fullExpected.forEach(id => { if (expectFlat.indexOf(id) < 0) expectFlat.push(id); });

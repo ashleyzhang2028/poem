@@ -13,8 +13,8 @@ vm.createContext(sandbox);
   vm.runInContext(fs.readFileSync(path + f, 'utf8'), sandbox, { filename: f }));
 
 const IDX = sandbox.SITE_INDEX;
-chk(Array.isArray(IDX) && IDX.length === 101,
-  '总索引含 100 篇小古文 + 1 条集子条目（实际 ' + (IDX ? IDX.length : 'undefined') + '）');
+chk(Array.isArray(IDX) && IDX.length === 103,
+  '总索引含 102 篇小古文 + 1 条集子条目（实际 ' + (IDX ? IDX.length : 'undefined') + '）');
 const ids = new Set();
 let dup = 0;
 IDX.forEach(x => { if (ids.has(x.id)) dup++; ids.add(x.id); });
@@ -25,8 +25,9 @@ chk(IDX.some(x => x.isBook && x.title === '课外必背小古文'),
   '集子自身也是一条结果（搜「小古文」能直接进那一页）');
 chk(sandbox.SITE_BOOKS.length === 9 &&
   sandbox.SITE_BOOKS.map(b => b.page).join(',') ===
-    '/,/yuefu/,/zhaoming/,/tangshi/,/songci/,/yuanqu/,/guwen/,/classic/,/jinxiandai/',
-  '九部集子的索引页地址（按时代排序）：课内 · 乐府 · 昭明 · 唐诗 · 宋词 · 元曲 · 古文观止 · 小古文 · 近现代（实际 ' +
+    '/,/classic/,/zhaoming/,/yuefu/,/tangshi/,/songci/,/yuanqu/,/guwen/,/jinxiandai/',
+  '九部集子的索引页地址按时代排序：/ · /classic/ · /zhaoming/ · /yuefu/ · ' +
+  '/tangshi/ · /songci/ · /yuanqu/ · /guwen/ · /jinxiandai/（实际 ' +
   sandbox.SITE_BOOKS.map(b => b.page).join(',') + '）');
 
 const only = sandbox.buildSiteIndex({ tangshi: [{ id: 'ts-1', title: '感遇·其一', author: '张九龄', dynasty: '唐' }] });
@@ -70,8 +71,8 @@ const mk = (win, rootId, listId) => {
 
 setTimeout(() => {
   const mounted = w.document.querySelector('#gw-list');
-  chk(mounted.querySelectorAll('.item').length === 100,
-    '小古文页按配置挂上了引擎实例（列表 100 篇）');
+  chk(mounted.querySelectorAll('.item').length === 102,
+    '小古文页按配置挂上了引擎实例（列表 102 篇）');
 
   mk(w, 'rootA', 'listA');
   mk(w, 'rootB', 'listB');
@@ -153,13 +154,13 @@ setTimeout(() => {
   //   ② 带了钩子但没绑上（挂在挂载点 / body 之外）—— 逐页敲字看列表变不变。
   // 两件事都按**真页面**跑一遍，不靠「读源码里有没有那串字」。
   const SEARCH_PAGES = [
-    ['classic/index.html', '/classic/', '司马光', 100],
+    ['classic/index.html', '/classic/', '司马光', 102],
     ['tangshi/index.html', '/tangshi/', '李白', 317],
     ['songci/index.html', '/songci/', '李清照', 285],
     ['guwen/index.html', '/guwen/', '韩愈', 167],
     ['zhaoming/index.html', '/zhaoming/', '陶渊明', 480],
     ['yuanqu/index.html', '/yuanqu/', '马致远', 30],
-    ['yuefu/index.html', '/yuefu/', '木兰', 7],
+    ['yuefu/index.html', '/yuefu/', '木兰', 15],
     ['jinxiandai/index.html', '/jinxiandai/', '毛泽东', 24],
     ['poems/index.html', '/poems/', '静夜思', 251]
   ];

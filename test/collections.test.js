@@ -156,8 +156,8 @@ order.forEach(f => {
 
 setTimeout(() => {
   const list = w.document.querySelector('#gw-list');
-  chk(list.querySelectorAll('.item').length === 100, '小古文列表照旧渲染 100 篇');
-  chk(list.querySelectorAll('.item .item-recite').length === 100,
+  chk(list.querySelectorAll('.item').length === 102, '小古文列表照旧渲染 102 篇');
+  chk(list.querySelectorAll('.item .item-recite').length === 102,
     '每条右侧都有一枚「加入背诵」圆键（索引列表这一条入口）');
 
   const first = list.querySelector('.item');
