@@ -5800,3 +5800,91 @@ zhaoming / yuefu / jinxiandai` 这几部**凡正文取不到的条目一律丢�
   同一个数；字体子集补入「钊」（李大钊）。
 
 验证：`bash test/run.sh` 全量断言零失败。
+
+---
+
+### 4.36 集子索引页左上角那颗搜索框：钩子漏了一个属性，绑定漏了一层（2026-09-19 · 回答 Issue #243 第四轮）
+
+用户的原话是「好多集子索引页左上角搜索框不起作用」。盘下来是**两处各错一点**，
+分别在两条不同的路上 —— 所以是「好多」页坏了，而不是某一页。
+
+#### 一、报的是哪一颗
+
+- **每部集子各自的索引页**（`/classic/` `/tangshi/` `/songci/` `/guwen/`
+  `/zhaoming/` `/yuanqu/` `/yuefu/` `/jinxiandai/` 以及 `/poems/`）左上角那一颗。
+- **课外阅读入口页「就地铺开」那一层**（`/library/` 点一张卡之后）。
+  这一页的搜索框是**同一颗的另一个化身**（同一个 `.toolbar` / `.search-wrap` /
+  `.search-input` 复用），但它是页面自己写的 DOM，不是引擎渲染的。
+
+#### 二、根因一：入口页那颗框没带引擎认的钩子
+
+引擎认搜索框只有两条路：`[data-gw="search"]`，或旧口径的 `#gw-search`。
+`library/index.html` 里那一颗写的是：
+
+```html
+<input id="lib-gw-search" data-lib-part="search" class="search-input" … />
+```
+
+`id` 是 `lib-gw-search`（不是 `#gw-search`）、属性是 `data-lib-part`
+（不是 `data-gw`）—— **两条路都不通**。旁边那一排筛选键 `data-lib-part="filter-seg"`
+是同一个毛病（引擎按 `[data-filter]` 认，这个倒是碰上了），
+所以只有搜索框一个人哑着。
+
+修法不是「再认一种 id」，而是**把钩子补上**：加 `data-gw="search"`。
+`data-lib-part` 留着 —— `js/library.js` 的 `resetRail()` 按它清空输入框，
+两套标记各管各的、互不覆盖。
+
+#### 三、根因二：`bindSearch` 只从 document 起步，够不着「就地铺开」那一层
+
+引擎起手绑监听是这一句老口径：
+
+```js
+var search = $('[data-gw="search"]') || $("#gw-search");
+```
+
+`$` 从 mount 时那个**根**起步 —— 集子索引页的根就是 `[data-gw-root]`
+（那一颗框在根里），所以七部集子本来没问题。但 `/library/` 那一层不一样：
+它的根是 `js/library.js` 传进去的**列表节点** `#lib-gw-list`，
+搜索框是这个节点的**兄弟**（在同一个 `.toolbar` 下），
+于是「按根找」找不到、「按 document 找」又被 `[data-gw-root]` 这一层挡在门外
+（`$` 先试根、试 box，都不中才看 document；document 那一档恰好落在挂载点之外）。
+
+所以入口页那颗框无论怎么点都不进列表 —— 这正是用户说的「不起作用」。
+
+**修法**：把搜索绑定抽成 `bindSearch(scope)`，`mount` 时按**本挂载点的根**补一次：
+
+```js
+if (s.root && s.root.querySelector('[data-gw="search"]')) bindSearch(s.root);
+bindEvents();   // 里面再 bindSearch(document)，老口径不动
+```
+
+⚠️ 两个细节是要紧的：
+
+- **必须去重**。同一个 input 上挂两个 `input` 监听 → 两个字各 `renderList()`
+  一次 → 敲一个字整张列表重画两遍。所以绑过的框打一个 `data-gw-search-bound`
+  记号，第二次见到就跳过。测试里有一条专门数这个（`renders === 1`）。
+- **顺序是「先按根、后按 document」**。同一页面同时只有一部集子（挂载点唯一），
+  所以先绑反而更安全：免得上游（`js/search.js` 那类）漏下来的节点被顺便认成
+  自己的。认错了就是「敲字没反应」—— 与用户报的正好相反的那个症状。
+
+`bindSearch(document)` 仍保留给**根之外**的那颗框（`js/search.js` 会在
+`ReaderEngine.mount` 之后自己再挂一遍 `input` 监听做候选下拉，两件事不冲突：
+引擎那份管 `renderList()`，它那份管下拉）。
+
+#### 四、守卫（两处，都是「真页面跑一遍」）
+
+- `test/library-nav.test.js`：入口页那一段加五条 —— 框带 `data-gw="search"`、
+  就在挂载点那一层里、`dataset.gwSearchBound === '1'`、敲「李白」列表**真的**
+  从 317 收成子集、一个字只重画一次。
+- `test/engine.test.js`：新增一节把**每一部集子页**各开一遍，逐页验
+  「有钩子 → 绑上了 → 敲字收成子集 → 一个字只重画一次 → 清空复原」。
+  这一节是冲着「好多页」去的：漏一页就红，不必等用户来报。
+  数重画次数的办法是给列表节点挂 `innerHTML` 的 setter，
+  ⚠️ 访问器挂在 **`Element.prototype`** 那一层（不是 `HTMLElement` / `HTMLDivElement`），
+  要顺着原型链找；`MutationObserver` 不行 —— jsdom 的观察者是异步投递的，
+  同一轮里连触两次也只会收一条。
+
+`sw.js` 缓存版本 v178 → **v179**，`js/settings-nav.js` 的 `APP_VERSION`
+跟着同一个数（测试会两处对拍）。
+
+验证：`bash test/run.sh` 全量断言零失败。
