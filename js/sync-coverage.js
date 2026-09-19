@@ -109,6 +109,23 @@
       why: "乐府诗选已读 —— 与其余七部同一族（Issue #244 新增集子，同轮补上）。"
     },
     {
+      key: "poem_yuefu_read_v1", sync: true, row: "reads:poem_yuefu_read_v1",
+      merge: "并集", cap: "每行 ≤ 2000 篇",
+      why: "乐府诗选已读 —— 与其余各部同一族（2026-09-19 新增第八部）。"
+    },
+    {
+      key: "poem_jinxiandai_read_v1", sync: true, row: "reads:poem_jinxiandai_read_v1",
+      merge: "并集", cap: "每行 ≤ 2000 篇",
+      why: "近现代诗词已读 —— 与其余各部同一族（2026-09-19 新增第九部）。"
+    },
+    {
+      key: "poem_pinyin_fix_v1", sync: true, row: "pinyin_fix:v1",
+      merge: "谁最后改谁赢（整份一份表，按条并会得到一份「一半是本机编的」的表）",
+      cap: "≤ 500 条、每句 ≤ 120 字；**只有条目，不存正文** —— 体积天然很小",
+      why: "注音勘误（Issue #243）：某篇某句某字读什么。它必须上云 —— " +
+           "用户在「滕王阁序」里改对的那一处，换台设备、换个浏览器也该是对的。"
+    },
+    {
       key: "poem_daily_extra_v1", sync: true, row: "daily_extra:v1",
       merge: "**按天并集**（日期相同才并；日期不同听本机的）",
       cap: "≤ 20 篇、每篇快照正文各截 20000 字",

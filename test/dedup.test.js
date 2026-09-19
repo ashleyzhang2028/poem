@@ -11,7 +11,7 @@ const DATA = [
   'data/poems-1.js', 'data/poems-2.js', 'data/poems-3.js', 'data/poems-4.js', 'data/poems-5.js',
   'data/poems-6.js', 'data/poems-7.js', 'data/poems-8.js', 'data/poems-9.js', 'data/poems-10.js',
   'data/poems-11.js', 'data/poems-12.js', 'data/index.js', 'data/poems-classic.js',
-  'data/poems-tangshi.js', 'data/poems-songci.js', 'data/poems-guwen.js', 'data/poems-zhaoming.js', 'data/poems-yuanqu.js', 'data/poems-yuefu.js',
+  'data/poems-tangshi.js', 'data/poems-songci.js', 'data/poems-guwen.js', 'data/poems-zhaoming.js', 'data/poems-yuanqu.js',
   'data/site-index.js', 'data/works-map.js', 'data/works-index.js'
 ];
 
@@ -25,7 +25,7 @@ const WI = sb.WorksIndex;
 const norm = t => String(t || '').replace(/[\s\u3000]+/g, '')
   .replace(/[，。！？；：、,.!?;:"'“”‘’「」『』《》〈〉（）()\[\]【】—－\-…·~～]/g, '');
 
-chk(ALL.length === 261, '课内诗词总数 261（去重前 273，删掉 12 条重复条目；实际 ' + ALL.length + '）');
+chk(ALL.length === 251, '课内诗词总数 251（去重前 273，删掉 22 条重复条目；实际 ' + ALL.length + '）');
 
 const REMOVED = [
   ['xx3-10', '绝句', '三年级下', 'poems-xx2-12', '二年级下'],
@@ -40,6 +40,18 @@ const REMOVED = [
   ['gz12-12', '师说', '高三下', 'poems-gz10-11', '高一上'],
   ['gz12-23', '李凭箜篌引', '高三下', 'poems-gz11-11', '高二下'],
   ['gz12-24', '静女', '高三下', 'poems-gz10-14', '高一下'],
+  // 2026-09-19（Issue #243 后续）：一批高年级长文此前只录了残篇（夹 ……），
+  // 补全后与低年级同篇条目的正文逐字一致 —— 按「低年级版本为准」删掉高年级那份。
+  ['gz12-10', '岳阳楼记', '高三上', 'poems-cz9-04', '九年级上'],
+  ['gz12-11', '劝学', '高三下', 'poems-gz10-10', '高一上'],
+  ['gz12-08', '阿房宫赋', '高三上', 'poems-gz10-19', '高一下'],
+  ['gz12-09', '赤壁赋', '高三上', 'poems-gz10-12', '高一上'],
+  ['gz12-03', '蜀道难', '高三上', 'poems-gz11-14', '高二上'],
+  ['gz12-13', '陈情表', '高三下', 'poems-gz11-15', '高二上'],
+  ['gz12-14', '归去来兮辞', '高三下', 'poems-gz11-16', '高二上'],
+  ['gz12-05', '琵琶行', '高三上', 'poems-gz10-06', '高一上'],
+  ['gz12-22', '燕歌行', '高三下', 'poems-gz11-10', '高二上'],
+  ['gz11-18', '望海潮·东南形胜', '高二上', 'poems-gz10-17', '高一下'],
 ];
 const PROSE_BY_ID = {};
 ['data/poems-1.js', 'data/poems-2.js', 'data/poems-3.js', 'data/poems-4.js', 'data/poems-5.js',
@@ -68,7 +80,7 @@ const KEPT_TEXT = {
   'poems-gz10-05': '风急天高猿啸哀，渚清沙白鸟飞回。无边落木萧萧下，不尽长江滚滚来。万里悲秋常作客，百年多病独登台。艰难苦恨繁霜鬓，潦倒新停浊酒杯。',
   'poems-gz10-07': '大江东去，浪淘尽，千古风流人物。故垒西边，人道是，三国周郎赤壁。乱石穿空，惊涛拍岸，卷起千堆雪。江山如画，一时多少豪杰。遥想公瑾当年，小乔初嫁了，雄姿英发。羽扇纶巾，谈笑间，樯橹灰飞烟灭。故国神游，多情应笑我，早生华发。人生如梦，一尊还酹江月。',
   'poems-gz10-08': '千古江山，英雄无觅，孙仲谋处。舞榭歌台，风流总被，雨打风吹去。斜阳草树，寻常巷陌，人道寄奴曾住。想当年，金戈铁马，气吞万里如虎。元嘉草草，封狼居胥，赢得仓皇北顾。四十三年，望中犹记，烽火扬州路。可堪回首，佛狸祠下，一片神鸦社鼓。凭谁问：廉颇老矣，尚能饭否？',
-  'poems-gz10-11': '古之学者必有师。师者，所以传道受业解惑也。人非生而知之者，孰能无惑？惑而不从师，其为惑也，终不解矣。是故无贵无贱，无长无少，道之所存，师之所存也。是故弟子不必不如师，师不必贤于弟子。闻道有先后，术业有专攻，如是而已。',
+  'poems-gz10-11': '古之学者必有师。师者，所以传道受业解惑也。人非生而知之者，孰能无惑？惑而不从师，其为惑也，终不解矣。生乎吾前，其闻道也固先乎吾，吾从而师之；生乎吾后，其闻道也亦先乎吾，吾从而师之。吾师道也，夫庸知其年之先后生于吾乎？是故无贵无贱，无长无少，道之所存，师之所存也。嗟乎！师道之不传也久矣！欲人之无惑也难矣！古之圣人，其出人也远矣，犹且从师而问焉；今之众人，其下圣人也亦远矣，而耻学于师。是故圣益圣，愚益愚。圣人之所以为圣，愚人之所以为愚，其皆出于此乎？爱其子，择师而教之；于其身也，则耻师焉，惑矣。彼童子之师，授之书而习其句读者，非吾所谓传其道解其惑者也。句读之不知，惑之不解，或师焉，或不焉，小学而大遗，吾未见其明也。巫医乐师百工之人，不耻相师。士大夫之族，曰师曰弟子云者，则群聚而笑之。问之，则曰：「彼与彼年相若也，道相似也。位卑则足羞，官盛则近谀。」呜呼！师道之不复可知矣。巫医乐师百工之人，君子不齿，今其智乃反不能及，其可怪也欤！圣人无常师。孔子师郯子、苌弘、师襄、老聃。郯子之徒，其贤不及孔子。孔子曰：三人行，则必有我师。是故弟子不必不如师，师不必贤于弟子。闻道有先后，术业有专攻，如是而已。李氏子蟠，年十七，好古文，六艺经传皆通习之，不拘于时，学于余。余嘉其能行古道，作《师说》以贻之。',
   'poems-gz11-11': '吴丝蜀桐张高秋，空山凝云颓不流。江娥啼竹素女愁，李凭中国弹箜篌。昆山玉碎凤凰叫，芙蓉泣露香兰笑。十二门前融冷光，二十三丝动紫皇。女娲炼石补天处，石破天惊逗秋雨。梦入神山教神妪，老鱼跳波瘦蛟舞。吴质不眠倚桂树，露脚斜飞湿寒兔。',
   'poems-gz10-14': '静女其姝，俟我于城隅。爱而不见，搔首踟蹰。静女其娈，贻我彤管。彤管有炜，说怿女美。自牧归荑，洵美且异。匪女之为美，美人之贻。',
 };
@@ -107,8 +119,8 @@ chk(WI.same('poems-gz10-05', 'tangshi-ts-190'), '《登高》课内与唐诗三�
 chk(WI.same('poems-gz10-07', 'songci-sc-67'), '《念奴娇·赤壁怀古》课内与宋词三百首仍判为同一篇');
 chk(WI.same('poems-gz10-08', 'songci-sc-183'), '《永遇乐·京口北固亭怀古》课内与宋词三百首仍判为同一篇');
 
-chk(sb.WORKS_GROUPS.length === 72,
-  '同篇对照表 60 组 + 60 组之后各轮新增的 12 组（唐诗 / 元曲 / 乐府与课内同篇）（实际 ' +
+chk(sb.WORKS_GROUPS.length === 89,
+  '同篇对照表 89 组（原有 + 新收唐诗/元曲/古文观止 + 乐府 / 近现代与课内同篇 + 长文补全后与选集同篇）（实际 ' +
   sb.WORKS_GROUPS.length + '）');
 
 const jys = byId['xx1-09'];
@@ -135,10 +147,10 @@ ALL.forEach(p => { cnt[p.grade] = (cnt[p.grade] || 0) + 1; });
 const primary = [1, 2, 3, 4, 5, 6].map(g => cnt[g] || 0).reduce((a, b) => a + b, 0);
 const high = [10, 11, 12].map(g => cnt[g] || 0).reduce((a, b) => a + b, 0);
 chk(primary === 119, '小学段 119 首（去重后；实际 ' + primary + '）');
-chk(high === 61, '高中段 61 首（去重后；实际 ' + high + '）');
+chk(high === 51, '高中段 51 首（去重后；实际 ' + high + '）');
 chk(cnt[3] === 17 && cnt[4] === 23 && cnt[5] === 23, '三 / 四 / 五年级各少 1 首（17 / 23 / 23，实际 ' +
   [cnt[3], cnt[4], cnt[5]].join(' / ') + '）');
-chk(cnt[10] === 24 && cnt[11] === 19 && cnt[12] === 18, '高一 / 高二 / 高三为 24 / 19 / 18（实际 ' +
+chk(cnt[10] === 24 && cnt[11] === 18 && cnt[12] === 9, '高一 / 高二 / 高三为 24 / 18 / 9（实际 ' +
   [cnt[10], cnt[11], cnt[12]].join(' / ') + '）');
 
 const thinCourse = REMOVED.filter(r => {
@@ -250,7 +262,7 @@ const uncov = [];
 chk(uncov.length === 0,
   '判重表 59 组的每一条条目都在存储主表里（未覆盖：' + (uncov.slice(0, 6).join('、') || '无') + '）');
 
-const FULL_BOOKS = ['zhaoming', 'guwen', 'songci', 'tangshi', 'classic', 'yuanqu', 'yuefu'];
+const FULL_BOOKS = ['zhaoming', 'guwen', 'songci', 'tangshi', 'classic', 'yuanqu', 'yuefu', 'jinxiandai'];
 const inFullBooks = e => FULL_BOOKS.some(b => e.indexOf(b + '-') === 0);
 const masterInGroups = [];
 Object.keys(masterEntries).forEach(e => {
@@ -298,7 +310,7 @@ chk((sb.POEMS_SONGCI || []).length === 285,
 chk((sb.POEMS_TANGSHI || []).length === 317,
   '《唐诗三百首》301 首 + 校外补充 16 首 = 317（并进去的那三条仍在选本列表里；实际 ' +
   (sb.POEMS_TANGSHI || []).length + '）');
-chk(ALL.length === 261, '课内仍 261 首（实际 ' + ALL.length + '）');
+chk(ALL.length === 251, '课内仍 251 首（实际 ' + ALL.length + '）');
 
 console.log('');
 if (fails) { console.log('✗ 课内去重 / 《静夜思》测试失败 ' + fails + ' 项'); process.exit(1); }

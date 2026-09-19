@@ -39,6 +39,216 @@
     return Ent.isOwner(backing);
   }
 
+  // ---------------------------------------------------------------------------
+  // 注音勘误（Issue #243 · 《滕王阁序》「长」）
+  // ---------------------------------------------------------------------------
+  // 这一块**不上服务端**：勘误表就是本机 `poem_pinyin_fix_v1` 那一份
+  // （ProgressStore 带 `pinyin_fix:v1` 一行上云，走的是与自选集合同一条路）。
+  // 后台在这里只做三件事：找篇、钉一处、删一处。
+  function fix() { return window.PinyinFix || null; }
+
+  // 全站篇目（课内 12 册 + 各集子）——给「搜一篇」用。
+  // 集子那几部的数据在本页没加载（首屏体积），所以这里列的是**课内**；
+  // 集子里的篇目可以用「篇目 id 直接填」那条路（下面 pickHit 会说明）。
+  function allPoems() {
+    var out = [];
+    try {
+      var base = (window.POEMS_ALL || []).slice();
+      base.forEach(function (p) { if (p && p.id && p.text) out.push(p); });
+    } catch (e) {  }
+    return out;
+  }
+
+  function widOfPoem(p) {
+    var id = (p && p.id) || "";
+    if (!id) return "";
+    if (window.WorksIndex && typeof window.WorksIndex.widOf === "function") {
+      try { return window.WorksIndex.widOf(id) || id; } catch (e) {  }
+    }
+    return id;
+  }
+
+  function searchPoems(kw) {
+    var q = String(kw || "").trim();
+    if (!q) return [];
+    var out = [];
+    allPoems().forEach(function (p) {
+      var hay = (p.title || "") + (p.author || "") + (p.text || "");
+      if (hay.indexOf(q) < 0) return;
+      if (out.length < 8) out.push(p);
+    });
+    return out;
+  }
+
+  function renderHits(list) {
+    var box = $("pf-hits");
+    if (!box) return;
+    if (!list.length) { box.hidden = true; box.innerHTML = ""; return; }
+    box.hidden = false;
+    box.innerHTML = list.map(function (p) {
+      return '<li class="grant-row">' +
+        '<span class="grant-mail">' + esc(p.title || "") + "</span>" +
+        '<span class="grant-when">' + esc(widOfPoem(p)) + "</span>" +
+        '<button class="grant-del" type="button" data-pick="' + esc(p.id) + '">选这一篇</button>' +
+        "</li>";
+    }).join("");
+  }
+
+  function onPinyinSearch() {
+    var kw = (($("pf-wid") || {}).value || "").trim();
+    renderHits(searchPoems(kw));
+  }
+
+  function pickedPoem() {
+    var id = onPinyinSearch._id || "";
+    if (!id) return null;
+    var hit = null;
+    allPoems().forEach(function (p) { if (p.id === id) hit = p; });
+    return hit;
+  }
+
+  function onPinyinPick(e) {
+    var b = e.target.closest ? e.target.closest("button[data-pick]") : null;
+    if (!b) return;
+    var id = b.getAttribute("data-pick");
+    var p = null;
+    allPoems().forEach(function (x) { if (x.id === id) p = x; });
+    if (!p) return;
+    onPinyinSearch._id = id;
+    var w = $("pf-wid");
+    if (w) w.value = p.title || "";
+    renderHits([]);
+    fillLine(p);
+  }
+
+  // 「从篇目里挑一句」：把正文按行摊开，点哪一行就填进「原文里的一句」，
+  // 并自动数出「这一句里第几次出现」那一格（用户在正文里点中哪个字都行 ——
+  // 这里先按第一个字算，用户可以自己改那个数）。
+  function fillLine(p) {
+    var box = $("pf-hits");
+    if (!box || !p || !p.text) return;
+    var lines = String(p.text).split("\n").filter(function (x) { return x.trim(); });
+    box.hidden = false;
+    box.innerHTML = lines.map(function (line) {
+      return '<li class="grant-row">' +
+        '<span class="grant-mail">' + esc(line) + "</span>" +
+        '<button class="grant-del" type="button" data-line="' + esc(line.trim()) + '">用这一句</button>' +
+        "</li>";
+    }).join("");
+  }
+
+  function onPinyinLine(e) {
+    var b = e.target.closest ? e.target.closest("button[data-line]") : null;
+    if (!b) return;
+    var line = b.getAttribute("data-line");
+    var box = $("pf-line");
+    if (box) box.value = line;
+    renderHits([]);
+    previewLine();
+  }
+
+  // 这一句里每个字读什么（用当前引擎 + 当前勘误算一遍）——
+  // 钉之前先让人看清「现在读成什么」，钉之后再看一眼「有没有改对」。
+  function previewLine() {
+    var el = $("pf-picked");
+    if (!el) return;
+    var line = (($("pf-line") || {}).value || "").trim();
+    var P = window.Pinyin;
+    var p = pickedPoem();
+    if (!line || !P) { el.hidden = true; el.textContent = ""; return; }
+    var wid = p ? widOfPoem(p) : "";
+    var html = P.annotatePoem ? P.annotatePoem(wid, line, "all") : P.annotateHtml(line, "all");
+    // 只留「字(读音)」这一层，别把 ruby 标签塞进提示里。
+    var text = html.replace(/<ruby>([^<]*)<rt>([^<]*)<\/rt><\/ruby>/g, "$1($2)")
+                   .replace(/<br>/g, " ");
+    el.innerHTML = "这一句现在这样读：" + esc(text);
+    el.hidden = false;
+  }
+
+  function onPinyinAdd() {
+    var F = fix();
+    if (!F) { msg("msg-pf", "页面脚本版本对不上（刷新一次即可）：这一块现在改不了。", "warn"); return; }
+    var p = pickedPoem();
+    var wid = p ? widOfPoem(p) : "";
+    var line = (($("pf-line") || {}).value || "").trim();
+    var py = (($("pf-py") || {}).value || "").trim();
+    var at = Number((($("pf-at") || {}).value || "1"));
+    if (!wid) { msg("msg-pf", "先在上面搜一篇（点「选这一篇」）。", "warn"); return; }
+    if (!line) { msg("msg-pf", "要填原文里的一句（点「从篇目里挑一句」也行）。", "warn"); return; }
+    if (!py) { msg("msg-pf", "要填应读作什么（带声调，如 cháng）。", "warn"); return; }
+    if (!isFinite(at) || at < 1) at = 1;
+
+    // 那一个字是什么：从这一句里数出第 at 个字（复核用，也让别处不必再翻正文）。
+    var text = line;
+    var ch = "";
+    if (p && p.text) {
+      var hit = String(p.text).split("\n").filter(function (x) { return x.trim() === line; })[0];
+      if (hit) text = hit;
+    }
+    var chs = Array.from(text.trim());
+    ch = chs[Math.min(at - 1, chs.length - 1)] || "";
+
+    var r = F.add({ wid: wid, line: line, at: at, ch: ch, py: py });
+    if (!r.ok) {
+      msg("msg-pf", r.reason === "full" ? ("勘误表满了（上限 " + F.MAX + " 条）。先删几条再钉。") : "这一条填得不全，没存。", "warn");
+      return;
+    }
+    msg("msg-pf", (r.replaced ? "已改写" : "已钉住") + "：" + (p ? p.title : wid) +
+      "「" + line + "」第 " + at + " 个「" + ch + "」读 " + py +
+      "。立刻生效 —— 打开那篇（或刷新）就能看到。", "ok");
+    renderFixList();
+    previewLine();
+  }
+
+  function renderFixList() {
+    var box = $("pf-list");
+    var F = fix();
+    if (!box || !F) return;
+    var list = F.list();
+    var empty = $("pf-empty");
+    if (empty) empty.hidden = list.length > 0;
+    var note = $("pf-note");
+    if (note) {
+      note.hidden = false;
+      note.textContent = list.length
+        ? ("共 " + list.length + " 条（上限 " + F.MAX + "）。这一份随账号同步 —— 换台设备也照它读。")
+        : "";
+    }
+    box.innerHTML = list.map(function (f) {
+      return '<li class="grant-row">' +
+        '<span class="grant-mail">' + esc(f.wid) + "</span>" +
+        '<span class="grant-when">' + esc(f.line) + " · 第" + esc(String(f.at)) +
+          "个「" + esc(f.ch || "?") + "」 → " + esc(f.py) + "</span>" +
+        '<button class="grant-del" type="button" data-unfix="' + esc(F.keyOf(f)) + '">删除</button>' +
+        "</li>";
+    }).join("");
+  }
+
+  function onFixListClick(e) {
+    var b = e.target.closest ? e.target.closest("button[data-unfix]") : null;
+    if (!b) return;
+    var F = fix();
+    if (!F) return;
+    var r = F.remove(b.getAttribute("data-unfix"));
+    msg("msg-pf", r.ok ? "已删除这一条（那一处恢复成机器读音）。" : "这一条已经不在了。", r.ok ? "ok" : "warn");
+    renderFixList();
+    previewLine();
+  }
+
+  function onFixExport() {
+    var F = fix();
+    if (!F) return;
+    var text = JSON.stringify({ v: 1, fixes: F.list() }, null, 2);
+    var done = function () { msg("msg-pf", "勘误表已复制 —— 它可以贴进 PR、也可以发给别人导入。", "ok"); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, function () {
+        msg("msg-pf", "复制失败，请手动抄下：" + text, "warn");
+      });
+      return;
+    }
+    msg("msg-pf", "这个浏览器不给复制，请手动抄下：" + text, "warn");
+  }
+
   function renderTierPick() {
     var box = $("tier-pick");
     if (!box) return;
@@ -389,6 +599,7 @@
     show($("grant-card"));
     show($("server-card"));
     show($("accounts-card"));
+    show($("pinyin-card"));
     show($("list-card"));
     show($("sim-card"));
     show($("danger-card"));
@@ -403,6 +614,24 @@
     $("server-list").addEventListener("click", onServerListClick);
     $("btn-server-reload").addEventListener("click", loadServerGrants);
     $("btn-accounts-reload").addEventListener("click", loadAccounts);
+
+    var pfWid = $("pf-wid"), pfLine = $("pf-line");
+    if (pfWid) pfWid.addEventListener("input", onPinyinSearch);
+    if (pfLine) pfLine.addEventListener("input", previewLine);
+    $("pf-hits").addEventListener("click", function (e) {
+      if (e.target.closest && e.target.closest("button[data-line]")) onPinyinLine(e);
+      else onPinyinPick(e);
+    });
+    $("btn-pf-add").addEventListener("click", onPinyinAdd);
+    $("btn-pf-fill").addEventListener("click", function () {
+      var p = pickedPoem();
+      if (!p) { msg("msg-pf", "先在上面搜一篇、点「选这一篇」。", "warn"); return; }
+      fillLine(p);
+    });
+    $("pf-list").addEventListener("click", onFixListClick);
+    $("btn-pf-export").addEventListener("click", onFixExport);
+    $("btn-pf-refresh").addEventListener("click", renderFixList);
+    renderFixList();
     $("grant-list").addEventListener("click", onListClick);
     $("btn-export").addEventListener("click", onExport);
     $("btn-import-open").addEventListener("click", onImportOpen);
@@ -430,6 +659,10 @@
   window.AdminPage = {
     isOwner: isOwner, esc: esc,
 
-    readForm: readForm, grantFailed: grantFailed
+    readForm: readForm, grantFailed: grantFailed,
+
+    // 注音勘误那一块（测试直接调这几个，不必去点 DOM）。
+    searchPoems: searchPoems,
+    widOfPoem: widOfPoem
   };
 })();

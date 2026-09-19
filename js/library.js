@@ -45,7 +45,7 @@
       short: "唐诗",
       page: "/tangshi/",
       unit: "首",
-      desc: "按卷一至卷八编排：五言古诗、七言乐府、律诗、绝句"
+      desc: "八卷选本按体裁编排，唐代诗歌的入门选本"
     },
     {
       id: "songci",
@@ -54,7 +54,7 @@
       short: "宋词",
       page: "/songci/",
       unit: "首",
-      desc: "按词牌分组，一调之下诸家并列，可直接比对同调之作"
+      desc: "按词牌分组，宋词婉约与豪放两派精粹"
     },
     {
       id: "yuanqu",
@@ -73,6 +73,15 @@
       page: "/guwen/",
       unit: "篇",
       desc: "十二卷自周文至明文，历代文章的选本经典"
+    },
+    {
+      id: "jinxiandai",
+      name: "近现代诗词",
+      book: "JinxiandaiBook",
+      short: "近现代",
+      page: "/jinxiandai/",
+      unit: "首",
+      desc: "近百年间的志士之诗；原作引用、译文自拟，仅供背诵学习"
     }
   ];
 
@@ -94,7 +103,8 @@
       guwen: "POEMS_GUWEN",
       zhaoming: "POEMS_ZHAOMING",
       yuefu: "POEMS_YUEFU",
-      yuanqu: "POEMS_YUANQU"
+      yuanqu: "POEMS_YUANQU",
+      jinxiandai: "POEMS_JINXIANDAI"
     };
     var key = VARS[bookId];
     var list = key ? window[key] : null;

@@ -11,7 +11,12 @@ sandbox.window = sandbox;
 vm.createContext(sandbox);
 
 const { loadData, resolve } = require('./master-env');
-loadData(sandbox, ['data/poems-classic.js', 'data/poems-yuefu.js', 'data/site-index.js']);
+// 乐府十五首里有四首与课内同篇（长歌行 / 迢迢牵牛星 / 木兰诗 / 敕勒歌），
+// 它们只留 textRef、正文到主表取；所以课内语料与主表都要装进来。
+loadData(sandbox, ['data/poems-1.js', 'data/poems-2.js', 'data/poems-3.js', 'data/poems-4.js',
+  'data/poems-5.js', 'data/poems-6.js', 'data/poems-7.js', 'data/poems-8.js',
+  'data/poems-9.js', 'data/poems-10.js', 'data/poems-11.js', 'data/poems-12.js',
+  'data/index.js', 'data/poems-yuefu.js', 'data/poems-classic.js', 'data/site-index.js']);
 
 const YF = resolve(sandbox, sandbox.POEMS_YUEFU, 'yuefu');
 chk(Array.isArray(YF) && YF.length === 15,
@@ -64,6 +69,15 @@ const need = ['孔雀东南飞', '陌上桑', '长歌行', '十五从军征', '�
 const titles = YF.map(p => p.title);
 chk(need.every(t => titles.indexOf(t) >= 0),
   '十五首乐府一篇不少（缺：' + need.filter(t => titles.indexOf(t) < 0).join('/') + '）');
+
+// 与课内同篇的四首走 textRef：正文取回主表那一份，**不落第二份**
+const SAME_AS_COURSE = ['长歌行', '迢迢牵牛星', '木兰诗', '敕勒歌'];
+const raw = sandbox.POEMS_YUEFU;
+SAME_AS_COURSE.forEach(t => {
+  const p = raw.filter(x => x.title === t)[0];
+  chk(!!p && /^poems-/.test(p.textRef || ''),
+    '《' + t + '》与课内同篇，乐府这边只留条目（textRef 指向课内那一条）');
+});
 
 const IDX = sandbox.SITE_INDEX;
 const yfIdx = IDX.filter(x => x.book === 'yuefu' && !x.isBook);
@@ -118,12 +132,18 @@ setTimeout(() => {
       '正文由 textRef / 主表取回《上邪》全文（实际「' +
       strip2(rd.querySelector('#rd-text').textContent).slice(0, 12) + '…」）');
     if (api.close) api.close();
-    api.open('yf-1');
-    chk(/孔雀东南飞/.test(rd.querySelector('#rd-title').textContent),
-      '长篇《孔雀东南飞》也能打开（实际 ' + rd.querySelector('#rd-title').textContent + '）');
+    api.open('yf-3');
+    chk(/长歌行/.test(rd.querySelector('#rd-title').textContent),
+      '与课内同篇的《长歌行》也能打开（实际 ' + rd.querySelector('#rd-title').textContent + '）');
+    chk(strip2(rd.querySelector('#rd-text').textContent).indexOf('少壮不努力') >= 0,
+      '《长歌行》正文按 textRef 取回课内那一份');
   }
 
+  const sw = fs.readFileSync(path + 'sw.js', 'utf8');
+  chk(/\.\/yuefu\//.test(sw) && /js\/yuefu\.js/.test(sw) && /data\/poems-yuefu\.js/.test(sw),
+    '乐府页 / 脚本 / 数据都进了 Service Worker 预缓存（断网也能读）');
+
   console.log('');
-  if (fails) { console.log('✗ 乐府诗选测试失败 ' + fails + ' 项'); process.exit(1); }
-  console.log('🎉 乐府诗选测试全部通过');
+  console.log(fails === 0 ? '🎉 乐府诗选测试全部通过' : '❌ 乐府诗选测试 ' + fails + ' 项失败');
+  process.exit(fails === 0 ? 0 : 1);
 }, 300);

@@ -25,7 +25,9 @@
 
     yuefu: window.YUEFU_GROUP_ORDER || null,
 
-    yuanqu: window.YUANQU_GROUP_ORDER || null
+    yuanqu: window.YUANQU_GROUP_ORDER || null,
+
+    jinxiandai: window.JINXIANDAI_GROUP_ORDER || null
   };
 
   window.GROUP_ORDER = GROUPS;

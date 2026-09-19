@@ -91,6 +91,51 @@
         <p class="account-msg" id="msg-accounts"></p>
       </section>
 
+      <section class="account-card" id="pinyin-card" hidden>
+        <h2 class="account-card-title">注音勘误</h2>
+        <p class="account-lead">
+          注音是<strong>按字查表 + 按词消歧</strong>算出来的，古籍里的组合总有几个是表里没有的
+          —— 比如《滕王阁序》「秋水共长<strong>长</strong>天一色」的「长」，机器读成了 zhǎng。
+          在这里把那一处<strong>钉住</strong>：它只改<strong>这一篇的这一句</strong>，
+          改完<strong>立刻</strong>对所有人生效（不必等发版）。
+        </p>
+
+        <div class="grant-form">
+          <div class="account-field">
+            <label class="account-label" for="pf-wid">篇目（搜索标题或正文，选中一篇）</label>
+            <input id="pf-wid" class="account-input" type="text" autocomplete="off"
+                   spellcheck="false" placeholder="滕王阁序" maxlength="40" />
+            <ul class="grant-list" id="pf-hits" hidden></ul>
+          </div>
+          <div class="account-field">
+            <label class="account-label" for="pf-line">原文里的一句</label>
+            <input id="pf-line" class="account-input" type="text" autocomplete="off"
+                   spellcheck="false" placeholder="秋水共长天一色。" maxlength="120" />
+          </div>
+          <div class="account-field">
+            <label class="account-label" for="pf-at">这一句里第几次出现（从 1 数起）</label>
+            <input id="pf-at" class="account-input" type="number" min="1" step="1" value="1" />
+          </div>
+          <div class="account-field">
+            <label class="account-label" for="pf-py">应读作（带声调，如 cháng）</label>
+            <input id="pf-py" class="account-input" type="text" autocomplete="off"
+                   spellcheck="false" placeholder="cháng" maxlength="12" />
+          </div>
+          <button class="account-btn" id="btn-pf-add" type="button">钉住这一处</button>
+          <button class="account-btn ghost" id="btn-pf-fill" type="button">从篇目里挑一句</button>
+        </div>
+        <p class="account-hint" id="pf-picked" hidden></p>
+        <p class="account-msg" id="msg-pf"></p>
+
+        <p class="account-hint" id="pf-note" hidden></p>
+        <ul class="grant-list" id="pf-list"></ul>
+        <p class="account-hint" id="pf-empty" hidden>还没有任何勘误 —— 一处都没钉过。</p>
+        <div class="confirm-row" style="margin-top:12px">
+          <button class="account-btn ghost" id="btn-pf-export" type="button">导出勘误表</button>
+          <button class="account-btn ghost" id="btn-pf-refresh" type="button">刷新</button>
+        </div>
+      </section>
+
       <section class="account-card" id="list-card" hidden>
         <h2 class="account-card-title">本机发放名单</h2>
         <p class="account-lead">
@@ -164,7 +209,28 @@
   <script src="/js/auth-api.js"></script>
   <script src="/js/account-api.js"></script>
   <script src="/js/family.js"></script>
+  <script src="/js/progress-store.js"></script>
+  <script src="/js/storage.js"></script>
   <script src="/js/avatar.js"></script>
+  <script src="/data/pinyin-table.js"></script>
+  <script src="/data/common-chars.js"></script>
+  <script src="/data/works-index.js"></script>
+  <script src="/data/poems-1.js"></script>
+  <script src="/data/poems-2.js"></script>
+  <script src="/data/poems-3.js"></script>
+  <script src="/data/poems-4.js"></script>
+  <script src="/data/poems-5.js"></script>
+  <script src="/data/poems-6.js"></script>
+  <script src="/data/poems-7.js"></script>
+  <script src="/data/poems-8.js"></script>
+  <script src="/data/poems-9.js"></script>
+  <script src="/data/poems-10.js"></script>
+  <script src="/data/poems-11.js"></script>
+  <script src="/data/poems-12.js"></script>
+  <script src="/data/text-master.js"></script>
+  <script src="/data/index.js"></script>
+  <script src="/js/pinyin-edit.js"></script>
+  <script src="/js/pinyin.js"></script>
   <script src="/js/admin-page.js"></script>
   <script src="/js/chrome.js"></script>
   <script src="/js/pwa.js"></script>

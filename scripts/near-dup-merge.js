@@ -45,7 +45,8 @@ const BOOK_FILE = {
   guwen: 'data/poems-guwen.js',
   zhaoming: 'data/poems-zhaoming.js',
   yuanqu: 'data/poems-yuanqu.js',
-  yuefu: 'data/poems-yuefu.js'
+  yuefu: 'data/poems-yuefu.js',
+  jinxiandai: 'data/poems-jinxiandai.js'
 };
 const POEMS_FILES = [];
 for (let i = 1; i <= 12; i++) POEMS_FILES.push('data/poems-' + i + '.js');

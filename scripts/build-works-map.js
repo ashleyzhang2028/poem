@@ -9,7 +9,8 @@ const LOAD = [
   'data/poems-5.js', 'data/poems-6.js', 'data/poems-7.js', 'data/poems-8.js',
   'data/poems-9.js', 'data/poems-10.js', 'data/poems-11.js', 'data/poems-12.js',
   'data/index.js', 'data/poems-classic.js', 'data/poems-tangshi.js',
-  'data/poems-songci.js', 'data/poems-guwen.js', 'data/poems-zhaoming.js', 'data/poems-yuanqu.js', 'data/poems-yuefu.js',
+  'data/poems-songci.js', 'data/poems-guwen.js', 'data/poems-zhaoming.js', 'data/poems-yuanqu.js',
+  'data/poems-yuefu.js', 'data/poems-jinxiandai.js',
   'data/site-index.js', 'data/works-index.js'
 ];
 
@@ -20,6 +21,59 @@ vm.createContext(sandbox);
 LOAD.forEach(function (f) {
   vm.runInContext(fs.readFileSync(path.join(ROOT, f), 'utf8'), sandbox, { filename: f });
 });
+
+// 与 build-text-master.js 同一条口径：新增一部的**第一次**收归时，索引里那些
+// 条目只留了 textRef、正文取不到，会被当成「没有正文」丢掉；这里从原始语料
+// 按 textRef 补一次。收过一次之后自然不再补任何东西。
+(function () {
+  var RAW = {};
+  [
+    { f: 'data/poems-1.js', v: 'POEMS_1' }, { f: 'data/poems-2.js', v: 'POEMS_2' },
+    { f: 'data/poems-3.js', v: 'POEMS_3' }, { f: 'data/poems-4.js', v: 'POEMS_4' },
+    { f: 'data/poems-5.js', v: 'POEMS_5' }, { f: 'data/poems-6.js', v: 'POEMS_6' },
+    { f: 'data/poems-7.js', v: 'POEMS_7' }, { f: 'data/poems-8.js', v: 'POEMS_8' },
+    { f: 'data/poems-9.js', v: 'POEMS_9' }, { f: 'data/poems-10.js', v: 'POEMS_10' },
+    { f: 'data/poems-11.js', v: 'POEMS_11' }, { f: 'data/poems-12.js', v: 'POEMS_12' },
+    { f: 'data/poems-classic.js', v: 'POEMS_CLASSIC' },
+    { f: 'data/poems-tangshi.js', v: 'POEMS_TANGSHI' },
+    { f: 'data/poems-songci.js', v: 'POEMS_SONGCI' },
+    { f: 'data/poems-guwen.js', v: 'POEMS_GUWEN' },
+    { f: 'data/poems-zhaoming.js', v: 'POEMS_ZHAOMING' },
+    { f: 'data/poems-yuanqu.js', v: 'POEMS_YUANQU' },
+    { f: 'data/poems-yuefu.js', v: 'POEMS_YUEFU' },
+    { f: 'data/poems-jinxiandai.js', v: 'POEMS_JINXIANDAI' }
+  ].forEach(function (o) {
+    var book = o.f.replace('data/poems-', '').replace('.js', '');
+    if (/^\d+$/.test(book)) book = 'poems';
+    (sandbox[o.v] || []).forEach(function (p) {
+      if (p && p.id) RAW[book + '-' + p.id] = p;
+    });
+  });
+  var inIndex = {};
+  sandbox.SITE_INDEX.forEach(function (p) { if (p && p.id) inIndex[p.id] = true; });
+  Object.keys(RAW).forEach(function (id) {
+    if (inIndex[id] || id.indexOf('poems-') === 0) return;
+    var raw = RAW[id];
+    var t = { text: raw.text || '', translation: raw.translation || '',
+      translationSource: raw.translationSource || '' };
+    if (!t.text && raw.textRef && RAW[raw.textRef]) {
+      var up = RAW[raw.textRef];
+      t = { text: up.text || '', translation: up.translation || '',
+        translationSource: up.translationSource || '' };
+    }
+    if (!t.text) return;
+    var book = id.split('-')[0];
+    sandbox.SITE_INDEX.push({
+      id: id, originId: id.slice(book.length + 1), title: raw.title,
+      author: raw.author || '', dynasty: raw.dynasty || '',
+      source: raw.source || '', gradeGroup: raw.gradeGroup || '',
+      text: t.text, translation: t.translation, translationSource: t.translationSource,
+      book: book, bookName: book, page: book + '/'
+    });
+    inIndex[id] = true;
+  });
+})();
+sandbox.WorksIndex.rebuild(sandbox.SITE_INDEX);
 
 const WI = sandbox.WorksIndex;
 // entries 与 titles 都排成「课内优先、其次按 id」的顺序：
@@ -59,7 +113,7 @@ out += '   ⚠️ 这是**生成文件**，改动请改 scripts/build-works-map.
 out += '      不要手改这里 —— 下次重新生成会把手工改动覆盖掉。\n';
 out += '\n';
 out += '   为什么要单独落成一份**静态数据**而不是每页现算：\n';
-out += '     现算要先备齐七部集子的全部数据（约 3MB）。集子索引页只加载自己那一部，\n';
+out += '     现算要先备齐九部集子的全部数据（约 3MB）。集子索引页只加载自己那一部，\n';
 out += '     它也要判重（「这篇是不是已经在课内背过了」），现算就会得到一张残表。\n';
 out += '     这一份 8KB，任何页面都能引，判重口径全站一致。\n';
 out += '\n';

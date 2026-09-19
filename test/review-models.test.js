@@ -37,7 +37,7 @@ RM.keys().forEach(k => {
 // ---------------------------------------------------------------------------
 // 算法按层级开放（Issue #229 第四轮）
 //
-// 用户原话：「游客可以用斯宾浩斯遗忘曲线 / 登录 free 添加莱特纳盒 /
+// 用户原话：「游客可以用艾宾浩斯遗忘曲线 / 登录 free 添加莱特纳盒 /
 // pro 添加 SM-2 / max 再添加 FSRS 支持全部」。
 //
 // 「哪一档能用哪几张」这句话在 js/entitlement.js 的 CAPS 里（四条
@@ -114,7 +114,7 @@ chk(RM.allowedKey('', undefined) === 'ebbinghaus',
   chk(R2.allowed('fsrs', TIERS.max) === false && R2.allowedKey('fsrs', TIERS.max) === 'ebbinghaus',
     '没有权益层时（内核单跑）只有出厂默认那一张算数 —— 少给不许多给');
 }
-chk(RM.subFor('ebbinghaus') === '按遗忘曲线复习' &&
+chk(RM.subFor('ebbinghaus') === '按艾宾浩斯遗忘曲线复习' &&
   RM.subFor('sm2') === '按 SM-2 复习' &&
   RM.subFor('fsrs') === '按 FSRS 复习' &&
   RM.subFor('leitner') === '按 Leitner 盒复习',
@@ -349,10 +349,10 @@ function body() {
   chk([...opts].map(o => o.dataset.algo).join(',') === 'ebbinghaus,leitner,sm2,fsrs',
     '四张卡的顺序与模型清单一致');
   chk(sd.querySelector('#seg-algo [aria-checked="true"]').dataset.algo === 'ebbinghaus',
-    '默认选中出厂默认「遗忘曲线」');
+    '默认选中出厂默认「艾宾浩斯遗忘曲线」');
   chk(sd.querySelectorAll('#seg-algo .algo-opt.active').length === 1,
     '四张卡里只有一张是选中态（互斥）');
-  chk((sd.querySelector('#algo-hint') || {}).textContent.indexOf('遗忘曲线') >= 0,
+  chk((sd.querySelector('#algo-hint') || {}).textContent.indexOf('艾宾浩斯遗忘曲线') >= 0,
     '下方回显当前算法（实际「' + sd.querySelector('#algo-hint').textContent + '」）');
   chk((sd.querySelector('#algo-interval') || {}).textContent.indexOf('当天 → 1 → 2 → 4') >= 0,
     '「复习间隔」那一行说的是**当前模型**的口径（遗忘曲线 = 固定表）');
@@ -415,8 +415,8 @@ function body() {
       JSON.stringify({ algo: '不知道是啥' }));
     setTimeout(() => {
       const wd = wildDom.window.document;
-      chk(wd.body.getAttribute('data-sub') === '按遗忘曲线复习',
-        '野生算法键退回出厂默认，副标题写「按遗忘曲线复习」（实际「' +
+      chk(wd.body.getAttribute('data-sub') === '按艾宾浩斯遗忘曲线复习',
+        '野生算法键退回出厂默认，副标题写「按艾宾浩斯遗忘曲线复习」（实际「' +
         wd.body.getAttribute('data-sub') + '」）');
 
       guestPage();
@@ -490,15 +490,15 @@ function guestPage() {
     chk(gd.querySelector('#seg-algo [aria-checked="true"]').dataset.algo === 'ebbinghaus',
       '游客点自己那张：还是它，界面不抖');
 
-    // 首页副标题：游客即使设置里塞着 FSRS，也如实写「按遗忘曲线复习」
+    // 首页副标题：游客即使设置里塞着 FSRS，也如实写「按艾宾浩斯遗忘曲线复习」
     const ghostDom = new JSDOM(homeHtml, {
       runScripts: 'dangerously', resources: repoResources(path), url: 'https://local.test/'
     });
     ghostDom.window.localStorage.setItem('poem_recite_settings_v1', JSON.stringify({ algo: 'fsrs' }));
     setTimeout(() => {
       const gh = ghostDom.window.document;
-      chk(gh.body.getAttribute('data-sub') === '按遗忘曲线复习',
-        '游客的首页副标题退到遗忘曲线（设置里那份 FSRS 不算数，实际「' +
+      chk(gh.body.getAttribute('data-sub') === '按艾宾浩斯遗忘曲线复习',
+        '游客的首页副标题退到艾宾浩斯遗忘曲线（设置里那份 FSRS 不算数，实际「' +
         gh.body.getAttribute('data-sub') + '」）');
 
       console.log('\n' + (fails ? '❌ ' + fails + ' 项失败' : '🎉 复习算法测试全部通过'));

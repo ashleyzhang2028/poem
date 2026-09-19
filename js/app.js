@@ -179,13 +179,13 @@
   function algoShort() {
     return window.ReviewModels
       ? window.ReviewModels.describe(algoKey()).short
-      : "遗忘曲线";
+      : "艾宾浩斯遗忘曲线";
   }
 
   function applyAlgoSub() {
     const sub = window.ReviewModels
       ? window.ReviewModels.subFor(algoKey())
-      : "按遗忘曲线复习";
+      : "按艾宾浩斯遗忘曲线复习";
     document.body.setAttribute("data-sub", sub);
     const el = $("#brand-sub");
     if (el) el.textContent = sub;
@@ -496,7 +496,7 @@
     }).length;
     const pinnedN = todayPlan.filter(function (it) { return it.reason === "pinned"; }).length;
     $("#today-sub").textContent =
-      "共 " + todayPlan.length + " 首 · 待复习 " + reviewN + " · 新学 " +
+      "共 " + todayPlan.length + " 首 · 复习 " + reviewN + " · 新学 " +
       (todayPlan.length - reviewN - pinnedN) +
       (pinnedN ? " · 加背 " + pinnedN : "");
 
@@ -561,7 +561,7 @@
       '<div class="stat"><b>' + st.total + "</b><span>诗词总数</span></div>" +
       '<div class="stat"><b>' + st.learned + "</b><span>已学</span></div>" +
       '<div class="stat"><b>' + st.mastered + "</b><span>较牢固</span></div>" +
-      '<div class="stat review"><b>' + st.dueToday + "</b><span>待复习</span></div>";
+      '<div class="stat review"><b>' + st.dueToday + "</b><span>复习</span></div>";
 
     const box = $("#all-list");
     box.innerHTML = "";
@@ -624,7 +624,9 @@
     songci: { file: "data/poems-songci.js", global: "POEMS_SONGCI" },
     guwen: { file: "data/poems-guwen.js", global: "POEMS_GUWEN" },
     zhaoming: { file: "data/poems-zhaoming.js", global: "POEMS_ZHAOMING" },
-    yuanqu: { file: "data/poems-yuanqu.js", global: "POEMS_YUANQU" }
+    yuanqu: { file: "data/poems-yuanqu.js", global: "POEMS_YUANQU" },
+    yuefu: { file: "data/poems-yuefu.js", global: "POEMS_YUEFU" },
+    jinxiandai: { file: "data/poems-jinxiandai.js", global: "POEMS_JINXIANDAI" }
   };
 
   function staleByBook() {
@@ -829,10 +831,26 @@
     syncBottomGap();
   }
 
+  // 这一篇的「作品 id」。注音勘误表按它绑定 —— 集子页与课内页的篇目 id 不同，
+  // 而同一篇作品在好几部集子里出现（《滕王阁序》在课内也在古文观止），
+  // 所以要用 WorksIndex 归并后的那个 wid，勘误才是「一处改、处处生效」。
+  function pinyinWidOf(p) {
+    const id = p && p.id ? p.id : "";
+    if (!id) return "";
+    if (window.WorksIndex && typeof window.WorksIndex.widOf === "function") {
+      try { return window.WorksIndex.widOf(id) || id; } catch (e) {  }
+    }
+    return id;
+  }
+
   function renderPoemText(p) {
     const box = $("#m-text");
     if (pinyinOn() && window.Pinyin) {
-      box.innerHTML = window.Pinyin.annotateHtml(p.text, pinyinRenderMode());
+      // 走 annotatePoem（逐句声明「哪一篇」，勘误层才找得到）：不传 wid 时
+      // 输出与 annotateHtml 逐字相同，所以这是纯增强、不是改口径。
+      box.innerHTML = window.Pinyin.annotatePoem
+        ? window.Pinyin.annotatePoem(pinyinWidOf(p), p.text, pinyinRenderMode())
+        : window.Pinyin.annotateHtml(p.text, pinyinRenderMode());
       box.classList.add("with-pinyin");
     } else {
       box.textContent = p.text;
