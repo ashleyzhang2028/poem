@@ -175,8 +175,20 @@
     var seen = readSeen();
     return Object.keys(seen).filter(function (id) {
 
-      return id !== CURSOR_KEY && id !== SIG_KEY && id !== FAMILY_ROW_ID &&
-        id !== DAILY_EXTRA_ROW_ID && norm(seen[id]) < 0;
+      // 「今日加背」「自选集合」「集子已读」都不进这里：它们各有自己的
+      // 合并规则（加背按天并集、已读纯并集、集合谁最后改谁赢 —— 集合那一条
+      // 例外：firstMerge 里它**是**要裁决的，见下面），
+      // 弹一次「保留本机还是保留账号」是错的。
+      if (id !== CURSOR_KEY && id !== SIG_KEY && id !== FAMILY_ROW_ID) {
+        // 下面几档另有各自的合并规则
+      } else {
+        return false;
+      }
+      if (id === DAILY_EXTRA_ROW_ID) return false;
+      if (id.indexOf(READ_ROW_STAMP) === 0) return false;
+      if (readSync() && readSync().isReadRow(id)) return false;
+      if (/__at$/.test(id)) return false;
+      return norm(seen[id]) < 0;
     });
   }
 
@@ -380,15 +392,24 @@
     var list = pending(seen);
     var reg = familyRow();
     var extra = dailyExtraRow(seen);
-    if (!list.length && !reg && !extra) return Promise.resolve({ ok: true, applied: 0 });
+    var cols = collectionsRow(seen);
+    var reads = readRows(seen);
+    if (!list.length && !reg && !extra && !cols && !reads.length) {
+      return Promise.resolve({ ok: true, applied: 0 });
+    }
 
     var sent = 0;
 
-    // 名册（family:v1）与「今日加背」（daily_extra:v1）都顶着 child_id = ""，
-    // 与第一批**同路**：都不按孩子分家（名册是账号级的，加背只属于「今天」）。
+    // 名册（family:v1）、「今日加背」（daily_extra:v1）与「集子已读」
+    // （reads:*）都顶着 child_id = ""，与第一批**同路**：都不按孩子分家
+    // （名册是账号级的，加背只属于「今天」，已读是「这个账号读过没有」）。
+    // 「自选集合」（collections:v1）也走这一批 —— 它是整份一份数据，
+    // 与孩子无关（集合本身不含进度）。
     var headRecs = [];
     if (reg) headRecs.push(reg);
     if (extra) headRecs.push(extra);
+    if (cols) headRecs.push(cols);
+    reads.forEach(function (r) { headRecs.push(r); });
     var head = Promise.resolve({ ok: true });
     if (headRecs.length) {
       head = sendBatch(headRecs, "").then(function (r) {
@@ -440,6 +461,24 @@
         if (dv === "applied") { out.applied++; out.dailyExtra = true; }
         return;
       }
+
+      // 「集子已读」：**并集**（读过就是读过，谁的都不该被抹掉），
+      // 所以不交给 applyRemote 的「谁最后写谁赢」。见 js/read-sync.js。
+      var RS = readSync();
+      if (row && RS && RS.isReadRow(row.id)) {
+        var rv = applyRemoteReads(row);
+        if (rv === "applied") { out.applied++; out.reads = true; }
+        return;
+      }
+
+      // 「自选集合」：与普通进度同一条路（谁最后写谁赢），但它**要**记 seen，
+      // 而且合并之后本机那一份的时间戳必须**就是云端那个**（否则每轮同步
+      // 都会把本机重写一遍，首页计划跟着反复重算）。见 applyRemoteCollections。
+      if (row && row.id === COLLECTIONS_ROW_ID) {
+        var cv = applyRemoteCollections(row);
+        if (cv === "applied") { out.applied++; out.collections = true; }
+        return;
+      }
       var verdict = applyRemote(row);
       if (verdict === "applied") out.applied++;
       else if (verdict === "conflict") out.conflict++;
@@ -473,6 +512,18 @@
 
   var DAILY_EXTRA_ROW_ID = "daily_extra:v1";
 
+  // 「自选集合」那一行。它**不新开表**（progress 里的一行），合并规则是
+  // 「谁最后改谁赢」，与普通进度同源；但它要在**首次合并**时进冲突裁决 ——
+  // 两端的集合结构不同，按篇并起来会得到一份谁也不认识的东西。
+  var COLLECTIONS_ROW_ID = "collections:v1";
+
+  // 「集子已读」那一族行的前缀（一个集子一行，`reads:<本机键名>`）。
+  var READ_ROW_PREFIX = "reads:";
+
+  // 已读的时间戳存在 seen 里（见 js/read-sync.js 的 touch()），
+  // 这一格不是一条记录 —— 不许进冲突裁决。
+  var READ_ROW_STAMP = "reads:";
+
   var SIG_KEY = "__family_sig__";
   function cursor() { return norm(readSeen()[CURSOR_KEY]); }
   function setCursor(ts) {
@@ -500,6 +551,30 @@
     var D = dailyExtraMod();
     if (!D) return null;
     try { return D.cloudRow(seen || readSeen()) || null; } catch (e) { return null; }
+  }
+
+  // 「自选集合」（Issue #243 后续）：一行 progress，与加背同路。
+  function collectionsMod() {
+    var C = typeof window !== "undefined" ? window.ReciteCollections : null;
+    return C && typeof C.cloudRow === "function" && typeof C.applyCloud === "function" ? C : null;
+  }
+
+  function collectionsRow(seen) {
+    var C = collectionsMod();
+    if (!C) return null;
+    try { return C.cloudRow(seen || readSeen()) || null; } catch (e) { return null; }
+  }
+
+  // 「集子已读」（Issue #243 后续）：一个集子一行，`reads:<本机键名>`。
+  function readSync() {
+    var R = typeof window !== "undefined" ? window.ReadSync : null;
+    return R && typeof R.rows === "function" && typeof R.applyCloud === "function" ? R : null;
+  }
+
+  function readRows(seen) {
+    var R = readSync();
+    if (!R) return [];
+    try { return R.rows(seen || readSeen()) || []; } catch (e) { return []; }
   }
 
   function familySig() { return String(readSeen()[SIG_KEY] || ""); }
@@ -565,6 +640,38 @@
     return verdict;
   }
 
+  function applyRemoteReads(row) {
+    var R = readSync();
+    if (!R) return "skip";
+    var seen = readSeen();
+    var known = norm(seen[row.id]);
+    var cloudTs = norm(row && row.updatedAt);
+    if (cloudTs && known === cloudTs && !row.deleted) return "skip";
+
+    var verdict = "skip";
+    try { verdict = R.applyCloud(row, seen) || "skip"; } catch (e) { verdict = "skip"; }
+
+    // 无论合没合上都要记 seen：不记的话下一轮拉取会把它当新东西反复拉，
+    // 每次都把本机那一份重写一遍（症状是「已读标记反复闪」）。
+    if (cloudTs) markSeen(row.id, cloudTs);
+    return verdict;
+  }
+
+  function applyRemoteCollections(row) {
+    var C = collectionsMod();
+    if (!C) return "skip";
+    var seen = readSeen();
+    var known = norm(seen[COLLECTIONS_ROW_ID]);
+    var cloudTs = norm(row && row.updatedAt);
+    if (cloudTs && known === cloudTs && !row.deleted) return "skip";
+
+    var verdict = "skip";
+    try { verdict = C.applyCloud(row, seen) || "skip"; } catch (e) { verdict = "skip"; }
+
+    if (cloudTs) markSeen(COLLECTIONS_ROW_ID, cloudTs);
+    return verdict;
+  }
+
   function applyRemoteFamily(row) {
     var F = familyMod();
     if (!F) return "skip";
@@ -620,8 +727,14 @@
 
       // 「今日加背」不进冲突裁决：它是**按天合并**的（见 js/daily-extra.js），
       // 两端都有旧数据时该并起来，而不是弹一次「保留本机还是保留账号」。
+      // 「今日加背」「集子已读」不进冲突裁决（各自有自己的合并规则）；
+      // 「自选集合」**进** —— 两端结构不同，按篇并起来会得到一份谁也不认识的东西。
       var list = (outcome.conflict || conflictIds(forCore, remoteRecs2))
-        .filter(function (id) { return id !== DAILY_EXTRA_ROW_ID; });
+        .filter(function (id) { return id !== DAILY_EXTRA_ROW_ID; })
+        .filter(function (id) {
+          var R = readSync();
+          return !(R && R.isReadRow(id)) && id.indexOf(READ_ROW_PREFIX) !== 0;
+        });
       list.forEach(function (id) {
         markSeen(id, -1);
       });
@@ -727,7 +840,13 @@
     NS: NS, EVT: EVT, CHUNK: CHUNK, TIMEOUT_MS: TIMEOUT_MS,
     FAMILY_ROW_ID: FAMILY_ROW_ID,
     DAILY_EXTRA_ROW_ID: DAILY_EXTRA_ROW_ID,
+    COLLECTIONS_ROW_ID: COLLECTIONS_ROW_ID,
+    READ_ROW_PREFIX: READ_ROW_PREFIX,
     dailyExtraRow: dailyExtraRow,
+    collectionsRow: collectionsRow,
+    readRows: readRows,
+    applyRemoteReads: applyRemoteReads,
+    applyRemoteCollections: applyRemoteCollections,
 
     init: init,
 

@@ -166,30 +166,49 @@ chk(order.indexOf('data/index.js') < order.indexOf('js/scheduler.js'),
 chk(order.indexOf('js/scheduler.js') < order.indexOf('js/progress.js'),
   '脚本顺序：scheduler 先于 progress（页面要用 overview）');
 
-class RepoLoader {
-  constructor() {
-
-    this._userAgent = 'jsdom-test';
-    this._strictSSL = true;
-    this._proxy = undefined;
+// 页面里那些 `src="js/xxx.js"` 要按仓库根目录解析 —— 这一步在各版 jsdom 上
+// 走的是**两套不同的口子**：
+//   · jsdom 26 及以前：`resources` 收一个自定义 loader（必须**继承真实的
+//     ResourceLoader**，不然 jsdom 会静默忽略它、所有脚本都不加载 ——
+//     症状是「课内 261 首都没进来」，而报错指向一个无关的断言）；
+//   · jsdom 27 起：私有的 `window._resourceLoader` 没了，`resources` 改成
+//     `{ interceptors }`（官方的 `requestInterceptor`）。
+// 两种都认，谁在就用谁。
+function repoResources(root) {
+  const jd = require('jsdom');
+  if (typeof jd.ResourceLoader === 'function') {
+    class RepoLoader extends jd.ResourceLoader {
+      fetch(url) {
+        const file = require('path').join(root, decodeURIComponent(new URL(url).pathname));
+        if (fs.existsSync(file)) return Promise.resolve(fs.readFileSync(file));
+        return Promise.reject(new Error('not found: ' + url));
+      }
+    }
+    return new RepoLoader({ userAgent: 'jsdom-test' });
   }
-  fetch(url) {
-    const file = require('path').join(path, decodeURIComponent(new URL(url).pathname));
-    if (fs.existsSync(file)) return Promise.resolve(fs.readFileSync(file));
-    return Promise.reject(new Error('not found: ' + url));
-  }
+  return {
+    interceptors: [
+      jd.requestInterceptor(async request => {
+        let file = null;
+        try { file = require('path').join(root, decodeURIComponent(new URL(request.url).pathname)); }
+        catch (e) { return undefined; }
+        if (!fs.existsSync(file) || fs.statSync(file).isDirectory()) return undefined;
+        const body = fs.readFileSync(file);
+        const type = file.endsWith('.css') ? 'text/css'
+          : file.endsWith('.json') ? 'application/json'
+          : file.endsWith('.js') ? 'text/javascript'
+          : 'application/octet-stream';
+        return new Response(body, { headers: { 'Content-Type': type } });
+      })
+    ]
+  };
 }
-const _probeDom = new JSDOM('', { resources: 'usable' });
-const _realProto = Object.getPrototypeOf(_probeDom.window._resourceLoader || {});
-void _probeDom;
-if (_realProto && _realProto.fetch) Object.setPrototypeOf(RepoLoader.prototype, _realProto);
-Object.defineProperty(RepoLoader, 'name', { value: 'ResourceLoader' });
 
 const DAY2 = 86400000;
 
 function openPage(progress) {
   const d = new JSDOM(html, {
-    runScripts: 'dangerously', resources: new RepoLoader(), url: 'https://local.test/progress/'
+    runScripts: 'dangerously', resources: repoResources(path), url: 'https://local.test/progress/'
   });
   if (progress) d.window.localStorage.setItem('poem_recite_progress_v1', JSON.stringify(progress));
   return d;
@@ -367,7 +386,7 @@ setTimeout(() => {
       const homeOrder = homeHtml.match(/<script src="([^"]+)"><\/script>/g)
         .map(x => x.match(/src="([^"]+)"/)[1]);
       const homeDom = new JSDOM(homeHtml, {
-        runScripts: 'dangerously', resources: new RepoLoader(), url: 'https://local.test/'
+        runScripts: 'dangerously', resources: repoResources(path), url: 'https://local.test/'
       });
       const wh = homeDom.window;
       wh.scrollTo = function () {};

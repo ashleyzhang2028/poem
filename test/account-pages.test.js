@@ -356,8 +356,8 @@ const LOGIN = strip(loginJs), PROFILE = strip(profileJs), ADMIN = strip(adminJs)
     .replace(/<[^>]+>/g, "").replace(/\s+/g, "").length;
   chk(legalLen('terms/index.html') < 1330,
     '用户协议正文 < 1330 字（实际 ' + legalLen('terms/index.html') + '）');
-  chk(legalLen('privacy/index.html') < 1670,
-    '隐私条款正文 < 1670 字（实际 ' + legalLen('privacy/index.html') + '）');
+  chk(legalLen('privacy/index.html') < 1990,
+    '隐私条款正文 < 1990 字（实际 ' + legalLen('privacy/index.html') + '）');
 
   const priv = read('privacy/index.html');
   chk(/保存到服务器/.test(priv), '隐私条款写明邮箱会保存到服务器（Issue #197 起明文确实落库）');

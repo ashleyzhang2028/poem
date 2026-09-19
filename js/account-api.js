@@ -95,6 +95,7 @@
       } : null;
 
       lastAccount = (me && typeof me === "object") ? {
+        avatar: typeof me.avatar === "string" ? me.avatar : "",
         uid: typeof me.uid === "string" ? me.uid : null,
         email: typeof me.email === "string" ? me.email : "",
         mask: typeof me.mask === "string" ? me.mask : "",
@@ -111,7 +112,30 @@
         role: E.isRole(me && me.role) ? me.role : null
       });
 
+      adoptAvatar(me);
+
       return !!(r && r.ok);
+    }
+
+    // 头像字节跨设备（Issue #243 后续 · 用户口径「能上云的全上」）。
+    //
+    // 已登录时头像的权威地址在服务器（Storage 桶里那张图），本机只留一份
+    // 副本供断网时显示。所以在**新设备上第一次拿到 /api/me** 时要把地址
+    // 写回账号域 —— 不写的话，换台设备头像就退回昵称首字（用户会以为
+    // 「头像没同步」）。这是唯一一处能写回的地方：/api/me 是账号事实的
+    // 唯一来路，散在几个页面里各写一遍必然漏。
+    //
+    // 本机那份 data URL 副本仍然保留（它就是「传不上去时还能看」的那一份），
+    // 所以这里只在**账号域里还没有图片**时才写。
+    function adoptAvatar(me) {
+      var AV = D.AV;
+      if (!AV || !AV.avatar || !AV.setAvatar || !D.backing) return false;
+      var url = String((me && me.avatar) || "").trim();
+      if (!url || !AV.isImgUrl || !AV.isImgUrl(url)) return false;
+      var cur = null;
+      try { cur = AV.avatar(D.backing) || {}; } catch (e) { cur = null; }
+      if (cur && cur.img) return false;
+      try { return !!AV.setAvatar(D.backing, { img: url }); } catch (e) { return false; }
     }
 
     function clearServerTier() {

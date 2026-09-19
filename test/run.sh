@@ -400,6 +400,14 @@ echo "    跨过 0 点自动归零，不留垃圾。"
 node test/daily-extra.test.js
 
 echo ""
+echo "=== 同步边界总表（Issue #243 后续 · 能上云的全上，上不了的逐条写清）==="
+echo "    守的是「表是全的」：源码里每一把 poem_* 键都必须在 js/sync-coverage.js
+    里有判定（本次就靠它发现自选集合与集子已读一直漏在表外）；
+    表的分域与 ProgressStore.scopes() 不许打架；上云的行号两端逐字一致；
+    服务端白名单真的在裁（封顶 / 截断 / 只留白名单字段）。"
+node test/sync-coverage.test.js
+
+echo ""
 echo "=== 用户名设置测试 ==="
 node test/username.test.js
 

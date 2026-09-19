@@ -325,7 +325,21 @@
     if (ps && ps.setReadMap) ps.setReadMap(W.readStore, map);
     else localStorage.setItem(W.readStore, JSON.stringify(map));
 
+    // 「集子已读」上云（Issue #243 后续）：先给这一把键盖一个「最后改动时刻」
+    // 的章，再把这一批推上去 —— 云端的合并是**并集**，所以推的是
+    // 「这个集子里读过的篇」，见 js/read-sync.js。
+    markReadSynced();
+
     window.dispatchEvent(new CustomEvent("reader-read-change", { detail: { store: W.readStore, id: id, read: !!val } }));
+  }
+
+  function markReadSynced() {
+    var R = typeof window !== "undefined" ? window.ReadSync : null;
+    if (!R || typeof R.touch !== "function") return;
+    try { R.touch(W.readStore); } catch (e) { return; }
+    var S = typeof window !== "undefined" ? window.SyncStore : null;
+    if (!S || typeof S.now !== "function") return;
+    try { S.now({ pull: false }); } catch (e) {  }
   }
 
   function onReadChange(e) {
