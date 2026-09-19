@@ -80,7 +80,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   const actionBtn = () => d.querySelector('.app > .topbar #top-act');
 
   chk(!!w.LibraryPage, '入口页暴露了 LibraryPage（铺开 / 收起都由它管）');
-  chk(d.querySelectorAll('.library-card').length === 6, '六张卡片都在（实际 ' +
+  chk(d.querySelectorAll('.library-card').length === 7, '七张卡片都在（实际 ' +
     d.querySelectorAll('.library-card').length + '）');
   chk(!gridHidden() && railHidden(), '初始状态：目录可见、索引层隐藏');
 
@@ -90,8 +90,8 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(subText() === '想读哪首点哪首',
     '副标题换成这一部的说明，且与 /tangshi/ 那一页的完全一致（同一份 config.pageSub；实际 ' + subText() + '）');
   chk(gridHidden() && !railHidden(), '目录收起、索引铺开（同一页里的两层）');
-  chk(d.querySelectorAll('#lib-gw-list .item').length === 301,
-    '索引层列出 301 首（实际 ' + d.querySelectorAll('#lib-gw-list .item').length + '）');
+  chk(d.querySelectorAll('#lib-gw-list .item').length === 317,
+    '索引层列出 317 首（实际 ' + d.querySelectorAll('#lib-gw-list .item').length + '）');
 
   chk(d.querySelector('.app > .topbar .count-badge') === null,
     '页顶那一行不再挂已读进度牌（实际 ' +
@@ -118,18 +118,18 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(!railHidden() && gridHidden(),
     '★ 落在**唐诗索引**这一层（不是一路退到集子目录）—— 这是 Issue #122 报的那一步');
   chk(pageName() === '唐诗三百首', '页名仍是「唐诗三百首」（实际 ' + pageName() + '）');
-  chk(d.querySelectorAll('#lib-gw-list .item').length === 301, '索引仍是完整 301 首');
+  chk(d.querySelectorAll('#lib-gw-list .item').length === 317, '索引仍是完整 317 首');
   chk(topActs() === 1, '退回索引层后仍只有一枚可见的返回键（实际 ' + topActs() + '）');
 
   const back2 = actionBtn();
   chk(!!back2, '索引层有返回键');
   click(back2);
   await sleep(200);
-  chk(railHidden() && !gridHidden(), '★ 再按返回，回到六张卡的集子目录');
+  chk(railHidden() && !gridHidden(), '★ 再按返回，回到七张卡的集子目录');
   chk(pageName() === '课外阅读', '页名还原成「课外阅读」（实际 ' + pageName() + '）');
   chk(subText() === '课本之外的经典，按部就班读下去',
     '副标题还原成入口页那一句（实际 ' + subText() + '）');
-  chk(d.querySelectorAll('.library-card').length === 6, '六张卡片仍在（退回来时没有把目录清掉）');
+  chk(d.querySelectorAll('.library-card').length === 7, '七张卡片仍在（退回来时没有把目录清掉）');
   chk(topActs() === 0, '目录这一层不再有返回键（恢复各页默认的「回首页」；实际 ' + topActs() + '）');
 
   const gs = d.querySelector('[data-lib-part="search"]');
@@ -140,8 +140,8 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   await sleep(350);
   chk(pageName() === '宋词三百首', '换成宋词，页名跟着换（实际 ' + pageName() + '）');
   chk(d.querySelectorAll('#lib-gw-list .item').length > 0 &&
-    d.querySelectorAll('#lib-gw-list .item').length !== 301,
-    '列表换成了宋词的篇目（不再是唐诗的 301 条；实际 ' +
+    d.querySelectorAll('#lib-gw-list .item').length !== 317,
+    '列表换成了宋词的篇目（不再是唐诗的 317 条；实际 ' +
     d.querySelectorAll('#lib-gw-list .item').length + '）');
   chk(d.querySelector('.app > .topbar .count-badge') === null,
     '换一部之后页顶照样没有读数（读数只有详情页那一处）');
@@ -152,8 +152,8 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   await sleep(200);
   click(d.querySelector('.library-card[data-book="tangshi"]'));
   await sleep(350);
-  chk(d.querySelectorAll('#lib-gw-list .item').length === 301,
-    '换回唐诗仍是完整 301 首（同一块挂载点上重新挂，不复用上一部的实例）');
+  chk(d.querySelectorAll('#lib-gw-list .item').length === 317,
+    '换回唐诗仍是完整 317 首（同一块挂载点上重新挂，不复用上一部的实例）');
 
   click(d.querySelector('.app > .topbar #top-act'));
   await sleep(200);
@@ -162,10 +162,11 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     '课内诗词那张仍是链接、仍指 /poems/（它有自己的索引页，不必在这一页里铺）');
 
   for (const [f, url, n, name] of [
-    ['tangshi/index.html', '/tangshi/', 301, '唐诗三百首'],
-    ['songci/index.html', '/songci/', 283, '宋词三百首'],
+    ['tangshi/index.html', '/tangshi/', 317, '唐诗三百首'],
+    ['songci/index.html', '/songci/', 285, '宋词三百首'],
     ['guwen/index.html', '/guwen/', null, '古文观止'],
     ['zhaoming/index.html', '/zhaoming/', null, '昭明文选'],
+    ['yuanqu/index.html', '/yuanqu/', 30, '元曲三百首'],
     ['classic/index.html', '/classic/', 100, '课外必背小古文']
   ]) {
     const w2 = boot(f, url);

@@ -99,7 +99,7 @@ console.log('\n=== 二、飞花令：候选从语料现算，命中的字由内�
   eq(none.rows.length, 0, '回 0 条时结果数组为空');
 
   const big = Q.flyFlower({ poems: ALL.concat(CLASSIC), chars: ['月'] });
-  chk(big.count >= ff.count, '六部集子一起查的条数不少于只查课内（' + big.count + ' ≥ ' + ff.count + '）');
+  chk(big.count >= ff.count, '七部集子一起查的条数不少于只查课内（' + big.count + ' ≥ ' + ff.count + '）');
 }
 
 console.log('\n=== 三、题库：一篇一条、干扰项三条规矩 ===');

@@ -179,15 +179,13 @@ window.POEMS_4 = [
     term: 1,
   },
   {
+    textRef: "poems-xx4-19",
     id: "xx4-19",
     title: "竹枝词",
     author: "刘禹锡",
     dynasty: "唐",
     grade: 4,
     term: 2,
-    text: "杨柳青青江水平，\n闻郎江上唱歌声。\n东边日出西边雨，\n道是无晴却有晴。",
-    translation: "杨柳青翠，江水平静，听见情郎在江上唱歌。东边出了太阳西边却在下雨，说是没有晴（情）却又是有晴（情）。",
-    translationSource: "school",
   },
   {
     textRef: "poems-xx4-20",

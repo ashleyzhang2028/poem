@@ -51,6 +51,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
    'data/poems-9.js', 'data/poems-10.js', 'data/poems-11.js', 'data/poems-12.js',
    'data/index.js', 'data/poems-classic.js', 'data/poems-tangshi.js',
    'data/poems-songci.js', 'data/poems-guwen.js', 'data/poems-zhaoming.js',
+   'data/poems-yuanqu.js',
    'data/site-index.js', 'data/works-map.js', 'data/works-index.js']);
 
   const IDX = sandbox.SITE_INDEX;
@@ -60,21 +61,22 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     resolve(sandbox, sandbox.POEMS_TANGSHI, 'tangshi'),
     resolve(sandbox, sandbox.POEMS_SONGCI, 'songci'),
     resolve(sandbox, sandbox.POEMS_GUWEN, 'guwen'),
-    resolve(sandbox, sandbox.POEMS_ZHAOMING, 'zhaoming')
+    resolve(sandbox, sandbox.POEMS_ZHAOMING, 'zhaoming'),
+    resolve(sandbox, sandbox.POEMS_YUANQU, 'yuanqu')
   ];
-  const BOOK_IDS = ['classic', 'tangshi', 'songci', 'guwen', 'zhaoming'];
+  const BOOK_IDS = ['classic', 'tangshi', 'songci', 'guwen', 'zhaoming', 'yuanqu'];
 
   const zmIndexed = books[4].filter(p => p.text && p.translation).length;
 
   chk(IDX.length === sandbox.POEMS_ALL.length +
-      books.reduce((n, b) => n + b.filter(p => p.text && p.translation).length, 0) + 6,
-    '总索引 = 课内诗词 + 五部全集子（其中昭明 ' + zmIndexed + ' 篇）+ 6 条集子条目（实际 ' + IDX.length + '）');
+      books.reduce((n, b) => n + b.filter(p => p.text && p.translation).length, 0) + 7,
+    '总索引 = 课内诗词 + 六部全集子（其中昭明 ' + zmIndexed + ' 篇）+ 7 条集子条目（实际 ' + IDX.length + '）');
   BOOK_IDS.forEach(id => {
     chk(IDX.some(x => x.book === id && !x.isBook),
       '总索引含「' + id + '」这一部的篇目');
   });
-  chk(IDX.filter(x => x.isBook).length === 6,
-    '集子自身也各有一条（搜「唐诗三百首」能直接进那一页）');
+  chk(IDX.filter(x => x.isBook).length === 7,
+    '七部集子自身也各有一条（搜「唐诗三百首」能直接进那一页）');
 
   const ids = new Set();
   let dup = 0;
@@ -82,7 +84,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(dup === 0, '全站 id 无重复（重复 ' + dup + ' 个）');
   chk(BOOK_IDS.every(id => IDX.filter(x => x.book === id && !x.isBook)
     .every(x => x.id.indexOf(id + '-') === 0)),
-    '每条结果的 id 都带自己那一部的前缀（六部原 id 会撞，前缀才分得开）');
+    '每条结果的 id 都带自己那一部的前缀（七部原 id 会撞，前缀才分得开）');
   chk(IDX.every(x => x.book && x.bookName && x.page),
     '每条结果都带「出自哪一部」与「该去哪一页」');
 
@@ -92,13 +94,13 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   const ld = wLib.document;
   const cards = [...ld.querySelectorAll('.library-card')];
 
-  chk(cards.length === 6, '入口页列出六部（课内 + 五部选集，实际 ' + cards.length + '）');
+  chk(cards.length === 7, '入口页列出七部（课内 + 六部选集，实际 ' + cards.length + '）');
   chk(cards.map(c => c.getAttribute('data-book')).join('/') ===
-    'poems/classic/tangshi/songci/guwen/zhaoming',
-    '六部的顺序与出处正确');
+    'poems/classic/tangshi/songci/guwen/zhaoming/yuanqu',
+    '七部的顺序与出处正确');
 
-  chk(cards.map(c => c.tagName).join('/') === 'A/BUTTON/BUTTON/BUTTON/BUTTON/BUTTON',
-    '六张卡：课内是链接（跳 /poems/），其余五部是按钮（就地铺索引；实际 ' +
+  chk(cards.map(c => c.tagName).join('/') === 'A/BUTTON/BUTTON/BUTTON/BUTTON/BUTTON/BUTTON',
+    '七张卡：课内是链接（跳 /poems/），其余六部是按钮（就地铺索引；实际 ' +
     cards.map(c => c.tagName).join('/') + '）');
   chk(cards[0].getAttribute('href') === '/poems/',
     '课内那张仍指自己的索引页（实际 ' + cards[0].getAttribute('href') + '）');
@@ -377,7 +379,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(dock.every(b => b.querySelectorAll(':scope > *').length === 2),
     '每格仍是 图标 + 文字 两个子元素，没有多加装饰');
   chk(dock.filter(b => b.getAttribute('data-nav-go') === 'classic').length === 0,
-    '五部集子不再各自占一格（「小古文」旧页签已撤）');
+    '六部集子不再各自占一格（「小古文」旧页签已撤）');
 
   chk(/的背诵/.test(wHome.document.querySelector('#brand-page-text').textContent),
     '首页顶栏页面名改为「XX的背诵」（实际 ' +

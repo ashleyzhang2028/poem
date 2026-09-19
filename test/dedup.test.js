@@ -11,7 +11,7 @@ const DATA = [
   'data/poems-1.js', 'data/poems-2.js', 'data/poems-3.js', 'data/poems-4.js', 'data/poems-5.js',
   'data/poems-6.js', 'data/poems-7.js', 'data/poems-8.js', 'data/poems-9.js', 'data/poems-10.js',
   'data/poems-11.js', 'data/poems-12.js', 'data/index.js', 'data/poems-classic.js',
-  'data/poems-tangshi.js', 'data/poems-songci.js', 'data/poems-guwen.js', 'data/poems-zhaoming.js',
+  'data/poems-tangshi.js', 'data/poems-songci.js', 'data/poems-guwen.js', 'data/poems-zhaoming.js', 'data/poems-yuanqu.js',
   'data/site-index.js', 'data/works-map.js', 'data/works-index.js'
 ];
 
@@ -107,7 +107,8 @@ chk(WI.same('poems-gz10-05', 'tangshi-ts-190'), '《登高》课内与唐诗三�
 chk(WI.same('poems-gz10-07', 'songci-sc-67'), '《念奴娇·赤壁怀古》课内与宋词三百首仍判为同一篇');
 chk(WI.same('poems-gz10-08', 'songci-sc-183'), '《永遇乐·京口北固亭怀古》课内与宋词三百首仍判为同一篇');
 
-chk(sb.WORKS_GROUPS.length === 60, '同篇对照表 66 → 57（自身重复去重）→ 60（近重复合并 +3）（实际 ' +
+chk(sb.WORKS_GROUPS.length === 68,
+  '同篇对照表 60 组 + 本轮新增的 8 组（新收的唐诗 / 元曲与课内同篇）（实际 ' +
   sb.WORKS_GROUPS.length + '）');
 
 const jys = byId['xx1-09'];
@@ -249,7 +250,7 @@ const uncov = [];
 chk(uncov.length === 0,
   '判重表 59 组的每一条条目都在存储主表里（未覆盖：' + (uncov.slice(0, 6).join('、') || '无') + '）');
 
-const FULL_BOOKS = ['zhaoming', 'guwen', 'songci', 'tangshi', 'classic'];
+const FULL_BOOKS = ['zhaoming', 'guwen', 'songci', 'tangshi', 'classic', 'yuanqu'];
 const inFullBooks = e => FULL_BOOKS.some(b => e.indexOf(b + '-') === 0);
 const masterInGroups = [];
 Object.keys(masterEntries).forEach(e => {
@@ -292,10 +293,11 @@ MERGES.forEach(function (m) {
     (out.split('\n').filter(l => l.indexOf('·') === 0).length) + ' 行跳过提示）');
 }
 
-chk((sb.POEMS_SONGCI || []).length === 283,
-  '《宋词三百首》284 → 283（并掉自拟编号的那一条；实际 ' + (sb.POEMS_SONGCI || []).length + '）');
-chk((sb.POEMS_TANGSHI || []).length === 301,
-  '《唐诗三百首》仍 301 首（并进去的那三条仍在选本列表里；实际 ' + (sb.POEMS_TANGSHI || []).length + '）');
+chk((sb.POEMS_SONGCI || []).length === 285,
+  '《宋词三百首》283 首 + 校外补充 2 首 = 285（实际 ' + (sb.POEMS_SONGCI || []).length + '）');
+chk((sb.POEMS_TANGSHI || []).length === 317,
+  '《唐诗三百首》301 首 + 校外补充 16 首 = 317（并进去的那三条仍在选本列表里；实际 ' +
+  (sb.POEMS_TANGSHI || []).length + '）');
 chk(ALL.length === 261, '课内仍 261 首（实际 ' + ALL.length + '）');
 
 console.log('');

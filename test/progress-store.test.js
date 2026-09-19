@@ -74,7 +74,7 @@ console.log('\n=== 三、设置域拆家：账号域字段留下，helper 归设
   eq(acct.algo, 'fsrs', 'algo 落在账号域老键里');
   eq(JSON.stringify(acct.device), undefined, '账号域里不生造 device 字段');
   eq(acct.helper, 'off',
-    'helper 在老键里仍留一份镜像（六部集子页还在读它，只写新键会两边打架）');
+    'helper 在老键里仍留一份镜像（七部集子页还在读它，只写新键会两边打架）');
   eq(JSON.parse(b.raw()[K.device] || '{}').helper, 'off', 'helper 同时写进设备域新键');
 
   PS.saveSettings({ grade: 2, helper: 'on', 野生字段: 1, plan: 'max' });

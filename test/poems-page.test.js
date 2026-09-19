@@ -24,13 +24,13 @@ const libEntries = (function () {
   vm.runInContext(libSrc, sandbox, { filename: 'js/library.js' });
   return sandbox.LibraryPage.entries();
 })();
-chk(libEntries.length === 6, '入口页仍是六张卡（课内 + 五部集子；实际 ' + libEntries.length + '）');
+chk(libEntries.length === 7, '入口页仍是七张卡（课内 + 七部集子；实际 ' + libEntries.length + '）');
 const courseCard = libEntries.filter(function (e) { return e.id === 'poems'; })[0];
 chk(!!courseCard, '入口页第一张卡是课内诗词');
 chk(courseCard.page === '/poems/', '课内诗词那张卡指向索引页 /poems/（实际 ' + courseCard.page + '）');
 chk(courseCard.page !== '/', '课内诗词那张卡不再指回背诵首页');
 chk(libEntries.every(function (e) { return /^\/[a-z]+\/$/.test(e.page); }),
-  '六张卡的去处都是目录化索引页：' + libEntries.map(function (e) { return e.page; }).join(' '));
+  '七张卡的去处都是目录化索引页：' + libEntries.map(function (e) { return e.page; }).join(' '));
 
 const html = fs.readFileSync(path + 'poems/index.html', 'utf8');
 const order = html.match(/<script src="([^"]+)"><\/script>/g).map(function (s) { return s.match(/src="([^"]+)"/)[1]; });
@@ -44,7 +44,7 @@ chk(order.indexOf('data/text-master.js') < order.indexOf('data/index.js'),
 chk(order.indexOf('js/collections.js') >= 0, '/poems/ 也加载了自选集合模块（详情页那枚键要用）');
 chk(/data-nav="poems"/.test(html), 'body 上标了 data-nav="poems"');
 chk(/<base href="\/" \/>/.test(html), '/poems/ 带了 <base href="/">（目录化 URL 下相对资源才解析得对）');
-chk(/data-page="课内古诗词"/.test(html), '页面名写作「课内古诗词」（与五部集子的命名口径一致）');
+chk(/data-page="课内古诗词"/.test(html), '页面名写作「课内古诗词」（与六部集子的命名口径一致）');
 
 {
   const doc = new JSDOM(html).window.document;
