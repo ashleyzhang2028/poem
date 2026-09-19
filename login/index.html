@@ -59,6 +59,7 @@
           </div>
 
           <div class="turnstile-slot" id="ts-pw" hidden></div>
+          <div class="account-note warn" id="ts-broken-ts-pw" hidden></div>
           <button class="account-btn" id="btn-login" type="button">登录</button>
           <p class="account-msg" id="msg-pw"></p>
 
@@ -78,6 +79,7 @@
                      placeholder="you@example.com" maxlength="120" />
             </div>
             <div class="turnstile-slot" id="ts-code" hidden></div>
+          <div class="account-note warn" id="ts-broken-ts-code" hidden></div>
             <button class="account-btn" id="btn-send" type="button">发送随机码</button>
             <p class="account-msg" id="msg-email"></p>
 
@@ -131,6 +133,7 @@
                    placeholder="两次要一样" maxlength="72" />
           </div>
           <div class="turnstile-slot" id="ts-reg" hidden></div>
+          <div class="account-note warn" id="ts-broken-ts-reg" hidden></div>
           <button class="account-btn" id="btn-register" type="button">注册</button>
           <p class="account-msg" id="msg-reg"></p>
 
@@ -148,6 +151,7 @@
                    placeholder="you@example.com" maxlength="120" />
           </div>
           <div class="turnstile-slot" id="ts-verify" hidden></div>
+          <div class="account-note warn" id="ts-broken-ts-verify" hidden></div>
           <button class="account-btn" id="btn-resend-verify" type="button">重发确认邮件</button>
 
           <button class="account-btn ghost" id="btn-verify-later" type="button">返回登录</button>
@@ -166,6 +170,7 @@
                    placeholder="you@example.com" maxlength="120" />
           </div>
           <div class="turnstile-slot" id="ts-forgot" hidden></div>
+          <div class="account-note warn" id="ts-broken-ts-forgot" hidden></div>
           <button class="account-btn" id="btn-forgot-send" type="button">发送重设邮件</button>
           <p class="account-msg" id="msg-forgot"></p>
 
@@ -178,6 +183,7 @@
           <p class="account-lead" id="unverified-lead"></p>
           <div class="account-note" id="unverified-note" hidden></div>
           <div class="turnstile-slot" id="ts-unverified" hidden></div>
+          <div class="account-note warn" id="ts-broken-ts-unverified" hidden></div>
           <button class="account-btn" id="btn-unverified-resend" type="button">重新发一封确认邮件</button>
           <button class="account-btn ghost" id="btn-unverified-back" type="button">返回登录</button>
           <p class="account-msg" id="msg-unverified"></p>

@@ -306,6 +306,123 @@ async function diagAt(base) {
       "页面上如实说明了「这一发不写任何数据」");
   }
 
+  /* 用户 2026-09-19（Issue #225）：在 Vercel 配了 TURNSTILE_ENABLED /
+     TURNSTILE_SITE_KEY / TURNSTILE_SECRET_KEY 三个变量，页面上却**看不见方框**。
+     这一档恰恰没有判据：磁盘上三样都在，坏的是「那个 Site Key 对不对」
+     「本站域名在那个 widget 的允许列表里吗」—— 只有真打一次 Cloudflare
+     才知道。这里把四种坏法逐个跑出来，并守着「报告里不出现任何 key 值」。 */
+  chk(/secretProbe/.test(fs.readFileSync(path.join(ROOT, "api/_routes/diag.js"), "utf8")),
+    "/api/diag 会拿假 token 真打一次 Cloudflare 的 siteverify（只在配了 Secret Key 时）");
+
+  {
+    const r = boot(null, { TURNSTILE_ENABLED: "1" });
+    const s = await serve();
+    const d = await diagAt(s.base);
+    const t = d.body.report.turnstile;
+    chk(t.server === false && t.widget === "no_site_key",
+      "只开开关、两个 key 都没填：如实报「前端不会渲染方框」（实际 " + t.widget + "）");
+    chk(d.body.report.checks.some(c => /人机校验/.test(c.name) && c.ok === false),
+      "而且自检里那一条明确是「未过」，不是「无」");
+    chk(/两个 key 是一对/.test(t.note || ""),
+      "note 直说两个 key 缺一个都跑不起来（这正是「配了三个变量却看不见方框」的一种）");
+    await s.close();
+    r.restore();
+  }
+
+  {
+    // 假 Cloudflare：secret 不对 → invalid-input-secret
+    const fake = http.createServer((req, res) => {
+      let b = "";
+      req.on("data", c => { b += c; });
+      req.on("end", () => {
+        const secret = new URLSearchParams(b).get("secret") || "";
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({
+          success: false,
+          "error-codes": secret === "good-secret" ? ["invalid-input-response"] : ["invalid-input-secret"]
+        }));
+      });
+    });
+    await new Promise(r => fake.listen(0, "127.0.0.1", r));
+    const port = fake.address().port;
+
+    // 把探测地址换成这台假 Cloudflare
+    const diagPath = path.join(ROOT, "api/_routes/diag.js");
+    const origSrc = fs.readFileSync(diagPath, "utf8");
+    const patched = origSrc.replace(
+      /var TURNSTILE_PROBE_URL = "[^"]+";/,
+      'var TURNSTILE_PROBE_URL = "http://127.0.0.1:' + port + '/siteverify";'
+    );
+    chk(patched !== origSrc, "测试里能替掉探测地址（否则这一层只能空跑）");
+    fs.writeFileSync(diagPath, patched);
+    try {
+      {
+        const r = boot({ TURNSTILE_ENABLED: "1", TURNSTILE_SITE_KEY: "0xsite", TURNSTILE_SECRET_KEY: "wrong-secret" });
+        const s = await serve();
+        const d = await diagAt(s.base);
+        const t = d.body.report.turnstile;
+        chk(t.secretValid === false, "Secret Key 不对时如实报 secretValid=false");
+        chk(t.secretProbe && t.secretProbe.codes.indexOf("invalid-input-secret") >= 0,
+          "并把 Cloudflare 的原话（invalid-input-secret）带回来 —— 这是唯一的材料");
+        chk(/弄混|无效/.test(t.note || ""),
+          "note 点出最常见的那种：把 Site Key 与 Secret Key 弄混了");
+        chk(t.widget === "renders" && t.server === true,
+          "⚠️ 关键：**磁盘上三个变量都在**，widget 报 renders、server 报 true ——" +
+          " 不看这一次真探测，完全分不出密钥是坏的");
+        await s.close();
+        r.restore();
+      }
+      {
+        const r = boot({ TURNSTILE_ENABLED: "1", TURNSTILE_SITE_KEY: "0xsite", TURNSTILE_SECRET_KEY: "good-secret" });
+        const s = await serve();
+        const d = await diagAt(s.base);
+        const t = d.body.report.turnstile;
+        chk(t.secretValid === true, "Secret Key 有效时 secretValid=true（收到 invalid-input-response 才算有效）");
+        await s.close();
+        r.restore();
+      }
+      {
+        const r = boot({ TURNSTILE_ENABLED: "1", TURNSTILE_SITE_KEY: "0xsite", TURNSTILE_SECRET_KEY: "good-secret" });
+        const s = await serve();
+        const d = await diagAt(s.base);
+        const strings = JSON.stringify(d.body);
+        chk(strings.indexOf("good-secret") < 0 && strings.indexOf("wrong-secret") < 0,
+          "报告里不出现 Secret Key 的值（一个字都不许漏）");
+        chk(strings.indexOf("0xsite") >= 0 || strings.indexOf("hasSiteKey") >= 0,
+          "Site Key 只报「有没有」，不报值");
+        await s.close();
+        r.restore();
+      }
+      {
+        const r = boot({ TURNSTILE_ENABLED: "1", TURNSTILE_SITE_KEY: "0xsite", TURNSTILE_SECRET_KEY: "good-secret", TURNSTILE_BYPASS: "1" });
+        const s = await serve();
+        const d = await diagAt(s.base);
+        const t = d.body.report.turnstile;
+        chk(t.widget === "bypassed" && /BYPASS/.test(t.note || ""),
+          "TURNSTILE_BYPASS=1 被点名报出来（它刻意不随任何响应下发，只有自检能看见）");
+        chk(d.body.report.checks.some(c => /人机校验/.test(c.name) && c.ok === null),
+          "绕过那一档是「无」不是「未过」—— 不假装校验在跑");
+        await s.close();
+        r.restore();
+      }
+    } finally {
+      fs.writeFileSync(diagPath, origSrc);
+    }
+    fake.close();
+  }
+
+  {
+    const r = boot({});
+    const s = await serve();
+    const d = await diagAt(s.base);
+    chk(d.body.report.turnstile.widget === "disabled",
+      "没开人机校验就是 disabled（默认关，不是坏）");
+    chk(d.body.report.turnstile.secretProbe === null,
+      "没配 Secret Key 时不打 Cloudflare（不打没意义的请求）");
+    await s.close();
+    r.restore();
+  }
+
   console.log("");
   console.log(fail ? "❌ " + fail + " 项失败" : "✅ 全部通过（" + pass + " 项）");
   process.exit(fail ? 1 : 0);

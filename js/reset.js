@@ -48,7 +48,19 @@
     if (!el) return;
     TS.mount(el, { siteKey: tsConfig.siteKey, enabled: tsConfig.enabled }).then(function (st) {
       if (st && st.configured) show(el);
+      turnstileBrokenNote();
     });
+  }
+
+  // 同 js/login.js：widget 渲染失败时页面上没有方框，不能再让人去找它。
+  function turnstileBrokenNote() {
+    if (!TS || !TS.failed) return;
+    var note = $("ts-broken-reset");
+    if (!note) return;
+    if (!TS.failed()) { hide(note); text(note, ""); return; }
+    text(note, (TS.why ? TS.why() : "") +
+      "（服务端这一侧仍在拦 —— 打开 /api/diag 可看服务端的说法）");
+    show(note);
   }
 
   function confirmReset() {
