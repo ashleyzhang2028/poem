@@ -13,8 +13,8 @@ vm.createContext(sandbox);
   vm.runInContext(fs.readFileSync(path + f, 'utf8'), sandbox, { filename: f }));
 
 const IDX = sandbox.SITE_INDEX;
-chk(Array.isArray(IDX) && IDX.length === 101,
-  '总索引含 100 篇小古文 + 1 条集子条目（实际 ' + (IDX ? IDX.length : 'undefined') + '）');
+chk(Array.isArray(IDX) && IDX.length === 103,
+  '总索引含 102 篇小古文 + 1 条集子条目（实际 ' + (IDX ? IDX.length : 'undefined') + '）');
 const ids = new Set();
 let dup = 0;
 IDX.forEach(x => { if (ids.has(x.id)) dup++; ids.add(x.id); });
@@ -25,8 +25,9 @@ chk(IDX.some(x => x.isBook && x.title === '课外必背小古文'),
   '集子自身也是一条结果（搜「小古文」能直接进那一页）');
 chk(sandbox.SITE_BOOKS.length === 9 &&
   sandbox.SITE_BOOKS.map(b => b.page).join(',') ===
-    '/,/yuefu/,/zhaoming/,/tangshi/,/songci/,/yuanqu/,/guwen/,/classic/,/jinxiandai/',
-  '九部集子的索引页地址（按时代排序）：课内 · 乐府 · 昭明 · 唐诗 · 宋词 · 元曲 · 古文观止 · 小古文 · 近现代（实际 ' +
+    '/,/classic/,/zhaoming/,/yuefu/,/tangshi/,/songci/,/yuanqu/,/guwen/,/jinxiandai/',
+  '九部集子的索引页地址按时代排序：/ · /classic/ · /zhaoming/ · /yuefu/ · ' +
+  '/tangshi/ · /songci/ · /yuanqu/ · /guwen/ · /jinxiandai/（实际 ' +
   sandbox.SITE_BOOKS.map(b => b.page).join(',') + '）');
 
 const only = sandbox.buildSiteIndex({ tangshi: [{ id: 'ts-1', title: '感遇·其一', author: '张九龄', dynasty: '唐' }] });
@@ -53,6 +54,8 @@ scriptOrder.forEach(f => {
   w.document.body.appendChild(el);
 });
 
+const searchPages = [];
+
 const mk = (win, rootId, listId) => {
   const root = win.document.createElement('div');
   root.setAttribute('data-gw-root', '');
@@ -68,8 +71,8 @@ const mk = (win, rootId, listId) => {
 
 setTimeout(() => {
   const mounted = w.document.querySelector('#gw-list');
-  chk(mounted.querySelectorAll('.item').length === 100,
-    '小古文页按配置挂上了引擎实例（列表 100 篇）');
+  chk(mounted.querySelectorAll('.item').length === 102,
+    '小古文页按配置挂上了引擎实例（列表 102 篇）');
 
   mk(w, 'rootA', 'listA');
   mk(w, 'rootB', 'listB');
@@ -144,6 +147,88 @@ setTimeout(() => {
     '小古文页不再自己读写 settings（用户名 / 阅读辅助由引擎统一管）');
 
   console.log('');
-  console.log(fails === 0 ? '🎉 古籍阅读库（引擎层）测试全部通过' : '❌ 古籍阅读库测试 ' + fails + ' 项失败');
-  process.exit(fails === 0 ? 0 : 1);
+  console.log('=== 每一部集子索引页左上角那颗搜索框（Issue #243 后续）===');
+  // 报的就是这句话：「好多集子索引页左上角搜索框不起作用」。
+  // 根因两类，各钉一条：
+  //   ① 页面上那颗框没带 data-gw="search"（引擎认不出它）—— 逐页查属性；
+  //   ② 带了钩子但没绑上（挂在挂载点 / body 之外）—— 逐页敲字看列表变不变。
+  // 两件事都按**真页面**跑一遍，不靠「读源码里有没有那串字」。
+  const SEARCH_PAGES = [
+    ['classic/index.html', '/classic/', '司马光', 102],
+    ['tangshi/index.html', '/tangshi/', '李白', 317],
+    ['songci/index.html', '/songci/', '李清照', 285],
+    ['guwen/index.html', '/guwen/', '韩愈', 167],
+    ['zhaoming/index.html', '/zhaoming/', '陶渊明', 480],
+    ['yuanqu/index.html', '/yuanqu/', '马致远', 30],
+    ['yuefu/index.html', '/yuefu/', '木兰', 15],
+    ['jinxiandai/index.html', '/jinxiandai/', '毛泽东', 24],
+    ['poems/index.html', '/poems/', '静夜思', 251]
+  ];
+  SEARCH_PAGES.forEach(([file, url, kw, total]) => {
+    const html = fs.readFileSync(path + file, 'utf8');
+    const d2 = new JSDOM(html, { runScripts: 'dangerously', url: 'https://local.test' + url,
+      base: 'https://local.test' + url });
+    const w2 = d2.window;
+    w2.scrollTo = function () { };
+    html.match(/<script src="([^"]+)"><\/script>/g).map(x => x.match(/src="([^"]+)"/)[1]).forEach(f => {
+      const el = w2.document.createElement('script');
+      el.textContent = fs.readFileSync(path + f, 'utf8');
+      w2.document.body.appendChild(el);
+    });
+    searchPages.push([file, w2, kw, total]);
+  });
+
+  setTimeout(() => {
+    searchPages.forEach(([file, w2, kw, total]) => {
+      const d2 = w2.document;
+      const listEl = d2.querySelector('#gw-list');
+      const input = d2.querySelector('[data-gw="search"]');
+      const seen = listEl ? listEl.querySelectorAll('.item').length : 0;
+
+      chk(!!input,
+        file + ' 有一颗带 data-gw="search" 的搜索框（引擎按这个钩子认它）');
+      if (!input) return;
+      chk(seen === total,
+        file + ' 打开就是全部 ' + total + ' 条（实际 ' + seen + ' 条）—— 先立个满员基线');
+      chk(input.dataset.gwSearchBound === '1',
+        file + ' 的搜索框真的绑上了输入监听（引擎 bindSearch 够得着它）');
+
+      // 一个字只重画一次：绑两遍会画两遍（同一个 input 上挂两个监听）。
+      // 数法：renderList() 每次都以 listEl.innerHTML = "" 起手重建。
+      // ⚠️ innerHTML 的访问器挂在 Element.prototype 上（不是 HTMLElement /
+      // HTMLDivElement 那一层），所以要顺着原型链找到它，否则拿到 undefined。
+      let renders = 0;
+      const listBoxEl = d2.querySelector('#gw-list');
+      let proto = Object.getPrototypeOf(listBoxEl);
+      let desc = null;
+      while (proto && !desc) {
+        desc = Object.getOwnPropertyDescriptor(proto, 'innerHTML');
+        proto = Object.getPrototypeOf(proto);
+      }
+      Object.defineProperty(listBoxEl, 'innerHTML', {
+        configurable: true,
+        get: function () { return desc.get.call(this); },
+        set: function (v) { renders += 1; return desc.set.call(this, v); }
+      });
+
+      input.value = kw;
+      input.dispatchEvent(new w2.Event('input', { bubbles: true }));
+
+      const hits = d2.querySelectorAll('#gw-list .item').length;
+      chk(hits > 0 && hits < total,
+        file + ' 敲「' + kw + '」列表真的收成子集（' + hits + ' / ' + total + '）');
+      chk(renders === 1,
+        file + ' 一个字只重画一次列表（实际 ' + renders + ' 次）—— 绑两遍就会画两遍');
+      delete listBoxEl.innerHTML;
+
+      input.value = '';
+      input.dispatchEvent(new w2.Event('input', { bubbles: true }));
+      chk(d2.querySelectorAll('#gw-list .item').length === total,
+        file + ' 清空关键字后 ' + total + ' 条全回来');
+    });
+
+    console.log('');
+    console.log(fails === 0 ? '🎉 古籍阅读库（引擎层）测试全部通过' : '❌ 古籍阅读库测试 ' + fails + ' 项失败');
+    process.exit(fails === 0 ? 0 : 1);
+  }, 120);
 }, 60);

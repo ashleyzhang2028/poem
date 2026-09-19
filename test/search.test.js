@@ -98,8 +98,8 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 
   chk(cards.length === 9, '入口页列出九部（课内 + 八部选集，实际 ' + cards.length + '）');
   chk(cards.map(c => c.getAttribute('data-book')).join('/') ===
-    'poems/yuefu/zhaoming/tangshi/songci/yuanqu/guwen/classic/jinxiandai',
-    '九部的顺序按时代（课内 · 乐府 · 昭明 · 唐诗 · 宋词 · 元曲 · 古文观止 · 小古文 · 近现代）');
+    'poems/classic/zhaoming/yuefu/tangshi/songci/yuanqu/guwen/jinxiandai',
+    '九部的顺序按时代（课内 · 小古文 · 昭明 · 乐府 · 唐诗 · 宋词 · 元曲 · 古文观止 · 近现代）');
 
   chk(cards.map(c => c.tagName).join('/') === 'A/BUTTON/BUTTON/BUTTON/BUTTON/BUTTON/BUTTON/BUTTON/BUTTON',
     '九张卡：课内是链接（跳 /poems/），其余八部是按钮（就地铺索引；实际 ' +

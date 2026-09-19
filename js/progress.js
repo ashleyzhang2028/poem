@@ -32,7 +32,7 @@
     if (!box) return;
     box.innerHTML =
       '<div class="stat"><b>' + o.learned + "</b><span>已学</span></div>" +
-      '<div class="stat review"><b>' + o.dueToday + "</b><span>待复习</span></div>" +
+      '<div class="stat review"><b>' + o.dueToday + "</b><span>复习</span></div>" +
       '<div class="stat"><b>' + o.avgMastery + "%</b><span>平均掌握</span></div>" +
       '<div class="stat"><b>' + o.unlearned + "</b><span>尚未学过</span></div>";
 

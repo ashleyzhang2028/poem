@@ -120,8 +120,8 @@ setTimeout(() => {
   chk(!/一年级至高三/.test(d.querySelector('.topbar').textContent),
     '顶栏第一行不再出现「一年级至高三 · 」，只有「跬步 · XX的背诵」');
 
-  chk(d.querySelector('#brand-sub').textContent === '按遗忘曲线复习',
-    '顶栏第二行精简为「按遗忘曲线复习」（实际「' + d.querySelector('#brand-sub').textContent + '」）');
+  chk(d.querySelector('#brand-sub').textContent === '按艾宾浩斯遗忘曲线复习',
+    '顶栏第二行精简为「按艾宾浩斯遗忘曲线复习」（实际「' + d.querySelector('#brand-sub').textContent + '」）');
   chk(!/小古文/.test((d.querySelector('.topbar .brand-sub') || {}).textContent || '') ||
     !/想读哪篇点哪篇/.test((d.querySelector('.topbar .brand-sub') || {}).textContent || ''),
     '顶栏副标题不再出现「小古文想读哪篇点哪篇」');
@@ -463,18 +463,34 @@ setTimeout(() => {
     d.querySelector('#m-font-down').dispatchEvent(new window.Event('click', { bubbles: true }));
     chk(d.querySelector('#m-text').style.fontSize === '17px', 'A－ 收小一级');
 
-    for (const px of ['15px', '13px']) {
+    for (const px of ['15px', '13px', '11px', '9px']) {
       d.querySelector('#m-font-down').dispatchEvent(new window.Event('click', { bubbles: true }));
       chk(d.querySelector('#m-text').style.fontSize === px,
         'A－ 可继续降到 ' + px + '（实际 ' + d.querySelector('#m-text').style.fontSize + '）');
     }
     d.querySelector('#m-font-down').dispatchEvent(new window.Event('click', { bubbles: true }));
-    chk(d.querySelector('#m-text').style.fontSize === '13px', '到底后继续点 A－ 仍停在 13px');
-    for (let i = 0; i < 2; i++) {
+    chk(d.querySelector('#m-text').style.fontSize === '9px',
+      '到底后继续点 A－ 仍停在 9px（Issue #229：比老的 13px 再往下降两档）');
+    for (let i = 0; i < 4; i++) {
       d.querySelector('#m-font-up').dispatchEvent(new window.Event('click', { bubbles: true }));
     }
     chk(d.querySelector('#m-text').style.fontSize === '17px',
       'A＋ 回到默认档 17px（实际 ' + d.querySelector('#m-text').style.fontSize + '）');
+
+    for (let i = 0; i < 8; i++) {
+      d.querySelector('#m-font-up').dispatchEvent(new window.Event('click', { bubbles: true }));
+    }
+    chk(d.querySelector('#m-text').style.fontSize === '25px',
+      'A＋ 顶到 25px 就停（实际 ' + d.querySelector('#m-text').style.fontSize + '）');
+    d.querySelector('#m-font-up').dispatchEvent(new window.Event('click', { bubbles: true }));
+    chk(d.querySelector('#m-text').style.fontSize === '25px', '到顶后继续点 A＋ 不再变大');
+
+    chk(window.localStorage.getItem('poem_font_v1') === '25', '顶档同样持久化');
+    for (let i = 0; i < 4; i++) {
+      d.querySelector('#m-font-down').dispatchEvent(new window.Event('click', { bubbles: true }));
+    }
+    chk(d.querySelector('#m-text').style.fontSize === '17px',
+      '再收四档回到默认 17px（实际 ' + d.querySelector('#m-text').style.fontSize + '）');
 
     chk(d.querySelectorAll('#m-align-seg button').length === 2 &&
       d.querySelectorAll('#m-align-seg button[data-align="right"]').length === 0,
@@ -518,7 +534,7 @@ setTimeout(() => {
     btn.dispatchEvent(new window.Event('click', { bubbles: true }));
     chk(body.hidden === false && btn.classList.contains('open'), '点折叠头展开（箭头朝上）');
     chk(d.querySelectorAll('#stats-row .stat').length === 4,
-      '展开后有四格统计（总数 / 已学 / 较牢固 / 待复习，实际 ' +
+      '展开后有四格统计（总数 / 已学 / 较牢固 / 复习，实际 ' +
       d.querySelectorAll('#stats-row .stat').length + ' 格）');
     chk(+d.querySelector('#all-count').textContent === d.querySelectorAll('#all-list .item').length,
       '篇目列表的条数与徽章上的数字一致（' +
@@ -603,9 +619,9 @@ setTimeout(() => {
   setOn('count', 8, '#seg-count button', 'count');
   chk(d.querySelector('#today-sub').textContent.includes('共 8 首'), '改为每日 8 首生效: ' + d.querySelector('#today-sub').textContent);
 
-  chk(/^共 \d+ 首 · 待复习 \d+ · 新学 \d+$/.test(d.querySelector('#today-sub').textContent),
-    '今日统计精简为「共 N 首 · 待复习 N · 新学 N」（实际 ' + d.querySelector('#today-sub').textContent + '）');
-  chk(!/待复习 \d+ 首/.test(d.querySelector('#today-sub').textContent), '待复习数字后不再带「首」');
+  chk(/^共 \d+ 首 · 复习 \d+ · 新学 \d+$/.test(d.querySelector('#today-sub').textContent),
+    '今日统计精简为「共 N 首 · 复习 N · 新学 N」（实际 ' + d.querySelector('#today-sub').textContent + '）');
+  chk(!/复习 \d+ 首/.test(d.querySelector('#today-sub').textContent), '复习数字后不再带「首」');
   chk(d.querySelectorAll('#today-list .item').length === 8, '今日列表变为 8 首');
 
   chk(!!window.localStorage.getItem('poem_recite_progress_v1'), '进度已写入 localStorage');

@@ -1309,6 +1309,45 @@ function sanitizeCollections(p) {
 }
 
 // ---------------------------------------------------------------------------
+// 注音勘误（Issue #243）：某篇某句某字读什么
+// ---------------------------------------------------------------------------
+// 与自选集合同一套路（progress 里的一行，不新开表），但轻得多 ——
+// 一条只有「哪一篇 / 哪一句 / 第几次出现 / 读什么」四个短字段，
+// **不存正文、不存译文**（正文在主表里，这一行只记「那一处读什么」）。
+//
+// 三条守卫：
+//   ① 条数封顶（与 js/pinyin-edit.js 的 MAX 一致）；
+//   ② 每段文字都截断（它是**别人写过的句子**，与加背 / 集合同一档纪律）；
+//   ③ 一段一句都没留的条目**整条丢掉**（半条勘误比没有更坏：它会静默不生效）。
+var PINYIN_FIX_ROW_ID = "pinyin_fix:v1";
+
+var PINYIN_FIX_MAX = 500;
+
+function sanitizePinyinFix(p) {
+  var out = { v: 1, updatedAt: Number((p && p.updatedAt) || 0) };
+  out.updatedAt = isFinite(out.updatedAt) && out.updatedAt > 0 ? Math.round(out.updatedAt) : 0;
+  out.deleted = (p && p.deleted) ? 1 : 0;
+
+  var list = (p && Array.isArray(p.fixes)) ? p.fixes.slice(0, PINYIN_FIX_MAX) : [];
+  out.fixes = [];
+  var seen = {};
+  list.forEach(function (f) {
+    if (!f || typeof f !== "object") return;
+    var wid = refText(f.wid, 80).trim();
+    var line = refText(f.line, 120).trim();
+    var py = refText(f.py, 12).trim();
+    if (!wid || !line || !py) return;
+    var at = Number(f.at);
+    at = isFinite(at) && at >= 0 ? Math.round(at) : 0;
+    var key = wid + "\u0000" + line + "\u0000" + at;
+    if (seen[key]) return;
+    seen[key] = 1;
+    out.fixes.push({ wid: wid, line: line, at: at, ch: refText(f.ch, 1).trim(), py: py });
+  });
+  return out;
+}
+
+// ---------------------------------------------------------------------------
 // 集子已读（Issue #243 后续）：一条记录只有一个布尔值，体积天然很小
 // ---------------------------------------------------------------------------
 // 与自选集合的区别：它是**并集**合并的（两台设备各读过几篇 → 合起来），
@@ -1460,6 +1499,7 @@ function sanitizePayload(p, poemId) {
   if (poemId === "family:v1") return sanitizeFamily(p);
   if (poemId === DAILY_EXTRA_ROW_ID) return sanitizeDailyExtra(p);
   if (poemId === COLLECTIONS_ROW_ID) return sanitizeCollections(p);
+  if (poemId === PINYIN_FIX_ROW_ID) return sanitizePinyinFix(p);
   if (readRowKeyOf(poemId)) return sanitizeReads(p);
 
   if (typeof p.level === "number") out.level = Math.max(0, Math.min(99, Math.round(p.level)));
