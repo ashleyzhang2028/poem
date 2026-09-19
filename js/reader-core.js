@@ -718,6 +718,18 @@
     openReader(list[i]);
   }
 
+  // 这一篇的作品 id（勘误表的绑定键）——与 js/app.js 的 pinyinWidOf 同一口径：
+  // 集子页 / 课内页的篇目 id 不同，而同一篇作品常在几部集子里各有一份，
+  // 用 WorksIndex 归并后的 wid 才能「一处勘误、处处生效」。
+  function readerWid(p) {
+    var id = p && p.id ? p.id : "";
+    if (!id) return "";
+    if (window.WorksIndex && typeof window.WorksIndex.widOf === "function") {
+      try { return window.WorksIndex.widOf(id) || id; } catch (e) {  }
+    }
+    return id;
+  }
+
   function renderReaderText() {
     if (!current) return;
     var el = rd("text");
@@ -729,7 +741,11 @@
     }
     var mode = pinyinMode();
     if (mode !== "off" && window.Pinyin) {
-      el.innerHTML = window.Pinyin.annotateHtml(current.text, mode === "all" ? "all" : "rare");
+      // 逐句注音：勘误表是按「某篇某句」绑的，所以要把这一篇的 wid 交进去
+      // （不交的话勘误层一行都不查，输出与改前逐字相同）。
+      el.innerHTML = window.Pinyin.annotatePoem
+        ? window.Pinyin.annotatePoem(readerWid(current), current.text, mode === "all" ? "all" : "rare")
+        : window.Pinyin.annotateHtml(current.text, mode === "all" ? "all" : "rare");
       el.classList.add("with-pinyin");
     } else {
       el.textContent = current.text;
@@ -1634,7 +1650,14 @@
           syncRandomReadButton();
         });
       },
-      annotate: function () { return withSession(session, function () { return window.Pinyin ? window.Pinyin.annotateHtml(current ? current.text : "") : ""; }); },
+      annotate: function () {
+        return withSession(session, function () {
+          if (!window.Pinyin) return "";
+          return window.Pinyin.annotatePoem
+            ? window.Pinyin.annotatePoem(readerWid(current), current ? current.text : "")
+            : window.Pinyin.annotateHtml(current ? current.text : "");
+        });
+      },
       onSpeechStopped: function () { withSession(session, handleSpeechStopped); },
       root: rootEl,
       box: session.box,
@@ -1989,7 +2012,12 @@
     isRead: function (id) { return isRead(id); },
     align: function () { return alignMode(); },
     setAlign: function (m) { return setAlign(m); },
-    annotate: function () { return window.Pinyin ? window.Pinyin.annotateHtml(current ? current.text : "") : ""; },
+    annotate: function () {
+      if (!window.Pinyin) return "";
+      return window.Pinyin.annotatePoem
+        ? window.Pinyin.annotatePoem(readerWid(current), current ? current.text : "")
+        : window.Pinyin.annotateHtml(current ? current.text : "");
+    },
 
     onSpeechStopped: handleSpeechStopped
   };
