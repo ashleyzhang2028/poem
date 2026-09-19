@@ -69,10 +69,8 @@ function check(name, cond, extra) {
 
     const icons = await page.$$eval('link[rel="apple-touch-icon"]', els =>
       els.map(e => ({ sizes: e.getAttribute('sizes'), href: e.getAttribute('href') })));
-    check('iPhone: apple-touch-icon 数量 >= 5', icons.length >= 5, '实际 ' + icons.length);
-    const sizesOk = ['120x120', '152x152', '167x167', '180x180'].every(s =>
-      icons.some(i => i.sizes === s));
-    check('iPhone: 120/152/167/180 四种尺寸齐全', sizesOk);
+    check('iPhone: 只留一条 apple-touch-icon（180，iOS 缺档时自行缩放最接近的）',
+      icons.length === 1 && /apple-touch-icon\.png$/.test(icons[0].href), JSON.stringify(icons));
 
     const iconStatuses = await page.evaluate(async () => {
       const links = Array.from(document.querySelectorAll('link[rel="apple-touch-icon"]'));
