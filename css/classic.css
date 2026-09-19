@@ -532,6 +532,36 @@ body.reader-open .dock { display: none; }
 }
 .item-recite[data-on="1"] { background: var(--blue); border-color: var(--blue); color: #fffdf8; }
 
+/* 列表行里那一颗「报告错误」的小旗（Issue #243 第四轮）。
+   与「加入今日背诵」「加入背诵」同一排，排在**最左** —— 它是这一排里
+   最少用的一颗，日常那两颗（加背 / 加集）应该挨着标题、拇指够得着。
+   颜色走「墨绿」（--ink-3）而不是蓝 / 绿：它不是「加入」那一类动作，
+   而是一个中性、低频、**不该被误点**的入口。 */
+.item-report {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--item-btn);
+  height: var(--item-btn);
+  flex: 0 0 auto;
+  padding: 0;
+  margin: 0 6px 0 0;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--card);
+  color: var(--ink-3);
+  cursor: pointer;
+  line-height: 0;
+  transition: transform .14s, background .18s, border-color .18s, color .18s;
+}
+.item-report svg {
+  width: var(--item-icon);
+  height: var(--item-icon);
+  display: block;
+}
+.item-report:hover { color: var(--green); border-color: var(--green); }
+.item-report:active { transform: scale(.94); }
+
 .icon-seg button {
   display: inline-flex;
   align-items: center;

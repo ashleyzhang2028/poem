@@ -362,9 +362,11 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     chk(!!plain, '搜「王维」（唐诗）出现「不带分组」的裸结果行');
     chk(!!grouped || true, '搜「唐」时课内那几首会落进分组卡（两种排法都测到）');
     if (plain) {
+      // 四颗（#243 第四轮加了最左那颗「报告错误」）：
+      // 报告 / ＋ / 收藏 / 播放 / 箭头 —— 与集子页的分组行同一个次序。
       chk([...plain.children].map(c => (c.className || '').split(' ')[0]).join('|') ===
-        'item-main|item-daily|item-recite|item-read|item-arrow',
-        '裸结果行里三颗钮的次序与分组行一致（＋ / 收藏 / 播放 / 箭头）');
+        'item-main|item-report|item-daily|item-recite|item-read|item-arrow',
+        '裸结果行里四颗钮的次序与分组行一致（报告 / ＋ / 收藏 / 播放 / 箭头）');
     }
     type('');
     await sleep(30);

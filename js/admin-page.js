@@ -264,6 +264,172 @@
     })["catch"](function () { accountsNote("连不上服务端，这一轮没问到。", true); });
   }
 
+  // ---- 用户报告台账（Issue #243 第四轮）----------------------------------
+  //
+  // 这一块与「发层级」那一族是**两条平行的线**：那条线改的是权益，
+  // 这条线只读台账 + 改状态。所以它有自己的一小套 load / render，
+  // 不与 `loadAccounts` 合并 —— 合并的下场是「刷新账号名录顺手把
+  // 报告也重拉一遍」，而报告的读比账号名录重得多。
+  //
+  // 三条口径：
+  //   · **默认只看「还没处理的」**（new）。全站翻到第 500 条不是管理员的日常，
+  //     「今天新来的有几条」才是。所以下拉框默认落在「已收到（还没看）」。
+  //   · **状态是按钮，不是下拉**。一屏里逐条改状态时，下拉要两次点击 + 一次滚动；
+  //     按钮一次。而这里的状态只有五个、且是终点（不会来回切）。
+  //   · **改完就地更新那一行**，不重拉整张表 —— 重拉的下场是「滚到第 30 条
+  //     改了一下，页面跳回顶部」。
+  var currentReports = [];
+
+  function reportsMsg(text, level) {
+    msg("msg-reports", text, level);
+  }
+
+  function reportsNote(text, warn) {
+    var el = $("reports-note");
+    if (!el) return;
+    el.textContent = text || "";
+    el.className = "account-hint" + (warn ? " warn" : "");
+    el.hidden = !text;
+  }
+
+  function loadReports() {
+    var M = acct();
+    var box = $("reports-list");
+    if (!box) return;
+    if (!M || typeof M.adminReports !== "function") {
+      reportsNote("页面脚本版本对不上（刷新一次即可）：这一块现在看不了。", true);
+      return;
+    }
+    var sel = $("report-filter");
+    var status = sel ? sel.value : "all";
+    reportsMsg("正在读取……", "");
+
+    Promise.resolve(M.adminReports({ status: status, backing: backing, A: window.AuthCore, E: Ent }))
+      .then(function (r) {
+        if (r && r.ok) {
+          currentReports = r.reports || [];
+          renderReports(currentReports);
+          renderReportCounts(r.counts || {});
+          reportsMsg("", "");
+          reportsNote("共 " + currentReports.length + " 条（这一屏）。上面那排小字是全站各状态的总数。", false);
+          return;
+        }
+        if (r && r.reason === "guest") { reportsMsg("登录状态已过期，请重新登录后再来。", "warn"); return; }
+        if (r && r.reason === "not-configured") { reportsNote("本站还没开放云端账号（服务端缺密钥）：报告这一块暂时问不到。", true); return; }
+        if (r && r.reason === "no-channel") { reportsNote("页面脚本版本对不上（刷新一次即可）。", true); return; }
+        if (r && r.code === "E_FORBIDDEN") { reportsNote("这一条只对管理员开放（服务端的角色闸）。", true); return; }
+        reportsMsg("连不上服务端，这一轮没问到。", "warn");
+      })["catch"](function () { reportsMsg("连不上服务端，这一轮没问到。", "warn"); });
+  }
+
+  function renderReportCounts(counts) {
+    var host = $("report-counts");
+    if (!host) return;
+    var R = window.Report;
+    var order = ["all"].concat((R && R.STATUS_LABEL) ? Object.keys(R.STATUS_LABEL) : []);
+    var parts = [];
+    order.forEach(function (k) {
+      var n = counts ? counts[k] : undefined;
+      if (typeof n !== "number") return;
+      var label = k === "all" ? "全部" : (R ? R.labelOfStatus(k) : k);
+      parts.push("<span>" + esc(label) + " " + n + "</span>");
+    });
+    host.innerHTML = parts.join("");
+  }
+
+  function renderReports(list) {
+    var box = $("reports-list");
+    if (!box) return;
+    var empty = $("reports-empty");
+    if (empty) empty.hidden = (list || []).length > 0;
+    var R = window.Report;
+    box.innerHTML = (list || []).map(function (r) {
+      var st = String(r.status || "new");
+      var label = R ? R.labelOfStatus(st) : st;
+      var kindLabel = R ? R.labelOfKind(r.kind) : r.kind;
+      return '<li class="report-row admin-report-row report-st-' + esc(st) + '" data-rid="' + esc(r.rid) + '">' +
+        '<div class="report-row-head">' +
+        '<span class="report-kind">' + esc(kindLabel) + "</span>" +
+        '<span class="report-title">' + esc(r.poemTitle || "（未指定篇目）") + "</span>" +
+        '<span class="report-status">' + esc(label) + "</span>" +
+        "</div>" +
+        '<div class="admin-report-who">' + esc(r.emailMask || "（无邮箱）") +
+        (r.nickname ? " · " + esc(r.nickname) : "") +
+        (r.book ? " · " + esc(r.book) : "") +
+        (r.poemId ? " · " + esc(r.poemId) : "") + "</div>" +
+        (r.quote ? '<div class="report-row-quote">「' + esc(r.quote) + "」</div>" : "") +
+        (r.context ? '<div class="report-row-note">' + esc(r.context) + "</div>" : "") +
+        (r.note ? '<div class="report-row-note">' + esc(r.note) + "</div>" : "") +
+        (r.suggestion ? '<div class="report-row-reply">建议：' + esc(r.suggestion) + "</div>" : "") +
+        (r.reply ? '<div class="report-row-reply">回给用户：' + esc(r.reply) + "</div>" : "") +
+        '<div class="report-row-time">' + esc(reportTime(r.createdAt)) + "</div>" +
+        '<div class="admin-report-acts">' +
+        reportAct(r.rid, "read", "已看过", R) +
+        reportAct(r.rid, "accepted", "确认", R) +
+        reportAct(r.rid, "fixed", "标为已修复", R) +
+        reportAct(r.rid, "rejected", "不采纳", R) +
+        "</div>" +
+        "</li>";
+    }).join("");
+  }
+
+  function reportAct(rid, status, label, R) {
+    return '<button type="button" data-report-act="' + esc(status) + '" data-rid="' + esc(rid) + '">' +
+      esc(label) + "</button>";
+  }
+
+  function reportTime(ts) {
+    var t = Number(ts) || 0;
+    if (!t) return "";
+    try {
+      var d = new Date(t);
+      var p = function (n) { return n < 10 ? "0" + n : "" + n; };
+      return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate()) +
+        " " + p(d.getHours()) + ":" + p(d.getMinutes());
+    } catch (e) { return ""; }
+  }
+
+  function onReportsClick(e) {
+    var b = e.target.closest ? e.target.closest("button[data-report-act]") : null;
+    if (!b) return;
+    var rid = b.getAttribute("data-rid");
+    var status = b.getAttribute("data-report-act");
+    var M = acct();
+    if (!M || typeof M.adminReportPatch !== "function") {
+      reportsMsg("页面脚本版本对不上（刷新一次即可）", "warn");
+      return;
+    }
+
+    // 「不采纳」要问一句 —— 那是对用户说「你报的是错的」，
+    // 而用户看得到这个状态（`/settings/reports/` 那一页）。
+    if (status === "rejected" && !window.confirm("标成「未采纳」？用户那一页会显示未采纳。")) return;
+
+    b.disabled = true;
+    reportsMsg("正在改……", "");
+    Promise.resolve(M.adminReportPatch({ rid: rid, status: status, backing: backing, A: window.AuthCore, E: Ent }))
+      .then(function (r) {
+        b.disabled = false;
+        if (r && r.ok) {
+          // 就地更新那一行（不重拉整张表 —— 重拉会把滚动位置打回顶部）。
+          var li = document.querySelector('.admin-report-row[data-rid="' + rid + '"]');
+          var R = window.Report;
+          if (li) {
+            li.className = "report-row admin-report-row report-st-" + status;
+            var s = li.querySelector(".report-status");
+            if (s) s.textContent = R ? R.labelOfStatus(status) : status;
+          }
+          reportsMsg("已改成「" + (window.Report ? window.Report.labelOfStatus(status) : status) + "」", "ok");
+          return;
+        }
+        if (r && r.code === "E_FORBIDDEN") { reportsMsg("服务端说这一条只对管理员开放。", "warn"); return; }
+        if (r && r.code === "E_NO_REPORT") { reportsMsg("这一条已经不在了（可能是另一台服务器发的）。", "warn"); return; }
+        reportsMsg("没改成，稍后再试。", "warn");
+      })["catch"](function () {
+        b.disabled = false;
+        reportsMsg("没改成，稍后再试。", "warn");
+      });
+  }
+
   function renderList() {
     var box = $("grant-list");
     if (!box) return;
@@ -389,6 +555,7 @@
     show($("grant-card"));
     show($("server-card"));
     show($("accounts-card"));
+    show($("reports-card"));
     show($("list-card"));
     show($("sim-card"));
     show($("danger-card"));
@@ -403,6 +570,10 @@
     $("server-list").addEventListener("click", onServerListClick);
     $("btn-server-reload").addEventListener("click", loadServerGrants);
     $("btn-accounts-reload").addEventListener("click", loadAccounts);
+    if ($("btn-reports-reload")) $("btn-reports-reload").addEventListener("click", loadReports);
+    if ($("report-filter")) $("report-filter").addEventListener("change", loadReports);
+    if ($("reports-list")) $("reports-list").addEventListener("click", onReportsClick);
+    loadReports();
     $("grant-list").addEventListener("click", onListClick);
     $("btn-export").addEventListener("click", onExport);
     $("btn-import-open").addEventListener("click", onImportOpen);
@@ -430,6 +601,8 @@
   window.AdminPage = {
     isOwner: isOwner, esc: esc,
 
-    readForm: readForm, grantFailed: grantFailed
+    readForm: readForm, grantFailed: grantFailed,
+
+    renderReports: renderReports, loadReports: loadReports, reportTime: reportTime
   };
 })();

@@ -373,6 +373,85 @@
       })["catch"](function () { return { ok: false, reason: REASON.UNAVAILABLE }; });
     }
 
+    // ---- 用户报告 / 勘误（Issue #243 第四轮）-----------------------------
+    // 三条与 adminGrant 那一族不同的地方：
+    //   · **游客也能读自己那一份**？不能 —— 服务端认人。所以没登录时
+    //     直接回 `guest`，界面去画本机那一份（js/report.js 有兜底）。
+    //   · 报告是**加密钥**的：`report` / `myReports` 都用同一个 channel。
+    //     不复用 grantChannel（那一族要三个方法齐备，报告不需要）。
+    //   · 错误码原样带出去（E_RATE_REPORT / E_EMPTY 这些），
+    //     因为界面要按码说不同的话，而不是笼统一句「没发出去」。
+    function reportChannel() {
+      var ch = usable(D.api) || (D.make ? safeCreate(D.make) : null);
+      return ch && typeof ch.report === "function" ? ch : null;
+    }
+
+    function report(input) {
+      var o = input || {};
+      if (!hasLocalSession()) return Promise.resolve({ ok: false, reason: REASON.GUEST, code: "E_NO_SESSION" });
+      var ch = reportChannel();
+      if (!ch) return Promise.resolve({ ok: false, reason: REASON_NO_CHANNEL, code: "E_NO_CHANNEL" });
+      return ch.report(o).then(function (r) {
+        if (r && r.ok) return { ok: true, reason: REASON.OK, rid: r.rid, createdAt: r.createdAt, remaining: r.remaining };
+        var code = (r && r.code) || "E_OFFLINE";
+        if (code === "E_NOT_CONFIGURED") return { ok: false, reason: REASON.NOT_CONFIGURED, code: code };
+        if (code === "E_NO_SESSION") return { ok: false, reason: REASON.GUEST, code: code };
+        return { ok: false, reason: REASON.OK, code: code, message: r && r.message };
+      })["catch"](function () { return { ok: false, reason: REASON.UNAVAILABLE, code: "E_OFFLINE" }; });
+    }
+
+    function myReports(input) {
+      var o = input || {};
+      if (!hasLocalSession()) return Promise.resolve({ ok: false, reason: REASON.GUEST, code: "E_NO_SESSION" });
+      var ch = usable(D.api) || (D.make ? safeCreate(D.make) : null);
+      if (!ch || typeof ch.myReports !== "function") {
+        return Promise.resolve({ ok: false, reason: REASON_NO_CHANNEL, code: "E_NO_CHANNEL" });
+      }
+      return ch.myReports({ limit: o.limit }).then(function (r) {
+        if (r && r.ok) return { ok: true, reason: REASON.OK, reports: r.reports || [] };
+        var code = (r && r.code) || "E_OFFLINE";
+        if (code === "E_NOT_CONFIGURED") return { ok: false, reason: REASON.NOT_CONFIGURED, code: code };
+        if (code === "E_NO_SESSION") return { ok: false, reason: REASON.GUEST, code: code };
+        return { ok: false, reason: REASON.UNAVAILABLE, code: code };
+      })["catch"](function () { return { ok: false, reason: REASON.UNAVAILABLE, code: "E_OFFLINE" }; });
+    }
+
+    function adminReports(input) {
+      var o = input || {};
+      if (!hasLocalSession()) return Promise.resolve({ ok: false, reason: REASON.GUEST });
+      var ch = usable(D.api) || (D.make ? safeCreate(D.make) : null);
+      if (!ch || typeof ch.adminReports !== "function") {
+        return Promise.resolve({ ok: false, reason: REASON_NO_CHANNEL });
+      }
+      return ch.adminReports({ status: o.status, poemId: o.poemId, limit: o.limit }).then(function (r) {
+        if (r && r.ok) {
+          return { ok: true, reason: REASON.OK, reports: r.reports || [], counts: r.counts || {}, total: r.total, store: r.store };
+        }
+        var code = (r && r.code) || "E_OFFLINE";
+        if (code === "E_NOT_CONFIGURED") return { ok: false, reason: REASON.NOT_CONFIGURED };
+        if (code === "E_NO_SESSION") return { ok: false, reason: REASON.GUEST };
+        if (code === "E_FORBIDDEN") return { ok: false, reason: REASON.OK, code: code, message: r && r.message };
+        return { ok: false, reason: REASON.UNAVAILABLE };
+      })["catch"](function () { return { ok: false, reason: REASON.UNAVAILABLE }; });
+    }
+
+    function adminReportPatch(input) {
+      var o = input || {};
+      if (!hasLocalSession()) return Promise.resolve({ ok: false, reason: REASON.GUEST });
+      var ch = usable(D.api) || (D.make ? safeCreate(D.make) : null);
+      if (!ch || typeof ch.adminReportPatch !== "function") {
+        return Promise.resolve({ ok: false, reason: REASON_NO_CHANNEL });
+      }
+      return ch.adminReportPatch({ rid: o.rid, status: o.status, reply: o.reply }).then(function (r) {
+        if (r && r.ok) return { ok: true, reason: REASON.OK, report: r.report };
+        var code = (r && r.code) || "E_OFFLINE";
+        if (code === "E_NOT_CONFIGURED") return { ok: false, reason: REASON.NOT_CONFIGURED };
+        if (code === "E_NO_SESSION") return { ok: false, reason: REASON.GUEST };
+        if (code === "E_FORBIDDEN") return { ok: false, reason: REASON.OK, code: code, message: r && r.message };
+        return { ok: false, reason: REASON.UNAVAILABLE };
+      })["catch"](function () { return { ok: false, reason: REASON.UNAVAILABLE }; });
+    }
+
     function adminRevoke(input) {
       var o = input || {};
       if (!hasLocalSession()) return Promise.resolve({ ok: false, reason: REASON.GUEST });
@@ -468,6 +547,11 @@
       adminRevoke: adminRevoke,
       adminAccounts: adminAccounts,
 
+      report: report,
+      myReports: myReports,
+      adminReports: adminReports,
+      adminReportPatch: adminReportPatch,
+
       gameAnswer: gameAnswer
     };
   }
@@ -506,6 +590,11 @@
     adminGrant: function (o) { return boundOnce(o).adminGrant(o); },
     adminGrants: function (o) { return boundOnce(o).adminGrants(o); },
     adminRevoke: function (o) { return boundOnce(o).adminRevoke(o); },
+
+    report: function (o) { return boundOnce(o).report(o); },
+    myReports: function (o) { return boundOnce(o).myReports(o); },
+    adminReports: function (o) { return boundOnce(o).adminReports(o); },
+    adminReportPatch: function (o) { return boundOnce(o).adminReportPatch(o); },
 
     uploadAvatar: function (o) { return boundOnce(o).uploadAvatar(o); },
     deleteAvatar: function (o) { return boundOnce(o).deleteAvatar(o); },

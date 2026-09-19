@@ -29,7 +29,7 @@
     }
   ];
 
-  var APP_VERSION = "1.0 (v177)";
+  var APP_VERSION = "1.0 (v178)";
   var APP_VERSION_NAME = "跬步 · 古诗词背诵";
 
   function esc(s) {
@@ -93,6 +93,7 @@
       kvRow(link("/terms/", "用户协议"), "") +
       kvRow(link("/privacy/", "隐私条款"), "") +
       kvRow(link("/self-check/", "自检"), "") +
+      kvRow(link("/settings/reports/", "我的报告"), "") +
       "</div>";
   }
 

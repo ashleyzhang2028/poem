@@ -132,7 +132,16 @@
           </span>
           <span class="sr-only" id="gw-daily-text">加入今日背诵</span>
         </button>
-        <button type="button" class="mini-btn recite-btn" id="gw-recite" data-gw="recite" data-on="0" aria-pressed="false" title="加入自选集合">
+        <button type="button" class="mini-btn report-btn" id="gw-report" data-gw="report" title="报告这一篇的错误">
+          <span class="btn-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 3.6v16.8" />
+              <path d="M6 4.6h11.4l-2.2 3.6 2.2 3.6H6Z" />
+            </svg>
+          </span>
+          <span class="sr-only" id="gw-report-text">报告错误</span>
+        </button>
+<button type="button" class="mini-btn recite-btn" id="gw-recite" data-gw="recite" data-on="0" aria-pressed="false" title="加入自选集合">
           <span class="btn-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
               <path d="M7 4.6h10a1.4 1.4 0 0 1 1.4 1.4v13.4l-6.4-4.1-6.4 4.1V6a1.4 1.4 0 0 1 1.4-1.4Z" />
@@ -257,6 +266,9 @@
   <script src="js/reader.js"></script>
 
   <script src="js/play-modes.js"></script>
+  <script src="js/auth-api.js"></script>
+  <script src="js/account-api.js"></script>
+  <script src="js/report.js"></script>
   <script src="js/reader-core.js"></script>
   <script src="js/avatar.js"></script>
   <script src="js/chrome.js"></script>
