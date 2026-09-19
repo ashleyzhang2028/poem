@@ -106,15 +106,13 @@ window.POEMS_4 = [
     translationSource: "school",
   },
   {
+    textRef: "poems-xx4-11",
     id: "xx4-11",
     title: "卜算子·咏梅",
     author: "毛泽东",
     dynasty: "现代",
     grade: 4,
     term: 2,
-    text: "风雨送春归，飞雪迎春到。\n已是悬崖百丈冰，犹有花枝俏。\n俏也不争春，只把春来报。\n待到山花烂漫时，她在丛中笑。",
-    translation: "风雨把春天送走，飞雪把春天迎来。已经是悬崖上结着百丈坚冰，却还有花枝开得俏丽。俏丽也不去争春，只把春天到来的消息报告。等到山花开得烂漫的时候，她就在花丛中欢笑。",
-    translationSource: "school",
   },
   {
     id: "xx4-12",
