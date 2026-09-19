@@ -13,7 +13,7 @@ const DATA = [
   'data/poems-1.js', 'data/poems-2.js', 'data/poems-3.js', 'data/poems-4.js', 'data/poems-5.js',
   'data/poems-6.js', 'data/poems-7.js', 'data/poems-8.js', 'data/poems-9.js', 'data/poems-10.js',
   'data/poems-11.js', 'data/poems-12.js', 'data/index.js', 'data/poems-classic.js',
-  'data/poems-tangshi.js', 'data/poems-songci.js', 'data/poems-guwen.js', 'data/poems-zhaoming.js',
+  'data/poems-tangshi.js', 'data/poems-songci.js', 'data/poems-guwen.js', 'data/poems-zhaoming.js', 'data/poems-yuanqu.js',
   'data/site-index.js', 'data/works-map.js', 'data/works-index.js'
 ];
 
@@ -200,7 +200,7 @@ setTimeout(() => {
   const stored = JSON.parse(w.localStorage.getItem('poem_recite_collections_v1'));
   const firstItem = stored.collections[0].items[0];
   chk(typeof firstItem === 'object' && !!firstItem.snap,
-    '加入时顺手存了一份最小快照（首页不加载五部集子，靠它显示与排程）');
+    '加入时顺手存了一份最小快照（首页不加载六部集子，靠它显示与排程）');
   chk(!!firstItem.snap.text && !!firstItem.snap.title,
     '快照里带着正文与题名（首页每日任务要读正文）');
 

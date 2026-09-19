@@ -9,7 +9,7 @@ const LOAD = [
   'data/poems-5.js', 'data/poems-6.js', 'data/poems-7.js', 'data/poems-8.js',
   'data/poems-9.js', 'data/poems-10.js', 'data/poems-11.js', 'data/poems-12.js',
   'data/index.js', 'data/poems-classic.js', 'data/poems-tangshi.js',
-  'data/poems-songci.js', 'data/poems-guwen.js', 'data/poems-zhaoming.js',
+  'data/poems-songci.js', 'data/poems-guwen.js', 'data/poems-zhaoming.js', 'data/poems-yuanqu.js',
   'data/site-index.js', 'data/works-index.js'
 ];
 
@@ -22,10 +22,24 @@ LOAD.forEach(function (f) {
 });
 
 const WI = sandbox.WorksIndex;
+// entries 与 titles 都排成「课内优先、其次按 id」的顺序：
+// 表格是静态数据，页面里 first() / [0] 这类取值只有排过序才稳定；
+// 主条目的裁定（WI.repOf）另有规则，但那一处也吃「课内优先」这个序。
+function byCourseFirst(a, b) {
+  const ac = a.indexOf('poems-') === 0;
+  const bc = b.indexOf('poems-') === 0;
+  if (ac !== bc) return ac ? -1 : 1;
+  return a < b ? -1 : 1;
+}
 const groups = WI.works
   .filter(function (w) { return w.entries.length > 1; })
   .map(function (w) {
-    return { wid: w.wid, title: w.title, titles: w.titles, entries: w.entries };
+    return {
+      wid: w.wid,
+      title: w.title,
+      titles: w.titles.slice(),
+      entries: w.entries.slice().sort(byCourseFirst)
+    };
   });
 groups.sort(function (a, b) { return a.entries[0] < b.entries[0] ? -1 : 1; });
 
@@ -45,7 +59,7 @@ out += '   ⚠️ 这是**生成文件**，改动请改 scripts/build-works-map.
 out += '      不要手改这里 —— 下次重新生成会把手工改动覆盖掉。\n';
 out += '\n';
 out += '   为什么要单独落成一份**静态数据**而不是每页现算：\n';
-out += '     现算要先备齐六部集子的全部数据（约 3MB）。集子索引页只加载自己那一部，\n';
+out += '     现算要先备齐七部集子的全部数据（约 3MB）。集子索引页只加载自己那一部，\n';
 out += '     它也要判重（「这篇是不是已经在课内背过了」），现算就会得到一张残表。\n';
 out += '     这一份 8KB，任何页面都能引，判重口径全站一致。\n';
 out += '\n';

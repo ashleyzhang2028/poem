@@ -21,7 +21,9 @@
       "卷九 唐宋文", "卷十 宋文", "卷十一 宋文", "卷十二 明文"
     ],
 
-    zhaoming: window.ZHAOMING_GROUP_ORDER || null
+    zhaoming: window.ZHAOMING_GROUP_ORDER || null,
+
+    yuanqu: window.YUANQU_GROUP_ORDER || null
   };
 
   window.GROUP_ORDER = GROUPS;

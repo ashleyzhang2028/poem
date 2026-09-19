@@ -66,6 +66,7 @@
     songci: "/songci/",
     guwen: "/guwen/",
     zhaoming: "/zhaoming/",
+    yuanqu: "/yuanqu/",
     search: "/search/",
     mine: "/mine/",
     settings: "/settings/",
@@ -102,6 +103,7 @@
     if (/^\/songci\/?$/.test(p) || /^\/songci\/index\.html$/.test(p)) return "songci";
     if (/^\/guwen\/?$/.test(p) || /^\/guwen\/index\.html$/.test(p)) return "guwen";
     if (/^\/zhaoming\/?$/.test(p) || /^\/zhaoming\/index\.html$/.test(p)) return "zhaoming";
+    if (/^\/yuanqu\/?$/.test(p) || /^\/yuanqu\/index\.html$/.test(p)) return "yuanqu";
     if (/^\/mine\/?$/.test(p) || /^\/mine\/index\.html$/.test(p)) return "mine";
     if (/^\/settings\/?$/.test(p) || /^\/settings\/index\.html$/.test(p)) return "settings";
     if (/^\/progress\/?$/.test(p) || /^\/progress\/index\.html$/.test(p)) return "progress";
@@ -252,6 +254,7 @@
     if (k === "songci") return "宋词三百首";
     if (k === "guwen") return "古文观止";
     if (k === "zhaoming") return "昭明文选";
+    if (k === "yuanqu") return "元曲三百首";
     return "";
   }
 
@@ -271,7 +274,7 @@
   function dockKey(key) {
     if (key === "settings") return "mine";
     if (key === "classic" || key === "tangshi" || key === "songci" || key === "guwen" ||
-        key === "zhaoming") return "library";
+        key === "zhaoming" || key === "yuanqu") return "library";
 
     if (key === "poems") return "library";
 

@@ -30,7 +30,11 @@
     //     pro 添加 SM-2 / max 再添加 FSRS 支持全部」
     // 四条各是一格（「一格说一件事」），念的是同一组的三个层级。
     // 键名 = "algo." + js/review-models.js 里那张模型的 key（内核据此发问）。
-    "algo.ebbinghaus":   { minTier: "free", login: false, quota: null, name: "遗忘曲线" },
+    // name 是**台账里的全名**（Issue #229 第五轮起叫「斯宾浩斯遗忘曲线」）。
+    // 对比表那格窄，靠 breaks 在指定处折行（第一行「斯宾浩斯」、第二行
+    //保留「遗忘曲线」整词），名字本身一个字不改。
+    "algo.ebbinghaus":   { minTier: "free", login: false, quota: null, name: "斯宾浩斯遗忘曲线",
+                           breaks: ["遗忘曲线"] },
     "algo.leitner":      { minTier: "free", login: true,  quota: null, name: "莱特纳盒" },
     "algo.sm2":          { minTier: "pro",  login: true,  quota: null, name: "SM-2 复习" },
     "algo.fsrs":         { minTier: "max",  login: true,  quota: null, name: "FSRS 复习" },
@@ -45,11 +49,16 @@
 
     "quiz.review":       { minTier: "pro",  login: true,  quota: null, name: "题库" },
 
-    "export.all":        { minTier: "pro",  login: true,  quota: null, name: "课内诗词导出",
+    // 名字收成「课内诗词」（Issue #229 第五轮：动作「导出」挪到第二行，
+    // 与设置页那一项同名），breaks 把「导出」顶下去。
+    "export.all":        { minTier: "pro",  login: true,  quota: null, name: "课内诗词 导出",
+                           breaks: ["导出"],
                            quotas: { free: 0, pro: 261, max: 261 } },
 
     "feihualing":        { minTier: "max",  login: true,  quota: null, name: "飞花令" },
-    "exam.gathering":    { minTier: "max",  login: true,  quota: null, name: "古诗词大会" },
+    // 「古诗词」一行、「大会」一行（Issue #229 第五轮）。
+    "exam.gathering":    { minTier: "max",  login: true,  quota: null, name: "古诗词 大会",
+                           breaks: ["大会"] },
     "exam.paper":        { minTier: "max",  login: true,  quota: null, name: "试题模拟" }
 
   };
@@ -334,7 +343,10 @@
             : denyReason(k, ctx)
         };
       });
-      return { cap: k, name: c.name, quota: c.quota, quotas: c.quotas || null,
+      // breaks 一路带到界面上（对比表在那里折行）—— 名字仍是一个名字，
+      // 表里读到的还是整句。
+      return { cap: k, name: c.name, breaks: c.breaks || null,
+               quota: c.quota, quotas: c.quotas || null,
                unit: c.unit || "", minTier: c.minTier, cells: cells };
     });
 

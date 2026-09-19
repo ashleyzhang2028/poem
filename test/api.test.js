@@ -640,6 +640,76 @@ async function main() {
     eq(many.status, 413, "一次超过 2000 条被拒");
   }
 
+  // 「今日加背」那一行（Issue #243 后续）：它上云，走的就是 progress 这张表。
+  // 服务端**不判今天是哪一天** —— 那是客户端的事（服务端不知道对方在哪个时区），
+  // 它只负责：行号认得出来、载荷按自己的白名单洗、长度封顶。
+  {
+    boot({});
+    const core = require("../api/_lib/core.js");
+    const cfg = require("../api/_lib/config.js");
+    const store = require("../api/_lib/store.js").memoryStore();
+    const limiter = core.makeRateLimiter();
+    let t = 1757900000000;
+    const d = { cfg, store, limiter, now: () => t, ip: "1.1.1.1" };
+
+    eq(core.DAILY_EXTRA_ROW_ID, "daily_extra:v1", "行号与前端逐字一致（js/daily-extra.js）");
+    eq(core.DAILY_EXTRA_MAX, 20, "条数上限与前端 MAX 一致");
+
+    const r = await core.sendCode(d, { email: "extra@example.com", ip: "1.1.1.1", code: "888888" });
+    const acc = store.getAccountByHash(
+      require("../api/_lib/identity.js").emailHash("extra@example.com", cfg.sessionSecret));
+    await confirmEmail(store, acc.uid, cfg.sessionSecret);
+    const v = await core.verifyCode(d, { codeId: r.body.codeId, code: "888888" });
+    const uid = v.body.account.uid;
+    // 同步要 Pro 起（§4.2 的层级），与其他同步层测试同一条规矩
+    const accRow = store.getAccount(uid);
+    accRow.plan = "pro";
+    store.putAccount(accRow);
+    const dd = Object.assign({}, d, { account: { uid } });
+
+    const row = {
+      id: "daily_extra:v1",
+      updatedAt: t,
+      deleted: false,
+      payload: {
+        v: 1, date: "2026-9-19", updatedAt: t,
+        items: [
+          { id: "tangshi-ts-1", wid: "w-1", entryId: "tangshi-ts-1", at: 1,
+            snap: { title: "感遇", dynasty: "唐", author: "张九龄", bookName: "唐诗三百首",
+              text: "兰叶春葳蕤".repeat(5000), email: "泄露@example.com" } },
+          { id: "", snap: { title: "没有 id 的脏条目" } },
+          "not-an-object"
+        ]
+      }
+    };
+
+    // 服务端**不**判今天是哪一天（不知道对方时区）
+    eq(core.sanitizeDailyExtra({ date: "2000-1-1", items: [] }).date, "2000-1-1",
+      "date 原样透传（「今天」是客户端判的）");
+
+    const push = await core.syncPush(dd, { deviceId: "A", recs: [row] });
+    eq(push.status, 200, "这一行推得上去（它是 progress 表里的普通一行）");
+    const pulled = await core.syncPull(dd, { deviceId: "A" });
+    const got = pulled.body.recs.filter(x => x.id === "daily_extra:v1")[0];
+    chk(!!got, "拉得下来");
+    eq(got.payload.date, "2026-9-19", "日期在里面（客户端靠它判「明天归零」）");
+    eq(got.payload.items.length, 1, "脏条目（没有 id / 不是对象）被丢掉");
+    eq(got.payload.items[0].snap.title, "感遇", "篇名留着");
+    eq(String(got.payload.items[0].snap.text).length, 20000, "正文截断到 20000 字");
+    chk(!("email" in got.payload.items[0].snap),
+      "snap 里不相干的字段（邮箱之类）被丢掉 —— 只留白名单那几项");
+
+    const big = core.sanitizeDailyExtra({
+      date: "2026-9-19",
+      items: new Array(40).fill(null).map((_, i) => ({ id: "p-" + i, snap: { title: "第" + i } }))
+    });
+    eq(big.items.length, 20, "条数封顶 20（任人灌超长数组就会撑爆 jsonb）");
+    eq(big.updatedAt, 0, "没有时间戳时如实回 0（不编一个假的）");
+
+    const del = core.sanitizeDailyExtra({ date: "2026-9-19", deleted: true, items: [] });
+    eq(del.deleted, 1, "删除标记照旧透传（删空也要让另一台设备知道）");
+  }
+
   {
     boot({});
     const core = require("../api/_lib/core.js");

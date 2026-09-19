@@ -256,7 +256,10 @@
 
       { key: KEYS.profile, domain: "account", local: false, perChild: false },
 
-      { key: KEYS.dailyExtra, domain: "device", local: true, perChild: true },
+      // 「今日加背」：**上云**（2026-09-19 用户改的口径）。它与自选集合走同一条
+      // 路（都是 progress 里的一行），所以这一条从 device 挪到 progress 域、
+      // local 从 true 改成 false。它仍然 perChild —— 一个家长几个孩子各加各的。
+      { key: KEYS.dailyExtra, domain: "progress", local: false, perChild: true },
       { key: KEYS.device, domain: "device", local: true, perChild: false },
       { key: KEYS.search, domain: "device", local: true, perChild: false },
       { key: KEYS.premerge, domain: "backup", local: true, perChild: false }

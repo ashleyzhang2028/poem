@@ -25,7 +25,7 @@ console.log('=== 一、免费不残缺：今天能用的，free 登录后一键�
     chk(E.can(c, free).ok, 'free 可用 ' + c + '（' + E.cap(c).name + '）');
   });
   chk(E.can('recite.basic', guest).ok, '游客也能背诵（打开即用，不被登录拦）');
-  chk(E.can('library.all', guest).ok, '游客也能读六部集子');
+  chk(E.can('library.all', guest).ok, '游客也能读七部集子');
   chk(E.can('pinyin.helper', guest).ok, '游客也能用注音');
 
   // Issue #229 第二轮（用户原话）：「层级页面 进度导出 功能改为登录可用，
@@ -42,9 +42,9 @@ console.log('=== 一、免费不残缺：今天能用的，free 登录后一键�
 
   // Issue #229 第四轮（用户原话）：「游客可以用斯宾浩斯遗忘曲线 /
   // 登录 free 添加莱特纳盒 / pro 添加 SM-2 / max 再添加 FSRS 支持全部」
-  eq(E.cap('algo.ebbinghaus').minTier, 'free', '遗忘曲线：免费档，层级写在台账上');
+  eq(E.cap('algo.ebbinghaus').minTier, 'free', '斯宾浩斯遗忘曲线：免费档，层级写在台账上');
   eq(E.cap('algo.ebbinghaus').login, false, '遗忘曲线：游客就能用（登录不是条件）');
-  chk(E.can('algo.ebbinghaus', guest).ok, '游客可以用遗忘曲线');
+  chk(E.can('algo.ebbinghaus', guest).ok, '游客可以用斯宾浩斯遗忘曲线');
   eq(E.cap('algo.leitner').minTier, 'free', '莱特纳盒：层级仍是 free');
   eq(E.cap('algo.leitner').login, true, '莱特纳盒：登录才给');
   chk(!E.can('algo.leitner', guest).ok && E.can('algo.leitner', free).ok,
@@ -117,7 +117,25 @@ console.log('\n=== 三、pro / max 只加不减：层级越高能力单调不减
   chk(!!E.cap('exam.gathering'), 'exam.gathering 是**独立的一条**能力（集子访问）');
   chk(!E.can('exam.gathering', pro).ok && E.can('exam.gathering', max).ok,
     '古诗词大会集子：pro 不可、max 可用（与试题模拟同一条口径）');
-  chk(E.cap('exam.gathering').name === '古诗词大会', '它的名字就叫「古诗词大会」（一格说一件事）');
+  chk(E.cap('exam.gathering').name === '古诗词 大会',
+    '它的名字就叫「古诗词 大会」（一格说一件事）');
+
+  // Issue #229 第五轮：名字是台账里的事实（读屏 / 搜索按整句），
+  // 名字里那一个断字空格是对比表的折行点 —— breaks 指的就是空格后那一截。
+  chk(E.cap('algo.ebbinghaus').name === '斯宾浩斯遗忘曲线',
+    '遗忘曲线那条的全名是「斯宾浩斯遗忘曲线」（实际 ' + E.cap('algo.ebbinghaus').name + '）');
+  chk(E.cap('export.all').name === '课内诗词 导出',
+    '名字收成「课内诗词 导出」（实际 ' + E.cap('export.all').name + '）');
+  [['algo.ebbinghaus', '遗忘曲线'], ['export.all', '导出'], ['exam.gathering', '大会']]
+    .forEach(function (pair) {
+      var c = E.cap(pair[0]);
+      chk(Array.isArray(c.breaks) && c.breaks[0] === pair[1],
+        pair[0] + ' 的折行点是「' + pair[1] + '」（实际 ' + JSON.stringify(c.breaks) + '）');
+      var at = c.name.indexOf(c.breaks[0]);
+      chk(at > 0 && at < c.name.length, pair[0] + ' 的折行点落在名字中段（位置 ' + at + '）');
+    });
+  chk(E.compare({}).rows.filter(function (r) { return r.breaks; }).length === 3,
+    'compare() 里正好三行带折行点（其余的名字都是单句）');
   chk(!E.can('quiz.review', free).ok && E.can('quiz.review', pro).ok, '题库复习：free 不可、pro 起');
   chk(!E.can('sync.multiDevice', free).ok && E.can('sync.multiDevice', pro).ok, '跨设备云同步：pro 起');
 
@@ -135,8 +153,8 @@ console.log('\n=== 三、pro / max 只加不减：层级越高能力单调不减
     'pinyin.helper': '阅读辅助', 'export.progress': '进度导出',
     'collections.many': '自选清单', 'sync.multiDevice': '设备同步',
     'export.paper': 'PDF / 打印', 'profile.family': '子用户',
-    'quiz.review': '题库', 'export.all': '课内诗词导出',
-    'exam.gathering': '古诗词大会', 'exam.paper': '试题模拟'
+    'quiz.review': '题库', 'export.all': '课内诗词 导出',
+    'exam.gathering': '古诗词 大会', 'exam.paper': '试题模拟'
   };
   Object.keys(renames).forEach(function (k) {
     eq(E.cap(k).name, renames[k], 'Issue #163 改名：' + k + ' → 「' + renames[k] + '」');
@@ -428,7 +446,7 @@ console.log('\n=== 十二、每条付费能力都得**真的有人管**（不许
   const EXEMPT = {
 
     'recite.basic': '免费档：打开即用，没有需要拦的地方（第一节断言钉着）',
-    'library.all': '免费档：六部集子全文，一律可读',
+    'library.all': '免费档：七部集子全文，一律可读',
     'pinyin.helper': '免费档：注音是阅读辅助，不做门槛',
     'export.progress': '免费档但要登录（Issue #229）：闸在 js/settings.js 的 #btn-export',
     'read.aloud': '语音播放：闸在 js/speech.js 的 gate()（有专门的第九节验它）',
