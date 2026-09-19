@@ -37,6 +37,13 @@
 
   --item-btn: 36px;
   --item-icon: 16px;
+  /* 详情页「白话译文」那一排的胶囊朗读键里的图标框。
+     ⚠️ 必须只有一个来源：style.css 与 classic.css 都写了
+     `.trans-read .btn-icon svg`（同为 0-2-1，同特异性），而首页同时加载这两张表、
+     classic.css 在后 —— 谁把 px 写死谁就赢。此前 style.css 写 14px、
+     classic.css 写 24px，于是首页那颗 12px 的胶囊被 24px 的图标撑到 36px 高
+     （量出来的胶囊比设计高 2px）。改成两处都读这一个变量，加载顺序不再有意义。 */
+  --trans-icon: 14px;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --shadow: 0 2px 14px rgba(74, 58, 38, 0.10);
@@ -693,7 +700,12 @@ body.no-dock .modal-box { max-height: 88vh; }
 .settings-item { margin: 14px 0; }
 .settings-item .chips { flex-wrap: wrap; }
 .settings-item .seg { flex-wrap: wrap; overflow: visible; }
-.settings-item label:not(.switch) {
+/* ⚠️ 这一条是给「一行一个标签 + 底下跟控件」那种 .settings-item 用的。
+   `.daily-row` 也是 <label>（整行点击＝勾选），但它自己是一行 flex（勾选框 + 篇名 + 出处），
+   不是「标签」。它若吃到这里，display:flex 会被 display:block 盖掉 ——
+   勾选框与篇名于是各占一行、行距也被 margin-bottom 撑开（Issue #229 点名的
+   「复选框和古诗名没间距」「行间距有点大」）。所以两个 :not 都得在。 */
+.settings-item label:not(.switch):not(.daily-row) {
   display: block;
   font-size: 13.5px;
   color: var(--ink-2);
@@ -2340,22 +2352,75 @@ html, body {
 }
 .daily-tools .collection-act[disabled] { opacity: .45; cursor: not-allowed; }
 .daily-list { display: block; }
+
+/* 「今日加背」的一行：勾选框 + 篇名 + 出处，一行到底。
+   字号 / 颜色照搬全站紧凑行的口径（标题 14.5/600/--ink，出处 12/--ink-3，
+   与搜索下拉的 .suggest-title / .suggest-meta 同档），所以这里的篇名
+   不比其他列表里的大、也不是纯黑。 */
 .daily-row {
+  position: relative;      /* 藏起来的原生 input 定位的锚点（不相对行定位就会跑到卡片外） */
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 2px;
+
+  padding: 7px 2px;
+
   border-bottom: 1px solid var(--line-2);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 .daily-row:last-child { border-bottom: none; }
+
+/* 原生 input 只留给键盘与读屏：视觉上交给 .daily-box。
+   用 opacity + 绝对定位（不是 display:none）—— display:none 的控件拿不到焦点，
+   键盘用户就点不到这枚框了。 */
 .daily-row .daily-pick {
-  flex: none;
-  width: 20px;
-  height: 20px;
+  position: absolute;
+  width: 1px;
+  height: 1px;
   margin: 0;
-  accent-color: var(--green);
+  padding: 0;
+  border: 0;
+  opacity: 0;
+
+  pointer-events: none;
 }
-.daily-row .daily-main { flex: 1 1 auto; min-width: 0; }
+
+/* 那一枚画出来的框：18×18、5px 圆角、描边与「加入自选集合」里的一致。
+   勾选框**不比行里的字大**（18 只比 14.5 的字高一点点，是传统方框的比例）。 */
+.daily-row .daily-box {
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--card);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: transparent;
+  transition: background .15s, border-color .15s, color .15s;
+}
+.daily-row .daily-box svg { width: 13px; height: 13px; display: block; }
+.daily-row .daily-pick:checked ~ .daily-box {
+  background: var(--green);
+  border-color: var(--green);
+  color: #fdfaf2;
+}
+.daily-row .daily-pick:focus-visible ~ .daily-box {
+  outline: 2px solid var(--celadon);
+  outline-offset: 2px;
+}
+.daily-row:hover .daily-box { border-color: var(--green); }
+
+.daily-row .daily-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
 .daily-row .daily-title {
   font-size: 14.5px;
   font-weight: 600;
@@ -2363,13 +2428,16 @@ html, body {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  flex: 0 1 auto;
 }
 .daily-row .daily-meta {
-  font-size: 12.5px;
+  font-size: 12px;
   color: var(--ink-3);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 .daily-row .daily-meta em { font-style: normal; color: var(--green); font-weight: 600; }
 
@@ -2674,7 +2742,7 @@ html, body {
   line-height: 1.5;
 }
 .trans-read .btn-icon { display: inline-flex; align-items: center; justify-content: center; flex: none; }
-.trans-read .btn-icon svg { display: block; width: 14px; height: 14px; margin: 0; }
+.trans-read .btn-icon svg { display: block; width: var(--trans-icon); height: var(--trans-icon); margin: 0; }
 
 .trans-read .btn-icon.pause-glyph { display: none; }
 .trans-read[data-on="1"] .btn-icon.play-glyph { display: none; }

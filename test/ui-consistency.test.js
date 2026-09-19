@@ -1095,6 +1095,59 @@ if (JSDOM) {
   chk(scaleActive.length === 0,
     '全站按钮的按下态不再缩放（扁平按钮的按下只用颜色；实际：' +
     scaleActive.map(b => b.sel).join(' | ') + '）');
+
+  // ---- .mini-btn 的归属：账页那一套不许漏进正文页（Issue #229）--------------
+  //
+  // account.css 是在 classic.css **之后**加载的。它里面原本有一条裸 `.mini-btn`
+  // （单类名）写着绿底 —— 于是凡「既加载 account.css、又用详情页工具条」的页面
+  // （当时正是 /poems/），那一排「朗读 / 译文 / 加背 / 收藏 / 已读」会统统变绿底，
+  // 看着像**全部处于选中态**。
+  {
+    const acctCc = strip(accountCss);
+    const acctBtns = [...acctCc.matchAll(/(?:^|\n)[ \t]*([^\n{}]*\.mini-btn[^\n{}]*)\{([^}]*)\}/g)]
+      .map(m => ({ sel: m[1].trim(), body: m[2] }));
+    chk(acctBtns.length >= 1, 'account.css 里有 .mini-btn 规则（尺子有牙，实际 ' + acctBtns.length + ' 条）');
+    const stray = acctBtns.filter(b => !/(^|[ >])\.account-page\b/.test(b.sel));
+    chk(stray.length === 0,
+      'account.css 里每一条 .mini-btn 都限定在 .account-page 之下' +
+      '（不再裸着 —— 否则它压过 classic.css、正文页那一排全变绿；越界：' +
+      stray.map(b => b.sel).join(' | ') + '）');
+
+    // classic.css 里那一排的底色是卡片色，只有 [data-on="1"] 才变绿
+    const classicCc = strip(classicCss);
+    const classicBtn = ruleOf(classicCc, '.mini-btn');
+    chk(/background:\s*var\(--card\)/.test(classicBtn),
+      'classic.css 的 .mini-btn 常态是卡片底（不是绿）');
+    chk(/\.mini-btn\[data-on="1"\]\s*\{[^}]*background:\s*var\(--green\)/.test(classicCc),
+      '只有 [data-on="1"] 才绿底 —— 绿＝选中，这份语义只此一处');
+
+    // 页面级：/poems/ 是唯一同时加载这两种样式的页面（account.css 还在 classic.css 之后）。
+    // 它曾经因此中招 —— 所以这里**真的拿选择器去对一遍**：account.css 里那几条
+    // .mini-btn 规则，一条都不许匹配到正文页工具条上的按钮。
+    if (JSDOM) {
+      const warn = console.warn, warn2 = console.error;
+      console.warn = function () {}; console.error = function () {};   // jsdom 拉不到外链资源时会吵
+      const dom = new JSDOM(read('poems/index.html'), { url: 'https://local.test/poems/' });
+      console.warn = warn; console.error = warn2;
+      const pd = dom.window.document;
+      const iconBtns = [...pd.querySelectorAll('.icon-row > .mini-btn')];
+      chk(iconBtns.length >= 4,
+        '/poems/ 的详情页第二行真有那一排 .icon-row > .mini-btn（实际 ' + iconBtns.length + ' 颗）');
+      const acctSelectors = [...acctCc.matchAll(/(?:^|\n)[ \t]*([^\n{}]*\.mini-btn[^\n{}]*)\{/g)]
+        .map(m => m[1].trim());
+      const hits = [];
+      acctSelectors.forEach(sel => {
+        iconBtns.forEach(b => {
+          try { if (b.matches(sel)) hits.push(sel); } catch (e) {}
+        });
+      });
+      chk(hits.length === 0,
+        'account.css 里没有一条 .mini-btn 规则会碰到 /poems/ 那一排按钮' +
+        '（碰到就说明又裸回去了，那一排会全变绿；实际命中：' +
+        [...new Set(hits)].join(' | ') + '）');
+      dom.window.close();
+    }
+  }
 }
 
 {

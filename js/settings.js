@@ -633,10 +633,18 @@
       return;
     }
 
+    // 勾选框画成自己的一枚（18×18 圆角方框，选中＝天青底 + 白勾），
+    // 形状与「加入自选集合」弹层里那一枚（.recite-col-tick）同一套 ——
+    // 浏览器自带的复选框各家画法不同、又比行里的字大一圈，放在这一列里很扎眼。
+    // 原生 input 仍在（键盘可点、可读屏），只是视觉上藏起来，由 .daily-box 顶上。
     box.innerHTML = items.map(function (it) {
       return '<label class="daily-row">' +
         '<input type="checkbox" class="daily-pick" value="' + esc(it.entryId || it.id) + '" ' +
         'aria-label="选中 ' + esc(dailyItemTitle(it)) + '" />' +
+        '<span class="daily-box" aria-hidden="true">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+        'stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5 10 17.5 19.5 7"/></svg>' +
+        "</span>" +
         '<span class="daily-main">' +
         '<span class="daily-title">' + esc(dailyItemTitle(it)) + "</span>" +
         '<span class="daily-meta">' + dailyItemMeta(it) + "</span>" +

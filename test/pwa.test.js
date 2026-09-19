@@ -490,6 +490,41 @@ function check(name, cond, extra) {
     check('iPhone: 详情页译文键是矮胶囊（没被 .trans-head 拉成一整行高）',
       roundState.trans.h >= 18 && roundState.trans.h <= 38,
       JSON.stringify(roundState.trans));
+
+    // 那一枚图标框必须与胶囊同档：它由 --trans-icon 单点给出。
+    // style.css 与 classic.css 都写了 `.trans-read .btn-icon svg`（同特异性），
+    // 首页两张表都加载、classic.css 在后 —— 谁写死 px 谁就赢。曾写死成
+    // 24px，把 12px 的胶囊撑到 36px 高。这条断言钉住「图标框 ≤ 胶囊内高」。
+    // 量的是**计算样式里声明的图标框**（不是渲染盒）：此刻 #m-trans 还带着
+    // hidden，getBoundingClientRect 一律为 0，量渲染盒只会得到 0。
+    const transIcon = await page.evaluate(() => {
+      const btn = document.querySelector('#m-trans-read');
+      const svg = btn.querySelector('svg');
+      const cs = getComputedStyle(btn);
+      const scs = getComputedStyle(svg);
+      const padY = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+      const borderY = parseFloat(cs.borderTopWidth) + parseFloat(cs.borderBottomWidth);
+      // 胶囊在「内容宽 = 图标 + gap + 文字」时的高度：图标是最高的一件。
+      return {
+        iconDeclaredW: scs.width,
+        iconDeclaredH: scs.height,
+        boxH: +btn.getBoundingClientRect().height.toFixed(2),
+        innerH: +(btn.getBoundingClientRect().height - padY - borderY).toFixed(2),
+        varValue: getComputedStyle(document.documentElement).getPropertyValue('--trans-icon').trim()
+      };
+    });
+    check('iPhone: 译文键图标框走 --trans-icon 一个来源（不再两表各写 px）',
+      transIcon.varValue === '14px' &&
+      transIcon.iconDeclaredW === transIcon.varValue &&
+      transIcon.iconDeclaredH === transIcon.varValue,
+      JSON.stringify(transIcon));
+    // 图标框不得把胶囊顶出设计高度：24px 那版正是卡在这里。
+    // 胶囊高 = max(图标框, 文字行盒 18px) + 上下内边距 10 + 边框 2 ——
+    // 14px 的图标比 18px 的行盒矮，高度由行盒定；24px 则会反超行盒变成 36。
+    const pillExpectedH = Math.max(parseFloat(transIcon.iconDeclaredH), 18) + 10 + 2;
+    check('iPhone: 译文键图标框没把胶囊撑高（胶囊高由图标框与行盒里更高的那个定）',
+      Math.abs(roundState.trans.h - pillExpectedH) <= 1.5 && roundState.trans.h <= 34,
+      JSON.stringify({ pillH: roundState.trans.h, iconH: transIcon.iconDeclaredH, expected: pillExpectedH }));
     check('iPhone: 详情页译文键圆角为胶囊（border-radius 接近半高或 999px）',
       roundState.trans.radius === '999px' || parseFloat(roundState.trans.radius) * 2 >= roundState.trans.h,
       roundState.trans.radius);
@@ -698,16 +733,12 @@ function check(name, cond, extra) {
 
             scrollW: last.scrollWidth,
             clientW: last.clientWidth,
-            // 截断的特征：内容自然宽已超出盒子（scrollWidth > clientWidth），
-            // 且盒子写着 nowrap + overflow:hidden + text-overflow:ellipsis，
-            // 三者齐备才是「末尾省略」。
-            // ⚠️ 早先这里把判据写反了（`scrollWidth <= clientWidth + 1`）：它表达的是
+            // 「末尾省略」的判据：文字的自然宽放不进盒子（scrollWidth > clientWidth），
+            // 且盒子写着 nowrap + overflow:hidden + text-overflow:ellipsis。
+            // ⚠️ 早先这里写反成 scrollWidth <= clientWidth + 1：它表达的是
             //    「整段都塞得下、根本没截」。而 nowrap + overflow:hidden 的元素，
             //    内容宽仍是那段文字的完整自然宽，于是正常截断时
             //    scrollWidth(219) > clientWidth(203)；真被硬缩反而相等。
-            //    本轮行内多了一颗「＋」（`.item-daily`），内容块由 241px 收到
-            //    203px，摘句真的放不下了 —— 正好落在 scrollW > clientW 这一侧。
-            //    这里改成量「真的溢出了、且溢出按省略号收场」，与断言名字对上。
             trimmed: (last.scrollWidth > last.clientWidth + 1 &&
               getComputedStyle(last).textOverflow === 'ellipsis' &&
               getComputedStyle(last).whiteSpace === 'nowrap' &&
@@ -1005,12 +1036,13 @@ function check(name, cond, extra) {
       const main = item.querySelector('.item-main').getBoundingClientRect();
       const play = item.querySelector('.item-read').getBoundingClientRect();
       const recite = item.querySelector('.item-recite');
-      const daily = item.querySelector('.item-daily');
-      // 内容块与播放键之间**所有**行内圆键（本轮起是「＋」与「加入背诵」两颗）。
-      // 这一段间距不是留白，而是被这几颗圆键各自「盒宽 + 右外边距」逐段占满的 ——
-      // 排得下就并排，排不下整行横滑，中间不会凭空多出一块空隙。
+
+      // 内容块 → 播放键这一段不是留白，而是被行内那串圆键各自
+      // 「盒宽 + 右外边距（6px）」逐段占满的：本轮起是两枚 ——
+      // ① 「加进今天」(.item-daily)  ② 「加入背诵」(.item-recite)。
       // 所以不去数常量，而是把实际渲染出来的圆键逐个量出来累加：
       // 中间有几枚、每枚多宽，断言自己就跟着算到几枚。
+      const daily = item.querySelector('.item-daily');
       const btnBox = el => el
         ? el.getBoundingClientRect().width + (parseFloat(getComputedStyle(el).marginRight) || 0)
         : 0;

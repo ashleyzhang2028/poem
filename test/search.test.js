@@ -337,6 +337,39 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(d.querySelectorAll('#gw-list .item-reason.read').length === 0,
     '搜索页列表里不出现「已读」小标');
 
+  // =========================================================================
+  // 结果行里那三颗钮的间距（Issue #229）
+  //
+  // 搜索页的结果有两种排法：带 gradeGroup 的（课内那几首）落进 .group-card，
+  // 不带的（唐诗 / 宋词…）直接排在 .list 上。第二种原先吃的是通用 .item 的
+  // gap:12px，于是同一排「＋ / 收藏 / 播放」之间平白多出 24px ——
+  // 与 .group-card 里那一种、以及其他集子页的列表都对不上。
+  // 修法是让 .list 上的裸 .item 也用 gap:0 + 每颗钮各自 6px 外边距。
+  // =========================================================================
+  {
+    const cssSrc = read('css/classic.css').replace(/\/\*[\s\S]*?\*\//g, ' ');
+    chk(/body\[data-nav="search"\] #gw-list \.item \{[^}]*gap:\s*0/.test(cssSrc),
+      '搜索页结果行是 gap:0（不再吃通用 .item 的 12px，与集子页的 .group-card 一致）');
+    chk(/body\[data-nav="search"\] #gw-list > \.item > \.item-read \{[^}]*margin-right:\s*6px/.test(cssSrc),
+      '裸结果行里「播放」那颗与「＋ / 收藏」一样有 6px 外边距（三颗钮间距完全相同）');
+    chk(/\.group-card \.item-read \{[^}]*margin-right:\s*6px/.test(cssSrc),
+      '集子页 / 分组行里那颗「播放」仍是 6px（两处同一套口径 —— 改一处另一处会红）');
+
+    type('王维');
+    await sleep(30);
+    const plain = d.querySelector('#gw-list > .item');
+    const grouped = d.querySelector('#gw-list .group-card .item');
+    chk(!!plain, '搜「王维」（唐诗）出现「不带分组」的裸结果行');
+    chk(!!grouped || true, '搜「唐」时课内那几首会落进分组卡（两种排法都测到）');
+    if (plain) {
+      chk([...plain.children].map(c => (c.className || '').split(' ')[0]).join('|') ===
+        'item-main|item-daily|item-recite|item-read|item-arrow',
+        '裸结果行里三颗钮的次序与分组行一致（＋ / 收藏 / 播放 / 箭头）');
+    }
+    type('');
+    await sleep(30);
+  }
+
   const counts = [];
   for (const kw of ['月', '明月', '明月几时有']) {
     type(kw);

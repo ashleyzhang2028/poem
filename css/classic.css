@@ -692,7 +692,7 @@ body.reader-open .dock { display: none; }
 .trans-read .btn-icon { display: inline-flex; align-items: center; justify-content: center; flex: none; }
 /* 图标框 14px（HTML 里那枚三角 stroke-width 已按 24÷14 ≈ 1.7 配好，
    屏幕上仍是 1px 笔画）。⚠️ 这里曾是 24px：24 的图标框把胶囊从 28px 撑到
-   36px 高，而「译文键是正圆角胶囊、不纵向拉高」那条守卫卡的是 ≤34px ——
+   36px 高，而「译文键不纵向拉高」那条守卫卡的是胶囊高度上限 ——
    24px 一上就红。14px 既守住 30px 高，也不会让胶囊显小。 */
 .trans-read .btn-icon svg { display: block; width: 14px; height: 14px; margin: 0; }
 
@@ -865,7 +865,15 @@ body[data-nav="search"] #gw-list { padding-top: var(--search-list-gap, 12px); }
 body[data-nav="search"] .search-hero.search-active ~ #gw-list,
 body[data-nav="search"] .search-hero.kb-open ~ #gw-list { padding-top: var(--search-list-gap, 12px); }
 
-body[data-nav="search"] #gw-list .item { padding: 14px 8px 14px 14px; }
+/* 搜索页的结果行：有些带 gradeGroup（课内那几首，落进 .group-card），
+   有些不带（唐诗 / 宋词等，直接排在 .list 上）。两处的**按钮间距必须一样**，
+   否则同一页里「课内」那几条与其余几条的「＋ / 收藏 / 播放」疏密不同。
+
+   .group-card .item 的间距是 gap: 0 + 每颗钮各自 6px 右外边距；
+   下面这条把 .list 上的裸 .item 拉齐到同一套（原先它吃的是通用 .item 的 gap: 12px，
+   于是同一排三个钮之间平白多出 24px）。 */
+body[data-nav="search"] #gw-list .item { padding: 14px 8px 14px 14px; gap: 0; }
+body[data-nav="search"] #gw-list > .item > .item-read { margin-right: 6px; }
 
 #gw-list .item-hit {
   color: var(--ink-3);

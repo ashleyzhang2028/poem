@@ -1113,7 +1113,14 @@ thead .plans-th-cap {
   margin-top: 12px;
 }
 
-.mini-btn {
+/* ⚠️ 账页这几颗小钮**必须**限定在 .account-page 里。
+   这一条曾经是裸 `.mini-btn`（单类名），而 account.css 是在 classic.css **之后**
+   加载的 —— 于是它压过了 classic.css 里同样单类名的 `.mini-btn`
+   （card 底 + 天青字），凡是「又加载了 account.css、又用到详情页工具条」的页面，
+   那一排「朗读 / 译文 / 加背 / 收藏 / 已读」会**统统变成绿底**，看着像全部选中
+   （Issue #229 用户点名的「第二行按钮全处于选中态」）。
+   现在收进 .account-page：账页自己的钮照旧，正文页的钮不再被波及。 */
+.account-page .mini-btn {
   border: 1px solid var(--green-dark);
   border-radius: var(--radius-sm);
   background: var(--green);
@@ -1126,13 +1133,13 @@ thead .plans-th-cap {
   cursor: pointer;
   transition: background .15s, border-color .15s, color .15s;
 }
-.mini-btn:hover { background: var(--celadon); }
-.mini-btn.ghost {
+.account-page .mini-btn:hover { background: var(--celadon); }
+.account-page .mini-btn.ghost {
   background: var(--card);
   color: var(--ink-2);
   border-color: var(--line);
 }
-.mini-btn.ghost:hover { color: var(--green); border-color: var(--green); }
+.account-page .mini-btn.ghost:hover { color: var(--green); border-color: var(--green); }
 
 .identity-row .avatar { --avatar-size: 46px; }
 
