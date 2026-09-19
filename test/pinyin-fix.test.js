@@ -31,6 +31,8 @@ const chk = (c, m) => { if (!c) { console.log("✗ " + m); fails++; } else conso
 // ---------------------------------------------------------------------------
 const POEM_WID = "book-tengwangge";
 const LINE = "落霞与孤鹜齐飞，秋水共长天一色。";
+// 上面那一句现在词表已经管了；勘误层用下面这个**故意没进词表**的句子来验。
+const FIX_LINE = "长风破浪会有时";
 const P1 = "长洲"; // 同一篇里「长」的另一处（读 cháng，本来就对）
 
 function boot() {
@@ -58,9 +60,17 @@ chk(F.KEY === "poem_pinyin_fix_v1", "本机键名是 poem_pinyin_fix_v1");
 chk(F.SYNC_ID === "pinyin_fix:v1", "云端行号是 pinyin_fix:v1");
 chk(typeof P.annotatePoem === "function", "引擎暴露了「按篇注音」那个入口（annotatePoem）");
 
-// 改之前：机器读 zhǎng（这就是用户报的那个错）
-const before = P.annotatePoem(POEM_WID, LINE, "all");
-chk(/长<rt>zhǎng<\/rt>/.test(before), "改之前「秋水共长天一色」的「长」读 zhǎng（复现用户报的错）");
+// 用户点名的那一处：**词表**已经补了「长天」，所以现在默认就读对了
+// （正本清源）；下面几节验的是「词表没料到的那些个例」怎么兜。
+// ⚠️ 这两件事必须分开看：词表管全站通例，勘误层管某篇的个例。
+chk(/长<rt>cháng<\/rt>/.test(P.annotatePoem("", LINE, "all")),
+  "词表补了「长天」→「秋水共长天一色」默认读 cháng（本条 Issue 的那一处已正本清源）");
+chk(/长<rt>cháng<\/rt>/.test(P.annotateHtml("长空万里", "all")),
+  "「长空」也补进来了（同一族的词，一次补清）");
+chk(/长<rt>zhǎng<\/rt>/.test(P.annotateHtml("长大", "all")),
+  "补词没有连累别的：「长大」照旧读 zhǎng dà");
+
+
 
 // 不传 wid 时与旧入口逐字相同 —— 纯增强的证据
 chk(P.annotatePoem("", LINE, "all") === P.annotateHtml(LINE, "all"),
@@ -68,20 +78,20 @@ chk(P.annotatePoem("", LINE, "all") === P.annotateHtml(LINE, "all"),
 chk(P.annotatePoem(POEM_WID, LINE, "all") === P.annotateHtml(LINE, "all"),
   "勘误表为空时，传了 wid 也与改前逐字相同");
 
-const r1 = F.add({ wid: POEM_WID, line: LINE, at: 1, ch: "长", py: "cháng" });
+const r1 = F.add({ wid: POEM_WID, line: FIX_LINE, at: 1, ch: "长", py: "cháng" });
 chk(r1.ok && !r1.replaced, "钉下第一处勘误");
 
-const after = P.annotatePoem(POEM_WID, LINE, "all");
+const after = P.annotatePoem(POEM_WID, FIX_LINE, "all");
 chk(/长<rt>cháng<\/rt>/.test(after), "钉住之后「长」读 cháng");
 chk(after.indexOf("zhǎng") === -1, "这一句里不再出现 zhǎng");
 
-chk(P.annotatePoem("book-other", LINE, "all").indexOf("cháng") === -1,
-  "**别的篇**不受影响（勘误按篇绑定，同一句同一字那边照旧读 zhǎng）");
-chk(P.annotatePoem("", LINE, "all").indexOf("cháng") === -1,
+chk(P.annotatePoem("book-other", FIX_LINE, "all").indexOf("cháng") === -1,
+  "**别的篇**不受影响（勘误按篇绑定，别的篇里的「长风」照旧读 zhǎng）");
+chk(P.annotatePoem("", FIX_LINE, "all").indexOf("cháng") === -1,
   "不传 wid 时勘误一行都不查（默认关闭）");
 
 // 按「第几次出现」定位：同一句里两个「长」
-const TWO = "长洲与长天";
+const TWO = "长风与长洲";
 chk(P.annotatePoem(POEM_WID, TWO, "all").match(/长<rt>[^<]*<\/rt>/g).join("|") === "长<rt>zhǎng</rt>|长<rt>zhǎng</rt>",
   "一句里两个「长」默认都读 zhǎng（未钉时）");
 F.add({ wid: POEM_WID, line: TWO, at: 2, ch: "长", py: "cháng" });
@@ -102,23 +112,23 @@ chk(/长<rt>zhǎng<\/rt>/.test(P.annotateHtml("长大", "all")),
   "不传 wid 时词表照旧生效（勘误不参与）");
 
 // 纯文本那一档（打印稿）
-chk(P.annotatePoemText(POEM_WID, LINE).indexOf("长(cháng)") > -1,
+chk(P.annotatePoemText(POEM_WID, FIX_LINE).indexOf("长(cháng)") > -1,
   "纯文本注音（打印稿那一档）同样走勘误");
 
 // —— 数据层的形状与限制 ——
 chk(F.count() >= 3, "勘误条数跟着增（当前 " + F.count() + " 条）");
 
-const dup = F.add({ wid: POEM_WID, line: LINE, at: 1, ch: "长", py: "cháng" });
+const dup = F.add({ wid: POEM_WID, line: FIX_LINE, at: 1, ch: "长", py: "cháng" });
 chk(dup.ok && dup.replaced, "同一处再钉一次是**改写**而不是新增一条（不会越钉越多）");
 chk(F.count() === 4, "改写之后条数不变（" + F.count() + " 条 —— 同一处只记一条）");
 
-chk(!F.add({ wid: "", line: LINE, at: 1, py: "cháng" }).ok, "缺篇目 → 不收");
+chk(!F.add({ wid: "", line: FIX_LINE, at: 1, py: "cháng" }).ok, "缺篇目 → 不收");
 chk(!F.add({ wid: POEM_WID, line: "", at: 1, py: "cháng" }).ok, "缺那一句 → 不收");
-chk(!F.add({ wid: POEM_WID, line: LINE, py: "" }).ok, "缺读音 → 不收");
+chk(!F.add({ wid: POEM_WID, line: FIX_LINE, py: "" }).ok, "缺读音 → 不收");
 chk(F.normOne({ wid: " w ", line: " l ", at: -5, py: " p " }).at === 0,
   "「第几次出现」小于 1 时归到 1（下标 0）—— 不存负数");
 
-const key = F.keyOf({ wid: POEM_WID, line: LINE, at: 1 });
+const key = F.keyOf({ wid: POEM_WID, line: FIX_LINE, at: 1 });
 chk(F.remove(key).ok, "按 key 删得掉一条");
 chk(F.count() === 3, "删完确实少一条（" + F.count() + "）");
 chk(!F.remove(key).ok, "删一条不存在的 → 如实回 false（不是假装成功）");
@@ -293,11 +303,15 @@ chk(/\{ key: KEYS\.pinyinFix, domain: "progress", local: false, perChild: true \
   const line = String(poem.text).split("\n").filter(x => x.indexOf("秋水共长天") > -1)[0];
   chk(!!line, "《滕王阁序》里有「秋水共长天一色」那一句");
 
-  chk(/长<rt>zhǎng<\/rt>/.test(w.Pinyin.annotatePoem(wid, line, "all")),
-    "端到端：钉之前读 zhǎng（就是用户看到的那一行）");
-
-  w.PinyinFix.add({ wid: wid, line: line.trim(), at: 1, ch: "长", py: "cháng" });
   chk(/长<rt>cháng<\/rt>/.test(w.Pinyin.annotatePoem(wid, line, "all")),
+    "端到端：这一处**默认就读 cháng 了**（词表已正本清源，用户不会再看到那个错）");
+
+  // 再验一遍勘误层本身在真页面里也生效（拿一个词表故意没管的句子）
+  const probe = "长风几万里";
+  chk(/长<rt>zhǎng<\/rt>/.test(w.Pinyin.annotatePoem(wid, probe, "all")),
+    "端到端：词表没管的「长风」默认读 zhǎng");
+  w.PinyinFix.add({ wid: wid, line: probe, at: 1, ch: "长", py: "cháng" });
+  chk(/长<rt>cháng<\/rt>/.test(w.Pinyin.annotatePoem(wid, probe, "all")),
     "端到端：钉之后读 cháng（不改代码、不发版）");
 })();
 
