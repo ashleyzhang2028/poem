@@ -481,6 +481,41 @@ function check(name, cond, extra) {
     check('iPhone: 详情页译文键是正圆角胶囊（不纵向拉高）',
       roundState.trans.h <= 34 && roundState.trans.h >= 18,
       JSON.stringify(roundState.trans));
+
+    // 那一枚图标框必须与胶囊同档：它由 --trans-icon 单点给出。
+    // style.css 与 classic.css 都写了 `.trans-read .btn-icon svg`（同特异性），
+    // 首页两张表都加载、classic.css 在后 —— 谁写死 px 谁就赢。曾写死成
+    // 24px，把 12px 的胶囊撑到 36px 高。这条断言钉住「图标框 ≤ 胶囊内高」。
+    // 量的是**计算样式里声明的图标框**（不是渲染盒）：此刻 #m-trans 还带着
+    // hidden，getBoundingClientRect 一律为 0，量渲染盒只会得到 0。
+    const transIcon = await page.evaluate(() => {
+      const btn = document.querySelector('#m-trans-read');
+      const svg = btn.querySelector('svg');
+      const cs = getComputedStyle(btn);
+      const scs = getComputedStyle(svg);
+      const padY = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+      const borderY = parseFloat(cs.borderTopWidth) + parseFloat(cs.borderBottomWidth);
+      // 胶囊在「内容宽 = 图标 + gap + 文字」时的高度：图标是最高的一件。
+      return {
+        iconDeclaredW: scs.width,
+        iconDeclaredH: scs.height,
+        boxH: +btn.getBoundingClientRect().height.toFixed(2),
+        innerH: +(btn.getBoundingClientRect().height - padY - borderY).toFixed(2),
+        varValue: getComputedStyle(document.documentElement).getPropertyValue('--trans-icon').trim()
+      };
+    });
+    check('iPhone: 译文键图标框走 --trans-icon 一个来源（不再两表各写 px）',
+      transIcon.varValue === '14px' &&
+      transIcon.iconDeclaredW === transIcon.varValue &&
+      transIcon.iconDeclaredH === transIcon.varValue,
+      JSON.stringify(transIcon));
+    // 图标框不得把胶囊顶出设计高度：24px 那版正是卡在这里。
+    // 胶囊高 = max(图标框, 文字行盒 18px) + 上下内边距 10 + 边框 2 ——
+    // 14px 的图标比 18px 的行盒矮，高度由行盒定；24px 则会反超行盒变成 36。
+    const pillExpectedH = Math.max(parseFloat(transIcon.iconDeclaredH), 18) + 10 + 2;
+    check('iPhone: 译文键图标框没把胶囊撑高（胶囊高由图标框与行盒里更高的那个定）',
+      Math.abs(roundState.trans.h - pillExpectedH) <= 1.5 && roundState.trans.h <= 34,
+      JSON.stringify({ pillH: roundState.trans.h, iconH: transIcon.iconDeclaredH, expected: pillExpectedH }));
     check('iPhone: 详情页译文键圆角为胶囊（border-radius 接近半高或 999px）',
       roundState.trans.radius === '999px' || parseFloat(roundState.trans.radius) * 2 >= roundState.trans.h,
       roundState.trans.radius);
@@ -672,7 +707,12 @@ function check(name, cond, extra) {
 
             overflows: prefixW + fullW > boxW + 1 ? 1 : 0,
 
-            trimmed: last.scrollWidth <= last.clientWidth + 1 ? 1 : 0,
+            // 摘句被自己的省略号盒裁住：内容宽 > 盒宽，才是「末尾省略」。
+            // （原判据写成 scrollWidth <= clientWidth，方向反了 ——
+            //   带 overflow:hidden + ellipsis 的元素，scrollWidth 报的正是
+            //   溢出到盒外的那段内容宽，必然大于 clientWidth；于是这条
+            //   只在文字**放得下**时才给 1，与断言名「走截断」正好相反。）
+            trimmed: last.scrollWidth > last.clientWidth + 1 ? 1 : 0,
             fullW: +fullW.toFixed(2),
             boxW: +boxW.toFixed(2)
           };
@@ -958,14 +998,27 @@ function check(name, cond, extra) {
       const main = item.querySelector('.item-main').getBoundingClientRect();
       const play = item.querySelector('.item-read').getBoundingClientRect();
       const recite = item.querySelector('.item-recite');
+
+      // 内容块 → 播放键这一段，并不只被「加入背诵」一颗键占着：
+      // 条目右侧的圆键是**一串**（「加入今日背」.item-daily ·「加入背诵」.item-recite · 播放），
+      // 每一颗都带 margin-right: 6px，按 DOM 顺序把这一段一节节吃掉。
+      // 这里按「内容块之后、播放键之前」的真实圆键逐个累加，而不是写死某一颗 ——
+      // 写死的那版在 .item-daily 落地后就与实际几何脱钩，成了必然红的断言。
+      const spanSeq = [...item.children].filter(el =>
+        el.classList.contains('item-daily') || el.classList.contains('item-recite'));
+      const middleW = spanSeq.reduce((a, el) =>
+        a + el.getBoundingClientRect().width +
+        (parseFloat(getComputedStyle(el).marginRight) || 0), 0);
       return {
         gap: +(play.left - main.right).toFixed(2),
+        middleW: +middleW.toFixed(2),
+        middleN: spanSeq.length,
         reciteW: +recite.getBoundingClientRect().width.toFixed(2),
         reciteMr: +(parseFloat(getComputedStyle(recite).marginRight) || 0).toFixed(2)
       };
     });
-    check('iPhone: 内容块 → 播放键这一段由「加入背诵」圆键占着（圆键盒宽 + 6px）',
-      Math.abs(gapState.gap - (gapState.reciteW + gapState.reciteMr)) <= 0.5,
+    check('iPhone: 内容块 → 播放键这一段由中间那串圆键占着（各圆键盒宽 + 各自 6px）',
+      Math.abs(gapState.gap - gapState.middleW) <= 0.5 && gapState.middleN >= 1,
       JSON.stringify(gapState));
 
     check('iPhone: 「加入背诵」键与播放键一样大（两枚并排圆键同径）',

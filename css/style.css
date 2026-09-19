@@ -37,6 +37,13 @@
 
   --item-btn: 36px;
   --item-icon: 16px;
+  /* 详情页「白话译文」那一排的胶囊朗读键里的图标框。
+     ⚠️ 必须只有一个来源：style.css 与 classic.css 都写了
+     `.trans-read .btn-icon svg`（同为 0-2-1，同特异性），而首页同时加载这两张表、
+     classic.css 在后 —— 谁把 px 写死谁就赢。此前 style.css 写 14px、
+     classic.css 写 24px，于是首页那颗 12px 的胶囊被 24px 的图标撑到 36px 高
+     （量出来的胶囊比设计高 2px）。改成两处都读这一个变量，加载顺序不再有意义。 */
+  --trans-icon: 14px;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --shadow: 0 2px 14px rgba(74, 58, 38, 0.10);
@@ -2728,7 +2735,7 @@ html, body {
   line-height: 1.5;
 }
 .trans-read .btn-icon { display: inline-flex; align-items: center; justify-content: center; flex: none; }
-.trans-read .btn-icon svg { display: block; width: 14px; height: 14px; margin: 0; }
+.trans-read .btn-icon svg { display: block; width: var(--trans-icon); height: var(--trans-icon); margin: 0; }
 
 .trans-read .btn-icon.pause-glyph { display: none; }
 .trans-read[data-on="1"] .btn-icon.play-glyph { display: none; }

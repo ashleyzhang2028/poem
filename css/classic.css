@@ -690,7 +690,7 @@ body.reader-open .dock { display: none; }
   line-height: 1.5;
 }
 .trans-read .btn-icon { display: inline-flex; align-items: center; justify-content: center; flex: none; }
-.trans-read .btn-icon svg { display: block; width: 24px; height: 24px; margin: 0; }
+.trans-read .btn-icon svg { display: block; width: var(--trans-icon); height: var(--trans-icon); margin: 0; }
 
 .trans-read .btn-icon.pause-glyph { display: none; }
 .trans-read[data-on="1"] .btn-icon.play-glyph { display: none; }
