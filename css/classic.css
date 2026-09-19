@@ -689,7 +689,17 @@ body.reader-open .dock { display: none; }
   flex: none;
   line-height: 1.5;
 }
-.trans-read .btn-icon { display: inline-flex; align-items: center; justify-content: center; flex: none; }
+.trans-read .btn-icon { display: inline-flex; align-items: center; justify-content: center; flex: none;
+  /* 图标框是 24px（见下一行），但**别让这 24px 决定胶囊的高度**。
+     24px 这个数是「三角描边 ≈ 1px」算出来的（换算表在本文件顶部：
+     图标框 × 描边值 ÷ 24 = 屏幕上的笔画），不能改小 —— 一改描边就变粗。
+     而 24px 的图标盒会把这颗 12px 字的胶囊顶成 36px 高，看着又高又胖。
+     所以这里给图标框一个 ≤ 文本行高的高度上限：图形本身用 `align-items:center`
+     在框内垂直居中（三角实际只占 11.8/24，居中后上下留白对称，看不出被裁），
+     胶囊的高度于是回到「内边距 + 文本行高」这一档。 */
+  height: 18px;
+  align-self: center;
+}
 .trans-read .btn-icon svg { display: block; width: 24px; height: 24px; margin: 0; }
 
 .trans-read .btn-icon.pause-glyph { display: none; }

@@ -672,7 +672,13 @@ function check(name, cond, extra) {
 
             overflows: prefixW + fullW > boxW + 1 ? 1 : 0,
 
-            trimmed: last.scrollWidth <= last.clientWidth + 1 ? 1 : 0,
+            // 「有没有被截断」= 文字的自然宽放不进盒宽。
+            // 早先这里写反了（scrollWidth <= clientWidth 才算 1），
+            // 于是「确实溢出了、确实截断了」反而判成失败。
+            // 摘句本身是 overflow:hidden + text-overflow:ellipsis + nowrap，
+            // 被 flex 压窄之后 scrollWidth（155）会**小于**自然宽（219），
+            // 所以判定要看「自然宽 > 盒宽」，而不是拿 scrollWidth 跟 clientWidth 比。
+            trimmed: (spans.length && fullW > last.getBoundingClientRect().width + 1) ? 1 : 0,
             fullW: +fullW.toFixed(2),
             boxW: +boxW.toFixed(2)
           };
@@ -958,14 +964,24 @@ function check(name, cond, extra) {
       const main = item.querySelector('.item-main').getBoundingClientRect();
       const play = item.querySelector('.item-read').getBoundingClientRect();
       const recite = item.querySelector('.item-recite');
+      // 内容块与播放键之间现在可能是**两颗**圆键：「加入今日背诵」＋「加入背诵」。
+      // 两颗按钮由不同的开关各自决定「在不在场」，所以这里按实际渲染出来的圆键
+      // 逐个累加（盒宽 + 各自 margin-right），而不是写死一颗的宽度。
+      const btnBox = el => el
+        ? el.getBoundingClientRect().width + (parseFloat(getComputedStyle(el).marginRight) || 0)
+        : 0;
+      const daily = item.querySelector('.item-daily');
       return {
         gap: +(play.left - main.right).toFixed(2),
         reciteW: +recite.getBoundingClientRect().width.toFixed(2),
-        reciteMr: +(parseFloat(getComputedStyle(recite).marginRight) || 0).toFixed(2)
+        reciteMr: +(parseFloat(getComputedStyle(recite).marginRight) || 0).toFixed(2),
+        dailyW: +btnBox(daily).toFixed(2),
+        reciteBoxW: +btnBox(recite).toFixed(2),
+        nBtn: [daily, recite].filter(Boolean).length
       };
     });
-    check('iPhone: 内容块 → 播放键这一段由「加入背诵」圆键占着（圆键盒宽 + 6px）',
-      Math.abs(gapState.gap - (gapState.reciteW + gapState.reciteMr)) <= 0.5,
+    check('iPhone: 内容块 → 播放键这一段由中间那几颗圆键占着（圆键盒宽 + 各自间距）',
+      Math.abs(gapState.gap - (gapState.dailyW + gapState.reciteBoxW)) <= 0.5,
       JSON.stringify(gapState));
 
     check('iPhone: 「加入背诵」键与播放键一样大（两枚并排圆键同径）',

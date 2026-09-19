@@ -9,7 +9,7 @@ const LOAD = [
   'data/poems-5.js', 'data/poems-6.js', 'data/poems-7.js', 'data/poems-8.js',
   'data/poems-9.js', 'data/poems-10.js', 'data/poems-11.js', 'data/poems-12.js',
   'data/index.js', 'data/poems-classic.js', 'data/poems-tangshi.js',
-  'data/poems-songci.js', 'data/poems-guwen.js', 'data/poems-zhaoming.js',
+  'data/poems-songci.js', 'data/poems-guwen.js', 'data/poems-zhaoming.js', 'data/poems-yuanqu.js',
   'data/site-index.js', 'data/works-map.js', 'data/works-index.js'
 ];
 
@@ -24,7 +24,7 @@ const byId = {};
 sandbox.SITE_INDEX.forEach(function (p) { byId[p.id] = p; });
 const WI = sandbox.WorksIndex;
 
-const FULL_BOOKS = ['zhaoming', 'guwen', 'songci', 'tangshi', 'classic'];
+const FULL_BOOKS = ['zhaoming', 'guwen', 'songci', 'tangshi', 'classic', 'yuanqu'];
 
 const prev = {};
 try {
@@ -120,8 +120,11 @@ const BOOK_FILES = [
   'data/poems-5.js', 'data/poems-6.js', 'data/poems-7.js', 'data/poems-8.js',
   'data/poems-9.js', 'data/poems-10.js', 'data/poems-11.js', 'data/poems-12.js',
   'data/poems-classic.js', 'data/poems-tangshi.js', 'data/poems-songci.js',
-  'data/poems-guwen.js', 'data/poems-zhaoming.js'
+  'data/poems-guwen.js', 'data/poems-zhaoming.js', 'data/poems-yuanqu.js'
 ];
+
+void fullBooksReport;
+
 const inlineCopies = [];
 BOOK_FILES.forEach(function (f) {
   const src = fs.readFileSync(path.join(ROOT, f), 'utf8');
@@ -136,14 +139,26 @@ BOOK_FILES.forEach(function (f) {
     }
   });
 });
-if (inlineCopies.length) {
-  console.error('✗ 有 ' + inlineCopies.length + ' 条条目一边带着 textRef、一边还内联着正文：');
-  inlineCopies.slice(0, 8).forEach(function (x) { console.error('    ' + x); });
+
+// 一次收归要跑两步：本脚本把正文收进主表 → apply-text-master.js 摘掉内联副本。
+// 所以「在册、本轮才收上来的条目」此刻**还带着**内联正文，是预期之中；
+// 只有「上一版主表里已经收过、这一次却还内联着」的才是真的存了两份。
+const stale = inlineCopies.filter(function (x) {
+  const id = x.split(' · ')[1];
+  const file = x.split(' · ')[0];
+  const prefix = file.replace('data/poems-', '').replace('.js', '');
+  return prev[prefix + '-' + id] || prev[id];
+});
+if (stale.length) {
+  console.error('✗ 有 ' + stale.length + ' 条条目一边带着 textRef、一边还内联着正文：');
+  stale.slice(0, 8).forEach(function (x) { console.error('    ' + x); });
   console.error('  这是「同一篇正文在磁盘上存了两份」—— 跑 scripts/apply-text-master.js 摘掉。');
   process.exit(1);
 }
-
-void fullBooksReport;
+if (inlineCopies.length) {
+  console.log('（' + inlineCopies.length + ' 条本轮新收的条目：正文收进主表后由 ' +
+    'scripts/apply-text-master.js 摘去内联副本）');
+}
 
 const NEAR_BY_KEY = {};
 
@@ -185,6 +200,42 @@ Object.keys(NEAR_BY_KEY).forEach(function (k) {
 });
 nearPairs.sort(function (a, b) { return a.entries[0] < b.entries[0] ? -1 : 1; });
 
+// 课内条目里也有「与集子同篇」的那些（《天净沙·秋思》课内 + 元曲、
+// 《山坡羊·骊山怀古》课内 + 元曲……）。上面那两轮按「跨集重复」已经收过；
+// 剩下的就是**课内独有**的条目 —— 它们不进主表（主表的边界是
+// 「同一篇落一份」，课内独苗本来就只有一份，由自己的数据文件持有）。
+// 所以这里只查一件事：同一条条目**不许**既被主表收着、又还内联着正文。
+const dupInline = [];
+master.forEach(function (m) {
+  (m.entries || []).forEach(function (eid) {
+    if (m.id === eid) return;
+    const book = eid.split('-')[0];
+    const files = book === 'poems'
+      ? ['data/poems-1.js', 'data/poems-2.js', 'data/poems-3.js', 'data/poems-4.js',
+         'data/poems-5.js', 'data/poems-6.js', 'data/poems-7.js', 'data/poems-8.js',
+         'data/poems-9.js', 'data/poems-10.js', 'data/poems-11.js', 'data/poems-12.js']
+      : ['data/poems-' + book + '.js'];
+    const localId = eid.slice(book.length + 1);
+    files.forEach(function (f) {
+      if (!fs.existsSync(path.join(ROOT, f))) return;
+      const src = fs.readFileSync(path.join(ROOT, f), 'utf8');
+      const hit = src.split(/\n(?=\s*\{)/).filter(function (blk) {
+        return new RegExp('id:\\s*"' + localId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '"').test(blk) &&
+          /^\s+text:\s*"/m.test(blk);
+      })[0];
+      if (hit) dupInline.push(eid + '（与主表 ' + m.id + ' 同时带正文）');
+    });
+  });
+});
+// ⚠️ 这一条**不拦**：它报的正是「主表刚收上来、副本还没摘」的那个中间态
+// （一次收归 = build-text-master 收 + apply-text-master 摘，两步）。
+// 谁要是只跑了前一步就提交，测试层的 canonical.test.js 会拦下来 ——
+// 那里查的是「磁盘上还剩几份」，比这里更准。
+if (dupInline.length) {
+  console.log('（' + dupInline.length + ' 条条目与主表那一份同时带着正文 —— ' +
+    '本轮刚收上来的，接着跑 scripts/apply-text-master.js 摘去内联副本）');
+}
+
 const empty = master.filter(function (m) { return !m.text; });
 if (empty.length) {
   console.error('✗ 有 ' + empty.length + ' 条主表条目的正文为空：' +
@@ -216,8 +267,8 @@ out += '   由引擎（js/reader-core.js）按 ' + BT + 'textRef' + BT + ' 到�
 out += '\n';
 out += '   ## 收归范围（已收齐）\n';
 out += '     ① 「在两部及以上集子里重复出现」的作品 —— 判重表自动收；\n';
-out += '     ② FULL_BOOKS 点名的五部集子里**其余全部单篇**（历史声明，\n';
-out += '        五部收齐后本表已按「凡在册且带正文的条目一律全收」执行）。\n';
+out += '     ② FULL_BOOKS 点名的六部集子里**其余全部单篇**（历史声明，\n';
+out += '        六部收齐后本表已按「凡在册且带正文的条目一律全收」执行）。\n';
 out += '   于是：在册却还带内联正文的条目即为异常（同一个脚本里两处断言会点名）。\n';
 out += '\n';
 out += '   ## 与另外两张表的分工\n';
@@ -296,7 +347,11 @@ out += '  var byId = null;\n';
 out += '  function map() {\n';
 out += '    if (byId) return byId;\n';
 out += '    byId = {};\n';
-out += '    (window.TEXT_MASTER || []).forEach(function (m) { if (m && m.id) byId[m.id] = m; });\n';
+out += '    (window.TEXT_MASTER || []).forEach(function (m) {\n';
+out += '      if (!m) return;\n';
+out += '      if (m.id) byId[m.id] = m;\n';
+out += '      (m.entries || []).forEach(function (e) { if (e && !byId[e]) byId[e] = m; });\n';
+out += '    });\n';
 out += '    return byId;\n';
 out += '  }\n';
 out += '\n';

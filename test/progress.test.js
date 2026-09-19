@@ -354,9 +354,9 @@ setTimeout(() => {
       chk(/if \(!books\.length\) return Promise\.resolve\(0\);/.test(appSrc4),
         '没有任何旧快照时不发请求（一部都不涉及就直接返回）');
       chk(/const BOOK_SOURCES = \{/.test(appSrc4) &&
-        ['classic', 'tangshi', 'songci', 'guwen', 'zhaoming'].every(b =>
+        ['classic', 'tangshi', 'songci', 'guwen', 'zhaoming', 'yuanqu'].every(b =>
           new RegExp(b + ':').test(appSrc4)),
-        '五部集子的数据文件与全局名写死在 BOOK_SOURCES（不 eval 任何东西）');
+        '七部集子的数据文件与全局名写死在 BOOK_SOURCES（不 eval 任何东西）');
       chk(/el\.src = src\.file/.test(appSrc4) && /document\.createElement\("script"\)/.test(appSrc4),
         '拉取走的是「新建 <script>」——与页面里那些 <script> 同一条路（同一个 SW 缓存）');
 

@@ -32,12 +32,12 @@ function loadSiteIndex() {
 const INDEX = loadSiteIndex();
 const items = C.order(C.pick(INDEX, "poems"), "poems");
 
-console.log("=== 一、内容：只导课内，六部集子**不做**整本导出 ===");
+console.log("=== 一、内容：只导课内，七部集子**不做**整本导出 ===");
 {
   eq(C.SCOPES.poems.books.join(","), "poems",
     "范围表里「课内」只认课内那一部（books: [\"poems\"]）");
 
-  ["classic", "tangshi", "songci", "guwen", "zhaoming"].forEach(b => {
+  ["classic", "tangshi", "songci", "guwen", "zhaoming", "yuanqu"].forEach(b => {
     chk(C.SCOPES.poems.books.indexOf(b) < 0,
       "范围表里**没有** " + b + "（集子不做一次性整本导出）");
   });
@@ -161,7 +161,7 @@ console.log("\n=== 七、范围表不认识的范围：一律空，不抛也不�
   chk(C.scopes().every(s => !!C.scopeInfo(s.id)), "scopes() 里每个 id 都查得到范围");
   eq(C.scopes().map(s => s.id).join(","), "custom,poems", "范围清单只有自选清单与课内两项");
 
-  ["classic", "tangshi", "songci", "guwen", "zhaoming"].forEach(b => {
+  ["classic", "tangshi", "songci", "guwen", "zhaoming", "yuanqu"].forEach(b => {
     chk(!C.scopeInfo(b), "范围表里没有 " + b + "（没有「导出这一部」这个选项）");
   });
 }

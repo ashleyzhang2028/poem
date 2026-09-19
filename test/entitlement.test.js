@@ -25,7 +25,7 @@ console.log('=== 一、免费不残缺：今天能用的，free 登录后一键�
     chk(E.can(c, free).ok, 'free 可用 ' + c + '（' + E.cap(c).name + '）');
   });
   chk(E.can('recite.basic', guest).ok, '游客也能背诵（打开即用，不被登录拦）');
-  chk(E.can('library.all', guest).ok, '游客也能读六部集子');
+  chk(E.can('library.all', guest).ok, '游客也能读七部集子');
   chk(E.can('pinyin.helper', guest).ok, '游客也能用注音');
 
   // Issue #229 第二轮（用户原话）：「层级页面 进度导出 功能改为登录可用，
@@ -446,7 +446,7 @@ console.log('\n=== 十二、每条付费能力都得**真的有人管**（不许
   const EXEMPT = {
 
     'recite.basic': '免费档：打开即用，没有需要拦的地方（第一节断言钉着）',
-    'library.all': '免费档：六部集子全文，一律可读',
+    'library.all': '免费档：七部集子全文，一律可读',
     'pinyin.helper': '免费档：注音是阅读辅助，不做门槛',
     'export.progress': '免费档但要登录（Issue #229）：闸在 js/settings.js 的 #btn-export',
     'read.aloud': '语音播放：闸在 js/speech.js 的 gate()（有专门的第九节验它）',

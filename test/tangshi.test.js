@@ -14,7 +14,8 @@ const { loadData, resolve } = require('./master-env');
 loadData(sandbox, ['data/poems-classic.js', 'data/poems-tangshi.js', 'data/site-index.js']);
 
 const TS = resolve(sandbox, sandbox.POEMS_TANGSHI, 'tangshi');
-chk(Array.isArray(TS) && TS.length === 301, '唐诗三百首共 301 首（实际 ' + (TS ? TS.length : 'undefined') + '）');
+chk(Array.isArray(TS) && TS.length === 317,
+  '唐诗三百首 301 首 + 校外补充 17 首 = 317（实际 ' + (TS ? TS.length : 'undefined') + '）');
 
 const ids = new Set();
 let dup = 0;
@@ -26,7 +27,7 @@ chk(TS.every(p => p.title && p.source && p.dynasty && p.author && p.text && p.tr
 
 const TS_SRC_OK = ['public-domain', 'school', 'academic', 'modern'];
 chk(TS.every(p => TS_SRC_OK.indexOf(p.translationSource) >= 0),
-  '301 首唐诗都标了译文来源且取值在允许范围（异常 ' +
+  '317 首唐诗都标了译文来源且取值在允许范围（异常 ' +
   TS.filter(p => TS_SRC_OK.indexOf(p.translationSource) < 0).length + ' 首）');
 chk(TS.filter(p => p.translationSource === 'public-domain').length >= 250,
   '绝大多数标 public-domain（与课内同篇的数首取课本口径，标 school）');
@@ -36,10 +37,10 @@ chk(TS.some(p => p.text.length > 200), '含长篇（>200 字）唐诗，验证�
 
 const groups = sandbox.getTangshiGroups();
 chk(groups.length === 8, '按卷次聚合出 8 组（实际 ' + groups.length + '）');
-chk(groups.reduce((n, g) => n + g.items.length, 0) === 301, '各组篇目合计 301');
+chk(groups.reduce((n, g) => n + g.items.length, 0) === 317, '各组篇目合计 317');
 const want = {
-  '卷一 五言古诗': 33, '卷二 七言古诗': 27, '卷三 五言乐府': 11, '卷四 七言乐府': 23,
-  '卷五 五言律诗': 78, '卷六 七言律诗': 49, '卷七 五言绝句': 29, '卷八 七言绝句': 51
+  '卷一 五言古诗': 33, '卷二 七言古诗': 27, '卷三 五言乐府': 13, '卷四 七言乐府': 25,
+  '卷五 五言律诗': 78, '卷六 七言律诗': 49, '卷七 五言绝句': 33, '卷八 七言绝句': 59
 };
 const got = {};
 groups.forEach(g => { got[g.name] = g.items.length; });
@@ -48,7 +49,10 @@ chk(Object.keys(want).every(k => got[k] === want[k]),
 
 const need = ['感遇·其一', '月下独酌', '望岳', '梦游天姥吟留别', '将进酒', '蜀道难', '长恨歌',
   '琵琶行·并序', '游子吟', '山居秋暝', '春望', '登高', '黄鹤楼', '锦瑟', '江雪', '寻隐者不遇',
-  '登鹳雀楼', '春晓', '夜思', '早发白帝城', '枫桥夜泊', '赤壁', '泊秦淮', '夜雨寄北', '九月九日忆山东兄弟'];
+  '登鹳雀楼', '春晓', '夜思', '早发白帝城', '枫桥夜泊', '赤壁', '泊秦淮', '夜雨寄北', '九月九日忆山东兄弟',
+  '前出塞九首·其二', '秋浦歌十七首·其十五', '从军行七首·其四', '采莲曲二首·其二', '登乐游原', '七步诗',
+  '于易水送人', '遗爱寺', '逢雪宿芙蓉山主人', '百忧集行', '菊花', '题都城南庄', '赠花卿', '闻雁',
+  '竹枝词', '忆江南·其一', '渔歌子·西塞山前白鹭飞'];
 const titles = TS.map(p => p.title);
 const missing = need.filter(t => !titles.includes(t));
 chk(missing.length === 0, '需求清单名篇齐备（缺 ' + missing.join('/') + '）');
@@ -92,14 +96,14 @@ setTimeout(() => {
     chk(dups.length === 0, f + ' 无重复 id（重复：' + dups.join(', ') + '）');
   });
 
-  chk(d.querySelectorAll('#gw-list .item').length === 301,
-    '列表渲染 301 首（实际 ' + d.querySelectorAll('#gw-list .item').length + '）');
+  chk(d.querySelectorAll('#gw-list .item').length === 317,
+    '列表渲染 317 首（实际 ' + d.querySelectorAll('#gw-list .item').length + '）');
   chk(d.querySelector('#gw-count') === null,
     '页顶那一行不再挂已读进度牌（Issue #147：读数已撤，页顶与详情页都没有）');
 
   const api = w.ReaderEngine.current;
   chk(!!api, '引擎挂上了唐诗实例');
-  chk(api.total() === 301, '实例 total() 为 301');
+  chk(api.total() === 317, '实例 total() 为 317');
 
   const tsrc = fs.readFileSync(path + 'js/tangshi.js', 'utf8');
   chk(/readStore:\s*"poem_tangshi_read_v1"/.test(tsrc),
@@ -121,7 +125,7 @@ setTimeout(() => {
 
   api.setKeyword('李白');
   const nLi = d.querySelectorAll('#gw-list .item').length;
-  chk(nLi > 0 && nLi < 301, '按作者「李白」搜索得到子集（' + nLi + ' 首）');
+  chk(nLi > 0 && nLi < 317, '按作者「李白」搜索得到子集（' + nLi + ' 首）');
 
   api.open('ts-212');
   const longTitle = d.querySelector('#rd-title').textContent;

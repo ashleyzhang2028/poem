@@ -19,7 +19,7 @@ loadData(sb, [
   'data/poems-1.js', 'data/poems-2.js', 'data/poems-3.js', 'data/poems-4.js', 'data/poems-5.js',
   'data/poems-6.js', 'data/poems-7.js', 'data/poems-8.js', 'data/poems-9.js', 'data/poems-10.js',
   'data/poems-11.js', 'data/poems-12.js', 'data/index.js', 'data/poems-classic.js',
-  'data/poems-tangshi.js', 'data/poems-songci.js', 'data/poems-guwen.js', 'data/poems-zhaoming.js',
+  'data/poems-tangshi.js', 'data/poems-songci.js', 'data/poems-guwen.js', 'data/poems-zhaoming.js', 'data/poems-yuanqu.js',
   'data/site-index.js', 'data/works-map.js', 'data/works-index.js',
   'data/canonical-texts.js'
 ]);
@@ -30,14 +30,14 @@ const WI = sb.WorksIndex;
 const byId = {};
 sb.SITE_INDEX.forEach(p => { byId[p.id] = p; });
 
-const FULL_BOOKS = ['zhaoming', 'guwen', 'songci', 'tangshi', 'classic'];
+const FULL_BOOKS = ['zhaoming', 'guwen', 'songci', 'tangshi', 'classic', 'yuanqu'];
 const FULL_BOOK_SET = {};
 FULL_BOOKS.forEach(b => { FULL_BOOK_SET[b] = true; });
 
 const multiEntries = MASTER.filter(m => m.entries.length >= 2);
 const singleEntries = MASTER.filter(m => m.entries.length === 1);
-chk(multiEntries.length === 60,
-  '主表里有 60 条「跨集重复」的作品（实际 ' + multiEntries.length + '）');
+chk(multiEntries.length === 68,
+  '主表里有 68 条「跨集重复」的作品（实际 ' + multiEntries.length + '）');
 const fullExpected = [];
 FULL_BOOKS.forEach(book => {
   sb.SITE_INDEX.forEach(p => {
@@ -114,7 +114,7 @@ MASTER.forEach(m => {
   if (texts.some(x => x.t !== first)) mismatch.push(m.id);
 });
 chk(mismatch.length === 0,
-  '60 篇作品在六部集子里读到的正文逐字相同（不一致：' + (mismatch.slice(0, 5).join('、') || '无') + '）');
+  '60 篇作品在七部集子里读到的正文逐字相同（不一致：' + (mismatch.slice(0, 5).join('、') || '无') + '）');
 
 const masterFlat = [];
 MASTER.forEach(m => (m.entries || []).forEach(e => masterFlat.push(e)));
@@ -136,8 +136,8 @@ const uncovered = dupEntries.filter(e => !covered[e]);
 chk(uncovered.length === 0,
   '「同篇判重键下有两条及以上」的条目共 ' + dupEntries.length + ' 条，全部收进了主表（未收：' +
   (uncovered.slice(0, 6).join('、') || '无') + '）');
-chk(dupEntries.length === 120,
-  '重复条目恰为 120 条（60 篇 × 2；实际 ' + dupEntries.length + '）');
+chk(dupEntries.length === 137,
+  '重复条目恰为 137 条（68 篇：多数 × 2，少数 × 3；实际 ' + dupEntries.length + '）');
 
 const expectFlat = dupEntries.slice();
 fullExpected.forEach(id => { if (expectFlat.indexOf(id) < 0) expectFlat.push(id); });
@@ -160,7 +160,7 @@ const inScope = sb.SITE_INDEX.filter(p => p && !p.isBook && p.id &&
   (p.text || p.translation) && FULL_BOOK_SET[p.book]);
 const missingFromMaster = inScope.filter(p => !masterFlat.some(e => e === p.id));
 chk(missingFromMaster.length === 0,
-  '清单点名的五部里，有正文的 ' + inScope.length + ' 条条目全部登记进了主表（未登记：' +
+  '清单点名的六部里，有正文的 ' + inScope.length + ' 条条目全部登记进了主表（未登记：' +
   (missingFromMaster.slice(0, 6).map(p => p.id).join('、') || '无') + '）');
 
 const keNei = sb.SITE_INDEX.filter(p => p && !p.isBook && p.book === 'poems' && p.id);
@@ -173,7 +173,7 @@ chk(masterFlat.every(id => byId[id] && !byId[id].isBook),
   '主表登记的每一条都是站点索引里的真实篇目（不是书本身、不是拼错的 id）');
 
 chk(FULL_BOOKS.every(b => sb.SITE_INDEX.some(p => p.book === b)),
-  'FULL_BOOKS 点名的五部在站点索引里都在册（实际：' +
+  'FULL_BOOKS 点名的六部在站点索引里都在册（实际：' +
   FULL_BOOKS.filter(b => !sb.SITE_INDEX.some(p => p.book === b)).join('、') + '）');
 
 const BOOK_VARS = {
@@ -184,7 +184,8 @@ const BOOK_VARS = {
   tangshi: ['data/poems-tangshi.js'],
   songci: ['data/poems-songci.js'],
   guwen: ['data/poems-guwen.js'],
-  zhaoming: ['data/poems-zhaoming.js']
+  zhaoming: ['data/poems-zhaoming.js'],
+  yuanqu: ['data/poems-yuanqu.js']
 };
 
 const stripped = [];
@@ -209,16 +210,18 @@ Object.keys(BOOK_VARS).forEach(book => {
   });
 });
 
+// 口径没变：**主表登记过的每一条**都要退化成只存归属（textRef），
+// 正文只在主表那一份。主条目自己也带 textRef（指向自己）——
+// 第一层「一份正文」不是靠「哪个文件存着」表达的，而是靠「只有主表存着」。
 const expectStripped = masterFlat.length;
 const strippedSet = {};
 stripped.forEach(k => { strippedSet[k] = 1; });
 const notStripped = masterFlat.filter(id => {
   const book = Object.keys(BOOK_VARS).filter(b => id.indexOf(b + '-') === 0)[0];
-
   return !book || !strippedSet[book + ':' + id.slice(book.length + 1)];
 });
 chk(stripped.length === expectStripped && notStripped.length === 0,
-  '主表登记的 ' + expectStripped + ' 条条目都已退化成只存归属（textRef；实际 ' +
+  '主表登记的 ' + expectStripped + ' 条非主条目都已退化成只存归属（textRef；实际 ' +
   stripped.length + '）' +
   (notStripped.length ? '，未摘：' + notStripped.slice(0, 8).join('、') : ''));
 chk(leftover.length === 0,

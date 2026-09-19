@@ -8,7 +8,8 @@
     { id: "songci", name: "宋词三百首", page: "/songci/", varName: "POEMS_SONGCI", unit: "首" },
     { id: "guwen", name: "古文观止", page: "/guwen/", varName: "POEMS_GUWEN", unit: "篇" },
 
-    { id: "zhaoming", name: "昭明文选", page: "/zhaoming/", varName: "POEMS_ZHAOMING", unit: "篇" }
+    { id: "zhaoming", name: "昭明文选", page: "/zhaoming/", varName: "POEMS_ZHAOMING", unit: "篇" },
+    { id: "yuanqu", name: "元曲三百首", page: "/yuanqu/", varName: "POEMS_YUANQU", unit: "首" }
   ];
 
   function buildSiteIndex(extra) {
@@ -23,7 +24,8 @@
         var p = (typeof window.masterTextOf === "function")
           ? window.masterTextOf(raw, b.id) : raw;
 
-        if ((b.id === "guwen" || b.id === "zhaoming") && (!p.text || !p.translation)) return;
+        if ((b.id === "guwen" || b.id === "yuanqu" || b.id === "zhaoming") &&
+            (!p.text || !p.translation)) return;
         out.push({
           id: b.id + "-" + p.id,
           originId: p.id,
