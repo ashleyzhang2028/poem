@@ -20,7 +20,7 @@
 
   var SCROLL_HIDE_DELAY = 140;
 
-  var EMPTY_IDLE = "输入篇名、作者或诗句，即可搜遍七部集子";
+  var EMPTY_IDLE = "输入篇名、作者或诗句，即可搜遍九部集子";
   var EMPTY_MISS = "没有找到匹配的篇目";
 
   var api = null;

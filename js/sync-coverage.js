@@ -107,6 +107,16 @@
       why: "元曲三百首已读 —— 与其余六部同一族（Issue #243 本次补上整族）。"
     },
     {
+      key: "poem_yuefu_read_v1", sync: true, row: "reads:poem_yuefu_read_v1",
+      merge: "并集", cap: "每行 ≤ 2000 篇",
+      why: "乐府诗选已读 —— 与其余各部同一族（2026-09-19 新增第八部）。"
+    },
+    {
+      key: "poem_jinxiandai_read_v1", sync: true, row: "reads:poem_jinxiandai_read_v1",
+      merge: "并集", cap: "每行 ≤ 2000 篇",
+      why: "近现代诗词已读 —— 与其余各部同一族（2026-09-19 新增第九部）。"
+    },
+    {
       key: "poem_daily_extra_v1", sync: true, row: "daily_extra:v1",
       merge: "**按天并集**（日期相同才并；日期不同听本机的）",
       cap: "≤ 20 篇、每篇快照正文各截 20000 字",
