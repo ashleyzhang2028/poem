@@ -40,6 +40,13 @@ function boot(file, url, seed) {
     base: 'https://local.test' + url
   });
   const w = dom.window;
+  // 三张纸手动塞进 head：jsdom 不会自己去取 <link>，不塞的话
+  // 「.today-search 里到底挂了哪几个类」这类断言量不到真类名与真规则。
+  ['css/style.css', 'css/classic.css', 'css/account.css'].forEach(f => {
+    const st = w.document.createElement('style');
+    st.textContent = read(f);
+    w.document.head.appendChild(st);
+  });
   if (seed) Object.keys(seed).forEach(k => w.localStorage.setItem(k, seed[k]));
   w.scrollTo = function () {};
   const scripts = html.match(/<script src="([^"]+)"><\/script>/g)
@@ -140,14 +147,14 @@ console.log('\n=== 二、跨过 0 点：旧的那一份作废，且不留垃圾 
   eq(D.today(), todayStr(), 'today() 的判据与首页那份计划同源（本地时间的年-月-日）');
 }
 
-console.log('\n=== 三、首页：顶上那一条搜索下拉，点一下 5 首变 6 首 ===');
+console.log('\n=== 三、首页：顶上的「我要加背」，点一下 5 首变 6 首 ===');
 {
   const w = boot('index.html', '/');
   await w.__ready;
   await sleep(250);
   const d = w.document;
 
-  chk(!!d.querySelector('#today-search'), '今日背诵卡与列表之间有搜索输入框');
+  chk(!!d.querySelector('#today-search'), '今日背诵卡与列表之间有「我要加背」那个输入框');
   chk(!!d.querySelector('#today-suggest'), '有候选下拉容器');
   chk(!!d.querySelector('#today-suggest').closest('.search-wrap'),
     '下拉挂在自己的输入框上（与搜索页同一套 .suggest）');
@@ -157,6 +164,59 @@ console.log('\n=== 三、首页：顶上那一条搜索下拉，点一下 5 首�
     '首页也加载 css/classic.css（搜索框 / 候选下拉的样式只有那一份，不另抄一套）');
   chk(/id="today-search-hero"[\s\S]*id="today-suggest"[\s\S]*id="today-list"/.test(homeHtml),
     '三者的先后：搜索条 → 下拉 → 今日列表');
+
+  // ---- Issue #229：它**不是**搜索页那一枚 hero ------------------------------
+  // 用户原话：「首页今日加背搜索框上下空那么大没必要了吧，又不是搜索页，
+  // 那个是仿谷歌设计才那么做的。首页今日加背搜索框按正常卡片间间距排版。」
+  //
+  // ⚠️ jsdom 不做 var() 代换（`height: var(--toolbar-h)` 原样吐回来），
+  // 所以这里量不了「画出来多高」。能真量的是两件事：
+  //   ① 类名与结构 —— hero 那套是靠 .search-hero / .search-toolbar 两个类挂上去的，
+  //      没有这两个类，就没有「一屏高度 + 居中 + 绝对定位」；
+  //   ② 规则本身 —— 把两条规则的声明文字直接对比（不含 var 的）：
+  //      margin-top 是不是 0、margin-bottom 是不是等于卡片自己的块距。
+  chk(!/class="[^"]*search-hero/.test(homeHtml),
+    '首页那一条**不挂** .search-hero（整屏居中 + 聚焦上浮是搜索页专属）');
+  const hero = d.querySelector('#today-search-hero');
+  chk(hero && !hero.classList.contains('search-hero'),
+    'DOM 上也没有 .search-hero 这个类');
+  chk(!!hero.querySelector('.toolbar') &&
+    !hero.querySelector('.toolbar').classList.contains('search-toolbar'),
+    '里头用的是通版 .toolbar，不是搜索页专属的 .search-toolbar（绝对定位那个）');
+
+  {
+    const cssText = read('css/style.css');
+    // 取出 .today-search 那一条（到下一个选择器为止）
+    const block = cssText.slice(cssText.indexOf('.today-search {'));
+    const heroBlock = block.slice(0, block.indexOf('}'));
+    chk(!/height\s*:\s*[^;]*vh/.test(heroBlock) && !/min-height\s*:\s*[^;]*vh/.test(heroBlock),
+      '这一条的高度里没有 vh 算式（hero 那套的高度才是「一屏减去 chrome」）');
+    chk(/height\s*:\s*auto/.test(heroBlock), '高度由内容定（height: auto）');
+    chk(/margin\s*:\s*0\s+0\s+var\(--block-gap/.test(heroBlock),
+      '上下不留额外空白：上边距归零，下边距就是那一个通版块距');
+    chk(!/\.today-search\s+\.search-toolbar/.test(cssText) &&
+      !/\.search-toolbar\s*\{[^}]*position:\s*static/.test(cssText),
+      '不再靠「把 .search-toolbar 的绝对定位复位回去」来收场 —— 那个类压根不用了');
+  }
+
+  {
+    // 高度这一条：hero 的 52px 与首页通版的 40px 是两个数，
+    // 钉住本页用的是后者 —— 它比搜索页矮一号，不是那一页的主角。
+    const rules = read('css/style.css');
+    const m = /[^}]*\.today-search \.toolbar \{[^}]*--toolbar-h:\s*([^;]+);/.exec(rules);
+    chk(!!m && m[1].trim() === '40px',
+      '工具条高度就是通版的 40px（不是搜索页 hero 的 52px）');
+    chk(/\.toolbar \{\s*\n\s*--toolbar-h:\s*40px/.test(rules),
+      '40px 这个数是 .toolbar 的默认值同款（不是这里另写一个数）');
+  }
+
+  // ---- Issue #229：文案改成「我要加背」 ------------------------------------
+  eq(d.querySelector('#today-search').placeholder, '我要加背',
+    '搜索框的提示语是「我要加背」（不再是「再找一首，加进今天要背的」）');
+  chk(homeHtml.indexOf('再找一首') < 0, '首页源码里不再留「再找一首」');
+  const cssText = read('css/style.css');
+  chk(cssText.indexOf('再找一首') < 0,
+    'css 注释里那处旧文案也一并换掉（注释里的名字错了，下一个人就会照错的理解改）');
 
   const before = d.querySelectorAll('#today-list .item').length;
   eq(before, 5, '默认今日背诵 5 首');
