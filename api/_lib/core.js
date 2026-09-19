@@ -1162,6 +1162,71 @@ function childId(raw) {
 
 var FAMILY_ROW_ID = "family:v1";
 
+// 「今日加背」那一行（Issue #243 后续）：它**也走 progress 这张表**，
+// 与「自选集合」同一套写法 —— 不给它开新表。
+//
+// ⚠️ 上一轮（同一天早些时候）的口径是「加背只存本机、不上云」。用户当天
+//    改了口径（「云同步功能不能添加这些吗？」），于是这一行就是为它补的。
+//
+// 形状与自选集合那份**逐字同源**：
+//   { v, date:"2026-9-19", updatedAt, deleted, items:[ {id, wid, entryId, snap, at} ] }
+//
+// 三条守卫（改一条都有一层测试直接红）：
+//   ① `items` **必须带日期**。读到日期不是今天，客户端就回空并清盘 ——
+//      「明天自动归零」靠的是这一条，不是服务端半夜跑一个什么任务。
+//   ② 上限与客户端一致（参考 js/daily-extra.js 的 MAX）—— 它是同步白名单
+//      的一员，任人往里灌超长数组就会撑爆 jsonb。
+//   ③ 不属于任何账号域设置，所以没有邮箱 / 昵称这类字段要过滤；但正文与译文
+//      是**别人写过的文本**，照样要截断（长度上限与自选集合同一档）。
+var DAILY_EXTRA_ROW_ID = "daily_extra:v1";
+
+function refText(v, max) {
+  var s = String(v == null ? "" : v);
+  return s.length > max ? s.slice(0, max) : s;
+}
+
+function sanitizeDailyExtra(p) {
+  var out = { v: 1, date: refText(p && p.date, 32), updatedAt: Number((p && p.updatedAt) || 0) };
+  out.updatedAt = isFinite(out.updatedAt) && out.updatedAt > 0 ? Math.round(out.updatedAt) : 0;
+  out.deleted = (p && p.deleted) ? 1 : 0;
+
+  var list = (p && Array.isArray(p.items)) ? p.items.slice(0, DAILY_EXTRA_MAX) : [];
+  out.items = [];
+  list.forEach(function (it) {
+    if (!it || typeof it !== "object") return;
+    var pid = refText(it.id, 80).trim();
+    if (!pid) return;
+    var snap = (it.snap && typeof it.snap === "object") ? it.snap : {};
+    out.items.push({
+      id: pid,
+      wid: refText(it.wid || pid, 80).trim() || pid,
+      entryId: refText(it.entryId || pid, 80).trim() || pid,
+      at: Number(it.at) > 0 ? Math.round(Number(it.at)) : 0,
+      snap: {
+        title: refText(snap.title, 120),
+        author: refText(snap.author, 60),
+        authorName: refText(snap.authorName, 60),
+        dynasty: refText(snap.dynasty, 30),
+        source: refText(snap.source, 120),
+        selection: refText(snap.selection, 120),
+        book: refText(snap.book, 60),
+        bookName: refText(snap.bookName, 120),
+        page: refText(snap.page, 60),
+        gradeGroup: refText(snap.gradeGroup, 60),
+        text: refText(snap.text, 20000),
+        translation: refText(snap.translation, 20000),
+        translationSource: refText(snap.translationSource, 200)
+      }
+    });
+    var last = out.items[out.items.length - 1];
+    if (typeof snap.grade === "number" && isFinite(snap.grade)) last.snap.grade = Math.round(snap.grade);
+    if (typeof snap.term === "number" && isFinite(snap.term)) last.snap.term = Math.round(snap.term);
+  });
+  return out;
+}
+
+var DAILY_EXTRA_MAX = 20;
+
 function exportAllProgress(deps, uid) {
   var store = deps.store;
   function one(child) {
@@ -1276,6 +1341,7 @@ function sanitizePayload(p, poemId) {
   if (!p || typeof p !== "object") return out;
 
   if (poemId === "family:v1") return sanitizeFamily(p);
+  if (poemId === DAILY_EXTRA_ROW_ID) return sanitizeDailyExtra(p);
 
   if (typeof p.level === "number") out.level = Math.max(0, Math.min(99, Math.round(p.level)));
   if (typeof p.level === "number") out.level = Math.max(0, Math.min(99, Math.round(p.level)));
@@ -1631,6 +1697,9 @@ module.exports = {
   sanitizeFamily: sanitizeFamily,
   sanitizeImgUrl: sanitizeImgUrl,
   FAMILY_ROW_ID: FAMILY_ROW_ID,
+  DAILY_EXTRA_ROW_ID: DAILY_EXTRA_ROW_ID,
+  DAILY_EXTRA_MAX: DAILY_EXTRA_MAX,
+  sanitizeDailyExtra: sanitizeDailyExtra,
   accountDelete: accountDelete,
 
   register: register,
