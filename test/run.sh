@@ -236,6 +236,14 @@ echo "=== 正文收归主表 / 孤儿进度清理（Issue #69 收尾）==="
 node test/canonical.test.js
 
 echo ""
+echo "=== 正文不许被截断（Issue #243）==="
+echo "    用户报《滕王阁序》正文里夹着一串「……」，中段不见了 —— 查下来是"
+echo "    初高中一部长篇当初只录了残篇。这一层守着：课内 + 七部集子的正文与"
+echo "    译文里除「真的省略号」（《我爱这土地》原诗的省略号，逐条登记）外，"
+echo "    一律不许出现「……」；课内每一条取回主表后都非空、有正文、有译文。"
+node test/truncation.test.js
+
+echo ""
 echo "=== 布局避让（弹层不被底部导航压住）==="
 node test/layout.test.js
 

@@ -44,7 +44,7 @@ console.log("=== 一、内容：只导课内，七部集子**不做**整本导�
   const books = {};
   items.forEach(p => { books[p.book] = (books[p.book] || 0) + 1; });
   eq(Object.keys(books).join(","), "poems", "导出条目只来自课内那一部");
-  eq(items.length, 261, "课内 261 首一篇不少（实际 " + items.length + "）");
+  eq(items.length, 251, "课内 251 首一篇不少（实际 " + items.length + "）");
   chk(items.every(p => !!p.text), "每一首都有正文");
 
   const other = INDEX.filter(p => !p.isBook && p.book !== "poems");
@@ -135,7 +135,7 @@ console.log("\n=== 五、没有正文的篇目：不写成空条，且如实计�
   eq(r.count, 3, "只有 3 篇写进文件");
   eq(r.skipped, 2, "如实报出 2 篇没有正文（不悄悄少一篇）");
   chk(r.text.indexOf("空篇") < 0, "没有正文的篇目**不写成一条只有题名的空条**");
-  eq(C.build({ items: items, scope: "poems" }).skipped, 0, "课内 261 首都有正文（skipped = 0）");
+  eq(C.build({ items: items, scope: "poems" }).skipped, 0, "课内 251 首都有正文（skipped = 0）");
 }
 
 console.log("\n=== 六、文件头与文件名：说清这是什么、什么时候导的 ===");
@@ -143,7 +143,7 @@ console.log("\n=== 六、文件头与文件名：说清这是什么、什么时�
   const r = C.build({ items: items, scope: "poems", now: new Date("2026-09-16T10:00:00") });
   const head = r.text.split("\n").slice(0, 3).join("\n");
   has(head, "课内诗词", "文件头第一行写明导出的是什么");
-  has(head, "261", "文件头写明共 261 首");
+  has(head, "251", "文件头写明共 251 首");
   has(head, "2026-09-16", "文件头写明导出日期");
 
   chk(C.build({ items: items, scope: "poems" }).text.indexOf("导出于") < 0,

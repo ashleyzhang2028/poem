@@ -218,7 +218,7 @@ const probe = openPage();
 
 setTimeout(() => {
   const all = probe.window.POEMS_ALL;
-  chk(all && all.length === 261, '课内 261 首批入（实际 ' + (all ? all.length : 'undefined') + '）');
+  chk(all && all.length === 251, '课内 251 首批入（实际 ' + (all ? all.length : 'undefined') + '）');
 
   const progress = {};
   progress[all[0].id] = { level: 0, learned: true, nextReviewAt: Date.now() - 2 * DAY2,
@@ -316,8 +316,8 @@ setTimeout(() => {
     chk(stats.length === 4, '总览四格（已学 / 待复习 / 平均掌握 / 尚未学过）');
     chk(d.querySelector('#progress-stats').textContent.indexOf('已学') >= 0,
       '四格里第一格是「已学」');
-    chk(d.querySelector('#progress-stats').textContent.indexOf('257') >= 0,
-      '「尚未学过」= 261 - 4 = 257（实际那一格：' +
+    chk(d.querySelector('#progress-stats').textContent.indexOf('247') >= 0,
+      '「尚未学过」= 251 - 4 = 247（实际那一格：' +
       d.querySelectorAll('#progress-stats .stat')[3].textContent + '）');
 
     chk(w2.localStorage.getItem('poem_recite_progress_v1') === JSON.stringify(progress),

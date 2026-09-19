@@ -1,4 +1,4 @@
-const CACHE_NAME = "poem-app-v177";
+const CACHE_NAME = "poem-app-v178";
 
 const PRECACHE = [
   "./",
