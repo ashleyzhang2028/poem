@@ -55,6 +55,15 @@
       page: "/zhaoming/",
       unit: "篇",
       desc: "六十卷按赋、诗、骚、七等三十九类文体编排，现存最早的诗文总集"
+    },
+    {
+      id: "yuanqu",
+      name: "元曲三百首",
+      book: "YuanquBook",
+      short: "元曲",
+      page: "/yuanqu/",
+      unit: "首",
+      desc: "小令与套数按宫调编排，质朴自然，曲白相生"
     }
   ];
 
@@ -74,7 +83,8 @@
       tangshi: "POEMS_TANGSHI",
       songci: "POEMS_SONGCI",
       guwen: "POEMS_GUWEN",
-      zhaoming: "POEMS_ZHAOMING"
+      zhaoming: "POEMS_ZHAOMING",
+      yuanqu: "POEMS_YUANQU"
     };
     var key = VARS[bookId];
     var list = key ? window[key] : null;

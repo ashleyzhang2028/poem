@@ -20,15 +20,13 @@ window.POEMS_6 = [
     translationSource: "school",
   },
   {
+    textRef: "poems-xx6-03",
     id: "xx6-03",
     title: "西江月·夜行黄沙道中",
     author: "辛弃疾",
     dynasty: "宋",
     grade: 6,
     term: 1,
-    text: "明月别枝惊鹊，清风半夜鸣蝉。\n稻花香里说丰年，听取蛙声一片。\n七八个星天外，两三点雨山前。\n旧时茅店社林边，路转溪桥忽见。",
-    translation: "明月移到树枝上，惊起了栖息的喜鹊；清凉的夜风里传来蝉的鸣叫。稻花飘香，人们谈论着丰收的年景，耳边响起一片蛙声。天边挂着七八颗星星，山前落下两三点雨。往日社庙树林边的茅草店，拐过溪桥忽然就出现在眼前。",
-    translationSource: "school",
   },
   {
     id: "xx6-04",
@@ -199,15 +197,13 @@ window.POEMS_6 = [
     translationSource: "school",
   },
   {
+    textRef: "poems-xx6-20",
     id: "xx6-20",
     title: "天净沙·秋思",
     author: "马致远",
     dynasty: "元",
     grade: 6,
     term: 2,
-    text: "枯藤老树昏鸦，\n小桥流水人家，\n古道西风瘦马。\n夕阳西下，\n断肠人在天涯。",
-    translation: "枯藤缠绕着老树，树上落着黄昏的乌鸦；小桥下流水潺潺，旁边是几户人家；古老的道路上西风萧瑟，一匹瘦马缓缓前行。夕阳西沉，极度伤心的游子还在天涯漂泊。",
-    translationSource: "school",
   },
   {
     id: "xx6-21",

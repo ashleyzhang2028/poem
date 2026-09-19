@@ -36,7 +36,8 @@ const BOOKS = [
   { file: 'data/poems-tangshi.js', prefix: 'tangshi-' },
   { file: 'data/poems-songci.js', prefix: 'songci-' },
   { file: 'data/poems-guwen.js', prefix: 'guwen-' },
-  { file: 'data/poems-zhaoming.js', prefix: 'zhaoming-' }
+  { file: 'data/poems-zhaoming.js', prefix: 'zhaoming-' },
+  { file: 'data/poems-yuanqu.js', prefix: 'yuanqu-' }
 ];
 
 const FIELD = /^(\s+)(text|translation|translationSource):\s*"/;
@@ -108,7 +109,8 @@ BOOKS.forEach(function (b) {
       const text = block.join('\n');
       const idM = text.match(ID_LINE);
       const innerId = idM ? idM[1] : '';
-      const masterId = ref[b.prefix + innerId];
+      const siteId = b.prefix + innerId;
+      const masterId = ref[siteId];
 
       if (masterId && lines.slice(i, j + 1).some(function (l) {
         return FIELD.test(l) || FIELD_BARE.test(l);
@@ -141,6 +143,7 @@ Object.keys(ref).forEach(function (entryId) {
   const innerId = entryId.slice(book.prefix.length);
   if (src.indexOf('id: ' + JSON.stringify(innerId)) < 0) return;
 
+  if (entryId === m.id) return;
   const blocks = src.split(/\n(?=\s*\{)/);
   const hit = blocks.filter(function (b) {
     return new RegExp('id:\\s*"' + innerId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '"').test(b);

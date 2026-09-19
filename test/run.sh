@@ -205,6 +205,13 @@ echo "=== 昭明文选（内容 PR，Issue #69 后续）==="
 node test/zhaoming.test.js
 
 echo ""
+echo "=== 元曲三百首（2026-09 · 课外阅读第七部集子）==="
+echo "    三十首小令与套数，按宫调（黄钟 / 正宫 / 中吕 / 南吕 / 双调 / 越调）编排；"
+echo "    与课内同篇的那三首（《天净沙·秋思》《山坡羊·骊山怀古》《朝天子·咏喇叭》）"
+echo "    走同一条判重与正文收归的路，各背各的。"
+node test/yuanqu.test.js
+
+echo ""
 echo "=== 全站搜索 / 课外阅读入口 / 底栏导航（搜索页 + 导航栏变更，Issue #69）==="
 node test/search.test.js
 

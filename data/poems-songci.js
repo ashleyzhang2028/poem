@@ -2828,7 +2828,29 @@ window.POEMS_SONGCI = [
     author: "王沂孙",
     gradeGroup: "词牌 · 天香",
     excerpt: "孤峤蟠烟，层涛蜕月",
-  }
+  },
+  {
+    textRef: "songci-sc-285",
+    textRef: "songci-sc-285",
+    id: "sc-285",
+    title: "如梦令·常记溪亭日暮",
+    source: "《宋词三百首》",
+    dynasty: "宋",
+    author: "李清照",
+    gradeGroup: "词牌 · 如梦令",
+    excerpt: "常记溪亭日暮",
+  },
+  {
+    textRef: "songci-sc-286",
+    textRef: "poems-xx6-03",
+    id: "sc-286",
+    title: "西江月·夜行黄沙道中",
+    source: "《宋词三百首》",
+    dynasty: "宋",
+    author: "辛弃疾",
+    gradeGroup: "词牌 · 西江月",
+    excerpt: "明月别枝惊鹊",
+  },
 ];
 
 (function () {

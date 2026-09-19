@@ -1,3 +1,43 @@
+/* ==========================================================================
+   正文存储主表（同一篇作品的正文 / 译文只落一份）
+   --------------------------------------------------------------------------
+   由 scripts/build-text-master.js 离线算出，共 1378 条。
+
+   ⚠️ 这是**生成文件**，改动请改 scripts/build-text-master.js 后重跑，
+      不要手改这里 —— 下次重新生成会把手工改动覆盖掉。
+
+   ## 它解决什么
+   同一篇作品（《答谢中书书》课内八年级上 + 小古文、《登高》课内高一上 +
+   唐诗卷五……）此前在每一部集子的数据文件里**各存一份完整正文与译文**。
+   显示层虽已按 data/canonical-texts.js 统一成「课本那一份」，
+   但磁盘上仍是五份副本：改一处要改五处，漏一处就又不一致。
+
+   这一份把这份文本收归**一处**；其余集子的条目退化成只存归属 ——
+   条目上留 `textRef: "<主条目站点 id>"`，正文与译文
+   由引擎（js/reader-core.js）按 `textRef` 到这里取。
+
+   ## 收归范围（已收齐）
+     ① 「在两部及以上集子里重复出现」的作品 —— 判重表自动收；
+     ② FULL_BOOKS 点名的六部集子里**其余全部单篇**（历史声明，
+        六部收齐后本表已按「凡在册且带正文的条目一律全收」执行）。
+   于是：在册却还带内联正文的条目即为异常（同一个脚本里两处断言会点名）。
+
+   ## 与另外两张表的分工
+     data/works-map.js        哪些条目是**同一篇作品**（判重、搜索去重、排程合流）
+     data/canonical-texts.js  显示层：同一篇**显示**用哪一份正文（收归之后已收敛为空表，
+                              机制留着给日后真出现异文时用）
+     data/text-master.js      存储层：同一篇的正文 / 译文**只落一份**（本文件）
+   三张表由同一套口径算出（课内条目为主条目），一起重跑。
+
+   ## 字段
+     work        作品 id（与 data/works-map.js 的 wid 一致）
+     id          主条目站点索引 id（`poems-cz8-02`，课内优先）
+     title       主条目题名
+     entries     这一篇的全部站点条目 id（含主条目自己）
+     text        正文（**全站唯一一份**）
+     translation 白话译文
+     translationSource 译文来源
+   ========================================================================== */
 window.TEXT_MASTER = [
   {
     work: "w-classic-gw-1",
@@ -2583,6 +2623,24 @@ window.TEXT_MASTER = [
     translationSource: "academic"
   },
   {
+    work: "w-poems-cz9-28",
+    id: "poems-cz9-28",
+    title: "山坡羊·骊山怀古",
+    entries: ["poems-cz9-28", "yuanqu-yq-3"],
+    text: "骊山四顾，阿房一炬，当时奢侈今何处？\n只见草萧疏，水萦纡。至今遗恨迷烟树。\n列国周齐秦汉楚。赢，都变做了土；输，都变做了土。",
+    translation: "站在骊山上四处眺望，阿房宫已在一把火中烧毁，当年的奢侈豪华如今在哪里？只见草木萧疏，流水曲折。到如今，遗恨还笼罩在烟雾笼罩的树林中。周、齐、秦、汉、楚这些列国，赢了的，都变成了泥土；输了的，也都变成了泥土。",
+    translationSource: "academic"
+  },
+  {
+    work: "w-poems-cz9-29",
+    id: "poems-cz9-29",
+    title: "朝天子·咏喇叭",
+    entries: ["poems-cz9-29", "yuanqu-yq-11"],
+    text: "喇叭，唢呐，曲儿小腔儿大。\n官船来往乱如麻，全仗你抬声价。\n军听了军愁，民听了民怕。\n哪里去辨甚么真共假？\n眼见的吹翻了这家，吹伤了那家，只吹的水尽鹅飞罢！",
+    translation: "喇叭，唢呐，吹的曲子虽然短小，声音却很大。官船来来往往多得如麻，全靠你来抬高声价。军人听了军人发愁，百姓听了百姓害怕。哪里去分辨什么是真什么是假？眼看着吹翻了这家，吹伤了那家，只吹得水也干了、鹅也飞了才罢休！",
+    translationSource: "academic"
+  },
+  {
     work: "w-poems-gz10-05",
     id: "poems-gz10-05",
     title: "登高",
@@ -2748,9 +2806,18 @@ window.TEXT_MASTER = [
     work: "w-poems-xx3-09",
     id: "poems-xx3-09",
     title: "采莲曲",
-    entries: ["poems-xx3-09", "tangshi-ts-89"],
+    entries: ["poems-xx3-09", "tangshi-ts-305", "tangshi-ts-89"],
     text: "荷叶罗裙一色裁，芙蓉向脸两边开。\n乱入池中看不见，闻歌始觉有人来。",
     translation: "荷叶和罗裙像是在同一块料子上裁成，荷花开在人脸两旁。混进荷池里就看不见人了，听见歌声才知道有人来。",
+    translationSource: "school"
+  },
+  {
+    work: "w-poems-xx3-13",
+    id: "poems-xx3-13",
+    title: "忆江南",
+    entries: ["poems-xx3-13", "tangshi-ts-317"],
+    text: "江南好，风景旧曾谙。\n日出江花红胜火，春来江水绿如蓝。能不忆江南？",
+    translation: "江南真好，那里的风景我从前就很熟悉。日出时江边的花红得胜过火焰，春天里江水碧绿如蓝草。怎能不怀念江南？",
     translationSource: "school"
   },
   {
@@ -2808,6 +2875,15 @@ window.TEXT_MASTER = [
     translationSource: "school"
   },
   {
+    work: "w-poems-xx4-19",
+    id: "poems-xx4-19",
+    title: "竹枝词",
+    entries: ["poems-xx4-19", "tangshi-ts-316"],
+    text: "杨柳青青江水平，\n闻郎江上唱歌声。\n东边日出西边雨，\n道是无晴却有晴。",
+    translation: "杨柳青翠，江水平静，听见情郎在江上唱歌。东边出了太阳西边却在下雨，说是没有晴（情）却又是有晴（情）。",
+    translationSource: "school"
+  },
+  {
     work: "w-poems-xx4-20",
     id: "poems-xx4-20",
     title: "芙蓉楼送辛渐",
@@ -2853,12 +2929,30 @@ window.TEXT_MASTER = [
     translationSource: "school"
   },
   {
+    work: "w-poems-xx5-14",
+    id: "poems-xx5-14",
+    title: "从军行",
+    entries: ["poems-xx5-14", "tangshi-ts-304"],
+    text: "青海长云暗雪山，孤城遥望玉门关。\n黄沙百战穿金甲，不破楼兰终不还。",
+    translation: "青海湖上长云弥漫，遮暗了雪山，孤零零的城池远远望着玉门关。黄沙百战磨穿了身上的铠甲，不打败楼兰就绝不回还。",
+    translationSource: "school"
+  },
+  {
     work: "w-poems-xx5-16",
     id: "poems-xx5-16",
     title: "闻官军收河南河北",
     entries: ["poems-xx5-16", "tangshi-ts-189"],
     text: "剑外忽传收蓟北，初闻涕泪满衣裳。\n却看妻子愁何在，漫卷诗书喜欲狂。\n白日放歌须纵酒，青春作伴好还乡。\n即从巴峡穿巫峡，便下襄阳向洛阳。",
     translation: "在剑门关外忽然听说官军收复了蓟北，刚听到消息时眼泪沾满了衣裳。回头看妻子儿女的愁容不知哪里去了，随手卷起诗书欢喜得快要发狂。白天要放声高歌，痛饮美酒，趁着春光正好伴我返回故乡。即刻从巴峡穿过巫峡，再顺流而下经过襄阳直奔洛阳。",
+    translationSource: "school"
+  },
+  {
+    work: "w-poems-xx5-17",
+    id: "poems-xx5-17",
+    title: "渔歌子",
+    entries: ["poems-xx5-17", "tangshi-ts-318"],
+    text: "西塞山前白鹭飞，\n桃花流水鳜鱼肥。\n青箬笠，绿蓑衣，\n斜风细雨不须归。",
+    translation: "西塞山前白鹭飞翔，桃花盛开，春水上涨，鳜鱼正肥。头戴青箬笠，身披绿蓑衣，斜风细雨中不必回家。",
     translationSource: "school"
   },
   {
@@ -2877,6 +2971,15 @@ window.TEXT_MASTER = [
     entries: ["poems-xx6-01", "tangshi-ts-229"],
     text: "移舟泊烟渚，日暮客愁新。\n野旷天低树，江清月近人。",
     translation: "我把船停靠在烟雾迷蒙的小洲边，日暮时分，旅人的愁绪又添了一层。旷野无边无际，天比树还低；江水清澈，月影仿佛离人更近了。",
+    translationSource: "school"
+  },
+  {
+    work: "w-poems-xx6-03",
+    id: "poems-xx6-03",
+    title: "西江月·夜行黄沙道中",
+    entries: ["poems-xx6-03", "songci-sc-286"],
+    text: "明月别枝惊鹊，清风半夜鸣蝉。\n稻花香里说丰年，听取蛙声一片。\n七八个星天外，两三点雨山前。\n旧时茅店社林边，路转溪桥忽见。",
+    translation: "明月移到树枝上，惊起了栖息的喜鹊；清凉的夜风里传来蝉的鸣叫。稻花飘香，人们谈论着丰收的年景，耳边响起一片蛙声。天边挂着七八颗星星，山前落下两三点雨。往日社庙树林边的茅草店，拐过溪桥忽然就出现在眼前。",
     translationSource: "school"
   },
   {
@@ -2913,6 +3016,15 @@ window.TEXT_MASTER = [
     entries: ["poems-xx6-17", "tangshi-ts-132"],
     text: "故人具鸡黍，邀我至田家。\n绿树村边合，青山郭外斜。\n开轩面场圃，把酒话桑麻。\n待到重阳日，还来就菊花。",
     translation: "老友准备了饭菜，邀我到农家做客。绿树环绕着村庄，青山在城郭外斜卧。打开窗子面对谷场菜园，端着酒谈说庄稼。等到重阳节，还要再来赏菊。",
+    translationSource: "school"
+  },
+  {
+    work: "w-poems-xx6-20",
+    id: "poems-xx6-20",
+    title: "天净沙·秋思",
+    entries: ["poems-xx6-20", "yuanqu-yq-1"],
+    text: "枯藤老树昏鸦，\n小桥流水人家，\n古道西风瘦马。\n夕阳西下，\n断肠人在天涯。",
+    translation: "枯藤缠绕着老树，树上落着黄昏的乌鸦；小桥下流水潺潺，旁边是几户人家；古老的道路上西风萧瑟，一匹瘦马缓缓前行。夕阳西沉，极度伤心的游子还在天涯漂泊。",
     translationSource: "school"
   },
   {
@@ -4713,6 +4825,15 @@ window.TEXT_MASTER = [
     entries: ["songci-sc-284"],
     text: "孤峤蟠烟，层涛蜕月，骊宫夜采铅水。汛远槎风，梦深薇露，化作断魂心字。红瓷候火，还乍识、冰环玉指。一缕萦帘翠影，依稀海天云气。\n几回殢娇半醉，翦春灯、夜寒花碎。更好故溪飞雪，小窗深闭。荀令如今顿老，总忘却、樽前旧风味。谩惜余熏，空篝素被。",
     translation: "孤岛上蟠绕的烟雾，层涛间蜕出的月色，龙宫夜里采来铅水。随着远去的木筏与风，梦入深沉的蔷薇露，化作断魂的心字香。红瓷炉中候着火，才初次识得冰环玉指。一缕翠影萦绕帘幕，依稀是海天间的云气。\n多少次她娇懒半醉，剪着春灯，夜寒中灯花碎落。更好的是故园溪上飞雪，小窗深闭。荀令如今一下老了，总忘却了樽前的旧风味。徒然怜惜残余的香气，香笼空着，素被孤寒。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-songci-sc-285",
+    id: "songci-sc-285",
+    title: "如梦令·常记溪亭日暮",
+    entries: ["songci-sc-285"],
+    text: "常记溪亭日暮，沉醉不知归路。\n兴尽晚回舟，误入藕花深处。\n争渡，争渡，惊起一滩鸥鹭。",
+    translation: "常常想起那次在溪边亭子里玩到日暮，喝得沉醉，连回家的路都认不出了。玩得尽兴才在傍晚划船回去，却误入了荷花丛的深处。抢着划呀，抢着划呀，惊得满滩的鸥鹭飞了起来。",
     translationSource: "public-domain"
   },
   {
@@ -6638,7 +6759,7 @@ window.TEXT_MASTER = [
     title: "登乐游原",
     entries: ["tangshi-ts-246"],
     text: "向晚意不适，驱车登古原。\n夕阳无限好，只是近黄昏。",
-    translation: "傍晚时心情不畅，驱车登上古老的乐游原。夕阳无限美好，只是已经接近黄昏。",
+    translation: "傍晚时心情不大舒畅，就赶着车登上了乐游原。落日的余晖真是无限美好，只可惜已经接近黄昏了。",
     translationSource: "public-domain"
   },
   {
@@ -7065,12 +7186,111 @@ window.TEXT_MASTER = [
     translationSource: "public-domain"
   },
   {
+    work: "w-tangshi-ts-302",
+    id: "tangshi-ts-302",
+    title: "前出塞九首·其二",
+    entries: ["tangshi-ts-302"],
+    text: "挽弓当挽强，用箭当用长。\n射人先射马，擒贼先擒王。\n杀人亦有限，列国自有疆。\n苟能制侵陵，岂在多杀伤。",
+    translation: "拉弓就该拉硬弓，用箭就该用长箭。要射敌人先射他的马，要捉贼人先捉他们的头领。杀人总该有个限度，各国自有自己的疆界。只要能制止住别人的侵犯，哪里在于多杀多少人呢。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-tangshi-ts-303",
+    id: "tangshi-ts-303",
+    title: "秋浦歌十七首·其十五",
+    entries: ["tangshi-ts-303"],
+    text: "白发三千丈，缘愁似个长。\n不知明镜里，何处得秋霜。",
+    translation: "白头发能有三千丈长，只因为我的愁绪也是这般长。真不知道明亮的镜子里，这满头白霜似的东西是从哪里来的。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-tangshi-ts-307",
+    id: "tangshi-ts-307",
+    title: "七步诗",
+    entries: ["tangshi-ts-307"],
+    text: "煮豆持作羹，漉菽以为汁。\n萁在釜下燃，豆在釜中泣。\n本是同根生，相煎何太急！",
+    translation: "煮豆子拿来做豆羹，把豆渣滤掉留下豆汁。豆秸在锅底下燃烧，豆子在锅里哭泣：我们本来是同一条根上生出来的，你煎逼我何必这样急迫！",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-tangshi-ts-308",
+    id: "tangshi-ts-308",
+    title: "于易水送人",
+    entries: ["tangshi-ts-308"],
+    text: "此地别燕丹，壮士发冲冠。\n昔时人已没，今日水犹寒。",
+    translation: "当年就在这个地方，荆轲辞别燕太子丹，壮士怒发冲冠。从前的人早已不在了，可今天这易水仍旧是这样寒冷。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-tangshi-ts-309",
+    id: "tangshi-ts-309",
+    title: "遗爱寺",
+    entries: ["tangshi-ts-309"],
+    text: "弄石临溪坐，寻花绕寺行。\n时时闻鸟语，处处是泉声。",
+    translation: "对着溪水坐着把玩石头，绕着寺院走着一路寻花。时时听见鸟叫，处处都是泉水的声响。",
+    translationSource: "public-domain"
+  },
+  {
     work: "w-tangshi-ts-31",
     id: "tangshi-ts-31",
     title: "送杨氏女",
     entries: ["tangshi-ts-31"],
     text: "永日方戚戚，出行复悠悠。\n女子今有行，大江溯轻舟。\n尔辈苦无恃，抚念益慈柔。\n幼为长所育，两别泣不休。\n对此结中肠，义往难复留。\n自小阙内训，事姑贻我忧。\n赖兹托令门，任恤庶无尤。\n贫俭诚所尚，资从岂待周。\n孝恭遵妇道，容止顺其猷。\n别离在今晨，见尔当何秋。\n居闲始自遣，临感忽难收。\n归来视幼女，零泪缘缨流。",
     translation: "整天都在悲戚，出行又是那么遥远。女儿今天要出嫁，要逆着大江乘轻舟而去。你们自幼丧母，我抚育思念，更加慈爱温柔。妹妹是你这做姐姐的抚养大的，今朝分别，两人哭个不停。面对此情我心中郁结，可女儿应当出嫁，难以再留。你从小缺少母亲的教诲，侍奉婆婆让我担忧。好在托身到好人家，但愿能受到信任体恤，不致有什么过失。安贫节俭本是我所崇尚的，嫁妆哪里需要置办周全。要孝顺恭敬，遵守为妇之道，仪容举止都要合乎规矩。离别就在今晨，再见你不知是哪个秋天。平日闲暇时还能自我排遣，临到别时这感情忽然难以收住。回来后看着小女儿，眼泪顺着帽带直往下流。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-tangshi-ts-310",
+    id: "tangshi-ts-310",
+    title: "逢雪宿芙蓉山主人",
+    entries: ["tangshi-ts-310"],
+    text: "日暮苍山远，天寒白屋贫。\n柴门闻犬吠，风雪夜归人。",
+    translation: "天黑了，青苍的山看着格外遥远；天气寒冷，那间白茅草屋显得更加贫寒。柴门外传来几声狗叫，风雪夜里，有人回来了。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-tangshi-ts-311",
+    id: "tangshi-ts-311",
+    title: "百忧集行",
+    entries: ["tangshi-ts-311"],
+    text: "忆年十五心尚孩，健如黄犊走复来。\n庭前八月梨枣熟，一日上树能千回。\n即今倏忽已五十，坐卧只多少行立。\n强将笑语供主人，悲见生涯百忧集。\n入门依旧四壁空，老妻睹我颜色同。\n痴儿不知父子礼，叫怒索饭啼门东。",
+    translation: "记得十五岁时心智还像个孩子，健壮得像头小黄牛，跑来跑去。八月里庭前的梨和枣熟了，一天爬树能爬上千回。如今转眼已经五十岁，坐卧的时候多，站起走动的时候少。勉强陪笑侍奉主人，伤悲地看着这一生，种种忧患一齐涌来。进得门来还是四壁空空，老妻看我也是一样愁苦的脸色。不懂事的儿子不知道父子的礼数，饿得在门东边又哭又闹地讨饭吃。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-tangshi-ts-312",
+    id: "tangshi-ts-312",
+    title: "菊花",
+    entries: ["tangshi-ts-312"],
+    text: "秋丛绕舍似陶家，遍绕篱边日渐斜。\n不是花中偏爱菊，此花开尽更无花。",
+    translation: "一丛丛秋菊绕着屋子，就像陶渊明的家；绕着篱笆看了一遍又一遍，太阳渐渐西斜。不是百花之中我偏爱菊花，只因为菊花开过之后，就再没有别的花了。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-tangshi-ts-313",
+    id: "tangshi-ts-313",
+    title: "题都城南庄",
+    entries: ["tangshi-ts-313"],
+    text: "去年今日此门中，人面桃花相映红。\n人面不知何处去，桃花依旧笑春风。",
+    translation: "去年的今天，就在这扇门里，姑娘的脸和桃花互相映得绯红。如今姑娘不知到哪里去了，只有桃花仍旧在春风里盛开。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-tangshi-ts-314",
+    id: "tangshi-ts-314",
+    title: "赠花卿",
+    entries: ["tangshi-ts-314"],
+    text: "锦城丝管日纷纷，半入江风半入云。\n此曲只应天上有，人间能得几回闻。",
+    translation: "锦官城里丝竹管弦天天纷纷扬扬，一半随江风飘散，一半飞入云端。这样的曲子只应是天上才有的，人世间能听到几回呢。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-tangshi-ts-315",
+    id: "tangshi-ts-315",
+    title: "闻雁",
+    entries: ["tangshi-ts-315"],
+    text: "故园渺何处，归思方悠哉。\n淮南秋雨夜，高斋闻雁来。",
+    translation: "故乡遥远，渺茫得不知在哪里；归乡的思绪正绵长无尽。淮南一个秋雨的夜里，我在高高的书斋中听见大雁飞来。",
     translationSource: "public-domain"
   },
   {
@@ -7656,6 +7876,249 @@ window.TEXT_MASTER = [
     entries: ["tangshi-ts-99"],
     text: "独有宦游人，偏惊物候新。\n云霞出海曙，梅柳渡江春。\n淑气催黄鸟，晴光转绿苹。\n忽闻歌古调，归思欲沾巾。",
     translation: "只有宦游在外的人，才特别惊觉物候的变化。云霞从海上透出曙光，梅柳渡过江来带来春意。和暖的气息催促黄鸟鸣叫，晴朗的阳光使绿苹转动。忽然听到你唱起古雅的曲调，归乡的思绪使我泪湿手巾。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-yuanqu-yq-10",
+    id: "yuanqu-yq-10",
+    title: "醉太平·讥贪小利者",
+    entries: ["yuanqu-yq-10"],
+    text: "夺泥燕口，削铁针头，刮金佛面细搜求，无中觅有。\n鹌鹑嗉里寻豌豆，鹭鸶腿上劈精肉，蚊子腹内刳脂油。\n亏老先生下手！",
+    translation: "从燕子嘴里夺泥，在针尖上削铁，刮佛像脸上的金还要细细搜寻，在没处找的地方硬找出点东西来。在鹌鹑的嗉囊里找豌豆，从鹭鸶的细腿上劈出精肉，到蚊子的肚子里去刮脂油。先生您可真下得去手！",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-yuanqu-yq-12",
+    id: "yuanqu-yq-12",
+    title: "天净沙·即事",
+    entries: ["yuanqu-yq-12"],
+    text: "莺莺燕燕春春，花花柳柳真真，事事风风韵韵。\n娇娇嫩嫩，停停当当人人。",
+    translation: "莺莺燕燕，一派春光；花啊柳啊，真是好景致；每一件事都透着风韵情趣。娇娇嫩嫩，端端正正，真是一个可心的人儿。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-yuanqu-yq-13",
+    id: "yuanqu-yq-13",
+    title: "满庭芳·渔父词",
+    entries: ["yuanqu-yq-13"],
+    text: "携鱼换酒，鱼鲜可口，酒热扶头。\n盘中不是重张网，网得鲜鱼。\n菱芡熟、水滨闲走，看沙鸥。\n这的是渔家乐处，无荣无辱无愁。",
+    translation: "提着鱼去换酒，鱼味道鲜美，酒喝得热气上头。盘中餐若不是重新撒网，就是网来的鲜鱼。菱角和芡实熟了，在水边闲走，看看沙鸥。这才是渔家快乐的地方，没有荣耀，没有屈辱，也没有忧愁。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-yuanqu-yq-14",
+    id: "yuanqu-yq-14",
+    title: "十二月过尧民歌·别情",
+    entries: ["yuanqu-yq-14"],
+    text: "自别后遥山隐隐，更那堪远水粼粼。\n见杨柳飞绵滚滚，对桃花醉脸醺醺。\n透内阁香风阵阵，掩重门暮雨纷纷。\n怕黄昏忽地又黄昏，不销魂怎地不销魂。\n新啼痕压旧啼痕，断肠人忆断肠人。\n今春，香肌瘦几分，缕带宽三寸。",
+    translation: "自从分别以后，远山隐隐约约，更怎受得那远水波光粼粼。看见杨柳飞絮滚滚，对着桃花像醉红的脸庞。香风一阵阵透进内室，掩上重重院门，黄昏的雨纷纷落下。怕黄昏，偏偏一下子又到了黄昏；不想失魂落魄，又怎么能不失魂落魄。新的泪痕压着旧的泪痕，伤心人思念着伤心人。今年春天，娇嫩的身子又瘦了几分，衣带也宽了三寸。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-yuanqu-yq-15",
+    id: "yuanqu-yq-15",
+    title: "阳春曲·知几",
+    entries: ["yuanqu-yq-15"],
+    text: "知荣知辱牢缄口，谁是谁非暗点头。\n诗书丛里且淹留。\n闲袖手，贫煞也风流。",
+    translation: "知道什么是荣耀、什么是耻辱，就把嘴闭紧；谁是谁非，只在心里暗暗点头。且把自己留在诗书堆里消磨时光。闲来袖着手，就算穷到底，也自有一份风流。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-yuanqu-yq-16",
+    id: "yuanqu-yq-16",
+    title: "水仙子·夜雨",
+    entries: ["yuanqu-yq-16"],
+    text: "一声梧叶一声秋，一点芭蕉一点愁，三更归梦三更后。\n落灯花棋未收，叹新丰孤馆人留。\n枕上十年事，江南二老忧，都到心头。",
+    translation: "一声梧桐叶落就是一声秋，一滴雨打芭蕉就是一分愁；半夜里做梦回家，醒来已是三更过后。灯花落尽，棋盘还没收拾，可叹我这游子被留在他乡的孤馆里。枕上想起十年来的种种经历，又牵挂江南的双亲，一时间全涌上了心头。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-yuanqu-yq-17",
+    id: "yuanqu-yq-17",
+    title: "水仙子·寻梅",
+    entries: ["yuanqu-yq-17"],
+    text: "冬前冬后几村庄，溪北溪南两履霜，树头树底孤山上。\n冷风来何处香？忽相逢缟袂绡裳。\n酒醒寒惊梦，笛凄春断肠，淡月昏黄。",
+    translation: "入冬前后走遍了几处村庄，溪北溪南两脚踩着霜，树梢下树根边一直找到孤山上。冷风里飘来一阵香，是哪里？忽然就遇见了它——像穿着白衣素裳的仙子。酒醒时被寒气惊醒了好梦，笛声凄清，春意令人断肠，天上一弯淡淡的月，夜色昏黄。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-yuanqu-yq-18",
+    id: "yuanqu-yq-18",
+    title: "殿前欢·客中",
+    entries: ["yuanqu-yq-18"],
+    text: "望长安，前程渺渺鬓斑斑。\n南来北往随征雁，行路艰难。\n青泥小剑关，红叶湓江岸，白草连云栈。\n功名半纸，风雪千山。",
+    translation: "遥望长安，前程渺茫，两鬓已经斑白。随着北来南往的征雁奔波，行路实在艰难。走过青泥岭的小剑关，看过红叶满山的湓江岸，行过白草连云的连云栈道。为的只是一纸功名，却要历尽千山的风雪。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-yuanqu-yq-19",
+    id: "yuanqu-yq-19",
+    title: "折桂令·九日",
+    entries: ["yuanqu-yq-19"],
+    text: "对青山强整乌纱。归雁横秋，倦客思家。\n翠袖殷勤，金杯错落，玉手琵琶。\n人老去西风白发，蝶愁来明日黄花。\n回首天涯，一抹斜阳，数点寒鸦。",
+    translation: "对着青山勉强整一整头上的乌纱帽。北归的大雁横过秋空，疲倦的游子思念着家。歌女殷勤劝酒，金杯参差错落，纤纤玉手弹着琵琶。人老了，西风里吹动着白发；蝴蝶也发愁，明天重阳过去，黄花就要凋零了。回头远望天涯，只见一抹斜阳，几点寒鸦。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-yuanqu-yq-2",
+    id: "yuanqu-yq-2",
+    title: "山坡羊·潼关怀古",
+    entries: ["yuanqu-yq-2"],
+    text: "峰峦如聚，波涛如怒，山河表里潼关路。\n望西都，意踌躇。\n伤心秦汉经行处，宫阙万间都做了土。\n兴，百姓苦；亡，百姓苦。",
+    translation: "山峰好像聚拢在一起，黄河的波涛好像发了怒，潼关这条路外有黄河、内有华山。遥望长安故都，心里犹豫感慨。令人伤心的是秦汉时军队经过的地方，千万间华美的宫殿如今都化成了黄土。王朝兴起了，百姓受苦；王朝灭亡了，百姓还是受苦。",
+    translationSource: "school"
+  },
+  {
+    work: "w-yuanqu-yq-20",
+    id: "yuanqu-yq-20",
+    title: "清江引·秋怀",
+    entries: ["yuanqu-yq-20"],
+    text: "西风信来家万里，问我归期未？\n雁啼红叶天，人醉黄花地，芭蕉雨声秋梦里。",
+    translation: "西风捎来万里之外家中的书信，问我什么时候回去。大雁在满山红叶里啼叫，人在菊花丛中喝醉了酒，芭蕉上的雨声一直飘进了我思乡的秋梦里。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-yuanqu-yq-21",
+    id: "yuanqu-yq-21",
+    title: "清江引·立春",
+    entries: ["yuanqu-yq-21"],
+    text: "金钗影摇春燕斜，木杪生春叶。\n水塘春始波，火候春初热。\n土牛儿载将春到也。",
+    translation: "金钗的影子摇动，春燕斜飞；树梢上长出了新春的叶子。水塘里刚泛起春波，炉火正烧得暖暖的。打春用的土牛，把春天载着送来了。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-yuanqu-yq-22",
+    id: "yuanqu-yq-22",
+    title: "天净沙·春情",
+    entries: ["yuanqu-yq-22"],
+    text: "多才惹得多愁，多情便有多忧。\n不重不轻证候，甘心消受，谁教你会风流。",
+    translation: "才气多就惹来愁多，感情多就有忧多。这不重不轻的相思病，我却甘心承受——谁让你这样懂得风流呢。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-yuanqu-yq-23",
+    id: "yuanqu-yq-23",
+    title: "天净沙·江上",
+    entries: ["yuanqu-yq-23"],
+    text: "嗈嗈落雁平沙，依依孤鹜残霞，隔水疏林几家。\n小舟如画，渔歌唱入芦花。",
+    translation: "大雁鸣叫着落在平展的沙滩上，一只孤雁贴着残霞缓缓飞行，隔水的地方几户人家散在稀疏的树林边。小船像画里的一样，渔人的歌声一直唱进了芦花丛中。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-yuanqu-yq-24",
+    id: "yuanqu-yq-24",
+    title: "水仙子·咏雪",
+    entries: ["yuanqu-yq-24"],
+    text: "冷无香柳絮扑将来，冻成片梨花拂不开。\n大灰泥漫了三千界，银棱了东大海。\n探梅的心噤难捱。\n面瓮儿里袁安舍，盐堆儿里党尉宅，粉缸儿里舞榭歌台。",
+    translation: "冷冷的、没有香气的柳絮扑过来，冻成一片片的梨花拂也拂不开。大雪像灰泥漫过了三千大千世界，把东海也镶上了银边。想去探梅，冻得心里发紧，实在难熬。袁安那样的寒士住在面缸似的雪屋里，党太尉那样的豪家也埋在盐堆似的雪里，连歌舞楼台都像沉在粉缸中一般。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-yuanqu-yq-25",
+    id: "yuanqu-yq-25",
+    title: "水仙子·咏江南",
+    entries: ["yuanqu-yq-25"],
+    text: "一江烟水照晴岚，两岸人家接画檐。\n芰荷丛一段秋光淡，看沙鸥舞再三。\n卷香风十里珠帘。\n画船儿天边至，酒旗儿风外飐，爱杀江南！",
+    translation: "一江烟水映着晴天的山岚，两岸人家的屋檐像画一样相接。菱角和荷叶丛里，一段秋光淡淡的，看沙鸥一回回地飞舞。香风卷起十里珠帘。画船从天边驶来，酒旗在风中招展，真是爱煞了江南！",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-yuanqu-yq-26",
+    id: "yuanqu-yq-26",
+    title: "人月圆·山中书事",
+    entries: ["yuanqu-yq-26"],
+    text: "兴亡千古繁华梦，诗眼倦天涯。\n孔林乔木，吴宫蔓草，楚庙寒鸦。\n数间茅舍，藏书万卷，投老村家。\n山中何事？松花酿酒，春水煎茶。",
+    translation: "千古以来的兴盛衰亡都像一场繁华的梦，看惯了世事的眼睛已经厌倦了走遍天涯。孔林里的乔木，吴宫里的蔓草，楚庙上的寒鸦。几间茅草屋，藏着万卷书，就在这乡村人家养老。山里面有什么事要做？用松花酿酒，用春天的溪水煮茶。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-yuanqu-yq-27",
+    id: "yuanqu-yq-27",
+    title: "小桃红·寄鉴湖诸友",
+    entries: ["yuanqu-yq-27"],
+    text: "一城秋雨豆花凉，闲倚平山望。\n不似年时鉴湖上，锦云香，采莲人语荷花荡。\n西风雁行，清溪渔唱，吹恨入沧浪。",
+    translation: "满城秋雨，豆花透出凉意，我闲闲地靠在平山堂上远望。不像往年在家乡鉴湖上，锦缎似的荷花香气袭人，采莲人在荷花丛里说着话。西风里大雁排成行列，清溪上渔人唱歌，把一腔愁恨都吹进了苍茫的江水里。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-yuanqu-yq-28",
+    id: "yuanqu-yq-28",
+    title: "庆东原·京口夜泊",
+    entries: ["yuanqu-yq-28"],
+    text: "故园一千里，孤帆数日程，倚篷窗自叹飘零。\n城头鼓声，江心浪声，山顶钟声。\n一夜梦难成，三处愁相并。",
+    translation: "故乡远在一千里外，孤舟还要走好几天，靠着船篷的窗口自己叹息漂泊无依。城头上响起鼓声，江心里传来浪声，山顶上敲起钟声。一夜好梦难成，三处的愁绪一齐涌上来。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-yuanqu-yq-29",
+    id: "yuanqu-yq-29",
+    title: "金字经·春晚",
+    entries: ["yuanqu-yq-29"],
+    text: "惜花人何处？落红春又残。\n倚遍危楼十二阑，弹，泪痕罗袖斑。\n江南岸，夕阳山外山。",
+    translation: "怜惜花的人如今在哪里？落花纷纷，春天又要过去了。倚遍了高楼上的十二处栏杆，拨弄着琴弦，泪痕把罗袖都染斑驳了。江南岸边，夕阳之外还是重重青山。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-yuanqu-yq-30",
+    id: "yuanqu-yq-30",
+    title: "普天乐·秋江忆别",
+    entries: ["yuanqu-yq-30"],
+    text: "晚天长，秋水苍，山腰落日，雁背斜阳。\n别后书辞，别时针线，两处相思，一样情伤。\n壁间吟诗，马上琵琶，总是凄凉。",
+    translation: "傍晚的天空高远，秋天的江水苍青；落日挂在山腰，斜阳照在大雁的背上。分别后写来的书信，分别时缝的针脚；两处相思，一样伤心。在墙壁上题的诗，在马上弹的琵琶，听起来总是凄凉。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-yuanqu-yq-4",
+    id: "yuanqu-yq-4",
+    title: "天净沙·秋",
+    entries: ["yuanqu-yq-4"],
+    text: "孤村落日残霞，轻烟老树寒鸦，一点飞鸿影下。\n青山绿水，白草红叶黄花。",
+    translation: "孤零零的村落，落日西斜，只剩下几抹残霞；淡淡的炊烟，苍老的树上栖着寒鸦；一只鸿雁飞来，身影划过天空。远处青山绿水，近处白草、红叶、黄花，一片明净的秋色。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-yuanqu-yq-5",
+    id: "yuanqu-yq-5",
+    title: "天净沙·春",
+    entries: ["yuanqu-yq-5"],
+    text: "春山暖日和风，阑干楼阁帘栊，杨柳秋千院中。\n啼莺舞燕，小桥流水飞红。",
+    translation: "春天的山，和暖的太阳，轻柔的风；栏杆、楼阁、帘幕；院子里是杨柳和秋千。黄莺啼叫，燕子飞舞，小桥底下流水潺潺，落花纷纷飘飞。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-yuanqu-yq-6",
+    id: "yuanqu-yq-6",
+    title: "天净沙·冬",
+    entries: ["yuanqu-yq-6"],
+    text: "一声画角谯门，半庭新月黄昏，雪里山前水滨。\n竹篱茅舍，淡烟衰草孤村。",
+    translation: "几声画角从城门楼上吹响，黄昏时新月挂上半边庭院；山前的雪地里、水边，是竹篱茅舍，淡淡的炊烟、衰败的野草，一座孤零零的村庄。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-yuanqu-yq-7",
+    id: "yuanqu-yq-7",
+    title: "寿阳曲·江天暮雪",
+    entries: ["yuanqu-yq-7"],
+    text: "天将暮，雪乱舞，半梅花半飘柳絮。\n江上晚来堪画处，钓鱼人一蓑归去。",
+    translation: "天快黑了，雪花纷乱地飞舞，一半像梅花，一半像飘飞的柳絮。傍晚江上最堪入画的地方，是那位钓鱼的人披着蓑衣回去了。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-yuanqu-yq-8",
+    id: "yuanqu-yq-8",
+    title: "寿阳曲·远浦帆归",
+    entries: ["yuanqu-yq-8"],
+    text: "夕阳下，酒旆闲，两三航未曾着岸。\n落花水香茅舍晚，断桥头卖鱼人散。",
+    translation: "夕阳西下，酒旗静静地垂着，还有两三只船没有靠岸。落花飘在水上，水也带着香气，茅屋那边天色已晚；断桥的桥头，卖鱼的人已经散了。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-yuanqu-yq-9",
+    id: "yuanqu-yq-9",
+    title: "四块玉·别情",
+    entries: ["yuanqu-yq-9"],
+    text: "自送别，心难舍，一点相思几时绝？\n凭阑袖拂杨花雪。\n溪又斜，山又遮，人去也！",
+    translation: "自从送你走，心里就舍不下，这一点相思什么时候才能了结？靠着栏杆，用衣袖拂去像雪一样飘来的杨花。溪水又斜斜地流去，山又把它遮住，人真的走远了！",
     translationSource: "public-domain"
   },
   {
@@ -11980,9 +12443,39 @@ window.TEXT_MASTER = [
   },
 ];
 
+/* ==========================================================================
+   近重复对：同一篇却有两种写法，**故意不合并**
+   --------------------------------------------------------------------------
+   下面是「差不多是同一篇、但正文有一字之差」的那些对，共 0 组。
+   它们**没有**被收进上面的主表 —— 因为一字之差往往不是录入出错，
+   而是两条并列的文本传统：
+
+     · 选本原貌（《文选》作「凤皇」、《古文观止》作「霪雨」）
+     · 教材 / 通行字（课本作「凤凰」，今通行本作「淫雨」）
+
+   裁定见 data/works-index.js：「课内以教材文本为准，选集以选本原貌为准，
+   冲突时分成两条并列的作品，各背各的」—— 所以这里**只登记事实**，
+   不去合并、也不改任何一份正文。主表收归的是「字面完全相同」的那些篇；
+   这一份清单是它的边界：谁要是把这几篇也并了，学生就会读到
+   与自己课本不一样的那一份《岳阳楼记》。
+
+   ⚠️ 这是**生成文件**，改动请改 scripts/build-text-master.js 后重跑。
+
+   字段：entries 两条（及以上）条目 id；reason 为什么它们「像同一篇而不合并」
+   ========================================================================== */
 window.TEXT_NEAR_DUP = [
 ];
 
+/* ==========================================================================
+   取数入口：把条目上的 textRef 展开成正文 / 译文
+   --------------------------------------------------------------------------
+   摘掉内联正文的条目只留一行 textRef，正文从这里取回。
+   各消费方（站点索引、阅读引擎、搜索页……）都调这一个函数 ——
+   各写一份迟早有一处忘了取，而表现只是「那一处正文空白」，不报错。
+
+   ⚠️ 没有 textRef、或主表里查不到时**原样返回**，不做任何猜测：
+      猜出来的正文比空白更糟 —— 空白一眼可见，取错一篇却看着正常。
+   ========================================================================== */
 (function () {
   "use strict";
 
@@ -11990,10 +12483,20 @@ window.TEXT_NEAR_DUP = [
   function map() {
     if (byId) return byId;
     byId = {};
-    (window.TEXT_MASTER || []).forEach(function (m) { if (m && m.id) byId[m.id] = m; });
+    (window.TEXT_MASTER || []).forEach(function (m) {
+      if (!m) return;
+      if (m.id) byId[m.id] = m;
+      (m.entries || []).forEach(function (e) { if (e && !byId[e]) byId[e] = m; });
+    });
     return byId;
   }
 
+  /**
+   * 取这一条的正文 / 译文。
+   * @param {Object} p      条目（可能带 textRef）
+   * @param {String} [book] 所属集子 id —— textRef 记的是集子内 id 时补前缀再查
+   * @returns {Object} 展开后的条目（无 textRef 或查不到时原样返回）
+   */
   window.masterTextOf = function (p, book) {
     if (!p || !p.textRef || p.text) return p;
     var m = map()[p.textRef];
@@ -12007,3 +12510,4 @@ window.TEXT_NEAR_DUP = [
     return out;
   };
 })();
+
