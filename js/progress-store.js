@@ -13,6 +13,9 @@
 
     collections: "poem_recite_collections_v1",
 
+    // 「注音勘误」：某篇某句某字读什么（可在管理页面增删）。见 js/pinyin-edit.js。
+    pinyinFix: "poem_pinyin_fix_v1",
+
     // 七部集子的「已读」各有自己的一把键。它们**不是**这一份表能逐个登记的
     // （引擎按集子配置 `readStore`），所以下面 scopes() 里用一条前缀规则收口 ——
     // `js/family.js` 的 isPerChild() 读的就是这一条（已读跟着孩子走）。
@@ -276,6 +279,11 @@
       // 篇目顺序都在里面），所以合并规则是「谁最后改谁赢」；域挂在 account 上 ——
       // 它是「这个账号要背哪些」，与本机设备无关，也不跟孩子分家。
       { key: KEYS.collections, domain: "account", local: false, perChild: false },
+
+      // 「注音勘误」（Issue #243）：上云。它是**整份一份数据**（某篇某句某字
+      // 读什么），所以合并规则与自选集合同源（谁最后改谁赢）；perChild ——
+      // 一个家长几个孩子可以各有各的勘误口径（谁也没规定兄弟姐妹必须一样）。
+      { key: KEYS.pinyinFix, domain: "progress", local: false, perChild: true },
 
       // 「集子已读」（Issue #243 后续）：上云，且**跟着孩子走**
       // （一个家长几个孩子各读各的，与已读键分家同源）。

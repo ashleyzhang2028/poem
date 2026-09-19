@@ -829,10 +829,26 @@
     syncBottomGap();
   }
 
+  // 这一篇的「作品 id」。注音勘误表按它绑定 —— 集子页与课内页的篇目 id 不同，
+  // 而同一篇作品在好几部集子里出现（《滕王阁序》在课内也在古文观止），
+  // 所以要用 WorksIndex 归并后的那个 wid，勘误才是「一处改、处处生效」。
+  function pinyinWidOf(p) {
+    const id = p && p.id ? p.id : "";
+    if (!id) return "";
+    if (window.WorksIndex && typeof window.WorksIndex.widOf === "function") {
+      try { return window.WorksIndex.widOf(id) || id; } catch (e) {  }
+    }
+    return id;
+  }
+
   function renderPoemText(p) {
     const box = $("#m-text");
     if (pinyinOn() && window.Pinyin) {
-      box.innerHTML = window.Pinyin.annotateHtml(p.text, pinyinRenderMode());
+      // 走 annotatePoem（逐句声明「哪一篇」，勘误层才找得到）：不传 wid 时
+      // 输出与 annotateHtml 逐字相同，所以这是纯增强、不是改口径。
+      box.innerHTML = window.Pinyin.annotatePoem
+        ? window.Pinyin.annotatePoem(pinyinWidOf(p), p.text, pinyinRenderMode())
+        : window.Pinyin.annotateHtml(p.text, pinyinRenderMode());
       box.classList.add("with-pinyin");
     } else {
       box.textContent = p.text;
