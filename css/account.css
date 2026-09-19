@@ -478,12 +478,17 @@ body[data-nav="login"] .app {
   color: var(--ink);
 }
 
+/* 卡片顶上那一行（Issue #229 第五轮：文案从「各身份可用功能对照」收成
+   「功能对比」，并**按卡片里其它小标题的样子显示** —— 与 .account-card-title
+   同一套字号 / 字重 / 颜色 / 字距，只是它长在 caption 上。 */
 .plans-caption {
   caption-side: top;
   text-align: left;
-  font-size: 11.5px;
-  color: var(--ink-3);
-  padding: 0 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: .8px;
+  color: var(--ink-2);
+  padding: 0 0 12px;
 }
 
 .plans-th-cap {
@@ -580,11 +585,16 @@ thead .plans-th-cap {
 }
 .plans-v { display: block; line-height: 1.2; }
 
+/* 圆里那颗记号（Issue #229 第五轮）：圆改成 flex 居中 —— 勾与叉都是
+   同一套 24 视图框的 SVG，圆心对圆心，不再各自带着字体给的墨迹盒碰运气。
+   以前是 line-height: 18px 的 inline-block，✕ 是按基线坐的字符，
+   圆底会空出一块。 */
 .plans-mark {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 18px;
   height: 18px;
-  line-height: 18px;
   border-radius: 50%;
   font-size: 11px;
   font-weight: 700;
@@ -593,17 +603,20 @@ thead .plans-th-cap {
 .plans-mark.ok { color: #fff; background: var(--green); }
 .plans-mark.no { color: var(--ink-3); background: var(--green-light); }
 
-/* 绿色那颗「可用」是一枚 SVG 勾（Issue #229 第二轮）：符号 ✓ 是各家字体
-   的自由发挥、笔形带手写的歪劲，用户点名要「很正的 √」。SVG 按坐标落线，
-   与字号 / 字体无关，任何机器上都是同一个形状。
-   13px 的外框略小于 18px 的圆，四周留出 2.5px 的余白 —— 勾才不会顶到圆边。 */
+/* 圆里那两颗记号都是 SVG（勾自 Issue #229 第二轮、叉自第五轮）：一个 24 的
+   视图框按坐标落线，与字号 / 字体无关，任何机器上都是同一个形状。
+   两个记号都支在 .plans-mark 的 flex 居中上，所以这里只管定尺。
+   14px 的外框略小于 18px 的圆，四周留出 2px 余白 —— 笔尖才不会顶到圆边。 */
 .plans-mark-svg {
   display: block;
-  width: 13px;
-  height: 13px;
-  margin: 0 auto;
+  width: 14px;
+  height: 14px;
+  flex: none;
 }
-.account-hint .plans-mark .plans-mark-svg { margin: 0; }
+
+/* 名字的第二行（Issue #229 第五轮）：略淡一档，好让「导出 / 大会 / 遗忘曲线」
+   看着是同一个名字的下半截，而不是另一个词条。 */
+.plans-th-rest { color: var(--ink-2); }
 
 .plans-cell-hint {
   display: block;
@@ -640,7 +653,6 @@ thead .plans-th-cap {
 .plans-sum { font-weight: 600; color: var(--ink); }
 .plans-sum-of { font-weight: 400; font-size: 11px; color: var(--ink-3); margin-left: 2px; }
 
-.account-hint .plans-mark { vertical-align: -2px; margin: 0 2px; }
 
 @media (max-width: 400px) {
   .plans-table { font-size: 12px; }
