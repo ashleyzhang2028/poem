@@ -24,6 +24,10 @@ const eq = (a, b, m) => chk(a === b, m + '（实际 ' + JSON.stringify(a) + '）
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
+// 首页那条搜索框的提示语：与设置「背诵」页那一块的小标题、
+// 列表里那颗金色小标签**同字**（Issue #229 后续）。
+const PLACEHOLDER_LABEL = '今日加背';
+
 const DATA = [
   'data/poems-1.js', 'data/poems-2.js', 'data/poems-3.js', 'data/poems-4.js', 'data/poems-5.js',
   'data/poems-6.js', 'data/poems-7.js', 'data/poems-8.js', 'data/poems-9.js', 'data/poems-10.js',
@@ -147,14 +151,14 @@ console.log('\n=== 二、跨过 0 点：旧的那一份作废，且不留垃圾 
   eq(D.today(), todayStr(), 'today() 的判据与首页那份计划同源（本地时间的年-月-日）');
 }
 
-console.log('\n=== 三、首页：顶上的「我要加背」，点一下 5 首变 6 首 ===');
+console.log('\n=== 三、首页：顶上的「今日加背」，点一下 5 首变 6 首 ===');
 {
   const w = boot('index.html', '/');
   await w.__ready;
   await sleep(250);
   const d = w.document;
 
-  chk(!!d.querySelector('#today-search'), '今日背诵卡与列表之间有「我要加背」那个输入框');
+  chk(!!d.querySelector('#today-search'), '今日背诵卡与列表之间有「今日加背」那个输入框');
   chk(!!d.querySelector('#today-suggest'), '有候选下拉容器');
   chk(!!d.querySelector('#today-suggest').closest('.search-wrap'),
     '下拉挂在自己的输入框上（与搜索页同一套 .suggest）');
@@ -210,10 +214,18 @@ console.log('\n=== 三、首页：顶上的「我要加背」，点一下 5 首�
       '40px 这个数是 .toolbar 的默认值同款（不是这里另写一个数）');
   }
 
-  // ---- Issue #229：文案改成「我要加背」 ------------------------------------
-  eq(d.querySelector('#today-search').placeholder, '我要加背',
-    '搜索框的提示语是「我要加背」（不再是「再找一首，加进今天要背的」）');
+  // ---- Issue #229：文案改成「今日加背」 ------------------------------------
+  // 先「我要加背」，2026-09-19 又按用户原话收回成「今日加背」
+  // （「首页加背搜索框里的 我要加背 提示改成 今日加背」）—— 四个字，
+  // 与设置「背诵」页那一块的小标题、列表里那颗金色小标签同名。
+  eq(d.querySelector('#today-search').placeholder, '今日加背',
+    '搜索框的提示语是「今日加背」（不再是「我要加背」，更不是「再找一首，加进今天要背的」）');
   chk(homeHtml.indexOf('再找一首') < 0, '首页源码里不再留「再找一首」');
+  chk(homeHtml.indexOf('placeholder="我要加背"') < 0,
+    '也不留上一版的「我要加背」');
+  // 与列表里那颗金色小标签同字 —— 同一个名字在两个地方，读的人不会以为是两件事
+  eq(d.querySelector('#today-search').placeholder, PLACEHOLDER_LABEL,
+    '提示语与列表里那颗小标签（item.reason === "pinned"）的字面一致');
   const cssText = read('css/style.css');
   chk(cssText.indexOf('再找一首') < 0,
     'css 注释里那处旧文案也一并换掉（注释里的名字错了，下一个人就会照错的理解改）');
