@@ -91,6 +91,38 @@
         <p class="account-msg" id="msg-accounts"></p>
       </section>
 
+      <section class="account-card" id="reports-card" hidden>
+        <h2 class="account-card-title">用户报告</h2>
+        <p class="account-lead">
+          用户在篇目页点那颗<strong>小旗</strong>报上来的正文 / 译文 / 注音 / 朗读 / 界面问题。
+          这里<strong>看得到、改得动状态</strong>，但<strong>改不动正文</strong> ——
+          真正的修复是<strong>改源码</strong>（`data/poems-*.js`、`data/pinyin-table.js`），
+          这一张台账只是「谁知道哪一处错了」的收件箱。
+        </p>
+        <p class="account-hint">
+          一条报告的「已修复」是<strong>你说的</strong>，不是系统验过的：改完源码之后
+          回来把它标成「已修复」，用户那一页就会显示已修复。
+        </p>
+
+        <div class="admin-report-counts" id="report-counts"></div>
+
+        <div class="admin-report-tools">
+          <label class="account-label" for="report-filter" style="margin:0">只看</label>
+          <select id="report-filter">
+            <option value="all">全部</option>
+            <option value="new">已收到（还没看）</option>
+            <option value="read">已看过</option>
+            <option value="accepted">已确认</option>
+            <option value="fixed">已修复</option>
+            <option value="rejected">未采纳</option>
+          </select>
+          <button class="account-btn ghost" id="btn-reports-reload" type="button" style="width:auto;padding:8px 14px">刷新</button>
+        </div>
+
+        <ul class="report-list" id="reports-list"></ul>
+        <p class="account-hint" id="reports-empty" hidden>还没有人报过错。</p>
+        <p class="account-hint" id="reports-note" hidden></p>
+        <p class="account-msg" id="msg-reports"></p>
       <section class="account-card" id="pinyin-card" hidden>
         <h2 class="account-card-title">注音勘误</h2>
         <p class="account-lead">
@@ -212,6 +244,7 @@
   <script src="/js/progress-store.js"></script>
   <script src="/js/storage.js"></script>
   <script src="/js/avatar.js"></script>
+  <script src="/js/report.js"></script>
   <script src="/data/pinyin-table.js"></script>
   <script src="/data/common-chars.js"></script>
   <script src="/data/works-index.js"></script>

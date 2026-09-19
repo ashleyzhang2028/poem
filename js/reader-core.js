@@ -558,6 +558,7 @@
         "</div>" +
         "</div>" +
 
+        (CFG.reportList === false ? "" : reportItemBtn(p)) +
         (CFG.dailyList === false ? "" : dailyItemBtn(p)) +
         (CFG.reciteList === false ? "" : reciteItemBtn(p)) +
         '<button type="button" class="item-read" title="播放这一篇" aria-label="播放 ' + esc(p.title) + '">' +
@@ -583,6 +584,14 @@
           e.stopPropagation();
           claim(e);
           toggleDaily(p);
+        });
+      }
+      var reportBtn = el.querySelector(".item-report");
+      if (reportBtn) {
+        reportBtn.addEventListener("click", function (e) {
+          e.stopPropagation();
+          claim(e);
+          openReport(p);
         });
       }
       (groupCard || listEl).appendChild(el);
@@ -677,6 +686,7 @@
     syncDoneButton();
     syncReciteButtons();
     syncDailyButton();
+    syncReportButton();
     el.hidden = false;
     document.body.classList.add("reader-open");
 
@@ -1371,6 +1381,13 @@
       startRecite(current);
     });
 
+    var reportBtn = rd("report");
+    if (reportBtn) reportBtn.addEventListener("click", function (e) {
+      claim(e);
+      if (!current) return;
+      openReport(current);
+    });
+
     var transToggle = rd("trans-toggle");
     if (transToggle) transToggle.addEventListener("click", function (e) {
       claim(e);
@@ -1401,6 +1418,20 @@
     if (readBtn) readBtn.addEventListener("click", function (e) { claim(e); toggleRead(); });
     var transReadBtn = rd("trans-read");
     if (transReadBtn) transReadBtn.addEventListener("click", function (e) { claim(e); toggleTransRead(); });
+
+    // 正文选区 → 「报这一段」小气泡（见 js/report.js）。
+    // 绑在**正文那一块**上，不绑整页：用户选地址栏、选页脚时不该冒气泡。
+    var textEl = rd("text");
+    var R = reportMod();
+    if (textEl && R && typeof R.bindSelection === "function") {
+      R.bindSelection(textEl, function () {
+        return {
+          poemId: (current && current.id) || "",
+          poemTitle: (current && current.title) || "",
+          book: (current && (current.bookName || current.source || current.book)) || ""
+        };
+      });
+    }
   }
 
   function bindGlobal() {
@@ -1725,6 +1756,47 @@
     }
 
     if (session.api && session.api.refreshCanonical) session.api.refreshCanonical();
+  }
+
+  // ---- 「报告错误」（Issue #243 第四轮）------------------------------------
+  //
+  // 图形与文案全在 js/report.js 一份出；这里只做「放哪 + 调谁」。
+  // 它不是「加入背诵」那一类 —— 它**不改任何数据**，只是把一句话送到
+  // 管理员的台账。所以详情页那一颗**没有 data-on / aria-pressed**：
+  // 一个只报一次的动作没有「已报状态」可言（同一处也可能报两次，
+  // 第二次带着更准的描述）。
+  function reportMod() {
+    return (typeof window !== "undefined" && window.Report) || null;
+  }
+
+  function reportItemBtn(p) {
+    var R = reportMod();
+    if (!R || typeof R.itemBtn !== "function") return "";
+    return R.itemBtn(p);
+  }
+
+  // 详情页那一颗：**不是**每次重画 HTML，而是进阅读器时按当前这一篇
+  // 把 `data-report-poem` 改掉（那一颗是 classic/index.html 里写死的）。
+  function syncReportButton() {
+    var btn = rd("report");
+    var R = reportMod();
+    if (!btn) return;
+    if (!current || !R) { btn.hidden = true; return; }
+    btn.hidden = false;
+  }
+
+  function openReport(p, extra) {
+    var R = reportMod();
+    if (!R) { showToast("页面脚本版本对不上（刷新一次即可）"); return; }
+    var o = extra || {};
+    R.open({
+      kind: o.kind || "other",
+      poemId: (p && p.id) || "",
+      poemTitle: (p && p.title) || "",
+      book: (p && (p.bookName || p.source || p.book)) || "",
+      quote: o.quote || "",
+      context: o.context || ""
+    });
   }
 
   // ---- 「加入今日背诵」（Issue #243）---------------------------------------

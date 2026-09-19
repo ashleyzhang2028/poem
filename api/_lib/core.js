@@ -1710,6 +1710,298 @@ function adminRevoke(deps, input) {
   });
 }
 
+// ---------------------------------------------------------------------------
+// 用户报告 / 勘误（Issue #243 第四轮）
+// ---------------------------------------------------------------------------
+// 用户原话：「同样允许用户报告错误，勘误，我觉得可以发送到 supabase 数据库，
+// 然后我作为管理员能在管理员看到并纠正，你看看如何设计用户报告错误的界面，
+// 入口，交互等等」。
+//
+// 这一节只写**服务端那一半**：形状校验、频控、落库、管理端读写闸。
+// 界面那一半在 js/report.js / js/admin-page.js，两边共用同一份「档位」常量。
+//
+// 三条口径，每条都有一个「不这么写会怎样」：
+//
+//   · **报告与成员无关**（不按 child_id 分区）。它是「这一篇的正文/注音错了」，
+//     不是「老大背到哪」。分区之后同一个错会被报成三条，管理员还看不出
+//     那是同一处。
+//   · **不参与同步**。报告是**单向**的：用户 → 服务端 → 管理员。
+//     放进 progress 白名单的下场是「用户本机那份被云端覆盖之后，
+//     他刚报的错也跟着回到旧状态」。
+//   · **状态只由管理端改**。用户端只有「报一条」「看自己报过的」两个动作。
+//     用户端能改 `status` 的下场是报告自己把自己标成已修复。
+// ---------------------------------------------------------------------------
+
+var REPORT_KINDS = ["text", "translation", "pinyin", "audio", "ui", "other"];
+
+var REPORT_STATUSES = ["new", "read", "accepted", "fixed", "rejected"];
+
+// 各字段上界。它们同时是**前端 maxlength** 的来源（`js/report.js` 里抄同一组数），
+// 所以两边不会漂：谁改了一个，守卫测试直接红。
+var REPORT_LIMITS = {
+  quote: 200,
+  context: 2000,
+  note: 2000,
+  suggestion: 2000,
+  poemId: 80,
+  poemTitle: 120,
+  book: 60,
+  ua: 240
+};
+
+function clip(v, max) {
+  var s = String(v == null ? "" : v);
+  return s.length > max ? s.slice(0, max) : s;
+}
+
+function isReportKind(k) {
+  return REPORT_KINDS.indexOf(String(k || "")) >= 0;
+}
+
+var REPORT_STATUS_ALIAS = { open: "new", done: "fixed", closed: "rejected" };
+
+function normReportStatus(s) {
+  var v = String(s == null ? "" : s).trim().toLowerCase();
+  if (REPORT_STATUS_ALIAS[v]) return REPORT_STATUS_ALIAS[v];
+  return REPORT_STATUSES.indexOf(v) >= 0 ? v : "";
+}
+
+function reportPublic(row) {
+  if (!row) return null;
+  var r = row;
+  return {
+    rid: String(r.rid || ""),
+    kind: isReportKind(r.kind) ? String(r.kind) : "other",
+    status: normReportStatus(r.status) || "new",
+    poemId: String(r.poem_id || r.poemId || ""),
+    poemTitle: String(r.poem_title || r.poemTitle || ""),
+    book: String(r.book || ""),
+    quote: String(r.quote || ""),
+    context: String(r.context || ""),
+    note: String(r.note || ""),
+    suggestion: String(r.suggestion || ""),
+    createdAt: Number(r.created_at || r.createdAt || 0),
+    updatedAt: Number(r.updated_at || r.updatedAt || 0),
+    handledAt: Number(r.handled_at || r.handledAt || 0),
+    reply: String(r.reply || "")
+  };
+}
+
+function reportAdmin(row) {
+  var pub = reportPublic(row) || {};
+  pub.emailMask = String(row.email_mask || "");
+  pub.nickname = String(row.nickname || "");
+  pub.uid = String(row.uid || "");
+  pub.handledBy = String(row.handled_by || "");
+  pub.ua = String(row.ua || "");
+  return pub;
+}
+
+// **每日每人一条闸**。用户能无限报的下场是管理端被刷成一堵墙，
+// 真正的错被埋掉。上限与「今日加背」那条同源：它是「日报」的量级，不是「API 调用」。
+var REPORT_DAILY_MAX = 20;
+
+function normReportInput(deps, input) {
+  var kind = String((input && input.kind) || "").toLowerCase();
+  if (!isReportKind(kind)) kind = "other";
+
+  var note = clip(input && input.note, REPORT_LIMITS.note).trim();
+  var quote = clip(input && input.quote, REPORT_LIMITS.quote).trim();
+  var context = clip(input && input.context, REPORT_LIMITS.context).trim();
+  var suggestion = clip(input && input.suggestion, REPORT_LIMITS.suggestion).trim();
+
+  // 「说了什么」不能全空：一条只有篇名的报告，管理员打开是一张白纸。
+  // 但**不能**要求「必须写正文」—— 点「注音错了」这一档时，
+  // 用户要的是一键上报，逼他打字就等于这条功能没人用。
+  if (!note && !quote && !suggestion) {
+    return { bad: "E_EMPTY", message: "请写一句「哪里不对」（哪怕两个字：如「长 注音」）" };
+  }
+
+  return {
+    kind: kind,
+    poemId: clip(input && input.poemId, REPORT_LIMITS.poemId).trim(),
+    poemTitle: clip(input && input.poemTitle, REPORT_LIMITS.poemTitle).trim(),
+    book: clip(input && input.book, REPORT_LIMITS.book).trim(),
+    quote: quote,
+    context: context,
+    note: note || (quote ? "「" + quote + "」这一处不对" : ""),
+    suggestion: suggestion,
+    device: String((input && input.deviceId) || deps.deviceId || "").slice(0, 64),
+    ua: clip(input && input.ua, REPORT_LIMITS.ua).trim()
+  };
+}
+
+function reportCreate(deps, input) {
+  var cfg = deps.cfg, store = deps.store, t = deps.now();
+
+  if (!cfg.hasSession()) {
+    return Promise.resolve(err(503, "E_NOT_CONFIGURED", "服务端还没配置好（缺 SESSION_SECRET）。想提意见可以直接开一个 Issue，那条路不依赖服务端。"));
+  }
+  if (!deps.account) {
+    return Promise.resolve(err(401, "E_NO_SESSION", "报告要登录后才能发（这样才认得出是谁报的、修好之后能回你一句）。没登录也能直接开 Issue。"));
+  }
+
+  var who = normReportInput(deps, input);
+  if (who.bad) return Promise.resolve(err(400, who.bad, who.message));
+
+  // 频控两档，与发码同源：
+  //   · device 档挡「同一台机器连点」，命中时**不落账**（报错的那一次不发也算一次）
+  //   · uid 档是每日总量，见 REPORT_DAILY_MAX
+  var device = String(input && input.deviceId || deps.deviceId || "unknown");
+  var g = deps.limiter.check(cfg, "device", "report:" + device, t);
+  if (!g.ok) {
+    return Promise.resolve(err(429, "E_RATE_DEVICE", "报得太快了，隔一会儿再发（今天已经报的那些都在）", { retryAfter: g.retryAfter }));
+  }
+
+  return Promise.resolve(store.getAccount(deps.account.uid)).then(function (me) {
+    if (!me || me.status === "deleted") return err(401, "E_NO_SESSION", "还没有登录");
+
+    return Promise.resolve(store.countReportsByUid(deps.account.uid, t)).then(function (n) {
+      if (n >= REPORT_DAILY_MAX) {
+        return err(429, "E_RATE_REPORT", "今天报得有点多（上限 " + REPORT_DAILY_MAX + " 条）。剩下的明天再报，或者直接开一个 Issue。", { limit: REPORT_DAILY_MAX });
+      }
+
+      deps.limiter.hit("device", "report:" + device, t);
+
+      var rid = id.newReportId();
+      var row = {
+        rid: rid,
+        uid: deps.account.uid,
+
+        // 掩码与昵称是**快照**：账号注销之后，管理员仍认得出这条是谁提的
+        email_mask: String(me.email_mask || me.emailMask || ""),
+        nickname: String(me.nickname || ""),
+        kind: who.kind,
+        status: "new",
+        poem_id: who.poemId,
+        poem_title: who.poemTitle,
+        book: who.book,
+        quote: who.quote,
+        context: who.context,
+        note: who.note,
+        suggestion: who.suggestion,
+        device: who.device,
+        ua: who.ua,
+        created_at: t,
+        updated_at: t
+      };
+
+      return Promise.resolve(store.putReport(row)).then(function () {
+        return ok({
+          rid: rid,
+          status: "new",
+          createdAt: t,
+          remaining: Math.max(0, REPORT_DAILY_MAX - (n + 1)),
+          note: "收到了。这一条进的是管理员那一张台账，修好之后会在「我的报告」里变成「已修复」。"
+        });
+      });
+    });
+  });
+}
+
+// 用户端只看**自己**报过的。传别人的 uid 也只看自己的（uid 从会话取，
+// 不从请求体取）—— 这与「权益只从 /api/me 来」是同一类闸。
+function reportMine(deps, input) {
+  var cfg = deps.cfg, store = deps.store;
+  if (!cfg.hasSession()) {
+    return Promise.resolve(err(503, "E_NOT_CONFIGURED", "服务端还没配置好（缺 SESSION_SECRET）。"));
+  }
+  if (!deps.account) return Promise.resolve(err(401, "E_NO_SESSION", "还没有登录"));
+
+  var limit = Math.max(1, Math.min(200, Number(input && input.limit) || 50));
+  return Promise.resolve(store.listReports({ uid: deps.account.uid }, limit)).then(function (rows) {
+    return ok({
+      reports: (rows || []).map(reportPublic),
+      note: "这里只列你自己报过的。管理端看到的是全站那一张台账。"
+    });
+  });
+}
+
+// ---------------------------------------------------------------------------
+// 管理端：读全站台账 + 改状态
+// ---------------------------------------------------------------------------
+// 两道闸，缺一不可：
+//   1. `adminGate` —— 会话配了没、登录了没
+//   2. `isAdminRole` —— accounts.role 是不是 owner / admin
+// 把入口藏起来**不是**安全边界（README 那四条硬规矩里原话）。
+function adminReports(deps, input) {
+  var cfg = deps.cfg, store = deps.store;
+  var gate = adminGate(deps, cfg);
+  if (gate) return Promise.resolve(gate);
+
+  var status = String((input && input.status) || "").trim();
+  var wantStatus = status && status !== "all" ? normReportStatus(status) : "";
+  if (status && status !== "all" && !wantStatus) {
+    return Promise.resolve(err(400, "E_STATUS", "状态只认 " + REPORT_STATUSES.join(" / ") + "（或 all）"));
+  }
+
+  return Promise.resolve(store.getAccount(deps.account.uid)).then(function (me) {
+    if (!me || me.status === "deleted") return err(401, "E_NO_SESSION", "还没有登录");
+    if (!isAdminRole(me.role)) return err(403, "E_FORBIDDEN", "这一条只对管理员开放");
+
+    var limit = Math.max(1, Math.min(500, Number(input && input.limit) || 200));
+    var filter = {};
+    if (wantStatus) filter.status = wantStatus;
+    if (input && input.poemId) filter.poemId = clip(input.poemId, REPORT_LIMITS.poemId).trim();
+
+    return Promise.resolve(store.listReports(filter, limit)).then(function (rows) {
+      return Promise.resolve(store.countReports({})).then(function (counts) {
+        return ok({
+          reports: (rows || []).map(reportAdmin),
+          counts: counts || {},
+          total: (rows || []).length,
+          kinds: REPORT_KINDS.slice(),
+          statuses: REPORT_STATUSES.slice(),
+          store: store.kind
+        });
+      });
+    });
+  });
+}
+
+function adminReportPatch(deps, input) {
+  var cfg = deps.cfg, store = deps.store, t = deps.now();
+  var gate = adminGate(deps, cfg);
+  if (gate) return Promise.resolve(gate);
+
+  var rid = clip(input && input.rid, 64).trim();
+  if (!rid) return Promise.resolve(err(400, "E_RID", "缺 rid"));
+
+  var status = normReportStatus(input && input.status);
+  if (!status) return Promise.resolve(err(400, "E_STATUS", "状态只认 " + REPORT_STATUSES.join(" / ")));
+
+  return Promise.resolve(store.getAccount(deps.account.uid)).then(function (me) {
+    if (!me || me.status === "deleted") return err(401, "E_NO_SESSION", "还没有登录");
+    if (!isAdminRole(me.role)) return err(403, "E_FORBIDDEN", "这一条只对管理员开放");
+
+    var patch = {
+      status: status,
+      updated_at: t,
+      reply: clip(input && input.reply, REPORT_LIMITS.suggestion).trim()
+    };
+
+    // 只有「真处理过」的那三档才盖处理人/处理时刻。
+    // 标成「已读」就盖上 handled_at 的下场是：管理端里「处理过几条」
+    // 把「只是看了一眼」也算进去，那张统计当场失真。
+    if (status === "accepted" || status === "fixed" || status === "rejected") {
+      patch.handled_at = t;
+      patch.handled_by = String(me.uid || "");
+    } else {
+      patch.handled_at = null;
+      patch.handled_by = "";
+    }
+
+    return Promise.resolve(store.patchReport(rid, patch)).then(function (row) {
+      if (!row) return err(404, "E_NO_REPORT", "没有 rid 是 " + rid + " 的那一条（可能是另一台服务器发的？）");
+      return ok({
+        report: reportAdmin(row),
+        note: "这一条只改了服务端那一份。界面上的正文要**真的改源码**才算修好 —— 报告台账不是数据源。"
+      });
+    });
+  });
+}
+
+
 var GAME_CAP = { fly: "feihualing", paper: "exam.paper", review: "quiz.review" };
 
 function gameAllowed(cfg, tier, cap) {
@@ -1890,6 +2182,19 @@ module.exports = {
   adminAccounts: adminAccounts,
   adminRevoke: adminRevoke,
   isAdminRole: isAdminRole,
+
+  reportCreate: reportCreate,
+  reportMine: reportMine,
+  adminReports: adminReports,
+  adminReportPatch: adminReportPatch,
+  REPORT_KINDS: REPORT_KINDS,
+  REPORT_STATUSES: REPORT_STATUSES,
+  REPORT_LIMITS: REPORT_LIMITS,
+  REPORT_DAILY_MAX: REPORT_DAILY_MAX,
+  normReportStatus: normReportStatus,
+  normReportInput: normReportInput,
+  reportPublic: reportPublic,
+  reportAdmin: reportAdmin,
   normGrantInput: normGrantInput,
   MASK_RE: MASK_RE,
   publicAccount: publicAccount,
