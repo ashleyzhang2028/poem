@@ -324,6 +324,26 @@
     var k = String(key == null ? "" : key);
     var K = sharedKeys();
 
+    // ---- 先看 ProgressStore 那张分域表（**唯一**一份定义）--------------
+    //
+    // 原先这里是「按名字猜」：已读键一律分家、`poem_(font|align|reader|play)`
+    // 一律不分家，其余默认分家。猜出来的答案已经出过两次错：
+    //   · 「今日加背」当时被当成设备键，跨设备一同步，第一个孩子那台就露出来；
+    //   · 「自选集合」其实是一份**账号级**的清单（集合本身不含进度），
+    //     却被默认判成分家 —— 于是第二个孩子建出来后那份集合凭空消失。
+    // 现在把这两条并起来：表里有登记的（含已读那一族的前缀规则）一律听表，
+    // 表里没有的才走下面的名字口径（那是给还没登记的键兜底的）。
+    var g0 = typeof globalThis !== "undefined" ? globalThis : null;
+    var PS0 = g0 && g0.ProgressStore;
+    if (PS0 && PS0.scopes) {
+      var hit = null;
+      try {
+        hit = (PS0.scopes() || []).filter(function (sc) { return sc.key === k; })[0] || null;
+      } catch (e) { hit = null; }
+      if (!hit && PS0.isReadKey && PS0.isReadKey(k)) return true;
+      if (hit) return !!hit.perChild;
+    }
+
     if (k === K.progress || k === K.settings) return true;
     if (k === K.profile) return false;
     if (k === K.device) return false;
@@ -331,19 +351,6 @@
     if (/^poem_.*_read_v1$/.test(k)) return true;
 
     if (/^poem_(font|align|reader|ios_|play)/.test(k)) return false;
-
-    var g = typeof globalThis !== "undefined" ? globalThis : null;
-    var PS = g && g.ProgressStore;
-    if (PS && PS.isLocalKey) {
-      var known = false;
-      try {
-        var scopes = PS.scopes ? PS.scopes() : [];
-        known = scopes.some(function (sc) { return sc.key === k; });
-      } catch (e) { known = false; }
-      if (known) {
-        try { if (PS.isLocalKey(k)) return false; } catch (e) {  }
-      }
-    }
 
     return true;
   }

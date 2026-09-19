@@ -497,6 +497,67 @@ async function main() {
     }
   }
 
+  console.log("\n=== 十一、头像地址跟着 /api/me 回来（Issue #243 后续）===");
+  {
+    // 头像字节太大（≤1 MB 的 data URL），进不了同步载荷 —— 它的跨设备靠
+    // Storage 桶里那张图的公开地址。新设备上第一次拿到 /api/me 时把它写回
+    // 账号域，否则换台设备头像就退回昵称首字（用户会以为「头像没同步」）。
+    const AV = require(path.join(ROOT, "js/avatar.js"));
+    const URL_OK = "https://x.supabase.co/storage/v1/object/public/avatars/zh/zhang/avatar.jpg";
+
+    const b1 = mem();
+    const { store: s1 } = signedInStore(b1);
+    const a1 = M.bind({
+      api: fakeApi({ me: { ok: true, plan: { tier: "pro" }, role: "user", avatar: URL_OK } }),
+      E: E, A: A, AV: AV, backing: b1
+    });
+    eq(AV.avatar(b1).img, "", "起点：这台新设备的账号域里没有头像图片");
+    await a1.refreshMe();
+    eq(AV.avatar(b1).img, URL_OK, "/api/me 带回的地址真的写进了账号域");
+
+    // 本机已经有图片时**不动它**：那份是「服务器还没配上时还能看」的
+    const b2 = mem();
+    const { store: s2 } = signedInStore(b2);
+    AV.setAvatar(b2, { img: "https://example.com/mine.jpg" });
+    const a2 = M.bind({
+      api: fakeApi({ me: { ok: true, plan: { tier: "pro" }, role: "user", avatar: URL_OK } }),
+      E: E, A: A, AV: AV, backing: b2
+    });
+    await a2.refreshMe();
+    eq(AV.avatar(b2).img, "https://example.com/mine.jpg", "本机已有图片时不覆盖（它不是空位）");
+
+    // 服务端没配 Storage：如实回空串，不编一个假地址
+    const b3 = mem();
+    signedInStore(b3);
+    const a3 = M.bind({
+      api: fakeApi({ me: { ok: true, plan: { tier: "free" }, role: "user", avatar: "" } }),
+      E: E, A: A, AV: AV, backing: b3
+    });
+    await a3.refreshMe();
+    eq(AV.avatar(b3).img, "", "服务端没配 Storage 时账号域仍是空的（不假装有头像）");
+
+    // 脏地址（不是白名单里的形状）一律不收
+    const b4 = mem();
+    signedInStore(b4);
+    const a4 = M.bind({
+      api: fakeApi({ me: { ok: true, plan: { tier: "free" }, role: "user", avatar: "javascript:alert(1)" } }),
+      E: E, A: A, AV: AV, backing: b4
+    });
+    await a4.refreshMe();
+    eq(AV.avatar(b4).img, "", "javascript: 这种假地址不收（走的是同一份 isImgUrl 白名单）");
+
+    // 服务端那一侧：publicAccount() 如实带上地址，没配就回空串
+    const core = require(path.join(ROOT, "api/_lib/core.js"));
+    const withStore = core.publicAccount(
+      { avatarPublicUrl: u => "https://x.supabase.co/storage/v1/object/public/avatars/" + u.slice(0, 2) + "/" + u + "/avatar.jpg" },
+      { uid: "zhangmin", nickname: "张敏", role: "user" }
+    );
+    chk(/\.jpg$/.test(withStore.avatar), "配了 Storage 时 /api/me 带上公开地址");
+    eq(core.publicAccount({}, { uid: "zhangmin" }).avatar, "",
+      "没配 Storage 时回空串（不编一个指向不存在文件的地址）");
+    eq(core.avatarUrlOf({}, "ab"), "", "uid 太短时也不编地址");
+  }
+
   console.log("");
   if (fails) { console.log("❌ 账号接线测试 " + fails + " 项失败"); process.exit(1); }
   console.log("🎉 账号接线测试全部通过");

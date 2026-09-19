@@ -560,8 +560,10 @@ console.log('\n=== 九、上云：一行 progress，按天合并（云同步也�
     '与名册同路推（child_id 为空串的那一批）');
   chk(/markSeen\(DAILY_EXTRA_ROW_ID, cloudTs\)/.test(sync),
     '拉取一律记 seen（不记就会每轮重复拉、反复重写本机）');
-  chk(/id !== DAILY_EXTRA_ROW_ID && norm\(seen\[id\]\) < 0/.test(sync),
+  chk(/id !== DAILY_EXTRA_ROW_ID/.test(sync),
     '不进冲突裁决（它不是一份进度）');
+  chk(/id === DAILY_EXTRA_ROW_ID\) return false/.test(sync),
+    'conflicts() 里那一档真的把它排掉（只写在注释里不算）');
   chk(/outcome\.conflict \|\| conflictIds\(forCore, remoteRecs2\)\)[\s\S]{0,120}DAILY_EXTRA_ROW_ID/.test(sync),
     'firstMerge 的冲突清单也把它滤掉（不弹「保留本机还是保留账号」）');
 

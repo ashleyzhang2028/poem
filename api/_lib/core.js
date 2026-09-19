@@ -162,8 +162,25 @@ function publicAccount(cfg, acc) {
     emailVerifiedAt: acc.email_verified_at == null ? null : Number(acc.email_verified_at),
     emailVerified: acc.email_verified_at != null,
 
+    // 头像的权威地址（Issue #243 后续）：图片在 Storage 桶里，这一串是公开地址。
+    // 客户端在新设备上第一次拿到 /api/me 时把它写回账号域 —— 不写的话，
+    // 换台设备头像就退回昵称首字（头像字节本身太大，进不了同步载荷）。
+    // 没配 Storage（没有 public URL）时如实回空串，不编一个假地址。
+    avatar: avatarUrlOf(cfg, acc.uid),
+
     channel: channelFacts(cfg)
   };
+}
+
+function avatarUrlOf(cfg, uid) {
+  try {
+    if (typeof cfg.avatarPublicUrl !== "function") return "";
+    var u = String(uid || "").replace(/[^A-Za-z0-9_-]/g, "");
+    if (u.length < 2) return "";
+    return String(cfg.avatarPublicUrl(u) || "");
+  } catch (e) {
+    return "";
+  }
 }
 
 function channelFacts(cfg) {
@@ -1227,6 +1244,106 @@ function sanitizeDailyExtra(p) {
 
 var DAILY_EXTRA_MAX = 20;
 
+// ---------------------------------------------------------------------------
+// 自选集合（Issue #243 后续 · 用户口径：「云同步能加的都加上」）
+// ---------------------------------------------------------------------------
+// 与 daily_extra:v1 同一套路：它是 progress 里的一行，不是新表。
+// 但它比加背重得多 —— 一篇一条快照，所以有两条硬闸：
+//   · 集合数封顶（与 js/collections.js 的 MAX_COLLECTIONS 一致）
+//   · 每集合篇数封顶，**超出的整条丢掉而不是截断**（截一半比丢掉更坏：
+//     用户看到的是「我的集合回来了，但少了几篇」）
+// 载荷体积因此有上界，不会因为一个人攒了几千篇就撑爆 jsonb。
+var COLLECTIONS_ROW_ID = "collections:v1";
+
+var COLLECTIONS_MAX = 5000;
+
+var COLLECTIONS_ITEMS_MAX = 500;
+
+function sanitizeCollections(p) {
+  var out = { v: 1, updatedAt: Number((p && p.updatedAt) || 0) };
+  out.updatedAt = isFinite(out.updatedAt) && out.updatedAt > 0 ? Math.round(out.updatedAt) : 0;
+  out.deleted = (p && p.deleted) ? 1 : 0;
+
+  var list = (p && Array.isArray(p.collections)) ? p.collections.slice(0, COLLECTIONS_MAX) : [];
+  out.collections = [];
+  list.forEach(function (c) {
+    if (!c || typeof c !== "object") return;
+    var id = refText(c.id, 80).trim();
+    if (!id) return;
+    var items = Array.isArray(c.items) ? c.items : [];
+    if (items.length > COLLECTIONS_ITEMS_MAX) return;
+    var seen = {};
+    var kept = [];
+    items.forEach(function (it) {
+      var pid = refText((it && typeof it === "object" ? it.id : it), 80).trim();
+      if (!pid || seen[pid]) return;
+      seen[pid] = true;
+      var row = { id: pid };
+      var snap = (it && typeof it === "object" && it.snap && typeof it.snap === "object") ? it.snap : null;
+      if (snap) {
+        row.snap = {
+          title: refText(snap.title, 120),
+          author: refText(snap.author, 60),
+          authorName: refText(snap.authorName, 60),
+          dynasty: refText(snap.dynasty, 30),
+          source: refText(snap.source, 120),
+          selection: refText(snap.selection, 120),
+          book: refText(snap.book, 60),
+          bookName: refText(snap.bookName, 120),
+          page: refText(snap.page, 60),
+          text: refText(snap.text, 20000),
+          translation: refText(snap.translation, 20000),
+          translationSource: refText(snap.translationSource, 200)
+        };
+      }
+      kept.push(row);
+    });
+    out.collections.push({
+      id: id,
+      name: refText(c.name, 40),
+      createdAt: Number(c.createdAt) > 0 ? Math.round(Number(c.createdAt)) : 0,
+      items: kept
+    });
+  });
+  return out;
+}
+
+// ---------------------------------------------------------------------------
+// 集子已读（Issue #243 后续）：一条记录只有一个布尔值，体积天然很小
+// ---------------------------------------------------------------------------
+// 与自选集合的区别：它是**并集**合并的（两台设备各读过几篇 → 合起来），
+// 所以载荷按「篇 id → 薄记录」推，不推整张 map 的胜者。
+var READ_ROW_PREFIX = "reads:";
+
+var READ_ROW_MAX = 2000;
+
+function readRowKeyOf(poemId) {
+  var s = String(poemId == null ? "" : poemId);
+  return s.indexOf(READ_ROW_PREFIX) === 0 && s.slice(READ_ROW_PREFIX.length).length > 0;
+}
+
+function sanitizeReads(p) {
+  var out = { v: 1, updatedAt: Number((p && p.updatedAt) || 0) };
+  out.updatedAt = isFinite(out.updatedAt) && out.updatedAt > 0 ? Math.round(out.updatedAt) : 0;
+  out.deleted = (p && p.deleted) ? 1 : 0;
+
+  var src = (p && p.marks && typeof p.marks === "object" && !Array.isArray(p.marks)) ? p.marks : {};
+  var keys = Object.keys(src).slice(0, READ_ROW_MAX);
+  out.marks = {};
+  keys.forEach(function (id) {
+    var pid = refText(id, 80).trim();
+    if (!pid) return;
+    var v = src[id];
+    var o = (v && typeof v === "object") ? v : {};
+    out.marks[pid] = {
+      at: Number(o.at) > 0 ? Math.round(Number(o.at)) : 0,
+      times: Number(o.times) > 0 ? Math.min(100000, Math.round(Number(o.times))) : 0
+    };
+  });
+  return out;
+}
+
+
 function exportAllProgress(deps, uid) {
   var store = deps.store;
   function one(child) {
@@ -1342,6 +1459,8 @@ function sanitizePayload(p, poemId) {
 
   if (poemId === "family:v1") return sanitizeFamily(p);
   if (poemId === DAILY_EXTRA_ROW_ID) return sanitizeDailyExtra(p);
+  if (poemId === COLLECTIONS_ROW_ID) return sanitizeCollections(p);
+  if (readRowKeyOf(poemId)) return sanitizeReads(p);
 
   if (typeof p.level === "number") out.level = Math.max(0, Math.min(99, Math.round(p.level)));
   if (typeof p.level === "number") out.level = Math.max(0, Math.min(99, Math.round(p.level)));
@@ -1700,6 +1819,15 @@ module.exports = {
   DAILY_EXTRA_ROW_ID: DAILY_EXTRA_ROW_ID,
   DAILY_EXTRA_MAX: DAILY_EXTRA_MAX,
   sanitizeDailyExtra: sanitizeDailyExtra,
+  COLLECTIONS_ROW_ID: COLLECTIONS_ROW_ID,
+  COLLECTIONS_MAX: COLLECTIONS_MAX,
+  COLLECTIONS_ITEMS_MAX: COLLECTIONS_ITEMS_MAX,
+  sanitizeCollections: sanitizeCollections,
+  READ_ROW_PREFIX: READ_ROW_PREFIX,
+  READ_ROW_MAX: READ_ROW_MAX,
+  readRowKeyOf: readRowKeyOf,
+  sanitizeReads: sanitizeReads,
+  avatarUrlOf: avatarUrlOf,
   accountDelete: accountDelete,
 
   register: register,

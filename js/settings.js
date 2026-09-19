@@ -977,7 +977,7 @@
       hint.textContent = "已开启，登录后才会真的同步。";
       return;
     }
-    hint.textContent = "开启中：进度与账号设置会同步；本机那份始终完整，断网照常背。";
+    hint.textContent = "开启中：进度、账号设置、自选集合、集子已读、今日加背、头像都会同步；本机那份始终完整，断网照常背。";
   }
 
   function bindSync() {

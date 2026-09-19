@@ -964,6 +964,204 @@ async function main() {
     eq(h.Sync.conflicts().length, 0, "conflicts() 里也看不到它");
   }
 
+  // 「自选集合」也上云（Issue #243 后续 · 用户口径「能上云的全上」）。
+  // 它是 progress 里的一行（`collections:v1`），合并规则是「谁最后改谁赢」——
+  // 与加背的「按天并集」、已读的「纯并集」都不一样，所以这一段单独守。
+  {
+    const h = harness({
+      store: {
+        poem_recite_collections_v1: JSON.stringify({
+          version: 1, updatedAt: 1000,
+          collections: [{ id: "c1", name: "我要背的", createdAt: 1, items: [{ id: "ts-1" }] }]
+        })
+      },
+      net: { syncpush: () => Promise.resolve(jsonRes(200, { applied: 1, serverTime: 2000 })) }
+    });
+
+    global.window.ReciteCollections = undefined;
+    delete require.cache[require.resolve(path.join(ROOT, "js/collections.js"))];
+    require(path.join(ROOT, "js/collections.js"));
+    const C = global.ReciteCollections;
+    eq(C.SYNC_ID, h.Sync.COLLECTIONS_ROW_ID,
+      "sync-store 与 collections 的行号逐字一致（各写一份就静默不同步）");
+
+    h.Sync.setEnabled(true);
+    h.calls.length = 0;
+    await h.Sync.now({ pull: false });
+
+    const pushed = h.calls.filter(c => c.url === "/api/sync/push");
+    eq(pushed.length, 1, "推了一轮");
+    const row = pushed[0].body.recs.filter(r => r.id === "collections:v1")[0];
+    chk(!!row, "集合那一行在推送清单里");
+    eq(pushed[0].body.child, "", "与名册同路（child_id 空串那一批）");
+    eq(row.payload.collections.length, 1, "载荷带上了那个集合");
+
+    h.calls.length = 0;
+    await h.Sync.now({ pull: false });
+    eq(h.calls.length, 0, "推过的行不会在下一轮被再推一次（没有它就成死循环）");
+  }
+
+  // 拉取：云端更新 → 写进本机，且**写完不再往回推**（本机时间戳就是云端那个）
+  {
+    const h = harness({
+      store: {
+        poem_recite_collections_v1: JSON.stringify({
+          version: 1, updatedAt: 1000,
+          collections: [{ id: "old", name: "旧的", createdAt: 1, items: [] }]
+        })
+      },
+      net: {
+        syncpull: () => Promise.resolve(jsonRes(200, {
+          recs: [{
+            id: "collections:v1", updatedAt: 9000, deleted: false,
+            payload: { version: 1, updatedAt: 9000, collections: [{ id: "new", name: "云端的", createdAt: 2, items: [{ id: "ts-2" }] }] }
+          }],
+          serverTime: 9500
+        }))
+      }
+    });
+
+    global.window.ReciteCollections = undefined;
+    delete require.cache[require.resolve(path.join(ROOT, "js/collections.js"))];
+    require(path.join(ROOT, "js/collections.js"));
+    const C = global.ReciteCollections;
+
+    h.Sync.setEnabled(true);
+    const r = await h.Sync.pullOnce(0);
+    chk(r.ok, "拉成功了");
+    eq(r.applied.applied, 1, "记成「应用了一条」");
+    eq(C.list().length, 1, "本机换成了云端那一份");
+    eq(C.list()[0].id, "new", "内容来自云端（覆盖，不是并起来）");
+    eq(h.Sync.seen()["collections:v1"], 9000, "记了 seen");
+
+    h.calls.length = 0;
+    await h.Sync.now({ pull: false });
+    eq(h.calls.length, 0,
+      "并进来的内容不会在下一轮被推回去（本机那份的时间戳必须就是云端那个）");
+  }
+
+  // 删空之后仍要推一行删除标记（否则另一台设备还挂着那几个集合）
+  {
+    const h = harness({
+      store: {
+        poem_recite_collections_v1: JSON.stringify({
+          version: 1, updatedAt: 1000, collections: [{ id: "c1", name: "x", createdAt: 1, items: [] }]
+        })
+      },
+      net: {
+        syncpush: () => Promise.resolve(jsonRes(200, { applied: 1, serverTime: 2000 })),
+        syncpull: () => Promise.resolve(jsonRes(200, { recs: [], serverTime: 2100 }))
+      }
+    });
+
+    global.window.ReciteCollections = undefined;
+    delete require.cache[require.resolve(path.join(ROOT, "js/collections.js"))];
+    require(path.join(ROOT, "js/collections.js"));
+    const C = global.ReciteCollections;
+
+    h.Sync.setEnabled(true);
+    h.Sync.markSeen("collections:v1", 1000);
+    try { h.backing.removeItem("poem_recite_collections_v1"); } catch (e) {  }
+
+    h.calls.length = 0;
+    await h.Sync.now({ pull: false });
+    const pushed = h.calls.filter(c => c.url === "/api/sync/push");
+    eq(pushed.length, 1, "删空之后仍推了一轮");
+    const row = pushed[0].body.recs.filter(r => r.id === "collections:v1")[0];
+    chk(!!row && row.deleted === true, "那一行是删除标记");
+  }
+
+  // 「集子已读」也上云（Issue #243 后续）：一个集子一行，**并集**合并。
+  {
+    const h = harness({
+      store: {
+        poem_tangshi_read_v1: JSON.stringify({ "ts-1": { read: true, at: 100, times: 1 } })
+      },
+      net: {
+        syncpull: () => Promise.resolve(jsonRes(200, {
+          recs: [{
+            id: "reads:poem_tangshi_read_v1", updatedAt: 9000, deleted: false,
+            payload: { v: 1, updatedAt: 9000, marks: { "ts-2": { at: 200, times: 1 } } }
+          }],
+          serverTime: 9500
+        })),
+        syncpush: () => Promise.resolve(jsonRes(200, { applied: 1, serverTime: 9600 }))
+      }
+    });
+
+    global.window.ReadSync = undefined;
+    delete require.cache[require.resolve(path.join(ROOT, "js/read-sync.js"))];
+    require(path.join(ROOT, "js/read-sync.js"));
+    const R = global.ReadSync;
+    eq(R.PREFIX, h.Sync.READ_ROW_PREFIX, "已读那一族的行号前缀两端一致");
+
+    h.Sync.setEnabled(true);
+    const r = await h.Sync.pullOnce(0);
+    chk(r.ok, "拉成功了");
+    eq(r.applied.applied, 1, "记成「应用了一条」");
+
+    const map = h.PS.readMap("poem_tangshi_read_v1");
+    chk(!!map["ts-1"], "本机读过的那一篇**留着**（并集，不是覆盖）");
+    chk(!!map["ts-2"], "云端读过的那一篇也并进来了");
+    eq(h.Sync.conflicts().length, 0, "已读不进冲突裁决");
+    eq(h.Sync.seen()["reads:poem_tangshi_read_v1"], 9000, "记了 seen");
+
+    h.calls.length = 0;
+    await h.Sync.now({ pull: false });
+    eq(h.calls.length, 0, "并进来的内容不会在下一轮被推回去");
+  }
+
+  // 读一篇 → 会推（这一条最容易漏：引擎写已读与同步层本来是两拨人）
+  {
+    const h = harness({
+      store: { poem_tangshi_read_v1: JSON.stringify({}) },
+      net: { syncpush: () => Promise.resolve(jsonRes(200, { applied: 1, serverTime: 2000 })) }
+    });
+
+    global.window.ReadSync = undefined;
+    delete require.cache[require.resolve(path.join(ROOT, "js/read-sync.js"))];
+    require(path.join(ROOT, "js/read-sync.js"));
+    const R = global.ReadSync;
+
+    h.Sync.setEnabled(true);
+    h.Sync.markSeen("__cursor__", 0);
+    h.PS.setRead("poem_tangshi_read_v1", "ts-9", true);
+    R.touch("poem_tangshi_read_v1");
+
+    h.calls.length = 0;
+    await h.Sync.now({ pull: false });
+    const pushed = h.calls.filter(c => c.url === "/api/sync/push");
+    eq(pushed.length, 1, "标了一篇之后推了一轮");
+    const row = pushed[0].body.recs.filter(r => r.id === "reads:poem_tangshi_read_v1")[0];
+    chk(!!row, "已读那一行在推送清单里");
+    eq(Object.keys(row.payload.marks).length, 1, "带上刚读过的那一篇");
+  }
+
+  // 设备域仍然一个字节都不许上传（用户这次的口径没有动它）
+  {
+    const h = harness({
+      store: {
+        poem_device_prefs_v1: JSON.stringify({ v: 1, helper: "off" }),
+        poem_font_v1: "21",
+        poem_play_mode_v1: "shuffle-origin"
+      },
+      net: { syncpush: () => Promise.resolve(jsonRes(200, { applied: 0, serverTime: 2000 })) }
+    });
+
+    global.window.ReciteCollections = undefined;
+    global.window.ReadSync = undefined;
+    delete require.cache[require.resolve(path.join(ROOT, "js/collections.js"))];
+    delete require.cache[require.resolve(path.join(ROOT, "js/read-sync.js"))];
+    require(path.join(ROOT, "js/collections.js"));
+    require(path.join(ROOT, "js/read-sync.js"));
+
+    h.Sync.setEnabled(true);
+    h.calls.length = 0;
+    await h.Sync.now({ pull: false });
+    eq(h.calls.length, 0,
+      "只有设备偏好时一条请求都不发（字号 / 连读档 / 阅读辅助都只在盘上）");
+  }
+
   console.log("");
   console.log(fails === 0 ? "🎉 跨设备同步测试全部通过" : "❌ 跨设备同步测试 " + fails + " 项失败");
   process.exit(fails ? 1 : 0);

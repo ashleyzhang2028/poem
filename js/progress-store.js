@@ -9,8 +9,19 @@
     search: "poem_search_kw_v1",
     premerge: "poem_pre_merge_backup_v1",
 
-    dailyExtra: "poem_daily_extra_v1"
+    dailyExtra: "poem_daily_extra_v1",
+
+    collections: "poem_recite_collections_v1",
+
+    // 七部集子的「已读」各有自己的一把键。它们**不是**这一份表能逐个登记的
+    // （引擎按集子配置 `readStore`），所以下面 scopes() 里用一条前缀规则收口 ——
+    // `js/family.js` 的 isPerChild() 读的就是这一条（已读跟着孩子走）。
+    reads: "poem_poems_read_v1"
   };
+
+  // scopes() 里那一条「已读一族」的占位键（它不是一把真的盘上键，
+  // 真键由集子引擎按 `readStore` 给）。
+  var READ_SCOPE_KEY = "poem_reads:*";
 
   var FIELDS = {
     settings: ["grade", "term", "scope", "dailyCount", "algo"],
@@ -260,6 +271,15 @@
       // 路（都是 progress 里的一行），所以这一条从 device 挪到 progress 域、
       // local 从 true 改成 false。它仍然 perChild —— 一个家长几个孩子各加各的。
       { key: KEYS.dailyExtra, domain: "progress", local: false, perChild: true },
+
+      // 「自选集合」（Issue #243 后续）：上云。它是整份一份数据（集合的增删改名、
+      // 篇目顺序都在里面），所以合并规则是「谁最后改谁赢」；域挂在 account 上 ——
+      // 它是「这个账号要背哪些」，与本机设备无关，也不跟孩子分家。
+      { key: KEYS.collections, domain: "account", local: false, perChild: false },
+
+      // 「集子已读」（Issue #243 后续）：上云，且**跟着孩子走**
+      // （一个家长几个孩子各读各的，与已读键分家同源）。
+      { key: READ_SCOPE_KEY, domain: "progress", local: false, perChild: true, readKey: true },
       { key: KEYS.device, domain: "device", local: true, perChild: false },
       { key: KEYS.search, domain: "device", local: true, perChild: false },
       { key: KEYS.premerge, domain: "backup", local: true, perChild: false }
@@ -329,8 +349,16 @@
     childProgressKey: function () { return kk(KEYS.progress); },
 
     scopes: scopes,
+
+    // 是不是「集子已读」那一族的键（`poem_*_read_v1`）。
+    isReadKey: function (key) {
+      return /^poem_[a-z0-9_]*_read_v1$/.test(String(key == null ? "" : key));
+    },
+
     isLocalKey: function (key) {
-      var hit = scopes().filter(function (s) { return s.key === key; })[0];
+      var k = String(key == null ? "" : key);
+      if (window.ProgressStore.isReadKey(k)) return false;
+      var hit = scopes().filter(function (s) { return s.key === k; })[0];
       return hit ? hit.local : true;
     }
   };

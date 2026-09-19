@@ -39,7 +39,7 @@
 
   function read() {
     try {
-      var v = JSON.parse(localStorage.getItem(KEY) || "null");
+      var v = JSON.parse((storeOf() || { getItem: function () { return null; } }).getItem(physKey()) || "null");
       if (!v || typeof v !== "object") return { version: 1, collections: [] };
       if (!Array.isArray(v.collections)) v.collections = [];
       v.collections.forEach(function (c) {
@@ -52,16 +52,22 @@
   }
 
   function write(data) {
-    localStorage.setItem(KEY, JSON.stringify(data));
-
+    // 时间戳是「云端那一行靠什么判新旧」的**唯一**判据（见 cloudRow）：
+    // 每次写盘都往前推一格，同一毫秒里连点两下也不会停在同一个值上。
+    data.updatedAt = bump(Number(data.updatedAt) > 0 ? Math.round(Number(data.updatedAt)) : stampOf());
     try {
-      Object.keys(sessionStorage)
-        .filter(function (k) { return k.indexOf("poem_plan_") === 0; })
-        .forEach(function (k) { sessionStorage.removeItem(k); });
+      storeOf().setItem(physKey(), JSON.stringify(data));
+    } catch (e) {
+      return false;
+    }
+
+    clearPlanCache();
+    try {
+      window.dispatchEvent(new CustomEvent("recite-collections-change", {
+        detail: { collections: data.collections }
+      }));
     } catch (e) {  }
-    window.dispatchEvent(new CustomEvent("recite-collections-change", {
-      detail: { collections: data.collections }
-    }));
+    return true;
   }
 
   function cleanName(name) {
@@ -360,10 +366,171 @@
     return out;
   }
 
+  // ---- 云端那一行（sync-store 用，Issue #243 后续）-------------------------
+  //
+  // 与「今日加背」同一个套路：它是 progress 里的一行（`collections:v1`），
+  // 不新开表。差别有三处：
+  //
+  //   ① 它是**整份**一份数据（集合的增删改名、篇目顺序都在里面），
+  //      所以合并规则是「谁最后改谁赢」（updatedAt），不是并集 ——
+  //      两端的集合结构不同，按篇并起来会得到一份谁也不认识的东西。
+  //   ② 它必须能推**空**（用户把集合全删了）：所以删空之后仍要推一行
+  //      deleted=1，否则另一台设备还挂着那几个集合。
+  //   ③ 它带 updatedAt，且**每次写盘都要换一个更大的值**：盘上那一份与
+  //      云端那一行靠这个时间戳判新旧，只写一次的话第二次改名就推不上去。
+  var SYNC_ID = "collections:v1";
+
+  // 与 ProgressStore / family.js 同一套「盘上那一份」的读写（走子用户后缀）。
+  function storeOf() {
+    var ps = typeof window !== "undefined" && window.ProgressStore ? window.ProgressStore : null;
+    if (ps && typeof ps.store === "function") {
+      try {
+        var s = ps.store();
+        if (s) return s;
+      } catch (e) {  }
+    }
+    try {
+      return typeof localStorage !== "undefined" ? localStorage : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function physKey() {
+    var ps = typeof window !== "undefined" && window.ProgressStore ? window.ProgressStore : null;
+    if (ps && typeof ps.keyFor === "function") {
+      try { return ps.keyFor(KEY, ps.childId ? ps.childId() : ""); } catch (e) {  }
+    }
+    return KEY;
+  }
+
+  function nowTs() { return Date.now(); }
+
+  // 盘上那一份的 updatedAt 提出来（老形状没有这个字段，回 0）。
+  function stampOf() {
+    try {
+      var v = JSON.parse((storeOf() || { getItem: function () { return null; } }).getItem(KEY) || "null");
+      return v && Number(v.updatedAt) > 0 ? Math.round(Number(v.updatedAt)) : 0;
+    } catch (e) { return 0; }
+  }
+
+  // 每次写盘都把这个时间戳往前推一格（同一毫秒里连点两下也不能相同 ——
+  // 相同就意味着「变了没有」判不出来，第二次改动永远推不上去）。
+  function bump(prev) {
+    var t = nowTs();
+    return t > prev ? t : prev + 1;
+  }
+
+  function cloudRow(seen) {
+    var s = storeOf();
+    if (!s) return null;
+    var raw = null;
+    try { raw = s.getItem(physKey()); } catch (e) { raw = null; }
+
+    var mem = seen || {};
+    var known = Number(mem[SYNC_ID]) || 0;
+
+    if (!raw) {
+      // 盘上什么都没有：之前推过就补一条删除（删空/清进度都要让另一台知道）。
+      if (known > 0) {
+        var t = bump(known);
+        return { id: SYNC_ID, payload: { v: 1, collections: [], updatedAt: t },
+                 updatedAt: t, deleted: true };
+      }
+      return null;
+    }
+
+    var data = null;
+    try { data = JSON.parse(raw); } catch (e) { data = null; }
+    if (!data || !Array.isArray(data.collections)) return null;
+
+    var ts = Number(data.updatedAt) > 0 ? Math.round(Number(data.updatedAt)) : 0;
+    if (!ts) {
+      // 老形状（v1 期写的、没有时间戳）：当场补一个并落盘，
+      // 否则这一份永远推不上去（没有时间戳就没有「谁更新」的判据）。
+      ts = bump(known);
+      data.updatedAt = ts;
+      try { s.setItem(physKey(), JSON.stringify(data)); } catch (e) { return null; }
+    }
+    if (ts <= known) return null;
+    return { id: SYNC_ID, payload: data, updatedAt: ts, deleted: false };
+  }
+
+  // 把云端那一行拉下来写进本机。判词只有 "applied" / "skip"：
+  // 它走 applyRemote 的「谁最后写谁赢」，不单独弹冲突面板（firstMerge 那一步例外，
+  // 那里它**是**一份要用户裁决的进度 —— 集合结构不同，不能自动合并）。
+  function applyCloud(row, seen) {
+    var payload = (row && row.payload) || null;
+    if (!payload || typeof payload !== "object") return "skip";
+
+    var mem = seen || {};
+    var known = Number(mem[SYNC_ID]) || 0;
+    var cloudTs = Number(row && row.updatedAt) > 0 ? Math.round(Number(row.updatedAt)) : 0;
+
+    var s = storeOf();
+    if (!s) return "skip";
+
+    if (row && row.deleted) {
+      try { s.removeItem(physKey()); } catch (e) { return "skip"; }
+      emitChange([]);
+      return "applied";
+    }
+
+    var localTs = stampOf();
+    if (cloudTs && cloudTs < localTs) return "skip";
+    if (cloudTs && cloudTs === localTs && known === cloudTs) return "skip";
+
+    var clean = {
+      version: 1,
+      updatedAt: cloudTs || nowTs(),
+      collections: (Array.isArray(payload.collections) ? payload.collections : []).map(function (c) {
+        return {
+          id: c && c.id,
+          name: cleanName(c && c.name),
+          createdAt: Number(c && c.createdAt) > 0 ? Math.round(Number(c.createdAt)) : 0,
+          items: (c && Array.isArray(c.items) ? c.items : []).map(function (it) {
+            var id = itemId(it);
+            if (!id) return null;
+            var snap = itemSnap(it);
+            return snap ? { id: id, snap: snap } : { id: id };
+          }).filter(Boolean)
+        };
+      }).filter(function (c) { return !!c.id; })
+    };
+
+    // ⚠️ 不在这里 write()（write 会换一个新的时间戳 → 下一轮又当成「本机改了」
+    //    推回去 → 死循环）。拉下来的这一份，时间戳**就是云端那个**。
+    try { s.setItem(physKey(), JSON.stringify(clean)); } catch (e) { return "skip"; }
+    emitChange(clean.collections);
+    return "applied";
+  }
+
+  function emitChange(collections) {
+    clearPlanCache();
+    try {
+      window.dispatchEvent(new CustomEvent("recite-collections-change", {
+        detail: { collections: (collections || []).slice() }
+      }));
+    } catch (e) {  }
+  }
+
+  function clearPlanCache() {
+    try {
+      Object.keys(sessionStorage)
+        .filter(function (k) { return k.indexOf("poem_plan_") === 0; })
+        .forEach(function (k) { sessionStorage.removeItem(k); });
+    } catch (e) {  }
+  }
+
   window.ReciteCollections = {
     KEY: KEY,
+    SYNC_ID: SYNC_ID,
     DEFAULT_NAME: DEFAULT_NAME,
     NAME_MAX: NAME_MAX,
+
+    cloudRow: cloudRow,
+    applyCloud: applyCloud,
+    stamp: stampOf,
 
     FREE_COLLECTIONS: FALLBACK.free,
     PRO_COLLECTIONS: FALLBACK.pro,
