@@ -624,7 +624,9 @@
     songci: { file: "data/poems-songci.js", global: "POEMS_SONGCI" },
     guwen: { file: "data/poems-guwen.js", global: "POEMS_GUWEN" },
     zhaoming: { file: "data/poems-zhaoming.js", global: "POEMS_ZHAOMING" },
-    yuanqu: { file: "data/poems-yuanqu.js", global: "POEMS_YUANQU" }
+    yuanqu: { file: "data/poems-yuanqu.js", global: "POEMS_YUANQU" },
+    yuefu: { file: "data/poems-yuefu.js", global: "POEMS_YUEFU" },
+    jinxiandai: { file: "data/poems-jinxiandai.js", global: "POEMS_JINXIANDAI" }
   };
 
   function staleByBook() {

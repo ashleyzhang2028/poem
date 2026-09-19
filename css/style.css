@@ -2220,7 +2220,7 @@ html, body {
 }
 
 .today-read svg { display: block; width: var(--today-btn-inner, 17px); height: var(--today-btn-inner, 17px); margin: auto; }
-/* ---- 今日背诵页顶上的「我要加背」（Issue #243；Issue #229 收回 hero 那套）------
+/* ---- 今日背诵页顶上的「今日加背」（Issue #243；Issue #229 收回 hero 那套）------
    与搜索页那一枚**同一套**：.toolbar / .search-wrap / .search-input / .suggest
    全部复用（外观逐项一致是用户点名要的）。差别只有四处：
 
@@ -2543,9 +2543,9 @@ html, body {
   body[data-nav="home"] .today-bar,
   body[data-nav="home"] .all-section { margin-bottom: 0; }
 
-  /* 左列两行之间（今日卡片 → 我要加背 → 今日列表）与 .card 同一个块距 26px ——
+  /* 左列两行之间（今日卡片 → 今日加背 → 今日列表）与 .card 同一个块距 26px ——
      窄屏是 14px，宽屏卡片自己的 margin-bottom 变成 26px，这条跟着走。
-     「今日卡片」到「我要加背」那条缝由 .card 的 margin-bottom 出，
+     「今日卡片」到「今日加背」那条缝由 .card 的 margin-bottom 出，
      所以这里只补下面那一条。 */
   body[data-nav="home"] .today-search { margin-bottom: 26px; }
 

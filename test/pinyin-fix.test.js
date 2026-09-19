@@ -244,7 +244,7 @@ chk(/if \(!wid \|\| !line \|\| !py\) return;/.test(coreSrc),
 // SW 预缓存：新脚本必须在清单里（否则离线打开时它是 404，注音静默退回旧行为）
 const swSrc = src("sw.js");
 chk(/\.\/js\/pinyin-edit\.js/.test(swSrc), "新脚本进了 SW 预缓存清单（离线也读得到勘误）");
-chk(/const CACHE_NAME = "poem-app-v178";/.test(swSrc), "缓存版本号已往上推（改动才会真的下发）");
+chk(/const CACHE_NAME = "poem-app-v180";/.test(swSrc), "缓存版本号已往上推（改动才会真的下发）");
 
 // 架构文档
 const arch = src("docs/architecture.md");
