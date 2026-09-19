@@ -646,6 +646,21 @@ function check(name, cond, extra) {
         playGapLeft: +(playRect.left - mainRect.right).toFixed(2),
         playW: +playRect.width.toFixed(2),
         mainW: +mainRect.width.toFixed(2),
+        itemW: +itemRect.width.toFixed(2),
+
+        // 「这一行给内容块留了多少」的上限：条目自身宽度，减去左右内边距、
+        // 减去每一颗行内圆键的「盒宽 + 右外边距」、再减去尾部箭头 —— 全部现算。
+        rowBudgetMax: +(function () {
+          const cs = getComputedStyle(item);
+          const used = [].slice.call(item.children).reduce(function (a, c) {
+            if (c === main) return a;
+            const r = c.getBoundingClientRect();
+            const mr = parseFloat(getComputedStyle(c).marginRight) || 0;
+            const ml = parseFloat(getComputedStyle(c).marginLeft) || 0;
+            return a + r.width + mr + ml;
+          }, 0);
+          return itemRect.width - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - used;
+        })().toFixed(2),
 
         metaBox: (() => {
           const meta = main.querySelector('.item-meta');
@@ -672,7 +687,19 @@ function check(name, cond, extra) {
 
             overflows: prefixW + fullW > boxW + 1 ? 1 : 0,
 
-            trimmed: last.scrollWidth <= last.clientWidth + 1 ? 1 : 0,
+            // 截断的特征：内容自然宽已超出盒子（scrollWidth > clientWidth），
+            // 且盒子写着 nowrap + overflow:hidden + text-overflow:ellipsis，
+            // 三者齐备才是「末尾省略」。
+            // ⚠️ 旧写法把判据写反了（`scrollWidth <= clientWidth + 1`）：它表达的是
+            //    「整段都塞得下、根本没截」。main 上摘句恰好塞得下，于是长期为
+            //    真、看着像绿的；本轮行内多了一颗「＋」（`.item-daily`），内容块
+            //    由 241px 收到 203px，摘句真的放不下了 —— 这时浏览器给出的正是
+            //    `scrollWidth(219) > clientWidth(203)`，旧判据立刻变假。
+            //    这里改成量「真的溢出了、且溢出按省略号收场」，与断言名字对上。
+            trimmed: (last.scrollWidth > last.clientWidth + 1 &&
+              getComputedStyle(last).textOverflow === 'ellipsis' &&
+              getComputedStyle(last).whiteSpace === 'nowrap' &&
+              getComputedStyle(last).overflow === 'hidden') ? 1 : 0,
             fullW: +fullW.toFixed(2),
             boxW: +boxW.toFixed(2)
           };
@@ -811,7 +838,7 @@ function check(name, cond, extra) {
     check('iPhone: 全列表两颗图标的固定间距只有一个值（6px，与标题长短无关）',
       alignState.gapMax - alignState.gapMin <= 0.5 && Math.abs(alignState.gapMin - 6) <= 0.5,
       JSON.stringify({ gapMin: alignState.gapMin, gapMax: alignState.gapMax }));
-    check('iPhone: 全列表「内容块 → 播放键」的间距只有一个值（由加入背诵圆键给，与标题长短无关）',
+    check('iPhone: 全列表「内容块 → 播放键」的间距只有一个值（由行内圆键给，与标题长短无关）',
       alignState.n > 5 && alignState.mainToPlayMax - alignState.mainToPlayMin <= 0.5,
       JSON.stringify({ n: alignState.n, min: alignState.mainToPlayMin, max: alignState.mainToPlayMax }));
 
@@ -957,15 +984,25 @@ function check(name, cond, extra) {
       const item = document.querySelector('#gw-list .item');
       const main = item.querySelector('.item-main').getBoundingClientRect();
       const play = item.querySelector('.item-read').getBoundingClientRect();
-      const recite = item.querySelector('.item-recite');
+      // 内容块与播放键之间**所有**行内圆键（本轮起是「＋」与「加入背诵」两颗）。
+      // 这一段间距不是留白，而是被这几颗圆键各自「盒宽 + 右外边距」逐段占满的 ——
+      // 排得下就并排，排不下整行横滑，中间不会凭空多出一块空隙。
+      const btns = [].slice.call(item.querySelectorAll('.item-daily, .item-recite'));
+      const occupied = btns.reduce(function (a, b) {
+        return a + b.getBoundingClientRect().width +
+          (parseFloat(getComputedStyle(b).marginRight) || 0);
+      }, 0);
       return {
         gap: +(play.left - main.right).toFixed(2),
-        reciteW: +recite.getBoundingClientRect().width.toFixed(2),
-        reciteMr: +(parseFloat(getComputedStyle(recite).marginRight) || 0).toFixed(2)
+        btns: btns.length,
+        occupied: +occupied.toFixed(2),
+        reciteW: +item.querySelector('.item-recite').getBoundingClientRect().width.toFixed(2),
+        reciteMr: +(parseFloat(getComputedStyle(item.querySelector('.item-recite')).marginRight) || 0).toFixed(2)
       };
     });
-    check('iPhone: 内容块 → 播放键这一段由「加入背诵」圆键占着（圆键盒宽 + 6px）',
-      Math.abs(gapState.gap - (gapState.reciteW + gapState.reciteMr)) <= 0.5,
+    check('iPhone: 内容块 → 播放键这一段由行内圆键（「＋」+「加入背诵」）占满',
+      gapState.btns === 2 &&
+      Math.abs(gapState.gap - gapState.occupied) <= 0.5,
       JSON.stringify(gapState));
 
     check('iPhone: 「加入背诵」键与播放键一样大（两枚并排圆键同径）',
@@ -978,9 +1015,15 @@ function check(name, cond, extra) {
       Math.abs(parseFloat(numState.playGapRightCss) - 6) <= 0.5,
       numState.playGapRightCss);
 
-    check('iPhone: 小古文内容块不再撑满整行（按内容取宽，不是 flex 增长项）',
-      numState.mainW < 393 - 2 - 12 - 8 - 36 - 6 - 18 - 1,
-      numState.mainW + 'px（整行 ' + 393 + 'px）');
+    // 内容块不许吃掉整行：行内那几颗圆键 + 尾部箭头要各自留住自己的位置。
+    // 上限从 DOM 现算，不写死 —— 行内圆键的**颗数**是活的（本轮从两颗变成三颗：
+    // 「＋」+「加入背诵」+「播放」），一写死就会在新颗数下失控，或者反过来变成
+    // 一条永远为真的空断言。这里量的是「整行去掉两侧部件之后还剩多少」：
+    // 内容块至多铺满这一段（长摘句会溢出成省略号），不可能再多。
+    check('iPhone: 小古文内容块不再撑满整行（两侧圆键各自留住了位置）',
+      numState.mainW <= numState.rowBudgetMax + 0.5 &&
+      numState.mainW < numState.itemW - 0.5,
+      numState.mainW + 'px（整行可用 ' + numState.rowBudgetMax + 'px / 条目 ' + numState.itemW + 'px）');
 
     check('iPhone: 副信息里的朝代 / 作者 / 出处没被摘句压窄（宽度为正且合理）',
       numState.metaBox.prefixW > 8 && numState.metaBox.prefixW < numState.metaBox.boxW,

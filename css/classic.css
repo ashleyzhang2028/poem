@@ -690,7 +690,11 @@ body.reader-open .dock { display: none; }
   line-height: 1.5;
 }
 .trans-read .btn-icon { display: inline-flex; align-items: center; justify-content: center; flex: none; }
-.trans-read .btn-icon svg { display: block; width: 24px; height: 24px; margin: 0; }
+/* 图标框 14px（HTML 里那枚三角 stroke-width 已按 24÷14 ≈ 1.7 配好，
+   屏幕上仍是 1px 笔画）。⚠️ 这里曾是 24px：24 的图标框把胶囊从 28px 撑到
+   36px 高，而「译文键是正圆角胶囊、不纵向拉高」那条守卫卡的是 ≤34px ——
+   24px 一上就红。14px 既守住 30px 高，也不会让胶囊显小。 */
+.trans-read .btn-icon svg { display: block; width: 14px; height: 14px; margin: 0; }
 
 .trans-read .btn-icon.pause-glyph { display: none; }
 .trans-read[data-on="1"] .btn-icon.play-glyph { display: none; }
