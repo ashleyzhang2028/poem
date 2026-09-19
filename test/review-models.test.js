@@ -33,6 +33,87 @@ RM.keys().forEach(k => {
   chk(d.name && d.sub && d.years && d.blurb.length > 8 && d.blurb.length <= 40,
     '「' + k + '」的说明齐备且只有一句（' + d.name + ' · ' + d.years + '）');
 });
+
+// ---------------------------------------------------------------------------
+// 算法按层级开放（Issue #229 第四轮）
+//
+// 用户原话：「游客可以用斯宾浩斯遗忘曲线 / 登录 free 添加莱特纳盒 /
+// pro 添加 SM-2 / max 再添加 FSRS 支持全部」。
+//
+// 「哪一档能用哪几张」这句话在 js/entitlement.js 的 CAPS 里（四条
+// algo.*），内核只是替调用方去问它 —— 所以这一节先把 Entitlement 装进
+// 内核那个 vm 沙盒，再逐档对拍。
+// ---------------------------------------------------------------------------
+vm.runInContext(fs.readFileSync(path + 'js/entitlement.js', 'utf8'), sb, { filename: 'js/entitlement.js' });
+const Ent = sb.Entitlement;
+const TIERS = {
+  guest: { tier: 'free', signedIn: false },
+  free: { tier: 'free', signedIn: true },
+  pro: { tier: 'pro', signedIn: true },
+  max: { tier: 'max', signedIn: true }
+};
+
+chk(RM.entrance('ebbinghaus') === 'algo.ebbinghaus' && RM.entrance('fsrs') === 'algo.fsrs',
+  'entrance() 拼出的能力键是 "algo." + 模型的 key（内核与台账由此对上）');
+chk(RM.entrance('不存在') === 'algo.ebbinghaus',
+  '不认识的键退回出厂默认那一张（绝不返回一个查不到的能力名）');
+
+chk(RM.allowedKeys(TIERS.guest).join(',') === 'ebbinghaus',
+  '游客只有遗忘曲线（实际 ' + RM.allowedKeys(TIERS.guest).join(',') + '）');
+chk(RM.allowedKeys(TIERS.free).join(',') === 'ebbinghaus,leitner',
+  '登录的 free 拿到两张：遗忘曲线 + 莱特纳盒（实际 ' + RM.allowedKeys(TIERS.free).join(',') + '）');
+chk(RM.allowedKeys(TIERS.pro).join(',') === 'ebbinghaus,leitner,sm2',
+  'pro 三张：再加 SM-2（实际 ' + RM.allowedKeys(TIERS.pro).join(',') + '）');
+chk(RM.allowedKeys(TIERS.max).join(',') === 'ebbinghaus,leitner,sm2,fsrs',
+  'max 四张齐备（实际 ' + RM.allowedKeys(TIERS.max).join(',') + '）');
+
+chk(RM.allowed('ebbinghaus', TIERS.guest) && !RM.allowed('leitner', TIERS.guest),
+  'allowed() 逐张回答，游客那张永远是开的');
+chk(RM.allowed('leitner', TIERS.guest) === false && RM.allowed('leitner', TIERS.free) === true,
+  '莱特纳盒：游客不行、登录的 free 可以');
+chk(RM.allowed('fsrs', TIERS.pro) === false && RM.allowed('fsrs', TIERS.max) === true,
+  'FSRS：pro 不行、max 可以');
+chk(RM.allowed('fsrs') === false && RM.allowed('ebbinghaus') === true,
+  '不传 ctx 时按**游客**处理（内核不认识人，宁可给最少的）');
+chk(RM.allowed('fsrs', { tier: 'vip', signedIn: true }) === false,
+  '脏层级按 free 处理（内核不自己发明层级）');
+
+chk(RM.allowedKey('fsrs', TIERS.guest) === 'ebbinghaus',
+  '游客「想要」FSRS → 退到遗忘曲线（退到能用的那一张，不是直接用没权的）');
+chk(RM.allowedKey('fsrs', TIERS.pro) === 'sm2',
+  'pro「想要」FSRS → 退到 SM-2（从高往低找第一张能用的）');
+chk(RM.allowedKey('sm2', TIERS.free) === 'leitner',
+  'free「想要」SM-2 → 退到莱特纳盒');
+chk(RM.allowedKey('leitner', TIERS.max) === 'leitner',
+  '有权时原样用它自己（回落只在不够层时发生）');
+chk(RM.allowedKey('不知道是啥', TIERS.max) === 'ebbinghaus',
+  '野生键照旧退回出厂默认（与 known() 那条同一口径）');
+chk(RM.allowedKey('', undefined) === 'ebbinghaus',
+  '空 ctx + 空键 → 出厂默认（任何输入都不得返回 null）');
+
+// 单调性：层级越高，能用的张数只增不减
+{
+  const order = ['guest', 'free', 'pro', 'max'];
+  let prev = RM.allowedKeys(TIERS.guest).length;
+  order.slice(1).forEach((t, i) => {
+    const n = RM.allowedKeys(TIERS[t]).length;
+    chk(n >= prev, '算法张数单调不减：' + t + '（' + prev + ' → ' + n + '）');
+    prev = n;
+  });
+  chk(prev === RM.keys().length, '到 max 时四张全开（一张都不缺）');
+}
+
+// 内核不自己判层级：把 Entitlement 拿掉后只剩出厂默认那一张
+{
+  const sb2 = { window: {}, console };
+  sb2.window = sb2;
+  vm.createContext(sb2);
+  ['data/text-master', 'data/poems-1', 'js/review-models'].forEach(f =>
+    vm.runInContext(fs.readFileSync(path + f + '.js', 'utf8'), sb2, { filename: f }));
+  const R2 = sb2.ReviewModels;
+  chk(R2.allowed('fsrs', TIERS.max) === false && R2.allowedKey('fsrs', TIERS.max) === 'ebbinghaus',
+    '没有权益层时（内核单跑）只有出厂默认那一张算数 —— 少给不许多给');
+}
 chk(RM.subFor('ebbinghaus') === '按遗忘曲线复习' &&
   RM.subFor('sm2') === '按 SM-2 复习' &&
   RM.subFor('fsrs') === '按 FSRS 复习' &&
@@ -201,10 +282,34 @@ const _realProto = Object.getPrototypeOf(_probe.window._resourceLoader || {});
 if (_realProto && _realProto.fetch) Object.setPrototypeOf(RepoLoader.prototype, _realProto);
 Object.defineProperty(RepoLoader, 'name', { value: 'ResourceLoader' });
 
+// 算法按层级开放（Issue #229 第四轮）之后，设置页与首页都要**有一个身份**
+// 才能切到上层算法。这里把这一份 jsdom 认成 Max（登录 + 本机层级），
+// 于是四张卡全开 —— 下面那些「切到 FSRS / SM-2 真的落盘」的断言才谈得上。
+// 「不够层时切不动」那几条另在末尾单独造一个游客页面来验。
+//
+// 登进去的那个「本机会话」由 auth-core 自己造（不手抄那份 JSON —— 抄一份
+// 就等于把「会话长什么样」量了两遍）。造好再塞进页面，页面拿到的是真会话。
+const AuthCore = require(path + 'js/auth-core.js');
+function signInMax(win) {
+  const b = {
+    getItem: k => win.__mem[k] === undefined ? null : win.__mem[k],
+    setItem: (k, v) => { win.__mem[k] = String(v); },
+    removeItem: k => { delete win.__mem[k]; }
+  };
+  win.__mem = {};
+  const A = AuthCore;
+  const store = A.makeStore(b);
+  const req = A.requestCode(store, { channel: 'email', value: 'max@test.com' }, 'login', { code: '246810' });
+  A.verifyCode(store, req.codeId, '246810', 'login');
+  win.localStorage.setItem(A.NS, b.getItem(A.NS));
+  win.localStorage.setItem('poem_plan_v1', JSON.stringify({ v: 1, tier: 'max', until: null }));
+}
+
 const sdom = new JSDOM(settingsHtml, {
   runScripts: 'dangerously', resources: new RepoLoader(), url: 'https://local.test/settings/recite/'
 });
 const sd = sdom.window.document;
+signInMax(sdom.window);
 
 function bootSettled() {
   if (sd.readyState === 'loading') return setTimeout(bootSettled, 30);
@@ -230,6 +335,10 @@ function body() {
     '四张卡是一组单选（role=radiogroup），不是四个各自为政的按钮');
   chk([...opts].every(o => o.getAttribute('role') === 'radio'),
     '每张卡都是 role=radio（读屏能听出「四选一」）');
+
+  // 这一份 jsdom 是 Max：四张卡一张都不锁
+  const locked = sd.querySelectorAll('#seg-algo .algo-opt.locked');
+  chk(locked.length === 0, 'Max 身份下四张卡一张都不锁（实际锁了 ' + locked.length + ' 张）');
 
   const before = sd.querySelector('#seg-algo [aria-checked="true"]').dataset.algo;
   sd.querySelector('#seg-algo [data-algo="fsrs"]').dispatchEvent(
@@ -262,6 +371,7 @@ function body() {
   const homeDom = new JSDOM(homeHtml, {
     runScripts: 'dangerously', resources: new RepoLoader(), url: 'https://local.test/'
   });
+  signInMax(homeDom.window);
   homeDom.window.localStorage.setItem('poem_recite_settings_v1', JSON.stringify({ algo: 'fsrs' }));
   setTimeout(() => {
     const hd = homeDom.window.document;
@@ -284,8 +394,90 @@ function body() {
         '野生算法键退回出厂默认，副标题写「按遗忘曲线复习」（实际「' +
         wd.body.getAttribute('data-sub') + '」）');
 
+      guestPage();
+    }, 800);
+  }, 800);
+}
+
+// ---------------------------------------------------------------------------
+// 游客那一档（Issue #229 第四轮）：四张卡**都在**（看得见才知道有这一档），
+// 但只有遗忘曲线是开的；点锁住的那几张得到门槛文案、**一个字都不落盘**。
+// ---------------------------------------------------------------------------
+function guestPage() {
+  const gdom = new JSDOM(settingsHtml, {
+    runScripts: 'dangerously', resources: new RepoLoader(), url: 'https://local.test/settings/recite/'
+  });
+  const gd = gdom.window.document;
+
+  function settled() {
+    if (gd.readyState === 'loading') return setTimeout(settled, 30);
+    gd.dispatchEvent(new gdom.window.Event('DOMContentLoaded', { bubbles: true }));
+    setTimeout(gbody, 60);
+  }
+  setTimeout(settled, 30);
+
+  function gbody() {
+    const opts = gd.querySelectorAll('#seg-algo .algo-opt');
+    chk(opts.length === 4, '游客的设置页照样画出四张卡（一张不藏，实际 ' + opts.length + '）');
+    chk([...opts].map(o => o.dataset.algo).join(',') === 'ebbinghaus,leitner,sm2,fsrs',
+      '四张卡的顺序与模型清单一致（游客也是这个顺序）');
+
+    const isLocked = k => gd.querySelector('#seg-algo [data-algo="' + k + '"]').classList.contains('locked');
+    chk(!isLocked('ebbinghaus'), '游客：遗忘曲线不锁（这一张就是给他的）');
+    chk(isLocked('leitner'), '游客：莱特纳盒锁着');
+    chk(isLocked('sm2'), '游客：SM-2 锁着');
+    chk(isLocked('fsrs'), '游客：FSRS 锁着');
+    chk(gd.querySelector('#seg-algo [data-algo="leitner"]').getAttribute('aria-disabled') === 'true',
+      '锁住的那几张 aria-disabled=true（读屏能听出来）');
+    chk(gd.querySelector('#seg-algo [data-algo="ebbinghaus"]').getAttribute('aria-disabled') === null,
+      '没锁的那张不写 aria-disabled');
+
+    const lockText = k => (gd.querySelector('#seg-algo [data-algo="' + k + '"] .algo-lock') || {}).textContent;
+    chk(lockText('leitner') === '登录可用', '莱特纳盒卡上写着它的门槛（实际「' + lockText('leitner') + '」）');
+    chk(lockText('sm2') === '登录可用', 'SM-2 卡上写着「登录可用」（实际「' + lockText('sm2') + '」）');
+    chk(lockText('fsrs') === '登录可用', 'FSRS 卡上写着「登录可用」（实际「' + lockText('fsrs') + '」）');
+    chk(!lockText('ebbinghaus'), '能用的那张不写门槛（没有一句多余的话）');
+
+    // 点锁住的那张：不落盘、选中态不动、给一句门槛
+    const toast = gd.getElementById('toast');
+    gd.querySelector('#seg-algo [data-algo="fsrs"]').dispatchEvent(
+      new gdom.window.Event('click', { bubbles: true }));
+    const saved = JSON.parse(gdom.window.localStorage.getItem('poem_recite_settings_v1') || '{}');
+    chk(!saved.algo || saved.algo === 'ebbinghaus',
+      '游客点锁住的 FSRS：设置里一个字都没写（实际 ' + JSON.stringify(saved.algo) + '）');
+    chk(gd.querySelector('#seg-algo [aria-checked="true"]').dataset.algo === 'ebbinghaus',
+      '选中态原地不动（还是遗忘曲线）');
+    chk(toast.textContent === '登录可用', '游客点 FSRS 得到的是门槛文案（实际「' + toast.textContent + '」）');
+
+    // 已登录的 free 与 pro：门槛文案各自说「还差在哪儿」
+    // （can() 的判序是**先登录、后层级** —— 登录了才轮到层级说话）
+    const E = require(path + 'js/entitlement.js');
+    chk(E.denyReason('algo.leitner', { tier: 'free', signedIn: false }) === '登录可用',
+      '游客看莱特纳盒：「登录可用」');
+    chk(E.denyReason('algo.sm2', { tier: 'free', signedIn: true }) === 'Pro 起',
+      '登录的 free 看 SM-2：「Pro 起」');
+    chk(E.denyReason('algo.fsrs', { tier: 'pro', signedIn: true }) === 'Max 起',
+      'pro 看 FSRS：「Max 起」');
+
+    // 点开的那张：照旧切得动
+    gd.querySelector('#seg-algo [data-algo="ebbinghaus"]').dispatchEvent(
+      new gdom.window.Event('click', { bubbles: true }));
+    chk(gd.querySelector('#seg-algo [aria-checked="true"]').dataset.algo === 'ebbinghaus',
+      '游客点自己那张：还是它，界面不抖');
+
+    // 首页副标题：游客即使设置里塞着 FSRS，也如实写「按遗忘曲线复习」
+    const ghostDom = new JSDOM(homeHtml, {
+      runScripts: 'dangerously', resources: new RepoLoader(), url: 'https://local.test/'
+    });
+    ghostDom.window.localStorage.setItem('poem_recite_settings_v1', JSON.stringify({ algo: 'fsrs' }));
+    setTimeout(() => {
+      const gh = ghostDom.window.document;
+      chk(gh.body.getAttribute('data-sub') === '按遗忘曲线复习',
+        '游客的首页副标题退到遗忘曲线（设置里那份 FSRS 不算数，实际「' +
+        gh.body.getAttribute('data-sub') + '」）');
+
       console.log('\n' + (fails ? '❌ ' + fails + ' 项失败' : '🎉 复习算法测试全部通过'));
       process.exit(fails ? 1 : 0);
     }, 800);
-  }, 800);
+  }
 }

@@ -39,6 +39,27 @@ console.log('=== 一、免费不残缺：今天能用的，free 登录后一键�
   eq(E.cap('export.progress').login, true, 'CAPS 里 login 显式是 true（两端的唯一来源）');
   chk(E.can('export.progress', free).ok, '登录后的 free 可以导出进度');
   chk(E.can('export.progress', pro).ok && E.can('export.progress', max).ok, 'pro / max 当然也能用');
+
+  // Issue #229 第四轮（用户原话）：「游客可以用斯宾浩斯遗忘曲线 /
+  // 登录 free 添加莱特纳盒 / pro 添加 SM-2 / max 再添加 FSRS 支持全部」
+  eq(E.cap('algo.ebbinghaus').minTier, 'free', '遗忘曲线：免费档，层级写在台账上');
+  eq(E.cap('algo.ebbinghaus').login, false, '遗忘曲线：游客就能用（登录不是条件）');
+  chk(E.can('algo.ebbinghaus', guest).ok, '游客可以用遗忘曲线');
+  eq(E.cap('algo.leitner').minTier, 'free', '莱特纳盒：层级仍是 free');
+  eq(E.cap('algo.leitner').login, true, '莱特纳盒：登录才给');
+  chk(!E.can('algo.leitner', guest).ok && E.can('algo.leitner', free).ok,
+    '莱特纳盒：游客不行、登录的 free 可以');
+  eq(E.denyReason('algo.leitner', guest), '登录可用', '游客选莱特纳盒得到「登录可用」');
+  eq(E.cap('algo.sm2').minTier, 'pro', 'SM-2：Pro 起');
+  chk(!E.can('algo.sm2', free).ok && E.can('algo.sm2', pro).ok, 'SM-2：free 不可、pro 起');
+  eq(E.denyReason('algo.sm2', free), 'Pro 起', 'free 选 SM-2 得到「Pro 起」');
+  eq(E.cap('algo.fsrs').minTier, 'max', 'FSRS：Max 起');
+  chk(!E.can('algo.fsrs', pro).ok && E.can('algo.fsrs', max).ok, 'FSRS：pro 不可、max 起');
+  eq(E.denyReason('algo.fsrs', pro), 'Max 起', 'pro 选 FSRS 得到「Max 起」');
+
+  ['algo.ebbinghaus', 'algo.leitner', 'algo.sm2', 'algo.fsrs'].forEach(function (c) {
+    chk(E.capNames().indexOf(c) >= 0, '算法能力 ' + c + ' 在台账里');
+  });
 }
 
 console.log('\n=== 二、语音播放与进度导出：游客不行，登录的 free 可以 ===');
@@ -54,8 +75,8 @@ console.log('\n=== 二、语音播放与进度导出：游客不行，登录的 
   const loginCaps = E.capNames().filter(function (c) {
     return E.cap(c).minTier === 'free' && E.cap(c).login;
   });
-  eq(loginCaps.sort().join(','), 'export.progress,read.aloud',
-    '「免费档但要登录」的恰好是这两件（实际 ' + loginCaps.join(',') + '）');
+  eq(loginCaps.sort().join(','), 'algo.leitner,export.progress,read.aloud',
+    '「免费档但要登录」的恰好是这三件（实际 ' + loginCaps.join(',') + '）');
 
   E.capNames().forEach(function (c) {
     const h = E.denyReason(c, guest);
@@ -412,6 +433,13 @@ console.log('\n=== 十二、每条付费能力都得**真的有人管**（不许
     'export.progress': '免费档但要登录（Issue #229）：闸在 js/settings.js 的 #btn-export',
     'read.aloud': '语音播放：闸在 js/speech.js 的 gate()（有专门的第九节验它）',
 
+    // 算法四条（Issue #229 第四轮）：闸都在 js/settings.js 的 algoGate() ——
+    // 「能选哪几张」由它当场问 can()（阅读页排期那条路走 ReviewModels.allowedKey()）。
+    'algo.ebbinghaus': '免费档：只有出厂默认那一张，界面照旧看得见（不需要拦）',
+    'algo.leitner': '免费但要登录：闸在 js/settings.js 的 algoGate()',
+    'algo.sm2': 'Pro 起：闸在 js/settings.js 的 algoGate()',
+    'algo.fsrs': 'Max 起：闸在 js/settings.js 的 algoGate()',
+
     'collections.many': '按 tier 判（js/collections.js 的 limit()），读同一个门槛值',
     'collections.unlimited': '同上：max 档 → 不限'
   };
@@ -457,13 +485,19 @@ console.log('\n=== 十二、每条付费能力都得**真的有人管**（不许
   const unGated = freeLogin.filter(function (k) {
     return !sources.some(function (s) {
       if (DECL_ONLY.indexOf(s.rel) >= 0) return false;
+      // 算法那一条的问法不是逐字写死在某处的 can("algo.leitner")，
+      // 而是由 js/review-models.js 的 entrance(key) 拼出来的（"algo." + key），
+      // 再在 js/settings.js 的 algoGate() 处问出去。所以这两处一起算数。
+      if (s.rel === 'js/settings.js' && /can\(cap, ident\)/.test(s.text) &&
+          /function algoGate\(/.test(s.text)) return true;
+      if (s.rel === 'js/review-models.js' && /"algo\." \+/.test(s.text)) return true;
       return s.text.indexOf('can("' + k + '"') >= 0 || s.text.indexOf("can('" + k + "'") >= 0;
     });
   });
   chk(unGated.length === 0,
     '每件「免费但要登录」的能力都有一处真的问 can()（没问的：' + (unGated.join('、') || '无') + '）');
-  chk(freeLogin.sort().join(',') === 'export.progress,read.aloud',
-    '「免费但要登录」的恰好是「进度导出 + 语音朗读」两件（实际 ' + freeLogin.join(',') + '）');
+  chk(freeLogin.sort().join(',') === 'algo.leitner,export.progress,read.aloud',
+    '「免费但要登录」的恰好是「莱特纳盒 + 进度导出 + 语音朗读」三件（实际 ' + freeLogin.join(',') + '）');
 }
 
 console.log('');

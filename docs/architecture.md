@@ -5181,3 +5181,98 @@ DELETE /rest/v1/codes?code_id=eq.keepalive  （Prefer: tx=rollback 的平台不�
 
 验证：`bash test/run.sh` 全量 **零失败**。`sw.js` 缓存版本 v155 → **v157**
 （#231 已先占到 v156，合并时这一档往后挪一位）。
+
+---
+
+### 4.32 复习算法按层级开放：游客一张、逐层加满（2026-09-18 · 回答 Issue #229 第四轮）
+
+用户原话：
+
+> 「更新阅读算法的层级
+>  游客可以用斯宾浩斯遗忘曲线
+>  登录 free 添加莱特纳盒
+>  pro 添加 SM-2
+>  max再添加FSRS 支持全部」
+
+#### 一、四张模型本来就都有，缺的是「谁用得上哪一张」
+
+`js/review-models.js` 里四张模型（`ebbinghaus` / `leitner` / `sm2` / `fsrs`）
+与它们的公式早就在跑（§ 复习调度算法那一层，134 条断言）。这一轮**一行公式都没动**，
+改的是**门槛**：原先四张对所有人开放，现在按层级逐层放。
+
+台账仍然只有一处 —— `js/entitlement.js` 的 `CAPS`，新增四条：
+
+```js
+"algo.ebbinghaus": { minTier: "free", login: false, quota: null, name: "遗忘曲线" },
+"algo.leitner":    { minTier: "free", login: true,  quota: null, name: "莱特纳盒" },
+"algo.sm2":        { minTier: "pro",  login: true,  quota: null, name: "SM-2 复习" },
+"algo.fsrs":       { minTier: "max",  login: true,  quota: null, name: "FSRS 复习" },
+```
+
+**键名 = `"algo." + 模型自己的 key`**：核心里 `ReviewModels.entrance(key)` 现拼，
+所以「模型清单」与「能力清单」之间不靠人肉对齐 —— 加第五张模型时，
+`js/review-models.js` 加一处、`CAPS` 加一处，测试里那条对拍会发现漏掉的一边。
+
+四档的答案：
+
+| 身份 | 能用哪几张 |
+|---|---|
+| 游客 | 遗忘曲线 |
+| Free（登录） | + 莱特纳盒 |
+| Pro | + SM-2 |
+| Max | + FSRS（四张齐备） |
+
+#### 二、内核不认识人：`allowed()` / `allowedKey()`
+
+`js/review-models.js` 是**纯内核**，它不该知道「游客 / Free / Pro / Max」这几个词。
+于是那两个新函数只是替调用方**去问权益层**：
+
+```js
+RM.allowed(key, ctx)       // 这一张此刻能不能用
+RM.allowedKey(want, ctx)   // 想要的能用就用它，不然从高往低退到第一张能用的
+```
+
+- **不传 ctx 时按游客处理**：内核单跑（测试 / 没有权益层的页面）时只有出厂默认那张算数
+  —— 少给不许多给。装不到 `Entitlement` 时同理
+- **回落从高往低**：`allowedKey("fsrs", pro)` → `sm2`、`allowedKey("fsrs", free)` → `leitner`、
+  `allowedKey("fsrs", guest)` → `ebbinghaus`。任何输入都不得返回 `null`
+- **降级 / 退出登录之后不会接着用没权的那张**：这是这一轮最容易漏的一条 ——
+  在 Max 上选了 FSRS，退出登录后首页副标题、今日计划、进度页的「按 X 排期」
+  必须一律退到遗忘曲线。四处调用点（`js/app.js` / `js/scheduler.js` /
+  `js/progress.js` / `js/settings.js`）都过 `allowedKey()`，一个都少不得
+
+#### 三、四处调用点与一处补漏
+
+| 文件 | 改什么 |
+|---|---|
+| `js/settings.js` | `renderAlgos()` 按 `algoGate(key)` 给不够层的卡加 `.locked` 与门槛；`setAlgo()` 先问门、拦下就 `showToast(hint)`；`loadSettings()` 读出来的 `algo` 也过一遍 `allowedKey()`（**回收不写盘**：层级回来时原选择照旧生效） |
+| `js/app.js` / `js/scheduler.js` / `js/progress.js` | 三处 `algoKey()` 一律 `ReviewModels.allowedKey(want, ctx)` |
+| `progress/index.html` | **补漏**：这一页原先没加载 `js/entitlement.js`（它只画进度，从不过权益）—— 现在要问门槛了，把 `auth-core` + `entitlement` 补在 `review-models` 之前 |
+| `api/_lib/core.js` | `featuresFor()`：`algo.ebbinghaus` / `algo.leitner` 进 base，`algo.sm2` 进 pro，`algo.fsrs` 进 max（两端同源） |
+
+#### 四、界面：四张卡永远都在，不够层的「看得见、点得动、写着门槛」
+
+与语音朗读 / 进度导出同一条规矩（§4.19「按钮写事、理由三个字」）：
+**不隐藏、不 disabled** —— 藏起来就成了「设置里没有那一项」，
+用户不知道有这一档，也不知道差什么。不够层的那几张：
+
+- 虚线描边、字色淡一档、右边那颗单选圈留白（`.algo-opt.locked`，`css/style.css`）
+- 右下角写出门槛（`.algo-lock`）：`登录可用` / `Pro 起` / `Max 起`
+- `aria-disabled="true"`（读屏能听出「这一张锁着」）
+- 点下去得到同一句话（`showToast`），**一个字都不落盘**
+
+#### 五、守卫
+
+- `test/review-models.test.js`：新增「算法按层级开放」一节 —— 把 `js/entitlement.js`
+  装进内核那个 vm 沙盒，逐档对拍 `allowedKeys()`（游客 1 张 / free 2 张 / pro 3 张 /
+  max 4 张）、`allowedKey()` 的四条回落、单调不减、以及**拿掉权益层后只剩出厂默认**；
+  设置页那一段改成 Max 身份（会话由 `auth-core` 现造，不手抄 JSON），
+  并新增一个**游客页面**：四张卡都在、三张锁着、点锁住的**不落盘**、
+  首页副标题退到「按遗忘曲线复习」（哪怕设置里塞着 FSRS）
+- `test/entitlement.test.js`：第一节加四条算法能力的层级对拍；
+  「免费但要登录」的名单从两件长到**三件**（多 `algo.leitner`）；
+  第十二节的源码扫描认得算法那一条的问法（`entrance()` 拼键 + `algoGate()` 问出去）
+- `test/plans-page.test.js`：未登录与 Free 的差异从 2 条改成 **3 条**（多 `algo.leitner`）
+
+验证：`bash test/run.sh` 全量跑过（除 `test/print-page.test.js` 那条**在 main 上
+就已失败**的 `.foot` 断言 —— 上一轮删页脚时漏改，与本轮无关）。

@@ -203,12 +203,23 @@ function featuresFor(cfg, tier) {
   // 未登录本来就没有 features（调用方先看 deps.account）。
   // export.progress 自 Issue #229 第二轮起与 js/entitlement.js 的 CAPS 同步
   // 改成 login: true（层级仍是 free，只是未登录不放行）。
-  var base = ["recite.basic", "library.all", "read.aloud", "pinyin.helper", "export.progress"];
+  //
+  // 算法按层级开放（Issue #229 第四轮）：algo.ebbinghaus / algo.leitner 进 base
+  // （登录后的 free 就有前两张），algo.sm2 进 pro、algo.fsrs 进 max。
+  // **未登录只有 algo.ebbinghaus**，那一条由调用方按「没有 features」处理
+  // （与 recite.basic 同一口径：游客本来就不走 features 这条路）。
+  var base = ["recite.basic", "library.all", "read.aloud", "pinyin.helper", "export.progress",
+
+              "algo.ebbinghaus", "algo.leitner"];
 
   var pro = ["collections.many", "sync.multiDevice", "export.paper",
-             "profile.family", "quiz.review", "export.all"];
+             "profile.family", "quiz.review", "export.all",
 
-  var max = ["feihualing", "exam.gathering", "exam.paper"];
+             "algo.sm2"];
+
+  var max = ["feihualing", "exam.gathering", "exam.paper",
+
+             "algo.fsrs"];
 
   var out = base.slice();
   if (tier === "pro" || tier === "max") out = out.concat(pro);

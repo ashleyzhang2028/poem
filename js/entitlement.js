@@ -25,6 +25,16 @@
     // api/_lib/core.js 的 featuresFor()（两端同源）。
     "export.progress":   { minTier: "free", login: true,  quota: null, name: "进度导出" },
 
+    // 复习算法按层级开放（Issue #229 第四轮，用户原话）：
+    //   「游客可以用斯宾浩斯遗忘曲线 / 登录 free 添加莱特纳盒 /
+    //     pro 添加 SM-2 / max 再添加 FSRS 支持全部」
+    // 四条各是一格（「一格说一件事」），念的是同一组的三个层级。
+    // 键名 = "algo." + js/review-models.js 里那张模型的 key（内核据此发问）。
+    "algo.ebbinghaus":   { minTier: "free", login: false, quota: null, name: "遗忘曲线" },
+    "algo.leitner":      { minTier: "free", login: true,  quota: null, name: "莱特纳盒" },
+    "algo.sm2":          { minTier: "pro",  login: true,  quota: null, name: "SM-2 复习" },
+    "algo.fsrs":         { minTier: "max",  login: true,  quota: null, name: "FSRS 复习" },
+
     "collections.many":  { minTier: "pro",  login: true,  quota: null, name: "自选清单",
                            quotas: { free: 10, pro: 100, max: 5000 } },
     "sync.multiDevice":  { minTier: "pro",  login: true,  quota: null, name: "设备同步" },
