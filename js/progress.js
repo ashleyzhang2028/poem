@@ -241,10 +241,22 @@
   }
 
   function algoKey() {
+    if (!window.ReviewModels) return "ebbinghaus";
     var s = window.Storage ? window.Storage.getSettings() : null;
     var key = s && s.algo;
-    if (!window.ReviewModels) return "ebbinghaus";
-    return window.ReviewModels.known(key) ? key : window.ReviewModels.DEFAULT_KEY;
+
+    return window.ReviewModels.allowedKey(key, algoCtx());
+  }
+
+  function algoCtx() {
+    var E = window.Entitlement;
+    if (!E || typeof E.can !== "function") return undefined;
+    try {
+      var id = typeof E.identity === "function" ? E.identity() : null;
+      return id && id.ctx ? id.ctx : undefined;
+    } catch (e) {
+      return undefined;
+    }
   }
 
   function init() {

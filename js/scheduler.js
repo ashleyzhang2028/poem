@@ -7,7 +7,23 @@
     if (!window.ReviewModels) return "ebbinghaus";
     const s = window.Storage ? window.Storage.getSettings() : null;
     const key = s && s.algo;
-    return window.ReviewModels.known(key) ? key : window.ReviewModels.DEFAULT_KEY;
+    // 算法按层级开放（Issue #229 第四轮）：设置的 key 只是个「想要的」，
+    // 能不能用要问权益层 —— 降级 / 退出登录之后，这里退到当前身份能用的
+    // 那张（allowedKey 自己会从高往低找），不会接着用已经没权的那张。
+    return window.ReviewModels.allowedKey(key, algoCtx());
+  }
+
+  // 「算哪张」要问的唯一一处：Entitlement.identity()。没有权益层的页面
+  // （例如内核单跑）传 undefined，ReviewModels.allowed() 会按游客处理。
+  function algoCtx() {
+    const E = typeof window !== "undefined" ? window.Entitlement : null;
+    if (!E || typeof E.can !== "function") return undefined;
+    try {
+      const id = typeof E.identity === "function" ? E.identity() : null;
+      return id && id.ctx ? id.ctx : undefined;
+    } catch (e) {
+      return undefined;
+    }
   }
 
   const MODEL_INTERVALS = {

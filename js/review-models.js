@@ -25,6 +25,11 @@
     ebbinghaus: {
       key: "ebbinghaus",
       name: "遗忘曲线",
+      // 算法按层级开放（Issue #229 第四轮）：游客就这一张，登录后逐层加，
+      // Max 四张齐备。minTier/login 与 js/entitlement.js 的 CAPS 逐字同源
+      // （那边是唯一台账，这里只是把同一件事写在内核自己身上，供界面回显）。
+      minTier: "free",
+      login: false,
       short: "遗忘曲线",
       sub: "按遗忘曲线复习",
       years: "1885 · 固定间隔",
@@ -55,6 +60,8 @@
     leitner: {
       key: "leitner",
       name: "莱特纳盒",
+      minTier: "free",
+      login: true,
       short: "Leitner",
       sub: "按 Leitner 盒复习",
       years: "1972 · 分级盒子",
@@ -81,6 +88,8 @@
     sm2: {
       key: "sm2",
       name: "SM-2",
+      minTier: "pro",
+      login: true,
       short: "SM-2",
       sub: "按 SM-2 复习",
       years: "1987 · 间隔 × 简易度",
@@ -123,6 +132,8 @@
     fsrs: {
       key: "fsrs",
       name: "FSRS",
+      minTier: "max",
+      login: true,
       short: "FSRS",
       sub: "按 FSRS 复习",
       years: "2022 · 难度 / 稳定性",
@@ -378,8 +389,57 @@
       short: m.short,
       sub: m.sub,
       years: m.years,
-      blurb: m.blurb
+      blurb: m.blurb,
+      minTier: m.minTier,
+      login: !!m.login
     };
+  }
+
+  // ---------------------------------------------------------------------------
+  // 算法按层级开放（Issue #229 第四轮）：游客只有遗忘曲线，登录后逐层加。
+  //
+  // 「哪一档能用哪几张」这句话只有一个来源 —— js/entitlement.js 的 CAPS
+  // （`algo.ebbinghaus` / `algo.leitner` / `algo.sm2` / `algo.fsrs` 四条）。
+  // allowed(key, ctx) 只是替调用方去问那唯一一处，**不自己判层级**：
+  // 本文件是纯内核，认不得「游客 / Free / Pro / Max」这几个词。
+  //
+  // ctx 传 { tier, signedIn }；不传 ctx 时退回**游客**（最弱的那一档）——
+  // 内核不认识人，宁可给最少的，也不能凭空放行。
+  // ---------------------------------------------------------------------------
+  function ent() {
+    if (typeof window !== "undefined" && window && window.Entitlement) return window.Entitlement;
+    if (typeof globalThis !== "undefined" && globalThis.Entitlement) return globalThis.Entitlement;
+    return null;
+  }
+
+  function entrance(key) {
+    return "algo." + (known(key) ? key : DEFAULT_KEY);
+  }
+
+  function allowed(key, ctx) {
+    var k = known(key) ? key : DEFAULT_KEY;
+    var E = ent();
+    if (!E || typeof E.can !== "function") {
+      // 内核单独跑（测试 / 没有权益层的页面）：只有出厂默认那张算数，
+      // 与「不传 ctx 时按游客处理」同一口径 —— 少给不许多给。
+      return k === DEFAULT_KEY;
+    }
+    var c = ctx || { tier: "free", signedIn: false };
+    return !!E.can(entrance(k), c).ok;
+  }
+
+  // 当前身份能用的那张：想要的还在就用它，不然**按 ORDER 从高往低**退到
+  // 第一张能用的。退不到就回出厂默认（游客永远有一张）。
+  function allowedKey(want, ctx) {
+    if (allowed(want, ctx)) return known(want) ? want : DEFAULT_KEY;
+    for (var i = ORDER.length - 1; i >= 0; i--) {
+      if (allowed(ORDER[i], ctx)) return ORDER[i];
+    }
+    return DEFAULT_KEY;
+  }
+
+  function allowedKeys(ctx) {
+    return ORDER.filter(function (k) { return allowed(k, ctx); });
   }
 
   window.ReviewModels = {
@@ -392,6 +452,10 @@
     keys: keys,
     known: known,
     modelOf: modelOf,
+    entrance: entrance,
+    allowed: allowed,
+    allowedKey: allowedKey,
+    allowedKeys: allowedKeys,
     adopt: adopt,
     review: review,
     subFor: subFor,

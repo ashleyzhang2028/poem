@@ -1960,17 +1960,27 @@ function check(name, cond, extra) {
       const m = await page.evaluate(() => {
         const de = document.documentElement;
         const card = document.querySelector('#login-page > .account-card');
-        // 页底页脚已删：卡片下缘到页面底边就是「下面还剩多少」。
+        // ⚠️ 页脚删掉之后，「下面还剩多少」不能再量 scrollHeight：
+        // 登录页不溢出，scrollHeight 就等于视口高 —— 那样算出来的是
+        // 「卡片下缘到视口底」，`margin: auto` 把卡片顶到上半屏之后它
+        // 永远是上面那侧的近两倍（852 上量得 上 150 / 下 290），
+        // 与卡片居不居中无关。
+        //
+        // 居中这件事真正的两侧留白是：**上** = 顶栏下缘 → 卡片上缘，
+        // **下** = 卡片下缘 → 内容盒（`.app` 去掉它自己那条 padding）下缘。
+        // 两侧都由 `#login-page` 的 `min-height` 与 `margin: auto` 决定，
+        // 卡片居中时两处相当。
         const cr = card.getBoundingClientRect();
         const tb = document.querySelector('.topbar').getBoundingClientRect();
+        const ab = document.querySelector('.app').getBoundingClientRect();
+        const padB = parseFloat(getComputedStyle(document.querySelector('.app')).paddingBottom) || 0;
         return {
           vw: de.clientWidth, vh: window.innerHeight,
           overflow: de.scrollHeight - window.innerHeight,
           cardTop: Math.round(cr.top), cardBottom: Math.round(cr.bottom),
-          pageBottom: de.scrollHeight,
 
           above: Math.round(cr.top - tb.bottom),
-          below: Math.round(de.scrollHeight - cr.bottom)
+          below: Math.round(ab.bottom - padB - cr.bottom)
         };
       });
       check('登录页 @' + vw + '×' + vh + '（' + label + '）：页面不溢出',
@@ -1987,6 +1997,27 @@ function check(name, cond, extra) {
         check('登录页 @' + vw + '×' + vh + '（' + label + '）：卡片仍垂直居中（上下留白相当）',
           Math.abs(m.above - m.below) <= 60,
           '上 ' + m.above + ' / 下 ' + m.below);
+      }
+
+      /* ⚠️ 光有「相差 ≤ 60px」这一条**抓不住**「整张卡一起挪」那种改坏：
+         `#login-page` 的 `min-height` 里那几笔是「顶栏 + 页脚 + 收尾」的
+         和（css/account.css 那一大段注释），页脚（`.foot`）全站删掉之后
+         算式没跟着改，卡片按矮了 63px 的盒子重新居中 —— 七档**整齐地**
+         偏 140px，而 60px 的容差只比它的一半多一点，**七档全红**。
+         量得准的那一条（相对偏差）能把它按「差了多少」直接说出来：
+         实测正常值最紧的一档是 58 / 156 ≈ 37%（320×568：屏幕矮、
+         卡片几乎占满一屏，上下本来就没多少余量），改动后 140 / 440 ≈ 32%
+         —— 短屏那几档（上留白 < 100px）**量不出好阈值**：筛选阀拿掉之后
+         正常值最紧的档是 25.4%，与改动后的 32% 挤在一起，分不开。
+         所以下面只管屏幕够高的这几档（60 不够，实测要 100），
+         它们正常值 ≤ 16%、改动后 ≥ 32%，阈值取 25% 两边都留得住余量。 */
+      const span = m.above + m.below;
+      // 屏幕够高的档才判（短屏上卡片已占满一屏，量不出「居中」）
+      if (m.above >= 100) {
+        check('登录页 @' + vw + '×' + vh + '（' + label + '）：卡片几乎就在正中间（相对偏差 ≤ 25%）',
+          span > 0 && Math.abs(m.above - m.below) / span <= 0.25,
+          '偏差 ' + (span > 0 ? Math.round(Math.abs(m.above - m.below) / span * 1000) / 10 : '-') + '%'
+            + '（上 ' + m.above + ' / 下 ' + m.below + '）');
       }
     }
     await page.close();

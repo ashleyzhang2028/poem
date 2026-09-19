@@ -70,10 +70,11 @@ const plansCommentOnly = pageJs;
   chk(readAloud.cells[1].ok === true, '「语音朗读」在 Free 列是钩（登录后免费可用）');
 
   // 未登录与 Free 差的是**登录取向**的那几件：语音朗读 + 进度导出
-  // （Issue #229 第二轮：进度导出也改成登录可用）。层级仍是 free，只差登录。
+  // （Issue #229 第二轮）＋ 莱特纳盒（Issue #229 第四轮：算法按层级开放）。
+  // 层级仍是 free，三件都只差登录。
   const diffCaps = cmp.rows.filter(r => r.cells[0].ok !== r.cells[1].ok).map(r => r.cap);
-  chk(diffCaps.join(',') === 'read.aloud,export.progress',
-    '未登录与 Free 差的是登录取向的两件（实际差：' + diffCaps.join(',') + '）');
+  chk(diffCaps.join(',') === 'read.aloud,export.progress,algo.leitner',
+    '未登录与 Free 差的是登录取向的三件（实际差：' + diffCaps.join(',') + '）');
   chk(diffCaps.every(c => cmp.rows.find(r => r.cap === c).cells[0].reason === 'login'),
     '差的每一条拦它的理由都是「未登录」，不是层级');
 
@@ -112,8 +113,8 @@ const plansCommentOnly = pageJs;
   const sumOK = cmp.summary.every((s, i) =>
     s.ok === cmp.rows.filter(r => r.cells[i].ok).length && s.total === cmp.rows.length);
   chk(sumOK, '表尾「能用几项 / 共几项」与表身逐格相符');
-  chk(cmp.summary[0].ok === cmp.summary[1].ok - 2,
-    '未登录与 Free 的可用项数差 2（语音朗读 + 进度导出，两件都是登录才给）');
+  chk(cmp.summary[0].ok === cmp.summary[1].ok - 3,
+    '未登录与 Free 的可用项数差 3（语音朗读 + 进度导出 + 莱特纳盒，都是登录才给）');
   chk(cmp.rows.filter(r => r.cells[0].ok && !r.cells[1].ok).length === 0,
     '没有「游客能用、登录后反而不能用」的（免费版不缩水仍成立）');
   chk(cmp.summary[3].ok === cmp.summary[3].total,

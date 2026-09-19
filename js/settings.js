@@ -70,6 +70,12 @@
     if (KNOWN_SCOPES.indexOf(merged.scope) === -1) merged.scope = DEFAULT_SCOPE;
 
     if (!algoModels() || !algoModels().known(merged.algo)) merged.algo = DEFAULTS.algo;
+
+    // 算法按层级开放（Issue #229 第四轮）：`merged.algo` 记的是**想要的**
+    // 那一张，**不在读盘这一层回收** —— 回收（按当前身份退到能用的那张）
+    // 一律发生在「用」的时候（renderAlgos 的 cur、以及 app / scheduler /
+    // progress 三处 algoKey()）。这是在内存里改一下 = 下一次改年级调用
+    // saveSettings() 就把它写死成降级后的值，层级回来也回不到原选择。
     if (!STAGES[stageOf(merged.grade)]) merged.grade = DEFAULTS.grade;
     return merged;
   }
@@ -575,6 +581,21 @@
     return (typeof window !== "undefined" && window.ReviewModels) || null;
   }
 
+  // 算法按层级开放（Issue #229 第四轮）：四张卡永远都在（看得见，
+  // 才知道有这一档），能不能选由 Entitlement.can("algo.<key>") 当场答。
+  // 不够层的那几张**不隐藏、不 disabled**：点下去得到的是「Pro 起」这类
+  // 门槛文案，与语音朗读 / 进度导出同一套写法（藏起来就成了「点了没反应」）。
+  function algoGate(key) {
+    const E = entitlementMod();
+    const RM = algoModels();
+    if (!E || !RM || typeof RM.entrance !== "function") return { ok: true, hint: "" };
+    const ident = currentIdentity();
+    if (!ident) return { ok: true, hint: "" };
+    const cap = RM.entrance(key);
+    const r = E.can(cap, ident);
+    return { ok: !!r.ok, hint: r.ok ? "" : E.denyReason(cap, ident) };
+  }
+
   function renderAlgos() {
     const RM = algoModels();
     const box = $("#seg-algo");
@@ -584,14 +605,21 @@
       box.innerHTML = '<div class="settings-hint">复习算法加载失败：请刷新页面重试。</div>';
       return;
     }
-    const cur = RM.known(settings.algo) ? settings.algo : RM.DEFAULT_KEY;
+
+    const cur = RM.allowedKey(settings.algo, currentCtx());
     box.innerHTML = RM.keys().map(function (k) {
       const m = RM.describe(k);
-      return '<button type="button" role="radio" class="algo-opt' + (k === cur ? " active" : "") +
-        '" data-algo="' + m.key + '" aria-checked="' + (k === cur ? "true" : "false") + '">' +
+      const gate = algoGate(k);
+      const cls = "algo-opt" + (k === cur ? " active" : "") + (gate.ok ? "" : " locked");
+      const hint = gate.ok
+        ? ""
+        : '<span class="algo-lock">' + gate.hint + "</span>";
+      return '<button type="button" role="radio" class="' + cls +
+        '" data-algo="' + m.key + '" aria-checked="' + (k === cur ? "true" : "false") + '"' +
+        (gate.ok ? "" : ' aria-disabled="true"') + '>' +
         '<span class="algo-name">' + m.name +
         '<span class="algo-years">' + m.years + "</span></span>" +
-        '<span class="algo-blurb">' + m.blurb + "</span>" +
+        '<span class="algo-blurb">' + m.blurb + "</span>" + hint +
         "</button>";
     }).join("");
 
@@ -603,6 +631,11 @@
     }
     const iv = $("#algo-interval");
     if (iv) iv.textContent = intervalText(cur);
+  }
+
+  function currentCtx() {
+    const ident = currentIdentity();
+    return ident && ident.ctx ? ident.ctx : undefined;
   }
 
   function intervalText(key) {
@@ -630,7 +663,17 @@
 
   function setAlgo(key) {
     const RM = algoModels();
-    if (!RM || !RM.known(key) || key === settings.algo) {
+    if (!RM || !RM.known(key)) {
+      renderAlgos();
+      return;
+    }
+
+    const gate = algoGate(key);
+    if (!gate.ok) {
+      showToast(gate.hint || "这一档还不能用");
+      return;
+    }
+    if (key === settings.algo) {
       renderAlgos();
       return;
     }

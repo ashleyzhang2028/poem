@@ -890,6 +890,32 @@ body.no-dock .modal-box { max-height: 88vh; }
   background: #f0cd7c;
 }
 
+/* 算法按层级开放（Issue #229 第四轮）：不够层的那几张不隐藏、不 disabled，
+   只是**看着淡一点**、右边那颗单选圈留白，并在角上写出门槛
+   （与语音朗读 / 进度导出同一条规矩：藏起来就成了「点了没反应」）。
+   点下去仍然给出一句门槛文案（js/settings.js 的 setAlgo）。
+   门槛右下角那一枚用金色描边 —— 与「实底 = 选中」这一套不混。 */
+.algo-opt.locked {
+  color: var(--ink-3);
+  background: transparent;
+  border-style: dashed;
+}
+.algo-opt.locked .algo-name,
+.algo-opt.locked .algo-blurb,
+.algo-opt.locked .algo-years { color: var(--ink-3); }
+.algo-opt.locked::after {
+  border-color: var(--line-2);
+  background: transparent;
+}
+.algo-lock {
+  position: absolute;
+  right: 10px;
+  bottom: 9px;
+  font-size: 11px;
+  color: var(--autumn);
+  letter-spacing: .2px;
+}
+
 @media (max-width: 400px) {
   .settings-page .seg button,
   .settings-page .chips button { padding: 9px 13px; font-size: 13px; }

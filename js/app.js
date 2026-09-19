@@ -162,7 +162,18 @@
 
   function algoKey() {
     if (!window.ReviewModels) return "ebbinghaus";
-    return window.ReviewModels.known(settings.algo) ? settings.algo : window.ReviewModels.DEFAULT_KEY;
+
+    return window.ReviewModels.allowedKey(settings.algo, algoCtx());
+  }
+
+  function algoCtx() {
+    if (!window.Entitlement || typeof Entitlement.identity !== "function") return undefined;
+    try {
+      const id = Entitlement.identity();
+      return id && id.ctx ? id.ctx : undefined;
+    } catch (e) {
+      return undefined;
+    }
   }
 
   function algoShort() {
