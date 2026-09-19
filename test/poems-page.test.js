@@ -24,13 +24,13 @@ const libEntries = (function () {
   vm.runInContext(libSrc, sandbox, { filename: 'js/library.js' });
   return sandbox.LibraryPage.entries();
 })();
-chk(libEntries.length === 7, '入口页仍是七张卡（课内 + 七部集子；实际 ' + libEntries.length + '）');
+chk(libEntries.length === 9, '入口页是九张卡（课内 + 八部集子；实际 ' + libEntries.length + '）');
 const courseCard = libEntries.filter(function (e) { return e.id === 'poems'; })[0];
 chk(!!courseCard, '入口页第一张卡是课内诗词');
 chk(courseCard.page === '/poems/', '课内诗词那张卡指向索引页 /poems/（实际 ' + courseCard.page + '）');
 chk(courseCard.page !== '/', '课内诗词那张卡不再指回背诵首页');
 chk(libEntries.every(function (e) { return /^\/[a-z]+\/$/.test(e.page); }),
-  '七张卡的去处都是目录化索引页：' + libEntries.map(function (e) { return e.page; }).join(' '));
+  '九张卡的去处都是目录化索引页：' + libEntries.map(function (e) { return e.page; }).join(' '));
 
 const html = fs.readFileSync(path + 'poems/index.html', 'utf8');
 const order = html.match(/<script src="([^"]+)"><\/script>/g).map(function (s) { return s.match(/src="([^"]+)"/)[1]; });

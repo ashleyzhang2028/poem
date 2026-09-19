@@ -119,8 +119,8 @@ chk(WI.same('poems-gz10-05', 'tangshi-ts-190'), '《登高》课内与唐诗三�
 chk(WI.same('poems-gz10-07', 'songci-sc-67'), '《念奴娇·赤壁怀古》课内与宋词三百首仍判为同一篇');
 chk(WI.same('poems-gz10-08', 'songci-sc-183'), '《永遇乐·京口北固亭怀古》课内与宋词三百首仍判为同一篇');
 
-chk(sb.WORKS_GROUPS.length === 81,
-  '同篇对照表 81 组（60 原有 + 8 新收唐诗/元曲 + 13 组长文补全后与选集同篇）（实际 ' +
+chk(sb.WORKS_GROUPS.length === 92,
+  '同篇对照表 92 组（原有 + 新收唐诗/元曲/古文观止 + 乐府 / 近现代与课内同篇 + 长文补全后与选集同篇）（实际 ' +
   sb.WORKS_GROUPS.length + '）');
 
 const jys = byId['xx1-09'];
@@ -262,7 +262,7 @@ const uncov = [];
 chk(uncov.length === 0,
   '判重表 59 组的每一条条目都在存储主表里（未覆盖：' + (uncov.slice(0, 6).join('、') || '无') + '）');
 
-const FULL_BOOKS = ['zhaoming', 'guwen', 'songci', 'tangshi', 'classic', 'yuanqu'];
+const FULL_BOOKS = ['zhaoming', 'guwen', 'songci', 'tangshi', 'classic', 'yuanqu', 'yuefu', 'jinxiandai'];
 const inFullBooks = e => FULL_BOOKS.some(b => e.indexOf(b + '-') === 0);
 const masterInGroups = [];
 Object.keys(masterEntries).forEach(e => {

@@ -10,6 +10,7 @@ const LOAD = [
   'data/poems-9.js', 'data/poems-10.js', 'data/poems-11.js', 'data/poems-12.js',
   'data/index.js', 'data/poems-classic.js', 'data/poems-tangshi.js',
   'data/poems-songci.js', 'data/poems-guwen.js', 'data/poems-zhaoming.js', 'data/poems-yuanqu.js',
+  'data/poems-yuefu.js', 'data/poems-jinxiandai.js',
   'data/site-index.js', 'data/works-map.js', 'data/works-index.js'
 ];
 
@@ -20,11 +21,12 @@ LOAD.forEach(function (f) {
   vm.runInContext(fs.readFileSync(path.join(ROOT, f), 'utf8'), sandbox, { filename: f });
 });
 
-const byId = {};
-sandbox.SITE_INDEX.forEach(function (p) { byId[p.id] = p; });
+
+
+
 const WI = sandbox.WorksIndex;
 
-const FULL_BOOKS = ['zhaoming', 'guwen', 'songci', 'tangshi', 'classic', 'yuanqu'];
+const FULL_BOOKS = ['zhaoming', 'guwen', 'songci', 'tangshi', 'classic', 'yuanqu', 'yuefu', 'jinxiandai'];
 
 const prev = {};
 try {
@@ -49,7 +51,83 @@ function textOfEntry(entry, masterId) {
   return { text: "", translation: "", translationSource: "" };
 }
 
+// 新增一部的**第一次**收归有个先有鸡还是先有蛋的坎：
+// 站点索引里那些条目只留了 textRef，正文要等 text-master 生成后才取得到；
+// 而 LOAD 里 text-master 排在 site-index 之前 —— 于是「这一部还没进过主表」
+// 时，索引组装会把这一部整部当成「没有正文」丢掉，本脚本也就永远收不到它。
+//
+// 这里补一遍：凡在**原始数据文件**里带着 textRef、正文却取不到的条目，
+// 按 textRef 到原始语料里再找一次；找得到就把正文挂到 SITE_INDEX 上。
+// 收过一次之后，这些条目就带着 textRef 进索引了，这一步自然不再补任何东西 ——
+// 但机制留着，日后新增集子不必再踩一次。
+var RAW_ENTRIES = {};
+(function () {
+  var FILES = [
+    { f: 'data/poems-1.js', v: 'POEMS_1' }, { f: 'data/poems-2.js', v: 'POEMS_2' },
+    { f: 'data/poems-3.js', v: 'POEMS_3' }, { f: 'data/poems-4.js', v: 'POEMS_4' },
+    { f: 'data/poems-5.js', v: 'POEMS_5' }, { f: 'data/poems-6.js', v: 'POEMS_6' },
+    { f: 'data/poems-7.js', v: 'POEMS_7' }, { f: 'data/poems-8.js', v: 'POEMS_8' },
+    { f: 'data/poems-9.js', v: 'POEMS_9' }, { f: 'data/poems-10.js', v: 'POEMS_10' },
+    { f: 'data/poems-11.js', v: 'POEMS_11' }, { f: 'data/poems-12.js', v: 'POEMS_12' },
+    { f: 'data/poems-classic.js', v: 'POEMS_CLASSIC' },
+    { f: 'data/poems-tangshi.js', v: 'POEMS_TANGSHI' },
+    { f: 'data/poems-songci.js', v: 'POEMS_SONGCI' },
+    { f: 'data/poems-guwen.js', v: 'POEMS_GUWEN' },
+    { f: 'data/poems-zhaoming.js', v: 'POEMS_ZHAOMING' },
+    { f: 'data/poems-yuanqu.js', v: 'POEMS_YUANQU' },
+    { f: 'data/poems-yuefu.js', v: 'POEMS_YUEFU' },
+    { f: 'data/poems-jinxiandai.js', v: 'POEMS_JINXIANDAI' }
+  ];
+  FILES.forEach(function (o) {
+    var book = o.f.replace('data/poems-', '').replace('.js', '');
+    if (/^\d+$/.test(book)) book = 'poems';
+    (sandbox[o.v] || []).forEach(function (p) {
+      if (!p || !p.id) return;
+      RAW_ENTRIES[book + '-' + p.id] = p;
+    });
+  });
+})();
+var inIndex = {};
+sandbox.SITE_INDEX.forEach(function (p) { if (p && p.id) inIndex[p.id] = true; });
+var BOOTSTRAPPED = [];
+Object.keys(RAW_ENTRIES).forEach(function (id) {
+  if (inIndex[id]) return;
+  var raw = RAW_ENTRIES[id];
+
+  var t = { text: raw.text || '', translation: raw.translation || '',
+    translationSource: raw.translationSource || '' };
+  if (!t.text && raw.textRef) {
+    var up = RAW_ENTRIES[raw.textRef];
+    if (up && up.text) t = { text: up.text || '', translation: up.translation || '',
+      translationSource: up.translationSource || '' };
+  }
+  if (!t.text) return;
+  // 只补「跨集子指向的另一条」：课内自己的单条本来就有一份内联正文、
+  // 也早就在索引里，不该在这里再挂一次。
+  if (id.indexOf('poems-') === 0) return;
+  var book = id.indexOf('poems-') === 0 ? 'poems' : id.split('-')[0];
+  var localId = id.indexOf('poems-') === 0 ? id.slice(6) : id.slice(book.length + 1);
+  sandbox.SITE_INDEX.push({
+    id: id, originId: localId, title: raw.title, author: raw.author || '',
+    authorName: raw.authorName || '', dynasty: raw.dynasty || '',
+    source: raw.source || '', selection: raw.selection || '',
+    gradeGroup: raw.gradeGroup || '', grade: raw.grade, term: raw.term,
+    text: t.text, translation: t.translation, translationSource: t.translationSource,
+    book: book, bookName: book, page: book + '/'
+  });
+  inIndex[id] = true;
+  BOOTSTRAPPED.push(id);
+});
+if (BOOTSTRAPPED.length) {
+  console.log('（' + BOOTSTRAPPED.length + ' 条首次进入主表的条目：' +
+    '它们原先只有 textRef、正文取不到，本轮先从原始数据文件那一段补回索引）');
+}
+const byId = {};
+sandbox.SITE_INDEX.forEach(function (p) { byId[p.id] = p; });
+
+
 const sig = function (t) { return String(t || '').replace(/\s+/g, ''); };
+
 
 const master = [];
 WI.works.forEach(function (w) {
@@ -120,7 +198,8 @@ const BOOK_FILES = [
   'data/poems-5.js', 'data/poems-6.js', 'data/poems-7.js', 'data/poems-8.js',
   'data/poems-9.js', 'data/poems-10.js', 'data/poems-11.js', 'data/poems-12.js',
   'data/poems-classic.js', 'data/poems-tangshi.js', 'data/poems-songci.js',
-  'data/poems-guwen.js', 'data/poems-zhaoming.js', 'data/poems-yuanqu.js'
+  'data/poems-guwen.js', 'data/poems-zhaoming.js', 'data/poems-yuanqu.js',
+  'data/poems-yuefu.js', 'data/poems-jinxiandai.js'
 ];
 
 void fullBooksReport;
