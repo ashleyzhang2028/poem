@@ -313,7 +313,7 @@ setTimeout(() => {
       '日历每一格带 data-offset，挂 role=button（点了跳到那一档）');
 
     const stats = d.querySelectorAll('#progress-stats .stat');
-    chk(stats.length === 4, '总览四格（已学 / 待复习 / 平均掌握 / 尚未学过）');
+    chk(stats.length === 4, '总览四格（已学 / 复习 / 平均掌握 / 尚未学过）');
     chk(d.querySelector('#progress-stats').textContent.indexOf('已学') >= 0,
       '四格里第一格是「已学」');
     chk(d.querySelector('#progress-stats').textContent.indexOf('247') >= 0,
