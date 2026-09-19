@@ -7,7 +7,9 @@
     profile: "poem_profile_v1",
     device: "poem_device_prefs_v1",
     search: "poem_search_kw_v1",
-    premerge: "poem_pre_merge_backup_v1"
+    premerge: "poem_pre_merge_backup_v1",
+
+    dailyExtra: "poem_daily_extra_v1"
   };
 
   var FIELDS = {
@@ -253,6 +255,8 @@
       { key: KEYS.settings, domain: "account", local: false, perChild: true },
 
       { key: KEYS.profile, domain: "account", local: false, perChild: false },
+
+      { key: KEYS.dailyExtra, domain: "device", local: true, perChild: true },
       { key: KEYS.device, domain: "device", local: true, perChild: false },
       { key: KEYS.search, domain: "device", local: true, perChild: false },
       { key: KEYS.premerge, domain: "backup", local: true, perChild: false }
