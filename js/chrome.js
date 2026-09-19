@@ -67,6 +67,8 @@
     guwen: "/guwen/",
     zhaoming: "/zhaoming/",
     yuanqu: "/yuanqu/",
+    yuefu: "/yuefu/",
+    jinxiandai: "/jinxiandai/",
     search: "/search/",
     mine: "/mine/",
     settings: "/settings/",
@@ -104,6 +106,8 @@
     if (/^\/guwen\/?$/.test(p) || /^\/guwen\/index\.html$/.test(p)) return "guwen";
     if (/^\/zhaoming\/?$/.test(p) || /^\/zhaoming\/index\.html$/.test(p)) return "zhaoming";
     if (/^\/yuanqu\/?$/.test(p) || /^\/yuanqu\/index\.html$/.test(p)) return "yuanqu";
+    if (/^\/yuefu\/?$/.test(p) || /^\/yuefu\/index\.html$/.test(p)) return "yuefu";
+    if (/^\/jinxiandai\/?$/.test(p) || /^\/jinxiandai\/index\.html$/.test(p)) return "jinxiandai";
     if (/^\/mine\/?$/.test(p) || /^\/mine\/index\.html$/.test(p)) return "mine";
     if (/^\/settings\/?$/.test(p) || /^\/settings\/index\.html$/.test(p)) return "settings";
     if (/^\/progress\/?$/.test(p) || /^\/progress\/index\.html$/.test(p)) return "progress";
@@ -255,6 +259,8 @@
     if (k === "guwen") return "古文观止";
     if (k === "zhaoming") return "昭明文选";
     if (k === "yuanqu") return "元曲三百首";
+    if (k === "yuefu") return "乐府诗选";
+    if (k === "jinxiandai") return "近现代诗词";
     return "";
   }
 
@@ -274,7 +280,8 @@
   function dockKey(key) {
     if (key === "settings") return "mine";
     if (key === "classic" || key === "tangshi" || key === "songci" || key === "guwen" ||
-        key === "zhaoming" || key === "yuanqu") return "library";
+        key === "zhaoming" || key === "yuanqu" ||
+        key === "yuefu" || key === "jinxiandai") return "library";
 
     if (key === "poems") return "library";
 

@@ -238,8 +238,8 @@ chk(zmIdx.every(x => x.text && x.translation),
   '进索引的每一篇都原文与译文齐备');
 chk(IDX.some(x => x.book === 'zhaoming' && x.isBook),
   '「昭明文选」本身也作为一条结果（搜集子名能直接进那一页）');
-chk(sandbox.SITE_BOOKS.length === 7 && sandbox.SITE_BOOKS.some(b => b.id === 'zhaoming'),
-  '七部集子的清单里含昭明文选（' + sandbox.SITE_BOOKS.length + ' 部）');
+chk(sandbox.SITE_BOOKS.length === 9 && sandbox.SITE_BOOKS.some(b => b.id === 'zhaoming'),
+  '九部集子的清单里含昭明文选（' + sandbox.SITE_BOOKS.length + ' 部）');
 
 const dom = new JSDOM(fs.readFileSync(path + 'zhaoming/index.html', 'utf8'), {
   runScripts: 'dangerously',

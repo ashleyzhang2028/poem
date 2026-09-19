@@ -23,10 +23,11 @@ chk(IDX.every(x => x.title && x.book && x.bookName && x.page),
   '每条结果都带齐 篇名 / 所属集子 / 集子名 / 跳转地址');
 chk(IDX.some(x => x.isBook && x.title === '课外必背小古文'),
   '集子自身也是一条结果（搜「小古文」能直接进那一页）');
-chk(sandbox.SITE_BOOKS.length === 7 &&
+chk(sandbox.SITE_BOOKS.length === 9 &&
   sandbox.SITE_BOOKS.map(b => b.page).join(',') ===
-    '/,/classic/,/tangshi/,/songci/,/guwen/,/zhaoming/,/yuanqu/',
-  '七部集子的索引页地址依次为 / · /classic/ · /tangshi/ · /songci/ · /guwen/ · /zhaoming/ · /yuanqu/');
+    '/,/yuefu/,/zhaoming/,/tangshi/,/songci/,/yuanqu/,/guwen/,/classic/,/jinxiandai/',
+  '九部集子的索引页地址（按时代排序）：课内 · 乐府 · 昭明 · 唐诗 · 宋词 · 元曲 · 古文观止 · 小古文 · 近现代（实际 ' +
+  sandbox.SITE_BOOKS.map(b => b.page).join(',') + '）');
 
 const only = sandbox.buildSiteIndex({ tangshi: [{ id: 'ts-1', title: '感遇·其一', author: '张九龄', dynasty: '唐' }] });
 chk(only.some(x => x.book === 'tangshi' && x.title === '感遇·其一') &&
