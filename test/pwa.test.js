@@ -863,6 +863,10 @@ function check(name, cond, extra) {
         const barState = await page.evaluate(() => {
           const items = [...document.querySelectorAll('#gw-list .item')];
           if (!items.length) return null;
+          const listAct = document.querySelector('.app > .topbar .top-act:not(.top-act-spacer)');
+          const listGap = listAct
+            ? +(document.documentElement.clientWidth - listAct.getBoundingClientRect().right).toFixed(1)
+            : null;
           items[0].click();
           return new Promise(res => setTimeout(() => {
             const bar = document.querySelector('.reader > .topbar');
@@ -873,6 +877,7 @@ function check(name, cond, extra) {
             const text = bar.querySelector('#brand-page-text');
             return res({
               vw: document.documentElement.clientWidth,
+              listGap: listGap,
               barW: +r.width.toFixed(1),
               barRight: +r.right.toFixed(1),
               barScrollW: bar.scrollWidth,
@@ -895,6 +900,12 @@ function check(name, cond, extra) {
         check('iPhone ' + vw + 'px：' + colLabel + ' 详情页返回键整个落在视口里（不被屏幕裁掉）',
           barState && barState.actRight <= barState.vw + 1 && barState.actLeft >= 0,
           barState ? ('返回键 ' + barState.actLeft + '→' + barState.actRight + ' / 视口 ' + barState.vw) : 'no reader');
+
+        check('iPhone ' + vw + 'px：' + colLabel + ' 详情页返回键与列表页同一档内缩（不比别的页面更贴边）',
+          !!barState && barState.listGap != null &&
+          Math.abs((barState.vw - barState.actRight) - barState.listGap) < 0.6,
+          barState ? ('详情页内缩 ' + +(barState.vw - barState.actRight).toFixed(1) +
+            ' / 列表页内缩 ' + barState.listGap) : 'no reader');
 
         check('iPhone ' + vw + 'px：' + colLabel + ' 详情页状态栏（朝代 / 作者 / 出处）在视口里',
           barState && barState.metaRight != null && barState.metaRight <= barState.vw + 1,
@@ -1632,10 +1643,11 @@ function check(name, cond, extra) {
           padL: parseFloat(appStyle.paddingLeft), padR: parseFloat(appStyle.paddingRight)
         };
       });
-      const sideL = w.appL, sideR = +(w.vw - w.appR).toFixed(1);
-      check('桌面 ' + vw + 'px：内容壳层居中且宽度不超过 1200px',
-        Math.abs(sideL - sideR) < 1.5 && w.appR - w.appL <= 1200,
-        JSON.stringify({ 左: sideL, 右: sideR, 视口: w.vw, 内容宽: +(w.appR - w.appL).toFixed(0) }));
+      check('桌面 ' + vw + 'px：一列纸跟视口走，两侧各留 56px 的边',
+        Math.abs(w.padL - 56) < 1.5 && Math.abs(w.padR - 56) < 1.5 &&
+        Math.abs(w.appR - w.appL - w.vw) < 1.5,
+        JSON.stringify({ 左: w.appL, 右: w.vw - w.appR, 视口: w.vw, 内容宽: +(w.appR - w.appL).toFixed(0),
+          内边距: [w.padL, w.padR] }));
       check('桌面 ' + vw + 'px：顶栏与正文列左右同缘（不是各写各的宽度）',
         Math.abs(w.barL - (w.appL + w.padL)) < 1.5 && Math.abs(w.barR - (w.appR - w.padR)) < 1.5,
         JSON.stringify({ 顶栏: [w.barL, w.barR], 正文: [w.appL, w.appR] }));
@@ -1664,8 +1676,8 @@ function check(name, cond, extra) {
         });
       }, 900);
     }));
-    check('桌面 1920px：阅读器正文壳层跟随 1200px 内容上限',
-      readW && readW.bodyW >= 1000 && readW.bodyW <= 1200,
+    check('桌面 1920px：阅读器正文壳层收回 --read-w 这一档（一行 35~40 字的阅读上限）',
+      readW && readW.bodyW > 600 && readW.bodyW <= 760,
       readW ? String(readW.bodyW) : 'no reader');
     check('桌面 1920px：一行字仍封顶 720px 这一档（不跟着屏幕一起变宽）',
       readW && readW.txtW <= 760,

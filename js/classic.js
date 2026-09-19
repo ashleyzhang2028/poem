@@ -18,7 +18,7 @@
       groupOrder: GROUP_ORDER,
 
       pageTitle: "课外必背小古文",
-      pageSub: "想读哪篇点哪篇",
+      pageSub: "百字上下，最适合起步",
       words: {
         list: "小古文",
         unit: "篇",

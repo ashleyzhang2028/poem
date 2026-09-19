@@ -131,7 +131,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     '卡片文案没有渲染异常（无 undefined / [object]）');
 
   const libSrc = read('library/index.html');
-  chk(/data-sub="课本之外的经典，按部就班读下去"/.test(libSrc),
+  chk(/data-sub="课本之外的经典"/.test(libSrc),
     '入口页的说明写在 body 的 data-sub 上（顶栏第二行）');
   chk(!/library-hint/.test(libSrc),
     '正文里那段与顶栏重复的说明已删（不再渲染 .library-hint）');
