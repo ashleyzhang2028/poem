@@ -19,7 +19,7 @@ loadData(sb, [
   'data/poems-1.js', 'data/poems-2.js', 'data/poems-3.js', 'data/poems-4.js', 'data/poems-5.js',
   'data/poems-6.js', 'data/poems-7.js', 'data/poems-8.js', 'data/poems-9.js', 'data/poems-10.js',
   'data/poems-11.js', 'data/poems-12.js', 'data/index.js', 'data/poems-classic.js',
-  'data/poems-tangshi.js', 'data/poems-songci.js', 'data/poems-guwen.js', 'data/poems-zhaoming.js', 'data/poems-yuanqu.js',
+  'data/poems-yuefu.js', 'data/poems-tangshi.js', 'data/poems-songci.js', 'data/poems-guwen.js', 'data/poems-zhaoming.js', 'data/poems-yuanqu.js',
   'data/site-index.js', 'data/works-map.js', 'data/works-index.js',
   'data/canonical-texts.js'
 ]);
@@ -30,14 +30,15 @@ const WI = sb.WorksIndex;
 const byId = {};
 sb.SITE_INDEX.forEach(p => { byId[p.id] = p; });
 
-const FULL_BOOKS = ['zhaoming', 'guwen', 'songci', 'tangshi', 'classic', 'yuanqu'];
+const FULL_BOOKS = ['zhaoming', 'guwen', 'songci', 'yuanqu', 'tangshi', 'classic', 'yuefu'];
 const FULL_BOOK_SET = {};
 FULL_BOOKS.forEach(b => { FULL_BOOK_SET[b] = true; });
 
 const multiEntries = MASTER.filter(m => m.entries.length >= 2);
 const singleEntries = MASTER.filter(m => m.entries.length === 1);
-chk(multiEntries.length === 68,
-  '主表里有 68 条「跨集重复」的作品（实际 ' + multiEntries.length + '）');
+chk(multiEntries.length === 101,
+  '主表里有 101 条「跨集重复」的作品（乐府集与课内 / 其余集子重篇，Issue #244；实际 ' +
+  multiEntries.length + '）');
 const fullExpected = [];
 FULL_BOOKS.forEach(book => {
   sb.SITE_INDEX.forEach(p => {
@@ -61,8 +62,18 @@ chk(MASTER.every(m => m.id && m.work && Array.isArray(m.entries) && m.entries.le
   '每条都带 id / work / entries（跨集重复至少两条条目指它）');
 chk(MASTER.every(m => m.text && m.translation),
   '每条都有正文与译文（主表是唯一一份正文，不许有空文）');
-chk(multiEntries.every(m => m.id.indexOf('poems-') === 0),
-  '跨集重复的主条目一律是课内条目（教材口径优先）—— 与作品主表同口径');
+// 主条目口径：**有课内条目就取课内**（教材口径优先）；两边都没有课内时
+// 按 data/works-index.js 的 repOf() —— 即 entries 里按「课内优先、其余按 id」
+// 排过序的第一个。乐府集（Issue #244）与唐诗三百首重篇的那 14 篇就落在后一支上：
+// 两条都不是课内，主条目取 id 更小的那一部（tangshi-* < yuefu-*）。
+const noCourse = multiEntries.filter(m => m.id.indexOf('poems-') !== 0);
+chk(noCourse.every(m => m.entries.every(e => e.indexOf('poems-') !== 0)),
+  '主条目不是课内条目的那些，entries 里也确实没有课内条目（不该有人放着课内不用）');
+chk(noCourse.every(m => m.id === m.entries.slice().sort()[0]),
+  '没有课内可比时，主条目取 id 最小的那一条（与 works-index 的排序口径一致；' +
+  noCourse.length + ' 篇，全是唐诗 ↔ 乐府集的重篇）');
+chk(multiEntries.filter(m => m.id.indexOf('poems-') === 0).length === multiEntries.length - noCourse.length,
+  '其余 ' + (multiEntries.length - noCourse.length) + ' 篇的主条目都是课内条目（教材口径优先）');
 
 chk(singleEntries.every(m => FULL_BOOKS.some(b => m.id.indexOf(b + '-') === 0)),
   '全量收归部的单篇：主条目 id 带自己那一部的前缀');
@@ -136,8 +147,9 @@ const uncovered = dupEntries.filter(e => !covered[e]);
 chk(uncovered.length === 0,
   '「同篇判重键下有两条及以上」的条目共 ' + dupEntries.length + ' 条，全部收进了主表（未收：' +
   (uncovered.slice(0, 6).join('、') || '无') + '）');
-chk(dupEntries.length === 137,
-  '重复条目恰为 137 条（68 篇：多数 × 2，少数 × 3；实际 ' + dupEntries.length + '）');
+chk(dupEntries.length === 216,
+  '重复条目恰为 216 条（101 篇：多数 × 2，少数 × 3；乐府集收进来的一批重篇，Issue #244；实际 ' +
+  dupEntries.length + '）');
 
 const expectFlat = dupEntries.slice();
 fullExpected.forEach(id => { if (expectFlat.indexOf(id) < 0) expectFlat.push(id); });
@@ -160,7 +172,7 @@ const inScope = sb.SITE_INDEX.filter(p => p && !p.isBook && p.id &&
   (p.text || p.translation) && FULL_BOOK_SET[p.book]);
 const missingFromMaster = inScope.filter(p => !masterFlat.some(e => e === p.id));
 chk(missingFromMaster.length === 0,
-  '清单点名的六部里，有正文的 ' + inScope.length + ' 条条目全部登记进了主表（未登记：' +
+  '清单点名的七部里，有正文的 ' + inScope.length + ' 条条目全部登记进了主表（未登记：' +
   (missingFromMaster.slice(0, 6).map(p => p.id).join('、') || '无') + '）');
 
 const keNei = sb.SITE_INDEX.filter(p => p && !p.isBook && p.book === 'poems' && p.id);
@@ -173,7 +185,7 @@ chk(masterFlat.every(id => byId[id] && !byId[id].isBook),
   '主表登记的每一条都是站点索引里的真实篇目（不是书本身、不是拼错的 id）');
 
 chk(FULL_BOOKS.every(b => sb.SITE_INDEX.some(p => p.book === b)),
-  'FULL_BOOKS 点名的六部在站点索引里都在册（实际：' +
+  'FULL_BOOKS 点名的七部在站点索引里都在册（实际：' +
   FULL_BOOKS.filter(b => !sb.SITE_INDEX.some(p => p.book === b)).join('、') + '）');
 
 const BOOK_VARS = {
@@ -181,6 +193,7 @@ const BOOK_VARS = {
     'data/poems-5.js', 'data/poems-6.js', 'data/poems-7.js', 'data/poems-8.js',
     'data/poems-9.js', 'data/poems-10.js', 'data/poems-11.js', 'data/poems-12.js'],
   classic: ['data/poems-classic.js'],
+  yuefu: ['data/poems-yuefu.js'],
   tangshi: ['data/poems-tangshi.js'],
   songci: ['data/poems-songci.js'],
   guwen: ['data/poems-guwen.js'],

@@ -80,7 +80,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   const actionBtn = () => d.querySelector('.app > .topbar #top-act');
 
   chk(!!w.LibraryPage, '入口页暴露了 LibraryPage（铺开 / 收起都由它管）');
-  chk(d.querySelectorAll('.library-card').length === 7, '七张卡片都在（实际 ' +
+  chk(d.querySelectorAll('.library-card').length === 8, '八张卡片都在（实际 ' +
     d.querySelectorAll('.library-card').length + '）');
   chk(!gridHidden() && railHidden(), '初始状态：目录可见、索引层隐藏');
 
@@ -129,7 +129,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(pageName() === '课外阅读', '页名还原成「课外阅读」（实际 ' + pageName() + '）');
   chk(subText() === '课本之外的经典',
     '副标题还原成入口页那一句（实际 ' + subText() + '）');
-  chk(d.querySelectorAll('.library-card').length === 7, '七张卡片仍在（退回来时没有把目录清掉）');
+  chk(d.querySelectorAll('.library-card').length === 8, '八张卡片仍在（退回来时没有把目录清掉）');
   chk(topActs() === 0, '目录这一层不再有返回键（恢复各页默认的「回首页」；实际 ' + topActs() + '）');
 
   const gs = d.querySelector('[data-lib-part="search"]');

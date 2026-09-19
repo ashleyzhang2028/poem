@@ -44,15 +44,13 @@ window.POEMS_3 = [
     translationSource: "school",
   },
   {
+    textRef: "poems-xx3-05",
     id: "xx3-05",
     title: "望天门山",
     author: "李白",
     dynasty: "唐",
     grade: 3,
     term: 1,
-    text: "天门中断楚江开，碧水东流至此回。\n两岸青山相对出，孤帆一片日边来。",
-    translation: "天门山从中间断开，楚江从中奔涌而出，碧水向东流到这里回旋。两岸青山相对而出，一片孤帆从日边驶来。",
-    translationSource: "school",
   },
   {
     id: "xx3-06",

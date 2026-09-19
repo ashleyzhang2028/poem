@@ -4,13 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#2f6055" />
-  <title>跬步 · 全站搜索</title>
-  <meta name="description" content="跬步全站搜索：一次搜遍课内诗词、课外必背小古文、唐诗三百首、宋词三百首与古文观止，输入即出候选与结果，点开就读，带注音、朗读与白话译文。" />
+  <title>跬步 · 乐府集</title>
+  <meta name="description" content="跬步乐府集：精选一百首，按卷一至卷五编次 —— 汉魏乐府、南朝乐府、唐代乐府、唐五代乐府与乐府歌辞，每篇都有原文、生字注音、语音朗读与白话译文。" />
   <meta name="format-detection" content="telephone=no" />
 
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <meta name="apple-mobile-web-app-title" content="搜索" />
+  <meta name="apple-mobile-web-app-title" content="乐府集" />
   <meta name="mobile-web-app-capable" content="yes" />
 
   <base href="/" />
@@ -19,35 +19,41 @@
   <link rel="stylesheet" href="css/style.css" />
   <link rel="stylesheet" href="css/classic.css" />
 </head>
-<body data-nav="search" data-page="搜索">
+<body data-nav="yuefu" data-page="乐府集">
 
   <div class="app" data-gw-root>
 
-    <header class="topbar"></header>
-
-    <div class="search-hero" id="search-hero">
-
-      <div class="toolbar search-toolbar">
-        <div class="search-wrap" id="site-search-wrap">
-          <span class="search-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="11" cy="11" r="6.4" />
-              <path d="M15.8 15.8 20 20" />
-            </svg>
-          </span>
-          <input id="gw-search" data-gw="search" class="search-input" type="search"
-                 placeholder="搜索篇名 / 作者 / 诗句（全站）" autocomplete="off" role="combobox"
-                 aria-expanded="false" aria-controls="search-suggest" aria-autocomplete="list"
-                 enterkeyhint="search" />
-
-          <kbd class="search-slash">/</kbd>
-
-          <div class="suggest" id="search-suggest" role="listbox" aria-label="搜索候选" hidden></div>
-        </div>
+    <header class="topbar">
+    </header>
+    <div class="toolbar">
+      <div class="search-wrap">
+        <span class="search-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="6.4" />
+            <path d="M15.8 15.8 20 20" />
+          </svg>
+        </span>
+        <input id="gw-search" data-gw="search" class="search-input" type="search" placeholder="搜索篇名 / 作者 / 文体" autocomplete="off" />
       </div>
+      <div class="seg mini filter-seg" id="gw-filter-seg" role="group" aria-label="筛选">
+        <button type="button" data-filter="all" class="active" aria-pressed="true">全部</button>
+        <button type="button" data-filter="unread" aria-pressed="false">未读</button>
+      </div>
+
+      <button class="gw-play gw-play-main" id="gw-random-read" data-gw="random" type="button" data-on="0"
+        aria-pressed="false" title="随机连读：随机抽一篇开读，读完自动跳下一篇">
+        <span class="play-glyph" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M8.4 6.1 18.3 12 8.4 17.9Z" fill="none" stroke="currentColor" stroke-width="1" stroke-linejoin="round" stroke-linecap="round" /></svg>
+        </span>
+        <span class="pause-glyph" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M8.2 5h2.9v14H8.2Z M12.9 5h2.9v14h-2.9Z" fill="currentColor" stroke="none" /></svg>
+        </span>
+        <span class="sr-only" id="gw-random-read-text">随机连读</span>
+      </button>
     </div>
 
     <div class="list" id="gw-list" data-gw="list"></div>
+
   </div>
 
   <div class="reader" id="gw-reader" data-gw="reader" hidden>
@@ -67,6 +73,11 @@
           <button type="button" data-gw="align" data-align="center" class="active" aria-pressed="true" title="居中对齐" aria-label="居中对齐">
             <span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round">
               <path d="M4 6.5h16M6.8 11h10.4M4 15.5h16M8 20h8" />
+            </svg></span>
+          </button>
+          <button type="button" data-gw="align" data-align="right" aria-pressed="false" title="右对齐" aria-label="右对齐">
+            <span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round">
+              <path d="M4 6.5h16M9.5 11H20M4 15.5h16M12 20h8" />
             </svg></span>
           </button>
         </div>
@@ -203,49 +214,13 @@
 
   <div class="toast" id="toast" hidden></div>
 
-  <script src="data/poems-1.js"></script>
-  <script src="data/poems-2.js"></script>
-  <script src="data/poems-3.js"></script>
-  <script src="data/poems-4.js"></script>
-  <script src="data/poems-5.js"></script>
-  <script src="data/poems-6.js"></script>
-  <script src="data/poems-7.js"></script>
-  <script src="data/poems-8.js"></script>
-  <script src="data/poems-9.js"></script>
-  <script src="data/poems-10.js"></script>
-  <script src="data/poems-11.js"></script>
-  <script src="data/poems-12.js"></script>
-  <script src="data/poems-classic.js"></script>
   <script src="data/poems-yuefu.js"></script>
-  <script src="data/poems-tangshi.js"></script>
-  <script src="data/poems-songci.js"></script>
-  <script src="data/poems-guwen.js"></script>
-  <script src="data/poems-zhaoming.js"></script>
-  <script src="data/poems-yuanqu.js"></script>
-
-  <script src="data/poems-1.js"></script>
-  <script src="data/poems-2.js"></script>
-  <script src="data/poems-3.js"></script>
-  <script src="data/poems-4.js"></script>
-  <script src="data/poems-5.js"></script>
-  <script src="data/poems-6.js"></script>
-  <script src="data/poems-7.js"></script>
-  <script src="data/poems-8.js"></script>
-  <script src="data/poems-9.js"></script>
-  <script src="data/poems-10.js"></script>
-  <script src="data/poems-11.js"></script>
-  <script src="data/poems-12.js"></script>
-  <script src="data/index.js"></script>
-
-  <script src="data/text-master.js"></script>
-  <script src="data/site-index.js"></script>
 
   <script src="data/works-map.js"></script>
   <script src="data/works-index.js"></script>
 
+  <script src="data/text-master.js"></script>
   <script src="data/canonical-texts.js"></script>
-
-  <script src="data/group-order.js"></script>
 
   <script src="js/family.js"></script>
   <script src="js/progress-store.js"></script>
@@ -257,6 +232,21 @@
   <script src="js/collections.js"></script>
   <script src="js/daily-extra.js"></script>
   <script src="js/daily-extra-ui.js"></script>
+
+  <script src="data/poems-1.js"></script>
+  <script src="data/poems-2.js"></script>
+  <script src="data/poems-3.js"></script>
+  <script src="data/poems-4.js"></script>
+  <script src="data/poems-5.js"></script>
+  <script src="data/poems-6.js"></script>
+  <script src="data/poems-7.js"></script>
+  <script src="data/poems-8.js"></script>
+  <script src="data/poems-9.js"></script>
+  <script src="data/poems-10.js"></script>
+  <script src="data/poems-11.js"></script>
+  <script src="data/poems-12.js"></script>
+
+  <script src="data/index.js"></script>
   <script src="data/pinyin-table.js"></script>
   <script src="data/common-chars.js"></script>
   <script src="js/pinyin.js"></script>
@@ -271,6 +261,8 @@
   <script src="js/avatar.js"></script>
   <script src="js/chrome.js"></script>
   <script src="js/pwa.js"></script>
-  <script src="js/search.js"></script>
+
+  <script src="data/group-order.js"></script>
+  <script src="js/yuefu.js"></script>
 </body>
 </html>

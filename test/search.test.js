@@ -50,7 +50,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
    'data/poems-5.js', 'data/poems-6.js', 'data/poems-7.js', 'data/poems-8.js',
    'data/poems-9.js', 'data/poems-10.js', 'data/poems-11.js', 'data/poems-12.js',
    'data/index.js', 'data/poems-classic.js', 'data/poems-tangshi.js',
-   'data/poems-songci.js', 'data/poems-guwen.js', 'data/poems-zhaoming.js',
+   'data/poems-songci.js', 'data/poems-yuefu.js', 'data/poems-guwen.js', 'data/poems-zhaoming.js',
    'data/poems-yuanqu.js',
    'data/site-index.js', 'data/works-map.js', 'data/works-index.js']);
 
@@ -58,25 +58,26 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 
   const books = [
     resolve(sandbox, sandbox.POEMS_CLASSIC, 'classic'),
+    resolve(sandbox, sandbox.POEMS_YUEFU, 'yuefu'),
     resolve(sandbox, sandbox.POEMS_TANGSHI, 'tangshi'),
     resolve(sandbox, sandbox.POEMS_SONGCI, 'songci'),
+    resolve(sandbox, sandbox.POEMS_YUANQU, 'yuanqu'),
     resolve(sandbox, sandbox.POEMS_GUWEN, 'guwen'),
-    resolve(sandbox, sandbox.POEMS_ZHAOMING, 'zhaoming'),
-    resolve(sandbox, sandbox.POEMS_YUANQU, 'yuanqu')
+    resolve(sandbox, sandbox.POEMS_ZHAOMING, 'zhaoming')
   ];
-  const BOOK_IDS = ['classic', 'tangshi', 'songci', 'guwen', 'zhaoming', 'yuanqu'];
+  const BOOK_IDS = ['classic', 'yuefu', 'tangshi', 'songci', 'yuanqu', 'guwen', 'zhaoming'];
 
-  const zmIndexed = books[4].filter(p => p.text && p.translation).length;
+  const zmIndexed = books[6].filter(p => p.text && p.translation).length;
 
   chk(IDX.length === sandbox.POEMS_ALL.length +
-      books.reduce((n, b) => n + b.filter(p => p.text && p.translation).length, 0) + 7,
-    '总索引 = 课内诗词 + 六部全集子（其中昭明 ' + zmIndexed + ' 篇）+ 7 条集子条目（实际 ' + IDX.length + '）');
+      books.reduce((n, b) => n + b.filter(p => p.text && p.translation).length, 0) + 8,
+    '总索引 = 课内诗词 + 七部全集子（其中昭明 ' + zmIndexed + ' 篇）+ 8 条集子条目（实际 ' + IDX.length + '）');
   BOOK_IDS.forEach(id => {
     chk(IDX.some(x => x.book === id && !x.isBook),
       '总索引含「' + id + '」这一部的篇目');
   });
-  chk(IDX.filter(x => x.isBook).length === 7,
-    '七部集子自身也各有一条（搜「唐诗三百首」能直接进那一页）');
+  chk(IDX.filter(x => x.isBook).length === 8,
+    '八部集子自身也各有一条（搜「唐诗三百首」能直接进那一页）');
 
   const ids = new Set();
   let dup = 0;
@@ -84,7 +85,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(dup === 0, '全站 id 无重复（重复 ' + dup + ' 个）');
   chk(BOOK_IDS.every(id => IDX.filter(x => x.book === id && !x.isBook)
     .every(x => x.id.indexOf(id + '-') === 0)),
-    '每条结果的 id 都带自己那一部的前缀（七部原 id 会撞，前缀才分得开）');
+    '每条结果的 id 都带自己那一部的前缀（八部原 id 会撞，前缀才分得开）');
   chk(IDX.every(x => x.book && x.bookName && x.page),
     '每条结果都带「出自哪一部」与「该去哪一页」');
 
@@ -94,41 +95,45 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   const ld = wLib.document;
   const cards = [...ld.querySelectorAll('.library-card')];
 
-  chk(cards.length === 7, '入口页列出七部（课内 + 六部选集，实际 ' + cards.length + '）');
+  chk(cards.length === 8, '入口页列出八部（课内 + 七部选集，实际 ' + cards.length + '）');
   chk(cards.map(c => c.getAttribute('data-book')).join('/') ===
-    'poems/classic/tangshi/songci/guwen/zhaoming/yuanqu',
-    '七部的顺序与出处正确');
+    'poems/classic/yuefu/tangshi/songci/yuanqu/guwen/zhaoming',
+    '八部的顺序与出处正确（乐府集在唐诗前、元曲在宋词后，Issue #244）');
 
-  chk(cards.map(c => c.tagName).join('/') === 'A/BUTTON/BUTTON/BUTTON/BUTTON/BUTTON/BUTTON',
-    '七张卡：课内是链接（跳 /poems/），其余六部是按钮（就地铺索引；实际 ' +
+  chk(cards.map(c => c.tagName).join('/') === 'A/BUTTON/BUTTON/BUTTON/BUTTON/BUTTON/BUTTON/BUTTON',
+    '八张卡：课内是链接（跳 /poems/），其余七部是按钮（就地铺索引；实际 ' +
     cards.map(c => c.tagName).join('/') + '）');
   chk(cards[0].getAttribute('href') === '/poems/',
     '课内那张仍指自己的索引页（实际 ' + cards[0].getAttribute('href') + '）');
 
   const libSrcForPages = read('js/library.js');
-  const bookPages = { classic: '/classic/', tangshi: '/tangshi/', songci: '/songci/',
-    guwen: '/guwen/', zhaoming: '/zhaoming/' };
+  const bookPages = { classic: '/classic/', yuefu: '/yuefu/', tangshi: '/tangshi/', songci: '/songci/',
+    yuanqu: '/yuanqu/', guwen: '/guwen/', zhaoming: '/zhaoming/' };
   const missingPage = Object.keys(bookPages).filter(id =>
     libSrcForPages.indexOf('page: "' + bookPages[id] + '"') < 0);
   chk(missingPage.length === 0,
     '就地打开的五部也各自留着自己的页面地址（直接访问 / 中键新开仍可用；缺 ' +
     (missingPage.join('/') || '无') + '）');
   chk(cards.slice(1).every(c => c.querySelector('.library-card-go')),
-    '五张按钮卡与课内那张一样带「进去」的箭头（外观逐项一致）');
+    '七张按钮卡与课内那张一样带「进去」的箭头（外观逐项一致）');
 
-  const CARD_VARS = { poems: 'POEMS_ALL', classic: 'POEMS_CLASSIC', tangshi: 'POEMS_TANGSHI',
-    songci: 'POEMS_SONGCI', guwen: 'POEMS_GUWEN', zhaoming: 'POEMS_ZHAOMING' };
-  const CARD_UNITS = { poems: '首', classic: '篇', tangshi: '首',
-    songci: '首', guwen: '篇', zhaoming: '篇' };
+  const CARD_VARS = { poems: 'POEMS_ALL',
+    classic: 'POEMS_CLASSIC', yuefu: 'POEMS_YUEFU',
+    tangshi: 'POEMS_TANGSHI', songci: 'POEMS_SONGCI', yuanqu: 'POEMS_YUANQU',
+    guwen: 'POEMS_GUWEN', zhaoming: 'POEMS_ZHAOMING' };
+  const CARD_UNITS = { poems: '首',
+    classic: '篇', yuefu: '首', tangshi: '首',
+    songci: '首', yuanqu: '首', guwen: '篇', zhaoming: '篇' };
   Object.keys(CARD_VARS).forEach((id, i) => {
     const n = sandbox[CARD_VARS[id]].length;
     chk(cards[i].querySelector('.library-card-count').textContent === n + ' ' + CARD_UNITS[id],
       cards[i].querySelector('.library-card-name').textContent + ' 篇数与数据一致（' + n + '）');
   });
-  chk(/课外必背小古文/.test(ld.body.textContent) && /唐诗三百首/.test(ld.body.textContent) &&
+  chk(/课外必背小古文/.test(ld.body.textContent) && /乐府集/.test(ld.body.textContent) &&
+    /唐诗三百首/.test(ld.body.textContent) &&
     /宋词三百首/.test(ld.body.textContent) && /古文观止/.test(ld.body.textContent) &&
-    /昭明文选/.test(ld.body.textContent),
-    '五部的**全名**都写在这一页上（页签装不下书名，这里要写全）');
+    /元曲三百首/.test(ld.body.textContent) && /昭明文选/.test(ld.body.textContent),
+    '六部的**全名**都写在这一页上（页签装不下书名，这里要写全）');
   chk(!/\[object|undefined/.test(ld.querySelector('#library-grid').textContent),
     '卡片文案没有渲染异常（无 undefined / [object]）');
 
@@ -412,7 +417,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(dock.every(b => b.querySelectorAll(':scope > *').length === 2),
     '每格仍是 图标 + 文字 两个子元素，没有多加装饰');
   chk(dock.filter(b => b.getAttribute('data-nav-go') === 'classic').length === 0,
-    '六部集子不再各自占一格（「小古文」旧页签已撤）');
+    '七部集子不再各自占一格（「小古文」旧页签已撤）');
 
   chk(/的背诵/.test(wHome.document.querySelector('#brand-page-text').textContent),
     '首页顶栏页面名改为「XX的背诵」（实际 ' +
@@ -420,7 +425,9 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(!/的古诗词/.test(wHome.document.title), '标题里不再写「的古诗词」（实际 ' + wHome.document.title + '）');
 
   for (const [page, url] of [['classic/index.html', '/classic/'],
+    ['yuefu/index.html', '/yuefu/'],
     ['tangshi/index.html', '/tangshi/'], ['songci/index.html', '/songci/'],
+    ['yuanqu/index.html', '/yuanqu/'],
     ['guwen/index.html', '/guwen/'], ['zhaoming/index.html', '/zhaoming/']]) {
     const wp = boot(page, url);
     await wp.__ready;

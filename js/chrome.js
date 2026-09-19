@@ -62,6 +62,7 @@
     poems: "/poems/",
     library: "/library/",
     classic: "/classic/",
+    yuefu: "/yuefu/",
     tangshi: "/tangshi/",
     songci: "/songci/",
     guwen: "/guwen/",
@@ -99,6 +100,7 @@
     if (/^\/poems\/?$/.test(p) || /^\/poems\/index\.html$/.test(p)) return "poems";
     if (/^\/search\/?$/.test(p) || /^\/search\/index\.html$/.test(p)) return "search";
     if (/^\/classic\/?$/.test(p) || /^\/classic\/index\.html$/.test(p)) return "classic";
+    if (/^\/yuefu\/?$/.test(p) || /^\/yuefu\/index\.html$/.test(p)) return "yuefu";
     if (/^\/tangshi\/?$/.test(p) || /^\/tangshi\/index\.html$/.test(p)) return "tangshi";
     if (/^\/songci\/?$/.test(p) || /^\/songci\/index\.html$/.test(p)) return "songci";
     if (/^\/guwen\/?$/.test(p) || /^\/guwen\/index\.html$/.test(p)) return "guwen";
@@ -250,6 +252,7 @@
     if (k === "mine") return "我的";
     if (k === "search") return "搜索";
     if (k === "classic") return "小古文";
+    if (k === "yuefu") return "乐府集";
     if (k === "tangshi") return "唐诗三百首";
     if (k === "songci") return "宋词三百首";
     if (k === "guwen") return "古文观止";
@@ -266,15 +269,15 @@
 
   var DOCK_ITEMS = [
     { key: "home", href: "/", icon: GLYPHS.tabPoem, label: "背诵", desc: "课内古诗词，按当前复习算法安排复习" },
-    { key: "library", href: "/library/", icon: GLYPHS.tabLibrary, label: "课外", desc: "课内诗词 / 小古文 / 唐诗 / 宋词 / 古文观止 / 昭明文选" },
+    { key: "library", href: "/library/", icon: GLYPHS.tabLibrary, label: "课外", desc: "课内诗词 / 小古文 / 乐府集 / 唐诗 / 宋词 / 元曲 / 古文观止 / 昭明文选" },
     { key: "search", href: "/search/", icon: GLYPHS.tabSearch, label: "搜索", desc: "全站篇目一次搜遍" },
     { key: "mine", href: "/mine/", icon: GLYPHS.tabMineImg, label: "我的", desc: "头像 / 昵称 / 账号 / 本机数据" }
   ];
 
   function dockKey(key) {
     if (key === "settings") return "mine";
-    if (key === "classic" || key === "tangshi" || key === "songci" || key === "guwen" ||
-        key === "zhaoming" || key === "yuanqu") return "library";
+    if (key === "classic" || key === "yuefu" || key === "tangshi" || key === "songci" ||
+        key === "guwen" || key === "zhaoming" || key === "yuanqu") return "library";
 
     if (key === "poems") return "library";
 

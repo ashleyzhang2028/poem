@@ -21,6 +21,15 @@
       desc: "蒙学识字、寓言故事到诸子论道，百字上下，最适合起步"
     },
     {
+      id: "yuefu",
+      name: "乐府集",
+      book: "YuefuBook",
+      short: "乐府",
+      page: "/yuefu/",
+      unit: "首",
+      desc: "精选一百首，自汉魏至唐五代按卷一至卷五分卷，乐府一体两千年"
+    },
+    {
       id: "tangshi",
       name: "唐诗三百首",
       book: "TangshiBook",
@@ -39,6 +48,15 @@
       desc: "按词牌分组，一调之下诸家并列，可直接比对同调之作"
     },
     {
+      id: "yuanqu",
+      name: "元曲三百首",
+      book: "YuanquBook",
+      short: "元曲",
+      page: "/yuanqu/",
+      unit: "首",
+      desc: "小令与套数按宫调编排，质朴自然，曲白相生"
+    },
+    {
       id: "guwen",
       name: "古文观止",
       book: "GuwenBook",
@@ -55,15 +73,6 @@
       page: "/zhaoming/",
       unit: "篇",
       desc: "六十卷按赋、诗、骚、七等三十九类文体编排，现存最早的诗文总集"
-    },
-    {
-      id: "yuanqu",
-      name: "元曲三百首",
-      book: "YuanquBook",
-      short: "元曲",
-      page: "/yuanqu/",
-      unit: "首",
-      desc: "小令与套数按宫调编排，质朴自然，曲白相生"
     }
   ];
 
@@ -80,6 +89,7 @@
     var VARS = {
       poems: "POEMS_ALL",
       classic: "POEMS_CLASSIC",
+      yuefu: "POEMS_YUEFU",
       tangshi: "POEMS_TANGSHI",
       songci: "POEMS_SONGCI",
       guwen: "POEMS_GUWEN",

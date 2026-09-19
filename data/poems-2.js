@@ -31,15 +31,13 @@ window.POEMS_2 = [
     term: 1,
   },
   {
+    textRef: "poems-xx2-04",
     id: "xx2-04",
     title: "望庐山瀑布",
     author: "李白",
     dynasty: "唐",
     grade: 2,
     term: 1,
-    text: "日照香炉生紫烟，遥看瀑布挂前川。\n飞流直下三千尺，疑是银河落九天。",
-    translation: "阳光照着香炉峰升起紫色的云雾，远远看瀑布像白练挂在山前。水流从三千尺高处飞泻下来，让人疑心是银河从九天落了下来。",
-    translationSource: "school",
   },
   {
     textRef: "poems-xx2-05",
@@ -62,15 +60,13 @@ window.POEMS_2 = [
     translationSource: "school",
   },
   {
+    textRef: "poems-xx2-07",
     id: "xx2-07",
     title: "敕勒歌",
     author: "北朝民歌",
     dynasty: "南北朝",
     grade: 2,
     term: 1,
-    text: "敕勒川，阴山下。\n天似穹庐，笼盖四野。\n天苍苍，野茫茫，\n风吹草低见牛羊。",
-    translation: "敕勒川在阴山脚下。天像一顶大圆顶帐篷，笼罩着四方的原野。天色苍苍，原野茫茫，风吹低了草，露出成群的牛羊。",
-    translationSource: "school",
   },
   {
     id: "xx2-08",

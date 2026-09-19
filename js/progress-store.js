@@ -13,7 +13,7 @@
 
     collections: "poem_recite_collections_v1",
 
-    // 七部集子的「已读」各有自己的一把键。它们**不是**这一份表能逐个登记的
+    // 八部集子的「已读」各有自己的一把键。它们**不是**这一份表能逐个登记的
     // （引擎按集子配置 `readStore`），所以下面 scopes() 里用一条前缀规则收口 ——
     // `js/family.js` 的 isPerChild() 读的就是这一条（已读跟着孩子走）。
     reads: "poem_poems_read_v1"

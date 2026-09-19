@@ -128,15 +128,13 @@ window.POEMS_4 = [
     translationSource: "school",
   },
   {
+    textRef: "poems-xx4-13",
     id: "xx4-13",
     title: "独坐敬亭山",
     author: "李白",
     dynasty: "唐",
     grade: 4,
     term: 2,
-    text: "众鸟高飞尽，孤云独去闲。\n相看两不厌，只有敬亭山。",
-    translation: "众多的鸟儿高高飞尽，孤零零的一片云也悠然飘去。互相看着都不觉得厌烦的，只有我和敬亭山。",
-    translationSource: "school",
   },
   {
     id: "xx4-15",

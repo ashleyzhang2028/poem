@@ -13,6 +13,8 @@
       "卷五 五言律诗", "卷六 七言律诗", "卷七 五言绝句", "卷八 七言绝句"
     ],
 
+    yuefu: window.YUEFU_GROUP_ORDER || null,
+
     songci: window.SONGCI_GROUP_ORDER || null,
 
     guwen: [

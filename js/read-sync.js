@@ -3,15 +3,16 @@
 
   // 「集子已读」上云（Issue #243 后续 · 用户口径「云同步能加的都加上」）。
   //
-  // 六部集子各有自己的一把已读键（`poem_classic_read_v1` / `poem_tangshi_read_v1`
-  // / `poem_songci_read_v1` / `poem_guwen_read_v1` / `poem_zhaoming_read_v1` /
-  // `poem_yuanqu_read_v1` / `poem_poems_read_v1`），形状是 `{ 篇 id: { read, at, times } }`。
+  // 八部集子各有自己的一把已读键（`poem_classic_read_v1` / `poem_yuefu_read_v1`
+  // / `poem_tangshi_read_v1` / `poem_songci_read_v1` / `poem_yuanqu_read_v1` /
+  // `poem_guwen_read_v1` / `poem_zhaoming_read_v1` / `poem_poems_read_v1`），
+  // 形状是 `{ 篇 id: { read, at, times } }`。
   //
-  // 它们不上云时是**七把各自独立的键**；上云时不再开七张表、也不推七行 ——
-  // 一行一个集子会撑出六条「要拉的东西」，而每一部都可能有几百篇。
+  // 它们不上云时是**八把各自独立的键**；上云时不再开八张表、也不推八行 ——
+  // 一行一个集子会撑出七条「要拉的东西」，而每一部都可能有几百篇。
   // 折中的口径是：**一个集子一行**，`poem_id = "reads:<键名>"`，
   // 载荷只带「读过的篇」的薄记录（`{ at, times }`）。没读过的篇**不进载荷** ——
-  // 这一张表是稀疏的：七部集子全站近两千篇，全读完也只有一百来 KB，
+  // 这一张表是稀疏的：八部集子全站近两千篇，全读完也只有一百来 KB，
   // 平时一个人读过的通常不到一百篇。
   //
   // 合并规则是**并集**（与加背同源，与自选集合相反）：两台设备各读过几篇，
@@ -29,6 +30,7 @@
   var BOOKS = [
     "poem_poems_read_v1",
     "poem_classic_read_v1",
+    "poem_yuefu_read_v1",
     "poem_tangshi_read_v1",
     "poem_songci_read_v1",
     "poem_guwen_read_v1",

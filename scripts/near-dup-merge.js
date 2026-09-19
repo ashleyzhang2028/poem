@@ -40,6 +40,7 @@ const MERGES = [
 
 const BOOK_FILE = {
   classic: 'data/poems-classic.js',
+  yuefu: 'data/poems-yuefu.js',
   tangshi: 'data/poems-tangshi.js',
   songci: 'data/poems-songci.js',
   guwen: 'data/poems-guwen.js',

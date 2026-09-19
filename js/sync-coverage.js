@@ -79,6 +79,11 @@
       why: "小古文已读 —— Issue #243 本次补上。"
     },
     {
+      key: "poem_yuefu_read_v1", sync: true, row: "reads:poem_yuefu_read_v1",
+      merge: "并集", cap: "每行 ≤ 2000 篇",
+      why: "乐府集已读 —— 与其余七部同一族（2026-09 新增这一部时一并登记）。"
+    },
+    {
       key: "poem_tangshi_read_v1", sync: true, row: "reads:poem_tangshi_read_v1",
       merge: "并集", cap: "每行 ≤ 2000 篇",
       why: "唐诗三百首已读 —— Issue #243 本次补上。"
@@ -101,7 +106,7 @@
     {
       key: "poem_yuanqu_read_v1", sync: true, row: "reads:poem_yuanqu_read_v1",
       merge: "并集", cap: "每行 ≤ 2000 篇",
-      why: "元曲三百首已读 —— 与其余六部同一族（Issue #243 本次补上整族）。"
+      why: "元曲三百首已读 —— 与其余七部同一族（Issue #243 本次补上整族）。"
     },
     {
       key: "poem_daily_extra_v1", sync: true, row: "daily_extra:v1",

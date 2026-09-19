@@ -11,15 +11,13 @@ window.POEMS_1 = [
     translationSource: "school",
   },
   {
+    textRef: "poems-xx1-02",
     id: "xx1-02",
     title: "江南",
     author: "汉乐府",
     dynasty: "汉",
     grade: 1,
     term: 1,
-    text: "江南可采莲，莲叶何田田。\n鱼戏莲叶间。\n鱼戏莲叶东，鱼戏莲叶西，\n鱼戏莲叶南，鱼戏莲叶北。",
-    translation: "江南可以采莲，莲叶长得多么茂盛。鱼儿在莲叶间嬉戏：一会儿游到莲叶东边，一会儿西边，一会儿南边，一会儿北边。",
-    translationSource: "school",
   },
   {
     id: "xx1-03",
@@ -75,15 +73,13 @@ window.POEMS_1 = [
     term: 2,
   },
   {
+    textRef: "poems-xx1-08",
     id: "xx1-08",
     title: "赠汪伦",
     author: "李白",
     dynasty: "唐",
     grade: 1,
     term: 2,
-    text: "李白乘舟将欲行，忽闻岸上踏歌声。\n桃花潭水深千尺，不及汪伦送我情。",
-    translation: "李白乘船正要出发，忽然听到岸上传来踏歌相送的声音。桃花潭水纵有千尺深，也比不上汪伦送我的这份情谊。",
-    translationSource: "school",
   },
   {
     textRef: "poems-xx1-09",
