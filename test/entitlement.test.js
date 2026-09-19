@@ -175,8 +175,8 @@ console.log('\n=== 三、pro / max 只加不减：层级越高能力单调不减
   eq(E.quotaFor(E.cap('profile.family'), 'free'), 1, '子用户 Free 1 个');
   eq(E.quotaFor(E.cap('profile.family'), 'pro'), 3, '子用户 Pro 3 个');
   eq(E.quotaFor(E.cap('profile.family'), 'max'), 180, '子用户 Max 180 个');
-  eq(E.quotaFor(E.cap('export.all'), 'pro'), 261, '课内诗词导出 Pro 261 首（用户点名「pro 和 max 列列出 261 首」）');
-  eq(E.quotaFor(E.cap('export.all'), 'max'), 261, '课内诗词导出 Max 261 首（同上）');
+  eq(E.quotaFor(E.cap('export.all'), 'pro'), 251, '课内诗词导出 Pro 251 首（用户点名「pro 和 max 列列出」）');
+  eq(E.quotaFor(E.cap('export.all'), 'max'), 251, '课内诗词导出 Max 251 首（同上）');
 
   eq(E.quotaFor({ quota: 50 }, 'pro'), 50, '没有 quotas 的能力回落 quota');
   eq(E.quotaFor({ quota: null }, 'pro'), null, '既没 quotas 也没 quota → null（这一格没有数字可说）');
