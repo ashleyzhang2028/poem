@@ -377,7 +377,145 @@ console.log('\n=== 七、设置页：单独一处能看见、能多选删 ===');
 
   const page = read('settings/recite/index.html');
   chk(/今日加背/.test(page), '这一块有自己的小标题');
-  chk(/不上云/.test(page), '如实写明本机保存、不上云（换设备不跟过去）');
+  // 用户 2026-09-19 改了口径：「本机保存，不上云」那句删掉（它上云了）。
+  chk(!/不上云/.test(page), '不再写「不上云」（用户点名删掉那一段）');
+  chk(!/本机保存/.test(page), '也不再写「本机保存」');
+}
+
+console.log('\n=== 九、上云：一行 progress，按天合并（云同步也带上它）===');
+{
+  const mem = {};
+  const sb = { window: {}, console: console, localStorage: null };
+  sb.window = sb;
+  vm.createContext(sb);
+  sb.localStorage = {
+    getItem: k => (Object.prototype.hasOwnProperty.call(mem, k) ? mem[k] : null),
+    setItem: (k, v) => { mem[k] = String(v); },
+    removeItem: k => { delete mem[k]; }
+  };
+  ['js/progress-store.js', 'js/daily-extra.js'].forEach(f => {
+    vm.runInContext(read(f), sb, { filename: f });
+  });
+  const D = sb.DailyExtra;
+
+  eq(D.SYNC_ID, 'daily_extra:v1', '云端那一行的 poem_id 是 daily_extra:v1');
+  eq(D.cloudRow({}), null, '没推过、盘上也没有 → 什么都不用推');
+
+  D.add({ id: 'a-1', title: '甲', bookName: '唐诗三百首' });
+  const row = D.cloudRow({});
+  chk(!!row, '加了就有一行要推');
+  eq(row.id, 'daily_extra:v1', '行号对');
+  eq(row.deleted, false, '不是删除');
+  eq(row.payload.date, todayStr(), '载荷带今天的日期（判定「明天归零」的就是它）');
+  eq(row.payload.items.length, 1, '一篇');
+  chk(row.updatedAt > 0, '带 updatedAt（云端那一行靠它判新旧）');
+
+  eq(D.cloudRow({ 'daily_extra:v1': row.updatedAt }), null,
+    '推过之后时间戳一致 → 不再重复推');
+
+  // 时间戳只到毫秒：同一次 tick 里连加两篇会拿到同一个 updatedAt，
+  // 于是「变了没有」判不出来（真实使用里不可能这么点）。这里等一毫秒再点。
+  await sleep(3);
+  D.add({ id: 'b-2', title: '乙' });
+  const row2 = D.cloudRow({ 'daily_extra:v1': row.updatedAt });
+  chk(!!row2 && row2.payload.items.length === 2,
+    '再加一篇 → 这一行跟着变（两篇）');
+
+  // 删空之后：本机盘上那把键没了，但云端得知道「空了」
+  const stamp = D.cloudRow({}).updatedAt;
+  await sleep(3);
+  D.clear();
+  eq(D.count(), 0, '清空了');
+  const gone = D.cloudRow({ 'daily_extra:v1': stamp });
+  chk(!!gone, '清空之后仍要推一行（否则另一台设备还挂着那几篇）');
+  eq(gone.deleted, true, '那一行是删除标记');
+  eq(gone.payload.items.length, 0, '载荷里一篇都没有');
+
+  // ---- applyCloud：同一天并集 ----
+  const fresh = {};
+  const sb2 = { window: {}, console: console, localStorage: null };
+  sb2.window = sb2;
+  vm.createContext(sb2);
+  sb2.localStorage = {
+    getItem: k => (Object.prototype.hasOwnProperty.call(fresh, k) ? fresh[k] : null),
+    setItem: (k, v) => { fresh[k] = String(v); },
+    removeItem: k => { delete fresh[k]; }
+  };
+  ['js/progress-store.js', 'js/daily-extra.js'].forEach(f => {
+    vm.runInContext(read(f), sb2, { filename: f });
+  });
+  const D2 = sb2.DailyExtra;
+  D2.add({ id: 'local-1', title: '本机的' });
+  const verdict = D2.applyCloud({
+    id: 'daily_extra:v1',
+    updatedAt: Date.now() + 5,
+    deleted: false,
+    payload: { v: 1, date: todayStr(), updatedAt: Date.now() + 5,
+      items: [{ id: 'cloud-1', wid: 'cloud-1', entryId: 'cloud-1',
+        snap: { title: '云端的' }, at: 1 }] }
+  });
+  eq(verdict, 'applied', '同一天：并进来了');
+  eq(D2.count(), 2, '两台设备今天各加一首 → 并起来是两首（不是覆盖）');
+  eq(D2.ids().join(','), 'local-1,cloud-1', '本机的在前，顺序稳定');
+
+  eq(D2.applyCloud({
+    id: 'daily_extra:v1', updatedAt: Date.now() + 9, deleted: false,
+    payload: { v: 1, date: '2000-1-1', items: [{ id: 'old-1', wid: 'old-1' }] }
+  }), 'skip', '云端写的是过去某一天：本机今天有东西时不予理会');
+  eq(D2.count(), 2, '本机那两首没被动过');
+
+  eq(D2.applyCloud({
+    id: 'daily_extra:v1', updatedAt: Date.now() + 20, deleted: true,
+    payload: { v: 1, date: todayStr(), items: [] }
+  }), 'applied', '云端说今天清空了：认');
+  eq(D2.count(), 0, '本机也跟着清空');
+
+  // 本机今天什么都没有、云端写着今天 → 认它
+  const mem3 = {};
+  const sb3 = { window: {}, console: console, localStorage: null };
+  sb3.window = sb3;
+  vm.createContext(sb3);
+  sb3.localStorage = {
+    getItem: k => (Object.prototype.hasOwnProperty.call(mem3, k) ? mem3[k] : null),
+    setItem: (k, v) => { mem3[k] = String(v); },
+    removeItem: k => { delete mem3[k]; }
+  };
+  ['js/progress-store.js', 'js/daily-extra.js'].forEach(f => {
+    vm.runInContext(read(f), sb3, { filename: f });
+  });
+  const D3 = sb3.DailyExtra;
+  eq(D3.applyCloud({
+    id: 'daily_extra:v1', updatedAt: Date.now(), deleted: false,
+    payload: { v: 1, date: todayStr(), items: [{ id: 'x-9', wid: 'x-9', snap: { title: '九' } }] }
+  }), 'applied', '本机空、云端是今天 → 认云端那一份');
+  eq(D3.count(), 1, '并进来了');
+
+  // ---- 同步层：推 / 拉 两条路都要照顾到 ----
+  const sync = read('js/sync-store.js');
+  chk(/DAILY_EXTRA_ROW_ID = "daily_extra:v1"/.test(sync),
+    'sync-store 认这个行号');
+  chk(/dailyExtraRow\(seen\)/.test(sync), '推送时把这一行算进去');
+  chk(/applyRemoteDailyExtra/.test(sync), '拉取时单独处理这一行');
+  chk(/sendBatch\(headRecs, ""\)/.test(sync),
+    '与名册同路推（child_id 为空串的那一批）');
+  chk(/markSeen\(DAILY_EXTRA_ROW_ID, cloudTs\)/.test(sync),
+    '拉取一律记 seen（不记就会每轮重复拉、反复重写本机）');
+  chk(/id !== DAILY_EXTRA_ROW_ID && norm\(seen\[id\]\) < 0/.test(sync),
+    '不进冲突裁决（它不是一份进度）');
+  chk(/outcome\.conflict \|\| conflictIds\(forCore, remoteRecs2\)\)[\s\S]{0,120}DAILY_EXTRA_ROW_ID/.test(sync),
+    'firstMerge 的冲突清单也把它滤掉（不弹「保留本机还是保留账号」）');
+
+  const core = read('api/_lib/core.js');
+  chk(/DAILY_EXTRA_ROW_ID = "daily_extra:v1"/.test(core),
+    '服务端的行号与前端逐字一致');
+  chk(/function sanitizeDailyExtra/.test(core), '服务端有一条自己的白名单');
+  chk(/DAILY_EXTRA_MAX = 20/.test(core), '条数封顶与 js/daily-extra.js 的 MAX 一致');
+  chk(/Array\.isArray\(p\.items\)\) \? p\.items\.slice\(0, DAILY_EXTRA_MAX\)/.test(core),
+    '服务端真的按那个上限裁');
+
+  const ps = read('js/progress-store.js');
+  chk(/key: KEYS\.dailyExtra, domain: "progress", local: false, perChild: true/.test(ps),
+    '不再是设备域 / 本地域（family.js 的 isPerChild 会读这一条）');
 }
 
 console.log('\n=== 八、三处口径（源码级守卫）===');

@@ -50,7 +50,7 @@
         <h2>二、数据存在哪</h2>
         <ul class="legal-mini">
           <li><span class="mini-k">默认存本机</span><span class="mini-v">进度、排期与设置默认通过 localStorage 只存在你的设备上，<strong>本机这份始终完整可用</strong>：服务器连不上、同步关着、没登录，背诵照旧。</span></li>
-          <li><span class="mini-k">开启同步才上传</span><span class="mini-v">只有建了账号、<strong>并且自己打开云端同步</strong>（出厂关着），进度与账号设置才会上传；随时可在「设置 · 通用」关掉，关掉即退回只存本机。<strong>设备偏好不上云</strong>：字号、对齐、注音、连读只留在这台设备；「今日加背」那几篇也只留在这台设备、今天过完自动清掉。两台设备都改过同一篇时我们不自动合并，只列出两边篇数让你选；选「保留账号」前先在本机留一份快照。</span></li>
+          <li><span class="mini-k">开启同步才上传</span><span class="mini-v">只有建了账号、<strong>并且自己打开云端同步</strong>（出厂关着），进度与账号设置才会上传；随时可在「设置 · 通用」关掉，关掉即退回只存本机。<strong>设备偏好不上云</strong>：字号、对齐、注音、连读只留在这台设备；「今日加背」那几篇会随账号同步过去（只属于当天，换一天自动归零）。两台设备都改过同一篇时我们不自动合并，只列出两边篇数让你选；选「保留账号」前先在本机留一份快照。</span></li>
           <li><span class="mini-k">谁在处理</span><span class="mini-v">服务器与数据库由 Supabase 提供，登录随机码、邮箱确认与重设密码这三类邮件由 Resend 发送。邮件只包含那一条链接或那一个随机码，不含你的进度与昵称。除此之外不向第三方提供任何数据。</span></li>
           <li><span class="mini-k">改密码之后</span><span class="mini-v">用重设链接改完密码，你在<strong>其它设备上的登录会全部退出</strong>，需要拿新密码重新登录。这是刻意的：能改密码，说明原来那个可能已经泄露了。</span></li>
           <li><span class="mini-k">删除方式</span><span class="mini-v">进度在设置里「清空进度」；账号在「个人中心 → 注销账号」<strong>注销即删除</strong>服务器上的账号与进度，并先把云端那份导给你（需联网；连不上会如实说明还没删掉）。也可清除浏览器站点数据。均为永久删除。</span></li>

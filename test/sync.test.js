@@ -811,6 +811,159 @@ async function main() {
     chk(!!box4 && box4.hidden === true, "没有冲突时不摆面板（不给用户看一个空壳）");
   }
 
+  // 「今日加背」也上云（Issue #243 后续）：它是 progress 里的一行
+  // （`daily_extra:v1`），与自选集合同一条路，但**合并规则是「按天并集」**
+  // 而不是「谁最后写谁赢」—— 这一段守的就是那几条。
+  {
+    const todayStr = (() => {
+      const d = new Date();
+      return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate();
+    })();
+
+    const extraStore = todayStr =>
+      JSON.stringify({ v: 1, date: todayStr, updatedAt: 1000, items: [
+        { id: "local-1", wid: "local-1", entryId: "local-1", snap: { title: "本机的" }, at: 1 }
+      ] });
+
+    const h = harness({
+      store: { poem_daily_extra_v1: extraStore(todayStr) },
+      net: { syncpush: () => Promise.resolve(jsonRes(200, { applied: 1, serverTime: 2000 })) }
+    });
+
+    global.window.DailyExtra = undefined;
+    delete require.cache[require.resolve(path.join(ROOT, "js/daily-extra.js"))];
+    require(path.join(ROOT, "js/daily-extra.js"));
+    const D = global.DailyExtra;
+    eq(D.SYNC_ID, h.Sync.DAILY_EXTRA_ROW_ID,
+      "sync-store 与 daily-extra 的行号逐字一致（两处各写一份就会静默不同步）");
+
+    h.Sync.setEnabled(true);
+    h.calls.length = 0;
+    await h.Sync.now({ pull: false });
+
+    const pushed = h.calls.filter(c => c.url === "/api/sync/push");
+    eq(pushed.length, 1, "推了一轮");
+    const row = pushed[0].body.recs.filter(r => r.id === "daily_extra:v1")[0];
+    chk(!!row, "加背那一行在推送清单里");
+    eq(pushed[0].body.child, "", "与名册同路（child_id 空串那一批：它只属于「今天」）");
+    eq(row.payload.date, todayStr, "载荷带今天的日期");
+    eq(row.deleted, false, "不是删除");
+    eq(pushed[0].body.recs.filter(r => r.id === "daily_extra:v1").length, 1,
+      "同一行只推一次（不重复）");
+
+    // 推完之后不再重复推
+    h.calls.length = 0;
+    await h.Sync.now({ pull: false });
+    eq(h.calls.length, 0, "推过的行不会在下一轮被再推一次（没有它就成死循环）");
+  }
+
+  // 拉取：两台设备今天各加了几首 → 并起来，而不是互相覆盖
+  {
+    const todayStr = (() => {
+      const d = new Date();
+      return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate();
+    })();
+
+    const h = harness({
+      store: { poem_daily_extra_v1: JSON.stringify({ v: 1, date: todayStr, updatedAt: 1000, items: [
+        { id: "local-1", wid: "local-1", entryId: "local-1", snap: { title: "本机的" }, at: 1 }
+      ] }) },
+      net: {
+        syncpull: () => Promise.resolve(jsonRes(200, {
+          recs: [{
+            id: "daily_extra:v1", updatedAt: 9000, deleted: false,
+            payload: { v: 1, date: todayStr, updatedAt: 9000, items: [
+              { id: "cloud-1", wid: "cloud-1", entryId: "cloud-1", snap: { title: "云端的" }, at: 2 }
+            ] }
+          }],
+          serverTime: 9500
+        }))
+      }
+    });
+
+    global.window.DailyExtra = undefined;
+    delete require.cache[require.resolve(path.join(ROOT, "js/daily-extra.js"))];
+    require(path.join(ROOT, "js/daily-extra.js"));
+    const D = global.DailyExtra;
+
+    h.Sync.setEnabled(true);
+    const r = await h.Sync.pullOnce(0);
+    chk(r.ok, "拉成功了");
+    eq(r.applied.applied, 1, "记成「应用了一条」");
+    eq(D.ids().join(","), "local-1,cloud-1",
+      "两台设备今天各加一首 → 并起来两首（**不是**谁覆盖谁）");
+    eq(h.Sync.conflicts().length, 0, "加背**不进**冲突裁决（它不是一份进度）");
+    eq(h.Sync.seen()["daily_extra:v1"], 9000,
+      "拉取一律记 seen（不记就会每轮重复拉、反复重写本机）");
+
+    h.calls.length = 0;
+    await h.Sync.now({ pull: false });
+    eq(h.calls.length, 0, "并进来的内容不会在下一轮被推回去（没有它就成死循环）");
+  }
+
+  // 云端那一行写的是**过去**某一天：本机今天有东西时不予理会
+  {
+    const todayStr = (() => {
+      const d = new Date();
+      return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate();
+    })();
+
+    const h = harness({
+      store: { poem_daily_extra_v1: JSON.stringify({ v: 1, date: todayStr, updatedAt: 1000, items: [
+        { id: "local-1", wid: "local-1", entryId: "local-1", snap: { title: "本机的" }, at: 1 }
+      ] }) },
+      net: {
+        syncpull: () => Promise.resolve(jsonRes(200, {
+          recs: [{
+            id: "daily_extra:v1", updatedAt: 9000, deleted: false,
+            payload: { v: 1, date: "2000-1-1", items: [{ id: "old-1", wid: "old-1" }] }
+          }],
+          serverTime: 9500
+        }))
+      }
+    });
+
+    global.window.DailyExtra = undefined;
+    delete require.cache[require.resolve(path.join(ROOT, "js/daily-extra.js"))];
+    require(path.join(ROOT, "js/daily-extra.js"));
+    const D = global.DailyExtra;
+
+    h.Sync.setEnabled(true);
+    const r = await h.Sync.pullOnce(0);
+    eq(D.ids().join(","), "local-1", "本机今天那一份没被动过");
+    eq(r.applied.applied, 0, "没应用（记的是 skip）");
+    eq(h.Sync.conflicts().length, 0, "也不该变成一次冲突裁决");
+  }
+
+  // 首次同步：两端都有旧数据时，加背**不**弹「保留本机还是保留账号」
+  {
+    const h = harness({
+      store: { poem_daily_extra_v1: JSON.stringify({ v: 1, date: "2000-1-1", updatedAt: 1000, items: [
+        { id: "local-1", wid: "local-1", entryId: "local-1", snap: { title: "本机的" }, at: 1 }
+      ] }) },
+      net: {
+        syncpull: () => Promise.resolve(jsonRes(200, {
+          recs: [{
+            id: "daily_extra:v1", updatedAt: 9000, deleted: false,
+            payload: { v: 1, date: "2000-1-1", items: [{ id: "old-1", wid: "old-1" }] }
+          }],
+          serverTime: 9500
+        })),
+        syncpush: () => Promise.resolve(jsonRes(200, { applied: 0, serverTime: 9600 }))
+      }
+    });
+
+    global.window.DailyExtra = undefined;
+    delete require.cache[require.resolve(path.join(ROOT, "js/daily-extra.js"))];
+    require(path.join(ROOT, "js/daily-extra.js"));
+
+    h.Sync.setEnabled(true);
+    const r = await h.Sync.firstSync();
+    chk(r.ok, "首次同步跑通");
+    eq(r.conflicts, 0, "加背不产生冲突（旧日期那一行不该拦住用户）");
+    eq(h.Sync.conflicts().length, 0, "conflicts() 里也看不到它");
+  }
+
   console.log("");
   console.log(fails === 0 ? "🎉 跨设备同步测试全部通过" : "❌ 跨设备同步测试 " + fails + " 项失败");
   process.exit(fails ? 1 : 0);
