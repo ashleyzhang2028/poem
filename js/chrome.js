@@ -66,6 +66,7 @@
     songci: "/songci/",
     guwen: "/guwen/",
     zhaoming: "/zhaoming/",
+    yuefu: "/yuefu/",
     yuanqu: "/yuanqu/",
     search: "/search/",
     mine: "/mine/",
@@ -103,6 +104,7 @@
     if (/^\/songci\/?$/.test(p) || /^\/songci\/index\.html$/.test(p)) return "songci";
     if (/^\/guwen\/?$/.test(p) || /^\/guwen\/index\.html$/.test(p)) return "guwen";
     if (/^\/zhaoming\/?$/.test(p) || /^\/zhaoming\/index\.html$/.test(p)) return "zhaoming";
+    if (/^\/yuefu\/?$/.test(p) || /^\/yuefu\/index\.html$/.test(p)) return "yuefu";
     if (/^\/yuanqu\/?$/.test(p) || /^\/yuanqu\/index\.html$/.test(p)) return "yuanqu";
     if (/^\/mine\/?$/.test(p) || /^\/mine\/index\.html$/.test(p)) return "mine";
     if (/^\/settings\/?$/.test(p) || /^\/settings\/index\.html$/.test(p)) return "settings";
@@ -254,6 +256,7 @@
     if (k === "songci") return "宋词三百首";
     if (k === "guwen") return "古文观止";
     if (k === "zhaoming") return "昭明文选";
+    if (k === "yuefu") return "乐府诗选";
     if (k === "yuanqu") return "元曲三百首";
     return "";
   }
@@ -266,7 +269,7 @@
 
   var DOCK_ITEMS = [
     { key: "home", href: "/", icon: GLYPHS.tabPoem, label: "背诵", desc: "课内古诗词，按当前复习算法安排复习" },
-    { key: "library", href: "/library/", icon: GLYPHS.tabLibrary, label: "课外", desc: "课内诗词 / 小古文 / 唐诗 / 宋词 / 古文观止 / 昭明文选" },
+    { key: "library", href: "/library/", icon: GLYPHS.tabLibrary, label: "课外", desc: "课内诗词 / 小古文 / 昭明文选 / 唐诗 / 宋词 / 元曲 / 古文观止" },
     { key: "search", href: "/search/", icon: GLYPHS.tabSearch, label: "搜索", desc: "全站篇目一次搜遍" },
     { key: "mine", href: "/mine/", icon: GLYPHS.tabMineImg, label: "我的", desc: "头像 / 昵称 / 账号 / 本机数据" }
   ];
@@ -274,7 +277,7 @@
   function dockKey(key) {
     if (key === "settings") return "mine";
     if (key === "classic" || key === "tangshi" || key === "songci" || key === "guwen" ||
-        key === "zhaoming" || key === "yuanqu") return "library";
+        key === "zhaoming" || key === "yuefu" || key === "yuanqu") return "library";
 
     if (key === "poems") return "library";
 

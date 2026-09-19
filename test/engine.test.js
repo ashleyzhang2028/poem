@@ -13,8 +13,8 @@ vm.createContext(sandbox);
   vm.runInContext(fs.readFileSync(path + f, 'utf8'), sandbox, { filename: f }));
 
 const IDX = sandbox.SITE_INDEX;
-chk(Array.isArray(IDX) && IDX.length === 101,
-  '总索引含 100 篇小古文 + 1 条集子条目（实际 ' + (IDX ? IDX.length : 'undefined') + '）');
+chk(Array.isArray(IDX) && IDX.length === 103,
+  '总索引含 102 篇小古文 + 1 条集子条目（实际 ' + (IDX ? IDX.length : 'undefined') + '）');
 const ids = new Set();
 let dup = 0;
 IDX.forEach(x => { if (ids.has(x.id)) dup++; ids.add(x.id); });
@@ -23,10 +23,11 @@ chk(IDX.every(x => x.title && x.book && x.bookName && x.page),
   '每条结果都带齐 篇名 / 所属集子 / 集子名 / 跳转地址');
 chk(IDX.some(x => x.isBook && x.title === '课外必背小古文'),
   '集子自身也是一条结果（搜「小古文」能直接进那一页）');
-chk(sandbox.SITE_BOOKS.length === 7 &&
+chk(sandbox.SITE_BOOKS.length === 8 &&
   sandbox.SITE_BOOKS.map(b => b.page).join(',') ===
-    '/,/classic/,/tangshi/,/songci/,/guwen/,/zhaoming/,/yuanqu/',
-  '七部集子的索引页地址依次为 / · /classic/ · /tangshi/ · /songci/ · /guwen/ · /zhaoming/ · /yuanqu/');
+    '/,/classic/,/zhaoming/,/yuefu/,/tangshi/,/songci/,/yuanqu/,/guwen/',
+  '八部集子的索引页地址按时代排序：/ · /classic/ · /zhaoming/ · /yuefu/ · ' +
+  '/tangshi/ · /songci/ · /yuanqu/ · /guwen/');
 
 const only = sandbox.buildSiteIndex({ tangshi: [{ id: 'ts-1', title: '感遇·其一', author: '张九龄', dynasty: '唐' }] });
 chk(only.some(x => x.book === 'tangshi' && x.title === '感遇·其一') &&
@@ -67,8 +68,8 @@ const mk = (win, rootId, listId) => {
 
 setTimeout(() => {
   const mounted = w.document.querySelector('#gw-list');
-  chk(mounted.querySelectorAll('.item').length === 100,
-    '小古文页按配置挂上了引擎实例（列表 100 篇）');
+  chk(mounted.querySelectorAll('.item').length === 102,
+    '小古文页按配置挂上了引擎实例（列表 102 篇）');
 
   mk(w, 'rootA', 'listA');
   mk(w, 'rootB', 'listB');

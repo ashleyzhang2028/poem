@@ -21,6 +21,24 @@
       desc: "蒙学识字、寓言故事到诸子论道，百字上下，最适合起步"
     },
     {
+      id: "zhaoming",
+      name: "昭明文选",
+      book: "ZhaomingBook",
+      short: "文选",
+      page: "/zhaoming/",
+      unit: "篇",
+      desc: "六十卷按赋、诗、骚、七等三十九类文体编排，现存最早的诗文总集"
+    },
+    {
+      id: "yuefu",
+      name: "乐府诗选",
+      book: "YuefuBook",
+      short: "乐府",
+      page: "/yuefu/",
+      unit: "首",
+      desc: "两汉至南北朝的乐府民歌，感于哀乐，缘事而发"
+    },
+    {
       id: "tangshi",
       name: "唐诗三百首",
       book: "TangshiBook",
@@ -39,24 +57,6 @@
       desc: "按词牌分组，一调之下诸家并列，可直接比对同调之作"
     },
     {
-      id: "guwen",
-      name: "古文观止",
-      book: "GuwenBook",
-      short: "古文",
-      page: "/guwen/",
-      unit: "篇",
-      desc: "十二卷自周文至明文，历代文章的选本经典"
-    },
-    {
-      id: "zhaoming",
-      name: "昭明文选",
-      book: "ZhaomingBook",
-      short: "文选",
-      page: "/zhaoming/",
-      unit: "篇",
-      desc: "六十卷按赋、诗、骚、七等三十九类文体编排，现存最早的诗文总集"
-    },
-    {
       id: "yuanqu",
       name: "元曲三百首",
       book: "YuanquBook",
@@ -64,6 +64,15 @@
       page: "/yuanqu/",
       unit: "首",
       desc: "小令与套数按宫调编排，质朴自然，曲白相生"
+    },
+    {
+      id: "guwen",
+      name: "古文观止",
+      book: "GuwenBook",
+      short: "古文",
+      page: "/guwen/",
+      unit: "篇",
+      desc: "十二卷自周文至明文，历代文章的选本经典"
     }
   ];
 
@@ -84,6 +93,7 @@
       songci: "POEMS_SONGCI",
       guwen: "POEMS_GUWEN",
       zhaoming: "POEMS_ZHAOMING",
+      yuefu: "POEMS_YUEFU",
       yuanqu: "POEMS_YUANQU"
     };
     var key = VARS[bookId];

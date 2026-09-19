@@ -98,7 +98,7 @@ vm.runInContext(fs.readFileSync(ROOT + "data/poems-classic.js", "utf8"), d, { fi
 const allText = [...d.POEMS_ALL, ...d.POEMS_CLASSIC].map(p => p.text).join("");
 const missing = [...new Set([...allText].filter(c => /\p{Script=Han}/u.test(c) && !P.has(c)))];
 chk(missing.length === 0, "课内 + 小古文全部汉字都有注音（缺 " + missing.slice(0, 12).join("") + "）");
-chk(d.POEMS_CLASSIC.length === 100, "小古文共 100 篇（实际 " + d.POEMS_CLASSIC.length + "）");
+chk(d.POEMS_CLASSIC.length === 102, "小古文共 102 篇（实际 " + d.POEMS_CLASSIC.length + "）");
 
 const URL_OF = {
   "index.html": "/",

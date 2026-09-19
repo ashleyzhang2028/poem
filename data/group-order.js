@@ -23,6 +23,8 @@
 
     zhaoming: window.ZHAOMING_GROUP_ORDER || null,
 
+    yuefu: window.YUEFU_GROUP_ORDER || null,
+
     yuanqu: window.YUANQU_GROUP_ORDER || null
   };
 

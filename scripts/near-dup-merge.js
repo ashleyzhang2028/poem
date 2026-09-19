@@ -43,7 +43,9 @@ const BOOK_FILE = {
   tangshi: 'data/poems-tangshi.js',
   songci: 'data/poems-songci.js',
   guwen: 'data/poems-guwen.js',
-  zhaoming: 'data/poems-zhaoming.js'
+  zhaoming: 'data/poems-zhaoming.js',
+  yuanqu: 'data/poems-yuanqu.js',
+  yuefu: 'data/poems-yuefu.js'
 };
 const POEMS_FILES = [];
 for (let i = 1; i <= 12; i++) POEMS_FILES.push('data/poems-' + i + '.js');
@@ -93,6 +95,7 @@ vm.createContext(sandbox);
   'data/poems-9.js', 'data/poems-10.js', 'data/poems-11.js', 'data/poems-12.js',
   'data/index.js', 'data/poems-classic.js', 'data/poems-tangshi.js',
   'data/poems-songci.js', 'data/poems-guwen.js', 'data/poems-zhaoming.js',
+  'data/poems-yuanqu.js', 'data/poems-yuefu.js',
   'data/site-index.js'
 ].forEach(function (f) {
   vm.runInContext(fs.readFileSync(path.join(ROOT, f), 'utf8'), sandbox, { filename: f });

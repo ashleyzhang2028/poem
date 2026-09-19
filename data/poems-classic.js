@@ -2,7 +2,7 @@ window.POEMS_CLASSIC = [
   {
     textRef: "classic-gw-1",
     id: "gw-1",
-    title: "人之初",
+    title: "三字经",
     source: "《三字经》",
     dynasty: "宋",
     author: "王应麟",
@@ -12,7 +12,7 @@ window.POEMS_CLASSIC = [
   {
     textRef: "classic-gw-2",
     id: "gw-2",
-    title: "弟子规（节选）",
+    title: "弟子规",
     source: "《弟子规》",
     dynasty: "清",
     author: "李毓秀",
@@ -998,6 +998,26 @@ window.POEMS_CLASSIC = [
     author: "诸葛亮",
     gradeGroup: "诸子论道",
     difficulty: 3,
+  },
+  {
+    textRef: "classic-gw-101",
+    id: "gw-101",
+    title: "千字文",
+    source: "《千字文》",
+    dynasty: "南朝·梁",
+    author: "周兴嗣",
+    gradeGroup: "蒙学经典",
+    difficulty: 1,
+  },
+  {
+    textRef: "classic-gw-102",
+    id: "gw-102",
+    title: "百家姓",
+    source: "《百家姓》",
+    dynasty: "宋",
+    author: "佚名",
+    gradeGroup: "蒙学经典",
+    difficulty: 1,
   },
 ];
 

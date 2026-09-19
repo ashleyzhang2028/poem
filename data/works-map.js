@@ -2,7 +2,7 @@
    同篇对照表（主表裁定规则的静态成果）
    --------------------------------------------------------------------------
    由 scripts/build-works-map.js 离线算出：**正文（去标点后）一致 = 同一篇作品**。
-   只登记「在两部及以上集子里重复出现」的那些作品（共 68 组），
+   只登记「在两部及以上集子里重复出现」的那些作品（共 72 组），
    单条的作品不必登记 —— 它本来就只出现一次，条目 id 自己就是作品 id。
 
    ⚠️ 这是**生成文件**，改动请改 scripts/build-works-map.js 后重跑，
@@ -45,6 +45,7 @@ window.WORKS_GROUPS = [
   { wid: "w-poems-cz7-06", title: "江南逢李龟年", titles: ["江南逢李龟年"], entries: ["poems-cz7-06","tangshi-ts-262"] },
   { wid: "w-poems-cz7-08", title: "夜上受降城闻笛", titles: ["夜上受降城闻笛"], entries: ["poems-cz7-08","tangshi-ts-270"] },
   { wid: "w-poems-cz7-10", title: "夜雨寄北", titles: ["夜雨寄北"], entries: ["poems-cz7-10","tangshi-ts-295"] },
+  { wid: "w-poems-cz7-13", title: "木兰诗", titles: ["木兰诗"], entries: ["poems-cz7-13","yuefu-yf-8"] },
   { wid: "w-poems-cz7-14", title: "竹里馆", titles: ["竹里馆"], entries: ["poems-cz7-14","tangshi-ts-223"] },
   { wid: "w-poems-cz7-16", title: "逢入京使", titles: ["逢入京使"], entries: ["poems-cz7-16","tangshi-ts-261"] },
   { wid: "w-poems-cz7-18", title: "登幽州台歌", titles: ["登幽州台歌"], entries: ["poems-cz7-18","tangshi-ts-34"] },
@@ -82,6 +83,7 @@ window.WORKS_GROUPS = [
   { wid: "w-poems-xx1-10", title: "寻隐者不遇", titles: ["寻隐者不遇"], entries: ["poems-xx1-10","tangshi-ts-247"] },
   { wid: "w-poems-xx2-03", title: "登鹳雀楼", titles: ["登鹳雀楼"], entries: ["poems-xx2-03","tangshi-ts-234"] },
   { wid: "w-poems-xx2-05", title: "江雪", titles: ["江雪"], entries: ["poems-xx2-05","tangshi-ts-242"] },
+  { wid: "w-poems-xx2-07", title: "敕勒歌", titles: ["敕勒歌"], entries: ["poems-xx2-07","yuefu-yf-9"] },
   { wid: "w-poems-xx2-10", title: "赋得古原草送别", titles: ["赋得古原草送别","草"], entries: ["poems-xx2-10","tangshi-ts-156"] },
   { wid: "w-poems-xx3-08", title: "早发白帝城", titles: ["早发白帝城"], entries: ["poems-xx3-08","tangshi-ts-260"] },
   { wid: "w-poems-xx3-09", title: "采莲曲", titles: ["采莲曲","采莲曲二首·其二"], entries: ["poems-xx3-09","tangshi-ts-305","tangshi-ts-89"] },
@@ -101,11 +103,13 @@ window.WORKS_GROUPS = [
   { wid: "w-poems-xx5-14", title: "从军行", titles: ["从军行","从军行七首·其四"], entries: ["poems-xx5-14","tangshi-ts-304"] },
   { wid: "w-poems-xx5-16", title: "闻官军收河南河北", titles: ["闻官军收河南河北"], entries: ["poems-xx5-16","tangshi-ts-189"] },
   { wid: "w-poems-xx5-17", title: "渔歌子", titles: ["渔歌子","渔歌子·西塞山前白鹭飞"], entries: ["poems-xx5-17","tangshi-ts-318"] },
+  { wid: "w-poems-xx5-21", title: "长歌行", titles: ["长歌行"], entries: ["poems-xx5-21","yuefu-yf-3"] },
   { wid: "w-poems-xx5-23", title: "送元二使安西", titles: ["送元二使安西","渭城曲"], entries: ["poems-xx5-23","tangshi-ts-86"] },
   { wid: "w-poems-xx6-01", title: "宿建德江", titles: ["宿建德江"], entries: ["poems-xx6-01","tangshi-ts-229"] },
   { wid: "w-poems-xx6-03", title: "西江月·夜行黄沙道中", titles: ["西江月·夜行黄沙道中"], entries: ["poems-xx6-03","songci-sc-286"] },
   { wid: "w-poems-xx6-07", title: "回乡偶书", titles: ["回乡偶书","回乡偶书·其一"], entries: ["poems-xx6-07","tangshi-ts-251"] },
   { wid: "w-poems-xx6-08", title: "寒食", titles: ["寒食"], entries: ["poems-xx6-08","tangshi-ts-265"] },
+  { wid: "w-poems-xx6-09", title: "迢迢牵牛星", titles: ["迢迢牵牛星"], entries: ["poems-xx6-09","yuefu-yf-5"] },
   { wid: "w-poems-xx6-14", title: "清平乐·春归何处", titles: ["清平乐·春归何处","清平乐"], entries: ["poems-xx6-14","songci-sc-80"] },
   { wid: "w-poems-xx6-17", title: "过故人庄", titles: ["过故人庄"], entries: ["poems-xx6-17","tangshi-ts-132"] },
   { wid: "w-poems-xx6-20", title: "天净沙·秋思", titles: ["天净沙·秋思"], entries: ["poems-xx6-20","yuanqu-yq-1"] }
