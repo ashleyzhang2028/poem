@@ -721,18 +721,29 @@ setTimeout(() => {
   chk(d.querySelector('#rd-text').style.fontSize === '15px',
     '再点 A－ 可降一级到 15px（实际 ' + d.querySelector('#rd-text').style.fontSize + '）');
 
+  for (const px of ['13px', '11px', '9px']) {
+    d.querySelector('#rd-font-down').dispatchEvent(new window.Event('click', { bubbles: true }));
+    chk(d.querySelector('#rd-text').style.fontSize === px,
+      'A－ 可继续降到 ' + px + '（实际 ' + d.querySelector('#rd-text').style.fontSize + '）');
+  }
+  chk(window.localStorage.getItem('poem_classic_font_v1') === '9', '最细档同样持久化');
   d.querySelector('#rd-font-down').dispatchEvent(new window.Event('click', { bubbles: true }));
-  chk(d.querySelector('#rd-text').style.fontSize === '13px',
-    'A－ 在 15px 之下仍能再降一档到 13px（实际 ' + d.querySelector('#rd-text').style.fontSize + '）');
-  chk(window.localStorage.getItem('poem_classic_font_v1') === '13', '最细档同样持久化');
-  d.querySelector('#rd-font-down').dispatchEvent(new window.Event('click', { bubbles: true }));
-  chk(d.querySelector('#rd-text').style.fontSize === '13px',
-    '到底后继续点 A－ 不再变化，最小字号锁定 13px');
+  chk(d.querySelector('#rd-text').style.fontSize === '9px',
+    '到底后继续点 A－ 不再变化，最小字号锁定 9px（Issue #229）');
 
+  for (let i = 0; i < 8; i++) {
+    d.querySelector('#rd-font-up').dispatchEvent(new window.Event('click', { bubbles: true }));
+  }
+  chk(d.querySelector('#rd-text').style.fontSize === '25px',
+    'A＋ 顶到 25px 就停（实际 ' + d.querySelector('#rd-text').style.fontSize + '）');
   d.querySelector('#rd-font-up').dispatchEvent(new window.Event('click', { bubbles: true }));
-  d.querySelector('#rd-font-up').dispatchEvent(new window.Event('click', { bubbles: true }));
+  chk(d.querySelector('#rd-text').style.fontSize === '25px', '到顶后继续点 A＋ 不再变大');
+
+  for (let i = 0; i < 4; i++) {
+    d.querySelector('#rd-font-down').dispatchEvent(new window.Event('click', { bubbles: true }));
+  }
   chk(d.querySelector('#rd-text').style.fontSize === '17px',
-    'A＋ 回到默认档 17px（实际 ' + d.querySelector('#rd-text').style.fontSize + '）');
+    '从顶档收四档回到默认 17px（实际 ' + d.querySelector('#rd-text').style.fontSize + '）');
 
   d.querySelector('#rd-trans-toggle').dispatchEvent(new window.Event('click', { bubbles: true }));
   chk(d.querySelector('#rd-trans').hidden === false, '点译文图标展开译文');

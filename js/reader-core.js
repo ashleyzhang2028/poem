@@ -192,7 +192,11 @@
 
   function enterLive() { if (live) liveTo(live); }
 
-  const FONT_SIZES = [13, 15, 17, 19, 21, 23];
+  // 级差统一 2px：最小 9px（再小汉字笔画就并在一起了），最大 25px。
+  // 见 docs/architecture.md §4.35 —— 9px 那档是用户 2026-09-19 点名要的。
+  const FONT_SIZES = [9, 11, 13, 15, 17, 19, 21, 23, 25];
+  const FONT_MIN = 9;
+  const FONT_MAX = 25;
   const DEFAULT_FONT = 17;
 
   const ALIGNS = ["left", "center"];
