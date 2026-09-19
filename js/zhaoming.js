@@ -32,7 +32,7 @@
       id: "zhaoming",
       groupOrder: GROUP_ORDER,
       pageTitle: "昭明文选",
-      pageSub: "六十卷 · 三十九类文体 · 想读哪篇点哪篇",
+      pageSub: "六十卷 · 三十九类文体",
       words: {
         list: "文章",
         unit: "篇",

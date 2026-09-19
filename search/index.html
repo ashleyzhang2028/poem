@@ -110,6 +110,17 @@
           <span class="sr-only" id="rd-trans-toggle-text">显示译文</span>
         </button>
 
+        <button type="button" class="mini-btn daily-btn" id="gw-daily" data-gw="daily" data-on="0" aria-pressed="false" title="加入今日背诵">
+          <span class="btn-icon" aria-hidden="true">
+            <svg class="de-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 5.4v13.2M5.4 12h13.2" />
+            </svg>
+            <svg class="de-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 12.5 10 17.5 19.5 7" />
+            </svg>
+          </span>
+          <span class="sr-only" id="gw-daily-text">加入今日背诵</span>
+        </button>
         <button type="button" class="mini-btn recite-btn" id="gw-recite" data-gw="recite" data-on="0" aria-pressed="false" title="加入自选集合">
           <span class="btn-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -242,6 +253,8 @@
 
   <script src="js/storage.js"></script>
   <script src="js/collections.js"></script>
+  <script src="js/daily-extra.js"></script>
+  <script src="js/daily-extra-ui.js"></script>
   <script src="data/pinyin-table.js"></script>
   <script src="data/common-chars.js"></script>
   <script src="js/pinyin.js"></script>

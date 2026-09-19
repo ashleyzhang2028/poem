@@ -522,8 +522,7 @@ chk(/#4d7d74|#37605a/.test(icon), 'favicon 使用天青主色');
 chk(/#a83b32|#c8564a/.test(icon), 'favicon 带朱砂印');
 chk(/诗|讠/.test(icon), 'favicon 备注里有「诗」字说明');
 
-['icons/icon-120.png', 'icons/icon-152.png', 'icons/icon-167.png', 'icons/icon-180.png',
- 'icons/apple-touch-icon.png', 'icons/icon-192.png', 'icons/icon-256.png',
+['icons/apple-touch-icon.png', 'icons/icon-192.png', 'icons/icon-256.png',
  'icons/icon-384.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png'].forEach(f => {
   const p = path + f;
   chk(fs.existsSync(p) && fs.statSync(p).size > 1024, '图标存在：' + f);
@@ -534,10 +533,6 @@ const pngSize = p => {
   return { w: b.readUInt32BE(16), h: b.readUInt32BE(20) };
 };
 const expected = {
-  'icons/icon-120.png': 120,
-  'icons/icon-152.png': 152,
-  'icons/icon-167.png': 167,
-  'icons/icon-180.png': 180,
   'icons/apple-touch-icon.png': 180,
   'icons/icon-192.png': 192,
   'icons/icon-256.png': 256,
@@ -549,6 +544,25 @@ Object.keys(expected).forEach(f => {
   const s = pngSize(f);
   chk(s.w === expected[f] && s.h === expected[f], f + ' 尺寸为 ' + expected[f] + '×' + expected[f]);
 });
+
+// 只留 180 那一张 iOS 主屏图：下面这批重复档已删（Issue #229 之后）
+const GONE = ['icons/icon-120.png', 'icons/icon-152.png', 'icons/icon-167.png',
+  'icons/icon-180.png', 'icons/favicon.ico', 'icons/favicon-16x16.png',
+  'icons/favicon-32x32.png', 'icons/android-chrome-192x192.png'];
+const stillThere = GONE.filter(f => fs.existsSync(path + f));
+chk(stillThere.length === 0,
+  '重复的 <256 图标与 favicon 三件套已删（实际 ' + (stillThere.join('、') || '全部已删') + '）');
+
+const home = read('index.html');
+chk(!/sizes="(120x120|152x152|167x167|180x180)"/.test(home),
+  '首页不再逐档指定 apple-touch-icon 尺寸（iOS 会自己缩放最接近的一张）');
+chk((home.match(/rel="apple-touch-icon"/g) || []).length === 1,
+  '首页只留一条 apple-touch-icon');
+const manifestTxt = read('manifest.webmanifest');
+chk(!/icon-(120|152|167|180)\.png/.test(manifestTxt),
+  'manifest 里不再挂 <180 的图标档');
+chk(!/icon-(120|152|167|180)\.png/.test(read('sw.js')),
+  'sw 预缓存里不再留已删图标');
 
 const norm = fs.readFileSync(path + 'icons/icon-maskable-512.png');
 const any = fs.readFileSync(path + 'icons/icon-512.png');
@@ -821,8 +835,8 @@ chk(!/\.reader-body \{[\s\S]{0,600}?width:\s*100%/.test(classicCss),
 chk(/\.reader-body \{[\s\S]{0,1200}?box-sizing:\s*border-box/.test(classicCss),
   '阅读器正文显式 border-box，内边距算在 720px 之内');
 
-chk(/\.reader-body \{[\s\S]{0,1200}?width:\s*var\(--content-w/.test(classicCss),
-  '阅读器正文用定宽 --content-w（flex 子项上的 max-width 会退化成 flex-basis）');
+chk(/\.reader-body \{[\s\S]{0,1200}?width:\s*min\(var\(--content-w/.test(classicCss),
+  '阅读器正文用定宽 --content-w，并收回 --read-w 的阅读上限（flex 子项上的 max-width 会退化成 flex-basis）');
 chk(/\.reader-body \{[\s\S]{0,1200}?max-width:\s*calc\(100%/.test(classicCss),
   '窄屏由 max-width: calc(100% - 安全区) 收成满宽，宽屏稳定居中');
 chk(/\.reader-body \{[\s\S]{0,400}?min-height:\s*0/.test(classicCss),

@@ -394,7 +394,9 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
   chk(!!c.querySelector('#rd-font-down') && !!c.querySelector('#rd-font-up'),
     'A－ / A＋ 字号按钮还在（此前被合并丢掉）');
   chk(!!c.querySelector('#rd-align-seg'), '正文对齐组合按钮在');
-  chk(!!rowIcons && rowIcons.children.length === 4, '下一行：正文朗读键 / 译文开关 / 标记已读 / 加入背诵 四组都在（实际 ' + (rowIcons ? rowIcons.children.length : 0) + '）');
+  chk(!!rowIcons && rowIcons.children.length === 5,
+    '下一行：正文朗读键 / 译文开关 / 加入今日背诵 / 加入背诵 / 标记已读 五组都在（实际 ' +
+    (rowIcons ? rowIcons.children.length : 0) + '）');
 
   chk(c.querySelector('#rd-read-combo') === null, '不再有「原文 / 译文」并排的组合键');
   chk(c.querySelectorAll('#rd-actions-icons #rd-read-btn').length === 1 &&

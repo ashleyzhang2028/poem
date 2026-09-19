@@ -87,8 +87,8 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   click(d.querySelector('.library-card[data-book="tangshi"]'));
   await sleep(350);
   chk(pageName() === '唐诗三百首', '点卡片后页名换成「唐诗三百首」（实际 ' + pageName() + '）');
-  chk(subText() === '想读哪首点哪首',
-    '副标题换成这一部的说明，且与 /tangshi/ 那一页的完全一致（同一份 config.pageSub；实际 ' + subText() + '）');
+  chk(subText() === '按卷一至卷八 · 五言七言 · 律诗绝句',
+    '副标题换成这一部的总结，且与 /tangshi/ 那一页的完全一致（同一份 config.pageSub；实际 ' + subText() + '）');
   chk(gridHidden() && !railHidden(), '目录收起、索引铺开（同一页里的两层）');
   chk(d.querySelectorAll('#lib-gw-list .item').length === 317,
     '索引层列出 317 首（实际 ' + d.querySelectorAll('#lib-gw-list .item').length + '）');
@@ -127,7 +127,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   await sleep(200);
   chk(railHidden() && !gridHidden(), '★ 再按返回，回到七张卡的集子目录');
   chk(pageName() === '课外阅读', '页名还原成「课外阅读」（实际 ' + pageName() + '）');
-  chk(subText() === '课本之外的经典，按部就班读下去',
+  chk(subText() === '课本之外的经典',
     '副标题还原成入口页那一句（实际 ' + subText() + '）');
   chk(d.querySelectorAll('.library-card').length === 7, '七张卡片仍在（退回来时没有把目录清掉）');
   chk(topActs() === 0, '目录这一层不再有返回键（恢复各页默认的「回首页」；实际 ' + topActs() + '）');

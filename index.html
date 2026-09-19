@@ -20,12 +20,10 @@
   <link rel="icon" href="/icons/icon.svg" type="image/svg+xml" />
 
   <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
-  <link rel="apple-touch-icon" sizes="120x120" href="/icons/icon-120.png" />
-  <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152.png" />
-  <link rel="apple-touch-icon" sizes="167x167" href="/icons/icon-167.png" />
-  <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-180.png" />
 
   <link rel="stylesheet" href="css/style.css" />
+
+  <link rel="stylesheet" href="css/classic.css" />
 </head>
 
 <body data-nav="home" data-page="的古诗词" data-sub="按记忆曲线复习">
@@ -59,6 +57,26 @@
             <path class="ring-fg" id="ring-fg" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
           </svg>
           <span id="ring-text">0/5</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="search-hero today-search" id="today-search-hero">
+
+      <div class="toolbar search-toolbar">
+        <div class="search-wrap" id="today-search-wrap">
+          <span class="search-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="6.4" />
+              <path d="M15.8 15.8 20 20" />
+            </svg>
+          </span>
+          <input id="today-search" class="search-input" type="search"
+                 placeholder="再找一首，加进今天要背的" autocomplete="off" role="combobox"
+                 aria-expanded="false" aria-controls="today-suggest" aria-autocomplete="list"
+                 enterkeyhint="search" />
+
+          <div class="suggest" id="today-suggest" role="listbox" aria-label="加进今日背诵" hidden></div>
         </div>
       </div>
     </section>
@@ -278,6 +296,9 @@
   <script src="js/sync-store.js"></script>
   <script src="js/collections.js"></script>
   <script src="js/storage.js"></script>
+
+  <script src="js/daily-extra.js"></script>
+  <script src="js/daily-extra-ui.js"></script>
 
   <script src="js/review-models.js"></script>
   <script src="js/scheduler.js"></script>

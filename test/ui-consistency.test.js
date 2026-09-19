@@ -192,8 +192,8 @@ chk(/max-width:\s*var\(--col-w/.test(appRule), '内容区列宽走 --col-w');
 
 chk(/max-width:\s*var\(--content-w/.test(ruleOf(cssCode, '.topbar')),
   '顶栏列宽与内容区同源（--content-w）');
-chk(/width:\s*var\(--content-w/.test(ruleOf(classicCode, '.reader-body')),
-  '阅读器正文列宽与内容区同源（--content-w）');
+chk(/width:\s*min\(var\(--content-w/.test(ruleOf(classicCode, '.reader-body')),
+  '阅读器正文列宽取自内容区（--content-w），并收回 --read-w 的阅读上限');
 chk(/max-width:\s*var\(--content-w/.test(ruleOf(cssCode, '.dock-inner')),
   '页签内层与内容区同源（--content-w）');
 
@@ -353,15 +353,15 @@ const deskRoot = /@media \(min-width:\s*1024px\)\s*\{[^@]*:root\s*\{([^}]*)\}/s.
 chk(!!deskRoot, '桌面（≥1024px）那一档真的存在（不是把平板那一列当桌面用）');
 if (deskRoot) {
   const block = deskRoot[1];
-  chk(/--col-w:\s*min\(1200px,\s*100vw\)/.test(block),
-    '桌面列宽 = min(1200px, 100vw)（超宽屏上内容壳层封顶 1200px，窄窗口仍跟视口走）');
-  chk(/--col-side:\s*32px/.test(block),
-    '桌面两侧留 32px（壳层封顶后这一段就是「边」，不再随视口一起长）');
+  chk(/--col-w:\s*100vw/.test(block),
+    '桌面列宽 = 100vw（一列纸跟视口走，不再收成 1200px 的明信片）');
+  chk(/--col-side:\s*56px/.test(block),
+    '桌面两侧留 56px（这一档就是「边」，宽屏上顶栏与正文左右同缘）');
   chk(!/--col-w:\s*max\(\s*\d+px/.test(block),
     '桌面列宽不再用 max(固定值, …) 兜底（真机上那会在 1024px 处造出一个 1px 断崖）');
 }
 
-chk(/--col-side:\s*32px/.test(cssCode) && !/--col-side:\s*(max|min)\(/.test(cssCode),
+chk(/--col-side:\s*56px/.test(cssCode) && !/--col-side:\s*(max|min)\(/.test(cssCode),
   '--col-side 是固定值，不是算式（算式会与 max-width 打架、把内容卡死）');
 
 chk(/--read-w:\s*720px/.test(cssCode),
