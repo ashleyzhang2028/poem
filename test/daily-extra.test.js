@@ -380,6 +380,95 @@ console.log('\n=== 七、设置页：单独一处能看见、能多选删 ===');
   chk(/不上云/.test(page), '如实写明本机保存、不上云（换设备不跟过去）');
 }
 
+// ===========================================================================
+// 七之二、「今日加背」那一行的样子（Issue #229）
+//
+// 用户点名的四条：复选框太丑、篇名比别的大又是纯黑、勾选框与篇名没间距、
+// 行间距偏大。根因是一条**选择器泄漏**：`.settings-item label:not(.switch)`
+// 会命中 `.daily-row`（它也是 <label>），把 `display:flex` 盖成 `display:block`，
+// 顺带带来 `margin-bottom: 8px`；原生复选框又比行里的字大一圈。
+//
+// 这里量的是**相对关系**（谁和谁挨着、字号同不同档），不是量某一条 px ——
+// 上一轮「跨设备同步」就是吃了「只量自己、没量相对位置」的亏。
+// ===========================================================================
+{
+  const seed = {
+    poem_daily_extra_v1: JSON.stringify({ v: 1, date: todayStr(), items: [
+      { id: 'poems-xx1-01', wid: 'poems-xx1-01', entryId: 'poems-xx1-01',
+        snap: { title: '咏鹅', dynasty: '唐', author: '骆宾王', bookName: '课内诗词' }, at: 1 }
+    ] })
+  };
+  const w = boot('settings/recite/index.html', '/settings/recite/', seed);
+  await w.__ready;
+  await sleep(250);
+  const d = w.document;
+  const row = d.querySelector('.daily-row');
+  chk(!!row, '有今日加背的一行');
+
+  // 勾选框：原生 input 仍留着（键盘 / 读屏），另画一枚 .daily-box
+  const pick = row.querySelector('.daily-pick');
+  const box = row.querySelector('.daily-box');
+  chk(!!pick, '行里仍有原生 checkbox（键盘能选、读屏能念）');
+  chk(!!box, '另有一枚画出来的 .daily-box（原生控件交给它表示）');
+  chk(box.querySelector('svg path'),
+    '那一枚里是画出来的勾（与「加入自选集合」同一笔）');
+
+  // 以下按**样式源码**核对（jsdom 不解析外部 <link> 样式表，量不到 computed）
+  const css2 = read('css/style.css');
+  const decl = (sel) => {
+    const flat = css2.replace(/\/\*[\s\S]*?\*\//g, ' ');
+    const re = /([^{}]+)\{([^}]*)\}/g;
+    let m, out = [];
+    while ((m = re.exec(flat))) {
+      const sels = m[1].split(',').map(x => x.trim());
+      if (sels.includes(sel)) m[2].split(';').forEach(d => { if (d.trim()) out.push(d.trim()); });
+    }
+    return out.join('; ');
+  };
+  const has = (sel, re) => re.test(decl(sel));
+
+  // ①② 行是 flex、且不再吃 label 规则那 8px 下边距
+  chk(has('.daily-row', /display:\s*flex/),
+    '行是 flex（勾选框与篇名排一行）');
+  chk(!has('.daily-row', /margin-bottom:\s*[1-9]/),
+    '行不再有 margin-bottom（.settings-item label 那 8px 没落在这里，行距收回来了）');
+
+  // ③ 原生 input 视觉上藏起来，但不 display:none
+  chk(has('.daily-row .daily-pick', /position:\s*absolute/) &&
+    has('.daily-row .daily-pick', /opacity:\s*0/) &&
+    !has('.daily-row .daily-pick', /display:\s*none/),
+    '原生 input 绝对定位 + 透明（不是 display:none —— 键盘还点得到）');
+
+  // ③ 那一枚框 18×18（不比 14.5 的字大一圈）
+  chk(has('.daily-row .daily-box', /width:\s*18px/) && has('.daily-row .daily-box', /height:\s*18px/),
+    '那一枚框 18×18（与字同高量级，不是原生那 20px 控件）');
+
+  // ④ 勾选框与篇名之间有间距
+  chk(has('.daily-row', /gap:\s*(?!0)/),
+    '勾选框与篇名之间有间距（行的 gap 不是 0）');
+
+  // ⑤ 篇名与出处同一行、之间有间距、字号同档
+  chk(has('.daily-row .daily-main', /display:\s*flex/) && has('.daily-row .daily-main', /gap:\s*(?!0)/),
+    '篇名与出处排在同一行、之间有间距');
+  chk(has('.daily-row .daily-title', /font-size:\s*14\.5px/),
+    '篇名 14.5px（与搜索下拉 .suggest-title 同档）');
+
+  // ⑥ 颜色同档
+  chk(has('.daily-row .daily-title', /color:\s*var\(--ink\)/),
+    '篇名走 --ink（全站正文色，不是纯黑 #000）');
+  chk(has('.daily-row .daily-meta', /color:\s*var\(--ink-3\)/) &&
+    has('.daily-row .daily-meta', /font-size:\s*12px/),
+    '出处 12px / --ink-3（与搜索下拉的 .suggest-meta 同一档）');
+
+  // ⑦ 选中态：勾上以后是绿底
+  chk(/\.daily-row \.daily-pick:checked ~ \.daily-box\s*\{[^}]*background:\s*var\(--green\)/.test(css2),
+    '勾上以后框变绿底（与「加入自选集合」里那一枚同一套语言）');
+
+  // ⑧ 选择器泄漏本身：那两条 :not 都必须在，否则 display:flex 又被盖掉
+  chk(/\.settings-item label:not\(\.switch\):not\(\.daily-row\)/.test(css2),
+    '.settings-item label 那条排除了 .daily-row（不然下次又会被压成 block）');
+}
+
 console.log('\n=== 八、三处口径（源码级守卫）===');
 {
   const data = read('js/daily-extra.js');
