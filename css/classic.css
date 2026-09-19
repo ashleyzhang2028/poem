@@ -344,6 +344,12 @@ body.reader-open .dock { display: none; }
 
   width: 100%;
   min-width: 0;
+
+  max-width: none;
+  margin: 0;
+
+  padding-left: calc(var(--col-side) + var(--safe-left));
+  padding-right: calc(var(--col-side) + var(--safe-right));
 }
 
 .reader-body {
@@ -354,7 +360,7 @@ body.reader-open .dock { display: none; }
   -webkit-overflow-scrolling: touch;
   padding: 20px calc(18px + var(--safe-right)) calc(40px + var(--safe-bottom)) calc(18px + var(--safe-left));
 
-  width: var(--content-w, 692px);
+  width: min(var(--content-w, 692px), var(--read-w, 720px));
   max-width: calc(100% - var(--safe-left) - var(--safe-right));
   margin: 0 auto;
   box-sizing: border-box;

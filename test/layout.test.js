@@ -85,8 +85,8 @@ chk(/\.reader\s*\{[^}]*z-index:\s*66/s.test(classicCss),
 chk(zModal > zOf('.reader') || zModal > 66,
   '弹层（' + zModal + '）高于阅读器，阅读器里弹出的选择器盖得住正文');
 
-chk(/@media\s*\(min-width:\s*1024px\)[\s\S]*?--col-w:\s*min\(1200px,\s*100vw\)/.test(css),
-  '桌面内容壳层封顶 1200px，避免超宽屏内容散开');
+chk(/@media\s*\(min-width:\s*1024px\)[\s\S]*?--col-w:\s*100vw/.test(css),
+  '桌面一列纸跟视口走（100vw），由两侧 --col-side 留边而不是把壳层收成明信片');
 chk(/grid-template-columns:\s*repeat\(auto-fit,\s*minmax\(min\(100%,\s*280px\),\s*1fr\)\)/.test(css),
   '桌面列表使用流式等宽列，避免固定卡片宽度产生零散空隙');
 

@@ -21,7 +21,7 @@
       id: "guwen",
       groupOrder: GROUP_ORDER,
       pageTitle: "古文观止",
-      pageSub: "想读哪篇点哪篇",
+      pageSub: "十二卷 · 自周文至明文",
       words: {
         list: "古文",
         unit: "篇",

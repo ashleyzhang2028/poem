@@ -120,6 +120,15 @@ setTimeout(() => {
     '样式表里不再留 .top-slot 规则（那一枚圆槽是头像的，头像撤了它也没了）');
   chk(/\.top-act \{[^}]*width:\s*var\(--top-key\)/.test(cssAll),
     '顶栏那一颗的尺寸只有一个来源 --top-key（顶栏右端现在只有这一件）');
+
+  const readerBarBlock = (/\.reader > \.topbar \{([^}]*)\}/.exec(clsCss) || [, ''])[1];
+  chk(/max-width:\s*none/.test(readerBarBlock),
+    '阅读器顶栏收回通用 .topbar 的 max-width: var(--content-w)（不然它会比 .app 窄两条边）');
+  chk(/margin:\s*0;/.test(readerBarBlock),
+    '阅读器顶栏清掉通用 .topbar 的 margin: 0 auto（否则宽屏上左右各多出一条边）');
+  chk(/padding-left:\s*calc\(var\(--col-side\) \+ var\(--safe-left\)\)/.test(readerBarBlock) &&
+    /padding-right:\s*calc\(var\(--col-side\) \+ var\(--safe-right\)\)/.test(readerBarBlock),
+    '阅读器顶栏左右内缩取自 --col-side（与 .app 同一档，返回键不再比列表页更贴边）');
   const backBtn2 = topbar.querySelector('#top-back');
   chk(!!backBtn2 && backBtn2.tagName === 'A' && backBtn2.getAttribute('href') === '/',
     '返回键统一由 chrome.js 渲染（回首页），页面不再自造一颗');
@@ -195,8 +204,8 @@ setTimeout(() => {
 
   const appSub = () => d.querySelector('.app > .topbar #brand-sub').textContent;
   const readerSub = () => d.querySelector('#gw-reader > .topbar #brand-sub').textContent;
-  chk(readerSub() === '想读哪篇点哪篇', '阅读器顶栏的第二行也在（与列表页同一句）');
-  chk(appSub() === '想读哪篇点哪篇', '合上阅读器后，列表页顶栏的第二行还在（重绘后已补回）');
+  chk(readerSub() === '百字上下，最适合起步', '阅读器顶栏的第二行也在（与列表页同一句）');
+  chk(appSub() === '百字上下，最适合起步', '合上阅读器后，列表页顶栏的第二行还在（重绘后已补回）');
   chk(topbar.contains(d.querySelector('#brand-name')) && topbar.contains(d.querySelector('#brand-page-text')),
     '顶栏那件「跬步 · 小古文」仍在（撤掉的只是那枚读数）');
 
@@ -274,7 +283,8 @@ setTimeout(() => {
   chk(d.title === '课外必背小古文 · 跬步', '集子页标题为「课外必背小古文 · 跬步」（实际 ' + d.title + '）');
 
   const sub = d.querySelector('.app > .topbar #brand-sub').textContent;
-  chk(sub === '想读哪篇点哪篇', '小古文页副标题为「想读哪篇点哪篇」（实际 ' + JSON.stringify(sub) + '）');
+  chk(sub === '百字上下，最适合起步', '小古文页副标题为这一部的总结（实际 ' + JSON.stringify(sub) + '）');
+  chk(!/想读哪篇点哪篇/.test(sub), '副标题不再写「想读哪篇点哪篇」这类口号');
   chk(!/小古文/.test(sub) && !/跬步/.test(sub), '副标题不与第一行重复页面名 / 应用名');
 
   chk(!/小古文[^。]{0,40}小古文/.test(d.querySelector('.app > .topbar').textContent.replace(/\s+/g, '')),
@@ -296,8 +306,8 @@ setTimeout(() => {
   chk(!/不排复习日期/.test(htmlSrc), '页面里不再出现「不排复习日期」这类说明');
   chk(!/想读哪篇点哪篇[。．]/.test(htmlSrc.replace(/<p>.*?<\/p>/, '')), '不再有婆婆妈妈的说明段落');
 
-  chk(d.querySelector('.app > .topbar #brand-sub').textContent === '想读哪篇点哪篇',
-    '小古文页有副标题「想读哪篇点哪篇」（实际 ' + JSON.stringify(d.querySelector('.app > .topbar #brand-sub').textContent) + '）');
+  chk(d.querySelector('.app > .topbar #brand-sub').textContent === '百字上下，最适合起步',
+    '小古文页有副标题（实际 ' + JSON.stringify(d.querySelector('.app > .topbar #brand-sub').textContent) + '）');
   chk(d.querySelector('#brand-page-text').textContent === '课外必背小古文',
     '页面名与 chrome.js 的 data-page 一致，由 CSS 的 ::before 生成分隔符（不再写死标点）');
   chk(d.querySelectorAll('#gw-list .item .item-reason.review').length === 0, '列表里没有「复习」标签，不做复习排期');

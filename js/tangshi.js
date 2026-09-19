@@ -17,7 +17,7 @@
       id: "tangshi",
       groupOrder: GROUP_ORDER,
       pageTitle: "唐诗三百首",
-      pageSub: "想读哪首点哪首",
+      pageSub: "按卷一至卷八 · 五言七言 · 律诗绝句",
       words: {
         list: "唐诗",
         unit: "首",
