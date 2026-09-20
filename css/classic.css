@@ -268,17 +268,19 @@
   }
 }
 
-/* 内联圆键**四颗**之后，1024 这一档不能再排三列。
+/* 1024 这一档排三列，唐诗那几部长题会折成竖排。
    一行里除内容块外要放：小旗（报告）/ ＋（加背）/ 加入背诵 / 播放 —— 四颗
-   36px 的圆键各带 6px 右外边距，再加尾部箭头，固定占去 198px。
+   36px 的圆键排成 2×2 网格（一簇 80px），再加尾部箭头 18px，固定占去 98px。
    1024 档内容宽 912px 排三列时，一格只剩 289px，扣掉内边距 20px 后
-   内容块只拿到 82.66px —— 而这一段的 min-content 是那颗
-   `white-space: nowrap` 的摘句，它把内容块钉死在这个宽度上，
-   「感遇·其一」于是折成三行、「下终南山过斛斯山人宿置酒」折成五行，
+   内容块只拿到 171px —— 而这一段的 min-content 是那颗
+   `white-space: nowrap` 的摘句（实测 219px），它把内容块钉死在这个宽度上，
+   「至德二载甫自京金光门出……」于是折成三行、标题高到 188px，
    正是 `test/pwa.test.js` 那句「卡内篇名不折成竖排」要守的东西。
-   三颗键时这一档是能站住的（内容块 124.66px），第四颗插进来就站不住了 ——
-   「加了一颗键，就得少排一列」，所以 1024~1279 收回两列（一格 444px、
-   内容块 238px），1280 起宽度够了再回三列。 */
+   排两列一格 444px、内容块 326px > 219px，站得住 ——
+   所以 1024~1279 收回两列，1280 起宽度够了再回三列。
+   ⚠️ 圆键从「横着一排」（168px）收成 2×2 网格（80px）之后，这一档其实比
+   以前宽松了很多（内容块 171px vs 曾经的三颗键时代 124px、四颗键时代 82px），
+   但离 219px 那一关还差一点，所以这条暂时留着。 */
 @media (min-width: 1024px) and (max-width: 1279px) {
   .group-card > .item {
     flex: 1 1 calc(50% - 11px);
@@ -312,6 +314,34 @@
   margin-left: 0;
 
   margin-right: 6px;
+}
+
+/* 列表行里那几颗行内圆键（报告 / 加背 / 加入背诵 / 播放）**排两行两列**。
+   原先一排横着铺满（三颗或四颗），一行里除去内容块就要固定占掉 126 / 168px，
+   屏幕窄一档标题就被挤到折行；而且四颗挤在一起时相邻两颗之间只有一道 6px
+   外边距，圆与圆几乎贴住，误点的机会大于点中。
+   改成 2×2 的网格：左右与上下**同一道 gap**，四颗各占一格；
+   只有三颗（/poems/ 不带「加入背诵」）时第二行左边那一格空着，
+   第一行仍是两颗 —— 网格与四颗时完全同一个位置，不会因为少一颗就整体挪位。 */
+.item-actions {
+  display: grid;
+  grid-template-columns: repeat(2, var(--item-btn));
+  grid-auto-rows: var(--item-btn);
+  gap: var(--item-gap);
+  flex: 0 0 auto;
+  align-content: center;
+  justify-content: end;
+
+  /* 与尾部箭头之间留出与网格内部同宽的呼吸（箭头自己 margin-left: auto） */
+  margin-right: var(--item-gap);
+}
+
+/* 网格自己给间距，圆键各自那 6px 右外边距在这里撤掉（否则左右会比上下多出 6px） */
+.item-actions > .item-report,
+.item-actions > .item-daily,
+.item-actions > .item-recite,
+.item-actions > .item-read {
+  margin: 0;
 }
 
 #gw-list .item { border-left-color: var(--blue); }
@@ -927,11 +957,10 @@ body[data-nav="search"] .search-hero.kb-open ~ #gw-list { padding-top: var(--sea
    有些不带（唐诗 / 宋词等，直接排在 .list 上）。两处的**按钮间距必须一样**，
    否则同一页里「课内」那几条与其余几条的「＋ / 收藏 / 播放」疏密不同。
 
-   .group-card .item 的间距是 gap: 0 + 每颗钮各自 6px 右外边距；
+   .group-card .item 的间距是 gap: 0，圆键那一簇收进 .item-actions 自己排；
    下面这条把 .list 上的裸 .item 拉齐到同一套（原先它吃的是通用 .item 的 gap: 12px，
    于是同一排三个钮之间平白多出 24px）。 */
 body[data-nav="search"] #gw-list .item { padding: 14px 8px 14px 14px; gap: 0; }
-body[data-nav="search"] #gw-list > .item > .item-read { margin-right: 6px; }
 
 #gw-list .item-hit {
   color: var(--ink-3);
