@@ -2263,16 +2263,30 @@ html, body {
 .today-search .suggest-row {
   display: flex;
   align-items: stretch;
+
+  /* 最左侧那一列的宽度：一颗直径 30 的圆 + 两侧各 7 的外边距。
+     槽宽给出来，圆的左右外边距就能由它现算（见下）——
+     「圆在这一列里居中」与「这一列有多宽」从此只有一个来源。*/
+  --suggest-slot: 44px;
 }
 
 /* 下拉里那一颗「＋」：与列表里的圆形按钮同一形状，但嵌在 44px 的行里，
-   所以比 --item-btn 小一号（36 → 30），行高才不会被撑破。 */
+   所以比 --item-btn 小一号（36 → 30），行高才不会被撑破。
+
+   两侧外边距各 (44 − 30) ÷ 2 = 7px —— 圆的**格**宽度定死 44，
+   圆在里面左右各留 7，水平中心就落在 44 ÷ 2 = 22px 上。
+
+   2026-09-20 用户报的「原点处那颗圆形加号，没有在最左侧一列里水平居中」
+   正是差在这里：原先外边距写死 10 / 4，圆的占位 10 + 30 + 4 = 44 看似
+   等于槽宽，可两边留白一边 10、一边 4，圆被推到 25px 上 ——
+   比槽心偏右 3px，一排下来那一列圆是歪的。
+   现在两边都由槽宽现算（不是各写一个数），槽一改两边一起跟着回中心。*/
 .suggest-add {
   flex: none;
   align-self: center;
   width: 30px;
   height: 30px;
-  margin: 0 4px 0 10px;
+  margin: 0 calc((var(--suggest-slot) - 30px) / 2);
   padding: 0;
   border: 1px solid var(--line);
   border-radius: 50%;
@@ -2285,6 +2299,10 @@ html, body {
   line-height: 0;
   transition: transform .14s, background .18s, border-color .18s, color .18s;
 }
+/* 「画出来的尺寸 = 声明的尺寸」：这 30px 是**连边框一起**的直径，不是内容区。
+   默认就是 border-box；写出来只为把这条口径钉在纸上 —— 换成 content-box
+   就会画成 32，圆的中心也跟着偏 1px（居中就不再是居中）。*/
+.suggest-add { box-sizing: border-box; }
 .suggest-add svg { display: block; width: 15px; height: 15px; }
 .suggest-add .de-check { display: none; }
 .suggest-add[data-on="1"] { background: var(--green); border-color: var(--green); color: #fffdf8; }

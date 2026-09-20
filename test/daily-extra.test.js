@@ -681,6 +681,162 @@ console.log('\n=== 九、上云：一行 progress，按天合并（云同步也�
     '.settings-item label 那条排除了 .daily-row（不然下次又会被压成 block）');
 }
 
+// ===========================================================================
+// 七之三、下拉里那颗「＋」在**最左侧那一列里居中**（Issue #229 · 2026-09-20）
+//
+// 用户原话：「今日加背的搜索，输入关键字后，下拉框左侧一列，
+//             圆形加号并没有在最左侧一列水平居中对齐」。
+//
+// 根因是那条外边距写反了偏心：`margin: 0 4px 0 10px` —— 直径 30 的圆
+// 左边留 10、右边留 4，圆的占位确实是 10 + 30 + 4 = 44（等于那一列的宽），
+// 可**圆在里面是偏右的**：中心落在 10 + 15 = 25px，比列心 22px 偏 3px。
+// 一排候选看下来，那一列圆就是歪的。
+//
+// 这一节守两件事，且都**按相对关系**量（不是量某一条 px 写死）：
+//   ① 左右两侧留白必须相等（圆在列里居中；偏心 ±3px 也要拦下来）；
+//   ② 两侧留白由那一列的宽度现算 —— 槽宽一改，圆跟着回到列心，
+//      不会出现「槽改了、圆还钉在旧位置上」。
+//
+// 优先用真浏览器（puppeteer）量**实际渲染**的矩形（这正是用户看到的东西）；
+// 起不了浏览器时退回「按声明的盒子自己算」——两条路算的是同一组数，
+// 免得在没浏览器的机器上这一节变成空转。
+// ===========================================================================
+{
+  const cssAll = read('css/style.css');
+  const declOf = (sel, prop) => {
+    const flat = cssAll.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/@media[^{]+\{/g, '{');
+    const re = /([^{}]+)\{([^}]*)\}/g;
+    let m, v = null;
+    while ((m = re.exec(flat))) {
+      if (!m[1].split(',').map(x => x.trim()).includes(sel)) continue;
+      for (const d of m[2].split(';')) {
+        const i = d.indexOf(':');
+        if (i < 0) continue;
+        if (d.slice(0, i).trim() === prop) v = d.slice(i + 1).trim();
+      }
+    }
+    return v;
+  };
+
+  // 「圆的外边距由槽宽现算」——不是写死 10 / 4 那种偏心写法
+  const margin = declOf('.suggest-add', 'margin');
+  const width = declOf('.suggest-add', 'width');
+  chk(/calc\(/.test(margin) && /var\(--suggest-slot\)/.test(margin),
+    '圆的外边距由槽宽现算（' + margin + '），不是各写一个数');
+  chk(!/\d+px\s+\d+px\s+\d+px\s+\d+px/.test(margin),
+    '不再是「上 右 下 左」四个数那种写法（10 / 4 就是一偏心就写歪的写法）');
+  chk(/\d+px/.test(width), '圆的直径仍有明确声明（' + width + '）');
+  chk(declOf('.suggest-add', 'box-sizing') === 'border-box',
+    '这 30px 是连边框一起的直径（border-box，「画出来的尺寸 = 声明的尺寸」）');
+  const rowSlot = declOf('.today-search .suggest-row', '--suggest-slot');
+  chk(!!rowSlot && /\d+px/.test(rowSlot),
+    '那一列的宽度 --suggest-slot 定义在行上（' + (rowSlot || '缺') +
+    ' —— 行是圆与文字那一格共同的祖先，两处都从它取值）');
+  chk(/--item-btn:\s*\d+px/.test(cssAll),
+    '全站圆键直径 --item-btn 仍是唯一来源（下拉里那一颗只是小一号）');
+
+  // ---- 用真浏览器量实际渲染的矩形 ----
+  // 这一段必须**等它跑完**再往下（否则断言还没打印，进程就退了 ——
+  // 上面那版就是栽在这里：异步块挂在事件循环上，测试却已经收尾）。
+  let measured = null;
+  let pup = null;
+  try { pup = require('puppeteer'); } catch (e) { pup = null; }
+  if (pup) {
+    await (async () => {
+      // 浏览器落在哪由项目里那一处出口说了算（test/pwa-env.js）——
+      // puppeteer 自己的 executablePath() 在这台机器上指向一份没下下来的
+      // 构建（路径存在、文件不在），直接用它等于这一节永远是空的。
+      const chrome = await (async () => {
+        try {
+          const env = require('./pwa-env.js');
+          const p0 = await env.resolveChromePath();
+          if (p0 && fs.existsSync(p0)) return p0;
+        } catch (e) { /* 落下去找系统那一份 */ }
+        for (const c of ['/usr/local/bin/chromium', '/usr/bin/chromium',
+          '/usr/bin/chromium-browser', '/usr/bin/google-chrome']) {
+          if (fs.existsSync(c)) return c;
+        }
+        return null;
+      })();
+      if (chrome && fs.existsSync(chrome)) {
+        const html = '<!DOCTYPE html><html><head><meta charset="utf-8"><style>' +
+          (cssAll + read('css/classic.css')).replace(/<\/style>/gi, '') +
+          '</style></head><body data-nav="home"><div class="app" style="width:420px">' +
+          '<section class="today-search"><div class="toolbar"><div class="search-wrap" style="width:420px">' +
+          '<div class="suggest" style="position:static;max-height:none;width:420px">' +
+          '<div class="suggest-row"><button type="button" class="suggest-add">' +
+          '<svg class="de-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9">' +
+          '<path d="M12 5.4v13.2M5.4 12h13.2"/></svg></button>' +
+          '<button type="button" class="suggest-item"><span class="suggest-title">静夜思</span>' +
+          '<span class="suggest-meta">唐 · 李白</span></button></div></div>' +
+          '</div></div></section></div></body></html>';
+        let browser = null;
+        try {
+          browser = await pup.launch({ executablePath: chrome,
+            args: ['--no-sandbox', '--disable-dev-shm-usage'] });
+          const page = await browser.newPage();
+          await page.setContent(html, { waitUntil: 'load' });
+          measured = await page.evaluate(() => {
+            const R = s => { const b = document.querySelector(s).getBoundingClientRect();
+              return { l: b.left, r: b.right }; };
+            const row = R('.suggest-row');
+            const add = R('.suggest-add');
+            const item = R('.suggest-item');   // 文字那一格的边框盒
+            const circleCx = (add.l + add.r) / 2;
+            const colCenter = (row.l + item.l) / 2;   // 「最左侧一列」= 行左缘 → 那条分隔线
+            return {
+              colWidth: +(item.l - row.l).toFixed(2),
+              leftGap: +(add.l - row.l).toFixed(2),
+              rightGap: +(item.l - add.r).toFixed(2),
+              circleCx: +circleCx.toFixed(2),
+              colCenter: +colCenter.toFixed(2),
+              offCenter: +(circleCx - colCenter).toFixed(2)
+            };
+          });
+        } catch (e) {
+          measured = null;
+        } finally {
+          if (browser) { try { await browser.close(); } catch (e) {} }
+        }
+      }
+
+      if (measured) {
+        chk(measured.leftGap === measured.rightGap,
+          '那颗「＋」左右两侧留白相等（左 ' + measured.leftGap + ' / 右 ' + measured.rightGap +
+          'px —— 一圈圆只有在两侧相等时才叫「居中」）');
+        chk(Math.abs(measured.offCenter) < 0.5,
+          '圆的水平中心落在那一列的中心上（列心 ' + measured.colCenter + '，圆中心 ' +
+          measured.circleCx + '，偏 ' + measured.offCenter + 'px）—— ' +
+          '原先写死 10 / 4 时这一点偏 3px，正是用户报的「没有水平居中」');
+        chk(measured.leftGap + measured.rightGap + 30 > measured.colWidth - 1 &&
+          measured.leftGap + measured.rightGap + 30 < measured.colWidth + 1,
+          '圆的占位（两侧留白 + 直径）= 那一列的宽（' + measured.colWidth + 'px）—— ' +
+          '列里只有这一颗，不留多余的空');
+
+        // 反面样本：偏心的一对留白必须被上面两条咬住（保证这把尺子不是哑的）
+        const badCx = (measured.circleCx - measured.leftGap) + 10 + 15;   // 换成 10 / 4 的写法
+        chk(Math.abs(badCx - measured.colCenter) >= 0.5,
+          '换个口径也量得出来：把留白写成 10 / 4 时，中心会偏 ' +
+          (badCx - measured.colCenter).toFixed(2) + 'px（这把尺子不哑）');
+      } else {
+        console.log('(起不了浏览器，改按声明的盒子自己算「居中」这把尺子)');
+      }
+    })();
+  }
+
+  // ---- 兜底：按声明的盒子自己算（与上面同一组数）----
+  if (!measured) {
+    const num = v => parseFloat(v);
+    const slot = num(declOf('.today-search .suggest-row', '--suggest-slot'));
+    const dia = num(width);
+    const side = (slot - dia) / 2;   // calc((slot - 30px) / 2)
+    chk(side * 2 + dia === slot,
+      '两侧留白 + 直径 = 那一列的宽（' + side + ' × 2 + ' + dia + ' = ' + slot + '）');
+    chk(declOf('.suggest-add', 'align-self') === 'center',
+      '圆在行里纵向也是居中的（align-self: center）');
+  }
+}
+
 console.log('\n=== 八、三处口径（源码级守卫）===');
 {
   const data = read('js/daily-extra.js');
