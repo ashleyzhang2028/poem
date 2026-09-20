@@ -609,8 +609,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     '贴顶那一段高度是一个具名变量（--hero-top），不是散落的魔数');
   chk(/syncHeroState/.test(searchJs) &&
     /classList\.toggle\("search-active",\s*lifted\)/.test(searchJs),
-    '贴顶只认「框里真的有焦点 / 键盘真的弹着」（Issue #163：按内容贴顶会让' +
-    '回填的上次关键词一进页就把框顶上顶栏，接着把键盘也带出来 —— 见第八节）');
+    '贴顶由 syncHeroState 一处写入（search-active 这个类名只有这一个出口）');
   chk(/classList\.toggle\("kb-open",\s*lifted\)/.test(searchJs),
     'kb-open 只在键盘真的弹出来时加（贴顶的落位与 search-active 共用）');
 
@@ -641,6 +640,20 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(/--hero-top:\s*var\(--search-list-gap/.test(cssCode),
     '框上那一段（--hero-top）与框下那一段（--search-list-gap）取自同一个变量 ——' +
     '上下才真的等距（上一版是 8px / 12px 的两个魔数）');
+
+  // Issue #229（2026-09-20 这一轮）：--search-list-gap 必须挂在**两者共同的祖先**上。
+  // 自定义属性只沿树往下继承，兄弟之间传不过去：原先它只写在 .search-hero 上，
+  // 而 #gw-list 是 hero 的兄弟 —— 那条 var() 一直是无效值（padding-top 落成 0），
+  // 框下那 12px 是通版 .toolbar 的 margin-bottom 凑出来的。这条断言守住来源。
+  chk(/body\[data-nav="search"\] \{ --search-list-gap: \d+px; \}/.test(cssCode),
+    '--search-list-gap 定义在 body[data-nav="search"] 上（hero 与 #gw-list 共同的祖先 ——' +
+    '挂在 hero 上兄弟读不到，那条 var() 就一直是无效值）');
+  chk(!/\.search-hero \{[^}]*--search-list-gap:\s*\d+px/.test(cssCode),
+    'hero 自己不再另定义一份 --search-list-gap（一处一值，两处就是「改一处留一处」）');
+  const pinToolbarBlock = (/body\[data-nav="search"\] \.search-hero\.search-active \.search-toolbar,\s*\nbody\[data-nav="search"\] \.search-hero\.kb-open \.search-toolbar \{([^}]*)\}/.exec(cssCode) || ['', ''])[1];
+  chk(/margin-bottom:\s*0/.test(pinToolbarBlock),
+    '贴顶态把通版 .toolbar 的 margin-bottom 归零（框下那一段只由 --search-list-gap 出，' +
+    '留着就成了「12 + 14」两段缝）');
   const idleH = (/body\[data-nav="search"\] #gw-list \.empty\[data-empty="idle"\] \{([^}]*)\}/.exec(cssCode) || ['', ''])[1];
   const idlePx = Number((/height:\s*(\d+)px/.exec(idleH) || [0, 999])[1]);
   chk(idlePx <= 8,
@@ -688,10 +701,20 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(jsFocusCalls === 1,
     'js/search.js 里只剩一处 .focus()（敲 / 进搜索框那条），实际 ' + jsFocusCalls + ' 处');
 
-  chk(/var lifted = focused \|\| space > 0/.test(searchJs),
-    '贴顶 = 框里真的有焦点（或软键盘真的弹着）—— 不再把「有内容」算进去');
-  chk(!/hasKeyword\(\) \|\| lifted/.test(searchJs),
-    '没有「有内容就贴顶」的残留（那一条会让回填的上次关键词一进页就把框顶上去）');
+  // Issue #229（2026-09-20 这一轮）：用户报「候选下拉一收起，搜索结果和搜索框之间的
+  // 空白太大」，要「照搬今日搜索的设计与排版」。这一条就是原来那套三态的第②条
+  // 「有搜索内容 → 框停在页面顶部（失焦也不回去）」，被 Issue #163 连带作废过、
+  // 这一轮恢复。恢复的依据：当年作废它的理由是「回填的词一进页就把框顶上去，
+  // 接着把键盘也带出来」—— 而把键盘带出来的是当时那套 focusInput()（进页自动
+  // 聚焦），它已经撤了；现在贴顶只改框的位置、不碰焦点，键盘不会自己弹。
+  chk(/var lifted = focused \|\| space > 0 \|\| hasKeyword\(\)/.test(searchJs),
+    '贴顶 = 框里真的有焦点 / 软键盘真的弹着 / 框里有搜出来的内容（三态里的第②条已恢复）');
+  const searchJsBare = searchJs
+    .replace(/\/\*[\s\S]*?\*\//g, ' ')
+    .replace(/^\s*\/\/.*$/gm, ' ');
+  chk(!/focusInput|autofocus/i.test(searchJsBare),
+    '没有任何「进页自动聚焦」的残留（恢复「有内容就贴顶」的前提就是它已经不在 ——' +
+    '否则回填的词一进页就把键盘带出来，正是 Issue #163 当初作废第②条的原因）');
 
   chk(/readKeyword/.test(searchJs) && /noteKeyword/.test(searchJs) &&
     /onLiftLost/.test(searchJs),

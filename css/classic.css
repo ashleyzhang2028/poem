@@ -907,7 +907,7 @@ body.reader-open .dock { display: none; }
   --hero-input-h: 52px;
   --hero-box-h: 52px;
 
-  --hero-top: var(--search-list-gap, 12px);
+  --hero-top: var(--search-list-gap);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -949,9 +949,23 @@ body.reader-open .dock { display: none; }
 
 .search-hero .search-wrap { transform: translateY(-2px); }
 
-body[data-nav="search"] #gw-list { padding-top: var(--search-list-gap, 12px); }
+/* 「框 → 结果列表」那一段间隔，框上框下共用这一个数：
+   框上走 --hero-top（贴顶态）、框下走 #gw-list 的 padding-top，两者都读它。
+
+   ⚠️ 这个变量要挂在**两者共同的祖先**上。原先它只写在 .search-hero 上（还带着
+   12px 的兜底），而 #gw-list 是 hero 的**兄弟**不是后代 —— 自定义属性只沿树往下
+   继承，兄弟之间传不过去，所以 #gw-list 那条 `var(--search-list-gap)` 一直是
+   **无效值**（padding-top 落成 0），框下那 12px 是通版 .toolbar 的 margin-bottom
+   凑出来的。看着「差不多」，实际是两个数在各自出缝。
+   2026-09-20 这一轮把来源收到一处：值定义在 body 上，两个用它的人都读得到。
+
+   14px 与首页今日背诵页那一条（--block-gap）同值 —— 用户 2026-09-20 要的是
+   「照搬今日搜索的设计与排版」，那一条就是「框与列表之间一格块距」。 */
+body[data-nav="search"] { --search-list-gap: 14px; }
+
+body[data-nav="search"] #gw-list { padding-top: var(--search-list-gap); }
 body[data-nav="search"] .search-hero.search-active ~ #gw-list,
-body[data-nav="search"] .search-hero.kb-open ~ #gw-list { padding-top: var(--search-list-gap, 12px); }
+body[data-nav="search"] .search-hero.kb-open ~ #gw-list { padding-top: var(--search-list-gap); }
 
 /* 搜索页的结果行：有些带 gradeGroup（课内那几首，落进 .group-card），
    有些不带（唐诗 / 宋词等，直接排在 .list 上）。两处的**按钮间距必须一样**，
@@ -1090,6 +1104,12 @@ body[data-nav="search"] .search-hero.kb-open .search-toolbar {
   width: auto;
 
   z-index: 30;
+
+  /* 通版 .toolbar 自带 margin-bottom: 12px（那是「工具条 → 下面一块」的块距）。
+     贴顶态下这一条由 #gw-list 的 padding-top（--search-list-gap）出，
+     两处都留着就成了「12 + 14」——看着是两段缝、改一处也改不干净。
+     所以这里把它归零：框到列表之间只有一个来源。 */
+  margin-bottom: 0;
 }
 
 @media screen and (max-width: 700px) {

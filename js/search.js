@@ -287,7 +287,17 @@
     var focused = !!input && document.activeElement === input;
     var space = keyboardSpace();
 
-    var lifted = focused || space > 0;
+    // 「贴顶」= 框里真的有焦点 / 软键盘真的弹着 / 框里有搜出来的内容。
+    // 最后那一条是 Issue #229 这一轮补回来的：候选下拉一收起（失焦了），框就
+    // 飘回页面正中，而结果列表还在页面下方 —— 中间空出两百多像素（用户原话
+    // 「搜索结果下拉框和搜索框之间的空白太大」）。原来的三态里本来就有这一条
+    // （「有搜索内容 → 框停在页面顶部，失焦也不回去」），是 Issue #163 连带
+    // 作废的；那时作废的理由是「回填的词一进页就把框顶上去，接着把键盘也带
+    // 出来」—— 而**把键盘带出来的是当时那套 focusInput()（进页自动聚焦），
+    // 它已经撤了**。现在贴顶只改框的位置，不碰焦点，键盘不会自己弹。
+    // 于是这一页与今日背诵页的手感一致：框在上、结果紧贴框下，中间不留空。
+    // 清了内容且没有焦点 → 仍然回到页面中心（仍是「打开就是来搜的」那一页）。
+    var lifted = focused || space > 0 || hasKeyword();
     setLift(lifted, onLiftLost);
     try {
       hero.classList.toggle("search-active", lifted);
