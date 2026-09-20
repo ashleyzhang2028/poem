@@ -1,11 +1,11 @@
-// 乐府集（精选 100 首）—— 课外阅读的第二部集子（Issue #244）。
+// 乐府集（精选 103 首）—— 课外阅读的第二部集子（Issue #244）。
 //
 // 一句话说清这一部与其余七部的不同：它是**一个体制**（乐府）跨汉魏、南朝、
 // 唐、五代的选本，所以目录按**时代次第**分卷（卷一 汉魏 → 卷二 南朝 →
 // 卷三 唐代 → 卷四 唐五代 → 卷五 乐府歌辞），而不是按体裁或词牌。
 //
 // 这一层守四件事：
-//   ① 一百首齐备、字段齐全、分组落在这五卷里；
+//   ① 一百零三首齐备、字段齐全、分组落在这五卷里；
 //   ② 与课内 / 唐诗重篇的那几十首走同一条判重与正文收归的路（作品主表里合并、
 //      正文只在存储主表落一份）—— 乐府集自己不留第二份正文；
 //   ③ 集子页能读、能搜、能分组，正文由 textRef 取回；
@@ -33,8 +33,8 @@ loadData(sandbox, ['data/poems-1.js', 'data/poems-2.js', 'data/poems-3.js', 'dat
 
 console.log('=== 一、一百首：数量、id、字段、分组 ===');
 const YF = resolve(sandbox, sandbox.POEMS_YUEFU, 'yuefu');
-chk(Array.isArray(YF) && YF.length === 100,
-  '乐府集精选 100 首（实际 ' + (YF ? YF.length : 'undefined') + '）');
+chk(Array.isArray(YF) && YF.length === 103,
+  '乐府集精选 103 首（实际 ' + (YF ? YF.length : 'undefined') + '）');
 
 const ids = new Set();
 let dup = 0;
@@ -64,7 +64,7 @@ chk(GROUPS.every(g => haveGroups.has(g)) && haveGroups.size === GROUPS.length,
 
 const groups = sandbox.getYuefuGroups();
 chk(groups.length === GROUPS.length, '按卷聚合出 ' + groups.length + ' 组（实际 ' + groups.length + '）');
-chk(groups.reduce((n, g) => n + g.items.length, 0) === 100, '各组篇目合计 100');
+chk(groups.reduce((n, g) => n + g.items.length, 0) === 103, '各组篇目合计 103');
 
 const ysrc = read('js/yuefu.js');
 const listed = JSON.parse('[' + ysrc.match(/var GROUP_ORDER = window\.YUEFU_GROUP_ORDER = \[([\s\S]*?)\];/)[1].replace(/,\s*$/, '') + ']');
@@ -74,7 +74,8 @@ chk(listed.join('/') === GROUPS.join('/'),
   '卷次顺序就是面板上的呈现顺序：汉魏 → 南朝 → 唐代 → 唐五代 → 乐府歌辞');
 
 console.log('\n=== 二、名篇齐备、正文对得上篇名 ===');
-const NEED = ['木兰诗', '敕勒歌', '西洲曲', '陌上桑', '十五从军征', '长歌行', '上邪',
+const NEED = ['孔雀东南飞', '有所思', '迢迢牵牛星',
+  '木兰诗', '敕勒歌', '西洲曲', '陌上桑', '十五从军征', '长歌行', '上邪',
   '饮马长城窟行', '观沧海', '龟虽寿', '短歌行', '燕歌行', '白马篇', '七哀诗', '胡笳十八拍·其一',
   '子夜歌·其一', '子夜四时歌·春歌', '读曲歌', '华山畿', '莫愁乐', '折杨柳歌辞', '陇头歌辞',
   '春江花月夜', '蜀道难', '将进酒', '行路难', '长相思', '关山月', '长干行', '塞下曲',
@@ -89,6 +90,7 @@ const missing = NEED.filter(t => titles.indexOf(t) < 0);
 chk(missing.length === 0, '选本名篇齐备（缺 ' + (missing.join('/') || '无') + '）');
 
 const OPENINGS = {
+  '孔雀东南飞': '序曰', '有所思': '有所思', '迢迢牵牛星': '迢迢牵牛星',
   '木兰诗': '唧唧复唧唧', '敕勒歌': '敕勒川，阴山下', '西洲曲': '忆梅下西洲',
   '陌上桑': '日出东南隅', '十五从军征': '十五从军征', '长歌行': '青青园中葵',
   '上邪': '上邪', '观沧海': '东临碣石', '龟虽寿': '神龟虽寿', '短歌行': '对酒当歌',
@@ -113,7 +115,7 @@ chk(badOpening.length === 0,
 console.log('\n=== 三、与课内 / 其余集子重篇：走同一条判重与正文收归的路 ===');
 const IDX = sandbox.SITE_INDEX;
 const yfIdx = IDX.filter(x => x.book === 'yuefu' && !x.isBook);
-chk(yfIdx.length === 100, '总索引收了全部 100 首（实际 ' + yfIdx.length + '）');
+chk(yfIdx.length === 103, '总索引收了全部 103 首（实际 ' + yfIdx.length + '）');
 chk(yfIdx.every(x => x.text && x.translation), '进索引的每一首原文与译文齐备');
 chk(IDX.some(x => x.book === 'yuefu' && x.isBook),
   '「乐府集」本身也作为一条结果（搜集子名能直接进那一页）');
@@ -150,8 +152,8 @@ chk(sandbox.TEXT_MASTER.some(m => m.entries.indexOf('yuefu-yf-1') >= 0),
 const MASTER = sandbox.TEXT_MASTER;
 const yfEntries = [];
 MASTER.forEach(m => (m.entries || []).forEach(e => { if (e.indexOf('yuefu-') === 0) yfEntries.push(e); }));
-chk(yfEntries.length === 100, '存储主表收齐乐府集 100 条（实际 ' + yfEntries.length + '）');
-chk(new Set(yfEntries).size === 100, '主表里没有重复登记同一条乐府条目');
+chk(yfEntries.length === 103, '存储主表收齐乐府集 103 条（实际 ' + yfEntries.length + '）');
+chk(new Set(yfEntries).size === 103, '主表里没有重复登记同一条乐府条目');
 
 const inline = [];
 read('data/poems-yuefu.js').split(/\n(?=\s*\{)/).forEach(blk => {
@@ -212,7 +214,7 @@ setTimeout(() => {
 
   chk(!!w.ReaderEngine, '阅读库引擎已加载');
   const items = d.querySelectorAll('#gw-list .item');
-  chk(items.length === 100, '列表渲染出 100 条（实际 ' + items.length + '）');
+  chk(items.length === 103, '列表渲染出 103 条（实际 ' + items.length + '）');
   chk(/乐府集/.test(d.body.textContent), '页面出现「乐府集」');
   chk(/卷一 汉魏乐府/.test(d.body.textContent), '卷名「卷一 汉魏乐府」渲染到了页面上');
   chk(/卷五 乐府歌辞/.test(d.body.textContent), '卷名「卷五 乐府歌辞」渲染到了页面上');
@@ -235,14 +237,14 @@ setTimeout(() => {
 
     api.setKeyword('曹操');
     const nCao = d.querySelectorAll('#gw-list .item').length;
-    chk(nCao > 0 && nCao < 100, '按作者「曹操」搜索得到子集（' + nCao + ' 首）');
+    chk(nCao > 0 && nCao < 103, '按作者「曹操」搜索得到子集（' + nCao + ' 首）');
 
     api.setKeyword('木兰');
     chk(d.querySelectorAll('#gw-list .item').length === 1,
       '搜「木兰」只出《木兰诗》一条');
     api.setKeyword('');
 
-    chk(d.querySelectorAll('#gw-list .item').length === 100, '清空关键词后回到 100 条');
+    chk(d.querySelectorAll('#gw-list .item').length === 103, '清空关键词后回到 103 条');
   }
 
   chk(Object.keys(w.localStorage).filter(k => /read_v1/.test(k)).length === 0,

@@ -2,7 +2,7 @@
    同篇对照表（主表裁定规则的静态成果）
    --------------------------------------------------------------------------
    由 scripts/build-works-map.js 离线算出：**正文（去标点后）一致 = 同一篇作品**。
-   只登记「在两部及以上集子里重复出现」的那些作品（共 117 组），
+   只登记「在两部及以上集子里重复出现」的那些作品（共 118 组），
    单条的作品不必登记 —— 它本来就只出现一次，条目 id 自己就是作品 id。
 
    ⚠️ 这是**生成文件**，改动请改 scripts/build-works-map.js 后重跑，
@@ -139,6 +139,7 @@ window.WORKS_GROUPS = [
   { wid: "w-poems-xx6-03", title: "西江月·夜行黄沙道中", titles: ["西江月·夜行黄沙道中"], entries: ["poems-xx6-03","songci-sc-286"] },
   { wid: "w-poems-xx6-07", title: "回乡偶书", titles: ["回乡偶书","回乡偶书·其一"], entries: ["poems-xx6-07","tangshi-ts-251"] },
   { wid: "w-poems-xx6-08", title: "寒食", titles: ["寒食"], entries: ["poems-xx6-08","tangshi-ts-265"] },
+  { wid: "w-poems-xx6-09", title: "迢迢牵牛星", titles: ["迢迢牵牛星"], entries: ["poems-xx6-09","yuefu-yf-103"] },
   { wid: "w-poems-xx6-14", title: "清平乐·春归何处", titles: ["清平乐·春归何处","清平乐"], entries: ["poems-xx6-14","songci-sc-80"] },
   { wid: "w-poems-xx6-17", title: "过故人庄", titles: ["过故人庄"], entries: ["poems-xx6-17","tangshi-ts-132"] },
   { wid: "w-poems-xx6-18", title: "七律·长征", titles: ["七律·长征"], entries: ["poems-xx6-18","jinxiandai-jxd-05"] },

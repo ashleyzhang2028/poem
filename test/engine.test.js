@@ -160,7 +160,7 @@ setTimeout(() => {
     ['guwen/index.html', '/guwen/', '韩愈', 167],
     ['zhaoming/index.html', '/zhaoming/', '陶渊明', 480],
     ['yuanqu/index.html', '/yuanqu/', '马致远', 30],
-    ['yuefu/index.html', '/yuefu/', '木兰', 100],
+    ['yuefu/index.html', '/yuefu/', '木兰', 103],
     ['jinxiandai/index.html', '/jinxiandai/', '毛泽东', 24],
     ['poems/index.html', '/poems/', '静夜思', 251]
   ];

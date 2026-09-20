@@ -119,8 +119,8 @@ chk(WI.same('poems-gz10-05', 'tangshi-ts-190'), '《登高》课内与唐诗三�
 chk(WI.same('poems-gz10-07', 'songci-sc-67'), '《念奴娇·赤壁怀古》课内与宋词三百首仍判为同一篇');
 chk(WI.same('poems-gz10-08', 'songci-sc-183'), '《永遇乐·京口北固亭怀古》课内与宋词三百首仍判为同一篇');
 
-chk(sb.WORKS_GROUPS.length === 117,
-  '同篇对照表 117 组（乐府集收进来的一批重篇 + main 长文补全带来的同篇，Issue #244）（实际 ' +
+chk(sb.WORKS_GROUPS.length === 118,
+  '同篇对照表 118 组（乐府集收进来的一批重篇 + main 长文补全带来的同篇，Issue #244）（实际 ' +
 
   sb.WORKS_GROUPS.length + '）');
 

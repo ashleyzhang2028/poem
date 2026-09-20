@@ -999,6 +999,36 @@ window.POEMS_YUEFU = [
     gradeGroup: "卷二 南朝乐府",
     excerpt: "今夕已欢别，合会在何时？",
   },
+  {
+    textRef: "yuefu-yf-101",
+    id: "yf-101",
+    title: "孔雀东南飞",
+    source: "《乐府诗集》",
+    dynasty: "东汉",
+    author: "佚名",
+    gradeGroup: "卷一 汉魏乐府",
+    excerpt: "孔雀东南飞，五里一徘徊。",
+  },
+  {
+    textRef: "yuefu-yf-102",
+    id: "yf-102",
+    title: "有所思",
+    source: "《乐府诗集》",
+    dynasty: "汉",
+    author: "佚名",
+    gradeGroup: "卷一 汉魏乐府",
+    excerpt: "有所思，乃在大海南。",
+  },
+  {
+    textRef: "poems-xx6-09",
+    id: "yf-103",
+    title: "迢迢牵牛星",
+    source: "《文选·古诗十九首》",
+    dynasty: "汉",
+    author: "佚名",
+    gradeGroup: "卷一 汉魏乐府",
+    excerpt: "迢迢牵牛星，皎皎河汉女。",
+  },
 ];
 
 (function () {
