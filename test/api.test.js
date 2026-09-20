@@ -21,7 +21,9 @@ function boot(envVars) {
 
     "TURNSTILE_ENABLED", "TURNSTILE_SITE_KEY", "TURNSTILE_SECRET_KEY", "TURNSTILE_BYPASS",
 
-    "SUPABASE_AVATAR_BUCKET", "AVATAR_MAX_BYTES"
+    "SUPABASE_AVATAR_BUCKET", "AVATAR_MAX_BYTES",
+
+    "OWNER_EMAILS"
   ];
   keys.forEach(k => { saved[k] = process.env[k]; });
 
@@ -1378,8 +1380,8 @@ async function main() {
       ["root", "", null].forEach(r => {
         chk(!core.isAdminRole(r), "服务端对不认识的角色 " + JSON.stringify(r) + " 一律不放行（无兜底）");
       });
-      chk(E.isOwner(null, { role: "root" }) === true,
-        "客户端遇到不认识的角色时退回本机兜底（那是它本来就有的行为，不是 bug）");
+      chk(E.isOwner(null, { role: "root" }) === false,
+        "客户端对不认识的角色一律不放行（Issue #276 之后连本机兜底也删了 —— 两边同一个答案）");
     }
 
     boot({ ALLOW_CODE_ECHO: "1" });
@@ -2086,6 +2088,8 @@ async function main() {
     const bindSrc = fs.readFileSync(path.join(ROOT, "js/account-api.js"), "utf8");
     chk(/resendVerification:\s*resendVerification/.test(bindSrc), "account-api 接了 resendVerification");
     chk(/adminAccounts:\s*adminAccounts/.test(bindSrc), "account-api 接了 adminAccounts");
+    chk(/adminSetRole:\s*adminSetRole/.test(bindSrc), "account-api 接了 adminSetRole（改角色那条线）");
+    chk(/setRole:\s*function/.test(apiSrc), "js/auth-api.js 接了 setRole()（少一条就是按钮点了没反应）");
 
     const swSrc = fs.readFileSync(path.join(ROOT, "sw.js"), "utf8");
     ["./verify/", "./reset/", "./js/verify.js", "./js/reset.js", "./js/login.js"].forEach(f => {
@@ -2596,6 +2600,133 @@ async function main() {
     } finally { await sv2.close(); }
   }
 
+  console.log("\n=== 第廿六节、管理员角色（Issue #276）：数据库是唯一权威 ===");
+  {
+    // 用户原话：「管理员页面只允许 belem@163.com 登录的邮箱访问（目前），
+    // 未登录用户以及其他登录账户一律不允许访问。或者告诉我怎么在数据库
+    // 设置管理员权限。……free, pro, max 登录用户的角色怎么设置，是要在
+    // admin 页面加一个已登录用户列表，然后 belem@163.com 可以更改他们的 role 吗？」
+    //
+    // 这一节守三件事：
+    //   ① `OWNER_EMAILS` 里的邮箱在**登录链路**里被认成 owner（写进 accounts.role）；
+    //   ② 不在名单里的人**一个角色都不许有**（尤其不能是 owner）；
+    //   ③ `/api/admin/role` 只有 owner 调得动，目标值只认 user / admin，
+    //      改不了自己、也改不了种子主人。
+    boot({ ALLOW_CODE_ECHO: "1", OWNER_EMAILS: "boss@example.com" });
+    const sv = await serve();
+    try {
+      const POST = (p, b, cookie) => call(sv.base, "POST", p, b, cookie);
+
+      // ① 名额在外的那一位：注册 → 确认 → 登录 → 已经是 owner
+      const boss = await loginByHttpDetailed(POST, "boss@example.com");
+      eq(boss.register.body.created, true, "（前置）boss 注册建号成功");
+      const cBoss = boss.cookie;
+      chk(!!cBoss, "（前置）boss 拿到会话");
+
+      const storeM = require("../api/_lib/store.js").getStore(require("../api/_lib/config.js"));
+      const rows = () => Object.keys(storeM._db.accounts).map(k => storeM._db.accounts[k]);
+      eq(rows().filter(a => a.email === "boss@example.com")[0].role, "owner",
+        "① 登录链路把 OWNER_EMAILS 里的人认成了 owner（写进数据库那一列）");
+
+      // ② 不在名单里的人
+      const kid = await loginByHttpDetailed(POST, "kid@example.com");
+      const cKid = kid.cookie;
+      eq(rows().filter(a => a.email === "kid@example.com")[0].role, "user",
+        "② 不在名单里的人是 user（没有「谁先注册谁是主人」这条兜底）");
+
+      // /api/me 如实下发角色
+      const meKid = await call(sv.base, "GET", "/api/me", undefined, cKid);
+      eq(meKid.body.role, "user", "/api/me 如实下发 role:user");
+      const meBoss = await call(sv.base, "GET", "/api/me", undefined, cBoss);
+      eq(meBoss.body.role, "owner", "/api/me 如实下发 role:owner");
+
+      // ③ 改角色
+      const kidUid = rows().filter(a => a.email === "kid@example.com")[0].uid;
+      const bossUid = rows().filter(a => a.email === "boss@example.com")[0].uid;
+
+      const anon = await POST("/api/admin/role", { uid: kidUid, role: "admin" });
+      eq(anon.status, 401, "没会话时改角色回 401");
+
+      const asKid = await POST("/api/admin/role", { uid: kidUid, role: "admin" }, cKid);
+      eq(asKid.status, 403, "**普通用户**改角色回 403（角色闸在服务端，不经界面）");
+      eq(asKid.body.code, "E_FORBIDDEN", "码是 E_FORBIDDEN");
+
+      const selfDown = await POST("/api/admin/role", { uid: bossUid, role: "user" }, cBoss);
+      eq(selfDown.status, 400, "B 主人**改不了自己**（降自己 = 把自己关在门外，且没人能加回来）");
+      eq(selfDown.body.code, "E_SELF", "码是 E_SELF");
+
+      const toOwner = await POST("/api/admin/role", { uid: kidUid, role: "owner" }, cBoss);
+      eq(toOwner.status, 400, "owner 这个值**不许从这个口发**（它是凭据 + 名单级别的东西）");
+      eq(toOwner.body.code, "E_ROLE", "码是 E_ROLE");
+
+      const up = await POST("/api/admin/role", { uid: kidUid, role: "admin" }, cBoss);
+      eq(up.status, 200, "主人把 kid 提成 admin：200");
+      eq(up.body.changed, true, "如实回 changed:true");
+      eq(rows().filter(a => a.email === "kid@example.com")[0].role, "admin",
+        "**真的写进了数据库那一列**（不是只在响应里说说）");
+
+      // 提成 admin 之后：能进名录，但**不能授权**（这正是 owner 与 admin 的分界）
+      const kidList = await POST("/api/admin/accounts", {}, cKid);
+      eq(kidList.status, 200, "admin 能看账号名录");
+      const kidTryRole = await POST("/api/admin/role", { uid: kidUid, role: "user" }, cKid);
+      eq(kidTryRole.status, 403, "**admin 改不了角色**（能发层级、看名录、处理报告，但不能授权）");
+      chk(/owner/.test(kidTryRole.body.message), "文案说清这一条只对 owner 开放");
+
+      const kidTryBoss = await POST("/api/admin/role", { uid: bossUid, role: "user" }, cKid);
+      eq(kidTryBoss.status, 403, "admin 也动不了（根因仍是「不是 owner」，不是「改的是主人」）");
+
+      const down = await POST("/api/admin/role", { uid: kidUid, role: "user" }, cBoss);
+      eq(down.status, 200, "主人把 admin 降回 user：200");
+      eq(down.body.before, "admin", "如实回改之前是什么");
+      eq(rows().filter(a => a.email === "kid@example.com")[0].role, "user", "库里真的降回去了");
+
+      const bossLocked = await POST("/api/admin/role", { uid: bossUid, role: "user" }, cBoss);
+      eq(bossLocked.body.code, "E_SELF", "（前置）主人那一行由 E_SELF 挡住，走不到 E_OWNER_LOCKED");
+      // 换一个 owner 来试「改种子主人」：先给 kid 一个 owner 身份（模拟手改库 / 加进名单）
+      rows().filter(a => a.email === "kid@example.com")[0].role = "owner";
+      const tryMoveBoss = await POST("/api/admin/role", { uid: bossUid, role: "user" }, cKid);
+      eq(tryMoveBoss.status, 400, "另一个 owner 也改不了**种子主人**那一行");
+      eq(tryMoveBoss.body.code, "E_OWNER_LOCKED", "码是 E_OWNER_LOCKED（「换主人就改 OWNER_EMAILS」）");
+      rows().filter(a => a.email === "kid@example.com")[0].role = "user";
+
+      const ghost = await POST("/api/admin/role", { uid: "u_ghost", role: "admin" }, cBoss);
+      eq(ghost.status, 404, "改一个不存在的账号回 404（不假装改成了）");
+
+      const noUid = await POST("/api/admin/role", { role: "admin" }, cBoss);
+      eq(noUid.status, 400, "不给 uid 回 400");
+      eq(noUid.body.code, "E_UID", "码是 E_UID");
+
+      const g = await call(sv.base, "GET", "/api/admin/role", undefined);
+      eq(g.status, 405, "GET /api/admin/role 回 405（写接口不接受 GET）");
+    } finally { await sv.close(); }
+
+    // 不配 OWNER_EMAILS：**一个 owner 都没有**（不退回「谁打开谁是主人」）
+    boot({ ALLOW_CODE_ECHO: "1" });
+    const sv2 = await serve();
+    try {
+      const POST2 = (p, b, cookie) => call(sv2.base, "POST", p, b, cookie);
+      const nobody = await loginByHttpDetailed(POST2, "nobody@example.com");
+      const storeN = require("../api/_lib/store.js").getStore(require("../api/_lib/config.js"));
+      const row = Object.keys(storeN._db.accounts).map(k => storeN._db.accounts[k])
+        .filter(a => a.email === "nobody@example.com")[0];
+      eq(row.role, "user", "没配 OWNER_EMAILS 时谁也**不是** owner（如实：本站还没指定主人）");
+      const l = await POST2("/api/admin/accounts", {}, nobody.cookie);
+      eq(l.status, 403, "于是 /admin/ 那一族全都 403（关门，不是漏开）");
+    } finally { await sv2.close(); }
+
+    // 名单里大小写 / 空格不影响认人
+    boot({ ALLOW_CODE_ECHO: "1", OWNER_EMAILS: "  Boss@Example.com , other@x.com " });
+    const sv3 = await serve();
+    try {
+      const POST3 = (p, b, cookie) => call(sv3.base, "POST", p, b, cookie);
+      await loginByHttpDetailed(POST3, "boss@example.com");
+      const store3 = require("../api/_lib/store.js").getStore(require("../api/_lib/config.js"));
+      const r3 = Object.keys(store3._db.accounts).map(k => store3._db.accounts[k])
+        .filter(a => a.email === "boss@example.com")[0];
+      eq(r3.role, "owner", "名单里带空格 / 大小写也能认（归一化后比对）");
+    } finally { await sv3.close(); }
+  }
+
   fs.writeFileSync("/tmp/m205.txt", "REACHED-205\n");
   console.log("\n=== 末节、路由与函数数（Issue #205：Hobby 档 12 个函数上限） ===");
   {
@@ -2642,7 +2773,8 @@ async function main() {
       ["DELETE", "/api/account", 503],
       ["POST", "/api/avatar", 503],
       ["GET", "/api/family", 503],
-      ["POST", "/api/admin/accounts", 503]
+      ["POST", "/api/admin/accounts", 503],
+      ["POST", "/api/admin/role", 503]
     ].forEach(([m, p]) => {
       const hit = routesMod.resolve(m, p);
       chk(!!hit && hit.methodAllowed, m + " " + p + " 在路由表里（且方法认下来了）");

@@ -4,9 +4,14 @@
 })(typeof globalThis !== "undefined" ? globalThis : this, function () {
   "use strict";
 
+  // 本机只剩**一份**权益键（Issue #276）：`poem_plan_v1` 是**服务端答案的缓存**
+  // （离线也能按上一次的层级放行），不是「你在这儿登记自己是 Pro」。
+  // 原先那两份本机的都删了：
+  //   · `poem_plan_grant_v1` —— 「本机发放名单」，要对方自己导入才生效、
+  //     且对方改一行存储就能改。用户裁「走数据库的全部走数据库」，它整个下线。
+  //   · `poem_owner_v1` —— 「谁打开谁是主人」的本机兜底，正是本轮要拆的东西：
+  //     清一次浏览器存储就能当管理员的所谓权限，不是权限。
   var NS = "poem_plan_v1";
-  var GRANT_NS = "poem_plan_grant_v1";
-  var OWNER_NS = "poem_owner_v1";
 
   var TIERS = ["free", "pro", "max"];
 
@@ -74,108 +79,29 @@
   function isTier(t) { return TIERS.indexOf(t) >= 0; }
   function isRole(r) { return ROLES.indexOf(r) >= 0; }
 
-  function emptyGrants() { return { v: 1, grants: [] }; }
-
-  function readGrants(backing) {
-    if (!backing) return emptyGrants();
-    var text = null;
-    try { text = backing.getItem(GRANT_NS); } catch (e) { return emptyGrants(); }
-    if (!text) return emptyGrants();
-    var o = null;
-    try { o = JSON.parse(text); } catch (e) { return emptyGrants(); }
-    if (!o || typeof o !== "object" || !Array.isArray(o.grants)) return emptyGrants();
-    return o;
-  }
-
-  function writeGrants(backing, data) {
-    if (!backing) return false;
-    try { backing.setItem(GRANT_NS, JSON.stringify(data || emptyGrants())); return true; }
-    catch (e) { return false; }
-  }
-
-  function normGrant(g) {
-    if (!g || typeof g !== "object") return null;
-    var mask = String(g.emailMask == null ? "" : g.emailMask).trim().toLowerCase();
-    if (!mask || !isTier(g.tier)) return null;
-    var until = g.until == null ? null : Number(g.until);
-    if (until !== null && !isFinite(until)) until = null;
-    return {
-      emailMask: mask, tier: g.tier, until: until,
-      by: String(g.by || "").slice(0, 24),
-      at: Number(g.at) || 0,
-      note: String(g.note == null ? "" : g.note).slice(0, 60)
-    };
-  }
-
-  function putGrant(backing, grant) {
-    var g = normGrant(grant);
-    if (!g) return { ok: false, code: "E_GRANT", message: "发放记录不完整：需要邮箱掩码与层级" };
-    var data = readGrants(backing);
-    data.grants = data.grants
-      .map(normGrant)
-      .filter(function (x) { return x && x.emailMask !== g.emailMask; });
-    data.grants.push(g);
-    writeGrants(backing, data);
-    return { ok: true, grant: g };
-  }
-
-  function removeGrant(backing, mask) {
-    var m = String(mask == null ? "" : mask).trim().toLowerCase();
-    var data = readGrants(backing);
-    var before = data.grants.length;
-    data.grants = data.grants.map(normGrant).filter(function (g) { return g && g.emailMask !== m; });
-    writeGrants(backing, data);
-    return { ok: true, removed: before - data.grants.length };
-  }
-
-  function clearGrants(backing) {
-    writeGrants(backing, emptyGrants());
-    return { ok: true };
-  }
-
-  function exportGrants(backing) {
-    return JSON.stringify(readGrants(backing), null, 2);
-  }
-
-  function importGrants(backing, text) {
-    var o = null;
-    try { o = JSON.parse(text); } catch (e) { return { ok: false, code: "E_JSON", message: "名单格式不正确" }; }
-    if (!o || typeof o !== "object" || !Array.isArray(o.grants)) {
-      return { ok: false, code: "E_JSON", message: "名单格式不正确" };
-    }
-    var clean = o.grants.map(normGrant).filter(Boolean);
-    writeGrants(backing, { v: 1, grants: clean });
-    return { ok: true, count: clean.length };
-  }
-
-  function grantFor(backing, mask, ts) {
-    var m = String(mask == null ? "" : mask).trim().toLowerCase();
-    if (!m) return null;
-    var t = typeof ts === "number" ? ts : Date.now();
-    var hit = readGrants(backing).grants
-      .map(normGrant)
-      .filter(function (g) { return g && g.emailMask === m; });
-    if (!hit.length) return null;
-    var g = hit[hit.length - 1];
-    if (g.until != null && g.until <= t) return null;
-    return g;
-  }
-
+  // 「谁能进管理后台」（Issue #276 重写）。
+  //
+  // 唯一权威是服务端下发到 `poem_plan_v1` 里的那个 `role`（源头是
+  // 数据库 `accounts.role` 那一列）。这一版**删掉了本机兜底** ——
+  // 老口径「没有标记 = 你是主人」让 `/admin/` 在没配服务端的机器上
+  // 对每个打开它的人都开着，那是个**假的**安全边界。
+  //
+  // 三条现在的口径：
+  //   · **有服务端答案就认它**：`role` 是 owner / admin 才放行。
+  //   · **没有服务端答案就不放行**（未登录 / 还没问到 / 服务端没配）——
+  //     于是 `/admin/` 会如实说「请先登录，本站管理员由数据库里的角色决定」。
+  //   · **不认识的角色一律 user**（与 `core.isAdminRole` 同源，有对拍断言）。
   function isOwner(backing, opt) {
     var opt2 = opt || {};
-
-    if (opt2.role && isRole(opt2.role)) return opt2.role === "owner" || opt2.role === "admin";
-    var b = backing || defaultBacking();
-    if (!b) return true;
-    var raw = null;
-    try { raw = b.getItem(OWNER_NS); } catch (e) { raw = null; }
-    return raw == null || raw === "" || raw === "owner";
+    if (opt2.role) return isAdminRole(opt2.role);
+    var plan = readPlan(backing || defaultBacking());
+    if (plan && plan.source === "server") return isAdminRole(plan.role);
+    return false;
   }
 
-  function markOwner(backing) {
-    var b = backing || defaultBacking();
-    if (!b) return { ok: false };
-    try { b.setItem(OWNER_NS, "owner"); return { ok: true }; } catch (e) { return { ok: false }; }
+  function isAdminRole(role) {
+    var r = String(role == null ? "" : role).trim().toLowerCase();
+    return r === "owner" || r === "admin";
   }
 
   function readPlan(backing) {
@@ -390,9 +316,9 @@
     var serverTier = readServerTier(backing);
     var serverRole = readServerRole(backing);
 
-    var role = isOwner(backing, serverRole ? { role: serverRole } : undefined)
-      ? (serverRole === "owner" || serverRole === "admin" ? serverRole : "owner")
-      : "user";
+    // 角色只从服务端来（Issue #276）：`serverRole` 是 `poem_plan_v1`
+    // 里那份服务端答案的 role 字段。没有它一律 user。
+    var role = isAdminRole(serverRole) ? String(serverRole).toLowerCase() : "user";
     if (authStore) {
       var s = null;
       try { s = authSession(authStore); } catch (e) { s = null; }
@@ -415,13 +341,12 @@
       }
     }
 
+    // 没有服务端那一份时退回本机缓存（离线也能按上次的层级放行），
+    // 但**本机不再有第二条写入口**（旧的管理页「模拟身份」已删）。
     var tier = readTier(backing);
 
     if (serverTier && tierIndex(serverTier) > tierIndex(tier)) tier = serverTier;
-    if (signedIn) {
-      var g = grantFor(backing, mask, t);
-      if (g && tierIndex(g.tier) > tierIndex(tier)) tier = g.tier;
-    }
+    void t;
     return finish(tier, signedIn, uid, mask, role,
       serverTier && tierIndex(serverTier) >= tierIndex(tier) ? "server" : "local");
   }
@@ -462,21 +387,17 @@
   function guestIdentity() { return finish("free", false, "", "", "user", "local"); }
 
   return {
-    NS: NS, GRANT_NS: GRANT_NS, OWNER_NS: OWNER_NS,
+    NS: NS,
     TIERS: TIERS, ROLES: ROLES, CAPS: CAPS, ALIAS: ALIAS,
     capNames: capNames, cap: cap, can: can, denyReason: denyReason,
     tierLabel: tierLabel, matrix: matrix, compare: compare, COLUMNS: COLUMNS,
     quotaFor: quotaFor, quotaText: quotaText, columnLabel: columnLabel,
     isTier: isTier, isRole: isRole,
     tierIndex: tierIndex,
-    emptyGrants: emptyGrants, readGrants: readGrants, writeGrants: writeGrants,
-    normGrant: normGrant, putGrant: putGrant, removeGrant: removeGrant,
-    clearGrants: clearGrants, exportGrants: exportGrants, importGrants: importGrants,
-    grantFor: grantFor,
     readTier: readTier, writeTier: writeTier, clearTier: clearTier,
     readPlan: readPlan, readServerTier: readServerTier,
     readServerRole: readServerRole, tierSource: tierSource,
-    isOwner: isOwner, markOwner: markOwner,
+    isOwner: isOwner, isAdminRole: isAdminRole,
     identity: identity, guestIdentity: guestIdentity, setAuthCore: setAuthCore,
     defaultBacking: defaultBacking
   };

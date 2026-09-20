@@ -1100,6 +1100,55 @@ thead .plans-th-cap {
 
 .account-hint.warn-hint { color: var(--red); }
 
+/* 角色徽章与「改角色」两颗小键（Issue #276）。
+   与层级徽章**长得刻意不一样**（层级是 .tier-badge 的圆角小药丸）：
+   角色是「身份」，用方一点的形状，免得两条正交的轴看起来像一件事。
+   —— 用户那句「free/pro/max 的角色」正是把它们当成一条轴的口误。 */
+.role-badge {
+  font-size: 11px;
+  line-height: 1;
+  padding: 4px 7px;
+  border-radius: 6px;
+  background: var(--card-2);
+  color: var(--ink-2);
+  border: 1px solid var(--line-2);
+  white-space: nowrap;
+}
+.role-badge.role-owner {
+  background: var(--green-light);
+  color: var(--green-dark);
+  border-color: var(--line);
+}
+
+.acct-role-acts {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+.acct-role-btn {
+  font: inherit;
+  font-size: 11.5px;
+  line-height: 1;
+  padding: 6px 9px;
+  border-radius: 8px;
+  border: 1px solid var(--line-2);
+  background: var(--card);
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.acct-role-btn.active {
+  background: var(--green-light);
+  color: var(--green-dark);
+  border-color: var(--line);
+}
+.acct-role-btn:disabled { opacity: .55; cursor: default; }
+
+@media (max-width: 560px) {
+  .acct-role-acts { width: 100%; }
+}
+
 @media (max-width: 420px) {
   .acct-row { flex-direction: column; gap: 6px; }
   .acct-tags { max-width: 100%; justify-content: flex-start; }

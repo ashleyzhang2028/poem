@@ -38,6 +38,15 @@ var ENTRY = [
     how: "Supabase → Project Settings → API → service_role（不是 anon）"
   },
   {
+    key: "OWNER_EMAILS",
+    level: "optional",
+    group: "管理员",
+    secret: false,
+    what: "管理员（owner）邮箱名单：**完整邮箱**，逗号或空格分隔（Issue #276）",
+    missing: "不填时**一个 owner 都没有** —— `/admin/` 对所有人关门并如实说「本站还没有管理员」。这不是坏掉，是「还没指定主人」",
+    how: "填你自己的完整邮箱（如 `belem@163.com`）。名单里的邮箱在注册 / 确认 / 登录时被认成 owner（写进 `accounts.role`）；之后改别人的角色在 `/admin/` 的账号名录里点，不必改环境变量 —— 环境变量只决定「谁是种子主人」"
+  },
+  {
     key: "SUPABASE_AVATAR_BUCKET",
     level: "optional",
     group: "头像存储",

@@ -78,23 +78,24 @@ async function main() {
     eq(E.can("feihualing", id.ctx).ok, false, "而 Max 的飞花令没跟着开（层级没被抬高）");
   }
 
-  console.log("\n=== 二、角色（role）也是服务端优先，本机兜底只在没有服务端答案时生效 ===");
+  console.log("\n=== 二、角色（role）**只**从服务端来（Issue #276：本机兜底已删）===");
   {
 
     const b1 = mem();
     const a1 = M.bind({ api: fakeApi({ me: { ok: true, plan: { tier: "free" }, role: "user" } }), E: E, A: A, backing: b1 });
     const { store: s1 } = signedInStore(b1);
-    eq(E.identity({ backing: b1, authStore: s1 }).role, "owner", "还没问服务端时：本机兜底判成 owner");
+    eq(E.identity({ backing: b1, authStore: s1 }).role, "user",
+      "还没问服务端时**不是** owner（老口径「谁打开谁是主人」已删）");
     await a1.refreshMe();
     eq(E.identity({ backing: b1, authStore: s1 }).role, "user",
-      "服务端说 role=user 时，本机那个「谁打开谁是主人」的兜底让位（否则清空存储就能当管理员）");
+      "服务端说 role=user 时是 user");
 
-    const b2 = mem({ [E.OWNER_NS]: "member" });
+    const b2 = mem({ poem_owner_v1: "member" });
     const a2 = M.bind({ api: fakeApi({ me: { ok: true, plan: { tier: "free" }, role: "owner" } }), E: E, A: A, backing: b2 });
     const { store: s2 } = signedInStore(b2);
-    eq(E.identity({ backing: b2, authStore: s2 }).role, "user", "本机标记 member 时是 user");
+    eq(E.identity({ backing: b2, authStore: s2 }).role, "user", "本机标记 `poem_owner_v1` 已经没人读了（一律 user）");
     await a2.refreshMe();
-    eq(E.identity({ backing: b2, authStore: s2 }).role, "owner", "服务端说 owner 时以服务端为准（两向都验）");
+    eq(E.identity({ backing: b2, authStore: s2 }).role, "owner", "服务端说 owner 时以服务端为准");
 
     const id = E.identity({ backing: b2, authStore: s2 });
     eq(id.role, "owner", "管理员身份成立");
@@ -144,8 +145,7 @@ async function main() {
   console.log("\n=== 六、会话过期（401）：清掉服务端那一份，但绝不碰本机名单与进度 ===");
   {
     const b = mem({ "poem_recite_progress_v1": JSON.stringify({ p1: { level: 3 } }) });
-    const { store, mask } = signedInStore(b);
-    E.putGrant(b, { emailMask: mask, tier: "pro" });
+    const { store } = signedInStore(b);
     const api = M.bind({ api: fakeApi({ me: { ok: true, plan: { tier: "pro", until: null }, role: "owner" } }), E: E, A: A, backing: b });
     await api.refreshMe();
     eq(E.readServerTier(b), "pro", "服务端那份先落下来了");
@@ -156,10 +156,10 @@ async function main() {
     eq(E.readServerTier(b), null, "服务端那一份被清掉了（否则退出的人还顶着 Pro 徽章）");
     eq(E.readTier(b), "free", "本机层级缓存**没有被顺手清掉**（它有自己的生命周期）");
     chk(!!b.getItem("poem_recite_progress_v1"), "进度键一个字节都没动");
-    chk(!b.getItem(E.OWNER_NS), "也没有顺手落一个 owner 标记");
+    chk(!b.getItem("poem_owner_v1"), "也没有顺手落一个 owner 标记（那个键已经没有了）");
   }
 
-  console.log("\n=== 七、只清服务端那一份：本机发放名单不许被退出登录抹掉 ===");
+  console.log("\n=== 七、只清服务端那一份：退出登录不碰本机那份缓存 ===");
   {
     const b = mem();
     E.writeTier(b, "free");
@@ -401,17 +401,16 @@ async function main() {
 
     {
       const b = mem();
-      const { store, mask } = signedInStore(b);
-      E.putGrant(b, { emailMask: mask, tier: "free" });
+      signedInStore(b);
+      E.writeTier(b, "free", null, { source: "server", role: "user" });
       const boom = { me: () => Promise.reject(new Error("down")), deleteAccount: () => Promise.reject(new Error("down")),
         grant: () => Promise.reject(new Error("down")), revoke: () => Promise.reject(new Error("down")), grants: () => Promise.reject(new Error("down")) };
       const api = M.bind({ api: boom, E: E, A: A, backing: b });
-      const r = await api.adminGrant({ emailMask: mask, tier: "max" });
+      const r = await api.adminGrant({ emailMask: "a***@qq.com", tier: "max" });
       eq(r.ok, false, "连不上时 ok:false");
       eq(r.reason, M.REASON.UNAVAILABLE, "reason 是 unavailable");
       chk(/没发出任何东西/.test(r.message), "文案说清「这一轮没发出任何东西」（不许让人以为发成了）");
-      eq(E.readGrants(b).grants.length, 1, "本机名单**一条都没多**（绝不拿本机那份顶替服务端那份）");
-      eq(E.readGrants(b).grants[0].tier, "free", "也没有被改（发放失败不该有任何副作用）");
+      eq(E.readTier(b), "free", "本机那份缓存**一个字都没被改**（发放失败不该有任何副作用）");
     }
 
     {
@@ -449,7 +448,7 @@ async function main() {
     }
   }
 
-  console.log("\n=== 十八、真页面：/admin/ 的发放真的打接口，两份名单分开渲染（jsdom） ===");
+  console.log("\n=== 十八、真页面：/admin/ 的发放与改角色真的打接口（jsdom） ===");
   {
     let JSDOM = null;
     try { JSDOM = require("jsdom").JSDOM; } catch (e) { JSDOM = null; }
@@ -464,15 +463,40 @@ async function main() {
       chk(!!w.AuthCore.session(w.AuthCore.makeStore(w.localStorage)), "用例里的登录建立成功");
 
       eq(doc.getElementById("server-card").hidden, false, "服务端那一块渲染出来了");
-      eq(doc.getElementById("list-card").hidden, false, "本机那一块也渲染出来了");
+      eq(doc.getElementById("accounts-card").hidden, false, "名录那一块也渲染出来了");
+      eq(!!doc.getElementById("list-card"), false, "「本机发放名单」那一卡已删（Issue #276：全走数据库）");
+      eq(!!doc.getElementById("sim-card"), false, "「模拟身份」那一卡已删（本机不再能自己改层级）");
       await sleep(60);
 
       const srv = doc.getElementById("server-list").textContent;
       chk(/s\*\*\*@qq\.com/.test(srv), "服务端名单渲染的是**接口回的**那条掩码（实际：" + srv.replace(/\s+/g, " ").slice(0, 80) + "）");
-      const local = doc.getElementById("grant-list").textContent;
-      chk(/l\*\*\*@qq\.com/.test(local), "本机名单渲染的是**本机存储**的那一条（两份分开）");
-      chk(!/s\*\*\*@qq\.com/.test(local), "本机那一块里**没有**服务端那条（两块不混）");
 
+      // 名录：角色一列 + 改角色两颗键
+      const accts = doc.getElementById("accounts-list").textContent;
+      chk(/belem@163\.com/.test(accts), "名录里给出了明文邮箱（管理员认人靠它）");
+      chk(/主人（种子）/.test(accts), "owner 那一行如实标出「种子」身份（不由这个口改）");
+
+      const kidRow = doc.querySelector('.acct-row[data-uid="u_kid"]');
+      chk(!!kidRow, "普通用户那一行在名录里");
+      const roleBtns = kidRow.querySelectorAll("button[data-set-role]");
+      eq(roleBtns.length, 2, "普通用户那一行有两颗角色键（普通用户 / 管理员）");
+      const ownerRow = doc.querySelector('.acct-row[data-uid="u_owner"]');
+      eq(ownerRow.querySelectorAll("button[data-set-role]").length, 0,
+        "种子主人那一行**没有**角色键（改不了自己 / 改不了名单里的人 —— 服务端也再拦一次）");
+
+      // 点「管理员」：真的打接口
+      const adminBtn = kidRow.querySelector('button[data-set-role="admin"]');
+      w.confirm = () => true;
+      adminBtn.click();
+      await sleep(60);
+      eq(page.calls.roleMethod, "POST", "「改角色」真的发了 POST");
+      eq(page.calls.roleUrl.indexOf("/api/admin/role") >= 0, true, "打的是 /api/admin/role");
+      eq(page.calls.roleBody.uid, "u_kid", "带上要改的那个 uid");
+      eq(page.calls.roleBody.role, "admin", "带上目标角色");
+      okLine(doc.getElementById("msg-accounts").textContent, "改角色的回执如实说出结果");
+      chk(/管理员/.test(kidRow.querySelector("[data-role-badge]").textContent), "那一行就地更新成管理员（不重拉整张表）");
+
+      // 发放层级照旧
       doc.getElementById("input-mask").value = "x***@qq.com";
       doc.getElementById("btn-grant").click();
       await sleep(60);
@@ -480,15 +504,7 @@ async function main() {
       eq(page.calls.grantUrl.indexOf("/api/admin/grant") >= 0, true, "打的是 /api/admin/grant");
       eq(page.calls.grantBody.tier, "pro", "带上默认档位 pro");
       eq(page.calls.grantBody.emailMask, "x***@qq.com", "带上填的掩码（表单读法只有一份）");
-      okLine(doc.getElementById("msg-grant").textContent, "发放成功的回执如实说出「已写进服务端」");
-
-      const before = page.calls.count;
-      doc.getElementById("input-mask").value = "y***@qq.com";
-      doc.getElementById("btn-grant-local").click();
-      await sleep(30);
-      eq(page.calls.count, before, "「只发到本机名单」**一个网络请求都不发**（它就是本地那条路）");
-      chk(/y\*\*\*@qq\.com/.test(doc.getElementById("grant-list").textContent),
-        "本机名单多了一条（那条路仍然是可用的降级）");
+      okLine(doc.getElementById("msg-grant").textContent, "发放成功的回执如实说出「已写进数据库」");
 
       const revokeBtn = doc.querySelector('#server-list button[data-revoke]');
       chk(!!revokeBtn, "服务端名单每行有一颗「收回」");
@@ -496,6 +512,26 @@ async function main() {
       await sleep(60);
       eq(page.calls.revokeMethod, "DELETE", "「收回」真的发了 DELETE");
       eq(page.calls.revokeUrl.indexOf("/api/admin/grant") >= 0, true, "打的是同一个地址");
+    }
+  }
+
+  console.log("\n=== 十八之二、真页面：没有服务端角色时 /admin/ 如实拒绝（Issue #276）===");
+  {
+    let JSDOM = null;
+    try { JSDOM = require("jsdom").JSDOM; } catch (e) { JSDOM = null; }
+    if (!JSDOM) {
+      console.log("(未安装 jsdom，跳过)");
+    } else {
+      const page = await bootAdminPage({ role: "user" });
+      const doc = page.doc;
+      eq(doc.getElementById("deny-card").hidden, false, "角色是 user 时画的是拒绝卡");
+      eq(doc.getElementById("grant-card").hidden, true, "发放那一块**没画**（非 owner 看不到任何发放信息）");
+      eq(doc.getElementById("accounts-card").hidden, true, "名录那一块也没画");
+      okLine(doc.getElementById("deny-lead").textContent, "拒绝卡上说清「只对管理员开放」与当前角色");
+
+      const page2 = await bootAdminPage({ signedOut: true });
+      eq(page2.doc.getElementById("deny-card").hidden, false, "未登录时也拒绝");
+      chk(/登录/.test(page2.doc.getElementById("deny-lead").textContent), "未登录那一档的文案指一条路：先去登录");
     }
   }
 
@@ -611,7 +647,8 @@ async function bootPage(rel, url, answers) {
   return { window: w, doc: w.document, calls: calls };
 }
 
-async function bootAdminPage() {
+async function bootAdminPage(opts) {
+  opts = opts || {};
   const JSDOM = require("jsdom").JSDOM;
   const html = read("admin/index.html");
   const dom = new JSDOM(html, { url: "https://kuibu.app/admin/", runScripts: "outside-only", pretendToBeVisual: true });
@@ -620,6 +657,7 @@ async function bootAdminPage() {
     count: 0, me: 0,
     grantMethod: null, grantUrl: null, grantBody: null,
     revokeMethod: null, revokeUrl: null,
+    roleMethod: null, roleUrl: null, roleBody: null,
     listMethod: null
   };
 
@@ -634,6 +672,27 @@ async function bootAdminPage() {
     if (url.indexOf("/api/admin/grants") >= 0) {
       calls.listMethod = m;
       return Promise.resolve(jsonRes(200, { grants: [{ emailMask: "s***@qq.com", tier: "pro", until: null }], store: "memory" }));
+    }
+    if (url.indexOf("/api/admin/accounts") >= 0) {
+      calls.accountsMethod = m;
+      return Promise.resolve(jsonRes(200, {
+        total: 2, store: "memory", accounts: [
+          { uid: "u_owner", email: "belem@163.com", emailMask: "b***@163.com", nickname: "主人",
+            tier: "max", role: "owner", status: "active", emailVerified: true, hasPassword: true,
+            createdAt: 1, lastLoginAt: 2 },
+          { uid: "u_kid", email: "kid@example.com", emailMask: "k***@example.com", nickname: "",
+            tier: "free", role: "user", status: "active", emailVerified: true, hasPassword: true,
+            createdAt: 3, lastLoginAt: 4 }
+        ]
+      }));
+    }
+    if (url.indexOf("/api/admin/role") >= 0) {
+      const body = init && init.body ? JSON.parse(init.body) : {};
+      calls.roleMethod = m; calls.roleUrl = url; calls.roleBody = body;
+      return Promise.resolve(jsonRes(200, {
+        uid: body.uid, role: body.role, before: "user", changed: true,
+        emailMask: "k***@example.com", note: "已写进数据库"
+      }));
     }
     if (url.indexOf("/api/admin/grant") >= 0) {
       const body = init && init.body ? JSON.parse(init.body) : {};
@@ -657,9 +716,13 @@ async function bootAdminPage() {
   if (w.Entitlement && w.Entitlement.setAuthCore) w.Entitlement.setAuthCore(w.AuthCore);
 
   if (w.Entitlement) {
-    w.Entitlement.putGrant(w.localStorage, { emailMask: "l***@qq.com", tier: "pro" });
+    // 服务端答案的缓存（Issue #276：本机发放名单已下线，这里是「上一次问到的」那份）。
+    // 角色写 owner —— 否则新版 /admin/ 会如实拒绝（本机兜底已删）。
+    if (!opts.signedOut) {
+      w.Entitlement.writeTier(w.localStorage, "free", null, { source: "server", role: opts.role || "owner" });
+    }
   }
-  if (w.AuthCore) {
+  if (w.AuthCore && !opts.signedOut) {
     const store = w.AuthCore.makeStore(w.localStorage);
     const r = w.AuthCore.requestCode(store, { channel: "email", value: "zhangmin@163.com" }, "login", { code: "246810" });
     w.AuthCore.verifyCode(store, r.codeId, "246810", "login");

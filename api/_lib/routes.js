@@ -19,6 +19,7 @@ var ROUTES = {
   "DELETE /admin/grant": "./../_routes/admin/grant.js",
   "POST /admin/grants": "./../_routes/admin/grants.js",
   "POST /admin/accounts": "./../_routes/admin/accounts.js",
+  "POST /admin/role": "./../_routes/admin/role.js",
   "POST /admin/reports": "./../_routes/admin/reports.js",
 
   "GET /report": "./../_routes/report/index.js",

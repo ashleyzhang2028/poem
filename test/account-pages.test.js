@@ -116,10 +116,14 @@ const LOGIN = strip(loginJs), MINE = strip(mineJs), ADMIN = strip(adminJs);
   chk(/Ent\.tierLabel\(/.test(MINE) && /Ent\.tierLabel\(/.test(ADMIN),
     '层级徽章文案一律由 Entitlement.tierLabel() 出');
   chk(/Ent\.TIERS/.test(ADMIN), '可发放的层级列表读 Entitlement.TIERS（不自己写死一份）');
-  chk(/putGrant\(backing/.test(ADMIN) && /readGrants\(backing\)/.test(ADMIN) &&
-      /removeGrant\(backing/.test(ADMIN) && /clearGrants\(backing\)/.test(ADMIN),
-    '名单的增 / 查 / 删 / 清一律走 Entitlement 的发放接口');
-  chk(!/poem_plan_grant_v1/.test(ADMIN), 'admin 页不自己拼发放名单的键名（键名只在 entitlement.js 里）');
+  // Issue #276：本机发放名单整族下线 —— 管理页只发到服务端，本机不再有第二份。
+  chk(!/putGrant|readGrants|removeGrant|clearGrants|importGrants|exportGrants/.test(ADMIN),
+    '本机发放名单那一族调用已从管理页删干净（全走数据库）');
+  chk(!/poem_plan_grant_v1|poem_owner_v1/.test(ADMIN + MINE),
+    '管理页与「我的」页都不碰那两个已删除的本机键名');
+  chk(/adminSetRole/.test(ADMIN) && /data-set-role/.test(ADMIN),
+    '改角色走 adminSetRole()（服务端那条线），不是本机自己写 role');
+  chk(/adminAccounts/.test(ADMIN), '名录走 adminAccounts()（角色一列从那儿来）');
   chk(!/poem_plan_v1/.test(MINE + ADMIN + LOGIN),
     '账号这几页都不自己碰层级存储键（只在 entitlement.js 里）');
 }
@@ -182,43 +186,39 @@ const LOGIN = strip(loginJs), MINE = strip(mineJs), ADMIN = strip(adminJs);
 
 {
 
-  chk(/改一行存储就能改|它不是权威/.test(SRC.admin),
-    '管理后台如实写明本机分层的局限（对方改一行存储就能改 / 它不是权威）');
-
   const adminVisible = stripHtml(SRC.admin);
   chk(!/没有服务器|本期没有服务端/.test(adminVisible),
     '管理后台不再宣称「本期没有服务端」（服务端 1 期已接通，见 2.1）');
-  chk(/要对方自己导入|对方自己导入|名单导入导出/.test(SRC.admin + ADMIN),
-    '管理后台如实写明「发的是本机名单，要对方自己导入」这层局限');
   chk(/deny-card/.test(SRC.admin) && /isOwner/.test(ADMIN),
     '非管理员有明确的拒绝界面（不是白页、也不是 403 跳走）');
-  chk(/hide\(\$\("grant-card"\)\)|show\(\$\("grant-card"\)\)/.test(ADMIN),
+  chk(/show\(\$\("grant-card"\)\)/.test(ADMIN),
     '管理后台按权限决定各块渲染（非 owner 不画发放区）');
-
-  chk(/wipe-step-1/.test(SRC.admin) && /wipe-step-2/.test(SRC.admin),
-    '清空发放名单有二次确认');
+  // Issue #276：本机那一套整块删了 —— 连「本机」这两个字都不该再以「第二份名单」的身份出现。
+  chk(!/id="list-card"/.test(SRC.admin), '「本机发放名单」那一卡已删（全走数据库）');
+  chk(!/id="sim-card"/.test(SRC.admin), '「模拟身份」那一卡已删（本机不再能自己改层级）');
+  chk(!/wipe-step-1/.test(SRC.admin) && !/btn-import-open/.test(SRC.admin),
+    '清空名单的二次确认与导入名单一起撤了（那都是本机那一套的事）');
+  chk(/OWNER_EMAILS/.test(adminVisible),
+    '管理后台如实写明「主人是种子」：由服务端 OWNER_EMAILS 认领（页面不自己发 owner）');
 }
 
 {
 
   const adminVisible = stripHtml(SRC.admin);
 
-  chk(/id="server-card"/.test(SRC.admin) && /id="list-card"/.test(SRC.admin),
-    '后台有**两块**名单：服务端那一份与本机那一份各是一张卡');
-  chk(/id="server-list"/.test(SRC.admin) && /id="grant-list"/.test(SRC.admin),
-    '两块各有各的列表挂载点（不是同一个 DOM 复用）');
+  chk(/id="server-card"/.test(SRC.admin) && /id="accounts-card"/.test(SRC.admin),
+    '后台有一张「服务端名单」+ 一张「账号名录」（后者才是改角色的地方）');
+  chk(!/id="list-card"/.test(SRC.admin),
+    '**不再有**「本机那一份」这张卡（Issue #276：应该走数据库的全部走数据库）');
+  chk(/id="server-list"/.test(SRC.admin) && /id="accounts-list"/.test(SRC.admin),
+    '两张各有各的列表挂载点（不是同一个 DOM 复用）');
   chk(/服务端名单（权威）/.test(adminVisible), '服务端那一块抬头写明「权威」');
-  chk(/本机发放名单/.test(adminVisible), '本机那一块抬头写明是「本机」');
   chk(/对方改一行存储改不动它/.test(adminVisible),
     '服务端那一块说清「改一行存储改不动它」（这才是「权威」的具体含义）');
-  chk(/要对方自己导入/.test(adminVisible),
-    '本机那一块说清「要对方自己导入」这层局限（1 期之前那套没变）');
-  chk(/不是权威/.test(adminVisible),
-    '本机那一块**明说它不是权威**（不许让它顶着「服务端已接通」蹭权威）');
-  chk(/两份\*{0,2}不自动同步|不自动同步/.test(adminVisible) || /不自动同步/.test(ADMIN),
-    '说清两份**不自动同步**（服务端发了一条，对方那台机器的本机名单不会跟着多一条）');
   chk(/对方先登录过一次/.test(adminVisible),
     '说清服务端发放的**前提**：对方先登录过一次，库里才会有那一行');
+  chk(/accounts\.role/.test(adminVisible) && /accounts\.plan/.test(adminVisible),
+    '名录那一段写明「角色与层级都以数据库为准」，点名 accounts.role / accounts.plan 两列');
 
   chk(/不收款|没有收款能力|没有任何收款能力/.test(adminVisible) &&
       /不是付费凭据|不是收费凭据/.test(adminVisible),
@@ -229,8 +229,8 @@ const LOGIN = strip(loginJs), MINE = strip(mineJs), ADMIN = strip(adminJs);
   chk(!/fetch\(|XMLHttpRequest/.test(ADMIN),
     'js/admin-page.js 不自己发网络请求（走 js/account-api.js）');
   chk(/AccountApi/.test(ADMIN), '发放走 AccountApi（接线层的唯一出口）');
-  chk(/adminGrant|adminRevoke|adminGrants/.test(ADMIN),
-    '三条都走接线层的方法名（本页不自己拼 /api/admin/*）');
+  chk(/adminGrant|adminRevoke|adminGrants|adminAccounts|adminSetRole/.test(ADMIN),
+    '发层级 / 收回 / 列名单 / 名录 / 改角色都走接线层的方法名（本页不自己拼 /api/admin/*）');
   chk(!/\/api\/admin/.test(ADMIN),
     'js/admin-page.js 里不出现 /api/admin 字面量（路径只有 js/auth-api.js 一处）');
   chk(/E_FORBIDDEN|只对管理员开放|403/.test(ADMIN + adminVisible),

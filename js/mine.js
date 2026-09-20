@@ -206,12 +206,14 @@
     });
   }
 
+  // 管理后台入口（Issue #276）：**只认服务端下发的角色**（源头是数据库
+  // `accounts.role`）。本机兜底已删 —— 未登录、或角色不够，这一颗就不画。
+  // 与 /admin/ 的准入走同一个出口 `Entitlement.isOwner()`（不是各判各的）。
   function renderAdmin(id) {
     var btn = $("btn-go-admin");
     if (!btn) return;
     var owner = Ent.isOwner(backing, id && id.role ? { role: id.role } : undefined);
     if (owner && id && id.signedIn) {
-      Ent.markOwner(backing);
       show(btn);
     } else {
       hide(btn);

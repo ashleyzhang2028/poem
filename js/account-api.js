@@ -452,6 +452,29 @@
       })["catch"](function () { return { ok: false, reason: REASON.UNAVAILABLE }; });
     }
 
+    // 改别人的角色（Issue #276）：与 adminGrant 同一族（同一个 channel、
+    // 同一套 reason 归类），因为它们的失败形态一模一样（未登录 / 没配 /
+    // 连不上 / 服务端拒绝）。
+    function adminSetRole(input) {
+      var o = input || {};
+      if (!hasLocalSession()) return Promise.resolve({ ok: false, reason: REASON.GUEST });
+      var ch = usable(D.api) || (D.make ? safeCreate(D.make) : null);
+      if (!ch || typeof ch.setRole !== "function") return Promise.resolve({ ok: false, reason: REASON_NO_CHANNEL });
+      return ch.setRole({ uid: o.uid, role: o.role }).then(function (r) {
+        if (r && r.ok) {
+          return {
+            ok: true, reason: REASON.OK,
+            uid: r.uid, role: r.role, before: r.before, changed: r.changed,
+            emailMask: r.emailMask, note: r.note
+          };
+        }
+        var code = (r && r.code) || "E_OFFLINE";
+        if (code === "E_NOT_CONFIGURED") return { ok: false, reason: REASON.NOT_CONFIGURED, code: code, message: r && r.message };
+        if (code === "E_NO_SESSION") return { ok: false, reason: REASON.GUEST, code: code, message: r && r.message };
+        return { ok: false, reason: REASON.OK, code: code, message: r && r.message };
+      })["catch"](function () { return { ok: false, reason: REASON.UNAVAILABLE, code: "E_OFFLINE" }; });
+    }
+
     function adminRevoke(input) {
       var o = input || {};
       if (!hasLocalSession()) return Promise.resolve({ ok: false, reason: REASON.GUEST });
@@ -546,6 +569,7 @@
       adminGrants: adminGrants,
       adminRevoke: adminRevoke,
       adminAccounts: adminAccounts,
+      adminSetRole: adminSetRole,
 
       report: report,
       myReports: myReports,
@@ -590,6 +614,7 @@
     adminGrant: function (o) { return boundOnce(o).adminGrant(o); },
     adminGrants: function (o) { return boundOnce(o).adminGrants(o); },
     adminRevoke: function (o) { return boundOnce(o).adminRevoke(o); },
+    adminSetRole: function (o) { return boundOnce(o).adminSetRole(o); },
 
     report: function (o) { return boundOnce(o).report(o); },
     myReports: function (o) { return boundOnce(o).myReports(o); },
