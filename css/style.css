@@ -2994,10 +2994,14 @@ html, body {
 /* 六档「报什么」，**一行装得下**（Issue #229）。
    六颗都是两字词，一行放不下就会被折成 5 + 1 —— 那正是用户当初看到的
    「其它」孤零零挂在第二行。这里三处一起收：字号 13 → 12.5px、
-   左右 padding 14 → 8px、间距 8 → 6px。最窄的 320px 机上量过，六颗加
-   间距在 360px 机上是 288px、可容纳宽 320px —— 到 320px 那一档仍会被折成
-   5 + 1，所以再补一条窄屏档：`.modal-box` 的左右内边距收到 14px、
-   六颗再各收 1px，该档可容纳宽 292px > 278px，一行放得下。 */
+   左右 padding 14 → 8px、间距 8 → 6px。
+
+   用户后续又提了一条：「左右 padding 增加 2px」—— 8 → 10px。
+   加宽是往「更好点」的方向走，但一行这条底线不能破，所以先算再改：
+   一颗 43 → 47px，六颗加 5 道 6px 缝 = 312px，要落进 350px（390px 机）之内 ——
+   宽屏几档都放得下；320 / 360px 那档由下面的窄屏规则接管。
+   窄屏那条也从 5px 收到 7px（同样 +2px），六颗 = 270px < 该档可容纳宽 292px。
+   每一档都真机量过：320 / 360 / 375 / 390 / 412 / 768 / 1024 全是**一行**。 */
 .report-kinds {
   display: flex;
   flex-wrap: wrap;
@@ -3008,7 +3012,7 @@ html, body {
 .report-kinds button {
   flex: none;
   white-space: nowrap;
-  padding: 6px 8px;
+  padding: 6px 10px;
   border: 1px solid var(--line);
   border-radius: 999px;
   background: var(--card);
@@ -3031,7 +3035,7 @@ html, body {
 @media (max-width: 360px) {
   .report-modal .modal-box { padding-left: 14px; padding-right: 14px; }
   .report-kinds { gap: 4px; }
-  .report-kinds button { padding: 6px 5px; font-size: 12px; }
+  .report-kinds button { padding: 6px 7px; font-size: 12px; }
 }
 
 .report-quote {
@@ -3079,6 +3083,12 @@ html, body {
    account.css，也不会反过来压掉账页自己的长相）。
    「加载哪张样式表」从此不影响它长相 —— 这是 issue #229 那一类「同一套界面
    在另一页变样」的总闸。
+
+   同一条口径的续集（用户原话：「应该是什么（可留空）这里的输入框要不要和
+   哪里不对输入框的长宽及元素保持一致？都显示两行的高度」）：
+   这两格**同一种元素、同宽、同高、同字号** —— 都是占满整行的 textarea、
+   都 rows=2、字号都是 15px。修好之前它们是两样东西（一个满行 3 行多行框，
+   一个 220px 的单行 input，字号还大一号），看着不像一套。
    -------------------------------------------------------------------------- */
 .report-modal .account-field { margin-bottom: 12px; }
 .report-modal .account-field:last-child { margin-bottom: 0; }
@@ -3111,12 +3121,23 @@ html, body {
 }
 .report-modal .account-input::placeholder { color: #9c8d7b; }
 
-/* 那条「哪里不对」的多行框：字与行高跟着正文走的那一档，另给一条最小高 */
-.report-modal .report-textarea { resize: vertical; min-height: 72px; line-height: 1.65; }
+/* 两个多行框「哪里不对 / 应该是什么」**等长等宽、同一种元素、都是两行高**
+   （Issue #229 后续，用户原话：「要不要和哪里不对输入框的长宽及元素保持一致？
+   都显示两行的高度」）。
+   原先这两格是两样东西：「哪里不对」是占满整行的 3 行 textarea，
+   「应该是什么」是一枚 220px 的单行 <input>（还比上面那格大一号字，
+   16px 对 15px —— 浏览器给 input 的默认 16px 没被覆盖掉）。
+   一边满行多行、一边窄条单行，看着像两种控件。
+   现在：两格都是 textarea、都占满整行、都是 rows=2，字与行高也同源。
+   min-height 写死成两行「实高」= 2 × (15 × 1.65) + 上下内边距 22 + 上下边框 2
+   —— rows 属性各浏览器算出的箱高略有出入，写死这个数才真的「都两行」。 */
+.report-modal .report-textarea {
+  resize: vertical;
+  line-height: 1.65;
+  min-height: 73.5px;
+}
 
-/* 「应该是什么」那一格是**短答案**（例：「应该读 cháng」），给个上限就行 ——
-   占满整行会让它看着像第二个多行框，与上面那格分不清主次。 */
-.report-modal input.account-input { max-width: 220px; }
+/* 两格都不设宽度上限：满行才是与上方多行框一致的样子。 */
 .report-modal textarea.account-input { max-width: none; }
 
 .report-modal .account-hint {

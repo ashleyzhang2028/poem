@@ -305,15 +305,15 @@
 
       '<div class="account-field">' +
       '<label class="account-label" for="report-note">哪里不对</label>' +
-      '<textarea id="report-note" class="account-input report-textarea" rows="3" ' +
+      '<textarea id="report-note" class="account-input report-textarea" rows="2" ' +
       'maxlength="' + LIMITS.note + '" placeholder="例：「长」这里该读 cháng，不是 zhǎng"></textarea>' +
       '<p class="account-hint" id="report-note-hint"></p>' +
       "</div>" +
 
       '<div class="account-field">' +
       '<label class="account-label" for="report-suggestion">应该是什么（可留空）</label>' +
-      '<input id="report-suggestion" class="account-input" type="text" autocomplete="off" ' +
-      'maxlength="' + LIMITS.suggestion + '" placeholder="想好了就填，没想到就空着" />' +
+      '<textarea id="report-suggestion" class="account-input report-textarea" rows="2" ' +
+      'maxlength="' + LIMITS.suggestion + '" placeholder="例：应读 cháng，或写作「明月光」"></textarea>' +
       "</div>" +
 
       '<p class="account-msg" id="report-msg"></p>' +
