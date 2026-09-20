@@ -1632,11 +1632,16 @@ function check(name, cond, extra) {
         await new Promise(r => setTimeout(r, 400));
         const box = inp.getBoundingClientRect();
         const bar = document.querySelector('.topbar').getBoundingClientRect();
-        const list = document.getElementById('gw-list').getBoundingClientRect();
+        // ⚠️ 量**第一条结果**的顶，不是 #gw-list 的盒子顶。
+        // 「框 → 列表」那一段走的是 #gw-list 的 padding-top —— padding 在盒子里侧，
+        // 盒子的 top 不动（量它永远是 0，会误判成「没有间隔」）。
+        const first = document.querySelector('#gw-list .item') ||
+          document.querySelector('#gw-list .group-card');
+        const r0 = (first || document.getElementById('gw-list')).getBoundingClientRect();
         return {
           above: +(box.top - bar.bottom).toFixed(1),
-          below: +(list.top - box.bottom).toFixed(1),
-          gap: getComputedStyle(document.getElementById('search-hero'))
+          below: +(r0.top - box.bottom).toFixed(1),
+          gap: getComputedStyle(document.body)
             .getPropertyValue('--search-list-gap').trim()
         };
       });
@@ -1646,6 +1651,52 @@ function check(name, cond, extra) {
       check('iPhone 搜索页：那一段间隔由 --search-list-gap 一处供给（框上框下不再各写一个数）',
         evenGap.below > 0 && Math.abs(evenGap.below - evenGap.above) <= 2,
         'gap ' + JSON.stringify([evenGap.above, evenGap.below]));
+
+      // ---- Issue #229（2026-09-20）：候选下拉收起后，框与结果之间不许再空一大片 ----
+      // 用户原话：「让搜索候选下拉列表关闭后，搜索结果下拉框和搜索框之间的空白太大，
+      //             可不可以照搬今日搜索的设计与排版？」
+      // 病根不在间距，在**框的落位**：失焦后框飘回页面正中，结果列表还在页面下方，
+      // 中间空出两百多像素。要的是三态里的第②条「有搜索内容 → 框停在页面顶部」。
+      const afterClose = await sp.evaluate(async () => {
+        const vv = window.visualViewport;
+        delete vv.height;
+        vv.dispatchEvent(new Event('resize'));
+        const inp = document.getElementById('gw-search');
+        const hero = document.getElementById('search-hero');
+        const sug = document.getElementById('search-suggest');
+        inp.value = '静夜';
+        inp.dispatchEvent(new Event('input', { bubbles: true }));
+        await new Promise(r => setTimeout(r, 300));
+        // 收起候选（模拟点空白）并失焦 —— 这正是用户描述的那一刻
+        sug.hidden = true;
+        inp.blur();
+        await new Promise(r => setTimeout(r, 500));
+        const box = inp.getBoundingClientRect();
+        const bar = document.querySelector('.topbar').getBoundingClientRect();
+        const first = document.querySelector('#gw-list .item');
+        return {
+          cls: hero.className,
+          focused: document.activeElement === inp,
+          sugHidden: sug.hidden,
+          inputTop: +box.top.toFixed(1),
+          above: +(box.top - bar.bottom).toFixed(1),
+          firstTop: first ? +first.getBoundingClientRect().top.toFixed(1) : null,
+          gapBoxToFirst: first
+            ? +(first.getBoundingClientRect().top - box.bottom).toFixed(1) : null,
+          vh: window.innerHeight
+        };
+      });
+      check('iPhone 搜索页：候选收起且失焦后，框停在页顶（不飘回页面正中）',
+        /search-active/.test(afterClose.cls) && !afterClose.focused &&
+        afterClose.sugHidden && afterClose.inputTop <= 160,
+        JSON.stringify([afterClose.cls, afterClose.focused, afterClose.inputTop]));
+      check('iPhone 搜索页：候选收起后，框与第一条结果之间就是那一段正常间隔（不再空一大片）',
+        afterClose.gapBoxToFirst !== null &&
+        afterClose.gapBoxToFirst > 0 && afterClose.gapBoxToFirst <= 24,
+        JSON.stringify([afterClose.gapBoxToFirst, afterClose.firstTop]));
+      check('iPhone 搜索页：候选收起后，第一条结果落在首屏内（一屏看得见结果与框）',
+        afterClose.firstTop !== null && afterClose.firstTop < afterClose.vh * 0.6,
+        JSON.stringify([afterClose.firstTop, afterClose.vh]));
 
       const r1 = await sp.evaluate(async () => {
         const vv = window.visualViewport;
