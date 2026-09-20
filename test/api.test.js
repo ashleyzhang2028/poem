@@ -172,6 +172,33 @@ const chk = (c, m) => { if (!c) { console.log("✗ " + m); fails++; } else conso
 const eq = (a, b, m) => chk(a === b, m + "（实际 " + JSON.stringify(a) + "）");
 
 async function main() {
+  {
+    const serveSource = fs.readFileSync(path.join(ROOT, "scripts/serve.js"), "utf8");
+    const exportsFactory = /module\.exports\s*=\s*\{[^}]*createServer/.test(serveSource);
+    chk(exportsFactory, "本地服务导出 createServer，测试可用随机端口启动");
+    if (exportsFactory) {
+      const env = boot({});
+      const local = require("../scripts/serve.js").createServer();
+      await new Promise(resolve => local.listen(0, "127.0.0.1", resolve));
+      const base = "http://127.0.0.1:" + local.address().port;
+      try {
+        eq((await fetch(base + "/login/")).status, 200, "本地服务能打开登录页");
+        eq((await fetch(base + "/api/config")).status, 200, "本地服务同源挂载 API");
+        const invalid = await fetch(base + "/api/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: "not-an-email", password: "hunter2hunter" })
+        });
+        const body = await invalid.json();
+        eq(invalid.status, 400, "本地注册请求到达真实 API 校验");
+        eq(body.code, "E_EMAIL_FORMAT", "本地 API 返回结构化邮箱错误");
+      } finally {
+        await new Promise(resolve => local.close(resolve));
+        env.restore();
+      }
+    }
+  }
+
 
   {
     boot({});
@@ -2101,7 +2128,7 @@ async function main() {
       "js/reset.js 按服务端回的 emailVerified 填那一句（不是自己猜的）");
     const resetJsSrc = fs.readFileSync(path.join(ROOT, "js/reset.js"), "utf8");
 
-    chk(/重发确认邮件|重新发一封确认邮件/.test(resetJsSrc) && /登录页/.test(resetJsSrc),
+    chk(/重发验证邮件|重新发送验证邮件/.test(resetJsSrc) && /登录页/.test(resetJsSrc),
       "那一句指出了唯一那一步的入口在哪儿（含「登录页」这个落点）");
   }
 
@@ -2208,9 +2235,9 @@ async function main() {
         chk(!/不确认也能用|不确认也照常|不确认也能正常使用/.test(src),
           f + " 里不再有旧口径那句「不确认也能用」");
       });
-      chk(/确认之后才能登录|点开那条链接之后才能登录|确认后才能登录/.test(
+      chk(/验证邮箱后才能登录|完成邮箱验证后才能登录/.test(
         fs.readFileSync(path.join(ROOT, "login/index.html"), "utf8")),
-        "登录页写明「确认之后才能登录」（用户得知道下一步是什么）");
+        "登录页写明「验证邮箱后才能登录」（用户得知道下一步是什么）");
 
       const loginHtml = fs.readFileSync(path.join(ROOT, "login/index.html"), "utf8");
       chk(/id="btn-unverified-resend"/.test(loginHtml),
@@ -3213,11 +3240,11 @@ async function main() {
       chk(/skipped/.test(ts), "⑥ js/turnstile.js 有 skipped 这一档（没配时**不拦**用户）");
       chk(!/sitekey:\s*"[0-9a-zA-Z]/.test(ts), "⑥ 前端**不写死** siteKey（由 /api/config 下发，没配时一个字节都不发给 Cloudflare）");
       const loginHtml = fs.readFileSync(path.join(ROOT, "login/index.html"), "utf8");
-      chk((loginHtml.match(/turnstile-slot/g) || []).length >= 6,
-        "⑥ 登录页有六个挂载点（密码 / 随机码 / 注册 / 忘记密码 / 重发确认 / 未确认重发）");
+      chk((loginHtml.match(/turnstile-slot/g) || []).length >= 5,
+        "⑥ 登录页有五个受保护挂载点（随机码 / 注册 / 忘记密码 / 重发确认 / 未确认重发）");
       chk(/js\/turnstile\.js/.test(loginHtml), "⑥ 登录页加载了 js/turnstile.js");
 
-      chk(/id="ts-pw" hidden/.test(loginHtml), "⑥ 挂载点出厂 `hidden`（没配时不留一个空壳让人以为有校验）");
+      chk(/id="ts-reg" hidden/.test(loginHtml), "⑥ 受保护挂载点出厂 `hidden`（没配时不留一个空壳让人以为有校验）");
     }
   }
 

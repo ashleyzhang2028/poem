@@ -3,10 +3,41 @@
 
   var api = (window.AuthApi && window.AuthApi.supported()) ? window.AuthApi.create({}) : null;
 
-  var TS = window.Turnstile || null;
-  var tsConfig = { enabled: false, siteKey: "" };
-
   function $(id) { return document.getElementById(id); }
+
+  function pending(button, busy, label) {
+    if (!button) return;
+    if (busy) {
+      button.dataset.idleText = button.textContent;
+      button.disabled = true;
+      button.setAttribute("aria-busy", "true");
+      if (label) button.textContent = label;
+      return;
+    }
+    button.disabled = false;
+    button.removeAttribute("aria-busy");
+    if (button.dataset.idleText) button.textContent = button.dataset.idleText;
+  }
+
+  function submitPending(buttonId, label, task) {
+    var button = $(buttonId);
+    if (!button || button.disabled) return Promise.resolve(null);
+    pending(button, true, label);
+    var result;
+    try { result = task(); }
+    catch (error) { pending(button, false); throw error; }
+    if (!result || typeof result.then !== "function") {
+      pending(button, false);
+      return result;
+    }
+    return result.then(function (value) {
+      pending(button, false);
+      return value;
+    }, function (error) {
+      pending(button, false);
+      throw error;
+    });
+  }
   function show(el) { if (el) el.hidden = false; }
   function hide(el) { if (el) el.hidden = true; }
   function text(el, s) { if (el) el.textContent = s == null ? "" : String(s); }
@@ -40,30 +71,29 @@
 
   function toLogin() { location.href = "/login/"; }
 
+  function bindEye(btnId, inputId) {
+    var button = $(btnId), input = $(inputId);
+    if (!button || !input) return;
+    function render(shown) {
+      button.innerHTML = shown
+        ? '<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18"/><path d="M10.6 6.2A10.7 10.7 0 0 1 12 6c6 0 9.5 6 9.5 6a15.6 15.6 0 0 1-2.1 2.8M6.2 6.2A15.8 15.8 0 0 0 2.5 12s3.5 6 9.5 6a10.5 10.5 0 0 0 3.8-.7"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>'
+        : '<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6S2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="2.5"/></svg>';
+      button.setAttribute("aria-label", shown ? "隐藏密码" : "显示密码");
+      button.setAttribute("title", shown ? "隐藏密码" : "显示密码");
+      button.setAttribute("aria-pressed", shown ? "true" : "false");
+    }
+    button.addEventListener("click", function () {
+      var shown = input.type === "text";
+      input.type = shown ? "password" : "text";
+      render(!shown);
+    });
+    render(input.type === "text");
+  }
+
   var rid = "";
 
-  function mountTurnstile() {
-    if (!TS || !TS.mount) return;
-    var el = $("ts-reset");
-    if (!el) return;
-    TS.mount(el, { siteKey: tsConfig.siteKey, enabled: tsConfig.enabled }).then(function (st) {
-      if (st && st.configured) show(el);
-      turnstileBrokenNote();
-    });
-  }
-
-  // 同 js/login.js：widget 渲染失败时页面上没有方框，不能再让人去找它。
-  function turnstileBrokenNote() {
-    if (!TS || !TS.failed) return;
-    var note = $("ts-broken-reset");
-    if (!note) return;
-    if (!TS.failed()) { hide(note); text(note, ""); return; }
-    text(note, (TS.why ? TS.why() : "") +
-      "（服务端这一侧仍在拦 —— 打开 /api/diag 可看服务端的说法）");
-    show(note);
-  }
-
   function confirmReset() {
+    return submitPending("btn-reset-confirm", "重设中…", function () {
     if (!api) { msg("连不上服务器，请稍后再试", "warn"); return; }
     var pw = ($("input-new-pw") || {}).value || "";
     var pw2 = ($("input-new-pw2") || {}).value || "";
@@ -74,12 +104,11 @@
     if (!token) { state("none"); return; }
 
     msg("");
-    api.resetConfirm({ rid: rid, token: token, password: pw }).then(function (r) {
+    return api.resetConfirm({ rid: rid, token: token, password: pw }).then(function (r) {
 
       if ($("input-new-pw")) $("input-new-pw").value = "";
       if ($("input-new-pw2")) $("input-new-pw2").value = "";
 
-      if (TS && TS.reset) { try { TS.reset(); } catch (e) {  } }
       if (!r.ok) {
 
         if (/^E_TOKEN_/.test(r.code) || r.code === "E_NO_TOKEN") {
@@ -99,7 +128,7 @@
           hint.hidden = false;
           hint.className = "account-note warn";
 
-          hint.textContent = "新密码还用不了：邮箱未确认，需先去登录页重发确认邮件。";
+          hint.textContent = "邮箱尚未验证，请先在登录页重新发送验证邮件。";
         } else {
           hint.hidden = true;
           hint.textContent = "";
@@ -110,6 +139,7 @@
       } catch (e) {  }
     }, function () {
       msg("连不上服务器，请稍后再试", "warn");
+    });
     });
   }
 
@@ -124,29 +154,13 @@
     $("btn-reset-retry").addEventListener("click", toLogin);
     $("btn-reset-confirm").addEventListener("click", confirmReset);
 
-    var eye = $("btn-new-eye"), input = $("input-new-pw");
-    if (eye && input) {
-      eye.addEventListener("click", function () {
-        var shown = input.type === "text";
-        input.type = shown ? "password" : "text";
-        eye.textContent = shown ? "显示" : "隐藏";
-        eye.setAttribute("aria-label", shown ? "显示密码" : "隐藏密码");
-      });
-    }
+    bindEye("btn-new-eye", "input-new-pw");
+    bindEye("btn-new-eye2", "input-new-pw2");
     ["input-new-pw", "input-new-pw2"].forEach(function (id) {
       var el = $(id);
       if (!el) return;
       el.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); confirmReset(); } });
     });
-
-    if (TS && api && api.config) {
-      api.config().then(function (r) {
-        if (!r || !r.ok || !r.turnstile) return;
-        tsConfig.enabled = r.turnstile.enabled === true;
-        tsConfig.siteKey = r.turnstile.siteKey || "";
-        if (tsConfig.enabled) mountTurnstile();
-      }, function () {  });
-    }
 
     if (!rid || !resetToken) { state("none"); return; }
 

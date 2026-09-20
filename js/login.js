@@ -41,6 +41,40 @@
   };
 
   function $(id) { return document.getElementById(id); }
+
+  function pending(button, busy, label) {
+    if (!button) return;
+    if (busy) {
+      button.dataset.idleText = button.textContent;
+      button.disabled = true;
+      button.setAttribute("aria-busy", "true");
+      if (label) button.textContent = label;
+      return;
+    }
+    button.disabled = false;
+    button.removeAttribute("aria-busy");
+    if (button.dataset.idleText) button.textContent = button.dataset.idleText;
+  }
+
+  function submitPending(buttonId, label, task) {
+    var button = $(buttonId);
+    if (!button || button.disabled) return Promise.resolve(null);
+    pending(button, true, label);
+    var result;
+    try { result = task(); }
+    catch (error) { pending(button, false); throw error; }
+    if (!result || typeof result.then !== "function") {
+      pending(button, false);
+      return result;
+    }
+    return result.then(function (value) {
+      pending(button, false);
+      return value;
+    }, function (error) {
+      pending(button, false);
+      throw error;
+    });
+  }
   function show(el) { if (el) el.hidden = false; }
   function hide(el) { if (el) el.hidden = true; }
   function text(el, s) { if (el) el.textContent = s == null ? "" : String(s); }
@@ -76,16 +110,11 @@
   }
 
   function mailNotConfiguredNote(masked) {
-
-    return "这台服务器还没接上发信商（现在是 console 通道：只往服务端日志写一行，不往外发信）。" +
-      "要收信得请运维在托管平台的环境变量里补上发信密钥 —— 步骤：在终端跑 " +
-      "`npm run doctor -- --steps`，第 C 步写的就是它" +
-      "（托管平台环境变量填密钥 + 在 Resend 后台验发信子域 SPF/DKIM/DMARC 三条 DNS）。" +
-      (masked ? "这一步只能由运维做，所以 " + masked + " 现在收不到信。" : "");
+    void masked;
+    return "验证邮件暂时无法发送，请稍后重试。如问题持续，请联系管理员。";
   }
 
   var TS_SLOTS = {
-    pw: "ts-pw",
     code: "ts-code",
     register: "ts-reg",
     forgot: "ts-forgot",
@@ -107,17 +136,13 @@
     });
   }
 
-  // 装了、也配了，但 widget 渲染失败（Site Key 填错 / 域名没进允许列表）：
-  // 页面上**没有方框可勾**。旧版只会弹一句「请先完成人机校验（上面那个方框）」，
-  // 用户照着找那个不存在的方框，永远过不去。这里把真原因说出来，
-  // 并指一条能走的路（自检页 + /api/diag），而不是把人钉在页面上。
   function turnstileBrokenNote(slotId) {
     if (!TS || !TS.failed || !slotId) return;
     var note = $("ts-broken-" + slotId);
     if (!note) return;
     if (!TS.failed()) { hide(note); text(note, ""); return; }
-    text(note, (TS.why ? TS.why() : "") +
-      "（服务端这一侧仍在拦 —— 你可以打开「我的 → 设置 · 关于 → 自检」或访问 /api/diag 看服务端是怎么说的）");
+    text(note, (TS.why ? TS.why() + " " : "") +
+      "请刷新页面重试。如问题持续，请联系管理员。");
     show(note);
   }
 
@@ -169,6 +194,15 @@
     // 免得「注册」那一屏的红字留在「登录」屏上。
     turnstileHideNotes();
     if (TS && mode !== "done") mountTurnstile(mode);
+
+    var firstField = {
+      pw: "input-pw-email",
+      code: "input-email",
+      register: "input-reg-email",
+      verify: "input-verify-email",
+      forgot: "input-forgot-email"
+    }[mode];
+    if (firstField && $(firstField)) $(firstField).focus();
   }
 
   function esc(s) {
@@ -188,12 +222,20 @@
   function bindEye(btnId, inputId) {
     var btn = $(btnId), input = $(inputId);
     if (!btn || !input) return;
+    function render(shown) {
+      btn.innerHTML = shown
+        ? '<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18"/><path d="M10.6 6.2A10.7 10.7 0 0 1 12 6c6 0 9.5 6 9.5 6a15.6 15.6 0 0 1-2.1 2.8M6.2 6.2A15.8 15.8 0 0 0 2.5 12s3.5 6 9.5 6a10.5 10.5 0 0 0 3.8-.7"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>'
+        : '<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6S2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="2.5"/></svg>';
+      btn.setAttribute("aria-label", shown ? "隐藏密码" : "显示密码");
+      btn.setAttribute("title", shown ? "隐藏密码" : "显示密码");
+      btn.setAttribute("aria-pressed", shown ? "true" : "false");
+    }
     btn.addEventListener("click", function () {
       var shown = input.type === "text";
       input.type = shown ? "password" : "text";
-      btn.textContent = shown ? "显示" : "隐藏";
-      btn.setAttribute("aria-label", shown ? "显示密码" : "隐藏密码");
+      render(!shown);
     });
+    render(input.type === "text");
   }
 
   function buildCodeRow(rowId) {
@@ -209,7 +251,7 @@
       b.pattern = "[0-9]*";
       b.maxLength = 1;
       b.autocomplete = "one-time-code";
-      b.setAttribute("aria-label", "第 " + (i + 1) + " 位随机码");
+      b.setAttribute("aria-label", "第 " + (i + 1) + " 位验证码");
       b.dataset.idx = String(i);
       row.appendChild(b);
       boxes.push(b);
@@ -259,22 +301,24 @@
 
   function startTick(boxes) {
     stopTick();
-    state.tick = setInterval(function () {
+    function update() {
       if (!state.expiresAt) { stopTick(); return; }
       var left = Math.max(0, Math.round((state.expiresAt - Date.now()) / 1000));
       var mm = Math.floor(left / 60);
       var ss = String(left % 60).padStart(2, "0");
-      text($("code-timer"), left > 0 ? "有效 " + mm + ":" + ss : "已过期，请重新发送");
+      text($("code-timer"), left > 0 ? "剩余 " + mm + " 分 " + ss + " 秒" : "已过期，请重新发送");
 
       var cd = Math.max(0, Math.round((state.cooldown - Date.now()) / 1000));
       var again = $("btn-resend");
       if (again) {
         again.disabled = cd > 0;
-        again.textContent = cd > 0 ? "重新发送（" + cd + "s）" : "重新发送";
+        again.textContent = cd > 0 ? "重新发送（" + cd + " 秒）" : "重新发送";
       }
       if (!left && $("btn-verify")) $("btn-verify").disabled = false;
       void boxes;
-    }, 1000);
+    }
+    update();
+    state.tick = setInterval(update, 1000);
   }
 
   function stopTick() {
@@ -282,6 +326,7 @@
   }
 
   function onRegister() {
+    return submitPending("btn-register", "注册中…", function () {
     var ch = passwordChannel("msg-reg");
     if (!ch) return;
     var email = (($("input-reg-email") || {}).value || "").trim();
@@ -317,24 +362,19 @@
       if (!gated) {
 
         if (r.verifySent) {
-          note("verify-fail-note", "这台服务器现在**没有**拦「邮箱没确认」——不点也能登录，确认只是为了将来能找回密码。", "warn");
-          text($("verify-lead"), "确认邮件已发往 " + state.regEmail + "。");
+          note("verify-fail-note", "当前无需验证邮箱即可登录；完成验证后可使用密码找回功能。", "warn");
+          text($("verify-lead"), "验证邮件已发往 " + state.regEmail + "。");
         } else {
-          text($("verify-lead"), "账号建好了。但这台服务器现在**没能把确认邮件发出去**（发信商还没配好）。");
-          note("verify-fail-note", "这台服务器也没拦「邮箱没确认」：现在就可以回「密码登录」用刚才那个密码进来。", "warn");
+          text($("verify-lead"), "账号已创建。验证邮件暂时无法发送，请稍后重试。");
+          note("verify-fail-note", "当前无需验证邮箱即可登录；完成验证后可使用密码找回功能。", "warn");
         }
       } else if (r.verifySent) {
         note("verify-fail-note", "", "");
-        text($("verify-lead"), "确认邮件已发往 " + state.regEmail + "。点开那条链接之后就能登录。");
-        note("verify-fail-note", "**邮箱确认之后才能登录**：请现在去收件箱点开那条链接。", "warn");
+        text($("verify-lead"), "验证邮件已发往 " + state.regEmail + "。完成验证后即可登录。");
+        note("verify-fail-note", "请打开收件箱中的链接验证邮箱。", "warn");
       } else {
-
-        var tries = Number(r.verifyAttempts) || 1;
-        text($("verify-lead"), "账号建好了。但这台服务器现在**没能把确认邮件发出去**（已试 "
-          + tries + " 次）。");
-        note("verify-fail-note", "而这台服务器**要求邮箱确认之后才能登录**。" +
-          mailNotConfiguredNote(state.regEmail) +
-          " 请稍后点下面那颗「重发确认邮件」，或者联系站长先把发信商配好。", "warn");
+        text($("verify-lead"), "账号已创建。验证邮件暂时无法发送，请稍后重试。");
+        note("verify-fail-note", "完成邮箱验证后才能登录。如问题持续，请联系管理员。", "warn");
       }
       showToast(r.created ? "账号已建好" : "账号信息已更新");
       setMode("verify");
@@ -342,9 +382,11 @@
     }, function () {
       msg("msg-reg", "连不上服务器，请稍后再试", "warn");
     });
+    });
   }
 
   function onLogin() {
+    return submitPending("btn-login", "登录中…", function () {
     var ch = passwordChannel("msg-pw");
     if (!ch) return;
     var email = (($("input-pw-email") || {}).value || "").trim();
@@ -355,10 +397,8 @@
     }
     if (!pw) { msg("msg-pw", ch.messageOf("E_PW_EMPTY") || "请先填密码", "warn"); return; }
 
-    if (turnstileBlocked("msg-pw")) return;
     msg("msg-pw", "");
     return ch.login({ email: email, password: pw }).then(function (r) {
-      turnstileReset();
       if ($("input-pw")) $("input-pw").value = "";
       if (!r.ok) {
 
@@ -382,9 +422,11 @@
     }, function () {
       msg("msg-pw", "连不上服务器，请稍后再试", "warn");
     });
+    });
   }
 
   function onForgotSend() {
+    return submitPending("btn-forgot-send", "发送中…", function () {
     var ch = passwordChannel("msg-forgot");
     if (!ch) return;
     var email = (($("input-forgot-email") || {}).value || "").trim();
@@ -408,6 +450,7 @@
       return r;
     }, function () {
       msg("msg-forgot", "连不上服务器，请稍后再试", "warn");
+    });
     });
   }
 
@@ -501,25 +544,32 @@
 
   function renderLocalOnlyTools() {
     var local = isLocal();
+    var canInspectCode = local || !!state.code;
     var copy = $("btn-copy-code"), mailBtn = $("btn-mail-code");
     var tools = $("code-tools"), localNote = $("local-note"), remoteNote = $("remote-note");
-    if (copy) copy.hidden = !local;
-    if (mailBtn) mailBtn.hidden = !local;
-    if (tools) tools.hidden = !local;
+    if (copy) copy.hidden = !canInspectCode;
+    if (mailBtn) mailBtn.hidden = !canInspectCode;
+    if (tools) tools.hidden = !canInspectCode;
     if (localNote) localNote.hidden = !local;
     if (remoteNote) remoteNote.hidden = local;
   }
 
   var codeBoxes = [];
 
-  function onSend() {
-    return sendCode();
+  function onSend(event) {
+    if (event && event.currentTarget && event.currentTarget.id === "btn-resend") {
+      return submitPending("btn-resend", "发送中…", sendCode).then(function (result) {
+        startTick(codeBoxes);
+        return result;
+      });
+    }
+    return submitPending("btn-send", "发送中…", sendCode);
   }
 
   function verify() {
     var digits = readCode(codeBoxes);
     if (digits.length < A.CODE_LEN) {
-      msg("msg-code", "请填满 6 位随机码", "warn");
+      msg("msg-code", "请输入 6 位验证码。", "warn");
       return;
     }
     if (state.expiresAt && Date.now() > state.expiresAt) {
@@ -545,7 +595,7 @@
 
           text($("verify-lead"), "这个邮箱还没确认。");
 
-          note("verify-fail-note", "去收件箱点开确认邮件；没收到就点下面那颗重发。", "warn");
+          note("verify-fail-note", "请打开收件箱中的验证邮件；未收到可重新发送。", "warn");
           setMode("verify");
           return;
         }
@@ -630,12 +680,12 @@
   function showUnverified(r) {
     stopTick();
     setMode("unverified");
-    text($("unverified-lead"), r.message || "邮箱还没确认：请点开注册时那封确认邮件里的链接。");
+    text($("unverified-lead"), r.message || "邮箱尚未验证，请打开验证邮件中的链接。");
 
     if (r.verifySent === true) {
       note("unverified-note", "我们又发了一封，发往 " + (r.emailMask || "你的邮箱") + "。", "ok");
     } else if (r.verifySent === false) {
-      note("unverified-note", "这一次没有重复发信 —— 稍后点下面那颗「重新发一封」即可。", "");
+      note("unverified-note", "本次未重复发送，可稍后重试。", "");
     } else {
       note("unverified-note", "", "");
     }
@@ -645,6 +695,7 @@
   }
 
   function onUnverifiedResend() {
+    return submitPending("btn-unverified-resend", "发送中…", function () {
     var ch = passwordChannel("msg-unverified");
     if (!ch) return;
     if (!ch.resendVerificationByEmail) {
@@ -665,7 +716,7 @@
       if (r.alreadyVerified) {
         msg("msg-unverified", "这个邮箱已经确认过了，直接回「密码登录」进来即可。", "ok");
       } else if (r.verifySent) {
-        msg("msg-unverified", "确认邮件已发往 " + (r.emailMask || "你的邮箱") + "。", "ok");
+        msg("msg-unverified", "验证邮件已发往 " + (r.emailMask || "你的邮箱") + "。", "ok");
       } else {
         msg("msg-unverified", "这台服务器现在没能把邮件发出去（发信商还没配好），稍后再试。", "warn");
       }
@@ -673,9 +724,11 @@
     }, function () {
       msg("msg-unverified", "连不上服务器，请稍后再试", "warn");
     });
+    });
   }
 
   function onResendVerify() {
+    return submitPending("btn-resend-verify", "发送中…", function () {
     var ch = passwordChannel("msg-verify");
     if (!ch) return;
     if (!ch.resendVerification) {
@@ -703,7 +756,7 @@
 
       if (signedIn && r.verifySent) {
         msg("msg-verify", mailOutcome(
-          "确认邮件已发往 " + (r.emailMask || state.regEmail) + "。",
+          "验证邮件已发往 " + (r.emailMask || state.regEmail) + "。",
           r.emailMask || state.regEmail), mailDelivered === false ? "warn" : "ok");
       } else if (signedIn) {
 
@@ -713,12 +766,13 @@
 
         msg("msg-verify", mailDelivered === false
           ? mailNotConfiguredNote("")
-          : "若该邮箱已注册且未确认，确认邮件已发出。",
+          : "若该邮箱已注册且尚未验证，验证邮件已发出。",
           mailDelivered === false ? "warn" : "ok");
       }
       return r;
     }, function () {
       msg("msg-verify", "连不上服务器，请稍后再试", "warn");
+    });
     });
   }
 
@@ -800,6 +854,7 @@
     if (later) later.addEventListener("click", function () { setMode("pw"); });
     bindEye("btn-pw-eye", "input-pw");
     bindEye("btn-reg-eye", "input-reg-pw");
+    bindEye("btn-reg-eye2", "input-reg-pw2");
 
     $("btn-send").addEventListener("click", onSend);
     $("btn-edit-email").addEventListener("click", function () {
