@@ -574,12 +574,47 @@ curl -sS "$SITE_URL/api/config"      # 期望 {"turnstile":{"enabled":true,"site
 - **本地开发 / CI** 用 `TURNSTILE_BYPASS=1`（**只在服务端读**，绝不随任何响应下发）。
   也正因如此，生产开着它时客户端无从察觉 —— `npm run doctor` 会为它单独喊一条警告。
 - **widget 要允许本站域名**：Add site 时填的域名与实际访问域名不一致时，
-  widget 会渲染失败（浏览器控制台看得见）。
+  widget 会渲染失败（浏览器控制台看得见）—— 而页面上的症状只是「方框不出现」，
+  所以自检会拿假 token 真打一次 Cloudflare 来分辨（见下一节）。
 
 ⚠️ **没配就如实降级**：`turnstileReady()` 为 false 时服务端**跳过**校验，
 并自报在 `/api/config`（`turnstile.enabled:false`）与 `/api/me` 的 `channel.turnstile` 里。
 前端**一个字节都不发给 Cloudflare**（不渲染、连脚本都不加载）——
 绝不摆一个空壳让人以为「本站有人机校验」（与 `mail: "console"` 同一条纪律）。
+
+#### 「三个变量都配了，页面上还是看不见方框」怎么查
+
+这条比「没配」难得多：磁盘上三样都在（`/api/config` 也会回 `enabled:true` + `siteKey`），
+坏的是**那个 Site Key 到底对不对**「本站域名在那个 widget 的允许列表里吗」——
+纯看配置分不出来，页面上只是「方框不出现」。
+
+> 2026-09-19 用户就是这么报的：三个变量都在托管平台上配好了，页面空白。
+> 查下来是 `js/turnstile.js` 把「widget 渲染失败」和「你没勾方框」混成了同一句话 ——
+> 于是用户被一句「请先完成人机校验（上面那个方框）」钉在页面上，**永远过不去**。
+
+三处一起修，各管一段：
+
+1. **前端不再撒谎**（`js/turnstile.js`）：新增 `failed()` 与 `why()`，
+   把 `widget_error` / `render_failed` / `script_error` / `script_timeout` /
+   `no_render_api` 归为「装不上」—— 这几种情况下 `gate()` **放行**（本来就没有方框可勾），
+   页面上改成说真原因：「多半是 Site Key 填错了，或本站域名没加进那个 widget 的允许列表」
+   「关掉广告拦截 / 换个网络」。六个挂载点（登录 / 随机码 / 注册 / 验证 / 忘记密码 /
+   未验证重发）与重设密码页各带一条这样的提示。**真闸仍在服务端** —— 绕过前端提交还是 `400`。
+2. **`/api/diag` 多一段 `turnstile`**：`widget` 给四种互斥状态
+   （`bypassed` / `disabled` / `no_site_key` → 前端不可能渲染 / `renders`），
+   外加 `secretProbe` —— **拿一个假 token 真打一次 Cloudflare 的 `siteverify`**，
+   读它的 `error-codes`：
+   - `invalid-input-secret` → `secretValid:false`（**密钥是坏的**，多半把两个 key 弄混了）
+   - `invalid-input-response` → `secretValid:true`（密钥有效，token 是假的 —— 本来也是假的）
+
+   这一发**只读、不写、不消耗任何东西**，且**绝不回密钥值本身**（只说是不是 `service_role` 那一档的形状）。
+3. **诊断给出可比的形状**：`turnstile.expected.config` 是 `curl` 的目标，
+   `expectWhenRenders` / `expectWhenPartial` 是两种预期 JSON，
+   `bypassTest` 是那条「绕过前端提交、期望 `400 E_TURNSTILE`」的命令 —— 照着一比就知道卡在哪一层。
+
+守着这一层的是 `test/turnstile-slot.test.js`（VM 里给假 document / 假 Cloudflare，
+六种现场逐个跑）与 `test/self-check.test.js` 里那五条（把 `siteverify` 换成假 Cloudflare，
+`invalid-input-secret` / `invalid-input-response` 两种都跑出来，并断言报告里不出现任何 key 值）。
 
 ### 古诗词大会 / 试题模拟（3 期「不花钱的那三件」，已落地）
 
@@ -894,6 +929,9 @@ API 挂上没 / 会话签得出来没 / 库读得动没 / 库写得动没 / 注�
 - **失败一律一句话**（「人机校验没通过，请刷新页面再试一次」），
   不回 Cloudflare 的 `error-codes`（那些码会把「密钥配错了」暴露给调用方）——
   它只进服务端日志（`api.turnstile_blocked`）
+- **方框自己没装出来时，不许再让人去勾它**：widget 渲染失败 / 脚本被拦时，
+  页面上**没有**那个方框，这时如实说原因（Site Key 填错 / 域名不在允许列表 / 被拦截）
+  并指一条能走的路（`/self-check/` 或 `/api/diag`），而不是让用户对着空白干等
 
 配置步骤见上一节「**人机校验在哪配**」（四步 + 四条自检）。
 

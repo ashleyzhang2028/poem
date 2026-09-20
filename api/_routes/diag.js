@@ -140,6 +140,56 @@ function writeProbe(d) {
   });
 }
 
+// 「配了三个环境变量但页面上看不见方框」这一档（Issue #225 的后续）：
+//   · 开关 / 两个 key 缺一个 —— 这里逐项如实报（值一个字不回，只说有没有）
+//   · 两个 key 都填了，但**其中一个填错了**（Site Key 填成 Secret、域名没加进
+//     那个 widget 的允许列表）—— 磁盘上完全看不出来，页面上只是「没有方框」。
+//     唯一能分辨的办法：拿一个假 token 打一次 Cloudflare 的 siteverify，
+//     读它的 error-codes（invalid-input-secret / invalid-input-response）。
+//     这个请求**不消耗任何东西、不落任何数据**，是只读探测。
+var TURNSTILE_PROBE_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
+
+function turnstileProbe(cfg) {
+  var secret = String((cfg && cfg.turnstileSecretKey) || "");
+  if (!secret) return Promise.resolve(null);
+  var body = new URLSearchParams();
+  body.set("secret", secret);
+  body.set("response", "__diag__");
+  var t0 = Date.now();
+  return fetch(TURNSTILE_PROBE_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: body.toString()
+  }).then(function (r) {
+    return r.text().then(function (t) {
+      var data = null;
+      try { data = JSON.parse(t); } catch (e) { data = null; }
+      // Cloudflare 同时回 error-codes（连字符）与 error_codes（下划线），
+      // 各家实现/网关只有前者时别把结论读成「密钥没问题」。
+      var codes = (data && (data.error_codes || data["error-codes"])) || [];
+      // 认得出的两种：密钥错、token 是假的。后者才说明密钥是有效的。
+      var bad = codes.indexOf("invalid-input-secret") >= 0;
+      var ok = codes.indexOf("invalid-input-response") >= 0;
+      return {
+        httpStatus: r.status,
+        ms: Date.now() - t0,
+        reachable: true,
+        secretValid: ok ? true : (bad ? false : null),
+        codes: codes
+      };
+    });
+  })["catch"](function (e) {
+    var cause = e && e.cause ? String(e.cause.code || e.cause.message || e.cause) : "";
+    return {
+      httpStatus: 0,
+      ms: Date.now() - t0,
+      reachable: false,
+      secretValid: null,
+      upstream: (String((e && e.message) || e) + (cause ? " (" + cause + ")" : "")).slice(0, 300)
+    };
+  });
+}
+
 var VERDICT_TEXT = {
   no_secret: "缺 SESSION_SECRET：会话签不出来，所有 /api/* 会回 503（本站仍可离线用，这是设计好的降级）",
   db_not_configured: "缺 SUPABASE_URL / SUPABASE_SERVICE_KEY：账号只活在当前实例的内存里，重启即丢。注册能成，但换设备 / 重启后就找不回来",
@@ -171,6 +221,32 @@ function verdictOf(r) {
   return "ok";
 }
 
+function turnstileWidgetState(cfg) {
+  if (cfg.turnstileBypass === true) return "bypassed";
+  if (cfg.turnstileEnabled !== true) return "disabled";
+  if (!String(cfg.turnstileSiteKey || "")) return "no_site_key";
+  if (!String(cfg.turnstileSecretKey || "")) return "no_secret_key";
+  return "renders";
+}
+
+function turnstileNote(cfg, probe) {
+  var w = turnstileWidgetState(cfg);
+  if (w === "bypassed") {
+    return "⚠️ TURNSTILE_BYPASS=1：人机校验被整个绕开了（这条只在本地/CI 用，生产绝不许开）";
+  }
+  if (w === "disabled") return null;
+  if (w === "no_site_key") {
+    return "TURNSTILE_ENABLED=1 但没填 TURNSTILE_SITE_KEY：**前端不会渲染方框**，而服务端照旧在拦 —— 于是每一次登录/注册都会被拒（400 E_TURNSTILE）。两个 key 是一对，缺一个都跑不起来";
+  }
+  if (probe && probe.secretValid === false) {
+    return "TURNSTILE_SECRET_KEY 无效：Cloudflare 回 invalid-input-secret —— 多半是**把 Site Key 与 Secret Key 弄混了**（两个长得像），或 key 已被删除/重置。页面上的症状就是「方框一直不出现」";
+  }
+  if (probe && probe.reachable === false) {
+    return "打不通 challenges.cloudflare.com/siteverify（HTTP 0）：服务端验不了 token，**所有登录/注册都会回 400 E_TURNSTILE** —— 查这台部署的网络出口 / 代理";
+  }
+  return "开关与两个 key 都在。方框仍需**浏览器**里真渲染一次才算数 —— 页面上不出现方框时，看浏览器控制台（多半是 Site Key 填错，或本站域名没加进那个 widget 的允许列表）";
+}
+
 function sessionReport(d) {
   var key = d.cfg.sessionKeyOf.call(d.cfg);
   return { ok: key.length >= 16, keyLength: key.length, cookieName: d.cfg.cookieName };
@@ -199,11 +275,25 @@ module.exports = handler.make("diag", ["GET"], function (d, body, req) {
       bypass: d.cfg.turnstileBypass === true,
       enabledFlag: d.cfg.turnstileEnabled === true,
       hasSiteKey: !!d.cfg.turnstileSiteKey,
-      hasSecretKey: !!d.cfg.turnstileSecretKey
+      hasSecretKey: !!d.cfg.turnstileSecretKey,
+
+      // 前端能不能渲染出方框 = 服务端就绪 + Site Key 在。
+      // 三个变量「都配了」却看不见方框，多半就卡在下面这几条上。
+      widget: null,
+      note: null,
+      secretProbe: null
     }
   };
 
   var jobs = [dbProbe(d, "accounts", ACCOUNT_COLS.join(","))];
+
+  // 人机校验这一档也要**实跑一次**才敢下结论（同 writeProbe 的道理）。
+  jobs.push(turnstileProbe(d.cfg).then(function (p) {
+    r.turnstile.secretProbe = p;
+    r.turnstile.secretValid = p ? p.secretValid : null;
+    r.turnstile.widget = turnstileWidgetState(d.cfg);
+    r.turnstile.note = turnstileNote(d.cfg, p);
+  }));
 
   if (r.database.mode === "supabase") {
     var base = String(d.cfg.supabaseUrl || "").replace(/\/+$/, "");
@@ -277,7 +367,14 @@ module.exports = handler.make("diag", ["GET"], function (d, body, req) {
       { name: "数据库配置", ok: out.database.mode === "supabase", hint: out.database.mode === "supabase" ? null : "内存模式：账号重启即丢" },
       { name: "六张表都在", ok: out.database.tables.length ? out.database.tables.every(function (t) { return t.httpStatus === 200; }) : null },
       { name: "表形状是新的（accounts 的 14 列 + progress 的 child_id）", ok: out.database.columns ? (out.database.columns.accounts.ok && out.database.columns.progress.ok) : null },
-      { name: "能写进去（真跑一次 INSERT + DELETE）", ok: out.database.write ? out.database.write.ok : null }
+      { name: "能写进去（真跑一次 INSERT + DELETE）", ok: out.database.write ? out.database.write.ok : null },
+      {
+        name: "人机校验的方框在浏览器里该出现（Site Key + Secret Key + 开关三者都要）",
+        ok: out.turnstile.widget === "renders" ? true
+          : (out.turnstile.widget === "bypassed" ? null
+            : (out.turnstile.widget === "disabled" ? null : false)),
+        hint: out.turnstile.note
+      }
     ];
     out.nextSteps = [
       { n: 1, name: "API 形态", cmd: "curl -sS -o /dev/null -w '%{http_code}\\n' https://<你的域名>/api/config" },
@@ -287,7 +384,25 @@ module.exports = handler.make("diag", ["GET"], function (d, body, req) {
       { n: 5, name: "注册真跑一遍", cmd: "curl -sS -i -X POST https://<你的域名>/api/register -H 'Content-Type: application/json' -d '{\"email\":\"you+diag@example.com\",\"password\":\"diagtest12345\",\"deviceId\":\"diag\"}'" },
       { n: 6, name: "服务端日志里搜", cmd: "Vercel → Logs，搜 api.error，把那一行的 error 字段贴回来" }
     ];
-    out.neverSend = ["SESSION_SECRET 的值", "SUPABASE_SERVICE_KEY 的值", "SUPABASE_DB_URL", "用户密码", "任何完整邮箱"];
+    // 别让报告把「该不该出现方框」的**结论**说满：两个 key 都在时，
+    // 唯一能定死的是浏览器里真渲染一次。把预期形状一起写出来，
+    // 用户照着 curl 一比就知道「页面看不见方框」卡在哪一层。
+    out.turnstile.expected = (function () {
+      var site = String(o.current || "").replace(/\/+$/, "");
+      return {
+        config: site + "/api/config",
+        // 带 siteKey 才是「前端会渲染」，不带就是「开关开了但缺 Site Key」。
+        expectWhenRenders: '{"turnstile":{"enabled":true,"siteKey":"0x..."}}',
+        expectWhenPartial: '{"turnstile":{"enabled":false}}',
+        // 真绕过前端提交（页面上方框被删掉那种）：服务端必须回 400，这才证明闸在服务端。
+        bypassTest: "curl -sS -i -X POST " + site + "/api/register -H 'Content-Type: application/json' " +
+          "-d '{\"email\":\"you@example.com\",\"password\":\"diagtest12345\",\"deviceId\":\"diag\"}'",
+        bypassExpect: "400 E_TURNSTILE（人机校验没通过，请刷新页面再试一次）—— 收到 400 就说明服务端在拦；" +
+          "若还是 202/别的码，说明这次部署没带上人机校验"
+      };
+    })();
+
+    out.neverSend = ["SESSION_SECRET 的值", "SUPABASE_SERVICE_KEY 的值", "SUPABASE_DB_URL", "用户密码", "任何完整邮箱", "TURNSTILE_SECRET_KEY 的值"];
 
     return { status: 200, body: { code: "E_DIAG", message: "诊断报告见 body", report: out }, headers: { "Cache-Control": "no-store" } };
   });

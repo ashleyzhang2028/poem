@@ -38,6 +38,34 @@
 
   function required() { return !st.skipped; }
 
+  // 装了、也配了，但**校验根本跑不起来**。三种成因：
+  //   script_error / script_timeout —— Cloudflare 的脚本压根没加载（公司网、广告拦截、CSP、断网）
+  //   no_render_api                —— 脚本加载了但没给出 render API
+  //   widget_error / render_failed —— widget 渲染失败：**Site Key 填错**，或
+  //                                   本站域名没加进那个 widget 的允许列表（最常见）
+  // 这些情况下页面上**没有方框可勾**。旧版把「没 token」一律说成
+  // 「请先完成人机校验（上面那个方框）」—— 用户对着一个不存在的方框干等，
+  // 而真正的修法（去 Cloudflare 改域名 / 换 Site Key）一个字都没露。
+  var BROKEN = ["script_error", "script_timeout", "no_render_api", "widget_error", "render_failed"];
+
+  function failed() { return BROKEN.indexOf(st.err) >= 0; }
+
+  function why() {
+    if (!st.configured) return "";
+    if (st.err === "widget_error" || st.err === "render_failed") {
+      return "人机校验的方框没能加载出来（多半是 Site Key 填错了，或本站域名没加进 Cloudflare 那个 widget 的允许列表）。" +
+        "这不是你网络的问题，请联系站点管理员；在此之前这类操作暂时做不了。";
+    }
+    if (st.err === "script_timeout" || st.err === "script_error") {
+      return "加载人机校验脚本失败（浏览器拦下了 challenges.cloudflare.com，或网络不通）。" +
+        "请关掉广告拦截 / 换一个网络再试；一直不行就联系站点管理员。";
+    }
+    if (st.err === "no_render_api") {
+      return "人机校验脚本没给出可用的接口（多半是被网络中间层改写了）。请联系站点管理员。";
+    }
+    return "";
+  }
+
   function configure(opts) {
     opts = opts || {};
     var key = String(opts.siteKey == null ? "" : opts.siteKey).trim();
@@ -139,10 +167,10 @@
   function gate() {
     if (st.skipped) return null;
     if (st.tokenValue) return null;
-    if (st.err === "script_error" || st.err === "script_timeout" || st.err === "no_render_api") {
-
-      return null;
-    }
+    // 校验跑不起来 = 没有方框可勾。这里必须放行：否则用户会被一句
+    // 「请先完成人机校验」钉死在页面上，而那个方框永远不会出现。
+    // 闸门仍在服务端 —— 真绕过前端提交，服务端回 400 E_TURNSTILE。
+    if (failed()) return null;
     return "请先完成人机校验（上面那个方框）";
   }
 
@@ -161,6 +189,8 @@
     token: token,
     reset: reset,
     gate: gate,
+    failed: failed,
+    why: why,
     _resetForTest: _resetForTest
   };
 });

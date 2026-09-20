@@ -8,6 +8,21 @@ try {
 
 const { browserAvailable } = require("./pwa-env");
 
+// 小古文列表条数的唯一来源（data/poems-classic.js 挂在 window 上，
+// 与 test/classic.test.js 同一种读法）。
+const fs = require("fs");
+const path = require("path");
+const vm = require("vm");
+const gwSandbox = { window: {}, console };
+gwSandbox.window = gwSandbox;
+vm.createContext(gwSandbox);
+vm.runInContext(
+  fs.readFileSync(path.join(__dirname, "..", "data", "poems-classic.js"), "utf8"),
+  gwSandbox,
+  { filename: "poems-classic.js" }
+);
+const GW_ITEM_COUNT = (gwSandbox.POEMS_CLASSIC || []).length;
+
 const IPHONE_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1';
 const IPAD_UA = 'Mozilla/5.0 (iPad; CPU OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1';
 const ANDROID_UA = 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36';
@@ -202,7 +217,12 @@ function check(name, cond, extra) {
         textLen: document.getElementById('rd-text').textContent.length
       };
     });
-    check('iPhone: 断网也能打开小古文页', gwOffline.items === 100, JSON.stringify(gwOffline));
+    // 条数断言不再写死：小古文库这一路是 34 → 100 →（合并后）102（千字文 / 百家姓）。
+    // 每补一次内容就要来改一个数，而这条断言想问的根本不是「几篇」——
+    // 它守的是**断网时这一页还能把列表铺出来**（预缓存里真有这张页与这份数据）。
+    // 于是改成「与数据源条数一致」：单来源、不会再漂。
+    check('iPhone: 断网也能打开小古文页',
+      gwOffline.items === GW_ITEM_COUNT, JSON.stringify(gwOffline));
     check('iPhone: 断网也能打开整页阅读器',
       gwOffline.readerOpen && gwOffline.textLen > 50, JSON.stringify(gwOffline));
 

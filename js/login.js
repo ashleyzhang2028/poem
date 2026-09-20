@@ -103,7 +103,22 @@
     TS.mount(el, { siteKey: tsConfig.siteKey, enabled: tsConfig.enabled }).then(function (st) {
 
       if (st && st.configured) show(el);
+      turnstileBrokenNote(slotId);
     });
+  }
+
+  // 装了、也配了，但 widget 渲染失败（Site Key 填错 / 域名没进允许列表）：
+  // 页面上**没有方框可勾**。旧版只会弹一句「请先完成人机校验（上面那个方框）」，
+  // 用户照着找那个不存在的方框，永远过不去。这里把真原因说出来，
+  // 并指一条能走的路（自检页 + /api/diag），而不是把人钉在页面上。
+  function turnstileBrokenNote(slotId) {
+    if (!TS || !TS.failed || !slotId) return;
+    var note = $("ts-broken-" + slotId);
+    if (!note) return;
+    if (!TS.failed()) { hide(note); text(note, ""); return; }
+    text(note, (TS.why ? TS.why() : "") +
+      "（服务端这一侧仍在拦 —— 你可以打开「我的 → 设置 · 关于 → 自检」或访问 /api/diag 看服务端是怎么说的）");
+    show(note);
   }
 
   function turnstileBlocked(msgId) {
@@ -111,7 +126,15 @@
     var why = TS.gate();
     if (!why) return false;
     msg(msgId, why, "warn");
+    if (TS.failed && TS.failed()) turnstileBrokenNote(TS_SLOTS[state.mode]);
     return true;
+  }
+
+  function turnstileHideNotes() {
+    Object.keys(TS_SLOTS).forEach(function (k) {
+      var note = $("ts-broken-" + TS_SLOTS[k]);
+      if (note) { hide(note); text(note, ""); }
+    });
   }
 
   function turnstileReset() {
@@ -142,6 +165,9 @@
     if (mode === "unverified") show($("step-unverified")); else hide($("step-unverified"));
     if (mode === "code") { show($("step-email")); hide($("step-code")); }
 
+    // 有 TS_SLOTS 的 mode 一共就这几个；切屏时把上一屏的失败提示收掉，
+    // 免得「注册」那一屏的红字留在「登录」屏上。
+    turnstileHideNotes();
     if (TS && mode !== "done") mountTurnstile(mode);
   }
 

@@ -134,9 +134,15 @@ const LOGIN = strip(loginJs), PROFILE = strip(profileJs), ADMIN = strip(adminJs)
   chk(/随机码已生成|已生成随机码/.test(SRC.login + LOGIN),
     '登录页用的是「已生成随机码」——措辞与本机发码的事实一致');
 
+  // 守的是「不自己发网络请求」——登录页一律走 js/auth-api.js（api.sendCode / api.verifyCode）。
+  // 判据只认**真正发请求的写法**（fetch / XHR / sendBeacon / 第三方通道），
+  // 不再拿 `/api/` 这条字面量当代理：它会把「提示里指给用户看的 /api/diag」
+  // 也判成一次请求（那不是请求，是一句指路的话；reset.js 有同一句）。
   const loginNet = LOGIN.replace(/btn-resend/g, 'btn-again');
-  chk(!/fetch\(|XMLHttpRequest|sendBeacon|navigator\.sendMail|sendgrid|resend\.com|supabase|\.vercel\.app|\/api\//i.test(loginNet),
-    'js/login.js 不发任何网络请求（本期没有后端，一个请求都不该有）');
+  chk(!/fetch\(|XMLHttpRequest|sendBeacon|navigator\.sendMail|sendgrid|resend\.com|supabase|\.vercel\.app/i.test(loginNet),
+    'js/login.js 不发任何网络请求（走 js/auth-api.js，不自己 fetch / XHR）');
+  chk(/AuthApi/.test(LOGIN),
+    '发码 / 校验一律走 AuthApi（接线层的唯一出口，路径只在 js/auth-api.js 一处）');
   chk(/mailto:/.test(LOGIN),
     'js/login.js 唯一的外发途径是 mailto:（把码发给用户自己，不经过任何服务器）');
 
