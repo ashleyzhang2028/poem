@@ -912,9 +912,9 @@
       '<span class="account-mask" id="account-mask">' + (ident.mask || "本机账号") + "</span>" + badge + "</p>" +
       rows +
       '<div class="settings-btns">' +
-      '<a class="btn ghost-btn" id="btn-goprofile" href="/profile/">个人中心</a>' +
+      '<a class="btn ghost-btn" id="btn-goprofile" href="/mine/">我的</a>' +
       '<button class="btn ghost-btn" id="btn-signout" type="button">退出登录</button></div>' +
-      '<p class="settings-hint">退出不删进度；注销在个人中心。</p>' +
+      '<p class="settings-hint">退出不删进度；注销在「我的」页。</p>' +
 
       '<p class="settings-hint" id="account-tier-src">层级来源：' +
       esc(ident.tierSource === "server" ? "服务器" : "本机登记") + "</p>";

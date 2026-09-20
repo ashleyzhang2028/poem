@@ -6,16 +6,19 @@ const read = f => fs.readFileSync(path + f, 'utf8');
 let fails = 0;
 const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else console.log('✓ ' + m); };
 
+// ⚠️ 原先这一档还有 `profile: 'profile/index.html'`（个人中心）。
+//    2026-09-20（Issue #244）那一页已删除，它独有的几件搬进了「我的」页；
+//    这里继续守的是登录页与管理后台，个人中心那一条口径的守卫在
+//    test/profile-removed.test.js 与 test/mine-page.test.js 里。
 const PAGES = {
   login: 'login/index.html',
-  profile: 'profile/index.html',
   admin: 'admin/index.html'
 };
 const SRC = {};
 Object.keys(PAGES).forEach(k => { SRC[k] = read(PAGES[k]); });
 
 const loginJs = read('js/login.js');
-const profileJs = read('js/profile.js');
+const mineJs = read('js/mine.js');
 const adminJs = read('js/admin-page.js');
 const chromeJs = read('js/chrome.js');
 const sw = read('sw.js');
@@ -32,7 +35,7 @@ const rule = (sel) => (CSS.match(new RegExp(
 const strip = t => t.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/^\s*\/\/.*$/gm, ' ');
 
 const stripHtml = t => t.replace(/<!--[\s\S]*?-->/g, ' ');
-const LOGIN = strip(loginJs), PROFILE = strip(profileJs), ADMIN = strip(adminJs);
+const LOGIN = strip(loginJs), MINE = strip(mineJs), ADMIN = strip(adminJs);
 
 {
   Object.keys(PAGES).forEach(k => {
@@ -62,9 +65,9 @@ const LOGIN = strip(loginJs), PROFILE = strip(profileJs), ADMIN = strip(adminJs)
   chk(SRC.login.indexOf('<script src="/js/login.js"></script>') <
       SRC.login.indexOf('<script src="/js/chrome.js"></script>'),
     'login 页里 js/login.js 排在 js/chrome.js 之前');
-  chk(SRC.profile.indexOf('<script src="/js/profile.js"></script>') <
-      SRC.profile.indexOf('<script src="/js/chrome.js"></script>'),
-    'profile 页里 js/profile.js 排在 js/chrome.js 之前');
+  chk(read('mine/index.html').indexOf('<script src="/js/mine.js"></script>') <
+      read('mine/index.html').indexOf('<script src="/js/chrome.js"></script>'),
+    '「我的」页里 js/mine.js 排在 js/chrome.js 之前');
 
   chk(SRC.admin.indexOf('<script src="/js/admin-page.js"></script>') <
       SRC.admin.indexOf('<script src="/js/chrome.js"></script>'),
@@ -74,26 +77,25 @@ const LOGIN = strip(loginJs), PROFILE = strip(profileJs), ADMIN = strip(adminJs)
 }
 
 {
-  const names = ['login', 'profile', 'admin'].map(k => (SRC[k].match(/data-page="([^"]+)"/) || [])[1]);
-  chk(names.join(',') === '登录,个人中心,管理后台', '三张页的页名各不相同且如实：' + names.join(' / '));
-  chk(new Set(names).size === 3, '三张页的页名不重复（否则「返回上一页」会让人分不清层）');
+  const names = ['login', 'admin'].map(k => (SRC[k].match(/data-page="([^"]+)"/) || [])[1]);
+  chk(names.join(',') === '登录,管理后台', '两张页的页名各不相同且如实：' + names.join(' / '));
+  chk(new Set(names).size === 2, '两张页的页名不重复（否则「返回上一页」会让人分不清层）');
 
-  chk(/data-back="\/profile\/"/.test(SRC.login),
-    '登录页的上一层是个人中心（登录是身份的事，落回设置页等于多绕一层）');
-  chk(/data-back="\/mine\/"/.test(SRC.profile), '个人中心的上一层是「我的」页（账号动线的上一层）');
-  chk(/data-back="\/profile\/"/.test(SRC.admin), '管理后台的上一层是个人中心（不是设置页）');
+  chk(/data-back="\/mine\/"/.test(SRC.login),
+    '登录页的上一层是「我的」页（登录是身份的事，落回设置页等于多绕一层）');
+  chk(/data-back="\/mine\/"/.test(SRC.admin), '管理后台的上一层是「我的」页（不是设置页）');
 
   chk(/login: "\/login\/"/.test(chromeJs), 'js/chrome.js 的 ROUTES 里有 /login/');
-  chk(/profile: "\/profile\/"/.test(chromeJs), 'js/chrome.js 的 ROUTES 里有 /profile/');
+  chk(!/profile/.test(chromeJs),
+    'js/chrome.js 的 ROUTES 里没有 profile（那一页 2026-09-20 已删，整条不残留）');
   chk(/admin: "\/admin\/"/.test(chromeJs), 'js/chrome.js 的 ROUTES 里有 /admin/');
 
-  chk(!/userAvatarHtml|ROUTES\.profile/.test(chromeJs),
-    '顶栏不再画头像，那条 /profile/ 的落点也随之撤掉（转由「我的」页第一条承担）');
-  chk(/profile: "\/profile\/"/.test(chromeJs), 'ROUTES 里仍有 /profile/（那一页还在）');
+  chk(!/userAvatarHtml/.test(chromeJs),
+    '顶栏不画头像（那条 /profile/ 的落点也随之撤掉，转由「我的」页承担）');
 }
 
 {
-  const files = { 'js/login.js': LOGIN, 'js/profile.js': PROFILE, 'js/admin-page.js': ADMIN };
+  const files = { 'js/login.js': LOGIN, 'js/mine.js': MINE, 'js/admin-page.js': ADMIN };
   Object.keys(files).forEach(f => {
     const s = files[f];
 
@@ -102,26 +104,24 @@ const LOGIN = strip(loginJs), PROFILE = strip(profileJs), ADMIN = strip(adminJs)
     chk(!/plan\s*===/.test(s), f + ' 没有自己比对 plan');
   });
 
-  chk(!/Ent\.matrix\(/.test(PROFILE),
-    '个人中心不再自己画一遍能力清单（清单只有 /plans/ 一处，见 plans-page 测试）');
-  chk(!/cap-list|cap-name|cap-hint/.test(PROFILE + SRC.profile),
-    '个人中心不再有清单的挂载点与样式类');
-  chk(!/cap-tier/.test(PROFILE + SRC.profile),
-    '「身份」那一行也撤了（层级只在身份卡徽章上说一次）');
-  chk(/Ent\.tierLabel\(/.test(PROFILE), '层级徽章仍然由 Entitlement.tierLabel() 出');
-  chk((PROFILE.match(/Ent\.tierLabel\(/g) || []).length === 1,
-    '层级文案在个人中心只有一处来源（实际 ' + (PROFILE.match(/Ent\.tierLabel\(/g) || []).length + ' 处）');
-  chk(!/renderCaps/.test(PROFILE),
-    '不再有 renderCaps()（那节撤了就不留一个画空东西的函数）');
-  chk(/Ent\.tierLabel\(/.test(PROFILE) && /Ent\.tierLabel\(/.test(ADMIN),
+  chk(!/Ent\.matrix\(/.test(MINE),
+    '「我的」页不自己画一遍能力清单（清单只有 /plans/ 一处，见 plans-page 测试）');
+  chk(!/cap-list|cap-name|cap-hint/.test(MINE + read('mine/index.html')),
+    '「我的」页没有清单的挂载点与样式类');
+  chk(/Ent\.tierLabel\(/.test(MINE), '层级徽章由 Entitlement.tierLabel() 出');
+  chk((MINE.match(/Ent\.tierLabel\(/g) || []).length === 1,
+    '层级文案在「我的」页只有一处来源（实际 ' + (MINE.match(/Ent\.tierLabel\(/g) || []).length + ' 处）');
+  chk(!/renderCaps/.test(MINE),
+    '没有 renderCaps()（那节撤了就不留一个画空东西的函数）');
+  chk(/Ent\.tierLabel\(/.test(MINE) && /Ent\.tierLabel\(/.test(ADMIN),
     '层级徽章文案一律由 Entitlement.tierLabel() 出');
   chk(/Ent\.TIERS/.test(ADMIN), '可发放的层级列表读 Entitlement.TIERS（不自己写死一份）');
   chk(/putGrant\(backing/.test(ADMIN) && /readGrants\(backing\)/.test(ADMIN) &&
       /removeGrant\(backing/.test(ADMIN) && /clearGrants\(backing\)/.test(ADMIN),
     '名单的增 / 查 / 删 / 清一律走 Entitlement 的发放接口');
   chk(!/poem_plan_grant_v1/.test(ADMIN), 'admin 页不自己拼发放名单的键名（键名只在 entitlement.js 里）');
-  chk(!/poem_plan_v1/.test(PROFILE + ADMIN + LOGIN),
-    '三张页都不自己碰层级存储键（只在 entitlement.js 里）');
+  chk(!/poem_plan_v1/.test(MINE + ADMIN + LOGIN),
+    '账号这几页都不自己碰层级存储键（只在 entitlement.js 里）');
 }
 
 {
@@ -155,23 +155,29 @@ const LOGIN = strip(loginJs), PROFILE = strip(profileJs), ADMIN = strip(adminJs)
 
 {
 
+  // ⚠️ 「我的」页原先在个人中心那一批里被判过，这里那一页已经删了；
+  //    js/mine.js 里 `poem_recite_settings_v1` 那**一处**是昵称的兜底写盘
+  //    （ProgressStore.patch 不可用时的退路，见 mine-page 测试里那条口径），
+  //    与「账号页乱写进度键」不是一回事，所以它从这张黑名单里摘出来，
+  //    换成它自己那条正面断言。
   const forbidden = ['poem_recite_progress_v1', 'poem_recite_collections_v1',
-    'poem_device_prefs_v1', 'poem_poems_read_v1', 'poem_classic_read_v1',
-    'poem_recite_settings_v1'];
-  const files = { 'js/login.js': LOGIN, 'js/profile.js': PROFILE, 'js/admin-page.js': ADMIN };
+    'poem_device_prefs_v1', 'poem_poems_read_v1', 'poem_classic_read_v1'];
+  const files = { 'js/login.js': LOGIN, 'js/mine.js': MINE, 'js/admin-page.js': ADMIN };
   Object.keys(files).forEach(f => {
     forbidden.forEach(k => {
       chk(files[f].indexOf(k) < 0, f + ' 不出现进度/设置键名 ' + k);
     });
   });
 
-  chk(/AuthCore\.signOut|A\.signOut/.test(PROFILE), '个人中心的退出走 AuthCore.signOut()（只清会话）');
-  chk(/退出不删进度/.test(SRC.profile), '界面上如实写「退出不删进度」（长句精简后事实保留）');
+  chk(/AuthCore\.signOut|A\.signOut/.test(MINE), '「我的」页的退出走 AuthCore.signOut()（只清会话）');
+  chk((MINE.match(/poem_recite_settings_v1/g) || []).length === 0,
+    'js/mine.js 不出现设置域键名（昵称一律走 ProgressStore.patch，见 mine-page 测试）');
+  chk(/退出不删进度/.test(read('mine/index.html')), '界面上如实写「退出不删进度」（长句精简后事实保留）');
 
-  chk(/delete-step-1/.test(SRC.profile) && /delete-step-2/.test(SRC.profile),
+  chk(/delete-step-1/.test(read('mine/index.html')) && /delete-step-2/.test(read('mine/index.html')),
     '注销账号分两步：先说明、再要求重输邮箱');
-  chk(/deleteAccount\(store, /.test(PROFILE), '注销走 AuthCore.deleteAccount()（内含邮箱二次确认）');
-  chk(/不动本机背诵进度/.test(SRC.profile), '注销前如实写明「不动本机背诵进度」（进度与账号是两回事）');
+  chk(/deleteAccount\(store, /.test(MINE), '注销走 AuthCore.deleteAccount()（内含邮箱二次确认）');
+  chk(/不动本机背诵进度/.test(read('mine/index.html')), '注销前如实写明「不动本机背诵进度」（进度与账号是两回事）');
 }
 
 {
@@ -247,15 +253,19 @@ const LOGIN = strip(loginJs), PROFILE = strip(profileJs), ADMIN = strip(adminJs)
 }
 
 {
-  ['login', 'profile', 'admin'].forEach(k => {
+  ['login', 'admin'].forEach(k => {
     chk(sw.indexOf('"./' + k + '/"') >= 0, 'sw.js 预缓存里有 ./' + k + '/（断网也进得去）');
   });
-  ['login.js', 'profile.js', 'admin-page.js'].forEach(f => {
+  ['login.js', 'admin-page.js'].forEach(f => {
     chk(sw.indexOf('"./js/' + f + '"') >= 0, 'sw.js 预缓存里有 js/' + f);
   });
+  chk(sw.indexOf('"./profile/"') < 0 && sw.indexOf('"./js/profile.js"') < 0,
+    'sw.js 预缓存里不再有已删除的个人中心（页面与脚本一起撤）');
+  chk(sw.indexOf('"./mine/"') >= 0 && sw.indexOf('"./js/mine.js"') >= 0,
+    'sw.js 预缓存里有「我的」页与 js/mine.js（个人中心那几件现在住在这里）');
   chk(/css\/account\.css/.test(sw), 'sw.js 预缓存里有 css/account.css');
   const ver = parseInt((sw.match(/poem-app-v(\d+)/) || [0, '0'])[1], 10);
-  chk(ver >= 128, '缓存版本已跟着提（本轮 Issue #163 动了 /plans/、/profile/ 与三份脚本，实际 v' + ver + '）');
+  chk(ver >= 188, '缓存版本已跟着提（本轮 Issue #244 删了 /profile/ 与它的脚本、改了 css，实际 v' + ver + '）');
 
   const list = [...sw.matchAll(/"(\.\/[^"]+)"/g)].map(m => m[1]);
   const missing = list.filter(u => {
@@ -293,6 +303,19 @@ const LOGIN = strip(loginJs), PROFILE = strip(profileJs), ADMIN = strip(adminJs)
     '输入框聚焦光晕与全站其他输入框逐位相同');
   chk(/@media \(min-width: 1024px\)/.test(css), '宽屏有单列不拉满整屏那一档（与全站同一条口径）');
   chk(/@media \(max-width: 340px\)/.test(css), '窄屏（320px 一档）对六格验证码单独收过间距');
+
+  // 用户 2026-09-20（Issue #244）：「登录注册等页面上下留白还是多了，
+  // 减少 30 px 上下 margin」。
+  // ⚠️ 这条守的是**那个数落在它该在的地方**（`#login-page` 的 min-height），
+  //    不是把数写死：写死一个数的话，下一次微调又要来改这条断言。
+  //    真正的「留白真的均等了、页面真的不溢出」由 test/pwa.test.js 的
+  //    真浏览器七档来判 —— 那一边才量得到真相。
+  const loginMin = rule('#login-page').match(/min-height:\s*calc\(100 \* var\(--app-vh\) - (\d+)px\)/);
+  chk(!!loginMin && Number(loginMin[1]) >= 160,
+    '登录页容器那一档已按 Issue #244 收过（100vh 减 160px 起，实际减去 ' +
+    (loginMin ? loginMin[1] : '?') + 'px）');
+  chk(/165px/.test(css) && /164px/.test(css),
+    '手机与宽屏两档各写了自己的数（165 / 164 —— 宽屏顶栏厚一档，所以少 1）');
 }
 
 {
@@ -327,12 +350,12 @@ const LOGIN = strip(loginJs), PROFILE = strip(profileJs), ADMIN = strip(adminJs)
     'AuthCore.resetCredential 仍在（本机那条路的能力没删）');
   chk(!/onResetSend|onResetVerify/.test(LOGIN), 'js/login.js 不再接旧的重设凭证那一块');
 
-  const toLogin = [...PROFILE.replace(/^\s*\/\/.*$/gm, ' ').matchAll(/"\/login\/"/g)].length;
+  const toLogin = [...MINE.replace(/^\s*\/\/.*$/gm, ' ').matchAll(/"\/login\/"/g)].length;
   chk(toLogin === 1,
-    '个人中心只有一颗去 /login/ 的按钮（实际 ' + toLogin +
-    ' 处 —— 身份卡那颗账号入口就是它，下面不该再摆一颗「建账号」）');
-  chk(/btn-account-entry/.test(SRC.profile) && /btn-account-entry/.test(PROFILE),
-    '个人中心靠身份卡那颗 #btn-account-entry 承担去 /login/ 的动线');
+    '「我的」页只有一颗去 /login/ 的按钮（实际 ' + toLogin +
+    ' 处 —— 账号卡那颗入口就是它，下面不该再摆一颗「建账号」）');
+  chk(/btn-account-entry/.test(read('mine/index.html')) && /btn-account-entry/.test(MINE),
+    '「我的」页靠账号卡那颗 #btn-account-entry 承担去 /login/ 的动线');
 }
 
 {
@@ -379,51 +402,32 @@ const LOGIN = strip(loginJs), PROFILE = strip(profileJs), ADMIN = strip(adminJs)
 
 {
 
-  const cards = [...SRC.profile.matchAll(/<section class="account-card/g)].length;
-  chk(cards === 4,
-    '个人中心是四张卡（身份 / 本机数据 / 关于 / 危险区，实际 ' + cards + '）');
-  const actionRows = [...SRC.profile.matchAll(/class="account-actions"/g)].length;
-  chk(actionRows === 2,
-    '操作键收成两行（身份卡那一行 + 「关于」卡那一行，实际 ' + actionRows + ' 行）');
-  chk(/id="identity-actions"/.test(SRC.profile),
-    '登录 / 退出 / 层级对比三颗键并排在同一行（#identity-actions）');
-
-  const idActions = (SRC.profile.match(/id="identity-actions"[\s\S]*?<\/div>/) || [''])[0];
-  chk(/id="btn-account-entry"[\s\S]*?id="btn-sign-out"[\s\S]*?id="btn-go-plans"/.test(idActions),
-    '登录 / 退出 / 层级对比三件真的在同一行里（顺序也在）');
+  const mineSettings = read('mine/index.html');
+  const cards = [...mineSettings.matchAll(/<section class="account-card/g)].length;
+  chk(cards === 6,
+    '「我的」页是六张卡（身份 / 子用户 / 本机数据 / 账号 / 关于 / 危险区，实际 ' + cards + '）');
+  chk(/id="about-card"/.test(mineSettings),
+    '「我的」页有「关于」卡（原先在个人中心第四张，随个人中心一起并进来）');
+  chk(/id="sync-row"/.test(mineSettings) && /id="toggle-sync"/.test(mineSettings),
+    '跨设备同步开关在「我的」页的「关于」卡里');
+  chk(/id="btn-go-admin"/.test(mineSettings),
+    '管理后台入口在「我的」页的「关于」卡里');
 
   // 用户 2026-09-18：这颗「层级对比」改成链接 —— 它是「去别处看一张表」，
   // 不是「登录 / 退出」那类动作。做成 <a href="/plans/">：不点 JS、
   // 中键新开、键盘可达、还没脚本时也能走。
-  chk(/<a[^>]*id="btn-go-plans"[^>]*href="\/plans\/"[^>]*>层级对比<\/a>/.test(SRC.profile) ||
-      /<a[^>]*href="\/plans\/"[^>]*id="btn-go-plans"[^>]*>层级对比<\/a>/.test(SRC.profile),
-    '「层级对比」是一个 <a href="/plans/">（用户 2026-09-18：这颗键改成链接）');
-  chk(!/<button[^>]*id="btn-go-plans"/.test(SRC.profile),
-    '它不再是一颗 <button>');
-  chk(!/class="account-btn[^"]*"[^>]*id="btn-go-plans"/.test(SRC.profile) &&
-      !/id="btn-go-plans"[^>]*class="account-btn/.test(SRC.profile),
-    '它也不再挂着按钮那套 class（挂了就还是画出来一颗键）');
-  chk(/\/plans\//.test(SRC.profile) || /location\.href = "\/plans\/"/.test(PROFILE),
-    '去 /plans/ 这条动线仍在（现在是 <a> 自己带着地址）');
-
-  chk(!/id="btn-go-sync"/.test(SRC.profile),
-    '「同步设置」那颗键撤掉了（点了还是要去通用页再点一次，纯属多余）');
-  chk(/id="sync-row"/.test(SRC.profile) && /id="toggle-sync"/.test(SRC.profile),
-    '跨设备同步在「关于」卡里是**一行**：项名 + 开关（#sync-row / #toggle-sync）');
-  chk(/<label class="switch sync-row"[\s\S]{0,400}?id="toggle-sync"[\s\S]{0,200}?switch-toggle/.test(SRC.profile),
-    '开关排在那一行的最右（label 包着 input + 轨道，由 .switch 的 space-between 推过去）');
-  chk(/id="sync-conflict"/.test(SRC.profile),
+  ['/plans/', '/terms/', '/privacy/'].forEach(href => {
+    chk(new RegExp('<a class="kv-link" href="' + href.replace(/\//g, '\\/') + '"').test(mineSettings),
+      href + ' 在「关于」卡里是一行「左格本身当链接」（与「设置 · 关于」同一形状）');
+  });
+  chk(/id="sync-conflict"/.test(mineSettings),
     '需要你裁决时那个冲突面板仍留着（有冲突才铺开）');
-  chk(!/id="btn-go-plans"[\s\S]{0,400}?id="btn-go-sync"/.test(SRC.profile),
-    '「层级对比」已从「关于」卡挪走（同一颗键不在两处）');
-  chk(/class="account-card danger-zone"/.test(SRC.profile),
+  chk(/<label class="switch sync-row"[\s\S]{0,400}?id="toggle-sync"[\s\S]{0,200}?switch-toggle/.test(mineSettings),
+    '开关排在那一行的最右（label 包着 input + 轨道，由 .switch 的 space-between 推过去）');
+  chk(/class="account-card danger-zone"/.test(mineSettings),
     '注销仍**单独一张卡**（朱砂描边的危险区，不与那些「去别处」的键并列）');
 
-  const fullBtns = [...SRC.profile.matchAll(/<button class="account-btn(?! ghost)[^"]*"/g)].length;
-  chk(fullBtns <= 4,
-    '满宽的实心按钮不再一排排出现在每张卡底下（实际 ' + fullBtns + ' 颗，都是表单 / 危险区里的）');
-
-  const profileVisible = stripHtml(SRC.profile);
+  const profileVisible = stripHtml(mineSettings);
   chk(!/昵称与印记在/.test(profileVisible),
     '删掉「昵称与印记在「设置 · 通用」里改。」（去别处调的话不必在这一页念）');
   chk(!/进度只在这台设备上/.test(profileVisible),
@@ -433,25 +437,24 @@ const LOGIN = strip(loginJs), PROFILE = strip(profileJs), ADMIN = strip(adminJs)
   chk(!/guest-card/.test(SRC.profile),
     '那块「未登录引导」整块撤掉（不留空壳容器）');
 
-  chk(/btn\.textContent = id\.signedIn \? "管理登录状态" : "登录"/.test(PROFILE),
+  chk(/bt\.textContent = id\.signedIn \? "管理登录状态" : "登录"/.test(MINE) ||
+      /"管理登录状态"\s*:\s*"登录"/.test(MINE),
     '未登录那颗键就叫「登录」（不把理由写在按钮上）');
 
-  chk(!/id="login-hint"/.test(stripHtml(SRC.profile)) &&
-    !/login-hint/.test(PROFILE) && !/diffLine/.test(PROFILE),
+  chk(!/id="login-hint"/.test(stripHtml(mineSettings)) &&
+    !/login-hint/.test(MINE) && !/diffLine/.test(MINE),
     '「差语音朗读」那一行撤干净（挂点、渲染、diffLine 都不留）');
-  chk(!/语音朗读/.test(strip(stripHtml(SRC.profile))),
-    '个人中心的**可见文字里**没有「语音朗读」四个字（只剩布局注释里提它）');
+  chk(!/语音朗读/.test(strip(stripHtml(mineSettings))),
+    '「我的」页的**可见文字里**没有「语音朗读」四个字');
 
-  chk(!/id="account-card"/.test(SRC.profile),
-    '「账号」不再独占一张卡（它回答的「我是谁」与身份卡重合）');
-  chk(/id="account-list"/.test(SRC.profile) && /\$\("account-list"\)/.test(PROFILE),
-    '账号那几行挪进「关于」卡（#account-list），仍由 renderAccount() 画');
+  chk(/id="account-card"/.test(mineSettings) && /id="account-list"/.test(mineSettings),
+    '账号卡与它的列表挂载点都在（#account-card / #account-list）—— 「我的」页现在是它的家');
 
   // 用户 2026-09-18：这一页的「关于」不再自己念一遍「应用 / 版本」——
   // 那两行在「设置 · 关于」里已经说得很清楚，同一件事只说一遍。
   // 留下的两个法务入口也走同一套排法：左列是链接、右列留空、行高一致。
-  const aboutBlock = SRC.profile.slice(SRC.profile.indexOf('account-card-title">关于'),
-    SRC.profile.indexOf('id="sync-row"'));
+  const aboutBlock = mineSettings.slice(mineSettings.indexOf('account-card-title">关于'),
+    mineSettings.indexOf('id="sync-row"'));
   chk(!/应用<\/span>/.test(aboutBlock) && !/跬步 · 古诗词背诵/.test(aboutBlock),
     '「关于」卡里不再有「应用」那一行（应用名已撤，用户 2026-09-18：不要与应用/版本一样）');
   chk(!/版本<\/span>/.test(aboutBlock),
@@ -459,7 +462,7 @@ const LOGIN = strip(loginJs), PROFILE = strip(profileJs), ADMIN = strip(adminJs)
   chk(/\/terms\//.test(aboutBlock) && /\/privacy\//.test(aboutBlock),
     '用户协议与隐私条款两条入口仍在「关于」卡里');
   chk(/<span class="kv-v"><\/span>/.test(aboutBlock),
-    '那两条的右列**留空**（项名自己就是入口，不用再挂一颗「查看」）');
+    '那三条的右列**留空**（项名自己就是入口，不用再挂一颗「查看」）');
   chk(!/>查看</.test(aboutBlock), '也不再各挂一个「查看」');
 
   // 「不画下划线」全站只有一条默认（style.css 顶上的 `a { text-decoration: none }`），
@@ -473,39 +476,47 @@ const LOGIN = strip(loginJs), PROFILE = strip(profileJs), ADMIN = strip(adminJs)
 {
   const { JSDOM } = require('jsdom');
   const ROOT = require('path').join(__dirname, '..');
+  const mineHtml = read('mine/index.html');
   const boot = () => {
-    const d = new JSDOM(read('profile/index.html'),
-      { url: 'https://local.test/profile/', runScripts: 'outside-only', pretendToBeVisual: true });
+    const d = new JSDOM(mineHtml,
+      { url: 'https://local.test/mine/', runScripts: 'outside-only', pretendToBeVisual: true });
     const W = d.window;
 
     ['js/auth-core.js', 'js/auth-api.js', 'js/entitlement.js', 'js/account-api.js',
       'js/family.js', 'js/progress-store.js', 'js/sync-store.js', 'js/storage.js',
-      'js/avatar.js', 'js/profile.js'].forEach(f => {
+      'js/avatar.js', 'js/avatar-image.js', 'js/avatar-edit.js',
+      'js/family-ui.js', 'js/mine.js'].forEach(f => {
         W.eval(fs.readFileSync(ROOT + '/' + f, 'utf8'));
       });
     W.document.dispatchEvent(new W.Event('DOMContentLoaded', { bubbles: true }));
     return W;
   };
 
-  // 那一行里有动作（按钮）也有落点（链接），所以这里按「看得见的东西」数，
-  // 不按标签数 —— 未登录两件、已登录三件，顺序与页面上一样。
-  const shown = (W) => [...W.document.getElementById('identity-actions')
-    .querySelectorAll('button, a')].filter(el => !el.hidden).map(el => el.id);
-
   let W = boot();
-  let row = W.document.getElementById('identity-actions');
-  const ids = shown(W);
-  chk(ids.join(',') === 'btn-account-entry,btn-go-plans',
-    '未登录时那一行里是「登录」+「层级对比」两件（实际 ' + ids.join(',') + '）');
-  chk(W.document.getElementById('btn-go-plans').tagName === 'A' &&
-      W.document.getElementById('btn-go-plans').getAttribute('href') === '/plans/',
-    '「层级对比」真的画成了链接（tagName 是 A、href 是 /plans/）');
-  chk(W.document.getElementById('btn-account-entry').textContent === '登录',
-    '那颗键上只有一个词：登录（实际「' + W.document.getElementById('btn-account-entry').textContent + '」）');
+  const d0 = W.document;
 
-  chk(W.document.getElementById('login-hint') === null,
-    '它底下不再有「差语音朗读」那一行（挂点撤了，实际 ' +
-    (W.document.getElementById('login-hint') ? '还在' : 'null') + '）');
+  // 账号卡那一行：登录 / 退出（层级对比已挪进「关于」卡）。
+  chk(d0.getElementById('btn-account-entry').textContent === '登录',
+    '未登录时那颗键上只有一个词：登录（实际「' +
+    d0.getElementById('btn-account-entry').textContent + '」）');
+  chk(d0.getElementById('login-hint') === null,
+    '账号卡底下没有「差语音朗读」那一行（挂点撤了）');
+
+  // 「关于」卡：三行链接 + 同步开关 + 管理后台（原先在个人中心那张卡里）
+  const about = d0.getElementById('about-card');
+  chk(!!about, '「我的」页上画出了「关于」卡（#about-card）');
+  chk(!!about.querySelector('a[href="/plans/"]'),
+    '「层级对比」在「关于」卡里是一行链接（原先它在个人中心的身份卡那一行）');
+  chk(!!about.querySelector('a[href="/terms/"]') && !!about.querySelector('a[href="/privacy/"]'),
+    '用户协议与隐私条款两条入口也在这张卡里');
+
+  const sync = d0.getElementById('toggle-sync');
+  chk(!!sync && sync.tagName === 'INPUT' && sync.type === 'checkbox',
+    '那一行里是一颗真的 checkbox（键盘 / 读屏 / 原生 toggle 都走它）');
+  chk(!!about.querySelector('.switch .switch-toggle'),
+    '它的可见本体仍是那颗自绘胶囊（.switch-toggle）');
+  chk(d0.getElementById('sync-conflict').hidden === true,
+    '没有冲突时不摆裁决面板（不给用户看一个空壳）');
 
   W = boot();
   const A = W.AuthCore;
@@ -513,13 +524,10 @@ const LOGIN = strip(loginJs), PROFILE = strip(profileJs), ADMIN = strip(adminJs)
   const req = A.requestCode(store, { channel: 'email', value: 'zhangmin@163.com' }, 'login');
   A.verifyCode(store, req.codeId, req.code, 'login');
   W.document.dispatchEvent(new W.Event('DOMContentLoaded', { bubbles: true }));
-  const ids2 = shown(W);
-  chk(ids2.join(',') === 'btn-account-entry,btn-sign-out,btn-go-plans',
-    '已登录时三件（管理登录状态 / 退出 / 层级对比）在同一行（实际 ' + ids2.join(',') + '）');
-  chk(W.document.getElementById('login-hint') === null,
-    '已登录时那一行同样不在（这件事已经不再说了）');
   chk(W.document.getElementById('btn-account-entry').textContent === '管理登录状态',
     '已登录时那颗键换成「管理登录状态」（仍落在 /login/，不是死路）');
+  chk(W.document.getElementById('btn-sign-out').hidden === false,
+    '已登录时「退出登录」露出来（与「管理登录状态」同一行）');
 }
 
 {

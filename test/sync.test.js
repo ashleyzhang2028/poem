@@ -639,15 +639,30 @@ async function main() {
 
     const sw = fs.readFileSync(path.join(ROOT, "sw.js"), "utf8");
     chk(/js\/sync-store\.js/.test(sw), "sw.js 预缓存含 js/sync-store.js（断网也要能同步）");
+
+    // ⚠️ 同步引擎自己那三把键的分家口径（2026-09-20 的真实故障）：
+    //    它们在 ProgressStore 的分域表里没有登记，原先掉进 family 那边
+    //    「认不出就默认分家」的兜底 —— 于是「设置 · 通用」里开着的同步，
+    //    切到「我的」页显示成没开（两页读的是两个不同孩子的键）。
+    //    答案现在只有一处：`SyncStore.perChildKey()`，family 只是转问它。
+    const ssSrc = fs.readFileSync(path.join(ROOT, "js/sync-store.js"), "utf8");
+    chk(/perChildKey/.test(ssSrc), "sync-store 导出 perChildKey()（分家口径的唯一一处）");
+    chk(/Family\.keyFor/.test(ssSrc),
+      "seenKey() 走 Family.keyFor()（与进度键同一套拼法，不再各拼各的）");
+    const famSrc = fs.readFileSync(path.join(ROOT, "js/family.js"), "utf8");
+    chk(/SS\.perChildKey/.test(famSrc),
+      "family 的 isPerChild() 会先问 SyncStore.perChildKey()（不再替它猜）");
     const vm = sw.match(/poem-app-v(\d+)/);
 
     chk(!!vm && Number(vm[1]) >= 132, "sw.js 缓存版本提到 v132 以上（实际 " + (vm && vm[1]) + "）");
 
     const gen = fs.readFileSync(path.join(ROOT, "settings/general/index.html"), "utf8");
     chk(/id="toggle-sync"/.test(gen), "设置 · 通用里有同步开关（用户有权拒绝上传）");
-    const prof = fs.readFileSync(path.join(ROOT, "profile/index.html"), "utf8");
+    // ⚠️ 冲突裁决三颗键原先在 /profile/ 那一页（个人中心）。
+    //    2026-09-20（Issue #244）那一页已删除，这一块整体搬进了「我的」页。
+    const minePage = fs.readFileSync(path.join(ROOT, "mine/index.html"), "utf8");
     ["btn-keep-local", "btn-keep-remote", "btn-export-first"].forEach(id => {
-      chk(new RegExp('id="' + id + '"').test(prof), "个人中心有冲突裁决入口 " + id);
+      chk(new RegExp('id="' + id + '"').test(minePage), "「我的」页有冲突裁决入口 " + id);
     });
 
     const setjs = fs.readFileSync(path.join(ROOT, "js/settings.js"), "utf8");
@@ -764,12 +779,22 @@ async function main() {
     const pending = S.pending();
     chk(pending.some(x => x.id === "p_probe"), "于是它真的进了「该推的」清单");
 
-    const w3 = await page("profile", {
-      "poem_recite_progress_v1": JSON.stringify({ p1: { level: 5, updatedAt: 9000 } }),
-      "poem_sync_seen_v1": JSON.stringify({ p1: -1 })
-    });
+    // ⚠️ 种子必须种在**分家之后**那两把键上：子用户 id 是每张页各自现建的
+    //    随机值，所以不能「先空跑一页拿 id 再种给下一页」——两页的 id 不同。
+    //    做法是先让这一页自己把子用户建出来，在同一页里按它的 id 种下
+    //    进度与「见过没」，再整页重画一次。
+    //    （2026-09-20 之前这里直接种 `poem_sync_seen_v1`：那是唯一一把
+    //      un-suffixed 键，能过只是因为当时引擎自己拼 seen 键、
+    //      与进度键的分家口径不一致。现在两条走同一个出口 Family.keyFor()。）
+    const w3 = await page("mine", {});
+    const cid3 = w3.Family.currentId({ backing: w3.localStorage });
+    w3.localStorage.setItem("poem_recite_progress_v1::" + cid3,
+      JSON.stringify({ p1: { level: 5, updatedAt: 9000 } }));
+    w3.localStorage.setItem("poem_sync_seen_v1::" + cid3, JSON.stringify({ p1: -1 }));
+    w3.document.dispatchEvent(new w3.Event("DOMContentLoaded"));
+    await new Promise(r => setTimeout(r, 40));
     const box = w3.document.getElementById("sync-conflict");
-    chk(!!box && box.hidden === false, "有冲突时个人中心把裁决面板摆出来");
+    chk(!!box && box.hidden === false, "有冲突时「我的」页把裁决面板摆出来");
     const lead = w3.document.getElementById("conflict-lead").textContent;
     ok(/1 篇/.test(lead), "面板里写明争的是几篇（不让用户在不知代价的情况下选）");
     ok(/快照/.test(lead), "面板里写明「保留账号」之前会留快照（后悔药先说清）");
@@ -780,7 +805,7 @@ async function main() {
 
     const pInput = w3.document.getElementById("toggle-sync");
     chk(!!pInput && pInput.tagName === "INPUT" && pInput.type === "checkbox",
-      "个人中心那一行的开关是一颗真的 checkbox（键盘 / 读屏 / 原生 toggle 都走它）");
+      "「我的」页那一行的开关是一颗真的 checkbox（键盘 / 读屏 / 原生 toggle 都走它）");
     chk(!!w3.document.querySelector(".switch .switch-toggle"),
       "它的可见本体仍是那颗自绘胶囊（.switch-toggle）");
     eq(pInput.checked, false,
@@ -789,16 +814,16 @@ async function main() {
     const wSet = await page("settings/general", {});
     await signInPro(wSet, "same@example.com");
     wSet.SyncStore.setEnabled(true);
-    const wShare = await page("profile", { "poem_sync_pref_v1": wSet.localStorage.getItem("poem_sync_pref_v1") });
+    const wShare = await page("mine", { "poem_sync_pref_v1": wSet.localStorage.getItem("poem_sync_pref_v1") });
     eq(wShare.document.getElementById("toggle-sync").checked, true,
-      "在「设置 · 通用」里打开之后，个人中心那一行也是开着的（两页同一份状态）");
+      "在「设置 · 通用」里打开之后，「我的」页那一行也是开着的（两页同一份状态）");
 
     const pInp = wShare.document.getElementById("toggle-sync");
     pInp.checked = false;
     pInp.dispatchEvent(new wShare.Event("change", { bubbles: true }));
     await new Promise(r => setTimeout(r, 30));
     eq(wShare.SyncStore.enabled(), false,
-      "在个人中心拨关：引擎里真的关上了（写的是同一条接线）");
+      "在「我的」页拨关：引擎里真的关上了（写的是同一条接线）");
     eq(JSON.parse(wShare.localStorage.getItem("poem_sync_pref_v1")).enabled, false,
       "落盘的也是同一个键（不是另一份只在个人中心生效的偏好）");
 
@@ -806,7 +831,7 @@ async function main() {
       "关掉之后那一行不再留在「开启中」（实际「" +
         wShare.document.getElementById("sync-hint").textContent + "」）");
 
-    const w4 = await page("profile", {});
+    const w4 = await page("mine", {});
     const box4 = w4.document.getElementById("sync-conflict");
     chk(!!box4 && box4.hidden === true, "没有冲突时不摆面板（不给用户看一个空壳）");
   }

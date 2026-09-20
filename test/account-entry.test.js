@@ -10,20 +10,20 @@ const strip = t => t.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/^\s*\/\/.*$/gm, 
 
 const stripHtml = t => t.replace(/<!--[\s\S]*?-->/g, ' ');
 
+// ⚠️ 原先这一档还读 `profile/index.html` 与 `js/profile.js`（个人中心）。
+//    2026-09-20（Issue #244）那一页已删除 —— 它承担的账号入口动线
+//    现在由「我的」页那一条独家承担，断言的落点也跟着换成 js/mine.js。
 const SETTINGS_HOME = 'settings/index.html';
 const MINE_HOME = 'mine/index.html';
-const PROFILE = 'profile/index.html';
 const LOGIN = 'login/index.html';
 
 const SRC = {
   home: read(SETTINGS_HOME),
   mine: read(MINE_HOME),
-  profile: read(PROFILE),
   login: read(LOGIN)
 };
 const NAV = read('js/settings-nav.js');
 const MINE_JS = read('js/mine.js');
-const PROFILE_JS = read('js/profile.js');
 const LOGIN_JS = read('js/login.js');
 const CHROME = read('js/chrome.js');
 const SW = read('sw.js');
@@ -71,23 +71,25 @@ function repaint(p) {
 
   chk(!/userAvatarHtml|userHref|__AVATAR_PAGE__/.test(CHROME),
     'chrome.js 不再画顶栏头像，那条 /profile/ 的落点也整件撤掉');
+  chk(!/profile/.test(CHROME),
+    'chrome.js 里连 profile 这个键名都没有了（个人中心那一页已删除，整条撤干净）');
 
   chk(!/top-user/.test(strip(CHROME)) && !/avatar-top/.test(strip(CHROME)),
     '顶栏那枚头像相关的类名也从引擎里删干净（不留没人用的渲染分支）');
 }
 
 {
-  chk(/id="btn-account-entry"/.test(SRC.profile),
-    '/profile/ 的身份卡里有账号入口（它是账号三页唯一的枢纽）');
-  chk(/renderAccountEntry\(id\)/.test(PROFILE_JS),
-    '那颗入口的文案由 profile.js 按登录态写（不在 HTML 里写死两处）');
-  chk(/location\.href = "\/login\/"/.test(PROFILE_JS),
+  chk(/id="btn-account-entry"/.test(SRC.mine),
+    '「我的」页的账号卡里有账号入口（个人中心删掉后它是唯一的枢纽）');
+  chk(/"管理登录状态"\s*:\s*"登录"/.test(MINE_JS) || /id\.signedIn/.test(MINE_JS),
+    '那颗入口的文案由 js/mine.js 按登录态写（不在 HTML 里写死两处）');
+  chk(/location\.href = "\/login\/"/.test(MINE_JS),
     '账号入口落在 /login/');
-  chk(/id\.signedIn/.test(PROFILE_JS.slice(PROFILE_JS.indexOf('function renderAccountEntry'))),
+  chk(/id\.signedIn/.test(MINE_JS.slice(MINE_JS.indexOf('function renderSignOut'))),
     '入口文案按 id.signedIn 分两种（不是自己另算一遍登录态）');
 
-  chk(!/replace\(\s*"\/profile\//.test(PROFILE_JS) && !/history\.back/.test(PROFILE_JS),
-    '个人中心不做「跳回来」的花招（点一下就被弹回去，用户只会以为按钮坏了）');
+  chk(!/history\.back/.test(MINE_JS),
+    '「我的」页不做「跳回来」的花招（点一下就被弹回去，用户只会以为按钮坏了）');
 }
 
 {
@@ -192,37 +194,36 @@ function repaint(p) {
 }
 
 {
-  chk(/data-back="\/profile\/"/.test(SRC.login),
-    '登录页的返回落点是个人中心（登录是身份的事，落回设置页等于又多绕一层）');
-  chk(/data-back="\/mine\/"/.test(SRC.profile),
-    '个人中心的返回落点仍是「我的」页（账号动线的上一层');
+  chk(/data-back="\/mine\/"/.test(SRC.login),
+    '登录页的返回落点是「我的」页（登录是身份的事，落回设置页等于又多绕一层）');
   chk(!/data-back="\/settings\/"/.test(SRC.login), '登录页不再退回设置页（两处落点会打架）');
 
-  chk(/location\.href = nextUrl\(\) \|\| "\/profile\/"/.test(LOGIN_JS),
-    '登录成功后回个人中心（权限那一节就在那里，登录完最该看见的是「我在哪一层」）');
+  chk(/location\.href = nextUrl\(\) \|\| "\/mine\/"/.test(LOGIN_JS),
+    '登录成功后回「我的」页（层级徽章就在那里，登录完最该看见的是「我在哪一层」）');
   chk(/\?next=/.test(read('js/print.js')),
     '从别的页面被送来登录的，登录完回原来那一页（?next= 只认站内路径，Issue #229）');
   chk(/raw\.charAt\(0\) !== "\/"/.test(LOGIN_JS) && /raw\.charAt\(1\) === "\/"/.test(LOGIN_JS),
     'next 只收本站路径：/ 开头、第二个字符不是 /（不当开放跳板）');
   chk(!/\/settings\/general\//.test(LOGIN_JS), '登录页里不再有回设置 · 通用的老落点');
 
-  chk(/login: "\/login\/"/.test(CHROME) && /profile: "\/profile\/"/.test(CHROME),
-    'js/chrome.js 的 ROUTES 里有 /login/ 与 /profile/');
+  chk(/login: "\/login\/"/.test(CHROME) && /mine: "\/mine\/"/.test(CHROME),
+    'js/chrome.js 的 ROUTES 里有 /login/ 与 /mine/（/profile/ 那条已随页面删除）');
 }
 
 {
 
-  chk(/location\.href = "\/login\/"/.test(PROFILE_JS), '路一：/profile/ → /login/');
-  chk(/"\/login\//.test(MINE_JS), '路二：「我的」页那颗账号入口 → /login/');
+  chk(/"\/login\//.test(MINE_JS), '路一：「我的」页那颗账号入口 → /login/');
 
-  ['login', 'profile', 'admin', 'settings', 'settings/general', 'mine'].forEach(f => {
+  ['login', 'admin', 'settings', 'settings/general', 'mine'].forEach(f => {
     chk(fs.existsSync(path + f + '/index.html'), '落点真的有那张页：/' + f + '/');
   });
+  chk(!fs.existsSync(path + 'profile/index.html'),
+    '/profile/ 那一页不在（2026-09-20 Issue #244 已删，删干净不是留个空目录）');
 
   chk(/id="top-back"|data-back=/.test(SRC.login) || /top-back/.test(CHROME),
     '登录页有返回键（深页不留底部页签，只能靠顶栏退出）');
-  chk(/data-dock="off"/.test(SRC.login) && /data-dock="off"/.test(SRC.profile),
-    '登录页与个人中心都不挂底部页签（专心做完一件事，免得误触跳走）');
+  chk(/data-dock="off"/.test(SRC.login) && /data-dock="off"/.test(read('admin/index.html')),
+    '登录页与管理后台都不挂底部页签（专心做完一件事，免得误触跳走）');
 }
 
 {

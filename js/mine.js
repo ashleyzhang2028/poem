@@ -319,14 +319,14 @@
   function commitNickname(value) {
     var v = String(value == null ? "" : value).trim().slice(0, 12);
     var P = window.ProgressStore;
-    if (P && typeof P.patch === "function") {
+    // ⚠️ 设置域键名只在 js/progress-store.js 一处拼（saveUsername）。
+    //    本页不再自己 setItem —— 那是第二处拼键名的地方，改键名时必漏一处。
+    //    引擎不可用（老缓存 / 脚本顺序不对）时也照旧走它：saveUsername 自己
+    //    有兜底那一支，兜底同样不把键名漏到页面里。
+    if (P && typeof P.saveUsername === "function") {
+      P.saveUsername(v);
+    } else if (P && typeof P.patch === "function") {
       P.patch({ username: v });
-    } else {
-      try {
-        var raw = JSON.parse(backing.getItem("poem_recite_settings_v1") || "{}");
-        raw.username = v;
-        backing.setItem("poem_recite_settings_v1", JSON.stringify(raw));
-      } catch (e) { }
     }
     var Av = window.Avatar;
     if (Av && typeof Av.saveNickname === "function") {
@@ -467,6 +467,7 @@
     renderStats();
     renderAccount(sess);
     renderNickname();
+    renderSync();
     renderAdmin(id);
   }
 
@@ -485,6 +486,15 @@
     if (dCancel) dCancel.addEventListener("click", onDeleteCancel);
     var dConfirm = $("btn-delete-confirm");
     if (dConfirm) dConfirm.addEventListener("click", onDeleteConfirm);
+
+    var syncToggle = $("toggle-sync");
+    if (syncToggle) syncToggle.addEventListener("change", onToggleSync);
+    var keepLocal = $("btn-keep-local");
+    if (keepLocal) keepLocal.addEventListener("click", function () { onResolve("keepLocal"); });
+    var keepRemote = $("btn-keep-remote");
+    if (keepRemote) keepRemote.addEventListener("click", function () { onResolve("keepRemote"); });
+    var exportFirst = $("btn-export-first");
+    if (exportFirst) exportFirst.addEventListener("click", function () { onResolve("exportFirst"); });
 
     bindNickname();
     if (document.querySelector("#site-dock .dock-icon")) {
@@ -520,5 +530,123 @@
     init();
   }
 
-  window.MinePage = { paint: paint, esc: esc };
+  // ---- 跨设备同步（原先在 /profile/ 那一页，个人中心并入「我的」后搬到这里）----
+  // ⚠️ 同步的唯一开关与唯一的裁决出口都只在这一处：`SyncStore`。
+  //    本页只负责「把引擎的状态画出来」与「把用户的动作转给引擎」，
+  //    不自己判登录与否、也不自己算层级（与 js/settings.js 同一条口径）。
+  function syncMod() { return window.SyncStore || null; }
+
+  function renderSync() {
+    var input = $("toggle-sync");
+    var hint = $("sync-hint");
+    if (!input || !hint) return;
+    var S = syncMod();
+
+    if (!S) {
+      input.disabled = true;
+      hint.textContent = "同步层没加载成功，刷新页面重试（背诵不受影响）。";
+      hide($("sync-conflict"));
+      return;
+    }
+
+    var st = S.status();
+    var on = S.enabled();
+    var n = S.conflicts().length;
+    input.checked = on;
+
+    input.disabled = (st === "unavailable");
+
+    hint.textContent = n
+      ? "有 " + n + " 篇需要你选一下（下面），选完之前不会自动合并。"
+      : st === "unavailable"
+      ? "本站未开放同步，进度只存本机。"
+      : st === "tier"
+        ? "跨设备云同步要 Pro 起（当前没到这一层）。进度仍在本机、一字不少。"
+        : st === "off"
+          ? ""
+          : st === "signin"
+            ? "已开启，登录后才会真的同步。"
+            : "开启中：进度、账号设置、自选集合、集子已读、今日加背、头像都会同步；本机那份始终完整，断网照常背。";
+
+    renderConflict(S, !!sess());
+  }
+
+  function onToggleSync() {
+    var input = $("toggle-sync");
+    var S = syncMod();
+    if (!input || !S) return;
+    var r = S.setEnabled(input.checked);
+    if (!r || !r.ok) {
+      input.checked = !!S.enabled();
+      showToast(r && r.code === "E_TIER"
+        ? (r.hint || "跨设备云同步要 Pro 起")
+        : "浏览器不允许保存设置，这次改动没生效");
+      renderSync();
+      return;
+    }
+    renderSync();
+    if (input.checked) {
+
+      try {
+        var first = S.firstSync();
+        if (first && first.then) first.then(function () { renderSync(); }, function () {  });
+      } catch (e) {  }
+      showToast(S.status() === "signin" ? "已开启，登录后才会真的同步" : "已开启跨设备同步");
+    } else {
+      showToast("已关闭同步，进度仍在本机");
+    }
+  }
+
+  function sess() {
+    try { return A && A.session ? A.session(store) : null; } catch (e) { return null; }
+  }
+
+  function renderConflict(S, signedIn) {
+    var box = $("sync-conflict");
+    var lead = $("conflict-lead");
+    if (!box) return;
+    var list = S.conflicts();
+    if (!list.length) { hide(box); return; }
+
+    var localCount = 0;
+    try { localCount = Object.keys(window.ProgressStore.all() || {}).length; } catch (e) { localCount = 0; }
+    if (lead) {
+      lead.textContent = "有 " + list.length + " 篇两边都改过，判不出该听谁的，未自动合并。" +
+        "本机共 " + localCount + " 篇。" +
+        (signedIn ? "" : "请先登录再选。") +
+        "选「保留账号」前会先在本机留一份快照。";
+    }
+    show(box);
+  }
+
+  function onResolve(mode) {
+    var S = syncMod();
+    var msg = $("msg-conflict");
+    if (!S) return;
+    var r = S.resolveConflict(mode);
+    if (!r || !r.ok) {
+      if (msg) { msg.textContent = (r && r.message) || "没能完成这一步"; msg.className = "account-msg warn"; }
+      return;
+    }
+    if (mode === "exportFirst") {
+
+      var text = JSON.stringify(r.backup || {}, null, 2);
+      try {
+        var blob = new Blob([text], { type: "application/json" });
+        var a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "跬步-同步快照-" + new Date().toISOString().slice(0, 10) + ".json";
+        a.click();
+        URL.revokeObjectURL(a.href);
+        if (msg) { msg.textContent = "快照已导出，冲突还没处理，你想好了再回来选。"; msg.className = "account-msg"; }
+      } catch (e) {
+        if (msg) { msg.textContent = "这份浏览器不允许直接下载文件，请到「设置 · 通用」用导出备份。"; msg.className = "account-msg warn"; }
+      }
+      return;
+    }
+    renderSync();
+    showToast(mode === "keepLocal" ? "已按本机这一份处理，稍后会同步上去" : "已按账号这一份处理");
+  }
+
+  window.MinePage = { paint: paint, esc: esc, renderSync: renderSync };
 })();

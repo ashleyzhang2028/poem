@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#2f6055" />
   <title>我的 · 跬步</title>
-  <meta name="description" content="跬步「我的」：头像与昵称、登录状态与本机层级、本机背诵进度概览，以及注销账号。设置整页在小齿轮后面。" />
+  <meta name="description" content="跬步「我的」：头像与昵称、子用户、登录状态与本机层级、本机背诵进度概览、跨设备同步开关、法务入口，以及注销账号。设置整页在小齿轮后面。" />
   <meta name="format-detection" content="telephone=no" />
   <meta name="robots" content="noindex, follow" />
 
@@ -21,7 +21,7 @@
   <link rel="stylesheet" href="css/account.css" />
 </head>
 
-<body data-nav="mine" data-page="我的" data-sub="头像 · 昵称 · 子用户 · 本机数据" data-top-action="settings">
+<body data-nav="mine" data-page="我的" data-sub="头像 · 昵称 · 账号 · 本机数据" data-top-action="settings">
   <div class="app">
     <header class="topbar"></header>
 
@@ -95,6 +95,37 @@
         <p class="account-hint" id="signout-hint" hidden>退出不删进度；注销在下面「危险区」。</p>
       </section>
 
+      <section class="account-card" id="about-card">
+        <h2 class="account-card-title">关于</h2>
+        <div class="kv-list">
+          <div class="kv-row"><span class="kv-k"><a class="kv-link" href="/terms/">用户协议</a></span><span class="kv-v"></span></div>
+          <div class="kv-row"><span class="kv-k"><a class="kv-link" href="/privacy/">隐私条款</a></span><span class="kv-v"></span></div>
+          <div class="kv-row"><span class="kv-k"><a class="kv-link" href="/plans/">层级对比</a></span><span class="kv-v"></span></div>
+        </div>
+
+        <label class="switch sync-row" id="sync-row">
+          <span class="settings-label" id="sync-name">跨设备同步</span>
+          <input id="toggle-sync" class="switch-input" type="checkbox"
+                 role="switch" aria-labelledby="sync-name" />
+          <span class="switch-toggle" aria-hidden="true"></span>
+        </label>
+        <p class="switch-hint" id="sync-hint"></p>
+
+        <div id="sync-conflict" hidden>
+          <p class="account-hint" id="conflict-lead"></p>
+          <div class="settings-btns">
+            <button class="account-btn" id="btn-keep-local" type="button">保留本机</button>
+            <button class="account-btn ghost" id="btn-keep-remote" type="button">保留账号</button>
+            <button class="account-btn ghost" id="btn-export-first" type="button">先导出再决定</button>
+          </div>
+          <p class="account-msg" id="msg-conflict"></p>
+        </div>
+
+        <div class="account-actions">
+          <button class="account-btn ghost" id="btn-go-admin" type="button" hidden>管理后台</button>
+        </div>
+      </section>
+
       <section class="account-card danger-zone" id="danger-card">
         <h2 class="account-card-title danger-title">注销账号</h2>
         <p class="account-lead">
@@ -122,9 +153,6 @@
         </div>
       </section>
 
-      <div class="admin-slot">
-        <button class="account-btn ghost" id="btn-go-admin" type="button" hidden>管理后台</button>
-      </div>
     </main>
 
   </div>

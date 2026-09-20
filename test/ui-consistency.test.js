@@ -665,7 +665,6 @@ if (!JSDOM) {
     ['settings/index.html', '/settings/'],
     ['library/index.html', '/library/'],
     ['poems/index.html', '/poems/'],
-    ['profile/index.html', '/profile/'],
     ['login/index.html', '/login/'],
     ['terms/index.html', '/terms/']
   ];
@@ -729,7 +728,7 @@ PAGE_FILES.forEach(f => {
   chk(/keydown[\s\S]{0,200}Escape/.test(readerJs),
     '桌面还能按 Esc 合上（手机没有 Esc —— 这正是手机更要那颗按钮的原因）');
 
-  const DOCKLESS = ['login/index.html', 'profile/index.html', 'admin/index.html',
+  const DOCKLESS = ['login/index.html', 'admin/index.html',
     'plans/index.html', 'terms/index.html', 'privacy/index.html'];
   DOCKLESS.forEach(f => {
     chk(/data-dock="off"/.test(stripHtml(read(f))),
@@ -862,7 +861,7 @@ PAGE_FILES.forEach(f => {
   // 页底页脚已全站删除，样式表里也不该留下它的孤儿规则。
   ['settings/index.html', 'settings/general/index.html',
    'settings/recite/index.html', 'settings/lists/index.html', 'settings/reader/index.html',
-   'login/index.html', 'profile/index.html', 'admin/index.html', 'plans/index.html',
+   'login/index.html', 'admin/index.html', 'plans/index.html',
    'terms/index.html', 'privacy/index.html', 'mine/index.html', 'self-check/index.html',
    'reset/index.html', 'verify/index.html'].forEach(f => {
     chk(!/<footer[^>]*class="[^"]*foot/.test(read(f)), f + ' 已无页底页脚');
@@ -1290,8 +1289,10 @@ if (JSDOM) {
     settingsNav.indexOf('function go()'));
   // 「设置 · 关于」那几行由 link(href, 词) 生成（左格就是那个 <a>），
   // 「个人中心 · 关于」那两行直接写在 HTML 里（同样的 <a class="kv-link">）。
-  const profileHtml2 = read('profile/index.html');
-  ['/plans/', '/terms/', '/privacy/', '/self-check/'].forEach(href => {
+  // ⚠️ 原先这一档读 profile/index.html（个人中心）；那一页 2026-09-20 已删除，
+  //    它那两条法务入口搬到了「我的」页的「关于」卡里，形状必须一模一样。
+  const profileHtml2 = read('mine/index.html');
+  ['/terms/', '/privacy/'].forEach(href => {
     chk(new RegExp('link\\("' + href + '",').test(aboutBlock2),
       '设置「关于」里 ' + href + ' 那一行是「左格本身当链接」');
   });
@@ -1299,10 +1300,10 @@ if (JSDOM) {
     '设置「关于」里不再有「右格挂一颗『查看』」那种形状');
   ['/terms/', '/privacy/'].forEach(href => {
     chk(new RegExp('class="kv-k"><a class="kv-link" href="' + href + '"').test(profileHtml2),
-      '个人中心「关于」里 ' + href + ' 那一行也是「左格本身当链接」');
+      '「我的」页「关于」里 ' + href + ' 那一行也是「左格本身当链接」');
   });
   chk(!/<span class="kv-v"><a href="\/(terms|privacy)\//.test(profileHtml2),
-    '个人中心「关于」里不再留「右格『查看』」（两处形状必须一样，否则同一件事两种长相）');
+    '「我的」页「关于」里不再留「右格『查看』」（两处形状必须一样，否则同一件事两种长相）');
 
   /* 反向：整份样式表里，三处链接不许再出现任何「浏览器默认蓝」的兜底色值。 */
   chk(!/#0000ee|#0000ff|rgb\(0,\s*0,\s*238\)/i.test(cssCode),

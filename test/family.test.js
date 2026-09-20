@@ -25,7 +25,12 @@ function install() {
   global.Family = require(path + 'js/family.js');
   global.Avatar = require(path + 'js/avatar.js');
   require(path + 'js/progress-store.js');
-  return { F: global.Family, A: global.Avatar, PS: global.ProgressStore };
+  // ⚠️ 同步引擎也要装上：它的三把键（开关 / 记账表 / 快照）的分家口径
+  //    现在由 `SyncStore.perChildKey()` 回答（见下面那条断言），
+  //    family 那一侧只是转问 —— 不在全局装上它就问不到。
+  delete require.cache[require.resolve(path + 'js/sync-store.js')];
+  global.SyncStore = require(path + 'js/sync-store.js');
+  return { F: global.Family, A: global.Avatar, PS: global.ProgressStore, S: global.SyncStore };
 }
 
 function sandbox(seed) {
@@ -183,6 +188,20 @@ console.log('\n=== 四、分家的边界：谁跟着孩子走，谁不跟 ===');
   eq(F.isPerChild('poem_whatever_new_v1'), true,
     '认不出的键按「分家」处理（安全的一侧：多开一份只是多占几 KB，混在一起是数据串了）');
 
+  // ⚠️ 同步引擎那三把键的分家口径（2026-09-20 从 sync 测试的真页面一节
+  //    量出来的一个真实故障）：它们在分域表里没有登记，于是掉到上面那条
+  //    「认不出 → 默认分家」的兜底里 —— `poem_sync_pref_v1` 与
+  //    `poem_pre_merge_backup_v1` 被当成进度键跟着孩子分家，
+  //    在「设置 · 通用」开着同步、切到「我的」页却显示成没开
+  //    （两页读的是两个不同孩子的键）。
+  //    答案现在由 SyncStore.perChildKey() 给（唯一一处），family 这边只是转问。
+  eq(F.isPerChild('poem_sync_pref_v1'), false,
+    '同步开关**不分家**（它回答的是「这台设备上要不要上传」，同步引擎自己也按这个读）');
+  eq(F.isPerChild('poem_pre_merge_backup_v1'), false,
+    '合并前快照**不分家**（SyncStore.forget() 清的就是那把 un-suffixed 键）');
+  eq(F.isPerChild('poem_sync_seen_v1'), true,
+    '「见过没」的记账表**分家**（每个孩子的同步进程各记各的）');
+
   F.select(a, { backing: b });
   PS.clearProgress();
   eq(JSON.stringify(PS.all()), '{}', '清空进度：当前孩子那份空了');
@@ -211,6 +230,14 @@ console.log('\n=== 五、拼键只有一处；Family 缺席时退化 ===');
   });
   eq(splicers.sort().join(','), 'family.js,sync-store.js',
     'js/ 下拼 `::` 后缀的只有 family.js 与 sync-store.js 的记账表（多一处就红）');
+
+  // ⚠️ 记账表这一处是 `seenKey()` 的**兜底分支**（Family 缺席、或它自己炸了时
+  //    才走到），主路已经是转问 `Family.keyFor()` —— 两处拼法必须一致，
+  //    否则就是「按引擎写的在 A 键、按引擎读的在 B 键」那种读不到自己的故障。
+  //    见 sync-store.js 里 seenKey() 上方那段注释（2026-09-20 的真实事故）。
+  const ss = read('js/sync-store.js');
+  chk(/Family\.keyFor/.test(ss),
+    'sync-store 的 seenKey() 走 Family.keyFor()（物理键名的拼法只有一处）');
 
   const sb5 = sandbox();
   sb5.F.ensure({ backing: sb5.b });

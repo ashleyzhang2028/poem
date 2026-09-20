@@ -181,6 +181,26 @@
     return saveSettings(next) ? settings() : null;
   }
 
+  // 昵称（username）的写盘只有这一个出口。
+  //
+  // ⚠️ 为什么要有它：「我的」页的昵称输入框是**边打边存**的（input 事件就落盘），
+  //    它原先自己写了一段 `backing.setItem("poem_recite_settings_v1", …)` 的兜底
+  //    —— 那是第二处拼设置域键名的地方，改键名时必漏一处。
+  //    现在页面只调 `Sync.saveUsername()`，键名仍只活在 FIELDS / KEYS 这一份里。
+  //    （兜底本身留着：ProgressStore 不可用时昵称也不该丢。）
+  function saveUsername(name) {
+    var v = String(name == null ? "" : name).trim().slice(0, 12);
+    var r = patchSettings({ username: v });
+    if (r) return r;
+    try {
+      var cur = parse(raw(KEYS.settings), null);
+      var next = (cur && typeof cur === "object" && !Array.isArray(cur)) ? cur : {};
+      next.username = v;
+      put(KEYS.settings, JSON.stringify(next));
+    } catch (e) {  }
+    return settings();
+  }
+
   function helper() {
     var stored = raw(KEYS.device);
     var fromNew = parse(stored, null);
@@ -322,6 +342,7 @@
     settings: settings,
     saveSettings: saveSettings,
     patch: patchSettings,
+    saveUsername: saveUsername,
 
     device: device,
     helper: helper,

@@ -196,7 +196,7 @@ setTimeout(() => {
   // 页底整块（©2026 kuibu.app + 用户协议 · 隐私条款）已全站删除：
   // 这是个装在手机上的应用，不是网页 —— 法务入口只在设置「关于」里留一份。
   const noFootPages = [...new Set(['index.html', 'terms/index.html', 'privacy/index.html',
-    'login/index.html', 'mine/index.html', 'profile/index.html', 'admin/index.html',
+    'login/index.html', 'mine/index.html', 'admin/index.html',
     'plans/index.html', 'self-check/index.html', 'reset/index.html', 'verify/index.html']
     .concat(settingsPages.map(sp => sp.f)))];
   noFootPages.forEach(f => {

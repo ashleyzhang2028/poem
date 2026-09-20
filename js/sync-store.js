@@ -22,9 +22,21 @@
 
   var TIMEOUT_MS = 15000;
 
+  // ⚠️ 这一把键**必须**与 ProgressStore.kk() 走出逐字相同的名字。
+  //    它原先自己拼 `${NS.seen}::${cid}`，与 Family.keyFor() 是同一条口径的
+  //    第二份实现 —— 「seen 分不分家」这个判断一旦两边不一致，就会出现
+  //    「按引擎写的在 A 把键上、按引擎读的在 B 把键上」这种读不到自己的故障
+  //    （2026-09-20 从 sync 测试的真页面一节量出来的：进度键分家了、
+  //      seen 键没分家，冲突面板于是永远不出现）。
+  //    现在统一问 Family.keyFor()：它才是「物理键名怎么拼」的唯一一处。
   function seenKey() {
     var cid = childId();
-    return cid ? NS.seen + "::" + cid : NS.seen;
+    if (!cid) return NS.seen;
+    var g = typeof window !== "undefined" ? window.Family : null;
+    if (g && typeof g.keyFor === "function") {
+      try { return String(g.keyFor(NS.seen, cid)) || NS.seen; } catch (e) {  }
+    }
+    return NS.seen + "::" + cid;
   }
 
   var deps = {};
@@ -891,6 +903,25 @@
 
   var api = {
     NS: NS, EVT: EVT, CHUNK: CHUNK, TIMEOUT_MS: TIMEOUT_MS,
+
+    // ---- 分家口径（唯一一份，js/family.js 直接来问）----------------------
+    //
+    // 「哪些键按子用户各存一份」这件事原先在 family 那边有一套**按名字猜**
+    // 的兜底，猜不到就默认分家 —— 而同步引擎自己的三把键
+    // （`poem_sync_pref_v1` / `poem_sync_seen_v1` / `poem_pre_merge_backup_v1`）
+    // 恰好落在「猜不到」那一档里，于是被当成进度键跟着第一个孩子分家：
+    //   ① 在设置页开同步 → 落在 `poem_sync_pref_v1::f-xxx`；
+    //   ② 「我的」页读到的是 **另一个孩子的键**（或根本没有）→ 显示成「没开」。
+    // 两页读同一份状态这件事就这么静默坏了（2026-09-20 从 sync 测试的真页面
+    // 一节量出来的）。
+    //
+    // ⚠️ 答案只有这一处：family 那边不再自己猜，直接问这里。
+    perChildKey: function (key) {
+      var k = String(key == null ? "" : key);
+      if (k.indexOf(NS.seen) === 0) return true;
+      if (k === NS.pref || k === NS.premerge) return false;
+      return null;
+    },
     FAMILY_ROW_ID: FAMILY_ROW_ID,
     DAILY_EXTRA_ROW_ID: DAILY_EXTRA_ROW_ID,
     COLLECTIONS_ROW_ID: COLLECTIONS_ROW_ID,

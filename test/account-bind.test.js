@@ -250,7 +250,9 @@ async function main() {
 
   console.log("\n=== 十三、源码口径：服务端的答案只在一处接，页面不自己拼 ===");
   {
-    const PAGES = ["js/profile.js", "js/settings.js", "js/login.js", "js/admin-page.js"];
+    // ⚠️ 原先这里还有 js/profile.js：那一页（个人中心）2026-09-20 已删除，
+    //    它的注销接线整体留在 js/mine.js 里，所以下面换成 js/mine.js 继续守。
+    const PAGES = ["js/mine.js", "js/settings.js", "js/login.js", "js/admin-page.js"];
     PAGES.forEach(f => {
       const src = read(f).replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^\s*\/\/.*$/gm, " ");
       chk(!/fetch\(\s*["'`]\/api\//.test(src) && !/fetch\(\s*["'`]\/api\//.test(src),
@@ -260,10 +262,10 @@ async function main() {
       chk(!/document\.cookie/.test(src), f + " 不自己读 Cookie（会话是 HttpOnly，读不到也不该试）");
       chk(!/\/api\/account/.test(src), f + " 不自己拼注销的地址（走 AccountApi.deleteAccount）");
     });
-    const prof = read("js/profile.js").replace(/\/\*[\s\S]*?\*\//g, " ");
-    chk(/AccountApi|acct\(\)/.test(prof), "个人中心的注销走账号接线层");
-    chk(/M\.deleteAccount\(/.test(prof), "…且用的是 AccountApi.deleteAccount（服务端 + 本机两条路一起走）");
-    chk(/remote === "skipped"/.test(prof), "个人中心如实处理「云端那份没删掉」这一支");
+    const mine = read("js/mine.js").replace(/\/\*[\s\S]*?\*\//g, " ");
+    chk(/AccountApi|acct\(\)/.test(mine), "「我的」页的注销走账号接线层");
+    chk(/M\.deleteAccount\(/.test(mine), "…且用的是 AccountApi.deleteAccount（服务端 + 本机两条路一起走）");
+    chk(/remote === "skipped"/.test(mine), "「我的」页如实处理「云端那份没删掉」这一支");
     const set = read("js/settings.js").replace(/\/\*[\s\S]*?\*\//g, " ");
     chk(/refreshServerIdentity/.test(set), "设置页也接上了 /api/me");
     chk(/clearServerTier/.test(set), "退出登录时会清掉服务端那一份层级");
@@ -293,7 +295,7 @@ async function main() {
       const m = src.match(new RegExp('<script src="\\/?' + file.replace(/[./]/g, "\\$&") + '"><\\/script>'));
       return m ? src.indexOf(m[0]) : -1;
     };
-    ["profile/index.html", "settings/general/index.html", "plans/index.html"].forEach(f => {
+    ["mine/index.html", "settings/general/index.html", "plans/index.html"].forEach(f => {
       const s = read(f);
       const aApi = at(s, "js/account-api.js");
       const authApi = at(s, "js/auth-api.js");
@@ -325,13 +327,13 @@ async function main() {
     if (!JSDOM) {
       console.log("(未安装 jsdom，跳过真页面一节 —— run.sh 会先装好它)");
     } else {
-      const page = await bootPage("profile/index.html", "https://kuibu.app/profile/", {
+      const page = await bootPage("mine/index.html", "https://kuibu.app/mine/", {
         me: { ok: false, code: "E_NO_SESSION" },
         del: { ok: false, code: "E_OFFLINE" }
       });
       const w = page.window, doc = page.doc;
 
-      chk(!!w.AccountApi, "个人中心里 AccountApi 挂在 window 上（接线层真的被加载了）");
+      chk(!!w.AccountApi, "「我的」页里 AccountApi 挂在 window 上（接线层真的被加载了）");
       const sess = w.AuthCore.session(w.AuthCore.makeStore(w.localStorage));
       chk(!!sess, "用例里的登录建立成功");
       okLine(doc.getElementById("account-list").textContent, "层级那一行如实标注来源");

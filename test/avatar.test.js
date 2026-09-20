@@ -321,7 +321,9 @@ console.log('\n=== 十之一、顶栏右端：没有头像，只有一颗裸箭�
 
 console.log('\n=== 十一、源码扫描：页面不许自己拼一份头像 ===');
 {
-  const files = ['js/chrome.js', 'js/app.js', 'js/settings.js', 'js/reader-core.js', 'js/profile.js'];
+  // ⚠️ 原先这一档还扫 js/profile.js（个人中心）。那一页 2026-09-20 已删除，
+  //    它那份头像渲染 / 裁切整体接到了「我的」页（js/mine.js + js/avatar-edit.js）。
+  const files = ['js/chrome.js', 'js/app.js', 'js/settings.js', 'js/reader-core.js', 'js/mine.js'];
   files.forEach(function (f) {
     const src = fs.readFileSync(f, 'utf8')
       .replace(/\/\*[\s\S]*?\*\//g, '')

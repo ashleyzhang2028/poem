@@ -74,7 +74,6 @@
     mine: "/mine/",
     settings: "/settings/",
     login: "/login/",
-    profile: "/profile/",
     admin: "/admin/",
     plans: "/plans/",
     terms: "/terms/",
@@ -115,7 +114,6 @@
     if (/^\/progress\/?$/.test(p) || /^\/progress\/index\.html$/.test(p)) return "progress";
 
     if (/^\/login\/?$/.test(p) || /^\/login\/index\.html$/.test(p)) return "login";
-    if (/^\/profile\/?$/.test(p) || /^\/profile\/index\.html$/.test(p)) return "profile";
     if (/^\/admin\/?$/.test(p) || /^\/admin\/index\.html$/.test(p)) return "admin";
 
     if (/^\/plans\/?$/.test(p) || /^\/plans\/index\.html$/.test(p)) return "plans";

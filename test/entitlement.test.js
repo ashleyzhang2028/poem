@@ -88,8 +88,8 @@ console.log('\n=== 二、语音播放与进度导出：游客不行，登录的 
 
   const fs = require('fs');
   const root = require('path').join(__dirname, '..');
-  const SRC_FILES = ['js/entitlement.js', 'js/profile.js', 'js/app.js', 'js/reader-core.js',
-    'js/settings-nav.js', 'profile/index.html', 'settings/index.html'];
+  const SRC_FILES = ['js/entitlement.js', 'js/mine.js', 'js/app.js', 'js/reader-core.js',
+    'js/settings-nav.js', 'mine/index.html', 'settings/index.html'];
   SRC_FILES.forEach(function (f) {
     const src = fs.readFileSync(root + '/' + f, 'utf8')
       .replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/<!--[\s\S]*?-->/g, ' ')
@@ -293,7 +293,7 @@ console.log('\n=== 七、身份合成：只认 AuthCore 会话，不认页面自
   E.clearTier(b);
 }
 
-console.log('\n=== 八、能力清单（/profile/ 的「权限」一节）===');
+console.log('\n=== 八、能力清单（能力清单那一节的唯一出口是 matrix()）===');
 {
   const m = E.matrix(free);
   chk(m.length === Object.keys(E.CAPS).length, '清单条数与能力表一致');
@@ -370,7 +370,7 @@ console.log('\n=== 十、源码扫描：页面上不许自己拼 plan ===');
     chk(/Speech\.allowed/.test(src), f + ' 的按钮状态读的是 Speech.allowed（与门同源）');
   });
 
-  ['js/login.js', 'js/profile.js', 'js/admin-page.js'].forEach(function (f) {
+  ['js/login.js', 'js/mine.js', 'js/admin-page.js'].forEach(function (f) {
     const src = fs.readFileSync(f, 'utf8')
       .replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
     chk(!/tier\s*===\s*["']|plan\s*===\s*["']/.test(src),
@@ -379,7 +379,7 @@ console.log('\n=== 十、源码扫描：页面上不许自己拼 plan ===');
       f + ' 不自己拼权益相关的存储键名（键名只在 entitlement.js 里）');
   });
   chk(/isOwner\(backing\)/.test(fs.readFileSync('js/admin-page.js', 'utf8')) &&
-      /isOwner\(backing\)/.test(fs.readFileSync('js/profile.js', 'utf8')),
+      /isOwner\(backing/.test(fs.readFileSync('js/mine.js', 'utf8')),
     '「谁能进管理后台」两页走同一个出口 Entitlement.isOwner()');
 }
 
@@ -436,7 +436,7 @@ console.log('\n=== 十二、每条付费能力都得**真的有人管**（不许
     .concat(walk(path.join(root, 'js'), []))
     .concat(walk(path.join(root, 'api'), []))
     .concat(walk(path.join(root, 'settings'), []))
-    .concat(walk(path.join(root, 'profile'), []))
+    .concat(walk(path.join(root, 'mine'), []))
     .concat(walk(path.join(root, 'plans'), []))
     .concat(walk(path.join(root, 'admin'), []));
 
