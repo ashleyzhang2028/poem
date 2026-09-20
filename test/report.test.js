@@ -14,6 +14,7 @@
 //   五、数据形状：三处共用同一组上界（前端 maxlength 与服务端截断不许漂）
 //   六、界面入口：详情页那一颗、列表行那一颗、设置页那一页、管理端那一张卡
 //   七、不做什么：不进 progress、不参与同步、不按孩子分家
+//   八、弹层的长相**自带**（不靠账页那张样式表；Issue #229）
 
 const fs = require("fs");
 const path = require("path");
@@ -485,6 +486,89 @@ console.log("一、服务端内核：创建 / 频控 / 每日上限 / 空内容�
       chk(lit >= 1 && asg >= 1,
         "memory 与 supabase 两个实现都有 " + n + "（字面量 " + lit + " / 挂载 " + asg + "）");
     });
+  }
+
+  // --------------------------------------------------------------------------
+  console.log("");
+  console.log("八、弹层的长相必须**自带**（Issue #229）");
+  // --------------------------------------------------------------------------
+  // 这张弹层是 js/report.js 在运行时 append 到 <body> 上的，而它出现的页面里
+  // 有一大半**不加载 css/account.css**（/tangshi/ /songci/ /guwen/ /classic/
+  // /zhaoming/ /yuanqu/ /library/ /search/）。它原先借用的是 account.css 里的
+  // `.account-field / .account-label / .account-input / .account-hint /
+  // .account-msg` —— 于是同一个弹层在 /poems/（引了 account.css）是圆角缃线
+  // 小字灰标签，在其余每一页退回浏览器默认（方角、深灰粗边、16px 纯黑标签）。
+  //
+  // 守两件事：
+  //   1. 那五个 class 在 style.css 里各有 `.report-modal` 冠名的规则（自带）；
+  //   2. 那一组调用方页面**真的没有** account.css —— 有的话这条守卫就是空的。
+  {
+    const read0 = f => fs.readFileSync(path.join(ROOT, f), "utf8");
+    const CSS = read0("css/style.css").replace(/\/\*[\s\S]*?\*\//g, " ");
+    const RJ = read0("js/report.js");
+
+    ["account-field", "account-label", "account-input", "account-hint", "account-msg"]
+      .forEach(cls => {
+        const re = new RegExp("(?:^|\\n)[ \\t]*\\.report-modal[^{,]*\\." + cls + "\\b[^{]*\\{", "m");
+        chk(re.test(CSS),
+          ".report-modal 自带 ." + cls + " 的规则（不靠账页那张样式表）");
+      });
+
+    // 「自带」的反面就是「这页得引 account.css」——所以逐个页面查：调用方里
+    // 必须**至少有一个**不引它（否则这条守卫根本没在守东西），且不许出现
+    // 「只有引了 account.css 的页面才好看」这种半吊子。
+    const NEED_ACCOUNT = ["poems", "settings/reports", "settings/lists"];
+    const NO_ACCOUNT = ["classic", "tangshi", "songci", "guwen", "zhaoming",
+      "yuanqu", "library", "search"];
+    NO_ACCOUNT.forEach(p => {
+      const s = read0(p + "/index.html");
+      chk(/js\/report\.js/.test(s) || /reader-core\.js/.test(s),
+        p + "/ 会用到这张弹层（加载 report.js 或阅读器引擎）");
+      chk(!/css\/account\.css/.test(s),
+        p + "/ **不**加载 css/account.css —— 所以弹层的长相不许指望它");
+    });
+    NEED_ACCOUNT.forEach(p => {
+      chk(/css\/account\.css/.test(read0(p + "/index.html")),
+        p + "/ 加载了 css/account.css（这一条是上一条守卫的对照组）");
+    });
+  }
+
+  {
+    // 六档「报什么」必须**一行装得下**（用户原话：「正文 译文 注音... 其他
+    // 这六个按钮一行显示 也许需要字体小一点 左右及上下 padding 小一点」）。
+    // 这里量的是声明：字号、左右 padding、间距、以及它 `.modal-box` 的左右内边距。
+    // 真实换行由 Chromium 那一层量（见 test/pwa.test.js / 本目录说明）——
+    // 算式在 css/style.css 那一段注释里：最窄的 320px 机上六颗 = 236px < 292px。
+    const CSS = read("css/style.css").replace(/\/\*[\s\S]*?\*\//g, " ");
+    const RJ = read("js/report.js");
+    const kinds = [...CSS.matchAll(/(?:^|\n)[ \t]*(\.report-kinds(?: button)?(?:\.active)?)[^{]*\{([^}]*)\}/g)]
+      .map(m => ({ sel: m[1].trim(), body: m[2] }));
+    const base = kinds.filter(k => k.sel === ".report-kinds button").map(k => k.body).join(";");
+    chk(kinds.length >= 3, "css/style.css 里有 .report-kinds 一族规则（实际 " + kinds.length + " 条）");
+
+    const fs_ = (base.match(/font-size:\s*([0-9.]+)px/) || [])[1];
+    chk(Number(fs_) > 0 && Number(fs_) <= 12.5,
+      ".report-kinds button 的字号收到 ≤12.5px（实际 " + fs_ + "px）");
+
+    const pad = (base.match(/padding:\s*([0-9.]+)px\s+([0-9.]+)px/) || []);
+    chk(pad.length === 3 && Number(pad[1]) <= 10 && Number(pad[2]) <= 8,
+      "上下 ≤10px、左右 ≤8px（实际 " + (pad[0] || "没写") + "）");
+
+    chk(/white-space:\s*nowrap/.test(base), "每一颗**不许折行**（「正文」被拆成两行就不是一颗按钮了）");
+    chk(/flex:\s*none/.test(base), "不参与拉伸（六颗挤在一行时那六份 flex:1 会互相压）");
+
+    const gap = (CSS.match(/(?:^|\n)[ \t]*\.report-kinds\s*\{([^}]*)\}/) || [])[1] || "";
+    chk(/gap:\s*6px/.test(gap), ".report-kinds 的间距是 6px（原先 8px，六颗就是多出来的 10px）");
+
+    // 窄屏档：320px 那一档要靠它才守得住一行
+    chk(/@media\s*\(max-width:\s*360px\)[\s\S]{0,400}?\.report-kinds button\s*\{[^}]*padding:\s*6px 5px/.test(CSS),
+      "≤360px 有专门的窄屏档（内边距与间距一起收，320px 机上六颗仍是一行）");
+
+    // 档位是「单选」不是「一组控件」——ARIA 要说实话
+    chk(/role="group" aria-label="报哪一类问题"/.test(RJ),
+      "六颗用 role=\"group\"（它们是可切换的单选，不是一组动作按钮；radiogroup 会让读屏找不存在的子项）");
+    chk(/aria-pressed=/.test(RJ), "每一颗带 aria-pressed（读屏据此念「已选中 / 未选中」）");
+    chk(!/role="radiogroup"/.test(RJ), "不再用 radiogroup");
   }
 
   console.log("");

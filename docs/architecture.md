@@ -6810,3 +6810,80 @@ main 那批旧编号 `yuefu-yf-*` 的独立正文整批丢掉 —— 于是 15 �
 验证：`bash test/run.sh` 全量零失败；Chromium 那层 **382 项**全过（含新写的
 「两行两列」「左右 gap = 上下 gap」「网格里每一颗都与播放键同径」三条）。
 `sw.js` v185 → **v186**。
+
+### 4.48 报告弹层的长相自带：一页引了账页样式，其余八页在裸奔（2026-09-20 · 回答 Issue #229）
+
+用户原话：「报告错误弹出卡片界面，课内诗词几个输入框显示很好，
+但其他的变框颜色，周边文字都没有好好使用上样式」。第二句是同一件事的另一半：
+「正文 译文 注音… 其他 这六个按钮一行显示 也许需要字体小一点 左右及上下 padding 小一点」。
+
+#### 病根：一张运行时注入的弹层，靠调用方页面「碰巧」引了某张样式表
+
+`js/report.js` 的弹层是**运行时** `document.body.appendChild` 上去的，而它的五个
+class（`.account-field` / `.account-label` / `.account-input` / `.account-hint` /
+`.account-msg`）原先只在 `css/account.css` 里有规则。问题是**引这张表的页面只有三个**：
+
+| 引了 `css/account.css` | 没引（弹层在这里裸奔） |
+|---|---|
+| `/poems/`、`/settings/reports/`、`/settings/lists/` | `/classic/` `/tangshi/` `/songci/` `/guwen/` `/zhaoming/` `/yuanqu/` `/library/` `/search/` |
+
+于是同一个弹层有两种长相：`/poems/` 上是圆角缃线、标签 12.5px 灰；
+其余八页退回浏览器默认 —— **方角、`rgb(118,118,118)` 深灰粗边、标签 16px 纯黑**，
+下面那句 h16 的提示行、`.report-foot` 也一样是浏览器默认字。这就是用户说的
+「课内诗词几个输入框显示很好，但其他的变框颜色，周边文字都没有好好使用上样式」。
+
+顺带量出一处不对：`.report-modal` 里的单行输入框（「应该是什么（可留空）」）
+在 JS 里**没有** `.report-textarea` 这个类，所以连 `css/account.css` 里的
+`width: 100%` 也没捞着 —— 量到 445px，之后靠 `js/report.js` 的
+`size` 属性兜了个 186px（浏览器按字符数估的宽度），看着像随手拉的。
+
+#### 改法一：弹层自带（不靠哪张样式表）
+
+`css/style.css` 的「报告错误」那一节里，给那五个 class 各补一条
+**冠以 `.report-modal`** 的规则（字号、缃线、`var(--radius-sm)` 圆角、
+`.card` 底、聚焦天青描边＋光晕，逐条与 `account.css` 同值）。
+冠名有两个好处：只影响这张弹层；即使这一页真引了 `account.css`，
+也不会反过来压掉账页自己的长相。
+
+「加载哪张样式表」从此不影响它的长相 —— 这是 issue #229 那一类
+「同一套界面在另一页变样」的总闸。`test/report.test.js` 第八节守着：
+五个 class 各有 `.report-modal` 冠名规则，且八个调用方页面**逐个查过**
+真的没有 `account.css`（`/poems/` 等三页作为对照组，它们有）。
+
+#### 改法二：六颗一行（小字、窄内边距）
+
+`.report-kinds button` 三处一起收：字号 13 → **12.5px**、左右 padding
+14 → **8px**、间距 8 → **6px**，另加 `white-space: nowrap` 与 `flex: none`
+（六颗挤一行时那六份 `flex: 1` 会互相压、把「正文」拆成两行）。
+
+量过（Chromium，逐档改视口）：
+
+| 视口 | 六颗总宽 | 可容纳宽 | 行数 |
+|---|---|---|---|
+| 320px | 236px | 292px | 1 |
+| 360px | 236px | 332px | 1 |
+| 390px | 288px | 350px | 1 |
+| 768px | 288px | 480px | 1 |
+
+320px 那一档要靠一条 `@media (max-width: 360px)` 兜住：弹层左右内边距
+20 → 14px、间距再收 2px、每颗再收 3px。原来 390px 上是 6 + 0（刚好卡在
+一条线上）、320px 上是 5 + 1 —— 用户看到的「其它」挂第二行就是这个。
+
+#### 顺带修的两处
+
+- **单行输入框给个上限**：`.report-modal input.account-input { max-width: 220px }`
+  —— 「应该是什么」是短答案，占满整行会让它看着像第二个多行框。
+  多行框另给 `max-width: none` 与 `min-height: 72px`。
+- **ARIA 说实话**：`.report-kinds` 原来写 `role="radiogroup"`，
+  但**一条 `role="radio"` 都没有** —— 读屏按 radiogroup 会去找不存在的单选子项。
+  六颗带 `aria-pressed`，本来就是「一组可切换的按钮」，改成 `role="group"`。
+
+#### 版本
+
+`sw.js` 缓存版本 v185 → **v186**（`js/settings-nav.js` 的「关于」同源对拍）。
+
+#### 验证
+
+`bash test/run.sh` 全量零失败（9970 行断言）；`test/report.test.js` 新增第八节 33 条。
+Chromium 真机逐档量过一行、`/poems/`（有 account.css）与 `/tangshi/`（没有）
+两页各截一张，长相一致。

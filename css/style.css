@@ -2266,16 +2266,30 @@ html, body {
 .today-search .suggest-row {
   display: flex;
   align-items: stretch;
+
+  /* 最左侧那一列的宽度：一颗直径 30 的圆 + 两侧各 7 的外边距。
+     槽宽给出来，圆的左右外边距就能由它现算（见下）——
+     「圆在这一列里居中」与「这一列有多宽」从此只有一个来源。*/
+  --suggest-slot: 44px;
 }
 
 /* 下拉里那一颗「＋」：与列表里的圆形按钮同一形状，但嵌在 44px 的行里，
-   所以比 --item-btn 小一号（36 → 30），行高才不会被撑破。 */
+   所以比 --item-btn 小一号（36 → 30），行高才不会被撑破。
+
+   两侧外边距各 (44 − 30) ÷ 2 = 7px —— 圆的**格**宽度定死 44，
+   圆在里面左右各留 7，水平中心就落在 44 ÷ 2 = 22px 上。
+
+   2026-09-20 用户报的「原点处那颗圆形加号，没有在最左侧一列里水平居中」
+   正是差在这里：原先外边距写死 10 / 4，圆的占位 10 + 30 + 4 = 44 看似
+   等于槽宽，可两边留白一边 10、一边 4，圆被推到 25px 上 ——
+   比槽心偏右 3px，一排下来那一列圆是歪的。
+   现在两边都由槽宽现算（不是各写一个数），槽一改两边一起跟着回中心。*/
 .suggest-add {
   flex: none;
   align-self: center;
   width: 30px;
   height: 30px;
-  margin: 0 4px 0 10px;
+  margin: 0 calc((var(--suggest-slot) - 30px) / 2);
   padding: 0;
   border: 1px solid var(--line);
   border-radius: 50%;
@@ -2288,6 +2302,10 @@ html, body {
   line-height: 0;
   transition: transform .14s, background .18s, border-color .18s, color .18s;
 }
+/* 「画出来的尺寸 = 声明的尺寸」：这 30px 是**连边框一起**的直径，不是内容区。
+   默认就是 border-box；写出来只为把这条口径钉在纸上 —— 换成 content-box
+   就会画成 32，圆的中心也跟着偏 1px（居中就不再是居中）。*/
+.suggest-add { box-sizing: border-box; }
 .suggest-add svg { display: block; width: 15px; height: 15px; }
 .suggest-add .de-check { display: none; }
 .suggest-add[data-on="1"] { background: var(--green); border-color: var(--green); color: #fffdf8; }
@@ -2976,20 +2994,32 @@ html, body {
   word-break: break-word;
 }
 
+/* 六档「报什么」，**一行装得下**（Issue #229）。
+   六颗都是两字词，一行放不下就会被折成 5 + 1 —— 那正是用户当初看到的
+   「其它」孤零零挂在第二行。这里三处一起收：字号 13 → 12.5px、
+   左右 padding 14 → 8px、间距 8 → 6px。最窄的 320px 机上量过，六颗加
+   间距在 360px 机上是 288px、可容纳宽 320px —— 到 320px 那一档仍会被折成
+   5 + 1，所以再补一条窄屏档：`.modal-box` 的左右内边距收到 14px、
+   六颗再各收 1px，该档可容纳宽 292px > 278px，一行放得下。 */
 .report-kinds {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  justify-content: center;
+  gap: 6px;
   margin: 0 0 14px;
 }
 .report-kinds button {
-  padding: 7px 14px;
+  flex: none;
+  white-space: nowrap;
+  padding: 6px 8px;
   border: 1px solid var(--line);
   border-radius: 999px;
   background: var(--card);
   color: var(--ink-2);
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 600;
+  line-height: 1.3;
+  font-family: inherit;
   cursor: pointer;
   transition: background .16s, border-color .16s, color .16s;
 }
@@ -2997,6 +3027,14 @@ html, body {
   background: var(--green);
   border-color: var(--green-dark);
   color: #fdfaf2;
+}
+
+/* 窄屏（≤360px）：弹层内边距与档位间距一起收，六颗才守得住一行。
+   按屏宽分档比按容器查问（@container）稳 —— 这张弹层在每一页都是全宽的。 */
+@media (max-width: 360px) {
+  .report-modal .modal-box { padding-left: 14px; padding-right: 14px; }
+  .report-kinds { gap: 4px; }
+  .report-kinds button { padding: 6px 5px; font-size: 12px; }
 }
 
 .report-quote {
@@ -3025,18 +3063,82 @@ html, body {
   word-break: break-word;
 }
 
-.report-textarea {
-  width: 100%;
-  box-sizing: border-box;
-  resize: vertical;
-  min-height: 72px;
-  font-size: 14px;
-  line-height: 1.65;
-
-  /* 输入框里的字体跟随正文字号会很怪 —— 这里固定 14px，与其它弹层输入框一致 */
-}
 
 .report-actions { margin-top: 4px; }
+
+/* --------------------------------------------------------------------------
+   下面这一节是**补课**，不是新功能（Issue #229）
+   --------------------------------------------------------------------------
+   这张弹层是 `js/report.js` 在**运行时** append 到 `<body>` 上的，而调用它的
+   页面里，集子页（/tangshi/ /songci/ /guwen/ /classic/ /zhaoming/ /yuanqu/）
+   与 /library/ /search/ **都不加载 css/account.css** —— 表单原先借用的是
+   account.css 里的 `.account-field / .account-label / .account-input /
+   .account-hint / .account-msg`。结果是：课内 /poems/ 那一页有 account.css，
+   框是圆角缃线、标签小字灰；其余每一页都退回浏览器默认 —— 方角、深灰粗边、
+   标签 16px 纯黑，与整站格格不入。
+
+   修法是**让这张弹层自带**：四个 class 在 style.css 里各补一条，选择器一律
+   冠 `.report-modal`（两条好处：只影响这张弹层；即使这一页真加载了
+   account.css，也不会反过来压掉账页自己的长相）。
+   「加载哪张样式表」从此不影响它长相 —— 这是 issue #229 那一类「同一套界面
+   在另一页变样」的总闸。
+   -------------------------------------------------------------------------- */
+.report-modal .account-field { margin-bottom: 12px; }
+.report-modal .account-field:last-child { margin-bottom: 0; }
+
+.report-modal .account-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+
+.report-modal .account-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 11px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 15px;
+  outline: none;
+  transition: border-color .15s, background .15s;
+}
+.report-modal .account-input:focus {
+  border-color: var(--green);
+  background: #fffdf6;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(47, 96, 85, .10);
+}
+.report-modal .account-input::placeholder { color: #9c8d7b; }
+
+/* 那条「哪里不对」的多行框：字与行高跟着正文走的那一档，另给一条最小高 */
+.report-modal .report-textarea { resize: vertical; min-height: 72px; line-height: 1.65; }
+
+/* 「应该是什么」那一格是**短答案**（例：「应该读 cháng」），给个上限就行 ——
+   占满整行会让它看着像第二个多行框，与上面那格分不清主次。 */
+.report-modal input.account-input { max-width: 220px; }
+.report-modal textarea.account-input { max-width: none; }
+
+.report-modal .account-hint {
+  margin: 8px 0 0;
+  font-size: 11.5px;
+  line-height: 1.7;
+  color: var(--ink-3);
+}
+
+.report-modal .account-msg {
+  margin: 8px 0 0;
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: var(--ink-2);
+  min-height: 0;
+}
+.report-modal .account-msg:empty { display: none; }
+.report-modal .account-msg.warn { color: var(--red); }
+.report-modal .account-msg.ok { color: var(--green); }
 
 .report-foot {
   margin: 10px 0 0;
