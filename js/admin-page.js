@@ -732,21 +732,11 @@
 
     if (!isOwner(id)) {
       // 拒绝界面（Issue #276）：**不再有「本机主人」这条兜底** ——
-      // 没有服务端答案就不放行。所以这里的文案要按「是没登录、还是
-      // 登录了但角色不够、还是服务端没配」分三种说，别笼统一句。
+      // 没有服务端答案就不放行。文案只有一句（用户裁：不分情况啰嗦）：
+      // 未登录与角色不够的答案一样 —— 都不放行。
       show($("deny-card"));
       var lead = $("deny-lead");
-      if (lead) {
-        if (!id.signedIn) {
-          lead.textContent = "管理后台要登录才能进。本站的管理员身份由数据库里的角色决定（" +
-            "目前只允许主人 / 管理员），请先用你的管理员邮箱登录。";
-        } else {
-          lead.textContent = "这一页只对管理员开放。你现在是「" + Ent.tierLabel(id.tier) +
-            "」" + (id.mask ? "（" + id.mask + "）" : "") +
-            "，角色是「" + (id.role === "user" ? "普通用户" : id.role) +
-            "」。要用管理后台，请让主人把你的角色改成管理员（或把自己加进 OWNER_EMAILS）。";
-        }
-      }
+      if (lead) lead.textContent = "只对管理员开放。";
       var back = $("btn-back-profile");
       if (back) back.addEventListener("click", function () { location.href = "/mine/"; });
       return;
