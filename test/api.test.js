@@ -40,7 +40,7 @@ function boot(envVars) {
 }
 
 function serve() {
-  const entry = require("../api/[...path].js");
+  const entry = require("../api/handler.js");
 
   const routes = require("../api/_lib/routes.js");
   const server = http.createServer(entry);
@@ -100,11 +100,14 @@ async function loginByHttpDetailed(POST, email) {
 }
 
 function wirePath(p) {
-  const prefix = require("../api/_lib/routes.js").PREFIX;
   const s = String(p);
-  if (s === prefix || s.indexOf(prefix + "/") === 0) return s;
-  if (s === "/api") return prefix;
-  if (s.indexOf("/api/") === 0) return prefix + s.slice("/api".length);
+  if (s.indexOf("/api/handler?__path=") === 0) return s;
+  if (s === "/api") return "/api/handler?__path=";
+  if (s.indexOf("/api/") === 0) {
+    var parts = s.slice("/api/".length).split("?");
+    var query = parts.slice(1).join("?");
+    return "/api/handler?__path=" + encodeURIComponent(parts[0]) + (query ? "&" + query : "");
+  }
   return s;
 }
 
@@ -2588,17 +2591,15 @@ async function main() {
     })(apiDir);
 
     eq(entries.length, 1, "api/ 下只有 **1 个** Serverless 函数入口（Hobby 上限 12）");
-    chk(entries[0] === "[...path].js",
-      "那一个入口就是 catch-all 的 api/[...path].js（实际 " + entries[0] + "）");
+    chk(entries[0] === "handler.js",
+      "那一个入口就是固定的 api/handler.js（实际 " + entries[0] + "）");
     chk(entries.length <= 12, "函数数没有超过 Hobby 档的 12（实际 " + entries.length + "）");
 
     const vercel = JSON.parse(fs.readFileSync(path.join(ROOT, "vercel.json"), "utf8"));
     const rw = (vercel.rewrites || []).find(r => r.source === "/api/:path*");
     chk(!!rw, "vercel.json 里有一条 `/api/:path*` 的 rewrite（它就是 /api/* 接上函数的那一层）");
-    eq(rw && rw.destination, "/api/handler/:path*",
-      "那条 rewrite 转到 catch-all 的内部前缀（与 routes.js 的 PREFIX 同一处约定）");
-    eq(routesMod.PREFIX, "/api/handler",
-      "routes.js 的 PREFIX 与 vercel.json 的 destination 对得上（写歪一处 = 全站 /api 404）");
+    eq(rw && rw.destination, "/api/handler?__path=:path*",
+      "那条 rewrite 转到固定函数，并把原 API 路径放进内部参数");
 
     Object.keys(routesMod.ROUTES).forEach(key => {
       const file = routesMod.ROUTES[key];
@@ -2634,7 +2635,7 @@ async function main() {
     chk(!!routesMod.resolve("GET", "//api//me"), "重复斜杠不影响命中");
 
     {
-      const srv = http.createServer(require("../api/[...path].js"));
+      const srv = http.createServer(require("../api/handler.js"));
       await new Promise(r => srv.listen(0, "127.0.0.1", r));
       const port = srv.address().port;
       const hit = (method, p) => new Promise(resolve => {
@@ -2664,14 +2665,14 @@ async function main() {
          上面两条断的是「函数**在**的时候能答对」，而线上这一次坏的是
          **函数压根没被调起来**（Vercel 平台层直接 NOT_FOUND，正文是
          `The page could not be found`，连函数的日志都没有）。
-         所以这里补一条：把 rewrite 的目标地址（`/api/handler/...`）也真打一次 ——
+         所以这里补一条：把 rewrite 的目标地址（`/api/handler?__path=...`）也真打一次 ——
          平台层执行 rewrite 之后交到函数手上的就是这串 URL，
          后面那一层必须逐字认得它。少了这条，改完 rewrite 仍然会是全站 404。 */
-      const viaRw = await hit("GET", "/api/handler/me");
+      const viaRw = await hit("GET", "/api/handler?__path=me");
       chk(viaRw.status === 200 || viaRw.status === 401 || viaRw.status === 503,
-        "rewrite 之后的地址 GET /api/handler/me 也打到 handler（实际 " + viaRw.status + "）");
+        "rewrite 之后的地址 GET /api/handler?__path=me 也打到 handler（实际 " + viaRw.status + "）");
       chk(viaRw.raw.indexOf("E_404") < 0,
-        "它不是「本站说没有这个接口」—— 那就是 PREFIX 与 vercel.json 的 destination 对不上");
+        "它不是「本站说没有这个接口」—— 那就是 __path 与 handler 的契约对不上");
       eq(viaRw.status, me.status,
         "同一个接口，走用户地址与走 rewrite 之后的地址，状态码必须一样（实际 " +
         viaRw.status + " / " + me.status + "）");

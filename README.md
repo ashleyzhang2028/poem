@@ -174,14 +174,14 @@ python3 -m http.server 8080  # 或 Python 3
 ├── css/                    # style.css（全站）/ classic.css（阅读器）/ legal.css（法务页）
 ├── js/                     # 应用脚本（progress-store.js：分域引擎；
 │                           #   sync-store.js：跨设备同步，storage.js 是前者的转发层）
-├── api/                    # Vercel Serverless：**1 个函数**（[...path].js 收口，
+├── api/                    # Vercel Serverless：**1 个函数**（handler.js 收口，
 │                           #   _routes/ 是 19 条路由的实现，_lib/ 是可在 Node 里直接测的内核）
 ├── fonts/                  # 自托管中文 Web Font（思源宋体 / 黑体，子集化）
 ├── icons/                  # 矢量图标 + 各尺寸 PNG
 ├── data/                   # 诗词语料与索引（见下）
 ├── scripts/                # 本地服务器、数据生成脚本，以及 doctor.js（开通自检）
 ├── api/                    # 服务端（Vercel Serverless，1 期 1A 已落地）
-│   ├── [...path].js                    # **唯一那个函数**：catch-all，按内表转发
+│   ├── handler.js                      # **唯一那个函数**：固定入口，按内表转发
 │   ├── _routes/                        # 19 条路由的实现（一个业务一个文件）
 │   │   ├── send-code.js verify-code.js me.js account.js
 │   │   ├── sync/pull.js sync/push.js
@@ -280,7 +280,7 @@ bash test/run.sh   # 全部测试（等价于 npm test）
 ```
 
 测试分多层，覆盖调度算法、各页面端到端（jsdom）、数据完整性、主题、注音朗读、法务页、
-服务端 19 条路由（真 http，不联网；线上由 `api/[...path].js` **一个函数**收口）、
+服务端 19 条路由（真 http，不联网；线上由 `api/handler.js` **一个函数**收口）、
 头像上传（裸字节 + 客户端压缩裁切）、
 账号接线、权威发放、开通自检等。其中 PWA 一层需要真实浏览器
 （`puppeteer`），未安装则跳过。
@@ -360,22 +360,21 @@ Serverless 函数，而上面这 19 条路由按「一个文件 = 一个函数�
 deployment on the hobby plan`）。所以：
 
 - 19 条路由的实现放在 `api/_routes/`（`_` 开头的目录 Vercel 不当函数）；
-- `api/[...path].js` 是**唯一那个函数**（catch-all），按 `api/_lib/routes.js`
+- `api/handler.js` 是**唯一那个函数**（固定路径），按 `api/_lib/routes.js`
   那张**唯一的路由表**把请求交给对应的 handler；
-- `vercel.json` 里**一条 rewrite**（`/api/:path*` → `/api/handler/:path*`）
-  把外部地址接进去。
+- `vercel.json` 里**一条 rewrite**（`/api/:path*` →
+  `/api/handler?__path=:path*`）把外部地址与原路径接进去。
 
 **外部 URL 一个都没变**（`/api/me` 还是 `/api/me`），客户端、文档、`npm run doctor`
 的 curl 全部照旧。
 
-⚠️ **收口必须是「catch-all 文件 + 一条 rewrite」，不能靠目录兜底**（2026-09-18 的教训，
-见 `docs/architecture.md` §2.2.1.1）：2026-09-17 那版把 `index.js` 直接放在 `api/` 下
-当 `/api` 目录的兜底函数，**线上从来没生效** —— 全站 `/api/*` 回 Vercel 平台层的 404
+⚠️ **收口必须是「固定函数 + 一条携带原路径的 rewrite」**（见
+`docs/architecture.md` §2.2.1.1）：`index.js` 目录兜底和 `[...path].js` 动态入口都曾在
+部署详情里存在、线上却不可达。两次都是全站 `/api/*` 回 Vercel 平台层的 404
 （`The page could not be found` + `x-vercel-error: NOT_FOUND`，连函数日志都没有），
 静态页面照旧 200，本地测试还全绿（测试挂的是模块，平台那一层在测试里不存在）。
-现在 `api/` 下只有 `[...path].js` 这**一个**函数，`test/api.test.js` 末节同时守着
-三件事：函数数 = 1、`vercel.json` 里**有**那条 rewrite 且 destination 等于
-`routes.js` 的 `PREFIX`、以及**按用户地址与按 rewrite 之后的地址各真打一次**。
+现在 `api/` 下只有 `handler.js` 这**一个固定函数**，`test/api.test.js` 末节同时守着
+函数数 = 1、rewrite 携带 `__path`，以及用户地址与 rewrite 地址的行为一致。
 
 **验收这一条**（第 E 步第 ⑥ 条）：`curl -sS "$SITE_URL/api/config"` 期望 **200**；
 回 404 且正文是 `The page could not be found` = 打到了平台层，`/api/*` 没接到函数上。
