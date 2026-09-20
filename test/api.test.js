@@ -40,7 +40,7 @@ function boot(envVars) {
 }
 
 function serve() {
-  const entry = require("../api/[...path].js");
+  const entry = require("../api/handler.js");
 
   const routes = require("../api/_lib/routes.js");
   const server = http.createServer(entry);
@@ -100,11 +100,14 @@ async function loginByHttpDetailed(POST, email) {
 }
 
 function wirePath(p) {
-  const prefix = require("../api/_lib/routes.js").PREFIX;
   const s = String(p);
-  if (s === prefix || s.indexOf(prefix + "/") === 0) return s;
-  if (s === "/api") return prefix;
-  if (s.indexOf("/api/") === 0) return prefix + s.slice("/api".length);
+  if (s.indexOf("/api/handler?__path=") === 0) return s;
+  if (s === "/api") return "/api/handler?__path=";
+  if (s.indexOf("/api/") === 0) {
+    var parts = s.slice("/api/".length).split("?");
+    var query = parts.slice(1).join("?");
+    return "/api/handler?__path=" + encodeURIComponent(parts[0]) + (query ? "&" + query : "");
+  }
   return s;
 }
 
@@ -169,6 +172,33 @@ const chk = (c, m) => { if (!c) { console.log("✗ " + m); fails++; } else conso
 const eq = (a, b, m) => chk(a === b, m + "（实际 " + JSON.stringify(a) + "）");
 
 async function main() {
+  {
+    const serveSource = fs.readFileSync(path.join(ROOT, "scripts/serve.js"), "utf8");
+    const exportsFactory = /module\.exports\s*=\s*\{[^}]*createServer/.test(serveSource);
+    chk(exportsFactory, "本地服务导出 createServer，测试可用随机端口启动");
+    if (exportsFactory) {
+      const env = boot({});
+      const local = require("../scripts/serve.js").createServer();
+      await new Promise(resolve => local.listen(0, "127.0.0.1", resolve));
+      const base = "http://127.0.0.1:" + local.address().port;
+      try {
+        eq((await fetch(base + "/login/")).status, 200, "本地服务能打开登录页");
+        eq((await fetch(base + "/api/config")).status, 200, "本地服务同源挂载 API");
+        const invalid = await fetch(base + "/api/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: "not-an-email", password: "hunter2hunter" })
+        });
+        const body = await invalid.json();
+        eq(invalid.status, 400, "本地注册请求到达真实 API 校验");
+        eq(body.code, "E_EMAIL_FORMAT", "本地 API 返回结构化邮箱错误");
+      } finally {
+        await new Promise(resolve => local.close(resolve));
+        env.restore();
+      }
+    }
+  }
+
 
   {
     boot({});
@@ -2098,7 +2128,7 @@ async function main() {
       "js/reset.js 按服务端回的 emailVerified 填那一句（不是自己猜的）");
     const resetJsSrc = fs.readFileSync(path.join(ROOT, "js/reset.js"), "utf8");
 
-    chk(/重发确认邮件|重新发一封确认邮件/.test(resetJsSrc) && /登录页/.test(resetJsSrc),
+    chk(/重发验证邮件|重新发送验证邮件/.test(resetJsSrc) && /登录页/.test(resetJsSrc),
       "那一句指出了唯一那一步的入口在哪儿（含「登录页」这个落点）");
   }
 
@@ -2205,9 +2235,9 @@ async function main() {
         chk(!/不确认也能用|不确认也照常|不确认也能正常使用/.test(src),
           f + " 里不再有旧口径那句「不确认也能用」");
       });
-      chk(/确认之后才能登录|点开那条链接之后才能登录|确认后才能登录/.test(
+      chk(/验证邮箱后才能登录|完成邮箱验证后才能登录/.test(
         fs.readFileSync(path.join(ROOT, "login/index.html"), "utf8")),
-        "登录页写明「确认之后才能登录」（用户得知道下一步是什么）");
+        "登录页写明「验证邮箱后才能登录」（用户得知道下一步是什么）");
 
       const loginHtml = fs.readFileSync(path.join(ROOT, "login/index.html"), "utf8");
       chk(/id="btn-unverified-resend"/.test(loginHtml),
@@ -2588,17 +2618,15 @@ async function main() {
     })(apiDir);
 
     eq(entries.length, 1, "api/ 下只有 **1 个** Serverless 函数入口（Hobby 上限 12）");
-    chk(entries[0] === "[...path].js",
-      "那一个入口就是 catch-all 的 api/[...path].js（实际 " + entries[0] + "）");
+    chk(entries[0] === "handler.js",
+      "那一个入口就是固定的 api/handler.js（实际 " + entries[0] + "）");
     chk(entries.length <= 12, "函数数没有超过 Hobby 档的 12（实际 " + entries.length + "）");
 
     const vercel = JSON.parse(fs.readFileSync(path.join(ROOT, "vercel.json"), "utf8"));
     const rw = (vercel.rewrites || []).find(r => r.source === "/api/:path*");
     chk(!!rw, "vercel.json 里有一条 `/api/:path*` 的 rewrite（它就是 /api/* 接上函数的那一层）");
-    eq(rw && rw.destination, "/api/handler/:path*",
-      "那条 rewrite 转到 catch-all 的内部前缀（与 routes.js 的 PREFIX 同一处约定）");
-    eq(routesMod.PREFIX, "/api/handler",
-      "routes.js 的 PREFIX 与 vercel.json 的 destination 对得上（写歪一处 = 全站 /api 404）");
+    eq(rw && rw.destination, "/api/handler?__path=:path*",
+      "那条 rewrite 转到固定函数，并把原 API 路径放进内部参数");
 
     Object.keys(routesMod.ROUTES).forEach(key => {
       const file = routesMod.ROUTES[key];
@@ -2634,7 +2662,7 @@ async function main() {
     chk(!!routesMod.resolve("GET", "//api//me"), "重复斜杠不影响命中");
 
     {
-      const srv = http.createServer(require("../api/[...path].js"));
+      const srv = http.createServer(require("../api/handler.js"));
       await new Promise(r => srv.listen(0, "127.0.0.1", r));
       const port = srv.address().port;
       const hit = (method, p) => new Promise(resolve => {
@@ -2664,14 +2692,14 @@ async function main() {
          上面两条断的是「函数**在**的时候能答对」，而线上这一次坏的是
          **函数压根没被调起来**（Vercel 平台层直接 NOT_FOUND，正文是
          `The page could not be found`，连函数的日志都没有）。
-         所以这里补一条：把 rewrite 的目标地址（`/api/handler/...`）也真打一次 ——
+         所以这里补一条：把 rewrite 的目标地址（`/api/handler?__path=...`）也真打一次 ——
          平台层执行 rewrite 之后交到函数手上的就是这串 URL，
          后面那一层必须逐字认得它。少了这条，改完 rewrite 仍然会是全站 404。 */
-      const viaRw = await hit("GET", "/api/handler/me");
+      const viaRw = await hit("GET", "/api/handler?__path=me");
       chk(viaRw.status === 200 || viaRw.status === 401 || viaRw.status === 503,
-        "rewrite 之后的地址 GET /api/handler/me 也打到 handler（实际 " + viaRw.status + "）");
+        "rewrite 之后的地址 GET /api/handler?__path=me 也打到 handler（实际 " + viaRw.status + "）");
       chk(viaRw.raw.indexOf("E_404") < 0,
-        "它不是「本站说没有这个接口」—— 那就是 PREFIX 与 vercel.json 的 destination 对不上");
+        "它不是「本站说没有这个接口」—— 那就是 __path 与 handler 的契约对不上");
       eq(viaRw.status, me.status,
         "同一个接口，走用户地址与走 rewrite 之后的地址，状态码必须一样（实际 " +
         viaRw.status + " / " + me.status + "）");
@@ -3212,11 +3240,11 @@ async function main() {
       chk(/skipped/.test(ts), "⑥ js/turnstile.js 有 skipped 这一档（没配时**不拦**用户）");
       chk(!/sitekey:\s*"[0-9a-zA-Z]/.test(ts), "⑥ 前端**不写死** siteKey（由 /api/config 下发，没配时一个字节都不发给 Cloudflare）");
       const loginHtml = fs.readFileSync(path.join(ROOT, "login/index.html"), "utf8");
-      chk((loginHtml.match(/turnstile-slot/g) || []).length >= 6,
-        "⑥ 登录页有六个挂载点（密码 / 随机码 / 注册 / 忘记密码 / 重发确认 / 未确认重发）");
+      chk((loginHtml.match(/turnstile-slot/g) || []).length >= 5,
+        "⑥ 登录页有五个受保护挂载点（随机码 / 注册 / 忘记密码 / 重发确认 / 未确认重发）");
       chk(/js\/turnstile\.js/.test(loginHtml), "⑥ 登录页加载了 js/turnstile.js");
 
-      chk(/id="ts-pw" hidden/.test(loginHtml), "⑥ 挂载点出厂 `hidden`（没配时不留一个空壳让人以为有校验）");
+      chk(/id="ts-reg" hidden/.test(loginHtml), "⑥ 受保护挂载点出厂 `hidden`（没配时不留一个空壳让人以为有校验）");
     }
   }
 

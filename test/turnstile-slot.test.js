@@ -70,10 +70,11 @@ const CF_OK = (calls) => ({
 
   {
     // ② 配好、方框渲染出来、但用户还没勾 —— 这时才该说「请先完成人机校验」
-    const { T } = boot(CF_OK);
+    const { T, calls } = boot(CF_OK);
     await T.mount({}, { siteKey: "0x4AAAAAAA", enabled: true });
     chk(T.state().configured === true && T.state().err === null,
       "两个 key 都在、脚本也回来了：widget 渲染出来（err 为空）");
+    chk(calls.size === "flexible", "Turnstile 使用 flexible 尺寸适配窄屏");
     chk(/请先完成人机校验/.test(T.gate() || ""),
       "⚠️ 这一档才是「请先完成人机校验（上面那个方框）」—— 方框真的在页面上");
     chk(T.failed() === false, "「没勾」不是「坏了」—— 两件事必须分得开");
@@ -95,6 +96,22 @@ const CF_OK = (calls) => ({
       "why() 直说两种真原因：Site Key 填错、或本站域名没加进 widget 的允许列表");
     chk(/管理员/.test(T.why()),
       "并告诉用户这不是他能修的（指一条去找站点管理员的路），而不是让他一直重试");
+  }
+
+  {
+    const rendered = [];
+    const removed = [];
+    const { T } = boot(() => ({
+      render(el) { rendered.push(el); return "w" + rendered.length; },
+      reset() {},
+      remove(id) { removed.push(id); }
+    }));
+    const first = { id: "ts-reg" };
+    const second = { id: "ts-forgot" };
+    await T.mount(first, { siteKey: "0x4AAAAAAA", enabled: true });
+    await T.mount(second, { siteKey: "0x4AAAAAAA", enabled: true });
+    chk(rendered.length === 2 && rendered[1] === second && removed[0] === "w1",
+      "切到另一处受保护表单时，Turnstile 方框跟着移到当前面板");
   }
 
   {
@@ -124,25 +141,26 @@ const CF_OK = (calls) => ({
   }
 
   {
-    // ⑥ 三个页面都得把「坏了」这档说出来
+    // ⑥ 只有服务端真正校验的提交才显示 Turnstile
     const login = fs.readFileSync(path.join(ROOT, "login/index.html"), "utf8");
     const reset = fs.readFileSync(path.join(ROOT, "reset/index.html"), "utf8");
     const loginJs = fs.readFileSync(path.join(ROOT, "js/login.js"), "utf8");
     const resetJs = fs.readFileSync(path.join(ROOT, "js/reset.js"), "utf8");
 
-    ["ts-pw", "ts-code", "ts-reg", "ts-verify", "ts-forgot", "ts-unverified"].forEach((id) => {
+    ["ts-code", "ts-reg", "ts-verify", "ts-forgot", "ts-unverified"].forEach((id) => {
       chk(new RegExp('id="ts-broken-' + id + '"').test(login),
         "登录/注册页每一处挂载点旁边都备了一条失败提示（" + id + "）");
     });
-    chk(/id="ts-broken-reset"/.test(reset), "重设密码页也有（ts-reset）");
+    chk(!/id="ts-pw"|id="ts-broken-ts-pw"/.test(login), "密码登录不显示服务端不校验的 Turnstile");
+    chk(!/ts-reset|turnstile\.js/.test(reset), "重设密码页不显示服务端不校验的 Turnstile");
     chk(/ts-broken-/.test(loginJs) && /turnstileBrokenNote/.test(loginJs),
       "js/login.js 在 mount 之后查一次、坏了就把原因写进那条提示");
-    chk(/ts-broken-/.test(resetJs) && /turnstileBrokenNote/.test(resetJs),
-      "js/reset.js 同样处理");
+    chk(!/Turnstile|turnstileBrokenNote|mountTurnstile/.test(resetJs),
+      "js/reset.js 不执行服务端未采用的 Turnstile 校验");
     chk(/turnstileHideNotes/.test(loginJs) && /turnstileHideNotes\(\)/.test(loginJs),
       "切屏时把上一屏的失败提示收掉（注册屏的红字不许留在登录屏上）");
-    chk(/api\/diag/.test(loginJs) || /自检/.test(loginJs),
-      "提示里给一条能走的路：自检页 / /api/diag 看服务端怎么说");
+    chk(/请刷新页面重试/.test(loginJs) && /如问题持续，请联系管理员/.test(loginJs),
+      "提示提供刷新重试和联系管理员两步处理方式");
   }
 
   console.log("");

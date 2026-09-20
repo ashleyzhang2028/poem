@@ -9,9 +9,9 @@
 
   var TRANSPORT_ERR = {
     E_NOT_CONFIGURED: "这个站点还没开放云端账号，当前是本机体验版",
-    E_OFFLINE: "连不上服务端，已切回本机体验版",
-    E_TIMEOUT: "服务端响应太慢，已切回本机体验版",
-    E_INTERNAL: "服务端出了点问题，稍后再试；期间本站仍可完全离线使用",
+    E_OFFLINE: "无法连接服务器，请检查网络后重试。",
+    E_TIMEOUT: "服务器响应超时，请稍后重试。",
+    E_INTERNAL: "服务暂时不可用，请稍后重试。",
 
     E_SMS_NOT_OPEN: "短信登录还没开通（需要先签短信商并完成模板报备）",
 
@@ -28,10 +28,10 @@
     E_TOKEN_INVALID: "这个链接不对，请重新发一封邮件",
     E_TOKEN_USED: "这个链接已经用过了",
     E_TOKEN_EXPIRED: "链接已过期，请重新发一封邮件",
-    E_VERIFY_MAIL_FAIL: "确认邮件没能发出去，请稍后再试",
-    E_RESET_MAIL_FAIL: "重设邮件没能发出去，请稍后再试",
+    E_VERIFY_MAIL_FAIL: "验证邮件暂时无法发送，请稍后重试。",
+    E_RESET_MAIL_FAIL: "重设邮件暂时无法发送，请稍后重试。",
 
-    E_EMAIL_UNVERIFIED: "邮箱还没确认：请点开注册时那封确认邮件里的链接。没收到就点「重新发一封」。",
+    E_EMAIL_UNVERIFIED: "邮箱尚未验证，请打开验证邮件中的链接。",
 
     E_TURNSTILE: "人机校验没通过，请刷新页面再试一次"
   };
@@ -51,9 +51,9 @@
 
   var PASSWORD_ERR = {
     E_NOT_CONFIGURED: "这台服务器还没开放云端账号，暂时不能注册或改密码",
-    E_OFFLINE: "连不上服务器，暂时不能注册或改密码",
-    E_TIMEOUT: "服务端响应太慢，暂时不能注册或改密码",
-    E_INTERNAL: "服务端出了点问题，稍后再试"
+    E_OFFLINE: "无法连接服务器，请检查网络后重试。",
+    E_TIMEOUT: "服务器响应超时，请稍后重试。",
+    E_INTERNAL: "服务暂时不可用，请稍后重试。"
   };
 
   function messageOf(code, fallback) {

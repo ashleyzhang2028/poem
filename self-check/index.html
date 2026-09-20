@@ -80,7 +80,7 @@
                 （本站的 404 是 JSON：<code>{"code":"E_404","message":"没有这个接口。"}</code>），
                 意思是 <code>/api/*</code> 压根没接到函数上 —— 重新部署一次。</p>
               <p><strong>①之二 函数认不认转进来的地址</strong> —— 期望 401<br />
-                <code>curl -sS https://&lt;你的域名&gt;/api/handler/me</code><br />
+                <code>curl -sS 'https://&lt;你的域名&gt;/api/handler?__path=me'</code><br />
                 平台层把 <code>/api/*</code> 转成这个形状再交给函数，所以它也必须是 401。
                 若它回的是本站的 <code>E_404</code>（JSON），说明<strong>函数在、但转进来的地址没人认</strong>
                 —— 那是 <code>vercel.json</code> 里那条 rewrite 的落点与路由表的前缀对不上，

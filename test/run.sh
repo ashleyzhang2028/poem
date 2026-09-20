@@ -119,8 +119,8 @@
 #                          归 Max、题库归 Pro）与**刹车**（口径改了，界面一个字
 #                          都不提前渲染，js/ 下只有内核能力表提到它们）；
 #                          末节另守**部署形态**：api/ 下只许有 1 个函数入口
-#                          （api/[...path].js），vercel.json 那条 rewrite 的 destination
-#                          必须逐字等于 routes.js 的 PREFIX，且按**用户地址**与按
+#                          （api/handler.js），vercel.json 那条 rewrite 必须用
+#                          __path 把原 API 路径交给固定函数，且按**用户地址**与按
 #                          **rewrite 之后的地址**各真打一次、状态码必须一样
 #                          （Issue #205 的第三次：前两次线上都 404）
 #                          最后守 **docs/todo.md**（用户 2026-09-18：以后要做的都放那里）：

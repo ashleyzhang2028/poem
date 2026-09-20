@@ -86,8 +86,19 @@
 
     var d = doc();
     if (!d) { st.err = "no_dom"; return Promise.resolve(state()); }
-    containerEl = (typeof target === "string") ? d.getElementById(target) : target;
-    if (!containerEl) { st.err = "no_target"; return Promise.resolve(state()); }
+    var nextContainer = (typeof target === "string") ? d.getElementById(target) : target;
+    if (!nextContainer) { st.err = "no_target"; return Promise.resolve(state()); }
+    if (st.widgetId !== null && containerEl && containerEl !== nextContainer) {
+      if (root.turnstile && typeof root.turnstile.remove === "function") {
+        try { root.turnstile.remove(st.widgetId); } catch (e) {  }
+      } else if (containerEl.innerHTML !== undefined) {
+        containerEl.innerHTML = "";
+      }
+      st.widgetId = null;
+      st.tokenValue = "";
+      st.ready = false;
+    }
+    containerEl = nextContainer;
     if (mounted) { renderWidget(); return Promise.resolve(state()); }
 
     return loadScript(d).then(function () {
@@ -130,6 +141,7 @@
     try {
       st.widgetId = root.turnstile.render(containerEl, {
         sitekey: siteKeyValue,
+        size: "flexible",
 
         appearance: "always",
         callback: function (tok) {

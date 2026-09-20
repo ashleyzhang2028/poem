@@ -29,7 +29,7 @@
       <section class="account-card">
         <div id="reset-none" hidden>
           <p class="account-lead">这条链接不完整。</p>
-          <p class="account-hint">请直接点邮件里那颗按钮，或者把整条链接完整地打开一次。</p>
+          <p class="account-hint">请点击邮件中的按钮，或完整打开邮件中的链接。</p>
           <div class="account-actions">
             <button class="account-btn" id="btn-reset-to-login" type="button">去登录</button>
           </div>
@@ -43,18 +43,23 @@
               <input id="input-new-pw" class="account-input" type="password"
                      autocomplete="new-password" spellcheck="false" enterkeyhint="next"
                      placeholder="至少 8 位" maxlength="72" />
-              <button class="pw-eye" id="btn-new-eye" type="button" aria-label="显示密码">显示</button>
+              <button class="pw-eye" id="btn-new-eye" type="button" aria-label="显示密码" aria-pressed="false" title="显示密码">
+                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6S2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="2.5"/></svg>
+              </button>
             </div>
           </div>
           <div class="account-field">
-            <label class="account-label" for="input-new-pw2">再填一次</label>
-            <input id="input-new-pw2" class="account-input" type="password"
-                   autocomplete="new-password" spellcheck="false" enterkeyhint="go"
-                   placeholder="两次要一样" maxlength="72" />
+            <label class="account-label" for="input-new-pw2">确认密码</label>
+            <div class="pw-row">
+              <input id="input-new-pw2" class="account-input" type="password"
+                     autocomplete="new-password" spellcheck="false" enterkeyhint="go"
+                     placeholder="请再次输入相同密码" maxlength="72" />
+              <button class="pw-eye" id="btn-new-eye2" type="button" aria-label="显示密码" aria-pressed="false" title="显示密码">
+                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6S2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="2.5"/></svg>
+              </button>
+            </div>
           </div>
 
-          <div class="turnstile-slot" id="ts-reset" hidden></div>
-          <div class="account-note warn" id="ts-broken-reset" hidden></div>
           <button class="account-btn" id="btn-reset-confirm" type="button">重设密码</button>
           <p class="account-msg" id="msg-reset"></p>
 
@@ -85,7 +90,6 @@
   <div class="toast" id="toast" hidden></div>
 
   <script src="/js/auth-core.js"></script>
-  <script src="/js/turnstile.js"></script>
   <script src="/js/auth-api.js"></script>
   <script src="/js/entitlement.js"></script>
   <script src="/js/family.js"></script>

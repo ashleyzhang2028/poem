@@ -1512,9 +1512,8 @@ emailMask = "a***@b.com"                          // 用于界面回显
 > Vercel Serverless 的目录约定就是 `api/`，用 `/auth/*` 要多配一层 rewrite，
 > 而 rewrite 会让「哪个文件对应哪个接口」变得不可见。六个接口的实现在
 > `api/_routes/{send-code,verify-code,me,account}.js` 与 `api/_routes/sync/{pull,push}.js`
-> （Issue #205 之后实现都在 `_routes/` 下，线上由 `api/[...path].js` 一个函数收口 ——
-> catch-all 文件名 + `vercel.json` 一条 rewrite；⚠️ 别改成「把 `index.js` 放在
-> `api/` 下当目录兜底」，2026-09-17 试过、09-18 复测，线上全站 404，
+> （Issue #205 之后实现都在 `_routes/` 下，线上由 `api/handler.js` 一个固定函数收口 ——
+> `vercel.json` 用 `__path` 传原路径；目录兜底与动态 catch-all 都曾在线上全站 404，
 > 见 `docs/architecture.md` §2.2.1.1），
 > 业务内核全在 `api/_lib/core.js`（这样才写得了测试），
 > 客户端的 `transport` 是 `js/auth-api.js`。

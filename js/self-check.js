@@ -6,7 +6,7 @@
   var CHECKS = [
     { key: "js", name: "浏览器能跑本站的离线界面", hint: "不通过＝页面本身没加载起来，与云端账号无关" },
     { key: "api", name: "本站的 /api/* 真的挂上了", hint: "回平台层的「The page could not be found」＝部署没把 /api/* 接到函数上" },
-    { key: "api2", name: "函数认得平台转进来的地址", hint: "平台层把 /api/* 转成 /api/handler/* 再交给函数；这一步 404 说明两处前缀对不上" },
+    { key: "api2", name: "函数认得平台转进来的地址", hint: "平台层把原路径放进 __path 再交给固定函数；这一步 404 说明 rewrite 契约对不上" },
     { key: "config", name: "站点自报的配置形状正确", hint: "这一条只验证接口活着，不涉及密钥" },
     { key: "me", name: "服务端状态可读", hint: "401 = 未登录（正常）；503 = 服务端没配会话密钥" },
     { key: "cors", name: "这个域名和 SITE_URL 对得上", hint: "对不上时，注册邮件里的链接会把人带去另一个域名" },
@@ -99,18 +99,18 @@
       check("config", !!(res.body && res.body.turnstile && typeof res.body.mail === "object"),
         res.body && res.body.turnstile ? "turnstile / mail 两段都在" : "响应形状不对（可能不是本站）");
 
-      // 平台层会把 /api/* 转成内部前缀（见 vercel.json 的 rewrite）再交给函数。
+      // 平台层会把 /api/* 的原路径放进 __path（见 vercel.json）再交给固定函数。
       // 单独测一次这条内部地址：用户地址能通、内部地址不通，说明那一条 rewrite 的
       // 落点与路由表的前缀对不上 —— 另一种坏法，症状同样是「全站 /api 404」。
-      return call("/api/handler/config");
+      return call("/api/handler?__path=config");
     }).then(function (res) {
-      rawLines.push("GET /api/handler/config → " + res.status + " " + JSON.stringify(res.body).slice(0, 200));
+      rawLines.push("GET /api/handler?__path=config → " + res.status + " " + JSON.stringify(res.body).slice(0, 200));
       var isPlatform404 = !!(res.body && (res.body.__raw || "").indexOf("The page could not be found") >= 0);
       var isSite404 = !!(res.body && res.body.code === "E_404");
       if (res.status === 200) {
         check("api2", true, "200 —— 函数认得平台转进来的地址");
       } else if (isSite404) {
-        check("api2", false, "函数在，但不认这个地址 —— vercel.json 里那条 rewrite 的落点与路由表前缀对不上（两处必须同名）");
+        check("api2", false, "函数在，但不认这个地址 —— vercel.json 与 handler 的 __path 契约对不上");
       } else if (isPlatform404) {
         check("api2", false, "平台层 404 —— 这个部署里压根没有这个函数");
       } else {

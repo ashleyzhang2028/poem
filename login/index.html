@@ -21,7 +21,7 @@
   <link rel="stylesheet" href="css/account.css" />
 </head>
 
-<body data-nav="login" data-dock="off" data-back="/mine/" data-page="登录" data-sub="邮箱 · 密码 · 随机码">
+<body data-nav="login" data-dock="off" data-back="/mine/" data-page="登录" data-sub="邮箱 · 密码 · 验证码">
   <div class="app">
     <header class="topbar"></header>
 
@@ -31,7 +31,7 @@
         <div id="trust-panel" hidden>
           <button class="account-btn" id="btn-trust" type="button"></button>
           <button class="account-btn ghost" id="btn-trust-other" type="button">用别的邮箱</button>
-          <p class="account-hint">信任期 30 天。换设备或换邮箱，点上面那颗。</p>
+          <p class="account-hint">信任期 30 天。也可使用其他邮箱登录。</p>
         </div>
 
         <div class="auth-tabs" id="auth-tabs" role="tablist" aria-label="登录方式">
@@ -54,12 +54,12 @@
               <input id="input-pw" class="account-input" type="password"
                      autocomplete="current-password" spellcheck="false" enterkeyhint="go"
                      placeholder="至少 8 位" maxlength="72" />
-              <button class="pw-eye" id="btn-pw-eye" type="button" aria-label="显示密码">显示</button>
+              <button class="pw-eye" id="btn-pw-eye" type="button" aria-label="显示密码" aria-pressed="false" title="显示密码">
+                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6S2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="2.5"/></svg>
+              </button>
             </div>
           </div>
 
-          <div class="turnstile-slot" id="ts-pw" hidden></div>
-          <div class="account-note warn" id="ts-broken-ts-pw" hidden></div>
           <button class="account-btn" id="btn-login" type="button">登录</button>
           <p class="account-msg" id="msg-pw"></p>
 
@@ -80,19 +80,19 @@
             </div>
             <div class="turnstile-slot" id="ts-code" hidden></div>
           <div class="account-note warn" id="ts-broken-ts-code" hidden></div>
-            <button class="account-btn" id="btn-send" type="button">发送随机码</button>
+            <button class="account-btn" id="btn-send" type="button">发送验证码</button>
             <p class="account-msg" id="msg-email"></p>
 
           </div>
 
           <div class="account-step" id="step-code" hidden>
             <p class="account-lead" id="code-sent-to"></p>
-            <div class="code-row" id="code-row"></div>
+            <div class="code-row" id="code-row" role="group" aria-label="请输入 6 位验证码"></div>
             <div class="code-meta">
               <span id="code-timer"></span>
               <button class="code-resend" id="btn-resend" type="button">重新发送</button>
             </div>
-            <button class="account-btn" id="btn-verify" type="button">确定</button>
+            <button class="account-btn" id="btn-verify" type="button">验证并登录</button>
             <button class="account-btn ghost" id="btn-edit-email" type="button">换个邮箱</button>
             <p class="account-msg" id="msg-code"></p>
 
@@ -104,7 +104,7 @@
               <strong>本地体验版</strong>：本应用没有服务器，随机码由这台设备生成，自己保管，别转给别人。
             </div>
             <div class="account-field" id="code-tools" style="margin-top:10px">
-              <button class="account-btn ghost" id="btn-copy-code" type="button">复制随机码</button>
+              <button class="account-btn ghost" id="btn-copy-code" type="button">复制验证码</button>
               <button class="account-btn ghost" id="btn-mail-code" type="button">用邮箱客户端发送</button>
             </div>
           </div>
@@ -123,21 +123,28 @@
               <input id="input-reg-pw" class="account-input" type="password"
                      autocomplete="new-password" spellcheck="false" enterkeyhint="next"
                      placeholder="至少 8 位" maxlength="72" />
-              <button class="pw-eye" id="btn-reg-eye" type="button" aria-label="显示密码">显示</button>
+              <button class="pw-eye" id="btn-reg-eye" type="button" aria-label="显示密码" aria-pressed="false" title="显示密码">
+                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6S2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="2.5"/></svg>
+              </button>
             </div>
           </div>
           <div class="account-field">
-            <label class="account-label" for="input-reg-pw2">再填一次密码</label>
-            <input id="input-reg-pw2" class="account-input" type="password"
-                   autocomplete="new-password" spellcheck="false" enterkeyhint="go"
-                   placeholder="两次要一样" maxlength="72" />
+            <label class="account-label" for="input-reg-pw2">确认密码</label>
+            <div class="pw-row">
+              <input id="input-reg-pw2" class="account-input" type="password"
+                     autocomplete="new-password" spellcheck="false" enterkeyhint="go"
+                     placeholder="请再次输入相同密码" maxlength="72" />
+              <button class="pw-eye" id="btn-reg-eye2" type="button" aria-label="显示密码" aria-pressed="false" title="显示密码">
+                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6S2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="2.5"/></svg>
+              </button>
+            </div>
           </div>
           <div class="turnstile-slot" id="ts-reg" hidden></div>
           <div class="account-note warn" id="ts-broken-ts-reg" hidden></div>
           <button class="account-btn" id="btn-register" type="button">注册</button>
           <p class="account-msg" id="msg-reg"></p>
 
-          <p class="account-hint">注册后我们会发一封确认邮件，<strong>点开链接确认后才能登录</strong>。链接 24 小时内有效。</p>
+          <p class="account-hint">注册后我们会发送验证邮件，<strong>点击链接验证邮箱后才能登录</strong>。链接 24 小时内有效。</p>
           <p class="auth-links"><button class="link-btn" id="btn-back-login" type="button">返回登录</button></p>
         </div>
 
@@ -152,12 +159,12 @@
           </div>
           <div class="turnstile-slot" id="ts-verify" hidden></div>
           <div class="account-note warn" id="ts-broken-ts-verify" hidden></div>
-          <button class="account-btn" id="btn-resend-verify" type="button">重发确认邮件</button>
+          <button class="account-btn" id="btn-resend-verify" type="button">重发验证邮件</button>
 
           <button class="account-btn ghost" id="btn-verify-later" type="button">返回登录</button>
           <p class="account-msg" id="msg-verify"></p>
 
-          <p class="account-hint">链接 24 小时内有效，没收到就点上面那颗重发。</p>
+          <p class="account-hint">链接 24 小时内有效，未收到可重发。</p>
           <p class="auth-links"><button class="link-btn" id="btn-back-login3" type="button">返回登录</button></p>
         </div>
 
@@ -175,7 +182,7 @@
           <p class="account-msg" id="msg-forgot"></p>
 
           <p class="account-hint">没收到先看垃圾邮件；或改用「快捷登录」的随机码。</p>
-          <p class="account-hint">邮箱未确认的重设也登不进去 —— 先去登录页点「重新发一封确认邮件」。</p>
+          <p class="account-hint">邮箱尚未验证时，请先在登录页重新发送验证邮件。</p>
           <p class="auth-links"><button class="link-btn" id="btn-back-login2" type="button">返回登录</button></p>
         </div>
 
@@ -184,10 +191,10 @@
           <div class="account-note" id="unverified-note" hidden></div>
           <div class="turnstile-slot" id="ts-unverified" hidden></div>
           <div class="account-note warn" id="ts-broken-ts-unverified" hidden></div>
-          <button class="account-btn" id="btn-unverified-resend" type="button">重新发一封确认邮件</button>
+          <button class="account-btn" id="btn-unverified-resend" type="button">重新发送验证邮件</button>
           <button class="account-btn ghost" id="btn-unverified-back" type="button">返回登录</button>
           <p class="account-msg" id="msg-unverified"></p>
-          <p class="account-hint">确认前只有云端登录被拦，背诵功能照旧可用。</p>
+          <p class="account-hint">完成邮箱验证前无法登录，背诵功能不受影响。</p>
         </div>
 
         <div class="account-step" id="step-done" hidden>

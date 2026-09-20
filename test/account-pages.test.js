@@ -552,24 +552,81 @@ const LOGIN = strip(loginJs), MINE = strip(mineJs), ADMIN = strip(adminJs);
         chk(T.token() === '', '③ reset() 清掉 token（token 一次性，提交后必调）');
 
         const LH = read('login/index.html');
-        ['ts-pw', 'ts-code', 'ts-reg', 'ts-forgot', 'ts-verify', 'ts-unverified'].forEach(id => {
+        const RH = read('reset/index.html');
+        ['btn-pw-eye', 'btn-reg-eye', 'btn-reg-eye2'].forEach(function (id) {
+          chk(new RegExp('id="' + id + '"[^>]*aria-label="显示密码"[^>]*aria-pressed="false"').test(LH),
+            '④ #' + id + ' 是默认关闭的密码可见性按钮');
+        });
+        ['btn-new-eye', 'btn-new-eye2'].forEach(function (id) {
+          chk(new RegExp('id="' + id + '"[^>]*aria-label="显示密码"[^>]*aria-pressed="false"').test(RH),
+            '④ #' + id + ' 是默认关闭的密码可见性按钮');
+        });
+        chk((LH.match(/class="pw-eye"[\s\S]*?<svg[^>]*aria-hidden="true"/g) || []).length >= 3,
+          '④ 登录与注册的三颗密码按钮使用装饰性 SVG 图标');
+        chk((RH.match(/class="pw-eye"[\s\S]*?<svg[^>]*aria-hidden="true"/g) || []).length >= 2,
+          '④ 重设密码的两颗密码按钮使用装饰性 SVG 图标');
+        ['ts-code', 'ts-reg', 'ts-forgot', 'ts-verify', 'ts-unverified'].forEach(id => {
           chk(new RegExp('id="' + id + '" hidden').test(LH),
             '④ 挂载点 #' + id + ' 在、且出厂 `hidden`（没配时不留一个空壳让人以为有校验）');
         });
+        chk(!/id="ts-pw"/.test(LH), '④ 密码登录不显示服务端不校验的 Turnstile');
         chk(/<script src="\/js\/turnstile\.js"><\/script>/.test(LH), '⑤ 登录页加载 js/turnstile.js');
         chk(LH.indexOf('/js/turnstile.js') < LH.indexOf('/js/auth-api.js'),
           '⑤ 它排在 auth-api **之前**（auth-api 发请求时要向它取 token）');
 
         const LJS = read('js/login.js');
+        chk(/bindEye\("btn-reg-eye2",\s*"input-reg-pw2"\)/.test(LJS),
+          '④ 注册确认密码有独立显示按钮');
         const gates = (LJS.match(/turnstileBlocked\(/g) || []).length;
-        chk(gates >= 6,
-          '⑤ 登录页的每一次提交都先问一次 gate（密码/注册/忘记密码/发码/重发确认×2），实际 ' + gates + ' 处');
+        chk(gates >= 5,
+          '⑤ 需要保护的提交先问 gate（注册/忘记密码/发码/重发确认×2），实际 ' + gates + ' 处');
+        chk(!/turnstileBlocked\("msg-pw"\)/.test(LJS), '⑤ 密码登录不做服务端未执行的假前端闸');
         chk(/turnstileReset\(\)/.test(LJS), '⑤ 提交之后重置（token 一次性）');
         chk(/api\.config\(\)/.test(LJS), '⑤ 配置从 GET /api/config 来（**不写死** siteKey）');
 
         const RJS = read('js/reset.js');
-        chk(/ts-reset/.test(read('reset/index.html')), '⑤ 重设页也有一个挂载点');
-        chk(/api\.config\(\)/.test(RJS), '⑤ 重设页同样从服务端问配置');
+        chk(/bindEye\("btn-new-eye2",\s*"input-new-pw2"\)/.test(RJS),
+          '④ 重设确认密码有独立显示按钮');
+        const authApi = read('js/auth-api.js');
+        const authCopy = [LH, RH, LJS, RJS, authApi].join('\n');
+        ['那颗', 'console 通道', 'npm run doctor', 'SPF/DKIM/DMARC', '/api/diag', '被拦', '照旧']
+          .forEach(function (term) {
+            chk(!authCopy.includes(term), '④ 账号文案不出现：' + term);
+          });
+        chk(/for="input-reg-pw2">确认密码</.test(LH) &&
+          /for="input-new-pw2">确认密码</.test(RH), '④ 两个确认字段统一使用「确认密码」');
+        chk((authCopy.match(/请再次输入相同密码/g) || []).length >= 2,
+          '④ 两个确认密码框使用明确占位文案');
+        chk(/验证邮箱/.test(LH) && /验证邮件/.test(authCopy),
+          '④ 邮箱验证流程统一使用「验证」术语');
+        chk(/E_OFFLINE:\s*"无法连接服务器，请检查网络后重试。"/.test(authApi) &&
+          /E_TIMEOUT:\s*"服务器响应超时，请稍后重试。"/.test(authApi) &&
+          /E_INTERNAL:\s*"服务暂时不可用，请稍后重试。"/.test(authApi),
+          '④ 连接错误简洁、专业且可执行');
+        chk(/验证邮件暂时无法发送，请稍后重试。/.test(authCopy) &&
+          /如问题持续，请联系管理员。/.test(authCopy),
+          '④ 发信失败只给结果和后续动作，不暴露部署细节');
+        chk(/id="code-row"[^>]*role="group"[^>]*aria-label="请输入 6 位验证码"/.test(LH),
+          '④ 验证码输入格有整体可访问名称');
+        chk(/setAttribute\("aria-label",\s*"第 " \+ \(i \+ 1\) \+ " 位验证码"\)/.test(LJS),
+          '④ 六个输入格分别标明验证码位数');
+        chk(/剩余 " \+ mm \+ " 分 " \+ ss \+ " 秒/.test(LJS) &&
+          /重新发送（" \+ cd \+ " 秒）/.test(LJS) && !/cd \+ "s/.test(LJS),
+          '④ 验证码有效期与重发倒计时使用中文单位');
+        chk(!/ts-reset|turnstile\.js/.test(read('reset/index.html')), '⑤ 重设页不显示服务端不校验的 Turnstile');
+        chk(!/Turnstile|mountTurnstile|api\.config\(\)/.test(RJS), '⑤ 重设逻辑不做服务端未执行的假校验');
+
+        chk(/function submitPending\(/.test(LJS), '⑤c 登录页用同一个 pending helper 防重复提交');
+        ['btn-login', 'btn-register', 'btn-send', 'btn-forgot-send',
+          'btn-resend-verify', 'btn-unverified-resend'].forEach(function (id) {
+          chk(new RegExp('submitPending\\("' + id + '"').test(LJS),
+            '⑤c #' + id + ' 的请求未完成时不可重复提交');
+        });
+        chk(/function submitPending\(/.test(RJS) && /submitPending\("btn-reset-confirm"/.test(RJS),
+          '⑤c 重设确认请求未完成时不可重复提交');
+        chk(/\.account-btn:disabled\s*\{[^}]*opacity:/s.test(css) &&
+          /\.account-btn\[aria-busy="true"\]\s*\{[^}]*cursor:\s*wait/s.test(css),
+          '⑤c 请求中的主按钮有稳定的 disabled 样式');
 
         const tsSrc = read('js/turnstile.js');
         chk(!/["']0x[0-9A-Za-z]{20,}["']/.test(tsSrc) && !/sitekey:\s*["'][^"']+["']/.test(tsSrc.replace(/sitekey:\s*siteKeyValue/,'')),
@@ -617,15 +674,14 @@ const LOGIN = strip(loginJs), MINE = strip(mineJs), ADMIN = strip(adminJs);
           const finishTs = () => {
             try {
 
-              chk(shown2('ts-pw'), '⑤b 服务端说「配了」→ 密码那一屏的挂载点被摘掉 hidden（widget 真的渲染了）');
-              chk(($2('ts-pw') || {}).dataset && $2('ts-pw').dataset.rendered === '1',
-                '⑤b 而且真的调了 Cloudflare 的 render（不是只把块显示出来）');
-              chk(!shown2('ts-reg'), '⑤b 其余几屏的挂载点仍收着（按需渲染，不是一次全渲染）');
+              chk(!shown2('ts-reg'), '⑤b 服务端说「配了」→ 非当前屏的挂载点仍收着（按需渲染）');
 
               $2('btn-go-register').click();
               setTimeout(() => {
                 try {
                   chk(shown2('ts-reg'), '⑤b 切到注册屏 → 注册那一块也挂上了');
+                  chk(($2('ts-reg') || {}).dataset && $2('ts-reg').dataset.rendered === '1',
+                    '⑤b 而且真的调了 Cloudflare 的 render（不是只把块显示出来）');
 
                   hits.length = 0;
                   $2('input-reg-email').value = 'a@b.com';
@@ -708,8 +764,8 @@ const LOGIN = strip(loginJs), MINE = strip(mineJs), ADMIN = strip(adminJs);
       const m4 = $4('msg-forgot').textContent;
       chk(!/重设链接已经发出去了/.test(m4),
         '发信商没配好时，**不再说「重设链接已经发出去了」**（实际「' + m4 + '」）');
-      chk(/还没接上发信商|console/.test(m4),
-        '而是如实说「这台服务器还没接上发信商」并指出去哪补（实际「' + m4 + '」）');
+      chk(/验证邮件暂时无法发送，请稍后重试。/.test(m4) && /如问题持续，请联系管理员。/.test(m4),
+        '只说明邮件暂时无法发送及后续动作（实际「' + m4 + '」）');
       chk(!/q\*\*\*@example\.com 现在收不到信/.test(m4) || true, '（掩码回显不参与判据）');
       console.log('\n' + (fails ? '❌ ' + fails + ' 项失败' : '🎉 账号三页测试全部通过'));
       process.exit(fails ? 1 : 0);
@@ -792,10 +848,12 @@ const LOGIN = strip(loginJs), MINE = strip(mineJs), ADMIN = strip(adminJs);
   const pw = $('input-reg-pw'), eye = $('btn-reg-eye');
   chk(pw.type === 'password', '口令栏初始是 password');
   eye.click();
-  chk(pw.type === 'text' && eye.textContent === '隐藏' && eye.getAttribute('aria-label') === '隐藏密码',
-    '「显示」键三件一起切：type / 按钮字 / aria-label');
+  chk(pw.type === 'text' && eye.querySelector('svg') && eye.getAttribute('aria-label') === '隐藏密码' &&
+    eye.getAttribute('aria-pressed') === 'true',
+    '密码图标键同步切换 type / 图标 / aria-label / aria-pressed');
   eye.click();
-  chk(pw.type === 'password' && eye.textContent === '显示', '再点切回去');
+  chk(pw.type === 'password' && eye.querySelector('svg') && eye.getAttribute('aria-pressed') === 'false',
+    '再点密码图标键恢复隐藏');
 
   $('input-reg-email').value = 'a@b.com';
   $('input-reg-pw').value = 'hunter2hunter';
