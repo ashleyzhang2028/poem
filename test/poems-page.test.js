@@ -44,7 +44,7 @@ chk(order.indexOf('data/text-master.js') < order.indexOf('data/index.js'),
 chk(order.indexOf('js/collections.js') >= 0, '/poems/ 也加载了自选集合模块（详情页那枚键要用）');
 chk(/data-nav="poems"/.test(html), 'body 上标了 data-nav="poems"');
 chk(/<base href="\/" \/>/.test(html), '/poems/ 带了 <base href="/">（目录化 URL 下相对资源才解析得对）');
-chk(/data-page="课内古诗词"/.test(html), '页面名写作「课内古诗词」（与六部集子的命名口径一致）');
+chk(/data-page="课内古诗词"/.test(html), '页面名写作「课内古诗词」（与七部集子的命名口径一致）');
 
 {
   const doc = new JSDOM(html).window.document;

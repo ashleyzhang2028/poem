@@ -109,7 +109,7 @@
     {
       key: "poem_yuefu_read_v1", sync: true, row: "reads:poem_yuefu_read_v1",
       merge: "并集", cap: "每行 ≤ 2000 篇",
-      why: "乐府诗选已读 —— 与其余七部同一族（Issue #244 新增集子，同轮补上）。"
+      why: "乐府集已读 —— 与其余各部同一族（Issue #244 新增集子，同轮补上）。"
     },
     {
       key: "poem_jinxiandai_read_v1", sync: true, row: "reads:poem_jinxiandai_read_v1",

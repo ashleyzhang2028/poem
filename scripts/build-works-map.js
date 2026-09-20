@@ -61,6 +61,19 @@ LOAD.forEach(function (f) {
       t = { text: up.text || '', translation: up.translation || '',
         translationSource: up.translationSource || '' };
     }
+    // 正文也可能只落在上一版存储主表里（那一条自己的 id，或它 textRef 指向的 id）——
+    // 新增集子的条目只存 textRef 时，正文正是这样传下来的。
+    if (!t.text) {
+      var TM = {};
+      (sandbox.TEXT_MASTER || []).forEach(function (m) {
+        if (!m) return;
+        if (m.id && !TM[m.id]) TM[m.id] = m;
+        (m.entries || []).forEach(function (e) { if (e && !TM[e]) TM[e] = m; });
+      });
+      var hit = TM[id] || (raw.textRef ? TM[raw.textRef] : null);
+      if (hit) t = { text: hit.text || '', translation: hit.translation || '',
+        translationSource: hit.translationSource || '' };
+    }
     if (!t.text) return;
     var book = id.split('-')[0];
     sandbox.SITE_INDEX.push({
@@ -73,6 +86,28 @@ LOAD.forEach(function (f) {
     inIndex[id] = true;
   });
 })();
+
+
+// 课内那些**只留 textRef** 的条目（正文本来在 text-master 里）：先把上一版主表里
+// 那一条的正文补回索引，同篇判重才认得它 —— 否则整组的同篇关系会在重算时整批丢掉。
+(function () {
+  var TM = {};
+  (sandbox.TEXT_MASTER || []).forEach(function (m) {
+    if (!m) return;
+    if (m.id && !TM[m.id]) TM[m.id] = m;
+    (m.entries || []).forEach(function (e) { if (e && !TM[e]) TM[e] = m; });
+  });
+  sandbox.SITE_INDEX.forEach(function (p) {
+    if (!p || p.isBook || !p.textRef || p.text) return;
+    if (p.book !== 'poems') return;
+    var hit = TM[p.textRef] || TM[p.id];
+    if (!hit || !hit.text) return;
+    p.text = hit.text;
+    p.translation = hit.translation || "";
+    p.translationSource = hit.translationSource;
+  });
+})();
+
 sandbox.WorksIndex.rebuild(sandbox.SITE_INDEX);
 
 const WI = sandbox.WorksIndex;

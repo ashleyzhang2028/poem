@@ -21,22 +21,13 @@
       desc: "蒙学识字、寓言故事到诸子论道，百字上下，最适合起步"
     },
     {
-      id: "zhaoming",
-      name: "昭明文选",
-      book: "ZhaomingBook",
-      short: "文选",
-      page: "/zhaoming/",
-      unit: "篇",
-      desc: "六十卷按赋、诗、骚、七等三十九类文体编排，现存最早的诗文总集"
-    },
-    {
       id: "yuefu",
-      name: "乐府诗选",
+      name: "乐府集",
       book: "YuefuBook",
       short: "乐府",
       page: "/yuefu/",
       unit: "首",
-      desc: "两汉至南北朝的乐府民歌，感于哀乐，缘事而发"
+      desc: "精选一百零三首，自汉魏至唐五代按卷一至卷五分卷，乐府一体两千年"
     },
     {
       id: "tangshi",
@@ -82,6 +73,15 @@
       page: "/jinxiandai/",
       unit: "首",
       desc: "近百年间的志士之诗；原作引用、译文自拟，仅供背诵学习"
+    },
+    {
+      id: "zhaoming",
+      name: "昭明文选",
+      book: "ZhaomingBook",
+      short: "文选",
+      page: "/zhaoming/",
+      unit: "篇",
+      desc: "六十卷按赋、诗、骚、七等三十九类文体编排，现存最早的诗文总集"
     }
   ];
 
@@ -98,11 +98,11 @@
     var VARS = {
       poems: "POEMS_ALL",
       classic: "POEMS_CLASSIC",
+      yuefu: "POEMS_YUEFU",
       tangshi: "POEMS_TANGSHI",
       songci: "POEMS_SONGCI",
       guwen: "POEMS_GUWEN",
       zhaoming: "POEMS_ZHAOMING",
-      yuefu: "POEMS_YUEFU",
       yuanqu: "POEMS_YUANQU",
       jinxiandai: "POEMS_JINXIANDAI"
     };

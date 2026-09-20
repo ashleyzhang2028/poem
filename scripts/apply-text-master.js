@@ -33,6 +33,7 @@ const BOOKS = [
   { file: 'data/poems-11.js', prefix: 'poems-' },
   { file: 'data/poems-12.js', prefix: 'poems-' },
   { file: 'data/poems-classic.js', prefix: 'classic-' },
+  { file: 'data/poems-yuefu.js', prefix: 'yuefu-' },
   { file: 'data/poems-tangshi.js', prefix: 'tangshi-' },
   { file: 'data/poems-songci.js', prefix: 'songci-' },
   { file: 'data/poems-guwen.js', prefix: 'guwen-' },

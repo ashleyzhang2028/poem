@@ -31,15 +31,13 @@ window.POEMS_2 = [
     term: 1,
   },
   {
+    textRef: "poems-xx2-04",
     id: "xx2-04",
     title: "望庐山瀑布",
     author: "李白",
     dynasty: "唐",
     grade: 2,
     term: 1,
-    text: "日照香炉生紫烟，遥看瀑布挂前川。\n飞流直下三千尺，疑是银河落九天。",
-    translation: "阳光照着香炉峰升起紫色的云雾，远远看瀑布像白练挂在山前。水流从三千尺高处飞泻下来，让人疑心是银河从九天落了下来。",
-    translationSource: "school",
   },
   {
     textRef: "poems-xx2-05",

@@ -258,15 +258,13 @@ window.POEMS_6 = [
     translationSource: "school",
   },
   {
+    textRef: "poems-xx6-26",
     id: "xx6-26",
     title: "江畔独步寻花（其六）",
     author: "杜甫",
     dynasty: "唐",
     grade: 6,
     term: 1,
-    text: "黄四娘家花满蹊，\n千朵万朵压枝低。\n留连戏蝶时时舞，\n自在娇莺恰恰啼。",
-    translation: "黄四娘家的小路上开满了花，千朵万朵把枝条压得低垂。留恋花丛的蝴蝶时时起舞，自在的娇莺恰恰地啼叫。",
-    translationSource: "school",
   },
   {
     id: "xx6-27",

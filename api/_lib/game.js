@@ -12,12 +12,12 @@ var BOOKS = [
                             "data/poems-9.js", "data/poems-10.js", "data/poems-11.js", "data/poems-12.js"],
     varName: "POEMS_ALL", needsIndex: true },
   { id: "classic",  files: ["data/poems-classic.js"],  varName: "POEMS_CLASSIC" },
+  { id: "yuefu",    files: ["data/poems-yuefu.js"],    varName: "POEMS_YUEFU" },
   { id: "tangshi",  files: ["data/poems-tangshi.js"],  varName: "POEMS_TANGSHI" },
   { id: "songci",   files: ["data/poems-songci.js"],   varName: "POEMS_SONGCI" },
   { id: "guwen",    files: ["data/poems-guwen.js"],    varName: "POEMS_GUWEN" },
   { id: "zhaoming", files: ["data/poems-zhaoming.js"], varName: "POEMS_ZHAOMING" },
   { id: "yuanqu",   files: ["data/poems-yuanqu.js"],   varName: "POEMS_YUANQU" },
-  { id: "yuefu",    files: ["data/poems-yuefu.js"],     varName: "POEMS_YUEFU" },
   { id: "jinxiandai", files: ["data/poems-jinxiandai.js"], varName: "POEMS_JINXIANDAI" }
 ];
 
@@ -42,20 +42,20 @@ function corpus() {
     var files = b.files.filter(function (f) { return fs.existsSync(path.join(ROOT, f)); });
     if (!files.length) return;
 
-    // 课内那一部要 index.js 才能汇成 POEMS_ALL；其余各部凡是**同一篇还落在
-    // 别的集子里**的条目，正文只存了 textRef，得连主表一起加载才取得到。
+    // 课内那一部要 index.js 才能汇成 POEMS_ALL；每一部都要带上正文存储主表
+    // （`data/text-master.js`）：集子条目只存 `textRef`，正文由 `masterTextOf()`
+    // 现取。少了这一份，取出来的正文是空的 —— 而空白不报错，只会让飞花令 /
+    // 题库悄悄少掉一整部（Issue #244 加乐府集时踩到）。
     var extra = [];
     if (b.needsIndex && fs.existsSync(path.join(ROOT, "data/index.js"))) {
       extra = ["data/index.js"];
     }
     extra = extra.concat(["data/text-master.js"]);
     extra = extra.filter(function (f) { return fs.existsSync(path.join(ROOT, f)); });
-    var win = runInSandbox(extra.length ? files.concat(extra) : files);
-    if (win.masterTextOf) {
-      var list0 = win[b.varName] || [];
-      list0.forEach(function (p, i) { list0[i] = win.masterTextOf(p, b.id); });
-    }
-    var list = win[b.varName] || [];
+    var win = runInSandbox(files.concat(extra));
+    var list = (win[b.varName] || []).map(function (p) {
+      return (typeof win.masterTextOf === "function") ? win.masterTextOf(p, b.id) : p;
+    });
     list.forEach(function (p) {
       if (!p || !p.id) return;
       out.push({

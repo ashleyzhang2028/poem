@@ -35,7 +35,13 @@ try {
   vm.createContext(prevSandbox);
   vm.runInContext(fs.readFileSync(path.join(ROOT, 'data/text-master.js'), 'utf8'),
     prevSandbox, { filename: 'data/text-master.js' });
-  (prevSandbox.TEXT_MASTER || []).forEach(function (m) { if (m && m.id) prev[m.id] = m; });
+  // 既按 id 索引，也按 entries 索引 —— 与 data/text-master.js 的 map() 同一口径：
+  // 一条主表记录代表「同一篇」的一组条目，正文可能挂在组里任意一个 id 上。
+  (prevSandbox.TEXT_MASTER || []).forEach(function (m) {
+    if (!m) return;
+    if (m.id && !prev[m.id]) prev[m.id] = m;
+    (m.entries || []).forEach(function (e) { if (e && !prev[e]) prev[e] = m; });
+  });
 } catch (e) {  }
 
 function textOfEntry(entry, masterId) {
@@ -101,6 +107,13 @@ Object.keys(RAW_ENTRIES).forEach(function (id) {
     if (up && up.text) t = { text: up.text || '', translation: up.translation || '',
       translationSource: up.translationSource || '' };
   }
+  // 正文也可能只落在上一版存储主表里（那一条自己的 id，或它 textRef 指向的 id）——
+  // 新增集子的条目只存 textRef 时，正文正是这样传下来的。
+  if (!t.text) {
+    var hit = prev[id] || (raw.textRef ? prev[raw.textRef] : null);
+    if (hit) t = { text: hit.text || '', translation: hit.translation || '',
+      translationSource: hit.translationSource || '' };
+  }
   if (!t.text) return;
   // 只补「跨集子指向的另一条」：课内自己的单条本来就有一份内联正文、
   // 也早就在索引里，不该在这里再挂一次。
@@ -118,10 +131,48 @@ Object.keys(RAW_ENTRIES).forEach(function (id) {
   inIndex[id] = true;
   BOOTSTRAPPED.push(id);
 });
+
+
+// 课内那些**只留 textRef** 的条目（它们的正文本来在 text-master 里）：
+// 组装 POEMS_ALL 时要按 textRef 取回正文，而取回的表就是本脚本要产出的那一份。
+// 这里先把上一版主表里那一条的正文补回索引（这一条不新增索引项、也不改 id 归属），
+// 好让同篇判重认得它 —— 否则整组的同篇关系会在重算时整批丢掉。
+Object.keys(prev).forEach(function (id) {
+  if (id.indexOf('poems-') !== 0) return;
+  var raw = RAW_ENTRIES[id];
+  if (!raw || raw.text) return;
+  var t = prev[raw.textRef] || prev[id];
+  if (!t || !t.text) return;
+  var exist = sandbox.SITE_INDEX.filter(function (x) { return x.id === id; })[0];
+  if (exist) {
+    if (!exist.text) {
+      exist.text = t.text;
+      exist.translation = t.translation || "";
+      exist.translationSource = t.translationSource;
+    }
+    inIndex[id] = true;
+    return;
+  }
+  sandbox.SITE_INDEX.push({
+    id: id, originId: id.slice(6), title: raw.title, author: raw.author || '',
+    authorName: raw.authorName || '', dynasty: raw.dynasty || '',
+    source: raw.source || '', selection: raw.selection || '',
+    gradeGroup: raw.gradeGroup || '', grade: raw.grade, term: raw.term,
+    text: t.text, translation: t.translation || '',
+    translationSource: t.translationSource, book: 'poems', bookName: 'poems', page: '/'
+  });
+  inIndex[id] = true;
+});
+
 if (BOOTSTRAPPED.length) {
   console.log('（' + BOOTSTRAPPED.length + ' 条首次进入主表的条目：' +
     '它们原先只有 textRef、正文取不到，本轮先从原始数据文件那一段补回索引）');
 }
+// 上面往 SITE_INDEX 补了正文（课内 textRef 那批 + 新集子那批），
+// 同篇对照表要按补过之后的索引重算一次 —— 否则 WI.works 还是加载时的旧视图，
+// 整组的同篇关系会整批丢掉。
+sandbox.WorksIndex.rebuild(sandbox.SITE_INDEX);
+
 const byId = {};
 sandbox.SITE_INDEX.forEach(function (p) { byId[p.id] = p; });
 

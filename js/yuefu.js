@@ -1,24 +1,36 @@
 (function () {
   "use strict";
 
+  // 乐府集（精选 103 首）—— 课外阅读的第二部集子，排在《唐诗三百首》之前。
+  //
+  // 分组口径：按**乐府本身的时代次第**分卷，而不是按体裁。这一部与其余
+  // 六部最大的不同就在这里 —— 它是「一个体制」（乐府）跨汉魏、南朝、
+  // 唐、五代的作品集合，时间线本身就是它的目录：
+  //   卷一 汉魏乐府   汉魏的相和、杂曲与文人拟作
+  //   卷二 南朝乐府   六朝的清商曲辞与北朝民歌
+  //   卷三 唐代乐府   唐人以乐府旧题写的名篇
+  //   卷四 唐五代乐府 唐人新乐府与五代词（词本出于乐府）
+  //   卷五 乐府歌辞   历代传诵的乐府体名篇（含课内同名篇目）
   var GROUP_ORDER = window.YUEFU_GROUP_ORDER = [
-    "汉乐府",
-    "北朝乐府",
-    "南朝乐府"
+    "卷一 汉魏乐府",
+    "卷二 南朝乐府",
+    "卷三 唐代乐府",
+    "卷四 唐五代乐府",
+    "卷五 乐府歌辞"
   ];
 
   function bookConfig() {
     return {
       id: "yuefu",
       groupOrder: GROUP_ORDER,
-      pageTitle: "乐府诗选",
-      pageSub: "汉乐府与南北朝乐府 · 言浅意深",
+      pageTitle: "乐府集",
+      pageSub: "精选一百零三首 · 汉魏至唐五代",
       words: {
         list: "乐府",
         unit: "首",
-        loadingFailed: "乐府数据加载失败",
+        loadingFailed: "乐府集数据加载失败",
         empty: "没有匹配的乐府",
-        matchGroup: "乐府诗选",
+        matchGroup: "乐府集",
         backToList: "返回乐府列表",
         readStore: "poem_yuefu_read_v1",
         playerTitle: "乐府朗读",
@@ -32,7 +44,7 @@
     var all = window.POEMS_YUEFU || window.YUEFU_ALL || [];
     if (!all.length) {
       var listEl = document.querySelector('[data-gw="list"]');
-      if (listEl) listEl.innerHTML = '<div class="empty">乐府数据加载失败</div>';
+      if (listEl) listEl.innerHTML = '<div class="empty">乐府集数据加载失败</div>';
       return;
     }
 
@@ -43,38 +55,9 @@
     window.ReaderEngine.mount(cfg);
   }
 
-  // 分组顺序表是 window.YUEFU_GROUP_ORDER（见文件开头）——
-  // data/group-order.js 的 yuefu 一格按它取，各页排序口径全站一致。
-  window.YUEFU_ALL = window.POEMS_YUEFU;
-
-  window.getYuefuById = function (id) {
-    return (window.POEMS_YUEFU || []).filter(function (p) { return p.id === id; })[0] || null;
-  };
-
-  window.getYuefuGroups = function () {
-    var groups = [];
-    (window.POEMS_YUEFU || []).forEach(function (p) {
-      var g = p.gradeGroup || "其他";
-      var hit = groups.filter(function (it) { return it.name === g; })[0];
-      if (!hit) { hit = { name: g, items: [] }; groups.push(hit); }
-      hit.items.push(p);
-    });
-
-    var order = window.YUEFU_GROUP_ORDER || [];
-    groups.sort(function (a, b) {
-      var ia = order.indexOf(a.name);
-      var ib = order.indexOf(b.name);
-      if (ia < 0) ia = order.length;
-      if (ib < 0) ib = order.length;
-      if (ia !== ib) return ia - ib;
-      return a.name < b.name ? -1 : 1;
-    });
-    return groups;
-  };
-
   window.YuefuBook = {
     config: bookConfig,
-    items: function () { return window.POEMS_YUEFU || []; }
+    items: function () { return window.POEMS_YUEFU || window.YUEFU_ALL || []; }
   };
 
   if (document.readyState === "loading") {
