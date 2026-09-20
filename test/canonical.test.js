@@ -20,7 +20,7 @@ loadData(sb, [
   'data/poems-6.js', 'data/poems-7.js', 'data/poems-8.js', 'data/poems-9.js', 'data/poems-10.js',
   'data/poems-11.js', 'data/poems-12.js', 'data/index.js', 'data/poems-classic.js',
   'data/poems-yuefu.js', 'data/poems-tangshi.js', 'data/poems-songci.js', 'data/poems-guwen.js', 'data/poems-zhaoming.js', 'data/poems-yuanqu.js',
-  'data/poems-jinxiandai.js', 'data/poems-classic.js',
+  'data/poems-jinxiandai.js',
   'data/site-index.js', 'data/works-map.js', 'data/works-index.js',
   'data/canonical-texts.js'
 ]);
@@ -39,7 +39,6 @@ const multiEntries = MASTER.filter(m => m.entries.length >= 2);
 const singleEntries = MASTER.filter(m => m.entries.length === 1);
 chk(multiEntries.length === 118,
   '主表里有 118 条「跨集重复」的作品（乐府集与课内 / 其余集子重篇 + main 长文补全带来的同篇，Issue #244；实际 ' +
-
   multiEntries.length + '）');
 const fullExpected = [];
 FULL_BOOKS.forEach(book => {
@@ -152,7 +151,6 @@ chk(uncovered.length === 0,
 chk(dupEntries.length === 251,
   '重复条目恰为 251 条（118 篇：多数 × 2，少数 × 3；乐府集收进来的一批重篇 + main 长文补全同篇，Issue #244；实际 ' +
   dupEntries.length + '）');
-
 
 const expectFlat = dupEntries.slice();
 fullExpected.forEach(id => { if (expectFlat.indexOf(id) < 0) expectFlat.push(id); });

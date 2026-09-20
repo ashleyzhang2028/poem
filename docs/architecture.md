@@ -6705,12 +6705,41 @@ main 那批旧编号 `yuefu-yf-*` 的独立正文整批丢掉 —— 于是 15 �
 - 乐府集 **100 → 103** 首；主表 **1476 → 1479** 条
 - 同篇对照表 **117 → 118** 组（新增《迢迢牵牛星》课内 ↔ 乐府那一组）
 - 重复条目 **249 → 251** 条
-- 缓存版本 **v183 → v184**
+- 缓存版本 **v183 → v184**（随后与 main 并流时再推到 **v185**，见 §4.46）
 
 ## 顺带
 
 - `test/yuefu.test.js` 的满员基线 100 → 103，名篇清单补上这 3 篇；
 - `test/{canonical,dedup,engine,pinyin-fix}.test.js` 同步计数与缓存版本。
+
+`bash test/run.sh` 全量跑过，除 `test/ui-consistency.test.js` 那 7 条**改动前就已红**的
+#147 版式断言（`origin/main` 上同样红）之外零失败。
+
+### 4.46 PR #265 与 main 再并一次：此前那次「合并」其实没并进来（2026-09-19 · 解决冲突）
+
+前一轮把 main 并进来得的那个提交（`Merge main 进 auto/add-yuefu-book-a03f，解决冲突`）
+**只有一个父提交** —— 内容是按逐文件裁定手工重写了一遍，`main` 并没有真的成为祖先。
+于是 PR 上一直挂着 `code_conflict`，源分支也落后 main 三十余个提交。
+
+这一轮做了**一次真的合并**（`git merge origin/main`），冲突 25 个文件，逐处裁定如下：
+
+- **乐府那一套（`data/poems-yuefu.js` / `js/yuefu.js` / `yuefu/index.html`）**
+  「add/add」，两边各写了一份：main 是 15 首版、这里是 100 首版。取**本分支这一份**
+  （100 首，且已按 §4.45 补齐到 103）。main 的「乐府诗选」15 首不再保留。
+- **`data/site-index.js` / `js/library.js` / `js/chrome.js` / `js/progress-store.js` /
+  `js/sync-coverage.js` / `api/_lib/game.js`**：九部的名字与次序取本分支口径 ——
+  课内 · 小古文 · **乐府集** · 唐诗 · 宋词 · **元曲** · 古文观止 · 近现代诗词 · 昭明文选。
+- **`data/text-master.js` / `data/works-map.js`**：生成文件，取本分支那一份
+  （它已包含 main 的全部内容，只是乐府条目按本分支编号），随后重跑两个生成脚本确认
+  结果稳定（1479 条 / 118 组，与重跑前一致）。
+- **`data/poems-10.js` 的《短歌行》**：main 从注释里「复活」了一份内联正文，
+  与本分支的 `textRef` 冲突 —— 取本分支（`textRef`，正文只在主表落一份）。
+- **`scripts/build-text-master.js` / `build-works-map.js`**：两处口径（按 `entries` 查正文、
+  重建 `WorksIndex`）都是本分支那一份，取本分支。
+- **`sw.js`**：两边都改过（本分支还叠了重复的 `yuefu` 预缓存行）—— 版本取 **v185**
+  （高于两边），并顺手把重复的 `./yuefu/` 三行去重成一行。
+- **测试**：`test/{yuefu,canonical,dedup,engine,search,pinyin-fix}.test.js` 计数与版本
+  同步到 103 / 1479 / 118 / 251 / v185。
 
 `bash test/run.sh` 全量跑过，除 `test/ui-consistency.test.js` 那 7 条**改动前就已红**的
 #147 版式断言（`origin/main` 上同样红）之外零失败。

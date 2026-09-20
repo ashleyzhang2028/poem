@@ -121,7 +121,6 @@ chk(WI.same('poems-gz10-08', 'songci-sc-183'), '《永遇乐·京口北固亭怀
 
 chk(sb.WORKS_GROUPS.length === 118,
   '同篇对照表 118 组（乐府集收进来的一批重篇 + main 长文补全带来的同篇，Issue #244）（实际 ' +
-
   sb.WORKS_GROUPS.length + '）');
 
 const jys = byId['xx1-09'];

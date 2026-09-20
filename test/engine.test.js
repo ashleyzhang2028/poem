@@ -29,7 +29,6 @@ chk(sandbox.SITE_BOOKS.length === 9 &&
   '九部集子的索引页地址依次为 / · /classic/ · /yuefu/ · /tangshi/ · /songci/ · /yuanqu/ · /guwen/ · /jinxiandai/ · /zhaoming/' +
   '（乐府集排在唐诗之前、元曲排在宋词之后，Issue #244）');
 
-
 const only = sandbox.buildSiteIndex({ tangshi: [{ id: 'ts-1', title: '感遇·其一', author: '张九龄', dynasty: '唐' }] });
 chk(only.some(x => x.book === 'tangshi' && x.title === '感遇·其一') &&
   only.some(x => x.book === 'classic'),

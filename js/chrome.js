@@ -67,6 +67,7 @@
     songci: "/songci/",
     guwen: "/guwen/",
     zhaoming: "/zhaoming/",
+    yuefu: "/yuefu/",
     yuanqu: "/yuanqu/",
     jinxiandai: "/jinxiandai/",
     search: "/search/",
@@ -260,6 +261,7 @@
     if (k === "songci") return "宋词三百首";
     if (k === "guwen") return "古文观止";
     if (k === "zhaoming") return "昭明文选";
+    if (k === "yuefu") return "乐府诗选";
     if (k === "yuanqu") return "元曲三百首";
     if (k === "jinxiandai") return "近现代诗词";
     return "";
