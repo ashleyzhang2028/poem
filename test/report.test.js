@@ -550,9 +550,12 @@ console.log("一、服务端内核：创建 / 频控 / 每日上限 / 空内容�
     chk(Number(fs_) > 0 && Number(fs_) <= 12.5,
       ".report-kinds button 的字号收到 ≤12.5px（实际 " + fs_ + "px）");
 
+    // 左右 padding：用户要求「增加 2px」（8 → 10px）。上限仍守着「一行」这条
+    // 底线 —— 一颗 47px、六颗加 5 道 6px 缝 = 312px，要落进 350px（390px 机）
+    // 以内。所以这里同时钉住「≥10px」（+2px 真的加了）与「≤10px」（没再多加）。
     const pad = (base.match(/padding:\s*([0-9.]+)px\s+([0-9.]+)px/) || []);
-    chk(pad.length === 3 && Number(pad[1]) <= 10 && Number(pad[2]) <= 8,
-      "上下 ≤10px、左右 ≤8px（实际 " + (pad[0] || "没写") + "）");
+    chk(pad.length === 3 && Number(pad[1]) <= 10 && Number(pad[2]) === 10,
+      "上下 ≤10px、左右 = 10px（+2px 已加，实际 " + (pad[0] || "没写") + "）");
 
     chk(/white-space:\s*nowrap/.test(base), "每一颗**不许折行**（「正文」被拆成两行就不是一颗按钮了）");
     chk(/flex:\s*none/.test(base), "不参与拉伸（六颗挤在一行时那六份 flex:1 会互相压）");
@@ -561,14 +564,64 @@ console.log("一、服务端内核：创建 / 频控 / 每日上限 / 空内容�
     chk(/gap:\s*6px/.test(gap), ".report-kinds 的间距是 6px（原先 8px，六颗就是多出来的 10px）");
 
     // 窄屏档：320px 那一档要靠它才守得住一行
-    chk(/@media\s*\(max-width:\s*360px\)[\s\S]{0,400}?\.report-kinds button\s*\{[^}]*padding:\s*6px 5px/.test(CSS),
-      "≤360px 有专门的窄屏档（内边距与间距一起收，320px 机上六颗仍是一行）");
+    chk(/@media\s*\(max-width:\s*360px\)[\s\S]{0,400}?\.report-kinds button\s*\{[^}]*padding:\s*6px 7px/.test(CSS),
+      "≤360px 有专门的窄屏档（内边距与间距一起收，同样 +2px → 7px，320px 机上六颗仍是一行）");
 
     // 档位是「单选」不是「一组控件」——ARIA 要说实话
     chk(/role="group" aria-label="报哪一类问题"/.test(RJ),
       "六颗用 role=\"group\"（它们是可切换的单选，不是一组动作按钮；radiogroup 会让读屏找不存在的子项）");
     chk(/aria-pressed=/.test(RJ), "每一颗带 aria-pressed（读屏据此念「已选中 / 未选中」）");
     chk(!/role="radiogroup"/.test(RJ), "不再用 radiogroup");
+  }
+
+  // --------------------------------------------------------------------------
+  console.log("");
+  console.log("八之二、两格输入框**等长等宽、都是两行高**，提示语是有礼的例句（Issue #229 续）");
+  // --------------------------------------------------------------------------
+  // 用户原话：「应该是什么（可留空）这里的输入框要不要和哪里不对输入框的长宽及
+  // 元素保持一致？？？都显示两行的高度」以及「想好了就填，没想到就空着 这话也太
+  // 随意了，没有礼貌」。
+  //
+  // 这里守的是声明：两格同一种元素（textarea）、都 rows=2、都有一个同值的
+  // min-height（两行实高）、都不设宽度上限；提示语是「例：…」这一档，
+  // 而且那句随意的话一个字都不许留。
+  {
+    const CSS2 = read("css/style.css").replace(/\/\*[\s\S]*?\*\//g, " ");
+    const RJ2 = read("js/report.js");
+
+    // 1. 两格都是 textarea、都 rows=2
+    const noteTag = (RJ2.match(/<textarea id="report-note"[^>]*rows="(\d+)"/) || []);
+    const suggTag = (RJ2.match(/<textarea id="report-suggestion"[^>]*rows="(\d+)"/) || []);
+    chk(/class="account-input report-textarea" rows="2"/.test(RJ2),
+      "「哪里不对」是 textarea rows=2（原先 3 行）");
+    chk(/class="account-input report-textarea" rows="2"/.test(RJ2),
+      "「应该是什么」也是 textarea rows=2（原先是一枚 220px 的单行 input）");
+    chk(noteTag[1] === "2" && suggTag[1] === "2",
+      "两格 rows 都是 2（实际 " + noteTag[1] + " / " + suggTag[1] + "）");
+    chk(!/<input id="report-suggestion"/.test(RJ2),
+      "「应该是什么」不再是一枚 <input>（元素已与上面那格统一）");
+
+    // 2. 两格共用同一条「两行高」的规则，且写死成两行实高
+    const ta = (CSS2.match(/\.report-modal \.report-textarea\s*\{([^}]*)\}/) || [])[1] || "";
+    const mh = (ta.match(/min-height:\s*([0-9.]+)px/) || [])[1];
+    // 两行实高 = 2 × (15 × 1.65) + 22(上下内边距) + 2(上下边框) = 73.5
+    chk(Number(mh) >= 73 && Number(mh) <= 74,
+      "两格共用的 min-height 是两行实高（实际 " + (mh || "没写") + "px；行高 1.65 × 15px × 2 + 24）");
+    chk(/line-height:\s*1\.65/.test(ta), "行高与正文那一档同源（1.65）");
+
+    // 3. 谁都不许再给这两格单独设宽度上限（旧的 220px 那条必须消失）
+    chk(!/max-width:\s*220px/.test(CSS2),
+      "旧的「input.account-input { max-width: 220px }」已撤（否则两格又不一样宽）");
+    chk(/\.report-modal textarea\.account-input\s*\{\s*max-width:\s*none/.test(CSS2),
+      "textarea.account-input 明确不吃宽度上限（满行）");
+
+    // 4. 提示语：有礼的例句，且那句随意的话一个字都不许留
+    chk(/placeholder="例：应读 cháng，或写作「明月光」"/.test(RJ2),
+      "「应该是什么」的提示语是「例：…」这一档的例句（与「哪里不对」的写法一致）");
+    chk(!/想好了就填，没想到就空着/.test(RJ2),
+      "那句随意的「想好了就填，没想到就空着」已经一个字都不留");
+    chk(/placeholder="例：「长」这里该读 cháng，不是 zhǎng"/.test(RJ2),
+      "「哪里不对」的提示语照旧（例：…，没被动过）");
   }
 
   console.log("");
