@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#2f6055" />
+  <title>我的报告 · 跬步</title>
+  <meta name="description" content="跬步设置 · 我的报告：看自己报过的正文 / 译文 / 注音问题现在处理到哪一步。" />
+  <meta name="format-detection" content="telephone=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="跬步" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <base href="/" />
+  <link rel="icon" href="/icons/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/account.css" />
+</head>
+<body data-nav="settings" data-back="/settings/" data-page="我的报告" data-sub="报过的错，处理到哪一步">
+  <div class="app">
+    <header class="topbar"></header>
+
+    <main class="settings-page" id="settings-page">
+
+      <div class="settings-groups">
+        <section class="settings-group">
+          <div class="settings-item wide">
+            <label>我报过的</label>
+
+            <p class="account-lead">
+              看到错字、标错的注音、翻错的译文，在篇目页上点那颗<strong>小旗</strong>
+              （正文里选中一段再点「报这一段」也行）。报告会送到管理员那里，
+              修好之后这一页会显示「已修复」。
+            </p>
+
+            <p class="account-hint" id="reports-guest" hidden>
+              还没登录 —— 报告要登录后才能发，这样才认得出是谁报的、修好之后能回你一句。
+              <a class="report-login-link" href="/login/">去登录</a>
+            </p>
+
+            <div class="settings-btns" style="margin-bottom:10px">
+              <button class="btn ghost-btn" type="button" id="btn-reports-refresh">刷新</button>
+            </div>
+
+            <div id="reports-panel">
+              <p class="account-hint">正在读取……</p>
+            </div>
+
+            <p class="account-msg" id="msg-reports"></p>
+          </div>
+        </section>
+
+        <section class="settings-group">
+          <h2 class="settings-group-title">别的入口</h2>
+          <div class="settings-item wide">
+            <p class="account-lead">
+              报的是<strong>整站</strong>的事、或是想提一条建议（不是某一句诗的错），
+              开一个 <a class="report-login-link" href="https://cnb.cool/npu-gpu-cpu/poem/-/issues">Issue</a> 更快 ——
+              那条路不依赖服务端，也不用登录。
+            </p>
+          </div>
+        </section>
+      </div>
+    </main>
+
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+
+  <script src="/js/auth-core.js"></script>
+  <script src="/js/entitlement.js"></script>
+  <script src="/js/auth-api.js"></script>
+  <script src="/js/account-api.js"></script>
+  <script src="/js/family.js"></script>
+  <script src="/js/report.js"></script>
+  <script src="/js/avatar.js"></script>
+  <script src="/js/reports-page.js"></script>
+  <script src="/js/chrome.js"></script>
+  <script src="/js/pwa.js"></script>
+</body>
+</html>

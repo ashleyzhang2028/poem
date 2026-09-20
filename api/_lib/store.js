@@ -1,7 +1,7 @@
 "use strict";
 
 function memoryStore() {
-  var db = { accounts: {}, codes: {}, sessions: {}, progress: {}, verifications: {}, resets: {} };
+  var db = { accounts: {}, codes: {}, sessions: {}, progress: {}, verifications: {}, resets: {}, reports: {} };
   var api = {
     kind: "memory",
     ready: function () { return true; },
@@ -129,6 +129,54 @@ function memoryStore() {
     deleteProgress: function (uid) {
       Object.keys(db.progress).forEach(function (k) { if (db.progress[k].uid === uid) delete db.progress[k]; });
       return true;
+    },
+
+    // ---- 报告台账（Issue #243 第四轮）--------------------------------------
+    // 与 progress 那张表**不共享生命周期**：注销账号时报告**留着**
+    // （uid 外键在真库上是 on delete，但 memory 这一份要自己保住台账 ——
+    //  它是管理员的工作台，不是用户的私有数据）。
+    putReport: function (row) { db.reports[row.rid] = row; return { rid: row.rid }; },
+    getReport: function (rid) {
+      var r = db.reports[rid];
+      return Promise.resolve(r || null);
+    },
+    listReports: function (filter, limit) {
+      var f = filter || {};
+      var out = Object.keys(db.reports).map(function (k) { return db.reports[k]; });
+      if (f.uid) out = out.filter(function (r) { return r.uid === f.uid; });
+      if (f.status) out = out.filter(function (r) { return r.status === f.status; });
+      if (f.poemId) out = out.filter(function (r) { return r.poem_id === f.poemId; });
+      out.sort(function (a, b) { return (b.created_at || 0) - (a.created_at || 0); });
+      return Promise.resolve(out.slice(0, limit || 200));
+    },
+    patchReport: function (rid, patch) {
+      var r = db.reports[rid];
+      if (!r) return Promise.resolve(null);
+      Object.keys(patch || {}).forEach(function (k) { r[k] = patch[k]; });
+      return Promise.resolve(r);
+    },
+    countReports: function (filter) {
+      var f = filter || {};
+      var counts = { all: 0 };
+      Object.keys(db.reports).forEach(function (k) {
+        var r = db.reports[k];
+        var hit = true;
+        if (f.uid && r.uid !== f.uid) hit = false;
+        if (f.status && r.status !== f.status) hit = false;
+        if (!hit) return;
+        counts.all += 1;
+        counts[r.status || "new"] = (counts[r.status || "new"] || 0) + 1;
+      });
+      return Promise.resolve(counts);
+    },
+    countReportsByUid: function (uid, since) {
+      var n = 0;
+      var day = since - 86400000;
+      Object.keys(db.reports).forEach(function (k) {
+        var r = db.reports[k];
+        if (r.uid === uid && Number(r.created_at || 0) > day) n += 1;
+      });
+      return Promise.resolve(n);
     }
   };
   return api;
@@ -264,7 +312,7 @@ function supabaseStore(cfg) {
   var COLS = "uid,email,email_hash,email_mask,nickname,plan,plan_until,role,created_at,last_login_at,status,email_verified_at,password_hash,password_salt";
   var q = encodeURIComponent;
 
-  return {
+  var api = {
     kind: "supabase",
     ready: function () { return !!base && !!KEY; },
 
@@ -387,6 +435,72 @@ function supabaseStore(cfg) {
       return call("/progress?uid=eq." + q(uid), { method: "DELETE", prefer: "return=minimal" }).then(function () { return true; });
     }
   };
+
+  return attachReportApi(api);
+}
+
+// ---- 报告台账（Supabase）-------------------------------------------------
+// 与其它表同一条口径：service key 直连 PostgREST，RLS 全开且不给策略。
+// 三条与 accounts/progress 不同的地方：
+//   · `listReports` 的**排序在服务端做**（order=created_at.desc）——
+//     客户端再排一次的下场是「分页时顺序与游标对不上」。
+//   · `countReports` **一次查完再就近分组**（不查五次）—— 见它的正文。
+//   · `patchReport` 返回 representation，因为内核要**回写之后那一条**
+//     （不是回写前）。空返回会让界面上那一行停在旧状态。
+var REPORT_COLS = "rid,uid,email_mask,nickname,kind,status,poem_id,poem_title,book," +
+  "quote,context,note,suggestion,device,ua,created_at,updated_at,handled_at,handled_by,reply";
+
+function reportFilterQs(filter) {
+  var parts = [];
+  if (filter && filter.uid) parts.push("uid=eq." + q(filter.uid));
+  if (filter && filter.status) parts.push("status=eq." + q(filter.status));
+  if (filter && filter.poemId) parts.push("poem_id=eq." + q(filter.poemId));
+  return parts.length ? "&" + parts.join("&") : "";
+}
+
+function attachReportApi(api) {
+  api.putReport = function (row) {
+    return call("/reports", { method: "POST", body: row, prefer: "return=minimal" }).then(function () {
+      return { rid: row.rid };
+    });
+  };
+  api.getReport = function (rid) {
+    return call("/reports?rid=eq." + q(rid) + "&select=" + REPORT_COLS + "&limit=1")
+      .then(function (rows) { return rows && rows[0] ? rows[0] : null; });
+  };
+  api.listReports = function (filter, limit) {
+    var p = "/reports?select=" + REPORT_COLS + reportFilterQs(filter) +
+      "&order=created_at.desc&limit=" + encodeURIComponent(String(limit || 200));
+    return call(p).then(function (rows) { return rows || []; });
+  };
+  api.patchReport = function (rid, patch) {
+    return call("/reports?rid=eq." + q(rid), {
+      method: "PATCH", body: patch, prefer: "return=representation"
+    }).then(function (rows) { return rows && rows[0] ? rows[0] : null; });
+  };
+  api.countReports = function (filter) {
+    // 状态分布**一次查完**：拉一次全量（上限 5000，台账量级远不到），
+    // 在本地按状态分组。分五次查的下场是「五个数字来自五个不同的瞬间」——
+    // 管理员正好在这五次之间改了一条状态，面板上就会出现
+    // 「总计 12，各状态加起来 13」。
+    var base = "/reports?select=status" + reportFilterQs(filter) + "&limit=5000";
+    return call(base).then(function (rows) {
+      var out = { all: 0 };
+      ((require("./core").REPORT_STATUSES) || []).forEach(function (st) { out[st] = 0; });
+      (rows || []).forEach(function (r) {
+        out.all += 1;
+        var st = String((r && r.status) || "new");
+        out[st] = (out[st] || 0) + 1;
+      });
+      return out;
+    });
+  };
+  api.countReportsByUid = function (uid, since) {
+    var day = Number(since) - 86400000;
+    return call("/reports?select=rid&uid=eq." + q(uid) + "&created_at=gt." + q(day) + "&limit=1000")
+      .then(function (rows) { return (rows || []).length; });
+  };
+  return api;
 }
 
 var singleton = null;

@@ -25,10 +25,9 @@ chk(IDX.some(x => x.isBook && x.title === '课外必背小古文'),
   '集子自身也是一条结果（搜「小古文」能直接进那一页）');
 chk(sandbox.SITE_BOOKS.length === 9 &&
   sandbox.SITE_BOOKS.map(b => b.page).join(',') ===
-    '/,/classic/,/zhaoming/,/yuefu/,/tangshi/,/songci/,/yuanqu/,/guwen/,/jinxiandai/',
-  '九部集子的索引页地址按时代排序：/ · /classic/ · /zhaoming/ · /yuefu/ · ' +
-  '/tangshi/ · /songci/ · /yuanqu/ · /guwen/ · /jinxiandai/（实际 ' +
-  sandbox.SITE_BOOKS.map(b => b.page).join(',') + '）');
+    '/,/classic/,/yuefu/,/tangshi/,/songci/,/yuanqu/,/guwen/,/jinxiandai/,/zhaoming/',
+  '九部集子的索引页地址依次为 / · /classic/ · /yuefu/ · /tangshi/ · /songci/ · /yuanqu/ · /guwen/ · /jinxiandai/ · /zhaoming/' +
+  '（乐府集排在唐诗之前、元曲排在宋词之后，Issue #244）');
 
 const only = sandbox.buildSiteIndex({ tangshi: [{ id: 'ts-1', title: '感遇·其一', author: '张九龄', dynasty: '唐' }] });
 chk(only.some(x => x.book === 'tangshi' && x.title === '感遇·其一') &&
@@ -160,7 +159,7 @@ setTimeout(() => {
     ['guwen/index.html', '/guwen/', '韩愈', 167],
     ['zhaoming/index.html', '/zhaoming/', '陶渊明', 480],
     ['yuanqu/index.html', '/yuanqu/', '马致远', 30],
-    ['yuefu/index.html', '/yuefu/', '木兰', 15],
+    ['yuefu/index.html', '/yuefu/', '木兰', 103],
     ['jinxiandai/index.html', '/jinxiandai/', '毛泽东', 24],
     ['poems/index.html', '/poems/', '静夜思', 251]
   ];

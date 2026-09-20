@@ -1043,56 +1043,58 @@ function check(name, cond, extra) {
     check('iPhone: 播放键左侧没有负外边距（圆键不再压住正文）',
       numState.playGapLeft >= 0, numState.playGapLeft + 'px');
 
-    // 内容块与播放键之间这一段，现在由**两枚**圆键占着：
-    //   ① 「加进今天」（.item-daily，Issue #229 的今日加背）；
-    //   ② 「加入背诵」（.item-recite，Issue #69 的自选集合）。
-    // 两枚都是 width: var(--item-btn) + margin-right: 6px，谁也不许比谁宽一号。
-    // ⚠️ 断言要跟着「中间到底有几枚」走：写死成「一枚的宽 + 6px」会在加一颗键的那天
-    //    必然变红，而页面其实完全正确（2026-09-19 就是这样红的）。
-    //    这里不去数常量，而是把内容块与播放键之间的**实际盒子**一个个量出来累加：
-    //    中间有几枚、每枚多宽，断言自己就跟着算到几枚。
+    // 内容块与播放键之间这一段，由**若干枚**行内圆键占着：
+    //   ① 「报告错误」（.item-report，Issue #243 第四轮，排在最左）；
+    //   ② 「加进今天」（.item-daily，Issue #229 的今日加背）；
+    //   ③ 「加入背诵」（.item-recite，Issue #69 的自选集合）。
+    // 每一枚都是 width: var(--item-btn) + margin-right: 6px，谁也不许比谁宽一号。
+    // ⚠️ 断言要跟着「中间到底有几枚」走，而且**不许列举类名**：
+    //    写死颗数、或只认某几个类名，都会在加一颗键的那天必然变红，
+    //    而页面其实完全正确（2026-09-19 就是这样红的：只认 daily/report 两枚，
+    //    漏掉新来的 .item-report，实测 126 对不上求和 84）。
+    //    这里改成量「main 与 play 之间的实际兄弟盒子」，加多少颗都自己跟着算。
     const gapState = await page.evaluate(() => {
       const item = document.querySelector('#gw-list .item');
-      const main = item.querySelector('.item-main').getBoundingClientRect();
-      const play = item.querySelector('.item-read').getBoundingClientRect();
-      const recite = item.querySelector('.item-recite');
 
-      // 内容块 → 播放键这一段不是留白，而是被行内那串圆键各自
-      // 「盒宽 + 右外边距（6px）」逐段占满的：本轮起是两枚 ——
-      // ① 「加进今天」(.item-daily)  ② 「加入背诵」(.item-recite)。
-      // 所以不去数常量，而是把实际渲染出来的圆键逐个量出来累加：
-      // 中间有几枚、每枚多宽，断言自己就跟着算到几枚。
-      const daily = item.querySelector('.item-daily');
-      const btnBox = el => el
-        ? el.getBoundingClientRect().width + (parseFloat(getComputedStyle(el).marginRight) || 0)
-        : 0;
-      const btns = [].slice.call(item.querySelectorAll('.item-daily, .item-recite'));
-      const occupied = btns.reduce(function (a, b) { return a + btnBox(b); }, 0);
+      // 内容块 → 播放键这一段不是留白，而是被中间那串行内圆键各自
+      // 「盒宽 + 右外边距（6px）」逐段占满的：起先是两枚（「加进今天」
+      // .item-daily + 「加入背诵」.item-recite），#243 第四轮又插进
+      // 一枚「报告错误」.item-report（排在**最左**）。
+      //
+      // ⚠️ 这里**不去数颗数、也不列举类名**：中间有几枚是活的（两枚 → 三枚
+      //    已经发生过一次），一写死就会在加一颗键的那天必然变红，而页面
+      //    其实完全正确（2026-09-19 就是这样红的 —— 断言只认
+      //    `.item-daily, .item-recite` 两枚，漏掉了新的 `.item-report`，
+      //    于是「实测 126 ≠ 求和 84」，红的却不是页面）。
+      //    改法：直接从 DOM 里取 main 与 play **之间的兄弟元素**，
+      //    它们占多少就加多少 —— 以后再加第四颗、第五颗，这条自己跟着算。
+      const main = item.querySelector('.item-main');
+      const play = item.querySelector('.item-read');
+      const kids = [].slice.call(item.children);
+      const mid = kids.slice(kids.indexOf(main) + 1, kids.indexOf(play));
+      const btnBox = el =>
+        el.getBoundingClientRect().width + (parseFloat(getComputedStyle(el).marginRight) || 0);
+      const occupied = mid.reduce(function (a, b) { return a + btnBox(b); }, 0);
       return {
-        gap: +(play.left - main.right).toFixed(2),
-        btns: btns.length,
+        gap: +(play.getBoundingClientRect().left - main.getBoundingClientRect().right).toFixed(2),
+        btns: mid.length,
+        midCls: mid.map(function (el) { return el.className; }),
         occupied: +occupied.toFixed(2),
-        reciteW: +recite.getBoundingClientRect().width.toFixed(2),
-        reciteMr: +(parseFloat(getComputedStyle(recite).marginRight) || 0).toFixed(2),
-        // dailyW 供下面「两枚圆键与播放键同径」那条比**本体宽**，所以是纯盒宽（不含外边距）；
-        // 占位求和用 occupied（本体宽 + 各自 margin-right）。
-        dailyW: daily ? +daily.getBoundingClientRect().width.toFixed(2) : null,
-        dailyBoxW: +btnBox(daily).toFixed(2),
-        reciteBoxW: +btnBox(recite).toFixed(2),
-        playW: +play.width.toFixed(2),
-        nBtn: btns.length
+        // 下面「行内圆键与播放键同径」那条要逐颗比**本体宽**（不含外边距），
+        // 所以把中间每一颗的本体宽与类名一起带出去，同样不写死颗数。
+        midW: mid.map(function (el) { return +el.getBoundingClientRect().width.toFixed(2); }),
+        playW: +play.getBoundingClientRect().width.toFixed(2)
       };
     });
-    check('iPhone: 内容块 → 播放键这一段由行内圆键（「＋」+「加入背诵」）占满',
-      gapState.btns === 2 &&
+    check('iPhone: 内容块 → 播放键这一段由行内圆键（小旗 + 「＋」+「加入背诵」）占满',
+      gapState.btns >= 1 &&
       Math.abs(gapState.gap - gapState.occupied) <= 0.5,
       JSON.stringify(gapState));
-    check('iPhone: 中间两枚圆键（加进今天 / 加入背诵）与播放键同径',
-      gapState.dailyW != null &&
-      Math.abs(gapState.dailyW - gapState.playW) <= 0.5 &&
-      Math.abs(gapState.reciteW - gapState.playW) <= 0.5 &&
+    check('iPhone: 中间每一枚行内圆键（报告 / 加进今天 / 加入背诵）都与播放键同径',
+      gapState.midW.length >= 1 &&
+      gapState.midW.every(function (w) { return Math.abs(w - gapState.playW) <= 0.5; }) &&
       gapState.playW >= 30,
-      JSON.stringify({ dailyW: gapState.dailyW, reciteW: gapState.reciteW, playW: gapState.playW }));
+      JSON.stringify({ midW: gapState.midW, midCls: gapState.midCls, playW: gapState.playW }));
 
     check('iPhone: 圆键本体没被压小（仍是 --item-btn 那一档的正圆，36px；宽高同值）',
       Math.abs(numState.playW - 36) <= 0.5, numState.playW + 'px');
