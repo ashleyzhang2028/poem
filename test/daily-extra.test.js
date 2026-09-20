@@ -320,10 +320,16 @@ console.log('\n=== 五、集子页：列表每一行都有，详情页插在译�
   chk(rows.every(r => r.querySelector('.item-daily')), '每一行都有一颗「＋」');
   chk(rows.every(r => r.querySelector('.item-recite')), '每一行原有的「加入背诵」也都还在');
 
+  // 行内圆键已收进 .item-actions（2×2 网格），「＋ / 加入背诵」在网格里的
+  // 次序仍是「报告 → ＋ → 收藏 → 播放」——这一条守的就是网格内部那份次序。
   const kids = [...rows[0].children].map(e => (e.className || '').split(' ')[0]);
-  chk(kids.indexOf('item-main') < kids.indexOf('item-daily') &&
-      kids.indexOf('item-daily') < kids.indexOf('item-recite'),
-    '「＋」在正文右边、加入背诵**左边**（用户点名的位置；实际 ' + kids.join(',') + '）');
+  const wrap = rows[0].querySelector('.item-actions');
+  const cells = wrap ? [...wrap.children].map(e => (e.className || '').split(' ')[0]) : [];
+  chk(kids.indexOf('item-main') < kids.indexOf('item-actions'),
+    '圆键网格在正文右边（实际 ' + kids.join(',') + '）');
+  chk(cells.indexOf('item-daily') > cells.indexOf('item-report') &&
+      cells.indexOf('item-daily') < cells.indexOf('item-recite'),
+    '「＋」在「报告」右边、加入背诵**左边**（用户点名的位置；实际 ' + cells.join(',') + '）');
 
   const id = rows[0].dataset.id;
   const btn = rows[0].querySelector('.item-daily');

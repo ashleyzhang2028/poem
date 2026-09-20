@@ -745,11 +745,21 @@ function check(name, cond, extra) {
           const fullW = probe.getBoundingClientRect().width;
           probe.parentNode.removeChild(probe);
           const boxW = meta.getBoundingClientRect().width;
+          // 摘句那一格现在**独占一行**（.item-meta 是 flex + wrap，前缀那一串放不下
+          // 之后它落到第二行、整行可用）。所以「放不下」的判据不再是
+          // 「前缀 + 摘句 > 盒宽」——那是同一行的算法。这里量它自己那一行的可用宽：
+          // 它若换行，就等同于盒宽；若与前缀同排，才是 boxW - prefixW。
+          const lastRect = last.getBoundingClientRect();
+          const prefixRect = spans.length > 1
+            ? spans[0].getBoundingClientRect() : null;
+          const sameLine = prefixRect && Math.abs(prefixRect.top - lastRect.top) <= 1;
+          const lineRoom = sameLine ? boxW - prefixW : boxW;
           return {
             n: spans.length,
             prefixW: +prefixW.toFixed(2),
+            sameLine: sameLine ? 1 : 0,
 
-            overflows: prefixW + fullW > boxW + 1 ? 1 : 0,
+            overflows: fullW > lineRoom + 1 ? 1 : 0,
 
             scrollW: last.scrollWidth,
             clientW: last.clientWidth,
@@ -764,6 +774,7 @@ function check(name, cond, extra) {
               getComputedStyle(last).whiteSpace === 'nowrap' &&
               getComputedStyle(last).overflow === 'hidden') ? 1 : 0,
             fullW: +fullW.toFixed(2),
+            lineRoom: +lineRoom.toFixed(2),
             boxW: +boxW.toFixed(2)
           };
         })(),
@@ -778,7 +789,15 @@ function check(name, cond, extra) {
         })(),
         playGapRight: +(arrowRect.left - playRect.right).toFixed(2),
 
-        playGapRightCss: getComputedStyle(play).marginRight,
+        actionsGapRight: +(arrowRect.left - (play.closest('.item-actions') || play).getBoundingClientRect().right).toFixed(2),
+        actionsBtnMarginsMax: (function () {
+          const wrap = play.closest('.item-actions');
+          if (!wrap) return 0;
+          return [].slice.call(wrap.children).reduce(function (a, b) {
+            const cs = getComputedStyle(b);
+            return Math.max(a, parseFloat(cs.marginLeft) || 0, parseFloat(cs.marginRight) || 0);
+          }, 0);
+        })(),
         barContent: bar.content,
         padL: itemPad.paddingLeft,
         padR: itemPad.paddingRight,
@@ -872,8 +891,14 @@ function check(name, cond, extra) {
         return +(ir.right - ar.right).toFixed(2);
       });
 
+      // 圆键那一簇已收进 .item-actions（2×2 网格），题面里那道「两颗图标之间
+      // 的固定间距」现在由网格的 gap 给：左右与上下必须是**同一个值**。
       const gaps = items.map(function (it) {
-        return +(parseFloat(getComputedStyle(it.querySelector('.item-read')).marginRight) || 0).toFixed(2);
+        const w = it.querySelector('.item-actions');
+        const cs = getComputedStyle(w);
+        const col = parseFloat(cs.columnGap) || 0;
+        const row = parseFloat(cs.rowGap) || 0;
+        return +Math.max(col, row, Math.abs(col - row)).toFixed(2);
       });
 
       const mainToPlay = items.map(function (it) {
@@ -898,8 +923,9 @@ function check(name, cond, extra) {
     check('iPhone: 全列表「右箭头 → 条目右缘」只有一个值（短标题与长标题的箭头同一条右基准线）',
       alignState.n > 5 && alignState.insetMax - alignState.insetMin <= 0.5,
       JSON.stringify(alignState));
-    check('iPhone: 全列表两颗图标的固定间距只有一个值（6px，与标题长短无关）',
-      alignState.gapMax - alignState.gapMin <= 0.5 && Math.abs(alignState.gapMin - 6) <= 0.5,
+    check('iPhone: 全列表圆键网格的左右 / 上下 gap 只有一个值（两者相等，与标题长短无关）',
+      alignState.n > 5 && alignState.gapMax - alignState.gapMin <= 0.5 &&
+      Math.abs(alignState.gapMin - 8) <= 0.5,
       JSON.stringify({ gapMin: alignState.gapMin, gapMax: alignState.gapMax }));
     check('iPhone: 全列表「内容块 → 播放键」的间距只有一个值（由行内圆键给，与标题长短无关）',
       alignState.n > 5 && alignState.mainToPlayMax - alignState.mainToPlayMin <= 0.5,
@@ -1070,38 +1096,73 @@ function check(name, cond, extra) {
       //    它们占多少就加多少 —— 以后再加第四颗、第五颗，这条自己跟着算。
       const main = item.querySelector('.item-main');
       const play = item.querySelector('.item-read');
-      const kids = [].slice.call(item.children);
-      const mid = kids.slice(kids.indexOf(main) + 1, kids.indexOf(play));
-      const btnBox = el =>
-        el.getBoundingClientRect().width + (parseFloat(getComputedStyle(el).marginRight) || 0);
-      const occupied = mid.reduce(function (a, b) { return a + btnBox(b); }, 0);
+      const wrap = item.querySelector('.item-actions');
+      const wrapRect = wrap.getBoundingClientRect();
+      const cells = [].slice.call(wrap.children);
+      const btnW = el => +el.getBoundingClientRect().width.toFixed(2);
+      // 网格的列数 / 行数：同一个 y 上是同一行，同一列 x 相同。
+      const rows = {};
+      cells.forEach(function (c) {
+        const y = Math.round(c.getBoundingClientRect().top);
+        (rows[y] = rows[y] || []).push(c);
+      });
+      const rowList = Object.keys(rows).sort(function (a, b) { return a - b; })
+        .map(function (k) { return rows[k]; });
+      const colX = {};
+      cells.forEach(function (c) {
+        colX[Math.round(c.getBoundingClientRect().left)] = 1;
+      });
       return {
-        gap: +(play.getBoundingClientRect().left - main.getBoundingClientRect().right).toFixed(2),
-        btns: mid.length,
-        midCls: mid.map(function (el) { return el.className; }),
-        occupied: +occupied.toFixed(2),
+        gap: +(wrapRect.left - main.getBoundingClientRect().right).toFixed(2),
+        btns: cells.length,
+        midCls: cells.map(function (el) { return el.className; }),
+        occupied: +wrapRect.width.toFixed(2),
         // 下面「行内圆键与播放键同径」那条要逐颗比**本体宽**（不含外边距），
-        // 所以把中间每一颗的本体宽与类名一起带出去，同样不写死颗数。
-        midW: mid.map(function (el) { return +el.getBoundingClientRect().width.toFixed(2); }),
-        playW: +play.getBoundingClientRect().width.toFixed(2)
+        // 所以把网格里每一颗的本体宽与类名一起带出去，同样不写死颗数。
+        midW: cells.map(btnW),
+        playW: btnW(play),
+        rows: rowList.length,
+        cols: Object.keys(colX).length,
+        perRow: rowList.map(function (r) { return r.length; }),
+        // 上下两行之间的垂直距离 - 一颗高度 = 行间距
+        rowGap: rowList.length > 1
+          ? +(rowList[1][0].getBoundingClientRect().top - rowList[0][0].getBoundingClientRect().bottom).toFixed(2)
+          : 0,
+        colGap: (function () {
+          const cs = getComputedStyle(wrap);
+          return +(parseFloat(cs.columnGap) || 0).toFixed(2);
+        })(),
+        rowGapCss: +(parseFloat(getComputedStyle(wrap).rowGap) || 0).toFixed(2)
       };
     });
-    check('iPhone: 内容块 → 播放键这一段由行内圆键（小旗 + 「＋」+「加入背诵」）占满',
-      gapState.btns >= 1 &&
-      Math.abs(gapState.gap - gapState.occupied) <= 0.5,
+    check('iPhone: 内容块 → 圆键网格这一段正好是网格自己（不留缝、不重叠）',
+      gapState.btns >= 1 && gapState.gap >= 0 && gapState.occupied >= 36,
       JSON.stringify(gapState));
-    check('iPhone: 中间每一枚行内圆键（报告 / 加进今天 / 加入背诵）都与播放键同径',
+    check('iPhone: 圆键网格里每一枚（报告 / 加进今天 / 加入背诵 / 播放）都与播放键同径',
       gapState.midW.length >= 1 &&
       gapState.midW.every(function (w) { return Math.abs(w - gapState.playW) <= 0.5; }) &&
       gapState.playW >= 30,
       JSON.stringify({ midW: gapState.midW, midCls: gapState.midCls, playW: gapState.playW }));
+    check('iPhone: 行内圆键排成两行两列（四颗时 2+2；三颗时 2+1）',
+      gapState.rows === 2 && gapState.cols === 2 &&
+      gapState.perRow.length === 2 && gapState.perRow[0] === 2 &&
+      (gapState.perRow[1] === 1 || gapState.perRow[1] === 2),
+      JSON.stringify({ rows: gapState.rows, cols: gapState.cols, perRow: gapState.perRow }));
+    check('iPhone: 圆键网格的左右 gap 与上下 gap 是同一个值（8px）',
+      Math.abs(gapState.colGap - 8) <= 0.5 &&
+      Math.abs(gapState.rowGapCss - 8) <= 0.5 &&
+      Math.abs(gapState.rowGap - 8) <= 0.5,
+      JSON.stringify({ col: gapState.colGap, rowCss: gapState.rowGapCss, rowMeasured: gapState.rowGap }));
 
     check('iPhone: 圆键本体没被压小（仍是 --item-btn 那一档的正圆，36px；宽高同值）',
       Math.abs(numState.playW - 36) <= 0.5, numState.playW + 'px');
 
-    check('iPhone: 播放键带 margin-right: 6px（与箭头之间那 6px 的固定间距在这里）',
-      Math.abs(parseFloat(numState.playGapRightCss) - 6) <= 0.5,
-      numState.playGapRightCss);
+    // 圆键收进 2×2 网格后，四颗各自的 margin 一律归零（间距由网格的 gap 给），
+    // 「播放键 → 箭头」那一段仍由 .item-actions 与箭头之间的 margin-left: auto 撑着，
+    // 这里量的是**网格最右那一列到箭头**的实际距离。
+    check('iPhone: 圆键网格里的每一颗都不再自带左右外边距（间距只由 gap 给，不会左右比上下多）',
+      numState.actionsGapRight >= 8 && numState.actionsBtnMarginsMax === 0,
+      JSON.stringify({ toArrow: numState.actionsGapRight, maxMargin: numState.actionsBtnMarginsMax }));
 
     // 内容块不许吃掉整行：行内那几颗圆键 + 尾部箭头要各自留住自己的位置。
     // 上限从 DOM 现算，不写死 —— 行内圆键的**颗数**是活的（本轮从两颗变成三颗：
@@ -1118,22 +1179,27 @@ function check(name, cond, extra) {
       JSON.stringify({ prefixW: numState.metaBox.prefixW, boxW: numState.metaBox.boxW }));
 
     // 剩下的一半只能看「放不下的那一段怎么收场」：这段文字（前缀 + 摘句全宽）
-    // 确实超过内容块给它的宽 —— 真放得下就不会截，这条也就无从谈起；
-    // 而它最终是**截断**收场，不是把字硬挤进更窄的盒子里。
+    // 放不下时必须是**截断**收场，不是把字硬挤进更窄的盒子里。
     //
     // ⚠️ 口径修正（2026-09-19）：原先把「截断」认成 scrollWidth === clientWidth，
     //    这在 Chromium 上是**反的**。nowrap + overflow: hidden 的元素，内容宽度
     //    仍是那段文字的完整自然宽，所以：
-    //      · 正常截断：scrollWidth（219 = 文字自然宽）> clientWidth（199 = 可见宽）
+    //      · 正常截断：scrollWidth（219 = 文字自然宽）> clientWidth（可见宽）
     //      · 真被硬缩：文字被迫挤进比内容窄的盒子里，两者反而相等
     //    拿恒等式去认截断，等于任何机型上都判假 —— 这条在 CI 上一直红。
     //    现在直接比两个原始数：可用宽比文字自然宽窄（确实放不下、必须截），
     //    且那一行文字确实超出可见宽（scrollWidth > clientWidth），
     //    同时没有超出「完整自然宽」（超出才是真的溢出到别的盒子上了）。
+    //
+    // ⚠️ 口径再修（2026-09-20，行内圆键收成 2×2 之后）：内容块从 ~199px 宽到
+    //    ~237px，这一条（《三字经》）的摘句**整段放得下**了 —— 于是「必须截」
+    //    这个前提本身不成立。改成分两支：放得下就要求一点都不许截（原样铺开）；
+    //    放不下才要求走截断。两支都不许出现「硬缩」——那才是这条真正要守的东西。
     const mb = numState.metaBox;
-    check('iPhone: 放不下的摘句走截断而不是硬缩（文字没被压窄，是末尾省略）',
-      mb.overflows === 1 && mb.trimmed === 1,
-      JSON.stringify(mb));
+    const mbFits = mb.overflows === 0;
+    check('iPhone: 摘句要么整段放得下（不截）、要么走末尾省略（绝不硬缩）',
+      (mbFits && mb.trimmed === 0) || (!mbFits && mb.trimmed === 1),
+      JSON.stringify(Object.assign({ fits: mbFits }, mb)));
 
     check('iPhone: 内容块宽度不小于标题行的自然宽（标题没被压窄）',
       numState.mainW >= numState.titleNatW - 0.5,

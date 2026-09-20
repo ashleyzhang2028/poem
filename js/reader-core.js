@@ -558,11 +558,13 @@
         "</div>" +
         "</div>" +
 
+        '<div class="item-actions">' +
         (CFG.reportList === false ? "" : reportItemBtn(p)) +
         (CFG.dailyList === false ? "" : dailyItemBtn(p)) +
         (CFG.reciteList === false ? "" : reciteItemBtn(p)) +
         '<button type="button" class="item-read" title="播放这一篇" aria-label="播放 ' + esc(p.title) + '">' +
         playGlyph() + "</button>" +
+        "</div>" +
         '<div class="item-arrow">' + arrowGlyph() + "</div>";
       el.addEventListener("click", function () { openReader(p); });
       var playBtn = el.querySelector(".item-read");

@@ -343,22 +343,26 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     '搜索页列表里不出现「已读」小标');
 
   // =========================================================================
-  // 结果行里那三颗钮的间距（Issue #229）
+  // 结果行里那几颗圆键的排法（Issue #229 续）
   //
   // 搜索页的结果有两种排法：带 gradeGroup 的（课内那几首）落进 .group-card，
   // 不带的（唐诗 / 宋词…）直接排在 .list 上。第二种原先吃的是通用 .item 的
-  // gap:12px，于是同一排「＋ / 收藏 / 播放」之间平白多出 24px ——
-  // 与 .group-card 里那一种、以及其他集子页的列表都对不上。
-  // 修法是让 .list 上的裸 .item 也用 gap:0 + 每颗钮各自 6px 外边距。
+  // gap:12px，于是同一排「＋ / 收藏 / 播放」之间平白多出 24px。
+  //
+  // 本轮（Issue #229）圆键从「横着一排」改成「2×2 网格」，收进 .item-actions：
+  // 左右与上下共用同一个 gap，两种排法共用同一套 —— 这里守的就是「两处一致」。
   // =========================================================================
   {
     const cssSrc = read('css/classic.css').replace(/\/\*[\s\S]*?\*\//g, ' ');
     chk(/body\[data-nav="search"\] #gw-list \.item \{[^}]*gap:\s*0/.test(cssSrc),
       '搜索页结果行是 gap:0（不再吃通用 .item 的 12px，与集子页的 .group-card 一致）');
-    chk(/body\[data-nav="search"\] #gw-list > \.item > \.item-read \{[^}]*margin-right:\s*6px/.test(cssSrc),
-      '裸结果行里「播放」那颗与「＋ / 收藏」一样有 6px 外边距（三颗钮间距完全相同）');
-    chk(/\.group-card \.item-read \{[^}]*margin-right:\s*6px/.test(cssSrc),
-      '集子页 / 分组行里那颗「播放」仍是 6px（两处同一套口径 —— 改一处另一处会红）');
+    chk(/\.item-actions \{[^}]*display:\s*grid/.test(cssSrc) &&
+      /\.item-actions \{[^}]*grid-template-columns:\s*repeat\(2/.test(cssSrc),
+      '行内圆键收进 .item-actions，排成两列网格');
+    chk(/\.item-actions \{[^}]*gap:\s*var\(--item-gap\)/.test(cssSrc),
+      '网格的左右与上下共用同一个 gap 变量（不是两条各写各的）');
+    chk(/\.item-actions > \.item-report,[\s\S]*?margin:\s*0/.test(cssSrc),
+      '网格自己给间距，圆键各自那 6px 右外边距在这一簇里撤掉（否则左右会比上下多 6px）');
 
     type('王维');
     await sleep(30);
@@ -367,11 +371,15 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     chk(!!plain, '搜「王维」（唐诗）出现「不带分组」的裸结果行');
     chk(!!grouped || true, '搜「唐」时课内那几首会落进分组卡（两种排法都测到）');
     if (plain) {
-      // 四颗（#243 第四轮加了最左那颗「报告错误」）：
-      // 报告 / ＋ / 收藏 / 播放 / 箭头 —— 与集子页的分组行同一个次序。
+      // 内容块 → 圆键网格 → 箭头：圆键那一簇整个收在一个容器里。
       chk([...plain.children].map(c => (c.className || '').split(' ')[0]).join('|') ===
-        'item-main|item-report|item-daily|item-recite|item-read|item-arrow',
-        '裸结果行里四颗钮的次序与分组行一致（报告 / ＋ / 收藏 / 播放 / 箭头）');
+        'item-main|item-actions|item-arrow',
+        '裸结果行里是「内容块 | 圆键网格 | 箭头」三段');
+      const wrap = plain.querySelector('.item-actions');
+      chk(!!wrap &&
+        [...wrap.children].map(c => (c.className || '').split(' ')[0]).join('|') ===
+        'item-report|item-daily|item-recite|item-read',
+        '网格里四颗圆键的次序与集子页一致（报告 / ＋ / 收藏 / 播放）');
     }
     type('');
     await sleep(30);
