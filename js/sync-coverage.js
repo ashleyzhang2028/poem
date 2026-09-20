@@ -49,8 +49,13 @@
     {
       key: "poem_recite_settings_v1", sync: true, row: "settings:v1",
       merge: "谁最后改谁赢",
-      cap: "约 1 KB",
-      why: "账号域的设置（学段 / 年级 / 学期 / 范围 / 每日数量 / 算法）是「这个账号怎么背」。"
+      cap: "约 1 KB；**只带账号域那五个字段**（FIELDS.settings = 年级 / 学期 / 范围 / 每日数量 / 算法）",
+      why: "账号域的设置（学段 / 年级 / 学期 / 范围 / 每日数量 / 算法）是「这个账号怎么背」。" +
+           "⚠️ 这一把键是**混装**的：`helper`（阅读辅助总开关）历史上也住在这里，" +
+           "但它说的是「这台设备长什么样」，所以它**不跟着上云** —— " +
+           "`FIELDS.device = [\"helper\"]` 把它划到设备域，" +
+           "`ProgressStore.helper()` 读到之后会当场搬到 `poem_device_prefs_v1`。" +
+           "口径一句话：**同一把键里，账号域的走 settings:v1，设备域的留在本机**。"
     },
     {
       key: "poem_profile_v1", sync: true, row: "family:v1（放在名册里，不单独一行）",
@@ -171,7 +176,9 @@
     },
     {
       key: "poem_device_prefs_v1", sync: false, row: "", merge: "", cap: WHY.device,
-      why: "设备域的收纳盒（`helper` 住这里）——「阅读辅助」总开关。"
+      why: "设备域的收纳盒（`helper` 住这里）——「阅读辅助」总开关。" +
+           "它原先混在 `poem_recite_settings_v1` 里，被 `settings:v1` 那一行整份推上云；" +
+           "**现在只有这一把键说了算**，且不上云（手机开了阅读辅助、平板没开，是两回事）。"
     },
     {
       key: "poem_search_kw_v1", sync: false, row: "", merge: "", cap: WHY.trans,

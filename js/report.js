@@ -122,10 +122,17 @@
     var list = readLocal();
     var byRid = {};
     list.forEach(function (r) { if (r && r.rid) byRid[r.rid] = r; });
-    (remote || []).forEach(function (r) { if (r && r.rid) byRid[r.rid] = r; });
+    var rows = (remote || []);
+    rows.forEach(function (r) { if (r && r.rid) byRid[r.rid] = r; });
+
+    // ⚠️ 这一份是**画出来给人看的**，不落回本机。
+    //    落回本机的话，服务端那几条会被写进 `poem_reports_v1` ——
+    //    而下一轮再读本机时，它们看起来就都「送达了」，
+    //    于是「本机还有几条没发出去」这个判断**永远不成立**
+    //    （那几条没发出去的也一起被淹没，用户再也没机会补发）。
     var out = Object.keys(byRid).map(function (k) { return byRid[k]; });
     out.sort(function (a, b) { return (b.createdAt || 0) - (a.createdAt || 0); });
-    return writeLocal(out);
+    return out.slice(0, LOCAL_MAX);
   }
 
   function signedIn() {
@@ -223,11 +230,80 @@
     }
     return Promise.resolve(A.myReports({ limit: (opt && opt.limit) || 50 }))
       .then(function (r) {
-        if (r && r.ok && Array.isArray(r.reports)) return { ok: true, local: false, reports: mergeLocal(r.reports) };
-        return { ok: true, local: true, reports: readLocal() };
+        if (r && r.ok && Array.isArray(r.reports)) {
+          // `reports` 是并起来画给人看的那一列；`serverOnly` 是**服务端原样**。
+          // 「本机还压着几条」只能拿后者比 —— 拿前者比的话，本机那几条
+          // 已经在并起来的那一列里了，每一条都成了「服务端已经有了」。
+          return { ok: true, local: false, reports: mergeLocal(r.reports), serverOnly: r.reports };
+        }
+        return { ok: true, local: true, reports: readLocal(), serverOnly: [] };
       })["catch"](function () {
-        return { ok: true, local: true, reports: readLocal() };
+        return { ok: true, local: true, reports: readLocal(), serverOnly: [] };
       });
+  }
+
+  // 本机记着、服务端那份里没有的（报的时候没登录 / 断网）。
+  // 「服务端那份」按 rid 比 —— rid 是服务端下发的，同一条重发不会多出第二条。
+  function pendingLocal(remote) {
+    var have = {};
+    (remote || []).forEach(function (r) { if (r && r.rid) have[r.rid] = 1; });
+    return readLocal().filter(function (r) { return r && r.rid && !have[r.rid]; });
+  }
+
+  // 把本机压着的那几条再发一次。**不是「重发」把旧的顶掉**：
+  // 服务端按 rid 认人，第一次其实根本没送达（没登录 / 断网），
+  // 所以这里发的就是同一个 rid 的那一条。
+  //
+  // 一条都发不出去时**不给假成功**：如实回「还是没发出去」，
+  // 让用户知道该去登录还是该等网络。
+  function resend() {
+    if (!signedIn()) {
+      return Promise.resolve({ ok: false, reason: "guest", sent: 0, pending: readLocal().length,
+        message: "还没登录 —— 先登录，再回到这一页点重发。" });
+    }
+    var A = accountApi();
+    if (!A || typeof A.report !== "function") {
+      return Promise.resolve({ ok: false, reason: "no-channel", sent: 0, pending: readLocal().length,
+        message: "页面脚本版本对不上，刷新一次即可。" });
+    }
+
+    var list = readLocal();
+    var sent = 0;
+    var failed = 0;
+    var chain = Promise.resolve();
+    list.forEach(function (r) {
+      if (!r || !r.rid) return;
+      chain = chain.then(function () {
+        return Promise.resolve(A.report({
+          rid: r.rid,
+          kind: r.kind,
+          poemId: r.poemId,
+          poemTitle: r.poemTitle,
+          book: r.book,
+          quote: r.quote,
+          context: r.context,
+          note: r.note,
+          suggestion: r.suggestion,
+          ua: r.ua || clip(navigator && navigator.userAgent, 240),
+          localOnly: false
+        })).then(function (res) {
+          if (res && res.ok) sent++;
+          else failed++;
+        }, function () { failed++; });
+      });
+    });
+
+    return chain.then(function () {
+      return {
+        ok: sent > 0,
+        sent: sent,
+        failed: failed,
+        pending: readLocal().length,
+        message: failed
+          ? (sent ? ("发出去 " + sent + " 条，另有 " + failed + " 条还是没发出去。") : "一条都没发出去（可能断网了）。")
+          : ""
+      };
+    });
   }
 
   function clearLocal() {
@@ -665,6 +741,8 @@
     mine: mine,
     readLocal: readLocal,
     writeLocal: writeLocal,
+    pendingLocal: pendingLocal,
+    resend: resend,
     mergeLocal: mergeLocal,
     clearLocal: clearLocal,
     renderList: renderList,

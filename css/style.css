@@ -3276,13 +3276,64 @@ html, body {
   gap: 6px;
   margin: 0 0 12px;
 }
-.admin-report-counts span {
+/* 这一排是**筛选器的化身**（点一格即切换只看哪一档），所以它长得像按钮、
+   当前那一格是实心绿 —— 与「一列灰字 + 另一个下拉」那种两套控件的写法不同。
+   括号里的数是**全站**该状态的条数，所以无论当前筛的是哪一档都在。 */
+.admin-report-counts button {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  font: inherit;
   font-size: 11.5px;
   color: var(--ink-3);
   background: var(--bg);
   border: 1px solid var(--line-2);
   border-radius: 999px;
-  padding: 3px 9px;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+.admin-report-counts button span {
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.admin-report-counts button:hover { border-color: var(--green); }
+.admin-report-counts button.active {
+  background: var(--green);
+  border-color: var(--green);
+  color: #fff;
+}
+.admin-report-counts button.active span { color: #fff; }
+
+/* 流程那四步：用户报告卡顶部，一屏说清「报上来 → 改源码 → 标已修复」。 */
+.admin-flow {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  counter-reset: flow;
+}
+.admin-flow li {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  font-size: 12.5px;
+  color: var(--ink-2);
+  padding: 5px 0;
+  border-bottom: 1px dashed var(--line-2);
+}
+.admin-flow li:last-child { border-bottom: 0; }
+.flow-step {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--bg-soft);
+  color: var(--green);
+  font-size: 11px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px;
 }
 .admin-report-who {
   font-size: 11.5px;

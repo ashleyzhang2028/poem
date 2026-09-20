@@ -424,6 +424,15 @@ body[data-nav="login"] .app {
 .grant-form .account-field { flex: 1 1 140px; margin-bottom: 0; }
 .grant-form .account-btn { width: auto; flex: none; padding: 11px 16px; }
 .grant-form .account-input { font-size: 14px; }
+/* 注音勘误那四格是**一路往下填**的（篇目 → 一句 → 第几次 → 读作什么），
+   不是「发放层级」那种并排的短表单。摊成一行时四个输入框挤在一排、
+   标签各自折行，「从篇目里挑一句」还飘在最后 —— 于是没人看得出顺序。
+   这里按步骤竖排，每一格占满一行；篇目那一格的候选列表也占满一整行。 */
+.pf-wid-field { flex: 1 1 100%; }
+#pf-line-field { flex: 1 1 100%; align-items: flex-end; }
+#pf-line-field .account-field { flex: 1 1 200px; }
+#pf-line-field .account-btn { margin-left: auto; }
+.grant-form .grant-list { flex: 1 1 100%; max-height: 220px; overflow: auto; }
 .tier-pick { display: flex; gap: 6px; flex-wrap: wrap; }
 .tier-pick button {
   border: 1px solid var(--line);
