@@ -512,6 +512,54 @@ async function main() {
       await sleep(60);
       eq(page.calls.revokeMethod, "DELETE", "「收回」真的发了 DELETE");
       eq(page.calls.revokeUrl.indexOf("/api/admin/grant") >= 0, true, "打的是同一个地址");
+
+      // ---- 用户报告那一张台账（Issue #276 第二轮）------------------------
+      await sleep(60);
+      eq(page.calls.reportBody.status, "new",
+        "打开台账默认只看「已收到（还没看）」—— 下拉第一项就是它，不是「全部」");
+      const counts = [...doc.querySelectorAll("#report-counts button")];
+      chk(counts.length >= 5, "那一排小字每一格都是一颗可点的键（实际 " + counts.length + " 颗）");
+      eq(counts.filter(b => b.className.indexOf("active") >= 0).length, 1,
+        "只有当前筛的那一格是选中态（一排灰字 + 另一个下拉 = 同一件事两套控件，这次收成一套）");
+      eq(counts[0].getAttribute("data-count-status"), "all",
+        "第一格是「全部」（总数先摆出来），后面才是各档");
+      chk(counts.some(b => b.getAttribute("data-count-status") === "new" &&
+          b.textContent.indexOf("1") >= 0),
+        "每一格括号里是全站该状态的条数（服务端 counts 原样画出来）");
+
+      // 点「全部」那一格 → 真的换筛选重拉
+      counts[0].click();
+      await sleep(60);
+      eq(page.calls.reportBody.status, "all", "点那一排小字 = 切筛选（不必再去动下拉）");
+      eq(doc.getElementById("report-filter").value, "all", "下拉跟着走（两处共用一个出口）");
+
+      // 状态键 + 「不采纳」多问一句
+      doc.getElementById("report-filter").value = "all";
+      doc.getElementById("report-filter").dispatchEvent(new w.Event("change"));
+      await sleep(60);
+      const rows = [...doc.querySelectorAll(".admin-report-row")];
+      chk(rows.length >= 1, "台账把服务端那几条画出来了（实际 " + rows.length + " 条）");
+      const acts = [...rows[0].querySelectorAll("button[data-report-act]")]
+        .map(b => b.getAttribute("data-report-act"));
+      eq(acts.join(","), "read,accepted,fixed,rejected",
+        "每一条有四颗状态键，末一颗就是「不采纳」—— 只有终态才配一颗显眼的键");
+
+      // 卡顶那四步：把「报告 → 改源码 → 标已修复 → 注音走勘误」说清
+      const flow = doc.getElementById("reports-intro").parentElement
+        .querySelectorAll(".admin-flow li");
+      chk(flow.length === 4, "报告卡顶部有四步流程（实际 " + flow.length + " 步）");
+      chk(/改源码/.test(doc.querySelector(".admin-flow").textContent) &&
+          /标为已修复/.test(doc.querySelector(".admin-flow").textContent),
+        "流程里点名「改源码」与「标为已修复」—— 这正是用户看不懂的那两件事");
+
+      // 「钉住」不再留在孤零零的一格里：注音勘误自成一张卡，四格按步骤排
+      const cards = [...doc.querySelectorAll("#admin-page > section")].map(x => x.id);
+      chk(cards.indexOf("pinyin-card") > cards.indexOf("reports-card"),
+        "注音勘误自成一张卡、排在报告卡之后（原先它在 DOM 里被报告的 </section> 截断、整块钻进报告卡里）");
+      const pfLabels = [...doc.querySelectorAll("#pinyin-card .account-label")]
+        .map(x => x.textContent.trim());
+      chk(pfLabels.length === 4 && /^①/.test(pfLabels[0]) && /^④/.test(pfLabels[3]),
+        "注音勘误四格带①②③④（一路往下填的顺序看得出来），实际：" + pfLabels.join(" / "));
     }
   }
 
@@ -684,6 +732,22 @@ async function bootAdminPage(opts) {
             tier: "free", role: "user", status: "active", emailVerified: true, hasPassword: true,
             createdAt: 3, lastLoginAt: 4 }
         ]
+      }));
+    }
+    if (url.indexOf("/api/admin/reports") >= 0) {
+      const body = init && init.body ? JSON.parse(init.body) : {};
+      calls.reportMethod = m; calls.reportUrl = url; calls.reportBody = body;
+      // 两条：一条还没处理、一条已修复 —— 用来验「默认只看新到的」那一档。
+      return Promise.resolve(jsonRes(200, {
+        total: 2, store: "memory",
+        counts: { all: 2, new: 1, read: 0, accepted: 0, fixed: 1, rejected: 0 },
+        reports: body.status === "all" || body.status === "fixed"
+          ? [{ rid: "r_1", kind: "pinyin", status: "fixed", poemId: "p1", poemTitle: "滕王阁序",
+               book: "古文观止", quote: "长", context: "秋水共长天一色。", note: "该读 cháng",
+               suggestion: "", reply: "", createdAt: 1, updatedAt: 2, handledAt: 2, emailMask: "a***@qq.com" }]
+          : [{ rid: "r_2", kind: "text", status: "new", poemId: "p2", poemTitle: "静夜思",
+               book: "一年级上册", quote: "明月", context: "床前明月光。", note: "少了一个字",
+               suggestion: "", reply: "", createdAt: 3, updatedAt: 3, handledAt: 0, emailMask: "b***@qq.com" }]
       }));
     }
     if (url.indexOf("/api/admin/role") >= 0) {

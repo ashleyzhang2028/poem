@@ -419,6 +419,29 @@ console.log("一、服务端内核：创建 / 频控 / 每日上限 / 空内容�
     chk(/标成「未采纳」/.test(aj), "「不采纳」会多问一句（用户看得到这个状态）");
     chk(/不重拉整张表|不重拉/.test(aj), "改完**就地更新那一行**（不重拉整张表，否则滚动位置被打回顶部）");
 
+    // 「本机还压着几条没发出去」—— 这一条**踩过一次坑**：
+    // 画出来的那一列是 `Report.mine()` 把服务端那份与本机那份**并起来**的
+    // 结果（`mergeLocal`），拿它当「服务端那份」去比，本机那几条本来就在
+    // 里面，于是每一条都成了「服务端已经有了」，`pending` 永远是 0 ——
+    // 用户再也没机会补发那几条真没送出去的。
+    {
+      const rp = read("js/reports-page.js");
+      chk(/serverOnly/.test(rp),
+        "「本机压着几条」比的是 serveOnly 那一份（服务端原样），不是并起来画出来的那一列");
+      chk(/pendingLocal\(serverOnly/.test(rp),
+        "pendingLocal 的入参是 serverOnly（并起来那一列传进去 = 永远是 0）");
+      const rj = read("js/report.js");
+      chk(/serverOnly: r\.reports/.test(rj),
+        "Report.mine() 把服务端原样那一份单独带出来（画的是并集，比的是原样）");
+      chk(/pendingLocal: pendingLocal/.test(rj) && /resend: resend/.test(rj),
+        "Report 上挂着 pendingLocal / resend（「还没发出去」与「补发」是一对）");
+      chk(/function pendingLocal\(remote\)[\s\S]{0,200}readLocal\(\)/.test(rj),
+        "pendingLocal 拿本机那一份去比服务端那份（方向不能反）");
+      chk(/function mergeLocal[\s\S]{0,900}return out\.slice/.test(rj) &&
+          !/function mergeLocal[\s\S]{0,900}writeLocal\(out\)/.test(rj),
+        "mergeLocal **不落回本机** —— 落回去的话本机那几条看起来就都「送达了」");
+    }
+
     const api = read("js/account-api.js");
     chk(/function report\(/.test(api) && /function myReports\(/.test(api), "account-api 有 report / myReports");
     chk(/function adminReports\(/.test(api) && /function adminReportPatch\(/.test(api), "account-api 有 adminReports / adminReportPatch");

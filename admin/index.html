@@ -98,24 +98,28 @@
 
       <section class="account-card" id="reports-card" hidden>
         <h2 class="account-card-title">用户报告</h2>
-        <p class="account-lead">
+
+        <p class="account-lead" id="reports-intro">
           用户在篇目页点那颗<strong>小旗</strong>报上来的正文 / 译文 / 注音 / 朗读 / 界面问题。
-          这里<strong>看得到、改得动状态</strong>，但<strong>改不动正文</strong> ——
-          真正的修复是<strong>改源码</strong>（`data/poems-*.js`、`data/pinyin-table.js`），
-          这一张台账只是「谁知道哪一处错了」的收件箱。
+          报告<strong>发到服务器</strong>（<code>public.reports</code> 那张表），你在这里读到的就是服务端那一份。
         </p>
-        <p class="account-hint">
-          一条报告的「已修复」是<strong>你说的</strong>，不是系统验过的：改完源码之后
-          回来把它标成「已修复」，用户那一页就会显示已修复。
-        </p>
+
+        <ul class="admin-flow">
+          <li><span class="flow-step">1</span>用户点小旗 → 报告送进数据库（台账到手）</li>
+          <li><span class="flow-step">2</span><strong>改源码</strong>（<code>data/poems-*.js</code>、<code>data/pinyin-table.js</code>）——
+              这一页<strong>改不动正文</strong>，报告不是数据源</li>
+          <li><span class="flow-step">3</span>回来点「<strong>标为已修复</strong>」，用户那一页才显示已修复
+              —— 这一下是<strong>你说的</strong>，不是系统验过的</li>
+          <li><span class="flow-step">4</span>注音那一类：不必改源码，在本卡最下面「<strong>注音勘误</strong>」把那一处<strong>钉住</strong>，立刻对所有人生效</li>
+        </ul>
 
         <div class="admin-report-counts" id="report-counts"></div>
 
         <div class="admin-report-tools">
           <label class="account-label" for="report-filter" style="margin:0">只看</label>
           <select id="report-filter">
-            <option value="all">全部</option>
             <option value="new">已收到（还没看）</option>
+            <option value="all">全部</option>
             <option value="read">已看过</option>
             <option value="accepted">已确认</option>
             <option value="fixed">已修复</option>
@@ -128,6 +132,8 @@
         <p class="account-hint" id="reports-empty" hidden>还没有人报过错。</p>
         <p class="account-hint" id="reports-note" hidden></p>
         <p class="account-msg" id="msg-reports"></p>
+      </section>
+
       <section class="account-card" id="pinyin-card" hidden>
         <h2 class="account-card-title">注音勘误</h2>
         <p class="account-lead">
@@ -138,30 +144,30 @@
         </p>
 
         <div class="grant-form">
-          <div class="account-field">
-            <label class="account-label" for="pf-wid">篇目（搜索标题或正文，选中一篇）</label>
+          <div class="account-field pf-wid-field">
+            <label class="account-label" for="pf-wid">① 篇目（搜标题或正文，点一篇）</label>
             <input id="pf-wid" class="account-input" type="text" autocomplete="off"
                    spellcheck="false" placeholder="滕王阁序" maxlength="40" />
             <ul class="grant-list" id="pf-hits" hidden></ul>
           </div>
-          <div class="account-field">
-            <label class="account-label" for="pf-line">原文里的一句</label>
+          <div class="account-field" id="pf-line-field">
+            <label class="account-label" for="pf-line">② 原文里的一句</label>
             <input id="pf-line" class="account-input" type="text" autocomplete="off"
                    spellcheck="false" placeholder="秋水共长天一色。" maxlength="120" />
+            <button class="account-btn ghost" id="btn-pf-fill" type="button">从篇目里挑一句</button>
           </div>
+          <p class="account-hint" id="pf-picked" hidden></p>
           <div class="account-field">
-            <label class="account-label" for="pf-at">这一句里第几次出现（从 1 数起）</label>
+            <label class="account-label" for="pf-at">③ 这一句里第几次出现（从 1 数起）</label>
             <input id="pf-at" class="account-input" type="number" min="1" step="1" value="1" />
           </div>
           <div class="account-field">
-            <label class="account-label" for="pf-py">应读作（带声调，如 cháng）</label>
+            <label class="account-label" for="pf-py">④ 应读作（带声调，如 cháng）</label>
             <input id="pf-py" class="account-input" type="text" autocomplete="off"
                    spellcheck="false" placeholder="cháng" maxlength="12" />
           </div>
           <button class="account-btn" id="btn-pf-add" type="button">钉住这一处</button>
-          <button class="account-btn ghost" id="btn-pf-fill" type="button">从篇目里挑一句</button>
         </div>
-        <p class="account-hint" id="pf-picked" hidden></p>
         <p class="account-msg" id="msg-pf"></p>
 
         <p class="account-hint" id="pf-note" hidden></p>
@@ -169,7 +175,6 @@
         <p class="account-hint" id="pf-empty" hidden>还没有任何勘误 —— 一处都没钉过。</p>
         <div class="confirm-row" style="margin-top:12px">
           <button class="account-btn ghost" id="btn-pf-export" type="button">导出勘误表</button>
-          <button class="account-btn ghost" id="btn-pf-refresh" type="button">刷新</button>
         </div>
       </section>
 

@@ -122,8 +122,12 @@
     onPinyinSearch._id = id;
     var w = $("pf-wid");
     if (w) w.value = p.title || "";
+    // 选中一篇之后**不自动摊开全文**：那一格是「搜一篇」，摊开 40 行会把它
+    // 撑成一堵墙，而且下一格（原文里的一句）还空着。正文用下面那颗
+    // 「从篇目里挑一句」按需摊开 —— 两个用途各自的入口，不抢同一块地方。
     renderHits([]);
-    fillLine(p);
+    msg("msg-pf", "已选中《" + (p.title || widOfPoem(p)) + "》。" +
+      "正文那一格可以手打，也可以点「从篇目里挑一句」从正文里点一行。", "ok");
   }
 
   // 「从篇目里挑一句」：把正文按行摊开，点哪一行就填进「原文里的一句」，
@@ -136,7 +140,7 @@
     box.hidden = false;
     box.innerHTML = lines.map(function (line) {
       return '<li class="grant-row">' +
-        '<span class="grant-mail">' + esc(line) + "</span>" +
+        '<span class="grant-mail">' + esc(line.trim()) + "</span>" +
         '<button class="grant-del" type="button" data-line="' + esc(line.trim()) + '">用这一句</button>' +
         "</li>";
     }).join("");
@@ -151,6 +155,10 @@
     renderHits([]);
     previewLine();
   }
+
+  // 「挑一句」的候选列表与「搜一篇」共用同一个盒子（`pf-hits`）——
+  // 两个用途叠在一起时，输入框里一打字就会把候选列表冲掉。
+  // 所以只在**真的在挑句子**时才打开它，其余时刻一律收起（见 onPickerClick）。
 
   // 这一句里每个字读什么（用当前引擎 + 当前勘误算一遍）——
   // 钉之前先让人看清「现在读成什么」，钉之后再看一眼「有没有改对」。
@@ -570,7 +578,8 @@
   //
   // 三条口径：
   //   · **默认只看「还没处理的」**（new）。全站翻到第 500 条不是管理员的日常，
-  //     「今天新来的有几条」才是。所以下拉框默认落在「已收到（还没看）」。
+  //     「今天新来的有几条」才是。所以下拉框默认落在「已收到（还没看）」
+  //     （`<option value="new">` 是第一个，HTML 与这里两处一起定的）。
   //   · **状态是按钮，不是下拉**。一屏里逐条改状态时，下拉要两次点击 + 一次滚动；
   //     按钮一次。而这里的状态只有五个、且是终点（不会来回切）。
   //   · **改完就地更新那一行**，不重拉整张表 —— 重拉的下场是「滚到第 30 条
@@ -598,7 +607,7 @@
       return;
     }
     var sel = $("report-filter");
-    var status = sel ? sel.value : "all";
+    var status = sel ? sel.value : "new";
     reportsMsg("正在读取……", "");
 
     Promise.resolve(M.adminReports({ status: status, backing: backing, A: window.AuthCore, E: Ent }))
@@ -606,9 +615,10 @@
         if (r && r.ok) {
           currentReports = r.reports || [];
           renderReports(currentReports);
-          renderReportCounts(r.counts || {});
+          renderReportCounts(r.counts || {}, status);
           reportsMsg("", "");
-          reportsNote("共 " + currentReports.length + " 条（这一屏）。上面那排小字是全站各状态的总数。", false);
+          reportsNote("上面那一排就是上面的下拉：点一格切过去，括号里是全站的条数；" +
+            "「全部」那一格是总数。", false);
           return;
         }
         if (r && r.reason === "guest") { reportsMsg("登录状态已过期，请重新登录后再来。", "warn"); return; }
@@ -619,19 +629,36 @@
       })["catch"](function () { reportsMsg("连不上服务端，这一轮没问到。", "warn"); });
   }
 
-  function renderReportCounts(counts) {
+  // 这一排既是「各状态几条」，也是筛选器的化身。
+  // 原先它只是一串灰字、而筛选是另一个下拉 —— 同一件事两个控件，
+  // 「全部 12 / 已收到 3」还和下拉当前的值对不上，看着就是两套数。
+  // 现在：**点一格即切换筛选**，当前那格是实心绿，括号里是全站的条数。
+  function renderReportCounts(counts, current) {
     var host = $("report-counts");
     if (!host) return;
     var R = window.Report;
+    var cur = String(current || "new");
     var order = ["all"].concat((R && R.STATUS_LABEL) ? Object.keys(R.STATUS_LABEL) : []);
     var parts = [];
     order.forEach(function (k) {
       var n = counts ? counts[k] : undefined;
       if (typeof n !== "number") return;
       var label = k === "all" ? "全部" : (R ? R.labelOfStatus(k) : k);
-      parts.push("<span>" + esc(label) + " " + n + "</span>");
+      parts.push('<button type="button" class="' + (k === cur ? "active" : "") + '"' +
+        ' data-count-status="' + esc(k) + '" aria-pressed="' + (k === cur ? "true" : "false") + '">' +
+        esc(label) + "<span>" + n + "</span></button>");
     });
     host.innerHTML = parts.join("");
+  }
+
+  // 点那一排小字 = 切筛选（与下拉同一个出口）。
+  function onCountsClick(e) {
+    var b = e.target.closest ? e.target.closest("button[data-count-status]") : null;
+    if (!b) return;
+    var sel = $("report-filter");
+    var want = b.getAttribute("data-count-status");
+    if (sel && sel.value !== want) sel.value = want;
+    loadReports();
   }
 
   function renderReports(list) {
@@ -769,6 +796,7 @@
     if ($("accounts-list")) $("accounts-list").addEventListener("click", onAccountsClick);
     if ($("btn-reports-reload")) $("btn-reports-reload").addEventListener("click", loadReports);
     if ($("report-filter")) $("report-filter").addEventListener("change", loadReports);
+    if ($("report-counts")) $("report-counts").addEventListener("click", onCountsClick);
     if ($("reports-list")) $("reports-list").addEventListener("click", onReportsClick);
     loadReports();
 
@@ -783,11 +811,12 @@
     $("btn-pf-fill").addEventListener("click", function () {
       var p = pickedPoem();
       if (!p) { msg("msg-pf", "先在上面搜一篇、点「选这一篇」。", "warn"); return; }
+      var box = $("pf-hits");
+      if (box && !box.hidden) { renderHits([]); return; }   // 再点一下收起
       fillLine(p);
     });
     $("pf-list").addEventListener("click", onFixListClick);
     $("btn-pf-export").addEventListener("click", onFixExport);
-    $("btn-pf-refresh").addEventListener("click", renderFixList);
     renderFixList();
   }
 
@@ -803,6 +832,7 @@
     readForm: readForm, grantFailed: grantFailed,
 
     renderReports: renderReports, loadReports: loadReports, reportTime: reportTime,
+    renderReportCounts: renderReportCounts,
 
     // 注音勘误那一块（测试直接调这几个，不必去点 DOM）。
     searchPoems: searchPoems,
