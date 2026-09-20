@@ -296,7 +296,7 @@
       '<div class="modal-head"><h2 id="report-dialog-title">报告错误</h2></div>' +
       '<p class="report-sub" id="report-sub"></p>' +
 
-      '<div class="report-kinds" id="report-kinds" role="radiogroup" aria-label="报哪一类问题"></div>' +
+      '<div class="report-kinds" id="report-kinds" role="group" aria-label="报哪一类问题"></div>' +
 
       '<div class="report-quote" id="report-quote-wrap" hidden>' +
       '<span class="report-quote-label">这一段</span>' +
