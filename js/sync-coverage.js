@@ -206,15 +206,7 @@
     },
     {
       key: "poem_plan_v1", sync: false, row: "", merge: "", cap: WHY.account,
-      why: "本机会话里的层级缓存 —— 权威答案在 /api/me。"
-    },
-    {
-      key: "poem_plan_grant_v1", sync: false, row: "", merge: "", cap: WHY.account,
-      why: "本机发放台账（离线时的层级来源，服务端也有台账）。"
-    },
-    {
-      key: "poem_owner_v1", sync: false, row: "", merge: "", cap: WHY.account,
-      why: "这台设备是不是站点所有者（管理员用）。"
+      why: "本机会话里的层级 / 角色缓存 —— 权威答案在 /api/me（数据库里那两列）。"
     }
   ];
 

@@ -351,6 +351,11 @@
 
       grants: function () { return post("/admin/grants", { deviceId: deviceId }); },
 
+      setRole: function (input) {
+        input = input || {};
+        return post("/admin/role", { uid: input.uid, role: input.role, deviceId: deviceId });
+      },
+
       deleteAccount: function (input) {
         input = input || {};
         return call("/account", "DELETE", { confirm: input.confirm === true, deviceId: deviceId });

@@ -253,6 +253,62 @@ function pepperOf(cfg) {
   return String(cfg.sessionSecret || cfg.sessionKey || "");
 }
 
+// ---------------------------------------------------------------------------
+// 管理员怎么诞生（Issue #276）
+// ---------------------------------------------------------------------------
+// 用户原话：
+//
+//   「管理员页面只允许 belem@163.com 登录的邮箱访问（目前），未登录用户以及
+//     其他登录账户一律不允许访问。或者告诉我怎么在数据库设置管理员权限。」
+//
+// 这一节给的答案：**角色的权威是 `accounts.role` 那一列**，别的都是缓存。
+// 三条口径：
+//
+//   · **名单在环境变量 `OWNER_EMAILS` 里**（完整邮箱，逗号 / 空格分隔）。
+//     为什么不用掩码：掩码是给人看的（`b***@163.com` 一眼认人），而授权
+//     要唯一 —— 掩码命中的可能不止一条（`core.adminGrant` 里那段
+//     「命中多条」的告警就是为它写的），拿它授权等于「谁能注册出同掩码
+//     谁就是管理员」。**这条与「名录里给明文邮箱」同源**：管理员本来
+//     就看得到明文。
+//   · **认领发生在登录链路里**（注册 / 确认 / 登录 / 随机码登录），
+//     不在界面里 —— 界面能改的事就不叫权限。认领是**幂等**的：
+//     在名单里就写 owner，不在名单里就**什么都不做**（绝不把已有的
+//     owner / admin 降回去 —— 那会让「运营手改过的角色」被一次登录抹掉）。
+//   · **没有兜底**。不配 `OWNER_EMAILS` 时一个 owner 都没有，`/admin/`
+//     对所有人关门并如实说「本站还没有管理员」。老口径「谁打开谁是主人」
+//     （`poem_owner_v1`）本轮删掉了：清一次浏览器存储就能当管理员的
+//     所谓权限，不是权限。
+// ---------------------------------------------------------------------------
+
+function ownerEmailsOf(cfg) {
+  var raw = String((cfg && cfg.ownerEmails) || "");
+  if (!raw) return [];
+  return raw.split(/[,\s;]+/).map(function (x) {
+    return id.normalizeEmail(x);
+  }).filter(function (x) { return !!x; });
+}
+
+function isOwnerEmail(cfg, email) {
+  var e = id.normalizeEmail(email);
+  if (!e) return false;
+  return ownerEmailsOf(cfg).indexOf(e) >= 0;
+}
+
+// 认领 owner：在名单里就写 owner，不在名单里一个字都不动。
+// 返回「改没改」的布尔，调用方不必知道细节。
+function claimOwnerRole(store, cfg, acc) {
+  if (!acc || acc.status === "deleted") return Promise.resolve(false);
+  if (!isOwnerEmail(cfg, acc.email)) return Promise.resolve(false);
+  if (String(acc.role || "user").toLowerCase() === "owner") return Promise.resolve(false);
+  return Promise.resolve(store.patchAccount(acc.uid, { role: "owner" })).then(function () {
+    // 就地更新那一份（调用方手里那个 acc 对象随后会被 putAccount / publicAccount
+    // 接着用，不改它的话响应里会回一个旧的 role —— 症状是「刚登录的人
+    // 要刷第二次才看到管理后台入口」）。
+    acc.role = "owner";
+    return true;
+  });
+}
+
 function findOrCreateAccount(store, cfg, identity, t) {
   var ch = identity.channel;
   var hash = ch === "sms"
@@ -542,6 +598,9 @@ function verifyCode_(deps, input) {
         if (gate) return Promise.resolve(gate);
         acc.last_login_at = t;
         return Promise.resolve(store.putAccount(acc)).then(function (saved) {
+          // 随机码登录也是登录：名单里的邮箱在这里同样认领 owner（Issue #276）。
+          return claimOwnerRole(store, cfg, saved || acc).then(function () { return saved || acc; });
+        }).then(function (saved) {
           var s = session.issue(cfg, acc.uid, t);
           return {
             status: 200,
@@ -683,7 +742,9 @@ function registerAfterGuard(deps, input) {
     }
     return Promise.resolve(store.putAccount(acc)).then(function (saved) {
       var cur = saved || acc;
-
+      // 注册链路也认领 owner（Issue #276）：名单里的人一建号就是 owner。
+      return claimOwnerRole(store, cfg, cur).then(function () { return cur; });
+    }).then(function (cur) {
       if (cur.email_verified_at != null) {
         var masked = cur.email_mask || id.maskEmail(email);
         return ok(withDegrade(store, {
@@ -801,6 +862,8 @@ function verifyEmail(deps, input) {
 
         if (acc.status === "pending") acc.status = "active";
         return Promise.resolve(store.putAccount(acc)).then(function (saved) {
+          return claimOwnerRole(store, cfg, saved || acc).then(function () { return saved || acc; });
+        }).then(function (saved) {
           return ok({
             verified: true,
             email: String((saved || acc).email || ""),
@@ -866,6 +929,10 @@ function loginWithPassword(deps, input) {
       if (limiter.clearFails) limiter.clearFails("login", "uid:" + acc.uid);
       acc.last_login_at = t;
       return Promise.resolve(store.putAccount(acc)).then(function (saved) {
+        // 登录链路认领 owner（Issue #276）：名单里的人每次登录都对齐一次，
+        // 在名单外的**一个字都不动**（不降级 —— 手改过的角色不该被登录抹掉）。
+        return claimOwnerRole(store, cfg, saved || acc).then(function () { return saved || acc; });
+      }).then(function (saved) {
         var s = session.issue(cfg, acc.uid, t);
         return {
           status: 200,
@@ -1686,6 +1753,89 @@ function adminAccounts(deps) {
   });
 }
 
+// ---------------------------------------------------------------------------
+// 改别人的角色（Issue #276）
+// ---------------------------------------------------------------------------
+// 用户原话：「free, pro, max 登录用户的角色怎么设置，是要在 admin 页面加一个
+// 已登录用户列表，然后 belem@163.com 可以更改他们的 role 吗？」
+//
+// 是。这一支就是那张列表上「改角色」那颗按钮的服务端。
+//
+// 四条口径，每条都有「不这么写会怎样」：
+//
+//   · **只有 owner 能改角色**（admin 也不行）。admin 与 owner 在
+//     「发层级 / 看名录 / 处理报告」这些日常事上等价，但**授权本身**
+//     只归 owner —— 否则一个 admin 就能把自己人提成 admin，角色闸形同虚设。
+//   · **改不到自己**。降自己 = 把自己关在门外，且**没有第二个 owner 时
+//     没人能把他加回来**（库里那一个 owner 自己把 role 写成 user 之后，
+//     `/api/admin/role` 就再也没有调用者了）。要换主人就得改
+//     `OWNER_EMAILS` 再用那个邮箱登录一次 —— 那条路永远留着。
+//   · **改不到名单外的人的身份**？不，这条故意**允许**：`OWNER_EMAILS`
+//     是「谁是主人」的种子，不是「谁是管理员」的全部。运营给人一个 admin
+//     身份（帮看报告）是正常的，而 admin **不能**再授权 —— 这正好卡住
+//     「爬上去就再也下不来」。
+//   · **只认 user / admin 两个目标值**。`owner` 不许通过这个口发出去：
+//     owner 是「凭据 + 名单」级别的东西，得走 `OWNER_EMAILS`。
+//     发出去的每个改变都**如实回执**（谁改的、什么时候、改成了什么），
+//     与 `adminGrant` 同一形状 —— 界面照抄那段渲染就行。
+// ---------------------------------------------------------------------------
+
+var ROLE_TARGETS = ["user", "admin"];
+
+function adminSetRole(deps, input) {
+  var cfg = deps.cfg, store = deps.store, t = deps.now();
+  var gate = adminGate(deps, cfg);
+  if (gate) return Promise.resolve(gate);
+
+  var uid = String((input && input.uid) || "").trim();
+  var role = String((input && input.role) || "").trim().toLowerCase();
+  if (!uid) return Promise.resolve(err(400, "E_UID", "要说清改谁的（uid）"));
+  if (ROLE_TARGETS.indexOf(role) < 0) {
+    return Promise.resolve(err(400, "E_ROLE", "角色只认 user / admin 两个值（owner 走 OWNER_EMAILS，不在这个口发）"));
+  }
+
+  return Promise.resolve(store.getAccount(deps.account.uid)).then(function (me) {
+    if (!me || me.status === "deleted") return err(401, "E_NO_SESSION", "还没有登录");
+    var myRole = String(me.role || "user").toLowerCase();
+    if (myRole !== "owner") {
+      return err(403, "E_FORBIDDEN", myRole === "admin"
+        ? "改角色这一条只对 owner 开放（admin 能发层级、看名录、处理报告，但不能授权）"
+        : "这一条只对管理员开放");
+    }
+    if (uid === me.uid) {
+      return err(400, "E_SELF", "改不了自己的角色 —— 要换主人，把 OWNER_EMAILS 改成那个邮箱再用它登录一次");
+    }
+
+    var device = String(input.deviceId || "unknown");
+    var g = deps.limiter.check(cfg, "device", "role:" + device, t);
+    if (!g.ok) return err(429, "E_RATE_DEVICE", "操作太频繁了，请稍后再试", { retryAfter: g.retryAfter });
+    deps.limiter.hit("device", "role:" + device, t);
+
+    return Promise.resolve(store.getAccount(uid)).then(function (target) {
+      if (!target || target.status === "deleted") return err(404, "E_NO_ACCOUNT", "没有这个账号（可能是刚刚被注销了）");
+      if (String(target.role || "user").toLowerCase() === "owner") {
+        return err(400, "E_OWNER_LOCKED", "这一位是 owner（名单里的人），身份不由这个口改");
+      }
+      var before = String(target.role || "user").toLowerCase();
+      var changed = before !== role;
+      return Promise.resolve(changed ? store.patchAccount(uid, { role: role }) : null).then(function () {
+        return ok({
+          uid: uid,
+          emailMask: target.email_mask || "***",
+          role: role,
+          before: before,
+          changed: changed,
+          by: me.uid,
+          at: t,
+          note: changed
+            ? "已写进数据库：对方刷新页面（或重新打开「我的」页）即由服务器判定生效。"
+            : "本来就是「" + role + "」，这一轮一个字都没改。"
+        });
+      });
+    });
+  });
+}
+
 function adminRevoke(deps, input) {
   var cfg = deps.cfg, store = deps.store, t = deps.now();
   var gate = adminGate(deps, cfg);
@@ -2180,6 +2330,7 @@ module.exports = {
   adminGrant: adminGrant,
   adminGrants: adminGrants,
   adminAccounts: adminAccounts,
+  adminSetRole: adminSetRole,
   adminRevoke: adminRevoke,
   isAdminRole: isAdminRole,
 

@@ -8,7 +8,11 @@
   var backing = null;
   try { backing = window.localStorage; } catch (e) { backing = null; }
 
+  // 可发放的层级（Issue #276 之后**只发到服务端**，本机那一份已下线）。
   var pickedTier = "pro";
+
+  // 名录那一张的当前快照（改角色后就地更新，不重拉整张）。
+  var currentAccounts = [];
 
   function $(id) { return document.getElementById(id); }
   function show(el) { if (el) el.hidden = false; }
@@ -33,9 +37,10 @@
     el.className = "account-msg" + (level ? " " + level : "");
   }
 
+  // 「谁能进管理后台」（Issue #276）：**只看服务端下发到本机缓存里的那个角色**
+  // （源头是数据库 `accounts.role`）。本机兜底已删 —— 没有服务端答案就不放行。
   function isOwner(id) {
-
-    void id;
+    if (id && id.role) return Ent.isOwner(backing, { role: id.role });
     return Ent.isOwner(backing);
   }
 
@@ -294,7 +299,7 @@
 
     if (!M || typeof M.adminGrant !== "function") {
       if (btn) btn.disabled = false;
-      msg("msg-grant", "页面脚本版本对不上（刷新一次即可），这一轮没发出任何东西。想先用本机那份，点「只发到本机名单」。", "warn");
+      msg("msg-grant", "页面脚本版本对不上（刷新一次即可），这一轮没发出任何东西。", "warn");
       return;
     }
 
@@ -303,20 +308,20 @@
         if (btn) btn.disabled = false;
         if (!r || !r.ok) { grantFailed(r); return; }
         if (!r.changed) {
-
           msg("msg-grant", "服务端收到这一条了，但" + r.note, "warn");
           clearForm();
           loadServerGrants();
-    loadAccounts();
+          loadAccounts();
           return;
         }
-        var line = "已写进服务端：" + r.emailMask + " → " + Ent.tierLabel(r.tier) +
+        var line = "已写进数据库：" + r.emailMask + " → " + Ent.tierLabel(r.tier) +
           (r.until ? "（到期 " + new Date(r.until).toLocaleDateString() + "）" : "（永久）") +
           "。对方刷新页面（或打开「我的」页）即由服务器判定生效。";
         if (r.ambiguous) line += "⚠️ 这个掩码在库里不只一条，只改了最早的那一条 —— 请让对方确认。";
         msg("msg-grant", line, "ok");
         clearForm();
         loadServerGrants();
+        loadAccounts();
       })["catch"](function () {
         if (btn) btn.disabled = false;
         msg("msg-grant", "连不上服务端，这一轮没发出任何东西。", "warn");
@@ -329,25 +334,13 @@
     if (reason === "guest") {
       text = "登录状态已过期，请重新登录后再来。";
     } else if (reason === "not-configured") {
-      text = "本站还没开放云端账号（服务端缺密钥），这一条发不出去。可以先用「只发到本机名单」兜底 —— 但那一份不是权威。";
+      text = "本站还没开放云端账号（服务端缺密钥），这一条发不出去。本站**没有**第二条发放的路 —— 层级只在数据库里。";
     } else if (reason === "no-channel") {
       text = "页面脚本版本对不上（刷新一次即可），这一轮没发出任何东西。";
     } else if (reason === "unavailable") {
-      text = "连不上服务端，这一轮没发出任何东西。（本机名单不受影响，可先用「只发到本机名单」兜底 —— 但那一份不是权威。）";
+      text = "连不上服务端，这一轮没发出任何东西。请稍后重试 —— 层级只在数据库里，本机没有第二份。";
     }
     msg("msg-grant", text, "warn");
-  }
-
-  function onGrantLocal() {
-    var f = readForm();
-    if (f.bad) { msg("msg-grant", f.bad, "warn"); return; }
-    var r = Ent.putGrant(backing, { emailMask: f.mask, tier: pickedTier, until: f.until, by: "owner", at: Date.now() });
-    if (!r.ok) { msg("msg-grant", r.message, "warn"); return; }
-    msg("msg-grant", "已发往**本机名单**：" + r.grant.emailMask + " → " + Ent.tierLabel(r.grant.tier) +
-      (r.grant.until ? "（到期 " + new Date(r.grant.until).toLocaleDateString() + "）" : "（永久）") +
-      "。⚠️ 这一份要对方自己导入，且不是权威。", "ok");
-    clearForm();
-    renderList();
   }
 
   function renderServerGrants(data) {
@@ -377,20 +370,20 @@
   function loadServerGrants() {
     var M = acct();
     if (!M || typeof M.adminGrants !== "function") {
-      serverNote("页面脚本版本对不上（刷新一次即可）：这一块现在只能看本机名单。", true);
+      serverNote("页面脚本版本对不上（刷新一次即可）：这一块现在看不了。", true);
       return;
     }
     Promise.resolve(M.adminGrants({ backing: backing, A: window.AuthCore, E: Ent })).then(function (r) {
       if (r && r.ok) {
         renderServerGrants(r);
-        serverNote("和上面那份**不是一回事**：这一份由服务器判定，对方改一行存储改不动它。两份不自动同步。", false);
+        serverNote("这一份由服务器判定：对方改一行存储改不动它 —— 层级只在数据库里。", false);
         return;
       }
-      if (r && r.reason === "guest") { serverNote("登录状态已过期，请重新登录后再来。下面这一份本机名单照旧可用。", true); return; }
-      if (r && r.reason === "not-configured") { serverNote("本站还没开放云端账号（服务端缺密钥）：这一块暂时问不到。下面这一份本机名单照旧可用。", true); return; }
-      if (r && r.reason === "no-channel") { serverNote("页面脚本版本对不上（刷新一次即可）：这一块现在只能看本机名单。", true); return; }
-      if (r && r.code === "E_FORBIDDEN") { serverNote("这一条只对管理员开放（服务端的角色闸）：下面是本机那一份。", true); return; }
-      serverNote("连不上服务端，这一轮没问到。下面这一份本机名单照旧可用。", true);
+      if (r && r.reason === "guest") { serverNote("登录状态已过期，请重新登录后再来。", true); return; }
+      if (r && r.reason === "not-configured") { serverNote("本站还没开放云端账号（服务端缺密钥）：这一块暂时问不到。", true); return; }
+      if (r && r.reason === "no-channel") { serverNote("页面脚本版本对不上（刷新一次即可）：这一块现在看不了。", true); return; }
+      if (r && r.code === "E_FORBIDDEN") { serverNote("这一条只对管理员开放（服务端的角色闸）。", true); return; }
+      serverNote("连不上服务端，这一轮没问到。", true);
     })["catch"](function () { serverNote("连不上服务端，这一轮没问到。", true); });
   }
 
@@ -406,24 +399,42 @@
       b.disabled = false;
       if (!r || !r.ok) { msg("msg-server", (r && r.message) || "收回没成功，稍后再试。", "warn"); return; }
       msg("msg-server", r.changed
-        ? "已在服务端收回 " + mask + " 的层级（对方刷新即回落 Free）。"
-        : "服务端上本来就没有 " + mask + " 这一条。", r.changed ? "ok" : "warn");
+        ? "已在数据库里收回 " + mask + " 的层级（对方刷新即回落 Free）。"
+        : "数据库里本来就没有 " + mask + " 这一条。", r.changed ? "ok" : "warn");
       loadServerGrants();
     })["catch"](function () { b.disabled = false; msg("msg-server", "连不上服务端，这一轮没发出任何东西。", "warn"); });
+  }
+
+  // 名录（Issue #276 起这里也是「改角色」的地方）
+  //
+  // 三条口径：
+  //   · **角色与层级各一格**。它们是两条正交的轴（`role` 决定能不能进后台，
+  //     `tier` 决定能用什么），所以并排显示、各自一个徽章 —— 折成一列的下场
+  //     是「管理员 = 买了 Max 的人」这个误解又回来了。
+  //   · **改角色是按钮，不是下拉**。目标值只有两档（普通用户 / 管理员），
+  //     下拉要两次点击 + 一次滚动，按钮一次。
+  //   · **改完就地更新那一行**（不重拉整张表）—— 重拉的下场是「滚到第 40 个
+  //     人改了一下，页面跳回顶部」。
+  var ROLE_LABEL = { owner: "主人（种子）", admin: "管理员", user: "普通用户" };
+
+  function roleText(role) {
+    var r = String(role || "user").toLowerCase();
+    return ROLE_LABEL[r] || r;
   }
 
   function renderAccounts(data) {
     var box = $("accounts-list");
     if (!box) return;
     var list = (data && data.accounts) || [];
+    currentAccounts = list;
     var empty = $("accounts-empty");
     if (empty) {
       empty.hidden = list.length > 0;
       empty.textContent = "还没有任何账号。";
     }
     box.innerHTML = list.map(function (a) {
-
       var mail = a.email || a.emailMask || "（无邮箱）";
+      var role = String(a.role || "user").toLowerCase();
 
       var verified = a.emailVerified
         ? '<span class="acct-tag ok">已确认</span>'
@@ -435,14 +446,38 @@
       var nick = a.nickname ? esc(a.nickname) : '<span class="acct-none">未起名</span>';
       var created = a.createdAt ? new Date(a.createdAt).toLocaleDateString() : "—";
       var last = a.lastLoginAt ? new Date(a.lastLoginAt).toLocaleDateString() : "—";
-      return '<li class="acct-row">' +
+
+      return '<li class="acct-row" data-uid="' + esc(a.uid || "") + '">' +
         '<span class="acct-main"><span class="acct-mail">' + esc(mail) + "</span>" +
         '<span class="acct-sub">' + nick + " · 注册 " + esc(created) + " · 最后登录 " + esc(last) + "</span></span>" +
         '<span class="acct-tags">' +
+        '<span class="role-badge role-' + esc(role) + '" data-role-badge>' + esc(roleText(role)) + "</span>" +
         '<span class="tier-badge tier-' + esc(a.tier) + '">' + esc(Ent.tierLabel(a.tier)) + "</span>" +
         verified + pw + st +
-        "</span></li>";
+        "</span>" +
+        roleActs(a.uid, role) +
+        "</li>";
     }).join("");
+  }
+
+  // 角色按钮：只有 owner 改得动（服务端也会再拦一次）；owner 本人那一行不摆按钮
+  // ——「改不了自己」是服务端定的规矩，界面照实画出来，不做成点了才报错。
+  function roleActs(uid, role) {
+    if (!uid) return "";
+    if (role === "owner") {
+      return '<span class="acct-role-acts"><span class="acct-none">种子主人 · 由 OWNER_EMAILS 认领</span></span>';
+    }
+    return '<span class="acct-role-acts">' +
+      roleAct(uid, "user", "普通用户", role) +
+      roleAct(uid, "admin", "管理员", role) +
+      "</span>";
+  }
+
+  function roleAct(uid, target, label, role) {
+    var on = role === target;
+    return '<button type="button" class="acct-role-btn' + (on ? " active" : "") + '"' +
+      ' data-set-role="' + esc(target) + '" data-uid="' + esc(uid) + '"' +
+      (on ? ' aria-pressed="true"' : ' aria-pressed="false"') + ">" + esc(label) + "</button>";
   }
 
   function accountsNote(text, warn) {
@@ -462,8 +497,10 @@
     Promise.resolve(M.adminAccounts({ backing: backing, A: window.AuthCore, E: Ent })).then(function (r) {
       if (r && r.ok) {
         renderAccounts(r);
-        var data = (r.accounts || []).length;
-        accountsNote("共 " + data + " 个账号。这里列的是**注册过的**（含邮箱）；上面那张只列发过层级的。", false);
+        var n = (r.accounts || []).length;
+        var owners = (r.accounts || []).filter(function (a) { return a.role === "owner"; }).length;
+        accountsNote("共 " + n + " 个账号（其中主人 " + owners + " 位）。角色与层级都以数据库为准；" +
+          "上面那张只列发过层级的。", owners ? false : true);
         return;
       }
       if (r && r.reason === "guest") { accountsNote("登录状态已过期，请重新登录后再来。", true); return; }
@@ -472,6 +509,56 @@
       if (r && r.code === "E_FORBIDDEN") { accountsNote("这一条只对管理员开放（服务端的角色闸）。", true); return; }
       accountsNote("连不上服务端，这一轮没问到。", true);
     })["catch"](function () { accountsNote("连不上服务端，这一轮没问到。", true); });
+  }
+
+  function onAccountsClick(e) {
+    var b = e.target.closest ? e.target.closest("button[data-set-role]") : null;
+    if (!b) return;
+    var uid = b.getAttribute("data-uid");
+    var role = b.getAttribute("data-set-role");
+    var M = acct();
+    if (!M || typeof M.adminSetRole !== "function") {
+      msg("msg-accounts", "页面脚本版本对不上（刷新一次即可）。", "warn");
+      return;
+    }
+    var li = document.querySelector('.acct-row[data-uid="' + uid + '"]');
+    var mail = li ? (li.querySelector(".acct-mail") || {}).textContent || "" : "";
+    if (role === "admin" && !window.confirm("把 " + mail + " 提成管理员？管理员能发层级、看名录、处理报告（但改不了别人的角色）。")) return;
+    if (role === "user" && /管理员/.test((li && li.querySelector(".role-badge") || {}).textContent || "") &&
+        !window.confirm("把 " + mail + " 降回普通用户？他立刻进不了管理后台。")) return;
+
+    var btns = li ? li.querySelectorAll("button[data-set-role]") : [];
+    for (var i = 0; i < btns.length; i++) btns[i].disabled = true;
+    msg("msg-accounts", "正在改……", "");
+    Promise.resolve(M.adminSetRole({ uid: uid, role: role })).then(function (r) {
+      for (var j = 0; j < btns.length; j++) btns[j].disabled = false;
+      if (r && r.ok) {
+        // 就地更新那一行（不重拉整张表 —— 重拉会把滚动位置打回顶部）。
+        if (li) {
+          var badge = li.querySelector("[data-role-badge]");
+          if (badge) { badge.textContent = roleText(role); badge.className = "role-badge role-" + role; }
+          var bs = li.querySelectorAll("button[data-set-role]");
+          for (var k = 0; k < bs.length; k++) {
+            var on = bs[k].getAttribute("data-set-role") === role;
+            bs[k].className = "acct-role-btn" + (on ? " active" : "");
+            bs[k].setAttribute("aria-pressed", on ? "true" : "false");
+          }
+        }
+        msg("msg-accounts", r.changed
+          ? ((r.emailMask || mail) + " 现在是「" + roleText(role) + "」。对方刷新即生效（由服务器判定）。")
+          : ((r.emailMask || mail) + " 本来就是「" + roleText(role) + "」。"), "ok");
+        return;
+      }
+      if (r && r.code === "E_SELF") { msg("msg-accounts", "改不了自己的角色 —— 要换主人，把 OWNER_EMAILS 改成那个邮箱再用它登录一次。", "warn"); return; }
+      if (r && r.code === "E_OWNER_LOCKED") { msg("msg-accounts", "这一位是种子主人（OWNER_EMAILS 里的人），身份不由这个口改。", "warn"); return; }
+      if (r && r.code === "E_FORBIDDEN") { msg("msg-accounts", "改角色只对主人开放（管理员能发层级、看名录、处理报告，但不能授权）。", "warn"); return; }
+      if (r && r.reason === "guest") { msg("msg-accounts", "登录状态已过期，请重新登录后再来。", "warn"); return; }
+      if (r && r.reason === "not-configured") { msg("msg-accounts", "本站还没开放云端账号（服务端缺密钥），改不了。", "warn"); return; }
+      msg("msg-accounts", (r && r.message) || "没改成，稍后再试。", "warn");
+    })["catch"](function () {
+      for (var j2 = 0; j2 < btns.length; j2++) btns[j2].disabled = false;
+      msg("msg-accounts", "连不上服务端，这一轮没发出任何东西。", "warn");
+    });
   }
 
   // ---- 用户报告台账（Issue #243 第四轮）----------------------------------
@@ -640,147 +727,46 @@
       });
   }
 
-  function renderList() {
-    var box = $("grant-list");
-    if (!box) return;
-    var grants = Ent.readGrants(backing).grants;
-    var empty = $("grant-empty");
-    if (empty) empty.hidden = grants.length > 0;
-    box.innerHTML = grants.map(function (g) {
-      var when = g.until ? "到期 " + new Date(g.until).toLocaleDateString() : "永久";
-      return '<li class="grant-row">' +
-        '<span class="grant-mail">' + esc(g.emailMask) + "</span>" +
-        '<span class="tier-badge tier-' + esc(g.tier) + '">' + esc(Ent.tierLabel(g.tier)) + "</span>" +
-        '<span class="grant-when">' + esc(when) + "</span>" +
-        '<button class="grant-del" type="button" data-mask="' + esc(g.emailMask) + '">删除</button>' +
-        "</li>";
-    }).join("");
-  }
-
-  function onListClick(e) {
-    var b = e.target.closest ? e.target.closest("button[data-mask]") : null;
-    if (!b) return;
-    var mask = b.getAttribute("data-mask");
-    var r = Ent.removeGrant(backing, mask);
-    msg("msg-list", r.removed ? "已收回 " + mask + " 的层级" : "这条已经不在了", r.removed ? "ok" : "warn");
-    renderList();
-  }
-
-  function onExport() {
-    var text = Ent.exportGrants(backing);
-    var done = function () { msg("msg-list", "名单已复制，发给对方让他导入即可", "ok"); };
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(text).then(done, function () {
-
-        msg("msg-list", "复制失败，请手动抄下：" + text, "warn");
-      });
-    } else {
-      msg("msg-list", "这份名单请手动抄下：" + text, "warn");
-    }
-  }
-
-  function onImportOpen() {
-    var modal = $("text-dialog");
-    if (!modal) return;
-    var t = $("text-dialog-text");
-    if (t) t.value = "";
-    var title = $("text-dialog-title");
-    if (title) title.textContent = "导入发放名单";
-    var tip = $("text-dialog-tip");
-    if (tip) tip.textContent = "把对方给你的名单 JSON 粘在这里，导入会覆盖当前名单。";
-    modal.hidden = false;
-    if (t) t.focus();
-  }
-
-  function closeImport() {
-    var modal = $("text-dialog");
-    if (modal) modal.hidden = true;
-  }
-
-  function onImportOk() {
-    var t = $("text-dialog-text");
-    var text = (t && t.value ? t.value : "").trim();
-    if (!text) { msg("msg-list", "还没有粘贴内容", "warn"); closeImport(); return; }
-    var r = Ent.importGrants(backing, text);
-    closeImport();
-    if (!r.ok) { msg("msg-list", r.message, "warn"); return; }
-    msg("msg-list", "已导入 " + r.count + " 条发放记录", "ok");
-    renderList();
-  }
-
-  function renderSim(id) {
-    var label = $("sim-label");
-    var btn = $("btn-sim");
-    if (!label || !btn) return;
-
-    var real = Ent.readTier(backing);
-    var isFree = Ent.tierIndex(real) === 0;
-    label.textContent = Ent.tierLabel(real);
-
-    btn.textContent = isFree ? "恢复 " + Ent.tierLabel(Ent.TIERS[1]) : "降到 " + Ent.tierLabel(Ent.TIERS[0]);
-    btn.setAttribute("data-mode", isFree ? "restore" : "free");
-    void id;
-  }
-
-  function onSim() {
-    var btn = $("btn-sim");
-    var mode = btn ? btn.getAttribute("data-mode") : "free";
-    if (mode === "restore") {
-      Ent.writeTier(backing, "pro", null);
-      showToast("已恢复为 Pro");
-    } else {
-      Ent.writeTier(backing, "free", null);
-      showToast("现在以 Free 身份预览");
-    }
-    renderSim(Ent.identity({ backing: backing }));
-  }
-
-  function onWipeStart() { hide($("wipe-step-1")); show($("wipe-step-2")); msg("msg-wipe", ""); }
-  function onWipeCancel() { hide($("wipe-step-2")); show($("wipe-step-1")); msg("msg-wipe", ""); }
-  function onWipeConfirm() {
-    Ent.clearGrants(backing);
-    hide($("wipe-step-2"));
-    show($("wipe-step-1"));
-    msg("msg-wipe", "发放名单已清空，所有已发放的层级都已收回。", "ok");
-    renderList();
-  }
-
   function init() {
     var id = Ent.identity({ backing: backing });
 
     if (!isOwner(id)) {
-
+      // 拒绝界面（Issue #276）：**不再有「本机主人」这条兜底** ——
+      // 没有服务端答案就不放行。所以这里的文案要按「是没登录、还是
+      // 登录了但角色不够、还是服务端没配」分三种说，别笼统一句。
       show($("deny-card"));
       var lead = $("deny-lead");
       if (lead) {
-        lead.textContent = "只对本机管理员开放。你现在是「" + Ent.tierLabel(id.tier) +
-          "」" + (id.signedIn ? "（" + (id.mask || "无邮箱") + "）" : "（未登录）") + "。";
+        if (!id.signedIn) {
+          lead.textContent = "管理后台要登录才能进。本站的管理员身份由数据库里的角色决定（" +
+            "目前只允许主人 / 管理员），请先用你的管理员邮箱登录。";
+        } else {
+          lead.textContent = "这一页只对管理员开放。你现在是「" + Ent.tierLabel(id.tier) +
+            "」" + (id.mask ? "（" + id.mask + "）" : "") +
+            "，角色是「" + (id.role === "user" ? "普通用户" : id.role) +
+            "」。要用管理后台，请让主人把你的角色改成管理员（或把自己加进 OWNER_EMAILS）。";
+        }
       }
-      $("btn-back-profile").addEventListener("click", function () { location.href = "/mine/"; });
+      var back = $("btn-back-profile");
+      if (back) back.addEventListener("click", function () { location.href = "/mine/"; });
       return;
     }
-
-    Ent.markOwner(backing);
 
     show($("grant-card"));
     show($("server-card"));
     show($("accounts-card"));
     show($("reports-card"));
     show($("pinyin-card"));
-    show($("list-card"));
-    show($("sim-card"));
-    show($("danger-card"));
     renderTierPick();
-    renderList();
-    renderSim(id);
     loadServerGrants();
+    loadAccounts();
 
     $("tier-pick").addEventListener("click", onPick);
     $("btn-grant").addEventListener("click", onGrant);
-    $("btn-grant-local").addEventListener("click", onGrantLocal);
     $("server-list").addEventListener("click", onServerListClick);
     $("btn-server-reload").addEventListener("click", loadServerGrants);
     $("btn-accounts-reload").addEventListener("click", loadAccounts);
+    if ($("accounts-list")) $("accounts-list").addEventListener("click", onAccountsClick);
     if ($("btn-reports-reload")) $("btn-reports-reload").addEventListener("click", loadReports);
     if ($("report-filter")) $("report-filter").addEventListener("change", loadReports);
     if ($("reports-list")) $("reports-list").addEventListener("click", onReportsClick);
@@ -803,22 +789,6 @@
     $("btn-pf-export").addEventListener("click", onFixExport);
     $("btn-pf-refresh").addEventListener("click", renderFixList);
     renderFixList();
-    $("grant-list").addEventListener("click", onListClick);
-    $("btn-export").addEventListener("click", onExport);
-    $("btn-import-open").addEventListener("click", onImportOpen);
-    $("btn-sim").addEventListener("click", onSim);
-    $("btn-wipe-start").addEventListener("click", onWipeStart);
-    $("btn-wipe-cancel").addEventListener("click", onWipeCancel);
-    $("btn-wipe-confirm").addEventListener("click", onWipeConfirm);
-
-    var ok = $("text-dialog-ok"), cancel = $("text-dialog-cancel"), modal = $("text-dialog");
-    if (ok) ok.addEventListener("click", onImportOk);
-    if (cancel) cancel.addEventListener("click", closeImport);
-    if (modal) {
-      modal.addEventListener("click", function (e) {
-        if (e.target && e.target.getAttribute && e.target.getAttribute("data-close")) closeImport();
-      });
-    }
   }
 
   if (document.readyState === "loading") {
@@ -828,7 +798,7 @@
   }
 
   window.AdminPage = {
-    isOwner: isOwner, esc: esc,
+    isOwner: isOwner, esc: esc, roleText: roleText, renderAccounts: renderAccounts,
 
     readForm: readForm, grantFailed: grantFailed,
 

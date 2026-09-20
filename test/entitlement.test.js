@@ -201,32 +201,18 @@ console.log('\n=== 四、唯一出口：脏值 / 未知能力 / 缺参一律回�
   chk(E.capNames().length >= E.capNames().filter(k => !!E.cap(k)).length, 'capNames 里每个名字都能查到能力');
 }
 
-console.log('\n=== 五、本机发放名单：可导出可粘贴、脏记录一律丢掉 ===');
+console.log('\n=== 五、本机发放名单已下线（Issue #276）：本机只剩一份服务端答案的缓存 ===');
 {
-  const b = mem();
-  eq(E.removeGrant(b, 'x@qq.com').removed, 0, '空名单删除返回 0');
-  const bad = E.putGrant(b, { tier: 'pro' });
-  eq(bad.ok, false, '缺邮箱掩码的发放记录被拒');
-  const bad2 = E.putGrant(b, { emailMask: 'a***@qq.com', tier: 'vip' });
-  eq(bad2.ok, false, '不认识的层级不被写入（不会悄悄变成 free）');
-  const ok = E.putGrant(b, { emailMask: 'A***@QQ.com', tier: 'pro', note: '内测家长' });
-  chk(ok.ok, '正常发放记录写入成功');
-  eq(E.grantFor(b, 'a***@qq.com').tier, 'pro', '掩码大小写归一化后可匹配');
-  E.putGrant(b, { emailMask: 'a***@qq.com', tier: 'max' });
-  eq(E.readGrants(b).grants.length, 1, '同掩码只保留最新一条');
-  eq(E.grantFor(b, 'a***@qq.com').tier, 'max', '后发的层级覆盖先前那条');
-  E.putGrant(b, { emailMask: 'b***@163.com', tier: 'pro', until: 1000 });
-  eq(E.grantFor(b, 'b***@163.com', 2000), null, '过期记录不生效');
-  chk(!!E.grantFor(b, 'b***@163.com', 500), '未过期记录生效');
-  const text = E.exportGrants(b);
-  const b2 = mem();
-  const imp = E.importGrants(b2, text);
-  chk(imp.ok && imp.count === 2, '名单可导出后粘贴进另一台设备');
-  eq(E.importGrants(b2, '不是 json').ok, false, '坏名单被拒且不抛');
-  eq(E.importGrants(b2, '{"grants":{}}').ok, false, '形状不对的名单被拒');
-  E.clearGrants(b);
-  eq(E.readGrants(b).grants.length, 0, '清空名单可用');
-  chk(E.readGrants(null).grants.length === 0, '没有存储时名单为空，不抛');
+  // 用户原话：「你现在那些关于本地设置 free, pro, max 的那些设计和代码我觉得
+  // 可以删除了，全部走在线数据库。」于是 `poem_plan_grant_v1` 那一族
+  // （putGrant / readGrants / grantFor / importGrants ……）整个删掉。
+  // 这一节守的是「真的删干净了」：接口不在，且本机不再有第二条写入口。
+  ['putGrant', 'readGrants', 'grantFor', 'importGrants', 'exportGrants',
+    'removeGrant', 'clearGrants', 'normGrant', 'emptyGrants'].forEach(k => {
+    eq(typeof E[k], 'undefined', '本机发放名单的 ' + k + '() 已删除（全走数据库）');
+  });
+  eq(typeof E.GRANT_NS, 'undefined', 'poem_plan_grant_v1 这个键名也不在了');
+  eq(E.NS, 'poem_plan_v1', '本机只留一份权益键：服务端答案的缓存');
 }
 
 console.log('\n=== 六、本机会话层级：到期即回落 ===');
@@ -275,9 +261,10 @@ console.log('\n=== 七、身份合成：只认 AuthCore 会话，不认页面自
   eq(id.can('export.progress').ok, true, '登录的 free 也可以导出进度了');
   eq(id.mask, 'z***@163.com', '身份里带回邮箱掩码（供名单匹配）');
 
-  E.putGrant(b, { emailMask: id.mask, tier: 'max' });
+  // 层级从**服务端答案**来（Issue #276：本机不再有第二份名单）。
+  E.writeTier(b, 'max', null, { source: 'server', role: 'user' });
   const id2 = E.identity({ authStore: authStore, backing: b });
-  eq(id2.tier, 'max', '发放名单命中后层级升到 max');
+  eq(id2.tier, 'max', '服务端下发的层级落到权益层（本机那两份名单已删）');
 
   eq(id2.can('feihualing').ok, true, '发了 max 之后拿到飞花令');
   eq(id2.can('read.aloud').ok, true, 'pro 的语音播放当然还在（只加不减）');
@@ -383,35 +370,52 @@ console.log('\n=== 十、源码扫描：页面上不许自己拼 plan ===');
     '「谁能进管理后台」两页走同一个出口 Entitlement.isOwner()');
 }
 
-console.log('\n=== 十一、管理员（role）：与层级正交，且是全站唯一出口 ===');
+console.log('\n=== 十一、管理员（role）：只认数据库那一列，本机兜底已删（Issue #276）===');
 {
   const mem = function (init) {
     const m = Object.assign({}, init || {});
-    return { getItem: k => (k in m ? m[k] : null), setItem: (k, v) => { m[k] = String(v); }, raw: () => m };
+    return {
+      getItem: k => (k in m ? m[k] : null),
+      setItem: (k, v) => { m[k] = String(v); },
+      removeItem: k => { delete m[k]; },
+      raw: () => m
+    };
   };
+  // 服务端答案写进本机缓存的样子（源头是数据库 `accounts.role`）。
+  const serverRole = (role) => mem({ [E.NS]: JSON.stringify({ v: 1, tier: 'free', source: 'server', role }) });
 
-  eq(E.isOwner(mem()), true, '全新机器上是主人（第一次打开后台不该被拒）');
-  eq(E.isOwner(mem({ [E.OWNER_NS]: 'owner' })), true, '已落下主人标记 → 是主人');
-  eq(E.isOwner(mem({ [E.OWNER_NS]: 'member' })), false, '标记是 member → 不是主人');
-  eq(E.isOwner(mem({ [E.OWNER_NS]: '' })), true, '空标记当作「还没决定」→ 仍是主人（幂等）');
-  eq(E.isOwner(null), true, '没有任何存储（隐私模式）→ 不拦人也不落标记');
+  // 用户原话：「管理员页面只允许 belem@163.com 登录的邮箱访问（目前），
+  // 未登录用户以及其他登录账户一律不允许访问。」
+  eq(E.isOwner(mem()), false, '全新机器上**不是**主人（「谁打开谁是主人」这条兜底已删）');
+  eq(E.isOwner(null), false, '没有任何存储时也不放行（不拦人的那条兜底同样删了）');
+  eq(E.isOwner(mem({ poem_owner_v1: 'owner' })), false,
+    '老的本机主人标记 `poem_owner_v1` 一个字都不认（清一次存储就能当管理员的东西不是权限）');
 
-  eq(E.isOwner(mem(), { role: 'user' }), false, '服务端下发的 role=user 优先于本机（1 期的口）');
-  eq(E.isOwner(mem({ [E.OWNER_NS]: 'member' }), { role: 'owner' }), true,
-    '服务端下发的 role=owner 优先于本机（1 期的口）');
+  eq(E.isOwner(serverRole('owner')), true, '服务端说 owner → 放行');
+  eq(E.isOwner(serverRole('admin')), true, '服务端说 admin → 放行');
+  eq(E.isOwner(serverRole('user')), false, '服务端说 user → 不放行（这正是 Issue #276 要的那件事）');
+  eq(E.isOwner(mem({ [E.NS]: JSON.stringify({ v: 1, tier: 'max' }) })), false,
+    '**本机自己写的**层级（没有 source:server）不带角色 → 不放行（层级高不等于管理员）');
+  eq(E.isOwner(serverRole('root')), false, '不认识的角色一律不放行（无兜底）');
 
-  const b = mem();
-  E.markOwner(b);
-  eq(b.raw()[E.OWNER_NS], 'owner', 'markOwner 落下 owner 标记');
-  E.markOwner(b);
-  eq(b.raw()[E.OWNER_NS], 'owner', 'markOwner 连落两次结果一致（幂等）');
+  eq(E.isOwner(mem(), { role: 'user' }), false, '显式传 role=user → 不放行');
+  eq(E.isOwner(serverRole('user'), { role: 'owner' }), true, '显式传入的 role 优先（调用方手里那一份更新）');
 
-  const owner = E.identity({ backing: mem({ [E.OWNER_NS]: 'owner' }), authStore: null });
-  eq(owner.role, 'owner', '本机主人：identity().role 是 owner');
+  eq(typeof E.markOwner, 'undefined', 'markOwner 已删除（本机不再能把自己写成主人）');
+  eq(typeof E.OWNER_NS, 'undefined', 'poem_owner_v1 这个键名也不在了');
+
+  ['owner', 'admin', 'user'].forEach(r => {
+    eq(E.isAdminRole(r), ['owner', 'admin'].indexOf(r) >= 0, 'isAdminRole(' + r + ')');
+  });
+  eq(E.isAdminRole('OWNER'), true, '大小写不敏感（与 core.isAdminRole 同源）');
+  ['', null, 'root', '超级管理员'].forEach(r => eq(E.isAdminRole(r), false, 'isAdminRole(' + JSON.stringify(r) + ') 为假'));
+
+  const owner = E.identity({ backing: serverRole('owner'), authStore: null });
+  eq(owner.role, 'owner', '服务端说 owner：identity().role 是 owner');
   eq(owner.tier, 'free', '…但层级仍是 free —— 管理员不是「买了 Max 的人」');
-  const member = E.identity({ backing: mem({ [E.OWNER_NS]: 'member' }), authStore: null });
-  eq(member.role, 'user', '非主人：role 是 user');
-  eq(E.tierLabel(member.tier), 'Free', '…层级照旧按发放名单算');
+  const member = E.identity({ backing: serverRole('user'), authStore: null });
+  eq(member.role, 'user', '服务端说 user：role 是 user');
+  eq(member.role, 'user', '…与 isOwner 的答案一致（同一个出口）');
 }
 
 console.log('\n=== 十二、每条付费能力都得**真的有人管**（不许只写在能力表里）===');

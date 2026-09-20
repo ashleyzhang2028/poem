@@ -40,6 +40,15 @@ var CONFIG = {
   turnstileBypass: env("TURNSTILE_BYPASS", "0") === "1",
 
   requireEmailVerified: env("REQUIRE_EMAIL_VERIFIED", "1") !== "0",
+
+  // 管理员怎么诞生（Issue #276）：**名单在环境变量里，判定在服务端**。
+  // OWNER_EMAILS 是逗号 / 空格分隔的**完整邮箱**（不是掩码 —— 掩码是给人看的，
+  // 授权要唯一）。这一串里的邮箱在**注册 / 确认 / 登录**时被认成 owner
+  // （见 core.claimOwnerRole），从此角色的权威在 `accounts.role` 那一列。
+  // 不填的后果是「一个 owner 都没有」：这时 /admin/ 对所有人关门（如实拒绝），
+  // 而不是退回「谁打开谁是主人」——那条兜底正是 Issue #276 要拆掉的东西。
+  ownerEmails: env("OWNER_EMAILS", ""),
+
   passwordMin: intEnv("PASSWORD_MIN", 8),
   passwordMax: intEnv("PASSWORD_MAX", 72),
   verifyTtlMs: intEnv("VERIFY_TTL_MS", 24 * 60 * 60 * 1000),

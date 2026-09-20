@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#2f6055" />
   <title>管理后台 · 跬步</title>
-  <meta name="description" content="跬步管理后台：按邮箱掩码发放 Free / Pro / Max 层级，导出与导入发放名单。" />
+  <meta name="description" content="跬步管理后台：账号名录、角色（管理员）与 Free / Pro / Max 层级的权威发放。全部以数据库为准。" />
   <meta name="format-detection" content="telephone=no" />
   <meta name="robots" content="noindex, nofollow" />
 
@@ -19,7 +19,7 @@
   <link rel="stylesheet" href="css/style.css" />
   <link rel="stylesheet" href="css/account.css" />
 </head>
-<body data-nav="admin" data-dock="off" data-back="/mine/" data-page="管理后台" data-sub="发放层级 · 名单导入导出">
+<body data-nav="admin" data-dock="off" data-back="/mine/" data-page="管理后台" data-sub="账号名录 · 角色与层级">
   <div class="app">
     <header class="topbar"></header>
 
@@ -32,10 +32,10 @@
       </section>
 
       <section class="account-card" id="grant-card" hidden>
-        <h2 class="account-card-title">发放层级（服务端权威）</h2>
+        <h2 class="account-card-title">发放层级（数据库权威）</h2>
         <p class="account-lead">
           按<strong>邮箱掩码</strong>发放（如 <code>b***@qq.com</code>，与账号页上显示的那串一致）。
-          写进服务端，对方刷新即可生效（由服务器判定）。
+          写进数据库 <code>accounts.plan</code>，对方刷新即可生效（由服务器判定）。
         </p>
         <p class="account-hint" id="grant-precondition">
           前提：<strong>对方先登录过一次</strong> —— 库里得先有那一行，才可能按掩码找得到人。
@@ -52,7 +52,6 @@
             <input id="input-until" class="account-input" type="date" />
           </div>
           <button class="account-btn" id="btn-grant" type="button">发放到服务端</button>
-          <button class="account-btn ghost" id="btn-grant-local" type="button">只发到本机名单</button>
         </div>
         <div class="account-field" style="margin-top:12px">
           <label class="account-label">层级</label>
@@ -68,7 +67,7 @@
           但本站<strong>没有收款能力</strong>（<strong>不收款</strong>，从不做支付通道），所以它<strong>同样不是付费凭据</strong>。
         </p>
         <ul class="grant-list" id="server-list"></ul>
-        <p class="account-hint" id="server-empty" hidden>服务端还没有发放过任何层级。</p>
+        <p class="account-hint" id="server-empty" hidden>数据库里还没有发放过任何层级。</p>
         <p class="account-hint" id="server-note" hidden></p>
         <div class="confirm-row" style="margin-top:12px">
           <button class="account-btn ghost" id="btn-server-reload" type="button">刷新这一份</button>
@@ -77,10 +76,16 @@
       </section>
 
       <section class="account-card" id="accounts-card" hidden>
-        <h2 class="account-card-title">全部账号（名录）</h2>
+        <h2 class="account-card-title">全部账号（名录 · 角色 / 层级）</h2>
         <p class="account-lead">
-          这里列的是<strong>注册过的账号</strong>，含<strong>邮箱</strong>与昵称。
-          与上面那张「服务端名单」不是一张表：那边只列发过层级的人。
+          这里列的是<strong>注册过的账号</strong>，含<strong>邮箱</strong>、昵称、<strong>角色</strong>与<strong>层级</strong>。
+          与上面那张「服务端名单」不是一张表：那边只列发过层级的。
+        </p>
+        <p class="account-hint">
+          这一份的每一格都<strong>以数据库为准</strong>（<code>accounts.role</code> /
+          <code>accounts.plan</code>）。<strong>角色</strong>只有 <code>owner</code> 改得动，
+          目标值只认「普通用户 / 管理员」两档；<strong>owner 是种子</strong>
+          （由服务端 <code>OWNER_EMAILS</code> 认领），不在这个口发。
         </p>
         <ul class="account-list" id="accounts-list"></ul>
         <p class="account-hint" id="accounts-empty" hidden>还没有任何账号。</p>
@@ -168,70 +173,8 @@
         </div>
       </section>
 
-      <section class="account-card" id="list-card" hidden>
-        <h2 class="account-card-title">本机发放名单</h2>
-        <p class="account-lead">
-          这一份是「手工发邀请码的本机版」：<strong>要对方自己导入</strong>才生效，
-          而且对方改一行存储就能改。<strong>它不是权威</strong> —— 只在
-          <strong>没配服务端 / 连不上</strong>时兜底，改不动服务端判定的那个层级。
-        </p>
-        <p class="account-hint">
-          两份<strong>不自动同步</strong>：上面发了一条，对方那台机器的这一份不会跟着多一条。
-        </p>
-        <ul class="grant-list" id="grant-list"></ul>
-        <p class="account-hint" id="grant-empty" hidden>还没有发放过任何层级。</p>
-        <div class="confirm-row" style="margin-top:12px">
-          <button class="account-btn ghost" id="btn-export" type="button">导出名单</button>
-          <button class="account-btn ghost" id="btn-import-open" type="button">导入名单</button>
-        </div>
-        <p class="account-msg" id="msg-list"></p>
-      </section>
-
-      <section class="account-card" id="sim-card" hidden>
-        <h2 class="account-card-title">模拟身份</h2>
-        <div class="sim-row">
-          <span>以 <strong id="sim-label">Free</strong> 身份预览</span>
-          <button class="account-btn ghost" id="btn-sim" type="button" style="width:auto;padding:9px 16px"></button>
-        </div>
-        <p class="settings-hint" id="sim-hint">
-          打开后本机层级临时降到 Free，看清免费用户看到什么。
-        </p>
-      </section>
-
-      <section class="account-card danger-zone" id="danger-card" hidden>
-        <h2 class="account-card-title danger-title">危险区</h2>
-        <p class="account-lead">
-          清空<strong>本机</strong>发放名单会立刻收回所有<strong>本机</strong>发放的层级
-          （对方下次打开页面即回落 Free）。<strong>服务端那一份不受影响</strong> ——
-          要收回它，在上面那份名单里逐条删。这条不可撤销。
-        </p>
-        <div class="confirm-row" id="wipe-step-1">
-          <button class="account-btn danger" id="btn-wipe-start" type="button">清空发放名单</button>
-        </div>
-        <div class="confirm-row" id="wipe-step-2" hidden>
-          <button class="account-btn danger" id="btn-wipe-confirm" type="button">确认清空</button>
-          <button class="account-btn ghost" id="btn-wipe-cancel" type="button">取消</button>
-        </div>
-        <p class="account-msg" id="msg-wipe"></p>
-      </section>
     </main>
 
-  </div>
-
-  <div class="modal text-modal" id="text-dialog" hidden>
-    <div class="modal-mask" data-close="1"></div>
-    <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="text-dialog-title">
-      <button class="modal-close" data-close="1" aria-label="关闭">✕</button>
-      <div class="modal-head">
-        <h2 id="text-dialog-title"></h2>
-      </div>
-      <p class="text-dialog-tip" id="text-dialog-tip"></p>
-      <textarea id="text-dialog-text" spellcheck="false" aria-label="发放名单 JSON"></textarea>
-      <div class="actions">
-        <button type="button" class="btn" id="text-dialog-cancel">关闭</button>
-        <button type="button" class="btn good primary-btn" id="text-dialog-ok">导入</button>
-      </div>
-    </div>
   </div>
 
   <div class="toast" id="toast" hidden></div>
