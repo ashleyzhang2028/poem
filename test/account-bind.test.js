@@ -527,11 +527,13 @@ async function main() {
       eq(doc.getElementById("deny-card").hidden, false, "角色是 user 时画的是拒绝卡");
       eq(doc.getElementById("grant-card").hidden, true, "发放那一块**没画**（非 owner 看不到任何发放信息）");
       eq(doc.getElementById("accounts-card").hidden, true, "名录那一块也没画");
-      okLine(doc.getElementById("deny-lead").textContent, "拒绝卡上说清「只对管理员开放」与当前角色");
+      eq(doc.getElementById("deny-lead").textContent, "只对管理员开放。",
+        "拒绝卡只有这一句（用户裁：「说这么多废话干什么」）—— 不再分未登录 / 角色不够两种啰嗦");
 
       const page2 = await bootAdminPage({ signedOut: true });
       eq(page2.doc.getElementById("deny-card").hidden, false, "未登录时也拒绝");
-      chk(/登录/.test(page2.doc.getElementById("deny-lead").textContent), "未登录那一档的文案指一条路：先去登录");
+      eq(page2.doc.getElementById("deny-lead").textContent, "只对管理员开放。",
+        "未登录那一档与角色不够那一档**同一句**（答案本来就是一个：不放行）");
     }
   }
 

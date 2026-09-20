@@ -191,6 +191,11 @@ const LOGIN = strip(loginJs), MINE = strip(mineJs), ADMIN = strip(adminJs);
     '管理后台不再宣称「本期没有服务端」（服务端 1 期已接通，见 2.1）');
   chk(/deny-card/.test(SRC.admin) && /isOwner/.test(ADMIN),
     '非管理员有明确的拒绝界面（不是白页、也不是 403 跳走）');
+  chk(/id="deny-lead">\s*<\/p>|id="deny-lead"\s*><\/p>/.test(SRC.admin) || /deny-lead/.test(SRC.admin),
+    '拒绝卡留着一句挂载点（文案由 admin-page.js 写）');
+  chk(!/管理后台要登录才能进/.test(ADMIN + adminVisible),
+    '那句啰嗦的拒绝文案已删（用户裁：「说这么多废话干什么，全部删掉」）—— 只剩「只对管理员开放。」');
+  chk(/只对管理员开放。/.test(ADMIN), '拒绝卡只说这一句，且两类拒绝同一句');
   chk(/show\(\$\("grant-card"\)\)/.test(ADMIN),
     '管理后台按权限决定各块渲染（非 owner 不画发放区）');
   // Issue #276：本机那一套整块删了 —— 连「本机」这两个字都不该再以「第二份名单」的身份出现。
