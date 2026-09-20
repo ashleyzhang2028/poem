@@ -112,10 +112,12 @@
 
 ### 本地起服务
 ```bash
-node scripts/serve.js        # 项目自带的零依赖服务器（支持目录化地址，推荐）
-python3 -m http.server 8080  # 或 Python 3
+npm run dev:auth             # 静态页面与 /api/* 同源，调试登录/注册时用这个
+python3 -m http.server 8080  # 只提供静态页面，不提供账号 API
 # 然后访问 http://localhost:8080
 ```
+
+未提供 Supabase 或发信环境变量时，`dev:auth` 会使用进程内存储与 console 发信；重启后账号数据会清空，也不会真的发送邮件。
 
 服务器需支持「目录索引」：所有地址都是目录形式，不带 `.html`（根 `/` → `index.html`，`/classic/` → `classic/index.html`），Nginx / GitHub Pages / CNB Pages 无需额外配置。
 
