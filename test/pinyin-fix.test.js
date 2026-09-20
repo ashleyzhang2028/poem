@@ -244,7 +244,11 @@ chk(/if \(!wid \|\| !line \|\| !py\) return;/.test(coreSrc),
 // SW 预缓存：新脚本必须在清单里（否则离线打开时它是 404，注音静默退回旧行为）
 const swSrc = src("sw.js");
 chk(/\.\/js\/pinyin-edit\.js/.test(swSrc), "新脚本进了 SW 预缓存清单（离线也读得到勘误）");
-chk(/const CACHE_NAME = "poem-app-v187";/.test(swSrc), "缓存版本号已往上推（改动才会真的下发）");
+// ⚠️ 判据是「**比上一版大**」而不是「等于某个数」：写死一个数的话，
+//    每一次与本测试无关的改动（比如 2026-09-20 删除 /profile/ 那一轮 v188）
+//    都会把这条断言弄红 —— 那是以「守事实」为名把测试钉在版本号上。
+const ver = parseInt((swSrc.match(/poem-app-v(\d+)/) || [0, "0"])[1], 10);
+chk(ver >= 187, "缓存版本号已往上推（改动才会真的下发，实际 v" + ver + "）");
 
 // 架构文档
 const arch = src("docs/architecture.md");

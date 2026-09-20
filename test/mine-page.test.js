@@ -186,9 +186,12 @@ const css = read('css/style.css') + read('css/account.css');
   chk(/mine:\s*"\/mine\/"/.test(CHROME), 'ROUTES 里有 mine 这一项');
 
   chk(/data-back="\/mine\/"/.test(SETTINGS), '设置整页的返回键回「我的」页（齿轮点进来点回去）');
-  chk(/data-back="\/mine\/"/.test(read('profile/index.html')), '个人中心的返回键回「我的」页');
-  chk(!/data-back="\/settings\/"/.test(read('profile/index.html')),
-    '个人中心不再退回设置整页（两处落点会打架）');
+  // ⚠️ 原先这里守着「个人中心的返回键回『我的』页」（读 profile/index.html）。
+  //    2026-09-20（Issue #244）那一页已删除 —— 它留下的这一条口径现在由
+  //    test/profile-removed.test.js 承担（全站不该再有指向 /profile/ 的落点）。
+  chk(!/\/profile\//.test(read('js/mine.js').replace(/^\s*\/\/.*$/gm, ' ')
+    .replace(/\/\*[\s\S]*?\*\//g, ' ')),
+    '「我的」页不再指向已删除的个人中心');
 
   ['general', 'recite', 'lists', 'reader'].forEach(k => {
     chk(/data-back="\/settings\/"/.test(read('settings/' + k + '/index.html')),
@@ -339,9 +342,13 @@ function boot(seed) {
     '（真页面）权限 / 层级对比那张卡整张撤了（实际 ' + order0.join(' → ') + '）');
   chk(order0.indexOf('danger-card') === order0.length - 1,
     '（真页面）注销仍是最下面那张卡');
+  // ⚠️ 用户 2026-09-18 原话是「从『关于』卡挪出，放到最下面」；
+  //    2026-09-20（Issue #244）个人中心删掉后，管理后台入口与它同一张卡里的
+  //    同步开关 / 法务三行一起搬进「我的」页的「关于」卡 —— 这是用户
+  //    2026-09-20 的新口径（把个人中心那张卡整体并进来），不是回退。
   const admin = d0.getElementById('btn-go-admin');
-  chk(!!admin && admin.closest('#mine-page') && !admin.closest('.account-card'),
-    '（真页面）管理后台那颗键整张卡都在外面（用户 2026-09-18：从「关于」卡挪出，放到最下面）');
+  chk(!!admin && admin.closest('#about-card'),
+    '（真页面）管理后台那颗键在「关于」卡里（2026-09-20：随个人中心那张卡并进来）');
 
   const gear = d0.getElementById('top-act-link');
   chk(!!gear && gear.getAttribute('href') === '/settings/',

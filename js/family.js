@@ -334,6 +334,25 @@
     // 现在把这两条并起来：表里有登记的（含已读那一族的前缀规则）一律听表，
     // 表里没有的才走下面的名字口径（那是给还没登记的键兜底的）。
     var g0 = typeof globalThis !== "undefined" ? globalThis : null;
+
+    // ---- 再问一次**同步引擎**（它自己那三把键的分家口径也在这儿）----------
+    //
+    // ⚠️ 这一问是补上一个真实故障（2026-09-20 从 sync 测试的真页面一节量出来的）：
+    //    同步引擎的三把键（`poem_sync_pref_v1` / `poem_sync_seen_v1` /
+    //    `poem_pre_merge_backup_v1`）在分域表里没有登记，于是掉到下面那条
+    //    「按名字猜」的兜底里 —— 名字里既没有 `_read_` 前缀、也不匹配
+    //    `poem_(font|align|reader|ios_|play)`，就被**默认判成分家**。
+    //    后果：在「设置 · 通用」开着同步，切到「我的」页却显示成没开
+    //    （两页读的是两个不同孩子的键，静默不一致）。
+    //    SyncStore 自己早把答案写好了（`perChildKey()`），这里直接问它，
+    //    不再由 family 这一侧替它猜。
+    var SS = g0 && g0.SyncStore;
+    if (SS && typeof SS.perChildKey === "function") {
+      var ans = null;
+      try { ans = SS.perChildKey(k); } catch (e) { ans = null; }
+      if (ans !== null && ans !== undefined) return !!ans;
+    }
+
     var PS0 = g0 && g0.ProgressStore;
     if (PS0 && PS0.scopes) {
       var hit = null;

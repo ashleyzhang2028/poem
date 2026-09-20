@@ -11,8 +11,11 @@ const pageHtml = read('plans/index.html');
 const pageJs = read('js/plans.js');
 const css = read('css/account.css');
 const sw = read('sw.js');
-const profileHtml = read('profile/index.html');
-const profileJs = read('js/profile.js');
+// ⚠️ 原先这一档读 profile/index.html 与 js/profile.js（个人中心）。
+//    2026-09-20（Issue #244）那一页已删除，「层级对比」那一行搬到了
+//    「我的」页的「关于」卡里 —— 守的还是同一条口径（它是一个 <a href="/plans/">）。
+const mineHtml = read('mine/index.html');
+const mineJs = read('js/mine.js');
 const chromeJs = read('js/chrome.js');
 
 const strip = t => t.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/^\s*\/\/.*$/gm, ' ');
@@ -329,31 +332,31 @@ const plansCommentOnly = pageJs;
 
 {
 
-  chk(/btn-go-plans/.test(profileHtml), '个人中心有进对比页的入口（它在身份卡那一行里）');
-  chk(/id="identity-actions"[\s\S]{0,400}?btn-go-plans/.test(profileHtml),
-    '它跟「登录 / 退出」并排在同一行里');
+  chk(/\/plans\//.test(mineHtml), '「我的」页有进对比页的入口（它在「关于」卡里）');
+  chk(/id="about-card"[\s\S]{0,900}?href="\/plans\//.test(mineHtml),
+    '那一行落在「关于」卡里（2026-09-20 随个人中心那张卡并进来）');
 
   // 用户 2026-09-18：这一颗改成链接。<a href="/plans/"> 自己带着地址 ——
   // 不点 JS、中键新开、键盘可达，还没跑脚本时也走得通。
-  chk(/<a[^>]*id="btn-go-plans"[^>]*href="\/plans\/"/.test(profileHtml) ||
-      /<a[^>]*href="\/plans\/"[^>]*id="btn-go-plans"/.test(profileHtml),
-    '它是一个 <a href="/plans/">（用户 2026-09-18：这颗键改成链接）');
-  chk(!/<button[^>]*id="btn-go-plans"/.test(profileHtml), '它不再是一颗 <button>');
-  chk(!/location\.href = "\/plans\/"/.test(profileJs),
-    'js/profile.js 里不再为它绑一段跳转（地址就写在 <a> 上）');
+  chk(/<a class="kv-link" href="\/plans\/">层级对比<\/a>/.test(mineHtml),
+    '它是一个 <a href="/plans/"> 链接（用户 2026-09-18：这颗键改成链接）');
+  chk(!/<button[^>]*href="\/plans\/"/.test(mineHtml) && !/btn-go-plans/.test(mineHtml),
+    '它不再是一颗 <button>（那个 id 也不留了）');
+  chk(!/location\.href = "\/plans\/"/.test(mineJs),
+    'js/mine.js 不为它绑一段跳转（地址就写在 <a> 上）');
 
   chk(/Ent\.compare\(/.test(PAGE), '对比表一律由 compare() 生成（清单的唯一一处）');
-  chk(!/Ent\.matrix\(/.test(profileJs),
-    '个人中心不再自己画一遍能力清单（同一件事只在一页说）');
-  chk(/层级对比/.test(stripHtml(profileHtml)),
-    '按钮文案说清它去哪（「层级对比」—— 与页名同一个词，用户 2026-09-18 点名）');
+  chk(!/Ent\.matrix\(/.test(mineJs),
+    '「我的」页不自己画一遍能力清单（同一件事只在一页说）');
+  chk(/层级对比/.test(stripHtml(mineHtml)),
+    '那一行文案说清它去哪（「层级对比」—— 与页名同一个词，用户 2026-09-18 点名）');
 }
 
 {
   chk(sw.indexOf('"./plans/"') >= 0, 'sw.js 预缓存里有 ./plans/（断网也进得去）');
   chk(sw.indexOf('"./js/plans.js"') >= 0, 'sw.js 预缓存里有 js/plans.js');
   const ver = parseInt((sw.match(/poem-app-v(\d+)/) || [0, '0'])[1], 10);
-  chk(ver >= 160, '缓存版本已跟着提（本轮 Issue #229 第二轮改了本页 / js/plans.js / css/account.css，实际 v' + ver + '）');
+  chk(ver >= 188, '缓存版本已跟着提（本轮 Issue #244 改了入口所在的那一页，实际 v' + ver + '）');
   const list = [...sw.matchAll(/"(\.\/[^"]+)"/g)].map(m => m[1]);
   const missing = list.filter(u => {
     if (u === './') return false;

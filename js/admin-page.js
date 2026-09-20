@@ -312,7 +312,7 @@
         }
         var line = "已写进服务端：" + r.emailMask + " → " + Ent.tierLabel(r.tier) +
           (r.until ? "（到期 " + new Date(r.until).toLocaleDateString() + "）" : "（永久）") +
-          "。对方刷新页面（或打开个人中心）即由服务器判定生效。";
+          "。对方刷新页面（或打开「我的」页）即由服务器判定生效。";
         if (r.ambiguous) line += "⚠️ 这个掩码在库里不只一条，只改了最早的那一条 —— 请让对方确认。";
         msg("msg-grant", line, "ok");
         clearForm();
@@ -756,7 +756,7 @@
         lead.textContent = "只对本机管理员开放。你现在是「" + Ent.tierLabel(id.tier) +
           "」" + (id.signedIn ? "（" + (id.mask || "无邮箱") + "）" : "（未登录）") + "。";
       }
-      $("btn-back-profile").addEventListener("click", function () { location.href = "/profile/"; });
+      $("btn-back-profile").addEventListener("click", function () { location.href = "/mine/"; });
       return;
     }
 

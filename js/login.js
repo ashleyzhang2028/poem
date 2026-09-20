@@ -624,7 +624,7 @@
       try { Avatar.saveNickname(backing, clean); } catch (e) {  }
     }
     if (A.setNickname && store) { try { A.setNickname(store, clean); } catch (e) {  } }
-    location.href = nextUrl() || "/profile/";
+    location.href = nextUrl() || "/mine/";
   }
 
   function showUnverified(r) {

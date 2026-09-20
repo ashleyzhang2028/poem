@@ -614,7 +614,9 @@ exportJSON / importJSON` 一个签名都不改，实现转调 `ProgressStore`。
    - ⚠️ 「只读页面读一遍后 localStorage 键集合与内容**零变化**」这一条
      **这一期没有单独写**（它守的是「浏览型页面不写盘」，而本期没有任何新建的只读页）。
      已有的等价守据在 `test/account-pages.test.js` / `test/plans-page.test.js`：
-     `/login/` `/profile/` `/admin/` `/plans/` 四页**一个字节都不写进度键**（源码扫描）——
+     `/login/` `/admin/` `/plans/` 三页**一个字节都不写进度键**（源码扫描）——
+     （原先还有 `/profile/`：那一页 2026-09-20 已并入「我的」页，见 §4.18，
+      它留下的是「我的」页那条同等口径的断言）——
      1 期开工前会把它扩成「跑一遍页面、比对键集合快照」。
 3. ⚠️ **改成了另一种做法**：原计划的 `test/page-matrix.test.js`（逐页比对脚本集合 ==
    `PROGRESS_STORE_PAGES` 常量）**没有单独建**。理由：那种常量表本身就是第二份真相，
@@ -1354,7 +1356,7 @@ curl -sS -o /dev/null -w '%{http_code}\n' -X DELETE "$SITE_URL/api/account"     
 **`/plans/` 同时接上 `/api/me`**：这一页原本不加载 `js/account-api.js`。
 要如实说清「谁定的」就得问一次服务端 —— 于是补上 `auth-api.js +
 account-api.js` 两个 `<script>`（顺序：entitlement → auth-api → account-api），
-并在 `init()` 里 `AccountApi.refreshMe()` 一次、回来再整页重画（与 `/profile/`
+并在 `init()` 里 `AccountApi.refreshMe()` 一次、回来再整页重画（与「我的」页
 同款：先画本机口径，服务端回来再画一遍；调不到什么都不做）。
 
 **验证**
@@ -2012,7 +2014,8 @@ ProgressStore（唯一进度真相）
 - **`open()` 如实返回 `false`**（没打开），调用方据此知道自己被送走了。
 - **`next` 只收站内路径**：`/` 开头、第二个字符不是 `/`。否则
   `/login/?next=https://别处` 就是一条开放跳转。登录成功后
-  `location.href = nextUrl() || "/profile/"` —— 默认落点仍是个人中心。
+  `location.href = nextUrl() || "/mine/"` —— 默认落点是「我的」页
+  （个人中心那一页 2026-09-20 已删，见 `docs/auth-design.md` §3.6.2）。
 - **卡片里那句「四种身份对比」留着**：它回答的是登录之后的问题
   （层级从哪来），不是登录之前的问题。
 - **`?next=` 只带路径，不带查询与哈希**：刚打开的那一篇的临时状态没必要跟过去。
@@ -4193,8 +4196,8 @@ Issue #147 又把它们各自钉进固定像素位（`--top-slot: 42px` 的圆�
 - `test/ui.test.js` / `test/classic.test.js` / `test/avatar.test.js` /
   `test/ui-consistency.test.js`：顶栏右端结构、去框去底、「不再留 .top-user /
   .top-slot / .top-act-spacer 规则」逐条守住；
-- `test/account-entry.test.js`：「我的」页五条（个人中心 + 四组）、
-  第一条未登录 → `/login/`、已登录 → `/profile/`、「关于」那一块的内容；
+- `test/account-entry.test.js`：「我的」页那几条（账号 + 四组设置）、
+  未登录 → `/login/`、已登录 → 「管理登录状态」、「关于」那一块的内容；
 - `test/settings-nav.test.js` 第七节：页签名「我的」、图标是整圆 + 首字、
   `dockIcon()` 现算首字、版本号与 `sw.js` 同步；
 - `test/ui.test.js` / `test/classic.test.js` / `test/search.test.js`：四格页签的
@@ -4378,7 +4381,7 @@ chk(/var\(--nav-h\)/.test(settingsPad) && !/var\(--nav-h\)\s*-/.test(settingsPad
 
 | 行 | 内容 | 点了去哪 |
 |---|---|---|
-| 1 | 个人中心（昵称 + 层级徽章） | `/profile/` |
+| 1 | 个人中心（昵称 + 层级徽章） | `/profile/`（2026-09-20 已并入「我的」页） |
 | 2 | 通用 | `/settings/general/` ← **头像、用户名、账号、数据备份都在这** |
 | 3–6 | 背诵 / 清单 / 朗读 / 关于 | 各自那张页 |
 
@@ -4458,9 +4461,9 @@ chk(/var\(--nav-h\)/.test(settingsPad) && !/var\(--nav-h\)\s*-/.test(settingsPad
 底部「我的」页签 ──► /mine/  ──齿轮──► /settings/ ──► /settings/{general,…}/
                       │                     ▲                    │
                       │                     └──── data-back ─────┘
-                      ├─ 账号入口 ──► /login/ ──成功──► /profile/
+                      ├─ 账号入口 ──► /login/ ──成功──► /mine/
                       │                    ▲              │
-                      │                    └── data-back ─┘（/profile/ → /mine/）
+                      │                    └── data-back ─┘（/login/ → /mine/）
                       ├─ 权限对比 ──► /plans/
                       └─ 注销（危险区，就地两步）
 ```
@@ -4898,7 +4901,7 @@ DOM 节点，焦点与光标位置都会丢（测试里第二次编辑会打在�
   触达高度三件一起判；`.kv-v` 的反面断言（不许再有 `break-all`）；
   页脚两条的触达高度与 `nowrap`；两处「关于」的形状一致性；
   以及「样式表里不许写死浏览器默认蓝」
-- **真浏览器（Chrome 153，CDP）**：`/settings/` 与 `/profile/` 各量过
+- **真浏览器（Chrome 153，CDP）**：`/settings/` 与「我的」页各量过
   `getComputedStyle`，改前 `rgb(0,0,238)` / 0px / 13px，
   改后 `rgb(47,96,85)` / 1px solid `rgb(79,122,110)` / 30px ——
   两张页各截了改前改后对照图
