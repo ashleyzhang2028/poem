@@ -602,7 +602,7 @@ const LOGIN = strip(loginJs), MINE = strip(mineJs), ADMIN = strip(adminJs);
           /for="input-new-pw2">确认密码</.test(RH), '④ 两个确认字段统一使用「确认密码」');
         chk((authCopy.match(/请再次输入相同密码/g) || []).length >= 2,
           '④ 两个确认密码框使用明确占位文案');
-        chk(/验证邮箱/.test(LH) && /验证邮件/.test(authCopy),
+        chk(/验证后登录/.test(LH) && /验证邮件/.test(authCopy) && /验证邮箱/.test(authCopy),
           '④ 邮箱验证流程统一使用「验证」术语');
         chk(/E_OFFLINE:\s*"无法连接服务器，请检查网络后重试。"/.test(authApi) &&
           /E_TIMEOUT:\s*"服务器响应超时，请稍后重试。"/.test(authApi) &&
