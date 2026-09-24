@@ -31,12 +31,27 @@
 
   function toLogin() { location.href = "/login/"; }
 
+  // 「下一步去哪」只有一处判据（Issue #278）。
+  // 确认成功 = 已经登录（服务端在同一个响应里签了会话），于是那颗按钮
+  // 不再是「去登录」而是「开始背诵」，落点是首页；没拿到会话时才回落
+  // 到登录页 —— 两种情形如实分开，不说做不到的话。
+  var signedIn = false;
+
+  function nextStep() {
+    location.href = signedIn ? "/mine/" : "/login/";
+  }
+
+  function renderNextStep() {
+    var btn = $("btn-verify-login");
+    if (btn) btn.textContent = signedIn ? "开始背诵" : "去登录";
+  }
+
   function init() {
     var vid = param("vid");
     var token = param("token");
 
     $("btn-verify-to-login").addEventListener("click", toLogin);
-    $("btn-verify-login").addEventListener("click", toLogin);
+    $("btn-verify-login").addEventListener("click", nextStep);
     $("btn-verify-retry-login").addEventListener("click", toLogin);
 
     if (!vid || !token) { state("none"); return; }
@@ -51,21 +66,18 @@
     api.verifyEmail({ vid: vid, token: token }).then(function (r) {
       if (r.ok) {
         state("ok");
-        text($("verify-ok-lead"), "邮箱已确认：" + (r.emailMask || r.email || "") + "。");
+        signedIn = r.signedIn === true;
+        renderNextStep();
 
-        var fallback = "现在可以用它找回密码了。";
+        text($("verify-ok-lead"), signedIn
+          ? "邮箱已确认，已经帮你登录：" + (r.emailMask || r.email || "") + "。"
+          : "邮箱已确认：" + (r.emailMask || r.email || "") + "。");
+
         var hint = $("verify-ok-hint");
-        if (hint) hint.textContent = fallback;
-        if (api.me) {
-          api.me().then(function (m) {
-            var ch = (m && m.ok && m.channel) || null;
-            if (!hint || !ch) return;
-            if (ch.emailGate === true) {
-              hint.textContent = "现在可以回登录页用这个邮箱登录了。";
-            } else if (ch.emailGate === false) {
-              hint.textContent = "这台服务器**没有**拦「没确认就不让登录」，确认只影响找回密码。";
-            }
-          }, function () {  });
+        if (hint) {
+          hint.textContent = signedIn
+            ? "不用再回登录页了，已经进来了。下次换设备用这个邮箱加密码登录即可。"
+            : "现在可以回登录页用这个邮箱登录了。";
         }
         return;
       }
@@ -80,5 +92,5 @@
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
   else init();
 
-  window.VerifyPage = { param: param };
+  window.VerifyPage = { param: param, nextStep: nextStep, isSignedIn: function () { return signedIn; } };
 })();

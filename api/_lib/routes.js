@@ -4,6 +4,7 @@ var ROUTES = {
   "POST /send-code": "./../_routes/send-code.js",
   "POST /verify-code": "./../_routes/verify-code.js",
   "GET /me": "./../_routes/me.js",
+  "PATCH /me": "./../_routes/me-patch.js",
 
   "GET /config": "./../_routes/config.js",
   "GET /diag": "./../_routes/diag.js",

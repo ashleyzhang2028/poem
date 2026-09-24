@@ -490,6 +490,42 @@
       }).catch(function () { return { ok: false, reason: REASON.UNAVAILABLE }; });
     }
 
+    // -------------------------------------------------------------------
+    // 昵称（Issue #278）
+    // -------------------------------------------------------------------
+    // 昵称是**账号域**的东西（换台设备应该还在），所以它必须落服务器。
+    // 这里的三档与 resendVerification 同源：GUEST（没登录）/ NOT_CONFIGURED
+    // （这台服务器没开放云端账号）/ UNAVAILABLE（连不上）。
+    // **任何一档都不拦人**：名字没同步上，比「进不去」轻得多 ——
+    // 本机那一份仍然写下了（调用方负责），页面如实说一句就是了。
+    function setNickname(input) {
+      var o = input || {};
+      // ⚠️ 这里**不能**像别的写口那样先用 `hasLocalSession()` 挡一道。
+      // 那一位读的是**本机** `poem_auth_v1.sessions`，而「服务器上的账号」
+      // 恰恰是另一回事：刚注册完（或刚点开确认链接）的人，本机一个会话
+      // 都没有，但服务端已经给了 Cookie —— 先挡一道就会把**唯一需要它的人**
+      // 挡在门外（症状是「起了名，换台设备名字没了，而且一句提示都不说」）。
+      // 登录与否由服务端说了算：它回 401 就是没登录，那一条下面接得住。
+      var ch = usable(D.api) || (D.make ? safeCreate(D.make) : null);
+      if (!ch || typeof ch.setNickname !== "function") {
+        return Promise.resolve({ ok: false, reason: REASON_NO_CHANNEL, code: "E_NO_CHANNEL" });
+      }
+      return Promise.resolve(ch.setNickname({ nickname: o.nickname })).then(function (r) {
+        if (r && r.ok) {
+          return { ok: true, reason: REASON.OK, nickname: r.nickname || "", account: r.account || null };
+        }
+        var code = (r && r.code) || "E_OFFLINE";
+        if (code === "E_NOT_CONFIGURED") return { ok: false, reason: REASON.NOT_CONFIGURED, code: code };
+        if (code === "E_NO_SESSION") {
+          clearServerTier();
+          return { ok: false, reason: REASON.GUEST, code: code };
+        }
+        return { ok: false, reason: REASON.UNAVAILABLE, code: code, message: r && r.message };
+      })["catch"](function () {
+        return { ok: false, reason: REASON.UNAVAILABLE, code: "E_OFFLINE" };
+      });
+    }
+
     function resendVerification() {
       if (!hasLocalSession()) {
         return Promise.resolve({ ok: false, reason: REASON.GUEST, code: "E_NO_SESSION" });
@@ -561,6 +597,7 @@
       refreshMe: refreshMe,
       deleteAccount: deleteAccount,
       resendVerification: resendVerification,
+      setNickname: setNickname,
 
       uploadAvatar: uploadAvatar,
       deleteAvatar: deleteAvatar,

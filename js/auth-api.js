@@ -31,7 +31,10 @@
     E_VERIFY_MAIL_FAIL: "验证邮件暂时无法发送，请稍后重试。",
     E_RESET_MAIL_FAIL: "重设邮件暂时无法发送，请稍后重试。",
 
-    E_EMAIL_UNVERIFIED: "邮箱尚未验证，请打开验证邮件中的链接。",
+    // 这一条只用**服务端没给 message 时**（正常路径下服务端那句会盖过它）。
+    // 用词与页面其它地方统一是「确认」——「验证」在这个站上指的是验证码那件事
+    // （「发送验证码」「验证并登录」），两件事混用会让人以为要去再输一次验证码。
+    E_EMAIL_UNVERIFIED: "邮箱还没确认：请打开验证邮件里的链接，点开即完成确认并登录。",
 
     E_TURNSTILE: "人机校验没通过，请刷新页面再试一次"
   };
@@ -231,6 +234,9 @@
         }, PASSWORD_ERR);
       },
 
+      // 点完确认链接**直接登录**（Issue #278）：这条响应现在也带会话 Cookie，
+      // 所以它同时带一封账号事实回来。`signedIn` 是服务端如实自报的那一位
+      // ——「确认了」与「进去了」是两件事，界面不替服务端猜。
       verifyEmail: function (input) {
         input = input || {};
         return post("/verify-email", { vid: input.vid, token: input.token }, PASSWORD_ERR);
@@ -311,6 +317,14 @@
       },
 
       me: function () { return call("/me", "GET"); },
+
+      // 昵称（Issue #278）：以前它只写本机（localStorage），服务器上那一列
+      // 永远是空的 —— 换台设备名字就没了，管理端名录也认不出人。
+      // 现在它是一件**账号事实**，走 PATCH /api/me。
+      setNickname: function (input) {
+        input = input || {};
+        return call("/me", "PATCH", { nickname: input.nickname }, PASSWORD_ERR);
+      },
 
       config: function () { return call("/config", "GET"); },
 

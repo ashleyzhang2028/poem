@@ -1081,6 +1081,44 @@ verifyReason:  "network"      ← 为什么没成（网络层 / http_5xx / …�
 ⚠️ 这两项**不参与判权**（真闸在服务端），只是如实自报 ——
 与 `channel.mail` / `channel.db` 完全同一条纪律。
 
+#### 点开确认链接即登录（Issue #278）
+
+用户原话：「用邮箱注册成功，点击验证链接成功，设置昵称完成，但很多功能
+一点就说需要登录？」「让你完成登录功能就应该全部完善，怎么还每一步
+每一步地催？全部完成完善！！！」
+
+查下来的病根是**三处「只做了一半」**，各自都不报错：
+
+| 半截在哪 | 原先的做法 | 症状 |
+|---|---|---|
+| **点完确认链接不签发会话** | `core.verifyEmail()` 只写 `email_verified_at` 与 `status` | 点完链接落到 `/mine/` 还是未登录 —— **用户以为注册白做了** |
+| **昵称只写本机** | 登录页 `Avatar.saveNickname()` 写 localStorage；`accounts.nickname` 一直是空的 | 换台设备名字没了；管理端名录 / 报告署名也认不出人 |
+| **会话那段代码抄了三份** | 口令登录 / 随机码登录各抄一份，确认那条路根本不知道有这回事 | 「签了会话忘了落库」这种半截活没有第二处能看出来 |
+
+三条一起收口：
+
+1. **能点开那枚一次性令牌 = 邮箱可达已经证明**，所以那一步之后就该是「已登录」。
+   `core.verifyEmail()` 走 `issueSessionFor()`（全站唯一一处签会话的地方），
+   接口层走 `handler.settleSession()`（唯一一处落库 + 设 Cookie 的地方）。
+   安全上不放宽任何东西：口令登录那道闸只拦 `pending`，而确认本来就把
+   `pending` 提成 `active`；令牌的 `vid` 与口令无关，改口令仍要另走重设那条路。
+   ⚠️ **令牌仍然一次性**：同一枚链接第二次点回 `E_TOKEN_USED` 且**一枚 Cookie 都不发**。
+2. **昵称进账号域**：新增 `PATCH /api/me`（`core.nicknameSet`，12 字符 / 剔控制字符与 `<>`），
+   传输层 `AuthApi.setNickname()` → 接线层 `AccountApi.setNickname()`。
+   顺序是「本机先写、服务器后跟」：本机那份头像 / 顶栏立刻要用，不能等一次网络往返；
+   **服务器那份失败也不拦人**，只在那一屏如实说一句（名单没同步上比进不去轻得多）。
+   ⚠️ `AccountApi.setNickname()` **不先查 `hasLocalSession()`** —— 那一位读的是
+   **本机** `poem_auth_v1.sessions`，而刚注册完 / 刚点完确认的人恰恰没有本机会话，
+   先挡一道就会把唯一需要它的人挡在门外。登录与否由服务端说了算（401 接得住）。
+3. **一页四屏的「已完成」也按服务器自报改口**：`requiresVerification:false` 时
+   注册完直接落在已登录那一屏（原先无论哪一档都停在「请点邮件链接」，
+   对着一个关掉闸的服务器说一句做不到的话）；`/verify/` 按 `signedIn` 决定
+   那颗键是「开始背诵」还是「去登录」。
+
+⚠️ **签名 Cookie 是一条 `Set-Cookie`，不是两条**：`issueSessionFor` 只回一枚，
+两张页读的是同一份账号事实（`publicAccount`）。
+
+
 #### 与「忘记密码」的交界：一条必须说出来的死角
 
 「重设口令」**不动** `email_verified_at`（§4.4.6 那条「两件事各写各的」），
@@ -1134,14 +1172,14 @@ verifyReason:  "network"      ← 为什么没成（网络层 / http_5xx / …�
 | 层 | 文件 | 做什么 |
 |---|---|---|
 | 库 | `api/_lib/schema.sql` §6 | 四列 + 两张表 + RLS + 清理函数 |
-| 内核 | `api/_lib/core.js` | `register` / `loginWithPassword` / `verifyEmail` / `resendVerification`（两条入口一套闸）/ **`resendVerificationByEmail`（匿名薄壳，只委托上一条）** / `resetRequest` / `resetConfirm` / `adminAccounts` / **`emailGate`（邮箱确认闸，判据唯一一处）** + `requireVerified`（应急闸门的唯一读处） |
+| 内核 | `api/_lib/core.js` | `register` / `loginWithPassword` / `verifyEmail`（**点开即登录**）/ `nicknameSet`（Issue #278）/ `issueSessionFor`（**签会话唯一一处**）/ `resendVerification`（两条入口一套闸）/ **`resendVerificationByEmail`（匿名薄壳，只委托上一条）** / `resetRequest` / `resetConfirm` / `adminAccounts` / **`emailGate`（邮箱确认闸，判据唯一一处）** + `requireVerified`（应急闸门的唯一读处） |
 | 口令 | `api/_lib/identity.js` | `hashPassword` / `verifyPassword` / `newToken` / `tokenHash` / `normalizeEmailForStore` |
 | 文档层 | `api/_lib/store.js` | 两张新表的方法（memory / supabase **两个实现键集合必须一致**） |
 | 邮件 | `api/_lib/mail/index.js` | `buildConfirm` / `buildReset`（与验证码邮件共用同一个 `transports` 出口）；**`withRetry`（退避重试 + 只重试可自愈的错）** |
-| 接口 | `api/_routes/auth/*.js`、`api/_routes/admin/accounts.js` | 六个 202/200 与错误口径（含 403 `E_EMAIL_UNVERIFIED`）；`resend-verification` 与 `resend-verification-by-email` 两条路由都进同一个内核函数 |
+| 接口 | `api/_routes/auth/*.js`、`api/_routes/admin/accounts.js`、`api/_routes/me-patch.js` | 六个 202/200 与错误口径（含 403 `E_EMAIL_UNVERIFIED`）；`resend-verification` 与 `resend-verification-by-email` 两条路由都进同一个内核函数；`PATCH /api/me` 只改昵称（口令 / 邮箱 / 角色各走各的路） |
 | 传输 | `js/auth-api.js` | **八个**方法（注册 / 登录 / 确认 / 两条重发 / 两步重设 / 名录）+ `config()`（取人机校验的公开配置） |
 | 人机校验 | `api/_lib/turnstile.js`、`js/turnstile.js` | 服务端 siteverify（fail-closed + hostname 校验）与前端 widget 渲染；挂载点与顺序在 `core.humanGuard` 一处 |
-| 接线 | `js/account-api.js` | `resendVerification` / `resendVerificationByEmail` / `adminAccounts` / 账号自助信息（明文邮箱 + 确认状态 + `channel.emailGate`） |
+| 接线 | `js/account-api.js` | `resendVerification` / `resendVerificationByEmail` / `adminAccounts` / `setNickname`（Issue #278）/ 账号自助信息（明文邮箱 + 确认状态 + `channel.emailGate`） |
 | 页面 | `login/`、`verify/`、`reset/`、`profile/`、`admin/` | 四屏登录页 + **一屏「等确认」**（那颗「重新发一封」走匿名口）、两张邮件落地页、个人中心的确认状态、管理后台的名录 |
 | 测试 | `test/api.test.js` 第廿二 / 廿三 / **廿四** / **廿六** / **廿八**节 | 上述每一条口径都有断言；第廿四节是「没确认就不让登录」的总闸，第廿六节是 **Issue #197 复审**（账号接管、匿名重发、IP 档、发信重试），第廿八节是**人机校验**（默认关 / 挂载点 / fail-closed / 不回 error-codes） |
 
