@@ -1474,10 +1474,21 @@ if (JSDOM) {
     '.mail-link 不再是 inline-block（那是本 issue 的病根）');
 
   // 输入框那一列：只改行高，不加 flex（单行框里的 caret 位置会跑偏）。
-  const inpRules = [ruleOf(cs, 'input'), ruleOf(cs, 'textarea')];
-  chk(inpRules.every(r => /line-height:\s*var\(--ctl-leading-md\)/.test(r)),
-    '输入框 / 文本域那一列也把行高收进盒子（定高 38，行高 18）');
-  chk(!/display:\s*(inline-)?flex/.test(ruleOf(cs, 'input')),
+  //
+  // ⚠️ 这一列**不含** `.search-input`：它高度吃 `--toolbar-h`（40 / 52px），
+  //    与「定高 38」不是同一个盒子；且它的文字是两档字号叠在一处，提示字靠
+  //    `::placeholder` 的 `transform` 抬回正中轴 —— 那个位移照的是 `normal`
+  //    行盒。全局这条一旦把它也收进来，提示字与输入文字双双偏位
+  //    （CI 实测 `.search-input` 的 lineHeight 从 `normal` 被改成 `18px`，
+  //      `test/pwa.test.js` 里「索引页输入框本体不做垂直方向的改动」那条翻红）。
+  //    所以本条把 `.search-input` 用 `:not()` 排除在外。
+  const inpRule = ruleSegments(cs, 'input:not(.search-input)')[0] || '';
+  chk(/line-height:\s*var\(--ctl-leading-md\)/.test(inpRule) &&
+      /line-height:\s*var\(--ctl-leading-md\)/.test(ruleOf(cs, 'textarea')),
+    '输入框（`.search-input` 除外）/ 文本域那一列也把行高收进盒子（定高 38，行高 18）');
+  chk(/input:not\(\.search-input\)\s*,/.test(strip(cs)),
+    '那一列显式把 .search-input 排除（判据钉在「是不是那枚搜索框」，不靠规则先后）');
+  chk(!/display:\s*(inline-)?flex/.test(ruleOf(cs, 'input:not(.search-input)')),
     '输入框**不是** flex（单行输入的 caret 位置在部分浏览器上会跑偏）');
 
   // `.btn` 那一颗在别处本来就是 `<button>`，改成 inline-flex 后宽度仍要自适应。

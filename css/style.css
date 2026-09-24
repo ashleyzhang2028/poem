@@ -910,8 +910,20 @@ body.no-dock .modal-box { max-height: 88vh; }
 /* 输入框那一列：`.account-input` 与设置页的 `.settings-input` 都是定高
    38px（手机上字号抬到 16px），行高留 18px 正好落在框里。
    ⚠️ 它们**不是** flex —— 单行输入框里的文字由 `line-height` 居中，
-      加 flex 反而会让 caret 位置在部分浏览器上跑偏。 */
-input,
+      加 flex 反而会让 caret 位置在部分浏览器上跑偏。
+   ⚠️ 例外：`.search-input`（索引页 / 搜索页 / 首页「今日加背」那一枚搜索框）
+      **不在这一列**，它继续用 UA 的 `normal`。
+      它虽然也是 `<input>`，但高度吃的是 `--toolbar-h`（40 / 52px），
+      与本条「38px 那一档」不是同一个盒子；而且它的文字是**两档字号叠在一处**
+      （输入文字 16px、提示字 12.5px），提示字靠 `::placeholder` 的
+      `transform: translateY(-2.25px)` 抬回正中轴 —— 这 2.25px 正是照
+      `normal` 行盒算的（两档字号行盒中心差的一半）。行高一旦被本条改成
+      18px 定值，行盒就与字号脱钩，提示字与输入文字双双偏位。
+      所以本条把 `.search-input` 排除在外（`:not(.search-input)`），
+      不是给 `.search-input` 再补一条覆盖 —— 覆盖只会让「谁赢」取决于
+      两条规则在文件里的先后，换个位置就翻车；排除则把判据钉在「是不是
+      那一枚搜索框」上。 */
+input:not(.search-input),
 select,
 textarea { line-height: var(--ctl-leading-md); }
 select { padding-top: 0; padding-bottom: 0; }
