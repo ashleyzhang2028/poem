@@ -27,16 +27,17 @@
 
     <main class="account-page" id="mine-page">
       <section class="account-card">
+        <!-- ⚠️ 头像 / 昵称 / 层级徽章 / 账号动作**同行**（用户 2026-09-24，Issue #276：
+             「要不要登录，上传头像，和删除头像在一行显示？」）。
+             所以这三格的次序由 js/mine.js 一处画出来：
+               头像槽 · 昵称 + 身份 · 层级徽章 ·「登录/账号」「上传头像」「删除头像」
+             这一行**不许换行**（css/account.css 的 .identity-row 那条 nowrap），
+             手机上宁可昵称列让位，也不折回「一行一个按钮」那个样子。
+             屏幕次序：头像 · 昵称 · 徽章 ·「登录 / 账号」·「上传头像」·「删除头像」。
+             「退出登录」不进这一行 —— 它留在下面「账号」卡里跟这一份账号在一起
+             （CSS 那条 :has() 把它 display: none 掉；不摘的话实测 360px 上
+             这一行会跑出 14px 的横向滚动）。 -->
         <div class="identity-row" id="identity-row"></div>
-        <!-- ⚠️ 这两颗是**档②（次按钮）的标准大小**，不是行内小号：
-             它们是这一张卡的主动作（这张卡里没有别的按下去会做事的东西），
-             而且与下面每一张卡里的 `.account-btn.ghost` 在同一列、同一个位置。
-             用 `.mini-btn`（32px 那档）时，它比同一列下面的按钮矮 6px ——
-             「我的」页上六张卡里的按钮于是有两个高度（Issue #278 第六轮）。 -->
-        <div class="identity-btns">
-          <button class="account-btn ghost" id="btn-avatar-pick" type="button">上传头像</button>
-          <button class="account-btn ghost" id="btn-avatar-clear" type="button" hidden>删除头像</button>
-        </div>
 
         <input id="avatar-file" class="sr-only" type="file" accept="image/*"
                aria-label="选择头像图片" />
@@ -86,8 +87,15 @@
           </div>
         </div>
 
+        <!-- ⚠️ 这两颗的**次序在 HTML 里就要排对**：默认渲染态是「登录」+「退出登录」
+             （会话过了 90 天时它俩同时在，退出那一颗挪到这里才不闪 —— 用户看到的是
+             两颗键顺序稳定）。CSS 用 :has() 再把「已登录」态换成
+             「退出登录 | 账号」，两态都不会先闪一下再跳。
+             ⚠️ 「账号」那颗**不再**开新的渲染出口：它就是这儿这颗
+             #btn-account-entry，只是位置由 CSS 换一下（见 css/account.css
+             那一段 .account-actions:has(...) 的说明）。 -->
         <div class="account-actions" id="account-actions">
-          <button class="account-btn" id="btn-account-entry" type="button"></button>
+          <button class="account-btn" id="btn-account-entry" type="button">登录</button>
           <button class="account-btn ghost" id="btn-sign-out" type="button" hidden>退出登录</button>
         </div>
 

@@ -204,14 +204,18 @@ console.log('\n=== 三、首页：顶上的「今日加背」，点一下 5 首�
   }
 
   {
-    // 高度这一条：hero 的 52px 与首页通版的 40px 是两个数，
-    // 钉住本页用的是后者 —— 它比搜索页矮一号，不是那一页的主角。
+    // ⚠️ 高度这一条在 2026-09-24（Issue #276）**整条反转了**，不是放宽：
+    //    用户要「今日加背搜索框高度需要和搜索页搜索框一样高」——
+    //    原先是 40px（「比搜索页矮一号、首页上它不是主角」），现在必须是 52px。
+    //    与搜索页那一枚同高这件事，在 test/search.test.js 里两边对着同一个数测。
     const rules = read('css/style.css');
     const m = /[^}]*\.today-search \.toolbar \{[^}]*--toolbar-h:\s*([^;]+);/.exec(rules);
-    chk(!!m && m[1].trim() === '40px',
-      '工具条高度就是通版的 40px（不是搜索页 hero 的 52px）');
-    chk(/\.toolbar \{\s*\n\s*--toolbar-h:\s*40px/.test(rules),
-      '40px 这个数是 .toolbar 的默认值同款（不是这里另写一个数）');
+    chk(!!m && m[1].trim() === '52px',
+      '工具条高度就是搜索页 hero 那一档的 52px（用户 2026-09-24：两枚框要一样高）');
+    const mi = /[^}]*\.today-search \.search-input \{[^}]*--toolbar-h:\s*([^;]+);/.exec(rules);
+    chk(!!mi && mi[1].trim() === '52px',
+      '输入框自己也是 52px（.search-input 的 height 读的就是这个变量，' +
+      '只改工具栏那一处是画不出高度的）');
   }
 
   // ---- Issue #229：文案改成「今日加背」 ------------------------------------

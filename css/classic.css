@@ -12,7 +12,9 @@
 
 @media (min-width: 768px) {
   .toolbar:not(.search-toolbar) {
-    max-width: 720px;
+    /* 与首页「今日加背」那一枚共用同一把尺（--bar-w 定义在 css/style.css 的
+       :root，Issue #276 把它收成一处）。这里不再自己写一个 720。 */
+    max-width: var(--bar-w, 720px);
     margin-left: auto;
     margin-right: auto;
   }

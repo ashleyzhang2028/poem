@@ -228,6 +228,15 @@ html, body {
   --content-w: calc(var(--col-w) - 2 * var(--col-side));
 
   --read-w: 720px;
+
+  /* 「一条工具条 / 一枚搜索框」在宽屏上的封顶宽度（Issue #276 收进来的一把尺）。
+     它原先散在三处，各自写死同一个 720 —— 集子页工具栏那一排按钮、
+     搜索页 hero 下面那条工具栏、首页「今日加背」。三处同数不是巧合，
+     是「它们都是同一条工具条」这件事；收成一个变量之后，
+     改一处三处一起动，也不会再有人问「为什么这里写 720」。
+     ⚠️ 它只在 768–1023 这一档用；>=1024 时那几处会各自收回更窄的
+        --content-w 或 520px（搜索框不该跟着一列纸拉长）。 */
+  --bar-w: 720px;
 }
 
 @media (min-width: 768px) {
@@ -2540,8 +2549,13 @@ html, body {
       而 .search-wrap 自己有 position:relative，所以位置本来就对。
    ③ 块距与首页其他块**同一个** --block-gap，不另起一套间距：
       上面是今日卡片、下面是今日列表，两条缝一样宽。
-   ④ 输入框 40px（与首页别处的工具条同高）、字号 14px —— 比搜索页那枚矮一号，
-      首页上它是「一条」，不是页面的主角。 */
+   ④ 输入框的**高与宽都与搜索页那一枚对齐**：52px / 桌面封顶 520px
+      （用户 2026-09-24，Issue #276：「搜索页的搜索框宽度需要和今日加背搜索框
+      一样长」「今日加背搜索框高度需要和搜索页搜索框一样高」）。
+      ⚠️ 这一条**改掉了**原先「矮一号、首页上它是一条而不是主角」那一档：
+      用户要的是两枚框**逐项一样**（高、宽、字号），先后两句话各说一半。
+      仍然不沾 .search-hero 那套「整屏高度 + 居中 + 聚焦上浮 + 键盘避让」——
+      这就是上面①那条的取舍没变。 */
 
 .today-search {
   position: relative;
@@ -2553,15 +2567,64 @@ html, body {
 }
 
 .today-search .toolbar {
-  --toolbar-h: 40px;
+  --toolbar-h: 52px;
   margin: 0;
   max-width: none;
   width: 100%;
 }
 
+/* ⚠️ 用户 2026-09-24（Issue #276）两句话是一对，必须一起满足：
+      「搜索页的搜索框宽度需要和今日加背搜索框一样长」
+      「今日加背搜索框高度需要和搜索页搜索框一样高」
+   高度：这一档从 40px 抬到 52px（= .search-hero 的 --hero-box-h，
+        也就是搜索页那一枚的**真实高度**：`height: var(--toolbar-h)`）。
+   宽度：不再是「吃满 --content-w」—— 桌面那一档下面自己会收到 520px，
+        与搜索页 hero 的 max-width 同一个数、同样居中（见紧随其后的
+        @media (min-width: 768px) 那一段）。
+   ⚠️ 字号跟着抬到搜索页的 14px 不能算「顺手」：同一个框高、字号却小一号，
+      一搜起来字会比搜索页那枚明显小一圈 —— 这一条也在用户的「一样」里。
+      手机上两者都走 --input-font-narrow（16px），本来就同档。 */
 .today-search .search-input {
-  --toolbar-h: 40px;
+  --toolbar-h: 52px;
   font-size: 14px;
+}
+
+/* 与搜索页 hero 同一个宽度：同一枚框在两个页面上「一样长」。
+   ⚠️ 两个数（520px）不写成两处 —— 这一条的数字与 classic.css 里
+      `@media (min-width: 768px) .search-hero { max-width: 520px }` 是同一个承诺，
+      改一处就得改另一处；test/search.test.js 里有一条断言把两者钉在一起。 */
+/* ⚠️ 「今日加背」这个框的宽度（Issue #276：用户要它和搜索页那一枚**一样长**）：
+   两页的框在 768px 以上落到同一个数 —— 搜索页 hero 在 768 那一档也是
+   `--content-w`（1040 − 44 = 996，封顶 720px 那一档写在同一处），
+   在 1024 那一档 hero 是写死的 520px。
+   所以这里照抄这两档，一个字不差：768 起封顶 720，1024 起封顶 520。
+   ⚠️ **不要写 `margin-left/right: auto`**。>=1024 时首页的 .app 是 grid，
+      这一格所在的那条轨道是 minmax(0, 340px)，`margin: auto` 在 grid 项上
+      会把「拉伸」关掉 —— 块按**内容**定宽，520px 的封顶根本轮不到，
+      实测框只剩 204px（正是用户说的「不一样长」）。
+      改用 `justify-self: center`：它是 grid 项上那把尺，块照旧被容器拉满、
+      再拿 max-width 封顶，最后才是这一句居中。
+   ⚠️ 窄屏（<768）不加这一对 —— 手机上框就该满宽（与搜索页一致）。 */
+@media (min-width: 768px) {
+  .today-search {
+    /* ⚠️ 三句缺一不可，而且**换掉哪一句都会退回去**：
+       · width: 100%    —— 把「撑满所在那一格」写成显式的（grid 里
+         `max-width` 单独用不保证块被拉伸，见上面那段说明）；
+       · max-width: var(--bar-w) —— 768–1023 这一段的封顶（与集子页工具栏同尺，见 :root 那条）；
+       · margin-inline: auto —— 块在这个盒子里居中（块级元素的老办法，
+         在 grid 项上也照常生效，不像 `width: 520px` 那样把人钉在左边）。 */
+    width: 100%;
+    max-width: var(--bar-w);
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+@media (min-width: 1024px) {
+  .today-search {
+    /* 与搜索页 hero 同一个数：520px。 */
+    max-width: 520px;
+  }
 }
 
 .today-search .suggest { z-index: 40; }
@@ -2872,6 +2935,17 @@ html, body {
      「今日卡片」到「今日加背」那条缝由 .card 的 margin-bottom 出，
      所以这里只补下面那一条。 */
   body[data-nav="home"] .today-search { margin-bottom: 26px; }
+
+  /* ⚠️ 「今日加背」的**宽度**在这一档由这一句定死（Issue #276 用户要它
+     和搜索页那一枚一样长）。
+     为什么非写宽度不可：>=1024 时首页 .app 是 grid，这一格所在的轨道是
+     `minmax(0, 340px)` —— 轨道**顶到 340px 就封顶**。`max-width` 只管
+     「不许超过」，管不了「撑到 520」：块被轨道卡在 340，读数就是 340。
+     （试过 `justify-self: center` / `margin: auto`：那两个会把「拉伸」也关掉，
+     块按内容定宽，实测只剩 204px —— 比 340 还离谱。）
+     所以这里直接给 width，与搜索页 hero 那个 `width: min(520px, 100%)`
+     同一个数：**两页的框在桌面档都是 520px 宽**。 */
+  body[data-nav="home"] .today-search { width: 520px; }
 
   .list {
     display: grid;

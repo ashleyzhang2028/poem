@@ -471,6 +471,54 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     'hero 的垂直空间按视口减去顶栏与实测底栏算（不是写死一个高度）');
   chk(!/\.book-seg/.test(classicCss), '集子药丸的样式整块删除（CSS 里不再留死代码）');
 
+  // ⚠️ Issue #276：用户要「两枚框逐项一样」——
+  //    「搜索页的搜索框宽度需要和今日加背搜索框一样长」
+  //    「今日加背搜索框高度需要和搜索页搜索框一样高」。
+  //    高度与宽度这两个数**只有一处可以写**，所以两条都对着「同一处来源」断言：
+  //    高度 → 两边都必须写 52px（= .search-hero 的 --hero-box-h，
+  //      而 .search-input 的 height 读 --toolbar-h，52 就是画出来的真实高度）；
+  //    宽度 → 桌面那一档两边的 max-width 必须是同一个 520px。
+  {
+    const homeCss = read('css/style.css').replace(/\/\*[\s\S]*?\*\//g, ' ');
+    const classicBare = classicCss.replace(/\/\*[\s\S]*?\*\//g, ' ');
+
+    chk(/\.today-search \.toolbar \{[^}]*--toolbar-h:\s*52px/.test(homeCss),
+      '「今日加背」的工具栏行高是 52px（搜索页那一枚的真实高度）');
+    chk(/\.today-search \.search-input \{[^}]*--toolbar-h:\s*52px/.test(homeCss),
+      '「今日加背」输入框自己也是 52px（.search-input 的 height 读的就是这个变量）');
+    chk(/\.search-hero \.search-input \{[^}]*--toolbar-h:\s*52px/.test(classicBare),
+      '（对照）搜索页那一枚也是 52px —— 两边的数字是同一个');
+
+    // ⚠️ 宽度的口径是「两页在**同一档**落到同一个数」，不是「两页写同一个数」：
+    //    768–1023 那一档两页的封顶都是 720px（搜索页 hero 走的是
+    //    `.toolbar:not(.search-toolbar) { max-width: var(--content-w) }`，
+    //    而 --content-w 在这一档是 1040 − 44 = 996 → 720 那一档先封顶）；
+    //    ≥1024 那一档两页都是 520px。下面两条各测一档，两边对着同一个数。
+    // ⚠️ 720 这个数只在 :root 的 --bar-w 里出现一次（集子页工具栏与「今日加背」
+    //    读的都是它）—— 这一条守「两边读同一把尺」，比对上「两边都写 720」结实。
+    chk(/--bar-w:\s*720px/.test(homeCss),
+      '宽屏工具条那把尺 --bar-w = 720px（:root 里唯一的定义处）');
+    chk(/@media \(min-width:\s*768px\) \{[^}]*\.today-search \{[^}]*max-width:\s*var\(--bar-w/s.test(homeCss),
+      '「今日加背」在 ≥768px 封顶读 --bar-w（与集子页工具栏同尺，不是各写一个 720）');
+    chk(!/max-width:\s*720px/.test(classicBare),
+      '（对照）集子页工具栏那条也不再写死 720（读同一把尺）');
+    chk(/@media \(min-width:\s*1024px\) \{[^}]*\.today-search \{[^}]*max-width:\s*520px/s.test(homeCss),
+      '「今日加背」在 ≥1024px 封顶 520px（与搜索页 hero 同一个数）');
+    chk(/@media \(min-width:\s*768px\) \{[^}]*\.search-hero \{[^}]*max-width:\s*520px/s.test(classicBare),
+      '（对照）搜索页 hero 在 ≥768px 是 520px —— 「一样长」这件事由上面那条 1024 档承接');
+    chk(/\.today-search \{[^}]*margin-left:\s*auto[^}]*margin-right:\s*auto/s.test(homeCss),
+      '「今日加背」封顶之后居中（不然它靠左、搜索页居中，看着还是两枚不一样的框）');
+    // ⚠️ 桌面那一档还有一条 **width**：>=1024 时首页 .app 是 grid，这一格所在
+    //    的轨道顶到 340px 就封顶 —— 只写 max-width 的框会被卡在 340（不是 520）。
+    chk(/#today-list \{ grid-area: card; \}[\s\S]{0,200}\n\s*body\[data-nav="home"\] \.today-search \{ width: 520px/s.test(homeCss) ||
+        /body\[data-nav="home"\] \.today-search \{ width: 520px/.test(homeCss),
+      '桌面那一档把「今日加背」的宽度写成 520px（grid 轨道 340px 封顶，' +
+      '只靠 max-width 撑不到 520 —— 实测会被卡在 340）');
+
+    chk(/\.today-search \.search-input \{[^}]*font-size:\s*14px/.test(homeCss),
+      '「今日加背」的字号也是 14px（同一个框高、字小一号，一搜起来就看得出不一样）');
+  }
+
   chk(/allowEmpty:\s*true/.test(read('js/search.js')),
     '搜索页声明 allowEmpty（空关键词时确实要挂一块空列表）');
   chk(/allowEmpty/.test(read('js/reader-core.js')),
@@ -710,8 +758,21 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   // 这一轮恢复。恢复的依据：当年作废它的理由是「回填的词一进页就把框顶上去，
   // 接着把键盘也带出来」—— 而把键盘带出来的是当时那套 focusInput()（进页自动
   // 聚焦），它已经撤了；现在贴顶只改框的位置、不碰焦点，键盘不会自己弹。
-  chk(/var lifted = focused \|\| space > 0 \|\| hasKeyword\(\)/.test(searchJs),
-    '贴顶 = 框里真的有焦点 / 软键盘真的弹着 / 框里有搜出来的内容（三态里的第②条已恢复）');
+  // ⚠️ 2026-09-24（Issue #276）把第②态的判据从「框里有没有字」改成
+  //    「**这次访问里**搜过没有」。原判据在「回到这一页、框里还留着上次那个词」
+  //    时会把框当场钉到顶上（hero 的居中算式白丢），而用户把字删光时又会让它
+  //    飘回正中（列表还在下面）—— 两头都错。现在只认「发生过什么」。
+  chk(/var lifted = focused \|\| space > 0 \|\| searchedThisVisit/.test(searchJs),
+    '贴顶 = 框里真的有焦点 / 软键盘真的弹着 / 这次访问里真的搜过（三态里的第②条已恢复）');
+  chk(/var searchedThisVisit = false/.test(searchJs) && /function noteSearchAction\(\)/.test(searchJs),
+    '「这次搜过」是一个具名状态、一个具名入口（不是散在几处的布尔）');
+  chk(/addEventListener\("input"[\s\S]{0,240}noteSearchAction\(\)/.test(searchJs),
+    '打过字就记下「这次搜过」（input 事件那一路）');
+  chk(/function pickSuggest[\s\S]{0,240}noteSearchAction\(\)/.test(searchJs),
+    '选中一条候选也算搜过（那也是一次真的搜索动作）');
+  chk(/if \(input\) \{\s*\n\s*var last = readKeyword\(\);\s*\n\s*if \(last\) input\.value = last;/.test(searchJs) ||
+      !/input\.value = last[\s\S]{0,200}noteSearchAction/.test(searchJs),
+    '把上次的词放回输入框**不算**「这次搜过」（那一句是进页回填，不是人的动作）');
   const searchJsBare = searchJs
     .replace(/\/\*[\s\S]*?\*\//g, ' ')
     .replace(/^\s*\/\/.*$/gm, ' ');
