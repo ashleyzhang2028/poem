@@ -72,6 +72,16 @@ const SETTINGS_SRC = SETTINGS_PAGES.map(read);
     chk(MINE.indexOf(m) >= 0, "「我的」页上有 " + m + "（它现在唯一的家）");
   });
 
+  // ⚠️ 2026-09-24（Issue #276）那一轮把静态标记又收掉两条：头像那两颗键跟着
+  //    身份行走（见 mine-page.test.js），这里守的是**别再有人手写第二份**：
+  //    那一行里的动作由 js/mine.js 一处画出来，HTML 里连壳都不留。
+  ["id=\"btn-avatar-pick\"", "id=\"btn-avatar-clear\""].forEach(m => {
+    chk(MINE.indexOf(m) < 0, "「我的」页 HTML 里不再写死 " + m + "（身份行那一格由 js/mine.js 画）");
+    chk(MINE_JS.indexOf(m.replace("id=", "id=\"")) < 0 || MINE_JS.indexOf("'" + m.replace("id=", "") + "'") >= 0 ||
+        MINE_JS.indexOf('"' + m.replace("id=", "") + '"') >= 0,
+      "js/mine.js 里能查到 " + m + "（它唯一的出画口）");
+  });
+
   // 通用页剩下什么：只有「数据管理」与「课内诗词导出」两块
   const generalItems = (stripHtml(GENERAL).match(/class="settings-item"/g) || []).length;
   chk(generalItems === 2,

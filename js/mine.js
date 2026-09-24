@@ -44,8 +44,27 @@
       ' placeholder="起个名字" autocomplete="off" enterkeyhint="done" />' +
       '<span class="identity-sub" id="identity-sub"></span>' +
       "</span>" +
-      '<span class="tier-badge" id="identity-badge"></span>';
+      '<span class="tier-badge" id="identity-badge"></span>' +
+      '<div class="identity-btns">' +
+      '<button class="account-btn ghost" id="btn-avatar-pick" type="button">上传头像</button>' +
+      '<button class="account-btn ghost" id="btn-avatar-clear" type="button" hidden>删除头像</button>' +
+      "</div>";
+    mountActionsRow(row);
     bindNickname();
+  }
+
+  // ⚠️ 「账号」那一颗（#btn-account-entry）**就地搬进身份行**，不另画一颗：
+  //    用户 2026-09-24（Issue #276）要「登录 / 上传头像 / 删除头像在一行」，
+  //    而「登录」与「账号」本来就是同一颗键的两种文案（renderSignOut 判的）。
+  //    另画一颗的下场是两颗键都要维护登录态、都要维护落点 —— 必然漂。
+  //    它原本那个容器（#account-actions）也跟着一起搬走：退出登录 /
+  //    重发确认邮件 / 注销那一串动作仍归账号卡，两者从此物理分开。
+  //    ⚠️ 搬走之后，本页里**再也没有**第二个元素可以当它「上一行」的判据 ——
+  //      这是好事：CSS 那条 `#account-actions:has(#btn-sign-out:not([hidden]))`
+  //      是同一容器内的兄弟顺序，容器唯一，判据也就唯一。
+  function mountActionsRow(row) {
+    var acts = $("account-actions");
+    if (acts && acts.parentNode !== row) row.appendChild(acts);
   }
 
   function renderIdentity(id) {
@@ -71,6 +90,11 @@
     var input = $("input-nickname");
     if (input && document.activeElement !== input) input.value = nicknameValue();
 
+    // ⚠️ 每次重画都确认一次「账号」那颗还在这一行里。判据就是 `> ` 本身
+    //    （parentNode 比较），不另记一个「搬过了」的布尔 —— 那种标记一旦与真实
+    //    DOM 不一致，这一行会永远少一格，而且没有任何地方会报错。
+    mountActionsRow(row);
+
     // ⚠️ 这里原先还有一行「层级由服务器判定。/ 层级本机登记。」——
     //    结论就是旁边那枚徽章（Free / Pro / Max），「判定」这一步是内部实现，
     //    用户在这一页不需要知道，整行撤掉（挂载点一起走，不留空壳）。
@@ -84,6 +108,10 @@
     if (btn) {
       // 用户 2026-09-21：「管理登录状态」是五个字的绕话 —— 它就是「账号」。
       btn.textContent = id.signedIn ? "账号" : "登录";
+      // ⚠️ 这颗键**永远画出来**（Issue #276：用户找不到登录入口了）。
+      //    原先它由「账号」卡整卡显隐，未登录那一刻卡片是藏着的 ——
+      //    一个没登录的人在这一页上找不到「从哪儿登录」，是必然的。
+      btn.hidden = false;
       if (!btn.dataset.bound) {
         btn.dataset.bound = "1";
         btn.addEventListener("click", function () { location.href = "/login/"; });

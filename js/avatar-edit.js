@@ -24,17 +24,26 @@
   function render() {
     var A = avatarMod();
     var slot = $("#avatar-slot");
-    if (!A || !slot) return;
+    // ⚠️ 身份行还没落地时**照样往下走**：下面那几行里就是「把 #btn-avatar-clear
+    //    的显隐画对」。早退的话，mine.js 一重画身份行（那颗键回到 hidden），
+    //    删除头像就再也不出现了 —— 而本页没有任何地方会补画它。
+    if (!A) return;
     var html = "";
     try { html = A.html(window.localStorage, { dock: true }); } catch (e) { html = ""; }
-    slot.innerHTML = html;
-    if (html) slot.removeAttribute("aria-hidden");
-    else slot.setAttribute("aria-hidden", "true");
+    if (slot) {
+      slot.innerHTML = html;
+      if (html) slot.removeAttribute("aria-hidden");
+      else slot.setAttribute("aria-hidden", "true");
+    }
 
     var d = null;
     try { d = A.display(window.localStorage); } catch (e) { d = null; }
     var clear = $("#btn-avatar-clear");
     if (clear) clear.hidden = !(d && d.hasImage);
+
+    // 身份行是新节点的话，两颗键这会儿才存在 —— 在这里补绑一次（幂等）。
+    // 不补的话：mine.js 重画身份行的那一瞬间，两颗键就与监听器一起被丢掉了。
+    bindAvatarButtons();
   }
 
   // ⚠️ 原先这里往「我的」页写一行「已同步 / 未同步」（renderHint + synced 一对）——
@@ -278,15 +287,32 @@
     box.addEventListener("pointerleave", endPointer);
   }
 
-  function bind() {
+  // ⚠️ 「上传头像 / 删除头像」这两颗键现在挂在**身份行**里（Issue #276：
+  //    与「登录」同行），而身份行是 js/mine.js 按需整段重画的
+  //    （buildIdentityRow 换 innerHTML —— 换一次，两颗键就是全新的节点）。
+  //    所以这两处的绑定必须**幂等**：用 dataset.bound 记一次，由 render()
+  //    每次重画后补调一次。不补的下场是「重画一次这两颗键就哑了」——
+  //    点了没反应，而且不报错。
+  function bindAvatarButtons() {
     var pick = $("#btn-avatar-pick");
     var file = $("#avatar-file");
-    if (pick && file) {
+    if (pick && file && !pick.dataset.bound) {
+      pick.dataset.bound = "1";
       pick.addEventListener("click", function () { file.click(); });
+    }
+    if (file && !file.dataset.bound) {
+      file.dataset.bound = "1";
       file.addEventListener("change", function () { onPickFile(file); });
     }
     var clearBtn = $("#btn-avatar-clear");
-    if (clearBtn) clearBtn.addEventListener("click", clear);
+    if (clearBtn && !clearBtn.dataset.bound) {
+      clearBtn.dataset.bound = "1";
+      clearBtn.addEventListener("click", clear);
+    }
+  }
+
+  function bind() {
+    bindAvatarButtons();
     bindCrop();
 
     window.addEventListener("resize", function () {

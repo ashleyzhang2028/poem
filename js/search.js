@@ -152,6 +152,7 @@
   function pickSuggest(i) {
     var ids = suggestIds();
     if (i < 0 || i >= ids.length) return false;
+    noteSearchAction();
     if (api) api.open(ids[i]);
     hideSuggest();
     return true;
@@ -280,6 +281,31 @@
     return !!input && !!String(input.value || "").trim();
   }
 
+  // ---- 「贴顶」（框停在页面上沿）那件事 -------------------------------------------------
+  //
+  // 三态（Issue #229 定的，本轮 Issue #276 把来源收成一处）：
+  //   ① 框里有焦点 / 软键盘弹着 → 贴顶；
+  //   ② 这一页上**已经做过一次搜索动作**（打过字或挑过候选）→ 贴顶，失焦也不回去；
+  //   ③ 都没有（刚打开、词是上一次留下的）→ 回到页面正中，也就是「打开就是来搜的」。
+  //
+  // ⚠️ ②原先的判据是「框里有没有字」（hasKeyword）。那个判据在两个地方会算错：
+  //    · 回到这一页时框里还留着上次的词 → **一进页整块框就贴到顶上**，
+  //      整块 hero 的居中算式白白丢掉（用户 2026-09-24 报的「空白 / 位置不对」
+  //      就是这个的多半来源）；
+  //    · 用户把字删光 → 框当场飘回正中，结果列表还停在下面。
+  //    现在改成**这次访问里发生过什么**：打过一个字、或选中过一条候选。
+  //    那个词是上一次留下的，不算「这次搜过」（它仍在框里看得见，一字不少）。
+  //
+  // ⚠️ 候选下拉自己的显隐只听焦点，与贴顶无关（见 suggestBox 那条路径）——
+  //    两件事挂在同一个「hasKeyword」上的年代，删字会同时把下拉和位置一起掀翻。
+  var searchedThisVisit = false;
+
+  function noteSearchAction() {
+    if (searchedThisVisit) return;
+    searchedThisVisit = true;
+    syncHeroState();
+  }
+
   function syncHeroState() {
     var hero = heroEl();
     if (!hero) return;
@@ -287,17 +313,7 @@
     var focused = !!input && document.activeElement === input;
     var space = keyboardSpace();
 
-    // 「贴顶」= 框里真的有焦点 / 软键盘真的弹着 / 框里有搜出来的内容。
-    // 最后那一条是 Issue #229 这一轮补回来的：候选下拉一收起（失焦了），框就
-    // 飘回页面正中，而结果列表还在页面下方 —— 中间空出两百多像素（用户原话
-    // 「搜索结果下拉框和搜索框之间的空白太大」）。原来的三态里本来就有这一条
-    // （「有搜索内容 → 框停在页面顶部，失焦也不回去」），是 Issue #163 连带
-    // 作废的；那时作废的理由是「回填的词一进页就把框顶上去，接着把键盘也带
-    // 出来」—— 而**把键盘带出来的是当时那套 focusInput()（进页自动聚焦），
-    // 它已经撤了**。现在贴顶只改框的位置，不碰焦点，键盘不会自己弹。
-    // 于是这一页与今日背诵页的手感一致：框在上、结果紧贴框下，中间不留空。
-    // 清了内容且没有焦点 → 仍然回到页面中心（仍是「打开就是来搜的」那一页）。
-    var lifted = focused || space > 0 || hasKeyword();
+    var lifted = focused || space > 0 || searchedThisVisit;
     setLift(lifted, onLiftLost);
     try {
       hero.classList.toggle("search-active", lifted);
@@ -456,7 +472,8 @@
     }
     if (input) {
       input.addEventListener("input", function () {
-
+        // 打过字 = 这次访问里真的搜过（贴顶第②态的唯一来源，见 noteSearchAction）。
+        noteSearchAction();
         renderBody();
         renderSuggest(input.value);
       });

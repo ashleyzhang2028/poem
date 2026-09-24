@@ -1761,11 +1761,27 @@ function check(name, cond, extra) {
         r1.topFocused <= 140 && r1.topFocused < 336 - 100,
         JSON.stringify([r1.clsFocused, r1.topFocused, r1.focusedFlag]));
 
-      check('iPhone 搜索页：清空内容且没有焦点后，搜索框回到页面中心',
-        !/search-active/.test(r1.clsWhenEmpty) && !r1.focusedWhenEmpty &&
-        Math.abs(r1.centeredOffset) <= 2 &&
-        r1.centeredHeroH > 300 && r1.topWhenEmpty > r1.topFocused + 100,
-        JSON.stringify([r1.clsWhenEmpty, r1.centeredOffset, r1.topWhenEmpty, r1.centeredHeroH]));
+      // ⚠️ 2026-09-24（Issue #276）判据换了一条：**打过字、又清空**不等于
+      //    「回到页面中心」。用户在这一页上已经搜过一次了，结果列表就在框下面 ——
+      //    这时把框飘回正中，框与结果之间就空出两百多像素（正是 Issue #229
+      //    用户点名的那个「空白太大」）。贴顶第②态现在记的是
+      //    「**这次访问里**搜过没有」（searchedThisVisit），打过字就算搜过。
+      //    所以这一条改测**同一件事的另一半**：清空之后
+      //    ①框仍贴顶（不再飘回正中，与结果列表相邻）；②列表真的空了。
+      //    「没搜过就居中」那一半由 test/search.test.js 的
+      //    「把上次的词放回输入框不算这次搜过」那一条守着。
+      check('iPhone 搜索页：清空内容后，框仍停在顶上（打过字就算搜过，不再飘回正中）',
+        /search-active/.test(r1.clsWhenEmpty) && !r1.focusedWhenEmpty &&
+        r1.topWhenEmpty <= 140,
+        JSON.stringify([r1.clsWhenEmpty, r1.topWhenEmpty, r1.centeredHeroH]));
+
+      const cleared = await sp.evaluate(async () => {
+        const inp = document.getElementById('gw-search');
+        const w = await new Promise(r => setTimeout(r, 300));
+        return document.querySelectorAll('#gw-list .item').length;
+      });
+      check('iPhone 搜索页：清空之后结果列表一条不留',
+        cleared === 0, JSON.stringify([cleared]));
 
       const blank = await sp.evaluate(async () => {
         const inp = document.getElementById('gw-search');

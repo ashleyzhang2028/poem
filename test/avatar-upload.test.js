@@ -237,6 +237,12 @@ const SESSION = JSON.stringify({
         try { el.textContent = read(f.replace(/^\//, "")); } catch (e) { return; }
         w.document.body.appendChild(el);
       });
+      // ⚠️ 这一下必须点：jsdom 的 readyState 在我们注入脚本时还是 loading，
+      //    所以每一份脚本都走的是「等 DOMContentLoaded」那一支 —— 不派发它，
+      //    本页的两个初始化函数（js/avatar-edit.js 与 js/mine.js）都不会跑，
+      //    于是这一节测的是一个**还没挂起来**的页面。原先它靠下面那 400ms
+      //    的等待蒙对了（jsdom 自己迟早会 fire），但那是时序运气，不是判据。
+      w.document.dispatchEvent(new w.Event("DOMContentLoaded", { bubbles: true }));
       await new Promise(r => setTimeout(r, 400));
 
       const $ = id => w.document.getElementById(id);
@@ -256,10 +262,23 @@ const SESSION = JSON.stringify({
       //    「那一行不再存在，而图形本身如实跟着走」。
       eq($("avatar-hint"), null, "不再有「已同步 / 未同步」那一行（挂载点与文案一起撤）");
 
-      let clicked = 0;
-      $("avatar-file").addEventListener("click", e => { clicked++; });
-      $("btn-avatar-pick").dispatchEvent(new w.Event("click", { bubbles: true }));
-      eq(clicked, 1, "点「上传头像」转发给文件选择框（不是自己造一个假弹窗）");
+      // ⚠️ 2026-09-24（Issue #276）：身份行改成按需整段重画（js/mine.js
+      //    的 buildIdentityRow 换 innerHTML），两颗键每次重画都是**新节点**。
+      //    所以绑定是幂等的、由 avatar-edit 的 render() 每次补绑 —— 「点一下
+      //    有没有转发给文件框」这件事仍然要测，但**必须重测两遍**：
+      //    第一遍测首次绑定，第二遍测「重画之后还绑着吗」。
+      //    只测一遍的话，这一层会对着一个「只在首帧能用」的实现亮绿灯。
+      const clickPick = () => {
+        let clicked = 0;
+        $("avatar-file").addEventListener("click", e => { clicked++; e.preventDefault(); });
+        $("btn-avatar-pick").dispatchEvent(new w.Event("click", { bubbles: true }));
+        return clicked;
+      };
+      eq(clickPick(), 1, "点「上传头像」转发给文件选择框（不是自己造一个假弹窗）");
+
+      w.MinePage.paint(w.AuthCore.session(w.AuthCore.makeStore(w.localStorage)));
+      eq(clickPick(), 1,
+        "身份行重画一次之后，那颗键仍绑着（重画换掉的是节点，绑定要跟着补）");
 
       w.Avatar.setAvatar(w.localStorage, { img: "https://x.supabase.co/a.jpg" });
       w.SiteChrome && w.SiteChrome.refreshUser && w.SiteChrome.refreshUser();

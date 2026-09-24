@@ -337,8 +337,13 @@ chk(/\.progress-card\.wide\s*\{[^}]*max-width:\s*100%/s.test(classicCode),
 chk(/@media \(min-width:\s*768px\)[\s\S]{0,400}\.reader-text\s*\{[^}]*max-width:\s*var\(--read-w/s.test(classicCode),
   '阅读器正文列在 ≥768px 封顶 --read-w（栏宽了，一行字数不跟着涨）');
 
-chk(/@media \(min-width:\s*768px\)[\s\S]{0,400}\.toolbar:not\(\.search-toolbar\)\s*\{[^}]*max-width:\s*720px/s.test(classicCode),
-  '集子页工具栏在 ≥768px 封顶居中（搜索框一个人吃掉 900px，右边两枚隔着半屏）');
+// ⚠️ Issue #276 把 720 这把尺收成了 --bar-w（定义在 css/style.css 的 :root），
+//    首页「今日加背」读的也是它 —— 所以这里守的是「读同一把尺」，
+//    顺手也守着「这一处不许再写死 720」。
+chk(/@media \(min-width:\s*768px\)[\s\S]{0,400}\.toolbar:not\(\.search-toolbar\)\s*\{[^}]*max-width:\s*var\(--bar-w/s.test(classicCode) &&
+  /--bar-w:\s*720px/.test(cssCode),
+  '集子页工具栏在 ≥768px 封顶居中（搜索框一个人吃掉 900px，右边两枚隔着半屏），' +
+  '且封顶读的是 --bar-w 这把共用的尺');
 chk(/@media \(min-width:\s*1024px\)[\s\S]{0,400}\.toolbar:not\(\.search-toolbar\)\s*\{[^}]*max-width:\s*var\(--content-w/s.test(classicCode),
   '集子页工具栏在 ≥1024px 改跟 --content-w（与下面的卷次卡左右同缘，且不比容器宽）');
 chk(/@media \(min-width:\s*768px\)[\s\S]{0,400}\.search-hero\s*\{[^}]*max-width:\s*520px/s.test(classicCode),
