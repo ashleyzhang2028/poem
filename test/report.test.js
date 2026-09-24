@@ -428,8 +428,13 @@ console.log("一、服务端内核：创建 / 频控 / 每日上限 / 空内容�
       const rp = read("js/reports-page.js");
       chk(/serverOnly/.test(rp),
         "「本机压着几条」比的是 serveOnly 那一份（服务端原样），不是并起来画出来的那一列");
-      chk(/pendingLocal\(serverOnly/.test(rp),
+      // 2026-09-24（Issue #278）：这一页「废话连篇」，updateSend 的三个入参
+      // 收了两个 —— 只留 serverOnly（另外两个只是拿来说一句用户数得出来的话）。
+      // ⚠️ 但**口径不变**：比对的那一份仍然是「服务端原样」。
+      chk(/function updateSend\(serverOnly\)/.test(rp) && /pendingLocal\(serverOnly/.test(rp),
         "pendingLocal 的入参是 serverOnly（并起来那一列传进去 = 永远是 0）");
+      chk(!/已在服务器上|没有压在本机发不出去的/.test(rp),
+        "updateSend 不再报「服务器上几条 / 没有压着的」——那是用户数得出来的一句话（Issue #278）");
       const rj = read("js/report.js");
       chk(/serverOnly: r\.reports/.test(rj),
         "Report.mine() 把服务端原样那一份单独带出来（画的是并集，比的是原样）");

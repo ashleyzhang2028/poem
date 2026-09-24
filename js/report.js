@@ -687,8 +687,11 @@
     if (!host) return;
     var list = reports || [];
     var o = opt || {};
+    // 空屏那一句是**全站唯一**教「怎么报错」的地方（「我的报告」页首那段
+    // 与它说的是一件事，2026-09-24 删了 —— 用户原话「废话连篇」）。
+    // 所以这一句不能再短：它是唯一入口说明。
     var head = o.local
-      ? '<p class="account-hint">这是<strong>本机记下</strong>的那一份（服务端暂时读不到，可能是没登录或断网）。</p>'
+      ? '<p class="account-hint">本机的（服务端暂时读不到）。</p>'
       : "";
     if (!list.length) {
       host.innerHTML = head + '<p class="account-hint">还没有报过。<br>看到错字、标错的注音、翻错的译文，' +
