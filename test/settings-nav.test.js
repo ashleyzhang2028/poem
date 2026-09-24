@@ -277,18 +277,58 @@ const NAV = read('js/settings-nav.js');
     '行高只由 min-height 定：上下 padding 是 0（写了上下 padding，链接那一行就与上面几行对不上）');
   chk(/min-height:\s*42px/.test(kvRowRule), '行高仍是 42px（与上面几行同一个数）');
 
-  // 「自检」那一行：用户 2026-09-18 点名从「设置 · 通用」搬来，排在隐私条款下面。
-  chk(/\/self-check\//.test(aboutBlock) && /自检/.test(aboutBlock),
-    '「关于」里有去 /self-check/ 的「自检」一行（它原先在「设置 · 通用」当一颗按钮）');
-  chk(rowsHtml.indexOf('隐私条款') < rowsHtml.indexOf('/self-check/'),
-    '「自检」排在隐私条款下面一行（用户点名的位置）');
-  chk(/link\("\/self-check\/",\s*"自检"\)/.test(rowsHtml),
-    '左边那格自己就是链接（不是一颗按钮）');
-  chk(!/跑一遍自检/.test(aboutBlock) && !/btn-selfcheck/.test(aboutBlock),
+  // 「自检」那一行：用户 2026-09-18 点名从「设置 · 通用」搬来。
+  //
+  // ⚠️ Issue #276 后续（用户 2026-09-24）：「自检页面只能已登录的管理员账号
+  //    访问，其他情况一律**不显示**自检页面链接」。所以这一行**不再无条件
+  //    渲染** —— 它搬进了一个按角色开关的 `renderSelfCheck()`。
+  //    这一层守着「搬走了、但入口还在（对的人看得见）」与「对所有人都在
+  //    一份静态 HTML 里」这两种坏法。
+  chk(/\/self-check\//.test(nav) && /自检/.test(nav),
+    '「关于」这一块仍备着去 /self-check/ 的「自检」入口（它原先在「设置 · 通用」当一颗按钮）');
+  chk(/function renderSelfCheck\(/.test(nav),
+    '那一行改由 renderSelfCheck() 渲染（不再直接写死在 renderAbout 的 innerHTML 里）');
+  chk(/Ent\.isOwner\(/.test(nav) && /Entitlement/.test(nav),
+    '它的判据是 Entitlement.isOwner()（与 /admin/ 走同一个出口，不另判一套）');
+  chk(/isOwner\(backing, id && id\.role \? \{ role: id\.role \} : undefined\)/.test(nav),
+    '传参形状与 /admin/ 那一处逐字相同（role 优先，其次才是本机那份 plan）');
+  chk(/if \(!ok\) return "";/.test(nav),
+    '不通过时**返回空串** —— 那一行压根不进 DOM（不是 hidden，也不是 CSS 遮住）');
+  chk(/host\.hidden = !host\.innerHTML/.test(nav),
+    '整块空的时候连 .kv-list 一起收走（不留一圈空 margin）');
+  chk(/addEventListener\("storage"/.test(nav) && /addEventListener\("entitlementchange"/.test(nav),
+    '角色是异步到位的：登录回来 / 云端拉到 role 后重画那一行，不用整页刷新');
+  chk(!/跑一遍自检/.test(aboutBlock) && !/btn-selfcheck/.test(nav),
     '文案就叫「自检」（用户 2026-09-18 点名改），也不留那颗按钮的 id');
   chk(!/btn-selfcheck/.test(read('settings/general/index.html')) &&
       !/跑一遍自检/.test(read('settings/general/index.html')),
     '「设置 · 通用」里那一块（按钮 + 说明）整块撤干净，不留空壳');
+
+  // 设置首页要先把 Entitlement 请进来，否则上面那条判据拿不到角色。
+  const settingsIndex = read('settings/index.html');
+  chk(settingsIndex.indexOf('/js/entitlement.js') >= 0,
+    '设置首页加载了 js/entitlement.js（renderSelfCheck 要用它判角色）');
+  chk(settingsIndex.indexOf('/js/entitlement.js') < settingsIndex.indexOf('/js/settings-nav.js'),
+    '而且排在 js/settings-nav.js **之前** —— 后者渲染「关于」时就要这份答案');
+
+  // 自检页自己那一半：入口藏了不等于页面进不去（有地址的人照样能敲）。
+  const scHtml = read('self-check/index.html');
+  chk(/id="self-check-gate"|js\/self-check-gate\.js/.test(scHtml),
+    '/self-check/ 引了 js/self-check-gate.js（页面自己那道闸）');
+  chk(/<main class="settings-page selfcheck-page" id="selfcheck-page" hidden>/.test(scHtml),
+    '内容那一块**默认 hidden**（判据没跑完之前谁都不许先看见逐条结论）');
+  chk(/id="selfcheck-deny"/.test(scHtml),
+    '备着一张「只对管理员开放」的拒绝卡');
+  chk(/id="self-check-script" type="text\/plain" data-src="\/js\/self-check\.js"/.test(scHtml),
+    '自检脚本是**占位**（type=text/plain 不执行），放行时才换成真脚本');
+  const gate = read('js/self-check-gate.js');
+  chk(/E\.isOwner\(backing, id && id\.role \? \{ role: id\.role \} : undefined\)/.test(gate) &&
+      /window\.Entitlement/.test(gate),
+    '页面那道闸与入口那道闸走同一个出口 Entitlement.isOwner()（连传参形状都逐字相同）');
+  chk(/page\.hidden = false/.test(gate),
+    '放行时把内容那一块从 hidden 里放出来');
+  chk(/replaceChild\(s, holder\)/.test(gate),
+    '放行时才把占位换成真脚本 —— 拒绝那一支里 /js/self-check.js 一次都没被请求');
 }
 
 console.log('\n' + (fails ? '❌ ' + fails + ' 项失败' : '🎉 二级设置页测试全部通过'));

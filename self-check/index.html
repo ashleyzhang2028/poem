@@ -23,7 +23,7 @@
   <div class="app">
     <header class="topbar"></header>
 
-    <main class="settings-page selfcheck-page" id="selfcheck-page">
+    <main class="settings-page selfcheck-page" id="selfcheck-page" hidden>
 
       <div class="settings-groups">
         <section class="settings-group">
@@ -109,11 +109,40 @@
       </div>
     </main>
 
+    <section class="settings-page selfcheck-deny" id="selfcheck-deny" hidden>
+      <div class="settings-groups">
+        <section class="settings-group">
+          <div class="settings-item">
+            <label>只对管理员开放</label>
+            <p class="account-hint">
+              自检页会把服务端那一环的结论摊开（含 <code>/api/diag</code> 的服务端自报与
+              「写入实跑」）。所以它只对<strong>已登录的管理员</strong>开放 ——
+              其余情况一律看不到入口，直接打这个地址也不会加载自检脚本。
+            </p>
+            <p class="account-hint">
+              判断依据是服务端下发的角色（<code>accounts.role</code> 是
+              <code>owner</code> / <code>admin</code>）。没登录就先去登录，
+              角色不够就找管理员。
+            </p>
+            <div class="settings-btns">
+              <button class="btn ghost-btn" id="btn-selfcheck-back" type="button">回到「我的」页</button>
+              <a class="btn ghost-btn" href="/login/">去登录</a>
+            </div>
+          </div>
+        </section>
+      </div>
+    </section>
+
   </div>
 
   <div class="toast" id="toast" hidden></div>
 
-  <script src="/js/self-check.js"></script>
+  <!-- 判据（谁能看这一页）要在自检脚本之前就位：
+       `js/entitlement.js` 给角色，`js/self-check-gate.js` 放行时才把下面那枚
+       占位脚本换成真的 —— 拒绝那一支里 `/js/self-check.js` 一次都没被请求。 -->
+  <script src="/js/entitlement.js"></script>
+  <script src="/js/self-check-gate.js"></script>
+  <script id="self-check-script" type="text/plain" data-src="/js/self-check.js"></script>
   <script src="/js/avatar.js"></script>
   <script src="/js/chrome.js"></script>
   <script src="/js/pwa.js"></script>

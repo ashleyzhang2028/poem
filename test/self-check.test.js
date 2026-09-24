@@ -61,6 +61,56 @@ async function diagAt(base) {
     "页面上备着命令行判据（含「搜 api.error」这一条），页面打不开时照样能查");
   chk(/js\/self-check\.js/.test(html), "/self-check/ 引了 js/self-check.js");
 
+  /* 用户 2026-09-24（Issue #276 后续）：
+       「自检页面只能已登录的管理员账号访问，其他情况一律**不显示**自检
+         页面链接，且不能访问」
+
+     两半都要守：入口（设置 · 关于 里那一行）与页面自己。
+     ⚠️ 隐藏入口**不是**安全边界（README 那四条硬规矩）：`/api/diag` 仍
+        公开（它按设计只回**形状**不回**值**，README §自助排查 里那句
+        `curl -sS "$SITE_URL/api/diag"` 是给「页面打不开的人」留的出路）。
+        所以这一层守的是「页面与入口」，不是「接口」。 */
+  {
+    const gate = fs.readFileSync(path.join(ROOT, "js/self-check-gate.js"), "utf8");
+    const nav = fs.readFileSync(path.join(ROOT, "js/settings-nav.js"), "utf8");
+
+    chk(/window\.Entitlement/.test(gate) && /E\.isOwner\(/.test(gate),
+      "页面那道闸走 Entitlement.isOwner()（源头是服务端下发的 accounts.role）");
+    chk(/E\.isOwner\(backing, id && id\.role \? \{ role: id\.role \} : undefined\)/.test(gate),
+      "传参形状与 /admin/ 那一处逐字相同（两个地方各判一套迟早漂）");
+    chk(/if \(allowed\(\)\) \{ arm\(\); return; \}/.test(gate) && /deny\(\);/.test(gate),
+      "闸只有两支：放行（arm）与拒绝（deny），没有第三条模糊态");
+
+    // 拒绝那一支必须**连脚本都不请求**：不然页面照样会打 /api/diag 与
+    // /api/register 探针 —— 「不能访问」就只是「看不见」。
+    chk(/type="text\/plain"[^>]*data-src="\/js\/self-check\.js"/.test(html),
+      "自检脚本在 HTML 里是**占位**（type=text/plain 浏览器不执行）");
+    chk(/document\.createElement\("script"\)/.test(gate) && /replaceChild\(s, holder\)/.test(gate),
+      "只有放行时才把它换成真脚本 —— 拒绝那一支里那个文件一次都没被请求");
+    chk(/page\.hidden = true/.test(gate) && /denyBox\.hidden = false/.test(gate) &&
+      /selfcheck-deny/.test(html),
+      "拒绝时把内容收走、把「只对管理员开放」那张卡放出来");
+
+    chk(/ENTRY|isOwner|Entitlement/.test(nav) && /Entitlement\.isOwner|Ent\.isOwner/.test(nav),
+      "入口那一道（设置 · 关于）与页面那一道同源，不另判一套");
+    chk(/if \(!ok\) return "";/.test(nav),
+      "不通过时那一行**返回空串**（不进 DOM，不是 hidden 也不是 CSS 遮住）");
+  }
+
+  // 「不能访问」的另一半：那把门后面的东西**不许先渲染出来**。
+  // 页面默认 hidden 是关键 —— 否则判据还没跑完，逐条结论已经闪了一下，
+  // 截图 / 读屏 / 缓存都可能把它留下。
+  chk(/id="selfcheck-page" hidden>/.test(html),
+    "内容那一块在 HTML 里就是 hidden（判据跑完之前谁都不许先看见）");
+  chk(/id="selfcheck-steps"[\s\S]{0,120}?hidden/.test(html),
+    "命令行判据那一段也是默认收着的（它同样只在管理员那里才展开）");
+
+  // 页面引了 gate.js 与 entitlement.js，且**顺序**是「先判据、后脚本」。
+  const gateIdx = html.indexOf("js/self-check-gate.js");
+  const entIdx = html.indexOf("js/entitlement.js");
+  chk(gateIdx > 0 && entIdx > 0 && entIdx < gateIdx,
+    "/self-check/ 先引 entitlement.js 再引 self-check-gate.js（判角色要有那份答案）");
+
   chk(!/apikey/i.test(js) && !/Authorization/i.test(js) && !/eyJ|sb_[a-z]/i.test(js),
     "前端脚本里不发任何密钥头、也不认密钥形状（apikey / Authorization / JWT 前缀都不出现）");
   chk(/api\/diag/.test(js) && /api\/register/.test(js) && /api\/config/.test(js),

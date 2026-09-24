@@ -84,6 +84,34 @@
   --ctl-font-md: 14px;
   --ctl-font-sm: 13px;
 
+  /* 定高控件里那一行字的行高（Issue #291）。
+     ⚠️ 这条不是「另一个字号」：它是**把一行字摆正**用的。
+
+     病根：`html, body { line-height: 1.6 }`（第 185 行）是给**正文段落**的。
+     段落要 1.6 才读得舒服，但把同一个 1.6 用在「高 38px 的按钮」里就出事：
+     字 13.5px 时行盒 25.65px —— 行盒比控件矮，浏览器把**行盒顶端**摆在
+     控件顶端，于是字**贴着上沿**、底下空一大截（实测「显示邮箱地址」
+     上面 3px、下面 15px）。
+
+     `<button>` 不受影响，纯属巧合：UA 样式表给 button 的 line-height 是
+     `normal`（button **不继承** line-height），所以同一颗键写成 `<a>`
+     就歪、写成 `<button>` 就正 —— 同一个页面上两种长相，用户看得见。
+
+     所以这里定死：**凡是定高的控件，里面那一行字用自己的行高**。
+     判据是「这个盒子有没有定高」（--ctl-h-* / --ctl-input-h），
+     不是「它是不是 button」—— 与 --ctl-pad-* 那一组同源：
+     高度 − 上下内边距×2 − 上下边框×2 = **这个数**×档位字号。
+     ⚠️ 下面每一档的数就是那句算式的结果，改字号要连它一起改，
+        否则定高控件会长高（与 --ctl-pad-* 上面那条警告同一件事）。
+        · 档① 15px 字：44 − 11×2 − 1×2 = 20px
+        · 档② 14px 字：38 −  9×2 − 1×2 = 18px
+        · 档③ 13px 字：32 −  6×2 − 1×2 = 18px
+     ⚠️ 用**像素行高**而不是 `1.2`：`1.2 × 字号` 会随字号漂，
+        而控件高度是定死的 —— 定高配比例行高，两边迟早对不上。 */
+  --ctl-leading-lg: 20px;
+  --ctl-leading-md: 18px;
+  --ctl-leading-sm: 18px;
+
   /* 左右内边距（同一个高度的档，横向也只有一个数）。 */
   --ctl-pad-x: 14px;
 
@@ -811,6 +839,82 @@ body.no-dock .modal-box { max-height: 88vh; }
   padding: 0 var(--ctl-pad-x);
   font-size: var(--ctl-font-md);
 }
+
+/* ---------- 定高控件里的那一行字：一处摆正（Issue #291） ----------
+   用户原话（2026-09-24）：
+
+     「显示邮箱地址这个按钮以及背诵进度按钮 文字都没有垂直居中，
+       是文字下面的padding太多了吗」
+
+   不是内边距 —— 它们的上下内边距本来就是 0。是**行高**：
+   `html, body { line-height: 1.6 }`（第 185 行）是给正文段落用的，
+   控件把它继承了进来。`<button>` 恰好免疫（UA 样式表给 button 的
+   line-height 是 `normal`，button 不继承 line-height），`<a>` 不免疫 ——
+   于是**同一个 `.btn`，写成 `<button>` 就正、写成 `<a>` 就歪**。
+   issue 里点名那两颗（「显示邮箱地址」「背诵进度」）恰好都是 `<a>`，
+   旁边同档的 `<button>` 看着好好的，差别就在这里。
+
+   ⚠️ 光改 `line-height` 只解决一半。实测把它们改成 18px 之后：
+      `<button>` 那几颗（`height: 38px` + `display: flex` 居中）立刻正了
+      （上 9 / 下 9），但 `<a>` 那几颗**还是贴上沿**（上 0 / 下 18）——
+      因为它们是 `display: inline-block` + `min-height`：
+      **块里的内容从顶部排**，`min-height` 多出来的那 20px 全堆在下面，
+      行高再小也没人把那一行挪到中间。
+
+   所以这里两件事一起办，判据都是「这个盒子有没有定高」：
+
+     · **一、把那一行字居中**：定高控件一律 `display: inline-flex` +
+       `align-items: center`（`<button>` 本来就是这套，`.account-link`
+       也已经是这套 —— 本条只是**把同一套发给 `<a>` 写的同款控件**）。
+     · **二、把行高收进盒子**：行高不再继承正文的 1.6，改读这一档的数。
+       两件事都要：只做第一件时行盒 25.65px 在 38px 盒子里虽然居中，
+       但字大一号（手机上输入框 16px）就会溢出去；只做第二件就是上面
+       测到的「button 正了、a 还歪」。
+
+   ⚠️ `min-height` 那一档（.seg / .chips / .collection-act / .tier-pick
+      / .admin-report-acts button …）**不在此列**：`min-height` 是**地板**，
+      盒子可以长高，一行字在长高的盒子里本来就居中；给它们定死行高
+      反而会在字大一号时把行盒顶出去。
+   ⚠️ 行高按档位给，与 `--ctl-pad-*` 同源：
+      高度 − 上下内边距×2 − 上下边框×2 = 行高。改字号要连行高一起算。
+   ========================================================================== */
+/* 档① 44px（--ctl-h-lg / 15px 字）。 */
+.btn,
+.account-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: var(--ctl-leading-lg);
+}
+/* 档② 38px（--ctl-h-md，14px 字）。
+   `.settings-btns .btn` 是同一颗 `.btn` 收了内边距的那一档；
+   `.mail-link / .mail-plain`（legal.css）与 `.mini-btn / .ios-tip-close`
+   是「自己写 min-height: --ctl-h-md」的那几件 —— 它们内容固定一行、
+   高度就是按那一行算的，所以居中与行高这两条对它们同样成立。 */
+.settings-btns .btn,
+.ghost-btn,
+.danger-btn,
+.mini-btn,
+.account-link,
+.mail-link,
+.mail-plain,
+.ios-tip-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: var(--ctl-leading-md);
+}
+/* `.btn / .ghost-btn / .danger-btn` 在别处本来就是 `<button>`（UA 的
+   `display: inline-block` 被 `flex` 顶掉的那一套）；这条把它们统一到
+   `inline-flex` 之后，宽度仍是自适应（内容撑），不会变成满格。 */
+/* 输入框那一列：`.account-input` 与设置页的 `.settings-input` 都是定高
+   38px（手机上字号抬到 16px），行高留 18px 正好落在框里。
+   ⚠️ 它们**不是** flex —— 单行输入框里的文字由 `line-height` 居中，
+      加 flex 反而会让 caret 位置在部分浏览器上跑偏。 */
+input,
+select,
+textarea { line-height: var(--ctl-leading-md); }
+select { padding-top: 0; padding-bottom: 0; }
 
 /* 全站按钮的**状态三件套**（悬浮 / 按下），这一份是唯一来源：
    · 悬浮 = 浅一档底（+ 有的档把描边转成主色）
