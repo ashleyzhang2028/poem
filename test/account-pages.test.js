@@ -356,6 +356,11 @@ const LOGIN = strip(loginJs), MINE = strip(mineJs), ADMIN = strip(adminJs);
     chk(new RegExp('body\\[data-nav="' + nav + '"\\] \\.account-page').test(css),
       '居中页名册里有 ' + nav + '（少了它那一页的卡就吊在顶栏下缘）');
   });
+  // ⚠️ 而管理后台的那张**拒绝卡**必须从名册里摘出来（Issue #278 第六轮）：
+  //    它是「一叠卡」页面上唯一的卡，居中就等于「上面空 290、下面空 300
+  //    地端着一句话」—— 用户说的「留白太多」在那一屏上正是它。
+  chk(/body\[data-nav="admin"\] \.account-page > #deny-card\s*\{[^}]*margin-top:\s*0/.test(css),
+    '管理后台的拒绝卡不参与居中（一叠卡的页面贴顶顺排）');
   // ⚠️ 而「我的」页**必须不在**这一组里：它是一叠卡（六张）的清单页，
   //    内容本来就比一屏长 —— 居中在它身上永远不生效，只会多一句没人验证的声明。
   chk(!/body\[data-nav="mine"\]/.test(css),

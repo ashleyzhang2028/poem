@@ -1357,8 +1357,10 @@ function check(name, cond, extra) {
         haloIsGreenish && !haloIsBlack,
         JSON.stringify([boxState.borderColor, boxState.outlineStyle, boxState.outlineWidth, halo]));
 
+      // ⚠️ 半径的值 Issue #278 第六轮从 12px 换成 6px（控件那一档的 7px 上限）。
+      //    要守的口径没变：**四个角同一个值**、且没有被 scaleY 拉成椭圆角。
       check('iPhone 搜索页：搜索框四个角是同一个半径（不再被纵向拉伸成椭圆角）',
-        boxState.radius === '12px' && !/matrix/.test(boxState.scale),
+        boxState.radius === '6px' && !/matrix/.test(boxState.scale),
         JSON.stringify([boxState.radius, boxState.scale]));
 
       check('iPhone 搜索页：输入框与定位上下文同高（下拉的 top 只是 4px 的呼吸）',
@@ -2288,10 +2290,18 @@ function check(name, cond, extra) {
       //    而屏幕底下空着几百像素。上面那两条「相差 ≤ 60px」对那一档是
       //    **量不出问题**的（4 vs 26 相差才 22），所以必须另有一条专门盯它：
       //    既然共用了居中容器，卡片顶端就不该贴着顶栏。
-      check(where + '：卡片没吊在顶栏下缘（居中的那一组都要离开顶栏）',
-        m.above >= 40, '上留白 ' + m.above + 'px');
+      //
+      //    ⚠️ 第六轮把这条**按页分开**：管理后台是一叠卡（同屏最多五张，
+      //       拒绝时只有一张 144px 的），它就该贴顶顺排 —— 那张拒绝卡居中
+      //       反而正是用户说的「留白太多」（实测 393×852：上面空 290、
+      //       下面空 300 地端着一句话）。其余三页仍是一张卡，仍要居中。
+      const centered = navLabel !== '/admin/';
+      check(where + '：卡片顶端的位置与这一页该有的排法一致'
+        + (centered ? '（居中的那一组都要离开顶栏）' : '（一叠卡的页面贴顶顺排）'),
+        centered ? m.above >= 40 : (m.above >= 0 && m.above <= 24),
+        '上留白 ' + m.above + 'px');
 
-      if (m.above >= 0) {
+      if (m.above >= 0 && centered) {
         check(where + '：卡片仍垂直居中（上下留白相当）',
           Math.abs(m.above - m.below) <= 60,
           '上 ' + m.above + ' / 下 ' + m.below);
@@ -2311,7 +2321,7 @@ function check(name, cond, extra) {
          它们正常值 ≤ 16%、改动后 ≥ 32%，阈值取 25% 两边都留得住余量。 */
       const span = m.above + m.below;
       // 屏幕够高的档才判（短屏上卡片已占满一屏，量不出「居中」）
-      if (m.above >= 100) {
+      if (m.above >= 100 && centered) {
         check(where + '：卡片几乎就在正中间（相对偏差 ≤ 25%）',
           span > 0 && Math.abs(m.above - m.below) / span <= 0.25,
           '偏差 ' + (span > 0 ? Math.round(Math.abs(m.above - m.below) / span * 1000) / 10 : '-') + '%'

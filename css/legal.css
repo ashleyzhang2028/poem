@@ -81,20 +81,24 @@
   color: var(--green);
   background: var(--green-light);
   border: 1px dashed var(--green);
-  border-radius: var(--radius-sm);
-  padding: 8px 14px;
+  border-radius: var(--ctl-radius);
+  min-height: var(--ctl-h-md);
+  padding: 0 14px;
   cursor: pointer;
   word-break: break-all;
+  transition: background .15s, border-color .15s;
 }
-.mail-link:hover { filter: brightness(.97); }
+.mail-link:hover { background: var(--card); border-color: var(--green-dark); }
+.mail-link:active { background: var(--green-light); }
 
 .mail-plain {
   display: inline-block;
   font-size: 13.5px;
   color: var(--ink);
   background: var(--bg-soft);
-  border-radius: var(--radius-sm);
-  padding: 8px 14px;
+  border-radius: var(--ctl-radius);
+  min-height: var(--ctl-h-md);
+  padding: 0 14px;
   word-break: break-all;
   user-select: all;
 }

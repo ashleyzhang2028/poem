@@ -218,10 +218,18 @@ chk(!/\.dock-item::before/.test(css) && !/\.dock-item\.active::before/.test(css)
 chk(/\.dock-item\.active \.dock-icon \{[^}]*translateY/.test(css), '选中态改由图标轻微抬起表达');
 chk(/prefers-reduced-motion[\s\S]{0,160}?\.dock-icon/.test(css), '减少动态偏好下不再位移（无障碍兜底）');
 
-chk(/a \{ text-decoration: none; \}/.test(css),
-  '页面链接（含页签里的 <a>）由全站唯一那条 `a { text-decoration: none }` 负责');
-chk((css.match(/a \{ text-decoration: none; \}/g) || []).length === 1,
-  '这条规则全站只有一处（六处各写一遍就是六个会漏的地方）');
+// ⚠️ Issue #278 第六轮：全站那条 `a` 规则从「只关下划线」扩成**链接的四态**
+//    （默认天青 / 悬浮与按下压深一档 / 键盘焦点有光晕），所以这里不再逐字匹配
+//    `a { text-decoration: none; }` —— 要守的是「下划线一条都没有」+「这条规则
+//    只此一处」，两个判据各自独立成立才算数（逐字匹配会把「多写一个 color」
+//    这种正常改动也判红）。
+chk(/^a \{[^}]*text-decoration:\s*none/m.test(css),
+  '页面链接（含页签里的 <a>）由全站那条 `a` 规则负责关下划线');
+chk((css.match(/^a \{/gm) || []).length === 1,
+  '基础 `a` 规则全站只有一处（六处各写一遍就是六个会漏的地方）');
+chk(/^a:hover[\s,]*$/m.test(css.replace(/a:hover,/g, 'a:hover')) ||
+    /a:hover,[\s\S]{0,40}a:focus-visible\s*\{[^}]*color:\s*var\(--green-dark\)/.test(css),
+  '链接的悬浮 / 焦点态与基础规则写在同一处（链接四态只有一个来源）');
 
 chk(/\.dock-item\.active \{[\s\S]{0,200}?background:\s*rgba\(47,\s*96,\s*85/.test(css),
   '页签选中态有天青药丸底，不只靠文字染色');
@@ -770,8 +778,12 @@ const optFs = maxFontSize(/\.settings-page \.seg button,[\s\S]{0,60}?\{([\s\S]{0
 chk(brandFs >= 17 && titleFs < brandFs,
   '分组标题（' + titleFs + 'px）小于页面顶部大标题（' + brandFs + 'px）');
 
-chk(optFs >= 13 && titleFs > optFs,
-  '分组标题（' + titleFs + 'px）大于组内选项文字（' + optFs + 'px），主次由字号 + 字重 + 颜色三档一起分');
+// ⚠️ 字号本轮换成了令牌（var(--ctl-font-sm) = 13px），所以下面这条既要认
+//    得旧的字面量、也要认得令牌 —— 令牌最终值仍写在 :root 里，另有一条守着它。
+const CTL_FS = Number((css.match(/--ctl-font-sm:\s*([\d.]+)px/) || [0, 0])[1]) || 0;
+const optEffective = optFs >= 13 ? optFs : CTL_FS;
+chk(optEffective >= 13 && titleFs > optEffective,
+  '分组标题（' + titleFs + 'px）大于组内选项文字（' + optEffective + 'px），主次由字号 + 字重 + 颜色三档一起分');
 chk(!/\.settings-group-desc/.test(css), '样式里不再保留二级描述 .settings-group-desc');
 chk(!/settings-group-desc/.test(SETTINGS_HTML), '设置页 HTML 里不再有二级描述节点');
 
