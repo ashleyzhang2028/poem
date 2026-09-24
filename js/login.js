@@ -122,8 +122,12 @@
     unverified: "ts-unverified"
   };
 
-  var tsMounted = {};
-
+  // 挂载点有两处（Issue #276）：
+  //   ① 页面打开时 preload 脚本（见下面的 preloadTurnstileScript）；
+  //   ② 每次切屏（切到哪一屏就把方框挂到哪一屏）＋ 拿到 /api/config 之后补挂一次。
+  // 都不是「用户点提交」那一刻 —— 用户 2026-09-21 报的正是「点完注册按钮，
+  // 验证框才开始弹出来、还慢慢转圈」。那一整段等待（拉脚本最多 8 秒 + 渲染
+  // widget + Cloudflare 判人机）必须提前到用户填表的时候跑完。
   function mountTurnstile(slotKey) {
     if (!TS || !TS.mount || !slotKey) return;
     var slotId = TS_SLOTS[slotKey];
@@ -134,6 +138,17 @@
       if (st && st.configured) show(el);
       turnstileBrokenNote(slotId);
     });
+  }
+
+  // 页面一打开，只要本站配了人机校验，就先把 Cloudflare 的脚本拉起来。
+  // 这时还没拿到 siteKey（/api/config 与脚本是两条可以并行的请求），所以这里
+  // 只负责「加载」脚本，渲染留给拿到 siteKey 之后的 mount。
+  // 用户 2026-09-21 报的 Issue #276 就是这一段被推迟到了提交之后：脚本最多要
+  // 8 秒，加上渲染 widget 与 Cloudflare 判人机，用户看到的就是「点完按钮，
+  // 验证框才慢慢冒出来」。
+  function preloadTurnstileScript() {
+    if (!TS || !TS.preload) return;
+    TS.preload();
   }
 
   function turnstileBrokenNote(slotId) {
@@ -192,6 +207,10 @@
 
     // 有 TS_SLOTS 的 mode 一共就这几个；切屏时把上一屏的失败提示收掉，
     // 免得「注册」那一屏的红字留在「登录」屏上。
+    //
+    // 顺带把方框挂到这一屏 —— 用户切过来的这一下就开始画了，不用等他点提交
+    // （Issue #276）。TS_SLOTS 里没有的 mode（密码登录 / 完成屏）会原样返回，
+    // 密码登录本来就不需要人机校验（服务端那一条路不校验）。
     turnstileHideNotes();
     if (TS && mode !== "done") mountTurnstile(mode);
 
@@ -873,6 +892,7 @@
       return;
     }
     renderTrust();
+    preloadTurnstileScript();
 
     if (TS && api && api.config) {
       api.config().then(function (r) {
@@ -955,6 +975,8 @@
   window.LoginPage = {
     state: state,
     MODES: MODES,
+    mountTurnstile: mountTurnstile,
+    preloadTurnstileScript: preloadTurnstileScript,
     buildCodeRow: buildCodeRow,
     readCode: readCode,
     setCode: setCode,

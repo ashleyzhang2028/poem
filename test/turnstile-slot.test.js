@@ -22,8 +22,15 @@ function chk(ok, msg) {
 }
 
 // 把 js/turnstile.js 装进一个沙箱。cf 为 null 时表示脚本没加载出来。
-function boot(cf) {
+//
+// opts.late = true 模拟**真网页的那条时序**：Cloudflare 的脚本还没到，
+// 页面就先调了 mount()（用户一打开页面就挂），脚本在之后才异步回来 ——
+// `window.turnstile` 是脚本自己的顶层赋值，所以这里用脚本 onload 那一刻
+// 才把 turnstile 塞进沙箱。
+function boot(cf, opts) {
+  opts = opts || {};
   const calls = {};
+  const appended = [];
   const sandbox = {
     module: { exports: {} },
     console: console,
@@ -32,16 +39,26 @@ function boot(cf) {
     document: {
       getElementById: () => ({}),
       querySelector: () => null,
-      createElement: () => ({ setAttribute() {} }),
-      head: { appendChild() {} }
+      createElement: () => ({
+        setAttribute() {}, _onload: null,
+        get onload() { return this._onload; },
+        set onload(fn) { this._onload = fn; }
+      }),
+      head: { appendChild: (s) => appended.push(s) }
     }
   };
-  if (cf) sandbox.turnstile = cf(calls);
+  if (cf && !opts.late) sandbox.turnstile = cf(calls);
   sandbox.globalThis = sandbox;
   sandbox.module.exports = {};
   vm.createContext(sandbox);
   vm.runInContext(SRC, sandbox);
-  return { T: sandbox.module.exports, calls: calls };
+
+  // 脚本「加载完成」：沙箱里现在才出现 window.turnstile，再触发 onload
+  function arrive() {
+    if (cf) sandbox.turnstile = cf(calls);
+    appended.forEach((s) => { if (typeof s.onload === "function") s.onload(); });
+  }
+  return { T: sandbox.module.exports, calls: calls, appended: appended, arrive: arrive };
 }
 
 const CF_OK = (calls) => ({
@@ -51,6 +68,7 @@ const CF_OK = (calls) => ({
 
 (async function () {
   console.log("=== 人机校验的方框（Issue #225 · 看不见方框时不许再让人去勾它）===");
+  console.log("    Issue #276：方框要在**点提交之前**就准备好，不是点完才慢慢弹出来。");
 
   const js = fs.readFileSync(path.join(ROOT, "js/turnstile.js"), "utf8");
   chk(/function why\(\)/.test(js) && /function failed\(\)/.test(js),
@@ -161,6 +179,87 @@ const CF_OK = (calls) => ({
       "切屏时把上一屏的失败提示收掉（注册屏的红字不许留在登录屏上）");
     chk(/请刷新页面重试/.test(loginJs) && /如问题持续，请联系管理员/.test(loginJs),
       "提示提供刷新重试和联系管理员两步处理方式");
+  }
+
+
+  {
+    // ⑦ 用户 2026-09-21（Issue #276）：验证框**提交之后才弹出来**，还慢慢转圈。
+    //
+    // 真网页的时序应该是：用户一打开页面，Cloudflare 的脚本就上路；等他填完
+    // 邮箱密码点「注册」时，方框早就在那儿、token 早在手里。原先把「拉脚本
+    // （最多 8 秒）+ 渲染 widget + 等 Cloudflare 判人机」全压在点提交之后，
+    // 用户看到的就是「点完按钮，验证框才慢慢冒出来」。
+    // preload() 就是修这一条的：**页面打开时**就把脚本插上去（这时还没拿到
+    // siteKey，所以只加载、不渲染）。这一节守三件事：
+    //   ① preload() 当场就插 <script>（不是等有人 mount 才插）；
+    //   ② 它只插一个，重复叫不多插（否则页面上会出现两个方框）；
+    //   ③ 脚本还没回来、siteKey 先到时挂载不拦人、也不报假故障。
+    const { T, appended } = boot(CF_OK, { late: true });
+    chk(typeof T.preload === "function",
+      "⚠️ js/turnstile.js 给出了 preload() —— 页面打开时就能把脚本拉起来（Issue #276）");
+    if (typeof T.preload === "function") T.preload();
+    chk(appended.length === 1 && appended[0].src === T.SCRIPT_SRC,
+      "⚠️ 页面一打开（preload）就把 Cloudflare 的脚本插上 —— 不用等用户点提交");
+    if (typeof T.preload === "function") T.preload();
+    chk(appended.length === 1, "重复 preload 不会插第二个 <script>（否则页面上两个方框）");
+
+    const mounting = T.mount({ id: "ts-reg" }, { siteKey: "0x4AAAAAAA", enabled: true });
+    chk(T.failed() === false && T.state().err === null,
+      "脚本还在路上时挂载：不算坏、也不报假故障（「还没到」不是「坏了」）");
+    chk(appended.length === 1, "拿到 siteKey 后挂载复用 preload 那一份脚本，不再插一个");
+
+  }
+
+  {
+    // ⑦b 脚本到得比 siteKey 晚：脚本回来时必须补渲染一次，否则方框永远不出现
+    const { T, calls, arrive } = boot(CF_OK, { late: true });
+    if (typeof T.preload === "function") T.preload();
+    const mounting = T.mount({ id: "ts-reg" }, { siteKey: "0x4AAAAAAA", enabled: true });
+    chk(T.state().ready === false, "脚本还没回来时没有 token（方框都还没画出来）");
+    arrive();
+    await mounting;
+    chk(calls.sitekey === "0x4AAAAAAA",
+      "⚠️ 脚本回来之后补渲染一次 —— 否则方框永远不出现（Issue #276 的「慢慢才弹出来」）");
+  }
+
+  {
+    // ⑧ token 是全局的，页面切一次面板就会把它清掉一次；提交要等一等。
+    //    这一节只钉「挂载本身不再顺手把 token 抹掉」—— 旧实现每换一次容器就
+    //    remove + 清空 token，用户在注册页填表期间切一下屏，token 就没了。
+    const rendered = [];
+    const removed = [];
+    const { T } = boot(() => ({
+      render(el, opts) { rendered.push(el.id); if (opts.callback) opts.callback("tok-" + rendered.length); return "w" + rendered.length; },
+      reset() {},
+      remove(id) { removed.push(id); }
+    }));
+    await T.mount({ id: "ts-code" }, { siteKey: "0x4AAAAAAA", enabled: true });
+    const before = T.token();
+    await T.mount({ id: "ts-reg" }, { siteKey: "0x4AAAAAAA", enabled: true });
+    chk(before !== "" && T.token() !== "",
+      "换面板之后 token 不丢（旧实现每换一次容器就清空一次 token）");
+    chk(rendered.join(",") === "ts-code,ts-reg",
+      "换面板时把上一个方框挪走、在新面板上补一个（不叠两个）");
+  }
+
+  {
+    // ⑨ 页面结构与接线：脚本在页面打开时就上路，方框在切到那一屏时就挂上
+    const login = fs.readFileSync(path.join(ROOT, "login/index.html"), "utf8");
+    const loginJs = fs.readFileSync(path.join(ROOT, "js/login.js"), "utf8");
+    chk(!/mountTurnstile\(\s*["']pw["']/.test(loginJs),
+      "密码登录那屏不挂 Turnstile（服务端那里根本不校验，挂了也只是个摆设）");
+    const setModeBody = loginJs.slice(loginJs.indexOf("function setMode(mode)"), loginJs.indexOf("function esc("));
+    chk(/mountTurnstile\(mode\)/.test(setModeBody),
+      "setMode 里就挂当前面板（用户切到注册屏的那一下，方框已经开始画了）");
+    chk(/api\.config\(\)/.test(loginJs) && /mountTurnstile\(state\.mode\)/.test(loginJs),
+      "拿到 /api/config 之后把当前面板挂上（那时才第一次知道 siteKey）");
+    chk(/TS\.preload\(\)/.test(loginJs),
+      "⚠️ 页面打开（init）就调 TS.preload() —— 脚本在路上，不是等点提交才去拉");
+    const initBody = loginJs.slice(loginJs.indexOf("function init()"), loginJs.indexOf("if (document.readyState"));
+    chk(/preloadTurnstileScript\(\)/.test(initBody),
+      "preload 就在 init 里（不是藏在某个提交处理函数里）");
+    chk(/<script src="\/js\/turnstile\.js"><\/script>/.test(login) && !/challenges\.cloudflare\.com/.test(login),
+      "登录页仍然只引本站那一份实现（不自己再手写一段 Cloudflare 脚本）");
   }
 
   console.log("");

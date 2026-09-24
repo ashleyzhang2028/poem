@@ -199,6 +199,44 @@ Run: `node test/auth-browser.test.js`
 
 Expected: all journeys and all three viewport sizes pass with no page errors or failed same-origin API requests.
 
+### Task 6: Mount Turnstile Before Submit, Not On Submit (Issue #276)
+
+**Files:**
+- Modify: `test/turnstile-slot.test.js`
+- Modify: `js/turnstile.js`
+- Modify: `js/login.js`
+
+- [x] **Step 1: Write failing assertions for the load-time order**
+
+Boot `js/turnstile.js` in a VM with a *late* fake script (the sandbox only gets
+`window.turnstile` when the fake `<script>` fires `onload`), mount while the script is
+still on the wire, and assert: not `failed()`, `err === null`, no token yet, and that
+`render()` really runs once the script arrives. Assert `js/login.js` mounts inside
+`setMode()` (not only from a submit handler), calls `mountTurnstile(state.mode)` right
+after `/api/config`, and that a URL-only shim (`configure()`), not Turnstile's real
+script, is what gets loaded. Assert the panel swap does not wipe the token.
+
+- [x] **Step 2: Verify the assertions fail**
+
+Run: `node test/turnstile-slot.test.js` — the late-script case and the token-carry case
+are red before the fix.
+
+- [x] **Step 3: Make mount idempotent across panel swaps**
+
+In `js/turnstile.js`, stop clearing `tokenValue` when the widget moves to another
+container (expiry and post-submit `reset()` still own that), and re-render after the
+script resolves when a widget already exists.
+
+- [x] **Step 4: Move the mount point to page open and mode switch**
+
+In `js/login.js`, add `preloadTurnstileScript()` at init (loads the Cloudflare script
+while the user is still on the password screen) and keep `mountTurnstile(mode)` inside
+`setMode()` so the box is already drawn when the user starts typing.
+
+- [x] **Step 5: Verify**
+
+Run: `node test/turnstile-slot.test.js; node test/account-pages.test.js` — both exit 0.
+
 ### Task 5: Final Verification
 
 **Files:**
