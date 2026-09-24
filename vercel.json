@@ -2,5 +2,10 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
     { "source": "/api/:path*", "destination": "/api/handler?__path=:path*" }
-  ]
+  ],
+  "functions": {
+    "api/handler.js": {
+      "includeFiles": "{api/**,data/*.js,js/quiz.js}"
+    }
+  }
 }
