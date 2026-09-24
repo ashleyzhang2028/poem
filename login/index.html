@@ -99,7 +99,7 @@
             <p class="account-msg" id="msg-code"></p>
 
             <div class="account-note" id="remote-note" hidden>
-              进度会保存到服务器以便跨设备同步。点「确定」即表示同意；可在「设置 · 通用」关掉。
+              进度会保存到服务器以便跨设备同步。点「确定」即表示同意；可在「我的」页关掉。
             </div>
 
             <div class="account-note" id="local-note" hidden>
@@ -154,10 +154,10 @@
           <p class="account-lead" id="verify-lead"></p>
           <div class="account-note" id="verify-fail-note" hidden></div>
           <div class="account-field">
-            <label class="account-label" for="input-verify-email"><span class="sr-only">邮箱（没登录也能重发）</span></label>
+            <label class="account-label" for="input-verify-email"><span class="sr-only">邮箱</span></label>
             <input id="input-verify-email" class="account-input" type="email" inputmode="email"
                    autocomplete="email" spellcheck="false" enterkeyhint="send"
-                   placeholder="邮箱" maxlength="120" aria-label="邮箱（没登录也能重发）" />
+                   placeholder="邮箱" maxlength="120" aria-label="邮箱" />
           </div>
           <div class="turnstile-slot" id="ts-verify" hidden></div>
           <div class="account-note warn" id="ts-broken-ts-verify" hidden></div>
@@ -167,7 +167,6 @@
           <p class="account-msg" id="msg-verify"></p>
 
           <p class="account-hint">链接 24 小时内有效，未收到可重发。点开链接即完成邮箱验证后登录。</p>
-          <p class="auth-links"><button class="link-btn" id="btn-back-login3" type="button">返回登录</button></p>
         </div>
 
         <div class="auth-pane" id="pane-forgot" role="tabpanel" hidden>

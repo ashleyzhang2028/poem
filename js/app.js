@@ -425,8 +425,8 @@
         b.classList.toggle("active", b.dataset.scope === scopeKey());
       });
     }
-    const hint = $("#scope-hint");
-    if (hint) hint.textContent = "当前：" + scopeInfo().scopeName;
+    // ⚠️ 这里原先往「设置 · 背诵」页的范围下面回显一行「当前：本学期及之前」——
+    //    选中的那一格就是当前值，用户 2026-09-21 点名撤掉，首页不再替设置页写字。
     const sh = $("#seg-helper");
     if (sh) {
       $$("button", sh).forEach(function (b) {

@@ -234,7 +234,6 @@ setTimeout(() => {
     '「通用」页不再有用户名输入框（与「我的」页重复了，用户 2026-09-18 点名删）');
   chk(!sgeneral.querySelector('#family-panel'),
     '「通用」页不再有子用户那一块（整块挪去「我的」页）');
-  chk(!!sgeneral.querySelector('#account-panel'), '「通用」页含账号一项');
   chk(!!srecite.querySelector('#seg-stage'), '学段选择在「背诵」页');
   chk(!!srecite.querySelector('#seg-term'), '学期选择在「背诵」页');
   chk(!!srecite.querySelector('#grade-chips'), '年级选择在「背诵」页');
@@ -310,18 +309,18 @@ setTimeout(() => {
   chk(grpOf(srecite, '#seg-algo') === '复习算法', '复习算法选择归到「复习算法」组');
 
   const generalItems = sgeneral.querySelector('#settings-page .settings-group').querySelectorAll('.settings-item');
-  chk(generalItems.length === 4,
-    '「通用」组是账号 / 跨设备同步 / 数据管理 / 课内诗词导出四项' +
-    '（用户名与子用户整块撤掉 —— 它们都是「我是谁」，归「我的」页；' +
-    '自检 Issue #225 加过，Issue #229 又搬到设置「关于」当一行链接；实际 ' + generalItems.length + '）');
+  chk(generalItems.length === 2,
+    '「通用」组只剩「数据管理」与「课内诗词导出」两块' +
+    '（账号 / 跨设备同步 2026-09-21 收回「我的」页 —— 它们是「我是谁」，不是「怎么调机器」；' +
+    '用户名与子用户更早撤过；自检 Issue #229 搬到设置「关于」当一行链接；实际 ' + generalItems.length + '）');
   chk(!sgeneral.querySelector('#btn-selfcheck'),
     '「通用」里不再有自检那颗按钮（用户 2026-09-18：搬到关于、按钮变成链接）');
   chk(!!sgeneral.querySelector('#btn-export-poems'),
     '「通用」里有课内诗词导出（Issue #159：只导课本那 261 首）');
   chk(grpOf(sgeneral, '#btn-export-poems') === '通用',
     '课内诗词导出归到「通用」（与数据管理同一组：都是「把你的东西拿走」）');
-  chk(!!sgeneral.querySelector('#toggle-sync'),
-    '「通用」里有跨设备同步开关（用户有权拒绝上传，默认关着 —— docs §4.2 第 2 条）');
+  chk(!sgeneral.querySelector('#toggle-sync'),
+    '「通用」里不再有跨设备同步开关（搬去「我的」页的「关于」卡，全场只有一处）');
 
   chk(!sgeneral.querySelector('#seal-chars') && !sgeneral.querySelector('#seal-inks'),
     '那四个色点与字集选择器都不在了（用户点名删掉的自造流程）');
@@ -336,7 +335,6 @@ setTimeout(() => {
   chk(!!smine.querySelector('#danger-card'), '「我的」页有注销那一张危险区卡');
 
   const OWNER_OF = {
-    '#account-panel': [sgeneral],
     '#btn-export': [sgeneral], '#btn-import': [sgeneral], '#btn-reset': [sgeneral],
     '#seg-stage': [srecite], '#grade-chips': [srecite], '#seg-term': [srecite],
     '#seg-scope': [srecite], '#seg-count': [srecite], '#seg-algo': [srecite],
@@ -356,14 +354,13 @@ setTimeout(() => {
     chk(doc.querySelector('.foot') === null, '每一张设置页都没有页底页脚（应用形态，不是网页）');
   });
 
+  // ⚠️ 用户 2026-09-21「能省则省」：范围下面原先还回显一行「当前：本学期及之前」——
+  //    选中的那一格就是当前值（.active 已经把这件事说完了），整行撤掉。
   chk(!!srecite.querySelector('#scope-hint') &&
-      srecite.querySelector('#scope-hint').textContent === '当前：本学期及之前',
-    '背诵范围下回显当前范围（实际「' + (srecite.querySelector('#scope-hint') || {}).textContent + '」）');
+      srecite.querySelector('#scope-hint').textContent === '',
+    '背诵范围下不再回显「当前：…」（选中态自己就是当前值，实际「' +
+    (srecite.querySelector('#scope-hint') || {}).textContent + '」）');
 
-  chk(sgeneral.querySelector('#account-state').textContent === '游客',
-    '「账号」一项未登录时写「游客」（实际「' + sgeneral.querySelector('#account-state').textContent + '」）');
-  chk(/用邮箱登录/.test(sgeneral.querySelector('#account-panel').textContent),
-    '「账号」一项仍有进 /login/ 的入口（删的是那段解释，不是入口）');
 
   chk(d.querySelector('#classic-entry') === null, '首页不再有小古文入口卡片');
   chk(d.querySelector('.classic-entry') === null, '首页不再有小古文入口卡片（classic-entry 已删）');
@@ -404,8 +401,9 @@ setTimeout(() => {
   chk(d.querySelectorAll('#today-list .item-read .play-glyph').length === 5,
     '今日每首右侧都是 ▶ 播放键');
 
-  chk(srecite.querySelector('#scope-hint').textContent === '当前：本学期及之前',
-    '出厂范围回显正确（实际 ' + srecite.querySelector('#scope-hint').textContent + '）');
+  chk(activeOne(srecite, '#seg-scope') &&
+      srecite.querySelector('#seg-scope button.active').dataset.scope === 'upto',
+    '出厂范围由选中态表达（「本册及之前」那一格是 active）');
 
   const setOn = (key, val, sel, attr) => {
     const b = [...srecite.querySelectorAll(sel)].find(x => String(x.dataset[attr]) === String(val));
@@ -416,22 +414,21 @@ setTimeout(() => {
 
   setOn('grade', 2, '#grade-chips button', 'grade');
   chk(String(srecite.querySelector('#grade-chips button.active').dataset.grade) === '2', '设置页年级高亮切到二年级（实际 ' + (srecite.querySelector('#grade-chips button.active') ? srecite.querySelector('#grade-chips button.active').textContent : '无') + '）');
-  chk(srecite.querySelector('#scope-hint').textContent === '当前：本学期及之前',
-    '切到二年级上学期：范围回显仍是「本学期及之前」');
+  chk(srecite.querySelector('#seg-scope button.active').dataset.scope === 'upto',
+    '切到二年级上学期：范围仍是「本学期及之前」');
   chk(d.querySelectorAll('#today-list .item').length === 5, '切换后仍是 5 首计划');
 
   setOn('term', 2, '#seg-term button', 'term');
-  chk(srecite.querySelector('#chip-grade')
-      ? srecite.querySelector('#scope-hint').textContent === '当前：本学期及之前'
-      : true, '二年级下学期：范围回显一致');
+  chk(srecite.querySelector('#seg-scope button.active').dataset.scope === 'upto',
+    '二年级下学期：范围一致');
 
   setOn('stage', 'high', '#seg-stage button', 'stage');
   chk(srecite.querySelectorAll('#grade-chips button').length === 3, '设置页切高中后显示 3 个年级');
   chk(['10', '11', '12'].indexOf(String(srecite.querySelector('#grade-chips button.active').dataset.grade)) > -1,
     '换学段后年级落在新学段内');
   setOn('grade', 12, '#grade-chips button', 'grade');
-  chk(srecite.querySelector('#scope-hint').textContent === '当前：本学期及之前',
-    '高三下学期：范围回显仍是「本学期及之前」');
+  chk(srecite.querySelector('#seg-scope button.active').dataset.scope === 'upto',
+    '高三下学期：范围仍是「本学期及之前」');
 
   {
 
@@ -566,8 +563,8 @@ setTimeout(() => {
   setOn('scope', 'primary', '#seg-scope button', 'scope');
   chk(srecite.querySelector('#seg-scope button.active').dataset.scope === 'primary', '切换后按钮高亮跟随');
 
-  chk(srecite.querySelector('#scope-hint').textContent === '当前：小学阶段',
-    '小学随机范围 → 设置页回显「当前：小学阶段」（实际 ' + srecite.querySelector('#scope-hint').textContent + '）');
+  chk(srecite.querySelector('#seg-scope button.active').dataset.scope === 'primary',
+    '小学随机范围 → 选中态落在「小学随机」那一格');
   chk(/小学阶段/.test(d.querySelector('#all-label').textContent),
     '小学随机范围 → 首页那张卡的标题跟着变成「' + d.querySelector('#all-label').textContent + '」');
   chk(+d.querySelector('#all-count').textContent > 5,
@@ -575,13 +572,19 @@ setTimeout(() => {
   chk(d.querySelectorAll('#today-list .item').length === 5, '随机范围下仍按每日数量出计划');
   chk(JSON.parse(spRecite.window.localStorage.getItem('poem_recite_settings_v1')).scope === 'primary', '背诵范围已持久化');
   setOn('scope', 'high', '#seg-scope button', 'scope');
-  chk(srecite.querySelector('#scope-hint').textContent === '当前：高中阶段',
-    '高中随机范围 → 设置页回显「当前：高中阶段」');
+  chk(srecite.querySelector('#seg-scope button.active').dataset.scope === 'high',
+    '高中随机范围 → 选中态落在「高中随机」那一格');
   setOn('scope', 'upto', '#seg-scope button', 'scope');
-  chk(srecite.querySelector('#scope-hint').textContent === '当前：本学期及之前',
-    '切回「本册及之前」→ 设置页回显「当前：本学期及之前」');
+  chk(srecite.querySelector('#seg-scope button.active').dataset.scope === 'upto',
+    '切回「本册及之前」→ 选中态跟回来');
 
   const spMineN = bootSettingsPage(null, 'mine/index.html');
+  chk(!sgeneral.querySelector('#account-panel'),
+    '「通用」页不再有账号那一项（账号是「我是谁」，归「我的」页）');
+  chk(!sgeneral.querySelector('#toggle-sync') && !sgeneral.querySelector('#sync-hint'),
+    '「通用」页不再有跨设备同步开关（它有两个来源时会打架）');
+  chk(!!spMineN.doc.querySelector('#toggle-sync') && !!spMineN.doc.querySelector('#sync-hint'),
+    '跨设备同步开关在「我的」页的「关于」卡里（唯一一处）');
   const uInput = spMineN.doc.querySelector('#input-nickname');
   chk(uInput.value === '', '昵称初始为空（使用默认名 Ashley）');
 

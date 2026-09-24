@@ -656,8 +656,13 @@ async function main() {
 
     chk(!!vm && Number(vm[1]) >= 132, "sw.js 缓存版本提到 v132 以上（实际 " + (vm && vm[1]) + "）");
 
+    // ⚠️ 用户 2026-09-21「哪些应该放到我的却放到了设置」：同步开关原先在
+    //    「设置 · 通用」，与「我的」页那份**各写了一遍**（两处各写一遍的下场
+    //    就是改了一处、显示另一处）。现在整块收回「我的」页，全场只有一处。
+    const mineJs = fs.readFileSync(path.join(ROOT, "js/mine.js"), "utf8");
     const gen = fs.readFileSync(path.join(ROOT, "settings/general/index.html"), "utf8");
-    chk(/id="toggle-sync"/.test(gen), "设置 · 通用里有同步开关（用户有权拒绝上传）");
+    chk(!/id="toggle-sync"/.test(gen),
+      "「设置 · 通用」里不再有同步开关（账号与同步都归「我的」页）");
     // ⚠️ 冲突裁决三颗键原先在 /profile/ 那一页（个人中心）。
     //    2026-09-20（Issue #244）那一页已删除，这一块整体搬进了「我的」页。
     const minePage = fs.readFileSync(path.join(ROOT, "mine/index.html"), "utf8");
@@ -666,8 +671,16 @@ async function main() {
     });
 
     const setjs = fs.readFileSync(path.join(ROOT, "js/settings.js"), "utf8");
-    chk(/SyncStore|syncMod\(\)/.test(setjs), "设置页的同步状态读 SyncStore（不自己判登录与否）");
-    chk(/S\.status\(\)|Sync\.status\(\)/.test(setjs), "设置页用 status() 出状态，不自己拼一套");
+    // ⚠️ 唯一允许出现 SyncStore 的地方是 bindAccount() 里那次 S.forget()：
+    //    退出登录要顺手忘掉同步游标。画开关 / 出状态那一套整块撤了。
+    chk(!/syncMod|function renderSync|function bindSync/.test(setjs),
+      "js/settings.js 里不再有第二份同步 UI（开关与状态只有一个来源）");
+    chk(/S\.status\(\)|Sync\.status\(\)/.test(mineJs),
+      "「我的」页用 status() 出状态，不自己拼一套");
+    chk(!/poem_sync_pref_v1/.test(setjs),
+      "js/settings.js 不再碰同步偏好那一把键（键名只在引擎里）");
+    chk((setjs.match(/SyncStore/g) || []).length <= 1,
+      "js/settings.js 里 SyncStore 至多出现一次（退出登录时 forget() 那一下）");
   }
 
   {
@@ -722,11 +735,11 @@ async function main() {
     console.log("\n(未安装 jsdom，跳过真页面一节 —— run.sh 会先装好它)");
   } else {
 
-    const w = await page("settings/general", {});
+    const w = await page("mine", {});
     await signInPro(w);
 
     const input = w.document.getElementById("toggle-sync");
-    chk(!!input, "设置 · 通用里有同步开关那颗控件");
+    chk(!!input, "「我的」页里有同步开关那颗控件（唯一一处）");
     eq(input.checked, false, "打开页面时开关是**关着的**（出厂状态）");
     eq(input.disabled, false, "服务端可用时开关点得动（不是灰的）");
 
@@ -747,23 +760,26 @@ async function main() {
     var _inpCss = (cssCode.match(/\.switch-input\s*\{[^}]*\}/) || [""])[0];
     chk(/width:\s*0/.test(_inpCss) && /height:\s*0/.test(_inpCss),
       "真实复选框画成 0 尺寸（不占位，视觉交给轨道那颗 span）");
-    ok(/只存本机/.test(w.document.getElementById("sync-hint").textContent),
-      "关着时如实说「进度只存本机，不上传」");
+    // 关着时那一行**留空**（#sync-hint 不再念一句「进度只存本机，不上传」）：
+    // 开关自己是关的，这句话是它的复述。开着时那一句才是真事实（会传上去）。
+    eq(w.document.getElementById("sync-hint").textContent, "",
+      "关着时那一行是空的（开关状态自己说得清，不重复念）");
 
     input.checked = true;
     input.dispatchEvent(new w.Event("change", { bubbles: true }));
     await new Promise(r => setTimeout(r, 20));
     chk(!!w.localStorage.getItem("poem_sync_pref_v1"), "开关落了盘");
     eq(JSON.parse(w.localStorage.getItem("poem_sync_pref_v1")).enabled, true, "落盘的是 enabled:true");
-    ok(/同步到服务器/.test(w.document.getElementById("sync-hint").textContent),
-      "开着时如实说「会上传到服务器」（两种说法不能混）");
+    ok(/已开启/.test(w.document.getElementById("sync-hint").textContent),
+      "开着时如实说一句「已开启」（实际「" +
+      w.document.getElementById("sync-hint").textContent + "」）");
 
     input.checked = false;
     input.dispatchEvent(new w.Event("change", { bubbles: true }));
     await new Promise(r => setTimeout(r, 20));
     eq(JSON.parse(w.localStorage.getItem("poem_sync_pref_v1")).enabled, false, "关掉也落盘");
 
-    const w2 = await page("settings/general", {});
+    const w2 = await page("mine", {});
     await signInPro(w2, "pro2@example.com");
     const S = w2.SyncStore;
     chk(!!S, "页面里 SyncStore 挂在 window 上");
@@ -797,7 +813,8 @@ async function main() {
     chk(!!box && box.hidden === false, "有冲突时「我的」页把裁决面板摆出来");
     const lead = w3.document.getElementById("conflict-lead").textContent;
     ok(/1 篇/.test(lead), "面板里写明争的是几篇（不让用户在不知代价的情况下选）");
-    ok(/快照/.test(lead), "面板里写明「保留账号」之前会留快照（后悔药先说清）");
+    ok(/两边都改过/.test(lead) && /选一份/.test(lead),
+      "面板里写明争的是什么、要用户做什么（实际「" + lead + "」）");
 
     ok(/需要你选一下/.test(w3.document.getElementById("sync-hint").textContent),
       "说明行如实写「需要你选一下」，不写「已同步」（实际：" +
@@ -811,12 +828,16 @@ async function main() {
     eq(pInput.checked, false,
       "没开同步的人落到这一页：开关就是关着的（读的是同一份 SyncStore 状态）");
 
-    const wSet = await page("settings/general", {});
-    await signInPro(wSet, "same@example.com");
-    wSet.SyncStore.setEnabled(true);
-    const wShare = await page("mine", { "poem_sync_pref_v1": wSet.localStorage.getItem("poem_sync_pref_v1") });
+    // ⚠️ 原先这里是「在『设置 · 通用』里打开之后，『我的』页那一行也是开着的」
+    //    —— 那正是本轮要收掉的那条病：同一条偏好有两个写入口，两页各画一遍。
+    //    现在写入口只有「我的」页这一处；这里改成「**另一张**『我的』页面上
+    //    读到的仍是同一份状态」（即它是引擎里的状态，不是这一页自己的变量）。
+    const wOpen = await page("mine", {});
+    await signInPro(wOpen, "same@example.com");
+    wOpen.SyncStore.setEnabled(true);
+    const wShare = await page("mine", { "poem_sync_pref_v1": wOpen.localStorage.getItem("poem_sync_pref_v1") });
     eq(wShare.document.getElementById("toggle-sync").checked, true,
-      "在「设置 · 通用」里打开之后，「我的」页那一行也是开着的（两页同一份状态）");
+      "一处打开之后，另一张页面上那一行也是开着的（读的是同一份引擎状态）");
 
     const pInp = wShare.document.getElementById("toggle-sync");
     pInp.checked = false;

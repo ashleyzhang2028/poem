@@ -389,7 +389,12 @@ function check(name, cond, extra) {
       }), sel);
       return Object.assign({ clicked: true, href: link.href }, after);
     };
-    const subGeneral = await enterSub('general', '#toggle-sync');
+    // ⚠️ 用户 2026-09-21「哪些应该放到我的却放到了设置」：这一档原先拿
+    //    **同步开关**（#toggle-sync）当「这张页真的预缓存到位了」的证据 ——
+    //    可那颗开关已经收回「我的」页了，在「通用」页上当然取不到，
+    //    于是这里会红成「通用这张页没进预缓存」（那是个假结论）。
+    //    证据换成这张页上**现在真的住着**的东西：数据管理那三颗键。
+    const subGeneral = await enterSub('general', '#btn-reset');
     check('iPhone: 断网时点「通用」进得去二级页（预缓存里真的有这张页）',
       subGeneral.clicked && subGeneral.href === '/settings/general/' &&
       subGeneral.url === '/settings/general/' &&
@@ -1949,9 +1954,15 @@ function check(name, cond, extra) {
   }
 
   {
+    // ⚠️ 用户 2026-09-21：同步开关从「设置 · 通用」收回「我的」页的「关于」卡
+    //    （全场只有一处）。这一档量的**结构**没变，只是换到它现在真正住的那张页上取。
+    //    ⚠️ 种子会话也必须在这张页上种：播种要 AuthCore，而「设置 · 通用」
+    //    已经不再加载 auth-core.js / account-api.js（那一页没有挂载点了）——
+    //    在那张页上种不出来，pre.pro 会一直是 false，下面五条跟着一起红
+    //    （红的理由是「没登录」，不是「开关画错了」，那种红最难查）。
     const { page } = await freshPage();
     await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
-    await page.goto(base + 'settings/general/', { waitUntil: 'networkidle0' });
+    await page.goto(base + 'mine/', { waitUntil: 'networkidle0' });
     await new Promise(r => setTimeout(r, 600));
 
     const seed = await page.evaluate(() => {

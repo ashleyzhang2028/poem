@@ -80,9 +80,12 @@ const sourceFiles = [];
     "管理后台的页面与脚本都不再提个人中心");
 
   const settingsJs = strip(read("js/settings.js"));
-  chk(/id="btn-goprofile"[^>]*href="\/mine\/"|href="\/mine\/"[^>]*id="btn-goprofile"/.test(settingsJs) ||
-      /'<a class="btn ghost-btn" id="btn-goprofile" href="\/mine\/">/.test(settingsJs),
-    "设置 · 通用的「个人中心」那颗键改成去「我的」页");
+  // ⚠️ 原先这里守的是「设置 · 通用里那颗『个人中心』键改成去 /mine/」。
+  //    用户 2026-09-21「哪些应该放到我的却放到了设置」之后，**账号那一整项
+  //    都从「通用」收回了「我的」页**（连 #account-panel 在内），
+  //    那颗键当然也不再需要 —— 守的是它整块不回来，而不是换个地址再挂一颗。
+  chk(!/btn-goprofile/.test(settingsJs) && !/id="account-panel"/.test(settingsJs),
+    "设置 · 通用里不再有账号那一项（账号归「我的」页，那颗指路的键也随之撤掉）");
   chk(!/\/profile\//.test(settingsJs), "js/settings.js 里不再有 /profile/");
 }
 
@@ -92,10 +95,16 @@ const sourceFiles = [];
   const mineJs = strip(read("js/mine.js"));
 
   chk(/id="about-card"/.test(mine), "「我的」页新增「关于」卡（个人中心那张卡的落点）");
-  ['/terms/', '/privacy/', '/plans/'].forEach(href => {
+  ['/terms/', '/privacy/'].forEach(href => {
     chk(new RegExp('class="kv-k"><a class="kv-link" href="' + href + '"').test(mine),
-      "法务 / 层级对比入口 " + href + " 出现在「我的」页的「关于」卡里");
+      "法务入口 " + href + " 出现在「我的」页的「关于」卡里");
   });
+  // ⚠️ 用户 2026-09-21：层级对比是**一张表**（一处就够），它留在
+  //    「设置 · 关于」那一行；「我的」页不再重复收一份。
+  chk(!/href="\/plans\/"/.test(mine),
+    "「我的」页不再重复收「层级对比」（只在「设置 · 关于」一处给入口）");
+  chk(/link\("\/plans\/",\s*"层级对比"\)/.test(read("js/settings-nav.js")),
+    "「层级对比」那一行仍在「设置 · 关于」里（Issue #244 那四件一件没少）");
   chk(/id="sync-row"/.test(mine) && /id="toggle-sync"/.test(mine),
     "跨设备同步开关搬到了「我的」页（项名 + 开关一行）");
   chk(/id="sync-conflict"/.test(mine) && /id="conflict-lead"/.test(mine),
@@ -131,6 +140,11 @@ const sourceFiles = [];
     .map(m => m[1] || "identity");
   chk(ids.join(" > ").indexOf("about-card") < ids.join(" > ").indexOf("danger-card"),
     "「关于」卡排在注销（危险区）之前（去别处看的两行不与危险动作并列，实际 " + ids.join(" > ") + "）");
+  // 用户 2026-09-21「再次梳理所有页面」：这一页的次序按「我是谁 → 我的数据 →
+  // 我的账号 → 这台应用」走 —— 账号在前（它是这一页的主语之一），
+  // 「关于」在后（应用信息的入口），注销垫底。
+  chk(ids.join(" > ").indexOf("account-card") < ids.join(" > ").indexOf("about-card"),
+    "「账号」卡排在「关于」卡之前（实际 " + ids.join(" > ") + "）");
 
   chk(!/class="admin-slot"/.test(mine),
     "管理后台那颗键不再单占页尾一块（.admin-slot 随移动一起撤掉）");
@@ -159,7 +173,7 @@ const sourceFiles = [];
 {
   const sw = read("sw.js");
   const ver = parseInt((sw.match(/poem-app-v(\d+)/) || [0, "0"])[1], 10);
-  chk(ver >= 188, "缓存版本已跟着提（删了一页一脚本 + 改了 css，实际 v" + ver + "）");
+  chk(ver >= 194, "缓存版本已跟着提（本轮收了账号 / 同步两块 + 精简提示，实际 v" + ver + "）");
 
   const navVer = (read("js/settings-nav.js").match(/APP_VERSION = "[^"]*v(\d+)/) || [0, "0"])[1];
   chk(String(ver) === String(navVer),

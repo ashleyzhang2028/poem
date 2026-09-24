@@ -61,8 +61,10 @@ const NAV = read('js/settings-nav.js');
 {
   const OWNER = {
 
-    general: ['#account-panel',
-      '#btn-export', '#btn-import', '#btn-reset'],
+    // ⚠️ 原先这里还有 #account-panel（账号那一块）—— 用户 2026-09-21
+    //    「哪些应该放到我的却放到了设置」：账号与跨设备同步都收回「我的」页，
+    //    #account-panel 与 #toggle-sync 在设置这一侧一个都不剩。
+    general: ['#btn-export', '#btn-import', '#btn-reset'],
     recite: ['#seg-stage', '#grade-chips', '#seg-term', '#seg-scope', '#seg-count', '#seg-algo'],
     lists: ['#collections-list', '#btn-collections-import', '#collections-tip'],
     reader: ['#seg-helper', '#seg-play']
@@ -80,6 +82,14 @@ const NAV = read('js/settings-nav.js');
     .flatMap(k => [...SRC[k].matchAll(/aria-labelledby="grp-([a-z]+)"/g)].map(m => m[1]));
   chk(titles.join(',') === 'recite,algo,print',
     '四张页合起来仍是那几组，顺序不变（只有两组以上的页才留 aria-labelledby，实际 ' + titles.join(',') + '）');
+
+  ['#account-panel', '#toggle-sync', '#sync-hint'].forEach(sel => {
+    const id = sel.replace(/^#/, '');
+    const hit = Object.keys(PAGES).filter(k => new RegExp('id="' + id + '"').test(SRC[k]));
+    chk(hit.length === 0,
+      '控件 ' + sel + ' 不在任何一张设置页上（账号与同步归「我的」页 /mine/；' +
+      '实际：' + (hit.join(',') || '哪一页都没有') + '）');
+  });
 
   ['general', 'reader'].forEach(k => {
     chk(!/settings-group-title/.test(SRC[k]),
@@ -145,7 +155,7 @@ const NAV = read('js/settings-nav.js');
     '四张二级页都在预缓存清单里（断网也进得去）');
   chk(/\.\/js\/settings-nav\.js/.test(sw), 'js/settings-nav.js 在预缓存清单里');
   const ver = parseInt((sw.match(/poem-app-v(\d+)/) || [0, '0'])[1], 10);
-  chk(ver >= 143, '缓存版本已跟着提（本轮改了 css / js / 数据，实际 v' + ver + '）');
+  chk(ver >= 194, '缓存版本已跟着提（本轮改了 css / js / 页面文案，实际 v' + ver + '）');
 
   const list = [...sw.matchAll(/"(\.\/[^"]+)"/g)].map(m => m[1]);
   const missing = list.filter(u => {

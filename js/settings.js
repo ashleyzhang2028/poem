@@ -22,16 +22,6 @@
   const DEFAULT_SCOPE = "upto";
   const KNOWN_SCOPES = ["term", "upto", "primary", "middle", "primary_middle", "high", "all"];
 
-  const SCOPE_NAMES = {
-    term: "本学期",
-    upto: "本学期及之前",
-    primary: "小学阶段",
-    middle: "初中阶段",
-    primary_middle: "小学及初中阶段",
-    high: "高中阶段",
-    all: "全部阶段"
-  };
-
   const DEFAULTS = {
     username: "",
     grade: 1,
@@ -160,11 +150,10 @@
     mark("#seg-count", "count", settings.dailyCount);
     mark("#seg-helper", "helper", settings.helper === "on" ? "on" : "off");
 
-    const scopeHint = $("#scope-hint");
-    if (scopeHint) scopeHint.textContent = "当前：" + (SCOPE_NAMES[settings.scope] || SCOPE_NAMES[DEFAULT_SCOPE]);
-
-    renderAccount();
-    renderSync();
+    // ⚠️ 这里**不再**回显「当前：本学期及之前」—— 选中的那一格就是当前值
+    //    （`.active` 已经把这件事说完了），再写一行是重复（用户 2026-09-21）。
+    //    #scope-hint 这个挂载点留着：它现在是块空壳，但位置还在 ——
+    //    一旦有谁要在这里补一句真事实，不必先动 HTML。
     renderAlgos();
     renderPlayModes();
     renderCollections();
@@ -859,9 +848,6 @@
     if (window.SiteChrome && window.SiteChrome.refreshUser) window.SiteChrome.refreshUser();
   };
 
-  function authMod() {
-    return window.AuthCore || null;
-  }
   function entitlementMod() {
     return window.Entitlement || null;
   }
@@ -876,58 +862,17 @@
     }
   }
 
-  function renderAccount() {
-    const box = $("#account-panel");
-    if (!box) return;
-    const A = authMod();
-    const E = entitlementMod();
-    const ident = currentIdentity();
-
-    if (!A || !E || !ident) {
-      box.innerHTML = '<p class="settings-hint">账号信息加载失败：请刷新页面重试。</p>';
-      return;
-    }
-
-    const badge = '<span class="tier-badge tier-' + ident.tier + '" id="account-tier">' +
-      E.tierLabel(ident.tier) + "</span>";
-
-    if (!ident.signedIn) {
-
-      box.innerHTML =
-        '<p class="account-line"><span class="account-state" id="account-state">游客</span>' +
-        badge + "</p>" +
-        '<div class="settings-btns"><a class="btn ghost-btn" id="btn-gologin" href="/login/">用邮箱登录</a></div>';
-      return;
-    }
-
-    const lacks = E.matrix(ident).filter(function (m) { return !m.ok; });
-    const rows = lacks.length
-      ? '<p class="settings-hint">还差：' + lacks.map(function (m) {
-          return esc(m.name + "（" + m.hint + "）");
-        }).join("、") + '</p>'
-      : '<p class="settings-hint">全部功能都能用。</p>';
-
-    box.innerHTML =
-      '<p class="account-line"><span class="account-state ok" id="account-state">已登录</span>' +
-      '<span class="account-mask" id="account-mask">' + (ident.mask || "本机账号") + "</span>" + badge + "</p>" +
-      rows +
-      '<div class="settings-btns">' +
-      '<a class="btn ghost-btn" id="btn-goprofile" href="/mine/">我的</a>' +
-      '<button class="btn ghost-btn" id="btn-signout" type="button">退出登录</button></div>' +
-      '<p class="settings-hint">退出不删进度；注销在「我的」页。</p>' +
-
-      '<p class="settings-hint" id="account-tier-src">层级来源：' +
-      esc(ident.tierSource === "server" ? "服务器" : "本机登记") + "</p>";
-  }
-
+  // 「退出登录」那一颗由管理后台签发给自己的那一块画出来（#account-signout，
+  // 见 js/admin-page.js）。账号与同步的正主是「我的」页，这里只管把这一颗
+  // 转给引擎 —— 不在这张页上另造一份账号 UI（那正是本轮要收掉的东西）。
   function bindAccount() {
     const btn = $("#btn-signout");
     if (!btn) return;
     btn.addEventListener("click", function () {
       if (!window.confirm("退出登录？进度不受影响。")) return;
-      const A = authMod();
-      const S = syncMod();
+      const S = window.SyncStore || null;
       try {
+        const A = window.AuthCore;
         if (A && A.makeStore) A.signOut(A.makeStore(window.localStorage));
       } catch (e) {  }
 
@@ -935,78 +880,11 @@
 
       try {
         const M = window.AccountApi;
-        if (M && M.clearServerTier) M.clearServerTier({ backing: window.localStorage, E: entitlementMod() });
+        if (M && M.clearServerTier) {
+          M.clearServerTier({ backing: window.localStorage, E: entitlementMod() });
+        }
       } catch (e) {  }
-      renderAccount();
-      renderSync();
       showToast("已退出登录，进度都还在这台设备上");
-    });
-  }
-
-  function syncMod() { return window.SyncStore || null; }
-
-  function renderSync() {
-    const input = $("#toggle-sync");
-    const hint = $("#sync-hint");
-    if (!input || !hint) return;
-    const S = syncMod();
-    if (!S) {
-      input.disabled = true;
-      hint.textContent = "同步层没有加载成功，请刷新页面重试（背诵不受影响）。";
-      return;
-    }
-    const st = S.status();
-    const on = S.enabled();
-    input.checked = on;
-    input.disabled = (st === "unavailable");
-
-    if (st === "unavailable") {
-      hint.textContent = "本站未开放同步，进度只存本机。";
-      return;
-    }
-    if (st === "tier") {
-      hint.textContent = "跨设备云同步要 Pro 起（当前没到这一层）。进度仍在本机、一字不少。";
-      return;
-    }
-
-    if (!on) {
-      hint.textContent = "";
-      return;
-    }
-    if (st === "signin") {
-      hint.textContent = "已开启，登录后才会真的同步。";
-      return;
-    }
-    hint.textContent = "开启中：进度、账号设置、自选集合、集子已读、今日加背、头像都会同步；本机那份始终完整，断网照常背。";
-  }
-
-  function bindSync() {
-    const input = $("#toggle-sync");
-    if (!input) return;
-    input.addEventListener("change", function () {
-      const S = syncMod();
-      if (!S) return;
-      const r = S.setEnabled(input.checked);
-      if (!r || !r.ok) {
-        input.checked = !!S.enabled();
-
-        if (r && r.code === "E_TIER") showToast(r.hint || "跨设备云同步要 Pro 起");
-        else showToast("浏览器不允许保存设置，这次改动没生效");
-        renderSync();
-        return;
-      }
-      renderSync();
-      renderAccount();
-      if (input.checked) {
-
-        try {
-          const first = S.firstSync();
-          if (first && first.then) first.then(function () { renderSync(); }, function () {  });
-        } catch (e) {  }
-        showToast(S.status() === "signin" ? "已开启，登录后才会真的同步" : "已开启跨设备同步");
-      } else {
-        showToast("已关闭同步，进度仍在本机");
-      }
     });
   }
 
@@ -1193,20 +1071,6 @@
     }
   }
 
-  function refreshServerIdentity() {
-    const M = window.AccountApi;
-    const box = $("#account-panel");
-    if (!M || !M.refreshMe || !box) return;
-    Promise.resolve(M.refreshMe({
-      backing: window.localStorage,
-      A: authMod(),
-      E: entitlementMod()
-    })).then(function (r) {
-      if (!r || !r.ok) return;
-      renderAccount();
-    })["catch"](function () {  });
-  }
-
   function init() {
     settings = loadSettings();
     applyAppName();
@@ -1215,8 +1079,6 @@
     bindCollections();
     bindDaily();
     bindAccount();
-    bindSync();
-    refreshServerIdentity();
 
     window.addEventListener("storage", function (e) {
       const PM = playModes();

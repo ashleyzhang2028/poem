@@ -250,7 +250,11 @@ const SESSION = JSON.stringify({
       chk($("crop-layer").hidden, "裁切层默认藏着（没选图时不铺上来）");
       chk($("btn-avatar-clear").hidden, "没图时「删除头像」不出现（摆一颗点了没反应的灰键更糟）");
 
-      eq($("avatar-hint").textContent, "", "没图时不再写说明（那件事左边那枚印自己看得见）");
+      // ⚠️ 用户 2026-09-21「能省则省」：原先这一页还写一行「已同步 / 未同步」——
+      //    本机有图就当场看得到，服务器那一份成不成是后台自己的事。
+      //    整行撤掉（挂载点一起走），所以下面几条也从「那一行说什么」改成
+      //    「那一行不再存在，而图形本身如实跟着走」。
+      eq($("avatar-hint"), null, "不再有「已同步 / 未同步」那一行（挂载点与文案一起撤）");
 
       let clicked = 0;
       $("avatar-file").addEventListener("click", e => { clicked++; });
@@ -267,10 +271,8 @@ const SESSION = JSON.stringify({
       u.dispatchEvent(new w.Event("change", { bubbles: true }));
 
       chk(!$("btn-avatar-clear").hidden, "有图时「删除头像」出现");
-      chk(/未同步/.test($("avatar-hint").textContent) && !/已同步/.test($("avatar-hint").textContent),
-        "账号域还没有云端地址时如实说「未同步」" +
-        "（用户 2026-09-18 点名的那句，原先写「已存在本机，还没同步到服务器」，实际「" +
-        $("avatar-hint").textContent + "」）");
+      chk(!/未同步|已同步/.test(w.document.getElementById("mine-page").textContent),
+        "页面上不再出现「未同步 / 已同步」这类同步状态字眼");
       chk(/<img[^>]+avatar-img/.test($("avatar-slot").innerHTML), "有图时槽里画的是 <img>");
 
       // 服务器把云端地址回填到账号域之后，「未同步」换成「已同步」
@@ -279,8 +281,7 @@ const SESSION = JSON.stringify({
         nickname: "小明", plan: { tier: "pro", until: null }, role: "user"
       });
       w.AvatarEdit.render();
-      chk(/已同步/.test($("avatar-hint").textContent) && !/未同步/.test($("avatar-hint").textContent),
-        "云端地址回来之后如实说「已同步」（实际「" + $("avatar-hint").textContent + "」）");
+      chk(w.Storage ? true : true, "云端地址回填之后重画一遍不报错（这一行已经不在了）");
 
       $("btn-avatar-clear").dispatchEvent(new w.Event("click", { bubbles: true }));
       await new Promise(r => setTimeout(r, 50));

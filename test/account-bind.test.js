@@ -267,8 +267,11 @@ async function main() {
     chk(/M\.deleteAccount\(/.test(mine), "…且用的是 AccountApi.deleteAccount（服务端 + 本机两条路一起走）");
     chk(/remote === "skipped"/.test(mine), "「我的」页如实处理「云端那份没删掉」这一支");
     const set = read("js/settings.js").replace(/\/\*[\s\S]*?\*\//g, " ");
-    chk(/refreshServerIdentity/.test(set), "设置页也接上了 /api/me");
-    chk(/clearServerTier/.test(set), "退出登录时会清掉服务端那一份层级");
+    // ⚠️ 用户 2026-09-21：账号那一整项从「设置 · 通用」收回「我的」页，
+    //    设置侧那次 refreshServerIdentity() 跟着撤掉（它画的正是那一块）。
+    chk(!/refreshServerIdentity/.test(set) && !/renderAccount\(/.test(set),
+      "设置页不再自己接 /api/me（账号那一块归「我的」页）");
+    chk(/clearServerTier/.test(set), "退出登录时仍会清掉服务端那一份层级");
   }
 
   console.log("\n=== 十四、服务端真的下发 role（否则「服务端角色优先」只是注释） ===");
@@ -295,7 +298,9 @@ async function main() {
       const m = src.match(new RegExp('<script src="\\/?' + file.replace(/[./]/g, "\\$&") + '"><\\/script>'));
       return m ? src.indexOf(m[0]) : -1;
     };
-    ["mine/index.html", "settings/general/index.html", "plans/index.html"].forEach(f => {
+    // ⚠️ 「设置 · 通用」不再加载接线层：那一页上已经没有账号 / 同步的挂载点，
+    //    拖进来只会白跑一遍（真正接的那两张页在下面）。
+    ["mine/index.html", "plans/index.html"].forEach(f => {
       const s = read(f);
       const aApi = at(s, "js/account-api.js");
       const authApi = at(s, "js/auth-api.js");

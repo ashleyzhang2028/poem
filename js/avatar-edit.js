@@ -35,21 +35,12 @@
     try { d = A.display(window.localStorage); } catch (e) { d = null; }
     var clear = $("#btn-avatar-clear");
     if (clear) clear.hidden = !(d && d.hasImage);
-    renderHint(d);
   }
 
-  function synced(backing) {
-    var Api = accountApiMod();
-    var info = Api && Api.account ? Api.account() : null;
-    return !!(info && String(info.nickname || "").trim());
-  }
-
-  function renderHint(d) {
-    var hint = $("#avatar-hint");
-    if (!hint || !d) return;
-    if (!d.hasImage) { hint.textContent = ""; return; }
-    hint.textContent = synced(window.localStorage) ? "已同步" : "未同步";
-  }
+  // ⚠️ 原先这里往「我的」页写一行「已同步 / 未同步」（renderHint + synced 一对）——
+  //    本机有图就当场看得到，服务器那一份成不成是后台自己的事，
+  //    用户在这一页不需要这行状态（用户 2026-09-21：能省则省）。两边一起撤掉，
+  //    不留一个没人调用的判断。
 
   // 刷「页壳」：顶栏 + 底栏。
   //
