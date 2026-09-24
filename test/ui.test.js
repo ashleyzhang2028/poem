@@ -751,6 +751,76 @@ setTimeout(() => {
         chk(dockPaint(md) === 'char', '删完头像底栏当场退回首字（不刷新页面，实际 ' + dockPaint(md) + '）');
         chk(!/avatar-img/.test(dockIconOf(md).innerHTML), '退回去时不留一张裂图');
 
+        // ---- Issue #276 后续：底栏只有「我的」那一格该动 ----
+        // 用户 2026-09-24 原话：「点击上传头像，结果左下角背诵上面的图标变成头像，
+        // 而我的上面头像应该更新却没有直接更新。刷新页面后才正常显示。」
+        //
+        // 两个真 bug（都在 headless Chromium 与这里各复现过一遍）：
+        //  ① js/avatar-edit.js 的 refreshChrome 用 `#site-dock .dock-icon` 取样 ——
+        //     querySelector 取的是**第一颗**，即左下角「背诵」那一格。
+        //     于是头像被贴到了「背诵」上，「我的」那一格原样不动。
+        //  ② js/chrome.js 的 refreshDockAvatar 判据是 `hasImage === !!img`，
+        //     换一张新头像时两边都为真 → 当场 return → 「我的」一直挂着旧图，
+        //     要刷新页面才换过来。
+        //
+        // ⚠️ 只测「我的」那一格抓不住这两条：必须**同时看别格有没有被污染**，
+        //    而且要走**换图 / 传图**那条真路（光调 AvatarEdit.render() 是绕开
+        //    refreshChrome 的，这一条就是上一版测试漏掉的原因）。
+        const dockIc = (doc, key) => {
+          const it = doc.querySelector('#site-dock .dock-item[data-nav-go="' + key + '"]');
+          return it ? it.querySelector('.dock-icon') : null;
+        };
+        const paintOf = ic => !ic ? 'missing'
+          : (ic.querySelector('.avatar-img') ? 'image' : (ic.querySelector('.avatar') ? 'char' : 'svg'));
+
+        // ② 换一张**新**图：那一格要当场换成新那张（原先整个 return）。
+        m1.window.Avatar.setLocalImage(L, 'data:image/png;base64,QUJD');
+        m1.window.SiteChrome.refreshUser();
+        setTimeout(() => {
+          const im = dockIc(md, 'mine').querySelector('.avatar-img');
+          chk(!!im && im.getAttribute('src') === 'data:image/png;base64,QUJD',
+            '换一张**新**头像时「我的」那一格当场换成新的那张（不是留着上一张等刷新页面；' +
+            '实际「' + (im && im.getAttribute('src')) + '」）');
+
+          m1.window.Avatar.setLocalImage(L, 'data:image/png;base64,WFla');
+          m1.window.SiteChrome.refreshUser();
+          setTimeout(() => {
+            const im2 = dockIc(md, 'mine').querySelector('.avatar-img');
+            chk(!!im2 && im2.getAttribute('src') === 'data:image/png;base64,WFla',
+              '再换一张也照样跟上（判据比的是「画的是哪一张」，不是「有没有图」；' +
+              '实际「' + (im2 && im2.getAttribute('src')) + '」）');
+
+            // ① 走真按钮那条路（选文件 → 用这张）：头像只许落在「我的」那一格，
+            //    不许贴到左下角「背诵」上。
+            m1.window.AvatarImage.checkFile = () => ({ ok: true });
+            m1.window.AvatarImage.decode = () => Promise.resolve({ width: 8, height: 8 });
+            m1.window.AvatarImage.release = () => {};
+            m1.window.AvatarImage.process = () => Promise.resolve({ type: 'image/png', size: 8 });
+            m1.window.AvatarImage.blobToDataUrl = () => Promise.resolve('data:image/png;base64,TkVX');
+
+            const fileInput = md.getElementById('avatar-file');
+            Object.defineProperty(fileInput, 'files', {
+              value: [{ type: 'image/png', size: 8, name: 'a.png' }], configurable: true
+            });
+            fileInput.dispatchEvent(new m1.window.Event('change', { bubbles: true }));
+            setTimeout(() => {
+              md.getElementById('btn-crop-ok').dispatchEvent(new m1.window.Event('click', { bubbles: true }));
+              setTimeout(() => {
+                chk(paintOf(dockIc(md, 'home')) === 'svg',
+                  '传完头像后左下角「背诵」那一格仍是它自己的图标（不许被贴成头像；实际 ' +
+                  paintOf(dockIc(md, 'home')) + '）');
+                chk(['library', 'search'].every(k => paintOf(dockIc(md, k)) === 'svg'),
+                  '「课外」「搜索」两格也没被牵连（头像只长在「我的」那一格上）');
+                chk(paintOf(dockIc(md, 'mine')) === 'image',
+                  '该换的那一格（「我的」）换上了（实际 ' + paintOf(dockIc(md, 'mine')) + '）');
+
+                finish();
+              }, 150);
+            }, 50);
+          }, 50);
+        }, 50);
+
+        function finish() {
         const myCss = fs.readFileSync(path + 'css/style.css', 'utf8');
         chk(/--dock-icon-size:\s*26px/.test(myCss),
           '底栏图标尺寸只有一个来源（--dock-icon-size: 26px）');
@@ -761,6 +831,7 @@ setTimeout(() => {
 
         console.log(fails === 0 ? '\n🎉 UI 测试全部通过' : '\n❌ ' + fails + ' 项失败');
         process.exit(fails ? 1 : 0);
+        }
       }, 300);
     }, 300);
   }, 500);
