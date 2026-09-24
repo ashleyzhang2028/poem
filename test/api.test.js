@@ -2727,6 +2727,148 @@ async function main() {
     } finally { await sv3.close(); }
   }
 
+  console.log("\n=== 第廿七节、注册即登录（Issue #278）：点开确认链接就进门 ===");
+  {
+    // 用户原话：「用邮箱注册成功，点击验证链接成功，设置昵称完成，但很多功能
+    // 一点就说需要登录？」「让你完成登录功能就应该全部完善，怎么还每一步
+    // 每一步地催？全部完成完善！！！」
+    //
+    // 查下来的病根是**两处**：
+    //   ① 点完确认链接**不签发会话** —— 这一节守的就是它：能点开那枚
+    //      一次性令牌，就证明邮箱可达，那一步之后该是「已经登录」；
+    //   ② 昵称只写本机 localStorage，服务器上那一列永远是空的 ——
+    //      换台设备名字就没了，管理端名录也认不出人。
+    boot({ ALLOW_CODE_ECHO: "1" });
+    const sv = await serve();
+    try {
+      const POST = (p, b, cookie) => call(sv.base, "POST", p, b, cookie);
+      const PATCH = (p, b, cookie) => call(sv.base, "PATCH", p, b, cookie);
+
+      // ① 注册 → 确认 → **就有会话了**（整条动线一次做齐）
+      const core = require("../api/_lib/core.js");
+      const mailMod = core.__mail;
+      const captured = [];
+      const realConfirm = mailMod.confirm;
+      mailMod.confirm = function (c, o) {
+        captured.push(o);
+        return Promise.resolve({ delivered: true, transport: "resend", attempts: 1 });
+      };
+      let reg, vid, tok;
+      try {
+        reg = await POST("/api/register", { email: "flow278@example.com", password: "hunter2hunter" });
+        eq(reg.status, 202, "① 注册回 202（与 send-code 同一档）");
+        chk(!reg.setCookie, "① 注册这一刻**还没有**会话 —— 邮箱还没证明可达，不该先放人进来");
+        const m = captured[captured.length - 1];
+        chk(!!m && !!m.vid && !!m.token, "① 确认邮件真的发出去了一封（发信商是假的，但形状是真的）");
+        vid = m.vid; tok = m.token;
+      } finally { mailMod.confirm = realConfirm; }
+
+      const v = await POST("/api/verify-email", { vid: vid, token: tok });
+      eq(v.status, 200, "② 点开邮件里那条链接 → 200");
+      eq(v.body.verified, true, "② 如实回 verified:true");
+      eq(v.body.signedIn, true, "② **如实回 signedIn:true**（界面据它决定说「已登录」还是「去登录」）");
+      chk(/^kbsid=/.test(String(v.setCookie || "")), "② **就在这一步签发了会话 Cookie**（原先一个字节都不发）");
+      chk(/HttpOnly/.test(String(v.setCookie || "")), "② 那一枚 Cookie 是 HttpOnly");
+      chk(!/plan|tier|email/i.test(String(v.setCookie || "")), "② Cookie 里不含权益或邮箱");
+      const cookie278 = String(v.setCookie || "").split(";")[0];
+
+      const me278 = await call(sv.base, "GET", "/api/me", undefined, cookie278);
+      eq(me278.status, 200, "③ 拿那一枚 Cookie 读 /api/me：200（**这一步以前是 401，正是用户说的那个 bug**）");
+      eq(me278.body.email, "flow278@example.com", "③ 读到的就是本人");
+      eq(me278.body.emailVerified, true, "③ 邮箱状态如实为已确认");
+      // publicAccount 刻意**不下发 status**（那是内部状态机，界面用不着它；
+      // 要看的「进没进来」是 emailVerified 那一位）。账号那一列直接读库。
+      {
+        const sAcc = require("../api/_lib/store.js").getStore(require("../api/_lib/config.js"));
+        const aRow = Object.keys(sAcc._db.accounts).map(k => sAcc._db.accounts[k])
+          .filter(a => a.email === "flow278@example.com")[0];
+        eq(aRow.status, "active", "③ 库里那一行是 active（pending 已被确认那一步提上来）");
+      }
+
+      // ④ 重放：同一枚令牌不能第二次换会话
+      const again = await POST("/api/verify-email", { vid: vid, token: tok });
+      eq(again.status, 400, "④ 同一条链接再点一次 → 400");
+      eq(again.body.code, "E_TOKEN_USED", "④ 码是 E_TOKEN_USED（一次性令牌不因为「顺手签了个会话」而变成可重放）");
+      chk(!again.setCookie, "④ 被拒的那一次**一枚 Cookie 都不发**");
+
+      // ⑤ 昵称：落服务器，且换一台设备读得到
+      const set = await PATCH("/api/me", { nickname: "  小明  " }, cookie278);
+      eq(set.status, 200, "⑤ PATCH /api/me 改昵称：200");
+      eq(set.body.nickname, "小明", "⑤ 前后空格被剔掉，如实回存下来的那个值");
+      const meB = await call(sv.base, "GET", "/api/me", undefined, cookie278);
+      eq(meB.body.nickname, "小明", "⑤ 再读一次还是它（真的落库了，不是只在响应里说说）");
+
+      const storeM = require("../api/_lib/store.js").getStore(require("../api/_lib/config.js"));
+      const rowM = Object.keys(storeM._db.accounts).map(k => storeM._db.accounts[k])
+        .filter(a => a.email === "flow278@example.com")[0];
+      eq(rowM.nickname, "小明", "⑤ **库里那一列也写上了**（原先它只落本机 localStorage，这一列永远是空的）");
+
+      const lg278 = await POST("/api/login", { email: "flow278@example.com", password: "hunter2hunter" });
+      const ck278 = String(lg278.setCookie || "").split(";")[0];
+      const meC = await call(sv.base, "GET", "/api/me", undefined, ck278);
+      eq(meC.body.nickname, "小明", "⑤ **换一个会话（= 换一台设备）登录，名字还在**（这正是「账号域」的含义）");
+
+      const long = await PATCH("/api/me", { nickname: "一二三四五六七八九十十一十二十三" }, cookie278);
+      eq(long.body.nickname.length, 12, "⑤ 超长昵称截到 12 个字符（与服务端家族子用户同一档）");
+      const dirty = await PATCH("/api/me", { nickname: "<b>ok</b>\u0000" }, cookie278);
+      eq(dirty.body.nickname, "bok/b", "⑤ 尖括号与控制字符被剔掉（它最后是画在别人屏幕上的）");
+
+      const anon = await PATCH("/api/me", { nickname: "x" });
+      eq(anon.status, 401, "⑥ 没登录改昵称 → 401（不是 403、也不是「改成了」）");
+      eq(anon.body.code, "E_NO_SESSION", "⑥ 码是 E_NO_SESSION");
+
+      const g278 = await call(sv.base, "GET", "/api/me", undefined, cookie278);
+      eq(g278.status, 200, "⑥ GET /api/me 仍然走原来的路（新加的 PATCH 没把它挤掉）");
+
+      // ⑦ 「会话只有一个出口」：三条登录路 + 确认路都走同一处落库
+      const coreSrc278 = fs.readFileSync(path.join(ROOT, "api/_lib/core.js"), "utf8");
+      eq((coreSrc278.match(/session\.issue\(cfg, acc\.uid, t\)/g) || []).length, 1,
+        "⑦ **签会话只写一处**（`issueSessionFor`）——原先这个调用在原码里手抄了三份");
+      eq((coreSrc278.match(/function issueSessionFor\(/g) || []).length, 1,
+        "⑦ `issueSessionFor()` 只有一份定义");
+      chk(/issueSessionFor\(deps, cur\)/.test(coreSrc278),
+        "⑦ 邮箱确认那条路也走它（**这一行就是 Issue #278 的修复本身**）");
+
+      const handlerSrc278 = fs.readFileSync(path.join(ROOT, "api/_lib/handler.js"), "utf8");
+      chk(/function settleSession\(/.test(handlerSrc278), "⑦ 接口层有 settleSession（落库 + 响应整形只有一处）");
+      ["api/_routes/auth/login.js", "api/_routes/auth/verify-email.js"].forEach(f => {
+        chk(/handler\.settleSession\(/.test(fs.readFileSync(path.join(ROOT, f), "utf8")),
+          "⑦ " + f + " 走的是 handler.settleSession（不再自己抄一段 putSession）");
+      });
+      chk(/putSession/.test(handlerSrc278) &&
+        !/putSession/.test(fs.readFileSync(path.join(ROOT, "api/_routes/auth/login.js"), "utf8")),
+        "⑦ putSession 只在 handler.js 那一处（接口文件里不再各写一遍）");
+
+      const routes278 = require("../api/_lib/routes.js");
+      chk(!!routes278.resolve("PATCH", "/api/me"), "⑦ PATCH /api/me 在路由表里（少一条就是按钮点了没反应）");
+      chk(routes278.resolve("GET", "/api/me").methodAllowed === true &&
+        routes278.resolve("PATCH", "/api/me").methodAllowed === true,
+        "⑦ GET 与 PATCH 是同一个路径的两条路，各自认自己的方法");
+
+      // ⑧ 页面那一半：确认页据 signedIn 决定下一步，登录页把昵称发上去
+      const verifyJs278 = fs.readFileSync(path.join(ROOT, "js/verify.js"), "utf8");
+      chk(/r\.signedIn === true/.test(verifyJs278), "⑧ js/verify.js 读的是服务端回的 signedIn（不自己猜）");
+      chk(/location\.href = signedIn \? "\/mine\/" : "\/login\/"/.test(verifyJs278),
+        "⑧ 已登录时那颗按钮去首页，没拿到会话时才回登录页（两种情形如实分开）");
+      chk(/开始背诵/.test(fs.readFileSync(path.join(ROOT, "verify/index.html"), "utf8")),
+        "⑧ 确认页那颗按钮的出厂文案是「开始背诵」");
+
+      const loginJs278 = fs.readFileSync(path.join(ROOT, "js/login.js"), "utf8");
+      chk(/setNickname\(\{\s*nickname: clean\s*\}\)/.test(loginJs278) ||
+        /setNickname\(\{ nickname: clean \}\)/.test(loginJs278),
+        "⑧ 登录页把昵称发给服务端（调的是 AccountApi.setNickname）");
+      chk(/Acct\.bind/.test(loginJs278), "⑧ 走的是 account-api 那一层（页面不直接碰传输层）");
+      chk(/昵称暂时没能同步到服务器/.test(loginJs278),
+        "⑧ 同步失败**如实说一句**，且不拦人（名字没同步上比进不去轻得多）");
+
+      const acctSrc278 = fs.readFileSync(path.join(ROOT, "js/account-api.js"), "utf8");
+      chk(/setNickname:\s*setNickname/.test(acctSrc278), "⑧ account-api 导出 setNickname");
+      const apiSrc278 = fs.readFileSync(path.join(ROOT, "js/auth-api.js"), "utf8");
+      chk(/setNickname:\s*function/.test(apiSrc278), "⑧ 传输层接了 setNickname()（少一条就是按钮点了没反应）");
+      chk(/call\("\/me", "PATCH"/.test(apiSrc278), "⑧ 它打的是 PATCH /api/me（不是另开一条 /api/nickname）");
+    } finally { await sv.close(); }
+  }
+
   fs.writeFileSync("/tmp/m205.txt", "REACHED-205\n");
   console.log("\n=== 末节、路由与函数数（Issue #205：Hobby 档 12 个函数上限） ===");
   {

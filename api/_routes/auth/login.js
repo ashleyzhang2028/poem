@@ -14,13 +14,8 @@ module.exports = handler.make("auth.login", ["POST"], function (d, body) {
 
     ip: d.ip
   }).then(function (r) {
-    if (r.status !== 200 || !r._session) return r;
-    var s = r._session;
-    return Promise.resolve(d.store.putSession({ sid: s.sid, uid: s.uid, iat: s.iat, exp: s.exp, revoked: 0 }))
-      .then(function () {
-        var out = { status: r.status, body: r.body, cookies: r.cookies };
-        delete r._session;
-        return out;
-      });
+    // 会话行的落库与响应整形只写一处（`_lib/handler.js` 的 settleSession）：
+    // 「内核签了会话但接口忘了落库」这种半截活，本轮起不再有第二个地方可写。
+    return handler.settleSession(d, r);
   });
 });

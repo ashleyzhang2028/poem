@@ -376,6 +376,27 @@
         text($("verify-lead"), "账号已创建。验证邮件暂时无法发送，请稍后重试。");
         note("verify-fail-note", "完成邮箱验证后才能登录。如问题持续，请联系管理员。", "warn");
       }
+      // 分流只有一处判据：服务端回的 `requiresVerification`。
+      //   · 要验证（默认）：停在「去收件箱点链接」那一屏，那一屏本身就是
+      //     完整的下一步（点开链接即登录，见 js/verify.js）；
+      //   · 不必验证（运维把闸关了）：账号这一刻就能用，直接进门 ——
+      //     原先无论哪一档都停在「请点邮件链接」，对着一个关掉闸的服务器
+      //     说一句做不到的话。
+      if (!gated) {
+        showToast(r.created ? "账号已建好，已登录" : "账号信息已更新");
+        onSignedIn({
+          account: {
+            uid: r.uid || "",
+            nickname: r.nickname || "",
+            identities: [{ channel: "email", mask: r.emailMask || state.regEmail || "" }],
+            createdAt: 0, lastLoginAt: 1
+          },
+          remote: true,
+          emailVerified: r.emailVerified === true
+        });
+        return r;
+      }
+
       showToast(r.created ? "账号已建好" : "账号信息已更新");
       setMode("verify");
       return r;
@@ -667,15 +688,46 @@
     return raw;
   }
 
-  function onFinish() {
+  // 昵称是**账号域**的东西（Issue #278）：原先只写本机 localStorage，
+  // 服务器上那一列永远是空的 —— 换台设备名字就没了，管理端名录也认不出人。
+  //
+  // 现在的顺序是「本机先写、服务器后跟」：本机那一份是头像 / 顶栏
+  // 立刻要用的那一份，不能等一次网络往返；服务器那一份失败也**不拦人**
+  // （名字没同步上比进不去轻得多），只是如实说一句。
+  //
+  // 落点是**这一屏的那一句提示**，不是 toast —— toast 两秒就没了，
+  // 而用户需要知道的是「这个名字到底存下来没有」。
+  function saveNicknameAndGo() {
     var v = ($("input-nickname") || {}).value || "";
     var clean = String(v).trim().slice(0, 12);
     if (window.Avatar && Avatar.saveNickname) {
       try { Avatar.saveNickname(backing, clean); } catch (e) {  }
     }
     if (A.setNickname && store) { try { A.setNickname(store, clean); } catch (e) {  } }
-    location.href = nextUrl() || "/mine/";
+
+    function leave(noteText, level) {
+      if (noteText) note("done-note", noteText, level);
+      location.href = nextUrl() || "/mine/";
+    }
+
+    // 没起名就别发请求（空串会把服务器上已有的名字抹掉）。
+    if (!clean || !api || isLocal()) { leave("", ""); return; }
+
+    var Acct = window.AccountApi;
+    if (!Acct || !Acct.bind) { leave("", ""); return; }
+
+    msg("msg-done", "");
+    return submitPending("btn-finish", "保存中…", function () {
+      return Acct.bind({}).setNickname({ nickname: clean }).then(function (r) {
+        if (r && r.ok) { leave("", ""); return r; }
+        if (r && r.reason === "not-configured") { leave("这台服务器没有开放云端账号，昵称只存在本机。", "warn"); return r; }
+        leave("昵称暂时没能同步到服务器（连不上或服务不可用），本机这一份还在；进去之后可以在「设置」里再改一次。", "warn");
+        return r;
+      });
+    });
   }
+
+  function onFinish() { return saveNicknameAndGo(); }
 
   function showUnverified(r) {
     stopTick();

@@ -601,14 +601,8 @@ function verifyCode_(deps, input) {
           // 随机码登录也是登录：名单里的邮箱在这里同样认领 owner（Issue #276）。
           return claimOwnerRole(store, cfg, saved || acc).then(function () { return saved || acc; });
         }).then(function (saved) {
-          var s = session.issue(cfg, acc.uid, t);
-          return {
-            status: 200,
-            body: { account: publicAccount(cfg, saved || acc) },
-
-            cookies: [session.setCookieHeader(cfg, s.token, Math.round((s.exp - t) / 1000))],
-            _session: s
-          };
+          // 会话只有一个出口（Issue #278）：这一段原先在这儿手抄了一份。
+          return issueSessionFor(deps, saved || acc);
         });
       });
   });
@@ -632,6 +626,33 @@ function checkPassword(cfg, pw) {
 function requireVerified(cfg) {
   if (!cfg) return true;
   return cfg.requireEmailVerified !== false;
+}
+
+// ---------------------------------------------------------------------------
+// 会话只有一个出口（Issue #278）
+// ---------------------------------------------------------------------------
+// 原先「签一枚会话 Cookie」这段写在**三处**（口令登录 / 随机码登录 /
+// 邮箱确认），而三处各自只记得自己那一半：
+//
+//   · 口令登录：写会话 + 认领 owner + 回 publicAccount —— 齐的；
+//   · 随机码登录：同上 —— 齐的；
+//   · 邮箱确认：**什么都不签** —— 于是「注册 → 点邮件 → 落到 /mine/
+//     还是未登录」，用户以为注册那一步白做了（Issue #278 的原话）。
+//
+// 所以会话这一件事收在这里一处：**谁要让人进门，就调它**。
+// 三件事一次做齐（少一件就是半截）：落库会话行、认领 owner、回 Set-Cookie。
+function issueSessionFor(deps, acc) {
+  var cfg = deps.cfg, store = deps.store, t = deps.now();
+  var s = session.issue(cfg, acc.uid, t);
+  return Promise.resolve(store.putSession({ sid: s.sid, uid: s.uid, iat: s.iat, exp: s.exp, revoked: 0 }))
+    .then(function () {
+      return {
+        status: 200,
+        body: { account: publicAccount(cfg, acc) },
+        cookies: [session.setCookieHeader(cfg, s.token, Math.round((s.exp - t) / 1000))],
+        _session: s
+      };
+    });
 }
 
 function emailGate(deps, acc) {
@@ -864,11 +885,44 @@ function verifyEmail(deps, input) {
         return Promise.resolve(store.putAccount(acc)).then(function (saved) {
           return claimOwnerRole(store, cfg, saved || acc).then(function () { return saved || acc; });
         }).then(function (saved) {
-          return ok({
+          var cur = saved || acc;
+
+          // -----------------------------------------------------------------
+          // 点完确认链接即登录（Issue #278）
+          // -----------------------------------------------------------------
+          // 用户走完「注册 → 点邮件里的链接」之后，原先是**没有会话**的：
+          // 这一处只把 email_verified_at 写上就回了。于是落到 `/mine/`
+          // 还是未登录，用户以为注册白做了（Issue #278 的原话：
+          // 「让你完成登录功能就应该全部完善，怎么还每一步每一步地催」）。
+          //
+          // 为什么在这一处签是**安全的**：
+          //   · 能走到这里，说明他手里有邮件里那枚一次性令牌（64 位 hex、
+          //     24 小时有效、用过即废），**邮箱可达这件事已经被证明**；
+          //   · 确认本来就把 pending 提成了 active，而口令登录那道闸
+          //     （emailGate）只拦 pending —— 能点开链接的人本来就是
+          //     「有资格登录」的那一类，这里不额外放宽任何东西；
+          //   · 令牌的 vid 与口令无关：改口令仍然要另外走重设那条路。
+          //
+          // 所以：**点完链接就进来**，不必再让他去登录页把口令重敲一遍。
+          // 页面据 `signedIn` 如实说「已登录」，没拿到会话时（理论上不会）
+          // 回落到旧文案「邮箱已确认」，绝不说一句做不到的话。
+          var out = {
             verified: true,
-            email: String((saved || acc).email || ""),
-            emailMask: (saved || acc).email_mask || "***",
-            note: "邮箱已确认。现在可以用它找回密码了。"
+            email: String(cur.email || ""),
+            emailMask: cur.email_mask || "***",
+            note: "邮箱已确认，已经帮你登录了。"
+          };
+          return issueSessionFor(deps, cur).then(function (sess) {
+            if (!sess || !sess.cookies) {
+              out.note = "邮箱已确认。现在可以用它登录或找回密码了。";
+              return ok(out);
+            }
+            sess.body.verified = true;
+            sess.body.email = out.email;
+            sess.body.emailMask = out.emailMask;
+            sess.body.signedIn = true;
+            sess.body.note = out.note;
+            return sess;
           });
         });
       });
@@ -933,13 +987,8 @@ function loginWithPassword(deps, input) {
         // 在名单外的**一个字都不动**（不降级 —— 手改过的角色不该被登录抹掉）。
         return claimOwnerRole(store, cfg, saved || acc).then(function () { return saved || acc; });
       }).then(function (saved) {
-        var s = session.issue(cfg, acc.uid, t);
-        return {
-          status: 200,
-          body: { account: publicAccount(cfg, saved || acc) },
-          cookies: [session.setCookieHeader(cfg, s.token, Math.round((s.exp - t) / 1000))],
-          _session: s
-        };
+        // 会话只有一个出口（Issue #278）。
+        return issueSessionFor(deps, saved || acc);
       });
     });
 }
@@ -1200,6 +1249,39 @@ function me(deps) {
     if (!acc || acc.status === "deleted") return err(401, "E_NO_SESSION", "还没有登录");
     return ok(publicAccount(cfg, acc));
   });
+}
+
+// ---------------------------------------------------------------------------
+// 昵称（Issue #278）
+// ---------------------------------------------------------------------------
+// 原先昵称**只落在本机**（`Avatar.saveNickname` 写 localStorage），
+// 服务器上那一列 `accounts.nickname` 一直是空的。于是：
+//   · 换台设备登录，名字没了（用户以为「注册时起的名没保存」）；
+//   · 管理端的名录、报告的署名栏全是空的。
+//
+// 这一条把它接上：**从服务器读、写回服务器**。三条口径：
+//   · 长度 12 个字符（与登录页那个输入框的 maxlength、家族子用户的
+//     `sanitizeFamily` 同一档 —— 写两套长度必然有一套是错的）；
+//   · 控制字符与 `<>` 剔掉（它最后是画在别人屏幕上的）；
+//   · **不是登录闸**：没登录回 401，但登录页上起名失败也不拦人 ——
+//     名字没存上比「进不来」轻得多，如实回一句就是了。
+function nicknameNorm(raw) {
+  return String(raw == null ? "" : raw)
+    .replace(/[\u0000-\u001f<>]/g, "")
+    .trim()
+    .slice(0, 12);
+}
+
+function nicknameSet(deps, input) {
+  if (!deps.account) return Promise.resolve(err(401, "E_NO_SESSION", "登录之后才能改昵称"));
+  var name = nicknameNorm(input && input.nickname);
+  return Promise.resolve(deps.store.patchAccount(deps.account.uid, { nickname: name }))
+    .then(function () { return deps.store.getAccount(deps.account.uid); })
+    .then(function (acc) {
+      if (!acc || acc.status === "deleted") return err(401, "E_NO_SESSION", "登录之后才能改昵称");
+      acc.nickname = name;
+      return ok({ nickname: name, account: publicAccount(deps.cfg, acc) });
+    });
 }
 
 function familyGet(deps) {
@@ -2319,6 +2401,8 @@ module.exports = {
   resendVerification: resendVerification,
   resetRequest: resetRequest,
   resetConfirm: resetConfirm,
+  nicknameSet: nicknameSet,
+  nicknameNorm: nicknameNorm,
   checkPassword: checkPassword,
   isTokenShape: isTokenShape,
   issueVerification: issueVerification,

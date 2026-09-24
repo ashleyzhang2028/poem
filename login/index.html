@@ -144,7 +144,7 @@
           <button class="account-btn" id="btn-register" type="button">注册</button>
           <p class="account-msg" id="msg-reg"></p>
 
-          <p class="account-hint">注册后请查收电子邮件，<strong>点击链接验证后登录</strong>。链接 24 小时内有效。</p>
+          <p class="account-hint">注册后请查收电子邮件，<strong>点击链接验证后登录</strong>（点开即登录，不必再输一次密码）。链接 24 小时内有效。</p>
           <p class="auth-links"><button class="link-btn" id="btn-back-login" type="button">返回登录</button></p>
         </div>
 
@@ -164,7 +164,7 @@
           <button class="account-btn ghost" id="btn-verify-later" type="button">返回登录</button>
           <p class="account-msg" id="msg-verify"></p>
 
-          <p class="account-hint">链接 24 小时内有效，未收到可重发。</p>
+          <p class="account-hint">链接 24 小时内有效，未收到可重发。点开链接即完成邮箱验证后登录。</p>
           <p class="auth-links"><button class="link-btn" id="btn-back-login3" type="button">返回登录</button></p>
         </div>
 
@@ -205,7 +205,9 @@
                    autocomplete="off" enterkeyhint="done" placeholder="Ashley" />
           </div>
           <button class="account-btn" id="btn-finish" type="button">完成</button>
-          <p class="account-hint">请只填小名。</p>
+          <p class="account-msg" id="msg-done"></p>
+          <div class="account-note warn" id="done-note" hidden></div>
+          <p class="account-hint">请只填小名。昵称会跟着账号走，换设备也在。</p>
         </div>
       </section>
 
@@ -220,6 +222,7 @@
   <script src="/js/turnstile.js"></script>
   <script src="/js/auth-api.js"></script>
   <script src="/js/entitlement.js"></script>
+  <script src="/js/account-api.js"></script>
   <script src="/data/text-master.js"></script>
   <script src="/data/index.js"></script>
   <script src="/js/family.js"></script>

@@ -772,8 +772,9 @@ const LOGIN = strip(loginJs), MINE = strip(mineJs), ADMIN = strip(adminJs);
       chk(/验证邮件暂时无法发送，请稍后重试。/.test(m4) && /如问题持续，请联系管理员。/.test(m4),
         '只说明邮件暂时无法发送及后续动作（实际「' + m4 + '」）');
       chk(!/q\*\*\*@example\.com 现在收不到信/.test(m4) || true, '（掩码回显不参与判据）');
-      console.log('\n' + (fails ? '❌ ' + fails + ' 项失败' : '🎉 账号三页测试全部通过'));
-      process.exit(fails ? 1 : 0);
+      // 这一节原先顺手把进程收了；它后面接的第十六节（Issue #278）要接着跑，
+      // 所以收尾统一挪到那个文件末尾去了。
+      runSixteenth();
     } catch (e) {
       console.log('✗ 第十二之二节自身抛异常：' + e.message);
       process.exit(1);
@@ -813,7 +814,14 @@ const LOGIN = strip(loginJs), MINE = strip(mineJs), ADMIN = strip(adminJs);
   const sdom = new JSDOM(html, { runScripts: 'dangerously', url: 'https://x.test/login/', base: 'https://x.test/login/' });
   const w = sdom.window;
 
-  w.fetch = () => Promise.reject(new Error('offline'));
+  // 这一节考的是「服务端回 503 = 这个站点没开放口令这条路」，所以夹具必须
+  // 让请求**走完**并拿到 503 —— 直接 reject 是「连不上」，那是另一句话
+  // （两条文案在 js/auth-api.js 里各有一条，分得开是它的设计）。
+  w.fetch = () => Promise.resolve({
+    status: 503,
+    text: () => Promise.resolve(JSON.stringify({ code: 'E_NOT_CONFIGURED' })),
+    headers: { get: () => null }
+  });
   ['js/auth-core.js', 'js/auth-api.js', 'js/entitlement.js', 'js/avatar.js',
     'js/family.js', 'js/progress-store.js'].forEach(f => {
     const el = w.document.createElement('script');
@@ -987,11 +995,6 @@ const LOGIN = strip(loginJs), MINE = strip(mineJs), ADMIN = strip(adminJs);
   $('input-pw').value = 'hunter2hunter';
   $('btn-login').click();
 
-  const finish = (msg, code) => {
-    chk(msg, code);
-    console.log('\n' + (fails ? '❌ ' + fails + ' 项失败' : '🎉 账号三页测试全部通过'));
-    process.exit(fails ? 1 : 0);
-  };
 
   setTimeout(() => {
     try {
@@ -1028,9 +1031,12 @@ const LOGIN = strip(loginJs), MINE = strip(mineJs), ADMIN = strip(adminJs);
           const loginJs = read('js/login.js');
           chk(/requiresVerification/.test(loginJs),
             '注册完那一屏按 requiresVerification 分开说（拦 / 不拦各说各的话）');
-          chk(/emailGate/.test(read('js/profile.js')),
-            '个人中心那一行按服务器自报的 channel.emailGate 说（不猜）');
-          finish('（第十四节）新口径那一屏的断言全过', true);
+          // 个人中心整页在 Issue #244 删掉了，「邮箱确认闸」那一行搬进了「我的」页。
+          chk(/emailGate/.test(read('js/mine.js')),
+            '「我的」页那一行按服务器自报的 channel.emailGate 说（不猜）');
+          // 第十四节不再自己 process.exit —— 后面还有第十五节
+          // （原先它是最后一节，所以顺手把进程收了）。
+          chk(true, '（第十四节）新口径那一屏的断言全过');
         } catch (e) {
           console.log('✗ 第十四节自身抛异常：' + e.message);
           process.exit(1);
@@ -1038,6 +1044,112 @@ const LOGIN = strip(loginJs), MINE = strip(mineJs), ADMIN = strip(adminJs);
       }, 60);
     } catch (e) {
       console.log('✗ 第十四节自身抛异常：' + e.message);
+      process.exit(1);
+    }
+  }, 60);
+}
+
+// ---------------------------------------------------------------------------
+// 第十六节、注册即登录 / 昵称上服务器（Issue #278）
+// ---------------------------------------------------------------------------
+// 用户原话：
+//   「用邮箱注册成功，点击验证链接成功，设置昵称完成，但很多功能一点就说
+//     需要登录？」「让你完成登录功能就应该全部完善，怎么还每一步每一步地催？」
+//
+// （第十四节守的是「被拦时给出路」）—— 这一节守的是**别把他拦下来**：
+//   · 闸关着（服务器自报 requiresVerification:false）时，注册完就该在
+//     已登录那一屏，而不是对着一个关掉的闸说「请去点邮件里的链接」；
+//   · 昵称要**发给服务器**（原先只写本机 localStorage，换台设备就没了），
+//     而且同步失败**不拦人**、如实说一句。
+function runSixteenth() {
+  const html = read('login/index.html');
+  const sdom = new JSDOM(html, { runScripts: 'dangerously', url: 'https://x.test/login/', base: 'https://x.test/login/' });
+  const w = sdom.window;
+
+  const calls = [];
+  w.fetch = (url, init) => {
+    const path = String(url).replace('https://x.test', '');
+    const method = (init && init.method) || 'GET';
+    const body = init && init.body ? JSON.parse(init.body) : {};
+    calls.push({ path, method, body });
+    const reply = (status, obj) => Promise.resolve({
+      status, text: () => Promise.resolve(JSON.stringify(obj)), headers: { get: () => null }
+    });
+    if (path === '/api/register') {
+      // 闸关着的服务器：注册完账号就能用
+      return reply(202, { uid: 'u_1', created: true, emailMask: 'a***@b.com',
+        requiresVerification: false, emailVerified: false, verifySent: false, store: 'memory' });
+    }
+    if (path === '/api/me' && method === 'PATCH') {
+      return reply(200, { nickname: body.nickname, account: { uid: 'u_1', nickname: body.nickname } });
+    }
+    return reply(401, { code: 'E_NO_SESSION' });
+  };
+
+  ['js/auth-core.js', 'js/auth-api.js', 'js/entitlement.js', 'js/account-api.js', 'js/avatar.js',
+    'js/family.js', 'js/progress-store.js'].forEach(f => {
+    const el = w.document.createElement('script');
+    el.textContent = read(f);
+    w.document.body.appendChild(el);
+  });
+  const s2 = w.document.createElement('script');
+  s2.textContent = read('js/login.js');
+  w.document.body.appendChild(s2);
+  w.document.dispatchEvent(new w.Event('DOMContentLoaded', { bubbles: true }));
+
+  const doc = w.document;
+  const $ = (id) => doc.getElementById(id);
+  const shown = (sel) => { const e = doc.querySelector(sel); return !!(e && !e.hidden); };
+
+  chk(!!w.AccountApi, '（第十六节）登录页加载了 js/account-api.js（昵称那一格要用它）');
+  chk(/js\/account-api\.js/.test(read('login/index.html')),
+    'login/index.html 里真的有那一行 script（不是只在测试里塞进去的）');
+
+  $('input-reg-email').value = 'a@b.com';
+  $('input-reg-pw').value = 'hunter2hunter';
+  $('input-reg-pw2').value = 'hunter2hunter';
+  $('btn-go-register').click();
+  chk(shown('#pane-register'), '（第十六节）先切到注册那一屏');
+  $('btn-register').click();
+
+  setTimeout(() => {
+    try {
+      chk(calls.some(c => c.path === '/api/register'), '点注册打的确实是 /api/register');
+      chk(shown('#step-done'),
+        '**闸关着时注册完就落在「已登录」那一屏**（不是对着一个关掉的闸说「请去点邮件链接」）');
+      chk(!shown('#pane-verify'),
+        '**没有**切到「去收件箱点链接」那一屏（requiresVerification:false 时那句话是空话）');
+      chk(/已登录/.test($('done-lead').textContent),
+        '那一屏如实说「已登录」（实际「' + $('done-lead').textContent + '」）');
+
+      calls.length = 0;
+      $('input-nickname').value = '  小明  ';
+      $('btn-finish').click();
+      setTimeout(() => {
+        try {
+          const nk = calls.filter(c => c.path === '/api/me' && c.method === 'PATCH');
+          chk(nk.length === 1,
+            '点「完成」把那一个昵称**发给服务器**（PATCH /api/me）—— 原先它只写本机 localStorage');
+          chk(nk[0] && nk[0].body.nickname === '小明',
+            '发出去的是剔过前后空格的那个值（实际 ' + JSON.stringify(nk[0] && nk[0].body.nickname) + '）');
+          chk($('done-note').hidden,
+            '同步成功时那一句提示收着（成了就别说多余的话）');
+
+          const loginJs = read('js/login.js');
+          chk(/saveNicknameAndGo/.test(loginJs), '登录页那段逻辑收在 saveNicknameAndGo 一处');
+          chk(/还没.*同步|没能同步/.test(loginJs),
+            '同步失败那一句是「没能同步」（如实说，不假装成了）');
+          chk(!/location\.href[^;]*nickname/i.test(loginJs), '昵称不进 URL（口令与个人信息的存放纪律同源）');
+
+          console.log('\n' + (fails ? '❌ ' + fails + ' 项失败' : '🎉 账号三页测试全部通过'));
+          process.exit(fails ? 1 : 0);
+        } catch (e) {
+          console.log('✗ 第十六节自身抛异常：' + e.message);
+          process.exit(1);
+        }
+      }, 60);
+    } catch (e) {
+      console.log('✗ 第十六节自身抛异常：' + e.message);
       process.exit(1);
     }
   }, 60);
