@@ -77,6 +77,18 @@
     return state();
   }
 
+  // 挂载点是「用户打开这一屏」时，不是「用户点提交」时（Issue #276）。
+  //
+  // 用户 2026-09-21 报的就是这条时序：注册页填完邮箱密码、点下「注册」按钮，
+  // 验证框才**开始**弹出来，还慢慢转圈。原因不在 Cloudflare，在这儿 ——
+  // 页面上只有**提交那一下**才调 mount()，于是「拉脚本(最多 8s) + 渲染 widget
+  // + 等 Cloudflare 判人机」这一整段全压在提交后：用户以为卡住了，
+  // 服务端还会在 token 没到时回 400 E_TURNSTILE。
+  //
+  // 现在起的叫法（js/login.js）是「切到哪一屏就挂哪一屏」，所以这里要能扛住
+  // 两种新时序，且**都不许把用户挡在门外**：
+  //   ① 页面刚打开就挂，脚本还在路上 —— 这不是失败，如实记着，不拦也不报假故障；
+  //   ② 挂完这一屏又切到另一屏 —— 方框跟着挪（挪走旧的、在新面板补一个）。
   function mount(target, opts) {
     opts = opts || {};
     onTokenCb = typeof opts.onToken === "function" ? opts.onToken : null;
@@ -95,14 +107,18 @@
         containerEl.innerHTML = "";
       }
       st.widgetId = null;
-      st.tokenValue = "";
-      st.ready = false;
+      // 老实现这里顺手把 token 也清了。token 是全局的（Cloudflare 只按 widget
+      // 回调给值），用户在注册页填表期间切一下屏就会把它抹掉，提交时又变成
+      // 「没勾」—— 与 #276 是同一个病灶的另一半。过期由 expired-callback 管，
+      // 提交成功后由 reset() 管，**换面板不该管**。
     }
     containerEl = nextContainer;
     if (mounted) { renderWidget(); return Promise.resolve(state()); }
 
     return loadScript(d).then(function () {
       mounted = true;
+      // 上一次挂载已经画过一个方框（这次只是换面板）时，renderWidget 自己会
+      // 走 remove + 重新 render 那条路；没画过就直接画。
       renderWidget();
       return state();
     }, function (why) {
@@ -111,20 +127,51 @@
     });
   }
 
-  function loadScript(d) {
-    return new Promise(function (resolve, reject) {
+  // 同一个页面只挂一次 <script>：谁先到谁算（preload 常常是先到的那一个）。
+  // 要是各挂各的，页面打开时 preload 插一个、拿到 siteKey 后 mount 又插一个，
+  // 用户会看到两个方框。
+  var scriptPromise = null;
 
-      if (d.querySelector && d.querySelector('script[data-kb-turnstile="1"]')) return resolve();
-      if (root.turnstile && typeof root.turnstile.render === "function") return resolve();
+  function loadScript(d) {
+
+    if (d.querySelector && d.querySelector('script[data-kb-turnstile="1"]')) return Promise.resolve();
+    if (root.turnstile && typeof root.turnstile.render === "function") return Promise.resolve();
+    if (scriptPromise) return scriptPromise;
+
+    scriptPromise = new Promise(function (resolve, reject) {
       var s = d.createElement("script");
       s.src = SCRIPT_SRC;
       s.async = true;
       s.defer = true;
       s.setAttribute("data-kb-turnstile", "1");
-      var timer = setTimeout(function () { reject("script_timeout"); }, LOAD_TIMEOUT_MS);
+      var timer = setTimeout(function () { scriptPromise = null; reject("script_timeout"); }, LOAD_TIMEOUT_MS);
       s.onload = function () { clearTimeout(timer); resolve(); };
-      s.onerror = function () { clearTimeout(timer); reject("script_error"); };
+      s.onerror = function () { clearTimeout(timer); scriptPromise = null; reject("script_error"); };
       (d.head || d.body).appendChild(s);
+    });
+    return scriptPromise;
+  }
+
+  // 页面一打开就叫它：先把 Cloudflare 的脚本拉起来（这时多半还没拿到 siteKey，
+  // 所以不等它渲染）。这是 Issue #276 的正解 —— 原先「拉脚本（最多 8 秒）+
+  // 渲染 widget + 等 Cloudflare 判人机」这一整段都压在点提交之后，
+  // 用户看到的就是「点完按钮，验证框才慢慢冒出来」。
+  // 现在：脚本在用户**还在读登录页**时就已经在路上。
+  var preloaded = false;
+
+  function preload() {
+    var d = doc();
+    if (!d || preloaded) return Promise.resolve(state());
+    preloaded = true;
+    return loadScript(d).then(function () {
+      // 脚本到了，而 widget 还没画（拿到了 siteKey 但脚本后到的那条路）：
+      // 补画一次。已经画过就什么都不做。
+      if (st.configured && st.widgetId === null && containerEl) renderWidget();
+      return state();
+    }, function () {
+      // 加载失败先不声张：页面上可能压根没配人机校验，这时报「坏了」是假故障。
+      // 真需要拦人的那一步（mount / gate）会自己把话说清楚。
+      return state();
     });
   }
 
@@ -190,11 +237,13 @@
     st.configured = false; st.ready = false; st.skipped = true;
     st.err = null; st.tokenValue = ""; st.widgetId = null;
     mounted = false; siteKeyValue = ""; containerEl = null; onTokenCb = null;
+    scriptPromise = null; preloaded = false;
   }
 
   return {
     SCRIPT_SRC: SCRIPT_SRC,
     configure: configure,
+    preload: preload,
     mount: mount,
     state: state,
     required: required,
