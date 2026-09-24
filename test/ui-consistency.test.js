@@ -1411,6 +1411,81 @@ if (JSDOM) {
   chk(/height:\s*var\(--ctl-input-h\);/.test(accInp) && !/padding:\s*\d+px 12px/.test(accInp),
     '输入框的高度不再由内边距撑出来（写 height 才能与按钮真的相等）');
 
+  // ---- ②b 定高控件里那一行字：一处摆正（Issue #291）------------------
+  //
+  // 用户 2026-09-24：「显示邮箱地址这个按钮以及背诵进度按钮 文字都没有
+  // 垂直居中，是文字下面的 padding 太多了吗」。
+  //
+  // 不是 padding（上下本来就是 0），是**行高**：`html, body { line-height:
+  // 1.6 }` 被控件继承进来，行盒比控件矮时行盒贴顶摆 -> 字贴上沿、底下空一片。
+  // `<button>` 恰好免疫（UA 给 button 的 line-height 是 normal，不继承），
+  // `<a>` 不免疫 —— 同一颗 `.btn` 写成 `<a>` 就歪。issue 点名那两颗都是 `<a>`。
+  //
+  // 这一组守着两件事：① 行高有唯一来源且在尺上；② 定高控件那**一列**
+  // （含 `<a>` 写的同款）都读它，且都是 inline-flex 居中。
+  ['--ctl-leading-lg', '--ctl-leading-md', '--ctl-leading-sm'].forEach(tok => {
+    chk(new RegExp(tok + ':').test(root),
+      '行高令牌 ' + tok + ' 在 :root 里定义（定高空件的行高只有一个来源）');
+  });
+  chk(!/--ctl-leading-lg:\s*[\d.]+em/.test(root),
+    '行高用 px 而不是 em/比例（定高配比例行高，字大一号就把行盒顶出去）');
+
+  // 那一列「定高控件」：`.mini-btn / .account-link / .mail-link / .mail-plain`
+  // 各自在 classic.css / account.css / legal.css 里写着**自己的盒子**，
+  // 但行高与居中**只在 style.css 那一处**给（同一件事写两遍必然漂）。
+  // 所以这里量的是「那一处有没有把它们全收进来」—— 与 `.btn` 那一条同源。
+  //
+  // ⚠️ 判据是「这个盒子定不定高」，不是「它是不是 button」 —— 这正是病根：
+  //    `<button>` 被 UA 的 line-height: normal 救了，`<a>` 没救。
+  const centeredBlock = (() => {
+    // ⚠️ 用**未剥注释**的源码：那一段的边界就是两条注释，剥了就找不到头。
+    const i = css.indexOf('/* ---------- 定高控件里的那一行字：一处摆正');
+    return i < 0 ? '' : css.slice(i, css.indexOf('/* 全站按钮的**状态三件套**', i));
+  })();
+  chk(centeredBlock.length > 0, '能找到「定高控件那一行字」那一段（尺子有牙）');
+  ['.btn', '.account-btn', '.ghost-btn', '.danger-btn', '.mini-btn',
+    '.account-link', '.mail-link', '.mail-plain', '.settings-btns .btn'].forEach(sel => {
+    chk(new RegExp('(^|[,\\s])' + sel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*[,{]', 'm')
+      .test(centeredBlock),
+      '那一列收进了 ' + sel + '（定高控件一个都不漏）');
+  });
+  chk(/display:\s*inline-flex/.test(centeredBlock) && /align-items:\s*center/.test(centeredBlock),
+    '那一列一律 inline-flex + align-items: center（居中由盒子说，不靠行高去撞）');
+  chk((centeredBlock.match(/line-height:\s*var\(--ctl-leading-/g) || []).length >= 2,
+    '那一列的行高读 --ctl-leading-*（不再继承正文的 1.6）');
+  chk(!/line-height:\s*1\.6/.test(strip(centeredBlock)),
+    '那一列里没有再写回正文的 1.6（写回去就等于没改；注释里提到 1.6 不算）');
+
+  // 反面样本：不能只改 line-height 就以为解决了 —— 上面第 0 页实测无效。
+  chk(/inline-flex/.test(ruleOf(legalCode, '.mail-link')),
+    '「显示邮箱地址」是 inline-flex（inline-block + 行高改小 = 字贴上沿，实测上 0 / 下 18）');
+  chk(/display:\s*inline-flex/.test(ruleOf(legalCode, '.mail-link')) &&
+      /display:\s*inline-flex/.test(ruleOf(legalCode, '.mail-plain')),
+    '.mail-link 与 .mail-plain 用同一套盒子（点一下会换成后者，尺寸差一点就跳一下）');
+  const mlRule = ruleOf(legalCode, '.mail-link');
+  const mpRule = ruleOf(legalCode, '.mail-plain');
+  chk(/min-height:\s*var\(--ctl-h-md\)/.test(mlRule) && /min-height:\s*var\(--ctl-h-md\)/.test(mpRule),
+    '两件的 min-height 读同一个令牌（换之前换之后一样高）');
+  chk(/font-size:\s*13\.5px/.test(mlRule) && /font-size:\s*13\.5px/.test(mpRule),
+    '两件的字号同一个数');
+  chk(/border-radius:\s*var\(--ctl-radius\)/.test(mlRule) && /border-radius:\s*var\(--ctl-radius\)/.test(mpRule),
+    '两件的圆角读同一个令牌');
+  chk(!/display:\s*inline-block/.test(mlRule),
+    '.mail-link 不再是 inline-block（那是本 issue 的病根）');
+
+  // 输入框那一列：只改行高，不加 flex（单行框里的 caret 位置会跑偏）。
+  const inpRules = [ruleOf(cs, 'input'), ruleOf(cs, 'textarea')];
+  chk(inpRules.every(r => /line-height:\s*var\(--ctl-leading-md\)/.test(r)),
+    '输入框 / 文本域那一列也把行高收进盒子（定高 38，行高 18）');
+  chk(!/display:\s*(inline-)?flex/.test(ruleOf(cs, 'input')),
+    '输入框**不是** flex（单行输入的 caret 位置在部分浏览器上会跑偏）');
+
+  // `.btn` 那一颗在别处本来就是 `<button>`，改成 inline-flex 后宽度仍要自适应。
+  chk(!/width:\s*100%/.test(ruleOf(cs, '.btn')),
+    '.btn 改 flex 之后仍是宽度自适应（没有顺手写成满格）');
+  chk(/width:\s*100%/.test(ruleOf(strip(accountCss), '.account-btn')),
+    '.account-btn 仍是满格（它是卡片里唯一的主按钮，宽度是「卡片宽度」这件事的表达）');
+
   // ---- ③ 状态一致性 --------------------------------------------------
   // 全站按钮的按下只用颜色（不许缩放）—— 上面已有那一条；这里补「悬浮存在」。
   const hoverClasses = ['.btn', '.mini-btn', '.account-btn.ghost', '.collection-act',

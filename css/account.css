@@ -327,7 +327,9 @@ body[data-nav="login"] .app {
   font-family: inherit;
   font-size: var(--ctl-font-lg);
   font-weight: 600;
-  line-height: 1.2;
+  /* ⚠️ 行高**不在这儿写**（Issue #291）：定高空件那一行字的行高统一由
+     `style.css` 那一段给（`--ctl-leading-lg`）。原先这里写死 1.2，
+     与那一处就成了「同一件事的两个来源」—— 改一处、另一处照旧歪。 */
   cursor: pointer;
   transition: background .15s, border-color .15s, color .15s;
 

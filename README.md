@@ -834,6 +834,19 @@ curl -sS "$SITE_URL/api/config"      # 期望 {"turnstile":{"enabled":true,"site
 1. **页面上跑**：「我的 → 设置（齿轮）→ 关于 → 自检」（`/self-check/`）。
    它逐条给**过 / 未过 / 无**，外加 `/api/diag` 的服务端结论，还有一颗「复制报告」——
    报告里只有结论、HTTP 状态与上游原话，**没有密钥**，贴到 Issue 里就能接着往下定。
+
+   > ⚠️ 这一页与它的入口**只对已登录的管理员开放**（用户口径：「自检页面只能
+   > 已登录的管理员账号访问，其他情况一律**不显示**自检页面链接，且不能访问」）。
+   > 判据与 `/admin/` 同一个出口
+   > `Entitlement.isOwner()`（源头是库里的 `accounts.role` 是 `owner` / `admin`）：
+   > 未登录、普通用户、服务端还没给答案 —— **都不显示入口**，直接敲
+   > `/self-check/` 也只会拿到一张「只对管理员开放」的卡，
+   > `js/self-check.js` 一次都不会被加载（它在那一步只是占位，放行时才换成真脚本）。
+   > 所以拒绝那一支里连 `/api/register` 探针都不会发出去。
+   >
+   > ⚠️ 隐藏入口**不是**安全边界（本文件上面那四条硬规矩）：`/api/diag` 仍对所有人
+   > 可用 —— 它按设计**只回形状不回值**，而下面第 2 条正是留给「页面打不开的人」的出路。
+   > 真要有闸，闸得在服务端（`/admin/*` 那几条就是这样，`core.isAdminRole` 一道不落）。
 2. **一条命令**：`curl -sS "$SITE_URL/api/diag"`。返回的 `verdict` 是互斥的一个值：
    `no_secret` / `db_not_configured` / `db_unreachable` / `db_bad_key` /
    `db_no_table` / `db_no_column` / `db_write_fail` / `ok`。

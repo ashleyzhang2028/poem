@@ -35,6 +35,7 @@ const PRECACHE = [
   "./js/print.js",
   "./js/settings.js",
   "./js/settings-nav.js",
+  "./js/self-check-gate.js",
   "./js/self-check.js",
   "./js/family-ui.js",
   "./js/mine.js",
