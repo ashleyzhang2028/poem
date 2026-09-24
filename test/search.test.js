@@ -486,9 +486,12 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(!/(?:^|\n)\.search-input\s*\{[^}]*height:\s*5[0-9]px/.test(classicCss),
     '增高只发生在搜索页：全站的 .search-input 高度仍走 --toolbar-h（索引页那一排不许跟着长）');
 
-  chk(/\.search-hero \.search-input\s*\{[^}]*border-radius:\s*var\(--radius-sm\)/.test(classicCss) ||
-    /(?:^|\n)\.search-input \{[^}]*border-radius:\s*var\(--radius-sm\)/.test(classicCss),
-    '搜索页搜索框的圆角仍是 var(--radius-sm) 一个值（四个角同半径，不再是椭圆角）');
+  // ⚠️ Issue #278 第六轮：圆角的值从 --radius-sm（12px）换成 --ctl-radius（6px）
+  //    —— 搜索框是**输入框**，归控件那一档（用户的 7px 上限）。要守的口径没变：
+  //    四个角同一个值，不是「横 / 竖两个半径」拼出来的椭圆角。
+  chk(/\.search-hero \.search-input\s*\{[^}]*border-radius:\s*var\(--ctl-radius\)/.test(classicCss) ||
+    /(?:^|\n)\.search-input \{[^}]*border-radius:\s*var\(--ctl-radius\)/.test(classicCss),
+    '搜索页搜索框的圆角是控件那一档一个值（四个角同半径，不再是椭圆角）');
   chk(!/\.search-hero \.search-input\s*\{[^}]*border-radius:\s*[^;}]*(\/|px)/.test(classicCss),
     '没有给搜索页的搜索框单独写「横 / 竖两个半径」的圆角（那正是椭圆角的写法）');
   chk(/\.search-hero \.search-input::placeholder \{[^}]*transform:\s*none/.test(classicCss),

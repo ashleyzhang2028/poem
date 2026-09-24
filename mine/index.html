@@ -28,9 +28,14 @@
     <main class="account-page" id="mine-page">
       <section class="account-card">
         <div class="identity-row" id="identity-row"></div>
+        <!-- ⚠️ 这两颗是**档②（次按钮）的标准大小**，不是行内小号：
+             它们是这一张卡的主动作（这张卡里没有别的按下去会做事的东西），
+             而且与下面每一张卡里的 `.account-btn.ghost` 在同一列、同一个位置。
+             用 `.mini-btn`（32px 那档）时，它比同一列下面的按钮矮 6px ——
+             「我的」页上六张卡里的按钮于是有两个高度（Issue #278 第六轮）。 -->
         <div class="identity-btns">
-          <button class="mini-btn ghost" id="btn-avatar-pick" type="button">上传头像</button>
-          <button class="mini-btn ghost" id="btn-avatar-clear" type="button" hidden>删除头像</button>
+          <button class="account-btn ghost" id="btn-avatar-pick" type="button">上传头像</button>
+          <button class="account-btn ghost" id="btn-avatar-clear" type="button" hidden>删除头像</button>
         </div>
 
         <input id="avatar-file" class="sr-only" type="file" accept="image/*"

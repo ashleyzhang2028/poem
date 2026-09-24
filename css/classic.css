@@ -26,7 +26,9 @@
 
 .filter-seg {
   flex: 0 0 auto;
-  border-radius: var(--radius-sm);
+  /* 「全部 / 课内 / 小古文…」那一排筛选按钮：它是**档③（选项）**里
+     「分段控件」的那种画法（一排贴着的小格），圆角归控件那一档。 */
+  border-radius: var(--ctl-radius);
 
   height: var(--toolbar-h);
   box-sizing: border-box;
@@ -63,7 +65,8 @@
   padding: 0 12px 0 34px;
   border: 1px solid var(--line);
 
-  border-radius: var(--radius-sm);
+  /* 搜索框是**输入框**，圆角归控件那一档（它自己那一档的高度来自 --toolbar-h）。 */
+  border-radius: var(--ctl-radius);
   background: var(--card);
   color: var(--ink);
   font-family: inherit;
@@ -204,7 +207,7 @@
   padding: 5px;
   background: var(--card);
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--ctl-radius);
   box-shadow: 0 10px 26px rgba(35, 75, 66, .18);
   display: flex;
   flex-direction: column;
@@ -219,7 +222,7 @@
   width: 100%;
   padding: 7px 9px;
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--ctl-radius);
   background: none;
   color: var(--ink);
   font-family: inherit;
@@ -457,25 +460,36 @@ body.reader-open .dock { display: none; }
   margin-bottom: 4px;
   overflow: visible;
 }
+/* 档②（次按钮）的**行内小号**：详情页工具条那一排。
+   高度 / 圆角 / 字号一律读 style.css 里那把尺（--ctl-h-sm / --ctl-radius /
+   --ctl-font-sm），不再自己写 34px / 12px / 13px ——
+   本轮之前它 34px、.account-page 里那一颗 27px、设置页那颗 40px，
+   同名的按钮在三个页面上三个高度。 */
 .mini-btn,
 .reader-actions .seg.mini {
 
-  min-height: 34px;
+  min-height: var(--ctl-h-sm);
   border: 1px solid var(--line);
   background: var(--card);
   color: var(--green);
-  border-radius: var(--radius-sm);
-  padding: 6px 12px;
-  font-size: 13px;
+  border-radius: var(--ctl-radius);
+  padding: 0 var(--ctl-pad-x);
+  font-size: var(--ctl-font-sm);
   font-weight: 600;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
+  transition: background .15s, border-color .15s, color .15s;
 }
+.mini-btn:hover { background: var(--ctl-hover); border-color: var(--celadon); }
+.mini-btn:active { background: var(--ctl-press); }
 .mini-btn.ghost { color: var(--ink-2); }
+.mini-btn.ghost:hover { color: var(--green); border-color: var(--celadon); }
 .mini-btn[data-on="1"] { background: var(--green); border-color: var(--green); color: #fdfaf2; }
+.mini-btn[data-on="1"]:hover { background: var(--celadon); }
+.mini-btn[data-on="1"]:active { background: var(--green-dark); }
 
 .icon-row > .mini-btn {
   padding: 0;
@@ -1334,7 +1348,7 @@ body[data-nav="search"] #gw-list .empty[data-empty="idle"] { padding: 0; }
   align-items: center;
   gap: 2px;
   padding: 6px 0 4px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--ctl-radius);
   background: var(--bg);
 }
 

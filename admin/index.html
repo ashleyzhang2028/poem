@@ -32,15 +32,9 @@
       </section>
 
       <section class="account-card" id="grant-card" hidden>
-        <h2 class="account-card-title">发放层级（数据库权威）</h2>
-        <p class="account-lead">
-          按<strong>邮箱掩码</strong>发放（如 <code>b***@qq.com</code>，与账号页上显示的那串一致）。
-          写进数据库 <code>accounts.plan</code>，对方刷新即可生效（由服务器判定）。
-        </p>
-        <p class="account-hint" id="grant-precondition">
-          前提：<strong>对方先登录过一次</strong> —— 库里得先有那一行，才可能按掩码找得到人。
-          没找到时这里会如实说「命中 0 条」，不会凭空替他建账号。
-        </p>
+        <h2 class="account-card-title">发放层级</h2>
+        <p class="account-lead">按<strong>邮箱掩码</strong>发放（如 <code>b***@qq.com</code>），写进 <code>accounts.plan</code>。</p>
+        <p class="account-hint" id="grant-precondition">前提：<strong>对方先登录过一次</strong> —— 库里得先有那一行，才可能按掩码找得到人。没找到会说「命中 0 条」。</p>
         <div class="grant-form">
           <div class="account-field">
             <label class="account-label" for="input-mask">邮箱掩码</label>
@@ -51,9 +45,9 @@
             <label class="account-label" for="input-until">到期日（可留空＝永久）</label>
             <input id="input-until" class="account-input" type="date" />
           </div>
-          <button class="account-btn" id="btn-grant" type="button">发放到服务端</button>
+          <button class="account-btn" id="btn-grant" type="button">发放</button>
         </div>
-        <div class="account-field" style="margin-top:12px">
+        <div class="account-field admin-tier-field">
           <label class="account-label">层级</label>
           <div class="tier-pick" id="tier-pick" role="radiogroup" aria-label="选择层级"></div>
         </div>
@@ -62,36 +56,24 @@
 
       <section class="account-card" id="server-card" hidden>
         <h2 class="account-card-title">服务端名单（权威）</h2>
-        <p class="account-lead">
-          这一份由服务器判定：<strong>对方改一行存储改不动它</strong>。
-          但本站<strong>没有收款能力</strong>（<strong>不收款</strong>，从不做支付通道），所以它<strong>同样不是付费凭据</strong>。
-        </p>
+        <p class="account-lead">服务器判定：<strong>对方改一行存储改不动它</strong>。本站<strong>不收款</strong>，这一份<strong>不是付费凭据</strong>。</p>
         <ul class="grant-list" id="server-list"></ul>
-        <p class="account-hint" id="server-empty" hidden>数据库里还没有发放过任何层级。</p>
+        <p class="account-hint" id="server-empty" hidden>还没发过层级。</p>
         <p class="account-hint" id="server-note" hidden></p>
-        <div class="confirm-row" style="margin-top:12px">
-          <button class="account-btn ghost" id="btn-server-reload" type="button">刷新这一份</button>
+        <div class="confirm-row admin-reload-row">
+          <button class="account-btn ghost" id="btn-server-reload" type="button">刷新</button>
         </div>
         <p class="account-msg" id="msg-server"></p>
       </section>
 
       <section class="account-card" id="accounts-card" hidden>
-        <h2 class="account-card-title">全部账号（名录 · 角色 / 层级）</h2>
-        <p class="account-lead">
-          这里列的是<strong>注册过的账号</strong>，含<strong>邮箱</strong>、昵称、<strong>角色</strong>与<strong>层级</strong>。
-          与上面那张「服务端名单」不是一张表：那边只列发过层级的。
-        </p>
-        <p class="account-hint">
-          这一份的每一格都<strong>以数据库为准</strong>（<code>accounts.role</code> /
-          <code>accounts.plan</code>）。<strong>角色</strong>只有 <code>owner</code> 改得动，
-          目标值只认「普通用户 / 管理员」两档；<strong>owner 是种子</strong>
-          （由服务端 <code>OWNER_EMAILS</code> 认领），不在这个口发。
-        </p>
+        <h2 class="account-card-title">全部账号</h2>
+        <p class="account-lead">注册过的账号：邮箱、昵称、角色、层级。角色与层级都以数据库为准（<code>accounts.role</code> / <code>accounts.plan</code>）。<strong>角色</strong>只有 <code>owner</code> 改得动（<code>OWNER_EMAILS</code> 认领，这里发不了）。</p>
         <ul class="account-list" id="accounts-list"></ul>
-        <p class="account-hint" id="accounts-empty" hidden>还没有任何账号。</p>
+        <p class="account-hint" id="accounts-empty" hidden>还没有账号。</p>
         <p class="account-hint" id="accounts-note" hidden></p>
-        <div class="confirm-row" style="margin-top:12px">
-          <button class="account-btn ghost" id="btn-accounts-reload" type="button">刷新名录</button>
+        <div class="confirm-row admin-reload-row">
+          <button class="account-btn ghost" id="btn-accounts-reload" type="button">刷新</button>
         </div>
         <p class="account-msg" id="msg-accounts"></p>
       </section>
@@ -99,24 +81,18 @@
       <section class="account-card" id="reports-card" hidden>
         <h2 class="account-card-title">用户报告</h2>
 
-        <p class="account-lead" id="reports-intro">
-          用户在篇目页点那颗<strong>小旗</strong>报上来的正文 / 译文 / 注音 / 朗读 / 界面问题。
-          报告<strong>发到服务器</strong>（<code>public.reports</code> 那张表），你在这里读到的就是服务端那一份。
-        </p>
+        <p class="account-lead" id="reports-intro">用户在篇目页点小旗报上来的问题（存在服务端 <code>public.reports</code>）。</p>
 
         <ul class="admin-flow">
-          <li><span class="flow-step">1</span>用户点小旗 → 报告送进数据库（台账到手）</li>
-          <li><span class="flow-step">2</span><strong>改源码</strong>（<code>data/poems-*.js</code>、<code>data/pinyin-table.js</code>）——
-              这一页<strong>改不动正文</strong>，报告不是数据源</li>
-          <li><span class="flow-step">3</span>回来点「<strong>标为已修复</strong>」，用户那一页才显示已修复
-              —— 这一下是<strong>你说的</strong>，不是系统验过的</li>
-          <li><span class="flow-step">4</span>注音那一类：不必改源码，在本卡最下面「<strong>注音勘误</strong>」把那一处<strong>钉住</strong>，立刻对所有人生效</li>
+          <li><span class="flow-step">1</span>改源码（<code>data/</code>）——— 这一页改不动正文</li>
+          <li><span class="flow-step">2</span>回来点「标为已修复」（是你说修好了，系统没验过）</li>
+          <li><span class="flow-step">3</span>注音那一类不必改源码：在下面「注音勘误」钉住即生效</li>
         </ul>
 
         <div class="admin-report-counts" id="report-counts"></div>
 
         <div class="admin-report-tools">
-          <label class="account-label" for="report-filter" style="margin:0">只看</label>
+          <label class="account-label admin-filter-label" for="report-filter">只看</label>
           <select id="report-filter">
             <option value="new">已收到（还没看）</option>
             <option value="all">全部</option>
@@ -125,7 +101,7 @@
             <option value="fixed">已修复</option>
             <option value="rejected">未采纳</option>
           </select>
-          <button class="account-btn ghost" id="btn-reports-reload" type="button" style="width:auto;padding:8px 14px">刷新</button>
+          <button class="account-btn ghost admin-reload-inline" id="btn-reports-reload" type="button">刷新</button>
         </div>
 
         <ul class="report-list" id="reports-list"></ul>
@@ -136,44 +112,39 @@
 
       <section class="account-card" id="pinyin-card" hidden>
         <h2 class="account-card-title">注音勘误</h2>
-        <p class="account-lead">
-          注音是<strong>按字查表 + 按词消歧</strong>算出来的，古籍里的组合总有几个是表里没有的
-          —— 比如《滕王阁序》「秋水共长<strong>长</strong>天一色」的「长」，机器读成了 zhǎng。
-          在这里把那一处<strong>钉住</strong>：它只改<strong>这一篇的这一句</strong>，
-          改完<strong>立刻</strong>对所有人生效（不必等发版）。
-        </p>
+        <p class="account-lead">机器按字查表算注音，古籍里总有读错的。在这里钉住一处，只改这一篇的这一句，立刻生效。</p>
 
         <div class="grant-form">
           <div class="account-field pf-wid-field">
-            <label class="account-label" for="pf-wid">① 篇目（搜标题或正文，点一篇）</label>
+            <label class="account-label" for="pf-wid">① 篇目</label>
             <input id="pf-wid" class="account-input" type="text" autocomplete="off"
                    spellcheck="false" placeholder="滕王阁序" maxlength="40" />
             <ul class="grant-list" id="pf-hits" hidden></ul>
           </div>
           <div class="account-field" id="pf-line-field">
-            <label class="account-label" for="pf-line">② 原文里的一句</label>
+            <label class="account-label" for="pf-line">② 那一句原文</label>
             <input id="pf-line" class="account-input" type="text" autocomplete="off"
                    spellcheck="false" placeholder="秋水共长天一色。" maxlength="120" />
-            <button class="account-btn ghost" id="btn-pf-fill" type="button">从篇目里挑一句</button>
+            <button class="account-btn ghost" id="btn-pf-fill" type="button">挑一句</button>
           </div>
           <p class="account-hint" id="pf-picked" hidden></p>
           <div class="account-field">
-            <label class="account-label" for="pf-at">③ 这一句里第几次出现（从 1 数起）</label>
+            <label class="account-label" for="pf-at">③ 第几次出现</label>
             <input id="pf-at" class="account-input" type="number" min="1" step="1" value="1" />
           </div>
           <div class="account-field">
-            <label class="account-label" for="pf-py">④ 应读作（带声调，如 cháng）</label>
+            <label class="account-label" for="pf-py">④ 应读作</label>
             <input id="pf-py" class="account-input" type="text" autocomplete="off"
-                   spellcheck="false" placeholder="cháng" maxlength="12" />
+                   spellcheck="false" placeholder="应读作（带声调，如 cháng）" maxlength="12" />
           </div>
-          <button class="account-btn" id="btn-pf-add" type="button">钉住这一处</button>
+          <button class="account-btn" id="btn-pf-add" type="button">钉住</button>
         </div>
         <p class="account-msg" id="msg-pf"></p>
 
         <p class="account-hint" id="pf-note" hidden></p>
         <ul class="grant-list" id="pf-list"></ul>
-        <p class="account-hint" id="pf-empty" hidden>还没有任何勘误 —— 一处都没钉过。</p>
-        <div class="confirm-row" style="margin-top:12px">
+        <p class="account-hint" id="pf-empty" hidden>一处都没钉过。</p>
+        <div class="confirm-row admin-reload-row">
           <button class="account-btn ghost" id="btn-pf-export" type="button">导出勘误表</button>
         </div>
       </section>

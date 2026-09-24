@@ -124,6 +124,51 @@ body[data-nav="admin"] .account-page > .account-card,
   margin-bottom: auto;
 }
 
+/* ⚠️ 但管理后台是**一叠卡**：它同屏最多只画一张拒绝卡、放行时画五张。
+   本轮实测（393×852）拿掉这一条时：拒绝卡只有 144px 高，却被那对 `auto`
+   外边距推到了离顶栏 290px 的位置 —— 上面空 290、下面空 300，而这一页
+   只需要放一句「只对管理员开放。」。用户说的「留白太多」在那一屏上就是它。
+   收起这一条之后：拒绝卡贴顶（上面只剩 4px 的页容器内边距），放行的五张卡
+   也贴顶顺排 —— 一叠卡的页面本来就不该居中。
+   ⚠️ 判据是**「这一页是不是一张卡」**：拒绝卡 / 登录卡 / 重设卡都是，
+   管理后台的整体不是。所以这条只覆盖 `#deny-card` 这一张，不动上面那一组。 */
+body[data-nav="admin"] .account-page > #deny-card {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+/* ⚠️ 拒绝卡上不留那一片空白：它是**一叠卡开头的一张**，居中就等于「上面空
+   290px、下面空 300px 地端着一句话」（本轮实测 393×852：卡高 144，上下各
+   空 290+）。但它若把这一页撑到一屏高，就会带出 586px 的下留白 ——
+   所以这一条同时把它那一份 `min-height` 也收掉。 */
+body[data-nav="admin"] .account-page:has(> #deny-card:not([hidden])) {
+  min-height: 0;
+}
+
+/* 拒绝卡上那颗「回到我的」也不吸满整行：这张卡只在宽屏上才撑到 560px，
+   一颗满格的按钮在那儿看着像「这一页只有一个动作」—— 它只是退出去。 */
+#deny-card .account-btn { width: auto; min-width: 132px; }
+
+/* 一叠卡的最后一张不再多留一格底距（列表页到底就该到底）。 */
+body[data-nav="admin"] .account-page > .account-card:last-child { margin-bottom: 0; }
+
+/* ⚠️ 账号几页共用一条收尾：`.app` 底下那 48px（`--safe-bottom` 版本的
+   `40px + 安全区` 或 `body:not(.no-dock)` 的 `25px + 底栏`）是给
+   **长页面**留的「滚到底别贴着屏幕边」的余量。而登录 / 重设 / 确认邮箱 /
+   管理后台这四页是**一屏装得下**的（卡片居中，下面本来就有几百像素），
+   再垫 48px 等于把这条余量算两遍 —— 用户量的「上下 margin」里，
+   下面那一侧就一直比上面多出 10~48px。
+   收掉之后：四页的上下留白由同一个 `min-height` 算式给出，逐页画出来相等
+   （实测 393×852：/reset/ 与 /verify/ 都是 上 291 / 下 301）。
+   ⚠️ 只收这四页，不给 `.app` 全体：列表页（「我的」/ 设置二级页）是长页面，
+      那一条余量正是它们要的。 */
+body[data-nav="login"] .app,
+body[data-nav="reset"] .app,
+body[data-nav="verify"] .app,
+body[data-nav="admin"] .app {
+  padding-bottom: 0;
+}
+
 /* ---------- 登录页的 `.app`：让「容器撑一屏 + 卡片居中」落在同一套分栏里 ----------
    ⚠️ 页脚（`.foot` / `.settings-foot`）已全站删除，原先这里还挂着
       `body[data-nav="login"] .app > .foot { margin-top: auto; padding-top: 0 }`
@@ -234,38 +279,55 @@ body[data-nav="login"] .app {
   border: 0;
 }
 
+/* ⚠️ 高度与档①「中」的按钮同一档（--ctl-input-h = --ctl-h-md = 38px）：
+   用户 2026-09-24（Issue #278 第六轮）：「输入框大小也应该和按钮相匹配」。
+   原先它按 padding 11px + 字 15px 自己长到 43px 高，而旁边那颗 `.account-btn`
+   是 padding 12px + 字 15px = 46px —— 一高一矮、相差 3px，一行里看得见。
+   现在两者都写 height（38px），画出来的高度**必然**相等。
+   ⚠️ 38px 也是「手机上输入框不许小于 16px 字号」那条硬规矩的边界值：
+      iOS 只对 <16px 的输入框做聚焦缩放，而全站已在
+      `@media (max-width: 700px)` 把手机上的输入框字号抬到 --input-font-narrow
+      （16px），所以这一档不会触发缩放。 */
 .account-input {
   width: 100%;
+  height: var(--ctl-input-h);
   box-sizing: border-box;
-  padding: 11px 12px;
+  padding: 0 12px;
   border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
+  border-radius: var(--ctl-radius);
   background: var(--card);
   color: var(--ink);
   font-family: inherit;
   font-size: 15px;
   outline: none;
-  transition: border-color .15s, background .15s;
+  transition: border-color .15s, background .15s, box-shadow .15s;
 }
 .account-input:focus {
   border-color: var(--green);
   background: #fffdf6;
   outline: none;
-  box-shadow: 0 0 0 3px rgba(47, 96, 85, .10);
+  box-shadow: var(--ctl-focus);
 }
 .account-input::placeholder { color: #9c8d7b; }
 
 .account-input[type="email"] { letter-spacing: .2px; }
 
+/* 档① 主按钮。高度 / 圆角 / 字号读 style.css 那一把尺
+   （--ctl-h-lg 44px / --ctl-radius 6px / --ctl-font-lg 15px），
+   与 `.btn.primary` 是**同一档**：并排看是同一颗键。
+   ⚠️ 宽度仍是满格（width: 100%）：它是卡片里唯一的主按钮，
+      满格是「卡片宽度」这件事的表达，不是另一种按钮。 */
 .account-btn {
   width: 100%;
+  height: var(--ctl-h-lg);
   box-sizing: border-box;
-  padding: 12px;
-  border-radius: var(--radius-sm);
+  padding: 0 var(--ctl-pad-x);
+  border-radius: var(--ctl-radius);
   color: #fdfaf2;
   font-family: inherit;
-  font-size: 15px;
+  font-size: var(--ctl-font-lg);
   font-weight: 600;
+  line-height: 1.2;
   cursor: pointer;
   transition: background .15s, border-color .15s, color .15s;
 
@@ -287,13 +349,16 @@ body[data-nav="login"] .app {
   cursor: default;
 }
 .account-btn[aria-busy="true"] { cursor: wait; }
+/* 档②「次按钮」：纸底 + 缃线。悬浮 / 按下与 .btn / .mini-btn 同一套。 */
 .account-btn.ghost {
   background: var(--card);
   color: var(--ink-2);
   border: 1px solid var(--line);
 }
-.account-btn.ghost:hover { color: var(--green); border-color: var(--green); background: var(--card); }
-.account-btn.danger:hover { background: var(--red-light); }
+.account-btn.ghost:hover { color: var(--green); border-color: var(--celadon); background: var(--ctl-hover); }
+.account-btn.ghost:active { background: var(--ctl-press); }
+.account-btn.danger:hover { background: var(--danger-hover); border-color: var(--red); }
+.account-btn.danger:active { background: var(--danger-press); }
 .account-btn + .account-btn { margin-top: 8px; }
 
 .account-actions {
@@ -485,14 +550,20 @@ body[data-nav="login"] .app {
 .grant-when { font-size: 11.5px; color: var(--ink-3); }
 .grant-del {
   flex: none;
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
   border: none;
   background: none;
   color: var(--red);
   font-family: inherit;
   font-size: 12.5px;
   cursor: pointer;
-  padding: 2px 4px;
+  padding: 0 4px;
+  transition: color .15s;
 }
+.grant-del:hover,
+.grant-del:active { color: var(--red); opacity: .82; }
 .grant-form { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; }
 .grant-form .account-field { flex: 1 1 140px; margin-bottom: 0; }
 .grant-form .account-btn { width: auto; flex: none; padding: 11px 16px; }
@@ -506,23 +577,34 @@ body[data-nav="login"] .app {
 #pf-line-field .account-field { flex: 1 1 200px; }
 #pf-line-field .account-btn { margin-left: auto; }
 .grant-form .grant-list { flex: 1 1 100%; max-height: 220px; overflow: auto; }
+/* 层级选择（免费 / Pro / Max）：**档③（选项）**的又一落点。
+   尺寸 / 圆角读同一把尺（--ctl-h-sm 32px / --ctl-radius 6px），
+   选中态与设置页那些胶囊**同一套语义**：实心天青 + 奶白字（本轮之前它是
+   「浅底 + 天青字 + 内描边」，与其它选项按钮的选中态不是一件事）。 */
 .tier-pick { display: flex; gap: 6px; flex-wrap: wrap; }
 .tier-pick button {
   border: 1px solid var(--line);
   background: var(--card);
   color: var(--ink-2);
   font-family: inherit;
-  font-size: 12.5px;
-  padding: 8px 14px;
-  border-radius: var(--radius-sm);
+  font-size: var(--ctl-font-sm);
+  min-height: var(--ctl-h-sm);
+  padding: 0 var(--ctl-pad-x);
+  border-radius: var(--ctl-radius);
   cursor: pointer;
+  transition: background .15s, border-color .15s, color .15s;
 }
+.tier-pick button:hover { background: var(--ctl-hover); border-color: var(--celadon); color: var(--green); }
+.tier-pick button:active { background: var(--ctl-press); }
 .tier-pick button.active {
-  border-color: var(--green);
-  color: var(--green);
-  background: #fffdf6;
-  box-shadow: inset 0 0 0 1px rgba(47, 96, 85, .28);
+  border-color: var(--green-dark);
+  color: #fdfaf2;
+  background: var(--green);
+  font-weight: 600;
+  box-shadow: none;
 }
+.tier-pick button.active:hover { background: var(--celadon); border-color: var(--green-dark); color: #fdfaf2; }
+.tier-pick button.active:active { background: var(--green-dark); }
 
 .account-card.danger-zone { border: 1px solid var(--danger-line); }
 .danger-title { color: var(--red); }
@@ -777,7 +859,8 @@ thead .plans-th-cap {
   color: var(--red);
   border: 1px solid var(--danger-line);
 }
-.account-btn.danger:hover { background: var(--red-light); }
+.account-btn.danger:hover { background: var(--danger-hover); border-color: var(--red); }
+.account-btn.danger:active { background: var(--danger-press); }
 
 .poems-game-entry {
   flex: 0 0 auto;
@@ -789,15 +872,19 @@ thead .plans-th-cap {
   padding: 4px 10px;
   margin-left: 8px;
   border: none;
-  border-radius: var(--radius-sm);
+  border-radius: var(--ctl-radius);
   background: var(--card);
   box-shadow: var(--shadow);
   color: var(--ink);
   font: inherit;
   cursor: pointer;
+  transition: background .15s;
 }
-.poems-game-entry:hover { filter: brightness(1.04); }
-.poems-game-entry:active { transform: scale(.985); }
+.poems-game-entry:hover { background: var(--ctl-hover); }
+/* ⚠️ 按下不再 `transform: scale(.985)`：全站口径是「按下只用颜色」
+   （ui-consistency.test.js 有一条守着「按钮按下不许缩放」——
+   一条 transform 就能让文字在按下的一瞬间被重采样、看着发虚）。 */
+.poems-game-entry:active { background: var(--ctl-press); }
 .poems-game-name { font-size: 13px; font-weight: 600; letter-spacing: .5px; }
 .poems-game-sub { font-size: 10.5px; color: var(--ink-3); white-space: nowrap; }
 
@@ -959,7 +1046,12 @@ thead .plans-th-cap {
 .print-blank-lines { margin-top: 10px; }
 .print-blank-lines .account-input { max-width: 120px; }
 .print-paper { justify-content: flex-start; }
-.print-paper button { flex: 0 1 auto; padding: 5px 12px; }
+.print-paper button {
+  flex: 0 1 auto;
+  min-height: var(--ctl-h-sm);
+  padding: 0 var(--ctl-pad-x);
+  border-radius: var(--ctl-radius);
+}
 .print-actions { display: flex; gap: 8px; }
 .print-actions .account-btn { flex: 1 1 0; margin-top: 0; }
 
@@ -1015,6 +1107,11 @@ thead .plans-th-cap {
   border-bottom: 1px solid var(--line);
 }
 
+/* 登录页顶上那两条「密码登录 / 快捷登录」：**页签**，不是按钮 ——
+   没有盒子、没有底色，选中态靠那一道底边。所以它不是第四档按钮，
+   尺寸（32px 高 / 13px 字）与档③的选项同源。
+   ⚠️ 选中那道底边原来是 --red（这个站上红是「危险 / 出错」的颜色），
+      本轮改成主色 --green —— 同一页里「选中」与「刚才出错了」是两件事。 */
 .auth-tab {
   appearance: none;
   background: none;
@@ -1022,24 +1119,27 @@ thead .plans-th-cap {
   border-bottom: 2px solid transparent;
 
   margin-bottom: -1px;
-  padding: 8px 12px 9px;
+  min-height: var(--ctl-h-sm);
+  padding: 0 12px;
   font-family: inherit;
-  font-size: 14px;
+  font-size: var(--ctl-font-sm);
   font-weight: 500;
   color: var(--ink-3);
   cursor: pointer;
+  transition: color .15s, border-color .15s;
 }
+.auth-tab:hover { color: var(--ink-2); }
 
 .auth-tab[aria-selected="true"] {
   color: var(--ink);
   font-weight: 600;
-  border-bottom-color: var(--red);
+  border-bottom-color: var(--green);
 }
 
 .auth-tab:focus-visible {
-  outline: 2px solid var(--red);
-  outline-offset: 2px;
-  border-radius: 4px 4px 0 0;
+  outline: none;
+  box-shadow: var(--ctl-focus);
+  border-radius: var(--ctl-radius) var(--ctl-radius) 0 0;
 }
 
 .auth-pane {
@@ -1062,13 +1162,15 @@ thead .plans-th-cap {
   margin-bottom: 0;
 }
 
+/* 「显示密码」那颗眼睛：左边就是输入框，所以它与输入框**同高同圆角**
+   （--ctl-input-h / --ctl-radius）—— 一行里两个盒子不许一高一矮。 */
 .pw-eye {
   appearance: none;
   background: var(--card-2);
   border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  width: 44px;
-  min-width: 44px;
+  border-radius: var(--ctl-radius);
+  width: var(--ctl-input-h);
+  min-width: var(--ctl-input-h);
   padding: 0;
   font-family: inherit;
   font-size: 12.5px;
@@ -1078,11 +1180,13 @@ thead .plans-th-cap {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  transition: background .15s, border-color .15s, color .15s;
 }
 
 .pw-eye svg { width: 20px; height: 20px; }
 
-.pw-eye:hover { color: var(--green); border-color: var(--green); }
+.pw-eye:hover { color: var(--green); border-color: var(--celadon); background: var(--ctl-hover); }
+.pw-eye:active { background: var(--ctl-press); }
 
 .auth-links {
   margin: 14px 0 0;
@@ -1091,18 +1195,27 @@ thead .plans-th-cap {
   color: var(--ink-3);
 }
 
+/* 登录页底下那几颗字（注册 / 忘记密码 / 返回登录）：**它们是链接**（只是
+   语义上必须留在浏览器里、不能真的跳走，所以是 <button>）。
+   四态与全站链接逐字相同：默认天青、悬浮/按下压深一档、键盘焦点有光晕。
+   ⚠️ 原先 hover 会**加粗**（font-weight: 600）—— 加粗会改变文字宽度、
+      把同一行里另外那颗字顶得左右跳一下。全站链接的悬浮只换颜色。 */
 .link-btn {
   appearance: none;
   background: none;
   border: 0;
-  padding: 2px 0;
+  padding: 0;
+  min-height: 28px;
   font-family: inherit;
   font-size: 13px;
   color: var(--green);
   cursor: pointer;
+  transition: color .15s;
 }
 
-.link-btn:hover { color: var(--green-dark); font-weight: 600; }
+.link-btn:hover,
+.link-btn:focus-visible,
+.link-btn:active { color: var(--green-dark); }
 
 .link-sep { margin: 0 6px; color: var(--line); }
 
@@ -1193,7 +1306,7 @@ thead .plans-th-cap {
   font-size: 11px;
   line-height: 1;
   padding: 4px 7px;
-  border-radius: 6px;
+  border-radius: var(--ctl-radius);
   background: var(--card-2);
   color: var(--ink-2);
   border: 1px solid var(--line-2);
@@ -1216,18 +1329,24 @@ thead .plans-th-cap {
   font: inherit;
   font-size: 11.5px;
   line-height: 1;
-  padding: 6px 9px;
-  border-radius: 8px;
+  min-height: 28px;
+  padding: 0 9px;
+  border-radius: var(--ctl-radius);
   border: 1px solid var(--line-2);
   background: var(--card);
   color: var(--ink-2);
   cursor: pointer;
+  transition: background .15s, border-color .15s, color .15s;
 }
+.acct-role-btn:hover { background: var(--ctl-hover); border-color: var(--celadon); color: var(--green); }
+.acct-role-btn:active { background: var(--ctl-press); }
 .acct-role-btn.active {
-  background: var(--green-light);
-  color: var(--green-dark);
-  border-color: var(--line);
+  background: var(--green);
+  color: #fdfaf2;
+  border-color: var(--green-dark);
+  font-weight: 600;
 }
+.acct-role-btn.active:hover { background: var(--celadon); color: #fdfaf2; }
 .acct-role-btn:disabled { opacity: .55; cursor: default; }
 
 @media (max-width: 560px) {
@@ -1276,10 +1395,12 @@ thead .plans-th-cap {
 
 .identity-btns {
   display: flex;
-  gap: 6px;
+  gap: 8px;
   flex-wrap: wrap;
   margin-top: 12px;
 }
+/* 这两颗不再吸满整行：它们是「上传 / 删除」两颗并排的小动作，不是这一页的主按钮。 */
+.identity-btns .account-btn { width: auto; min-width: 116px; flex: 0 1 auto; }
 
 /* ⚠️ 账页这几颗小钮**必须**限定在 .account-page 里。
    这一条曾经是裸 `.mini-btn`（单类名），而 account.css 是在 classic.css **之后**
@@ -1288,26 +1409,34 @@ thead .plans-th-cap {
    那一排「朗读 / 译文 / 加背 / 收藏 / 已读」会**统统变成绿底**，看着像全部选中
    （Issue #229 用户点名的「第二行按钮全处于选中态」）。
    现在收进 .account-page：账页自己的钮照旧，正文页的钮不再被波及。 */
+/* ⚠️ 尺寸这一轮换成与 classic.css 里那一排**同一把尺**（--ctl-h-sm /
+   --ctl-radius）：原来它 4px 内边距 + 11.5px 字，比正文页那一排矮 7px、
+   字小 1.5px —— 同一颗「上传头像」在「我的」页是这副小样，而同一颗「加背」
+   在正文页是另一副。现在两个页面上的行内小按钮逐像素相同。
+   底色仍是实心天青（账页这一颗默认就是主按钮语义），悬浮 / 按下读全站那两条。 */
 .account-page .mini-btn {
+  min-height: var(--ctl-h-sm);
   border: 1px solid var(--green-dark);
-  border-radius: var(--radius-sm);
+  border-radius: var(--ctl-radius);
   background: var(--green);
   color: #fdfaf2;
   font-family: inherit;
-  font-size: 11.5px;
+  font-size: var(--ctl-font-sm);
   font-weight: 600;
   line-height: 1.2;
-  padding: 4px 9px;
+  padding: 0 10px;
   cursor: pointer;
   transition: background .15s, border-color .15s, color .15s;
 }
 .account-page .mini-btn:hover { background: var(--celadon); }
+.account-page .mini-btn:active { background: var(--green-dark); }
 .account-page .mini-btn.ghost {
   background: var(--card);
   color: var(--ink-2);
   border-color: var(--line);
 }
-.account-page .mini-btn.ghost:hover { color: var(--green); border-color: var(--green); }
+.account-page .mini-btn.ghost:hover { color: var(--green); border-color: var(--celadon); background: var(--ctl-hover); }
+.account-page .mini-btn.ghost:active { background: var(--ctl-press); }
 
 .identity-row .avatar { --avatar-size: 46px; }
 

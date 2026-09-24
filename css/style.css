@@ -29,8 +29,78 @@
   --radius-sm: 12px;
   --radius-md: 14px;
 
+  /* ==========================================================================
+     控件三档（Issue #278 第六轮 · 用户原话：
+     「所有页面，所有输入框及大按钮的边框 radius 最多 7px……
+       这些按钮样式是否应该统一，还是分成两种或者三种固定样式，
+       确保 padding 的一致性，高度的一致性，radius 的一致性，
+       以及默认，悬浮，选中，点击，激活，等各种状态的一致性？最多三种，不要再多了。」
+       「输入框大小也应该和按钮相匹配」「链接是否应该固定样式」）
+
+     --------------------------------------------------------------------------
+     口径：全站按钮**只有三档**，除此之外不再有第四种长相。
+
+       ① 主按钮  .btn.primary / .btn.good / .account-btn（不带 .ghost）
+                实心天青底，一行里只放一颗 —— 一件事只有一颗主按钮。
+       ② 次按钮  .btn / .btn.ghost-btn / .account-btn.ghost / .mini-btn
+                纸底 + 缃线 + 墨字；一格里的「另一件可做的事」。
+       ③ 选项档  .seg / .chips / .tier-pick / .play-mode-opt /
+                 .admin-report-counts / .print-paper
+                一排等价的选项，**选中态自证**（实心天青），不是「点了会做事」。
+
+     危险（.danger-btn / .account-btn.danger / .btn.bad）不是第四档：
+     它就是②的红色副本，尺寸 / 圆角 / 状态与②逐字相同。
+
+     ⚠️ 三档**共用同一把尺**：下面这几个数就是那把尺，各档只准读它们，
+        不许再各写一个数 —— 同一件事写两遍必然漂（本轮之前全站 12 种圆角、
+        6 种高度、三种按下反馈、两种悬浮效果，正是这么漂出来的）。
+
+     ⚠️ 圆角 **≤ 7px** 是用户的硬上限。原来 --radius-sm 是 12px，
+        比上限高出 5px；控件这一层改用 --ctl-radius（6px），
+        `.btn / .mini-btn / .account-btn`（11 个页面共用）一处改、处处跟着变。
+     ⚠️ 卡片那一层（--radius 16 / --radius-md 14）**不在这一轮里**：
+        卡片不是「按钮」，而且 16px 是 .card / .account-card / .settings-link
+        共用的既有口径，动它会牵到全站每一张纸。用户这一轮说的是
+        「输入框及大按钮」—— 按字面收口在控件上。
+     ========================================================================== */
+  --ctl-radius: 6px;
+
+  /* 档①「大」：一格里的主按钮（登录 / 发放 / 注销确认）。 */
+  --ctl-h-lg: 44px;
+  /* 档①「中」与档②的默认档：一行里并排的两颗（导出 / 清空 / 刷新）。 */
+  --ctl-h-md: 38px;
+  /* 档③「小」：选项按钮与网格里的行内小键。 */
+  --ctl-h-sm: 32px;
+
+  /* 纵向内边距从高度反推，所以每一档的**画出来的高度**真的等于上面那个数：
+     高度 − 上下内边距×2 − 上下边框×2 = 文字行盒（font-size × 1.2 的圆整值）。
+     ⚠️ 这几个数是「算出来的结果」，不是「随手挑的」——改字号就要连它们一起算，
+        否则 `.btn` 那种不写 height 的按钮会自己长高，与写了 height 的差开。 */
+  --ctl-pad-lg: 11px;   /* 11×2 + 1×2 + 20(字 15px) = 44 */
+  --ctl-pad-md: 9px;    /*  9×2 + 1×2 + 18(字 14px) = 38 */
+  --ctl-pad-sm: 6px;    /*  6×2 + 1×2 + 18(字 14px) = 32 */
+
+  --ctl-font-lg: 15px;
+  --ctl-font-md: 14px;
+  --ctl-font-sm: 13px;
+
+  /* 左右内边距（同一个高度的档，横向也只有一个数）。 */
+  --ctl-pad-x: 14px;
+
+  /* 输入框 / 下拉框：**高度与档①「中」同一档**（用户：「输入框大小也应该和
+     按钮相匹配」）。44px 的输入框与 38px 的按钮并排会一高一矮，
+     所以表单里两者都用 38px 那一档；搜索框等自成一行的另按 --toolbar-h。 */
+  --ctl-input-h: var(--ctl-h-md);
+
+  /* 悬浮 / 按下 / 选中 / 焦点：全站每个控件都读这三条，不再各写一套。 */
+  --ctl-hover: var(--bg-soft);
+  --ctl-press: var(--line-2);
+  --ctl-focus: 0 0 0 3px rgba(47, 96, 85, .10);
+
   --danger-bg: #fbeae7;
   --danger-line: #ecd2cd;
+  --danger-hover: var(--red-light);
+  --danger-press: #f0d3cd;
 
   --input-font: 14px;
   --input-font-narrow: 16px;
@@ -57,7 +127,46 @@
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-a { text-decoration: none; }
+/* ==========================================================================
+   链接：全站一套（Issue #278 第六轮 · 用户原话：
+   「链接和按钮是否有区分？而且链接是否应该固定样式，包括默认，悬浮，active？」
+
+   --------------------------------------------------------------------------
+   一、链接与按钮**靠三件事区分**（不是靠下划线）：
+       ① 形状 —— 链接没有盒子：没有底、没有描边、没有"高度"；
+       ② 手感 —— 链接按下**不换底**，只把颜色压深一档（按钮换底）；
+       ③ 颜色 —— 链接一律天青（--green），按钮的文字色是墨（主按钮是奶白）。
+       用户 2026-09-18 定过「不要下划线」，所以区分不靠下划线 ——
+       这一轮把「不画下划线」升格成「链接自己有一套固定的四态」。
+
+   二、四态（全站同一份，不再各处各写）：
+       默认   --green
+       悬浮   --green-dark
+       active --green-dark（与悬浮同色 —— 触屏上没有悬浮，按下必须自己可见）
+       焦点   --ctl-focus 的焦点环 + 圆角，键盘用户看得出自己在哪
+
+   三、**正文里**的链接例外：正文中间插一条颜色不同的字会打断阅读，
+       所以正文链接保持与正文同色，只用一条细下划线把自己标出来
+       （`.legal a` / `.report-login-link` 是这一类的两个落点）。
+       它们不是"另一种链接"，是"链接在正文里的画法"。
+   ========================================================================== */
+a { text-decoration: none; color: var(--green); }
+
+a:hover,
+a:focus-visible { color: var(--green-dark); }
+a:active { color: var(--green-dark); }
+a:focus-visible { outline: none; box-shadow: var(--ctl-focus); border-radius: 2px; }
+
+/* ⚠️ 例外：这几处是「一整块可点的卡 / 行」，颜色必须继承外层的墨色
+      （它们是布局容器，不是句子里的一个词）。 */
+/* ⚠️ 这几处的链接颜色必须继承外层的墨色（它们是布局容器，不是句子里的词）：
+   一张可点的卡、一行可点的行 —— 把它们染成天青就等于「整块都成了链接」。
+   ⚠️ 选择器里**不要**把「关于」那几行的行名当成前缀写进来：那一行本身
+      有自己的一条规则（见「关于」那一节），同名前缀会让按行扫的守卫读错对象。 */
+.settings-link, .account-link, .item a, .item-title a, a.entry-link,
+a.kv-link, .brand, .suggest-item, .library-card, .collection-card { color: inherit; }
+.settings-link:hover, .account-link:hover, a.kv-link:hover, .item a:hover,
+a.entry-link:hover { color: inherit; }
 
 button,
 input,
@@ -145,7 +254,7 @@ html, body {
 .seg {
   display: flex;
   background: var(--bg);
-  border-radius: var(--radius-sm);
+  border-radius: var(--ctl-radius);
   padding: 3px;
   gap: 2px;
   flex: 1;
@@ -157,28 +266,30 @@ html, body {
   flex: 1;
   border: none;
   background: transparent;
-  padding: 7px 12px;
-  border-radius: 8px;
-  font-size: 14px;
+  padding: 0 12px;
+  min-height: var(--ctl-h-sm);
+  border-radius: calc(var(--ctl-radius) - 1px);
+  font-size: var(--ctl-font-sm);
   color: var(--ink-2);
   cursor: pointer;
   white-space: nowrap;
   transition: all .18s;
 }
+.seg button:hover { background: var(--ctl-hover); }
 .seg button.active {
   background: var(--card);
   color: var(--green);
   font-weight: 600;
   box-shadow: 0 1px 4px rgba(0, 0, 0, .08);
 }
-.seg.small button { font-size: 13px; padding: 6px 8px; }
+.seg.small button { font-size: var(--ctl-font-sm); padding: 0 10px; }
 
 .seg.mini {
   flex: 0 0 auto;
   border: 1px solid var(--line);
   background: var(--card);
 }
-.seg.mini button { font-size: 12.5px; padding: 5px 9px; }
+.seg.mini button { font-size: 12.5px; padding: 0 9px; }
 
 .chips {
   display: flex;
@@ -194,18 +305,22 @@ html, body {
   background: var(--card);
   color: var(--ink-2);
   border-radius: 999px;
-  padding: 6px 14px;
-  font-size: 14px;
+  padding: 0 var(--ctl-pad-x);
+  min-height: var(--ctl-h-sm);
+  font-size: var(--ctl-font-sm);
   cursor: pointer;
   white-space: nowrap;
   transition: all .18s;
 }
+.chips button:hover { background: var(--ctl-hover); border-color: var(--celadon); }
+.chips button:active { background: var(--ctl-press); }
 .chips button.active {
   background: var(--green);
   border-color: var(--green);
   color: #fdfaf2;
   font-weight: 600;
 }
+.chips button.active:hover { background: var(--celadon); border-color: var(--celadon); }
 
 .today-bar {
   display: flex;
@@ -395,21 +510,31 @@ html, body {
 }
 .collection-count { font-size: 12px; color: var(--ink-3); }
 
+/* 「我的清单」里的行内小键（导入清单 / 重命名 / 删除 / 全选 / 移出选中的）。
+   原先它是独立的一档：3px 10px 内边距 + 12px 字（高 22px），
+   比档②的小号（32px）矮整整 10px，颜色还是灰底灰字 ——
+   与旁边那颗「打印清单」（.btn 38px 高）并排，一格里有三种高度的按钮。
+   本轮归到**档②（次按钮）的小号**：尺寸 / 圆角 / 状态全部读同一把尺。 */
 .collection-act {
   margin-left: auto;
   border: 1px solid var(--line);
-  background: var(--bg-soft);
+  background: var(--card);
   color: var(--ink-2);
-  font-size: 12px;
-  padding: 3px 10px;
-  border-radius: var(--radius-sm);
+  font-size: var(--ctl-font-sm);
+  font-weight: 500;
+  min-height: var(--ctl-h-sm);
+  padding: 0 12px;
+  border-radius: var(--ctl-radius);
   cursor: pointer;
   flex: 0 0 auto;
+  transition: background .15s, border-color .15s, color .15s;
 }
 .collection-head .collection-act + .collection-act { margin-left: 0; }
-.collection-act.danger { color: var(--red, #b4553c); }
-.collection-act:hover { border-color: var(--green); color: var(--green); }
-.collection-act.danger:hover { border-color: var(--red, #b4553c); color: var(--red, #b4553c); }
+.collection-act.danger { color: var(--red); }
+.collection-act:hover { background: var(--ctl-hover); border-color: var(--celadon); color: var(--green); }
+.collection-act:active { background: var(--ctl-press); }
+.collection-act.danger:hover { background: var(--danger-hover); border-color: var(--red); color: var(--red); }
+.collection-act.danger:active { background: var(--danger-press); }
 
 .item-remove {
   display: inline-flex;
@@ -466,12 +591,15 @@ html, body {
   border: 1px solid var(--line);
   background: var(--card);
   color: var(--ink-3);
-  font-size: 11.5px;
-  padding: 2px 8px;
-  border-radius: var(--radius-sm);
+  font-size: 12.5px;
+  min-height: 26px;
+  padding: 0 9px;
+  border-radius: var(--ctl-radius);
   cursor: pointer;
+  transition: background .15s, border-color .15s, color .15s;
 }
-.collection-group-drop:hover { border-color: var(--red, #b4553c); color: var(--red, #b4553c); }
+.collection-group-drop:hover { background: var(--danger-hover); border-color: var(--red); color: var(--red); }
+.collection-group-drop:active { background: var(--danger-press); }
 
 .item-move {
   display: inline-flex;
@@ -655,21 +783,53 @@ body.no-dock .modal-box { max-height: 88vh; }
   flex: 1;
   border: 1px solid var(--line);
   background: var(--card);
-  border-radius: var(--radius-sm);
-  padding: 12px 8px;
-  font-size: 15px;
+  border-radius: var(--ctl-radius);
+  /* 档① 的默认档 = 「大」（与 .account-btn 逐字相同：高 44 / 字 15 / 圆角 6）。
+     ⚠️ 尺寸上一次是 12px 内边距 + 15px 字（≈43px 高，靠巧合与账页那颗差 1px），
+        现在是同一个 --ctl-h-lg 与同一个 --ctl-font-lg —— 「导出备份」与
+        「登录」在任何页面上都是同一颗键。
+     宽度仍是自适应（flex: 1 + 一格里的几颗平分），所以一行里并排两颗时
+     不是满格，但高矮与字号一致。 */
+  /* ⚠️ height 而不是 min-height：min-height 只是**地板**，内边距 + 字行盒
+     比它高时按钮会自己长高（本轮实测：设置页那几颗画出来 40~42px，
+     而账页那颗 44px —— 同一档两个数）。写 height 才能保证画出来的高度
+     真的等于这一档的数。 */
+  height: var(--ctl-h-lg);
+  padding: 0 var(--ctl-pad-x);
+  font-size: var(--ctl-font-lg);
   font-weight: 600;
   cursor: pointer;
   transition: background .15s, border-color .15s, color .15s;
   color: var(--ink);
 }
 
-.btn:active { background: var(--bg-soft); }
+/* 一行里并排三颗以上的（设置页那几行）用「中」档：44px 的三连按钮在一行里
+   太占地方，而 38px 仍是同一把尺上的一档 —— 不是第四种长相。
+   判据是**格子里有几颗**，不是「哪个页面」：同一页上单颗走 44、多颗走 38。 */
+.settings-btns .btn {
+  height: var(--ctl-h-md);
+  padding: 0 var(--ctl-pad-x);
+  font-size: var(--ctl-font-md);
+}
+
+/* 全站按钮的**状态三件套**（悬浮 / 按下），这一份是唯一来源：
+   · 悬浮 = 浅一档底（+ 有的档把描边转成主色）
+   · 按下 = 再深一档底
+   · 焦点 = 与全站输入框逐位相同的天青光晕（见文件底下那一条 :focus-visible）
+
+   ⚠️ 本轮之前这里只有 `:active` 改底、没有 `:hover`（触屏上无所谓，
+      鼠标上就是「指过去什么也不发生」）；而 .account-btn / .ghost-btn
+      各写了一套自己的悬浮。现在三者合成一套。 */
+.btn:hover { background: var(--ctl-hover); border-color: var(--celadon); }
+.btn:active { background: var(--ctl-press); }
 .btn.bad { color: var(--red); border-color: var(--danger-line); background: var(--red-light); }
-.btn.bad:active { background: var(--danger-line); }
+.btn.bad:hover { background: var(--danger-hover); border-color: var(--red); }
+.btn.bad:active { background: var(--danger-press); }
 .btn.fuzzy { color: var(--amber); border-color: #ecdcc5; background: var(--amber-light); }
+.btn.fuzzy:hover { background: #f7e0c0; border-color: var(--amber); }
 .btn.fuzzy:active { background: #f2d9b6; }
-.btn.good { color: #fdfaf2; background: var(--green); border-color: var(--green); }
+.btn.good { color: #fdfaf2; background: var(--green); border-color: var(--green-dark); }
+.btn.good:hover { background: var(--celadon); }
 .btn.good:active { background: var(--green-dark); }
 
 .hint { font-size: 12px; color: var(--ink-2); margin-top: 12px; text-align: center; }
@@ -687,7 +847,7 @@ body.no-dock .modal-box { max-height: 88vh; }
   flex: 1 1 auto;
   resize: vertical;
   border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
+  border-radius: var(--ctl-radius);
   background: var(--card);
   color: var(--ink);
   padding: 10px 12px;
@@ -726,6 +886,17 @@ body.no-dock .modal-box { max-height: 88vh; }
   overflow: visible;
 }
 
+/* 设置页把 seg / chips 画成**一排胶囊**（不是分段控件）—— 这是档③在设置页
+   上的样子。尺寸仍从同一把尺来：32px 高、13px 字、6px 圆角？
+   ⚠️ 这里圆角是 999px（胶囊），不是 --ctl-radius —— 这正是用户说的
+      「像背诵页面的学段、年级那样的按钮（这种 radius 按风格设置，
+      不受 7px 限制）」：它是**选项档**，圆角按风格走（胶囊），
+      但**尺寸、状态、密度与按钮那两档同源**。
+   ⚠️ 本轮之前这几颗是 9px 18px 内边距 + 13.5px 字（高 40px），
+      而档③的其余落点是 32px —— 同一档在设置页比在别处高 8px。
+      现在统一 32px（--ctl-h-sm），字号 13（--ctl-font-sm）。
+   ⚠️ 按下不再 transform: scale(.97)：全站口径是「按下只用颜色」
+      （ui-consistency.test.js 有一条守着「按钮按下不许缩放」）。 */
 .settings-page .seg button,
 .settings-page .chips button {
   flex: 0 1 auto;
@@ -733,11 +904,19 @@ body.no-dock .modal-box { max-height: 88vh; }
   background: var(--card);
   color: var(--ink-2);
   border-radius: 999px;
-  font-size: 13.5px;
+  font-size: var(--ctl-font-sm);
   font-weight: 500;
   line-height: 1.2;
-  padding: 9px 18px;
+  min-height: var(--ctl-h-sm);
+  padding: 0 var(--ctl-pad-x);
   box-shadow: none;
+}
+
+.settings-page .seg button:hover,
+.settings-page .chips button:hover {
+  background: var(--ctl-hover);
+  border-color: var(--celadon);
+  color: var(--green);
 }
 
 .settings-page .seg button.active,
@@ -746,14 +925,20 @@ body.no-dock .modal-box { max-height: 88vh; }
   border-color: var(--green-dark);
   color: #fdfaf2;
   font-weight: 600;
-  box-shadow: inset 0 0 0 1px rgba(240, 205, 124, .42);
+  box-shadow: none;
+}
+.settings-page .seg button.active:hover,
+.settings-page .chips button.active:hover {
+  background: var(--celadon);
+  border-color: var(--green-dark);
+  color: #fdfaf2;
 }
 
 .settings-page .seg button:active,
-.settings-page .chips button:active { transform: scale(.97); }
+.settings-page .chips button:active { background: var(--ctl-press); }
 .settings-page .seg button:not(.active):active,
 .settings-page .chips button:not(.active):active {
-  background: var(--green-light);
+  background: var(--ctl-press);
   border-color: var(--celadon);
   color: var(--green);
 }
@@ -802,12 +987,14 @@ body.no-dock .modal-box { max-height: 88vh; }
   border: 1px solid var(--line);
   background: var(--card);
   color: var(--ink-2);
-  border-radius: var(--radius-sm);
+  border-radius: var(--ctl-radius);
   padding: 10px 14px;
   font-family: inherit;
   cursor: pointer;
-  transition: border-color .15s, background .15s;
+  transition: border-color .15s, background .15s, color .15s;
 }
+.play-mode-opt:hover { background: var(--ctl-hover); border-color: var(--celadon); }
+.play-mode-opt:active { background: var(--ctl-press); }
 .play-mode-name { font-size: 13.5px; font-weight: 500; }
 .play-mode-note { font-size: 11.5px; color: var(--ink-3); line-height: 1.5; }
 .play-mode-opt.active {
@@ -815,7 +1002,6 @@ body.no-dock .modal-box { max-height: 88vh; }
   border-color: var(--green-dark);
   color: #fdfaf2;
   font-weight: 600;
-  box-shadow: inset 0 0 0 1px rgba(240, 205, 124, .42);
 }
 
 .play-mode-opt.active .play-mode-note { color: rgba(253, 250, 242, .82); }
@@ -860,12 +1046,13 @@ body.no-dock .modal-box { max-height: 88vh; }
   border: 1px solid var(--line);
   background: var(--card);
   color: var(--ink-2);
-  border-radius: var(--radius-sm);
+  border-radius: var(--ctl-radius);
   padding: 10px 34px 11px 14px;
   font-family: inherit;
   cursor: pointer;
-  transition: border-color .15s, background .15s;
+  transition: border-color .15s, background .15s, color .15s;
 }
+.algo-opt:hover { background: var(--ctl-hover); border-color: var(--celadon); }
 .algo-name {
   display: flex;
   align-items: baseline;
@@ -879,12 +1066,12 @@ body.no-dock .modal-box { max-height: 88vh; }
   background: var(--green);
   border-color: var(--green-dark);
   color: #fdfaf2;
-  box-shadow: inset 0 0 0 1px rgba(240, 205, 124, .42);
 }
+.algo-opt.active:hover { background: var(--celadon); border-color: var(--green-dark); }
 .algo-opt.active .algo-years,
 .algo-opt.active .algo-blurb { color: rgba(253, 250, 242, .82); }
 .algo-opt:not(.active):active {
-  background: var(--green-light);
+  background: var(--ctl-press);
   border-color: var(--celadon);
   color: var(--green);
 }
@@ -931,38 +1118,47 @@ body.no-dock .modal-box { max-height: 88vh; }
   letter-spacing: .2px;
 }
 
+/* 窄屏：字号不再另降一档（13px 已是档③的最小号），只收左右内边距。 */
 @media (max-width: 400px) {
   .settings-page .seg button,
-  .settings-page .chips button { padding: 9px 13px; font-size: 13px; }
+  .settings-page .chips button { padding: 0 11px; }
 }
 
+/* 输入框与档①「中」的按钮**同一档高度**（--ctl-input-h = --ctl-h-md = 38px）。
+   ⚠️ 原先它按 9px 内边距 + 14px 字自己长到 38px —— 与按钮的 38px 纯属巧合，
+      字号一改两边就分家。现在两边都直读同一个令牌。 */
 .settings-input {
   width: 100%;
+  height: var(--ctl-input-h);
   box-sizing: border-box;
-  padding: 9px 12px;
+  padding: 0 12px;
   border: 1px solid var(--line);
 
-  border-radius: var(--radius-sm);
+  border-radius: var(--ctl-radius);
   background: var(--card);
   color: var(--ink);
   font-family: inherit;
-  font-size: 14px;
+  font-size: var(--ctl-font-md);
   outline: none;
-  transition: border-color .15s, background .15s;
+  transition: border-color .15s, background .15s, box-shadow .15s;
 }
 
 .settings-input:focus {
   border-color: var(--green);
   background: #fffdf6;
   outline: none;
-  box-shadow: 0 0 0 3px rgba(47, 96, 85, .10);
+  box-shadow: var(--ctl-focus);
 }
 
+/* 全站输入控件的焦点环只有这一处（值就是 --ctl-focus）。
+   ⚠️ 它同时覆盖 .account-input:focus / .settings-input:focus 那两条 ——
+      三处写的是同一个值，这里收口成一条；字号 16px（--input-font-narrow）
+      那一档只改字号，不改焦点态。 */
 input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):focus,
 select:focus,
 textarea:focus {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(47, 96, 85, .10);
+  box-shadow: var(--ctl-focus);
 }
 
 @media (min-width: 1024px) {
@@ -1180,18 +1376,26 @@ textarea:focus {
   padding: 1px 7px;
 }
 .family-acts { flex: none; display: flex; gap: 4px; }
+/* 子用户那一行右端的两颗小字（改名 / 删除）：**链接**，不是按钮 ——
+   没有盒子、没有圆角、没有按下换底；四态与全站链接同一套。
+   ⚠️ 原先它有 `border-radius: 6px` 却没有底也没有描边（一条画不出来的圆角），
+      判定「控件圆角 ≤ 7px」时它是一条永远对不上落点的规则，本轮撤掉。 */
 .family-act {
   border: none;
   background: none;
   color: var(--ink-3);
   font-family: inherit;
   font-size: 12.5px;
-  padding: 4px 6px;
+  min-height: 28px;
+  padding: 0 6px;
   cursor: pointer;
-  border-radius: 6px;
+  transition: color .15s;
 }
-.family-act:hover { color: var(--green); }
-.family-act.danger:hover { color: var(--ink); }
+.family-act:hover,
+.family-act:active { color: var(--green); }
+.family-act.danger { color: var(--red); }
+.family-act.danger:hover,
+.family-act.danger:active { color: var(--red); opacity: .82; }
 
 .family-add {
   border: 1px dashed var(--line-2);
@@ -1255,8 +1459,12 @@ textarea:focus {
 .collection-body > .item + .item { border-top: 1px solid var(--line); }
 
 .settings-btns { display: flex; gap: 8px; flex-wrap: wrap; }
-.ghost-btn { flex: 1; min-width: 90px; padding: 9px; font-size: 13.5px; }
-.danger-btn { flex: 1; min-width: 90px; padding: 9px; font-size: 13.5px; color: var(--red); border-color: var(--danger-line); background: var(--danger-bg); }
+/* 「设置 · 通用 / 我的清单 / 我的报告 / 朗读」那几行按钮：
+   三档体系里它们是**档②（48 行的次按钮）**，所以尺寸只从那一把尺来。
+   ⚠️ 原先这里各写了一个 `flex: 1; min-width: 90px; padding: 9px; font-size: 13.5px`
+      —— 于是「导出备份」比「刷新」高 2px、字小一号，同一个页面上两种按钮。
+     本轮改成与 .btn 同一档（38px 高 / 14px 字），宽度仍按内容自适应。 */
+.ghost-btn, .danger-btn { flex: 0 1 auto; min-width: 0; }
 .settings-tip {
   font-size: 12px;
   color: var(--ink-2);
@@ -1378,8 +1586,9 @@ button,
   border: none;
   background: var(--green);
   color: #fdfaf2;
-  border-radius: 9px;
-  padding: 7px 11px;
+  border-radius: var(--ctl-radius);
+  min-height: var(--ctl-h-sm);
+  padding: 0 var(--ctl-pad-x);
   font-size: 12.5px;
   font-weight: 600;
   cursor: pointer;
@@ -1586,13 +1795,14 @@ body.has-install-tip #app {
 .kv-k { color: var(--ink-2); flex: none; }
 
 /* 「关于」这几行的条目链接（层级对比 / 用户协议 / 隐私条款 / 自检）：
-   天青副色 + **一条下划线都不画** —— 只在颜色上说它是可点的。
-   字号与同一行的正文一样（13px），行的对齐与行高都交给 .kv-row
-   （它把 align-items 定成 center、高度只由 min-height 定），
+   颜色 / 悬浮 / active / 焦点**就是文件顶上那条 `a` 的口径**，这里不重复写一遍
+   （写了就是同一件事的第二个来源 —— 上一轮 `.kv-k a` 各写了一套 hover/active，
+   与全站那条漂开过一次）。
+   这一条只管「行里的落点」：字号与同一行的正文一样（13px）、
+   行高交给 .kv-row（它把 align-items 定成 center、高度只由 min-height 定），
    所以左边当链接的那几行与上面「应用 / 版本 / 离线缓存」几行完全齐。
    用户 2026-09-18 两轮口径合起来就是这三件：不要下划线、间距一样、
-   它就是一行普通文字（不是一颗键）。
-   不加这条规则的话它会落回浏览器默认样式的正文 —— 那才是真正的问题。 */
+   它就是一行普通文字（不是一颗键）。 */
 .kv-k a {
   display: inline-flex;
   align-items: center;
@@ -1603,7 +1813,7 @@ body.has-install-tip #app {
   transition: color .16s ease;
 }
 .kv-k a:hover,
-.kv-k a:focus-visible { color: var(--green-dark); }
+.kv-k a:focus-visible,
 .kv-k a:active { color: var(--green-dark); }
 
 /* 右列留空的那些行（项名本身就是入口的那几行）：空 <span> 照样参与
@@ -1827,7 +2037,11 @@ body.has-install-tip #app {
   align-items: center;
   gap: 2px;
   padding: 7px 4px 6px;
-  border-radius: 12px;
+  /* ⚠️ 底栏这五格是「页签」不是「按钮」：它带底色的那两格（悬浮 / 选中）
+     是这个圆角唯一画得出来的地方。12px 在前一轮是允许的，本轮按用户的
+     「所有大按钮最多 7px」收口 —— 它不是大按钮，但既然同屏就是 6px，
+     没有理由为它单开一档。 */
+  border-radius: var(--ctl-radius);
   color: var(--ink-3);
   font-size: 10.5px;
   font-weight: 600;
@@ -1907,28 +2121,16 @@ html, body {
 .btn.primary:hover { background: var(--celadon); }
 .btn.primary:active { background: var(--green-dark); }
 
-.btn.good {
-  background: var(--green);
-  border-color: var(--green-dark);
-}
-.btn.good:hover { background: var(--celadon); }
-.btn.good:active { background: var(--green-dark); }
-.btn.fuzzy {
-  background: var(--amber-light);
-  border-color: #ecdcc5;
-}
-.btn.fuzzy:active { background: #f2d9b6; }
-.btn.bad {
-  background: var(--red-light);
-  border-color: var(--danger-line);
-}
-.btn.bad:active { background: var(--danger-line); }
-
+/* ⚠️ 下面这一组原先在文件里又写了一遍（与上面 .btn.good / .btn.fuzzy / .btn.bad
+   逐字重复）—— 那是同一件事的第二个来源：上一处改了、这一处忘了，全站就出现
+   「两颗看起来一样的一级按钮，指过去一颗变色、另一颗不动」。
+   本轮把重复的那几行收成一处，这里只留 `.ghost-btn / .danger-btn` 两档
+   （它们是 .btn 的变体：字号 / 高度 / 圆角 / 状态一律读同一把尺）。 */
 .ghost-btn {
   background: var(--card);
   border: 1px solid var(--line);
   color: var(--green);
-  border-radius: var(--radius-sm);
+  border-radius: var(--ctl-radius);
   font-weight: 600;
 }
 .ghost-btn:hover { border-color: var(--green); background: var(--card); }
@@ -1938,10 +2140,11 @@ html, body {
   background: var(--danger-bg);
   border: 1px solid var(--danger-line);
   color: var(--red);
-  border-radius: var(--radius-sm);
+  border-radius: var(--ctl-radius);
   font-weight: 600;
 }
-.danger-btn:active { background: var(--danger-line); }
+.danger-btn:hover { background: var(--danger-hover); border-color: var(--red); }
+.danger-btn:active { background: var(--danger-press); }
 
 .item-read,
 .today-read,
@@ -3228,7 +3431,7 @@ html, body {
   font-size: 12.5px;
   color: var(--green);
   background: var(--bg-soft);
-  border-radius: 8px;
+  border-radius: var(--ctl-radius);
   padding: 6px 9px;
   word-break: break-word;
 }
@@ -3268,13 +3471,15 @@ html, body {
   align-items: baseline;
   gap: 5px;
   font: inherit;
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--ink-3);
   background: var(--bg);
   border: 1px solid var(--line-2);
   border-radius: 999px;
-  padding: 4px 10px;
+  min-height: 28px;
+  padding: 0 12px;
   cursor: pointer;
+  transition: background .15s, border-color .15s, color .15s;
 }
 .admin-report-counts button span {
   font-weight: 600;
@@ -3331,15 +3536,20 @@ html, body {
   margin: 8px 0 0;
 }
 .admin-report-acts button {
-  padding: 6px 11px;
+  min-height: var(--ctl-h-sm);
+  padding: 0 var(--ctl-pad-x);
   border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
+  border-radius: var(--ctl-radius);
   background: var(--card);
   color: var(--green);
-  font-size: 12.5px;
+  font-size: var(--ctl-font-sm);
   font-weight: 600;
   cursor: pointer;
+  transition: background .15s, border-color .15s, color .15s;
 }
-.admin-report-acts button:hover { border-color: var(--green); }
+.admin-report-acts button:hover { background: var(--ctl-hover); border-color: var(--celadon); }
+.admin-report-acts button:active { background: var(--ctl-press); }
 .admin-report-acts button[disabled] { opacity: .45; cursor: not-allowed; }
-.admin-report-acts button.danger { color: var(--red, #b4544a); }
+.admin-report-acts button.danger { color: var(--red); }
+.admin-report-acts button.danger:hover { background: var(--danger-hover); border-color: var(--red); }
+.admin-report-acts button.danger:active { background: var(--danger-press); }

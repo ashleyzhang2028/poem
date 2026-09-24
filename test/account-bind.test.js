@@ -549,10 +549,14 @@ async function main() {
       eq(acts.join(","), "read,accepted,fixed,rejected",
         "每一条有四颗状态键，末一颗就是「不采纳」—— 只有终态才配一颗显眼的键");
 
-      // 卡顶那四步：把「报告 → 改源码 → 标已修复 → 注音走勘误」说清
+      // 卡顶那几步：把「改源码 → 标已修复 → 注音走勘误」说清。
+      // ⚠️ Issue #278 第六轮把四步收成三步（用户裁：「管理员页面如果废话太多
+      //    也要删除精简，简单明了」）—— 原先第 1 步「用户点小旗 → 报告送进
+      //    数据库」讲的是**报告怎么来的**，而看这一页的人刚点完小旗，
+      //    那一步对他没有信息量。剩下三步都是他要做的事。
       const flow = doc.getElementById("reports-intro").parentElement
         .querySelectorAll(".admin-flow li");
-      chk(flow.length === 4, "报告卡顶部有四步流程（实际 " + flow.length + " 步）");
+      chk(flow.length === 3, "报告卡顶部有三步流程（实际 " + flow.length + " 步）");
       chk(/改源码/.test(doc.querySelector(".admin-flow").textContent) &&
           /标为已修复/.test(doc.querySelector(".admin-flow").textContent),
         "流程里点名「改源码」与「标为已修复」—— 这正是用户看不懂的那两件事");

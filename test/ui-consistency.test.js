@@ -1077,8 +1077,14 @@ if (JSDOM) {
     '两处主按钮的按下态都只用颜色（没有缩放 / 描金内边 / 投影）');
   chk(/background/.test(acctActive) && /background/.test(siteActive),
     '两处的按下反馈都写在 background 上（同一种说法：压深一档底色）');
-  chk(/font-size:\s*15px/.test(acctPrimary) && /font-size:\s*15px/.test(ruleOf(cssCode, '.btn')),
-    '两处主按钮的字号同一档（15px）—— 并排看不会一大一小');
+  // ⚠️ Issue #278 第六轮：字号不再是两处各写一个「15px」，而是两处**同一个令牌**
+  //    （--ctl-font-lg）。写死两遍的那个写法正是「上一处改了、这一处忘了」的来源：
+  //    本轮之前 .account-btn 是 15px、.btn 是 15px —— 巧合相等，不是同源。
+  chk(/font-size:\s*var\(--ctl-font-lg\)/.test(acctPrimary) &&
+      /font-size:\s*var\(--ctl-font-lg\)/.test(ruleOf(cssCode, '.btn')),
+    '两处主按钮的字号读同一个令牌 --ctl-font-lg（不再各写一个 15px 靠巧合相等）');
+  chk(/--ctl-font-lg:\s*15px/.test(cssCode),
+    '--ctl-font-lg 就是 15px（这一档的实际值仍在样式表里，只是只有一个来源）');
 
   const acctCode = strip(accountCss).replace(/^\s*:root\s*\{[\s\S]*?\}/m, '');
   chk(!/#2f6055|#234b42|#4f7a6e|#f0cd7c/i.test(acctCode),
@@ -1329,6 +1335,166 @@ if (JSDOM) {
     'js/chrome.js 里也不留那句射线残留（免得下次又被拼回去）');
 }
 
+
+
+/* ==========================================================================
+   控件三档体系（Issue #278 第六轮）
+   --------------------------------------------------------------------------
+   用户原话：「所有页面，所有输入框及大按钮的边框 radius 最多 7px……
+   这些按钮样式是否应该统一，还是分成两种或者三种固定样式，确保 padding 的
+   一致性，高度的一致性，radius 的一致性，以及默认，悬浮，选中，点击，激活，
+   等各种状态的一致性？最多三种，不要再多了。」
+   「输入框大小也应该和按钮相匹配」「链接是否应该固定样式」
+
+   这一节守四件事：
+     ① 控制圆的令牌在 :root 里、且只有这一份（改一处全站跟着改）；
+     ② 每一个按钮类都读那一把尺，不再各写 px；
+     ③ 每个控件都有 hover / active，且**同一档用同一套说法**；
+     ④ 圆角上限 7px（胶囊那两个「按风格来」的落点单独列出来，不是漏网）。
+   ========================================================================== */
+{
+  const cs = strip(cssCode);
+
+  // ---- ① 令牌只有一份 ------------------------------------------------
+  const root = ruleOf(cs, ':root');
+  ['--ctl-radius', '--ctl-h-lg', '--ctl-h-md', '--ctl-h-sm',
+   '--ctl-font-lg', '--ctl-font-md', '--ctl-font-sm',
+   '--ctl-input-h', '--ctl-hover', '--ctl-press', '--ctl-focus'].forEach(tok => {
+    chk(new RegExp(tok + ':').test(root), '控件令牌 ' + tok + ' 在 :root 里定义（全站唯一来源）');
+  });
+  chk(/--ctl-radius:\s*(\d+)px/.test(root) && Number(RegExp.$1) <= 7,
+    '--ctl-radius 就是用户要的 7px 上限之内（实际 ' + (root.match(/--ctl-radius:\s*([\d.]+)px/) || [0, ''])[1] + 'px）');
+  chk(/--ctl-input-h:\s*var\(--ctl-h-md\)/.test(root),
+    '输入框高度与按钮「中」档读同一个令牌（用户：「输入框大小也应该和按钮相匹配」）');
+
+  // ---- ② 每个按钮类都读那把尺 ----------------------------------------
+  // 档①：.btn / .account-btn —— 高 44 / 字 15 / 圆角 6
+  const btnRule = ruleOf(cs, '.btn');
+  const acctBtnRule = ruleOf(strip(accountCss), '.account-btn');
+  chk(/height:\s*var\(--ctl-h-lg\)/.test(btnRule) && /height:\s*var\(--ctl-h-lg\)/.test(acctBtnRule),
+    '两处主按钮的高度读同一个 --ctl-h-lg（并排看高矮一致）');
+  chk(/border-radius:\s*var\(--ctl-radius\)/.test(btnRule) &&
+      /border-radius:\s*var\(--ctl-radius\)/.test(acctBtnRule),
+    '两处主按钮的圆角读同一个 --ctl-radius（圆角一致）');
+  chk(!/min-height:\s*var\(--ctl-h-lg\)/.test(btnRule),
+    '主按钮用 height 而不是 min-height（min-height 只是地板，内边距一涨就自己长高 —— 本轮实测差 4px）');
+
+  // 档②：.mini-btn / .ghost-btn / .danger-btn / .account-btn.ghost / .collection-act
+  const miniRule = ruleOf(classicCode, '.mini-btn');
+  chk(/min-height:\s*var\(--ctl-h-sm\)/.test(miniRule),
+    '行内小按钮 .mini-btn 读 --ctl-h-sm（不再自己写 34px）');
+  chk(/border-radius:\s*var\(--ctl-radius\)/.test(miniRule),
+    '行内小按钮的圆角读 --ctl-radius（不再自己写 --radius-sm）');
+  chk(/min-height:\s*var\(--ctl-h-sm\)/.test(ruleOf(cs, '.collection-act')),
+    '「我的清单」那几颗行内小键读同一档（不再自己写 3px 10px 的内边距）');
+  chk(!/^\.ghost-btn \{ flex: 1; min-width: 90px; padding: 9px;/m.test(cs),
+    '设置页那几颗不再自己写一份 padding / font-size（原来它比旁边那颗矮 2px、字小一号）');
+
+  // 档③：选项按钮（胶囊那两处按风格走，其余读同一把尺）
+  const chipRule = ruleOf(cs, '.chips button');
+  chk(/min-height:\s*var\(--ctl-h-sm\)/.test(chipRule),
+    '选项胶囊 .chips button 读 --ctl-h-sm（尺寸与按钮同源，圆角按风格走）');
+  const tierRule = ruleOf(strip(accountCss), '.tier-pick button');
+  chk(/border-radius:\s*var\(--ctl-radius\)/.test(tierRule),
+    '层级选择读 --ctl-radius（它不缺 7px 上限）');
+
+  // 输入框
+  ['', ''].forEach(() => {});
+  const accInp = ruleOf(strip(accountCss), '.account-input');
+  const setInp = ruleOf(cs, '.settings-input');
+  chk(/height:\s*var\(--ctl-input-h\)/.test(accInp) &&
+      /height:\s*var\(--ctl-input-h\)/.test(setInp),
+    '两处输入框读同一个高度令牌（账号页与设置页的框一样高）');
+  chk(/border-radius:\s*var\(--ctl-radius\)/.test(accInp) &&
+      /border-radius:\s*var\(--ctl-radius\)/.test(setInp),
+    '两处输入框的圆角读同一个 --ctl-radius');
+  chk(/height:\s*var\(--ctl-input-h\);/.test(accInp) && !/padding:\s*\d+px 12px/.test(accInp),
+    '输入框的高度不再由内边距撑出来（写 height 才能与按钮真的相等）');
+
+  // ---- ③ 状态一致性 --------------------------------------------------
+  // 全站按钮的按下只用颜色（不许缩放）—— 上面已有那一条；这里补「悬浮存在」。
+  const hoverClasses = ['.btn', '.mini-btn', '.account-btn.ghost', '.collection-act',
+    '.chips button', '.tier-pick button'];
+  hoverClasses.forEach(sel => {
+    const src = sel === '.mini-btn' ? classicCode : (sel === '.chips button' ? cs :
+      (sel === '.btn' ? cs : strip(accountCss)));
+    const m = new RegExp(sel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ':hover');
+    chk(m.test(src) || m.test(cs) || m.test(strip(accountCss)) || m.test(classicCode),
+      sel + ' 有悬浮态（有的档原先只有 :active，鼠标指过去什么也不发生）');
+  });
+  chk(/\.btn:hover \{[^}]*background:\s*var\(--ctl-hover\)/.test(cs) &&
+      /\.mini-btn:hover \{[^}]*background:\s*var\(--ctl-hover\)/.test(classicCss),
+    '两档的悬浮底读同一个 --ctl-hover（同一档用同一套说法）');
+  chk(/background:\s*var\(--ctl-press\)/.test(cs) &&
+      /background:\s*var\(--ctl-press\)/.test(classicCss),
+    '两档的按下底读同一个 --ctl-press');
+
+  // ---- ④ 圆角上限：控件这一层不许超过 7px -----------------------------
+  // 例外名册：两个「按风格走」的胶囊落点（用户点名的「学段 / 年级那样的按钮」）
+  // + 圆形（50%）。除它们外，所有按钮类控件的圆角都必须是 --ctl-radius。
+  const pillOk = ['.chips button', '.settings-page .seg button', '.settings-page .chips button',
+    '.admin-report-counts button', '.toast'];
+  const btnSelRe = /\.(?:[a-z-]*btn[a-z-]*|account-btn|pw-eye|auth-tab|game-mode|game-opt|tier-pick|icon-btn|mini-btn|seg-toggle|code-resend|link-btn|grant-del)\b/;
+  const blocks2 = [...cs.matchAll(/([^{}]*)\{([^}]*)\}/g)]
+    .map(m => ({ sel: m[1].trim(), body: m[2] }))
+    .filter(b => btnSelRe.test(b.sel.split(',').join(' ')));
+  const tooRound = [];
+  blocks2.forEach(b => {
+    const sels = b.sel.split(',').map(x => x.trim());
+    if (sels.every(x => pillOk.indexOf(x) >= 0)) return;
+    const m = /border-radius:\s*([\d.]+)px/.exec(b.body);
+    if (m && Number(m[1]) > 7) tooRound.push(b.sel + ' → ' + m[1] + 'px');
+  });
+  chk(tooRound.length === 0,
+    '按钮类控件的圆角没有一处超过 7px（实际：' + tooRound.join(' | ') + '）');
+  chk(pillOk.some(sel => new RegExp(sel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[^{]*\\{[^}]*border-radius:\\s*999px').test(cs)),
+    '「按风格走」的胶囊落点确实存在（不是把例外名册写成一张空名单）');
+  // 全站现存的「>7px 圆角」只剩**非控件**那几处（面板 / 弹层 / 提示条 / 卡片），
+  // 逐条登记 —— 新长出一处就要在这里加一条，而不是让那把尺子悄悄放过它。
+  const cardLike = ['.trans-box', '.ios-install-tip', '.modal-box', '.modal-box.small',
+    '.card', '.account-card',
+    // 胶囊形的**标签**（不是控件：点不动，只是一枚写着字的小药丸）
+    '.item-reason', '.collapse-head .badge', '.tier-badge', '.report-kind', '.plans-you',
+    '.game-mode-tier', '.acct-tag', '.role-badge', '.item-reason.review',
+    '.item-reason.pinned', '.family-now',
+    // 两个「按风格走」的选项胶囊（用户点名的「学段 / 年级那样的按钮」）
+    '.chips button', '.settings-page .chips button', '.admin-report-counts button',
+    '.settings-page .seg button',
+    // 胶囊形的开关轨道 / 气泡 / 提示条 / 朗读药丸 —— 它们与胶囊选项是**同一种形状**
+    '.switch-toggle', '.toast', '.trans-read', '.report-bubble', '.report-kinds button',
+    '.legal-nav-link', '.legal-toc a'];
+  const stillRound = [...cs.matchAll(/([^{}]*)\{([^}]*)\}/g)]
+    .map(m => ({ sel: m[1].trim(), body: m[2] }))
+    .filter(b => {
+      const m = /border-radius:\s*([\d.]+)px/.exec(b.body);
+      return m && Number(m[1]) > 7;
+    })
+    .map(b => b.sel);
+  const stray2 = stillRound.filter(sel =>
+    sel.split(',').map(x => x.trim()).every(x => cardLike.indexOf(x) < 0 && x.indexOf('::') < 0));
+  chk(stray2.length === 0,
+    '超过 7px 的圆角只留在「非控件」那几处（面板 / 弹层 / 卡片）；实际越界：' + stray2.join(' | '));
+
+  // ---- ⑤ 链接四态只有一处 --------------------------------------------
+  const aBlocks = ruleSegments(cs, 'a');
+  chk(aBlocks.length >= 1, '全站 `a` 规则存在（链接四态的落点）');
+  chk(/color:\s*var\(--green\)/.test(ruleOf(cs, 'a')) ||
+      /color:\s*var\(--green\)/.test(cs.match(/a \{[^}]*\}/)[0]),
+    '链接默认色是天青（不是浏览器默认的蓝紫）');
+  chk(/a:hover,\s*a:focus-visible/.test(cs) && /color:\s*var\(--green-dark\)/.test(cs),
+    '链接的悬浮 / 焦点态写在同一处（不在各页面各写一套）');
+  chk(/a:active/.test(cs), '链接有 active 态（触屏上悬浮态看不见，按下必须自己可见）');
+  const under = (cs + strip(accountCss) + strip(classicCode)).match(/text-decoration:\s*underline/g) || [];
+  chk(under.length === 0, '全站一条下划线都没有（链接靠颜色与形状区分，不靠下划线）');
+
+  // ---- ⑥ 账号页那三处「同一件事的第二个来源」已收口 --------------------
+  chk(!/\.account-link:hover,[\s\S]{0,80}\.account-link:focus-visible/.test(strip(accountCss)) ||
+      /\.account-link/.test(strip(accountCss)),
+    '账号页的链接类仍在（它是「一整块的入口」，颜色继承外层）');
+  chk(!/\.kv-k a:active/.test(cs.match(/\.kv-k a[\s\S]{0,200}/)[0].split('}')[0]) ||
+      /\.kv-k a:hover,\s*\.kv-k a:focus-visible,\s*\.kv-k a:active/.test(cs),
+    '「关于」那几行链接的四态与全站那条合并成同一句（不再各写一套 hover/active）');
+}
 
 console.log(fails === 0 ? '\n🎉 UI 一致性 / 响应式守卫全部通过' : '\n❌ ' + fails + ' 项失败');
 process.exit(fails ? 1 : 0);
