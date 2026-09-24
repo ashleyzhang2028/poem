@@ -8,12 +8,15 @@
   // 所以这里没有第二套 DOM 结构。
   //
   // 一条口径：**服务端读不到时如实说**。没登录 / 断网时画的是本机记下的那一份，
-  // 顶部会写一句「这是本机记下的」—— 不写的话，用户会以为
+  // 顶部会写一句「本机的」—— 不写的话，用户会以为
   // 「我报的都还在、都收到了」，而实际上有几条根本没发出去。
+  //
+  // 一条口径之二：**引导语只留一处**。这一页原先有四处教用户「点那颗小旗」
+  // （页首一段、未登录一屏、空列表一屏、JS 里三句），用户原话是「废话连篇」。
+  // 各屏只留它**独有**的那半句：怎么报错是 `renderList` 空屏那一句的事，
+  // 这一页不再复述。
 
   function $(id) { return document.getElementById(id); }
-
-  function show(el) { if (el) el.hidden = false; }
 
   function setMsg(text, level) {
     var el = $("msg-reports");
@@ -22,19 +25,22 @@
     el.className = "account-msg" + (level ? " " + level : "");
   }
 
-  // 服务端读到了几条、本机还压着几条。
+  // 本机还压着几条没发出去 —— 只在这一页说，且只说这一个数。
   //
   // ⚠️ 「本机压着几条」**不能拿画出来的那一列去比**：那一列是
   //    `Report.mine()` 把服务端那份与本机那份**并起来**的结果
   //    （`mergeLocal`），本机那几条本来就在里面 —— 拿它当「服务端那份」
   //    去比，每一条都成了「服务端已经有了」，`pending` 永远是 0。
   //    所以这里比的是**服务端那一份原样**（`serverOnly`），它由调用方传进来。
-  function updateSend(reports, local, serverOnly) {
+  //
+  // ⚠️ 「没有压着的那几条」**不写**：一句「服务器上 N 条」在用户看过的
+  //    那一列里数得出来，写在这里只是把同一件事再说一遍。
+  //    （要留也可以，但那正是「废话」这两个字指的东西。）
+  function updateSend(serverOnly) {
     var btn = $("btn-reports-send");
     var hint = $("reports-send-hint");
     if (!btn || !hint) return;
 
-    var total = (reports || []).length;
     var pending = 0;
     var R = window.Report;
     if (R && typeof R.pendingLocal === "function") {
@@ -42,17 +48,8 @@
     }
 
     btn.hidden = !pending;
-    if (!pending) {
-      hint.textContent = total
-        ? ("已在服务器上 " + total + " 条，没有压在本机发不出去的。")
-        : "";
-      hint.hidden = !total;
-      return;
-    }
-    hint.hidden = false;
-    hint.textContent = local
-      ? ("本机记着 " + pending + " 条还没发到服务器（多半是报的时候没登录或断网）。点上面那颗键补发。")
-      : ("有 " + pending + " 条本机记着、服务器上没有。点上面那颗键补发。");
+    hint.hidden = !pending;
+    if (pending) hint.textContent = `还有 ${pending} 条没发出去。`;
   }
 
   function renderGuest() {
@@ -64,7 +61,7 @@
     if (p && window.Report) {
       var localList = window.Report.readLocal();
       window.Report.renderList(p, localList, { local: true });
-      updateSend(localList, true, []);
+      updateSend([]);
     }
   }
 
@@ -77,14 +74,17 @@
     }
     var btn = $("btn-reports-send");
     if (btn) btn.disabled = true;
-    setMsg("正在补发……", "");
     Promise.resolve(R.resend()).then(function (r) {
       if (btn) btn.disabled = false;
-      setMsg((r && r.message) || ("已补发 " + ((r && r.sent) || 0) + " 条。"), r && r.ok ? "ok" : "warn");
+      // 发出去的那几条不另报数：列表重读完就摆在那儿。
+      // ⚠️ 一句都不写是**不行**的：一条都没送出去时必须说，否则
+      //    「点了一下什么也没发生」就等于骗人（这一页就靠这一句兜底）。
+      if (r && r.ok) setMsg("", "");
+      else setMsg((r && r.message) || "没发出去，稍后再试。", "warn");
       load();
     })["catch"](function () {
       if (btn) btn.disabled = false;
-      setMsg("补发没成功，稍后再试。", "warn");
+      setMsg("没发出去，稍后再试。", "warn");
     });
   }
 
@@ -99,14 +99,13 @@
     if (g) g.hidden = R.isSignedIn();
     if (!R.isSignedIn()) { renderGuest(); return; }
 
-    setMsg("正在读取……", "");
     R.mine({ limit: 50 }).then(function (r) {
       setMsg("", "");
       var list = (r && r.reports) || [];
       R.renderList($("reports-panel"), list, { local: !!(r && r.local) });
-      updateSend(list, !!(r && r.local), (r && r.serverOnly) || []);
+      updateSend((r && r.serverOnly) || []);
     })["catch"](function () {
-      setMsg("读取失败，稍后再试", "warn");
+      setMsg("读取失败，稍后再试。", "warn");
     });
   }
 
@@ -123,7 +122,7 @@
     // 报告**发到服务器**（权威那一份在 `public.reports`，服务端只读回自己那几条）。
     // 这一页原先没有任何「发出去没有」的出口：用户在篇目页报完，
     // 切到这一页只看得到列表，发没发成、服务端认没认，一个字都没有。
-    // 这里给出「已送达几条 / 尚未送达几条」，点一下就能把本机那几条再发一次。
+    // 这里给出「还有几条没发出去」，点一下就能把本机那几条再发一次。
     var send = $("btn-reports-send");
     if (send) send.addEventListener("click", resend);
 

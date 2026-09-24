@@ -186,7 +186,64 @@ const SETTINGS_SRC = SETTINGS_PAGES.map(read);
 }
 
 {
-  console.log("\n=== 六、缓存版本 ===");
+  console.log("\n=== 六、我的报告那一页：引导语只留一处（Issue #278 第八轮）===");
+
+  // 用户原话：「我的报告页面废话连篇，需要删除或精简」。
+  //
+  // 这一页原先有**四处**教同一件事（怎么报错）：页首一段「看到错字、标错的注音、
+  // 翻错的译文，在篇目页上点那颗小旗（正文里选中一段再点「报这一段」也行）……」、
+  // 空列表那一屏、未登录那一屏、以及 JS 里三句。四处说的是同一件事，而这一页
+  // 是**回执页** —— 用户来这儿是看「报的处理到哪一步」，不是来学怎么报的。
+  //
+  // 所以这一轮的口径是：**怎么报错只在空屏那一句里讲**（那是全站唯一一处，
+  // 也是用户第一次打开这一页时唯一需要的那句）；别的屏只留自己独有的那半句。
+  const REPORTS = read("settings/reports/index.html");
+  const REPORTS_JS = read("js/reports-page.js");
+  const REPORT_JS = read("js/report.js");
+
+  // 1. 页首那段长引导语整段撤掉
+  chk(!/account-lead/.test(stripHtml(REPORTS)),
+    "那一页不再有 \`.account-lead\` 那段长引导语（「点那颗小旗（正文里选中一段…」）");
+  chk(!/报这一段/.test(REPORTS),
+    "那段里「正文里选中一段再点『报这一段』也行」也一个字不留");
+
+  // 2. 「别的入口」那一组（讲 Issue 那条路）整组撤掉
+  chk(!/别的入口/.test(REPORTS), "「别的入口」那一组撤掉（整组只讲「去开 Issue」）");
+  chk(!/issues/.test(stripHtml(REPORTS)),
+    "那一页不再挂 github/cnb 的 Issue 外链（弹层里那条路还在，见下）");
+
+  // 3. 未登录那一屏只留「登录后才能报告」
+  chk(/id="reports-guest"/.test(REPORTS),
+    "未登录那一句还留着（挂载点 #reports-guest）");
+  const guest = stripHtml(REPORTS).slice(stripHtml(REPORTS).indexOf('id="reports-guest"'));
+  chk(!/认得出是谁报的|修好之后能回你一句/.test(guest),
+    "未登录那一屏不再解释「这样才认得出是谁报的、修好之后能回你一句」");
+  chk(/href="\/login\/"/.test(guest),
+    "但「去登录」这条路一个字不少（只说结论，路要能走）");
+
+  // 4. 空屏那句是**全站唯一**讲「怎么报错」的地方 —— 它不能再短
+  chk(/点篇目上方那颗<strong>小旗<\/strong>就能报/.test(REPORT_JS),
+    "空屏那一句仍然讲清「点篇目上方那颗小旗」（全站唯一一处，撤了就没地方知道了）");
+
+  // 5. JS 里的两句长提示收短
+  chk(!/已在服务器上|没有压在本机发不出去的/.test(REPORTS_JS),
+    "不再报「已在服务器上 N 条 / 没有压在本机发不出去的」（那是用户数得出来的一句话）");
+  chk(/还有 \$\{pending\} 条没发出去。/.test(REPORTS_JS),
+    "「还有 N 条没发出去」这一句收成一句（原先两句 40+ 字，还带一个因果解释）");
+  chk(!/多半是报的时候没登录或断网/.test(REPORTS_JS),
+    "那句「（多半是报的时候没登录或断网）」撤掉 —— 原因对用户没有下一步");
+
+  // 6. 本机那一份的横幅收短，但**不能删**（删了用户会以为都收到了）
+  chk(/本机的（服务端暂时读不到）/.test(REPORT_JS),
+    "「这是本机记下的那一份（服务端暂时读不到，可能是没登录或断网）」收成「本机的（服务端暂时读不到）」");
+  chk(!/这是<strong>本机记下<\/strong>的那一份/.test(REPORT_JS),
+    "旧的那一版 30 字横幅已撤");
+  chk(/serviceWorker|本机/.test(REPORT_JS),
+    "「服务端读不到时如实说」这条口径还在（收短，没有删）");
+}
+
+{
+  console.log("\n=== 七、缓存版本 ===");
   const sw = read("sw.js");
   const ver = parseInt((sw.match(/poem-app-v(\d+)/) || [0, "0"])[1], 10);
   chk(ver >= 194, "缓存版本已提（本轮改了页面 / 脚本 / 样式，实际 v" + ver + "）");
