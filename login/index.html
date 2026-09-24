@@ -43,23 +43,25 @@
 
         <div class="auth-pane" id="pane-pw" role="tabpanel" aria-labelledby="tab-pw">
           <div class="account-field">
-            <label class="account-label" for="input-pw-email">邮箱</label>
+            <label class="account-label" for="input-pw-email"><span class="sr-only">邮箱</span></label>
             <input id="input-pw-email" class="account-input" type="email" inputmode="email"
                    autocomplete="email" spellcheck="false" enterkeyhint="next"
-                   placeholder="you@example.com" maxlength="120" />
+                   placeholder="邮箱" maxlength="120" aria-label="邮箱" />
           </div>
           <div class="account-field">
-            <label class="account-label" for="input-pw">密码</label>
+            <label class="account-label" for="input-pw"><span class="sr-only">密码</span></label>
             <div class="pw-row">
               <input id="input-pw" class="account-input" type="password"
                      autocomplete="current-password" spellcheck="false" enterkeyhint="go"
-                     placeholder="至少 8 位" maxlength="72" />
+                     placeholder="密码（至少 8 位）" maxlength="72" aria-label="密码" />
               <button class="pw-eye" id="btn-pw-eye" type="button" aria-label="显示密码" aria-pressed="false" title="显示密码">
                 <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6S2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="2.5"/></svg>
               </button>
             </div>
           </div>
 
+          <div class="turnstile-slot" id="ts-pw" hidden></div>
+          <div class="account-note warn" id="ts-broken-ts-pw" hidden></div>
           <button class="account-btn" id="btn-login" type="button">登录</button>
           <p class="account-msg" id="msg-pw"></p>
 
@@ -73,10 +75,10 @@
         <div class="auth-pane" id="pane-code" role="tabpanel" aria-labelledby="tab-code" hidden>
           <div class="account-step" id="step-email">
             <div class="account-field">
-              <label class="account-label" for="input-email">邮箱</label>
+              <label class="account-label" for="input-email"><span class="sr-only">邮箱</span></label>
               <input id="input-email" class="account-input" type="email" inputmode="email"
                      autocomplete="email" spellcheck="false" enterkeyhint="send"
-                     placeholder="you@example.com" maxlength="120" />
+                     placeholder="邮箱" maxlength="120" aria-label="邮箱" />
             </div>
             <div class="turnstile-slot" id="ts-code" hidden></div>
           <div class="account-note warn" id="ts-broken-ts-code" hidden></div>
@@ -112,28 +114,28 @@
 
         <div class="auth-pane" id="pane-register" role="tabpanel" hidden>
           <div class="account-field">
-            <label class="account-label" for="input-reg-email">邮箱</label>
+            <label class="account-label" for="input-reg-email"><span class="sr-only">邮箱</span></label>
             <input id="input-reg-email" class="account-input" type="email" inputmode="email"
                    autocomplete="email" spellcheck="false" enterkeyhint="next"
-                   placeholder="you@example.com" maxlength="120" />
+                   placeholder="邮箱" maxlength="120" aria-label="邮箱" />
           </div>
           <div class="account-field">
-            <label class="account-label" for="input-reg-pw">密码</label>
+            <label class="account-label" for="input-reg-pw"><span class="sr-only">密码</span></label>
             <div class="pw-row">
               <input id="input-reg-pw" class="account-input" type="password"
                      autocomplete="new-password" spellcheck="false" enterkeyhint="next"
-                     placeholder="至少 8 位" maxlength="72" />
+                     placeholder="密码（至少 8 位）" maxlength="72" aria-label="密码" />
               <button class="pw-eye" id="btn-reg-eye" type="button" aria-label="显示密码" aria-pressed="false" title="显示密码">
                 <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6S2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="2.5"/></svg>
               </button>
             </div>
           </div>
           <div class="account-field">
-            <label class="account-label" for="input-reg-pw2">确认密码</label>
+            <label class="account-label" for="input-reg-pw2"><span class="sr-only">确认密码</span></label>
             <div class="pw-row">
               <input id="input-reg-pw2" class="account-input" type="password"
                      autocomplete="new-password" spellcheck="false" enterkeyhint="go"
-                     placeholder="请再次输入相同密码" maxlength="72" />
+                     placeholder="确认密码" maxlength="72" aria-label="确认密码" />
               <button class="pw-eye" id="btn-reg-eye2" type="button" aria-label="显示密码" aria-pressed="false" title="显示密码">
                 <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6S2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="2.5"/></svg>
               </button>
@@ -152,10 +154,10 @@
           <p class="account-lead" id="verify-lead"></p>
           <div class="account-note" id="verify-fail-note" hidden></div>
           <div class="account-field">
-            <label class="account-label" for="input-verify-email">邮箱（没登录也能重发）</label>
+            <label class="account-label" for="input-verify-email"><span class="sr-only">邮箱（没登录也能重发）</span></label>
             <input id="input-verify-email" class="account-input" type="email" inputmode="email"
                    autocomplete="email" spellcheck="false" enterkeyhint="send"
-                   placeholder="you@example.com" maxlength="120" />
+                   placeholder="邮箱" maxlength="120" aria-label="邮箱（没登录也能重发）" />
           </div>
           <div class="turnstile-slot" id="ts-verify" hidden></div>
           <div class="account-note warn" id="ts-broken-ts-verify" hidden></div>
@@ -171,10 +173,10 @@
         <div class="auth-pane" id="pane-forgot" role="tabpanel" hidden>
           <p class="account-lead">填注册时的邮箱，我们发一条重设链接。</p>
           <div class="account-field">
-            <label class="account-label" for="input-forgot-email">邮箱</label>
+            <label class="account-label" for="input-forgot-email"><span class="sr-only">邮箱</span></label>
             <input id="input-forgot-email" class="account-input" type="email" inputmode="email"
                    autocomplete="email" spellcheck="false" enterkeyhint="send"
-                   placeholder="you@example.com" maxlength="120" />
+                   placeholder="邮箱" maxlength="120" aria-label="邮箱" />
           </div>
           <div class="turnstile-slot" id="ts-forgot" hidden></div>
           <div class="account-note warn" id="ts-broken-ts-forgot" hidden></div>
@@ -200,9 +202,9 @@
         <div class="account-step" id="step-done" hidden>
           <p class="account-lead" id="done-lead"></p>
           <div class="account-field">
-            <label class="account-label" for="input-nickname">昵称（可留空）</label>
+            <label class="account-label" for="input-nickname"><span class="sr-only">昵称（可留空）</span></label>
             <input id="input-nickname" class="account-input" type="text" maxlength="12"
-                   autocomplete="off" enterkeyhint="done" placeholder="Ashley" />
+                   autocomplete="off" enterkeyhint="done" placeholder="昵称（可留空）" aria-label="昵称（可留空）" />
           </div>
           <button class="account-btn" id="btn-finish" type="button">完成</button>
           <p class="account-msg" id="msg-done"></p>

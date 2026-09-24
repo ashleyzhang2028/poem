@@ -3426,9 +3426,22 @@ async function main() {
         const resNo = await POST("/api/resend-verification-by-email", { email: "ts-d@example.com" });
         eq(resNo.status, 400, "③ resend-verification（匿名口）没带 token → 400");
 
+        // ⚠️ 这一条是 Issue #278 第四轮**改过口径**的：原先 login 不挂人机校验
+        //    （「它本来就有凭据」），用户 2026-09-24 明确要求「登录页面同样加上
+        //    cloudflare 的验证」——挂上之后这一档不再是 E_LOGIN_FAIL。
+        //    挂它的理由写在 api/_lib/core.js 的 loginWithPassword 上方：
+        //    口令挡得住猜，挡不住**撞库**（拿泄露的邮箱 + 常见口令慢速试）。
         const loginNo = await POST("/api/login", { email: "ts-e@example.com", password: "hunter2hunter" });
-        eq(loginNo.status, 401, "③ login **没挂**人机校验（没带 token 也照样走到「邮箱或密码不对」这一步）");
-        eq(loginNo.body.code, "E_LOGIN_FAIL", "③ 它回的是自己的码，不是 E_TURNSTILE");
+        eq(loginNo.status, 400, "③ login **也挂**人机校验了（没带 token → 400，Issue #278 第四轮）");
+        eq(loginNo.body.code, "E_TURNSTILE", "③ 它回的是 E_TURNSTILE（不再是「邮箱或密码不对」）");
+        eq(loginNo.body.turnstile, "missing", "③ 附带 turnstile:missing（与「没带」别的口一致）");
+
+        // 带上一枚好令牌：这才走到口令那一步（回它自己的码，不是 E_TURNSTILE）
+        const loginGood = await POST("/api/login", { email: "ts-e@example.com", password: "hunter2hunter", turnstileToken: "good-token" });
+        eq(loginGood.status, 401, "③ 带好令牌时 login 走到「邮箱或密码不对」这一步");
+        eq(loginGood.body.code, "E_LOGIN_FAIL", "③ 它回的是自己的码（人机校验不是它回的那句话）");
+        chk(loginGood.body.turnstile === undefined,
+          "③ 通过了校验的响应里不带 turnstile 这一位（那不是给客户端看的状态）");
 
         const bad = await POST("/api/send-code", { email: "ts-f@example.com", turnstileToken: "bad-token" });
         eq(bad.status, 400, "④ token 无效 → 400");
@@ -3453,11 +3466,15 @@ async function main() {
       const coreSrc = fs.readFileSync(path.join(ROOT, "api/_lib/core.js"), "utf8");
 
       const calls = (coreSrc.match(/return humanGuard\(deps, input\)\.then/g) || []).length;
-      chk(calls === 4,
-        "③ `humanGuard` 在内核里被调用 **4 次**（sendCode / register / resetRequest / resendVerification），实际 " + calls);
+      chk(calls === 5,
+        "③ `humanGuard` 在内核里被调用 **5 次**（sendCode / register / resetRequest / resendVerification / loginWithPassword），实际 " + calls);
+      // 用户 2026-09-24（Issue #278）：「登录页面同样加上 cloudflare 的验证」。
+      // 那一条**改掉了原来那条口径**（login 不挂），理由见 core.js 里那一段注释。
       const loginSrc = fs.readFileSync(path.join(ROOT, "api/_routes/auth/login.js"), "utf8");
-      chk(!/humanGuard|turnstile/i.test(loginSrc.replace(/\/\*[\s\S]*?\*\//g, " ")),
-        "③ login 那条路**不挂**人机校验（它本来就有凭据：口令猜中才能过）");
+      chk(/turnstileToken/.test(loginSrc),
+        "③ login 那条路**现在也把人机校验的令牌交给内核**了（Issue #278 第四轮）");
+      chk(/humanGuard\(deps, input\)\.then[\s\S]{0,80}loginWithPasswordAfterGuard/.test(coreSrc),
+        "③ 而且内核那一侧真的挂了闸（不是只在路由里收一个没人用的字段）");
       const confirmSrc = fs.readFileSync(path.join(ROOT, "api/_routes/auth/reset-confirm.js"), "utf8");
       chk(!/humanGuard/i.test(confirmSrc.replace(/\/\*[\s\S]*?\*\//g, " ")),
         "③ reset-confirm **不挂**（用户是点邮件里那条链接进来的，那一步已证明邮箱可达）");

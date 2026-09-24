@@ -315,12 +315,45 @@ const LOGIN = strip(loginJs), MINE = strip(mineJs), ADMIN = strip(adminJs);
   //    不是把数写死：写死一个数的话，下一次微调又要来改这条断言。
   //    真正的「留白真的均等了、页面真的不溢出」由 test/pwa.test.js 的
   //    真浏览器七档来判 —— 那一边才量得到真相。
+  // ⚠️ 这条守的是**那个数落在它该在的地方、且不越界**，不是把它写死：
+  //    写死一个数的话，下一次微调又要来改这条断言。
+  //
+  //    Issue #244 收一轮（165）→ Issue #278 第五轮再收一轮（118）。
+  //    ⚠️ 118 是**下界**，不是「已经是 118 了就好」：
+  //       `.app 高 = 顶栏 69 + (100vh - N) + .app 下内边距 48 = 117 + 100vh - N`，
+  //       所以 `N ≥ 117` 才不溢出（实测七档：N=118 溢出 0，N=98 溢出 19px）。
+  //       往**大**改（留白变小）页面更稳，往**小**改必然溢出 —— 而那件事的
+  //       用户可见症状不是「滚动条」，是**卡片被 `.app` 那 48px 下内边距
+  //       顶上去**，于是「上留白更挤、下留白反而更大」。这条断言就是拦这个。
   const loginMin = rule('#login-page').match(/min-height:\s*calc\(100 \* var\(--app-vh\) - (\d+)px\)/);
-  chk(!!loginMin && Number(loginMin[1]) >= 160,
-    '登录页容器那一档已按 Issue #244 收过（100vh 减 160px 起，实际减去 ' +
-    (loginMin ? loginMin[1] : '?') + 'px）');
-  chk(/165px/.test(css) && /164px/.test(css),
-    '手机与宽屏两档各写了自己的数（165 / 164 —— 宽屏顶栏厚一档，所以少 1）');
+  const mob = loginMin ? Number(loginMin[1]) : NaN;
+  chk(Number.isFinite(mob) && mob >= 117,
+    '登录页容器那一档不许低于 117（低于它页面就溢出、卡片反被顶上去；实际减去 ' +
+    mob + 'px）');
+  chk(mob < 165, '并且确实比 Issue #244 那一轮的 165 更收紧了（实际 ' + mob + '）');
+
+  // 手机与宽屏两档**永远一起改**：宽屏顶栏厚一档，所以正好少 1。
+  // 只动一档的症状是「两个数看起来谁也没错，但宽屏上多出 1px」。
+  const wideMin = css.match(/@media \(min-width: 1024px\)[\s\S]*?min-height:\s*calc\(100 \* var\(--app-vh\) - (\d+)px\)/);
+  const wide = wideMin ? Number(wideMin[1]) : NaN;
+  chk(Number.isFinite(mob) && Number.isFinite(wide) && mob - wide === 1,
+    '手机与宽屏两档各写了自己的数、且只差 1（实际手机 ' + mob + ' / 宽屏 ' + wide + '）');
+  chk(Number.isFinite(wide) && wide >= 116,
+    '宽屏那一档同样不许低于 116（它的顶栏厚一档，所以下界比手机少 1；实际 ' + wide + '）');
+
+  // ⚠️ 「居中页」是**一组成员**，不是一个 id（Issue #278 第五轮）：
+  //    重设密码 / 确认邮箱 / 管理后台原先都吊在顶栏下缘（实测 393×852：
+  //    卡片顶端 73px、上面只剩 4px），屏幕底下空着一整片 —— 用户说的
+  //    「重设密码等等各项页面上下 margin 再减少 20px」在那几页上是
+  //    一句做不到的话（没有留白可减）。这一组就是它们的名册。
+  ['login', 'reset', 'verify', 'admin'].forEach(nav => {
+    chk(new RegExp('body\\[data-nav="' + nav + '"\\] \\.account-page').test(css),
+      '居中页名册里有 ' + nav + '（少了它那一页的卡就吊在顶栏下缘）');
+  });
+  // ⚠️ 而「我的」页**必须不在**这一组里：它是一叠卡（六张）的清单页，
+  //    内容本来就比一屏长 —— 居中在它身上永远不生效，只会多一句没人验证的声明。
+  chk(!/body\[data-nav="mine"\]/.test(css),
+    '「我的」页不在居中那一组里（它是一叠卡的清单页，居中对它永远是句空话）');
 }
 
 {
@@ -570,11 +603,16 @@ const LOGIN = strip(loginJs), MINE = strip(mineJs), ADMIN = strip(adminJs);
           '④ 登录与注册的三颗密码按钮使用装饰性 SVG 图标');
         chk((RH.match(/class="pw-eye"[\s\S]*?<svg[^>]*aria-hidden="true"/g) || []).length >= 2,
           '④ 重设密码的两颗密码按钮使用装饰性 SVG 图标');
-        ['ts-code', 'ts-reg', 'ts-forgot', 'ts-verify', 'ts-unverified'].forEach(id => {
+        // ⚠️ Issue #278 第四轮起，这一张表里**多了 `ts-pw`**：用户明确要求
+        //    「登录页面同样加上 cloudflare 的验证」，服务端那条路（core.js 的
+        //    loginWithPassword）也挂上了，所以前端得画出方框来。
+        //    少一个挂载点的症状：那一屏没方框可勾，而服务端要 token —— 谁也登不进来。
+        ['ts-pw', 'ts-code', 'ts-reg', 'ts-forgot', 'ts-verify', 'ts-unverified'].forEach(id => {
           chk(new RegExp('id="' + id + '" hidden').test(LH),
             '④ 挂载点 #' + id + ' 在、且出厂 `hidden`（没配时不留一个空壳让人以为有校验）');
         });
-        chk(!/id="ts-pw"/.test(LH), '④ 密码登录不显示服务端不校验的 Turnstile');
+        chk(/id="ts-broken-ts-pw"/.test(LH),
+          '④ 密码那一屏也备了一条失败提示（方框没渲染出来时不许让人对着不存在的东西勾）');
         chk(/<script src="\/js\/turnstile\.js"><\/script>/.test(LH), '⑤ 登录页加载 js/turnstile.js');
         chk(LH.indexOf('/js/turnstile.js') < LH.indexOf('/js/auth-api.js'),
           '⑤ 它排在 auth-api **之前**（auth-api 发请求时要向它取 token）');
@@ -583,9 +621,15 @@ const LOGIN = strip(loginJs), MINE = strip(mineJs), ADMIN = strip(adminJs);
         chk(/bindEye\("btn-reg-eye2",\s*"input-reg-pw2"\)/.test(LJS),
           '④ 注册确认密码有独立显示按钮');
         const gates = (LJS.match(/turnstileBlocked\(/g) || []).length;
-        chk(gates >= 5,
-          '⑤ 需要保护的提交先问 gate（注册/忘记密码/发码/重发确认×2），实际 ' + gates + ' 处');
-        chk(!/turnstileBlocked\("msg-pw"\)/.test(LJS), '⑤ 密码登录不做服务端未执行的假前端闸');
+        chk(gates >= 6,
+          '⑤ 需要保护的提交先问 gate（口令登录/注册/忘记密码/发码/重发确认×2），实际 ' + gates + ' 处');
+        // Issue #278 第四轮：口令登录那一屏**也在**这张表里了（服务端确实校验）。
+        // 这一条与上面那一条是同一件事的两面 —— 少任何一面都会「点了按钮什么也没发生」。
+        chk(/turnstileBlocked\("msg-pw"\)/.test(LJS), '⑤ 密码登录也过前端那道闸（服务端确实校验它）');
+        chk(/turnstileToken:\s*turnstileToken\(\)/.test(LJS),
+          '⑤ 并且把令牌**带上**（挂了闸却不带令牌 = 服务端必然拒）');
+        chk(/TS_SLOTS = \{[\s\S]{0,60}pw:\s*"ts-pw"/.test(LJS),
+          '⑤ pw 那一屏在 TS_SLOTS 里（切到它就画方框，不是等点提交才画）');
         chk(/turnstileReset\(\)/.test(LJS), '⑤ 提交之后重置（token 一次性）');
         chk(/api\.config\(\)/.test(LJS), '⑤ 配置从 GET /api/config 来（**不写死** siteKey）');
 
@@ -598,10 +642,16 @@ const LOGIN = strip(loginJs), MINE = strip(mineJs), ADMIN = strip(adminJs);
           .forEach(function (term) {
             chk(!authCopy.includes(term), '④ 账号文案不出现：' + term);
           });
-        chk(/for="input-reg-pw2">确认密码</.test(LH) &&
-          /for="input-new-pw2">确认密码</.test(RH), '④ 两个确认字段统一使用「确认密码」');
-        chk((authCopy.match(/请再次输入相同密码/g) || []).length >= 2,
-          '④ 两个确认密码框使用明确占位文案');
+        // ⚠️ Issue #278 第四轮起，「确认密码」这四个字**从 label 搬进了
+        //    placeholder**（用户要「标题都在输入框里」），但 label 还在
+        //    DOM 里（藏在 .sr-only 里当无障碍名）。所以这里改成两条一起判：
+        //    一条认「可见的那份在 placeholder 上」，一条认「label 没被删」。
+        chk(/for="input-reg-pw2">[\s\S]{0,60}确认密码/.test(LH) &&
+          /for="input-new-pw2">[\s\S]{0,60}确认密码/.test(RH),
+          '④ 两个确认字段的无障碍名仍是「确认密码」（label 只藏起来，没删掉）');
+        chk((LH.match(/id="input-reg-pw2"[\s\S]*?placeholder="确认密码"/) || []).length === 1 &&
+          (RH.match(/id="input-new-pw2"[\s\S]*?placeholder="确认密码"/) || []).length === 1,
+          '④ 两个确认密码框的可见标题就是「确认密码」（在 placeholder 上，不另占一行）');
         chk(/验证后登录/.test(LH) && /验证邮件/.test(authCopy) && /验证邮箱/.test(authCopy),
           '④ 邮箱验证流程统一使用「验证」术语');
         chk(/E_OFFLINE:\s*"无法连接服务器，请检查网络后重试。"/.test(authApi) &&
@@ -653,6 +703,12 @@ const LOGIN = strip(loginJs), MINE = strip(mineJs), ADMIN = strip(adminJs);
             if (p2 === '/api/config') {
               return reply(200, { turnstile: { enabled: true, siteKey: '1x00000000000000000000AA' }, mail: { delivered: true } });
             }
+            // 口令登录那一屏现在也有人机校验（Issue #278 第四轮）：这里回一句
+            // 「邮箱或密码不对」，好让登录那条路能**走完**（不然它会等在
+            // 那个必然超时的响应上，后面几条断言就都读不到东西）。
+            if (p2 === '/api/login') {
+              return reply(401, { code: 'E_LOGIN_FAIL', message: '邮箱或密码不对' });
+            }
             return reply(200, {});
           };
 
@@ -688,6 +744,17 @@ const LOGIN = strip(loginJs), MINE = strip(mineJs), ADMIN = strip(adminJs);
                   chk(($2('ts-reg') || {}).dataset && $2('ts-reg').dataset.rendered === '1',
                     '⑤b 而且真的调了 Cloudflare 的 render（不是只把块显示出来）');
 
+                  // ⚠️ 同一时刻**只许有一块**露着（Issue #278 第五轮 · 真浏览器量出来的）。
+                  //    原先 `mountTurnstile` 的 `.then` 只判 st.configured 就
+                  //    `show(el)`，而它是**异步**的 —— 用户在它回来之前切了屏时，
+                  //    切走那一屏的方框会被重新显形。实测走完四屏，
+                  //    四个 ts-* 槽位**同时**是 visible。
+                  ['ts-pw', 'ts-code', 'ts-reg', 'ts-forgot', 'ts-verify', 'ts-unverified']
+                    .forEach(id => {
+                      chk(id === 'ts-reg' ? shown2(id) : !shown2(id),
+                        '⑤b 同一时刻只有注册那一块露着（' + id + ' 已收）');
+                    });
+
                   hits.length = 0;
                   $2('input-reg-email').value = 'a@b.com';
                   $2('input-reg-pw').value = 'hunter2hunter';
@@ -699,6 +766,30 @@ const LOGIN = strip(loginJs), MINE = strip(mineJs), ADMIN = strip(adminJs);
                         '⑤b 令牌没拿到时点「注册」→ **一个请求都没发出去**（前端那一道省掉了必然失败的一次）');
                       chk(/人机校验/.test($2('msg-reg').textContent),
                         '⑤b 并且就地提示说的是「人机校验」（实际「' + $2('msg-reg').textContent + '」）');
+
+                      // ⚠️ 口令登录那一屏也带上了令牌（Issue #278 第四轮）。
+                      //    「挂了闸却不带令牌」= 服务端必然拒 → 谁也登不进来。
+                      hits.length = 0;
+                      $2('tab-pw').click();
+                      setTimeout(() => {
+                        try {
+                          chk(shown2('ts-pw') && !shown2('ts-reg'),
+                            '⑤b 切回密码登录屏 → 方框跟着走（注册那块的可见态被收掉）');
+                          $2('input-pw-email').value = 'a@b.com';
+                          $2('input-pw').value = 'hunter2hunter';
+                          $2('btn-login').click();
+                          setTimeout(() => {
+                            try {
+                              chk(hits.indexOf('/api/login') < 0,
+                                '⑤b 这一档令牌还没到（turnstile 夹具只 render 不给 token）→ 前端先拦住');
+                              chk(/人机校验/.test($2('msg-pw').textContent),
+                                '⑤b 提示落在口令那一屏上（实际「' + $2('msg-pw').textContent + '」）');
+                              chk(/turnstileToken/.test(read('js/login.js')),
+                                '⑤b 而且源码里那条请求确实带着令牌（有令牌时会送出去）');
+                            } catch (e) { console.log('✗ 第十五节（口令）自身抛异常：' + e.message); process.exit(1); }
+                          }, 20);
+                        } catch (e) { console.log('✗ 第十五节（切回）自身抛异常：' + e.message); process.exit(1); }
+                      }, 20);
                     } catch (e) { console.log('✗ 第十五节（瞬时）自身抛异常：' + e.message); process.exit(1); }
                   }, 20);
                 } catch (e) { console.log('✗ 第十五节自身抛异常：' + e.message); process.exit(1); }

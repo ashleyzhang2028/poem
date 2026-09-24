@@ -114,7 +114,18 @@
     return "验证邮件暂时无法发送，请稍后重试。如问题持续，请联系管理员。";
   }
 
+  // 每一处挂载点：键是「屏」（js/login.js 的 mode），值那一路表单里的容器 id。
+  //
+  // ⚠️ `pw` 这一条是 Issue #278 第四轮加的（用户原话：「登录页面同样加上
+  //    cloudflare 的验证」）。它**改掉了原来那条口径**——
+  //    原先这里写的是「密码登录本来就不需要人机校验（服务端那一条路不校验）」，
+  //    现在服务端也挂了（api/_lib/core.js 的 loginWithPassword），
+  //    所以这一条不许再删：删了之后前端不画方框、服务端却要 token，
+  //    症状就是**谁也别想用口令登进来**（400 E_TURNSTILE）。
+  //    两处是**同一个开关的两半**：《js/turnstile.js》没配时前端不画、
+  //    服务端也 skipped，所以没接 Cloudflare 的实例两半都安静。
   var TS_SLOTS = {
+    pw: "ts-pw",
     code: "ts-code",
     register: "ts-reg",
     forgot: "ts-forgot",
@@ -134,8 +145,19 @@
     var el = slotId ? $(slotId) : null;
     if (!el) return;
     TS.mount(el, { siteKey: tsConfig.siteKey, enabled: tsConfig.enabled }).then(function (st) {
-
-      if (st && st.configured) show(el);
+      // ⚠️ 这个 `.then` 是**异步**的（脚本在路上、widget 要等 Cloudflare 判人机），
+      //    而用户在这几百毫秒里可能已经切到别的屏了。原来这里只判
+      //    `st.configured` 就 `show(el)` —— 于是切走的那一屏的方框被**重新显形**：
+      //    实测（Issue #278 第五轮，真浏览器点一遍）
+      //      密码登录 → 快捷登录 → 注册 → 忘记密码
+      //    走完四屏，页面上**四个 `ts-*` 槽位同时是可见的**（`hidden=false`），
+      //    只有一个是真的画在当前屏上的。用户会看到方框跟着自己跑，
+      //    或者提交时报「人机校验没通过」而他在当前屏上根本找不到那个方框。
+      //
+      //    判据是「这一屏还是当前那一屏吗」—— `state.mode` 就是那个答案
+      //    （挂 pw 的槽位时 4 个 mode 里有 3 个都会命中，所以必须比对值）。
+      //    切走的那一屏由 `setMode()` 的 `hide()` 收走即可。
+      if (st && st.configured && state.mode === slotKey) show(el);
       turnstileBrokenNote(slotId);
     });
   }
@@ -155,6 +177,12 @@
     if (!TS || !TS.failed || !slotId) return;
     var note = $("ts-broken-" + slotId);
     if (!note) return;
+    // ⚠️ 同样要判「还是当前那一屏」（理由与上面 `show(el)` 那一段同源）：
+    //    否则用户在注册屏上会看到密码登录那一屏的红字 —— 与 Issue #276
+    //    那条「切屏时把上一屏的失败提示收掉」是同一件事的两半。
+    //    调用方 `turnstileBlocked()` 已经在当前屏上，所以那里传进来的
+    //    slotId 一定就是当前那一屏，这一条不会误伤它。
+    if (note.hidden && TS_SLOTS[state.mode] !== slotId) return;
     if (!TS.failed()) { hide(note); text(note, ""); return; }
     text(note, (TS.why ? TS.why() + " " : "") +
       "请刷新页面重试。如问题持续，请联系管理员。");
@@ -181,6 +209,15 @@
     if (TS && TS.reset) { try { TS.reset(); } catch (e) {  } }
   }
 
+  // 当前那一枚令牌（没配人机校验时恒为空串 —— 服务端那时也 skipped，两边对称）。
+  // ⚠️ 走到提交这一刻才取，不在页面打开时取一次存着：widget 的
+  //    `expired-callback` 会把令牌清掉（js/turnstile.js），存着的那一份
+  //    就成了一个早就过期的值，而服务端只会回一句「人机校验没通过」。
+  function turnstileToken() {
+    if (!TS || !TS.token) return "";
+    try { return TS.token() || ""; } catch (e) { return ""; }
+  }
+
   var MODES = ["pw", "code", "register", "verify", "unverified", "forgot", "done"];
   function setMode(mode) {
     if (MODES.indexOf(mode) < 0) mode = "pw";
@@ -193,12 +230,31 @@
     hide($("auth-tabs"));
     if (mode === "pw" || mode === "code") show($("auth-tabs"));
 
+    // 「一屏」= 一个 pane（或 done / unverified 那两个 account-step）。
+    // ⚠️ `pw` / `code` 这两屏**各自还有两个内层 step**（快捷登录的
+    //    「填邮箱」与「填码」），所以切屏时要连内层一起复位 —— 否则用户从
+    //    注册屏回到快捷登录屏，看到的还是上一次「已发码」那一屏。
     var panes = { pw: $("pane-pw"), code: $("pane-code"), register: $("pane-register"),
       verify: $("pane-verify"), forgot: $("pane-forgot") };
     Object.keys(panes).forEach(function (k) {
       var el = panes[k];
       if (!el) return;
       if (k === mode) show(el); else hide(el);
+    });
+
+    // ⚠️ 人机校验的槽位**不跟着 pane 走**：`ts-pw` 住在 `pane-pw` 里、
+    //    `ts-reg` 住在 `pane-register` 里，而 pane 被 `hide()` 收走时
+    //    槽位自己那一份 `hidden` 还留着 —— 于是「切走再切回来」或者
+    //    「同一个槽位被 show() 过之后又切走」都会让它**在隐藏的 pane 里
+    //    保持可见态**（实测：切到快捷登录后 `#ts-pw` 的 `hidden` 仍是 false）。
+    //    它对外看不见（父级 hidden），但它会被 `mountTurnstile` 的返回值
+    //    继续当成「已安装」，而用户切回来时看到的是上一次那份旧 widget。
+    //
+    //    所以：不在当前这一屏的槽位，一律先收掉；当前这一屏的槽位由
+    //    `mountTurnstile` 在 widget 真的画出来之后再显形。
+    Object.keys(TS_SLOTS).forEach(function (k) {
+      var slot = $(TS_SLOTS[k]);
+      if (slot && k !== mode) hide(slot);
     });
 
     if (mode === "done") show($("step-done")); else hide($("step-done"));
@@ -209,8 +265,9 @@
     // 免得「注册」那一屏的红字留在「登录」屏上。
     //
     // 顺带把方框挂到这一屏 —— 用户切过来的这一下就开始画了，不用等他点提交
-    // （Issue #276）。TS_SLOTS 里没有的 mode（密码登录 / 完成屏）会原样返回，
-    // 密码登录本来就不需要人机校验（服务端那一条路不校验）。
+    // （Issue #276）。TS_SLOTS 里没有的 mode（完成屏 / 未确认屏）会原样返回。
+    // ⚠️ 密码登录那一屏**现在也在 TS_SLOTS 里**（Issue #278 第四轮）：
+    //    服务端那条路挂上了人机校验，前端就得画出方框来。
     turnstileHideNotes();
     if (TS && mode !== "done") mountTurnstile(mode);
 
@@ -437,8 +494,16 @@
     }
     if (!pw) { msg("msg-pw", ch.messageOf("E_PW_EMPTY") || "请先填密码", "warn"); return; }
 
+    // 人机校验：与发码 / 注册 / 忘记密码那几处同一道闸、同一句提示（Issue #278）。
+    // ⚠️ 它必须落在**本地那几条校验之后**：先告诉他「两次密码不一样」这种
+    //    自己就能改的事，再让他去过人机校验 —— 反过来会让人先勾方框、
+    //    送出去，再被一句「密码至少 8 位」退回来重勾一次。
+    if (turnstileBlocked("msg-pw")) return;
+
     msg("msg-pw", "");
-    return ch.login({ email: email, password: pw }).then(function (r) {
+    return ch.login({ email: email, password: pw, turnstileToken: turnstileToken() }).then(function (r) {
+      // 令牌一次性：无论成没成都作废（成功那条已经用掉了，失败那条更要换一枚）。
+      turnstileReset();
       if ($("input-pw")) $("input-pw").value = "";
       if (!r.ok) {
 

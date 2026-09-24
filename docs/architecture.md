@@ -481,7 +481,7 @@ x-vercel-error: NOT_FOUND            ← 平台层，函数压根没被调起来
 | 权益来源 | **只有 `/api/me`**，客户端一切 `plan` 字段都是显示用的缓存；唯一能写它的地方是 `POST /api/admin/grant`（2.2 已落地，见 §4.14） |
 | 权益由谁写 | 服务端：`accounts.plan` / `plan_until`。**不在客户端**，也不在本机（本机只留一份**服务端答案的缓存**，见 §4.14 / §4.30） |
 | 短信 | 只留口子（`channel` 枚举已就位），不实现 |
-| 人机校验 | **可选**（Cloudflare Turnstile，Issue #197 后续）。默认**关**；开了才挡在四条匿名可写、会发信/建号的口子前面（`send-code` / `register` / `reset-request` / `resend-verification`）。判据只有一处（`turnstileReady()` = 开关 + 密钥 + 非旁路），`/api/config` 与 `/api/me` 的 `channel.turnstile` 如实自报。详见 `docs/auth-design.md` §4.4.12 |
+| 人机校验 | **可选**（Cloudflare Turnstile，Issue #197 后续）。默认**关**；开了才挡在**五条**口子前面 —— 四条匿名可写、会发信/建号（`send-code` / `register` / `reset-request` / `resend-verification`），加上 `login`（Issue #278 起因是**撞库**：口令挡得住猜，挡不住拿泄露的邮箱 + 常见口令慢速试）。判据只有一处（`turnstileReady()` = 开关 + 密钥 + 非旁路），`/api/config` 与 `/api/me` 的 `channel.turnstile` 如实自报。挂载点与顺序都在 `core.humanGuard()` 一处；前端那一半是 `js/login.js` 的 `TS_SLOTS`（**方框只属于当前那一屏**，切屏时跟着走）。详见 `docs/auth-design.md` §4.4.12 |
 | 儿童 | 只允许成年人建号，孩子只是展示昵称；不做家庭子用户（1 期不做） |
 
 > ⚠️ **这一条与 `docs/auth-design.md` §3.4 有冲突，以本文为准**：
@@ -7184,3 +7184,149 @@ POST /api/admin/role   req { uid, role:"user"|"admin" }
   `wipe-step-1` / `btn-import-open` 都不在了」（拆掉的东西不能留半个壳）
 - `test/ops.test.js`：配置清单与 `.env.example` 同步（新增 `OWNER_EMAILS` 一条）
 - `bash test/run.sh` 全量退出码 **0**，一层不红
+
+---
+
+### 第 N+1 轮：账号几页的上下留白、字段标题收进 placeholder、口令登录挂人机校验（Issue #278 第四/五轮）
+
+用户 2026-09-24 一口气说了四件事：
+
+> 登录页面，重设密码等等各项页面上下 margin 再减少 20px
+> 注册页面好像没法再减了，上面碰到 logo 行了快。
+> 另外，登录页面同样加上 cloudflare 的验证。
+> 能不能让 邮箱 密码 确认密码这些标题都在输入框里 placeholder, 这样能减少相应行空间
+
+#### 一、字段标题搬进 placeholder（**少一行**，不是少一个 label）
+
+`login/index.html`（9 处）与 `reset/index.html`（2 处）的可见 label 撤掉，
+标题文字分别搬进**输入框的 `placeholder`** 与 `<span class="sr-only">`：
+
+| 字段 | placeholder | 无障碍名 |
+|---|---|---|
+| 邮箱 | 邮箱 | 邮箱 |
+| 密码 | 密码（至少 8 位） | 密码 |
+| 确认密码 | 确认密码 | 确认密码 |
+| 新密码 | 新密码（至少 8 位） | 新密码 |
+
+- **`.account-label` 没有被删**，只是收成 1px（`clip-path: inset(50%)`）——
+  它仍是那个字段的无障碍名，点 label 聚焦输入框的浏览器行为也还在。
+  几个字段另挂了一条 `aria-label`，两边写的是同一个词。
+- 「密码至少 8 位」这条**规则**跟着进了 placeholder；原来 `.account-hint`
+  里那一处保留（不重复写两遍）。
+- 代价说清楚：placeholder 只在「空着、没聚焦」时可见，用户一输入就看不见字段名了。
+  这是用户明确要的取舍，**不许**因此再加回 label（真嫌看不清就加
+  `.account-input:focus` 的辅助手段，而不是把那一行重新长出来）。
+
+#### 二、上下留白：118 是**地板**，不是「还能再减 20」
+
+先把两个数各管什么拆开：卡片靠 `margin: auto` 在容器里居中，**上下各吃掉一半余量**，
+余量 = `(100vh - N) - .account-page 内边距 - 卡片高`。
+所以 N **越小 → 容器越高 → 留白看起来越大**；「上下 margin 减少」= N **变大**。
+
+N 也不许无限变大。实测（真浏览器，七档逐档）：
+
+```
+.app 高 = 顶栏 69 + (100vh - N) + .app 下内边距 48 = 117 + 100vh - N
+```
+
+`.app` 高 ≤ 100vh ⇔ **N ≥ 117**。逐档跑过三遍：
+
+| 393×852 | 上 / 下 | 溢出 |
+|---|---|---|
+| N=165（Issue #244 之后） | 193 / 203 | 0 |
+| **N=118（本轮）** | **217 / 227** | **0** |
+| N=98 | 227 / 237 | 19px |
+
+⚠️ 溢出不是「挪一点」：溢出之后 `.app` 那 48px 下内边距会把卡片**整体顶上去**
+（上缘 286 → 296），下留白反而不变/变大。于是「再收 20」的用户可见效果
+**全落在「上面更挤」上，还多一条滚动条** —— 与用户要的正好相反。
+
+所以本轮取 **118（手机）/ 117（宽屏，顶栏厚一档）**：
+用户量到的上下留白每侧少了 **24px**（193→217 / 203→227），
+**比他开口要的 20px 还多** —— 那 4px 是上一轮 165 里虚高的余量被一并收干了。
+真还要再少，唯一的办法是把 `.app` 那 48px 下内边距在账号页上收掉 ——
+那是**改另一件事**（登录页不留底），不是「margin 少一点」，本轮没动。
+
+#### 三、重设密码那一页原先**压根没居中**（这才是「减 20px」做不到的真原因）
+
+用户点的是「重设密码等等各项页面」，而实测（393×852）那一页的卡片
+**吊在顶栏下缘**：卡片顶端 73px、上面只剩 **4px**，屏幕底下空一整片。
+`.account-page` 只有「顶栏到页脚之间」那一块高，而「居中」那三条规则
+当时**只给了 `#login-page`**（Issue #163/#244 留下的口径）。
+
+所以这一轮把它放开成**一组成员**（`body[data-nav="..."]`）：
+
+| 在名册里（居中） | 不在名册里 |
+|---|---|
+| `login` / `reset` / `verify` / `admin` | `mine`（一叠卡，六张，内容比一屏长） |
+
+修后七档实测（上 / 下留白，溢出）：
+
+```
+/reset/   320×568 147/157 · 393×852 289/299 · 1920×1080 403/413   溢出恒 0
+/verify/  320×568 137/147 · 393×852 289/299 · 1920×1080 403/413   溢出恒 0
+/admin/   320×568 146/156 · 393×852 288/298 · 1920×1080 402/412   溢出恒 0
+/login/   320×568  75/ 85 · 393×852 217/227 · 1920×1080 334/344   溢出恒 0
+```
+
+⚠️ 判据走 `body` 上的 `data-nav`，不是「页面里有没有 `#login-page`」：
+`data-nav` 是这几页本来就有的那一位，加一页时看得见要顺手加一条。
+
+#### 四、口令登录也挂人机校验（`POST /api/login`）
+
+口径改了：原先「login 不挂 —— 它本来就有凭据」，现在也挂。
+理由与代价写在 `docs/auth-design.md` §4.4.12（撞库那一段）。
+
+改动落在**两半**，少一半都是「谁也登不进来」：
+
+| 一半 | 位置 |
+|---|---|
+| 服务端 | `core.loginWithPassword()` 调 `humanGuard`；`_routes/auth/login.js` 把 `turnstileToken` / `cf-turnstile-response` 交给内核 |
+| 前端 | `js/login.js` 的 `TS_SLOTS.pw = "ts-pw"`、提交前 `turnstileBlocked("msg-pw")`、请求带 `turnstileToken`；`login/index.html` 里 `#ts-pw` + `#ts-broken-ts-pw` |
+
+`core.humanGuard()` 的调用点从 **4** 处变 **5** 处（`test/api.test.js` 守着这个数）。
+
+#### 五、本轮在真浏览器上挖出来的三个**旧 bug**（都不是新写的）
+
+做这件事的过程中用一个假 Site Key（`1x00000000000000000000AA`）真跑了一遍
+`/login/`，撞出三个原先就存在、只是没人同时踩到的问题：
+
+**① `renderWidget()` 把「脚本还在路上」写成了「坏了」。**
+`mount()` 走 `loadScript().then(renderWidget)`，而 `loadScript()` 只因
+「`<script>` 插上了」就 resolve —— 那份 `.then` **不等 Cloudflare 的脚本到达**。
+此时 `root.turnstile` 还没出现，旧实现记 `no_render_api`（在 `BROKEN` 表里），
+于是页面上立刻摆出一句红字「人机校验脚本没给出可用的接口（多半是被网络中间层改写了）」——
+而方框 300ms 后正常画出来、token 也拿到了。**用户看到的是一个根本不存在的故障。**
+现在：脚本还在路上时 `err` 保持 `null`（并 `ready: false`），
+只有 `loadScript` 的 8 秒超时/失败分支才记「坏了」。
+
+**② 切屏之后，切走那一屏的方框会被**重新显形**。**
+`mountTurnstile()` 的 `.then` 是异步的，而它只判 `st.configured` 就 `show(el)` ——
+用户在几百毫秒里切了屏，那块方框就被重新摆出来。实测走完
+「密码登录 → 快捷登录 → 注册 → 忘记密码」，**四个 `ts-*` 槽位同时是可见态**。
+现在：`state.mode === slotKey` 才显形；`setMode()` 另把不在当前屏的槽位一律 `hide()`。
+（`turnstileHideNotes()` 与 `turnstileBrokenNote()` 同样补了这一判据 ——
+否则注册屏上会留着口令屏的红字。）
+
+**③ `mountTurnstile` 挂过一块之后，槽位自己那一份 `hidden` 再也不复位。**
+`ts-pw` 住在 `pane-pw` 里、`ts-reg` 住在 `pane-register` 里，而 `setMode()`
+只 `hide()` **pane**，槽位自己那一份 `hidden` 留着 —— 切走再切回来就会
+拿上一次那份旧 widget（且它与「当前屏」对不上）。②的修法里那条
+「不在当前屏就 `hide()`」把这一条一起治了。
+
+#### 六、守卫
+
+- `test/pwa.test.js`「卡片仍垂直居中」那一节**从 1 页扩到 4 页 × 7 档 = 28 档**，
+  另加一条新的判据：**「卡片没吊在顶栏下缘（上留白 ≥ 40px）」**——
+  上一条「上下相差 ≤ 60px」对「吊顶」那一档是**量不出问题**的
+  （4 / 26 相差才 22），所以必须另有一条专门盯它。
+- `test/account-pages.test.js`：登录页容器那个数判成**「不许低于 117」**
+  （不是写死 118 —— 往大改页面更稳、往小改必然溢出，这条拦的正是后者）；
+  手机/宽屏两档永远只差 1；居中页名册里四页一个不少、`mine` 必须在名册**外**。
+- `test/account-pages.test.js` 第十五节（jsdom）：**同一时刻只许一块方框露着**
+  （六个槽位逐个判）、切回口令屏后方框跟着走、口令提交带令牌。
+- `test/turnstile-slot.test.js` 第 ⑦c 节：脚本还在路上时 `err !== no_render_api`；
+  超时那一档仍然 `failed() === true` 且 `gate()` 放行。
+- `test/api.test.js` 第廿二节：`login` 没带 token 回 400 `E_TURNSTILE`（`turnstile:"missing"`）、
+  带好令牌才走到 `E_LOGIN_FAIL`、`humanGuard` 调用点 = 5。
+- `sw.js` v193 → **v194**（`css/` 与 `js/` 都改了）。

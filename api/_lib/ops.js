@@ -437,7 +437,8 @@ var STEPS = [
     ],
     verify: [
       "GET /api/config 回 `turnstile.enabled:true` 且带 `siteKey`（没带 = 开关开了但缺 Site Key）",
-      "打开 /login/，密码那一屏下方应当出现 Cloudflare 的方框；不出现就看浏览器控制台（多半是 Site Key 填错或域名没加进 widget 的允许列表）",
+      "打开 /login/，**「密码登录」那一屏**的登录键上方应当出现 Cloudflare 的方框（口令登录也挂，见 docs/auth-design.md §4.4.12）；不出现就看浏览器控制台（多半是 Site Key 填错或域名没加进 widget 的允许列表）",
+      "切屏时方框跟着走：切到「快捷登录 / 注册 / 忘记密码」，同一时刻页面上**只有一块**方框",
       "故意不勾就点「注册」：前端会就地提示「请先完成人机校验」，**不会**发出那次请求",
       "把 widget 删掉再点「注册」（模拟绕过前端）：服务端回 400 `E_TURNSTILE` —— **这才证明闸在服务端**",
       "服务端日志里搜 `api.turnstile_blocked`：它带着 Cloudflare 的 error-codes（如 invalid-input-secret），是排查「密钥配错了」的唯一材料"
