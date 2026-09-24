@@ -322,12 +322,6 @@
     } catch (e) { return null; }
   }
 
-  function avatarNow(backing) {
-    var A = avatarMod();
-    if (!A || !A.display) return null;
-    try { return A.display(backing == null ? backingStore() : backing); } catch (e) { return null; }
-  }
-
   function dockIcon(it) {
 
     if (it.icon.indexOf("__SRC__") < 0) return it.icon;
@@ -464,19 +458,40 @@
     location.href = "/settings/";
   }
 
+  // 底栏「我的」那一格的头像 —— **只在这一次重画**（唯一出口）。
+  //
+  // 两处踩过的坑（2026-09-24 用户报的那一条）：
+  //   ① 定位必须精确到「我的」那一格。原先 js/avatar-edit.js 的
+  //      `document.querySelector("#site-dock .dock-icon")` 取的是**第一颗**
+  //      dock 图标 —— 也就是左下角「背诵」那一格。于是传完头像，
+  //      背诵的图标被换成了头像，「我的」那一格原样不动。
+  //      ⇒ 这里用 `[data-nav-go="mine"]` 精确点名，且**只此一处**写它；
+  //        avatar-edit 那边不再自己拼一份（第二处必然会再次选错）。
+  //   ② 判据必须比**画出来的那一份**，不能只比「有没有图」。原先写
+  //      `if (hasImage === !!img) return;` —— 换一张新头像时两边都为真，
+  //      于是当场 return，底栏一直挂着旧图，要刷新页面才换过来。
+  //      ⇒ 改成比 innerHTML：与「当前该画的那一份」不一致就重画。
+  //        一致时仍然一个字节都不写 DOM（否则会和 MutationObserver 互相触发）。
+  function dockMineItem() {
+    return document.querySelector('.dock-item[data-nav-go="mine"]');
+  }
+
+  function dockMineHtml() {
+    var hit = null;
+    DOCK_ITEMS.forEach(function (it) { if (it.key === "mine") hit = it; });
+    return hit ? dockIcon(hit) : "";
+  }
+
   function refreshDockAvatar() {
     if (!dockEnabled()) return;
-    var item = document.querySelector('.dock-item[data-nav-go="mine"]');
-    if (!item) return;
-    var ic = item.querySelector(".dock-icon");
+    var item = dockMineItem();
+    var ic = item ? item.querySelector(".dock-icon") : null;
     if (!ic) return;
 
-    var d = avatarNow();
-    var hasImage = !!(d && d.hasImage);
-    var img = ic.querySelector(".avatar-img");
+    var want = dockMineHtml();
+    if (!want || ic.innerHTML === want) return;
 
-    if (hasImage === !!img) return;
-    ic.innerHTML = dockIcon(DOCK_ITEMS[3]);
+    ic.innerHTML = want;
   }
 
   function mountDockAvatarWatch() {

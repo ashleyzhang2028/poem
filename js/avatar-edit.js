@@ -51,18 +51,18 @@
     hint.textContent = synced(window.localStorage) ? "已同步" : "未同步";
   }
 
+  // 刷「页壳」：顶栏 + 底栏。
+  //
+  // ⚠️ 这里**只转发**给 SiteChrome，不再自己找节点写 innerHTML。
+  //    原先末尾那三行 `document.querySelector("#site-dock .dock-icon")`
+  //    取到的是**第一颗** dock 图标（左下角「背诵」那一格），于是传完头像：
+  //      · 「背诵」的图标被换成了头像（用户 2026-09-24 原话：
+  //        「左下角背诵上面的图标变成头像」）；
+  //      · 「我的」那一格反而没动（「我的上面头像应该更新却没有直接更新」）。
+  //    底栏头像的唯一出口是 SiteChrome.refreshUser → refreshDockAvatar，
+  //    它按 `[data-nav-go="mine"]` 点名那一格。页面里不再有第二处写它的地方。
   function refreshChrome() {
-
     if (window.SiteChrome && window.SiteChrome.refreshUser) window.SiteChrome.refreshUser();
-    var A = avatarMod();
-    if (!A) return;
-    var d = null;
-    try { d = A.display(window.localStorage); } catch (e) { d = null; }
-    if (!d || !d.hasImage) return;
-
-    var slot = document.querySelector("#site-dock .dock-icon");
-    if (!slot) return;
-    slot.innerHTML = A.html(window.localStorage, { dock: true });
   }
 
   function onPickFile(input) {
