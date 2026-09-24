@@ -2239,9 +2239,9 @@ async function main() {
         chk(!/不确认也能用|不确认也照常|不确认也能正常使用/.test(src),
           f + " 里不再有旧口径那句「不确认也能用」");
       });
-      chk(/验证邮箱后才能登录|完成邮箱验证后才能登录/.test(
+      chk(/点击链接验证后登录|完成邮箱验证后才能登录/.test(
         fs.readFileSync(path.join(ROOT, "login/index.html"), "utf8")),
-        "登录页写明「验证邮箱后才能登录」（用户得知道下一步是什么）");
+        "登录页写明「点击链接验证后登录」（用户得知道下一步是什么）");
 
       const loginHtml = fs.readFileSync(path.join(ROOT, "login/index.html"), "utf8");
       chk(/id="btn-unverified-resend"/.test(loginHtml),
