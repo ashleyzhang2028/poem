@@ -2759,6 +2759,14 @@ async function main() {
     eq(rw && rw.destination, "/api/handler?__path=:path*",
       "那条 rewrite 转到固定函数，并把原 API 路径放进内部参数");
 
+    // routes.js 用 `require(hit)` 动态加载 _routes/**：Vercel 的静态追踪器
+    // （@vercel/nft）看不懂变量形参，不 includeFiles 就一个路由文件都不打包 ——
+    // 症状是每条 /api/* 都回 FUNCTION_INVOCATION_FAILED（非 JSON → 前端 E_INTERNAL）。
+    const inc = ((vercel.functions || {})["api/handler.js"] || {}).includeFiles || "";
+    chk(/api\/\*\*/.test(inc), "vercel.json 把 api/** 一起打进函数（动态 require 的路由文件靠它才在）");
+    chk(/data\/\*\.js/.test(inc) && /js\/quiz\.js/.test(inc),
+      "飞花令/题库要现读 data/*.js 与 js/quiz.js，这两份也要 includeFiles");
+
     Object.keys(routesMod.ROUTES).forEach(key => {
       const file = routesMod.ROUTES[key];
       const abs = path.resolve(apiDir, "_lib", file);
