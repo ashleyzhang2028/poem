@@ -175,11 +175,39 @@
     });
   }
 
+  // ⚠️ 这一条是「重画」的护栏，不是「第一次画」的失败处理 —— 两者必须分开
+  //    （Issue #278 第五轮在真浏览器上量出来的一个假故障）。
+  //
+  // 现场：页面打开时 preload() 先把 <script> 插上（Issue #276 那条）；
+  // 紧接着拿到 siteKey 的 mount() 走 `loadScript().then(renderWidget)`。
+  // 而 `loadScript()` 在这一刻回的是一个**已经 resolve 的 Promise**
+  // （它只因「inserted」而 resolve），那份 `.then` 于是**不等 Cloudflare
+  // 的脚本到达**就跑了 renderWidget —— 此时 `root.turnstile` 还没出现，
+  // 于是记下 `no_render_api`。
+  //
+  // 病根不在这个判断（脚本没到确实不该画），在**它把「还没到」写成了
+  // 「坏了」**：`no_render_api` 在 BROKEN 表里，于是
+  //   · gate() 放行（前端不拦）—— 这一半是对的；
+  //   · 但 `turnstileBrokenNote()` 会把一句**红字**摆在页面上：
+  //     「人机校验脚本没给出可用的接口（多半是被网络中间层改写了）」。
+  // 而那个方框半秒后就正常画出来了、token 也拿到了。用户看到的是一个
+  // 根本不存在的故障，而且它连「请刷新」都劝。
+  //
+  // 现在的口径：**只有 preload 也没能把脚本拉起来，才算坏了。**
+  // 脚本还在路上时什么都不记（原本 err 就是 null），等它回来时
+  // `preload()` 那条路会补画一次（见下面 preload 里的注释），
+  // 那时若真的还是没有 render API，才由 loadScript 的失败分支记成
+  // script_error / script_timeout。
+  //
+  // ⚠️ 为什么不是「这里也去 loadScript()」：那会变成两条路各拉一份脚本，
+  //    用户在页面上会看到两个方框（这正是那一节注释要防的）。
   function renderWidget() {
     if (!root.turnstile || typeof root.turnstile.render !== "function") {
-      st.err = "no_render_api";
+      // 脚本还在路上：如实记着「没画成」，但**不报故障**（err 留空）。
+      st.ready = false;
       return;
     }
+    st.err = null;
     if (st.widgetId !== null) {
 
       try { root.turnstile.reset(st.widgetId); } catch (e) { st.err = "reset_failed"; }

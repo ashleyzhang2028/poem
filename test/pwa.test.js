@@ -2231,18 +2231,24 @@ function check(name, cond, extra) {
     await page.close();
   }
 
-  {
+  // ⚠️ 这一节量的是**全部「居中页」**，不只登录页（Issue #278 第五轮）：
+  //    重设密码 / 确认邮箱 / 管理后台原先压根没居中（卡片吊在顶栏下缘、
+  //    屏幕底下空一整片），用户说的「重设密码等等各项页面上下 margin 再
+  //    减少 20px」在那几页上是一句做不到的话。现在它们与登录页共用容器，
+  //    所以**同一个偏差判据要逐页跑一遍** —— 只量登录页的话，那一组里
+  //    少一页（或哪一页被改回吊顶）这里一个字都不会说。
+  for (const navLabel of ['/login/', '/reset/', '/verify/', '/admin/']) {
     const { page } = await freshPage();
-    const LOGIN = base.replace(/\/$/, '') + '/login/';
+    const TARGET = base.replace(/\/$/, '') + navLabel;
     for (const [vw, vh, label] of [[320, 568, 'iPhone SE1'], [360, 640, '安卓小屏'],
       [393, 852, 'iPhone 14'], [768, 1024, 'iPad 竖屏'], [1024, 768, 'iPad 横屏'],
       [1440, 900, '桌面'], [1920, 1080, '大屏桌面']]) {
       await page.setViewport({ width: vw, height: vh, deviceScaleFactor: 1 });
-      await page.goto(LOGIN, { waitUntil: 'networkidle0' });
+      await page.goto(TARGET, { waitUntil: 'networkidle0' });
       await new Promise(r => setTimeout(r, 700));
       const m = await page.evaluate(() => {
         const de = document.documentElement;
-        const card = document.querySelector('#login-page > .account-card');
+        const card = document.querySelector('.account-page > .account-card');
         // ⚠️ 页脚删掉之后，「下面还剩多少」不能再量 scrollHeight：
         // 登录页不溢出，scrollHeight 就等于视口高 —— 那样算出来的是
         // 「卡片下缘到视口底」，`margin: auto` 把卡片顶到上半屏之后它
@@ -2266,18 +2272,27 @@ function check(name, cond, extra) {
           below: Math.round(ab.bottom - padB - cr.bottom)
         };
       });
-      check('登录页 @' + vw + '×' + vh + '（' + label + '）：页面不溢出',
+      const where = navLabel + ' @' + vw + '×' + vh + '（' + label + '）';
+      check(where + '：页面不溢出',
         m.overflow <= 0, '溢出 ' + m.overflow + 'px');
 
-      check('登录页 @' + vw + '×' + vh + '（' + label + '）：卡片整张落在视口里',
+      check(where + '：卡片整张落在视口里',
         m.cardBottom <= m.vh && m.cardTop >= 0,
         '卡片 ' + m.cardTop + '~' + m.cardBottom + ' / 视口 ' + m.vh);
 
-      check('登录页 @' + vw + '×' + vh + '（' + label + '）：卡片顶端没被顶出屏幕',
+      check(where + '：卡片顶端没被顶出屏幕',
         m.cardTop >= 0, '卡片顶 ' + m.cardTop + 'px');
 
+      // ⚠️ 这一条是 Issue #278 第五轮新加的，量的是**「有没有在上半屏吊着」**：
+      //    重设 / 确认 / 管理后台原先卡片上留白只有 4px（吊在顶栏下缘），
+      //    而屏幕底下空着几百像素。上面那两条「相差 ≤ 60px」对那一档是
+      //    **量不出问题**的（4 vs 26 相差才 22），所以必须另有一条专门盯它：
+      //    既然共用了居中容器，卡片顶端就不该贴着顶栏。
+      check(where + '：卡片没吊在顶栏下缘（居中的那一组都要离开顶栏）',
+        m.above >= 40, '上留白 ' + m.above + 'px');
+
       if (m.above >= 0) {
-        check('登录页 @' + vw + '×' + vh + '（' + label + '）：卡片仍垂直居中（上下留白相当）',
+        check(where + '：卡片仍垂直居中（上下留白相当）',
           Math.abs(m.above - m.below) <= 60,
           '上 ' + m.above + ' / 下 ' + m.below);
       }
@@ -2297,7 +2312,7 @@ function check(name, cond, extra) {
       const span = m.above + m.below;
       // 屏幕够高的档才判（短屏上卡片已占满一屏，量不出「居中」）
       if (m.above >= 100) {
-        check('登录页 @' + vw + '×' + vh + '（' + label + '）：卡片几乎就在正中间（相对偏差 ≤ 25%）',
+        check(where + '：卡片几乎就在正中间（相对偏差 ≤ 25%）',
           span > 0 && Math.abs(m.above - m.below) / span <= 0.25,
           '偏差 ' + (span > 0 ? Math.round(Math.abs(m.above - m.below) / span * 1000) / 10 : '-') + '%'
             + '（上 ' + m.above + ' / 下 ' + m.below + '）');

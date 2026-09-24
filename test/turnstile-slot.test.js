@@ -165,11 +165,19 @@ const CF_OK = (calls) => ({
     const loginJs = fs.readFileSync(path.join(ROOT, "js/login.js"), "utf8");
     const resetJs = fs.readFileSync(path.join(ROOT, "js/reset.js"), "utf8");
 
-    ["ts-code", "ts-reg", "ts-verify", "ts-forgot", "ts-unverified"].forEach((id) => {
+    // ⚠️ Issue #278 第四轮：`ts-pw` 进了这张表 —— 用户 2026-09-24 明确要求
+    //    「登录页面同样加上 cloudflare 的验证」，服务端（core.js 的
+    //    loginWithPassword）那条路也挂上了闸。原来那条「密码登录不显示
+    //    Turnstile」的断言因此**反过来**：现在必须显示，否则前端不画方框、
+    //    服务端却要 token，谁也不进来。
+    ["ts-pw", "ts-code", "ts-reg", "ts-verify", "ts-forgot", "ts-unverified"].forEach((id) => {
       chk(new RegExp('id="ts-broken-' + id + '"').test(login),
         "登录/注册页每一处挂载点旁边都备了一条失败提示（" + id + "）");
     });
-    chk(!/id="ts-pw"|id="ts-broken-ts-pw"/.test(login), "密码登录不显示服务端不校验的 Turnstile");
+    chk(/id="ts-pw" hidden/.test(login),
+      "密码登录那一屏也挂 Turnstile（Issue #278：服务端那条路现在确实校验它）");
+    // 重设密码页仍然不挂：那一条**没变**（reset-confirm 是点邮件链接进来的，
+    // 那一步已经证明了邮箱可达；reset-request 在登录页上，那一处有方框）。
     chk(!/ts-reset|turnstile\.js/.test(reset), "重设密码页不显示服务端不校验的 Turnstile");
     chk(/ts-broken-/.test(loginJs) && /turnstileBrokenNote/.test(loginJs),
       "js/login.js 在 mount 之后查一次、坏了就把原因写进那条提示");
@@ -211,7 +219,40 @@ const CF_OK = (calls) => ({
   }
 
   {
-    // ⑦b 脚本到得比 siteKey 晚：脚本回来时必须补渲染一次，否则方框永远不出现
+    // ⑦c 脚本「还在路上」不是「坏了」（Issue #278 第五轮 · 真浏览器量出来的）。
+    //
+    // 现场：页面打开时 preload() 插 <script>（Issue #276），紧接着拿到 siteKey
+    // 的 mount() 走 `loadScript().then(renderWidget)` —— 而 loadScript() 那一下
+    // 回的是**已经 resolve 的 Promise**，.then 于是不等脚本到达就跑了
+    // renderWidget，此时 root.turnstile 还没出现，旧实现记下 `no_render_api`
+    // （在 BROKEN 表里）→ 页面上摆出一句**红字**「人机校验脚本没给出可用的接口
+    // （多半是被网络中间层改写了）」。而 300ms 后方框正常画出来、token 也拿到了。
+    // 用户看到的是一个根本不存在的故障。
+    // ⚠️ 这一节要分清**两个时刻**，不能只看「mount 之后」那一个瞬间：
+    //   · 脚本还在路上（前 8 秒内）：`renderWidget()` 被叫到时
+    //     `root.turnstile` 还没出现 —— 这一档**什么都不许记**。
+    //     旧实现在这里记 `no_render_api`（BROKEN 表里的一员），
+    //     于是页面上立刻摆出一句红字「脚本没给出可用的接口（多半是被网络
+    //     中间层改写了）」，而方框半秒后就自己画出来了。
+    //   · 脚本一直没来（过了 loadScript 的 8 秒超时）：那才是真的坏了，
+    //     由 loadScript 的失败分支记 script_timeout，页面上该说话。
+    // 所以判据是「**那一刻** err 是不是 no_render_api」，而不是「最终 err 是不是空」。
+    const { T } = boot(CF_OK, { late: true });
+    if (typeof T.preload === "function") T.preload();
+    await T.mount({ id: "ts-reg" }, { siteKey: "0x4AAAAAAA", enabled: true });
+    chk(T.state().err !== "no_render_api",
+      "⚠️ 脚本还在路上时**不许**记成 no_render_api —— 那会让页面上多一句假红字（Issue #278）");
+    chk(T.state().ready === false, "还没有 token（方框都还没画出来）—— 但也不许拦人");
+    chk(T.gate() === null, "这一档前端不拦人（脚本还在路上，方框马上就到）");
+
+    // 而脚本一路没来（8 秒超时之后）仍然如实说「坏了」，且仍然放行前端
+    chk(T.state().err === "script_timeout" && T.failed() === true,
+      "脚本一直没到（8 秒超时）才记「坏了」，实际 " + T.state().err);
+    chk(T.gate() === null, "超时那一档同样放行前端（方框不存在时不能让人去勾它）");
+  }
+
+  {
+    // ⑦d 脚本到得比 siteKey 晚：脚本回来时必须补渲染一次，否则方框永远不出现
     const { T, calls, arrive } = boot(CF_OK, { late: true });
     if (typeof T.preload === "function") T.preload();
     const mounting = T.mount({ id: "ts-reg" }, { siteKey: "0x4AAAAAAA", enabled: true });
@@ -246,11 +287,17 @@ const CF_OK = (calls) => ({
     // ⑨ 页面结构与接线：脚本在页面打开时就上路，方框在切到那一屏时就挂上
     const login = fs.readFileSync(path.join(ROOT, "login/index.html"), "utf8");
     const loginJs = fs.readFileSync(path.join(ROOT, "js/login.js"), "utf8");
-    chk(!/mountTurnstile\(\s*["']pw["']/.test(loginJs),
-      "密码登录那屏不挂 Turnstile（服务端那里根本不校验，挂了也只是个摆设）");
+    // Issue #278 第四轮改了口径：pw 那一屏**现在挂**（服务端也校验了）。
+    // ⚠️ 两条要一起在：TS_SLOTS 里有 pw（切屏就画）+ 提交时带令牌。
+    //    只有前者 = 用户勾了方框，令牌却没送出去 → 服务端回 E_TURNSTILE；
+    //    只有后者 = 页面上没有方框可勾 → 那句提示指着一个不存在的东西。
+    chk(/TS_SLOTS = \{[\s\S]{0,40}pw:\s*"ts-pw"/.test(loginJs),
+      "密码登录那屏也在 TS_SLOTS 里（服务端那条路挂了闸，前端就得画方框）");
+    chk(/turnstileBlocked\("msg-pw"\)/.test(loginJs), "提交口令前先过前端那道闸");
+    chk(/turnstileToken:\s*turnstileToken\(\)/.test(loginJs), "并且把当前那枚令牌带上（否则必然被服务端拒）");
     const setModeBody = loginJs.slice(loginJs.indexOf("function setMode(mode)"), loginJs.indexOf("function esc("));
     chk(/mountTurnstile\(mode\)/.test(setModeBody),
-      "setMode 里就挂当前面板（用户切到注册屏的那一下，方框已经开始画了）");
+      "setMode 里就挂当前面板（用户切到某屏的那一下，方框已经开始画了）");
     chk(/api\.config\(\)/.test(loginJs) && /mountTurnstile\(state\.mode\)/.test(loginJs),
       "拿到 /api/config 之后把当前面板挂上（那时才第一次知道 siteKey）");
     chk(/TS\.preload\(\)/.test(loginJs),
