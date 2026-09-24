@@ -396,7 +396,7 @@
 
       '<div class="actions report-actions">' +
       '<button type="button" class="btn" id="report-cancel">取消</button>' +
-      '<button type="button" class="btn good primary-btn" id="report-send">发出去</button>' +
+      '<button type="button" class="btn good primary-btn" id="report-send">发送</button>' +
       "</div>" +
       '<p class="report-foot" id="report-foot"></p>' +
       "</div>";
@@ -515,7 +515,7 @@
     }
 
     if (btn) btn.disabled = true;
-    msg("正在发出去……", "");
+    msg("正在发送……", "");
 
     create({
       kind: pickedKind,
@@ -539,7 +539,7 @@
       }
       var reason = r && r.reason;
       if (reason === "guest") {
-        msg("报告要登录后才能发。点「去登录」—— 登录后回来再点一次「发出去」，写好的内容还在。", "warn");
+        msg("报告要登录后才能发。点「去登录」—— 登录后回来再点一次「发送」，写好的内容还在。", "warn");
         showLoginHint();
         return;
       }
