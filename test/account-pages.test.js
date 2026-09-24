@@ -176,7 +176,13 @@ const LOGIN = strip(loginJs), MINE = strip(mineJs), ADMIN = strip(adminJs);
   chk(/AuthCore\.signOut|A\.signOut/.test(MINE), '「我的」页的退出走 AuthCore.signOut()（只清会话）');
   chk((MINE.match(/poem_recite_settings_v1/g) || []).length === 0,
     'js/mine.js 不出现设置域键名（昵称一律走 ProgressStore.patch，见 mine-page 测试）');
-  chk(/退出不删进度/.test(read('mine/index.html')), '界面上如实写「退出不删进度」（长句精简后事实保留）');
+  // ⚠️ 用户 2026-09-21：原先这里有一句「退出不删进度；注销在下面『危险区』」——
+  //    危险区就在同一屏往下一点，两边的动作键各自都写着，整句撤掉。
+  chk(!/退出不删进度/.test(read('mine/index.html')) &&
+      !/退出不删进度/.test(MINE),
+    '「退出不删进度」那句整句撤掉（注销那一张卡就在同一屏，不重复念）');
+  chk(/不动本机背诵进度/.test(read('mine/index.html')),
+    '注销那一句仍如实写着「不动本机背诵进度」（这是**真的会被误解**的一条事实，必须留）');
 
   chk(/delete-step-1/.test(read('mine/index.html')) && /delete-step-2/.test(read('mine/index.html')),
     '注销账号分两步：先说明、再要求重输邮箱');
@@ -421,10 +427,16 @@ const LOGIN = strip(loginJs), MINE = strip(mineJs), ADMIN = strip(adminJs);
   // 用户 2026-09-18：这颗「层级对比」改成链接 —— 它是「去别处看一张表」，
   // 不是「登录 / 退出」那类动作。做成 <a href="/plans/">：不点 JS、
   // 中键新开、键盘可达、还没脚本时也能走。
-  ['/plans/', '/terms/', '/privacy/'].forEach(href => {
+  ['/terms/', '/privacy/'].forEach(href => {
     chk(new RegExp('<a class="kv-link" href="' + href.replace(/\//g, '\\/') + '"').test(mineSettings),
       href + ' 在「关于」卡里是一行「左格本身当链接」（与「设置 · 关于」同一形状）');
   });
+  // ⚠️ 用户 2026-09-21「哪些应该放到我的却放到了设置」：层级对比是**一张表**，
+  //    不是「我的」这一页上的动作；「设置 · 关于」里已经有它一行，这里不重复收。
+  chk(!/href="\/plans\/"/.test(mineSettings),
+    '「我的」页不再重复收「层级对比」（同一件事只在「设置 · 关于」一处给入口）');
+  chk(/link\("\/plans\/",\s*"层级对比"\)/.test(read('js/settings-nav.js')),
+    '「层级对比」那一行仍在「设置 · 关于」里（用户 2026-09-18 点名放的位置）');
   chk(/id="sync-conflict"/.test(mineSettings),
     '需要你裁决时那个冲突面板仍留着（有冲突才铺开）');
   chk(/<label class="switch sync-row"[\s\S]{0,400}?id="toggle-sync"[\s\S]{0,200}?switch-toggle/.test(mineSettings),
@@ -442,9 +454,9 @@ const LOGIN = strip(loginJs), MINE = strip(mineJs), ADMIN = strip(adminJs);
   chk(!/guest-card/.test(SRC.profile),
     '那块「未登录引导」整块撤掉（不留空壳容器）');
 
-  chk(/bt\.textContent = id\.signedIn \? "管理登录状态" : "登录"/.test(MINE) ||
-      /"管理登录状态"\s*:\s*"登录"/.test(MINE),
-    '未登录那颗键就叫「登录」（不把理由写在按钮上）');
+  chk(/bt\.textContent = id\.signedIn \? "账号" : "登录"/.test(MINE) ||
+      /"账号"\s*:\s*"登录"/.test(MINE),
+    '未登录那颗键就叫「登录」（不把理由写在按钮上；已登录换「账号」）；');
 
   chk(!/id="login-hint"/.test(stripHtml(mineSettings)) &&
     !/login-hint/.test(MINE) && !/diffLine/.test(MINE),
@@ -510,8 +522,8 @@ const LOGIN = strip(loginJs), MINE = strip(mineJs), ADMIN = strip(adminJs);
   // 「关于」卡：三行链接 + 同步开关 + 管理后台（原先在个人中心那张卡里）
   const about = d0.getElementById('about-card');
   chk(!!about, '「我的」页上画出了「关于」卡（#about-card）');
-  chk(!!about.querySelector('a[href="/plans/"]'),
-    '「层级对比」在「关于」卡里是一行链接（原先它在个人中心的身份卡那一行）');
+  chk(!about.querySelector('a[href="/plans/"]'),
+    '「关于」卡里不再重复收「层级对比」（它只在「设置 · 关于」一处）');
   chk(!!about.querySelector('a[href="/terms/"]') && !!about.querySelector('a[href="/privacy/"]'),
     '用户协议与隐私条款两条入口也在这张卡里');
 
@@ -529,10 +541,10 @@ const LOGIN = strip(loginJs), MINE = strip(mineJs), ADMIN = strip(adminJs);
   const req = A.requestCode(store, { channel: 'email', value: 'zhangmin@163.com' }, 'login');
   A.verifyCode(store, req.codeId, req.code, 'login');
   W.document.dispatchEvent(new W.Event('DOMContentLoaded', { bubbles: true }));
-  chk(W.document.getElementById('btn-account-entry').textContent === '管理登录状态',
-    '已登录时那颗键换成「管理登录状态」（仍落在 /login/，不是死路）');
+  chk(W.document.getElementById('btn-account-entry').textContent === '账号',
+    '已登录时那颗键换成「账号」（仍落在 /login/，不是死路）');
   chk(W.document.getElementById('btn-sign-out').hidden === false,
-    '已登录时「退出登录」露出来（与「管理登录状态」同一行）');
+    '已登录时「退出登录」露出来（与「账号」同一行）');
 }
 
 {

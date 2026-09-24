@@ -6,7 +6,7 @@
       key: "general",
       href: "/settings/general/",
       title: "通用",
-      desc: "用户名、账号、数据备份"
+      desc: "数据备份 · 课内诗词导出"
     },
     {
       key: "recite",
@@ -29,7 +29,7 @@
     }
   ];
 
-  var APP_VERSION = "1.0 (v193)";
+  var APP_VERSION = "1.0 (v194)";
   var APP_VERSION_NAME = "跬步 · 古诗词背诵";
 
   function esc(s) {
@@ -89,6 +89,13 @@
       kvRow("应用", esc(APP_VERSION_NAME)) +
       kvRow("版本", esc(APP_VERSION)) +
       kvRow("离线缓存", esc(cached)) +
+      "</div>" +
+      // 「这几页去哪儿看」与上面对齐：左列自己就是链接，右列留空。
+      // 分成两段是因为上面三行是**这台应用自己的事**（叫什么 / 哪一版 /
+      // 能不能离线），下面四行是**另外几张页**；凑在一个表里，用户会以为
+      // 「层级对比」也是设置里的一项。
+      '<h2 class="settings-about-title">页面</h2>' +
+      '<div class="kv-list">' +
       kvRow(link("/plans/", "层级对比"), "") +
       kvRow(link("/terms/", "用户协议"), "") +
       kvRow(link("/privacy/", "隐私条款"), "") +

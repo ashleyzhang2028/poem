@@ -920,7 +920,6 @@
     $("btn-forgot").addEventListener("click", function () { setMode("forgot"); msg("msg-forgot", ""); });
     $("btn-back-login").addEventListener("click", function () { setMode("pw"); });
     $("btn-back-login2").addEventListener("click", function () { setMode("pw"); });
-    $("btn-back-login3").addEventListener("click", function () { setMode("pw"); });
 
     var later = $("btn-verify-later");
     if (later) later.addEventListener("click", function () { setMode("pw"); });

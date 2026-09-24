@@ -339,14 +339,21 @@ console.log('\n=== 七、子用户那一块的接线与收口（js/family-ui.js�
   chk(/if \(left > 0\) \{[\s\S]{0,200}btn-family-add/.test(uiJs),
     '那颗键整块在 left > 0 的分支里（不是在画完之后再拿 CSS 遮住）');
 
-  // ---- Issue #209：上限那一行把各层的名额一并写出来 ----
-  chk(/Pro 用户可建/.test(uiJs) && /Max 用户可建/.test(uiJs),
-    '上限那一行写出 Pro / Max 各能建几个（用户 2026-09-18 要给的那句话）');
-  chk(/CAPS\["profile\.family"\]|CAPS\['profile\.family'\]/.test(uiJs),
-    '名额数字取自 Entitlement.CAPS["profile.family"]（不手抄一份 3 / 180）');
+  // ---- 上限那一行只说「现在到哪」----
+  //
+  // ⚠️ Issue #209 时这一行把 Free / Pro / Max 三档名额全背了一遍
+  //    （「当前 1 / 1 个，Pro 用户可建 3 个，Max 用户可建 180 个」）。
+  //    用户 2026-09-21「不要废话太多」：这一行缩到「当前 N / M 个」——
+  //    上限本身由「再建一个（还可建 N 个）」那颗键与 /plans/ 那张表各自说清。
+  chk(!/Pro 用户可建|Max 用户可建/.test(uiJs),
+    '上限那一行不再把各层名额全背一遍（只说现在到哪）');
+  chk(/当前 " \+ count \+ " \/ "/.test(uiJs),
+    '它写的是「当前 N / M 个」这一句（实际就是这一句）');
+  chk(/CAPS\["profile\.family"\]|CAPS\['profile\.family'\]/.test(uiJs) ||
+      /function limitLine/.test(uiJs),
+    '名额数字仍取自 Entitlement.CAPS["profile.family"]（不手抄一份 3 / 180）');
   chk(!/180/.test(strip(uiJs)) && !/\b3\b/.test(strip(uiJs).replace(/zh-CN|UTF-8/g, '')),
     'js/family-ui.js 里不出现写死的 3 / 180（数字只有一个来源）');
-  chk(/quotas/.test(uiJs), '它读的是内核能力表里的 quotas 那一栏');
 }
 
 console.log('\n=== 七之二、备份：名册跟着走 ===');
@@ -422,8 +429,8 @@ if (!JSDOM) {
     eq(wf.document.querySelectorAll('.family-row').length, 1, '真页面：Free 一进来就有 1 个子用户（认领出来的）');
     const freeHint = wf.document.getElementById('family-hint').textContent;
     chk(/当前 1 \/ 1 个/.test(freeHint), '真页面：如实写「1 / 1 个」（上限只有一个来源）');
-    chk(/Pro 用户可建 3 个/.test(freeHint) && /Max 用户可建 180 个/.test(freeHint),
-      '真页面：同一行写出 Pro / Max 各能建几个（实际「' + freeHint + '」）');
+    chk(!/Pro 用户可建|Max 用户可建/.test(freeHint),
+      '真页面：那一行只说现在到哪，不再把三档名额全念一遍（实际「' + freeHint + '」）');
     chk(!/Free 用户可建/.test(freeHint),
       '真页面：当前就是 Free，不再重复写一遍「Free 用户可建 1 个」');
     chk(!wf.document.getElementById('btn-family-add'),

@@ -1133,13 +1133,6 @@ textarea:focus {
 }
 .crop-btns { display: flex; gap: 10px; margin-top: 8px; }
 .crop-btns .btn { flex: 1; }
-.crop-hint {
-  font-size: 11.5px;
-  color: var(--ink-3);
-  margin: 8px 0 0;
-  text-align: center;
-}
-
 .family-panel { display: flex; flex-direction: column; gap: 6px; }
 .family-row {
   display: flex;
@@ -1527,21 +1520,12 @@ body.has-install-tip #app {
 
 .settings-index { margin-top: 4px; }
 
-.settings-link-desc .tier-badge { margin-left: 6px; }
-.settings-link-title .tier-badge { margin-left: 6px; }
-
-.account-line {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin: 0 0 8px;
-  font-size: 13.5px;
-  color: var(--ink);
-}
-.account-state { font-weight: 600; }
-.account-state.ok { color: var(--green); }
-.account-mask { color: var(--ink-2); }
+/* ⚠️ 原先这里有 `.account-line / .account-state / .account-mask` 三条 ——
+   它们画的是「设置 · 通用」里那行「已登录 a***@b.com <徽章>」。
+   2026-09-21：账号那一项整块收回「我的」页（那种一行「状态 + 掩码 + 徽章」
+   的画法也随之没有落点），三条规则一起撤。
+   另两条 `.settings-link-desc .tier-badge`（在设置入口那一行里挂徽章）
+   同样没有落点了 —— 入口那一行现在只写「这一组管什么」。 */
 .tier-badge {
   flex: none;
   padding: 1px 8px;

@@ -332,31 +332,32 @@ const plansCommentOnly = pageJs;
 
 {
 
-  chk(/\/plans\//.test(mineHtml), '「我的」页有进对比页的入口（它在「关于」卡里）');
-  chk(/id="about-card"[\s\S]{0,900}?href="\/plans\//.test(mineHtml),
-    '那一行落在「关于」卡里（2026-09-20 随个人中心那张卡并进来）');
+  // ⚠️ 用户 2026-09-21「哪些应该放到我的却放到了设置，等等」又回头捋了一遍：
+  //    层级对比是**一张表**（一页），不是「我的」这一页上的动作 ——
+  //    它已经在「设置 · 关于」里有一行（用户 2026-09-18 亲自点名的位置），
+  //    「我的」页不再重复收一份。
+  //    守的是两半：① 「我的」页不再有第二个入口；② 设置那一个还在、还是链接。
+  chk(!/\/plans\//.test(mineHtml), '「我的」页不再重复收「层级对比」的入口');
+  chk(!/btn-go-plans/.test(mineHtml) && !/btn-go-plans/.test(mineJs),
+    '那颗旧的按钮连 id 都不回来（不留一颗没人用的键）');
+  chk(!/location\.href = "\/plans\//.test(mineJs),
+    'js/mine.js 里没有为它绑的跳转');
 
-  // 用户 2026-09-18：这一颗改成链接。<a href="/plans/"> 自己带着地址 ——
-  // 不点 JS、中键新开、键盘可达，还没跑脚本时也走得通。
-  chk(/<a class="kv-link" href="\/plans\/">层级对比<\/a>/.test(mineHtml),
-    '它是一个 <a href="/plans/"> 链接（用户 2026-09-18：这颗键改成链接）');
-  chk(!/<button[^>]*href="\/plans\/"/.test(mineHtml) && !/btn-go-plans/.test(mineHtml),
-    '它不再是一颗 <button>（那个 id 也不留了）');
-  chk(!/location\.href = "\/plans\/"/.test(mineJs),
-    'js/mine.js 不为它绑一段跳转（地址就写在 <a> 上）');
+  const nav = read('js/settings-nav.js');
+  chk(/link\("\/plans\/",\s*"层级对比"\)/.test(nav),
+    '「层级对比」那一行在「设置 · 关于」里（地址就写在 <a> 上，不点 JS）');
+  chk(!/>查看<\/a>/.test(nav), '它不另挂一颗「查看」（链接本身就说清了）');
 
   chk(/Ent\.compare\(/.test(PAGE), '对比表一律由 compare() 生成（清单的唯一一处）');
   chk(!/Ent\.matrix\(/.test(mineJs),
     '「我的」页不自己画一遍能力清单（同一件事只在一页说）');
-  chk(/层级对比/.test(stripHtml(mineHtml)),
-    '那一行文案说清它去哪（「层级对比」—— 与页名同一个词，用户 2026-09-18 点名）');
 }
 
 {
   chk(sw.indexOf('"./plans/"') >= 0, 'sw.js 预缓存里有 ./plans/（断网也进得去）');
   chk(sw.indexOf('"./js/plans.js"') >= 0, 'sw.js 预缓存里有 js/plans.js');
   const ver = parseInt((sw.match(/poem-app-v(\d+)/) || [0, '0'])[1], 10);
-  chk(ver >= 188, '缓存版本已跟着提（本轮 Issue #244 改了入口所在的那一页，实际 v' + ver + '）');
+  chk(ver >= 194, '缓存版本已跟着提（本轮收了账号 / 同步两块 + 精简提示，实际 v' + ver + '）');
   const list = [...sw.matchAll(/"(\.\/[^"]+)"/g)].map(m => m[1]);
   const missing = list.filter(u => {
     if (u === './') return false;

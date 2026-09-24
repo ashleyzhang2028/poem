@@ -81,18 +81,11 @@
     return String(n);
   }
 
+  // 名额那一行只说**现在到哪**：上限本身由「再建一个（还可建 N 个）」那颗键
+  // 与 /plans/ 那张对照表各自说清，这里不再把三档数字全背一遍
+  // （用户 2026-09-21：不要废话太多）。
   function limitLine(count, lim) {
-    const E = entitlementMod();
-    const caps = E && E.CAPS ? E.CAPS["profile.family"] : null;
-    const head = "当前 " + count + " / " + quoText(lim) + " 个";
-    const q = caps && caps.quotas ? caps.quotas : null;
-    if (!q || lim === Infinity) return head;
-    const others = [];
-    if (q.free > lim) others.push("Free 用户可建 " + quoText(q.free) + " 个");
-    if (q.pro > lim) others.push("Pro 用户可建 " + quoText(q.pro) + " 个");
-    if (q.max > lim) others.push("Max 用户可建 " + quoText(q.max) + " 个");
-    if (!others.length) return head;
-    return head + ", " + others.join(", ");
+    return "当前 " + count + " / " + quoText(lim) + " 个";
   }
 
   function switchFamily(id) {

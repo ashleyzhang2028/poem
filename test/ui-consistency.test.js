@@ -742,14 +742,17 @@ PAGE_FILES.forEach(f => {
 })();
 
 {
-  const genHtml = read('settings/general/index.html');
+  // ⚠️ 用户 2026-09-21「哪些应该放到我的却放到了设置」：跨设备同步开关
+  //    从「设置 · 通用」收回「我的」页（全场只有一处）。这一档量的**结构**
+  //    不变，只是改到它现在真正住的那张页上取。
+  const genHtml = read('mine/index.html');
   const usedHtml = stripHtml(genHtml);
 
-  chk(/class="switch"[\s\S]{0,400}class="switch-input"[\s\S]{0,200}class="switch-toggle"/.test(usedHtml),
-    '设置页的开关是 <label.switch> 包着 input 与轨道（点文字 = 点开关）');
+  chk(/class="switch sync-row"[\s\S]{0,400}class="switch-input"[\s\S]{0,200}class="switch-toggle"/.test(usedHtml),
+    '同步开关是 <label.switch> 包着 input 与轨道（点文字 = 点开关）');
   chk(/id="toggle-sync"[\s\S]{0,200}role="switch"/.test(usedHtml),
     '开关带 role="switch"（读屏念得出「开关」，而不是「复选框」）');
-  chk(/aria-labelledby="switch-sync-name"/.test(usedHtml),
+  chk(/aria-labelledby="sync-name"/.test(usedHtml),
     '开关用 aria-labelledby 指向左侧项名（读屏念得出「跨设备同步，开关」）');
   chk(!/id="sync-label"/.test(usedHtml),
     '旧的那颗「关」/「开」文字标签已经拿掉（状态由开关本体表达）');
@@ -829,11 +832,11 @@ PAGE_FILES.forEach(f => {
     console.log('(未安装 jsdom，跳过「开关真的画得出来」的真实渲染断言 —— npm i jsdom 可启用)');
   } else {
     const sheet = '<style>' + css.replace(/<\/style>/gi, '') + '</style>';
-    const d = new JSDOM(genHtml, { url: 'https://local.test/settings/general/' });
+    const d = new JSDOM(genHtml, { url: 'https://local.test/mine/' });
     d.window.document.head.insertAdjacentHTML('beforeend', sheet);
     const win = d.window, doc = win.document;
     const input = doc.getElementById('toggle-sync');
-    chk(!!input, '设置 · 通用里能取到那颗同步开关');
+    chk(!!input, '「我的」页里能取到那颗同步开关');
     if (input) {
       const box = input.nextElementSibling;
       chk(!!box && box.classList.contains('switch-toggle'),
@@ -913,7 +916,9 @@ PAGE_FILES.forEach(f => {
   chk(noneWriters.length <= 1,
     '除全局那条外，各页面文件里不再各写一遍 text-decoration: none（实际 ' + noneWriters.length + ' 条）');
 
-  const genHtml0 = read('settings/general/index.html');
+  // 开关那一组类名现在住在「我的」页上（见上一节）。
+  const genHtml0 = read('mine/index.html').indexOf('switch-input') >= 0
+    ? read('mine/index.html') : read('settings/general/index.html');
   const usedSwitchCls = ['switch', 'switch-input', 'switch-toggle'].filter(cls =>
     new RegExp('class="[^"]*\\b' + cls + '\\b').test(stripHtml(genHtml0)));
   chk(usedSwitchCls.length >= 3, '设置页的开关用到了 switch / switch-input / switch-toggle 三个类名');
@@ -996,8 +1001,9 @@ if (JSDOM) {
 }
 
 if (JSDOM) {
-  const doc = new JSDOM(read('settings/general/index.html'),
-    { url: 'https://local.test/settings/general/' }).window.document;
+  // 开关现在住「我的」页（用户 2026-09-21 从「设置 · 通用」收回）。
+  const doc = new JSDOM(read('mine/index.html'),
+    { url: 'https://local.test/mine/' }).window.document;
   const input = doc.getElementById('toggle-sync');
   const track = doc.querySelector('.switch-toggle');
   chk(!!input && !!track, '开关的 input / 轨道两样都在 DOM 里（状态由是否选中表达）');

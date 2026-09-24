@@ -71,12 +71,9 @@
     var input = $("input-nickname");
     if (input && document.activeElement !== input) input.value = nicknameValue();
 
-    var hint = $("identity-hint");
-    if (hint) {
-      hint.hidden = !id.signedIn;
-      hint.textContent = id.signedIn ? "层级" + tierSourceLine(id) + "。" : "";
-    }
-
+    // ⚠️ 这里原先还有一行「层级由服务器判定。/ 层级本机登记。」——
+    //    结论就是旁边那枚徽章（Free / Pro / Max），「判定」这一步是内部实现，
+    //    用户在这一页不需要知道，整行撤掉（挂载点一起走，不留空壳）。
     renderSignOut(id);
   }
 
@@ -84,20 +81,15 @@
 
     var btn = $("btn-account-entry");
     var out = $("btn-sign-out");
-    var hint = $("signout-hint");
     if (btn) {
-      btn.textContent = id.signedIn ? "管理登录状态" : "登录";
+      // 用户 2026-09-21：「管理登录状态」是五个字的绕话 —— 它就是「账号」。
+      btn.textContent = id.signedIn ? "账号" : "登录";
       if (!btn.dataset.bound) {
         btn.dataset.bound = "1";
         btn.addEventListener("click", function () { location.href = "/login/"; });
       }
     }
     if (out) out.hidden = !id.signedIn;
-    if (hint) hint.hidden = !id.signedIn;
-  }
-
-  function tierSourceLine(id) {
-    return id && id.tierSource === "server" ? "由服务器判定" : "本机登记";
   }
 
   function renderStats() {
@@ -144,7 +136,7 @@
       : (acc.identities[0] ? acc.identities[0].mask : "（无邮箱）");
     var rows = [
       ["账号", email],
-      ["本次登录", "还剩 " + days + " 天"]
+      ["登录还有", days + " 天"]
     ];
     list.innerHTML = rows.map(function (r) {
       return '<div class="kv-row"><span class="kv-k">' + esc(r[0]) +
@@ -166,11 +158,11 @@
     var deliverable = ch && ch.emailDeliverable === true;
     if (el) {
       if (gated && !deliverable) {
-        el.textContent = "邮箱还没确认。这台服务器现在是**要求确认后才能登录**的，但它没能把确认邮件发出去（发信商还没配好）——点下面那颗重发试试，或者让站长先把发信商配好。";
+        el.textContent = "邮箱还没确认；邮件也还没发出去（发信商没配好）。先点下面那颗重发。";
       } else if (gated) {
-        el.textContent = "邮箱还没确认。默认口径是「确认之后才能登录」；你能站在这里，说明这台服务器当前**没有**拦它。";
+        el.textContent = "邮箱还没确认；这台服务器当前没有拦它。";
       } else {
-        el.textContent = "邮箱还没确认。这台服务器**没有**拦「没确认就不让登录」，确认只影响将来找回密码。";
+        el.textContent = "邮箱还没确认；确认只影响将来找回密码。";
       }
     }
     show(row);
@@ -196,8 +188,7 @@
       if (el) {
         el.textContent = r.verifySent
           ? "确认邮件已发往 " + (r.emailMask || "你的邮箱") + "。"
-          : "这台服务器现在没能把邮件发出去（已试 " + (Number(r.verifyAttempts) || 1)
-            + " 次）。稍后再试，或联系管理员。";
+          : "邮件没发出去（已试 " + (Number(r.verifyAttempts) || 1) + " 次），稍后再试。";
       }
       showToast(r.verifySent ? "确认邮件已发出" : "没能发出去");
     }, function () {
@@ -290,11 +281,11 @@
 
     var line;
     if (r.remote === "deleted") {
-      line = "账号已注销：账号与云端进度都已在服务器上删除，那一份已导出给你。这台设备上的背诵进度仍在。";
+      line = "账号与云端进度都已删除，那一份已导出给你；本机背诵进度仍在。";
     } else if (r.remote === "skipped") {
-      line = "本机账号已注销。但没连上服务器，云端那一份还在 —— 网络恢复后再注销一次，或在服务器上删除。";
+      line = "本机账号已注销；没连上服务器，云端那一份还在 —— 联网后再注销一次。";
     } else {
-      line = "账号已注销。这台设备上的背诵进度仍在。";
+      line = "账号已注销；本机背诵进度仍在。";
     }
     if (msg) { msg.textContent = line; msg.className = "account-msg " + (r.remote === "skipped" ? "warn" : "ok"); }
     showToast(r.remote === "skipped" ? "已注销本机账号；云端那一份没删掉" : "账号已注销，背诵进度仍在");
@@ -546,7 +537,7 @@
 
     if (!S) {
       input.disabled = true;
-      hint.textContent = "同步层没加载成功，刷新页面重试（背诵不受影响）。";
+      hint.textContent = "同步层没加载出来，刷新页面重试。";
       hide($("sync-conflict"));
       return;
     }
@@ -568,7 +559,7 @@
           ? ""
           : st === "signin"
             ? "已开启，登录后才会真的同步。"
-            : "开启中：进度、账号设置、自选集合、集子已读、今日加背、头像都会同步；本机那份始终完整，断网照常背。";
+            : "已开启：本机那份始终完整，断网照常背。";
 
     renderConflict(S, !!sess());
   }
@@ -613,10 +604,8 @@
     var localCount = 0;
     try { localCount = Object.keys(window.ProgressStore.all() || {}).length; } catch (e) { localCount = 0; }
     if (lead) {
-      lead.textContent = "有 " + list.length + " 篇两边都改过，判不出该听谁的，未自动合并。" +
-        "本机共 " + localCount + " 篇。" +
-        (signedIn ? "" : "请先登录再选。") +
-        "选「保留账号」前会先在本机留一份快照。";
+      lead.textContent = "这 " + list.length + " 篇两边都改过，需要你选一份（这边一共 " + localCount + " 篇）。" +
+        (signedIn ? "" : "请先登录再选。");
     }
     show(box);
   }

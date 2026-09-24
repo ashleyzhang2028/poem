@@ -143,8 +143,8 @@ const css = read('css/style.css') + read('css/account.css');
   chk(!/location\.href = "\/plans\/"/.test(strip(MINE_JS)),
     '「我的」页一个字都不提 /plans/（那一页的入口只在设置「关于」里）');
   chk(/id\.signedIn/.test(MINE_JS), '账号入口的文案按 id.signedIn 分两种（不自己另算一遍登录态）');
-  chk(/\?\s*"管理登录状态"\s*:\s*"登录"/.test(MINE_JS) || /"登录"\s*:\s*"管理登录状态"/.test(MINE_JS),
-    '未登录「登录」/ 已登录「管理登录状态」（实际就是这两句）');
+  chk(/\?\s*"账号"\s*:\s*"登录"/.test(MINE_JS) || /"登录"\s*:\s*"账号"/.test(MINE_JS),
+    '未登录「登录」/ 已登录「账号」（用户 2026-09-21：「管理登录状态」是五个字的绕话）');
   chk(/location\.href = "\/login\/"/.test(MINE_JS), '账号入口落在 /login/');
 
   chk(/id="danger-card"/.test(MINE) && /class="account-card danger-zone"/.test(MINE),
@@ -329,11 +329,11 @@ function boot(seed) {
   chk(!!d0.getElementById('family-panel'), '（真页面）子用户那一块画出来了');
   chk(!d0.getElementById('btn-family-add'),
     '（真页面）Free 只剩 0 个名额时**不摆**「再建一个」（摆一颗点不动的键没有意义）');
-  chk(/当前 1 \/ 1 个/.test(d0.getElementById('family-hint').textContent) &&
-      /Pro 用户可建 3 个/.test(d0.getElementById('family-hint').textContent) &&
-      /Max 用户可建 180 个/.test(d0.getElementById('family-hint').textContent),
-    '（真页面）上限那一行如实写出各层的名额（实际「' +
+  chk(/当前 1 \/ 1 个/.test(d0.getElementById('family-hint').textContent),
+    '（真页面）上限那一行只说现在到哪（实际「' +
     d0.getElementById('family-hint').textContent + '」）');
+  chk(!/Pro 用户可建|Max 用户可建/.test(d0.getElementById('family-hint').textContent),
+    '（真页面）不再把 Free / Pro / Max 三档名额全背一遍（那些数字在 /plans/ 那张表上）');
 
   const order0 = [...d0.querySelectorAll('#mine-page > section')].map(s => s.id);
   chk(order0.indexOf('family-item') >= 0 && order0.indexOf('family-item') < order0.indexOf('stats-card'),
@@ -379,18 +379,18 @@ function boot(seed) {
   chk(/玥/.test(d1.getElementById('identity-row').textContent),
     '（真页面）身份行跟着换成新昵称（头像那枚首字也在里面）');
 
-  // 头像：本机有图且还没传上服务器 → 「未同步」
+  // 头像：本机有图就当场看得到 —— 页面上不再摆「已同步 / 未同步」那一行
   const w2 = boot({
     poem_avatar_local_v1: JSON.stringify({ v: 1, img: 'data:image/png;base64,iVBORw0KGgo=' })
   });
   await new Promise(r => setTimeout(r, 300));
   const d2 = w2.document;
-  chk(d2.getElementById('avatar-hint').textContent === '未同步',
-    '（真页面）本机有图、服务器上还没有时写「未同步」（用户 2026-09-18 点名的那句，' +
-    '原先写「已存在本机，还没同步到服务器」，实际「' +
-    d2.getElementById('avatar-hint').textContent + '」）');
-  chk(!/已存在本机/.test(d2.getElementById('mine-page').textContent),
-    '（真页面）页面上不再出现「已存在本机」那句长文案');
+  chk(!d2.getElementById('avatar-hint'),
+    '（真页面）不再有「已同步 / 未同步」那一行（用户 2026-09-21：能省则省）');
+  chk(!/已存在本机|未同步|已同步/.test(d2.getElementById('mine-page').textContent),
+    '（真页面）页面上不再出现同步状态那几句（图本身在左边那枚印里看得见）');
+  chk(!!d2.querySelector('#avatar-slot .avatar-img') || !!d2.querySelector('#avatar-slot img'),
+    '（真页面）本机有图就当场画出来（这才是那条状态唯一的用处）');
 
   console.log('\n' + (fails ? '❌ ' + fails + ' 项失败' : '🎉 「我的」页测试全部通过'));
   process.exit(fails ? 1 : 0);

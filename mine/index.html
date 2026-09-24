@@ -28,14 +28,10 @@
     <main class="account-page" id="mine-page">
       <section class="account-card">
         <div class="identity-row" id="identity-row"></div>
-        <p class="account-hint" id="identity-hint"></p>
-
         <div class="identity-btns">
           <button class="mini-btn ghost" id="btn-avatar-pick" type="button">上传头像</button>
           <button class="mini-btn ghost" id="btn-avatar-clear" type="button" hidden>删除头像</button>
         </div>
-
-        <p class="settings-hint" id="avatar-hint"></p>
 
         <input id="avatar-file" class="sr-only" type="file" accept="image/*"
                aria-label="选择头像图片" />
@@ -52,7 +48,6 @@
               <button class="btn ghost-btn" id="btn-crop-cancel" type="button">取消</button>
               <button class="btn" id="btn-crop-ok" type="button">用这张</button>
             </div>
-            <p class="crop-hint" id="crop-hint">拖动图片调整位置，双指或滑杆缩放</p>
           </div>
         </div>
 
@@ -60,7 +55,6 @@
 
       <section class="account-card" id="family-item">
         <h2 class="account-card-title">子用户</h2>
-        <p class="settings-hint family-lead">一个孩子一份进度，各背各的。</p>
         <div class="family-panel" id="family-panel"></div>
         <p class="settings-hint" id="family-hint"></p>
       </section>
@@ -92,15 +86,16 @@
           <button class="account-btn ghost" id="btn-sign-out" type="button" hidden>退出登录</button>
         </div>
 
-        <p class="account-hint" id="signout-hint" hidden>退出不删进度；注销在下面「危险区」。</p>
       </section>
 
       <section class="account-card" id="about-card">
         <h2 class="account-card-title">关于</h2>
+        <!-- 法务两条在这儿，层级对比 / 自检 / 我的报告在「设置 · 关于」那一处 ——
+             同一件事只在**一处**给入口，用户不用记住「哪个入口在哪个页」。
+             ⚠️ Issue #244 把个人中心那张卡的层级对比一起搬了过来，本行不重复收它。 -->
         <div class="kv-list">
           <div class="kv-row"><span class="kv-k"><a class="kv-link" href="/terms/">用户协议</a></span><span class="kv-v"></span></div>
           <div class="kv-row"><span class="kv-k"><a class="kv-link" href="/privacy/">隐私条款</a></span><span class="kv-v"></span></div>
-          <div class="kv-row"><span class="kv-k"><a class="kv-link" href="/plans/">层级对比</a></span><span class="kv-v"></span></div>
         </div>
 
         <label class="switch sync-row" id="sync-row">
@@ -129,7 +124,7 @@
       <section class="account-card danger-zone" id="danger-card">
         <h2 class="account-card-title danger-title">注销账号</h2>
         <p class="account-lead">
-          注销会删掉账号与服务器上的云端进度（云端那份先导给你留档），<strong>不动本机背诵进度</strong>。想连本机一起清，去「设置 · 通用」。
+          注销会删掉账号与服务器上的云端进度（云端那份先导给你留档），<strong>不动本机背诵进度</strong>。想连本机一起清：<a class="kv-link" href="/settings/general/">清空进度</a>。
         </p>
         <div id="delete-step-1">
           <button class="account-btn danger" id="btn-delete-start" type="button">我要注销账号</button>

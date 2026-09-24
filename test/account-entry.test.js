@@ -81,8 +81,8 @@ function repaint(p) {
 {
   chk(/id="btn-account-entry"/.test(SRC.mine),
     '「我的」页的账号卡里有账号入口（个人中心删掉后它是唯一的枢纽）');
-  chk(/"管理登录状态"\s*:\s*"登录"/.test(MINE_JS) || /id\.signedIn/.test(MINE_JS),
-    '那颗入口的文案由 js/mine.js 按登录态写（不在 HTML 里写死两处）');
+  chk(/"账号"\s*:\s*"登录"/.test(MINE_JS) || /id\.signedIn/.test(MINE_JS),
+    '那颗入口的文案由 js/mine.js 按登录态写（不在 HTML 里写死两处；已登录叫「账号」）');
   chk(/location\.href = "\/login\/"/.test(MINE_JS),
     '账号入口落在 /login/');
   chk(/id\.signedIn/.test(MINE_JS.slice(MINE_JS.indexOf('function renderSignOut'))),
@@ -157,8 +157,9 @@ function repaint(p) {
   signIn(p.window, 'belem@example.com');
   repaint(p);
 
-  chk(entryBtn(p).textContent === '管理登录状态',
-    '已登录时那颗键换成「管理登录状态」（实际「' + entryBtn(p).textContent + '」）');
+  // 用户 2026-09-21：「管理登录状态」是五个字的绕话 —— 那颗键就是「账号」。
+  chk(entryBtn(p).textContent === '账号',
+    '已登录时那颗键就是「账号」（实际「' + entryBtn(p).textContent + '」）');
   chk(shownIds(p).join(',') === 'btn-account-entry,btn-sign-out',
     '已登录时两颗键（管理登录状态 / 退出）在同一行（实际 ' + shownIds(p).join(',') + '）');
   const innText = stripHtml(p.doc.getElementById('identity-row').outerHTML);
@@ -310,7 +311,7 @@ function repaint(p) {
   chk(/\.\/mine\//.test(SW) && /\.\/js\/mine\.js/.test(SW),
     '「我的」页与 js/mine.js 都在预缓存清单里（断网也进得去）');
   const ver = parseInt((SW.match(/poem-app-v(\d+)/) || [0, '0'])[1], 10);
-  chk(ver >= 143, '缓存版本跟着提（本轮改了 3 份 js + css，实际 v' + ver + '）');
+  chk(ver >= 194, '缓存版本跟着提（本轮改了多份 js + css + 页面文案，实际 v' + ver + '）');
   const design = read('docs/auth-design.md');
   chk(/账号入口|入口动线/.test(design),
     'docs/auth-design.md 里记了账号入口的动线（D 这一步）');
