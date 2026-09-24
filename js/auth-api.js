@@ -225,12 +225,16 @@
         }, PASSWORD_ERR);
       },
 
+      // 口令登录（Issue #278 第四轮起也带人机校验的令牌）。
+      // `turnstileToken()` 是这一层自己的兜底：拿不到令牌时它是空串，
+      // 而没配人机校验的服务端对空串同样放行 —— 两边都不需要谁来特判。
       login: function (input) {
         input = input || {};
         return post("/login", {
           email: input.email,
           password: input.password,
-          deviceId: deviceId
+          deviceId: deviceId,
+          turnstileToken: input.turnstileToken != null ? input.turnstileToken : turnstileToken()
         }, PASSWORD_ERR);
       },
 

@@ -934,6 +934,30 @@ function verifyEmail(deps, input) {
 }
 
 function loginWithPassword(deps, input) {
+  var cfg = deps.cfg;
+
+  // 口令登录这条路**也挂人机校验**（Issue #278 第四轮）。
+  //
+  // ⚠️ 这一条是**在用户的明示要求下**加的，动手前先把原来那条口径记住：
+  //    「login 不挂人机校验 —— 它本来就有凭据（口令猜中才能过）」。
+  //    那条口径本身没错（口令就是一道闸），
+  //    ⚠️ 但它挡不住**撞库**：攻击者拿一批泄露的邮箱 + 常见口令逐个试，
+  //       每次都是「有凭据」的合法请求 —— 频控（设备 / IP）拦得住量，
+  //       拦不住「慢速、换 IP、只打几个账号」这种。
+  //    人机校验正好补这一段：口令可以是偷来的，但「坐在浏览器前的人」
+  //    这件事偷不走。
+  //
+  // 口径与别的挂载点一致：**没配就照旧放行**（turnstileReady 为 false 时
+  // turnstile.guard 回 ok:true/skipped），所以本地开发、CI、没接 Cloudflare
+  // 的实例一个字都不用改。配了之后前端（js/login.js / js/turnstile.js）
+  // 会像别的屏一样把方框挂到密码那一屏上。
+  return humanGuard(deps, input).then(function (blocked) {
+    if (blocked) return blocked;
+    return loginWithPasswordAfterGuard(deps, input);
+  });
+}
+
+function loginWithPasswordAfterGuard(deps, input) {
   var cfg = deps.cfg, store = deps.store, limiter = deps.limiter, t = deps.now();
   var email = id.normalizeEmailForStore(input.email != null ? input.email : input.value);
   var pw = String(input.password == null ? "" : input.password);
