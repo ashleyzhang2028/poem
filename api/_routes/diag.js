@@ -90,31 +90,53 @@ function writeProbe(d) {
   var KEY = String(d.cfg.supabaseServiceKey || "");
   var base = String(d.cfg.supabaseUrl || "").replace(/\/+$/, "");
   var uid = "u_diag" + identity.newUid().slice(2);
+  var now = Date.now();
+  var account = {
+    uid: uid,
+    email_hash: "diag_" + uid,
+    email_mask: "diag***@example.invalid",
+    nickname: "",
+    plan: "free",
+    role: "user",
+    created_at: now,
+    last_login_at: now,
+    status: "active"
+  };
   var row = {
     uid: uid,
     child_id: "",
     poem_id: "__diag__",
     payload: { diag: true },
-    updated_at: Date.now(),
+    updated_at: now,
     deleted: 0
   };
   var t0 = Date.now();
-  return fetch(base + "/rest/v1/progress", {
-    method: "POST",
-    headers: {
-      apikey: KEY, Authorization: "Bearer " + KEY, "Content-Type": "application/json",
-      Prefer: "resolution=merge-duplicates,return=minimal"
-    },
-    body: JSON.stringify(row)
+  var headers = {
+    apikey: KEY, Authorization: "Bearer " + KEY, "Content-Type": "application/json",
+    Prefer: "resolution=merge-duplicates,return=minimal"
+  };
+  var accountCreated = false;
+  return fetch(base + "/rest/v1/accounts", {
+    method: "POST", headers: headers, body: JSON.stringify(account)
   }).then(function (r) {
-    if (!r.ok) {
-      return r.text().then(function (t) {
-        return r.status === 404
-          ? { ok: false, ms: Date.now() - t0, verdict: "表不存在或主键形状不对（(uid, child_id, poem_id) 三列主键要一起在）" }
-          : { ok: false, ms: Date.now() - t0, verdict: "写入失败（HTTP " + r.status + "）", upstream: String(t).slice(0, 300) };
-      });
-    }
-    return { ok: true, ms: Date.now() - t0, verified: false, cleanup: false };
+    if (r.ok) { accountCreated = true; return null; }
+    return { ok: false, ms: Date.now() - t0, verdict: "账号写入失败（HTTP " + r.status + "）" };
+  }).then(function (failure) {
+    if (failure) return failure;
+    return fetch(base + "/rest/v1/progress", {
+      method: "POST",
+      headers: headers,
+      body: JSON.stringify(row)
+    }).then(function (r) {
+      if (!r.ok) {
+        return r.text().then(function (t) {
+          return r.status === 404
+            ? { ok: false, ms: Date.now() - t0, verdict: "表不存在或主键形状不对（(uid, child_id, poem_id) 三列主键要一起在）" }
+            : { ok: false, ms: Date.now() - t0, verdict: "写入失败（HTTP " + r.status + "）", upstream: String(t).slice(0, 300) };
+        });
+      }
+      return { ok: true, ms: Date.now() - t0, verified: false, cleanup: false };
+    });
   }).then(function (out) {
     if (!out.ok) return out;
     return fetch(base + "/rest/v1/progress?uid=eq." + encodeURIComponent(uid) + "&poem_id=eq.__diag__", {
@@ -124,11 +146,14 @@ function writeProbe(d) {
       if (!out.verified) out.verdict = "写进去读不回来（多半是 RLS 或服务端没给 service_role 权限）";
       return out;
     })["catch"](function () { return out; });
+  })["catch"](function (e) {
+    return { ok: false, ms: Date.now() - t0, verdict: "写测试行时连不上", upstream: String(e && e.message || e).slice(0, 300) };
   }).then(function (out) {
-    return fetch(base + "/rest/v1/progress?uid=eq." + encodeURIComponent(uid), {
+    if (!accountCreated) return out;
+    return fetch(base + "/rest/v1/accounts?uid=eq." + encodeURIComponent(uid), {
       method: "DELETE",
       headers: { apikey: KEY, Authorization: "Bearer " + KEY, Prefer: "return=minimal" }
-    }).then(function () { out.cleanup = true; return out; })["catch"](function () { return out; });
+    }).then(function (r) { out.cleanup = r.ok; return out; })["catch"](function () { return out; });
   })["catch"](function (e) {
     var cause = e && e.cause ? String(e.cause.code || e.cause.message || e.cause) : "";
     return {
@@ -267,7 +292,7 @@ module.exports = handler.make("diag", ["GET"], function (d, body, req) {
       apiBase: "/api"
     },
     session: sessionReport(d),
-    database: { mode: (d.store && d.store.kind) || "unknown" },
+    database: { mode: (d.store && d.store.kind) || "unknown", probe: {} },
     mail: mailReport(d),
     limits: { passwordMin: d.cfg.passwordMin, passwordMax: d.cfg.passwordMax },
     turnstile: {
@@ -316,7 +341,8 @@ module.exports = handler.make("diag", ["GET"], function (d, body, req) {
     jobs.push(Promise.all(TABLES.map(function (t) {
       return dbProbe(d, t, PROGRESS_COLS.indexOf("payload") >= 0 && t === "progress" ? "uid" : "uid");
     })).then(function (rows) {
-      r.database.probe = { connect: rows[0], tables: rows };
+      r.database.probe.connect = rows[0];
+      r.database.probe.tables = rows;
     }));
 
     jobs.push(Promise.all([

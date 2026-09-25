@@ -246,13 +246,40 @@ async function diagAt(base) {
   }
 
   {
+    let accountPresent = false;
+    const fake = http.createServer((req, res) => {
+      const table = req.url.split("?")[0];
+      if (table === "/rest/v1/accounts" && req.method === "POST") accountPresent = true;
+      if (table === "/rest/v1/progress" && req.method === "POST" && !accountPresent) {
+        res.writeHead(409, { "Content-Type": "application/json" });
+        return res.end('{"code":"23503"}');
+      }
+      if (table === "/rest/v1/accounts" && req.method === "DELETE") accountPresent = false;
+      if (req.method === "POST" || req.method === "DELETE") { res.writeHead(204); return res.end(); }
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(table === "/rest/v1/progress" && accountPresent ? '[{"uid":"diag"}]' : "[]");
+    });
+    await new Promise(r => fake.listen(0, "127.0.0.1", r));
+    const r = boot({ SUPABASE_URL: "http://127.0.0.1:" + fake.address().port, SUPABASE_SERVICE_KEY: "sb_secret_fake" });
+    const s = await serve();
+    const d = await diagAt(s.base);
+    chk(d.body.report.verdict === "ok" && d.body.report.database.write.verified === true,
+      "写入探针先创建外键所需的账号，再检查进度行");
+    chk(d.body.report.database.write.cleanup === true && !accountPresent,
+      "写入探针删除临时账号及其级联进度");
+    await s.close();
+    fake.close();
+    r.restore();
+  }
+
+  {
     const fake = http.createServer((req, res) => {
       const p = req.url.split("?")[0];
       if (req.headers.apikey !== "sb_secret_fake") {
         res.writeHead(401, { "Content-Type": "application/json" });
         return res.end('{"message":"Invalid API key"}');
       }
-      if (p === "/rest/v1/accounts") {
+      if (p === "/rest/v1/accounts" && req.method === "GET") {
         res.writeHead(400, { "Content-Type": "application/json" });
         return res.end('{"code":"42703","message":"column accounts.email_verified_at does not exist"}');
       }
