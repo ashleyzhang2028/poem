@@ -232,9 +232,22 @@
   //
   // 那三件事（注销入口可见性 / 管理入口可见性 / 页底那一排）从前是搭在
   // `renderAccount()` 的尾巴上的，现在单独拿出来，**登录状态一变照样重画**。
+  //
+  // ⚠️ **没登录就两颗都不画**（Issue #320 用户最后一句：「如果用户已经登出，
+  //    不要显示 注销账号和 管理后台 按钮」）。
+  //    从前这里只处理「登录了」那一档 —— 未登录时它一声不响地 `return`，
+  //    两颗键的 `hidden` 于是**指望上一次画的时候留下的状态**：登出前画成
+  //    `hidden=false`，登出后没人再关它，键就留在屏幕上。而登出这条路会
+  //    连本机那份会话一起清，`identity()` 随即回「未登录」—— 正是这一档。
+  //    所以「未登录」必须**明确地把两颗键关掉**，不能靠「什么都没做」。
   function renderSignedIn(sess) {
     var id = identity();
-    if (!id || !id.signedIn) { renderBottomActions(); return; }
+    if (!id || !id.signedIn) {
+      hide($("btn-delete-start"));
+      hide($("btn-go-admin"));
+      renderBottomActions();
+      return;
+    }
     show($("btn-delete-start"));
     show($("btn-go-admin"));
     renderBottomActions();
@@ -299,6 +312,11 @@
     });
   }
 
+  // ⚠️ `renderAdmin()` 跑在 `renderSignedIn()` **之后**，所以它的
+  //    `show()` 能覆盖上一步刚关掉的那颗键（Issue #320 用户最后一句）。
+  //    于是它自己也得先看登录状态：`Entitlement.isOwner()` 只回答「这个人是不是
+  //    管理员」，答不了「他现在登录着没」—— 一份还没被清掉的服务端答案
+  //    会让它照样回 true。两个字都要看，缺一个就是「登出了还显示管理后台」。
   function renderAdmin(id) {
     var btn = $("btn-go-admin");
     if (!btn) return;

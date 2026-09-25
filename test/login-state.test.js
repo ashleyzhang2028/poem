@@ -275,6 +275,83 @@ function tick(ms) { return new Promise(r => setTimeout(r, ms || 30)); }
     }
 
     // -----------------------------------------------------------------------
+    console.log("\n--- 三b、登出之后，页底那一排不许留一颗键在屏幕上（Issue #320）---");
+    // -----------------------------------------------------------------------
+    // 用户原话：「如果用户已经登出，不要显示 注销账号和 管理后台 按钮」。
+    //
+    // 这是**从「登录着」那一屏退出来**的一个 bug：两颗键的可见性从前只在
+    // 「登录着」那一档里画（`show()`），未登录那一档一声不响地 `return` ——
+    // 于是登出之后没人把那两颗键关掉，前一次画的 `hidden=false` 就留在屏幕上。
+    // 光从「游客」那一屏进来看不出来（出厂就是 hidden），必须**先登录、再登出**。
+    {
+      // ⚠️ 这里**自己登一个**，不共用上面那一枚 Cookie —— 登出会顺手把服务端
+      //    那枚票也撤掉（`AccountApi.signOut()` 打 `POST /api/logout`），
+      //    共用的话后面几节就全成了「未登录」。
+      const b = await serverLogin(base, "leave@example.com");
+      const { win } = await openPage(base, b.cookie, "/mine/");
+      await tick(200);
+      const d = win.document;
+      const Ent = win.Entitlement;
+
+      eq(Ent.identity({ backing: win.localStorage }).signedIn, true, "前提：先以服务端会话登录着");
+      chk(!d.getElementById("btn-delete-start").hasAttribute("hidden"), "前提：登录着时「注销账号」看得见");
+
+      // 走用户实际点的那条路：身份行那颗「退出登录」→ `onSignOut()`
+      // （`AccountApi.signOut()` 撤掉服务端那枚票 + 本机那份答案）。
+      await win.AccountApi.signOut({ backing: win.localStorage, E: Ent, A: win.AuthCore });
+      win.dispatchEvent(new win.Event("storage"));
+      await tick(120);
+
+      eq(Ent.identity({ backing: win.localStorage }).signedIn, false, "登出之后：identity() 回未登录");
+
+      const del = d.getElementById("btn-delete-start");
+      const adminBtn = d.getElementById("btn-go-admin");
+      chk(!!del && del.hasAttribute("hidden"), "登出之后：「注销账号」那颗键收起来了（从前它留在屏幕上）");
+      chk(!!adminBtn && adminBtn.hasAttribute("hidden"), "登出之后：「管理后台」也收起来了");
+      chk(d.getElementById("bottom-actions").hasAttribute("hidden"), "那一排跟着整个收掉，不占位");
+      win.close();
+    }
+
+    // -----------------------------------------------------------------------
+    console.log("\n--- 三c、登出的是「管理员」：两颗键都要收（不许靠 isOwner 单独放行）---");
+    // -----------------------------------------------------------------------
+    // `Entitlement.isOwner()` 只回答「这个人是不是管理员」—— 一份还没被清掉的
+    // 服务端答案会让它照样回 `true`。所以「画不画那颗键」必须**两个条件一起看**：
+    // `owner && signedIn`。只留 `owner` 那一半，就是「登出了还显示管理后台」。
+    {
+      // ⚠️ 次序：**先把库里那个账号提成 owner，再开页面** —— 页面开机的那一发
+      //    `/api/me` 就是它第一次（也是唯一一次）读到这一行，`AccountApi` 的
+      //    `refreshMe()` 又是**单例**的，开完页面再改库是改不动的。
+      const a = await serverLogin(base, "boss@example.com");
+      const cfg = require("../api/_lib/config.js");
+      const store = require("../api/_lib/store.js").getStore(cfg);
+      const ident = require("../api/_lib/identity.js");
+      const boss = store.getAccountByHash(
+        ident.emailHash("boss@example.com", cfg.sessionSecret || "no-pepper"));
+      chk(!!boss, "服务端：库里认得出这个账号");
+      store.patchAccount(boss.uid, { role: "owner" });
+
+      const { win } = await openPage(base, a.cookie, "/mine/");
+      await tick(200);
+      const d = win.document;
+      const Ent = win.Entitlement;
+      const uid = Ent.identity({ backing: win.localStorage }).uid;
+
+      eq(Ent.isOwner(win.localStorage, { uid: uid }), true, "前提：这个人是管理员");
+      chk(!d.getElementById("btn-go-admin").hasAttribute("hidden"), "登录着：「管理后台」看得见");
+
+      await win.AccountApi.signOut({ backing: win.localStorage, E: Ent, A: win.AuthCore });
+      win.dispatchEvent(new win.Event("storage"));
+      await tick(120);
+
+      eq(Ent.identity({ backing: win.localStorage }).signedIn, false, "登出之后：identity() 回未登录");
+      eq(Ent.isOwner(win.localStorage, { uid: uid }), false, "那份服务端答案也被清掉了，isOwner() 跟着回 false");
+      chk(d.getElementById("btn-go-admin").hasAttribute("hidden"), "登出之后：「管理后台」照样收起来");
+      chk(d.getElementById("btn-delete-start").hasAttribute("hidden"), "登出之后：「注销账号」也收起来");
+      win.close();
+    }
+
+    // -----------------------------------------------------------------------
     console.log("\n--- 四、服务端那份答案换了人，不继承 ---");
     // -----------------------------------------------------------------------
     {
@@ -331,6 +408,21 @@ function tick(ms) { return new Promise(r => setTimeout(r, ms || 30)); }
       const mineSrc = fs.readFileSync(path.join(ROOT, "js/mine.js"), "utf8");
       chk(!/!!\s*A\.session\(|\bif \(A\.session\(/.test(mineSrc),
         "「我的」页不再拿 A.session() 当布尔判据（它只是 renderAccount 的显示输入）");
+
+      // ⚠️ 页底两颗键的可见性**每一处都要先看登录状态**（Issue #320 用户最后一句）。
+      //    两处画页底那一排的地方（`renderSignedIn` / `renderAdmin`）各有分工：
+      //   · `renderSignedIn()` —— 未登录就**明确关掉**两颗键（那一档不能再「什么都不做」）；
+      //   · `renderAdmin()`    —— 它跑在后面，`show()` 会盖掉上一步刚关的键，
+      //                          所以 `owner`（是不是管理员）与 `signedIn` 一起看。
+      //
+      // ⚠️ 直接量那两句判据的原文，不去切函数体 —— 函数体里有 `{ role: … }`
+      //    这种花括号，按 `}` 切会切在半路（先写的版本正是这么误报的）。
+      chk(/if \(!id \|\| !id\.signedIn\) \{[\s\S]{0,160}?hide\(\$\("btn-delete-start"\)\)[\s\S]{0,80}?hide\(\$\("btn-go-admin"\)\)/.test(mineSrc),
+        "`renderSignedIn()` 未登录那一档**明确关掉**两颗键（不靠「什么都没做」）");
+      chk(/if \(owner && id && id\.signedIn\)/.test(mineSrc),
+        "`renderAdmin()` 里两个条件一起看（`owner && id.signedIn`）—— 缺一个就是登出了还显示");
+      chk(!/if \(owner\) \{/.test(mineSrc),
+        "没有哪一处只看 `owner` 就画「管理后台」（`isOwner()` 答不了「登录着没」）");
       const syncSrc = codeOnly(fs.readFileSync(path.join(ROOT, "js/sync-store.js"), "utf8"));
       chk(!/deps\.signedIn/.test(syncSrc),
         "同步引擎不再由调用方注入「登录了没」（注入的每一份都是第二个判据）");
