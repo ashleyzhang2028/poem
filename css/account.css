@@ -2,6 +2,21 @@
   padding: 4px 0 14px;
 }
 
+/* 卡片之间一律留出间距：原先靠 .account-card 的 margin-bottom，
+   但「登录/重设/后台」这几页额外的 margin: auto 归零把那一条盖掉了，
+   于是卡片首尾相接、一条缝都没有（Issue #319）。改用 gap，谁也不压谁。 */
+.account-page {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ⚠️ 「卡片挨得紧、中间没有缝」的根子在这里（Issue #319）：
+   从前是**每张卡片各自 `margin: auto`**。一页只有一张卡时那是「往下居中」，
+   一页好几张时（后台）就变成「多出来的空间按卡片数**均摊**」——
+   于是卡片被撑开几十上百像素。
+   现在只有「一页就一张卡」时才对那一张用 `margin: auto` 居中，
+   多张卡的一页交给上面的 `gap` 排（见 `.account-page`）。 */
 body[data-nav="login"] .account-page,
 body[data-nav="reset"] .account-page,
 body[data-nav="verify"] .account-page,
@@ -12,28 +27,29 @@ body[data-nav="admin"] .account-page,
   min-height: calc(100vh - 118px);
   min-height: calc(100 * var(--app-vh) - 118px);
 }
-body[data-nav="login"] .account-page > .account-card,
-body[data-nav="reset"] .account-page > .account-card,
-body[data-nav="verify"] .account-page > .account-card,
-body[data-nav="admin"] .account-page > .account-card,
-#login-page > .account-card {
 
+/* 一页只有**一张卡**（登录 / 重设 / 验证）时才往下居中；后台那类一页好几张的
+   交由普通流从上往下排 —— 每张都居中会让卡片之间张出几十上百像素（Issue #319）。 */
+body[data-nav="login"] .account-page > .account-card:only-of-type,
+body[data-nav="reset"] .account-page > .account-card:only-of-type,
+body[data-nav="verify"] .account-page > .account-card:only-of-type,
+#login-page > .account-card:only-of-type {
   margin-top: auto;
   margin-bottom: auto;
 }
 
-body[data-nav="admin"] .account-page > #deny-card {
-  margin-top: 0;
-  margin-bottom: 0;
-}
-
-body[data-nav="admin"] .account-page:has(> #deny-card:not([hidden])) {
-  min-height: 0;
-}
-
 #deny-card .account-btn { width: auto; min-width: 132px; }
 
-body[data-nav="admin"] .account-page > .account-card:last-child { margin-bottom: 0; }
+/* 后台只有「没有权限」那一张可见时，这一页就是「一张卡的页」——
+   与登录页同样地把它摆到中间（其余四张还带着 `hidden`，`:only-of-type`
+   数不上它们）。⚠️ 不能用 `:has(> #deny-card:not([hidden]))` 判：
+   `:has` 认的是「页面里有没有这一张」，与「现在看得见几张」不是一回事，
+   于是「主人打开这一页」时它也会跟着命中，把一页四张卡也从中间分成两半。
+   `min-height: 0` 同理——本来就不想让它撑满一屏。 */
+body[data-nav="admin"] .account-page > #deny-card:not([hidden]) {
+  margin-top: auto;
+  margin-bottom: auto;
+}
 
 body[data-nav="login"] .app,
 body[data-nav="reset"] .app,
@@ -52,9 +68,7 @@ body[data-nav="login"] .app {
   border-radius: var(--radius);
   box-shadow: var(--shadow);
   padding: 16px 14px;
-  margin-bottom: 12px;
 }
-.account-card + .account-card { margin-top: 0; }
 .account-card-title {
   font-size: 13px;
   font-weight: 600;
@@ -1284,4 +1298,205 @@ thead .plans-th-cap {
   .identity-row .avatar { --avatar-size: 36px; }
   .identity-head { gap: 5px; }
   .identity-btns { gap: 5px; }
+}
+
+/* ---- 管理后台（Issue #319）--------------------------------------------
+   这一页的几块：两张表（账号与角色 / 已发放层级）、注音勘误的分步表单、
+   已钉清单、用户报告。样式都收在这一个前缀下，别的地方不受影响。 */
+
+.admin-table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.admin-table thead th {
+  text-align: left;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: .8px;
+  color: var(--ink-3);
+  padding: 0 8px 8px 0;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+
+.admin-table tbody td {
+  padding: 9px 8px 9px 0;
+  border-bottom: 1px solid var(--line-2);
+  vertical-align: middle;
+}
+.admin-table tbody tr:last-child td { border-bottom: 0; }
+
+.admin-table th:last-child,
+.admin-table td:last-child { padding-right: 0; }
+
+.admin-mail {
+  font-size: 13px;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.admin-who-note {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--ink-3);
+}
+
+.admin-role-cell { width: 1%; white-space: nowrap; }
+
+.admin-role-select {
+  font: inherit;
+  font-size: 13px;
+  min-height: var(--ctl-h-sm);
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--ctl-radius);
+  background: var(--card);
+  color: var(--ink);
+  cursor: pointer;
+}
+.admin-role-select:focus {
+  outline: none;
+  border-color: var(--celadon);
+  box-shadow: var(--ctl-focus);
+}
+.admin-role-select:disabled { color: var(--ink-3); cursor: default; }
+
+.admin-role-lock {
+  display: inline-block;
+  font-size: 11.5px;
+  line-height: 1;
+  padding: 5px 8px;
+  border-radius: var(--ctl-radius);
+  background: var(--green-light);
+  color: var(--green-dark);
+  white-space: nowrap;
+}
+
+.admin-tier-cell { width: 1%; white-space: nowrap; }
+
+.admin-until {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+.admin-until.is-expired { color: var(--red); }
+
+.admin-revoke {
+  font: inherit;
+  font-size: 11.5px;
+  min-height: 28px;
+  padding: 0 8px;
+  border: none;
+  background: none;
+  color: var(--red);
+  cursor: pointer;
+}
+.admin-revoke:hover { opacity: .82; }
+.admin-revoke:disabled { opacity: .45; cursor: not-allowed; }
+
+/* 注音勘误：分步表单 */
+.admin-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0 0 12px;
+}
+.admin-steps .account-field { margin-bottom: 0; }
+
+.admin-line-row { display: flex; gap: 8px; align-items: center; }
+.admin-line-row .account-input { flex: 1 1 auto; min-width: 0; }
+.admin-line-row .account-btn { width: auto; flex: none; margin-top: 0; padding: 10px 14px; }
+
+.admin-step-pair {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+.admin-step-pair .account-field { flex: 1 1 120px; margin-bottom: 0; }
+.admin-step-pair #pf-at { max-width: 9em; }
+
+.admin-hits {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  max-height: 240px;
+  overflow: auto;
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius-sm);
+  background: var(--bg-soft);
+}
+.admin-hits .grant-row { padding: 8px 10px; }
+.admin-hits .grant-ish {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 12.5px;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.admin-sub {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line-2);
+}
+.admin-sub-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .6px;
+  color: var(--ink-2);
+}
+.admin-count {
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: var(--bg-soft);
+  color: var(--green);
+}
+
+.admin-fix-list { list-style: none; margin: 0; padding: 0; }
+.admin-fix-list .grant-row {
+  align-items: flex-start;
+  padding: 9px 0;
+}
+.admin-fix-wid {
+  flex: 0 0 auto;
+  max-width: 40%;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+.admin-fix-detail {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+.admin-fix-detail b { color: var(--green-dark); font-weight: 600; }
+
+@media (max-width: 480px) {
+  .admin-fix-list .grant-row { flex-wrap: wrap; gap: 4px; }
+  .admin-fix-wid { max-width: 100%; }
+  .admin-line-row { flex-wrap: wrap; }
+  .admin-line-row .account-btn { width: 100%; }
 }

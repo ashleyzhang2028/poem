@@ -386,7 +386,10 @@ console.log("一、服务端内核：创建 / 频控 / 每日上限 / 空内容�
       "admin-page 有 loadReports / renderReports / onReportsClick 三件");
     chk(/adminReportPatch/.test(aj), "改状态走 adminReportPatch");
     chk(/标成「未采纳」/.test(aj), "「不采纳」会多问一句（用户看得到这个状态）");
-    chk(/data-role-badge/.test(aj) && /stay|就地|li\.querySelector/.test(aj),
+    // 「就地更新」= 拿到那一行、改它的状态文字，**不**重拉整张表。
+    // 判据是「查那一行 + 改状态」，不是某个特定的 class 名：
+    // Issue #319 把名录那张表重排过一遍，class 名会变，这件事不会。
+    chk(/admin-report-row\[data-rid|stay|就地/.test(aj) && /li\.querySelector/.test(aj),
       "改完**就地更新那一行**（不重拉整张表，否则滚动位置被打回顶部）");
 
     {

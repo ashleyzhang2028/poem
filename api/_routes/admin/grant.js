@@ -11,6 +11,7 @@ module.exports = handler.make("admin.grant", ["POST", "DELETE"], function (d, bo
     return handler.core.adminRevoke(d, { emailMask: body.emailMask || body.mask, deviceId: body.deviceId || d.deviceId });
   }
   return handler.core.adminGrant(d, {
+    uid: body.uid,
     emailMask: body.emailMask || body.mask,
     tier: body.tier,
     until: body.until,
