@@ -254,7 +254,20 @@ const SESSION = JSON.stringify({
       chk(!!$("avatar-file") && $("avatar-file").type === "file", "文件选择框是 input[type=file]");
       eq($("avatar-file").accept, "image/*", "只让挑图片（accept 收窄选择器，不是安全边界）");
       chk($("crop-layer").hidden, "裁切层默认藏着（没选图时不铺上来）");
-      chk($("btn-avatar-clear").hidden, "没图时「删除头像」不出现（摆一颗点了没反应的灰键更糟）");
+
+      // ⚠️ Issue #276 第八轮：用户问「如果用户没有上传头像，是不是不应该显示
+      //    删除头像按钮？」—— 答案是不该。旧实现把那颗键**画在身份行上**、
+      //    再靠 `hidden` 藏着它（页面上一直挂着一颗看不见但存在的键，判据
+      //    还要在两处维护）。现在它住在**裁切层**里：裁切层只有点了
+      //    「上传/更新头像」才铺得上来，而那时一定有图 —— 结构上就不可能出现
+      //    「没图却有一颗删除」。所以判据从「那颗键 hidden 了吗」换成
+      //    「身份行上还有没有那一颗」。
+      chk($("btn-avatar-clear") === null,
+        "「删除头像」不再挂在身份行上（没图时它就不该存在，而不是 hidden）");
+      chk(!!$("btn-crop-clear") && /删除头像/.test($("btn-crop-clear").textContent),
+        "它搬进了裁切层（有图那一半的入口才谈得上删）");
+      chk(/上传头像/.test($("btn-avatar-pick").textContent),
+        "没图时那颗键说「上传头像」");
 
       // ⚠️ 用户 2026-09-21「能省则省」：原先这一页还写一行「已同步 / 未同步」——
       //    本机有图就当场看得到，服务器那一份成不成是后台自己的事。
@@ -289,7 +302,10 @@ const SESSION = JSON.stringify({
       u.dispatchEvent(new w.Event("input", { bubbles: true }));
       u.dispatchEvent(new w.Event("change", { bubbles: true }));
 
-      chk(!$("btn-avatar-clear").hidden, "有图时「删除头像」出现");
+      // ⚠️ 有图时那颗键不是「多画一颗删除」，而是**同一颗键换文案**：
+      //    用户原话「如果用户上传了头像，上传头像是不是应该显示更新头像？」
+      chk(/更新头像/.test($("btn-avatar-pick").textContent),
+        "有图时那颗键改说「更新头像」（一颗键、两个文案、同一个动作）");
       chk(!/未同步|已同步/.test(w.document.getElementById("mine-page").textContent),
         "页面上不再出现「未同步 / 已同步」这类同步状态字眼");
       chk(/<img[^>]+avatar-img/.test($("avatar-slot").innerHTML), "有图时槽里画的是 <img>");
@@ -302,7 +318,7 @@ const SESSION = JSON.stringify({
       w.AvatarEdit.render();
       chk(w.Storage ? true : true, "云端地址回填之后重画一遍不报错（这一行已经不在了）");
 
-      $("btn-avatar-clear").dispatchEvent(new w.Event("click", { bubbles: true }));
+      $("btn-crop-clear").dispatchEvent(new w.Event("click", { bubbles: true }));
       await new Promise(r => setTimeout(r, 50));
       eq(w.Avatar.display(w.localStorage).img, "", "删完账号域那个地址空了");
 

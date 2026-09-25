@@ -40,31 +40,59 @@
       (window.Avatar ? Avatar.html(backing) : "") + "</span>" +
       '<span class="identity-main">' +
       '<label class="sr-only" for="input-nickname">用户名</label>' +
+      // ⚠️ `size="1"` 不是装饰（Issue #276 第八轮）：`<input>` 的默认宽度来自
+      //    `size` 属性（缺省 20 个字符 ≈ 186px），而那个宽度是它的
+      //    **min-content 下限** —— 于是外面怎么设 `min-width: 0` 都收不动它，
+      //    这一行的 min-content 被钉在 142px 上。窄屏（360/320px）装不下时
+      //    flex 断行先发生，两颗键被拆到第二行 —— 正是用户报的那道题。
+      //    写成 `size="1"` 之后，输入框的直觉宽度交给 CSS 管（我们本来就
+      //    用 max-width 给了 9.5em 那一段），min-content 才真的能收到 0。
       '<input id="input-nickname" class="nickname-input" type="text" maxlength="12"' +
-      ' placeholder="起个名字" autocomplete="off" enterkeyhint="done" />' +
+      ' size="1" placeholder="起个名字" autocomplete="off" enterkeyhint="done" />' +
       '<span class="identity-sub" id="identity-sub"></span>' +
       "</span>" +
       '<span class="tier-badge" id="identity-badge"></span>' +
       '<div class="identity-btns">' +
+      // ⚠️ 这一行现在只放**两颗键**（Issue #276 第八轮）：
+      //    ① 头像那颗 —— 「上传头像」/「更新头像」**同一颗键的两个文案**
+      //       （有没有图由 js/avatar-edit.js 的 render 一处定，见那一条）；
+      //    ②「登录 / 退出登录」—— 也是**同一颗键的两个文案**（见 renderSignOut）。
+      //    「删除头像」不在这里：**没图时它压根不该出现**（用户原话：
+      //    「如果用户没有上传头像，是不是不应该显示删除头像按钮？」），
+      //    而它只能在「有图」这一半里出现 —— 那一半已经由「更新头像」这一颗
+      //    的点击进到裁切层里了，所以删除也搬进**裁切层**那一格（那颗「取消」
+      //    旁边），与「用这张」并列，不再占身份行一格。
+      //    ⚠️ 这么并之后这一行只有**两格宽**（头像 / 头像键 / 登录键），
+      //    393px 上不必再折行 —— 折行才是「删除头像跑到第二行」的真身。
       '<button class="account-btn ghost" id="btn-avatar-pick" type="button">上传头像</button>' +
-      '<button class="account-btn ghost" id="btn-avatar-clear" type="button" hidden>删除头像</button>' +
-      "</div>";
-    mountActionsRow(row);
+      "</div>" +
+      '<div class="account-actions" id="account-actions">' +
+      // ⚠️ **一颗键、两个文案、两件事**：没登录时它是「登录」（去 /login/），
+      //    登录着时它是「退出登录」（当场退出这一份账号）。用户 2026-09-24
+      //    （Issue #276）问的正是这一条：「登录按钮和退出登录按钮应该同时
+      //    显示吗？他们应该是一个按钮两个状态吧？」—— 是，现在就是一颗。
+      //    ⚠️ 它是**构建期**就在这儿的一颗（不是从账号卡搬进来的）：原地不动，
+      //       免得「搬」这件事自己又要一处判据（旧实现靠 CSS 的 :has() 判
+      //       「退出那颗画出来了没」来切文案与位置，两态都会先闪一下）。
+      '<button class="account-btn" id="btn-account-entry" type="button">登录</button>' +
+      "</div>" +
+      // ⚠️ 「账号」那颗（去 /login/ 看「我是谁」）**不在这一行**了：这一行上
+      //    要摆的是「跟这一份账号有关的动作」，而不是又一个去账号页的入口
+      //    —— 顶栏与底栏都有「我的」，本页不必再给第三条路。
+      //    它搬进下面「账号」卡（#account-actions-card，与「重发确认邮件」同处）。
+      "";
     bindNickname();
-  }
-
-  // ⚠️ 「账号」那一颗（#btn-account-entry）**就地搬进身份行**，不另画一颗：
-  //    用户 2026-09-24（Issue #276）要「登录 / 上传头像 / 删除头像在一行」，
-  //    而「登录」与「账号」本来就是同一颗键的两种文案（renderSignOut 判的）。
-  //    另画一颗的下场是两颗键都要维护登录态、都要维护落点 —— 必然漂。
-  //    它原本那个容器（#account-actions）也跟着一起搬走：退出登录 /
-  //    重发确认邮件 / 注销那一串动作仍归账号卡，两者从此物理分开。
-  //    ⚠️ 搬走之后，本页里**再也没有**第二个元素可以当它「上一行」的判据 ——
-  //      这是好事：CSS 那条 `#account-actions:has(#btn-sign-out:not([hidden]))`
-  //      是同一容器内的兄弟顺序，容器唯一，判据也就唯一。
-  function mountActionsRow(row) {
-    var acts = $("account-actions");
-    if (acts && acts.parentNode !== row) row.appendChild(acts);
+    // ⚠️ 这里**必须**把「上传 / 更新头像」那颗键的文案补一次（Issue #276 第八轮）。
+    //    原因：上面那段 HTML 里那颗键的**出厂文案写死成「上传头像」**，
+    //    而「有图时它该叫更新头像」这件事只有 js/avatar-edit.js 的 render
+    //    知道（它读 Avatar.display().hasImage）。身份行是**按需重画**的：
+    //    重画一次就把那颗键换成一个新节点、文案回到出厂那一份 ——
+    //    于是「这台设备本来就传过头像」的人打开这一页，看到的仍然是
+    //    「上传头像」（实测：本机有图 + 刷新页面 → 那颗键写「上传头像」，
+    //    而槽里明明画着头像）。
+    //    ⚠️ 这一行是**转发**，不是第二个判据：文案与绑定仍只由
+    //       js/avatar-edit.js 一处写。这里负责的只是「画完之后叫它一次」。
+    if (window.AvatarEdit && window.AvatarEdit.render) window.AvatarEdit.render();
   }
 
   function renderIdentity(id) {
@@ -90,34 +118,40 @@
     var input = $("input-nickname");
     if (input && document.activeElement !== input) input.value = nicknameValue();
 
-    // ⚠️ 每次重画都确认一次「账号」那颗还在这一行里。判据就是 `> ` 本身
-    //    （parentNode 比较），不另记一个「搬过了」的布尔 —— 那种标记一旦与真实
-    //    DOM 不一致，这一行会永远少一格，而且没有任何地方会报错。
-    mountActionsRow(row);
-
     // ⚠️ 这里原先还有一行「层级由服务器判定。/ 层级本机登记。」——
     //    结论就是旁边那枚徽章（Free / Pro / Max），「判定」这一步是内部实现，
     //    用户在这一页不需要知道，整行撤掉（挂载点一起走，不留空壳）。
     renderSignOut(id);
   }
 
+  // ⚠️ 登录那一颗：**一颗键、两个文案、两件事**（Issue #276 第八轮）。
+  //    用户原话：「登录按钮和退出登录按钮应该同时显示吗？他们应该是一个按钮
+  //    两个状态吧？」—— 对。旧实现里「登录」去 /login/、「退出登录」留在
+  //    账号卡，两颗键一直同时在页面上，用户要自己判断「我现在该点哪一颗」。
+  //    现在一颗：没登录时说「登录」（去登录页），登录着时说「退出登录」
+  //    （当场退出）。**任何时刻这一行上只有这一颗说得通**。
+  //    ⚠️ 文案只在这**一处**写（旧实现里账号卡那颗由 CSS 的 order + :has()
+  //       换位置，两态都要维护，必然漂）—— 现在 DOM 里就这一颗，没有第二处。
+  //    ⚠️ 落点也跟着文案一起换，不许写死成 /login/：登录着的人点它要退出，
+  //       不是再跳一次登录页。
   function renderSignOut(id) {
-
     var btn = $("btn-account-entry");
-    var out = $("btn-sign-out");
-    if (btn) {
-      // 用户 2026-09-21：「管理登录状态」是五个字的绕话 —— 它就是「账号」。
-      btn.textContent = id.signedIn ? "账号" : "登录";
-      // ⚠️ 这颗键**永远画出来**（Issue #276：用户找不到登录入口了）。
-      //    原先它由「账号」卡整卡显隐，未登录那一刻卡片是藏着的 ——
-      //    一个没登录的人在这一页上找不到「从哪儿登录」，是必然的。
-      btn.hidden = false;
-      if (!btn.dataset.bound) {
-        btn.dataset.bound = "1";
-        btn.addEventListener("click", function () { location.href = "/login/"; });
-      }
+    if (!btn) return;
+    btn.textContent = id.signedIn ? "退出登录" : "登录";
+    btn.className = id.signedIn ? "account-btn ghost" : "account-btn";
+    // ⚠️ 这颗键**永远画出来**（Issue #276：用户找不到登录入口了）。
+    //    未登录时它就是这一页上唯一的登录入口，藏起来等于没有入口。
+    btn.hidden = false;
+    btn.dataset.action = id.signedIn ? "sign-out" : "sign-in";
+    if (!btn.dataset.bound) {
+      btn.dataset.bound = "1";
+      // ⚠️ 监听器只绑一次，判据每次点击时**现读** dataset.action ——
+      //    不这么写的话，第一帧绑的那个落点会被记死（登录之后点它仍然去登录页）。
+      btn.addEventListener("click", function () {
+        if (btn.dataset.action === "sign-out") onSignOut();
+        else location.href = "/login/";
+      });
     }
-    if (out) out.hidden = !id.signedIn;
   }
 
   function renderStats() {
@@ -495,8 +529,17 @@
   function init() {
     if (!A || !Ent || !store) return;
 
-    var out = $("btn-sign-out");
-    if (out) out.addEventListener("click", onSignOut);
+    // ⚠️ 这里原先给账号卡里那颗 #btn-sign-out 绑退出 —— 那一颗已经不存在了
+    //    （退出并进身份行的 #btn-account-entry 一颗键，见 renderSignOut）。
+    //    绑一颗页面上没有的键，只会是一条**永远不响**的死线。
+    // 账号卡里那颗「账号与安全」：去 /login/ 看「我是谁」（改口令 / 换邮箱 /
+    // 注销都在那一页的导航里）。它**不是**身份行上那颗「退出登录」——
+    // 那颗管的是「我现在要不要退出」，这颗管的是「我的账号资料在哪」。
+    var openAcct = $("btn-account-open");
+    if (openAcct && !openAcct.dataset.bound) {
+      openAcct.dataset.bound = "1";
+      openAcct.addEventListener("click", function () { location.href = "/login/"; });
+    }
     var resend = $("btn-resend-verify");
     if (resend) resend.addEventListener("click", onResendVerify);
     var admin = $("btn-go-admin");

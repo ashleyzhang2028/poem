@@ -380,76 +380,64 @@ body[data-nav="login"] .app {
   margin-top: 0;
 }
 
-/* ⚠️ 「已登录」那把次序（Issue #276）：用户 2026-09-21 定下那颗键在已登录时叫
-   「账号」（不是「管理登录状态」这种绕话），本轮又要求「登录 / 上传头像 /
-   删除头像在一行」—— 于是「账号」那颗从**账号卡**里搬进身份行的尾格，
-   只读不写（点开仍去 /login/，那是「我是谁」那一页的事）。
-   ⚠️ 搬法是纯 CSS 的 order + 一条固定的容器次序，**不是第二个渲染出口**：
-      仍只有 #btn-account-entry 一颗键、一处写它的文案（js/mine.js）。
-   ⚠️ 判据用「有人登录着」=「退出登录」那一颗**画出来了**。它是这一页上
-      唯一只凭登录态显隐的兄弟；文案（登录 / 账号）在会话过期时会变，
-      拿它当判据会让次序跟着跳。
-   ⚠️ 两态都写出来，是为了**首帧就稳定**：默认态（未登录）那颗在最前；
-      登录着的人首帧就落到最后。反过来写的话，登录的人会先看见「账号」出现在
-      最前面、再跳到最后一行去。
-   ⚠️ 浏览器不认 :has() 时退化成：身份行只有「上传头像 / 删除头像」两颗小钮，
-      「账号」留在账号卡里 —— 也就是**改前**的样子，不会错乱、不会丢键。 */
+/* ⚠️ 身份行上**那两格**的次序与尺寸（Issue #276 第八轮，全部由 CSS 管，
+   页面只管把两颗键画出来）。
+   ⚠️ 第八轮把这一行从「六格」收成了**四格**：
+      头像槽 · 昵称列 · 徽章 ·「上传/更新头像」+「登录/退出登录」。
+      上一轮那六格（多了「账号」一格与「删除头像」一格）装不下的收场是
+      **折行** —— 而用户 2026-09-24 报的就是折行本身：
+      「删除头像按钮比其他按钮显示得往下了」。
+      两格一收，393px 上就是完整的一行，不必再靠折行兜底。
+   ⚠️ 这里**不再有** `:has(#btn-sign-out:not([hidden]))` 那一族判据：
+      它是上一轮「同一个容器里塞着登录 + 退出两颗、靠 CSS 在两态间换位置」
+      的产物；现在那一格上只有**一颗键**（文案与落点由 js/mine.js 的
+      renderSignOut 一处定），没有第二颗要挪，也就没什么可判的。 */
 @supports selector(:has(*)) {
   /* 屏幕上那把次序，全部由 order 定（一处一处写清，不靠 DOM 次序兜底）。 */
   #avatar-slot { order: 0; flex-shrink: 0; }
   .identity-main { order: 1; }
   #identity-badge { order: 2; }
 
-  /* 「登录 / 账号」那一格：动作行整只搬进身份行之后归它管。
-     ⚠️ flex: 0 1 auto（不是 0 0 auto）—— 它是装那几颗键的盒子，
-        盒子不许被压的话，里面那几颗「允许收缩」也就没有空间可让。 */
-  .identity-row > .account-actions {
-    order: 3;
-    margin-top: 0;
-    /* ⚠️ 这一格是**装键的盒子**，它自己不许收缩（flex: 0 0 auto）：
-       收缩发生在它身上时，里面那几颗键不会跟着变窄，只会**溢出**到隔壁格子上
-       —— 实测 393px：「退出登录」的框压住「上传头像」那一格，字叠在一起。
-       宽度不够时该折的是**这一行**自己（`.identity-row` 的 flex-wrap: wrap）。 */
-    flex: 0 0 auto;
-    min-width: 0;
-    flex-wrap: nowrap;
-    align-items: center;
-  }
-  /* 「上传头像 / 删除头像」那一格（盒子同样要能被压，理由同上）。 */
-  .identity-btns { order: 4; flex: 0 0 auto; min-width: 0; }
+  /* ⚠️ 最后两格（头像键 · 登录键）的次序就按**内容**排，不再用 order：
+     order 是上一轮为了把「登录 / 账号」那一整格挪到最右才用的，现在那一格
+     里只有一颗键，DOM 次序 = 屏幕次序 —— 少一套编号，就少一处能对不上的地方。
+     ⚠️ 但它们**都在这一行**、且彼此贴在一起（中间那 8px 由 .identity-row 的
+        gap 给，不是各自的 margin）：两颗的「脚」必须踩在同一个 y 上，
+        这是用户点名的「删除头像比其他按钮显示得往下了」的同一条口径。
+        实现见下面 `.identity-btns .account-btn { margin-top: 0 }` 那一条。 */
+
+  /* 这两格是**装键的盒子**，盒子自己不收缩（flex: 0 0 auto）：
+     收缩发生在盒子上时，里面那几颗键不会跟着变窄，只会**溢出**到隔壁格子上
+     —— 实测 393px：「退出登录」的框压住「上传头像」那一格，字叠在一起。 */
+  .identity-btns { flex: 0 0 auto; min-width: 0; }
+  .identity-row > .account-actions { flex: 0 0 auto; min-width: 0; }
+
+  /* ⚠️ **两颗键的「脚」必须踩在同一个 y 上**（Issue #276 第八轮）。
+     `.account-actions` 自己带着 `margin-top: 12px`（那是它当年在**账号卡里
+     另起一行**时的算式：`#btn-account-entry` 一颗满宽主按钮要跟上面那些行
+     拉开一档）。它搬进身份行之后这 12px 就成了一段「凭空多出来的上边距」——
+     盒子在行里被 align-items: center 居中，露出来的就是半截（6px）：
+     真浏览器 393px 实测「上传头像」y=96、「登录」y=102，登录那颗整整低 6px，
+     与用户报的「删除头像按钮比其他按钮显示得往下了」是**同一道题**。
+     ⚠️ 所以这里给身份行里那一份点名清零：这一行的对齐由行的
+        align-items: center 管，行内任何一格都不许再带自己的上外边距。 */
+  .identity-row > .account-actions { margin-top: 0; }
 
   /* ⚠️ 每一颗键的宽度**由内容定**（Issue #278 第七轮）。
      原先这一格是 `flex-basis: fit-content(max-content)`，而在这一行里
      max-content 被算成了 **0**（实测 393px：「上传头像」66px 的键只剩 3px
-     的 flex-basis，靠 padding 撑着才没归零）—— 「账号」那颗更狠，
-     被压成 39px、两个字竖排。所以这里把 basis 写成 `auto`（= 内容宽），
-     与同一个文件下面 `.identity-btns .account-btn` 那条口径收成一条：
-     **行内小号键的宽度是它自己的内容，不是这一行的剩余空间。** */
+     的 flex-basis，靠 padding 撑着才没归零）。所以这里把 basis 写成
+     `auto`（= 内容宽）：**行内小号键的宽度是它自己的内容，
+     不是这一行的剩余空间。** */
   .identity-row > .account-actions .account-btn {
     flex: 0 0 auto;
   }
 
-  /* ⚠️ 两态的那一处分岔：「登录」待在自己那一格里（order: 0，与「退出登录」
-        并排时它在左）；「账号」挪到最后（头像那两颗之后）。
-        拿「退出登录画出来了」当判据 —— 它是这一页上**唯一**只凭登录态显隐的
-        兄弟，不像文案那样会随会话过期而变。 */
-  #account-actions:has(#btn-sign-out:not([hidden])) #btn-account-entry {
-    order: 1;
-  }
-  /* ⚠️ 但「退出登录」**不许跟着进这一行**：它说的是「我这一份账号」，
-     归下面「账号」卡管；挤在身份行上纯占位。
-     摘法是 `display: none`（它不进布局），而不是 `visibility: hidden` ——
-     后者仍占着一条 flex 项的位置，会把这一行挤到换行去。
-     ⚠️ 判据用同一个 `:has(#btn-sign-out:not([hidden]))`：没登录时那一颗是
-        hidden 的、这一条自然不生效 —— 不需要第二套条件。 */
-  #account-actions:has(#btn-sign-out:not([hidden])) #btn-sign-out {
-    display: none;
-  }
-
-  /* 动作行自己那两颗键也收成行内小号（与头像那两颗逐像素同尺）——
-     ⚠️ 必须**点名到身份行里的这一份**：上面那条 `.account-actions .account-btn`
-        （flex: 1 1 0 / min-width: 104px）是「账号卡里两张满宽键」的算式，
-        挪进身份行之后那套宽度会把「账号」撑成 104px，把旁边的键挤掉。 */
+  /* 这一格上那颗键也收成行内小号（与头像那颗逐像素同尺）——
+     ⚠️ 必须**点名到身份行里的这一份**：上面那一条
+        `.account-actions .account-btn`（flex: 1 1 0 / min-width: 104px）
+        是「账号卡里两张满宽键」的算式，挪进身份行之后那套宽度会把
+        这一颗撑成 104px，把旁边的键挤掉。 */
   .identity-row > .account-actions .account-btn {
     flex: 0 0 auto;
     width: auto;
@@ -459,21 +447,6 @@ body[data-nav="login"] .app {
     font-size: var(--ctl-font-sm);
     margin-top: 0;
   }
-  /* 动作行自己的间距也收一格（8 → 6）：这一行上有三颗键，缝隙是纯开销。 */
-  .identity-row > .account-actions { gap: 5px; }
-  .identity-btns {
-    gap: 5px;
-    /* 那两颗键在小屏上收到一档更小的字号（12.5px）：32px 高的框里
-       「上传头像」四个字本来就只占一半宽度，但手机上它是最容易被挤没的
-       那两颗之一 —— 这一档只在小屏生效，宽屏上仍是 13px 那档。 */
-  }
-  @media screen and (max-width: 700px) {
-    .identity-btns .account-btn,
-    .identity-row > .account-actions .account-btn { font-size: 12.5px; }
-  }
-  /* 这一行自己的格距在 .identity-row 那条里统一收了一格（10 → 6/8）：
-     这一行有五个成员、四处缝，纯开销。收缝是**唯一**能换出宽度的办法 ——
-     六格键的宽度由内容定死，靠自己让位是让不出宽度的（见上面那条）。 */
 
   /* 徽章在身份行里收小一号：它是「我在哪一层」的一个字，不是这一行的主角。
      ⚠️ 这一条只对身份行里那一枚生效（#identity-badge 是它在页面上的唯一 id），
@@ -487,7 +460,6 @@ body[data-nav="login"] .app {
     letter-spacing: 0;
   }
 }
-
 
 /* 同一行里那颗「层级对比」：它去别处看一张表，不是「登录 / 退出」那类动作，
    所以不画成键 —— 一行天青副色的字，无下划线；高度与旁边两颗键齐平
@@ -607,44 +579,106 @@ body[data-nav="login"] .app {
 .identity-row {
   display: flex;
   align-items: center;
-  /* ⚠️ 折行是这一行**唯一的**让位方式（Issue #278 第七轮）。
+  /* ⚠️ 折行是这一行**最后的**让位方式（Issue #278 第七轮定下来的下限）。
      上一轮是不折行 + 让每颗键各自收缩，实测的收场是「登录」两个字竖排、
      「上传头像」被「退出登录」压住（用户 2026-09-24：「彻底找不到上传头像
-     和删除头像按钮了」）。这一行现在由六个**宽度定死**的格子组成，
-     让不动就只能折 —— 折了至少颗颗读得出来，而不折的下场是读不出来。
-     `align-content: center` 保证折行后两行仍然贴在一起居中（不是被拉成一整块）。 */
+     和删除头像按钮了」）。所以**不许**把折行整个拿掉：真到极限时
+     `scrollWidth > clientWidth` 会比折行更糟（屏幕右边多出一段横滚，
+     最后一格被切在屏幕外，看着像键丢了）。
+     ⚠️ 但它得是**最后一招**，不是第一招（Issue #276 第八轮）：
+        flex 的断行判据用**假想主尺寸**（这里 = 昵称框的 120px max-content），
+        不看 `flex-shrink` —— 于是「只差 2px」时断行先发生、
+        shrink:999 的昵称列压根没轮到让位。真浏览器 393px 实测的收场就是
+        这一条：自然宽 339 > 可用 337，昵称列一格没让，**徽章落到了第二行**
+        —— 而「第二个东西跑到下一行」正是用户 2026-09-24 报的那道题。
+     解法有两半，缺一不可：
+       ① 昵称列的**假想主尺寸**别按 120px 算那么多（见下面
+          `.identity-main { flex: 1 999 auto }` 上面那条说明里
+          「为什么昵称框的 basis 要收窄」）；
+       ② 格子之间的缝在窄屏上再收一格（见下面那条 @media）。
+     `align-content: center` 保证万一折了，两行仍然贴在一起居中。 */
   flex-wrap: wrap;
   align-content: center;
   gap: 6px 8px;
 }
-/* ⚠️ 那一簇动作（「登录 / 账号」「上传头像」「删除头像」）整组**贴右**。
-   它是两个格子，而 `margin-left: auto` 只认它摸得到的第一个 ——
-   写在这儿只有「登录 / 账号」那一格吃到，头像那两颗会紧跟其后，
-   看着就是「删除头像」被推到第二行去（Issue #278 第七轮实测）。
-   所以右推只由 .identity-main 的 `margin-right: auto` 负责：
-   它是这一行里**唯一**不参与右簇的东西，让它把余量全吃在右边，
-   后面三个格子自然挤到右缘。 */
-.identity-main { margin-right: auto; }
-.identity-row > .account-actions { margin-left: 0; }
+/* ⚠️ 窄屏上把**列缝**再收一格（8 → 6，Issue #276 第八轮）。
+   393px 实测这一行的自然宽是 339px、行内可用 337px —— **就差 2px**，
+   而 flex 的断行判据不看 flex-shrink（见 .identity-row 那条说明），
+   于是这 2px 的收场是「徽章落到第二行」。四处列缝各收 2px = 省下 8px，
+   把那 2px 的差额吞掉，这一行在 393px 上终于是**真的一行**。
+   ⚠️ 只在窄屏生效：宽屏上这四处缝本来就宽裕，收它只会让那一行看着挤。 */
+/* ⚠️ 这一行上「余量归谁」与「装不下时谁先让」是**同一件事**（Issue #276 第八轮）。
+   两个写法都试过、都不行，写在这儿免得下一个人再走一遍：
+     · `.identity-main { margin-right: auto }`（上一轮用的）
+     · `#identity-badge { margin-left: auto }`（这一轮先试的）
+   **auto 外边距在 flex 算法里优先于收缩**：它先把余量全吃走，
+   盒子还差 2px 装不下时，`flex-shrink: 999` 的昵称列也一格都让不出来
+   （根本没轮到收缩这一步），于是最后那枚徽章被挤到**第二行**。
+   真浏览器 393px 实测：这一行自然宽 339px、可用 337px —— 差 2px，
+   昵称列 shrink=999 却纹丝不动，徽章落到了 y=144 那第二行上。
+   ⚠️ 唯一能让「装不下就先让」真的生效的写法：让昵称列自己当那个
+      **`flex-grow: 1` + `flex-shrink: 999`** 的成员 ——
+      宽裕时它吃余量（动作簇自然贴右，与 margin-right: auto 的观感一致），
+      装不下时它也第一个让（收的是它自己的宽度，不是别人吃剩的余量）。
+      两者落在**同一个盒子**上，就不会互相挡住。
+   ⚠️ 这一条必须写**一次**、写全（flex-grow / flex-shrink / flex-basis / min-width
+      四件齐全）。下面若再出现一条 `.identity-main { flex: ... }`，
+      它会把这里的 flex-shrink 一起重设成 1 —— 那正是本轮踩到的坑。 */
+.identity-main {
+  min-width: 0;
+  /* ⚠️ **basis 必须是 0，不能是 auto**（Issue #276 第八轮，这一条是本题的核心）。
+     flex 的断行判据用每个 flex 项的**假想主尺寸**（= flex-basis）：
+       · basis: auto → 昵称列按自己的 max-content（147px）去参与断行计算，
+         于是 40+147+37+66+66+缝 = 380 > 337，**断行先发生**，
+         收缩（flex-shrink: 999）压根没轮到 —— 徽章就落到了第二行。
+       · basis: 0 → 断行计算时这一项只算 0，这一行 40+0+37+66+66+24 = 233 < 337，
+         **永不因为昵称列而断行**；剩下的空间由 flex-grow: 1 分给它，
+         而「能分多少」正好被它自己的 `max-width: 9.5em` 卡住
+         （宽屏上仍是 120px，与改前逐像素相同）。
+     这就是「宽裕时占 9.5em、装不下时第一个让」的正确写法。
+     ⚠️ 别再改回 `flex: 1 999 auto`：那一版的实测收场就是徽章掉到第二行。 */
+  flex: 1 999 0;
+  /* ⚠️ 两个条件**必须一起**（Issue #276 第八轮，少一个都不行）：
+       · `flex-basis: 0` —— 断行计算时这一项只算 0（见上面那段说明）；
+       · `min-width: 96px` —— 断行与收缩都到这儿为止，不许把它压穿。
+     只给 basis:0 不给下限的实测收场：393px 上昵称列被压到 31px，
+     「已登录 · b***@163.com」只剩几个字，看着像这一行坏了。
+     只给下限不给 basis:0 的实测收场：断行先发生（auto basis = 147px），
+     徽章被挤到第二行 —— 用户在 Issue #276 里报的正是这一条。
+     96px 是「够认出三四个字」的下限（名字与那行小字都有 ellipsis 兜底）。 */
+  min-width: 96px;
+}
 /* ⚠️ 昵称列是这一行里唯一「小一点也没关系」的东西 —— 放不下时它先让，
    一路可以让到 0 宽（那时只剩下边的头像与右边的几颗键）。
-   flex-shrink 给一个大值（999），确保任何情况下它都**先于**那几颗键让位。 */
-.identity-main { min-width: 0; flex: 1 1 auto; flex-shrink: 999; }
-
-/* ⚠️ 未登录那一态：昵称框**收进内容宽**（Issue #278 第七轮）。
-   它原先宽 9.5em（19px 字号下约 180px）且 `flex: 1 1 auto`，于是这一行上
-   「名字占 180、六格键挤 265」—— 393px 实测昵称列被压到 **0 宽**，
-   「登录」被压成 39px（两个字竖着排）、「退出登录」压成一条缝、
-   「上传头像」四颗键叠在一起，整行看着像坏了（用户 2026-09-24：
-   「我的页面 现在怎么彻底找不到上传头像和删除头像按钮了」）。
-   盒子按内容定宽之后，让位的顺序回到设计里写的那一条：
-   **先让昵称列**，六格键颗颗读得出来；真挤到极限才折行。
-   `max-content` 上再取 120px —— 名字是这一行的主角，但没登录时
-   空框不该比它要说明的那几颗键还金贵。 */
+   `flex-shrink: 999` 就是「它先让」的唯一依据（见上面那一条的说明）。
+   ⚠️ 未登录那一态：昵称框**收进内容宽**（Issue #278 第七轮）。
+      它原先宽 9.5em（19px 字号下约 180px）且 `flex: 1 1 auto`，于是这一行上
+      「名字占 180、几格键挤 265」—— 393px 实测昵称列被压到 **0 宽**、
+      那几颗键叠在一起，整行看着像坏了（用户 2026-09-24：
+      「我的页面 现在怎么彻底找不到上传头像和删除头像按钮了」）。
+      盒子按内容定宽之后，让位的顺序回到设计里写的那一条：
+      **先让昵称列**，那几颗键颗颗读得出来；真挤到极限才折行。
+      `max-content` 上再取 120px —— 名字是这一行的主角，但没登录时
+      空框不该比它要说明的那几颗键还金贵。 */
+/* ⚠️ `min-width: 0` 是这一段的**关键**，不是顺手写的（Issue #276 第八轮）。
+   `<input>` 有自己的默认宽度（`size=20` → 约 186px），它表现为该元素的
+   **min-content 下限** —— 于是 `max-width: 120px` 只能把它的**上限**收住，
+   装不下时它一格都不肯再让（实测 `.identity-main` 的 min-content 是 142px，
+   而这一行只差几像素）。加 `min-width: 0` 之后才真的能收。
+   ⚠️ 这一条同时解释了「为什么上一轮以为昵称列会先让、实际却没让」。 */
 .identity-name,
-.nickname-input { max-width: min(9.5em, 120px); }
-.identity-main:not(:focus-within) .nickname-input { flex: 0 1 auto; width: min(9.5em, 120px); }
-.identity-main { flex: 0 1 auto; }
+.nickname-input { max-width: min(9.5em, 120px); min-width: 0; }
+/* ⚠️ 这里用 `max-width`（不是 `width`，Issue #276 第八轮踩过的坑）。
+   写 `width: 120px` 是**硬宽**：它把这个盒子钉死在 120px 上，
+   `flex-shrink: 999` 再大也收不动它（收缩只能收「flex-basis 之上的部分」，
+   而 width 就是 basis 的实底）。实测后果：昵称列纹丝不动，
+   最后那颗徽章被挤到第二行 —— 用户报的「按钮往下跑」的同一族毛病。
+   改成 `max-width` 之后，宽裕时它仍占 120px（观感不变），
+   装不下时它第一个让（一路让到内容宽）。 */
+.identity-main:not(:focus-within) .nickname-input { flex: 0 1 auto; max-width: min(9.5em, 120px); width: 100%; min-width: 0; }
+/* ⚠️ 聚焦那一态：昵称列**放开吃余量**（正在打字时这一行让给输入框）——
+   这里可以再写 `flex: 1 1 auto`（它会重设 shrink），因为那一态下
+   「让位」与「吃余量」都是它自己的事，重设成 1 也还是它先让。 */
 .identity-main:focus-within { flex: 1 1 auto; }
 .identity-name {
   font-family: var(--font-poem);
@@ -657,6 +691,8 @@ body[data-nav="login"] .app {
   white-space: nowrap;
 }
 .identity-sub {
+  display: block;
+  min-width: 0;
   font-size: 12.5px;
   color: var(--ink-3);
   overflow: hidden;
@@ -1527,8 +1563,16 @@ thead .plans-th-cap {
 
 .nickname-input {
   display: block;
-  width: 9.5em;
-  max-width: 100%;
+  /* ⚠️ 这里必须是 `max-width` 语义（不是 `width`）—— Issue #276 第八轮。
+     原先 `width: 9.5em`（≈180px）是**硬宽**，它把这个输入框钉死，
+     `flex-shrink: 999` 的昵称列因此一格都收不动 —— 装不下时 flex 断行先发生，
+     最后那几个格子被挤到第二行（用户 2026-09-24 报的那道题）。
+     现在：`width: 100%` 让它在盒子里可伸缩，`max-width: 9.5em` 收住上限
+     （宽的时候观感与改前逐像素相同：仍是 9.5em 那一段），
+     `min-width: 0` 放开 `<input>` 自带的 min-content 下限（约 186px）。
+     三条合起来才是「宽裕时 9.5em、装不下时先让」这个设计本来要的东西。 */
+  width: 100%;
+  max-width: 9.5em;
   min-width: 0;
   margin: 0 0 3px;
   padding: 0;
@@ -1662,10 +1706,70 @@ thead .plans-th-cap {
 .identity-foot .settings-hint { margin-top: 2px; }
 .identity-foot .settings-hint:empty { display: none; }
 
-#btn-avatar-clear { margin-top: 10px; }
+/* ⚠️ 这一条是**遗留**：早先「上传头像」与「删除头像」是上下两行（一行一个），
+   所以给下面那颗留了 10px 的间距（见 .account-btn + .account-btn 那条 8px 的同族）。
+   用户 2026-09-24（Issue #276）点名的正是它：
+   「删除头像按钮比其他按钮显示得往下了」—— 真浏览器（1280px）实测
+   「上传头像」y=101、「删除头像」y=106，**整整低下 5px**（32px 高的框，
+   margin-top: 10px 被行内 align-items: center 分掉一半，露出来就是 5px）。
+   两颗现在是**并排**的兄弟，间距由 .identity-btns 的 gap 管，
+   各自不许再带自己的外边距 —— 留着一条，它们就永远差 5px 对不齐。
+   ⚠️ 别再按「上下两行」的老样子把它加回来。 */
+.identity-btns .account-btn { margin-top: 0; }
 
 #stats-card .settings-btns { margin-top: 12px; }
 
 .admin-slot { margin-top: 4px; }
 .admin-slot .account-btn { width: auto; min-width: 132px; padding: 10px 16px; }
 
+@media screen and (max-width: 480px) {
+  .identity-row { column-gap: 6px; }
+  .identity-btns,
+  .identity-row > .account-actions { gap: 5px; }
+  /* ⚠️ 再往下（≤400px）昵称框的**封顶**也跟着收一档（120 → 96px）。
+     它不是「名字不重要」，而是：375 / 360 两档实测自然宽 335 / 320，
+     行内可用 319 / 304 —— 差 16px，而这一行上唯一的活钱就是昵称框
+     （那两颗键的字不能压、徽章不能压、头像不能压）。收掉 24px 之后
+     两档都是完整的一行。名字写长了有 `text-overflow: ellipsis` 兜着，
+     而「一行按钮」是用户点名的要求 —— 两者冲突时让名字短一点。 */
+  .identity-name,
+  .nickname-input { max-width: 96px; }
+  .identity-main:not(:focus-within) .nickname-input { max-width: 96px; }
+  .identity-btns { gap: 4px; }
+  /* ⚠️ 那道「昵称列不许压成 0 宽」的下限，只在**装得下**的档位上要
+     （≥481px，见上面对应的注释）。窄屏这一档反过来：昵称列是**唯一**
+     还能让的格子，给它一个下限就等于把溢出转移给整行 ——
+     实测 375px：下限 72px 时这一行的 scrollWidth 比 clientWidth 大 13px，
+     多出来的是**整页**的横滚（屏幕右边能拖出一段空白）。
+     所以这一档**明确不要**下限，让它一路让到内容宽（名字长了有 ellipsis 兜）。
+     ⚠️ 也不折行：折行会把两颗键拆到两行，而「一行」正是用户点名要的形状。 */
+  /* ⚠️ 窄屏下限一档更小（96 → 72）：360px 那一档若坚持 96px，
+     这一行就要溢出去（实测 scrollWidth 比 clientWidth 大 10px 上下）。
+     72px 是「还认得出两三个字」的下限；再窄的屏（320px）宁可让名字短一点，
+     也不许把那两颗键挤到第二行。 */
+  /* ⚠️ 窄屏下限一档更小（96 → 72）：360px 那一档若坚持 96px，
+     这一行就要溢出去或折行（实测 360px：96 + 132 + 40 + 37 + 24 = 329 > 304）。
+     72px 是「还认得出两三个字」的下限；再窄的屏（320px）宁可让名字短一点，
+     也不许把那两颗键挤到第二行 —— 「一行」是用户点名的形状。 */
+  .identity-main { min-width: 72px; }
+  /* ⚠️ 最窄那一档（≤400px）头像也让一步（44 → 40px）。
+     它是这一行上**最后一个**可以小一点的东西：360px 实测
+     自然宽 307px、可用 304px —— 差 3px，而缝已经收到 6/4、名字已经收到 96。
+     头像缩 4px 正好把那 3px 吞掉。
+     ⚠️ 40px 是下限：再小就不是一枚能认出来的头像了（触达也不够）。
+        更窄的屏（320px）本来就装不下 —— 那一档折行，这是设计里认下来的
+        （折行只丢「一行」这个形状，不丢任何一颗键的读法）。 */
+  .identity-row .avatar { --avatar-size: 40px; }
+}
+/* ⚠️ 最窄那一档（≤400px）再挤一挤：头像到 36px、昵称列下限到 64px、
+   键的左右内边距收到 5px。这一档上 360/320 两屏的可用宽只有
+   304 / 264px，而一行上的定数是「头像 + 徽章 + 两颗键 + 四处缝」
+   = 36+37+66+66+18 = 223 —— 剩下 81 / 41px 给名字。
+   ⚠️ 这些都是**下限值**，不是「让字形变小」：字一个都不许压
+      （把字压成竖排是这一族问题的原始形态）。 */
+@media screen and (max-width: 400px) {
+  .identity-row .avatar { --avatar-size: 36px; }
+  .identity-main { min-width: 64px; }
+  .identity-btns .account-btn,
+  .identity-row > .account-actions .account-btn { padding: 0 5px; font-size: 12px; }
+}

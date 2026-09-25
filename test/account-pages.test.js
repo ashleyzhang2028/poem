@@ -399,12 +399,21 @@ const LOGIN = strip(loginJs), MINE = strip(mineJs), ADMIN = strip(adminJs);
     'AuthCore.resetCredential 仍在（本机那条路的能力没删）');
   chk(!/onResetSend|onResetVerify/.test(LOGIN), 'js/login.js 不再接旧的重设凭证那一块');
 
+  // ⚠️ 第八轮（Issue #276）：「去 /login/」的动线**还是两处，但各有各的事**，
+  //    所以这条断言从「只有一处」换成了「点名叫出是哪两处」——
+  //    放宽不是因为它多了，而是因为**这两处都是真的需要**：
+  //      ① 身份行那颗「登录 / 退出登录」（未登录那一态去 /login/）；
+  //      ② 账号卡里那颗「账号与安全」（已登录的人去看「我是谁」）。
+  //    旧实现里②去 /login/ 是**唯一**那条（那时身份行那颗还叫「账号」）；
+  //    现在①是「我现在要不要登录」、②是「我的账号资料在哪」——
+  //    两件事、两个落点，不该合并成一颗（合并就又回到用户问的那件事上）。
   const toLogin = [...MINE.replace(/^\s*\/\/.*$/gm, ' ').matchAll(/"\/login\/"/g)].length;
-  chk(toLogin === 1,
-    '「我的」页只有一颗去 /login/ 的按钮（实际 ' + toLogin +
-    ' 处 —— 账号卡那颗入口就是它，下面不该再摆一颗「建账号」）');
-  chk(/btn-account-entry/.test(read('mine/index.html')) && /btn-account-entry/.test(MINE),
-    '「我的」页靠账号卡那颗 #btn-account-entry 承担去 /login/ 的动线');
+  chk(toLogin === 2,
+    '「我的」页去 /login/ 的动线**就这两处**（实际 ' + toLogin + ' 处）：' +
+    '① 未登录时身份行那颗「登录」② 账号卡里那颗「账号与安全」');
+  chk(/btn-account-entry/.test(MINE) && /btn-account-open/.test(read('mine/index.html')) &&
+      /btn-account-open/.test(MINE),
+    '两处各有各的 id：#btn-account-entry（登录/退出）+ #btn-account-open（账号与安全）');
 }
 
 {
@@ -492,9 +501,13 @@ const LOGIN = strip(loginJs), MINE = strip(mineJs), ADMIN = strip(adminJs);
   chk(!/guest-card/.test(SRC.profile),
     '那块「未登录引导」整块撤掉（不留空壳容器）');
 
-  chk(/bt\.textContent = id\.signedIn \? "账号" : "登录"/.test(MINE) ||
-      /"账号"\s*:\s*"登录"/.test(MINE),
-    '未登录那颗键就叫「登录」（不把理由写在按钮上；已登录换「账号」）；');
+  // ⚠️ 第八轮（Issue #276）：用户问「登录按钮和退出登录按钮应该同时显示吗？
+  //    他们应该是一个按钮两个状态吧？」—— 是。那颗键现在是**一颗键的两个文案**：
+  //    未登录「登录」、已登录「退出登录」（不再是「账号」——「账号」是另一件事，
+  //    搬去账号卡的 #btn-account-open 了）。
+  chk(/btn\.textContent = id\.signedIn \? "退出登录" : "登录"/.test(MINE) ||
+      /"退出登录"\s*:\s*"登录"/.test(MINE),
+    '未登录那颗键就叫「登录」，已登录换成「退出登录」（一颗键两个状态）；');
 
   chk(!/id="login-hint"/.test(stripHtml(mineSettings)) &&
     !/login-hint/.test(MINE) && !/diffLine/.test(MINE),
@@ -579,10 +592,12 @@ const LOGIN = strip(loginJs), MINE = strip(mineJs), ADMIN = strip(adminJs);
   const req = A.requestCode(store, { channel: 'email', value: 'zhangmin@163.com' }, 'login');
   A.verifyCode(store, req.codeId, req.code, 'login');
   W.document.dispatchEvent(new W.Event('DOMContentLoaded', { bubbles: true }));
-  chk(W.document.getElementById('btn-account-entry').textContent === '账号',
-    '已登录时那颗键换成「账号」（仍落在 /login/，不是死路）');
-  chk(W.document.getElementById('btn-sign-out').hidden === false,
-    '已登录时「退出登录」露出来（与「账号」同一行）');
+  chk(W.document.getElementById('btn-account-entry').textContent === '退出登录',
+    '已登录时**同一颗键**换成「退出登录」（问题 #276：一个按钮两个状态）');
+  chk(W.document.getElementById('btn-account-entry').dataset.action === 'sign-out',
+    '并且它的落点跟着换成「退出」（不是写死成再去一次 /login/）');
+  chk(W.document.getElementById('btn-sign-out') === null,
+    '不再有与之并存的第二颗键（两颗同时在，用户要自己判断该点哪一颗）');
 }
 
 {

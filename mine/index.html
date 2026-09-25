@@ -52,6 +52,16 @@
                    step="0.01" value="0" aria-label="放大缩小" />
             <div class="crop-btns">
               <button class="btn ghost-btn" id="btn-crop-cancel" type="button">取消</button>
+              <!-- ⚠️ 「删除头像」这颗键住在**裁切层**里（Issue #276 第八轮）。
+                   它原先在身份行上、与「上传头像」并排，而那颗键在**没图时
+                   也画着**（只是 hidden）—— 判据就是「本机有没有图」，
+                   要两处维护（身份行那一半 + 编辑层那一半）。
+                   用户 2026-09-24 的原话是：「如果用户没有上传头像，
+                   是不是不应该显示删除头像按钮？」—— 那么它只该在
+                   **有图**这一半里出现，而有图那一半的唯一入口就是这里
+                   （「上传头像」在有图时叫「更新头像」，点进来就是这个层）。
+                   这么并之后「删除」不再占身份行一格，也不会再被折到第二行。 -->
+              <button class="btn ghost-btn" id="btn-crop-clear" type="button">删除头像</button>
               <button class="btn" id="btn-crop-ok" type="button">用这张</button>
             </div>
           </div>
@@ -87,16 +97,14 @@
           </div>
         </div>
 
-        <!-- ⚠️ 这两颗的**次序在 HTML 里就要排对**：默认渲染态是「登录」+「退出登录」
-             （会话过了 90 天时它俩同时在，退出那一颗挪到这里才不闪 —— 用户看到的是
-             两颗键顺序稳定）。CSS 用 :has() 再把「已登录」态换成
-             「退出登录 | 账号」，两态都不会先闪一下再跳。
-             ⚠️ 「账号」那颗**不再**开新的渲染出口：它就是这儿这颗
-             #btn-account-entry，只是位置由 CSS 换一下（见 css/account.css
-             那一段 .account-actions:has(...) 的说明）。 -->
-        <div class="account-actions" id="account-actions">
-          <button class="account-btn" id="btn-account-entry" type="button">登录</button>
-          <button class="account-btn ghost" id="btn-sign-out" type="button" hidden>退出登录</button>
+        <!-- ⚠️ 这一格原先装着「登录 + 退出登录」两颗键，并整只搬进身份行
+             （Issue #276 第七轮靠 CSS 的 order + :has() 在两态间换位置）。
+             第八轮把它们收成**身份行上那一颗键的两个文案**（见 js/mine.js 的
+             renderSignOut），这里改成账号自己的入口：「账号」去哪儿看
+             「我是谁」是 /login/ 那一页的事，与上面「登录 / 退出」那颗
+             不是同一件事，所以它在**卡里**，不在身份行上。 -->
+        <div class="account-actions" id="account-card-actions">
+          <button class="account-btn ghost" id="btn-account-open" type="button">账号与安全</button>
         </div>
 
       </section>
