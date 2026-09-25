@@ -25,6 +25,43 @@
     return g && g.Family ? g.Family : null;
   }
 
+  // 本机那份头像字节（LOCAL_NS）怎么跟着子用户走（Issue #320）。
+  //
+  // 从前这一把键是**设备域**的（`Family.isPerChild` 对它说 false），
+  // 于是「切子用户」只换得动昵称：头像仍是上一个孩子那张脸 ——
+  // 顶栏底栏、以及「我的」那一版头像，切完还是原来那张。
+  // 现在它按 `<原键>::<子用户 id>` 存，读写都经 Family.keyFor() 拼，
+  // 拼法仍然只有那一处（老样子：Family 缺席时退化成原键，0 期形状一字不动）。
+  function localKey(backing) {
+    var F = familyMod();
+    if (!F || typeof F.keyFor !== "function") return LOCAL_NS;
+    var id = "";
+    if (typeof F.currentId === "function") {
+      try { id = String(F.currentId({ backing: backing }) || ""); } catch (e) { id = ""; }
+    } else if (typeof F.current === "function") {
+      try {
+        var p = F.current({ backing: backing });
+        id = String((p && p.id) || "");
+      } catch (e) { id = ""; }
+    }
+    if (!id) return LOCAL_NS;
+    try { return F.keyFor(LOCAL_NS, id); } catch (e) { return LOCAL_NS; }
+  }
+
+  // 读那一把：先读当前子用户那把，**再回落到不分家的老键**。
+  //
+  // ⚠️ 回落这一半是必要的 —— 老用户（或是本机那份字节还写在老键上的
+  //    那些人）不该因为这一改就「头像突然变回首字」，而且他们**一张图
+  //    都丢不掉**。写的时候会把它搬到当前子用户名下（见 setLocalImage）。
+  function localRaw(backing) {
+    var k = localKey(backing);
+    if (k !== LOCAL_NS) {
+      var own = safeGet(backing, k);
+      if (own) return own;
+    }
+    return safeGet(backing, LOCAL_NS);
+  }
+
   function currentChild(backing) {
     var F = familyMod();
     if (!F || !F.current) return null;
@@ -189,7 +226,7 @@
   }
 
   function localImage(backing) {
-    var o = safeParse(safeGet(backing, LOCAL_NS));
+    var o = safeParse(localRaw(backing));
     var v = o && typeof o === "object" ? String(o.img == null ? "" : o.img) : "";
     return /^data:image\//.test(v) ? v : "";
   }
@@ -198,12 +235,83 @@
     var v = String(dataUrl == null ? "" : dataUrl);
     if (!/^data:image\//.test(v)) return false;
     if (v.length > 400 * 1024) return false;
-    return safePut(backing, LOCAL_NS, JSON.stringify({ v: 1, img: v }));
+    var k = localKey(backing);
+    var ok = safePut(backing, k, JSON.stringify({ v: 1, img: v }));
+    // 搬完就把不分家的那把老键撤掉：同一份字节留两处就是第二份真相，
+    // 而下一回「切孩子」还会按老键画错一次。
+    if (ok && k !== LOCAL_NS) dropKey(backing, LOCAL_NS);
+    return ok;
   }
 
   function clearLocalImage(backing) {
     if (!backing) return false;
-    try { backing.removeItem(LOCAL_NS); return true; } catch (e) { return false; }
+    var k = localKey(backing);
+    var ok = dropKey(backing, k);
+    if (k !== LOCAL_NS) ok = dropKey(backing, LOCAL_NS) || ok;
+    return ok;
+  }
+
+  // 备份里怎么带上「本机那份字节」（Issue #320 起它按子用户分家）。
+  //
+  // 它是**设备域里唯一一份「不导就会丢」的东西**：昵称与头像地址住在名册里
+  // （`Family.read()` 那一条），而本机那份 data URL 副本只在这里。
+  // 所以导出按子用户整份带走，导入原样回填（键名由这里一处算，别处不拼）。
+  function exportLocal(opt) {
+    var o = opt || {};
+    var b = o.backing === undefined ? defaultBacking() : o.backing;
+    var out = {};
+    var F = familyMod();
+    var ids = [];
+    if (F && typeof F.list === "function") {
+      try {
+        (F.list({ backing: b }) || []).forEach(function (p) {
+          if (p && p.id) ids.push(String(p.id));
+        });
+      } catch (e) {  }
+    }
+    ids.forEach(function (id) {
+      var raw = safeGet(b, localKeyOf(id));
+      var img = imgOfLocal(raw);
+      if (img) out[id] = img;
+    });
+    // 老键（不分家的那一把）也带上：它是迁移前写下的，导入端要能把它接住。
+    var legacy = imgOfLocal(safeGet(b, LOCAL_NS));
+    if (legacy) out[""] = legacy;
+    return out;
+  }
+
+  function importLocal(map, opt) {
+    var o = opt || {};
+    var b = o.backing === undefined ? defaultBacking() : o.backing;
+    if (!map || typeof map !== "object") return false;
+    var any = false;
+    Object.keys(map).forEach(function (id) {
+      var img = imgOfLocal(JSON.stringify({ v: 1, img: map[id] }));
+      if (!img) return;
+      if (safePut(b, localKeyOf(id), JSON.stringify({ v: 1, img: img }))) any = true;
+    });
+    return any;
+  }
+
+  function imgOfLocal(raw) {
+    var o = safeParse(raw);
+    var v = o && typeof o === "object" ? String(o.img == null ? "" : o.img) : "";
+    if (!/^data:image\//.test(v)) return "";
+    return v.length > 400 * 1024 ? "" : v;
+  }
+
+  // 按**指定 id** 拼那一把键（`localKey()` 用的是「当前那一个」）。
+  // 拼法仍然只有 Family.keyFor() 一处 —— 这里不写 `::`。
+  function localKeyOf(profileId) {
+    var F = familyMod();
+    var pid = String(profileId == null ? "" : profileId);
+    if (!pid || !F || typeof F.keyFor !== "function") return LOCAL_NS;
+    try { return F.keyFor(LOCAL_NS, pid); } catch (e) { return LOCAL_NS; }
+  }
+
+  function dropKey(backing, key) {
+    if (!backing) return false;
+    try { backing.removeItem(key); return true; } catch (e) { return false; }
   }
 
   function display(backing) {
@@ -297,6 +405,8 @@
     nickname: nickname, setNickname: setNickname,
     saveNickname: saveNickname, clearLegacyNickname: clearLegacyNickname,
     avatar: avatar, setAvatar: setAvatar, resetAvatar: resetAvatar,
+    localKey: localKey,
+    exportLocal: exportLocal, importLocal: importLocal,
     localImage: localImage, setLocalImage: setLocalImage, clearLocalImage: clearLocalImage,
     display: display, displayOf: displayOf, html: html, htmlFor: htmlFor, esc: esc,
     defaultBacking: defaultBacking
