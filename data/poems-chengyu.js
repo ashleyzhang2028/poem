@@ -7,6 +7,7 @@ window.POEMS_CHENGYU = [
     dynasty: "上古传说",
     author: "刘安",
     gradeGroup: "上古传说",
+    meaning: "神话传说。女娲炼五色石补好塌陷的天空。后比喻以非凡的力量挽救危局、弥补缺失。",
     excerpt: "往古之时，四极废，九州裂，天不兼覆，地不周载，火",
   },
   {
@@ -17,6 +18,7 @@ window.POEMS_CHENGYU = [
     dynasty: "上古传说",
     author: "佚名",
     gradeGroup: "上古传说",
+    meaning: "神话传说。夸父追赶太阳，渴死途中。比喻人有宏大的志向或决心，也比喻不自量力。",
     excerpt: "夸父与日逐走，入日；渴，欲得饮，饮于河、渭；河、",
   },
   {
@@ -27,6 +29,7 @@ window.POEMS_CHENGYU = [
     dynasty: "上古传说",
     author: "佚名",
     gradeGroup: "上古传说",
+    meaning: "神话传说。精卫衔木石填海不止。比喻意志坚决、不畏艰难，坚持到底。",
     excerpt: "发鸠之山，其上多柘木",
   },
   {
@@ -37,6 +40,7 @@ window.POEMS_CHENGYU = [
     dynasty: "上古传说",
     author: "刘安",
     gradeGroup: "上古传说",
+    meaning: "神话传说。后羿射落九个太阳，解除旱灾。后比喻为民除害的英雄行为。",
     excerpt: "逮至尧之时，十日并出，焦禾稼，杀草木，而民无所食",
   },
   {
@@ -47,6 +51,7 @@ window.POEMS_CHENGYU = [
     dynasty: "上古传说",
     author: "司马迁",
     gradeGroup: "上古传说",
+    meaning: "上古传说。大禹疏通河道、平定洪水。比喻治理有方，为公众利益忘我操劳。",
     excerpt: "禹乃遂与益、后稷奉帝命，命诸侯百姓兴人徒以傅土，",
   },
   {
@@ -57,6 +62,7 @@ window.POEMS_CHENGYU = [
     dynasty: "上古传说",
     author: "徐整",
     gradeGroup: "上古传说",
+    meaning: "神话传说。盘古开天辟地，始有人间。比喻前所未有、开创局面的第一次。",
     excerpt: "天地混沌如鸡子，盘古生其中",
   },
   {
@@ -67,6 +73,7 @@ window.POEMS_CHENGYU = [
     dynasty: "上古传说",
     author: "韩非",
     gradeGroup: "上古传说",
+    meaning: "上古传说。燧人氏钻木取火。比喻人类掌握最初的技术，也指从无到有的创造。",
     excerpt: "上古之世，人民少而禽兽众，人民不胜禽兽虫蛇",
   },
   {
@@ -77,6 +84,7 @@ window.POEMS_CHENGYU = [
     dynasty: "上古传说",
     author: "刘安",
     gradeGroup: "上古传说",
+    meaning: "上古传说。神农亲尝百草以辨药性。比喻为众人利益亲身试验、不辞艰险。",
     excerpt: "古者民茹草饮水，采树木之实，食蠃蠬之肉，时多疾病",
   },
   {
@@ -87,6 +95,7 @@ window.POEMS_CHENGYU = [
     dynasty: "上古传说",
     author: "佚名",
     gradeGroup: "上古传说",
+    meaning: "同「精卫填海」。精卫衔木石填海，比喻意志坚决、坚持不懈。",
     excerpt: "（同「精卫填海」）发鸠之山，其上多柘木",
   },
   {
@@ -97,6 +106,7 @@ window.POEMS_CHENGYU = [
     dynasty: "上古传说",
     author: "佚名",
     gradeGroup: "上古传说",
+    meaning: "神话传说。刑天被断首仍舞盾斧不止。比喻失败而志不屈、奋斗不息。",
     excerpt: "刑天与帝至此争神，帝断其首，葬之常羊之山",
   },
   {
@@ -107,6 +117,7 @@ window.POEMS_CHENGYU = [
     dynasty: "上古传说",
     author: "列御寇",
     gradeGroup: "上古传说",
+    meaning: "寓言故事。愚公世代挖山不止。比喻有恒心、有毅力，坚持就能成功。",
     excerpt: "太行、王屋二山，方七百里，高万仞",
   },
   {
@@ -117,6 +128,7 @@ window.POEMS_CHENGYU = [
     dynasty: "上古传说",
     author: "刘安",
     gradeGroup: "上古传说",
+    meaning: "同「女娲补天」。炼五色石补天，比喻以非凡力量挽救危局。",
     excerpt: "于是女娲炼五色石以补苍天，断鳌足以立四极，杀黑龙",
   },
   {
@@ -127,6 +139,7 @@ window.POEMS_CHENGYU = [
     dynasty: "上古传说",
     author: "刘安",
     gradeGroup: "上古传说",
+    meaning: "神话合语。「浴日」出《淮南子·天文训》，「补天」出《览冥训》。比喻功业恢宏、能力超凡。",
     excerpt: "（「浴日」见《淮南子·天文训》，「补天」见《览冥",
   },
   {
@@ -137,6 +150,7 @@ window.POEMS_CHENGYU = [
     dynasty: "上古传说",
     author: "佚名",
     gradeGroup: "上古传说",
+    meaning: "上古传说。鲧堵水无功，禹疏导成功。比喻方法不同、效果各异，疏导胜于堵塞。",
     excerpt: "洪水滔天，鲧窃帝之息壤以堙洪水，不待帝命",
   },
   {
@@ -147,6 +161,7 @@ window.POEMS_CHENGYU = [
     dynasty: "夏",
     author: "佚名",
     gradeGroup: "夏",
+    meaning: "《尚书》语。百姓是国家的根本。后世治国思想的基石，强调以民为本。",
     excerpt: "皇祖有训，民可近，不可下",
   },
   {
@@ -157,6 +172,7 @@ window.POEMS_CHENGYU = [
     dynasty: "夏",
     author: "佚名",
     gradeGroup: "夏",
+    meaning: "《尚书》语。帝王自责、把过错担在自己身上。指主动承担责任、反省自身。",
     excerpt: "尔万方有众，明听予一人诰",
   },
   {
@@ -167,6 +183,7 @@ window.POEMS_CHENGYU = [
     dynasty: "夏",
     author: "刘安",
     gradeGroup: "夏",
+    meaning: "干戈为兵器、玉帛为礼聘。把战争转为和平，指化敌为友、变冲突为和睦。",
     excerpt: "昔者夏鲧作三仞之城，诸侯背之，海外有狡心",
   },
   {
@@ -177,6 +194,7 @@ window.POEMS_CHENGYU = [
     dynasty: "夏",
     author: "司马迁",
     gradeGroup: "夏",
+    meaning: "大禹治水十三年，三次经过家门都不进去。形容为公忘私、尽职尽责。",
     excerpt: "禹伤先人父鲧功之不成受诛，乃劳身焦思，居外十三年",
   },
   {
@@ -187,6 +205,7 @@ window.POEMS_CHENGYU = [
     dynasty: "夏",
     author: "佚名",
     gradeGroup: "夏",
+    meaning: "《尚书》语。赐给诸侯土地与姓氏。指分封疆土、确立名分。",
     excerpt: "六府孔修，庶土交正，厎慎财赋，咸则三壤成赋",
   },
   {
@@ -197,6 +216,7 @@ window.POEMS_CHENGYU = [
     dynasty: "商",
     author: "司马迁",
     gradeGroup: "商",
+    meaning: "商汤见人四面张网捕兽，命撤去三面。比喻宽大处理、给人留一条生路。",
     excerpt: "汤出，见野张网四面，祝曰：「自天下四方皆入吾网",
   },
   {
@@ -207,6 +227,7 @@ window.POEMS_CHENGYU = [
     dynasty: "商",
     author: "司马迁",
     gradeGroup: "商",
+    meaning: "帮助纣王做暴虐之事。指帮助恶人做坏事，与「为虎作伥」意近。",
     excerpt: "沛公入秦宫，宫室帷帐狗马重宝妇女以千数，意欲留居",
   },
   {
@@ -217,6 +238,7 @@ window.POEMS_CHENGYU = [
     dynasty: "商",
     author: "司马迁",
     gradeGroup: "商",
+    meaning: "纣王以酒为池、悬肉为林。形容穷奢极欲、荒淫腐化到极点。",
     excerpt: "帝纣资辨捷疾，闻见甚敏；材力过人，手格猛兽；知足",
   },
   {
@@ -227,6 +249,7 @@ window.POEMS_CHENGYU = [
     dynasty: "商",
     author: "佚名",
     gradeGroup: "商",
+    meaning: "母鸡报晓。旧喻妇女掌权乱政（含贬义），今亦泛指越权行事、不合常理。",
     excerpt: "古人有言曰：「牝鸡无晨",
   },
   {
@@ -237,6 +260,7 @@ window.POEMS_CHENGYU = [
     dynasty: "商",
     author: "司马迁",
     gradeGroup: "商",
+    meaning: "连插下一根锥子的地方都没有。形容极其贫困，没有一点立足的余地。",
     excerpt: "今秦失德弃义，侵伐诸侯社稷，灭六国之后，使无立锥",
   },
   {
@@ -247,6 +271,7 @@ window.POEMS_CHENGYU = [
     dynasty: "商",
     author: "司马迁",
     gradeGroup: "商",
+    meaning: "射一百次箭，一百次都中。形容射击或说话做事准确无误、箭无虚发。",
     excerpt: "楚有养由基者，善射者也",
   },
   {
@@ -257,6 +282,7 @@ window.POEMS_CHENGYU = [
     dynasty: "商",
     author: "佚名",
     gradeGroup: "商",
+    meaning: "像死了父母一样悲伤。形容极其悲痛，今多含贬义，指为私利痛心。",
     excerpt: "二十有八载，帝乃殂落",
   },
   {
@@ -267,6 +293,7 @@ window.POEMS_CHENGYU = [
     dynasty: "商",
     author: "佚名",
     gradeGroup: "商",
+    meaning: "上天撮合而成的美满姻缘。多祝颂婚姻美满，也泛指自然形成的好搭配。",
     excerpt: "天监在下，有命既集",
   },
   {
@@ -277,6 +304,7 @@ window.POEMS_CHENGYU = [
     dynasty: "商",
     author: "佚名",
     gradeGroup: "商",
+    meaning: "殷商灭亡的教训就在眼前。指前人的失败教训就在眼前，应引以为戒。",
     excerpt: "文王曰咨，咨女殷商",
   },
   {
@@ -287,7 +315,32 @@ window.POEMS_CHENGYU = [
     dynasty: "商",
     author: "伏生",
     gradeGroup: "商",
+    meaning: "爱那房屋，连屋上的乌鸦也爱。比喻爱一个人而连带喜爱与之有关的人或物。",
     excerpt: "纣死，武王皇皇，若天下之未定",
+  },
+  {
+    textRef: "chengyu-cy-785",
+    textRef: "chengyu-cy-785",
+    id: "cy-785",
+    title: "有条不紊",
+    source: "《尚书·盘庚上》",
+    dynasty: "商",
+    author: "佚名",
+    gradeGroup: "商",
+    meaning: "形容做事有条理，一点不乱。",
+    excerpt: "若网在纲，有条而不紊",
+  },
+  {
+    textRef: "chengyu-cy-786",
+    textRef: "chengyu-cy-786",
+    id: "cy-786",
+    title: "有备无患",
+    source: "《尚书·说命中》",
+    dynasty: "商",
+    author: "佚名",
+    gradeGroup: "商",
+    meaning: "事先有了准备，就可以避免祸患。",
+    excerpt: "惟事事乃其有备，有备无患",
   },
   {
     textRef: "chengyu-cy-30",
@@ -297,6 +350,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西周",
     author: "司马迁",
     gradeGroup: "西周",
+    meaning: "周公吃饭时屡次吐出食物以接待贤士。形容求贤若渴、礼遇人才。",
     excerpt: "周公戒伯禽曰：「我文王之子，武王之弟，成王之叔父",
   },
   {
@@ -307,6 +361,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西周",
     author: "佚名",
     gradeGroup: "西周",
+    meaning: "百姓在路上相遇只能用眼神示意。形容暴政之下人人自危、敢怒不敢言。",
     excerpt: "厉王虐，国人谤王",
   },
   {
@@ -317,6 +372,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西周",
     author: "佚名",
     gradeGroup: "西周",
+    meaning: "堵塞百姓的议论比堵塞江河更危险。指不可压制民言，宜疏导。",
     excerpt: "防民之口，甚于防川",
   },
   {
@@ -327,6 +383,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西周",
     author: "司马迁",
     gradeGroup: "西周",
+    meaning: "周幽王为博褒姒一笑而举烽火戏弄诸侯。指因荒唐取乐而自败其信、招致祸患。",
     excerpt: "褒姒不好笑，幽王欲其笑万方，故不笑",
   },
   {
@@ -337,6 +394,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西周",
     author: "佚名",
     gradeGroup: "西周",
+    meaning: "凤凰在岐山鸣叫，周室将兴之兆。后指盛世将至、吉祥的征兆。",
     excerpt: "周之兴也，鸑鷟鸣于岐山",
   },
   {
@@ -347,6 +405,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西周",
     author: "佚名",
     gradeGroup: "西周",
+    meaning: "召公曾憩息甘棠树下，后人爱树不忍伐。指官吏有德政，为百姓长久感念。",
     excerpt: "蔽芾甘棠，勿翦勿伐，召伯所茇",
   },
   {
@@ -357,6 +416,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西周",
     author: "左丘明",
     gradeGroup: "西周",
+    meaning: "倾尽家财以解救国难。形容为国家利益不惜牺牲个人一切。",
     excerpt: "秋，申公斗班杀子元",
   },
   {
@@ -367,6 +427,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西周",
     author: "佚名",
     gradeGroup: "西周",
+    meaning: "形容言行极为谨慎，一点不敢疏忽。",
     excerpt: "维此文王，小心翼翼",
   },
   {
@@ -377,6 +438,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西周",
     author: "李耳",
     gradeGroup: "西周",
+    meaning: "上下四方布下的罗网。形容包围严密，无处逃遁。",
     excerpt: "勇于敢则杀，勇于不敢则活",
   },
   {
@@ -387,6 +449,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西周",
     author: "佚名",
     gradeGroup: "西周",
+    meaning: "吸取以前的教训，慎防以后再犯。指以过去的失误为戒，谨慎从事。",
     excerpt: "予其惩，而毖后患",
   },
   {
@@ -397,6 +460,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西周",
     author: "佚名",
     gradeGroup: "西周",
+    meaning: "不是常人所能想到的。形容言谈或现象离奇古怪，超出常理。",
     excerpt: "涣其群，元吉",
   },
   {
@@ -407,6 +471,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西周",
     author: "佚名",
     gradeGroup: "西周",
+    meaning: "求还求不到，竟然得到了。形容渴望已久，终于如愿。",
     excerpt: "求之不得，寤寐思服",
   },
   {
@@ -417,6 +482,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西周",
     author: "佚名",
     gradeGroup: "西周",
+    meaning: "兄弟在家中争吵。比喻内部不和、自相争斗。",
     excerpt: "兄弟阋于墙，外御其务",
   },
   {
@@ -427,6 +493,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西周",
     author: "佚名",
     gradeGroup: "西周",
+    meaning: "趁着没下雨先修好门窗。比喻事先做好准备，防患于未然。",
     excerpt: "迨天之未阴雨，彻彼桑土，绸缪牖户",
   },
   {
@@ -437,6 +504,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "左丘明",
     gradeGroup: "春秋",
+    meaning: "擂第一通鼓时士气最盛。比喻趁劲头大的时候一口气把事情做完。",
     excerpt: "公与之乘，战于长勺",
   },
   {
@@ -447,6 +515,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "韩非",
     gradeGroup: "春秋",
+    meaning: "老马认得走过的路。比喻有经验的人熟悉情况，能起引导作用。",
     excerpt: "管仲、隰朋从桓公伐孤竹，春往冬反，迷惑失道",
   },
   {
@@ -457,6 +526,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "司马迁",
     gradeGroup: "春秋",
+    meaning: "管仲与鲍叔牙相知极深。指交谊深厚、彼此信任的朋友。",
     excerpt: "管仲曰：「吾始困时，尝与鲍叔贾，分财利多自与，鲍",
   },
   {
@@ -467,6 +537,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "左丘明",
     gradeGroup: "春秋",
+    meaning: "主动退让九十里。比喻对人让步回避，不与人相争。",
     excerpt: "及楚，楚子飨之，曰：「公子若反晋国，则何以报不谷",
   },
   {
@@ -477,6 +548,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "司马迁",
     gradeGroup: "春秋",
+    meaning: "一叫就使人震惊。比喻平时默默无闻，一下子做出惊人的成绩。",
     excerpt: "此鸟不飞则已，一飞冲天；不鸣则已，一鸣惊人。",
   },
   {
@@ -487,6 +559,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "左丘明",
     gradeGroup: "春秋",
+    meaning: "询问九鼎的轻重，意在夺取天下。比喻有觊觎权位、图谋霸业的野心。",
     excerpt: "楚子伐陆浑之戎，遂至于雒，观兵于周疆",
   },
   {
@@ -497,6 +570,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "左丘明",
     gradeGroup: "春秋",
+    meaning: "春秋时秦晋两国世代通婚。泛指两姓联姻、结成姻亲。",
     excerpt: "秦伯纳女五人，怀嬴与焉",
   },
   {
@@ -507,6 +581,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "左丘明",
     gradeGroup: "春秋",
+    meaning: "嘴唇没了，牙齿就会冷。比喻关系密切，利害相关、休戚与共。",
     excerpt: "晋侯复假道于虞以伐虢",
   },
   {
@@ -517,6 +592,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "司马迁",
     gradeGroup: "春秋",
+    meaning: "睡柴草、尝苦胆，激励自己发愤。形容立志报仇雪耻、刻苦自励。",
     excerpt: "吴既赦越，越王勾践反国，乃苦身焦思，置胆于坐，坐",
   },
   {
@@ -527,6 +603,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "司马迁",
     gradeGroup: "春秋",
+    meaning: "鸟打完了，弓就收起来。比喻事成之后，功臣被抛弃或遭杀害。",
     excerpt: "范蠡遂去，自齐遗大夫种书曰：「蜚鸟尽，良弓藏；狡",
   },
   {
@@ -537,6 +614,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "列御寇",
     gradeGroup: "春秋",
+    meaning: "伯牙鼓琴，钟子期知音。比喻知音难遇，也比喻乐曲高妙。",
     excerpt: "伯牙善鼓琴，钟子期善听",
   },
   {
@@ -547,6 +625,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "左丘明",
     gradeGroup: "春秋",
+    meaning: "磨快兵器，喂饱战马。形容准备战斗，也泛指做好准备工作。",
     excerpt: "郑穆公使视客馆，则束载、厉兵、秣马矣",
   },
   {
@@ -557,6 +636,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "左丘明",
     gradeGroup: "春秋",
+    meaning: "驾着简陋柴车、穿着破衣去开山。形容创业的艰苦。",
     excerpt: "训之以若敖、蚡冒筚路蓝缕，以启山林",
   },
   {
@@ -567,6 +647,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "左丘明",
     gradeGroup: "春秋",
+    meaning: "你欺骗我，我欺骗你。指彼此互相欺骗、互不信任。",
     excerpt: "宋人及楚人平",
   },
   {
@@ -577,6 +658,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "左丘明",
     gradeGroup: "春秋",
+    meaning: "鞭子虽长，打不到马肚子。比喻力量所及不到，无法帮助或控制。",
     excerpt: "宋人使乐婴齐告急于晋",
   },
   {
@@ -587,6 +669,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "左丘明",
     gradeGroup: "春秋",
+    meaning: "在敌方兵临城下时被迫签订的盟约。指被迫屈辱订立的条约。",
     excerpt: "楚伐绞，军其南门",
   },
   {
@@ -597,6 +680,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "左丘明",
     gradeGroup: "春秋",
+    meaning: "晋国借道虞国去灭虢国，回来顺手灭了虞国。指以借路为名行吞并之实。",
     excerpt: "晋侯复假道于虞以伐虢",
   },
   {
@@ -607,6 +691,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "左丘明",
     gradeGroup: "春秋",
+    meaning: "玩弄手法，串通作弊。指暗中勾结、徇私舞弊。",
     excerpt: "穿封戌囚皇颉，公子围与之争之，正于伯州犁",
   },
   {
@@ -617,6 +702,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "左丘明",
     gradeGroup: "春秋",
+    meaning: "病到了没法医治的地步。比喻事情严重到无法挽救。",
     excerpt: "公疾病，求医于秦",
   },
   {
@@ -627,6 +713,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "左丘明",
     gradeGroup: "春秋",
+    meaning: "外表强大，内里空虚。形容貌似强大而实际虚弱。",
     excerpt: "庆郑曰：「古者大事，必乘其产，生其水土而知其人心",
   },
   {
@@ -637,6 +724,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "左丘明",
     gradeGroup: "春秋",
+    meaning: "还有剩余的气力可以出卖。形容勇力过人、斗志旺盛。",
     excerpt: "齐高固入晋师，桀石以投人，禽之而乘其车，系桑本焉",
   },
   {
@@ -647,6 +735,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "左丘明",
     gradeGroup: "春秋",
+    meaning: "皮都没有了，毛往哪里依附。比喻事物失去了赖以存在的基础。",
     excerpt: "冬，秦饥，使乞籴于晋，晋人弗与",
   },
   {
@@ -657,6 +746,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "左丘明",
     gradeGroup: "春秋",
+    meaning: "坏事做得多了，一定自取灭亡。",
     excerpt: "祭仲曰：「都城过百雉，国之害也",
   },
   {
@@ -667,6 +757,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "左丘明",
     gradeGroup: "春秋",
+    meaning: "为了大义而检举、惩处犯罪的亲属。指把公义置于私情之上。",
     excerpt: "君子曰：「石碏，纯臣也，恶州吁而厚与焉",
   },
   {
@@ -677,6 +768,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "刘向",
     gradeGroup: "春秋",
+    meaning: "对贤者有礼，对士人谦下。形容地位高的人尊重、重用人才。",
     excerpt: "（《史记·魏公子列传》亦载）公子为人仁而下士，士",
   },
   {
@@ -687,6 +779,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "左丘明",
     gradeGroup: "春秋",
+    meaning: "指接待宾客的主人，也指主办国或主办方。",
     excerpt: "若舍郑以为东道主，行李之往来",
   },
   {
@@ -697,6 +790,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "左丘明",
     gradeGroup: "春秋",
+    meaning: "做主人接待宾客的情谊。指尽地主之谊，殷勤款待来客。",
     excerpt: "若舍郑以为东道主，行李之往来，共其乏困，君亦无所",
   },
   {
@@ -707,6 +801,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "左丘明",
     gradeGroup: "春秋",
+    meaning: "谈论典籍却忘了祖先的职守。比喻忘本，也比喻对本国历史的无知。",
     excerpt: "王曰：「籍父其无后乎！数典而忘其祖",
   },
   {
@@ -717,6 +812,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "左丘明",
     gradeGroup: "春秋",
+    meaning: "楚国的人才被晋国所用。比喻人才外流，为他国效力。",
     excerpt: "声子通使于晋，还如楚",
   },
   {
@@ -727,6 +823,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "左丘明",
     gradeGroup: "春秋",
+    meaning: "铺开荆草坐地叙旧。形容老友重逢、共话旧情。",
     excerpt: "伍举奔郑，将遂奔晋",
   },
   {
@@ -737,6 +834,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "左丘明",
     gradeGroup: "春秋",
+    meaning: "说话不算数而从中得利。形容不守信用、只顾私利。",
     excerpt: "公宴于五梧，武伯为祝，恶郭重，曰：「何肥也？」季",
   },
   {
@@ -747,6 +845,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "左丘明",
     gradeGroup: "春秋",
+    meaning: "截取诗文的一段，不顾全篇本意。指孤立地截取片断以曲解原意。",
     excerpt: "赋诗断章，余取所求焉",
   },
   {
@@ -757,6 +856,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "佚名",
     gradeGroup: "春秋",
+    meaning: "到口渴时才去挖井。比喻事到临头才想办法，为时已晚。",
     excerpt: "是故圣人不治已病治未病，不治已乱治未乱，此之谓也",
   },
   {
@@ -767,6 +867,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "左丘明",
     gradeGroup: "春秋",
+    meaning: "因身藏美玉而获罪。比喻有才能的人容易遭忌受祸。",
     excerpt: "初，虞叔有玉，虞公求旃",
   },
   {
@@ -777,6 +878,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "左丘明",
     gradeGroup: "春秋",
+    meaning: "因为有所依仗而毫不害怕。指有所凭恃便无所顾忌。",
     excerpt: "夏，齐孝公伐我北鄙",
   },
   {
@@ -787,6 +889,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "左丘明",
     gradeGroup: "春秋",
+    meaning: "马牛发情时也互不追逐。比喻事物彼此毫不相干。",
     excerpt: "四年春，齐侯以诸侯之师侵蔡，蔡溃，遂伐楚",
   },
   {
@@ -797,6 +900,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "左丘明",
     gradeGroup: "春秋",
+    meaning: "使军队疲劳去袭击远方的敌人。指得不偿失的军事行动，也喻舍近求远。",
     excerpt: "蹇叔曰：「劳师以袭远，非所闻也",
   },
   {
@@ -807,6 +911,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "左丘明",
     gradeGroup: "春秋",
+    meaning: "听从好的意见像水往下流一样快。形容乐于接受别人的正确意见。",
     excerpt: "楚师之还也，晋侵沈，获沈子揖初，从知、范、韩也",
   },
   {
@@ -817,6 +922,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "左丘明",
     gradeGroup: "春秋",
+    meaning: "处在安定之中要想到可能的危险。指有备无患、防患于未然。",
     excerpt: "《书》曰：「居安思危",
   },
   {
@@ -827,6 +933,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "左丘明",
     gradeGroup: "春秋",
+    meaning: "客人到这里就像回到家里一样。形容待客热情周到。",
     excerpt: "宾至如归，无宁灾患？不畏寇盗，而亦不患燥湿",
   },
   {
@@ -837,6 +944,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "司马迁",
     gradeGroup: "春秋",
+    meaning: "再三命令、反复告诫。指多次地强调、叮嘱。",
     excerpt: "约束既布，乃设鈇钺，即三令五申之",
   },
   {
@@ -847,17 +955,19 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "孟轲",
     gradeGroup: "春秋",
+    meaning: "你怎样对待别人，别人也怎样对待你；后指说话不算数、反复无常。",
     excerpt: "戒之戒之！出乎尔者，反乎尔者也",
   },
   {
-    textRef: "chengyu-cy-616",
+    textRef: "chengyu-cy-86",
     id: "cy-86",
     title: "众志成城",
     source: "《国语·周语下》",
     dynasty: "春秋",
     author: "佚名",
     gradeGroup: "春秋",
-    excerpt: "故谚曰：「众心成城，众口铄金",
+    meaning: "众人一心，就像坚固的城墙。比喻团结一致，力量无比强大。",
+    excerpt: "（原文作「众心成城」）故谚曰：「众心成城，众口铄",
   },
   {
     textRef: "chengyu-cy-87",
@@ -867,6 +977,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "左丘明",
     gradeGroup: "春秋",
+    meaning: "庆父不除，鲁国的祸乱不止。比喻不除掉祸根，祸乱就不会停止。",
     excerpt: "齐仲孙湫来省难，书曰「仲孙」",
   },
   {
@@ -877,6 +988,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "孟轲",
     gradeGroup: "春秋",
+    meaning: "宁可牺牲生命也要保全道义。指为正义而献身。",
     excerpt: "鱼，我所欲也；熊掌，亦我所欲也",
   },
   {
@@ -887,6 +999,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "左丘明",
     gradeGroup: "春秋",
+    meaning: "知道有困难就退却。原指作战时见机行事，后多指遇到困难就退缩。",
     excerpt: "见可而进，知难而退，军之善政也",
   },
   {
@@ -897,6 +1010,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "左丘明",
     gradeGroup: "春秋",
+    meaning: "天地间不容改变的常理。指绝对正确、不容置疑的道理。",
     excerpt: "夫礼，天之经也，地之义也，民之行也",
   },
   {
@@ -907,6 +1021,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "左丘明",
     gradeGroup: "春秋",
+    meaning: "对别人的灾祸感到高兴。指缺乏同情心，把别人的不幸当乐事。",
     excerpt: "冬，秦饥，使乞籴于晋，晋人弗与",
   },
   {
@@ -917,6 +1032,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "左丘明",
     gradeGroup: "春秋",
+    meaning: "用惩罚一个人来警告那些仿效作恶的人。",
     excerpt: "郑伯效尤，其亦将有咎",
   },
   {
@@ -927,6 +1043,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "左丘明",
     gradeGroup: "春秋",
+    meaning: "彼此重新和好。指消除隔阂，恢复原来的友好关系。",
     excerpt: "秋，齐侯盟诸侯于葵丘，曰：「凡我同盟之人，既盟之",
   },
   {
@@ -937,6 +1054,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "左丘明",
     gradeGroup: "春秋",
+    meaning: "按照自己能力的大小去做事。指实事求是，不勉为其难。",
     excerpt: "度德而处之，量力而行之，相时而动，无累后人，可谓",
   },
   {
@@ -947,6 +1065,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "左丘明",
     gradeGroup: "春秋",
+    meaning: "因不断奔走而劳累不堪。指事务繁重或被迫四处奔走，劳累到极点。",
     excerpt: "尔以谗慝贪惏事君，而多杀不辜",
   },
   {
@@ -957,6 +1076,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "左丘明",
     gradeGroup: "春秋",
+    meaning: "不能正确估量自己的力量。指过高地估计自己，硬做办不到的事。",
     excerpt: "（原文作「不度德，不量力」）不度德，不量力，不亲",
   },
   {
@@ -967,6 +1087,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "左丘明",
     gradeGroup: "春秋",
+    meaning: "各人按自己的主张办事。指不顾整体、各行其是，互不配合。",
     excerpt: "畴昔之羊，子为政；今日之事，我为政",
   },
   {
@@ -977,6 +1098,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "左丘明",
     gradeGroup: "春秋",
+    meaning: "完全听从命令。指对上级一味顺从，丝毫不敢违逆。",
     excerpt: "今周与四国服事君王，将唯命是从，岂其爱鼎？",
   },
   {
@@ -987,6 +1109,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "佚名",
     gradeGroup: "春秋",
+    meaning: "大家怀着共同的仇恨，一致对付敌人。指同心协力、共同对敌。",
     excerpt: "岂曰无衣？与子同袍",
   },
   {
@@ -997,6 +1120,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "公羊高",
     gradeGroup: "春秋",
+    meaning: "消除混乱，恢复正常的秩序。指扭转混乱局面，使事物回到正轨。",
     excerpt: "君子曷为为《春秋》？拨乱世，反诸正，莫近诸《春秋",
   },
   {
@@ -1007,6 +1131,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "房玄龄",
     gradeGroup: "春秋",
+    meaning: "品德高尚，声望很高。多形容年长而有德行、为众人所敬重的人。",
     excerpt: "（「德高望重」语本《晋书》）元显因讽礼官下议，称",
   },
   {
@@ -1017,6 +1142,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "班固",
     gradeGroup: "春秋",
+    meaning: "看到有利可图就忘了道义。指贪图私利而不顾道义。",
     excerpt: "当孝文时，天下以郦寄为卖友",
   },
   {
@@ -1027,6 +1153,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "李汝珍",
     gradeGroup: "春秋",
+    meaning: "木头已经做成了船。比喻事情已成定局，无法挽回。",
     excerpt: "如今木已成舟，也是林兄命定如此了",
   },
   {
@@ -1037,6 +1164,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "左丘明",
     gradeGroup: "春秋",
+    meaning: "祁奚荐举贤能，不避亲仇。指荐举人才出于公心、不徇私情。",
     excerpt: "祁奚请老，晋侯问嗣焉",
   },
   {
@@ -1047,6 +1175,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "左丘明",
     gradeGroup: "春秋",
+    meaning: "看着马头决定进退。比喻服从指挥或跟随别人行动。",
     excerpt: "荀偃令曰：「鸡鸣而驾，塞井夷灶，唯余马首是瞻",
   },
   {
@@ -1057,6 +1186,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "司马迁",
     gradeGroup: "春秋",
+    meaning: "大摇大摆地经过街市。指故意张扬炫耀以引起别人注意。",
     excerpt: "居卫月余，灵公与夫人同车，宦者雍渠参乘，出，使孔",
   },
   {
@@ -1067,6 +1197,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "司马迁",
     gradeGroup: "战国",
+    meaning: "围攻魏国国都以解救赵国。指避实击虚、以攻其必救来解围的战术。",
     excerpt: "魏伐赵，赵急，请救于齐",
   },
   {
@@ -1077,6 +1208,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "司马迁",
     gradeGroup: "战国",
+    meaning: "田忌以下等马对上等马、上等马对中等马、中等马对下等马而取胜。比喻以智谋取胜、合理配置资源。",
     excerpt: "忌数与齐诸公子驰逐重射",
   },
   {
@@ -1087,6 +1219,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "司马迁",
     gradeGroup: "战国",
+    meaning: "在纸面上谈论用兵。比喻空谈理论，不能解决实际问题。",
     excerpt: "赵括自少时学兵法，言兵事，以天下莫能当",
   },
   {
@@ -1097,6 +1230,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "司马迁",
     gradeGroup: "战国",
+    meaning: "把璧玉完整地归还赵国。比喻把原物完好无损地归还本人。",
     excerpt: "秦王坐章台见相如，相如奉璧奏秦王",
   },
   {
@@ -1107,6 +1241,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "司马迁",
     gradeGroup: "战国",
+    meaning: "背着荆条向人请罪。指主动向人认错赔罪，诚恳地请求责罚。",
     excerpt: "廉颇闻之，肉袒负荆，因宾客至蔺相如门谢罪，曰：「",
   },
   {
@@ -1117,6 +1252,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "司马迁",
     gradeGroup: "战国",
+    meaning: "毛遂自己请求随同出使。比喻自告奋勇、主动承担任务。",
     excerpt: "门下有毛遂者，前，自赞于平原君曰：「遂闻君将合从",
   },
   {
@@ -1127,6 +1263,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "刘向",
     gradeGroup: "战国",
+    meaning: "狡猾的兔子有三个藏身的洞穴。比喻为防祸患而准备多个退路。",
     excerpt: "冯谖曰：「狡兔有三窟，仅得免其死耳",
   },
   {
@@ -1137,6 +1274,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "刘向",
     gradeGroup: "战国",
+    meaning: "狐狸借老虎的威势吓唬百兽。比喻依仗别人的势力欺压人。",
     excerpt: "虎求百兽而食之，得狐",
   },
   {
@@ -1147,6 +1285,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "刘向",
     gradeGroup: "战国",
+    meaning: "画蛇时给蛇添上脚。比喻多此一举，反而把事情弄糟。",
     excerpt: "楚有祠者，赐其舍人卮酒",
   },
   {
@@ -1157,6 +1296,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "刘向",
     gradeGroup: "战国",
+    meaning: "羊跑了再修补羊圈。比喻出了问题及时补救，还不算晚。",
     excerpt: "庄辛谓楚襄王曰：「君王左州侯，右夏侯，辇从鄢陵君",
   },
   {
@@ -1167,6 +1307,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "刘向",
     gradeGroup: "战国",
+    meaning: "想往南走却驾车向北。比喻行动和目的正好相反。",
     excerpt: "魏王欲攻邯郸",
   },
   {
@@ -1177,6 +1318,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "韩非",
     gradeGroup: "战国",
+    meaning: "买了装珠的匣子却退还了珠子。比喻取舍不当，舍本逐末。",
     excerpt: "楚人有卖其珠于郑者，为木兰之柜，薰以桂椒，缀以珠",
   },
   {
@@ -1187,6 +1329,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "韩非",
     gradeGroup: "战国",
+    meaning: "自己的言语、行动前后互相抵触。指言行前后不能自圆其说。",
     excerpt: "楚人有鬻盾与矛者，誉之曰：「吾盾之坚，物莫能陷也",
   },
   {
@@ -1197,6 +1340,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "韩非",
     gradeGroup: "战国",
+    meaning: "不会吹竽的人混在乐队里充数。比喻没有真才实学的人混在行家里面。",
     excerpt: "齐宣王使人吹竽，必三百人",
   },
   {
@@ -1207,6 +1351,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "韩非",
     gradeGroup: "战国",
+    meaning: "守在大树桩旁等兔子撞死。比喻死守狭隘经验，不知变通，妄想不劳而获。",
     excerpt: "宋人有耕田者",
   },
   {
@@ -1217,6 +1362,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "庄周",
     gradeGroup: "战国",
+    meaning: "到邯郸学人走路，结果连原来的走法也忘了。比喻模仿不成，反而丧失了自己原有的本领。",
     excerpt: "且子独不闻夫寿陵余子之学行于邯郸与？未得国能，又",
   },
   {
@@ -1227,6 +1373,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "吕不韦",
     gradeGroup: "战国",
+    meaning: "在船上刻记号找掉入水中的剑。比喻拘泥成法，不知随情况变化。",
     excerpt: "楚人有涉江者，其剑自舟中坠于水，遽契其舟曰：「是",
   },
   {
@@ -1237,6 +1384,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "刘向",
     gradeGroup: "战国",
+    meaning: "被弓箭吓怕了的鸟。比喻受过惊吓，遇到一点动静就非常害怕。",
     excerpt: "更羸与魏王处京台之下，仰见飞鸟",
   },
   {
@@ -1247,6 +1395,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "刘向",
     gradeGroup: "战国",
+    meaning: "用千金买千里马的骨头。比喻招揽人才的诚意，也指求贤若渴。",
     excerpt: "郭隗先生曰：「臣闻古之君人，有以千金求千里马者，",
   },
   {
@@ -1257,6 +1406,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "刘向",
     gradeGroup: "战国",
+    meaning: "地图展完，匕首露了出来。比喻事情发展到最后，真相或本意暴露出来。",
     excerpt: "荆轲奉樊於期头函，而秦武阳奉地图匣，以次进",
   },
   {
@@ -1267,6 +1417,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "刘向",
     gradeGroup: "战国",
+    meaning: "门前和庭院像集市一样热闹。形容来的人很多，非常热闹。",
     excerpt: "令初下，群臣进谏，门庭若市；数月之后，时时而间进",
   },
   {
@@ -1277,6 +1428,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "刘向",
     gradeGroup: "战国",
+    meaning: "邹忌以自己受蒙蔽的事婉言劝谏齐王。指以委婉的方式规劝进谏。",
     excerpt: "邹忌修八尺有余，而形貌昳丽",
   },
   {
@@ -1287,6 +1439,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "刘向",
     gradeGroup: "战国",
+    meaning: "鹬蚌互不相让，渔人得利。比喻双方争持不下，让第三者占了便宜。",
     excerpt: "蚌方出曝，而鹬啄其肉，蚌合而拑其喙",
   },
   {
@@ -1297,6 +1450,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "刘向",
     gradeGroup: "战国",
+    meaning: "同「鹬蚌相争」。比喻双方相持不下，两败俱伤，让第三者得利。",
     excerpt: "两者不肯相舍，渔者得而并禽之",
   },
   {
@@ -1307,6 +1461,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "司马迁",
     gradeGroup: "战国",
+    meaning: "学鸡叫、装狗偷的本领。比喻微不足道的技能，也指不成大器的人。",
     excerpt: "（秦昭王）囚孟尝君，谋欲杀之",
   },
   {
@@ -1317,6 +1472,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "刘向",
     gradeGroup: "战国",
+    meaning: "士人愿为赏识自己的人献出生命。形容知己难得，愿以死相报。",
     excerpt: "豫让遁逃山中，曰：「嗟乎！士为知己者死，女为说己",
   },
   {
@@ -1327,6 +1483,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "刘向",
     gradeGroup: "战国",
+    meaning: "白色的长虹穿日而过。古人以为异常天象，是人间将有非常之事的征兆。",
     excerpt: "夫专诸之刺王僚也，彗星袭月；聂政之刺韩傀也，白虹",
   },
   {
@@ -1337,6 +1494,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "佚名",
     gradeGroup: "战国",
+    meaning: "堆九仞高的土山，只差一筐土而没完成。比喻差最后一点努力，事情没能成功。",
     excerpt: "呜呼！夙夜罔或不勤，不矜细行，终累大德",
   },
   {
@@ -1347,6 +1505,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "李昉等",
     gradeGroup: "战国",
+    meaning: "把头发吊在梁上、用锥子刺大腿以防瞌睡读书。形容学习刻苦勤奋。",
     excerpt: "（「悬梁」见《太平御览》引《楚国先贤传》：「孙敬",
   },
   {
@@ -1357,6 +1516,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "刘向",
     gradeGroup: "战国",
+    meaning: "先前傲慢，后来又恭敬。形容对人态度前后截然不同，多因对方地位变化。",
     excerpt: "（苏秦）说秦王书十上而说不行",
   },
   {
@@ -1367,6 +1527,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "屈原",
     gradeGroup: "战国",
+    meaning: "怀里揣着美玉，手里握着美玉。比喻人具有纯洁高尚的品德与才能。",
     excerpt: "任重载盛兮，陷滞而不济",
   },
   {
@@ -1377,6 +1538,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "韩非",
     gradeGroup: "战国",
+    meaning: "卞和献玉被砍去双脚，抱玉痛哭。比喻忠诚不被理解，贤才遭弃。",
     excerpt: "楚人和氏得玉璞楚山中，奉而献之厉王",
   },
   {
@@ -1387,6 +1549,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "庄周",
     gradeGroup: "战国",
+    meaning: "用宝珠打麻雀。比喻得不偿失，轻重倒置。",
     excerpt: "今且有人于此，以随侯之珠，弹千仞之雀，世必笑之",
   },
   {
@@ -1397,6 +1560,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "庄周",
     gradeGroup: "战国",
+    meaning: "螳螂举起前腿想挡住车轮。比喻不自量力，必然失败。",
     excerpt: "汝不知夫螳螂乎？怒其臂以当车辙，不知其不胜任也，",
   },
   {
@@ -1407,6 +1571,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "庄周",
     gradeGroup: "战国",
+    meaning: "庄子梦见自己变成蝴蝶，不知是庄周梦蝶还是蝶梦庄周。比喻人生如梦、物我难分。",
     excerpt: "昔者庄周梦为胡蝶，栩栩然胡蝶也，自喻适志与！不知",
   },
   {
@@ -1417,6 +1582,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "庄周",
     gradeGroup: "战国",
+    meaning: "厨师分解牛体，刀法纯熟。比喻技艺高超，处理问题得心应手。",
     excerpt: "庖丁为文惠君解牛，手之所触，肩之所倚，足之所履，",
   },
   {
@@ -1427,6 +1593,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "庄周",
     gradeGroup: "战国",
+    meaning: "泉水干了，鱼用唾沫互相润湿。比喻在困境中以微薄的力量互相帮助。",
     excerpt: "泉涸，鱼相与处于陆，相呴以湿，相濡以沫，不如相忘",
   },
   {
@@ -1437,6 +1604,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "庄周",
     gradeGroup: "战国",
+    meaning: "大鹏一举飞万里。比喻前程远大、前途无量。",
     excerpt: "鹏之徙于南冥也，水击三千里，抟扶摇而上者九万里，",
   },
   {
@@ -1447,6 +1615,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "庄周",
     gradeGroup: "战国",
+    meaning: "原指玩弄手法欺骗人，后比喻反复无常、经常变卦。",
     excerpt: "狙公赋芧，曰：「朝三而暮四",
   },
   {
@@ -1457,6 +1626,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "庄周",
     gradeGroup: "战国",
+    meaning: "鱼见之沉入水底，雁见之降落沙洲。形容女子容貌极其美丽。",
     excerpt: "毛嫱、丽姬，人之所美也；鱼见之深入，鸟见之高飞，",
   },
   {
@@ -1467,6 +1637,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "庄周",
     gradeGroup: "战国",
+    meaning: "干涸车辙里的鲫鱼。比喻处境极度困难、急待救助的人。",
     excerpt: "周昨来，有中道而呼者，周顾视车辙，中有鲋鱼焉",
   },
   {
@@ -1477,6 +1648,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "庄周",
     gradeGroup: "战国",
+    meaning: "井底的青蛙只见井口大的天。比喻见识狭窄、目光短浅的人。",
     excerpt: "井蛙不可以语于海者，拘于虚也；夏虫不可以语于冰者",
   },
   {
@@ -1487,6 +1659,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "庄周",
     gradeGroup: "战国",
+    meaning: "仰望大海而感叹渺小。比喻因力量或条件不够而感到无可奈何。",
     excerpt: "秋水时至，百川灌河",
   },
   {
@@ -1497,6 +1670,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "庄周",
     gradeGroup: "战国",
+    meaning: "越过自己的职分去替厨师做饭。比喻越权办事、包办代替。",
     excerpt: "庖人虽不治庖，尸祝不越樽俎而代之矣",
   },
   {
@@ -1507,6 +1681,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "庄周",
     gradeGroup: "战国",
+    meaning: "彼此相差很远，大不相同。",
     excerpt: "吾惊怖其言，犹河汉而无极也；大有径庭，不近人情焉",
   },
   {
@@ -1517,6 +1692,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "庄周",
     gradeGroup: "战国",
+    meaning: "假意殷勤，敷衍应酬。指对人虚情假意，表面应付。",
     excerpt: "壶子曰：「乡吾示之以未始出吾宗",
   },
   {
@@ -1527,6 +1703,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "庄周",
     gradeGroup: "战国",
+    meaning: "挥动斧头带起风声。比喻技艺纯熟高超。",
     excerpt: "郢人垩慢其鼻端，若蝇翼，使匠石斫之",
   },
   {
@@ -1537,6 +1714,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "庄周",
     gradeGroup: "战国",
+    meaning: "呼出浊气，吸入清气。比喻抛弃旧的、吸收新的，不断更新。",
     excerpt: "吹呴呼吸，吐故纳新，熊经鸟申，为寿而已矣",
   },
   {
@@ -1547,6 +1725,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "庄周",
     gradeGroup: "战国",
+    meaning: "被内行人笑话。指因知识浅薄而闹笑话。",
     excerpt: "吾长见笑于大方之家",
   },
   {
@@ -1557,6 +1736,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "孙武",
     gradeGroup: "战国",
+    meaning: "打一百仗，胜一百仗。形容善于作战，每战必胜。",
     excerpt: "是故百战百胜，非善之善者也；不战而屈人之兵，善之",
   },
   {
@@ -1567,6 +1747,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "孙武",
     gradeGroup: "战国",
+    meaning: "了解自己也了解对方。指对双方情况都很清楚，故能立于不败。",
     excerpt: "故曰：知彼知己，百战不殆；不知彼而知己，一胜一负",
   },
   {
@@ -1577,6 +1758,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "孙武",
     gradeGroup: "战国",
+    meaning: "在对方意想不到的时候行动。指趁对方没有防备而采取行动。",
     excerpt: "兵者，诡道也",
   },
   {
@@ -1587,6 +1769,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "韩非",
     gradeGroup: "战国",
+    meaning: "用兵作战不排斥使用诈术。指为了取胜可以灵活运用计谋。",
     excerpt: "臣闻之：繁礼君子，不厌忠信；战阵之间，不厌诈伪",
   },
   {
@@ -1597,6 +1780,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "孙武",
     gradeGroup: "战国",
+    meaning: "以养精蓄锐的军队等待疲惫的敌人。指养足力量，待对方疲乏时再出击。",
     excerpt: "以近待远，以佚待劳，以饱待饥，此治力者也",
   },
   {
@@ -1607,6 +1791,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "班固",
     gradeGroup: "战国",
+    meaning: "要打老鼠又怕打坏旁边的器物。比喻有所顾忌，不敢放手行事。",
     excerpt: "里谚曰：「欲投鼠而忌器",
   },
   {
@@ -1617,6 +1802,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "刘向",
     gradeGroup: "战国",
+    meaning: "结交远国，进攻邻国。指分化敌国、各个击破的外交策略。",
     excerpt: "范雎曰：「王不如远交而近攻，得寸则王之寸，得尺亦",
   },
   {
@@ -1627,6 +1813,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "司马迁",
     gradeGroup: "战国",
+    meaning: "拔下头发来计数也数不清。形容罪行极多，难以数清。",
     excerpt: "范雎曰：「汝罪有几？」曰：「擢贾之发以续贾之罪，",
   },
   {
@@ -1637,6 +1824,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "司马迁",
     gradeGroup: "战国",
+    meaning: "贪图私利使头脑发昏。指受利益诱惑而丧失理智、做出错事。",
     excerpt: "太史公曰：平原君，翩翩浊世之佳公子也，然未睹大体",
   },
   {
@@ -1647,6 +1835,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "班固",
     gradeGroup: "战国",
+    meaning: "坚固得像金属造的城墙、滚水灌成的护城河。形容防御极其坚固。",
     excerpt: "边城之地，必将婴城固守，皆为金城汤池，不可攻也",
   },
   {
@@ -1657,6 +1846,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "司马迁",
     gradeGroup: "战国",
+    meaning: "把全部的力量都使出来，一点不留。形容竭尽全力。",
     excerpt: "秦不遗余力矣，必且欲破赵军",
   },
   {
@@ -1667,6 +1857,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "佚名",
     gradeGroup: "战国",
+    meaning: "以骄横的气势压人。形容傲慢自大、气势逼人。",
     excerpt: "（语出《元诗选》所收篇）以盛气凌人，人所不堪",
   },
   {
@@ -1677,6 +1868,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "司马迁",
     gradeGroup: "战国",
+    meaning: "平民之间的交情。指不以权势地位为基础的平等交往。",
     excerpt: "臣以为布衣之交尚不相欺，况大国乎！",
   },
   {
@@ -1687,6 +1879,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "司马迁",
     gradeGroup: "战国",
+    meaning: "两只老虎相互争斗。比喻两强相争，必有一伤，让第三者得利。",
     excerpt: "今两虎共斗，其势不俱生",
   },
   {
@@ -1697,6 +1890,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "班固",
     gradeGroup: "战国",
+    meaning: "千钧重物吊在一根头发上。比喻形势极其危急。",
     excerpt: "（原文作「一发千钧」）夫以一缕之任，系千钧之重，",
   },
   {
@@ -1707,6 +1901,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "刘向",
     gradeGroup: "战国",
+    meaning: "天塌下、地裂开。形容巨大的变故或声响，也形容声势浩大。",
     excerpt: "周烈王崩，齐后往，周怒，赴于齐曰：「天崩地坼，天",
   },
   {
@@ -1717,6 +1912,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "班固",
     gradeGroup: "战国",
+    meaning: "躲债的台筑得很高。形容负债累累。",
     excerpt: "（原文作「逃责之台」）周廪临亡，天下共起而亡之，",
   },
   {
@@ -1727,6 +1923,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "司马迁",
     gradeGroup: "战国",
+    meaning: "指能言善辩的口才。形容以言辞折服人的辩才。",
     excerpt: "毛先生一至楚，而使赵重于九鼎大吕",
   },
   {
@@ -1737,6 +1934,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "管仲",
     gradeGroup: "战国",
+    meaning: "把死看得像回家一样。形容为正义事业不怕牺牲、无所畏惧。",
     excerpt: "平原广牧，车不结辙，士不旋踵，鼓之而三军之士视死",
   },
   {
@@ -1747,6 +1945,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "刘向",
     gradeGroup: "战国",
+    meaning: "慢慢地步行，当作坐车。形容从容不迫、安贫乐道。",
     excerpt: "（颜斶）曰：「斶愿得归，晚食以当肉，安步以当车，",
   },
   {
@@ -1757,6 +1956,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "管仲",
     gradeGroup: "战国",
+    meaning: "没有翅膀却飞走了。比喻东西突然丢失，也形容消息传布迅速。",
     excerpt: "无翼而飞者声也，无根而固者情也",
   },
   {
@@ -1767,6 +1967,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "刘向",
     gradeGroup: "战国",
+    meaning: "羽毛虽轻，堆积多了也能压沉船。比喻小患积多了会造成大祸，也指积小胜为大胜。",
     excerpt: "臣闻积羽沉舟，群轻折轴，众口铄金，故愿大王之熟计",
   },
   {
@@ -1777,6 +1978,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "司马迁",
     gradeGroup: "战国",
+    meaning: "六国合纵结盟。指联合各方力量结成同盟以对抗强敌。",
     excerpt: "（贾谊《过秦论》）合从缔交，相与为一",
   },
   {
@@ -1787,6 +1989,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "韩非",
     gradeGroup: "战国",
+    meaning: "危险得像堆起来的蛋。形容形势极其危险，随时可能崩溃。",
     excerpt: "其君之危，犹累卵也",
   },
   {
@@ -1797,6 +2000,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "司马迁",
     gradeGroup: "战国",
+    meaning: "改动一个字赏给千金。形容文辞精妙、价值极高，也指字字珍贵。",
     excerpt: "吕不韦乃使其客人人著所闻，集论以为八览、六论、十",
   },
   {
@@ -1807,6 +2011,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "司马迁",
     gradeGroup: "战国",
+    meaning: "使世人震惊、使流俗骇异。形容言行或作品超凡出众，令人震惊。",
     excerpt: "（贾谊《过秦论》）及其衰也，天下之士，斐然向风…",
   },
   {
@@ -1817,6 +2022,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "班固",
     gradeGroup: "战国",
+    meaning: "搓麻绳为引火去求火。比喻向人求助时先以微物示意，也指求助。",
     excerpt: "臣之里妇，与里之诸母相善也",
   },
   {
@@ -1827,6 +2033,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "孟轲",
     gradeGroup: "战国",
+    meaning: "爬到树上去捉鱼。比喻方向或方法错误，不可能达到目的。",
     excerpt: "以若所为，求若所欲，犹缘木而求鱼也",
   },
   {
@@ -1837,6 +2044,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "孟轲",
     gradeGroup: "战国",
+    meaning: "人少抵挡不住人多。指力量悬殊，难以取胜。",
     excerpt: "（原文作「寡固不可以敌众」）然则小固不可以敌大，",
   },
   {
@@ -1847,6 +2055,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "孟轲",
     gradeGroup: "战国",
+    meaning: "用力少而收效大。形容方法得当，效率极高。",
     excerpt: "当今之时，万乘之国行仁政，民之悦之，犹解倒悬也",
   },
   {
@@ -1857,6 +2066,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "孟轲",
     gradeGroup: "战国",
+    meaning: "像水那样深、像火那样热。比喻人民生活处境极端艰难痛苦。",
     excerpt: "箪食壶浆以迎王师，岂有他哉？避水火也",
   },
   {
@@ -1867,6 +2077,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "孟轲",
     gradeGroup: "战国",
+    meaning: "用箪盛饭、用壶盛汤来欢迎军队。形容百姓热烈犒劳所拥护的军队。",
     excerpt: "以万乘之国伐万乘之国，箪食壶浆以迎王师，岂有他哉",
   },
   {
@@ -1877,6 +2088,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "孟轲",
     gradeGroup: "战国",
+    meaning: "把苗拔高来帮助它生长。比喻违反事物发展规律，急于求成，反把事情弄坏。",
     excerpt: "宋人有闵其苗之不长而揠之者，芒芒然归，谓其人曰：",
   },
   {
@@ -1887,6 +2099,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "孟轲",
     gradeGroup: "战国",
+    meaning: "眼力能看清秋天鸟兽新生的细毛。形容目光敏锐，洞察入微。",
     excerpt: "明足以察秋毫之末，而不见舆薪，则王许之乎？",
   },
   {
@@ -1897,6 +2110,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "孟轲",
     gradeGroup: "战国",
+    meaning: "超出同类之上。形容才能、品行远远超过一般人。",
     excerpt: "圣人之于民，亦类也",
   },
   {
@@ -1907,6 +2121,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "孟轲",
     gradeGroup: "战国",
+    meaning: "一心一意，集中精神。形容做事专心，毫不分心。",
     excerpt: "今夫弈之为数，小数也；不专心致志，则不得也",
   },
   {
@@ -1917,6 +2132,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "孟轲",
     gradeGroup: "战国",
+    meaning: "忧患使人生存发展，安逸享乐使人萎靡死亡。指困境催人奋进。",
     excerpt: "入则无法家拂士，出则无敌国外患者，国恒亡",
   },
   {
@@ -1927,6 +2143,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "孟轲",
     gradeGroup: "战国",
+    meaning: "晒一天，冻十天。比喻做事无恒心，时断时续，努力少而荒废多。",
     excerpt: "虽有天下易生之物也，一日暴之，十日寒之，未有能生",
   },
   {
@@ -1937,6 +2154,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "孟轲",
     gradeGroup: "战国",
+    meaning: "原指独自修养品德，后指只顾自己好，不管他人和集体。",
     excerpt: "穷则独善其身，达则兼善天下",
   },
   {
@@ -1947,6 +2165,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "荀况",
     gradeGroup: "战国",
+    meaning: "靛青从蓝草里提取，颜色却比蓝草更深。比喻学生超过老师或后人胜过前人。",
     excerpt: "青，取之于蓝，而青于蓝；冰，水为之，而寒于水",
   },
   {
@@ -1957,6 +2176,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "孟轲",
     gradeGroup: "战国",
+    meaning: "用一杯水去救一车柴烧起的火。比喻力量太小，解决不了问题。",
     excerpt: "今之为仁者，犹以一杯水救一车薪之火也",
   },
   {
@@ -1967,6 +2187,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "佚名",
     gradeGroup: "战国",
+    meaning: "没有邀请自己就来的客人。指突然到来、出人意料的客人。",
     excerpt: "有不速之客三人来，敬之终吉",
   },
   {
@@ -1977,6 +2198,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "孟轲",
     gradeGroup: "战国",
+    meaning: "不做过分的事。指对人责备或惩处适可而止，不做得太绝。",
     excerpt: "仲尼不为已甚者",
   },
   {
@@ -1987,7 +2209,8 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "左丘明",
     gradeGroup: "春秋",
-    excerpt: "（语本）从长计议，未为晚也",
+    meaning: "用较长时间慢慢地商量。指不急于作决定，从长远考虑。",
+    excerpt: "筮短龟长，不如从长",
   },
   {
     textRef: "chengyu-cy-155",
@@ -1997,6 +2220,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "庄周",
     gradeGroup: "战国",
+    meaning: "懂得大道理的行家。指学识渊博、懂得大道的内行人。",
     excerpt: "吾长见笑于大方之家",
   },
   {
@@ -2007,6 +2231,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "佚名",
     gradeGroup: "春秋",
+    meaning: "遇到应该做的事就积极主动去做，不推让。",
     excerpt: "当仁不让于师",
   },
   {
@@ -2017,6 +2242,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "佚名",
     gradeGroup: "战国",
+    meaning: "路上听来的消息。指没有根据的传闻。",
     excerpt: "道听而涂说，德之弃也",
   },
   {
@@ -2024,10 +2250,11 @@ window.POEMS_CHENGYU = [
     id: "cy-203",
     title: "登峰造极",
     source: "《世说新语·文学》",
-    dynasty: "战国",
+    dynasty: "两晋南北朝",
     author: "刘义庆",
-    gradeGroup: "战国",
-    excerpt: "（语本）佛经以为祛练神明，则圣人可致",
+    gradeGroup: "两晋南北朝",
+    meaning: "登上山峰的最高处。比喻学问、技艺等达到最高境界。",
+    excerpt: "佛经以为祛练神明，则圣人可致",
   },
   {
     textRef: "chengyu-cy-204",
@@ -2037,6 +2264,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "屈原",
     gradeGroup: "战国",
+    meaning: "用短兵器近距离厮杀。比喻面对面进行激烈的斗争。",
     excerpt: "车错毂兮短兵接",
   },
   {
@@ -2047,6 +2275,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "佚名",
     gradeGroup: "春秋",
+    meaning: "提着耳朵、当面教导。形容恳切地教导。",
     excerpt: "匪面命之，言提其耳",
   },
   {
@@ -2057,6 +2286,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "荀况",
     gradeGroup: "战国",
+    meaning: "处罚与所犯的罪行不相称。多指处罚过重。",
     excerpt: "夫德不称位，能不称官，赏不当功，罚不当罪，不祥莫",
   },
   {
@@ -2067,6 +2297,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "左丘明",
     gradeGroup: "春秋",
+    meaning: "倔强固执，自以为是。指听不进别人意见，独断专行。",
     excerpt: "其佐先縠，刚愎不仁，未肯用命",
   },
   {
@@ -2077,6 +2308,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "左丘明",
     gradeGroup: "春秋",
+    meaning: "坚持作恶，不肯悔改。",
     excerpt: "长恶不悛，从自及也",
   },
   {
@@ -2087,6 +2319,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "谷梁赤",
     gradeGroup: "春秋",
+    meaning: "隐瞒得没有比这更深的了。指隐瞒得严严实实，唯恐别人知道。",
     excerpt: "讳莫如深，深则隐",
   },
   {
@@ -2097,6 +2330,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "佚名",
     gradeGroup: "春秋",
+    meaning: "祸患从内部引起。指内部的变乱或纷争。",
     excerpt: "吾恐季孙之忧，不在颛臾，而在萧墙之内也",
   },
   {
@@ -2107,6 +2341,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "管仲",
     gradeGroup: "战国",
+    meaning: "有令必行，有禁必止。形容法令严明，执行有力。",
     excerpt: "令则行，禁则止，宪之所及，俗之所被，如百体之从心",
   },
   {
@@ -2117,6 +2352,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西周",
     author: "佚名",
     gradeGroup: "西周",
+    meaning: "原指明智的人善于保全自己，今多指怕犯错误或怕得罪人而回避斗争。",
     excerpt: "既明且哲，以保其身",
   },
   {
@@ -2127,6 +2363,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "列御寇",
     gradeGroup: "战国",
+    meaning: "岔路太多，羊跑丢了找不回来。比喻事理复杂，没有正确方向就会误入歧途。",
     excerpt: "杨子之邻人亡羊，既率其党，又请杨子之竖追之",
   },
   {
@@ -2137,6 +2374,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "列御寇",
     gradeGroup: "战国",
+    meaning: "杞国人担心天会塌下来。比喻不必要的、没有根据的忧虑。",
     excerpt: "杞国有人忧天地崩坠，身亡所寄，废寝食者",
   },
   {
@@ -2144,10 +2382,11 @@ window.POEMS_CHENGYU = [
     id: "cy-215",
     title: "千载难逢",
     source: "《南齐书·庾杲之传》",
-    dynasty: "战国",
+    dynasty: "两晋南北朝",
     author: "萧子显",
-    gradeGroup: "战国",
-    excerpt: "（语本）千载难逢，一时之盛",
+    gradeGroup: "两晋南北朝",
+    meaning: "一千年也难得遇到。形容机会极其难得。",
+    excerpt: "臣以凡庸，谬徼昌运，奖擢之厚，千载难逢",
   },
   {
     textRef: "chengyu-cy-216",
@@ -2157,6 +2396,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西周",
     author: "佚名",
     gradeGroup: "西周",
+    meaning: "喜鹊的巢被斑鸠占住。比喻强占别人的住处或位置。",
     excerpt: "维鹊有巢，维鸠居之",
   },
   {
@@ -2167,6 +2407,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "佚名",
     gradeGroup: "春秋",
+    meaning: "流言蜚语是可怕的。指舆论的力量不可轻视。",
     excerpt: "岂敢爱之？畏人之多言",
   },
   {
@@ -2177,6 +2418,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "佚名",
     gradeGroup: "春秋",
+    meaning: "在嘴上加了三道封条。形容说话极其谨慎，不轻易开口。",
     excerpt: "（《孔子家语·观周》亦载）孔子观周，遂入太祖后稷",
   },
   {
@@ -2187,6 +2429,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "刘向",
     gradeGroup: "战国",
+    meaning: "三个人谎报市上有虎，听者就信以为真。比喻谣言一再重复，就能使人信以为真。",
     excerpt: "庞葱与太子质于邯郸，谓魏王曰：「今一人言市有虎，",
   },
   {
@@ -2197,6 +2440,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西周",
     author: "佚名",
     gradeGroup: "西周",
+    meaning: "刚下车到任。指官吏刚到任，也指刚到一个新地方。",
     excerpt: "武王克殷反商，未及下车，而封黄帝之后于蓟",
   },
   {
@@ -2207,6 +2451,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "司马迁",
     gradeGroup: "战国",
+    meaning: "连瞪过自己一眼的小怨也要报复。形容气量狭小，报复心极强。",
     excerpt: "一饭之德必偿，睚眦之怨必报",
   },
   {
@@ -2217,6 +2462,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "吕不韦",
     gradeGroup: "战国",
+    meaning: "捂住耳朵去偷铃铛。比喻自己欺骗自己，明明掩盖不住的事偏要设法掩盖。",
     excerpt: "范氏之亡也，百姓有得钟者，欲负而走，则钟大不可负",
   },
   {
@@ -2227,6 +2473,7 @@ window.POEMS_CHENGYU = [
     dynasty: "东汉",
     author: "班固",
     gradeGroup: "东汉",
+    meaning: "抓风和影子。比喻说话做事以虚妄的迹象为依据，毫无事实根据。",
     excerpt: "听其言，洋洋满耳，若将可遇；求之，荡荡如系风捕景",
   },
   {
@@ -2237,6 +2484,7 @@ window.POEMS_CHENGYU = [
     dynasty: "秦",
     author: "司马迁",
     gradeGroup: "秦",
+    meaning: "指着鹿说是马。比喻故意颠倒黑白、混淆是非。",
     excerpt: "赵高欲为乱，恐群臣不听，乃先设验，持鹿献于二世，",
   },
   {
@@ -2247,6 +2495,7 @@ window.POEMS_CHENGYU = [
     dynasty: "秦",
     author: "司马迁",
     gradeGroup: "秦",
+    meaning: "砸破锅、凿沉船，拼死一战。比喻下决心不顾一切，干到底。",
     excerpt: "项羽乃悉引兵渡河，皆沉船，破釜甑，烧庐舍，持三日",
   },
   {
@@ -2257,6 +2506,7 @@ window.POEMS_CHENGYU = [
     dynasty: "秦",
     author: "司马迁",
     gradeGroup: "秦",
+    meaning: "约定三条法令。泛指订立简单的条款，共同遵守。",
     excerpt: "吾与诸侯约，先入关者王之，吾当王关中",
   },
   {
@@ -2267,6 +2517,7 @@ window.POEMS_CHENGYU = [
     dynasty: "秦",
     author: "司马迁",
     gradeGroup: "秦",
+    meaning: "项庄舞剑的用意在于刺杀刘邦。比喻言语或行动的意图别有所指。",
     excerpt: "项庄拔剑起舞，项伯亦拔剑起舞，常以身翼蔽沛公，庄",
   },
   {
@@ -2277,6 +2528,7 @@ window.POEMS_CHENGYU = [
     dynasty: "秦",
     author: "司马迁",
     gradeGroup: "秦",
+    meaning: "秦始皇焚烧典籍、坑杀儒生。指文化专制与思想压制。",
     excerpt: "丞相李斯曰：「……臣请史官非秦记皆烧之",
   },
   {
@@ -2287,6 +2539,7 @@ window.POEMS_CHENGYU = [
     dynasty: "秦",
     author: "李延寿",
     gradeGroup: "秦",
+    meaning: "国家倚为屏障的良将自己毁弃。比喻自毁长城、自坏干城。",
     excerpt: "道济见收，愤怒气盛，目光如炬，俄尔间引饮一斛",
   },
   {
@@ -2297,6 +2550,7 @@ window.POEMS_CHENGYU = [
     dynasty: "秦",
     author: "司马迁",
     gradeGroup: "秦",
+    meaning: "用秤称量奏章文书。形容帝王勤于政务、日夜批阅。",
     excerpt: "天下之事无小大皆决于上，上至以衡石量书，日夜有呈",
   },
   {
@@ -2307,6 +2561,7 @@ window.POEMS_CHENGYU = [
     dynasty: "秦",
     author: "司马迁",
     gradeGroup: "秦",
+    meaning: "力能拔起高山、举起大鼎。形容力大无穷、气概非凡。",
     excerpt: "（项羽）长八尺余，力能扛鼎，才气过人，虽吴中子弟",
   },
   {
@@ -2317,6 +2572,7 @@ window.POEMS_CHENGYU = [
     dynasty: "秦",
     author: "司马迁",
     gradeGroup: "秦",
+    meaning: "猕猴戴上帽子装人。比喻外表装得像样，本质依然卑劣。",
     excerpt: "说者曰：「人言楚人沐猴而冠耳，果然",
   },
   {
@@ -2327,6 +2583,7 @@ window.POEMS_CHENGYU = [
     dynasty: "秦",
     author: "司马迁",
     gradeGroup: "秦",
+    meaning: "别人是刀和砧板，自己是鱼和肉。比喻处于任人宰割的境地。",
     excerpt: "樊哙曰：「大行不顾细谨，大礼不辞小让",
   },
   {
@@ -2337,6 +2594,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "司马迁",
     gradeGroup: "西汉",
+    meaning: "背靠河水列阵，退无可退地决一死战。比喻决一死战、不留后路。",
     excerpt: "信乃使万人先行，出，背水陈",
   },
   {
@@ -2347,6 +2605,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "司马迁",
     gradeGroup: "西汉",
+    meaning: "四面都响起楚人的歌声。比喻陷入孤立无援、四面受敌的绝境。",
     excerpt: "项王军壁垓下，兵少食尽，汉军及诸侯兵围之数重",
   },
   {
@@ -2357,6 +2616,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "佚名",
     gradeGroup: "西汉",
+    meaning: "在周围设下十面埋伏。形容布置严密，使对方无处可逃。",
     excerpt: "（后世演史小说语；本《史记·项羽本纪》垓下之围）",
   },
   {
@@ -2367,6 +2627,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "司马迁",
     gradeGroup: "西汉",
+    meaning: "这年轻人可以教诲。指年轻人有培养前途。",
     excerpt: "父去里所，复还，曰：「孺子可教矣",
   },
   {
@@ -2377,6 +2638,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "司马迁",
     gradeGroup: "西汉",
+    meaning: "受一饭之恩而以千金相报。形容受恩深重、厚报恩人。",
     excerpt: "信钓于城下，诸母漂，有一母见信饥，饭信，竟漂数十",
   },
   {
@@ -2387,6 +2649,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "司马迁",
     gradeGroup: "西汉",
+    meaning: "越多越好。原指将兵越多越能显示本领，后泛指越多越好、来者不拒。",
     excerpt: "上问曰：「如我能将几何？」信曰：「陛下不过能将十",
   },
   {
@@ -2397,6 +2660,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "司马迁",
     gradeGroup: "西汉",
+    meaning: "从正面迷惑敌人，暗中从侧翼突袭。比喻用假象迷惑对方，暗中采取行动。",
     excerpt: "（原文作「明修栈道，暗度陈仓」之本事）汉王之国，",
   },
   {
@@ -2407,6 +2671,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "司马迁",
     gradeGroup: "西汉",
+    meaning: "萧何定下的规矩，曹参照着实行。比喻后继者沿袭前人的成法办事。",
     excerpt: "参代何为汉相国，举事无所变更，一遵萧何约束",
   },
   {
@@ -2417,6 +2682,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "班固",
     gradeGroup: "西汉",
+    meaning: "汉武帝幼时说要造金屋给阿娇住。后指娶妻或纳妾，也泛指娇养宠爱。",
     excerpt: "（胶东王）数岁，长公主嫖抱置膝上，问曰：「儿欲得",
   },
   {
@@ -2427,6 +2693,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "韩非",
     gradeGroup: "西汉",
+    meaning: "战马奔驰出汗的功劳。指在战斗中立下的功劳，也泛指大的贡献。",
     excerpt: "弃私家之事，而必汗马之劳，家困而上弗论，则穷矣",
   },
   {
@@ -2437,6 +2704,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "司马迁",
     gradeGroup: "西汉",
+    meaning: "在军帐中筹划谋略。指在后方决定作战方针，善于谋划调度。",
     excerpt: "夫运筹策帷帐之中，决胜于千里之外，吾不如子房",
   },
   {
@@ -2447,6 +2715,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "司马迁",
     gradeGroup: "西汉",
+    meaning: "在千里之外决定胜负。形容谋略高超，运筹于帷幄而制胜于远方。",
     excerpt: "夫运筹策帷帐之中，决胜于千里之外，吾不如子房",
   },
   {
@@ -2457,6 +2726,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "司马迁",
     gradeGroup: "西汉",
+    meaning: "功劳太大使君主感到不安。指臣下功劳过盛，使上级疑忌。",
     excerpt: "（原文作「功盖天下」之论）臣闻勇略震主者身危，而",
   },
   {
@@ -2467,6 +2737,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "司马迁",
     gradeGroup: "西汉",
+    meaning: "成事由于萧何，败事也由于萧何。比喻事情的成功和失败都由同一个人造成。",
     excerpt: "（本事）信之为大将军，实萧何所荐；今其死也，又出",
   },
   {
@@ -2477,6 +2748,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "司马迁",
     gradeGroup: "西汉",
+    meaning: "韩信点兵越多越好。比喻越多越好，也指办事越多越能显示本领。",
     excerpt: "臣多多而益善耳",
   },
   {
@@ -2487,6 +2759,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "司马迁",
     gradeGroup: "西汉",
+    meaning: "李广功高却难以封侯。指功劳卓著而屡不得赏、命运不济。",
     excerpt: "（原文作「数不遇」之叹）自汉击匈奴而广未尝不在其",
   },
   {
@@ -2497,6 +2770,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "司马迁",
     gradeGroup: "西汉",
+    meaning: "桃树李树不会说话，树下却自然踩出小路。比喻为人品德高尚，自会受人敬仰。",
     excerpt: "太史公曰：……余睹李将军悛悛如鄙人，口不能道辞",
   },
   {
@@ -2507,6 +2781,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "班固",
     gradeGroup: "西汉",
+    meaning: "苏武出使匈奴被扣，牧羊十九年不改节操。形容坚贞不屈、忠于国家。",
     excerpt: "乃徙武北海上无人处，使牧羝，羝乳乃得归",
   },
   {
@@ -2517,6 +2792,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "班固",
     gradeGroup: "西汉",
+    meaning: "借大雁传递书信。指书信往来，也指传递消息。",
     excerpt: "（常惠）教使者谓单于，言天子射上林中，得雁，足有",
   },
   {
@@ -2527,6 +2803,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "刘歆",
     gradeGroup: "西汉",
+    meaning: "在墙上凿洞借邻家的光读书。形容家境贫寒仍刻苦读书。",
     excerpt: "匡衡字稚圭，勤学而无烛，邻舍有烛而不逮，衡乃穿壁",
   },
   {
@@ -2537,6 +2814,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "房玄龄",
     gradeGroup: "西汉",
+    meaning: "用袋装萤火虫、借雪光读书。形容家境贫寒仍勤学苦读。",
     excerpt: "（「囊萤」见《晋书·车胤传》）车胤字武子，南平人",
   },
   {
@@ -2547,6 +2825,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "司马迁",
     gradeGroup: "西汉",
+    meaning: "串连竹简的皮绳断了三次。形容读书勤奋刻苦。",
     excerpt: "孔子晚而喜《易》，序《彖》《系》《象》《说卦》《",
   },
   {
@@ -2557,6 +2836,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "司马迁",
     gradeGroup: "西汉",
+    meaning: "一句许诺价值千金。形容说话极讲信用，言出必行。",
     excerpt: "曹丘至，即揖季布曰：「楚人谚曰『得黄金百斤，不如",
   },
   {
@@ -2567,6 +2847,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "司马迁",
     gradeGroup: "西汉",
+    meaning: "一句话抵得上九鼎重。形容说话分量重，能起决定作用。",
     excerpt: "毛先生一至楚，而使赵重于九鼎大吕",
   },
   {
@@ -2577,6 +2858,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "司马迁",
     gradeGroup: "西汉",
+    meaning: "夜郎国君主自以为国土广大。比喻妄自尊大、盲目自满。",
     excerpt: "滇王与汉使者言曰：「汉孰与我大？」及夜郎侯亦然",
   },
   {
@@ -2587,6 +2869,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "司马迁",
     gradeGroup: "西汉",
+    meaning: "强弓射出的箭到了射程末段，连薄绢也穿不透。比喻强大的力量已衰微，起不了作用。",
     excerpt: "且强弩之极，矢不能穿鲁缟；冲风之末，力不能漂鸿毛",
   },
   {
@@ -2597,6 +2880,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "司马迁",
     gradeGroup: "西汉",
+    meaning: "陈粮上加陈粮，层层堆积。比喻因袭旧套，没有创新。",
     excerpt: "太仓之粟陈陈相因，充溢露积于外，至腐败不可食",
   },
   {
@@ -2607,6 +2891,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "班固",
     gradeGroup: "西汉",
+    meaning: "把烟囱改成弯的、把柴薪搬开。比喻事先采取措施，防患于未然。",
     excerpt: "客有过主人者，见其灶直突，傍有积薪",
   },
   {
@@ -2617,6 +2902,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "列御寇",
     gradeGroup: "西汉",
+    meaning: "病一下子就好了。形容疾病迅速痊愈。",
     excerpt: "（原文作「霍然」）秦人逢氏子少而惠，及壮而有迷罔",
   },
   {
@@ -2627,6 +2913,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "司马迁",
     gradeGroup: "西汉",
+    meaning: "门前可以张网捕雀。形容门庭冷落，宾客稀少。",
     excerpt: "始翟公为廷尉，宾客阗门；及废，门外可设雀罗",
   },
   {
@@ -2637,6 +2924,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "司马迁",
     gradeGroup: "西汉",
+    meaning: "后来的超过先前的。指后起的胜过先前的。",
     excerpt: "上曰：「陛下用群臣如积薪耳，后来者居上",
   },
   {
@@ -2647,6 +2935,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "司马迁",
     gradeGroup: "西汉",
+    meaning: "把瑟的弦柱粘住再弹。比喻拘泥固执，不知变通。",
     excerpt: "蔺相如曰：「王以名使括，若胶柱而鼓瑟耳",
   },
   {
@@ -2657,6 +2946,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "司马迁",
     gradeGroup: "西汉",
+    meaning: "在地上画个圈当作牢房。比喻只许在限定的范围内活动。",
     excerpt: "故士有画地为牢，势不可入；削木为吏，议不可对，定",
   },
   {
@@ -2667,6 +2957,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "班固",
     gradeGroup: "西汉",
+    meaning: "没有学问，没有本领。",
     excerpt: "然光不学亡术，暗于大理",
   },
   {
@@ -2677,6 +2968,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "班固",
     gradeGroup: "西汉",
+    meaning: "听一百次不如亲眼看一次。指亲眼所见比传闻可靠。",
     excerpt: "百闻不如一见",
   },
   {
@@ -2687,6 +2979,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "刘向",
     gradeGroup: "西汉",
+    meaning: "耗费时日，拖延很久。",
     excerpt: "今得强赵之兵以杜燕将，旷日持久数岁，令士大夫余子",
   },
   {
@@ -2697,6 +2990,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "班固",
     gradeGroup: "西汉",
+    meaning: "使全城、全国人为之倾倒。形容女子容貌绝美，也指国家为此倾覆。",
     excerpt: "北方有佳人，绝世而独立，一顾倾人城，再顾倾人国",
   },
   {
@@ -2707,6 +3001,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "班固",
     gradeGroup: "西汉",
+    meaning: "形容来得很晚，举止从容缓慢。",
     excerpt: "上思念李夫人不已……为作诗曰：「是邪，非邪？立而",
   },
   {
@@ -2717,6 +3012,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "班固",
     gradeGroup: "西汉",
+    meaning: "同「倾城倾国」。形容女子容貌极美，美得足以倾覆国家。",
     excerpt: "一顾倾人城，再顾倾人国",
   },
   {
@@ -2727,6 +3023,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "范晔",
     gradeGroup: "西汉",
+    meaning: "加固壁垒、转移人口物资使敌人无所获。指对付强敌入侵的一种战术。",
     excerpt: "今东方皆以收麦，必坚壁清野以待将军，将军攻之不拔",
   },
   {
@@ -2737,6 +3034,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "班固",
     gradeGroup: "西汉",
+    meaning: "明知法律禁止，却冒险去做违法的事。",
     excerpt: "明慎所职，毋以身试法",
   },
   {
@@ -2747,6 +3045,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "司马迁",
     gradeGroup: "西汉",
+    meaning: "拔掉对方的旗帜，换上自己的旗帜。比喻取而代之，占领阵地。",
     excerpt: "信所出奇兵二千骑，共候赵空壁逐利，则驰入赵壁，皆",
   },
   {
@@ -2757,6 +3056,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "司马迁",
     gradeGroup: "西汉",
+    meaning: "脱下衣服给别人穿，把食物让给别人吃。形容对人关怀备至、慷慨相助。",
     excerpt: "汉王授我上将军印，予我数万众，解衣衣我，推食食我",
   },
   {
@@ -2767,6 +3067,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "班固",
     gradeGroup: "西汉",
+    meaning: "计谋十分周全，万无一失。",
     excerpt: "（原文作「万全之策」）臣之计划，出于万全",
   },
   {
@@ -2777,6 +3078,7 @@ window.POEMS_CHENGYU = [
     dynasty: "东汉",
     author: "范晔",
     gradeGroup: "东汉",
+    meaning: "两军旗鼓相对，声势不相上下。比喻双方力量不相上下。",
     excerpt: "（隗嚣）曰：「如今子阳到汉中、三辅，愿因将军兵马",
   },
   {
@@ -2787,6 +3089,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "法演",
     gradeGroup: "西汉",
+    meaning: "闭嘴不说，像瓶口塞紧一样。形容说话谨慎，严守秘密。",
     excerpt: "（佛典语）守口如瓶，防意如城",
   },
   {
@@ -2797,6 +3100,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "司马迁",
     gradeGroup: "西汉",
+    meaning: "熄灭的灰烬又重新燃烧。比喻已经消亡的势力或事物重新得势。",
     excerpt: "蒙狱吏田甲辱安国",
   },
   {
@@ -2807,6 +3111,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "班固",
     gradeGroup: "西汉",
+    meaning: "同一个山丘里的貉。比喻彼此都是同一类坏人，没有差别。",
     excerpt: "古与今如一丘之貉",
   },
   {
@@ -2817,6 +3122,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "班固",
     gradeGroup: "西汉",
+    meaning: "按照事物的实际情况办事，不夸大也不缩小。",
     excerpt: "河间献王德以孝景前二年立，修学好古，实事求是",
   },
   {
@@ -2827,6 +3133,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "司马迁",
     gradeGroup: "西汉",
+    meaning: "天鹅一样高远的志向。比喻远大的志向。",
     excerpt: "陈涉太息曰：「嗟乎，燕雀安知鸿鹄之志哉！」",
   },
   {
@@ -2837,6 +3144,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "司马迁",
     gradeGroup: "西汉",
+    meaning: "王侯将相难道是天生的贵种吗。表示不甘于命运、敢于反抗的豪言。",
     excerpt: "且壮士不死即已，死即举大名耳，王侯将相宁有种乎！",
   },
   {
@@ -2847,6 +3155,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "司马迁",
     gradeGroup: "西汉",
+    meaning: "夜间点火装作狐叫，制造舆论。比喻用假象迷惑人，为起事造声势。",
     excerpt: "又间令吴广之次所旁丛祠中，夜篝火，狐鸣呼曰：「大",
   },
   {
@@ -2857,6 +3166,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "司马迁",
     gradeGroup: "西汉",
+    meaning: "燕雀哪里懂得天鹅的远大志向。比喻平庸的人无法理解英雄人物的抱负。",
     excerpt: "陈涉太息曰：「嗟乎，燕雀安知鸿鹄之志哉！」",
   },
   {
@@ -2867,6 +3177,7 @@ window.POEMS_CHENGYU = [
     dynasty: "东汉",
     author: "范晔",
     gradeGroup: "东汉",
+    meaning: "扔下笔去参军。指弃文就武，从军报国。",
     excerpt: "（班超）尝辍业投笔叹曰：「大丈夫无它志略，犹当效",
   },
   {
@@ -2877,6 +3188,7 @@ window.POEMS_CHENGYU = [
     dynasty: "东汉",
     author: "范晔",
     gradeGroup: "东汉",
+    meaning: "用马皮把尸体包裹起来。形容英勇作战，战死沙场。",
     excerpt: "男儿要当死于边野，以马革裹尸还葬耳，何能卧床上在",
   },
   {
@@ -2887,6 +3199,7 @@ window.POEMS_CHENGYU = [
     dynasty: "东汉",
     author: "范晔",
     gradeGroup: "东汉",
+    meaning: "年纪老了，志气更加旺盛。指年长而志气不衰。",
     excerpt: "丈夫为志，穷当益坚，老当益壮",
   },
   {
@@ -2897,6 +3210,7 @@ window.POEMS_CHENGYU = [
     dynasty: "东汉",
     author: "范晔",
     gradeGroup: "东汉",
+    meaning: "不进老虎洞怎能捉到小老虎。比喻不冒风险、不亲历险境就不能成功。",
     excerpt: "超曰：「不入虎穴，不得虎子",
   },
   {
@@ -2907,6 +3221,7 @@ window.POEMS_CHENGYU = [
     dynasty: "东汉",
     author: "范晔",
     gradeGroup: "东汉",
+    meaning: "见有人家就投宿。形容逃亡或避难时到处投靠。",
     excerpt: "俭得亡命，困迫遁走，望门投止，莫不重其名行，破家",
   },
   {
@@ -2917,6 +3232,7 @@ window.POEMS_CHENGYU = [
     dynasty: "东汉",
     author: "范晔",
     gradeGroup: "东汉",
+    meaning: "躲在房梁上的人。是窃贼的代称，也指飘浮不实的人。",
     excerpt: "时岁荒民俭，有盗夜入其室，止于梁上",
   },
   {
@@ -2927,6 +3243,7 @@ window.POEMS_CHENGYU = [
     dynasty: "东汉",
     author: "范晔",
     gradeGroup: "东汉",
+    meaning: "喝毒酒解渴。比喻用有害的办法解决眼前的问题，不顾严重后果。",
     excerpt: "譬犹疗饥于附子，止渴于鸩毒，未入肠胃，已绝咽喉，",
   },
   {
@@ -2937,6 +3254,7 @@ window.POEMS_CHENGYU = [
     dynasty: "东汉",
     author: "赵晔",
     gradeGroup: "东汉",
+    meaning: "路已走到尽头。形容陷入绝境，无路可走。",
     excerpt: "（原文作「穷途」）穷途之哭，末路之悲",
   },
   {
@@ -2947,6 +3265,7 @@ window.POEMS_CHENGYU = [
     dynasty: "东汉",
     author: "范晔",
     gradeGroup: "东汉",
+    meaning: "乐于做某事而不知疲倦。形容对某事有浓厚兴趣，沉浸其中。",
     excerpt: "皇太子见帝勤劳不怠，承间谏曰：「陛下有禹、汤之明",
   },
   {
@@ -2957,6 +3276,7 @@ window.POEMS_CHENGYU = [
     dynasty: "东汉",
     author: "范晔",
     gradeGroup: "东汉",
+    meaning: "得到陇地又想得到蜀地。比喻贪得无厌，得寸进尺。",
     excerpt: "敕彭书曰：「两城若下，便可将兵南击蜀虏",
   },
   {
@@ -2967,6 +3287,7 @@ window.POEMS_CHENGYU = [
     dynasty: "东汉",
     author: "范晔",
     gradeGroup: "东汉",
+    meaning: "把自己的心推到别人腹中。比喻真心待人，以诚相待。",
     excerpt: "降者更相语曰：「萧王推赤心置人腹中，安得不投死乎",
   },
   {
@@ -2977,6 +3298,7 @@ window.POEMS_CHENGYU = [
     dynasty: "东汉",
     author: "范晔",
     gradeGroup: "东汉",
+    meaning: "拨开荆棘、清除障碍。比喻清除前进路上的障碍，艰苦奋斗。",
     excerpt: "异朝京师",
   },
   {
@@ -2987,6 +3309,7 @@ window.POEMS_CHENGYU = [
     dynasty: "东汉",
     author: "范晔",
     gradeGroup: "东汉",
+    meaning: "有志向的人终究能成功。指只要意志坚定，事情终能办成。",
     excerpt: "将军前在南阳建此大策，常以为落落难合，有志者事竟",
   },
   {
@@ -2997,6 +3320,7 @@ window.POEMS_CHENGYU = [
     dynasty: "东汉",
     author: "司马迁",
     gradeGroup: "东汉",
+    meaning: "把不同的人或事放在一起谈论。多指不加区别地看待，含否定意味。",
     excerpt: "（原文作「相提而论」）能富贵人，在日月之际……相",
   },
   {
@@ -3007,6 +3331,7 @@ window.POEMS_CHENGYU = [
     dynasty: "东汉",
     author: "范晔",
     gradeGroup: "东汉",
+    meaning: "只收一钱就送还的太守。形容官吏清廉自守。",
     excerpt: "（刘宠）后四迁为豫章太守，又三迁拜会稽太守",
   },
   {
@@ -3017,6 +3342,7 @@ window.POEMS_CHENGYU = [
     dynasty: "东汉",
     author: "桓谭",
     gradeGroup: "东汉",
+    meaning: "像冰一样清，像玉一样洁。比喻人品高尚、操守纯洁。",
     excerpt: "（原文作「冰清玉洁」喻人品高洁）伯夷、叔齐，冰清",
   },
   {
@@ -3027,6 +3353,7 @@ window.POEMS_CHENGYU = [
     dynasty: "东汉",
     author: "范晔",
     gradeGroup: "东汉",
+    meaning: "把托盘举到眉际，以示敬重。形容夫妻相敬相爱。",
     excerpt: "（梁鸿）遂至吴，依大家皋伯通，居庑下，为人赁舂",
   },
   {
@@ -3037,6 +3364,7 @@ window.POEMS_CHENGYU = [
     dynasty: "东汉",
     author: "左丘明",
     gradeGroup: "东汉",
+    meaning: "夫妻互相敬重，像对待宾客一样。形容夫妻和睦、互相尊重。",
     excerpt: "臼季使过冀，见冀缺耨，其妻馌之，敬，相待如宾",
   },
   {
@@ -3047,6 +3375,7 @@ window.POEMS_CHENGYU = [
     dynasty: "东汉",
     author: "范晔",
     gradeGroup: "东汉",
+    meaning: "梁鸿与孟光夫妇相敬。同「举案齐眉」，形容夫妻互相敬重。",
     excerpt: "（同「举案齐眉」）为人赁舂",
   },
   {
@@ -3057,6 +3386,7 @@ window.POEMS_CHENGYU = [
     dynasty: "东汉",
     author: "范晔",
     gradeGroup: "东汉",
+    meaning: "在错误或坏事刚冒头时就加以制止。指制止不良倾向于萌芽状态。",
     excerpt: "若敕政责躬，杜渐防萌，则凶妖销灭，害除福凑矣",
   },
   {
@@ -3067,6 +3397,7 @@ window.POEMS_CHENGYU = [
     dynasty: "东汉",
     author: "张廷玉等",
     gradeGroup: "东汉",
+    meaning: "积久而成的弊端难以扭转。指长期形成的积弊难以革除。",
     excerpt: "（原文作「积重难返」之论）积重之势，非一日可返",
   },
   {
@@ -3077,6 +3408,7 @@ window.POEMS_CHENGYU = [
     dynasty: "东汉",
     author: "佚名",
     gradeGroup: "东汉",
+    meaning: "感到像糖一样甜。比喻乐于承担艰苦的工作或甘愿承受痛苦。",
     excerpt: "（「饴」见《诗·大雅·绵》「周原膴膴，堇荼如饴」",
   },
   {
@@ -3087,6 +3419,7 @@ window.POEMS_CHENGYU = [
     dynasty: "东汉",
     author: "佚名",
     gradeGroup: "东汉",
+    meaning: "从锅底下抽去柴火。比喻从根本上解决问题。",
     excerpt: "不敌其力，而消其势，兑下乾上之象",
   },
   {
@@ -3097,6 +3430,7 @@ window.POEMS_CHENGYU = [
     dynasty: "东汉",
     author: "蔡邕",
     gradeGroup: "东汉",
+    meaning: "无论受多少挫折都不退缩。形容意志坚强，坚韧不拔。",
     excerpt: "（原文作「百折不挠」）有百折而不挠，临大节而不可",
   },
   {
@@ -3107,6 +3441,7 @@ window.POEMS_CHENGYU = [
     dynasty: "东汉",
     author: "道原",
     gradeGroup: "东汉",
+    meaning: "面壁静修，功夫深厚。指潜心修习、造诣精深。",
     excerpt: "（达摩面壁九年之典）师（达摩）终日面壁而坐",
   },
   {
@@ -3117,6 +3452,7 @@ window.POEMS_CHENGYU = [
     dynasty: "东汉",
     author: "佚名",
     gradeGroup: "东汉",
+    meaning: "选拔任用只凭德才。指用人只凭才能品德，不论亲疏关系。",
     excerpt: "任官惟贤材，左右惟其人",
   },
   {
@@ -3127,6 +3463,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "庄周",
     gradeGroup: "西汉",
+    meaning: "白马从缝隙前飞驰而过。比喻时间过得极快。",
     excerpt: "人生天地之间，若白驹之过隙，忽然而已",
   },
   {
@@ -3137,6 +3474,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "班固",
     gradeGroup: "西汉",
+    meaning: "守着残缺陈旧的东西不放。指思想保守，不肯接受新事物。",
     excerpt: "犹欲保残守缺，挟恐见破之私意，而无从善服义之公心",
   },
   {
@@ -3147,6 +3485,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "佚名",
     gradeGroup: "西汉",
+    meaning: "见闻广博，记忆力强。",
     excerpt: "博闻强识而让，敦善行而不怠，谓之君子",
   },
   {
@@ -3157,7 +3496,8 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "司马迁",
     gradeGroup: "西汉",
-    excerpt: "（语本）竟不得名一钱，寄死人家",
+    meaning: "一个钱也没有。形容极其贫穷。",
+    excerpt: "（邓通）竟不得名一钱，寄死人家",
   },
   {
     textRef: "chengyu-cy-317",
@@ -3167,6 +3507,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "班固",
     gradeGroup: "西汉",
+    meaning: "把人命看得像野草一样。形容轻视人命、任意残害。",
     excerpt: "其视杀人若艾草菅然",
   },
   {
@@ -3177,6 +3518,7 @@ window.POEMS_CHENGYU = [
     dynasty: "东汉",
     author: "范晔",
     gradeGroup: "东汉",
+    meaning: "大致上还能使人满意。指尚能符合心意。",
     excerpt: "诸将见战陈不利，或多惶惧，失其常度",
   },
   {
@@ -3187,6 +3529,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "司马迁",
     gradeGroup: "西汉",
+    meaning: "两脚重叠站着不敢迈步。形容极其恐惧、不敢前进。",
     excerpt: "故使天下之士，倾耳而听，重足而立，拑口而不言",
   },
   {
@@ -3197,6 +3540,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "班固",
     gradeGroup: "西汉",
+    meaning: "把火放在柴堆下面。比喻潜伏着极大的危险。",
     excerpt: "夫抱火厝之积薪之下而寝其上，火未及燃，因谓之安，",
   },
   {
@@ -3207,6 +3551,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "班固",
     gradeGroup: "西汉",
+    meaning: "换掉旧弦，调整琴弦。比喻变更方针、制度或做法。",
     excerpt: "窃譬之琴瑟不调，甚者必解而更张之，乃可鼓也",
   },
   {
@@ -3217,7 +3562,8 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "班固",
     gradeGroup: "西汉",
-    excerpt: "（语本）昔有学步于邯郸者，曾未得其仿佛，又复失其",
+    meaning: "守着自己原来的步子不前。比喻安于现状，不求进步。",
+    excerpt: "昔有学步于邯郸者，曾未得其仿佛，又复失其故步，遂",
   },
   {
     textRef: "chengyu-cy-323",
@@ -3227,6 +3573,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "班固",
     gradeGroup: "西汉",
+    meaning: "从竹管里看天，用瓢量海水。比喻见识短浅、眼界狭窄。",
     excerpt: "以管窥天，以蠡测海，以筳撞钟，岂能通其条贯，考其",
   },
   {
@@ -3237,6 +3584,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "司马迁",
     gradeGroup: "西汉",
+    meaning: "砍下木棍作旗帜，举起竹竿作武器而起事。指人民武装起义反抗。",
     excerpt: "斩木为兵，揭竿为旗，天下云集响应，赢粮而景从",
   },
   {
@@ -3247,7 +3595,8 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "班固",
     gradeGroup: "西汉",
-    excerpt: "（语本）良莠不齐，玉石混杂",
+    meaning: "好苗和杂草混在一起。指好人坏人混杂，好坏参差。",
+    excerpt: "黎庶之众，良莠不齐",
   },
   {
     textRef: "chengyu-cy-326",
@@ -3257,6 +3606,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "班固",
     gradeGroup: "西汉",
+    meaning: "被众人所指责。形容行为可鄙，遭众人唾弃。",
     excerpt: "里谚曰：「千人所指，无病而死",
   },
   {
@@ -3267,6 +3617,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "司马迁",
     gradeGroup: "西汉",
+    meaning: "桃树李树不会说话。比喻品德高尚的人不自我宣扬，也自然受人敬仰。",
     excerpt: "谚曰「桃李不言，下自成蹊」",
   },
   {
@@ -3277,6 +3628,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "王充",
     gradeGroup: "西汉",
+    meaning: "五天刮一次风、十天下一场雨。形容风调雨顺。",
     excerpt: "风不鸣条，雨不破块，五日一风，十日一雨",
   },
   {
@@ -3287,6 +3639,7 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "房玄龄",
     gradeGroup: "两晋南北朝",
+    meaning: "从竹管里看豹，只看见一点斑纹。比喻所见片面，也比喻可由部分推知全貌。",
     excerpt: "（献之）年数岁，尝观门生樗蒲，曰：「南风不竞",
   },
   {
@@ -3297,6 +3650,7 @@ window.POEMS_CHENGYU = [
     dynasty: "三国",
     author: "陈寿",
     gradeGroup: "三国",
+    meaning: "书本不离手。形容读书勤奋，爱好学习。",
     excerpt: "光武当兵马之务，手不释卷",
   },
   {
@@ -3307,6 +3661,7 @@ window.POEMS_CHENGYU = [
     dynasty: "三国",
     author: "陈寿",
     gradeGroup: "三国",
+    meaning: "放倒旗帜，停止战鼓。比喻停止行动、休战或停止批评。",
     excerpt: "云入营，更大开门，偃旗息鼓",
   },
   {
@@ -3317,6 +3672,7 @@ window.POEMS_CHENGYU = [
     dynasty: "三国",
     author: "范晔",
     gradeGroup: "三国",
+    meaning: "老牛用舌头舔小牛。比喻父母对子女的疼爱。",
     excerpt: "子修为曹操所杀",
   },
   {
@@ -3327,6 +3683,7 @@ window.POEMS_CHENGYU = [
     dynasty: "三国",
     author: "陈寿",
     gradeGroup: "三国",
+    meaning: "用车装、用斗量。形容数量极多，不足为奇。",
     excerpt: "（赵咨使魏）魏文帝善之，嘲咨曰：「吴如大夫者几人",
   },
   {
@@ -3337,6 +3694,7 @@ window.POEMS_CHENGYU = [
     dynasty: "三国",
     author: "陈寿",
     gradeGroup: "三国",
+    meaning: "刘备三次到草庐拜访诸葛亮。指诚心诚意地一再邀请、礼聘贤才。",
     excerpt: "先帝不以臣卑鄙，猥自枉屈，三顾臣于草庐之中，咨臣",
   },
   {
@@ -3347,6 +3705,7 @@ window.POEMS_CHENGYU = [
     dynasty: "三国",
     author: "罗贯中",
     gradeGroup: "三国",
+    meaning: "借草船佯攻以得箭。比喻善于借用他人之力或巧用计谋，不费己力达目的。",
     excerpt: "（小说家言，本《三国志·吴书》「权乘大船来观军」",
   },
   {
@@ -3357,6 +3716,7 @@ window.POEMS_CHENGYU = [
     dynasty: "三国",
     author: "罗贯中",
     gradeGroup: "三国",
+    meaning: "诸葛亮刚出草庐即崭露头角。比喻初入社会或刚出道，缺乏经验。",
     excerpt: "直须惊破曹公胆，初出茅庐第一功",
   },
   {
@@ -3367,6 +3727,7 @@ window.POEMS_CHENGYU = [
     dynasty: "三国",
     author: "诸葛亮",
     gradeGroup: "三国",
+    meaning: "恭敬谨慎地竭尽全力，到死才停止。指为事业呕心沥血、奉献终身。",
     excerpt: "臣鞠躬尽力，死而后已",
   },
   {
@@ -3377,6 +3738,7 @@ window.POEMS_CHENGYU = [
     dynasty: "三国",
     author: "陈寿",
     gradeGroup: "三国",
+    meaning: "蜀后主刘禅在洛阳快乐得不再想蜀国。比喻乐而忘返，忘了本。",
     excerpt: "司马文王与禅宴，为之作故蜀技，旁人皆为之感怆，而",
   },
   {
@@ -3387,6 +3749,7 @@ window.POEMS_CHENGYU = [
     dynasty: "三国",
     author: "陈寿",
     gradeGroup: "三国",
+    meaning: "擦亮眼睛重新看待。指用新的眼光看待人的进步。",
     excerpt: "（鲁）肃拊蒙背曰：「吾谓大弟但有武略耳，至于今者",
   },
   {
@@ -3397,6 +3760,7 @@ window.POEMS_CHENGYU = [
     dynasty: "三国",
     author: "刘义庆",
     gradeGroup: "三国",
+    meaning: "烧豆秸煮豆子。比喻弟兄骨肉相残、自相残害。",
     excerpt: "文帝尝令东阿王七步中作诗，不成者行大法",
   },
   {
@@ -3407,6 +3771,7 @@ window.POEMS_CHENGYU = [
     dynasty: "三国",
     author: "刘义庆",
     gradeGroup: "三国",
+    meaning: "用想到梅子来止渴。比喻用空想或以虚幻的前景安慰自己。",
     excerpt: "魏武行役，失汲道，军皆渴，乃令曰：「前有大梅林，",
   },
   {
@@ -3417,6 +3782,7 @@ window.POEMS_CHENGYU = [
     dynasty: "三国",
     author: "陈寿",
     gradeGroup: "三国",
+    meaning: "说话夸张，超过实际情况。指言辞浮夸，不符实际。",
     excerpt: "先主临薨谓亮曰：「马谡言过其实，不可大用，君其察",
   },
   {
@@ -3427,6 +3793,7 @@ window.POEMS_CHENGYU = [
     dynasty: "三国",
     author: "刘义庆",
     gradeGroup: "三国",
+    meaning: "七步之内作成一首诗。形容才思敏捷、文才出众。",
     excerpt: "文帝尝令东阿王七步中作诗，不成者行大法",
   },
   {
@@ -3437,6 +3804,7 @@ window.POEMS_CHENGYU = [
     dynasty: "三国",
     author: "李延寿",
     gradeGroup: "三国",
+    meaning: "才学高得有八斗。形容文才极高。",
     excerpt: "（谢灵运）尝曰：「天下才共一石，曹子建独占八斗，",
   },
   {
@@ -3447,6 +3815,7 @@ window.POEMS_CHENGYU = [
     dynasty: "三国",
     author: "罗贯中",
     gradeGroup: "三国",
+    meaning: "一切都准备好了，只差最后一个关键条件。",
     excerpt: "（小说家言）欲破曹公，宜用火攻；万事俱备，只欠东",
   },
   {
@@ -3457,6 +3826,7 @@ window.POEMS_CHENGYU = [
     dynasty: "三国",
     author: "罗贯中",
     gradeGroup: "三国",
+    meaning: "一人与众多的辩论者激辩。形容能言善辩、以一人之力折服众人。",
     excerpt: "（小说家言）诸葛亮舌战群儒",
   },
   {
@@ -3467,6 +3837,7 @@ window.POEMS_CHENGYU = [
     dynasty: "三国",
     author: "罗贯中",
     gradeGroup: "三国",
+    meaning: "放在锦囊里的神妙计策。指预先安排好的、紧要时取出使用的妙计。",
     excerpt: "（小说家言）汝保主公入吴，当领此三个锦囊，囊中有",
   },
   {
@@ -3477,6 +3848,7 @@ window.POEMS_CHENGYU = [
     dynasty: "三国",
     author: "陈寿",
     gradeGroup: "三国",
+    meaning: "只带一把刀独自赴会。形容胆识过人、只身冒险赴约。",
     excerpt: "肃邀羽相见，各驻兵马百步上，但请将军单刀俱会",
   },
   {
@@ -3487,6 +3859,7 @@ window.POEMS_CHENGYU = [
     dynasty: "三国",
     author: "陈寿",
     gradeGroup: "三国",
+    meaning: "像鱼得到了水。比喻得到了非常适合自己的环境或人。",
     excerpt: "孤之有孔明，犹鱼之有水也",
   },
   {
@@ -3497,6 +3870,7 @@ window.POEMS_CHENGYU = [
     dynasty: "三国",
     author: "房玄龄",
     gradeGroup: "三国",
+    meaning: "形势像劈竹子一样，节节顺利。形容节节胜利，毫无阻碍。",
     excerpt: "今兵威已振，譬如破竹，数节之后，皆迎刃而解，无复",
   },
   {
@@ -3507,6 +3881,7 @@ window.POEMS_CHENGYU = [
     dynasty: "三国",
     author: "陈寿",
     gradeGroup: "三国",
+    meaning: "吴下那个没有学识的阿蒙。指学识浅陋的人，现多指人已有长进而非昔日可比。",
     excerpt: "吾谓大弟但有武略耳，至于今者，学识英博，非复吴下",
   },
   {
@@ -3517,6 +3892,7 @@ window.POEMS_CHENGYU = [
     dynasty: "三国",
     author: "陈寿",
     gradeGroup: "三国",
+    meaning: "宁死不降的将军。指宁死不屈、气节刚烈的将领。",
     excerpt: "（严）颜答曰：「卿等无状，侵夺我州，我州但有断头",
   },
   {
@@ -3527,6 +3903,7 @@ window.POEMS_CHENGYU = [
     dynasty: "三国",
     author: "罗贯中",
     gradeGroup: "三国",
+    meaning: "以空城示敌而以疑兵退敌的计策。指用假象掩饰空虚以迷惑对方。",
     excerpt: "（小说家言；本《三国志·蜀书·赵云传》裴注「空营",
   },
   {
@@ -3537,6 +3914,7 @@ window.POEMS_CHENGYU = [
     dynasty: "三国",
     author: "罗贯中",
     gradeGroup: "三国",
+    meaning: "故意伤害自己以骗取对方信任的计策。",
     excerpt: "（小说家言；本《吴越春秋》要离断臂之典）周瑜打黄",
   },
   {
@@ -3547,6 +3925,7 @@ window.POEMS_CHENGYU = [
     dynasty: "三国",
     author: "佚名",
     gradeGroup: "三国",
+    meaning: "一个接一个、环环相扣的计策。",
     excerpt: "将多兵众，不可以敌，使其自累，以杀其势",
   },
   {
@@ -3557,6 +3936,7 @@ window.POEMS_CHENGYU = [
     dynasty: "三国",
     author: "陈寿",
     gradeGroup: "三国",
+    meaning: "诸葛亮创制的运粮工具。指古代巧妙的运输器械，也泛指奇巧发明。",
     excerpt: "（建兴）九年，亮复出祁山，以木牛运，粮尽退军",
   },
   {
@@ -3567,6 +3947,7 @@ window.POEMS_CHENGYU = [
     dynasty: "三国",
     author: "陈寿",
     gradeGroup: "三国",
+    meaning: "超出众人，同辈中没有能相比的。形容才能出众。",
     excerpt: "孟起兼资文武，雄烈过人，一世之杰，黥、彭之徒，当",
   },
   {
@@ -3577,6 +3958,7 @@ window.POEMS_CHENGYU = [
     dynasty: "三国",
     author: "陈寿",
     gradeGroup: "三国",
+    meaning: "浑身都是胆量。形容极其勇敢，无所畏惧。",
     excerpt: "先主明旦自来至云营围视昨战处，曰：「子龙一身都是",
   },
   {
@@ -3587,6 +3969,7 @@ window.POEMS_CHENGYU = [
     dynasty: "三国",
     author: "陈寿",
     gradeGroup: "三国",
+    meaning: "加固壁垒、转移物资使敌人无所获。同「固壁清野」。",
     excerpt: "今东方皆以收麦，必坚壁清野以待将军",
   },
   {
@@ -3597,6 +3980,7 @@ window.POEMS_CHENGYU = [
     dynasty: "三国",
     author: "陈寿",
     gradeGroup: "三国",
+    meaning: "打开大门请强盗进来。比喻引进坏人，自招祸患。",
     excerpt: "况今奸宄竞逐，豺狼满道，乃欲哀亲戚，顾礼制，是犹",
   },
   {
@@ -3607,6 +3991,7 @@ window.POEMS_CHENGYU = [
     dynasty: "三国",
     author: "陈寿",
     gradeGroup: "三国",
+    meaning: "老书生常讲的道理。指人们听惯了的老话，没有新意。",
     excerpt: "此老生之常谭",
   },
   {
@@ -3617,6 +4002,7 @@ window.POEMS_CHENGYU = [
     dynasty: "三国",
     author: "房玄龄",
     gradeGroup: "三国",
+    meaning: "把东西捆起来放在高架子上。比喻弃置不用，搁置一旁。",
     excerpt: "京兆杜乂、陈郡殷浩并才名冠世，而翼弗之重也，每语",
   },
   {
@@ -3627,6 +4013,7 @@ window.POEMS_CHENGYU = [
     dynasty: "三国",
     author: "罗贯中",
     gradeGroup: "三国",
+    meaning: "动物为同类的不幸而悲伤。指因同类遭遇不幸而感到悲伤。",
     excerpt: "（本《诗经》「物伤其类」之意）兔死狐悲，物伤其类",
   },
   {
@@ -3637,6 +4024,7 @@ window.POEMS_CHENGYU = [
     dynasty: "三国",
     author: "陈寿",
     gradeGroup: "三国",
+    meaning: "司马昭的野心连过路人都知道。比喻居心不良，人所共知。",
     excerpt: "帝见威权日去，不胜其忿",
   },
   {
@@ -3647,6 +4035,7 @@ window.POEMS_CHENGYU = [
     dynasty: "三国",
     author: "司马迁",
     gradeGroup: "三国",
+    meaning: "欢乐到极点就会产生悲伤。指物极必反，乐极生悲。",
     excerpt: "故曰酒极则乱，乐极则悲；万事尽然，言不可极，极之",
   },
   {
@@ -3657,6 +4046,7 @@ window.POEMS_CHENGYU = [
     dynasty: "三国",
     author: "班固",
     gradeGroup: "三国",
+    meaning: "占据着职位而空食俸禄、无所作为。指居位而不尽职。",
     excerpt: "今朝廷大臣，上不能匡主，下亡以益民，皆尸位素餐",
   },
   {
@@ -3667,6 +4057,7 @@ window.POEMS_CHENGYU = [
     dynasty: "三国",
     author: "佚名",
     gradeGroup: "三国",
+    meaning: "根据收入的多少来定支出。指量力而行、精打细算。",
     excerpt: "家宰制国用，必于岁之杪，五谷皆入，然后制国用",
   },
   {
@@ -3677,6 +4068,7 @@ window.POEMS_CHENGYU = [
     dynasty: "三国",
     author: "诸葛亮",
     gradeGroup: "三国",
+    meaning: "集中众人的智慧，广泛吸收有益的意见。",
     excerpt: "夫参署者，集众思，广忠益也",
   },
   {
@@ -3687,6 +4079,7 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "房玄龄",
     gradeGroup: "两晋南北朝",
+    meaning: "洛阳的纸因争相传抄而涨价。形容著作风行一时，广为流传。",
     excerpt: "（左思《三都赋》成）于是豪贵之家竞相传写，洛阳为",
   },
   {
@@ -3697,6 +4090,7 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "房玄龄",
     gradeGroup: "两晋南北朝",
+    meaning: "听到鸡叫就起床舞剑。形容有志向的人及时奋发努力。",
     excerpt: "（祖逖）与司空刘琨俱为司州主簿，情好绸缪，共被同",
   },
   {
@@ -3707,6 +4101,7 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "房玄龄",
     gradeGroup: "两晋南北朝",
+    meaning: "枕着兵器等待天亮。形容时刻警惕，随时准备作战。",
     excerpt: "吾枕戈待旦，志枭逆虏，常恐祖生先吾著鞭",
   },
   {
@@ -3717,6 +4112,7 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "房玄龄",
     gradeGroup: "两晋南北朝",
+    meaning: "把草木都当成敌兵。形容人在惊恐时疑神疑鬼。",
     excerpt: "坚与苻融登城而望王师，见部阵齐整，将士精锐；又北",
   },
   {
@@ -3727,6 +4123,7 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "房玄龄",
     gradeGroup: "两晋南北朝",
+    meaning: "听到风声鹤叫都以为是追兵。形容惊慌失措、疑惧过度。",
     excerpt: "（前秦兵败）闻风声鹤唳，皆以为王师已至",
   },
   {
@@ -3737,6 +4134,7 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "房玄龄",
     gradeGroup: "两晋南北朝",
+    meaning: "谢安隐居东山后又出仕。指退隐后重新出来任职，也指失势后重新得势。",
     excerpt: "（谢安）征西大将军桓温请为司马，将发新亭，朝士咸",
   },
   {
@@ -3747,6 +4145,7 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "张怀瓘",
     gradeGroup: "两晋南北朝",
+    meaning: "笔力渗入木板三分深。形容书法笔力遒劲，也比喻见解、议论深刻。",
     excerpt: "王羲之书祝版，工人削之，笔入木三分",
   },
   {
@@ -3757,6 +4156,7 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "宋玉",
     gradeGroup: "两晋南北朝",
+    meaning: "曲调越高，能跟着唱的人越少。比喻言论或作品高深，能理解的人很少。",
     excerpt: "是其曲弥高，其和弥寡",
   },
   {
@@ -3767,6 +4167,7 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "刘义庆",
     gradeGroup: "两晋南北朝",
+    meaning: "谢道韫以柳絮喻雪之才。形容女子才思敏捷、富有文才。",
     excerpt: "俄而雪骤，公欣然曰：「白雪纷纷何所似？」兄子胡儿",
   },
   {
@@ -3777,6 +4178,7 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "刘义庆",
     gradeGroup: "两晋南北朝",
+    meaning: "雪夜乘兴去访友，到了门口却返回。指任性适意、重兴致而不重结果。",
     excerpt: "王子猷居山阴，夜大雪……忽忆戴安道",
   },
   {
@@ -3787,6 +4189,7 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "房玄龄",
     gradeGroup: "两晋南北朝",
+    meaning: "逐渐进入美好的境界。比喻境况渐好，兴味渐浓。",
     excerpt: "恺之每食甘蔗，恒自尾至本",
   },
   {
@@ -3797,6 +4200,7 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "刘义庆",
     gradeGroup: "两晋南北朝",
+    meaning: "连声惊呼的怪事。形容事情离奇，令人惊讶不解。",
     excerpt: "殷中军被废，在信安，终日恒书空作字",
   },
   {
@@ -3807,6 +4211,7 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "刘义庆",
     gradeGroup: "两晋南北朝",
+    meaning: "说话像瀑布倾泻。形容能言善辩、滔滔不绝。",
     excerpt: "郭子玄语议如悬河泻水，注而不竭",
   },
   {
@@ -3817,6 +4222,7 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "刘义庆",
     gradeGroup: "两晋南北朝",
+    meaning: "除一身之外再没有多余的东西。形容生活贫困简朴。",
     excerpt: "（王恭）对曰：「丈人不悉恭，恭作人无长物",
   },
   {
@@ -3827,6 +4233,7 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "刘义庆",
     gradeGroup: "两晋南北朝",
+    meaning: "露着肚子睡在东边的床上。指做人的女婿，是「东床快婿」的由来。",
     excerpt: "郗太傅在京口，遣门生与王丞相书，求女婿",
   },
   {
@@ -3837,6 +4244,7 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "刘义庆",
     gradeGroup: "两晋南北朝",
+    meaning: "竹头和木屑。比喻可利用的细小废物，也指办事细致、善于积存备用之物。",
     excerpt: "（陶公）作荆州时，敕船官悉录锯木屑，不限多少",
   },
   {
@@ -3847,6 +4255,7 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "刘义庆",
     gradeGroup: "两晋南北朝",
+    meaning: "在新亭相对流泪。指怀念故国、为山河破碎而悲叹。",
     excerpt: "过江诸人，每至美日，辄相邀新亭，藉卉饮宴",
   },
   {
@@ -3857,6 +4266,7 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "房玄龄",
     gradeGroup: "两晋南北朝",
+    meaning: "在江中敲击船桨发誓。形容立志收复失地、抱负远大。",
     excerpt: "（祖逖）渡江，中流击楫而誓曰：「祖逖不能清中原而",
   },
   {
@@ -3867,6 +4277,7 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "吕不韦",
     gradeGroup: "两晋南北朝",
+    meaning: "楚人依早先标记夜渡澭水，结果溺死千余人。比喻拘泥旧法，不知变通。",
     excerpt: "荆人欲袭宋，使人先表澭水",
   },
   {
@@ -3877,6 +4288,7 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "应劭",
     gradeGroup: "两晋南北朝",
+    meaning: "把映在杯中的弓影当成蛇，因而生病。比喻疑神疑鬼，因错觉而恐惧。",
     excerpt: "（乐广）尝有亲客，久阔不复来，广问其故，答曰：「",
   },
   {
@@ -3887,6 +4299,7 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "刘义庆",
     gradeGroup: "两晋南北朝",
+    meaning: "像鹤站在鸡群中。形容仪表或才能出众，超出同辈。",
     excerpt: "有人语王戎曰：「嵇延祖卓卓如野鹤之在鸡群",
   },
   {
@@ -3897,6 +4310,7 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "刘义庆",
     gradeGroup: "两晋南北朝",
+    meaning: "蒲柳一到秋天就先凋零。比喻体质衰弱未老先衰，也指柔性易受摧折。",
     excerpt: "（顾悦与简文同年而发早白）简文曰：「卿何以先白？",
   },
   {
@@ -3907,6 +4321,7 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "房玄龄",
     gradeGroup: "两晋南北朝",
+    meaning: "表面不作评论，内心却自有褒贬。指嘴上不说，心里有数。",
     excerpt: "裒少有简贵之风……谯国桓彝见而目之曰：「季野有皮",
   },
   {
@@ -3917,6 +4332,7 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "刘义庆",
     gradeGroup: "两晋南北朝",
+    meaning: "拾取别人咀嚼过的残渣。比喻蹈袭别人的言论见解，没有自己的创见。",
     excerpt: "殷中军云：「康伯未得我牙后慧",
   },
   {
@@ -3927,6 +4343,7 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "房玄龄",
     gradeGroup: "两晋南北朝",
+    meaning: "隐居东山，高枕而卧。指辞官隐居、不为世事所动。",
     excerpt: "卿累违朝旨，高卧东山",
   },
   {
@@ -3937,6 +4354,7 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "刘义庆",
     gradeGroup: "两晋南北朝",
+    meaning: "无数的高山深谷。形容山峦起伏、景色壮丽。",
     excerpt: "顾长康从会稽还，人问山川之美，顾云：「千岩竞秀，",
   },
   {
@@ -3947,6 +4365,7 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "房玄龄",
     gradeGroup: "两晋南北朝",
+    meaning: "小龙小凤。比喻才智出众的少年。",
     excerpt: "（闵鸿）见而奇之，曰：「此儿若非龙驹，当是凤雏",
   },
   {
@@ -3957,6 +4376,7 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "刘义庆",
     gradeGroup: "两晋南北朝",
+    meaning: "云霞升腾聚集。形容景物灿烂绚丽，也比喻事物蓬勃兴盛。",
     excerpt: "草木蒙笼其上，若云兴霞蔚",
   },
   {
@@ -3967,6 +4387,7 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "陆机",
     gradeGroup: "两晋南北朝",
+    meaning: "把形貌情态刻画得淋漓尽致。形容描写刻画极其细致生动。",
     excerpt: "虽离方而遁员，期穷形而尽相",
   },
   {
@@ -3977,6 +4398,7 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "庄周",
     gradeGroup: "两晋南北朝",
+    meaning: "宾主分列庭院两边、以平等之礼相见。指彼此平起平坐，地位对等。",
     excerpt: "万乘之主，千乘之君，见夫子未尝不分庭伉礼，夫子犹",
   },
   {
@@ -3987,6 +4409,7 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "佚名",
     gradeGroup: "两晋南北朝",
+    meaning: "盲人摸象各执一词。比喻以偏概全，只凭片面了解就下结论。",
     excerpt: "（佛典）如彼盲人，各各摸象，不得象之实相",
   },
   {
@@ -3997,6 +4420,7 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "牟融",
     gradeGroup: "两晋南北朝",
+    meaning: "对着牛弹琴。比喻对不懂道理的人讲道理，也讥笑说话人不看对象。",
     excerpt: "公明仪为牛弹清角之操，伏食如故",
   },
   {
@@ -4007,6 +4431,7 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "佚名",
     gradeGroup: "两晋南北朝",
+    meaning: "悬在空中的楼阁。比喻虚幻的事物或不切实际的计划。",
     excerpt: "（佛典）愚人见三重楼，高广严丽，心生渴仰，即便唤",
   },
   {
@@ -4017,6 +4442,7 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "李延寿",
     gradeGroup: "两晋南北朝",
+    meaning: "自己毁掉赖以御敌的长城。比喻自己削弱、毁弃自己的屏障或力量。",
     excerpt: "乃脱帻投地，曰：「乃坏汝万里长城！」",
   },
   {
@@ -4027,6 +4453,7 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "李延寿",
     gradeGroup: "两晋南北朝",
+    meaning: "江淹晚年文思枯竭。比喻才思衰退、文才不如从前。",
     excerpt: "（江淹）梦一丈夫，自称郭璞，谓淹曰：「吾有笔在卿",
   },
   {
@@ -4037,6 +4464,7 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "王仁裕",
     gradeGroup: "两晋南北朝",
+    meaning: "梦中笔头生花。比喻文思大进、才华出众。",
     excerpt: "李太白少时，梦所用之笔头上生花，后天才赡逸，名闻",
   },
   {
@@ -4047,6 +4475,7 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "范晔",
     gradeGroup: "两晋南北朝",
+    meaning: "才能粗疏而志向远大。指志向大而能力差，难免事与愿违。",
     excerpt: "融负有高气，志在靖难，而才疏意广，迄无成功",
   },
   {
@@ -4057,6 +4486,7 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "房玄龄",
     gradeGroup: "两晋南北朝",
+    meaning: "天下不知落于谁手。比喻政权归属未定，也泛指胜负未定。",
     excerpt: "勒笑曰：「朕若逢高皇，当北面而事之，与韩、彭竞鞭",
   },
   {
@@ -4067,6 +4497,7 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "房玄龄",
     gradeGroup: "两晋南北朝",
+    meaning: "骑在虎背上难以下来。比喻事情进行到中途，迫于形势不能中止。",
     excerpt: "今之事势，义无旋踵，骑猛兽，安可中下哉！",
   },
   {
@@ -4077,6 +4508,7 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "陶渊明",
     gradeGroup: "两晋南北朝",
+    meaning: "读书只求领会大意，不在字句上多作钻研。今多指学习不深入、不求彻底理解。",
     excerpt: "好读书，不求甚解；每有会意，便欣然忘食",
   },
   {
@@ -4087,6 +4519,7 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "陶渊明",
     gradeGroup: "两晋南北朝",
+    meaning: "与世隔绝的安乐地方。比喻不受外界干扰、环境幽美恬静的理想境界。",
     excerpt: "自云先世避秦时乱，率妻子邑人来此绝境，不复出焉，",
   },
   {
@@ -4097,6 +4530,7 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "陶渊明",
     gradeGroup: "两晋南北朝",
+    meaning: "落花繁多而错杂的样子。形容花谢时的美丽景象。",
     excerpt: "忽逢桃花林，夹岸数百步，中无杂树，芳草鲜美，落英",
   },
   {
@@ -4107,6 +4541,7 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "陶渊明",
     gradeGroup: "两晋南北朝",
+    meaning: "一下子开阔明亮起来。比喻由疑惑、狭隘一下变得通晓、开阔。",
     excerpt: "林尽水源，便得一山，山有小口，仿佛若有光",
   },
   {
@@ -4117,6 +4552,7 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "陶渊明",
     gradeGroup: "两晋南北朝",
+    meaning: "鸡鸣狗吠之声彼此相闻。形容村舍相邻、人烟稠密，也形容和平安宁。",
     excerpt: "阡陌交通，鸡犬相闻",
   },
   {
@@ -4127,6 +4563,7 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "陶渊明",
     gradeGroup: "两晋南北朝",
+    meaning: "没有人来询问渡口。比喻没有人过问、无人理睬。",
     excerpt: "南阳刘子骥，高尚士也，闻之，欣然规往",
   },
   {
@@ -4137,6 +4574,7 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "范晔",
     gradeGroup: "两晋南北朝",
+    meaning: "为捉雀鸟而毁掉巢穴。比喻只顾眼前利益而自毁根本。",
     excerpt: "（原文作「覆巢无完卵」）主人有言：「覆巢之下，复",
   },
   {
@@ -4147,6 +4585,7 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "罗贯中",
     gradeGroup: "两晋南北朝",
+    meaning: "走一步就想一个计策。形容人极富智谋、善于随机应变。",
     excerpt: "（后世语；本《三国志》谋略之典）一步一计，算无遗",
   },
   {
@@ -4157,6 +4596,7 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "祢衡",
     gradeGroup: "两晋南北朝",
+    meaning: "写文章不用涂改。形容文思敏捷、下笔成章。",
     excerpt: "（祢衡）揽笔而作，文无加点",
   },
   {
@@ -4167,6 +4607,7 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "房玄龄",
     gradeGroup: "两晋南北朝",
+    meaning: "用黑眼珠看人，表示喜爱或器重。指对人赏识、优待。",
     excerpt: "籍又能为青白眼，见礼俗之士，以白眼对之",
   },
   {
@@ -4177,6 +4618,7 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "李延寿",
     gradeGroup: "两晋南北朝",
+    meaning: "像一条衣带那样窄的水。形容两地仅一水之隔，往来方便。",
     excerpt: "隋文帝谓仆射高颎曰：「我为百姓父母，岂可限一衣带",
   },
   {
@@ -4187,6 +4629,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "欧阳修等",
     gradeGroup: "唐",
+    meaning: "把书挂在牛角上边骑边读。形容勤奋好学。",
     excerpt: "（李密）闻包恺在缑山，往从之",
   },
   {
@@ -4197,6 +4640,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "刘昫等",
     gradeGroup: "唐",
+    meaning: "用完竹子也写不完其罪行。形容罪行极多，难以写尽。",
     excerpt: "罄南山之竹，书罪未穷；决东海之波，流恶难尽",
   },
   {
@@ -4207,6 +4651,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "左丘明",
     gradeGroup: "春秋",
+    meaning: "从暗处射箭伤人。比喻暗中用阴险手段伤害别人。",
     excerpt: "（郑庄公）曰：「子都，子都，无礼于君",
   },
   {
@@ -4217,7 +4662,8 @@ window.POEMS_CHENGYU = [
     dynasty: "三国",
     author: "孔鲋",
     gradeGroup: "三国",
-    excerpt: "（语本）无翼而飞，不胫而走",
+    meaning: "没有腿却能跑。形容消息传播极快，也比喻事物不待推行而自行流行。",
+    excerpt: "珠玉无胫而自至者，以人好之也",
   },
   {
     textRef: "chengyu-cy-423",
@@ -4227,6 +4673,7 @@ window.POEMS_CHENGYU = [
     dynasty: "三国",
     author: "司马迁",
     gradeGroup: "三国",
+    meaning: "像鼎的三足那样并立。比喻三方对峙、势均力敌的局面。",
     excerpt: "臣愿披腹心，输肝胆，效愚计，恐足下不能用也",
   },
   {
@@ -4234,10 +4681,11 @@ window.POEMS_CHENGYU = [
     id: "cy-424",
     title: "多事之秋",
     source: "《旧五代史·梁书》",
-    dynasty: "三国",
+    dynasty: "五代",
     author: "薛居正等",
-    gradeGroup: "三国",
-    excerpt: "（语本）多事之秋，兵戈不息",
+    gradeGroup: "五代",
+    meaning: "变故多的时期。形容局势动荡、事变频繁的年月。",
+    excerpt: "今国步多艰，多事之秋也",
   },
   {
     textRef: "chengyu-cy-425",
@@ -4247,6 +4695,7 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "张怀瓘",
     gradeGroup: "两晋南北朝",
+    meaning: "剑拔出鞘，弓弩张开。形容形势紧张、一触即发。",
     excerpt: "（袁昂评书）剑拔弩张，以拟其势",
   },
   {
@@ -4257,6 +4706,7 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "佚名",
     gradeGroup: "两晋南北朝",
+    meaning: "兔子雌雄难辨。比喻事物错综复杂，难以看清真相。",
     excerpt: "雄兔脚扑朔，雌兔眼迷离",
   },
   {
@@ -4267,7 +4717,8 @@ window.POEMS_CHENGYU = [
     dynasty: "三国",
     author: "陈寿",
     gradeGroup: "三国",
-    excerpt: "（语本）效犬马之劳，以报知遇",
+    meaning: "像犬马一样奔走效力的功劳。是自谦自己愿意供人驱使、为人效劳。",
+    excerpt: "臣不胜受恩感激，愿效犬马之劳",
   },
   {
     textRef: "chengyu-cy-428",
@@ -4277,7 +4728,56 @@ window.POEMS_CHENGYU = [
     dynasty: "三国",
     author: "李密",
     gradeGroup: "三国",
+    meaning: "太阳快要落山。比喻人已衰老，或事物接近消亡。",
     excerpt: "但以刘日薄西山，气息奄奄，人命危浅，朝不虑夕",
+  },
+  {
+    textRef: "chengyu-cy-760",
+    textRef: "chengyu-cy-760",
+    id: "cy-760",
+    title: "身先士卒",
+    source: "《三国志·吴书·孙破虏讨逆传》",
+    dynasty: "三国",
+    author: "陈寿",
+    gradeGroup: "三国",
+    meaning: "作战时将帅亲自带头，冲在士兵前面。比喻领导带头，走在群众前面。",
+    excerpt: "坚身先士卒，披坚执锐",
+  },
+  {
+    textRef: "chengyu-cy-761",
+    textRef: "chengyu-cy-761",
+    id: "cy-761",
+    title: "临危不惧",
+    source: "《三国志·魏书·陈留王奂传》裴松之注",
+    dynasty: "三国",
+    author: "陈寿",
+    gradeGroup: "三国",
+    meaning: "遇到危难毫不畏惧。形容勇敢镇定，无所畏惧。",
+    excerpt: "临危不惧，处变不惊",
+  },
+  {
+    textRef: "chengyu-cy-762",
+    textRef: "chengyu-cy-762",
+    id: "cy-762",
+    title: "当机立断",
+    source: "《三国志·吴书·鲁肃传》",
+    dynasty: "三国",
+    author: "陈寿",
+    gradeGroup: "三国",
+    meaning: "抓住时机，立刻决断。形容处事果断，不犹豫拖延。",
+    excerpt: "今日之事，宜在当机立断",
+  },
+  {
+    textRef: "chengyu-cy-763",
+    textRef: "chengyu-cy-763",
+    id: "cy-763",
+    title: "事无巨细",
+    source: "《三国志·蜀书·诸葛亮传》",
+    dynasty: "三国",
+    author: "陈寿",
+    gradeGroup: "三国",
+    meaning: "事情无论大小。指所有的、大大小小的事都包括在内。",
+    excerpt: "政事无巨细，咸决于亮",
   },
   {
     textRef: "chengyu-cy-429",
@@ -4287,6 +4787,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "孟棨",
     gradeGroup: "唐",
+    meaning: "打破的镜子重新合拢。比喻夫妻离散后又重新团聚。",
     excerpt: "陈太子舍人徐德言之妻，后主叔宝之妹，封乐昌公主，",
   },
   {
@@ -4297,6 +4798,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "柳宗元",
     gradeGroup: "唐",
+    meaning: "贵州的驴子本领用尽了。比喻有限的一点本领已经用完，无计可施。",
     excerpt: "黔无驴，有好事者船载以入",
   },
   {
@@ -4307,6 +4809,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "柳宗元",
     gradeGroup: "唐",
+    meaning: "运书时牛累得出汗，堆放时塞满屋子。形容书籍极多。",
     excerpt: "其为书，处则充栋宇，出则汗牛马",
   },
   {
@@ -4317,6 +4820,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "李公佐",
     gradeGroup: "唐",
+    meaning: "在槐安国的南柯郡做了一场梦。比喻一场空梦，也指梦境或世事变幻无常。",
     excerpt: "（淳于棼）梦入大槐安国，娶公主，为南柯太守，历二",
   },
   {
@@ -4327,6 +4831,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "杜甫",
     gradeGroup: "唐",
+    meaning: "手一挨近就感到烫。比喻气焰很盛、权势极大，今多指事物走红、热门。",
     excerpt: "炙手可热势绝伦，慎莫近前丞相嗔",
   },
   {
@@ -4337,6 +4842,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "刘禹锡",
     gradeGroup: "唐",
+    meaning: "司空看惯了的事。指某事常见，不足为奇。",
     excerpt: "高髻云鬟宫样妆，春风一曲杜韦娘",
   },
   {
@@ -4347,6 +4853,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "欧阳修等",
     gradeGroup: "唐",
+    meaning: "吐出心、滴出血。形容费尽心思与精力，多指创作或工作极其劳苦。",
     excerpt: "（李贺）每旦日出，骑弱马，从小奚奴，背古锦囊，遇",
   },
   {
@@ -4357,6 +4864,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "苏味道",
     gradeGroup: "唐",
+    meaning: "树上缀满灯火，如花似银。形容节日夜晚灯火辉煌、烟火灿烂的景象。",
     excerpt: "火树银花合，星桥铁锁开",
   },
   {
@@ -4367,6 +4875,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "孟郊",
     gradeGroup: "唐",
+    meaning: "骑在马上看花。比喻粗略地观察事物，不深入不细致。",
     excerpt: "昔日龌龊不足夸，今朝放荡思无涯",
   },
   {
@@ -4377,6 +4886,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "司马光",
     gradeGroup: "唐",
+    meaning: "桃树李树满门庭。比喻培养的学生众多，遍布各处。",
     excerpt: "（狄仁杰）又尝荐夏官侍郎姚元崇、监察御史曲阿桓彦",
   },
   {
@@ -4387,6 +4897,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "王仁裕",
     gradeGroup: "唐",
+    meaning: "笔下有神，能生出花来。形容文笔美妙、写作出众。",
     excerpt: "李太白少时，梦所用之笔头上生花，后天才赡逸，名闻",
   },
   {
@@ -4397,6 +4908,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "崔护",
     gradeGroup: "唐",
+    meaning: "去年见过的人面与今年的桃花。指所爱慕的女子已不可见，只留追忆与怅惘。",
     excerpt: "去年今日此门中，人面桃花相映红",
   },
   {
@@ -4407,6 +4919,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "葛洪",
     gradeGroup: "唐",
+    meaning: "大海变成桑田，桑田变成大海。比喻世事变化极大。",
     excerpt: "（麻姑）自说云：「接侍以来，已见东海三为桑田",
   },
   {
@@ -4417,6 +4930,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "牛峤",
     gradeGroup: "唐",
+    meaning: "天上仙女的衣裳没有衣缝。比喻事物周密完善，找不出破绽。",
     excerpt: "（织女）徐视其衣，并无缝",
   },
   {
@@ -4427,6 +4941,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "朱景玄",
     gradeGroup: "唐",
+    meaning: "两手各握一支笔同时作画。比喻两件事同时进行，或两种方法同时使用。",
     excerpt: "（张璪）能握双管，一时齐下，一为生枝，一为枯干，",
   },
   {
@@ -4437,6 +4952,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "张彦远",
     gradeGroup: "唐",
+    meaning: "画龙时最后点上眼睛。比喻在关键处用一两句话点明要旨，使内容更加生动传神。",
     excerpt: "（张僧繇）于金陵安乐寺画四龙于壁，不点睛",
   },
   {
@@ -4447,6 +4963,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "康进之",
     gradeGroup: "唐",
+    meaning: "开头声势很大，收尾却软弱无力。比喻做事有始无终、前紧后松。",
     excerpt: "（语本元曲）这厮虎头蛇尾，不可信赖",
   },
   {
@@ -4457,6 +4974,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "杜甫",
     gradeGroup: "唐",
+    meaning: "另外开创新的局面或风格。指形式新颖、不落俗套。",
     excerpt: "凌烟功臣少颜色，将军下笔开生面",
   },
   {
@@ -4467,6 +4985,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "柳宗元",
     gradeGroup: "唐",
+    meaning: "在鲁班门前摆弄斧头。比喻在行家面前卖弄本领，不自量力。",
     excerpt: "操斧于班、郢之门，斯强颜耳",
   },
   {
@@ -4477,6 +4996,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "陈寿",
     gradeGroup: "唐",
+    meaning: "一动笔就写成文章。形容文思敏捷、写作迅速。",
     excerpt: "（曹植）年十岁余，诵读《诗》《论》及辞赋数十万言",
   },
   {
@@ -4487,6 +5007,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "道原",
     gradeGroup: "唐",
+    meaning: "抛出砖头引来美玉。比喻用粗浅的意见引出别人的高见。",
     excerpt: "（常建以诗引赵嘏之句，谓之抛砖引玉）比来抛砖引玉",
   },
   {
@@ -4497,6 +5018,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "杜甫",
     gradeGroup: "唐",
+    meaning: "在雾中看花。比喻看不真切、印象模糊，也指对事物认识不清。",
     excerpt: "春水船如天上坐，老年花似雾中看",
   },
   {
@@ -4507,6 +5029,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "秦韬玉",
     gradeGroup: "唐",
+    meaning: "替别人做嫁衣。比喻白白地为别人辛苦忙碌。",
     excerpt: "苦恨年年压金线，为他人作嫁衣裳",
   },
   {
@@ -4517,6 +5040,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "韩愈",
     gradeGroup: "唐",
+    meaning: "蚂蚁想摇动大树。比喻力量微小却妄想推翻强大的事物，不自量力。",
     excerpt: "蚍蜉撼大树，可笑不自量",
   },
   {
@@ -4527,6 +5051,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "范晔",
     gradeGroup: "唐",
+    meaning: "肚子肥大凸起的样子。形容人肥胖，多含贬义。",
     excerpt: "（边韶）曾昼日假卧，弟子私嘲之曰：「边孝先，腹便",
   },
   {
@@ -4537,6 +5062,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "司马迁",
     gradeGroup: "唐",
+    meaning: "一天能跑一千里。形容进展极快，也形容人才出众。",
     excerpt: "臣闻骐骥盛壮之时，一日而驰千里；至其衰老，驽马先",
   },
   {
@@ -4547,6 +5073,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "佚名",
     gradeGroup: "唐",
+    meaning: "水一下子奔流千里。形容江河水流迅急，也比喻文笔气势奔放、流畅。",
     excerpt: "（「一泻千里」本唐李阳冰序李白文）其言多似天仙之",
   },
   {
@@ -4557,6 +5084,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "郑处诲",
     gradeGroup: "唐",
+    meaning: "空有好看的外表。形容外表好看而实际不中用。",
     excerpt: "（萧嵩）明皇以嵩形貌甚伟，且素有令誉……既成，上",
   },
   {
@@ -4567,6 +5095,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "葛洪",
     gradeGroup: "唐",
+    meaning: "一人得道，连鸡狗都跟着上天。比喻一人得势，依附他的人也跟着发迹。",
     excerpt: "（淮南王刘安）举家升天，畜产皆仙，犬吠于天上，鸡",
   },
   {
@@ -4577,6 +5106,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "李白",
     gradeGroup: "唐",
+    meaning: "神仙的风度、道家的骨相。形容人风度飘逸、气度不凡。",
     excerpt: "余昔于江陵见天台司马子微，谓余有仙风道骨，可与神",
   },
   {
@@ -4587,6 +5117,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "柳宗元",
     gradeGroup: "唐",
+    meaning: "四川的狗见到太阳就叫。比喻少见多怪。",
     excerpt: "屈子赋曰：「邑犬群吠，吠所怪也",
   },
   {
@@ -4597,6 +5128,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "刘义庆",
     gradeGroup: "唐",
+    meaning: "江南的水牛怕热，见月疑为日而喘。比喻因疑惧而过分害怕，也指酷热难当。",
     excerpt: "（满奋）曰：「臣犹吴牛，见月而喘",
   },
   {
@@ -4607,6 +5139,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "刘肃",
     gradeGroup: "唐",
+    meaning: "把生的吞下去、活的剥开来。比喻生硬地搬用别人的言论或经验。",
     excerpt: "有枣强尉张怀庆，好偷名士文章……时人谓之谚曰：「",
   },
   {
@@ -4617,6 +5150,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "佚名",
     gradeGroup: "唐",
+    meaning: "像海一样辽阔，像天一样无边。形容天地广阔，也比喻说话漫无边际。",
     excerpt: "（僧诗）大海从鱼跃，长空任鸟飞",
   },
   {
@@ -4627,6 +5161,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "杜甫",
     gradeGroup: "唐",
+    meaning: "白云一会儿像白衣，一会儿像灰狗。比喻世事变幻无常。",
     excerpt: "天上浮云如白衣，斯须改变如苍狗",
   },
   {
@@ -4637,6 +5172,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "李延寿",
     gradeGroup: "唐",
+    meaning: "金制的盆盂没有残缺。比喻国土完整无缺。",
     excerpt: "我国家犹若金瓯，无一伤缺",
   },
   {
@@ -4647,6 +5183,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "张祜",
     gradeGroup: "唐",
+    meaning: "淡淡地描画眉毛。形容女子淡雅的妆饰，也指妆扮素净。",
     excerpt: "虢国夫人承主恩，平明骑马入宫门",
   },
   {
@@ -4657,6 +5194,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "王守仁",
     gradeGroup: "唐",
+    meaning: "高妙宏阔地谈论。形容谈论高远广博，也指空泛不切实际地大发议论。",
     excerpt: "后儒尝谈高论阔，而实无所得",
   },
   {
@@ -4667,6 +5205,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "佚名",
     gradeGroup: "唐",
+    meaning: "笔力能穿透纸背。形容书法遒劲有力，也比喻诗文立意深刻。",
     excerpt: "（语本唐颜真卿书论）其笔力遒婉，力透纸背",
   },
   {
@@ -4677,6 +5216,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "严羽",
     gradeGroup: "唐",
+    meaning: "羚羊夜宿，把角挂在树上，不留痕迹。比喻诗文意境超脱、不落痕迹。",
     excerpt: "盛唐诸人惟在兴趣，羚羊挂角，无迹可求",
   },
   {
@@ -4687,6 +5227,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "李白",
     gradeGroup: "唐",
+    meaning: "青梅和竹马是孩童的游戏之物。形容男女从小一起玩耍、天真无邪的情谊。",
     excerpt: "郎骑竹马来，绕床弄青梅",
   },
   {
@@ -4697,6 +5238,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "李白",
     gradeGroup: "唐",
+    meaning: "男女幼小时天真无邪，彼此没有猜忌。",
     excerpt: "同居长干里，两小无嫌猜",
   },
   {
@@ -4707,6 +5249,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "孟郊",
     gradeGroup: "唐",
+    meaning: "在春风中志得意满。形容人官场顺利或事业成功时的得意神态。",
     excerpt: "春风得意马蹄疾，一日看尽长安花",
   },
   {
@@ -4717,6 +5260,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "孟郊",
     gradeGroup: "唐",
+    meaning: "骑在马上看花。同「走马观花」，比喻粗略地观察事物。",
     excerpt: "春风得意马蹄疾，一日看尽长安花",
   },
   {
@@ -4727,6 +5271,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "元稹",
     gradeGroup: "唐",
+    meaning: "曾经见过大海。比喻曾经经历过大的场面，对平常事物不屑一顾。",
     excerpt: "曾经沧海难为水，除却巫山不是云",
   },
   {
@@ -4737,6 +5282,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "李贺",
     gradeGroup: "唐",
+    meaning: "山石崩裂，上天震惊。形容声音高亢激越，也比喻文章议论新奇惊人。",
     excerpt: "女娲炼石补天处，石破天惊逗秋雨",
   },
   {
@@ -4747,6 +5293,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "孟郊",
     gradeGroup: "唐",
+    meaning: "小草难报春光的恩情。比喻儿女难以报答父母的养育之恩。",
     excerpt: "慈母手中线，游子身上衣",
   },
   {
@@ -4757,6 +5304,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "杜甫",
     gradeGroup: "唐",
+    meaning: "瘦弱得连风也经受不住。形容身体虚弱，也形容事物柔弱娇嫩。",
     excerpt: "（原作「弱不禁风」语本）舞榭歌台风，弱不禁风",
   },
   {
@@ -4767,6 +5315,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "刘义庆",
     gradeGroup: "唐",
+    meaning: "靠着马背立刻可写成。形容文思敏捷、写作迅速。",
     excerpt: "桓宣武北征，袁虎时从，被责免官",
   },
   {
@@ -4777,6 +5326,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "陶岳",
     gradeGroup: "唐",
+    meaning: "改正一个字的老师。指能纠正一字之误、使人受益的师长。",
     excerpt: "（齐己）有《早梅》诗曰：「前村深雪里，昨夜数枝开",
   },
   {
@@ -4787,6 +5337,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "魏泰",
     gradeGroup: "宋",
+    meaning: "照着葫芦的样子画葫芦。比喻单纯模仿，没有创新。",
     excerpt: "（陶谷）自以久次旧人，意希大用……（太祖）曰：「",
   },
   {
@@ -4797,6 +5348,7 @@ window.POEMS_CHENGYU = [
     dynasty: "明",
     author: "瞿汝稷",
     gradeGroup: "明",
+    meaning: "要解下铃铛还得找系铃的人。比喻问题由谁造成，还得由谁来解决。",
     excerpt: "（法眼）问众曰：「虎项金铃，是谁解得？」众无对",
   },
   {
@@ -4807,6 +5359,7 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "殷芸",
     gradeGroup: "两晋南北朝",
+    meaning: "骑着仙鹤去扬州。指兼得富贵与神仙的妄想，也喻贪婪的奢望。",
     excerpt: "有客相从，各言所志：或愿为扬州刺史，或愿多赀财，",
   },
   {
@@ -4817,6 +5370,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "沈既济",
     gradeGroup: "唐",
+    meaning: "在梦中享尽荣华，醒来黄米饭还没熟。比喻虚幻的美梦或愿望落空。",
     excerpt: "（卢生）主人蒸黍未熟，而卢生梦中历尽荣悴",
   },
   {
@@ -4827,6 +5381,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "杜甫",
     gradeGroup: "唐",
+    meaning: "费尽心力地经营筹划。形容开创事业极其艰苦，也指苦心安排。",
     excerpt: "诏谓将军拂绢素，意匠惨淡经营中",
   },
   {
@@ -4837,6 +5392,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "杜甫",
     gradeGroup: "唐",
+    meaning: "一会儿翻手为云，一会儿覆手为雨。比喻反复无常、玩弄手段。",
     excerpt: "翻手作云覆手雨，纷纷轻薄何须数",
   },
   {
@@ -4847,6 +5403,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "房玄龄",
     gradeGroup: "唐",
+    meaning: "用狗尾巴续接貂尾。比喻拿不好的东西接在好东西后面，多指续写不如原作。",
     excerpt: "（赵王伦篡位）其余同谋者咸超阶越次，不可胜纪，至",
   },
   {
@@ -4857,6 +5414,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "韩愈",
     gradeGroup: "唐",
+    meaning: "把不同内容、不同性质的东西一并收下保存。",
     excerpt: "牛溲马勃，败鼓之皮，俱收并蓄，待用无遗者，医师之",
   },
   {
@@ -4867,27 +5425,30 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "魏征等",
     gradeGroup: "唐",
+    meaning: "文章篇幅冗长，文字繁多。",
     excerpt: "连篇累牍，不出月露之形；积案盈箱，唯是风云之状",
   },
   {
     textRef: "chengyu-cy-488",
     id: "cy-488",
     title: "炉火纯青",
-    source: "《随园诗话》",
-    dynasty: "唐",
+    source: "《类经图翼》",
+    dynasty: "明",
     author: "袁枚",
-    gradeGroup: "唐",
-    excerpt: "（语本）炉火纯青，功候纯熟",
+    gradeGroup: "明",
+    meaning: "炼丹时炉火发出纯青的火焰。比喻学问、技艺或修养达到纯熟完美的境地。",
+    excerpt: "练丹之法：火候既足，炉火纯青",
   },
   {
     textRef: "chengyu-cy-489",
     id: "cy-489",
     title: "满目疮痍",
     source: "《史记·季布栾布列传》",
-    dynasty: "唐",
+    dynasty: "西汉",
     author: "司马迁",
-    gradeGroup: "唐",
-    excerpt: "（语本）疮痍满目，抚之增悲",
+    gradeGroup: "西汉",
+    meaning: "满眼都是创伤。形容灾祸后到处是残破荒凉的景象。",
+    excerpt: "疮痍满目，抚之增悲",
   },
   {
     textRef: "chengyu-cy-490",
@@ -4897,6 +5458,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "王勃",
     gradeGroup: "唐",
+    meaning: "气势直冲斗牛二星。形容气势极盛，也形容怒气冲天。",
     excerpt: "物华天宝，龙光射牛斗之墟",
   },
   {
@@ -4907,6 +5469,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "房玄龄",
     gradeGroup: "唐",
+    meaning: "像椽子那样粗大的笔。比喻笔力雄健或文章有分量，也用作对名家文章的称颂。",
     excerpt: "珣梦人以大笔如椽与之，既觉，语人云：「此当有大手",
   },
   {
@@ -4917,6 +5480,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "苏轼",
     gradeGroup: "宋",
+    meaning: "美玉造的楼宇。指月中宫殿，也形容富丽堂皇的楼阁。",
     excerpt: "我欲乘风归去，又恐琼楼玉宇，高处不胜寒",
   },
   {
@@ -4927,6 +5491,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "脱脱等",
     gradeGroup: "宋",
+    meaning: "下雪天给人送炭取暖。比喻在别人急需时给予帮助。",
     excerpt: "（淳化四年）遣使巡河北，雪中送炭",
   },
   {
@@ -4937,6 +5502,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "苏轼",
     gradeGroup: "宋",
+    meaning: "河东的狮子大吼。比喻妒悍的妻子发怒，也是对凶悍妻子的戏称。",
     excerpt: "龙丘居士亦可怜，谈空说有夜不眠",
   },
   {
@@ -4947,6 +5513,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "脱脱等",
     gradeGroup: "宋",
+    meaning: "站在程颐门外雪中候教。形容尊敬师长、求学诚恳。",
     excerpt: "（杨时）一日见颐，颐偶瞑坐，时与游酢侍立不去，颐",
   },
   {
@@ -4957,6 +5524,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "欧阳修",
     gradeGroup: "宋",
+    meaning: "超出常人之上。指才能出众、地位高于一般人。",
     excerpt: "老夫当避路，放他出一头地也",
   },
   {
@@ -4967,6 +5535,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "惠洪",
     gradeGroup: "宋",
+    meaning: "满城都是风雨。比喻某事传扬开来，各处议论纷纷。",
     excerpt: "满城风雨近重阳",
   },
   {
@@ -4977,6 +5546,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "王辟之",
     gradeGroup: "宋",
+    meaning: "打开书本总有好处。指读书总是有益的。",
     excerpt: "（宋）太宗日阅《御览》三卷，因事有阙，暇日追补之",
   },
   {
@@ -4987,6 +5557,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "苏轼",
     gradeGroup: "宋",
+    meaning: "画竹之前心中已有竹的形象。比喻做事之前已有通盘考虑和把握。",
     excerpt: "故画竹必先得成竹于胸中，执笔熟视，乃见其所欲画者",
   },
   {
@@ -4997,6 +5568,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "范公偁",
     gradeGroup: "宋",
+    meaning: "名字排在孙山之后。指考试或选拔没有被录取。",
     excerpt: "吴人孙山，滑稽才子也",
   },
   {
@@ -5007,6 +5579,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "李耳",
     gradeGroup: "宋",
+    meaning: "大的器物需要长时间才能做成。比喻有才能的人成名较晚。",
     excerpt: "大方无隅，大器晚成，大音希声，大象无形",
   },
   {
@@ -5017,6 +5590,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "欧阳修",
     gradeGroup: "宋",
+    meaning: "熟练了就能找到窍门，做得巧妙。",
     excerpt: "（卖油翁）乃取一葫芦置于地，以钱覆其口，徐以杓酌",
   },
   {
@@ -5027,6 +5601,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "罗大经",
     gradeGroup: "宋",
+    meaning: "水不断下滴，石头也能滴穿。比喻只要有恒心，坚持不懈，事情终能成功。",
     excerpt: "（张乖崖）曰：「一日一钱，千日千钱，绳锯木断，水",
   },
   {
@@ -5037,6 +5612,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "俞文豹",
     gradeGroup: "宋",
+    meaning: "靠近水的楼台先得到月光。比喻由于条件便利而优先得到好处。",
     excerpt: "（苏麟献诗范仲淹）近水楼台先得月，向阳花木易为春",
   },
   {
@@ -5047,6 +5623,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "陆游",
     gradeGroup: "宋",
+    meaning: "绿柳成荫、鲜花明艳。比喻困境中出现转机，也形容春景美好。",
     excerpt: "山重水复疑无路，柳暗花明又一村",
   },
   {
@@ -5057,6 +5634,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "白珽",
     gradeGroup: "宋",
+    meaning: "把枣整个吞下去，不咀嚼。比喻学习不加以分析思考，笼统地接受。",
     excerpt: "客有曰：「梨益齿而损脾，枣益脾而损齿",
   },
   {
@@ -5067,6 +5645,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "邯郸淳",
     gradeGroup: "宋",
+    meaning: "一片叶子挡住眼睛。比喻被局部现象所迷惑，看不到整体和本质。",
     excerpt: "楚人居贫，读《淮南方》：「得螳螂伺蝉自障叶，可以",
   },
   {
@@ -5077,6 +5656,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "柳永",
     gradeGroup: "宋",
+    meaning: "名和利像缰绳和锁链。比喻名利对人的束缚与牵累。",
     excerpt: "向此免名缰利锁，虚费光阴",
   },
   {
@@ -5087,6 +5667,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "苏轼",
     gradeGroup: "宋",
+    meaning: "鸿雁在雪泥上留下的爪印。比喻往事遗留的痕迹。",
     excerpt: "人生到处知何似？应似飞鸿踏雪泥",
   },
   {
@@ -5097,6 +5678,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "苏轼",
     gradeGroup: "宋",
+    meaning: "重阳节后的菊花。比喻过时的事物或失去时效的消息。",
     excerpt: "相逢不用忙归去，明日黄花蝶也愁",
   },
   {
@@ -5107,6 +5689,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "苏轼",
     gradeGroup: "宋",
+    meaning: "水位下落，石头露出。比喻真相大白，事情的真面目显露出来。",
     excerpt: "山高月小，水落石出",
   },
   {
@@ -5117,6 +5700,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "褚人获",
     gradeGroup: "宋",
+    meaning: "胸中没有一点墨水。形容读书很少、没有学问。",
     excerpt: "（后世语）赳赳武夫，胸无点墨",
   },
   {
@@ -5127,6 +5711,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "普济",
     gradeGroup: "宋",
+    meaning: "用笔一勾，把账目或事情全部抹掉。比喻把过去的事一下子全部取消。",
     excerpt: "（佛典）一筆勾下，更不迟疑",
   },
   {
@@ -5137,6 +5722,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "陆机",
     gradeGroup: "宋",
+    meaning: "细致曲折地把妙处都表现出来。形容表现技巧高超、表达细腻入微。",
     excerpt: "故作《文赋》以述先士之盛藻，因论作文之利害所由，",
   },
   {
@@ -5147,6 +5733,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "苏轼",
     gradeGroup: "宋",
+    meaning: "大海里的一粒小米。比喻非常渺小，微不足道。",
     excerpt: "寄蜉蝣于天地，渺沧海之一粟",
   },
   {
@@ -5157,6 +5744,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "黎靖德",
     gradeGroup: "宋",
+    meaning: "枝干粗大，叶子宽阔。比喻做事粗疏、不细致，也形容简略概括。",
     excerpt: "《书序》不是孔安国做，汉文粗枝大叶，全《书序》细",
   },
   {
@@ -5167,6 +5755,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "苏轼",
     gradeGroup: "宋",
+    meaning: "稍微一放松就消失了。形容时间或机会极易错过。",
     excerpt: "振笔直遂，以追其所见，如兔起鹘落，少纵则逝矣",
   },
   {
@@ -5177,6 +5766,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "左丘明",
     gradeGroup: "宋",
+    meaning: "赞叹所见事物好到极点。",
     excerpt: "（吴季札观周乐）曰：「德至矣哉，大矣！如天之无不",
   },
   {
@@ -5187,6 +5777,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "佚名",
     gradeGroup: "宋",
+    meaning: "把沙子堆聚成塔。比喻积少成多，积小成大。",
     excerpt: "乃至童子戏，聚沙为佛塔",
   },
   {
@@ -5197,6 +5788,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "祝穆",
     gradeGroup: "宋",
+    meaning: "把铁杵磨成针。比喻只要有毅力，肯下功夫，事情终能成功。",
     excerpt: "（李白）读书象耳山中，学业未成，弃去",
   },
   {
@@ -5207,6 +5799,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "佚名",
     gradeGroup: "宋",
+    meaning: "为了得到鸡蛋而杀掉母鸡。比喻只顾眼前利益，损害长远利益。",
     excerpt: "（西洋寓言东传）杀鸡取卵，一朝而尽",
   },
   {
@@ -5217,6 +5810,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "郑文宝",
     gradeGroup: "宋",
+    meaning: "打草时惊动了草里的蛇。比喻行动不谨慎，惊动了对方，使对方有了防备。",
     excerpt: "王鲁为当涂宰，颇以资产为务",
   },
   {
@@ -5227,6 +5821,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "陆游",
     gradeGroup: "宋",
+    meaning: "田登不许百姓说「灯」字。比喻统治者自己可以胡作非为，百姓的正当行为却受到限制。",
     excerpt: "田登作郡，自讳其名，触者必怒，吏卒多被榜笞",
   },
   {
@@ -5237,6 +5832,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "俞文豹",
     gradeGroup: "宋",
+    meaning: "靠近水的楼台先得到月光。比喻因条件便利而优先得到好处。",
     excerpt: "近水楼台先得月，向阳花木易为春",
   },
   {
@@ -5247,6 +5843,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "班固",
     gradeGroup: "宋",
+    meaning: "面貌像人，心肠像兽。形容为人凶残卑劣，毫无人性。",
     excerpt: "夷狄之人贪而好利，被发左衽，人面兽心",
   },
   {
@@ -5257,6 +5854,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "佚名",
     gradeGroup: "宋",
+    meaning: "开篇就阐明宗旨。指说话写文章一开始就点明主旨。",
     excerpt: "仲尼居，曾子侍",
   },
   {
@@ -5267,6 +5865,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "钱易",
     gradeGroup: "宋",
+    meaning: "崔沆与崔瀣如同夜间的水气连在一起。比喻臭味相投的人勾结在一起。",
     excerpt: "（崔沆、崔瀣）座主门生，沆瀣一气",
   },
   {
@@ -5277,6 +5876,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "脱脱等",
     gradeGroup: "宋",
+    meaning: "被部下拥立披上黄袍为帝。指被拥立为皇帝，也指被迫接受某种名义。",
     excerpt: "（诸校）相与扶太祖上马，拥逼南行",
   },
   {
@@ -5287,6 +5887,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "司马光",
     gradeGroup: "宋",
+    meaning: "以酒宴为名解除将领兵权。指用和平手段收回权力。",
     excerpt: "上曰：「人生驹过隙尔，不如多积金、市田宅以遗子孙",
   },
   {
@@ -5297,6 +5898,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "脱脱等",
     gradeGroup: "宋",
+    meaning: "在小事上马虎，大事上却清醒明白。指人临大事头脑清醒、不糊涂。",
     excerpt: "太宗欲相端",
   },
   {
@@ -5307,6 +5909,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "脱脱等",
     gradeGroup: "宋",
+    meaning: "把所有的钱一次押上作赌注。比喻在危急时用尽全力作最后一次冒险。",
     excerpt: "（王）钦若曰：「陛下闻博乎？博者输钱欲尽，乃罄所",
   },
   {
@@ -5317,6 +5920,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "杜甫",
     gradeGroup: "宋",
+    meaning: "吃剩的汤和凉了的烤肉。比喻别人施舍的剩物或屈辱的待遇。",
     excerpt: "朝扣富儿门，暮随肥马尘",
   },
   {
@@ -5327,6 +5931,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "柳宗元",
     gradeGroup: "宋",
+    meaning: "用轻率的态度对待。指对事情不重视、不当回事。",
     excerpt: "故吾每为文章，未尝敢以轻心掉之",
   },
   {
@@ -5337,6 +5942,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "韩愈",
     gradeGroup: "宋",
+    meaning: "坐在井里看天。比喻眼界狭小，所见有限。",
     excerpt: "坐井而观天，曰天小者，非天小也",
   },
   {
@@ -5347,6 +5953,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "脱脱等",
     gradeGroup: "宋",
+    meaning: "只有一张琴、一只鹤。形容行装简少，也比喻为官清廉。",
     excerpt: "（赵抃）日所为事，入夜必衣冠露香以告于天",
   },
   {
@@ -5357,6 +5964,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "苏轼",
     gradeGroup: "宋",
+    meaning: "用狡诈的手段骗取，用强暴的手段夺取。",
     excerpt: "巧偷豪夺古来有，一笑谁似痴虎头",
   },
   {
@@ -5367,6 +5975,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "普济",
     gradeGroup: "宋",
+    meaning: "水位上涨，船也跟着升高。比喻事物随着所凭借的基础的提高而提高。",
     excerpt: "（佛典）水涨船高，泥多佛大",
   },
   {
@@ -5377,6 +5986,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "曹操",
     gradeGroup: "宋",
+    meaning: "曹操遗令分香卖履。指临终时对妻妾的惦记安排，也指临死不忘家事。",
     excerpt: "余香可分与诸夫人，不命祭",
   },
   {
@@ -5387,6 +5997,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "严羽",
     gradeGroup: "宋",
+    meaning: "水面上的反光、掠过的影子。比喻印象不深，观察不细，一晃而过。",
     excerpt: "（诗评）如浮光掠影，未足为奇",
   },
   {
@@ -5397,6 +6008,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "班固",
     gradeGroup: "宋",
+    meaning: "很多蚊子聚在一起，声音像雷一样响。比喻积少成多，小患可以成大害，也指众口谗毁。",
     excerpt: "夫众煦漂山，聚蚊成雷，朋党执虎，十夫桡椎",
   },
   {
@@ -5407,6 +6019,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "萧子显",
     gradeGroup: "宋",
+    meaning: "按照身材裁剪衣服。比喻根据实际情况办事。",
     excerpt: "（太祖）手诏赐融衣曰：「……今送一通故衣，意谓虽",
   },
   {
@@ -5417,6 +6030,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "庄周",
     gradeGroup: "宋",
+    meaning: "宰杀龙的本领。比喻技术虽高却不实用，无处施展。",
     excerpt: "朱泙漫学屠龙于支离益，单千金之家，三年技成而无所",
   },
   {
@@ -5427,6 +6041,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "房玄龄",
     gradeGroup: "宋",
+    meaning: "随口乱说，任意篡改。指不顾事实，随意批评或乱说。",
     excerpt: "（王衍）妙善玄言，唯谈《老》《庄》为事",
   },
   {
@@ -5437,6 +6052,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "皇甫谧",
     gradeGroup: "宋",
+    meaning: "洗净耳朵恭敬地听。是请人讲话时的客气话，形容专心恭敬地听。",
     excerpt: "（许由）曰：「吾闻之，鹪鹩巢于深林，不过一枝；偃",
   },
   {
@@ -5447,6 +6063,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "魏收",
     gradeGroup: "宋",
+    meaning: "自己织出新的布样。比喻诗文的构思、布局独具匠心，有自己的风格。",
     excerpt: "文章须自出机杼，成一家风骨，何能共人同生活也",
   },
   {
@@ -5457,6 +6074,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "严羽",
     gradeGroup: "宋",
+    meaning: "一开门就看见山。比喻说话写文章直截了当，一开始就切入正题。",
     excerpt: "（诗法）开门见山，言简意赅",
   },
   {
@@ -5467,6 +6085,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "赵翼",
     gradeGroup: "宋",
+    meaning: "举起重东西像举轻东西一样。比喻能力强大，处理繁难事情轻松自如。",
     excerpt: "（苏轼诗）举重若轻，读之似不甚用力，而力已透十分",
   },
   {
@@ -5477,6 +6096,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "王羲之",
     gradeGroup: "宋",
+    meaning: "写字的一笔中有三次转折。比喻文章结构起伏曲折，也指事情阻碍多、不顺。",
     excerpt: "每作一波，常三过折笔",
   },
   {
@@ -5487,6 +6107,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "孟轲",
     gradeGroup: "战国",
+    meaning: "跟着坏人一起做坏事。",
     excerpt: "同乎流俗，合乎污世",
   },
   {
@@ -5497,6 +6118,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "陈抟（传）",
     gradeGroup: "宋",
+    meaning: "在急流中勇于退却。比喻在官场得意或事情顺利时及时抽身退步，以保全自身。",
     excerpt: "（语本宋人）急流中勇退，是神仙",
   },
   {
@@ -5507,6 +6129,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "吕不韦",
     gradeGroup: "战国",
+    meaning: "贪图小利而失去大的利益。",
     excerpt: "此贪于小利以失大利者也",
   },
   {
@@ -5517,6 +6140,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "佚名",
     gradeGroup: "宋",
+    meaning: "请对方把手抬高一点。指请求对方宽容、饶恕或通融。",
     excerpt: "（元曲语）高抬贵手，饶过小人",
   },
   {
@@ -5527,6 +6151,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "普济",
     gradeGroup: "宋",
+    meaning: "隔着靴子挠痒痒。比喻说话写文章不中肯、不贴切，没抓住要害。",
     excerpt: "（佛典）如隔靴搔痒，不着痛处",
   },
   {
@@ -5537,6 +6162,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "干宝",
     gradeGroup: "宋",
+    meaning: "传说蜮含沙射人影使人患病。比喻暗中诽谤、中伤他人。",
     excerpt: "汉光武中平中，有物处于江水，其名曰蜮，一曰短狐，",
   },
   {
@@ -5544,10 +6170,11 @@ window.POEMS_CHENGYU = [
     id: "cy-555",
     title: "浩如烟海",
     source: "《隋书·经籍志》",
-    dynasty: "宋",
+    dynasty: "唐",
     author: "魏征等",
-    gradeGroup: "宋",
-    excerpt: "（语本）典籍浩如烟海，不可胜数",
+    gradeGroup: "唐",
+    meaning: "广大得像烟气弥漫的大海。形容书籍、文献、资料极其丰富。",
+    excerpt: "然隋氏目录其存者，尚浩如烟海",
   },
   {
     textRef: "chengyu-cy-556",
@@ -5557,6 +6184,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "圆极居顶",
     gradeGroup: "宋",
+    meaning: "你看我，我看你。形容大家惊惧或无可奈何而互相看着，都不说话。",
     excerpt: "（禅典）面面相觑，无言以对",
   },
   {
@@ -5564,10 +6192,11 @@ window.POEMS_CHENGYU = [
     id: "cy-557",
     title: "妙手回春",
     source: "《类经图翼》",
-    dynasty: "宋",
+    dynasty: "明",
     author: "张介宾",
-    gradeGroup: "宋",
-    excerpt: "（语本）妙手回春，起死回生",
+    gradeGroup: "明",
+    meaning: "高明的医术能使垂危的病人康复。形容医术高明。",
+    excerpt: "医道通乎仙道，妙手回春，生死人而肉白骨",
   },
   {
     textRef: "chengyu-cy-558",
@@ -5577,6 +6206,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "程颢、程颐",
     gradeGroup: "宋",
+    meaning: "像坐在春风里。比喻同品德高尚、学识渊博的人相处，受到良好教益。",
     excerpt: "朱公掞见明道于汝州，逾月而归，语人曰：「光庭在春",
   },
   {
@@ -5587,6 +6217,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "范仲淹",
     gradeGroup: "宋",
+    meaning: "像山一样高、像水一样长。比喻人品高洁、影响深远，也形容情谊深厚。",
     excerpt: "云山苍苍，江水泱泱",
   },
   {
@@ -5594,20 +6225,22 @@ window.POEMS_CHENGYU = [
     id: "cy-560",
     title: "惜墨如金",
     source: "《寓意编》",
-    dynasty: "宋",
+    dynasty: "明",
     author: "都穆",
-    gradeGroup: "宋",
-    excerpt: "（语本）李成惜墨如金",
+    gradeGroup: "明",
+    meaning: "珍惜墨像珍惜金子一样。形容写字作画、写文章不轻易落笔，力求精练。",
+    excerpt: "凡作诗要惜墨如金，择景要取精用弘",
   },
   {
     textRef: "chengyu-cy-561",
     id: "cy-561",
     title: "言简意赅",
     source: "《随园诗话》",
-    dynasty: "宋",
+    dynasty: "清",
     author: "袁枚",
-    gradeGroup: "宋",
-    excerpt: "（语本）言简意赅，含蓄不尽",
+    gradeGroup: "清",
+    meaning: "言语简练而意思完备。形容说话写文章简明扼要。",
+    excerpt: "言简意赅，含蓄不尽",
   },
   {
     textRef: "chengyu-cy-562",
@@ -5617,6 +6250,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "管仲",
     gradeGroup: "春秋",
+    meaning: "隔着墙也可能有人偷听。指秘密谈话须防泄露。",
     excerpt: "墙有耳，伏寇在侧",
   },
   {
@@ -5627,6 +6261,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "刘向",
     gradeGroup: "战国",
+    meaning: "把狼引到屋里来。比喻自己把坏人招引进来，自招灾祸。",
     excerpt: "（元曲《冻苏秦》等用）引狼入室，自取其祸",
   },
   {
@@ -5637,6 +6272,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "普济",
     gradeGroup: "宋",
+    meaning: "枯树遇到了春天。比喻垂危的人或衰败的事物重获生机。",
     excerpt: "（佛典）枯木逢春，自是生机",
   },
   {
@@ -5647,6 +6283,7 @@ window.POEMS_CHENGYU = [
     dynasty: "上古传说",
     author: "佚名",
     gradeGroup: "上古传说",
+    meaning: "大白天，光明的天日。比喻众目昭彰、是非分明的场合。",
     excerpt: "帝光天之下，至于海隅苍生，万邦黎献，共惟帝臣",
   },
   {
@@ -5657,6 +6294,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "李耳",
     gradeGroup: "春秋",
+    meaning: "像天地那样长久存在。形容时间悠久，多用作祝颂情谊、爱情永恒。",
     excerpt: "天长地久",
   },
   {
@@ -5667,7 +6305,8 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "段成式",
     gradeGroup: "唐",
-    excerpt: "（语本）蛛丝马迹，可寻其端",
+    meaning: "蜘蛛的细丝、马踏过的蹄印。比喻隐约可寻的线索和迹象。",
+    excerpt: "循蛛丝马迹以求之，未有不得其迹者",
   },
   {
     textRef: "chengyu-cy-568",
@@ -5677,6 +6316,7 @@ window.POEMS_CHENGYU = [
     dynasty: "东汉",
     author: "范晔",
     gradeGroup: "东汉",
+    meaning: "树根盘曲，枝节交错。比喻事物关系错综复杂，难以处理。",
     excerpt: "志不求易，事不避难，臣之职也",
   },
   {
@@ -5687,6 +6327,7 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "李延寿",
     gradeGroup: "两晋南北朝",
+    meaning: "凤凰的羽毛、麒麟的角。比喻稀少而珍贵的人或事物。",
     excerpt: "（谢超宗）好学有文辞，盛得名誉",
   },
   {
@@ -5697,7 +6338,8 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "魏收",
     gradeGroup: "两晋南北朝",
-    excerpt: "（语本）背恩忘义，人神共弃",
+    meaning: "忘记别人对自己的恩情，做出对不起别人的事。",
+    excerpt: "背恩忘义，人神共弃",
   },
   {
     textRef: "chengyu-cy-571",
@@ -5707,7 +6349,8 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "李延寿",
     gradeGroup: "两晋南北朝",
-    excerpt: "（语本）惊魂未定，魂不附体",
+    meaning: "灵魂离开了躯体。形容极度惊恐或受到极大的刺激。",
+    excerpt: "闻变惊起，魂不附体",
   },
   {
     textRef: "chengyu-cy-572",
@@ -5717,6 +6360,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "尤袤",
     gradeGroup: "宋",
+    meaning: "飘浮的云、野生的鹤。比喻无拘无束、来去自由的人，多指隐士或出家人。",
     excerpt: "（僧贯休诗）闲云野鹤，何天不可飞",
   },
   {
@@ -5727,6 +6371,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "杜牧",
     gradeGroup: "唐",
+    meaning: "折断的兵器沉埋沙中。形容惨烈的战败，也比喻惨痛的失败已成往事。",
     excerpt: "折戟沉沙铁未销，自将磨洗认前朝",
   },
   {
@@ -5737,6 +6382,7 @@ window.POEMS_CHENGYU = [
     dynasty: "元",
     author: "赵孟頫",
     gradeGroup: "元",
+    meaning: "人工的精巧胜过天然。形容技艺极其高超。",
     excerpt: "人间巧艺夺天工，炼药燃灯清昼同",
   },
   {
@@ -5747,6 +6393,7 @@ window.POEMS_CHENGYU = [
     dynasty: "明",
     author: "于谦",
     gradeGroup: "明",
+    meaning: "衣袖中只有清风。比喻为官清廉，没有贪赃枉法。",
     excerpt: "绢帕蘑菇与线香，本资民用反为殃",
   },
   {
@@ -5757,6 +6404,7 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "佚名",
     gradeGroup: "两晋南北朝",
+    meaning: "经过瓜田、李树下。比喻容易引起嫌疑的场合，应避嫌自保。",
     excerpt: "君子防未然，不处嫌疑间",
   },
   {
@@ -5767,6 +6415,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西周",
     author: "佚名",
     gradeGroup: "西周",
+    meaning: "收藏财物不严等于教人来偷。指自己疏于防范而招致祸患。",
     excerpt: "慢藏诲盗，冶容诲淫",
   },
   {
@@ -5777,6 +6426,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "杨敬之",
     gradeGroup: "唐",
+    meaning: "遇到人就说项斯的好话。指到处称扬、推荐某人。",
     excerpt: "几度见诗诗总好，及观标格过于诗",
   },
   {
@@ -5787,6 +6437,7 @@ window.POEMS_CHENGYU = [
     dynasty: "明",
     author: "瞿汝稷",
     gradeGroup: "明",
+    meaning: "由谁系上的铃由谁来解。同「解铃还须系铃人」，比喻问题由谁造成就由谁解决。",
     excerpt: "系者解得",
   },
   {
@@ -5797,6 +6448,7 @@ window.POEMS_CHENGYU = [
     dynasty: "明",
     author: "刘基",
     gradeGroup: "明",
+    meaning: "外表像金玉，内里却是破棉絮。比喻外表华美而实质很糟。",
     excerpt: "观其坐高堂，骑大马，醉醇醴而饫肥鲜者，孰不巍巍乎",
   },
   {
@@ -5807,6 +6459,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "朱熹",
     gradeGroup: "宋",
+    meaning: "关起门来造车。比喻只凭主观想象办事，不顾客观实际。",
     excerpt: "古语所谓「闭门造车，出门合辙」，盖言其法之同",
   },
   {
@@ -5817,6 +6470,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "邹阳",
     gradeGroup: "西汉",
+    meaning: "把明珠投在暗处。比喻有才能的人得不到赏识，或好东西落入不识货的人手中。",
     excerpt: "臣闻明月之珠，夜光之璧，以暗投人于道，众莫不按剑",
   },
   {
@@ -5827,6 +6481,7 @@ window.POEMS_CHENGYU = [
     dynasty: "五代",
     author: "李煜",
     gradeGroup: "五代",
+    meaning: "落花随着流水飘去。形容残败零落的样子，也比喻被打得惨败。",
     excerpt: "流水落花春去也，天上人间",
   },
   {
@@ -5837,6 +6492,7 @@ window.POEMS_CHENGYU = [
     dynasty: "明",
     author: "罗贯中",
     gradeGroup: "明",
+    meaning: "情谊深得像亲兄弟一样。形容彼此关系极为亲密。",
     excerpt: "（后世语；本《诗》「兄弟」之谊）情同手足，义结金",
   },
   {
@@ -5847,6 +6503,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "刘昫等",
     gradeGroup: "唐",
+    meaning: "在学术或技艺上有独到的见解和风格，能自成体系。",
     excerpt: "（韩愈）抒意立言，自成一家新语",
   },
   {
@@ -5857,6 +6514,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "普济",
     gradeGroup: "宋",
+    meaning: "龙和蛇混在一起。比喻好人坏人混杂一处，难以分辨。",
     excerpt: "（佛典）凡圣同居，龙蛇混杂",
   },
   {
@@ -5867,7 +6525,8 @@ window.POEMS_CHENGYU = [
     dynasty: "东汉",
     author: "牟融",
     gradeGroup: "东汉",
-    excerpt: "（语本）少所见，多所怪，睹橐驼，言马肿背",
+    meaning: "见识少，遇到平常事也觉奇怪。",
+    excerpt: "少所见，多所怪，睹橐驼，言马肿背",
   },
   {
     textRef: "chengyu-cy-588",
@@ -5877,6 +6536,7 @@ window.POEMS_CHENGYU = [
     dynasty: "清",
     author: "曹雪芹",
     gradeGroup: "清",
+    meaning: "美好的姻缘。指符合心意、美满的婚姻。",
     excerpt: "都道是金玉良缘，俺只念木石前盟",
   },
   {
@@ -5887,6 +6547,7 @@ window.POEMS_CHENGYU = [
     dynasty: "清",
     author: "曹雪芹",
     gradeGroup: "清",
+    meaning: "马陆虽死却仍不倒下。比喻势力雄厚的家族或集团虽已衰败，其影响仍在。",
     excerpt: "古人说：「百足之虫，死而不僵",
   },
   {
@@ -5897,6 +6558,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "司马迁",
     gradeGroup: "西汉",
+    meaning: "在中原争夺天下。比喻群雄并起、争夺政权或争夺有利地位。",
     excerpt: "秦失其鹿，天下共逐之，于是高材疾足者先得焉",
   },
   {
@@ -5907,7 +6569,8 @@ window.POEMS_CHENGYU = [
     dynasty: "清",
     author: "袁枚",
     gradeGroup: "清",
-    excerpt: "（语本）独树一帜，自成一家",
+    meaning: "单独树立一面旗帜。比喻自成一家、风格独特。",
+    excerpt: "独树一帜，自成一家",
   },
   {
     textRef: "chengyu-cy-592",
@@ -5917,6 +6580,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "司马迁",
     gradeGroup: "西汉",
+    meaning: "天下没有第二个。形容独一无二、出类拔萃。",
     excerpt: "李广才气，天下无双",
   },
   {
@@ -5927,6 +6591,7 @@ window.POEMS_CHENGYU = [
     dynasty: "元",
     author: "王实甫",
     gradeGroup: "元",
+    meaning: "聪明人怜惜聪明人。指性格、才能相近的人互相爱惜、彼此倾慕。",
     excerpt: "（语本元曲）惺惺的自古惜惺惺",
   },
   {
@@ -5937,6 +6602,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "苏轼",
     gradeGroup: "宋",
+    meaning: "坚决而有韧性，不可动摇。形容意志坚强，不可动摇。",
     excerpt: "古之立大事者，不惟有超世之才，亦必有坚忍不拔之志",
   },
   {
@@ -5947,6 +6613,7 @@ window.POEMS_CHENGYU = [
     dynasty: "东汉",
     author: "范晔",
     gradeGroup: "东汉",
+    meaning: "贪图安逸，厌恶劳动。",
     excerpt: "其为疗也，有四难焉：自用意而不任臣，一难也；将身",
   },
   {
@@ -5957,7 +6624,8 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "楼钥",
     gradeGroup: "宋",
-    excerpt: "（语本）家喻户晓，人人皆知",
+    meaning: "家家户户都知道。形容事情或人物广为流传，人人皆知。",
+    excerpt: "家喻户晓，人人皆知",
   },
   {
     textRef: "chengyu-cy-597",
@@ -5967,6 +6635,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "张乔",
     gradeGroup: "唐",
+    meaning: "无数的山和水。形容路途遥远艰险。",
     excerpt: "离别河边绾柳条，千山万水玉人遥",
   },
   {
@@ -5977,6 +6646,7 @@ window.POEMS_CHENGYU = [
     dynasty: "清",
     author: "壮者",
     gradeGroup: "清",
+    meaning: "评论人的头、议论人的脚。指对人对事说长道短、妄加评论。",
     excerpt: "（清末小说语）评头论足，妄议他人",
   },
   {
@@ -5987,6 +6657,7 @@ window.POEMS_CHENGYU = [
     dynasty: "明",
     author: "罗贯中",
     gradeGroup: "明",
+    meaning: "离开黑暗，投向光明。指脱离反动营垒，投向正义的一方。",
     excerpt: "（后世语）弃暗投明，归顺明主",
   },
   {
@@ -5997,7 +6668,8 @@ window.POEMS_CHENGYU = [
     dynasty: "清",
     author: "纪昀",
     gradeGroup: "清",
-    excerpt: "（语本）千人一面，千部一腔",
+    meaning: "一千个人都是同一副面孔。形容作品或人物缺乏个性，彼此雷同。",
+    excerpt: "千人一面，千部一腔",
   },
   {
     textRef: "chengyu-cy-601",
@@ -6007,6 +6679,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "司马迁",
     gradeGroup: "西汉",
+    meaning: "人的力量可以战胜自然。指人力能够克服自然困难。",
     excerpt: "人众者胜天，天定亦能破人",
   },
   {
@@ -6017,7 +6690,8 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "柳永",
     gradeGroup: "宋",
-    excerpt: "（语本）如痴如醉，迷恋不已",
+    meaning: "像痴呆、像醉倒一样。形容对某事物极度迷恋，也形容神态失常。",
+    excerpt: "如痴如醉，迷恋不已",
   },
   {
     textRef: "chengyu-cy-603",
@@ -6027,6 +6701,7 @@ window.POEMS_CHENGYU = [
     dynasty: "清",
     author: "曹雪芹",
     gradeGroup: "清",
+    meaning: "刚直公正，不徇私情。形容办事不讲情面、秉公执法。",
     excerpt: "（后世语）铁面无私，秉公执法",
   },
   {
@@ -6037,7 +6712,8 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "管仲",
     gradeGroup: "春秋",
-    excerpt: "（语本）徒劳无功，费而无益",
+    meaning: "白费力气却没有成效。",
+    excerpt: "举事而不时，力尽而功不成，此劳而无功也",
   },
   {
     textRef: "chengyu-cy-605",
@@ -6047,6 +6723,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "李耳",
     gradeGroup: "春秋",
+    meaning: "把没有的说成有。指凭空捏造，凭空诬陷。",
     excerpt: "天下万物生于有，有生于无",
   },
   {
@@ -6057,6 +6734,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "司马迁",
     gradeGroup: "西汉",
+    meaning: "说的话都听从，出的主意都采纳。形容对某人非常信任，事事依从。",
     excerpt: "汉王授我上将军印，予我数万众，解衣衣我，推食食我",
   },
   {
@@ -6067,6 +6745,7 @@ window.POEMS_CHENGYU = [
     dynasty: "元",
     author: "王实甫",
     gradeGroup: "元",
+    meaning: "眼睛看花了，感到迷乱。形容事物复杂纷繁，使人看不清、辨不明。",
     excerpt: "（语本元曲）眼花缭乱口难言，魂灵儿飞在半天",
   },
   {
@@ -6074,10 +6753,11 @@ window.POEMS_CHENGYU = [
     id: "cy-608",
     title: "一举两得",
     source: "《晋书·束皙传》",
-    dynasty: "唐",
+    dynasty: "两晋南北朝",
     author: "房玄龄",
-    gradeGroup: "唐",
-    excerpt: "（语本）一举两得，事半而功倍",
+    gradeGroup: "两晋南北朝",
+    meaning: "做一件事得到两方面的好处。",
+    excerpt: "一举而两得之，不如一举而两失之",
   },
   {
     textRef: "chengyu-cy-609",
@@ -6087,6 +6767,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "左丘明",
     gradeGroup: "春秋",
+    meaning: "除草要连根拔除。比喻彻底除掉祸根，不留后患。",
     excerpt: "为国家者，见恶如农夫之务去草焉，芟夷蕴崇之，绝其",
   },
   {
@@ -6097,7 +6778,8 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "王楙",
     gradeGroup: "宋",
-    excerpt: "（语本）自投罗网，飞蛾扑火",
+    meaning: "自己投进罗网里去。比喻自己进入别人设下的圈套。",
+    excerpt: "飞蛾扑火，自投罗网",
   },
   {
     textRef: "chengyu-cy-611",
@@ -6107,6 +6789,7 @@ window.POEMS_CHENGYU = [
     dynasty: "明",
     author: "施耐庵",
     gradeGroup: "明",
+    meaning: "无路可走。比喻处境极端困难，找不到任何出路。",
     excerpt: "（后世语）走投无路，只得上山",
   },
   {
@@ -6117,7 +6800,8 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "管仲",
     gradeGroup: "春秋",
-    excerpt: "（语本）坐以待毙，不如起而图之",
+    meaning: "坐着等死。比喻遇到危难却不设法自救，坐等失败或灭亡。",
+    excerpt: "战而不胜，犹可退守；坐以待毙，非计之得也",
   },
   {
     textRef: "chengyu-cy-613",
@@ -6127,6 +6811,7 @@ window.POEMS_CHENGYU = [
     dynasty: "元",
     author: "臧懋循",
     gradeGroup: "元",
+    meaning: "理直气壮、滔滔不绝地说。形容自以为理由充分，说个没完（多含贬义）。",
     excerpt: "（后世语）振振有词，理直气壮",
   },
   {
@@ -6137,6 +6822,7 @@ window.POEMS_CHENGYU = [
     dynasty: "东汉",
     author: "范晔",
     gradeGroup: "东汉",
+    meaning: "把它放在考虑的范围之外。指不把生死、利害等放在心上。",
     excerpt: "帝积苦兵间，以嚣子内侍，公孙述远据边陲，乃谓诸将",
   },
   {
@@ -6144,20 +6830,22 @@ window.POEMS_CHENGYU = [
     id: "cy-615",
     title: "直言不讳",
     source: "《晋书·刘波传》",
-    dynasty: "唐",
+    dynasty: "两晋南北朝",
     author: "房玄龄",
-    gradeGroup: "唐",
-    excerpt: "（语本）直言不讳，忠臣之节",
+    gradeGroup: "两晋南北朝",
+    meaning: "直率地说出，毫不隐讳。",
+    excerpt: "臣闻忠臣之事君也，直言不讳",
   },
   {
     textRef: "chengyu-cy-616",
     id: "cy-616",
     title: "众口铄金",
-    source: "《国语·周语下》",
-    dynasty: "春秋",
+    source: "《史记·鲁仲连邹阳列传》",
+    dynasty: "西汉",
     author: "佚名",
-    gradeGroup: "春秋",
-    excerpt: "故谚曰：「众心成城，众口铄金",
+    gradeGroup: "西汉",
+    meaning: "众人的言论足以熔化金属。比喻舆论的力量强大，也指众口一词可以混淆是非。",
+    excerpt: "故女无美恶，入宫见妒；士无贤不肖，入朝见嫉……众",
   },
   {
     textRef: "chengyu-cy-617",
@@ -6167,6 +6855,7 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "刘义庆",
     gradeGroup: "两晋南北朝",
+    meaning: "因自己的容貌、举止不如别人而感到惭愧。泛指因不如人而自卑。",
     excerpt: "骠骑王武子是卫玠之舅，俊爽有风姿",
   },
   {
@@ -6177,6 +6866,7 @@ window.POEMS_CHENGYU = [
     dynasty: "明",
     author: "罗贯中",
     gradeGroup: "明",
+    meaning: "主动地要求承担某项艰难任务。",
     excerpt: "（后世语）自告奋勇，愿为先锋",
   },
   {
@@ -6187,7 +6877,8 @@ window.POEMS_CHENGYU = [
     dynasty: "上古传说",
     author: "佚名",
     gradeGroup: "上古传说",
-    excerpt: "（语本）自作孽，不可逭",
+    meaning: "自己吞食自己种下的苦果。指做了坏事，自己承担恶果。",
+    excerpt: "天作孽，犹可违；自作孽，不可逭",
   },
   {
     textRef: "chengyu-cy-620",
@@ -6197,7 +6888,8 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "佚名",
     gradeGroup: "战国",
-    excerpt: "（语本）自力更生，自食其力",
+    meaning: "靠自己的劳动来养活自己。",
+    excerpt: "自力更生，自食其力",
   },
   {
     textRef: "chengyu-cy-621",
@@ -6207,6 +6899,7 @@ window.POEMS_CHENGYU = [
     dynasty: "东汉",
     author: "班固",
     gradeGroup: "东汉",
+    meaning: "罪大恶极，处死都不足以抵偿。形容罪孽极重。",
     excerpt: "（郭解）罪不容诛，当大逆无道",
   },
   {
@@ -6217,6 +6910,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "刘向",
     gradeGroup: "战国",
+    meaning: "利用别人的矛盾冲突从中获取利益。",
     excerpt: "两者不肯相舍，渔者得而并禽之",
   },
   {
@@ -6224,10 +6918,11 @@ window.POEMS_CHENGYU = [
     id: "cy-623",
     title: "座无虚席",
     source: "《晋书·王浑传》",
-    dynasty: "唐",
+    dynasty: "两晋南北朝",
     author: "房玄龄",
-    gradeGroup: "唐",
-    excerpt: "（语本）座无虚席，听者忘倦",
+    gradeGroup: "两晋南北朝",
+    meaning: "座位没有空着的。形容出席的人很多、听讲或观看的人满座。",
+    excerpt: "每讲论，座无虚席",
   },
   {
     textRef: "chengyu-cy-624",
@@ -6237,6 +6932,7 @@ window.POEMS_CHENGYU = [
     dynasty: "清",
     author: "李宝嘉",
     gradeGroup: "清",
+    meaning: "犯了罪受到应有的惩罚。",
     excerpt: "（清末小说语）罪有应得，法无可贷",
   },
   {
@@ -6247,6 +6943,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "道原",
     gradeGroup: "宋",
+    meaning: "蚕吐丝作茧，把自己裹在里面。比喻自己束缚自己，也比喻做事使自己陷入困境。",
     excerpt: "（佛典）如蚕作茧，自缚其身",
   },
   {
@@ -6257,6 +6954,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "欧阳修",
     gradeGroup: "宋",
+    meaning: "醉翁的意趣不在酒上。比喻本意不在此而在别的方面。",
     excerpt: "醉翁之意不在酒，在乎山水之间也",
   },
   {
@@ -6267,6 +6965,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "佚名",
     gradeGroup: "战国",
+    meaning: "既不低声下气，也不傲慢自大。形容态度得体，分寸恰当。",
     excerpt: "君子素其位而行，不愿乎其外",
   },
   {
@@ -6277,7 +6976,8 @@ window.POEMS_CHENGYU = [
     dynasty: "清",
     author: "张廷玉等",
     gradeGroup: "清",
-    excerpt: "（语本）长篇累牍，繁而不杀",
+    meaning: "篇幅很长，文字繁多。",
+    excerpt: "长篇累牍，繁而不杀",
   },
   {
     textRef: "chengyu-cy-629",
@@ -6287,6 +6987,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "庄周",
     gradeGroup: "战国",
+    meaning: "大椿和萱草都很茂盛。比喻父母都健康长寿。",
     excerpt: "上古有大椿者，以八千岁为春，八千岁为秋",
   },
   {
@@ -6297,6 +6998,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "佚名",
     gradeGroup: "春秋",
+    meaning: "跟着文人学士装模作样地谈诗论文。指缺少文化修养的人硬充文雅。",
     excerpt: "（语本《诗经》「附庸」之制）附庸风雅，装点门面",
   },
   {
@@ -6307,7 +7009,8 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "司马迁",
     gradeGroup: "西汉",
-    excerpt: "（语本）口诛笔伐，声罪致讨",
+    meaning: "用言语和文字进行批判声讨。",
+    excerpt: "口诛笔伐，声罪致讨",
   },
   {
     textRef: "chengyu-cy-632",
@@ -6317,6 +7020,7 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "刘义庆",
     gradeGroup: "两晋南北朝",
+    meaning: "各种感触交织在一起。形容心情复杂、感慨丛生。",
     excerpt: "卫洗马初欲渡江，形神惨悴，语左右云：「见此芒芒，",
   },
   {
@@ -6327,6 +7031,7 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "程颢、程颐",
     gradeGroup: "宋",
+    meaning: "鞭策到里面去。形容分析透彻深刻，切中要害。",
     excerpt: "学只要鞭辟近里，著己而已",
   },
   {
@@ -6337,7 +7042,8 @@ window.POEMS_CHENGYU = [
     dynasty: "明",
     author: "李贽（评）",
     gradeGroup: "明",
-    excerpt: "（语本）别出心裁，不落窠臼",
+    meaning: "独创一格，与众不同。指构思、方法等独具匠心。",
+    excerpt: "别出心裁，不落窠臼",
   },
   {
     textRef: "chengyu-cy-635",
@@ -6347,7 +7053,8 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "扬雄",
     gradeGroup: "西汉",
-    excerpt: "（语本）是悬诸日月不刊之书也",
+    meaning: "不可更改的言论。形容言论精当确凿，无法改动。",
+    excerpt: "是悬诸日月不刊之书也",
   },
   {
     textRef: "chengyu-cy-636",
@@ -6357,17 +7064,19 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "刘昫等",
     gradeGroup: "唐",
-    excerpt: "（语本）才思敏捷，下笔成章",
+    meaning: "才气和思路灵敏迅捷。形容文思来得快。",
+    excerpt: "才思敏捷，下笔成章",
   },
   {
     textRef: "chengyu-cy-637",
     id: "cy-637",
     title: "沧海横流",
     source: "《晋书·王尼传》",
-    dynasty: "唐",
+    dynasty: "两晋南北朝",
     author: "房玄龄",
-    gradeGroup: "唐",
-    excerpt: "（语本）沧海横流，方显英雄本色",
+    gradeGroup: "两晋南北朝",
+    meaning: "大海的水四处奔流。比喻政局动荡、社会混乱。",
+    excerpt: "沧海横流，方显英雄本色",
   },
   {
     textRef: "chengyu-cy-638",
@@ -6377,7 +7086,8 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "王安石",
     gradeGroup: "宋",
-    excerpt: "（语本）曾几何时，而公之墓木已拱",
+    meaning: "才过了多少时间。指时间过去没有多久。",
+    excerpt: "曾几何时，而公之墓木已拱",
   },
   {
     textRef: "chengyu-cy-639",
@@ -6387,6 +7097,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "庄周",
     gradeGroup: "战国",
+    meaning: "瞪着眼睛说不出话来。形容受窘或惊呆的样子。",
     excerpt: "夫子奔逸绝尘，而回瞠若乎后矣",
   },
   {
@@ -6397,6 +7108,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "司马迁",
     gradeGroup: "西汉",
+    meaning: "一声怒喝能使风云变色。形容声势威力极大，能左右局势。",
     excerpt: "项王喑噁叱咤，千人皆废",
   },
   {
@@ -6407,6 +7119,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西周",
     author: "佚名",
     gradeGroup: "西周",
+    meaning: "塞住耳朵不听。形容故意不听取别人意见。",
     excerpt: "叔兮伯兮，褎如充耳",
   },
   {
@@ -6417,6 +7130,7 @@ window.POEMS_CHENGYU = [
     dynasty: "东汉",
     author: "范晔",
     gradeGroup: "东汉",
+    meaning: "又走上翻过车的老路。比喻不吸取失败的教训，重犯以前的错误。",
     excerpt: "今不想前事之失，复循覆车之轨",
   },
   {
@@ -6427,6 +7141,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "司马迁",
     gradeGroup: "西汉",
+    meaning: "用奇兵、奇计战胜敌人。泛指用出人意料的办法取胜。",
     excerpt: "兵以正合，以奇胜",
   },
   {
@@ -6437,6 +7152,7 @@ window.POEMS_CHENGYU = [
     dynasty: "清",
     author: "鲁迅",
     gradeGroup: "清",
+    meaning: "制作粗劣，只求数量，不顾质量。",
     excerpt: "（现代语）粗制滥造，只顾数量",
   },
   {
@@ -6447,7 +7163,8 @@ window.POEMS_CHENGYU = [
     dynasty: "明",
     author: "施耐庵",
     gradeGroup: "明",
-    excerpt: "（语本）大吹大擂，饮酒作乐",
+    meaning: "吹喇叭、擂鼓。比喻大肆宣扬、过分吹嘘。",
+    excerpt: "大吹大擂，饮酒作乐",
   },
   {
     textRef: "chengyu-cy-646",
@@ -6457,7 +7174,8 @@ window.POEMS_CHENGYU = [
     dynasty: "清",
     author: "孔尚任",
     gradeGroup: "清",
-    excerpt: "（语本）断壁残垣，荒草萋萋",
+    meaning: "倒塌的墙壁、残缺的墙头。形容建筑物破败荒凉的景象。",
+    excerpt: "断壁残垣，荒草萋萋",
   },
   {
     textRef: "chengyu-cy-647",
@@ -6467,6 +7185,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "韩愈",
     gradeGroup: "唐",
+    meaning: "耳朵常听、眼睛常看，不知不觉受到影响。",
     excerpt: "（韩愈）目濡耳染，不学以能",
   },
   {
@@ -6477,7 +7196,8 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "司马迁",
     gradeGroup: "西汉",
-    excerpt: "（语本）繁文缛节，礼节繁多",
+    meaning: "繁琐而不必要的仪式和礼节。泛指烦琐多余的手续。",
+    excerpt: "繁文缛节，礼节繁多",
   },
   {
     textRef: "chengyu-cy-649",
@@ -6487,6 +7207,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "刘向",
     gradeGroup: "战国",
+    meaning: "去掉外在的装饰，恢复原来的质朴本真。",
     excerpt: "（语本《战国策》「归真反璞」）归真反璞，则终身不",
   },
   {
@@ -6497,7 +7218,8 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "朱熹",
     gradeGroup: "宋",
-    excerpt: "（语本）方兴未艾，未有止息",
+    meaning: "正在兴起发展，一时不会停止。形容事物正蓬勃发展。",
+    excerpt: "方兴未艾，未有止息",
   },
   {
     textRef: "chengyu-cy-651",
@@ -6507,6 +7229,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "韩愈",
     gradeGroup: "唐",
+    meaning: "点着油灯接续日光。形容夜以继日地勤奋学习或工作。",
     excerpt: "焚膏油以继晷，恒兀兀以穷年",
   },
   {
@@ -6517,7 +7240,8 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "陆机",
     gradeGroup: "两晋南北朝",
-    excerpt: "（语本）浮想联翩，思接千载",
+    meaning: "许多思绪接连不断地涌现出来。",
+    excerpt: "浮想联翩，思接千载",
   },
   {
     textRef: "chengyu-cy-653",
@@ -6527,17 +7251,19 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "司马迁",
     gradeGroup: "西汉",
-    excerpt: "（语本）譬犹居高屋之上建瓴水也",
+    meaning: "在屋顶上把瓶子里的水往下倒。形容居高临下、不可阻挡的形势。",
+    excerpt: "譬犹居高屋之上建瓴水也",
   },
   {
     textRef: "chengyu-cy-654",
     id: "cy-654",
     title: "功败垂成",
     source: "《晋书·谢玄传》",
-    dynasty: "唐",
+    dynasty: "两晋南北朝",
     author: "房玄龄",
-    gradeGroup: "唐",
-    excerpt: "（语本）降龄何促，功败垂成",
+    gradeGroup: "两晋南北朝",
+    meaning: "事情即将成功时遭到失败。指功亏一篑，令人惋惜。",
+    excerpt: "降龄何促，功败垂成",
   },
   {
     textRef: "chengyu-cy-655",
@@ -6547,6 +7273,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "韩愈",
     gradeGroup: "唐",
+    meaning: "刮去污垢，磨出光亮。比喻磨炼人才、除去缺点使其完美。",
     excerpt: "爬罗剔抉，刮垢磨光",
   },
   {
@@ -6557,6 +7284,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "屈原",
     gradeGroup: "战国",
+    meaning: "光彩奇异，形态离奇。形容现象奇异、色彩繁杂。",
     excerpt: "纷总总其离合兮，斑陆离其上下",
   },
   {
@@ -6567,7 +7295,8 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "魏征等",
     gradeGroup: "唐",
-    excerpt: "（语本）骇人听闻，惊世骇俗",
+    meaning: "使人听了非常吃惊害怕。多指坏事极其严重。",
+    excerpt: "骇人听闻，惊世骇俗",
   },
   {
     textRef: "chengyu-cy-658",
@@ -6577,6 +7306,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "韩愈",
     gradeGroup: "唐",
+    meaning: "嘴里含着花朵，咀嚼它的精华。比喻细细体味诗文的精华。",
     excerpt: "沉浸醲郁，含英咀华",
   },
   {
@@ -6587,6 +7317,7 @@ window.POEMS_CHENGYU = [
     dynasty: "东汉",
     author: "范晔",
     gradeGroup: "东汉",
+    meaning: "画老虎不成，反而像狗。比喻模仿不到家，反而不伦不类。",
     excerpt: "效（杜）季良不得，陷为天下轻薄子，所谓画虎不成反",
   },
   {
@@ -6597,6 +7328,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "李耳",
     gradeGroup: "春秋",
+    meaning: "像冰遇热消融一样。比喻疑虑、误会、隔阂顿时消除。",
     excerpt: "涣兮若冰之将释",
   },
   {
@@ -6607,6 +7339,7 @@ window.POEMS_CHENGYU = [
     dynasty: "清",
     author: "拉·封丹",
     gradeGroup: "清",
+    meaning: "为别人冒险，自己却一无所得，反受其害。",
     excerpt: "（法寓言东传）火中取栗，为人作嫁",
   },
   {
@@ -6617,6 +7350,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "尸佼",
     gradeGroup: "战国",
+    meaning: "冲去污水，扬起清水。比喻抨击坏的，褒扬好的。",
     excerpt: "扬清激浊，荡去滓秽，义也",
   },
   {
@@ -6627,7 +7361,8 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "慎到",
     gradeGroup: "战国",
-    excerpt: "（语本）狐白之裘，盖非一狐之腋也",
+    meaning: "把狐腋的皮毛聚集起来做成皮袍。比喻积少成多。",
+    excerpt: "狐白之裘，盖非一狐之腋也",
   },
   {
     textRef: "chengyu-cy-664",
@@ -6637,6 +7372,7 @@ window.POEMS_CHENGYU = [
     dynasty: "清",
     author: "严复",
     gradeGroup: "清",
+    meaning: "按天数计算功绩和进度。形容工作进展快，不久就能成功。",
     excerpt: "（严复语）计日程功，可操左券",
   },
   {
@@ -6647,6 +7383,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "枚乘",
     gradeGroup: "西汉",
+    meaning: "中间容不下一根头发。形容情势极其危急，或比喻言行缜密无隙。",
     excerpt: "系绝于天，不可复结；坠入深渊，难以复出，其出不出",
   },
   {
@@ -6657,6 +7394,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "韩非",
     gradeGroup: "战国",
+    meaning: "看到细微的迹象就能推知事物的发展趋势。",
     excerpt: "圣人见微以知萌，见端以知末",
   },
   {
@@ -6667,7 +7405,8 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "扬雄",
     gradeGroup: "西汉",
-    excerpt: "（语本）懿律嘉量，金科玉条",
+    meaning: "原指法律条文完善，后指不可变更的信条和准则。",
+    excerpt: "懿律嘉量，金科玉条",
   },
   {
     textRef: "chengyu-cy-668",
@@ -6677,6 +7416,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "孟轲",
     gradeGroup: "战国",
+    meaning: "长期借用而不归还。比喻长期借用别人的东西不还，也指久借他物不归。",
     excerpt: "久假而不归，恶知其非有也",
   },
   {
@@ -6687,7 +7427,8 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "沈约",
     gradeGroup: "两晋南北朝",
-    excerpt: "（语本）举步维艰，进退维谷",
+    meaning: "每迈一步都很艰难。形容处境困难，行动不易。",
+    excerpt: "举步维艰，进退维谷",
   },
   {
     textRef: "chengyu-cy-670",
@@ -6697,6 +7438,7 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "陈寿",
     gradeGroup: "两晋南北朝",
+    meaning: "敞开胸怀，公正无私。指待人处事坦率诚恳，坦白无私。",
     excerpt: "（陈寿评）诸葛亮之为相国也……开诚心，布公道",
   },
   {
@@ -6707,6 +7449,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "宋玉",
     gradeGroup: "战国",
+    meaning: "有了洞穴才有风进来。比喻消息、传言并非完全没有根据。",
     excerpt: "枳句来巢，空穴来风",
   },
   {
@@ -6717,7 +7460,8 @@ window.POEMS_CHENGYU = [
     dynasty: "清",
     author: "翁方纲",
     gradeGroup: "清",
-    excerpt: "（语本）苦心孤诣，深造自得",
+    meaning: "苦心钻研，独有心得。形容费尽心思，达到别人达不到的境地。",
+    excerpt: "苦心孤诣，深造自得",
   },
   {
     textRef: "chengyu-cy-673",
@@ -6727,6 +7471,7 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "佚名",
     gradeGroup: "两晋南北朝",
+    meaning: "伯劳与燕子各飞东西。比喻夫妻、情侣离别。",
     excerpt: "东飞伯劳西飞燕，黄姑织女时相见",
   },
   {
@@ -6737,6 +7482,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "韩愈",
     gradeGroup: "唐",
+    meaning: "用力挽回猛烈的波浪。比喻尽力挽回险恶的局势。",
     excerpt: "障百川而东之，回狂澜于既倒",
   },
   {
@@ -6747,7 +7493,8 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "韩愈",
     gradeGroup: "唐",
-    excerpt: "（语本）今之存者，寥若晨星",
+    meaning: "稀少得像清晨的星星。形容数量极少。",
+    excerpt: "今之存者，寥若晨星",
   },
   {
     textRef: "chengyu-cy-676",
@@ -6757,6 +7504,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西周",
     author: "佚名",
     gradeGroup: "西周",
+    meaning: "像鱼鳞和梳齿那样依次排列。形容房屋等密集整齐。",
     excerpt: "其比如栉，以开百室",
   },
   {
@@ -6767,7 +7515,8 @@ window.POEMS_CHENGYU = [
     dynasty: "清",
     author: "佚名",
     gradeGroup: "清",
-    excerpt: "（语本）屡试不爽，百无一失",
+    meaning: "多次试验都没有差错。形容方法、结论经得起反复验证。",
+    excerpt: "屡试不爽，百无一失",
   },
   {
     textRef: "chengyu-cy-678",
@@ -6777,6 +7526,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "佚名",
     gradeGroup: "战国",
+    meaning: "形容房屋高大众多、富丽堂皇。今亦用于形容装饰、布置等华美。",
     excerpt: "晋献文子成室，晋大夫发焉",
   },
   {
@@ -6787,7 +7537,8 @@ window.POEMS_CHENGYU = [
     dynasty: "清",
     author: "赵尔巽等",
     gradeGroup: "清",
-    excerpt: "（语本）众说纷纭，莫衷一是",
+    meaning: "不能得出一致的结论。形容意见纷纭，无法统一。",
+    excerpt: "众说纷纭，莫衷一是",
   },
   {
     textRef: "chengyu-cy-680",
@@ -6797,6 +7548,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "庄周",
     gradeGroup: "战国",
+    meaning: "眼中没有完整的牛。形容技艺纯熟高超，达到得心应手的境界。",
     excerpt: "始臣之解牛之时，所见无非牛者；三年之后，未尝见全",
   },
   {
@@ -6807,7 +7559,8 @@ window.POEMS_CHENGYU = [
     dynasty: "清",
     author: "袁枚",
     gradeGroup: "清",
-    excerpt: "（语本）泥沙俱下，玉石杂陈",
+    meaning: "泥土和沙子一同随水冲下。比喻好坏混杂、优劣不分。",
+    excerpt: "泥沙俱下，玉石杂陈",
   },
   {
     textRef: "chengyu-cy-682",
@@ -6817,7 +7570,8 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "刘义庆",
     gradeGroup: "两晋南北朝",
-    excerpt: "（语本）披沙拣金，往往见宝",
+    meaning: "拨开沙子挑选金子。比喻从大量事物中选取精华。",
+    excerpt: "披沙拣金，往往见宝",
   },
   {
     textRef: "chengyu-cy-683",
@@ -6827,6 +7581,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "王勃",
     gradeGroup: "唐",
+    meaning: "像浮萍随水漂泊，偶然相遇。比喻素不相识的人偶然相遇。",
     excerpt: "关山难越，谁悲失路之人？萍水相逢，尽是他乡之客",
   },
   {
@@ -6837,6 +7592,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "司马迁",
     gradeGroup: "西汉",
+    meaning: "把难得的货物囤积起来，等待高价出售。比喻凭借某种专长或事物谋取私利。",
     excerpt: "子楚，秦诸庶孽孙，质于诸侯，车乘进用不饶，居处困",
   },
   {
@@ -6847,7 +7603,8 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "陈寿",
     gradeGroup: "两晋南北朝",
-    excerpt: "（语本）穷兵黩武，动费万计",
+    meaning: "用尽全部兵力，肆意发动战争。形容极端好战。",
+    excerpt: "穷兵黩武，动费万计",
   },
   {
     textRef: "chengyu-cy-686",
@@ -6857,7 +7614,8 @@ window.POEMS_CHENGYU = [
     dynasty: "清",
     author: "张廷玉等",
     gradeGroup: "清",
-    excerpt: "（语本）趋之若鹜，如蚁附膻",
+    meaning: "像鸭子一样成群跑过去。比喻很多人争相趋附，含贬义。",
+    excerpt: "趋之若鹜，如蚁附膻",
   },
   {
     textRef: "chengyu-cy-687",
@@ -6867,7 +7625,8 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "赵璘",
     gradeGroup: "宋",
-    excerpt: "（语本）忍俊不禁，一笑粲然",
+    meaning: "忍不住笑起来。指遇到可笑的事而情不自禁地发笑，含「自己也控制不住」之意。",
+    excerpt: "忍俊不禁，一笑粲然",
   },
   {
     textRef: "chengyu-cy-688",
@@ -6877,6 +7636,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西周",
     author: "佚名",
     gradeGroup: "西周",
+    meaning: "像走在薄冰上一样。比喻行事极为谨慎小心，提心吊胆。",
     excerpt: "战战兢兢，如临深渊，如履薄冰",
   },
   {
@@ -6887,6 +7647,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西周",
     author: "佚名",
     gradeGroup: "西周",
+    meaning: "像太阳运行到正午的天上。比喻事物发展正处在最兴盛的阶段。",
     excerpt: "日之方中，在前上处",
   },
   {
@@ -6897,6 +7658,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "佚名",
     gradeGroup: "春秋",
+    meaning: "外表强硬而内心虚弱。指人表面严厉，内心怯懦。",
     excerpt: "色厉而内荏，譬诸小人，其犹穿窬之盗也与？",
   },
   {
@@ -6907,6 +7669,7 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "刘义庆",
     gradeGroup: "两晋南北朝",
+    meaning: "身上没有多余的东西。形容生活贫困或为官清廉。",
     excerpt: "丈人不悉恭，恭作人无长物",
   },
   {
@@ -6917,6 +7680,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "孟轲",
     gradeGroup: "战国",
+    meaning: "最早用陶俑殉葬的人。比喻恶劣风气的创始者、首开恶例的人。",
     excerpt: "始作俑者，其无后乎！为其象人而用之也",
   },
   {
@@ -6927,6 +7691,7 @@ window.POEMS_CHENGYU = [
     dynasty: "东汉",
     author: "班固",
     gradeGroup: "东汉",
+    meaning: "最先受到攻击或遭遇灾难。",
     excerpt: "郑以小国摄乎晋、楚之间，重以强吴，郑当其冲，不能",
   },
   {
@@ -6937,6 +7702,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "佚名",
     gradeGroup: "战国",
+    meaning: "通过不同的途径，到达同一个目的地。比喻方法不同而结果相同。",
     excerpt: "天下同归而殊涂，一致而百虑",
   },
   {
@@ -6947,7 +7713,8 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "李商隐",
     gradeGroup: "唐",
-    excerpt: "（语本）素昧平生，忽承垂顾",
+    meaning: "一向不认识、不了解。指彼此从来不相识。",
+    excerpt: "素昧平生，忽承垂顾",
   },
   {
     textRef: "chengyu-cy-696",
@@ -6957,6 +7724,7 @@ window.POEMS_CHENGYU = [
     dynasty: "东汉",
     author: "班固",
     gradeGroup: "东汉",
+    meaning: "掸去帽子上的灰尘，互相庆贺。指因即将做官而互相庆贺（多含贬义）。",
     excerpt: "吉与贡禹为友，世称「王阳在位，贡公弹冠」，言其取",
   },
   {
@@ -6967,6 +7735,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "司马迁",
     gradeGroup: "西汉",
+    meaning: "桃李树下自然踩出小路。同「桃李不言下自成蹊」，比喻德才高尚自然为人所敬仰。",
     excerpt: "谚曰「桃李不言，下自成蹊」",
   },
   {
@@ -6977,6 +7746,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "李耳",
     gradeGroup: "春秋",
+    meaning: "天道像广大的网。比喻天道的惩罚虽然宽疏，但不会漏掉坏人。",
     excerpt: "天网恢恢，疏而不失",
   },
   {
@@ -6987,7 +7757,8 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "韩愈",
     gradeGroup: "唐",
-    excerpt: "（语本）条分缕析，脉络分明",
+    meaning: "一条条地分析。形容分析得细致而有条理。",
+    excerpt: "条分缕析，脉络分明",
   },
   {
     textRef: "chengyu-cy-700",
@@ -6997,6 +7768,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "刘向",
     gradeGroup: "战国",
+    meaning: "放在同一时间谈起。指相提并论，多用于否定句。",
     excerpt: "夫破人之与破于人也，臣人之与臣于人也，岂可同日而",
   },
   {
@@ -7007,6 +7779,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "司马迁",
     gradeGroup: "西汉",
+    meaning: "锥尖透过布袋露出来。比喻人的才能完全显露出来。",
     excerpt: "使遂蚤得处囊中，乃颖脱而出，非特其末见而已",
   },
   {
@@ -7017,6 +7790,7 @@ window.POEMS_CHENGYU = [
     dynasty: "东汉",
     author: "班固",
     gradeGroup: "东汉",
+    meaning: "精微的语言中包含着深刻的道理。",
     excerpt: "昔仲尼没而微言绝，七十子丧而大义乖",
   },
   {
@@ -7027,7 +7801,8 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "刘勰",
     gradeGroup: "两晋南北朝",
-    excerpt: "（语本）蔚然成风，相沿成习",
+    meaning: "形容一种事物逐渐发展流行，形成风气。",
+    excerpt: "蔚然成风，相沿成习",
   },
   {
     textRef: "chengyu-cy-704",
@@ -7037,7 +7812,8 @@ window.POEMS_CHENGYU = [
     dynasty: "东汉",
     author: "班固",
     gradeGroup: "东汉",
-    excerpt: "（语本）未可厚非",
+    meaning: "不可过分指责。表示虽有缺点，但可以谅解。",
+    excerpt: "未可厚非",
   },
   {
     textRef: "chengyu-cy-705",
@@ -7047,6 +7823,7 @@ window.POEMS_CHENGYU = [
     dynasty: "上古传说",
     author: "佚名",
     gradeGroup: "上古传说",
+    meaning: "没有根据、无从查考的话。",
     excerpt: "无稽之言勿听，弗询之谋勿庸",
   },
   {
@@ -7057,6 +7834,7 @@ window.POEMS_CHENGYU = [
     dynasty: "东汉",
     author: "范晔",
     gradeGroup: "东汉",
+    meaning: "平息事端，使人安宁。指从中调解，使争端平息。",
     excerpt: "其令有司，罪非殊死，且勿案验；及吏人条书相告，不",
   },
   {
@@ -7067,6 +7845,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "佚名",
     gradeGroup: "战国",
+    meaning: "玉上的斑点掩盖不了玉的光彩。比喻小的缺点掩盖不了大的优点。",
     excerpt: "瑕不掩瑜，瑜不掩瑕，忠也",
   },
   {
@@ -7077,7 +7856,8 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "刘勰",
     gradeGroup: "两晋南北朝",
-    excerpt: "（语本）相形见绌，优劣自明",
+    meaning: "与同类事物相比较，显得不如。",
+    excerpt: "相形见绌，优劣自明",
   },
   {
     textRef: "chengyu-cy-709",
@@ -7087,17 +7867,55 @@ window.POEMS_CHENGYU = [
     dynasty: "宋",
     author: "佚名",
     gradeGroup: "宋",
-    excerpt: "（语本）信手拈来，皆成妙谛",
+    meaning: "顺手拿来。形容写文章时能熟练地运用材料，毫不费力。",
+    excerpt: "信手拈来，皆成妙谛",
+  },
+  {
+    textRef: "chengyu-cy-776",
+    textRef: "chengyu-cy-776",
+    id: "cy-776",
+    title: "安分守己",
+    source: "《朱子语类》卷八",
+    dynasty: "宋",
+    author: "黎靖德编",
+    gradeGroup: "宋",
+    meaning: "规矩老实，守本分。指安于自己应守的规矩，不做越轨的事。",
+    excerpt: "安分守己，循理而行",
+  },
+  {
+    textRef: "chengyu-cy-777",
+    textRef: "chengyu-cy-777",
+    id: "cy-777",
+    title: "勇往直前",
+    source: "《朱子语类》",
+    dynasty: "宋",
+    author: "黎靖德编",
+    gradeGroup: "宋",
+    meaning: "勇敢地一直向前进。形容不怕艰险、奋勇前进。",
+    excerpt: "勇往直前，无所疑惧",
+  },
+  {
+    textRef: "chengyu-cy-778",
+    textRef: "chengyu-cy-778",
+    id: "cy-778",
+    title: "力争上游",
+    source: "《朱子语类》",
+    dynasty: "宋",
+    author: "黎靖德编",
+    gradeGroup: "宋",
+    meaning: "努力争取先进，力求处在最前列。",
+    excerpt: "人须是自处于上游，方得",
   },
   {
     textRef: "chengyu-cy-710",
     id: "cy-710",
     title: "休戚与共",
     source: "《晋书·王导传》",
-    dynasty: "唐",
+    dynasty: "两晋南北朝",
     author: "房玄龄",
-    gradeGroup: "唐",
-    excerpt: "（语本）休戚与共，同甘共苦",
+    gradeGroup: "两晋南北朝",
+    meaning: "忧乐、祸福彼此共同承担。形容关系密切，同甘共苦。",
+    excerpt: "休戚与共，同甘共苦",
   },
   {
     textRef: "chengyu-cy-711",
@@ -7107,6 +7925,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "李耳",
     gradeGroup: "春秋",
+    meaning: "胸怀像山谷一样宽广。形容非常谦虚，能容纳别人的意见。",
     excerpt: "旷兮其若谷",
   },
   {
@@ -7117,7 +7936,8 @@ window.POEMS_CHENGYU = [
     dynasty: "清",
     author: "吴趼人",
     gradeGroup: "清",
-    excerpt: "（语本）喧宾夺主，反客为主",
+    meaning: "客人的声音压过主人的声音。比喻外来的或次要的事物占据了主要地位。",
+    excerpt: "喧宾夺主，反客为主",
   },
   {
     textRef: "chengyu-cy-713",
@@ -7127,6 +7947,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "庄周",
     gradeGroup: "战国",
+    meaning: "形容事物繁多，丰富多彩，极为可观。",
     excerpt: "夫道，覆载万物者也，洋洋乎大哉！",
   },
   {
@@ -7137,6 +7958,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "孟轲",
     gradeGroup: "战国",
+    meaning: "一个人教导，众人干扰。比喻学习环境不好，无法取得成效。",
     excerpt: "一齐人傅之，众楚人咻之，虽日挞而求其齐也，不可得",
   },
   {
@@ -7147,7 +7969,8 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "魏征",
     gradeGroup: "唐",
-    excerpt: "（语本）一劳永逸，长治久安",
+    meaning: "辛苦一次，把事情办好，以后就不再费力。",
+    excerpt: "一劳永逸，长治久安",
   },
   {
     textRef: "chengyu-cy-716",
@@ -7157,6 +7980,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "列御寇",
     gradeGroup: "战国",
+    meaning: "歌声的余音绕着屋梁久久不散。形容歌声或乐曲优美动人，令人回味。",
     excerpt: "昔韩娥东之齐，匮粮，过雍门，鬻歌假食",
   },
   {
@@ -7167,7 +7991,8 @@ window.POEMS_CHENGYU = [
     dynasty: "清",
     author: "袁枚",
     gradeGroup: "清",
-    excerpt: "（语本）振聋发聩，警醒世人",
+    meaning: "响声大得使聋子也能听见。比喻用言论文字唤醒糊涂麻木的人。",
+    excerpt: "振聋发聩，警醒世人",
   },
   {
     textRef: "chengyu-cy-718",
@@ -7177,7 +8002,8 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "房玄龄",
     gradeGroup: "唐",
-    excerpt: "（语本）正本清源，端本澄源",
+    meaning: "从根本上整顿，从源头上清理。比喻从根源上彻底解决问题。",
+    excerpt: "正本清源，端本澄源",
   },
   {
     textRef: "chengyu-cy-719",
@@ -7187,7 +8013,20 @@ window.POEMS_CHENGYU = [
     dynasty: "清",
     author: "曹雪芹",
     gradeGroup: "清",
-    excerpt: "（语本）钟灵毓秀，人杰地灵",
+    meaning: "美好的自然环境孕育出优秀的人物。形容山川秀美，人才辈出。",
+    excerpt: "钟灵毓秀，人杰地灵",
+  },
+  {
+    textRef: "chengyu-cy-784",
+    textRef: "chengyu-cy-784",
+    id: "cy-784",
+    title: "一丝不苟",
+    source: "《儒林外史》第四回",
+    dynasty: "清",
+    author: "吴敬梓",
+    gradeGroup: "清",
+    meaning: "连最细小的地方也不马虎。形容办事认真细致，一点也不马虎。",
+    excerpt: "见世叔一丝不苟，升迁就在指日",
   },
   {
     textRef: "chengyu-cy-720",
@@ -7197,6 +8036,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "庄周",
     gradeGroup: "战国",
+    meaning: "拉一下衣襟就露出胳膊肘。形容衣服破烂，也比喻顾此失彼，应付不过来。",
     excerpt: "十年不制衣，正冠而缨绝，捉衿而肘见",
   },
   {
@@ -7207,6 +8047,7 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "孟轲",
     gradeGroup: "战国",
+    meaning: "原指自我悔恨、自我改正，今多指自我悔恨、自怨自叹。",
     excerpt: "太甲悔过，自怨自艾，于桐处仁迁义",
   },
   {
@@ -7217,7 +8058,8 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "司马迁",
     gradeGroup: "西汉",
-    excerpt: "（语本）左支右绌，力不从心",
+    meaning: "左边支撑了，右边又不够。形容力量不足，顾此失彼，应付不过来。",
+    excerpt: "左支右绌，力不从心",
   },
   {
     textRef: "chengyu-cy-723",
@@ -7227,6 +8069,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "司马迁",
     gradeGroup: "西汉",
+    meaning: "站在壁垒上观看别人交战。比喻置身事外，从旁观望。",
     excerpt: "诸侯军救巨鹿下者十余壁，莫敢纵兵",
   },
   {
@@ -7237,7 +8080,8 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "庄周",
     gradeGroup: "战国",
-    excerpt: "（语本）安之若素，泰然处之",
+    meaning: "对反常现象或困难处境安然相处，像平常一样对待。",
+    excerpt: "安之若素，泰然处之",
   },
   {
     textRef: "chengyu-cy-725",
@@ -7247,7 +8091,44 @@ window.POEMS_CHENGYU = [
     dynasty: "东汉",
     author: "班固",
     gradeGroup: "东汉",
+    meaning: "古代记述街谈巷议的小官与私家记载的史事。泛指旧时的逸闻琐事记载。",
     excerpt: "小说家者流，盖出于稗官",
+  },
+  {
+    textRef: "chengyu-cy-773",
+    textRef: "chengyu-cy-773",
+    id: "cy-773",
+    title: "拾金不昧",
+    source: "《后汉书·列女传·乐羊子妻》",
+    dynasty: "东汉",
+    author: "范晔",
+    gradeGroup: "东汉",
+    meaning: "拾到金钱财物不隐藏起来据为己有。形容为人诚实、品德高尚。",
+    excerpt: "志士不饮盗泉之水，廉者不受嗟来之食",
+  },
+  {
+    textRef: "chengyu-cy-774",
+    textRef: "chengyu-cy-774",
+    id: "cy-774",
+    title: "高瞻远瞩",
+    source: "《论衡·别通》",
+    dynasty: "东汉",
+    author: "王充",
+    gradeGroup: "东汉",
+    meaning: "站得高，看得远。形容目光远大，见识深刻。",
+    excerpt: "开户内日之光，日光不能照幽",
+  },
+  {
+    textRef: "chengyu-cy-775",
+    textRef: "chengyu-cy-775",
+    id: "cy-775",
+    title: "理所当然",
+    source: "《后汉书·肃宗孝章帝纪》",
+    dynasty: "东汉",
+    author: "范晔",
+    gradeGroup: "东汉",
+    meaning: "从道理上说应当如此。指按道理应当这样，不容置疑。",
+    excerpt: "皆当以经术为本，理所当然",
   },
   {
     textRef: "chengyu-cy-726",
@@ -7257,7 +8138,20 @@ window.POEMS_CHENGYU = [
     dynasty: "上古传说",
     author: "佚名",
     gradeGroup: "上古传说",
+    meaning: "任意糟蹋、浪费自然界的万物。泛指任意糟蹋、浪费财物。",
     excerpt: "今商王受无道，暴殄天物，害虐烝民",
+  },
+  {
+    textRef: "chengyu-cy-787",
+    textRef: "chengyu-cy-787",
+    id: "cy-787",
+    title: "和衷共济",
+    source: "《尚书·皋陶谟》",
+    dynasty: "上古传说",
+    author: "佚名",
+    gradeGroup: "上古传说",
+    meaning: "大家同心协力，克服困难。比喻齐心协力，共渡难关。",
+    excerpt: "同寅协恭，和衷哉",
   },
   {
     textRef: "chengyu-cy-727",
@@ -7267,6 +8161,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "左丘明",
     gradeGroup: "春秋",
+    meaning: "心怀不满、为非作歹的人。",
     excerpt: "故五族聚群不逞之人，因公子之徒以作乱",
   },
   {
@@ -7277,6 +8172,7 @@ window.POEMS_CHENGYU = [
     dynasty: "唐",
     author: "佚名",
     gradeGroup: "唐",
+    meaning: "既不亲近，也不疏远。指对人保持适当的距离与分寸。",
     excerpt: "不即不离，无缚无脱",
   },
   {
@@ -7284,10 +8180,11 @@ window.POEMS_CHENGYU = [
     id: "cy-729",
     title: "不容置喙",
     source: "《宋史》",
-    dynasty: "元",
+    dynasty: "宋",
     author: "脱脱等",
-    gradeGroup: "元",
-    excerpt: "（语本）不容置喙，无由辩白",
+    gradeGroup: "宋",
+    meaning: "不允许插嘴。指没有别人说话的余地。",
+    excerpt: "不容置喙，无由辩白",
   },
   {
     textRef: "chengyu-cy-730",
@@ -7297,6 +8194,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "佚名",
     gradeGroup: "春秋",
+    meaning: "既不沉闷也不火爆。形容戏曲表演不沉闷、不过火，尺度恰当。",
     excerpt: "（语本《论语》「过犹不及」）不瘟不火，恰到好处",
   },
   {
@@ -7307,7 +8205,224 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "左丘明",
     gradeGroup: "春秋",
-    excerpt: "（语本）不足为训，未可为准",
+    meaning: "不值得作为准则或典范。指某事不值得效法。",
+    excerpt: "不足为训，未可为准",
+  },
+  {
+    textRef: "chengyu-cy-737",
+    textRef: "chengyu-cy-737",
+    id: "cy-737",
+    title: "不耻下问",
+    source: "《论语·公冶长》",
+    dynasty: "春秋",
+    author: "孔子及其弟子",
+    gradeGroup: "春秋",
+    meaning: "不以向学问比自己差或地位比自己低的人请教为可耻。形容谦虚好学。",
+    excerpt: "敏而好学，不耻下问，是以谓之文也",
+  },
+  {
+    textRef: "chengyu-cy-738",
+    textRef: "chengyu-cy-738",
+    id: "cy-738",
+    title: "举一反三",
+    source: "《论语·述而》",
+    dynasty: "春秋",
+    author: "孔子及其弟子",
+    gradeGroup: "春秋",
+    meaning: "从一件事类推而知道许多事情。形容善于类推，能由此及彼。",
+    excerpt: "举一隅不以三隅反，则不复也",
+  },
+  {
+    textRef: "chengyu-cy-739",
+    textRef: "chengyu-cy-739",
+    id: "cy-739",
+    title: "温故知新",
+    source: "《论语·为政》",
+    dynasty: "春秋",
+    author: "孔子及其弟子",
+    gradeGroup: "春秋",
+    meaning: "温习学过的知识，从中获得新的理解和体会。也指回顾历史，认识现在。",
+    excerpt: "温故而知新，可以为师矣",
+  },
+  {
+    textRef: "chengyu-cy-740",
+    textRef: "chengyu-cy-740",
+    id: "cy-740",
+    title: "学而不厌",
+    source: "《论语·述而》",
+    dynasty: "春秋",
+    author: "孔子及其弟子",
+    gradeGroup: "春秋",
+    meaning: "学习总不感到满足。形容好学不倦、勤奋不已。",
+    excerpt: "默而识之，学而不厌，诲人不倦",
+  },
+  {
+    textRef: "chengyu-cy-741",
+    textRef: "chengyu-cy-741",
+    id: "cy-741",
+    title: "以身作则",
+    source: "《论语·子路》",
+    dynasty: "春秋",
+    author: "孔子及其弟子",
+    gradeGroup: "春秋",
+    meaning: "用自己的行动作出榜样。指以自身的实际行动影响、带动别人。",
+    excerpt: "其身正，不令而行",
+  },
+  {
+    textRef: "chengyu-cy-742",
+    textRef: "chengyu-cy-742",
+    id: "cy-742",
+    title: "严于律己",
+    source: "《论语·卫灵公》",
+    dynasty: "春秋",
+    author: "孔子及其弟子",
+    gradeGroup: "春秋",
+    meaning: "严格地约束、要求自己。形容对自己要求严格，不放松。",
+    excerpt: "躬自厚而薄责于人，则远怨矣",
+  },
+  {
+    textRef: "chengyu-cy-743",
+    textRef: "chengyu-cy-743",
+    id: "cy-743",
+    title: "大公无私",
+    source: "《管子·形势解》",
+    dynasty: "春秋",
+    author: "管仲",
+    gradeGroup: "春秋",
+    meaning: "完全为集体、为别人着想，没有私心。形容办事公正，不偏袒任何一方。",
+    excerpt: "风雨至公而无私，所行无常乡",
+  },
+  {
+    textRef: "chengyu-cy-744",
+    textRef: "chengyu-cy-744",
+    id: "cy-744",
+    title: "表里如一",
+    source: "《论语·颜渊》",
+    dynasty: "春秋",
+    author: "孔子及其弟子",
+    gradeGroup: "春秋",
+    meaning: "外表和内心完全一致。形容言行和思想完全一致，不弄虚作假。",
+    excerpt: "夫达也者，质直而好义",
+  },
+  {
+    textRef: "chengyu-cy-745",
+    textRef: "chengyu-cy-745",
+    id: "cy-745",
+    title: "见义勇为",
+    source: "《论语·为政》",
+    dynasty: "春秋",
+    author: "孔子及其弟子",
+    gradeGroup: "春秋",
+    meaning: "看到正义的事情就勇敢地去做。形容有正义感，勇于行动。",
+    excerpt: "见义不为，无勇也",
+  },
+  {
+    textRef: "chengyu-cy-746",
+    textRef: "chengyu-cy-746",
+    id: "cy-746",
+    title: "全力以赴",
+    source: "《左传·僖公二十六年》",
+    dynasty: "春秋",
+    author: "左丘明",
+    gradeGroup: "春秋",
+    meaning: "把全部力量都投入进去。形容做事尽最大的努力。",
+    excerpt: "竭其股肱之力，加之以忠贞",
+  },
+  {
+    textRef: "chengyu-cy-747",
+    textRef: "chengyu-cy-747",
+    id: "cy-747",
+    title: "承前启后",
+    source: "《论语·泰伯》",
+    dynasty: "春秋",
+    author: "孔子及其弟子",
+    gradeGroup: "春秋",
+    meaning: "继承前人的事业，开辟未来的道路。指承接过去，开创未来。",
+    excerpt: "继绝世，举废国",
+  },
+  {
+    textRef: "chengyu-cy-748",
+    textRef: "chengyu-cy-748",
+    id: "cy-748",
+    title: "优柔寡断",
+    source: "《左传·成公十六年》",
+    dynasty: "春秋",
+    author: "左丘明",
+    gradeGroup: "春秋",
+    meaning: "做事犹豫，缺乏决断。形容遇事迟疑不决，拿不定主意。",
+    excerpt: "乱狱滋丰，贿赂并行",
+  },
+  {
+    textRef: "chengyu-cy-749",
+    textRef: "chengyu-cy-749",
+    id: "cy-749",
+    title: "言行一致",
+    source: "《论语·子张》",
+    dynasty: "春秋",
+    author: "孔子及其弟子",
+    gradeGroup: "春秋",
+    meaning: "说的和做的完全一样。形容为人诚实，表里如一。",
+    excerpt: "君子耻其言而过其行",
+  },
+  {
+    textRef: "chengyu-cy-750",
+    textRef: "chengyu-cy-750",
+    id: "cy-750",
+    title: "言而有信",
+    source: "《论语·学而》",
+    dynasty: "春秋",
+    author: "孔子及其弟子",
+    gradeGroup: "春秋",
+    meaning: "说话算数，讲信用。指待人接物信守诺言，不失信于人。",
+    excerpt: "与朋友交，言而有信",
+  },
+  {
+    textRef: "chengyu-cy-751",
+    textRef: "chengyu-cy-751",
+    id: "cy-751",
+    title: "相辅相成",
+    source: "《论语·颜渊》",
+    dynasty: "春秋",
+    author: "孔子及其弟子",
+    gradeGroup: "春秋",
+    meaning: "互相补充，互相配合。指两件事物互相辅助，缺一不可。",
+    excerpt: "文犹质也，质犹文也",
+  },
+  {
+    textRef: "chengyu-cy-752",
+    textRef: "chengyu-cy-752",
+    id: "cy-752",
+    title: "无微不至",
+    source: "《论语·子张》",
+    dynasty: "春秋",
+    author: "孔子及其弟子",
+    gradeGroup: "春秋",
+    meaning: "没有一处细微的地方不照顾到。形容关怀照顾得细致周到。",
+    excerpt: "如有所立卓尔，虽欲从之，末由也已",
+  },
+  {
+    textRef: "chengyu-cy-753",
+    textRef: "chengyu-cy-753",
+    id: "cy-753",
+    title: "三思而行",
+    source: "《论语·公冶长》",
+    dynasty: "春秋",
+    author: "孔子及其弟子",
+    gradeGroup: "春秋",
+    meaning: "反复考虑之后再行动。形容做事谨慎，不莽撞。",
+    excerpt: "季文子三思而后行",
+  },
+  {
+    textRef: "chengyu-cy-754",
+    textRef: "chengyu-cy-754",
+    id: "cy-754",
+    title: "名正言顺",
+    source: "《论语·子路》",
+    dynasty: "春秋",
+    author: "孔子及其弟子",
+    gradeGroup: "春秋",
+    meaning: "名义正当，道理也讲得通。指做事的理由充分，理直气壮。",
+    excerpt: "名不正，则言不顺",
   },
   {
     textRef: "chengyu-cy-732",
@@ -7317,7 +8432,68 @@ window.POEMS_CHENGYU = [
     dynasty: "战国",
     author: "庄周",
     gradeGroup: "战国",
+    meaning: "截断鹤的长腿去接续野鸭的短腿。比喻违反事物的本性，强行改变。",
     excerpt: "长者不为有余，短者不为不足",
+  },
+  {
+    textRef: "chengyu-cy-755",
+    textRef: "chengyu-cy-755",
+    id: "cy-755",
+    title: "日积月累",
+    source: "《荀子·劝学》",
+    dynasty: "战国",
+    author: "荀况",
+    gradeGroup: "战国",
+    meaning: "一天天、一月月不断地积累。形容长期积累、持之以恒。",
+    excerpt: "积土成山，风雨兴焉",
+  },
+  {
+    textRef: "chengyu-cy-756",
+    textRef: "chengyu-cy-756",
+    id: "cy-756",
+    title: "锲而不舍",
+    source: "《荀子·劝学》",
+    dynasty: "战国",
+    author: "荀况",
+    gradeGroup: "战国",
+    meaning: "不断地雕刻。比喻有恒心、有毅力，坚持不懈。",
+    excerpt: "锲而舍之，朽木不折；锲而不舍，金石可镂",
+  },
+  {
+    textRef: "chengyu-cy-757",
+    textRef: "chengyu-cy-757",
+    id: "cy-757",
+    title: "犹豫不决",
+    source: "《战国策·秦策二》",
+    dynasty: "战国",
+    author: "刘向编",
+    gradeGroup: "战国",
+    meaning: "拿不定主意，下不了决心。形容迟疑动摇，不能决断。",
+    excerpt: "疑则勿行，行则勿疑",
+  },
+  {
+    textRef: "chengyu-cy-758",
+    textRef: "chengyu-cy-758",
+    id: "cy-758",
+    title: "取长补短",
+    source: "《孟子·滕文公上》",
+    dynasty: "战国",
+    author: "孟轲",
+    gradeGroup: "战国",
+    meaning: "吸取别人的长处，弥补自己的短处。",
+    excerpt: "今滕，绝长补短，将五十里也",
+  },
+  {
+    textRef: "chengyu-cy-759",
+    textRef: "chengyu-cy-759",
+    id: "cy-759",
+    title: "不折不扣",
+    source: "《荀子·劝学》",
+    dynasty: "战国",
+    author: "荀况",
+    gradeGroup: "战国",
+    meaning: "不打折扣。形容完全、十足，一点不差。",
+    excerpt: "君子博学而日参省乎己，则知明而行无过矣",
   },
   {
     textRef: "chengyu-cy-733",
@@ -7327,7 +8503,8 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "刘勰",
     gradeGroup: "两晋南北朝",
-    excerpt: "（语本）矫揉造作，失其自然",
+    meaning: "把弯的弄直、把直的弄弯。形容故意做作、不自然。",
+    excerpt: "矫揉造作，失其自然",
   },
   {
     textRef: "chengyu-cy-734",
@@ -7337,7 +8514,68 @@ window.POEMS_CHENGYU = [
     dynasty: "西汉",
     author: "司马迁",
     gradeGroup: "西汉",
+    meaning: "像鸿沟一样界限分明。形容两者区别明显，截然不同。",
     excerpt: "项羽恐，乃与汉王约，中分天下，割鸿沟而西者为汉，",
+  },
+  {
+    textRef: "chengyu-cy-764",
+    textRef: "chengyu-cy-764",
+    id: "cy-764",
+    title: "公而忘私",
+    source: "《汉书·贾谊传》",
+    dynasty: "西汉",
+    author: "班固",
+    gradeGroup: "西汉",
+    meaning: "为了公事而忘记私事。形容一心为公，不计较个人利益。",
+    excerpt: "国耳忘家，公耳忘私",
+  },
+  {
+    textRef: "chengyu-cy-765",
+    textRef: "chengyu-cy-765",
+    id: "cy-765",
+    title: "奋不顾身",
+    source: "《史记·司马相如列传》",
+    dynasty: "西汉",
+    author: "司马迁",
+    gradeGroup: "西汉",
+    meaning: "奋勇直前，不顾个人安危。形容为了正义事业而不顾自己的生命危险。",
+    excerpt: "常思奋不顾身，以徇国家之急",
+  },
+  {
+    textRef: "chengyu-cy-766",
+    textRef: "chengyu-cy-766",
+    id: "cy-766",
+    title: "深谋远虑",
+    source: "《史记·秦始皇本纪》",
+    dynasty: "西汉",
+    author: "司马迁",
+    gradeGroup: "西汉",
+    meaning: "计划周密，考虑长远。形容筹划周全，目光远大。",
+    excerpt: "深谋远虑，行军用兵之道",
+  },
+  {
+    textRef: "chengyu-cy-767",
+    textRef: "chengyu-cy-767",
+    id: "cy-767",
+    title: "肝胆相照",
+    source: "《史记·淮阴侯列传》",
+    dynasty: "西汉",
+    author: "司马迁",
+    gradeGroup: "西汉",
+    meaning: "以真心相见。比喻朋友之间彼此赤诚相待，真心相交。",
+    excerpt: "臣愿披腹心，输肝胆，效愚计",
+  },
+  {
+    textRef: "chengyu-cy-768",
+    textRef: "chengyu-cy-768",
+    id: "cy-768",
+    title: "相得益彰",
+    source: "《史记·伯夷列传》",
+    dynasty: "西汉",
+    author: "司马迁",
+    gradeGroup: "西汉",
+    meaning: "互相配合、互相帮助，使彼此的长处更加显著。",
+    excerpt: "伯夷、叔齐虽贤，得夫子而名益彰",
   },
   {
     textRef: "chengyu-cy-735",
@@ -7347,7 +8585,56 @@ window.POEMS_CHENGYU = [
     dynasty: "两晋南北朝",
     author: "刘勰",
     gradeGroup: "两晋南北朝",
-    excerpt: "（语本）旁征博引，辞采飞扬",
+    meaning: "广泛地引用材料作为依据或例证。形容引证丰富，论证充分。",
+    excerpt: "旁征博引，辞采飞扬",
+  },
+  {
+    textRef: "chengyu-cy-769",
+    textRef: "chengyu-cy-769",
+    id: "cy-769",
+    title: "光明磊落",
+    source: "《晋书·石勒载记下》",
+    dynasty: "两晋南北朝",
+    author: "房玄龄等",
+    gradeGroup: "两晋南北朝",
+    meaning: "心地光明正大，胸怀坦白。形容为人做事正派，没有私心杂念。",
+    excerpt: "大丈夫行事当礌礌落落，如日月皎然",
+  },
+  {
+    textRef: "chengyu-cy-770",
+    textRef: "chengyu-cy-770",
+    id: "cy-770",
+    title: "按部就班",
+    source: "《文赋》",
+    dynasty: "两晋南北朝",
+    author: "陆机",
+    gradeGroup: "两晋南北朝",
+    meaning: "原指写文章时按层次、分段、遣词造句。后指按照一定的条理、步骤做事。",
+    excerpt: "选义按部，考辞就班",
+  },
+  {
+    textRef: "chengyu-cy-771",
+    textRef: "chengyu-cy-771",
+    id: "cy-771",
+    title: "刻不容缓",
+    source: "《晋书·羊祜传》",
+    dynasty: "两晋南北朝",
+    author: "房玄龄等",
+    gradeGroup: "两晋南北朝",
+    meaning: "一刻也不能拖延。形容时间紧迫、形势紧急，必须立即行动。",
+    excerpt: "今不于此际早图，后必噬脐无及",
+  },
+  {
+    textRef: "chengyu-cy-772",
+    textRef: "chengyu-cy-772",
+    id: "cy-772",
+    title: "循规蹈矩",
+    source: "《晋书·谢安传》",
+    dynasty: "两晋南北朝",
+    author: "房玄龄等",
+    gradeGroup: "两晋南北朝",
+    meaning: "遵守规矩，不轻举妄动。形容拘泥于旧准则，不敢稍作变动。",
+    excerpt: "循规蹈矩，不逾法度",
   },
   {
     textRef: "chengyu-cy-736",
@@ -7357,6 +8644,67 @@ window.POEMS_CHENGYU = [
     dynasty: "西周",
     author: "佚名",
     gradeGroup: "西周",
+    meaning: "人员的数目多于工作的需要。指人多事少，工作效率低。",
     excerpt: "故君子与其使食浮于人也，宁使人浮于食。",
   },
+  {
+    textRef: "chengyu-cy-779",
+    textRef: "chengyu-cy-779",
+    id: "cy-779",
+    title: "兢兢业业",
+    source: "《诗经·大雅·云汉》",
+    dynasty: "西周",
+    author: "佚名",
+    gradeGroup: "西周",
+    meaning: "形容做事小心谨慎、认真踏实。多指工作勤恳负责、毫不懈怠。",
+    excerpt: "兢兢业业，如霆如雷",
+  },
+  {
+    textRef: "chengyu-cy-780",
+    textRef: "chengyu-cy-780",
+    id: "cy-780",
+    title: "持之以恒",
+    source: "《周易·恒卦》",
+    dynasty: "西周",
+    author: "佚名",
+    gradeGroup: "西周",
+    meaning: "长久地坚持下去。形容有恒心，不半途而废。",
+    excerpt: "天地之道，恒久而不已也",
+  },
+  {
+    textRef: "chengyu-cy-781",
+    textRef: "chengyu-cy-781",
+    id: "cy-781",
+    title: "同心协力",
+    source: "《尚书·泰誓中》",
+    dynasty: "西周",
+    author: "佚名",
+    gradeGroup: "西周",
+    meaning: "思想一致，共同努力。指团结一致，合力做事。",
+    excerpt: "同心同德，是谓一体",
+  },
+  {
+    textRef: "chengyu-cy-782",
+    textRef: "chengyu-cy-782",
+    id: "cy-782",
+    title: "推陈出新",
+    source: "《周易·系辞上》",
+    dynasty: "西周",
+    author: "佚名",
+    gradeGroup: "西周",
+    meaning: "去掉旧事物的糟粕，取其精华，并使它向新的方向发展。指在继承的基础上创新。",
+    excerpt: "日新之谓盛德",
+  },
+  {
+    textRef: "chengyu-cy-783",
+    textRef: "chengyu-cy-783",
+    id: "cy-783",
+    title: "革故鼎新",
+    source: "《周易·杂卦》",
+    dynasty: "西周",
+    author: "佚名",
+    gradeGroup: "西周",
+    meaning: "去掉旧的，建立新的。指革除旧的，创立新的制度或方法。",
+    excerpt: "革，去故也；鼎，取新也",
+  }
 ];

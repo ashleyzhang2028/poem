@@ -701,6 +701,17 @@ body.reader-open .dock { display: none; }
   color: var(--ink-2);
 }
 
+/* 成语释义：与白话译文同一种「引文卡」的样式，只在成语页出现 */
+.meaning-box {
+  border-left: 3px solid var(--green);
+}
+.meaning-box h3 { margin-bottom: 6px; }
+.meaning-box p {
+  font-size: 14.5px;
+  line-height: 1.9;
+  color: var(--ink);
+}
+
 .trans-box p.trans-src {
   margin: 8px 0 0;
   font-size: 11.5px;

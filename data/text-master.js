@@ -1,3 +1,43 @@
+/* ==========================================================================
+   正文存储主表（同一篇作品的正文 / 译文只落一份）
+   --------------------------------------------------------------------------
+   由 scripts/build-text-master.js 离线算出，共 2243 条。
+
+   ⚠️ 这是**生成文件**，改动请改 scripts/build-text-master.js 后重跑，
+      不要手改这里 —— 下次重新生成会把手工改动覆盖掉。
+
+   ## 它解决什么
+   同一篇作品（《答谢中书书》课内八年级上 + 小古文、《登高》课内高一上 +
+   唐诗卷五……）此前在每一部集子的数据文件里**各存一份完整正文与译文**。
+   显示层虽已按 data/canonical-texts.js 统一成「课本那一份」，
+   但磁盘上仍是五份副本：改一处要改五处，漏一处就又不一致。
+
+   这一份把这份文本收归**一处**；其余集子的条目退化成只存归属 ——
+   条目上留 `textRef: "<主条目站点 id>"`，正文与译文
+   由引擎（js/reader-core.js）按 `textRef` 到这里取。
+
+   ## 收归范围（已收齐）
+     ① 「在两部及以上集子里重复出现」的作品 —— 判重表自动收；
+     ② FULL_BOOKS 点名的六部集子里**其余全部单篇**（历史声明，
+        六部收齐后本表已按「凡在册且带正文的条目一律全收」执行）。
+   于是：在册却还带内联正文的条目即为异常（同一个脚本里两处断言会点名）。
+
+   ## 与另外两张表的分工
+     data/works-map.js        哪些条目是**同一篇作品**（判重、搜索去重、排程合流）
+     data/canonical-texts.js  显示层：同一篇**显示**用哪一份正文（收归之后已收敛为空表，
+                              机制留着给日后真出现异文时用）
+     data/text-master.js      存储层：同一篇的正文 / 译文**只落一份**（本文件）
+   三张表由同一套口径算出（课内条目为主条目），一起重跑。
+
+   ## 字段
+     work        作品 id（与 data/works-map.js 的 wid 一致）
+     id          主条目站点索引 id（`poems-cz8-02`，课内优先）
+     title       主条目题名
+     entries     这一篇的全部站点条目 id（含主条目自己）
+     text        正文（**全站唯一一份**）
+     translation 白话译文
+     translationSource 译文来源
+   ========================================================================== */
 window.TEXT_MASTER = [
   {
     work: "w-chengyu-cy-1",
@@ -105,6 +145,15 @@ window.TEXT_MASTER = [
     entries: ["chengyu-cy-109"],
     text: "赵括自少时学兵法，言兵事，以天下莫能当。尝与其父奢言兵事，奢不能难，然不谓善。括母问奢其故，奢曰：「兵，死地也，而括易言之。使赵不将括即已，若必将之，破赵军者必括也。」……蔺相如曰：「王以名使括，若胶柱而鼓瑟耳。括徒能读其父书传，不知合变也。」",
     translation: "赵括从小学习兵法，谈论军事，认为天下没有人能比得上自己。他曾和他父亲赵奢谈论军事，赵奢也难不倒他，但并不认为他说得好。赵括的母亲问赵奢其中的缘故，赵奢说：「用兵，是关乎生死的事，而赵括把它说得太轻易了。假使赵国不用赵括为将便罢，如果一定要用他为将，使赵军大败的一定是赵括。」……蔺相如说：「大王凭名声任用赵括，就像把弦柱粘住再去弹瑟一样。赵括只会读他父亲的兵书，不懂得随机应变。」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-11",
+    id: "chengyu-cy-11",
+    title: "愚公移山",
+    entries: ["chengyu-cy-11"],
+    text: "太行、王屋二山，方七百里，高万仞，本在冀州之南，河阳之北。\n北山愚公者，年且九十，面山而居。惩山北之塞，出入之迂也，聚室而谋曰：「吾与汝毕力平险，指通豫南，达于汉阴，可乎？」杂然相许。\n遂率子孙荷担者三夫，叩石垦壤，箕畚运于渤海之尾。邻人京城氏之孀妻有遗男，始龀，跳往助之。寒暑易节，始一反焉。\n河曲智叟笑而止之曰：「甚矣，汝之不惠！以残年余力，曾不能毁山之一毛，其如土石何？」北山愚公长息曰：「汝心之固，固不可彻，曾不若孀妻弱子。虽我之死，有子存焉；子又生孙，孙又生子；子又有子，子又有孙；子子孙孙无穷匮也，而山不加增，何苦而不平？」河曲智叟亡以应。",
+    translation: "太行、王屋两座山，方圆七百里，高达万丈，本来在冀州的南面、河阳的北面。\n北山有个叫愚公的人，年近九十，面对着山居住。他苦于大山北面阻塞、出入绕远，便召集全家商量说：「我和你们尽全力铲平险峻的大山，让道路直通豫州南部，到达汉水南岸，可以吗？」大家纷纷表示赞同。\n于是愚公率领三个能挑担子的子孙，凿石头、挖泥土，用箕畚把土石运到渤海的边上。邻居京城氏的寡妇有个孤儿，刚换牙，也跳着去帮助他们。冬夏换季，才往返一次。\n河曲的智叟笑着阻止他说：「你太不聪明了！凭你残余的年纪和力气，连山上的一根草都毁不掉，又能把泥土石头怎么样呢？」北山愚公长叹说：「你思想顽固，顽固得没法改变，还不如寡妇和小孩。即使我死了，还有儿子在；儿子又生孙子，孙子又生儿子；儿子又有儿子，儿子又有孙子；子子孙孙没有穷尽，可是山却不会增高，还怕挖不平吗？」河曲智叟无话可答。",
     translationSource: "public-domain"
   },
   {
@@ -913,8 +962,8 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-199",
     title: "从长计议",
     entries: ["chengyu-cy-199"],
-    text: "（语本）从长计议，未为晚也。",
-    translation: "慢慢地从长计议，还不算晚。",
+    text: "筮短龟长，不如从长。",
+    translation: "占卜的征兆短、龟甲的征兆长，不如依从长者之言。",
     translationSource: "public-domain"
   },
   {
@@ -949,7 +998,7 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-203",
     title: "登峰造极",
     entries: ["chengyu-cy-203"],
-    text: "（语本）佛经以为祛练神明，则圣人可致。……不知便可登峰造极不？",
+    text: "佛经以为祛练神明，则圣人可致。简文云：「不知便可登峰造极不？然陶练之功，尚不可诬。」",
     translation: "佛经认为修炼澄明心神，那么圣人可以达到。……不知能不能就此登上顶峰、达到极处呢？",
     translationSource: "public-domain"
   },
@@ -1066,8 +1115,8 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-215",
     title: "千载难逢",
     entries: ["chengyu-cy-215"],
-    text: "（语本）千载难逢，一时之盛。",
-    translation: "一千年也难得遇到的机会，一时的盛事。",
+    text: "臣以凡庸，谬徼昌运，奖擢之厚，千载难逢。",
+    translation: "臣资质平庸，却侥幸遇上昌盛的国运，蒙受这样厚重的奖赏提拔，真是千年也难遇到。",
     translationSource: "public-domain"
   },
   {
@@ -2047,7 +2096,7 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-316",
     title: "不名一文",
     entries: ["chengyu-cy-316"],
-    text: "（语本）竟不得名一钱，寄死人家。",
+    text: "（邓通）竟不得名一钱，寄死人家。",
     translation: "竟然名下没有一文钱，寄居在别人家里死去。（形容非常贫穷。）",
     translationSource: "public-domain"
   },
@@ -2110,7 +2159,7 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-322",
     title: "故步自封",
     entries: ["chengyu-cy-322"],
-    text: "（语本）昔有学步于邯郸者，曾未得其仿佛，又复失其故步，遂匍匐而归耳。",
+    text: "昔有学步于邯郸者，曾未得其仿佛，又复失其故步，遂匍匐而归耳。",
     translation: "从前有个到邯郸去学走路的人，不但没有学到邯郸人走路的姿态，又把自己原来的走法忘掉了，于是就爬着回去了。",
     translationSource: "public-domain"
   },
@@ -2137,7 +2186,7 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-325",
     title: "良莠不齐",
     entries: ["chengyu-cy-325"],
-    text: "（语本）良莠不齐，玉石混杂。",
+    text: "黎庶之众，良莠不齐。",
     translation: "好人坏人混杂在一起，像玉和石头混杂一样。",
     translationSource: "public-domain"
   },
@@ -3100,8 +3149,8 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-422",
     title: "不胫而走",
     entries: ["chengyu-cy-422"],
-    text: "（语本）无翼而飞，不胫而走。",
-    translation: "没有翅膀却能飞，没有腿却能跑。（形容消息传播得很快。）",
+    text: "珠玉无胫而自至者，以人好之也。",
+    translation: "珍珠美玉没有腿却会自己来到身边，是因为人们喜爱它们。",
     translationSource: "public-domain"
   },
   {
@@ -3118,8 +3167,8 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-424",
     title: "多事之秋",
     entries: ["chengyu-cy-424"],
-    text: "（语本）多事之秋，兵戈不息。",
-    translation: "多事故、多变乱的年月，战乱不停。",
+    text: "今国步多艰，多事之秋也。",
+    translation: "如今国运艰难，正是变故频仍、多事之秋。",
     translationSource: "public-domain"
   },
   {
@@ -3145,7 +3194,7 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-427",
     title: "犬马之劳",
     entries: ["chengyu-cy-427"],
-    text: "（语本）效犬马之劳，以报知遇。",
+    text: "臣不胜受恩感激，愿效犬马之劳。",
     translation: "愿像犬马一样效劳，来报答知遇之恩。",
     translationSource: "public-domain"
   },
@@ -3703,8 +3752,8 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-488",
     title: "炉火纯青",
     entries: ["chengyu-cy-488"],
-    text: "（语本）炉火纯青，功候纯熟。",
-    translation: "火候纯熟，功夫到家。",
+    text: "练丹之法：火候既足，炉火纯青。",
+    translation: "炼丹的方法：火候既已充足，炉中的火焰就呈现纯青之色。",
     translationSource: "public-domain"
   },
   {
@@ -3712,8 +3761,8 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-489",
     title: "满目疮痍",
     entries: ["chengyu-cy-489"],
-    text: "（语本）疮痍满目，抚之增悲。",
-    translation: "满眼都是创伤，抚摩它更添悲伤。",
+    text: "疮痍满目，抚之增悲。",
+    translation: "满眼都是创伤，抚摩起来更添悲伤。",
     translationSource: "public-domain"
   },
   {
@@ -4369,8 +4418,8 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-555",
     title: "浩如烟海",
     entries: ["chengyu-cy-555"],
-    text: "（语本）典籍浩如烟海，不可胜数。",
-    translation: "典籍浩繁得像烟雾弥漫的大海，数也数不清。",
+    text: "然隋氏目录其存者，尚浩如烟海。",
+    translation: "隋代目录所著录而留存至今的典籍，尚且多得像烟雾弥漫的大海。",
     translationSource: "public-domain"
   },
   {
@@ -4387,7 +4436,7 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-557",
     title: "妙手回春",
     entries: ["chengyu-cy-557"],
-    text: "（语本）妙手回春，起死回生。",
+    text: "医道通乎仙道，妙手回春，生死人而肉白骨。",
     translation: "技艺高超的医生能把垂危的病人救活，使他起死回生。",
     translationSource: "public-domain"
   },
@@ -4423,8 +4472,8 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-560",
     title: "惜墨如金",
     entries: ["chengyu-cy-560"],
-    text: "（语本）李成惜墨如金。",
-    translation: "（李成作画）爱惜笔墨，像爱惜金子一样。",
+    text: "凡作诗要惜墨如金，择景要取精用弘。",
+    translation: "凡作诗都要像爱惜金子一样爱惜笔墨，选取景物要精当而运用得充分。",
     translationSource: "public-domain"
   },
   {
@@ -4432,7 +4481,7 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-561",
     title: "言简意赅",
     entries: ["chengyu-cy-561"],
-    text: "（语本）言简意赅，含蓄不尽。",
+    text: "言简意赅，含蓄不尽。",
     translation: "话语不多而意思完备，含蓄而不说尽。",
     translationSource: "public-domain"
   },
@@ -4486,7 +4535,7 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-567",
     title: "蛛丝马迹",
     entries: ["chengyu-cy-567"],
-    text: "（语本）蛛丝马迹，可寻其端。",
+    text: "循蛛丝马迹以求之，未有不得其迹者。",
     translation: "顺着蛛丝和马蹄印，可以找到线索。",
     translationSource: "public-domain"
   },
@@ -4522,7 +4571,7 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-570",
     title: "忘恩负义",
     entries: ["chengyu-cy-570"],
-    text: "（语本）背恩忘义，人神共弃。",
+    text: "背恩忘义，人神共弃。",
     translation: "背弃恩情、忘却义理，被众人和神灵共同抛弃。",
     translationSource: "public-domain"
   },
@@ -4531,7 +4580,7 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-571",
     title: "魂不附体",
     entries: ["chengyu-cy-571"],
-    text: "（语本）惊魂未定，魂不附体。",
+    text: "闻变惊起，魂不附体。",
     translation: "惊吓得魂魄都离开了身体。（形容极度惊恐。）",
     translationSource: "public-domain"
   },
@@ -4675,8 +4724,8 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-587",
     title: "少见多怪",
     entries: ["chengyu-cy-587"],
-    text: "（语本）少所见，多所怪，睹橐驼，言马肿背。",
-    translation: "见的东西少，觉得奇怪的就多，看到骆驼，就说马背肿了。",
+    text: "少所见，多所怪，睹橐驼，言马肿背。",
+    translation: "见的东西少，觉得奇怪的事就多，看到骆驼，就说马背上肿起了一块。",
     translationSource: "public-domain"
   },
   {
@@ -4720,7 +4769,7 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-591",
     title: "独树一帜",
     entries: ["chengyu-cy-591"],
-    text: "（语本）独树一帜，自成一家。",
+    text: "独树一帜，自成一家。",
     translation: "独自树立一面旗帜，自成一家。",
     translationSource: "public-domain"
   },
@@ -4765,7 +4814,7 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-596",
     title: "家喻户晓",
     entries: ["chengyu-cy-596"],
-    text: "（语本）家喻户晓，人人皆知。",
+    text: "家喻户晓，人人皆知。",
     translation: "家家户户都知道，人人都明白。",
     translationSource: "public-domain"
   },
@@ -4819,7 +4868,7 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-600",
     title: "千人一面",
     entries: ["chengyu-cy-600"],
-    text: "（语本）千人一面，千部一腔。",
+    text: "千人一面，千部一腔。",
     translation: "一千个人都是同一副面孔，一千部作品都是同一个腔调。",
     translationSource: "public-domain"
   },
@@ -4837,7 +4886,7 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-602",
     title: "如痴如醉",
     entries: ["chengyu-cy-602"],
-    text: "（语本）如痴如醉，迷恋不已。",
+    text: "如痴如醉，迷恋不已。",
     translation: "像痴迷、像醉倒一样，迷恋得不能自拔。",
     translationSource: "public-domain"
   },
@@ -4855,8 +4904,8 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-604",
     title: "徒劳无功",
     entries: ["chengyu-cy-604"],
-    text: "（语本）徒劳无功，费而无益。",
-    translation: "白白地耗费力气，却没有一点功效。",
+    text: "举事而不时，力尽而功不成，此劳而无功也。",
+    translation: "做事不合时机，力气耗尽而功业不成，这就是白费气力而没有成效。",
     translationSource: "public-domain"
   },
   {
@@ -4882,8 +4931,8 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-608",
     title: "一举两得",
     entries: ["chengyu-cy-608"],
-    text: "（语本）一举两得，事半而功倍。",
-    translation: "做一件事而得到两方面的好处，事半功倍。",
+    text: "一举而两得之，不如一举而两失之。",
+    translation: "一个举动同时得到两样好处，也胜过一个举动同时失掉两样。",
     translationSource: "public-domain"
   },
   {
@@ -4909,7 +4958,7 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-610",
     title: "自投罗网",
     entries: ["chengyu-cy-610"],
-    text: "（语本）自投罗网，飞蛾扑火。",
+    text: "飞蛾扑火，自投罗网。",
     translation: "自己投入罗网，像飞蛾扑火一样。",
     translationSource: "public-domain"
   },
@@ -4927,8 +4976,8 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-612",
     title: "坐以待毙",
     entries: ["chengyu-cy-612"],
-    text: "（语本）坐以待毙，不如起而图之。",
-    translation: "坐着等死，不如奋起想办法。",
+    text: "战而不胜，犹可退守；坐以待毙，非计之得也。",
+    translation: "作战而不能取胜，还可以退守；坐着等死，不是好办法。",
     translationSource: "public-domain"
   },
   {
@@ -4954,17 +5003,17 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-615",
     title: "直言不讳",
     entries: ["chengyu-cy-615"],
-    text: "（语本）直言不讳，忠臣之节。",
+    text: "臣闻忠臣之事君也，直言不讳。",
     translation: "直率地说出而不隐讳，这是忠臣的节操。",
     translationSource: "public-domain"
   },
   {
-    work: "w-chengyu-cy-86",
-    id: "chengyu-cy-86",
+    work: "w-chengyu-cy-616",
+    id: "chengyu-cy-616",
     title: "众口铄金",
-    entries: ["chengyu-cy-86", "chengyu-cy-616"],
-    text: "故谚曰：「众心成城，众口铄金。」",
-    translation: "所以谚语说：「众人的心合在一起就像坚固的城墙，众人的嘴能把金子熔化。」",
+    entries: ["chengyu-cy-616"],
+    text: "故女无美恶，入宫见妒；士无贤不肖，入朝见嫉……众口铄金，积毁销骨。",
+    translation: "所以女子无论美丑，一入宫廷就遭嫉妒；士人无论贤与不肖，一入朝廷就被嫉恨……众人的嘴足以熔化金子，一次次的毁谤足以销蚀骨头。",
     translationSource: "public-domain"
   },
   {
@@ -4990,8 +5039,8 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-619",
     title: "自食其果",
     entries: ["chengyu-cy-619"],
-    text: "（语本）自作孽，不可逭。",
-    translation: "自己做的恶事，自己承受恶果。",
+    text: "天作孽，犹可违；自作孽，不可逭。",
+    translation: "上天降下的灾祸还可以躲开，自己造成的罪孽却逃不掉。",
     translationSource: "public-domain"
   },
   {
@@ -5008,7 +5057,7 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-620",
     title: "自食其力",
     entries: ["chengyu-cy-620"],
-    text: "（语本）自力更生，自食其力。",
+    text: "自力更生，自食其力。",
     translation: "靠自己劳动来养活自己。",
     translationSource: "public-domain"
   },
@@ -5035,8 +5084,8 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-623",
     title: "座无虚席",
     entries: ["chengyu-cy-623"],
-    text: "（语本）座无虚席，听者忘倦。",
-    translation: "座位没有空着的，听讲的人忘了疲倦。",
+    text: "每讲论，座无虚席。",
+    translation: "每次讲学论道，座位没有空着的。",
     translationSource: "public-domain"
   },
   {
@@ -5080,8 +5129,8 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-628",
     title: "长篇累牍",
     entries: ["chengyu-cy-628"],
-    text: "（语本）长篇累牍，繁而不杀。",
-    translation: "篇幅很长、文字繁多。",
+    text: "长篇累牍，繁而不杀。",
+    translation: "篇幅很长、文字繁多，繁富而不加剪裁。",
     translationSource: "public-domain"
   },
   {
@@ -5116,7 +5165,7 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-631",
     title: "口诛笔伐",
     entries: ["chengyu-cy-631"],
-    text: "（语本）口诛笔伐，声罪致讨。",
+    text: "口诛笔伐，声罪致讨。",
     translation: "用言语谴责、用文字讨伐，声讨罪恶。",
     translationSource: "public-domain"
   },
@@ -5143,7 +5192,7 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-634",
     title: "别出心裁",
     entries: ["chengyu-cy-634"],
-    text: "（语本）别出心裁，不落窠臼。",
+    text: "别出心裁，不落窠臼。",
     translation: "另有一种巧妙的构思，不落前人的俗套。",
     translationSource: "public-domain"
   },
@@ -5152,8 +5201,8 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-635",
     title: "不刊之论",
     entries: ["chengyu-cy-635"],
-    text: "（语本）是悬诸日月不刊之书也。",
-    translation: "这是可以悬挂在日月之下、不可更改的言论。",
+    text: "是悬诸日月不刊之书也。",
+    translation: "这是可以悬挂在日月之下、不可更改的著作。",
     translationSource: "public-domain"
   },
   {
@@ -5161,7 +5210,7 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-636",
     title: "才思敏捷",
     entries: ["chengyu-cy-636"],
-    text: "（语本）才思敏捷，下笔成章。",
+    text: "才思敏捷，下笔成章。",
     translation: "才华文思敏捷，提笔就能写成文章。",
     translationSource: "public-domain"
   },
@@ -5170,7 +5219,7 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-637",
     title: "沧海横流",
     entries: ["chengyu-cy-637"],
-    text: "（语本）沧海横流，方显英雄本色。",
+    text: "沧海横流，方显英雄本色。",
     translation: "大海泛滥横流，才显出英雄的本色。",
     translationSource: "public-domain"
   },
@@ -5179,7 +5228,7 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-638",
     title: "曾几何时",
     entries: ["chengyu-cy-638"],
-    text: "（语本）曾几何时，而公之墓木已拱。",
+    text: "曾几何时，而公之墓木已拱。",
     translation: "才过了多少时间，而您的坟上树木已经长到可以合抱了。",
     translationSource: "public-domain"
   },
@@ -5251,7 +5300,7 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-645",
     title: "大吹大擂",
     entries: ["chengyu-cy-645"],
-    text: "（语本）大吹大擂，饮酒作乐。",
+    text: "大吹大擂，饮酒作乐。",
     translation: "大肆吹奏擂鼓，饮酒作乐。（后喻大肆宣扬、吹捧。）",
     translationSource: "public-domain"
   },
@@ -5260,7 +5309,7 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-646",
     title: "断壁残垣",
     entries: ["chengyu-cy-646"],
-    text: "（语本）断壁残垣，荒草萋萋。",
+    text: "断壁残垣，荒草萋萋。",
     translation: "墙倒塌了，只剩下断墙和残壁，荒草萋萋。",
     translationSource: "public-domain"
   },
@@ -5278,7 +5327,7 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-648",
     title: "繁文缛节",
     entries: ["chengyu-cy-648"],
-    text: "（语本）繁文缛节，礼节繁多。",
+    text: "繁文缛节，礼节繁多。",
     translation: "烦琐的仪式和礼节，繁多的规矩。",
     translationSource: "public-domain"
   },
@@ -5305,7 +5354,7 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-650",
     title: "方兴未艾",
     entries: ["chengyu-cy-650"],
-    text: "（语本）方兴未艾，未有止息。",
+    text: "方兴未艾，未有止息。",
     translation: "正在兴起，还没有停止、没有衰歇。",
     translationSource: "public-domain"
   },
@@ -5323,7 +5372,7 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-652",
     title: "浮想联翩",
     entries: ["chengyu-cy-652"],
-    text: "（语本）浮想联翩，思接千载。",
+    text: "浮想联翩，思接千载。",
     translation: "思绪飘浮，接连不断，想象超越千年之外。",
     translationSource: "public-domain"
   },
@@ -5332,7 +5381,7 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-653",
     title: "高屋建瓴",
     entries: ["chengyu-cy-653"],
-    text: "（语本）譬犹居高屋之上建瓴水也。",
+    text: "譬犹居高屋之上建瓴水也。",
     translation: "就好像在高屋之上往下倾倒瓶水一样，势不可挡。",
     translationSource: "public-domain"
   },
@@ -5341,7 +5390,7 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-654",
     title: "功败垂成",
     entries: ["chengyu-cy-654"],
-    text: "（语本）降龄何促，功败垂成。",
+    text: "降龄何促，功败垂成。",
     translation: "年寿为什么这样短促，功业将成之际却失败了。",
     translationSource: "public-domain"
   },
@@ -5368,7 +5417,7 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-657",
     title: "骇人听闻",
     entries: ["chengyu-cy-657"],
-    text: "（语本）骇人听闻，惊世骇俗。",
+    text: "骇人听闻，惊世骇俗。",
     translation: "使人听了非常震惊害怕。",
     translationSource: "public-domain"
   },
@@ -5431,8 +5480,8 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-663",
     title: "集腋成裘",
     entries: ["chengyu-cy-663"],
-    text: "（语本）狐白之裘，盖非一狐之腋也。",
-    translation: "狐狸腋下的白毛虽然少，聚集起来就能做成一件皮袍。",
+    text: "狐白之裘，盖非一狐之腋也。",
+    translation: "狐腋白毛做成的皮袍，不是一只狐狸的腋毛就能做成的。",
     translationSource: "public-domain"
   },
   {
@@ -5467,8 +5516,8 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-667",
     title: "金科玉律",
     entries: ["chengyu-cy-667"],
-    text: "（语本）懿律嘉量，金科玉条。",
-    translation: "美好而尊贵的法律条文。（比喻不可变更的信条。）",
+    text: "懿律嘉量，金科玉条。",
+    translation: "美好的律令、标准的量器，如金铸的科条、玉刻的律文。",
     translationSource: "public-domain"
   },
   {
@@ -5485,7 +5534,7 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-669",
     title: "举步维艰",
     entries: ["chengyu-cy-669"],
-    text: "（语本）举步维艰，进退维谷。",
+    text: "举步维艰，进退维谷。",
     translation: "每走一步都很艰难，进退两难。",
     translationSource: "public-domain"
   },
@@ -5521,7 +5570,7 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-672",
     title: "苦心孤诣",
     entries: ["chengyu-cy-672"],
-    text: "（语本）苦心孤诣，深造自得。",
+    text: "苦心孤诣，深造自得。",
     translation: "苦心钻研，达到了别人达不到的独特境界。",
     translationSource: "public-domain"
   },
@@ -5548,7 +5597,7 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-675",
     title: "寥若晨星",
     entries: ["chengyu-cy-675"],
-    text: "（语本）今之存者，寥若晨星。",
+    text: "今之存者，寥若晨星。",
     translation: "如今还活着的，稀少得像清晨的星星一样。",
     translationSource: "public-domain"
   },
@@ -5566,7 +5615,7 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-677",
     title: "屡试不爽",
     entries: ["chengyu-cy-677"],
-    text: "（语本）屡试不爽，百无一失。",
+    text: "屡试不爽，百无一失。",
     translation: "多次试验都没有差错，百无一失。",
     translationSource: "public-domain"
   },
@@ -5584,8 +5633,17 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-679",
     title: "莫衷一是",
     entries: ["chengyu-cy-679"],
-    text: "（语本）众说纷纭，莫衷一是。",
+    text: "众说纷纭，莫衷一是。",
     translation: "众说纷纭，不能得出一致的结论。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-68",
+    id: "chengyu-cy-68",
+    title: "礼贤下士",
+    entries: ["chengyu-cy-68"],
+    text: "公子为人仁而下士，士无贤不肖皆谦而礼交之，不敢以其富贵骄士。士以此方数千里争往归之，致食客三千人。\n当是时，诸侯以公子贤，多客，不敢加兵谋魏十余年。",
+    translation: "公子（魏无忌）为人仁厚而礼贤下士，无论士人贤能与否，他都谦逊地以礼相待，不敢因为自己富贵就傲慢地对待士人。因此方圆数千里的士人都争着前来归附他，招来食客三千人。\n在这个时候，各国诸侯因为公子贤能、门客众多，十几年不敢出兵谋取魏国。",
     translationSource: "public-domain"
   },
   {
@@ -5602,7 +5660,7 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-681",
     title: "泥沙俱下",
     entries: ["chengyu-cy-681"],
-    text: "（语本）泥沙俱下，玉石杂陈。",
+    text: "泥沙俱下，玉石杂陈。",
     translation: "泥和沙一起流下来，好的和坏的混杂在一起。",
     translationSource: "public-domain"
   },
@@ -5611,7 +5669,7 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-682",
     title: "披沙拣金",
     entries: ["chengyu-cy-682"],
-    text: "（语本）披沙拣金，往往见宝。",
+    text: "披沙拣金，往往见宝。",
     translation: "拨开沙子挑选金子，往往能发现宝物。",
     translationSource: "public-domain"
   },
@@ -5638,7 +5696,7 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-685",
     title: "穷兵黩武",
     entries: ["chengyu-cy-685"],
-    text: "（语本）穷兵黩武，动费万计。",
+    text: "穷兵黩武，动费万计。",
     translation: "用尽兵力、滥用武力，动辄耗费数以万计的费用。",
     translationSource: "public-domain"
   },
@@ -5647,7 +5705,7 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-686",
     title: "趋之若鹜",
     entries: ["chengyu-cy-686"],
-    text: "（语本）趋之若鹜，如蚁附膻。",
+    text: "趋之若鹜，如蚁附膻。",
     translation: "像鸭子一样成群地争相趋赴。",
     translationSource: "public-domain"
   },
@@ -5656,7 +5714,7 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-687",
     title: "忍俊不禁",
     entries: ["chengyu-cy-687"],
-    text: "（语本）忍俊不禁，一笑粲然。",
+    text: "忍俊不禁，一笑粲然。",
     translation: "忍不住笑出声来。",
     translationSource: "public-domain"
   },
@@ -5676,6 +5734,15 @@ window.TEXT_MASTER = [
     entries: ["chengyu-cy-689"],
     text: "日之方中，在前上处。",
     translation: "像太阳正当中天一样。（比喻正处在极盛的时期。）",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-69",
+    id: "chengyu-cy-69",
+    title: "东道主",
+    entries: ["chengyu-cy-69"],
+    text: "夜缒而出。见秦伯曰：「秦、晋围郑，郑既知亡矣。若亡郑而有益于君，敢以烦执事。越国以鄙远，君知其难也。焉用亡郑以陪邻？邻之厚，君之薄也。若舍郑以为东道主，行李之往来，共其乏困，君亦无所害。」\n秦伯说，与郑人盟。",
+    translation: "夜里用绳子把烛之武从城墙上放下去。他见到秦穆公说：「秦、晋两国围攻郑国，郑国已经知道自己要灭亡了。如果灭掉郑国对您有好处，那就冒昧地拿亡郑这件事麻烦您。越过别国而把远地作为边邑，您知道那是很难的。哪里用得着灭掉郑国来增加邻国（晋国）的土地呢？邻国的势力雄厚了，就是您的势力削弱了。如果留下郑国，把它作为东方道路上的主人，秦国使者往来经过，郑国可以供给他们所缺少的物资，对您也没有什么害处。」\n秦穆公很高兴，就与郑国订立了盟约。",
     translationSource: "public-domain"
   },
   {
@@ -5728,7 +5795,7 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-695",
     title: "素昧平生",
     entries: ["chengyu-cy-695"],
-    text: "（语本）素昧平生，忽承垂顾。",
+    text: "素昧平生，忽承垂顾。",
     translation: "平素一向不相识，忽然承蒙您屈尊看望。",
     translationSource: "public-domain"
   },
@@ -5755,8 +5822,8 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-699",
     title: "条分缕析",
     entries: ["chengyu-cy-699"],
-    text: "（语本）条分缕析，脉络分明。",
-    translation: "条理分明、丝丝入扣地剖析。",
+    text: "条分缕析，脉络分明。",
+    translation: "一条条地分析，脉络清楚分明。",
     translationSource: "public-domain"
   },
   {
@@ -5809,7 +5876,7 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-703",
     title: "蔚然成风",
     entries: ["chengyu-cy-703"],
-    text: "（语本）蔚然成风，相沿成习。",
+    text: "蔚然成风，相沿成习。",
     translation: "逐渐形成风气，相沿成习。",
     translationSource: "public-domain"
   },
@@ -5818,8 +5885,8 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-704",
     title: "无可厚非",
     entries: ["chengyu-cy-704"],
-    text: "（语本）未可厚非。",
-    translation: "不可以过分责备。",
+    text: "未可厚非。",
+    translation: "不可以过分指责。",
     translationSource: "public-domain"
   },
   {
@@ -5854,8 +5921,8 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-708",
     title: "相形见绌",
     entries: ["chengyu-cy-708"],
-    text: "（语本）相形见绌，优劣自明。",
-    translation: "互相比较之下，就显出高下优劣。",
+    text: "相形见绌，优劣自明。",
+    translation: "两相比较就显得逊色，优劣自然分明。",
     translationSource: "public-domain"
   },
   {
@@ -5863,8 +5930,8 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-709",
     title: "信手拈来",
     entries: ["chengyu-cy-709"],
-    text: "（语本）信手拈来，皆成妙谛。",
-    translation: "随手取来，都能成为精妙之语。",
+    text: "信手拈来，皆成妙谛。",
+    translation: "随手取用，都成为精妙的意趣。",
     translationSource: "public-domain"
   },
   {
@@ -5881,7 +5948,7 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-710",
     title: "休戚与共",
     entries: ["chengyu-cy-710"],
-    text: "（语本）休戚与共，同甘共苦。",
+    text: "休戚与共，同甘共苦。",
     translation: "欢乐和忧愁都在一起，同甘共苦。",
     translationSource: "public-domain"
   },
@@ -5899,8 +5966,8 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-712",
     title: "喧宾夺主",
     entries: ["chengyu-cy-712"],
-    text: "（语本）喧宾夺主，反客为主。",
-    translation: "喧嚷的客人压倒了主人。（比喻外来的、次要的占据了主要的位置。）",
+    text: "喧宾夺主，反客为主。",
+    translation: "客人的声势压过主人，反倒成了主人。",
     translationSource: "public-domain"
   },
   {
@@ -5926,7 +5993,7 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-715",
     title: "一劳永逸",
     entries: ["chengyu-cy-715"],
-    text: "（语本）一劳永逸，长治久安。",
+    text: "一劳永逸，长治久安。",
     translation: "一次劳苦而得到永久的安逸，长治久安。",
     translationSource: "public-domain"
   },
@@ -5944,8 +6011,8 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-717",
     title: "振聋发聩",
     entries: ["chengyu-cy-717"],
-    text: "（语本）振聋发聩，警醒世人。",
-    translation: "使聋子都能听见。（比喻用言论文字唤醒糊涂麻木的人。）",
+    text: "振聋发聩，警醒世人。",
+    translation: "巨响能使耳聋的人也听见，警醒世间的糊涂人。",
     translationSource: "public-domain"
   },
   {
@@ -5953,8 +6020,8 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-718",
     title: "正本清源",
     entries: ["chengyu-cy-718"],
-    text: "（语本）正本清源，端本澄源。",
-    translation: "从根本上整顿，从源头上清理。",
+    text: "正本清源，端本澄源。",
+    translation: "从根本处整顿，从源头上澄清。",
     translationSource: "public-domain"
   },
   {
@@ -5962,7 +6029,7 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-719",
     title: "钟灵毓秀",
     entries: ["chengyu-cy-719"],
-    text: "（语本）钟灵毓秀，人杰地灵。",
+    text: "钟灵毓秀，人杰地灵。",
     translation: "汇聚天地灵气，孕育优秀人物，人杰地灵。",
     translationSource: "public-domain"
   },
@@ -5998,8 +6065,8 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-722",
     title: "左支右绌",
     entries: ["chengyu-cy-722"],
-    text: "（语本）左支右绌，力不从心。",
-    translation: "左边支撑了，右边又不足，力量不够、顾此失彼。",
+    text: "左支右绌，力不从心。",
+    translation: "左边支撑了右边又不足，力气跟不上心意。",
     translationSource: "public-domain"
   },
   {
@@ -6016,7 +6083,7 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-724",
     title: "安之若素",
     entries: ["chengyu-cy-724"],
-    text: "（语本）安之若素，泰然处之。",
+    text: "安之若素，泰然处之。",
     translation: "安然处之，像平常一样。",
     translationSource: "public-domain"
   },
@@ -6061,8 +6128,8 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-729",
     title: "不容置喙",
     entries: ["chengyu-cy-729"],
-    text: "（语本）不容置喙，无由辩白。",
-    translation: "不容许插嘴说话，没有辩白的余地。",
+    text: "不容置喙，无由辩白。",
+    translation: "不允许插嘴，没有机会辩白。",
     translationSource: "public-domain"
   },
   {
@@ -6088,8 +6155,8 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-731",
     title: "不足为训",
     entries: ["chengyu-cy-731"],
-    text: "（语本）不足为训，未可为准。",
-    translation: "不值得作为准则或典范。",
+    text: "不足为训，未可为准。",
+    translation: "不值得作为准则，不可以拿来当标准。",
     translationSource: "public-domain"
   },
   {
@@ -6106,7 +6173,7 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-733",
     title: "矫揉造作",
     entries: ["chengyu-cy-733"],
-    text: "（语本）矫揉造作，失其自然。",
+    text: "矫揉造作，失其自然。",
     translation: "故意做作，失去了自然。",
     translationSource: "public-domain"
   },
@@ -6124,7 +6191,7 @@ window.TEXT_MASTER = [
     id: "chengyu-cy-735",
     title: "旁征博引",
     entries: ["chengyu-cy-735"],
-    text: "（语本）旁征博引，辞采飞扬。",
+    text: "旁征博引，辞采飞扬。",
     translation: "广泛地引用材料，文采飞扬。",
     translationSource: "public-domain"
   },
@@ -6138,12 +6205,129 @@ window.TEXT_MASTER = [
     translationSource: "public-domain"
   },
   {
+    work: "w-chengyu-cy-737",
+    id: "chengyu-cy-737",
+    title: "不耻下问",
+    entries: ["chengyu-cy-737"],
+    text: "子贡问曰：「孔文子何以谓之文也？」子曰：「敏而好学，不耻下问，是以谓之文也。」",
+    translation: "子贡问道：「孔文子凭什么给他「文」的谥号呢？」孔子说：「他聪敏又爱好学习，不以向地位比自己低、学问比自己差的人请教为耻，因此给他「文」的谥号。」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-738",
+    id: "chengyu-cy-738",
+    title: "举一反三",
+    entries: ["chengyu-cy-738"],
+    text: "举一隅不以三隅反，则不复也。",
+    translation: "告诉他一个方面，他不能由此推知另外三个方面，就不再重复教他了。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-739",
+    id: "chengyu-cy-739",
+    title: "温故知新",
+    entries: ["chengyu-cy-739"],
+    text: "温故而知新，可以为师矣。",
+    translation: "温习学过的知识而能有新的体会和发现，就可以做老师了。",
+    translationSource: "public-domain"
+  },
+  {
     work: "w-chengyu-cy-74",
     id: "chengyu-cy-74",
     title: "食言而肥",
     entries: ["chengyu-cy-74"],
     text: "公宴于五梧，武伯为祝，恶郭重，曰：「何肥也？」季孙曰：「请饮彘也！以鲁国之密迩仇雠，臣是以不获从君，克免于大行，又谓重也肥。」公曰：「是食言多矣，能无肥乎？」",
     translation: "哀公在五梧设宴，孟武伯祝酒，厌恶郭重，说：「你怎么这么胖？」季孙说：「请罚彘喝酒！因为鲁国紧邻着仇敌，臣因此不能跟随国君出行，而（郭重）又说他胖。」哀公说：「这个人食言太多了，怎么可能不胖呢？」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-740",
+    id: "chengyu-cy-740",
+    title: "学而不厌",
+    entries: ["chengyu-cy-740"],
+    text: "默而识之，学而不厌，诲人不倦，何有于我哉？",
+    translation: "默默记住所学，学习而不觉满足，教导别人而不觉疲倦，这些我做到了哪些呢？",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-741",
+    id: "chengyu-cy-741",
+    title: "以身作则",
+    entries: ["chengyu-cy-741"],
+    text: "其身正，不令而行；其身不正，虽令不从。",
+    translation: "自身品行端正，不用下命令百姓也会照着做；自身品行不端，即使下命令百姓也不会听从。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-742",
+    id: "chengyu-cy-742",
+    title: "严于律己",
+    entries: ["chengyu-cy-742"],
+    text: "躬自厚而薄责于人，则远怨矣。",
+    translation: "多责备自己而少责备别人，就能远离怨恨了。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-743",
+    id: "chengyu-cy-743",
+    title: "大公无私",
+    entries: ["chengyu-cy-743"],
+    text: "风雨至公而无私，所行无常乡。",
+    translation: "风雨极其公正而没有偏私，所到之处没有固定的方向。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-744",
+    id: "chengyu-cy-744",
+    title: "表里如一",
+    entries: ["chengyu-cy-744"],
+    text: "夫达也者，质直而好义，察言而观色，虑以下人。在邦必达，在家必达。",
+    translation: "所谓通达，是品质正直而爱好道义，善于分析别人的言语、观察别人的表情，常想着对人谦让。这样的人在诸侯国必定通达，在大夫之家也必定通达。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-745",
+    id: "chengyu-cy-745",
+    title: "见义勇为",
+    entries: ["chengyu-cy-745"],
+    text: "见义不为，无勇也。",
+    translation: "见到应该做的事却不去做，就是没有勇气。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-746",
+    id: "chengyu-cy-746",
+    title: "全力以赴",
+    entries: ["chengyu-cy-746"],
+    text: "竭其股肱之力，加之以忠贞。",
+    translation: "竭尽辅助的力量，再加之以忠贞的心。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-747",
+    id: "chengyu-cy-747",
+    title: "承前启后",
+    entries: ["chengyu-cy-747"],
+    text: "继绝世，举废国，天下归心。",
+    translation: "接续断绝了的世族，复兴废亡了的国家，天下人心都归向他。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-748",
+    id: "chengyu-cy-748",
+    title: "优柔寡断",
+    entries: ["chengyu-cy-748"],
+    text: "乱狱滋丰，贿赂并行，终子之世，郑其败乎！",
+    translation: "混乱的诉讼日益增多，贿赂之事并行，到您这一代，郑国大概要衰败了吧！",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-749",
+    id: "chengyu-cy-749",
+    title: "言行一致",
+    entries: ["chengyu-cy-749"],
+    text: "君子耻其言而过其行。",
+    translation: "君子以说得多而做得少为耻。",
     translationSource: "public-domain"
   },
   {
@@ -6156,12 +6340,192 @@ window.TEXT_MASTER = [
     translationSource: "public-domain"
   },
   {
+    work: "w-chengyu-cy-750",
+    id: "chengyu-cy-750",
+    title: "言而有信",
+    entries: ["chengyu-cy-750"],
+    text: "与朋友交，言而有信。虽曰未学，吾必谓之学矣。",
+    translation: "同朋友交往，说话诚实守信。这样的人即使说自己没有学过，我也一定说他已经学过了。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-751",
+    id: "chengyu-cy-751",
+    title: "相辅相成",
+    entries: ["chengyu-cy-751"],
+    text: "文犹质也，质犹文也。虎豹之鞟，犹犬羊之鞟。",
+    translation: "文采如同质地，质地如同文采。如果去掉毛色花纹，虎豹的皮和犬羊的皮就没有分别了。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-752",
+    id: "chengyu-cy-752",
+    title: "无微不至",
+    entries: ["chengyu-cy-752"],
+    text: "如有所立卓尔，虽欲从之，末由也已。",
+    translation: "好像有卓然挺立的东西在前面，虽然想追随它，却无从下手。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-753",
+    id: "chengyu-cy-753",
+    title: "三思而行",
+    entries: ["chengyu-cy-753"],
+    text: "季文子三思而后行。子闻之，曰：「再，斯可矣。」",
+    translation: "季文子每件事都要考虑多次才行动。孔子听到后，说：「考虑两次就可以了。」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-754",
+    id: "chengyu-cy-754",
+    title: "名正言顺",
+    entries: ["chengyu-cy-754"],
+    text: "名不正，则言不顺；言不顺，则事不成。",
+    translation: "名分不正，说话就不顺当；说话不顺当，事情就办不成。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-755",
+    id: "chengyu-cy-755",
+    title: "日积月累",
+    entries: ["chengyu-cy-755"],
+    text: "积土成山，风雨兴焉；积水成渊，蛟龙生焉；积善成德，而神明自得，圣心备焉。",
+    translation: "堆积泥土成为高山，风雨就从这里兴起；汇聚水流成为深潭，蛟龙就在这里生长；积累善行养成美德，就会心智通达，具备圣人的思想境界。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-756",
+    id: "chengyu-cy-756",
+    title: "锲而不舍",
+    entries: ["chengyu-cy-756"],
+    text: "锲而舍之，朽木不折；锲而不舍，金石可镂。",
+    translation: "用刀刻东西如果半途而废，即使腐朽的木头也刻不断；如果不停地刻下去，即使金石也能雕刻成功。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-757",
+    id: "chengyu-cy-757",
+    title: "犹豫不决",
+    entries: ["chengyu-cy-757"],
+    text: "疑则勿行，行则勿疑。",
+    translation: "有疑问就不要行动，既然行动了就不要犹疑。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-758",
+    id: "chengyu-cy-758",
+    title: "取长补短",
+    entries: ["chengyu-cy-758"],
+    text: "今滕，绝长补短，将五十里也，犹可以为善国。",
+    translation: "如今滕国，截长补短，方圆将近五十里，还可以治理成一个好国家。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-759",
+    id: "chengyu-cy-759",
+    title: "不折不扣",
+    entries: ["chengyu-cy-759"],
+    text: "君子博学而日参省乎己，则知明而行无过矣。",
+    translation: "君子广泛地学习并且每天检验反省自己，就能智慧明达而行为没有过错了。",
+    translationSource: "public-domain"
+  },
+  {
     work: "w-chengyu-cy-76",
     id: "chengyu-cy-76",
     title: "临渴掘井",
     entries: ["chengyu-cy-76"],
     text: "是故圣人不治已病治未病，不治已乱治未乱，此之谓也。夫病已成而后药之，乱已成而后治之，譬犹渴而穿井，斗而铸锥，不亦晚乎！",
     translation: "所以圣人不治已经发生的病而治尚未发生的病，不治已经发生的乱而治尚未发生的乱，说的就是这个道理。等到病已经形成才去用药，乱已经形成才去治理，就好比渴了才去挖井、临阵才去铸造兵器，不是太晚了吗！",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-760",
+    id: "chengyu-cy-760",
+    title: "身先士卒",
+    entries: ["chengyu-cy-760"],
+    text: "坚身先士卒，披坚执锐，躬耕陇亩，劝课农桑。",
+    translation: "孙坚作战时身先士卒，身披坚甲、手执锐利兵器，亲自耕种田地，勉励督促农桑之事。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-761",
+    id: "chengyu-cy-761",
+    title: "临危不惧",
+    entries: ["chengyu-cy-761"],
+    text: "临危不惧，处变不惊，诚社稷之良辅也。",
+    translation: "面对危难不畏惧，遇到变故不惊慌，确实是国家的良辅之臣。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-762",
+    id: "chengyu-cy-762",
+    title: "当机立断",
+    entries: ["chengyu-cy-762"],
+    text: "今日之事，宜在当机立断，不宜复疑。",
+    translation: "今天的事情，应当抓住时机果断作出决定，不应再犹疑。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-763",
+    id: "chengyu-cy-763",
+    title: "事无巨细",
+    entries: ["chengyu-cy-763"],
+    text: "政事无巨细，咸决于亮。",
+    translation: "政事无论大小，都由诸葛亮决断。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-764",
+    id: "chengyu-cy-764",
+    title: "公而忘私",
+    entries: ["chengyu-cy-764"],
+    text: "国耳忘家，公耳忘私，利不苟就，害不苟去，唯义所在。",
+    translation: "为了国家而忘记自家，为了公事而忘记私事；有利不苟且趋就，有害不苟且躲避，只依道义而行。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-765",
+    id: "chengyu-cy-765",
+    title: "奋不顾身",
+    entries: ["chengyu-cy-765"],
+    text: "常思奋不顾身，以徇国家之急，而甘心焉。",
+    translation: "常想着奋不顾身，为国家的急难而献身，并且心甘情愿。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-766",
+    id: "chengyu-cy-766",
+    title: "深谋远虑",
+    entries: ["chengyu-cy-766"],
+    text: "深谋远虑，行军用兵之道，非及乡时之士也。",
+    translation: "深谋远虑，行军作战之道，都比不上先前那些贤士。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-767",
+    id: "chengyu-cy-767",
+    title: "肝胆相照",
+    entries: ["chengyu-cy-767"],
+    text: "臣愿披腹心，输肝胆，效愚计，恐足下不能用也。",
+    translation: "我愿意剖开腹心，献出肝胆，献上我愚拙的计策，只怕您不能采用。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-768",
+    id: "chengyu-cy-768",
+    title: "相得益彰",
+    entries: ["chengyu-cy-768"],
+    text: "伯夷、叔齐虽贤，得夫子而名益彰。",
+    translation: "伯夷、叔齐虽然贤德，但得到孔子的称述而名声更加显著。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-769",
+    id: "chengyu-cy-769",
+    title: "光明磊落",
+    entries: ["chengyu-cy-769"],
+    text: "大丈夫行事当礌礌落落，如日月皎然，终不能如曹孟德、司马仲达欺他孤儿寡妇，狐媚以取天下也。",
+    translation: "大丈夫做事应当磊落洒脱，像日月一样光明皎洁，绝不能像曹操、司马懿那样欺负别人的孤儿寡妇，用狐媚的手段夺取天下。",
     translationSource: "public-domain"
   },
   {
@@ -6174,12 +6538,174 @@ window.TEXT_MASTER = [
     translationSource: "public-domain"
   },
   {
+    work: "w-chengyu-cy-770",
+    id: "chengyu-cy-770",
+    title: "按部就班",
+    entries: ["chengyu-cy-770"],
+    text: "选义按部，考辞就班。",
+    translation: "选择文义要按门类安排，考究文辞要按次序布置。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-771",
+    id: "chengyu-cy-771",
+    title: "刻不容缓",
+    entries: ["chengyu-cy-771"],
+    text: "今不于此际早图，后必噬脐无及。",
+    translation: "如今不趁这个时机早作打算，以后必定后悔也来不及了。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-772",
+    id: "chengyu-cy-772",
+    title: "循规蹈矩",
+    entries: ["chengyu-cy-772"],
+    text: "循规蹈矩，不逾法度，足以守成。",
+    translation: "遵守规矩，不逾越法度，足以守住已成的事业。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-773",
+    id: "chengyu-cy-773",
+    title: "拾金不昧",
+    entries: ["chengyu-cy-773"],
+    text: "妾闻志士不饮盗泉之水，廉者不受嗟来之食，况拾遗求利以污其行乎！",
+    translation: "我听说有志气的人不喝盗泉的水，廉洁的人不接受带有侮辱性的施舍，何况捡拾别人失落的财物来求得利益，而玷污自己的品行呢！",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-774",
+    id: "chengyu-cy-774",
+    title: "高瞻远瞩",
+    entries: ["chengyu-cy-774"],
+    text: "开户内日之光，日光不能照幽；凿窗启牖，以助户明也。",
+    translation: "打开门户让日光射进来，可日光还是照不到幽暗之处；再凿窗开牖，用来辅助门户的采光。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-775",
+    id: "chengyu-cy-775",
+    title: "理所当然",
+    entries: ["chengyu-cy-775"],
+    text: "其议郎、博士，皆当以经术为本，理所当然。",
+    translation: "那些议郎、博士，都应当以经术为根本，这是理所应当的。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-776",
+    id: "chengyu-cy-776",
+    title: "安分守己",
+    entries: ["chengyu-cy-776"],
+    text: "安分守己，循理而行，则自无过不及之差。",
+    translation: "安于本分、守住自己的操守，依照道理而行，就自然不会有超过或达不到的偏差。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-777",
+    id: "chengyu-cy-777",
+    title: "勇往直前",
+    entries: ["chengyu-cy-777"],
+    text: "勇往直前，无所疑惧，方是见得。",
+    translation: "勇敢地一直向前，没有一点疑虑畏惧，这才是真正有所领悟。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-778",
+    id: "chengyu-cy-778",
+    title: "力争上游",
+    entries: ["chengyu-cy-778"],
+    text: "人须是自处于上游，方得。若自处于下游，便无由进。",
+    translation: "人必须把自己放在上游的位置上，才行。如果把自己放在下游，就没有进步的路了。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-779",
+    id: "chengyu-cy-779",
+    title: "兢兢业业",
+    entries: ["chengyu-cy-779"],
+    text: "兢兢业业，如霆如雷。周余黎民，靡有孑遗。",
+    translation: "小心谨慎、战战兢兢，像遇到雷霆、像听到雷声一样惊惧。周朝剩余的百姓，没有留下多少了。",
+    translationSource: "public-domain"
+  },
+  {
     work: "w-chengyu-cy-78",
     id: "chengyu-cy-78",
     title: "有恃无恐",
     entries: ["chengyu-cy-78"],
     text: "夏，齐孝公伐我北鄙。……公使展喜犒师，使受命于展禽。齐侯未入竟，展喜从之，曰：「寡君闻君亲举玉趾，将辱于敝邑，使下臣犒执事。」齐侯曰：「鲁人恐乎？」对曰：「小人恐矣，君子则否。」齐侯曰：「室如县罄，野无青草，何恃而不恐？」对曰：「恃先王之命。……」",
     translation: "夏天，齐孝公攻打我国北部边境。……僖公派展喜去犒劳齐军，让他先到展禽那里接受指教。齐孝公还没有进入鲁国国境，展喜就迎上去，说：「我们国君听说您亲自出动大驾，将要屈尊光临我国，特派下臣来犒劳您的左右。」齐孝公说：「鲁国人害怕吗？」展喜回答说：「小人害怕了，君子却不害怕。」齐孝公说：「你们的屋室像挂着的磬一样空无一物，野地里连青草都没有，凭什么不害怕？」展喜回答说：「凭先王的命令。……」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-780",
+    id: "chengyu-cy-780",
+    title: "持之以恒",
+    entries: ["chengyu-cy-780"],
+    text: "天地之道，恒久而不已也。",
+    translation: "天地运行的规律，是恒久而不停止的。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-781",
+    id: "chengyu-cy-781",
+    title: "同心协力",
+    entries: ["chengyu-cy-781"],
+    text: "予有乱臣十人，同心同德，是谓一体。",
+    translation: "我有治乱的能臣十人，同心同德，可算作一个整体。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-782",
+    id: "chengyu-cy-782",
+    title: "推陈出新",
+    entries: ["chengyu-cy-782"],
+    text: "富有之谓大业，日新之谓盛德。",
+    translation: "富有叫做大业，天天更新叫做盛大的德行。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-783",
+    id: "chengyu-cy-783",
+    title: "革故鼎新",
+    entries: ["chengyu-cy-783"],
+    text: "革，去故也；鼎，取新也。",
+    translation: "革，就是去掉旧的；鼎，就是取得新的。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-784",
+    id: "chengyu-cy-784",
+    title: "一丝不苟",
+    entries: ["chengyu-cy-784"],
+    text: "上司访知，见世叔一丝不苟，升迁就在指日。",
+    translation: "上司查访得知，见您做事一丝不苟，升迁的日子就在眼前了。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-785",
+    id: "chengyu-cy-785",
+    title: "有条不紊",
+    entries: ["chengyu-cy-785"],
+    text: "若网在纲，有条而不紊。",
+    translation: "好像网结在纲上，有条理而不紊乱。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-786",
+    id: "chengyu-cy-786",
+    title: "有备无患",
+    entries: ["chengyu-cy-786"],
+    text: "惟事事乃其有备，有备无患。",
+    translation: "只有每件事都有准备，有了准备才能没有祸患。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-787",
+    id: "chengyu-cy-787",
+    title: "和衷共济",
+    entries: ["chengyu-cy-787"],
+    text: "同寅协恭，和衷哉！",
+    translation: "同僚之间协同恭敬，和善相处啊！",
     translationSource: "public-domain"
   },
   {
@@ -6252,6 +6778,15 @@ window.TEXT_MASTER = [
     entries: ["chengyu-cy-85"],
     text: "戒之戒之！出乎尔者，反乎尔者也。",
     translation: "要警戒啊要警戒！你怎样对待别人，别人也就会怎样对待你。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-86",
+    id: "chengyu-cy-86",
+    title: "众志成城",
+    entries: ["chengyu-cy-86"],
+    text: "（原文作「众心成城」）故谚曰：「众心成城，众口铄金。」",
+    translation: "所以谚语说：「众人的心合在一起就像坚固的城墙，众人的嘴能把金子熔化。」",
     translationSource: "public-domain"
   },
   {
@@ -6342,6 +6877,15 @@ window.TEXT_MASTER = [
     entries: ["chengyu-cy-95"],
     text: "尔以谗慝贪惏事君，而多杀不辜。余必使尔罢于奔命以死。",
     translation: "你靠着谗言邪恶、贪婪无度来事奉国君，又滥杀无辜。我一定要让你因奔命而疲于应付，直到死去。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-96",
+    id: "chengyu-cy-96",
+    title: "不自量力",
+    entries: ["chengyu-cy-96"],
+    text: "不度德，不量力，不亲亲，不征辞，不察有罪。犯五不韪，而以伐人，其丧师也，不亦宜乎！",
+    translation: "不衡量自己的德行，不估量自己的实力，不亲近同姓之国，不审察言辞的是非，不明辨罪过的有无。犯了这五种错误，还要去讨伐别人，他军队的覆没，不也是应该的吗！",
     translationSource: "public-domain"
   },
   {
@@ -6780,7 +7324,7 @@ window.TEXT_MASTER = [
     work: "w-classic-gw-48",
     id: "classic-gw-48",
     title: "卧薪尝胆",
-    entries: ["classic-gw-48"],
+    entries: ["chengyu-cy-52", "classic-gw-48"],
     text: "吴既赦越，越王勾践反国，乃苦身焦思，置胆于坐，坐卧即仰胆，饮食亦尝胆也。\n曰：「女忘会稽之耻邪？」\n身自耕作，夫人自织，食不加肉，衣不重采，折节下贤人，厚遇宾客，振贫吊死，与百姓同其劳。",
     translation: "吴国赦免越国之后，越王勾践回到国内，就劳苦身体、苦心思虑，把苦胆挂在座位旁，坐着躺着都仰头看胆，吃饭时也先尝一尝苦胆。他常问自己：「你忘了会稽之耻吗？」他亲自耕田，夫人亲自织布，吃饭不加肉，穿衣不用多种色彩，谦恭地礼待贤人，优厚地对待宾客，救济穷人、吊唁死者，与百姓同甘共苦。",
     translationSource: "public-domain"
@@ -8985,7 +9529,7 @@ window.TEXT_MASTER = [
     work: "w-poems-cz7-23",
     id: "poems-cz7-23",
     title: "陋室铭",
-    entries: ["poems-cz7-23", "guwen-gwj-97"],
+    entries: ["guwen-gwj-97", "poems-cz7-23"],
     text: "山不在高，有仙则名。水不在深，有龙则灵。\n斯是陋室，惟吾德馨。\n苔痕上阶绿，草色入帘青。\n谈笑有鸿儒，往来无白丁。\n可以调素琴，阅金经。\n无丝竹之乱耳，无案牍之劳形。\n南阳诸葛庐，西蜀子云亭。孔子云：何陋之有？",
     translation: "山不在于高，有了神仙就有名。水不在于深，有了龙就显灵。这是简陋的屋子，只因我的品德高尚就不觉得简陋了。苔痕蔓延到台阶上，一片碧绿；草色映入竹帘，满眼青翠。说笑谈天的都是博学的人，来往的没有浅薄的人。可以弹奏不加装饰的琴，阅读珍贵的佛经。没有嘈杂的音乐扰乱耳朵，没有官府公文使身体劳累。南阳诸葛亮的草庐，西蜀扬子云的亭子。孔子说：有什么简陋的呢？",
     translationSource: "school"
@@ -8994,7 +9538,7 @@ window.TEXT_MASTER = [
     work: "w-poems-cz8-02",
     id: "poems-cz8-02",
     title: "答谢中书书",
-    entries: ["poems-cz8-02", "classic-gw-60"],
+    entries: ["classic-gw-60", "poems-cz8-02"],
     text: "山川之美，古来共谈。高峰入云，清流见底。\n两岸石壁，五色交辉。青林翠竹，四时俱备。\n晓雾将歇，猿鸟乱鸣；夕日欲颓，沉鳞竞跃。\n实是欲界之仙都。自康乐以来，未复有能与其奇者。",
     translation: "山川的美丽，自古以来就是人们共同赞叹的。高高的山峰插入云端，清澈的溪流可以看见水底。两岸的石壁，五彩斑斓交相辉映。青翠的树木、碧绿的竹丛，四季都有。清晨的薄雾将要消散，猿猴和鸟儿乱纷纷地鸣叫；夕阳快要落山，潜游水中的鱼儿争相跃出水面。这里实在是人间的仙境啊。自从谢灵运以来，就再也没有能够欣赏这种奇丽景色的人了。",
     translationSource: "school"
@@ -9030,7 +9574,7 @@ window.TEXT_MASTER = [
     work: "w-poems-cz8-14",
     id: "poems-cz8-14",
     title: "桃花源记",
-    entries: ["poems-cz8-14", "guwen-gwj-88"],
+    entries: ["guwen-gwj-88", "poems-cz8-14"],
     text: "晋太元中，武陵人捕鱼为业。缘溪行，忘路之远近。\n忽逢桃花林，夹岸数百步，中无杂树，芳草鲜美，落英缤纷。\n渔人甚异之，复前行，欲穷其林。\n林尽水源，便得一山，山有小口，仿佛若有光。\n便舍船，从口入。初极狭，才通人。复行数十步，豁然开朗。\n土地平旷，屋舍俨然，有良田、美池、桑竹之属。\n阡陌交通，鸡犬相闻。\n其中往来种作，男女衣着，悉如外人。黄发垂髫，并怡然自乐。\n见渔人，乃大惊，问所从来。具答之。\n便要还家，设酒杀鸡作食。\n村中闻有此人，咸来问讯。自云先世避秦时乱，率妻子邑人来此绝境，不复出焉，遂与外人间隔。\n问今是何世，乃不知有汉，无论魏晋。此人一一为具言所闻，皆叹惋。\n余人各复延至其家，皆出酒食。停数日，辞去。此中人语云：不足为外人道也。\n既出，得其船，便扶向路，处处志之。及郡下，诣太守，说如此。\n太守即遣人随其往，寻向所志，遂迷，不复得路。\n南阳刘子骥，高尚士也，闻之，欣然规往。未果，寻病终。后遂无问津者。",
     translation: "东晋太元年间，武陵郡有个人以打鱼为生。他沿着溪水划船前行，忘记了路程的远近。忽然遇到一片桃花林，生长在溪水两岸，长达几百步，中间没有别的树，芳草鲜嫩美丽，落花纷纷。渔人非常惊奇，继续往前走，想走到那片林子的尽头。桃林在溪水发源的地方就到头了，便出现一座山，山上有个小洞口，里面隐隐约约好像有光亮。渔人就丢下船，从洞口进去。起初洞口很狭窄，仅容一个人通过。又走了几十步，突然变得开阔明亮了。这里土地平坦开阔，房屋整整齐齐，有肥沃的田地、美丽的池塘和桑树竹子之类。田间小路交错相通，村落间鸡鸣狗吠之声处处可以听到。人们在田野里来来往往耕种劳作，男女的穿戴都和桃花源外面的人一样。老人和小孩都悠闲愉快、自得其乐。村里的人见到渔人，就非常惊奇，问他从哪里来。渔人详细地回答了他们。村里人便邀请他到自己家里去，摆酒杀鸡做饭来款待他。村里的人听说来了这样一个人，都来打听消息。他们自己说祖先为了躲避秦朝时的战乱，带领妻子儿女和乡邻来到这个与人世隔绝的地方，不再从这里出去，于是就和外面的人断绝了来往。他们问现在是什么朝代，竟不知道有过汉朝，更不必说魏朝和晋朝了。渔人把自己知道的事一一详细地告诉了他们，村里人都感叹惋惜。其余的人各自又把渔人请到自己家中，都拿出酒饭来招待他。渔人停留了几天，就告辞离去。村里人嘱咐他说：这里的情况不值得对外面的人说啊。渔人出来以后，找到了他的船，就顺着旧路回去，处处做了标记。到了郡城，去拜见太守，报告了这件事。太守立即派人跟着他去，寻找先前所做的标记，最终迷失了方向，再也找不到通往桃花源的路了。南阳的刘子骥，是个志向高洁的隐士，听说了这件事，高兴地计划前往。还没有实现，不久就因病去世了。此后就再也没有探寻桃花源的人了。",
     translationSource: "school"
@@ -9102,7 +9646,7 @@ window.TEXT_MASTER = [
     work: "w-poems-cz9-01",
     id: "poems-cz9-01",
     title: "沁园春·雪",
-    entries: ["poems-cz9-01", "jinxiandai-jxd-07"],
+    entries: ["jinxiandai-jxd-07", "poems-cz9-01"],
     text: "北国风光，千里冰封，万里雪飘。\n望长城内外，惟余莽莽；大河上下，顿失滔滔。\n山舞银蛇，原驰蜡象，欲与天公试比高。\n须晴日，看红装素裹，分外妖娆。\n江山如此多娇，引无数英雄竞折腰。\n惜秦皇汉武，略输文采；唐宗宋祖，稍逊风骚。\n一代天骄，成吉思汗，只识弯弓射大雕。\n俱往矣，数风流人物，还看今朝。",
     translation: "北方的风光，千里大地结着坚冰，万里长空飘着雪花。远望长城内外，只剩下白茫茫一片；黄河上下，顿时失去了波涛滚滚的气势。山岭好像银白色的蛇在舞动，高原好像白蜡色的象在奔驰，都想与老天一比高低。等到晴天，看红日映着白雪，格外妖艳美好。江山如此娇媚，引得无数英雄竞相倾倒。可惜秦始皇、汉武帝，文采略嫌不足；唐太宗、宋太祖，文学才华稍逊一筹。称雄一世的成吉思汗，只知道弯弓射大雕。这些人全都过去了，要数真正能建功立业的人物，还得看今天。",
     translationSource: "modern"
@@ -9111,7 +9655,7 @@ window.TEXT_MASTER = [
     work: "w-poems-cz9-05",
     id: "poems-cz9-05",
     title: "醉翁亭记",
-    entries: ["poems-cz9-05", "guwen-gwj-127"],
+    entries: ["guwen-gwj-127", "poems-cz9-05"],
     text: "环滁皆山也。其西南诸峰，林壑尤美。望之蔚然而深秀者，琅琊也。山行六七里，渐闻水声潺潺，而泻出于两峰之间者，酿泉也。峰回路转，有亭翼然临于泉上者，醉翁亭也。作亭者谁？山之僧智仙也。名之者谁？太守自谓也。太守与客来饮于此，饮少辄醉，而年又最高，故自号曰醉翁也。醉翁之意不在酒，在乎山水之间也。山水之乐，得之心而寓之酒也。\n若夫日出而林霏开，云归而岩穴暝，晦明变化者，山间之朝暮也。野芳发而幽香，佳木秀而繁阴，风霜高洁，水落而石出者，山间之四时也。朝而往，暮而归，四时之景不同，而乐亦无穷也。\n至于负者歌于途，行者休于树，前者呼，后者应，伛偻提携，往来而不绝者，滁人游也。临溪而渔，溪深而鱼肥；酿泉为酒，泉香而酒洌；山肴野蔌，杂然而前陈者，太守宴也。宴酣之乐，非丝非竹，射者中，弈者胜，觥筹交错，起坐而喧哗者，众宾欢也。苍颜白发，颓然乎其间者，太守醉也。\n已而夕阳在山，人影散乱，太守归而宾客从也。树林阴翳，鸣声上下，游人去而禽鸟乐也。然而禽鸟知山林之乐，而不知人之乐；人知从太守游而乐，而不知太守之乐其乐也。醉能同其乐，醒能述以文者，太守也。太守谓谁？庐陵欧阳修也。",
     translation: "环绕滁州的都是山。它西南的各个山峰，树林山谷尤其优美。望去草木茂盛而幽深秀丽的，是琅琊山。沿着山路走六七里，渐渐听到水声潺潺，而从两峰之间倾泻出来的，是酿泉。山峰回环、道路转弯，有个亭子像鸟张开翅膀一样高踞在泉上的，是醉翁亭。建造亭子的是谁？是山里的僧人智仙。给它命名的是谁？太守用自己的号来命名。太守同宾客来这里饮酒，喝得少就醉，而年纪又最大，所以自号醉翁。醉翁的意趣不在酒，而在山水之间。山水的快乐，领会在心里而寄托在酒上。\n至于太阳出来而林间的雾气散开，云气归来而岩洞昏暗，明暗变化的，是山间的早晨和傍晚。野花开放而幽香，好树秀丽而浓荫，风霜高洁，水位下落而石头露出的，是山间的四季。早晨前往，傍晚归来，四季的景色不同，而快乐也无穷。\n至于背着东西的人在路上唱歌，行路的人在树下休息，前面的人呼唤，后面的人应答，弯腰驼背的、牵着小孩的，往来不断的，是滁州人在游览。到溪边钓鱼，溪水深而鱼肥；用酿泉的水酿酒，泉水香而酒清；山里的野味野菜，杂然摆在前面的，是太守的宴席。宴饮酣畅的快乐，不是丝也不是竹，投壶的投中了，下棋的赢了，酒杯和酒筹交错，起来坐下而喧哗的，是众宾客的欢乐。苍老的面容、花白的头发，颓然倒在其中的，是太守喝醉了。\n不久夕阳在山，人影散乱，太守回去而宾客跟从。树林阴暗，鸟声上下，游人离去而禽鸟快乐。然而禽鸟知道山林的快乐，而不知道人的快乐；人们知道跟从太守游览而快乐，而不知道太守以他们的快乐为快乐。醉了能同他们一起快乐，醒了能用文章记述的，是太守。太守是谁？是庐陵的欧阳修。",
     translationSource: "school"
@@ -9183,7 +9727,7 @@ window.TEXT_MASTER = [
     work: "w-poems-gz10-01",
     id: "poems-gz10-01",
     title: "沁园春·长沙",
-    entries: ["poems-gz10-01", "jinxiandai-jxd-01"],
+    entries: ["jinxiandai-jxd-01", "poems-gz10-01"],
     text: "独立寒秋，湘江北去，橘子洲头。\n看万山红遍，层林尽染；漫江碧透，百舸争流。\n鹰击长空，鱼翔浅底，万类霜天竞自由。\n怅寥廓，问苍茫大地，谁主沉浮？\n携来百侣曾游。忆往昔峥嵘岁月稠。\n恰同学少年，风华正茂；书生意气，挥斥方遒。\n指点江山，激扬文字，粪土当年万户侯。\n曾记否，到中流击水，浪遏飞舟？",
     translation: "在深秋一个寒冷的日子里，我独自站在橘子洲头，湘江水向北流去。看那万千山峰都变成了红色，层层树林像染过一样；满江碧绿澄澈，大船争先行驶。雄鹰在广阔的天空中飞翔，鱼儿在清澈的水里游动，万物都在秋光中竞相过自由自在的生活。面对着无边无际的宇宙，我心中怅然感慨，要问这苍茫大地的盛衰兴废，究竟由谁来主宰？我曾经和许多朋友来这里游览，回忆过去，那些不平凡的岁月实在很多。那时正值同学少年，风采才华正当旺盛；意气奔放，正强劲有力。评论国家大事，写出激浊扬清的文章，把当时的军阀官僚看得如同粪土。还记得吗？当年我们到江心游泳，掀起的波浪几乎挡住了飞驰的船只。",
     translationSource: "modern"
@@ -9255,7 +9799,7 @@ window.TEXT_MASTER = [
     work: "w-poems-gz10-12",
     id: "poems-gz10-12",
     title: "赤壁赋",
-    entries: ["poems-gz10-12", "guwen-gwj-139"],
+    entries: ["guwen-gwj-139", "poems-gz10-12"],
     text: "壬戌之秋，七月既望，苏子与客泛舟游于赤壁之下。清风徐来，水波不兴。举酒属客，诵明月之诗，歌窈窕之章。少焉，月出于东山之上，徘徊于斗牛之间。白露横江，水光接天。纵一苇之所如，凌万顷之茫然。浩浩乎如冯虚御风，而不知其所止；飘飘乎如遗世独立，羽化而登仙。\n于是饮酒乐甚，扣舷而歌之。歌曰：「桂棹兮兰桨，击空明兮溯流光。渺渺兮予怀，望美人兮天一方。」客有吹洞箫者，倚歌而和之。其声呜呜然，如怨如慕，如泣如诉，余音袅袅，不绝如缕。舞幽壑之潜蛟，泣孤舟之嫠妇。\n苏子愀然，正襟危坐，而问客曰：「何为其然也？」客曰：「『月明星稀，乌鹊南飞』，此非曹孟德之诗乎？西望夏口，东望武昌，山川相缪，郁乎苍苍，此非孟德之困于周郎者乎？方其破荆州，下江陵，顺流而东也，舳舻千里，旌旗蔽空，酾酒临江，横槊赋诗，固一世之雄也，而今安在哉？况吾与子渔樵于江渚之上，侣鱼虾而友麋鹿，驾一叶之扁舟，举匏樽以相属。寄蜉蝣于天地，渺沧海之一粟。哀吾生之须臾，羡长江之无穷。挟飞仙以遨游，抱明月而长终。知不可乎骤得，托遗响于悲风。」\n苏子曰：「客亦知夫水与月乎？逝者如斯，而未尝往也；盈虚者如彼，而卒莫消长也。盖将自其变者而观之，则天地曾不能以一瞬；自其不变者而观之，则物与我皆无尽也，而又何羡乎！且夫天地之间，物各有主，苟非吾之所有，虽一毫而莫取。惟江上之清风，与山间之明月，耳得之而为声，目遇之而成色，取之无禁，用之不竭，是造物者之无尽藏也，而吾与子之所共适。」\n客喜而笑，洗盏更酌。肴核既尽，杯盘狼籍。相与枕藉乎舟中，不知东方之既白。",
     translation: "壬戌年的秋天，七月十六日，我和客人乘船游览于赤壁之下。清风缓缓吹来，水波不起。举酒劝客，诵读明月的诗，歌唱窈窕的篇章。一会儿，月亮从东山上升起，徘徊在斗宿牛宿之间。白露横亘江面，水光连接天空。任凭一片苇叶般的小船所去，凌越万顷的茫然。浩浩荡荡像凭空驾风，而不知它停在哪里；飘飘然像脱离尘世独立，羽化成仙。\n于是饮酒非常快乐，敲着船舷唱歌。歌词说：「桂树做的棹啊兰木做的桨，划开空明的江水啊逆流而上。渺远啊我的情怀，遥望美人啊在天的那一方。」客人中有吹洞箫的，依着歌声应和。那声音呜呜然，像哀怨像思慕，像哭泣像诉说，余音袅袅，不断如丝缕。使深谷中潜伏的蛟龙起舞，使孤舟中的寡妇哭泣。\n我神色改变，整好衣襟端坐，问客人说：「为什么这样呢？」客人说：「『月明星稀，乌鹊南飞』，这不是曹孟德的诗吗？西望夏口，东望武昌，山川缭绕，郁郁苍苍，这不是孟德被周郎困住的地方吗？当他攻破荆州，攻下江陵，顺流东下时，战船千里，旌旗遮蔽天空，面对长江斟酒，横着长矛赋诗，本来是一世的英雄，如今在哪里呢？何况我和你在江边洲上打鱼砍柴，以鱼虾为伴侣、以麋鹿为朋友，驾着一片苇叶般的小船，举着葫芦杯互相劝酒。像蜉蝣一样寄身于天地，渺小得像沧海中的一粒粟。哀叹我生命的短暂，羡慕长江的无穷。携飞仙而遨游，抱明月而长存。知道不能骤然得到，只好把余音寄托在悲风之中。」\n我说：「你也知道水和月吗？流逝的像这样，而并没有真正流去；盈虚的像那样，而终究没有消长。大概从它变化的一面看，那么天地连一瞬间都不能保持不变；从它不变的一面看，那么万物和我都是无穷的，又羡慕什么呢！况且天地之间，万物各有主人，如果不是我所有的，即使一根毫毛也不能取。只有江上的清风，和山间的明月，耳朵听到就成为声音，眼睛遇到就成为颜色，取它没有禁忌，用它不会枯竭，这是造物者的无穷宝藏，而我和你所共同享有的。」\n客人高兴地笑了，洗杯重新斟酒。菜肴果品已经吃完，杯盘凌乱。互相枕靠着睡在船中，不知道东方已经发白。",
     translationSource: "school"
@@ -9291,7 +9835,7 @@ window.TEXT_MASTER = [
     work: "w-poems-gz10-19",
     id: "poems-gz10-19",
     title: "阿房宫赋",
-    entries: ["poems-gz10-19", "guwen-gwj-98"],
+    entries: ["guwen-gwj-98", "poems-gz10-19"],
     text: "六王毕，四海一，蜀山兀，阿房出。覆压三百余里，隔离天日。骊山北构而西折，直走咸阳。二川溶溶，流入宫墙。五步一楼，十步一阁；廊腰缦回，檐牙高啄；各抱地势，钩心斗角。盘盘焉，囷囷焉，蜂房水涡，矗不知其几千万落。长桥卧波，未云何龙？复道行空，不霁何虹？高低冥迷，不知西东。歌台暖响，春光融融；舞殿冷袖，风雨凄凄。一日之内，一宫之间，而气候不齐。\n妃嫔媵嫱，王子皇孙，辞楼下殿，辇来于秦。朝歌夜弦，为秦宫人。明星荧荧，开妆镜也；绿云扰扰，梳晓鬟也；渭流涨腻，弃脂水也；烟斜雾横，焚椒兰也。雷霆乍惊，宫车过也；辘辘远听，杳不知其所之也。一肌一容，尽态极妍，缦立远视，而望幸焉。有不见者，三十六年。\n燕赵之收藏，韩魏之经营，齐楚之精英，几世几年，剽掠其人，倚叠如山。一旦不能有，输来其间。鼎铛玉石，金块珠砾，弃掷逦迤，秦人视之，亦不甚惜。\n嗟乎！一人之心，千万人之心也。秦爱纷奢，人亦念其家。奈何取之尽锱铢，用之如泥沙？使负栋之柱，多于南亩之农夫；架梁之椽，多于机上之工女；钉头磷磷，多于在庾之粟粒；瓦缝参差，多于周身之帛缕；直栏横槛，多于九土之城郭；管弦呕哑，多于市人之言语。使天下之人，不敢言而敢怒。独夫之心，日益骄固。戍卒叫，函谷举，楚人一炬，可怜焦土！\n呜呼！灭六国者六国也，非秦也；族秦者秦也，非天下也。嗟夫！使六国各爱其人，则足以拒秦；使秦复爱六国之人，则递三世可至万世而为君，谁得而族灭也？秦人不暇自哀，而后人哀之；后人哀之而不鉴之，亦使后人而复哀后人也。",
     translation: "六国灭亡，天下统一，蜀地的山林被砍光，阿房宫建了起来。它覆盖三百多里，遮蔽了天日。从骊山北面建起，曲折向西，一直通到咸阳。渭水、樊川浩浩荡荡，流入宫墙。五步一座楼，十步一座阁；走廊像丝绸一样回环曲折，屋檐像鸟嘴一样向高处啄去；各随地势而建，屋角互相对峙如钩心斗角。盘旋曲折，像蜂房、像水涡，高高矗立，不知有几千万座。长桥横卧在水波上，没有云怎么会有龙？复道凌空而行，没有雨过天晴怎么会有虹？高低迷蒙，分不清东西南北。歌台上歌声温暖，春光融融；舞殿里舞袖生寒，风雨凄凄。一天之内，一宫之中，气候却不一样。\n六国的妃嫔媵嫱、王子皇孙，辞别了自己的楼阁宫殿，被用车送到秦国。早晚唱歌弹琴，成为秦国的宫人。明星闪烁，是她们打开了梳妆的镜子；绿云纷乱，是她们早晨在梳头；渭水涨起一层油腻，是她们倒掉的脂水；烟雾斜飞横绕，是她们在烧椒兰香料。雷霆忽然惊响，是宫车经过；车声辘辘远远听去，不知驶向何处。每一处肌肤、每一种姿容，都极尽娇媚，久久地站着远望，盼望皇帝临幸。有的三十六年都没有见过皇帝。\n燕国赵国的收藏，韩国魏国的经营，齐国楚国的精华，多少世代多少年，从人民那里掠夺来，堆积如山。一旦不能保有，都运到这里来。宝鼎被当作铁锅，美玉被当作石头，黄金被当作土块，珍珠被当作沙砾，丢弃得连续不断，秦人看着它们，也不很爱惜。\n唉！一个人的心，就是千万人的心。秦始皇喜爱繁华奢侈，别人也顾念自己的家。为什么搜刮时一分一厘都不放过，使用时却像泥沙一样？使得支撑大梁的柱子，比田里的农夫还多；架梁的椽子，比织机上的女工还多；钉头闪闪，比粮仓里的谷粒还多；瓦缝参差，比全身衣服的丝线还多；栏杆纵横，比九州的城郭还多；管弦嘈杂，比集市上人的言语还多。使天下的人，不敢说话却敢愤怒。独夫的心，一天比一天骄傲顽固。戍卒一声呼号，函谷关就被攻下，楚人一把火，可怜的阿房宫化成焦土！\n唉！灭亡六国的是六国自己，不是秦国；灭掉秦国的是秦国自己，不是天下人。唉！如果六国各自爱护自己的人民，就足以抵抗秦国；如果秦国又能爱护六国的人民，就可以传位三代直到万世做君主，谁能灭掉它呢？秦人来不及哀叹自己，而后人哀叹他们；后人哀叹却不引以为鉴，也会使更后的人再哀叹后人啊。",
     translationSource: "school"
@@ -9300,7 +9844,7 @@ window.TEXT_MASTER = [
     work: "w-poems-gz10-20",
     id: "poems-gz10-20",
     title: "谏太宗十思疏",
-    entries: ["poems-gz10-20", "guwen-gwj-91"],
+    entries: ["guwen-gwj-91", "poems-gz10-20"],
     text: "臣闻求木之长者，必固其根本；欲流之远者，必浚其泉源；思国之安者，必积其德义。源不深而望流之远，根不固而求木之长，德不厚而思国之安，臣虽下愚，知其不可，而况于明哲乎！人君当神器之重，居域中之大，将崇极天之峻，永保无疆之休，不念居安思危，戒奢以俭，德不处其厚，情不胜其欲，斯亦伐根以求木茂，塞源而欲流长者也。\n凡百元首，承天景命，莫不殷忧而道著，功成而德衰。有善始者实繁，能克终者盖寡。岂其取之易而守之难乎？昔取之而有余，今守之而不足，何也？夫在殷忧，必竭诚以待下；既得志，则纵情以傲物。竭诚则胡越为一体，傲物则骨肉为行路。虽董之以严刑，振之以威怒，终苟免而不怀仁，貌恭而不心服。怨不在大，可畏惟人；载舟覆舟，所宜深慎。奔车朽索，其可忽乎！\n君人者，诚能见可欲则思知足以自戒，将有作则思知止以安人，念高危则思谦冲而自牧，惧满溢则思江海下百川，乐盘游则思三驱以为度，忧懈怠则思慎始而敬终，虑壅蔽则思虚心以纳下，想谗邪则思正身以黜恶，恩所加则思无因喜以谬赏，罚所及则思无因怒而滥刑。总此十思，宏兹九德，简能而任之，择善而从之，则智者尽其谋，勇者竭其力，仁者播其惠，信者效其忠。文武并用，垂拱而治。何必劳神苦思，代百司之职役哉！",
     translation: "我听说想要树木生长得高，一定要使它的根稳固；想要水流得远，一定要疏浚它的源头；想要国家安定，一定要积聚德行仁义。水源不深却希望水流得远，树根不牢却要求树木长得高，德行不厚却想国家安定，我虽然愚昧，也知道这是不可能的，何况明智的人呢！君主承担着帝位的重任，处在天地间重要的位置上，将要追求像天一样的高峻，永远保持无穷的福禄，如果不考虑居安思危、戒除奢侈而厉行节俭，德行不能保持深厚，情感不能战胜欲望，这也就像砍断树根却要求树木茂盛、堵塞水源却想要水流长远一样。\n凡是古代的君主，承受上天的大命，没有不是在深重忧患中道德显著、功业成就后德行衰败的。有良好开端的人实在很多，能坚持到底的大概很少。难道是取得天下容易而守住天下难吗？从前取得天下还有余力，如今守住天下却力不从心，为什么？因为在深重忧患中，一定竭尽诚心来对待下属；一旦得志，就放纵情欲、傲视他人。竭尽诚心，那么胡越这样疏远的人也能结为一体；傲视他人，那么骨肉之亲也会变成路人。即使用严酷的刑罚督察他们，用威严怒气震慑他们，最终也只是苟且免于刑罚而不怀念仁德，表面恭敬而内心不服。怨恨不在于大小，可怕的只有人心；水能载舟也能覆舟，这是应该深切谨慎对待的。奔车拉着朽索，怎么能忽视呢！\n做君主的，如果真能做到：看见引起欲望的东西，就想到知足来自我警戒；将要兴建土木，就想到适可而止来使百姓安定；想到高位危险，就想到谦虚自守；害怕自满，就想到江海位居百川之下；喜欢游玩，就想到三面驱围、留一面的限度；担忧懈怠，就想到慎始慎终；忧虑耳目被蒙蔽，就想到虚心接纳下属意见；想到谗邪之人，就想到端正自身、斥退邪恶；施恩的时候，就想到不要因一时高兴而错赏；惩罚的时候，就想到不要因一时恼怒而滥用刑罚。总括这十思，弘扬这九种品德，选拔有才能的人任用他们，择取好的意见听从它，那么聪明的人会竭尽谋略，勇敢的人会竭尽全力，仁爱的人会传播恩惠，诚信的人会献出忠心。文臣武将都得到任用，君主就可以垂衣拱手而天下大治。何必劳神苦思，代替百官去处理事务呢！",
     translationSource: "school"
@@ -9336,7 +9880,7 @@ window.TEXT_MASTER = [
     work: "w-poems-gz11-08",
     id: "poems-gz11-08",
     title: "屈原列传",
-    entries: ["poems-gz11-08", "guwen-gwj-70"],
+    entries: ["guwen-gwj-70", "poems-gz11-08"],
     text: "屈原者，名平，楚之同姓也。为楚怀王左徒。博闻强志，明于治乱，娴于辞令。入则与王图议国事，以出号令；出则接遇宾客，应对诸侯。王甚任之。\n上官大夫与之同列，争宠而心害其能。怀王使屈原造为宪令，屈平属草稿未定。上官大夫见而欲夺之，屈平不与，因谗之曰：「王使屈平为令，众莫不知。每一令出，平伐其功，曰以为『非我莫能为』也。」王怒而疏屈平。\n屈平疾王听之不聪也，谗谄之蔽明也，邪曲之害公也，方正之不容也，故忧愁幽思而作《离骚》。「离骚」者，犹离忧也。夫天者，人之始也；父母者，人之本也。人穷则反本，故劳苦倦极，未尝不呼天也；疾痛惨怛，未尝不呼父母也。屈平正道直行，竭忠尽智以事其君，谗人间之，可谓穷矣。信而见疑，忠而被谤，能无怨乎？屈平之作《离骚》，盖自怨生也。\n屈平既绌，其后秦欲伐齐，齐与楚从亲。惠王患之，乃令张仪佯去秦，厚币委质事楚，曰：「秦甚憎齐，齐与楚从亲，楚诚能绝齐，秦愿献商於之地六百里。」楚怀王贪而信张仪，遂绝齐，使使如秦受地。张仪诈之曰：「仪与王约六里，不闻六百里。」楚使怒去，归告怀王。怀王怒，大兴师伐秦。秦发兵击之，大破楚师于丹、淅，斩首八万，虏楚将屈匄，遂取楚之汉中地。怀王乃悉发国中兵，以深入击秦，战于蓝田。魏闻之，袭楚至邓。楚兵惧，自秦归。而齐竟怒，不救楚，楚大困。\n明年，秦割汉中地与楚以和。楚王曰：「不愿得地，愿得张仪而甘心焉。」张仪闻，乃曰：「以一仪而当汉中地，臣请往如楚。」如楚，又因厚币用事者臣靳尚，而设诡辩于怀王之宠姬郑袖。怀王竟听郑袖，复释去张仪。是时屈平既疏，不复在位，使于齐，顾反，谏怀王曰：「何不杀张仪？」怀王悔，追张仪，不及。\n其后诸侯共击楚，大破之，杀其将唐眜。\n时秦昭王与楚婚，欲与怀王会。怀王欲行，屈平曰：「秦，虎狼之国，不可信，不如毋行。」怀王稚子子兰劝王行：「奈何绝秦欢！」怀王卒行。入武关，秦伏兵绝其后，因留怀王，以求割地。怀王怒，不听。亡走赵，赵不内。复之秦，竟死于秦而归葬。\n长子顷襄王立，以其弟子兰为令尹。楚人既咎子兰以劝怀王入秦而不反也。屈平既嫉之，虽放流，眷顾楚国，系心怀王，不忘欲反，冀幸君之一悟，俗之一改也。其存君兴国，而欲反覆之，一篇之中，三致志焉。然终无可奈何，故不可以反。卒以此见怀王之终不悟也。\n令尹子兰闻之，大怒，卒使上官大夫短屈原于顷襄王。顷襄王怒而迁之。\n屈原至于江滨，被发行吟泽畔，颜色憔悴，形容枯槁。渔父见而问之曰：「子非三闾大夫欤？何故而至此？」屈原曰：「举世混浊而我独清，众人皆醉而我独醒，是以见放。」渔父曰：「夫圣人者，不凝滞于物，而能与世推移。举世混浊，何不随其流而扬其波？众人皆醉，何不餔其糟而啜其醨？何故怀瑾握瑜，而自令见放为？」屈原曰：「吾闻之，新沐者必弹冠，新浴者必振衣。人又谁能以身之察察，受物之汶汶者乎！宁赴常流而葬乎江鱼腹中耳，又安能以皓皓之白，而蒙世俗之温蠖乎！」乃作《怀沙》之赋。于是怀石，遂自投汨罗以死。\n屈原既死之后，楚有宋玉、唐勒、景差之徒者，皆好辞而以赋见称；然皆祖屈原之从容辞令，终莫敢直谏。其后楚日以削，数十年，竟为秦所灭。",
     translation: "屈原，名平，是楚国王族的同姓。他做楚怀王的左徒。见闻广博，记忆力强，明白国家治乱的道理，熟悉外交辞令。对内与怀王商议国事，发布号令；对外接待宾客，应对诸侯。怀王很信任他。\n上官大夫与屈原同朝为官，想争得宠幸，心里嫉妒他的才能。怀王让屈原制定法令，屈原起草的稿子还没定稿。上官大夫看见了想夺取它，屈原不给，于是进谗言说：「大王让屈原制定法令，没有人不知道。每一条法令出台，屈原就夸耀自己的功劳，说『除了我没有人能做』。」怀王发怒，疏远了屈原。\n屈原痛心怀王听不进去忠言，谗谄之人蒙蔽了明智，邪恶之人损害了公正，端方正直的人不被容纳，所以忧愁深思而写下《离骚》。「离骚」就是遭遇忧患的意思。天是人的起源，父母是人的根本。人处境困窘就会追念根本，所以劳苦困倦到极点，没有不呼喊上天的；病痛忧伤，没有不呼喊父母的。屈原行为正直，竭尽忠诚和智慧来侍奉他的君主，谗人从中挑拨，可以说处境困窘了。诚信却被怀疑，忠贞却被诽谤，能没有怨愤吗？屈原写作《离骚》，大概是从怨愤中产生的。\n屈原被罢黜之后，秦国想要攻打齐国，齐国与楚国合纵相亲。秦惠王为此忧虑，就派张仪假装离开秦国，带着厚礼呈献信物侍奉楚国，说：「秦国非常憎恨齐国，而齐国和楚国合纵相亲。楚国如果真能与齐国绝交，秦国愿意献出商於之地六百里。」楚怀王贪心而相信张仪，于是与齐国绝交，派使者到秦国接受土地。张仪狡赖说：「我与楚王约定的是六里，没听说六百里。」楚国使者愤怒离去，回去报告怀王。怀王发怒，大举兴兵攻打秦国。秦国发兵迎击，在丹水、淅水一带大败楚军，斩杀八万人，俘虏楚将屈匄，于是夺取了楚国的汉中之地。怀王于是动员国内全部兵力，深入攻打秦国，在蓝田交战。魏国听说后，偷袭楚国直到邓地。楚军恐惧，从秦国撤兵回来。而齐国终究因为怨恨不肯救楚，楚国非常困窘。\n第二年，秦国割让汉中之地与楚国讲和。楚王说：「不愿得到土地，只愿得到张仪才甘心。」张仪听说后，就说：「用我一个人来抵汉中之地，请让我到楚国去。」到了楚国，又用厚礼买通当权的大臣靳尚，并在怀王的宠姬郑袖面前施展诡辩。怀王终究听信郑袖，又放走了张仪。这时屈原已被疏远，不再在位，出使齐国，回来后就劝谏怀王说：「为什么不杀张仪？」怀王后悔了，派人追张仪，没有追上。\n此后诸侯共同攻打楚国，大败楚军，杀了楚将唐眜。\n当时秦昭王与楚国联姻，想与怀王会面。怀王想前往，屈原说：「秦国是虎狼一样的国家，不可信任，不如不去。」怀王的小儿子子兰劝怀王前往：「怎么能断绝与秦国的友好！」怀王终于去了。进入武关，秦国的伏兵截断了他的后路，于是扣留怀王，要求割地。怀王愤怒，不肯答应。逃到赵国，赵国不肯接纳。又回到秦国，终于死在秦国，灵柩送回楚国安葬。\n怀王的长子顷襄王即位，让他的弟弟子兰做令尹。楚国人因为子兰劝怀王入秦而不能回来而责怪他。屈原也痛恨子兰，虽然被流放，仍眷恋楚国，心系怀王，不忘想回去，希望君主能醒悟一次，风俗能改变一次。他思念君主、振兴国家，想扭转局面，在一篇作品中再三表达这种心意。然而终究无可奈何，所以不能回去。终于由此看出怀王始终没有醒悟。\n令尹子兰听说后大怒，终于让上官大夫在顷襄王面前说屈原的坏话。顷襄王发怒，把屈原放逐了。\n屈原到了江边，披散着头发在水边边走边吟，面色憔悴，形体枯瘦。渔父看见他问道：「您不是三闾大夫吗？为什么到了这里？」屈原说：「整个世道都混浊而我独自清白，众人都昏醉而我独自清醒，因此被放逐。」渔父说：「圣人不受外物的拘束，而能随世俗推移。整个世道混浊，为什么不随波逐流、推波助澜？众人都昏醉，为什么不吃酒糟、喝薄酒？为什么要怀藏美玉般的品德，而使自己被放逐呢？」屈原说：「我听说，刚洗过头的人一定要弹去帽上的灰，刚洗过澡的人一定要抖去衣上的尘。又有谁能让自己干净的身体，去沾染外物的污浊呢！我宁可跳进江水葬身鱼腹，又怎能让洁白之身，蒙受世俗的尘垢呢！」于是写下《怀沙》之赋。接着抱着石头，投汨罗江而死。\n屈原死后，楚国有宋玉、唐勒、景差这些人，都爱好文辞而以赋著称；但都效法屈原的从容辞令，终究没有人敢直言劝谏。此后楚国日益削弱，几十年后，终于被秦国所灭。",
     translationSource: "school"
@@ -9381,7 +9925,7 @@ window.TEXT_MASTER = [
     work: "w-poems-gz11-15",
     id: "poems-gz11-15",
     title: "陈情表",
-    entries: ["poems-gz11-15", "guwen-gwj-85"],
+    entries: ["guwen-gwj-85", "poems-gz11-15"],
     text: "臣密言：臣以险衅，夙遭闵凶。生孩六月，慈父见背；行年四岁，舅夺母志。祖母刘愍臣孤弱，躬亲抚养。臣少多疾病，九岁不行，零丁孤苦，至于成立。既无伯叔，终鲜兄弟，门衰祚薄，晚有儿息。外无期功强近之亲，内无应门五尺之僮，茕茕孑立，形影相吊。而刘夙婴疾病，常在床蓐，臣侍汤药，未曾废离。\n逮奉圣朝，沐浴清化。前太守臣逵察臣孝廉，后刺史臣荣举臣秀才。臣以供养无主，辞不赴命。诏书特下，拜臣郎中，寻蒙国恩，除臣洗马。猥以微贱，当侍东宫，非臣陨首所能上报。臣具以表闻，辞不就职。诏书切峻，责臣逋慢。郡县逼迫，催臣上道；州司临门，急于星火。臣欲奉诏奔驰，则刘病日笃；欲苟顺私情，则告诉不许。臣之进退，实为狼狈。\n伏惟圣朝以孝治天下，凡在故老，犹蒙矜育，况臣孤苦，特为尤甚。且臣少仕伪朝，历职郎署，本图宦达，不矜名节。今臣亡国贱俘，至微至陋，过蒙拔擢，宠命优渥，岂敢盘桓，有所希冀。但以刘日薄西山，气息奄奄，人命危浅，朝不虑夕。臣无祖母，无以至今日；祖母无臣，无以终余年。母孙二人，更相为命，是以区区不能废远。\n臣密今年四十有四，祖母今年九十有六，是臣尽节于陛下之日长，报养刘之日短也。乌鸟私情，愿乞终养。臣之辛苦，非独蜀之人士及二州牧伯所见明知，皇天后土实所共鉴。愿陛下矜愍愚诚，听臣微志，庶刘侥幸，保卒余年。臣生当陨首，死当结草。臣不胜犬马怖惧之情，谨拜表以闻。",
     translation: "臣李密上言：我因为命运不好，早年就遭遇不幸。生下来六个月，慈父就去世了；长到四岁，舅舅逼母亲改嫁。祖母刘氏怜惜我孤苦弱小，亲自抚养我。我小时候多病，九岁还不能走路，孤苦零丁，直到成年。既没有伯叔，也少有兄弟，门庭衰微、福分浅薄，很晚才有儿子。外面没有关系较近的亲戚，家里没有照应门户的僮仆，孤孤单单，只有自己的身子和影子互相安慰。而刘氏一向患病，常年卧床，我侍奉汤药，从来没有停止离开过。\n到了圣朝，我受到清明政治的浸润。先前太守逵考察我推举为孝廉，后来刺史荣选拔我为秀才。我因为无人供养祖母，辞谢不接受任命。诏书特地颁下，任命我为郎中，不久又蒙受国恩，任命我为洗马。以我这样卑微低贱的人，担当侍奉太子的职务，不是我杀身所能报答的。我把这些详细写成表章上奏，辞谢不去就职。诏书急切严厉，责备我逃避怠慢。郡县长官逼迫，催我上路；州官上门，比星火还急。我想奉诏奔走，但刘氏的病情一天天沉重；想姑且顺从私情，但申诉不被允许。我的进退，实在狼狈。\n我想到圣朝以孝治理天下，凡是年老的人，尚且受到怜惜养育，何况我孤苦的情况，特别严重。况且我年轻时曾在伪朝做官，历任郎官之职，本来就图仕途显达，并不看重名誉节操。如今我是亡国的卑贱俘虏，极其卑微浅陋，过分地受到提拔，恩宠优厚，怎敢迟疑徘徊，另有希图。只因为刘氏像落日迫近西山，气息微弱，生命危险，朝不保夕。我没有祖母，就没有今天；祖母没有我，就无法度过余年。祖孙二人，相依为命，所以我不能舍弃她而远离。\n我李密今年四十四岁，祖母今年九十六岁，这样我向陛下尽忠的日子长，报答养育刘氏的日子短。像乌鸦反哺一样的私情，希望求得让我把祖母奉养到最后。我的苦衷，不只是蜀地的人士和两州的长官所看见明白的，天地神明实在都共同鉴察。希望陛下怜惜我愚拙的诚心，听从我微小的愿望，或许刘氏能侥幸保全，度过余年。我活着当杀身报效，死了也要结草报恩。我怀着犬马般不胜恐惧的心情，恭敬地呈上表章让陛下知道。",
     translationSource: "school"
@@ -9390,7 +9934,7 @@ window.TEXT_MASTER = [
     work: "w-poems-gz11-16",
     id: "poems-gz11-16",
     title: "归去来兮辞",
-    entries: ["poems-gz11-16", "guwen-gwj-87"],
+    entries: ["guwen-gwj-87", "poems-gz11-16"],
     text: "归去来兮，田园将芜胡不归！既自以心为形役，奚惆怅而独悲？悟已往之不谏，知来者之可追。实迷途其未远，觉今是而昨非。舟遥遥以轻飏，风飘飘而吹衣。问征夫以前路，恨晨光之熹微。\n乃瞻衡宇，载欣载奔。僮仆欢迎，稚子候门。三径就荒，松菊犹存。携幼入室，有酒盈樽。引壶觞以自酌，眄庭柯以怡颜。倚南窗以寄傲，审容膝之易安。园日涉以成趣，门虽设而常关。策扶老以流憩，时矫首而遐观。云无心以出岫，鸟倦飞而知还。景翳翳以将入，抚孤松而盘桓。\n归去来兮，请息交以绝游。世与我而相违，复驾言兮焉求？悦亲戚之情话，乐琴书以消忧。农人告余以春及，将有事于西畴。或命巾车，或棹孤舟。既窈窕以寻壑，亦崎岖而经丘。木欣欣以向荣，泉涓涓而始流。善万物之得时，感吾生之行休。\n已矣乎！寓形宇内复几时，曷不委心任去留？胡为乎遑遑欲何之？富贵非吾愿，帝乡不可期。怀良辰以孤往，或植杖而耘耔。登东皋以舒啸，临清流而赋诗。聊乘化以归尽，乐夫天命复奚疑！",
     translation: "回去吧，田园快要荒芜了，为什么还不回去！既然自己让心志被形体所驱使，为什么还惆怅独自悲伤？觉悟到过去的事已无法挽回，知道将来的事还可以补救。其实走入迷途还不算远，已经明白今天是对的、昨天是错的。船在水上轻轻地飘荡，风飘飘地吹动衣裳。向行人打听前面的路，只恨晨光还很微弱。\n终于望见自家的屋檐，一边欣喜一边奔跑。僮仆前来迎接，幼儿在门口等候。院中的小路快要荒芜，松树菊花还依然存在。牵着幼儿走进屋内，酒已盛满酒樽。拿起酒壶酒杯自斟自饮，看着院中的树枝和悦地露出笑容。靠着南窗寄托傲然的情怀，深知这仅容膝盖的小屋反而容易安适。天天到园中散步成了乐趣，门虽设着却常常关着。拄着手杖走走停停，时时抬头远望。云无意地从山峰间飘出，鸟飞倦了就知道回巢。日光昏暗将要落山，我抚着孤松徘徊不去。\n回去吧，请让我断绝与世俗的交游。世俗与我相违背，再驾车出去又追求什么呢？喜欢与亲戚说知心话，乐于弹琴读书来消解忧愁。农人告诉我春天到了，将要到西边的田地去耕作。有时驾着有帷幕的车，有时划着孤舟。既曲折地探寻山壑，也崎岖地经过山丘。树木欣欣向荣，泉水涓涓开始流动。羡慕万物得到好时节，感叹我的一生将要结束。\n算了吧！寄身天地间还能多久，为什么不随心任其去留？为什么惶惶不安地想要到哪里去？富贵不是我的愿望，仙界不可期望。趁着好时光独自出游，或者把手杖插在田边除草培土。登上东边的高地放声长啸，面对清流赋诗。姑且顺着自然的造化走到尽头，乐天知命还有什么可怀疑的！",
     translationSource: "school"
@@ -9417,7 +9961,7 @@ window.TEXT_MASTER = [
     work: "w-poems-gz12-15",
     id: "poems-gz12-15",
     title: "滕王阁序",
-    entries: ["poems-gz12-15", "guwen-gwj-93"],
+    entries: ["guwen-gwj-93", "poems-gz12-15"],
     text: "豫章故郡，洪都新府。星分翼轸，地接衡庐。襟三江而带五湖，控蛮荆而引瓯越。物华天宝，龙光射牛斗之墟；人杰地灵，徐孺下陈蕃之榻。雄州雾列，俊采星驰。台隍枕夷夏之交，宾主尽东南之美。都督阎公之雅望，棨戟遥临；宇文新州之懿范，襜帷暂驻。十旬休假，胜友如云；千里逢迎，高朋满座。腾蛟起凤，孟学士之词宗；紫电青霜，王将军之武库。家君作宰，路出名区；童子何知，躬逢胜饯。\n时维九月，序属三秋。潦水尽而寒潭清，烟光凝而暮山紫。俨骖騑于上路，访风景于崇阿；临帝子之长洲，得天人之旧馆。层峦耸翠，上出重霄；飞阁流丹，下临无地。鹤汀凫渚，穷岛屿之萦回；桂殿兰宫，即冈峦之体势。\n披绣闼，俯雕甍，山原旷其盈视，川泽纡其骇瞩。闾阎扑地，钟鸣鼎食之家；舸舰弥津，青雀黄龙之舳。云销雨霁，彩彻区明。落霞与孤鹜齐飞，秋水共长天一色。渔舟唱晚，响穷彭蠡之滨；雁阵惊寒，声断衡阳之浦。\n遥襟甫畅，逸兴遄飞。爽籁发而清风生，纤歌凝而白云遏。睢园绿竹，气凌彭泽之樽；邺水朱华，光照临川之笔。四美具，二难并。穷睇眄于中天，极娱游于暇日。天高地迥，觉宇宙之无穷；兴尽悲来，识盈虚之有数。望长安于日下，目吴会于云间。地势极而南溟深，天柱高而北辰远。关山难越，谁悲失路之人？萍水相逢，尽是他乡之客。怀帝阍而不见，奉宣室以何年？\n嗟乎！时运不齐，命途多舛。冯唐易老，李广难封。屈贾谊于长沙，非无圣主；窜梁鸿于海曲，岂乏明时？所赖君子见机，达人知命。老当益壮，宁移白首之心？穷且益坚，不坠青云之志。酌贪泉而觉爽，处涸辙以犹欢。北海虽赊，扶摇可接；东隅已逝，桑榆非晚。孟尝高洁，空余报国之情；阮籍猖狂，岂效穷途之哭！\n勃，三尺微命，一介书生。无路请缨，等终军之弱冠；有怀投笔，慕宗悫之长风。舍簪笏于百龄，奉晨昏于万里。非谢家之宝树，接孟氏之芳邻。他日趋庭，叨陪鲤对；今兹捧袂，喜托龙门。杨意不逢，抚凌云而自惜；钟期既遇，奏流水以何惭？\n呜呼！胜地不常，盛筵难再；兰亭已矣，梓泽丘墟。临别赠言，幸承恩于伟饯；登高作赋，是所望于群公。敢竭鄙怀，恭疏短引；一言均赋，四韵俱成。请洒潘江，各倾陆海云尔。",
     translation: "这里是汉代的豫章旧郡，如今是洪州的新府。星空的分野属于翼、轸两宿，地势连接着衡山和庐山。以三江为衣襟、以五湖为衣带，控制着楚地、连接着瓯越。物类的精华是上天的珍宝，宝剑的光芒直射牛斗二宿的所在；人中有英杰、地有灵气，徐孺子使陈蕃为他放下床榻。雄伟的州城像雾一般涌起，杰出的人才像流星般飞驰。城池依凭着中原与南夷的交界，宾客与主人都是东南一带的俊杰。都督阎公有崇高的声望，仪仗远远地来到；新州的宇文刺史有美好的风范，车驾在此暂时停驻。正值十日一休的假期，好友如云；千里之外的宾客前来相会，高朋满座。文辞如蛟龙腾起、凤凰飞舞，是孟学士这样的文章宗师；宝剑如紫电青霜，是王将军这样的武库。家父在外地做县令，我因探望路过这名胜之地；我年幼无知，却有幸亲身遇到了这场盛大的宴会。\n时当九月，季节属于深秋。积水消尽而寒潭清澄，烟霭凝集而暮山发紫。驾着车马在高高的路上前行，到高丘上寻访风景；来到滕王曾经游宴的长洲，见到仙人住过的旧馆。层层山峦耸起翠绿，向上直出云霄；凌空的楼阁涂饰鲜红，向下俯视不见地面。白鹤栖息的水滨、小鸭聚集的小洲，极尽岛屿曲折回环的情致；桂木兰木的殿堂宫室，都依着山冈的形势而建。\n推开雕花的阁门，俯视雕饰的屋脊，山岭平原辽阔得充满视野，河流湖泽纡回得令人惊叹。里巷房舍遍地，尽是钟鸣鼎食的富贵人家；船只塞满渡口，船头画着青雀黄龙。云散雨停，阳光普照、天空明净。落霞与孤雁一同飞舞，秋水与长空浑然一色。渔舟在傍晚唱起歌，歌声传遍彭蠡之滨；雁阵因寒意而惊飞，叫声消失在衡阳的水边。\n远望的胸怀刚刚畅快，飘逸的兴致急速飞升。排箫奏起而清风生，细歌凝聚而白云停。像睢园的绿竹，气概超过彭泽的酒樽；像邺水的红莲，光彩照耀临川的笔。音乐、美景、佳宾、盛宴四美俱全，贤主、嘉宾二难并具。极目远望天空，尽情游乐在这闲暇之日。天高地远，感到宇宙的无穷；兴尽悲来，认识到盛衰自有定数。遥望长安在日下，远眺吴会在云间。地势尽于南方而南海深，天柱高耸而北极星遥远。关山难以逾越，谁来悲悯迷路的人？萍水相逢，都是他乡之客。怀念朝廷宫门却不能见到，什么时候才能像贾谊那样被召入宣室？\n唉！时运不齐，命运多有坎坷。冯唐容易衰老，李广难以封侯。使贾谊屈居长沙，并非没有圣明的君主；让梁鸿逃隐海边，难道不是太平盛世？所依靠的是君子能见机行事，通达的人知道天命。年老应当更加壮健，怎么能改变白首之心？处境困窘应当更加坚定，不能坠落青云之志。饮了贪泉之水仍觉清爽，处在干涸的车辙中仍然欢畅。北海虽然遥远，乘着旋风可以到达；早晨的时光已经逝去，日落时的收成还不算晚。孟尝君品行高洁，白白留下报国的热情；阮籍放纵不羁，我怎能学他穷途之哭！\n我王勃，不过是三尺微命的一个书生。没有门路请缨报国，与终军二十岁的年纪相同；有心投笔从戎，仰慕宗悫乘风破浪的志向。舍弃一生的功名仕途，到万里之外去侍奉父母的晨昏起居。虽不是谢家那样的宝树，却也接近孟氏那样的芳邻。将来在父亲庭前侍立，有幸陪侍父亲聆听教诲；如今手持衣袖，高兴地登上了龙门。没有遇到杨得意那样引荐的人，只能抚着自己的文章自惜；既然遇到了钟子期这样的知音，弹一曲流水又有什么可羞愧的？\n唉！美好的地方不会永远，盛大的宴会难以再逢；兰亭的集会已成往事，金谷园也成了废墟。临别赠言，有幸承受这盛大的饯行之恩；登高作赋，是希望仰赖在座诸公。我大胆竭尽浅陋的心怀，恭敬地写下这篇短序；大家一同赋诗，四韵都已完成。请诸位挥洒像潘岳、陆机那样的文采吧。",
     translationSource: "school"
@@ -9534,7 +10078,7 @@ window.TEXT_MASTER = [
     work: "w-poems-xx3-09",
     id: "poems-xx3-09",
     title: "采莲曲",
-    entries: ["poems-xx3-09", "tangshi-ts-305", "tangshi-ts-89"],
+    entries: ["poems-xx3-09", "tangshi-ts-89", "tangshi-ts-305"],
     text: "荷叶罗裙一色裁，芙蓉向脸两边开。\n乱入池中看不见，闻歌始觉有人来。",
     translation: "荷叶和罗裙像是在同一块料子上裁成，荷花开在人脸两旁。混进荷池里就看不见人了，听见歌声才知道有人来。",
     translationSource: "school"
@@ -9588,7 +10132,7 @@ window.TEXT_MASTER = [
     work: "w-poems-xx4-11",
     id: "poems-xx4-11",
     title: "卜算子·咏梅",
-    entries: ["poems-xx4-11", "jinxiandai-jxd-11"],
+    entries: ["jinxiandai-jxd-11", "poems-xx4-11"],
     text: "风雨送春归，飞雪迎春到。\n已是悬崖百丈冰，犹有花枝俏。\n俏也不争春，只把春来报。\n待到山花烂漫时，她在丛中笑。",
     translation: "风雨把春天送走，飞雪把春天迎来。已经是悬崖上结着百丈坚冰，却还有花枝开得俏丽。俏丽也不去争春，只把春天到来的消息报告。等到山花开得烂漫的时候，她就在花丛中欢笑。",
     translationSource: "school"
@@ -9786,7 +10330,7 @@ window.TEXT_MASTER = [
     work: "w-poems-xx6-18",
     id: "poems-xx6-18",
     title: "七律·长征",
-    entries: ["poems-xx6-18", "jinxiandai-jxd-05"],
+    entries: ["jinxiandai-jxd-05", "poems-xx6-18"],
     text: "红军不怕远征难，万水千山只等闲。\n五岭逶迤腾细浪，乌蒙磅礴走泥丸。\n金沙水拍云崖暖，大渡桥横铁索寒。\n更喜岷山千里雪，三军过后尽开颜。",
     translation: "红军不怕长征的艰难，万水千山只当作平常。五岭起伏像翻腾的细浪，乌蒙山气势磅礴像滚动的泥丸。金沙江水拍打云崖，大渡河上铁索桥寒意森森。更喜岷山千里积雪，全军过后人人笑开颜。",
     translationSource: "school"
@@ -19682,56 +20226,41 @@ window.TEXT_MASTER = [
     translation: "拄着杖去招隐士，荒芜的道路横贯古今。岩穴没有构架，丘中有鸣琴。白雪停在阴冈，红花耀于阳林。石泉漱洗琼瑶，纤鳞也浮沉其中。不必非要丝竹，山水自有清音。何须等待啸歌，灌木自会悲吟。秋菊兼作干粮，幽兰间杂重襟。踌躇而足力已疲，姑且想要投下我的簪。\n开始经营东山的庐舍，果树之下自成荆棘。前面有寒泉之井，姑且可以莹净心神。在峭蒨青葱之间，竹柏得其真性。弱叶栖着霜雪，飞荣流着余津。爵服不是常玩之物，好恶有屈有伸。结绶便生缠牵，弹冠才去尘埃。惠连并非我所屈，首阳也非我所仁。相与观看所崇尚的，逍遥地选择良辰。",
     translationSource: "public-domain"
   },
-  {
-    work: "w-chengyu-cy-11",
-    id: "chengyu-cy-11",
-    title: "愚公移山",
-    entries: ["chengyu-cy-11"],
-    text: "太行、王屋二山，方七百里，高万仞，本在冀州之南，河阳之北。\n北山愚公者，年且九十，面山而居。惩山北之塞，出入之迂也，聚室而谋曰：「吾与汝毕力平险，指通豫南，达于汉阴，可乎？」杂然相许。\n遂率子孙荷担者三夫，叩石垦壤，箕畚运于渤海之尾。邻人京城氏之孀妻有遗男，始龀，跳往助之。寒暑易节，始一反焉。\n河曲智叟笑而止之曰：「甚矣，汝之不惠！以残年余力，曾不能毁山之一毛，其如土石何？」北山愚公长息曰：「汝心之固，固不可彻，曾不若孀妻弱子。虽我之死，有子存焉；子又生孙，孙又生子；子又有子，子又有孙；子子孙孙无穷匮也，而山不加增，何苦而不平？」河曲智叟亡以应。",
-    translation: "太行、王屋两座山，方圆七百里，高达万丈，本来在冀州的南面、河阳的北面。\n北山有个叫愚公的人，年近九十，面对着山居住。他苦于大山北面阻塞、出入绕远，便召集全家商量说：「我和你们尽全力铲平险峻的大山，让道路直通豫州南部，到达汉水南岸，可以吗？」大家纷纷表示赞同。\n于是愚公率领三个能挑担子的子孙，凿石头、挖泥土，用箕畚把土石运到渤海的边上。邻居京城氏的寡妇有个孤儿，刚换牙，也跳着去帮助他们。冬夏换季，才往返一次。\n河曲的智叟笑着阻止他说：「你太不聪明了！凭你残余的年纪和力气，连山上的一根草都毁不掉，又能把泥土石头怎么样呢？」北山愚公长叹说：「你思想顽固，顽固得没法改变，还不如寡妇和小孩。即使我死了，还有儿子在；儿子又生孙子，孙子又生儿子；儿子又有儿子，儿子又有孙子；子子孙孙没有穷尽，可是山却不会增高，还怕挖不平吗？」河曲智叟无话可答。",
-    translationSource: "public-domain"
-  },
-  {
-    work: "w-chengyu-cy-52",
-    id: "chengyu-cy-52",
-    title: "卧薪尝胆",
-    entries: ["chengyu-cy-52"],
-    text: "吴既赦越，越王勾践反国，乃苦身焦思，置胆于坐，坐卧即仰胆，饮食亦尝胆也。曰：「女忘会稽之耻邪？」\n身自耕作，夫人自织，食不加肉，衣不重采，折节下贤人，厚遇宾客，振贫吊死，与百姓同其劳。",
-    translation: "吴国赦免越国之后，越王勾践回到国内，就劳苦身体、苦心思虑，把苦胆挂在座位旁，坐着躺着都仰头看胆，吃饭时也先尝一尝苦胆。他常问自己：「你忘了会稽之耻吗？」\n他亲自耕田，夫人亲自织布，吃饭不加肉，穿衣不用多种色彩，谦恭地礼待贤人，优厚地对待宾客，救济穷人、吊唁死者，与百姓同甘共苦。",
-    translationSource: "public-domain"
-  },
-  {
-    work: "w-chengyu-cy-68",
-    id: "chengyu-cy-68",
-    title: "礼贤下士",
-    entries: ["chengyu-cy-68"],
-    text: "公子为人仁而下士，士无贤不肖皆谦而礼交之，不敢以其富贵骄士。士以此方数千里争往归之，致食客三千人。\n当是时，诸侯以公子贤，多客，不敢加兵谋魏十余年。",
-    translation: "公子（魏无忌）为人仁厚而礼贤下士，无论士人贤能与否，他都谦逊地以礼相待，不敢因为自己富贵就傲慢地对待士人。因此方圆数千里的士人都争着前来归附他，招来食客三千人。\n在这个时候，各国诸侯因为公子贤能、门客众多，十几年不敢出兵谋取魏国。",
-    translationSource: "public-domain"
-  },
-  {
-    work: "w-chengyu-cy-96",
-    id: "chengyu-cy-96",
-    title: "不自量力",
-    entries: ["chengyu-cy-96"],
-    text: "不度德，不量力，不亲亲，不征辞，不察有罪。犯五不韪，而以伐人，其丧师也，不亦宜乎！",
-    translation: "不衡量自己的德行，不估量自己的实力，不亲近同姓之国，不审察言辞的是非，不明辨罪过的有无。犯了这五种错误，还要去讨伐别人，他军队的覆没，不也是应该的吗！",
-    translationSource: "public-domain"
-  },
-  {
-    work: "w-chengyu-cy-69",
-    id: "chengyu-cy-69",
-    title: "东道主",
-    entries: ["chengyu-cy-69"],
-    text: "夜缒而出。见秦伯曰：「秦、晋围郑，郑既知亡矣。若亡郑而有益于君，敢以烦执事。越国以鄙远，君知其难也。焉用亡郑以陪邻？邻之厚，君之薄也。若舍郑以为东道主，行李之往来，共其乏困，君亦无所害。」\n秦伯说，与郑人盟。",
-    translation: "夜里用绳子把烛之武从城墙上放下去。他见到秦穆公说：「秦、晋两国围攻郑国，郑国已经知道自己要灭亡了。如果灭掉郑国对您有好处，那就冒昧地拿亡郑这件事麻烦您。越过别国而把远地作为边邑，您知道那是很难的。哪里用得着灭掉郑国来增加邻国（晋国）的土地呢？邻国的势力雄厚了，就是您的势力削弱了。如果留下郑国，把它作为东方道路上的主人，秦国使者往来经过，郑国可以供给他们所缺少的物资，对您也没有什么害处。」\n秦穆公很高兴，就与郑国订立了盟约。",
-    translationSource: "public-domain"
-  }
 ];
 
+/* ==========================================================================
+   近重复对：同一篇却有两种写法，**故意不合并**
+   --------------------------------------------------------------------------
+   下面是「差不多是同一篇、但正文有一字之差」的那些对，共 0 组。
+   它们**没有**被收进上面的主表 —— 因为一字之差往往不是录入出错，
+   而是两条并列的文本传统：
+
+     · 选本原貌（《文选》作「凤皇」、《古文观止》作「霪雨」）
+     · 教材 / 通行字（课本作「凤凰」，今通行本作「淫雨」）
+
+   裁定见 data/works-index.js：「课内以教材文本为准，选集以选本原貌为准，
+   冲突时分成两条并列的作品，各背各的」—— 所以这里**只登记事实**，
+   不去合并、也不改任何一份正文。主表收归的是「字面完全相同」的那些篇；
+   这一份清单是它的边界：谁要是把这几篇也并了，学生就会读到
+   与自己课本不一样的那一份《岳阳楼记》。
+
+   ⚠️ 这是**生成文件**，改动请改 scripts/build-text-master.js 后重跑。
+
+   字段：entries 两条（及以上）条目 id；reason 为什么它们「像同一篇而不合并」
+   ========================================================================== */
 window.TEXT_NEAR_DUP = [
 ];
 
+/* ==========================================================================
+   取数入口：把条目上的 textRef 展开成正文 / 译文
+   --------------------------------------------------------------------------
+   摘掉内联正文的条目只留一行 textRef，正文从这里取回。
+   各消费方（站点索引、阅读引擎、搜索页……）都调这一个函数 ——
+   各写一份迟早有一处忘了取，而表现只是「那一处正文空白」，不报错。
+
+   ⚠️ 没有 textRef、或主表里查不到时**原样返回**，不做任何猜测：
+      猜出来的正文比空白更糟 —— 空白一眼可见，取错一篇却看着正常。
+   ========================================================================== */
 (function () {
   "use strict";
 
@@ -19747,6 +20276,12 @@ window.TEXT_NEAR_DUP = [
     return byId;
   }
 
+  /**
+   * 取这一条的正文 / 译文。
+   * @param {Object} p      条目（可能带 textRef）
+   * @param {String} [book] 所属集子 id —— textRef 记的是集子内 id 时补前缀再查
+   * @returns {Object} 展开后的条目（无 textRef 或查不到时原样返回）
+   */
   window.masterTextOf = function (p, book) {
     if (!p || !p.textRef || p.text) return p;
     var m = map()[p.textRef];

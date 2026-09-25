@@ -665,6 +665,16 @@
       (p.selection ? '<span class="tag ghost">' + esc(p.selection) + "</span>" : "");
 
     renderReaderText();
+
+    // 释义卡（成语页专属）：没有 meaning 的集子整卡不出现，不留空白框
+    var meanBox = rd("meaning");
+    var meanEl = rd("meaning-text");
+    if (meanBox) {
+      var mean = p.meaning ? String(p.meaning) : "";
+      meanBox.hidden = !mean;
+      if (meanEl) meanEl.textContent = mean;
+    }
+
     el.querySelector('.rd-trans-text, #rd-trans-text').textContent = p.translation || W.pendingTranslation;
 
     var srcEl = el.querySelector('.rd-trans-src, #rd-trans-src');

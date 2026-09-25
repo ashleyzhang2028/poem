@@ -150,9 +150,10 @@ const uncovered = dupEntries.filter(e => !covered[e]);
 chk(uncovered.length === 0,
   '「同篇判重键下有两条及以上」的条目共 ' + dupEntries.length + ' 条，全部收进了主表（未收：' +
   (uncovered.slice(0, 6).join('、') || '无') + '）');
-chk(dupEntries.length === 297,
-  '重复条目恰为 297 条（139 篇：多数 × 2，少数 × 3 或 4；乐府集与成语故事收进来的一批重篇，' +
-  'Issue #244 / #308；Issue #339 拆开 5 组错并后由 303 降为 297；实际 ' +
+chk(dupEntries.length === 295,
+  '重复条目恰为 295 条（139 篇：多数 × 2，少数 × 3 或 4；乐府集与成语故事收进来的一批重篇，' +
+  'Issue #244 / #308；Issue #339 拆开 5 组错并后由 303 降为 297；' +
+  '本轮又把 众志成城 / 众口铄金 这一组「正文撞巧相同」的拆开，降为 295；实际 ' +
   dupEntries.length + '）');
 
 const expectFlat = dupEntries.slice();
