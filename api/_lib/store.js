@@ -34,7 +34,7 @@ function memoryStore() {
       var a = db.accounts[uid];
       if (!a) return false;
 
-      ["plan", "plan_until", "role", "last_login_at", "nickname", "status",
+      ["plan", "plan_until", "role", "last_login_at", "login_count", "nickname", "status",
         "email", "email_verified_at", "password_hash", "password_salt"].forEach(function (k) {
         if (patch && Object.prototype.hasOwnProperty.call(patch, k)) a[k] = patch[k];
       });
@@ -225,7 +225,14 @@ function supabaseStore(cfg) {
 
   var degraded = [];
 
-  var MIGRATED = ["email", "email_verified_at", "password_hash", "password_salt"];
+  // 「后加的列」：老库上还没有它们。写不进去时**降级**（剔除这几列再发一次），
+  // 而不是让整发请求红掉 —— 少一列的用户体验是「少个功能」，不是「整个站点用不了」。
+  //
+  // ⚠️ `login_count`（Issue #276 后续）在这份名单里：它是「这个人以前登录过没有」
+  //    的唯一判据。老库上没有它时，判定会退回「看 last_login_at 有没有被登录动过」，
+  //    也就是「这一次登录问昵称、之后不再问」照旧生效，只是**第一次登录若与注册
+  //    落在同一毫秒**会少问一次昵称（不会多问）。
+  var MIGRATED = ["email", "email_verified_at", "password_hash", "password_salt", "login_count"];
 
   function isMissingColumn(err) {
     if (!err || err.status !== 400) return false;
@@ -268,7 +275,7 @@ function supabaseStore(cfg) {
       if (!isMissingColumn(err)) throw err;
 
       var CLS = ["uid", "email_hash", "nickname", "plan", "plan_until", "role",
-        "created_at", "last_login_at", "status"];
+        "created_at", "last_login_at", "login_count", "status"];
       var second = call("/accounts?" + filter + "&select=" + CLS.join(",") + "&limit=1");
 
       second["catch"](function (e2) { noteDegrade(MIGRATED); });
@@ -290,7 +297,7 @@ function supabaseStore(cfg) {
 
       noteDegrade(refusedColumns(safeKeys));
       var CLS = ["uid", "email_hash", "nickname", "plan", "plan_until", "role",
-        "created_at", "last_login_at", "status"];
+        "created_at", "last_login_at", "login_count", "status"];
       return sendAccount(pick(acc, CLS));
     }).then(function (saved) {
       if (!Object.keys(rest).length) return saved;
@@ -307,7 +314,7 @@ function supabaseStore(cfg) {
     });
   }
 
-  var COLS = "uid,email,email_hash,nickname,plan,plan_until,role,created_at,last_login_at,status,email_verified_at,password_hash,password_salt";
+  var COLS = "uid,email,email_hash,nickname,plan,plan_until,role,created_at,last_login_at,login_count,status,email_verified_at,password_hash,password_salt";
   var q = encodeURIComponent;
 
   var api = {
@@ -348,7 +355,7 @@ function supabaseStore(cfg) {
 
     patchAccount: function (uid, patch) {
       var body = {};
-      ["plan", "plan_until", "role", "last_login_at", "nickname", "status",
+      ["plan", "plan_until", "role", "last_login_at", "login_count", "nickname", "status",
         "email", "email_verified_at", "password_hash", "password_salt"].forEach(function (k) {
         if (patch && Object.prototype.hasOwnProperty.call(patch, k)) body[k] = patch[k];
       });

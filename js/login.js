@@ -400,7 +400,9 @@
             uid: r.uid || "",
             nickname: r.nickname || "",
             identities: [{ channel: "email", value: r.email || state.regEmail || "" }],
-            createdAt: 0, lastLoginAt: 1
+            createdAt: Number(r.createdAt) || 0,
+            lastLoginAt: Number(r.lastLoginAt) || Number(r.createdAt) || 0,
+            firstLogin: r.created === true
           },
           remote: true,
           emailVerified: r.emailVerified === true
@@ -448,7 +450,9 @@
           uid: r.account.uid,
           nickname: r.account.nickname || "",
           identities: [{ channel: "email", value: r.account.email || "" }],
-          createdAt: 0, lastLoginAt: 1
+          createdAt: r.account.createdAt,
+          lastLoginAt: r.account.lastLoginAt,
+          firstLogin: r.account.firstLogin
         },
         remote: true,
         emailVerified: r.account.emailVerified === true
@@ -662,7 +666,9 @@
           uid: r.account.uid,
           nickname: r.account.nickname || "",
           identities: [{ channel: "email", value: r.account.email || "" }],
-          createdAt: 0, lastLoginAt: 1
+          createdAt: r.account.createdAt,
+          lastLoginAt: r.account.lastLoginAt,
+          firstLogin: r.account.firstLogin
         },
         remote: true,
         emailVerified: r.account.emailVerified === true
@@ -670,13 +676,54 @@
     });
   }
 
+  // 这一次登录是不是**第一次**（决定要不要停下来问昵称）。
+  //
+  // ⚠️ 口径：**服务端说了算**（`publicAccount` 下发的 `firstLogin` 那一列）。
+  //    客户端不猜、不算、不比自己编的时间戳。
+  //
+  //    从前这里是：
+  //        var isNew = !r.account.lastLoginAt || r.account.lastLoginAt === r.account.createdAt;
+  //    这句话有两处都不成立：
+  //      ① 喂进来的那一份是**编的** —— 三处 onSignedIn 的调用者都写死了
+  //         `createdAt: 0, lastLoginAt: 1`（那两个数凭空来的），于是**老用户
+  //         每一次登录都被算成「第一次」**，被一路拖去「快捷登录」那一屏填昵称
+  //         （这就是用户 2026-09-25 报的那一条）；
+  //      ② 判据本身也不对 —— `created_at` 与 `last_login_at` **本来就不相等**
+  //         （注册在 T1、第一次登录在 T2，真浏览器实测差了 1.6 秒），比大小
+  //         会把**真·第一次**判成老用户，于是新用户永远见不到昵称那一屏。
+  //
+  //    现在两边都当真：服务端在覆盖 `last_login_at` **之前**问出这一位，
+  //    客户端照它说；问不到（老服务端 / 本机路径没带）才退回时间戳比对。
+  function isFirstLogin(account) {
+    var acc = account || {};
+    if (acc.firstLogin === true) return true;
+    if (acc.firstLogin === false) return false;
+    var has = function (k) {
+      return acc[k] != null && acc[k] !== 0 && acc[k] !== "";
+    };
+    if (!has("lastLoginAt")) return true;
+    if (!has("createdAt")) return false;
+    return Number(acc.lastLoginAt) === Number(acc.createdAt);
+  }
+
+  // 已经登录过的人**不再**被拦下来填昵称：直接落到 /mine/（或 ?next= 指的那页）。
+  // 昵称/头像照旧随时能在「我的 → 编辑资料」里改。
+  function leaveWithoutNickname() {
+    var next = nextUrl() || "/mine/";
+    location.replace(next);
+    return null;
+  }
+
   function onSignedIn(r) {
     stopTick();
+
+    var doneMail = (r.account.identities[0] && r.account.identities[0].value) || "";
+
+    if (!isFirstLogin(r.account)) return leaveWithoutNickname();
+
     setMode("done");
 
-    var isNew = !r.account.lastLoginAt || r.account.lastLoginAt === r.account.createdAt;
-    var doneMail = (r.account.identities[0] && r.account.identities[0].value) || "";
-    text($("done-lead"), (isNew ? "账号已建好 · " : "已登录 · ") +
+    text($("done-lead"), "账号已建好 · " +
       (Ent ? Ent.tierLabel(Ent.identity().tier) : "Free") +
       (doneMail ? " · " + doneMail : ""));
 
@@ -688,11 +735,11 @@
     }
 
     if (r.remote) {
-      showToast("登录成功：进度已可跨设备同步");
+      showToast("账号已建好：进度已可跨设备同步");
     } else if (r.isLocalOnly) {
       showToast("浏览器不允许保存数据：本次登录刷新后会失效");
     } else {
-      showToast("登录成功（本机体验版）");
+      showToast("账号已建好（本机体验版）");
     }
   }
 
