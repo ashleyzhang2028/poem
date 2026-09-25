@@ -2880,16 +2880,103 @@ async function main() {
       const meC = await call(sv.base, "GET", "/api/me", undefined, ck278);
       eq(meC.body.nickname, "小明", "⑤ **换一个会话（= 换一台设备）登录，名字还在**（这正是「账号域」的含义）");
 
-      const code278 = await POST("/api/send-code", { email: "flow278@example.com" });
-      eq(code278.status, 202, "⑤ 快捷登录能发送验证码");
-      const codeLogin278 = await POST("/api/verify-code", { codeId: code278.body.codeId, code: code278.body.devCode });
-      eq(codeLogin278.status, 200, "⑤ 验证码登录在拒绝重复 sid 的数据库上仍成功");
-      eq(sessionWrites278, 3, "⑤ 验证码登录只新增一次会话");
+      // ⑤ 验证码登录（Issue #278 那件事的现场）
+      //
+      // 原先这一条只是「快速登录能发码 + 验码能换到会话」。
+      // feca3f4f 之后它多守一件事：**验码接口不再自己抄一段落库**。
+      // 那个洞是这么出的 —— 内核 `issueSessionFor` 落了一行，接口层又落一遍
+      // 同一枚 sid，真 Supabase 上 `sessions_pkey` 冲突，`/api/verify-code`
+      // 直接 500（就是用户说的「登录又失败」）。内存库下它是静默覆盖
+      // （`db.sessions[sid] = s`），所以**本地绿不等于线上绿** ——
+      // 本节上面那个「重复 sid 就 reject」的桩，才是把双写钉住的东西。
+      //
+      // 为什么要**指定出口 IP**：验码口按 `ip` 记账（`core.verifyCode` 的
+      // `ip|verify:`），而 `clientIp()` 取 `x-forwarded-for` 第一段 ——
+      // 节点 http 默认没有这个头，全都算 "unknown"；前几节打过的码也记在
+      // 那个名下，**不指定 IP 就会先撞上 429**，那样这一条守的就不是
+      // 「双写」这件事了（假红比漏测更坏）。
+      const CODE_IP = "203.0.113.7";
+      const vcMsg = (tail) => "⑤ " + tail + "｜" + CODE_IP;
+      const vcIp278 = ip => ({ "x-forwarded-for": ip });
+
+      // 量「内核写了几次」要用的三样（下面几条都靠它）
+      const cfg278 = require("../api/_lib/config.js");
+      const storeMod278 = require("../api/_lib/store.js").getStore(cfg278);
+      const core278 = require("../api/_lib/core.js");
+
+      const code278 = await call(sv.base, "POST", "/api/send-code",
+        { email: "flow278@example.com" }, undefined, vcIp278(CODE_IP));
+      eq(code278.status, 202, vcMsg("快捷登录能发送验证码"));
+
+      // 同一个「设备」（不带会话 = 同一台机器）连着用两次
+      const vcOnce = async (codeId, code, cookie) => call(sv.base, "POST", "/api/verify-code",
+        { codeId: codeId, code: code }, cookie, vcIp278(CODE_IP));
+
+      const codeLogin278 = await vcOnce(code278.body.codeId, code278.body.devCode);
+      eq(codeLogin278.status, 200,
+        vcMsg("验码登录第一发 200（**四件事一次做齐**：落库会话行 / 认领 owner / 设 Cookie / 回 account）"));
+      eq(sessionWrites278, 3, vcMsg("验码登录只新增一次会话"));
+      chk(/^kbsid=/.test(String(codeLogin278.setCookie || "")), vcMsg("这一发真的带上了 Set-Cookie（不是只回一句 200）"));
+      chk(!!(codeLogin278.body.account && codeLogin278.body.account.uid), vcMsg("账号信息一条不少"));
+
+      // ⑤′ 「会话只有一个出口」这件事**可以量**（Issue #278 的落点）
+      //
+      // 上面那个桩只让「真 HTTP」第一发红。这里把约束本身变成能直接调、
+      // 能直接量的东西 —— 不再只靠 `core.js` 里那几句正则：
+      //   ① 内核签一次会话：`store.putSession` **只被调一次**（多调一次就是双写）；
+      //   ② 签出来的那一枚 token 解得回同一笔会话（Cookie 与库里那一行是同一件东西）。
+      //
+      // ③「同一枚 sid 落第二行当场失败」这一条守不了「双写」：
+      //    sid 是随机的（`identity.newSid`），两条路各签一枚 token 就会
+      //    各拿一枚 sid，落库**不撞**，只有用例自己构造同址才撞——
+      //    拿它当判据等于自欺。所以这里只量「内核写了几次」，
+      //    双写那条路由**真 HTTP** 那一发去抓（见上面 `sessionWrites278`）。
+      {
+        const t278 = Date.now();
+        const writes278 = [];
+        const realPut278 = storeMod278.putSession;
+        storeMod278.putSession = function (rec) { writes278.push(rec); return realPut278(rec); };
+        let issued278 = null;
+        try {
+          issued278 = await core278.issueSessionFor(
+            { cfg: cfg278, store: storeMod278, now: () => t278 },
+            { uid: "u_probe_sid_278", email: "probe278@example.com", plan: { tier: "free" }, role: "user", status: "active" });
+        } finally { storeMod278.putSession = realPut278; }
+
+        eq(writes278.length, 1, vcMsg("**内核签一次会话只落一行**（`issueSessionFor` 一处出口）"));
+        chk(!!issued278 && Array.isArray(issued278.cookies) && issued278.cookies.length === 1,
+          vcMsg("同一处把 Set-Cookie 也给了（少一件就是半截活）"));
+
+        const token278 = issued278 && issued278.cookies
+          ? require("../api/_lib/session.js").fromCookieHeader(issued278.cookies[0], cfg278.cookieName) : null;
+        const back278 = require("../api/_lib/session.js").read(cfg278, token278, t278);
+        chk(!!back278 && back278.sid === writes278[0].sid && back278.uid === writes278[0].uid,
+          vcMsg("那一枚 Cookie 里就是刚落库的那一行（签与落是同一笔会话，不是各写各的）"));
+      }
 
       const long = await PATCH("/api/me", { nickname: "一二三四五六七八九十十一十二十三" }, cookie278);
       eq(long.body.nickname.length, 12, "⑤ 超长昵称截到 12 个字符（与服务端家族子用户同一档）");
       const dirty = await PATCH("/api/me", { nickname: "<b>ok</b>\u0000" }, cookie278);
       eq(dirty.body.nickname, "bok/b", "⑤ 尖括号与控制字符被剔掉（它最后是画在别人屏幕上的）");
+      // ⑤′2 双写那一发：**带上第一发签的那枚会话**，同一台设备再走一次验码。
+      //
+      // 这是 feca3f4f 修掉那个现场的**客户端那一半**：验码接口自己抄一段
+      // putSession，这一发就会再落一行（它用的是自己那枚新 token 的 sid）。
+      // 真库上 `sessions_pkey` 冲突 → `/api/verify-code` 回 500。
+      // 排在紧后面 —— 双写那一版会返回 500，前面几条替死掉的就少。
+      //
+      // ⚠️ 这一发**必然**是 400（内核判据「这一枚码已经用过了」，见 core.js:554，
+      //    它在 `putSession` 之前，两版都一样，所以这一条**不是**双写的判据）。
+      //    它守的是另一件真事：这一档在双写版下会变成 **500**，
+      //    在今天的码上是 **400 且一枚 Cookie 都不发**。
+      const cookieVc278 = String(codeLogin278.setCookie || "").split(";")[0];
+      chk(/^kbsid=/.test(cookieVc278), vcMsg("（前置）第一发那枚 Cookie 真的拿到了"));
+      const codeLogin2nd = await vcOnce(code278.body.codeId, code278.body.devCode, cookieVc278);
+      eq(codeLogin2nd.status, 400,
+        vcMsg("同一枚码再用一次 → **400**（不是 500：500 就是双写把这一发打成 `sessions_pkey` 冲突）"));
+      eq(codeLogin2nd.body && codeLogin2nd.body.code, "E_CODE_USED",
+        vcMsg("码是 E_CODE_USED（一次性码就是一次性）"));
+      chk(!codeLogin2nd.setCookie, vcMsg("被拒的那一发**一枚 Cookie 都不发**（不给人会话，也不悄悄续期）"));
 
       const anon = await PATCH("/api/me", { nickname: "x" });
       eq(anon.status, 401, "⑥ 没登录改昵称 → 401（不是 403、也不是「改成了」）");
@@ -2917,6 +3004,27 @@ async function main() {
         !/store\.putSession\(/.test(handlerSrc278) &&
         !/store\.putSession\(/.test(fs.readFileSync(path.join(ROOT, "api/_routes/verify-code.js"), "utf8")),
         "⑦ 会话只在内核落库一次，登录 / 验码接口不再重复写入");
+
+      // ⑦′ 名单要**认整个 api/ 目录**，不是手点几个文件名
+      //
+      // 上一版这句只点了 `handler.js` 与 `auth/login.js` —— 于是
+      // `_routes/verify-code.js` 里那份手抄的 `putSession` 站在守区之外，
+      // 全绿放行（Issue #278 那一轮的实际情形）。名单是人手点的，人手点的
+      // 名单一定会漏下一份实现，所以这一条不再点名：**谁在 api/ 下调用
+      // `store.putSession`，只有内核那一处**。将来多出第四个文件、或者
+      // 拷一段改个变量名（`store["putSession"]` 这种也一并认），都会当场红。
+      const apiDir278 = path.join(ROOT, "api");
+      const walkApi = dir => fs.readdirSync(dir, { withFileTypes: true }).flatMap(e => {
+        const full = path.join(dir, e.name);
+        if (e.isDirectory()) return walkApi(full);
+        return /\.js$/.test(e.name) ? [full] : [];
+      });
+      const putSessionCallers278 = walkApi(apiDir278)
+        .filter(f => /store\s*(\.\s*)?\[?\s*["']?putSession/.test(fs.readFileSync(f, "utf8")))
+        .map(f => path.relative(ROOT, f).split(path.sep).join("/"));
+      eq(putSessionCallers278.join(","), "api/_lib/core.js",
+        "⑦ 整个 api/ 下只有内核那一处调 store.putSession（名单不是手点的；实为 " +
+        JSON.stringify(putSessionCallers278) + "）");
 
       const routes278 = require("../api/_lib/routes.js");
       chk(!!routes278.resolve("PATCH", "/api/me"), "⑦ PATCH /api/me 在路由表里（少一条就是按钮点了没反应）");

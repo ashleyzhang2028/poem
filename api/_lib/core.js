@@ -2391,6 +2391,11 @@ function accountDelete(deps, input) {
 module.exports = {
   ok: ok,
 
+  // 会话只有一个出口（Issue #278）：谁要让人进门，就调它。
+  // 导出是为了**能被量**：「内核签一次会话只落一行」这句话，
+  // 要有一个能直接调、能直接数的地方，而不是只靠源码里那几句正则。
+  issueSessionFor: issueSessionFor,
+
   __mail: mail,
   err: err,
   sendCode: sendCode,
