@@ -100,7 +100,7 @@ window.POEMS_CHENGYU = [
     excerpt: "刑天与帝至此争神，帝断其首，葬之常羊之山",
   },
   {
-    textRef: "classic-gw-21",
+    textRef: "chengyu-cy-11",
     id: "cy-11",
     title: "愚公移山",
     source: "《列子·汤问》",
@@ -510,7 +510,7 @@ window.POEMS_CHENGYU = [
     excerpt: "晋侯复假道于虞以伐虢",
   },
   {
-    textRef: "chengyu-cy-32",
+    textRef: "chengyu-cy-52",
     id: "cy-52",
     title: "卧薪尝胆",
     source: "《史记·越王勾践世家》",
@@ -670,7 +670,7 @@ window.POEMS_CHENGYU = [
     excerpt: "君子曰：「石碏，纯臣也，恶州吁而厚与焉",
   },
   {
-    textRef: "chengyu-cy-67",
+    textRef: "chengyu-cy-68",
     id: "cy-68",
     title: "礼贤下士",
     source: "《新序·杂事》",
@@ -680,14 +680,14 @@ window.POEMS_CHENGYU = [
     excerpt: "（《史记·魏公子列传》亦载）公子为人仁而下士，士",
   },
   {
-    textRef: "tangshi-ts-313",
+    textRef: "chengyu-cy-69",
     id: "cy-69",
     title: "东道主",
     source: "《左传·僖公三十年》",
     dynasty: "春秋",
     author: "左丘明",
     gradeGroup: "春秋",
-    excerpt: "子犯请击之",
+    excerpt: "若舍郑以为东道主，行李之往来",
   },
   {
     textRef: "chengyu-cy-70",
@@ -950,7 +950,7 @@ window.POEMS_CHENGYU = [
     excerpt: "尔以谗慝贪惏事君，而多杀不辜",
   },
   {
-    textRef: "chengyu-cy-65",
+    textRef: "chengyu-cy-96",
     id: "cy-96",
     title: "不自量力",
     source: "《左传·隐公十一年》",
