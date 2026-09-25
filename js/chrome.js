@@ -239,9 +239,15 @@
     return null;
   }
 
+  // ⚠️ 兜底那一支从前去首页 —— 而顶栏上那颗键是「返回」（它的 title 与
+  // aria-label 都写着「返回」）。两者对不上时，那颗键落在哪儿谁也说不准：
+  // 后台那一页正因为没写 `data-back` 而走到这里（Issue #320 用户点了它，
+  // 落到的不是「我的」）。现在兜底认底栏那一颗「我的」，与 `data-back="/mine/"`
+  // 是同一个去处；底栏上的页面本来就点不亮它，所以首页那边不受影响。
   function pageBackHref() {
     var back = bodyData("back");
     if (back && /^\/[^\/\s]/.test(back)) return back;
+    if (dockEnabled()) return routeHref("mine");
     return ROUTES.home;
   }
 

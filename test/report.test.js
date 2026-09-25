@@ -445,6 +445,46 @@ console.log("一、服务端内核：创建 / 频控 / 每日上限 / 空内容�
   }
 
   console.log("");
+  console.log("六之二、「没有权限」那一张卡：摆在屏幕正中，按钮叫「返回」（Issue #320）");
+
+  {
+    // 用户原话：
+    //   「没有权限 / 只对管理员开放。/ 回到「我的」页
+    //    这张卡片在屏幕中怎么显示得那么往下？
+    //    把 回到「我的」页 修改为 返回」
+    const admin = read("admin/index.html");
+    chk(/>返回<\/button>/.test(admin), "那颗键的文案是「返回」");
+    chk(admin.indexOf("回到「我的」页") < 0, "「回到「我的」页」在管理端一个字都不剩");
+    chk(/id="btn-back-profile"[^>]*>返回</.test(admin), "「返回」就是那颗 btn-back-profile（id 没换，js 那头不用改）");
+
+    // 自检页那张「只对管理员开放」的卡：同一次报的同一件事，一起改。
+    const sc = read("self-check/index.html");
+    chk(/>返回<\/button>/.test(sc) && sc.indexOf("回到「我的」页") < 0, "自检页那张卡也是「返回」");
+
+    // 文案改了，服务端那份自检说明也得跟着 —— 它念的是用户看到的那张卡。
+    chk(/拿到一张「没有权限」的卡/.test(read("api/_lib/ops.js")),
+      "开通自检里那句说明书跟着改成「没有权限」的卡");
+
+    // 摆位：卡片要在**屏幕**正中，而不是「可视区再往下一条底栏」的正中。
+    // 判据是 CSS 里那条 min-height 真的减掉了底栏高度（--nav-h）——
+    // 底栏写死的那一天它是 0，所以减它 = 白减，老行为原样。
+    const css = read("css/account.css");
+    chk(/min-height:\s*calc\(100vh - 118px - var\(--nav-h, 0px\)\)/.test(css),
+      "「一张卡的页」的 min-height 减掉了真实底栏高度");
+    chk(/min-height:\s*calc\(100 \* var\(--app-vh\) - 118px - var\(--nav-h, 0px\)\)/.test(css),
+      "iOS 那一支（--app-vh）同样减掉");
+    chk(/data-nav="admin"\] \.account-page > #deny-card:not\(\[hidden\]\)/.test(css),
+      "「没有权限」那一张仍按「一页一张卡」居中（别的四张带着 hidden）");
+    chk(/margin-top:\s*auto/.test(css.slice(css.indexOf("#deny-card:not([hidden])"))),
+      "居中用的是 margin-top: auto（兜底那条 margin-bottom: auto 在这里等于 0）");
+
+    // js/chrome.js 的兜底：顶栏那颗叫「返回」，就该回到「我的」。
+    const cj = read("js/chrome.js");
+    chk(/if \(dockEnabled\(\)\) return routeHref\("mine"\)/.test(cj),
+      "顶栏「返回」兜底认底栏那颗「我的」（不是首页）");
+  }
+
+  console.log("");
   console.log("七、不做什么：不进 progress、不参与同步、不按孩子分家");
 
   {
