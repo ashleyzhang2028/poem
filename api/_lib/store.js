@@ -41,16 +41,6 @@ function memoryStore() {
       return true;
     },
 
-    findAccountsByMask: function (mask) {
-      var m = String(mask == null ? "" : mask).trim().toLowerCase();
-      if (!m) return [];
-      var out = [];
-      Object.keys(db.accounts).forEach(function (uid) {
-        var a = db.accounts[uid];
-        if (String(a.email_mask || "").toLowerCase() === m) out.push(a);
-      });
-      return out;
-    },
     listAccounts: function () {
       return Object.keys(db.accounts).map(function (uid) { return db.accounts[uid]; });
     },
@@ -277,7 +267,7 @@ function supabaseStore(cfg) {
 
       if (!isMissingColumn(err)) throw err;
 
-      var CLS = ["uid", "email_hash", "email_mask", "nickname", "plan", "plan_until", "role",
+      var CLS = ["uid", "email_hash", "nickname", "plan", "plan_until", "role",
         "created_at", "last_login_at", "status"];
       var second = call("/accounts?" + filter + "&select=" + CLS.join(",") + "&limit=1");
 
@@ -299,7 +289,7 @@ function supabaseStore(cfg) {
       if (!isMissingColumn(err)) throw err;
 
       noteDegrade(refusedColumns(safeKeys));
-      var CLS = ["uid", "email_hash", "email_mask", "nickname", "plan", "plan_until", "role",
+      var CLS = ["uid", "email_hash", "nickname", "plan", "plan_until", "role",
         "created_at", "last_login_at", "status"];
       return sendAccount(pick(acc, CLS));
     }).then(function (saved) {
@@ -317,7 +307,7 @@ function supabaseStore(cfg) {
     });
   }
 
-  var COLS = "uid,email,email_hash,email_mask,nickname,plan,plan_until,role,created_at,last_login_at,status,email_verified_at,password_hash,password_salt";
+  var COLS = "uid,email,email_hash,nickname,plan,plan_until,role,created_at,last_login_at,status,email_verified_at,password_hash,password_salt";
   var q = encodeURIComponent;
 
   var api = {
@@ -366,12 +356,6 @@ function supabaseStore(cfg) {
       return call("/accounts?uid=eq." + q(uid), {
         method: "PATCH", body: body, prefer: "return=minimal"
       }).then(function () { return true; });
-    },
-    findAccountsByMask: function (mask) {
-      var m = String(mask == null ? "" : mask).trim().toLowerCase();
-      if (!m) return Promise.resolve([]);
-      return call("/accounts?email_mask=eq." + q(m) + "&select=" + COLS + "&limit=2")
-        .then(function (rows) { return rows || []; });
     },
     listAccounts: function () {
       return call("/accounts?select=" + COLS + "&order=created_at.desc&limit=500")
@@ -447,7 +431,7 @@ function supabaseStore(cfg) {
   return attachReportApi(api);
 }
 
-var REPORT_COLS = "rid,uid,email_mask,nickname,kind,status,poem_id,poem_title,book," +
+var REPORT_COLS = "rid,uid,email,nickname,kind,status,poem_id,poem_title,book," +
   "quote,context,note,suggestion,device,ua,created_at,updated_at,handled_at,handled_by,reply";
 
 function reportFilterQs(filter) {

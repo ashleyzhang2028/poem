@@ -22,7 +22,7 @@
 
     E_FORBIDDEN: "这一条只对管理员开放",
     E_TIER: "层级只认 Free / Pro / Max",
-    E_MASK: "邮箱掩码形状不对（形如 a***@qq.com，与账号页上显示的那串一致）",
+    E_UID: "要说清改谁的：填 uid（后台名录里那一列）",
 
     E_LOGIN_FAIL: "邮箱或密码不对",
     E_PW_EMPTY: "请先填密码",
@@ -194,7 +194,9 @@
             retryAfter: data.retryAfter,
             remaining: data.remaining,
 
-            emailMask: data.emailMask,
+            // 失败时也把明文邮箱带出去（Issue #320）：从前这里是 `emailMask`，
+            // 界面拿它说「验证邮件已发往 b***@163.com」。
+            email: data.email,
             verifySent: data.verifySent,
             verifyTransport: data.verifyTransport,
             emailVerified: data.emailVerified,
@@ -379,11 +381,11 @@
         return post("/sync/push", { recs: input.recs || [], deviceId: deviceId });
       },
 
+      // 发 / 收层级**只认 uid**（Issue #320）：掩码那一条认人路整块撤掉了。
       grant: function (input) {
         input = input || {};
         return post("/admin/grant", {
           uid: input.uid,
-          emailMask: input.emailMask,
           tier: input.tier,
           until: input.until == null ? null : input.until,
           deviceId: deviceId
@@ -393,7 +395,7 @@
       revoke: function (input) {
         input = input || {};
         return call("/admin/grant", "DELETE", {
-          emailMask: input.emailMask,
+          uid: input.uid,
           deviceId: deviceId
         });
       },

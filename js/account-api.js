@@ -117,7 +117,6 @@
         avatar: typeof me.avatar === "string" ? me.avatar : "",
         uid: typeof me.uid === "string" ? me.uid : null,
         email: typeof me.email === "string" ? me.email : "",
-        mask: typeof me.mask === "string" ? me.mask : "",
         emailVerified: me.emailVerified === true,
         emailVerifiedAt: me.emailVerifiedAt == null ? null : Number(me.emailVerifiedAt),
         nickname: typeof me.nickname === "string" ? me.nickname : ""
@@ -129,13 +128,14 @@
       // ⚠️ `uid` 一起写进去（Issue #276 后续）：这份答案**属于谁**必须跟着
       // 一起存，否则同一台机器换个人登录时，上一个人的 `role: "owner"`
       // 还是那一份 —— 新登录的普通用户会被当成管理员。
-      // ⚠️ `mask` 也一起写进去（Issue #274）：服务端登录的人本机没有会话，
-      //    界面要显示「已登录 · a***@qq.com」时，掩码只能从这份缓存里取
-      //    （它就是服务端那次 `/api/me` 原样给的，`publicAccount` 的同一个字段）。
+      // ⚠️ `email` 也一起写进去（Issue #274 / #320）：服务端登录的人本机没有
+      //    会话，界面要显示「已登录 · xxx@yyy」（点开才显示）时，邮箱只能从
+      //    这份缓存里取（它就是服务端那次 `/api/me` 原样给的，`publicAccount`
+      //    的同一个字段）。
       var r = E.writeTier(D.backing, tier, until, {
         source: "server",
         role: E.isRole(me && me.role) ? me.role : null,
-        mask: (me && me.mask) || "",
+        email: (me && me.email) || "",
         uid: (me && me.uid) || ""
       });
 
@@ -224,7 +224,7 @@
           return {
             ok: true, reason: REASON.OK,
             tier: r.plan ? r.plan.tier : undefined,
-            role: r.role, mask: r.mask, uid: r.uid, me: r
+            role: r.role, email: r.email, uid: r.uid, me: r
           };
         }
         var code = (r && r.code) || "E_OFFLINE";
@@ -371,13 +371,13 @@
           message: "页面脚本版本对不上（刷新一次即可），这一轮没发出任何东西"
         });
       }
-      return ch.grant({ uid: o.uid, emailMask: o.emailMask, tier: o.tier, until: o.until }).then(function (r) {
+      return ch.grant({ uid: o.uid, tier: o.tier, until: o.until }).then(function (r) {
         if (r && r.ok) {
 
           return {
             ok: true, reason: REASON.OK,
             matched: r.matched, changed: r.changed, ambiguous: !!r.ambiguous,
-            emailMask: r.emailMask, tier: r.tier, until: r.until == null ? null : r.until,
+            email: r.email, tier: r.tier, until: r.until == null ? null : r.until,
             uid: r.uid, before: r.before, note: r.note
           };
         }
@@ -514,7 +514,7 @@
           return {
             ok: true, reason: REASON.OK,
             uid: r.uid, role: r.role, before: r.before, changed: r.changed,
-            emailMask: r.emailMask, note: r.note
+            email: r.email, note: r.note
           };
         }
         var code = (r && r.code) || "E_OFFLINE";
@@ -529,8 +529,8 @@
       if (!signedIn()) return Promise.resolve({ ok: false, reason: REASON.GUEST });
       var ch = grantChannel();
       if (!ch) return Promise.resolve({ ok: false, reason: REASON_NO_CHANNEL });
-      return ch.revoke({ emailMask: o.emailMask }).then(function (r) {
-        if (r && r.ok) return { ok: true, reason: REASON.OK, matched: r.matched, changed: r.changed, emailMask: r.emailMask };
+      return ch.revoke({ uid: o.uid }).then(function (r) {
+        if (r && r.ok) return { ok: true, reason: REASON.OK, matched: r.matched, changed: r.changed, uid: r.uid, email: r.email };
         var code = (r && r.code) || "E_OFFLINE";
         if (code === "E_NOT_CONFIGURED") return { ok: false, reason: REASON.NOT_CONFIGURED };
         if (code === "E_NO_SESSION") return { ok: false, reason: REASON.GUEST };
@@ -616,7 +616,7 @@
             verifySent: r.verifySent === true,
             verifyAttempts: Number(r.verifyAttempts) || 1,
             verifyReason: r.verifyReason || null,
-            emailMask: r.emailMask || ""
+            email: r.email || ""
           };
         }
         var code = (r && r.code) || "E_OFFLINE";

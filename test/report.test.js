@@ -33,7 +33,7 @@ function mkDeps(uid, opts) {
 function admin(store, uid, opts) {
   const o = opts || {};
   store.putAccount({
-    uid, email: uid + "@t.dev", email_hash: "h_" + uid, email_mask: uid.slice(0, 1) + "***@t.dev",
+    uid, email: uid + "@t.dev", email_hash: "h_" + uid,
     nickname: o.nickname || uid, plan: "max", plan_until: null, role: o.role || "owner",
     created_at: 1789000000000, last_login_at: 1789000000000, status: "active",
     email_verified_at: 1789000000000, password_hash: "", password_salt: ""
@@ -57,7 +57,8 @@ console.log("一、服务端内核：创建 / 频控 / 每日上限 / 空内容�
 
     const rows = await d._store.listReports({ uid: "u1" }, 10);
     chk(rows.length === 1, "落库一条");
-    chk(rows[0].email_mask === "u***@t.dev", "掩码是**快照**（不是每次现查账号 —— 账号注销后仍认得出）");
+    chk(rows[0].email === "u1@t.dev",
+      "邮箱是**快照明文**（Issue #320：从前是掩码，而掩码不可逆 —— 账号注销后认不出是谁）");
     chk(rows[0].nickname === "u1", "昵称也是快照");
     chk(rows[0].context.indexOf("秋水共长天一色") >= 0, "落库带上了整句上下文（不是只有两个字）");
   }
@@ -150,7 +151,7 @@ console.log("一、服务端内核：创建 / 频控 / 每日上限 / 空内容�
     await core.reportCreate(dA, { kind: "text", note: "A 的" });
 
     dB._store.putReport({
-      rid: "rp_other", uid: "uA", email_mask: "u***@t.dev", nickname: "A", kind: "text",
+      rid: "rp_other", uid: "uA", email: "uA@t.dev", nickname: "A", kind: "text",
       status: "new", poem_id: "", poem_title: "", book: "", quote: "", context: "",
       note: "别人的", suggestion: "", device: "", ua: "", created_at: 1789000000000, updated_at: 1789000000000
     });
@@ -158,7 +159,8 @@ console.log("一、服务端内核：创建 / 频控 / 每日上限 / 空内容�
     const r = await core.reportMine(dB, {});
     chk(r.status === 200, "读自己那一份：200");
     chk(r.body.reports.every(x => x.rid !== "rp_other"), "**看不到别人报的**（uid 从会话取）");
-    chk(!/email_mask/.test(JSON.stringify(r.body.reports)), "用户端那一份**不含** emailMask 字段");
+    chk(!/emailMask|@/.test(JSON.stringify(r.body.reports)),
+      "用户端那一份**不含**邮箱字段（那是给管理员认人用的，不是给用户看的）");
 
     const r2 = await core.reportMine(dB, { uid: "uA", limit: 10 });
     chk(r2.body.reports.every(x => x.rid !== "rp_other"), "请求体里塞别人的 uid 也没用");
@@ -176,7 +178,7 @@ console.log("一、服务端内核：创建 / 频控 / 每日上限 / 空内容�
     const uDeps = mkDeps("uUser");
     admin(uDeps._store, "uUser", { role: "user" });
     uDeps._store.putReport({
-      rid: "rp1", uid: "uUser", email_mask: "u***@t.dev", nickname: "小朋友", kind: "pinyin",
+      rid: "rp1", uid: "uUser", email: "uUser@t.dev", nickname: "小朋友", kind: "pinyin",
       status: "new", poem_id: "gw-tw", poem_title: "滕王阁序", book: "古文观止",
       quote: "长", context: "秋水共长天一色。", note: "读 cháng", suggestion: "cháng",
       device: "d1", ua: "UA", created_at: 1789000000000, updated_at: 1789000000000
@@ -190,11 +192,11 @@ console.log("一、服务端内核：创建 / 频控 / 每日上限 / 空内容�
 
     const aDeps = mkDeps("uAdmin");
     aDeps._store.putAccount({
-      uid: "uAdmin", email: "a@t.dev", email_hash: "ha", email_mask: "a***@t.dev", nickname: "管理员",
+      uid: "uAdmin", email: "a@t.dev", email_hash: "ha", nickname: "管理员",
       plan: "max", plan_until: null, role: "owner", created_at: 1, last_login_at: 1, status: "active"
     });
     aDeps._store.putReport({
-      rid: "rp1", uid: "uUser", email_mask: "u***@t.dev", nickname: "小朋友", kind: "pinyin",
+      rid: "rp1", uid: "uUser", email: "uUser@t.dev", nickname: "小朋友", kind: "pinyin",
       status: "new", poem_id: "gw-tw", poem_title: "滕王阁序", book: "古文观止",
       quote: "长", context: "秋水共长天一色。", note: "读 cháng", suggestion: "cháng",
       device: "d1", ua: "UA", created_at: 1789000000000, updated_at: 1789000000000
@@ -203,7 +205,7 @@ console.log("一、服务端内核：创建 / 频控 / 每日上限 / 空内容�
     r = await core.adminReports(aDeps, {});
     chk(r.status === 200, "管理员读台账：200");
     chk(r.body.reports.length === 1, "读到那一条");
-    chk(r.body.reports[0].emailMask === "u***@t.dev", "管理端**看得见**掩码（用来认人）");
+    chk(r.body.reports[0].email === "uUser@t.dev", "管理端**看得见明文邮箱**（用来认人）");
     chk(Array.isArray(r.body.kinds) && r.body.kinds.length === core.REPORT_KINDS.length, "回 kinds 清单（界面据此画筛选项）");
     chk(r.body.counts && typeof r.body.counts.all === "number", "回各状态计数（" + JSON.stringify(r.body.counts) + "）");
 
@@ -219,7 +221,7 @@ console.log("一、服务端内核：创建 / 频控 / 每日上限 / 空内容�
     const d = mkDeps("uA");
     admin(d._store, "uA", { role: "owner" });
     d._store.putReport({
-      rid: "rpX", uid: "uB", email_mask: "b***@t.dev", nickname: "B", kind: "text",
+      rid: "rpX", uid: "uB", email: "uB@t.dev", nickname: "B", kind: "text",
       status: "new", poem_id: "", poem_title: "", book: "", quote: "", context: "",
       note: "x", suggestion: "", device: "", ua: "", created_at: 1789000000000, updated_at: 1789000000000
     });

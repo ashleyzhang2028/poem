@@ -13,6 +13,8 @@
 --      Issue #132 时「只存摘要 + 掩码」的老口径（用户裁「邮箱必须记录到数据库」）。
 --      登录查找仍走 `email_hash`（输入继续小写归一化，历史行为不变）；
 --      明文只用来**显示与认人**，只下发给「你自己」与管理员。
+--      ⚠️ **`email_mask` 那一列整个删掉了**（第 8 节，Issue #320）——
+--      掩码只活在界面上（「点一下才显示」那个临时状态），不再落库、不再下发。
 --   2. **RLS 全部开启且不给任何策略** —— 所有访问都走服务端的 service key；
 --      anon key 即便泄露也读不到一行（默认拒绝）
 --   3. 索引按「查询一定会用到的那一列」建：`email_hash` 唯一（登录查找）、
@@ -23,7 +25,6 @@
 create table if not exists public.accounts (
   uid           text primary key,
   email_hash    text        not null,
-  email_mask    text        not null,
   nickname      text        not null default '',
   plan          text        not null default 'free',
   plan_until    bigint,
@@ -204,8 +205,8 @@ $$;
 --
 --    为什么 `email` 允许为空：Issue #197 之前建的账号压根没有这一列的值。
 --    把它设成 NOT NULL 要么让迁移失败，要么得编一个假的默认值 ——
---    而「编一个假的」正是本项目最恨的那件事（掩码 `a***@qq.com` 至少还是真的）。
---    空值由 `store.js` 如实回空串，界面显示掩码，**不假装有明文**。
+--    而「编一个假的」正是本项目最恨的那件事。
+--    空值由 `store.js` 如实回空串，界面如实留白，**不假装有明文**。
 alter table public.accounts add column if not exists email              text not null default '';
 alter table public.accounts add column if not exists email_verified_at  bigint;
 alter table public.accounts add column if not exists password_hash      text not null default '';
@@ -296,14 +297,17 @@ $$;
 -- 另外两条口径与既有表逐字一致：
 --   · RLS 全开、**不给任何策略**（默认拒绝）—— 漏掉这一段不会报错，
 --     症状是 anon key 能读别人报的错与他的邮箱掩码。
---   · 「谁报的」用 uid 外键 + 邮箱掩码快照两样都留：uid 用来防刷与回信，
---     掩码快照用来在账号被注销之后，管理员仍然认得出这条报告是谁提的。
+--   · 「谁报的」用 uid 外键 + 邮箱快照两样都留：uid 用来防刷与回信，
+--     快照用来在账号被注销之后，管理员仍然认得出这条报告是谁提的。
+--     ⚠️ 快照落的是**明文邮箱**（第 8 节，Issue #320）：从前的掩码
+--     `b***@163.com` 认不出是谁，而它又不可逆 —— 账号注销之后就成了一条
+--     谁也认不出的记录。
 -- ==========================================================================
 
 create table if not exists public.reports (
   rid          text primary key,
   uid          text   not null references public.accounts(uid) on delete cascade,
-  email_mask   text   not null default '',
+  email        text   not null default '',
   nickname     text   not null default '',
   kind         text   not null default 'other',
   status       text   not null default 'new',
@@ -337,3 +341,51 @@ alter table public.reports enable row level security;
 -- 报告是**人工处理**的台账：自动删掉一条「用户报的错」就等于把一条
 -- 还没看的反馈丢掉，而它体积很小（每条几 KB 上界，见 core.reportCreate 的截断）。
 -- 留着它，管理端才可能「翻半年前谁报过同一处」。
+
+-- ==========================================================================
+-- 8. 去掉掩码邮箱（Issue #320 · 用户原话）
+-- ==========================================================================
+-- 用户原话（2026-09-25）：
+--
+--   「去掉整个app中关于掩码邮箱的设计，数据库也不需要这一列。
+--     b***@163.com 我的那里将掩码邮箱换成 真实邮箱，但用户需要点击
+--     我的邮箱 按钮才显示」
+--
+-- 掩码（`b***@163.com`）当年是「不存明文」那个口径的产物：因为库里没有
+-- 明文可显示，界面只能显示掩成一串的那一份。Issue #197 用户裁「邮箱必须
+-- 记录到数据库」之后，明文 `accounts.email` **已经落库**（第 6 节 ①），
+-- 掩码这一列就只剩一个用处：把**自己看得见**的邮箱对自己的界面掩起来。
+-- 那不是保护，是给用户添了一次点击。
+--
+-- 所以这一节把设计整块撤掉，三条一起：
+--   ① `accounts.email_mask` **删列**。它没有第二个读者 —— 界面回显、
+--      管理端认人两件事现在都读 `accounts.email`（明文）。
+--   ② `reports.email_mask` **改名成 `email`**，内容从掩码换成**快照明文**。
+--      这一列从来不参与任何判定，只用来「账号注销之后还认得出这条报告
+--      是谁提的」—— 而掩码不可逆，认不出是谁，等于没有快照。
+--      改名而不是新加一列：留着旧列就是留一列永远没人读、也说不清是什么
+--      形状的幽灵字段（`degrade()` 那套「缺列就退让」的机器更会把它兜住，
+--      于是它会在库里躺很多年）。
+--   ③ 报文里的 `emailMask` 字段**一并撤掉**（`codes.sent_to` 落明文、
+--      `emailGate()` / 注册 / 重发 / 重设的响应回 `email`）。
+--      要认人看 `email`，要 uid 看 `uid`。
+--
+-- ⚠️ **本机那一份不受影响**：`poem_auth_v1` 里的 `accounts[uid].identities[]
+--     .mask` 是**本机体验版**（没有服务器时）唯一的记法，它有独立的键名、
+--     自己的摘要，和数据库这一列不是一件事。`service` 那一侧的掩码只剩
+--     手机号的（`maskPhone`，短信通道预留），没有邮箱掩码。
+-- --------------------------------------------------------------------------
+
+-- ① accounts 去掉 email_mask。
+--    先 drop index 再 drop column？没有为这一列建过索引，直接删列即可。
+alter table public.accounts drop column if exists email_mask;
+
+-- ② reports：把掩码那一列改名成明文快照，并把已有的掩码清空。
+--    ⚠️ **没有回填** —— 掩码不可逆，`b***@163.com` 还原不出真实邮箱。
+--       已有的那些行如实留空（界面遇到空值直接不显示「谁报的」那一小段），
+--       比编一个出来强。新报告从这一版起落明文快照。
+alter table public.reports rename column email_mask to email;
+update public.reports set email = '' where email like '%*%';
+
+-- ③ 老库如果还留着 `email_hash`（登录查找用得到）就**不要动它** ——
+--    它跟掩码不是一回事，登录查找一直走它，且它不可逆（那是它的本意）。

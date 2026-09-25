@@ -76,8 +76,8 @@
         renderNextStep();
 
         text($("verify-ok-lead"), signedIn
-          ? "邮箱已确认，已经帮你登录：" + (r.emailMask || r.email || "") + "。"
-          : "邮箱已确认：" + (r.emailMask || r.email || "") + "。");
+          ? "邮箱已确认，已经帮你登录：" + (r.email || "") + "。"
+          : "邮箱已确认：" + (r.email || "") + "。");
 
         var hint = $("verify-ok-hint");
         if (hint) {
