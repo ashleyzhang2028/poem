@@ -20,7 +20,7 @@ loadData(sb, [
   'data/poems-6.js', 'data/poems-7.js', 'data/poems-8.js', 'data/poems-9.js', 'data/poems-10.js',
   'data/poems-11.js', 'data/poems-12.js', 'data/index.js', 'data/poems-classic.js',
   'data/poems-yuefu.js', 'data/poems-tangshi.js', 'data/poems-songci.js', 'data/poems-guwen.js', 'data/poems-zhaoming.js', 'data/poems-yuanqu.js',
-  'data/poems-jinxiandai.js',
+  'data/poems-jinxiandai.js', 'data/poems-chengyu.js',
   'data/site-index.js', 'data/works-map.js', 'data/works-index.js',
   'data/canonical-texts.js'
 ]);
@@ -31,14 +31,15 @@ const WI = sb.WorksIndex;
 const byId = {};
 sb.SITE_INDEX.forEach(p => { byId[p.id] = p; });
 
-const FULL_BOOKS = ['zhaoming', 'guwen', 'songci', 'tangshi', 'classic', 'yuanqu', 'yuefu', 'jinxiandai'];
+const FULL_BOOKS = ['zhaoming', 'guwen', 'songci', 'tangshi', 'classic', 'yuanqu', 'yuefu', 'jinxiandai', 'chengyu'];
 const FULL_BOOK_SET = {};
 FULL_BOOKS.forEach(b => { FULL_BOOK_SET[b] = true; });
 
 const multiEntries = MASTER.filter(m => m.entries.length >= 2);
 const singleEntries = MASTER.filter(m => m.entries.length === 1);
-chk(multiEntries.length === 118,
-  '主表里有 118 条「跨集重复」的作品（乐府集与课内 / 其余集子重篇 + main 长文补全带来的同篇，Issue #244；实际 ' +
+chk(multiEntries.length === 124,
+  '主表里有 124 条「跨集重复」的作品（乐府集与课内 / 其余集子重篇 + main 长文补全带来的同篇，Issue #244；' +
+  '再加成语故事与课内、唐诗本身的同篇 6 条，Issue #308；实际 ' +
   multiEntries.length + '）');
 const fullExpected = [];
 FULL_BOOKS.forEach(book => {
@@ -67,9 +68,10 @@ chk(MASTER.every(m => m.text && m.translation),
 const noCourse = multiEntries.filter(m => m.id.indexOf('poems-') !== 0);
 chk(noCourse.every(m => m.entries.every(e => e.indexOf('poems-') !== 0)),
   '主条目不是课内条目的那些，entries 里也确实没有课内条目（不该有人放着课内不用）');
-chk(noCourse.every(m => m.id === m.entries.slice().sort()[0]),
-  '没有课内可比时，主条目取 id 最小的那一条（与 works-index 的排序口径一致；' +
-  noCourse.length + ' 篇，全是唐诗 ↔ 乐府集的重篇）');
+chk(noCourse.every(m => m.id === WI.repOf(m.entries[0])) &&
+  noCourse.every(m => m.entries.indexOf(m.id) >= 0),
+  '没有课内可比时，主条目就是 data/works-index.js 认的那一条（排序口径同源；' +
+  noCourse.length + ' 篇，是唐诗 ↔ 乐府集、成语 ↔ 唐诗等跨集重篇）');
 chk(multiEntries.filter(m => m.id.indexOf('poems-') === 0).length === multiEntries.length - noCourse.length,
   '其余 ' + (multiEntries.length - noCourse.length) + ' 篇的主条目都是课内条目（教材口径优先）');
 
@@ -145,8 +147,9 @@ const uncovered = dupEntries.filter(e => !covered[e]);
 chk(uncovered.length === 0,
   '「同篇判重键下有两条及以上」的条目共 ' + dupEntries.length + ' 条，全部收进了主表（未收：' +
   (uncovered.slice(0, 6).join('、') || '无') + '）');
-chk(dupEntries.length === 251,
-  '重复条目恰为 251 条（118 篇：多数 × 2，少数 × 3；乐府集收进来的一批重篇 + main 长文补全同篇，Issue #244；实际 ' +
+chk(dupEntries.length === 264,
+  '重复条目恰为 264 条（124 篇：多数 × 2，少数 × 3；乐府集收进来的一批重篇 + main 长文补全同篇，Issue #244；' +
+  '成语故事与课内 / 唐诗重篇再加 6 篇，Issue #308；实际 ' +
   dupEntries.length + '）');
 
 const expectFlat = dupEntries.slice();
@@ -198,7 +201,8 @@ const BOOK_VARS = {
   zhaoming: ['data/poems-zhaoming.js'],
   yuanqu: ['data/poems-yuanqu.js'],
   yuefu: ['data/poems-yuefu.js'],
-  jinxiandai: ['data/poems-jinxiandai.js']
+  jinxiandai: ['data/poems-jinxiandai.js'],
+  chengyu: ['data/poems-chengyu.js']
 };
 
 const stripped = [];

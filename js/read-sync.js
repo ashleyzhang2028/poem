@@ -13,7 +13,8 @@
     "poem_zhaoming_read_v1",
     "poem_yuanqu_read_v1",
     "poem_yuefu_read_v1",
-    "poem_jinxiandai_read_v1"
+    "poem_jinxiandai_read_v1",
+    "poem_chengyu_read_v1"
   ];
 
   function ps() {

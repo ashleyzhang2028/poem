@@ -82,6 +82,15 @@
       page: "/zhaoming/",
       unit: "篇",
       desc: "六十卷按赋、诗、骚、七等三十九类文体编排，现存最早的诗文总集"
+    },
+    {
+      id: "chengyu",
+      name: "中华成语故事",
+      book: "ChengyuBook",
+      short: "成语",
+      page: "/chengyu/",
+      unit: "则",
+      desc: "自上古传说到明清，按朝代编排；每则给最早出处的原文与译文"
     }
   ];
 
@@ -104,7 +113,8 @@
       guwen: "POEMS_GUWEN",
       zhaoming: "POEMS_ZHAOMING",
       yuanqu: "POEMS_YUANQU",
-      jinxiandai: "POEMS_JINXIANDAI"
+      jinxiandai: "POEMS_JINXIANDAI",
+      chengyu: "POEMS_CHENGYU"
     };
     var key = VARS[bookId];
     var list = key ? window[key] : null;

@@ -70,6 +70,7 @@
     yuefu: "/yuefu/",
     yuanqu: "/yuanqu/",
     jinxiandai: "/jinxiandai/",
+    chengyu: "/chengyu/",
     search: "/search/",
     mine: "/mine/",
     settings: "/settings/",
@@ -109,6 +110,7 @@
     if (/^\/yuefu\/?$/.test(p) || /^\/yuefu\/index\.html$/.test(p)) return "yuefu";
     if (/^\/yuanqu\/?$/.test(p) || /^\/yuanqu\/index\.html$/.test(p)) return "yuanqu";
     if (/^\/jinxiandai\/?$/.test(p) || /^\/jinxiandai\/index\.html$/.test(p)) return "jinxiandai";
+    if (/^\/chengyu\/?$/.test(p) || /^\/chengyu\/index\.html$/.test(p)) return "chengyu";
     if (/^\/mine\/?$/.test(p) || /^\/mine\/index\.html$/.test(p)) return "mine";
     if (/^\/settings\/?$/.test(p) || /^\/settings\/index\.html$/.test(p)) return "settings";
     if (/^\/progress\/?$/.test(p) || /^\/progress\/index\.html$/.test(p)) return "progress";
@@ -262,6 +264,7 @@
     if (k === "yuefu") return "乐府诗选";
     if (k === "yuanqu") return "元曲三百首";
     if (k === "jinxiandai") return "近现代诗词";
+    if (k === "chengyu") return "中华成语故事";
     return "";
   }
 
@@ -273,7 +276,7 @@
 
   var DOCK_ITEMS = [
     { key: "home", href: "/", icon: GLYPHS.tabPoem, label: "背诵", desc: "课内古诗词，按当前复习算法安排复习" },
-    { key: "library", href: "/library/", icon: GLYPHS.tabLibrary, label: "课外", desc: "课内诗词 / 小古文 / 乐府集 / 唐诗 / 宋词 / 元曲 / 古文观止 / 近现代诗词 / 昭明文选" },
+    { key: "library", href: "/library/", icon: GLYPHS.tabLibrary, label: "课外", desc: "课内诗词 / 小古文 / 乐府集 / 唐诗 / 宋词 / 元曲 / 古文观止 / 近现代诗词 / 昭明文选 / 成语故事" },
     { key: "search", href: "/search/", icon: GLYPHS.tabSearch, label: "搜索", desc: "全站篇目一次搜遍" },
     { key: "mine", href: "/mine/", icon: GLYPHS.tabMineImg, label: "我的", desc: "头像 / 昵称 / 账号 / 本机数据" }
   ];
@@ -282,7 +285,7 @@
     if (key === "settings") return "mine";
     if (key === "classic" || key === "yuefu" || key === "tangshi" || key === "songci" ||
         key === "guwen" || key === "zhaoming" || key === "yuanqu" ||
-        key === "jinxiandai") return "library";
+        key === "jinxiandai" || key === "chengyu") return "library";
 
     if (key === "poems") return "library";
 

@@ -613,7 +613,8 @@
     zhaoming: { file: "data/poems-zhaoming.js", global: "POEMS_ZHAOMING" },
     yuanqu: { file: "data/poems-yuanqu.js", global: "POEMS_YUANQU" },
     yuefu: { file: "data/poems-yuefu.js", global: "POEMS_YUEFU" },
-    jinxiandai: { file: "data/poems-jinxiandai.js", global: "POEMS_JINXIANDAI" }
+    jinxiandai: { file: "data/poems-jinxiandai.js", global: "POEMS_JINXIANDAI" },
+    chengyu: { file: "data/poems-chengyu.js", global: "POEMS_CHENGYU" }
   };
 
   function staleByBook() {
