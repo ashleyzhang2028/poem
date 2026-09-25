@@ -10,7 +10,7 @@ const LOAD = [
   'data/poems-9.js', 'data/poems-10.js', 'data/poems-11.js', 'data/poems-12.js',
   'data/index.js', 'data/poems-classic.js', 'data/poems-tangshi.js',
   'data/poems-songci.js', 'data/poems-guwen.js', 'data/poems-zhaoming.js', 'data/poems-yuanqu.js',
-  'data/poems-yuefu.js', 'data/poems-jinxiandai.js',
+  'data/poems-yuefu.js', 'data/poems-jinxiandai.js', 'data/poems-chengyu.js',
   'data/site-index.js', 'data/works-index.js'
 ];
 
@@ -38,7 +38,8 @@ LOAD.forEach(function (f) {
     { f: 'data/poems-zhaoming.js', v: 'POEMS_ZHAOMING' },
     { f: 'data/poems-yuanqu.js', v: 'POEMS_YUANQU' },
     { f: 'data/poems-yuefu.js', v: 'POEMS_YUEFU' },
-    { f: 'data/poems-jinxiandai.js', v: 'POEMS_JINXIANDAI' }
+    { f: 'data/poems-jinxiandai.js', v: 'POEMS_JINXIANDAI' },
+    { f: 'data/poems-chengyu.js', v: 'POEMS_CHENGYU' }
   ].forEach(function (o) {
     var book = o.f.replace('data/poems-', '').replace('.js', '');
     if (/^\d+$/.test(book)) book = 'poems';
@@ -104,21 +105,32 @@ LOAD.forEach(function (f) {
 sandbox.WorksIndex.rebuild(sandbox.SITE_INDEX);
 
 const WI = sandbox.WorksIndex;
+const byId0 = {};
+(sandbox.SITE_INDEX || []).forEach(function (p) { if (p && p.id) byId0[p.id] = p; });
 
-function byCourseFirst(a, b) {
-  const ac = a.indexOf('poems-') === 0;
-  const bc = b.indexOf('poems-') === 0;
-  if (ac !== bc) return ac ? -1 : 1;
+// 条目次序：主条目在最前。主条目 = 课内优先，其次出处集子优先于成语故事，
+// 同档取「序号小」的那一条（chengyu-cy-48 排在 chengyu-cy-217 之前）——
+// 与 data/works-index.js 的 repOf 同口径，只是同档时按数字序号而非字典序。
+function orderKey(e) {
+  const m = String(e).match(/^(.*?)(\d+)$/);
+  return [m ? m[1] : e, m ? Number(m[2]) : 0, e];
+}
+function byMainFirst(a, b) {
+  const ka = orderKey(a), kb = orderKey(b);
+  if (ka[0] !== kb[0]) return ka[0] < kb[0] ? -1 : 1;
+  if (ka[1] !== kb[1]) return ka[1] - kb[1];
   return a < b ? -1 : 1;
 }
 const groups = WI.works
   .filter(function (w) { return w.entries.length > 1; })
   .map(function (w) {
+    const entries = w.entries.slice().sort(byMainFirst);
+    const rep = entries[0];
     return {
       wid: w.wid,
-      title: w.title,
+      title: (byId0[rep] && byId0[rep].title) || w.title,
       titles: w.titles.slice(),
-      entries: w.entries.slice().sort(byCourseFirst)
+      entries: entries
     };
   });
 groups.sort(function (a, b) { return a.entries[0] < b.entries[0] ? -1 : 1; });

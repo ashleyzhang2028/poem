@@ -10,6 +10,14 @@
 
   var COURSE_BOOK = "poems";
 
+  var BOOK_RANK = { poems: 0, chengyu: 2 };
+  var DEFAULT_RANK = 1;
+
+  function rankOf(entryId) {
+    var b = bookOf(entryId);
+    return BOOK_RANK[b] == null ? DEFAULT_RANK : BOOK_RANK[b];
+  }
+
   function bookOf(entryId) {
     return String(entryId || "").split("-")[0];
   }
@@ -95,7 +103,25 @@
       for (var i = 0; i < w.entries.length; i++) {
         if (bookOf(w.entries[i]) === COURSE_BOOK) return w.entries[i];
       }
-      return w.entries.indexOf(entryId) >= 0 ? entryId : w.entries[0];
+      // 同档取「id 最小」那一条 —— 但按**数字序号**比，不按字典序：
+      // chengyu-cy-48 该排在 chengyu-cy-217 之前（字典序恰好相反）。
+      var seq = function (e) {
+        var m = String(e).match(/^(.*?)(\d+)$/);
+        return [m ? m[1] : String(e), m ? Number(m[2]) : 0];
+      };
+      var better = function (a, b) {
+        var ra = rankOf(a), rb = rankOf(b);
+        if (ra !== rb) return ra < rb;
+        var ka = seq(a), kb = seq(b);
+        if (ka[0] !== kb[0]) return ka[0] < kb[0];
+        if (ka[1] !== kb[1]) return ka[1] < kb[1];
+        return a < b;
+      };
+      var best = null;
+      for (var j = 0; j < w.entries.length; j++) {
+        if (best == null || better(w.entries[j], best)) best = w.entries[j];
+      }
+      return best;
     },
 
     rebuild: function (index) {

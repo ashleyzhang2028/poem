@@ -11,7 +11,6 @@ window.POEMS_CHENGYU = [
   },
   {
     textRef: "chengyu-cy-2",
-    textRef: "classic-gw-19",
     id: "cy-2",
     title: "夸父逐日",
     source: "《山海经·海外北经》",
@@ -22,7 +21,6 @@ window.POEMS_CHENGYU = [
   },
   {
     textRef: "chengyu-cy-3",
-    textRef: "classic-gw-5",
     id: "cy-3",
     title: "精卫填海",
     source: "《山海经·北山经》",
@@ -103,7 +101,6 @@ window.POEMS_CHENGYU = [
   },
   {
     textRef: "chengyu-cy-11",
-    textRef: "classic-gw-21",
     id: "cy-11",
     title: "鲧禹治水",
     source: "《山海经·海内经》",
@@ -480,7 +477,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西周",
     author: "佚名",
     gradeGroup: "西周",
-    excerpt: "求之不得，寤寐思服。悠哉悠哉",
+    excerpt: "求之不得，寤寐思服。悠哉悠哉，辗转反侧。",
   },
   {
     textRef: "chengyu-cy-49",
@@ -684,7 +681,6 @@ window.POEMS_CHENGYU = [
   },
   {
     textRef: "chengyu-cy-69",
-    textRef: "tangshi-ts-313",
     id: "cy-69",
     title: "人面桃花",
     source: "《本事诗·情感》",
@@ -2171,7 +2167,7 @@ window.POEMS_CHENGYU = [
     dynasty: "西周",
     author: "佚名",
     gradeGroup: "西周",
-    excerpt: "求之不得，寤寐思服。悠哉悠哉，辗转反侧。",
+    excerpt: "悠哉悠哉，辗转反侧。",
   },
   {
     textRef: "chengyu-cy-218",
