@@ -552,7 +552,34 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     '搜索页 hero 不再单独覆写提示字（字号与位移都从 :root 那对变量来，' +
     '「覆写一份相同的数」不算一致 —— 下次还会从其中一处先漂走）');
   chk(/\.search-input::placeholder \{[^}]*transform:\s*translateY\(var\(--search-placeholder-shift/.test(classicCss),
-    '两页共用同一条位移（0.65px = 两档行盒中心差的一半，见 :root 那一对变量）');
+    '两页共用同一条位移（由字号算式现算，见 :root 那一条 calc）');
+
+  // ---- 提示字的位移是**一档一个数**，算式与断点必须一起对得上 ------------
+  // ⚠️ 2026-09-25 修 CI：上一轮把位移写死成 -0.65px（那是「输入字号 14px」那一档
+  //    的结果），可 700px 及以下的输入字号是 16px（行盒 20），该抬 1.9px ——
+  //    写死一个数就必然在手机上错。现在它是一行 calc，且在窄屏那一档重算一次。
+  //    这一节守的是**两处断点不许分家**：CSS 里改行高的那一档（classic.css 的
+  //    `@media (max-width: 700px) .search-input { font-size: --input-font-narrow }`）
+  //    与写位移的那一档（style.css 的 `@media (max-width: 700px) :root`）
+  //    必须是同一个数 —— 一边挪了另一边没挪，人眼在 CSS 里看不出来。
+  {
+    const styleSheet = read('css/style.css');
+    const shiftNarrowBp = (styleSheet.match(
+      /@media \(max-width: (\d+)px\)[\s\S]{0,400}?--search-placeholder-shift:/) || [])[1];
+    // ⚠️ 要的是**紧挨着** `.search-input { font-size: var(--input-font-narrow) }`
+    //    的那个 @media：classic.css 前面还有一个 `@media (max-width: 380px)`
+    //    （那是工具栏压到 36px 那一档），405 字的窗口会先撞上它。
+    const fontNarrowBp = (classicCss.match(
+      /@media (?:screen and )?\(max-width: (\d+)px\)\s*\{\s*\.search-input \{[^}]*--input-font-narrow/) || [])[1];
+    chk(!!shiftNarrowBp && shiftNarrowBp === fontNarrowBp,
+      '位移重算的那一档与输入字号抬档的那一档是同一个断点（实际 ' +
+      shiftNarrowBp + ' vs ' + fontNarrowBp + '）');
+    chk(/--search-placeholder-shift:\s*calc\(/.test(styleSheet),
+      '位移在 :root 里就是一个 calc（不是手写的一个数）');
+    chk(/@media \(max-width: \d+px\)[\s\S]{0,400}?--search-placeholder-shift:\s*calc\([^;]*--input-font-narrow/
+        .test(styleSheet),
+      '窄屏那一档的位移读 --input-font-narrow（16px，不是 :root 那个 14px）');
+  }
 
   chk(/\.suggest \{[^}]*top:\s*calc\(100% \+ 4px\)/.test(classicCss),
     '候选下拉只留 4px 间隙（用户反馈的「离搜索框太远」的反面）');

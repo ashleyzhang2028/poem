@@ -717,15 +717,27 @@ setTimeout(() => {
 
   chk(!!phCss && /transform:\s*translateY\(var\(--search-placeholder-shift/.test(phCss[1]),
     '提示字上抬量也读 :root 的变量（回到框的水平中轴，只动伪元素，不动输入文字）');
-  // ⚠️ 这条位移是**算出来的**，不是挑出来的：输入文字行盒 = 14 × 1.25 = 17.5、
-  //    提示字行盒 = 13.5 × 1.2 = 16.2（`normal`），中心差的一半 = 0.65。
+  // ⚠️ 这条位移是**算出来的**，不是挑出来的：输入文字行盒 = 字号 × 1.25、
+  //    提示字行盒 = 字号 × 1.2（`normal`），中心差的一半就是上抬量。
   //    改字号不重算位移，两档字会一起偏出中轴 —— 而这件事在 CSS 里看着永远对。
+  //
+  //    ⚠️ 口径再修（2026-09-25 · CI 修）：原先这里守的是「它就等于 **14px 那一档**
+  //       算出来的 -0.65」，读的也是那个写死的数。可位移是**一档一个数**：
+  //       手机上输入字号被抬到 16px（行盒 20），位移该是 -1.9 —— 写死一个数
+  //       就必然在另一个尺寸上错，上一轮 CI 红的就是这一条（pwa.test.js 量到 1.9）。
+  //       现在守的是「它是算式、不是数」：calc + 那两个来源变量 + 行高比，
+  //       至于每一档具体算成几，由 pwa.test.js 在真浏览器里量。
   const shVar = (rootVars.match(/--search-placeholder-shift:\s*([^;]+);/) || [])[1];
-  const shNum = shVar && parseFloat(shVar);
-  const wantSh = -(((14 * 1.25) - (parseFloat(phVar) * 1.2)) / 2);
-  chk(!!shVar && Math.abs(shNum - wantSh) <= 1e-9,
-    '位移与字号没脱钩：' + shVar + ' 该是 ' + wantSh.toFixed(2) +
-    'px（= (输入字号 14 × 1.25 − 提示字号 ' + phVar + ' × 1.2) ÷ 2）');
+  chk(!!shVar && /^calc\(/.test(shVar.trim()) &&
+    /var\(--input-font\)/.test(shVar) &&
+    /var\(--search-placeholder-font\)/.test(shVar) &&
+    /var\(--search-input-lh-ratio\)/.test(shVar),
+    '位移是**算式**（calc，读 输入字号 / 提示字号 / 行高比 三个来源），不是写死的一个数：' +
+    shVar);
+  const narrowShift = (rootVars.match(/@media \(max-width: 700px\)[\s\S]*?--search-placeholder-shift:\s*([^;]+);/) || [])[1];
+  chk(!!narrowShift && /^calc\(/.test(narrowShift.trim()) && /--input-font-narrow/.test(narrowShift),
+    '700px 及以下位移**重算过一次**（那一档输入字号 16px，行盒 20，不是 17.5）：' +
+    (narrowShift || '缺'));
 
   chk(!/padding(-top|-bottom)?\s*:/.test(phCss[1]) && !/line-height\s*:/.test(phCss[1]),
     '居中的修法不碰输入框本体（提示字用 transform，输入文字仍是居中的 16px）');

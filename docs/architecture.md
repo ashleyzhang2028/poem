@@ -7559,6 +7559,12 @@ placeholder 文字字体样式颜色和大小保持一致」。
   它 —— 1280px 那一档 `(14 × 1.25 − 13.5 × 1.2) ÷ 2 = 0.65`。
   ⚠️ 改字号 / 改行高**必须连它一起重算**，否则两档字一起偏出中轴，
   而这件事在 CSS 里看着永远是对的。
+  ⚠️ **它是一档一个数，不是全站一个数**（2026-09-25 修 CI 时改的）：700px 及以下
+  `--input-font-narrow` 把输入字号抬到 16px（行盒 20），位移该是
+  `(16 × 1.25 − 13.5 × 1.2) ÷ 2 = 1.9` —— 写死 0.65 就必然在手机上错。
+  现在它写成 `calc(-0.5 * (var(--input-font) * var(--search-input-lh-ratio) −
+  var(--search-placeholder-font) * 1.2))`，并在 `@media (max-width: 700px)` 里
+  对 `--input-font-narrow` 再算一次。
 - **不写成「两页各覆写一份相同的数」**：那样下次还会从其中一处先漂走。
   判据是「只有一个来源」，不是「两处碰巧一样」。
 
@@ -7585,9 +7591,17 @@ placeholder 文字字体样式颜色和大小保持一致」。
   反向验证：把 hero 那条覆写放回去，四条断言当场变红，
   红字直接列出 `font: 12.5px vs 13.5px、shift: -2.25 vs 0`。
 - `test/classic.test.js`：提示字字号必须读 `--search-placeholder-font`、
-  位移必须读 `--search-placeholder-shift`，并**按算式现算**一遍
-  （`|位移 − (输入字号 × 1.25 − 提示字号 × 1.2) ÷ 2| ≤ 1e-9`）——
-  守的是「字号与行高没脱钩」，不是把 0.65 写死。
+  位移必须读 `--search-placeholder-shift`，且位移必须是 **calc**（读
+  输入字号 / 提示字号 / 行高比 三个来源），窄屏那一档必须读
+  `--input-font-narrow` —— 守的是「字号与行高没脱钩」，不是把 0.65 写死。
+  ⚠️ 2026-09-25 之前这条比的是 `|位移 − 14px 那一档的 0.65| ≤ 1e-9`，
+  它在 393×852 上必然红（那里该是 1.9）；改成守算式之后，每一档具体算成几
+  由 `test/pwa.test.js` 在真浏览器里量。
+- `test/pwa.test.js`：位移那条的**期望值也从 CSS 现算**（读 `--search-input-lh-ratio`
+  与本机输入字号），并把「同字号」那条改成量**同一个来源**
+  （`:root` 的 `--seg-mini-font` 必须是 `var(--search-placeholder-font)`，
+  两处 computed 值都等于它）—— 原先它抄的是「等于 13.5px」，
+  于是 CSS 里两个数各自漂、断言还盯着旧数。
   另加一条反向的：`classic.css` 里**不许**再出现 `.search-hero .search-input::placeholder`。
 - `test/search.test.js` 里原先守着「hero 的提示字 `transform: none`」那一条
   **整条反转**（它守的正是这一轮要收掉的那处不一致），改守「hero 不再覆写」。
@@ -7688,3 +7702,66 @@ README「用户对比页」那一节加一句「上一轮曾裁『层级对比�
 ⚠️ 口径一处没动，说在明处：**「层级」（free / pro / max）这个词本身照旧**
 —— 它是权益那一根轴的正式名（`Entitlement.tierLabel()`、管理后台「发放层级」、
 法务页那两条）。换的是**那一页的名字**，不是那一根轴的词。
+
+---
+
+### 4.53 修 CI：提示字那一对变量的**两处脱钩**（2026-09-25 · PR #299 的 CI 红）
+
+PR #299 的 `cnb/pull_request/pipeline-1(pr-test)` 报了 2 项失败，都在
+`test/pwa.test.js` 那一节（真浏览器在 393×852 上量索引页的搜索框）：
+
+```
+✗ 提示字 13.5px / 全部·未读 12.5px iPhone: 搜索框提示字与「全部 / 未读」同字号
+✗ 提示字位移 -0.65 / 该是 -1.5（= 两档**行盒**中心差的一半，行盒各乘 1.2，行高 20px）
+```
+
+两条的来处**都不是「数算错了」，而是「同一个东西有两个来源」** ——
+与 §4.52 同一个形状，只是这回出在 CSS 变量上。
+
+#### 一、第一条：字号抬了，旁边那排控件没跟
+
+§4.28 那一轮把提示字从 12.5px 抬到 13.5px（`--search-placeholder-font`），
+但 `.seg.mini button`（右边那排「全部 / 未读」）**自己还写死 12.5px**。
+那条断言守的正是「两者同字号」，于是它红了 —— 红得对：
+上一轮只把数各抬到一个新值，没有把**来源**收成一个。
+
+改法：`:root` 加 `--seg-mini-font: var(--search-placeholder-font)`，
+`.seg.mini button` 读它。断言也改成量那件事本身
+（`--seg-mini-font` 的**声明**必须是 `var(--search-placeholder-font)`，
+两处的 computed 值都必须等于 `--search-placeholder-font`）——
+「碰巧都是 13.5px」不算过。
+
+#### 二、第二条：位移写死了 1280px 那一档的数
+
+`--search-placeholder-shift: -0.65px` 是拿 `--input-font`（14px）算的，
+可 700px 及以下输入字号被抬到 16px（`--input-font-narrow`，行盒 20），
+手机上该抬 **1.9px**。这条断言按算式现算，量到 1.9 对 0.65，于是红 ——
+它红得也对：**CSS 里那一个数在一个尺寸上是对的，在另一个尺寸上必然错**，
+而这件事在 CSS 里看着永远是对的（这正是那条断言存在的理由）。
+
+改法：
+
+- 位移写成算式 `calc(-0.5 * (var(--input-font) × var(--search-input-lh-ratio)
+  − var(--search-placeholder-font) × 1.2))`，行高比收成
+  `--search-input-lh-ratio: 1.25`（与 classic.css 里 `.search-input` 的
+  `line-height` 同一个来源）；
+- `@media (max-width: 700px)` 里对 `--input-font-narrow` **再算一次** ——
+  断点与 classic.css 里「`.search-input` 抬到 `--input-font-narrow`」那一档
+  必须是同一个数，`test/search.test.js` 新加一条断言把两处钉在一起；
+- `test/classic.test.js` 那条「位移 = 14px 那一档的 0.65」改成守
+  **「它是一个 calc」**（读那三个来源、窄屏读 `--input-font-narrow`）。
+
+#### 三、顺带收掉一处**误报**
+
+`test/ui-consistency.test.js` 里「`--read-w` 在任何一档里都不被改写」那条，
+正则 `@media[^{]*\{[^@]*--read-w:\s*(?!720px)` 是**贪婪地**扫到第一个
+`--read-w` 出现处为止的，块与块分不开 —— 上面新加的
+`@media (max-width: 700px) :root` 一带进来，它就误报（那个块里根本没有
+`--read-w`）。改成把每个 `@media` 块单独切出来看。
+
+#### 四、验证
+
+- `bash test/run.sh` 退出码 **0**（**9705 条断言** 0 失败，手机上那两条由红转绿）
+- 反向核过：把 `--seg-mini-font` 换成写死的 `13.5px`、把位移换回写死的
+  `-0.65px`，改过的那几条立刻变红
+- `sw.js` 缓存版本 v198 → **v199**（动了 `css/`，「关于」里的版本号同步跟上）

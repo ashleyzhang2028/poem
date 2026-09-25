@@ -1232,10 +1232,41 @@ function check(name, cond, extra) {
     //    守的那件事没变：提示字**比输入文字小一号**（辅助文字不抢眼）。
     check('iPhone: 索引页提示字仍比输入文字小一号（辅助文字不抢眼）',
       parseFloat(phState.phFont) < parseFloat(phState.inputFont) &&
-      phState.phFont === '13.5px' && phState.inputFont === '16px',
+      phState.inputFont === '16px',
       JSON.stringify([phState.phFont, phState.inputFont]));
-    check('iPhone: 索引页提示字上抬回正中轴（位移 = 两档字号行盒中心差）',
-      Math.abs(phState.shift - -0.65) <= 0.01, 'shift ' + phState.shift + 'px');
+    // ⚠️ Issue #278 第八轮修正（2026-09-25 CI 红的那一条）：原先这里写的是
+    //    「提示字 === '13.5px'」（把数抄了一遍）。可这条断言真正要守的是
+    //    **它与旁边那排「全部 / 未读」同字号** —— 上面 test/pwa.test.js 里
+    //    那条量的是 `#gw-search` 的 ::placeholder 与 `.filter-seg button`
+    //    的 computed 值。CSS 里两处现在读**同一个变量**
+    //    （`--seg-mini-font: var(--search-placeholder-font)`），所以这里
+    //    改成量那件事本身：机器上把 :root 的变量读回来、再对一遍
+    //    computed 值确实跟着它 —— 谁把其中一个数写死就会在这里红，
+    //    而不是像上一轮那样「两边各改一个新数、断言还盯着旧数」。
+    const segState = await page.evaluate(() => {
+      const root = getComputedStyle(document.documentElement);
+      const phVar = root.getPropertyValue('--search-placeholder-font').trim();
+      const segVar = root.getPropertyValue('--seg-mini-font').trim();
+      const ph = getComputedStyle(document.querySelector('#gw-search'), '::placeholder');
+      const seg = getComputedStyle(document.querySelector('.filter-seg button'));
+      return { phVar: phVar, segVar: segVar, ph: ph.fontSize, seg: seg.fontSize };
+    });
+    //    ⚠️ `--seg-mini-font` 在**解析后**就是那一个数（自定义属性的值会被
+    //       代换掉），所以要守着「两处同一个来源」得看**声明**：CSS 源码里
+    //       那一行必须是 `var(--search-placeholder-font)`,而不是又一个 px。
+    const segRule = await page.evaluate(async () => {
+      const href = [...document.querySelectorAll('link[rel="stylesheet"]')]
+        .map(l => l.href).find(h => /style\.css/.test(h));
+      if (!href) return null;
+      const css = await (await fetch(href)).text();
+      const m = /--seg-mini-font:\s*([^;]+);/.exec(css);
+      return m ? m[1].trim() : null;
+    });
+    check('iPhone: 提示字与「全部 / 未读」同字号，且两处读的是同一个变量',
+      segState.phVar !== '' &&
+      segRule !== null && /var\(--search-placeholder-font/.test(segRule) &&
+      segState.ph === segState.phVar && segState.seg === segState.phVar,
+      JSON.stringify([segState.ph, segState.seg, segState.phVar, segRule]));
     // ⚠️ 口径改过一次（Issue #278 第七轮）：用户 2026-09-24 要
     //    「搜索页搜索框上下 padding 或者行高需要小 4px 左右」，所以这一条
     //    原先守的「上下 padding 必须是 0、行高必须是 normal」不再是口径。
@@ -1253,11 +1284,16 @@ function check(name, cond, extra) {
       const m = /matrix\(1, 0, 0, 1, 0, (-?[\d.]+)\)/.exec(ph.transform);
       const phShift = m ? +parseFloat(m[1]).toFixed(2) : 0;
       const lh = parseFloat(cs.lineHeight);
+      // ⚠️ 行高比从 CSS 读（`--search-input-lh-ratio: 1.25`），不在这里再写
+      //    一个 1.25 —— 改了行高而没改位移时，这条要跟着一起变。
+      const ratio = parseFloat(
+        getComputedStyle(document.documentElement)
+          .getPropertyValue('--search-input-lh-ratio')) || 1.25;
       return {
         font: cs.fontSize, lh: cs.lineHeight,
-        lm: +(lh - font * 1.2).toFixed(2),
+        lm: +(lh - font * ratio).toFixed(2),
         phShift: phShift,
-        expectShift: +(-(font * 1.2 - phFont * 1.2) / 2).toFixed(2),
+        expectShift: +((font * ratio - phFont * 1.2) / -2).toFixed(2),
         fontPx: font, phFontPx: phFont,
         padTop: cs.paddingTop, padBottom: cs.paddingBottom
       };
@@ -1267,10 +1303,39 @@ function check(name, cond, extra) {
       parseFloat(leadProbe.padTop) === 1 && parseFloat(leadProbe.padBottom) === 1,
       JSON.stringify([leadProbe.lh, leadProbe.padTop, leadProbe.padBottom]) +
       '（未登录那一枚 16px 字号的 `normal` 行盒 = 24px，故 20 + 上下各 1 = 24 − 4）');
+    //    ⚠️ 期望值由**CSS 里那一行算式**现算（读到 1.25 与 13.5px、输入字号
+    //       取本机的 16px），不是在这里再抄一个数：抄数的那一版正是上一轮
+    //       在手机上判假的那一条（它算的是「14px 输入字号」那一档的 0.65）。
     check('iPhone: 提示字仍抬回输入文字的行盒中心（行高与字号没脱钩）',
       Math.abs(leadProbe.phShift - leadProbe.expectShift) <= 0.15,
       '提示字位移 ' + leadProbe.phShift + ' / 该是 ' + leadProbe.expectShift +
       '（= 两档**行盒**中心差的一半，行盒各乘 1.2，行高 ' + leadProbe.lh + '）');
+    // ⚠️ **再核一遍位移的来源**（Issue #278 第八轮 · 2026-09-25 CI 修）。
+    //    上面那条比的是「量到的位移 vs 由**行高**现算的期望」，两边都由
+    //    浏览器里的实数出 —— 它在 :root 写死 -0.65 时也会**绿**（那一档的
+    //    期望正好是 0.65），却在手机上错：393×852 的输入字号是 16px，
+    //    行盒 20，位移该是 1.9。上一轮就是这样漏过去的。
+    //    所以这一条盯的是那件事本身：位移变量**是由字号算式现算的**，
+    //    不是手写的一个数 —— 「今天对不对」不靠记，靠它算不算得出来。
+    const shiftSrc = await page.evaluate(() => {
+      const root = getComputedStyle(document.documentElement);
+      return {
+        shift: root.getPropertyValue('--search-placeholder-shift').trim(),
+        ratio: root.getPropertyValue('--search-input-lh-ratio').trim(),
+        narrowFont: root.getPropertyValue('--input-font-narrow').trim(),
+        wideFont: root.getPropertyValue('--input-font').trim()
+      };
+    });
+    check('iPhone: 位移是「由字号算式现算」的一个变量（不是手写的一个数）',
+      /calc\(/.test(shiftSrc.shift) &&
+      shiftSrc.shift.indexOf('calc(-0.5 * (16px * 1.25 -') === 0 &&
+      shiftSrc.narrowFont === '16px' && shiftSrc.wideFont === '14px' &&
+      parseFloat(shiftSrc.ratio) === 1.25,
+      JSON.stringify(shiftSrc));
+    check('iPhone: 手机上那一档的位移确实被重算过（16×1.25 对 13.5×1.2）',
+      Math.abs(parseFloat(shiftSrc.narrowFont) * parseFloat(shiftSrc.ratio) -
+        parseFloat(segState.phVar) * 1.2) / 2 > 1.5,
+      JSON.stringify([shiftSrc.narrowFont, shiftSrc.ratio, segState.phVar]));
     void phState.lh;
 
     {

@@ -373,8 +373,20 @@ chk(/--read-w:\s*720px/.test(cssCode),
   '「一行字」的宽度令牌 --read-w 只定义一次，取手机那一档 720px（约 38 个汉字）');
 chk(!/--read-w:\s*calc\(100vw/.test(cssCode),
   '--read-w 不跟视口走（行宽跟着屏幕一起涨正是「读一行太累」的成因）');
-chk(!/@media[^{]*\{[^@]*--read-w:\s*(?!720px)/.test(cssCode),
-  '--read-w 在任何一档里都不被改写（三档同一个值：手机 / 平板 / 桌面一行字一样长）');
+// ⚠️ 这条原先写成「在任何一个 @media 块里都不许出现 `--read-w: <别的值>`」——
+//    用的正则 `@media[^{]*\{[^@]*--read-w:\s*(?!720px)` 是**贪婪地**扫到
+//    第一个 `--read-w` 出现处为止，块与块之间分不开。Issue #278 第八轮
+//    给 `--search-placeholder-shift` 加了一条 `@media (max-width: 700px)`
+//    重算之后，这一条立刻误报（那个块里根本没有 --read-w）——
+//    2026-09-25 修 CI 时顺手把误报也收掉。
+//    现在做的是它**真正要守的那件事**：把每一个 @media 块单独切出来看，
+//    里面有没有给 --read-w 另写一个值。
+const mediaRule = /@media[^{]*\{[\s\S]*?\n\}/g;
+const readWRewrites = (cssCode.match(mediaRule) || []).filter(block =>
+  /--read-w:\s*(?!720px)[^;]+;/.test(block));
+chk(readWRewrites.length === 0,
+  '--read-w 在任何一档里都不被改写（三档同一个值：手机 / 平板 / 桌面一行字一样长）' +
+  (readWRewrites.length ? ' —— 改写的块：' + readWRewrites.join(' / ') : ''));
 
 chk(/@media \(min-width:\s*1024px\)[\s\S]{0,400}\.list\s*>\s*\.item\s*\{[^}]*33\.333%/s.test(cssCode),
   '篇目列表在 ≥1024px 再排一档（两列时 1808px 里每行 893px，又是「空白比字宽」）');
