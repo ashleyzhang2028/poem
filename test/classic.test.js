@@ -698,13 +698,39 @@ setTimeout(() => {
 
   const classicSheet = fs.readFileSync(path + 'css/classic.css', 'utf8');
   const phCss = classicSheet.match(/\.search-input::placeholder \{([^}]*)\}/);
-  chk(!!phCss && /font-size:\s*12\.5px/.test(phCss[1]),
-    '搜索框提示字（placeholder）字号压到 12.5px，与右侧「全部 / 未读」同号');
+  // ⚠️ Issue #278 第八轮：这一条**整条换了口径**。
+  //    原先守的是「字号压到 12.5px，与右侧『全部 / 未读』同号」——
+  //    可那个理由说的是**索引页那一排 40px 的工具栏**（旁边真有一排 12.5px 的
+  //    控件），而 52px 的搜索页 hero / 首页「今日加背」都不是那一排。
+  //    于是首页那一枚照抄 12.5px、搜索页 hero 覆写 13.5px，同一个「今日加背」
+  //    在两页差 1px —— 用户 2026-09-25 点名的正是这一处。
+  //    现在字号与位移都读 :root 那一对变量：全站每一个搜索框只有一个来源，
+  //    两页的「一样」由 var 承接，不由「各自写一个相同的数」承接。
+  chk(!!phCss && /font-size:\s*var\(--search-placeholder-font/.test(phCss[1]),
+    '搜索框提示字字号读 :root 的 --search-placeholder-font（不再本文件写死一个数）');
+  chk(!/font-size:\s*12\.5px/.test(phCss[1]),
+    '提示字这一条里不再留 12.5px（那是「与索引页那排控件同号」，与 52px 的框无关）');
+  const rootVars = fs.readFileSync(path + 'css/style.css', 'utf8');
+  const phVar = (rootVars.match(/--search-placeholder-font:\s*([^;]+);/) || [])[1];
+  chk(!!phVar && phVar.trim() === '13.5px',
+    '全站搜索框提示字那一个数 = 13.5px（' + (phVar || '缺') + '）');
 
-  chk(!!phCss && /transform:\s*translateY\(-2\.25px\)/.test(phCss[1]),
-    '提示字上抬 2.25px，回到搜索框的水平中轴（只动伪元素，不动输入文字）');
+  chk(!!phCss && /transform:\s*translateY\(var\(--search-placeholder-shift/.test(phCss[1]),
+    '提示字上抬量也读 :root 的变量（回到框的水平中轴，只动伪元素，不动输入文字）');
+  // ⚠️ 这条位移是**算出来的**，不是挑出来的：输入文字行盒 = 14 × 1.25 = 17.5、
+  //    提示字行盒 = 13.5 × 1.2 = 16.2（`normal`），中心差的一半 = 0.65。
+  //    改字号不重算位移，两档字会一起偏出中轴 —— 而这件事在 CSS 里看着永远对。
+  const shVar = (rootVars.match(/--search-placeholder-shift:\s*([^;]+);/) || [])[1];
+  const shNum = shVar && parseFloat(shVar);
+  const wantSh = -(((14 * 1.25) - (parseFloat(phVar) * 1.2)) / 2);
+  chk(!!shVar && Math.abs(shNum - wantSh) <= 1e-9,
+    '位移与字号没脱钩：' + shVar + ' 该是 ' + wantSh.toFixed(2) +
+    'px（= (输入字号 14 × 1.25 − 提示字号 ' + phVar + ' × 1.2) ÷ 2）');
+
   chk(!/padding(-top|-bottom)?\s*:/.test(phCss[1]) && !/line-height\s*:/.test(phCss[1]),
     '居中的修法不碰输入框本体（提示字用 transform，输入文字仍是居中的 16px）');
+  chk(!/\.search-hero \.search-input::placeholder/.test(classicSheet),
+    '搜索页 hero **不再单独覆写提示字**（覆写一份＝下次还会从其中一处先漂走）');
 
   const segMini = fs.readFileSync(path + 'css/style.css', 'utf8');
   chk(/\.seg\.mini button \{[^}]*font-size:\s*12\.5px/.test(segMini),
