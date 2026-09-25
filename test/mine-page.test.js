@@ -110,12 +110,22 @@ const css = read('css/style.css') + read('css/account.css');
   chk(!/poem_recite_settings_v1/.test(strip(MINE_JS)) || /patch/.test(strip(MINE_JS)),
     '「我的」页不自己拼设置键名（拼法只在 ProgressStore 一处）');
 
-  const nickRule = (strip(css).match(/\.nickname-input\s*\{[^}]*\}/) || [''])[0];
+  // ⚠️ 这一页的 `.nickname-input` 现在**有两条规则**：
+  //    · 一条是这一页自己的外观（无边框 / 无底色 / 9.5em 收窄，在 account.css 末尾）；
+  //    · 另一条是 Issue #278 第七轮那句 `max-width: min(9.5em, 120px)` 的封顶。
+  //    取「最后一条带 width 的」才量得到真口径 —— 取第一条会量到那条只写封顶的。
+  const nickRules = [...strip(css).matchAll(/\.nickname-input\s*\{[^}]*\}/g)].map(m => m[0]);
+  const nickRule = nickRules.filter(r => /(^|[;{\s])width:/.test(r)).pop() || nickRules.pop() || '';
   chk(/border:\s*none/.test(nickRule) || /border:\s*0/.test(nickRule),
     '用户名输入框不画边框（用户 2026-09-18：不显示输入框的 border 样式和颜色）');
   chk(/background:\s*none/.test(nickRule),
     '用户名输入框不铺底色（无边框就该是一行字，不是一个盒子）');
-  chk(/\bwidth:\s*\d[\d.]*em/.test(nickRule),
+  // ⚠️ 口径收紧过一次（Issue #278 第七轮）：宽度仍是「em 收窄、不占满一整行」，
+  //    但 em 上多了一个 120px 的封顶 —— 9.5em 在 19px 字号下是 180px，
+  //    而这一行要装六个格子（昵称 + 登录 + 上传头像 + 删除头像 + 头像 + 徽章）。
+  //    180px 那版的实测后果是「登录被压成 39px（两个字竖排）、上传头像叠在
+  //    退出登录上面」（用户 2026-09-24：「彻底找不到上传头像和删除头像按钮」）。
+  chk(/\bwidth:\s*(min\(\s*\d[\d.]*em\s*,\s*\d+px\s*\)|\d[\d.]*em)/.test(nickRule),
     '用户名输入框的宽度用 em 收窄（短，不占满一整行；实际「' +
     ((nickRule.match(/width:[^;]+/) || [''])[0]) + '」）');
   chk(!/(^|[;{\s])width:\s*100%/.test(nickRule),
@@ -437,11 +447,19 @@ function boot(seed) {
     console.log('\n=== 身份行：登录 / 上传头像 / 删除头像同一行（Issue #276）===');
 
     const cssBare = strip(css);
+    // ⚠️ 口径改过一次（Issue #278 第七轮）：上一轮写的是「**不许**换行」，
+    //    而实测的收场是「登录」两个字竖排、「上传头像」被「退出登录」压住 ——
+    //    用户 2026-09-24 的原话就是「彻底找不到上传头像和删除头像按钮了」。
+    //    现在口径是：这一行**可以**折，而每一颗键**都不许被压变形**
+    //    （见下面 flex: 0 0 auto 那两条）。折行只在 ≤360px 这一档发生。
     chk(/\.identity-row \{[^}]*display:\s*flex/.test(cssBare) &&
-        /\.identity-row \{[^}]*flex-wrap:\s*nowrap/.test(cssBare),
-      '身份行是**不许换行**的一行（折行就退回「一行一个按钮」那个被点名的样子）');
+        /\.identity-row \{[^}]*flex-wrap:\s*wrap/.test(cssBare),
+      '身份行是一个 flex 行、且**可以折行**（这是它唯一的让位方式；' +
+      '不让位也不折行的下场是键被压成两个字竖排）');
+    chk(/\.identity-main \{[^}]*margin-right:\s*auto/.test(cssBare),
+      '昵称列把余量全吃在右边（那一簇动作整组贴右缘）');
     chk(/\.identity-btns \{[^}]*flex-wrap:\s*nowrap/.test(cssBare),
-      '「上传头像 / 删除头像」那一格自己也不换行');
+      '「上传头像 / 删除头像」那一格自己也不换行（两颗要并排）');
     chk(/\.identity-btns \{[^}]*margin-top:\s*0/.test(cssBare),
       '那一格不带自己的上外边距（它现在在一行里，不是另起一行）');
 
@@ -457,28 +475,34 @@ function boot(seed) {
       '字号也跟着落到小号那一档（高度收了、字号不收，字会顶在框里）');
     chk(!/min-width:\s*116px/.test(btnsRule),
       '不再有 116px 的最小宽度（那正是「一行显示一个按钮」的宽度来源）');
-    chk(/min-width:\s*0/.test(btnsRule) && /flex:\s*0 1 auto/.test(btnsRule),
-      '放不下时宁可两颗各自收窄，也不折行（收窄是可逆的，折行不是）');
-    // ⚠️ 这一条是本轮最容易被后人改回坏的一处：宽度若按「父级那一行的剩余空间」
-    //    来分，三个孩子的行里数出来的剩余是 0 —— 两颗键当场压成两个字宽。
-    chk(/flex-basis:\s*max-content/.test(btnsRule),
-      '宽度由**内容**定（flex-basis: max-content）—— 不是从剩余空间里分，' +
-      '不然「三个孩子的行」里那两颗键会被解成 0 宽');
-    // ⚠️ 实测出来的那一档「不溢出、但读不出来」：flex-shrink 给 1（随便压）时，
-    //    浏览器会把「账号」在 360px 上压到 14px —— 两个字挤成一条竖缝。
-    //    所以这里给的是「几乎不让」（0.02），全靠昵称列让位（flex-shrink: 999）。
-    chk(/flex-shrink:\s*0?\.0\d/.test(btnsRule.replace(/flex-basis[^;]*;/g, '')),
-      '键的 flex-shrink 是一个**小值**（几乎不让）——' +
-      '给 1 时浏览器会把它压到只剩一条缝（实测 14px），不溢出但读不出来');
+    // ⚠️ 口径再改一次（Issue #278 第七轮）：上一轮靠 `flex-basis: max-content`
+    //    + `flex-shrink: 0.02` 表达「几乎不让」，而实测里 `max-content` 在这个
+    //    容器里被算成了 **0**（393px：「上传头像」66px 的键只剩 3px 的 basis）。
+    //    现在口径更硬：键的宽度就是**它自己的内容**（basis auto = 内容宽），
+    //    一格都不收缩（shrink 0）。让位只有一条路 —— **折行**，
+    //    而「一行」的口径不变（375px 及以上仍是完整的一行）。
+    chk(/min-width:\s*0/.test(btnsRule) && /flex:\s*0 0 auto/.test(btnsRule),
+      '键的宽度由**内容**定死（flex: 0 0 auto）—— 不从这一行的剩余空间里分，' +
+      '也不收缩（再收缩就是本轮之前那副「两个字竖排」的样子）');
+    chk(!/flex-basis:\s*max-content/.test(cssBare),
+      '不再靠 flex-basis: max-content 定宽（实测它在这个容器里被算成 0，' +
+      '「上传头像」66px 的键只剩 3px 的 basis）');
+    // ⚠️ 昵称列让位优先级最高：放不下时它先让，一路可以让到 0。
     chk(/\.identity-main \{[^}]*flex-shrink:\s*\d{3}/.test(cssBare),
       '昵称列让位优先级最高（flex-shrink: 999）—— 放不下时它先让，' +
       '一路让到 0 宽，那几颗键一颗都不许被压死');
+    // ⚠️ 昵称列还必须**先于内容**（flex-basis: auto）：它按 9.5em 要 180px 时，
+    //    这一行上六个格子根本摆不下，「登录」会被压成两个字竖排。
+    chk(/\.identity-main \{[^}]*flex:\s*0 1 auto/.test(cssBare),
+      '昵称列按**内容**要与让位（flex: 0 1 auto）—— 不是按 9.5em 先占满 180px 再让');
+    chk(/\.nickname-input \{[\s\S]{0,400}?max-width:\s*min\(\s*9\.5em\s*,\s*120px\s*\)/.test(cssBare),
+      '昵称框在最窄那一档还有一个 120px 的封顶（9.5em 在 19px 字下是 180px）');
     // ⚠️ 这一条是本轮踩过的第二个坑（比溢出更隐蔽）：
     //    身份行里那两颗键必须**点名**覆盖掉 `.account-actions .account-btn`
     //    那套 `flex: 1 1 0; min-width: 104px`（那是「账号卡里两张满宽键」的算式）。
     //    不覆盖的话，「账号」会被撑成 104px，把旁边的键挤到变形
     //    （实测：真浏览器里「账号」冲上 104px，「上传头像」被压在被它盖住的下面）。
-    chk(/\.identity-row > \.account-actions \.account-btn \{[^}]*flex:\s*0 1 auto[^}]*min-width:\s*0/.test(cssBare),
+    chk(/\.identity-row > \.account-actions \.account-btn \{[^}]*flex:\s*0 0 auto[^}]*min-width:\s*0/.test(cssBare),
       '身份行里的「账号」点名覆盖了账号卡那套满宽算式（flex: 1 1 0 / min-width: 104px）');
     // ⚠️ 判据按**出现次序**：文件里 .identity-btns .account-btn 有两处，
     //    第一条在 @supports 里（只补尺寸），最后一条在文件末尾（定宽那一条）。
