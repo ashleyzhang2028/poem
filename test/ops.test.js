@@ -383,7 +383,7 @@ console.log("\n=== 八、/api/me 如实自报开通状态（界面才配自称�
 {
   const core = require(path.join(ROOT, "api/_lib/core.js"));
   const cfg = fullCfg({ mailTransport: null, sendgridKey: null });
-  const acc = { uid: "u_1", plan: "free", email_mask: "a***@b.com", nickname: "" };
+  const acc = { uid: "u_1", plan: "free", email: "a@b.com", nickname: "" };
   const pub = core.publicAccount(cfg, acc);
   chk(pub.channel && typeof pub.channel === "object", "publicAccount 下发 channel（开通状态）");
   eq(pub.channel.mail, "console", "mail 如实是 console");

@@ -141,14 +141,11 @@
     return DISPOSABLE.some(function (d) { return domain.indexOf(d) >= 0; });
   }
 
-  function maskEmail(email) {
-    var e = normalizeEmail(email);
-    var at = e.indexOf("@");
-    if (at <= 0) return "***";
-    var name = e.slice(0, at);
-    var head = name.slice(0, 1);
-    return head + "***@" + e.slice(at + 1);
-  }
+  // ⚠️ **邮箱没有掩码**（Issue #320）：`maskEmail()` 整块删掉了。
+  //    本机这份账号记的是**明文邮箱**（`identities[].value`），
+  //    界面上那个「点一下才显示」是**临时的显示状态**（`js/mine.js`），
+  //    不是一份数据 —— 不需要在这里再维持一个掩码字段。
+  //    手机号那一路的掩码留着（`maskPhone`，短信通道预留）。
 
   function maskPhone(v) {
     var s = normalizePhone(v);
@@ -273,7 +270,9 @@
     var uid = uniqueId(state.accounts, newUid());
     var acc = {
       uid: uid,
-      identities: [{ channel: id.channel, key: identityKey(id), mask: maskEmail(id.value), verifiedAt: t }],
+      // 明文邮箱（`value`）+ 它自己的摘要（`key`）。`value` 落本机存储、
+      // 供「本机体验版」回显；`key` 是查找用的摘要。
+      identities: [{ channel: id.channel, key: identityKey(id), value: id.value, verifiedAt: t }],
       profile: { nickname: "" },
       createdAt: t, updatedAt: t, lastLoginAt: t,
       status: "active",
@@ -361,7 +360,9 @@
     if (id.channel === "email" && !isEmailShape(id.value)) {
       return { ok: false, code: "E_EMAIL_FORMAT", message: ERR.E_EMAIL_FORMAT };
     }
-    var sentTo = id.channel === "email" ? maskEmail(id.value) : maskPhone(id.value);
+    // 邮箱回明文、短信回掩码（Issue #320）：这一句是界面上的
+    // 「已发往 xxx@yyy」，用户自己刚填的邮箱掩成 b***@163.com 毫无意义。
+    var sentTo = id.channel === "email" ? id.value : maskPhone(id.value);
 
     var state = ensureBase(store.read());
     var t = now();
@@ -497,7 +498,9 @@
     return {
       uid: acc.uid, status: acc.status,
       nickname: (acc.profile && acc.profile.nickname) || "",
-      identities: acc.identities.map(function (i) { return { channel: i.channel, mask: i.mask, verifiedAt: i.verifiedAt }; }),
+      identities: acc.identities.map(function (i) {
+        return { channel: i.channel, value: i.value || "", verifiedAt: i.verifiedAt };
+      }),
       plan: acc.plan, createdAt: acc.createdAt, lastLoginAt: acc.lastLoginAt
     };
   }
@@ -639,7 +642,7 @@
     makeStore: makeStore, emptyState: emptyState,
     setClock: setClock, setRandom: setRandom,
     normalizeEmail: normalizeEmail, isEmailShape: isEmailShape, emailHint: emailHint,
-    isDisposable: isDisposable, maskEmail: maskEmail, maskPhone: maskPhone,
+    isDisposable: isDisposable, maskPhone: maskPhone,
     normalizePhone: normalizePhone, isPhoneShape: isPhoneShape,
     digest: digest, codeDigest: codeDigest,
     requestCode: requestCode, verifyCode: verifyCode,

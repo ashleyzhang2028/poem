@@ -117,18 +117,17 @@ function makeRateLimiter() {
   };
 }
 
-function accountRow(identityValue, hash, mask, now) {
+// 建一行新账号。**没有 `email_mask` 了**（Issue #320）：
+// 这一列从前存的是 `b***@163.com`，界面靠它回显「已登录 · b***@163.com」、
+// 管理员按它发层级。现在邮箱一律**明文**（`email` 那一列就是唯一的一份），
+// 掩码只剩界面上的一个「点开才显示」的临时状态，不落库、不下发。
+function accountRow(identityValue, hash, now) {
   var plain = id.normalizeEmailForStore(identityValue);
-
-  if (!mask) {
-    mask = plain.indexOf("@") > 0 ? id.maskEmail(plain) : "***";
-  }
   return {
     uid: id.newUid(),
 
     email: plain,
     email_hash: hash,
-    email_mask: mask,
 
     email_verified_at: null,
 
@@ -155,8 +154,10 @@ function publicAccount(cfg, acc) {
     plan: { tier: planTier(acc), until: acc.plan_until || null },
     role: role,
     features: featuresFor(cfg, planTier(acc)),
-    mask: acc.email_mask || "***",
 
+    // ⚠️ 只有 `email`（明文），**没有 `mask`**（Issue #320）。
+    //    界面上那个「点一下才显示」是**本机的临时状态**（`js/mine.js`），
+    //    不是服务端下发的字段 —— 服务端不再为它维持一列。
     email: String(acc.email || ""),
 
     emailVerifiedAt: acc.email_verified_at == null ? null : Number(acc.email_verified_at),
@@ -270,11 +271,10 @@ function findOrCreateAccount(store, cfg, identity, t) {
   var hash = ch === "sms"
     ? id.phoneHash(identity.value, pepperOf(cfg))
     : id.emailHash(identity.value, pepperOf(cfg));
-  var mask = ch === "sms" ? id.maskPhone(identity.value) : id.maskEmail(identity.value);
   return Promise.resolve(store.getAccountByHash(hash)).then(function (acc) {
     if (acc && acc.status !== "deleted") return { acc: acc, created: false };
 
-    var row = accountRow(identity.raw != null ? identity.raw : identity.value, hash, mask, t);
+    var row = accountRow(identity.raw != null ? identity.raw : identity.value, hash, t);
     return Promise.resolve(store.putAccount(row)).then(function (saved) {
       return { acc: saved || row, created: true };
     });
@@ -293,10 +293,12 @@ function normIdentity(input) {
     var email = id.normalizeEmail(raw);
     if (!id.isEmailShape(email)) return { bad: "E_EMAIL_FORMAT", message: "这个邮箱看起来不太对，再检查一下" };
 
-    return { channel: ch, value: email, raw: id.normalizeEmailForStore(raw), mask: id.maskEmail(email), bucket: "email", key: email };
+    return { channel: ch, value: email, raw: id.normalizeEmailForStore(raw), bucket: "email", key: email };
   }
   var phone = id.normalizePhone(raw);
   if (!id.isPhoneShape(phone)) return { bad: "E_PHONE_FORMAT", message: "这个手机号看起来不太对，再检查一下" };
+  // ⚠️ 只有**短信**带 `mask`（`sent_to` 那一列与界面回显用它）。
+  //    邮箱那条路不再有 `who.mask` —— 邮箱明文到处都是（Issue #320）。
   return { channel: ch, value: phone, raw: phone, mask: id.maskPhone(phone), bucket: "phone", key: phone };
 }
 
@@ -394,7 +396,9 @@ function sendCodeAfterGuard(deps, input, who, isSms, purpose, device, ip) {
       uid: acc.uid,
       purpose: purpose,
       channel: who.channel,
-      sent_to: who.mask,
+      // 邮箱落**明文**、短信落掩码（Issue #320）。这一列是「这一枚码发往哪儿」，
+      // 界面上本来就要给用户看「已发往 xxx@yyy」，掩成 b***@163.com 反而是错的。
+      sent_to: who.channel === "sms" ? who.mask : who.value,
       code_hash: id.codeHash(acc.uid, purpose, rawCode, salt, pepperOf(cfg)),
       salt: salt,
       issued_at: t,
@@ -438,8 +442,10 @@ function sendCodeAfterGuard(deps, input, who, isSms, purpose, device, ip) {
 }
 
 function sendVia(cfg, who, code) {
+  // ⚠️ 邮箱那条路**不再传 `mask`**（Issue #320）：`who.mask` 只在短信那一路
+  //    才有值，邮件正文与日志用的都是真收件人 `who.value`。
   if (who.channel !== "sms") {
-    return mail.send(cfg, { to: who.value, mask: who.mask, code: code });
+    return mail.send(cfg, { to: who.value, code: code });
   }
 
   var smsCfg = Object.assign({}, cfg, { mailTransport: "sms" });
@@ -608,7 +614,7 @@ function emailGate(deps, acc) {
     "邮箱还没确认：请点开注册时那封确认邮件里的链接。没收到就点「重新发一封」。",
     {
 
-      emailMask: (acc && acc.email_mask) || "***",
+      email: String((acc && acc.email) || ""),
 
       verifySent: false,
       verifyTransport: null
@@ -710,14 +716,16 @@ function registerAfterGuard(deps, input) {
       return claimOwnerRole(store, cfg, cur).then(function () { return cur; });
     }).then(function (cur) {
       if (cur.email_verified_at != null) {
-        var masked = cur.email_mask || id.maskEmail(email);
         return ok(withDegrade(store, {
           uid: cur.uid,
           registerRequested: true,
           created: r.created,
           store: store.kind,
           emailVerified: true,
-          emailMask: masked,
+          // 回明文（Issue #320）：注册响应里从前回掩码，界面据此说
+          // 「验证邮件已发往 b***@163.com」—— 用户自己刚填的邮箱，
+          // 掩起来只是让他多确认一遍自己写对了没有。
+          email: String(cur.email || email),
           verifySent: false,
           verifyTransport: null,
           note: "邮箱已经在确认过了 —— 这次只更新了密码，确认状态保持不变。"
@@ -737,7 +745,7 @@ function registerAfterGuard(deps, input) {
           verifyReason: v.reason || null,
 
           emailVerified: false,
-          emailMask: cur.email_mask || id.maskEmail(email),
+          email: String(cur.email || email),
 
           requiresVerification: !!requireVerified(cfg),
 
@@ -762,7 +770,7 @@ function issueVerification(deps, acc) {
   var rec = {
     vid: vid,
     uid: acc.uid,
-    email_hash: id.emailHash(acc.email || acc.email_mask, cfg.sessionSecret || "no-pepper"),
+    email_hash: id.emailHash(acc.email, cfg.sessionSecret || "no-pepper"),
     token_hash: id.tokenHash(acc.uid, "verify", token, cfg.sessionSecret || "no-pepper"),
     salt: salt,
     issued_at: t,
@@ -775,7 +783,7 @@ function issueVerification(deps, acc) {
     .then(function () { return store.putVerification(rec); })
     .then(function () {
 
-      return mail.confirm(cfg, { to: acc.email, mask: acc.email_mask, vid: vid, token: token, ttlMs: cfg.verifyTtlMs });
+      return mail.confirm(cfg, { to: acc.email, vid: vid, token: token, ttlMs: cfg.verifyTtlMs });
     })
     .then(function (sent) {
 
@@ -833,7 +841,6 @@ function verifyEmail(deps, input) {
           var out = {
             verified: true,
             email: String(cur.email || ""),
-            emailMask: cur.email_mask || "***",
             note: "邮箱已确认，已经帮你登录了。"
           };
           return issueSessionFor(deps, cur).then(function (sess) {
@@ -843,7 +850,6 @@ function verifyEmail(deps, input) {
             }
             sess.body.verified = true;
             sess.body.email = out.email;
-            sess.body.emailMask = out.emailMask;
             sess.body.signedIn = true;
             sess.body.note = out.note;
             return sess;
@@ -994,7 +1000,7 @@ function issueReset(deps, acc, email) {
     .then(function () { return store.putReset(rec); })
     .then(function () {
 
-      return mail.reset(cfg, { to: acc.email, mask: acc.email_mask, rid: rid, token: token, ttlMs: cfg.resetTtlMs });
+      return mail.reset(cfg, { to: acc.email, rid: rid, token: token, ttlMs: cfg.resetTtlMs });
     })
     .then(function (sent) {
       return {
@@ -1065,7 +1071,9 @@ function resetConfirm(deps, input) {
           .then(function () {
             return ok({
               reset: true,
-              emailMask: acc.email_mask || "***",
+              // 回明文（Issue #320）：这是**他自己的**邮箱，界面拿它说
+              // 「已发往哪儿」，掩起来没有一处受益。
+              email: String(acc.email || ""),
               sessionsRevoked: true,
 
               emailVerified: acc.email_verified_at != null,
@@ -1129,7 +1137,7 @@ function resendVerificationAfterGuard(deps, input) {
       return ok({
         requested: true,
         alreadyVerified: !!(acc && acc.email_verified_at != null),
-        emailMask: (acc && acc.email_mask) || "***",
+        email: String((acc && acc.email) || ""),
         verifySent: false,
         store: store.kind,
         note: SAME.note
@@ -1145,7 +1153,7 @@ function resendVerificationAfterGuard(deps, input) {
         body = {
           requested: true,
           alreadyVerified: false,
-          emailMask: acc.email_mask || "***",
+          email: String(acc.email || ""),
           verifySent: v.sent,
           verifyTransport: v.transport,
           verifyAttempts: v.attempts || 1,
@@ -1588,7 +1596,8 @@ function adminGate(deps, cfg) {
   return null;
 }
 
-var MASK_RE = /^[^\s@]{1,64}\*{2,}[^\s@]{1,64}@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$/;
+// ⚠️ `MASK_RE` 连同「按掩码认人」那一条岔路一起删掉了（Issue #320）：
+//    掩码这个设计整块撤掉，认人只剩 uid 一条路（名录里每一行都带着它）。
 
 function normGrantInput(input) {
   var tier = String((input && input.tier) || "").toLowerCase();
@@ -1600,30 +1609,22 @@ function normGrantInput(input) {
     return { bad: "E_UNTIL", message: "到期时刻看不懂（要毫秒时间戳，留空即永久）" };
   }
 
-  // 两种认人的方式：**uid**（后台名录那张表点着改，Issue #319）与
-  // **邮箱掩码**（冒烟 / 脚本调这一条接口时的老路）。uid 优先 ——
-  // 它指谁就是谁，掩码在库里可能对上不止一行。
+  // **只认 uid**（Issue #320 起）。从前还有一条「按邮箱掩码认人」的岔路
+  // （掩码在库里可能对上不止一行，那一段注释本身就是为它写的告警）——
+  // 掩码这条设计整块撤掉了，发层级也只剩 uid 一条路：
+  // 后台名录那张表点着改（Issue #319），脚本调这一条接口时自己带 uid。
   var uid = String((input && input.uid) || "").trim();
-  if (uid) return { tier: tier, uid: uid, until: until };
-
-  var mask = String((input && (input.emailMask || input.mask)) || "").trim().toLowerCase();
-  if (!mask) return { bad: "E_MASK", message: "要说清改谁的：uid 或邮箱掩码（形如 a***@qq.com）" };
-  if (!MASK_RE.test(mask)) {
-    return { bad: "E_MASK", message: "掩码形状不对：形如 a***@qq.com，与账号页上显示的那一串一致" };
+  if (!uid) {
+    return { bad: "E_UID", message: "要说清改谁的：填 uid（后台名录那一列，或 /api/admin/accounts 里拿）" };
   }
-  return { tier: tier, mask: mask, until: until };
+  return { tier: tier, uid: uid, until: until };
 }
 
-// 认人：给了 uid 就按 uid 取，否则按掩码找（可能命中不止一条，取最早那条）。
+// 认人：按 uid 取（Issue #320 起只有这一条路）。
 function adminTarget(store, who) {
-  if (who.uid) {
-    return Promise.resolve(store.getAccount(who.uid)).then(function (a) {
-      if (!a || a.status === "deleted") return { hits: [] };
-      return { hits: [a] };
-    });
-  }
-  return Promise.resolve(store.findAccountsByMask(who.mask)).then(function (rows) {
-    return { hits: (rows || []).filter(function (a) { return a && a.status !== "deleted"; }) };
+  return Promise.resolve(store.getAccount(who.uid)).then(function (a) {
+    if (!a || a.status === "deleted") return { hits: [] };
+    return { hits: [a] };
   });
 }
 
@@ -1654,8 +1655,8 @@ function adminGrant(deps, input) {
       if (!target) {
         return ok({
           matched: 0, changed: false,
-          emailMask: who.mask, uid: who.uid, tier: who.tier, until: who.until,
-          note: "没找到这个账号。本方案里「对方先登录一次」才会在库里留下一行 —— 请让对方先登录一次再发。"
+          uid: who.uid, tier: who.tier, until: who.until,
+          note: "没有 uid 是 " + who.uid + " 的账号（可能已经注销）。后台名录里每一行都带着 uid。"
         });
       }
 
@@ -1669,7 +1670,7 @@ function adminGrant(deps, input) {
           matched: hits.length, changed: !same,
           ambiguous: hits.length > 1,
           uid: target.uid,
-          emailMask: target.email_mask || who.mask,
+          email: String(target.email || ""),
 
           tier: who.tier, until: who.until,
           before: before,
@@ -1697,7 +1698,7 @@ function adminGrants(deps) {
       var grants = (rows || []).filter(function (a) {
         return a && a.status !== "deleted" && planTier(a) !== "free";
       }).map(function (a) {
-        return { emailMask: a.email_mask, tier: planTier(a), until: a.plan_until == null ? null : Number(a.plan_until) };
+        return { uid: String(a.uid || ""), email: String(a.email || ""), tier: planTier(a), until: a.plan_until == null ? null : Number(a.plan_until) };
       });
       return ok({ grants: grants, store: store.kind });
     });
@@ -1717,7 +1718,6 @@ function adminAccounts(deps) {
 
           uid: String(a.uid || ""),
           email: String(a.email || ""),
-          emailMask: a.email_mask || "***",
           nickname: a.nickname || "",
           tier: planTier(a),
 
@@ -1785,7 +1785,7 @@ function adminSetRole(deps, input) {
       return Promise.resolve(changed ? store.patchAccount(uid, { role: role }) : null).then(function () {
         return ok({
           uid: uid,
-          emailMask: target.email_mask || "***",
+          email: String(target.email || ""),
           role: role,
           before: before,
           changed: changed,
@@ -1804,8 +1804,9 @@ function adminRevoke(deps, input) {
   var cfg = deps.cfg, store = deps.store, t = deps.now();
   var gate = adminGate(deps, cfg);
   if (gate) return Promise.resolve(gate);
-  var mask = String((input && (input.emailMask || input.mask)) || "").trim().toLowerCase();
-  if (!mask || !MASK_RE.test(mask)) return Promise.resolve(err(400, "E_MASK", "掩码形状不对：形如 a***@qq.com"));
+  // 收回也**只认 uid**（Issue #320）：从前是按掩码找那一行。
+  var uid = String((input && input.uid) || "").trim();
+  if (!uid) return Promise.resolve(err(400, "E_UID", "要说清收回谁的：填 uid（后台名录里那一列）"));
   return Promise.resolve(store.getAccount(deps.account.uid)).then(function (me) {
     if (!me || me.status === "deleted") return err(401, "E_NO_SESSION", "还没有登录");
     if (!isAdminRole(me.role)) return err(403, "E_FORBIDDEN", "这一条只对管理员开放");
@@ -1813,12 +1814,13 @@ function adminRevoke(deps, input) {
     var g = deps.limiter.check(cfg, "device", "grant:" + device, t);
     if (!g.ok) return err(429, "E_RATE_DEVICE", "操作太频繁了，请稍后再试", { retryAfter: g.retryAfter });
     deps.limiter.hit("device", "grant:" + device, t);
-    return Promise.resolve(store.findAccountsByMask(mask)).then(function (rows) {
-      var hits = (rows || []).filter(function (a) { return a && a.status !== "deleted"; });
-      if (!hits.length) return ok({ matched: 0, changed: false, emailMask: mask });
-      return Promise.resolve(store.patchAccount(hits[0].uid, { plan: "free", plan_until: null }))
+    return Promise.resolve(store.getAccount(uid)).then(function (target) {
+      if (!target || target.status === "deleted") {
+        return ok({ matched: 0, changed: false, uid: uid, note: "没有 uid 是 " + uid + " 的账号（可能已经注销）。" });
+      }
+      return Promise.resolve(store.patchAccount(uid, { plan: "free", plan_until: null }))
         .then(function () {
-          return ok({ matched: hits.length, changed: true, emailMask: mask, tier: "free", by: me.uid, at: t });
+          return ok({ matched: 1, changed: true, uid: uid, email: String(target.email || ""), tier: "free", by: me.uid, at: t });
         });
     });
   });
@@ -1879,7 +1881,7 @@ function reportPublic(row) {
 
 function reportAdmin(row) {
   var pub = reportPublic(row) || {};
-  pub.emailMask = String(row.email_mask || "");
+  pub.email = String(row.email || "");
   pub.nickname = String(row.nickname || "");
   pub.uid = String(row.uid || "");
   pub.handledBy = String(row.handled_by || "");
@@ -1950,7 +1952,10 @@ function reportCreate(deps, input) {
         rid: rid,
         uid: deps.account.uid,
 
-        email_mask: String(me.email_mask || me.emailMask || ""),
+        // 快照落**明文**（Issue #320）：从前落掩码，于是账号注销之后管理员
+        // 看到的是 `b***@163.com` —— 认不出这条报告是谁提的，掩码本身
+        // 又不可逆。明文快照至少在账号没了之后还看得出「这是谁报的」。
+        email: String(me.email || ""),
         nickname: String(me.nickname || ""),
         kind: who.kind,
         status: "new",
@@ -2269,7 +2274,6 @@ module.exports = {
   reportPublic: reportPublic,
   reportAdmin: reportAdmin,
   normGrantInput: normGrantInput,
-  MASK_RE: MASK_RE,
   publicAccount: publicAccount,
   channelFacts: channelFacts,
   featuresFor: featuresFor,

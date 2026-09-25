@@ -179,7 +179,7 @@
     return '<div class="game-gate">' +
       '<p class="game-gate-why">' + esc(why) + "</p>" +
       (id.signedIn
-        ? '<p class="account-hint">层级由管理员按邮箱掩码发放。这一页的说明与对照见 <a href="/plans/">四种用户对比</a>。</p>'
+        ? '<p class="account-hint">层级由管理员在后台按账号发放。这一页的说明与对照见 <a href="/plans/">四种用户对比</a>。</p>'
         : '<button class="account-btn" type="button" data-game-go="/login/">用邮箱建一个账号</button>') +
       "</div>";
   }

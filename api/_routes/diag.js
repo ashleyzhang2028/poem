@@ -7,7 +7,7 @@ var identity = require("../_lib/identity");
 var TABLES = ["accounts", "codes", "sessions", "progress", "verifications", "resets"];
 
 var ACCOUNT_COLS = [
-  "uid", "email", "email_hash", "email_mask", "nickname", "plan", "plan_until", "role",
+  "uid", "email", "email_hash", "nickname", "plan", "plan_until", "role",
   "created_at", "last_login_at", "status", "email_verified_at", "password_hash", "password_salt"
 ];
 
@@ -94,7 +94,6 @@ function writeProbe(d) {
   var account = {
     uid: uid,
     email_hash: "diag_" + uid,
-    email_mask: "diag***@example.invalid",
     nickname: "",
     plan: "free",
     role: "user",

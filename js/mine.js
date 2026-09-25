@@ -34,6 +34,59 @@
 
   function identityRow() { return $("identity-row"); }
 
+  // ---- 「我的邮箱」那一颗（Issue #320）----------------------------------
+  //
+  // 用户原话：「我的那里将掩码邮箱换成真实邮箱，但用户需要点击 我的邮箱
+  // 按钮才显示」。
+  //
+  // 所以身份行底下那一句是**两段**：左边永远写着「已登录」，
+  // 右边那一小段是邮箱 —— 默认收成「我的邮箱」四个字，点一下才换成
+  // 真邮箱，再点一下收回去。
+  //
+  // ⚠️ **这是本机的临时显示状态**，不是数据：邮箱本身一直在手上
+  //    （`identity().email`），收起来只是少画一段文字。所以
+  //      · 不落存储（刷新一下又是收起的，符合「要你点才显示」）；
+  //      · 不参与同步（它是「这一屏看不看得到」，不是「你是谁」）；
+  //      · 换个人登录 / 退出登录时**自动收起**（别人走过来时不该停在他
+  //        上一位的邮箱上）。
+  var EMAIL_OPEN = false;
+
+  function identityEmail() {
+    var id = identity();
+    if (!id || !id.signedIn) return "";
+    var info = acct() && acct().account ? acct().account() : null;
+    if (info && info.email) return String(info.email);
+    if (id.email) return String(id.email);
+    var s = A.session(store);
+    var ids = (s && s.account && s.account.identities) || [];
+    for (var i = 0; i < ids.length; i++) {
+      if (ids[i] && ids[i].channel === "email" && ids[i].value) return String(ids[i].value);
+    }
+    return "";
+  }
+
+  function paintEmailToggle() {
+    var btn = $("btn-my-email");
+    var box = $("identity-email");
+    if (!btn || !box) return;
+    var mail = identityEmail();
+    if (!mail) {
+      hide(btn); hide(box); box.textContent = "";
+      return;
+    }
+    // 换人 / 退出登录之后自动收回去（见上面那一条）。
+    if (paintEmailToggle._who !== identity().uid) {
+      paintEmailToggle._who = identity().uid;
+      EMAIL_OPEN = false;
+    }
+    show(btn);
+    btn.textContent = EMAIL_OPEN ? "收起邮箱" : "我的邮箱";
+    btn.setAttribute("aria-expanded", EMAIL_OPEN ? "true" : "false");
+    btn.setAttribute("aria-controls", "identity-email");
+    box.textContent = EMAIL_OPEN ? mail : "";
+    if (EMAIL_OPEN) show(box); else hide(box);
+  }
+
   function buildIdentityRow(row) {
     row.innerHTML =
 
@@ -46,7 +99,14 @@
 
       '<input id="input-nickname" class="nickname-input" type="text" maxlength="12"' +
       ' size="1" placeholder="起个名字" autocomplete="off" enterkeyhint="done" />' +
-      '<span class="identity-sub" id="identity-sub"></span>' +
+      // 身份行第二行：左边「已登录 / 游客」，右边一颗「我的邮箱」——
+      // 点了才把那串真邮箱画出来（Issue #320，见 `paintEmailToggle()`）。
+      '<span class="identity-sub" id="identity-sub">' +
+      '<span id="identity-state"></span>' +
+      '<button class="identity-mail-btn" id="btn-my-email" type="button" hidden' +
+      ' aria-expanded="false">我的邮箱</button>' +
+      '<span class="identity-email" id="identity-email" hidden></span>' +
+      "</span>" +
       "</span>" +
       '<span class="tier-badge" id="identity-badge"></span>' +
       "</div>" +
@@ -58,8 +118,19 @@
 
       "";
     bindNickname();
+    bindEmailToggle();
 
     if (window.AvatarEdit && window.AvatarEdit.render) window.AvatarEdit.render();
+  }
+
+  function bindEmailToggle() {
+    var btn = $("btn-my-email");
+    if (!btn || btn.dataset.bound) return;
+    btn.dataset.bound = "1";
+    btn.addEventListener("click", function () {
+      EMAIL_OPEN = !EMAIL_OPEN;
+      paintEmailToggle();
+    });
   }
 
   function renderIdentity(id) {
@@ -70,11 +141,12 @@
     var slot = $("avatar-slot");
     if (slot) slot.innerHTML = window.Avatar ? Avatar.html(backing) : "";
 
-    var sub = id.signedIn
-      ? "已登录 · " + (id.mask || "（无邮箱）")
-      : "游客";
-    var subEl = $("identity-sub");
-    if (subEl) subEl.textContent = sub;
+    // ⚠️ 这里**只写「已登录 / 游客」**这一段（Issue #320）。
+    //    邮箱是旁边那一颗「我的邮箱」点开才画的东西，交给
+    //    `paintEmailToggle()` —— 从前这一行是「已登录 · b***@163.com」。
+    var stateEl = $("identity-state");
+    if (stateEl) stateEl.textContent = id.signedIn ? "已登录" : "游客";
+    paintEmailToggle();
 
     var badge = $("identity-badge");
     if (badge) {
@@ -142,7 +214,7 @@
   //
   // 现在分两栏读：
   //   · **账号那一行**照旧优先用 `/api/me` 那份明文邮箱
-  //     （`AccountApi.account()`，只有服务端登录的人才有），退回本机的掩码；
+  //     （`AccountApi.account()`，只有服务端登录的人才有），退回本机那一份；
   //   · **「登录还有 N 天」**只有本机会话算得出来（本机记着 `exp`），
   //     服务端那条路的有效期在 Cookie 里、脚本读不到（HttpOnly）——
   //     那就**如实不写这一行**，不编一个数字出来。
@@ -157,13 +229,23 @@
       return;
     }
 
+    // 这一张卡写**账号那几件事的现状**（Issue #320 顺带收口）。
+    //
+    // ⚠️ 从前它只有一行「账号 · <邮箱>」，底下挂着一颗「账号与安全」——
+    //    而那颗键点了只是去 `/login/`（一个**已经登录的人**落到登录页，
+    //    既不是「安全设置」也没有任何可改的东西）。用户问的正是这件事：
+    //    「这张卡片有啥用？这个按钮又有什么作用？」
+    //
+    // 现在的口径：**卡片写事实，按钮写它真要做的事**。
+    //   · 事实：邮箱（与身份行里那颗「我的邮箱」同一个出口）、确认了没、
+    //     登录还有多久（本机会话算得出来才写，算不出来不编）；
+    //   · 按钮：那颗键改成「换一个账号登录」—— 点下去**就是**去 `/login/`，
+    //     文案与落点对得上。要退出登录，身份行那颗「退出登录」本来就够。
     var info = acct() && acct().account ? acct().account() : null;
-    var mask = (sess && sess.account && sess.account.identities[0])
-      ? sess.account.identities[0].mask : "";
-    var email = (info && info.email) ? info.email
-      : (mask || id.mask || "（无邮箱）");
-
-    var rows = [["账号", email]];
+    var rows = [["邮箱", identityEmail() || "（这个账号没留邮箱）"]];
+    if (info) {
+      rows.push(["邮箱确认", info.emailVerified ? "已确认" : "还没确认"]);
+    }
     if (sess && sess.account && sess.exp) {
       rows.push(["登录还有", Math.max(0, Math.round((sess.exp - Date.now()) / 86400000)) + " 天"]);
     }
@@ -171,6 +253,7 @@
       return '<div class="kv-row"><span class="kv-k">' + esc(r[0]) +
         '</span><span class="kv-v">' + esc(r[1]) + "</span></div>";
     }).join("");
+    list.hidden = !rows.length;
     show($("account-card"));
     show($("btn-delete-start"));
     show($("btn-go-admin"));
@@ -218,7 +301,7 @@
       }
       if (el) {
         el.textContent = r.verifySent
-          ? "确认邮件已发往 " + (r.emailMask || "你的邮箱") + "。"
+          ? "确认邮件已发往 " + (r.email || identityEmail() || "你的邮箱") + "。"
           : "邮件没发出去（已试 " + (Number(r.verifyAttempts) || 1) + " 次），稍后再试。";
       }
       showToast(r.verifySent ? "确认邮件已发出" : "没能发出去");
@@ -555,6 +638,7 @@
     var id = identity();
     if (!id) return;
     renderIdentity(id);
+    paintEmailToggle();
     renderStats();
     renderAccount(sess);
     renderNickname();

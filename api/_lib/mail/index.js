@@ -180,7 +180,9 @@ transports.console = function (cfg) {
     configured: function () { return true; },
     devOnly: true,
     send: function (msg) {
-      console.log("[mail:console] 未配置发信商，验证码未向外发送 → 收件人 " + (msg.mask || "***") +
+      // 回显用 `msg.to`（真收件人）：邮箱不再有掩码（Issue #320），
+      // 而这一行是**服务端日志**，用户看不到 —— 掩起来只是让运维少了一条线索。
+      console.log("[mail:console] 未配置发信商，验证码未向外发送 → 收件人 " + (msg.to || "***") +
         "（明文码不回给调用方，也**不打印**；要看码请开 ALLOW_CODE_ECHO=1）");
       return Promise.resolve({ ok: true, transport: "console", delivered: false });
     }
@@ -281,7 +283,6 @@ function sendKind(cfg, kind, opts) {
     : kind === "reset" ? buildReset(cfg, opts)
       : buildMessage(cfg, opts);
   msg.to = opts.to;
-  msg.mask = opts.mask;
   msg.code = opts.code;
   if (opts.vid) msg.vid = opts.vid;
   if (opts.rid) msg.rid = opts.rid;

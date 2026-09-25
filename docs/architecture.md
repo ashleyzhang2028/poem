@@ -69,7 +69,7 @@ api（同一个 Vercel 项目里的 /api/*，19 条路由 · 部署时收口成 
   ├─ /api/sync/push      → 推本机进度（增量、按条覆盖）
   ├─ /api/account        → DELETE 注销（含数据导出）
   ├─ /api/admin/grant    → POST 发放 / DELETE 收回（2.2 权威名单，服务端角色闸）
-  ├─ /api/admin/grants   → POST 看名单（只回掩码，只列发过层级的那几条）
+  ├─ /api/admin/grants   → POST 看名单（uid + 明文邮箱，只列发过层级的那几条）
   └─ /api/game/answer    → POST 判分（3 期 · **不花钱**：用仓库里的 js/quiz.js，不接 AI 商）
   ▼
 Supabase（免费版，Postgres + 一张 accounts 表 + 一张 progress 表）
@@ -804,14 +804,15 @@ DELETE /api/account
   res  200 { deleted:true, export:{...} }   ← 数据随响应回（本期无对象存储，不给下载链接）
 
 POST   /api/admin/grant      （2.2 权威发放）
-  req  { emailMask, tier:"free"|"pro"|"max", until:null|毫秒时间戳 }
-  res  200 { matched, changed, uid?, tier, until, by, at, note }
-       400 { code:"E_TIER|E_MASK|E_UNTIL" }   403 { code:"E_FORBIDDEN" }
+  req  { uid, tier:"free"|"pro"|"max", until:null|毫秒时间戳 }
+  res  200 { matched, changed, uid, tier, until, by, at, note }
+       400 { code:"E_TIER|E_UID|E_UNTIL" }   403 { code:"E_FORBIDDEN" }
   ⚠️ 角色闸在**服务端**（`accounts.role` 是 owner / admin 才放行）；
-     `matched:0` **不是错误** —— 对方先登录一次库里才会有那一行，
-     绝不「查不到就替他建一条」（掩码不可逆，造出来是永远登不上的幽灵行）
-DELETE /api/admin/grant      （2.2 收回：等价于发一个 free，不删账号、不删进度）
-POST   /api/admin/grants     （2.2 看名单：只回掩码，只列 plan !== free 的行）
+     ⚠️ **只认 uid**（Issue #320 起）：掩码那一条认人路整块撤掉，
+        只给掩码一律 `400 E_UID`；
+     `matched:0` **不是错误** —— 没有那个 uid 就如实说，绝不造一条幽灵行
+DELETE /api/admin/grant      （2.2 收回：等价于发一个 free，不删账号、不删进度；同样只认 uid）
+POST   /api/admin/grants     （2.2 看名单：uid + 明文邮箱，只列 plan !== free 的行）
 ```
 
 **服务端必须守住的三条（review checklist）：**
@@ -1386,8 +1387,9 @@ account-api.js` 两个 `<script>`（顺序：entitlement → auth-api → accoun
 
 #### ① 为什么这一条必须做，且必须**现在**做
 
-`/admin/` 页上的名单从 0 期起就是「手工发邀请码的本机版」：管理员按掩码
-写好名单 → 导出给对方 → 对方自己导入 → 掩码对上就生效。
+`/admin/` 页上的名单从 0 期起就是「手工发邀请码的本机版」：管理员按邮箱
+（当年是掩码）写好名单 → 导出给对方 → 对方自己导入 → 对上就生效。
+⚠️ 掩码这一条设计 2026-09-25 整块撤掉（§4.61）：现在认人一律按 **uid**。
 它有一个**明说过的**局限：**对方改一行存储就能升级**。
 
 服务端接通（2A）之后，这个局限就变成了一个**自相矛盾**：
@@ -1406,14 +1408,14 @@ account-api.js` 两个 `<script>`（顺序：entitlement → auth-api → accoun
 #### ② 接口：两条写、一条读（第 7~9 个函数，`api/admin/`）
 
 ```
-POST   /api/admin/grant    req { emailMask, tier:"free"|"pro"|"max", until? }
-  res  200 { matched, changed, uid?, tier, until, by, at, note }
-       400 { code:"E_TIER"|"E_MASK"|"E_UNTIL" }
+POST   /api/admin/grant    req { uid, tier:"free"|"pro"|"max", until? }   ← uid（§4.61 起唯一认人路）
+  res  200 { matched, changed, uid, tier, until, by, at, note }
+       400 { code:"E_TIER"|"E_UID"|"E_UNTIL" }
        401 { code:"E_NO_SESSION" }   403 { code:"E_FORBIDDEN", message }
        429 { code:"E_RATE_DEVICE", retryAfter }   503 { code:"E_NOT_CONFIGURED" }
 
-DELETE /api/admin/grant    req { emailMask }        ← 收回：等价于发一个 free
-POST   /api/admin/grants   req {}   res 200 { grants:[{emailMask,tier,until}], store }
+DELETE /api/admin/grant    req { uid }              ← 收回：等价于发一个 free
+POST   /api/admin/grants   req {}   res 200 { grants:[{uid,email,tier,until}], store }
 ```
 
 **四条不许含糊的口径**（前三条都钉进了 `test/api.test.js` 第二十一节）：
@@ -1423,16 +1425,15 @@ POST   /api/admin/grants   req {}   res 200 { grants:[{emailMask,tier,until}], s
    「把入口藏起来**不是**安全边界」这件事（`docs §3.4`）。
    客户端 `isOwner()` 在拿不到服务端角色时有「本机主人」兜底，服务端**没有**：
    两边的**兜底形态**故意不同，但**同一个明确角色**的答案必须一致（有对拍断言）。
-2. **这一节只认掩码，不认明文邮箱**。⚠️ 注意与「库里存不存明文」是两件事 ——
-   #197 之后 `accounts.email` **是存明文的**（§2.4 第 1 条已被推翻），
-   但这一节的接口仍**只收掩码**：掩码规则若有两份实现，漂移的症状是
-   「管理员明明发了，对方却拿不到」。形状不对一律 `400 E_MASK`。
-   （要看明文邮箱请走 §2.8 的 `POST /api/admin/accounts` 名录。）
-3. **命中 0 条不是错误**，而是**一种如实的状态**：本方案里
-   「对方先登录一次」才会在库里留下一行，管理员才可能拿到他的掩码。
-   所以接口如实回 `{matched:0, changed:false}` + 一句成因。
-   ⚠️ **绝不「查不到就替他建一条」**：掩码是**不可逆**的
-   （`a***@qq.com` 对应哪个真实邮箱谁也不知道），造出来的是**永远登不上的幽灵行**。
+2. ~~**这一节只认掩码，不认明文邮箱**~~ —— ⚠️ **这一条已被 §4.61 推翻**：
+   掩码那套设计（含 `MASK_RE` 与 `store.findAccountsByMask()`）2026-09-25
+   整块撤掉，这一节现在**只认 uid**（缺了回 `400 E_UID`）。
+   当年的理由是「掩码规则若有两份实现，漂移的症状是『管理员明明发了，
+   对方却拿不到』」；现在认人只剩 uid 一条路，那条漂移的可能性直接消失。
+3. **命中 0 条不是错误**，而是**一种如实的状态**：没有那个 uid 就如实说
+   `{matched:0, changed:false, uid}` + 一句成因。
+   ⚠️ **绝不「查不到就替他建一条」**：造出来的是**永远登不上的幽灵行**。
+   （回头翻成 uid 之前，这一条说的是「掩码不可逆」—— 结论一样，理由换了。）
 4. **改了就要真的生效**。发放写的是 `accounts.plan` / `plan_until`，
    也就是 `planTier()` 唯一读的那两列 —— 于是发完之后 `/api/me` 下发的
    `plan.tier` 与 `features[]` 立刻跟着变，**不需要第二套判定**。
@@ -1479,7 +1480,7 @@ POST   /api/admin/grants   req {}   res 200 { grants:[{emailMask,tier,until}], s
 #### ⑤ `/admin/` 页现在长什么样
 
 ```
-发放层级（服务端权威）   [掩码] [到期日] [发放到服务端]
+发放层级（服务端权威）   [uid] [到期日] [发放到服务端]     ← Issue #320 起只认 uid
                         ⚠️ 前提：对方先登录过一次
 服务端名单（权威）       <!-- 从接口读，每行一颗「收回」 -->
 账号名录（角色 / 层级）   <!-- Issue #276：角色一列 + 两颗改角色的键 -->
@@ -1494,9 +1495,9 @@ POST   /api/admin/grants   req {}   res 200 { grants:[{emailMask,tier,until}], s
 
 - `bash test/run.sh`：**4709 条断言全绿、0 失败**（2.1 是 4567，本轮 +142）
 - `test/api.test.js` 新增第二十一节（468 条，较 2.1 的 400+ 增 68）：
-  归一化（三个层级 / 只认掩码 / 额度时刻）、**两端角色表对拍**、
+  归一化（三个层级 / **只认 uid** / 额度时刻）、**两端角色表对拍**、
   走真 HTTP 的 401/403/200 三条路、命中 0 条**不建账号**、
-  发完 `/api/me` 真的跟着变、到期即回落 free、名单只回掩码不回摘要、
+  发完 `/api/me` 真的跟着变、到期即回落 free、名单回 uid + 明文不回摘要、
   收回不删账号、写接口有频控、缺 `SESSION_SECRET` 回 503、GET 回 405
 - `test/account-pages.test.js` 新增第六之二节：两块名单分开（卡片 / 列表 / 文案）、
   「不是权威」「不自动同步」「先登录一次」「没有收款能力」四句都在、
@@ -2164,7 +2165,7 @@ toast 全走它）。`test/entitlement.test.js` 直接钉住这个字串：
 
 | 卡 | 里面是什么 |
 |---|---|
-| 身份 | 印 + 昵称 + 邮箱掩码 + 层级徽章；下面**一行**：管理登录状态 / 退出登录 |
+| 身份 | 印 + 昵称 + 层级徽章；第二行「已登录 / 游客」+ 一颗「**我的邮箱**」（点了才显示真邮箱，Issue #320）；下面**一行**：退出登录 |
 | 本机数据 | 有记录 / 已开始 / 今天到期 / 平均掌握度（只读） |
 | 跨设备同步 | 状态 + 开关回显；需要你裁决时才铺冲突面板 |
 | 关于 | 应用 / 身份 / 两份法务 / 离线缓存 + 账号那两行；下面**一行**：权限对比 / 同步设置（「管理后台」Issue #323 起挪到页底那一排） |
@@ -4467,7 +4468,7 @@ chk(/var\(--nav-h\)/.test(settingsPad) && !/var\(--nav-h\)\s*-/.test(settingsPad
 ```
 我的（/mine/，底部最后一格）
 ├─ 右上角：一颗齿轮 → /settings/            ← 设置整页（四组入口一行不减）
-├─ 身份卡：印 + 昵称 + 掩码 + 层级徽章
+├─ 身份卡：印 + 昵称 + 层级徽章 + 「我的邮箱」（点了才显示，Issue #320）
 │    · 昵称输入框（就地改）
 │    · 头像（上传 / 删除，就地做）
 │    · 一行操作键：登录 / 管理登录状态 · 退出登录 · 权限对比
@@ -6413,7 +6414,7 @@ bindEvents();   // 里面再 bindSearch(document)，老口径不动
 | 与孩子的关系 | 按 `child_id` 分区（一个家长几个孩子各加各的） | **不分区**（「这一篇的注音错了」与哪个孩子无关） |
 | 谁改它 | 只有用户自己 | **只有管理员改状态**（用户端只读） |
 | 要不要检索 | 不用（按 `poem_id` 取一行就够了） | **要**（按状态筛「还没看的」、按 `poem_id` 问「这一篇被报过几次」） |
-| 载荷形状 | 黑盒 `jsonb` | 十个具名字段（掩码 / 引文 / 状态 / 处理人…） |
+| 载荷形状 | 黑盒 `jsonb` | 十个具名字段（邮箱快照 / 引文 / 状态 / 处理人…） |
 
 把报告塞进 `progress` 的下场是：管理员想看报告，得先把**全站账号的 progress
 全拉下来**再一条条挑 —— 而 progress 的载荷是黑盒 `jsonb`，服务端连
@@ -6424,7 +6425,7 @@ bindEvents();   // 里面再 bindSearch(document)，老口径不动
 
 **三条与 accounts / progress 逐字一致的地方**：
 uid 外键指向 `accounts(uid)`；RLS 全开且**不给任何策略**（漏掉这一段的症状是
-「anon key 能读别人报的错与他的邮箱掩码」，而不报错）；键全走 PostgREST
+「anon key 能读别人报的错与他的邮箱」，而不报错）；键全走 PostgREST
 的 `select` 列表（`REPORT_COLS`），不在两处各写一份。
 
 **一条与它们不同的地方**：`kb_purge_expired()` **不删报告**，并且这不是遗漏 ——
@@ -6434,7 +6435,7 @@ uid 外键指向 `accounts(uid)`；RLS 全开且**不给任何策略**（漏掉�
 #### 二、数据：**前后端共用同一组上界**，且「谁报的」要留快照
 
 ```js
-{ rid, uid, email_mask, nickname,          // 谁报的（掩码与昵称是**快照**）
+{ rid, uid, email, nickname,               // 谁报的（邮箱与昵称是**快照**，Issue #320 起是明文）
   kind,                                     // 六档：text / translation / pinyin / audio / ui / other
   status,                                   // 五档：new / read / accepted / fixed / rejected
   poem_id, poem_title, book,                // 报的是哪一篇
@@ -6447,7 +6448,7 @@ uid 外键指向 `accounts(uid)`；RLS 全开且**不给任何策略**（漏掉�
 三处值得单独说：
 
 - **`email_mask` 与 `nickname` 是快照，不是每次现查账号。** uid 外键在真库上是
-  `on delete cascade`（注销时行跟着走），但**掩码快照**让「这条报告是谁提的」
+  `on delete cascade`（注销时行跟着走），但**邮箱快照**让「这条报告是谁提的」
   在账号没了之后仍然认得出。这与 `daily_extra` 存篇目快照是同一条理由。
 - **`context` 带整句，不只 `quote`。** 用户点的是「长」两个字；半年后管理端打开
   台账，只看这两个字**谁也不知道在说哪一句**。`js/report.js` 的 `sentenceAround()`
@@ -6577,7 +6578,7 @@ uid 外键指向 `accounts(uid)`；RLS 全开且**不给任何策略**（漏掉�
 
 服务端内核（创建 / 识别不出的 kind 落 other / 每日上限 20 / 设备档频控 /
 未配置 503 / 未登录 401 且给出 Issue 那条路）→ 只读自己那一份
-（传别人的 uid 也没用、用户端那一段**不含** emailMask）→ 管理端两道闸
+（传别人的 uid 也没用、用户端那一段**连邮箱都不含**）→ 管理端两道闸
 （普通用户读写都 403）→ 状态机与序列化（别名 `open→new`、`done→fixed`、
 退回 `new` 时**清掉**处理人 / 处理时刻、不存在的 rid 回 404）→
 数据形状（截断真的生效、四个上界前后端逐字一致、`schema.sql` 建表 +
@@ -7254,14 +7255,14 @@ var lifted = focused || space > 0 || hasKeyword();
 | 问题 | 答案 |
 |---|---|
 | 怎么在数据库设置管理员？ | 改 `accounts.role` 这一列（`owner` / `admin` / `user`）。代码这边**本来就支持** —— `/api/me` 每个请求都如实下发那一列。**本轮补的是「怎么让它第一次有人」**：种子主人走环境变量 `OWNER_EMAILS` |
-| free / pro / max 的「角色」怎么设置？ | ⚠️ **这是个口误，也是这一轮要说清的一件正事**：`tier`（free / pro / max，能用什么）与 `role`（owner / admin / user，谁能管理）是**两条正交的轴**。层级仍然是「发一个掩码」，角色才是「账号名录上改」 |
+| free / pro / max 的「角色」怎么设置？ | ⚠️ **这是个口误，也是这一轮要说清的一件正事**：`tier`（free / pro / max，能用什么）与 `role`（owner / admin / user，谁能管理）是**两条正交的轴**。层级是「在名录上按 uid 发一档」，角色才是「账号名录上改」 |
 | 要加一个已登录用户列表、让 belem@163.com 改他们的 role 吗？ | **要，已经有了**（名录从 2.8 起就在）。本轮给它补上**角色一列 + 两颗改角色的键** |
 
 #### ② 拆掉的两样（用户说「莫名其妙」的那两样）
 
 | 拆掉的 | 它原先是什么 | 为什么拆 |
 |---|---|---|
-| 「本机发放名单」（`poem_plan_grant_v1` + 导入 / 导出 / 清空 / 二次确认） | 「手工发邀请码的本机版」：管理员写名单 → 导出给对方 → 对方自己导入 → 掩码对上就生效 | 它**明说过**自己不是权威（对方改一行存储就能改）。用户裁「全部走在线数据库」—— 留着它就是留一条**看起来能用、其实改不动权威**的岔路 |
+| 「本机发放名单」（`poem_plan_grant_v1` + 导入 / 导出 / 清空 / 二次确认） | 「手工发邀请码的本机版」：管理员写名单 → 导出给对方 → 对方自己导入 → 邮箱（当年是掩码）对上就生效 | 它**明说过**自己不是权威（对方改一行存储就能改）。用户裁「全部走在线数据库」—— 留着它就是留一条**看起来能用、其实改不动权威**的岔路 |
 | 「模拟身份」（本机临时降成 Free 预览） | 写 `poem_plan_v1` 的本机层级 | 用户点名「关于本地设置 free, pro, max 的那些设计和代码可以删除了」。它正是「本机自己给自己发层级」最后一个入口 |
 | 「谁打开谁是主人」（`poem_owner_v1`） | `isOwner()` 在没有服务端答案时**默认放行** | 清一次浏览器存储就能当管理员的所谓权限，**不是权限**。用户原话要的正是「未登录用户以及其他登录账户一律不允许访问」 |
 
@@ -7274,7 +7275,7 @@ var lifted = focused || space > 0 || hasKeyword();
 
 ```
 POST /api/admin/role   req { uid, role:"user"|"admin" }
-  res  200 { uid, emailMask, role, before, changed, by, at, note }
+  res  200 { uid, email, role, before, changed, by, at, note }   ← email 是明文（§4.61）
        400 { code:"E_UID"|"E_ROLE"|"E_SELF"|"E_OWNER_LOCKED" }
        401 { code:"E_NO_SESSION" }   403 { code:"E_FORBIDDEN" }
        404 { code:"E_NO_ACCOUNT" }   429 { code:"E_RATE_DEVICE" }
@@ -7300,6 +7301,7 @@ POST /api/admin/role   req { uid, role:"user"|"admin" }
 **为什么名单用完整邮箱、不用掩码**：掩码是给人看的（`b***@163.com` 一眼认人），
 而授权要唯一 —— 掩码命中的可能不止一条（`core.adminGrant` 里那段「命中多条」
 的告警就是为它写的），拿它授权等于「谁能注册出同掩码谁就是管理员」。
+⚠️ 再往前一步（Issue #320）：掩码这一整条设计都撤了，名录**按 uid** 指人。
 
 **不配 `OWNER_EMAILS` 会怎样**：一个 owner 都没有，`/admin/` 对所有人关门
 并如实拒绝。这是**如实的状态**（「还没指定主人」），
@@ -8340,3 +8342,94 @@ PR #299 的 `cnb/pull_request/pipeline-1(pr-test)` 报了 2 项失败，都在
 
 `sw.js` 的 `CACHE_NAME` 与 `js/settings-nav.js` 的 `APP_VERSION` 一起
 到 **v217 / v216**（动了 html / css / js，README 那条纪律就得推版本）。
+
+---
+
+### 4.61 去掉掩码邮箱：库里删列、界面回明文、「我的邮箱」点一下才显示（2026-09-25 · 回答 Issue #320）
+
+用户原话：
+
+> 「去掉整个app中关于掩码邮箱的设计，数据库也不需要这一列
+>
+> 已登录 · b***@163.com
+>
+> b***@163.com 我的那里将掩码邮箱换成 真实邮箱，但用户需要点击 我的邮箱 按钮才显示
+>
+> 账号
+> 账号
+> belem@163.com
+> 账号与安全
+>
+> 这张卡片有啥用？这个按钮又有什么作用？」
+
+#### 一、掩码是怎么来的，为什么现在要撤
+
+掩码 `b***@163.com` 是 Issue #132 那个阶段「**邮箱不落明文**」的产物：
+库里只有 `email_hash` + `email_mask`，界面想「显示你自己的邮箱」就只能显示掩成
+一串的那一份。Issue #197 用户裁「邮箱必须记录到数据库」之后，明文
+`accounts.email` **已经落库**，掩码这一列就只剩一个作用：**把用户自己看得见的
+邮箱、对自己的界面掩起来**。那不是保护，是给用户添了一次「我到底填的哪个」的
+心算。所以这一轮把它**整条设计**撤掉，不是「不再显示」而已。
+
+#### 二、四处一起动（少一处就会出现「有的地方认、有的地方不认」）
+
+| # | 落点 | 从前 | 现在 |
+|---|---|---|---|
+| 1 | `accounts.email_mask` | 一列掩码，界面回显与「按掩码发层级」都读它 | **删列**（`schema.sql` 第 8 节 `drop column if exists`），落库只剩 `email`（明文） |
+| 2 | `reports.email_mask` | 报告里的「谁报的」快照是掩码 | **改名 `email`**，内容换成**快照明文**；老行的掩码清空（不可逆，不编） |
+| 3 | 报文里的 `emailMask` | 发码 / 注册 / 确认 / 重发 / 重设的响应都带它 | 一律改成 **`email`（明文）**；`/api/me` 的 `publicAccount()` 不再有 `mask` 字段 |
+| 4 | 管理端「按掩码认人」 | `/api/admin/grant` 收 `emailMask`，`store.findAccountsByMask()` 查一行 | **只认 uid**（`E_UID`）；`MASK_RE`、`findAccountsByMask()` 一起删掉 |
+
+⚠️ **第 4 条与前三件是同一件事**：掩码一旦不再是「界面上那一串」，它在服务端就
+只剩一个用途 —— 给人指人。而它**本来就不可逆**（`a***@qq.com` 还原不出真实邮箱），
+命中的可能不止一行（`adminGrant` 里那段「命中多条」的告警就是为它写的）。
+名录那张表（Issue #319）已经按 **uid** 指人，掩码那一条路于是整块撤掉。
+
+#### 三、界面：「我的邮箱」点一下才显示（用户那句原话）
+
+`/mine/` 身份行第二行从「已登录 · b***@163.com」改成：
+
+```
+已登录   我的邮箱        ← 收着（默认）
+已登录   收起邮箱  belem@163.com    ← 点一下
+```
+
+四条口径（`js/mine.js` 的 `paintEmailToggle()` 里逐条写着）：
+
+1. **这是本机的临时显示状态**，不是数据 —— 邮箱一直在手上（`identity().email`），
+   收起来只是少画一段文字。所以**不落存储**（刷新又是收起的，符合「要你点才显示」），
+   **不参与同步**（它是「这一屏看不看得到」，不是「你是谁」）。
+2. **换人 / 退出登录自动收起**（`paintEmailToggle._who` 记住上一次是谁）；
+   别人走过来时不该停在上一位的邮箱上。
+3. **账号卡那一行改成写事实**：`邮箱` / `邮箱确认` / `登录还有 N 天`。
+   同一串邮箱在一页上出现两遍、其中一遍还是自动展开的，正是用户说的那种别扭。
+4. **那颗「账号与安全」改成「换一个账号登录」** —— 这是用户问的第二件事
+   （「这个按钮又有什么作用？」）：它从前点了只是去 `/login/`，而**已经登录的人**
+   落到登录页，既不是「安全设置」也没有任何可改的东西。文案与落点现在对得上：
+   点它**就是**去登录页；要退出登录，身份行那颗「退出登录」本来就够。
+
+#### 四、这一层怎么守
+
+`test/api.test.js`：
+
+- 建表语句里**没有** `email_mask` 列；迁移里**有**「删列」与「改名」那两步（幂等）；
+- `typeof id.maskEmail === "undefined"`、`A.maskEmail` 也没有（两端各自删干净）；
+- `publicAccount()` 回明文、**没有** `mask`；
+- 发 / 收层级只认 uid：只给掩码 → `400 E_UID`（不是 `E_MASK` —— 那套规则也不存在了）；
+- 名单里**没有**掩码字段，回的是 `uid` + 明文邮箱。
+
+`test/auth.test.js`：本机那份账号记的是**明文**（`identities[].value`），
+`identities[].mask` 那个字段没有了。
+
+`test/entitlement.test.js`：`identity().email` 是明文，`identity().mask` 不存在。
+
+`test/report.test.js`：报告快照是**明文邮箱**（账号注销后仍认得出是谁提的）。
+
+`sw.js` 的 `CACHE_NAME` 到 **v218**（动了 html / css / js）。
+
+#### 五、留着的那个掩码：**手机号**
+
+`maskPhone()`（`138****8000`）一个字没动 —— 它有两个跟邮箱完全不同的性质：
+短信通道预留（还没开通）、且号码是**发给别人的**凭据之一。邮箱掩码撤掉，
+不等于「掩码」这个词在项目里消失；`codes.sent_to` 那一列仍是「邮箱落明文、
+短信落掩码」（见 `api/_lib/core.js` 里那一句）。

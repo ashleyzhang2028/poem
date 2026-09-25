@@ -132,7 +132,7 @@ async function main() {
       const store = require("../api/_lib/store.js").memoryStore();
       const d = serverDeps(store);
 
-      await store.putAccount({ uid: "u_1", email_hash: "h", email_mask: "a***@qq.com", nickname: "", plan: "pro", plan_until: null, role: "user", created_at: 1, last_login_at: 1, status: "active" });
+      await store.putAccount({ uid: "u_1", email_hash: "h", email: "a@qq.com", nickname: "", plan: "pro", plan_until: null, role: "user", created_at: 1, last_login_at: 1, status: "active" });
 
       await core.syncPush(d, { recs: [{ id: "p1", payload: { level: 5 }, updatedAt: 100 }], child: "f-ming" });
       await core.syncPush(d, { recs: [{ id: "p1", payload: { level: 2 }, updatedAt: 100 }], child: "f-hong" });
@@ -170,7 +170,7 @@ async function main() {
       const store = require("../api/_lib/store.js").memoryStore();
       const d = serverDeps(store);
 
-      await store.putAccount({ uid: "u_1", email_hash: "h", email_mask: "a***@qq.com", nickname: "", plan: "pro", plan_until: null, role: "user", created_at: 1, last_login_at: 1, status: "active" });
+      await store.putAccount({ uid: "u_1", email_hash: "h", email: "a@qq.com", nickname: "", plan: "pro", plan_until: null, role: "user", created_at: 1, last_login_at: 1, status: "active" });
 
       const empty = await core.familyGet(d);
       eq(empty.status, 200, "没有名册时回 200（不是 404 —— 那是「对方还没同步过名册」）");
@@ -236,7 +236,7 @@ async function main() {
       const store = require("../api/_lib/store.js").memoryStore();
       const d = serverDeps(store);
 
-      await store.putAccount({ uid: "u_1", email_hash: "h", email_mask: "a***@qq.com", nickname: "", plan: "free", plan_until: null, role: "user", created_at: 1, last_login_at: 1, status: "active" });
+      await store.putAccount({ uid: "u_1", email_hash: "h", email: "a@qq.com", nickname: "", plan: "free", plan_until: null, role: "user", created_at: 1, last_login_at: 1, status: "active" });
       const r1 = await core.familyPut(d, { family: { v: 1, at: "f-a", profiles: [{ id: "f-a", nickname: "A" }] } });
       eq(r1.status, 403, "free 写名册回 403（与 sync/push 同一把闸）");
       eq(r1.body.code, "E_TIER", "码是 E_TIER（不是「连不上」——那会让人一直重试）");
@@ -260,7 +260,7 @@ async function main() {
       const core = require("../api/_lib/core.js");
       const store = require("../api/_lib/store.js").memoryStore();
       const d = serverDeps(store);
-      await store.putAccount({ uid: "u_1", email_hash: "h", email_mask: "a***@qq.com", nickname: "", plan: "pro", plan_until: null, role: "user", created_at: 1, last_login_at: 1, status: "active" });
+      await store.putAccount({ uid: "u_1", email_hash: "h", email: "a@qq.com", nickname: "", plan: "pro", plan_until: null, role: "user", created_at: 1, last_login_at: 1, status: "active" });
 
       await store.putProgress("u_1", "", [{ poem_id: "family:v1", payload: { v: 1, at: "f-a", profiles: [{ id: "f-a", nickname: "A", createdAt: 1 }, { id: "f-b", nickname: "B", createdAt: 2 }] }, updated_at: 10 }]);
       await store.putProgress("u_1", "", [{ poem_id: "p1", payload: { level: 1 }, updated_at: 11 }]);

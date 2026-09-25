@@ -247,7 +247,8 @@ console.log('\n=== 七、身份合成：只认 AuthCore 会话，不认页面自
   eq(id.tier, 'free', '新账号仍是 free');
   eq(id.can('read.aloud').ok, true, '登录的 free 可以语音播放');
   eq(id.can('export.progress').ok, true, '登录的 free 也可以导出进度了');
-  eq(id.mask, 'z***@163.com', '身份里带回邮箱掩码（供名单匹配）');
+  eq(id.email, 'zhangmin@163.com', '身份里带回**明文**邮箱（Issue #320：掩码撤掉了）');
+  eq(id.mask, undefined, '身份里**没有** mask 字段了');
 
   E.writeTier(b, 'max', null, { source: 'server', role: 'user' });
   const id2 = E.identity({ authStore: authStore, backing: b });

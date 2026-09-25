@@ -35,7 +35,7 @@ console.log('=== 一、邮箱归一化与形态校验 ===');
   chk(!A.isEmailShape('@b.com'), '空本地部分被拒');
   chk(!A.isEmailShape('a b@c.com'), '含空格被拒');
   chk(!A.isEmailShape('x'.repeat(300) + '@b.com'), '超长邮箱被拒');
-  eq(A.maskEmail('zhangmin@163.com'), 'z***@163.com', '掩码只留首字母与域名');
+  eq(typeof A.maskEmail, 'undefined', '邮箱掩码整个删掉了（Issue #320）');
   chk(/163\.com/.test(A.emailHint('me@163.con')) , '163.con 给出域名纠错提示');
   chk(A.isDisposable('x@mailinator.com'), '一次性邮箱被识别');
   chk(!A.isDisposable('x@163.com'), '正常邮箱不算一次性');
@@ -49,13 +49,14 @@ console.log('\n=== 二、发码：注册登录合一 ===');
   chk(r.ok, '首次发码成功');
   eq(r.code, '123456', '可控随机源下码固定');
   eq(A.CODE_LEN, 6, '码长 6 位');
-  eq(r.sentTo, 'm***@163.com', '回显已发往的掩码地址');
+  eq(r.sentTo, 'ma@163.com', '回显的是明文邮箱（Issue #320，不再是 m***@163.com）');
   chk(!e.raw().includes('123456'), '明文码绝不落盘（存储字符串里搜不到）');
   chk(e.raw().includes(A.codeDigest(A.digest('Ma@163.com'), 'login', '123456', JSON.parse(e.raw()).codes[r.codeId].salt))
       || /codeHash/.test(e.raw()), '落盘的是码摘要');
   const acc = Object.values(JSON.parse(e.raw()).accounts)[0];
-  chk(!JSON.stringify(acc).includes('ma@163.com'), '账号记录里不含明文邮箱');
+  eq(acc.identities[0].value, 'ma@163.com', '本机那份账号记**明文邮箱**（Issue #320：掩码撤掉了）');
   chk(acc.identities[0].key.indexOf('email:') === 0, '身份以 channel:摘要 形式登记');
+  chk(!('mask' in acc.identities[0]), '身份里**没有** mask 字段了');
 
   const r2 = A.requestCode(e.store, { channel: 'email', value: 'ma@163.com' }, 'login', { code: '999999' });
   eq(r2.codeId, undefined, '同邮箱 60 秒内第二次直接被频控拦下');

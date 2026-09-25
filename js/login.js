@@ -368,7 +368,9 @@
         msg("msg-reg", r.message, "warn");
         return null;
       }
-      state.regEmail = A.maskEmail(email);
+      // 明文邮箱（Issue #320）：从前记的是掩码，界面据此说
+      // 「验证邮件已发往 b***@163.com」—— 用户自己刚填的那个邮箱。
+      state.regEmail = String(r.email || email || "");
       var vInput = $("input-verify-email");
       if (vInput) vInput.value = email;
 
@@ -397,7 +399,7 @@
           account: {
             uid: r.uid || "",
             nickname: r.nickname || "",
-            identities: [{ channel: "email", mask: r.emailMask || state.regEmail || "" }],
+            identities: [{ channel: "email", value: r.email || state.regEmail || "" }],
             createdAt: 0, lastLoginAt: 1
           },
           remote: true,
@@ -445,7 +447,7 @@
         account: {
           uid: r.account.uid,
           nickname: r.account.nickname || "",
-          identities: [{ channel: "email", mask: r.account.mask || "" }],
+          identities: [{ channel: "email", value: r.account.email || "" }],
           createdAt: 0, lastLoginAt: 1
         },
         remote: true,
@@ -531,7 +533,8 @@
       state.purpose = "login";
       state.codeId = r.codeId;
       state.code = r.devCode || "";
-      state.sentTo = A.maskEmail(email);
+      // 明文（Issue #320）：这一句就是「已发往 xxx@yyy」。
+      state.sentTo = String(email || "");
       state.expiresAt = r.expiresAt;
       state.cooldown = Date.now() + (r.cooldown || 60) * 1000;
       state.remote = true;
@@ -658,7 +661,7 @@
         account: {
           uid: r.account.uid,
           nickname: r.account.nickname || "",
-          identities: [{ channel: "email", mask: r.account.mask || "" }],
+          identities: [{ channel: "email", value: r.account.email || "" }],
           createdAt: 0, lastLoginAt: 1
         },
         remote: true,
@@ -672,9 +675,10 @@
     setMode("done");
 
     var isNew = !r.account.lastLoginAt || r.account.lastLoginAt === r.account.createdAt;
+    var doneMail = (r.account.identities[0] && r.account.identities[0].value) || "";
     text($("done-lead"), (isNew ? "账号已建好 · " : "已登录 · ") +
       (Ent ? Ent.tierLabel(Ent.identity().tier) : "Free") +
-      " · " + (r.account.identities[0] ? r.account.identities[0].mask : ""));
+      (doneMail ? " · " + doneMail : ""));
 
     var nickInput = $("input-nickname");
     if (nickInput) {
@@ -742,7 +746,7 @@
     text($("unverified-lead"), r.message || "邮箱尚未验证，请打开验证邮件中的链接。");
 
     if (r.verifySent === true) {
-      note("unverified-note", "我们又发了一封，发往 " + (r.emailMask || "你的邮箱") + "。", "ok");
+      note("unverified-note", "我们又发了一封，发往 " + (r.email || "你的邮箱") + "。", "ok");
     } else if (r.verifySent === false) {
       note("unverified-note", "本次未重复发送，可稍后重试。", "");
     } else {
@@ -775,7 +779,7 @@
       if (r.alreadyVerified) {
         msg("msg-unverified", "这个邮箱已经确认过了，直接回「密码登录」进来即可。", "ok");
       } else if (r.verifySent) {
-        msg("msg-unverified", "验证邮件已发往 " + (r.emailMask || "你的邮箱") + "。", "ok");
+        msg("msg-unverified", "验证邮件已发往 " + (r.email || "你的邮箱") + "。", "ok");
       } else {
         msg("msg-unverified", "这台服务器现在没能把邮件发出去（发信商还没配好），稍后再试。", "warn");
       }
@@ -815,8 +819,8 @@
 
       if (signedIn && r.verifySent) {
         msg("msg-verify", mailOutcome(
-          "验证邮件已发往 " + (r.emailMask || state.regEmail) + "。",
-          r.emailMask || state.regEmail), mailDelivered === false ? "warn" : "ok");
+          "验证邮件已发往 " + (r.email || state.regEmail || "你的邮箱") + "。",
+          r.email || state.regEmail), mailDelivered === false ? "warn" : "ok");
       } else if (signedIn) {
 
         msg("msg-verify", "这台服务器现在没能把邮件发出去（已试 " + (Number(r.verifyAttempts) || 1)
@@ -839,9 +843,11 @@
     var acc = A.trustedAccount(store);
     var panel = $("trust-panel");
     if (!acc) { hide(panel); return; }
-    var mask = (acc.identities[0] && acc.identities[0].mask) || "";
+    // 明文邮箱（Issue #320）：这是**本机的**那份账号（没有服务器时的
+    // 唯一记法），本来就只有用户自己看得到。
+    var mail = (acc.identities[0] && acc.identities[0].value) || "";
     var btn = $("btn-trust");
-    if (btn) btn.textContent = "继续以 " + mask + " 进入";
+    if (btn) btn.textContent = mail ? "继续以 " + mail + " 进入" : "继续进入";
     show(panel);
   }
 

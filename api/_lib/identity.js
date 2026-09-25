@@ -36,6 +36,11 @@ function isPhoneShape(value) {
   return /^1[3-9]\d{9}$/.test(normalizePhone(value));
 }
 
+// 手机号掩码：`138****8000`。
+//
+// ⚠️ 只给**短信**用（`sent_to` 那一列、界面回显「发往哪儿」）。
+//    **邮箱没有掩码**（Issue #320）：邮箱一律以明文出现 —— 邮箱是本人的，
+//    掩成 `b***@163.com` 既认不出是谁，还得再存一列 `email_mask` 去维持它。
 function maskPhone(value) {
   var s = normalizePhone(value);
   if (!isPhoneShape(s)) return "***";
@@ -46,13 +51,6 @@ function phoneHash(value, pepper) {
   return crypto.createHash("sha256")
     .update(String(pepper || "") + "|phone|" + normalizePhone(value), "utf8")
     .digest("hex");
-}
-
-function maskEmail(email) {
-  var e = normalizeEmail(email);
-  var at = e.indexOf("@");
-  if (at <= 0) return "***";
-  return e.slice(0, 1) + "***@" + e.slice(at + 1);
 }
 
 function emailHash(email, pepper) {
@@ -169,7 +167,6 @@ module.exports = {
   maskPhone: maskPhone,
   phoneHash: phoneHash,
   isEmailShape: isEmailShape,
-  maskEmail: maskEmail,
   emailHash: emailHash,
   codeHash: codeHash,
   timingSafeEqual: timingSafeEqual,

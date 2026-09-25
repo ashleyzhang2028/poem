@@ -8,11 +8,11 @@ module.exports = handler.make("admin.grant", ["POST", "DELETE"], function (d, bo
   }
   var method = String((req && req.method) || "POST").toUpperCase();
   if (method === "DELETE") {
-    return handler.core.adminRevoke(d, { emailMask: body.emailMask || body.mask, deviceId: body.deviceId || d.deviceId });
+    // 收回**只认 uid**（Issue #320）：掩码那一条认人路整块撤掉了。
+    return handler.core.adminRevoke(d, { uid: body.uid, deviceId: body.deviceId || d.deviceId });
   }
   return handler.core.adminGrant(d, {
     uid: body.uid,
-    emailMask: body.emailMask || body.mask,
     tier: body.tier,
     until: body.until,
     deviceId: body.deviceId || d.deviceId

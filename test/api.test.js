@@ -231,12 +231,12 @@ async function main() {
     chk(!id.isEmailShape("a@@b.com"), "两个 @ 被拒");
     chk(!id.isEmailShape("a..b@c.com"), "域名含 .. 被拒");
     chk(!id.isEmailShape(""), "空邮箱被拒");
-    eq(id.maskEmail("zhangmin@163.com"), "z***@163.com", "掩码只留首字母与域名");
-    eq(id.maskEmail("bad"), "***", "掩码对脏值给 ***");
+    eq(typeof id.maskEmail, "undefined", "**邮箱掩码整个删掉了**（Issue #320）");
+    eq(id.maskPhone("13800138000"), "138****8000", "手机号掩码留着（短信通道预留）");
 
     const A = require("../js/auth-core.js");
+    eq(typeof A.maskEmail, "undefined", "前端内核里也没有 maskEmail 了");
     ["zhangmin@163.com", " A@B.com ", "x@qq.com"].forEach(e => {
-      eq(id.maskEmail(e), A.maskEmail(e), "掩码与前端内核一致：" + JSON.stringify(e));
       eq(id.normalizeEmail(e), A.normalizeEmail(e), "归一化与前端内核一致：" + JSON.stringify(e));
     });
 
@@ -395,7 +395,7 @@ async function main() {
 
     const rec = store.getCode(r1.body.codeId);
     chk(!/111111/.test(JSON.stringify(rec)), "落库的码记录里没有明文验证码");
-    eq(rec.sent_to, "p***@example.com", "落库的是邮箱掩码，不是明文邮箱");
+    eq(rec.sent_to, "parent@example.com", "落库的是**明文**邮箱（Issue #320）；这一列是「这枚码发往哪儿」");
     eq(rec.attempts, 0, "初始失败次数为 0");
 
     const acc = store.getAccountByHash(
@@ -422,7 +422,7 @@ async function main() {
     eq(gated.status, 403, "**码是对的、但邮箱没确认 → 403**（这是这一节的核心口径）");
     eq(gated.body.code, "E_EMAIL_UNVERIFIED", "码是 E_EMAIL_UNVERIFIED");
     chk(/确认/.test(gated.body.message), "文案里说了要去点确认（这是用户唯一的下一步）");
-    chk(!!gated.body.emailMask, "带出掩码，界面据此回显「发往哪儿」");
+    eq(gated.body.email, "Parent@Example.com", "带出**明文邮箱**（Issue #320），界面据此回显「发往哪儿」");
     chk(gated.cookies === undefined, "**一枚 Cookie 都不发**（判在前、签在后）");
 
     eq((await core.verifyCode(d, { codeId: r1.body.codeId, code: "111111" })).body.code, "E_CODE_USED",
@@ -437,7 +437,8 @@ async function main() {
     eq(v1.status, 200, "**确认之后同一枚码就能换到会话了**（拦的是「没确认」，不是「用码登录」这件事）");
     chk(!!v1.body.account.uid, "回账号信息");
     eq(v1.body.account.plan.tier, "free", "回 free 层级");
-    chk(v1.body.account.mask === "p***@example.com", "回的是掩码，不是明文邮箱");
+    eq(v1.body.account.email, "Parent@Example.com", "回的是明文邮箱（Issue #320：掩码字段整个没了）");
+    eq(v1.body.account.mask, undefined, "**没有** mask 字段");
     chk(v1.body.account.emailVerified === true, "响应如实说「邮箱已确认」");
     chk(Array.isArray(v1.cookies) && v1.cookies.length === 1, "签发了一枚 Cookie");
     chk(v1.cookies[0].indexOf("HttpOnly") > 0, "那枚 Cookie 是 HttpOnly");
@@ -926,7 +927,8 @@ async function main() {
         const me1 = await call(sv2.base, "GET", "/api/me", undefined, cookie);
         eq(me1.status, 200, "带上 Cookie 后 /api/me 回 200");
         eq(me1.body.plan.tier, "free", "回 free");
-        eq(me1.body.mask, "h***@example.com", "回掩码");
+        eq(me1.body.email, "http@example.com", "回**明文**邮箱（Issue #320）；mask 字段整个没了");
+        eq(me1.body.mask, undefined, "**没有** mask 字段");
 
         const tampered = cookie.slice(0, -3) + "aaa";
         const me2 = await call(sv2.base, "GET", "/api/me", undefined, tampered);
@@ -1168,7 +1170,7 @@ async function main() {
       chk(new RegExp("create table if not exists public\\." + t.slice(1)).test(sql),
         "schema.sql 里建有 " + t.slice(1) + " 表");
     });
-    ["uid", "email_hash", "email_mask", "nickname", "plan", "plan_until", "role",
+    ["uid", "email_hash", "nickname", "plan", "plan_until", "role",
       "created_at", "last_login_at", "status"].forEach(c => {
       chk(new RegExp("\\b" + c + "\\b").test(sql), "schema.sql 的 accounts 有列 " + c);
     });
@@ -1176,6 +1178,10 @@ async function main() {
       "issued_at", "expires_at", "attempts", "consumed_at"].forEach(c => {
       chk(new RegExp("\\b" + c + "\\b").test(sql), "schema.sql 的 codes 有列 " + c);
     });
+    // Issue #320：掩码这一列整个撤掉 —— 建表与迁移两处都不许再出现它。
+    chk(!/email_mask\s+text/.test(sql), "**建表语句里没有 email_mask 列了**");
+    chk(/drop column if exists email_mask/.test(sql), "迁移里有「删掉那一列」那一步（幂等）");
+    chk(/rename column email_mask to email/.test(sql), "reports 那一列改名成 email（快照换成明文）");
   }
 
   {
@@ -1360,7 +1366,9 @@ async function main() {
     const core = require("../api/_lib/core.js");
     boot({});
     const cfg1 = require("../api/_lib/config.js");
-    const pub = core.publicAccount(cfg1, { uid: "u_1", plan: "free", email_mask: "a***@b.com", nickname: "" });
+    const pub = core.publicAccount(cfg1, { uid: "u_1", plan: "free", email: "a@b.com", nickname: "" });
+    eq(pub.email, "a@b.com", "publicAccount 回**明文**邮箱");
+    eq(pub.mask, undefined, "publicAccount **没有** mask 字段了（Issue #320）");
     eq(pub.channel.mail, "console", "没配发信商时如实自报 console");
     eq(pub.channel.delivered, false, "console ⇒ delivered:false（不假装发出去了）");
     eq(pub.channel.db, "memory", "没配库时如实自报 memory（不是 db）");
@@ -1385,29 +1393,30 @@ async function main() {
     boot({});
     const core = require("../api/_lib/core.js");
 
-    eq(core.normGrantInput({ emailMask: "a***@qq.com", tier: "pro" }).tier, "pro", "层级 pro 通过");
+    // Issue #320：发层级**只认 uid**，掩码那一条认人路整块撤掉了。
+    eq(core.normGrantInput({ uid: "u_1", tier: "pro" }).tier, "pro", "层级 pro 通过");
     ["free", "pro", "max"].forEach(t => {
-      chk(!core.normGrantInput({ emailMask: "a***@qq.com", tier: t }).bad, "三个合法层级之一通过：" + t);
+      chk(!core.normGrantInput({ uid: "u_1", tier: t }).bad, "三个合法层级之一通过：" + t);
     });
     ["Pro", "PRO", "vip", "", null, "max "].forEach(t => {
-      const r = core.normGrantInput({ emailMask: "a***@qq.com", tier: t });
+      const r = core.normGrantInput({ uid: "u_1", tier: t });
       const low = String(t == null ? "" : t).toLowerCase();
       if (["free", "pro", "max"].indexOf(low) >= 0) return;
       chk(!!r.bad && r.bad === "E_TIER", "不认识的层级一律拒（" + JSON.stringify(t) + "）—— 不回落 free");
     });
-    eq(core.normGrantInput({ emailMask: "a***@qq.com", tier: "PRO" }).tier, "pro", "层级大小写归一成小写");
+    eq(core.normGrantInput({ uid: "u_1", tier: "PRO" }).tier, "pro", "层级大小写归一成小写");
 
-    eq(core.normGrantInput({ emailMask: "zhangmin@163.com", tier: "pro" }).bad, "E_MASK",
-      "**完整邮箱**被拒：这一节只认掩码（明文库里是有的，但掩码规则只许有一份实现）");
-    eq(core.normGrantInput({ emailMask: "", tier: "pro" }).bad, "E_MASK", "空掩码被拒");
-    eq(core.normGrantInput({ emailMask: "a***@", tier: "pro" }).bad, "E_MASK", "掩码缺域名被拒");
-    eq(core.normGrantInput({ emailMask: "a@b.com", tier: "pro" }).bad, "E_MASK", "没有 *** 的地址被拒");
-    chk(!core.normGrantInput({ emailMask: " A***@QQ.com ", tier: "pro" }).bad, "掩码接受并归一大小写/空格");
-    eq(core.normGrantInput({ emailMask: " A***@QQ.com ", tier: "pro" }).mask, "a***@qq.com", "掩码归一成小写");
-    eq(core.normGrantInput({ emailMask: "a***@qq.com", tier: "pro", until: "x" }).bad, "E_UNTIL",
+    eq(core.normGrantInput({ tier: "pro" }).bad, "E_UID", "不填 uid 被拒（不再有掩码那条路）");
+    eq(core.normGrantInput({ emailMask: "a***@qq.com", tier: "pro" }).bad, "E_UID",
+      "**掩码那条路没了**：只给掩码一律 E_UID（不再有 MASK_RE 第二套实现）");
+    eq(core.normGrantInput({ emailMask: "zhangmin@163.com", tier: "pro" }).bad, "E_UID",
+      "明文邮箱也不认 —— 认人只认 uid");
+    eq(core.normGrantInput({ uid: "  ", tier: "pro" }).bad, "E_UID", "空 uid 被拒");
+    eq(core.normGrantInput({ uid: "u_1", tier: "pro", until: "x" }).bad, "E_UNTIL",
       "看不懂的到期时刻被拒（不静默当成永久）");
-    eq(core.normGrantInput({ emailMask: "a***@qq.com", tier: "pro", until: "" }).until, null, "空到期 = 永久");
-    eq(core.normGrantInput({ emailMask: "a***@qq.com", tier: "pro" }).until, null, "缺到期 = 永久");
+    eq(core.normGrantInput({ uid: "u_1", tier: "pro", until: "" }).until, null, "空到期 = 永久");
+    eq(core.normGrantInput({ uid: "u_1", tier: "pro" }).until, null, "缺到期 = 永久");
+    eq(typeof core.MASK_RE, "undefined", "MASK_RE 常量整个删掉了（不再有掩码形状这一套规则）");
 
     ["owner", "admin"].forEach(r => chk(core.isAdminRole(r), "服务端放行角色：" + r));
     ["user", "", null, "OWNER ", "root"].forEach(r => {
@@ -1439,14 +1448,14 @@ async function main() {
     try {
       const POST = (p, b, cookie) => call(sv.base, "POST", p, b, cookie);
 
-      const anon = await POST("/api/admin/grant", { emailMask: "a***@qq.com", tier: "pro" });
+      const anon = await POST("/api/admin/grant", { uid: "u_1", tier: "pro" });
       eq(anon.status, 401, "没有会话时回 401（不是 403、不是 500）");
       eq(anon.body.code, "E_NO_SESSION", "码是 E_NO_SESSION");
 
       const plainCookie = await loginByHttp(POST, "plain@example.com");
       chk(/^kbsid=/.test(plainCookie), "拿到了普通用户的会话 Cookie");
 
-      const forbidden = await POST("/api/admin/grant", { emailMask: "a***@qq.com", tier: "pro" }, plainCookie);
+      const forbidden = await POST("/api/admin/grant", { uid: "u_1", tier: "pro" }, plainCookie);
       eq(forbidden.status, 403, "**普通用户**打发放接口回 403（角色闸在服务端，不经界面）");
       eq(forbidden.body.code, "E_FORBIDDEN", "码是 E_FORBIDDEN（不是「连不上」，用户不该一直重试）");
       chk(/管理员/.test(forbidden.body.message), "文案里说清是权限问题");
@@ -1454,29 +1463,35 @@ async function main() {
       const forbidList = await POST("/api/admin/grants", {}, plainCookie);
       eq(forbidList.status, 403, "列名单也要管理员（只读接口同样走角色闸）");
 
-      const forbidRevoke = await call(sv.base, "DELETE", "/api/admin/grant", { emailMask: "a***@qq.com" }, plainCookie);
+      const forbidRevoke = await call(sv.base, "DELETE", "/api/admin/grant", { uid: "u_1" }, plainCookie);
       eq(forbidRevoke.status, 403, "收回也要管理员");
 
       const cfgM = require("../api/_lib/config.js");
       const storeM = require("../api/_lib/store.js").getStore(cfgM);
       const rows = Object.keys(storeM._db.accounts).map(k => storeM._db.accounts[k]);
-      const plain = rows.filter(a => a.email_mask === "p***@example.com")[0];
-      chk(!!plain, "普通用户那一行在库里（掩码 p***@example.com）");
+      const plain = rows.filter(a => a.email === "plain@example.com")[0];
+      chk(!!plain, "普通用户那一行在库里（明文邮箱 plain@example.com）");
+      chk(plain.email_mask === undefined, "库里**没有** email_mask 那一列了（Issue #320）");
       plain.role = "owner";
 
-      const noHit = await POST("/api/admin/grant", { emailMask: "nobody***@qq.com", tier: "pro" }, plainCookie);
-      eq(noHit.status, 200, "**命中 0 条不是错误**：回 200（不是 404、不是 400）");
+      const noHit = await POST("/api/admin/grant", { uid: "u_nobody", tier: "pro" }, plainCookie);
+      eq(noHit.status, 200, "**找不到那个 uid 不是错误**：回 200（不是 404、不是 400）");
       eq(noHit.body.matched, 0, "如实回 matched:0");
       eq(noHit.body.changed, false, "changed 为 false —— 一个字都没改");
-      chk(/先登录/.test(noHit.body.note), "note 里说清成因：对方先登录一次才会有那一行");
+      eq(noHit.body.uid, "u_nobody", "回话里带回那个 uid（界面据此对上自己改的是哪一行）");
       {
         const before = Object.keys(storeM._db.accounts).length;
         const after = Object.keys(storeM._db.accounts).length;
-        eq(after, before, "命中 0 条**不建账号**（掩码不可逆，造出来是永远登不上的幽灵行）");
+        eq(after, before, "找不到就**不建账号**（绝不造幽灵行）");
       }
 
-      const okG = await POST("/api/admin/grant", { emailMask: "p***@example.com", tier: "pro" }, plainCookie);
-      eq(okG.status, 200, "掩码命中时回 200");
+      // 只给掩码不给 uid：**这一条路已经撤掉了**（Issue #320）。
+      const maskOnly = await POST("/api/admin/grant", { emailMask: "p***@example.com", tier: "pro" }, plainCookie);
+      eq(maskOnly.status, 400, "只给掩码 → 400（那条认人路整个没了）");
+      eq(maskOnly.body.code, "E_UID", "码是 E_UID（不是 E_MASK —— 掩码那套规则也不存在了）");
+
+      const okG = await POST("/api/admin/grant", { uid: plain.uid, tier: "pro" }, plainCookie);
+      eq(okG.status, 200, "uid 命中时回 200");
       eq(okG.body.matched, 1, "matched 如实回 1");
       eq(okG.body.changed, true, "changed 为 true");
       eq(okG.body.tier, "pro", "回的是**改完之后**的层级（服务端判定，不是请求体回显）");
@@ -1490,7 +1505,7 @@ async function main() {
       // 按 uid 发（Issue #319）：后台名录那张表是拿 uid 指人的 ——
       // 那张表列的是明文邮箱，而写明文的行改一次邮箱就找不着人了。
       const byUid = await POST("/api/admin/grant", { uid: plain.uid, tier: "max" }, plainCookie);
-      eq(byUid.status, 200, "按 uid 发也回 200（uid 是名录那张表点着改时用的那把钥匙）");
+      eq(byUid.status, 200, "按 uid 发回 200（Issue #320 起这是**唯一**的一条认人路）");
       eq(byUid.body.uid, plain.uid, "回话里带回 uid（界面据此对上自己改的是哪一行）");
       eq(byUid.body.tier, "max", "按 uid 发同样写进库");
       const meU = await call(sv.base, "GET", "/api/me", undefined, plainCookie);
@@ -1499,42 +1514,45 @@ async function main() {
       eq(sameU.body.changed, false, "层级没变就不写库（界面那颗下拉一动不能落一次写）");
       eq(sameU.body.before, "max", "回话里带出改之前是什么（界面据此说明「本来就是」）");
       const badUid = await POST("/api/admin/grant", { uid: "u_nobody", tier: "pro" }, plainCookie);
-      eq(badUid.status, 200, "uid 找不到那个账号也回 200（与掩码命中 0 条同一种口径）");
+      eq(badUid.status, 200, "uid 找不到那个账号也回 200（找不到不是错误，是一种如实的状态）");
       eq(badUid.body.changed, false, "uid 找不到就不改任何东西");
 
       const future = Date.now() + 86400000;
-      const withUntil = await POST("/api/admin/grant", { emailMask: "p***@example.com", tier: "max", until: future }, plainCookie);
+      const withUntil = await POST("/api/admin/grant", { uid: plain.uid, tier: "max", until: future }, plainCookie);
       eq(withUntil.body.tier, "max", "到期时刻写进去之后 tier 是 max");
       const me2 = await call(sv.base, "GET", "/api/me", undefined, plainCookie);
       eq(me2.body.plan.until, future, "plan.until 原样下发（客户端据此显示到期日）");
-      const past = await POST("/api/admin/grant", { emailMask: "p***@example.com", tier: "max", until: Date.now() - 1000 }, plainCookie);
+      const past = await POST("/api/admin/grant", { uid: plain.uid, tier: "max", until: Date.now() - 1000 }, plainCookie);
       eq(past.status, 200, "写一个已过去的到期时刻不报错");
       const me3 = await call(sv.base, "GET", "/api/me", undefined, plainCookie);
       eq(me3.body.plan.tier, "free", "**到期即回落 free**（与 planTier 同一处判定，不是两套）");
 
-      await POST("/api/admin/grant", { emailMask: "p***@example.com", tier: "pro" }, plainCookie);
+      await POST("/api/admin/grant", { uid: plain.uid, tier: "pro" }, plainCookie);
       const listR = await POST("/api/admin/grants", {}, plainCookie);
       eq(listR.status, 200, "管理员能列名单");
       chk(Array.isArray(listR.body.grants), "grants 是数组");
       eq(listR.body.grants.length, 1, "只列 plan !== free 的行（普通账号不在里面）");
-      eq(listR.body.grants[0].emailMask, "p***@example.com", "只回掩码");
+      eq(listR.body.grants[0].uid, plain.uid, "按 uid 列（改层级与收回都用它）");
+      eq(listR.body.grants[0].email, "plain@example.com", "带回明文邮箱（Issue #320：管理员要认得出是谁）");
       chk(!/email_hash/.test(JSON.stringify(listR.body)), "名单里**没有摘要**（泄出去等于「这人是不是本站用户」可被查询）");
-      chk(!JSON.stringify(listR.body).includes("plain@example.com"),
-        "名单里**没有明文邮箱**（掩码是给人看的；要明文请走 /api/admin/accounts 名录）");
-      chk(!/uid/.test(JSON.stringify(listR.body.grants[0])), "名单里连 uid 都不给（掩码已经够用）");
+      chk(!/emailMask/.test(JSON.stringify(listR.body)), "名单里**没有掩码字段**了");
 
-      const rev = await call(sv.base, "DELETE", "/api/admin/grant", { emailMask: "p***@example.com" }, plainCookie);
+      const rev = await call(sv.base, "DELETE", "/api/admin/grant", { uid: plain.uid }, plainCookie);
       eq(rev.status, 200, "收回回 200");
       eq(rev.body.changed, true, "收回改了东西");
       const me4 = await call(sv.base, "GET", "/api/me", undefined, plainCookie);
       eq(me4.body.plan.tier, "free", "收回之后 /api/me 回落 free");
       eq(me4.body.uid, plain.uid, "**收回不删账号**（uid 还是那一个，进度记录跟着 uid 走）");
-      const revNo = await call(sv.base, "DELETE", "/api/admin/grant", { emailMask: "nobody***@qq.com" }, plainCookie);
-      eq(revNo.body.matched, 0, "收回一个不存在的掩码：matched 0、不报错");
+      const revNo = await call(sv.base, "DELETE", "/api/admin/grant", { uid: "u_nobody" }, plainCookie);
+      eq(revNo.status, 200, "收回一个不存在的 uid：回 200");
+      eq(revNo.body.matched, 0, "如实 matched 0、不报错");
+      const revMissing = await call(sv.base, "DELETE", "/api/admin/grant", { emailMask: "p***@example.com" }, plainCookie);
+      eq(revMissing.status, 400, "只给掩码收回 → 400（与发放同一条口径：只认 uid）");
+      eq(revMissing.body.code, "E_UID", "码是 E_UID");
 
       let sawRate = false;
       for (let i = 0; i < 60 && !sawRate; i++) {
-        const r = await POST("/api/admin/grant", { emailMask: "p***@example.com", tier: "pro" }, plainCookie);
+        const r = await POST("/api/admin/grant", { uid: plain.uid, tier: "pro" }, plainCookie);
         if (r.status === 429) { sawRate = true; eq(r.body.code, "E_RATE_DEVICE", "发放也走设备档频控（429 的码与同步/注销同表）"); }
       }
       chk(sawRate, "发放是写接口：连点会被频控拦住（不是只有 send-code 才有频控）");
@@ -1543,7 +1561,7 @@ async function main() {
     boot({ SESSION_SECRET: "" });
     const sv2 = await serve();
     try {
-      const r = await call(sv2.base, "POST", "/api/admin/grant", { emailMask: "a***@qq.com", tier: "pro" });
+      const r = await call(sv2.base, "POST", "/api/admin/grant", { uid: "u_1", tier: "pro" });
       eq(r.status, 503, "缺 SESSION_SECRET 时回 503（不是 500、不是 403）");
       eq(r.body.code, "E_NOT_CONFIGURED", "码是 E_NOT_CONFIGURED（「未开放」是如实回答）");
     } finally { await sv2.close(); }
@@ -1608,7 +1626,7 @@ async function main() {
       eq(asFree.body.tier, "free", "如实回当前层级");
 
       const rows = Object.keys(storeM._db.accounts).map(k => storeM._db.accounts[k]);
-      const me = rows.filter(a => a.email_mask === "p***@example.com")[0];
+      const me = rows.filter(a => a.email === "player@example.com")[0];
       chk(!!me, "玩家那一行在库里");
       me.plan = "pro";
 
@@ -1798,7 +1816,9 @@ async function main() {
       chk(await confirmForTest(core, d, "Parent@Example.COM"), "（前置）大小写那一节：邮箱已确认");
       const row = Object.keys(store._db.accounts).map(k => store._db.accounts[k])[0];
       eq(row.email, "Parent@Example.COM", "落库的明文保留用户填的大小写（只 trim + 去零宽）");
-      eq(row.email_mask, "p***@example.com", "掩码仍然全是小写（那是给人认的，不是给人看的原文）");
+      eq(row.email_mask, undefined, "**没有 email_mask 那一列了**（Issue #320）");
+      eq(row.email_hash, require("../api/_lib/identity.js").emailHash("parent@example.com", cfg.sessionSecret),
+        "登录查找照旧走 email_hash（那一列没动，它跟掩码不是一回事）");
 
       await confirmEmail(store, row.uid, cfg.sessionSecret);
 
@@ -2120,7 +2140,7 @@ async function main() {
 
       const storeN = require("../api/_lib/store.js").getStore(require("../api/_lib/config.js"));
       const rowsN = Object.keys(storeN._db.accounts).map(k => storeN._db.accounts[k]);
-      rowsN.filter(a => a.email_mask === "o***@example.com")[0].role = "owner";
+      rowsN.filter(a => a.email === "owner@example.com")[0].role = "owner";
 
       const list = await POST("/api/admin/accounts", {}, cA);
       eq(list.status, 200, "管理员能列名录");
@@ -2128,10 +2148,12 @@ async function main() {
       const mails = list.body.accounts.map(a => a.email).sort();
       eq(mails.join(","), "kid@example.com,owner@example.com", "**明文邮箱在里面**（名录存在的理由）");
       const one = list.body.accounts[0];
-      ["uid", "email", "emailMask", "nickname", "tier", "until", "role", "status", "emailVerified",
+      ["uid", "email", "nickname", "tier", "until", "role", "status", "emailVerified",
         "hasPassword", "createdAt", "lastLoginAt"].forEach(k => {
         chk(Object.prototype.hasOwnProperty.call(one, k), "名录每行给出 " + k);
       });
+      chk(!Object.prototype.hasOwnProperty.call(one, "emailMask"),
+        "名录每行**没有** emailMask 了（Issue #320：只给明文）");
       chk(/^u_[0-9a-f]+$/.test(
         list.body.accounts.filter(a => a.email === "kid@example.com")[0].uid),
         "名录每行带 uid（界面上改角色 / 层级要靠它回填，缺了那两颗下拉就落不了库）");
@@ -2239,7 +2261,8 @@ async function main() {
       eq(legacy.status, 202, "（前置）老账号：发码那条路建的，未确认");
       const legacyBlocked = await POST("/api/verify-code", { codeId: legacy.body.codeId, code: legacy.body.devCode });
       eq(legacyBlocked.status, 403, "老账号同样被拦（口径对**所有**未确认账号一视同仁）");
-      chk(!!legacyBlocked.body.emailMask, "被拦时带出掩码，界面据此回显发往哪儿");
+      eq(legacyBlocked.body.email, "legacy-gate@example.com",
+        "被拦时带出**明文邮箱**（Issue #320），界面据此回显发往哪儿");
       eq(legacyBlocked.body.verifySent, false,
         "**登录这条路被拦时不顺手发信**（否则拿一个已知的未确认邮箱反复点登录即可给人发垃圾邮件）");
 
@@ -2248,8 +2271,8 @@ async function main() {
 
       eq(resend.body.devVerifyToken, undefined,
         "匿名重发口**不回明文令牌**（回了就等于「凭邮箱确认别人的邮箱」）");
-      chk(!/emailMask/.test(JSON.stringify(resend.body)),
-        "匿名重发口**连掩码都不回**（掩码是从「这个邮箱存在」推出来的）");
+      chk(!/emailMask|@/.test(JSON.stringify(resend.body)),
+        "匿名重发口**连邮箱都不回**（回一句就从「这个邮箱存在」推出来了）");
 
       const storeG = require("../api/_lib/store.js").getStore(require("../api/_lib/config.js"));
       const regG = await POST("/api/register", { email: "legacy-gate@example.com", password: "hunter2hunter" });
@@ -3196,8 +3219,8 @@ async function main() {
       const anon = await core.resendVerification(d, { email: "stuck@example.com", deviceId: "u1", ip: "1.1.1.1" });
       eq(anon.status, 200, "③ 匿名重发可用（原先回 401 —— 而登不进来的人恰恰最需要它）");
       eq(anon.body.requested, true, "③ 回 requested:true（与 reset-request 同一个形状）");
-      chk(!/emailMask|verifyAttempts/.test(JSON.stringify(anon.body)),
-        "③ 匿名口的响应里**没有掩码、没有尝试次数** —— 它们都是从「这个邮箱存在」推出来的");
+      chk(!/emailMask|verifyAttempts|@/.test(JSON.stringify(anon.body)),
+        "③ 匿名口的响应里**没有邮箱、没有尝试次数** —— 它们都是从「这个邮箱存在」推出来的");
 
       const plainCfg = Object.assign({}, cfg, { allowCodeEcho: false, resendCooldownMs: 1 });
       const dp = Object.assign({}, d, { cfg: plainCfg, limiter: core.makeRateLimiter(), ip: "3.3.3.3" });

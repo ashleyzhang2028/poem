@@ -211,11 +211,11 @@
     var payload = { v: 1, tier: tier, until: until == null ? null : Number(until) };
     if (o.source) payload.source = String(o.source);
     if (o.role && isRole(o.role)) payload.role = o.role;
-    // ⚠️ `mask` 与 `uid` 一起存（Issue #274）：这份缓存是**按浏览器**存的
-    //    「服务端答案」，而服务端登录的人本机没有会话 —— 界面要显示
-    //    「已登录 · a***@qq.com」时，掩码只能从这一份里取。
+    // ⚠️ `email` 与 `uid` 一起存（Issue #274 / #320）：这份缓存是**按浏览器**
+    //    存的「服务端答案」，而服务端登录的人本机没有会话 —— 身份行那句
+    //    「已登录 · xxx@yyy」（点开才显示）只能从这一份里取。
     //    它由 `/api/me` 的响应原样带来（`AccountApi.applyMe`），只读、不改写。
-    if (o.mask) payload.mask = String(o.mask);
+    if (o.email) payload.email = String(o.email);
     if (o.uid) payload.uid = String(o.uid);
     try {
       backing.setItem(NS, JSON.stringify(payload));
@@ -408,7 +408,7 @@
       try { return A && A.makeStore ? A.makeStore(backing) : null; } catch (e) { return null; }
     })();
 
-    var uid = "", mask = "", signedIn = false;
+    var uid = "", email = "", signedIn = false;
 
     // ⚠️ **先读会话，再读服务端那份缓存**（Issue #276 后续）。
     //
@@ -422,9 +422,10 @@
       if (s && s.account) {
         signedIn = true;
         uid = s.account.uid || "";
+        // 明文邮箱（Issue #320）。从前这里取的是 `identities[].mask`。
         var ids = s.account.identities || [];
         for (var i = 0; i < ids.length; i++) {
-          if (ids[i] && ids[i].mask) { mask = ids[i].mask; break; }
+          if (ids[i] && ids[i].value) { email = ids[i].value; break; }
         }
       }
     }
@@ -457,7 +458,7 @@
     if (!localSignedIn && cookie) {
       signedIn = true;
       uid = cookie.uid || "";
-      mask = cookie.mask || "";
+      email = cookie.email || "";
     }
 
     // 只认「当前这个人」的那一份（未登录时 uid 为空 → 一份都不认）。
@@ -473,10 +474,10 @@
       try { acc = authSession(authStore).account; } catch (e) { acc = null; }
       var accTier = acc && acc.plan && acc.plan.tier;
       if (isTier(accTier) && accTier !== "free") {
-        return finish(accTier, signedIn, uid, mask, role, "local");
+        return finish(accTier, signedIn, uid, email, role, "local");
       }
       if (serverTier && serverTier !== "free") {
-        return finish(serverTier, signedIn, uid, mask, role, "server");
+        return finish(serverTier, signedIn, uid, email, role, "server");
       }
     }
 
@@ -486,7 +487,7 @@
 
     if (serverTier && tierIndex(serverTier) > tierIndex(tier)) tier = serverTier;
     void t;
-    return finish(tier, signedIn, uid, mask, role,
+    return finish(tier, signedIn, uid, email, role,
       serverTier && tierIndex(serverTier) >= tierIndex(tier) ? "server" : "local");
   }
 
@@ -525,7 +526,7 @@
     try { seen = String(backing.getItem(SEEN) || ""); } catch (e) { seen = ""; }
     if (seen !== stampOf(plan)) return null;
 
-    return { uid: uid, mask: String(plan.mask == null ? "" : plan.mask) };
+    return { uid: uid, email: String(plan.email == null ? "" : plan.email) };
   }
 
   // 水位线的那一串：这份答案是「谁 / 到什么时候」的（`applyMe` 写它时一起写）。
@@ -581,10 +582,10 @@
     };
   }
 
-  function finish(tier, signedIn, uid, mask, role, tierSource) {
+  function finish(tier, signedIn, uid, email, role, tierSource) {
     var ctx = { tier: tier, signedIn: signedIn };
     return {
-      uid: uid, mask: mask, signedIn: signedIn, tier: tier, role: role,
+      uid: uid, email: email, signedIn: signedIn, tier: tier, role: role,
       tierSource: tierSource || "local",
       label: tierLabel(tier),
       ctx: ctx,

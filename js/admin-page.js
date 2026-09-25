@@ -262,7 +262,7 @@
     var empty = $("accounts-empty");
     if (empty) empty.hidden = list.length > 0;
     box.innerHTML = list.map(function (a) {
-      var mail = a.email || a.emailMask || "（无邮箱）";
+      var mail = a.email || "（无邮箱）";
       var role = String(a.role || "user").toLowerCase();
       var sub = [];
       if (a.nickname) sub.push(esc(a.nickname));
@@ -287,7 +287,7 @@
     }).join("");
     return '<select class="admin-role-select" data-uid="' + esc(a.uid) + '"' +
       ' data-was="' + esc(role) + '"' +
-      ' aria-label="' + esc((a.email || a.emailMask || "") + " 的角色") + '"' +
+      ' aria-label="' + esc((a.email || "") + " 的角色") + '"' +
       (canAdmin ? "" : ' disabled title="改角色只对主人开放"') + ">" + opts + "</select>";
   }
 
@@ -357,8 +357,8 @@
       if (r && r.ok) {
         sel.setAttribute("data-was", role);
         msg("msg-accounts", r.changed
-          ? ((r.emailMask || mail) + " 现在是「" + roleText(role) + "」。对方刷新即生效（由服务器判定）。")
-          : ((r.emailMask || mail) + " 本来就是「" + roleText(role) + "」。"), "ok");
+          ? ((r.email || mail) + " 现在是「" + roleText(role) + "」。对方刷新即生效（由服务器判定）。")
+          : ((r.email || mail) + " 本来就是「" + roleText(role) + "」。"), "ok");
         return;
       }
       sel.value = r && r.before ? r.before : (was || "user");
@@ -378,7 +378,7 @@
   // ---- 层级（同一张表，第二个动作）---------------------------------------
   // 原先这里是一张独立的「发放层级」表单：填邮箱掩码、选层级、点发放。
   // 现在改成直接在表里改：选谁，就在他那一行把层级从 free 拨到 pro / max。
-  // 走的是同一个服务端接口，只是不再需要「先知道掩码」这一步。
+  // 走的是同一个服务端接口，认人一律按 **uid**（Issue #320 起接口也只收 uid）。
   function onTierChange(e) {
     var sel = e.target.closest ? e.target.closest("select[data-tier-of]") : null;
     if (!sel) return;
@@ -426,7 +426,7 @@
     var empty = $("server-empty");
     if (empty) empty.hidden = (list || []).length > 0;
     box.innerHTML = (list || []).map(function (a) {
-      var mail = a.email || a.emailMask || "（无邮箱）";
+      var mail = a.email || "（无邮箱）";
       var tier = String(a.tier || "free");
       var opts = Ent.TIERS.map(function (t) {
         return '<option value="' + t + '"' + (t === tier ? " selected" : "") + ">" + esc(Ent.tierLabel(t)) + "</option>";
@@ -436,27 +436,33 @@
         '<td class="admin-tier-cell"><select class="admin-role-select" data-tier-of="' + esc(a.uid || "") + '"' +
           ' data-was="' + esc(tier) + '"' +
           ' aria-label="' + esc(mail + " 的层级") + '">' + opts + "</select></td>" +
-        '<td><button class="admin-revoke" type="button" data-revoke="' + esc(a.emailMask || "") + '">收回</button></td>' +
+        '<td><button class="admin-revoke" type="button" data-revoke="' + esc(a.uid || "") + '"' +
+          ' data-revoke-mail="' + esc(mail) + '">收回</button></td>' +
         "</tr>";
     }).join("");
   }
 
+  // 收回**按 uid**（Issue #320）：从前是按邮箱掩码找那一行，而掩码
+  // 这一整条设计已经撤掉了。按钮上带 `data-revoke`（uid）与
+  // `data-revoke-mail`（那一行显示的名字，只用来写那句回话）。
   function onRevokeClick(e) {
     var b = e.target.closest ? e.target.closest("button[data-revoke]") : null;
     if (!b) return;
-    var mask = b.getAttribute("data-revoke");
+    var uid = b.getAttribute("data-revoke");
+    var who = b.getAttribute("data-revoke-mail") || uid;
+    if (!uid) { msg("msg-grants", "这一行没有 uid，刷新页面再来。", "warn"); return; }
     var M = acct();
     if (!M || typeof M.adminRevoke !== "function") { msg("msg-grants", "页面脚本版本对不上，这一轮没发出任何东西。", "warn"); return; }
     b.disabled = true;
-    Promise.resolve(M.adminRevoke({ emailMask: mask, backing: backing, A: window.AuthCore, E: Ent })).then(function (r) {
+    Promise.resolve(M.adminRevoke({ uid: uid, backing: backing, A: window.AuthCore, E: Ent })).then(function (r) {
       if (!r || !r.ok) {
         b.disabled = false;
         msg("msg-grants", (r && r.message) || "收回没成功，稍后再试。", "warn");
         return;
       }
       msg("msg-grants", r.changed
-        ? "已在数据库里收回 " + mask + " 的层级（对方刷新即回落 Free）。"
-        : "数据库里本来就没有 " + mask + " 这一条。", r.changed ? "ok" : "warn");
+        ? "已在数据库里收回 " + who + " 的层级（对方刷新即回落 Free）。"
+        : "数据库里本来就没有 " + who + " 这一条。", r.changed ? "ok" : "warn");
       loadAccounts();
     })["catch"](function () { b.disabled = false; msg("msg-grants", "连不上服务端，这一轮没发出任何东西。", "warn"); });
   }
@@ -548,7 +554,7 @@
         '<span class="report-title">' + esc(r.poemTitle || "（未指定篇目）") + "</span>" +
         '<span class="report-status">' + esc(label) + "</span>" +
         "</div>" +
-        '<div class="admin-report-who">' + esc(r.emailMask || "（无邮箱）") +
+        '<div class="admin-report-who">' + esc(r.email || "（无邮箱）") +
         (r.nickname ? " · " + esc(r.nickname) : "") +
         (r.book ? " · " + esc(r.book) : "") +
         (r.poemId ? " · " + esc(r.poemId) : "") + "</div>" +

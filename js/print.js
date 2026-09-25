@@ -139,7 +139,7 @@
     return '<section class="account-card print-gate">' +
       '<h2 class="account-card-title">篇目打印页</h2>' +
       '<p class="account-gate-why">' + esc(why) + "</p>" +
-      '<p class="account-hint">层级由管理员按邮箱掩码发放。四种身份的对照见 ' +
+      '<p class="account-hint">层级由管理员在后台按账号发放。四种身份的对照见 ' +
       '<a href="/plans/">四种用户对比</a>。</p>' +
       "</section>";
   }

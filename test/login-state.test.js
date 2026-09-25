@@ -181,7 +181,8 @@ function tick(ms) { return new Promise(r => setTimeout(r, ms || 30)); }
 
       const id = win.Entitlement.identity({ backing: win.localStorage });
       eq(id.signedIn, true, "「我的」页：Entitlement.identity().signedIn 是 true（从前恒为 false）");
-      eq(id.mask, "s***@example.com", "掩码来自 /api/me，不是空的");
+      eq(id.email, "state@example.com", "明文邮箱来自 /api/me（Issue #320：掩码字段整个没了）");
+      eq(id.mask, undefined, "identity() 里**没有** mask 字段了");
       chk(!/游客/.test(text(win, "identity-sub") || ""), "身份行不再写「游客」（实际「" + text(win, "identity-sub") + "」）");
       chk(/已登录/.test(text(win, "identity-sub") || ""), "身份行写「已登录」");
       eq(text(win, "btn-account-entry"), "退出登录", "那颗键写「退出登录」（不是「登录」）");
