@@ -185,6 +185,55 @@ chk(html.indexOf('data-nav="chengyu"') >= 0, '成语页 body 标了 data-nav="ch
 chk(html.indexOf('data/poems-chengyu.js') >= 0 && html.indexOf('js/chengyu.js') >= 0,
   '成语页加载了数据与挂载脚本');
 
+// ── Issue #339：5 条正文「串了」的防回归断言 ───────────────────────────
+// 这 5 则的 textRef 曾错指同组别的成语（愚公移山→鲧禹治水、卧薪尝胆→防民之口…），
+// 点开会「A 标题显示 B 的原文译文」。现已各补独立正文，这里钉死：
+//   ① 每则读到的正文必须命中自己的摘句；② 这 5 则的 textRef 必须指回自身 id。
+const RESUMED = {
+  '愚公移山': 'chengyu-cy-11',
+  '卧薪尝胆': 'chengyu-cy-52',
+  '礼贤下士': 'chengyu-cy-68',
+  '不自量力': 'chengyu-cy-96',
+  '东道主': 'chengyu-cy-69'
+};
+Object.keys(RESUMED).forEach(t => {
+  const p = CY.filter(x => x.title === t)[0];
+  if (!p) { chk(false, '缺条目：' + t); return; }
+  chk(p.textRef === RESUMED[t],
+    'Issue #339·' + t + ' 的 textRef 指回自身（' + RESUMED[t] + '，实际 ' + p.textRef + '）');
+  const ex = String(p.excerpt || '').replace(/（[^）]*）/g, '').trim();
+  chk(!!p.text && p.text.indexOf(ex) >= 0,
+    'Issue #339·' + t + ' 读到的正文命中自己的摘句（摘句：' + ex.slice(0, 10) + '…）');
+});
+
+// 全表通检：每则读到的正文都应与自己的摘句交叠
+// 摘句可能带（批注）或一字之差，故：先反复剥掉（...）批注，再取「摘句里最长的一段
+// 连续实文」，要求它落在正文中且长度 ≥ 4。串了的条目（A 标题配 B 正文）在此必然命中 < 4。
+function stripAnn(s) {
+  let t = String(s || ''), prev;
+  do { prev = t; t = t.replace(/（[^（）]*）/g, ''); } while (t !== prev);
+  return t.replace(/\s/g, '');
+}
+function longestHit(ex, text) {
+  let best = 0, i = 0;
+  while (i < ex.length) {
+    if (text.indexOf(ex[i]) < 0) { i++; continue; }
+    let j = i;
+    while (j < ex.length && text.indexOf(ex.slice(i, j + 1)) >= 0) j++;
+    best = Math.max(best, j - i);
+    i++;
+  }
+  return best;
+}
+const strayed = CY.filter(p => {
+  const ex = stripAnn(p.excerpt);
+  if (!ex || !p.text) return false;
+  return longestHit(ex, String(p.text).replace(/\s/g, '')) < 4;
+}).map(p => p.title + '(' + p.textRef + ')');
+chk(strayed.length === 0,
+  'Issue #339·全表没有「正文与摘句对不上」的条目（异常：' +
+  (strayed.slice(0, 8).join('、') || '无') + '）');
+
 console.log('');
 console.log(fails ? '❌ ' + fails + ' 项失败' : '🎉 chengyu测试全部通过');
 process.exit(fails ? 1 : 0);

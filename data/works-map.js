@@ -2,7 +2,7 @@
    同篇对照表（主表裁定规则的静态成果）
    --------------------------------------------------------------------------
    由 scripts/build-works-map.js 离线算出：**正文（去标点后）一致 = 同一篇作品**。
-   只登记「在两部及以上集子里重复出现」的那些作品（共 142 组），
+   只登记「在两部及以上集子里重复出现」的那些作品（共 140 组），
    单条的作品不必登记 —— 它本来就只出现一次，条目 id 自己就是作品 id。
 
    ⚠️ 这是**生成文件**，改动请改 scripts/build-works-map.js 后重跑，
@@ -41,13 +41,13 @@
      entries 收录这一篇的全部站点条目 id，与 data/site-index.js 同口径
    ========================================================================== */
 window.WORKS_GROUPS = [
-  { wid: "w-classic-gw-21", title: "愚公移山", titles: ["鲧禹治水","愚公移山"], entries: ["chengyu-cy-11","chengyu-cy-14","classic-gw-21"] },
   { wid: "w-classic-gw-39", title: "狐假虎威", titles: ["狐假虎威"], entries: ["chengyu-cy-114","classic-gw-39"] },
   { wid: "w-classic-gw-25", title: "画蛇添足", titles: ["画蛇添足"], entries: ["chengyu-cy-115","classic-gw-25"] },
   { wid: "w-classic-gw-11", title: "自相矛盾", titles: ["自相矛盾"], entries: ["chengyu-cy-119","classic-gw-11"] },
   { wid: "w-classic-gw-33", title: "滥竽充数", titles: ["滥竽充数"], entries: ["chengyu-cy-120","classic-gw-33"] },
   { wid: "w-classic-gw-76", title: "邯郸学步", titles: ["邯郸学步"], entries: ["chengyu-cy-122","classic-gw-76"] },
   { wid: "w-classic-gw-26", title: "刻舟求剑", titles: ["刻舟求剑"], entries: ["chengyu-cy-123","classic-gw-26"] },
+  { wid: "w-classic-gw-21", title: "鲧禹治水", titles: ["鲧禹治水"], entries: ["chengyu-cy-14","classic-gw-21"] },
   { wid: "w-chengyu-cy-155", title: "贻笑大方", titles: ["贻笑大方","大方之家"], entries: ["chengyu-cy-155","chengyu-cy-200"] },
   { wid: "w-classic-gw-32", title: "揠苗助长", titles: ["揠苗助长"], entries: ["chengyu-cy-188","classic-gw-32"] },
   { wid: "w-classic-gw-19", title: "夸父逐日", titles: ["夸父逐日"], entries: ["chengyu-cy-2","classic-gw-19"] },
@@ -55,17 +55,15 @@ window.WORKS_GROUPS = [
   { wid: "w-chengyu-cy-276", title: "解衣推食", titles: ["解衣推食","言听计从"], entries: ["chengyu-cy-276","chengyu-cy-606"] },
   { wid: "w-chengyu-cy-283", title: "鸿鹄之志", titles: ["鸿鹄之志","燕雀安知鸿鹄之志"], entries: ["chengyu-cy-283","chengyu-cy-286"] },
   { wid: "w-classic-gw-5", title: "精卫填海", titles: ["精卫填海"], entries: ["chengyu-cy-3","classic-gw-5"] },
-  { wid: "w-chengyu-cy-32", title: "防民之口，甚于防川", titles: ["防民之口，甚于防川","卧薪尝胆"], entries: ["chengyu-cy-32","chengyu-cy-52"] },
   { wid: "w-chengyu-cy-327", title: "桃李不言", titles: ["桃李不言","桃李成蹊"], entries: ["chengyu-cy-327","chengyu-cy-697"] },
   { wid: "w-classic-gw-46", title: "望梅止渴", titles: ["望梅止渴"], entries: ["chengyu-cy-341","classic-gw-46"] },
   { wid: "w-chengyu-cy-404", title: "梦笔生花", titles: ["梦笔生花","妙笔生花"], entries: ["chengyu-cy-404","chengyu-cy-439"] },
+  { wid: "w-yuefu-yf-96", title: "人面桃花", titles: ["题都城南庄","人面桃花"], entries: ["chengyu-cy-440","tangshi-ts-313","yuefu-yf-96"] },
   { wid: "w-tangshi-ts-276", title: "淡扫蛾眉", titles: ["集灵台·其二","淡扫蛾眉"], entries: ["chengyu-cy-465","tangshi-ts-276"] },
   { wid: "w-chengyu-cy-471", title: "春风得意", titles: ["春风得意","走马看花"], entries: ["chengyu-cy-471","chengyu-cy-472"] },
   { wid: "w-poems-xx5-12", title: "寸草春晖", titles: ["游子吟","寸草春晖"], entries: ["chengyu-cy-475","poems-xx5-12","tangshi-ts-67","yuefu-yf-48"] },
+  { wid: "w-classic-gw-48", title: "卧薪尝胆", titles: ["卧薪尝胆"], entries: ["chengyu-cy-52","classic-gw-48"] },
   { wid: "w-tangshi-ts-281", title: "折戟沉沙", titles: ["赤壁","折戟沉沙"], entries: ["chengyu-cy-573","tangshi-ts-281"] },
-  { wid: "w-chengyu-cy-65", title: "皮之不存，毛将焉附", titles: ["皮之不存，毛将焉附","不自量力"], entries: ["chengyu-cy-65","chengyu-cy-96"] },
-  { wid: "w-chengyu-cy-67", title: "大义灭亲", titles: ["大义灭亲","礼贤下士"], entries: ["chengyu-cy-67","chengyu-cy-68"] },
-  { wid: "w-yuefu-yf-96", title: "东道主", titles: ["题都城南庄","东道主","人面桃花"], entries: ["chengyu-cy-69","chengyu-cy-440","tangshi-ts-313","yuefu-yf-96"] },
   { wid: "w-chengyu-cy-86", title: "众志成城", titles: ["众志成城","众口铄金"], entries: ["chengyu-cy-86","chengyu-cy-616"] },
 
   { wid: "w-poems-cz8-02", title: "答谢中书书", titles: ["答谢中书书"], entries: ["classic-gw-60","poems-cz8-02"] },
