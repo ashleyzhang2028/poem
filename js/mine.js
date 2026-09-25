@@ -134,24 +134,39 @@
     }).join("");
   }
 
+  // 账号卡：**两条登录路都要画得出来**（Issue #274）。
+  //
+  // ⚠️ 从前这里只有一个入参 —— 本机会话（`A.session(store)`），于是
+  //    「服务端登录的人」这一整块（账号、注销区、重发确认邮件）全是 `hidden`：
+  //    用户明明登录着，却看不到自己的账号，也找不到注销入口。
+  //
+  // 现在分两栏读：
+  //   · **账号那一行**照旧优先用 `/api/me` 那份明文邮箱
+  //     （`AccountApi.account()`，只有服务端登录的人才有），退回本机的掩码；
+  //   · **「登录还有 N 天」**只有本机会话算得出来（本机记着 `exp`），
+  //     服务端那条路的有效期在 Cookie 里、脚本读不到（HttpOnly）——
+  //     那就**如实不写这一行**，不编一个数字出来。
   function renderAccount(sess) {
     var list = $("account-list");
     var danger = $("danger-card");
     if (!list) return;
-    if (!sess || !sess.account) {
+
+    var id = identity();
+    if (!id || !id.signedIn) {
       hide($("account-card")); hide(danger); hide($("verify-row"));
       return;
     }
-    var acc = sess.account;
-    var days = Math.max(0, Math.round((sess.exp - Date.now()) / 86400000));
 
     var info = acct() && acct().account ? acct().account() : null;
+    var mask = (sess && sess.account && sess.account.identities[0])
+      ? sess.account.identities[0].mask : "";
     var email = (info && info.email) ? info.email
-      : (acc.identities[0] ? acc.identities[0].mask : "（无邮箱）");
-    var rows = [
-      ["账号", email],
-      ["登录还有", days + " 天"]
-    ];
+      : (mask || id.mask || "（无邮箱）");
+
+    var rows = [["账号", email]];
+    if (sess && sess.account && sess.exp) {
+      rows.push(["登录还有", Math.max(0, Math.round((sess.exp - Date.now()) / 86400000)) + " 天"]);
+    }
     list.innerHTML = rows.map(function (r) {
       return '<div class="kv-row"><span class="kv-k">' + esc(r[0]) +
         '</span><span class="kv-v">' + esc(r[1]) + "</span></div>";
@@ -222,16 +237,37 @@
     }
   }
 
+  // 退出登录 = **两份凭据一起清**（Issue #274）。
+  //
+  // ⚠️ 从前这里只做 `A.signOut(store)`（清本机的 `poem_auth_v1.sessions`）
+  //    与 `clearServerTier()`（清本机那份「服务端答案」缓存）。服务端登录的
+  //    人那样点一下**根本退不出去**：`kbsid` 那枚 Cookie 还在浏览器里，
+  //    服务端照旧认他，下一次 `/api/me` 又把同一份答案写回来 —— 界面上那颗键
+  //    还是「退出登录」。现在多打一发 `POST /api/logout`：服务端把会话标成
+  //    `revoked` 并回一发过期 Cookie，票当场撕掉。
+  //
+  // ⚠️ 次序：**先叫服务端撤，再清本机**。反过来的话，本机那份答案先没了、
+  //    服务端还认这枚 Cookie，中间这一小段里界面说「没登录」而服务端说
+  //    「登录着」——正好是我们要消灭的那种不一致。
+  //    `AccountApi.signOut()` 自己就带 `clearServerTier()`（而且它是唯一
+  //    知道「退到什么程度」的地方），所以这里不再自己清一遍。
   function onSignOut() {
     var r = A.signOut(store);
     if (!r.ok) return;
     try { if (window.SyncStore && window.SyncStore.forget) window.SyncStore.forget(); } catch (e) { }
-    try {
-      var M = acct();
-      if (M && M.clearServerTier) M.clearServerTier({ backing: backing, E: Ent });
-    } catch (e) { }
-    showToast("已退出登录（进度没动）");
+
+    var M = acct();
+    var wait = M && M.signOut
+      ? Promise.resolve(M.signOut({ backing: backing, E: Ent, A: A }))
+      : Promise.resolve(null);
+
     paint(A.session(store));
+    showToast("已退出登录（进度没动）");
+
+    wait.then(function () {
+      paint(A.session(store));
+      renderIdentity(identity());
+    })["catch"](function () { });
   }
 
   function onDeleteStart() {
@@ -512,16 +548,31 @@
     }
     paint(A.session(store));
 
+    // ⚠️ **每次打开这一页都问一次服务端「我是谁」**（Issue #274）。
+    //
+    // 从前这里挂着 `if (M && sess)`（有**本机**会话才问），而服务端登录的人
+    // 本机一份会话都没有 —— 于是 `/api/me` 从来没被调用过，这一页只能一直
+    // 画「游客」。现在无条件问一次：服务端回 401 才是真的没登录。
+    //
+    // ⚠️ 问到了要把**整个身份行重画**（不只是那一份账号卡）：那颗键的文案、
+    //    身份行那一句、账号卡、注销区都由 `identity()` 决定，而它认的正是
+    //    这一发写下的那份服务端答案。
     var M = acct();
-    var sess = A.session(store);
-    if (M && sess) {
+    if (M) {
       Promise.resolve(M.refreshMe({ backing: backing, A: A, E: Ent })).then(function (r) {
         if (!r || !r.ok) return;
+        // `paint()` 一处出全部（身份行 / 账号卡 / 同步开关 / 管理入口）——
+        // 不许在这里另挑几处单独重画（漏一处就是「有的地方认、有的地方不认」）。
         paint(A.session(store));
       })["catch"](function () { });
     }
 
     window.addEventListener("storage", function () { paint(A.session(store)); });
+    // 服务端那份答案到位了就重画一遍（Issue #274）。`js/chrome.js` 在顶栏
+    // 就位时问一次 `/api/me`，答完喊这一声 —— 页面只管听，不自己再问一遍
+    // （两个地方各问一次，就有一处会先画错、后画对，用户看到闪一下）。
+    document.addEventListener("account:ready", function () { paint(A.session(store)); });
+    document.addEventListener("entitlementchange", function () { paint(A.session(store)); });
 
     function onFamilyChange() { paint(A.session(store)); }
     window.addEventListener("family-change", onFamilyChange);
@@ -597,8 +648,16 @@
     }
   }
 
+  // 「登录了没」——**问唯一出口**，不是问本机（Issue #274）。
+  //
+  // ⚠️ 原先这里是 `A.session(store)`（只读本机 `poem_auth_v1.sessions`）。
+  //    服务端登录的人本机一份都没有，于是这一页上凡是绕到它这里的地方
+  //    都答「未登录」—— 冲突裁决那一屏会多写一句「请先登录再选」，
+  //    而他已经登录了。判据只有一处：`Entitlement.cookieSession()`。
   function sess() {
-    try { return A && A.session ? A.session(store) : null; } catch (e) { return null; }
+    var ok = false;
+    try { ok = !!(Ent && Ent.cookieSession && Ent.cookieSession({ backing: backing })); } catch (e) { ok = false; }
+    return ok ? {} : null;
   }
 
   function renderConflict(S, signedIn) {

@@ -382,9 +382,40 @@
       mountDockAvatarWatch();
     }
 
+    refreshAccount();
+
     var ev = document.createEvent("Event");
     ev.initEvent("chrome:ready", true, true);
     document.dispatchEvent(ev);
+  }
+
+  // 顶栏就位时**问一次服务端「我是谁」**（Issue #274）。
+  //
+  // 为什么放在这里、而不是各页各自写一遍：`js/chrome.js` 是**每一张有导航的
+  // 页面都要加载的那一份**（它负责把顶栏 / 底栏装上去），所以这里的一发
+  // 覆盖「从首页到设置」全部页面 —— 而各页自己写的话，就是「有的页认、
+  // 有的页不认」，正是用户报的那个症状。
+  //
+  // ⚠️ 它只做一件事：把服务端那份答案取回来（`AccountApi.refreshMe()`
+  //    会写进 `poem_plan_v1`，并喊一声 `entitlementchange`），
+  //    **不碰任何界面**。要跟着这一份答案重画的页面去听那个事件
+  //    （`js/settings-nav.js` 早就在听了），页面自己那一处该不该重画、
+  //    画成什么样，仍归页面自己。
+  //
+  // ⚠️ 结果与三档：`E_NO_SESSION`（真的没登录）/ 没配服务端 / 连不上，
+  //    都**什么都不做** —— 未登录是正常状态，不是错误，不该弹任何提示。
+  function refreshAccount() {
+    var g = typeof globalThis !== "undefined" ? globalThis : null;
+    var M = (g && g.AccountApi) || null;
+    if (!M || typeof M.refreshMe !== "function") return;
+    try {
+      Promise.resolve(M.refreshMe({})).then(function (r) {
+        if (!r || !r.ok) return;
+        var ev = document.createEvent("Event");
+        ev.initEvent("account:ready", true, true);
+        document.dispatchEvent(ev);
+      })["catch"](function () {  });
+    } catch (e) {  }
   }
 
   function bindHeader() {

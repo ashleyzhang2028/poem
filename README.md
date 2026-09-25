@@ -194,6 +194,8 @@ Vercel Serverless，同源、无 CORS。**线上只有 1 个函数**：`api/hand
 
 **四条硬规矩**：明文验证码不进任何日志；权益只从 `/api/me` 来，请求体里的 `plan` 一律忽略；所有写接口都有频控；能改别人数据的接口有服务端角色闸（`403`）—— 把入口藏起来**不是**安全边界。
 
+**登录状态只有一个答案**：会话有两种存在方式 —— 服务端的 `kbsid` Cookie（口令 / 真邮件验证码 / 点确认链接 / 重设这四条路签的都是它）与本机的 `poem_auth_v1.sessions`（云端用不了时前端自己发码的那条降级路）。界面上**每一处**「登录了没」都问同一个出口 `Entitlement.identity()` / `cookieSession()`，没有本机会话时就认「服务端刚认过这个人」那份答案（`poem_plan_v1` 里 `source:"server"` 的那一份）。`js/chrome.js` 在顶栏就位时问一次 `/api/me`，答案一到就喊 `account:ready` —— 于是**从首页到设置，一个判据、一个答案**。退出登录走两半：`POST /api/logout` 撤服务端那枚会话，`AuthCore.signOut()` 清本机那份。
+
 部署与建表见 `api/_lib/schema.sql`。开通只差几个环境变量，做成可执行的：
 
 ```bash

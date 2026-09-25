@@ -190,6 +190,12 @@
     {
       key: "poem_plan_v1", sync: false, row: "", merge: "", cap: WHY.account,
       why: "本机会话里的层级 / 角色缓存 —— 权威答案在 /api/me（数据库里那两列）。"
+    },
+    {
+      key: "poem_plan_seen_v1", sync: false, row: "", merge: "", cap: WHY.account,
+      why: "上面那一份答案的**水位线**（`uid::until`，Issue #274）：回答「这一份" +
+           "是不是本机刚问来的」。它按**浏览器**记、不按账号记，跟着那份答案一起" +
+           "写一起清 —— 上云的话就是把「这台机器问过谁」传出去了，既没意义也越界。"
     }
   ];
 

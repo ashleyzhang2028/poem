@@ -266,6 +266,22 @@
         return post("/verify-email", { vid: input.vid, token: input.token }, PASSWORD_ERR);
       },
 
+      // 退出登录（Issue #274）：**服务端那一枚会话也得撤掉**。
+      // 从前界面上那颗「退出登录」只清本机（`AuthCore.signOut`），于是
+      // 服务端登录的人点了退出，Cookie 还在 —— 刷新一下又「登录着」，
+      // 或者界面以为退了、服务端还认他（两边的登录状态各说各话）。
+      // 服务端本来没配会话（503）或不认识这枚 Cookie（401）都**不算失败**：
+      // 要的结果是「出去」，而票在客户端这边照样被撕掉。
+      logout: function () {
+        return post("/logout", {}).then(function (r) {
+          if (r && r.ok) return r;
+          var code = (r && r.code) || "E_OFFLINE";
+          return { ok: true, reason: code, signedOut: true };
+        })["catch"](function () {
+          return { ok: true, reason: "E_OFFLINE", signedOut: true };
+        });
+      },
+
       resendVerification: function (input) {
         input = input || {};
         var body = { deviceId: deviceId };

@@ -299,6 +299,27 @@
     });
   }
 
+  // 「登录了没」——**唯一出口**（Issue #274）。
+  //
+  // 判据只有一条：`Entitlement.cookieSession()`（服务端认过人那份答案还在）。
+  // 它同时兜住「本机会话」与「Cookie 会话」，所以从前那句
+  // `deps.signedIn()` 注入**不再需要**，也就不会再有人从别处拼一份判据。
+  //
+  // 起因（用户原话）：「用户登录所有页面需要变成登录状态，从首页到设置等等页面，
+  // 目前登录了各页面还是认为没有登录」。同步开关那一句「已开启，登录后才会真的
+  // 同步」就是同一个病根的一个出口 —— 它读的是**本机**会话，而服务端登录的人
+  // 本机一份都没有。
+  //
+  // ⚠️ **没有 Entitlement 时按「已登录」放行**（老行为）：同步是否真的能跑，
+  //    最终由服务端那一发说了算（回 401 就是没登录）—— 这里的答只是「要不要
+  //    把「登录后才同步」那句话摆出来」，判不出来的话不该拦人。
+  function signedIn() {
+    var E = deps.Entitlement ||
+      ((typeof window !== "undefined" && window.Entitlement) || null);
+    if (!E || typeof E.cookieSession !== "function") return true;
+    try { return !!E.cookieSession({ backing: backing() }); } catch (e) { return true; }
+  }
+
   function emit(name, payload) {
     try {
       if (deps.emit && deps.emit !== emit) deps.emit(name, payload || {});
@@ -314,7 +335,7 @@
     if (deps.base === null) return "unavailable";
     if (!enabled()) return "off";
     if (!gate().ok) return "tier";
-    if (deps.signedIn && !deps.signedIn()) return "signin";
+    if (!signedIn()) return "signin";
     return "ready";
   }
 

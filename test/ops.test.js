@@ -508,8 +508,16 @@ const section9 = (async () => {
     eq(ch.mail, "sendgrid", "mail 字段收下");
     eq(ch.sms, false, "sms 字段收下");
 
-    const added = Object.keys(backing.raw()).filter(k => beforeKeys.indexOf(k) < 0);
-    eq(added.join(","), "poem_plan_v1", "这一轮只多写了一个权益键（开通状态一个字节都没写盘）");
+    const added = Object.keys(backing.raw()).filter(k => beforeKeys.indexOf(k) < 0).sort();
+    // ⚠️ 从 Issue #274 起是**两把**键：`poem_plan_v1`（服务端那份答案）
+    //    与它的水位线 `poem_plan_seen_v1`（回答「这一份是本机哪一次问来的」——
+    //    没有它就分不清「服务端刚认过这个人」与「谁把这行角色写在了本机」）。
+    //    开通状态（channel 那一份）仍然**一个字节都不落盘**，那条口径没变。
+    eq(added.join(","), "poem_plan_seen_v1,poem_plan_v1",
+      "这一轮只多了权益键 + 它的水位线（开通状态一个字节都没写盘）");
+    eq(String(backing.raw().poem_plan_seen_v1),
+      JSON.stringify({ uid: meUid, until: null }),
+      "水位线记着「这份答案是谁的 / 到什么时候」（服务端那份答案的主人 + 到期）");
     const dumped = JSON.stringify(backing.raw());
     chk(dumped.indexOf("sendgrid") < 0, "开通状态**没有落盘**（缓存一份必然与服务端真实状态漂移）");
     eq(E.identity({ backing: backing, authStore: store }).tier, "pro", "层级照旧落到权益层（与开通状态无关）");
