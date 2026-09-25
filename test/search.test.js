@@ -554,31 +554,34 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(/\.search-input::placeholder \{[^}]*transform:\s*translateY\(var\(--search-placeholder-shift/.test(classicCss),
     '两页共用同一条位移（由字号算式现算，见 :root 那一条 calc）');
 
-  // ---- 提示字的位移是**一档一个数**，算式与断点必须一起对得上 ------------
-  // ⚠️ 2026-09-25 修 CI：上一轮把位移写死成 -0.65px（那是「输入字号 14px」那一档
-  //    的结果），可 700px 及以下的输入字号是 16px（行盒 20），该抬 1.9px ——
-  //    写死一个数就必然在手机上错。现在它是一行 calc，且在窄屏那一档重算一次。
-  //    这一节守的是**两处断点不许分家**：CSS 里改行高的那一档（classic.css 的
-  //    `@media (max-width: 700px) .search-input { font-size: --input-font-narrow }`）
-  //    与写位移的那一档（style.css 的 `@media (max-width: 700px) :root`）
-  //    必须是同一个数 —— 一边挪了另一边没挪，人眼在 CSS 里看不出来。
+  // ---- 提示字的位移是**一档一个数**，档与断点必须一起对得上 ------------
+  // ⚠️ 2026-09-25 并流裁决（PR #304）：位移的口径**改过三次**，最后落成
+  //    「一档一个数、只用一个变量名」：
+  //      · 写死一个数（-0.65 或 -1.5）必然在一档上错 —— 输入字号是两档的
+  //        （700px 及以下 `--input-font-narrow` 16px、其上 `--input-font` 14px）；
+  //      · 「一档一个数」这件事两支分支都同意，分歧在**门限**：一支在 700px
+  //        又算一次（与字号换档那一档分家），本案裁决**只留 768px 一个门限**
+  //        —— 字号换到哪一档、位移就跟到哪一档，两处门限漂开正是这一整族 bug
+  //        的来处；
+  //      · 落的数取**真量出来**的：窄屏 1.5px（`(16 − 13.5) × 1.2 ÷ 2`）、
+  //        768 以上 0.3px（`(14 − 13.5) × 1.2 ÷ 2`）。
+  //    所以这一节守的是「两档各一个数，且 768 以上那一档真的被改写」——
+  //    具体几由 test/classic.test.js 两档各算一遍，这里只需量到
+  //    「:root 那一档不是 768 那一档的数」。
   {
     const styleSheet = read('css/style.css');
-    const shiftNarrowBp = (styleSheet.match(
-      /@media \(max-width: (\d+)px\)[\s\S]{0,400}?--search-placeholder-shift:/) || [])[1];
-    // ⚠️ 要的是**紧挨着** `.search-input { font-size: var(--input-font-narrow) }`
-    //    的那个 @media：classic.css 前面还有一个 `@media (max-width: 380px)`
-    //    （那是工具栏压到 36px 那一档），405 字的窗口会先撞上它。
-    const fontNarrowBp = (classicCss.match(
-      /@media (?:screen and )?\(max-width: (\d+)px\)\s*\{\s*\.search-input \{[^}]*--input-font-narrow/) || [])[1];
-    chk(!!shiftNarrowBp && shiftNarrowBp === fontNarrowBp,
-      '位移重算的那一档与输入字号抬档的那一档是同一个断点（实际 ' +
-      shiftNarrowBp + ' vs ' + fontNarrowBp + '）');
-    chk(/--search-placeholder-shift:\s*calc\(/.test(styleSheet),
-      '位移在 :root 里就是一个 calc（不是手写的一个数）');
-    chk(/@media \(max-width: \d+px\)[\s\S]{0,400}?--search-placeholder-shift:\s*calc\([^;]*--input-font-narrow/
-        .test(styleSheet),
-      '窄屏那一档的位移读 --input-font-narrow（16px，不是 :root 那个 14px）');
+    const shiftRoot = (styleSheet.match(/--search-placeholder-shift:\s*(-?[\d.]+)px;/) || [])[1];
+    chk(!!shiftRoot && /--search-placeholder-shift:\s*-?[\d.]+px;/.test(styleSheet),
+      '位移在 :root 里仍有**一个数**（窄屏那一档，实际 ' + (shiftRoot || '缺') + '）');
+    // 768 以上那一档：classic.css 与 style.css 各有一处就地改值，
+    // 都用**同一个变量名**（不另起 `--search-placeholder-shift-wide` 这种第二个名字）。
+    chk(/@media \(min-width: 768px\) \{\s*\.search-input \{ --search-placeholder-shift:\s*-?[\d.]+px; \}/.test(classicCss),
+      '768 以上那一档在 classic.css 就地把同一个变量改成另一档的数（不另起名字）');
+    chk(/@media \(min-width: 768px\) \{\s*\.today-search \.search-input \{ --search-placeholder-shift:\s*-?[\d.]+px; \}/.test(styleSheet),
+      '「今日加背」那一枚用同一个门限（768px）换位移，与它自己那条 font-size 同门限');
+    chk(!/--search-placeholder-shift:\s*calc\(/.test(styleSheet) &&
+      !/--search-input-lh-ratio/.test(styleSheet),
+      '两档都是**数**，不再是 calc —— 算式只当「改字号就得重算」那把尺写在注释里');
   }
 
   chk(/\.suggest \{[^}]*top:\s*calc\(100% \+ 4px\)/.test(classicCss),
