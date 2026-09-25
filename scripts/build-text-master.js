@@ -21,9 +21,6 @@ LOAD.forEach(function (f) {
   vm.runInContext(fs.readFileSync(path.join(ROOT, f), 'utf8'), sandbox, { filename: f });
 });
 
-
-
-
 const WI = sandbox.WorksIndex;
 
 const FULL_BOOKS = ['zhaoming', 'guwen', 'songci', 'tangshi', 'classic', 'yuanqu', 'yuefu', 'jinxiandai'];
@@ -35,8 +32,7 @@ try {
   vm.createContext(prevSandbox);
   vm.runInContext(fs.readFileSync(path.join(ROOT, 'data/text-master.js'), 'utf8'),
     prevSandbox, { filename: 'data/text-master.js' });
-  // 既按 id 索引，也按 entries 索引 —— 与 data/text-master.js 的 map() 同一口径：
-  // 一条主表记录代表「同一篇」的一组条目，正文可能挂在组里任意一个 id 上。
+
   (prevSandbox.TEXT_MASTER || []).forEach(function (m) {
     if (!m) return;
     if (m.id && !prev[m.id]) prev[m.id] = m;
@@ -57,15 +53,6 @@ function textOfEntry(entry, masterId) {
   return { text: "", translation: "", translationSource: "" };
 }
 
-// 新增一部的**第一次**收归有个先有鸡还是先有蛋的坎：
-// 站点索引里那些条目只留了 textRef，正文要等 text-master 生成后才取得到；
-// 而 LOAD 里 text-master 排在 site-index 之前 —— 于是「这一部还没进过主表」
-// 时，索引组装会把这一部整部当成「没有正文」丢掉，本脚本也就永远收不到它。
-//
-// 这里补一遍：凡在**原始数据文件**里带着 textRef、正文却取不到的条目，
-// 按 textRef 到原始语料里再找一次；找得到就把正文挂到 SITE_INDEX 上。
-// 收过一次之后，这些条目就带着 textRef 进索引了，这一步自然不再补任何东西 ——
-// 但机制留着，日后新增集子不必再踩一次。
 var RAW_ENTRIES = {};
 (function () {
   var FILES = [
@@ -107,16 +94,14 @@ Object.keys(RAW_ENTRIES).forEach(function (id) {
     if (up && up.text) t = { text: up.text || '', translation: up.translation || '',
       translationSource: up.translationSource || '' };
   }
-  // 正文也可能只落在上一版存储主表里（那一条自己的 id，或它 textRef 指向的 id）——
-  // 新增集子的条目只存 textRef 时，正文正是这样传下来的。
+
   if (!t.text) {
     var hit = prev[id] || (raw.textRef ? prev[raw.textRef] : null);
     if (hit) t = { text: hit.text || '', translation: hit.translation || '',
       translationSource: hit.translationSource || '' };
   }
   if (!t.text) return;
-  // 只补「跨集子指向的另一条」：课内自己的单条本来就有一份内联正文、
-  // 也早就在索引里，不该在这里再挂一次。
+
   if (id.indexOf('poems-') === 0) return;
   var book = id.indexOf('poems-') === 0 ? 'poems' : id.split('-')[0];
   var localId = id.indexOf('poems-') === 0 ? id.slice(6) : id.slice(book.length + 1);
@@ -132,11 +117,6 @@ Object.keys(RAW_ENTRIES).forEach(function (id) {
   BOOTSTRAPPED.push(id);
 });
 
-
-// 课内那些**只留 textRef** 的条目（它们的正文本来在 text-master 里）：
-// 组装 POEMS_ALL 时要按 textRef 取回正文，而取回的表就是本脚本要产出的那一份。
-// 这里先把上一版主表里那一条的正文补回索引（这一条不新增索引项、也不改 id 归属），
-// 好让同篇判重认得它 —— 否则整组的同篇关系会在重算时整批丢掉。
 Object.keys(prev).forEach(function (id) {
   if (id.indexOf('poems-') !== 0) return;
   var raw = RAW_ENTRIES[id];
@@ -168,17 +148,13 @@ if (BOOTSTRAPPED.length) {
   console.log('（' + BOOTSTRAPPED.length + ' 条首次进入主表的条目：' +
     '它们原先只有 textRef、正文取不到，本轮先从原始数据文件那一段补回索引）');
 }
-// 上面往 SITE_INDEX 补了正文（课内 textRef 那批 + 新集子那批），
-// 同篇对照表要按补过之后的索引重算一次 —— 否则 WI.works 还是加载时的旧视图，
-// 整组的同篇关系会整批丢掉。
+
 sandbox.WorksIndex.rebuild(sandbox.SITE_INDEX);
 
 const byId = {};
 sandbox.SITE_INDEX.forEach(function (p) { byId[p.id] = p; });
 
-
 const sig = function (t) { return String(t || '').replace(/\s+/g, ''); };
-
 
 const master = [];
 WI.works.forEach(function (w) {
@@ -270,9 +246,6 @@ BOOK_FILES.forEach(function (f) {
   });
 });
 
-// 一次收归要跑两步：本脚本把正文收进主表 → apply-text-master.js 摘掉内联副本。
-// 所以「在册、本轮才收上来的条目」此刻**还带着**内联正文，是预期之中；
-// 只有「上一版主表里已经收过、这一次却还内联着」的才是真的存了两份。
 const stale = inlineCopies.filter(function (x) {
   const id = x.split(' · ')[1];
   const file = x.split(' · ')[0];
@@ -330,11 +303,6 @@ Object.keys(NEAR_BY_KEY).forEach(function (k) {
 });
 nearPairs.sort(function (a, b) { return a.entries[0] < b.entries[0] ? -1 : 1; });
 
-// 课内条目里也有「与集子同篇」的那些（《天净沙·秋思》课内 + 元曲、
-// 《山坡羊·骊山怀古》课内 + 元曲……）。上面那两轮按「跨集重复」已经收过；
-// 剩下的就是**课内独有**的条目 —— 它们不进主表（主表的边界是
-// 「同一篇落一份」，课内独苗本来就只有一份，由自己的数据文件持有）。
-// 所以这里只查一件事：同一条条目**不许**既被主表收着、又还内联着正文。
 const dupInline = [];
 master.forEach(function (m) {
   (m.entries || []).forEach(function (eid) {
@@ -357,10 +325,7 @@ master.forEach(function (m) {
     });
   });
 });
-// ⚠️ 这一条**不拦**：它报的正是「主表刚收上来、副本还没摘」的那个中间态
-// （一次收归 = build-text-master 收 + apply-text-master 摘，两步）。
-// 谁要是只跑了前一步就提交，测试层的 canonical.test.js 会拦下来 ——
-// 那里查的是「磁盘上还剩几份」，比这里更准。
+
 if (dupInline.length) {
   console.log('（' + dupInline.length + ' 条条目与主表那一份同时带着正文 —— ' +
     '本轮刚收上来的，接着跑 scripts/apply-text-master.js 摘去内联副本）');

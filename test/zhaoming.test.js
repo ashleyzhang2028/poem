@@ -105,8 +105,7 @@ chk(withText.every(p => p.excerpt),
   '每一篇都给了列表用摘句（excerpt）');
 chk(withTrans.length === ZM.length,
   '480 篇白话译文全部整理完成，列表里不再有「待补」（实际 ' + withTrans.length + '）');
-// 与课内同篇的条目（正文收归主表后，译文随主条目）—— 主条目是课内的那一条，
-// 译文来源自然跟着课内走；这一条例外由 works-map 登记，逐条列在这里。
+
 const COURSE_LINKED = ['过秦论'];
 const notPublicDomain = withTrans.filter(p =>
   p.translationSource !== 'public-domain' && COURSE_LINKED.indexOf(p.title) < 0);
@@ -245,12 +244,6 @@ chk(IDX.some(x => x.book === 'zhaoming' && x.isBook),
   '「昭明文选」本身也作为一条结果（搜集子名能直接进那一页）');
 chk(sandbox.SITE_BOOKS.length === 9 && sandbox.SITE_BOOKS.some(b => b.id === 'zhaoming'),
   '九部集子的清单里含昭明文选（' + sandbox.SITE_BOOKS.length + ' 部）');
-
-// ---------------------------------------------------------------------------
-// Issue #278：这一层的**页面层**（jsdom 起页面、挂脚本、渲染分组、点开详情、
-// 搜索框敲字）整段删除 —— 那是界面测试。留下的是数据层：篇目数量 / id / 字段 /
-// 分组口径 / 总索引收录，以及页面脚本顺序这一类**功能接线**的口径。
-// ---------------------------------------------------------------------------
 
 console.log('');
 console.log(fails ? '❌ ' + fails + ' 项失败' : '🎉 zhaoming测试全部通过');

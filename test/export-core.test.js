@@ -168,9 +168,7 @@ console.log("\n=== 七、范围表不认识的范围：一律空，不抛也不�
 
 console.log("\n=== 七之二、进度导出（导出备份）是登录可用（Issue #229 第二轮）===");
 echo: {
-  // 用户原话：「层级页面 进度导出 功能改为登录可用，实际功能也按这个修改。」
-  // 台账那一行在 js/entitlement.js（CAPS），真正的按钮在 js/settings.js 的
-  // #btn-export —— 两处都得跟着走，否则就是「表上说要登录、实际游客照样导」。
+
   const cap = E.cap("export.progress");
   chk(!!cap, "进度导出这条能力在（键名 export.progress）");
   eq(cap.login, true, "内核里 export.progress 的 login 是 true");
@@ -216,28 +214,17 @@ console.log("\n=== 八、接口与页面：拦在数据层，按钮之外也绕�
   chk(ver >= 160, "缓存版本已跟着提（Issue #229 第二轮动了 js/settings.js，实际 v" + ver + "）");
   has(read("settings/general/index.html"), "/js/export-core.js", "设置页加载了导出内核");
 
-  // ⚠️ 这一条是 Issue #278 第七轮补上的，守的是一个**真出过的故障**：
-  //    用户 2026-09-24「导出课内诗词显示 导出组件没有加载成功」。
-  //    病根不是导出内核，是**这一页少加载了两个脚本** ——
-  //    `exportPoems()` 那三样（ExportCore / Entitlement / identity）里
-  //    少了 `js/entitlement.js`，于是 `currentIdentity()` 恒为 null，
-  //    守卫当场判成「组件没加载成功」，而真正少的那一个谁也没点名。
-  //    ⚠️ 这条不写「页面里有这两行」的静态断言（那种断言挡不住
-  //       「行在但加载顺序错」这种坏法）：它直接**按 HTML 的加载次序**
-  //       把这两个脚本求出来，走一遍 `exportPoems()` 的前置判断。
-  //       `exportPoems()` 里那三样，一样都不许少。
   {
     const gen = read("settings/general/index.html");
     const loaded = (gen.match(/<script src="([^"]+)"><\/script>/g) || [])
       .map(t => t.match(/src="([^"]+)"/)[1]);
 
-    // 按页面里的**真实次序**在沙箱里跑一遍引擎那两个文件。
     const sandbox = { window: {}, console: console, document: undefined };
     sandbox.window = sandbox;
     vm.createContext(sandbox);
     ["js/auth-core.js", "js/entitlement.js",
      "js/progress-store.js", "js/storage.js", "js/export-core.js"].forEach(f => {
-      if (loaded.indexOf("/" + f) < 0) return;      // 按页面的加载名对
+      if (loaded.indexOf("/" + f) < 0) return;
       vm.runInContext(read(f), sandbox, { filename: f });
     });
 

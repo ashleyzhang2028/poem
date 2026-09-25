@@ -61,11 +61,6 @@
 
     if (!algoModels() || !algoModels().known(merged.algo)) merged.algo = DEFAULTS.algo;
 
-    // 算法按层级开放（Issue #229 第四轮）：`merged.algo` 记的是**想要的**
-    // 那一张，**不在读盘这一层回收** —— 回收（按当前身份退到能用的那张）
-    // 一律发生在「用」的时候（renderAlgos 的 cur、以及 app / scheduler /
-    // progress 三处 algoKey()）。这是在内存里改一下 = 下一次改年级调用
-    // saveSettings() 就把它写死成降级后的值，层级回来也回不到原选择。
     if (!STAGES[stageOf(merged.grade)]) merged.grade = DEFAULTS.grade;
     return merged;
   }
@@ -150,10 +145,6 @@
     mark("#seg-count", "count", settings.dailyCount);
     mark("#seg-helper", "helper", settings.helper === "on" ? "on" : "off");
 
-    // ⚠️ 这里**不再**回显「当前：本学期及之前」—— 选中的那一格就是当前值
-    //    （`.active` 已经把这件事说完了），再写一行是重复（用户 2026-09-21）。
-    //    #scope-hint 这个挂载点留着：它现在是块空壳，但位置还在 ——
-    //    一旦有谁要在这里补一句真事实，不必先动 HTML。
     renderAlgos();
     renderPlayModes();
     renderCollections();
@@ -567,15 +558,6 @@
 
   }
 
-  // ---- 「今日加背」（Issue #243）-------------------------------------------
-  //
-  // 用户 2026-09-19 的口径：加背的篇目不进自选集合，所以要有一处**看得见、
-  // 删得掉**的地方 —— 就放在「背诵」这张页上（它管的就是「今天背哪几首」）。
-  //
-  // 这一块的多选删除是用户点名的（「供用户随时删除（多选）」）：
-  //   一行一篇 + 行首一个勾选框；「移出选中的」按勾选删，「全部清空」全删。
-  //   只有两三个时也能一篇一篇删 —— 那时勾选只是多一步，所以「一封到底」
-  //   的确认留给「全部清空」那一颗（它会一次删掉好几篇，值得多问一句）。
   function dailyMod() {
     return (typeof window !== "undefined" && window.DailyExtra) || null;
   }
@@ -622,10 +604,6 @@
       return;
     }
 
-    // 勾选框画成自己的一枚（18×18 圆角方框，选中＝天青底 + 白勾），
-    // 形状与「加入自选集合」弹层里那一枚（.recite-col-tick）同一套 ——
-    // 浏览器自带的复选框各家画法不同、又比行里的字大一圈，放在这一列里很扎眼。
-    // 原生 input 仍在（键盘可点、可读屏），只是视觉上藏起来，由 .daily-box 顶上。
     box.innerHTML = items.map(function (it) {
       return '<label class="daily-row">' +
         '<input type="checkbox" class="daily-pick" value="' + esc(it.entryId || it.id) + '" ' +
@@ -700,10 +678,6 @@
     return (typeof window !== "undefined" && window.ReviewModels) || null;
   }
 
-  // 算法按层级开放（Issue #229 第四轮）：四张卡永远都在（看得见，
-  // 才知道有这一档），能不能选由 Entitlement.can("algo.<key>") 当场答。
-  // 不够层的那几张**不隐藏、不 disabled**：点下去得到的是「Pro 起」这类
-  // 门槛文案，与语音朗读 / 进度导出同一套写法（藏起来就成了「点了没反应」）。
   function algoGate(key) {
     const E = entitlementMod();
     const RM = algoModels();
@@ -862,9 +836,6 @@
     }
   }
 
-  // 「退出登录」那一颗由管理后台签发给自己的那一块画出来（#account-signout，
-  // 见 js/admin-page.js）。账号与同步的正主是「我的」页，这里只管把这一颗
-  // 转给引擎 —— 不在这张页上另造一份账号 UI（那正是本轮要收掉的东西）。
   function bindAccount() {
     const btn = $("#btn-signout");
     if (!btn) return;
@@ -998,10 +969,6 @@
     if (exportBtn) {
       exportBtn.addEventListener("click", function () {
 
-        // 「进度导出」自 Issue #229 第二轮起是**登录可用**（层级仍是 free）。
-        // 闸就设在这一处：按钮照旧看得见、点得到，未登录时点它得到的是
-        // Entitlement 出的那句「登录可用」—— 与语音朗读同一套写法
-        // （不隐藏按钮：藏起来的话用户只看到「点了没反应」）。
         const E = entitlementMod();
         const ident = currentIdentity();
         if (E && ident && !E.can("export.progress", ident).ok) {

@@ -133,10 +133,6 @@ function memoryStore() {
       return true;
     },
 
-    // ---- 报告台账（Issue #243 第四轮）--------------------------------------
-    // 与 progress 那张表**不共享生命周期**：注销账号时报告**留着**
-    // （uid 外键在真库上是 on delete，但 memory 这一份要自己保住台账 ——
-    //  它是管理员的工作台，不是用户的私有数据）。
     putReport: function (row) { db.reports[row.rid] = row; return { rid: row.rid }; },
     getReport: function (rid) {
       var r = db.reports[rid];
@@ -206,31 +202,15 @@ function supabaseStore(cfg) {
           var err = new Error("supabase " + r.status + ": " + String(t).slice(0, 300));
           err.status = r.status;
           err.upstream = String(t).slice(0, 300);
-          // 分类（Issue #276）：让上层能把「上游读不动」与「我们自己的毛病」
-          // 分开说 —— 原先两者都被 handler 的 catch 笼统翻成
-          // 500 E_INTERNAL，前端于是回一句「服务暂时不可用，请稍后重试。」，
-          // 而那句话对着一个被暂停的数据库说一万遍也没用。
+
           throw upstream.tag(err);
         });
       }
-      // 上游回了 200，但身体**不是 JSON**（Supabase 暂停时前面那层网关会回
-      // 一个 HTML 说明页）。原先这里直接 `return null` —— 于是每一处
-      // `rows && rows[0]` 都读成「没这个账号」，登录会说「邮箱或密码不对」、
-      // 验码会说「请用最新收到的验证码」。**两句都是假话**：真相是这台
-      // 数据库根本读不动（Issue #276）。
-      //
-      // 现在按「上游读不动」如实抛出去 —— 上层分类成 E_DB_UNREACHABLE，
-      // 用户看到的是「账号服务器连不上，别再点了」，而不是一个假的密码错。
-      //
-      // ⚠️ 但**不能**只看 content-type：PostgREST 对 204 / 201 这类
-      //    「写成功、无返回体」的发子**根本不带 content-type**，它们的身体
-      //    是空的 —— 那是**正常**的，不是「读不动」。判据要落在
-      //    「有身体、却不是 JSON」上。原先这里只看 content-type，
-      //    会把 `Prefer: return=minimal` 那几发（PATCH / POST）全打成故障。
+
       var ct = String(r.headers.get("content-type") || "").toLowerCase();
       if (ct.indexOf("json") < 0) {
         return r.text().then(function (body) {
-          // 空身体：PostgREST 的 204 / return=minimal，正常，如实回 null
+
           if (!body || !body.trim()) return null;
           var e0 = new Error("supabase " + r.status + ": 响应不是 JSON（content-type=" +
             (ct || "空") + "，身体开头 " + JSON.stringify(body.slice(0, 60)) + "）");
@@ -248,18 +228,13 @@ function supabaseStore(cfg) {
         throw upstream.tag(err);
       });
     })["catch"](function (e) {
-      // fetch 自己就拒了（DNS 解不出 / 连接被拒 / TLS 失败 / 项目暂停后
-      // 连接层直接断）—— 这一档连响应都没有，上面那几个分支一个都进不来。
-      // 它是**最典型**的「上游读不动」，必须也带上分类，否则又退回
-      // 「服务端出了点问题」那句笼统话。
+
       throw upstream.tag(e);
     });
   }
 
   var degraded = [];
 
-  // 迁移列：库停在旧形状时这三/四列还没有。
-  // 建号**不能**因为它们缺席就整个失败 —— 那正是「首次注册必炸」的成因。
   var MIGRATED = ["email", "email_verified_at", "password_hash", "password_salt"];
 
   function isMissingColumn(err) {
@@ -279,9 +254,7 @@ function supabaseStore(cfg) {
   }
 
   function refusedColumns(sentKeys) {
-    // PostgREST 一次只点名**第一列**（`Could not find the 'c' column of 'accounts'`），
-    // 所以「哪几列没写进去」要按**这一发真发出去的那几列**来数，不能只认上游那一句 ——
-    // 否则报告里永远只有一列，用户会以为只缺一列。
+
     return sentKeys.filter(function (k) { return MIGRATED.indexOf(k) >= 0; });
   }
 
@@ -301,17 +274,13 @@ function supabaseStore(cfg) {
     return call("/accounts?" + filter + "&select=" + COLS + "&limit=1").then(function (rows) {
       return rows && rows[0] ? rows[0] : null;
     })["catch"](function (err) {
-      // 旧形状的库上，`select` 里那几个迁移列不存在 —— 读也读不成。
-      // 「读不出账号」不能变成 500：注册正是**靠这次读**判断是新号还是老号的，
-      // 一炸用户就拿到「服务端出了点问题」。退到老列那份投影，把能读到的读回来。
+
       if (!isMissingColumn(err)) throw err;
-      // ⚠️ 这里**只能**列老表真有的那批列。把迁移列写进来，第二发照样 400 ——
-      //    那就等于没退，用户看到的还是 500。
+
       var CLS = ["uid", "email_hash", "email_mask", "nickname", "plan", "plan_until", "role",
         "created_at", "last_login_at", "status"];
       var second = call("/accounts?" + filter + "&select=" + CLS.join(",") + "&limit=1");
-      // 第二发再被拒（表比第 5、6 节还老）时，也要**如实记降级**再退出，
-      // 否则用户拿到 500、报告里还写着「一路都通」。
+
       second["catch"](function (e2) { noteDegrade(MIGRATED); });
       return second.then(function (rows) {
           noteDegrade(MIGRATED);
@@ -321,8 +290,7 @@ function supabaseStore(cfg) {
   }
 
   function putAccount(acc) {
-    // 第一发：老库认得的那批列。新库里这些列都有，所以这一步永远安全；
-    // 少发列不会丢数据（幂等 upsert 只更新发过去的那几列）。
+
     var safeKeys = Object.keys(acc).filter(function (k) { return MIGRATED.indexOf(k) < 0; });
     var safe = pick(acc, safeKeys);
     var rest = pick(acc, MIGRATED);
@@ -330,8 +298,6 @@ function supabaseStore(cfg) {
     return sendAccount(safe)["catch"](function (err) {
       if (!isMissingColumn(err)) throw err;
 
-      // 库是更老的形状（连安全列都缺）：只能降级到建表那批老列，
-      // 并记下「哪几列没写进去」，由 /api/diag 与注册响应如实报出来。
       noteDegrade(refusedColumns(safeKeys));
       var CLS = ["uid", "email_hash", "email_mask", "nickname", "plan", "plan_until", "role",
         "created_at", "last_login_at", "status"];
@@ -339,7 +305,6 @@ function supabaseStore(cfg) {
     }).then(function (saved) {
       if (!Object.keys(rest).length) return saved;
 
-      // 第二发：补上迁移列。整发被拒（列根本不在）就降级，绝不抛给用户。
       return call("/accounts?uid=eq." + q(acc.uid), {
         method: "PATCH", body: rest, prefer: "return=minimal"
       }).then(function () {
@@ -482,14 +447,6 @@ function supabaseStore(cfg) {
   return attachReportApi(api);
 }
 
-// ---- 报告台账（Supabase）-------------------------------------------------
-// 与其它表同一条口径：service key 直连 PostgREST，RLS 全开且不给策略。
-// 三条与 accounts/progress 不同的地方：
-//   · `listReports` 的**排序在服务端做**（order=created_at.desc）——
-//     客户端再排一次的下场是「分页时顺序与游标对不上」。
-//   · `countReports` **一次查完再就近分组**（不查五次）—— 见它的正文。
-//   · `patchReport` 返回 representation，因为内核要**回写之后那一条**
-//     （不是回写前）。空返回会让界面上那一行停在旧状态。
 var REPORT_COLS = "rid,uid,email_mask,nickname,kind,status,poem_id,poem_title,book," +
   "quote,context,note,suggestion,device,ua,created_at,updated_at,handled_at,handled_by,reply";
 
@@ -522,10 +479,7 @@ function attachReportApi(api) {
     }).then(function (rows) { return rows && rows[0] ? rows[0] : null; });
   };
   api.countReports = function (filter) {
-    // 状态分布**一次查完**：拉一次全量（上限 5000，台账量级远不到），
-    // 在本地按状态分组。分五次查的下场是「五个数字来自五个不同的瞬间」——
-    // 管理员正好在这五次之间改了一条状态，面板上就会出现
-    // 「总计 12，各状态加起来 13」。
+
     var base = "/reports?select=status" + reportFilterQs(filter) + "&limit=5000";
     return call(base).then(function (rows) {
       var out = { all: 0 };

@@ -1,16 +1,4 @@
-// 同步边界总表（Issue #243 后续）
-//
-// 用户 2026-09-19：「重新审查全部配置，选项，进度及内容，既然有云同步功能，
-// 应该尽量保持账号内设备间和服务器的各项同步，除非有云端存储过大和服务器限制。」
-//
-// 这一层守的就是「表是全的」这一件事：
-//   ① 源码里出现的每一把 `poem_*` 键，都必须在 `js/sync-coverage.js` 里有判定
-//      —— 这是唯一能挡住「下次又漏一个」的机制（本次就是靠它发现集合与已读
-//      两样一直漏在表外）；
-//   ② 表的分域与 `ProgressStore.scopes()` 不许打架；
-//   ③ 上云的那几样，云端行号在**客户端与服务端逐字一致**；
-//   ④ 服务端白名单真的在裁（封顶 / 截断 / 只留白名单字段）；
-//   ⑤ 客户端推出来的行，服务端认（不认就是白推）。
+
 
 const fs = require('fs');
 const vm = require('vm');
@@ -21,7 +9,6 @@ let fails = 0;
 const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else console.log('✓ ' + m); };
 const eq = (a, b, m) => chk(a === b, m + '（实际 ' + JSON.stringify(a) + '）');
 
-// ---- 加载总表 ---------------------------------------------------------------
 const box = { window: {}, console };
 box.window = box;
 box.globalThis = box;
@@ -41,15 +28,14 @@ chk(rows.every(r => !r.sync || r.merge), '上云的每一行都写了「多设�
 chk(new Set(rows.map(r => r.key)).size === rows.length, '没有重复的键');
 
 console.log('\n=== 二、源码里的每一把 poem_* 键都在表里（本次就靠它发现漏网）===');
-// 把 js/ 下所有 `poem_xxx` 字面量扫出来（跳过总表自己、以及 keyFor 拼出来的）
+
 const jsFiles = fs.readdirSync(path + 'js').filter(f => f.endsWith('.js') && f !== 'sync-coverage.js');
 const found = new Set();
-// 前缀族（`poem_plan_<日期>_…`、`poem_classic_words_<版本>`）在表里也有自己的一行，
-// 所以这里只剩「名字片段」要滤掉 —— 一个都不能省，省一个就等于放一条漏过去。
+
 const IGNORE = new Set(['poem_reads', 'poem_', 'poem']);
 jsFiles.forEach(f => {
   const src = read('js/' + f);
-  // 只认「像一把盘上键」的字面量：`poem_` 打头（`"poems"` 是集子 id，不是键）
+
   (src.match(/["']poem_[a-z0-9_]*["']/g) || []).forEach(lit => {
     const k = lit.slice(1, -1);
     if (IGNORE.has(k)) return;
@@ -60,9 +46,6 @@ const missing = [...found].filter(k => !C.known(k));
 eq(missing.join(','), '', '没有「表外」的键（漏一个就在这一条上红）');
 chk(found.size >= 20, '扫出来 ' + found.size + ' 把键（太少说明扫描规则失效了）');
 
-// 还有一道更宽的网：**任何** `xxx_v1` 形状的盘上键字面量都要在表里
-// （不只 `poem_` 打头的）—— 挡的是「哪天有人起了一把新键、名字没带 poem_」。
-// 前缀族按前缀查。
 const allLits = new Set();
 jsFiles.forEach(f => {
   const src = read('js/' + f);
@@ -71,7 +54,6 @@ jsFiles.forEach(f => {
 const notInTable = [...allLits].filter(k => !C.known(k));
 eq(notInTable.join(','), '', '所有 `*_v1` 形状的键都在表里（不分前缀）');
 
-// 前缀式的键（`poem_classic_words_ + version`、`poem_plan_*`）在表里要有归属
 chk(C.known('poem_classic_words_'), '前缀族 `poem_classic_words_<版本>` 在表里有自己的一行');
 chk(C.known('poem_plan_'), '前缀族 `poem_plan_<日期>_…` 在表里有自己的一行');
 chk(!C.synced('poem_classic_words_') && !C.synced('poem_plan_'), '这两族不上云');
@@ -172,7 +154,7 @@ const manyReads = coreMod.sanitizeReads({
 eq(Object.keys(manyReads.marks).length, coreMod.READ_ROW_MAX, '已读每行封顶 ' + coreMod.READ_ROW_MAX);
 
 console.log('\n=== 六、客户端推出来的行，服务端认 ===');
-// 一部集子的已读 → 一行 → 服务端洗一遍，内容不该被洗掉
+
 const readBox = { window: {}, console };
 readBox.window = readBox;
 readBox.globalThis = readBox;
@@ -217,7 +199,7 @@ chk(/applyRemoteReads/.test(syncSrc), '拉取时单独处理已读');
 chk(/R\.touch\(W\.readStore\)/.test(read('js/reader-core.js')),
   '读完一篇会把那一把已读键盖一章时间戳并发起推送');
 chk(/markReadSynced/.test(read('js/reader-core.js')), '上面那两步收在一个具名函数里');
-// 已读的时间戳存在 seen 里，不塞进那把 map
+
 chk(/markSeen\(rowId \+ "__at", t\)/.test(readSyncSrc),
   '已读的时间戳存在 seen 里（塞进 map 会被当成一篇叫 __at 的诗）');
 chk(/stampOf/.test(readSyncSrc), '读回那个时间戳有具名入口');

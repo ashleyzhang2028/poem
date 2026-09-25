@@ -73,12 +73,6 @@ chk(scriptOrder.indexOf('js/reader-core.js') >= 0, '页面加载了 js/reader-co
 chk(scriptOrder.indexOf('js/reader-core.js') < scriptOrder.indexOf('js/tangshi.js'),
   '引擎排在挂载脚本 js/tangshi.js 之前');
 
-// ---------------------------------------------------------------------------
-// Issue #278：这一层的**页面层**（jsdom 起页面、挂脚本、渲染分组、点开详情、
-// 搜索框敲字）整段删除 —— 那是界面测试。留下的是数据层：篇目数量 / id / 字段 /
-// 分组口径 / 总索引收录，以及页面脚本顺序这一类**功能接线**的口径。
-// ---------------------------------------------------------------------------
-
 console.log('');
 console.log(fails ? '❌ ' + fails + ' 项失败' : '🎉 tangshi测试全部通过');
 process.exit(fails ? 1 : 0);

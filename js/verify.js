@@ -8,16 +8,6 @@
   function hide(el) { if (el) el.hidden = true; }
   function text(el, s) { if (el) el.textContent = s == null ? "" : String(s); }
 
-  // 解一个 URL 参数：**永不抛**。
-  //
-  // `decodeURIComponent("...%zz")` 会抛 URIError，而这里是在**页面初始化**时
-  // 被调的 —— 一抛，整个脚本停在这一句，`/verify/`（`/reset/` 同理）就僵在
-  // 出厂那一屏：用户点开邮件链接、看到的却是一句「链接不完整」，
-  // 甚至什么都不显示。而真正的原因（邮件客户端把 token 里的 % 弄坏 /
-  // 手动截断了链接）一个字都没露。
-  //
-  // 口径与 `api/_lib/session.js` 的 `safeDecode` 同源：读不动就**按原样**
-  // 还回去，交给下游如实判「这不是一个完整的链接」。
   function safeDecodeParam(v) {
     var raw = String(v == null ? "" : v);
     try {
@@ -51,10 +41,6 @@
 
   function toLogin() { location.href = "/login/"; }
 
-  // 「下一步去哪」只有一处判据（Issue #278）。
-  // 确认成功 = 已经登录（服务端在同一个响应里签了会话），于是那颗按钮
-  // 不再是「去登录」而是「开始背诵」，落点是首页；没拿到会话时才回落
-  // 到登录页 —— 两种情形如实分开，不说做不到的话。
   var signedIn = false;
 
   function nextStep() {

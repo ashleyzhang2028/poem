@@ -114,16 +114,6 @@
     return "验证邮件暂时无法发送，请稍后重试。如问题持续，请联系管理员。";
   }
 
-  // 每一处挂载点：键是「屏」（js/login.js 的 mode），值那一路表单里的容器 id。
-  //
-  // ⚠️ `pw` 这一条是 Issue #278 第四轮加的（用户原话：「登录页面同样加上
-  //    cloudflare 的验证」）。它**改掉了原来那条口径**——
-  //    原先这里写的是「密码登录本来就不需要人机校验（服务端那一条路不校验）」，
-  //    现在服务端也挂了（api/_lib/core.js 的 loginWithPassword），
-  //    所以这一条不许再删：删了之后前端不画方框、服务端却要 token，
-  //    症状就是**谁也别想用口令登进来**（400 E_TURNSTILE）。
-  //    两处是**同一个开关的两半**：《js/turnstile.js》没配时前端不画、
-  //    服务端也 skipped，所以没接 Cloudflare 的实例两半都安静。
   var TS_SLOTS = {
     pw: "ts-pw",
     code: "ts-code",
@@ -133,41 +123,18 @@
     unverified: "ts-unverified"
   };
 
-  // 挂载点有两处（Issue #276）：
-  //   ① 页面打开时 preload 脚本（见下面的 preloadTurnstileScript）；
-  //   ② 每次切屏（切到哪一屏就把方框挂到哪一屏）＋ 拿到 /api/config 之后补挂一次。
-  // 都不是「用户点提交」那一刻 —— 用户 2026-09-21 报的正是「点完注册按钮，
-  // 验证框才开始弹出来、还慢慢转圈」。那一整段等待（拉脚本最多 8 秒 + 渲染
-  // widget + Cloudflare 判人机）必须提前到用户填表的时候跑完。
   function mountTurnstile(slotKey) {
     if (!TS || !TS.mount || !slotKey) return;
     var slotId = TS_SLOTS[slotKey];
     var el = slotId ? $(slotId) : null;
     if (!el) return;
     TS.mount(el, { siteKey: tsConfig.siteKey, enabled: tsConfig.enabled }).then(function (st) {
-      // ⚠️ 这个 `.then` 是**异步**的（脚本在路上、widget 要等 Cloudflare 判人机），
-      //    而用户在这几百毫秒里可能已经切到别的屏了。原来这里只判
-      //    `st.configured` 就 `show(el)` —— 于是切走的那一屏的方框被**重新显形**：
-      //    实测（Issue #278 第五轮，真浏览器点一遍）
-      //      密码登录 → 快捷登录 → 注册 → 忘记密码
-      //    走完四屏，页面上**四个 `ts-*` 槽位同时是可见的**（`hidden=false`），
-      //    只有一个是真的画在当前屏上的。用户会看到方框跟着自己跑，
-      //    或者提交时报「人机校验没通过」而他在当前屏上根本找不到那个方框。
-      //
-      //    判据是「这一屏还是当前那一屏吗」—— `state.mode` 就是那个答案
-      //    （挂 pw 的槽位时 4 个 mode 里有 3 个都会命中，所以必须比对值）。
-      //    切走的那一屏由 `setMode()` 的 `hide()` 收走即可。
+
       if (st && st.configured && state.mode === slotKey) show(el);
       turnstileBrokenNote(slotId);
     });
   }
 
-  // 页面一打开，只要本站配了人机校验，就先把 Cloudflare 的脚本拉起来。
-  // 这时还没拿到 siteKey（/api/config 与脚本是两条可以并行的请求），所以这里
-  // 只负责「加载」脚本，渲染留给拿到 siteKey 之后的 mount。
-  // 用户 2026-09-21 报的 Issue #276 就是这一段被推迟到了提交之后：脚本最多要
-  // 8 秒，加上渲染 widget 与 Cloudflare 判人机，用户看到的就是「点完按钮，
-  // 验证框才慢慢冒出来」。
   function preloadTurnstileScript() {
     if (!TS || !TS.preload) return;
     TS.preload();
@@ -177,11 +144,7 @@
     if (!TS || !TS.failed || !slotId) return;
     var note = $("ts-broken-" + slotId);
     if (!note) return;
-    // ⚠️ 同样要判「还是当前那一屏」（理由与上面 `show(el)` 那一段同源）：
-    //    否则用户在注册屏上会看到密码登录那一屏的红字 —— 与 Issue #276
-    //    那条「切屏时把上一屏的失败提示收掉」是同一件事的两半。
-    //    调用方 `turnstileBlocked()` 已经在当前屏上，所以那里传进来的
-    //    slotId 一定就是当前那一屏，这一条不会误伤它。
+
     if (note.hidden && TS_SLOTS[state.mode] !== slotId) return;
     if (!TS.failed()) { hide(note); text(note, ""); return; }
     text(note, (TS.why ? TS.why() + " " : "") +
@@ -209,10 +172,6 @@
     if (TS && TS.reset) { try { TS.reset(); } catch (e) {  } }
   }
 
-  // 当前那一枚令牌（没配人机校验时恒为空串 —— 服务端那时也 skipped，两边对称）。
-  // ⚠️ 走到提交这一刻才取，不在页面打开时取一次存着：widget 的
-  //    `expired-callback` 会把令牌清掉（js/turnstile.js），存着的那一份
-  //    就成了一个早就过期的值，而服务端只会回一句「人机校验没通过」。
   function turnstileToken() {
     if (!TS || !TS.token) return "";
     try { return TS.token() || ""; } catch (e) { return ""; }
@@ -230,10 +189,6 @@
     hide($("auth-tabs"));
     if (mode === "pw" || mode === "code") show($("auth-tabs"));
 
-    // 「一屏」= 一个 pane（或 done / unverified 那两个 account-step）。
-    // ⚠️ `pw` / `code` 这两屏**各自还有两个内层 step**（快捷登录的
-    //    「填邮箱」与「填码」），所以切屏时要连内层一起复位 —— 否则用户从
-    //    注册屏回到快捷登录屏，看到的还是上一次「已发码」那一屏。
     var panes = { pw: $("pane-pw"), code: $("pane-code"), register: $("pane-register"),
       verify: $("pane-verify"), forgot: $("pane-forgot") };
     Object.keys(panes).forEach(function (k) {
@@ -242,16 +197,6 @@
       if (k === mode) show(el); else hide(el);
     });
 
-    // ⚠️ 人机校验的槽位**不跟着 pane 走**：`ts-pw` 住在 `pane-pw` 里、
-    //    `ts-reg` 住在 `pane-register` 里，而 pane 被 `hide()` 收走时
-    //    槽位自己那一份 `hidden` 还留着 —— 于是「切走再切回来」或者
-    //    「同一个槽位被 show() 过之后又切走」都会让它**在隐藏的 pane 里
-    //    保持可见态**（实测：切到快捷登录后 `#ts-pw` 的 `hidden` 仍是 false）。
-    //    它对外看不见（父级 hidden），但它会被 `mountTurnstile` 的返回值
-    //    继续当成「已安装」，而用户切回来时看到的是上一次那份旧 widget。
-    //
-    //    所以：不在当前这一屏的槽位，一律先收掉；当前这一屏的槽位由
-    //    `mountTurnstile` 在 widget 真的画出来之后再显形。
     Object.keys(TS_SLOTS).forEach(function (k) {
       var slot = $(TS_SLOTS[k]);
       if (slot && k !== mode) hide(slot);
@@ -261,13 +206,6 @@
     if (mode === "unverified") show($("step-unverified")); else hide($("step-unverified"));
     if (mode === "code") { show($("step-email")); hide($("step-code")); }
 
-    // 有 TS_SLOTS 的 mode 一共就这几个；切屏时把上一屏的失败提示收掉，
-    // 免得「注册」那一屏的红字留在「登录」屏上。
-    //
-    // 顺带把方框挂到这一屏 —— 用户切过来的这一下就开始画了，不用等他点提交
-    // （Issue #276）。TS_SLOTS 里没有的 mode（完成屏 / 未确认屏）会原样返回。
-    // ⚠️ 密码登录那一屏**现在也在 TS_SLOTS 里**（Issue #278 第四轮）：
-    //    服务端那条路挂上了人机校验，前端就得画出方框来。
     turnstileHideNotes();
     if (TS && mode !== "done") mountTurnstile(mode);
 
@@ -452,12 +390,7 @@
         text($("verify-lead"), "账号已创建。验证邮件暂时无法发送，请稍后重试。");
         note("verify-fail-note", "完成邮箱验证后才能登录。如问题持续，请联系管理员。", "warn");
       }
-      // 分流只有一处判据：服务端回的 `requiresVerification`。
-      //   · 要验证（默认）：停在「去收件箱点链接」那一屏，那一屏本身就是
-      //     完整的下一步（点开链接即登录，见 js/verify.js）；
-      //   · 不必验证（运维把闸关了）：账号这一刻就能用，直接进门 ——
-      //     原先无论哪一档都停在「请点邮件链接」，对着一个关掉闸的服务器
-      //     说一句做不到的话。
+
       if (!gated) {
         showToast(r.created ? "账号已建好，已登录" : "账号信息已更新");
         onSignedIn({
@@ -494,15 +427,11 @@
     }
     if (!pw) { msg("msg-pw", ch.messageOf("E_PW_EMPTY") || "请先填密码", "warn"); return; }
 
-    // 人机校验：与发码 / 注册 / 忘记密码那几处同一道闸、同一句提示（Issue #278）。
-    // ⚠️ 它必须落在**本地那几条校验之后**：先告诉他「两次密码不一样」这种
-    //    自己就能改的事，再让他去过人机校验 —— 反过来会让人先勾方框、
-    //    送出去，再被一句「密码至少 8 位」退回来重勾一次。
     if (turnstileBlocked("msg-pw")) return;
 
     msg("msg-pw", "");
     return ch.login({ email: email, password: pw, turnstileToken: turnstileToken() }).then(function (r) {
-      // 令牌一次性：无论成没成都作废（成功那条已经用掉了，失败那条更要换一枚）。
+
       turnstileReset();
       if ($("input-pw")) $("input-pw").value = "";
       if (!r.ok) {
@@ -574,18 +503,6 @@
     return Promise.resolve(sendCodeLocal("login", email, msgId));
   }
 
-  // 「服务端现在做不了这一件事」——**一条判据，两处用**（Issue #276）。
-  //
-  // 这一档包括：没配服务端（E_NOT_CONFIGURED）、网络不通（E_OFFLINE / E_TIMEOUT）、
-  // 以及**上游读不动**（E_DB_UNREACHABLE / E_DB_MISSING_TABLE / E_DB_BAD_KEY，
-  // 数据库项目被暂停 / 表没建 / 密钥不对）。它们的共同点是：
-  //   · 服务端没做错事，用户也没做错事；
-  //   · 「等一会儿再点一次」对前三档可能有用、对后三档没用 ——
-  //     但**不管哪一档，本站都还有一条能走通的路**（本机体验版）。
-  //
-  // 原先这里只列了前三档，于是数据库被暂停时，用户拿到一句
-  // 「暂时用不了」就**到此为止**了 —— 连「随机码登录」那条本机路都不给。
-  // 这与产品那条不可退让的边界（不注册也能用全部功能）正好相反。
   var SOFT_CODES = ["E_NOT_CONFIGURED", "E_OFFLINE", "E_TIMEOUT",
     "E_DB_UNREACHABLE", "E_DB_MISSING_TABLE", "E_DB_BAD_KEY"];
 
@@ -598,10 +515,7 @@
       turnstileReset();
       if (!r.ok) {
         if (serverCannot(r.code)) {
-          // ⚠️ 顺序要紧：**先把服务端那句原话摆出来**（它知道是哪一档、
-          //    也知道该找谁），再退回本机那条路 —— 倒过来的话这句会被
-          //    `sendCodeLocal` 自己那句「随机码已生成」顶掉，用户就再也
-          //    看不到「数据库被暂停了」这个事实（Issue #276 的原现场）。
+
           msg(msgId, r.message, "warn");
           showToast("云端暂时用不了，已改用本机随机码");
           return sendCodeLocal("login", email, msgId);
@@ -727,9 +641,7 @@
           return;
         }
         if (serverCannot(r.code)) {
-          // 服务端读不动时**不能说一句就完**：用户手里这枚码是本机生成的，
-          // 得让他改走本机那条路（下面这一句就是那个出口），而不是对着
-          // 一个永远验不过的码一直点。
+
           msg("msg-code", r.message + " 可以改用「本机随机码」：点「换个邮箱」重发一次，会在本机生成。", "warn");
           state.cooldown = 0;
           startTick(codeBoxes);
@@ -780,10 +692,6 @@
     }
   }
 
-  // 从别的页面被送过来登录的（例如未登录时点「打印清单」），
-  // 登录完要回得去它原来站着的那一页（?next=/settings/lists/）。
-  // 只认本站的站内路径：一个 / 开头、第二个字符不是 /、也不带 '\'，
-  // 防着把 /login/?next=https://别处 当成开放跳板。
   function nextUrl() {
     var raw = "";
     try {
@@ -797,15 +705,6 @@
     return raw;
   }
 
-  // 昵称是**账号域**的东西（Issue #278）：原先只写本机 localStorage，
-  // 服务器上那一列永远是空的 —— 换台设备名字就没了，管理端名录也认不出人。
-  //
-  // 现在的顺序是「本机先写、服务器后跟」：本机那一份是头像 / 顶栏
-  // 立刻要用的那一份，不能等一次网络往返；服务器那一份失败也**不拦人**
-  // （名字没同步上比进不去轻得多），只是如实说一句。
-  //
-  // 落点是**这一屏的那一句提示**，不是 toast —— toast 两秒就没了，
-  // 而用户需要知道的是「这个名字到底存下来没有」。
   function saveNicknameAndGo() {
     var v = ($("input-nickname") || {}).value || "";
     var clean = String(v).trim().slice(0, 12);
@@ -819,7 +718,6 @@
       location.href = nextUrl() || "/mine/";
     }
 
-    // 没起名就别发请求（空串会把服务器上已有的名字抹掉）。
     if (!clean || !api || isLocal()) { leave("", ""); return; }
 
     var Acct = window.AccountApi;

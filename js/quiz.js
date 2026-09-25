@@ -42,11 +42,6 @@
     return bits.filter(Boolean).join(" · ");
   }
 
-  // 同一篇的正文重复切分是这一层最贵的一步：`lines()` / `candidates()` /
-  // `flyFlower()` 一行一行地把同一批篇目扫一遍，而每一篇的正文本就在手边。
-  // 切分结果只由**正文**决定（与篇名 / 作者无关），所以按正文缓存一次就够：
-  // 出题内核是「同样输入同样输出」的纯函数，这一层缓存不改变任何结果，
-  // 只是不再把同一句话切两遍。
   var SPLIT_CACHE = {};
 
   function splitCached(text) {
@@ -55,7 +50,7 @@
     if (hit) return hit;
 
     hit = splitLines(key);
-    // 语料是有限的（全站也就两千来篇），不必考虑淘汰
+
     SPLIT_CACHE[key] = hit;
     return hit;
   }
@@ -73,9 +68,6 @@
     return src.length + ":" + s;
   }
 
-  // `lines()` 是这一层被叫得最多的一个函数（candidates 扫一遍、每一句令字
-  // 又扫一遍），而它的结果**只由传进来的那批篇目决定**。出题内核是纯函数，
-  // 缓存不改变任何结果，只是不再把同一批语料切十遍。
   function lines(poems) {
     var fp = linesFingerprint(poems);
     for (var c = 0; c < LINES_CACHE.length; c++) {
@@ -83,7 +75,7 @@
     }
     var rows = buildLines(poems);
     LINES_CACHE.push({ fp: fp, rows: rows });
-    // 语料是有限的，留两三批就够（正常调用方就那么几批：课内 / 课外 / 两批合起来）
+
     if (LINES_CACHE.length > 4) LINES_CACHE.shift();
     return rows;
   }

@@ -1,16 +1,6 @@
 (function () {
   "use strict";
 
-  // 「加入今日背诵」这一套控件的**唯一一份**实现。
-  //
-  // 三处地方要用它，而三处的部件不一样：
-  //   ① 今日背诵页顶上的搜索下拉 —— 左边一颗「＋」，右边一行「朝代 · 作者 · 集子」；
-  //   ② 集子页 / 搜索页的结果列表 —— 每一行左侧一颗圆形按钮；
-  //   ③ 集子页 / 搜索页的详情页 —— 译文按钮与「加入背诵」之间那颗圆形按钮。
-  //
-  // 三处的**图形、文案、开关态、点击效果**必须一字不差（用户看到的是一件事），
-  // 所以它们都从这里出去；各页面只管「放在哪、什么时候调 sync()」。
-
   var SUGGEST_MAX = 8;
 
   function esc(s) {
@@ -41,8 +31,6 @@
     try { return D.remove(p); } catch (e) { return false; }
   }
 
-  // 「＋」那一枚：加进去之后变成实心 + 打勾（与「收藏」按钮同一套开关语言，
-  // 用户不用再学第二遍）。
   function glyph() {
     return '<svg class="de-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
       'stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">' +
@@ -55,7 +43,7 @@
   var STATE_WORDS = {
     add: "加入今日背诵",
     in: "已加入今日背诵",
-    // 这一颗点下去的**取消**语义要说清：加背那几篇删掉之后，今天的计划里就没了。
+
     remove: "移出今日背诵"
   };
 
@@ -66,7 +54,6 @@
     return st === "in" ? STATE_WORDS.in : STATE_WORDS.add;
   }
 
-  // 列表行里那一颗（圆形、左侧、与「播放」同一尺寸）。
   function itemBtn(p, opts) {
     var o = opts || {};
     var on = has(p);
@@ -80,7 +67,6 @@
       ' aria-pressed="' + (on ? "true" : "false") + '">' + glyph() + "</button>";
   }
 
-  // 详情页那一颗（与朗读 / 译文按钮同一个 .mini-btn 尺寸）。
   function detailBtn(p) {
     var on = has(p);
     var label = on ? STATE_WORDS.in : STATE_WORDS.add;
@@ -97,7 +83,7 @@
     btn.dataset.on = on ? "1" : "0";
     btn.setAttribute("aria-pressed", on ? "true" : "false");
     var label = on ? STATE_WORDS.in : STATE_WORDS.add;
-    // 详情页那一颗：点下去会**移出**，所以标题写移出；列表那一颗同理。
+
     btn.title = on ? STATE_WORDS.remove : label;
     if (btn.hasAttribute && btn.hasAttribute("aria-label")) {
       btn.setAttribute("aria-label", (p.title || "") + "：" + (on ? STATE_WORDS.remove : label));
@@ -106,8 +92,6 @@
     if (text) text.textContent = label;
   }
 
-  // 按 id 现查一篇：列表里那些按钮只存了 id，页面各自的 itemsById 不一定
-  // 覆盖得到（搜索结果来自全站索引，集子页来自自己那部）。这里一个出口。
   function lookup(id) {
     if (!id) return null;
     var list = window.SITE_INDEX || [];
@@ -127,7 +111,6 @@
     return null;
   }
 
-  // 点一下 = 加 / 移出，并给一句人话。返回 {ok, on}。
   function toggle(p) {
     if (!p || !p.id) return { ok: false, on: false };
     if (has(p)) {
@@ -145,8 +128,6 @@
     return { ok: true, on: true, message: "已加入今日背诵：今天要背的就多这一首" };
   }
 
-  // ---- 搜索下拉（今日背诵页顶栏那一处）-------------------------------------
-
   function matchScore(p, q) {
     var title = String(p.title || "").toLowerCase();
     var author = String(p.author || "").toLowerCase();
@@ -163,7 +144,7 @@
   function allItems() {
     var list = (window.SITE_INDEX || []).filter(function (p) { return !p.isBook; });
     if (!window.WorksIndex) return list;
-    // 同一篇作品只留一条（课内《静夜思》与唐诗《夜思》不要出现两遍）
+
     var out = [];
     var slotOf = {};
     list.forEach(function (p) {
@@ -201,7 +182,6 @@
     return left + (left ? " · " : "") + "<em>" + esc(p.bookName) + "</em>";
   }
 
-  // 下拉挂在哪个输入框上，由页面传入（今日背诵页只有这一个）。
   function bindSuggest(opt) {
     var o = opt || {};
     var input = typeof o.input === "string" ? document.querySelector(o.input) : o.input;
@@ -267,13 +247,13 @@
         : toggle(p);
       if (typeof o.onToast === "function" && r.message) o.onToast(r.message);
       if (r.ok !== false && typeof o.onChange === "function") o.onChange(p, !!r.on);
-      // 加完**不收起下拉**：小朋友常常一次加两三首（收起就等于每次都要重新打字）。
+
       refreshStates();
       paint(input.value);
     }
 
     function refreshStates() {
-      // 外部（别的按钮 / 另一台页签）改了以后，下拉里的开关态跟着走。
+
       if (box.hidden) return;
       Array.prototype.forEach.call(box.querySelectorAll("[data-daily-suggest]"), function (btn) {
         var i = Number(btn.getAttribute("data-daily-suggest"));
@@ -315,7 +295,7 @@
     });
 
     box.addEventListener("mousedown", function (e) {
-      // 下拉里的点击**不能**让输入框失焦（一失焦就收起，点击落空）
+
       e.preventDefault();
     });
     box.addEventListener("click", function (e) {

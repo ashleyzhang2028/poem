@@ -1,4 +1,4 @@
-// Issue #278：页面层（jsdom 真跑 /progress/ 与首页）已删除，只留 Scheduler 数据层。
+
 const fs = require('fs');
 const vm = require('vm');
 const path = __dirname + '/../';
@@ -165,12 +165,6 @@ chk(order.indexOf('data/index.js') < order.indexOf('js/scheduler.js'),
   '脚本顺序：data/index.js 先于 scheduler（排程要读 POEMS_ALL）');
 chk(order.indexOf('js/scheduler.js') < order.indexOf('js/progress.js'),
   '脚本顺序：scheduler 先于 progress（页面要用 overview）');
-
-// ---------------------------------------------------------------------------
-// Issue #278：这一层的**页面层**（jsdom 起 /progress/ 与首页、按真页面量日历 /
-// 掌握度分布 / 旧快照刷新）整段删除 —— 那是界面测试。留下的是 Scheduler 的
-// 数据层：overview() / dueList() / 日历分档，以及页面脚本顺序的口径。
-// ---------------------------------------------------------------------------
 
 console.log('');
 console.log(fails ? '❌ ' + fails + ' 项失败' : '🎉 背诵进度总览（数据层）测试全部通过');

@@ -44,17 +44,6 @@ function boot(envVars) {
   return { restore: () => { keys.forEach(k => { if (saved[k] === undefined) delete process.env[k]; else process.env[k] = saved[k]; }); } };
 }
 
-// ---------------------------------------------------------------------------
-// Issue #278：把 scrypt 的成本压到测试该有的量级。
-//
-// 这一层里注册 / 登录 / 重设密码要走几十趟，每一趟都调一次 scryptSync ——
-// 生产参数 N=16384 一趟约 30~60ms，加起来就是**十几秒**的纯白等。
-// 这里把 N 降到 1024（同一份代码、同一条判据、同一串摘要格式），
-// 把「防爆破的成本」还给线上，把「逻辑对不对」留给测试。
-//
-// 只削 N，不动 r / p / len：摘要串的形状（scrypt$N$r$p$salt$hash）与
-// 「参数不同的老摘要仍然认」那两条断言都照旧成立。
-// ---------------------------------------------------------------------------
 const SCRYPT_N = Number(process.env.TEST_SCRYPT_N || 1024);
 const realScryptSync = require("crypto").scryptSync;
 let scryptPatched = false;
@@ -65,7 +54,7 @@ function cheapScrypt() {
   require("crypto").scryptSync = function (password, salt, keylen, options) {
     const o = Object.assign({}, options || {});
     if (o.N && o.N > SCRYPT_N) o.N = SCRYPT_N;
-    // maxmem 要跟着 N 收（scrypt 自己会按 N 要内存）
+
     if (o.maxmem && o.maxmem > 8 * 1024 * 1024) o.maxmem = 8 * 1024 * 1024;
     return realScryptSync(password, salt, keylen, o);
   };
@@ -231,7 +220,6 @@ async function main() {
     }
   }
 
-
   {
     boot({});
     const id = require("../api/_lib/identity.js");
@@ -307,12 +295,6 @@ async function main() {
     eq(S.fromCookieHeader("a=1", "kbsid"), null, "没有那一枚时返回 null");
     eq(S.fromCookieHeader("", "kbsid"), null, "空头返回 null");
 
-    // 解不动的百分号编码：**不许抛**（Issue #276 后续，线上实测的那条）。
-    //
-    // `decodeURIComponent("abc%zz")` 抛 URIError，而 fromCookieHeader 是在
-    // 路由之前被调的 —— 一抛，handler.make 的 catch 把**任何**请求都回成
-    // 500 E_INTERNAL，前端翻成「服务暂时不可用，请稍后重试。」。
-    // 线上真这么炸过：Cookie 里存着一枚解不动的 Cookie，整站接口全哑。
     ["abc%zz", "%", "%E4", "%GG", "a%2"].forEach(bad => {
       let out = null, threw = null;
       try { out = S.fromCookieHeader("kbsid=" + bad, "kbsid"); } catch (e) { threw = e; }
@@ -327,12 +309,6 @@ async function main() {
     chk(!/nickname|email|plan|tier/.test(JSON.stringify(payload)), "会话里不固化权益与身份资料");
   }
 
-  // 「服务暂时不可用，请稍后重试。」端到端那一条（Issue #276 后续）。
-  //
-  // 用户 2026-09-25 报：登录一直显示这句话。追下去是**一枚解不动的 Cookie**
-  // 把整套 /api/* 打成了 500 —— 与「服务端内部出错」是两件事，
-  // 但前端只会翻出那一句，用户完全看不到线索。
-  // 这一节在**真 HTTP** 上把那条路复现出来，并守住「修好之后它不再是 500」。
   {
     boot({});
     const sv = await serve();
@@ -358,7 +334,6 @@ async function main() {
         eq(me.status, 401, "坏 Cookie 按「没有会话」处理，如实回 401（不是 500）");
       }
 
-      // 正面：同一颗 Cookie 位置换成一枚**正常编码**的值，行为一字不变
       const ok = await call(sv.base, "GET", "/api/me", undefined,
         "kbsid=" + encodeURIComponent("whatever.token"));
       eq(ok.status, 401, "正常编码但签名不对的 Cookie 仍走 401（与坏编码同一条出口）");
@@ -618,10 +593,6 @@ async function main() {
     eq(mine.body.plan.tier, "free", "free 账号回 free");
     chk(mine.body.features.indexOf("read.aloud") >= 0, "free 有 read.aloud（与 js/entitlement.js 同一个键名）");
 
-    // Issue #229 第二轮：export.progress 与内核同步改成「登录可用」。
-    // 这里拿到 features 的**前提就是有会话**（上面刚确认过邮箱），
-    // 所以它仍然在 free 的清单里 —— 与 js/entitlement.js 的
-    // minTier: free + login: true 同一档。
     chk(mine.body.features.indexOf("export.progress") >= 0,
       "登录后的 free 有 export.progress（层级仍是 free，只是未登录不放行）");
     eq(core.featuresFor(cfg, "free").indexOf("export.progress") >= 0, true,
@@ -755,9 +726,6 @@ async function main() {
     eq(many.status, 413, "一次超过 2000 条被拒");
   }
 
-  // 「今日加背」那一行（Issue #243 后续）：它上云，走的就是 progress 这张表。
-  // 服务端**不判今天是哪一天** —— 那是客户端的事（服务端不知道对方在哪个时区），
-  // 它只负责：行号认得出来、载荷按自己的白名单洗、长度封顶。
   {
     boot({});
     const core = require("../api/_lib/core.js");
@@ -776,7 +744,7 @@ async function main() {
     await confirmEmail(store, acc.uid, cfg.sessionSecret);
     const v = await core.verifyCode(d, { codeId: r.body.codeId, code: "888888" });
     const uid = v.body.account.uid;
-    // 同步要 Pro 起（§4.2 的层级），与其他同步层测试同一条规矩
+
     const accRow = store.getAccount(uid);
     accRow.plan = "pro";
     store.putAccount(accRow);
@@ -798,7 +766,6 @@ async function main() {
       }
     };
 
-    // 服务端**不**判今天是哪一天（不知道对方时区）
     eq(core.sanitizeDailyExtra({ date: "2000-1-1", items: [] }).date, "2000-1-1",
       "date 原样透传（「今天」是客户端判的）");
 
@@ -1149,9 +1116,6 @@ async function main() {
     chk(/add column if not exists email_verified_at/.test(sql),
       "schema.sql 里有邮箱确认时刻列（确认与否的唯一凭据）");
 
-    // 顶部那段「三条口径」是给人看的导读，最容易在迁移之后忘了改 ——
-    // 它若还写着「不存明文邮箱」，读者会以为库里没有 email 列，
-    // 而实际第 6 节 ① 就把它加上了（#197）。口径必须与实现同一句。
     chk(!/不存明文邮箱/.test(sql),
       "schema.sql 顶部不再说「不存明文邮箱」（#197 已推翻，库里就是存明文的）");
     chk(/邮箱明文是落库的/.test(sql),
@@ -1454,10 +1418,7 @@ async function main() {
     {
 
       const E = require("../js/entitlement.js");
-      // ⚠️ 对拍的是**「这个角色名算不算管理员」这一件事**，取 `E.isAdminRole()`
-      //    这个纯函数（Issue #276 后续）。原先拿 `E.isOwner(null, {role})` 对拍，
-      //    而 `isOwner` 现在还要核对「这份答案是不是当前登录那位的」——
-      //    它答的是另一个问题（放不放行），不是「角色名认不认」。
+
       ["owner", "admin", "user"].forEach(r => {
         const srv = core.isAdminRole(r);
         const cli = E.isAdminRole(r);
@@ -1722,12 +1683,6 @@ async function main() {
     } finally { await sv3.close(); }
   }
 
-  // ⚠️ Issue #278：这一节每多跑一次 scryptSync（N=16384）就要几十毫秒 ——
-  //    单是「同盐同口令得到同一个摘要」那几条就把这一层拖长了十几秒。
-  //    scrypt 的**成本**由它自己的参数决定，与测试想验的东西无关：
-  //    这里要验的是「加盐 / 参数写进摘要串 / 脏摘要不抛 / 命名空间分家」这些
-  //    **格式与判据**，所以显式传一组小参数（与生产同一份代码、同一份判据，
-  //    只是把 N 调小）。生产默认值仍由下面那一条单独钉住。
   const FAST_PW = { N: 1024, r: 8, p: 1, len: 32 };
 
   {
@@ -2701,22 +2656,12 @@ async function main() {
 
   console.log("\n=== 第廿六节、管理员角色（Issue #276）：数据库是唯一权威 ===");
   {
-    // 用户原话：「管理员页面只允许 belem@163.com 登录的邮箱访问（目前），
-    // 未登录用户以及其他登录账户一律不允许访问。或者告诉我怎么在数据库
-    // 设置管理员权限。……free, pro, max 登录用户的角色怎么设置，是要在
-    // admin 页面加一个已登录用户列表，然后 belem@163.com 可以更改他们的 role 吗？」
-    //
-    // 这一节守三件事：
-    //   ① `OWNER_EMAILS` 里的邮箱在**登录链路**里被认成 owner（写进 accounts.role）；
-    //   ② 不在名单里的人**一个角色都不许有**（尤其不能是 owner）；
-    //   ③ `/api/admin/role` 只有 owner 调得动，目标值只认 user / admin，
-    //      改不了自己、也改不了种子主人。
+
     boot({ ALLOW_CODE_ECHO: "1", OWNER_EMAILS: "boss@example.com" });
     const sv = await serve();
     try {
       const POST = (p, b, cookie) => call(sv.base, "POST", p, b, cookie);
 
-      // ① 名额在外的那一位：注册 → 确认 → 登录 → 已经是 owner
       const boss = await loginByHttpDetailed(POST, "boss@example.com");
       eq(boss.register.body.created, true, "（前置）boss 注册建号成功");
       const cBoss = boss.cookie;
@@ -2727,19 +2672,16 @@ async function main() {
       eq(rows().filter(a => a.email === "boss@example.com")[0].role, "owner",
         "① 登录链路把 OWNER_EMAILS 里的人认成了 owner（写进数据库那一列）");
 
-      // ② 不在名单里的人
       const kid = await loginByHttpDetailed(POST, "kid@example.com");
       const cKid = kid.cookie;
       eq(rows().filter(a => a.email === "kid@example.com")[0].role, "user",
         "② 不在名单里的人是 user（没有「谁先注册谁是主人」这条兜底）");
 
-      // /api/me 如实下发角色
       const meKid = await call(sv.base, "GET", "/api/me", undefined, cKid);
       eq(meKid.body.role, "user", "/api/me 如实下发 role:user");
       const meBoss = await call(sv.base, "GET", "/api/me", undefined, cBoss);
       eq(meBoss.body.role, "owner", "/api/me 如实下发 role:owner");
 
-      // ③ 改角色
       const kidUid = rows().filter(a => a.email === "kid@example.com")[0].uid;
       const bossUid = rows().filter(a => a.email === "boss@example.com")[0].uid;
 
@@ -2764,7 +2706,6 @@ async function main() {
       eq(rows().filter(a => a.email === "kid@example.com")[0].role, "admin",
         "**真的写进了数据库那一列**（不是只在响应里说说）");
 
-      // 提成 admin 之后：能进名录，但**不能授权**（这正是 owner 与 admin 的分界）
       const kidList = await POST("/api/admin/accounts", {}, cKid);
       eq(kidList.status, 200, "admin 能看账号名录");
       const kidTryRole = await POST("/api/admin/role", { uid: kidUid, role: "user" }, cKid);
@@ -2781,7 +2722,7 @@ async function main() {
 
       const bossLocked = await POST("/api/admin/role", { uid: bossUid, role: "user" }, cBoss);
       eq(bossLocked.body.code, "E_SELF", "（前置）主人那一行由 E_SELF 挡住，走不到 E_OWNER_LOCKED");
-      // 换一个 owner 来试「改种子主人」：先给 kid 一个 owner 身份（模拟手改库 / 加进名单）
+
       rows().filter(a => a.email === "kid@example.com")[0].role = "owner";
       const tryMoveBoss = await POST("/api/admin/role", { uid: bossUid, role: "user" }, cKid);
       eq(tryMoveBoss.status, 400, "另一个 owner 也改不了**种子主人**那一行");
@@ -2799,7 +2740,6 @@ async function main() {
       eq(g.status, 405, "GET /api/admin/role 回 405（写接口不接受 GET）");
     } finally { await sv.close(); }
 
-    // 不配 OWNER_EMAILS：**一个 owner 都没有**（不退回「谁打开谁是主人」）
     boot({ ALLOW_CODE_ECHO: "1" });
     const sv2 = await serve();
     try {
@@ -2813,7 +2753,6 @@ async function main() {
       eq(l.status, 403, "于是 /admin/ 那一族全都 403（关门，不是漏开）");
     } finally { await sv2.close(); }
 
-    // 名单里大小写 / 空格不影响认人
     boot({ ALLOW_CODE_ECHO: "1", OWNER_EMAILS: "  Boss@Example.com , other@x.com " });
     const sv3 = await serve();
     try {
@@ -2828,15 +2767,7 @@ async function main() {
 
   console.log("\n=== 第廿七节、注册即登录（Issue #278）：点开确认链接就进门 ===");
   {
-    // 用户原话：「用邮箱注册成功，点击验证链接成功，设置昵称完成，但很多功能
-    // 一点就说需要登录？」「让你完成登录功能就应该全部完善，怎么还每一步
-    // 每一步地催？全部完成完善！！！」
-    //
-    // 查下来的病根是**两处**：
-    //   ① 点完确认链接**不签发会话** —— 这一节守的就是它：能点开那枚
-    //      一次性令牌，就证明邮箱可达，那一步之后该是「已经登录」；
-    //   ② 昵称只写本机 localStorage，服务器上那一列永远是空的 ——
-    //      换台设备名字就没了，管理端名录也认不出人。
+
     boot({ ALLOW_CODE_ECHO: "1" });
     const sv = await serve();
     const sessionStore278 = require("../api/_lib/store.js").getStore(require("../api/_lib/config.js"));
@@ -2851,7 +2782,6 @@ async function main() {
       const POST = (p, b, cookie) => call(sv.base, "POST", p, b, cookie);
       const PATCH = (p, b, cookie) => call(sv.base, "PATCH", p, b, cookie);
 
-      // ① 注册 → 确认 → **就有会话了**（整条动线一次做齐）
       const core = require("../api/_lib/core.js");
       const mailMod = core.__mail;
       const captured = [];
@@ -2884,8 +2814,7 @@ async function main() {
       eq(me278.status, 200, "③ 拿那一枚 Cookie 读 /api/me：200（**这一步以前是 401，正是用户说的那个 bug**）");
       eq(me278.body.email, "flow278@example.com", "③ 读到的就是本人");
       eq(me278.body.emailVerified, true, "③ 邮箱状态如实为已确认");
-      // publicAccount 刻意**不下发 status**（那是内部状态机，界面用不着它；
-      // 要看的「进没进来」是 emailVerified 那一位）。账号那一列直接读库。
+
       {
         const sAcc = require("../api/_lib/store.js").getStore(require("../api/_lib/config.js"));
         const aRow = Object.keys(sAcc._db.accounts).map(k => sAcc._db.accounts[k])
@@ -2893,13 +2822,11 @@ async function main() {
         eq(aRow.status, "active", "③ 库里那一行是 active（pending 已被确认那一步提上来）");
       }
 
-      // ④ 重放：同一枚令牌不能第二次换会话
       const again = await POST("/api/verify-email", { vid: vid, token: tok });
       eq(again.status, 400, "④ 同一条链接再点一次 → 400");
       eq(again.body.code, "E_TOKEN_USED", "④ 码是 E_TOKEN_USED（一次性令牌不因为「顺手签了个会话」而变成可重放）");
       chk(!again.setCookie, "④ 被拒的那一次**一枚 Cookie 都不发**");
 
-      // ⑤ 昵称：落服务器，且换一台设备读得到
       const set = await PATCH("/api/me", { nickname: "  小明  " }, cookie278);
       eq(set.status, 200, "⑤ PATCH /api/me 改昵称：200");
       eq(set.body.nickname, "小明", "⑤ 前后空格被剔掉，如实回存下来的那个值");
@@ -2918,26 +2845,10 @@ async function main() {
       const meC = await call(sv.base, "GET", "/api/me", undefined, ck278);
       eq(meC.body.nickname, "小明", "⑤ **换一个会话（= 换一台设备）登录，名字还在**（这正是「账号域」的含义）");
 
-      // ⑤ 验证码登录（Issue #278 那件事的现场）
-      //
-      // 原先这一条只是「快速登录能发码 + 验码能换到会话」。
-      // feca3f4f 之后它多守一件事：**验码接口不再自己抄一段落库**。
-      // 那个洞是这么出的 —— 内核 `issueSessionFor` 落了一行，接口层又落一遍
-      // 同一枚 sid，真 Supabase 上 `sessions_pkey` 冲突，`/api/verify-code`
-      // 直接 500（就是用户说的「登录又失败」）。内存库下它是静默覆盖
-      // （`db.sessions[sid] = s`），所以**本地绿不等于线上绿** ——
-      // 本节上面那个「重复 sid 就 reject」的桩，才是把双写钉住的东西。
-      //
-      // 为什么要**指定出口 IP**：验码口按 `ip` 记账（`core.verifyCode` 的
-      // `ip|verify:`），而 `clientIp()` 取 `x-forwarded-for` 第一段 ——
-      // 节点 http 默认没有这个头，全都算 "unknown"；前几节打过的码也记在
-      // 那个名下，**不指定 IP 就会先撞上 429**，那样这一条守的就不是
-      // 「双写」这件事了（假红比漏测更坏）。
       const CODE_IP = "203.0.113.7";
       const vcMsg = (tail) => "⑤ " + tail + "｜" + CODE_IP;
       const vcIp278 = ip => ({ "x-forwarded-for": ip });
 
-      // 量「内核写了几次」要用的三样（下面几条都靠它）
       const cfg278 = require("../api/_lib/config.js");
       const storeMod278 = require("../api/_lib/store.js").getStore(cfg278);
       const core278 = require("../api/_lib/core.js");
@@ -2946,7 +2857,6 @@ async function main() {
         { email: "flow278@example.com" }, undefined, vcIp278(CODE_IP));
       eq(code278.status, 202, vcMsg("快捷登录能发送验证码"));
 
-      // 同一个「设备」（不带会话 = 同一台机器）连着用两次
       const vcOnce = async (codeId, code, cookie) => call(sv.base, "POST", "/api/verify-code",
         { codeId: codeId, code: code }, cookie, vcIp278(CODE_IP));
 
@@ -2957,18 +2867,6 @@ async function main() {
       chk(/^kbsid=/.test(String(codeLogin278.setCookie || "")), vcMsg("这一发真的带上了 Set-Cookie（不是只回一句 200）"));
       chk(!!(codeLogin278.body.account && codeLogin278.body.account.uid), vcMsg("账号信息一条不少"));
 
-      // ⑤′ 「会话只有一个出口」这件事**可以量**（Issue #278 的落点）
-      //
-      // 上面那个桩只让「真 HTTP」第一发红。这里把约束本身变成能直接调、
-      // 能直接量的东西 —— 不再只靠 `core.js` 里那几句正则：
-      //   ① 内核签一次会话：`store.putSession` **只被调一次**（多调一次就是双写）；
-      //   ② 签出来的那一枚 token 解得回同一笔会话（Cookie 与库里那一行是同一件东西）。
-      //
-      // ③「同一枚 sid 落第二行当场失败」这一条守不了「双写」：
-      //    sid 是随机的（`identity.newSid`），两条路各签一枚 token 就会
-      //    各拿一枚 sid，落库**不撞**，只有用例自己构造同址才撞——
-      //    拿它当判据等于自欺。所以这里只量「内核写了几次」，
-      //    双写那条路由**真 HTTP** 那一发去抓（见上面 `sessionWrites278`）。
       {
         const t278 = Date.now();
         const writes278 = [];
@@ -2996,17 +2894,7 @@ async function main() {
       eq(long.body.nickname.length, 12, "⑤ 超长昵称截到 12 个字符（与服务端家族子用户同一档）");
       const dirty = await PATCH("/api/me", { nickname: "<b>ok</b>\u0000" }, cookie278);
       eq(dirty.body.nickname, "bok/b", "⑤ 尖括号与控制字符被剔掉（它最后是画在别人屏幕上的）");
-      // ⑤′2 双写那一发：**带上第一发签的那枚会话**，同一台设备再走一次验码。
-      //
-      // 这是 feca3f4f 修掉那个现场的**客户端那一半**：验码接口自己抄一段
-      // putSession，这一发就会再落一行（它用的是自己那枚新 token 的 sid）。
-      // 真库上 `sessions_pkey` 冲突 → `/api/verify-code` 回 500。
-      // 排在紧后面 —— 双写那一版会返回 500，前面几条替死掉的就少。
-      //
-      // ⚠️ 这一发**必然**是 400（内核判据「这一枚码已经用过了」，见 core.js:554，
-      //    它在 `putSession` 之前，两版都一样，所以这一条**不是**双写的判据）。
-      //    它守的是另一件真事：这一档在双写版下会变成 **500**，
-      //    在今天的码上是 **400 且一枚 Cookie 都不发**。
+
       const cookieVc278 = String(codeLogin278.setCookie || "").split(";")[0];
       chk(/^kbsid=/.test(cookieVc278), vcMsg("（前置）第一发那枚 Cookie 真的拿到了"));
       const codeLogin2nd = await vcOnce(code278.body.codeId, code278.body.devCode, cookieVc278);
@@ -3023,7 +2911,6 @@ async function main() {
       const g278 = await call(sv.base, "GET", "/api/me", undefined, cookie278);
       eq(g278.status, 200, "⑥ GET /api/me 仍然走原来的路（新加的 PATCH 没把它挤掉）");
 
-      // ⑦ 「会话只有一个出口」：三条登录路 + 确认路都走同一处落库
       const coreSrc278 = fs.readFileSync(path.join(ROOT, "api/_lib/core.js"), "utf8");
       eq((coreSrc278.match(/session\.issue\(cfg, acc\.uid, t\)/g) || []).length, 1,
         "⑦ **签会话只写一处**（`issueSessionFor`）——原先这个调用在原码里手抄了三份");
@@ -3043,14 +2930,6 @@ async function main() {
         !/store\.putSession\(/.test(fs.readFileSync(path.join(ROOT, "api/_routes/verify-code.js"), "utf8")),
         "⑦ 会话只在内核落库一次，登录 / 验码接口不再重复写入");
 
-      // ⑦′ 名单要**认整个 api/ 目录**，不是手点几个文件名
-      //
-      // 上一版这句只点了 `handler.js` 与 `auth/login.js` —— 于是
-      // `_routes/verify-code.js` 里那份手抄的 `putSession` 站在守区之外，
-      // 全绿放行（Issue #278 那一轮的实际情形）。名单是人手点的，人手点的
-      // 名单一定会漏下一份实现，所以这一条不再点名：**谁在 api/ 下调用
-      // `store.putSession`，只有内核那一处**。将来多出第四个文件、或者
-      // 拷一段改个变量名（`store["putSession"]` 这种也一并认），都会当场红。
       const apiDir278 = path.join(ROOT, "api");
       const walkApi = dir => fs.readdirSync(dir, { withFileTypes: true }).flatMap(e => {
         const full = path.join(dir, e.name);
@@ -3070,7 +2949,6 @@ async function main() {
         routes278.resolve("PATCH", "/api/me").methodAllowed === true,
         "⑦ GET 与 PATCH 是同一个路径的两条路，各自认自己的方法");
 
-      // ⑧ 页面那一半：确认页据 signedIn 决定下一步，登录页把昵称发上去
       const verifyJs278 = fs.readFileSync(path.join(ROOT, "js/verify.js"), "utf8");
       chk(/r\.signedIn === true/.test(verifyJs278), "⑧ js/verify.js 读的是服务端回的 signedIn（不自己猜）");
       chk(/location\.href = signedIn \? "\/mine\/" : "\/login\/"/.test(verifyJs278),
@@ -3126,9 +3004,6 @@ async function main() {
     eq(rw && rw.destination, "/api/handler?__path=:path*",
       "那条 rewrite 转到固定函数，并把原 API 路径放进内部参数");
 
-    // routes.js 用 `require(hit)` 动态加载 _routes/**：Vercel 的静态追踪器
-    // （@vercel/nft）看不懂变量形参，不 includeFiles 就一个路由文件都不打包 ——
-    // 症状是每条 /api/* 都回 FUNCTION_INVOCATION_FAILED（非 JSON → 前端 E_INTERNAL）。
     const inc = ((vercel.functions || {})["api/handler.js"] || {}).includeFiles || "";
     chk(/api\/\*\*/.test(inc), "vercel.json 把 api/** 一起打进函数（动态 require 的路由文件靠它才在）");
     chk(/data\/\*\.js/.test(inc) && /js\/quiz\.js/.test(inc),
@@ -3193,15 +3068,6 @@ async function main() {
       chk(cfg.status === 200, "用户地址 GET /api/config 是 200（实际 " + cfg.status + "）");
       chk(cfg.raw.indexOf("turnstile") >= 0, "/api/config 真的回的是配置，不是别的什么东西");
 
-      /* ② **rewrite 之后那一层的形状**（2026-09-18 实测：函数挂在目录根上时
-         平台层根本不把 /api/* 转进来）。
-         --------------------------------------------------------------
-         上面两条断的是「函数**在**的时候能答对」，而线上这一次坏的是
-         **函数压根没被调起来**（Vercel 平台层直接 NOT_FOUND，正文是
-         `The page could not be found`，连函数的日志都没有）。
-         所以这里补一条：把 rewrite 的目标地址（`/api/handler?__path=...`）也真打一次 ——
-         平台层执行 rewrite 之后交到函数手上的就是这串 URL，
-         后面那一层必须逐字认得它。少了这条，改完 rewrite 仍然会是全站 404。 */
       const viaRw = await hit("GET", "/api/handler?__path=me");
       chk(viaRw.status === 200 || viaRw.status === 401 || viaRw.status === 503,
         "rewrite 之后的地址 GET /api/handler?__path=me 也打到 handler（实际 " + viaRw.status + "）");
@@ -3455,19 +3321,12 @@ async function main() {
     }
 
     {
-      // ⚠️ Issue #278：重试的退避基数本来是 400ms × 3ⁿ（线上该等），
-      //    这一节要验的是「试几次 / 预算怎么算 / 401 不重试」，不是「等多久」，
-      //    所以把基数压到 1ms —— 判据一条不改，白等的时间还回去。
+
       boot({ ALLOW_CODE_ECHO: "1", MAIL_RETRY_MAX: "2", MAIL_RETRY_BUDGET_MS: "6000",
              MAIL_RETRY_BASE_MS: "1" });
       const mail = require("../api/_lib/mail/index.js");
       const cfg = require("../api/_lib/config.js");
 
-      // ⚠️ 退避基数留成旋钮（本轮为了不白等压到 1ms），所以**生产默认值
-      //    必须有单独一条钉住** —— 否则哪天默认被改成 1ms，线上重试会变成
-      //    狂打上游，而测试全绿。
-      //    这一节自己 boot 时把基数压成了 1ms，所以默认值要在**另一个
-      //    干净的 boot**（一个变量都不给）里读 —— 那才是「线上不配会怎样」。
       {
         const keep = boot({ ALLOW_CODE_ECHO: "1" });
         const cfgDefault = require("../api/_lib/config.js");
@@ -3538,9 +3397,7 @@ async function main() {
     }
 
     {
-      // ⚠️ Issue #278：这一节故意让发信**一直失败**，于是真的会走满重试退避
-      //    （400ms × 3ⁿ ≈ 1.5 秒）。要验的是「试了 3 次 / 如实回 verifySent:false」，
-      //    不是「等多久」，所以基数压到 1ms —— 判据一条不改。
+
       boot({ ALLOW_CODE_ECHO: "1", MAIL_RETRY_BASE_MS: "1" });
       const sv = await serve();
       try {
@@ -3675,17 +3532,11 @@ async function main() {
         const resNo = await POST("/api/resend-verification-by-email", { email: "ts-d@example.com" });
         eq(resNo.status, 400, "③ resend-verification（匿名口）没带 token → 400");
 
-        // ⚠️ 这一条是 Issue #278 第四轮**改过口径**的：原先 login 不挂人机校验
-        //    （「它本来就有凭据」），用户 2026-09-24 明确要求「登录页面同样加上
-        //    cloudflare 的验证」——挂上之后这一档不再是 E_LOGIN_FAIL。
-        //    挂它的理由写在 api/_lib/core.js 的 loginWithPassword 上方：
-        //    口令挡得住猜，挡不住**撞库**（拿泄露的邮箱 + 常见口令慢速试）。
         const loginNo = await POST("/api/login", { email: "ts-e@example.com", password: "hunter2hunter" });
         eq(loginNo.status, 400, "③ login **也挂**人机校验了（没带 token → 400，Issue #278 第四轮）");
         eq(loginNo.body.code, "E_TURNSTILE", "③ 它回的是 E_TURNSTILE（不再是「邮箱或密码不对」）");
         eq(loginNo.body.turnstile, "missing", "③ 附带 turnstile:missing（与「没带」别的口一致）");
 
-        // 带上一枚好令牌：这才走到口令那一步（回它自己的码，不是 E_TURNSTILE）
         const loginGood = await POST("/api/login", { email: "ts-e@example.com", password: "hunter2hunter", turnstileToken: "good-token" });
         eq(loginGood.status, 401, "③ 带好令牌时 login 走到「邮箱或密码不对」这一步");
         eq(loginGood.body.code, "E_LOGIN_FAIL", "③ 它回的是自己的码（人机校验不是它回的那句话）");
@@ -3717,8 +3568,7 @@ async function main() {
       const calls = (coreSrc.match(/return humanGuard\(deps, input\)\.then/g) || []).length;
       chk(calls === 5,
         "③ `humanGuard` 在内核里被调用 **5 次**（sendCode / register / resetRequest / resendVerification / loginWithPassword），实际 " + calls);
-      // 用户 2026-09-24（Issue #278）：「登录页面同样加上 cloudflare 的验证」。
-      // 那一条**改掉了原来那条口径**（login 不挂），理由见 core.js 里那一段注释。
+
       const loginSrc = fs.readFileSync(path.join(ROOT, "api/_routes/auth/login.js"), "utf8");
       chk(/turnstileToken/.test(loginSrc),
         "③ login 那条路**现在也把人机校验的令牌交给内核**了（Issue #278 第四轮）");
@@ -3796,36 +3646,11 @@ async function main() {
     }
   }
 
-  // -------------------------------------------------------------------------
-  // 第廿七节：正文读不动时**不许挂起**（Issue #276 后续 · 线上实测那一档）
-  // -------------------------------------------------------------------------
-  // 用户原话：「登录 验证 等总出现服务暂不可用，请检查问题并修复」。
-  //
-  // 查出来的链路（对着线上 kuibu.app 实测，2026-09-24）：
-  //   curl -X POST .../api/reset-request -H 'Content-Type: application/json' -d 'oops'
-  //     → HTTP 500 {"code":"E_INTERNAL",...}
-  //   前端 js/auth-api.js 把 500 翻成「**服务暂时不可用，请稍后重试。**」
-  //
-  // 病根（`api/_lib/http.js` 的 readBody）：Vercel 的 Node 运行时面对
-  // `Content-Type: application/json` 会**先自己读一遍请求流**。正文不是合法
-  // JSON 时它把流读空、又不往 `req.body` 放东西，于是我们挂的那两个监听器
-  // （data / end）一个都不触发 —— Promise 永不 resolve，函数被平台判超时。
-  //
-  // 这一节守三条：
-  //   ① 流已经被读完（`readableEnded` / `complete`）时，readBody **立刻**给结论，不等；
-  //   ② 平台递来的原始字节（string / Buffer）**自己解一遍**，不许当成
-  //      「已经解析好的对象」直接放行（那会让每个参数悄悄变空值）；
-  //   ③ 结论不许说成「服务端出了点问题」—— 那是「这一发没被读懂」，
-  //      服务端如实回 400 E_BAD_BODY，前端如实说这句。
   {
     boot({ ALLOW_CODE_ECHO: "1" });
     const H = require("../api/_lib/http.js");
     const entry = require("../api/handler.js");
 
-    // ① 流已读完：必须**同步**给出结论，不能挂起。
-    //    ⚠️ 用普通对象而不是真的 Readable：`readableEnded` 在 Node 的流上是
-    //        **只读位**，赋值会抛 TypeError。这里要的正是「平台告诉我们它读完了」
-    //        这件事，形状对得上就够（真流那一路由 ③ 端到端覆盖）。
     {
       const consumed = { headers: {}, readableEnded: true, complete: true };
       const t0 = Date.now();
@@ -3836,7 +3661,6 @@ async function main() {
       chk(got !== "__HUNG__", "① 流已被读完时 readBody **不挂起**（它必须当场给结论，实际耗时 " + (Date.now() - t0) + "ms）");
       eq(JSON.stringify(got), "{}", "① 没有正文可读时如实回空对象（与「客户端本来就没发正文」同一档）");
 
-      // 真·流：把内容推完、让 end 自己触发（这一路本来就该走通的）
       const { Readable } = require("stream");
       const real = new Readable({ read() {} });
       real.headers = {};
@@ -3847,7 +3671,6 @@ async function main() {
       eq(gotReal && gotReal.email, "a@b.com", "① 正常的流照旧读得出来（新判据不许误伤这一路）");
     }
 
-    // ② 平台递来的原始字节：自己解，不许当成对象
     {
       const asString = await H.readBody({ headers: {}, body: '{"email":"a@b.com"}' });
       eq(asString && asString.email, "a@b.com", "② req.body 是 JSON 字符串时解得出来");
@@ -3863,12 +3686,9 @@ async function main() {
       eq(badBuffer, null, "② 解不出来的 Buffer 同样回 null");
     }
 
-    // ③ 端到端：模拟「平台已经把流读空」这一档，POST /api/* 必须当场回 400，不是 500
     {
       const server = http.createServer((req, res) => {
-        // 模拟 Vercel：先把流读空，然后不设 req.body，再交给我们的函数。
-        // ⚠️ 真流的 `readableEnded` / `complete` 是只读位，读完自然为 true，
-        //    所以这里**不赋值**（`req.complete` 由 Node 在收到完整请求时置位）。
+
         req.on("data", () => {});
         req.on("end", () => entry(req, res));
       });
@@ -3899,7 +3719,6 @@ async function main() {
       await new Promise(r => server.close(r));
     }
 
-    // 前端文案：400 不许说成「服务暂时不可用」
     {
       const api = require("../js/auth-api.js");
       eq(api.messageOf("E_BAD_BODY"), "这一发请求没能被服务端读懂，请刷新页面重试。",
@@ -3917,31 +3736,9 @@ async function main() {
     }
   }
 
-  // =========================================================================
-  // 第廿八节 · 「上游读不动」不许说成「服务端出了点问题」（Issue #276）
-  // =========================================================================
-  //
-  // 用户的现场（2026-09-25）：登录 / 注册 / 输完随机验证码之后，页面回一句
-  //   「服务暂时不可用，请稍后重试。」
-  // 而这句话在前端 `js/auth-api.js` 里只对应一个码 —— **HTTP 500 E_INTERNAL**。
-  //
-  // 这一节把「服务端连到一台读不动的数据库上」这件事在**真 HTTP** 上复现出来：
-  // 把全局 fetch 换成一台会按剧本坏的假 Supabase，然后逐条打接口。
-  //
-  // 修前实测（就是用户看到的那句话）：
-  //   POST /api/register    -> 500 E_INTERNAL
-  //   POST /api/login       -> 500 E_INTERNAL
-  //   POST /api/verify-code -> 500 E_INTERNAL
-  //   GET  /api/config      -> 200（这条不碰库，好的）
-  //
-  // 这一节守两件事：
-  //   ① 碰库那几条**不许再回 500** —— 上游读不动是 503（或 400），不是「服务端崩了」；
-  //   ② 每一档回的话**都要能指导下一步动作**，不许出现「稍后重试」这四个字
-  //      —— 那句话正是用户抱怨的：对着一个被暂停的数据库说一万遍也没用。
   {
     const origFetch = globalThere.fetch;
 
-    // 一台会按剧本坏的假 Supabase。剧本只看 resp 的 status / 身体。
     function fakeUpstream(script) {
       return function (url, init) {
         const u = String(url);
@@ -4002,15 +3799,12 @@ async function main() {
           eq(r.body && r.body.code, sc.want,
             "二十八·" + sc.name + "｜" + path + " 如实回 " + sc.want);
 
-          // 「稍后重试」这四个字正是用户抱怨的那句 —— 它对着一个被暂停的
-          // 数据库说一万遍也没用。每一档都要能指导下一步动作。
           const m = String((r.body && r.body.message) || "");
           chk(m.indexOf("稍后重试") < 0,
             "二十八·" + sc.name + "｜" + path + " 不许说「稍后重试」（那句指导不了任何动作）：" + m);
           chk(m.length > 12, "二十八·" + sc.name + "｜" + path + " 有一句真话可说（实际：" + m + "）");
         }
 
-        // 不碰库的那一条必须**照旧** -- 它本来就是好的，别被这一改牵连。
         const cfgx = await call(sv.base, "GET", "/api/config");
         eq(cfgx.status, 200, "二十八·" + sc.name + "｜GET /api/config 不碰库，照旧 200");
       } finally {
@@ -4019,7 +3813,6 @@ async function main() {
     }
     globalThere.fetch = origFetch;
 
-    // 分类器的单元口径：**认不出来就别乱归类**（宁可回落 E_INTERNAL）
     {
       const up = require("../api/_lib/upstream.js");
 
@@ -4035,8 +3828,6 @@ async function main() {
       eq(up.classify({ status: 503 }), "unreachable", "二十八·5xx 归 unreachable");
       eq(up.classify({ message: "fetch failed" }), "unreachable", "二十八·fetch failed 归 unreachable");
 
-      // bad_request 那一档**不许**说成「上游坏了」：它是这一发请求写坏了，
-      // 回 400 + 「这一发没送对」，与 Issue #276 那条「400 不许说成 500」同源。
       const vBad = up.verdict("bad_request", {});
       eq(vBad.status, 400, "二十八·bad_request 回 400（不是 503，更不是 500）");
       eq(vBad.body.code, "E_BAD_REQUEST", "二十八·bad_request 的码是 E_BAD_REQUEST");
@@ -4050,7 +3841,6 @@ async function main() {
       eq(up.verdict("认不出来的档", {}), null, "二十八·认不出来的档不编话（回落 E_INTERNAL）");
     }
 
-    // 前端：503 不许把服务端那句**顶掉**成「这个站点还没开放云端账号」
     {
       const api = require("../js/auth-api.js");
 
@@ -4075,7 +3865,6 @@ async function main() {
         eq(client.degraded(), true, "二十八·" + code + " 之后 degraded=true（后续请求该走本机路）");
       }
 
-      // 老服务端 / 平台层直接回 503 带 HTML：没有码可认，才折算成 E_NOT_CONFIGURED
       {
         const client = api.create({ fetch: async () => mkRes(503, "<html>Service Unavailable</html>") });
         const r = await client.login({ email: "a@b.com", password: "hunter2hunter" });
@@ -4092,7 +3881,6 @@ async function main() {
       }
     }
 
-    // 登录页：服务端做不了这一件事时，**要把本机那条路给用户**
     {
       const loginSrc = fs.readFileSync(path.join(ROOT, "js/login.js"), "utf8");
       chk(/SOFT_CODES/.test(loginSrc), "二十八·登录页把「服务端做不了」收成一条判据（SOFT_CODES）");

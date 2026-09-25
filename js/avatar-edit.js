@@ -37,39 +37,12 @@
     try { d = A.display(window.localStorage); } catch (e) { d = null; }
     var hasImage = !!(d && d.hasImage);
 
-    // ⚠️ 那颗键的文案就是**这一页上唯一**说明「有图 / 没图」的地方
-    //    （Issue #276 第八轮）。用户原话：「如果用户上传了头像，上传头像
-    //    是不是应该显示更新头像？」—— 是：没图时它说「上传头像」，
-    //    有图时它说「更新头像」。一个动作、两个文案，判据就是本机有没有图。
-    //    ⚠️ 这也顺手消掉了旧设计里那颗**没图时也画着**（只是 hidden）的
-    //       「删除头像」：用户问「没上传头像是不是不该显示删除头像按钮」，
-    //       答案是不该 —— 删除只在**有图**这一半里说得通，而那一半的唯一
-    //       入口就是这颗键点进来的裁切层（删除那颗现在住在那儿，见
-    //       mine/index.html 的 #btn-crop-clear）。所以这里不再有第二颗键
-    //       要从「有没有图」推显隐 —— 一颗键、一处文案，推不出第二处。
     var pick = $("#btn-avatar-pick");
     if (pick) pick.textContent = hasImage ? "更新头像" : "上传头像";
 
-    // 身份行是新节点的话，那颗键这会儿才存在 —— 在这里补绑一次（幂等）。
-    // 不补的话：mine.js 重画身份行的那一瞬间，键就与监听器一起被丢掉了。
     bindAvatarButtons();
   }
 
-  // ⚠️ 原先这里往「我的」页写一行「已同步 / 未同步」（renderHint + synced 一对）——
-  //    本机有图就当场看得到，服务器那一份成不成是后台自己的事，
-  //    用户在这一页不需要这行状态（用户 2026-09-21：能省则省）。两边一起撤掉，
-  //    不留一个没人调用的判断。
-
-  // 刷「页壳」：顶栏 + 底栏。
-  //
-  // ⚠️ 这里**只转发**给 SiteChrome，不再自己找节点写 innerHTML。
-  //    原先末尾那三行 `document.querySelector("#site-dock .dock-icon")`
-  //    取到的是**第一颗** dock 图标（左下角「背诵」那一格），于是传完头像：
-  //      · 「背诵」的图标被换成了头像（用户 2026-09-24 原话：
-  //        「左下角背诵上面的图标变成头像」）；
-  //      · 「我的」那一格反而没动（「我的上面头像应该更新却没有直接更新」）。
-  //    底栏头像的唯一出口是 SiteChrome.refreshUser → refreshDockAvatar，
-  //    它按 `[data-nav-go="mine"]` 点名那一格。页面里不再有第二处写它的地方。
   function refreshChrome() {
     if (window.SiteChrome && window.SiteChrome.refreshUser) window.SiteChrome.refreshUser();
   }
@@ -296,11 +269,6 @@
     box.addEventListener("pointerleave", endPointer);
   }
 
-  // ⚠️ 「上传/更新头像」那颗键挂在**身份行**里（Issue #276：与「登录」同行），
-  //    而身份行是 js/mine.js 按需整段重画的（buildIdentityRow 换 innerHTML
-  //    —— 换一次，那颗键就是全新的节点）。所以绑定必须**幂等**：用
-  //    dataset.bound 记一次，由 render() 每次重画后补调一次。不补的下场是
-  //    「重画一次这颗键就哑了」—— 点了没反应，而且不报错。
   function bindAvatarButtons() {
     var pick = $("#btn-avatar-pick");
     var file = $("#avatar-file");
@@ -312,13 +280,11 @@
       file.dataset.bound = "1";
       file.addEventListener("change", function () { onPickFile(file); });
     }
-    // 删除那颗住在裁切层里，是**静态标记**（只画一次，不随身份行重画）——
-    // 但幂等这一条照旧：裁切层若被重建过，这里还能补上。
+
     var clearBtn = $("#btn-crop-clear");
     if (clearBtn && !clearBtn.dataset.bound) {
       clearBtn.dataset.bound = "1";
-      // ⚠️ 先关层再删：删除之后这一层里的「用这张」就没有意义了
-      //    （它处理的是 crop.file，而 crop.file 只有「新挑一张」才有）。
+
       clearBtn.addEventListener("click", function () { closeCrop(); clear(); });
     }
   }

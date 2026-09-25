@@ -22,17 +22,6 @@ function deps(req, body) {
   };
 }
 
-// 认会话这一步**只管「认不认得这个人」，不管「认不出来就报错」**。
-//
-// ⚠️ 它必须在**任何**坏 Cookie 之下都不抛（Issue #276 后续，线上实测）：
-//    这一段是在路由之前跑的，一抛异常 `handler.make` 的 catch 会把
-//    **一切**请求（包括登录、注册、发码）都回成 500 E_INTERNAL，
-//    前端 auth-api 翻成「**服务暂时不可用，请稍后重试。**」。
-//    实测：`Cookie: kbsid=abc%zz` → POST /api/login 与 GET /api/config 双双 500。
-//    `fromCookieHeader` 那边已经把「解不动的百分号编码」收成不抛了
-//    （见 `_lib/session.js` 的 `safeDecode`），这里是**第二道**：
-//    哪一天有人再往这里塞一个会抛的读法（比如换掉 session 的实现），
-//    后果也只是「这一发按未登录处理」，不是整站接口全哑。
 function withSession(req, d) {
   if (!CONFIG.hasSession()) return Promise.resolve(d);
   return Promise.resolve()
@@ -54,20 +43,11 @@ function withSession(req, d) {
     });
 }
 
-// 内核已经落库会话行；这里只整形响应，不再插入相同的 sid。
 function settleSession(d, r) {
   if (!r || r.status !== 200 || !r._session) return Promise.resolve(r);
   return Promise.resolve({ status: r.status, body: r.body, cookies: r.cookies });
 }
 
-// 读正文这一步的**硬上限**（Issue #276 后续）。
-//
-// 为什么要有它：`readBody` 在两个监听器（data / end）都不会触发时**永不 resolve**
-// —— 实测线上那一档就是「平台已经把流读空了」，函数于是被平台判超时，
-// 外面看到的是整套 POST /api/* 回 500 E_INTERNAL（前端翻成「服务暂时不可用」）。
-// `readBody` 自己已经补上了「流已读完」的判据，这里是**最后一道**：
-// 无论以后谁改坏了那一处、或平台换了新的身体行为，函数都**不会挂死** ——
-// 最多是这一发如实回一句「没读懂」，用户刷新即可，而不是等一个永远不来的响应。
 var BODY_TIMEOUT = { __kb_body_timeout__: true };
 var BODY_TIMEOUT_MS = 8000;
 
@@ -94,8 +74,7 @@ function make(name, methods, run, opts) {
           return H.json(res, 400, { code: "E_BAD_BODY", message: "请求体不是合法的 JSON" });
         }
         if (body === BODY_TIMEOUT) {
-          // 读正文这一步超时 = 「这一发没被读懂」，与「服务端内部出错」不是
-          // 一件事 —— 后者会让人反复重试同一个坏请求（Issue #276 后续）。
+
           H.log("api.body_timeout", { api: name });
           return H.json(res, 400, { code: "E_BAD_BODY", message: "请求体没能在时限内读完，请刷新页面重试" });
         }
@@ -123,17 +102,6 @@ function make(name, methods, run, opts) {
       })
       .catch(function (e) {
 
-        // 「上游读不动」不许说成「服务端出了点问题」（Issue #276）。
-        //
-        // 现场：数据库项目被暂停 / 表没建 / 密钥填成 anon 时，**每一条**
-        // 碰库的接口（登录、注册、验证码、重设）都落到下面这一行，回
-        // 500 E_INTERNAL，前端翻成「**服务暂时不可用，请稍后重试。**」——
-        // 用户照着这句话「稍后重试」，而那句话背后的事情根本没有一件
-        // 会因为「稍后」而变好。
-        //
-        // 现在先按上游自己回的原文**分类**（`_lib/upstream.js`），
-        // 能认出哪一档就回哪一档的码与话（503 + 那句能指导下一步动作的
-        // 说明，或 400 + 「这一发没送对」）。认不出来才回落 E_INTERNAL。
         var kind = e && e.kind ? e.kind : upstream.classify(e);
         var v = upstream.verdict(kind, CONFIG);
         if (v) {

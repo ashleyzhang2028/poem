@@ -604,14 +604,9 @@ async function main() {
     const sw = fs.readFileSync(path.join(ROOT, "sw.js"), "utf8");
     chk(/js\/sync-store\.js/.test(sw), "sw.js 预缓存含 js/sync-store.js（断网也要能同步）");
 
-    // ⚠️ 同步引擎自己那三把键的分家口径（2026-09-20 的真实故障）：
-    //    它们在 ProgressStore 的分域表里没有登记，原先掉进 family 那边
-    //    「认不出就默认分家」的兜底 —— 于是「设置 · 通用」里开着的同步，
-    //    切到「我的」页显示成没开（两页读的是两个不同孩子的键）。
-    //    答案现在只有一处：`SyncStore.perChildKey()`，family 只是转问它。
     const ssSrc = fs.readFileSync(path.join(ROOT, "js/sync-store.js"), "utf8");
     chk(/perChildKey/.test(ssSrc), "sync-store 导出 perChildKey()（分家口径的唯一一处）");
-    chk(/Family\.keyFor/.test(ssSrc),
+    chk(/window\.Family/.test(ssSrc) && /keyFor\(/.test(ssSrc),
       "seenKey() 走 Family.keyFor()（与进度键同一套拼法，不再各拼各的）");
     const famSrc = fs.readFileSync(path.join(ROOT, "js/family.js"), "utf8");
     chk(/SS\.perChildKey/.test(famSrc),
@@ -620,23 +615,18 @@ async function main() {
 
     chk(!!vm && Number(vm[1]) >= 132, "sw.js 缓存版本提到 v132 以上（实际 " + (vm && vm[1]) + "）");
 
-    // ⚠️ 用户 2026-09-21「哪些应该放到我的却放到了设置」：同步开关原先在
-    //    「设置 · 通用」，与「我的」页那份**各写了一遍**（两处各写一遍的下场
-    //    就是改了一处、显示另一处）。现在整块收回「我的」页，全场只有一处。
     const mineJs = fs.readFileSync(path.join(ROOT, "js/mine.js"), "utf8");
     const gen = fs.readFileSync(path.join(ROOT, "settings/general/index.html"), "utf8");
     chk(!/id="toggle-sync"/.test(gen),
       "「设置 · 通用」里不再有同步开关（账号与同步都归「我的」页）");
-    // ⚠️ 冲突裁决三颗键原先在 /profile/ 那一页（个人中心）。
-    //    2026-09-20（Issue #244）那一页已删除，这一块整体搬进了「我的」页。
+
     const minePage = fs.readFileSync(path.join(ROOT, "mine/index.html"), "utf8");
     ["btn-keep-local", "btn-keep-remote", "btn-export-first"].forEach(id => {
       chk(new RegExp('id="' + id + '"').test(minePage), "「我的」页有冲突裁决入口 " + id);
     });
 
     const setjs = fs.readFileSync(path.join(ROOT, "js/settings.js"), "utf8");
-    // ⚠️ 唯一允许出现 SyncStore 的地方是 bindAccount() 里那次 S.forget()：
-    //    退出登录要顺手忘掉同步游标。画开关 / 出状态那一套整块撤了。
+
     chk(!/syncMod|function renderSync|function bindSync/.test(setjs),
       "js/settings.js 里不再有第二份同步 UI（开关与状态只有一个来源）");
     chk(/S\.status\(\)|Sync\.status\(\)/.test(mineJs),
@@ -692,14 +682,6 @@ async function main() {
     ok(typeof h.PS.get("p1").updatedAt === "number", "关掉同步不会抹掉已有的记账字段");
   }
 
-  // Issue #278：这一节原先全是**页面层**（jsdom 起「我的」页，拨同步开关、
-  // 量开关的样式、看冲突面板）—— 整段删除。同步层本身的功能验证（上面那些
-  // harness 里的 pull / push / 冲突 / 失败不打断）一条不少；「开关落在哪个键」
-  // 由 SyncStore 自己的用例守着，不靠真页面。
-
-  // 「今日加背」也上云（Issue #243 后续）：它是 progress 里的一行
-  // （`daily_extra:v1`），与自选集合同一条路，但**合并规则是「按天并集」**
-  // 而不是「谁最后写谁赢」—— 这一段守的就是那几条。
   {
     const todayStr = (() => {
       const d = new Date();
@@ -737,13 +719,11 @@ async function main() {
     eq(pushed[0].body.recs.filter(r => r.id === "daily_extra:v1").length, 1,
       "同一行只推一次（不重复）");
 
-    // 推完之后不再重复推
     h.calls.length = 0;
     await h.Sync.now({ pull: false });
     eq(h.calls.length, 0, "推过的行不会在下一轮被再推一次（没有它就成死循环）");
   }
 
-  // 拉取：两台设备今天各加了几首 → 并起来，而不是互相覆盖
   {
     const todayStr = (() => {
       const d = new Date();
@@ -787,7 +767,6 @@ async function main() {
     eq(h.calls.length, 0, "并进来的内容不会在下一轮被推回去（没有它就成死循环）");
   }
 
-  // 云端那一行写的是**过去**某一天：本机今天有东西时不予理会
   {
     const todayStr = (() => {
       const d = new Date();
@@ -821,7 +800,6 @@ async function main() {
     eq(h.Sync.conflicts().length, 0, "也不该变成一次冲突裁决");
   }
 
-  // 首次同步：两端都有旧数据时，加背**不**弹「保留本机还是保留账号」
   {
     const h = harness({
       store: { poem_daily_extra_v1: JSON.stringify({ v: 1, date: "2000-1-1", updatedAt: 1000, items: [
@@ -850,9 +828,6 @@ async function main() {
     eq(h.Sync.conflicts().length, 0, "conflicts() 里也看不到它");
   }
 
-  // 「自选集合」也上云（Issue #243 后续 · 用户口径「能上云的全上」）。
-  // 它是 progress 里的一行（`collections:v1`），合并规则是「谁最后改谁赢」——
-  // 与加背的「按天并集」、已读的「纯并集」都不一样，所以这一段单独守。
   {
     const h = harness({
       store: {
@@ -887,7 +862,6 @@ async function main() {
     eq(h.calls.length, 0, "推过的行不会在下一轮被再推一次（没有它就成死循环）");
   }
 
-  // 拉取：云端更新 → 写进本机，且**写完不再往回推**（本机时间戳就是云端那个）
   {
     const h = harness({
       store: {
@@ -926,7 +900,6 @@ async function main() {
       "并进来的内容不会在下一轮被推回去（本机那份的时间戳必须就是云端那个）");
   }
 
-  // 删空之后仍要推一行删除标记（否则另一台设备还挂着那几个集合）
   {
     const h = harness({
       store: {
@@ -957,7 +930,6 @@ async function main() {
     chk(!!row && row.deleted === true, "那一行是删除标记");
   }
 
-  // 「集子已读」也上云（Issue #243 后续）：一个集子一行，**并集**合并。
   {
     const h = harness({
       store: {
@@ -997,7 +969,6 @@ async function main() {
     eq(h.calls.length, 0, "并进来的内容不会在下一轮被推回去");
   }
 
-  // 读一篇 → 会推（这一条最容易漏：引擎写已读与同步层本来是两拨人）
   {
     const h = harness({
       store: { poem_tangshi_read_v1: JSON.stringify({}) },
@@ -1023,7 +994,6 @@ async function main() {
     eq(Object.keys(row.payload.marks).length, 1, "带上刚读过的那一篇");
   }
 
-  // 设备域仍然一个字节都不许上传（用户这次的口径没有动它）
   {
     const h = harness({
       store: {

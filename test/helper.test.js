@@ -1,6 +1,6 @@
 const fs = require("fs");
 const vm = require("vm");
-// Issue #278：页面层（jsdom 真跑首页 / 设置页）已删除，只留注音内核。
+
 const ROOT = __dirname + "/../";
 
 let fails = 0;
@@ -99,12 +99,6 @@ const allText = [...d.POEMS_ALL, ...d.POEMS_CLASSIC].map(p => p.text).join("");
 const missing = [...new Set([...allText].filter(c => /\p{Script=Han}/u.test(c) && !P.has(c)))];
 chk(missing.length === 0, "课内 + 小古文全部汉字都有注音（缺 " + missing.slice(0, 12).join("") + "）");
 chk(d.POEMS_CLASSIC.length === 102, "小古文共 102 篇（实际 " + d.POEMS_CLASSIC.length + "）");
-
-// ---------------------------------------------------------------------------
-// Issue #278：这一层的**页面层**（jsdom 起首页 / 设置页、点弹层、切注音档、
-// 朗读）整段删除 —— 那是界面测试。留下的是注音内核本身：拼音表 / 生字判定 /
-// annotateHtml 的输出口径 / 全站汉字覆盖率。
-// ---------------------------------------------------------------------------
 
 console.log("");
 console.log(fails ? "❌ " + fails + " 项失败" : "🎉 注音与朗读（内核）测试全部通过");

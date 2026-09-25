@@ -1,35 +1,9 @@
 (function () {
   "use strict";
 
-  // 用户报告 / 勘误（Issue #243 第四轮）
-  // =========================================================================
-  // 用户原话：「同样允许用户报告错误，勘误，我觉得可以发送到 supabase 数据库，
-  // 然后我作为管理员能在管理员看到并纠正，你看看如何设计用户报告错误的界面，
-  // 入口，交互等等」。
-  //
-  // 这一份是**唯一一处**报错的图形与文案（与 `js/daily-extra-ui.js` 同一条路数）：
-  // 阅读器详情页那一条、正文选中之后那个气泡、设置页那张卡，都调这里，
-  // 谁也不另画一遍。
-  //
-  // 四档「报什么」，对应用户真正会遇到的四件不同的事。**档位即路由**：
-  // 选「注音」时表单预先填上「注音」两个字，选「译文」时预填「译文」——
-  // 小朋友点两下就能发出去，不用先想一句中文。
-  //
-  // 三条口径：
-  //   · **登录才发得出去**（服务端认人）。没登录时如实说「去登录」并给链接，
-  //     而不是把表单填了一堆之后回你 401。
-  //   · **发出去就写进本机一份「我报过的」**（`poem_reports_v1`）。
-  //     服务端那份是权威，但没配服务端 / 断网时，用户至少看得到自己报过什么。
-  //   · **报告不改任何数据**。它只是把一句话送到管理员的台账。
-  //     它不进 progress、不参与同步（见 docs/architecture.md §4.35）。
-  // =========================================================================
-
   var KEY = "poem_reports_v1";
   var LOCAL_MAX = 50;
 
-  // 与服务端 api/_lib/core.js 的 REPORT_LIMITS **同源**。
-  // 两处各写一份的下场是「前端放行、服务端截断」—— 用户看到的引用后半截没了，
-  // 而界面上没有任何提示。test/report.test.js 有一条按源码对这两组数。
   var LIMITS = {
     quote: 200,
     context: 2000,
@@ -88,8 +62,6 @@
     try { return window.localStorage || null; } catch (e) { return null; }
   }
 
-  // 本机那一份「我报过的」。**只加不减到 50 条**：它是回执，不是档案 ——
-  // 留着几千条的下场是每次打开设置页要解析一大坨 JSON，而其中 99% 早已处理完。
   function readLocal() {
     var b = backing();
     if (!b) return [];
@@ -125,11 +97,6 @@
     var rows = (remote || []);
     rows.forEach(function (r) { if (r && r.rid) byRid[r.rid] = r; });
 
-    // ⚠️ 这一份是**画出来给人看的**，不落回本机。
-    //    落回本机的话，服务端那几条会被写进 `poem_reports_v1` ——
-    //    而下一轮再读本机时，它们看起来就都「送达了」，
-    //    于是「本机还有几条没发出去」这个判断**永远不成立**
-    //    （那几条没发出去的也一起被淹没，用户再也没机会补发）。
     var out = Object.keys(byRid).map(function (k) { return byRid[k]; });
     out.sort(function (a, b) { return (b.createdAt || 0) - (a.createdAt || 0); });
     return out.slice(0, LOCAL_MAX);
@@ -148,8 +115,6 @@
 
   function now() { return Date.now(); }
 
-  // 弹层是本机做的事（不上云）。这里是「哪一天报的」——
-  // 与服务端 created_at 是两个时刻，界面只显示服务端那一个（权威）。
   function create(input) {
     var o = input || {};
     var kind = kindOf(o.kind).key;
@@ -164,7 +129,7 @@
       note: clip(o.note, LIMITS.note).trim(),
       suggestion: clip(o.suggestion, LIMITS.suggestion).trim(),
       ua: clip(navigator && navigator.userAgent, 240),
-      // 没登录时**不发**：服务端认人，回 401 不如这里先说清楚
+
       localOnly: false
     };
 
@@ -221,8 +186,6 @@
     });
   }
 
-  // 拉自己报过的（服务端权威）。拉不到就回本机那一份并如实标 `local: true`
-  // —— 界面据此在顶部写一句「这是本机记下的，服务端暂时读不到」。
   function mine(opt) {
     var A = accountApi();
     if (!A || typeof A.myReports !== "function" || !signedIn()) {
@@ -231,9 +194,7 @@
     return Promise.resolve(A.myReports({ limit: (opt && opt.limit) || 50 }))
       .then(function (r) {
         if (r && r.ok && Array.isArray(r.reports)) {
-          // `reports` 是并起来画给人看的那一列；`serverOnly` 是**服务端原样**。
-          // 「本机还压着几条」只能拿后者比 —— 拿前者比的话，本机那几条
-          // 已经在并起来的那一列里了，每一条都成了「服务端已经有了」。
+
           return { ok: true, local: false, reports: mergeLocal(r.reports), serverOnly: r.reports };
         }
         return { ok: true, local: true, reports: readLocal(), serverOnly: [] };
@@ -242,20 +203,12 @@
       });
   }
 
-  // 本机记着、服务端那份里没有的（报的时候没登录 / 断网）。
-  // 「服务端那份」按 rid 比 —— rid 是服务端下发的，同一条重发不会多出第二条。
   function pendingLocal(remote) {
     var have = {};
     (remote || []).forEach(function (r) { if (r && r.rid) have[r.rid] = 1; });
     return readLocal().filter(function (r) { return r && r.rid && !have[r.rid]; });
   }
 
-  // 把本机压着的那几条再发一次。**不是「重发」把旧的顶掉**：
-  // 服务端按 rid 认人，第一次其实根本没送达（没登录 / 断网），
-  // 所以这里发的就是同一个 rid 的那一条。
-  //
-  // 一条都发不出去时**不给假成功**：如实回「还是没发出去」，
-  // 让用户知道该去登录还是该等网络。
   function resend() {
     if (!signedIn()) {
       return Promise.resolve({ ok: false, reason: "guest", sent: 0, pending: readLocal().length,
@@ -313,11 +266,6 @@
     return true;
   }
 
-  // -------------------------------------------------------------------------
-  // 图形
-  // -------------------------------------------------------------------------
-  // 一颗「旗子」——报错是「在这里插一面旗」，不是「警告」（⚠️ 太凶了，
-  // 而这是给小朋友用的界面；旗子是中性的「这里有点不对」）。
   function flagGlyph() {
     return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" ' +
       'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
@@ -326,8 +274,6 @@
       "</svg>";
   }
 
-  // 详情页工具栏那一颗圆钮。**位置由调用方决定**（详情页那一排在
-  // reader-core 里拼），这里只回 HTML —— 与 dailyItemBtn 同一路数。
   function detailBtn() {
     return '<button type="button" class="mini-btn report-btn" id="gw-report" data-gw="report" ' +
       'title="报告这一篇的错误">' +
@@ -336,9 +282,6 @@
       "</button>";
   }
 
-  // 列表行那一颗：与「加入今日背诵」「加入背诵」「播放」同一排，排在**最左**。
-  // 理由：它是四颗里「最少用」的一颗（加背 / 加集 / 播放都是日常动作），
-  // 日常动作应该挨着标题、拇指够得着的那一侧。
   function itemBtn(p) {
     var title = (p && p.title) || "";
     return '<button type="button" class="item-report" data-report="' + esc((p && p.id) || "") + '" ' +
@@ -346,13 +289,6 @@
       flagGlyph() + "</button>";
   }
 
-  // -------------------------------------------------------------------------
-  // 弹层：唯一那一份表单
-  // -------------------------------------------------------------------------
-  // 结构固定，只有三处随上下文变：标题下那条「这一篇是什么」、被引用的原文、
-  // 以及几个 hidden 字段（poemId / book）。所以只需要**建一次**，
-  // 之后每次打开改那几处 —— 每开一次重建一遍 DOM 的下场是
-  // 输入到一半的内容在切换篇目时被整个抹掉。
   var box = null;
   var ctx = { poemId: "", poemTitle: "", book: "", quote: "", context: "" };
   var pickedKind = "other";
@@ -437,9 +373,7 @@
   function pickKind(key) {
     pickedKind = kindOf(key).key;
     renderKinds();
-    // 预填：用户只点了一下「注音」，输入框里已经有那两个字的种子。
-    // 光标落在末尾，想补一句直接打。**不覆盖已经写过的内容** ——
-    // 覆盖的下场是「我从「注音」改成「正文」，刚才写的半句没了」。
+
     var note = $("#report-note", box);
     var seed = kindOf(pickedKind).seed;
     if (note && seed && !note.dataset.touched) note.value = seed;
@@ -483,8 +417,7 @@
     msg("", "");
     renderKinds();
     box.hidden = false;
-    // 桌面端把光标放进输入框；手机端**不自动聚焦** —— 一聚焦就弹软键盘，
-    // 而用户常常只是想先看一眼「我报的是哪一篇」。
+
     var wide = false;
     try { wide = window.matchMedia && window.matchMedia("(min-width: 768px)").matches; } catch (e) { wide = false; }
     if (wide && note && note.focus) note.focus();
@@ -550,7 +483,6 @@
     });
   }
 
-  // 未登录时那条出路：**把入口摆在眼前**，而不是只说「请登录」。
   function showLoginHint() {
     var foot = box ? $("#report-foot", box) : null;
     if (!foot) return;
@@ -569,19 +501,6 @@
     toast._t = setTimeout(function () { el.hidden = true; }, 2400);
   }
 
-  // -------------------------------------------------------------------------
-  // 正文选中 → 气泡（`select` 那一档）
-  // -------------------------------------------------------------------------
-  // 这是「报错」里最有价值的一条路：注音错了、译文某句错了，用户能**指着那一处**
-  // 说。所以详情页的正文本挂一个选区监听，选满 2 个字就浮一颗小气泡「报这一段」。
-  //
-  // 三条要绕开的坑：
-  //   · **气泡不能挡住选区**（选区那一段正是用户要确认的）—— 所以固定浮在
-  //     正文**上沿**，不跟着手指走。
-  //   · **点气泡不能把选区清掉**：`mousedown` 要 `preventDefault`，
-  //     否则浏览器先把选区收了，气泡拿到的是空字符串。
-  //   · **手机上长按选中会出现系统菜单**（复制 / 查询），气泡**不抢**
-  //     那个菜单的位置，而是浮在最顶上一行。
   var bubble = null;
 
   function ensureBubble() {
@@ -615,16 +534,13 @@
     if (!sel || sel.isCollapsed) return "";
     var text = String(sel.toString() || "").trim();
     if (text.length < 2) return "";
-    // 选区必须**落在正文里**：用户选地址栏、选页脚时不该冒出气泡。
+
     try {
       if (sel.rangeCount && host.contains && !host.contains(sel.getRangeAt(0).commonAncestorContainer)) return "";
     } catch (e) { }
     return text;
   }
 
-  // 把选中那一段的**整句**取出来当上下文。
-  // 只存「长」两个字的下场是：管理员半年后打开台账，不知道说的是哪一句。
-  // 找句子的办法是就地往前 / 往后扫到句读 —— 不引分词、不引标点表。
   function sentenceAround(full, pick) {
     var src = String(full || "");
     var at = src.indexOf(pick);
@@ -680,16 +596,11 @@
     };
   }
 
-  // -------------------------------------------------------------------------
-  // 设置页那一张卡：历史 + 状态
-  // -------------------------------------------------------------------------
   function renderList(host, reports, opt) {
     if (!host) return;
     var list = reports || [];
     var o = opt || {};
-    // 空屏那一句是**全站唯一**教「怎么报错」的地方（「我的报告」页首那段
-    // 与它说的是一件事，2026-09-24 删了 —— 用户原话「废话连篇」）。
-    // 所以这一句不能再短：它是唯一入口说明。
+
     var head = o.local
       ? '<p class="account-hint">本机的（服务端暂时读不到）。</p>'
       : "";
@@ -725,9 +636,6 @@
     } catch (e) { return ""; }
   }
 
-  // -------------------------------------------------------------------------
-  // 导出
-  // -------------------------------------------------------------------------
   window.Report = {
     KINDS: KINDS,
     LIMITS: LIMITS,

@@ -42,10 +42,6 @@ function corpus() {
     var files = b.files.filter(function (f) { return fs.existsSync(path.join(ROOT, f)); });
     if (!files.length) return;
 
-    // 课内那一部要 index.js 才能汇成 POEMS_ALL；每一部都要带上正文存储主表
-    // （`data/text-master.js`）：集子条目只存 `textRef`，正文由 `masterTextOf()`
-    // 现取。少了这一份，取出来的正文是空的 —— 而空白不报错，只会让飞花令 /
-    // 题库悄悄少掉一整部（Issue #244 加乐府集时踩到）。
     var extra = [];
     if (b.needsIndex && fs.existsSync(path.join(ROOT, "data/index.js"))) {
       extra = ["data/index.js"];

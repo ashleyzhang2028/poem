@@ -81,9 +81,6 @@
     return String(n);
   }
 
-  // 名额那一行只说**现在到哪**：上限本身由「再建一个（还可建 N 个）」那颗键
-  // 与 /plans/ 那张对照表各自说清，这里不再把三档数字全背一遍
-  // （用户 2026-09-21：不要废话太多）。
   function limitLine(count, lim) {
     return "当前 " + count + " / " + quoText(lim) + " 个";
   }

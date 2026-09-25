@@ -162,10 +162,6 @@ function publicAccount(cfg, acc) {
     emailVerifiedAt: acc.email_verified_at == null ? null : Number(acc.email_verified_at),
     emailVerified: acc.email_verified_at != null,
 
-    // 头像的权威地址（Issue #243 后续）：图片在 Storage 桶里，这一串是公开地址。
-    // 客户端在新设备上第一次拿到 /api/me 时把它写回账号域 —— 不写的话，
-    // 换台设备头像就退回昵称首字（头像字节本身太大，进不了同步载荷）。
-    // 没配 Storage（没有 public URL）时如实回空串，不编一个假地址。
     avatar: avatarUrlOf(cfg, acc.uid),
 
     channel: channelFacts(cfg)
@@ -216,15 +212,6 @@ function planTier(acc) {
 
 function featuresFor(cfg, tier) {
 
-  // base 是「登录后免费就给」的那几件 —— 这一串列的是**登录后**的能力，
-  // 未登录本来就没有 features（调用方先看 deps.account）。
-  // export.progress 自 Issue #229 第二轮起与 js/entitlement.js 的 CAPS 同步
-  // 改成 login: true（层级仍是 free，只是未登录不放行）。
-  //
-  // 算法按层级开放（Issue #229 第四轮）：algo.ebbinghaus / algo.leitner 进 base
-  // （登录后的 free 就有前两张），algo.sm2 进 pro、algo.fsrs 进 max。
-  // **未登录只有 algo.ebbinghaus**，那一条由调用方按「没有 features」处理
-  // （与 recite.basic 同一口径：游客本来就不走 features 这条路）。
   var base = ["recite.basic", "library.all", "read.aloud", "pinyin.helper", "export.progress",
 
               "algo.ebbinghaus", "algo.leitner"];
@@ -253,33 +240,6 @@ function pepperOf(cfg) {
   return String(cfg.sessionSecret || cfg.sessionKey || "");
 }
 
-// ---------------------------------------------------------------------------
-// 管理员怎么诞生（Issue #276）
-// ---------------------------------------------------------------------------
-// 用户原话：
-//
-//   「管理员页面只允许 belem@163.com 登录的邮箱访问（目前），未登录用户以及
-//     其他登录账户一律不允许访问。或者告诉我怎么在数据库设置管理员权限。」
-//
-// 这一节给的答案：**角色的权威是 `accounts.role` 那一列**，别的都是缓存。
-// 三条口径：
-//
-//   · **名单在环境变量 `OWNER_EMAILS` 里**（完整邮箱，逗号 / 空格分隔）。
-//     为什么不用掩码：掩码是给人看的（`b***@163.com` 一眼认人），而授权
-//     要唯一 —— 掩码命中的可能不止一条（`core.adminGrant` 里那段
-//     「命中多条」的告警就是为它写的），拿它授权等于「谁能注册出同掩码
-//     谁就是管理员」。**这条与「名录里给明文邮箱」同源**：管理员本来
-//     就看得到明文。
-//   · **认领发生在登录链路里**（注册 / 确认 / 登录 / 随机码登录），
-//     不在界面里 —— 界面能改的事就不叫权限。认领是**幂等**的：
-//     在名单里就写 owner，不在名单里就**什么都不做**（绝不把已有的
-//     owner / admin 降回去 —— 那会让「运营手改过的角色」被一次登录抹掉）。
-//   · **没有兜底**。不配 `OWNER_EMAILS` 时一个 owner 都没有，`/admin/`
-//     对所有人关门并如实说「本站还没有管理员」。老口径「谁打开谁是主人」
-//     （`poem_owner_v1`）本轮删掉了：清一次浏览器存储就能当管理员的
-//     所谓权限，不是权限。
-// ---------------------------------------------------------------------------
-
 function ownerEmailsOf(cfg) {
   var raw = String((cfg && cfg.ownerEmails) || "");
   if (!raw) return [];
@@ -294,16 +254,12 @@ function isOwnerEmail(cfg, email) {
   return ownerEmailsOf(cfg).indexOf(e) >= 0;
 }
 
-// 认领 owner：在名单里就写 owner，不在名单里一个字都不动。
-// 返回「改没改」的布尔，调用方不必知道细节。
 function claimOwnerRole(store, cfg, acc) {
   if (!acc || acc.status === "deleted") return Promise.resolve(false);
   if (!isOwnerEmail(cfg, acc.email)) return Promise.resolve(false);
   if (String(acc.role || "user").toLowerCase() === "owner") return Promise.resolve(false);
   return Promise.resolve(store.patchAccount(acc.uid, { role: "owner" })).then(function () {
-    // 就地更新那一份（调用方手里那个 acc 对象随后会被 putAccount / publicAccount
-    // 接着用，不改它的话响应里会回一个旧的 role —— 症状是「刚登录的人
-    // 要刷第二次才看到管理后台入口」）。
+
     acc.role = "owner";
     return true;
   });
@@ -598,10 +554,10 @@ function verifyCode_(deps, input) {
         if (gate) return Promise.resolve(gate);
         acc.last_login_at = t;
         return Promise.resolve(store.putAccount(acc)).then(function (saved) {
-          // 随机码登录也是登录：名单里的邮箱在这里同样认领 owner（Issue #276）。
+
           return claimOwnerRole(store, cfg, saved || acc).then(function () { return saved || acc; });
         }).then(function (saved) {
-          // 会话只有一个出口（Issue #278）：这一段原先在这儿手抄了一份。
+
           return issueSessionFor(deps, saved || acc);
         });
       });
@@ -628,19 +584,6 @@ function requireVerified(cfg) {
   return cfg.requireEmailVerified !== false;
 }
 
-// ---------------------------------------------------------------------------
-// 会话只有一个出口（Issue #278）
-// ---------------------------------------------------------------------------
-// 原先「签一枚会话 Cookie」这段写在**三处**（口令登录 / 随机码登录 /
-// 邮箱确认），而三处各自只记得自己那一半：
-//
-//   · 口令登录：写会话 + 认领 owner + 回 publicAccount —— 齐的；
-//   · 随机码登录：同上 —— 齐的；
-//   · 邮箱确认：**什么都不签** —— 于是「注册 → 点邮件 → 落到 /mine/
-//     还是未登录」，用户以为注册那一步白做了（Issue #278 的原话）。
-//
-// 所以会话这一件事收在这里一处：**谁要让人进门，就调它**。
-// 三件事一次做齐（少一件就是半截）：落库会话行、认领 owner、回 Set-Cookie。
 function issueSessionFor(deps, acc) {
   var cfg = deps.cfg, store = deps.store, t = deps.now();
   var s = session.issue(cfg, acc.uid, t);
@@ -763,7 +706,7 @@ function registerAfterGuard(deps, input) {
     }
     return Promise.resolve(store.putAccount(acc)).then(function (saved) {
       var cur = saved || acc;
-      // 注册链路也认领 owner（Issue #276）：名单里的人一建号就是 owner。
+
       return claimOwnerRole(store, cfg, cur).then(function () { return cur; });
     }).then(function (cur) {
       if (cur.email_verified_at != null) {
@@ -887,25 +830,6 @@ function verifyEmail(deps, input) {
         }).then(function (saved) {
           var cur = saved || acc;
 
-          // -----------------------------------------------------------------
-          // 点完确认链接即登录（Issue #278）
-          // -----------------------------------------------------------------
-          // 用户走完「注册 → 点邮件里的链接」之后，原先是**没有会话**的：
-          // 这一处只把 email_verified_at 写上就回了。于是落到 `/mine/`
-          // 还是未登录，用户以为注册白做了（Issue #278 的原话：
-          // 「让你完成登录功能就应该全部完善，怎么还每一步每一步地催」）。
-          //
-          // 为什么在这一处签是**安全的**：
-          //   · 能走到这里，说明他手里有邮件里那枚一次性令牌（64 位 hex、
-          //     24 小时有效、用过即废），**邮箱可达这件事已经被证明**；
-          //   · 确认本来就把 pending 提成了 active，而口令登录那道闸
-          //     （emailGate）只拦 pending —— 能点开链接的人本来就是
-          //     「有资格登录」的那一类，这里不额外放宽任何东西；
-          //   · 令牌的 vid 与口令无关：改口令仍然要另外走重设那条路。
-          //
-          // 所以：**点完链接就进来**，不必再让他去登录页把口令重敲一遍。
-          // 页面据 `signedIn` 如实说「已登录」，没拿到会话时（理论上不会）
-          // 回落到旧文案「邮箱已确认」，绝不说一句做不到的话。
           var out = {
             verified: true,
             email: String(cur.email || ""),
@@ -936,21 +860,6 @@ function verifyEmail(deps, input) {
 function loginWithPassword(deps, input) {
   var cfg = deps.cfg;
 
-  // 口令登录这条路**也挂人机校验**（Issue #278 第四轮）。
-  //
-  // ⚠️ 这一条是**在用户的明示要求下**加的，动手前先把原来那条口径记住：
-  //    「login 不挂人机校验 —— 它本来就有凭据（口令猜中才能过）」。
-  //    那条口径本身没错（口令就是一道闸），
-  //    ⚠️ 但它挡不住**撞库**：攻击者拿一批泄露的邮箱 + 常见口令逐个试，
-  //       每次都是「有凭据」的合法请求 —— 频控（设备 / IP）拦得住量，
-  //       拦不住「慢速、换 IP、只打几个账号」这种。
-  //    人机校验正好补这一段：口令可以是偷来的，但「坐在浏览器前的人」
-  //    这件事偷不走。
-  //
-  // 口径与别的挂载点一致：**没配就照旧放行**（turnstileReady 为 false 时
-  // turnstile.guard 回 ok:true/skipped），所以本地开发、CI、没接 Cloudflare
-  // 的实例一个字都不用改。配了之后前端（js/login.js / js/turnstile.js）
-  // 会像别的屏一样把方框挂到密码那一屏上。
   return humanGuard(deps, input).then(function (blocked) {
     if (blocked) return blocked;
     return loginWithPasswordAfterGuard(deps, input);
@@ -1007,11 +916,10 @@ function loginWithPasswordAfterGuard(deps, input) {
       if (limiter.clearFails) limiter.clearFails("login", "uid:" + acc.uid);
       acc.last_login_at = t;
       return Promise.resolve(store.putAccount(acc)).then(function (saved) {
-        // 登录链路认领 owner（Issue #276）：名单里的人每次登录都对齐一次，
-        // 在名单外的**一个字都不动**（不降级 —— 手改过的角色不该被登录抹掉）。
+
         return claimOwnerRole(store, cfg, saved || acc).then(function () { return saved || acc; });
       }).then(function (saved) {
-        // 会话只有一个出口（Issue #278）。
+
         return issueSessionFor(deps, saved || acc);
       });
     });
@@ -1275,20 +1183,6 @@ function me(deps) {
   });
 }
 
-// ---------------------------------------------------------------------------
-// 昵称（Issue #278）
-// ---------------------------------------------------------------------------
-// 原先昵称**只落在本机**（`Avatar.saveNickname` 写 localStorage），
-// 服务器上那一列 `accounts.nickname` 一直是空的。于是：
-//   · 换台设备登录，名字没了（用户以为「注册时起的名没保存」）；
-//   · 管理端的名录、报告的署名栏全是空的。
-//
-// 这一条把它接上：**从服务器读、写回服务器**。三条口径：
-//   · 长度 12 个字符（与登录页那个输入框的 maxlength、家族子用户的
-//     `sanitizeFamily` 同一档 —— 写两套长度必然有一套是错的）；
-//   · 控制字符与 `<>` 剔掉（它最后是画在别人屏幕上的）；
-//   · **不是登录闸**：没登录回 401，但登录页上起名失败也不拦人 ——
-//     名字没存上比「进不来」轻得多，如实回一句就是了。
 function nicknameNorm(raw) {
   return String(raw == null ? "" : raw)
     .replace(/[\u0000-\u001f<>]/g, "")
@@ -1352,22 +1246,6 @@ function childId(raw) {
 
 var FAMILY_ROW_ID = "family:v1";
 
-// 「今日加背」那一行（Issue #243 后续）：它**也走 progress 这张表**，
-// 与「自选集合」同一套写法 —— 不给它开新表。
-//
-// ⚠️ 上一轮（同一天早些时候）的口径是「加背只存本机、不上云」。用户当天
-//    改了口径（「云同步功能不能添加这些吗？」），于是这一行就是为它补的。
-//
-// 形状与自选集合那份**逐字同源**：
-//   { v, date:"2026-9-19", updatedAt, deleted, items:[ {id, wid, entryId, snap, at} ] }
-//
-// 三条守卫（改一条都有一层测试直接红）：
-//   ① `items` **必须带日期**。读到日期不是今天，客户端就回空并清盘 ——
-//      「明天自动归零」靠的是这一条，不是服务端半夜跑一个什么任务。
-//   ② 上限与客户端一致（参考 js/daily-extra.js 的 MAX）—— 它是同步白名单
-//      的一员，任人往里灌超长数组就会撑爆 jsonb。
-//   ③ 不属于任何账号域设置，所以没有邮箱 / 昵称这类字段要过滤；但正文与译文
-//      是**别人写过的文本**，照样要截断（长度上限与自选集合同一档）。
 var DAILY_EXTRA_ROW_ID = "daily_extra:v1";
 
 function refText(v, max) {
@@ -1417,15 +1295,6 @@ function sanitizeDailyExtra(p) {
 
 var DAILY_EXTRA_MAX = 20;
 
-// ---------------------------------------------------------------------------
-// 自选集合（Issue #243 后续 · 用户口径：「云同步能加的都加上」）
-// ---------------------------------------------------------------------------
-// 与 daily_extra:v1 同一套路：它是 progress 里的一行，不是新表。
-// 但它比加背重得多 —— 一篇一条快照，所以有两条硬闸：
-//   · 集合数封顶（与 js/collections.js 的 MAX_COLLECTIONS 一致）
-//   · 每集合篇数封顶，**超出的整条丢掉而不是截断**（截一半比丢掉更坏：
-//     用户看到的是「我的集合回来了，但少了几篇」）
-// 载荷体积因此有上界，不会因为一个人攒了几千篇就撑爆 jsonb。
 var COLLECTIONS_ROW_ID = "collections:v1";
 
 var COLLECTIONS_MAX = 5000;
@@ -1481,17 +1350,6 @@ function sanitizeCollections(p) {
   return out;
 }
 
-// ---------------------------------------------------------------------------
-// 注音勘误（Issue #243）：某篇某句某字读什么
-// ---------------------------------------------------------------------------
-// 与自选集合同一套路（progress 里的一行，不新开表），但轻得多 ——
-// 一条只有「哪一篇 / 哪一句 / 第几次出现 / 读什么」四个短字段，
-// **不存正文、不存译文**（正文在主表里，这一行只记「那一处读什么」）。
-//
-// 三条守卫：
-//   ① 条数封顶（与 js/pinyin-edit.js 的 MAX 一致）；
-//   ② 每段文字都截断（它是**别人写过的句子**，与加背 / 集合同一档纪律）；
-//   ③ 一段一句都没留的条目**整条丢掉**（半条勘误比没有更坏：它会静默不生效）。
 var PINYIN_FIX_ROW_ID = "pinyin_fix:v1";
 
 var PINYIN_FIX_MAX = 500;
@@ -1520,11 +1378,6 @@ function sanitizePinyinFix(p) {
   return out;
 }
 
-// ---------------------------------------------------------------------------
-// 集子已读（Issue #243 后续）：一条记录只有一个布尔值，体积天然很小
-// ---------------------------------------------------------------------------
-// 与自选集合的区别：它是**并集**合并的（两台设备各读过几篇 → 合起来），
-// 所以载荷按「篇 id → 薄记录」推，不推整张 map 的胜者。
 var READ_ROW_PREFIX = "reads:";
 
 var READ_ROW_MAX = 2000;
@@ -1554,7 +1407,6 @@ function sanitizeReads(p) {
   });
   return out;
 }
-
 
 function exportAllProgress(deps, uid) {
   var store = deps.store;
@@ -1859,33 +1711,6 @@ function adminAccounts(deps) {
   });
 }
 
-// ---------------------------------------------------------------------------
-// 改别人的角色（Issue #276）
-// ---------------------------------------------------------------------------
-// 用户原话：「free, pro, max 登录用户的角色怎么设置，是要在 admin 页面加一个
-// 已登录用户列表，然后 belem@163.com 可以更改他们的 role 吗？」
-//
-// 是。这一支就是那张列表上「改角色」那颗按钮的服务端。
-//
-// 四条口径，每条都有「不这么写会怎样」：
-//
-//   · **只有 owner 能改角色**（admin 也不行）。admin 与 owner 在
-//     「发层级 / 看名录 / 处理报告」这些日常事上等价，但**授权本身**
-//     只归 owner —— 否则一个 admin 就能把自己人提成 admin，角色闸形同虚设。
-//   · **改不到自己**。降自己 = 把自己关在门外，且**没有第二个 owner 时
-//     没人能把他加回来**（库里那一个 owner 自己把 role 写成 user 之后，
-//     `/api/admin/role` 就再也没有调用者了）。要换主人就得改
-//     `OWNER_EMAILS` 再用那个邮箱登录一次 —— 那条路永远留着。
-//   · **改不到名单外的人的身份**？不，这条故意**允许**：`OWNER_EMAILS`
-//     是「谁是主人」的种子，不是「谁是管理员」的全部。运营给人一个 admin
-//     身份（帮看报告）是正常的，而 admin **不能**再授权 —— 这正好卡住
-//     「爬上去就再也下不来」。
-//   · **只认 user / admin 两个目标值**。`owner` 不许通过这个口发出去：
-//     owner 是「凭据 + 名单」级别的东西，得走 `OWNER_EMAILS`。
-//     发出去的每个改变都**如实回执**（谁改的、什么时候、改成了什么），
-//     与 `adminGrant` 同一形状 —— 界面照抄那段渲染就行。
-// ---------------------------------------------------------------------------
-
 var ROLE_TARGETS = ["user", "admin"];
 
 function adminSetRole(deps, input) {
@@ -1966,34 +1791,10 @@ function adminRevoke(deps, input) {
   });
 }
 
-// ---------------------------------------------------------------------------
-// 用户报告 / 勘误（Issue #243 第四轮）
-// ---------------------------------------------------------------------------
-// 用户原话：「同样允许用户报告错误，勘误，我觉得可以发送到 supabase 数据库，
-// 然后我作为管理员能在管理员看到并纠正，你看看如何设计用户报告错误的界面，
-// 入口，交互等等」。
-//
-// 这一节只写**服务端那一半**：形状校验、频控、落库、管理端读写闸。
-// 界面那一半在 js/report.js / js/admin-page.js，两边共用同一份「档位」常量。
-//
-// 三条口径，每条都有一个「不这么写会怎样」：
-//
-//   · **报告与成员无关**（不按 child_id 分区）。它是「这一篇的正文/注音错了」，
-//     不是「老大背到哪」。分区之后同一个错会被报成三条，管理员还看不出
-//     那是同一处。
-//   · **不参与同步**。报告是**单向**的：用户 → 服务端 → 管理员。
-//     放进 progress 白名单的下场是「用户本机那份被云端覆盖之后，
-//     他刚报的错也跟着回到旧状态」。
-//   · **状态只由管理端改**。用户端只有「报一条」「看自己报过的」两个动作。
-//     用户端能改 `status` 的下场是报告自己把自己标成已修复。
-// ---------------------------------------------------------------------------
-
 var REPORT_KINDS = ["text", "translation", "pinyin", "audio", "ui", "other"];
 
 var REPORT_STATUSES = ["new", "read", "accepted", "fixed", "rejected"];
 
-// 各字段上界。它们同时是**前端 maxlength** 的来源（`js/report.js` 里抄同一组数），
-// 所以两边不会漂：谁改了一个，守卫测试直接红。
 var REPORT_LIMITS = {
   quote: 200,
   context: 2000,
@@ -2053,8 +1854,6 @@ function reportAdmin(row) {
   return pub;
 }
 
-// **每日每人一条闸**。用户能无限报的下场是管理端被刷成一堵墙，
-// 真正的错被埋掉。上限与「今日加背」那条同源：它是「日报」的量级，不是「API 调用」。
 var REPORT_DAILY_MAX = 20;
 
 function normReportInput(deps, input) {
@@ -2066,9 +1865,6 @@ function normReportInput(deps, input) {
   var context = clip(input && input.context, REPORT_LIMITS.context).trim();
   var suggestion = clip(input && input.suggestion, REPORT_LIMITS.suggestion).trim();
 
-  // 「说了什么」不能全空：一条只有篇名的报告，管理员打开是一张白纸。
-  // 但**不能**要求「必须写正文」—— 点「注音错了」这一档时，
-  // 用户要的是一键上报，逼他打字就等于这条功能没人用。
   if (!note && !quote && !suggestion) {
     return { bad: "E_EMPTY", message: "请写一句「哪里不对」（哪怕两个字：如「长 注音」）" };
   }
@@ -2100,9 +1896,6 @@ function reportCreate(deps, input) {
   var who = normReportInput(deps, input);
   if (who.bad) return Promise.resolve(err(400, who.bad, who.message));
 
-  // 频控两档，与发码同源：
-  //   · device 档挡「同一台机器连点」，命中时**不落账**（报错的那一次不发也算一次）
-  //   · uid 档是每日总量，见 REPORT_DAILY_MAX
   var device = String(input && input.deviceId || deps.deviceId || "unknown");
   var g = deps.limiter.check(cfg, "device", "report:" + device, t);
   if (!g.ok) {
@@ -2124,7 +1917,6 @@ function reportCreate(deps, input) {
         rid: rid,
         uid: deps.account.uid,
 
-        // 掩码与昵称是**快照**：账号注销之后，管理员仍认得出这条是谁提的
         email_mask: String(me.email_mask || me.emailMask || ""),
         nickname: String(me.nickname || ""),
         kind: who.kind,
@@ -2155,8 +1947,6 @@ function reportCreate(deps, input) {
   });
 }
 
-// 用户端只看**自己**报过的。传别人的 uid 也只看自己的（uid 从会话取，
-// 不从请求体取）—— 这与「权益只从 /api/me 来」是同一类闸。
 function reportMine(deps, input) {
   var cfg = deps.cfg, store = deps.store;
   if (!cfg.hasSession()) {
@@ -2173,13 +1963,6 @@ function reportMine(deps, input) {
   });
 }
 
-// ---------------------------------------------------------------------------
-// 管理端：读全站台账 + 改状态
-// ---------------------------------------------------------------------------
-// 两道闸，缺一不可：
-//   1. `adminGate` —— 会话配了没、登录了没
-//   2. `isAdminRole` —— accounts.role 是不是 owner / admin
-// 把入口藏起来**不是**安全边界（README 那四条硬规矩里原话）。
 function adminReports(deps, input) {
   var cfg = deps.cfg, store = deps.store;
   var gate = adminGate(deps, cfg);
@@ -2236,9 +2019,6 @@ function adminReportPatch(deps, input) {
       reply: clip(input && input.reply, REPORT_LIMITS.suggestion).trim()
     };
 
-    // 只有「真处理过」的那三档才盖处理人/处理时刻。
-    // 标成「已读」就盖上 handled_at 的下场是：管理端里「处理过几条」
-    // 把「只是看了一眼」也算进去，那张统计当场失真。
     if (status === "accepted" || status === "fixed" || status === "rejected") {
       patch.handled_at = t;
       patch.handled_by = String(me.uid || "");
@@ -2256,7 +2036,6 @@ function adminReportPatch(deps, input) {
     });
   });
 }
-
 
 var GAME_CAP = { fly: "feihualing", paper: "exam.paper", review: "quiz.review" };
 
@@ -2391,9 +2170,6 @@ function accountDelete(deps, input) {
 module.exports = {
   ok: ok,
 
-  // 会话只有一个出口（Issue #278）：谁要让人进门，就调它。
-  // 导出是为了**能被量**：「内核签一次会话只落一行」这句话，
-  // 要有一个能直接调、能直接数的地方，而不是只靠源码里那几句正则。
   issueSessionFor: issueSessionFor,
 
   __mail: mail,

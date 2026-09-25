@@ -22,13 +22,6 @@
 
   var TIMEOUT_MS = 15000;
 
-  // ⚠️ 这一把键**必须**与 ProgressStore.kk() 走出逐字相同的名字。
-  //    它原先自己拼 `${NS.seen}::${cid}`，与 Family.keyFor() 是同一条口径的
-  //    第二份实现 —— 「seen 分不分家」这个判断一旦两边不一致，就会出现
-  //    「按引擎写的在 A 把键上、按引擎读的在 B 把键上」这种读不到自己的故障
-  //    （2026-09-20 从 sync 测试的真页面一节量出来的：进度键分家了、
-  //      seen 键没分家，冲突面板于是永远不出现）。
-  //    现在统一问 Family.keyFor()：它才是「物理键名怎么拼」的唯一一处。
   function seenKey() {
     var cid = childId();
     if (!cid) return NS.seen;
@@ -187,18 +180,13 @@
     var seen = readSeen();
     return Object.keys(seen).filter(function (id) {
 
-      // 「今日加背」「自选集合」「集子已读」都不进这里：它们各有自己的
-      // 合并规则（加背按天并集、已读纯并集、集合谁最后改谁赢 —— 集合那一条
-      // 例外：firstMerge 里它**是**要裁决的，见下面），
-      // 弹一次「保留本机还是保留账号」是错的。
       if (id !== CURSOR_KEY && id !== SIG_KEY && id !== FAMILY_ROW_ID) {
-        // 下面几档另有各自的合并规则
+
       } else {
         return false;
       }
       if (id === DAILY_EXTRA_ROW_ID) return false;
-      // 「注音勘误」也不进冲突裁决：它是一份「一个确定结果」的表，
-      // 按时间戳判新旧即可，问「保留本机还是保留账号」是多余的。
+
       if (id === PINYIN_FIX_ROW_ID) return false;
       if (id.indexOf(READ_ROW_STAMP) === 0) return false;
       if (readSync() && readSync().isReadRow(id)) return false;
@@ -416,11 +404,6 @@
 
     var sent = 0;
 
-    // 名册（family:v1）、「今日加背」（daily_extra:v1）与「集子已读」
-    // （reads:*）都顶着 child_id = ""，与第一批**同路**：都不按孩子分家
-    // （名册是账号级的，加背只属于「今天」，已读是「这个账号读过没有」）。
-    // 「自选集合」（collections:v1）也走这一批 —— 它是整份一份数据，
-    // 与孩子无关（集合本身不含进度）。
     var headRecs = [];
     if (reg) headRecs.push(reg);
     if (extra) headRecs.push(extra);
@@ -470,17 +453,12 @@
         return;
       }
 
-      // 「今日加背」那一行不进 applyRemote 的「谁最后写谁赢」：它是**按天合并**
-      // 的（两台设备今天各加两首，要并成四首），而且判据是 payload 里的
-      // `date`，与 updatedAt 谁大谁小无关。理由写在 js/daily-extra.js。
       if (row && row.id === DAILY_EXTRA_ROW_ID) {
         var dv = applyRemoteDailyExtra(row);
         if (dv === "applied") { out.applied++; out.dailyExtra = true; }
         return;
       }
 
-      // 「集子已读」：**并集**（读过就是读过，谁的都不该被抹掉），
-      // 所以不交给 applyRemote 的「谁最后写谁赢」。见 js/read-sync.js。
       var RS = readSync();
       if (row && RS && RS.isReadRow(row.id)) {
         var rv = applyRemoteReads(row);
@@ -488,20 +466,12 @@
         return;
       }
 
-      // 「自选集合」：与普通进度同一条路（谁最后写谁赢），但它**要**记 seen，
-      // 而且合并之后本机那一份的时间戳必须**就是云端那个**（否则每轮同步
-      // 都会把本机重写一遍，首页计划跟着反复重算）。见 applyRemoteCollections。
-      // 「注音勘误」：与自选集合同一条路（整份一份数据、谁最后改谁赢），
-      // 但**不进**冲突裁决 —— 按时间戳判新旧就够了。见 applyRemotePinyinFix。
       if (row && row.id === PINYIN_FIX_ROW_ID) {
         var pv = applyRemotePinyinFix(row);
         if (pv === "applied") { out.applied++; out.pinyinFix = true; }
         return;
       }
 
-      // 「自选集合」：与普通进度同一条路（谁最后写谁赢），但它**要**记 seen，
-      // 而且合并之后本机那一份的时间戳必须**就是云端那个**（否则每轮同步
-      // 都会把本机重写一遍，首页计划跟着反复重算）。见 applyRemoteCollections。
       if (row && row.id === COLLECTIONS_ROW_ID) {
         var cv = applyRemoteCollections(row);
         if (cv === "applied") { out.applied++; out.collections = true; }
@@ -540,16 +510,10 @@
 
   var DAILY_EXTRA_ROW_ID = "daily_extra:v1";
 
-  // 「自选集合」那一行。它**不新开表**（progress 里的一行），合并规则是
-  // 「谁最后改谁赢」，与普通进度同源；但它要在**首次合并**时进冲突裁决 ——
-  // 两端的集合结构不同，按篇并起来会得到一份谁也不认识的东西。
   var COLLECTIONS_ROW_ID = "collections:v1";
 
-  // 「集子已读」那一族行的前缀（一个集子一行，`reads:<本机键名>`）。
   var READ_ROW_PREFIX = "reads:";
 
-  // 已读的时间戳存在 seen 里（见 js/read-sync.js 的 touch()），
-  // 这一格不是一条记录 —— 不许进冲突裁决。
   var READ_ROW_STAMP = "reads:";
 
   var SIG_KEY = "__family_sig__";
@@ -563,13 +527,6 @@
     return g && typeof g.list === "function" ? g : null;
   }
 
-  // 「今日加背」（Issue #243 后续）：它上云，走的是与自选集合同一条路 ——
-  // 作为 progress 里的**一行**（`daily_extra:v1`），不新开表。
-  //
-  // 这一行必须在同步的两个方向上都被照顾到（少照顾一边的症状很隐蔽）：
-  //   · 推送：本机改了要推上去（pushPending）；
-  //   · 拉取：别的设备改了要并进来（applyPull）；
-  //   · 首次合并：两端都有旧数据时不能进「冲突裁决」（见下）。
   function dailyExtraMod() {
     var D = typeof window !== "undefined" ? window.DailyExtra : null;
     return D && typeof D.cloudRow === "function" && typeof D.applyCloud === "function" ? D : null;
@@ -581,7 +538,6 @@
     try { return D.cloudRow(seen || readSeen()) || null; } catch (e) { return null; }
   }
 
-  // 「自选集合」（Issue #243 后续）：一行 progress，与加背同路。
   function collectionsMod() {
     var C = typeof window !== "undefined" ? window.ReciteCollections : null;
     return C && typeof C.cloudRow === "function" && typeof C.applyCloud === "function" ? C : null;
@@ -593,10 +549,6 @@
     try { return C.cloudRow(seen || readSeen()) || null; } catch (e) { return null; }
   }
 
-  // 「注音勘误」（Issue #243）：一行 progress（`pinyin_fix:v1`），
-  // 与自选集合同路（整份一份数据、谁最后改谁赢）。它**不进冲突裁决** ——
-  // 勘误表是「一个确定的结果」，两边都有旧数据时该按时间戳判新旧，
-  // 而不是弹一次「保留本机还是保留账号」。
   var PINYIN_FIX_ROW_ID = "pinyin_fix:v1";
 
   function pinyinFixMod() {
@@ -610,7 +562,6 @@
     try { return F.cloudRow(seen || readSeen()) || null; } catch (e) { return null; }
   }
 
-  // 「集子已读」（Issue #243 后续）：一个集子一行，`reads:<本机键名>`。
   function readSync() {
     var R = typeof window !== "undefined" ? window.ReadSync : null;
     return R && typeof R.rows === "function" && typeof R.applyCloud === "function" ? R : null;
@@ -660,9 +611,6 @@
     return { id: FAMILY_ROW_ID, payload: { v: 1, at: at, profiles: list, updatedAt: ts }, updatedAt: ts, deleted: false };
   }
 
-  // 与 applyRemoteFamily 同一个形状：判词是 "applied" / "skip"。
-  // 不返回 "conflict" —— 加背**不进冲突裁决**：它不是一份「进度」，
-  // 而是「今天加的那几首」；两端的日期不同就以本机为准（在 DailyExtra 里判）。
   function applyRemoteDailyExtra(row) {
     var D = dailyExtraMod();
     if (!D) return "skip";
@@ -670,17 +618,11 @@
     var known = norm(seen[DAILY_EXTRA_ROW_ID]);
     var cloudTs = norm(row && row.updatedAt);
 
-    // 拉取 -> 读盘 -> 写盘之间隔着一个网络往返，两端可能同时改了同一行。
-    // 这里只在「云端确实比见过的更新」时才动本机（与 applyRemote 同一条守卫）。
     if (cloudTs && known === cloudTs && !row.deleted) return "skip";
 
     var verdict = "skip";
     try { verdict = D.applyCloud(row, seen) || "skip"; } catch (e) { verdict = "skip"; }
 
-    // ⚠️ 无论合没合上都要把「见过」记下来：不记的话，下一轮拉取
-    //    （pull 是按 updated_at 的手表走的）会把这一行当成新东西反复拉，
-    //    而 applyCloud 每次都会把本机盘上那一份重写一遍 —— 症状是
-    //    「每轮同步都触发一次 daily-extra-change，首页计划反复重算」。
     if (cloudTs) markSeen(DAILY_EXTRA_ROW_ID, cloudTs);
     return verdict;
   }
@@ -696,14 +638,10 @@
     var verdict = "skip";
     try { verdict = R.applyCloud(row, seen) || "skip"; } catch (e) { verdict = "skip"; }
 
-    // 无论合没合上都要记 seen：不记的话下一轮拉取会把它当新东西反复拉，
-    // 每次都把本机那一份重写一遍（症状是「已读标记反复闪」）。
     if (cloudTs) markSeen(row.id, cloudTs);
     return verdict;
   }
 
-  // 「注音勘误」那一行（`pinyin_fix:v1`）：与自选集合同一套 —— 整份一份数据、
-  // 谁最后改谁赢，合并完把本机的时间戳同步成云端那个（下一轮才判得出「没变」）。
   function applyRemotePinyinFix(row) {
     var F = pinyinFixMod();
     if (!F) return "skip";
@@ -715,9 +653,7 @@
 
     var verdict = "skip";
     try { verdict = F.applyCloud(row, seen) || "skip"; } catch (e) { verdict = "skip"; }
-    // ⚠️ applyCloud 可能判「本机这一份更新」而一个字都没写 —— 那种情况
-    //    **不能**记 seen（记了就等于承认「云端那一版收下了」，
-    //    于是本机那一版再也推不上去）。只有真收下（applied）才记。
+
     if (verdict === "applied" && cloudTs) markSeen(rowId, cloudTs);
     return verdict;
   }
@@ -790,10 +726,6 @@
     if (outcome.action === "ask") {
       snapshot();
 
-      // 「今日加背」不进冲突裁决：它是**按天合并**的（见 js/daily-extra.js），
-      // 两端都有旧数据时该并起来，而不是弹一次「保留本机还是保留账号」。
-      // 「今日加背」「集子已读」不进冲突裁决（各自有自己的合并规则）；
-      // 「自选集合」**进** —— 两端结构不同，按篇并起来会得到一份谁也不认识的东西。
       var list = (outcome.conflict || conflictIds(forCore, remoteRecs2))
         .filter(function (id) { return id !== DAILY_EXTRA_ROW_ID; })
         .filter(function (id) {
@@ -904,18 +836,6 @@
   var api = {
     NS: NS, EVT: EVT, CHUNK: CHUNK, TIMEOUT_MS: TIMEOUT_MS,
 
-    // ---- 分家口径（唯一一份，js/family.js 直接来问）----------------------
-    //
-    // 「哪些键按子用户各存一份」这件事原先在 family 那边有一套**按名字猜**
-    // 的兜底，猜不到就默认分家 —— 而同步引擎自己的三把键
-    // （`poem_sync_pref_v1` / `poem_sync_seen_v1` / `poem_pre_merge_backup_v1`）
-    // 恰好落在「猜不到」那一档里，于是被当成进度键跟着第一个孩子分家：
-    //   ① 在设置页开同步 → 落在 `poem_sync_pref_v1::f-xxx`；
-    //   ② 「我的」页读到的是 **另一个孩子的键**（或根本没有）→ 显示成「没开」。
-    // 两页读同一份状态这件事就这么静默坏了（2026-09-20 从 sync 测试的真页面
-    // 一节量出来的）。
-    //
-    // ⚠️ 答案只有这一处：family 那边不再自己猜，直接问这里。
     perChildKey: function (key) {
       var k = String(key == null ? "" : key);
       if (k.indexOf(NS.seen) === 0) return true;

@@ -38,9 +38,7 @@
     "处理": ["chǔ", "lǐ"],
     "相处": ["xiāng", "chǔ"],
     "长啸": ["cháng", "xiào"],
-    // 「长天」是《滕王阁序》「秋水共长天一色」那一处（Issue #243 用户点名）。
-    // 词表是**通例**：补上它之后那一句在全站各处都对，而不只是那一篇；
-    // 勘误层（js/pinyin-edit.js）管的是词表没料到的**个例**，两者不冲突。
+
     "长天": ["cháng", "tiān"],
     "长空": ["cháng", "kōng"],
     "长大": ["zhǎng", "dà"],
@@ -138,23 +136,6 @@
     return /\p{Script=Han}/u.test(ch);
   }
 
-  // ---------------------------------------------------------------------------
-  // 注音勘误层（Issue #243 · 《滕王阁序》「秋水共长天一色」的「长」）
-  // ---------------------------------------------------------------------------
-  // 上面那两个读音来源（表 + 词表）都是**通例**：表给一个字几个读音，词表
-  // 给几个常见的词。可古文里总有表里没有、词表也想不到的组合（「长天」就是
-  // 一个），逐词去补是补不完的，而且改一次要发一次版。
-  //
-  // 所以在这一层之上加一张**勘误表**（js/pinyin-edit.js，可在管理页面增删）：
-  // 「某一篇 · 某一句 · 第几个字 → 读什么」。它只在一个前提下参与 ——
-  // 调用方用 `begin()` 声明「现在注的是哪一篇、哪一句」，否则一行都不查。
-  //
-  //   · 只有**多音字**才查勘误：单音字本来就没错可勘（勘误表里也存不下
-  //     第二个读音，硬改等于制造新错）。
-  //   · 勘误**优先于词表**：有人当面核对过的那一处，比通用规则可信。
-  //   · 勘误是「某篇某句第 N 个字」，不是「全文替换这个字」——
-  //     「长」在《滕王阁序》里出现好几次，各读各的。
-
   var FIX_WID = "";
   var FIX_LINE = "";
   var FIX_MAP = null;
@@ -163,7 +144,6 @@
     return typeof window !== "undefined" && window.PinyinFix ? window.PinyinFix : null;
   }
 
-  // 声明「接下来这一句属于哪一篇」——`line` 为空即关闭勘误（默认状态）。
   function begin(wid, line) {
     FIX_WID = String(wid == null ? "" : wid);
     FIX_LINE = String(line == null ? "" : line).trim();
@@ -176,8 +156,6 @@
 
   function end() { begin("", ""); }
 
-  // 这一句里第 i 个字符是同一个字的第几次出现（「长洲」与「长天」要靠它分开）。
-  // 传进来的 `chars` 是**整句**的字符数组（不是整篇），所以下标从 0 起算。
   function nthIn(chars, i) {
     var ch = chars[i];
     var n = 0;
@@ -198,7 +176,6 @@
     if (!list.length) return "";
     if (list.length === 1) return list[0];
 
-    // 勘误层（只在这一段被 begin() 声明过某篇某句时才可能命中）。
     const fixed = fixAt(ch, text, i);
     if (fixed) return fixed;
 
@@ -327,15 +304,6 @@
     return list;
   }
 
-  // 一篇的整体注音（**这是给页面用的那一个**）。
-  //
-  // 它比 annotateHtml 多做一件事：**逐句**声明「这一段属于哪一篇」，
-  // 让勘误层有机会命中。分句的判据就是换行 —— 正文里本来就一行一句
-  // （data/poems-*.js 的 text 用 \n 分行），所以行号与勘误表里存的那一句
-  // 是同一个东西，不需要再猜标点。
-  //
-  // 不传 wid 时（或勘误表为空时）行为与 annotateHtml **逐字相同**：
-  // 老调用点不改也不会变样。
   function annotatePoem(wid, text, mode) {
     const src = String(text == null ? "" : text);
     const w = String(wid == null ? "" : wid);
@@ -350,7 +318,6 @@
     return out.join("<br>");
   }
 
-  // 逐句注音（纯文本那一档，如打印稿）。同一套勘误，共用同一份分句逻辑。
   function annotatePoemText(wid, text, mode) {
     const src = String(text == null ? "" : text);
     const w = String(wid == null ? "" : wid);

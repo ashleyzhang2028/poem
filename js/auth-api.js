@@ -10,10 +10,6 @@
   var TRANSPORT_ERR = {
     E_NOT_CONFIGURED: "这个站点还没开放云端账号，当前是本机体验版",
 
-    // 「上游读不动」（Issue #276）：数据库项目被暂停 / 表没建 / 密钥不对。
-    // ⚠️ 这三句是**兜底** —— 服务端 `_lib/upstream.js` 会给一句更具体的
-    //    （哪一档、该找谁），下面那一段认这个码时会优先用服务端那句。
-    //    留在这里是为了「服务端只回了个码、没带 message」的场合也有话说。
     E_DB_UNREACHABLE: "账号服务器连不上（多半是数据库项目被暂停了）。云端登录 / 注册暂时用不了；本站的背诵功能不受影响。",
     E_DB_MISSING_TABLE: "账号服务器上的表还没建好，请联系站点管理员跑一次 schema.sql。",
     E_DB_BAD_KEY: "账号服务器的密钥不对，请联系站点管理员。",
@@ -40,16 +36,10 @@
     E_VERIFY_MAIL_FAIL: "验证邮件暂时无法发送，请稍后重试。",
     E_RESET_MAIL_FAIL: "重设邮件暂时无法发送，请稍后重试。",
 
-    // 这一条只用**服务端没给 message 时**（正常路径下服务端那句会盖过它）。
-    // 用词与页面其它地方统一是「确认」——「验证」在这个站上指的是验证码那件事
-    // （「发送验证码」「验证并登录」），两件事混用会让人以为要去再输一次验证码。
     E_EMAIL_UNVERIFIED: "邮箱还没确认：请打开验证邮件里的链接，点开即完成确认并登录。",
 
     E_TURNSTILE: "人机校验没通过，请刷新页面再试一次",
 
-    // 请求本身不合法（服务端回 400 E_BAD_BODY）。这一条要说「这一发没送对」，
-    // 不能说成「服务端出了点问题」—— 后者会让人以为是自己运气不好，
-    // 反复重试同一个坏请求（Issue #276 后续：线上就是这么表现的）。
     E_BAD_BODY: "这一发请求没能被服务端读懂，请刷新页面重试。",
     E_METHOD: "这一发请求的方式不对，请刷新页面重试。"
   };
@@ -73,7 +63,6 @@
     E_TIMEOUT: "服务器响应超时，请稍后重试。",
     E_INTERNAL: "服务暂时不可用，请稍后重试。",
 
-    // 与上面 TRANSPORT_ERR 同源的兜底（服务端没给 message 时才有话说）
     E_DB_UNREACHABLE: "账号服务器连不上（多半是数据库项目被暂停了）。云端登录 / 注册暂时用不了；本站的背诵功能不受影响。",
     E_DB_MISSING_TABLE: "账号服务器上的表还没建好，请联系站点管理员跑一次 schema.sql。",
     E_DB_BAD_KEY: "账号服务器的密钥不对，请联系站点管理员。",
@@ -161,15 +150,9 @@
           var data = null;
           try { data = text ? JSON.parse(text) : null; } catch (e) { data = null; }
           if (!data || typeof data !== "object") {
-            // 非 JSON 响应：4xx 多半是「这一发没送对」（平台层直接回的纯文本 /
-            // 网关页面），5xx 才是「服务端出了点问题」。原先一律回 E_INTERNAL，
-            // 于是**收到一个 400 也会显示「服务暂时不可用」** —— 一句话说错，
-            // 用户就去反复重试同一个坏请求了。
+
             var soft = res.status >= 400 && res.status < 500;
-            // 503 是**平台层**（Vercel / Supabase 网关）回的，不在 4xx 那一档 ——
-            // 但它说的正是「这一发现在做不了、过会儿再来」，不是「服务端崩了」。
-            // 原先它落进 E_INTERNAL（「服务暂时不可用，请稍后重试。」），
-            // 与数据库被暂停时**同一句话**，用户分不出是哪种。
+
             var unavail = res.status === 503;
             var softCode = soft ? "E_BAD_BODY" : (unavail ? "E_DB_UNREACHABLE" : "E_INTERNAL");
             state.degraded = unavail ? true : state.degraded;
@@ -177,14 +160,6 @@
             return { ok: false, code: softCode, message: em(softCode), retryable: unavail || undefined, status: res.status };
           }
 
-          // 503 = 「服务端在，但这一件事它现在做不了」。原先**整档**被改写成
-          // E_NOT_CONFIGURED（「这个站点还没开放云端账号，当前是本机体验版」）——
-          // 于是服务端好不容易说清楚的那一句（Issue #276 新增的
-          // 「账号服务器连不上（多半是数据库项目被暂停了）」）被**这一句顶掉**，
-          // 用户看到的还是一件跟现场无关的事，而且**该找谁、该做什么一个字都没露**。
-          //
-          // 现在的口径：**服务端给了码就用服务端的**，只在它没给（老服务端 /
-          // 平台层直接回 503 带 HTML）时才折算成 E_NOT_CONFIGURED。
           if (res.status === 503 || data.code === "E_NOT_CONFIGURED") {
             state.degraded = true;
             var known = data.code && TRANSPORT_ERR[data.code] && data.code !== "E_INTERNAL";
@@ -193,7 +168,7 @@
             return {
               ok: false,
               code: code503,
-              // ⚠️ 服务端那句优先于本地表：它知道是哪一档、也知道该找谁
+
               message: known ? (data.message || em(code503)) : em("E_NOT_CONFIGURED"),
               retryable: data.retryable,
               status: res.status
@@ -276,9 +251,6 @@
         }, PASSWORD_ERR);
       },
 
-      // 口令登录（Issue #278 第四轮起也带人机校验的令牌）。
-      // `turnstileToken()` 是这一层自己的兜底：拿不到令牌时它是空串，
-      // 而没配人机校验的服务端对空串同样放行 —— 两边都不需要谁来特判。
       login: function (input) {
         input = input || {};
         return post("/login", {
@@ -289,9 +261,6 @@
         }, PASSWORD_ERR);
       },
 
-      // 点完确认链接**直接登录**（Issue #278）：这条响应现在也带会话 Cookie，
-      // 所以它同时带一封账号事实回来。`signedIn` 是服务端如实自报的那一位
-      // ——「确认了」与「进去了」是两件事，界面不替服务端猜。
       verifyEmail: function (input) {
         input = input || {};
         return post("/verify-email", { vid: input.vid, token: input.token }, PASSWORD_ERR);
@@ -335,7 +304,6 @@
 
       accounts: function () { return post("/admin/accounts", { deviceId: deviceId }); },
 
-      // 用户报告 / 勘误（Issue #243 第四轮）
       report: function (input) {
         input = input || {};
         return post("/report", {
@@ -354,9 +322,7 @@
 
       myReports: function (input) {
         input = input || {};
-        // GET 用查询串，**不发请求体**：`send()` 只在 POST/PATCH 那两条路上
-        // 挂 Content-Type 与 body，而中间那些代理对「GET 带请求体」的处理
-        // 各家不一样（有的直接丢掉）—— 丢掉的下场是「limit 传了等于没传」。
+
         var qs = input.limit ? "?limit=" + encodeURIComponent(String(input.limit)) : "";
         return call("/report" + qs, "GET");
       },
@@ -373,9 +339,6 @@
 
       me: function () { return call("/me", "GET"); },
 
-      // 昵称（Issue #278）：以前它只写本机（localStorage），服务器上那一列
-      // 永远是空的 —— 换台设备名字就没了，管理端名录也认不出人。
-      // 现在它是一件**账号事实**，走 PATCH /api/me。
       setNickname: function (input) {
         input = input || {};
         return call("/me", "PATCH", { nickname: input.nickname }, PASSWORD_ERR);

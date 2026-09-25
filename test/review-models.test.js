@@ -1,4 +1,4 @@
-// Issue #278：页面层（jsdom 三张页）已删除，这里只留算法内核的功能验证。
+
 const fs = require('fs');
 const vm = require('vm');
 const path = __dirname + '/../';
@@ -34,16 +34,6 @@ RM.keys().forEach(k => {
     '「' + k + '」的说明齐备且只有一句（' + d.name + ' · ' + d.years + '）');
 });
 
-// ---------------------------------------------------------------------------
-// 算法按层级开放（Issue #229 第四轮）
-//
-// 用户原话：「游客可以用艾宾浩斯遗忘曲线 / 登录 free 添加莱特纳盒 /
-// pro 添加 SM-2 / max 再添加 FSRS 支持全部」。
-//
-// 「哪一档能用哪几张」这句话在 js/entitlement.js 的 CAPS 里（四条
-// algo.*），内核只是替调用方去问它 —— 所以这一节先把 Entitlement 装进
-// 内核那个 vm 沙盒，再逐档对拍。
-// ---------------------------------------------------------------------------
 vm.runInContext(fs.readFileSync(path + 'js/entitlement.js', 'utf8'), sb, { filename: 'js/entitlement.js' });
 const Ent = sb.Entitlement;
 const TIERS = {
@@ -91,7 +81,6 @@ chk(RM.allowedKey('不知道是啥', TIERS.max) === 'ebbinghaus',
 chk(RM.allowedKey('', undefined) === 'ebbinghaus',
   '空 ctx + 空键 → 出厂默认（任何输入都不得返回 null）');
 
-// 单调性：层级越高，能用的张数只增不减
 {
   const order = ['guest', 'free', 'pro', 'max'];
   let prev = RM.allowedKeys(TIERS.guest).length;
@@ -103,7 +92,6 @@ chk(RM.allowedKey('', undefined) === 'ebbinghaus',
   chk(prev === RM.keys().length, '到 max 时四张全开（一张都不缺）');
 }
 
-// 内核不自己判层级：把 Entitlement 拿掉后只剩出厂默认那一张
 {
   const sb2 = { window: {}, console };
   sb2.window = sb2;

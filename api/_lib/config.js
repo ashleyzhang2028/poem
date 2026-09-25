@@ -41,12 +41,6 @@ var CONFIG = {
 
   requireEmailVerified: env("REQUIRE_EMAIL_VERIFIED", "1") !== "0",
 
-  // 管理员怎么诞生（Issue #276）：**名单在环境变量里，判定在服务端**。
-  // OWNER_EMAILS 是逗号 / 空格分隔的**完整邮箱**（不是掩码 —— 掩码是给人看的，
-  // 授权要唯一）。这一串里的邮箱在**注册 / 确认 / 登录**时被认成 owner
-  // （见 core.claimOwnerRole），从此角色的权威在 `accounts.role` 那一列。
-  // 不填的后果是「一个 owner 都没有」：这时 /admin/ 对所有人关门（如实拒绝），
-  // 而不是退回「谁打开谁是主人」——那条兜底正是 Issue #276 要拆掉的东西。
   ownerEmails: env("OWNER_EMAILS", ""),
 
   passwordMin: intEnv("PASSWORD_MIN", 8),
@@ -70,10 +64,6 @@ var CONFIG = {
   mailRetryMax: intEnv("MAIL_RETRY_MAX", 2),
   mailRetryBudgetMs: intEnv("MAIL_RETRY_BUDGET_MS", 6000),
 
-  // 重试的退避基数（400ms × 3ⁿ 里那个 400）。留成旋钮是为了让**测试**
-  // 不必真的等到线上该等的时间：重试的判据（该不该重试、最多几次、
-  // 预算怎么算）与「等多久」是两件事，后者只该由生产口径决定
-  // （默认值不变，线上一个字都不改）—— Issue #278。
   mailRetryBaseMs: intEnv("MAIL_RETRY_BASE_MS", 400),
 
   requireEmailVerified: env("REQUIRE_EMAIL_VERIFIED", "1") !== "0",
