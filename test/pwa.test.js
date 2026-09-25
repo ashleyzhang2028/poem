@@ -1713,7 +1713,26 @@ function check(name, cond, extra) {
       const rowState = await sp.evaluate(() => {
         const row = document.getElementById('identity-row');
         const card = row.closest('.account-card').getBoundingClientRect();
-        const kids = [...row.children].map(e => {
+        // ⚠️ Issue #276 第十轮：`row.children` 从两行结构落地那一刻起，量的
+        //    就不是「格子」而是两个**容器**了（`.identity-head` /
+        //    `.identity-btns`，各 337px）—— 于是下一句「昵称列没被压成 0 宽」
+        //    永远在量那个容器：它当然有宽度，而真正该被看着的昵称格一旦
+        //    收窄（或那一格在源码里没了 id），这条判据照样是绿的。
+        //    实测（CI 与本地同一份）：扁平化出来的是 `identity-head:337
+        //    identity-btns:337`，判据报「昵称列没被压成 0 宽」——但它量的是
+        //    第一行那个**整体**。所以现在按「格子」点名，不按「容器的孩子」：
+        //    第一行里那三格（头像槽 / 昵称列 / 徽章）＋ 第二行里那两颗键。
+        //    ⚠️ 昵称格认的是 `#identity-main`（js/mine.js 里那一格自带这个 id，
+        //       test/mine-page.test.js 有一条同源守卫）——**不是**靠位置去猜
+        //       「children[1]」。位置会变，id 不会。
+        const cells = [
+          row.querySelector('.avatar-slot'),
+          document.getElementById('identity-main'),
+          row.querySelector('#identity-badge'),
+          row.querySelector('#btn-account-entry'),
+          row.querySelector('#btn-avatar-pick')
+        ].filter(Boolean);
+        const kids = cells.map(e => {
           const r = e.getBoundingClientRect();
           return { id: e.id || String(e.className).split(' ')[0],
                    l: +r.left.toFixed(1), r: +r.right.toFixed(1),
