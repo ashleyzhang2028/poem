@@ -79,12 +79,16 @@ function repaint(p) {
 }
 
 {
-  chk(/id="btn-account-entry"/.test(SRC.mine),
-    '「我的」页的账号卡里有账号入口（个人中心删掉后它是唯一的枢纽）');
-  chk(/"账号"\s*:\s*"登录"/.test(MINE_JS) || /id\.signedIn/.test(MINE_JS),
-    '那颗入口的文案由 js/mine.js 按登录态写（不在 HTML 里写死两处；已登录叫「账号」）');
+  // ⚠️ Issue #276 第八轮：「登录 / 退出」并成一颗键之后，它由 js/mine.js
+  //    画在**身份行**里（HTML 里没有静态标记了）；账号卡里那颗改叫
+  //    「账号与安全」（#btn-account-open，去 /login/ 看「我是谁」）。
+  //    两处的 id 都在 SRC.mine 上点名，判据按脚本画出来那一份。
+  chk(/"btn-account-entry"/.test(MINE_JS) && /btn-account-open/.test(SRC.mine),
+    '「我的」页有两颗账号相关的键：身份行那颗（登录/退出）+ 账号卡那颗（账号与安全）');
+  chk(/id\.signedIn/.test(MINE_JS),
+    '那颗入口的文案由 js/mine.js 按登录态写（不在 HTML 里写死两处）');
   chk(/location\.href = "\/login\/"/.test(MINE_JS),
-    '账号入口落在 /login/');
+    '未登录那一态落在 /login/');
   chk(/id\.signedIn/.test(MINE_JS.slice(MINE_JS.indexOf('function renderSignOut'))),
     '入口文案按 id.signedIn 分两种（不是自己另算一遍登录态）');
 
@@ -102,8 +106,8 @@ function repaint(p) {
     'init() 两步顺序：renderIndex → renderAbout');
 
   chk(/mine\.js/.test(SRC.mine), '「我的」页加载 js/mine.js（账号那一行的唯一来源）');
-  chk(/renderSignOut/.test(MINE_JS) && /btn-account-entry/.test(SRC.mine),
-    '账号那一行由 js/mine.js 的 renderSignOut 画（登录态那两颗键只有这一个来源）');
+  chk(/renderSignOut/.test(MINE_JS) && /"btn-account-entry"/.test(MINE_JS),
+    '那颗键由 js/mine.js 的 renderSignOut 画（登录态那两态只有这一个来源）');
   chk(!/href="\/login\/"/.test(stripHtml(SRC.mine)), '页面 HTML 里不写死 /login/（地址只在 JS 一处）');
   chk(/"\/login\/"/.test(MINE_JS), '账号入口的落点（/login/）写在 js/mine.js 里');
 }
@@ -157,11 +161,14 @@ function repaint(p) {
   signIn(p.window, 'belem@example.com');
   repaint(p);
 
-  // 用户 2026-09-21：「管理登录状态」是五个字的绕话 —— 那颗键就是「账号」。
-  chk(entryBtn(p).textContent === '账号',
-    '已登录时那颗键就是「账号」（实际「' + entryBtn(p).textContent + '」）');
-  chk(shownIds(p).join(',') === 'btn-account-entry,btn-sign-out',
-    '已登录时两颗键（管理登录状态 / 退出）在同一行（实际 ' + shownIds(p).join(',') + '）');
+  // ⚠️ Issue #276 第八轮：用户问「登录按钮和退出登录按钮应该同时显示吗？
+  //    他们应该是一个按钮两个状态吧？」—— 是。旧实现里已登录那颗叫「账号」、
+  //    旁边另有一颗「退出登录」，两颗并存；现在**一颗键两个状态**：
+  //    未登录「登录」、已登录「退出登录」。
+  chk(entryBtn(p).textContent === '退出登录',
+    '已登录时那颗键换成「退出登录」（实际「' + entryBtn(p).textContent + '」）');
+  chk(shownIds(p).join(',') === 'btn-account-entry',
+    '已登录时那一格上也只有**一颗**键（实际 ' + shownIds(p).join(',') + '）');
   const innText = stripHtml(p.doc.getElementById('identity-row').outerHTML);
   chk(/游客|已登录/.test(innText), '已登录时身份行仍写着登录态那一句');
   chk(!/belem@example\.com/.test(innText), '页面上不出现明文邮箱（掩码之外一个字符都不露）');

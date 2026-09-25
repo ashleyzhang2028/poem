@@ -1673,7 +1673,10 @@ function check(name, cond, extra) {
                    l: +r.left.toFixed(1), r: +r.right.toFixed(1),
                    w: +r.width.toFixed(1), h: +r.height.toFixed(1) };
         });
-        const btns = [...row.querySelectorAll('#btn-account-entry, #btn-avatar-pick, #btn-avatar-clear')]
+        // ⚠️ Issue #276 第八轮：这一行上只剩**两颗键**了（登录/退出 · 上传/更新
+        //    头像）。「删除头像」搬进裁切层（没图时它根本不该存在），
+        //    所以这里点名的是**现在真在这一行上的那两颗**，不是旧的三颗。
+        const btns = [...row.querySelectorAll('#btn-account-entry, #btn-avatar-pick')]
           .filter(b => !b.hidden);
         const squeezed = btns.filter(b => {
           const r = b.getBoundingClientRect();
@@ -1714,11 +1717,11 @@ function check(name, cond, extra) {
       check('iPhone 我的页：身份行不溢出（折行可以，撑破卡片不行）',
         rowState.scrollOver <= 0.5 && rowState.cardOver <= 0.5,
         '行内溢出 ' + rowState.scrollOver + ' / 出卡片 ' + rowState.cardOver + 'px');
-      check('iPhone 我的页：「登录 / 账号」「上传头像」这一簇每一颗都读得出来（没有被压成竖排）',
+      check('iPhone 我的页：「登录 / 退出登录」「上传头像」这一簇每一颗都读得出来（没有被压成竖排）',
         rowState.squeezed.length === 0,
         rowState.squeezed.length
           ? JSON.stringify(rowState.squeezed)
-          : '三颗键的宽度都撑得住自己的字，两侧也留得住白');
+          : '两颗键的宽度都撑得住自己的字，两侧也留得住白');
       const flat = rowState.kids.map(k => k.id + ':' + k.w).join(' ');
       // ⚠️ 昵称列不许被压成 0 宽：旧版（393px）实测 `identity-main:0` ——
       //    名字那一格整个没了，一行的重心全压在那几颗键上。

@@ -24,9 +24,6 @@
   function render() {
     var A = avatarMod();
     var slot = $("#avatar-slot");
-    // ⚠️ 身份行还没落地时**照样往下走**：下面那几行里就是「把 #btn-avatar-clear
-    //    的显隐画对」。早退的话，mine.js 一重画身份行（那颗键回到 hidden），
-    //    删除头像就再也不出现了 —— 而本页没有任何地方会补画它。
     if (!A) return;
     var html = "";
     try { html = A.html(window.localStorage, { dock: true }); } catch (e) { html = ""; }
@@ -38,11 +35,23 @@
 
     var d = null;
     try { d = A.display(window.localStorage); } catch (e) { d = null; }
-    var clear = $("#btn-avatar-clear");
-    if (clear) clear.hidden = !(d && d.hasImage);
+    var hasImage = !!(d && d.hasImage);
 
-    // 身份行是新节点的话，两颗键这会儿才存在 —— 在这里补绑一次（幂等）。
-    // 不补的话：mine.js 重画身份行的那一瞬间，两颗键就与监听器一起被丢掉了。
+    // ⚠️ 那颗键的文案就是**这一页上唯一**说明「有图 / 没图」的地方
+    //    （Issue #276 第八轮）。用户原话：「如果用户上传了头像，上传头像
+    //    是不是应该显示更新头像？」—— 是：没图时它说「上传头像」，
+    //    有图时它说「更新头像」。一个动作、两个文案，判据就是本机有没有图。
+    //    ⚠️ 这也顺手消掉了旧设计里那颗**没图时也画着**（只是 hidden）的
+    //       「删除头像」：用户问「没上传头像是不是不该显示删除头像按钮」，
+    //       答案是不该 —— 删除只在**有图**这一半里说得通，而那一半的唯一
+    //       入口就是这颗键点进来的裁切层（删除那颗现在住在那儿，见
+    //       mine/index.html 的 #btn-crop-clear）。所以这里不再有第二颗键
+    //       要从「有没有图」推显隐 —— 一颗键、一处文案，推不出第二处。
+    var pick = $("#btn-avatar-pick");
+    if (pick) pick.textContent = hasImage ? "更新头像" : "上传头像";
+
+    // 身份行是新节点的话，那颗键这会儿才存在 —— 在这里补绑一次（幂等）。
+    // 不补的话：mine.js 重画身份行的那一瞬间，键就与监听器一起被丢掉了。
     bindAvatarButtons();
   }
 
@@ -287,12 +296,11 @@
     box.addEventListener("pointerleave", endPointer);
   }
 
-  // ⚠️ 「上传头像 / 删除头像」这两颗键现在挂在**身份行**里（Issue #276：
-  //    与「登录」同行），而身份行是 js/mine.js 按需整段重画的
-  //    （buildIdentityRow 换 innerHTML —— 换一次，两颗键就是全新的节点）。
-  //    所以这两处的绑定必须**幂等**：用 dataset.bound 记一次，由 render()
-  //    每次重画后补调一次。不补的下场是「重画一次这两颗键就哑了」——
-  //    点了没反应，而且不报错。
+  // ⚠️ 「上传/更新头像」那颗键挂在**身份行**里（Issue #276：与「登录」同行），
+  //    而身份行是 js/mine.js 按需整段重画的（buildIdentityRow 换 innerHTML
+  //    —— 换一次，那颗键就是全新的节点）。所以绑定必须**幂等**：用
+  //    dataset.bound 记一次，由 render() 每次重画后补调一次。不补的下场是
+  //    「重画一次这颗键就哑了」—— 点了没反应，而且不报错。
   function bindAvatarButtons() {
     var pick = $("#btn-avatar-pick");
     var file = $("#avatar-file");
@@ -304,10 +312,14 @@
       file.dataset.bound = "1";
       file.addEventListener("change", function () { onPickFile(file); });
     }
-    var clearBtn = $("#btn-avatar-clear");
+    // 删除那颗住在裁切层里，是**静态标记**（只画一次，不随身份行重画）——
+    // 但幂等这一条照旧：裁切层若被重建过，这里还能补上。
+    var clearBtn = $("#btn-crop-clear");
     if (clearBtn && !clearBtn.dataset.bound) {
       clearBtn.dataset.bound = "1";
-      clearBtn.addEventListener("click", clear);
+      // ⚠️ 先关层再删：删除之后这一层里的「用这张」就没有意义了
+      //    （它处理的是 crop.file，而 crop.file 只有「新挑一张」才有）。
+      clearBtn.addEventListener("click", function () { closeCrop(); clear(); });
     }
   }
 

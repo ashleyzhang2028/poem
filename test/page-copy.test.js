@@ -72,15 +72,23 @@ const SETTINGS_SRC = SETTINGS_PAGES.map(read);
     chk(MINE.indexOf(m) >= 0, "「我的」页上有 " + m + "（它现在唯一的家）");
   });
 
-  // ⚠️ 2026-09-24（Issue #276）那一轮把静态标记又收掉两条：头像那两颗键跟着
+  // ⚠️ 2026-09-24（Issue #276）那一轮把静态标记又收掉一条：那颗头像键跟着
   //    身份行走（见 mine-page.test.js），这里守的是**别再有人手写第二份**：
   //    那一行里的动作由 js/mine.js 一处画出来，HTML 里连壳都不留。
-  ["id=\"btn-avatar-pick\"", "id=\"btn-avatar-clear\""].forEach(m => {
+  //    ⚠️ 第八轮**反向**一条：「删除头像」（#btn-avatar-clear）**撤了** ——
+  //    它搬到裁切层里去了（没图时它压根不该存在），所以这里改成三条：
+  //    ① 身份行那颗键 HTML 里不写死；② js/mine.js 画它；
+  //    ③ 旧的那颗在整个页面上**一个字都不许再出现**。
+  ["id=\"btn-avatar-pick\""].forEach(m => {
     chk(MINE.indexOf(m) < 0, "「我的」页 HTML 里不再写死 " + m + "（身份行那一格由 js/mine.js 画）");
     chk(MINE_JS.indexOf(m.replace("id=", "id=\"")) < 0 || MINE_JS.indexOf("'" + m.replace("id=", "") + "'") >= 0 ||
         MINE_JS.indexOf('"' + m.replace("id=", "") + '"') >= 0,
       "js/mine.js 里能查到 " + m + "（它唯一的出画口）");
   });
+  chk(MINE.indexOf('id="btn-avatar-clear"') < 0 && MINE_JS.indexOf('"btn-avatar-clear"') < 0,
+    "「删除头像」不再挂在身份行上（它只住在有图那一半的裁切层里）");
+  chk(MINE.indexOf('id="btn-crop-clear"') >= 0,
+    "它现在住在裁切层里（有图那一半的唯一入口就是那儿）");
 
   // 通用页剩下什么：只有「数据管理」与「课内诗词导出」两块
   const generalItems = (stripHtml(GENERAL).match(/class="settings-item"/g) || []).length;

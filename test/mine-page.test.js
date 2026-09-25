@@ -55,15 +55,23 @@ const css = read('css/style.css') + read('css/account.css');
 }
 
 {
-  // ⚠️ 2026-09-24（Issue #276）：#btn-avatar-pick / #btn-avatar-clear 这两颗
-  //    从 HTML 静态标记改成了**由 js/mine.js 就地画出来**（它们现在挂在身份行里，
-  //    与「登录」同一行，而身份行是整段按需画的）。所以这一条判据也换成
-  //    「两处都点了名」：脚本里画出来 → 页面运行时真的有 → 编辑层认它。
-  //    HTML 里那份静态标记撤了（画它的人只有一个，见 test/mine-page 那一节）。
-  chk(!/id="btn-avatar-pick"/.test(MINE) && !/id="btn-avatar-clear"/.test(MINE),
-    '那两颗键不再写死在 HTML 里（它们是身份行的一部分，由 js/mine.js 一处画）');
-  chk(/"btn-avatar-pick"/.test(MINE_JS) && /"btn-avatar-clear"/.test(MINE_JS),
-    'js/mine.js 把它们画在身份行里（与「登录」同一行的两名成员）');
+  // ⚠️ 2026-09-24（Issue #276）：#btn-avatar-pick 从 HTML 静态标记改成了
+  //    **由 js/mine.js 就地画出来**（它挂在身份行里、与「登录」同一行，
+  //    而身份行是整段按需画的）。所以这一条判据是「两处都点了名」：
+  //    脚本里画出来 → 页面运行时真的有 → 编辑层认它。
+  chk(!/id="btn-avatar-pick"/.test(MINE),
+    '那颗键不写死在 HTML 里（它是身份行的一部分，由 js/mine.js 一处画）');
+  chk(/"btn-avatar-pick"/.test(MINE_JS),
+    'js/mine.js 把它画在身份行里（与「登录」同一行）');
+  // ⚠️ 第八轮的**相反**一条：「删除头像」不许再挂在身份行上。
+  //    用户 2026-09-24 问「如果用户没有上传头像，是不是不应该显示删除头像
+  //    按钮？」—— 答案是不该，而且**不该**靠 `hidden` 藏一颗一直挂着的键
+  //    （那是「看着没有、其实有」，判据还得在两处维护）。它住进裁切层：
+  //    那一层只有点了「上传 / 更新头像」才铺得上来，那时一定有图。
+  chk(!/id="btn-avatar-clear"/.test(MINE_JS),
+    '「删除头像」不在身份行那一份代码里了（它只在有图那一半出现）');
+  chk(/id="btn-crop-clear"/.test(MINE) && /"#btn-crop-clear"/.test(AVATAR_EDIT),
+    '它住在裁切层里，且由 js/avatar-edit.js 认（一个出口，不在两处维护）');
 
   ['avatar-file', 'crop-layer',
    'crop-box', 'crop-img', 'crop-zoom', 'btn-crop-ok', 'btn-crop-cancel'].forEach(id => {
@@ -128,8 +136,12 @@ const css = read('css/style.css') + read('css/account.css');
   chk(/\bwidth:\s*(min\(\s*\d[\d.]*em\s*,\s*\d+px\s*\)|\d[\d.]*em)/.test(nickRule),
     '用户名输入框的宽度用 em 收窄（短，不占满一整行；实际「' +
     ((nickRule.match(/width:[^;]+/) || [''])[0]) + '」）');
-  chk(!/(^|[;{\s])width:\s*100%/.test(nickRule),
-    '用户名输入框不再占满一整行（用户 2026-09-18 点名的那个错）');
+  // ⚠️ Issue #276 第八轮：这条**反转**了 —— 输入框现在**必须**能伸缩
+  //    （`width: 100%` + `max-width: 9.5em`），否则它在窄屏上收不动、
+  //    把那一行挤到折行（详见 css/account.css 里那一段的说明）。
+  //    「不占满一整行」这件事改由 `max-width` 表达：上限还是 9.5em。
+  chk(/max-width:\s*(min\(\s*9\.5em|9\.5em)/.test(nickRule),
+    '用户名输入框仍不占满一整行 —— 上限 9.5em 那一段（改由 max-width 表达）');
 }
 
 {
@@ -151,8 +163,22 @@ const css = read('css/style.css') + read('css/account.css');
 
 {
   chk(/id="identity-row"/.test(MINE), '身份卡有身份行');
-  chk(/id="btn-account-entry"/.test(MINE) && /id="btn-sign-out"/.test(MINE),
-    '账号入口 / 退出两颗键都在（它们长在「账号」卡上，不在首卡里）');
+  // ⚠️ Issue #276 第八轮：用户问「登录按钮和退出登录按钮应该同时显示吗？
+  //    他们应该是一个按钮两个状态吧？」—— 是，现在**只有一颗键**
+  //    （#btn-account-entry），文案随登录态在「登录 / 退出登录」之间切，
+  //    落点也跟着换（未登录去 /login/，登录着当场退出）。
+  //    旧的 #btn-sign-out（账号卡里那颗、与登录那颗并存）**整颗撤掉** ——
+  //    两颗键同时在页面上，用户要自己判断「我现在该点哪一颗」，正是他问的那件事。
+  // ⚠️ 判据按**标记**（去掉 HTML 注释之后再找）：页面上留着一段注释说明
+  //    「那一颗已经并成一颗了」，那是说明，不是标记。
+  chk(/"btn-account-entry"/.test(MINE_JS) &&
+      !/id="btn-sign-out"/.test(MINE.replace(/<!--[\s\S]*?-->/g, ' ')),
+    '登录 / 退出是**一颗键**（#btn-account-entry，由 js/mine.js 画在身份行里），' +
+    '不再有与之并存的第二颗');
+  // ⚠️ 判据按**代码**（去注释之后再找）：js/mine.js 里留着一行注释说明
+  //    「原先那颗 #btn-sign-out 已经不在了」，那是说明，不是接线。
+  chk(!/\$\("btn-sign-out"\)/.test(strip(MINE_JS)),
+    'js/mine.js 里也不再给那颗不存在的键绑退出（那会是一条永远不响的死线）');
   chk(!/id="btn-go-plans"/.test(MINE),
     '首卡里不再有「层级对比」那颗键（用户 2026-09-18：从这里移出，改成设置「关于」里的一行链接）');
   chk(!/btn-go-plans/.test(strip(MINE_JS)), 'js/mine.js 里也不再有它的接线');
@@ -162,10 +188,16 @@ const css = read('css/style.css') + read('css/account.css');
     'js/mine.js 里也不再有那条入口的接线（卡撤了，接线一并撤）');
   chk(!/location\.href = "\/plans\/"/.test(strip(MINE_JS)),
     '「我的」页一个字都不提 /plans/（那一页的入口只在设置「关于」里）');
-  chk(/id\.signedIn/.test(MINE_JS), '账号入口的文案按 id.signedIn 分两种（不自己另算一遍登录态）');
-  chk(/\?\s*"账号"\s*:\s*"登录"/.test(MINE_JS) || /"登录"\s*:\s*"账号"/.test(MINE_JS),
-    '未登录「登录」/ 已登录「账号」（用户 2026-09-21：「管理登录状态」是五个字的绕话）');
-  chk(/location\.href = "\/login\/"/.test(MINE_JS), '账号入口落在 /login/');
+  chk(/id\.signedIn/.test(MINE_JS), '那颗键的文案按 id.signedIn 分两种（不自己另算一遍登录态）');
+  chk(/\?\s*"退出登录"\s*:\s*"登录"/.test(MINE_JS) || /"登录"\s*:\s*"退出登录"/.test(MINE_JS),
+    '未登录说「登录」/ 已登录说「退出登录」（问题 #276：一个按钮两个状态）');
+  chk(/location\.href = "\/login\/"/.test(MINE_JS), '未登录那一态落在 /login/');
+  // ⚠️ 落点**不许**写死在监听器里：文案会跟着登录态换，落点也得跟着换，
+  //    否则「登录之后点它仍然去登录页」—— 那是这一轮要修的另一半。
+  chk(/dataset\.action/.test(strip(MINE_JS)),
+    '落点由 dataset.action 现读（监听器只绑一次，不能把第一帧的落点记死）');
+  chk(/onSignOut/.test(strip(MINE_JS)) && /dataset\.action === "sign-out"/.test(MINE_JS),
+    '已登录那一态点了是**当场退出**（不是再跳一次登录页）');
 
   chk(/id="danger-card"/.test(MINE) && /class="account-card danger-zone"/.test(MINE),
     '注销单占一张危险区卡（朱砂描边）');
@@ -337,7 +369,9 @@ function boot(seed) {
     '（真页面）页面上不再出现「上传图片」四个字');
   chk(d0.getElementById('btn-account-entry').textContent === '登录',
     '（真页面）未登录时那颗键写「登录」');
-  chk(d0.getElementById('btn-sign-out').hidden, '（真页面）未登录时不摆「退出登录」');
+  chk(d0.getElementById('btn-account-entry').dataset.action === 'sign-in' &&
+      d0.getElementById('btn-account-entry').className.indexOf('ghost') < 0,
+    '（真页面）未登录时它是**主按钮**外观 + 落点是登录（一颗键的其中一态）');
   // ⚠️ 2026-09-24（Issue #276）这一条**整条反转了**，不是放宽：
   //    用户同一句话问出三件事 ——「上传头像和删除头像请用二级按钮吧 目前一行
   //    显示一个按钮也太大了」「我现在找不到登录入口了，从哪里登录？」
@@ -354,15 +388,18 @@ function boot(seed) {
         d0.getElementById('account-actions'),
     '（真页面）它仍住在那唯一的容器 #account-actions 里（不是又画了一颗）');
   chk(d0.getElementById('identity-row').contains(d0.getElementById('account-actions')),
-    '（真页面）那个容器整只搬进了身份行（登录 / 上传头像 / 删除头像 同一行）');
-  chk(d0.getElementById('identity-row').contains(d0.getElementById('btn-avatar-pick')) &&
-      d0.getElementById('identity-row').contains(d0.getElementById('btn-avatar-clear')),
-    '（真页面）上传头像 / 删除头像也在那一行里');
+    '（真页面）「登录 / 退出」那一格就在身份行里（与头像键同一行）');
+  chk(d0.getElementById('identity-row').contains(d0.getElementById('btn-avatar-pick')),
+    '（真页面）「上传头像」也在那一行里');
   chk(!d0.getElementById('btn-account-entry').hidden,
     '（真页面）未登录时它**画出来**（原先整张卡藏着 —— 没登录的人在这一页找不到登录入口）');
   chk(d0.getElementById('danger-card').hidden, '（真页面）未登录时不摆注销卡（没有账号可注销）');
-  chk(d0.getElementById('btn-avatar-clear').hidden,
-    '（真页面）没图时「删除头像」不出现（摆一颗点了没反应的灰键更糟）');
+  // ⚠️ 「删除头像」的判据从「那颗键 hidden 了吗」换成「它还在身份行上吗」：
+  //    没图时它**根本不该存在**（用户 2026-09-24 问的就是这一条）。
+  chk(d0.getElementById('btn-avatar-clear') === null,
+    '（真页面）没图时身份行上没有「删除头像」这颗键（不是 hidden，是没有）');
+  chk(/上传头像/.test(d0.getElementById('btn-avatar-pick').textContent),
+    '（真页面）没图时那颗键说「上传头像」');
   chk(/还没有/.test(d0.getElementById('stats-list').textContent),
     '（真页面）本机数据如实写「还没有」');
   chk(!!d0.getElementById('family-panel'), '（真页面）子用户那一块画出来了');
@@ -456,18 +493,24 @@ function boot(seed) {
         /\.identity-row \{[^}]*flex-wrap:\s*wrap/.test(cssBare),
       '身份行是一个 flex 行、且**可以折行**（这是它唯一的让位方式；' +
       '不让位也不折行的下场是键被压成两个字竖排）');
-    chk(/\.identity-main \{[^}]*margin-right:\s*auto/.test(cssBare),
-      '昵称列把余量全吃在右边（那一簇动作整组贴右缘）');
+    // ⚠️ 口径换过一次（Issue #276 第八轮）：上一轮靠 `margin-right: auto`
+    //    把余量吃在右边，而 auto 外边距在 flex 里**优先于收缩** ——
+    //    结果「差 2px 时昵称列一格不让、徽章掉到第二行」。现在余量交给
+    //    昵称列自己的 `flex-grow: 1`（同一个盒子既吃余量、又第一个让位）。
+    chk(/\.identity-main \{[^}]*flex:\s*1\s+999\s+0/.test(cssBare),
+      '昵称列把余量吃在右边（flex-grow: 1 —— 那一簇动作整组贴右缘）');
     chk(/\.identity-btns \{[^}]*flex-wrap:\s*nowrap/.test(cssBare),
       '「上传头像 / 删除头像」那一格自己也不换行（两颗要并排）');
     chk(/\.identity-btns \{[^}]*margin-top:\s*0/.test(cssBare),
       '那一格不带自己的上外边距（它现在在一行里，不是另起一行）');
 
-    // ⚠️ 取的是**文件里最后那一条**（.identity-btns .account-btn 有两处：@supports
-    //    里那一份只补尺寸，真正定宽的那一份在下面）。取第一条的话，测的是
-    //    「供 :has() 失败时兜底」的那半条 —— 那不是本轮要守的东西。
+    // ⚠️ 取的是**定尺那一条**（.identity-btns .account-btn 有两处：一条定尺
+    //    （width / height / font-size / flex），另一条专管
+    //    `margin-top: 0`（第八轮加的，给「删除头像偏低 5px」那道题）。
+    //    按「文件里最后一条」取会抓到那条单行的 —— 它测不出尺寸。
+    //    这里按**有没有 height** 认那一条，不按位置。
     const btnRules = [...cssBare.matchAll(/\.identity-btns \.account-btn \{[^}]*\}/g)].map(m => m[0]);
-    const btnsRule = btnRules[btnRules.length - 1] || '';
+    const btnsRule = btnRules.filter(r => /height:/.test(r)).pop() || '';
     chk(/height:\s*var\(--ctl-h-sm\)/.test(btnsRule),
       '那两颗键的高度是行内小号那一档（--ctl-h-sm = 32px），不是 44px 的主按钮 ——' +
       '用户说的「太大」就是这一条（实际「' + (btnsRule.match(/height:[^;]+/) || [''])[0] + '」）');
@@ -487,14 +530,19 @@ function boot(seed) {
     chk(!/flex-basis:\s*max-content/.test(cssBare),
       '不再靠 flex-basis: max-content 定宽（实测它在这个容器里被算成 0，' +
       '「上传头像」66px 的键只剩 3px 的 basis）');
-    // ⚠️ 昵称列让位优先级最高：放不下时它先让，一路可以让到 0。
-    chk(/\.identity-main \{[^}]*flex-shrink:\s*\d{3}/.test(cssBare),
-      '昵称列让位优先级最高（flex-shrink: 999）—— 放不下时它先让，' +
-      '一路让到 0 宽，那几颗键一颗都不许被压死');
-    // ⚠️ 昵称列还必须**先于内容**（flex-basis: auto）：它按 9.5em 要 180px 时，
-    //    这一行上六个格子根本摆不下，「登录」会被压成两个字竖排。
-    chk(/\.identity-main \{[^}]*flex:\s*0 1 auto/.test(cssBare),
-      '昵称列按**内容**要与让位（flex: 0 1 auto）—— 不是按 9.5em 先占满 180px 再让');
+    // ⚠️ 让位优先级（Issue #276 第八轮）：昵称列先让，且它必须有一个下限。
+    //    旧写法 `flex: 0 1 auto` 把 basis 留给内容（147px），而 flex 的
+    //    断行判据看 basis 不看 shrink —— 于是「差 2px」时断行先发生，
+    //    昵称列压根没轮到让位、徽章掉到了第二行。
+    //    新写法 `flex: 1 999 0` 三件一起：basis 0（断行时不算宽）
+    //    + shrink 999（让位优先）+ grow 1（宽裕时吃余量）。
+    const mainFlexRules = (cssBare.match(/\.identity-main \{[^}]*\}/g) || [])
+      .filter(r => /flex:/.test(r)).join(' ');
+    chk(/flex:\s*1\s+999\s+0/.test(mainFlexRules),
+      '昵称列的 flex 三件齐全：basis 0 / shrink 999 / grow 1（放不下它先让，' +
+      '那几颗键一颗都不许被压死）');
+    chk(/\.identity-main \{[^}]*min-width:\s*\d+px/.test(cssBare),
+      '昵称列有一个 min-width 兜底（不许被压成 0 宽 —— 实测那是「看着像坏了」）');
     chk(/\.nickname-input \{[\s\S]{0,400}?max-width:\s*min\(\s*9\.5em\s*,\s*120px\s*\)/.test(cssBare),
       '昵称框在最窄那一档还有一个 120px 的封顶（9.5em 在 19px 字下是 180px）');
     // ⚠️ 这一条是本轮踩过的第二个坑（比溢出更隐蔽）：
@@ -503,89 +551,69 @@ function boot(seed) {
     //    不覆盖的话，「账号」会被撑成 104px，把旁边的键挤到变形
     //    （实测：真浏览器里「账号」冲上 104px，「上传头像」被压在被它盖住的下面）。
     chk(/\.identity-row > \.account-actions \.account-btn \{[^}]*flex:\s*0 0 auto[^}]*min-width:\s*0/.test(cssBare),
-      '身份行里的「账号」点名覆盖了账号卡那套满宽算式（flex: 1 1 0 / min-width: 104px）');
-    // ⚠️ 判据按**出现次序**：文件里 .identity-btns .account-btn 有两处，
-    //    第一条在 @supports 里（只补尺寸），最后一条在文件末尾（定宽那一条）。
-    //    只看「@supports 之后有没有 flex-basis」会被第二段 @supports 骗过去。
-    chk(cssBare.lastIndexOf('.identity-btns .account-btn') >
-        cssBare.lastIndexOf('@supports'),
-      '定宽那一条排在最后一段 @supports **之后**（它不裹在里面：' +
-      '关掉 :has() 的浏览器也得是内容定宽，否则退回去的不是「改前的样子」' +
-      '而是「两颗键被压扁」）');
+      '身份行里的那颗登录/退出键点名覆盖了账号卡那套满宽算式（flex: 1 1 0 / min-width: 104px）');
+    chk(/^\s*\.identity-btns \.account-btn \{ margin-top: 0; \}/m.test(cssBare),
+      '两颗头像键**不带自己的上外边距**（这道题就是用户 2026-09-24 报的那一句：' +
+      '「删除头像按钮比其他按钮显示得往下了」—— 真浏览器 1280px 实测' +
+      '「上传头像」y=101、「删除头像」y=106，整整低下 5px）');
 
     chk(/@supports selector\(:has\(\*\)\)/.test(cssBare),
-      '把「账号」那颗搬进身份行的那几条规则裹在 @supports 里（不认 :has() 的浏览器' +
-      '退化成改前的样子，不会错乱、不会丢键）');
-    chk(/#account-actions:has\(#btn-sign-out:not\(\[hidden\]\)\) #btn-account-entry/.test(cssBare),
-      '「已登录」那一态用纯 CSS 的 order 表达（不是第二个渲染出口、不是再画一颗键）');
-    // ⚠️ 屏幕次序全部由 order 显式写出来（一处一处），不靠 DOM 次序兜底 ——
-    //    因为「两态」那一处必须用 order，而 order 一旦用了，不写 order 的元素
-    //    就等于 order: 0，会跑到所有负 order 的元素前面去。
+      '身份行那几条按内容定宽的规则裹在 @supports 里（不认 :has() 的浏览器' +
+      '退化成不排次序的样子，不会错乱、不会丢键）');
+    // ⚠️ **反向**一条（Issue #276 第八轮）：那一族东西**必须走光**。
+    //    它是上一轮「同一个容器里塞着登录 + 退出两颗、靠 CSS 在两态间换位置」
+    //    的产物；现在那一格上只有一颗键（文案与落点由 js/mine.js 一处定），
+    //    留着这条 :has() 等于留着一句「这里有第二颗要挪」的谎话。
+    chk(!/:has\(#btn-sign-out/.test(cssBare) && !/#btn-sign-out/.test(cssBare),
+      'CSS 里不再有 :has(#btn-sign-out) 那一族判据（那一格上只有一颗键，没什么可挪的）');
+    chk(!/#btn-sign-out\s*\{/.test(cssBare),
+      'CSS 里也没有一条给 #btn-sign-out 定样式的规则（那颗键整颗撤了，' +
+      '留一条规则就是留一句谎话）');
+    // ⚠️ 屏幕次序：留着的三格仍显式写 order（头像 / 昵称 / 徽章）。
+    //    最后那两格（头像键 · 登录键）**不再写 order** —— 它们是 DOM 次序的
+    //    自然结果，少一套编号就少一处能对不上的地方（第八轮收格的结果）。
     [
       /#avatar-slot \{[^}]*order:\s*0/.test(cssBare) ? '#avatar-slot 是第 0 格（最左）' : '',
       /\.identity-main \{[^}]*order:\s*1/.test(cssBare) ? '.identity-main 是第 1 格' : '',
-      /#identity-badge \{[^}]*order:\s*2/.test(cssBare) ? '#identity-badge 是第 2 格' : '',
-      /\.identity-row > \.account-actions \{[^}]*order:\s*3/.test(cssBare) ? '动作行（登录 / 账号）是第 3 格' : '',
-      /\.identity-btns \{[^}]*order:\s*4/.test(cssBare) ? '上传 / 删除头像是第 4 格（最右）' : ''
+      /#identity-badge \{[^}]*order:\s*2/.test(cssBare) ? '#identity-badge 是第 2 格' : ''
     ].forEach(label => {
       chk(!!label, '屏幕上那把次序写明了一格：' + (label || '（有一格没写 order）'));
     });
-    chk(/#account-actions:has\(#btn-sign-out:not\(\[hidden\]\)\) #btn-sign-out \{\s*display:\s*none;/.test(cssBare),
-      '「退出登录」被摘出身份行（它与「账号」共一个容器 —— 不摘的话' +
-      '真浏览器里实测这一行在 360px 上 scrollWidth 318 > clientWidth 304，' +
-      '整行跑出 14px，屏幕右边多出一段横滚）');
+    chk(!/\.identity-btns \{[^}]*order:\s*4/.test(cssBare) &&
+        !/\.identity-row > \.account-actions \{[^}]*order:\s*3/.test(cssBare),
+      '最后两格不再编号（它们按内容排，DOM 次序就是屏幕次序）');
 
-    // 真页面：三颗键同行、且都看得见
+    // 真页面：那颗键在、且只有一颗
     const row = d0.getElementById('identity-row');
     const acts = d0.getElementById('account-actions');
     const pick = d0.getElementById('btn-avatar-pick');
-    const clearBtn = d0.getElementById('btn-avatar-clear');
-    chk(!!row && !!acts && !!pick && !!clearBtn, '（真页面）四样都在：身份行 / 动作行 / 两颗头像键');
-    chk(row.contains(acts), '（真页面）动作行整只搬进了身份行');
-    chk(acts.children.length === 2, '（真页面）动作行里仍是那两颗（登录 + 退出，没有多画一颗）');
-    chk(!d0.getElementById('account-actions').querySelector('#btn-account-entry').hidden,
-      '（真页面）「登录」那一颗在页面上（用户找不到的那个入口回来了）');
+    const loginBtn = d0.getElementById('btn-account-entry');
+    chk(!!row && !!acts && !!pick && !!loginBtn, '（真页面）四样都在：身份行 / 动作格 / 头像键 / 登录键');
+    chk(row.contains(acts) && row.contains(pick), '（真页面）两格都在身份行里');
+    chk(acts.children.length === 1 && acts.firstElementChild === loginBtn,
+      '（真页面）「登录 / 退出」那一格上只有**一颗**键（不是一个按钮两个状态并存）');
+    chk(!loginBtn.hidden, '（真页面）它在页面上（用户找不到的那个登录入口）');
+    chk(d0.getElementById('btn-avatar-clear') === null,
+      '（真页面）「删除头像」不在这一行上（它只住在有图那一半的裁切层里）');
 
-    // 容量：手机最窄那一档能不能装下
+    // 容量：这一行现在只有**四个格子**（头像 · 昵称 · 徽章 · 头像键 · 登录键）
     //   360 − 卡内边距（.account-card 两侧各约 16）= 约 328
-    //   头像 44 + 间距 10 + 昵称列（min 0）+ 徽章约 46 + 10 + 登录约 64 + 8 + 88 + 8 + 88
-    //   → 头三格能被压到 0（.identity-main 是唯一 flex:1，昵称列会先让）
-    //   动作行（登录 64 + 8 + 上传头像 88 + 8 + 删除头像 88 = 256）
-    //   ⚠️ 加的是**动作行自己的实测宽度**，不是「两颗头像键 + 一颗登录」——
-    //   两处相加会把动作行自己的 gap 再算一遍（那 8px 是那颗退出登录留的位）。
-    //   JSDOM 不做布局（clientWidth 恒 0），所以手机上那把尺只能按声明算。
-    // ⚠️ 真浏览器（headless Chromium）在 320 / 360 / 414 三档 ×
-    //    （未登录 / 有图 / 已登录）九种组合上量过：**scrollWidth === clientWidth**，
-    //    一格都没跑出去。JSDOM 不做布局、量不出这些数，所以这一层守的是
-    //    「按声明算得下」（上面那两条）＋「CSS 里那几条收缩规则还在」（下面这条）。
+    //   头像 44 + 缝 8 + 徽章 40 + 缝 8 + 上传头像 66 + 缝 6 + 登录 40 ≈ 212
+    //   （昵称列可以被压到 0；它让光之后仍然装得下）
+    //   ⚠️ 真浏览器（headless Chromium）在 320 / 360 / 393 / 414 / 1280 五档 ×
+    //      （未登录 / 有图 / 已登录）上量过：**scrollWidth === clientWidth**，
+    //      且在 393px 及以上**不折行**（这一行的高度就是一行）。
+    //      JSDOM 不做布局（clientWidth 恒 0），所以这一层守的是
+    //      「按声明算得下」＋「CSS 里那几条收缩规则还在」（下面这些）。
     chk(/\.identity-row > \.avatar-slot,\s*\n\.identity-row > \.tier-badge \{[^}]*flex:\s*0 0 auto/.test(cssBare),
       '头像槽与徽章一步不让（flex: 0 0 auto）—— 压扁了就不是头像、不是徽章了；' +
       '让它们被压到 0 宽是实测过的真事故（整行 scrollWidth 比 clientWidth 大）');
     chk(/--avatar-size:\s*44px/.test(cssBare),
-      '头像缩到 44px（原先 46px：这一行多了两颗键，头像得让一让）');
+      '头像缩到 44px（这一行上有两颗行内小键，头像得让一让）');
 
-    // ⚠️ 真浏览器（headless Chromium，360 / 414 / 1280 三档各量一次）量到的
-    //    事实：这一行 **scrollWidth === clientWidth**，也就是「一格都没跑出去」。
-    //    JSDOM 不做布局，那一把尺量不出来 —— 所以真浏览器那三条口径
-    //    只能写成对 CSS 的断言（上面那些），这里的数按**声明**算。
-    //    最挤的那一态（本机有图 + 会话同时存在 → 上传头像 + 删除头像 + 账号
-    //    都在）在 360px 上量出来的真值是 290 上下，行内可用 304px。
-    //    320px 上量到的是 286 / 可用 264 —— 溢出已经不存在（靠昵称列让光 +
-    //    键上那一点点 flex-shrink 0.02 吸收），两个数都按「声明」写在下面。
-    const ROW_360 = 44 + 8 + 0 + 8 + 40 + 8 + 40 + 6 + 66 + 5 + 66;
+    const ROW_360 = 44 + 8 + 0 + 8 + 40 + 8 + 66 + 6 + 40;
     chk(ROW_360 <= 304,
-      '360px 那一档最挤的一态装得下：' + ROW_360 + 'px ≤ 304px（行内可用宽度）');
-
-    // 「退出登录」仍然留在卡里（它说的是「我这一份账号」，不挤在身份行上）
-    // ⚠️ 判据只能是**它是不是身份行那一行的直属成员**：
-    //    #btn-sign-out 与 #btn-account-entry 共一个容器，而那个容器整只搬进了
-    //    身份行 —— 用 `contains()` 判会把它也算成「挤进身份行」（它其实在
-    //    容器里，只是被 CSS 拿 order 排到最后一名，摸得到、占着位置）。
-    chk(![...d0.getElementById('identity-row').children].some(function (el) {
-      return el === d0.getElementById('btn-sign-out');
-    }), '（真页面）「退出登录」不是身份行那一行的直接成员（它跟账号那一卡在一起）');
-    chk(d0.getElementById('btn-sign-out').parentNode === acts,
-      '（真页面）它仍与「账号」共那唯一的容器（共用容器才谈得上「谁在前谁在后」）');
+      '360px 那一档装得下：' + ROW_360 + 'px ≤ 304px（行内可用宽度）');
 
     // 二次绑定：身份行重画之后两颗头像键仍然点得动
     const file = d0.getElementById('avatar-file');
@@ -599,12 +627,88 @@ function boot(seed) {
     chk(clicks === 2,
       '（真页面）身份行重画一次之后那颗键仍绑着（重画换掉的是节点，绑定是幂等的）');
 
-    // 删头像那颗：重画之后不许因为「没图」被永久藏起来
-    const clear2 = w0.document.getElementById('btn-avatar-clear');
-    chk(!!clear2 && clear2.hidden, '（真页面）没图时「删除头像」藏着（那颗键点不出意义）');
+    // ⚠️ 第八轮：那颗键的**文案**（上传 / 更新）由 js/avatar-edit.js 的 render
+    //    一处画 —— 不再有第二处从「有没有图」推显隐（旧实现里那颗「删除头像」
+    //    就是第二处，它一直挂着一颗看不见的键）。
+    chk(/btn-avatar-pick/.test(AVATAR_EDIT) && /更新头像/.test(AVATAR_EDIT) &&
+        /上传头像/.test(AVATAR_EDIT),
+      '那颗键的文案（上传 / 更新）由 js/avatar-edit.js 的 render 一处按「有没有图」画');
     w0.document.getElementById('input-nickname').value = '诗';
-    chk(/id="btn-avatar-clear"/.test(MINE_JS),
-      '那颗键的显隐仍由 js/avatar-edit.js 的 render 一处画（重画后它也会被补画一次）');
+  }
+
+  // ==========================================================================
+  // 十一、身份行的**布局防回归**（Issue #276 第八轮）
+  //
+  // 这一节守的是**真浏览器里量出来的四件事**（jsdom 不做布局，所以这里
+  // 一条一条对着 CSS 声明守 —— 每一条都注明它在真浏览器上的实测值）：
+  //   ① 两颗键的「脚」踩在同一个 y 上（用户原话：「删除头像按钮比其他按钮
+  //      显示得往下了」）；
+  //   ② 这一行**最宽的那几档不折行**（折行的形状就是「某个东西跑到下一行」）；
+  //   ③ 昵称列不许被压成 0 宽，也不许把行撑破（scrollWidth ≤ clientWidth）；
+  //   ④ 「上传 / 更新头像」的文案只有一处、且由「有没有图」定。
+  // ==========================================================================
+  {
+    console.log('\n=== 身份行布局防回归（Issue #276 第八轮）===');
+    const cssBare = strip(css);
+
+    // ① 两颗键的脚同一高度。
+    //    实测（真浏览器 1280px，改前）：「上传头像」y=101、「删除头像」y=106
+    //    —— 差 5px，正是用户报的那一句。改后两颗都是 y=101。
+    //    这一条有两个必需的声明，缺一个就会重新长出那 5px：
+    //      · #btn-avatar-clear 那条 `margin-top: 10px` 必须走光；
+    //      · 身份行里那两格各自不许带自己的上外边距。
+    chk(!/#btn-avatar-clear\s*\{/.test(cssBare),
+      '给「删除头像」那张 10px 上外边距的规则**走光**（那 5px 就是它漏出来的）');
+    chk(/\.identity-row > \.account-actions \{[^}]*margin-top:\s*0/.test(cssBare),
+      '身份行里那两格自己也清零上外边距（盒子居中时，自己的 margin-top 会漏出一半）');
+
+    // ② 这一行的让位顺序：basis 0 + shrink 999 + min-width 兜底，三件一起。
+    //    只用 shrink 不写 basis:0 的实测收场是「断行先发生、徽章掉到第二行」
+    //    （因为 flex 的断行判据看 flex-basis，不看 flex-shrink）；
+    //    只写 basis:0 不写下限的收场是「昵称列被压到 31px，看着像坏了」。
+    const mainRule = (cssBare.match(/\.identity-main \{[^}]*\}/g) || [])
+      .filter(r => /flex:/.test(r)).join(' ');
+    chk(/flex:\s*1\s+999\s+0/.test(mainRule),
+      '昵称列的 flex 是 `1 999 0`（basis 0 —— 断行时它不算宽；grow 1 —— 宽裕时它吃余量；' +
+      'shrink 999 —— 装不下时它先让）');
+    chk(/min-width:\s*(\d+)px/.test(mainRule),
+      '昵称列还有一个 min-width 兜底（不许被压成 0 宽 —— 那是实测过的「看着像坏了」）');
+
+    // ③ 昵称框的宽度必须是**上限**语义（max-width），不是硬宽（width）。
+    //    写死 `width: 9.5em` 的实测收场：昵称列变成一根钉死的柱子，
+    //    `flex-shrink: 999` 收不动它 —— 那一行只能折。
+    // ⚠️ 按**有没有 max-width: 9.5em** 认那一条（.nickname-input 有几处：
+    //    基础那条 + 焦点/占位符那些），不按位置取。
+    const nickBase = (cssBare.match(/\.nickname-input \{[^}]*\}/g) || [])
+      .filter(r => /9\.5em/.test(r))[0] || '';
+    chk(/max-width:\s*(min\(\s*9\.5em|9\.5em)/.test(nickBase),
+      '昵称框的宽是 `max-width`（上限，不是硬宽 —— 实际「' +
+      ((nickBase.match(/max-width:[^;]+/) || [''])[0]) + '」）');
+    chk(!/(^|[;{\s])width:\s*9\.5em/.test(nickBase),
+      '昵称框不再写 `width: 9.5em` 那种硬宽（硬宽 = 收缩收不动它）');
+    chk(/min-width:\s*0/.test(nickBase),
+      '昵称框上有 `min-width: 0`（放开 <input> 自带的 min-content 下限 —— 它默认约 186px）');
+
+    // ④ 窄屏那两档不许把这一行撑破（声明层：overflow 不许出现在这一行上）。
+    chk(!/\.identity-row \{[^}]*overflow/.test(cssBare),
+      '身份行上不许有 overflow（靠让位与折行解决，不靠把内容切掉或让它横向滚）');
+
+    // ⑤ 文案唯一来源：那颗键的两个文案只在 js/avatar-edit.js 里。
+    const pickLabel = /pick\.textContent = hasImage \? "([^"]+)" : "([^"]+)"/.exec(AVATAR_EDIT);
+    chk(!!pickLabel && pickLabel[1] === '更新头像' && pickLabel[2] === '上传头像',
+      '那颗键的文案由「有没有图」一处二分（有图「更新头像」/ 没图「上传头像」）');
+    // ⚠️ 判据按**代码**（strip 掉注释之后再找）：js/mine.js 里留着几行
+    //    说明这颗键有两个文案的注释，那是说明，不是第二个文案出口。
+    chk(!/更新头像/.test(strip(MINE_JS)),
+      'js/mine.js 的**代码里**不写那个文案（它只负责「画完之后叫 render 一次」）');
+    chk(!/更新头像/.test(MINE.replace(/<!--[\s\S]*?-->/g, ' ')),
+      '页面 HTML 里也不写它（那颗键是画出来的，文案只有一处）');
+
+    // ⑥ 那颗键画完之后**必须**被 render 补一次：身份行是按需重画的，
+    //    出厂 HTML 里那颗键写死成「上传头像」—— 不补的话，本机有图的人
+    //    打开这一页看到的仍是「上传头像」（实测就是这么错的）。
+    chk(/buildIdentityRow[\s\S]{0,2000}?AvatarEdit\.render/.test(strip(MINE_JS)),
+      'buildIdentityRow 画完就叫一次 AvatarEdit.render（把文案与绑定补上）');
   }
 
   console.log('\n' + (fails ? '❌ ' + fails + ' 项失败' : '🎉 「我的」页测试全部通过'));
