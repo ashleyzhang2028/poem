@@ -3140,9 +3140,11 @@ html, body {
   padding: 0;
 }
 .report-row {
-  padding: 11px 2px;
+  padding: 12px 0;
   border-bottom: 1px solid var(--line-2);
 }
+.report-st-new .report-status { color: var(--amber); font-weight: 600; }
+.report-st-read .report-status { color: var(--ink-3); }
 .report-row:last-child { border-bottom: 0; }
 
 .report-row-head {
@@ -3213,21 +3215,27 @@ html, body {
   flex-wrap: wrap;
   gap: 8px;
   align-items: center;
-  margin: 0 0 12px;
+  margin: 0 0 10px;
 }
 .admin-report-tools select {
-  padding: 7px 10px;
+  flex: 1 1 160px;
+  min-width: 0;
+  min-height: var(--ctl-h-sm);
+  padding: 0 10px;
   border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
+  border-radius: var(--ctl-radius);
   background: var(--card);
   color: var(--ink);
   font-size: 13px;
 }
+.admin-report-tools .account-btn { width: auto; flex: none; margin-top: 0; padding: 0 14px; }
 .admin-report-counts {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin: 0 0 12px;
+  margin: 0 0 4px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line-2);
 }
 
 .admin-report-counts button {
@@ -3292,11 +3300,15 @@ html, body {
   color: var(--ink-3);
 }
 .admin-report-row .report-row-head { gap: 6px; }
+.admin-report-row .report-title { white-space: normal; overflow: visible; }
+.admin-report-row .admin-report-who { margin: 4px 0 0; }
 .admin-report-acts {
   display: flex;
   flex-wrap: wrap;
-  gap: 7px;
-  margin: 8px 0 0;
+  gap: 6px;
+  margin: 9px 0 0;
+  padding-top: 9px;
+  border-top: 1px dashed var(--line-2);
 }
 .admin-report-acts button {
   min-height: var(--ctl-h-sm);

@@ -1,3 +1,4 @@
+
 const CACHE_NAME = "poem-app-v216";
 
 const PRECACHE = [

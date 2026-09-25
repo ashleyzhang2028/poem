@@ -1487,6 +1487,21 @@ async function main() {
       chk(me1.body.features.indexOf("sync.multiDevice") >= 0, "能力清单跟着变（pro 才有跨设备同步）");
       chk(me1.body.channel && me1.body.channel.db === "memory", "开通状态照旧如实自报（2C 那条没被改坏）");
 
+      // 按 uid 发（Issue #319）：后台名录那张表是拿 uid 指人的 ——
+      // 那张表列的是明文邮箱，而写明文的行改一次邮箱就找不着人了。
+      const byUid = await POST("/api/admin/grant", { uid: plain.uid, tier: "max" }, plainCookie);
+      eq(byUid.status, 200, "按 uid 发也回 200（uid 是名录那张表点着改时用的那把钥匙）");
+      eq(byUid.body.uid, plain.uid, "回话里带回 uid（界面据此对上自己改的是哪一行）");
+      eq(byUid.body.tier, "max", "按 uid 发同样写进库");
+      const meU = await call(sv.base, "GET", "/api/me", undefined, plainCookie);
+      eq(meU.body.plan.tier, "max", "**按 uid 发的也真的生效**（/api/me 立刻是 max）");
+      const sameU = await POST("/api/admin/grant", { uid: plain.uid, tier: "max" }, plainCookie);
+      eq(sameU.body.changed, false, "层级没变就不写库（界面那颗下拉一动不能落一次写）");
+      eq(sameU.body.before, "max", "回话里带出改之前是什么（界面据此说明「本来就是」）");
+      const badUid = await POST("/api/admin/grant", { uid: "u_nobody", tier: "pro" }, plainCookie);
+      eq(badUid.status, 200, "uid 找不到那个账号也回 200（与掩码命中 0 条同一种口径）");
+      eq(badUid.body.changed, false, "uid 找不到就不改任何东西");
+
       const future = Date.now() + 86400000;
       const withUntil = await POST("/api/admin/grant", { emailMask: "p***@example.com", tier: "max", until: future }, plainCookie);
       eq(withUntil.body.tier, "max", "到期时刻写进去之后 tier 是 max");
@@ -2113,10 +2128,13 @@ async function main() {
       const mails = list.body.accounts.map(a => a.email).sort();
       eq(mails.join(","), "kid@example.com,owner@example.com", "**明文邮箱在里面**（名录存在的理由）");
       const one = list.body.accounts[0];
-      ["email", "emailMask", "nickname", "tier", "role", "status", "emailVerified",
+      ["uid", "email", "emailMask", "nickname", "tier", "until", "role", "status", "emailVerified",
         "hasPassword", "createdAt", "lastLoginAt"].forEach(k => {
         chk(Object.prototype.hasOwnProperty.call(one, k), "名录每行给出 " + k);
       });
+      chk(/^u_[0-9a-f]+$/.test(
+        list.body.accounts.filter(a => a.email === "kid@example.com")[0].uid),
+        "名录每行带 uid（界面上改角色 / 层级要靠它回填，缺了那两颗下拉就落不了库）");
       const raw = JSON.stringify(list.body);
       chk(!/password_hash|password_salt/.test(raw), "**名录里没有口令字段**（管理员也不需要它）");
       chk(!/email_hash/.test(raw), "**名录里没有 email_hash**（那是登录标识，泄出去等于可查询「谁是本站用户」）");
