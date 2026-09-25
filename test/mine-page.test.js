@@ -606,6 +606,20 @@ function boot(seed) {
         head.contains(d0.getElementById('input-nickname')) &&
         head.contains(d0.getElementById('identity-badge')),
       '（真页面）第一行 = 头像 + 昵称 + 徽章（三格都在 .identity-head 里）');
+
+    // ⚠️ 量尺 / 判据不许各来一个 id（Issue #276 第十轮）。
+    //    真浏览器那一层（test/pwa.test.js）判「昵称列没被压成 0 宽」时读的是
+    //    `#identity-main` —— 而这一格上一轮只有类名，两行结构一落地，
+    //    真浏览器那层量到的就成了 `.identity-head` 这个**容器**（337px，
+    //    当然「没被压成 0 宽」），于是 CI 上冒出 `identity-head:337
+    //    identity-btns:337` 那条**假红条**：昵称格一度在源码里没有 id，
+    //    量尺指错了对象。这一条守的是「那一格真有 id、且就在第一行里」——
+    //    两边同源，就不会再有「量到别人头上」的假红条。
+    chk(!!d0.getElementById('identity-main') &&
+        head.contains(d0.getElementById('identity-main')) &&
+        d0.getElementById('identity-main').contains(d0.getElementById('input-nickname')),
+      '（真页面）第一行中间那一格带 `id="identity-main"`（真浏览器那层量的就是它，' +
+      '与 JSDOM 这里量的是同一格 —— 判据不许各认一个名字）');
     chk(line2.children.length === 2 &&
         line2.firstElementChild === loginBtn && line2.children[1] === pick,
       '（真页面）第二行上正好**两颗**键：先「登录 / 退出」，后「上传 / 更新头像」' +
