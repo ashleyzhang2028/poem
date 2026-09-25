@@ -1595,16 +1595,36 @@ function normGrantInput(input) {
   if (["free", "pro", "max"].indexOf(tier) < 0) {
     return { bad: "E_TIER", message: "层级只认 free / pro / max 三个值" };
   }
-  var mask = String((input && (input.emailMask || input.mask)) || "").trim().toLowerCase();
-  if (!mask) return { bad: "E_MASK", message: "请填邮箱掩码（形如 a***@qq.com）" };
-  if (!MASK_RE.test(mask)) {
-    return { bad: "E_MASK", message: "掩码形状不对：形如 a***@qq.com，与账号页上显示的那串一致" };
-  }
   var until = input && input.until != null && input.until !== "" ? Number(input.until) : null;
   if (until !== null && (!isFinite(until) || until <= 0)) {
     return { bad: "E_UNTIL", message: "到期时刻看不懂（要毫秒时间戳，留空即永久）" };
   }
+
+  // 两种认人的方式：**uid**（后台名录那张表点着改，Issue #319）与
+  // **邮箱掩码**（冒烟 / 脚本调这一条接口时的老路）。uid 优先 ——
+  // 它指谁就是谁，掩码在库里可能对上不止一行。
+  var uid = String((input && input.uid) || "").trim();
+  if (uid) return { tier: tier, uid: uid, until: until };
+
+  var mask = String((input && (input.emailMask || input.mask)) || "").trim().toLowerCase();
+  if (!mask) return { bad: "E_MASK", message: "要说清改谁的：uid 或邮箱掩码（形如 a***@qq.com）" };
+  if (!MASK_RE.test(mask)) {
+    return { bad: "E_MASK", message: "掩码形状不对：形如 a***@qq.com，与账号页上显示的那一串一致" };
+  }
   return { tier: tier, mask: mask, until: until };
+}
+
+// 认人：给了 uid 就按 uid 取，否则按掩码找（可能命中不止一条，取最早那条）。
+function adminTarget(store, who) {
+  if (who.uid) {
+    return Promise.resolve(store.getAccount(who.uid)).then(function (a) {
+      if (!a || a.status === "deleted") return { hits: [] };
+      return { hits: [a] };
+    });
+  }
+  return Promise.resolve(store.findAccountsByMask(who.mask)).then(function (rows) {
+    return { hits: (rows || []).filter(function (a) { return a && a.status !== "deleted"; }) };
+  });
 }
 
 function adminGrant(deps, input) {
@@ -1628,32 +1648,40 @@ function adminGrant(deps, input) {
     if (!g.ok) return err(429, "E_RATE_DEVICE", "操作太频繁了，请稍后再试", { retryAfter: g.retryAfter });
     deps.limiter.hit("device", "grant:" + device, t);
 
-    return Promise.resolve(store.findAccountsByMask(who.mask)).then(function (rows) {
-      var hits = (rows || []).filter(function (a) { return a && a.status !== "deleted"; });
-
+    return adminTarget(store, who).then(function (r) {
+      var hits = r.hits;
       var target = hits[0] || null;
       if (!target) {
         return ok({
           matched: 0, changed: false,
-          emailMask: who.mask, tier: who.tier, until: who.until,
-          note: "这个掩码还没有对应的账号。本方案里「对方先登录一次」才会在库里留下一行 —— 请让对方先登录一次再发。"
+          emailMask: who.mask, uid: who.uid, tier: who.tier, until: who.until,
+          note: "没找到这个账号。本方案里「对方先登录一次」才会在库里留下一行 —— 请让对方先登录一次再发。"
         });
       }
-      return Promise.resolve(store.patchAccount(target.uid, { plan: who.tier, plan_until: who.until }))
-        .then(function () {
-          return ok({
-            matched: hits.length, changed: true,
-            ambiguous: hits.length > 1,
-            uid: target.uid,
-            emailMask: who.mask,
 
-            tier: who.tier, until: who.until,
-            plan: { tier: who.tier, until: who.until },
-            by: me.uid,
-            at: t,
-            note: "已写进服务端的权威名单：对方下次打开页面（或刷新个人中心）时由服务器判定生效。"
-          });
+      // 层级没变的就不写库（回话照样说清楚是「本来就是这样」），
+      // 免得界面那颗下拉一动就落一次写。
+      var before = planTier(target);
+      var same = before === who.tier &&
+        (target.plan_until == null ? null : Number(target.plan_until)) === who.until;
+      var done = function () {
+        return ok({
+          matched: hits.length, changed: !same,
+          ambiguous: hits.length > 1,
+          uid: target.uid,
+          emailMask: target.email_mask || who.mask,
+
+          tier: who.tier, until: who.until,
+          before: before,
+          plan: { tier: who.tier, until: who.until },
+          by: me.uid,
+          at: t,
+          note: "已写进服务端的权威名单：对方下次打开页面（或刷新个人中心）时由服务器判定生效。"
         });
+      };
+      if (same) return done();
+      return Promise.resolve(store.patchAccount(target.uid, { plan: who.tier, plan_until: who.until }))
+        .then(done);
     });
   });
 }
@@ -1687,10 +1715,13 @@ function adminAccounts(deps) {
       var list = (rows || []).filter(function (a) { return a && a.status !== "deleted"; }).map(function (a) {
         return {
 
+          uid: String(a.uid || ""),
           email: String(a.email || ""),
           emailMask: a.email_mask || "***",
           nickname: a.nickname || "",
           tier: planTier(a),
+
+          until: a.plan_until == null ? null : Number(a.plan_until),
           role: isAdminRole(a.role) ? String(a.role).toLowerCase() : "user",
 
           status: String(a.status || "active"),
@@ -1705,7 +1736,9 @@ function adminAccounts(deps) {
         accounts: list,
         total: list.length,
         store: store.kind,
-        note: "这里列的是**注册过的账号**（含邮箱明文）。它与「发放台账」不是一张表：那边只列发过层级的。"
+        // uid 是「改这一行的角色 / 层级」要用的那一把钥匙：名录按名字列人，
+        // 但写回得认 uid（邮箱明文改一行就找不着人了）。
+        note: "这里列的是**注册过的账号**（含邮箱明文），每行带 uid 与到期，界面据此改角色与层级。"
       });
     });
   });

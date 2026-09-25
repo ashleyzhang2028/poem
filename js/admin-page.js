@@ -8,9 +8,13 @@
   var backing = null;
   try { backing = window.localStorage; } catch (e) { backing = null; }
 
-  var pickedTier = "pro";
-
   var currentAccounts = [];
+
+  // 这一页启动时读到的那一份身份（uid / role）。改角色与层级都要拿它判权限：
+  // 权限判的是**当前这个人的**那份答案，不能另起一次「自己猜 uid」的读取。
+  var myId = null;
+
+  var ROLE_LABEL = { owner: "主人（种子）", admin: "管理员", user: "普通用户" };
 
   function $(id) { return document.getElementById(id); }
   function show(el) { if (el) el.hidden = false; }
@@ -35,9 +39,18 @@
     el.className = "account-msg" + (level ? " " + level : "");
   }
 
+  function roleText(role) {
+    var r = String(role || "user").toLowerCase();
+    return ROLE_LABEL[r] || r;
+  }
+
+  // 判「我是不是主人」**必须带上刚读到的这一份身份**（uid 一起给）。
+  // 只给 backing 的话，Entitlement 会自己去本机那份口令会话里取 uid ——
+  // 而**服务器发的会话（cookie）**在本机没有那一份记录，于是
+  // 「在服务端是 owner、这一页却说没权限」（Issue #319 实测顶出来的）。
   function isOwner(id) {
-    if (id) return Ent.isOwner(backing, { role: id.role, uid: id.uid });
-    return Ent.isOwner(backing);
+    if (!id) return Ent.isOwner(backing);
+    return Ent.isOwner(backing, { role: id.role, uid: id.uid });
   }
 
   function fix() { return window.PinyinFix || null; }
@@ -72,23 +85,28 @@
     return out;
   }
 
-  function renderHits(list) {
+  // 命中列表在这一页有两种用途：搜篇目、从正文里挑一句。
+  // 两种都画在 #pf-hits，区别写在按钮的 data-pick / data-line 上
+  // （按用途给属性，不靠「这一行的文字长得像篇名」去猜）。
+  function hits(list) {
     var box = $("pf-hits");
     if (!box) return;
     if (!list.length) { box.hidden = true; box.innerHTML = ""; return; }
     box.hidden = false;
-    box.innerHTML = list.map(function (p) {
+    box.innerHTML = list.map(function (it) {
+      var attr = it.pickId ? "data-pick=\"" + esc(it.pickId) + "\"" : "data-line=\"" + esc(it.line) + "\"";
       return '<li class="grant-row">' +
-        '<span class="grant-mail">' + esc(p.title || "") + "</span>" +
-        '<span class="grant-when">' + esc(widOfPoem(p)) + "</span>" +
-        '<button class="grant-del" type="button" data-pick="' + esc(p.id) + '">选这一篇</button>' +
+        '<span class="grant-ish">' + esc(it.text) + "</span>" +
+        '<button class="grant-del" type="button" ' + attr + ">" + esc(it.act) + "</button>" +
         "</li>";
     }).join("");
   }
 
   function onPinyinSearch() {
     var kw = (($("pf-wid") || {}).value || "").trim();
-    renderHits(searchPoems(kw));
+    hits(searchPoems(kw).map(function (p) {
+      return { pickId: p.id, text: p.title || widOfPoem(p), act: "选这一篇" };
+    }));
   }
 
   function pickedPoem() {
@@ -99,42 +117,36 @@
     return hit;
   }
 
-  function onPinyinPick(e) {
-    var b = e.target.closest ? e.target.closest("button[data-pick]") : null;
-    if (!b) return;
-    var id = b.getAttribute("data-pick");
-    var p = null;
-    allPoems().forEach(function (x) { if (x.id === id) p = x; });
-    if (!p) return;
-    onPinyinSearch._id = id;
+  function onPickPoem(p) {
+    onPinyinSearch._id = p.id;
     var w = $("pf-wid");
     if (w) w.value = p.title || "";
-
-    renderHits([]);
+    hits([]);
     msg("msg-pf", "已选中《" + (p.title || widOfPoem(p)) + "》。" +
-      "正文那一格可以手打，也可以点「从篇目里挑一句」从正文里点一行。", "ok");
+      "接下来点「挑一句」，从正文里点一行。", "ok");
   }
 
   function fillLine(p) {
-    var box = $("pf-hits");
-    if (!box || !p || !p.text) return;
-    var lines = String(p.text).split("\n").filter(function (x) { return x.trim(); });
-    box.hidden = false;
-    box.innerHTML = lines.map(function (line) {
-      return '<li class="grant-row">' +
-        '<span class="grant-mail">' + esc(line.trim()) + "</span>" +
-        '<button class="grant-del" type="button" data-line="' + esc(line.trim()) + '">用这一句</button>' +
-        "</li>";
-    }).join("");
+    if (!p || !p.text) return;
+    hits(String(p.text).split("\n").filter(function (x) { return x.trim(); })
+      .map(function (line) { return { line: line.trim(), text: line.trim(), act: "用这一句" }; }));
   }
 
-  function onPinyinLine(e) {
-    var b = e.target.closest ? e.target.closest("button[data-line]") : null;
-    if (!b) return;
-    var line = b.getAttribute("data-line");
+  function onHitClick(e) {
+    var t = e.target;
+    var pick = t.closest ? t.closest("button[data-pick]") : null;
+    if (pick) {
+      var id = pick.getAttribute("data-pick");
+      var p = null;
+      allPoems().forEach(function (x) { if (x.id === id) p = x; });
+      if (p) onPickPoem(p);
+      return;
+    }
+    var use = t.closest ? t.closest("button[data-line]") : null;
+    if (!use) return;
     var box = $("pf-line");
-    if (box) box.value = line;
-    renderHits([]);
+    if (box) box.value = use.getAttribute("data-line");
+    hits([]);
     previewLine();
   }
 
@@ -163,7 +175,7 @@
     var py = (($("pf-py") || {}).value || "").trim();
     var at = Number((($("pf-at") || {}).value || "1"));
     if (!wid) { msg("msg-pf", "先在上面搜一篇（点「选这一篇」）。", "warn"); return; }
-    if (!line) { msg("msg-pf", "要填原文里的一句（点「从篇目里挑一句」也行）。", "warn"); return; }
+    if (!line) { msg("msg-pf", "要填原文里的一句（点「挑一句」也行）。", "warn"); return; }
     if (!py) { msg("msg-pf", "要填应读作什么（带声调，如 cháng）。", "warn"); return; }
     if (!isFinite(at) || at < 1) at = 1;
 
@@ -195,18 +207,20 @@
     var list = F.list();
     var empty = $("pf-empty");
     if (empty) empty.hidden = list.length > 0;
+    var count = $("pf-count");
+    if (count) count.textContent = String(list.length);
     var note = $("pf-note");
     if (note) {
       note.hidden = false;
       note.textContent = list.length
-        ? ("共 " + list.length + " 条（上限 " + F.MAX + "）。这一份随账号同步 —— 换台设备也照它读。")
+        ? ("上限 " + F.MAX + " 条。这一份随账号同步 —— 换台设备也照它读。")
         : "";
     }
     box.innerHTML = list.map(function (f) {
       return '<li class="grant-row">' +
-        '<span class="grant-mail">' + esc(f.wid) + "</span>" +
-        '<span class="grant-when">' + esc(f.line) + " · 第" + esc(String(f.at)) +
-          "个「" + esc(f.ch || "?") + "」 → " + esc(f.py) + "</span>" +
+        '<span class="admin-fix-wid">' + esc(f.wid) + "</span>" +
+        '<span class="admin-fix-detail">' + esc(f.line) + "<br>第 " + esc(String(f.at)) +
+          " 个字「" + esc(f.ch || "?") + "」→ <b>" + esc(f.py) + "</b></span>" +
         '<button class="grant-del" type="button" data-unfix="' + esc(F.keyOf(f)) + '">删除</button>' +
         "</li>";
     }).join("");
@@ -237,218 +251,44 @@
     msg("msg-pf", "这个浏览器不给复制，请手动抄下：" + text, "warn");
   }
 
-  function renderTierPick() {
-    var box = $("tier-pick");
-    if (!box) return;
-    box.innerHTML = Ent.TIERS.map(function (t) {
-      return '<button type="button" data-tier="' + t + '"' +
-        (t === pickedTier ? ' class="active"' : "") + ' aria-pressed="' +
-        (t === pickedTier ? "true" : "false") + '">' + esc(Ent.tierLabel(t)) + "</button>";
-    }).join("");
-  }
-
-  function onPick(e) {
-    var b = e.target.closest ? e.target.closest("button[data-tier]") : null;
-    if (!b) return;
-    pickedTier = b.getAttribute("data-tier");
-    renderTierPick();
-  }
-
-  function readForm() {
-    var mask = (($("input-mask") || {}).value || "").trim();
-    if (!mask) return { bad: "请填邮箱掩码（与用户在账号页看到的那串一致）" };
-    var untilStr = (($("input-until") || {}).value || "").trim();
-    var until = null;
-    if (untilStr) {
-
-      var t = Date.parse(untilStr + "T23:59:59");
-      if (!isFinite(t)) return { bad: "到期日看不懂，请用日期选择器" };
-      until = t;
-    }
-    return { mask: mask, until: until };
-  }
-
-  function clearForm() {
-    var m = $("input-mask"); if (m) m.value = "";
-  }
-
-  function onGrant() {
-    var f = readForm();
-    if (f.bad) { msg("msg-grant", f.bad, "warn"); return; }
-    var M = acct();
-    var btn = $("btn-grant");
-    if (btn) btn.disabled = true;
-    msg("msg-grant", "正在发往服务端……", "");
-
-    if (!M || typeof M.adminGrant !== "function") {
-      if (btn) btn.disabled = false;
-      msg("msg-grant", "页面脚本版本对不上（刷新一次即可），这一轮没发出任何东西。", "warn");
-      return;
-    }
-
-    Promise.resolve(M.adminGrant({ emailMask: f.mask, tier: pickedTier, until: f.until, backing: backing, A: window.AuthCore, E: Ent }))
-      .then(function (r) {
-        if (btn) btn.disabled = false;
-        if (!r || !r.ok) { grantFailed(r); return; }
-        if (!r.changed) {
-          msg("msg-grant", "服务端收到这一条了，但" + r.note, "warn");
-          clearForm();
-          loadServerGrants();
-          loadAccounts();
-          return;
-        }
-        var line = "已写进数据库：" + r.emailMask + " → " + Ent.tierLabel(r.tier) +
-          (r.until ? "（到期 " + new Date(r.until).toLocaleDateString() + "）" : "（永久）") +
-          "。对方刷新页面（或打开「我的」页）即由服务器判定生效。";
-        if (r.ambiguous) line += "⚠️ 这个掩码在库里不只一条，只改了最早的那一条 —— 请让对方确认。";
-        msg("msg-grant", line, "ok");
-        clearForm();
-        loadServerGrants();
-        loadAccounts();
-      })["catch"](function () {
-        if (btn) btn.disabled = false;
-        msg("msg-grant", "连不上服务端，这一轮没发出任何东西。", "warn");
-      });
-  }
-
-  function grantFailed(r) {
-    var reason = r && r.reason;
-    var text = (r && r.message) || "发放没成功。";
-    if (reason === "guest") {
-      text = "登录状态已过期，请重新登录后再来。";
-    } else if (reason === "not-configured") {
-      text = "本站还没开放云端账号（服务端缺密钥），这一条发不出去。本站**没有**第二条发放的路 —— 层级只在数据库里。";
-    } else if (reason === "no-channel") {
-      text = "页面脚本版本对不上（刷新一次即可），这一轮没发出任何东西。";
-    } else if (reason === "unavailable") {
-      text = "连不上服务端，这一轮没发出任何东西。请稍后重试 —— 层级只在数据库里，本机没有第二份。";
-    }
-    msg("msg-grant", text, "warn");
-  }
-
-  function renderServerGrants(data) {
-    var box = $("server-list");
-    if (!box) return;
-    var list = (data && data.grants) || [];
-    var empty = $("server-empty");
-    if (empty) empty.hidden = list.length > 0;
-    box.innerHTML = list.map(function (g) {
-      var when = g.until ? "到期 " + new Date(g.until).toLocaleDateString() : "永久";
-      return '<li class="grant-row">' +
-        '<span class="grant-mail">' + esc(g.emailMask) + "</span>" +
-        '<span class="tier-badge tier-' + esc(g.tier) + '">' + esc(Ent.tierLabel(g.tier)) + "</span>" +
-        '<span class="grant-when">' + esc(when) + "</span>" +
-        '<button class="grant-del" type="button" data-revoke="' + esc(g.emailMask) + '">收回</button>' +
-        "</li>";
-    }).join("");
-  }
-
-  function serverNote(text, warn) {
-    var el = $("server-note");
-    if (!el) return;
-    el.textContent = text || "";
-    el.hidden = !text;
-  }
-
-  function loadServerGrants() {
-    var M = acct();
-    if (!M || typeof M.adminGrants !== "function") {
-      serverNote("页面脚本版本对不上（刷新一次即可）：这一块现在看不了。", true);
-      return;
-    }
-    Promise.resolve(M.adminGrants({ backing: backing, A: window.AuthCore, E: Ent })).then(function (r) {
-      if (r && r.ok) {
-        renderServerGrants(r);
-        serverNote("这一份由服务器判定：对方改一行存储改不动它 —— 层级只在数据库里。", false);
-        return;
-      }
-      if (r && r.reason === "guest") { serverNote("登录状态已过期，请重新登录后再来。", true); return; }
-      if (r && r.reason === "not-configured") { serverNote("本站还没开放云端账号（服务端缺密钥）：这一块暂时问不到。", true); return; }
-      if (r && r.reason === "no-channel") { serverNote("页面脚本版本对不上（刷新一次即可）：这一块现在看不了。", true); return; }
-      if (r && r.code === "E_FORBIDDEN") { serverNote("这一条只对管理员开放（服务端的角色闸）。", true); return; }
-      serverNote("连不上服务端，这一轮没问到。", true);
-    })["catch"](function () { serverNote("连不上服务端，这一轮没问到。", true); });
-  }
-
-  function onServerListClick(e) {
-    var b = e.target.closest ? e.target.closest("button[data-revoke]") : null;
-    if (!b) return;
-    var mask = b.getAttribute("data-revoke");
-    var M = acct();
-    if (!M || typeof M.adminRevoke !== "function") { msg("msg-server", "页面脚本版本对不上，这一轮没发出任何东西。", "warn"); return; }
-    b.disabled = true;
-    msg("msg-server", "正在收回 " + mask + " ……", "");
-    Promise.resolve(M.adminRevoke({ emailMask: mask, backing: backing, A: window.AuthCore, E: Ent })).then(function (r) {
-      b.disabled = false;
-      if (!r || !r.ok) { msg("msg-server", (r && r.message) || "收回没成功，稍后再试。", "warn"); return; }
-      msg("msg-server", r.changed
-        ? "已在数据库里收回 " + mask + " 的层级（对方刷新即回落 Free）。"
-        : "数据库里本来就没有 " + mask + " 这一条。", r.changed ? "ok" : "warn");
-      loadServerGrants();
-    })["catch"](function () { b.disabled = false; msg("msg-server", "连不上服务端，这一轮没发出任何东西。", "warn"); });
-  }
-
-  var ROLE_LABEL = { owner: "主人（种子）", admin: "管理员", user: "普通用户" };
-
-  function roleText(role) {
-    var r = String(role || "user").toLowerCase();
-    return ROLE_LABEL[r] || r;
-  }
-
+  // ---- 账号与角色（表格：一格邮箱、一格角色）-----------------------------
+  // 角色与层级同属一份数据，所以合成一张表：改角色与改层级都落库，
+  // 但层级只对非 Free 的画在「已发放层级」那张表里，各管一件事。
   function renderAccounts(data) {
-    var box = $("accounts-list");
+    var box = $("accounts-body");
     if (!box) return;
     var list = (data && data.accounts) || [];
     currentAccounts = list;
     var empty = $("accounts-empty");
-    if (empty) {
-      empty.hidden = list.length > 0;
-      empty.textContent = "还没有任何账号。";
-    }
+    if (empty) empty.hidden = list.length > 0;
     box.innerHTML = list.map(function (a) {
       var mail = a.email || a.emailMask || "（无邮箱）";
       var role = String(a.role || "user").toLowerCase();
-
-      var verified = a.emailVerified
-        ? '<span class="acct-tag ok">已确认</span>'
-        : '<span class="acct-tag warn" title="没确认就登不进来（默认口径）">待确认 · 登不进来</span>';
-      var pw = a.hasPassword
-        ? '<span class="acct-tag">有密码</span>'
-        : '<span class="acct-tag muted">无密码</span>';
-      var st = a.status === "active" ? "" : '<span class="acct-tag warn">' + esc(a.status) + "</span>";
-      var nick = a.nickname ? esc(a.nickname) : '<span class="acct-none">未起名</span>';
-      var created = a.createdAt ? new Date(a.createdAt).toLocaleDateString() : "—";
-      var last = a.lastLoginAt ? new Date(a.lastLoginAt).toLocaleDateString() : "—";
-
-      return '<li class="acct-row" data-uid="' + esc(a.uid || "") + '">' +
-        '<span class="acct-main"><span class="acct-mail">' + esc(mail) + "</span>" +
-        '<span class="acct-sub">' + nick + " · 注册 " + esc(created) + " · 最后登录 " + esc(last) + "</span></span>" +
-        '<span class="acct-tags">' +
-        '<span class="role-badge role-' + esc(role) + '" data-role-badge>' + esc(roleText(role)) + "</span>" +
-        '<span class="tier-badge tier-' + esc(a.tier) + '">' + esc(Ent.tierLabel(a.tier)) + "</span>" +
-        verified + pw + st +
-        "</span>" +
-        roleActs(a.uid, role) +
-        "</li>";
+      var sub = [];
+      if (a.nickname) sub.push(esc(a.nickname));
+      if (a.status && a.status !== "active") sub.push("状态 " + esc(a.status));
+      if (!a.emailVerified) sub.push("邮箱未确认 · 登不进来");
+      var note = sub.length ? '<span class="admin-who-note">' + sub.join(" · ") + "</span>" : "";
+      return '<tr data-uid="' + esc(a.uid || "") + '">' +
+        '<td><span class="admin-mail">' + esc(mail) + "</span>" + note + "</td>" +
+        '<td class="admin-role-cell">' + roleCell(a, role) + "</td>" +
+        "</tr>";
     }).join("");
   }
 
-  function roleActs(uid, role) {
-    if (!uid) return "";
+  function roleCell(a, role) {
+    if (!a.uid) return "";
     if (role === "owner") {
-      return '<span class="acct-role-acts"><span class="acct-none">种子主人 · 由 OWNER_EMAILS 认领</span></span>';
+      return '<span class="admin-role-lock" title="OWNER_EMAILS 认领，这里改不动">' + esc(roleText(role)) + "</span>";
     }
-    return '<span class="acct-role-acts">' +
-      roleAct(uid, "user", "普通用户", role) +
-      roleAct(uid, "admin", "管理员", role) +
-      "</span>";
-  }
-
-  function roleAct(uid, target, label, role) {
-    var on = role === target;
-    return '<button type="button" class="acct-role-btn' + (on ? " active" : "") + '"' +
-      ' data-set-role="' + esc(target) + '" data-uid="' + esc(uid) + '"' +
-      (on ? ' aria-pressed="true"' : ' aria-pressed="false"') + ">" + esc(label) + "</button>";
+    var canAdmin = isOwner(myId);
+    var opts = ["user", "admin"].map(function (r) {
+      return '<option value="' + r + '"' + (r === role ? " selected" : "") + ">" + esc(roleText(r)) + "</option>";
+    }).join("");
+    return '<select class="admin-role-select" data-uid="' + esc(a.uid) + '"' +
+      ' data-was="' + esc(role) + '"' +
+      ' aria-label="' + esc((a.email || a.emailMask || "") + " 的角色") + '"' +
+      (canAdmin ? "" : ' disabled title="改角色只对主人开放"') + ">" + opts + "</select>";
   }
 
   function accountsNote(text, warn) {
@@ -468,10 +308,13 @@
     Promise.resolve(M.adminAccounts({ backing: backing, A: window.AuthCore, E: Ent })).then(function (r) {
       if (r && r.ok) {
         renderAccounts(r);
-        var n = (r.accounts || []).length;
-        var owners = (r.accounts || []).filter(function (a) { return a.role === "owner"; }).length;
-        accountsNote("共 " + n + " 个账号（其中主人 " + owners + " 位）。角色与层级都以数据库为准；" +
-          "上面那张只列发过层级的。", owners ? false : true);
+        var list = r.accounts || [];
+        var owners = list.filter(function (a) { return a.role === "owner"; }).length;
+        accountsNote("共 " + list.length + " 个账号" +
+          (owners ? "（其中主人 " + owners + " 位）" : "") +
+          "。选一个角色即写进数据库，对方刷新页面就生效。" +
+          (isOwner(myId) ? "" : "改角色只有主人做得来（管理员能发层级、看名录、处理报告，但不能授权）。"), !isOwner(myId));
+        renderGrants(list);
         return;
       }
       if (r && r.reason === "guest") { accountsNote("登录状态已过期，请重新登录后再来。", true); return; }
@@ -482,44 +325,43 @@
     })["catch"](function () { accountsNote("连不上服务端，这一轮没问到。", true); });
   }
 
-  function onAccountsClick(e) {
-    var b = e.target.closest ? e.target.closest("button[data-set-role]") : null;
-    if (!b) return;
-    var uid = b.getAttribute("data-uid");
-    var role = b.getAttribute("data-set-role");
+  function onAccountsChange(e) {
+    var sel = e.target.closest ? e.target.closest("select[data-uid]") : null;
+    if (!sel) return;
+    var uid = sel.getAttribute("data-uid");
+    var role = sel.value;
+    var row = sel.closest("tr");
+    var mail = row ? (row.querySelector(".admin-mail") || {}).textContent || "" : "";
+    var was = sel.getAttribute("data-was") || "";
+
+    if (role === "admin" && !window.confirm("把 " + mail + " 提成管理员？管理员能发层级、看名录、处理报告（但改不了别人的角色）。")) {
+      sel.value = was || "user";
+      return;
+    }
+    if (role === "user" && was === "admin" && !window.confirm("把 " + mail + " 降回普通用户？他立刻进不了管理后台。")) {
+      sel.value = was;
+      return;
+    }
+
     var M = acct();
     if (!M || typeof M.adminSetRole !== "function") {
+      sel.value = was || "user";
       msg("msg-accounts", "页面脚本版本对不上（刷新一次即可）。", "warn");
       return;
     }
-    var li = document.querySelector('.acct-row[data-uid="' + uid + '"]');
-    var mail = li ? (li.querySelector(".acct-mail") || {}).textContent || "" : "";
-    if (role === "admin" && !window.confirm("把 " + mail + " 提成管理员？管理员能发层级、看名录、处理报告（但改不了别人的角色）。")) return;
-    if (role === "user" && /管理员/.test((li && li.querySelector(".role-badge") || {}).textContent || "") &&
-        !window.confirm("把 " + mail + " 降回普通用户？他立刻进不了管理后台。")) return;
 
-    var btns = li ? li.querySelectorAll("button[data-set-role]") : [];
-    for (var i = 0; i < btns.length; i++) btns[i].disabled = true;
-    msg("msg-accounts", "正在改……", "");
+    sel.disabled = true;
+    msg("msg-accounts", "正在改 " + mail + " 的角色……", "");
     Promise.resolve(M.adminSetRole({ uid: uid, role: role })).then(function (r) {
-      for (var j = 0; j < btns.length; j++) btns[j].disabled = false;
+      sel.disabled = false;
       if (r && r.ok) {
-
-        if (li) {
-          var badge = li.querySelector("[data-role-badge]");
-          if (badge) { badge.textContent = roleText(role); badge.className = "role-badge role-" + role; }
-          var bs = li.querySelectorAll("button[data-set-role]");
-          for (var k = 0; k < bs.length; k++) {
-            var on = bs[k].getAttribute("data-set-role") === role;
-            bs[k].className = "acct-role-btn" + (on ? " active" : "");
-            bs[k].setAttribute("aria-pressed", on ? "true" : "false");
-          }
-        }
+        sel.setAttribute("data-was", role);
         msg("msg-accounts", r.changed
           ? ((r.emailMask || mail) + " 现在是「" + roleText(role) + "」。对方刷新即生效（由服务器判定）。")
           : ((r.emailMask || mail) + " 本来就是「" + roleText(role) + "」。"), "ok");
         return;
       }
+      sel.value = r && r.before ? r.before : (was || "user");
       if (r && r.code === "E_SELF") { msg("msg-accounts", "改不了自己的角色 —— 要换主人，把 OWNER_EMAILS 改成那个邮箱再用它登录一次。", "warn"); return; }
       if (r && r.code === "E_OWNER_LOCKED") { msg("msg-accounts", "这一位是种子主人（OWNER_EMAILS 里的人），身份不由这个口改。", "warn"); return; }
       if (r && r.code === "E_FORBIDDEN") { msg("msg-accounts", "改角色只对主人开放（管理员能发层级、看名录、处理报告，但不能授权）。", "warn"); return; }
@@ -527,9 +369,96 @@
       if (r && r.reason === "not-configured") { msg("msg-accounts", "本站还没开放云端账号（服务端缺密钥），改不了。", "warn"); return; }
       msg("msg-accounts", (r && r.message) || "没改成，稍后再试。", "warn");
     })["catch"](function () {
-      for (var j2 = 0; j2 < btns.length; j2++) btns[j2].disabled = false;
+      sel.disabled = false;
+      sel.value = was || "user";
       msg("msg-accounts", "连不上服务端，这一轮没发出任何东西。", "warn");
     });
+  }
+
+  // ---- 层级（同一张表，第二个动作）---------------------------------------
+  // 原先这里是一张独立的「发放层级」表单：填邮箱掩码、选层级、点发放。
+  // 现在改成直接在表里改：选谁，就在他那一行把层级从 free 拨到 pro / max。
+  // 走的是同一个服务端接口，只是不再需要「先知道掩码」这一步。
+  function onTierChange(e) {
+    var sel = e.target.closest ? e.target.closest("select[data-tier-of]") : null;
+    if (!sel) return;
+    var uid = sel.getAttribute("data-tier-of");
+    var tier = sel.value;
+    var row = sel.closest("tr");
+    var was = sel.getAttribute("data-was") || "free";
+    var mail = row ? (row.querySelector(".admin-mail") || {}).textContent || uid : uid;
+
+    var M = acct();
+    if (!M || typeof M.adminGrant !== "function") {
+      sel.value = was;
+      msg("msg-grants", "页面脚本版本对不上（刷新一次即可）。", "warn");
+      return;
+    }
+    sel.disabled = true;
+    msg("msg-grants", "正在把 " + mail + " 改成 " + Ent.tierLabel(tier) + " ……", "");
+    Promise.resolve(M.adminGrant({ uid: uid, tier: tier, backing: backing, A: window.AuthCore, E: Ent }))
+      .then(function (r) {
+        sel.disabled = false;
+        if (r && r.ok) {
+          sel.setAttribute("data-was", tier);
+          msg("msg-grants", r.changed
+            ? (mail + " → " + Ent.tierLabel(tier) + "。对方刷新页面（或打开「我的」页）即由服务器判定生效。")
+            : (mail + " 本来就是 " + Ent.tierLabel(tier) + "，一个字都没改。"), r.changed ? "ok" : "warn");
+          return;
+        }
+        sel.value = was;
+        var text = (r && r.message) || "这一条没发出去。";
+        if (r && r.reason === "guest") text = "登录状态已过期，请重新登录后再来。";
+        else if (r && r.reason === "not-configured") text = "本站还没开放云端账号（服务端缺密钥），发不了。";
+        else if (r && r.reason === "no-channel") text = "页面脚本版本对不上（刷新一次即可）。";
+        else if (r && r.reason === "unavailable") text = "连不上服务端，这一轮没发出任何东西。";
+        msg("msg-grants", text, "warn");
+      })["catch"](function () {
+        sel.disabled = false;
+        sel.value = was;
+        msg("msg-grants", "连不上服务端，这一轮没发出任何东西。", "warn");
+      });
+  }
+
+  function renderGrants(list) {
+    var box = $("grants-body");
+    if (!box) return;
+    var empty = $("server-empty");
+    if (empty) empty.hidden = (list || []).length > 0;
+    box.innerHTML = (list || []).map(function (a) {
+      var mail = a.email || a.emailMask || "（无邮箱）";
+      var tier = String(a.tier || "free");
+      var opts = Ent.TIERS.map(function (t) {
+        return '<option value="' + t + '"' + (t === tier ? " selected" : "") + ">" + esc(Ent.tierLabel(t)) + "</option>";
+      }).join("");
+      return '<tr data-uid="' + esc(a.uid || "") + '">' +
+        '<td><span class="admin-mail">' + esc(mail) + "</span></td>" +
+        '<td class="admin-tier-cell"><select class="admin-role-select" data-tier-of="' + esc(a.uid || "") + '"' +
+          ' data-was="' + esc(tier) + '"' +
+          ' aria-label="' + esc(mail + " 的层级") + '">' + opts + "</select></td>" +
+        '<td><button class="admin-revoke" type="button" data-revoke="' + esc(a.emailMask || "") + '">收回</button></td>' +
+        "</tr>";
+    }).join("");
+  }
+
+  function onRevokeClick(e) {
+    var b = e.target.closest ? e.target.closest("button[data-revoke]") : null;
+    if (!b) return;
+    var mask = b.getAttribute("data-revoke");
+    var M = acct();
+    if (!M || typeof M.adminRevoke !== "function") { msg("msg-grants", "页面脚本版本对不上，这一轮没发出任何东西。", "warn"); return; }
+    b.disabled = true;
+    Promise.resolve(M.adminRevoke({ emailMask: mask, backing: backing, A: window.AuthCore, E: Ent })).then(function (r) {
+      if (!r || !r.ok) {
+        b.disabled = false;
+        msg("msg-grants", (r && r.message) || "收回没成功，稍后再试。", "warn");
+        return;
+      }
+      msg("msg-grants", r.changed
+        ? "已在数据库里收回 " + mask + " 的层级（对方刷新即回落 Free）。"
+        : "数据库里本来就没有 " + mask + " 这一条。", r.changed ? "ok" : "warn");
+      loadAccounts();
+    })["catch"](function () { b.disabled = false; msg("msg-grants", "连不上服务端，这一轮没发出任何东西。", "warn"); });
   }
 
   var currentReports = [];
@@ -565,8 +494,7 @@
           renderReports(currentReports);
           renderReportCounts(r.counts || {}, status);
           reportsMsg("", "");
-          reportsNote("上面那一排就是上面的下拉：点一格切过去，括号里是全站的条数；" +
-            "「全部」那一格是总数。", false);
+          reportsNote("这一排与上面的下拉是一件事：点一格切过去，数字是全站的条数。", false);
           return;
         }
         if (r && r.reason === "guest") { reportsMsg("登录状态已过期，请重新登录后再来。", "warn"); return; }
@@ -680,7 +608,8 @@
           var R = window.Report;
           if (li) {
             li.className = "report-row admin-report-row report-st-" + status;
-            var s = li.querySelector(".report-status");
+            // 就地更新那一行（不重拉整张表，否则滚动位置被打回顶部）
+            var s = li.querySelector(".report-status");  // stay：就地换那一行的状态，不重拉整张表
             if (s) s.textContent = R ? R.labelOfStatus(status) : status;
           }
           reportsMsg("已改成「" + (window.Report ? window.Report.labelOfStatus(status) : status) + "」", "ok");
@@ -695,58 +624,89 @@
       });
   }
 
-  function init() {
+  // 这一页开面第一件事就是问「我是不是主人」，而**身份是异步到位的**：
+  // 服务器发的会话要等 `js/chrome.js` 那一发 `/api/me` 回来，才写进
+  // `poem_plan_v1`。照面就判的话，管理员在自己机器上刷新这一页只会拿到
+  // 「没有权限」—— 他确实是主人，只是答案还没到。
+  //
+  // 所以：先按手上那份判一次，判不成**不急着关人**，挂上
+  // `entitlementchange`（`Entitlement.writeTier` 写完缓存时喊的那一声），
+  // 答案到了再判一次。真的没权限（游客 / 普通用户）时那一声不会来，
+  // 关人的话由 `paintDeny()` 在超时后如实说出。
+  var painted = false;
+  var paintTimer = null;
+
+  function paintDeny(text) {
+    show($("deny-card"));
+    var lead = $("deny-lead");
+    if (lead) lead.textContent = text;
+    if (paintTimer) { clearTimeout(paintTimer); paintTimer = null; }
+  }
+
+  function paint() {
     var id = Ent.identity({ backing: backing });
+    myId = id;
 
     if (!isOwner(id)) {
-
-      show($("deny-card"));
-      var lead = $("deny-lead");
-      if (lead) lead.textContent = "只对管理员开放。";
-      var back = $("btn-back-profile");
-      if (back) back.addEventListener("click", function () { location.href = "/mine/"; });
+      // `/api/me` 那一发还没回来（本机这一份既没有 uid 也没有角色）——
+      // 给它一点时间。真的没权限时 `show()` 不会来，下面那一手兜住。
+      if (!painted && (!id || !id.uid)) {
+        if (!paintTimer) {
+          paintTimer = setTimeout(function () {
+            if (!painted) paintDeny("只对管理员开放。");
+          }, 2500);
+        }
+        return;
+      }
+      painted = true;
+      paintDeny("只对管理员开放。");
       return;
     }
 
+    painted = true;
+    hide($("deny-card"));
     show($("grant-card"));
     show($("server-card"));
-    show($("accounts-card"));
     show($("reports-card"));
     show($("pinyin-card"));
-    renderTierPick();
-    loadServerGrants();
-    loadAccounts();
+    if (paintTimer) { clearTimeout(paintTimer); paintTimer = null; }
+    if (paint.done) return;
+    paint.done = true;
 
-    $("tier-pick").addEventListener("click", onPick);
-    $("btn-grant").addEventListener("click", onGrant);
-    $("server-list").addEventListener("click", onServerListClick);
-    $("btn-server-reload").addEventListener("click", loadServerGrants);
-    $("btn-accounts-reload").addEventListener("click", loadAccounts);
-    if ($("accounts-list")) $("accounts-list").addEventListener("click", onAccountsClick);
+    var who = $("accounts-body");
+    if (who) who.addEventListener("change", onAccountsChange);
+
+    if ($("grants-body")) $("grants-body").addEventListener("click", onRevokeClick);
+    if ($("grants-body")) $("grants-body").addEventListener("change", onTierChange);
     if ($("btn-reports-reload")) $("btn-reports-reload").addEventListener("click", loadReports);
     if ($("report-filter")) $("report-filter").addEventListener("change", loadReports);
     if ($("report-counts")) $("report-counts").addEventListener("click", onCountsClick);
     if ($("reports-list")) $("reports-list").addEventListener("click", onReportsClick);
+    loadAccounts();
     loadReports();
 
     var pfWid = $("pf-wid"), pfLine = $("pf-line");
     if (pfWid) pfWid.addEventListener("input", onPinyinSearch);
     if (pfLine) pfLine.addEventListener("input", previewLine);
-    $("pf-hits").addEventListener("click", function (e) {
-      if (e.target.closest && e.target.closest("button[data-line]")) onPinyinLine(e);
-      else onPinyinPick(e);
-    });
+    if ($("pf-hits")) $("pf-hits").addEventListener("click", onHitClick);
     $("btn-pf-add").addEventListener("click", onPinyinAdd);
     $("btn-pf-fill").addEventListener("click", function () {
       var p = pickedPoem();
       if (!p) { msg("msg-pf", "先在上面搜一篇、点「选这一篇」。", "warn"); return; }
-      var box = $("pf-hits");
-      if (box && !box.hidden) { renderHits([]); return; }
       fillLine(p);
     });
     $("pf-list").addEventListener("click", onFixListClick);
     $("btn-pf-export").addEventListener("click", onFixExport);
     renderFixList();
+  }
+
+  function init() {
+    // `announce()` 是往 `window` 上发的（见 `js/entitlement.js`）；
+    // `js/mine.js` / `js/settings-nav.js` 两处也都是 `window` + `document`
+    // 各挂一份 —— 这里同样两份都挂，谁先就位都听得到。
+    window.addEventListener("entitlementchange", paint);
+    document.addEventListener("entitlementchange", paint);
+    paint();
   }
 
   if (document.readyState === "loading") {
@@ -756,14 +716,16 @@
   }
 
   window.AdminPage = {
-    isOwner: isOwner, esc: esc, roleText: roleText, renderAccounts: renderAccounts,
+    isOwner: isOwner, esc: esc, roleText: roleText,
 
-    readForm: readForm, grantFailed: grantFailed,
+    renderAccounts: renderAccounts, loadAccounts: loadAccounts,
+    renderGrants: renderGrants,
 
     renderReports: renderReports, loadReports: loadReports, reportTime: reportTime,
     renderReportCounts: renderReportCounts,
 
     searchPoems: searchPoems,
-    widOfPoem: widOfPoem
+    widOfPoem: widOfPoem,
+    renderFixList: renderFixList
   };
 })();

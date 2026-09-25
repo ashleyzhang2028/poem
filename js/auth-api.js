@@ -382,6 +382,7 @@
       grant: function (input) {
         input = input || {};
         return post("/admin/grant", {
+          uid: input.uid,
           emailMask: input.emailMask,
           tier: input.tier,
           until: input.until == null ? null : input.until,
