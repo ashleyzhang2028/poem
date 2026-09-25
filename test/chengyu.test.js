@@ -17,8 +17,8 @@ loadData(sandbox, ['data/poems-1.js', 'data/poems-2.js', 'data/poems-3.js', 'dat
   'data/index.js', 'data/poems-chengyu.js', 'data/poems-classic.js', 'data/site-index.js']);
 
 const CY = resolve(sandbox, sandbox.POEMS_CHENGYU, 'chengyu');
-chk(Array.isArray(CY) && CY.length === 166,
-  '中华成语故事共 166 则（实际 ' + (CY ? CY.length : 'undefined') + '）');
+chk(Array.isArray(CY) && CY.length >= 300,
+  '中华成语故事已收 300 则以上（实际 ' + (CY ? CY.length : 'undefined') + '）');
 
 const ids = new Set();
 let dup = 0;
@@ -43,15 +43,24 @@ chk(need.every(t => titles.indexOf(t) >= 0),
 
 const 上古 = CY.filter(p => p.gradeGroup === '上古传说').length;
 const 宋 = CY.filter(p => p.gradeGroup === '宋').length;
-chk(上古 === 11 && 宋 > 0,
-  '神话传说归入「上古传说」、宋代神话之外的条目归入「宋」（上古 ' + 上古 + ' 则，宋 ' + 宋 + ' 则）');
+const 战国 = CY.filter(p => p.gradeGroup === '战国').length;
+chk(上古 === 11 && 宋 > 0 && 战国 > 0,
+  '神话归「上古传说」、其余按最早出处归朝代（上古 ' + 上古 + '、战国 ' + 战国 + '、宋 ' + 宋 + '）');
 
 const 黄粱 = CY.filter(p => p.title === '黄粱一梦')[0];
 chk(!!黄粱 && 黄粱.dynasty === '唐' && /枕中记/.test(黄粱.source),
   'Issue #308 点名的校正已落实：黄粱一梦归「唐」、出自《枕中记》');
 
+const 亡羊 = CY.filter(p => p.title === '亡羊补牢')[0];
+chk(!!亡羊 && 亡羊.dynasty === '战国' && /战国策/.test(亡羊.source),
+  'Issue #308 点名的校正已落实：亡羊补牢归「战国」、出自《战国策·楚策四》');
+
+const 掩耳 = CY.filter(p => p.title === '掩耳盗铃')[0];
+chk(!!掩耳 && 掩耳.dynasty === '战国' && /吕氏春秋/.test(掩耳.source),
+  '掩耳盗铃归「战国」、出自《吕氏春秋·自知》（原清单误列入清）');
+
 const idx = sandbox.SITE_INDEX.filter(x => x.book === 'chengyu' && !x.isBook);
-chk(idx.length === 166, '总索引收了全部 166 则（实际 ' + idx.length + '）');
+chk(idx.length === CY.length, '总索引收了全部成语（实际 ' + idx.length + ' / ' + CY.length + '）');
 chk(idx.every(x => x.text && x.translation), '进索引的每一则原文与译文齐备');
 chk(sandbox.SITE_INDEX.some(x => x.book === 'chengyu' && x.isBook),
   '「中华成语故事」本身也作为一条结果（搜集子名能直接进那一页）');

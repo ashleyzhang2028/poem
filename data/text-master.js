@@ -1,7 +1,7 @@
 /* ==========================================================================
    正文存储主表（同一篇作品的正文 / 译文只落一份）
    --------------------------------------------------------------------------
-   由 scripts/build-text-master.js 离线算出，共 1638 条。
+   由 scripts/build-text-master.js 离线算出，共 1772 条。
 
    ⚠️ 这是**生成文件**，改动请改 scripts/build-text-master.js 后重跑，
       不要手改这里 —— 下次重新生成会把手工改动覆盖掉。
@@ -706,12 +706,120 @@ window.TEXT_MASTER = [
     translationSource: "public-domain"
   },
   {
+    work: "w-chengyu-cy-167",
+    id: "chengyu-cy-167",
+    title: "管鲍之交",
+    entries: ["chengyu-cy-167"],
+    text: "管仲夷吾者，颍上人也。少时常与鲍叔牙游，鲍叔知其贤。管仲贫困，常欺鲍叔，鲍叔终善遇之，不以为言。\n已而鲍叔事齐公子小白，管仲事公子纠。及小白立为桓公，公子纠死，管仲囚焉。鲍叔遂进管仲。\n管仲既用，任政于齐，齐桓公以霸，九合诸侯，一匡天下，管仲之谋也。\n管仲曰：「吾始困时，尝与鲍叔贾，分财利多自与，鲍叔不以我为贪，知我贫也。生我者父母，知我者鲍子也。」",
+    translation: "管仲，名夷吾，是颍上人。年轻时常常和鲍叔牙交往，鲍叔牙知道他有才干。管仲家境贫困，常占鲍叔牙的便宜，鲍叔牙始终待他很好，不把这些放在心上。后来鲍叔牙辅佐齐公子小白，管仲辅佐公子纠。等到小白立为国君（齐桓公），公子纠被杀，管仲被囚禁起来，鲍叔牙就向齐桓公举荐了管仲。管仲被任用以后，执掌齐国政事，齐桓公因此称霸，多次会盟诸侯，使天下归正于一，这都是管仲的谋略。管仲说：「我当初困窘的时候，曾和鲍叔牙一起做生意，分钱时自己多拿，鲍叔牙不认为我贪心，因为他知道我家里穷。生我的是父母，了解我的是鲍叔牙啊。」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-168",
+    id: "chengyu-cy-168",
+    title: "退避三舍",
+    entries: ["chengyu-cy-168"],
+    text: "（重耳）及楚，楚子飨之，曰：「公子若反晋国，则何以报不谷？」对曰：「子女玉帛，则君有之；羽毛齿革，则君地生焉。其波及晋国者，君之余也，其何以报君？」\n曰：「虽然，何以报我？」对曰：「若以君之灵，得反晋国，晋、楚治兵，遇于中原，其辟君三舍。若不获命，其左执鞭、弭，右属櫜、鞬，以与君周旋。」",
+    translation: "晋公子重耳流亡到楚国，楚成王设酒宴款待他，问道：「公子如果返回晋国即位，拿什么来报答我呢？」重耳回答说：「美女、宝玉、丝绸，君王您都有了；鸟羽、兽毛、象牙、犀革，都是贵地出产的。那些流散到晋国的，都是您剩下的，我拿什么报答您呢？」楚王说：「虽然如此，总得拿点什么报答我吧？」重耳答道：「如果托您的福，我能返回晋国，将来晋楚两国交战，在中原相遇，我一定退让九十里。如果这样还不能得到您的谅解，那我就只好左手拿着鞭子和弓，右边挂着箭袋和弓套，来跟您周旋一番了。」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-169",
+    id: "chengyu-cy-169",
+    title: "老马识途",
+    entries: ["chengyu-cy-169"],
+    text: "管仲、隰朋从于桓公而伐孤竹，春往冬反，迷惑失道。管仲曰：「老马之智可用也。」乃放老马而随之，遂得道。\n行山中无水，隰朋曰：「蚁冬居山之阳，夏居山之阴，蚁壤一寸而仞有水。」乃掘地，遂得水。",
+    translation: "管仲、隰朋跟随齐桓公去攻打孤竹国，春天出发、冬天返回，中途迷失了道路。管仲说：「老马的智慧可以利用。」于是放开老马，让队伍跟着它走，终于找到了路。走到山里没有水，隰朋说：「蚂蚁冬天住在山的南面，夏天住在山的北面，蚁窝土堆高一寸，下面八尺就有水。」于是就地挖掘，果然挖到了水。",
+    translationSource: "public-domain"
+  },
+  {
     work: "w-chengyu-cy-17",
     id: "chengyu-cy-17",
     title: "外强中干",
     entries: ["chengyu-cy-17"],
     text: "乱气狡愤，阴血周作，张脉偾兴，外强中干。进退不可，周旋不能。",
     translation: "（那匹马的）气血狂躁不安，阴血乱窜，脉管膨胀突起，外表看起来强壮，内里却已虚耗。要进不能进，要退不能退，回旋都做不到。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-170",
+    id: "chengyu-cy-170",
+    title: "秦晋之好",
+    entries: ["chengyu-cy-170"],
+    text: "秦伯纳女五人，怀嬴与焉。奉匜沃盥，既而挥之。怒曰：「秦、晋，匹也，何以卑我？」公子惧，降服而囚。",
+    translation: "秦穆公把五个女子送给晋公子重耳为妻，怀嬴也在其中。怀嬴捧着盛水器给重耳浇水洗手，重耳洗完后挥手让她走开。怀嬴发怒说：「秦国和晋国是地位对等的国家，你为什么轻视我？」重耳害怕了，脱下上衣自囚请罪。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-171",
+    id: "chengyu-cy-171",
+    title: "一鸣惊人",
+    entries: ["chengyu-cy-171"],
+    text: "齐威王之时喜隐，好为淫乐长夜之饮，沉湎不治，委政卿大夫。百官荒乱，诸侯并侵，国且危亡，在于旦暮，左右莫敢谏。\n淳于髡说之以隐曰：「国中有大鸟，止王之庭，三年不蜚又不鸣，王知此鸟何也？」王曰：「此鸟不飞则已，一飞冲天；不鸣则已，一鸣惊人。」于是乃朝诸县令长七十二人，赏一人，诛一人，奋兵而出。诸侯振惊，皆还齐侵地。",
+    translation: "齐威王当政时喜欢说隐语，沉溺于淫乐，通宵饮酒，不管政事，把国政都交给卿大夫。百官荒废混乱，诸侯一同来侵犯，国家危亡就在旦夕之间，左右的人没有敢进谏的。淳于髡用隐语劝说：「国都里有一只大鸟，停在大王的庭院中，三年不飞也不叫，大王知道这鸟是怎么回事吗？」威王说：「这鸟不飞则已，一飞就冲上云霄；不叫则已，一叫就使人震惊。」于是上朝召见各县长官七十二人，奖赏一人，诛杀一人，发兵出击。诸侯大为震惊，都把侵占齐国的土地归还了。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-172",
+    id: "chengyu-cy-172",
+    title: "问鼎中原",
+    entries: ["chengyu-cy-172"],
+    text: "楚子伐陆浑之戎，遂至于雒，观兵于周疆。定王使王孙满劳楚子。楚子问鼎之大小、轻重焉。\n对曰：「在德不在鼎。……周德虽衰，天命未改。鼎之轻重，未可问也。」",
+    translation: "楚庄王讨伐陆浑一带的戎人，于是到了洛水，在周朝的疆界上陈兵示威。周定王派王孙满去慰劳楚庄王。楚庄王问起九鼎的大小轻重。王孙满回答说：「鼎的轻重在于德行而不在于鼎本身。……周朝的德行虽然衰微，但天命还没有改变。鼎的轻重，是不能问的。」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-174",
+    id: "chengyu-cy-174",
+    title: "鸟尽弓藏",
+    entries: ["chengyu-cy-174"],
+    text: "范蠡遂去，自齐遗大夫种书曰：「蜚鸟尽，良弓藏；狡兔死，走狗烹。越王为人长颈鸟喙，可与共患难，不可与共乐。子何不去？」种见书，称病不朝。",
+    translation: "范蠡于是离开越国，从齐国给大夫文种送去一封信，说：「飞鸟打光了，好弓就被收藏起来；狡兔死光了，猎狗就被煮来吃了。越王这个人长脖子、尖嘴巴，可以和他共患难，不能和他同享乐。你为什么还不离开呢？」文种看到信后，就推说有病不去上朝。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-175",
+    id: "chengyu-cy-175",
+    title: "高山流水",
+    entries: ["chengyu-cy-175"],
+    text: "伯牙善鼓琴，钟子期善听。伯牙鼓琴，志在登高山。钟子期曰：「善哉，峨峨兮若泰山！」志在流水。钟子期曰：「善哉，洋洋兮若江河！」伯牙所念，钟子期必得之。",
+    translation: "伯牙擅长弹琴，钟子期擅长欣赏。伯牙弹琴时，心里想着攀登高山，钟子期就说：「好啊，高峻的样子像泰山！」伯牙心里想着流水，钟子期就说：「好啊，浩浩荡荡的样子像江河！」凡是伯牙所想的，钟子期一定能领会到。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-176",
+    id: "chengyu-cy-176",
+    title: "厉兵秣马",
+    entries: ["chengyu-cy-176"],
+    text: "三十三年春，秦师过周北门。……（郑商人弦高）以乘韦先，牛十二犒师。……\n郑穆公使视客馆，则束载、厉兵、秣马矣。",
+    translation: "鲁僖公三十三年春天，秦国的军队经过周朝都城北门。郑国商人弦高先用四张熟牛皮，再用十二头牛慰劳秦军。郑穆公派人去查看杞子等人居住的馆舍，发现他们已经捆好行装、磨快兵器、喂饱马匹（准备作内应）了。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-177",
+    id: "chengyu-cy-177",
+    title: "城下之盟",
+    entries: ["chengyu-cy-177"],
+    text: "楚伐绞，军其南门。莫敖屈瑕曰：「绞小而轻，轻则寡谋。请无捍采樵者以诱之。」从之。绞人获三十人。\n明日，绞人争出，驱楚役徒于山中。楚人坐其北门，而覆诸山下，大败之。为城下之盟而还。",
+    translation: "楚国攻打绞国，驻军在南门。莫敖屈瑕说：「绞国小而轻浮，轻浮就缺少谋略。请不要派兵保护砍柴的人，以此引诱他们。」楚王听从了。绞国人抓走了三十个砍柴人。第二天，绞国人争相出城，在山中追赶楚国的役徒。楚军守在北门，又在山下设伏，大败绞军。逼迫绞国在城下订立了屈辱的盟约才回国。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-178",
+    id: "chengyu-cy-178",
+    title: "礼贤下士",
+    entries: ["chengyu-cy-178"],
+    text: "公子为人仁而下士，士无贤不肖皆谦而礼交之，不敢以其富贵骄士。士以此方数千里争往归之，致食客三千人。当是时，诸侯以公子贤，多客，不敢加兵谋魏十余年。",
+    translation: "魏公子为人仁厚而能礼贤下士，无论士人贤能与否，他都谦恭地以礼相待，不敢因为自己富贵就傲慢待人。因此方圆数千里的士人都争着来投奔他，招来食客三千人。当时，诸侯因为公子贤能、门客众多，十几年不敢出兵图谋魏国。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-179",
+    id: "chengyu-cy-179",
+    title: "东道主",
+    entries: ["chengyu-cy-179"],
+    text: "烛之武夜缒而出，见秦伯曰：「秦、晋围郑，郑既知亡矣。若亡郑而有益于君，敢以烦执事。越国以鄙远，君知其难也；焉用亡郑以陪邻？邻之厚，君之薄也。……\n若不阙秦，将焉取之？阙秦以利晋，唯君图之。」秦伯说，与郑人盟。使杞子、逢孙、杨孙戍之，乃还。",
+    translation: "烛之武夜里用绳子吊着出城，见到秦穆公说：「秦、晋两国围攻郑国，郑国已经知道要灭亡了。如果灭掉郑国对您有好处，那就劳烦您了。越过别国把远方的土地作为边邑，您知道那是很难的；何必灭掉郑国来增加邻国的土地呢？邻国越雄厚，您就越薄弱。……如果不损害秦国，又从哪里取得土地呢？损害秦国来使晋国得利，希望您好好考虑。」秦穆公很高兴，就与郑国订立盟约。派杞子、逢孙、杨孙驻守郑国，自己就撤兵回国了。",
     translationSource: "public-domain"
   },
   {
@@ -724,12 +832,192 @@ window.TEXT_MASTER = [
     translationSource: "public-domain"
   },
   {
+    work: "w-chengyu-cy-180",
+    id: "chengyu-cy-180",
+    title: "楚材晋用",
+    entries: ["chengyu-cy-180"],
+    text: "声子通使于晋，还如楚。令尹子木与之语，问晋故焉，且曰：「晋大夫与楚孰贤？」对曰：「晋卿不如楚，其大夫则贤，皆卿材也。如杞、梓、皮革，自楚往也。虽楚有材，晋实用之。」",
+    translation: "声子出使晋国，回国后到了楚国。令尹子木同他谈话，问起晋国的情况，并且问：「晋国的大夫和楚国的大夫谁更贤能？」声子回答说：「晋国的卿不如楚国，他们的大夫却很贤能，都是可作卿的人才。就像杞木、梓木、皮革，都是从楚国运过去的。虽然楚国有人才，实际上却被晋国使用了。」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-181",
+    id: "chengyu-cy-181",
+    title: "班荆道故",
+    entries: ["chengyu-cy-181"],
+    text: "伍举奔郑，将遂奔晋。声子将如晋，遇之于郑郊，班荆相与食，而言复故。",
+    translation: "伍举逃奔到郑国，打算再逃到晋国去。声子将要到晋国去，在郑国郊外遇见了他，两人把荆草铺在地上一起吃东西，谈起恢复旧好的事。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-182",
+    id: "chengyu-cy-182",
+    title: "食言而肥",
+    entries: ["chengyu-cy-182"],
+    text: "公宴于五梧。武伯为祝，恶郭重，曰：「何肥也？」季孙曰：「请饮彘也！以鲁国之密迩仇雠，臣是以不获从君，克免于大行，又谓重也肥？」\n公曰：「是食言多矣，能无肥乎？」",
+    translation: "鲁哀公在五梧设宴。孟武伯祝酒，他讨厌郭重，就说：「你怎么这么胖？」季孙说：「请罚彘喝酒！因为鲁国紧邻仇敌，臣下因此不能跟随君王出行，得以免于远行，你却还说郭重胖？」哀公说：「这个人吃自己的诺言吃得太多了，怎么能不胖呢？」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-183",
+    id: "chengyu-cy-183",
+    title: "断章取义",
+    entries: ["chengyu-cy-183"],
+    text: "癸臣子之，有宠，妻之。庆舍之士谓卢蒲癸曰：「男女辨姓，子不辟宗，何也？」曰：「宗不余辟，余独焉辟之？赋诗断章，余取所求焉，恶识宗？」",
+    translation: "卢蒲癸做了庆舍的家臣，受到宠信，庆舍把女儿嫁给了他。庆舍的士人对卢蒲癸说：「男女要辨别姓氏，你不避开同宗，为什么？」卢蒲癸说：「同宗不避开我，我为什么单独避开它？诵诗断章取义，我只取我所需要的，哪里管什么同宗？」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-184",
+    id: "chengyu-cy-184",
+    title: "临渴掘井",
+    entries: ["chengyu-cy-184"],
+    text: "夫病已成而后药之，乱已成而后治之，譬犹渴而穿井，斗而铸锥，不亦晚乎！",
+    translation: "病已经形成了才去用药，动乱已经形成了才去治理，就好像口渴了才去挖井，临到打仗了才去铸造兵器，不是太晚了吗！",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-185",
+    id: "chengyu-cy-185",
+    title: "有恃无恐",
+    entries: ["chengyu-cy-185"],
+    text: "夏，齐孝公伐我北鄙。……公使展喜犒师，使受命于展禽。齐侯未入竟，展喜从之，曰：「寡君闻君亲举玉趾，将辱于敝邑，使下臣犒执事。」\n齐侯曰：「鲁人恐乎？」对曰：「小人恐矣，君子则否。」齐侯曰：「室如县罄，野无青草，何恃而不恐？」对曰：「恃先王之命。」",
+    translation: "夏天，齐孝公攻打鲁国北部边境。鲁僖公派展喜去慰劳齐军，让他先向展禽请教辞令。齐侯还没有进入鲁国国境，展喜就迎上前去，说：「我们国君听说您亲自出动大驾，将要光临敝国，特意派下臣来慰劳您的左右。」齐侯说：「鲁国人害怕吗？」展喜回答说：「小人害怕了，君子却不害怕。」齐侯说：「你们屋里像挂着的磬一样空无一物，田野里连青草都没有，凭什么不害怕？」展喜回答说：「凭先王的命令。」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-186",
+    id: "chengyu-cy-186",
+    title: "从善如流",
+    entries: ["chengyu-cy-186"],
+    text: "楚师之还也，晋侵沈，获沈子揖初，从知、范、韩也。君子曰：「从善如流，宜哉！《诗》曰：『恺悌君子，遐不作人。』求善也夫！作人斯有功绩矣。」",
+    translation: "楚军撤退的时候，晋国侵袭沈国，俘获了沈子揖初，这是听从了知庄子、范文子、韩献子的意见。君子说：「听从善言像流水一样自然，这是应该的呀！《诗经》说：『和乐平易的君子，怎么不培育人才。』这是求取善言啊！培育人才就会有功绩了。」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-187",
+    id: "chengyu-cy-187",
+    title: "三令五申",
+    entries: ["chengyu-cy-187"],
+    text: "约束既布，乃设鈇钺，即三令五申之。于是鼓之右，妇人大笑。孙子曰：「约束不明，申令不熟，将之罪也。」复三令五申而鼓之左，妇人复大笑。\n孙子曰：「约束不明，申令不熟，将之罪也；既已明而不如法者，吏士之罪也。」乃欲斩左右队长。",
+    translation: "纪律已经宣布，就摆出刑具斧钺，又把规定反复交代了多次。于是击鼓命令她们向右，宫女们大笑起来。孙武说：「纪律交代不明确，号令不熟悉，这是将领的罪过。」又把规定反复交代了多次，再击鼓命令向左，宫女们又大笑。孙武说：「纪律不明确、号令不熟悉，是将领的罪过；既然已经讲明白了却不遵照执行，就是官吏和士兵的罪过。」于是要斩杀左右两队的队长。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-188",
+    id: "chengyu-cy-188",
+    title: "出尔反尔",
+    entries: ["chengyu-cy-188"],
+    text: "邹与鲁哄。穆公问曰：「吾有司死者三十三人，而民莫之死也。诛之，则不可胜诛；不诛，则疾视其长上之死而不救，如之何则可也？」\n孟子对曰：「凶年饥岁，君之民老弱转乎沟壑，壮者散而之四方者，几千人矣；而君之仓廪实，府库充，有司莫以告，是上慢而残下也。曾子曰：『戒之戒之！出乎尔者，反乎尔者也。』夫民今而后得反之也。君无尤焉！君行仁政，斯民亲其上、死其长矣。」",
+    translation: "邹国与鲁国发生冲突。邹穆公问孟子：「我的官吏死了三十三人，而百姓却没有一个为他们效死的。杀掉他们吧，杀也杀不完；不杀吧，他们眼看着长官被杀却不去救，怎么办才好呢？」孟子回答说：「灾荒年头，您的百姓中年老体弱的辗转饿死在沟壑里，壮年人四散逃往四方，差不多有上千人了；而您的粮仓充盈、府库充实，官吏却不向您报告，这是在上位的人怠慢政事、残害百姓啊。曾子说：『警惕啊警惕！你怎么对待别人，别人就会怎么对待你。』百姓如今才有机会反过来报复。您不要责怪他们了！您施行仁政，百姓自然就会亲近长上、为长上效死了。」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-189",
+    id: "chengyu-cy-189",
+    title: "众志成城",
+    entries: ["chengyu-cy-189"],
+    text: "谚曰：「众心成城，众口铄金。」",
+    translation: "谚语说：「众人同心，就能筑成坚固的城墙；众口一词，能把金属熔化。」",
+    translationSource: "public-domain"
+  },
+  {
     work: "w-chengyu-cy-19",
     id: "chengyu-cy-19",
     title: "一鼓作气",
     entries: ["chengyu-cy-19"],
     text: "公与之乘，战于长勺。公将鼓之。刿曰：「未可。」齐人三鼓。刿曰：「可矣。」齐师败绩。\n既克，公问其故。对曰：「夫战，勇气也。一鼓作气，再而衰，三而竭。彼竭我盈，故克之。」",
     translation: "鲁庄公和曹刿同乘一辆战车，在长勺作战。庄公将要击鼓进军，曹刿说：「还不行。」齐军擂了三通鼓之后，曹刿说：「可以了。」齐军大败。战胜之后，庄公问其中的缘故。曹刿回答说：「作战，靠的是勇气。第一次击鼓振作了士气，第二次击鼓士气就衰减了，第三次击鼓士气就耗尽了。敌方士气耗尽而我方士气正旺，所以能打败他们。」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-190",
+    id: "chengyu-cy-190",
+    title: "舍生取义",
+    entries: ["chengyu-cy-190"],
+    text: "生，亦我所欲也；义，亦我所欲也。二者不可得兼，舍生而取义者也。\n生亦我所欲，所欲有甚于生者，故不为苟得也；死亦我所恶，所恶有甚于死者，故患有所不辟也。",
+    translation: "生命是我想要的，道义也是我想要的；如果两者不能同时得到，那就舍弃生命而选取道义。生命本是我想要的，但我所想要的还有超过生命的，所以我不做苟且偷生的事；死亡本是我厌恶的，但我所厌恶的还有超过死亡的，所以有的祸患我不躲避。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-191",
+    id: "chengyu-cy-191",
+    title: "知难而退",
+    entries: ["chengyu-cy-191"],
+    text: "见可而进，知难而退，军之善政也。兼弱攻昧，武之善经也。",
+    translation: "见到有利的时机就前进，知道有困难就退却，这是用兵的好策略。吞并弱小、攻打昏乱，这是用武的好法则。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-192",
+    id: "chengyu-cy-192",
+    title: "天经地义",
+    entries: ["chengyu-cy-192"],
+    text: "夫礼，天之经也，地之义也，民之行也。",
+    translation: "礼，是上天的常道，是大地的准则，是百姓行事的依据。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-193",
+    id: "chengyu-cy-193",
+    title: "幸灾乐祸",
+    entries: ["chengyu-cy-193"],
+    text: "冬，秦饥，使乞籴于晋，晋人弗与。庆郑曰：「背施无亲，幸灾不仁，贪爱不祥，怒邻不义。四德皆失，何以守国？」",
+    translation: "冬天，秦国发生饥荒，派人到晋国请求买粮，晋国人不给。庆郑说：「背弃恩施就失去亲人，幸灾乐祸就不仁，贪图所爱就不吉祥，激怒邻国就不义。四种德行都失去了，靠什么守住国家？」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-194",
+    id: "chengyu-cy-194",
+    title: "以儆效尤",
+    entries: ["chengyu-cy-194"],
+    text: "郑伯将王自圉门入，虢叔自北门入，杀王子颓及五大夫。\n（《左传·僖公二十四年》记：『郑伯、虢叔杀王子颓及五大夫。』《史记·周本纪》述其事，后世以「以儆效尤」为戒。）",
+    translation: "郑伯带着周惠王从圉门进入王城，虢叔从北门进入，杀掉了王子颓和五个大夫。（后世用「以儆效尤」表示用惩罚某人来警告那些效仿作恶的人。）",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-195",
+    id: "chengyu-cy-195",
+    title: "言归于好",
+    entries: ["chengyu-cy-195"],
+    text: "秋，齐侯盟诸侯于葵丘，曰：「凡我同盟之人，既盟之后，言归于好。」",
+    translation: "秋天，齐桓公在葵丘与诸侯结盟，说：「凡是我们同盟的人，结盟之后，都要重归于好。」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-196",
+    id: "chengyu-cy-196",
+    title: "量力而行",
+    entries: ["chengyu-cy-196"],
+    text: "力能则进，否则退，量力而行。",
+    translation: "力量够得上就前进，否则就退却，要估量自己的力量行事。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-197",
+    id: "chengyu-cy-197",
+    title: "不自量力",
+    entries: ["chengyu-cy-197"],
+    text: "息侯伐郑，郑伯与战于竟，息师大败而还。君子是以知息之将亡也：不度德，不量力，不亲亲，不征辞，不察有罪。犯五不韪，而以伐人，其丧师也，不亦宜乎！",
+    translation: "息侯攻打郑国，郑伯在边境上同他交战，息国军队大败而回。君子因此知道息国将要灭亡：它不衡量德行，不估量力量，不亲近亲戚，不分辨是非，不查察罪过。犯了这五种过错，还要去攻打别人，军队被消灭，不也是应该的吗！",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-198",
+    id: "chengyu-cy-198",
+    title: "各自为政",
+    entries: ["chengyu-cy-198"],
+    text: "将战，华元杀羊食士，其御羊斟不与。及战，曰：「畴昔之羊，子为政；今日之事，我为政。」与入郑师，故败。君子谓羊斟非人也，以其私憾，败国殄民。",
+    translation: "将要开战时，华元杀羊犒劳士卒，他的车夫羊斟没有分到。等到交战时，羊斟说：「前些日子的羊，由你做主；今天的事，由我做主。」于是驾着车冲进郑国军队里，宋军因此大败。君子认为羊斟不是人，因为个人的怨恨，而使国家战败、百姓受害。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-199",
+    id: "chengyu-cy-199",
+    title: "唯命是从",
+    entries: ["chengyu-cy-199"],
+    text: "（楚灵王）谓子革曰：「昔诸侯远我而畏晋，今我大城陈、蔡、不羹，赋皆千乘，子与有劳焉，诸侯其畏我乎？」\n对曰：「畏君王哉！是四国者，专足畏也，又加之以楚，敢不畏君王哉！」\n王曰：「然。吾事齐、晋、鲁、卫，唯命是听。」",
+    translation: "楚灵王对子革说：「从前诸侯疏远我国而畏惧晋国，如今我大修陈、蔡、不羹的城池，兵赋都有千辆战车，你也出了力，诸侯该畏惧我了吧？」子革回答说：「当然畏惧君王！这四国的力量，已经足够使人害怕了，再加上楚国，谁敢不畏惧君王呢！」楚王说：「对。我对待齐、晋、鲁、卫等国，都是唯命是从的。」",
     translationSource: "public-domain"
   },
   {
@@ -742,12 +1030,183 @@ window.TEXT_MASTER = [
     translationSource: "public-domain"
   },
   {
+    work: "w-chengyu-cy-200",
+    id: "chengyu-cy-200",
+    title: "捕风捉影",
+    entries: ["chengyu-cy-200"],
+    text: "听其言，洋洋满耳，若将可遇；求之，荡荡如系风捕影，终不可得。",
+    translation: "听他说的话，洋洋洒洒充满耳朵，好像马上就能得到；可是去寻求时，却空空荡荡像系住风、捕捉影子一样，终究什么也得不到。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-201",
+    id: "chengyu-cy-201",
+    title: "拨乱反正",
+    entries: ["chengyu-cy-201"],
+    text: "太史公曰：……秦政不改，反酷刑法，岂不缪乎？故汉兴，承敝易变，使人不倦，得天统矣。\n（《公羊传·哀公十四年》：『拨乱世，反诸正，莫近诸《春秋》。』）",
+    translation: "太史公说：……秦朝的政治不加改革，反而加重刑罚，难道不是荒谬吗？所以汉朝兴起，承接弊政而加以变通，使百姓不知疲倦，这是合于天道的。（《公羊传》说：『治理乱世，使它回归正道，没有比《春秋》更切近的了。』）",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-202",
+    id: "chengyu-cy-202",
+    title: "德高望重",
+    entries: ["chengyu-cy-202"],
+    text: "元显因讽礼官下议，称录尚书事，当时以为会稽王德高望重，宜以为相国。",
+    translation: "司马元显于是示意礼官提出建议，称任录尚书事，当时认为会稽王德行高尚、名望很大，应该让他做相国。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-203",
+    id: "chengyu-cy-203",
+    title: "见利忘义",
+    entries: ["chengyu-cy-203"],
+    text: "赞曰：……当孝文时，天下以郦寄为卖友。夫卖友者，谓见利而忘义也。",
+    translation: "班固评论说：……在汉文帝时，天下人都认为郦寄出卖朋友。所谓出卖朋友，说的就是见到利益就忘掉道义啊。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-204",
+    id: "chengyu-cy-204",
+    title: "木已成舟",
+    entries: ["chengyu-cy-204"],
+    text: "如今木已成舟，也是林兄命定如此了。",
+    translation: "如今事情已经成了定局，也是林兄命中注定如此了。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-205",
+    id: "chengyu-cy-205",
+    title: "祁奚举贤",
+    entries: ["chengyu-cy-205"],
+    text: "祁奚请老，晋侯问嗣焉。称解狐，其仇也，将立之而卒。又问焉，对曰：「午也可。」于是羊舌职死矣，晋侯曰：「孰可以代之？」对曰：「赤也可。」于是使祁午为中军尉，羊舌赤佐之。\n君子谓：「祁奚于是能举善矣。称其仇，不为谄；立其子，不为比；举其偏，不为党。」",
+    translation: "祁奚请求退休，晋悼公问谁可以接替他。祁奚举荐解狐，解狐是他的仇人，正要任命时解狐却死了。悼公又问，祁奚回答说：「祁午可以。」这时羊舌职死了，悼公问：「谁可以接替他？」祁奚回答：「羊舌赤可以。」于是任命祁午为中军尉，羊舌赤辅助他。君子说：「祁奚在这件事上能够举荐贤才了。举荐自己的仇人，不是谄媚；任命自己的儿子，不是偏私；推举自己的副手，不是结党。」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-206",
+    id: "chengyu-cy-206",
+    title: "马首是瞻",
+    entries: ["chengyu-cy-206"],
+    text: "荀偃令曰：「鸡鸣而驾，塞井夷灶，唯余马首是瞻。」\n栾黡曰：「晋国之命，未是有也。余马首欲东。」乃归。",
+    translation: "荀偃下令说：「鸡叫时套车，填井平灶，只看我的马头所向行动。」栾黡说：「晋国的命令，还没有过这样的。我的马头要往东走。」于是就回去了。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-207",
+    id: "chengyu-cy-207",
+    title: "招摇过市",
+    entries: ["chengyu-cy-207"],
+    text: "（孔子）居卫月余，灵公与夫人同车，宦者雍渠参乘，出，使孔子为次乘，招摇市过之。\n孔子曰：「吾未见好德如好色者也。」于是丑之，去卫，过曹。",
+    translation: "孔子在卫国住了一个多月，卫灵公和夫人同乘一辆车，宦官雍渠陪乘，出宫时让孔子坐第二辆车，大摇大摆地从街市上经过。孔子说：「我没见过爱好德行像爱好美色那样的人。」于是感到羞耻，离开卫国，经过曹国。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-208",
+    id: "chengyu-cy-208",
+    title: "爱屋及乌",
+    entries: ["chengyu-cy-208"],
+    text: "纣死，武王皇皇，若天下之未定。召太公而问曰：「入殷奈何？」\n太公曰：「臣闻之也：爱人者，兼其屋上之乌；不爱人者，及其胥余。」",
+    translation: "商纣死了，周武王心中不安，好像天下还没有安定下来。他召见太公问道：「进入殷都以后该怎么办？」太公说：「我听说过：喜爱一个人，连他屋上的乌鸦也喜爱；憎恶一个人，连他家的篱笆墙也憎恶。」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-209",
+    id: "chengyu-cy-209",
+    title: "道路以目",
+    entries: ["chengyu-cy-209"],
+    text: "厉王虐，国人谤王。召公告曰：「民不堪命矣！」王怒，得卫巫，使监谤者，以告，则杀之。国人莫敢言，道路以目。",
+    translation: "周厉王暴虐，国都里的人指责他。召公告诉他说：「百姓受不了这暴政了！」厉王大怒，找来一个卫国的巫师，让他监视指责朝政的人，一报告就杀掉。国都里的人没有谁敢说话，在路上相遇只用眼睛示意。",
+    translationSource: "public-domain"
+  },
+  {
     work: "w-chengyu-cy-21",
     id: "chengyu-cy-21",
     title: "多行不义必自毙",
     entries: ["chengyu-cy-21"],
     text: "多行不义，必自毙，子姑待之。",
     translation: "坏事干得多了，必定会自取灭亡，你姑且等着看吧。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-210",
+    id: "chengyu-cy-210",
+    title: "烽火戏诸侯",
+    entries: ["chengyu-cy-210"],
+    text: "褒姒不好笑，幽王欲其笑万方，故不笑。幽王为烽燧大鼓，有寇至则举烽火。诸侯悉至，至而无寇，褒姒乃大笑。\n幽王说之，为数举烽火。其后不信，诸侯益亦不至。",
+    translation: "褒姒不爱笑，周幽王想尽各种办法让她笑，她还是不笑。幽王设置了烽火台和大鼓，有敌寇来就点燃烽火。诸侯们全都赶来，到了却不见敌寇，褒姒于是大笑。幽王很喜欢她这样，就多次点燃烽火。后来诸侯不再相信，也就渐渐不来了。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-211",
+    id: "chengyu-cy-211",
+    title: "周公吐哺",
+    entries: ["chengyu-cy-211"],
+    text: "周公戒伯禽曰：「我文王之子，武王之弟，成王之叔父，我于天下亦不贱矣。然我一沐三捉发，一饭三吐哺，起以待士，犹恐失天下之贤人。子之鲁，慎无以国骄人。」",
+    translation: "周公告诫伯禽说：「我是文王的儿子、武王的弟弟、成王的叔父，我在天下的地位也不算低了。可是我洗一次头要多次握起头发，吃一顿饭要多次吐出嘴里的食物，起身接待来客，还怕失去天下的贤人。你到鲁国去，千万不要因为拥有封国就傲慢待人。」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-212",
+    id: "chengyu-cy-212",
+    title: "高山仰止",
+    entries: ["chengyu-cy-212"],
+    text: "高山仰止，景行行止。四牡騑騑，六辔如琴。觏尔新昏，以慰我心。",
+    translation: "高山要仰望，大路要行走。四匹公马跑得飞快，六条缰绳协调如琴弦。见到你这新婚的人，来安慰我的心。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-213",
+    id: "chengyu-cy-213",
+    title: "夙兴夜寐",
+    entries: ["chengyu-cy-213"],
+    text: "三岁为妇，靡室劳矣。夙兴夜寐，靡有朝矣。言既遂矣，至于暴矣。",
+    translation: "做你的妻子三年，家里的劳苦事没有不做的。早起晚睡，没有一天不是这样。你的心愿已经满足了，就对我粗暴起来。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-214",
+    id: "chengyu-cy-214",
+    title: "投桃报李",
+    entries: ["chengyu-cy-214"],
+    text: "辟尔为德，俾臧俾嘉。淑慎尔止，不愆于仪。不僭不贼，鲜不为则。投我以桃，报之以李。",
+    translation: "修明你的德行，使它善良美好。谨慎你的举止，不要有失礼仪。不越礼、不害人，很少有不被人效法的。人家送我桃子，我用李子回报。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-215",
+    id: "chengyu-cy-215",
+    title: "战战兢兢",
+    entries: ["chengyu-cy-215"],
+    text: "不敢暴虎，不敢冯河。人知其一，莫知其他。战战兢兢，如临深渊，如履薄冰。",
+    translation: "不敢空手打虎，不敢徒步过河。人们只知道其中一面，不知道其他方面。要小心谨慎，像站在深渊边上，像踩在薄冰上面。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-216",
+    id: "chengyu-cy-216",
+    title: "孔武有力",
+    entries: ["chengyu-cy-216"],
+    text: "羔裘豹饰，孔武有力。彼其之子，邦之司直。",
+    translation: "穿着镶豹皮的羔羊皮袄，非常勇武有力。那个人啊，是国家的司直官。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-218",
+    id: "chengyu-cy-218",
+    title: "明哲保身",
+    entries: ["chengyu-cy-218"],
+    text: "既明且哲，以保其身。夙夜匪解，以事一人。",
+    translation: "既明达又睿智，以此来保全自身。早晚不懈怠，来侍奉天子。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-219",
+    id: "chengyu-cy-219",
+    title: "必恭必敬",
+    entries: ["chengyu-cy-219"],
+    text: "维桑与梓，必恭敬止。靡瞻匪父，靡依匪母。",
+    translation: "看到桑树和梓树，一定要恭敬。没有不仰望父亲的，没有不依恋母亲的。",
     translationSource: "public-domain"
   },
   {
@@ -760,12 +1219,156 @@ window.TEXT_MASTER = [
     translationSource: "public-domain"
   },
   {
+    work: "w-chengyu-cy-220",
+    id: "chengyu-cy-220",
+    title: "不可救药",
+    entries: ["chengyu-cy-220"],
+    text: "天之方虐，无然谑谑。老夫灌灌，小子蹻蹻。匪我言耄，尔用忧谑。多将熇熇，不可救药。",
+    translation: "上天正在降下灾祸，不要这样嬉戏取乐。我老夫诚恳忠告，你们年轻人却傲慢自大。不是我老糊涂说错话，是你们把我的忧虑当作玩笑。坏事做多了气焰炽盛，就无法挽救了。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-221",
+    id: "chengyu-cy-221",
+    title: "大声疾呼",
+    entries: ["chengyu-cy-221"],
+    text: "蹈水火者之求免于人也，不惟其父兄子弟之慈爱，然后呼而望之也。将有介于其侧者，虽其所憎怨，苟不至乎欲其死者，则将大其声疾呼而望其仁之也。",
+    translation: "陷入水火之中的人向别人求救，不只是对着慈爱的父兄子弟才呼救盼望。只要旁边有人，即使是他所憎恨的人，只要那人还不至于想让他死，他都会放大声音急切呼救，盼望那人发仁心救他。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-222",
+    id: "chengyu-cy-222",
+    title: "临危不惧",
+    entries: ["chengyu-cy-222"],
+    text: "死生自命，贫富自时。怨夭折者，不知命也；怨贫贱者，不知时也。故临难不惧，知天命也；贫穷无慑，达时序也。",
+    translation: "死生由命，贫富由时。怨恨短命的人，是不懂得命运；怨恨贫贱的人，是不懂得时运。所以面临危难而不恐惧，是懂得天命；身处贫穷而不畏怯，是通达时序。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-223",
+    id: "chengyu-cy-223",
+    title: "玩火自焚",
+    entries: ["chengyu-cy-223"],
+    text: "夫兵，犹火也；弗戢，将自焚也。夫州吁弑其君而虐用其民，于是乎不务令德，而欲以乱成，必不免矣。",
+    translation: "用兵就像用火一样；不加收敛，将会烧到自己。州吁杀了他的国君，又虐待他的百姓，不致力于修养美德，却想靠作乱来成功，一定免不了灾祸。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-224",
+    id: "chengyu-cy-224",
+    title: "管中窥豹",
+    entries: ["chengyu-cy-224"],
+    text: "王子敬数岁时，尝看诸门生樗蒲，见有胜负，因曰：「南风不竞。」门生辈轻其小儿，乃曰：「此郎亦管中窥豹，时见一斑。」\n子敬瞋目曰：「远惭荀奉倩，近愧刘真长！」遂拂衣而去。",
+    translation: "王献之几岁的时候，曾经看门下弟子们玩樗蒲，看出有胜有负，就说：「南风不强劲。」弟子们轻视他是小孩，就说：「这位小郎也是从管子里看豹，只时常见到一块斑纹。」王献之瞪着眼睛说：「远的有愧于荀奉倩，近的有愧于刘真长！」于是拂袖而去。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-225",
+    id: "chengyu-cy-225",
+    title: "百发百中",
+    entries: ["chengyu-cy-225"],
+    text: "楚有养由基者，善射；去柳叶者百步而射之，百发百中。左右皆曰善。\n有一人过曰：「善射，可教射也矣。」养由基曰：「人皆善，子乃曰可教射，子何不代我射之也？」",
+    translation: "楚国有个叫养由基的人，擅长射箭；离柳叶一百步射它，百发百中。旁边的人都说好。有一个人经过说：「射得好，可以教他射箭了。」养由基说：「别人都说好，你却说可以教我射箭，你为什么不代我来射呢？」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-226",
+    id: "chengyu-cy-226",
+    title: "余勇可贾",
+    entries: ["chengyu-cy-226"],
+    text: "齐高固入晋师，桀石以投人，禽之而乘其车，系桑本焉，以徇齐垒，曰：「欲勇者贾余余勇。」",
+    translation: "齐国的高固冲进晋国军阵，举起石头砸向敌人，抓住一名敌人并坐上他的战车，把桑树根系在车上，在齐军营垒前巡行示众，说：「想要勇气的人，来买我多余的勇气。」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-227",
+    id: "chengyu-cy-227",
+    title: "皮之不存，毛将焉附",
+    entries: ["chengyu-cy-227"],
+    text: "虢射曰：「皮之不存，毛将焉傅？」（傅，同「附」）",
+    translation: "虢射说：「皮都没有了，毛还能附在哪里呢？」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-228",
+    id: "chengyu-cy-228",
+    title: "劳师袭远",
+    entries: ["chengyu-cy-228"],
+    text: "蹇叔曰：「劳师以袭远，非所闻也。师劳力竭，远主备之，无乃不可乎？师之所为，郑必知之，勤而无所，必有悖心。且行千里，其谁不知？」",
+    translation: "蹇叔说：「让军队劳累着去偷袭远方的国家，我没有听说过。军队劳累、力量耗尽，远方的国君又有了防备，恐怕不行吧？我军的一举一动，郑国一定知道；辛辛苦苦却毫无所得，士兵必然产生不满情绪。况且行军千里，谁能不知道呢？」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-229",
+    id: "chengyu-cy-229",
+    title: "竭泽而渔",
+    entries: ["chengyu-cy-229"],
+    text: "雍季曰：「竭泽而渔，岂不获得？而明年无鱼；焚薮而田，岂不获得？而明年无兽。诈伪之道，虽今偷可，后将无复，非长术也。」",
+    translation: "雍季说：「把池水弄干了来捕鱼，哪会捕不到？可是明年就没有鱼了；把沼泽烧光了来打猎，哪会打不到？可是明年就没有野兽了。欺诈作假的手段，即使眼前能苟且得利，以后就无法再用了，这不是长久之计。」",
+    translationSource: "public-domain"
+  },
+  {
     work: "w-chengyu-cy-23",
     id: "chengyu-cy-23",
     title: "假途灭虢",
     entries: ["chengyu-cy-23"],
     text: "晋侯复假道于虞以伐虢。宫之奇谏曰：「虢，虞之表也。虢亡，虞必从之。晋不可启，寇不可玩，一之谓甚，其可再乎？谚所谓『辅车相依，唇亡齿寒』者，其虞、虢之谓也。」",
     translation: "晋献公又向虞国借路去攻打虢国。宫之奇劝谏说：「虢国是虞国的屏障。虢国灭亡了，虞国必定跟着灭亡。不能给晋国开口子，不能轻忽强盗，借路一次已经过分了，还能来第二次吗？谚语说的『面颊和牙床骨互相依靠，嘴唇没有了牙齿就会寒冷』，说的正是虞国和虢国啊。」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-230",
+    id: "chengyu-cy-230",
+    title: "掩耳盗铃",
+    entries: ["chengyu-cy-230"],
+    text: "范氏之亡也，百姓有得钟者，欲负而走，则钟大不可负；以椎毁之，钟况然有音。恐人闻之而夺己也，遽掩其耳。\n恶人闻之，可也；恶己自闻之，悖矣！",
+    translation: "范氏灭亡的时候，有百姓得到一口钟，想背着它跑，可是钟太大背不动；就用锤子把它砸碎，钟发出「况况」的响声。他怕别人听见来抢夺，急忙捂住自己的耳朵。不愿别人听见，还说得过去；不愿自己听见，就太荒谬了！",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-232",
+    id: "chengyu-cy-232",
+    title: "南辕北辙",
+    entries: ["chengyu-cy-232"],
+    text: "今者臣来，见人于大行，方北面而持其驾，告臣曰：「我欲之楚。」臣曰：「君之楚，将奚为北面？」曰：「吾马良。」臣曰：「马虽良，此非楚之路也。」曰：「吾用多。」臣曰：「用虽多，此非楚之路也。」曰：「吾御者善。」此数者愈善，而离楚愈远耳。",
+    translation: "今天我回来的时候，在大路上遇见一个人，正朝着北方驾着车，他告诉我说：「我要到楚国去。」我说：「您去楚国，为什么往北走呢？」他说：「我的马好。」我说：「马虽然好，可这不是去楚国的路啊。」他说：「我的盘缠多。」我说：「盘缠虽然多，可这不是去楚国的路啊。」他说：「我的车夫技术好。」这几样越好，反而离楚国越远罢了。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-234",
+    id: "chengyu-cy-234",
+    title: "惊弓之鸟",
+    entries: ["chengyu-cy-234"],
+    text: "更羸与魏王处京台之下，仰见飞鸟。更羸谓魏王曰：「臣为王引弓虚发而下鸟。」魏王曰：「然则射可至此乎？」更羸曰：「可。」\n……雁从东方来，更羸以虚发而下之。魏王曰：「然则射可至此乎？」更羸曰：「此孽也。」王曰：「先生何以知之？」对曰：「其飞徐而鸣悲。飞徐者，故疮痛也；鸣悲者，久失群也。故疮未息而惊心未去也，闻弦音，引而高飞，故疮陨也。」",
+    translation: "更羸和魏王站在京台下面，抬头看见飞鸟。更羸对魏王说：「我为您拉开弓空放一下就能把鸟射下来。」魏王说：「那么射箭的本领能达到这种地步吗？」更羸说：「可以。」……一只大雁从东方飞来，更羸空放一箭就把它射了下来。魏王说：「那么射箭的本领真能达到这种地步吗？」更羸说：「这是一只受过伤的鸟。」魏王问：「先生怎么知道的？」更羸回答说：「它飞得慢而叫声悲。飞得慢，是因为旧伤疼痛；叫声悲，是因为长久失群。旧伤未好而惊惧之心未消，听到弓弦声就振翅高飞，旧伤发作就掉了下来。」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-235",
+    id: "chengyu-cy-235",
+    title: "亡羊补牢",
+    entries: ["chengyu-cy-235"],
+    text: "庄辛谓楚襄王曰：「君王左州侯，右夏侯，辇从鄢陵君与寿陵君，专淫逸侈靡，不顾国政，郢都必危矣。」\n……襄王闻之，颜色变作，身体战栗。于是乃以执珪而授之为阳陵君，与淮北之地也。\n（《战国策·楚策四》：「见兔而顾犬，未为晚也；亡羊而补牢，未为迟也。」）",
+    translation: "庄辛对楚襄王说：「君王左边是州侯，右边是夏侯，车后跟着鄢陵君和寿陵君，一味淫逸奢侈，不顾国家政事，郢都一定有危险了。」……楚襄王听了，脸色大变，浑身发抖。于是把玉珪授予庄辛，封他为阳陵君，并赐给他淮北之地。（《战国策·楚策四》说：「看见兔子再回头唤狗，还不算晚；羊跑了再修补羊圈，还不算迟。」）",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-236",
+    id: "chengyu-cy-236",
+    title: "买椟还珠",
+    entries: ["chengyu-cy-236"],
+    text: "楚人有卖其珠于郑者，为木兰之柜，薰以桂椒，缀以珠玉，饰以玫瑰，辑以翡翠。\n郑人买其椟而还其珠。此可谓善卖椟矣，未可谓善鬻珠也。",
+    translation: "楚国有个把珍珠卖给郑国人的人，他用木兰木做了个匣子，用桂皮、花椒熏香，用珠玉点缀，用玫瑰石装饰，用翡翠镶边。郑国人买下了他的匣子，却把珍珠退还给他。这可以说是善于卖匣子，不能说善于卖珍珠。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-239",
+    id: "chengyu-cy-239",
+    title: "守株待兔",
+    entries: ["chengyu-cy-239"],
+    text: "宋人有耕田者，田中有株，兔走触株，折颈而死，因释其耒而守株，冀复得兔。兔不可复得，而身为宋国笑。\n今欲以先王之政，治当世之民，皆守株之类也。",
+    translation: "宋国有个耕田的人，田里有一截树桩，一只兔子跑过来撞在树桩上，脖子折断死了，那人于是放下农具守在树桩旁，希望再得到兔子。兔子再也得不到，而他自己却被宋国人耻笑。如今想用先王的政令来治理当代的百姓，都是守株待兔一类的事。",
     translationSource: "public-domain"
   },
   {
@@ -778,12 +1381,183 @@ window.TEXT_MASTER = [
     translationSource: "public-domain"
   },
   {
+    work: "w-chengyu-cy-241",
+    id: "chengyu-cy-241",
+    title: "门庭若市",
+    entries: ["chengyu-cy-241"],
+    text: "令初下，群臣进谏，门庭若市；数月之后，时时而间进；期年之后，虽欲言，无可进者。",
+    translation: "命令刚下达时，群臣都来进谏，门前和庭院里像集市一样热闹；几个月以后，还时不时有人进谏；一年以后，即使想进言，也没有什么可说的了。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-242",
+    id: "chengyu-cy-242",
+    title: "鹬蚌相争",
+    entries: ["chengyu-cy-242"],
+    text: "蚌方出曝，而鹬啄其肉，蚌合而箝其喙。鹬曰：「今日不雨，明日不雨，即有死蚌。」蚌亦谓鹬曰：「今日不出，明日不出，即有死鹬。」两者不肯相舍，渔者得而并禽之。",
+    translation: "蚌正张开壳晒太阳，一只鹬鸟去啄它的肉，蚌合上壳夹住了鹬鸟的嘴。鹬鸟说：「今天不下雨，明天不下雨，就会有死蚌。」蚌也对鹬鸟说：「今天不松开，明天不松开，就会有死鹬。」两者谁也不肯放开，渔夫把它们一起捉住了。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-243",
+    id: "chengyu-cy-243",
+    title: "鸡鸣狗盗",
+    entries: ["chengyu-cy-243"],
+    text: "（秦昭王）囚孟尝君，谋欲杀之。孟尝君使人抵昭王幸姬求解。幸姬曰：「妾愿得君狐白裘。」\n……客有能为狗盗者，曰：「臣能得狐白裘。」乃夜为狗，以入秦宫臧中，取所献狐白裘至，以献秦王幸姬。幸姬为言昭王，昭王释孟尝君。\n……夜半至函谷关。秦关法：鸡鸣而出客。孟尝君恐追至，客之居下坐者有能为鸡鸣，而鸡齐鸣，遂发传出。",
+    translation: "秦昭王囚禁了孟尝君，打算杀掉他。孟尝君派人向昭王宠爱的姬妾求情。那姬妾说：「我希望得到您的白狐皮袍。」……门客中有一个能学狗偷东西的人说：「我能弄到那件白狐皮袍。」于是他夜里装成狗，钻进秦宫的仓库，偷出已经献给昭王的白狐皮袍，献给昭王的宠姬。宠姬替孟尝君说情，昭王就放了孟尝君。……半夜到了函谷关。按秦国的关法，要等鸡叫才能放行。孟尝君怕追兵赶来，门客中坐在末位的一个会学鸡叫，他一学鸡叫，周围的鸡都跟着叫起来，于是验过传符出关了。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-244",
+    id: "chengyu-cy-244",
+    title: "士为知己者死",
+    entries: ["chengyu-cy-244"],
+    text: "嗟乎！士为知己者死，女为说己者容。今智伯知我，我必为报仇而死，以报智伯，则吾魂魄不愧矣。",
+    translation: "唉！士人为赏识自己的人而死，女子为喜欢自己的人而梳妆打扮。如今智伯赏识我，我一定要为他报仇而死，来报答智伯，那么我的魂魄也就不惭愧了。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-245",
+    id: "chengyu-cy-245",
+    title: "白虹贯日",
+    entries: ["chengyu-cy-245"],
+    text: "聂政之刺韩傀也，白虹贯日；要离之刺庆忌也，苍鹰击于殿上。此三子者，皆布衣之士也，怀怒未发，休祲降于天，与臣而将四矣。",
+    translation: "聂政刺杀韩傀的时候，一道白虹穿过太阳；要离刺杀庆忌的时候，苍鹰扑击在宫殿上。这三个人，都是平民出身的士人，他们心中的愤怒还没有发作，上天就降下了征兆，加上我就要成为第四个人了。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-246",
+    id: "chengyu-cy-246",
+    title: "功亏一篑",
+    entries: ["chengyu-cy-246"],
+    text: "不矜细行，终累大德。为山九仞，功亏一篑。",
+    translation: "不注重细小的行为，最终会损害大德。堆一座九仞高的山，只差一筐土就放弃了。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-247",
+    id: "chengyu-cy-247",
+    title: "悬梁刺股",
+    entries: ["chengyu-cy-247"],
+    text: "（头悬梁）孙敬，字文宝，好学，晨夕不休。及至眠睡疲寝，以绳系头，悬屋梁。\n（锥刺股）读书欲睡，引锥自刺其股，血流至足。",
+    translation: "（头悬梁）孙敬，字文宝，勤奋好学，早晚不停地读书。到了困倦想睡的时候，就用绳子把头发系住，吊在屋梁上。（锥刺股）读书读到想打瞌睡时，就拿起锥子刺自己的大腿，血一直流到脚上。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-248",
+    id: "chengyu-cy-248",
+    title: "前倨后恭",
+    entries: ["chengyu-cy-248"],
+    text: "苏秦曰：「嫂何前倨而后卑也？」嫂曰：「以季子之位尊而多金。」\n苏秦曰：「嗟乎！贫穷则父母不子，富贵则亲戚畏惧。人生世上，势位富厚，盖可忽乎哉！」",
+    translation: "苏秦问：「嫂子为什么先前那样傲慢，现在又这样谦卑呢？」嫂子说：「因为小叔子地位尊贵、钱财多啊。」苏秦说：「唉！贫穷时连父母都不把我当儿子，富贵时连亲戚都畏惧我。人生在世，权势地位和财富，怎么可以忽视呢！」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-249",
+    id: "chengyu-cy-249",
+    title: "怀瑾握瑜",
+    entries: ["chengyu-cy-249"],
+    text: "任重载盛兮，陷滞而不济。怀瑾握瑜兮，穷不知所示。",
+    translation: "担负着沉重的责任啊，却陷于困境而不能前行。怀揣着美玉、手握珍宝啊，穷困潦倒却不知向谁展示。",
+    translationSource: "public-domain"
+  },
+  {
     work: "w-chengyu-cy-25",
     id: "chengyu-cy-25",
     title: "筚路蓝缕",
     entries: ["chengyu-cy-25"],
     text: "训之以若敖、蚡冒，筚路蓝缕，以启山林。",
     translation: "（先王）用若敖、蚡冒的事迹训导百姓：他们驾着简陋的柴车、穿着破旧的衣裳，去开辟山林。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-250",
+    id: "chengyu-cy-250",
+    title: "随珠弹雀",
+    entries: ["chengyu-cy-250"],
+    text: "今且有人于此，以随侯之珠，弹千仞之雀，世必笑之。是何也？则其所用者重，而所要者轻也。",
+    translation: "假如现在有个人在这里，用随侯的宝珠去弹射高飞千仞的鸟雀，世上的人一定会笑话他。这是为什么呢？因为他所用的东西贵重，而所要得到的东西却很轻微。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-251",
+    id: "chengyu-cy-251",
+    title: "螳臂当车",
+    entries: ["chengyu-cy-251"],
+    text: "汝不知夫螳螂乎？怒其臂以当车辙，不知其不胜任也，是其才之美者也。",
+    translation: "你不知道那螳螂吗？它愤怒地举起臂膀去阻挡车轮，不知道自己的力量根本不能胜任，这是因为它把自己的才能看得太美了。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-252",
+    id: "chengyu-cy-252",
+    title: "庄周梦蝶",
+    entries: ["chengyu-cy-252"],
+    text: "昔者庄周梦为胡蝶，栩栩然胡蝶也。自喻适志与！不知周也。俄然觉，则蘧蘧然周也。\n不知周之梦为胡蝶与？胡蝶之梦为周与？周与胡蝶则必有分矣。此之谓物化。",
+    translation: "从前庄周梦见自己变成了蝴蝶，翩翩飞舞的一只蝴蝶。自己感到十分惬意舒适！不知道自己是庄周了。忽然醒来，惊惶不定地发现自己是庄周。不知道是庄周做梦变成了蝴蝶呢，还是蝴蝶做梦变成了庄周呢？庄周与蝴蝶必定是有分别的。这就叫作物我交融的变化。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-253",
+    id: "chengyu-cy-253",
+    title: "庖丁解牛",
+    entries: ["chengyu-cy-253"],
+    text: "庖丁为文惠君解牛，手之所触，肩之所倚，足之所履，膝之所踦，砉然向然，奏刀騞然，莫不中音。\n……臣以神遇而不以目视，官知止而神欲行。依乎天理，批大郤，导大窾，因其固然。",
+    translation: "厨师给文惠君宰牛，手所触及的，肩所倚靠的，脚所踩踏的，膝所抵住的，都发出「砉砉」的响声，进刀时「騞騞」作响，没有不合乎音律的。……我是用精神去接触牛，而不用眼睛去看，感官停止了而精神仍在运行。依照牛体的自然结构，劈开筋骨间的缝隙，顺着骨节间的空处，依循它本来的构造。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-254",
+    id: "chengyu-cy-254",
+    title: "相濡以沫",
+    entries: ["chengyu-cy-254"],
+    text: "泉涸，鱼相与处于陆，相呴以湿，相濡以沫，不如相忘于江湖。",
+    translation: "泉水干涸了，鱼一同困在陆地上，互相用湿气吹嘘，互相用唾沫润湿，不如在江湖里彼此相忘。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-255",
+    id: "chengyu-cy-255",
+    title: "鹏程万里",
+    entries: ["chengyu-cy-255"],
+    text: "鹏之徙于南冥也，水击三千里，抟扶摇而上者九万里，去以六月息者也。",
+    translation: "大鹏迁徙到南海去的时候，翅膀拍击水面激起三千里的波涛，乘着旋风盘旋而上直冲九万里高空，是乘着六月的大风而离去的。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-256",
+    id: "chengyu-cy-256",
+    title: "朝三暮四",
+    entries: ["chengyu-cy-256"],
+    text: "狙公赋芧，曰：「朝三而暮四。」众狙皆怒。曰：「然则朝四而暮三。」众狙皆悦。",
+    translation: "养猴人给猴子分橡子，说：「早上三升，晚上四升。」猴子们都发怒。养猴人说：「那么早上四升，晚上三升。」猴子们都高兴起来。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-257",
+    id: "chengyu-cy-257",
+    title: "沉鱼落雁",
+    entries: ["chengyu-cy-257"],
+    text: "毛嫱、丽姬，人之所美也；鱼见之深入，鸟见之高飞，麋鹿见之决骤。四者孰知天下之正色哉？",
+    translation: "毛嫱、丽姬，是人们认为最美的女子；可是鱼见了她们就潜入水底，鸟见了她们就高高飞走，麋鹿见了她们就急速奔逃。这四种动物，谁知道天下真正的美色是什么呢？",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-258",
+    id: "chengyu-cy-258",
+    title: "涸辙之鲋",
+    entries: ["chengyu-cy-258"],
+    text: "周昨来，有中道而呼者。周顾视车辙中，有鲋鱼焉。周问之曰：「鲋鱼来！子何为者邪？」对曰：「我，东海之波臣也。君岂有斗升之水而活我哉？」\n周曰：「诺。我且南游吴越之王，激西江之水而迎子，可乎？」鲋鱼忿然作色曰：「吾失我常与，我无所处。吾得斗升之水然活耳，君乃言此，曾不如早索我于枯鱼之肆！」",
+    translation: "我昨天来的时候，路中间有喊救命的声音。我回头一看，车辙里有一条鲫鱼。我问它：「鲫鱼啊！你在这里做什么呢？」它回答说：「我是东海水族的臣仆。您可有斗升之水来救活我吗？」我说：「好。我正要到南方去游说吴越的君王，引西江之水来迎接你，可以吗？」鲫鱼变了脸色生气地说：「我失去了平日相依的水，没有安身之处。我只要得到斗升之水就能活命，您却说这样的话，还不如早点到干鱼铺里去找我！」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-259",
+    id: "chengyu-cy-259",
+    title: "井底之蛙",
+    entries: ["chengyu-cy-259"],
+    text: "井蛙不可以语于海者，拘于虚也；夏虫不可以语于冰者，笃于时也。",
+    translation: "不可以和井底之蛙谈海，因为它受所居之处的局限；不可以和夏天的虫子谈冰，因为它受生存时节的限制。",
     translationSource: "public-domain"
   },
   {
@@ -796,12 +1570,192 @@ window.TEXT_MASTER = [
     translationSource: "public-domain"
   },
   {
+    work: "w-chengyu-cy-260",
+    id: "chengyu-cy-260",
+    title: "望洋兴叹",
+    entries: ["chengyu-cy-260"],
+    text: "秋水时至，百川灌河。泾流之大，两涘渚崖之间，不辩牛马。于是焉河伯欣然自喜，以天下之美为尽在己。\n顺流而东行，至于北海，东面而视，不见水端。于是焉河伯始旋其面目，望洋向若而叹曰：「野语有之曰：『闻道百，以为莫己若』者，我之谓也。」",
+    translation: "秋天的洪水按时到来，千百条河流注入黄河。水流宽阔，两岸及沙洲之间，连牛马都分辨不清。于是河伯欣欣然自满起来，认为天下的美景都集中在自己这里。他顺着水流向东而行，到了北海，向东望去，看不到水的尽头。于是河伯才转过脸来，仰望着海神若感叹说：「俗话有这样一种说法：『听到许多道理，就以为没有人比得上自己』，说的就是我啊。」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-261",
+    id: "chengyu-cy-261",
+    title: "越俎代庖",
+    entries: ["chengyu-cy-261"],
+    text: "庖人虽不治庖，尸祝不越樽俎而代之矣。",
+    translation: "厨师虽然不去做祭祀用的饭菜，主祭的人也不会越过自己的职守，放下祭器去代替他做。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-262",
+    id: "chengyu-cy-262",
+    title: "大相径庭",
+    entries: ["chengyu-cy-262"],
+    text: "吾闻言于接舆，大而无当，往而不返。吾惊怖其言，犹河汉而无极也；大有径庭，不近人情焉。",
+    translation: "我听接舆说话，夸大而没有根据，一说开去就回不来头。我惊异于他的言论，像天河一样没有边际；与常理相差悬殊，不合乎人情。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-263",
+    id: "chengyu-cy-263",
+    title: "虚与委蛇",
+    entries: ["chengyu-cy-263"],
+    text: "壶子曰：「乡吾示之以未始出吾宗。吾与之虚而委蛇，不知其谁何，因以为弟靡，因以为波流，故逃也。」",
+    translation: "壶子说：「刚才我给他显示的是我还未从根本大道中显露出来的状态。我对他虚与委蛇，他摸不清我到底是什么，把我当作随顺之物，当作随波逐流之人，所以逃走了。」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-264",
+    id: "chengyu-cy-264",
+    title: "运斤成风",
+    entries: ["chengyu-cy-264"],
+    text: "郢人垩慢其鼻端，若蝇翼，使匠石斫之。匠石运斤成风，听而斫之，尽垩而鼻不伤，郢人立不失容。",
+    translation: "郢地有个人把白石灰薄薄地涂在自己的鼻尖上，薄得像苍蝇的翅膀，让匠石用斧子把它砍掉。匠石挥动斧子呼呼生风，随手砍去，白灰削尽而鼻子没有受伤，郢人站着面不改色。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-265",
+    id: "chengyu-cy-265",
+    title: "吐故纳新",
+    entries: ["chengyu-cy-265"],
+    text: "吹呴呼吸，吐故纳新，熊经鸟申，为寿而已矣。此导引之士，养形之人，彭祖寿考者之所好也。",
+    translation: "吹气呼气，吐出浊气、吸进新鲜空气，像熊一样悬吊、像鸟一样伸展，只是为了长寿罢了。这是导引养生的人、保养形体的人、像彭祖那样长寿的人所喜好的。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-266",
+    id: "chengyu-cy-266",
+    title: "贻笑大方",
+    entries: ["chengyu-cy-266"],
+    text: "吾长见笑于大方之家。",
+    translation: "我将永远被有学问有修养的人耻笑了。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-267",
+    id: "chengyu-cy-267",
+    title: "百战百胜",
+    entries: ["chengyu-cy-267"],
+    text: "是故百战百胜，非善之善者也；不战而屈人之兵，善之善者也。",
+    translation: "因此，百战百胜，不算是最好的；不战而使敌人的军队屈服，才算是最好的。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-268",
+    id: "chengyu-cy-268",
+    title: "知己知彼",
+    entries: ["chengyu-cy-268"],
+    text: "故曰：知彼知己，百战不殆；不知彼而知己，一胜一负；不知彼不知己，每战必殆。",
+    translation: "所以说：了解敌人又了解自己，百战都不会有危险；不了解敌人而了解自己，胜负各半；不了解敌人也不了解自己，每战必败。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-269",
+    id: "chengyu-cy-269",
+    title: "出其不意",
+    entries: ["chengyu-cy-269"],
+    text: "兵者，诡道也。故能而示之不能，用而示之不用，近而示之远，远而示之近。\n……攻其无备，出其不意。此兵家之胜，不可先传也。",
+    translation: "用兵，是一种诡诈的行为。所以能打却装作不能打，要打却装作不打，要攻近处却装作攻打远处，要攻远处却装作攻打近处。……在敌人没有防备的地方进攻，在敌人意想不到的时候出击。这是军事家取胜的奥妙，是不能预先规定的。",
+    translationSource: "public-domain"
+  },
+  {
     work: "w-chengyu-cy-27",
     id: "chengyu-cy-27",
     title: "疲于奔命",
     entries: ["chengyu-cy-27"],
     text: "而因郄至，以间楚，楚必多败。……吴始伐楚，伐巢，伐徐，子重奔命。马陵之会，吴入州来，子重自郑奔命。子重、子反于是乎一岁七奔命。",
     translation: "（楚国）因为连续用兵，一年之内子重、子反两人七次奉命奔走救急，往来疲于奔命。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-270",
+    id: "chengyu-cy-270",
+    title: "兵不厌诈",
+    entries: ["chengyu-cy-270"],
+    text: "晋文公将与楚人战，召舅犯问之曰：「吾将与楚人战，彼众我寡，为之奈何？」舅犯曰：「臣闻之：繁礼君子，不厌忠信；战阵之间，不厌诈伪。君其诈之而已矣。」",
+    translation: "晋文公将要和楚国人作战，召来舅犯问道：「我将要和楚国人作战，他们人多我们人少，怎么办？」舅犯说：「我听说过：讲究礼仪的君子，不厌弃忠信；战场上，不厌弃诡诈。您只管用诈术对付他们就是了。」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-271",
+    id: "chengyu-cy-271",
+    title: "以逸待劳",
+    entries: ["chengyu-cy-271"],
+    text: "以近待远，以佚待劳，以饱待饥，此治力者也。",
+    translation: "以近处等待远来的敌人，以从容休息等待疲劳的敌人，以饱食等待饥饿的敌人，这是掌握军队战斗力的方法。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-272",
+    id: "chengyu-cy-272",
+    title: "投鼠忌器",
+    entries: ["chengyu-cy-272"],
+    text: "里谚曰：「欲投鼠而忌器。」此善谕也。鼠近于器，尚惮不投，恐伤其器，况于贵臣之近主乎！",
+    translation: "民间谚语说：「想打老鼠却顾忌旁边的器物。」这是个很恰当的比喻。老鼠靠近器物，尚且怕打坏器物而不敢打，何况是亲近君主的贵臣呢！",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-273",
+    id: "chengyu-cy-273",
+    title: "远交近攻",
+    entries: ["chengyu-cy-273"],
+    text: "王不如远交而近攻，得寸则王之寸也，得尺亦王之尺也。今释此而远攻，不亦缪乎！",
+    translation: "大王不如结交远方的国家而攻打邻近的国家，这样得到一寸就是大王的一寸，得到一尺就是大王的一尺。如今放弃这个办法而去攻打远方的国家，不是太荒谬了吗！",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-274",
+    id: "chengyu-cy-274",
+    title: "擢发难数",
+    entries: ["chengyu-cy-274"],
+    text: "范雎曰：「汝罪有几？」曰：「擢贾之发以续贾之罪，尚未足。」",
+    translation: "范雎问：「你的罪有多少？」须贾说：「拔下我的头发来数我的罪，还不够数。」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-275",
+    id: "chengyu-cy-275",
+    title: "利令智昏",
+    entries: ["chengyu-cy-275"],
+    text: "太史公曰：平原君翩翩浊世之佳公子也，然未睹大体。鄙语曰「利令智昏」，平原君贪冯亭邪说，使赵陷长平兵四十余万众，邯郸几亡。",
+    translation: "太史公说：平原君是乱世中一位风度翩翩的好公子，但是没有看清大局。俗话说「利令智昏」，平原君贪图冯亭的那套邪说，使赵国在长平陷没了四十多万军队，邯郸几乎灭亡。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-276",
+    id: "chengyu-cy-276",
+    title: "固若金汤",
+    entries: ["chengyu-cy-276"],
+    text: "边城之人，皆为金城汤池，不可攻也。",
+    translation: "边境城池的守军，都把城池经营得像金属铸的城墙、滚烫的护城河一样，攻不下来。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-277",
+    id: "chengyu-cy-277",
+    title: "不遗余力",
+    entries: ["chengyu-cy-277"],
+    text: "秦之攻我也，不遗余力矣，必以倦而归也。",
+    translation: "秦国攻打我们，用尽了全部力量，必定会因为疲惫而退兵。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-278",
+    id: "chengyu-cy-278",
+    title: "盛气凌人",
+    entries: ["chengyu-cy-278"],
+    text: "左师触龙愿见太后。太后盛气而揖之。",
+    translation: "左师触龙希望拜见赵太后。太后怒气冲冲地等着他。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-279",
+    id: "chengyu-cy-279",
+    title: "布衣之交",
+    entries: ["chengyu-cy-279"],
+    text: "卫君与文布衣交，请具车马皮币，愿君以此从卫君游。",
+    translation: "卫君和孟尝君是平民之交，请准备车马皮币，希望您带着这些跟随卫君交游。",
     translationSource: "public-domain"
   },
   {
@@ -814,6 +1768,96 @@ window.TEXT_MASTER = [
     translationSource: "public-domain"
   },
   {
+    work: "w-chengyu-cy-280",
+    id: "chengyu-cy-280",
+    title: "两虎相斗",
+    entries: ["chengyu-cy-280"],
+    text: "蔺相如固止之，曰：「公之视廉将军孰与秦王？」曰：「不若也。」相如曰：「夫以秦王之威，而相如廷叱之，辱其群臣。相如虽驽，独畏廉将军哉？顾吾念之，强秦之所以不敢加兵于赵者，徒以吾两人在也。今两虎共斗，其势不俱生。吾所以为此者，以先国家之急而后私仇也。」",
+    translation: "蔺相如坚决劝阻他们，说：「你们看廉将军比秦王怎么样？」门客们说：「比不上。」蔺相如说：「凭秦王的威势，我尚且敢在朝廷上呵斥他，羞辱他的群臣。我蔺相如虽然无能，难道单单怕廉将军吗？只是我考虑到，强大的秦国之所以不敢出兵攻打赵国，只因为有我们两个人在。如今两虎相斗，势必不能共存。我之所以这样做，是把国家的急难放在前面，把个人的恩怨放在后面啊。」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-281",
+    id: "chengyu-cy-281",
+    title: "千钧一发",
+    entries: ["chengyu-cy-281"],
+    text: "夫以一缕之任，系千钧之重，上悬无极之高，下垂不测之渊，虽甚愚之人，犹知哀其将绝也。",
+    translation: "用一根线的承重，去系千钧的重量，上面悬挂在无边的高处，下面垂在深不可测的深渊之上，即使是极愚笨的人，也知道为它将要断裂而担忧。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-282",
+    id: "chengyu-cy-282",
+    title: "天崩地坼",
+    entries: ["chengyu-cy-282"],
+    text: "周烈王崩，齐后往，周怒，赴于齐曰：「天崩地坼，天子下席，东藩之臣田婴齐后至，则斮之。」",
+    translation: "周烈王去世，齐王去得晚了，周王室发怒，派人到齐国报丧说：「天崩地裂，天子逝世，东藩之臣田婴齐来晚了，就该斩了他。」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-283",
+    id: "chengyu-cy-283",
+    title: "债台高筑",
+    entries: ["chengyu-cy-283"],
+    text: "分为二周，有逃责之台，被窃鈇之言。（颜师古注引服虔曰：「周赧王负债，无以归之，主迫责急，乃逃于此台，后人因以名之。」）",
+    translation: "周朝分为西周、东周，有座「逃责（债）之台」，又有「窃鈇」的说法。（颜师古注引服虔说：「周赧王欠债，无法偿还，债主逼债很急，他就逃到这座台上去，后人因此给它命名。」）",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-284",
+    id: "chengyu-cy-284",
+    title: "三寸之舌",
+    entries: ["chengyu-cy-284"],
+    text: "毛先生一至楚，而使赵重于九鼎大吕。毛先生以三寸之舌，强于百万之师。",
+    translation: "毛先生一到楚国，就使赵国的地位比九鼎大吕还重要。毛先生凭三寸之舌，胜过百万大军。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-285",
+    id: "chengyu-cy-285",
+    title: "视死如归",
+    entries: ["chengyu-cy-285"],
+    text: "平原广牧，车不结辙，士不旋踵，鼓之而三军之士视死如归，臣不如王子城父，请立为大司马。",
+    translation: "广阔的原野上，战车不后退，士兵不转身，击鼓进军而三军将士视死如归，这一点我不如王子城父，请任命他为大司马。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-286",
+    id: "chengyu-cy-286",
+    title: "安步当车",
+    entries: ["chengyu-cy-286"],
+    text: "曰：「愿得赐归，安步以当车，晚食以当肉，无罪以当贵，清净贞正以自虞。」则再拜而辞去也。",
+    translation: "颜斶说：「希望能让我回去，安闲地步行就当作坐车，把晚点吃饭当作吃肉，把不犯罪当作富贵，以清静正直自得其乐。」于是拜了两拜辞别而去。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-287",
+    id: "chengyu-cy-287",
+    title: "不翼而飞",
+    entries: ["chengyu-cy-287"],
+    text: "无翼而飞者声也，无根而固者情也。",
+    translation: "没有翅膀却能飞走的是声音，没有根基却能牢固的是感情。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-288",
+    id: "chengyu-cy-288",
+    title: "积羽沉舟",
+    entries: ["chengyu-cy-288"],
+    text: "臣闻积羽沉舟，群轻折轴，众口铄金，故愿大王之熟计之也。",
+    translation: "我听说羽毛堆积多了也能使船下沉，轻的东西聚集多了也能压断车轴，众人的议论能把金属熔化，所以希望大王仔细考虑这件事。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-289",
+    id: "chengyu-cy-289",
+    title: "危如累卵",
+    entries: ["chengyu-cy-289"],
+    text: "其君之危，犹累卵也。",
+    translation: "他的君主的处境危险，就像堆叠起来的蛋一样。",
+    translationSource: "public-domain"
+  },
+  {
     work: "w-chengyu-cy-29",
     id: "chengyu-cy-29",
     title: "庆父不死，鲁难未已",
@@ -823,12 +1867,174 @@ window.TEXT_MASTER = [
     translationSource: "public-domain"
   },
   {
+    work: "w-chengyu-cy-290",
+    id: "chengyu-cy-290",
+    title: "一字千金",
+    entries: ["chengyu-cy-290"],
+    text: "吕不韦乃使其客人人著所闻，集论以为八览、六论、十二纪，二十余万言。以为备天地万物古今之事，号曰《吕氏春秋》。\n布咸阳市门，悬千金其上，延诸侯游士宾客有能增损一字者予千金。",
+    translation: "吕不韦就让他的门客人人写下自己的见闻，汇集编次为八览、六论、十二纪，共二十多万字。他认为这部书完备地记载了天地万物古今之事，取名《吕氏春秋》。他把书公布在咸阳城门上，上面悬挂千金，延请诸侯游士宾客，有能增减一个字的就赏给千金。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-291",
+    id: "chengyu-cy-291",
+    title: "惊世骇俗",
+    entries: ["chengyu-cy-291"],
+    text: "（《战国策》载苏秦游说之辞，多惊世骇俗之论。《史记·苏秦列传》述其说六国，皆惊世骇俗。）",
+    translation: "（《战国策》记载苏秦游说各国的言辞，多有惊世骇俗的议论。《史记·苏秦列传》记述他游说六国，都是惊世骇俗之论。）",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-292",
+    id: "chengyu-cy-292",
+    title: "束缊请火",
+    entries: ["chengyu-cy-292"],
+    text: "臣之里有夫死三日而嫁者，又有终身不嫁者，里母非有四体之亲，而欲为二子请火，非束缊不可是。（「束缊请火」谓束乱麻为引火之物，向邻家讨火。）",
+    translation: "我的乡里有死了丈夫三天就改嫁的，又有终身不改嫁的。乡里的老人和她们并没有血肉之亲，却想为这两人去讨火，非得束起乱麻作引火物不可。（「束缊请火」是说把乱麻束起来作引火物，向邻居讨火。）",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-293",
+    id: "chengyu-cy-293",
+    title: "缘木求鱼",
+    entries: ["chengyu-cy-293"],
+    text: "以若所为，求若所欲，犹缘木而求鱼也。\n……缘木求鱼，虽不得鱼，无后灾；以若所为，求若所欲，尽心力而为之，后必有灾。",
+    translation: "用您这样的做法去追求您想得到的东西，就像爬到树上去捉鱼一样。……爬到树上去捉鱼，虽然捉不到鱼，却没有后患；用您这样的做法去追求您想得到的东西，费尽心力去做，以后一定有灾祸。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-294",
+    id: "chengyu-cy-294",
+    title: "寡不敌众",
+    entries: ["chengyu-cy-294"],
+    text: "然则小固不可以敌大，寡固不可以敌众，弱固不可以敌强。",
+    translation: "这样说来，小国本来不可以与大国为敌，人口少的本来不可以与人口多的为敌，弱国本来不可以与强国为敌。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-295",
+    id: "chengyu-cy-295",
+    title: "事半功倍",
+    entries: ["chengyu-cy-295"],
+    text: "当今之时，万乘之国行仁政，民之悦之，犹解倒悬也。故事半古之人，功必倍之，惟此时为然。",
+    translation: "当今这个时候，拥有万辆兵车的大国施行仁政，百姓高兴，就像从倒悬中被解救出来一样。所以做事只花古人一半的力气，功效却必定加倍，只有现在这个时候才能这样。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-296",
+    id: "chengyu-cy-296",
+    title: "水深火热",
+    entries: ["chengyu-cy-296"],
+    text: "箪食壶浆，以迎王师。岂有他哉？避水火也。如水益深，如火益热，亦运而已矣。",
+    translation: "用竹筐盛饭、用壶装酒来迎接大王的军队。难道有别的原因吗？是为了躲避水火般的苦难。如果水更深、火更热，百姓也只好再转投他人了。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-297",
+    id: "chengyu-cy-297",
+    title: "箪食壶浆",
+    entries: ["chengyu-cy-297"],
+    text: "以万乘之国伐万乘之国，箪食壶浆以迎王师，岂有他哉？避水火也。",
+    translation: "以拥有万辆兵车的大国去攻打同样拥有万辆兵车的大国，百姓用竹筐盛饭、用壶装酒来迎接大王的军队，难道有别的原因吗？是为了躲避水火般的苦难呀。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-299",
+    id: "chengyu-cy-299",
+    title: "明察秋毫",
+    entries: ["chengyu-cy-299"],
+    text: "明足以察秋毫之末，而不见舆薪，则王许之乎？",
+    translation: "眼力足以看清秋天鸟兽新生细毛的末梢，却看不见整车的柴草，那么大王您相信吗？",
+    translationSource: "public-domain"
+  },
+  {
     work: "w-chengyu-cy-30",
     id: "chengyu-cy-30",
     title: "外怯中干（衍生）",
     entries: ["chengyu-cy-30"],
     text: "外强中干，进退不可，周旋不能。",
     translation: "外表看起来强壮，内里却已虚耗，进不能进，退不能退，回旋都做不到。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-300",
+    id: "chengyu-cy-300",
+    title: "专心致志",
+    entries: ["chengyu-cy-300"],
+    text: "今夫弈之为数，小数也；不专心致志，则不得也。\n弈秋，通国之善弈者也。使弈秋诲二人弈，其一人专心致志，惟弈秋之为听……",
+    translation: "下棋作为一种技艺，只是小技艺；如果不专心致志，就学不好。弈秋是全国最擅长下棋的人。让弈秋教两个人下棋，其中一个人专心致志，只听弈秋的教导……",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-301",
+    id: "chengyu-cy-301",
+    title: "生于忧患，死于安乐",
+    entries: ["chengyu-cy-301"],
+    text: "入则无法家拂士，出则无敌国外患者，国恒亡。然后知生于忧患而死于安乐也。",
+    translation: "在国内没有坚守法度的大臣和辅佐君王的贤士，在国外没有势力相当的敌国和外来的祸患，这样的国家常常会灭亡。这样以后才知道，忧患使人生存，安乐使人衰亡。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-302",
+    id: "chengyu-cy-302",
+    title: "一曝十寒",
+    entries: ["chengyu-cy-302"],
+    text: "虽有天下易生之物也，一日暴之，十日寒之，未有能生者也。",
+    translation: "即使有天下最容易生长的植物，晒它一天，冻它十天，也没有能生长起来的。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-303",
+    id: "chengyu-cy-303",
+    title: "独善其身",
+    entries: ["chengyu-cy-303"],
+    text: "穷则独善其身，达则兼善天下。",
+    translation: "不得志的时候就修养好自身的品德，得志的时候就使天下人都得到好处。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-304",
+    id: "chengyu-cy-304",
+    title: "泾渭分明",
+    entries: ["chengyu-cy-304"],
+    text: "泾以渭浊，湜湜其沚。",
+    translation: "泾水因为渭水而显得浑浊，但它静止的地方却是清澈的。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-305",
+    id: "chengyu-cy-305",
+    title: "虎头蛇尾",
+    entries: ["chengyu-cy-305"],
+    text: "（《景德传灯录》卷二十九：「虎头蛇尾，有始无终。」）",
+    translation: "（《景德传灯录》卷二十九：「起头像老虎一样威猛，收尾像蛇一样细小，有开头没有收场。」）",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-306",
+    id: "chengyu-cy-306",
+    title: "下笔成章",
+    entries: ["chengyu-cy-306"],
+    text: "（曹植）年十岁余，诵读诗论及辞赋数十万言，善属文。太祖尝视其文，谓植曰：「汝倩人邪？」植跪曰：「言出为论，下笔成章，顾当面试，奈何倩人？」",
+    translation: "曹植十多岁时，诵读诗、论及辞赋几十万字，擅长写文章。曹操曾看过他的文章，对曹植说：「你是请人代笔的吧？」曹植跪下说：「话一出口就是论说，笔一落下就成文章，您可以当面考试，我怎么会请人代笔？」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-307",
+    id: "chengyu-cy-307",
+    title: "大腹便便",
+    entries: ["chengyu-cy-307"],
+    text: "边韶字孝先，陈留浚仪人也。以文章知名，教授数百人。韶口辩，曾昼日假卧，弟子私嘲之曰：「边孝先，腹便便。懒读书，但欲眠。」",
+    translation: "边韶字孝先，是陈留浚仪人。凭文章知名，教授学生几百人。边韶有口才，曾经白天打瞌睡，弟子私下嘲笑他说：「边孝先，肚子肥肥胖胖。懒得读书，只想睡觉。」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-309",
+    id: "chengyu-cy-309",
+    title: "羚羊挂角",
+    entries: ["chengyu-cy-309"],
+    text: "盛唐诸人惟在兴趣，羚羊挂角，无迹可求。故其妙处透彻玲珑，不可凑泊。",
+    translation: "盛唐的诗人只讲究兴味情致，像羚羊夜晚把角挂在树上，不留下痕迹可以寻求。所以他们诗作的妙处透彻玲珑，无法勉强拼凑。",
     translationSource: "public-domain"
   },
   {
@@ -997,7 +2203,7 @@ window.TEXT_MASTER = [
     work: "w-chengyu-cy-48",
     id: "chengyu-cy-48",
     title: "求之不得",
-    entries: ["chengyu-cy-48"],
+    entries: ["chengyu-cy-48", "chengyu-cy-217"],
     text: "求之不得，寤寐思服。悠哉悠哉，辗转反侧。",
     translation: "追求她却得不到，日日夜夜都在思念。思念绵绵不断，翻来覆去睡不着觉。",
     translationSource: "public-domain"
@@ -1519,7 +2725,7 @@ window.TEXT_MASTER = [
     work: "w-classic-gw-11",
     id: "classic-gw-11",
     title: "自相矛盾",
-    entries: ["classic-gw-11"],
+    entries: ["classic-gw-11", "chengyu-cy-237"],
     text: "楚人有鬻盾与矛者，誉之曰：「吾盾之坚，物莫能陷也。」\n又誉其矛曰：「吾矛之利，于物无不陷也。」\n或曰：「以子之矛，陷子之盾，何如？」其人弗能应也。\n夫不可陷之盾与无不陷之矛，不可同世而立。",
     translation: "楚国有个卖盾和矛的人，夸盾说：「我的盾非常坚固，没有东西能刺穿它。」又夸矛说：「我的矛非常锋利，没有东西刺不穿。」有人问：「用你的矛刺你的盾，会怎么样？」那人答不上来。刺不穿的盾和刺得穿的矛，是不能同时成立的。",
     translationSource: "public-domain"
@@ -1654,7 +2860,7 @@ window.TEXT_MASTER = [
     work: "w-classic-gw-25",
     id: "classic-gw-25",
     title: "画蛇添足",
-    entries: ["classic-gw-25"],
+    entries: ["classic-gw-25", "chengyu-cy-233"],
     text: "楚有祠者，赐其舍人卮酒。舍人相谓曰：「数人饮之不足，一人饮之有余。请画地为蛇，先成者饮酒。」\n一人蛇先成，引酒且饮之，乃左手持卮，右手画蛇曰：「吾能为之足。」\n未成，一人之蛇成，夺其卮曰：「蛇固无足，子安能为之足？」遂饮其酒。\n为蛇足者，终亡其酒。",
     translation: "楚国有个祭祀的人，赏给门客一壶酒。门客们商量：「几个人喝不够，一个人喝有余。就在地上画蛇，先画成的喝酒。」一人先画好，端起酒壶正要喝，却左手拿壶、右手继续画，说：「我还能给它添上脚。」脚还没画完，另一个人的蛇画成了，夺过酒壶说：「蛇本来没有脚，你怎么能给它添脚？」于是喝了那壶酒。给蛇添脚的人，最终丢了酒。",
     translationSource: "public-domain"
@@ -1663,7 +2869,7 @@ window.TEXT_MASTER = [
     work: "w-classic-gw-26",
     id: "classic-gw-26",
     title: "刻舟求剑",
-    entries: ["classic-gw-26"],
+    entries: ["classic-gw-26", "chengyu-cy-231"],
     text: "楚人有涉江者，其剑自舟中坠于水，遽契其舟曰：「是吾剑之所从坠。」\n舟止，从其所契者入水求之。\n舟已行矣，而剑不行，求剑若此，不亦惑乎？",
     translation: "有个楚国人渡江，他的剑从船上掉进水里，他急忙在船舷上刻了个记号，说：「这就是我的剑掉下去的地方。」船停下后，他从刻记号的地方下水找剑。船已经走了，剑却没有动，这样找剑，不是很糊涂吗？",
     translationSource: "public-domain"
@@ -1726,7 +2932,7 @@ window.TEXT_MASTER = [
     work: "w-classic-gw-32",
     id: "classic-gw-32",
     title: "揠苗助长",
-    entries: ["classic-gw-32"],
+    entries: ["classic-gw-32", "chengyu-cy-298"],
     text: "宋人有闵其苗之不长而揠之者，芒芒然归，谓其人曰：「今日病矣！予助苗长矣！」\n其子趋而往视之，苗则槁矣。",
     translation: "宋国有个农夫，担心禾苗长不高，就把苗一棵棵往上拔。他疲惫不堪地回到家，对家里人说：「今天累坏了！我帮禾苗长高了！」他儿子赶紧跑去一看，禾苗全都枯死了。",
     translationSource: "public-domain"
@@ -1735,7 +2941,7 @@ window.TEXT_MASTER = [
     work: "w-classic-gw-33",
     id: "classic-gw-33",
     title: "滥竽充数",
-    entries: ["classic-gw-33"],
+    entries: ["classic-gw-33", "chengyu-cy-238"],
     text: "齐宣王使人吹竽，必三百人。南郭处士请为王吹竽，宣王说之，廪食以数百人。\n宣王死，湣王立，好一一听之，处士逃。",
     translation: "齐宣王听人吹竽，一定要三百人一起合奏。南郭先生请求为宣王吹竽，宣王很高兴，给他的待遇和几百人一样。宣王死后，湣王即位，喜欢让人一个一个地吹给自己听，南郭先生只好逃走了。",
     translationSource: "public-domain"
@@ -1879,7 +3085,7 @@ window.TEXT_MASTER = [
     work: "w-classic-gw-48",
     id: "classic-gw-48",
     title: "卧薪尝胆",
-    entries: ["classic-gw-48"],
+    entries: ["classic-gw-48", "chengyu-cy-173"],
     text: "吴既赦越，越王勾践反国，乃苦身焦思，置胆于坐，坐卧即仰胆，饮食亦尝胆也。\n曰：「女忘会稽之耻邪？」\n身自耕作，夫人自织，食不加肉，衣不重采，折节下贤人，厚遇宾客，振贫吊死，与百姓同其劳。",
     translation: "吴国赦免越国之后，越王勾践回到国内，就劳苦身体、苦心思虑，把苦胆挂在座位旁，坐着躺着都仰头看胆，吃饭时也先尝一尝苦胆。他常问自己：「你忘了会稽之耻吗？」他亲自耕田，夫人亲自织布，吃饭不加肉，穿衣不用多种色彩，谦恭地礼待贤人，优厚地对待宾客，救济穷人、吊唁死者，与百姓同甘共苦。",
     translationSource: "public-domain"
@@ -2149,7 +3355,7 @@ window.TEXT_MASTER = [
     work: "w-classic-gw-76",
     id: "classic-gw-76",
     title: "邯郸学步",
-    entries: ["classic-gw-76"],
+    entries: ["classic-gw-76", "chengyu-cy-240"],
     text: "且子独不闻夫寿陵余子之学行于邯郸与？未得国能，又失其故行矣，直匍匐而归耳。",
     translation: "你难道没听说过燕国寿陵的少年到邯郸学走路的事吗？他不但没有学到赵国人走路的技能，反而把自己原来的走法也忘掉了，最后只好爬着回去。",
     translationSource: "public-domain"
@@ -8818,7 +10024,7 @@ window.TEXT_MASTER = [
     work: "w-tangshi-ts-276",
     id: "tangshi-ts-276",
     title: "集灵台·其二",
-    entries: ["tangshi-ts-276"],
+    entries: ["tangshi-ts-276", "chengyu-cy-308"],
     text: "虢国夫人承主恩，平明骑马入宫门。\n却嫌脂粉污颜色，淡扫蛾眉朝至尊。",
     translation: "虢国夫人承受君主的恩宠，天明时骑马进入宫门。却嫌脂粉污了容颜，只淡淡地画了眉毛去朝见天子。",
     translationSource: "public-domain"

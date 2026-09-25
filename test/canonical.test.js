@@ -37,8 +37,8 @@ FULL_BOOKS.forEach(b => { FULL_BOOK_SET[b] = true; });
 
 const multiEntries = MASTER.filter(m => m.entries.length >= 2);
 const singleEntries = MASTER.filter(m => m.entries.length === 1);
-chk(multiEntries.length === 124,
-  '主表里有 124 条「跨集重复」的作品（乐府集与课内 / 其余集子重篇 + main 长文补全带来的同篇，Issue #244；' +
+chk(multiEntries.length === 133,
+  '主表里有 133 条「跨集重复」的作品（乐府集与课内 / 其余集子重篇 + main 长文补全带来的同篇，Issue #244；' +
   '再加成语故事与课内、唐诗本身的同篇 6 条，Issue #308；实际 ' +
   multiEntries.length + '）');
 const fullExpected = [];
@@ -147,9 +147,9 @@ const uncovered = dupEntries.filter(e => !covered[e]);
 chk(uncovered.length === 0,
   '「同篇判重键下有两条及以上」的条目共 ' + dupEntries.length + ' 条，全部收进了主表（未收：' +
   (uncovered.slice(0, 6).join('、') || '无') + '）');
-chk(dupEntries.length === 264,
-  '重复条目恰为 264 条（124 篇：多数 × 2，少数 × 3；乐府集收进来的一批重篇 + main 长文补全同篇，Issue #244；' +
-  '成语故事与课内 / 唐诗重篇再加 6 篇，Issue #308；实际 ' +
+chk(dupEntries.length === 282,
+  '重复条目恰为 282 条（133 篇：多数 × 2，少数 × 3；乐府集收进来的一批重篇 + main 长文补全同篇，Issue #244；' +
+  '成语故事与课内 / 唐诗重篇，Issue #308 二批续补；实际 ' +
   dupEntries.length + '）');
 
 const expectFlat = dupEntries.slice();
