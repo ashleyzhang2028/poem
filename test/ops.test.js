@@ -687,10 +687,19 @@ console.log("=== 十、一行一条的表格与分组卡片的排版约束（Iss
       /\.group-card:has\(> \.group-head\) > \.item:nth-of-type\(3n \+ 2\),/.test(cls),
     "三列那一档也只擦掉每行左侧那条线（3n+1 三条一起擦，再补回后两条）");
 
-  // 「我的」页与「设置 · 关于」都用 .kv-list，块与块之间要能接上
+  // 「我的」页与「设置 · 关于」都用 .kv-list，块与块之间要能接上。
+  //
+  // ⚠️ 从前这里是「>= 3」（本机数据 / 账号 / 关于）。Issue #320 用户把
+  //    「账号」那张卡整块删了（「这张卡片删掉吧，莫名其妙放在这里」），
+  //    于是只剩两块：**本机数据 / 关于**。断言跟着改成 2 —— 仍然要 ≥ 2，
+  //    因为 `.kv-list + .kv-list` 那条相邻分隔线只在「一页两块以上」时才有意义。
   const mine = read("mine/index.html");
-  chk((mine.match(/class="kv-list"/g) || []).length >= 3,
-    "「我的」页有三块 .kv-list（本机数据 / 账号 / 关于），块间靠 CSS 接上");
+  chk((mine.match(/class="kv-list"/g) || []).length === 2,
+    "「我的」页正好两块 .kv-list（本机数据 / 关于 —— 账号那块已删），块间靠 CSS 接上");
+  chk(mine.indexOf('id="account-card"') < 0,
+    "「我的」页不再有「账号」那张卡（Issue #320：整张删掉，不留空壳）");
+  chk(mine.indexOf('id="account-list"') < 0 && mine.indexOf('id="btn-account-open"') < 0,
+    "卡里的表与「换一个账号登录」那颗键也一起没了");
 }
 
 section9.then(() => {

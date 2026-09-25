@@ -206,65 +206,53 @@
     }).join("");
   }
 
-  // 账号卡：**两条登录路都要画得出来**（Issue #274）。
+  // 「账号」那一张卡已经**整块删掉**（Issue #320 用户第二句话）。
   //
-  // ⚠️ 从前这里只有一个入参 —— 本机会话（`A.session(store)`），于是
-  //    「服务端登录的人」这一整块（账号、注销区、重发确认邮件）全是 `hidden`：
-  //    用户明明登录着，却看不到自己的账号，也找不到注销入口。
+  // 用户原话：
+  //   账号 / 邮箱 / belem@163.com / 邮箱确认 / 已确认 / 换一个账号登录
+  //   「这张卡片删掉吧，莫名其妙放在这里」
   //
-  // 现在分两栏读：
-  //   · **账号那一行**照旧优先用 `/api/me` 那份明文邮箱
-  //     （`AccountApi.account()`，只有服务端登录的人才有），退回本机那一份；
-  //   · **「登录还有 N 天」**只有本机会话算得出来（本机记着 `exp`），
-  //     服务端那条路的有效期在 Cookie 里、脚本读不到（HttpOnly）——
-  //     那就**如实不写这一行**，不编一个数字出来。
-  function renderAccount(sess) {
-    var list = $("account-list");
-    if (!list) return;
-
+  // ⚠️ 这张卡是 Issue #274 那段历史的遗留 —— 那时候「我的」页上没有别的地方
+  //    认得出「我登录的是谁」，于是专门开一张卡写账号那几件事。后来身份行
+  //    本身就把这些说清楚了：
+  //      · 是不是登录着 —— 身份行第二行「已登录 / 游客」；
+  //      · 邮箱是什么   —— 同一行那颗「我的邮箱」，点一下才显示（Issue #320 前一句）；
+  //      · 确认了没     —— 邮箱没确认时，身份行下面本来就有「重发确认邮件」；
+  //      · 想换个人登录 —— 身份行那颗「登录 / 退出登录」就是出口。
+  //    于是这张卡在页面上只剩一个作用：把身份行刚说过的话**再说一遍**。
+  //
+  // 所以这一轮连卡带内容一起撤：
+  //   · HTML：`#account-card`（含标题、`#account-list`、`#verify-row`、
+  //     `#btn-account-open`）整段删，不留空壳；
+  //   · 这里：`renderAccount()` / `renderVerifyState()` / `onResendVerify()`
+  //     三个函数一起删（元素没了，留着就是死代码）；`init()` 里那颗
+  //     「换一个账号登录」的绑定也删；
+  //   · **没动**：页底「注销账号 / 管理后台」那一排（它们本来就在卡外）、
+  //     身份行、同步、子用户、本机数据。
+  //
+  // 那三件事（注销入口可见性 / 管理入口可见性 / 页底那一排）从前是搭在
+  // `renderAccount()` 的尾巴上的，现在单独拿出来，**登录状态一变照样重画**。
+  function renderSignedIn(sess) {
     var id = identity();
-    if (!id || !id.signedIn) {
-      hide($("account-card")); hide($("verify-row"));
-      renderDanger();
-      return;
-    }
-
-    // 这一张卡写**账号那几件事的现状**（Issue #320 顺带收口）。
-    //
-    // ⚠️ 从前它只有一行「账号 · <邮箱>」，底下挂着一颗「账号与安全」——
-    //    而那颗键点了只是去 `/login/`（一个**已经登录的人**落到登录页，
-    //    既不是「安全设置」也没有任何可改的东西）。用户问的正是这件事：
-    //    「这张卡片有啥用？这个按钮又有什么作用？」
-    //
-    // 现在的口径：**卡片写事实，按钮写它真要做的事**。
-    //   · 事实：邮箱（与身份行里那颗「我的邮箱」同一个出口）、确认了没、
-    //     登录还有多久（本机会话算得出来才写，算不出来不编）；
-    //   · 按钮：那颗键改成「换一个账号登录」—— 点下去**就是**去 `/login/`，
-    //     文案与落点对得上。要退出登录，身份行那颗「退出登录」本来就够。
-    var info = acct() && acct().account ? acct().account() : null;
-    var rows = [["邮箱", identityEmail() || "（这个账号没留邮箱）"]];
-    if (info) {
-      rows.push(["邮箱确认", info.emailVerified ? "已确认" : "还没确认"]);
-    }
-    if (sess && sess.account && sess.exp) {
-      rows.push(["登录还有", Math.max(0, Math.round((sess.exp - Date.now()) / 86400000)) + " 天"]);
-    }
-    list.innerHTML = rows.map(function (r) {
-      return '<div class="kv-row"><span class="kv-k">' + esc(r[0]) +
-        '</span><span class="kv-v">' + esc(r[1]) + "</span></div>";
-    }).join("");
-    list.hidden = !rows.length;
-    show($("account-card"));
+    if (!id || !id.signedIn) { renderBottomActions(); return; }
     show($("btn-delete-start"));
     show($("btn-go-admin"));
     renderBottomActions();
-    renderVerifyState(info);
   }
 
-  function renderVerifyState(info) {
+  // ⚠️ 邮箱「还没确认」这件事仍然要有人管（Issue #268）。
+  //
+  // 从前它住在账号卡那块 `#verify-row` 里。卡删了，这一块就得换个家 ——
+  // 挂到**身份行下面**：那是「我是谁」的地方，「这个邮箱还没确认」本来就是
+  // 同一件事的下半句。所以不删功能，只挪位置：元素 id 全不变
+  // （`#verify-row` / `#verify-state` / `#btn-resend-verify`），
+  // 下面这两个函数与 `init()` 里那颗按钮的绑定都原样留着。
+  function renderVerifyState() {
     var row = $("verify-row");
     if (!row) return;
-    if (!info || info.emailVerified) { hide(row); return; }
+    var id = identity();
+    var info = acct() && acct().account ? acct().account() : null;
+    if (!id || !id.signedIn || !info || info.emailVerified) { hide(row); return; }
     var el = $("verify-state");
 
     var ch = acct() && acct().channel ? acct().channel() : null;
@@ -640,7 +628,8 @@
     renderIdentity(id);
     paintEmailToggle();
     renderStats();
-    renderAccount(sess);
+    renderSignedIn(sess);
+    renderVerifyState();
     renderNickname();
     renderSync();
     renderAdmin(id);
@@ -650,11 +639,6 @@
   function init() {
     if (!A || !Ent || !store) return;
 
-    var openAcct = $("btn-account-open");
-    if (openAcct && !openAcct.dataset.bound) {
-      openAcct.dataset.bound = "1";
-      openAcct.addEventListener("click", function () { location.href = "/login/"; });
-    }
     var resend = $("btn-resend-verify");
     if (resend) resend.addEventListener("click", onResendVerify);
     var admin = $("btn-go-admin");
