@@ -90,13 +90,24 @@
   outline: none;
 }
 
+/* ⚠️ 768 以上这一排的搜索框读上面那条 `--input-font`（14px），而 :root 的
+   `--search-placeholder-shift`（-1.5px）是照 16px 那一档算出来的。
+   提示字位移 = (输入字号 − 提示字号) × 1.2 ÷ 2，
+   14px 这一档 = (14 − 13.5) × 1.2 ÷ 2 = 0.3 —— 就地在**同一个变量**上改，
+   不移出第二个名字，也不动字号。
+   ⚠️ 它**排在上面那条 `font-size` 之后**：同优先级下后者胜，
+      反过来写会被那一条盖掉（本文件早先那处 `.search-hero` 覆写就是这么漂开的）。 */
+@media (min-width: 768px) {
+  .search-input { --search-placeholder-shift: -0.3px; }
+}
+
 /* 搜索框的提示字（Issue #278 第八轮 · 用户 2026-09-25：
      「将今日加背搜索框里 今日加背 文字样式和搜索页内搜索框里的 placeholder
        文字字体样式颜色和大小保持一致」）。
 
    ⚠️ 字号与位移都读 :root 那一对变量，本文件不再自己写数：
       · `--search-placeholder-font`（13.5px）—— 全站每一个搜索框共用这一个数；
-      · `--search-placeholder-shift`（-0.65px）—— 由字号现算，不是挑出来的。
+      · `--search-placeholder-shift`（-1.5px）—— 由字号与行盒现算，不是挑出来的。
    原先这里写 12.5px，理由是「与右侧『全部 / 未读』同号」——那个理由说的是
    索引页那一排 40px 的工具栏（旁边真有一排 12.5px 的控件），而搜索页 hero 与
    首页「今日加背」都不是那一排：前者的覆写被 `.search-hero` 那条顶掉，
@@ -109,7 +120,7 @@
 .search-input::placeholder {
   font-size: var(--search-placeholder-font, 13.5px);
 
-  transform: translateY(var(--search-placeholder-shift, -0.65px));
+  transform: translateY(var(--search-placeholder-shift, -1.5px));
 }
 
 .search-input:focus {

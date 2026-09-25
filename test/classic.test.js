@@ -717,15 +717,31 @@ setTimeout(() => {
 
   chk(!!phCss && /transform:\s*translateY\(var\(--search-placeholder-shift/.test(phCss[1]),
     '提示字上抬量也读 :root 的变量（回到框的水平中轴，只动伪元素，不动输入文字）');
-  // ⚠️ 这条位移是**算出来的**，不是挑出来的：输入文字行盒 = 14 × 1.25 = 17.5、
-  //    提示字行盒 = 13.5 × 1.2 = 16.2（`normal`），中心差的一半 = 0.65。
+  // ⚠️ 这条位移是**算出来的**，不是挑出来的 —— 而且算式里**两边都乘 1.2**：
+  //    输入文字那一档的行盒是「输入字号 × 1.2」（写 `line-height: 1.25` 时它落成
+  //    20px，可浏览器排行盒乘的仍是 1.2 —— 两回事，不能拿 20 当行盒）。
+  //    位移 = (输入字号 − 提示字号) × 1.2 ÷ 2，与**输入字号无关**的那一项相消。
   //    改字号不重算位移，两档字会一起偏出中轴 —— 而这件事在 CSS 里看着永远对。
+  //
+  //    ⚠️ :root 给的是**窄屏那一档**（输入 16px）：(16 − 13.5) × 1.2 ÷ 2 = 1.5。
+  //       768 以上那一档输入字号变小成 14px，位移要跟着重算成 0.3
+  //       （classic.css 里那条 `@media (min-width: 768px)` 覆写）。
+  //       这里两档各算一遍 —— 守的是「两档都对上各自的字号」，
+  //       不是「两处写同一个数」。
   const shVar = (rootVars.match(/--search-placeholder-shift:\s*([^;]+);/) || [])[1];
   const shNum = shVar && parseFloat(shVar);
-  const wantSh = -(((14 * 1.25) - (parseFloat(phVar) * 1.2)) / 2);
-  chk(!!shVar && Math.abs(shNum - wantSh) <= 1e-9,
-    '位移与字号没脱钩：' + shVar + ' 该是 ' + wantSh.toFixed(2) +
-    'px（= (输入字号 14 × 1.25 − 提示字号 ' + phVar + ' × 1.2) ÷ 2）');
+  const narrowFont = 16;   // 窄屏输入字号（--input-font-narrow）
+  const wideFont = 14;     // 768 以上输入字号（--input-font）
+  const wantNarrow = -(((narrowFont - parseFloat(phVar)) * 1.2) / 2);
+  chk(!!shVar && Math.abs(shNum - wantNarrow) <= 1e-9,
+    '窄屏位移与字号没脱钩：' + shVar + ' 该是 ' + wantNarrow.toFixed(2) +
+    'px（= (输入字号 ' + narrowFont + ' − 提示字号 ' + phVar + ') × 1.2 ÷ 2）');
+  const wideShift = (classicSheet.match(
+    /@media \(min-width: 768px\)[\s\S]*?\.search-input \{[^}]*--search-placeholder-shift:\s*(-?[\d.]+)px/) || [])[1];
+  const wantWide = -(((wideFont - parseFloat(phVar)) * 1.2) / 2);
+  chk(wideShift && Math.abs(parseFloat(wideShift) - wantWide) <= 1e-9,
+    '768 以上那一档的位移也重算过：' + (wideShift || '缺') + ' 该是 ' + wantWide.toFixed(2) +
+    'px（= (输入字号 ' + wideFont + ' − 提示字号 ' + phVar + ') × 1.2 ÷ 2）');
 
   chk(!/padding(-top|-bottom)?\s*:/.test(phCss[1]) && !/line-height\s*:/.test(phCss[1]),
     '居中的修法不碰输入框本体（提示字用 transform，输入文字仍是居中的 16px）');
