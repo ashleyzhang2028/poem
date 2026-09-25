@@ -471,19 +471,19 @@ const LOGIN = strip(loginJs), MINE = strip(mineJs), ADMIN = strip(adminJs);
   chk(/id="btn-go-admin"/.test(mineSettings),
     '管理后台入口在「我的」页的「关于」卡里');
 
-  // 用户 2026-09-18：这颗「层级对比」改成链接 —— 它是「去别处看一张表」，
+  // 用户 2026-09-18：这颗「用户对比」改成链接 —— 它是「去别处看一张表」，
   // 不是「登录 / 退出」那类动作。做成 <a href="/plans/">：不点 JS、
   // 中键新开、键盘可达、还没脚本时也能走。
   ['/terms/', '/privacy/'].forEach(href => {
     chk(new RegExp('<a class="kv-link" href="' + href.replace(/\//g, '\\/') + '"').test(mineSettings),
       href + ' 在「关于」卡里是一行「左格本身当链接」（与「设置 · 关于」同一形状）');
   });
-  // ⚠️ 用户 2026-09-21「哪些应该放到我的却放到了设置」：层级对比是**一张表**，
+  // ⚠️ 用户 2026-09-21「哪些应该放到我的却放到了设置」：用户对比是**一张表**，
   //    不是「我的」这一页上的动作；「设置 · 关于」里已经有它一行，这里不重复收。
   chk(!/href="\/plans\/"/.test(mineSettings),
-    '「我的」页不再重复收「层级对比」（同一件事只在「设置 · 关于」一处给入口）');
-  chk(/link\("\/plans\/",\s*"层级对比"\)/.test(read('js/settings-nav.js')),
-    '「层级对比」那一行仍在「设置 · 关于」里（用户 2026-09-18 点名放的位置）');
+    '「我的」页不再重复收「用户对比」（同一件事只在「设置 · 关于」一处给入口）');
+  chk(/link\("\/plans\/",\s*"用户对比"\)/.test(read('js/settings-nav.js')),
+    '「用户对比」那一行仍在「设置 · 关于」里（用户 2026-09-18 点名放的位置）');
   chk(/id="sync-conflict"/.test(mineSettings),
     '需要你裁决时那个冲突面板仍留着（有冲突才铺开）');
   chk(/<label class="switch sync-row"[\s\S]{0,400}?id="toggle-sync"[\s\S]{0,200}?switch-toggle/.test(mineSettings),
@@ -563,7 +563,7 @@ const LOGIN = strip(loginJs), MINE = strip(mineJs), ADMIN = strip(adminJs);
   let W = boot();
   const d0 = W.document;
 
-  // 账号卡那一行：登录 / 退出（层级对比已挪进「关于」卡）。
+  // 账号卡那一行：登录 / 退出（用户对比已挪进「关于」卡）。
   chk(d0.getElementById('btn-account-entry').textContent === '登录',
     '未登录时那颗键上只有一个词：登录（实际「' +
     d0.getElementById('btn-account-entry').textContent + '」）');
@@ -574,7 +574,7 @@ const LOGIN = strip(loginJs), MINE = strip(mineJs), ADMIN = strip(adminJs);
   const about = d0.getElementById('about-card');
   chk(!!about, '「我的」页上画出了「关于」卡（#about-card）');
   chk(!about.querySelector('a[href="/plans/"]'),
-    '「关于」卡里不再重复收「层级对比」（它只在「设置 · 关于」一处）');
+    '「关于」卡里不再重复收「用户对比」（它只在「设置 · 关于」一处）');
   chk(!!about.querySelector('a[href="/terms/"]') && !!about.querySelector('a[href="/privacy/"]'),
     '用户协议与隐私条款两条入口也在这张卡里');
 
