@@ -51,13 +51,11 @@
       '<span id="avatar-slot" class="avatar-slot">' +
       (window.Avatar ? Avatar.html(backing) : "") + "</span>" +
       // ⚠️ `id="identity-main"` 不是给样式用的（样式一律走类名），而是**量尺**：
-      //    真浏览器那一层（test/pwa.test.js）按 id 读这一格，判它有没有
-      //    「被压成 0 宽」。上一轮它只有类名，量尺便落在 `row.children` 里
-      //    找不到那一格 —— 那时这一行只画一层，子节点就是它自己；
-      //    改成两行之后子节点成了 .identity-head / .identity-btns 两个**容器**，
-      //    名字那一格于是量不到了：CI 报 `identity-head:337 identity-btns:337`，
-      //    不是这一格真的被压扁，而是那个 id 压根不存在（量错了对象）。
-      //    ⚠️ 别再靠「第几个子节点」去认第一行中间那一格：两行是两件事。
+      //    按 id 读这一格，判它有没有「被压成 0 宽」。
+      //    ⚠️ Issue #278 起，原先那层真浏览器测试（test/pwa.test.js）整层删掉了，
+      //    这个 id 仍然留着 —— 界面回归改由人点一遍（`npm start`）或真机验收时
+      //    按它量。留着的理由是量尺本身：**别再靠「第几个子节点」去认**第一行
+      //    中间那一格（两行是两件事，容器一多就认错对象）。
       '<span class="identity-main" id="identity-main">' +
       '<label class="sr-only" for="input-nickname">用户名</label>' +
       // ⚠️ `size="1"` 不是装饰（Issue #276 第八轮）：`<input>` 的默认宽度来自

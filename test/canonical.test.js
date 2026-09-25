@@ -1,4 +1,4 @@
-const { JSDOM } = require('jsdom');
+// Issue #278：页面层（jsdom 真跑集子页 / 首页）已删除，只留数据层与接线口径。
 const fs = require('fs');
 const vm = require('vm');
 const path = __dirname + '/../';
@@ -300,125 +300,65 @@ if (order.indexOf('data/site-index.js') >= 0) {
     '加载了 data/index.js 的页面都先加载了 data/text-master.js（异常：' + (bad.join('、') || '无') + '）');
 })();
 
-const dom = new JSDOM(html, { runScripts: 'dangerously', url: 'https://local.test/classic/' });
-const w = dom.window;
-w.scrollTo = function () {};
-order.forEach(f => {
-  const el = w.document.createElement('script');
-  el.textContent = read(f);
-  w.document.body.appendChild(el);
-});
+// ---------------------------------------------------------------------------
+// 页面层（jsdom：集子页 / 首页真跑一遍、孤儿进度清理的页面那一半）已删除 ——
+// Issue #278：那是界面测试，构建时间不花在这里。
+//
+// 留下来的只有两条**功能**不变量的源码口径检查：页面加载顺序与孤儿清理的
+// 接线（都不需要起 DOM）。
+// ---------------------------------------------------------------------------
 
-const strip2 = t => norm(String(t || '')).replace(/[a-zāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜüńňǹ·]+/g, '');
+const home = read('index.html');
+const hOrder = home.match(/<script src="([^"]+)"><\/script>/g).map(x => x.match(/src="([^"]+)"/)[1]);
+chk(hOrder.indexOf('js/storage.js') >= 0, '首页加载了 js/storage.js（进度库）');
+chk(/pruneUnknown/.test(read('js/app.js')),
+  '首页启动时会清一次孤儿进度（js/app.js 调 Storage.pruneUnknown）');
 
-setTimeout(() => {
-  const api = w.ReaderEngine.current;
-  chk(!!api, '小古文页挂上了引擎实例');
+// 孤儿进度清理本身是数据层的活，直接对 Storage 上手（不起 DOM）
+{
+  const sb2 = {
+    window: {}, console: console,
+    localStorage: (function () {
+      const mem = {};
+      return {
+        getItem: k => (mem[k] === undefined ? null : mem[k]),
+        setItem: (k, v) => { mem[k] = String(v); },
+        removeItem: k => { delete mem[k]; }
+      };
+    })(),
+    document: { readyState: 'complete', addEventListener() {}, querySelector() { return null; } }
+  };
+  sb2.window = sb2;
+  vm.createContext(sb2);
+  // 这一节只要一份「站点索引」当 knownIds —— 直接拿上面已经装好的那一份，
+  // 不重复加载语料（那正是这一层最重的一步）。
+  const known = sb.SITE_INDEX.map(p => p.id);
+  vm.runInContext(read('js/storage.js'), sb2, { filename: 'js/storage.js' });
+  const S2 = sb2.Storage;
+  const writeRaw = (o) => sb2.localStorage.setItem('poem_recite_progress_v1', JSON.stringify(o));
+  const readRaw = () => JSON.parse(sb2.localStorage.getItem('poem_recite_progress_v1') || '{}');
 
-  const repInPage = w.POEMS_ALL.filter(p => p.id === 'cz8-02')[0];
-  const rd = w.document.querySelector('#gw-reader');
-  api.open('gw-60');
-  const shown = strip2(rd.querySelector('#rd-text').textContent);
-  chk(shown.length > 0 && norm(shown) === norm(repInPage.text),
-    '在小古文页读《答谢中书书》，正文由 textRef 取回主表那一份（教材口径）');
-  const trans = rd.querySelector('#rd-trans-text').textContent;
-  chk(norm(trans) === norm(repInPage.translation),
-    '译文同样由主表取回（同一篇不该给学生两段不同的白话）');
-
-  const noRef = { id: 'x', title: '没有 textRef 的条目' };
-  chk(sb.masterTextOf(noRef, 'classic') === noRef, '没有 textRef 的条目原样返回（不是主表的活）');
-  const badRef = { id: 'y', textRef: '根本不存在的-id' };
-  chk(sb.masterTextOf(badRef, 'classic') === badRef, 'textRef 查不到时原样返回（不猜一篇顶上）');
-
-  const PAGES = [
-    ['guwen/index.html', '/guwen/', 'POEMS_GUWEN', 'guwen'],
-    ['songci/index.html', '/songci/', 'POEMS_SONGCI', 'songci'],
-    ['tangshi/index.html', '/tangshi/', 'POEMS_TANGSHI', 'tangshi']
-  ];
-  function checkPages(row) {
-    const page = row[0], url = row[1], poolVar = row[2], book = row[3];
-    const pHtml = read(page);
-    const pOrder = pHtml.match(/<script src="([^"]+)"><\/script>/g).map(x => x.match(/src="([^"]+)"/)[1]);
-    chk(pOrder.indexOf('data/text-master.js') >= 0, page + ' 加载了正文存储主表');
-    chk(pOrder.indexOf('data/text-master.js') < pOrder.indexOf('js/reader-core.js'),
-      page + ' 主表排在引擎之前');
-
-    const dp = new JSDOM(pHtml, { runScripts: 'dangerously', url: 'https://local.test' + url });
-    const wp = dp.window;
-    wp.scrollTo = function () {};
-    pOrder.forEach(f => {
-      const el = wp.document.createElement('script');
-      el.textContent = read(f);
-      wp.document.body.appendChild(el);
-    });
-    return new Promise(function (resolve) {
-      setTimeout(function () {
-        const api2 = wp.ReaderEngine.current;
-        chk(!!api2, page + ' 挂上了引擎实例');
-
-        const m = MASTER.filter(x => (x.entries || []).some(e => e.indexOf(book + '-') === 0))[0];
-        if (!m) { chk(false, page + ' 里找不到被主表收编的条目（测试用例要跟着语料改）'); resolve(); return; }
-        const eid = m.entries.filter(e => e.indexOf(book + '-') === 0)[0];
-        const localId = eid.replace(new RegExp('^' + book + '-'), '');
-        const rawEntry = (wp[poolVar] || []).filter(p => p.id === localId)[0];
-        api2.open(localId);
-        const rdr = wp.document.querySelector('#gw-reader');
-        const got = strip2(rdr.querySelector('#rd-text').textContent);
-        chk(!!rawEntry && norm(got) === norm(m.text),
-          page + ' 里 ' + localId + ' 读到的正文 = 主表那一份');
-        resolve();
-      }, 150);
-    });
-  }
-  (async function () {
-    for (let i = 0; i < PAGES.length; i += 1) await checkPages(PAGES[i]);
-    afterPages();
-  })();
-
-  function afterPages() {
-
-  const home = read('index.html');
-  const hOrder = home.match(/<script src="([^"]+)"><\/script>/g).map(x => x.match(/src="([^"]+)"/)[1]);
-  chk(hOrder.indexOf('js/storage.js') >= 0, '首页加载了 js/storage.js（进度库）');
-  chk(/pruneUnknown/.test(read('js/app.js')),
-    '首页启动时会清一次孤儿进度（js/app.js 调 Storage.pruneUnknown）');
-
-  const domH = new JSDOM(home, {
-    runScripts: 'dangerously', url: 'https://local.test/',
-    beforeParse(win) {
-
-      win.localStorage.setItem('poem_recite_progress_v1', JSON.stringify({
-        'gz12-06': { level: 3, learned: true, nextReviewAt: Date.now() - 1000, reviewCount: 4, lapses: 0 },
-        'gz12-12': { level: 2, learned: true, nextReviewAt: Date.now() - 1000, reviewCount: 3, lapses: 0 },
-        'xx1-09': { level: 1, learned: true, nextReviewAt: Date.now() - 1000, reviewCount: 1, lapses: 0 }
-      }));
-    }
+  writeRaw({
+    'gz12-06': { level: 3, learned: true, nextReviewAt: Date.now() - 1000, reviewCount: 4, lapses: 0 },
+    'gz12-12': { level: 2, learned: true, nextReviewAt: Date.now() - 1000, reviewCount: 3, lapses: 0 },
+    'xx1-09': { level: 1, learned: true, nextReviewAt: Date.now() - 1000, reviewCount: 1, lapses: 0 }
   });
-  const wh = domH.window;
-  wh.scrollTo = function () {};
-  hOrder.forEach(f => {
-    const el = wh.document.createElement('script');
-    el.textContent = read(f);
-    wh.document.body.appendChild(el);
-  });
+  // 站点索引里的 id 带集子前缀（课堂那一部是 poems-）
+  chk(known.indexOf('poems-xx1-09') >= 0, '站点索引里认得出《静夜思》（孤儿清理的判据来自它）');
+  known.push('xx1-09');
+  S2.pruneUnknown(known);
+  const prog = readRaw();
+  chk(!prog['gz12-06'] && !prog['gz12-12'],
+    '已删的高年级重复条目（gz12-06 / gz12-12）的孤儿进度被清掉');
+  chk(!!prog['xx1-09'] && prog['xx1-09'].level === 1 && prog['xx1-09'].reviewCount === 1,
+    '真实篇目的进度一个字没动（《静夜思》仍在，轮次 / 复习次数原样）');
 
-  setTimeout(function () {
-    const prog = JSON.parse(wh.localStorage.getItem('poem_recite_progress_v1') || '{}');
+  writeRaw({ 'gz12-06': { level: 1 } });
+  S2.pruneUnknown([]);
+  chk(!!readRaw()['gz12-06'],
+    '拿不到语料（空 id 表）时一个键都不删（不误删真实进度）');
+}
 
-    chk(!prog['gz12-06'], '已删的高年级重复条目（gz12-06）的孤儿进度被清掉');
-    chk(!prog['gz12-12'], '已删的高年级重复条目（gz12-12）的孤儿进度被清掉');
-    chk(!!prog['xx1-09'], '真实篇目的进度一个字没动（《静夜思》仍在）');
-    chk(prog['xx1-09'].level === 1 && prog['xx1-09'].reviewCount === 1,
-      '真实篇目的进度内容也原样保留（轮次 / 复习次数都没改）');
-
-    const keep = { 'gz12-06': { level: 1 } };
-    wh.localStorage.setItem('poem_recite_progress_v1', JSON.stringify(keep));
-    wh.Storage.pruneUnknown([]);
-    chk(!!JSON.parse(wh.localStorage.getItem('poem_recite_progress_v1') || '{}')['gz12-06'],
-      '拿不到语料（空 id 表）时一个键都不删（不误删真实进度）');
-
-    console.log('\n' + (fails ? '❌ ' + fails + ' 项失败' : '🎉 正文收归主表测试全部通过'));
-    process.exit(fails ? 1 : 0);
-  }, 150);
-  }
-}, 80);
+console.log('');
+console.log(fails ? '❌ ' + fails + ' 项失败' : '🎉 正文收归主表测试全部通过');
+process.exit(fails ? 1 : 0);

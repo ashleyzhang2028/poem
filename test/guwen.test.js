@@ -1,4 +1,3 @@
-const { JSDOM } = require('jsdom');
 const fs = require('fs');
 const vm = require('vm');
 const path = __dirname + '/../';
@@ -309,135 +308,12 @@ chk(scriptOrder.indexOf('js/reader-core.js') < scriptOrder.indexOf('js/guwen.js'
   '引擎排在挂载脚本 js/guwen.js 之前');
 chk(html.indexOf('data-nav="guwen"') >= 0, '页面声明了 guwen 页签');
 
-const dom = new JSDOM(html, { runScripts: 'dangerously', url: 'https://local.test/guwen/', base: 'https://local.test/guwen/' });
-const w = dom.window;
-w.scrollTo = function () {};
-scriptOrder.forEach(f => {
-  const el = w.document.createElement('script');
-  el.textContent = fs.readFileSync(path + f, 'utf8');
-  w.document.body.appendChild(el);
-});
+// ---------------------------------------------------------------------------
+// Issue #278：这一层的**页面层**（jsdom 起页面、挂脚本、渲染分组、点开详情、
+// 搜索框敲字）整段删除 —— 那是界面测试。留下的是数据层：篇目数量 / id / 字段 /
+// 分组口径 / 总索引收录，以及页面脚本顺序这一类**功能接线**的口径。
+// ---------------------------------------------------------------------------
 
-setTimeout(() => {
-  const d = w.document;
-
-  ['guwen/index.html', 'songci/index.html', 'classic/index.html'].forEach(f => {
-    const doc = new JSDOM(fs.readFileSync(path + f, 'utf8')).window.document;
-    const seen = {};
-    const dups = [];
-    doc.querySelectorAll('[id]').forEach(el => {
-      if (seen[el.id]) { if (dups.indexOf(el.id) < 0) dups.push(el.id); } else seen[el.id] = 1;
-    });
-    chk(dups.length === 0, f + ' 无重复 id（重复：' + dups.join(', ') + '）');
-  });
-
-  chk(d.querySelectorAll('#gw-list .item').length === 167,
-    '列表渲染 167 篇目录（实际 ' + d.querySelectorAll('#gw-list .item').length + '）');
-  chk(d.querySelectorAll('#gw-list .item.pending').length === 0,
-    '列表里没有「待补」条目（167 篇全都有正文与译文）');
-  chk(d.querySelectorAll('#gw-list .item-reason.pending').length === 0,
-    '列表里也没有「待补」小标');
-  chk(d.querySelector('#gw-count') === null,
-    '页顶那一行不再挂已读进度牌（Issue #147：读数已撤，页顶与详情页都没有）');
-
-  const api = w.ReaderEngine.current;
-  chk(!!api, '引擎挂上了古文观止实例');
-  chk(api.total() === 167, '实例 total() 为 167');
-
-  const gsrc = fs.readFileSync(path + 'js/guwen.js', 'utf8');
-  const gwReadKey = (gsrc.match(/readStore:\s*"([^"]+)"/) || [])[1];
-  chk(gwReadKey === 'poem_guwen_read_v1',
-    '古文观止用独立的已读键 poem_guwen_read_v1（实际 ' + gwReadKey + '）');
-
-  chk(/卷一 周文/.test(gsrc) && /卷十二 明文/.test(gsrc),
-    '挂载脚本给出了卷一至卷十二的卷次顺序');
-
-  api.open('gwj-1');
-  const title = d.querySelector('#rd-title').textContent;
-  chk(title === '郑伯克段于鄢', '可打开指定篇目（gwj-1 → ' + title + '）');
-  chk(/左丘明/.test(d.querySelector('#rd-meta').textContent), '阅读器展示了作者');
-
-  chk(d.querySelectorAll('#rd-meta .rd-count').length === 0,
-    '详情页状态栏里不再有已读读数 .rd-count（实际 ' +
-    d.querySelectorAll('#rd-meta .rd-count').length + ' 枚）');
-  chk(!/\d\s*\/\s*\d+\s*(篇|首)/.test(d.querySelector('#rd-meta').textContent),
-    '状态栏整行不含「N / M 篇」这类读数（实际「' +
-    d.querySelector('#rd-meta').textContent + '」）');
-  chk(d.querySelectorAll('.topbar > .count-badge').length === 0,
-    '页顶那一行同样一枚读数都没有');
-
-  const firstItem = d.querySelector('#gw-list .item[data-id="gwj-1"]');
-  const itemMeta = firstItem.querySelector('.item-meta').textContent;
-  chk(itemMeta.includes('《左传》'), '列表条目显示真实出处《左传》（' + itemMeta + '）');
-  chk(itemMeta.includes('《古文观止》'),
-    '列表条目另以括注标出选本《古文观止》');
-  const rdMeta = d.querySelector('#rd-meta').textContent;
-  chk(rdMeta.includes('《左传》'), '阅读器显示真实出处《左传》');
-  chk(rdMeta.includes('《古文观止》'), '阅读器另标出选本《古文观止》');
-  const plain = d.querySelector('#rd-text').textContent
-    .replace(/[a-zāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜüńňǹ·]+/g, '').replace(/\s/g, '');
-  chk(/郑武公娶于申/.test(plain), '正文已写入阅读器');
-  chk(/郑武公/.test(d.querySelector('#rd-trans-text').textContent), '白话译文已写入阅读器');
-
-  [['gwj-68', '伯夷列传', '夫学者载籍极博'], ['gwj-127', '醉翁亭记', '环滁皆山也'],
-   ['gwj-155', '青霞先生文集序', '青霞沈君']].forEach(([id, name, opening]) => {
-    api.open(id);
-    const got = d.querySelector('#rd-title').textContent;
-
-    const body = d.querySelector('#rd-text').textContent
-      .replace(/[a-zāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜüńňǹ·]+/g, '').replace(/\s/g, '');
-    const trans = d.querySelector('#rd-trans-text').textContent;
-    chk(got === name && body.indexOf(opening) >= 0,
-      name + ' 可打开，正文写入阅读器');
-    chk(trans.length > 60, name + ' 的白话译文已写入阅读器（' + trans.length + ' 字）');
-  });
-
-  const GM = w.TEXT_MASTER || [];
-  const masterRows = GM.filter(m => (m.entries || []).indexOf('guwen-gwj-1') >= 0);
-  chk(masterRows.length === 1, '《郑伯克段于鄢》在主表里正好登记一条（待补分支的试验对象）');
-  const keep = { text: masterRows[0].text, translation: masterRows[0].translation };
-  masterRows[0].text = '';
-  masterRows[0].translation = '';
-
-  const box = d.createElement('div');
-  box.setAttribute('data-gw-root', '');
-
-  box.innerHTML = '<div data-gw="list"></div>' +
-    '<section id="probe-reader" data-gw="reader">' +
-    '<h2 class="rd-title"></h2><div class="rd-meta"></div>' +
-    '<div data-gw="text"></div>' +
-    '<div class="rd-trans-text"></div>' +
-    '<div class="rd-trans-src"></div>' +
-    '</section>';
-  d.body.appendChild(box);
-  const probe = w.ReaderEngine.mount({
-    id: 'guwen-probe',
-    items: w.POEMS_GUWEN.map(p => Object.assign({}, p)),
-    root: box,
-    reader: '#probe-reader',
-    groupOrder: [],
-    words: { readStore: 'poem_probe_read_v1', pendingText: '本篇原文尚在整理中',
-      pendingTranslation: '本篇白话译文尚在整理中' }
-  });
-  chk(!!probe, '待补分支试验用的实例已挂上');
-  probe.open('gwj-1');
-  const probeText = box.querySelector('[data-gw="text"]').textContent;
-  const probeTrans = box.querySelector('.rd-trans-text').textContent;
-  chk(/尚在整理中/.test(probeText),
-    '正文为空时给出「原文尚在整理中」的说明（引擎的待补分支仍生效）');
-  chk(/尚在整理中/.test(probeTrans),
-    '译文为空时给出「白话译文尚在整理中」的说明');
-  masterRows[0].text = keep.text;
-  masterRows[0].translation = keep.translation;
-  box.remove();
-  api.close();
-
-  api.setKeyword('左丘明');
-  const nZuo = d.querySelectorAll('#gw-list .item').length;
-  chk(nZuo > 0 && nZuo < 167, '按作者「左丘明」搜索得到子集（' + nZuo + ' 篇）');
-  api.setKeyword('');
-
-  console.log('');
-  console.log(fails === 0 ? '🎉 古文观止测试全部通过' : '❌ 古文观止测试 ' + fails + ' 项失败');
-  process.exit(fails === 0 ? 0 : 1);
-}, 120);
+console.log('');
+console.log(fails ? '❌ ' + fails + ' 项失败' : '🎉 guwen测试全部通过');
+process.exit(fails ? 1 : 0);

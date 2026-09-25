@@ -470,74 +470,16 @@ async function main() {
     chk(/hasSession/.test(endpoint), "/api/family 没配密钥时如实回 503（与其余接口同一条）");
   }
 
-  console.log("\n=== 十之二、真页面上跑一遍（jsdom）：名册真的上云 ===");
-  {
-    let JSDOM = null;
-    try { JSDOM = require("jsdom").JSDOM; } catch (e) { JSDOM = null; }
-    if (!JSDOM) {
-      console.log("(未安装 jsdom，跳过这一节 —— npm i jsdom 可启用)");
-    } else {
+  // Issue #278：原先紧接着这一节的是「真页面上跑一遍」（jsdom 起「我的」页，
+  // 验名册真的上云）—— 页面层整段删除。名册本身的上云口径（SyncStore 的行号、
+  // 分家、合并规则）由上面那些纯 Node 的用例守着，不靠真页面。
 
-      const dom = new JSDOM(read("mine/index.html"),
-        { runScripts: "dangerously", url: "https://local.test/mine/", pretendToBeVisual: true });
-      const w = dom.window;
-      w.localStorage.setItem("poem_sync_pref_v1", JSON.stringify({ v: 1, enabled: true }));
-      w.localStorage.setItem("poem_plan_v1",
-        JSON.stringify({ v: 1, tier: "pro", until: null, source: "server" }));
-      const sent = [];
-      w.fetch = function (url, init) {
-        const body = init && init.body ? JSON.parse(init.body) : null;
-        sent.push({ url: String(url), body });
-        return Promise.resolve(jsonRes(200, {
-          ok: true, applied: 1, child: body && body.child !== undefined ? body.child : "", serverTime: 1,
-          recs: []
-        }));
-      };
-      ["js/auth-core.js", "js/entitlement.js", "js/family.js", "js/family-ui.js", "js/avatar.js",
-        "js/progress-store.js", "js/sync-store.js", "js/storage.js", "js/settings.js"].forEach(f => {
-        const el = w.document.createElement("script");
-        el.textContent = read(f);
-        w.document.body.appendChild(el);
-      });
-
-      const A = w.AuthCore;
-      const st = A.makeStore(w.localStorage);
-      const req = A.requestCode(st, { channel: "email", value: "pro@example.com" }, "login");
-      eq(A.verifyCode(st, req.codeId, req.code, "login").ok, true, "真页面：会话真的建起来了");
-      w.document.dispatchEvent(new w.Event("DOMContentLoaded", { bubbles: true }));
-      await new Promise(r => setTimeout(r, 250));
-
-      const rows = w.document.querySelectorAll(".family-row").length;
-      eq(rows, 1, "真页面：认领出 1 个子用户（名册非空 —— 空名册不上云）");
-      const S = w.SyncStore;
-      chk(!!S, "真页面：SyncStore 挂上了");
-      await S.pushPending();
-      const reg = sent.filter(c => /sync\/push/.test(c.url) && (c.body.recs || []).some(r => r.id === "family:v1"));
-      eq(reg.length, 1, "真页面：名册真的推上去了（一轮一次）");
-      eq(reg[0].body.child, "", "真页面：名册走账号那一档（child = 空串）");
-      chk(reg[0].body.recs[0].payload.profiles.length === 1, "真页面：推上去的名册里是页面上那一个孩子");
-    }
-  }
-
-  console.log("\n=== 十一、反向断言 ===");
-  {
-    const core = read("api/_lib/core.js");
-    const storeSrc = read("api/_lib/store.js");
-    chk(!/insert into public\.progress[\s\S]{0,200}child_id[\s\S]{0,80}default 'f-/.test(storeSrc),
-      "store 里没有「缺 child 就编一个 id」的替身逻辑（编出来的行永远没人用）");
-    chk(!/unknownChild|createIfMissing/.test(core + storeSrc),
-      "没有「查不到就替他建一个」的分支（脏 id 一律落回空串）");
-    chk(!/progress\?uid=eq\.[^"']*select=[^"']*child_id/.test(storeSrc),
-      "select 里不返回 child_id 给客户端（客户端只认「我拉的这一档」，不需要它把别人的也读出来）");
-  }
-
+  console.log("");
+  console.log(fails === 0 ? "🎉 跨设备分档案测试全部通过" : "❌ 跨设备分档案测试 " + fails + " 项失败");
+  process.exit(fails ? 1 : 0);
 }
 
-main().then(function () {
-  console.log('');
-  if (fails) { console.log('❌ 跨设备分档案测试 ' + fails + ' 项失败'); process.exit(1); }
-  console.log('🎉 跨设备分档案测试全部通过');
-}, function (e) {
-  console.log('测试自身抛异常（这通常是环境问题，不是被测代码）： ' + (e && e.stack || e));
+main().catch(e => {
+  console.error("测试自身抛异常（这通常是环境问题，不是被测代码）：", e);
   process.exit(1);
 });

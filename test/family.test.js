@@ -380,121 +380,13 @@ console.log('\n=== 七之二、备份：名册跟着走 ===');
   eq(F.list({ backing: b2 }).length, 2, '名册两条都在');
 }
 
-let JSDOM = null;
-try { JSDOM = require('jsdom').JSDOM; } catch (e) { JSDOM = null; }
+// ---------------------------------------------------------------------------
+// Issue #278：原先这里的第八节是「真页面上跑一遍」（jsdom 起「我的」页，
+// 验名册交互 / 切换孩子 / 删除要过 confirm）—— 页面层整段删除。
+// 家庭子用户本身的功能验证（上面那些：名册拦在数据层、老用户零感知、
+// 分家边界、上限与内核同源）一条不少。
+// ---------------------------------------------------------------------------
 
-if (!JSDOM) {
-  console.log('\n(未安装 jsdom，跳过「真页面上跑一遍」一节 —— npm i jsdom 可启用)');
-  console.log('');
-  console.log(fails === 0 ? '🎉 家庭子用户测试全部通过' : '❌ 家庭子用户测试 ' + fails + ' 项失败');
-  process.exit(fails === 0 ? 0 : 1);
-} else {
-  console.log('\n=== 八、真页面上跑一遍（jsdom）===');
-
-  const SCRIPTS = ['js/auth-core.js', 'js/entitlement.js', 'js/family.js', 'js/family-ui.js',
-    'js/avatar.js', 'js/avatar-image.js', 'js/account-api.js', 'js/progress-store.js',
-    'js/storage.js', 'js/scheduler.js', 'js/mine.js'];
-
-  // 子用户那一块现在住在「我的」页（Issue #209），所以真页面测试也开在 /mine/ 上。
-  function openPage(tier, signedIn) {
-    const dom = new JSDOM(read('mine/index.html'),
-      { runScripts: 'dangerously', url: 'https://local.test/mine/', pretendToBeVisual: true });
-    const w = dom.window;
-    if (tier) {
-      w.localStorage.setItem('poem_plan_v1',
-        JSON.stringify({ v: 1, tier: tier, until: null, source: 'server' }));
-    }
-    if (signedIn) {
-      w.localStorage.setItem('poem_auth_v1', JSON.stringify({
-        v: 1, account: { uid: 'u1', identities: [{ channel: 'email', mask: 'a***@b.com', value: 'x' }] },
-        sessions: [{ sid: 's1', exp: 9e15 }], deviceId: 'd1'
-      }));
-    }
-
-    w.confirm = () => false;
-    SCRIPTS.forEach(f => {
-      const el = w.document.createElement('script');
-      el.textContent = read(f);
-      w.document.body.appendChild(el);
-    });
-    return w;
-  }
-
-  const wait = () => new Promise(r => setTimeout(r, 250));
-
-  (async function run() {
-
-    const wf = openPage(null, false);
-    await wait();
-    eq(wf.document.querySelectorAll('.family-row').length, 1, '真页面：Free 一进来就有 1 个子用户（认领出来的）');
-    const freeHint = wf.document.getElementById('family-hint').textContent;
-    chk(/当前 1 \/ 1 个/.test(freeHint), '真页面：如实写「1 / 1 个」（上限只有一个来源）');
-    chk(!/Pro 用户可建|Max 用户可建/.test(freeHint),
-      '真页面：那一行只说现在到哪，不再把三档名额全念一遍（实际「' + freeHint + '」）');
-    chk(!/Free 用户可建/.test(freeHint),
-      '真页面：当前就是 Free，不再重复写一遍「Free 用户可建 1 个」');
-    chk(!wf.document.getElementById('btn-family-add'),
-      '真页面：Free 只剩 0 个时**不摆**「再建一个」（只能建 0 个，那颗键没有意义）');
-
-    const w = openPage('max', true);
-    await wait();
-    eq(w.document.querySelectorAll('.family-row').length, 1, '真页面：Max 也是从 1 个开始');
-    chk(/当前 1 \/ 180 个/.test(w.document.getElementById('family-hint').textContent),
-      '真页面：Max 的上限如实写 180');
-    chk(!/Max 用户可建/.test(w.document.getElementById('family-hint').textContent),
-      '真页面：当前就是 Max，不再重复写一遍「Max 用户可建 180 个」');
-    chk(!!w.document.getElementById('btn-family-add'),
-      '真页面：还有名额时那颗「再建一个」照旧在');
-
-    const u = w.document.getElementById('input-nickname');
-    u.value = '小明';
-    u.dispatchEvent(new w.Event('input', { bubbles: true }));
-    u.dispatchEvent(new w.Event('change', { bubbles: true }));
-    const fam = JSON.parse(w.localStorage.getItem('poem_family_v1'));
-    eq(fam.profiles[0].nickname, '小明', '真页面：昵称写进的是**当前子用户**（昵称属孩子）');
-    chk(!!w.document.getElementById('family-panel').querySelector('.family-row'),
-      '真页面：子用户那一行仍画在页面上（头像搬去「我的」页之后仍要画）');
-    await wait();
-    chk(/小明/.test(w.document.getElementById('family-panel').innerHTML),
-      '真页面：子用户那一行的名字跟着昵称重画（同一个来源）');
-
-    w.document.querySelector('[data-family-rename]').dispatchEvent(new w.Event('click', { bubbles: true }));
-    const rin = w.document.getElementById('family-rename-input');
-    chk(!!rin, '真页面：点「改名」原地长出输入框（不用 prompt()）');
-    if (rin) {
-      rin.value = '小明';
-      rin.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
-      eq(JSON.parse(w.localStorage.getItem('poem_family_v1')).profiles[0].nickname, '小明',
-        '真页面：回车即落盘');
-    }
-
-    w.document.getElementById('btn-family-add').dispatchEvent(new w.Event('click', { bubbles: true }));
-    eq(w.document.querySelectorAll('.family-row').length, 2, '真页面：又建了一个');
-    const ids = Array.from(w.document.querySelectorAll('[data-family-pick]')).map(e => e.dataset.familyPick);
-    eq(JSON.parse(w.localStorage.getItem('poem_family_v1')).at, ids[1],
-      '真页面：新档案建好就**顺手切过去**（不然用户以为没建成功）');
-
-    w.ProgressStore.set('p1', { level: 7 });
-    w.document.querySelector('[data-family-pick="' + ids[0] + '"]')
-      .dispatchEvent(new w.Event('click', { bubbles: true }));
-    await wait();
-    eq(JSON.parse(w.localStorage.getItem('poem_family_v1')).at, ids[0], '真页面：点名字就切过去');
-    eq(JSON.stringify(w.ProgressStore.get('p1')), 'null',
-      '真页面：切到另一个孩子，看到的是**它自己那一份**（小明那份进度是空的）');
-    w.ProgressStore.set('p1', { level: 3 });
-    eq(w.ProgressStore.get('p1').level, 3, '真页面：在这个身份下写的进度读得回来');
-
-    const rows = Array.from(w.document.querySelectorAll('.family-row'));
-    eq(rows.length, 2, '（前置）现在有两个');
-    Array.from(w.document.querySelectorAll('[data-family-remove]')).length &&
-      w.document.querySelector('[data-family-remove]').dispatchEvent(new w.Event('click', { bubbles: true }));
-
-    eq(w.document.querySelectorAll('.family-row').length, 2,
-      '真页面：删除要过 confirm()，用户没确认时**什么都没发生**');
-
-    console.log('');
-    if (fails) { console.log('❌ 家庭子用户测试 ' + fails + ' 项失败'); process.exit(1); }
-    console.log('🎉 家庭子用户测试全部通过');
-    process.exit(0);
-  })();
-}
+console.log('');
+if (fails) { console.log('❌ 家庭子用户测试 ' + fails + ' 项失败'); process.exit(1); }
+console.log('🎉 家庭子用户测试全部通过');

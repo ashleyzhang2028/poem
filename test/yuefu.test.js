@@ -10,7 +10,7 @@
 //      正文只在存储主表落一份）—— 乐府集自己不留第二份正文；
 //   ③ 集子页能读、能搜、能分组，正文由 textRef 取回；
 //   ④ 排序与注册：乐府集排在《唐诗三百首》之前，元曲排在《宋词三百首》之后。
-const { JSDOM } = require('jsdom');
+
 const fs = require('fs');
 const vm = require('vm');
 const path = __dirname + '/../';
@@ -190,67 +190,12 @@ chk(/poem_yuefu_read_v1/.test(read('js/sync-coverage.js')),
   '同步边界总表里有这一把已读键（否则「表外键」那条守卫会红）');
 
 console.log('\n=== 五、集子页：分组渲染、正文取回、按作者搜索 ===');
-const dom = new JSDOM(read('yuefu/index.html'), {
-  runScripts: 'dangerously',
-  url: 'https://local.test/yuefu/'
-});
-const w = dom.window;
-w.scrollTo = function () {};
-const scripts = read('yuefu/index.html').match(/<script src="([^"]+)"><\/script>/g)
-  .map(s => s.match(/src="([^"]+)"/)[1]);
+// ---------------------------------------------------------------------------
+// Issue #278：这一层的**页面层**（jsdom 起页面、挂脚本、渲染分组、点开详情、
+// 搜索框敲字）整段删除 —— 那是界面测试。留下的是数据层：篇目数量 / id / 字段 /
+// 分组口径 / 总索引收录，以及页面脚本顺序这一类**功能接线**的口径。
+// ---------------------------------------------------------------------------
 
-setTimeout(() => {
-  for (const f of scripts) {
-    try {
-      const el = w.document.createElement('script');
-      el.textContent = read(f);
-      w.document.body.appendChild(el);
-    } catch (e) {
-      console.log('✗ 脚本执行失败 ' + f + '：' + e.message);
-      fails++;
-    }
-  }
-  const d = w.document;
-
-  chk(!!w.ReaderEngine, '阅读库引擎已加载');
-  const items = d.querySelectorAll('#gw-list .item');
-  chk(items.length === 103, '列表渲染出 103 条（实际 ' + items.length + '）');
-  chk(/乐府集/.test(d.body.textContent), '页面出现「乐府集」');
-  chk(/卷一 汉魏乐府/.test(d.body.textContent), '卷名「卷一 汉魏乐府」渲染到了页面上');
-  chk(/卷五 乐府歌辞/.test(d.body.textContent), '卷名「卷五 乐府歌辞」渲染到了页面上');
-  chk(!/\[object|undefined/.test(d.querySelector('#gw-list').textContent),
-    '列表文案没有渲染异常（无 undefined / [object]）');
-
-  const api = w.ReaderEngine.current;
-  chk(!!api, '拿到 /yuefu/ 页的挂载实例');
-  if (api) {
-    api.open('yf-17');
-    const rd = d.querySelector('#gw-reader');
-    chk(/木兰诗/.test(rd.querySelector('#rd-title').textContent),
-      '点开《木兰诗》，标题对得上（实际 ' + rd.querySelector('#rd-title').textContent + '）');
-    const strip2 = t => String(t || '').replace(/[a-zāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜüńňǹ·\s]+/gi, '');
-    chk(strip2(rd.querySelector('#rd-text').textContent).indexOf('唧唧复唧唧') >= 0,
-      '正文由 textRef 取回主表那一份（实际「' +
-      strip2(rd.querySelector('#rd-text').textContent).slice(0, 12) + '…」）');
-    chk(strip2(rd.querySelector('#rd-trans-text').textContent).length > 40,
-      '译文同样由主表取回');
-
-    api.setKeyword('曹操');
-    const nCao = d.querySelectorAll('#gw-list .item').length;
-    chk(nCao > 0 && nCao < 103, '按作者「曹操」搜索得到子集（' + nCao + ' 首）');
-
-    api.setKeyword('木兰');
-    chk(d.querySelectorAll('#gw-list .item').length === 1,
-      '搜「木兰」只出《木兰诗》一条');
-    api.setKeyword('');
-
-    chk(d.querySelectorAll('#gw-list .item').length === 103, '清空关键词后回到 103 条');
-  }
-
-  chk(Object.keys(w.localStorage).filter(k => /read_v1/.test(k)).length === 0,
-    '只读不标，页面没有写任何一部的已读键');
-
-  console.log('');
-  console.log(fails === 0 ? '🎉 乐府集测试全部通过' : '❌ 乐府集测试 ' + fails + ' 项失败');
-  process.exit(fails === 0 ? 0 : 1);
-}, 260);
+console.log('');
+console.log(fails ? '❌ ' + fails + ' 项失败' : '🎉 yuefu测试全部通过');
+process.exit(fails ? 1 : 0);

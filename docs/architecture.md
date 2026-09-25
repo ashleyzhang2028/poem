@@ -7974,3 +7974,92 @@ PR #299 的 `cnb/pull_request/pipeline-1(pr-test)` 报了 2 项失败，都在
 
 验证：`bash test/run.sh` 退出码 **0**（全量全绿，含 `test/pwa.test.js`
 真浏览器一节里原先红的那两条）；`sw.js` / 「关于」里的版本号见上，**v201**。
+
+---
+
+### 4.55 测试只留功能验证：界面层整层删除，构建时间从分钟级到十秒内（2026-09-25 · Issue #278）
+
+#### 一、用户的原话与这一轮的唯一目标
+
+> 「所有测试文件，除了功能验证的测试之外，删除尽可能多的其他测试，
+> 特别是界面相关的测试，**我的目的是构建时间变短**。」
+
+这不是「少测一点」，是**换一把尺子**：以前那一圈测试同时在守两件事 ——
+「功能对不对」与「界面长得跟上次一样不一样」。后者是这次要拿掉的那一半。
+
+#### 二、删了什么（整层删除的 24 个文件）
+
+界面测试的共同形状是**jsdom 起真页面 + 挂脚本 + 敲点量**，另外还有一层
+真浏览器。删掉的：
+
+| 类别 | 文件 |
+|---|---|
+| 真浏览器（puppeteer / playwright） | `pwa.test.js`、`auth-browser.test.js`、`pwa-env.js` |
+| UI / 响应式 / 布局 | `ui.test.js`、`ui-consistency.test.js`、`layout.test.js` |
+| 页面结构（一页一个） | `mine-page.test.js`、`settings-nav.test.js`、`plans-page.test.js`、`print-page.test.js`、`poems-page.test.js`、`library-nav.test.js`、`game-page.test.js`、`account-pages.test.js`、`account-bind.test.js`、`account-entry.test.js` |
+| 文案 / 删除守卫 / 样式 | `page-copy.test.js`、`profile-removed.test.js`、`theme.test.js`、`legal.test.js` |
+| 组件层（打印版面、自助排查、人机校验、旧库注册） | `print.test.js`、`self-check.test.js`、`turnstile-slot.test.js`、`register-legacy-db.test.js` |
+| 其余纯界面 | `daily-extra.test.js`、`auto-read.test.js`、`avatar-upload.test.js`、`username.test.js`、`title-seq.test.js`、`truncation.test.js` |
+
+**没有删的层**：数据、算法、接口、存储、同步、判重、注音、权益、配额。
+它们里原先夹着的**页面段**一并摘掉（`classic` / `engine` / `collections` /
+`canonical` / `progress` / `review-models` / `search` / `sync` /
+`cross-device` / `entitlement` / `family` / `helper` / `pinyin-fix` /
+`tangshi` / `songci` / `guwen` / `zhaoming` / `yuanqu` / `yuefu` /
+`jinxiandai`），留下的是同一批文件里的**功能验证节**。
+
+⚠️ 摘页面段时不是「删掉结尾」那么简单：有几处（`collections` / `canonical` /
+`reset`）**本来靠 jsdom 只是要一个 `window` + `localStorage`**，正文里跑的
+全是数据层断言。这些改成 `vm` 沙盒（同一份脚本、同一份 `data/*.js`，
+一个假 `window` 就够）—— 断言一条不减，只是不再起 DOM。
+
+#### 三、顺带把三处**真实的白等**还了回去
+
+删完之后还剩下十几秒，查下来没有一处是「测试写得啰嗦」，全是**真的在等**：
+
+| 处 | 原先 | 现在 | 依据 |
+|---|---|---|---|
+| `test/game.test.js` 出题内核 | 7.1s | 0.7s | `js/quiz.js` 的 `splitLines()` 对同一篇正文被切了十遍（`candidates()` 扫一遍、每个令字又扫一遍）。切分结果只由**正文**决定 ⇒ 按正文缓存。另按「那批篇目」缓存整份 `lines()`。出题内核是纯函数，缓存不改结果 |
+| `test/api.test.js` 口令摘要 | 9.9s | 2.8s | ① `scryptSync` 的 N 在测试里降到 1024（同一份代码、同一条判据、同一串摘要格式；生产默认仍是 16384，另加一条断言单独钉住）；② 发信重试的退避基数 400ms × 3ⁿ 在测试里压到 1ms |
+| `test/pinyin-fix.test.js` 封顶 | 1.16s | 0.07s | 逐条 `add()` 堆满 500 条 = O(n²) 的一千多毫秒。那一段要验的是「上限拦得住」，改成走同一份落盘口径的批量入口 |
+
+⚠️ 进生产的只有两处，且都是**真改进**（不是给测试开后门）：
+`js/quiz.js` 的切分缓存，以及 `api/_lib/config.js` 新增的
+`MAIL_RETRY_BASE_MS` 旋钮（**默认值仍是 400ms**，线上一个字不改；
+留成旋钮是因为「该不该重试 / 最多几次 / 预算怎么算」与「等多久」
+本来就是两件事，后者不该由测试环境说了算）。
+
+#### 四、`test/run.sh` 与 CI
+
+- `test/run.sh` 从「四十几层 + 一次性临时装 jsdom」重写成
+  **23 层、全部纯 Node + vm 沙盒、一个依赖都不装**。
+  每一层前面仍留着「为什么留着它」的一句说明。
+- `.cnb.yml`：`install-deps` 那一条（`npm i jsdom@^26 puppeteer`）**整条删掉**
+  —— 那一步要跑 npm 解析并下一份 Chromium（几百兆，缓存没命中时是分钟级）。
+  push（`main`）与 `pull_request` 两处都删。
+- `image/Dockerfile`：原先装的那一整套 Chrome 系统库
+  （`libnspr4` / `libnss3` / `libgbm` / `libasound2` …）随之删掉，
+  回到「就是 Node 20」—— 冷启动时少一层 `apt-get`。
+- `package.json`：`jsdom`（dependencies）与 `playwright`（devDependencies）
+  不再被任何人 require，一并去掉；两个指向已删文件的 script
+  （`test:pwa` / `test:auth-browser`）也去掉。
+
+#### 五、量出来的数
+
+| | 之前 | 之后 |
+|---|---|---|
+| `bash test/run.sh` | **34s+**（本机、无 jsdom 时；有 jsdom 时更多） | **6.6s** |
+| 前端构建步骤 | `npm i jsdom@^26 puppeteer`（含下一份 Chromium） | **无**（0 依赖） |
+| `image/Dockerfile` 构建 | 一层 `apt-get`（几十兆包） | **无** |
+| 测试文件 | 62 个 | **32 个**（含 `README.md` 与 `master-env.js`；`*.test.js` 31 个） |
+| 断言 | 9705 条 | **4722 条**（留下的都是功能验证） |
+
+⚠️ 有一处**不能只删了就算**：原先 `test/pwa.test.js` 顶出来的是一条
+**真 bug**（滑块几何 / `::placeholder` 的 computed style，jsdom 根本不支持
+量 `::after`）。这一轮删的是**那一层测试**，不是那条结论 —— 相应的样式
+口径仍写在 `css/` 的注释里（`test/run.sh` 顶部那句话也留了出路：
+界面回归改由人点一遍 / 真机验收盯，不再由构建时间替我们盯）。
+
+删掉的层如果哪天想捡回来：`git log --diff-filter=D --name-only` 找得到
+它们最后一次的样子 —— 但**别顺手把 `install-deps` 也捡回来**，
+除非真的重新引界面测试。

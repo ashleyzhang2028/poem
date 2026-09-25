@@ -203,7 +203,7 @@ python3 -m http.server 8080  # 只提供静态页面，不提供账号 API
 ```
 
 python3 scripts/supplement-fonts.py            # 新译文带来的新字补进字体子集
-node test/run.sh                               # 全量测试
+node test/run.sh                               # 测试（只跑功能验证层）
 ```
 
 新增译文往往带来字体里没有的字，不补字体那些字会缺笔画（表现为字被吃掉半边）。
@@ -244,7 +244,7 @@ node scripts/audit-translations.js             # 逐首体检：缺译文 / 过�
 node scripts/tag-translation-source.js --dry   # 看新篇目的来源标注
 node scripts/tag-translation-source.js         # 补上（幂等，只补缺的）
 python3 scripts/supplement-fonts.py            # 新译文带来的新字补进字体子集
-node test/run.sh                               # 全量测试
+node test/run.sh                               # 测试（只跑功能验证层）
 ```
 
 新增译文往往带来字体里没有的字，不补字体那些字会缺笔画（表现为字被吃掉半边）。
@@ -324,27 +324,27 @@ node test/run.sh                               # 全量测试
 ## 测试
 
 ```bash
-bash test/run.sh   # 全部测试（等价于 npm test）
+bash test/run.sh   # 测试（等价于 npm test，只跑功能验证层）
 ```
 
-测试分多层，覆盖调度算法、各页面端到端（jsdom）、数据完整性、主题、注音朗读、法务页、
-服务端 19 条路由（真 http，不联网；线上由 `api/handler.js` **一个函数**收口）、
-头像上传（裸字节 + 客户端压缩裁切）、
-账号接线、权威发放、开通自检等。其中 PWA 一层需要真实浏览器
-（`puppeteer`），未安装则跳过。
+⚠️ **只跑功能验证层**（Issue #278，2026-09-25）：用户要求「除了功能验证的测试之外，
+删除尽可能多的其他测试，特别是界面相关的测试，我的目的是构建时间变短」。
+原先那些 jsdom 起真页面（渲染 / 点击 / 量矩形 / 扫样式 / 扫源码里有没有某句话）
+与真浏览器（`puppeteer` 跑 PWA）的层**整层删除**，连同留下的层里夹着的页面段。
 
-依赖装法：`jsdom` 与 `puppeteer` 都用 `--no-save` 临时装，**务必一条命令一起装**（分两条时后一条会清掉前一条），并锁住 jsdom 大版本：
+所以现在这一圈是**纯 Node + vm 沙盒**，覆盖调度算法、四张复习模型的公式、
+课内与七部集子的数据完整性、判重与正文收归主表、自选集合与配额、注音内核与勘误、
+账号与随机码认证、权益分层、头像、服务端 19 条路由（真 http，不联网；
+线上由 `api/handler.js` **一个函数**收口）、跨设备同步与分档案、家庭子用户、
+整体导出、出题内核、用户报告、开通自检。
 
-```bash
-npm i jsdom@^26 puppeteer --no-save --no-fund --no-audit
-```
+**一个依赖都不用装**（`jsdom` / `puppeteer` / `playwright` 都已从 `package.json`
+与 CI 里去掉）。本机 `bash test/run.sh` 约 **6.6 秒**。
 
-单独运行 PWA 测试（需先起服务）：
-
-```bash
-node scripts/serve.js &
-node test/pwa.test.js
-```
+界面回归改由**人点一遍**（`npm start` 起本地服务）或真机验收盯 ——
+不再由构建时间替我们盯。要捡回某一层：`git log --diff-filter=D --name-only`
+找得到它最后一次的样子（但别顺手把 CI 里的 `install-deps` 也捡回来，
+除非真的重新引界面测试）。
 
 ## 数据与隐私
 

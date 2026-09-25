@@ -220,7 +220,9 @@ function withRetry(cfg, attempt) {
         return { failed: e, attempts: attempts, gaveUp: true };
       }
 
-      var wait = Math.round(400 * Math.pow(3, attempts - 1) * (0.7 + Math.random() * 0.6));
+      var base = Number(cfg.mailRetryBaseMs);
+      if (!isFinite(base) || base <= 0) base = 400;
+      var wait = Math.round(base * Math.pow(3, attempts - 1) * (0.7 + Math.random() * 0.6));
       if (wait > left) wait = Math.max(0, left - 50);
       return sleep(wait).then(once);
     });
