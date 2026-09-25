@@ -1671,18 +1671,53 @@ body.has-install-tip #app {
 
 .settings-about .kv-list { padding: 0 2px; }
 
+/* ---- 一行一条的「键 · 值」列表（Issue #329）------------------------------
+   .kv-list 出现在「我的」页（本机数据 / 账号 / 关于）与「设置 · 关于」，
+   一律「一个 .kv-list 就是一块表」，拼在一张卡片里的多个 .kv-list 之间
+   垫一条同样的分隔线 —— 从前只有块内的行有 .kv-row:nth-child 那条线，
+   块的最后一行（:last-child）被抹掉，于是同一张卡片里
+     「离线缓存」（块尾）没线、「用户对比」（下一块首行）有线，
+   看着就像「有的有底线有的没有」。 */
+.kv-list + .kv-list {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--line-2);
+}
+
 .kv-list { margin: 0; }
 .kv-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  box-sizing: border-box;
 
-  min-height: 42px;
-  padding: 0;
+  min-height: var(--kv-row-h, 42px);
+  padding: var(--kv-row-pad-y, 0) 0;
   font-size: 13px;
   border-bottom: 1px solid var(--line-2);
 }
+
+/* ⚠️ 行高会变的这一族（Issue #329）：
+   左边若是 <a>（.kv-k a 自带 min-height:30px），行里最高的一节就有 30px，
+   右边那节只有文字本身（约 20.8px）——align-items: center 是把**各自**的
+   内容盒在行内居中，两节高度不同就各自居中，一块表格里掺上几行这样的，
+   行高与基线就一高一低。所以：
+     · 行盒用「上下等 paddding + min-height」而不是光写 min-height，
+       任何一行都被撑到同样的高度，两条分隔线之间也等距；
+     · 行里的每一节都拉满行高（align-self: stretch + 自己再居中），
+       左右两节因此共享同一条中线，也与上下两条线等距。 */
+.kv-list .kv-row { min-height: var(--kv-row-h, 42px); }
+.kv-row > .kv-k,
+.kv-row > .kv-v {
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  min-height: var(--kv-row-h, 42px);
+
+  line-height: 1.5;
+}
+.kv-row > .kv-v { justify-content: flex-end; }
 .kv-row:last-child { border-bottom: none; }
 
 .kv-k { color: var(--ink-2); flex: none; }
