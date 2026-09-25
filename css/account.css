@@ -28,6 +28,22 @@ body[data-nav="admin"] .account-page,
   min-height: calc(100 * var(--app-vh) - 118px);
 }
 
+/* ⚠️ 上面那 118px 是「顶栏 + 页边距」的老估值 —— 写死它的那一天底栏还是
+   0（`--nav-h` 的初值）。而今天底栏是**实测**的（`js/pwa.js` 的
+   `syncBottomGap()` 把量出来的高度写进 `--nav-h`；手机上一颗图标的底栏
+   约 56px）。于是这一页比「屏幕上那一片可视区」高出整整一条底栏：
+   往下居中的卡片因此比屏幕正中低半条底栏，看着贴向屏幕底
+   （Issue #320 原话：「这张卡片在屏幕中怎么显示得那么往下？」）。
+   把真实底栏高度减掉 —— 减掉的量跟着底栏走，底栏多高就减多少。 */
+body[data-nav="login"] .account-page,
+body[data-nav="reset"] .account-page,
+body[data-nav="verify"] .account-page,
+body[data-nav="admin"] .account-page,
+#login-page {
+  min-height: calc(100vh - 118px - var(--nav-h, 0px));
+  min-height: calc(100 * var(--app-vh) - 118px - var(--nav-h, 0px));
+}
+
 /* 一页只有**一张卡**（登录 / 重设 / 验证）时才往下居中；后台那类一页好几张的
    交由普通流从上往下排 —— 每张都居中会让卡片之间张出几十上百像素（Issue #319）。 */
 body[data-nav="login"] .account-page > .account-card:only-of-type,
@@ -46,6 +62,14 @@ body[data-nav="verify"] .account-page > .account-card:only-of-type,
    `:has` 认的是「页面里有没有这一张」，与「现在看得见几张」不是一回事，
    于是「主人打开这一页」时它也会跟着命中，把一页四张卡也从中间分成两半。
    `min-height: 0` 同理——本来就不想让它撑满一屏。 */
+/* ⚠️ 这一页的「居中」全靠 `margin-top: auto` 一处 —— 兜底那条
+   `margin-bottom: auto` 在这里**等于 0**（一页四张卡的位置被
+   `margin: auto` 收成 0，这是 Issue #319 的裁定）。
+   于是卡片落在「`顶栏底`与`页面底`的正中」，而「页面底」在**底栏下面**：
+   比屏幕正中低半条底栏（手机上一颗图标的底栏约 56px → 约 28px）。
+   Issue #320 的原话就是这个：「这张卡片在屏幕中怎么显示得那么往下？」
+   修的方式在上面那两条 `min-height` 里 —— 把真实底栏高度减掉，
+   让「页面底」回到屏幕上那一片可视区的底，居中就落回屏幕正中了。 */
 body[data-nav="admin"] .account-page > #deny-card:not([hidden]) {
   margin-top: auto;
   margin-bottom: auto;
