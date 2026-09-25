@@ -37,9 +37,8 @@ FULL_BOOKS.forEach(b => { FULL_BOOK_SET[b] = true; });
 
 const multiEntries = MASTER.filter(m => m.entries.length >= 2);
 const singleEntries = MASTER.filter(m => m.entries.length === 1);
-chk(multiEntries.length === 124,
-  '主表里有 124 条「跨集重复」的作品（乐府集与课内 / 其余集子重篇 + main 长文补全带来的同篇，Issue #244；' +
-  '再加成语故事与课内、唐诗本身的同篇 6 条，Issue #308；实际 ' +
+chk(multiEntries.length === 142,
+  '主表里有 142 条「跨集重复」的作品（乐府集与课内 / 其余集子重篇 + 成语故事原文与古文 / 诗篇同篇，Issue #244 / #308；实际 ' +
   multiEntries.length + '）');
 const fullExpected = [];
 FULL_BOOKS.forEach(book => {
@@ -68,10 +67,14 @@ chk(MASTER.every(m => m.text && m.translation),
 const noCourse = multiEntries.filter(m => m.id.indexOf('poems-') !== 0);
 chk(noCourse.every(m => m.entries.every(e => e.indexOf('poems-') !== 0)),
   '主条目不是课内条目的那些，entries 里也确实没有课内条目（不该有人放着课内不用）');
-chk(noCourse.every(m => m.id === WI.repOf(m.entries[0])) &&
-  noCourse.every(m => m.entries.indexOf(m.id) >= 0),
-  '没有课内可比时，主条目就是 data/works-index.js 认的那一条（排序口径同源；' +
-  noCourse.length + ' 篇，是唐诗 ↔ 乐府集、成语 ↔ 唐诗等跨集重篇）');
+const rankOf = e => (e.indexOf('chengyu-') === 0 ? 2 : 1);
+chk(noCourse.every(m => {
+  const r = rankOf(m.id);
+  return m.entries.every(e => rankOf(e) > r || (rankOf(e) === r && m.id <= e));
+}),
+  '没有课内可比时，主条目取「出处集子优先于成语故事、同档取 id 最小」那一条' +
+  '（与 works-index 的排序口径一致；' +
+  noCourse.length + ' 篇，多是唐诗 ↔ 乐府集、古文 ↔ 成语故事的重篇）');
 chk(multiEntries.filter(m => m.id.indexOf('poems-') === 0).length === multiEntries.length - noCourse.length,
   '其余 ' + (multiEntries.length - noCourse.length) + ' 篇的主条目都是课内条目（教材口径优先）');
 
@@ -147,9 +150,8 @@ const uncovered = dupEntries.filter(e => !covered[e]);
 chk(uncovered.length === 0,
   '「同篇判重键下有两条及以上」的条目共 ' + dupEntries.length + ' 条，全部收进了主表（未收：' +
   (uncovered.slice(0, 6).join('、') || '无') + '）');
-chk(dupEntries.length === 264,
-  '重复条目恰为 264 条（124 篇：多数 × 2，少数 × 3；乐府集收进来的一批重篇 + main 长文补全同篇，Issue #244；' +
-  '成语故事与课内 / 唐诗重篇再加 6 篇，Issue #308；实际 ' +
+chk(dupEntries.length === 303,
+  '重复条目恰为 303 条（142 篇：多数 × 2，少数 × 3 或 4；乐府集与成语故事收进来的一批重篇，Issue #244 / #308；实际 ' +
   dupEntries.length + '）');
 
 const expectFlat = dupEntries.slice();
@@ -186,7 +188,7 @@ chk(masterFlat.every(id => byId[id] && !byId[id].isBook),
   '主表登记的每一条都是站点索引里的真实篇目（不是书本身、不是拼错的 id）');
 
 chk(FULL_BOOKS.every(b => sb.SITE_INDEX.some(p => p.book === b)),
-  'FULL_BOOKS 点名的七部在站点索引里都在册（实际：' +
+  'FULL_BOOKS 点名的各部在站点索引里都在册（实际：' +
   FULL_BOOKS.filter(b => !sb.SITE_INDEX.some(p => p.book === b)).join('、') + '）');
 
 const BOOK_VARS = {

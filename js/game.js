@@ -68,7 +68,8 @@
     { file: "data/poems-zhaoming.js", v: "POEMS_ZHAOMING" },
     { file: "data/poems-yuanqu.js",  v: "POEMS_YUANQU" },
     { file: "data/poems-yuefu.js",   v: "POEMS_YUEFU" },
-    { file: "data/poems-jinxiandai.js", v: "POEMS_JINXIANDAI" }
+    { file: "data/poems-jinxiandai.js", v: "POEMS_JINXIANDAI" },
+    { file: "data/poems-chengyu.js", v: "POEMS_CHENGYU" }
   ];
 
   var LOAD_TIMEOUT_MS = 8000;

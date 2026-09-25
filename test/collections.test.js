@@ -15,7 +15,7 @@ const DATA = [
   'data/poems-11.js', 'data/poems-12.js', 'data/index.js', 'data/poems-classic.js',
   'data/poems-yuefu.js',
   'data/poems-tangshi.js', 'data/poems-songci.js', 'data/poems-guwen.js', 'data/poems-zhaoming.js', 'data/poems-yuanqu.js',
-  'data/poems-yuefu.js', 'data/poems-jinxiandai.js',
+  'data/poems-yuefu.js', 'data/poems-jinxiandai.js', 'data/poems-chengyu.js',
   'data/site-index.js', 'data/works-map.js', 'data/works-index.js'
 ];
 

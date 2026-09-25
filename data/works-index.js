@@ -10,6 +10,14 @@
 
   var COURSE_BOOK = "poems";
 
+  var BOOK_RANK = { poems: 0, chengyu: 2 };
+  var DEFAULT_RANK = 1;
+
+  function rankOf(entryId) {
+    var b = bookOf(entryId);
+    return BOOK_RANK[b] == null ? DEFAULT_RANK : BOOK_RANK[b];
+  }
+
   function bookOf(entryId) {
     return String(entryId || "").split("-")[0];
   }
@@ -95,7 +103,14 @@
       for (var i = 0; i < w.entries.length; i++) {
         if (bookOf(w.entries[i]) === COURSE_BOOK) return w.entries[i];
       }
-      return w.entries.indexOf(entryId) >= 0 ? entryId : w.entries[0];
+      var best = null;
+      for (var j = 0; j < w.entries.length; j++) {
+        var e = w.entries[j];
+        if (best == null) { best = e; continue; }
+        if (rankOf(e) < rankOf(best)) { best = e; continue; }
+        if (rankOf(e) === rankOf(best) && e < best) best = e;
+      }
+      return best;
     },
 
     rebuild: function (index) {
