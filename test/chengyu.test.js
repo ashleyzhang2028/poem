@@ -16,8 +16,8 @@ loadData(sandbox, ['data/poems-1.js', 'data/poems-2.js', 'data/poems-3.js', 'dat
   'data/index.js', 'data/poems-chengyu.js', 'data/poems-classic.js', 'data/site-index.js']);
 
 const CY = resolve(sandbox, sandbox.POEMS_CHENGYU, 'chengyu');
-chk(Array.isArray(CY) && CY.length === 735,
-  '中华成语故事共 735 则（第二批 143 则里 9 则并入古文 / 诗篇条目：309 - 9 + 435 = 735；' +
+chk(Array.isArray(CY) && CY.length === 736,
+  '中华成语故事共 736 则（第二批 143 则里 9 则并入古文 / 诗篇条目：309 - 9 + 435 + 1 = 736；' +
   '实际 ' + (CY ? CY.length : 'undefined') + '）');
 
 const ids = new Set();
@@ -165,7 +165,7 @@ Object.keys(bookRule).forEach(t => {
 
 const IDX = sandbox.SITE_INDEX;
 const cyIdx = IDX.filter(x => x.book === 'chengyu' && !x.isBook);
-chk(cyIdx.length === 735, '总索引收了全部 735 则（实际 ' + cyIdx.length + '）');
+chk(cyIdx.length === 736, '总索引收了全部 736 则（实际 ' + cyIdx.length + '）');
 chk(cyIdx.every(x => x.text && x.translation), '进索引的每一则原文与译文齐备');
 chk(IDX.some(x => x.book === 'chengyu' && x.isBook),
   '「中华成语故事」本身也作为一条结果（搜集子名能直接进那一页）');

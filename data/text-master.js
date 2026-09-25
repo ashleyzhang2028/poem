@@ -6129,6 +6129,15 @@ window.TEXT_MASTER = [
     translationSource: "public-domain"
   },
   {
+    work: "w-chengyu-cy-736",
+    id: "chengyu-cy-736",
+    title: "人浮于事",
+    entries: ["chengyu-cy-736"],
+    text: "故君子与其使食浮于人也，宁使人浮于食。",
+    translation: "所以君子与其让俸禄超过自己的才能，宁可让自己的才能超过俸禄。",
+    translationSource: "public-domain"
+  },
+  {
     work: "w-chengyu-cy-74",
     id: "chengyu-cy-74",
     title: "食言而肥",
