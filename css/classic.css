@@ -99,9 +99,9 @@
         右侧那排「全部 / 未读」也读它（经 `--seg-mini-font`），「同字号」于是
         是同一条规则、不是两条规则碰巧相等；
       · `--search-placeholder-shift` —— **由算式现算**，不是挑出来的数。
-        ⚠️ 它跟着输入字号走（700px 及以下输入字号 16px → -1.9，其上 14px → -0.65）：
-           原先 :root 写死 -0.65（那是 14px 那一档的结果），手机上就再也对不上，
-           2026-09-25 的 CI 红的就是这一条（量出来 1.9 / 期望 0.65）。
+        ⚠️ 它跟着输入字号走（700px 及以下输入字号 16px → 1.9，其上 14px → 0.65）：
+           原先 :root 写死一个数（-0.65 是 14px 那一档、-1.5 是 16px 那一档量出来的
+           折中），一档对了另一档就必然错 —— 2026-09-25 的 CI 两次红的都是这一条。
    原先这里写 12.5px，理由是「与右侧『全部 / 未读』同号」——那个理由说的是
    索引页那一排 40px 的工具栏（旁边真有一排 12.5px 的控件），而搜索页 hero 与
    首页「今日加背」都不是那一排：前者的覆写被 `.search-hero` 那条顶掉，
@@ -114,7 +114,7 @@
 .search-input::placeholder {
   font-size: var(--search-placeholder-font, 13.5px);
 
-  transform: translateY(var(--search-placeholder-shift, -0.65px));
+  transform: translateY(var(--search-placeholder-shift, -1.5px));
 }
 
 .search-input:focus {

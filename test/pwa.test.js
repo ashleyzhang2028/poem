@@ -663,9 +663,19 @@ function check(name, cond, extra) {
         seg: getComputedStyle(seg).fontSize
       };
     });
-    check('iPhone: 搜索框提示字与「全部 / 未读」同字号',
-      fsState.placeholder === fsState.seg,
-      '提示字 ' + fsState.placeholder + ' / 全部·未读 ' + fsState.seg);
+    // ⚠️ 这一条**整条换了口径**（Issue #278 第八轮）：原先守的是
+    //    「提示字与右侧『全部 / 未读』同字号」—— 可那个理由说的是**索引页那一排
+    //    40px 的工具栏**（旁边真有一排 12.5px 的控件），而 52px 的搜索页 hero /
+    //    首页「今日加背」都不是那一排。用户 2026-09-25 要的是「两枚框逐项一致」，
+    //    于是一排控件与一枚搜索框之间不再要求同号。
+    //    现在改守**那一处真正的口径**：提示字比输入文字小一号（辅助文字不抢眼），
+    //    且等于 :root 那一个来源（全站四个搜索框共用一个数）。
+    check('iPhone: 搜索框提示字比输入文字小一号、且走全站那一个来源',
+      parseFloat(fsState.placeholder) < parseFloat(fsState.input) &&
+      fsState.placeholder === '13.5px',
+      '提示字 ' + fsState.placeholder + ' / 输入文字 ' + fsState.input +
+      '；⚠️ 不再要求与「全部 / 未读」(' + fsState.seg + ') 同号 —— ' +
+      '那是索引页那排 40px 控件的事（Issue #278 第八轮）');
     check('iPhone: 输入文字仍是 16px（压小会触发 iOS 聚焦放大整页）',
       fsState.input === '16px', fsState.input);
     check('iPhone: 圆键的 ▶ / ⏸ 互斥，一次只显示一个',
@@ -1267,6 +1277,9 @@ function check(name, cond, extra) {
       segRule !== null && /var\(--search-placeholder-font/.test(segRule) &&
       segState.ph === segState.phVar && segState.seg === segState.phVar,
       JSON.stringify([segState.ph, segState.seg, segState.phVar, segRule]));
+    // ⚠️ 位移那条不在这里写死某个数（Issue #278 第八轮 §4.53 曾写死 -1.5，第九轮又红）：
+    //    它是**跟着输入字号现算**的，具体几由下面那条「按 CSS 现算」的断言判，
+    //    以及再往后那条「位移是算式、手机上确实被重算过」的断言盯着来源（见 §4.54）。
     // ⚠️ 口径改过一次（Issue #278 第七轮）：用户 2026-09-24 要
     //    「搜索页搜索框上下 padding 或者行高需要小 4px 左右」，所以这一条
     //    原先守的「上下 padding 必须是 0、行高必须是 normal」不再是口径。
@@ -1279,22 +1292,23 @@ function check(name, cond, extra) {
       const inp = document.querySelector('.search-input');
       const cs = getComputedStyle(inp);
       const ph = getComputedStyle(inp, '::placeholder');
-      const font = parseFloat(cs.fontSize);
-      const phFont = parseFloat(ph.fontSize);
       const m = /matrix\(1, 0, 0, 1, 0, (-?[\d.]+)\)/.exec(ph.transform);
       const phShift = m ? +parseFloat(m[1]).toFixed(2) : 0;
       const lh = parseFloat(cs.lineHeight);
       // ⚠️ 行高比从 CSS 读（`--search-input-lh-ratio: 1.25`），不在这里再写
       //    一个 1.25 —— 改了行高而没改位移时，这条要跟着一起变。
+      //    提示字的行盒仍按 UA 的 `normal` ≈ 字号 × 1.2 估（§4.53 记过它「不读行高」），
+      //    这条守的是「行高与位移没脱钩」；真正判「这一档对不对」的是下面两条。
       const ratio = parseFloat(
         getComputedStyle(document.documentElement)
           .getPropertyValue('--search-input-lh-ratio')) || 1.25;
       return {
         font: cs.fontSize, lh: cs.lineHeight,
-        lm: +(lh - font * ratio).toFixed(2),
+        inputBox: lh, phBox: +(parseFloat(ph.fontSize) * 1.2).toFixed(2),
+        lm: +(lh - parseFloat(cs.fontSize) * ratio).toFixed(2),
         phShift: phShift,
-        expectShift: +((font * ratio - phFont * 1.2) / -2).toFixed(2),
-        fontPx: font, phFontPx: phFont,
+        expectShift: +((parseFloat(cs.fontSize) * ratio - parseFloat(ph.fontSize) * 1.2) / -2).toFixed(2),
+        fontPx: parseFloat(cs.fontSize), phFontPx: parseFloat(ph.fontSize),
         padTop: cs.paddingTop, padBottom: cs.paddingBottom
       };
     });
@@ -1310,11 +1324,12 @@ function check(name, cond, extra) {
       Math.abs(leadProbe.phShift - leadProbe.expectShift) <= 0.15,
       '提示字位移 ' + leadProbe.phShift + ' / 该是 ' + leadProbe.expectShift +
       '（= 两档**行盒**中心差的一半，行盒各乘 1.2，行高 ' + leadProbe.lh + '）');
-    // ⚠️ **再核一遍位移的来源**（Issue #278 第八轮 · 2026-09-25 CI 修）。
+    // ⚠️ **再核一遍位移的来源**（Issue #278 第八轮 · 2026-09-25 CI 修，见 §4.54）。
     //    上面那条比的是「量到的位移 vs 由**行高**现算的期望」，两边都由
-    //    浏览器里的实数出 —— 它在 :root 写死 -0.65 时也会**绿**（那一档的
-    //    期望正好是 0.65），却在手机上错：393×852 的输入字号是 16px，
-    //    行盒 20，位移该是 1.9。上一轮就是这样漏过去的。
+    //    浏览器里的实数出 —— 它在 :root 写死某一个数时也会**绿**（那一档的
+    //    期望正好相等），却在另一档上错：393×852 的输入字号是 16px，
+    //    行盒 20，位移该是 1.9；1280px 那一档该是 0.65。
+    //    §4.53 那版写死 -1.5 就是栽在这里（它只在手机档上「差不多」）。
     //    所以这一条盯的是那件事本身：位移变量**是由字号算式现算的**，
     //    不是手写的一个数 —— 「今天对不对」不靠记，靠它算不算得出来。
     const shiftSrc = await page.evaluate(() => {
