@@ -36,7 +36,13 @@
     // （「发送验证码」「验证并登录」），两件事混用会让人以为要去再输一次验证码。
     E_EMAIL_UNVERIFIED: "邮箱还没确认：请打开验证邮件里的链接，点开即完成确认并登录。",
 
-    E_TURNSTILE: "人机校验没通过，请刷新页面再试一次"
+    E_TURNSTILE: "人机校验没通过，请刷新页面再试一次",
+
+    // 请求本身不合法（服务端回 400 E_BAD_BODY）。这一条要说「这一发没送对」，
+    // 不能说成「服务端出了点问题」—— 后者会让人以为是自己运气不好，
+    // 反复重试同一个坏请求（Issue #276 后续：线上就是这么表现的）。
+    E_BAD_BODY: "这一发请求没能被服务端读懂，请刷新页面重试。",
+    E_METHOD: "这一发请求的方式不对，请刷新页面重试。"
   };
 
   var AVATAR_ERR = {
@@ -56,7 +62,9 @@
     E_NOT_CONFIGURED: "这台服务器还没开放云端账号，暂时不能注册或改密码",
     E_OFFLINE: "无法连接服务器，请检查网络后重试。",
     E_TIMEOUT: "服务器响应超时，请稍后重试。",
-    E_INTERNAL: "服务暂时不可用，请稍后重试。"
+    E_INTERNAL: "服务暂时不可用，请稍后重试。",
+    E_BAD_BODY: "这一发请求没能被服务端读懂，请刷新页面重试。",
+    E_METHOD: "这一发请求的方式不对，请刷新页面重试。"
   };
 
   function messageOf(code, fallback) {
@@ -139,8 +147,14 @@
           var data = null;
           try { data = text ? JSON.parse(text) : null; } catch (e) { data = null; }
           if (!data || typeof data !== "object") {
-            state.lastError = "E_INTERNAL";
-            return { ok: false, code: "E_INTERNAL", message: em("E_INTERNAL"), status: res.status };
+            // 非 JSON 响应：4xx 多半是「这一发没送对」（平台层直接回的纯文本 /
+            // 网关页面），5xx 才是「服务端出了点问题」。原先一律回 E_INTERNAL，
+            // 于是**收到一个 400 也会显示「服务暂时不可用」** —— 一句话说错，
+            // 用户就去反复重试同一个坏请求了。
+            var soft = res.status >= 400 && res.status < 500;
+            var softCode = soft ? "E_BAD_BODY" : "E_INTERNAL";
+            state.lastError = softCode;
+            return { ok: false, code: softCode, message: em(softCode), status: res.status };
           }
 
           if (res.status === 503 || data.code === "E_NOT_CONFIGURED") {

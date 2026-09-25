@@ -3547,6 +3547,127 @@ async function main() {
     }
   }
 
+  // -------------------------------------------------------------------------
+  // 第廿七节：正文读不动时**不许挂起**（Issue #276 后续 · 线上实测那一档）
+  // -------------------------------------------------------------------------
+  // 用户原话：「登录 验证 等总出现服务暂不可用，请检查问题并修复」。
+  //
+  // 查出来的链路（对着线上 kuibu.app 实测，2026-09-24）：
+  //   curl -X POST .../api/reset-request -H 'Content-Type: application/json' -d 'oops'
+  //     → HTTP 500 {"code":"E_INTERNAL",...}
+  //   前端 js/auth-api.js 把 500 翻成「**服务暂时不可用，请稍后重试。**」
+  //
+  // 病根（`api/_lib/http.js` 的 readBody）：Vercel 的 Node 运行时面对
+  // `Content-Type: application/json` 会**先自己读一遍请求流**。正文不是合法
+  // JSON 时它把流读空、又不往 `req.body` 放东西，于是我们挂的那两个监听器
+  // （data / end）一个都不触发 —— Promise 永不 resolve，函数被平台判超时。
+  //
+  // 这一节守三条：
+  //   ① 流已经被读完（`readableEnded` / `complete`）时，readBody **立刻**给结论，不等；
+  //   ② 平台递来的原始字节（string / Buffer）**自己解一遍**，不许当成
+  //      「已经解析好的对象」直接放行（那会让每个参数悄悄变空值）；
+  //   ③ 结论不许说成「服务端出了点问题」—— 那是「这一发没被读懂」，
+  //      服务端如实回 400 E_BAD_BODY，前端如实说这句。
+  {
+    boot({ ALLOW_CODE_ECHO: "1" });
+    const H = require("../api/_lib/http.js");
+    const entry = require("../api/handler.js");
+
+    // ① 流已读完：必须**同步**给出结论，不能挂起。
+    //    ⚠️ 用普通对象而不是真的 Readable：`readableEnded` 在 Node 的流上是
+    //        **只读位**，赋值会抛 TypeError。这里要的正是「平台告诉我们它读完了」
+    //        这件事，形状对得上就够（真流那一路由 ③ 端到端覆盖）。
+    {
+      const consumed = { headers: {}, readableEnded: true, complete: true };
+      const t0 = Date.now();
+      const got = await Promise.race([
+        H.readBody(consumed),
+        new Promise(r => setTimeout(() => r("__HUNG__"), 1000))
+      ]);
+      chk(got !== "__HUNG__", "① 流已被读完时 readBody **不挂起**（它必须当场给结论，实际耗时 " + (Date.now() - t0) + "ms）");
+      eq(JSON.stringify(got), "{}", "① 没有正文可读时如实回空对象（与「客户端本来就没发正文」同一档）");
+
+      // 真·流：把内容推完、让 end 自己触发（这一路本来就该走通的）
+      const { Readable } = require("stream");
+      const real = new Readable({ read() {} });
+      real.headers = {};
+      real.push(Buffer.from('{"email":"a@b.com"}'));
+      real.push(null);
+      await new Promise(r => setImmediate(r));
+      const gotReal = await H.readBody(real);
+      eq(gotReal && gotReal.email, "a@b.com", "① 正常的流照旧读得出来（新判据不许误伤这一路）");
+    }
+
+    // ② 平台递来的原始字节：自己解，不许当成对象
+    {
+      const asString = await H.readBody({ headers: {}, body: '{"email":"a@b.com"}' });
+      eq(asString && asString.email, "a@b.com", "② req.body 是 JSON 字符串时解得出来");
+
+      const asBuffer = await H.readBody({ headers: {}, body: Buffer.from('{"email":"a@b.com"}') });
+      eq(asBuffer && asBuffer.email, "a@b.com",
+        "② req.body 是 **Buffer** 时也解得出来（当成对象放行的话每个参数都会静默变成空值）");
+
+      const badString = await H.readBody({ headers: {}, body: "oops" });
+      eq(badString, null, "② 解不出来的字符串回 null（由 handler 如实回 400 E_BAD_BODY）");
+
+      const badBuffer = await H.readBody({ headers: {}, body: Buffer.from("oops") });
+      eq(badBuffer, null, "② 解不出来的 Buffer 同样回 null");
+    }
+
+    // ③ 端到端：模拟「平台已经把流读空」这一档，POST /api/* 必须当场回 400，不是 500
+    {
+      const server = http.createServer((req, res) => {
+        // 模拟 Vercel：先把流读空，然后不设 req.body，再交给我们的函数。
+        // ⚠️ 真流的 `readableEnded` / `complete` 是只读位，读完自然为 true，
+        //    所以这里**不赋值**（`req.complete` 由 Node 在收到完整请求时置位）。
+        req.on("data", () => {});
+        req.on("end", () => entry(req, res));
+      });
+      await new Promise(r => server.listen(0, "127.0.0.1", r));
+      const port = server.address().port;
+
+      const post = (p, body) => new Promise(resolve => {
+        const r = http.request({
+          host: "127.0.0.1", port: port, method: "POST", path: p,
+          headers: { "Content-Type": "application/json" }
+        }, res => {
+          let t = "";
+          res.on("data", d => { t += d; });
+          res.on("end", () => resolve({ status: res.statusCode, raw: t }));
+        });
+        r.setTimeout(12000, () => { r.destroy(new Error("timeout")); });
+        r.on("error", e => resolve({ status: 0, raw: String(e && e.message) }));
+        r.end(body);
+      });
+
+      for (const p of ["/api/reset-request", "/api/register", "/api/login", "/api/send-code"]) {
+        const r = await post(p, '{"email":"a@b.com"}{"b":2}');
+        chk(r.status !== 0, "③ 流被读空时 " + p + " **不挂起**（没有超时）");
+        chk(r.status !== 500, "③ " + p + " 不许回 500 —— 「这一发没读懂」不是「服务端出了点问题」（实际 " + r.status + "）");
+        chk(r.status === 400 || r.status === 401 || r.status === 403 || r.status === 429,
+          "③ " + p + " 如实回一个 4xx（实际 " + r.status + "）");
+      }
+      await new Promise(r => server.close(r));
+    }
+
+    // 前端文案：400 不许说成「服务暂时不可用」
+    {
+      const api = require("../js/auth-api.js");
+      eq(api.messageOf("E_BAD_BODY"), "这一发请求没能被服务端读懂，请刷新页面重试。",
+        "③ 前端认识 E_BAD_BODY，并且说的是「这一发没读懂」而不是「服务暂不可用」");
+      chk(api.TRANSPORT_ERR.E_BAD_BODY !== api.TRANSPORT_ERR.E_INTERNAL,
+        "③ E_BAD_BODY 与 E_INTERNAL 是两句不同的话（原先前者根本没有，用户只会看到后者）");
+      chk(api.PASSWORD_ERR.E_BAD_BODY, "③ 口令那几屏（PASSWORD_ERR）也有这一句，不说假话");
+
+      const src = fs.readFileSync(path.join(ROOT, "js/auth-api.js"), "utf8");
+      chk(/res\.status >= 400 && res\.status < 400 \+ 100/.test(src) || /res\.status >= 400 && res\.status < 500/.test(src),
+        "③ 非 JSON 响应按状态码分档：4xx 说「这一发没送对」，只有 5xx 才说「服务暂时不可用」");
+
+      const hSrc = fs.readFileSync(path.join(ROOT, "api/_lib/handler.js"), "utf8");
+      chk(/BODY_TIMEOUT/.test(hSrc), "③ handler 里有一道读正文的**硬上限**（以后谁改坏了 readBody 也不会挂死函数）");
+    }
+  }
+
   console.log(fails === 0 ? "\n🎉 服务端账号接口测试全部通过" : "\n❌ " + fails + " 项失败");
   process.exit(fails ? 1 : 0);
 }
