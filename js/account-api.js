@@ -449,9 +449,25 @@
       })["catch"](function () { return { ok: false, reason: REASON.UNAVAILABLE, code: "E_OFFLINE" }; });
     }
 
+    // 「我报过的」——**直接问服务端**（Issue #327）。
+    //
+    // ⚠️ 这里原先挡着一道 `if (!signedIn())`。它是本机与服务端**两份登录状态**
+    //    打架留下的：服务端刚登录的人，本机那份缓存常常还没热（`/api/me` 那一发
+    //    还在路上），于是同一次进入「我的报告」会先被判成游客 —— 用户看到的就是
+    //    「登录后才能报告」「本机的（服务端暂时读不到）」「还没有报过」三句
+    //    与事实不符的话，点一下刷新又好了。
+    //
+    // 现在的纪律：**报过的错都在服务器上**（本机那份只是发不出去时的存稿），
+    // 所以这一页只问服务端，不用任何本机判据当门。
+    // 服务端回 401（`E_NO_SESSION`）才是真的没登录，那一条如实回 `GUEST`，
+    // 由页面说「登录后才能报告」。
+    //
+    // ⚠️ `reason === GUEST` 这个出口有两层意思，调用方要分清：
+    //    ① 服务端明确回 401 —— 真没登录；
+    //    ② 连不上 / 没配服务端 —— **不能**据此说人家没登录，只能说读不到。
+    //    靠 `code` 分：401 那一档 `code === "E_NO_SESSION"`。
     function myReports(input) {
       var o = input || {};
-      if (!signedIn()) return Promise.resolve({ ok: false, reason: REASON.GUEST, code: "E_NO_SESSION" });
       var ch = usable(D.api) || (D.make ? safeCreate(D.make) : null);
       if (!ch || typeof ch.myReports !== "function") {
         return Promise.resolve({ ok: false, reason: REASON_NO_CHANNEL, code: "E_NO_CHANNEL" });

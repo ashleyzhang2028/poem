@@ -112,7 +112,15 @@ async function serverLogin(base, email) {
   eq(v.status, 200, "服务端：点确认链接成功（" + v.status + "）");
   const cookie = String(v.setCookie || "").split(";")[0];
   chk(/^kbsid=/.test(cookie), "服务端：确认链接那一发种下了会话 Cookie（kbsid）");
-  return { cookie: cookie };
+  return { cookie: cookie, uid: reg.body.uid };
+}
+
+// 服务端那张报告台账里，这个 uid 名下的条数（直接问真 store，不猜）。
+function reportCount(uid) {
+  const store = require("../api/_lib/store.js").getStore(require("../api/_lib/config.js"));
+  return Object.keys(store._db.reports || {})
+    .map(k => store._db.reports[k])
+    .filter(r => r && r.uid === uid).length;
 }
 
 // ---- 页面：把真页面装进 jsdom，把 fetch 接到真服务端上 --------------------
@@ -296,6 +304,73 @@ function tick(ms) { return new Promise(r => setTimeout(r, ms || 30)); }
       win.localStorage.removeItem(Ent.SEEN);
       eq(Ent.identity({ backing: win.localStorage }).signedIn, false, "没有水位线的那一份不认（旧版本写下 / 来路不明）");
       win.close();
+    }
+
+    // -----------------------------------------------------------------------
+    console.log("\n--- 四之二、「我的报告」：登录着就看得见自己的（Issue #327）---");
+    // -----------------------------------------------------------------------
+    // 用户原话：「我的报告 / 报过的错，处理到哪一步 / 我报过的 / 登录后才能报告。/
+    //   本机的（服务端暂时读不到）。/ 还没有报过。」
+    //   —— 四句话里三句与事实不符：他登录着，服务端上还压着他报过的错。
+    //
+    // 病根是这一页拿**本机判据**（`Entitlement.cookieSession()` 读 `poem_plan_v1`
+    // 那份缓存）当门：服务端刚登录、`/api/me` 那一发还没落地时它是 false，
+    // 于是 `Report.mine()` 直接调头去读本机空存稿，页面就写「还没有报过」。
+    // 这一节量的是**行为**：真起那一页，看它认不认得服务端上的报告。
+    {
+      const a = await serverLogin(base, "rep@example.com");
+      // 先用真接口报一条（走服务端那张台账）
+      const post = await fetch(base + wirePath("/api/report"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Cookie: a.cookie },
+        body: JSON.stringify({ kind: "text", poemTitle: "静夜思", note: "这里有个错字" })
+      });
+      eq(post.status, 200, "服务端：以这个人的身份报一条（200）");
+      eq(reportCount(a.uid), 1, "服务端那张台账上确实是 1 条");
+
+      const { win } = await openPage(base, a.cookie, "/settings/reports/");
+      await tick(300);
+      const panel = text(win, "reports-panel") || "";
+      chk(/静夜思/.test(panel), "「我的报告」列出了服务端上那一条（实际「" + panel.slice(0, 60) + "」）");
+      chk(!/没有报过/.test(panel), "不再说「还没有报过」（服务端明明有一条）");
+      chk(!/读不到/.test(panel), "不再说「服务端暂时读不到」");
+      chk(win.document.getElementById("reports-guest").hidden === true, "没有 Cookie 才显示的那句「登录后才能报告」是隐藏的");
+      win.close();
+    }
+
+    // -----------------------------------------------------------------------
+    console.log("\n--- 四之三、没登录的人仍要说「登录后才能报告」---");
+    // -----------------------------------------------------------------------
+    {
+      const { win } = await openPage(base, "", "/settings/reports/");
+      await tick(300);
+      const g = win.document.getElementById("reports-guest");
+      chk(!!g && g.hidden === false, "没有 Cookie：那一句「登录后才能报告」如实出现");
+      chk(/登录/.test(text(win, "reports-guest") || ""), "而且它给出一条去登录的路（不只是报错）");
+      const panel = text(win, "reports-panel") || "";
+      chk(!/没有报过/.test(panel), "未登录时不说「你还没有报过」（那是服务端才答得出的问题）");
+      win.close();
+    }
+
+    // -----------------------------------------------------------------------
+    console.log("\n--- 四之四、本机判据与服务端判据各管各的（源码口径）---");
+    // -----------------------------------------------------------------------
+    {
+      const rj = fs.readFileSync(path.join(ROOT, "js/report.js"), "utf8");
+      chk(/function mine\(opt\)([\s\S]{0,400})A\.myReports\(/.test(rj),
+        "Report.mine() 里 `A.myReports(` 排在很前面（不再先被本机判据挡掉）");
+      chk(!/typeof A\.myReports !== "function" \|\| !signedIn\(\)/.test(rj),
+        "Report.mine() 不再拿 `!signedIn()` 当门（本机读数答不了「服务端认不认我」）");
+      chk(/code === "E_NO_SESSION"/.test(rj), "401 才是「没登录」，靠 code 分得清");
+
+      const apiSrc = fs.readFileSync(path.join(ROOT, "js/account-api.js"), "utf8");
+      const mr = apiSrc.slice(apiSrc.indexOf("function myReports"));
+      chk(!/if \(!signedIn\(\)\) return[\s\S]{0,80}E_NO_SESSION/.test(mr.slice(0, 400)),
+        "AccountApi.myReports() 不再用本机判据当门（401 由服务端回）");
+
+      const rp = fs.readFileSync(path.join(ROOT, "js/reports-page.js"), "utf8");
+      chk(/r\.guest/.test(rp), "那一页按服务端回的 guest 定稿，不是按本机 isSignedIn()");
+      chk(!/\{ local: !!\(r && r\.local\) \}/.test(rp), "不再把「读回来了」误标成「本机的」");
     }
 
     // -----------------------------------------------------------------------
