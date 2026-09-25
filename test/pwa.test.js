@@ -1226,11 +1226,16 @@ function check(name, cond, extra) {
       };
     };
     const phState = await page.evaluate(readPh, '.search-input');
+    // ⚠️ Issue #278 第八轮：口径由「压到 12.5px」改成「全站搜索框同一个数」——
+    //    用户 2026-09-25 要的是「今日加背那一枚与搜索页那一枚逐项一致」，
+    //    而 12.5px 那个数的来历是索引页那一排 40px 的控件，与 52px 的框无关。
+    //    守的那件事没变：提示字**比输入文字小一号**（辅助文字不抢眼）。
     check('iPhone: 索引页提示字仍比输入文字小一号（辅助文字不抢眼）',
-      phState.phFont === '12.5px' && phState.inputFont === '16px',
+      parseFloat(phState.phFont) < parseFloat(phState.inputFont) &&
+      phState.phFont === '13.5px' && phState.inputFont === '16px',
       JSON.stringify([phState.phFont, phState.inputFont]));
     check('iPhone: 索引页提示字上抬回正中轴（位移 = 两档字号行盒中心差）',
-      phState.shift === -2.25, 'shift ' + phState.shift + 'px');
+      Math.abs(phState.shift - -0.65) <= 0.01, 'shift ' + phState.shift + 'px');
     // ⚠️ 口径改过一次（Issue #278 第七轮）：用户 2026-09-24 要
     //    「搜索页搜索框上下 padding 或者行高需要小 4px 左右」，所以这一条
     //    原先守的「上下 padding 必须是 0、行高必须是 normal」不再是口径。

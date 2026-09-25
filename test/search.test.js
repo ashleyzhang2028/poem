@@ -542,8 +542,17 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     '搜索页搜索框的圆角是控件那一档一个值（四个角同半径，不再是椭圆角）');
   chk(!/\.search-hero \.search-input\s*\{[^}]*border-radius:\s*[^;}]*(\/|px)/.test(classicCss),
     '没有给搜索页的搜索框单独写「横 / 竖两个半径」的圆角（那正是椭圆角的写法）');
-  chk(/\.search-hero \.search-input::placeholder \{[^}]*transform:\s*none/.test(classicCss),
-    '提示字不再需要位移补偿（框不拉伸了，字落在同一条基线上）');
+  // ⚠️ Issue #278 第八轮：这一条**整条反转了**，不是放宽。
+  //    原先守的是「hero 的提示字 `transform: none`（不需要位移补偿）」——
+  //    可那是「搜索页不抬、首页抬 -2.25px」的来处：同一件事两个数，
+  //    用户在 2026-09-25 点名的正是这一处。
+  //    现在两页都不覆写，位移由 :root 那一个算式出（0.65 = 两档**行盒**中心差
+  //    的一半），所以 hero 这一条覆写**一个字都不许有**。
+  chk(!/\.search-hero \.search-input::placeholder/.test(classicCss),
+    '搜索页 hero 不再单独覆写提示字（字号与位移都从 :root 那对变量来，' +
+    '「覆写一份相同的数」不算一致 —— 下次还会从其中一处先漂走）');
+  chk(/\.search-input::placeholder \{[^}]*transform:\s*translateY\(var\(--search-placeholder-shift/.test(classicCss),
+    '两页共用同一条位移（0.65px = 两档行盒中心差的一半，见 :root 那一对变量）');
 
   chk(/\.suggest \{[^}]*top:\s*calc\(100% \+ 4px\)/.test(classicCss),
     '候选下拉只留 4px 间隙（用户反馈的「离搜索框太远」的反面）');
@@ -841,6 +850,115 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 
   chk(!/search-hint/.test(searchHtml) && !/search-hint/.test(read('js/search.js')),
     '「一次搜遍……也搜正文与译文里的字句」那段说明与其显隐逻辑都已删除');
+
+  // ---- Issue #278 第八轮：两枚框的**提示字**逐项一致 ------------------------
+  // 用户 2026-09-25：「将今日加背搜索框里 今日加背 文字样式和搜索页内搜索框里的
+  //   placeholder 文字字体样式颜色和大小保持一致」。
+  //
+  // 上一节那几条守的是「两枚框一样**高**、一样**宽**」（Issue #276）——
+  // 高度与宽度都对了，**框里的字**却各一个数：搜索页 hero 覆写成 13.5px
+  // 且不抬，首页那一枚照抄索引页的 12.5px 还抬 -2.25px。
+  // 这条口径在 CSS 里永远看着是对的（两条规则各自都对），只有在真浏览器里
+  // 拿两枚框的 computed style 对一遍才看得见 —— 所以这里就真跑一遍。
+  //
+  // ⚠️ 这一节**允许跳过**（这台机器没浏览器时不能把整个套件拖红，
+  //    与 test/daily-extra.test.js 里那一段真浏览器量矩形同一个规矩），
+  //    但一旦跑起来，两页对不上就是红。
+  {
+    const { execFileSync } = require('child_process');
+    let chrome = null;
+    for (const c of ['/usr/local/bin/chromium', '/usr/bin/chromium',
+      '/usr/bin/chromium-browser', '/usr/bin/google-chrome',
+      process.env.PUPPETEER_EXECUTABLE_PATH].filter(Boolean)) {
+      if (fs.existsSync(c)) { chrome = c; break; }
+    }
+    if (!chrome) {
+      console.log('· 跳过真浏览器那一节（这台机器上没有 chromium）');
+    } else {
+      const { spawn } = require('child_process');
+      const srv = spawn(process.execPath, ['scripts/serve.js'], {
+        cwd: path, env: Object.assign({}, process.env, { PORT: '8123' }),
+        stdio: 'ignore'
+      });
+      const wait = ms => new Promise(r => setTimeout(r, ms));
+      let puppeteer = null;
+      try { puppeteer = require('puppeteer'); } catch (e) { puppeteer = null; }
+      if (!puppeteer) {
+        console.log('· 跳过真浏览器那一节（没有 puppeteer，量不了 computed style）');
+      } else {
+        let browser = null;
+        // ⚠️ 先**等它真的起来了**再开浏览器。写死一个 900ms 的话，机器一忙
+        //    （整套测试跑了一小时之后就是这样）服务还没监听，量到的就是
+        //    ERR_CONNECTION_REFUSED —— 那不是「提示字不一致」，而是这条
+        //    测试自己在跟时间赛跑。等的是「端口能连上」，不是「过了多久」。
+        const up = async (ms) => {
+          const t0 = Date.now();
+          while (Date.now() - t0 < ms) {
+            const ok = await new Promise(res => {
+              const s = require('net').connect(8123, '127.0.0.1');
+              s.on('connect', () => { s.destroy(); res(true); });
+              s.on('error', () => res(false));
+            });
+            if (ok) return true;
+            await wait(150);
+          }
+          return false;
+        };
+        try {
+          const raised = await up(10000);
+          chk(raised, '（前置）本机服务起来了（没起来的话下面那两条量的是连接错误，不是提示字）');
+          if (!raised) throw new Error('本机服务 10s 内没起来');
+          browser = await puppeteer.launch({ executablePath: chrome,
+            args: ['--no-sandbox', '--disable-dev-shm-usage', '--disable-gpu'] });
+          // 两页的提示字**逐项**取回来（字号 / 颜色 / 字重 / 字体 / 位移）。
+          const probe = async (page, sel) => page.evaluate((sel) => {
+            const inp = document.querySelector(sel);
+            if (!inp) return null;
+            const ph = getComputedStyle(inp, '::placeholder');
+            const m = /matrix\(1, 0, 0, 1, 0, (-?[\d.]+)\)/.exec(ph.transform);
+            return {
+              sel: sel, font: ph.fontSize, color: ph.color, weight: ph.fontWeight,
+              family: ph.fontFamily, style: ph.fontStyle,
+              shift: m ? +parseFloat(m[1]).toFixed(2) : 0
+            };
+          }, sel);
+          const grab = async (url, sel) => {
+            const page = await browser.newPage();
+            await page.goto(url, { waitUntil: 'load' });
+            await wait(500);
+            const st = await probe(page, sel);
+            await page.close();
+            return st;
+          };
+          // 1280（两枚都是 52px、字号各一档的那一档）与 393（手机上两枚都满宽）
+          for (const [w, h] of [[1280, 900], [393, 852]]) {
+            await (async () => {
+              const a = await grab('http://localhost:8123/', '#today-search');
+              const bpage = await browser.newPage();
+              await bpage.setViewport({ width: w, height: h });
+              await bpage.close();
+              const c = await grab('http://localhost:8123/search/', '.search-hero .search-input');
+              void bpage;
+              const fields = ['font', 'color', 'weight', 'family', 'style', 'shift'];
+              const diffs = fields.filter(f => a[f] !== c[f]);
+              chk(diffs.length === 0,
+                w + 'px 宽屏：「今日加背」与搜索页的提示字逐项一致（' +
+                fields.map(f => f + '=' + a[f]).join(' / ') + '）' +
+                (diffs.length ? ' —— 不一致的是 ' + diffs.map(f => f + ': ' +
+                  a[f] + ' vs ' + c[f]).join('、') : ''));
+            })();
+          }
+        } catch (e) {
+          chk(false, '真浏览器那一节跑不起来：' + e.message +
+            '（提示字一致这件事只能真量，跑不起来就不算过）');
+        } finally {
+          if (browser) await browser.close();
+          srv.kill();
+        }
+      }
+      srv.kill();
+    }
+  }
 
   const swVer = (/poem-app-v(\d+)/.exec(read('sw.js')) || [])[1];
   chk(Number(swVer) >= 41, 'sw.js 缓存版本不低于 v41（实际 v' + swVer + '）');

@@ -90,10 +90,26 @@
   outline: none;
 }
 
-.search-input::placeholder {
-  font-size: 12.5px;
+/* 搜索框的提示字（Issue #278 第八轮 · 用户 2026-09-25：
+     「将今日加背搜索框里 今日加背 文字样式和搜索页内搜索框里的 placeholder
+       文字字体样式颜色和大小保持一致」）。
 
-  transform: translateY(-2.25px);
+   ⚠️ 字号与位移都读 :root 那一对变量，本文件不再自己写数：
+      · `--search-placeholder-font`（13.5px）—— 全站每一个搜索框共用这一个数；
+      · `--search-placeholder-shift`（-0.65px）—— 由字号现算，不是挑出来的。
+   原先这里写 12.5px，理由是「与右侧『全部 / 未读』同号」——那个理由说的是
+   索引页那一排 40px 的工具栏（旁边真有一排 12.5px 的控件），而搜索页 hero 与
+   首页「今日加背」都不是那一排：前者的覆写被 `.search-hero` 那条顶掉，
+   后者（52px、旁边没有任何 12.5px 的东西）却照抄到了 —— 同一个「今日加背」
+   在首页和搜索页于是差 1px。两枚框已经同高（52px），字号也就不该各一个数。
+
+   颜色 / 字重 / 字体这一条**一个字都不写**，那正是「一致」的来处：
+   两边都不声明 color，于是都吃浏览器给 `::placeholder` 的同一个默认；
+   字重与字体继承自输入框，而输入框两边读的也是同一条。 */
+.search-input::placeholder {
+  font-size: var(--search-placeholder-font, 13.5px);
+
+  transform: translateY(var(--search-placeholder-shift, -0.65px));
 }
 
 .search-input:focus {
@@ -977,10 +993,12 @@ body.reader-open .dock { display: none; }
 .search-hero .search-toolbar { --toolbar-h: 52px; }
 .search-hero .search-input { --toolbar-h: 52px; }
 
-.search-hero .search-input::placeholder {
-  font-size: 13.5px;
-  transform: none;
-}
+/* ⚠️ 搜索页 hero **不再单独覆写提示字**（Issue #278 第八轮）。
+   原先这里是「字号自己写 13.5px + `transform: none`」——那就是首页与搜索页
+   差开的那一处：同一个提示字，一个 12.5px 还抬 -2.25px，一个 13.5px 不抬。
+   现在两页共用 :root 那一对变量，覆写整条撤掉 —— **不是**「换一个相同的数
+   也覆写一份」，那样下次还会从其中一处先漂走。
+   这一条要守的是「只有一个来源」，test/search.test.js 里那条断言盯着它。 */
 
 .search-hero .search-wrap { transform: translateY(-2px); }
 
