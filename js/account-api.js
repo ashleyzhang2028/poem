@@ -153,7 +153,14 @@
     // 唯一来路，散在几个页面里各写一遍必然漏。
     //
     // 本机那份 data URL 副本仍然保留（它就是「传不上去时还能看」的那一份），
-    // 所以这里只在**账号域里还没有图片**时才写。
+    // 所以这里只在**地址与手上这份不一样**时才写。
+    //
+    // ⚠️ 判据是「不一样」，不是「手上这份是空的」（Issue #320）。
+    //    原先写的是 `if (cur && cur.img) return false`，于是地址一旦写进去
+    //    就再也不更新 —— 可服务器那把地址的**缓存破参数是每次上传都会换的**
+    //    （`/api/avatar/...?v=<时间戳>`）。换头像之后本机那条地址停在旧 `?v=`，
+    //    浏览器拿到的还是旧那张图。子用户切的正是「谁的头像」这件事，
+    //    于是同一条 bug 露出两个症状：切了孩子，头像没跟着换。
     function adoptAvatar(me) {
       var AV = D.AV;
       if (!AV || !AV.avatar || !AV.setAvatar || !D.backing) return false;
@@ -161,7 +168,10 @@
       if (!url || !AV.isImgUrl || !AV.isImgUrl(url)) return false;
       var cur = null;
       try { cur = AV.avatar(D.backing) || {}; } catch (e) { cur = null; }
-      if (cur && cur.img) return false;
+      if (cur && cur.img === url) return false;
+      // ⚠️ 只比较**这张图是谁的**那一刻：本机那份字节（LOCAL_NS）仍是优先显示
+      //    的那一份，所以地址换了不等于用户当下会看到新脸 —— 真要立刻换脸，
+      //    得把本机那份字节一并清掉（此刻手上没有被处理过的字节）。
       try { return !!AV.setAvatar(D.backing, { img: url }); } catch (e) { return false; }
     }
 

@@ -103,12 +103,23 @@
       for (var i = 0; i < w.entries.length; i++) {
         if (bookOf(w.entries[i]) === COURSE_BOOK) return w.entries[i];
       }
+      // 同档取「id 最小」那一条 —— 但按**数字序号**比，不按字典序：
+      // chengyu-cy-48 该排在 chengyu-cy-217 之前（字典序恰好相反）。
+      var seq = function (e) {
+        var m = String(e).match(/^(.*?)(\d+)$/);
+        return [m ? m[1] : String(e), m ? Number(m[2]) : 0];
+      };
+      var better = function (a, b) {
+        var ra = rankOf(a), rb = rankOf(b);
+        if (ra !== rb) return ra < rb;
+        var ka = seq(a), kb = seq(b);
+        if (ka[0] !== kb[0]) return ka[0] < kb[0];
+        if (ka[1] !== kb[1]) return ka[1] < kb[1];
+        return a < b;
+      };
       var best = null;
       for (var j = 0; j < w.entries.length; j++) {
-        var e = w.entries[j];
-        if (best == null) { best = e; continue; }
-        if (rankOf(e) < rankOf(best)) { best = e; continue; }
-        if (rankOf(e) === rankOf(best) && e < best) best = e;
+        if (best == null || better(w.entries[j], best)) best = w.entries[j];
       }
       return best;
     },

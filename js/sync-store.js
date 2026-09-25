@@ -5,7 +5,10 @@
     pref: "poem_sync_pref_v1",
 
     seen: "poem_sync_seen_v1",
-    premerge: "poem_pre_merge_backup_v1"
+    premerge: "poem_pre_merge_backup_v1",
+    // 本机那份头像字节（Issue #320 起跟着子用户走）。键名**不在**这里另写一份，
+    // 真名是 `Avatar.LOCAL_NS`，这里只借它判「是不是这一族」。
+    avatarLocal: "poem_avatar_local_v1"
   };
 
   function childId() {
@@ -837,10 +840,15 @@
       if (g && typeof g.list === "function") {
         (g.list({ backing: b }) || []).forEach(function (p) {
           var id = p && p.id ? String(p.id) : "";
-          if (id) keys.push(NS.seen + "::" + id);
+          if (!id) return;
+          keys.push(NS.seen + "::" + id);
+          // 本机那份头像字节也跟着子用户走（Issue #320）—— 退出登录 /
+          // 换个人登录时它必须一起清，否则新登录的人看到的是上一位那张脸。
+          keys.push(avatarLocalKey(id));
         });
       }
     } catch (e) {  }
+    keys.push(avatarLocalKey(""));
     keys.forEach(function (k) {
       try { b.removeItem(k); } catch (e) {  }
     });
@@ -854,11 +862,30 @@
     return api;
   }
 
+  // 本机那份头像字节（`poem_avatar_local_v1`）现在**跟着子用户走**
+  // （Issue #320）：每个子用户一份，按 `Family.keyFor()` 拼后缀。
+  //
+  // ⚠️ 这里只给出「清哪一种键」这一件事，**拼法不在这儿再写一遍**
+  //    （`::` 只许出现在 family.js 一处，`test/family.test.js` 第五节红着）。
+  //    两个调用点：① 复位（`clearLocalImages()`）—— 每个孩子的都要清；
+  //    ② 某条路径在切走之后才被改掉 —— 让那个孩子下次再画一次（见 api.dropLocal）。
+  function avatarLocalKey(profileId) {
+    var F = typeof window !== "undefined" ? window.Family : null;
+    var AV = typeof window !== "undefined" ? window.Avatar : null;
+    var base = (AV && AV.LOCAL_NS) || "poem_avatar_local_v1";
+    if (!F || typeof F.keyFor !== "function") return base;
+    var pid = String(profileId == null ? "" : profileId);
+    if (!pid) return base;
+    try { return F.keyFor(base, pid); } catch (e) { return base; }
+  }
+
   var api = {
     NS: NS, EVT: EVT, CHUNK: CHUNK, TIMEOUT_MS: TIMEOUT_MS,
 
     perChildKey: function (key) {
       var k = String(key == null ? "" : key);
+      if (k === NS.avatarLocal) return true;
+      if (k.indexOf(NS.avatarLocal) === 0) return true;
       if (k.indexOf(NS.seen) === 0) return true;
       if (k === NS.pref || k === NS.premerge) return false;
       return null;
@@ -868,6 +895,28 @@
     COLLECTIONS_ROW_ID: COLLECTIONS_ROW_ID,
     PINYIN_FIX_ROW_ID: PINYIN_FIX_ROW_ID,
     READ_ROW_PREFIX: READ_ROW_PREFIX,
+    // 清掉**某一个子用户**本机那份头像字节（默认：当前那一个）。
+    //
+    // ⚠️ 它存在的理由只有一个（Issue #320）：页面把头像写完 / 切走之后，
+    //    服务端那条地址与「这个孩子本机那份字节」可能对不上，而显示是
+    //    **本机那份优先**的。不清掉它就永远是旧那张脸。
+    dropLocal: function (profileId, opt) {
+      var o = opt || {};
+      var b = o.backing === undefined ? backing() : o.backing;
+      if (!b) return false;
+      var pid = profileId === undefined ? "" : profileId;
+      if (!pid) {
+        var F = typeof window !== "undefined" ? window.Family : null;
+        try { pid = F && F.currentId ? String(F.currentId({ backing: b }) || "") : ""; } catch (e) { pid = ""; }
+      }
+      var ok = false;
+      var k = avatarLocalKey(pid);
+      try { b.removeItem(k); ok = true; } catch (e) {  }
+      // 老键（不分家的那一把）顺手也清：它只在迁移前有内容。
+      try { b.removeItem(avatarLocalKey("")); ok = true; } catch (e) {  }
+      return ok;
+    },
+
     dailyExtraRow: dailyExtraRow,
     collectionsRow: collectionsRow,
     readRows: readRows,

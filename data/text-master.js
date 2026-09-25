@@ -4960,7 +4960,7 @@ window.TEXT_MASTER = [
   },
   {
     work: "w-chengyu-cy-86",
-    id: "chengyu-cy-616",
+    id: "chengyu-cy-86",
     title: "众口铄金",
     entries: ["chengyu-cy-86", "chengyu-cy-616"],
     text: "故谚曰：「众心成城，众口铄金。」",
@@ -6129,15 +6129,6 @@ window.TEXT_MASTER = [
     translationSource: "public-domain"
   },
   {
-    work: "w-chengyu-cy-736",
-    id: "chengyu-cy-736",
-    title: "人浮于事",
-    entries: ["chengyu-cy-736"],
-    text: "故君子与其使食浮于人也，宁使人浮于食。",
-    translation: "所以君子与其让俸禄超过自己的才能（食浮于人），不如让自己的才能超过俸禄（人浮于食）。",
-    translationSource: "public-domain"
-  },
-  {
     work: "w-chengyu-cy-74",
     id: "chengyu-cy-74",
     title: "食言而肥",
@@ -6420,7 +6411,7 @@ window.TEXT_MASTER = [
     work: "w-classic-gw-11",
     id: "classic-gw-11",
     title: "自相矛盾",
-    entries: ["classic-gw-11", "chengyu-cy-119"],
+    entries: ["chengyu-cy-119", "classic-gw-11"],
     text: "楚人有鬻盾与矛者，誉之曰：「吾盾之坚，物莫能陷也。」\n又誉其矛曰：「吾矛之利，于物无不陷也。」\n或曰：「以子之矛，陷子之盾，何如？」其人弗能应也。\n夫不可陷之盾与无不陷之矛，不可同世而立。",
     translation: "楚国有个卖盾和矛的人，夸盾说：「我的盾非常坚固，没有东西能刺穿它。」又夸矛说：「我的矛非常锋利，没有东西刺不穿。」有人问：「用你的矛刺你的盾，会怎么样？」那人答不上来。刺不穿的盾和刺得穿的矛，是不能同时成立的。",
     translationSource: "public-domain"
@@ -6519,7 +6510,7 @@ window.TEXT_MASTER = [
     work: "w-classic-gw-21",
     id: "classic-gw-21",
     title: "鲧禹治水",
-    entries: ["chengyu-cy-11", "classic-gw-21", "chengyu-cy-14"],
+    entries: ["chengyu-cy-11", "chengyu-cy-14", "classic-gw-21"],
     text: "洪水滔天，鲧窃帝之息壤以堙洪水，不待帝命，帝令祝融杀鲧于羽郊。\n鲧复生禹，帝乃命禹卒布土以定九州。",
     translation: "洪水漫天，鲧偷了天帝的息壤来堵塞洪水，没有等候天帝的命令，天帝便命祝融在羽山郊野杀了鲧。鲧死后生下禹，天帝于是命禹继续用息壤填土治水，终于安定了九州。",
     translationSource: "public-domain"
@@ -6555,7 +6546,7 @@ window.TEXT_MASTER = [
     work: "w-classic-gw-25",
     id: "classic-gw-25",
     title: "画蛇添足",
-    entries: ["classic-gw-25", "chengyu-cy-115"],
+    entries: ["chengyu-cy-115", "classic-gw-25"],
     text: "楚有祠者，赐其舍人卮酒。舍人相谓曰：「数人饮之不足，一人饮之有余。请画地为蛇，先成者饮酒。」\n一人蛇先成，引酒且饮之，乃左手持卮，右手画蛇曰：「吾能为之足。」\n未成，一人之蛇成，夺其卮曰：「蛇固无足，子安能为之足？」遂饮其酒。\n为蛇足者，终亡其酒。",
     translation: "楚国有个祭祀的人，赏给门客一壶酒。门客们商量：「几个人喝不够，一个人喝有余。就在地上画蛇，先画成的喝酒。」一人先画好，端起酒壶正要喝，却左手拿壶、右手继续画，说：「我还能给它添上脚。」脚还没画完，另一个人的蛇画成了，夺过酒壶说：「蛇本来没有脚，你怎么能给它添脚？」于是喝了那壶酒。给蛇添脚的人，最终丢了酒。",
     translationSource: "public-domain"
@@ -6564,7 +6555,7 @@ window.TEXT_MASTER = [
     work: "w-classic-gw-26",
     id: "classic-gw-26",
     title: "刻舟求剑",
-    entries: ["classic-gw-26", "chengyu-cy-123"],
+    entries: ["chengyu-cy-123", "classic-gw-26"],
     text: "楚人有涉江者，其剑自舟中坠于水，遽契其舟曰：「是吾剑之所从坠。」\n舟止，从其所契者入水求之。\n舟已行矣，而剑不行，求剑若此，不亦惑乎？",
     translation: "有个楚国人渡江，他的剑从船上掉进水里，他急忙在船舷上刻了个记号，说：「这就是我的剑掉下去的地方。」船停下后，他从刻记号的地方下水找剑。船已经走了，剑却没有动，这样找剑，不是很糊涂吗？",
     translationSource: "public-domain"
@@ -6627,7 +6618,7 @@ window.TEXT_MASTER = [
     work: "w-classic-gw-32",
     id: "classic-gw-32",
     title: "揠苗助长",
-    entries: ["classic-gw-32", "chengyu-cy-188"],
+    entries: ["chengyu-cy-188", "classic-gw-32"],
     text: "宋人有闵其苗之不长而揠之者，芒芒然归，谓其人曰：「今日病矣！予助苗长矣！」\n其子趋而往视之，苗则槁矣。",
     translation: "宋国有个农夫，担心禾苗长不高，就把苗一棵棵往上拔。他疲惫不堪地回到家，对家里人说：「今天累坏了！我帮禾苗长高了！」他儿子赶紧跑去一看，禾苗全都枯死了。",
     translationSource: "public-domain"
@@ -6636,7 +6627,7 @@ window.TEXT_MASTER = [
     work: "w-classic-gw-33",
     id: "classic-gw-33",
     title: "滥竽充数",
-    entries: ["classic-gw-33", "chengyu-cy-120"],
+    entries: ["chengyu-cy-120", "classic-gw-33"],
     text: "齐宣王使人吹竽，必三百人。南郭处士请为王吹竽，宣王说之，廪食以数百人。\n宣王死，湣王立，好一一听之，处士逃。",
     translation: "齐宣王听人吹竽，一定要三百人一起合奏。南郭先生请求为宣王吹竽，宣王很高兴，给他的待遇和几百人一样。宣王死后，湣王即位，喜欢让人一个一个地吹给自己听，南郭先生只好逃走了。",
     translationSource: "public-domain"
@@ -6690,7 +6681,7 @@ window.TEXT_MASTER = [
     work: "w-classic-gw-39",
     id: "classic-gw-39",
     title: "狐假虎威",
-    entries: ["classic-gw-39", "chengyu-cy-114"],
+    entries: ["chengyu-cy-114", "classic-gw-39"],
     text: "虎求百兽而食之，得狐。\n狐曰：「子无敢食我也！天帝使我长百兽，今子食我，是逆天帝命也。\n子以我为不信，吾为子先行，子随我后，观百兽之见我而敢不走乎？」\n虎以为然，故遂与之行。兽见之皆走。虎不知兽畏己而走也，以为畏狐也。",
     translation: "老虎寻找各种野兽来吃，捉到一只狐狸。狐狸说：「你不敢吃我！天帝让我做百兽之长，你吃我就是违抗天命。你不信的话，我在前面走，你跟在我后面，看百兽见了我敢不逃跑吗？」老虎认为有理，就跟着它走。百兽见了都逃跑。老虎不知道百兽是怕自己而逃，还以为是怕狐狸。",
     translationSource: "public-domain"
@@ -6762,7 +6753,7 @@ window.TEXT_MASTER = [
     work: "w-classic-gw-46",
     id: "classic-gw-46",
     title: "望梅止渴",
-    entries: ["classic-gw-46", "chengyu-cy-341"],
+    entries: ["chengyu-cy-341", "classic-gw-46"],
     text: "魏武行役，失汲道，军皆渴，乃令曰：「前有大梅林，饶子，甘酸可以解渴。」\n士卒闻之，口皆出水，乘此得及前源。",
     translation: "曹操行军时找不到水源，全军都渴了，他便下令说：「前面有一大片梅林，结了很多果子，又甜又酸，可以解渴。」士兵们听了，嘴里都流出口水，趁此机会赶到了前面的水源。",
     translationSource: "public-domain"
@@ -7050,7 +7041,7 @@ window.TEXT_MASTER = [
     work: "w-classic-gw-76",
     id: "classic-gw-76",
     title: "邯郸学步",
-    entries: ["classic-gw-76", "chengyu-cy-122"],
+    entries: ["chengyu-cy-122", "classic-gw-76"],
     text: "且子独不闻夫寿陵余子之学行于邯郸与？未得国能，又失其故行矣，直匍匐而归耳。",
     translation: "你难道没听说过燕国寿陵的少年到邯郸学走路的事吗？他不但没有学到赵国人走路的技能，反而把自己原来的走法也忘掉了，最后只好爬着回去。",
     translationSource: "public-domain"
@@ -9669,7 +9660,7 @@ window.TEXT_MASTER = [
     work: "w-poems-xx5-12",
     id: "poems-xx5-12",
     title: "游子吟",
-    entries: ["poems-xx5-12", "tangshi-ts-67", "yuefu-yf-48", "chengyu-cy-475"],
+    entries: ["chengyu-cy-475", "poems-xx5-12", "tangshi-ts-67", "yuefu-yf-48"],
     text: "慈母手中线，游子身上衣。\n临行密密缝，意恐迟迟归。\n谁言寸草心，报得三春晖。",
     translation: "慈爱的母亲手里拿着针线，为将要远行的儿子缝制衣服。临行前密密地缝了又缝，担心孩子迟迟不能回来。谁说小草一样微薄的心意，能报答得了春天阳光般的恩情？",
     translationSource: "school"
@@ -13719,7 +13710,7 @@ window.TEXT_MASTER = [
     work: "w-tangshi-ts-276",
     id: "tangshi-ts-276",
     title: "集灵台·其二",
-    entries: ["tangshi-ts-276", "chengyu-cy-465"],
+    entries: ["chengyu-cy-465", "tangshi-ts-276"],
     text: "虢国夫人承主恩，平明骑马入宫门。\n却嫌脂粉污颜色，淡扫蛾眉朝至尊。",
     translation: "虢国夫人承受君主的恩宠，天明时骑马进入宫门。却嫌脂粉污了容颜，只淡淡地画了眉毛去朝见天子。",
     translationSource: "public-domain"
@@ -13773,7 +13764,7 @@ window.TEXT_MASTER = [
     work: "w-tangshi-ts-281",
     id: "tangshi-ts-281",
     title: "赤壁",
-    entries: ["tangshi-ts-281", "chengyu-cy-573"],
+    entries: ["chengyu-cy-573", "tangshi-ts-281"],
     text: "折戟沉沙铁未销，自将磨洗认前朝。\n东风不与周郎便，铜雀春深锁二乔。",
     translation: "折断的兵器沉在沙里、铁还没有销蚀，我把它磨洗一番、认出是前朝的遗物。如果东风不给周郎方便，铜雀台里恐怕已深锁着二乔了。",
     translationSource: "public-domain"
@@ -14052,7 +14043,7 @@ window.TEXT_MASTER = [
     work: "w-yuefu-yf-96",
     id: "tangshi-ts-313",
     title: "题都城南庄",
-    entries: ["chengyu-cy-69", "tangshi-ts-313", "yuefu-yf-96", "chengyu-cy-440"],
+    entries: ["chengyu-cy-69", "chengyu-cy-440", "tangshi-ts-313", "yuefu-yf-96"],
     text: "去年今日此门中，人面桃花相映红。\n人面不知何处去，桃花依旧笑春风。",
     translation: "去年的今天在这门中，人面和桃花互相映衬着红。人面不知到哪里去了，桃花依旧在春风中绽放。",
     translationSource: "public-domain"

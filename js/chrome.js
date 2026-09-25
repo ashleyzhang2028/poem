@@ -508,10 +508,30 @@
     var ic = item ? item.querySelector(".dock-icon") : null;
     if (!ic) return;
 
+    // ⚠️ 换子用户时**必然重画**、且把旧的那张 `<img>` 拆掉再插新的
+    //    （Issue #320）。理由有两条，都不是「多此一举」：
+    //    ① 旧 `<img>` 还挂着上一个孩子那张图 —— 内容一样就不重画的话，
+    //       它就一直挂在那儿；
+    //    ② 「本机那份字节优先」意味着换的是这个 `<img>` 自己看到的地址，
+    //       同一个 src 连画两次，浏览器拿的还是它手里那份缓存。
+    //    代价只是切档那一瞬间一次重排，底栏一颗 26px 的圆。
+    clearDockAvatar();
     var want = dockMineHtml();
     if (!want || ic.innerHTML === want) return;
 
     ic.innerHTML = want;
+  }
+
+  // 把底栏那颗头像的空槽清出来（没有头像字节时它画的是「诗」这个字印，
+  // 所以不留旧 `<img>` 也一样看得见东西）。
+  function clearDockAvatar() {
+    var item = dockMineItem();
+    var ic = item ? item.querySelector(".dock-icon") : null;
+    if (!ic || !ic.innerHTML) return;
+    var want = dockMineHtml();
+    if (!want || ic.innerHTML === want) return;
+
+    ic.innerHTML = GLYPHS.tabMineImg.replace("__SRC__", "");
   }
 
   function mountDockAvatarWatch() {
@@ -521,6 +541,10 @@
     window.addEventListener("pageshow", refreshDockAvatar);
     window.addEventListener("storage", refreshDockAvatar);
     window.addEventListener("poem:avatar-change", refreshDockAvatar);
+    // 子用户切走之后（`family-change`），底栏那颗头像必须重画 ——
+    // 顶栏那份由各页自己重画（TopBar/brand 与头像无关），底栏这一颗归这里。
+    window.addEventListener("family-change", refreshDockAvatar);
+    document.addEventListener("family-change", refreshDockAvatar);
   }
 
   window.SiteChrome = {

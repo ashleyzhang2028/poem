@@ -172,6 +172,11 @@
     return Api.uploadAvatar({ blob: blob, type: blob.type }).then(function (r) {
       render();
       if (r && r.ok) {
+        // 服务器那把地址的**破缓存参数每次上传都会换**（`?v=<时间戳>`）。
+        // 本机那份字节优先里画着的还是**刚才那张**，而账号域那条地址已经是新的
+        // —— 把本机那份字节清掉，让这个子用户下一次真正从服务器取新图（Issue #320）。
+        // 不这么做的话，改完头像当场看到的还是旧脸（同一处缓存，两个症状）。
+        dropLocalOnUpload(r);
         refreshChrome();
         toast("头像已保存");
         return true;
@@ -181,6 +186,15 @@
       else toast((r && r.message) || "头像已存在本机，还没同步到服务器");
       return false;
     });
+  }
+
+  function dropLocalOnUpload(r) {
+    var S = window.SyncStore;
+    if (!S || typeof S.dropLocal !== "function") return;
+    // ⚠️ 只在一个条件下清：服务端已经收下这张图（`r.ok`）、而且它回来的地址
+    //    与账号域里那条不一致时才谈得上「缓存旧了」。收下之前（离线 / 未登录）
+    //    本机那份字节就是**唯一**一张，清掉等于把用户的头像抹了。
+    try { S.dropLocal("", { backing: window.localStorage }); } catch (e) { }
   }
 
   function clear() {
