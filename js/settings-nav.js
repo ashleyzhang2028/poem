@@ -29,7 +29,7 @@
     }
   ];
 
-  var APP_VERSION = "1.0 (v201)";
+  var APP_VERSION = "1.0 (v203)";
   var APP_VERSION_NAME = "跬步 · 古诗词背诵";
 
   function esc(s) {
@@ -147,6 +147,11 @@
 
     window.addEventListener("storage", renderSelfCheck);
     window.addEventListener("entitlementchange", renderSelfCheck);
+    // ⚠️ `document` 上那两份是给「脚本次序比 `js/chrome.js` 早」的页面用的
+    //    —— 挂完监听那一刻账号答案可能还没回来，等它回来再补画一次
+    //    （`entitlementchange` 在写完那份缓存时发，见 `js/entitlement.js`）。
+    document.addEventListener("entitlementchange", renderSelfCheck);
+    document.addEventListener("account:ready", renderSelfCheck);
   }
 
   if (document.readyState === "loading") {

@@ -170,7 +170,12 @@ async function main() {
   }
 
   {
+    // ⚠️ 判据改成**唯一一处** `Entitlement.cookieSession()`（Issue #274）之后，
+    //    「登录了没」这件事不再由 `deps.signedIn()` 注入 —— 注入的东西每个
+    //    调用点各传一份，正是「同一个问题在不同地方有两个答案」的来源。
+    //    现在这个桩就是那一份答案的替身：没有它就当已登录（不拦人）。
     const h = harness({ signedIn: () => false });
+    h.setEnt({ cookieSession: () => null });
     h.Sync.setEnabled(true);
     eq(h.Sync.status(), "signin", "开着但没登录 → signin（要提示去登录，不是「已同步」）");
     const r = await h.Sync.now();

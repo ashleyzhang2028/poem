@@ -28,6 +28,7 @@ var ROUTES = {
 
   "POST /register": "./../_routes/auth/register.js",
   "POST /login": "./../_routes/auth/login.js",
+  "POST /logout": "./../_routes/auth/logout.js",
   "POST /verify-email": "./../_routes/auth/verify-email.js",
   "POST /resend-verification": "./../_routes/auth/resend-verification.js",
   "POST /resend-verification-by-email": "./../_routes/auth/resend-verification-by-email.js",
