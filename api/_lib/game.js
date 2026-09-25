@@ -18,7 +18,8 @@ var BOOKS = [
   { id: "guwen",    files: ["data/poems-guwen.js"],    varName: "POEMS_GUWEN" },
   { id: "zhaoming", files: ["data/poems-zhaoming.js"], varName: "POEMS_ZHAOMING" },
   { id: "yuanqu",   files: ["data/poems-yuanqu.js"],   varName: "POEMS_YUANQU" },
-  { id: "jinxiandai", files: ["data/poems-jinxiandai.js"], varName: "POEMS_JINXIANDAI" }
+  { id: "jinxiandai", files: ["data/poems-jinxiandai.js"], varName: "POEMS_JINXIANDAI" },
+  { id: "chengyu", files: ["data/poems-chengyu.js"], varName: "POEMS_CHENGYU" }
 ];
 
 var cache = null;

@@ -1,4 +1,2 @@
-
-
 window.CANONICAL_TEXTS = [
 ];

@@ -100,7 +100,7 @@
     {
       key: "poem_chengyu_read_v1", sync: true, row: "reads:poem_chengyu_read_v1",
       merge: "并集", cap: "每行 ≤ 2000 篇",
-      why: "中华成语故事已读 —— 与其余各部同一族（2026-09-25 新增第十部，Issue #308）。"
+      why: "中华成语故事已读 —— 与其余各部同一族（2026-09-25 新增第十部）。"
     },
     {
       key: "poem_pinyin_fix_v1", sync: true, row: "pinyin_fix:v1",
