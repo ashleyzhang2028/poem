@@ -16,6 +16,7 @@
     "node": ">=18"
   },
   "dependencies": {
+    "dotenv": "^18.0.3",
     "jsdom": "^26.1.0"
   },
   "devDependencies": {

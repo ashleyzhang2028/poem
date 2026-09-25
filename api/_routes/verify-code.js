@@ -16,19 +16,12 @@ module.exports = handler.make("verify-code", ["POST"], function (d, body, req) {
   }).then(function (r) {
 
     if (r.status !== 200 || !r._session) return r;
-    var s = r._session;
-    return Promise.resolve(d.store.putSession({
-      sid: s.sid, uid: s.uid, iat: s.iat, exp: s.exp, revoked: 0
-    })).then(function () {
-
-      var token = session.fromCookieHeader((req.headers || {}).cookie, d.cfg.cookieName);
-      var old = session.read(d.cfg, token, Date.now());
-      var renew = !old || session.shouldRenew(d.cfg, old, Date.now());
-      var out = { status: r.status, body: r.body };
-      if (renew) out.cookies = r.cookies;
-      else out.body = Object.assign({}, r.body, { sessionKept: true });
-      delete r._session;
-      return out;
-    });
+    var token = session.fromCookieHeader((req.headers || {}).cookie, d.cfg.cookieName);
+    var old = session.read(d.cfg, token, Date.now());
+    var renew = !old || session.shouldRenew(d.cfg, old, Date.now());
+    var out = { status: r.status, body: r.body };
+    if (renew) out.cookies = r.cookies;
+    else out.body = Object.assign({}, r.body, { sessionKept: true });
+    return out;
   });
 });

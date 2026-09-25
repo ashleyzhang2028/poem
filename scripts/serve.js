@@ -3,6 +3,7 @@
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
+if (require.main === module) require("dotenv").config({ path: path.resolve(__dirname, "..", ".env") });
 const apiHandler = require("../api/handler.js");
 
 const ROOT = path.resolve(__dirname, "..");
