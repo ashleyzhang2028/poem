@@ -467,8 +467,31 @@ body[data-nav="login"] .app {
 .tier-pick button.active:hover { background: var(--celadon); border-color: var(--green-dark); color: #fdfaf2; }
 .tier-pick button.active:active { background: var(--green-dark); }
 
-.account-card.danger-zone { border: 1px solid var(--danger-line); }
-.danger-title { color: var(--red); }
+.bottom-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+.bottom-actions .account-btn {
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 0;
+  height: var(--ctl-h-sm);
+  padding: 0 14px;
+  font-size: var(--ctl-font-sm);
+  margin-top: 0;
+}
+.danger-panel {
+  margin-top: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--danger-line);
+  border-radius: var(--ctl-radius);
+  background: var(--card);
+}
+.danger-panel .account-lead { margin: 0 0 10px; }
+.danger-panel .account-btn + .account-btn { margin-top: 0; }
 .confirm-row { display: flex; gap: 8px; }
 .confirm-row .account-btn { margin-top: 0; }
 
@@ -1264,9 +1287,6 @@ thead .plans-th-cap {
 .identity-btns .account-btn { margin-top: 0; }
 
 #stats-card .settings-btns { margin-top: 12px; }
-
-.admin-slot { margin-top: 4px; }
-.admin-slot .account-btn { width: auto; min-width: 132px; padding: 10px 16px; }
 
 @media screen and (max-width: 480px) {
   .identity-head { gap: 6px; }

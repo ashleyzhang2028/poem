@@ -148,12 +148,12 @@
   //     那就**如实不写这一行**，不编一个数字出来。
   function renderAccount(sess) {
     var list = $("account-list");
-    var danger = $("danger-card");
     if (!list) return;
 
     var id = identity();
     if (!id || !id.signedIn) {
-      hide($("account-card")); hide(danger); hide($("verify-row"));
+      hide($("account-card")); hide($("verify-row"));
+      renderDanger();
       return;
     }
 
@@ -172,7 +172,9 @@
         '</span><span class="kv-v">' + esc(r[1]) + "</span></div>";
     }).join("");
     show($("account-card"));
-    show(danger);
+    show($("btn-delete-start"));
+    show($("btn-go-admin"));
+    renderBottomActions();
     renderVerifyState(info);
   }
 
@@ -235,6 +237,33 @@
     } else {
       hide(btn);
     }
+    renderBottomActions();
+  }
+
+  function renderBottomActions() {
+    var row = $("bottom-actions");
+    if (!row) return;
+    var any = false;
+    Array.prototype.forEach.call(row.children, function (el) {
+      if (!el.hidden) any = true;
+    });
+    if (any) show(row); else hide(row);
+  }
+
+  function renderDanger() {
+    var id = identity();
+    var on = !!(id && id.signedIn);
+    var row = $("bottom-actions");
+    if (row && !on) {
+      hide($("btn-delete-start"));
+      hide($("btn-go-admin"));
+      renderBottomActions();
+    }
+    if (!on) {
+      hide($("danger-panel"));
+      hide($("delete-step-1"));
+      hide($("delete-step-2"));
+    }
   }
 
   // 退出登录 = **两份凭据一起清**（Issue #274）。
@@ -270,9 +299,33 @@
     })["catch"](function () { });
   }
 
+  function deletePanelOpen() {
+    var p = $("danger-panel");
+    return !!(p && !p.hasAttribute("hidden"));
+  }
+
+  function onDelete(open) {
+    var want = open === undefined ? !deletePanelOpen() : !!open;
+    var btn = $("btn-delete-start");
+    if (btn) btn.setAttribute("aria-expanded", want ? "true" : "false");
+
+    if (!want) {
+      onDeleteCancel();
+      hide($("danger-panel"));
+      return;
+    }
+
+    show($("danger-panel"));
+    show($("delete-step-1"));
+    hide($("delete-step-2"));
+    var ask = $("btn-delete-ask");
+    if (ask) ask.focus();
+  }
+
   function onDeleteStart() {
-    show($("delete-step-2"));
+    show($("danger-panel"));
     hide($("delete-step-1"));
+    show($("delete-step-2"));
     var el = $("input-delete-email");
     if (el) el.focus();
   }
@@ -336,6 +389,7 @@
     }
     if (msg) { msg.textContent = line; msg.className = "account-msg " + (r.remote === "skipped" ? "warn" : "ok"); }
     showToast(r.remote === "skipped" ? "已注销本机账号；云端那一份没删掉" : "账号已注销，背诵进度仍在");
+    renderDanger();
     if (r.remote === "skipped") return;
     setTimeout(function () { paint(A.session(store)); }, 900);
   }
@@ -506,6 +560,7 @@
     renderNickname();
     renderSync();
     renderAdmin(id);
+    renderBottomActions();
   }
 
   function init() {
@@ -521,7 +576,12 @@
     var admin = $("btn-go-admin");
     if (admin) admin.addEventListener("click", function () { location.href = "/admin/"; });
     var dStart = $("btn-delete-start");
-    if (dStart) dStart.addEventListener("click", onDeleteStart);
+    if (dStart) {
+      dStart.setAttribute("aria-expanded", "false");
+      dStart.addEventListener("click", function () { onDelete(); });
+    }
+    var dAsk = $("btn-delete-ask");
+    if (dAsk) dAsk.addEventListener("click", onDeleteStart);
     var dCancel = $("btn-delete-cancel");
     if (dCancel) dCancel.addEventListener("click", onDeleteCancel);
     var dConfirm = $("btn-delete-confirm");
@@ -579,10 +639,18 @@
     document.addEventListener("family-change", onFamilyChange);
   }
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", init);
-  } else {
+  var inited = false;
+
+  function boot() {
+    if (inited) return;
+    inited = true;
     init();
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", boot);
+  } else {
+    boot();
   }
 
   function syncMod() { return window.SyncStore || null; }
@@ -617,7 +685,7 @@
           ? ""
           : st === "signin"
             ? "已开启，登录后才会真的同步。"
-            : "已开启：本机那份始终完整，断网照常背。";
+            : "";
 
     renderConflict(S, !!sess());
   }
