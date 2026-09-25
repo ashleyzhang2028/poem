@@ -336,6 +336,52 @@ console.log('\n=== 七、子用户那一块的接线与收口（js/family-ui.js�
     'js/family-ui.js 里不出现写死的 3 / 180（数字只有一个来源）');
 }
 
+console.log('\n=== 七之一、切子用户：昵称与头像一起换（Issue #320）===');
+{
+  const { F, A, b } = sandbox();
+  F.ensure({ backing: b });
+  const ming = F.list({ backing: b })[0].id;
+  F.rename(ming, '小明', { backing: b });
+  const hong = F.create('小红', { backing: b }).profile.id;
+
+  A.setLocalImage(b, 'data:image/jpeg;base64,AAAA');
+  A.setAvatar(ming, { img: 'https://x.supabase.co/a.jpg' }, { backing: b });
+  F.select(hong, { backing: b });
+  A.setLocalImage(b, 'data:image/jpeg;base64,BBBB');
+  A.setAvatar(hong, { img: 'https://x.supabase.co/b.jpg' }, { backing: b });
+
+  F.select(ming, { backing: b });
+  eq(F.current({ backing: b }).nickname, '小明', '切回来：昵称是小明的');
+  eq(A.display(b).src, 'data:image/jpeg;base64,AAAA', '切回来：**头像也是小明的**');
+  F.select(hong, { backing: b });
+  eq(A.display(b).src, 'data:image/jpeg;base64,BBBB', '再切过去：头像是小红的');
+
+  chk(!!b.raw()[A.LOCAL_NS + '::' + ming] && !!b.raw()[A.LOCAL_NS + '::' + hong],
+    '一个孩子一把字节键（谁都不许盖谁）');
+
+  eq(F.isPerChild(A.LOCAL_NS), true, '本机那份字节算「分家」（它与昵称同属「你是谁」）');
+  eq(F.isPerChild('poem_device_prefs_v1'), false, '设备偏好仍不分家（同一台平板）');
+
+  const files = fs.readdirSync(path + 'js').filter(f => /\.js$/.test(f));
+  const splicers = files.filter(f => {
+    const src = read('js/' + f).replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/^\s*\/\/.*$/gm, ' ');
+    return /["']::["']|\+\s*["']::/.test(src) || /::\s*["']\s*\+/.test(src);
+  });
+  eq(splicers.sort().join(','), 'family.js,sync-store.js',
+    '拼 `::` 后缀的仍然只有 family.js 与 sync-store.js（头像那一族没在别处再写一遍）');
+
+  const stripJs = t => t.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/^\s*\/\/.*$/gm, ' ');
+  const av = stripJs(read('js/avatar.js'));
+  chk(/F\.keyFor\(/.test(av), 'js/avatar.js 用 Family.keyFor() 拼那一把键（不自己接后缀）');
+  chk(/function localKey\(/.test(av), '拼法收在 localKey() 一处');
+  chk(/moveAvatarBytes/.test(stripJs(read('js/family.js'))),
+    'js/family.js 有「老键搬一次」那一手（认领第一个子用户时）');
+  chk(/avatarLocal: "poem_avatar_local_v1"/.test(read('js/sync-store.js')),
+    'js/sync-store.js 认得这一族（退出登录时要一起清）');
+  chk(/dropLocal: function/.test(read('js/sync-store.js')) && /perChildKey/.test(read('js/sync-store.js')),
+    '清哪几把 / 分不分家都从 sync-store 那一处问（页面不自己拼键名）');
+}
+
 console.log('\n=== 七之二、备份：名册跟着走 ===');
 {
   const { F, PS, b } = sandbox();

@@ -85,9 +85,21 @@
     return "当前 " + count + " / " + quoText(lim) + " 个";
   }
 
+  // 切子用户（Issue #320）。
+  //
+  // ⚠️ 顺序是有讲究的：**先让位、再切**。
+  //    本机那份头像字节（`poem_avatar_local_v1`）跟着子用户走，
+  //    而「搬字节」只发生在 `ensure()` / `adoptAvatarBytes()` 上。
+  //    这里在切走之前先看一眼当前这个孩子是不是**一个字节都没有**
+  //    （老键上还留着上一版不分家那张图的那类设备）——是的话赶紧认领，
+  //    免得它被切走之后就再也认不着了。
   function switchFamily(id) {
     const F = familyMod();
     if (!F) return;
+    const cur = F.currentId({ backing: window.localStorage });
+    if (cur && cur !== id && typeof F.adoptAvatarBytes === "function") {
+      F.adoptAvatarBytes(cur, { backing: window.localStorage });
+    }
     const r = F.select(id, { backing: window.localStorage });
     if (!r.ok) { showToast("这个子用户已经不在名册里了"); return; }
     const p = F.current({ backing: window.localStorage });
@@ -179,6 +191,10 @@
   function reloadAll() {
     if (typeof window.__reloadSettingsControls === "function") window.__reloadSettingsControls();
     render();
+    // ⚠️ 把**两处头像**都重画一遍：底栏那颗（`SiteChrome.refreshUser`）、
+    //    「我的」页那一版（`family-change` 的听众）。
+    //    昵称从前会自己换 —— 它读的是名册；头像读的是本机那份字节，
+    //    而它从前**不在**这一条链上，于是切完还是上一个孩子那张脸（Issue #320）。
     try { document.dispatchEvent(new Event("family-change")); } catch (e) { }
     if (window.SiteChrome && window.SiteChrome.refreshUser) window.SiteChrome.refreshUser();
   }

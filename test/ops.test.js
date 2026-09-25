@@ -523,6 +523,55 @@ const section9 = (async () => {
     eq(E.identity({ backing: backing, authStore: store }).tier, "pro", "层级照旧落到权益层（与开通状态无关）");
     eq(E.identity({ backing: backing, authStore: store }).tierSource, "server", "来源仍是「服务器判定」");
   }
+
+  console.log("\n=== 九之一、/api/me 回来那条头像地址：每次都跟上（Issue #320）===");
+  {
+    // 服务器那把地址的破缓存参数**每次上传都会换**（`?v=<时间戳>`）。
+    // 从前 adoptAvatar() 的判据是「账号域里还没有图片才写」——
+    // 于是地址一旦写进去就再也不更新，本机永远挂着那条旧 `?v=`，
+    // 浏览器拿到的还是旧那张图：换了头像当场看不到新的。
+    const F = require(path.join(ROOT, "js/family.js"));
+    global.window = global;
+    global.Family = F;
+    delete require.cache[require.resolve(path.join(ROOT, "js/avatar.js"))];
+    global.Avatar = require(path.join(ROOT, "js/avatar.js"));
+
+    const raw = F.ensureDetailed({ backing: backing }).data;
+    const kid = raw.profiles[0].id;
+    F.select(kid, { backing: backing });
+
+    const url = v => "https://x.supabase.co/storage/v1/object/public/avatars/ab/abc/avatar.jpg?v=" + v;
+    const answers = { v: "1" };
+
+    const api2 = M.bind({
+      api: {
+        me: () => Promise.resolve({
+          ok: true, uid: meUid, avatar: url(answers.v),
+          plan: { tier: "pro", until: null }, role: "user", mask: "c***@163.com"
+        }),
+        deleteAccount: () => Promise.resolve({ ok: false, code: "E_OFFLINE" })
+      },
+      E: E, A: A, backing: backing, AV: global.Avatar
+    });
+    M.reset();
+
+    await api2.refreshMe();
+    eq(global.Avatar.avatar(backing).img, url("1"), "第一次问：地址写进账号域");
+    answers.v = "2";
+    await api2.refreshMe();
+    eq(global.Avatar.avatar(backing).img, url("2"),
+      "**再问一次：地址跟着服务端换**（不换的话，本机永远画着旧那张图）");
+
+    // ⚠️ 账号域那条地址是**按子用户**存的（名册里那一份）。
+    const hong = F.create("小红", { backing: backing }).profile.id;
+    F.select(hong, { backing: backing });
+    answers.v = "3";
+    await api2.refreshMe();
+    eq(global.Avatar.avatar(backing).img, url("3"), "换到另一个孩子：写的是**它**名下那条地址");
+    F.select(kid, { backing: backing });
+    eq(global.Avatar.avatar(backing).img, url("2"),
+      "切回来：还是这个孩子自己那条地址（没被后一个盖掉）");
+  }
 })().catch(e => {
 
   console.error("测试自身抛异常（通常是环境问题）：", e);

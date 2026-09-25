@@ -237,8 +237,19 @@
     var F = familyMod();
     if (F) {
       try {
-        var fam = F.read({ backing: backing });
-        if (fam && fam.profiles && fam.profiles.length) out.family = fam;
+        // ⚠️ 这里原来读的是 `Family.read()`，而它**只返回当前那一个孩子** ——
+        //    于是备份里那份「名册」永远只有一条，另外几个孩子一导入就不见了
+        //    （`test/family.test.js` 七之二量的是这件事）。名册要的是**整份**。
+        var fam = F.read;
+        if (!fam || typeof F.list !== "function") fam = null;
+        out.family = fam ? { v: 1, at: String(F.currentId({ backing: backing }) || ""), profiles: F.list({ backing: backing }) } : null;
+        if (out.family && !out.family.profiles.length) delete out.family;
+      } catch (e) {  }
+    }
+    if (window.Avatar && window.Avatar.exportLocal) {
+      try {
+        var av = window.Avatar.exportLocal({ backing: backing });
+        if (av && Object.keys(av).length) out.avatarLocal = av;
       } catch (e) {  }
     }
     return JSON.stringify(out, null, 2);
@@ -266,6 +277,10 @@
     if (data.device && typeof data.device === "object" &&
         (data.device.helper === HELPER_ON || data.device.helper === HELPER_OFF)) {
       setHelper(data.device.helper === HELPER_ON);
+    }
+    // 本机那份头像字节（Issue #320 起按子用户分家）：它一起进备份、一起回填。
+    if (window.Avatar && typeof window.Avatar.importLocal === "function" && data.avatarLocal) {
+      try { window.Avatar.importLocal(data.avatarLocal, { backing: backing }); } catch (e) {  }
     }
     return true;
   }
