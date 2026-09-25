@@ -144,25 +144,29 @@
       return;
     }
 
+    // 这一条 utterance 属于哪一篇 —— 记死，别用相对 +1。
+    // 用相对 +1 的话，cancel 触发的"残响"回调会从当前位置再往前推一格，
+    // 把中间那篇整个跨过去（就是用户看到的"点一次跳一首"）。
+    const at = q.index;
+
     if (typeof it.onStart === "function") {
-      try { it.onStart(q.index); } catch (e) {  }
+      try { it.onStart(at); } catch (e) {  }
     }
     if (typeof q.opts.onIndex === "function") {
-      try { q.opts.onIndex(q.index); } catch (e) {  }
+      try { q.opts.onIndex(at); } catch (e) {  }
     }
 
-    u.onend = function () {
+    function advance() {
       if (!queue || queue !== q) return;
+      // 已经不在这一篇上了（被主动跳转打断 / 已被别的回调推进过）：忽略残响
+      if (q.index !== at) return;
       q.current = null;
-      q.index += 1;
+      q.index = at + 1;
       readNext();
-    };
-    u.onerror = function () {
-      if (!queue || queue !== q) return;
-      q.current = null;
-      q.index += 1;
-      readNext();
-    };
+    }
+
+    u.onend = advance;
+    u.onerror = advance;
 
     q.current = u;
     try {
@@ -196,7 +200,10 @@
       opts: opts || {},
       index: 0,
       paused: false,
-      current: null
+      current: null,
+      // 主动跳转（点上一首/下一首）期间为 true：此间由 cancel 触发的
+      // onend 是"被打断"的残响，必须忽略，否则索引会被多推一格。
+      seeking: false
     };
     readNext();
     return controller;
@@ -262,22 +269,84 @@
     if (!queue || !synth) return false;
     const q = queue;
     q.current = null;
+    q.seeking = true;
+    try { synth.cancel(); } catch (e) {  }
     q.index += 1;
-    try {
-      synth.cancel();
-    } catch (e) {  }
     if (q.index >= q.items.length) {
+      q.seeking = false;
       finish(true);
       notifyChange();
       return false;
     }
     readNext();
+    q.seeking = false;
     notifyChange();
     return true;
   }
 
   function index() {
     return queue ? queue.index : -1;
+  }
+
+  function pending() {
+    return !!queue;
+  }
+
+  function setIndex(i) {
+    if (!queue) return false;
+    const q = queue;
+    const t = Math.max(0, Math.min(q.items.length - 1, Number(i) | 0));
+    if (t === q.index) return false;
+
+    if (t > q.index) {
+      while (q.index < t) {
+        if (!next()) return false;
+      }
+      return true;
+    }
+
+    q.current = null;
+    q.seeking = true;
+    try { synth.cancel(); } catch (e) {  }
+    q.index = t;
+    readNext();
+    q.seeking = false;
+    notifyChange();
+    return true;
+  }
+
+  function nextItem() {
+    if (!queue) return false;
+    const q = queue;
+    const cur = Math.max(0, Math.min(q.items.length - 1, q.index));
+
+    const target = cur + 1;
+
+    q.current = null;
+    q.seeking = true;
+    try { synth.cancel(); } catch (e) {  }
+
+    if (target >= q.items.length) {
+      q.index = target;
+      q.seeking = false;
+      finish(true);
+      notifyChange();
+      return false;
+    }
+
+    q.index = target;
+    readNext();
+    q.seeking = false;
+    notifyChange();
+    return true;
+  }
+
+  function peek(i) {
+    if (!queue) return "";
+    const q = queue;
+    const t = Math.max(0, Number(i) | 0);
+    const it = q.items[t];
+    return it ? normalize(it).title || "" : "";
   }
 
   function onVoicesReady(cb) {
@@ -310,6 +379,10 @@
     pause: pause,
     resume: resume,
     next: next,
+    nextItem: nextItem,
+    setIndex: setIndex,
+    peek: peek,
+    pending: pending,
     stop: stop,
     index: index,
     paused: function () { return !!(queue && queue.paused); }
@@ -325,6 +398,10 @@
     pause: pause,
     resume: resume,
     next: next,
+    nextItem: nextItem,
+    setIndex: setIndex,
+    peek: peek,
+    pending: pending,
     index: index,
     speaking: speaking,
     paused: paused,

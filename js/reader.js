@@ -69,9 +69,15 @@
       sync();
     });
     btnPrev.addEventListener("click", function () {
+      // 以引擎的实时索引为准：queueInfo.index 是上一次回调的快照，
+      // 直接拿它减一会慢半拍（第一下像是没反应）。
+      const cur = window.Speech && typeof window.Speech.index === "function" ? window.Speech.index() : queueInfo.index;
+      if (cur > 0) queueInfo.index = cur;
       if (prevItem()) sync();
     });
     btnNext.addEventListener("click", function () {
+      const cur = window.Speech && typeof window.Speech.index === "function" ? window.Speech.index() : queueInfo.index;
+      if (cur >= 0) queueInfo.index = cur;
       if (!nextItem()) close();
       sync();
     });
@@ -148,12 +154,18 @@
 
   function nextItem() {
     if (!window.Speech || !window.Speech.active || !window.Speech.active()) return false;
+
+    if (typeof window.Speech.nextItem === "function") return !!window.Speech.nextItem();
     return !!window.Speech.next();
   }
 
   function prevItem() {
     if (!window.Speech || !window.Speech.active || !window.Speech.active()) return false;
     if (queueInfo.index <= 0) return false;
+
+    if (typeof window.Speech.setIndex === "function") {
+      return !!window.Speech.setIndex(queueInfo.index - 1);
+    }
 
     const target = queueInfo.index - 1;
     let guard = (queueInfo.total || 0) + 2;
@@ -213,7 +225,7 @@
       onIndex: function (i) {
         setQueueInfo({
           current: titleAt(i),
-          next: titleAt(i + 1),
+          next: (window.Speech && typeof window.Speech.peek === "function" && window.Speech.peek(i + 1)) || titleAt(i + 1),
           index: i,
           total: items.length,
           hasNext: i + 1 < items.length,
