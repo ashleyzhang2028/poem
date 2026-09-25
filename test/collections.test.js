@@ -1,4 +1,4 @@
-// Issue #278：页面层（jsdom 渲染 / 点击 / 样式 / 源码扫描）已删除，只留集合本身的功能验证。
+
 const fs = require('fs');
 const vm = require('vm');
 const path = __dirname + '/../';
@@ -67,9 +67,6 @@ chk(WI.repOf('tangshi-ts-231') === 'poems-xx1-09',
 chk(WI.repOf('tangshi-ts-1') === 'tangshi-ts-1',
   '纯课外篇目（无课内对应）代表条目就是它自己');
 
-// Issue #278：这里原先起一个 jsdom 窗口来装脚本 —— 只为了一个 localStorage
-// 与 document，代价却是整层测试最慢的那一段。换成 vm 沙盒：同样的脚本、
-// 同样的 data/*.js，一个假的 window 就够。
 const dom0 = { window: null };
 const w0 = { console: console, Date: Date, JSON: JSON, Math: Math };
 w0.window = w0;
@@ -147,16 +144,10 @@ chk(!!jysItem, '《静夜思》进了排程篇目，且代表条目是课内那�
 chk(!!jysItem && ['poems-xx1-09', 'tangshi-ts-231'].indexOf(jysItem.sourceEntryId) >= 0,
   '原始加入的那一条记在 sourceEntryId（列表里显示用户加的那一条）');
 
-// ---------------------------------------------------------------------------
-// 以下是纯数据层的功能验证（配额 / 上限 / 导入导出），**不碰页面**。
-// Issue #278：页面层（jsdom 渲染 / 点击 / 样式）与源码扫描整段删除 ——
-// 那些是界面测试，构建时间花在这里不值。
-// ---------------------------------------------------------------------------
 C.list().slice().forEach(c => C.remove(c.id));
 
 {
-  // 上限那一条路走的是 window.Entitlement（与页面同一个口子），
-  // 所以把 entitlement.js 也装进同一个 vm 沙盒。
+
   vm.runInContext(fs.readFileSync(path + 'js/entitlement.js', 'utf8'), w0,
     { filename: 'js/entitlement.js' });
   const E2 = w0.Entitlement;
@@ -204,7 +195,6 @@ C.list().slice().forEach(c => C.remove(c.id));
   chk(!E2.cap('collections.unlimited'), 'collections.unlimited 能力已删除（Max 的额度归 collections.many 的 5000）');
 }
 
-// 排序 / 整组移出 / 导出 / 导入 —— 都是**集合本身**的功能，与页面无关
 {
   C.list().slice().forEach(c => C.remove(c.id));
   const cc = C.create('排序测试');
@@ -276,13 +266,9 @@ C.list().slice().forEach(c => C.remove(c.id));
   chk(res.collection.items.every(it => it.snap && it.snap.title),
     '导入时顺手给每一篇存了快照（首页不加载那几部集子，靠它显示）');
 
-  // 没有站点索引（首页不加载那几部集子）时必须按原样收 —— 传空数组同样是
-  // 「没有索引」那一档（importText 用 `list && list.length` 判它）
   const res2 = C.importText('tangshi-ts-1\nfoo-bar', '裸清单', []);
   chk(res2.added === 2 && res2.dropped === 0, '没有站点索引时按原样收（不因查不到就丢掉用户贴的东西）');
 
-  // 没有站点索引（首页不加载那几部集子）时，自选篇目仍要带题名与正文 ——
-  // 走的是加入时顺手存下的那份快照
   const noIndex = C.scheduleItems([]);
   chk(noIndex.length >= 2 && noIndex.every(p => p.title && p.text),
     '没有站点索引时（首页情形）认得出的自选篇目仍带题名与正文（走快照，实际 ' +

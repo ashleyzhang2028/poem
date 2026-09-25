@@ -270,8 +270,7 @@ console.log("\n=== 七之二、2D 的六个步骤（配置与真开通，docs §
   has(ev, "The page could not be found", "并点明平台层 404 长什么样（与本站的 E_404 区分开）");
   has(ev, "E_404", "同时给出**本站** 404 的形状，两种不许混成一句「404」");
   has(ev, "rewrite", "并写明这条坏法的来由（rewrite 那一层）");
-    /* 2026-09-20：动态 catch-all 出现在部署函数列表里，实际请求仍可能平台层 404。
-      所以 E 步的第 ⑤ 条钉死固定入口与携带原路径的 rewrite。 */
+
     has(ev, "api/handler.js", "E 步点明函数入口是固定的 api/handler.js");
     has(ev, "__path=:path*", "并写明 rewrite 如何把原 API 路径交给固定函数");
   has(ev, "vercel.json", "第 ⑤ 条的判据里要看 vercel.json 里那条 rewrite");
@@ -469,8 +468,7 @@ const section9 = (async () => {
   const M = require(path.join(ROOT, "js/account-api.js"));
   const E = require(path.join(ROOT, "js/entitlement.js"));
   const A = require(path.join(ROOT, "js/auth-core.js"));
-  // 页面里 `Entitlement` / `AuthCore` 同屏（脚本顺序固定），这一节也照办：
-  // `isOwner()` 在调用方没传 uid 时要自己从会话里问一次，问的是这份 AuthCore。
+
   if (E.setAuthCore) E.setAuthCore(A);
 
   const backing = (() => {
@@ -486,9 +484,7 @@ const section9 = (async () => {
   const store = A.makeStore(backing);
   const rr = A.requestCode(store, { channel: "email", value: "c@163.com" }, "login", { code: "246810" });
   const rv = A.verifyCode(store, rr.codeId, "246810", "login");
-  // ⚠️ `/api/me` 的答案要带上 **uid**（Issue #276 后续）：本机那份缓存记着
-  //    「这份答案是谁的」，uid 对不上就不认它（换了人登录时上一位的角色
-  //    不许被继承）。真实的 `/api/me` 一直回 uid。
+
   const meUid = (rv && rv.account && rv.account.uid) || "";
 
   const api = M.bind({

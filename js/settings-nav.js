@@ -76,13 +76,6 @@
       if (nav && nav.serviceWorker && nav.serviceWorker.controller) cached = "已缓存，可离线打开";
     } catch (e) { cached = "未缓存"; }
 
-    // 「关于」这几行是同一套排法：左列写项名（自己当链接的那几行就是入口，
-    // 不用另挂一颗「查看」），右列写值；没有值的那几行右列**留空**。
-    //
-    // 几条入口写成一整行普通文字（蓝色 + 无下划线），行高与「应用 / 版本 /
-    // 离线缓存」完全一致 —— 用户 2026-09-18：不要下划线，间距要和上面几行一样。
-    // 「自检」也走同一套（它原先在「设置 · 通用」里是一颗按钮，用户点名搬到
-    // 这儿、排在最后一行）。
     box.innerHTML =
       '<h2 class="settings-about-title">关于</h2>' +
       '<div class="kv-list">' +
@@ -90,10 +83,7 @@
       kvRow("版本", esc(APP_VERSION)) +
       kvRow("离线缓存", esc(cached)) +
       "</div>" +
-      // 「这几页去哪儿看」与上面对齐：左列自己就是链接，右列留空。
-      // 分成两段是因为上面三行是**这台应用自己的事**（叫什么 / 哪一版 /
-      // 能不能离线），下面四行是**另外几张页**；凑在一个表里，用户会以为
-      // 「用户对比」也是设置里的一项。
+
       '<h2 class="settings-about-title">页面</h2>' +
       '<div class="kv-list">' +
       kvRow(link("/plans/", "用户对比"), "") +
@@ -103,22 +93,6 @@
       "</div>";
   }
 
-  // 「自检」那一行**只给已登录的管理员**（Issue #276 后续）。
-  //
-  // 用户原话：「自检页面只能已登录的管理员账号访问，其他情况一律不显示自检
-  // 页面链接，且不能访问」。判据与 `/admin/` 走**同一个出口**
-  // `Entitlement.isOwner()`（源头是服务端下发的 `accounts.role`），
-  // 不在这一处另判一套 —— 两个地方各写一遍，迟早一处改、另一处忘。
-  //
-  // ⚠️ 它原先是「关于」里平铺的第五行。现在单独一段追加，是因为那一行
-  //    得先知道「我是谁」才知道渲不渲染：`Entitlement.identity()` 要
-  //    `poem_plan_v1` 里那份服务端答案，而那份答案可能比这一屏晚到
-  //    （登录页回来、同步拉到角色）。所以这里**先不画**，等
-  //    `entitlementchange` / 脚本就位后再补一次 —— 补的时候仍是同一个判据。
-  //    ⚠️ `entitlementchange` 由 `js/entitlement.js` 在**那份缓存被写**的
-  //       那一刻发（`writeTier` / `clearTier` 两个写入口各喊一声）。
-  //       Issue #276 后续之前这里只是**听着**，没人发 —— 于是管理员登录完
-  //       回到这一页，那一行要等下一次整页刷新才出现。
   function selfCheckRow() {
     var Ent = null;
     try { Ent = window.Entitlement || null; } catch (e) { Ent = null; }
@@ -130,8 +104,6 @@
     var id = null;
     try { id = Ent.identity({ backing: backing }); } catch (e) { id = null; }
 
-    // ⚠️ 带上 `uid`（Issue #276 后续）：判据是「服务端那份答案是不是当前
-    // 这位的」，不是「这台机器上最后一位管理员是谁」。
     var ok = false;
     try { ok = !!Ent.isOwner(backing, id ? { role: id.role, uid: id.uid } : undefined); } catch (e) { ok = false; }
     if (!ok) return "";
@@ -173,9 +145,6 @@
     renderAbout();
     renderSelfCheck();
 
-    // 角色是**异步到位**的（登录回来、云端拉到 role 都会换一份
-    // `poem_plan_v1`）。这里挂一次「变了就重画那一行」，不然管理员
-    // 刚登录完回到这一页，入口要等一次整页刷新才出现。
     window.addEventListener("storage", renderSelfCheck);
     window.addEventListener("entitlementchange", renderSelfCheck);
   }

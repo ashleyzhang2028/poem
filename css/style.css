@@ -29,98 +29,30 @@
   --radius-sm: 12px;
   --radius-md: 14px;
 
-  /* ==========================================================================
-     控件三档（Issue #278 第六轮 · 用户原话：
-     「所有页面，所有输入框及大按钮的边框 radius 最多 7px……
-       这些按钮样式是否应该统一，还是分成两种或者三种固定样式，
-       确保 padding 的一致性，高度的一致性，radius 的一致性，
-       以及默认，悬浮，选中，点击，激活，等各种状态的一致性？最多三种，不要再多了。」
-       「输入框大小也应该和按钮相匹配」「链接是否应该固定样式」）
-
-     --------------------------------------------------------------------------
-     口径：全站按钮**只有三档**，除此之外不再有第四种长相。
-
-       ① 主按钮  .btn.primary / .btn.good / .account-btn（不带 .ghost）
-                实心天青底，一行里只放一颗 —— 一件事只有一颗主按钮。
-       ② 次按钮  .btn / .btn.ghost-btn / .account-btn.ghost / .mini-btn
-                纸底 + 缃线 + 墨字；一格里的「另一件可做的事」。
-       ③ 选项档  .seg / .chips / .tier-pick / .play-mode-opt /
-                 .admin-report-counts / .print-paper
-                一排等价的选项，**选中态自证**（实心天青），不是「点了会做事」。
-
-     危险（.danger-btn / .account-btn.danger / .btn.bad）不是第四档：
-     它就是②的红色副本，尺寸 / 圆角 / 状态与②逐字相同。
-
-     ⚠️ 三档**共用同一把尺**：下面这几个数就是那把尺，各档只准读它们，
-        不许再各写一个数 —— 同一件事写两遍必然漂（本轮之前全站 12 种圆角、
-        6 种高度、三种按下反馈、两种悬浮效果，正是这么漂出来的）。
-
-     ⚠️ 圆角 **≤ 7px** 是用户的硬上限。原来 --radius-sm 是 12px，
-        比上限高出 5px；控件这一层改用 --ctl-radius（6px），
-        `.btn / .mini-btn / .account-btn`（11 个页面共用）一处改、处处跟着变。
-     ⚠️ 卡片那一层（--radius 16 / --radius-md 14）**不在这一轮里**：
-        卡片不是「按钮」，而且 16px 是 .card / .account-card / .settings-link
-        共用的既有口径，动它会牵到全站每一张纸。用户这一轮说的是
-        「输入框及大按钮」—— 按字面收口在控件上。
-     ========================================================================== */
   --ctl-radius: 6px;
 
-  /* 档①「大」：一格里的主按钮（登录 / 发放 / 注销确认）。 */
   --ctl-h-lg: 44px;
-  /* 档①「中」与档②的默认档：一行里并排的两颗（导出 / 清空 / 刷新）。 */
+
   --ctl-h-md: 38px;
-  /* 档③「小」：选项按钮与网格里的行内小键。 */
+
   --ctl-h-sm: 32px;
 
-  /* 纵向内边距从高度反推，所以每一档的**画出来的高度**真的等于上面那个数：
-     高度 − 上下内边距×2 − 上下边框×2 = 文字行盒（font-size × 1.2 的圆整值）。
-     ⚠️ 这几个数是「算出来的结果」，不是「随手挑的」——改字号就要连它们一起算，
-        否则 `.btn` 那种不写 height 的按钮会自己长高，与写了 height 的差开。 */
-  --ctl-pad-lg: 11px;   /* 11×2 + 1×2 + 20(字 15px) = 44 */
-  --ctl-pad-md: 9px;    /*  9×2 + 1×2 + 18(字 14px) = 38 */
-  --ctl-pad-sm: 6px;    /*  6×2 + 1×2 + 18(字 14px) = 32 */
+  --ctl-pad-lg: 11px;
+  --ctl-pad-md: 9px;
+  --ctl-pad-sm: 6px;
 
   --ctl-font-lg: 15px;
   --ctl-font-md: 14px;
   --ctl-font-sm: 13px;
 
-  /* 定高控件里那一行字的行高（Issue #291）。
-     ⚠️ 这条不是「另一个字号」：它是**把一行字摆正**用的。
-
-     病根：`html, body { line-height: 1.6 }`（第 185 行）是给**正文段落**的。
-     段落要 1.6 才读得舒服，但把同一个 1.6 用在「高 38px 的按钮」里就出事：
-     字 13.5px 时行盒 25.65px —— 行盒比控件矮，浏览器把**行盒顶端**摆在
-     控件顶端，于是字**贴着上沿**、底下空一大截（实测「显示邮箱地址」
-     上面 3px、下面 15px）。
-
-     `<button>` 不受影响，纯属巧合：UA 样式表给 button 的 line-height 是
-     `normal`（button **不继承** line-height），所以同一颗键写成 `<a>`
-     就歪、写成 `<button>` 就正 —— 同一个页面上两种长相，用户看得见。
-
-     所以这里定死：**凡是定高的控件，里面那一行字用自己的行高**。
-     判据是「这个盒子有没有定高」（--ctl-h-* / --ctl-input-h），
-     不是「它是不是 button」—— 与 --ctl-pad-* 那一组同源：
-     高度 − 上下内边距×2 − 上下边框×2 = **这个数**×档位字号。
-     ⚠️ 下面每一档的数就是那句算式的结果，改字号要连它一起改，
-        否则定高控件会长高（与 --ctl-pad-* 上面那条警告同一件事）。
-        · 档① 15px 字：44 − 11×2 − 1×2 = 20px
-        · 档② 14px 字：38 −  9×2 − 1×2 = 18px
-        · 档③ 13px 字：32 −  6×2 − 1×2 = 18px
-     ⚠️ 用**像素行高**而不是 `1.2`：`1.2 × 字号` 会随字号漂，
-        而控件高度是定死的 —— 定高配比例行高，两边迟早对不上。 */
   --ctl-leading-lg: 20px;
   --ctl-leading-md: 18px;
   --ctl-leading-sm: 18px;
 
-  /* 左右内边距（同一个高度的档，横向也只有一个数）。 */
   --ctl-pad-x: 14px;
 
-  /* 输入框 / 下拉框：**高度与档①「中」同一档**（用户：「输入框大小也应该和
-     按钮相匹配」）。44px 的输入框与 38px 的按钮并排会一高一矮，
-     所以表单里两者都用 38px 那一档；搜索框等自成一行的另按 --toolbar-h。 */
   --ctl-input-h: var(--ctl-h-md);
 
-  /* 悬浮 / 按下 / 选中 / 焦点：全站每个控件都读这三条，不再各写一套。 */
   --ctl-hover: var(--bg-soft);
   --ctl-press: var(--line-2);
   --ctl-focus: 0 0 0 3px rgba(47, 96, 85, .10);
@@ -133,68 +65,16 @@
   --input-font: 14px;
   --input-font-narrow: 16px;
 
-  /* 搜索框里的**提示字**（`.search-input::placeholder`）—— Issue #278 第八轮。
-     ⚠️ 全站每一个搜索框共用**这一组**变量：索引页 / 集子页那一排工具栏、
-        搜索页 hero、首页「今日加背」。
-     用户 2026-09-25 的话：「将今日加背搜索框里 今日加背 文字样式和搜索页内
-        搜索框里的 placeholder 文字字体样式颜色和大小保持一致」——
-        两页差的就是这一个数：搜索页 hero 自己覆写成 13.5px，其余走 12.5px。
-     为什么落成 13.5 而不是 12.5：两枚框在 2026-09-24（Issue #276）已经
-        被用户点名要求「一样高」——两边都是 52px。框一样高、字号却各一个数，
-        正是这一条要收掉的那种「看着差不多、其实两个数在各自出缝」。
-        12.5px 那个数的来历是「与右侧『全部 / 未读』（.seg.mini button）同号」，
-        那说的是**索引页那一排 40px 的工具栏**（旁边真有一排 12.5px 的控件），
-        与 52px 的搜索页 hero / 首页「今日加背」无关；而首页那一条旁边没有
-        任何 12.5px 的东西，它照抄 12.5 只是因为它与索引页共用同一条规则。
-     ⚠️ **右侧那排「全部 / 未读」也跟着读这一个数**（`--seg-mini-font`）。
-        原先那条断言守的是「提示字与『全部 / 未读』同字号」，而 `.seg.mini
-        button` 自己写死 12.5px —— 那一轮只把字号各抬到一个新数，两个数
-        仍然在两个地方，这条断言于是在 CI 上一直红（2026-09-25）。
-        口径改成**它们本来就该是同一个来源**：框里的提示字与旁边那排控件
-        读同一个变量，从此想漂也漂不开，而不是「碰巧都是 13.5px」。
-    颜色 / 字重 / 字体**本来就已经一致**（都是浏览器给 `::placeholder` 的
-        默认——两家都不写 color，字重与字体继承自输入框），
-        所以这一轮只对齐「字号」；那条位移的口径在 §4.53 / §4.54 两轮里改过
-        （见下一条与那条 `@media (min-width: 768px)`）。 */
   --search-placeholder-font: 13.5px;
   --seg-mini-font: var(--search-placeholder-font);
 
-  /* 提示字回到框**中轴**所需的上抬量（`.search-input::placeholder` 的
-     `transform: translateY(...)`）。
-     ⚠️ 这个数是**算出来**的，可从算式到「真量出来对不对」中间还隔着一层，
-        本轮（§4.54）与上一轮（§4.53）在这一点上正好各对了一半：
-        · 真实来源：`::placeholder` 是**行内盒**，它的行盒按 UA 的 `normal` 排，
-          **不读 `line-height`**（§4.53 真浏览器量过）——「两档行盒高度差 ÷ 2」
-          不是那个差，所以算式里的 1.2 只是**估算**，不是浏览器真乘的那个数。
-        · 档位：输入字号是**两档**的（700px 及以下 `--input-font-narrow` 16px、
-          其上 `--input-font` 14px），所以位移也必须**一档一个数** ——
-          只写一个数，一档对了另一档必然偏，而这件事在 CSS 里看着永远是对的。
-        · 现量值（把 transform 归零，取提示字墨迹中心与框中轴比）：
-          手机这一档（输入 16px）**1.5px**、宽屏那一档（输入 14px）**0.3px**。
-        ⇒ 于是：`(输入字号 − 提示字号) × 1.2 ÷ 2`，与「输入字号」本身无关的
-          那一项相消 —— 16 与 13.5 → 1.5；14 与 13.5 → 0.3。
-     ⚠️ **改字号 / 改行高必须连它一起重算**：脱钩之后提示字与输入文字会一起
-        偏出中轴，而这件事在 CSS 里看着永远是对的。
-     ⚠️ 变量分两档、门限只有一个（768px）：
-        `:root` 这一条写的是**窄屏那一档**（16px）的 1.5px；
-        768 以上 `--input-font` 变 14px，位移在下面那条
-        `@media (min-width: 768px)` 里就地改成 0.3px ——
-        用**同一个变量名**，不另起第二个名字，也不动字号。
-     ⚠️ 门限 768px 与 classic.css 里 `.search-input` 换字号那一档是**同一个数**：
-        字号换档与位移换档必须一起走，两处门限漂开正是这一整族 bug 的来处。 */
   --search-placeholder-shift: -1.5px;
 
   --item-btn: 36px;
   --item-icon: 16px;
-  /* 列表行里那几颗行内圆键排成 2×2 网格时，左右与上下**同一道** gap。
-     原先它们横着铺一排，相邻两颗之间只有 6px 外边距 —— 圆与圆几乎贴住 */
+
   --item-gap: 8px;
-  /* 详情页「白话译文」那一排的胶囊朗读键里的图标框。
-     ⚠️ 必须只有一个来源：style.css 与 classic.css 都写了
-     `.trans-read .btn-icon svg`（同为 0-2-1，同特异性），而首页同时加载这两张表、
-     classic.css 在后 —— 谁把 px 写死谁就赢。此前 style.css 写 14px、
-     classic.css 写 24px，于是首页那颗 12px 的胶囊被 24px 的图标撑到 36px 高
-     （量出来的胶囊比设计高 2px）。改成两处都读这一个变量，加载顺序不再有意义。 */
+
   --trans-icon: 14px;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -206,29 +86,6 @@
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-/* ==========================================================================
-   链接：全站一套（Issue #278 第六轮 · 用户原话：
-   「链接和按钮是否有区分？而且链接是否应该固定样式，包括默认，悬浮，active？」
-
-   --------------------------------------------------------------------------
-   一、链接与按钮**靠三件事区分**（不是靠下划线）：
-       ① 形状 —— 链接没有盒子：没有底、没有描边、没有"高度"；
-       ② 手感 —— 链接按下**不换底**，只把颜色压深一档（按钮换底）；
-       ③ 颜色 —— 链接一律天青（--green），按钮的文字色是墨（主按钮是奶白）。
-       用户 2026-09-18 定过「不要下划线」，所以区分不靠下划线 ——
-       这一轮把「不画下划线」升格成「链接自己有一套固定的四态」。
-
-   二、四态（全站同一份，不再各处各写）：
-       默认   --green
-       悬浮   --green-dark
-       active --green-dark（与悬浮同色 —— 触屏上没有悬浮，按下必须自己可见）
-       焦点   --ctl-focus 的焦点环 + 圆角，键盘用户看得出自己在哪
-
-   三、**正文里**的链接例外：正文中间插一条颜色不同的字会打断阅读，
-       所以正文链接保持与正文同色，只用一条细下划线把自己标出来
-       （`.legal a` / `.report-login-link` 是这一类的两个落点）。
-       它们不是"另一种链接"，是"链接在正文里的画法"。
-   ========================================================================== */
 a { text-decoration: none; color: var(--green); }
 
 a:hover,
@@ -236,12 +93,6 @@ a:focus-visible { color: var(--green-dark); }
 a:active { color: var(--green-dark); }
 a:focus-visible { outline: none; box-shadow: var(--ctl-focus); border-radius: 2px; }
 
-/* ⚠️ 例外：这几处是「一整块可点的卡 / 行」，颜色必须继承外层的墨色
-      （它们是布局容器，不是句子里的一个词）。 */
-/* ⚠️ 这几处的链接颜色必须继承外层的墨色（它们是布局容器，不是句子里的词）：
-   一张可点的卡、一行可点的行 —— 把它们染成天青就等于「整块都成了链接」。
-   ⚠️ 选择器里**不要**把「关于」那几行的行名当成前缀写进来：那一行本身
-      有自己的一条规则（见「关于」那一节），同名前缀会让按行扫的守卫读错对象。 */
 .settings-link, .account-link, .item a, .item-title a, a.entry-link,
 a.kv-link, .brand, .suggest-item, .library-card, .collection-card { color: inherit; }
 .settings-link:hover, .account-link:hover, a.kv-link:hover, .item a:hover,
@@ -280,13 +131,6 @@ html, body {
 
   --read-w: 720px;
 
-  /* 「一条工具条 / 一枚搜索框」在宽屏上的封顶宽度（Issue #276 收进来的一把尺）。
-     它原先散在三处，各自写死同一个 720 —— 集子页工具栏那一排按钮、
-     搜索页 hero 下面那条工具栏、首页「今日加背」。三处同数不是巧合，
-     是「它们都是同一条工具条」这件事；收成一个变量之后，
-     改一处三处一起动，也不会再有人问「为什么这里写 720」。
-     ⚠️ 它只在 768–1023 这一档用；>=1024 时那几处会各自收回更窄的
-        --content-w 或 520px（搜索框不该跟着一列纸拉长）。 */
   --bar-w: 720px;
 }
 
@@ -378,11 +222,7 @@ html, body {
   background: var(--card);
 }
 .seg.mini button {
-  /* ⚠️ 字号读 `--seg-mini-font`（= `--search-placeholder-font`），不自己写数。
-     这一排「全部 / 未读」与左边搜索框里的提示字**同一档**（用户 2026-09-24
-     点名过「同字号」），两边各写一个 px 就会各自漂：2026-09-25 那一轮
-     把提示字抬到 13.5px、这里仍 12.5px，于是 CI 上「同字号」那条断言红了。
-     收成同一个来源之后，「同字号」不再是两条规则碰巧相等，而是同一条规则。 */
+
   font-size: var(--seg-mini-font, 13.5px);
   padding: 0 9px;
 }
@@ -606,11 +446,6 @@ html, body {
 }
 .collection-count { font-size: 12px; color: var(--ink-3); }
 
-/* 「我的清单」里的行内小键（导入清单 / 重命名 / 删除 / 全选 / 移出选中的）。
-   原先它是独立的一档：3px 10px 内边距 + 12px 字（高 22px），
-   比档②的小号（32px）矮整整 10px，颜色还是灰底灰字 ——
-   与旁边那颗「打印清单」（.btn 38px 高）并排，一格里有三种高度的按钮。
-   本轮归到**档②（次按钮）的小号**：尺寸 / 圆角 / 状态全部读同一把尺。 */
 .collection-act {
   margin-left: auto;
   border: 1px solid var(--line);
@@ -880,16 +715,7 @@ body.no-dock .modal-box { max-height: 88vh; }
   border: 1px solid var(--line);
   background: var(--card);
   border-radius: var(--ctl-radius);
-  /* 档① 的默认档 = 「大」（与 .account-btn 逐字相同：高 44 / 字 15 / 圆角 6）。
-     ⚠️ 尺寸上一次是 12px 内边距 + 15px 字（≈43px 高，靠巧合与账页那颗差 1px），
-        现在是同一个 --ctl-h-lg 与同一个 --ctl-font-lg —— 「导出备份」与
-        「登录」在任何页面上都是同一颗键。
-     宽度仍是自适应（flex: 1 + 一格里的几颗平分），所以一行里并排两颗时
-     不是满格，但高矮与字号一致。 */
-  /* ⚠️ height 而不是 min-height：min-height 只是**地板**，内边距 + 字行盒
-     比它高时按钮会自己长高（本轮实测：设置页那几颗画出来 40~42px，
-     而账页那颗 44px —— 同一档两个数）。写 height 才能保证画出来的高度
-     真的等于这一档的数。 */
+
   height: var(--ctl-h-lg);
   padding: 0 var(--ctl-pad-x);
   font-size: var(--ctl-font-lg);
@@ -899,54 +725,12 @@ body.no-dock .modal-box { max-height: 88vh; }
   color: var(--ink);
 }
 
-/* 一行里并排三颗以上的（设置页那几行）用「中」档：44px 的三连按钮在一行里
-   太占地方，而 38px 仍是同一把尺上的一档 —— 不是第四种长相。
-   判据是**格子里有几颗**，不是「哪个页面」：同一页上单颗走 44、多颗走 38。 */
 .settings-btns .btn {
   height: var(--ctl-h-md);
   padding: 0 var(--ctl-pad-x);
   font-size: var(--ctl-font-md);
 }
 
-/* ---------- 定高控件里的那一行字：一处摆正（Issue #291） ----------
-   用户原话（2026-09-24）：
-
-     「显示邮箱地址这个按钮以及背诵进度按钮 文字都没有垂直居中，
-       是文字下面的padding太多了吗」
-
-   不是内边距 —— 它们的上下内边距本来就是 0。是**行高**：
-   `html, body { line-height: 1.6 }`（第 185 行）是给正文段落用的，
-   控件把它继承了进来。`<button>` 恰好免疫（UA 样式表给 button 的
-   line-height 是 `normal`，button 不继承 line-height），`<a>` 不免疫 ——
-   于是**同一个 `.btn`，写成 `<button>` 就正、写成 `<a>` 就歪**。
-   issue 里点名那两颗（「显示邮箱地址」「背诵进度」）恰好都是 `<a>`，
-   旁边同档的 `<button>` 看着好好的，差别就在这里。
-
-   ⚠️ 光改 `line-height` 只解决一半。实测把它们改成 18px 之后：
-      `<button>` 那几颗（`height: 38px` + `display: flex` 居中）立刻正了
-      （上 9 / 下 9），但 `<a>` 那几颗**还是贴上沿**（上 0 / 下 18）——
-      因为它们是 `display: inline-block` + `min-height`：
-      **块里的内容从顶部排**，`min-height` 多出来的那 20px 全堆在下面，
-      行高再小也没人把那一行挪到中间。
-
-   所以这里两件事一起办，判据都是「这个盒子有没有定高」：
-
-     · **一、把那一行字居中**：定高控件一律 `display: inline-flex` +
-       `align-items: center`（`<button>` 本来就是这套，`.account-link`
-       也已经是这套 —— 本条只是**把同一套发给 `<a>` 写的同款控件**）。
-     · **二、把行高收进盒子**：行高不再继承正文的 1.6，改读这一档的数。
-       两件事都要：只做第一件时行盒 25.65px 在 38px 盒子里虽然居中，
-       但字大一号（手机上输入框 16px）就会溢出去；只做第二件就是上面
-       测到的「button 正了、a 还歪」。
-
-   ⚠️ `min-height` 那一档（.seg / .chips / .collection-act / .tier-pick
-      / .admin-report-acts button …）**不在此列**：`min-height` 是**地板**，
-      盒子可以长高，一行字在长高的盒子里本来就居中；给它们定死行高
-      反而会在字大一号时把行盒顶出去。
-   ⚠️ 行高按档位给，与 `--ctl-pad-*` 同源：
-      高度 − 上下内边距×2 − 上下边框×2 = 行高。改字号要连行高一起算。
-   ========================================================================== */
-/* 档① 44px（--ctl-h-lg / 15px 字）。 */
 .btn,
 .account-btn {
   display: inline-flex;
@@ -954,11 +738,7 @@ body.no-dock .modal-box { max-height: 88vh; }
   justify-content: center;
   line-height: var(--ctl-leading-lg);
 }
-/* 档② 38px（--ctl-h-md，14px 字）。
-   `.settings-btns .btn` 是同一颗 `.btn` 收了内边距的那一档；
-   `.mail-link / .mail-plain`（legal.css）与 `.mini-btn / .ios-tip-close`
-   是「自己写 min-height: --ctl-h-md」的那几件 —— 它们内容固定一行、
-   高度就是按那一行算的，所以居中与行高这两条对它们同样成立。 */
+
 .settings-btns .btn,
 .ghost-btn,
 .danger-btn,
@@ -972,38 +752,12 @@ body.no-dock .modal-box { max-height: 88vh; }
   justify-content: center;
   line-height: var(--ctl-leading-md);
 }
-/* `.btn / .ghost-btn / .danger-btn` 在别处本来就是 `<button>`（UA 的
-   `display: inline-block` 被 `flex` 顶掉的那一套）；这条把它们统一到
-   `inline-flex` 之后，宽度仍是自适应（内容撑），不会变成满格。 */
-/* 输入框那一列：`.account-input` 与设置页的 `.settings-input` 都是定高
-   38px（手机上字号抬到 16px），行高留 18px 正好落在框里。
-   ⚠️ 它们**不是** flex —— 单行输入框里的文字由 `line-height` 居中，
-      加 flex 反而会让 caret 位置在部分浏览器上跑偏。
-   ⚠️ 例外：`.search-input`（索引页 / 搜索页 / 首页「今日加背」那一枚搜索框）
-      **不在这一列**，它继续用 UA 的 `normal`。
-      它虽然也是 `<input>`，但高度吃的是 `--toolbar-h`（40 / 52px），
-      与本条「38px 那一档」不是同一个盒子；而且它的文字是**两档字号叠在一处**
-      （输入文字 16px、提示字 12.5px），提示字靠 `::placeholder` 的
-      `transform: translateY(-2.25px)` 抬回正中轴 —— 这 2.25px 正是照
-      `normal` 行盒算的（两档字号行盒中心差的一半）。行高一旦被本条改成
-      18px 定值，行盒就与字号脱钩，提示字与输入文字双双偏位。
-      所以本条把 `.search-input` 排除在外（`:not(.search-input)`），
-      不是给 `.search-input` 再补一条覆盖 —— 覆盖只会让「谁赢」取决于
-      两条规则在文件里的先后，换个位置就翻车；排除则把判据钉在「是不是
-      那一枚搜索框」上。 */
+
 input:not(.search-input),
 select,
 textarea { line-height: var(--ctl-leading-md); }
 select { padding-top: 0; padding-bottom: 0; }
 
-/* 全站按钮的**状态三件套**（悬浮 / 按下），这一份是唯一来源：
-   · 悬浮 = 浅一档底（+ 有的档把描边转成主色）
-   · 按下 = 再深一档底
-   · 焦点 = 与全站输入框逐位相同的天青光晕（见文件底下那一条 :focus-visible）
-
-   ⚠️ 本轮之前这里只有 `:active` 改底、没有 `:hover`（触屏上无所谓，
-      鼠标上就是「指过去什么也不发生」）；而 .account-btn / .ghost-btn
-      各写了一套自己的悬浮。现在三者合成一套。 */
 .btn:hover { background: var(--ctl-hover); border-color: var(--celadon); }
 .btn:active { background: var(--ctl-press); }
 .btn.bad { color: var(--red); border-color: var(--danger-line); background: var(--red-light); }
@@ -1047,11 +801,7 @@ select { padding-top: 0; padding-bottom: 0; }
 .settings-item { margin: 14px 0; }
 .settings-item .chips { flex-wrap: wrap; }
 .settings-item .seg { flex-wrap: wrap; overflow: visible; }
-/* ⚠️ 这一条是给「一行一个标签 + 底下跟控件」那种 .settings-item 用的。
-   `.daily-row` 也是 <label>（整行点击＝勾选），但它自己是一行 flex（勾选框 + 篇名 + 出处），
-   不是「标签」。它若吃到这里，display:flex 会被 display:block 盖掉 ——
-   勾选框与篇名于是各占一行、行距也被 margin-bottom 撑开（Issue #229 点名的
-   「复选框和古诗名没间距」「行间距有点大」）。所以两个 :not 都得在。 */
+
 .settings-item label:not(.switch):not(.daily-row) {
   display: block;
   font-size: 13.5px;
@@ -1070,17 +820,6 @@ select { padding-top: 0; padding-bottom: 0; }
   overflow: visible;
 }
 
-/* 设置页把 seg / chips 画成**一排胶囊**（不是分段控件）—— 这是档③在设置页
-   上的样子。尺寸仍从同一把尺来：32px 高、13px 字、6px 圆角？
-   ⚠️ 这里圆角是 999px（胶囊），不是 --ctl-radius —— 这正是用户说的
-      「像背诵页面的学段、年级那样的按钮（这种 radius 按风格设置，
-      不受 7px 限制）」：它是**选项档**，圆角按风格走（胶囊），
-      但**尺寸、状态、密度与按钮那两档同源**。
-   ⚠️ 本轮之前这几颗是 9px 18px 内边距 + 13.5px 字（高 40px），
-      而档③的其余落点是 32px —— 同一档在设置页比在别处高 8px。
-      现在统一 32px（--ctl-h-sm），字号 13（--ctl-font-sm）。
-   ⚠️ 按下不再 transform: scale(.97)：全站口径是「按下只用颜色」
-      （ui-consistency.test.js 有一条守着「按钮按下不许缩放」）。 */
 .settings-page .seg button,
 .settings-page .chips button {
   flex: 0 1 auto;
@@ -1276,11 +1015,6 @@ select { padding-top: 0; padding-bottom: 0; }
   background: #f0cd7c;
 }
 
-/* 算法按层级开放（Issue #229 第四轮）：不够层的那几张不隐藏、不 disabled，
-   只是**看着淡一点**、右边那颗单选圈留白，并在角上写出门槛
-   （与语音朗读 / 进度导出同一条规矩：藏起来就成了「点了没反应」）。
-   点下去仍然给出一句门槛文案（js/settings.js 的 setAlgo）。
-   门槛右下角那一枚用金色描边 —— 与「实底 = 选中」这一套不混。 */
 .algo-opt.locked {
   color: var(--ink-3);
   background: transparent;
@@ -1302,15 +1036,11 @@ select { padding-top: 0; padding-bottom: 0; }
   letter-spacing: .2px;
 }
 
-/* 窄屏：字号不再另降一档（13px 已是档③的最小号），只收左右内边距。 */
 @media (max-width: 400px) {
   .settings-page .seg button,
   .settings-page .chips button { padding: 0 11px; }
 }
 
-/* 输入框与档①「中」的按钮**同一档高度**（--ctl-input-h = --ctl-h-md = 38px）。
-   ⚠️ 原先它按 9px 内边距 + 14px 字自己长到 38px —— 与按钮的 38px 纯属巧合，
-      字号一改两边就分家。现在两边都直读同一个令牌。 */
 .settings-input {
   width: 100%;
   height: var(--ctl-input-h);
@@ -1334,10 +1064,6 @@ select { padding-top: 0; padding-bottom: 0; }
   box-shadow: var(--ctl-focus);
 }
 
-/* 全站输入控件的焦点环只有这一处（值就是 --ctl-focus）。
-   ⚠️ 它同时覆盖 .account-input:focus / .settings-input:focus 那两条 ——
-      三处写的是同一个值，这里收口成一条；字号 16px（--input-font-narrow）
-      那一档只改字号，不改焦点态。 */
 input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):focus,
 select:focus,
 textarea:focus {
@@ -1560,10 +1286,7 @@ textarea:focus {
   padding: 1px 7px;
 }
 .family-acts { flex: none; display: flex; gap: 4px; }
-/* 子用户那一行右端的两颗小字（改名 / 删除）：**链接**，不是按钮 ——
-   没有盒子、没有圆角、没有按下换底；四态与全站链接同一套。
-   ⚠️ 原先它有 `border-radius: 6px` 却没有底也没有描边（一条画不出来的圆角），
-      判定「控件圆角 ≤ 7px」时它是一条永远对不上落点的规则，本轮撤掉。 */
+
 .family-act {
   border: none;
   background: none;
@@ -1643,11 +1366,7 @@ textarea:focus {
 .collection-body > .item + .item { border-top: 1px solid var(--line); }
 
 .settings-btns { display: flex; gap: 8px; flex-wrap: wrap; }
-/* 「设置 · 通用 / 我的清单 / 我的报告 / 朗读」那几行按钮：
-   三档体系里它们是**档②（48 行的次按钮）**，所以尺寸只从那一把尺来。
-   ⚠️ 原先这里各写了一个 `flex: 1; min-width: 90px; padding: 9px; font-size: 13.5px`
-      —— 于是「导出备份」比「刷新」高 2px、字小一号，同一个页面上两种按钮。
-     本轮改成与 .btn 同一档（38px 高 / 14px 字），宽度仍按内容自适应。 */
+
 .ghost-btn, .danger-btn { flex: 0 1 auto; min-width: 0; }
 .settings-tip {
   font-size: 12px;
@@ -1913,12 +1632,6 @@ body.has-install-tip #app {
 
 .settings-index { margin-top: 4px; }
 
-/* ⚠️ 原先这里有 `.account-line / .account-state / .account-mask` 三条 ——
-   它们画的是「设置 · 通用」里那行「已登录 a***@b.com <徽章>」。
-   2026-09-21：账号那一项整块收回「我的」页（那种一行「状态 + 掩码 + 徽章」
-   的画法也随之没有落点），三条规则一起撤。
-   另两条 `.settings-link-desc .tier-badge`（在设置入口那一行里挂徽章）
-   同样没有落点了 —— 入口那一行现在只写「这一组管什么」。 */
 .tier-badge {
   flex: none;
   padding: 1px 8px;
@@ -1965,10 +1678,6 @@ body.has-install-tip #app {
   justify-content: space-between;
   gap: 12px;
 
-  /* 行高只由 min-height 定：上下不写 padding。
-     「关于」那几行里有三行左边是链接（<a> 的字体比正文大一点、行盒也更高），
-     原先靠 padding 撑高，链接那一行就比上面几行高出两三个像素 —— 用户
-     2026-09-18 点名的「间距要和上面几行一样」就是这个。 */
   min-height: 42px;
   padding: 0;
   font-size: 13px;
@@ -1978,15 +1687,6 @@ body.has-install-tip #app {
 
 .kv-k { color: var(--ink-2); flex: none; }
 
-/* 「关于」这几行的条目链接（层级对比 / 用户协议 / 隐私条款 / 自检）：
-   颜色 / 悬浮 / active / 焦点**就是文件顶上那条 `a` 的口径**，这里不重复写一遍
-   （写了就是同一件事的第二个来源 —— 上一轮 `.kv-k a` 各写了一套 hover/active，
-   与全站那条漂开过一次）。
-   这一条只管「行里的落点」：字号与同一行的正文一样（13px）、
-   行高交给 .kv-row（它把 align-items 定成 center、高度只由 min-height 定），
-   所以左边当链接的那几行与上面「应用 / 版本 / 离线缓存」几行完全齐。
-   用户 2026-09-18 两轮口径合起来就是这三件：不要下划线、间距一样、
-   它就是一行普通文字（不是一颗键）。 */
 .kv-k a {
   display: inline-flex;
   align-items: center;
@@ -2000,15 +1700,8 @@ body.has-install-tip #app {
 .kv-k a:focus-visible,
 .kv-k a:active { color: var(--green-dark); }
 
-/* 右列留空的那些行（项名本身就是入口的那几行）：空 <span> 照样参与
-   space-between，左列因此仍在起点上，与上面几行左对齐。 */
 .kv-v:empty { display: block; }
 
-/* 右列改成弹性列：两个短状态（Free / 已缓存，可离线打开）仍靠右，
-   像「跬步 · 古诗词背诵」这种长值改成**自然换行**、不折断单词。
-   原先写死的 text-align: right + word-break: break-all 是为了长值不撞开
-   左列；那一半由 flex 的 min-width: 0 + overflow-wrap 承担 —— 右列永远
-   从左边那格的右缘起排，左列一个字都不会被挤走。 */
 .kv-v {
   color: var(--ink);
   flex: 1 1 auto;
@@ -2221,10 +1914,7 @@ body.has-install-tip #app {
   align-items: center;
   gap: 2px;
   padding: 7px 4px 6px;
-  /* ⚠️ 底栏这五格是「页签」不是「按钮」：它带底色的那两格（悬浮 / 选中）
-     是这个圆角唯一画得出来的地方。12px 在前一轮是允许的，本轮按用户的
-     「所有大按钮最多 7px」收口 —— 它不是大按钮，但既然同屏就是 6px，
-     没有理由为它单开一档。 */
+
   border-radius: var(--ctl-radius);
   color: var(--ink-3);
   font-size: 10.5px;
@@ -2305,11 +1995,6 @@ html, body {
 .btn.primary:hover { background: var(--celadon); }
 .btn.primary:active { background: var(--green-dark); }
 
-/* ⚠️ 下面这一组原先在文件里又写了一遍（与上面 .btn.good / .btn.fuzzy / .btn.bad
-   逐字重复）—— 那是同一件事的第二个来源：上一处改了、这一处忘了，全站就出现
-   「两颗看起来一样的一级按钮，指过去一颗变色、另一颗不动」。
-   本轮把重复的那几行收成一处，这里只留 `.ghost-btn / .danger-btn` 两档
-   （它们是 .btn 的变体：字号 / 高度 / 圆角 / 状态一律读同一把尺）。 */
 .ghost-btn {
   background: var(--card);
   border: 1px solid var(--line);
@@ -2594,27 +2279,6 @@ html, body {
 }
 
 .today-read svg { display: block; width: var(--today-btn-inner, 17px); height: var(--today-btn-inner, 17px); margin: auto; }
-/* ---- 今日背诵页顶上的「今日加背」（Issue #243；Issue #229 收回 hero 那套）------
-   与搜索页那一枚**同一套**：.toolbar / .search-wrap / .search-input / .suggest
-   全部复用（外观逐项一致是用户点名要的）。差别只有四处：
-
-   ① **它不是 hero**（用户 2026-09-19 的话：「首页今日加背搜索框上下空那么大
-      没必要了吧，又不是搜索页，那个是仿谷歌设计才那么做的」）。所以这里
-      **两个都不沾**：既不写 .search-hero（整屏高度 + 居中 + 聚焦上浮 +
-      键盘避让，那是「打开就是来搜的」那页的算式），也不写 .search-toolbar
-      （搜索页专属的绝对定位，靠它才需要那些复位去解）。
-      它就是「今日卡片与列表之间的一条」，高度由内容定，上下各一格块距。
-   ② 下拉跟着输入框走（.suggest 已经是 absolute + top:calc(100%+4px)），
-      而 .search-wrap 自己有 position:relative，所以位置本来就对。
-   ③ 块距与首页其他块**同一个** --block-gap，不另起一套间距：
-      上面是今日卡片、下面是今日列表，两条缝一样宽。
-   ④ 输入框的**高与宽都与搜索页那一枚对齐**：52px / 桌面封顶 520px
-      （用户 2026-09-24，Issue #276：「搜索页的搜索框宽度需要和今日加背搜索框
-      一样长」「今日加背搜索框高度需要和搜索页搜索框一样高」）。
-      ⚠️ 这一条**改掉了**原先「矮一号、首页上它是一条而不是主角」那一档：
-      用户要的是两枚框**逐项一样**（高、宽、字号），先后两句话各说一半。
-      仍然不沾 .search-hero 那套「整屏高度 + 居中 + 聚焦上浮 + 键盘避让」——
-      这就是上面①那条的取舍没变。 */
 
 .today-search {
   position: relative;
@@ -2632,76 +2296,19 @@ html, body {
   width: 100%;
 }
 
-/* ⚠️ 用户 2026-09-24（Issue #276）两句话是一对，必须一起满足：
-      「搜索页的搜索框宽度需要和今日加背搜索框一样长」
-      「今日加背搜索框高度需要和搜索页搜索框一样高」
-   高度：这一档从 40px 抬到 52px（= .search-hero 的 --hero-box-h，
-        也就是搜索页那一枚的**真实高度**：`height: var(--toolbar-h)`）。
-   宽度：不再是「吃满 --content-w」—— 桌面那一档下面自己会收到 520px，
-        与搜索页 hero 的 max-width 同一个数、同样居中（见紧随其后的
-        @media (min-width: 768px) 那一段）。
-   ⚠️ 字号跟着抬到搜索页的 14px 不能算「顺手」：同一个框高、字号却小一号，
-      一搜起来字会比搜索页那枚明显小一圈 —— 这一条也在用户的「一样」里。
-      手机上两者都走 --input-font-narrow（16px），本来就同档。
-   ⚠️ **「本来就同档」这句话当时写错了**（Issue #278 第八轮核对）：
-      这里说的是**输入文字**（两页都读 --input-font，确实同档），
-      但**提示字**当时并不同档 —— 这一枚是 12.5px，搜索页 hero 那一枚 13.5px
-      （用户 2026-09-25 点名的正是这一处）。提示字现读 :root 的
-      --search-placeholder-font，两页从此也只有一个来源。 */
 .today-search .search-input {
   --toolbar-h: 52px;
   font-size: 14px;
-  /* ⚠️ 位移**不能在这里定死**：字号 14px 只在 700px 以上成立 ——
-     手机上那条 `@media screen and (max-width: 700px) .search-input
-     { font-size: var(--input-font-narrow) }`（16px）会盖过上面这条 `font-size`，
-     所以窄屏要的是 :root 那条按 16px 算的 1.5px，宽屏才是 0.3px。
-     两句一起写在下面的 `min-width: 768px` 里 —— 与「字号在哪一档生效」
-     同一个门限，不各写一套。 */
+
 }
 
-/* ⚠️ 「今日加背」这一枚在 768 以上要换一档位移（Issue #278 第八轮 · §4.53~§4.54）
-   —— 与上面那条 `font-size: 14px` 同一个门限：**字号换到哪一档，位移就跟到哪一档**。
-   提示字位移 = (输入字号 − 提示字号) × 1.2 ÷ 2 = (14 − 13.5) × 1.2 ÷ 2 = 0.3
-   （窄屏那一档 = (16 − 13.5) × 1.2 ÷ 2 = 1.5，见 :root 那一条）。
-   ⚠️ 用的是**同一个变量名**在就地改值，不另起第二个名字、也不动字号；
-      门上**只有一个门限**（768px），不是「字号一条、位移另一条」——
-      两处门限漂开正是这一整族 bug 的来处。
-   ⚠️ 这一条必须排在 `.today-search .search-input` 的 `font-size` 之后，
-      否则会被那一条盖掉（本条只覆写变量，不与字号同特异性争）。 */
 @media (min-width: 768px) {
   .today-search .search-input { --search-placeholder-shift: -0.3px; }
 }
 
-/* ⚠️ 上面那两处（字号 + 位移）只在 `.today-search` 这一枚上生效；
-   **索引页 / 集子页那一排 40px 的搜索框**（`.search-input` 本体）在 768 以上
-   同样走 --input-font（14px）—— 见 classic.css 里 `@media (min-width: 768px)`
-   那条 `--search-placeholder-shift`。两处都按同一把尺
-   （输入字号 − 提示字号）× 1.2 ÷ 2 现算，不是各挑一个数。 */
-
-/* 与搜索页 hero 同一个宽度：同一枚框在两个页面上「一样长」。
-   ⚠️ 两个数（520px）不写成两处 —— 这一条的数字与 classic.css 里
-      `@media (min-width: 768px) .search-hero { max-width: 520px }` 是同一个承诺，
-      改一处就得改另一处；test/search.test.js 里有一条断言把两者钉在一起。 */
-/* ⚠️ 「今日加背」这个框的宽度（Issue #276：用户要它和搜索页那一枚**一样长**）：
-   两页的框在 768px 以上落到同一个数 —— 搜索页 hero 在 768 那一档也是
-   `--content-w`（1040 − 44 = 996，封顶 720px 那一档写在同一处），
-   在 1024 那一档 hero 是写死的 520px。
-   所以这里照抄这两档，一个字不差：768 起封顶 720，1024 起封顶 520。
-   ⚠️ **不要写 `margin-left/right: auto`**。>=1024 时首页的 .app 是 grid，
-      这一格所在的那条轨道是 minmax(0, 340px)，`margin: auto` 在 grid 项上
-      会把「拉伸」关掉 —— 块按**内容**定宽，520px 的封顶根本轮不到，
-      实测框只剩 204px（正是用户说的「不一样长」）。
-      改用 `justify-self: center`：它是 grid 项上那把尺，块照旧被容器拉满、
-      再拿 max-width 封顶，最后才是这一句居中。
-   ⚠️ 窄屏（<768）不加这一对 —— 手机上框就该满宽（与搜索页一致）。 */
 @media (min-width: 768px) {
   .today-search {
-    /* ⚠️ 三句缺一不可，而且**换掉哪一句都会退回去**：
-       · width: 100%    —— 把「撑满所在那一格」写成显式的（grid 里
-         `max-width` 单独用不保证块被拉伸，见上面那段说明）；
-       · max-width: var(--bar-w) —— 768–1023 这一段的封顶（与集子页工具栏同尺，见 :root 那条）；
-       · margin-inline: auto —— 块在这个盒子里居中（块级元素的老办法，
-         在 grid 项上也照常生效，不像 `width: 520px` 那样把人钉在左边）。 */
+
     width: 100%;
     max-width: var(--bar-w);
     margin-left: auto;
@@ -2711,7 +2318,7 @@ html, body {
 
 @media (min-width: 1024px) {
   .today-search {
-    /* 与搜索页 hero 同一个数：520px。 */
+
     max-width: 520px;
   }
 }
@@ -2722,23 +2329,9 @@ html, body {
   display: flex;
   align-items: stretch;
 
-  /* 最左侧那一列的宽度：一颗直径 30 的圆 + 两侧各 7 的外边距。
-     槽宽给出来，圆的左右外边距就能由它现算（见下）——
-     「圆在这一列里居中」与「这一列有多宽」从此只有一个来源。*/
   --suggest-slot: 44px;
 }
 
-/* 下拉里那一颗「＋」：与列表里的圆形按钮同一形状，但嵌在 44px 的行里，
-   所以比 --item-btn 小一号（36 → 30），行高才不会被撑破。
-
-   两侧外边距各 (44 − 30) ÷ 2 = 7px —— 圆的**格**宽度定死 44，
-   圆在里面左右各留 7，水平中心就落在 44 ÷ 2 = 22px 上。
-
-   2026-09-20 用户报的「原点处那颗圆形加号，没有在最左侧一列里水平居中」
-   正是差在这里：原先外边距写死 10 / 4，圆的占位 10 + 30 + 4 = 44 看似
-   等于槽宽，可两边留白一边 10、一边 4，圆被推到 25px 上 ——
-   比槽心偏右 3px，一排下来那一列圆是歪的。
-   现在两边都由槽宽现算（不是各写一个数），槽一改两边一起跟着回中心。*/
 .suggest-add {
   flex: none;
   align-self: center;
@@ -2757,9 +2350,7 @@ html, body {
   line-height: 0;
   transition: transform .14s, background .18s, border-color .18s, color .18s;
 }
-/* 「画出来的尺寸 = 声明的尺寸」：这 30px 是**连边框一起**的直径，不是内容区。
-   默认就是 border-box；写出来只为把这条口径钉在纸上 —— 换成 content-box
-   就会画成 32，圆的中心也跟着偏 1px（居中就不再是居中）。*/
+
 .suggest-add { box-sizing: border-box; }
 .suggest-add svg { display: block; width: 15px; height: 15px; }
 .suggest-add .de-check { display: none; }
@@ -2774,8 +2365,6 @@ html, body {
   border-left: 1px solid var(--line-2);
 }
 
-/* 「今日加背」那几条：与「复习」同一个位置的小标签，颜色走金色 ——
-   金色全站只有两处（今日卡片上的播放键与这里），一眼认得出「这是今天临时的」。 */
 .item .item-reason.pinned {
   background: rgba(240, 205, 124, .22);
   color: #9a7626;
@@ -2783,7 +2372,6 @@ html, body {
 
 .list .item.pinned { border-left-color: var(--gold); }
 
-/* 列表行里那一颗「＋」（集子页 / 搜索页的结果列表）。 */
 .item-daily {
   flex: none;
   width: var(--item-btn);
@@ -2810,14 +2398,12 @@ html, body {
 
 .item-daily.is-last { margin-right: 0; }
 
-/* 详情页那一颗（.mini-btn + .daily-btn）：与朗读 / 译文同一排。 */
 .mini-btn.daily-btn { color: var(--green); }
 .mini-btn.daily-btn .de-check { display: none; }
 .mini-btn.daily-btn[data-on="1"] { background: var(--green); border-color: var(--green); color: #fffdf8; }
 .mini-btn.daily-btn[data-on="1"] .de-plus { display: none; }
 .mini-btn.daily-btn[data-on="1"] .de-check { display: block; }
 
-/* 「今日加背」那几篇的删除：整页只有这一块会被整批清掉（设置页那一张卡）。 */
 .daily-panel { display: block; }
 .daily-tools {
   display: flex;
@@ -2829,12 +2415,8 @@ html, body {
 .daily-tools .collection-act[disabled] { opacity: .45; cursor: not-allowed; }
 .daily-list { display: block; }
 
-/* 「今日加背」的一行：勾选框 + 篇名 + 出处，一行到底。
-   字号 / 颜色照搬全站紧凑行的口径（标题 14.5/600/--ink，出处 12/--ink-3，
-   与搜索下拉的 .suggest-title / .suggest-meta 同档），所以这里的篇名
-   不比其他列表里的大、也不是纯黑。 */
 .daily-row {
-  position: relative;      /* 藏起来的原生 input 定位的锚点（不相对行定位就会跑到卡片外） */
+  position: relative;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -2847,9 +2429,6 @@ html, body {
 }
 .daily-row:last-child { border-bottom: none; }
 
-/* 原生 input 只留给键盘与读屏：视觉上交给 .daily-box。
-   用 opacity + 绝对定位（不是 display:none）—— display:none 的控件拿不到焦点，
-   键盘用户就点不到这枚框了。 */
 .daily-row .daily-pick {
   position: absolute;
   width: 1px;
@@ -2862,8 +2441,6 @@ html, body {
   pointer-events: none;
 }
 
-/* 那一枚画出来的框：18×18、5px 圆角、描边与「加入自选集合」里的一致。
-   勾选框**不比行里的字大**（18 只比 14.5 的字高一点点，是传统方框的比例）。 */
 .daily-row .daily-box {
   flex: 0 0 auto;
   box-sizing: border-box;
@@ -2916,8 +2493,6 @@ html, body {
   min-width: 0;
 }
 .daily-row .daily-meta em { font-style: normal; color: var(--green); font-weight: 600; }
-
-
 
 .today-read .pause-glyph { display: none; }
 .today-read[data-on="1"] .play-glyph { display: none; }
@@ -2984,8 +2559,6 @@ html, body {
     display: grid;
     grid-template-columns: minmax(0, 340px) minmax(0, 1fr);
 
-    /* 「今日加背」那一条搜索住在**左列**、今日卡片与今日列表之间
-       （Issue #243 用户点名的位置）—— 所以左列拆成 today / search 两行。 */
     grid-template-areas:
       "bar    bar"
       "today  card"
@@ -3019,21 +2592,8 @@ html, body {
   body[data-nav="home"] .today-bar,
   body[data-nav="home"] .all-section { margin-bottom: 0; }
 
-  /* 左列两行之间（今日卡片 → 今日加背 → 今日列表）与 .card 同一个块距 26px ——
-     窄屏是 14px，宽屏卡片自己的 margin-bottom 变成 26px，这条跟着走。
-     「今日卡片」到「今日加背」那条缝由 .card 的 margin-bottom 出，
-     所以这里只补下面那一条。 */
   body[data-nav="home"] .today-search { margin-bottom: 26px; }
 
-  /* ⚠️ 「今日加背」的**宽度**在这一档由这一句定死（Issue #276 用户要它
-     和搜索页那一枚一样长）。
-     为什么非写宽度不可：>=1024 时首页 .app 是 grid，这一格所在的轨道是
-     `minmax(0, 340px)` —— 轨道**顶到 340px 就封顶**。`max-width` 只管
-     「不许超过」，管不了「撑到 520」：块被轨道卡在 340，读数就是 340。
-     （试过 `justify-self: center` / `margin: auto`：那两个会把「拉伸」也关掉，
-     块按内容定宽，实测只剩 204px —— 比 340 还离谱。）
-     所以这里直接给 width，与搜索页 hero 那个 `width: min(520px, 100%)`
-     同一个数：**两页的框在桌面档都是 520px 宽**。 */
   body[data-nav="home"] .today-search { width: 520px; }
 
   .list {
@@ -3400,28 +2960,9 @@ html, body {
   word-break: break-all;
 }
 
-/* ==========================================================================
-   报告错误 / 勘误（Issue #243 第四轮）
-   ==========================================================================
-   三件东西的样式，都在这一节：
-     1. 详情页工具栏那一颗小旗（`.mini-btn.report-btn`）—— 与朗读 / 译文同一排
-     2. 正文选中之后那个「报这一段」气泡（`.report-bubble`）
-     3. 弹层里的表单（`.report-modal`）
-     4. 设置页「我的报告」那一列（`.report-list` / `.report-row`）
-     5. 管理端那一张台账（`.admin-report-*`，与 .report-row 同源）
-
-   一条口径：**旗子不抢语义色**。全站只有三个语义色（绿 = 已掌握 / 加入、
-   蓝 = 加入背诵、红 = 危险），报错三者都不占 —— 它是中性动作，
-   走 `--ink-3`（与副标题同一档）。抢了红的下场是「小朋友以为点一下会删东西」。
-   ========================================================================== */
-
-/* --- 1. 详情页那一颗小旗 ------------------------------------------------- */
 .mini-btn.report-btn { color: var(--ink-3); }
 .mini-btn.report-btn:hover { color: var(--green); }
-/* 它在那一排里是**唯一没有状态**的一颗：报一次不改变任何东西。
-   所以不写 [data-on] 相关的规则（写了就会有人去设 data-on）。 */
 
-/* --- 2. 选中之后的气泡 --------------------------------------------------- */
 .report-bubble {
   position: fixed;
   left: 50%;
@@ -3443,13 +2984,11 @@ html, body {
   box-shadow: 0 6px 18px rgba(35, 75, 66, .16);
   cursor: pointer;
 
-  /* 覆盖 `[hidden]` 的默认 display:none 会让它永远显示 —— 所以这一条必须有 */
 }
 .report-bubble[hidden] { display: none; }
 .report-bubble svg { width: 15px; height: 15px; display: block; }
 .report-bubble:active { background: var(--bg-soft); }
 
-/* --- 3. 弹层 ------------------------------------------------------------- */
 .report-modal .modal-box { max-width: 520px; }
 
 .report-sub {
@@ -3460,17 +2999,6 @@ html, body {
   word-break: break-word;
 }
 
-/* 六档「报什么」，**一行装得下**（Issue #229）。
-   六颗都是两字词，一行放不下就会被折成 5 + 1 —— 那正是用户当初看到的
-   「其它」孤零零挂在第二行。这里三处一起收：字号 13 → 12.5px、
-   左右 padding 14 → 8px、间距 8 → 6px。
-
-   用户后续又提了一条：「左右 padding 增加 2px」—— 8 → 10px。
-   加宽是往「更好点」的方向走，但一行这条底线不能破，所以先算再改：
-   一颗 43 → 47px，六颗加 5 道 6px 缝 = 312px，要落进 350px（390px 机）之内 ——
-   宽屏几档都放得下；320 / 360px 那档由下面的窄屏规则接管。
-   窄屏那条也从 5px 收到 7px（同样 +2px），六颗 = 270px < 该档可容纳宽 292px。
-   每一档都真机量过：320 / 360 / 375 / 390 / 412 / 768 / 1024 全是**一行**。 */
 .report-kinds {
   display: flex;
   flex-wrap: wrap;
@@ -3499,8 +3027,6 @@ html, body {
   color: #fdfaf2;
 }
 
-/* 窄屏（≤360px）：弹层内边距与档位间距一起收，六颗才守得住一行。
-   按屏宽分档比按容器查问（@container）稳 —— 这张弹层在每一页都是全宽的。 */
 @media (max-width: 360px) {
   .report-modal .modal-box { padding-left: 14px; padding-right: 14px; }
   .report-kinds { gap: 4px; }
@@ -3533,32 +3059,8 @@ html, body {
   word-break: break-word;
 }
 
-
 .report-actions { margin-top: 4px; }
 
-/* --------------------------------------------------------------------------
-   下面这一节是**补课**，不是新功能（Issue #229）
-   --------------------------------------------------------------------------
-   这张弹层是 `js/report.js` 在**运行时** append 到 `<body>` 上的，而调用它的
-   页面里，集子页（/tangshi/ /songci/ /guwen/ /classic/ /zhaoming/ /yuanqu/）
-   与 /library/ /search/ **都不加载 css/account.css** —— 表单原先借用的是
-   account.css 里的 `.account-field / .account-label / .account-input /
-   .account-hint / .account-msg`。结果是：课内 /poems/ 那一页有 account.css，
-   框是圆角缃线、标签小字灰；其余每一页都退回浏览器默认 —— 方角、深灰粗边、
-   标签 16px 纯黑，与整站格格不入。
-
-   修法是**让这张弹层自带**：四个 class 在 style.css 里各补一条，选择器一律
-   冠 `.report-modal`（两条好处：只影响这张弹层；即使这一页真加载了
-   account.css，也不会反过来压掉账页自己的长相）。
-   「加载哪张样式表」从此不影响它长相 —— 这是 issue #229 那一类「同一套界面
-   在另一页变样」的总闸。
-
-   同一条口径的续集（用户原话：「应该是什么（可留空）这里的输入框要不要和
-   哪里不对输入框的长宽及元素保持一致？都显示两行的高度」）：
-   这两格**同一种元素、同宽、同高、同字号** —— 都是占满整行的 textarea、
-   都 rows=2、字号都是 15px。修好之前它们是两样东西（一个满行 3 行多行框，
-   一个 220px 的单行 input，字号还大一号），看着不像一套。
-   -------------------------------------------------------------------------- */
 .report-modal .account-field { margin-bottom: 12px; }
 .report-modal .account-field:last-child { margin-bottom: 0; }
 
@@ -3590,23 +3092,12 @@ html, body {
 }
 .report-modal .account-input::placeholder { color: #9c8d7b; }
 
-/* 两个多行框「哪里不对 / 应该是什么」**等长等宽、同一种元素、都是两行高**
-   （Issue #229 后续，用户原话：「要不要和哪里不对输入框的长宽及元素保持一致？
-   都显示两行的高度」）。
-   原先这两格是两样东西：「哪里不对」是占满整行的 3 行 textarea，
-   「应该是什么」是一枚 220px 的单行 <input>（还比上面那格大一号字，
-   16px 对 15px —— 浏览器给 input 的默认 16px 没被覆盖掉）。
-   一边满行多行、一边窄条单行，看着像两种控件。
-   现在：两格都是 textarea、都占满整行、都是 rows=2，字与行高也同源。
-   min-height 写死成两行「实高」= 2 × (15 × 1.65) + 上下内边距 22 + 上下边框 2
-   —— rows 属性各浏览器算出的箱高略有出入，写死这个数才真的「都两行」。 */
 .report-modal .report-textarea {
   resize: vertical;
   line-height: 1.65;
   min-height: 73.5px;
 }
 
-/* 两格都不设宽度上限：满行才是与上方多行框一致的样子。 */
 .report-modal textarea.account-input { max-width: none; }
 
 .report-modal .account-hint {
@@ -3632,9 +3123,7 @@ html, body {
   text-align: center;
   min-height: 18px;
 }
-/* 「去登录」那条路：**不给下划线** —— 全站口径是「链接靠颜色认，不靠下划线」
-   （ui-consistency.test.js 有一条守着「样式表里一条 underline 都没有」）。
-   它是这一块里唯一可点的东西，所以加一条 1px 底边把它与说明文字分开。 */
+
 .report-login-link {
   display: inline-block;
   font-size: 13px;
@@ -3645,7 +3134,6 @@ html, body {
 }
 .report-login-link:hover { border-bottom-color: var(--green); }
 
-/* --- 4. 设置页「我的报告」------------------------------------------------ */
 .report-list {
   list-style: none;
   margin: 0;
@@ -3720,7 +3208,6 @@ html, body {
   color: var(--ink-3);
 }
 
-/* --- 5. 管理端台账（与 .report-row 同源，只多一列操作）------------------- */
 .admin-report-tools {
   display: flex;
   flex-wrap: wrap;
@@ -3742,9 +3229,7 @@ html, body {
   gap: 6px;
   margin: 0 0 12px;
 }
-/* 这一排是**筛选器的化身**（点一格即切换只看哪一档），所以它长得像按钮、
-   当前那一格是实心绿 —— 与「一列灰字 + 另一个下拉」那种两套控件的写法不同。
-   括号里的数是**全站**该状态的条数，所以无论当前筛的是哪一档都在。 */
+
 .admin-report-counts button {
   display: inline-flex;
   align-items: baseline;
@@ -3772,7 +3257,6 @@ html, body {
 }
 .admin-report-counts button.active span { color: #fff; }
 
-/* 流程那四步：用户报告卡顶部，一屏说清「报上来 → 改源码 → 标已修复」。 */
 .admin-flow {
   list-style: none;
   margin: 0 0 12px;

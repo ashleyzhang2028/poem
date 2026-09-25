@@ -12,8 +12,7 @@
 
 @media (min-width: 768px) {
   .toolbar:not(.search-toolbar) {
-    /* 与首页「今日加背」那一枚共用同一把尺（--bar-w 定义在 css/style.css 的
-       :root，Issue #276 把它收成一处）。这里不再自己写一个 720。 */
+
     max-width: var(--bar-w, 720px);
     margin-left: auto;
     margin-right: auto;
@@ -28,8 +27,7 @@
 
 .filter-seg {
   flex: 0 0 auto;
-  /* 「全部 / 课内 / 小古文…」那一排筛选按钮：它是**档③（选项）**里
-     「分段控件」的那种画法（一排贴着的小格），圆角归控件那一档。 */
+
   border-radius: var(--ctl-radius);
 
   height: var(--toolbar-h);
@@ -65,22 +63,12 @@
 
   height: var(--toolbar-h);
   padding: 0 12px 0 34px;
-  /* Issue #278 第七轮 · 用户 2026-09-24：「搜索页搜索框上下 padding 或者行高
-     需要小 4px 左右」。这枚框是定高的（height: var(--toolbar-h)，40 / 52px），
-     所以「上下 padding 小 4px」在它身上落成「**行盒**小 4px」——
-     上下各 1px 内边距 + 2px 行高（4 = 1 + 2 + 1），框**高度不变**、
-     框里的字比原先贴近上下各 2px。
-     ⚠️ 行高**必须写像素**：搜索框这一列不吃控件档那把尺
-        （`input:not(.search-input)` 那条把它排除在外），也不许写回
-        `normal` —— 见 test/pwa.test.js「索引页输入框本体不做垂直方向的改动」
-        与 test/ui-consistency.test.js 那一节。1.25 × 字号（16 → 20px、
-        窄屏 14 → 17.5px）就是「小 4px」那一档，且随字号缩放。 */
+
   line-height: 1.25;
   padding-top: 1px;
   padding-bottom: 1px;
   border: 1px solid var(--line);
 
-  /* 搜索框是**输入框**，圆角归控件那一档（它自己那一档的高度来自 --toolbar-h）。 */
   border-radius: var(--ctl-radius);
   background: var(--card);
   color: var(--ink);
@@ -90,46 +78,10 @@
   outline: none;
 }
 
-/* ⚠️ 768 以上这一排的搜索框读上面那条 `--input-font`（14px），而 :root 的
-   `--search-placeholder-shift`（-1.5px）是照 16px 那一档算出来的。
-   提示字位移 = (输入字号 − 提示字号) × 1.2 ÷ 2，
-   14px 这一档 = (14 − 13.5) × 1.2 ÷ 2 = 0.3 —— 就地在**同一个变量**上改值，
-   不移出第二个名字，也不动字号。
-   ⚠️ 门限 768px 与「字号换到哪一档」是同一个数：字号换档与位移换档必须一起走，
-      两处门限漂开正是这一整族 bug 的来处（§4.53 / §4.54 两轮的红都在这里）。
-   ⚠️ 它**排在上面那条 `font-size` 之后**：同优先级下后者胜，
-      反过来写会被那一条盖掉（本文件早先那处 `.search-hero` 覆写就是这么漂开的）。 */
 @media (min-width: 768px) {
   .search-input { --search-placeholder-shift: -0.3px; }
 }
 
-/* 搜索框的提示字（Issue #278 第八轮 · 用户 2026-09-25：
-     「将今日加背搜索框里 今日加背 文字样式和搜索页内搜索框里的 placeholder
-       文字字体样式颜色和大小保持一致」）。
-
-   ⚠️ 字号与位移都读 :root 那一组变量，本文件不再自己写数：
-      · `--search-placeholder-font`（13.5px）—— 全站每一个搜索框共用这一个数，
-        右侧那排「全部 / 未读」也读它（经 `--seg-mini-font`），「同字号」于是
-        是同一条规则、不是两条规则碰巧相等；
-      · `--search-placeholder-shift` —— **算出来**的一档一个数（本次口径）：
-        (输入字号 − 提示字号) × 1.2 ÷ 2，窄屏（16px）是 1.5px、768 以上（14px）
-        是 0.3px（覆写就在紧上面那条 `@media (min-width: 768px)` 里）。
-        ⚠️ 这个 1.2 是**估算**，不是浏览器真乘的那个数：`::placeholder` 是行内盒、
-           行盒按 UA 的 `normal` 排，**不读 `line-height`**（§4.53 真浏览器量过）。
-           真量值恰好与它逐位相同（手机 1.5 / 桌面 0.3，§4.53~§4.54 两轮都量过），
-           所以算式留着当「谁改了字号 / 行高就得重算」的那把尺。
-        ⚠️ 原先 :root 写死过**一个数**（-0.65 是 14px 那一档、-1.5 是 16px 那一档
-           量出来的折中）—— 一档对了另一档必然错，2026-09-25 的 CI 两次红的都是
-           这一条；现在两档各一个数、只用一个变量名。
-   原先这里写 12.5px，理由是「与右侧『全部 / 未读』同号」——那个理由说的是
-   索引页那一排 40px 的工具栏（旁边真有一排 12.5px 的控件），而搜索页 hero 与
-   首页「今日加背」都不是那一排：前者的覆写被 `.search-hero` 那条顶掉，
-   后者（52px、旁边没有任何 12.5px 的东西）却照抄到了 —— 同一个「今日加背」
-   在首页和搜索页于是差 1px。两枚框已经同高（52px），字号也就不该各一个数。
-
-   颜色 / 字重 / 字体这一条**一个字都不写**，那正是「一致」的来处：
-   两边都不声明 color，于是都吃浏览器给 `::placeholder` 的同一个默认；
-   字重与字体继承自输入框，而输入框两边读的也是同一条。 */
 .search-input::placeholder {
   font-size: var(--search-placeholder-font, 13.5px);
 
@@ -326,27 +278,12 @@
   }
 }
 
-/* 1024 这一档排三列，唐诗那几部长题会折成竖排。
-   一行里除内容块外要放：小旗（报告）/ ＋（加背）/ 加入背诵 / 播放 —— 四颗
-   36px 的圆键排成 2×2 网格（一簇 80px），再加尾部箭头 18px，固定占去 98px。
-   1024 档内容宽 912px 排三列时，一格只剩 289px，扣掉内边距 20px 后
-   内容块只拿到 171px —— 而这一段的 min-content 是那颗
-   `white-space: nowrap` 的摘句（实测 219px），它把内容块钉死在这个宽度上，
-   「至德二载甫自京金光门出……」于是折成三行、标题高到 188px，
-   正是 `test/pwa.test.js` 那句「卡内篇名不折成竖排」要守的东西。
-   排两列一格 444px、内容块 326px > 219px，站得住 ——
-   所以 1024~1279 收回两列，1280 起宽度够了再回三列。
-   ⚠️ 圆键从「横着一排」（168px）收成 2×2 网格（80px）之后，这一档其实比
-   以前宽松了很多（内容块 171px vs 曾经的三颗键时代 124px、四颗键时代 82px），
-   但离 219px 那一关还差一点，所以这条暂时留着。 */
 @media (min-width: 1024px) and (max-width: 1279px) {
   .group-card > .item {
     flex: 1 1 calc(50% - 11px);
     max-width: calc(50% - 11px);
   }
 
-  /* 两列时「隔行一条分隔线」的规则跟着回到 768 档那一条：
-     只有第 2、3 条没有上边框（第 2 条与第 3 条跟第 1 条同排）。 */
   .group-card > .item:nth-of-type(2),
   .group-card > .item:nth-of-type(3) {
     border-top: none;
@@ -374,13 +311,6 @@
   margin-right: 6px;
 }
 
-/* 列表行里那几颗行内圆键（报告 / 加背 / 加入背诵 / 播放）**排两行两列**。
-   原先一排横着铺满（三颗或四颗），一行里除去内容块就要固定占掉 126 / 168px，
-   屏幕窄一档标题就被挤到折行；而且四颗挤在一起时相邻两颗之间只有一道 6px
-   外边距，圆与圆几乎贴住，误点的机会大于点中。
-   改成 2×2 的网格：左右与上下**同一道 gap**，四颗各占一格；
-   只有三颗（/poems/ 不带「加入背诵」）时第二行左边那一格空着，
-   第一行仍是两颗 —— 网格与四颗时完全同一个位置，不会因为少一颗就整体挪位。 */
 .item-actions {
   display: grid;
   grid-template-columns: repeat(2, var(--item-btn));
@@ -390,11 +320,9 @@
   align-content: center;
   justify-content: end;
 
-  /* 与尾部箭头之间留出与网格内部同宽的呼吸（箭头自己 margin-left: auto） */
   margin-right: var(--item-gap);
 }
 
-/* 网格自己给间距，圆键各自那 6px 右外边距在这里撤掉（否则左右会比上下多出 6px） */
 .item-actions > .item-report,
 .item-actions > .item-daily,
 .item-actions > .item-recite,
@@ -515,11 +443,7 @@ body.reader-open .dock { display: none; }
   margin-bottom: 4px;
   overflow: visible;
 }
-/* 档②（次按钮）的**行内小号**：详情页工具条那一排。
-   高度 / 圆角 / 字号一律读 style.css 里那把尺（--ctl-h-sm / --ctl-radius /
-   --ctl-font-sm），不再自己写 34px / 12px / 13px ——
-   本轮之前它 34px、.account-page 里那一颗 27px、设置页那颗 40px，
-   同名的按钮在三个页面上三个高度。 */
+
 .mini-btn,
 .reader-actions .seg.mini {
 
@@ -659,11 +583,6 @@ body.reader-open .dock { display: none; }
 }
 .item-recite[data-on="1"] { background: var(--blue); border-color: var(--blue); color: #fffdf8; }
 
-/* 列表行里那一颗「报告错误」的小旗（Issue #243 第四轮）。
-   与「加入今日背诵」「加入背诵」同一排，排在**最左** —— 它是这一排里
-   最少用的一颗，日常那两颗（加背 / 加集）应该挨着标题、拇指够得着。
-   颜色走「墨绿」（--ink-3）而不是蓝 / 绿：它不是「加入」那一类动作，
-   而是一个中性、低频、**不该被误点**的入口。 */
 .item-report {
   display: inline-flex;
   align-items: center;
@@ -847,10 +766,7 @@ body.reader-open .dock { display: none; }
   line-height: 1.5;
 }
 .trans-read .btn-icon { display: inline-flex; align-items: center; justify-content: center; flex: none; }
-/* 图标框 14px（HTML 里那枚三角 stroke-width 已按 24÷14 ≈ 1.7 配好，
-   屏幕上仍是 1px 笔画）。⚠️ 这里曾是 24px：24 的图标框把胶囊从 28px 撑到
-   36px 高，而「译文键不纵向拉高」那条守卫卡的是胶囊高度上限 ——
-   24px 一上就红。14px 既守住 30px 高，也不会让胶囊显小。 */
+
 .trans-read .btn-icon svg { display: block; width: 14px; height: 14px; margin: 0; }
 
 .trans-read .btn-icon.pause-glyph { display: none; }
@@ -943,12 +859,7 @@ body.reader-open .dock { display: none; }
 .search-slash {
   position: absolute;
   top: 50%;
-  /* ⚠️ 右缘要落在**输入框**的右缘内侧 12px 上（Issue #278 第七轮）。
-     它原先写 12px，量的是 `.search-wrap` —— 而输入框自己有左右内边距与边框，
-     1024–1439 那一档 `.search-wrap` 比输入框宽 15px（浏览器给 `<input>`
-     加的那条 UA 外边距），于是这枚「/」被推到框外 3px 处，看着像飘在框上。
-     算式里的三项与 `.search-input` 的横向盒模型逐项对应：
-     右侧 UA 外边距 2px + 框自己的右内边距 12px + 边框 1px = 15px。 */
+
   right: calc(12px + 1px + 12px + 2px);
   transform: translateY(-50%);
   display: none;
@@ -1017,40 +928,14 @@ body.reader-open .dock { display: none; }
 .search-hero .search-toolbar { --toolbar-h: 52px; }
 .search-hero .search-input { --toolbar-h: 52px; }
 
-/* ⚠️ 搜索页 hero **不再单独覆写提示字**（Issue #278 第八轮）。
-   原先这里是「字号自己写 13.5px + `transform: none`」——那就是首页与搜索页
-   差开的那一处：同一个提示字，一个 12.5px 还抬 -2.25px，一个 13.5px 不抬。
-   现在两页共用 :root 那一对变量，覆写整条撤掉 —— **不是**「换一个相同的数
-   也覆写一份」，那样下次还会从其中一处先漂走。
-   这一条要守的是「只有一个来源」，test/search.test.js 里那条断言盯着它。 */
-
 .search-hero .search-wrap { transform: translateY(-2px); }
 
-/* 「框 → 结果列表」那一段间隔，框上框下共用这一个数：
-   框上走 --hero-top（贴顶态）、框下走 #gw-list 的 padding-top，两者都读它。
-
-   ⚠️ 这个变量要挂在**两者共同的祖先**上。原先它只写在 .search-hero 上（还带着
-   12px 的兜底），而 #gw-list 是 hero 的**兄弟**不是后代 —— 自定义属性只沿树往下
-   继承，兄弟之间传不过去，所以 #gw-list 那条 `var(--search-list-gap)` 一直是
-   **无效值**（padding-top 落成 0），框下那 12px 是通版 .toolbar 的 margin-bottom
-   凑出来的。看着「差不多」，实际是两个数在各自出缝。
-   2026-09-20 这一轮把来源收到一处：值定义在 body 上，两个用它的人都读得到。
-
-   14px 与首页今日背诵页那一条（--block-gap）同值 —— 用户 2026-09-20 要的是
-   「照搬今日搜索的设计与排版」，那一条就是「框与列表之间一格块距」。 */
 body[data-nav="search"] { --search-list-gap: 14px; }
 
 body[data-nav="search"] #gw-list { padding-top: var(--search-list-gap); }
 body[data-nav="search"] .search-hero.search-active ~ #gw-list,
 body[data-nav="search"] .search-hero.kb-open ~ #gw-list { padding-top: var(--search-list-gap); }
 
-/* 搜索页的结果行：有些带 gradeGroup（课内那几首，落进 .group-card），
-   有些不带（唐诗 / 宋词等，直接排在 .list 上）。两处的**按钮间距必须一样**，
-   否则同一页里「课内」那几条与其余几条的「＋ / 收藏 / 播放」疏密不同。
-
-   .group-card .item 的间距是 gap: 0，圆键那一簇收进 .item-actions 自己排；
-   下面这条把 .list 上的裸 .item 拉齐到同一套（原先它吃的是通用 .item 的 gap: 12px，
-   于是同一排三个钮之间平白多出 24px）。 */
 body[data-nav="search"] #gw-list .item { padding: 14px 8px 14px 14px; gap: 0; }
 
 #gw-list .item-hit {
@@ -1182,21 +1067,8 @@ body[data-nav="search"] .search-hero.kb-open .search-toolbar {
 
   z-index: 30;
 
-  /* 通版 .toolbar 自带 margin-bottom: 12px（那是「工具条 → 下面一块」的块距）。
-     贴顶态下这一条由 #gw-list 的 padding-top（--search-list-gap）出，
-     两处都留着就成了「12 + 14」——看着是两段缝、改一处也改不干净。
-     所以这里把它归零：框到列表之间只有一个来源。 */
   margin-bottom: 0;
 }
-
-/* ⚠️ 贴顶态**不许改左右内边距**（Issue #278 第七轮 · 用户 2026-09-24：
-      「当鼠标聚焦到输入框，输入框宽度变少了，或者搜索框左右 margin 变多了
-        需要维持宽度不变」）。
-      原先这里在 ≤700px 上给贴顶态加了左右各 8px 的内边距，于是同一枚框
-      聚焦前后**宽度差 16px**（393px 实测 365 → 349，左缘 14 → 22）——
-      这是「聚焦 → 上浮」那一下里唯一一处让框动尺寸的东西。
-      贴顶态本来就该与下面那张卡同宽（都是 `.app` 的内容宽），
-      所以这一条**整个撤掉**，不给它换一个更小的数。 */
 
 body[data-nav="search"] .search-hero.search-active .search-wrap,
 body[data-nav="search"] .search-hero.kb-open .search-wrap { transform: none; }

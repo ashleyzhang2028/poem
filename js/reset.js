@@ -48,16 +48,6 @@
     el.className = "account-msg" + (level ? " " + level : "");
   }
 
-  // 解一个 URL 参数：**永不抛**。
-  //
-  // `decodeURIComponent("...%zz")` 会抛 URIError，而这里是在**页面初始化**时
-  // 被调的 —— 一抛，整个脚本停在这一句，`/verify/`（`/reset/` 同理）就僵在
-  // 出厂那一屏：用户点开邮件链接、看到的却是一句「链接不完整」，
-  // 甚至什么都不显示。而真正的原因（邮件客户端把 token 里的 % 弄坏 /
-  // 手动截断了链接）一个字都没露。
-  //
-  // 口径与 `api/_lib/session.js` 的 `safeDecode` 同源：读不动就**按原样**
-  // 还回去，交给下游如实判「这不是一个完整的链接」。
   function safeDecodeParam(v) {
     var raw = String(v == null ? "" : v);
     try {

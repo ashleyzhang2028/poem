@@ -27,16 +27,7 @@
 
     <main class="account-page" id="mine-page">
       <section class="account-card">
-        <!-- ⚠️ 头像 / 昵称 / 层级徽章 / 账号动作**同行**（用户 2026-09-24，Issue #276：
-             「要不要登录，上传头像，和删除头像在一行显示？」）。
-             所以这三格的次序由 js/mine.js 一处画出来：
-               头像槽 · 昵称 + 身份 · 层级徽章 ·「登录/账号」「上传头像」「删除头像」
-             这一行**不许换行**（css/account.css 的 .identity-row 那条 nowrap），
-             手机上宁可昵称列让位，也不折回「一行一个按钮」那个样子。
-             屏幕次序：头像 · 昵称 · 徽章 ·「登录 / 账号」·「上传头像」·「删除头像」。
-             「退出登录」不进这一行 —— 它留在下面「账号」卡里跟这一份账号在一起
-             （CSS 那条 :has() 把它 display: none 掉；不摘的话实测 360px 上
-             这一行会跑出 14px 的横向滚动）。 -->
+
         <div class="identity-row" id="identity-row"></div>
 
         <input id="avatar-file" class="sr-only" type="file" accept="image/*"
@@ -52,15 +43,7 @@
                    step="0.01" value="0" aria-label="放大缩小" />
             <div class="crop-btns">
               <button class="btn ghost-btn" id="btn-crop-cancel" type="button">取消</button>
-              <!-- ⚠️ 「删除头像」这颗键住在**裁切层**里（Issue #276 第八轮）。
-                   它原先在身份行上、与「上传头像」并排，而那颗键在**没图时
-                   也画着**（只是 hidden）—— 判据就是「本机有没有图」，
-                   要两处维护（身份行那一半 + 编辑层那一半）。
-                   用户 2026-09-24 的原话是：「如果用户没有上传头像，
-                   是不是不应该显示删除头像按钮？」—— 那么它只该在
-                   **有图**这一半里出现，而有图那一半的唯一入口就是这里
-                   （「上传头像」在有图时叫「更新头像」，点进来就是这个层）。
-                   这么并之后「删除」不再占身份行一格，也不会再被折到第二行。 -->
+
               <button class="btn ghost-btn" id="btn-crop-clear" type="button">删除头像</button>
               <button class="btn" id="btn-crop-ok" type="button">用这张</button>
             </div>
@@ -78,9 +61,7 @@
       <section class="account-card" id="stats-card">
         <h2 class="account-card-title">本机数据</h2>
         <div class="kv-list" id="stats-list"></div>
-        <!-- 去进度页那一行：它是「去别处看」，不是「清空 / 导出」那类动作，
-             所以是一行天青副色的字（无下划线），不是一颗键。
-             用户 2026-09-18：文案改「背诵进度」、按钮改成链接。 -->
+
         <p class="settings-link-row">
           <a class="account-link" id="link-progress" href="/progress/">背诵进度</a>
         </p>
@@ -97,12 +78,6 @@
           </div>
         </div>
 
-        <!-- ⚠️ 这一格原先装着「登录 + 退出登录」两颗键，并整只搬进身份行
-             （Issue #276 第七轮靠 CSS 的 order + :has() 在两态间换位置）。
-             第八轮把它们收成**身份行上那一颗键的两个文案**（见 js/mine.js 的
-             renderSignOut），这里改成账号自己的入口：「账号」去哪儿看
-             「我是谁」是 /login/ 那一页的事，与上面「登录 / 退出」那颗
-             不是同一件事，所以它在**卡里**，不在身份行上。 -->
         <div class="account-actions" id="account-card-actions">
           <button class="account-btn ghost" id="btn-account-open" type="button">账号与安全</button>
         </div>
@@ -111,9 +86,7 @@
 
       <section class="account-card" id="about-card">
         <h2 class="account-card-title">关于</h2>
-        <!-- 法务两条在这儿，层级对比 / 自检 / 我的报告在「设置 · 关于」那一处 ——
-             同一件事只在**一处**给入口，用户不用记住「哪个入口在哪个页」。
-             ⚠️ Issue #244 把个人中心那张卡的层级对比一起搬了过来，本行不重复收它。 -->
+
         <div class="kv-list">
           <div class="kv-row"><span class="kv-k"><a class="kv-link" href="/terms/">用户协议</a></span><span class="kv-v"></span></div>
           <div class="kv-row"><span class="kv-k"><a class="kv-link" href="/privacy/">隐私条款</a></span><span class="kv-v"></span></div>

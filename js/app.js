@@ -17,8 +17,7 @@
   const APP_NAME = "跬步";
 
   const FONT_KEY = "poem_font_v1";
-  // 级差统一 2px：最小 9px（再小汉字笔画就并在一起了），最大 25px。
-  // 见 docs/architecture.md §4.35 —— 9px 那档是用户 2026-09-19 点名要的。
+
   const FONT_SIZES = [9, 11, 13, 15, 17, 19, 21, 23, 25];
   const FONT_MIN = 9;
   const FONT_MAX = 25;
@@ -253,9 +252,6 @@
     );
   }
 
-  // 今日加背的指纹：加 / 删一篇就换一把缓存键，计划随之重算。
-  // 取的是**今天**那一份（DailyExtra 自己按日期判），所以跨过 0 点指纹
-  // 自己会变 —— 与 todayKeyStr() 那一层双保险。
   function dailyExtraKey() {
     if (!window.DailyExtra) return "0";
     try {
@@ -270,11 +266,6 @@
     return window.ReciteCollections.scheduleItems(window.SITE_INDEX || []);
   }
 
-  // 「今日加背」（js/daily-extra.js）：小朋友今天主动多背的那几篇。
-  // 它**不走** extraPoems 那条路：extraPoems 进的是 scheduler 的候选池，
-  // 池子会被 dailyCount（3/5/8/10）裁掉 —— 用户要的是「点一下，5 首变 6 首」，
-  // 被裁掉就成了一句空话。所以它由 withTodayExtra() 在计划生成**之后**并上，
-  // 数量无条件累加。
   function todayExtraPoems() {
     if (!window.DailyExtra) return [];
     return window.DailyExtra.poems();
@@ -287,14 +278,6 @@
     renderAll();
   }
 
-  // 把「今日加背」那几篇并进计划**末尾**。
-  //
-  // 三条口径：
-  //   ① 放在末尾 —— 今日背诵列表的第一条永远还是今天该背的那一首
-  //      （顺序变了，小孩会以为计划乱了）；
-  //   ② 按 wid 去重 —— 课内那首《静夜思》已经在计划里时，再从唐诗页
-  //      点一次「加入今日背诵」不会多出重复的一条；
-  //   ③ 数量无条件累加 —— 5 首的档加一篇就是 6 首，不被 dailyCount 裁掉。
   function withTodayExtra(plan) {
     const list = (plan || []).slice();
     const extra = todayExtraPoems();
@@ -425,8 +408,7 @@
         b.classList.toggle("active", b.dataset.scope === scopeKey());
       });
     }
-    // ⚠️ 这里原先往「设置 · 背诵」页的范围下面回显一行「当前：本学期及之前」——
-    //    选中的那一格就是当前值，用户 2026-09-21 点名撤掉，首页不再替设置页写字。
+
     const sh = $("#seg-helper");
     if (sh) {
       $$("button", sh).forEach(function (b) {
@@ -836,9 +818,6 @@
     syncBottomGap();
   }
 
-  // 这一篇的「作品 id」。注音勘误表按它绑定 —— 集子页与课内页的篇目 id 不同，
-  // 而同一篇作品在好几部集子里出现（《滕王阁序》在课内也在古文观止），
-  // 所以要用 WorksIndex 归并后的那个 wid，勘误才是「一处改、处处生效」。
   function pinyinWidOf(p) {
     const id = p && p.id ? p.id : "";
     if (!id) return "";
@@ -851,8 +830,7 @@
   function renderPoemText(p) {
     const box = $("#m-text");
     if (pinyinOn() && window.Pinyin) {
-      // 走 annotatePoem（逐句声明「哪一篇」，勘误层才找得到）：不传 wid 时
-      // 输出与 annotateHtml 逐字相同，所以这是纯增强、不是改口径。
+
       box.innerHTML = window.Pinyin.annotatePoem
         ? window.Pinyin.annotatePoem(pinyinWidOf(p), p.text, pinyinRenderMode())
         : window.Pinyin.annotateHtml(p.text, pinyinRenderMode());
@@ -1197,7 +1175,6 @@
     return null;
   }
 
-  // 今日背诵页顶上的「再找一首」——下拉与搜索页一致，多一颗「＋」。
   function bindTodaySearch() {
     if (!window.DailyExtraUI) return;
     const ui = window.DailyExtraUI.bindSuggest({
@@ -1205,9 +1182,7 @@
       box: "#today-suggest",
       onToast: showToast,
       onOpen: function (p) {
-        // 点行本身 = 直接打开这一篇（与搜索页同一个手感）。打开前先把它加进
-        // 今天 —— **已经在里面的不许反而被移出**（行与那颗「＋」是两件事：
-        // 「＋」是开关，行是「打开看」）。
+
         if (!window.DailyExtraUI.has(p)) addTodayExtra(p, true);
         const item = todayPlanItemOf(p.id);
         openPoem(item && item.poem ? item.poem : p,

@@ -137,9 +137,6 @@
 
   <div class="toast" id="toast" hidden></div>
 
-  <!-- 判据（谁能看这一页）要在自检脚本之前就位：
-       `js/entitlement.js` 给角色，`js/self-check-gate.js` 放行时才把下面那枚
-       占位脚本换成真的 —— 拒绝那一支里 `/js/self-check.js` 一次都没被请求。 -->
   <script src="/js/entitlement.js"></script>
   <script src="/js/self-check-gate.js"></script>
   <script id="self-check-script" type="text/plain" data-src="/js/self-check.js"></script>

@@ -470,10 +470,6 @@ async function main() {
     chk(/hasSession/.test(endpoint), "/api/family 没配密钥时如实回 503（与其余接口同一条）");
   }
 
-  // Issue #278：原先紧接着这一节的是「真页面上跑一遍」（jsdom 起「我的」页，
-  // 验名册真的上云）—— 页面层整段删除。名册本身的上云口径（SyncStore 的行号、
-  // 分家、合并规则）由上面那些纯 Node 的用例守着，不靠真页面。
-
   console.log("");
   console.log(fails === 0 ? "🎉 跨设备分档案测试全部通过" : "❌ 跨设备分档案测试 " + fails + " 项失败");
   process.exit(fails ? 1 : 0);

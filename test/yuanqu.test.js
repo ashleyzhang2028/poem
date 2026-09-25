@@ -25,7 +25,6 @@ chk(YQ.every(p => p.title && p.source && p.dynasty && p.author && p.text && p.tr
   '每首都齐全：标题 / 出处 / 朝代 / 作者 / 原文 / 译文');
 chk(YQ.every(p => p.excerpt), '每首都给了列表用摘句（excerpt）');
 
-// 《山坡羊·骊山怀古》《朝天子·咏喇叭》两首课内已收，沿用课内那份译文口径（academic）。
 const YQ_SRC_OK = ['public-domain', 'school', 'academic'];
 chk(YQ.every(p => YQ_SRC_OK.indexOf(p.translationSource) >= 0),
   '30 首元曲都标了译文来源且取值在允许范围（异常 ' +
@@ -75,12 +74,6 @@ chk(yqIdx.length === 30, '总索引收了全部 30 首（实际 ' + yqIdx.length
 chk(yqIdx.every(x => x.text && x.translation), '进索引的每一首原文与译文齐备');
 chk(IDX.some(x => x.book === 'yuanqu' && x.isBook),
   '「元曲三百首」本身也作为一条结果（搜集子名能直接进那一页）');
-
-// ---------------------------------------------------------------------------
-// Issue #278：这一层的**页面层**（jsdom 起页面、挂脚本、渲染分组、点开详情、
-// 搜索框敲字）整段删除 —— 那是界面测试。留下的是数据层：篇目数量 / id / 字段 /
-// 分组口径 / 总索引收录，以及页面脚本顺序这一类**功能接线**的口径。
-// ---------------------------------------------------------------------------
 
 console.log('');
 console.log(fails ? '❌ ' + fails + ' 项失败' : '🎉 yuanqu测试全部通过');

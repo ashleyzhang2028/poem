@@ -1,4 +1,4 @@
-// Issue #278：页面层（jsdom 真跑集子页 / 首页）已删除，只留数据层与接线口径。
+
 const fs = require('fs');
 const vm = require('vm');
 const path = __dirname + '/../';
@@ -63,10 +63,7 @@ chk(MASTER.every(m => m.id && m.work && Array.isArray(m.entries) && m.entries.le
   '每条都带 id / work / entries（跨集重复至少两条条目指它）');
 chk(MASTER.every(m => m.text && m.translation),
   '每条都有正文与译文（主表是唯一一份正文，不许有空文）');
-// 主条目口径：**有课内条目就取课内**（教材口径优先）；两边都没有课内时
-// 按 data/works-index.js 的 repOf() —— 即 entries 里按「课内优先、其余按 id」
-// 排过序的第一个。乐府集（Issue #244）与唐诗三百首重篇的那 14 篇就落在后一支上：
-// 两条都不是课内，主条目取 id 更小的那一部（tangshi-* < yuefu-*）。
+
 const noCourse = multiEntries.filter(m => m.id.indexOf('poems-') !== 0);
 chk(noCourse.every(m => m.entries.every(e => e.indexOf('poems-') !== 0)),
   '主条目不是课内条目的那些，entries 里也确实没有课内条目（不该有人放着课内不用）');
@@ -226,9 +223,6 @@ Object.keys(BOOK_VARS).forEach(book => {
   });
 });
 
-// 口径没变：**主表登记过的每一条**都要退化成只存归属（textRef），
-// 正文只在主表那一份。主条目自己也带 textRef（指向自己）——
-// 第一层「一份正文」不是靠「哪个文件存着」表达的，而是靠「只有主表存着」。
 const expectStripped = masterFlat.length;
 const strippedSet = {};
 stripped.forEach(k => { strippedSet[k] = 1; });
@@ -267,11 +261,6 @@ if (order.indexOf('data/site-index.js') >= 0) {
     '主表排在站点索引之前（索引组装时就要按它取回正文）');
 }
 
-// 正文收归主表后，课内相当一部分条目只存 textRef（如《桃花源记》cz8-14）。
-// data/index.js 在汇成 POEMS_ALL 时就要调 masterTextOf 把正文取回 —— 所以
-// **任何加载 data/index.js 的页面，都必须先加载 data/text-master.js**。
-// 少了这一步，页面上的正文是空的（Issue #243 顺带揪出来的一个真 bug：
-// 那时候 data/index.js 排在主表之前，主页点开《桃花源记》正文一片空白）。
 (function () {
   const pages = [];
   (function walk(dir) {
@@ -300,21 +289,12 @@ if (order.indexOf('data/site-index.js') >= 0) {
     '加载了 data/index.js 的页面都先加载了 data/text-master.js（异常：' + (bad.join('、') || '无') + '）');
 })();
 
-// ---------------------------------------------------------------------------
-// 页面层（jsdom：集子页 / 首页真跑一遍、孤儿进度清理的页面那一半）已删除 ——
-// Issue #278：那是界面测试，构建时间不花在这里。
-//
-// 留下来的只有两条**功能**不变量的源码口径检查：页面加载顺序与孤儿清理的
-// 接线（都不需要起 DOM）。
-// ---------------------------------------------------------------------------
-
 const home = read('index.html');
 const hOrder = home.match(/<script src="([^"]+)"><\/script>/g).map(x => x.match(/src="([^"]+)"/)[1]);
 chk(hOrder.indexOf('js/storage.js') >= 0, '首页加载了 js/storage.js（进度库）');
 chk(/pruneUnknown/.test(read('js/app.js')),
   '首页启动时会清一次孤儿进度（js/app.js 调 Storage.pruneUnknown）');
 
-// 孤儿进度清理本身是数据层的活，直接对 Storage 上手（不起 DOM）
 {
   const sb2 = {
     window: {}, console: console,
@@ -330,8 +310,7 @@ chk(/pruneUnknown/.test(read('js/app.js')),
   };
   sb2.window = sb2;
   vm.createContext(sb2);
-  // 这一节只要一份「站点索引」当 knownIds —— 直接拿上面已经装好的那一份，
-  // 不重复加载语料（那正是这一层最重的一步）。
+
   const known = sb.SITE_INDEX.map(p => p.id);
   vm.runInContext(read('js/storage.js'), sb2, { filename: 'js/storage.js' });
   const S2 = sb2.Storage;
@@ -343,7 +322,7 @@ chk(/pruneUnknown/.test(read('js/app.js')),
     'gz12-12': { level: 2, learned: true, nextReviewAt: Date.now() - 1000, reviewCount: 3, lapses: 0 },
     'xx1-09': { level: 1, learned: true, nextReviewAt: Date.now() - 1000, reviewCount: 1, lapses: 0 }
   });
-  // 站点索引里的 id 带集子前缀（课堂那一部是 poems-）
+
   chk(known.indexOf('poems-xx1-09') >= 0, '站点索引里认得出《静夜思》（孤儿清理的判据来自它）');
   known.push('xx1-09');
   S2.pruneUnknown(known);

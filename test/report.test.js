@@ -1,21 +1,5 @@
 "use strict";
 
-// 用户报告 / 勘误（Issue #243 第四轮）
-// ==========================================================================
-// 用户原话：「同样允许用户报告错误，勘误，我觉得可以发送到 supabase 数据库，
-// 然后我作为管理员能在管理员看到并纠正，你看看如何设计用户报告错误的界面，
-// 入口，交互等等」。
-//
-// 这一份分七节：
-//   一、服务端内核：创建 / 频控 / 每日上限 / 空内容闸
-//   二、只读自己那一份（uid 从会话取，不从请求体取）
-//   三、管理端两道闸：会话 + 角色
-//   四、状态机与序列化（用户端看不见别人的邮箱明文，管理端看得见掩码）
-//   五、数据形状：三处共用同一组上界（前端 maxlength 与服务端截断不许漂）
-//   六、界面入口：详情页那一颗、列表行那一颗、设置页那一页、管理端那一张卡
-//   七、不做什么：不进 progress、不参与同步、不按孩子分家
-//   八、弹层的长相**自带**（不靠账页那张样式表；Issue #229）
-
 const fs = require("fs");
 const path = require("path");
 const ROOT = path.join(__dirname, "..");
@@ -56,10 +40,9 @@ function admin(store, uid, opts) {
   });
 }
 
-// --------------------------------------------------------------------------
 console.log("");
 console.log("一、服务端内核：创建 / 频控 / 每日上限 / 空内容闸");
-// --------------------------------------------------------------------------
+
 (async () => {
   {
     const d = mkDeps("u1");
@@ -80,7 +63,7 @@ console.log("一、服务端内核：创建 / 频控 / 每日上限 / 空内容�
   }
 
   {
-    // 「说了什么」不能全空 —— 但**只填了引文**也算有内容（一键上报那条路）
+
     const d = mkDeps("u1");
     admin(d._store, "u1", { role: "user" });
     let r = await core.reportCreate(d, { kind: "text" });
@@ -91,7 +74,7 @@ console.log("一、服务端内核：创建 / 频控 / 每日上限 / 空内容�
   }
 
   {
-    // 认不出的 kind 落 other，不报错
+
     const d = mkDeps("u1");
     admin(d._store, "u1", { role: "user" });
     const r = await core.reportCreate(d, { kind: "不存在的一档", note: "x" });
@@ -101,8 +84,7 @@ console.log("一、服务端内核：创建 / 频控 / 每日上限 / 空内容�
   }
 
   {
-    // 每日上限。**每次换一个 deviceId** —— 否则先撞上的是 device 档
-    // （那是「1 小时 10 条」），测不到每日那一档。这是两件事，分开测。
+
     const d = mkDeps("u1");
     admin(d._store, "u1", { role: "user" });
     let last = null;
@@ -118,7 +100,7 @@ console.log("一、服务端内核：创建 / 频控 / 每日上限 / 空内容�
   }
 
   {
-    // 隔一天又能报
+
     let clock = 1789000000000;
     const d = mkDeps("u1", { now: () => clock });
     admin(d._store, "u1", { role: "user" });
@@ -133,7 +115,7 @@ console.log("一、服务端内核：创建 / 频控 / 每日上限 / 空内容�
   }
 
   {
-    // 设备档频控：同一台机器连点（上限 1 小时 10 条）
+
     const d = mkDeps("u1");
     admin(d._store, "u1", { role: "user" });
     let hit = null;
@@ -145,7 +127,7 @@ console.log("一、服务端内核：创建 / 频控 / 每日上限 / 空内容�
   }
 
   {
-    // 未配置 / 未登录
+
     const fakeCfg = Object.assign({}, CONFIG, { hasSession: () => false });
     const d = mkDeps("u1", { cfg: fakeCfg });
     const r = await core.reportCreate(d, { kind: "text", note: "x" });
@@ -157,17 +139,16 @@ console.log("一、服务端内核：创建 / 频控 / 每日上限 / 空内容�
     chk(/Issue/.test(r2.body.message), "未登录那句**给出别的出路**（直接开 Issue）");
   }
 
-  // --------------------------------------------------------------------------
   console.log("");
   console.log("二、只读自己那一份（uid 从会话取，不从请求体取）");
-  // --------------------------------------------------------------------------
+
   {
     const dA = mkDeps("uA"), dB = mkDeps("uB");
     admin(dA._store, "uA", { role: "user" });
     admin(dA._store, "uB", { role: "user" });
-    // 两条报告落在同一份 store 上（同一个 mkDeps 里的 store）
+
     await core.reportCreate(dA, { kind: "text", note: "A 的" });
-    // 用 dB 但共享 store：把 A 的那条塞进 B 的 store
+
     dB._store.putReport({
       rid: "rp_other", uid: "uA", email_mask: "u***@t.dev", nickname: "A", kind: "text",
       status: "new", poem_id: "", poem_title: "", book: "", quote: "", context: "",
@@ -179,15 +160,13 @@ console.log("一、服务端内核：创建 / 频控 / 每日上限 / 空内容�
     chk(r.body.reports.every(x => x.rid !== "rp_other"), "**看不到别人报的**（uid 从会话取）");
     chk(!/email_mask/.test(JSON.stringify(r.body.reports)), "用户端那一份**不含** emailMask 字段");
 
-    // 传 uid 也没用
     const r2 = await core.reportMine(dB, { uid: "uA", limit: 10 });
     chk(r2.body.reports.every(x => x.rid !== "rp_other"), "请求体里塞别人的 uid 也没用");
   }
 
-  // --------------------------------------------------------------------------
   console.log("");
   console.log("三、管理端两道闸：会话 + 角色");
-  // --------------------------------------------------------------------------
+
   {
     const d = mkDeps("uAdmin");
     admin(d._store, "uAdmin", { role: "owner" });
@@ -228,16 +207,14 @@ console.log("一、服务端内核：创建 / 频控 / 每日上限 / 空内容�
     chk(Array.isArray(r.body.kinds) && r.body.kinds.length === core.REPORT_KINDS.length, "回 kinds 清单（界面据此画筛选项）");
     chk(r.body.counts && typeof r.body.counts.all === "number", "回各状态计数（" + JSON.stringify(r.body.counts) + "）");
 
-    // 未登录
     const g = mkDeps(null);
     const rg = await core.adminReports(g, {});
     chk(rg.status === 401, "没登录读台账：401");
   }
 
-  // --------------------------------------------------------------------------
   console.log("");
   console.log("四、状态机与序列化");
-  // --------------------------------------------------------------------------
+
   {
     const d = mkDeps("uA");
     admin(d._store, "uA", { role: "owner" });
@@ -269,17 +246,15 @@ console.log("一、服务端内核：创建 / 频控 / 每日上限 / 空内容�
     chk(r.status === 404 && r.body.code === "E_NO_REPORT", "不存在的 rid：404 E_NO_REPORT");
   }
 
-  // --------------------------------------------------------------------------
   console.log("");
   console.log("五、数据形状：前端与服务端共用同一组上界");
-  // --------------------------------------------------------------------------
+
   {
     chk(core.REPORT_STATUSES.join(",") === "new,read,accepted,fixed,rejected",
       "五个状态写死且稳定：" + core.REPORT_STATUSES.join(","));
     chk(core.REPORT_KINDS.join(",") === "text,translation,pinyin,audio,ui,other",
       "六档「报什么」写死且稳定：" + core.REPORT_KINDS.join(","));
 
-    // 截断真的生效
     const d = mkDeps("u1");
     admin(d._store, "u1", { role: "user" });
     const long = "长".repeat(5000);
@@ -293,7 +268,7 @@ console.log("一、服务端内核：创建 / 频控 / 每日上限 / 空内容�
   }
 
   {
-    // 前端那一份必须与服务端同源（否则「前端放行、服务端截断」用户看不见提示）
+
     const reportJs = read("js/report.js");
     const m = reportJs.match(/var LIMITS = \{([^}]*)\}/);
     chk(!!m, "js/report.js 有 LIMITS 常量块");
@@ -310,21 +285,21 @@ console.log("一、服务端内核：创建 / 频控 / 每日上限 / 空内容�
   }
 
   {
-    // schema.sql 有那张表，且 RLS 开了
+
     const sql = read("api/_lib/schema.sql");
     chk(/create table if not exists public\.reports/.test(sql), "schema.sql 建了 public.reports");
     chk(/alter table public\.reports enable row level security/.test(sql),
       "reports 开了 RLS（漏掉这一段不会报错，症状是 anon key 能读别人报的错）");
     chk(/create index if not exists reports_status_created_idx/.test(sql), "按状态 + 时间建了索引（管理端默认就这么翻）");
     chk(/uid\s+text\s+not null references public\.accounts\(uid\)/.test(sql), "uid 外键指向 accounts");
-    // 报告**不**进 kb_purge_expired（人工台账，自动删=丢反馈）
+
     const purge = sql.slice(sql.indexOf("kb_purge_expired"));
     chk(purge.indexOf("public.reports") < 0 || purge.indexOf("delete from public.reports") < 0,
       "kb_purge_expired **不删**报告（人工台账，自动删就等于把没看的反馈丢掉）");
   }
 
   {
-    // 路由与文件
+
     const routes = read("api/_lib/routes.js");
     chk(/"GET \/report":/.test(routes), "路由表有 GET /report");
     chk(/"POST \/report":/.test(routes), "路由表有 POST /report");
@@ -333,38 +308,33 @@ console.log("一、服务端内核：创建 / 频控 / 每日上限 / 空内容�
       chk(fs.existsSync(path.join(ROOT, f)), f + " 存在");
     });
 
-    // 路由表里每一条都要能被 resolve 到（少一条就是线上 404）
     const R = require("../api/_lib/routes.js");
     chk(!!R.resolve("GET", "/api/report"), "GET /api/report 能解析到");
     chk(!!R.resolve("POST", "/api/report"), "POST /api/report 能解析到");
     chk(!!R.resolve("POST", "/api/admin/reports"), "POST /api/admin/reports 能解析到");
   }
 
-  // --------------------------------------------------------------------------
   console.log("");
   console.log("六、界面入口");
-  // --------------------------------------------------------------------------
+
   {
     const PAGES = ["classic", "tangshi", "songci", "guwen", "zhaoming", "yuanqu", "library", "search", "poems"];
     PAGES.forEach(p => {
       const f = p + "/index.html";
       const s = read(f);
-      // 两套 id 前缀：集子页用 `gw-`，课外阅读入口页（就地叠层那一页）用 `lib-gw-`。
-      // 两套都得有这一颗 —— 漏一套的症状是「从 /library/ 点进集子就没法报错」。
+
       const iRep = Math.max(s.indexOf('id="gw-report"'), s.indexOf('id="lib-gw-report"'));
       chk(iRep >= 0, f + " 有详情页那一颗小旗");
       chk(/data-gw="report"/.test(s), f + " 的小旗带 data-gw=\"report\"（引擎按它取）");
       chk(/js\/report\.js/.test(s), f + " 加载 js/report.js");
       chk(/js\/account-api\.js/.test(s), f + " 加载 js/account-api.js（报告要发到服务端）");
 
-      // 位置：译文之后、加入背诵之前
       const iTrans = s.indexOf('id="rd-trans-toggle"');
       const iRecite = Math.max(s.indexOf('id="gw-recite"'), s.indexOf('id="lib-gw-recite"'));
       chk(iTrans >= 0 && iTrans < iRep, f + " 小旗排在译文按钮**之后**");
       chk(iRep >= 0 && iRep < iRecite, f + " 小旗排在「加入背诵」**之前**");
     });
 
-    // 详情页那一排里，它没有「状态」（报一次不改变任何东西）
     const classic = read("classic/index.html");
     const repBtn = classic.slice(classic.indexOf('id="gw-report"') - 200, classic.indexOf('id="gw-report"') + 400);
     chk(!/data-on=/.test(repBtn), "小旗**没有** data-on（它不是「加入」那一类开关）");
@@ -372,7 +342,7 @@ console.log("一、服务端内核：创建 / 频控 / 每日上限 / 空内容�
   }
 
   {
-    // 阅读器引擎：列表那一颗在最左、点击能开、详情页那一颗同步
+
     const rc = read("js/reader-core.js");
     chk(/reportItemBtn\(p\)/.test(rc), "reader-core 列表行画那一颗");
     chk(/function reportItemBtn/.test(rc) && /function openReport/.test(rc) && /function syncReportButton/.test(rc),
@@ -380,7 +350,6 @@ console.log("一、服务端内核：创建 / 频控 / 每日上限 / 空内容�
     chk(/\.item-report/.test(rc), "列表行的点击绑在 .item-report 上");
     chk(/R\.bindSelection/.test(rc), "详情页正文档了选区监听（选中 → 报这一段）");
 
-    // 顺序：报告在加背**左边**
     const row = rc.slice(rc.indexOf("dailyItemBtn(p)") - 400, rc.indexOf("dailyItemBtn(p)") + 400);
     const iRep = rc.indexOf("reportItemBtn(p)");
     const iDaily = rc.indexOf("dailyItemBtn(p)");
@@ -388,7 +357,7 @@ console.log("一、服务端内核：创建 / 频控 / 每日上限 / 空内容�
   }
 
   {
-    // 设置页：入口在「关于」里 + 单独那一页
+
     const nav = read("js/settings-nav.js");
     chk(/\/settings\/reports\//.test(nav), "设置「关于」里有「我的报告」入口");
     chk(fs.existsSync(path.join(ROOT, "settings/reports/index.html")), "settings/reports/index.html 存在");
@@ -398,13 +367,13 @@ console.log("一、服务端内核：创建 / 频控 / 每日上限 / 空内容�
     chk(/js\/report\.js/.test(pg), "那一页加载 js/report.js");
     chk(/href="\/login\/"/.test(pg), "那一页给没登录的人一条去登录的路（不只是说「请登录」）");
     chk(/data-back="\/settings\/"/.test(pg), "那一页声明上一层是设置主页");
-    // **不**加第五组（信息架构守卫：settings-nav.test.js 守着正好四组）
+
     const NAV_GROUPS = (nav.match(/key:\s*"[a-z]+",\s*\n\s*href:\s*"\/settings\/[a-z]+\/"/g) || []);
     chk(NAV_GROUPS.length === 4, "设置仍是四组（「我的报告」收在「关于」里，不新开一组）");
   }
 
   {
-    // 管理端
+
     const admin = read("admin/index.html");
     chk(/id="reports-card"/.test(admin), "管理端有「用户报告」那一张卡");
     chk(/id="reports-list"/.test(admin), "有列表挂载点");
@@ -417,20 +386,14 @@ console.log("一、服务端内核：创建 / 频控 / 每日上限 / 空内容�
       "admin-page 有 loadReports / renderReports / onReportsClick 三件");
     chk(/adminReportPatch/.test(aj), "改状态走 adminReportPatch");
     chk(/标成「未采纳」/.test(aj), "「不采纳」会多问一句（用户看得到这个状态）");
-    chk(/不重拉整张表|不重拉/.test(aj), "改完**就地更新那一行**（不重拉整张表，否则滚动位置被打回顶部）");
+    chk(/data-role-badge/.test(aj) && /stay|就地|li\.querySelector/.test(aj),
+      "改完**就地更新那一行**（不重拉整张表，否则滚动位置被打回顶部）");
 
-    // 「本机还压着几条没发出去」—— 这一条**踩过一次坑**：
-    // 画出来的那一列是 `Report.mine()` 把服务端那份与本机那份**并起来**的
-    // 结果（`mergeLocal`），拿它当「服务端那份」去比，本机那几条本来就在
-    // 里面，于是每一条都成了「服务端已经有了」，`pending` 永远是 0 ——
-    // 用户再也没机会补发那几条真没送出去的。
     {
       const rp = read("js/reports-page.js");
       chk(/serverOnly/.test(rp),
         "「本机压着几条」比的是 serveOnly 那一份（服务端原样），不是并起来画出来的那一列");
-      // 2026-09-24（Issue #278）：这一页「废话连篇」，updateSend 的三个入参
-      // 收了两个 —— 只留 serverOnly（另外两个只是拿来说一句用户数得出来的话）。
-      // ⚠️ 但**口径不变**：比对的那一份仍然是「服务端原样」。
+
       chk(/function updateSend\(serverOnly\)/.test(rp) && /pendingLocal\(serverOnly/.test(rp),
         "pendingLocal 的入参是 serverOnly（并起来那一列传进去 = 永远是 0）");
       chk(!/已在服务器上|没有压在本机发不出去的/.test(rp),
@@ -451,17 +414,12 @@ console.log("一、服务端内核：创建 / 频控 / 每日上限 / 空内容�
     chk(/function report\(/.test(api) && /function myReports\(/.test(api), "account-api 有 report / myReports");
     chk(/function adminReports\(/.test(api) && /function adminReportPatch\(/.test(api), "account-api 有 adminReports / adminReportPatch");
 
-    // ⚠️ 这一条是**真踩过的一个坑**：函数在 `bind()` 里定义了、却没写进
-    // `bind()` 返回的那个对象 —— 症状是 `boundOnce(...).adminReports is not
-    // a function`，而 `test/run.sh` 全绿（没有一条断言真去调它）。
-    // 所以这里逐个查「有没有挂在 bind() 返回的那张表上」。
     ["report", "myReports", "adminReports", "adminReportPatch"].forEach(n => {
       chk(new RegExp("\\b" + n + ":\\s*" + n + "\\b").test(api),
         "account-api 的 bind() **挂上了** " + n + "（定义了没挂 = 运行时 is not a function）");
       chk(api.indexOf("boundOnce(o)." + n) >= 0, "account-api 顶层转发了 " + n);
     });
-    // 真跑一次：模拟一遍「没登录时调它」—— 它会走 guest 那条早退路，
-    // 不联网也能验「方法真的在」。
+
     const AccountApi = require("../js/account-api.js");
     chk(AccountApi && typeof AccountApi.adminReports === "function", "AccountApi.adminReports 真的可调（不是 undefined）");
     chk(typeof AccountApi.report === "function" && typeof AccountApi.myReports === "function", "AccountApi.report / myReports 真的可调");
@@ -474,40 +432,34 @@ console.log("一、服务端内核：创建 / 频控 / 每日上限 / 空内容�
   }
 
   {
-    // 未登录时界面如实说「去登录」，而不是让人填完表单再收 401
+
     const rj = read("js/report.js");
     chk(/reason: "guest"/.test(rj), "report.js 认得 guest 这一档");
     chk(/去登录/.test(rj), "未登录时给出「去登录」这条路");
     chk(/signedIn\(\)/.test(rj), "发之前先看登录状态（不让人白填一遍）");
   }
 
-  // --------------------------------------------------------------------------
   console.log("");
   console.log("七、不做什么：不进 progress、不参与同步、不按孩子分家");
-  // --------------------------------------------------------------------------
+
   {
     const coreSrc = read("api/_lib/core.js");
     chk(core.REPORT_KINDS !== undefined, "core 里报告是独立的一节");
-    // 报告的载荷**不进** sanitizePayload 的分支
+
     const sp = coreSrc.slice(coreSrc.indexOf("function sanitizePayload"),
       coreSrc.indexOf("function sanitizeImgUrl"));
     chk(sp.indexOf("report") < 0, "sanitizePayload **不**收报告（它不进 progress 同步白名单）");
 
-    // core 的 reportCreate 不调 putProgress
     const rc = coreSrc.slice(coreSrc.indexOf("function reportCreate"), coreSrc.indexOf("function reportMine"));
     chk(rc.indexOf("putProgress") < 0, "reportCreate **不写** progress（报告与学习进度是两回事）");
     chk(rc.indexOf("putReport") >= 0, "reportCreate 写的是 putReport");
 
-    // 不按 child 分区
     const store = read("api/_lib/store.js");
     const mem = store.slice(store.indexOf("putReport: function"), store.indexOf("putReport: function") + 1200);
     chk(mem.indexOf("child") < 0, "report 那几条 store 方法**不含** child（报告与「哪个孩子」无关）");
 
-    // store 两个实现键集合一致（「两个实现不一致 → 静默失效」是反复踩过的坑）
     const names = ["putReport", "getReport", "listReports", "patchReport", "countReports", "countReportsByUid"];
-    // memory 那份是对象字面量（`listReports: function`），
-    // supabase 那份是挂上去的（`api.listReports = function`）——
-    // 两种写法都要认，否则守不到真正要守的那件事（两个实现键集合一致）。
+
     names.forEach(n => {
       const lit = (store.match(new RegExp("\\b" + n + ":\\s*function", "g")) || []).length;
       const asg = (store.match(new RegExp("api\\." + n + "\\s*=", "g")) || []).length;
@@ -516,20 +468,9 @@ console.log("一、服务端内核：创建 / 频控 / 每日上限 / 空内容�
     });
   }
 
-  // --------------------------------------------------------------------------
   console.log("");
   console.log("八、弹层的长相必须**自带**（Issue #229）");
-  // --------------------------------------------------------------------------
-  // 这张弹层是 js/report.js 在运行时 append 到 <body> 上的，而它出现的页面里
-  // 有一大半**不加载 css/account.css**（/tangshi/ /songci/ /guwen/ /classic/
-  // /zhaoming/ /yuanqu/ /library/ /search/）。它原先借用的是 account.css 里的
-  // `.account-field / .account-label / .account-input / .account-hint /
-  // .account-msg` —— 于是同一个弹层在 /poems/（引了 account.css）是圆角缃线
-  // 小字灰标签，在其余每一页退回浏览器默认（方角、深灰粗边、16px 纯黑标签）。
-  //
-  // 守两件事：
-  //   1. 那五个 class 在 style.css 里各有 `.report-modal` 冠名的规则（自带）；
-  //   2. 那一组调用方页面**真的没有** account.css —— 有的话这条守卫就是空的。
+
   {
     const read0 = f => fs.readFileSync(path.join(ROOT, f), "utf8");
     const CSS = read0("css/style.css").replace(/\/\*[\s\S]*?\*\//g, " ");
@@ -542,9 +483,6 @@ console.log("一、服务端内核：创建 / 频控 / 每日上限 / 空内容�
           ".report-modal 自带 ." + cls + " 的规则（不靠账页那张样式表）");
       });
 
-    // 「自带」的反面就是「这页得引 account.css」——所以逐个页面查：调用方里
-    // 必须**至少有一个**不引它（否则这条守卫根本没在守东西），且不许出现
-    // 「只有引了 account.css 的页面才好看」这种半吊子。
     const NEED_ACCOUNT = ["poems", "settings/reports", "settings/lists"];
     const NO_ACCOUNT = ["classic", "tangshi", "songci", "guwen", "zhaoming",
       "yuanqu", "library", "search"];
@@ -562,12 +500,7 @@ console.log("一、服务端内核：创建 / 频控 / 每日上限 / 空内容�
   }
 
   {
-    // 六档「报什么」必须**一行装得下**（用户原话：「正文 译文 注音... 其他
-    // 这六个按钮一行显示 也许需要字体小一点 左右及上下 padding 小一点」）。
-    // 这里量的是声明：字号、左右 padding、间距、以及它 `.modal-box` 的左右内边距。
-    // 真实换行由人点一遍 / 真机验收量（原先那一层 Chromium 测试已按
-    // Issue #278 整层删除 —— 本目录顶部有说明）——
-    // 算式在 css/style.css 那一段注释里：最窄的 320px 机上六颗 = 236px < 292px。
+
     const CSS = read("css/style.css").replace(/\/\*[\s\S]*?\*\//g, " ");
     const RJ = read("js/report.js");
     const kinds = [...CSS.matchAll(/(?:^|\n)[ \t]*(\.report-kinds(?: button)?(?:\.active)?)[^{]*\{([^}]*)\}/g)]
@@ -579,9 +512,6 @@ console.log("一、服务端内核：创建 / 频控 / 每日上限 / 空内容�
     chk(Number(fs_) > 0 && Number(fs_) <= 12.5,
       ".report-kinds button 的字号收到 ≤12.5px（实际 " + fs_ + "px）");
 
-    // 左右 padding：用户要求「增加 2px」（8 → 10px）。上限仍守着「一行」这条
-    // 底线 —— 一颗 47px、六颗加 5 道 6px 缝 = 312px，要落进 350px（390px 机）
-    // 以内。所以这里同时钉住「≥10px」（+2px 真的加了）与「≤10px」（没再多加）。
     const pad = (base.match(/padding:\s*([0-9.]+)px\s+([0-9.]+)px/) || []);
     chk(pad.length === 3 && Number(pad[1]) <= 10 && Number(pad[2]) === 10,
       "上下 ≤10px、左右 = 10px（+2px 已加，实际 " + (pad[0] || "没写") + "）");
@@ -592,33 +522,22 @@ console.log("一、服务端内核：创建 / 频控 / 每日上限 / 空内容�
     const gap = (CSS.match(/(?:^|\n)[ \t]*\.report-kinds\s*\{([^}]*)\}/) || [])[1] || "";
     chk(/gap:\s*6px/.test(gap), ".report-kinds 的间距是 6px（原先 8px，六颗就是多出来的 10px）");
 
-    // 窄屏档：320px 那一档要靠它才守得住一行
     chk(/@media\s*\(max-width:\s*360px\)[\s\S]{0,400}?\.report-kinds button\s*\{[^}]*padding:\s*6px 7px/.test(CSS),
       "≤360px 有专门的窄屏档（内边距与间距一起收，同样 +2px → 7px，320px 机上六颗仍是一行）");
 
-    // 档位是「单选」不是「一组控件」——ARIA 要说实话
     chk(/role="group" aria-label="报哪一类问题"/.test(RJ),
       "六颗用 role=\"group\"（它们是可切换的单选，不是一组动作按钮；radiogroup 会让读屏找不存在的子项）");
     chk(/aria-pressed=/.test(RJ), "每一颗带 aria-pressed（读屏据此念「已选中 / 未选中」）");
     chk(!/role="radiogroup"/.test(RJ), "不再用 radiogroup");
   }
 
-  // --------------------------------------------------------------------------
   console.log("");
   console.log("八之二、两格输入框**等长等宽、都是两行高**，提示语是有礼的例句（Issue #229 续）");
-  // --------------------------------------------------------------------------
-  // 用户原话：「应该是什么（可留空）这里的输入框要不要和哪里不对输入框的长宽及
-  // 元素保持一致？？？都显示两行的高度」以及「想好了就填，没想到就空着 这话也太
-  // 随意了，没有礼貌」。
-  //
-  // 这里守的是声明：两格同一种元素（textarea）、都 rows=2、都有一个同值的
-  // min-height（两行实高）、都不设宽度上限；提示语是「例：…」这一档，
-  // 而且那句随意的话一个字都不许留。
+
   {
     const CSS2 = read("css/style.css").replace(/\/\*[\s\S]*?\*\//g, " ");
     const RJ2 = read("js/report.js");
 
-    // 1. 两格都是 textarea、都 rows=2
     const noteTag = (RJ2.match(/<textarea id="report-note"[^>]*rows="(\d+)"/) || []);
     const suggTag = (RJ2.match(/<textarea id="report-suggestion"[^>]*rows="(\d+)"/) || []);
     chk(/class="account-input report-textarea" rows="2"/.test(RJ2),
@@ -630,21 +549,18 @@ console.log("一、服务端内核：创建 / 频控 / 每日上限 / 空内容�
     chk(!/<input id="report-suggestion"/.test(RJ2),
       "「应该是什么」不再是一枚 <input>（元素已与上面那格统一）");
 
-    // 2. 两格共用同一条「两行高」的规则，且写死成两行实高
     const ta = (CSS2.match(/\.report-modal \.report-textarea\s*\{([^}]*)\}/) || [])[1] || "";
     const mh = (ta.match(/min-height:\s*([0-9.]+)px/) || [])[1];
-    // 两行实高 = 2 × (15 × 1.65) + 22(上下内边距) + 2(上下边框) = 73.5
+
     chk(Number(mh) >= 73 && Number(mh) <= 74,
       "两格共用的 min-height 是两行实高（实际 " + (mh || "没写") + "px；行高 1.65 × 15px × 2 + 24）");
     chk(/line-height:\s*1\.65/.test(ta), "行高与正文那一档同源（1.65）");
 
-    // 3. 谁都不许再给这两格单独设宽度上限（旧的 220px 那条必须消失）
     chk(!/max-width:\s*220px/.test(CSS2),
       "旧的「input.account-input { max-width: 220px }」已撤（否则两格又不一样宽）");
     chk(/\.report-modal textarea\.account-input\s*\{\s*max-width:\s*none/.test(CSS2),
       "textarea.account-input 明确不吃宽度上限（满行）");
 
-    // 4. 提示语：有礼的例句，且那句随意的话一个字都不许留
     chk(/placeholder="例：应读 cháng，或写作「明月光」"/.test(RJ2),
       "「应该是什么」的提示语是「例：…」这一档的例句（与「哪里不对」的写法一致）");
     chk(!/想好了就填，没想到就空着/.test(RJ2),

@@ -25,9 +25,7 @@ function install() {
   global.Family = require(path + 'js/family.js');
   global.Avatar = require(path + 'js/avatar.js');
   require(path + 'js/progress-store.js');
-  // ⚠️ 同步引擎也要装上：它的三把键（开关 / 记账表 / 快照）的分家口径
-  //    现在由 `SyncStore.perChildKey()` 回答（见下面那条断言），
-  //    family 那一侧只是转问 —— 不在全局装上它就问不到。
+
   delete require.cache[require.resolve(path + 'js/sync-store.js')];
   global.SyncStore = require(path + 'js/sync-store.js');
   return { F: global.Family, A: global.Avatar, PS: global.ProgressStore, S: global.SyncStore };
@@ -188,13 +186,6 @@ console.log('\n=== 四、分家的边界：谁跟着孩子走，谁不跟 ===');
   eq(F.isPerChild('poem_whatever_new_v1'), true,
     '认不出的键按「分家」处理（安全的一侧：多开一份只是多占几 KB，混在一起是数据串了）');
 
-  // ⚠️ 同步引擎那三把键的分家口径（2026-09-20 从 sync 测试的真页面一节
-  //    量出来的一个真实故障）：它们在分域表里没有登记，于是掉到上面那条
-  //    「认不出 → 默认分家」的兜底里 —— `poem_sync_pref_v1` 与
-  //    `poem_pre_merge_backup_v1` 被当成进度键跟着孩子分家，
-  //    在「设置 · 通用」开着同步、切到「我的」页却显示成没开
-  //    （两页读的是两个不同孩子的键）。
-  //    答案现在由 SyncStore.perChildKey() 给（唯一一处），family 这边只是转问。
   eq(F.isPerChild('poem_sync_pref_v1'), false,
     '同步开关**不分家**（它回答的是「这台设备上要不要上传」，同步引擎自己也按这个读）');
   eq(F.isPerChild('poem_pre_merge_backup_v1'), false,
@@ -231,12 +222,8 @@ console.log('\n=== 五、拼键只有一处；Family 缺席时退化 ===');
   eq(splicers.sort().join(','), 'family.js,sync-store.js',
     'js/ 下拼 `::` 后缀的只有 family.js 与 sync-store.js 的记账表（多一处就红）');
 
-  // ⚠️ 记账表这一处是 `seenKey()` 的**兜底分支**（Family 缺席、或它自己炸了时
-  //    才走到），主路已经是转问 `Family.keyFor()` —— 两处拼法必须一致，
-  //    否则就是「按引擎写的在 A 键、按引擎读的在 B 键」那种读不到自己的故障。
-  //    见 sync-store.js 里 seenKey() 上方那段注释（2026-09-20 的真实事故）。
   const ss = read('js/sync-store.js');
-  chk(/Family\.keyFor/.test(ss),
+  chk(/window\.Family/.test(ss) && /keyFor\(/.test(ss),
     'sync-store 的 seenKey() 走 Family.keyFor()（物理键名的拼法只有一处）');
 
   const sb5 = sandbox();
@@ -332,19 +319,12 @@ console.log('\n=== 七、子用户那一块的接线与收口（js/family-ui.js�
   chk(/__reloadSettingsControls/.test(setJs) && /renderControls\(\)/.test(setJs),
     '「通用」页那一路仍是整页重画（renderControls 还在）');
 
-  // ---- Issue #209：名额用完了就别摆那颗点不动的键 ----
   chk(/left > 0/.test(uiJs),
     '「再建一个」只在下限允许时才画出来（left > 0）—— ' +
     '只能建 0 个时那颗键没有意义，不如不显示（用户 2026-09-18 点名）');
   chk(/if \(left > 0\) \{[\s\S]{0,200}btn-family-add/.test(uiJs),
     '那颗键整块在 left > 0 的分支里（不是在画完之后再拿 CSS 遮住）');
 
-  // ---- 上限那一行只说「现在到哪」----
-  //
-  // ⚠️ Issue #209 时这一行把 Free / Pro / Max 三档名额全背了一遍
-  //    （「当前 1 / 1 个，Pro 用户可建 3 个，Max 用户可建 180 个」）。
-  //    用户 2026-09-21「不要废话太多」：这一行缩到「当前 N / M 个」——
-  //    上限本身由「再建一个（还可建 N 个）」那颗键与 /plans/ 那张表各自说清。
   chk(!/Pro 用户可建|Max 用户可建/.test(uiJs),
     '上限那一行不再把各层名额全背一遍（只说现在到哪）');
   chk(/当前 " \+ count \+ " \/ "/.test(uiJs),
@@ -379,13 +359,6 @@ console.log('\n=== 七之二、备份：名册跟着走 ===');
   eq(PS.get('p1').level, 9, '**数据落到了对的孩子名下**（不是落到第一个）');
   eq(F.list({ backing: b2 }).length, 2, '名册两条都在');
 }
-
-// ---------------------------------------------------------------------------
-// Issue #278：原先这里的第八节是「真页面上跑一遍」（jsdom 起「我的」页，
-// 验名册交互 / 切换孩子 / 删除要过 confirm）—— 页面层整段删除。
-// 家庭子用户本身的功能验证（上面那些：名册拦在数据层、老用户零感知、
-// 分家边界、上限与内核同源）一条不少。
-// ---------------------------------------------------------------------------
 
 console.log('');
 if (fails) { console.log('❌ 家庭子用户测试 ' + fails + ' 项失败'); process.exit(1); }

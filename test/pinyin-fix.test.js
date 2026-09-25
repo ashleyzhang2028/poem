@@ -1,22 +1,5 @@
 "use strict";
 
-// 「注音勘误」测试（Issue #243：用户报《滕王阁序》「秋水共长天一色」的
-// 「长」被注成 zhǎng）。
-//
-// 分五层：
-//   ① 数据层（js/pinyin-edit.js）：增删改查 / 去重 / 封顶 / 按篇绑定
-//   ② 引擎层（js/pinyin.js）：勘误命中 / 不命中时的输出逐字不变 /
-//      按「第几次出现」定位同一个字的第二处
-//   ③ 页面层：首页弹层与集子阅读器真的读勘误表（走 annotatePoem）
-//   ④ 同步层：一行 progress（pinyin_fix:v1），谁最后改谁赢、不进冲突裁决
-//   ⑤ 服务端：白名单截断 / 封顶 / 半条丢掉
-//
-// 守住的边界（改一条就有断言红）：
-//   · **按篇绑定**：这一篇改了，别的篇不受影响
-//   · **不传 wid 时输出与改前逐字相同**（纯增强，不是改口径）
-//   · **勘误优先于词表**：有人核对过的那一处比通用规则可信
-//   · **只有多音字才查勘误**（单音字改了等于制造新错）
-
 const fs = require("fs");
 const path = require("path");
 const vm = require("vm");
@@ -26,14 +9,11 @@ const ROOT = path.join(__dirname, "..") + "/";
 let fails = 0;
 const chk = (c, m) => { if (!c) { console.log("✗ " + m); fails++; } else console.log("✓ " + m); };
 
-// ---------------------------------------------------------------------------
-// ① 数据层 + ② 引擎层
-// ---------------------------------------------------------------------------
 const POEM_WID = "book-tengwangge";
 const LINE = "落霞与孤鹜齐飞，秋水共长天一色。";
-// 上面那一句现在词表已经管了；勘误层用下面这个**故意没进词表**的句子来验。
+
 const FIX_LINE = "长风破浪会有时";
-const P1 = "长洲"; // 同一篇里「长」的另一处（读 cháng，本来就对）
+const P1 = "长洲";
 
 function boot() {
   const sb = { window: {}, console };
@@ -60,9 +40,6 @@ chk(F.KEY === "poem_pinyin_fix_v1", "本机键名是 poem_pinyin_fix_v1");
 chk(F.SYNC_ID === "pinyin_fix:v1", "云端行号是 pinyin_fix:v1");
 chk(typeof P.annotatePoem === "function", "引擎暴露了「按篇注音」那个入口（annotatePoem）");
 
-// 用户点名的那一处：**词表**已经补了「长天」，所以现在默认就读对了
-// （正本清源）；下面几节验的是「词表没料到的那些个例」怎么兜。
-// ⚠️ 这两件事必须分开看：词表管全站通例，勘误层管某篇的个例。
 chk(/长<rt>cháng<\/rt>/.test(P.annotatePoem("", LINE, "all")),
   "词表补了「长天」→「秋水共长天一色」默认读 cháng（本条 Issue 的那一处已正本清源）");
 chk(/长<rt>cháng<\/rt>/.test(P.annotateHtml("长空万里", "all")),
@@ -70,9 +47,6 @@ chk(/长<rt>cháng<\/rt>/.test(P.annotateHtml("长空万里", "all")),
 chk(/长<rt>zhǎng<\/rt>/.test(P.annotateHtml("长大", "all")),
   "补词没有连累别的：「长大」照旧读 zhǎng dà");
 
-
-
-// 不传 wid 时与旧入口逐字相同 —— 纯增强的证据
 chk(P.annotatePoem("", LINE, "all") === P.annotateHtml(LINE, "all"),
   "不传 wid 时 annotatePoem 与 annotateHtml 输出**逐字相同**（纯增强）");
 chk(P.annotatePoem(POEM_WID, LINE, "all") === P.annotateHtml(LINE, "all"),
@@ -90,7 +64,6 @@ chk(P.annotatePoem("book-other", FIX_LINE, "all").indexOf("cháng") === -1,
 chk(P.annotatePoem("", FIX_LINE, "all").indexOf("cháng") === -1,
   "不传 wid 时勘误一行都不查（默认关闭）");
 
-// 按「第几次出现」定位：同一句里两个「长」
 const TWO = "长风与长洲";
 chk(P.annotatePoem(POEM_WID, TWO, "all").match(/长<rt>[^<]*<\/rt>/g).join("|") === "长<rt>zhǎng</rt>|长<rt>zhǎng</rt>",
   "一句里两个「长」默认都读 zhǎng（未钉时）");
@@ -99,23 +72,19 @@ const two = P.annotatePoem(POEM_WID, TWO, "all").match(/长<rt>[^<]*<\/rt>/g).jo
 chk(two === "长<rt>zhǎng</rt>|长<rt>cháng</rt>",
   "只钉「第 2 个长」时第一个不动（按位移定位，不是全文替换）");
 
-// 单音字不查勘误：勘误表里存不下第二个读音，硬改等于制造新错
 F.add({ wid: POEM_WID, line: "白日依山尽", at: 1, ch: "白", py: "bó" });
 chk(P.annotatePoem(POEM_WID, "白日依山尽", "all").indexOf("bó") === -1,
   "**单音字不查勘误**（「白」怎么钉都读 bái —— 勘误是给多音字用的）");
 
-// 勘误优先于词表
 F.add({ wid: POEM_WID, line: "长大", at: 1, ch: "长", py: "cháng" });
 chk(/长<rt>cháng<\/rt>/.test(P.annotatePoem(POEM_WID, "长大", "all")),
   "勘误**优先于词表**（词表说「长大」读 zhǎng dà，勘误说 cháng 就听勘误的）");
 chk(/长<rt>zhǎng<\/rt>/.test(P.annotateHtml("长大", "all")),
   "不传 wid 时词表照旧生效（勘误不参与）");
 
-// 纯文本那一档（打印稿）
 chk(P.annotatePoemText(POEM_WID, FIX_LINE).indexOf("长(cháng)") > -1,
   "纯文本注音（打印稿那一档）同样走勘误");
 
-// —— 数据层的形状与限制 ——
 chk(F.count() >= 3, "勘误条数跟着增（当前 " + F.count() + " 条）");
 
 const dup = F.add({ wid: POEM_WID, line: FIX_LINE, at: 1, ch: "长", py: "cháng" });
@@ -135,17 +104,13 @@ chk(!F.remove(key).ok, "删一条不存在的 → 如实回 false（不是假装
 chk(F.removeMany([F.keyOf({ wid: POEM_WID, line: TWO, at: 2 })]).ok, "多选删除可用");
 chk(F.count() === 2, "多选删完剩 2 条（" + F.count() + "）");
 
-// 封顶
 let many = [];
 for (let i = 0; i < F.MAX + 10; i++) many.push({ wid: "w" + i, line: "l" + i, at: 1, ch: "长", py: "cháng" });
 const cur = F.list().concat(many);
-// 直接走 commit 的那条路（add 是逐条走盘，这里只要验「超上限不收」）
+
 F.clear();
 chk(F.count() === 0, "清空之后 0 条");
-// ⚠️ 这里不逐条 F.add() 堆满 500 条 —— 每一次 add 都要把已有那几百条
-//    重新规范化 / 重新写盘一遍，500 次就是 O(n²) 的一千多毫秒纯白等，
-//    而这一节要验的是「上限拦得住」，不是「循环写 500 次不会慢」。
-//    改成走同一份落盘口径的批量写入口，最后仍按 F.count() 对账。
+
 F.applyCloud({ id: "pinyin_fix:v1", deleted: false, updatedAt: Date.now() + 1000,
   payload: { fixes: Array.from({ length: F.MAX }, (_, i) =>
     ({ wid: "w" + i, line: "l" + i, at: 1, ch: "长", py: "cháng" })) } }, {});
@@ -154,11 +119,6 @@ const capped = F.add({ wid: "overflow", line: "l", at: 1, ch: "长", py: "cháng
 chk(capped && !capped.ok && capped.reason === "full", "超上限那一条**不收**（reason=full），不是悄悄丢掉");
 F.clear();
 
-// ③ 页面层：首页弹层 / 集子阅读器真的走勘误
-//
-// 加载顺序：勘误层必须在引擎**之前**（引擎启动时要能抓到它），
-// 而且每一张读了 pinyin.js 的页面都要把它带上 —— 漏一张，
-// 那一张里的注音就静默退回旧行为（看着只是「勘误没生效」）。
 (function () {
   const pages = [];
   (function walk(dir, rel) {
@@ -183,10 +143,6 @@ F.clear();
   chk(n >= 10, "至少 10 张页在读注音引擎（实际 " + n + " 张）");
 })();
 
-// ---------------------------------------------------------------------------
-// 首页（js/app.js 的 renderPoemText）与集子阅读器（js/reader-core.js 的
-// renderReaderText）都改走 annotatePoem —— 这里用**源码守卫**把它们钉住，
-// 因为真正跑一遍需要一整套 DOM 与网络桩，而那两条断言极易被后来的改动绕过。
 function src(p) { return fs.readFileSync(ROOT + p, "utf8"); }
 
 const appSrc = src("js/app.js");
@@ -200,7 +156,6 @@ chk(/window\.Pinyin\.annotatePoem/.test(rdSrc), "集子阅读器走 annotatePoem
 chk((rdSrc.match(/annotatePoem\(/g) || []).length >= 3,
   "阅读器的三个注音出口（正文 / 打印 / 逐句）都走 annotatePoem");
 
-// ④ 同步层：一行 progress，谁最后改谁赢，不进冲突裁决
 const syncSrc = src("js/sync-store.js");
 chk(/PINYIN_FIX_ROW_ID\s*=\s*"pinyin_fix:v1"/.test(syncSrc), "同步层认识 pinyin_fix:v1 这一行");
 chk(/applyRemotePinyinFix/.test(syncSrc), "拉取时并入（applyRemotePinyinFix）");
@@ -208,7 +163,6 @@ chk(/if \(pfix\) headRecs\.push\(pfix\)/.test(syncSrc), "推送时带上这一�
 chk(/if \(id === PINYIN_FIX_ROW_ID\) return false;/.test(syncSrc),
   "**不进冲突裁决**（整份一份表，按时间戳判新旧就够）");
 
-// cloudRow / applyCloud 的两个坑：不推重复、不被老时间戳盖掉
 const sb2 = boot();
 const F2 = sb2.PinyinFix;
 chk(F2.cloudRow({}) === null || F2.cloudRow({}) === undefined || F2.cloudRow({}),
@@ -224,14 +178,11 @@ chk(F2.list().length === 1 && F2.list()[0].wid === "w2", "并进来的是**整�
 const stale = F2.applyCloud({ id: "pinyin_fix:v1", payload: { fixes: [] }, updatedAt: 1, deleted: false }, {});
 chk(stale === "keepLocal", "云端那一份更旧 → **不动本机**（keepLocal）");
 
-// ⑤ 服务端：白名单
 const core = require(ROOT + "api/_lib/core.js");
 const clean = core.sanitizePayloadForTest
   ? null
   : null;
 
-// 用公开的那条路：syncPush 内部会调 sanitizePayload。这里直接拿源码里的
-// 三个常量与守卫来对拍（服务端没有把 sanitize 单独导出）。
 const coreSrc = src("api/_lib/core.js");
 chk(/PINYIN_FIX_ROW_ID\s*=\s*"pinyin_fix:v1"/.test(coreSrc), "服务端认识这一行（白名单里的一员）");
 chk(/poemId === PINYIN_FIX_ROW_ID\) return sanitizePinyinFix\(p\)/.test(coreSrc),
@@ -243,33 +194,21 @@ chk(/refText\(f\.ch, 1\)/.test(coreSrc), "那个字只留 1 个字（多出来�
 chk(/if \(!wid \|\| !line \|\| !py\) return;/.test(coreSrc),
   "**半条勘误整条丢掉**（缺篇 / 缺句 / 缺读音都收不下）");
 
-// SW 预缓存：新脚本必须在清单里（否则离线打开时它是 404，注音静默退回旧行为）
 const swSrc = src("sw.js");
 chk(/\.\/js\/pinyin-edit\.js/.test(swSrc), "新脚本进了 SW 预缓存清单（离线也读得到勘误）");
-// ⚠️ 判据是「**比上一版大**」而不是「等于某个数」：写死一个数的话，
-//    每一次与本测试无关的改动（比如 2026-09-20 删除 /profile/ 那一轮 v188）
-//    都会把这条断言弄红 —— 那是以「守事实」为名把测试钉在版本号上。
+
 const ver = parseInt((swSrc.match(/poem-app-v(\d+)/) || [0, "0"])[1], 10);
 chk(ver >= 187, "缓存版本号已往上推（改动才会真的下发，实际 v" + ver + "）");
 
-// 架构文档
 const arch = src("docs/architecture.md");
 chk(/注音勘误/.test(arch), "架构文档里记了这一条（设计记录）");
 
-// 存储分域表
 const sc = src("js/sync-coverage.js");
 chk(/poem_pinyin_fix_v1/.test(sc), "同步边界总表里登记了这把键（漏一把测试直接红）");
 const pstore = src("js/progress-store.js");
 chk(/pinyinFix: "poem_pinyin_fix_v1"/.test(pstore), "ProgressStore 的 KEYS 里有它");
 chk(/\{ key: KEYS\.pinyinFix, domain: "progress", local: false, perChild: true \}/.test(pstore),
   "分域表写的是「上云 + 跟孩子走」");
-
-// ---------------------------------------------------------------------------
-// Issue #278：原先这一层的第 ⑥ 节是「真页面里跑一遍」（jsdom 起首页、
-// 把脚本一份份塞进去），只为验「页面把 wid 交进去」这一步 —— 页面层删除后
-// 连带删掉。注音勘误本身的功能验证（上面那几节：定位 / 半条丢掉 / 分域 /
-// 预缓存 / 文档）一条不少。
-// ---------------------------------------------------------------------------
 
 console.log(fails === 0 ? "\n🎉 注音勘误测试全部通过" : "\n❌ " + fails + " 项失败");
 process.exit(fails ? 1 : 0);

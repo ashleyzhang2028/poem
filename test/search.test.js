@@ -1,4 +1,4 @@
-// Issue #278：页面层（jsdom 真跑搜索页 / 入口页 / 真浏览器量样式）已删除，只留数据层与接线口径。
+
 const fs = require('fs');
 const vm = require('vm');
 const path = __dirname + '/../';
@@ -90,15 +90,6 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   chk(IDX.every(x => x.book && x.bookName && x.page),
     '每条结果都带「出自哪一部」与「该去哪一页」');
 
-// ---------------------------------------------------------------------------
-// Issue #278：这一层的**页面层**（jsdom 起搜索页 / 课外阅读入口页、敲字筛
-// 候选、就地叠层、真浏览器量样式，以及成篇的界面文案断言）整段删除。
-// 留下的是数据层：全站总索引的形状（九部各有一条、id 前缀、部名与地址），
-// 以及搜索页/入口页脚本与预缓存清单这类**功能接线**的口径。
-// ---------------------------------------------------------------------------
-
-  // 入口页必须给每部集子留着自己的页面地址（就地叠层之外，直接访问 / 中键
-  // 新开仍可用）—— 这是功能口径，不是外观，所以留着。
   const libSrcForPages = read('js/library.js');
   const bookPages = { classic: '/classic/', yuefu: '/yuefu/', tangshi: '/tangshi/', songci: '/songci/',
     yuanqu: '/yuanqu/', guwen: '/guwen/', zhaoming: '/zhaoming/' };

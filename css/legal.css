@@ -76,21 +76,6 @@
 
 .mail-line { margin: 10px 0 4px; }
 
-/* ⚠️ 两件都是 `inline-flex` + `align-items: center`，**不再是 inline-block**。
-   Issue #291：用户点名「显示邮箱地址这个按钮文字没有垂直居中」。
-   病根是 `inline-block` + `min-height` —— 块里的内容**从顶部**排，
-   `min-height` 多出来的那一截全堆在下面（实测上 3px / 下 15px），
-   行高调到多少都没人把那一行挪下来。居中要由盒子自己说（flex），
-   不是靠行高去撞。
-
-   ⚠️ `justify-content: center` 是给 `.mail-plain`（那个换成的纯文本）
-      留的：它是整段邮箱地址，居中之后看着才像一颗「已经显示的键」。
-      `.mail-link` 上是「显示邮箱地址」五个字，居不居中看不出来，
-      但两条用同一套更省得以后分叉。
-
-   ⚠️ `.mail-link` 会被 `contact.js` 换成 `.mail-plain`（复制成功那一次），
-      两件的尺寸 / 圆角 / 行高必须**逐位相同**，否则点一下会跳一下 ——
-      所以下面这两块只差颜色。 */
 .mail-link,
 .mail-plain {
   display: inline-flex;

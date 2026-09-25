@@ -502,7 +502,6 @@ var STEPS = [
       "`cat vercel.json` 里那条 rewrite 的 destination 必须是" +
       " `/api/handler?__path=:path*`。见 docs/architecture.md §2.2.1",
 
-
       "⑥ **接口真的活着**：`curl -sS -o /dev/null -w '%{http_code}\\n' \"$SITE_URL/api/config\"`" +
       " 期望 **200**；`curl -sS \"$SITE_URL/api/me\"` 期望 401 E_NO_SESSION。" +
       "**回 404 且正文是 `The page could not be found`（带头 `x-vercel-error: NOT_FOUND`），" +

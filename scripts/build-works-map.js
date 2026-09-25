@@ -22,9 +22,6 @@ LOAD.forEach(function (f) {
   vm.runInContext(fs.readFileSync(path.join(ROOT, f), 'utf8'), sandbox, { filename: f });
 });
 
-// 与 build-text-master.js 同一条口径：新增一部的**第一次**收归时，索引里那些
-// 条目只留了 textRef、正文取不到，会被当成「没有正文」丢掉；这里从原始语料
-// 按 textRef 补一次。收过一次之后自然不再补任何东西。
 (function () {
   var RAW = {};
   [
@@ -61,8 +58,7 @@ LOAD.forEach(function (f) {
       t = { text: up.text || '', translation: up.translation || '',
         translationSource: up.translationSource || '' };
     }
-    // 正文也可能只落在上一版存储主表里（那一条自己的 id，或它 textRef 指向的 id）——
-    // 新增集子的条目只存 textRef 时，正文正是这样传下来的。
+
     if (!t.text) {
       var TM = {};
       (sandbox.TEXT_MASTER || []).forEach(function (m) {
@@ -87,9 +83,6 @@ LOAD.forEach(function (f) {
   });
 })();
 
-
-// 课内那些**只留 textRef** 的条目（正文本来在 text-master 里）：先把上一版主表里
-// 那一条的正文补回索引，同篇判重才认得它 —— 否则整组的同篇关系会在重算时整批丢掉。
 (function () {
   var TM = {};
   (sandbox.TEXT_MASTER || []).forEach(function (m) {
@@ -111,9 +104,7 @@ LOAD.forEach(function (f) {
 sandbox.WorksIndex.rebuild(sandbox.SITE_INDEX);
 
 const WI = sandbox.WorksIndex;
-// entries 与 titles 都排成「课内优先、其次按 id」的顺序：
-// 表格是静态数据，页面里 first() / [0] 这类取值只有排过序才稳定；
-// 主条目的裁定（WI.repOf）另有规则，但那一处也吃「课内优先」这个序。
+
 function byCourseFirst(a, b) {
   const ac = a.indexOf('poems-') === 0;
   const bc = b.indexOf('poems-') === 0;

@@ -52,8 +52,7 @@
   }
 
   function write(data) {
-    // 时间戳是「云端那一行靠什么判新旧」的**唯一**判据（见 cloudRow）：
-    // 每次写盘都往前推一格，同一毫秒里连点两下也不会停在同一个值上。
+
     data.updatedAt = bump(Number(data.updatedAt) > 0 ? Math.round(Number(data.updatedAt)) : stampOf());
     try {
       storeOf().setItem(physKey(), JSON.stringify(data));
@@ -366,21 +365,8 @@
     return out;
   }
 
-  // ---- 云端那一行（sync-store 用，Issue #243 后续）-------------------------
-  //
-  // 与「今日加背」同一个套路：它是 progress 里的一行（`collections:v1`），
-  // 不新开表。差别有三处：
-  //
-  //   ① 它是**整份**一份数据（集合的增删改名、篇目顺序都在里面），
-  //      所以合并规则是「谁最后改谁赢」（updatedAt），不是并集 ——
-  //      两端的集合结构不同，按篇并起来会得到一份谁也不认识的东西。
-  //   ② 它必须能推**空**（用户把集合全删了）：所以删空之后仍要推一行
-  //      deleted=1，否则另一台设备还挂着那几个集合。
-  //   ③ 它带 updatedAt，且**每次写盘都要换一个更大的值**：盘上那一份与
-  //      云端那一行靠这个时间戳判新旧，只写一次的话第二次改名就推不上去。
   var SYNC_ID = "collections:v1";
 
-  // 与 ProgressStore / family.js 同一套「盘上那一份」的读写（走子用户后缀）。
   function storeOf() {
     var ps = typeof window !== "undefined" && window.ProgressStore ? window.ProgressStore : null;
     if (ps && typeof ps.store === "function") {
@@ -406,7 +392,6 @@
 
   function nowTs() { return Date.now(); }
 
-  // 盘上那一份的 updatedAt 提出来（老形状没有这个字段，回 0）。
   function stampOf() {
     try {
       var v = JSON.parse((storeOf() || { getItem: function () { return null; } }).getItem(KEY) || "null");
@@ -414,8 +399,6 @@
     } catch (e) { return 0; }
   }
 
-  // 每次写盘都把这个时间戳往前推一格（同一毫秒里连点两下也不能相同 ——
-  // 相同就意味着「变了没有」判不出来，第二次改动永远推不上去）。
   function bump(prev) {
     var t = nowTs();
     return t > prev ? t : prev + 1;
@@ -431,7 +414,7 @@
     var known = Number(mem[SYNC_ID]) || 0;
 
     if (!raw) {
-      // 盘上什么都没有：之前推过就补一条删除（删空/清进度都要让另一台知道）。
+
       if (known > 0) {
         var t = bump(known);
         return { id: SYNC_ID, payload: { v: 1, collections: [], updatedAt: t },
@@ -446,8 +429,7 @@
 
     var ts = Number(data.updatedAt) > 0 ? Math.round(Number(data.updatedAt)) : 0;
     if (!ts) {
-      // 老形状（v1 期写的、没有时间戳）：当场补一个并落盘，
-      // 否则这一份永远推不上去（没有时间戳就没有「谁更新」的判据）。
+
       ts = bump(known);
       data.updatedAt = ts;
       try { s.setItem(physKey(), JSON.stringify(data)); } catch (e) { return null; }
@@ -456,9 +438,6 @@
     return { id: SYNC_ID, payload: data, updatedAt: ts, deleted: false };
   }
 
-  // 把云端那一行拉下来写进本机。判词只有 "applied" / "skip"：
-  // 它走 applyRemote 的「谁最后写谁赢」，不单独弹冲突面板（firstMerge 那一步例外，
-  // 那里它**是**一份要用户裁决的进度 —— 集合结构不同，不能自动合并）。
   function applyCloud(row, seen) {
     var payload = (row && row.payload) || null;
     if (!payload || typeof payload !== "object") return "skip";
@@ -498,8 +477,6 @@
       }).filter(function (c) { return !!c.id; })
     };
 
-    // ⚠️ 不在这里 write()（write 会换一个新的时间戳 → 下一轮又当成「本机改了」
-    //    推回去 → 死循环）。拉下来的这一份，时间戳**就是云端那个**。
     try { s.setItem(physKey(), JSON.stringify(clean)); } catch (e) { return "skip"; }
     emitChange(clean.collections);
     return "applied";

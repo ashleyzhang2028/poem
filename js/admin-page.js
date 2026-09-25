@@ -8,10 +8,8 @@
   var backing = null;
   try { backing = window.localStorage; } catch (e) { backing = null; }
 
-  // 可发放的层级（Issue #276 之后**只发到服务端**，本机那一份已下线）。
   var pickedTier = "pro";
 
-  // 名录那一张的当前快照（改角色后就地更新，不重拉整张）。
   var currentAccounts = [];
 
   function $(id) { return document.getElementById(id); }
@@ -37,27 +35,13 @@
     el.className = "account-msg" + (level ? " " + level : "");
   }
 
-  // 「谁能进管理后台」（Issue #276）：**只看服务端下发到本机缓存里的那个角色**
-  // （源头是数据库 `accounts.role`）。本机兜底已删 —— 没有服务端答案就不放行。
-  // ⚠️ 传参带上 **uid**（Issue #276 后续）：光有 `role` 分不清那份服务端答案
-  // 是不是**当前这位**的 —— 同一台机器换个人登录时，上一个人的 owner
-  // 会被继承。`Entitlement.isOwner()` 会核对缓存里那份答案的主人。
   function isOwner(id) {
     if (id) return Ent.isOwner(backing, { role: id.role, uid: id.uid });
     return Ent.isOwner(backing);
   }
 
-  // ---------------------------------------------------------------------------
-  // 注音勘误（Issue #243 · 《滕王阁序》「长」）
-  // ---------------------------------------------------------------------------
-  // 这一块**不上服务端**：勘误表就是本机 `poem_pinyin_fix_v1` 那一份
-  // （ProgressStore 带 `pinyin_fix:v1` 一行上云，走的是与自选集合同一条路）。
-  // 后台在这里只做三件事：找篇、钉一处、删一处。
   function fix() { return window.PinyinFix || null; }
 
-  // 全站篇目（课内 12 册 + 各集子）——给「搜一篇」用。
-  // 集子那几部的数据在本页没加载（首屏体积），所以这里列的是**课内**；
-  // 集子里的篇目可以用「篇目 id 直接填」那条路（下面 pickHit 会说明）。
   function allPoems() {
     var out = [];
     try {
@@ -125,17 +109,12 @@
     onPinyinSearch._id = id;
     var w = $("pf-wid");
     if (w) w.value = p.title || "";
-    // 选中一篇之后**不自动摊开全文**：那一格是「搜一篇」，摊开 40 行会把它
-    // 撑成一堵墙，而且下一格（原文里的一句）还空着。正文用下面那颗
-    // 「从篇目里挑一句」按需摊开 —— 两个用途各自的入口，不抢同一块地方。
+
     renderHits([]);
     msg("msg-pf", "已选中《" + (p.title || widOfPoem(p)) + "》。" +
       "正文那一格可以手打，也可以点「从篇目里挑一句」从正文里点一行。", "ok");
   }
 
-  // 「从篇目里挑一句」：把正文按行摊开，点哪一行就填进「原文里的一句」，
-  // 并自动数出「这一句里第几次出现」那一格（用户在正文里点中哪个字都行 ——
-  // 这里先按第一个字算，用户可以自己改那个数）。
   function fillLine(p) {
     var box = $("pf-hits");
     if (!box || !p || !p.text) return;
@@ -159,12 +138,6 @@
     previewLine();
   }
 
-  // 「挑一句」的候选列表与「搜一篇」共用同一个盒子（`pf-hits`）——
-  // 两个用途叠在一起时，输入框里一打字就会把候选列表冲掉。
-  // 所以只在**真的在挑句子**时才打开它，其余时刻一律收起（见 onPickerClick）。
-
-  // 这一句里每个字读什么（用当前引擎 + 当前勘误算一遍）——
-  // 钉之前先让人看清「现在读成什么」，钉之后再看一眼「有没有改对」。
   function previewLine() {
     var el = $("pf-picked");
     if (!el) return;
@@ -174,7 +147,7 @@
     if (!line || !P) { el.hidden = true; el.textContent = ""; return; }
     var wid = p ? widOfPoem(p) : "";
     var html = P.annotatePoem ? P.annotatePoem(wid, line, "all") : P.annotateHtml(line, "all");
-    // 只留「字(读音)」这一层，别把 ruby 标签塞进提示里。
+
     var text = html.replace(/<ruby>([^<]*)<rt>([^<]*)<\/rt><\/ruby>/g, "$1($2)")
                    .replace(/<br>/g, " ");
     el.innerHTML = "这一句现在这样读：" + esc(text);
@@ -194,7 +167,6 @@
     if (!py) { msg("msg-pf", "要填应读作什么（带声调，如 cháng）。", "warn"); return; }
     if (!isFinite(at) || at < 1) at = 1;
 
-    // 那一个字是什么：从这一句里数出第 at 个字（复核用，也让别处不必再翻正文）。
     var text = line;
     var ch = "";
     if (p && p.text) {
@@ -416,16 +388,6 @@
     })["catch"](function () { b.disabled = false; msg("msg-server", "连不上服务端，这一轮没发出任何东西。", "warn"); });
   }
 
-  // 名录（Issue #276 起这里也是「改角色」的地方）
-  //
-  // 三条口径：
-  //   · **角色与层级各一格**。它们是两条正交的轴（`role` 决定能不能进后台，
-  //     `tier` 决定能用什么），所以并排显示、各自一个徽章 —— 折成一列的下场
-  //     是「管理员 = 买了 Max 的人」这个误解又回来了。
-  //   · **改角色是按钮，不是下拉**。目标值只有两档（普通用户 / 管理员），
-  //     下拉要两次点击 + 一次滚动，按钮一次。
-  //   · **改完就地更新那一行**（不重拉整张表）—— 重拉的下场是「滚到第 40 个
-  //     人改了一下，页面跳回顶部」。
   var ROLE_LABEL = { owner: "主人（种子）", admin: "管理员", user: "普通用户" };
 
   function roleText(role) {
@@ -471,8 +433,6 @@
     }).join("");
   }
 
-  // 角色按钮：只有 owner 改得动（服务端也会再拦一次）；owner 本人那一行不摆按钮
-  // ——「改不了自己」是服务端定的规矩，界面照实画出来，不做成点了才报错。
   function roleActs(uid, role) {
     if (!uid) return "";
     if (role === "owner") {
@@ -544,7 +504,7 @@
     Promise.resolve(M.adminSetRole({ uid: uid, role: role })).then(function (r) {
       for (var j = 0; j < btns.length; j++) btns[j].disabled = false;
       if (r && r.ok) {
-        // 就地更新那一行（不重拉整张表 —— 重拉会把滚动位置打回顶部）。
+
         if (li) {
           var badge = li.querySelector("[data-role-badge]");
           if (badge) { badge.textContent = roleText(role); badge.className = "role-badge role-" + role; }
@@ -572,21 +532,6 @@
     });
   }
 
-  // ---- 用户报告台账（Issue #243 第四轮）----------------------------------
-  //
-  // 这一块与「发层级」那一族是**两条平行的线**：那条线改的是权益，
-  // 这条线只读台账 + 改状态。所以它有自己的一小套 load / render，
-  // 不与 `loadAccounts` 合并 —— 合并的下场是「刷新账号名录顺手把
-  // 报告也重拉一遍」，而报告的读比账号名录重得多。
-  //
-  // 三条口径：
-  //   · **默认只看「还没处理的」**（new）。全站翻到第 500 条不是管理员的日常，
-  //     「今天新来的有几条」才是。所以下拉框默认落在「已收到（还没看）」
-  //     （`<option value="new">` 是第一个，HTML 与这里两处一起定的）。
-  //   · **状态是按钮，不是下拉**。一屏里逐条改状态时，下拉要两次点击 + 一次滚动；
-  //     按钮一次。而这里的状态只有五个、且是终点（不会来回切）。
-  //   · **改完就地更新那一行**，不重拉整张表 —— 重拉的下场是「滚到第 30 条
-  //     改了一下，页面跳回顶部」。
   var currentReports = [];
 
   function reportsMsg(text, level) {
@@ -632,10 +577,6 @@
       })["catch"](function () { reportsMsg("连不上服务端，这一轮没问到。", "warn"); });
   }
 
-  // 这一排既是「各状态几条」，也是筛选器的化身。
-  // 原先它只是一串灰字、而筛选是另一个下拉 —— 同一件事两个控件，
-  // 「全部 12 / 已收到 3」还和下拉当前的值对不上，看着就是两套数。
-  // 现在：**点一格即切换筛选**，当前那格是实心绿，括号里是全站的条数。
   function renderReportCounts(counts, current) {
     var host = $("report-counts");
     if (!host) return;
@@ -654,7 +595,6 @@
     host.innerHTML = parts.join("");
   }
 
-  // 点那一排小字 = 切筛选（与下拉同一个出口）。
   function onCountsClick(e) {
     var b = e.target.closest ? e.target.closest("button[data-count-status]") : null;
     if (!b) return;
@@ -727,8 +667,6 @@
       return;
     }
 
-    // 「不采纳」要问一句 —— 那是对用户说「你报的是错的」，
-    // 而用户看得到这个状态（`/settings/reports/` 那一页）。
     if (status === "rejected" && !window.confirm("标成「未采纳」？用户那一页会显示未采纳。")) return;
 
     b.disabled = true;
@@ -737,7 +675,7 @@
       .then(function (r) {
         b.disabled = false;
         if (r && r.ok) {
-          // 就地更新那一行（不重拉整张表 —— 重拉会把滚动位置打回顶部）。
+
           var li = document.querySelector('.admin-report-row[data-rid="' + rid + '"]');
           var R = window.Report;
           if (li) {
@@ -761,9 +699,7 @@
     var id = Ent.identity({ backing: backing });
 
     if (!isOwner(id)) {
-      // 拒绝界面（Issue #276）：**不再有「本机主人」这条兜底** ——
-      // 没有服务端答案就不放行。文案只有一句（用户裁：不分情况啰嗦）：
-      // 未登录与角色不够的答案一样 —— 都不放行。
+
       show($("deny-card"));
       var lead = $("deny-lead");
       if (lead) lead.textContent = "只对管理员开放。";
@@ -805,7 +741,7 @@
       var p = pickedPoem();
       if (!p) { msg("msg-pf", "先在上面搜一篇、点「选这一篇」。", "warn"); return; }
       var box = $("pf-hits");
-      if (box && !box.hidden) { renderHits([]); return; }   // 再点一下收起
+      if (box && !box.hidden) { renderHits([]); return; }
       fillLine(p);
     });
     $("pf-list").addEventListener("click", onFixListClick);
@@ -827,7 +763,6 @@
     renderReports: renderReports, loadReports: loadReports, reportTime: reportTime,
     renderReportCounts: renderReportCounts,
 
-    // 注音勘误那一块（测试直接调这几个，不必去点 DOM）。
     searchPoems: searchPoems,
     widOfPoem: widOfPoem
   };

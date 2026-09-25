@@ -38,14 +38,6 @@
 
   function required() { return !st.skipped; }
 
-  // 装了、也配了，但**校验根本跑不起来**。三种成因：
-  //   script_error / script_timeout —— Cloudflare 的脚本压根没加载（公司网、广告拦截、CSP、断网）
-  //   no_render_api                —— 脚本加载了但没给出 render API
-  //   widget_error / render_failed —— widget 渲染失败：**Site Key 填错**，或
-  //                                   本站域名没加进那个 widget 的允许列表（最常见）
-  // 这些情况下页面上**没有方框可勾**。旧版把「没 token」一律说成
-  // 「请先完成人机校验（上面那个方框）」—— 用户对着一个不存在的方框干等，
-  // 而真正的修法（去 Cloudflare 改域名 / 换 Site Key）一个字都没露。
   var BROKEN = ["script_error", "script_timeout", "no_render_api", "widget_error", "render_failed"];
 
   function failed() { return BROKEN.indexOf(st.err) >= 0; }
@@ -77,18 +69,6 @@
     return state();
   }
 
-  // 挂载点是「用户打开这一屏」时，不是「用户点提交」时（Issue #276）。
-  //
-  // 用户 2026-09-21 报的就是这条时序：注册页填完邮箱密码、点下「注册」按钮，
-  // 验证框才**开始**弹出来，还慢慢转圈。原因不在 Cloudflare，在这儿 ——
-  // 页面上只有**提交那一下**才调 mount()，于是「拉脚本(最多 8s) + 渲染 widget
-  // + 等 Cloudflare 判人机」这一整段全压在提交后：用户以为卡住了，
-  // 服务端还会在 token 没到时回 400 E_TURNSTILE。
-  //
-  // 现在起的叫法（js/login.js）是「切到哪一屏就挂哪一屏」，所以这里要能扛住
-  // 两种新时序，且**都不许把用户挡在门外**：
-  //   ① 页面刚打开就挂，脚本还在路上 —— 这不是失败，如实记着，不拦也不报假故障；
-  //   ② 挂完这一屏又切到另一屏 —— 方框跟着挪（挪走旧的、在新面板补一个）。
   function mount(target, opts) {
     opts = opts || {};
     onTokenCb = typeof opts.onToken === "function" ? opts.onToken : null;
@@ -107,18 +87,14 @@
         containerEl.innerHTML = "";
       }
       st.widgetId = null;
-      // 老实现这里顺手把 token 也清了。token 是全局的（Cloudflare 只按 widget
-      // 回调给值），用户在注册页填表期间切一下屏就会把它抹掉，提交时又变成
-      // 「没勾」—— 与 #276 是同一个病灶的另一半。过期由 expired-callback 管，
-      // 提交成功后由 reset() 管，**换面板不该管**。
+
     }
     containerEl = nextContainer;
     if (mounted) { renderWidget(); return Promise.resolve(state()); }
 
     return loadScript(d).then(function () {
       mounted = true;
-      // 上一次挂载已经画过一个方框（这次只是换面板）时，renderWidget 自己会
-      // 走 remove + 重新 render 那条路；没画过就直接画。
+
       renderWidget();
       return state();
     }, function (why) {
@@ -127,9 +103,6 @@
     });
   }
 
-  // 同一个页面只挂一次 <script>：谁先到谁算（preload 常常是先到的那一个）。
-  // 要是各挂各的，页面打开时 preload 插一个、拿到 siteKey 后 mount 又插一个，
-  // 用户会看到两个方框。
   var scriptPromise = null;
 
   function loadScript(d) {
@@ -152,11 +125,6 @@
     return scriptPromise;
   }
 
-  // 页面一打开就叫它：先把 Cloudflare 的脚本拉起来（这时多半还没拿到 siteKey，
-  // 所以不等它渲染）。这是 Issue #276 的正解 —— 原先「拉脚本（最多 8 秒）+
-  // 渲染 widget + 等 Cloudflare 判人机」这一整段都压在点提交之后，
-  // 用户看到的就是「点完按钮，验证框才慢慢冒出来」。
-  // 现在：脚本在用户**还在读登录页**时就已经在路上。
   var preloaded = false;
 
   function preload() {
@@ -164,46 +132,18 @@
     if (!d || preloaded) return Promise.resolve(state());
     preloaded = true;
     return loadScript(d).then(function () {
-      // 脚本到了，而 widget 还没画（拿到了 siteKey 但脚本后到的那条路）：
-      // 补画一次。已经画过就什么都不做。
+
       if (st.configured && st.widgetId === null && containerEl) renderWidget();
       return state();
     }, function () {
-      // 加载失败先不声张：页面上可能压根没配人机校验，这时报「坏了」是假故障。
-      // 真需要拦人的那一步（mount / gate）会自己把话说清楚。
+
       return state();
     });
   }
 
-  // ⚠️ 这一条是「重画」的护栏，不是「第一次画」的失败处理 —— 两者必须分开
-  //    （Issue #278 第五轮在真浏览器上量出来的一个假故障）。
-  //
-  // 现场：页面打开时 preload() 先把 <script> 插上（Issue #276 那条）；
-  // 紧接着拿到 siteKey 的 mount() 走 `loadScript().then(renderWidget)`。
-  // 而 `loadScript()` 在这一刻回的是一个**已经 resolve 的 Promise**
-  // （它只因「inserted」而 resolve），那份 `.then` 于是**不等 Cloudflare
-  // 的脚本到达**就跑了 renderWidget —— 此时 `root.turnstile` 还没出现，
-  // 于是记下 `no_render_api`。
-  //
-  // 病根不在这个判断（脚本没到确实不该画），在**它把「还没到」写成了
-  // 「坏了」**：`no_render_api` 在 BROKEN 表里，于是
-  //   · gate() 放行（前端不拦）—— 这一半是对的；
-  //   · 但 `turnstileBrokenNote()` 会把一句**红字**摆在页面上：
-  //     「人机校验脚本没给出可用的接口（多半是被网络中间层改写了）」。
-  // 而那个方框半秒后就正常画出来了、token 也拿到了。用户看到的是一个
-  // 根本不存在的故障，而且它连「请刷新」都劝。
-  //
-  // 现在的口径：**只有 preload 也没能把脚本拉起来，才算坏了。**
-  // 脚本还在路上时什么都不记（原本 err 就是 null），等它回来时
-  // `preload()` 那条路会补画一次（见下面 preload 里的注释），
-  // 那时若真的还是没有 render API，才由 loadScript 的失败分支记成
-  // script_error / script_timeout。
-  //
-  // ⚠️ 为什么不是「这里也去 loadScript()」：那会变成两条路各拉一份脚本，
-  //    用户在页面上会看到两个方框（这正是那一节注释要防的）。
   function renderWidget() {
     if (!root.turnstile || typeof root.turnstile.render !== "function") {
-      // 脚本还在路上：如实记着「没画成」，但**不报故障**（err 留空）。
+
       st.ready = false;
       return;
     }
@@ -254,9 +194,7 @@
   function gate() {
     if (st.skipped) return null;
     if (st.tokenValue) return null;
-    // 校验跑不起来 = 没有方框可勾。这里必须放行：否则用户会被一句
-    // 「请先完成人机校验」钉死在页面上，而那个方框永远不会出现。
-    // 闸门仍在服务端 —— 真绕过前端提交，服务端回 400 E_TURNSTILE。
+
     if (failed()) return null;
     return "请先完成人机校验（上面那个方框）";
   }

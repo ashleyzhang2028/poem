@@ -132,10 +132,6 @@
     });
   }
 
-  // 未登录的用户看不到这一层：入口那一下就送去登录页（见 bindEntry）。
-  // 所以这张卡片只在**已经登录、层级却不够**时出现，只如实说「要 Pro」。
-  // 卡片里不再有「登录可用」这句，也不再有注册 / 登录的按钮——
-  // 要登录的人在登录页上，站在这里的人已经登录过了。
   function gateCard(id) {
     var why = (Ent && Ent.denyReason)
       ? Ent.denyReason(CAP, { tier: id.tier, signedIn: id.signedIn })
@@ -152,8 +148,6 @@
     if (!host || !PC) return;
     var id = identifier() || { tier: "free", signedIn: false };
 
-    // 没登录就不该站在这一层上（open() 已经把人送去登录页了）。
-    // 这里再兜一道：万一有人从别处喊 render()，也不画卡片、不画预览。
     if (!id.signedIn) { host.hidden = true; host.innerHTML = ""; return; }
 
     if (!allowed(id).ok) {
@@ -291,8 +285,7 @@
   }
 
   function loginUrl() {
-    // 登录后回得来：next 是这一页的路径（不带查询与哈希，避免把
-    // 打开过的那一篇的临时状态也一起带上）。
+
     var path = "/";
     try { path = location.pathname || "/"; } catch (e) { path = "/"; }
     return "/login/?next=" + encodeURIComponent(path);
@@ -305,7 +298,6 @@
     state.poemId = o.poemId || "";
     state.collectionId = o.collectionId || "";
 
-    // 要登录就大方地去登录，不在这里摆一张「登录可用」的卡片。
     var id = identifier() || { tier: "free", signedIn: false };
     if (!id.signedIn) {
       location.href = loginUrl();

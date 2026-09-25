@@ -1,4 +1,4 @@
-// Issue #278：页面层（jsdom 真跑小古文页）已删除，只留数据层与接线口径。
+
 const fs = require('fs');
 const path = __dirname + '/../';
 
@@ -41,9 +41,6 @@ const titles = CLS.map(p => p.title);
 const missing = need.filter(t => !titles.includes(t));
 chk(missing.length === 0, '需求清单篇目齐备（缺 ' + missing.join('/') + '）');
 
-// 蒙学四篇的完整性：题名去掉了「（节选）」，正文就必须是全文。
-// 判据用汉字数下限 —— 这几部书的全文汉字数是定数（三字经 1140 / 弟子规 1080 /
-// 千字文 1000 / 百家姓 504 姓），节选版一律不到下限的三分之一。
 const MENGXUE_FULL = [
   { title: '三字经', min: 1100, note: '宋·王应麟通行本全文' },
   { title: '弟子规', min: 1000, note: '清·李毓秀全文（含「信/泛爱众/亲仁/余力学文」三章）' },
@@ -57,8 +54,7 @@ MENGXUE_FULL.forEach(m => {
   const n = (p.text.match(/[\u4e00-\u9fff]/g) || []).length;
   chk(n >= m.min, '《' + m.title + '》正文是全文，不是节选（' + m.note + '，汉字 ' + n + ' ≥ ' + m.min + '）');
   chk(!/（节选）|\(节选\)/.test(p.title), '《' + m.title + '》题名不再带「（节选）」');
-  //《百家姓》是姓字表、没有连贯文义，译文是一段「说明」而不是逐句翻译 ——
-  // 这一条按下限单列，不套「译文长度与正文同量级」的判据。
+
   const tn = (p.translation.match(/[\u4e00-\u9fff]/g) || []).length;
   if (m.title === '百家姓') {
     chk(tn >= 200, '《百家姓》译文如实说明「它是姓字表、不作逐句翻译」（译文汉字 ' + tn + '）');
@@ -68,9 +64,6 @@ MENGXUE_FULL.forEach(m => {
   }
 });
 
-// 光比字数还可能被「同长度的另一段」蒙过去，再点名几句**只在全文里出现**的句子。
-// 三字经：香九龄（第 9 句，节选版止于第 8 句「习礼仪」）、清祚终 / 戒之哉（史事段与末句）。
-// 弟子规：信为先（「信」章后半，节选版止于「业无变」）、凡是人（「泛爱众」章）、可驯致（末句）。
 (function () {
   const get = t => CLS.filter(x => x.title === t)[0];
   const SPOT = [
@@ -100,12 +93,6 @@ const groups = sandbox.getClassicGroups();
 chk(groups.length >= 6, '按主题分组聚合出 ' + groups.length + ' 组');
 chk(groups.reduce((n, g) => n + g.items.length, 0) === 102, '分组内篇目合计 102');
 
-// ---------------------------------------------------------------------------
-// Issue #278：这一层的**页面层**（jsdom 起小古文页、渲染 102 篇、点已读、
-// 朗读、重复 id 扫描、样式扫描）整段删除 —— 那是界面测试。
-// 留下的是数据层：102 篇的数量 / id / 字段 / 分组 / 已读键，以及页面加载了
-// 数据与引擎这一类**功能接线**的口径。
-// ---------------------------------------------------------------------------
 const html = fs.readFileSync(path + 'classic/index.html', 'utf8');
 const scriptOrder = html.match(/<script src="([^"]+)"><\/script>/g).map(s => s.match(/src="([^"]+)"/)[1]);
 chk(scriptOrder.indexOf('data/poems-classic.js') >= 0, '页面引用了小古文数据');

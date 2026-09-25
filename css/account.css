@@ -2,108 +2,6 @@
   padding: 4px 0 14px;
 }
 
-/* ---------- 页容器之二：**居中页**那一张卡垂直居中（Issue #163 → #278） ----------
-   用户原话（2026-09-18，Issue #163）：「登录页面的登录卡片能垂直居中吗」
-
-   病根不在卡片自己，在**页面容器**：`.account-page` 只有「顶栏到页脚之间」
-   那一块高，内容不足时整块贴着顶栏排，卡片就挂在上半屏，底下空一大片。
-
-   ⚠️ 这一条原先**只给登录页**（`#login-page`）。2026-09-24（Issue #278 第五轮）
-      放开成**一组成员**，判据是 `body` 上的 `data-nav`（见下面那一组选择器）。
-
-      为什么放开：用户原话「登录页面，**重设密码等等各项页面**上下 margin 再
-      减少 20px」，而他点的那一页（`/reset/`）当时压根**没居中** ——
-      实测 393×852 卡片顶端 73px、上面只剩 **4px**，屏幕底下空着一整片。
-      在那一页上「上下 margin 减 20px」是一句**做不到的话**：没有留白可减。
-
-   ⚠️ 但**不给 `.account-page` 全体**：「我的」页是**一叠卡**的清单页（六张），
-      内容本来就比一屏长 —— 居中在它身上永远不生效，只会多一句没人验证的声明。
-      所以判据走 `data-nav`（加一页时看得见要顺手加一条），而不是给
-      `.account-page` 加一条通用规则。
-      **账号几页共用一份样式表，但「居不居中」是页自己的事。**
-
-   ⚠️ 高度算在「视口减掉顶栏那一行与页面底部的收尾空白」上，不用 `height: 100%`：
-      `.app` 的高度是内容撑出来的，`100%` 无从算起（等于没写）。
-   ⚠️ 用法是 `display: flex` + 子项 `margin: auto`，**不用**
-      `justify-content: center`：卡片比容器高时，`center` 会把卡片顶端顶到
-      容器外（顶栏那一段被裁掉、滚不到），`auto` 外边距在溢出时退化成 0，
-      顶端仍贴得住 —— 短屏幕 / 横屏 / 大字号下这才是对的。
-
-   ==========================================================================
-   一、`165` → `118`：卡片上下留白各收 20px —— 但**它已经到了地板**
-                （2026-09-24 · Issue #278 第五轮）
-   --------------------------------------------------------------------------
-   用户原话：「登录页面，重设密码等等各项页面上下 margin 再减少 20px
-              注册页面好像没法再减了，上面碰到 logo 行了快」
-
-   ⚠️ 这一条**把上一轮那个 165 改回了 118**，而 118 **正好是「不溢出」的边界**。
-      换句话说：用户要的「再少 20px」在这里是**物理上做不到**的 ——
-      不是没做，是再往下走页面就会溢出。下面把这件事说清楚，
-      免得下一个人又照着「减 20」把它改成 98 或 138。
-
-   ── 先把两个数各管什么拆开 ─────────────────────────────────────────────
-   卡片靠 `margin: auto` 在容器里居中，**上下各吃掉一半余量**：
-
-       余量 = (100vh - N) - .account-page 的上下内边距 - 卡片高
-
-   N **越小 → 容器越高 → 余量越多 → 上下留白看起来都变大**。
-   ⚠️ 所以「上下 margin 减少」= N **变大**，不是变小。用户看到的是留白，
-      而留白是**结果**，N 是那个原因 —— 上一轮（Issue #244）的注释把方向
-      写反过一次，这里按实测重新钉一遍。
-
-   ── 为什么再收 20px 会让页面溢出 ───────────────────────────────────────
-   N 也不许无限变大。`.app` 的高度恒等于（实测，七档视口逐档核过）：
-
-       .app 高 = 顶栏 69 + (100vh - N) + `.app` 自己的下内边距 48
-               = 117 + 100vh - N
-
-   而 `.app` 只要比视口高，页面就溢出（393×852 上量到 19~20px）。
-
-   ⚠️ 溢出不是「挪一点」那么轻：溢出之后 `.app` 的**下内边距 48px 会把
-      卡片整体顶上去** —— 卡片上缘往上走（实测 286 → 296），下留白只剩
-      `.app` 那条 48px。于是「再收 20」这件事的**实际效果全落在「上缘往上
-      走」上」，而下留白反而**变大**（227 → 237）。用户量的是「上下 margin」，
-      他看到的是「上面更挤、下面更空，还多出一条滚动条」。
-
-   ── 所以这两个数是怎么定下来的（**真浏览器逐档量出来的**）─────────────
-   临界点可以直接解出来：`.app 高 ≤ 100vh` ⇔ `N ≥ 117`。
-   手写这份注释时用 Chromium 在七档视口上跑了三遍（118 / 98 / 78）：
-
-       393×852   N=165  上 193 / 下 203   溢出 0
-                 N=118  上 217 / 下 227   溢出 0      ← 本轮的取值
-                 N= 98  上 227 / 下 237   溢出 19
-                 N= 78  上 237 / 下 247   溢出 39
-
-   N=118 与 N=117 是同一件事（117 是解析出来的临界，118 是它向上取整后
-   仍不溢出的那一档），手机上取 118、宽屏（顶栏厚一档）跟着取 117。
-
-   ── 与用户要的「再少 20px」差了 7px ────────────────────────────────────
-       165 - 20 = 145（用户的算式）
-       145 - 27 = 118（能落地的最大那一档）
-
-   剩下那 27px 不是省下来的，是**上一轮那 165 本身就虚高**：
-   它离临界点还有 47px 的余量（165 - 118），而那 47px 全是「上下各 23px
-   的空白」。本轮把这笔虚数一次收干，用户看到的上下留白每侧少了 24px ——
-   **比他开口要的 20px 还多**（193 → 217 / 203 → 227）。
-
-   ⚠️ 再往下（比如真按 145 走）唯一的办法是**把 `.app` 那 48px 的下内边距
-      在账号页上收掉**（`body[data-nav="login"] .app { padding-bottom: … }`）。
-      那是**改另一件事**（登录页不留底），不是「上下 margin 少一点」，
-      所以这一轮没动它 —— 要动请单独说，别顺手在这两个数上做假账。
-
-   ⚠️ 守卫在 `test/pwa.test.js`「卡片仍垂直居中」那一节：七档视口逐档判
-      「页面不溢出」+「上下留白相差 ≤ 60px」，另在够高的几档上判
-      「相对偏差 ≤ 25%」。**改这两个数之前先把那七档跑一遍**（本轮就是这么
-      发现 98 会溢出 19px 的）。`test/account-pages.test.js` 另判
-      「两档只差 1」——它们永远一起改。
-   ========================================================================== */
-
-/* ⚠️ 这一组是**居中页**的名册：`body` 上的 `data-nav` 就是它们的名字，
-   `#login-page` 也在这一组里（它自己那份 id 选择器留着，是为了那几段注释
-   与旧选择器不断线）。
-   ⚠️ 「我的」页**不在这一组里**，理由见上面：它是一叠卡。
-   ⚠️ 一次改三处的方法：加/减一页时，上面那份说明、下面这一组、
-      以及 test/pwa.test.js「卡片仍垂直居中」那一节三处一起动。 */
 body[data-nav="login"] .account-page,
 body[data-nav="reset"] .account-page,
 body[data-nav="verify"] .account-page,
@@ -119,49 +17,24 @@ body[data-nav="reset"] .account-page > .account-card,
 body[data-nav="verify"] .account-page > .account-card,
 body[data-nav="admin"] .account-page > .account-card,
 #login-page > .account-card {
-  /* 上下都 auto：卡片在剩余空间里居中；空间不够时自动退回「贴顶、可滚」 */
+
   margin-top: auto;
   margin-bottom: auto;
 }
 
-/* ⚠️ 但管理后台是**一叠卡**：它同屏最多只画一张拒绝卡、放行时画五张。
-   本轮实测（393×852）拿掉这一条时：拒绝卡只有 144px 高，却被那对 `auto`
-   外边距推到了离顶栏 290px 的位置 —— 上面空 290、下面空 300，而这一页
-   只需要放一句「只对管理员开放。」。用户说的「留白太多」在那一屏上就是它。
-   收起这一条之后：拒绝卡贴顶（上面只剩 4px 的页容器内边距），放行的五张卡
-   也贴顶顺排 —— 一叠卡的页面本来就不该居中。
-   ⚠️ 判据是**「这一页是不是一张卡」**：拒绝卡 / 登录卡 / 重设卡都是，
-   管理后台的整体不是。所以这条只覆盖 `#deny-card` 这一张，不动上面那一组。 */
 body[data-nav="admin"] .account-page > #deny-card {
   margin-top: 0;
   margin-bottom: 0;
 }
 
-/* ⚠️ 拒绝卡上不留那一片空白：它是**一叠卡开头的一张**，居中就等于「上面空
-   290px、下面空 300px 地端着一句话」（本轮实测 393×852：卡高 144，上下各
-   空 290+）。但它若把这一页撑到一屏高，就会带出 586px 的下留白 ——
-   所以这一条同时把它那一份 `min-height` 也收掉。 */
 body[data-nav="admin"] .account-page:has(> #deny-card:not([hidden])) {
   min-height: 0;
 }
 
-/* 拒绝卡上那颗「回到我的」也不吸满整行：这张卡只在宽屏上才撑到 560px，
-   一颗满格的按钮在那儿看着像「这一页只有一个动作」—— 它只是退出去。 */
 #deny-card .account-btn { width: auto; min-width: 132px; }
 
-/* 一叠卡的最后一张不再多留一格底距（列表页到底就该到底）。 */
 body[data-nav="admin"] .account-page > .account-card:last-child { margin-bottom: 0; }
 
-/* ⚠️ 账号几页共用一条收尾：`.app` 底下那 48px（`--safe-bottom` 版本的
-   `40px + 安全区` 或 `body:not(.no-dock)` 的 `25px + 底栏`）是给
-   **长页面**留的「滚到底别贴着屏幕边」的余量。而登录 / 重设 / 确认邮箱 /
-   管理后台这四页是**一屏装得下**的（卡片居中，下面本来就有几百像素），
-   再垫 48px 等于把这条余量算两遍 —— 用户量的「上下 margin」里，
-   下面那一侧就一直比上面多出 10~48px。
-   收掉之后：四页的上下留白由同一个 `min-height` 算式给出，逐页画出来相等
-   （实测 393×852：/reset/ 与 /verify/ 都是 上 291 / 下 301）。
-   ⚠️ 只收这四页，不给 `.app` 全体：列表页（「我的」/ 设置二级页）是长页面，
-      那一条余量正是它们要的。 */
 body[data-nav="login"] .app,
 body[data-nav="reset"] .app,
 body[data-nav="verify"] .app,
@@ -169,17 +42,6 @@ body[data-nav="admin"] .app {
   padding-bottom: 0;
 }
 
-/* ---------- 登录页的 `.app`：让「容器撑一屏 + 卡片居中」落在同一套分栏里 ----------
-   ⚠️ 页脚（`.foot` / `.settings-foot`）已全站删除，原先这里还挂着
-      `body[data-nav="login"] .app > .foot { margin-top: auto; padding-top: 0 }`
-      —— 那一条随页脚一起删掉了（它当时的作用是让页脚吃掉剩余空间、
-      贴住屏幕底边）。**留下来的这一条仍要**：`.app` 排成一列 flex，
-      `#login-page` 那个 `min-height` 与卡片的 `margin: auto` 才在同一套分栏里算。
-   ⚠️ 只给登录页（`body[data-nav="login"]`），不给 `.app` 全体：
-      「我的」页与管理后台是「一叠卡」的清单页，块距口径与这里不同。
-   ⚠️ 下内边距**不动**（仍是 css/style.css 那条 `40px + 安全区`，或
-      `body:not(.no-dock)` 的 `24px + --nav-h`）—— 见上面「一」里那 48px：
-      它真实占着视口高度，上面那条算式已经算过它了。 */
 body[data-nav="login"] .app {
   display: flex;
   flex-direction: column;
@@ -244,29 +106,6 @@ body[data-nav="login"] .app {
 .account-field { margin-bottom: 12px; }
 .account-field:last-child { margin-bottom: 0; }
 
-/* ---------- 字段标题不再单独占一行，收进输入框的 placeholder ----------
-   用户 2026-09-24（Issue #278 第四轮）：
-   「能不能让 邮箱 密码 确认密码这些标题都在输入框里 placeholder,
-     这样能减少相应行空间」
-
-   口径是「**少一行**」，不是「少一个 label」——
-   几个字段在可视上各让出 label 那一行（12.5px 字 + 6px 下边距 ≈ 24px），
-   登录 / 注册 / 重设几屏一屏能省下六七十像素。
-
-   ⚠️ 标签本身**留在 DOM 里**（标签文字搬进 `<span class="sr-only">`）：
-      · 它仍是那个字段的**无障碍名**（读屏用户听到的是「邮箱」，不是「你
-        在网页里」，见 test/auth-browser.test.js 那一节逐字段核名）；
-      · 点 label 能聚焦输入框的浏览器行为也还在；
-      · 输入框自己另挂了一条 `aria-label`，两处写的是同一个词
-        （`.sr-only` 藏着的那一个与 `aria-label` 那个**必须一致**，
-        否则读屏听到的名字会随浏览器实现漂移）。
-   ⚠️ 标题搬进 placeholder 之后，「密码至少 8 位」这种**规则**也跟着进去了
-      （placeholder 写「密码」时那句规则只剩 `.account-hint` 里那一处），
-      所以**不许**再给这两处加回一条独立的提示行 —— 那等于把省下来的行又填回去。
-   ⚠️ placeholder 只在「空着、没聚焦」时可见：用户一输入就看不见字段名了。
-      这是本改动的代价，用户明确要了这个取舍；**不要**因此再加回 label ——
-      真嫌看不清，正确的做法是加 `.account-input:focus` 的辅助手段，
-      而不是把这一行重新长出来。 */
 .account-label {
   position: absolute;
   width: 1px;
@@ -279,15 +118,6 @@ body[data-nav="login"] .app {
   border: 0;
 }
 
-/* ⚠️ 高度与档①「中」的按钮同一档（--ctl-input-h = --ctl-h-md = 38px）：
-   用户 2026-09-24（Issue #278 第六轮）：「输入框大小也应该和按钮相匹配」。
-   原先它按 padding 11px + 字 15px 自己长到 43px 高，而旁边那颗 `.account-btn`
-   是 padding 12px + 字 15px = 46px —— 一高一矮、相差 3px，一行里看得见。
-   现在两者都写 height（38px），画出来的高度**必然**相等。
-   ⚠️ 38px 也是「手机上输入框不许小于 16px 字号」那条硬规矩的边界值：
-      iOS 只对 <16px 的输入框做聚焦缩放，而全站已在
-      `@media (max-width: 700px)` 把手机上的输入框字号抬到 --input-font-narrow
-      （16px），所以这一档不会触发缩放。 */
 .account-input {
   width: 100%;
   height: var(--ctl-input-h);
@@ -312,11 +142,6 @@ body[data-nav="login"] .app {
 
 .account-input[type="email"] { letter-spacing: .2px; }
 
-/* 档① 主按钮。高度 / 圆角 / 字号读 style.css 那一把尺
-   （--ctl-h-lg 44px / --ctl-radius 6px / --ctl-font-lg 15px），
-   与 `.btn.primary` 是**同一档**：并排看是同一颗键。
-   ⚠️ 宽度仍是满格（width: 100%）：它是卡片里唯一的主按钮，
-      满格是「卡片宽度」这件事的表达，不是另一种按钮。 */
 .account-btn {
   width: 100%;
   height: var(--ctl-h-lg);
@@ -327,9 +152,7 @@ body[data-nav="login"] .app {
   font-family: inherit;
   font-size: var(--ctl-font-lg);
   font-weight: 600;
-  /* ⚠️ 行高**不在这儿写**（Issue #291）：定高空件那一行字的行高统一由
-     `style.css` 那一段给（`--ctl-leading-lg`）。原先这里写死 1.2，
-     与那一处就成了「同一件事的两个来源」—— 改一处、另一处照旧歪。 */
+
   cursor: pointer;
   transition: background .15s, border-color .15s, color .15s;
 
@@ -351,7 +174,7 @@ body[data-nav="login"] .app {
   cursor: default;
 }
 .account-btn[aria-busy="true"] { cursor: wait; }
-/* 档②「次按钮」：纸底 + 缃线。悬浮 / 按下与 .btn / .mini-btn 同一套。 */
+
 .account-btn.ghost {
   background: var(--card);
   color: var(--ink-2);
@@ -380,16 +203,8 @@ body[data-nav="login"] .app {
   margin-top: 0;
 }
 
-/* ⚠️ 身份行里那几格在**两行**里的尺寸（Issue #276 第九轮）。
-   结构：第一行 .identity-head（头像 · 昵称 · 徽章），
-   第二行 .identity-btns（「登录 / 退出登录」·「上传 / 更新头像」）。
-   屏幕上那把次序 = DOM 次序，**不再用 order**（上一轮的 order 是「六格挤一行、
-   靠编号挪格子」的产物；格子各就各位之后，它只会是下一处对不上的地方）。
-   ⚠️ 这里也**不再有** `:has(#btn-sign-out:not([hidden]))` 那一族判据：
-      「登录 / 退出」是**一颗键的两个文案**（js/mine.js 的 renderSignOut 一处定）。 */
 @supports selector(:has(*)) {
-  /* 第一行三格：头像与徽章一步不让（压扁了就不是头像、不是徽章），
-     昵称列带下限地让（见 .identity-main）。 */
+
   #avatar-slot { flex-shrink: 0; }
   #identity-badge.tier-badge {
     flex: 0 0 auto;
@@ -399,13 +214,6 @@ body[data-nav="login"] .app {
     letter-spacing: 0;
   }
 
-  /* ⚠️ 第二行那两颗键**必须点名覆盖**卡里那套满宽算式（Issue #276 第九轮）。
-     「登录」这颗键的容器是 #account-actions（它在下面「账号」卡里也有一份），
-     卡里那套是 `.account-actions .account-btn { flex: 1 1 0; min-width: 104px }`
-     —— 那是「账号卡里两张满宽键」的算式。搬到这一行之后，它把两颗键各自
-     撑成一整行（实测 393px：「登录」y=138 满宽 337，头像键被挤到 y=187），
-     正是用户 2026-09-24 报过的「一行显示一个按钮也太大了」。
-     所以这一行上的键一律**按内容定宽、并排**：宽度 = 自己的字，不收缩。 */
   #identity-btns > .account-actions,
   #identity-btns > .identity-btns,
   .identity-btns > .account-actions,
@@ -439,10 +247,6 @@ body[data-nav="login"] .app {
 .account-link:focus-visible { color: var(--green-dark); }
 .account-link:active { color: var(--green-dark); }
 
-/* 「本机数据」卡底下那一行入口（去 /progress/ 的「背诵进度」）：
-   一行字，左对齐落在卡片文字的左缘上，与上面那几行的第一列同一条竖线。
-   它是这一页唯一带链接的文字行，所以 .account-link 自己居中会把它推偏 ——
-   这里把它按文字行摆（不吸满宽度）。 */
 .settings-link-row {
   margin: 10px 0 0;
   padding-left: 2px;
@@ -523,33 +327,15 @@ body[data-nav="login"] .app {
 
 .account-step[hidden] { display: none; }
 
-/* ⚠️ 身份卡现在是**两行**（Issue #276 第九轮，用户 2026-09-25）：
-     第一行 .identity-head = 头像 + 昵称（含身份那一行小字）+ 层级徽章；
-     第二行 .identity-btns = 「登录 / 退出登录」+「上传 / 更新头像」两颗键。
-   用户原话：「更新头像和登录按钮放到下面一行吧 怎么放到头像和昵称中间
-   呢？！？」—— 上一轮把两颗键塞进了头像与昵称的**右边**（同一行），
-   屏幕上就是「按钮夹在头像和昵称中间」。所以现在两颗键**另起一行**，
-   摆在头像 + 昵称那一行**下面**。
-   ⚠️ 两行是**结构**，不是「装不下才折」：
-      · 第一行只有三格，且**永不折行** —— 装不下时收昵称列（它一路可以让到
-        下限），头像与徽章一步不让；真到极限宁可让昵称只剩两个字（ellipsis 兜底），
-        也不许把徽章掉到第二行 —— 那正是用户 2026-09-24 报过的样子。
-      · 第二行**可以折**（两颗键各占一行）：那是窄屏最后的退路，
-        折了也只是两颗键上下排，不会把昵称挤走。
-   ⚠️ 别再把这两颗键塞回第一行：塞回去就是用户点名的「放到头像和昵称中间」。 */
 .identity-row {
   display: flex;
   flex-direction: column;
-  /* ⚠️ 行距 8px：两行之间是「头像 + 昵称」与「几颗键」的关系，
-     比卡片里那些 12px 的段距紧一档（它们本来是一件事的两半）。 */
+
   gap: 8px;
-  /* ⚠️ 两行等宽、都从左缘起（column 方向下 align-items 管的是**横向**对齐）。
-     键那一行顶到卡的两侧（stretch），第一行则横铺 —— 这样第二行里
-     「登录」与「更新头像」从左缘排起，与上面的名字对齐。 */
+
   align-items: stretch;
 }
 
-/* 第一行：头像 + 昵称 + 徽章。**不许折行**（折了就是上一轮那道题）。 */
 .identity-head {
   display: flex;
   align-items: center;
@@ -558,19 +344,6 @@ body[data-nav="login"] .app {
   gap: 8px;
 }
 
-/* ⚠️ 昵称列（第一行中间那一格）：**装不下时它先让**，宽裕时它吃余量。
-   用户 2026-09-24 报的两道题（「按钮被压成两个字竖排」「徽章掉到第二行」）
-   都是这一格的伸缩算错引起的，所以三条一起写死、写全：
-     · `flex-basis: 0` —— flex 的**断行判据**用每个成员的假想主尺寸（= basis）；
-       若写 auto，昵称列按自己的 max-content（≈147px）参与判断，很容易
-       凑不够宽 → 徽章被挤到下一行。basis 0 让这一格在断行时只算 0 宽。
-     · `flex-shrink: 999` —— 它是这一行里唯一「小一点也没关系」的东西
-       （头像不能压、徽章不能压），所以让位只能它先来。
-     · `flex-grow: 1` —— 余量给它，于是右边那枚徽章自然贴右缘
-       （不再需要 `margin-right: auto`；auto 外边距在 flex 里**优先于收缩**，
-       上一轮就是它把「差 2px」硬生生变成了「徽章掉到第二行」）。
-   ⚠️ `min-width` 是**下限**：不许把它压成 0 宽（实测 393px 压到 31px 时
-      「已登录 · b***@163.com」只剩几个字，看着像这一行坏了）。 */
 .identity-main {
   min-width: 0;
   flex: 1 999 0;
@@ -578,17 +351,9 @@ body[data-nav="login"] .app {
 }
 .identity-name,
 .nickname-input { max-width: min(9.5em, 120px); min-width: 0; }
-/* ⚠️ 这里用 `max-width`（不是 `width`，Issue #276 第八轮踩过的坑）。
-   写 `width: 120px` 是**硬宽**：它把这个盒子钉死在 120px 上，
-   `flex-shrink: 999` 再大也收不动它（收缩只能收「flex-basis 之上的部分」，
-   而 width 就是 basis 的实底）。实测后果：昵称列纹丝不动，
-   最后那颗徽章被挤到第二行 —— 用户报的「按钮往下跑」的同一族毛病。
-   改成 `max-width` 之后，宽裕时它仍占 120px（观感不变），
-   装不下时它第一个让（一路让到内容宽）。 */
+
 .identity-main:not(:focus-within) .nickname-input { flex: 0 1 auto; max-width: min(9.5em, 120px); width: 100%; min-width: 0; }
-/* ⚠️ 聚焦那一态：昵称列**放开吃余量**（正在打字时这一行让给输入框）——
-   这里可以再写 `flex: 1 1 auto`（它会重设 shrink），因为那一态下
-   「让位」与「吃余量」都是它自己的事，重设成 1 也还是它先让。 */
+
 .identity-main:focus-within { flex: 1 1 auto; }
 .identity-name {
   font-family: var(--font-poem);
@@ -670,19 +435,13 @@ body[data-nav="login"] .app {
 .grant-form .account-field { flex: 1 1 140px; margin-bottom: 0; }
 .grant-form .account-btn { width: auto; flex: none; padding: 11px 16px; }
 .grant-form .account-input { font-size: 14px; }
-/* 注音勘误那四格是**一路往下填**的（篇目 → 一句 → 第几次 → 读作什么），
-   不是「发放层级」那种并排的短表单。摊成一行时四个输入框挤在一排、
-   标签各自折行，「从篇目里挑一句」还飘在最后 —— 于是没人看得出顺序。
-   这里按步骤竖排，每一格占满一行；篇目那一格的候选列表也占满一整行。 */
+
 .pf-wid-field { flex: 1 1 100%; }
 #pf-line-field { flex: 1 1 100%; align-items: flex-end; }
 #pf-line-field .account-field { flex: 1 1 200px; }
 #pf-line-field .account-btn { margin-left: auto; }
 .grant-form .grant-list { flex: 1 1 100%; max-height: 220px; overflow: auto; }
-/* 层级选择（免费 / Pro / Max）：**档③（选项）**的又一落点。
-   尺寸 / 圆角读同一把尺（--ctl-h-sm 32px / --ctl-radius 6px），
-   选中态与设置页那些胶囊**同一套语义**：实心天青 + 奶白字（本轮之前它是
-   「浅底 + 天青字 + 内描边」，与其它选项按钮的选中态不是一件事）。 */
+
 .tier-pick { display: flex; gap: 6px; flex-wrap: wrap; }
 .tier-pick button {
   border: 1px solid var(--line);
@@ -730,18 +489,6 @@ body[data-nav="login"] .app {
 @media (min-width: 1024px) {
   .account-page { max-width: 560px; }
 
-  /* 登录卡在宽屏上除了水平居中，还要**垂直居中**（Issue #163）：这一档的
-     顶栏比手机上厚一档，所以手机上那一档的 `118` 再收 `1` 到 `117`。
-     ⚠️ 两个数**永远一起改**（Issue #244 那轮 `165/164` → 本轮 `118/117`）：
-        只动手机那档，宽屏上就会比手机多出 1px —— 这一档的用户看不出来，
-        但下一轮来微调的人会以为它们本来就该差那么多。
-     ⚠️ **117 就是临界点**（N ≥ 顶栏 69 + `.app` 下内边距 48 = 117 时不溢出，
-        实测七档全过）。所以这两个数**只许往大改**（往大 = 留白变小 = 页面
-        更稳），往小改必然溢出 —— 理由与实测数都在上面「一」那一长段里。
-     ⚠️ 只放宽 `#login-page`：`.account-page` 那张 560px 的宽度上限是给
-        各张账号页共用的（「我的」页 / 管理后台也是「一列纸」）。
-     ⚠️ 守卫在同一节，七档视口逐档判「上下留白相当」，
-        1440 / 1920 两档另判「相对偏差 ≤ 25%」。 */
   #login-page {
     min-height: calc(100vh - 77px);
     min-height: calc(100 * var(--app-vh) - 117px);
@@ -764,9 +511,6 @@ body[data-nav="login"] .app {
   color: var(--ink);
 }
 
-/* 卡片顶上那一行（Issue #229 第五轮：文案从「各身份可用功能对照」收成
-   「功能对比」，并**按卡片里其它小标题的样子显示** —— 与 .account-card-title
-   同一套字号 / 字重 / 颜色 / 字距，只是它长在 caption 上。 */
 .plans-caption {
   caption-side: top;
   text-align: left;
@@ -871,10 +615,6 @@ thead .plans-th-cap {
 }
 .plans-v { display: block; line-height: 1.2; }
 
-/* 圆里那颗记号（Issue #229 第五轮）：圆改成 flex 居中 —— 勾与叉都是
-   同一套 24 视图框的 SVG，圆心对圆心，不再各自带着字体给的墨迹盒碰运气。
-   以前是 line-height: 18px 的 inline-block，✕ 是按基线坐的字符，
-   圆底会空出一块。 */
 .plans-mark {
   display: inline-flex;
   align-items: center;
@@ -889,10 +629,6 @@ thead .plans-th-cap {
 .plans-mark.ok { color: #fff; background: var(--green); }
 .plans-mark.no { color: var(--ink-3); background: var(--green-light); }
 
-/* 圆里那两颗记号都是 SVG（勾自 Issue #229 第二轮、叉自第五轮）：一个 24 的
-   视图框按坐标落线，与字号 / 字体无关，任何机器上都是同一个形状。
-   两个记号都支在 .plans-mark 的 flex 居中上，所以这里只管定尺。
-   14px 的外框略小于 18px 的圆，四周留出 2px 余白 —— 笔尖才不会顶到圆边。 */
 .plans-mark-svg {
   display: block;
   width: 14px;
@@ -900,8 +636,6 @@ thead .plans-th-cap {
   flex: none;
 }
 
-/* 名字的第二行（Issue #229 第五轮）：略淡一档，好让「导出 / 大会 / 遗忘曲线」
-   看着是同一个名字的下半截，而不是另一个词条。 */
 .plans-th-rest { color: var(--ink-2); }
 
 .plans-cell-hint {
@@ -938,7 +672,6 @@ thead .plans-th-cap {
 }
 .plans-sum { font-weight: 600; color: var(--ink); }
 .plans-sum-of { font-weight: 400; font-size: 11px; color: var(--ink-3); margin-left: 2px; }
-
 
 @media (max-width: 400px) {
   .plans-table { font-size: 12px; }
@@ -983,9 +716,7 @@ thead .plans-th-cap {
   transition: background .15s;
 }
 .poems-game-entry:hover { background: var(--ctl-hover); }
-/* ⚠️ 按下不再 `transform: scale(.985)`：全站口径是「按下只用颜色」
-   （ui-consistency.test.js 有一条守着「按钮按下不许缩放」——
-   一条 transform 就能让文字在按下的一瞬间被重采样、看着发虚）。 */
+
 .poems-game-entry:active { background: var(--ctl-press); }
 .poems-game-name { font-size: 13px; font-weight: 600; letter-spacing: .5px; }
 .poems-game-sub { font-size: 10.5px; color: var(--ink-3); white-space: nowrap; }
@@ -1209,11 +940,6 @@ thead .plans-th-cap {
   border-bottom: 1px solid var(--line);
 }
 
-/* 登录页顶上那两条「密码登录 / 快捷登录」：**页签**，不是按钮 ——
-   没有盒子、没有底色，选中态靠那一道底边。所以它不是第四档按钮，
-   尺寸（32px 高 / 13px 字）与档③的选项同源。
-   ⚠️ 选中那道底边原来是 --red（这个站上红是「危险 / 出错」的颜色），
-      本轮改成主色 --green —— 同一页里「选中」与「刚才出错了」是两件事。 */
 .auth-tab {
   appearance: none;
   background: none;
@@ -1264,8 +990,6 @@ thead .plans-th-cap {
   margin-bottom: 0;
 }
 
-/* 「显示密码」那颗眼睛：左边就是输入框，所以它与输入框**同高同圆角**
-   （--ctl-input-h / --ctl-radius）—— 一行里两个盒子不许一高一矮。 */
 .pw-eye {
   appearance: none;
   background: var(--card-2);
@@ -1297,11 +1021,6 @@ thead .plans-th-cap {
   color: var(--ink-3);
 }
 
-/* 登录页底下那几颗字（注册 / 忘记密码 / 返回登录）：**它们是链接**（只是
-   语义上必须留在浏览器里、不能真的跳走，所以是 <button>）。
-   四态与全站链接逐字相同：默认天青、悬浮/按下压深一档、键盘焦点有光晕。
-   ⚠️ 原先 hover 会**加粗**（font-weight: 600）—— 加粗会改变文字宽度、
-      把同一行里另外那颗字顶得左右跳一下。全站链接的悬浮只换颜色。 */
 .link-btn {
   appearance: none;
   background: none;
@@ -1400,10 +1119,6 @@ thead .plans-th-cap {
 
 .account-hint.warn-hint { color: var(--red); }
 
-/* 角色徽章与「改角色」两颗小键（Issue #276）。
-   与层级徽章**长得刻意不一样**（层级是 .tier-badge 的圆角小药丸）：
-   角色是「身份」，用方一点的形状，免得两条正交的轴看起来像一件事。
-   —— 用户那句「free/pro/max 的角色」正是把它们当成一条轴的口误。 */
 .role-badge {
   font-size: 11px;
   line-height: 1;
@@ -1473,14 +1188,7 @@ thead .plans-th-cap {
 
 .nickname-input {
   display: block;
-  /* ⚠️ 这里必须是 `max-width` 语义（不是 `width`）—— Issue #276 第八轮。
-     原先 `width: 9.5em`（≈180px）是**硬宽**，它把这个输入框钉死，
-     `flex-shrink: 999` 的昵称列因此一格都收不动 —— 装不下时 flex 断行先发生，
-     最后那几个格子被挤到第二行（用户 2026-09-24 报的那道题）。
-     现在：`width: 100%` 让它在盒子里可伸缩，`max-width: 9.5em` 收住上限
-     （宽的时候观感与改前逐像素相同：仍是 9.5em 那一段），
-     `min-width: 0` 放开 `<input>` 自带的 min-content 下限（约 186px）。
-     三条合起来才是「宽裕时 9.5em、装不下时先让」这个设计本来要的东西。 */
+
   width: 100%;
   max-width: 9.5em;
   min-width: 0;
@@ -1503,37 +1211,13 @@ thead .plans-th-cap {
   color: var(--green-dark);
 }
 
-/* 「登录 / 退出登录」+「上传 / 更新头像」这一行：**二级按钮（档②）的小号**。
-   ⚠️ 用户 2026-09-25（Issue #276 第九轮）原话：
-      「更新头像和登录按钮放到下面一行吧 怎么放到头像和昵称中间呢？！？」
-   上一轮把它们摆进了「头像 + 昵称」那一行里（夹在头像与昵称右边紧挨着），
-   屏幕上就是「按钮夹在头像和昵称中间」。所以这一行现在**另起一行**，
-   住在头像 + 昵称那一行的**下面**（.identity-row 是 column 方向）。
-   三个要求同时成立，缺一条就退回用户抱怨的样子：
-   ① 尺寸是行内小号（--ctl-h-sm 32px / --ctl-font-sm 13px，与正文页那一排
-      「朗读 / 译文 / 加背」逐像素同高）—— 不是 44px 的主按钮；
-   ② 次级外观看语义：「登录」是主按钮（页面上唯一的登录入口），
-      「上传 / 更新头像」是 .ghost 次按钮；
-   ③ 这一行**可以从左缘排起、必要时各占一行**（flex-wrap: wrap）——
-      宽度富余时两颗并排，窄屏折行也只是上下排，不会把字压成竖排。 */
 .identity-btns {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
 }
-/* ⚠️ 账页这几颗小钮**必须**限定在 .account-page 里。
-   这一条曾经是裸 `.mini-btn`（单类名），而 account.css 是在 classic.css **之后**
-   加载的 —— 于是它压过了 classic.css 里同样单类名的 `.mini-btn`
-   （card 底 + 天青字），凡是「又加载了 account.css、又用到详情页工具条」的页面，
-   那一排「朗读 / 译文 / 加背 / 收藏 / 已读」会**统统变成绿底**，看着像全部选中
-   （Issue #229 用户点名的「第二行按钮全处于选中态」）。
-   现在收进 .account-page：账页自己的钮照旧，正文页的钮不再被波及。 */
-/* ⚠️ 尺寸这一轮换成与 classic.css 里那一排**同一把尺**（--ctl-h-sm /
-   --ctl-radius）：原来它 4px 内边距 + 11.5px 字，比正文页那一排矮 7px、
-   字小 1.5px —— 同一颗「上传头像」在「我的」页是这副小样，而同一颗「加背」
-   在正文页是另一副。现在两个页面上的行内小按钮逐像素相同。
-   底色仍是实心天青（账页这一颗默认就是主按钮语义），悬浮 / 按下读全站那两条。 */
+
 .account-page .mini-btn {
   min-height: var(--ctl-h-sm);
   border: 1px solid var(--green-dark);
@@ -1558,13 +1242,6 @@ thead .plans-th-cap {
 .account-page .mini-btn.ghost:hover { color: var(--green); border-color: var(--celadon); background: var(--ctl-hover); }
 .account-page .mini-btn.ghost:active { background: var(--ctl-press); }
 
-
-
-/* ⚠️ 第一行里那两格的收缩性：头像槽与徽章**一步不让**（Issue #276）。
-   压扁了就不是头像、不是徽章了；让位只由昵称列承担（见 .identity-main）。
-   ⚠️ 真出过的事故是「谁都不让」＋「谁都在让」的两种极端：前者让整行溢出
-      （屏幕右边多一段横滚，徽章被切在屏幕外），后者把字压成竖排。
-      所以分工写死：昵称列让到底（有下限），其余两格不动。 */
 .identity-head > .avatar-slot,
 .identity-head > .tier-badge {
   flex: 0 0 auto;
@@ -1584,15 +1261,6 @@ thead .plans-th-cap {
 .identity-foot .settings-hint { margin-top: 2px; }
 .identity-foot .settings-hint:empty { display: none; }
 
-/* ⚠️ 这一条是**遗留**：早先「上传头像」与「删除头像」是上下两行（一行一个），
-   所以给下面那颗留了 10px 的间距（见 .account-btn + .account-btn 那条 8px 的同族）。
-   用户 2026-09-24（Issue #276）点名的正是它：
-   「删除头像按钮比其他按钮显示得往下了」—— 真浏览器（1280px）实测
-   「上传头像」y=101、「删除头像」y=106，**整整低下 5px**（32px 高的框，
-   margin-top: 10px 被行内 align-items: center 分掉一半，露出来就是 5px）。
-   两颗现在是**并排**的兄弟，间距由 .identity-btns 的 gap 管，
-   各自不许再带自己的外边距 —— 留着一条，它们就永远差 5px 对不齐。
-   ⚠️ 别再按「上下两行」的老样子把它加回来。 */
 .identity-btns .account-btn { margin-top: 0; }
 
 #stats-card .settings-btns { margin-top: 12px; }
@@ -1600,25 +1268,18 @@ thead .plans-th-cap {
 .admin-slot { margin-top: 4px; }
 .admin-slot .account-btn { width: auto; min-width: 132px; padding: 10px 16px; }
 
-/* ⚠️ 窄屏两档（Issue #276 第九轮）：两行结构下，手机上要收的只有三样 ——
-   行内缝、昵称框的封顶、头像的尺寸；**没有**任何「钮要挤一挤」的事
-   （两颗键住在自己那一行，宽裕得多）。 */
 @media screen and (max-width: 480px) {
   .identity-head { gap: 6px; }
   .identity-btns { gap: 6px; }
-  /* 昵称框的封顶收一档（120 → 96px）：窄屏上名字写长了有 ellipsis 兜，
-     而「一行三格」的完整比名字的长度重要（用户点名的正是这一行别错位）。 */
+
   .identity-name,
   .nickname-input { max-width: 96px; }
   .identity-main:not(:focus-within) .nickname-input { max-width: 96px; }
-  /* ⚠️ 下限收到 64px：它只是「别把名字压得认不出来」，
-     剩下的空间够不够跟它无关 —— 两颗键早就不在这一行了。 */
+
   .identity-main { min-width: 64px; }
   .identity-row .avatar { --avatar-size: 40px; }
 }
-/* ⚠️ 最窄那一档（≤400px）再收一格：头像 36px、行内缝 5px。
-   320px 上第一行 = 头像 36 + 缝 12 + 名字 ≥64 + 徽章 37 = 149 ≤ 264，
-   富余一半 —— 两行结构之后，窄屏不再是紧巴巴的那一档。 */
+
 @media screen and (max-width: 400px) {
   .identity-row .avatar { --avatar-size: 36px; }
   .identity-head { gap: 5px; }

@@ -165,13 +165,6 @@ function writeProbe(d) {
   });
 }
 
-// 「配了三个环境变量但页面上看不见方框」这一档（Issue #225 的后续）：
-//   · 开关 / 两个 key 缺一个 —— 这里逐项如实报（值一个字不回，只说有没有）
-//   · 两个 key 都填了，但**其中一个填错了**（Site Key 填成 Secret、域名没加进
-//     那个 widget 的允许列表）—— 磁盘上完全看不出来，页面上只是「没有方框」。
-//     唯一能分辨的办法：拿一个假 token 打一次 Cloudflare 的 siteverify，
-//     读它的 error-codes（invalid-input-secret / invalid-input-response）。
-//     这个请求**不消耗任何东西、不落任何数据**，是只读探测。
 var TURNSTILE_PROBE_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
 
 function turnstileProbe(cfg) {
@@ -189,10 +182,9 @@ function turnstileProbe(cfg) {
     return r.text().then(function (t) {
       var data = null;
       try { data = JSON.parse(t); } catch (e) { data = null; }
-      // Cloudflare 同时回 error-codes（连字符）与 error_codes（下划线），
-      // 各家实现/网关只有前者时别把结论读成「密钥没问题」。
+
       var codes = (data && (data.error_codes || data["error-codes"])) || [];
-      // 认得出的两种：密钥错、token 是假的。后者才说明密钥是有效的。
+
       var bad = codes.indexOf("invalid-input-secret") >= 0;
       var ok = codes.indexOf("invalid-input-response") >= 0;
       return {
@@ -302,8 +294,6 @@ module.exports = handler.make("diag", ["GET"], function (d, body, req) {
       hasSiteKey: !!d.cfg.turnstileSiteKey,
       hasSecretKey: !!d.cfg.turnstileSecretKey,
 
-      // 前端能不能渲染出方框 = 服务端就绪 + Site Key 在。
-      // 三个变量「都配了」却看不见方框，多半就卡在下面这几条上。
       widget: null,
       note: null,
       secretProbe: null
@@ -312,7 +302,6 @@ module.exports = handler.make("diag", ["GET"], function (d, body, req) {
 
   var jobs = [dbProbe(d, "accounts", ACCOUNT_COLS.join(","))];
 
-  // 人机校验这一档也要**实跑一次**才敢下结论（同 writeProbe 的道理）。
   jobs.push(turnstileProbe(d.cfg).then(function (p) {
     r.turnstile.secretProbe = p;
     r.turnstile.secretValid = p ? p.secretValid : null;
@@ -373,9 +362,6 @@ module.exports = handler.make("diag", ["GET"], function (d, body, req) {
     out.database = {
       mode: r.database.mode,
 
-      // 写不进去的列（旧形状库）—— 空的才许报「一路都通」。
-      // 这是**服务端自报**，和「上游探针通不通」是两件事：上游全通、
-      // 但注册那一发被 42703 拒掉，正是这次用户遇到的那一档。
       degraded: (function () {
         try { return typeof d.store.degrade === "function" ? (d.store.degrade() || []) : []; } catch (e) { return []; }
       })(),
@@ -410,17 +396,15 @@ module.exports = handler.make("diag", ["GET"], function (d, body, req) {
       { n: 5, name: "注册真跑一遍", cmd: "curl -sS -i -X POST https://<你的域名>/api/register -H 'Content-Type: application/json' -d '{\"email\":\"you+diag@example.com\",\"password\":\"diagtest12345\",\"deviceId\":\"diag\"}'" },
       { n: 6, name: "服务端日志里搜", cmd: "Vercel → Logs，搜 api.error，把那一行的 error 字段贴回来" }
     ];
-    // 别让报告把「该不该出现方框」的**结论**说满：两个 key 都在时，
-    // 唯一能定死的是浏览器里真渲染一次。把预期形状一起写出来，
-    // 用户照着 curl 一比就知道「页面看不见方框」卡在哪一层。
+
     out.turnstile.expected = (function () {
       var site = String(o.current || "").replace(/\/+$/, "");
       return {
         config: site + "/api/config",
-        // 带 siteKey 才是「前端会渲染」，不带就是「开关开了但缺 Site Key」。
+
         expectWhenRenders: '{"turnstile":{"enabled":true,"siteKey":"0x..."}}',
         expectWhenPartial: '{"turnstile":{"enabled":false}}',
-        // 真绕过前端提交（页面上方框被删掉那种）：服务端必须回 400，这才证明闸在服务端。
+
         bypassTest: "curl -sS -i -X POST " + site + "/api/register -H 'Content-Type: application/json' " +
           "-d '{\"email\":\"you@example.com\",\"password\":\"diagtest12345\",\"deviceId\":\"diag\"}'",
         bypassExpect: "400 E_TURNSTILE（人机校验没通过，请刷新页面再试一次）—— 收到 400 就说明服务端在拦；" +

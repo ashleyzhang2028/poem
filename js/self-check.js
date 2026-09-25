@@ -99,9 +99,6 @@
       check("config", !!(res.body && res.body.turnstile && typeof res.body.mail === "object"),
         res.body && res.body.turnstile ? "turnstile / mail 两段都在" : "响应形状不对（可能不是本站）");
 
-      // 平台层会把 /api/* 的原路径放进 __path（见 vercel.json）再交给固定函数。
-      // 单独测一次这条内部地址：用户地址能通、内部地址不通，说明那一条 rewrite 的
-      // 落点与路由表的前缀对不上 —— 另一种坏法，症状同样是「全站 /api 404」。
       return call("/api/handler?__path=config");
     }).then(function (res) {
       rawLines.push("GET /api/handler?__path=config → " + res.status + " " + JSON.stringify(res.body).slice(0, 200));
@@ -141,8 +138,6 @@
           : "当前 " + origin + "，而 SITE_URL 是 " + siteUrl + "（注册邮件里的链接会指向后者）");
       }
 
-      // 探针：**故意**打形状不合法的请求（不合法域名 → 服务端在归一化那一步就退回）。
-      // 用合法邮箱跑一发会在内存模式下真的建号（已实测），所以这里不能打合法邮箱。
       return call("/api/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

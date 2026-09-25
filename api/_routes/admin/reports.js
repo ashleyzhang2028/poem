@@ -2,7 +2,6 @@
 
 var handler = require("../../_lib/handler");
 
-// 报告台账（管理员）：读全站 + 改状态
 module.exports = handler.make("admin.reports", ["POST"], function (d, body) {
   if (d.cfg && !d.cfg.hasSession()) {
     return { status: 503, body: { code: "E_NOT_CONFIGURED", message: "服务端还没配置好（缺 SESSION_SECRET）。当前仍可完全离线使用本站。" } };

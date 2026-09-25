@@ -1,4 +1,4 @@
-// Issue #278：页面层（jsdom：mount / 搜索框 / 详情页 / 九部集子逐页真跑）已删除，只留数据层。
+
 const fs = require('fs');
 const vm = require('vm');
 const path = __dirname + '/../';
@@ -43,14 +43,6 @@ chk(scriptOrder.indexOf('js/reader-core.js') < scriptOrder.indexOf('js/classic.j
 chk(!/window\.CLASSIC_ALL/.test(fs.readFileSync(path + 'js/reader-core.js', 'utf8')),
   '引擎里不再直接读 window.CLASSIC_ALL（数据一律由 mount 交进来）');
 
-// ---------------------------------------------------------------------------
-// Issue #278：这一层的主体是「古籍阅读库引擎」的**页面层**（jsdom 里 mount /
-// 搜索框敲字 / 详情页 / 九部集子逐页跑一遍）—— 全删。留下的是数据层那几条：
-// 总索引的形状、九部集子的地址顺序、挂载脚本顺序的口径。
-//
-// reader-core.js 是界面引擎，不在「功能验证」的范围内；原先那几条
-// 「引擎 mount 回来什么」的断言一并删掉。
-// ---------------------------------------------------------------------------
 chk(!/window\.CLASSIC_ALL/.test(fs.readFileSync(path + 'js/reader-core.js', 'utf8')),
   '引擎里不再直接读 window.CLASSIC_ALL（数据一律由 mount 交进来）');
 

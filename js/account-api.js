@@ -107,9 +107,7 @@
       var plan = (me && me.plan) || {};
       var tier = E.isTier(plan.tier) ? plan.tier : "free";
       var until = plan.until == null ? null : Number(plan.until);
-      // ⚠️ `uid` 一起写进去（Issue #276 后续）：这份答案**属于谁**必须跟着
-      // 一起存，否则同一台机器换个人登录时，上一个人的 `role: "owner"`
-      // 还是那一份 —— 新登录的普通用户会被当成管理员。
+
       var r = E.writeTier(D.backing, tier, until, {
         source: "server",
         role: E.isRole(me && me.role) ? me.role : null,
@@ -121,16 +119,6 @@
       return !!(r && r.ok);
     }
 
-    // 头像字节跨设备（Issue #243 后续 · 用户口径「能上云的全上」）。
-    //
-    // 已登录时头像的权威地址在服务器（Storage 桶里那张图），本机只留一份
-    // 副本供断网时显示。所以在**新设备上第一次拿到 /api/me** 时要把地址
-    // 写回账号域 —— 不写的话，换台设备头像就退回昵称首字（用户会以为
-    // 「头像没同步」）。这是唯一一处能写回的地方：/api/me 是账号事实的
-    // 唯一来路，散在几个页面里各写一遍必然漏。
-    //
-    // 本机那份 data URL 副本仍然保留（它就是「传不上去时还能看」的那一份），
-    // 所以这里只在**账号域里还没有图片**时才写。
     function adoptAvatar(me) {
       var AV = D.AV;
       if (!AV || !AV.avatar || !AV.setAvatar || !D.backing) return false;
@@ -147,11 +135,7 @@
       if (!E) return false;
 
       try {
-        // ⚠️ 判据从「有没有服务端层级」放宽到「**这一份是不是服务端的**」
-        //    （Issue #276 后续）：退出登录时要清掉的是**上一位的整个答案**
-        //    （tier 与 role 一起）。只看 tier 的话，一位 free 的管理员
-        //    退出后 `tier: "free"` 是假值，那一行 `role: "owner"` 反而留在
-        //    本机 —— 下一个登录的人就继承了他的管理后台入口。
+
         var plan = E.readPlan ? E.readPlan(D.backing) : null;
         if (plan && plan.source === "server") {
           if (E.clearTier) E.clearTier(D.backing);
@@ -383,14 +367,6 @@
       })["catch"](function () { return { ok: false, reason: REASON.UNAVAILABLE }; });
     }
 
-    // ---- 用户报告 / 勘误（Issue #243 第四轮）-----------------------------
-    // 三条与 adminGrant 那一族不同的地方：
-    //   · **游客也能读自己那一份**？不能 —— 服务端认人。所以没登录时
-    //     直接回 `guest`，界面去画本机那一份（js/report.js 有兜底）。
-    //   · 报告是**加密钥**的：`report` / `myReports` 都用同一个 channel。
-    //     不复用 grantChannel（那一族要三个方法齐备，报告不需要）。
-    //   · 错误码原样带出去（E_RATE_REPORT / E_EMPTY 这些），
-    //     因为界面要按码说不同的话，而不是笼统一句「没发出去」。
     function reportChannel() {
       var ch = usable(D.api) || (D.make ? safeCreate(D.make) : null);
       return ch && typeof ch.report === "function" ? ch : null;
@@ -462,9 +438,6 @@
       })["catch"](function () { return { ok: false, reason: REASON.UNAVAILABLE }; });
     }
 
-    // 改别人的角色（Issue #276）：与 adminGrant 同一族（同一个 channel、
-    // 同一套 reason 归类），因为它们的失败形态一模一样（未登录 / 没配 /
-    // 连不上 / 服务端拒绝）。
     function adminSetRole(input) {
       var o = input || {};
       if (!hasLocalSession()) return Promise.resolve({ ok: false, reason: REASON.GUEST });
@@ -500,22 +473,9 @@
       }).catch(function () { return { ok: false, reason: REASON.UNAVAILABLE }; });
     }
 
-    // -------------------------------------------------------------------
-    // 昵称（Issue #278）
-    // -------------------------------------------------------------------
-    // 昵称是**账号域**的东西（换台设备应该还在），所以它必须落服务器。
-    // 这里的三档与 resendVerification 同源：GUEST（没登录）/ NOT_CONFIGURED
-    // （这台服务器没开放云端账号）/ UNAVAILABLE（连不上）。
-    // **任何一档都不拦人**：名字没同步上，比「进不去」轻得多 ——
-    // 本机那一份仍然写下了（调用方负责），页面如实说一句就是了。
     function setNickname(input) {
       var o = input || {};
-      // ⚠️ 这里**不能**像别的写口那样先用 `hasLocalSession()` 挡一道。
-      // 那一位读的是**本机** `poem_auth_v1.sessions`，而「服务器上的账号」
-      // 恰恰是另一回事：刚注册完（或刚点开确认链接）的人，本机一个会话
-      // 都没有，但服务端已经给了 Cookie —— 先挡一道就会把**唯一需要它的人**
-      // 挡在门外（症状是「起了名，换台设备名字没了，而且一句提示都不说」）。
-      // 登录与否由服务端说了算：它回 401 就是没登录，那一条下面接得住。
+
       var ch = usable(D.api) || (D.make ? safeCreate(D.make) : null);
       if (!ch || typeof ch.setNickname !== "function") {
         return Promise.resolve({ ok: false, reason: REASON_NO_CHANNEL, code: "E_NO_CHANNEL" });

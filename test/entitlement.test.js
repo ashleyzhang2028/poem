@@ -28,9 +28,6 @@ console.log('=== 一、免费不残缺：今天能用的，free 登录后一键�
   chk(E.can('library.all', guest).ok, '游客也能读七部集子');
   chk(E.can('pinyin.helper', guest).ok, '游客也能用注音');
 
-  // Issue #229 第二轮（用户原话）：「层级页面 进度导出 功能改为登录可用，
-  // 实际功能也按这个修改。」—— 层级仍是 free（登录后免费就给），
-  // 但**未登录不放行**，与语音朗读同一档。
   const ep = E.can('export.progress', guest);
   eq(ep.ok, false, '未登录不能导出进度（Issue #229：改为登录可用）');
   eq(ep.reason, 'login', '被拦的原因是「未登录」，不是层级不够');
@@ -40,9 +37,6 @@ console.log('=== 一、免费不残缺：今天能用的，free 登录后一键�
   chk(E.can('export.progress', free).ok, '登录后的 free 可以导出进度');
   chk(E.can('export.progress', pro).ok && E.can('export.progress', max).ok, 'pro / max 当然也能用');
 
-  // Issue #229 第四轮（用户原话，引文里的错字沿原文；第六轮把名字正为
-  //「艾宾浩斯遗忘曲线」）：「游客可以用艾宾浩斯遗忘曲线 /
-  // 登录 free 添加莱特纳盒 / pro 添加 SM-2 / max 再添加 FSRS 支持全部」
   eq(E.cap('algo.ebbinghaus').minTier, 'free', '艾宾浩斯遗忘曲线：免费档，层级写在台账上');
   eq(E.cap('algo.ebbinghaus').login, false, '遗忘曲线：游客就能用（登录不是条件）');
   chk(E.can('algo.ebbinghaus', guest).ok, '游客可以用艾宾浩斯遗忘曲线');
@@ -72,7 +66,6 @@ console.log('\n=== 二、语音播放与进度导出：游客不行，登录的 
   chk(E.can('read.aloud', pro).ok, 'pro 当然也能用');
   eq(E.denyReason('read.aloud', guest), '登录可用', '拦住游客时说的是「登录可用」');
 
-  // 登录取向的那几件现在是两件：语音朗读 + 进度导出（Issue #229）。
   const loginCaps = E.capNames().filter(function (c) {
     return E.cap(c).minTier === 'free' && E.cap(c).login;
   });
@@ -121,8 +114,6 @@ console.log('\n=== 三、pro / max 只加不减：层级越高能力单调不减
   chk(E.cap('exam.gathering').name === '古诗词 大会',
     '它的名字就叫「古诗词 大会」（一格说一件事）');
 
-  // Issue #229 第五轮：名字是台账里的事实（读屏 / 搜索按整句），
-  // 名字里那一个断字空格是对比表的折行点 —— breaks 指的就是空格后那一截。
   chk(E.cap('algo.ebbinghaus').name === '艾宾浩斯遗忘曲线',
     '遗忘曲线那条的全名是「艾宾浩斯遗忘曲线」（实际 ' + E.cap('algo.ebbinghaus').name + '）');
   chk(E.cap('algo.ebbinghaus').name.indexOf('斯宾浩斯') === -1,
@@ -203,10 +194,7 @@ console.log('\n=== 四、唯一出口：脏值 / 未知能力 / 缺参一律回�
 
 console.log('\n=== 五、本机发放名单已下线（Issue #276）：本机只剩一份服务端答案的缓存 ===');
 {
-  // 用户原话：「你现在那些关于本地设置 free, pro, max 的那些设计和代码我觉得
-  // 可以删除了，全部走在线数据库。」于是 `poem_plan_grant_v1` 那一族
-  // （putGrant / readGrants / grantFor / importGrants ……）整个删掉。
-  // 这一节守的是「真的删干净了」：接口不在，且本机不再有第二条写入口。
+
   ['putGrant', 'readGrants', 'grantFor', 'importGrants', 'exportGrants',
     'removeGrant', 'clearGrants', 'normGrant', 'emptyGrants'].forEach(k => {
     eq(typeof E[k], 'undefined', '本机发放名单的 ' + k + '() 已删除（全走数据库）');
@@ -261,7 +249,6 @@ console.log('\n=== 七、身份合成：只认 AuthCore 会话，不认页面自
   eq(id.can('export.progress').ok, true, '登录的 free 也可以导出进度了');
   eq(id.mask, 'z***@163.com', '身份里带回邮箱掩码（供名单匹配）');
 
-  // 层级从**服务端答案**来（Issue #276：本机不再有第二份名单）。
   E.writeTier(b, 'max', null, { source: 'server', role: 'user' });
   const id2 = E.identity({ authStore: authStore, backing: b });
   eq(id2.tier, 'max', '服务端下发的层级落到权益层（本机那两份名单已删）');
@@ -369,15 +356,6 @@ console.log('\n=== 十、源码扫描：页面上不许自己拼 plan ===');
       /isOwner\(backing/.test(fs.readFileSync('js/mine.js', 'utf8')),
     '「谁能进管理后台」两页走同一个出口 Entitlement.isOwner()');
 }
-
-// ---------------------------------------------------------------------------
-// 权益一变就喊一声（Issue #276 后续）
-// ---------------------------------------------------------------------------
-// Issue #278：原先这里有一节「权益变了要喊一声」（jsdom 造一份真 window 来
-// 听 `entitlementchange`）—— 那是页面层的事件接线，删除。
-// 权益分层本身的验证（上面那些：can() 的唯一出口、三档矩阵、语音门、
-// 「每件能力都有一处真的问 can()」）一条不少。
-// ---------------------------------------------------------------------------
 
 console.log('');
 if (fails) {

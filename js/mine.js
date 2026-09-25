@@ -36,67 +36,29 @@
 
   function buildIdentityRow(row) {
     row.innerHTML =
-      // ⚠️ **两行**（用户 2026-09-25，Issue #276 第九轮）：
-      //    第一行 = 头像 + 昵称 + 身份（层级徽章）；
-      //    第二行 = 「登录 / 退出登录」+「上传 / 更新头像」这两颗键。
-      //    用户原话：「更新头像和登录按钮放到下面一行吧 怎么放到头像和昵称
-      //    中间呢？！？」—— 上一轮把它们塞进了**同一行**（昵称列左边是头像、
-      //    右边紧跟着两颗键），看下来就是「按钮跑到了头像与昵称中间」。
-      //    ⚠️ 所以这一行**不许**再往第一行塞键：两行是结构，不是「装不下才折」。
-      //       第一行只用 flex 让位（装不下收昵称列），绝不折；
-      //       第二行允许折（两颗键各占一行），但那已经是 ≥300px 才发生的事。
-      //    ⚠️ 次序也按人话写：徽章紧跟昵称（「我是谁 + 我在哪一层」是一句
-      //       完整的自我介绍），键单独一行摆在它下面。
+
       '<div class="identity-head">' +
       '<span id="avatar-slot" class="avatar-slot">' +
       (window.Avatar ? Avatar.html(backing) : "") + "</span>" +
-      // ⚠️ `id="identity-main"` 不是给样式用的（样式一律走类名），而是**量尺**：
-      //    按 id 读这一格，判它有没有「被压成 0 宽」。
-      //    ⚠️ Issue #278 起，原先那层真浏览器测试（test/pwa.test.js）整层删掉了，
-      //    这个 id 仍然留着 —— 界面回归改由人点一遍（`npm start`）或真机验收时
-      //    按它量。留着的理由是量尺本身：**别再靠「第几个子节点」去认**第一行
-      //    中间那一格（两行是两件事，容器一多就认错对象）。
+
       '<span class="identity-main" id="identity-main">' +
       '<label class="sr-only" for="input-nickname">用户名</label>' +
-      // ⚠️ `size="1"` 不是装饰（Issue #276 第八轮）：`<input>` 的默认宽度来自
-      //    `size` 属性（缺省 20 个字符 ≈ 186px），而那个宽度是它的
-      //    **min-content 下限** —— 于是外面怎么设 `min-width: 0` 都收不动它。
-      //    写成 `size="1"` 之后，输入框的直觉宽度交给 CSS 管（我们本来就
-      //    用 max-width 给了 9.5em 那一段），min-content 才真的能收到 0。
+
       '<input id="input-nickname" class="nickname-input" type="text" maxlength="12"' +
       ' size="1" placeholder="起个名字" autocomplete="off" enterkeyhint="done" />' +
       '<span class="identity-sub" id="identity-sub"></span>' +
       "</span>" +
       '<span class="tier-badge" id="identity-badge"></span>' +
       "</div>" +
-      // ⚠️ 第二行（.identity-btns）放**两颗键**，次序 = 登录在前、头像键在后：
-      //    ①「登录 / 退出登录」—— **一颗键、两个文案、两件事**。没登录时说
-      //       「登录」（去 /login/），登录着时说「退出登录」（当场退出这一份
-      //       账号）。用户 2026-09-24 问的正是这一条：「登录按钮和退出登录
-      //       按钮应该同时显示吗？他们应该是一个按钮两个状态吧？」—— 是。
-      //    ②「上传头像 / 更新头像」—— 也是**同一颗键的两个文案**，判据是
-      //       「本机有没有图」，文案只由 js/avatar-edit.js 的 render 一处定。
-      //    ⚠️ 「删除头像」不在这里：**没图时它压根不该出现**，而有图那一半的
-      //       唯一入口是「更新头像」点进去的裁切层 —— 它就住在那儿
-      //       （见 mine/index.html 的 #btn-crop-clear），不占这一行一格。
+
       '<div class="identity-btns" id="identity-btns">' +
       '<button class="account-btn" id="btn-account-entry" type="button">登录</button>' +
       '<button class="account-btn ghost" id="btn-avatar-pick" type="button">上传头像</button>' +
       "</div>" +
-      // ⚠️ 「账号」那颗（去 /login/ 看「我是谁」）**不在这一行**：它搬进下面
-      //    「账号」卡（#account-card-actions，与「重发确认邮件」同处）。
+
       "";
     bindNickname();
-    // ⚠️ 这里**必须**把「上传 / 更新头像」那颗键的文案补一次（Issue #276 第八轮）。
-    //    原因：上面那段 HTML 里那颗键的**出厂文案写死成「上传头像」**，
-    //    而「有图时它该叫更新头像」这件事只有 js/avatar-edit.js 的 render
-    //    知道（它读 Avatar.display().hasImage）。第二行是**按需重画**的：
-    //    重画一次就把那颗键换成一个新节点、文案回到出厂那一份 ——
-    //    于是「这台设备本来就传过头像」的人打开这一页，看到的仍然是
-    //    「上传头像」（实测：本机有图 + 刷新页面 → 那颗键写「上传头像」，
-    //    而槽里明明画着头像）。
-    //    ⚠️ 这一行是**转发**，不是第二个判据：文案与绑定仍只由
-    //       js/avatar-edit.js 一处写。这里负责的只是「画完之后叫它一次」。
+
     if (window.AvatarEdit && window.AvatarEdit.render) window.AvatarEdit.render();
   }
 
@@ -123,35 +85,20 @@
     var input = $("input-nickname");
     if (input && document.activeElement !== input) input.value = nicknameValue();
 
-    // ⚠️ 这里原先还有一行「层级由服务器判定。/ 层级本机登记。」——
-    //    结论就是旁边那枚徽章（Free / Pro / Max），「判定」这一步是内部实现，
-    //    用户在这一页不需要知道，整行撤掉（挂载点一起走，不留空壳）。
     renderSignOut(id);
   }
 
-  // ⚠️ 登录那一颗：**一颗键、两个文案、两件事**（Issue #276 第八轮）。
-  //    用户原话：「登录按钮和退出登录按钮应该同时显示吗？他们应该是一个按钮
-  //    两个状态吧？」—— 对。旧实现里「登录」去 /login/、「退出登录」留在
-  //    账号卡，两颗键一直同时在页面上，用户要自己判断「我现在该点哪一颗」。
-  //    现在一颗：没登录时说「登录」（去登录页），登录着时说「退出登录」
-  //    （当场退出）。**任何时刻这一行上只有这一颗说得通**。
-  //    ⚠️ 文案只在这**一处**写（旧实现里账号卡那颗由 CSS 的 order + :has()
-  //       换位置，两态都要维护，必然漂）—— 现在 DOM 里就这一颗，没有第二处。
-  //    ⚠️ 落点也跟着文案一起换，不许写死成 /login/：登录着的人点它要退出，
-  //       不是再跳一次登录页。
   function renderSignOut(id) {
     var btn = $("btn-account-entry");
     if (!btn) return;
     btn.textContent = id.signedIn ? "退出登录" : "登录";
     btn.className = id.signedIn ? "account-btn ghost" : "account-btn";
-    // ⚠️ 这颗键**永远画出来**（Issue #276：用户找不到登录入口了）。
-    //    未登录时它就是这一页上唯一的登录入口，藏起来等于没有入口。
+
     btn.hidden = false;
     btn.dataset.action = id.signedIn ? "sign-out" : "sign-in";
     if (!btn.dataset.bound) {
       btn.dataset.bound = "1";
-      // ⚠️ 监听器只绑一次，判据每次点击时**现读** dataset.action ——
-      //    不这么写的话，第一帧绑的那个落点会被记死（登录之后点它仍然去登录页）。
+
       btn.addEventListener("click", function () {
         if (btn.dataset.action === "sign-out") onSignOut();
         else location.href = "/login/";
@@ -264,15 +211,6 @@
     });
   }
 
-  // 管理后台入口（Issue #276）：**只认服务端下发的角色**（源头是数据库
-  // `accounts.role`）。本机兜底已删 —— 未登录、或角色不够，这一颗就不画。
-  // 与 /admin/ 的准入走同一个出口 `Entitlement.isOwner()`（不是各判各的）。
-  //
-  // ⚠️ 传参要带上 **uid**（Issue #276 后续）：`id.role` 只是「服务端说这台
-  // 机器上最后登录的那位是 owner」，不带 uid 就分不清是不是**当前这位**。
-  // 带上之后 `isOwner` 会核对缓存里那份答案的主人 —— 换了人登录，
-  // 上一个人的管理员身份不再被继承（这正是「未登录 / 非管理员时那颗键
-  // 压根不显示」的判据）。
   function renderAdmin(id) {
     var btn = $("btn-go-admin");
     if (!btn) return;
@@ -385,10 +323,7 @@
   function commitNickname(value) {
     var v = String(value == null ? "" : value).trim().slice(0, 12);
     var P = window.ProgressStore;
-    // ⚠️ 设置域键名只在 js/progress-store.js 一处拼（saveUsername）。
-    //    本页不再自己 setItem —— 那是第二处拼键名的地方，改键名时必漏一处。
-    //    引擎不可用（老缓存 / 脚本顺序不对）时也照旧走它：saveUsername 自己
-    //    有兜底那一支，兜底同样不把键名漏到页面里。
+
     if (P && typeof P.saveUsername === "function") {
       P.saveUsername(v);
     } else if (P && typeof P.patch === "function") {
@@ -540,12 +475,6 @@
   function init() {
     if (!A || !Ent || !store) return;
 
-    // ⚠️ 这里原先给账号卡里那颗 #btn-sign-out 绑退出 —— 那一颗已经不存在了
-    //    （退出并进身份行的 #btn-account-entry 一颗键，见 renderSignOut）。
-    //    绑一颗页面上没有的键，只会是一条**永远不响**的死线。
-    // 账号卡里那颗「账号与安全」：去 /login/ 看「我是谁」（改口令 / 换邮箱 /
-    // 注销都在那一页的导航里）。它**不是**身份行上那颗「退出登录」——
-    // 那颗管的是「我现在要不要退出」，这颗管的是「我的账号资料在哪」。
     var openAcct = $("btn-account-open");
     if (openAcct && !openAcct.dataset.bound) {
       openAcct.dataset.bound = "1";
@@ -605,10 +534,6 @@
     init();
   }
 
-  // ---- 跨设备同步（原先在 /profile/ 那一页，个人中心并入「我的」后搬到这里）----
-  // ⚠️ 同步的唯一开关与唯一的裁决出口都只在这一处：`SyncStore`。
-  //    本页只负责「把引擎的状态画出来」与「把用户的动作转给引擎」，
-  //    不自己判登录与否、也不自己算层级（与 js/settings.js 同一条口径）。
   function syncMod() { return window.SyncStore || null; }
 
   function renderSync() {
