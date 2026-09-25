@@ -8425,7 +8425,9 @@ PR #299 的 `cnb/pull_request/pipeline-1(pr-test)` 报了 2 项失败，都在
 
 `test/report.test.js`：报告快照是**明文邮箱**（账号注销后仍认得出是谁提的）。
 
-`sw.js` 的 `CACHE_NAME` 到 **v218**（动了 html / css / js）。
+`sw.js` 的 `CACHE_NAME` 与 `js/settings-nav.js` 的 `APP_VERSION` 一起推到
+**v226**（动了 html / css / js，README 那条纪律：多个 PR 并行时每个 +5；
+合 main 时 main 已到 v225）。
 
 #### 五、留着的那个掩码：**手机号**
 

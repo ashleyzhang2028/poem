@@ -630,6 +630,69 @@ console.log("\n=== 十一、待做清单（docs/todo.md）是唯一一处「现�
 
 }
 
+// ---------------------------------------------------------------------------
+// 十 · 一行一条的表格与分组卡片的排版约束（Issue #329）
+//
+// 用户 2026-09-25：「用户协议 / 隐私条款 / 跨设备同步 这三个行高不一致且没有
+// 垂直居中？……而且他们有的有底部线有的没有？无法统一？其他页面是否有相同问题」
+//
+// 这一类毛病都是**样式契约**上的，不跑浏览器也能守住：
+//   · .kv-row 的行高必须由「上下等 padding + min-height」定，而不是光写
+//     min-height —— 光写 min-height 时行高由内容撑，同一块表里混着
+//     「左边是 <a>（min-height:30）」与「两边都是纯文字（20.8）」的行，
+//     行高与基线就会一高一低；
+//   · 行里每一节都得拉满行高再自己居中（align-self: stretch + display:flex），
+//     否则 align-items:center 只把**各自**的内容盒在行内居中，左右两节
+//     高度不同就各归各的，看着就不在一条中线上；
+//   · 分隔线不许靠「第几项 = 第几行」数序号去抹。.group-card 的 .item 是
+//     `flex: 1 1 calc(...)`，能长也能缩，两列只要有一列内容高一点就会换行
+//     悬浮，DOM 序与视觉序错位，「抹掉第二行」就只抹掉一半（左边有线、
+//     右边没线）。
+// ---------------------------------------------------------------------------
+console.log("");
+console.log("=== 十、一行一条的表格与分组卡片的排版约束（Issue #329）===");
+{
+  const css = read("css/style.css").replace(/\/\*[\s\S]*?\*\//g, " ");
+  const rule = (sel) => {
+    const flat = css.replace(/@media[^{]+\{/g, "{");
+    const i = flat.indexOf(sel + " {");
+    return i < 0 ? "" : flat.slice(i, flat.indexOf("}", i) + 1);
+  };
+
+  const row = rule(".kv-row");
+  chk(row.length > 0, "css/style.css 里找得到 .kv-row 这条规则");
+  has(row, "min-height", ".kv-row 定了最小行高（同一块表里每一行一样高）");
+  chk(/padding:\s*var\(--kv-row-pad-y/.test(row),
+    ".kv-row 的上下留白走变量（不是只靠 min-height 撑）");
+  chk(/align-items:\s*center/.test(row), ".kv-row 内容在行内居中");
+
+  const parts = css.replace(/@media[^{]+\{/g, "{");
+  const pi = parts.indexOf(".kv-row > .kv-k");
+  const partRule = pi < 0 ? "" : parts.slice(pi, parts.indexOf("}", pi) + 1);
+  has(partRule, "align-self: stretch",
+    ".kv-row 左右两节拉满行高（否则 align-items:center 只管各自的内容盒）");
+  has(partRule, "display: flex", ".kv-row 左右两节内部再做一次居中");
+  has(partRule, "min-height: var(--kv-row-h",
+    ".kv-row 左右两节的最小高度跟行盒同一个变量（同一把尺子）");
+
+  has(css, ".kv-list + .kv-list {",
+    "两块 .kv-list 之间补一条同样的分隔线（同一张卡片里的多块表要连贯）");
+
+  const cls = read("css/classic.css").replace(/\/\*[\s\S]*?\*\//g, " ");
+  chk(cls.indexOf(".group-card > .item:nth-of-type(4)") < 0,
+    "小古文分组卡片不再按「第 4 项」数着抹顶线（序号在悬浮换行后会错位）");
+  has(cls, ".group-card:has(> .group-head) > .item:first-of-type",
+    "分组卡片的「第一行」由浏览器按行算（:has 认得出卡片带不带头）");
+  chk(/\.group-card:has\(> \.group-head\) > \.item:nth-of-type\(3n \+ 2\)/.test(cls) ||
+      /\.group-card:has\(> \.group-head\) > \.item:nth-of-type\(3n \+ 2\),/.test(cls),
+    "三列那一档也只擦掉每行左侧那条线（3n+1 三条一起擦，再补回后两条）");
+
+  // 「我的」页与「设置 · 关于」都用 .kv-list，块与块之间要能接上
+  const mine = read("mine/index.html");
+  chk((mine.match(/class="kv-list"/g) || []).length >= 3,
+    "「我的」页有三块 .kv-list（本机数据 / 账号 / 关于），块间靠 CSS 接上");
+}
+
 section9.then(() => {
   console.log("");
   if (fails) { console.log("❌ 开通自检 / 配置清单测试 " + fails + " 项失败"); process.exit(1); }

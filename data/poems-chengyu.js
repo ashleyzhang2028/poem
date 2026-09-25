@@ -15,7 +15,7 @@ window.POEMS_CHENGYU = [
     title: "夸父逐日",
     source: "《山海经·海外北经》",
     dynasty: "上古传说",
-    author: "",
+    author: "佚名",
     gradeGroup: "上古传说",
     excerpt: "夸父与日逐走，入日；渴，欲得饮，饮于河、渭；河、",
   },
@@ -25,7 +25,7 @@ window.POEMS_CHENGYU = [
     title: "精卫填海",
     source: "《山海经·北山经》",
     dynasty: "上古传说",
-    author: "",
+    author: "佚名",
     gradeGroup: "上古传说",
     excerpt: "发鸠之山，其上多柘木",
   },
@@ -85,7 +85,7 @@ window.POEMS_CHENGYU = [
     title: "精卫衔木",
     source: "《山海经·北山经》",
     dynasty: "上古传说",
-    author: "",
+    author: "佚名",
     gradeGroup: "上古传说",
     excerpt: "（同「精卫填海」）发鸠之山，其上多柘木",
   },
@@ -95,7 +95,7 @@ window.POEMS_CHENGYU = [
     title: "刑天舞干戚",
     source: "《山海经·海外西经》",
     dynasty: "上古传说",
-    author: "",
+    author: "佚名",
     gradeGroup: "上古传说",
     excerpt: "刑天与帝至此争神，帝断其首，葬之常羊之山",
   },
@@ -135,7 +135,7 @@ window.POEMS_CHENGYU = [
     title: "鲧禹治水",
     source: "《山海经·海内经》",
     dynasty: "上古传说",
-    author: "",
+    author: "佚名",
     gradeGroup: "上古传说",
     excerpt: "洪水滔天，鲧窃帝之息壤以堙洪水，不待帝命",
   },
@@ -145,8 +145,8 @@ window.POEMS_CHENGYU = [
     title: "民惟邦本",
     source: "《尚书·五子之歌》",
     dynasty: "夏",
-    author: "",
-    gradeGroup: "上古传说",
+    author: "佚名",
+    gradeGroup: "夏",
     excerpt: "皇祖有训，民可近，不可下",
   },
   {
@@ -155,8 +155,8 @@ window.POEMS_CHENGYU = [
     title: "罪己责躬",
     source: "《尚书·汤诰》",
     dynasty: "夏",
-    author: "",
-    gradeGroup: "上古传说",
+    author: "佚名",
+    gradeGroup: "夏",
     excerpt: "尔万方有众，明听予一人诰",
   },
   {
@@ -166,7 +166,7 @@ window.POEMS_CHENGYU = [
     source: "《淮南子·原道训》",
     dynasty: "夏",
     author: "刘安",
-    gradeGroup: "上古传说",
+    gradeGroup: "夏",
     excerpt: "昔者夏鲧作三仞之城，诸侯背之，海外有狡心",
   },
   {
@@ -176,7 +176,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·夏本纪》",
     dynasty: "夏",
     author: "司马迁",
-    gradeGroup: "上古传说",
+    gradeGroup: "夏",
     excerpt: "禹伤先人父鲧功之不成受诛，乃劳身焦思，居外十三年",
   },
   {
@@ -185,8 +185,8 @@ window.POEMS_CHENGYU = [
     title: "锡土姓",
     source: "《尚书·禹贡》",
     dynasty: "夏",
-    author: "",
-    gradeGroup: "上古传说",
+    author: "佚名",
+    gradeGroup: "夏",
     excerpt: "六府孔修，庶土交正，厎慎财赋，咸则三壤成赋",
   },
   {
@@ -196,7 +196,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·殷本纪》",
     dynasty: "商",
     author: "司马迁",
-    gradeGroup: "上古传说",
+    gradeGroup: "商",
     excerpt: "汤出，见野张网四面，祝曰：「自天下四方皆入吾网",
   },
   {
@@ -206,7 +206,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·留侯世家》",
     dynasty: "商",
     author: "司马迁",
-    gradeGroup: "上古传说",
+    gradeGroup: "商",
     excerpt: "沛公入秦宫，宫室帷帐狗马重宝妇女以千数，意欲留居",
   },
   {
@@ -216,7 +216,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·殷本纪》",
     dynasty: "商",
     author: "司马迁",
-    gradeGroup: "上古传说",
+    gradeGroup: "商",
     excerpt: "帝纣资辨捷疾，闻见甚敏；材力过人，手格猛兽；知足",
   },
   {
@@ -225,8 +225,8 @@ window.POEMS_CHENGYU = [
     title: "牝鸡司晨",
     source: "《尚书·牧誓》",
     dynasty: "商",
-    author: "",
-    gradeGroup: "上古传说",
+    author: "佚名",
+    gradeGroup: "商",
     excerpt: "古人有言曰：「牝鸡无晨",
   },
   {
@@ -236,7 +236,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·留侯世家》",
     dynasty: "商",
     author: "司马迁",
-    gradeGroup: "上古传说",
+    gradeGroup: "商",
     excerpt: "今秦失德弃义，侵伐诸侯社稷，灭六国之后，使无立锥",
   },
   {
@@ -246,7 +246,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·周本纪》",
     dynasty: "商",
     author: "司马迁",
-    gradeGroup: "上古传说",
+    gradeGroup: "商",
     excerpt: "楚有养由基者，善射者也",
   },
   {
@@ -255,8 +255,8 @@ window.POEMS_CHENGYU = [
     title: "如丧考妣",
     source: "《尚书·舜典》",
     dynasty: "商",
-    author: "",
-    gradeGroup: "上古传说",
+    author: "佚名",
+    gradeGroup: "商",
     excerpt: "二十有八载，帝乃殂落",
   },
   {
@@ -265,8 +265,8 @@ window.POEMS_CHENGYU = [
     title: "天作之合",
     source: "《诗经·大雅·大明》",
     dynasty: "商",
-    author: "",
-    gradeGroup: "上古传说",
+    author: "佚名",
+    gradeGroup: "商",
     excerpt: "天监在下，有命既集",
   },
   {
@@ -275,8 +275,8 @@ window.POEMS_CHENGYU = [
     title: "殷鉴不远",
     source: "《诗经·大雅·荡》",
     dynasty: "商",
-    author: "",
-    gradeGroup: "上古传说",
+    author: "佚名",
+    gradeGroup: "商",
     excerpt: "文王曰咨，咨女殷商",
   },
   {
@@ -286,7 +286,7 @@ window.POEMS_CHENGYU = [
     source: "《尚书大传·大战》",
     dynasty: "商",
     author: "伏生",
-    gradeGroup: "上古传说",
+    gradeGroup: "商",
     excerpt: "纣死，武王皇皇，若天下之未定",
   },
   {
@@ -296,7 +296,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·鲁周公世家》",
     dynasty: "西周",
     author: "司马迁",
-    gradeGroup: "先秦",
+    gradeGroup: "西周",
     excerpt: "周公戒伯禽曰：「我文王之子，武王之弟，成王之叔父",
   },
   {
@@ -305,8 +305,8 @@ window.POEMS_CHENGYU = [
     title: "道路以目",
     source: "《国语·周语上》",
     dynasty: "西周",
-    author: "",
-    gradeGroup: "先秦",
+    author: "佚名",
+    gradeGroup: "西周",
     excerpt: "厉王虐，国人谤王",
   },
   {
@@ -315,8 +315,8 @@ window.POEMS_CHENGYU = [
     title: "防民之口，甚于防川",
     source: "《国语·周语上》",
     dynasty: "西周",
-    author: "",
-    gradeGroup: "先秦",
+    author: "佚名",
+    gradeGroup: "西周",
     excerpt: "防民之口，甚于防川",
   },
   {
@@ -326,7 +326,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·周本纪》",
     dynasty: "西周",
     author: "司马迁",
-    gradeGroup: "先秦",
+    gradeGroup: "西周",
     excerpt: "褒姒不好笑，幽王欲其笑万方，故不笑",
   },
   {
@@ -335,8 +335,8 @@ window.POEMS_CHENGYU = [
     title: "凤鸣岐山",
     source: "《国语·周语上》",
     dynasty: "西周",
-    author: "",
-    gradeGroup: "先秦",
+    author: "佚名",
+    gradeGroup: "西周",
     excerpt: "周之兴也，鸑鷟鸣于岐山",
   },
   {
@@ -345,8 +345,8 @@ window.POEMS_CHENGYU = [
     title: "甘棠遗爱",
     source: "《诗经·召南·甘棠》",
     dynasty: "西周",
-    author: "",
-    gradeGroup: "先秦",
+    author: "佚名",
+    gradeGroup: "西周",
     excerpt: "蔽芾甘棠，勿翦勿伐，召伯所茇",
   },
   {
@@ -356,7 +356,7 @@ window.POEMS_CHENGYU = [
     source: "《左传·庄公三十年》",
     dynasty: "西周",
     author: "左丘明",
-    gradeGroup: "先秦",
+    gradeGroup: "西周",
     excerpt: "秋，申公斗班杀子元",
   },
   {
@@ -365,8 +365,8 @@ window.POEMS_CHENGYU = [
     title: "小心翼翼",
     source: "《诗经·大雅·大明》",
     dynasty: "西周",
-    author: "",
-    gradeGroup: "先秦",
+    author: "佚名",
+    gradeGroup: "西周",
     excerpt: "维此文王，小心翼翼",
   },
   {
@@ -376,7 +376,7 @@ window.POEMS_CHENGYU = [
     source: "《老子》第七十三章",
     dynasty: "西周",
     author: "李耳",
-    gradeGroup: "先秦",
+    gradeGroup: "西周",
     excerpt: "勇于敢则杀，勇于不敢则活",
   },
   {
@@ -385,8 +385,8 @@ window.POEMS_CHENGYU = [
     title: "惩前毖后",
     source: "《诗经·周颂·小毖》",
     dynasty: "西周",
-    author: "",
-    gradeGroup: "先秦",
+    author: "佚名",
+    gradeGroup: "西周",
     excerpt: "予其惩，而毖后患",
   },
   {
@@ -395,8 +395,8 @@ window.POEMS_CHENGYU = [
     title: "匪夷所思",
     source: "《周易·涣卦》",
     dynasty: "西周",
-    author: "",
-    gradeGroup: "先秦",
+    author: "佚名",
+    gradeGroup: "西周",
     excerpt: "涣其群，元吉",
   },
   {
@@ -405,8 +405,8 @@ window.POEMS_CHENGYU = [
     title: "求之不得",
     source: "《诗经·周南·关雎》",
     dynasty: "西周",
-    author: "",
-    gradeGroup: "先秦",
+    author: "佚名",
+    gradeGroup: "西周",
     excerpt: "求之不得，寤寐思服",
   },
   {
@@ -415,8 +415,8 @@ window.POEMS_CHENGYU = [
     title: "兄弟阋墙",
     source: "《诗经·小雅·常棣》",
     dynasty: "西周",
-    author: "",
-    gradeGroup: "先秦",
+    author: "佚名",
+    gradeGroup: "西周",
     excerpt: "兄弟阋于墙，外御其务",
   },
   {
@@ -425,8 +425,8 @@ window.POEMS_CHENGYU = [
     title: "未雨绸缪",
     source: "《诗经·豳风·鸱鸮》",
     dynasty: "西周",
-    author: "",
-    gradeGroup: "先秦",
+    author: "佚名",
+    gradeGroup: "西周",
     excerpt: "迨天之未阴雨，彻彼桑土，绸缪牖户",
   },
   {
@@ -436,7 +436,7 @@ window.POEMS_CHENGYU = [
     source: "《左传·庄公十年》",
     dynasty: "春秋",
     author: "左丘明",
-    gradeGroup: "先秦",
+    gradeGroup: "春秋",
     excerpt: "公与之乘，战于长勺",
   },
   {
@@ -446,7 +446,7 @@ window.POEMS_CHENGYU = [
     source: "《韩非子·说林上》",
     dynasty: "春秋",
     author: "韩非",
-    gradeGroup: "先秦",
+    gradeGroup: "春秋",
     excerpt: "管仲、隰朋从桓公伐孤竹，春往冬反，迷惑失道",
   },
   {
@@ -456,7 +456,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·管晏列传》",
     dynasty: "春秋",
     author: "司马迁",
-    gradeGroup: "先秦",
+    gradeGroup: "春秋",
     excerpt: "管仲曰：「吾始困时，尝与鲍叔贾，分财利多自与，鲍",
   },
   {
@@ -466,7 +466,7 @@ window.POEMS_CHENGYU = [
     source: "《左传·僖公二十三年》",
     dynasty: "春秋",
     author: "左丘明",
-    gradeGroup: "先秦",
+    gradeGroup: "春秋",
     excerpt: "及楚，楚子飨之，曰：「公子若反晋国，则何以报不谷",
   },
   {
@@ -476,7 +476,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·滑稽列传》",
     dynasty: "春秋",
     author: "司马迁",
-    gradeGroup: "先秦",
+    gradeGroup: "春秋",
     excerpt: "此鸟不飞则已，一飞冲天；不鸣则已，一鸣惊人。",
   },
   {
@@ -486,7 +486,7 @@ window.POEMS_CHENGYU = [
     source: "《左传·宣公三年》",
     dynasty: "春秋",
     author: "左丘明",
-    gradeGroup: "先秦",
+    gradeGroup: "春秋",
     excerpt: "楚子伐陆浑之戎，遂至于雒，观兵于周疆",
   },
   {
@@ -496,7 +496,7 @@ window.POEMS_CHENGYU = [
     source: "《左传·僖公二十三年》",
     dynasty: "春秋",
     author: "左丘明",
-    gradeGroup: "先秦",
+    gradeGroup: "春秋",
     excerpt: "秦伯纳女五人，怀嬴与焉",
   },
   {
@@ -506,7 +506,7 @@ window.POEMS_CHENGYU = [
     source: "《左传·僖公五年》",
     dynasty: "春秋",
     author: "左丘明",
-    gradeGroup: "先秦",
+    gradeGroup: "春秋",
     excerpt: "晋侯复假道于虞以伐虢",
   },
   {
@@ -516,7 +516,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·越王勾践世家》",
     dynasty: "春秋",
     author: "司马迁",
-    gradeGroup: "先秦",
+    gradeGroup: "春秋",
     excerpt: "吴既赦越，越王勾践反国，乃苦身焦思，置胆于坐，坐",
   },
   {
@@ -526,7 +526,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·越王勾践世家》",
     dynasty: "春秋",
     author: "司马迁",
-    gradeGroup: "先秦",
+    gradeGroup: "春秋",
     excerpt: "范蠡遂去，自齐遗大夫种书曰：「蜚鸟尽，良弓藏；狡",
   },
   {
@@ -536,7 +536,7 @@ window.POEMS_CHENGYU = [
     source: "《列子·汤问》",
     dynasty: "春秋",
     author: "列御寇",
-    gradeGroup: "先秦",
+    gradeGroup: "春秋",
     excerpt: "伯牙善鼓琴，钟子期善听",
   },
   {
@@ -546,7 +546,7 @@ window.POEMS_CHENGYU = [
     source: "《左传·僖公三十三年》",
     dynasty: "春秋",
     author: "左丘明",
-    gradeGroup: "先秦",
+    gradeGroup: "春秋",
     excerpt: "郑穆公使视客馆，则束载、厉兵、秣马矣",
   },
   {
@@ -556,7 +556,7 @@ window.POEMS_CHENGYU = [
     source: "《左传·宣公十二年》",
     dynasty: "春秋",
     author: "左丘明",
-    gradeGroup: "先秦",
+    gradeGroup: "春秋",
     excerpt: "训之以若敖、蚡冒筚路蓝缕，以启山林",
   },
   {
@@ -566,7 +566,7 @@ window.POEMS_CHENGYU = [
     source: "《左传·宣公十五年》",
     dynasty: "春秋",
     author: "左丘明",
-    gradeGroup: "先秦",
+    gradeGroup: "春秋",
     excerpt: "宋人及楚人平",
   },
   {
@@ -576,7 +576,7 @@ window.POEMS_CHENGYU = [
     source: "《左传·宣公十五年》",
     dynasty: "春秋",
     author: "左丘明",
-    gradeGroup: "先秦",
+    gradeGroup: "春秋",
     excerpt: "宋人使乐婴齐告急于晋",
   },
   {
@@ -586,7 +586,7 @@ window.POEMS_CHENGYU = [
     source: "《左传·桓公十二年》",
     dynasty: "春秋",
     author: "左丘明",
-    gradeGroup: "先秦",
+    gradeGroup: "春秋",
     excerpt: "楚伐绞，军其南门",
   },
   {
@@ -596,7 +596,7 @@ window.POEMS_CHENGYU = [
     source: "《左传·僖公五年》",
     dynasty: "春秋",
     author: "左丘明",
-    gradeGroup: "先秦",
+    gradeGroup: "春秋",
     excerpt: "晋侯复假道于虞以伐虢",
   },
   {
@@ -606,7 +606,7 @@ window.POEMS_CHENGYU = [
     source: "《左传·襄公二十六年》",
     dynasty: "春秋",
     author: "左丘明",
-    gradeGroup: "先秦",
+    gradeGroup: "春秋",
     excerpt: "穿封戌囚皇颉，公子围与之争之，正于伯州犁",
   },
   {
@@ -616,7 +616,7 @@ window.POEMS_CHENGYU = [
     source: "《左传·成公十年》",
     dynasty: "春秋",
     author: "左丘明",
-    gradeGroup: "先秦",
+    gradeGroup: "春秋",
     excerpt: "公疾病，求医于秦",
   },
   {
@@ -626,7 +626,7 @@ window.POEMS_CHENGYU = [
     source: "《左传·僖公十五年》",
     dynasty: "春秋",
     author: "左丘明",
-    gradeGroup: "先秦",
+    gradeGroup: "春秋",
     excerpt: "庆郑曰：「古者大事，必乘其产，生其水土而知其人心",
   },
   {
@@ -636,7 +636,7 @@ window.POEMS_CHENGYU = [
     source: "《左传·成公二年》",
     dynasty: "春秋",
     author: "左丘明",
-    gradeGroup: "先秦",
+    gradeGroup: "春秋",
     excerpt: "齐高固入晋师，桀石以投人，禽之而乘其车，系桑本焉",
   },
   {
@@ -646,7 +646,7 @@ window.POEMS_CHENGYU = [
     source: "《左传·僖公十四年》",
     dynasty: "春秋",
     author: "左丘明",
-    gradeGroup: "先秦",
+    gradeGroup: "春秋",
     excerpt: "冬，秦饥，使乞籴于晋，晋人弗与",
   },
   {
@@ -656,7 +656,7 @@ window.POEMS_CHENGYU = [
     source: "《左传·隐公元年》",
     dynasty: "春秋",
     author: "左丘明",
-    gradeGroup: "先秦",
+    gradeGroup: "春秋",
     excerpt: "祭仲曰：「都城过百雉，国之害也",
   },
   {
@@ -666,7 +666,7 @@ window.POEMS_CHENGYU = [
     source: "《左传·隐公四年》",
     dynasty: "春秋",
     author: "左丘明",
-    gradeGroup: "先秦",
+    gradeGroup: "春秋",
     excerpt: "君子曰：「石碏，纯臣也，恶州吁而厚与焉",
   },
   {
@@ -676,7 +676,7 @@ window.POEMS_CHENGYU = [
     source: "《新序·杂事》",
     dynasty: "春秋",
     author: "刘向",
-    gradeGroup: "先秦",
+    gradeGroup: "春秋",
     excerpt: "（《史记·魏公子列传》亦载）公子为人仁而下士，士",
   },
   {
@@ -686,7 +686,7 @@ window.POEMS_CHENGYU = [
     source: "《左传·僖公三十年》",
     dynasty: "春秋",
     author: "左丘明",
-    gradeGroup: "先秦",
+    gradeGroup: "春秋",
     excerpt: "子犯请击之",
   },
   {
@@ -696,7 +696,7 @@ window.POEMS_CHENGYU = [
     source: "《左传·僖公三十年》",
     dynasty: "春秋",
     author: "左丘明",
-    gradeGroup: "先秦",
+    gradeGroup: "春秋",
     excerpt: "若舍郑以为东道主，行李之往来，共其乏困，君亦无所",
   },
   {
@@ -706,7 +706,7 @@ window.POEMS_CHENGYU = [
     source: "《左传·昭公十五年》",
     dynasty: "春秋",
     author: "左丘明",
-    gradeGroup: "先秦",
+    gradeGroup: "春秋",
     excerpt: "王曰：「籍父其无后乎！数典而忘其祖",
   },
   {
@@ -716,7 +716,7 @@ window.POEMS_CHENGYU = [
     source: "《左传·襄公二十六年》",
     dynasty: "春秋",
     author: "左丘明",
-    gradeGroup: "先秦",
+    gradeGroup: "春秋",
     excerpt: "声子通使于晋，还如楚",
   },
   {
@@ -726,7 +726,7 @@ window.POEMS_CHENGYU = [
     source: "《左传·襄公二十六年》",
     dynasty: "春秋",
     author: "左丘明",
-    gradeGroup: "先秦",
+    gradeGroup: "春秋",
     excerpt: "伍举奔郑，将遂奔晋",
   },
   {
@@ -736,7 +736,7 @@ window.POEMS_CHENGYU = [
     source: "《左传·哀公二十五年》",
     dynasty: "春秋",
     author: "左丘明",
-    gradeGroup: "先秦",
+    gradeGroup: "春秋",
     excerpt: "公宴于五梧，武伯为祝，恶郭重，曰：「何肥也？」季",
   },
   {
@@ -746,7 +746,7 @@ window.POEMS_CHENGYU = [
     source: "《左传·襄公二十八年》",
     dynasty: "春秋",
     author: "左丘明",
-    gradeGroup: "先秦",
+    gradeGroup: "春秋",
     excerpt: "赋诗断章，余取所求焉",
   },
   {
@@ -755,8 +755,8 @@ window.POEMS_CHENGYU = [
     title: "临渴掘井",
     source: "《黄帝内经·素问·四气调神大论》",
     dynasty: "春秋",
-    author: "",
-    gradeGroup: "先秦",
+    author: "佚名",
+    gradeGroup: "春秋",
     excerpt: "是故圣人不治已病治未病，不治已乱治未乱，此之谓也",
   },
   {
@@ -766,7 +766,7 @@ window.POEMS_CHENGYU = [
     source: "《左传·桓公十年》",
     dynasty: "春秋",
     author: "左丘明",
-    gradeGroup: "先秦",
+    gradeGroup: "春秋",
     excerpt: "初，虞叔有玉，虞公求旃",
   },
   {
@@ -776,7 +776,7 @@ window.POEMS_CHENGYU = [
     source: "《左传·僖公二十六年》",
     dynasty: "春秋",
     author: "左丘明",
-    gradeGroup: "先秦",
+    gradeGroup: "春秋",
     excerpt: "夏，齐孝公伐我北鄙",
   },
   {
@@ -786,7 +786,7 @@ window.POEMS_CHENGYU = [
     source: "《左传·僖公四年》",
     dynasty: "春秋",
     author: "左丘明",
-    gradeGroup: "先秦",
+    gradeGroup: "春秋",
     excerpt: "四年春，齐侯以诸侯之师侵蔡，蔡溃，遂伐楚",
   },
   {
@@ -796,7 +796,7 @@ window.POEMS_CHENGYU = [
     source: "《左传·僖公三十二年》",
     dynasty: "春秋",
     author: "左丘明",
-    gradeGroup: "先秦",
+    gradeGroup: "春秋",
     excerpt: "蹇叔曰：「劳师以袭远，非所闻也",
   },
   {
@@ -806,7 +806,7 @@ window.POEMS_CHENGYU = [
     source: "《左传·成公八年》",
     dynasty: "春秋",
     author: "左丘明",
-    gradeGroup: "先秦",
+    gradeGroup: "春秋",
     excerpt: "楚师之还也，晋侵沈，获沈子揖初，从知、范、韩也",
   },
   {
@@ -816,7 +816,7 @@ window.POEMS_CHENGYU = [
     source: "《左传·襄公十一年》",
     dynasty: "春秋",
     author: "左丘明",
-    gradeGroup: "先秦",
+    gradeGroup: "春秋",
     excerpt: "《书》曰：「居安思危",
   },
   {
@@ -826,7 +826,7 @@ window.POEMS_CHENGYU = [
     source: "《左传·襄公三十一年》",
     dynasty: "春秋",
     author: "左丘明",
-    gradeGroup: "先秦",
+    gradeGroup: "春秋",
     excerpt: "宾至如归，无宁灾患？不畏寇盗，而亦不患燥湿",
   },
   {
@@ -836,7 +836,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·孙子吴起列传》",
     dynasty: "春秋",
     author: "司马迁",
-    gradeGroup: "先秦",
+    gradeGroup: "春秋",
     excerpt: "约束既布，乃设鈇钺，即三令五申之",
   },
   {
@@ -846,7 +846,7 @@ window.POEMS_CHENGYU = [
     source: "《孟子·梁惠王下》",
     dynasty: "春秋",
     author: "孟轲",
-    gradeGroup: "先秦",
+    gradeGroup: "春秋",
     excerpt: "戒之戒之！出乎尔者，反乎尔者也",
   },
   {
@@ -855,8 +855,8 @@ window.POEMS_CHENGYU = [
     title: "众志成城",
     source: "《国语·周语下》",
     dynasty: "春秋",
-    author: "",
-    gradeGroup: "先秦",
+    author: "佚名",
+    gradeGroup: "春秋",
     excerpt: "故谚曰：「众心成城，众口铄金",
   },
   {
@@ -866,7 +866,7 @@ window.POEMS_CHENGYU = [
     source: "《左传·闵公元年》",
     dynasty: "春秋",
     author: "左丘明",
-    gradeGroup: "先秦",
+    gradeGroup: "春秋",
     excerpt: "齐仲孙湫来省难，书曰「仲孙」",
   },
   {
@@ -876,7 +876,7 @@ window.POEMS_CHENGYU = [
     source: "《孟子·告子上》",
     dynasty: "春秋",
     author: "孟轲",
-    gradeGroup: "先秦",
+    gradeGroup: "春秋",
     excerpt: "鱼，我所欲也；熊掌，亦我所欲也",
   },
   {
@@ -886,7 +886,7 @@ window.POEMS_CHENGYU = [
     source: "《左传·宣公十二年》",
     dynasty: "春秋",
     author: "左丘明",
-    gradeGroup: "先秦",
+    gradeGroup: "春秋",
     excerpt: "见可而进，知难而退，军之善政也",
   },
   {
@@ -896,7 +896,7 @@ window.POEMS_CHENGYU = [
     source: "《左传·昭公二十五年》",
     dynasty: "春秋",
     author: "左丘明",
-    gradeGroup: "先秦",
+    gradeGroup: "春秋",
     excerpt: "夫礼，天之经也，地之义也，民之行也",
   },
   {
@@ -906,7 +906,7 @@ window.POEMS_CHENGYU = [
     source: "《左传·僖公十四年》",
     dynasty: "春秋",
     author: "左丘明",
-    gradeGroup: "先秦",
+    gradeGroup: "春秋",
     excerpt: "冬，秦饥，使乞籴于晋，晋人弗与",
   },
   {
@@ -916,7 +916,7 @@ window.POEMS_CHENGYU = [
     source: "《左传·庄公二十一年》",
     dynasty: "春秋",
     author: "左丘明",
-    gradeGroup: "先秦",
+    gradeGroup: "春秋",
     excerpt: "郑伯效尤，其亦将有咎",
   },
   {
@@ -926,7 +926,7 @@ window.POEMS_CHENGYU = [
     source: "《左传·僖公九年》",
     dynasty: "春秋",
     author: "左丘明",
-    gradeGroup: "先秦",
+    gradeGroup: "春秋",
     excerpt: "秋，齐侯盟诸侯于葵丘，曰：「凡我同盟之人，既盟之",
   },
   {
@@ -936,7 +936,7 @@ window.POEMS_CHENGYU = [
     source: "《左传·隐公十一年》",
     dynasty: "春秋",
     author: "左丘明",
-    gradeGroup: "先秦",
+    gradeGroup: "春秋",
     excerpt: "度德而处之，量力而行之，相时而动，无累后人，可谓",
   },
   {
@@ -946,7 +946,7 @@ window.POEMS_CHENGYU = [
     source: "《左传·成公七年》",
     dynasty: "春秋",
     author: "左丘明",
-    gradeGroup: "先秦",
+    gradeGroup: "春秋",
     excerpt: "尔以谗慝贪惏事君，而多杀不辜",
   },
   {
@@ -956,7 +956,7 @@ window.POEMS_CHENGYU = [
     source: "《左传·隐公十一年》",
     dynasty: "春秋",
     author: "左丘明",
-    gradeGroup: "先秦",
+    gradeGroup: "春秋",
     excerpt: "（原文作「不度德，不量力」）不度德，不量力，不亲",
   },
   {
@@ -966,7 +966,7 @@ window.POEMS_CHENGYU = [
     source: "《左传·宣公二年》",
     dynasty: "春秋",
     author: "左丘明",
-    gradeGroup: "先秦",
+    gradeGroup: "春秋",
     excerpt: "畴昔之羊，子为政；今日之事，我为政",
   },
   {
@@ -976,7 +976,7 @@ window.POEMS_CHENGYU = [
     source: "《左传·昭公十二年》",
     dynasty: "春秋",
     author: "左丘明",
-    gradeGroup: "先秦",
+    gradeGroup: "春秋",
     excerpt: "今周与四国服事君王，将唯命是从，岂其爱鼎？",
   },
   {
@@ -985,8 +985,8 @@ window.POEMS_CHENGYU = [
     title: "同仇敌忾",
     source: "《诗经·秦风·无衣》",
     dynasty: "春秋",
-    author: "",
-    gradeGroup: "先秦",
+    author: "佚名",
+    gradeGroup: "春秋",
     excerpt: "岂曰无衣？与子同袍",
   },
   {
@@ -996,7 +996,7 @@ window.POEMS_CHENGYU = [
     source: "《公羊传·哀公十四年》",
     dynasty: "春秋",
     author: "公羊高",
-    gradeGroup: "先秦",
+    gradeGroup: "春秋",
     excerpt: "君子曷为为《春秋》？拨乱世，反诸正，莫近诸《春秋",
   },
   {
@@ -1006,7 +1006,7 @@ window.POEMS_CHENGYU = [
     source: "《晋书·简文三子传》",
     dynasty: "春秋",
     author: "房玄龄",
-    gradeGroup: "先秦",
+    gradeGroup: "春秋",
     excerpt: "（「德高望重」语本《晋书》）元显因讽礼官下议，称",
   },
   {
@@ -1016,7 +1016,7 @@ window.POEMS_CHENGYU = [
     source: "《汉书·樊郦滕灌傅靳周传》",
     dynasty: "春秋",
     author: "班固",
-    gradeGroup: "先秦",
+    gradeGroup: "春秋",
     excerpt: "当孝文时，天下以郦寄为卖友",
   },
   {
@@ -1026,7 +1026,7 @@ window.POEMS_CHENGYU = [
     source: "《镜花缘》第三十四回",
     dynasty: "春秋",
     author: "李汝珍",
-    gradeGroup: "先秦",
+    gradeGroup: "春秋",
     excerpt: "如今木已成舟，也是林兄命定如此了",
   },
   {
@@ -1036,7 +1036,7 @@ window.POEMS_CHENGYU = [
     source: "《左传·襄公三年》",
     dynasty: "春秋",
     author: "左丘明",
-    gradeGroup: "先秦",
+    gradeGroup: "春秋",
     excerpt: "祁奚请老，晋侯问嗣焉",
   },
   {
@@ -1046,7 +1046,7 @@ window.POEMS_CHENGYU = [
     source: "《左传·襄公十四年》",
     dynasty: "春秋",
     author: "左丘明",
-    gradeGroup: "先秦",
+    gradeGroup: "春秋",
     excerpt: "荀偃令曰：「鸡鸣而驾，塞井夷灶，唯余马首是瞻",
   },
   {
@@ -1056,7 +1056,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·孔子世家》",
     dynasty: "春秋",
     author: "司马迁",
-    gradeGroup: "先秦",
+    gradeGroup: "春秋",
     excerpt: "居卫月余，灵公与夫人同车，宦者雍渠参乘，出，使孔",
   },
   {
@@ -1066,7 +1066,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·孙子吴起列传》",
     dynasty: "战国",
     author: "司马迁",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "魏伐赵，赵急，请救于齐",
   },
   {
@@ -1076,7 +1076,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·孙子吴起列传》",
     dynasty: "战国",
     author: "司马迁",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "忌数与齐诸公子驰逐重射",
   },
   {
@@ -1086,7 +1086,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·廉颇蔺相如列传》",
     dynasty: "战国",
     author: "司马迁",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "赵括自少时学兵法，言兵事，以天下莫能当",
   },
   {
@@ -1096,7 +1096,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·廉颇蔺相如列传》",
     dynasty: "战国",
     author: "司马迁",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "秦王坐章台见相如，相如奉璧奏秦王",
   },
   {
@@ -1106,7 +1106,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·廉颇蔺相如列传》",
     dynasty: "战国",
     author: "司马迁",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "廉颇闻之，肉袒负荆，因宾客至蔺相如门谢罪，曰：「",
   },
   {
@@ -1116,7 +1116,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·平原君虞卿列传》",
     dynasty: "战国",
     author: "司马迁",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "门下有毛遂者，前，自赞于平原君曰：「遂闻君将合从",
   },
   {
@@ -1126,7 +1126,7 @@ window.POEMS_CHENGYU = [
     source: "《战国策·齐策四》",
     dynasty: "战国",
     author: "刘向",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "冯谖曰：「狡兔有三窟，仅得免其死耳",
   },
   {
@@ -1136,7 +1136,7 @@ window.POEMS_CHENGYU = [
     source: "《战国策·楚策一》",
     dynasty: "战国",
     author: "刘向",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "虎求百兽而食之，得狐",
   },
   {
@@ -1146,7 +1146,7 @@ window.POEMS_CHENGYU = [
     source: "《战国策·齐策二》",
     dynasty: "战国",
     author: "刘向",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "楚有祠者，赐其舍人卮酒",
   },
   {
@@ -1156,7 +1156,7 @@ window.POEMS_CHENGYU = [
     source: "《战国策·楚策四》",
     dynasty: "战国",
     author: "刘向",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "庄辛谓楚襄王曰：「君王左州侯，右夏侯，辇从鄢陵君",
   },
   {
@@ -1166,7 +1166,7 @@ window.POEMS_CHENGYU = [
     source: "《战国策·魏策四》",
     dynasty: "战国",
     author: "刘向",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "魏王欲攻邯郸",
   },
   {
@@ -1176,7 +1176,7 @@ window.POEMS_CHENGYU = [
     source: "《韩非子·外储说左上》",
     dynasty: "战国",
     author: "韩非",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "楚人有卖其珠于郑者，为木兰之柜，薰以桂椒，缀以珠",
   },
   {
@@ -1186,7 +1186,7 @@ window.POEMS_CHENGYU = [
     source: "《韩非子·难一》",
     dynasty: "战国",
     author: "韩非",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "楚人有鬻盾与矛者，誉之曰：「吾盾之坚，物莫能陷也",
   },
   {
@@ -1196,7 +1196,7 @@ window.POEMS_CHENGYU = [
     source: "《韩非子·内储说上》",
     dynasty: "战国",
     author: "韩非",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "齐宣王使人吹竽，必三百人",
   },
   {
@@ -1206,7 +1206,7 @@ window.POEMS_CHENGYU = [
     source: "《韩非子·五蠹》",
     dynasty: "战国",
     author: "韩非",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "宋人有耕田者",
   },
   {
@@ -1216,7 +1216,7 @@ window.POEMS_CHENGYU = [
     source: "《庄子·秋水》",
     dynasty: "战国",
     author: "庄周",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "且子独不闻夫寿陵余子之学行于邯郸与？未得国能，又",
   },
   {
@@ -1226,7 +1226,7 @@ window.POEMS_CHENGYU = [
     source: "《吕氏春秋·察今》",
     dynasty: "战国",
     author: "吕不韦",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "楚人有涉江者，其剑自舟中坠于水，遽契其舟曰：「是",
   },
   {
@@ -1236,7 +1236,7 @@ window.POEMS_CHENGYU = [
     source: "《战国策·楚策四》",
     dynasty: "战国",
     author: "刘向",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "更羸与魏王处京台之下，仰见飞鸟",
   },
   {
@@ -1246,7 +1246,7 @@ window.POEMS_CHENGYU = [
     source: "《战国策·燕策一》",
     dynasty: "战国",
     author: "刘向",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "郭隗先生曰：「臣闻古之君人，有以千金求千里马者，",
   },
   {
@@ -1256,7 +1256,7 @@ window.POEMS_CHENGYU = [
     source: "《战国策·燕策三》",
     dynasty: "战国",
     author: "刘向",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "荆轲奉樊於期头函，而秦武阳奉地图匣，以次进",
   },
   {
@@ -1266,7 +1266,7 @@ window.POEMS_CHENGYU = [
     source: "《战国策·齐策一》",
     dynasty: "战国",
     author: "刘向",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "令初下，群臣进谏，门庭若市；数月之后，时时而间进",
   },
   {
@@ -1276,7 +1276,7 @@ window.POEMS_CHENGYU = [
     source: "《战国策·齐策一》",
     dynasty: "战国",
     author: "刘向",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "邹忌修八尺有余，而形貌昳丽",
   },
   {
@@ -1286,7 +1286,7 @@ window.POEMS_CHENGYU = [
     source: "《战国策·燕策二》",
     dynasty: "战国",
     author: "刘向",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "蚌方出曝，而鹬啄其肉，蚌合而拑其喙",
   },
   {
@@ -1296,7 +1296,7 @@ window.POEMS_CHENGYU = [
     source: "《战国策·燕策二》",
     dynasty: "战国",
     author: "刘向",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "两者不肯相舍，渔者得而并禽之",
   },
   {
@@ -1306,7 +1306,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·孟尝君列传》",
     dynasty: "战国",
     author: "司马迁",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "（秦昭王）囚孟尝君，谋欲杀之",
   },
   {
@@ -1316,7 +1316,7 @@ window.POEMS_CHENGYU = [
     source: "《战国策·赵策一》",
     dynasty: "战国",
     author: "刘向",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "豫让遁逃山中，曰：「嗟乎！士为知己者死，女为说己",
   },
   {
@@ -1326,7 +1326,7 @@ window.POEMS_CHENGYU = [
     source: "《战国策·魏策四》",
     dynasty: "战国",
     author: "刘向",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "夫专诸之刺王僚也，彗星袭月；聂政之刺韩傀也，白虹",
   },
   {
@@ -1335,8 +1335,8 @@ window.POEMS_CHENGYU = [
     title: "功亏一篑",
     source: "《尚书·旅獒》",
     dynasty: "战国",
-    author: "",
-    gradeGroup: "先秦",
+    author: "佚名",
+    gradeGroup: "战国",
     excerpt: "呜呼！夙夜罔或不勤，不矜细行，终累大德",
   },
   {
@@ -1346,7 +1346,7 @@ window.POEMS_CHENGYU = [
     source: "《太平御览》卷六一一·卷三六三",
     dynasty: "战国",
     author: "李昉等",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "（「悬梁」见《太平御览》引《楚国先贤传》：「孙敬",
   },
   {
@@ -1356,7 +1356,7 @@ window.POEMS_CHENGYU = [
     source: "《战国策·秦策一》",
     dynasty: "战国",
     author: "刘向",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "（苏秦）说秦王书十上而说不行",
   },
   {
@@ -1366,7 +1366,7 @@ window.POEMS_CHENGYU = [
     source: "《楚辞·九章·怀沙》",
     dynasty: "战国",
     author: "屈原",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "任重载盛兮，陷滞而不济",
   },
   {
@@ -1376,7 +1376,7 @@ window.POEMS_CHENGYU = [
     source: "《韩非子·和氏》",
     dynasty: "战国",
     author: "韩非",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "楚人和氏得玉璞楚山中，奉而献之厉王",
   },
   {
@@ -1386,7 +1386,7 @@ window.POEMS_CHENGYU = [
     source: "《庄子·让王》",
     dynasty: "战国",
     author: "庄周",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "今且有人于此，以随侯之珠，弹千仞之雀，世必笑之",
   },
   {
@@ -1396,7 +1396,7 @@ window.POEMS_CHENGYU = [
     source: "《庄子·人间世》",
     dynasty: "战国",
     author: "庄周",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "汝不知夫螳螂乎？怒其臂以当车辙，不知其不胜任也，",
   },
   {
@@ -1406,7 +1406,7 @@ window.POEMS_CHENGYU = [
     source: "《庄子·齐物论》",
     dynasty: "战国",
     author: "庄周",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "昔者庄周梦为胡蝶，栩栩然胡蝶也，自喻适志与！不知",
   },
   {
@@ -1416,7 +1416,7 @@ window.POEMS_CHENGYU = [
     source: "《庄子·养生主》",
     dynasty: "战国",
     author: "庄周",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "庖丁为文惠君解牛，手之所触，肩之所倚，足之所履，",
   },
   {
@@ -1426,7 +1426,7 @@ window.POEMS_CHENGYU = [
     source: "《庄子·大宗师》",
     dynasty: "战国",
     author: "庄周",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "泉涸，鱼相与处于陆，相呴以湿，相濡以沫，不如相忘",
   },
   {
@@ -1436,7 +1436,7 @@ window.POEMS_CHENGYU = [
     source: "《庄子·逍遥游》",
     dynasty: "战国",
     author: "庄周",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "鹏之徙于南冥也，水击三千里，抟扶摇而上者九万里，",
   },
   {
@@ -1446,7 +1446,7 @@ window.POEMS_CHENGYU = [
     source: "《庄子·齐物论》",
     dynasty: "战国",
     author: "庄周",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "狙公赋芧，曰：「朝三而暮四",
   },
   {
@@ -1456,7 +1456,7 @@ window.POEMS_CHENGYU = [
     source: "《庄子·齐物论》",
     dynasty: "战国",
     author: "庄周",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "毛嫱、丽姬，人之所美也；鱼见之深入，鸟见之高飞，",
   },
   {
@@ -1466,7 +1466,7 @@ window.POEMS_CHENGYU = [
     source: "《庄子·外物》",
     dynasty: "战国",
     author: "庄周",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "周昨来，有中道而呼者，周顾视车辙，中有鲋鱼焉",
   },
   {
@@ -1476,7 +1476,7 @@ window.POEMS_CHENGYU = [
     source: "《庄子·秋水》",
     dynasty: "战国",
     author: "庄周",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "井蛙不可以语于海者，拘于虚也；夏虫不可以语于冰者",
   },
   {
@@ -1486,7 +1486,7 @@ window.POEMS_CHENGYU = [
     source: "《庄子·秋水》",
     dynasty: "战国",
     author: "庄周",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "秋水时至，百川灌河",
   },
   {
@@ -1496,7 +1496,7 @@ window.POEMS_CHENGYU = [
     source: "《庄子·逍遥游》",
     dynasty: "战国",
     author: "庄周",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "庖人虽不治庖，尸祝不越樽俎而代之矣",
   },
   {
@@ -1506,7 +1506,7 @@ window.POEMS_CHENGYU = [
     source: "《庄子·逍遥游》",
     dynasty: "战国",
     author: "庄周",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "吾惊怖其言，犹河汉而无极也；大有径庭，不近人情焉",
   },
   {
@@ -1516,7 +1516,7 @@ window.POEMS_CHENGYU = [
     source: "《庄子·应帝王》",
     dynasty: "战国",
     author: "庄周",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "壶子曰：「乡吾示之以未始出吾宗",
   },
   {
@@ -1526,7 +1526,7 @@ window.POEMS_CHENGYU = [
     source: "《庄子·徐无鬼》",
     dynasty: "战国",
     author: "庄周",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "郢人垩慢其鼻端，若蝇翼，使匠石斫之",
   },
   {
@@ -1536,7 +1536,7 @@ window.POEMS_CHENGYU = [
     source: "《庄子·刻意》",
     dynasty: "战国",
     author: "庄周",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "吹呴呼吸，吐故纳新，熊经鸟申，为寿而已矣",
   },
   {
@@ -1546,7 +1546,7 @@ window.POEMS_CHENGYU = [
     source: "《庄子·秋水》",
     dynasty: "战国",
     author: "庄周",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "吾长见笑于大方之家",
   },
   {
@@ -1556,7 +1556,7 @@ window.POEMS_CHENGYU = [
     source: "《孙子·谋攻》",
     dynasty: "战国",
     author: "孙武",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "是故百战百胜，非善之善者也；不战而屈人之兵，善之",
   },
   {
@@ -1566,7 +1566,7 @@ window.POEMS_CHENGYU = [
     source: "《孙子·谋攻》",
     dynasty: "战国",
     author: "孙武",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "故曰：知彼知己，百战不殆；不知彼而知己，一胜一负",
   },
   {
@@ -1576,7 +1576,7 @@ window.POEMS_CHENGYU = [
     source: "《孙子·计》",
     dynasty: "战国",
     author: "孙武",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "兵者，诡道也",
   },
   {
@@ -1586,7 +1586,7 @@ window.POEMS_CHENGYU = [
     source: "《韩非子·难一》",
     dynasty: "战国",
     author: "韩非",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "臣闻之：繁礼君子，不厌忠信；战阵之间，不厌诈伪",
   },
   {
@@ -1596,7 +1596,7 @@ window.POEMS_CHENGYU = [
     source: "《孙子·军争》",
     dynasty: "战国",
     author: "孙武",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "以近待远，以佚待劳，以饱待饥，此治力者也",
   },
   {
@@ -1606,7 +1606,7 @@ window.POEMS_CHENGYU = [
     source: "《汉书·贾谊传》",
     dynasty: "战国",
     author: "班固",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "里谚曰：「欲投鼠而忌器",
   },
   {
@@ -1616,7 +1616,7 @@ window.POEMS_CHENGYU = [
     source: "《战国策·秦策三》",
     dynasty: "战国",
     author: "刘向",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "范雎曰：「王不如远交而近攻，得寸则王之寸，得尺亦",
   },
   {
@@ -1626,7 +1626,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·范雎蔡泽列传》",
     dynasty: "战国",
     author: "司马迁",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "范雎曰：「汝罪有几？」曰：「擢贾之发以续贾之罪，",
   },
   {
@@ -1636,7 +1636,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·平原君虞卿列传》",
     dynasty: "战国",
     author: "司马迁",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "太史公曰：平原君，翩翩浊世之佳公子也，然未睹大体",
   },
   {
@@ -1646,7 +1646,7 @@ window.POEMS_CHENGYU = [
     source: "《汉书·蒯通传》",
     dynasty: "战国",
     author: "班固",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "边城之地，必将婴城固守，皆为金城汤池，不可攻也",
   },
   {
@@ -1656,7 +1656,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·平原君虞卿列传》",
     dynasty: "战国",
     author: "司马迁",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "秦不遗余力矣，必且欲破赵军",
   },
   {
@@ -1665,8 +1665,8 @@ window.POEMS_CHENGYU = [
     title: "盛气凌人",
     source: "《元诗选》",
     dynasty: "战国",
-    author: "",
-    gradeGroup: "先秦",
+    author: "佚名",
+    gradeGroup: "战国",
     excerpt: "（语出《元诗选》所收篇）以盛气凌人，人所不堪",
   },
   {
@@ -1676,7 +1676,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·廉颇蔺相如列传》",
     dynasty: "战国",
     author: "司马迁",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "臣以为布衣之交尚不相欺，况大国乎！",
   },
   {
@@ -1686,7 +1686,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·廉颇蔺相如列传》",
     dynasty: "战国",
     author: "司马迁",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "今两虎共斗，其势不俱生",
   },
   {
@@ -1696,7 +1696,7 @@ window.POEMS_CHENGYU = [
     source: "《汉书·枚乘传》",
     dynasty: "战国",
     author: "班固",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "（原文作「一发千钧」）夫以一缕之任，系千钧之重，",
   },
   {
@@ -1706,7 +1706,7 @@ window.POEMS_CHENGYU = [
     source: "《战国策·赵策三》",
     dynasty: "战国",
     author: "刘向",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "周烈王崩，齐后往，周怒，赴于齐曰：「天崩地坼，天",
   },
   {
@@ -1716,7 +1716,7 @@ window.POEMS_CHENGYU = [
     source: "《汉书·诸侯王表》",
     dynasty: "战国",
     author: "班固",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "（原文作「逃责之台」）周廪临亡，天下共起而亡之，",
   },
   {
@@ -1726,7 +1726,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·平原君虞卿列传》",
     dynasty: "战国",
     author: "司马迁",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "毛先生一至楚，而使赵重于九鼎大吕",
   },
   {
@@ -1736,7 +1736,7 @@ window.POEMS_CHENGYU = [
     source: "《管子·小匡》",
     dynasty: "战国",
     author: "管仲",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "平原广牧，车不结辙，士不旋踵，鼓之而三军之士视死",
   },
   {
@@ -1746,7 +1746,7 @@ window.POEMS_CHENGYU = [
     source: "《战国策·齐策四》",
     dynasty: "战国",
     author: "刘向",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "（颜斶）曰：「斶愿得归，晚食以当肉，安步以当车，",
   },
   {
@@ -1756,7 +1756,7 @@ window.POEMS_CHENGYU = [
     source: "《管子·戒》",
     dynasty: "战国",
     author: "管仲",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "无翼而飞者声也，无根而固者情也",
   },
   {
@@ -1766,7 +1766,7 @@ window.POEMS_CHENGYU = [
     source: "《战国策·魏策一》",
     dynasty: "战国",
     author: "刘向",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "臣闻积羽沉舟，群轻折轴，众口铄金，故愿大王之熟计",
   },
   {
@@ -1776,7 +1776,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·秦始皇本纪》",
     dynasty: "战国",
     author: "司马迁",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "（贾谊《过秦论》）合从缔交，相与为一",
   },
   {
@@ -1786,7 +1786,7 @@ window.POEMS_CHENGYU = [
     source: "《韩非子·十过》",
     dynasty: "战国",
     author: "韩非",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "其君之危，犹累卵也",
   },
   {
@@ -1796,7 +1796,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·吕不韦列传》",
     dynasty: "战国",
     author: "司马迁",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "吕不韦乃使其客人人著所闻，集论以为八览、六论、十",
   },
   {
@@ -1806,7 +1806,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·秦始皇本纪》",
     dynasty: "战国",
     author: "司马迁",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "（贾谊《过秦论》）及其衰也，天下之士，斐然向风…",
   },
   {
@@ -1816,7 +1816,7 @@ window.POEMS_CHENGYU = [
     source: "《汉书·蒯通传》",
     dynasty: "战国",
     author: "班固",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "臣之里妇，与里之诸母相善也",
   },
   {
@@ -1826,7 +1826,7 @@ window.POEMS_CHENGYU = [
     source: "《孟子·梁惠王上》",
     dynasty: "战国",
     author: "孟轲",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "以若所为，求若所欲，犹缘木而求鱼也",
   },
   {
@@ -1836,7 +1836,7 @@ window.POEMS_CHENGYU = [
     source: "《孟子·梁惠王上》",
     dynasty: "战国",
     author: "孟轲",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "（原文作「寡固不可以敌众」）然则小固不可以敌大，",
   },
   {
@@ -1846,7 +1846,7 @@ window.POEMS_CHENGYU = [
     source: "《孟子·公孙丑上》",
     dynasty: "战国",
     author: "孟轲",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "当今之时，万乘之国行仁政，民之悦之，犹解倒悬也",
   },
   {
@@ -1856,7 +1856,7 @@ window.POEMS_CHENGYU = [
     source: "《孟子·梁惠王下》",
     dynasty: "战国",
     author: "孟轲",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "箪食壶浆以迎王师，岂有他哉？避水火也",
   },
   {
@@ -1866,7 +1866,7 @@ window.POEMS_CHENGYU = [
     source: "《孟子·梁惠王下》",
     dynasty: "战国",
     author: "孟轲",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "以万乘之国伐万乘之国，箪食壶浆以迎王师，岂有他哉",
   },
   {
@@ -1876,7 +1876,7 @@ window.POEMS_CHENGYU = [
     source: "《孟子·公孙丑上》",
     dynasty: "战国",
     author: "孟轲",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "宋人有闵其苗之不长而揠之者，芒芒然归，谓其人曰：",
   },
   {
@@ -1886,7 +1886,7 @@ window.POEMS_CHENGYU = [
     source: "《孟子·梁惠王上》",
     dynasty: "战国",
     author: "孟轲",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "明足以察秋毫之末，而不见舆薪，则王许之乎？",
   },
   {
@@ -1896,7 +1896,7 @@ window.POEMS_CHENGYU = [
     source: "《孟子·公孙丑上》",
     dynasty: "战国",
     author: "孟轲",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "圣人之于民，亦类也",
   },
   {
@@ -1906,7 +1906,7 @@ window.POEMS_CHENGYU = [
     source: "《孟子·告子上》",
     dynasty: "战国",
     author: "孟轲",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "今夫弈之为数，小数也；不专心致志，则不得也",
   },
   {
@@ -1916,7 +1916,7 @@ window.POEMS_CHENGYU = [
     source: "《孟子·告子下》",
     dynasty: "战国",
     author: "孟轲",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "入则无法家拂士，出则无敌国外患者，国恒亡",
   },
   {
@@ -1926,7 +1926,7 @@ window.POEMS_CHENGYU = [
     source: "《孟子·告子上》",
     dynasty: "战国",
     author: "孟轲",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "虽有天下易生之物也，一日暴之，十日寒之，未有能生",
   },
   {
@@ -1936,7 +1936,7 @@ window.POEMS_CHENGYU = [
     source: "《孟子·尽心上》",
     dynasty: "战国",
     author: "孟轲",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "穷则独善其身，达则兼善天下",
   },
   {
@@ -1946,7 +1946,7 @@ window.POEMS_CHENGYU = [
     source: "《荀子·劝学》",
     dynasty: "战国",
     author: "荀况",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "青，取之于蓝，而青于蓝；冰，水为之，而寒于水",
   },
   {
@@ -1956,7 +1956,7 @@ window.POEMS_CHENGYU = [
     source: "《孟子·告子上》",
     dynasty: "战国",
     author: "孟轲",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "今之为仁者，犹以一杯水救一车薪之火也",
   },
   {
@@ -1965,8 +1965,8 @@ window.POEMS_CHENGYU = [
     title: "不速之客",
     source: "《周易·需卦》",
     dynasty: "战国",
-    author: "",
-    gradeGroup: "先秦",
+    author: "佚名",
+    gradeGroup: "战国",
     excerpt: "有不速之客三人来，敬之终吉",
   },
   {
@@ -1976,7 +1976,7 @@ window.POEMS_CHENGYU = [
     source: "《孟子·离娄下》",
     dynasty: "战国",
     author: "孟轲",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "仲尼不为已甚者",
   },
   {
@@ -1986,7 +1986,7 @@ window.POEMS_CHENGYU = [
     source: "《左传·僖公四年》",
     dynasty: "春秋",
     author: "左丘明",
-    gradeGroup: "先秦",
+    gradeGroup: "春秋",
     excerpt: "（语本）从长计议，未为晚也",
   },
   {
@@ -1996,7 +1996,7 @@ window.POEMS_CHENGYU = [
     source: "《庄子·秋水》",
     dynasty: "战国",
     author: "庄周",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "吾长见笑于大方之家",
   },
   {
@@ -2005,8 +2005,8 @@ window.POEMS_CHENGYU = [
     title: "当仁不让",
     source: "《论语·卫灵公》",
     dynasty: "春秋",
-    author: "",
-    gradeGroup: "先秦",
+    author: "佚名",
+    gradeGroup: "春秋",
     excerpt: "当仁不让于师",
   },
   {
@@ -2015,8 +2015,8 @@ window.POEMS_CHENGYU = [
     title: "道听途说",
     source: "《论语·阳货》",
     dynasty: "战国",
-    author: "",
-    gradeGroup: "先秦",
+    author: "佚名",
+    gradeGroup: "战国",
     excerpt: "道听而涂说，德之弃也",
   },
   {
@@ -2026,7 +2026,7 @@ window.POEMS_CHENGYU = [
     source: "《世说新语·文学》",
     dynasty: "战国",
     author: "刘义庆",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "（语本）佛经以为祛练神明，则圣人可致",
   },
   {
@@ -2036,7 +2036,7 @@ window.POEMS_CHENGYU = [
     source: "《楚辞·九歌·国殇》",
     dynasty: "战国",
     author: "屈原",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "车错毂兮短兵接",
   },
   {
@@ -2045,8 +2045,8 @@ window.POEMS_CHENGYU = [
     title: "耳提面命",
     source: "《诗经·大雅·抑》",
     dynasty: "春秋",
-    author: "",
-    gradeGroup: "先秦",
+    author: "佚名",
+    gradeGroup: "春秋",
     excerpt: "匪面命之，言提其耳",
   },
   {
@@ -2056,7 +2056,7 @@ window.POEMS_CHENGYU = [
     source: "《荀子·正论》",
     dynasty: "战国",
     author: "荀况",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "夫德不称位，能不称官，赏不当功，罚不当罪，不祥莫",
   },
   {
@@ -2066,7 +2066,7 @@ window.POEMS_CHENGYU = [
     source: "《左传·宣公十二年》",
     dynasty: "春秋",
     author: "左丘明",
-    gradeGroup: "先秦",
+    gradeGroup: "春秋",
     excerpt: "其佐先縠，刚愎不仁，未肯用命",
   },
   {
@@ -2076,7 +2076,7 @@ window.POEMS_CHENGYU = [
     source: "《左传·隐公六年》",
     dynasty: "春秋",
     author: "左丘明",
-    gradeGroup: "先秦",
+    gradeGroup: "春秋",
     excerpt: "长恶不悛，从自及也",
   },
   {
@@ -2086,7 +2086,7 @@ window.POEMS_CHENGYU = [
     source: "《谷梁传·庄公三十二年》",
     dynasty: "春秋",
     author: "谷梁赤",
-    gradeGroup: "先秦",
+    gradeGroup: "春秋",
     excerpt: "讳莫如深，深则隐",
   },
   {
@@ -2095,8 +2095,8 @@ window.POEMS_CHENGYU = [
     title: "祸起萧墙",
     source: "《论语·季氏》",
     dynasty: "春秋",
-    author: "",
-    gradeGroup: "先秦",
+    author: "佚名",
+    gradeGroup: "春秋",
     excerpt: "吾恐季孙之忧，不在颛臾，而在萧墙之内也",
   },
   {
@@ -2106,7 +2106,7 @@ window.POEMS_CHENGYU = [
     source: "《管子·立政》",
     dynasty: "战国",
     author: "管仲",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "令则行，禁则止，宪之所及，俗之所被，如百体之从心",
   },
   {
@@ -2115,8 +2115,8 @@ window.POEMS_CHENGYU = [
     title: "明哲保身",
     source: "《诗经·大雅·烝民》",
     dynasty: "西周",
-    author: "",
-    gradeGroup: "先秦",
+    author: "佚名",
+    gradeGroup: "西周",
     excerpt: "既明且哲，以保其身",
   },
   {
@@ -2126,7 +2126,7 @@ window.POEMS_CHENGYU = [
     source: "《列子·说符》",
     dynasty: "战国",
     author: "列御寇",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "杨子之邻人亡羊，既率其党，又请杨子之竖追之",
   },
   {
@@ -2136,7 +2136,7 @@ window.POEMS_CHENGYU = [
     source: "《列子·天瑞》",
     dynasty: "战国",
     author: "列御寇",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "杞国有人忧天地崩坠，身亡所寄，废寝食者",
   },
   {
@@ -2146,7 +2146,7 @@ window.POEMS_CHENGYU = [
     source: "《南齐书·庾杲之传》",
     dynasty: "战国",
     author: "萧子显",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "（语本）千载难逢，一时之盛",
   },
   {
@@ -2155,8 +2155,8 @@ window.POEMS_CHENGYU = [
     title: "鹊巢鸠占",
     source: "《诗经·召南·鹊巢》",
     dynasty: "西周",
-    author: "",
-    gradeGroup: "先秦",
+    author: "佚名",
+    gradeGroup: "西周",
     excerpt: "维鹊有巢，维鸠居之",
   },
   {
@@ -2165,8 +2165,8 @@ window.POEMS_CHENGYU = [
     title: "人言可畏",
     source: "《诗经·郑风·将仲子》",
     dynasty: "春秋",
-    author: "",
-    gradeGroup: "先秦",
+    author: "佚名",
+    gradeGroup: "春秋",
     excerpt: "岂敢爱之？畏人之多言",
   },
   {
@@ -2175,8 +2175,8 @@ window.POEMS_CHENGYU = [
     title: "三缄其口",
     source: "《太公金匮》",
     dynasty: "春秋",
-    author: "",
-    gradeGroup: "先秦",
+    author: "佚名",
+    gradeGroup: "春秋",
     excerpt: "（《孔子家语·观周》亦载）孔子观周，遂入太祖后稷",
   },
   {
@@ -2186,7 +2186,7 @@ window.POEMS_CHENGYU = [
     source: "《战国策·魏策二》",
     dynasty: "战国",
     author: "刘向",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "庞葱与太子质于邯郸，谓魏王曰：「今一人言市有虎，",
   },
   {
@@ -2195,8 +2195,8 @@ window.POEMS_CHENGYU = [
     title: "下车伊始",
     source: "《礼记·乐记》",
     dynasty: "西周",
-    author: "",
-    gradeGroup: "先秦",
+    author: "佚名",
+    gradeGroup: "西周",
     excerpt: "武王克殷反商，未及下车，而封黄帝之后于蓟",
   },
   {
@@ -2206,7 +2206,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·范雎蔡泽列传》",
     dynasty: "战国",
     author: "司马迁",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "一饭之德必偿，睚眦之怨必报",
   },
   {
@@ -2216,7 +2216,7 @@ window.POEMS_CHENGYU = [
     source: "《吕氏春秋·自知》",
     dynasty: "战国",
     author: "吕不韦",
-    gradeGroup: "先秦",
+    gradeGroup: "战国",
     excerpt: "范氏之亡也，百姓有得钟者，欲负而走，则钟大不可负",
   },
   {
@@ -2226,7 +2226,7 @@ window.POEMS_CHENGYU = [
     source: "《汉书·郊祀志下》",
     dynasty: "东汉",
     author: "班固",
-    gradeGroup: "秦汉",
+    gradeGroup: "东汉",
     excerpt: "听其言，洋洋满耳，若将可遇；求之，荡荡如系风捕景",
   },
   {
@@ -2236,7 +2236,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·秦始皇本纪》",
     dynasty: "秦",
     author: "司马迁",
-    gradeGroup: "秦汉",
+    gradeGroup: "秦",
     excerpt: "赵高欲为乱，恐群臣不听，乃先设验，持鹿献于二世，",
   },
   {
@@ -2246,7 +2246,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·项羽本纪》",
     dynasty: "秦",
     author: "司马迁",
-    gradeGroup: "秦汉",
+    gradeGroup: "秦",
     excerpt: "项羽乃悉引兵渡河，皆沉船，破釜甑，烧庐舍，持三日",
   },
   {
@@ -2256,7 +2256,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·高祖本纪》",
     dynasty: "秦",
     author: "司马迁",
-    gradeGroup: "秦汉",
+    gradeGroup: "秦",
     excerpt: "吾与诸侯约，先入关者王之，吾当王关中",
   },
   {
@@ -2266,7 +2266,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·项羽本纪》",
     dynasty: "秦",
     author: "司马迁",
-    gradeGroup: "秦汉",
+    gradeGroup: "秦",
     excerpt: "项庄拔剑起舞，项伯亦拔剑起舞，常以身翼蔽沛公，庄",
   },
   {
@@ -2276,7 +2276,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·秦始皇本纪》",
     dynasty: "秦",
     author: "司马迁",
-    gradeGroup: "秦汉",
+    gradeGroup: "秦",
     excerpt: "丞相李斯曰：「……臣请史官非秦记皆烧之",
   },
   {
@@ -2286,7 +2286,7 @@ window.POEMS_CHENGYU = [
     source: "《南史·檀道济传》",
     dynasty: "秦",
     author: "李延寿",
-    gradeGroup: "秦汉",
+    gradeGroup: "秦",
     excerpt: "道济见收，愤怒气盛，目光如炬，俄尔间引饮一斛",
   },
   {
@@ -2296,7 +2296,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·秦始皇本纪》",
     dynasty: "秦",
     author: "司马迁",
-    gradeGroup: "秦汉",
+    gradeGroup: "秦",
     excerpt: "天下之事无小大皆决于上，上至以衡石量书，日夜有呈",
   },
   {
@@ -2306,7 +2306,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·项羽本纪》",
     dynasty: "秦",
     author: "司马迁",
-    gradeGroup: "秦汉",
+    gradeGroup: "秦",
     excerpt: "（项羽）长八尺余，力能扛鼎，才气过人，虽吴中子弟",
   },
   {
@@ -2316,7 +2316,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·项羽本纪》",
     dynasty: "秦",
     author: "司马迁",
-    gradeGroup: "秦汉",
+    gradeGroup: "秦",
     excerpt: "说者曰：「人言楚人沐猴而冠耳，果然",
   },
   {
@@ -2326,7 +2326,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·项羽本纪》",
     dynasty: "秦",
     author: "司马迁",
-    gradeGroup: "秦汉",
+    gradeGroup: "秦",
     excerpt: "樊哙曰：「大行不顾细谨，大礼不辞小让",
   },
   {
@@ -2336,7 +2336,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·淮阴侯列传》",
     dynasty: "西汉",
     author: "司马迁",
-    gradeGroup: "秦汉",
+    gradeGroup: "西汉",
     excerpt: "信乃使万人先行，出，背水陈",
   },
   {
@@ -2346,7 +2346,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·项羽本纪》",
     dynasty: "西汉",
     author: "司马迁",
-    gradeGroup: "秦汉",
+    gradeGroup: "西汉",
     excerpt: "项王军壁垓下，兵少食尽，汉军及诸侯兵围之数重",
   },
   {
@@ -2355,8 +2355,8 @@ window.POEMS_CHENGYU = [
     title: "十面埋伏",
     source: "《前汉书平话》",
     dynasty: "西汉",
-    author: "",
-    gradeGroup: "秦汉",
+    author: "佚名",
+    gradeGroup: "西汉",
     excerpt: "（后世演史小说语；本《史记·项羽本纪》垓下之围）",
   },
   {
@@ -2366,7 +2366,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·留侯世家》",
     dynasty: "西汉",
     author: "司马迁",
-    gradeGroup: "秦汉",
+    gradeGroup: "西汉",
     excerpt: "父去里所，复还，曰：「孺子可教矣",
   },
   {
@@ -2376,7 +2376,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·淮阴侯列传》",
     dynasty: "西汉",
     author: "司马迁",
-    gradeGroup: "秦汉",
+    gradeGroup: "西汉",
     excerpt: "信钓于城下，诸母漂，有一母见信饥，饭信，竟漂数十",
   },
   {
@@ -2386,7 +2386,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·淮阴侯列传》",
     dynasty: "西汉",
     author: "司马迁",
-    gradeGroup: "秦汉",
+    gradeGroup: "西汉",
     excerpt: "上问曰：「如我能将几何？」信曰：「陛下不过能将十",
   },
   {
@@ -2396,7 +2396,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·高祖本纪》",
     dynasty: "西汉",
     author: "司马迁",
-    gradeGroup: "秦汉",
+    gradeGroup: "西汉",
     excerpt: "（原文作「明修栈道，暗度陈仓」之本事）汉王之国，",
   },
   {
@@ -2406,7 +2406,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·曹相国世家》",
     dynasty: "西汉",
     author: "司马迁",
-    gradeGroup: "秦汉",
+    gradeGroup: "西汉",
     excerpt: "参代何为汉相国，举事无所变更，一遵萧何约束",
   },
   {
@@ -2416,7 +2416,7 @@ window.POEMS_CHENGYU = [
     source: "《汉武故事》",
     dynasty: "西汉",
     author: "班固",
-    gradeGroup: "秦汉",
+    gradeGroup: "西汉",
     excerpt: "（胶东王）数岁，长公主嫖抱置膝上，问曰：「儿欲得",
   },
   {
@@ -2426,7 +2426,7 @@ window.POEMS_CHENGYU = [
     source: "《韩非子·五蠹》",
     dynasty: "西汉",
     author: "韩非",
-    gradeGroup: "秦汉",
+    gradeGroup: "西汉",
     excerpt: "弃私家之事，而必汗马之劳，家困而上弗论，则穷矣",
   },
   {
@@ -2436,7 +2436,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·高祖本纪》",
     dynasty: "西汉",
     author: "司马迁",
-    gradeGroup: "秦汉",
+    gradeGroup: "西汉",
     excerpt: "夫运筹策帷帐之中，决胜于千里之外，吾不如子房",
   },
   {
@@ -2446,7 +2446,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·高祖本纪》",
     dynasty: "西汉",
     author: "司马迁",
-    gradeGroup: "秦汉",
+    gradeGroup: "西汉",
     excerpt: "夫运筹策帷帐之中，决胜于千里之外，吾不如子房",
   },
   {
@@ -2456,7 +2456,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·淮阴侯列传》",
     dynasty: "西汉",
     author: "司马迁",
-    gradeGroup: "秦汉",
+    gradeGroup: "西汉",
     excerpt: "（原文作「功盖天下」之论）臣闻勇略震主者身危，而",
   },
   {
@@ -2466,7 +2466,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·淮阴侯列传》",
     dynasty: "西汉",
     author: "司马迁",
-    gradeGroup: "秦汉",
+    gradeGroup: "西汉",
     excerpt: "（本事）信之为大将军，实萧何所荐；今其死也，又出",
   },
   {
@@ -2476,7 +2476,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·淮阴侯列传》",
     dynasty: "西汉",
     author: "司马迁",
-    gradeGroup: "秦汉",
+    gradeGroup: "西汉",
     excerpt: "臣多多而益善耳",
   },
   {
@@ -2486,7 +2486,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·李将军列传》",
     dynasty: "西汉",
     author: "司马迁",
-    gradeGroup: "秦汉",
+    gradeGroup: "西汉",
     excerpt: "（原文作「数不遇」之叹）自汉击匈奴而广未尝不在其",
   },
   {
@@ -2496,7 +2496,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·李将军列传》",
     dynasty: "西汉",
     author: "司马迁",
-    gradeGroup: "秦汉",
+    gradeGroup: "西汉",
     excerpt: "太史公曰：……余睹李将军悛悛如鄙人，口不能道辞",
   },
   {
@@ -2506,7 +2506,7 @@ window.POEMS_CHENGYU = [
     source: "《汉书·苏武传》",
     dynasty: "西汉",
     author: "班固",
-    gradeGroup: "秦汉",
+    gradeGroup: "西汉",
     excerpt: "乃徙武北海上无人处，使牧羝，羝乳乃得归",
   },
   {
@@ -2516,7 +2516,7 @@ window.POEMS_CHENGYU = [
     source: "《汉书·苏武传》",
     dynasty: "西汉",
     author: "班固",
-    gradeGroup: "秦汉",
+    gradeGroup: "西汉",
     excerpt: "（常惠）教使者谓单于，言天子射上林中，得雁，足有",
   },
   {
@@ -2526,7 +2526,7 @@ window.POEMS_CHENGYU = [
     source: "《西京杂记》卷二",
     dynasty: "西汉",
     author: "刘歆",
-    gradeGroup: "秦汉",
+    gradeGroup: "西汉",
     excerpt: "匡衡字稚圭，勤学而无烛，邻舍有烛而不逮，衡乃穿壁",
   },
   {
@@ -2536,7 +2536,7 @@ window.POEMS_CHENGYU = [
     source: "《晋书·车胤传》",
     dynasty: "西汉",
     author: "房玄龄",
-    gradeGroup: "秦汉",
+    gradeGroup: "西汉",
     excerpt: "（「囊萤」见《晋书·车胤传》）车胤字武子，南平人",
   },
   {
@@ -2546,7 +2546,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·孔子世家》",
     dynasty: "西汉",
     author: "司马迁",
-    gradeGroup: "秦汉",
+    gradeGroup: "西汉",
     excerpt: "孔子晚而喜《易》，序《彖》《系》《象》《说卦》《",
   },
   {
@@ -2556,7 +2556,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·季布栾布列传》",
     dynasty: "西汉",
     author: "司马迁",
-    gradeGroup: "秦汉",
+    gradeGroup: "西汉",
     excerpt: "曹丘至，即揖季布曰：「楚人谚曰『得黄金百斤，不如",
   },
   {
@@ -2566,7 +2566,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·平原君虞卿列传》",
     dynasty: "西汉",
     author: "司马迁",
-    gradeGroup: "秦汉",
+    gradeGroup: "西汉",
     excerpt: "毛先生一至楚，而使赵重于九鼎大吕",
   },
   {
@@ -2576,7 +2576,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·西南夷列传》",
     dynasty: "西汉",
     author: "司马迁",
-    gradeGroup: "秦汉",
+    gradeGroup: "西汉",
     excerpt: "滇王与汉使者言曰：「汉孰与我大？」及夜郎侯亦然",
   },
   {
@@ -2586,7 +2586,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·韩长孺列传》",
     dynasty: "西汉",
     author: "司马迁",
-    gradeGroup: "秦汉",
+    gradeGroup: "西汉",
     excerpt: "且强弩之极，矢不能穿鲁缟；冲风之末，力不能漂鸿毛",
   },
   {
@@ -2596,7 +2596,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·平准书》",
     dynasty: "西汉",
     author: "司马迁",
-    gradeGroup: "秦汉",
+    gradeGroup: "西汉",
     excerpt: "太仓之粟陈陈相因，充溢露积于外，至腐败不可食",
   },
   {
@@ -2606,7 +2606,7 @@ window.POEMS_CHENGYU = [
     source: "《汉书·霍光传》",
     dynasty: "西汉",
     author: "班固",
-    gradeGroup: "秦汉",
+    gradeGroup: "西汉",
     excerpt: "客有过主人者，见其灶直突，傍有积薪",
   },
   {
@@ -2616,7 +2616,7 @@ window.POEMS_CHENGYU = [
     source: "《列子·周穆王》",
     dynasty: "西汉",
     author: "列御寇",
-    gradeGroup: "秦汉",
+    gradeGroup: "西汉",
     excerpt: "（原文作「霍然」）秦人逢氏子少而惠，及壮而有迷罔",
   },
   {
@@ -2626,7 +2626,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·汲郑列传》",
     dynasty: "西汉",
     author: "司马迁",
-    gradeGroup: "秦汉",
+    gradeGroup: "西汉",
     excerpt: "始翟公为廷尉，宾客阗门；及废，门外可设雀罗",
   },
   {
@@ -2636,7 +2636,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·汲郑列传》",
     dynasty: "西汉",
     author: "司马迁",
-    gradeGroup: "秦汉",
+    gradeGroup: "西汉",
     excerpt: "上曰：「陛下用群臣如积薪耳，后来者居上",
   },
   {
@@ -2646,7 +2646,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·廉颇蔺相如列传》",
     dynasty: "西汉",
     author: "司马迁",
-    gradeGroup: "秦汉",
+    gradeGroup: "西汉",
     excerpt: "蔺相如曰：「王以名使括，若胶柱而鼓瑟耳",
   },
   {
@@ -2656,7 +2656,7 @@ window.POEMS_CHENGYU = [
     source: "《报任安书》",
     dynasty: "西汉",
     author: "司马迁",
-    gradeGroup: "秦汉",
+    gradeGroup: "西汉",
     excerpt: "故士有画地为牢，势不可入；削木为吏，议不可对，定",
   },
   {
@@ -2666,7 +2666,7 @@ window.POEMS_CHENGYU = [
     source: "《汉书·霍光传》",
     dynasty: "西汉",
     author: "班固",
-    gradeGroup: "秦汉",
+    gradeGroup: "西汉",
     excerpt: "然光不学亡术，暗于大理",
   },
   {
@@ -2676,7 +2676,7 @@ window.POEMS_CHENGYU = [
     source: "《汉书·赵充国传》",
     dynasty: "西汉",
     author: "班固",
-    gradeGroup: "秦汉",
+    gradeGroup: "西汉",
     excerpt: "百闻不如一见",
   },
   {
@@ -2686,7 +2686,7 @@ window.POEMS_CHENGYU = [
     source: "《战国策·赵策四》",
     dynasty: "西汉",
     author: "刘向",
-    gradeGroup: "秦汉",
+    gradeGroup: "西汉",
     excerpt: "今得强赵之兵以杜燕将，旷日持久数岁，令士大夫余子",
   },
   {
@@ -2696,7 +2696,7 @@ window.POEMS_CHENGYU = [
     source: "《汉书·孝武李夫人传》",
     dynasty: "西汉",
     author: "班固",
-    gradeGroup: "秦汉",
+    gradeGroup: "西汉",
     excerpt: "北方有佳人，绝世而独立，一顾倾人城，再顾倾人国",
   },
   {
@@ -2706,7 +2706,7 @@ window.POEMS_CHENGYU = [
     source: "《汉书·孝武李夫人传》",
     dynasty: "西汉",
     author: "班固",
-    gradeGroup: "秦汉",
+    gradeGroup: "西汉",
     excerpt: "上思念李夫人不已……为作诗曰：「是邪，非邪？立而",
   },
   {
@@ -2716,7 +2716,7 @@ window.POEMS_CHENGYU = [
     source: "《汉书·孝武李夫人传》",
     dynasty: "西汉",
     author: "班固",
-    gradeGroup: "秦汉",
+    gradeGroup: "西汉",
     excerpt: "一顾倾人城，再顾倾人国",
   },
   {
@@ -2726,7 +2726,7 @@ window.POEMS_CHENGYU = [
     source: "《后汉书·荀彧传》",
     dynasty: "西汉",
     author: "范晔",
-    gradeGroup: "秦汉",
+    gradeGroup: "西汉",
     excerpt: "今东方皆以收麦，必坚壁清野以待将军，将军攻之不拔",
   },
   {
@@ -2736,7 +2736,7 @@ window.POEMS_CHENGYU = [
     source: "《汉书·王尊传》",
     dynasty: "西汉",
     author: "班固",
-    gradeGroup: "秦汉",
+    gradeGroup: "西汉",
     excerpt: "明慎所职，毋以身试法",
   },
   {
@@ -2746,7 +2746,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·淮阴侯列传》",
     dynasty: "西汉",
     author: "司马迁",
-    gradeGroup: "秦汉",
+    gradeGroup: "西汉",
     excerpt: "信所出奇兵二千骑，共候赵空壁逐利，则驰入赵壁，皆",
   },
   {
@@ -2756,7 +2756,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·淮阴侯列传》",
     dynasty: "西汉",
     author: "司马迁",
-    gradeGroup: "秦汉",
+    gradeGroup: "西汉",
     excerpt: "汉王授我上将军印，予我数万众，解衣衣我，推食食我",
   },
   {
@@ -2766,7 +2766,7 @@ window.POEMS_CHENGYU = [
     source: "《汉书·黥布传》",
     dynasty: "西汉",
     author: "班固",
-    gradeGroup: "秦汉",
+    gradeGroup: "西汉",
     excerpt: "（原文作「万全之策」）臣之计划，出于万全",
   },
   {
@@ -2776,7 +2776,7 @@ window.POEMS_CHENGYU = [
     source: "《后汉书·隗嚣传》",
     dynasty: "东汉",
     author: "范晔",
-    gradeGroup: "秦汉",
+    gradeGroup: "东汉",
     excerpt: "（隗嚣）曰：「如今子阳到汉中、三辅，愿因将军兵马",
   },
   {
@@ -2785,8 +2785,8 @@ window.POEMS_CHENGYU = [
     title: "守口如瓶",
     source: "《法演禅师语录》",
     dynasty: "西汉",
-    author: "",
-    gradeGroup: "秦汉",
+    author: "法演",
+    gradeGroup: "西汉",
     excerpt: "（佛典语）守口如瓶，防意如城",
   },
   {
@@ -2796,7 +2796,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·韩长孺列传》",
     dynasty: "西汉",
     author: "司马迁",
-    gradeGroup: "秦汉",
+    gradeGroup: "西汉",
     excerpt: "蒙狱吏田甲辱安国",
   },
   {
@@ -2806,7 +2806,7 @@ window.POEMS_CHENGYU = [
     source: "《汉书·杨恽传》",
     dynasty: "西汉",
     author: "班固",
-    gradeGroup: "秦汉",
+    gradeGroup: "西汉",
     excerpt: "古与今如一丘之貉",
   },
   {
@@ -2816,7 +2816,7 @@ window.POEMS_CHENGYU = [
     source: "《汉书·河间献王传》",
     dynasty: "西汉",
     author: "班固",
-    gradeGroup: "秦汉",
+    gradeGroup: "西汉",
     excerpt: "河间献王德以孝景前二年立，修学好古，实事求是",
   },
   {
@@ -2826,7 +2826,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·陈涉世家》",
     dynasty: "西汉",
     author: "司马迁",
-    gradeGroup: "秦汉",
+    gradeGroup: "西汉",
     excerpt: "陈涉太息曰：「嗟乎，燕雀安知鸿鹄之志哉！」",
   },
   {
@@ -2836,7 +2836,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·陈涉世家》",
     dynasty: "西汉",
     author: "司马迁",
-    gradeGroup: "秦汉",
+    gradeGroup: "西汉",
     excerpt: "且壮士不死即已，死即举大名耳，王侯将相宁有种乎！",
   },
   {
@@ -2846,7 +2846,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·陈涉世家》",
     dynasty: "西汉",
     author: "司马迁",
-    gradeGroup: "秦汉",
+    gradeGroup: "西汉",
     excerpt: "又间令吴广之次所旁丛祠中，夜篝火，狐鸣呼曰：「大",
   },
   {
@@ -2856,7 +2856,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·陈涉世家》",
     dynasty: "西汉",
     author: "司马迁",
-    gradeGroup: "秦汉",
+    gradeGroup: "西汉",
     excerpt: "陈涉太息曰：「嗟乎，燕雀安知鸿鹄之志哉！」",
   },
   {
@@ -2866,7 +2866,7 @@ window.POEMS_CHENGYU = [
     source: "《后汉书·班超传》",
     dynasty: "东汉",
     author: "范晔",
-    gradeGroup: "秦汉",
+    gradeGroup: "东汉",
     excerpt: "（班超）尝辍业投笔叹曰：「大丈夫无它志略，犹当效",
   },
   {
@@ -2876,7 +2876,7 @@ window.POEMS_CHENGYU = [
     source: "《后汉书·马援传》",
     dynasty: "东汉",
     author: "范晔",
-    gradeGroup: "秦汉",
+    gradeGroup: "东汉",
     excerpt: "男儿要当死于边野，以马革裹尸还葬耳，何能卧床上在",
   },
   {
@@ -2886,7 +2886,7 @@ window.POEMS_CHENGYU = [
     source: "《后汉书·马援传》",
     dynasty: "东汉",
     author: "范晔",
-    gradeGroup: "秦汉",
+    gradeGroup: "东汉",
     excerpt: "丈夫为志，穷当益坚，老当益壮",
   },
   {
@@ -2896,7 +2896,7 @@ window.POEMS_CHENGYU = [
     source: "《后汉书·班超传》",
     dynasty: "东汉",
     author: "范晔",
-    gradeGroup: "秦汉",
+    gradeGroup: "东汉",
     excerpt: "超曰：「不入虎穴，不得虎子",
   },
   {
@@ -2906,7 +2906,7 @@ window.POEMS_CHENGYU = [
     source: "《后汉书·张俭传》",
     dynasty: "东汉",
     author: "范晔",
-    gradeGroup: "秦汉",
+    gradeGroup: "东汉",
     excerpt: "俭得亡命，困迫遁走，望门投止，莫不重其名行，破家",
   },
   {
@@ -2916,7 +2916,7 @@ window.POEMS_CHENGYU = [
     source: "《后汉书·陈寔传》",
     dynasty: "东汉",
     author: "范晔",
-    gradeGroup: "秦汉",
+    gradeGroup: "东汉",
     excerpt: "时岁荒民俭，有盗夜入其室，止于梁上",
   },
   {
@@ -2926,7 +2926,7 @@ window.POEMS_CHENGYU = [
     source: "《后汉书·霍谞传》",
     dynasty: "东汉",
     author: "范晔",
-    gradeGroup: "秦汉",
+    gradeGroup: "东汉",
     excerpt: "譬犹疗饥于附子，止渴于鸩毒，未入肠胃，已绝咽喉，",
   },
   {
@@ -2936,7 +2936,7 @@ window.POEMS_CHENGYU = [
     source: "《吴越春秋》",
     dynasty: "东汉",
     author: "赵晔",
-    gradeGroup: "秦汉",
+    gradeGroup: "东汉",
     excerpt: "（原文作「穷途」）穷途之哭，末路之悲",
   },
   {
@@ -2946,7 +2946,7 @@ window.POEMS_CHENGYU = [
     source: "《后汉书·光武帝纪》",
     dynasty: "东汉",
     author: "范晔",
-    gradeGroup: "秦汉",
+    gradeGroup: "东汉",
     excerpt: "皇太子见帝勤劳不怠，承间谏曰：「陛下有禹、汤之明",
   },
   {
@@ -2956,7 +2956,7 @@ window.POEMS_CHENGYU = [
     source: "《后汉书·岑彭传》",
     dynasty: "东汉",
     author: "范晔",
-    gradeGroup: "秦汉",
+    gradeGroup: "东汉",
     excerpt: "敕彭书曰：「两城若下，便可将兵南击蜀虏",
   },
   {
@@ -2966,7 +2966,7 @@ window.POEMS_CHENGYU = [
     source: "《后汉书·光武帝纪》",
     dynasty: "东汉",
     author: "范晔",
-    gradeGroup: "秦汉",
+    gradeGroup: "东汉",
     excerpt: "降者更相语曰：「萧王推赤心置人腹中，安得不投死乎",
   },
   {
@@ -2976,7 +2976,7 @@ window.POEMS_CHENGYU = [
     source: "《后汉书·冯异传》",
     dynasty: "东汉",
     author: "范晔",
-    gradeGroup: "秦汉",
+    gradeGroup: "东汉",
     excerpt: "异朝京师",
   },
   {
@@ -2986,7 +2986,7 @@ window.POEMS_CHENGYU = [
     source: "《后汉书·耿弇传》",
     dynasty: "东汉",
     author: "范晔",
-    gradeGroup: "秦汉",
+    gradeGroup: "东汉",
     excerpt: "将军前在南阳建此大策，常以为落落难合，有志者事竟",
   },
   {
@@ -2996,7 +2996,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·魏其武安侯列传》",
     dynasty: "东汉",
     author: "司马迁",
-    gradeGroup: "秦汉",
+    gradeGroup: "东汉",
     excerpt: "（原文作「相提而论」）能富贵人，在日月之际……相",
   },
   {
@@ -3006,7 +3006,7 @@ window.POEMS_CHENGYU = [
     source: "《后汉书·刘宠传》",
     dynasty: "东汉",
     author: "范晔",
-    gradeGroup: "秦汉",
+    gradeGroup: "东汉",
     excerpt: "（刘宠）后四迁为豫章太守，又三迁拜会稽太守",
   },
   {
@@ -3016,7 +3016,7 @@ window.POEMS_CHENGYU = [
     source: "《新论·妄瑕》",
     dynasty: "东汉",
     author: "桓谭",
-    gradeGroup: "秦汉",
+    gradeGroup: "东汉",
     excerpt: "（原文作「冰清玉洁」喻人品高洁）伯夷、叔齐，冰清",
   },
   {
@@ -3026,7 +3026,7 @@ window.POEMS_CHENGYU = [
     source: "《后汉书·梁鸿传》",
     dynasty: "东汉",
     author: "范晔",
-    gradeGroup: "秦汉",
+    gradeGroup: "东汉",
     excerpt: "（梁鸿）遂至吴，依大家皋伯通，居庑下，为人赁舂",
   },
   {
@@ -3036,7 +3036,7 @@ window.POEMS_CHENGYU = [
     source: "《左传·僖公三十三年》",
     dynasty: "东汉",
     author: "左丘明",
-    gradeGroup: "秦汉",
+    gradeGroup: "东汉",
     excerpt: "臼季使过冀，见冀缺耨，其妻馌之，敬，相待如宾",
   },
   {
@@ -3046,7 +3046,7 @@ window.POEMS_CHENGYU = [
     source: "《后汉书·梁鸿传》",
     dynasty: "东汉",
     author: "范晔",
-    gradeGroup: "秦汉",
+    gradeGroup: "东汉",
     excerpt: "（同「举案齐眉」）为人赁舂",
   },
   {
@@ -3056,7 +3056,7 @@ window.POEMS_CHENGYU = [
     source: "《后汉书·丁鸿传》",
     dynasty: "东汉",
     author: "范晔",
-    gradeGroup: "秦汉",
+    gradeGroup: "东汉",
     excerpt: "若敕政责躬，杜渐防萌，则凶妖销灭，害除福凑矣",
   },
   {
@@ -3066,7 +3066,7 @@ window.POEMS_CHENGYU = [
     source: "《明史·王仪传》",
     dynasty: "东汉",
     author: "张廷玉等",
-    gradeGroup: "秦汉",
+    gradeGroup: "东汉",
     excerpt: "（原文作「积重难返」之论）积重之势，非一日可返",
   },
   {
@@ -3075,8 +3075,8 @@ window.POEMS_CHENGYU = [
     title: "甘之如饴",
     source: "《诗经·大雅·绵》",
     dynasty: "东汉",
-    author: "",
-    gradeGroup: "秦汉",
+    author: "佚名",
+    gradeGroup: "东汉",
     excerpt: "（「饴」见《诗·大雅·绵》「周原膴膴，堇荼如饴」",
   },
   {
@@ -3085,8 +3085,8 @@ window.POEMS_CHENGYU = [
     title: "釜底抽薪",
     source: "《三十六计》第十九计",
     dynasty: "东汉",
-    author: "",
-    gradeGroup: "秦汉",
+    author: "佚名",
+    gradeGroup: "东汉",
     excerpt: "不敌其力，而消其势，兑下乾上之象",
   },
   {
@@ -3096,7 +3096,7 @@ window.POEMS_CHENGYU = [
     source: "《太尉桥玄碑》",
     dynasty: "东汉",
     author: "蔡邕",
-    gradeGroup: "秦汉",
+    gradeGroup: "东汉",
     excerpt: "（原文作「百折不挠」）有百折而不挠，临大节而不可",
   },
   {
@@ -3106,7 +3106,7 @@ window.POEMS_CHENGYU = [
     source: "《景德传灯录》",
     dynasty: "东汉",
     author: "道原",
-    gradeGroup: "秦汉",
+    gradeGroup: "东汉",
     excerpt: "（达摩面壁九年之典）师（达摩）终日面壁而坐",
   },
   {
@@ -3115,8 +3115,8 @@ window.POEMS_CHENGYU = [
     title: "任人唯贤",
     source: "《尚书·咸有一德》",
     dynasty: "东汉",
-    author: "",
-    gradeGroup: "秦汉",
+    author: "佚名",
+    gradeGroup: "东汉",
     excerpt: "任官惟贤材，左右惟其人",
   },
   {
@@ -3126,7 +3126,7 @@ window.POEMS_CHENGYU = [
     source: "《庄子·知北游》",
     dynasty: "西汉",
     author: "庄周",
-    gradeGroup: "秦汉",
+    gradeGroup: "西汉",
     excerpt: "人生天地之间，若白驹之过隙，忽然而已",
   },
   {
@@ -3136,7 +3136,7 @@ window.POEMS_CHENGYU = [
     source: "《汉书·刘歆传》",
     dynasty: "西汉",
     author: "班固",
-    gradeGroup: "秦汉",
+    gradeGroup: "西汉",
     excerpt: "犹欲保残守缺，挟恐见破之私意，而无从善服义之公心",
   },
   {
@@ -3145,8 +3145,8 @@ window.POEMS_CHENGYU = [
     title: "博闻强识",
     source: "《礼记·曲礼上》",
     dynasty: "西汉",
-    author: "",
-    gradeGroup: "秦汉",
+    author: "佚名",
+    gradeGroup: "西汉",
     excerpt: "博闻强识而让，敦善行而不怠，谓之君子",
   },
   {
@@ -3156,7 +3156,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·佞幸列传》",
     dynasty: "西汉",
     author: "司马迁",
-    gradeGroup: "秦汉",
+    gradeGroup: "西汉",
     excerpt: "（语本）竟不得名一钱，寄死人家",
   },
   {
@@ -3166,7 +3166,7 @@ window.POEMS_CHENGYU = [
     source: "《汉书·贾谊传》",
     dynasty: "西汉",
     author: "班固",
-    gradeGroup: "秦汉",
+    gradeGroup: "西汉",
     excerpt: "其视杀人若艾草菅然",
   },
   {
@@ -3176,7 +3176,7 @@ window.POEMS_CHENGYU = [
     source: "《后汉书·吴汉传》",
     dynasty: "东汉",
     author: "范晔",
-    gradeGroup: "秦汉",
+    gradeGroup: "东汉",
     excerpt: "诸将见战陈不利，或多惶惧，失其常度",
   },
   {
@@ -3186,7 +3186,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·秦始皇本纪》",
     dynasty: "西汉",
     author: "司马迁",
-    gradeGroup: "秦汉",
+    gradeGroup: "西汉",
     excerpt: "故使天下之士，倾耳而听，重足而立，拑口而不言",
   },
   {
@@ -3196,7 +3196,7 @@ window.POEMS_CHENGYU = [
     source: "《汉书·贾谊传》",
     dynasty: "西汉",
     author: "班固",
-    gradeGroup: "秦汉",
+    gradeGroup: "西汉",
     excerpt: "夫抱火厝之积薪之下而寝其上，火未及燃，因谓之安，",
   },
   {
@@ -3206,7 +3206,7 @@ window.POEMS_CHENGYU = [
     source: "《汉书·董仲舒传》",
     dynasty: "西汉",
     author: "班固",
-    gradeGroup: "秦汉",
+    gradeGroup: "西汉",
     excerpt: "窃譬之琴瑟不调，甚者必解而更张之，乃可鼓也",
   },
   {
@@ -3216,7 +3216,7 @@ window.POEMS_CHENGYU = [
     source: "《汉书·叙传上》",
     dynasty: "西汉",
     author: "班固",
-    gradeGroup: "秦汉",
+    gradeGroup: "西汉",
     excerpt: "（语本）昔有学步于邯郸者，曾未得其仿佛，又复失其",
   },
   {
@@ -3226,7 +3226,7 @@ window.POEMS_CHENGYU = [
     source: "《汉书·东方朔传》",
     dynasty: "西汉",
     author: "班固",
-    gradeGroup: "秦汉",
+    gradeGroup: "西汉",
     excerpt: "以管窥天，以蠡测海，以筳撞钟，岂能通其条贯，考其",
   },
   {
@@ -3236,7 +3236,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·陈涉世家》",
     dynasty: "西汉",
     author: "司马迁",
-    gradeGroup: "秦汉",
+    gradeGroup: "西汉",
     excerpt: "斩木为兵，揭竿为旗，天下云集响应，赢粮而景从",
   },
   {
@@ -3246,7 +3246,7 @@ window.POEMS_CHENGYU = [
     source: "《汉书·王莽传》",
     dynasty: "西汉",
     author: "班固",
-    gradeGroup: "秦汉",
+    gradeGroup: "西汉",
     excerpt: "（语本）良莠不齐，玉石混杂",
   },
   {
@@ -3256,7 +3256,7 @@ window.POEMS_CHENGYU = [
     source: "《汉书·王嘉传》",
     dynasty: "西汉",
     author: "班固",
-    gradeGroup: "秦汉",
+    gradeGroup: "西汉",
     excerpt: "里谚曰：「千人所指，无病而死",
   },
   {
@@ -3266,7 +3266,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·李将军列传》",
     dynasty: "西汉",
     author: "司马迁",
-    gradeGroup: "秦汉",
+    gradeGroup: "西汉",
     excerpt: "谚曰「桃李不言，下自成蹊」",
   },
   {
@@ -3276,7 +3276,7 @@ window.POEMS_CHENGYU = [
     source: "《论衡·是应》",
     dynasty: "西汉",
     author: "王充",
-    gradeGroup: "秦汉",
+    gradeGroup: "西汉",
     excerpt: "风不鸣条，雨不破块，五日一风，十日一雨",
   },
   {
@@ -3286,7 +3286,7 @@ window.POEMS_CHENGYU = [
     source: "《晋书·王献之传》",
     dynasty: "两晋南北朝",
     author: "房玄龄",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "两晋南北朝",
     excerpt: "（献之）年数岁，尝观门生樗蒲，曰：「南风不竞",
   },
   {
@@ -3296,7 +3296,7 @@ window.POEMS_CHENGYU = [
     source: "《三国志·吴书·吕蒙传》裴松之注引《江表传》",
     dynasty: "三国",
     author: "陈寿",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "三国",
     excerpt: "光武当兵马之务，手不释卷",
   },
   {
@@ -3306,7 +3306,7 @@ window.POEMS_CHENGYU = [
     source: "《三国志·蜀书·赵云传》裴松之注引《云别传》",
     dynasty: "三国",
     author: "陈寿",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "三国",
     excerpt: "云入营，更大开门，偃旗息鼓",
   },
   {
@@ -3316,7 +3316,7 @@ window.POEMS_CHENGYU = [
     source: "《后汉书·杨彪传》",
     dynasty: "三国",
     author: "范晔",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "三国",
     excerpt: "子修为曹操所杀",
   },
   {
@@ -3326,7 +3326,7 @@ window.POEMS_CHENGYU = [
     source: "《三国志·吴书·吴主传》裴松之注引《吴书》",
     dynasty: "三国",
     author: "陈寿",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "三国",
     excerpt: "（赵咨使魏）魏文帝善之，嘲咨曰：「吴如大夫者几人",
   },
   {
@@ -3336,7 +3336,7 @@ window.POEMS_CHENGYU = [
     source: "《三国志·蜀书·诸葛亮传》",
     dynasty: "三国",
     author: "陈寿",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "三国",
     excerpt: "先帝不以臣卑鄙，猥自枉屈，三顾臣于草庐之中，咨臣",
   },
   {
@@ -3346,7 +3346,7 @@ window.POEMS_CHENGYU = [
     source: "《三国演义》第四十六回",
     dynasty: "三国",
     author: "罗贯中",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "三国",
     excerpt: "（小说家言，本《三国志·吴书》「权乘大船来观军」",
   },
   {
@@ -3356,7 +3356,7 @@ window.POEMS_CHENGYU = [
     source: "《三国演义》第三十九回",
     dynasty: "三国",
     author: "罗贯中",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "三国",
     excerpt: "直须惊破曹公胆，初出茅庐第一功",
   },
   {
@@ -3366,7 +3366,7 @@ window.POEMS_CHENGYU = [
     source: "《后出师表》",
     dynasty: "三国",
     author: "诸葛亮",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "三国",
     excerpt: "臣鞠躬尽力，死而后已",
   },
   {
@@ -3376,7 +3376,7 @@ window.POEMS_CHENGYU = [
     source: "《三国志·蜀书·后主传》裴松之注引《汉晋春秋》",
     dynasty: "三国",
     author: "陈寿",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "三国",
     excerpt: "司马文王与禅宴，为之作故蜀技，旁人皆为之感怆，而",
   },
   {
@@ -3386,7 +3386,7 @@ window.POEMS_CHENGYU = [
     source: "《三国志·吴书·吕蒙传》裴松之注引《江表传》",
     dynasty: "三国",
     author: "陈寿",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "三国",
     excerpt: "（鲁）肃拊蒙背曰：「吾谓大弟但有武略耳，至于今者",
   },
   {
@@ -3396,7 +3396,7 @@ window.POEMS_CHENGYU = [
     source: "《世说新语·文学》",
     dynasty: "三国",
     author: "刘义庆",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "三国",
     excerpt: "文帝尝令东阿王七步中作诗，不成者行大法",
   },
   {
@@ -3406,7 +3406,7 @@ window.POEMS_CHENGYU = [
     source: "《世说新语·假谲》",
     dynasty: "三国",
     author: "刘义庆",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "三国",
     excerpt: "魏武行役，失汲道，军皆渴，乃令曰：「前有大梅林，",
   },
   {
@@ -3416,7 +3416,7 @@ window.POEMS_CHENGYU = [
     source: "《三国志·蜀书·马良传》",
     dynasty: "三国",
     author: "陈寿",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "三国",
     excerpt: "先主临薨谓亮曰：「马谡言过其实，不可大用，君其察",
   },
   {
@@ -3426,7 +3426,7 @@ window.POEMS_CHENGYU = [
     source: "《世说新语·文学》",
     dynasty: "三国",
     author: "刘义庆",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "三国",
     excerpt: "文帝尝令东阿王七步中作诗，不成者行大法",
   },
   {
@@ -3436,7 +3436,7 @@ window.POEMS_CHENGYU = [
     source: "《南史·谢灵运传》",
     dynasty: "三国",
     author: "李延寿",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "三国",
     excerpt: "（谢灵运）尝曰：「天下才共一石，曹子建独占八斗，",
   },
   {
@@ -3446,7 +3446,7 @@ window.POEMS_CHENGYU = [
     source: "《三国演义》第四十九回",
     dynasty: "三国",
     author: "罗贯中",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "三国",
     excerpt: "（小说家言）欲破曹公，宜用火攻；万事俱备，只欠东",
   },
   {
@@ -3456,7 +3456,7 @@ window.POEMS_CHENGYU = [
     source: "《三国演义》第四十三回",
     dynasty: "三国",
     author: "罗贯中",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "三国",
     excerpt: "（小说家言）诸葛亮舌战群儒",
   },
   {
@@ -3466,7 +3466,7 @@ window.POEMS_CHENGYU = [
     source: "《三国演义》第五十四回",
     dynasty: "三国",
     author: "罗贯中",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "三国",
     excerpt: "（小说家言）汝保主公入吴，当领此三个锦囊，囊中有",
   },
   {
@@ -3476,7 +3476,7 @@ window.POEMS_CHENGYU = [
     source: "《三国志·吴书·鲁肃传》",
     dynasty: "三国",
     author: "陈寿",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "三国",
     excerpt: "肃邀羽相见，各驻兵马百步上，但请将军单刀俱会",
   },
   {
@@ -3486,7 +3486,7 @@ window.POEMS_CHENGYU = [
     source: "《三国志·蜀书·诸葛亮传》",
     dynasty: "三国",
     author: "陈寿",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "三国",
     excerpt: "孤之有孔明，犹鱼之有水也",
   },
   {
@@ -3496,7 +3496,7 @@ window.POEMS_CHENGYU = [
     source: "《晋书·杜预传》",
     dynasty: "三国",
     author: "房玄龄",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "三国",
     excerpt: "今兵威已振，譬如破竹，数节之后，皆迎刃而解，无复",
   },
   {
@@ -3506,7 +3506,7 @@ window.POEMS_CHENGYU = [
     source: "《三国志·吴书·吕蒙传》裴松之注引《江表传》",
     dynasty: "三国",
     author: "陈寿",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "三国",
     excerpt: "吾谓大弟但有武略耳，至于今者，学识英博，非复吴下",
   },
   {
@@ -3516,7 +3516,7 @@ window.POEMS_CHENGYU = [
     source: "《三国志·蜀书·张飞传》",
     dynasty: "三国",
     author: "陈寿",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "三国",
     excerpt: "（严）颜答曰：「卿等无状，侵夺我州，我州但有断头",
   },
   {
@@ -3526,7 +3526,7 @@ window.POEMS_CHENGYU = [
     source: "《三国演义》第九十五回",
     dynasty: "三国",
     author: "罗贯中",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "三国",
     excerpt: "（小说家言；本《三国志·蜀书·赵云传》裴注「空营",
   },
   {
@@ -3536,7 +3536,7 @@ window.POEMS_CHENGYU = [
     source: "《三国演义》第四十六回",
     dynasty: "三国",
     author: "罗贯中",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "三国",
     excerpt: "（小说家言；本《吴越春秋》要离断臂之典）周瑜打黄",
   },
   {
@@ -3545,8 +3545,8 @@ window.POEMS_CHENGYU = [
     title: "连环计",
     source: "《三十六计》第三十五计",
     dynasty: "三国",
-    author: "",
-    gradeGroup: "三国两晋南北朝",
+    author: "佚名",
+    gradeGroup: "三国",
     excerpt: "将多兵众，不可以敌，使其自累，以杀其势",
   },
   {
@@ -3556,7 +3556,7 @@ window.POEMS_CHENGYU = [
     source: "《三国志·蜀书·诸葛亮传》",
     dynasty: "三国",
     author: "陈寿",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "三国",
     excerpt: "（建兴）九年，亮复出祁山，以木牛运，粮尽退军",
   },
   {
@@ -3566,7 +3566,7 @@ window.POEMS_CHENGYU = [
     source: "《三国志·蜀书·关羽传》",
     dynasty: "三国",
     author: "陈寿",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "三国",
     excerpt: "孟起兼资文武，雄烈过人，一世之杰，黥、彭之徒，当",
   },
   {
@@ -3576,7 +3576,7 @@ window.POEMS_CHENGYU = [
     source: "《三国志·蜀书·赵云传》裴松之注引《云别传》",
     dynasty: "三国",
     author: "陈寿",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "三国",
     excerpt: "先主明旦自来至云营围视昨战处，曰：「子龙一身都是",
   },
   {
@@ -3586,7 +3586,7 @@ window.POEMS_CHENGYU = [
     source: "《三国志·魏书·荀彧传》",
     dynasty: "三国",
     author: "陈寿",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "三国",
     excerpt: "今东方皆以收麦，必坚壁清野以待将军",
   },
   {
@@ -3596,7 +3596,7 @@ window.POEMS_CHENGYU = [
     source: "《三国志·吴书·吴主传》",
     dynasty: "三国",
     author: "陈寿",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "三国",
     excerpt: "况今奸宄竞逐，豺狼满道，乃欲哀亲戚，顾礼制，是犹",
   },
   {
@@ -3606,7 +3606,7 @@ window.POEMS_CHENGYU = [
     source: "《三国志·魏书·管辂传》",
     dynasty: "三国",
     author: "陈寿",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "三国",
     excerpt: "此老生之常谭",
   },
   {
@@ -3616,7 +3616,7 @@ window.POEMS_CHENGYU = [
     source: "《晋书·庾翼传》",
     dynasty: "三国",
     author: "房玄龄",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "三国",
     excerpt: "京兆杜乂、陈郡殷浩并才名冠世，而翼弗之重也，每语",
   },
   {
@@ -3626,7 +3626,7 @@ window.POEMS_CHENGYU = [
     source: "《三国演义》第八十九回",
     dynasty: "三国",
     author: "罗贯中",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "三国",
     excerpt: "（本《诗经》「物伤其类」之意）兔死狐悲，物伤其类",
   },
   {
@@ -3636,7 +3636,7 @@ window.POEMS_CHENGYU = [
     source: "《三国志·魏书·高贵乡公纪》裴松之注引《汉晋春秋》",
     dynasty: "三国",
     author: "陈寿",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "三国",
     excerpt: "帝见威权日去，不胜其忿",
   },
   {
@@ -3646,7 +3646,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·滑稽列传》",
     dynasty: "三国",
     author: "司马迁",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "三国",
     excerpt: "故曰酒极则乱，乐极则悲；万事尽然，言不可极，极之",
   },
   {
@@ -3656,7 +3656,7 @@ window.POEMS_CHENGYU = [
     source: "《汉书·朱云传》",
     dynasty: "三国",
     author: "班固",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "三国",
     excerpt: "今朝廷大臣，上不能匡主，下亡以益民，皆尸位素餐",
   },
   {
@@ -3665,8 +3665,8 @@ window.POEMS_CHENGYU = [
     title: "量入为出",
     source: "《礼记·王制》",
     dynasty: "三国",
-    author: "",
-    gradeGroup: "三国两晋南北朝",
+    author: "佚名",
+    gradeGroup: "三国",
     excerpt: "家宰制国用，必于岁之杪，五谷皆入，然后制国用",
   },
   {
@@ -3676,7 +3676,7 @@ window.POEMS_CHENGYU = [
     source: "《教与军师长史参军掾属》",
     dynasty: "三国",
     author: "诸葛亮",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "三国",
     excerpt: "夫参署者，集众思，广忠益也",
   },
   {
@@ -3686,7 +3686,7 @@ window.POEMS_CHENGYU = [
     source: "《晋书·左思传》",
     dynasty: "两晋南北朝",
     author: "房玄龄",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "两晋南北朝",
     excerpt: "（左思《三都赋》成）于是豪贵之家竞相传写，洛阳为",
   },
   {
@@ -3696,7 +3696,7 @@ window.POEMS_CHENGYU = [
     source: "《晋书·祖逖传》",
     dynasty: "两晋南北朝",
     author: "房玄龄",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "两晋南北朝",
     excerpt: "（祖逖）与司空刘琨俱为司州主簿，情好绸缪，共被同",
   },
   {
@@ -3706,7 +3706,7 @@ window.POEMS_CHENGYU = [
     source: "《晋书·刘琨传》",
     dynasty: "两晋南北朝",
     author: "房玄龄",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "两晋南北朝",
     excerpt: "吾枕戈待旦，志枭逆虏，常恐祖生先吾著鞭",
   },
   {
@@ -3716,7 +3716,7 @@ window.POEMS_CHENGYU = [
     source: "《晋书·苻坚载记》",
     dynasty: "两晋南北朝",
     author: "房玄龄",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "两晋南北朝",
     excerpt: "坚与苻融登城而望王师，见部阵齐整，将士精锐；又北",
   },
   {
@@ -3726,7 +3726,7 @@ window.POEMS_CHENGYU = [
     source: "《晋书·谢玄传》",
     dynasty: "两晋南北朝",
     author: "房玄龄",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "两晋南北朝",
     excerpt: "（前秦兵败）闻风声鹤唳，皆以为王师已至",
   },
   {
@@ -3736,7 +3736,7 @@ window.POEMS_CHENGYU = [
     source: "《晋书·谢安传》",
     dynasty: "两晋南北朝",
     author: "房玄龄",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "两晋南北朝",
     excerpt: "（谢安）征西大将军桓温请为司马，将发新亭，朝士咸",
   },
   {
@@ -3746,7 +3746,7 @@ window.POEMS_CHENGYU = [
     source: "《书断·王羲之》",
     dynasty: "两晋南北朝",
     author: "张怀瓘",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "两晋南北朝",
     excerpt: "王羲之书祝版，工人削之，笔入木三分",
   },
   {
@@ -3756,7 +3756,7 @@ window.POEMS_CHENGYU = [
     source: "《对楚王问》",
     dynasty: "两晋南北朝",
     author: "宋玉",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "两晋南北朝",
     excerpt: "是其曲弥高，其和弥寡",
   },
   {
@@ -3766,7 +3766,7 @@ window.POEMS_CHENGYU = [
     source: "《世说新语·言语》",
     dynasty: "两晋南北朝",
     author: "刘义庆",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "两晋南北朝",
     excerpt: "俄而雪骤，公欣然曰：「白雪纷纷何所似？」兄子胡儿",
   },
   {
@@ -3776,7 +3776,7 @@ window.POEMS_CHENGYU = [
     source: "《世说新语·任诞》",
     dynasty: "两晋南北朝",
     author: "刘义庆",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "两晋南北朝",
     excerpt: "王子猷居山阴，夜大雪……忽忆戴安道",
   },
   {
@@ -3786,7 +3786,7 @@ window.POEMS_CHENGYU = [
     source: "《晋书·顾恺之传》",
     dynasty: "两晋南北朝",
     author: "房玄龄",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "两晋南北朝",
     excerpt: "恺之每食甘蔗，恒自尾至本",
   },
   {
@@ -3796,7 +3796,7 @@ window.POEMS_CHENGYU = [
     source: "《世说新语·黜免》",
     dynasty: "两晋南北朝",
     author: "刘义庆",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "两晋南北朝",
     excerpt: "殷中军被废，在信安，终日恒书空作字",
   },
   {
@@ -3806,7 +3806,7 @@ window.POEMS_CHENGYU = [
     source: "《世说新语·赏誉》",
     dynasty: "两晋南北朝",
     author: "刘义庆",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "两晋南北朝",
     excerpt: "郭子玄语议如悬河泻水，注而不竭",
   },
   {
@@ -3816,7 +3816,7 @@ window.POEMS_CHENGYU = [
     source: "《世说新语·德行》",
     dynasty: "两晋南北朝",
     author: "刘义庆",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "两晋南北朝",
     excerpt: "（王恭）对曰：「丈人不悉恭，恭作人无长物",
   },
   {
@@ -3826,7 +3826,7 @@ window.POEMS_CHENGYU = [
     source: "《世说新语·雅量》",
     dynasty: "两晋南北朝",
     author: "刘义庆",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "两晋南北朝",
     excerpt: "郗太傅在京口，遣门生与王丞相书，求女婿",
   },
   {
@@ -3836,7 +3836,7 @@ window.POEMS_CHENGYU = [
     source: "《世说新语·政事》",
     dynasty: "两晋南北朝",
     author: "刘义庆",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "两晋南北朝",
     excerpt: "（陶公）作荆州时，敕船官悉录锯木屑，不限多少",
   },
   {
@@ -3846,7 +3846,7 @@ window.POEMS_CHENGYU = [
     source: "《世说新语·言语》",
     dynasty: "两晋南北朝",
     author: "刘义庆",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "两晋南北朝",
     excerpt: "过江诸人，每至美日，辄相邀新亭，藉卉饮宴",
   },
   {
@@ -3856,7 +3856,7 @@ window.POEMS_CHENGYU = [
     source: "《晋书·祖逖传》",
     dynasty: "两晋南北朝",
     author: "房玄龄",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "两晋南北朝",
     excerpt: "（祖逖）渡江，中流击楫而誓曰：「祖逖不能清中原而",
   },
   {
@@ -3866,7 +3866,7 @@ window.POEMS_CHENGYU = [
     source: "《吕氏春秋·察今》",
     dynasty: "两晋南北朝",
     author: "吕不韦",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "两晋南北朝",
     excerpt: "荆人欲袭宋，使人先表澭水",
   },
   {
@@ -3876,7 +3876,7 @@ window.POEMS_CHENGYU = [
     source: "《风俗通义·怪神》",
     dynasty: "两晋南北朝",
     author: "应劭",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "两晋南北朝",
     excerpt: "（乐广）尝有亲客，久阔不复来，广问其故，答曰：「",
   },
   {
@@ -3886,7 +3886,7 @@ window.POEMS_CHENGYU = [
     source: "《世说新语·容止》",
     dynasty: "两晋南北朝",
     author: "刘义庆",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "两晋南北朝",
     excerpt: "有人语王戎曰：「嵇延祖卓卓如野鹤之在鸡群",
   },
   {
@@ -3896,7 +3896,7 @@ window.POEMS_CHENGYU = [
     source: "《世说新语·言语》",
     dynasty: "两晋南北朝",
     author: "刘义庆",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "两晋南北朝",
     excerpt: "（顾悦与简文同年而发早白）简文曰：「卿何以先白？",
   },
   {
@@ -3906,7 +3906,7 @@ window.POEMS_CHENGYU = [
     source: "《晋书·褚裒传》",
     dynasty: "两晋南北朝",
     author: "房玄龄",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "两晋南北朝",
     excerpt: "裒少有简贵之风……谯国桓彝见而目之曰：「季野有皮",
   },
   {
@@ -3916,7 +3916,7 @@ window.POEMS_CHENGYU = [
     source: "《世说新语·文学》",
     dynasty: "两晋南北朝",
     author: "刘义庆",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "两晋南北朝",
     excerpt: "殷中军云：「康伯未得我牙后慧",
   },
   {
@@ -3926,7 +3926,7 @@ window.POEMS_CHENGYU = [
     source: "《晋书·谢安传》",
     dynasty: "两晋南北朝",
     author: "房玄龄",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "两晋南北朝",
     excerpt: "卿累违朝旨，高卧东山",
   },
   {
@@ -3936,7 +3936,7 @@ window.POEMS_CHENGYU = [
     source: "《世说新语·言语》",
     dynasty: "两晋南北朝",
     author: "刘义庆",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "两晋南北朝",
     excerpt: "顾长康从会稽还，人问山川之美，顾云：「千岩竞秀，",
   },
   {
@@ -3946,7 +3946,7 @@ window.POEMS_CHENGYU = [
     source: "《晋书·陆云传》",
     dynasty: "两晋南北朝",
     author: "房玄龄",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "两晋南北朝",
     excerpt: "（闵鸿）见而奇之，曰：「此儿若非龙驹，当是凤雏",
   },
   {
@@ -3956,7 +3956,7 @@ window.POEMS_CHENGYU = [
     source: "《世说新语·言语》",
     dynasty: "两晋南北朝",
     author: "刘义庆",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "两晋南北朝",
     excerpt: "草木蒙笼其上，若云兴霞蔚",
   },
   {
@@ -3966,7 +3966,7 @@ window.POEMS_CHENGYU = [
     source: "《文赋》",
     dynasty: "两晋南北朝",
     author: "陆机",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "两晋南北朝",
     excerpt: "虽离方而遁员，期穷形而尽相",
   },
   {
@@ -3976,7 +3976,7 @@ window.POEMS_CHENGYU = [
     source: "《庄子·渔父》",
     dynasty: "两晋南北朝",
     author: "庄周",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "两晋南北朝",
     excerpt: "万乘之主，千乘之君，见夫子未尝不分庭伉礼，夫子犹",
   },
   {
@@ -3985,8 +3985,8 @@ window.POEMS_CHENGYU = [
     title: "盲人摸象",
     source: "《涅槃经》",
     dynasty: "两晋南北朝",
-    author: "",
-    gradeGroup: "三国两晋南北朝",
+    author: "佚名",
+    gradeGroup: "两晋南北朝",
     excerpt: "（佛典）如彼盲人，各各摸象，不得象之实相",
   },
   {
@@ -3996,7 +3996,7 @@ window.POEMS_CHENGYU = [
     source: "《理惑论》",
     dynasty: "两晋南北朝",
     author: "牟融",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "两晋南北朝",
     excerpt: "公明仪为牛弹清角之操，伏食如故",
   },
   {
@@ -4005,8 +4005,8 @@ window.POEMS_CHENGYU = [
     title: "空中楼阁",
     source: "《百喻经·三重楼喻》",
     dynasty: "两晋南北朝",
-    author: "",
-    gradeGroup: "三国两晋南北朝",
+    author: "佚名",
+    gradeGroup: "两晋南北朝",
     excerpt: "（佛典）愚人见三重楼，高广严丽，心生渴仰，即便唤",
   },
   {
@@ -4016,7 +4016,7 @@ window.POEMS_CHENGYU = [
     source: "《南史·檀道济传》",
     dynasty: "两晋南北朝",
     author: "李延寿",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "两晋南北朝",
     excerpt: "乃脱帻投地，曰：「乃坏汝万里长城！」",
   },
   {
@@ -4026,7 +4026,7 @@ window.POEMS_CHENGYU = [
     source: "《南史·江淹传》",
     dynasty: "两晋南北朝",
     author: "李延寿",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "两晋南北朝",
     excerpt: "（江淹）梦一丈夫，自称郭璞，谓淹曰：「吾有笔在卿",
   },
   {
@@ -4036,7 +4036,7 @@ window.POEMS_CHENGYU = [
     source: "《开元天宝遗事》",
     dynasty: "两晋南北朝",
     author: "王仁裕",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "两晋南北朝",
     excerpt: "李太白少时，梦所用之笔头上生花，后天才赡逸，名闻",
   },
   {
@@ -4046,7 +4046,7 @@ window.POEMS_CHENGYU = [
     source: "《后汉书·孔融传》",
     dynasty: "两晋南北朝",
     author: "范晔",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "两晋南北朝",
     excerpt: "融负有高气，志在靖难，而才疏意广，迄无成功",
   },
   {
@@ -4056,7 +4056,7 @@ window.POEMS_CHENGYU = [
     source: "《晋书·石勒载记》",
     dynasty: "两晋南北朝",
     author: "房玄龄",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "两晋南北朝",
     excerpt: "勒笑曰：「朕若逢高皇，当北面而事之，与韩、彭竞鞭",
   },
   {
@@ -4066,7 +4066,7 @@ window.POEMS_CHENGYU = [
     source: "《晋书·温峤传》",
     dynasty: "两晋南北朝",
     author: "房玄龄",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "两晋南北朝",
     excerpt: "今之事势，义无旋踵，骑猛兽，安可中下哉！",
   },
   {
@@ -4076,7 +4076,7 @@ window.POEMS_CHENGYU = [
     source: "《五柳先生传》",
     dynasty: "两晋南北朝",
     author: "陶渊明",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "两晋南北朝",
     excerpt: "好读书，不求甚解；每有会意，便欣然忘食",
   },
   {
@@ -4086,7 +4086,7 @@ window.POEMS_CHENGYU = [
     source: "《桃花源记》",
     dynasty: "两晋南北朝",
     author: "陶渊明",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "两晋南北朝",
     excerpt: "自云先世避秦时乱，率妻子邑人来此绝境，不复出焉，",
   },
   {
@@ -4096,7 +4096,7 @@ window.POEMS_CHENGYU = [
     source: "《桃花源记》",
     dynasty: "两晋南北朝",
     author: "陶渊明",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "两晋南北朝",
     excerpt: "忽逢桃花林，夹岸数百步，中无杂树，芳草鲜美，落英",
   },
   {
@@ -4106,7 +4106,7 @@ window.POEMS_CHENGYU = [
     source: "《桃花源记》",
     dynasty: "两晋南北朝",
     author: "陶渊明",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "两晋南北朝",
     excerpt: "林尽水源，便得一山，山有小口，仿佛若有光",
   },
   {
@@ -4116,7 +4116,7 @@ window.POEMS_CHENGYU = [
     source: "《桃花源记》",
     dynasty: "两晋南北朝",
     author: "陶渊明",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "两晋南北朝",
     excerpt: "阡陌交通，鸡犬相闻",
   },
   {
@@ -4126,7 +4126,7 @@ window.POEMS_CHENGYU = [
     source: "《桃花源记》",
     dynasty: "两晋南北朝",
     author: "陶渊明",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "两晋南北朝",
     excerpt: "南阳刘子骥，高尚士也，闻之，欣然规往",
   },
   {
@@ -4136,7 +4136,7 @@ window.POEMS_CHENGYU = [
     source: "《后汉书·孔融传》",
     dynasty: "两晋南北朝",
     author: "范晔",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "两晋南北朝",
     excerpt: "（原文作「覆巢无完卵」）主人有言：「覆巢之下，复",
   },
   {
@@ -4146,7 +4146,7 @@ window.POEMS_CHENGYU = [
     source: "《三国演义》",
     dynasty: "两晋南北朝",
     author: "罗贯中",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "两晋南北朝",
     excerpt: "（后世语；本《三国志》谋略之典）一步一计，算无遗",
   },
   {
@@ -4156,7 +4156,7 @@ window.POEMS_CHENGYU = [
     source: "《鹦鹉赋》序",
     dynasty: "两晋南北朝",
     author: "祢衡",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "两晋南北朝",
     excerpt: "（祢衡）揽笔而作，文无加点",
   },
   {
@@ -4166,7 +4166,7 @@ window.POEMS_CHENGYU = [
     source: "《晋书·阮籍传》",
     dynasty: "两晋南北朝",
     author: "房玄龄",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "两晋南北朝",
     excerpt: "籍又能为青白眼，见礼俗之士，以白眼对之",
   },
   {
@@ -4174,9 +4174,9 @@ window.POEMS_CHENGYU = [
     id: "cy-418",
     title: "一衣带水",
     source: "《南史·陈纪下》",
-    dynasty: "隋",
+    dynasty: "两晋南北朝",
     author: "李延寿",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "两晋南北朝",
     excerpt: "隋文帝谓仆射高颎曰：「我为百姓父母，岂可限一衣带",
   },
   {
@@ -4184,9 +4184,9 @@ window.POEMS_CHENGYU = [
     id: "cy-419",
     title: "牛角挂书",
     source: "《新唐书·李密传》",
-    dynasty: "隋",
+    dynasty: "唐",
     author: "欧阳修等",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "唐",
     excerpt: "（李密）闻包恺在缑山，往从之",
   },
   {
@@ -4194,9 +4194,9 @@ window.POEMS_CHENGYU = [
     id: "cy-420",
     title: "罄竹难书",
     source: "《旧唐书·李密传》",
-    dynasty: "隋",
+    dynasty: "唐",
     author: "刘昫等",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "唐",
     excerpt: "罄南山之竹，书罪未穷；决东海之波，流恶难尽",
   },
   {
@@ -4204,9 +4204,9 @@ window.POEMS_CHENGYU = [
     id: "cy-421",
     title: "暗箭伤人",
     source: "《左传·隐公十一年》",
-    dynasty: "隋",
+    dynasty: "春秋",
     author: "左丘明",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "春秋",
     excerpt: "（郑庄公）曰：「子都，子都，无礼于君",
   },
   {
@@ -4216,7 +4216,7 @@ window.POEMS_CHENGYU = [
     source: "《孔丛子·论势》",
     dynasty: "三国",
     author: "孔鲋",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "三国",
     excerpt: "（语本）无翼而飞，不胫而走",
   },
   {
@@ -4226,7 +4226,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·淮阴侯列传》",
     dynasty: "三国",
     author: "司马迁",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "三国",
     excerpt: "臣愿披腹心，输肝胆，效愚计，恐足下不能用也",
   },
   {
@@ -4236,7 +4236,7 @@ window.POEMS_CHENGYU = [
     source: "《旧五代史·梁书》",
     dynasty: "三国",
     author: "薛居正等",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "三国",
     excerpt: "（语本）多事之秋，兵戈不息",
   },
   {
@@ -4246,7 +4246,7 @@ window.POEMS_CHENGYU = [
     source: "《书断·王羲之》",
     dynasty: "两晋南北朝",
     author: "张怀瓘",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "两晋南北朝",
     excerpt: "（袁昂评书）剑拔弩张，以拟其势",
   },
   {
@@ -4255,8 +4255,8 @@ window.POEMS_CHENGYU = [
     title: "扑朔迷离",
     source: "《木兰诗》",
     dynasty: "两晋南北朝",
-    author: "",
-    gradeGroup: "三国两晋南北朝",
+    author: "佚名",
+    gradeGroup: "两晋南北朝",
     excerpt: "雄兔脚扑朔，雌兔眼迷离",
   },
   {
@@ -4266,7 +4266,7 @@ window.POEMS_CHENGYU = [
     source: "《三国志·蜀书·后主传》裴松之注",
     dynasty: "三国",
     author: "陈寿",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "三国",
     excerpt: "（语本）效犬马之劳，以报知遇",
   },
   {
@@ -4276,7 +4276,7 @@ window.POEMS_CHENGYU = [
     source: "《陈情表》",
     dynasty: "三国",
     author: "李密",
-    gradeGroup: "三国两晋南北朝",
+    gradeGroup: "三国",
     excerpt: "但以刘日薄西山，气息奄奄，人命危浅，朝不虑夕",
   },
   {
@@ -4286,7 +4286,7 @@ window.POEMS_CHENGYU = [
     source: "《本事诗·情感》",
     dynasty: "唐",
     author: "孟棨",
-    gradeGroup: "唐五代",
+    gradeGroup: "唐",
     excerpt: "陈太子舍人徐德言之妻，后主叔宝之妹，封乐昌公主，",
   },
   {
@@ -4296,7 +4296,7 @@ window.POEMS_CHENGYU = [
     source: "《三戒·黔之驴》",
     dynasty: "唐",
     author: "柳宗元",
-    gradeGroup: "唐五代",
+    gradeGroup: "唐",
     excerpt: "黔无驴，有好事者船载以入",
   },
   {
@@ -4306,7 +4306,7 @@ window.POEMS_CHENGYU = [
     source: "《唐故给事中皇太子侍读陆文通先生墓表》",
     dynasty: "唐",
     author: "柳宗元",
-    gradeGroup: "唐五代",
+    gradeGroup: "唐",
     excerpt: "其为书，处则充栋宇，出则汗牛马",
   },
   {
@@ -4316,7 +4316,7 @@ window.POEMS_CHENGYU = [
     source: "《南柯太守传》",
     dynasty: "唐",
     author: "李公佐",
-    gradeGroup: "唐五代",
+    gradeGroup: "唐",
     excerpt: "（淳于棼）梦入大槐安国，娶公主，为南柯太守，历二",
   },
   {
@@ -4326,7 +4326,7 @@ window.POEMS_CHENGYU = [
     source: "《丽人行》",
     dynasty: "唐",
     author: "杜甫",
-    gradeGroup: "唐五代",
+    gradeGroup: "唐",
     excerpt: "炙手可热势绝伦，慎莫近前丞相嗔",
   },
   {
@@ -4336,7 +4336,7 @@ window.POEMS_CHENGYU = [
     source: "《赠李司空妓》",
     dynasty: "唐",
     author: "刘禹锡",
-    gradeGroup: "唐五代",
+    gradeGroup: "唐",
     excerpt: "高髻云鬟宫样妆，春风一曲杜韦娘",
   },
   {
@@ -4346,7 +4346,7 @@ window.POEMS_CHENGYU = [
     source: "《新唐书·李贺传》",
     dynasty: "唐",
     author: "欧阳修等",
-    gradeGroup: "唐五代",
+    gradeGroup: "唐",
     excerpt: "（李贺）每旦日出，骑弱马，从小奚奴，背古锦囊，遇",
   },
   {
@@ -4356,7 +4356,7 @@ window.POEMS_CHENGYU = [
     source: "《正月十五夜》",
     dynasty: "唐",
     author: "苏味道",
-    gradeGroup: "唐五代",
+    gradeGroup: "唐",
     excerpt: "火树银花合，星桥铁锁开",
   },
   {
@@ -4366,7 +4366,7 @@ window.POEMS_CHENGYU = [
     source: "《登科后》",
     dynasty: "唐",
     author: "孟郊",
-    gradeGroup: "唐五代",
+    gradeGroup: "唐",
     excerpt: "昔日龌龊不足夸，今朝放荡思无涯",
   },
   {
@@ -4376,7 +4376,7 @@ window.POEMS_CHENGYU = [
     source: "《资治通鉴·唐纪》",
     dynasty: "唐",
     author: "司马光",
-    gradeGroup: "唐五代",
+    gradeGroup: "唐",
     excerpt: "（狄仁杰）又尝荐夏官侍郎姚元崇、监察御史曲阿桓彦",
   },
   {
@@ -4386,7 +4386,7 @@ window.POEMS_CHENGYU = [
     source: "《开元天宝遗事》",
     dynasty: "唐",
     author: "王仁裕",
-    gradeGroup: "唐五代",
+    gradeGroup: "唐",
     excerpt: "李太白少时，梦所用之笔头上生花，后天才赡逸，名闻",
   },
   {
@@ -4396,7 +4396,7 @@ window.POEMS_CHENGYU = [
     source: "《题都城南庄》",
     dynasty: "唐",
     author: "崔护",
-    gradeGroup: "唐五代",
+    gradeGroup: "唐",
     excerpt: "去年今日此门中，人面桃花相映红",
   },
   {
@@ -4406,7 +4406,7 @@ window.POEMS_CHENGYU = [
     source: "《神仙传·王远》",
     dynasty: "唐",
     author: "葛洪",
-    gradeGroup: "唐五代",
+    gradeGroup: "唐",
     excerpt: "（麻姑）自说云：「接侍以来，已见东海三为桑田",
   },
   {
@@ -4416,7 +4416,7 @@ window.POEMS_CHENGYU = [
     source: "《灵怪录·郭翰》",
     dynasty: "唐",
     author: "牛峤",
-    gradeGroup: "唐五代",
+    gradeGroup: "唐",
     excerpt: "（织女）徐视其衣，并无缝",
   },
   {
@@ -4426,7 +4426,7 @@ window.POEMS_CHENGYU = [
     source: "《唐朝名画录》",
     dynasty: "唐",
     author: "朱景玄",
-    gradeGroup: "唐五代",
+    gradeGroup: "唐",
     excerpt: "（张璪）能握双管，一时齐下，一为生枝，一为枯干，",
   },
   {
@@ -4436,7 +4436,7 @@ window.POEMS_CHENGYU = [
     source: "《历代名画记》",
     dynasty: "唐",
     author: "张彦远",
-    gradeGroup: "唐五代",
+    gradeGroup: "唐",
     excerpt: "（张僧繇）于金陵安乐寺画四龙于壁，不点睛",
   },
   {
@@ -4446,7 +4446,7 @@ window.POEMS_CHENGYU = [
     source: "《李逵负荆》",
     dynasty: "唐",
     author: "康进之",
-    gradeGroup: "唐五代",
+    gradeGroup: "唐",
     excerpt: "（语本元曲）这厮虎头蛇尾，不可信赖",
   },
   {
@@ -4456,7 +4456,7 @@ window.POEMS_CHENGYU = [
     source: "《丹青引赠曹将军霸》",
     dynasty: "唐",
     author: "杜甫",
-    gradeGroup: "唐五代",
+    gradeGroup: "唐",
     excerpt: "凌烟功臣少颜色，将军下笔开生面",
   },
   {
@@ -4466,7 +4466,7 @@ window.POEMS_CHENGYU = [
     source: "《河东先生集·王氏伯仲唱和诗序》",
     dynasty: "唐",
     author: "柳宗元",
-    gradeGroup: "唐五代",
+    gradeGroup: "唐",
     excerpt: "操斧于班、郢之门，斯强颜耳",
   },
   {
@@ -4476,7 +4476,7 @@ window.POEMS_CHENGYU = [
     source: "《三国志·魏书·陈思王植传》",
     dynasty: "唐",
     author: "陈寿",
-    gradeGroup: "唐五代",
+    gradeGroup: "唐",
     excerpt: "（曹植）年十岁余，诵读《诗》《论》及辞赋数十万言",
   },
   {
@@ -4486,7 +4486,7 @@ window.POEMS_CHENGYU = [
     source: "《景德传灯录》",
     dynasty: "唐",
     author: "道原",
-    gradeGroup: "唐五代",
+    gradeGroup: "唐",
     excerpt: "（常建以诗引赵嘏之句，谓之抛砖引玉）比来抛砖引玉",
   },
   {
@@ -4496,7 +4496,7 @@ window.POEMS_CHENGYU = [
     source: "《小寒食舟中作》",
     dynasty: "唐",
     author: "杜甫",
-    gradeGroup: "唐五代",
+    gradeGroup: "唐",
     excerpt: "春水船如天上坐，老年花似雾中看",
   },
   {
@@ -4506,7 +4506,7 @@ window.POEMS_CHENGYU = [
     source: "《贫女》",
     dynasty: "唐",
     author: "秦韬玉",
-    gradeGroup: "唐五代",
+    gradeGroup: "唐",
     excerpt: "苦恨年年压金线，为他人作嫁衣裳",
   },
   {
@@ -4516,7 +4516,7 @@ window.POEMS_CHENGYU = [
     source: "《调张籍》",
     dynasty: "唐",
     author: "韩愈",
-    gradeGroup: "唐五代",
+    gradeGroup: "唐",
     excerpt: "蚍蜉撼大树，可笑不自量",
   },
   {
@@ -4526,7 +4526,7 @@ window.POEMS_CHENGYU = [
     source: "《后汉书·边韶传》",
     dynasty: "唐",
     author: "范晔",
-    gradeGroup: "唐五代",
+    gradeGroup: "唐",
     excerpt: "（边韶）曾昼日假卧，弟子私嘲之曰：「边孝先，腹便",
   },
   {
@@ -4536,7 +4536,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·刺客列传》",
     dynasty: "唐",
     author: "司马迁",
-    gradeGroup: "唐五代",
+    gradeGroup: "唐",
     excerpt: "臣闻骐骥盛壮之时，一日而驰千里；至其衰老，驽马先",
   },
   {
@@ -4545,8 +4545,8 @@ window.POEMS_CHENGYU = [
     title: "一泻千里",
     source: "《赠汪伦》序及后人文评",
     dynasty: "唐",
-    author: "",
-    gradeGroup: "唐五代",
+    author: "佚名",
+    gradeGroup: "唐",
     excerpt: "（「一泻千里」本唐李阳冰序李白文）其言多似天仙之",
   },
   {
@@ -4556,7 +4556,7 @@ window.POEMS_CHENGYU = [
     source: "《明皇杂录》",
     dynasty: "唐",
     author: "郑处诲",
-    gradeGroup: "唐五代",
+    gradeGroup: "唐",
     excerpt: "（萧嵩）明皇以嵩形貌甚伟，且素有令誉……既成，上",
   },
   {
@@ -4566,7 +4566,7 @@ window.POEMS_CHENGYU = [
     source: "《神仙传·刘安》",
     dynasty: "唐",
     author: "葛洪",
-    gradeGroup: "唐五代",
+    gradeGroup: "唐",
     excerpt: "（淮南王刘安）举家升天，畜产皆仙，犬吠于天上，鸡",
   },
   {
@@ -4576,7 +4576,7 @@ window.POEMS_CHENGYU = [
     source: "《大鹏赋序》",
     dynasty: "唐",
     author: "李白",
-    gradeGroup: "唐五代",
+    gradeGroup: "唐",
     excerpt: "余昔于江陵见天台司马子微，谓余有仙风道骨，可与神",
   },
   {
@@ -4586,7 +4586,7 @@ window.POEMS_CHENGYU = [
     source: "《答韦中立论师道书》",
     dynasty: "唐",
     author: "柳宗元",
-    gradeGroup: "唐五代",
+    gradeGroup: "唐",
     excerpt: "屈子赋曰：「邑犬群吠，吠所怪也",
   },
   {
@@ -4596,7 +4596,7 @@ window.POEMS_CHENGYU = [
     source: "《世说新语·言语》",
     dynasty: "唐",
     author: "刘义庆",
-    gradeGroup: "唐五代",
+    gradeGroup: "唐",
     excerpt: "（满奋）曰：「臣犹吴牛，见月而喘",
   },
   {
@@ -4606,7 +4606,7 @@ window.POEMS_CHENGYU = [
     source: "《大唐新语·谐谑》",
     dynasty: "唐",
     author: "刘肃",
-    gradeGroup: "唐五代",
+    gradeGroup: "唐",
     excerpt: "有枣强尉张怀庆，好偷名士文章……时人谓之谚曰：「",
   },
   {
@@ -4615,8 +4615,8 @@ window.POEMS_CHENGYU = [
     title: "海阔天空",
     source: "《暗室灯·附集》",
     dynasty: "唐",
-    author: "",
-    gradeGroup: "唐五代",
+    author: "佚名",
+    gradeGroup: "唐",
     excerpt: "（僧诗）大海从鱼跃，长空任鸟飞",
   },
   {
@@ -4626,7 +4626,7 @@ window.POEMS_CHENGYU = [
     source: "《可叹》",
     dynasty: "唐",
     author: "杜甫",
-    gradeGroup: "唐五代",
+    gradeGroup: "唐",
     excerpt: "天上浮云如白衣，斯须改变如苍狗",
   },
   {
@@ -4636,7 +4636,7 @@ window.POEMS_CHENGYU = [
     source: "《南史·朱异传》",
     dynasty: "唐",
     author: "李延寿",
-    gradeGroup: "唐五代",
+    gradeGroup: "唐",
     excerpt: "我国家犹若金瓯，无一伤缺",
   },
   {
@@ -4646,7 +4646,7 @@ window.POEMS_CHENGYU = [
     source: "《集灵台·其二》",
     dynasty: "唐",
     author: "张祜",
-    gradeGroup: "唐五代",
+    gradeGroup: "唐",
     excerpt: "虢国夫人承主恩，平明骑马入宫门",
   },
   {
@@ -4656,7 +4656,7 @@ window.POEMS_CHENGYU = [
     source: "《传习录》",
     dynasty: "唐",
     author: "王守仁",
-    gradeGroup: "唐五代",
+    gradeGroup: "唐",
     excerpt: "后儒尝谈高论阔，而实无所得",
   },
   {
@@ -4665,8 +4665,8 @@ window.POEMS_CHENGYU = [
     title: "力透纸背",
     source: "《颜真卿集序》",
     dynasty: "唐",
-    author: "",
-    gradeGroup: "唐五代",
+    author: "佚名",
+    gradeGroup: "唐",
     excerpt: "（语本唐颜真卿书论）其笔力遒婉，力透纸背",
   },
   {
@@ -4676,7 +4676,7 @@ window.POEMS_CHENGYU = [
     source: "《沧浪诗话·诗辨》",
     dynasty: "唐",
     author: "严羽",
-    gradeGroup: "唐五代",
+    gradeGroup: "唐",
     excerpt: "盛唐诸人惟在兴趣，羚羊挂角，无迹可求",
   },
   {
@@ -4686,7 +4686,7 @@ window.POEMS_CHENGYU = [
     source: "《长干行》",
     dynasty: "唐",
     author: "李白",
-    gradeGroup: "唐五代",
+    gradeGroup: "唐",
     excerpt: "郎骑竹马来，绕床弄青梅",
   },
   {
@@ -4696,7 +4696,7 @@ window.POEMS_CHENGYU = [
     source: "《长干行》",
     dynasty: "唐",
     author: "李白",
-    gradeGroup: "唐五代",
+    gradeGroup: "唐",
     excerpt: "同居长干里，两小无嫌猜",
   },
   {
@@ -4706,7 +4706,7 @@ window.POEMS_CHENGYU = [
     source: "《登科后》",
     dynasty: "唐",
     author: "孟郊",
-    gradeGroup: "唐五代",
+    gradeGroup: "唐",
     excerpt: "春风得意马蹄疾，一日看尽长安花",
   },
   {
@@ -4716,7 +4716,7 @@ window.POEMS_CHENGYU = [
     source: "《登科后》",
     dynasty: "唐",
     author: "孟郊",
-    gradeGroup: "唐五代",
+    gradeGroup: "唐",
     excerpt: "春风得意马蹄疾，一日看尽长安花",
   },
   {
@@ -4726,7 +4726,7 @@ window.POEMS_CHENGYU = [
     source: "《离思五首·其四》",
     dynasty: "唐",
     author: "元稹",
-    gradeGroup: "唐五代",
+    gradeGroup: "唐",
     excerpt: "曾经沧海难为水，除却巫山不是云",
   },
   {
@@ -4736,7 +4736,7 @@ window.POEMS_CHENGYU = [
     source: "《李凭箜篌引》",
     dynasty: "唐",
     author: "李贺",
-    gradeGroup: "唐五代",
+    gradeGroup: "唐",
     excerpt: "女娲炼石补天处，石破天惊逗秋雨",
   },
   {
@@ -4746,7 +4746,7 @@ window.POEMS_CHENGYU = [
     source: "《游子吟》",
     dynasty: "唐",
     author: "孟郊",
-    gradeGroup: "唐五代",
+    gradeGroup: "唐",
     excerpt: "慈母手中线，游子身上衣",
   },
   {
@@ -4756,7 +4756,7 @@ window.POEMS_CHENGYU = [
     source: "《雨晴》",
     dynasty: "唐",
     author: "杜甫",
-    gradeGroup: "唐五代",
+    gradeGroup: "唐",
     excerpt: "（原作「弱不禁风」语本）舞榭歌台风，弱不禁风",
   },
   {
@@ -4766,7 +4766,7 @@ window.POEMS_CHENGYU = [
     source: "《世说新语·文学》",
     dynasty: "唐",
     author: "刘义庆",
-    gradeGroup: "唐五代",
+    gradeGroup: "唐",
     excerpt: "桓宣武北征，袁虎时从，被责免官",
   },
   {
@@ -4776,7 +4776,7 @@ window.POEMS_CHENGYU = [
     source: "《五代史补》",
     dynasty: "唐",
     author: "陶岳",
-    gradeGroup: "唐五代",
+    gradeGroup: "唐",
     excerpt: "（齐己）有《早梅》诗曰：「前村深雪里，昨夜数枝开",
   },
   {
@@ -4784,9 +4784,9 @@ window.POEMS_CHENGYU = [
     id: "cy-479",
     title: "依样画葫芦",
     source: "《东轩笔录》",
-    dynasty: "五代",
+    dynasty: "宋",
     author: "魏泰",
-    gradeGroup: "唐五代",
+    gradeGroup: "宋",
     excerpt: "（陶谷）自以久次旧人，意希大用……（太祖）曰：「",
   },
   {
@@ -4794,9 +4794,9 @@ window.POEMS_CHENGYU = [
     id: "cy-480",
     title: "解铃还须系铃人",
     source: "《指月录·法灯禅师》",
-    dynasty: "五代",
+    dynasty: "明",
     author: "瞿汝稷",
-    gradeGroup: "唐五代",
+    gradeGroup: "明",
     excerpt: "（法眼）问众曰：「虎项金铃，是谁解得？」众无对",
   },
   {
@@ -4804,9 +4804,9 @@ window.POEMS_CHENGYU = [
     id: "cy-481",
     title: "骑鹤扬州",
     source: "《殷芸小说》",
-    dynasty: "五代",
+    dynasty: "两晋南北朝",
     author: "殷芸",
-    gradeGroup: "唐五代",
+    gradeGroup: "两晋南北朝",
     excerpt: "有客相从，各言所志：或愿为扬州刺史，或愿多赀财，",
   },
   {
@@ -4816,7 +4816,7 @@ window.POEMS_CHENGYU = [
     source: "《枕中记》",
     dynasty: "唐",
     author: "沈既济",
-    gradeGroup: "唐五代",
+    gradeGroup: "唐",
     excerpt: "（卢生）主人蒸黍未熟，而卢生梦中历尽荣悴",
   },
   {
@@ -4826,7 +4826,7 @@ window.POEMS_CHENGYU = [
     source: "《丹青引赠曹将军霸》",
     dynasty: "唐",
     author: "杜甫",
-    gradeGroup: "唐五代",
+    gradeGroup: "唐",
     excerpt: "诏谓将军拂绢素，意匠惨淡经营中",
   },
   {
@@ -4836,7 +4836,7 @@ window.POEMS_CHENGYU = [
     source: "《贫交行》",
     dynasty: "唐",
     author: "杜甫",
-    gradeGroup: "唐五代",
+    gradeGroup: "唐",
     excerpt: "翻手作云覆手雨，纷纷轻薄何须数",
   },
   {
@@ -4846,7 +4846,7 @@ window.POEMS_CHENGYU = [
     source: "《晋书·赵王伦传》",
     dynasty: "唐",
     author: "房玄龄",
-    gradeGroup: "唐五代",
+    gradeGroup: "唐",
     excerpt: "（赵王伦篡位）其余同谋者咸超阶越次，不可胜纪，至",
   },
   {
@@ -4856,7 +4856,7 @@ window.POEMS_CHENGYU = [
     source: "《进学解》",
     dynasty: "唐",
     author: "韩愈",
-    gradeGroup: "唐五代",
+    gradeGroup: "唐",
     excerpt: "牛溲马勃，败鼓之皮，俱收并蓄，待用无遗者，医师之",
   },
   {
@@ -4866,7 +4866,7 @@ window.POEMS_CHENGYU = [
     source: "《隋书·李谔传》",
     dynasty: "唐",
     author: "魏征等",
-    gradeGroup: "唐五代",
+    gradeGroup: "唐",
     excerpt: "连篇累牍，不出月露之形；积案盈箱，唯是风云之状",
   },
   {
@@ -4876,7 +4876,7 @@ window.POEMS_CHENGYU = [
     source: "《随园诗话》",
     dynasty: "唐",
     author: "袁枚",
-    gradeGroup: "唐五代",
+    gradeGroup: "唐",
     excerpt: "（语本）炉火纯青，功候纯熟",
   },
   {
@@ -4886,7 +4886,7 @@ window.POEMS_CHENGYU = [
     source: "《史记·季布栾布列传》",
     dynasty: "唐",
     author: "司马迁",
-    gradeGroup: "唐五代",
+    gradeGroup: "唐",
     excerpt: "（语本）疮痍满目，抚之增悲",
   },
   {
@@ -4896,7 +4896,7 @@ window.POEMS_CHENGYU = [
     source: "《滕王阁序》",
     dynasty: "唐",
     author: "王勃",
-    gradeGroup: "唐五代",
+    gradeGroup: "唐",
     excerpt: "物华天宝，龙光射牛斗之墟",
   },
   {
@@ -4906,7 +4906,7 @@ window.POEMS_CHENGYU = [
     source: "《晋书·王珣传》",
     dynasty: "唐",
     author: "房玄龄",
-    gradeGroup: "唐五代",
+    gradeGroup: "唐",
     excerpt: "珣梦人以大笔如椽与之，既觉，语人云：「此当有大手",
   },
   {
@@ -4916,7 +4916,7 @@ window.POEMS_CHENGYU = [
     source: "《水调歌头·明月几时有》",
     dynasty: "宋",
     author: "苏轼",
-    gradeGroup: "宋辽金",
+    gradeGroup: "宋",
     excerpt: "我欲乘风归去，又恐琼楼玉宇，高处不胜寒",
   },
   {
@@ -4926,7 +4926,7 @@ window.POEMS_CHENGYU = [
     source: "《宋史·太宗纪》",
     dynasty: "宋",
     author: "脱脱等",
-    gradeGroup: "宋辽金",
+    gradeGroup: "宋",
     excerpt: "（淳化四年）遣使巡河北，雪中送炭",
   },
   {
@@ -4936,7 +4936,7 @@ window.POEMS_CHENGYU = [
     source: "《寄吴德仁兼简陈季常》",
     dynasty: "宋",
     author: "苏轼",
-    gradeGroup: "宋辽金",
+    gradeGroup: "宋",
     excerpt: "龙丘居士亦可怜，谈空说有夜不眠",
   },
   {
@@ -4946,7 +4946,7 @@ window.POEMS_CHENGYU = [
     source: "《宋史·杨时传》",
     dynasty: "宋",
     author: "脱脱等",
-    gradeGroup: "宋辽金",
+    gradeGroup: "宋",
     excerpt: "（杨时）一日见颐，颐偶瞑坐，时与游酢侍立不去，颐",
   },
   {
@@ -4956,7 +4956,7 @@ window.POEMS_CHENGYU = [
     source: "《与梅圣俞书》",
     dynasty: "宋",
     author: "欧阳修",
-    gradeGroup: "宋辽金",
+    gradeGroup: "宋",
     excerpt: "老夫当避路，放他出一头地也",
   },
   {
@@ -4966,7 +4966,7 @@ window.POEMS_CHENGYU = [
     source: "《题壁》",
     dynasty: "宋",
     author: "惠洪",
-    gradeGroup: "宋辽金",
+    gradeGroup: "宋",
     excerpt: "满城风雨近重阳",
   },
   {
@@ -4976,7 +4976,7 @@ window.POEMS_CHENGYU = [
     source: "《渑水燕谈录》",
     dynasty: "宋",
     author: "王辟之",
-    gradeGroup: "宋辽金",
+    gradeGroup: "宋",
     excerpt: "（宋）太宗日阅《御览》三卷，因事有阙，暇日追补之",
   },
   {
@@ -4986,7 +4986,7 @@ window.POEMS_CHENGYU = [
     source: "《文与可画筼筜谷偃竹记》",
     dynasty: "宋",
     author: "苏轼",
-    gradeGroup: "宋辽金",
+    gradeGroup: "宋",
     excerpt: "故画竹必先得成竹于胸中，执笔熟视，乃见其所欲画者",
   },
   {
@@ -4996,7 +4996,7 @@ window.POEMS_CHENGYU = [
     source: "《过庭录》",
     dynasty: "宋",
     author: "范公偁",
-    gradeGroup: "宋辽金",
+    gradeGroup: "宋",
     excerpt: "吴人孙山，滑稽才子也",
   },
   {
@@ -5006,7 +5006,7 @@ window.POEMS_CHENGYU = [
     source: "《老子》第四十一章",
     dynasty: "宋",
     author: "李耳",
-    gradeGroup: "宋辽金",
+    gradeGroup: "宋",
     excerpt: "大方无隅，大器晚成，大音希声，大象无形",
   },
   {
@@ -5016,7 +5016,7 @@ window.POEMS_CHENGYU = [
     source: "《欧阳文忠公文集·归田录》",
     dynasty: "宋",
     author: "欧阳修",
-    gradeGroup: "宋辽金",
+    gradeGroup: "宋",
     excerpt: "（卖油翁）乃取一葫芦置于地，以钱覆其口，徐以杓酌",
   },
   {
@@ -5026,7 +5026,7 @@ window.POEMS_CHENGYU = [
     source: "《鹤林玉露》",
     dynasty: "宋",
     author: "罗大经",
-    gradeGroup: "宋辽金",
+    gradeGroup: "宋",
     excerpt: "（张乖崖）曰：「一日一钱，千日千钱，绳锯木断，水",
   },
   {
@@ -5036,7 +5036,7 @@ window.POEMS_CHENGYU = [
     source: "《清夜录》",
     dynasty: "宋",
     author: "俞文豹",
-    gradeGroup: "宋辽金",
+    gradeGroup: "宋",
     excerpt: "（苏麟献诗范仲淹）近水楼台先得月，向阳花木易为春",
   },
   {
@@ -5046,7 +5046,7 @@ window.POEMS_CHENGYU = [
     source: "《游山西村》",
     dynasty: "宋",
     author: "陆游",
-    gradeGroup: "宋辽金",
+    gradeGroup: "宋",
     excerpt: "山重水复疑无路，柳暗花明又一村",
   },
   {
@@ -5056,7 +5056,7 @@ window.POEMS_CHENGYU = [
     source: "《湛渊静语》",
     dynasty: "宋",
     author: "白珽",
-    gradeGroup: "宋辽金",
+    gradeGroup: "宋",
     excerpt: "客有曰：「梨益齿而损脾，枣益脾而损齿",
   },
   {
@@ -5066,7 +5066,7 @@ window.POEMS_CHENGYU = [
     source: "《笑林》",
     dynasty: "宋",
     author: "邯郸淳",
-    gradeGroup: "宋辽金",
+    gradeGroup: "宋",
     excerpt: "楚人居贫，读《淮南方》：「得螳螂伺蝉自障叶，可以",
   },
   {
@@ -5076,7 +5076,7 @@ window.POEMS_CHENGYU = [
     source: "《夏云峰》",
     dynasty: "宋",
     author: "柳永",
-    gradeGroup: "宋辽金",
+    gradeGroup: "宋",
     excerpt: "向此免名缰利锁，虚费光阴",
   },
   {
@@ -5086,7 +5086,7 @@ window.POEMS_CHENGYU = [
     source: "《和子由渑池怀旧》",
     dynasty: "宋",
     author: "苏轼",
-    gradeGroup: "宋辽金",
+    gradeGroup: "宋",
     excerpt: "人生到处知何似？应似飞鸿踏雪泥",
   },
   {
@@ -5096,7 +5096,7 @@ window.POEMS_CHENGYU = [
     source: "《九日次韵王巩》",
     dynasty: "宋",
     author: "苏轼",
-    gradeGroup: "宋辽金",
+    gradeGroup: "宋",
     excerpt: "相逢不用忙归去，明日黄花蝶也愁",
   },
   {
@@ -5106,7 +5106,7 @@ window.POEMS_CHENGYU = [
     source: "《后赤壁赋》",
     dynasty: "宋",
     author: "苏轼",
-    gradeGroup: "宋辽金",
+    gradeGroup: "宋",
     excerpt: "山高月小，水落石出",
   },
   {
@@ -5116,7 +5116,7 @@ window.POEMS_CHENGYU = [
     source: "《隋唐演义》",
     dynasty: "宋",
     author: "褚人获",
-    gradeGroup: "宋辽金",
+    gradeGroup: "宋",
     excerpt: "（后世语）赳赳武夫，胸无点墨",
   },
   {
@@ -5126,7 +5126,7 @@ window.POEMS_CHENGYU = [
     source: "《五灯会元》",
     dynasty: "宋",
     author: "普济",
-    gradeGroup: "宋辽金",
+    gradeGroup: "宋",
     excerpt: "（佛典）一筆勾下，更不迟疑",
   },
   {
@@ -5136,7 +5136,7 @@ window.POEMS_CHENGYU = [
     source: "《文赋序》",
     dynasty: "宋",
     author: "陆机",
-    gradeGroup: "宋辽金",
+    gradeGroup: "宋",
     excerpt: "故作《文赋》以述先士之盛藻，因论作文之利害所由，",
   },
   {
@@ -5146,7 +5146,7 @@ window.POEMS_CHENGYU = [
     source: "《前赤壁赋》",
     dynasty: "宋",
     author: "苏轼",
-    gradeGroup: "宋辽金",
+    gradeGroup: "宋",
     excerpt: "寄蜉蝣于天地，渺沧海之一粟",
   },
   {
@@ -5156,7 +5156,7 @@ window.POEMS_CHENGYU = [
     source: "《朱子语类》",
     dynasty: "宋",
     author: "黎靖德",
-    gradeGroup: "宋辽金",
+    gradeGroup: "宋",
     excerpt: "《书序》不是孔安国做，汉文粗枝大叶，全《书序》细",
   },
   {
@@ -5166,7 +5166,7 @@ window.POEMS_CHENGYU = [
     source: "《文与可画筼筜谷偃竹记》",
     dynasty: "宋",
     author: "苏轼",
-    gradeGroup: "宋辽金",
+    gradeGroup: "宋",
     excerpt: "振笔直遂，以追其所见，如兔起鹘落，少纵则逝矣",
   },
   {
@@ -5176,7 +5176,7 @@ window.POEMS_CHENGYU = [
     source: "《左传·襄公二十九年》",
     dynasty: "宋",
     author: "左丘明",
-    gradeGroup: "宋辽金",
+    gradeGroup: "宋",
     excerpt: "（吴季札观周乐）曰：「德至矣哉，大矣！如天之无不",
   },
   {
@@ -5185,8 +5185,8 @@ window.POEMS_CHENGYU = [
     title: "聚沙成塔",
     source: "《妙法莲华经·方便品》",
     dynasty: "宋",
-    author: "",
-    gradeGroup: "宋辽金",
+    author: "佚名",
+    gradeGroup: "宋",
     excerpt: "乃至童子戏，聚沙为佛塔",
   },
   {
@@ -5196,7 +5196,7 @@ window.POEMS_CHENGYU = [
     source: "《方舆胜览》",
     dynasty: "宋",
     author: "祝穆",
-    gradeGroup: "宋辽金",
+    gradeGroup: "宋",
     excerpt: "（李白）读书象耳山中，学业未成，弃去",
   },
   {
@@ -5205,8 +5205,8 @@ window.POEMS_CHENGYU = [
     title: "杀鸡取卵",
     source: "《伊索寓言》译本",
     dynasty: "宋",
-    author: "",
-    gradeGroup: "宋辽金",
+    author: "佚名",
+    gradeGroup: "宋",
     excerpt: "（西洋寓言东传）杀鸡取卵，一朝而尽",
   },
   {
@@ -5216,7 +5216,7 @@ window.POEMS_CHENGYU = [
     source: "《南唐近事》",
     dynasty: "宋",
     author: "郑文宝",
-    gradeGroup: "宋辽金",
+    gradeGroup: "宋",
     excerpt: "王鲁为当涂宰，颇以资产为务",
   },
   {
@@ -5226,7 +5226,7 @@ window.POEMS_CHENGYU = [
     source: "《老学庵笔记》",
     dynasty: "宋",
     author: "陆游",
-    gradeGroup: "宋辽金",
+    gradeGroup: "宋",
     excerpt: "田登作郡，自讳其名，触者必怒，吏卒多被榜笞",
   },
   {
@@ -5236,7 +5236,7 @@ window.POEMS_CHENGYU = [
     source: "《清夜录》",
     dynasty: "宋",
     author: "俞文豹",
-    gradeGroup: "宋辽金",
+    gradeGroup: "宋",
     excerpt: "近水楼台先得月，向阳花木易为春",
   },
   {
@@ -5246,7 +5246,7 @@ window.POEMS_CHENGYU = [
     source: "《汉书·匈奴传》",
     dynasty: "宋",
     author: "班固",
-    gradeGroup: "宋辽金",
+    gradeGroup: "宋",
     excerpt: "夷狄之人贪而好利，被发左衽，人面兽心",
   },
   {
@@ -5255,8 +5255,8 @@ window.POEMS_CHENGYU = [
     title: "开宗明义",
     source: "《孝经·开宗明义章》",
     dynasty: "宋",
-    author: "",
-    gradeGroup: "宋辽金",
+    author: "佚名",
+    gradeGroup: "宋",
     excerpt: "仲尼居，曾子侍",
   },
   {
@@ -5266,7 +5266,7 @@ window.POEMS_CHENGYU = [
     source: "《南部新书》",
     dynasty: "宋",
     author: "钱易",
-    gradeGroup: "宋辽金",
+    gradeGroup: "宋",
     excerpt: "（崔沆、崔瀣）座主门生，沆瀣一气",
   },
   {
@@ -5276,7 +5276,7 @@ window.POEMS_CHENGYU = [
     source: "《宋史·太祖纪》",
     dynasty: "宋",
     author: "脱脱等",
-    gradeGroup: "宋辽金",
+    gradeGroup: "宋",
     excerpt: "（诸校）相与扶太祖上马，拥逼南行",
   },
   {
@@ -5286,7 +5286,7 @@ window.POEMS_CHENGYU = [
     source: "《涑水记闻》",
     dynasty: "宋",
     author: "司马光",
-    gradeGroup: "宋辽金",
+    gradeGroup: "宋",
     excerpt: "上曰：「人生驹过隙尔，不如多积金、市田宅以遗子孙",
   },
   {
@@ -5296,7 +5296,7 @@ window.POEMS_CHENGYU = [
     source: "《宋史·吕端传》",
     dynasty: "宋",
     author: "脱脱等",
-    gradeGroup: "宋辽金",
+    gradeGroup: "宋",
     excerpt: "太宗欲相端",
   },
   {
@@ -5306,7 +5306,7 @@ window.POEMS_CHENGYU = [
     source: "《宋史·寇准传》",
     dynasty: "宋",
     author: "脱脱等",
-    gradeGroup: "宋辽金",
+    gradeGroup: "宋",
     excerpt: "（王）钦若曰：「陛下闻博乎？博者输钱欲尽，乃罄所",
   },
   {
@@ -5316,7 +5316,7 @@ window.POEMS_CHENGYU = [
     source: "《奉赠韦左丞丈二十二韵》",
     dynasty: "宋",
     author: "杜甫",
-    gradeGroup: "宋辽金",
+    gradeGroup: "宋",
     excerpt: "朝扣富儿门，暮随肥马尘",
   },
   {
@@ -5326,7 +5326,7 @@ window.POEMS_CHENGYU = [
     source: "《答韦中立论师道书》",
     dynasty: "宋",
     author: "柳宗元",
-    gradeGroup: "宋辽金",
+    gradeGroup: "宋",
     excerpt: "故吾每为文章，未尝敢以轻心掉之",
   },
   {
@@ -5336,7 +5336,7 @@ window.POEMS_CHENGYU = [
     source: "《原道》",
     dynasty: "宋",
     author: "韩愈",
-    gradeGroup: "宋辽金",
+    gradeGroup: "宋",
     excerpt: "坐井而观天，曰天小者，非天小也",
   },
   {
@@ -5346,7 +5346,7 @@ window.POEMS_CHENGYU = [
     source: "《宋史·赵抃传》",
     dynasty: "宋",
     author: "脱脱等",
-    gradeGroup: "宋辽金",
+    gradeGroup: "宋",
     excerpt: "（赵抃）日所为事，入夜必衣冠露香以告于天",
   },
   {
@@ -5356,7 +5356,7 @@ window.POEMS_CHENGYU = [
     source: "《次韵米芾二王书跋尾》",
     dynasty: "宋",
     author: "苏轼",
-    gradeGroup: "宋辽金",
+    gradeGroup: "宋",
     excerpt: "巧偷豪夺古来有，一笑谁似痴虎头",
   },
   {
@@ -5366,7 +5366,7 @@ window.POEMS_CHENGYU = [
     source: "《五灯会元》",
     dynasty: "宋",
     author: "普济",
-    gradeGroup: "宋辽金",
+    gradeGroup: "宋",
     excerpt: "（佛典）水涨船高，泥多佛大",
   },
   {
@@ -5376,7 +5376,7 @@ window.POEMS_CHENGYU = [
     source: "《遗令》",
     dynasty: "宋",
     author: "曹操",
-    gradeGroup: "宋辽金",
+    gradeGroup: "宋",
     excerpt: "余香可分与诸夫人，不命祭",
   },
   {
@@ -5386,7 +5386,7 @@ window.POEMS_CHENGYU = [
     source: "《沧浪诗话》",
     dynasty: "宋",
     author: "严羽",
-    gradeGroup: "宋辽金",
+    gradeGroup: "宋",
     excerpt: "（诗评）如浮光掠影，未足为奇",
   },
   {
@@ -5396,7 +5396,7 @@ window.POEMS_CHENGYU = [
     source: "《汉书·中山靖王传》",
     dynasty: "宋",
     author: "班固",
-    gradeGroup: "宋辽金",
+    gradeGroup: "宋",
     excerpt: "夫众煦漂山，聚蚊成雷，朋党执虎，十夫桡椎",
   },
   {
@@ -5406,7 +5406,7 @@ window.POEMS_CHENGYU = [
     source: "《南齐书·张融传》",
     dynasty: "宋",
     author: "萧子显",
-    gradeGroup: "宋辽金",
+    gradeGroup: "宋",
     excerpt: "（太祖）手诏赐融衣曰：「……今送一通故衣，意谓虽",
   },
   {
@@ -5416,7 +5416,7 @@ window.POEMS_CHENGYU = [
     source: "《庄子·列御寇》",
     dynasty: "宋",
     author: "庄周",
-    gradeGroup: "宋辽金",
+    gradeGroup: "宋",
     excerpt: "朱泙漫学屠龙于支离益，单千金之家，三年技成而无所",
   },
   {
@@ -5426,7 +5426,7 @@ window.POEMS_CHENGYU = [
     source: "《晋书·王衍传》",
     dynasty: "宋",
     author: "房玄龄",
-    gradeGroup: "宋辽金",
+    gradeGroup: "宋",
     excerpt: "（王衍）妙善玄言，唯谈《老》《庄》为事",
   },
   {
@@ -5436,7 +5436,7 @@ window.POEMS_CHENGYU = [
     source: "《高士传·许由》",
     dynasty: "宋",
     author: "皇甫谧",
-    gradeGroup: "宋辽金",
+    gradeGroup: "宋",
     excerpt: "（许由）曰：「吾闻之，鹪鹩巢于深林，不过一枝；偃",
   },
   {
@@ -5446,7 +5446,7 @@ window.POEMS_CHENGYU = [
     source: "《魏书·祖莹传》",
     dynasty: "宋",
     author: "魏收",
-    gradeGroup: "宋辽金",
+    gradeGroup: "宋",
     excerpt: "文章须自出机杼，成一家风骨，何能共人同生活也",
   },
   {
@@ -5456,7 +5456,7 @@ window.POEMS_CHENGYU = [
     source: "《沧浪诗话》",
     dynasty: "宋",
     author: "严羽",
-    gradeGroup: "宋辽金",
+    gradeGroup: "宋",
     excerpt: "（诗法）开门见山，言简意赅",
   },
   {
@@ -5466,7 +5466,7 @@ window.POEMS_CHENGYU = [
     source: "《瓯北诗话》",
     dynasty: "宋",
     author: "赵翼",
-    gradeGroup: "宋辽金",
+    gradeGroup: "宋",
     excerpt: "（苏轼诗）举重若轻，读之似不甚用力，而力已透十分",
   },
   {
@@ -5476,7 +5476,7 @@ window.POEMS_CHENGYU = [
     source: "《题卫夫人笔阵图后》",
     dynasty: "宋",
     author: "王羲之",
-    gradeGroup: "宋辽金",
+    gradeGroup: "宋",
     excerpt: "每作一波，常三过折笔",
   },
   {
@@ -5484,9 +5484,9 @@ window.POEMS_CHENGYU = [
     id: "cy-549",
     title: "同流合污",
     source: "《孟子·尽心下》",
-    dynasty: "辽金",
+    dynasty: "战国",
     author: "孟轲",
-    gradeGroup: "宋辽金",
+    gradeGroup: "战国",
     excerpt: "同乎流俗，合乎污世",
   },
   {
@@ -5496,7 +5496,7 @@ window.POEMS_CHENGYU = [
     source: "《赠陈抟》",
     dynasty: "宋",
     author: "陈抟（传）",
-    gradeGroup: "宋辽金",
+    gradeGroup: "宋",
     excerpt: "（语本宋人）急流中勇退，是神仙",
   },
   {
@@ -5504,9 +5504,9 @@ window.POEMS_CHENGYU = [
     id: "cy-551",
     title: "贪小失大",
     source: "《吕氏春秋·权勋》",
-    dynasty: "辽金",
+    dynasty: "战国",
     author: "吕不韦",
-    gradeGroup: "宋辽金",
+    gradeGroup: "战国",
     excerpt: "此贪于小利以失大利者也",
   },
   {
@@ -5515,8 +5515,8 @@ window.POEMS_CHENGYU = [
     title: "高抬贵手",
     source: "《元曲选》",
     dynasty: "宋",
-    author: "",
-    gradeGroup: "宋辽金",
+    author: "佚名",
+    gradeGroup: "宋",
     excerpt: "（元曲语）高抬贵手，饶过小人",
   },
   {
@@ -5526,7 +5526,7 @@ window.POEMS_CHENGYU = [
     source: "《五灯会元》",
     dynasty: "宋",
     author: "普济",
-    gradeGroup: "宋辽金",
+    gradeGroup: "宋",
     excerpt: "（佛典）如隔靴搔痒，不着痛处",
   },
   {
@@ -5536,7 +5536,7 @@ window.POEMS_CHENGYU = [
     source: "《搜神记》",
     dynasty: "宋",
     author: "干宝",
-    gradeGroup: "宋辽金",
+    gradeGroup: "宋",
     excerpt: "汉光武中平中，有物处于江水，其名曰蜮，一曰短狐，",
   },
   {
@@ -5546,7 +5546,7 @@ window.POEMS_CHENGYU = [
     source: "《隋书·经籍志》",
     dynasty: "宋",
     author: "魏征等",
-    gradeGroup: "宋辽金",
+    gradeGroup: "宋",
     excerpt: "（语本）典籍浩如烟海，不可胜数",
   },
   {
@@ -5556,7 +5556,7 @@ window.POEMS_CHENGYU = [
     source: "《续传灯录》",
     dynasty: "宋",
     author: "圆极居顶",
-    gradeGroup: "宋辽金",
+    gradeGroup: "宋",
     excerpt: "（禅典）面面相觑，无言以对",
   },
   {
@@ -5566,7 +5566,7 @@ window.POEMS_CHENGYU = [
     source: "《类经图翼》",
     dynasty: "宋",
     author: "张介宾",
-    gradeGroup: "宋辽金",
+    gradeGroup: "宋",
     excerpt: "（语本）妙手回春，起死回生",
   },
   {
@@ -5576,7 +5576,7 @@ window.POEMS_CHENGYU = [
     source: "《二程全书·外书》",
     dynasty: "宋",
     author: "程颢、程颐",
-    gradeGroup: "宋辽金",
+    gradeGroup: "宋",
     excerpt: "朱公掞见明道于汝州，逾月而归，语人曰：「光庭在春",
   },
   {
@@ -5586,7 +5586,7 @@ window.POEMS_CHENGYU = [
     source: "《严先生祠堂记》",
     dynasty: "宋",
     author: "范仲淹",
-    gradeGroup: "宋辽金",
+    gradeGroup: "宋",
     excerpt: "云山苍苍，江水泱泱",
   },
   {
@@ -5596,7 +5596,7 @@ window.POEMS_CHENGYU = [
     source: "《寓意编》",
     dynasty: "宋",
     author: "都穆",
-    gradeGroup: "宋辽金",
+    gradeGroup: "宋",
     excerpt: "（语本）李成惜墨如金",
   },
   {
@@ -5606,7 +5606,7 @@ window.POEMS_CHENGYU = [
     source: "《随园诗话》",
     dynasty: "宋",
     author: "袁枚",
-    gradeGroup: "宋辽金",
+    gradeGroup: "宋",
     excerpt: "（语本）言简意赅，含蓄不尽",
   },
   {
@@ -5614,19 +5614,19 @@ window.POEMS_CHENGYU = [
     id: "cy-562",
     title: "隔墙有耳",
     source: "《管子·君臣下》",
-    dynasty: "元",
+    dynasty: "春秋",
     author: "管仲",
-    gradeGroup: "元",
+    gradeGroup: "春秋",
     excerpt: "墙有耳，伏寇在侧",
   },
   {
     textRef: "chengyu-cy-563",
     id: "cy-563",
     title: "引狼入室",
-    source: "《塞翁失马》本事",
-    dynasty: "元",
-    author: "",
-    gradeGroup: "元",
+    source: "《战国策·楚策四》",
+    dynasty: "战国",
+    author: "刘向",
+    gradeGroup: "战国",
     excerpt: "（元曲《冻苏秦》等用）引狼入室，自取其祸",
   },
   {
@@ -5634,9 +5634,9 @@ window.POEMS_CHENGYU = [
     id: "cy-564",
     title: "枯木逢春",
     source: "《五灯会元》",
-    dynasty: "元",
+    dynasty: "宋",
     author: "普济",
-    gradeGroup: "元",
+    gradeGroup: "宋",
     excerpt: "（佛典）枯木逢春，自是生机",
   },
   {
@@ -5644,9 +5644,9 @@ window.POEMS_CHENGYU = [
     id: "cy-565",
     title: "光天化日",
     source: "《尚书·益稷》",
-    dynasty: "元",
-    author: "",
-    gradeGroup: "元",
+    dynasty: "上古传说",
+    author: "佚名",
+    gradeGroup: "上古传说",
     excerpt: "帝光天之下，至于海隅苍生，万邦黎献，共惟帝臣",
   },
   {
@@ -5654,9 +5654,9 @@ window.POEMS_CHENGYU = [
     id: "cy-566",
     title: "天长地久",
     source: "《老子》第七章",
-    dynasty: "元",
+    dynasty: "春秋",
     author: "李耳",
-    gradeGroup: "元",
+    gradeGroup: "春秋",
     excerpt: "天长地久",
   },
   {
@@ -5664,9 +5664,9 @@ window.POEMS_CHENGYU = [
     id: "cy-567",
     title: "蛛丝马迹",
     source: "《酉阳杂俎》",
-    dynasty: "元",
+    dynasty: "唐",
     author: "段成式",
-    gradeGroup: "元",
+    gradeGroup: "唐",
     excerpt: "（语本）蛛丝马迹，可寻其端",
   },
   {
@@ -5674,9 +5674,9 @@ window.POEMS_CHENGYU = [
     id: "cy-568",
     title: "盘根错节",
     source: "《后汉书·虞诩传》",
-    dynasty: "元",
+    dynasty: "东汉",
     author: "范晔",
-    gradeGroup: "元",
+    gradeGroup: "东汉",
     excerpt: "志不求易，事不避难，臣之职也",
   },
   {
@@ -5684,9 +5684,9 @@ window.POEMS_CHENGYU = [
     id: "cy-569",
     title: "凤毛麟角",
     source: "《南史·谢超宗传》",
-    dynasty: "元",
+    dynasty: "两晋南北朝",
     author: "李延寿",
-    gradeGroup: "元",
+    gradeGroup: "两晋南北朝",
     excerpt: "（谢超宗）好学有文辞，盛得名誉",
   },
   {
@@ -5694,9 +5694,9 @@ window.POEMS_CHENGYU = [
     id: "cy-570",
     title: "忘恩负义",
     source: "《魏书·萧宝夤传》",
-    dynasty: "元",
+    dynasty: "两晋南北朝",
     author: "魏收",
-    gradeGroup: "元",
+    gradeGroup: "两晋南北朝",
     excerpt: "（语本）背恩忘义，人神共弃",
   },
   {
@@ -5704,9 +5704,9 @@ window.POEMS_CHENGYU = [
     id: "cy-571",
     title: "魂不附体",
     source: "《南史·谢朓传》",
-    dynasty: "元",
+    dynasty: "两晋南北朝",
     author: "李延寿",
-    gradeGroup: "元",
+    gradeGroup: "两晋南北朝",
     excerpt: "（语本）惊魂未定，魂不附体",
   },
   {
@@ -5714,9 +5714,9 @@ window.POEMS_CHENGYU = [
     id: "cy-572",
     title: "闲云野鹤",
     source: "《全唐诗话》",
-    dynasty: "元",
+    dynasty: "宋",
     author: "尤袤",
-    gradeGroup: "元",
+    gradeGroup: "宋",
     excerpt: "（僧贯休诗）闲云野鹤，何天不可飞",
   },
   {
@@ -5724,9 +5724,9 @@ window.POEMS_CHENGYU = [
     id: "cy-573",
     title: "折戟沉沙",
     source: "《赤壁》",
-    dynasty: "元",
+    dynasty: "唐",
     author: "杜牧",
-    gradeGroup: "元",
+    gradeGroup: "唐",
     excerpt: "折戟沉沙铁未销，自将磨洗认前朝",
   },
   {
@@ -5754,9 +5754,9 @@ window.POEMS_CHENGYU = [
     id: "cy-576",
     title: "瓜田李下",
     source: "《君子行》",
-    dynasty: "明",
-    author: "",
-    gradeGroup: "明",
+    dynasty: "两晋南北朝",
+    author: "佚名",
+    gradeGroup: "两晋南北朝",
     excerpt: "君子防未然，不处嫌疑间",
   },
   {
@@ -5764,9 +5764,9 @@ window.POEMS_CHENGYU = [
     id: "cy-577",
     title: "慢藏诲盗",
     source: "《周易·系辞上》",
-    dynasty: "明",
-    author: "",
-    gradeGroup: "明",
+    dynasty: "西周",
+    author: "佚名",
+    gradeGroup: "西周",
     excerpt: "慢藏诲盗，冶容诲淫",
   },
   {
@@ -5774,9 +5774,9 @@ window.POEMS_CHENGYU = [
     id: "cy-578",
     title: "逢人说项",
     source: "《赠项斯》",
-    dynasty: "明",
+    dynasty: "唐",
     author: "杨敬之",
-    gradeGroup: "明",
+    gradeGroup: "唐",
     excerpt: "几度见诗诗总好，及观标格过于诗",
   },
   {
@@ -5804,9 +5804,9 @@ window.POEMS_CHENGYU = [
     id: "cy-581",
     title: "闭门造车",
     source: "《中庸或问》",
-    dynasty: "明",
+    dynasty: "宋",
     author: "朱熹",
-    gradeGroup: "明",
+    gradeGroup: "宋",
     excerpt: "古语所谓「闭门造车，出门合辙」，盖言其法之同",
   },
   {
@@ -5814,9 +5814,9 @@ window.POEMS_CHENGYU = [
     id: "cy-582",
     title: "明珠暗投",
     source: "《狱中上书自明》",
-    dynasty: "明",
+    dynasty: "西汉",
     author: "邹阳",
-    gradeGroup: "明",
+    gradeGroup: "西汉",
     excerpt: "臣闻明月之珠，夜光之璧，以暗投人于道，众莫不按剑",
   },
   {
@@ -5824,9 +5824,9 @@ window.POEMS_CHENGYU = [
     id: "cy-583",
     title: "落花流水",
     source: "《浪淘沙令》",
-    dynasty: "明",
+    dynasty: "五代",
     author: "李煜",
-    gradeGroup: "明",
+    gradeGroup: "五代",
     excerpt: "流水落花春去也，天上人间",
   },
   {
@@ -5844,9 +5844,9 @@ window.POEMS_CHENGYU = [
     id: "cy-585",
     title: "自成一家",
     source: "《旧唐书·韩愈传》",
-    dynasty: "明",
+    dynasty: "唐",
     author: "刘昫等",
-    gradeGroup: "明",
+    gradeGroup: "唐",
     excerpt: "（韩愈）抒意立言，自成一家新语",
   },
   {
@@ -5854,9 +5854,9 @@ window.POEMS_CHENGYU = [
     id: "cy-586",
     title: "龙蛇混杂",
     source: "《五灯会元》",
-    dynasty: "明",
+    dynasty: "宋",
     author: "普济",
-    gradeGroup: "明",
+    gradeGroup: "宋",
     excerpt: "（佛典）凡圣同居，龙蛇混杂",
   },
   {
@@ -5864,9 +5864,9 @@ window.POEMS_CHENGYU = [
     id: "cy-587",
     title: "少见多怪",
     source: "《牟子理惑论》",
-    dynasty: "明",
+    dynasty: "东汉",
     author: "牟融",
-    gradeGroup: "明",
+    gradeGroup: "东汉",
     excerpt: "（语本）少所见，多所怪，睹橐驼，言马肿背",
   },
   {
@@ -5874,9 +5874,9 @@ window.POEMS_CHENGYU = [
     id: "cy-588",
     title: "金玉良缘",
     source: "《红楼梦》第五回",
-    dynasty: "明",
+    dynasty: "清",
     author: "曹雪芹",
-    gradeGroup: "明",
+    gradeGroup: "清",
     excerpt: "都道是金玉良缘，俺只念木石前盟",
   },
   {
@@ -5884,9 +5884,9 @@ window.POEMS_CHENGYU = [
     id: "cy-589",
     title: "百足之虫死而不僵",
     source: "《红楼梦》第七十四回",
-    dynasty: "明",
+    dynasty: "清",
     author: "曹雪芹",
-    gradeGroup: "明",
+    gradeGroup: "清",
     excerpt: "古人说：「百足之虫，死而不僵",
   },
   {
@@ -5894,9 +5894,9 @@ window.POEMS_CHENGYU = [
     id: "cy-590",
     title: "逐鹿中原",
     source: "《史记·淮阴侯列传》",
-    dynasty: "明",
+    dynasty: "西汉",
     author: "司马迁",
-    gradeGroup: "明",
+    gradeGroup: "西汉",
     excerpt: "秦失其鹿，天下共逐之，于是高材疾足者先得焉",
   },
   {
@@ -5904,9 +5904,9 @@ window.POEMS_CHENGYU = [
     id: "cy-591",
     title: "独树一帜",
     source: "《随园诗话》",
-    dynasty: "明",
+    dynasty: "清",
     author: "袁枚",
-    gradeGroup: "明",
+    gradeGroup: "清",
     excerpt: "（语本）独树一帜，自成一家",
   },
   {
@@ -5914,9 +5914,9 @@ window.POEMS_CHENGYU = [
     id: "cy-592",
     title: "天下无双",
     source: "《史记·李将军列传》",
-    dynasty: "明",
+    dynasty: "西汉",
     author: "司马迁",
-    gradeGroup: "明",
+    gradeGroup: "西汉",
     excerpt: "李广才气，天下无双",
   },
   {
@@ -5924,9 +5924,9 @@ window.POEMS_CHENGYU = [
     id: "cy-593",
     title: "惺惺相惜",
     source: "《西厢记》",
-    dynasty: "明",
+    dynasty: "元",
     author: "王实甫",
-    gradeGroup: "明",
+    gradeGroup: "元",
     excerpt: "（语本元曲）惺惺的自古惜惺惺",
   },
   {
@@ -5934,9 +5934,9 @@ window.POEMS_CHENGYU = [
     id: "cy-594",
     title: "坚忍不拔",
     source: "《晁错论》",
-    dynasty: "明",
+    dynasty: "宋",
     author: "苏轼",
-    gradeGroup: "明",
+    gradeGroup: "宋",
     excerpt: "古之立大事者，不惟有超世之才，亦必有坚忍不拔之志",
   },
   {
@@ -5944,9 +5944,9 @@ window.POEMS_CHENGYU = [
     id: "cy-595",
     title: "好逸恶劳",
     source: "《后汉书·郭玉传》",
-    dynasty: "明",
+    dynasty: "东汉",
     author: "范晔",
-    gradeGroup: "明",
+    gradeGroup: "东汉",
     excerpt: "其为疗也，有四难焉：自用意而不任臣，一难也；将身",
   },
   {
@@ -5954,9 +5954,9 @@ window.POEMS_CHENGYU = [
     id: "cy-596",
     title: "家喻户晓",
     source: "《缴郑熙等免罪》",
-    dynasty: "明",
+    dynasty: "宋",
     author: "楼钥",
-    gradeGroup: "明",
+    gradeGroup: "宋",
     excerpt: "（语本）家喻户晓，人人皆知",
   },
   {
@@ -5964,9 +5964,9 @@ window.POEMS_CHENGYU = [
     id: "cy-597",
     title: "千山万水",
     source: "《寄维扬故人》",
-    dynasty: "明",
+    dynasty: "唐",
     author: "张乔",
-    gradeGroup: "明",
+    gradeGroup: "唐",
     excerpt: "离别河边绾柳条，千山万水玉人遥",
   },
   {
@@ -5974,9 +5974,9 @@ window.POEMS_CHENGYU = [
     id: "cy-598",
     title: "评头论足",
     source: "《扫迷帚》",
-    dynasty: "明",
+    dynasty: "清",
     author: "壮者",
-    gradeGroup: "明",
+    gradeGroup: "清",
     excerpt: "（清末小说语）评头论足，妄议他人",
   },
   {
@@ -5994,9 +5994,9 @@ window.POEMS_CHENGYU = [
     id: "cy-600",
     title: "千人一面",
     source: "《阅微草堂笔记》",
-    dynasty: "明",
+    dynasty: "清",
     author: "纪昀",
-    gradeGroup: "明",
+    gradeGroup: "清",
     excerpt: "（语本）千人一面，千部一腔",
   },
   {
@@ -6004,9 +6004,9 @@ window.POEMS_CHENGYU = [
     id: "cy-601",
     title: "人定胜天",
     source: "《史记·伍子胥列传》",
-    dynasty: "明",
+    dynasty: "西汉",
     author: "司马迁",
-    gradeGroup: "明",
+    gradeGroup: "西汉",
     excerpt: "人众者胜天，天定亦能破人",
   },
   {
@@ -6014,9 +6014,9 @@ window.POEMS_CHENGYU = [
     id: "cy-602",
     title: "如痴如醉",
     source: "《洞仙歌》",
-    dynasty: "明",
+    dynasty: "宋",
     author: "柳永",
-    gradeGroup: "明",
+    gradeGroup: "宋",
     excerpt: "（语本）如痴如醉，迷恋不已",
   },
   {
@@ -6024,9 +6024,9 @@ window.POEMS_CHENGYU = [
     id: "cy-603",
     title: "铁面无私",
     source: "《红楼梦》",
-    dynasty: "明",
+    dynasty: "清",
     author: "曹雪芹",
-    gradeGroup: "明",
+    gradeGroup: "清",
     excerpt: "（后世语）铁面无私，秉公执法",
   },
   {
@@ -6034,9 +6034,9 @@ window.POEMS_CHENGYU = [
     id: "cy-604",
     title: "徒劳无功",
     source: "《管子·形势》",
-    dynasty: "明",
+    dynasty: "春秋",
     author: "管仲",
-    gradeGroup: "明",
+    gradeGroup: "春秋",
     excerpt: "（语本）徒劳无功，费而无益",
   },
   {
@@ -6044,9 +6044,9 @@ window.POEMS_CHENGYU = [
     id: "cy-605",
     title: "无中生有",
     source: "《老子》第四十章",
-    dynasty: "明",
+    dynasty: "春秋",
     author: "李耳",
-    gradeGroup: "明",
+    gradeGroup: "春秋",
     excerpt: "天下万物生于有，有生于无",
   },
   {
@@ -6054,9 +6054,9 @@ window.POEMS_CHENGYU = [
     id: "cy-606",
     title: "言听计从",
     source: "《史记·淮阴侯列传》",
-    dynasty: "明",
+    dynasty: "西汉",
     author: "司马迁",
-    gradeGroup: "明",
+    gradeGroup: "西汉",
     excerpt: "汉王授我上将军印，予我数万众，解衣衣我，推食食我",
   },
   {
@@ -6064,9 +6064,9 @@ window.POEMS_CHENGYU = [
     id: "cy-607",
     title: "眼花缭乱",
     source: "《西厢记》",
-    dynasty: "明",
+    dynasty: "元",
     author: "王实甫",
-    gradeGroup: "明",
+    gradeGroup: "元",
     excerpt: "（语本元曲）眼花缭乱口难言，魂灵儿飞在半天",
   },
   {
@@ -6074,9 +6074,9 @@ window.POEMS_CHENGYU = [
     id: "cy-608",
     title: "一举两得",
     source: "《晋书·束皙传》",
-    dynasty: "明",
+    dynasty: "唐",
     author: "房玄龄",
-    gradeGroup: "明",
+    gradeGroup: "唐",
     excerpt: "（语本）一举两得，事半而功倍",
   },
   {
@@ -6084,9 +6084,9 @@ window.POEMS_CHENGYU = [
     id: "cy-609",
     title: "斩草除根",
     source: "《左传·隐公六年》",
-    dynasty: "明",
+    dynasty: "春秋",
     author: "左丘明",
-    gradeGroup: "明",
+    gradeGroup: "春秋",
     excerpt: "为国家者，见恶如农夫之务去草焉，芟夷蕴崇之，绝其",
   },
   {
@@ -6094,9 +6094,9 @@ window.POEMS_CHENGYU = [
     id: "cy-610",
     title: "自投罗网",
     source: "《野客丛书》",
-    dynasty: "明",
+    dynasty: "宋",
     author: "王楙",
-    gradeGroup: "明",
+    gradeGroup: "宋",
     excerpt: "（语本）自投罗网，飞蛾扑火",
   },
   {
@@ -6114,19 +6114,19 @@ window.POEMS_CHENGYU = [
     id: "cy-612",
     title: "坐以待毙",
     source: "《管子·参患》",
-    dynasty: "明",
+    dynasty: "春秋",
     author: "管仲",
-    gradeGroup: "明",
+    gradeGroup: "春秋",
     excerpt: "（语本）坐以待毙，不如起而图之",
   },
   {
     textRef: "chengyu-cy-613",
     id: "cy-613",
     title: "振振有词",
-    source: "《 Shirley 》",
-    dynasty: "明",
-    author: "",
-    gradeGroup: "明",
+    source: "《元曲选·谢金吾》",
+    dynasty: "元",
+    author: "臧懋循",
+    gradeGroup: "元",
     excerpt: "（后世语）振振有词，理直气壮",
   },
   {
@@ -6134,9 +6134,9 @@ window.POEMS_CHENGYU = [
     id: "cy-614",
     title: "置之度外",
     source: "《后汉书·隗嚣公孙述传》",
-    dynasty: "明",
+    dynasty: "东汉",
     author: "范晔",
-    gradeGroup: "明",
+    gradeGroup: "东汉",
     excerpt: "帝积苦兵间，以嚣子内侍，公孙述远据边陲，乃谓诸将",
   },
   {
@@ -6144,9 +6144,9 @@ window.POEMS_CHENGYU = [
     id: "cy-615",
     title: "直言不讳",
     source: "《晋书·刘波传》",
-    dynasty: "明",
+    dynasty: "唐",
     author: "房玄龄",
-    gradeGroup: "明",
+    gradeGroup: "唐",
     excerpt: "（语本）直言不讳，忠臣之节",
   },
   {
@@ -6154,9 +6154,9 @@ window.POEMS_CHENGYU = [
     id: "cy-616",
     title: "众口铄金",
     source: "《国语·周语下》",
-    dynasty: "明",
-    author: "",
-    gradeGroup: "明",
+    dynasty: "春秋",
+    author: "佚名",
+    gradeGroup: "春秋",
     excerpt: "故谚曰：「众心成城，众口铄金",
   },
   {
@@ -6164,9 +6164,9 @@ window.POEMS_CHENGYU = [
     id: "cy-617",
     title: "自惭形秽",
     source: "《世说新语·容止》",
-    dynasty: "明",
+    dynasty: "两晋南北朝",
     author: "刘义庆",
-    gradeGroup: "明",
+    gradeGroup: "两晋南北朝",
     excerpt: "骠骑王武子是卫玠之舅，俊爽有风姿",
   },
   {
@@ -6184,9 +6184,9 @@ window.POEMS_CHENGYU = [
     id: "cy-619",
     title: "自食其果",
     source: "《尚书·太甲上》",
-    dynasty: "明",
-    author: "",
-    gradeGroup: "明",
+    dynasty: "上古传说",
+    author: "佚名",
+    gradeGroup: "上古传说",
     excerpt: "（语本）自作孽，不可逭",
   },
   {
@@ -6194,9 +6194,9 @@ window.POEMS_CHENGYU = [
     id: "cy-620",
     title: "自食其力",
     source: "《礼记·礼器》",
-    dynasty: "明",
-    author: "",
-    gradeGroup: "明",
+    dynasty: "战国",
+    author: "佚名",
+    gradeGroup: "战国",
     excerpt: "（语本）自力更生，自食其力",
   },
   {
@@ -6204,9 +6204,9 @@ window.POEMS_CHENGYU = [
     id: "cy-621",
     title: "罪不容诛",
     source: "《汉书·游侠传》",
-    dynasty: "明",
+    dynasty: "东汉",
     author: "班固",
-    gradeGroup: "明",
+    gradeGroup: "东汉",
     excerpt: "（郭解）罪不容诛，当大逆无道",
   },
   {
@@ -6214,9 +6214,9 @@ window.POEMS_CHENGYU = [
     id: "cy-622",
     title: "坐收渔利",
     source: "《战国策·燕策二》",
-    dynasty: "明",
+    dynasty: "战国",
     author: "刘向",
-    gradeGroup: "明",
+    gradeGroup: "战国",
     excerpt: "两者不肯相舍，渔者得而并禽之",
   },
   {
@@ -6224,9 +6224,9 @@ window.POEMS_CHENGYU = [
     id: "cy-623",
     title: "座无虚席",
     source: "《晋书·王浑传》",
-    dynasty: "明",
+    dynasty: "唐",
     author: "房玄龄",
-    gradeGroup: "明",
+    gradeGroup: "唐",
     excerpt: "（语本）座无虚席，听者忘倦",
   },
   {
@@ -6234,9 +6234,9 @@ window.POEMS_CHENGYU = [
     id: "cy-624",
     title: "罪有应得",
     source: "《官场现形记》",
-    dynasty: "明",
+    dynasty: "清",
     author: "李宝嘉",
-    gradeGroup: "明",
+    gradeGroup: "清",
     excerpt: "（清末小说语）罪有应得，法无可贷",
   },
   {
@@ -6244,9 +6244,9 @@ window.POEMS_CHENGYU = [
     id: "cy-625",
     title: "作茧自缚",
     source: "《景德传灯录》",
-    dynasty: "明",
+    dynasty: "宋",
     author: "道原",
-    gradeGroup: "明",
+    gradeGroup: "宋",
     excerpt: "（佛典）如蚕作茧，自缚其身",
   },
   {
@@ -6254,9 +6254,9 @@ window.POEMS_CHENGYU = [
     id: "cy-626",
     title: "醉翁之意不在酒",
     source: "《醉翁亭记》",
-    dynasty: "明",
+    dynasty: "宋",
     author: "欧阳修",
-    gradeGroup: "明",
+    gradeGroup: "宋",
     excerpt: "醉翁之意不在酒，在乎山水之间也",
   },
   {
@@ -6264,9 +6264,9 @@ window.POEMS_CHENGYU = [
     id: "cy-627",
     title: "不卑不亢",
     source: "《礼记·中庸》",
-    dynasty: "明",
-    author: "",
-    gradeGroup: "明",
+    dynasty: "战国",
+    author: "佚名",
+    gradeGroup: "战国",
     excerpt: "君子素其位而行，不愿乎其外",
   },
   {
@@ -6274,9 +6274,9 @@ window.POEMS_CHENGYU = [
     id: "cy-628",
     title: "长篇累牍",
     source: "《明史·文苑传》",
-    dynasty: "明",
+    dynasty: "清",
     author: "张廷玉等",
-    gradeGroup: "明",
+    gradeGroup: "清",
     excerpt: "（语本）长篇累牍，繁而不杀",
   },
   {
@@ -6284,9 +6284,9 @@ window.POEMS_CHENGYU = [
     id: "cy-629",
     title: "椿萱并茂",
     source: "《庄子·逍遥游》",
-    dynasty: "明",
+    dynasty: "战国",
     author: "庄周",
-    gradeGroup: "明",
+    gradeGroup: "战国",
     excerpt: "上古有大椿者，以八千岁为春，八千岁为秋",
   },
   {
@@ -6294,9 +6294,9 @@ window.POEMS_CHENGYU = [
     id: "cy-630",
     title: "附庸风雅",
     source: "《诗经·邶风》",
-    dynasty: "明",
-    author: "",
-    gradeGroup: "明",
+    dynasty: "春秋",
+    author: "佚名",
+    gradeGroup: "春秋",
     excerpt: "（语本《诗经》「附庸」之制）附庸风雅，装点门面",
   },
   {
@@ -6304,9 +6304,9 @@ window.POEMS_CHENGYU = [
     id: "cy-631",
     title: "口诛笔伐",
     source: "《史记·秦始皇本纪》",
-    dynasty: "明",
+    dynasty: "西汉",
     author: "司马迁",
-    gradeGroup: "明",
+    gradeGroup: "西汉",
     excerpt: "（语本）口诛笔伐，声罪致讨",
   },
   {
@@ -6314,9 +6314,9 @@ window.POEMS_CHENGYU = [
     id: "cy-632",
     title: "百感交集",
     source: "《世说新语·言语》",
-    dynasty: "清",
+    dynasty: "两晋南北朝",
     author: "刘义庆",
-    gradeGroup: "清",
+    gradeGroup: "两晋南北朝",
     excerpt: "卫洗马初欲渡江，形神惨悴，语左右云：「见此芒芒，",
   },
   {
@@ -6324,9 +6324,9 @@ window.POEMS_CHENGYU = [
     id: "cy-633",
     title: "鞭辟入里",
     source: "《二程全书·遗书》",
-    dynasty: "清",
+    dynasty: "宋",
     author: "程颢、程颐",
-    gradeGroup: "清",
+    gradeGroup: "宋",
     excerpt: "学只要鞭辟近里，著己而已",
   },
   {
@@ -6334,9 +6334,9 @@ window.POEMS_CHENGYU = [
     id: "cy-634",
     title: "别出心裁",
     source: "《水浒传》",
-    dynasty: "清",
+    dynasty: "明",
     author: "李贽（评）",
-    gradeGroup: "清",
+    gradeGroup: "明",
     excerpt: "（语本）别出心裁，不落窠臼",
   },
   {
@@ -6344,9 +6344,9 @@ window.POEMS_CHENGYU = [
     id: "cy-635",
     title: "不刊之论",
     source: "《答扬雄书》",
-    dynasty: "清",
+    dynasty: "西汉",
     author: "扬雄",
-    gradeGroup: "清",
+    gradeGroup: "西汉",
     excerpt: "（语本）是悬诸日月不刊之书也",
   },
   {
@@ -6354,9 +6354,9 @@ window.POEMS_CHENGYU = [
     id: "cy-636",
     title: "才思敏捷",
     source: "《旧唐书·陆贽传》",
-    dynasty: "清",
+    dynasty: "唐",
     author: "刘昫等",
-    gradeGroup: "清",
+    gradeGroup: "唐",
     excerpt: "（语本）才思敏捷，下笔成章",
   },
   {
@@ -6364,9 +6364,9 @@ window.POEMS_CHENGYU = [
     id: "cy-637",
     title: "沧海横流",
     source: "《晋书·王尼传》",
-    dynasty: "清",
+    dynasty: "唐",
     author: "房玄龄",
-    gradeGroup: "清",
+    gradeGroup: "唐",
     excerpt: "（语本）沧海横流，方显英雄本色",
   },
   {
@@ -6374,9 +6374,9 @@ window.POEMS_CHENGYU = [
     id: "cy-638",
     title: "曾几何时",
     source: "《祭盛侍郎文》",
-    dynasty: "清",
+    dynasty: "宋",
     author: "王安石",
-    gradeGroup: "清",
+    gradeGroup: "宋",
     excerpt: "（语本）曾几何时，而公之墓木已拱",
   },
   {
@@ -6384,9 +6384,9 @@ window.POEMS_CHENGYU = [
     id: "cy-639",
     title: "瞠目结舌",
     source: "《庄子·田子方》",
-    dynasty: "清",
+    dynasty: "战国",
     author: "庄周",
-    gradeGroup: "清",
+    gradeGroup: "战国",
     excerpt: "夫子奔逸绝尘，而回瞠若乎后矣",
   },
   {
@@ -6394,9 +6394,9 @@ window.POEMS_CHENGYU = [
     id: "cy-640",
     title: "叱咤风云",
     source: "《史记·淮阴侯列传》",
-    dynasty: "清",
+    dynasty: "西汉",
     author: "司马迁",
-    gradeGroup: "清",
+    gradeGroup: "西汉",
     excerpt: "项王喑噁叱咤，千人皆废",
   },
   {
@@ -6404,9 +6404,9 @@ window.POEMS_CHENGYU = [
     id: "cy-641",
     title: "充耳不闻",
     source: "《诗经·邶风·旄丘》",
-    dynasty: "清",
-    author: "",
-    gradeGroup: "清",
+    dynasty: "西周",
+    author: "佚名",
+    gradeGroup: "西周",
     excerpt: "叔兮伯兮，褎如充耳",
   },
   {
@@ -6414,9 +6414,9 @@ window.POEMS_CHENGYU = [
     id: "cy-642",
     title: "重蹈覆辙",
     source: "《后汉书·窦武传》",
-    dynasty: "清",
+    dynasty: "东汉",
     author: "范晔",
-    gradeGroup: "清",
+    gradeGroup: "东汉",
     excerpt: "今不想前事之失，复循覆车之轨",
   },
   {
@@ -6424,9 +6424,9 @@ window.POEMS_CHENGYU = [
     id: "cy-643",
     title: "出奇制胜",
     source: "《史记·田单列传》",
-    dynasty: "清",
+    dynasty: "西汉",
     author: "司马迁",
-    gradeGroup: "清",
+    gradeGroup: "西汉",
     excerpt: "兵以正合，以奇胜",
   },
   {
@@ -6444,9 +6444,9 @@ window.POEMS_CHENGYU = [
     id: "cy-645",
     title: "大吹大擂",
     source: "《水浒传》",
-    dynasty: "清",
+    dynasty: "明",
     author: "施耐庵",
-    gradeGroup: "清",
+    gradeGroup: "明",
     excerpt: "（语本）大吹大擂，饮酒作乐",
   },
   {
@@ -6464,9 +6464,9 @@ window.POEMS_CHENGYU = [
     id: "cy-647",
     title: "耳濡目染",
     source: "《进学解》",
-    dynasty: "清",
+    dynasty: "唐",
     author: "韩愈",
-    gradeGroup: "清",
+    gradeGroup: "唐",
     excerpt: "（韩愈）目濡耳染，不学以能",
   },
   {
@@ -6474,9 +6474,9 @@ window.POEMS_CHENGYU = [
     id: "cy-648",
     title: "繁文缛节",
     source: "《史记·礼书》",
-    dynasty: "清",
+    dynasty: "西汉",
     author: "司马迁",
-    gradeGroup: "清",
+    gradeGroup: "西汉",
     excerpt: "（语本）繁文缛节，礼节繁多",
   },
   {
@@ -6484,9 +6484,9 @@ window.POEMS_CHENGYU = [
     id: "cy-649",
     title: "返璞归真",
     source: "《战国策·齐策四》",
-    dynasty: "清",
+    dynasty: "战国",
     author: "刘向",
-    gradeGroup: "清",
+    gradeGroup: "战国",
     excerpt: "（语本《战国策》「归真反璞」）归真反璞，则终身不",
   },
   {
@@ -6494,9 +6494,9 @@ window.POEMS_CHENGYU = [
     id: "cy-650",
     title: "方兴未艾",
     source: "《答吕伯恭书》",
-    dynasty: "清",
+    dynasty: "宋",
     author: "朱熹",
-    gradeGroup: "清",
+    gradeGroup: "宋",
     excerpt: "（语本）方兴未艾，未有止息",
   },
   {
@@ -6504,9 +6504,9 @@ window.POEMS_CHENGYU = [
     id: "cy-651",
     title: "焚膏继晷",
     source: "《进学解》",
-    dynasty: "清",
+    dynasty: "唐",
     author: "韩愈",
-    gradeGroup: "清",
+    gradeGroup: "唐",
     excerpt: "焚膏油以继晷，恒兀兀以穷年",
   },
   {
@@ -6514,9 +6514,9 @@ window.POEMS_CHENGYU = [
     id: "cy-652",
     title: "浮想联翩",
     source: "《文赋》",
-    dynasty: "清",
+    dynasty: "两晋南北朝",
     author: "陆机",
-    gradeGroup: "清",
+    gradeGroup: "两晋南北朝",
     excerpt: "（语本）浮想联翩，思接千载",
   },
   {
@@ -6524,9 +6524,9 @@ window.POEMS_CHENGYU = [
     id: "cy-653",
     title: "高屋建瓴",
     source: "《史记·高祖本纪》",
-    dynasty: "清",
+    dynasty: "西汉",
     author: "司马迁",
-    gradeGroup: "清",
+    gradeGroup: "西汉",
     excerpt: "（语本）譬犹居高屋之上建瓴水也",
   },
   {
@@ -6534,9 +6534,9 @@ window.POEMS_CHENGYU = [
     id: "cy-654",
     title: "功败垂成",
     source: "《晋书·谢玄传》",
-    dynasty: "清",
+    dynasty: "唐",
     author: "房玄龄",
-    gradeGroup: "清",
+    gradeGroup: "唐",
     excerpt: "（语本）降龄何促，功败垂成",
   },
   {
@@ -6544,9 +6544,9 @@ window.POEMS_CHENGYU = [
     id: "cy-655",
     title: "刮垢磨光",
     source: "《进学解》",
-    dynasty: "清",
+    dynasty: "唐",
     author: "韩愈",
-    gradeGroup: "清",
+    gradeGroup: "唐",
     excerpt: "爬罗剔抉，刮垢磨光",
   },
   {
@@ -6554,9 +6554,9 @@ window.POEMS_CHENGYU = [
     id: "cy-656",
     title: "光怪陆离",
     source: "《离骚》",
-    dynasty: "清",
+    dynasty: "战国",
     author: "屈原",
-    gradeGroup: "清",
+    gradeGroup: "战国",
     excerpt: "纷总总其离合兮，斑陆离其上下",
   },
   {
@@ -6564,9 +6564,9 @@ window.POEMS_CHENGYU = [
     id: "cy-657",
     title: "骇人听闻",
     source: "《隋书·音乐志》",
-    dynasty: "清",
+    dynasty: "唐",
     author: "魏征等",
-    gradeGroup: "清",
+    gradeGroup: "唐",
     excerpt: "（语本）骇人听闻，惊世骇俗",
   },
   {
@@ -6574,9 +6574,9 @@ window.POEMS_CHENGYU = [
     id: "cy-658",
     title: "含英咀华",
     source: "《进学解》",
-    dynasty: "清",
+    dynasty: "唐",
     author: "韩愈",
-    gradeGroup: "清",
+    gradeGroup: "唐",
     excerpt: "沉浸醲郁，含英咀华",
   },
   {
@@ -6584,9 +6584,9 @@ window.POEMS_CHENGYU = [
     id: "cy-659",
     title: "画虎类犬",
     source: "《后汉书·马援传》",
-    dynasty: "清",
+    dynasty: "东汉",
     author: "范晔",
-    gradeGroup: "清",
+    gradeGroup: "东汉",
     excerpt: "效（杜）季良不得，陷为天下轻薄子，所谓画虎不成反",
   },
   {
@@ -6594,9 +6594,9 @@ window.POEMS_CHENGYU = [
     id: "cy-660",
     title: "涣然冰释",
     source: "《老子》第十五章",
-    dynasty: "清",
+    dynasty: "春秋",
     author: "李耳",
-    gradeGroup: "清",
+    gradeGroup: "春秋",
     excerpt: "涣兮若冰之将释",
   },
   {
@@ -6614,9 +6614,9 @@ window.POEMS_CHENGYU = [
     id: "cy-662",
     title: "激浊扬清",
     source: "《尸子·君治》",
-    dynasty: "清",
+    dynasty: "战国",
     author: "尸佼",
-    gradeGroup: "清",
+    gradeGroup: "战国",
     excerpt: "扬清激浊，荡去滓秽，义也",
   },
   {
@@ -6624,9 +6624,9 @@ window.POEMS_CHENGYU = [
     id: "cy-663",
     title: "集腋成裘",
     source: "《慎子·知忠》",
-    dynasty: "清",
+    dynasty: "战国",
     author: "慎到",
-    gradeGroup: "清",
+    gradeGroup: "战国",
     excerpt: "（语本）狐白之裘，盖非一狐之腋也",
   },
   {
@@ -6644,9 +6644,9 @@ window.POEMS_CHENGYU = [
     id: "cy-665",
     title: "间不容发",
     source: "《枚乘·上书谏吴王》",
-    dynasty: "清",
+    dynasty: "西汉",
     author: "枚乘",
-    gradeGroup: "清",
+    gradeGroup: "西汉",
     excerpt: "系绝于天，不可复结；坠入深渊，难以复出，其出不出",
   },
   {
@@ -6654,9 +6654,9 @@ window.POEMS_CHENGYU = [
     id: "cy-666",
     title: "见微知著",
     source: "《韩非子·说林上》",
-    dynasty: "清",
+    dynasty: "战国",
     author: "韩非",
-    gradeGroup: "清",
+    gradeGroup: "战国",
     excerpt: "圣人见微以知萌，见端以知末",
   },
   {
@@ -6664,9 +6664,9 @@ window.POEMS_CHENGYU = [
     id: "cy-667",
     title: "金科玉律",
     source: "《剧秦美新》",
-    dynasty: "清",
+    dynasty: "西汉",
     author: "扬雄",
-    gradeGroup: "清",
+    gradeGroup: "西汉",
     excerpt: "（语本）懿律嘉量，金科玉条",
   },
   {
@@ -6674,9 +6674,9 @@ window.POEMS_CHENGYU = [
     id: "cy-668",
     title: "久假不归",
     source: "《孟子·尽心上》",
-    dynasty: "清",
+    dynasty: "战国",
     author: "孟轲",
-    gradeGroup: "清",
+    gradeGroup: "战国",
     excerpt: "久假而不归，恶知其非有也",
   },
   {
@@ -6684,9 +6684,9 @@ window.POEMS_CHENGYU = [
     id: "cy-669",
     title: "举步维艰",
     source: "《宋书·谢庄传》",
-    dynasty: "清",
+    dynasty: "两晋南北朝",
     author: "沈约",
-    gradeGroup: "清",
+    gradeGroup: "两晋南北朝",
     excerpt: "（语本）举步维艰，进退维谷",
   },
   {
@@ -6694,9 +6694,9 @@ window.POEMS_CHENGYU = [
     id: "cy-670",
     title: "开诚布公",
     source: "《三国志·蜀书·诸葛亮传》",
-    dynasty: "清",
+    dynasty: "两晋南北朝",
     author: "陈寿",
-    gradeGroup: "清",
+    gradeGroup: "两晋南北朝",
     excerpt: "（陈寿评）诸葛亮之为相国也……开诚心，布公道",
   },
   {
@@ -6704,9 +6704,9 @@ window.POEMS_CHENGYU = [
     id: "cy-671",
     title: "空穴来风",
     source: "《风赋》",
-    dynasty: "清",
+    dynasty: "战国",
     author: "宋玉",
-    gradeGroup: "清",
+    gradeGroup: "战国",
     excerpt: "枳句来巢，空穴来风",
   },
   {
@@ -6724,9 +6724,9 @@ window.POEMS_CHENGYU = [
     id: "cy-673",
     title: "劳燕分飞",
     source: "《乐府诗集·东飞伯劳歌》",
-    dynasty: "清",
-    author: "",
-    gradeGroup: "清",
+    dynasty: "两晋南北朝",
+    author: "佚名",
+    gradeGroup: "两晋南北朝",
     excerpt: "东飞伯劳西飞燕，黄姑织女时相见",
   },
   {
@@ -6734,9 +6734,9 @@ window.POEMS_CHENGYU = [
     id: "cy-674",
     title: "力挽狂澜",
     source: "《进学解》",
-    dynasty: "清",
+    dynasty: "唐",
     author: "韩愈",
-    gradeGroup: "清",
+    gradeGroup: "唐",
     excerpt: "障百川而东之，回狂澜于既倒",
   },
   {
@@ -6744,9 +6744,9 @@ window.POEMS_CHENGYU = [
     id: "cy-675",
     title: "寥若晨星",
     source: "《祭柳子厚文》",
-    dynasty: "清",
+    dynasty: "唐",
     author: "韩愈",
-    gradeGroup: "清",
+    gradeGroup: "唐",
     excerpt: "（语本）今之存者，寥若晨星",
   },
   {
@@ -6754,9 +6754,9 @@ window.POEMS_CHENGYU = [
     id: "cy-676",
     title: "鳞次栉比",
     source: "《诗经·周颂·良耜》",
-    dynasty: "清",
-    author: "",
-    gradeGroup: "清",
+    dynasty: "西周",
+    author: "佚名",
+    gradeGroup: "西周",
     excerpt: "其比如栉，以开百室",
   },
   {
@@ -6765,7 +6765,7 @@ window.POEMS_CHENGYU = [
     title: "屡试不爽",
     source: "《与友人论文书》",
     dynasty: "清",
-    author: "",
+    author: "佚名",
     gradeGroup: "清",
     excerpt: "（语本）屡试不爽，百无一失",
   },
@@ -6774,9 +6774,9 @@ window.POEMS_CHENGYU = [
     id: "cy-678",
     title: "美轮美奂",
     source: "《礼记·檀弓下》",
-    dynasty: "清",
-    author: "",
-    gradeGroup: "清",
+    dynasty: "战国",
+    author: "佚名",
+    gradeGroup: "战国",
     excerpt: "晋献文子成室，晋大夫发焉",
   },
   {
@@ -6794,9 +6794,9 @@ window.POEMS_CHENGYU = [
     id: "cy-680",
     title: "目无全牛",
     source: "《庄子·养生主》",
-    dynasty: "清",
+    dynasty: "战国",
     author: "庄周",
-    gradeGroup: "清",
+    gradeGroup: "战国",
     excerpt: "始臣之解牛之时，所见无非牛者；三年之后，未尝见全",
   },
   {
@@ -6814,9 +6814,9 @@ window.POEMS_CHENGYU = [
     id: "cy-682",
     title: "披沙拣金",
     source: "《世说新语·文学》",
-    dynasty: "清",
+    dynasty: "两晋南北朝",
     author: "刘义庆",
-    gradeGroup: "清",
+    gradeGroup: "两晋南北朝",
     excerpt: "（语本）披沙拣金，往往见宝",
   },
   {
@@ -6824,9 +6824,9 @@ window.POEMS_CHENGYU = [
     id: "cy-683",
     title: "萍水相逢",
     source: "《滕王阁序》",
-    dynasty: "清",
+    dynasty: "唐",
     author: "王勃",
-    gradeGroup: "清",
+    gradeGroup: "唐",
     excerpt: "关山难越，谁悲失路之人？萍水相逢，尽是他乡之客",
   },
   {
@@ -6834,9 +6834,9 @@ window.POEMS_CHENGYU = [
     id: "cy-684",
     title: "奇货可居",
     source: "《史记·吕不韦列传》",
-    dynasty: "清",
+    dynasty: "西汉",
     author: "司马迁",
-    gradeGroup: "清",
+    gradeGroup: "西汉",
     excerpt: "子楚，秦诸庶孽孙，质于诸侯，车乘进用不饶，居处困",
   },
   {
@@ -6844,9 +6844,9 @@ window.POEMS_CHENGYU = [
     id: "cy-685",
     title: "穷兵黩武",
     source: "《三国志·吴书·陆抗传》",
-    dynasty: "清",
+    dynasty: "两晋南北朝",
     author: "陈寿",
-    gradeGroup: "清",
+    gradeGroup: "两晋南北朝",
     excerpt: "（语本）穷兵黩武，动费万计",
   },
   {
@@ -6864,9 +6864,9 @@ window.POEMS_CHENGYU = [
     id: "cy-687",
     title: "忍俊不禁",
     source: "《太常引》",
-    dynasty: "清",
+    dynasty: "宋",
     author: "赵璘",
-    gradeGroup: "清",
+    gradeGroup: "宋",
     excerpt: "（语本）忍俊不禁，一笑粲然",
   },
   {
@@ -6874,9 +6874,9 @@ window.POEMS_CHENGYU = [
     id: "cy-688",
     title: "如履薄冰",
     source: "《诗经·小雅·小旻》",
-    dynasty: "清",
-    author: "",
-    gradeGroup: "清",
+    dynasty: "西周",
+    author: "佚名",
+    gradeGroup: "西周",
     excerpt: "战战兢兢，如临深渊，如履薄冰",
   },
   {
@@ -6884,9 +6884,9 @@ window.POEMS_CHENGYU = [
     id: "cy-689",
     title: "如日中天",
     source: "《诗经·邶风·简兮》",
-    dynasty: "清",
-    author: "",
-    gradeGroup: "清",
+    dynasty: "西周",
+    author: "佚名",
+    gradeGroup: "西周",
     excerpt: "日之方中，在前上处",
   },
   {
@@ -6894,9 +6894,9 @@ window.POEMS_CHENGYU = [
     id: "cy-690",
     title: "色厉内荏",
     source: "《论语·阳货》",
-    dynasty: "清",
-    author: "",
-    gradeGroup: "清",
+    dynasty: "春秋",
+    author: "佚名",
+    gradeGroup: "春秋",
     excerpt: "色厉而内荏，譬诸小人，其犹穿窬之盗也与？",
   },
   {
@@ -6904,9 +6904,9 @@ window.POEMS_CHENGYU = [
     id: "cy-691",
     title: "身无长物",
     source: "《世说新语·德行》",
-    dynasty: "清",
+    dynasty: "两晋南北朝",
     author: "刘义庆",
-    gradeGroup: "清",
+    gradeGroup: "两晋南北朝",
     excerpt: "丈人不悉恭，恭作人无长物",
   },
   {
@@ -6914,9 +6914,9 @@ window.POEMS_CHENGYU = [
     id: "cy-692",
     title: "始作俑者",
     source: "《孟子·梁惠王上》",
-    dynasty: "清",
+    dynasty: "战国",
     author: "孟轲",
-    gradeGroup: "清",
+    gradeGroup: "战国",
     excerpt: "始作俑者，其无后乎！为其象人而用之也",
   },
   {
@@ -6924,9 +6924,9 @@ window.POEMS_CHENGYU = [
     id: "cy-693",
     title: "首当其冲",
     source: "《汉书·五行志》",
-    dynasty: "清",
+    dynasty: "东汉",
     author: "班固",
-    gradeGroup: "清",
+    gradeGroup: "东汉",
     excerpt: "郑以小国摄乎晋、楚之间，重以强吴，郑当其冲，不能",
   },
   {
@@ -6934,9 +6934,9 @@ window.POEMS_CHENGYU = [
     id: "cy-694",
     title: "殊途同归",
     source: "《周易·系辞下》",
-    dynasty: "清",
-    author: "",
-    gradeGroup: "清",
+    dynasty: "战国",
+    author: "佚名",
+    gradeGroup: "战国",
     excerpt: "天下同归而殊涂，一致而百虑",
   },
   {
@@ -6944,9 +6944,9 @@ window.POEMS_CHENGYU = [
     id: "cy-695",
     title: "素昧平生",
     source: "《赠田叟》",
-    dynasty: "清",
+    dynasty: "唐",
     author: "李商隐",
-    gradeGroup: "清",
+    gradeGroup: "唐",
     excerpt: "（语本）素昧平生，忽承垂顾",
   },
   {
@@ -6954,9 +6954,9 @@ window.POEMS_CHENGYU = [
     id: "cy-696",
     title: "弹冠相庆",
     source: "《汉书·王吉传》",
-    dynasty: "清",
+    dynasty: "东汉",
     author: "班固",
-    gradeGroup: "清",
+    gradeGroup: "东汉",
     excerpt: "吉与贡禹为友，世称「王阳在位，贡公弹冠」，言其取",
   },
   {
@@ -6964,9 +6964,9 @@ window.POEMS_CHENGYU = [
     id: "cy-697",
     title: "桃李成蹊",
     source: "《史记·李将军列传》",
-    dynasty: "清",
+    dynasty: "西汉",
     author: "司马迁",
-    gradeGroup: "清",
+    gradeGroup: "西汉",
     excerpt: "谚曰「桃李不言，下自成蹊」",
   },
   {
@@ -6974,9 +6974,9 @@ window.POEMS_CHENGYU = [
     id: "cy-698",
     title: "天网恢恢",
     source: "《老子》第七十三章",
-    dynasty: "清",
+    dynasty: "春秋",
     author: "李耳",
-    gradeGroup: "清",
+    gradeGroup: "春秋",
     excerpt: "天网恢恢，疏而不失",
   },
   {
@@ -6984,9 +6984,9 @@ window.POEMS_CHENGYU = [
     id: "cy-699",
     title: "条分缕析",
     source: "《进学解》",
-    dynasty: "清",
+    dynasty: "唐",
     author: "韩愈",
-    gradeGroup: "清",
+    gradeGroup: "唐",
     excerpt: "（语本）条分缕析，脉络分明",
   },
   {
@@ -6994,9 +6994,9 @@ window.POEMS_CHENGYU = [
     id: "cy-700",
     title: "同日而语",
     source: "《战国策·赵策二》",
-    dynasty: "清",
+    dynasty: "战国",
     author: "刘向",
-    gradeGroup: "清",
+    gradeGroup: "战国",
     excerpt: "夫破人之与破于人也，臣人之与臣于人也，岂可同日而",
   },
   {
@@ -7004,9 +7004,9 @@ window.POEMS_CHENGYU = [
     id: "cy-701",
     title: "脱颖而出",
     source: "《史记·平原君虞卿列传》",
-    dynasty: "清",
+    dynasty: "西汉",
     author: "司马迁",
-    gradeGroup: "清",
+    gradeGroup: "西汉",
     excerpt: "使遂蚤得处囊中，乃颖脱而出，非特其末见而已",
   },
   {
@@ -7014,9 +7014,9 @@ window.POEMS_CHENGYU = [
     id: "cy-702",
     title: "微言大义",
     source: "《汉书·艺文志》",
-    dynasty: "清",
+    dynasty: "东汉",
     author: "班固",
-    gradeGroup: "清",
+    gradeGroup: "东汉",
     excerpt: "昔仲尼没而微言绝，七十子丧而大义乖",
   },
   {
@@ -7024,9 +7024,9 @@ window.POEMS_CHENGYU = [
     id: "cy-703",
     title: "蔚然成风",
     source: "《文心雕龙·时序》",
-    dynasty: "清",
+    dynasty: "两晋南北朝",
     author: "刘勰",
-    gradeGroup: "清",
+    gradeGroup: "两晋南北朝",
     excerpt: "（语本）蔚然成风，相沿成习",
   },
   {
@@ -7034,9 +7034,9 @@ window.POEMS_CHENGYU = [
     id: "cy-704",
     title: "无可厚非",
     source: "《汉书·王莽传》",
-    dynasty: "清",
+    dynasty: "东汉",
     author: "班固",
-    gradeGroup: "清",
+    gradeGroup: "东汉",
     excerpt: "（语本）未可厚非",
   },
   {
@@ -7044,9 +7044,9 @@ window.POEMS_CHENGYU = [
     id: "cy-705",
     title: "无稽之谈",
     source: "《尚书·大禹谟》",
-    dynasty: "清",
-    author: "",
-    gradeGroup: "清",
+    dynasty: "上古传说",
+    author: "佚名",
+    gradeGroup: "上古传说",
     excerpt: "无稽之言勿听，弗询之谋勿庸",
   },
   {
@@ -7054,9 +7054,9 @@ window.POEMS_CHENGYU = [
     id: "cy-706",
     title: "息事宁人",
     source: "《后汉书·章帝纪》",
-    dynasty: "清",
+    dynasty: "东汉",
     author: "范晔",
-    gradeGroup: "清",
+    gradeGroup: "东汉",
     excerpt: "其令有司，罪非殊死，且勿案验；及吏人条书相告，不",
   },
   {
@@ -7064,9 +7064,9 @@ window.POEMS_CHENGYU = [
     id: "cy-707",
     title: "瑕不掩瑜",
     source: "《礼记·聘义》",
-    dynasty: "清",
-    author: "",
-    gradeGroup: "清",
+    dynasty: "战国",
+    author: "佚名",
+    gradeGroup: "战国",
     excerpt: "瑕不掩瑜，瑜不掩瑕，忠也",
   },
   {
@@ -7074,9 +7074,9 @@ window.POEMS_CHENGYU = [
     id: "cy-708",
     title: "相形见绌",
     source: "《文心雕龙·时序》",
-    dynasty: "清",
+    dynasty: "两晋南北朝",
     author: "刘勰",
-    gradeGroup: "清",
+    gradeGroup: "两晋南北朝",
     excerpt: "（语本）相形见绌，优劣自明",
   },
   {
@@ -7084,9 +7084,9 @@ window.POEMS_CHENGYU = [
     id: "cy-709",
     title: "信手拈来",
     source: "《题画》",
-    dynasty: "清",
-    author: "",
-    gradeGroup: "清",
+    dynasty: "宋",
+    author: "佚名",
+    gradeGroup: "宋",
     excerpt: "（语本）信手拈来，皆成妙谛",
   },
   {
@@ -7094,9 +7094,9 @@ window.POEMS_CHENGYU = [
     id: "cy-710",
     title: "休戚与共",
     source: "《晋书·王导传》",
-    dynasty: "清",
+    dynasty: "唐",
     author: "房玄龄",
-    gradeGroup: "清",
+    gradeGroup: "唐",
     excerpt: "（语本）休戚与共，同甘共苦",
   },
   {
@@ -7104,9 +7104,9 @@ window.POEMS_CHENGYU = [
     id: "cy-711",
     title: "虚怀若谷",
     source: "《老子》第十五章",
-    dynasty: "清",
+    dynasty: "春秋",
     author: "李耳",
-    gradeGroup: "清",
+    gradeGroup: "春秋",
     excerpt: "旷兮其若谷",
   },
   {
@@ -7124,9 +7124,9 @@ window.POEMS_CHENGYU = [
     id: "cy-713",
     title: "洋洋大观",
     source: "《庄子·天地》",
-    dynasty: "清",
+    dynasty: "战国",
     author: "庄周",
-    gradeGroup: "清",
+    gradeGroup: "战国",
     excerpt: "夫道，覆载万物者也，洋洋乎大哉！",
   },
   {
@@ -7134,9 +7134,9 @@ window.POEMS_CHENGYU = [
     id: "cy-714",
     title: "一傅众咻",
     source: "《孟子·滕文公下》",
-    dynasty: "清",
+    dynasty: "战国",
     author: "孟轲",
-    gradeGroup: "清",
+    gradeGroup: "战国",
     excerpt: "一齐人傅之，众楚人咻之，虽日挞而求其齐也，不可得",
   },
   {
@@ -7144,9 +7144,9 @@ window.POEMS_CHENGYU = [
     id: "cy-715",
     title: "一劳永逸",
     source: "《谏太宗十思疏》",
-    dynasty: "清",
+    dynasty: "唐",
     author: "魏征",
-    gradeGroup: "清",
+    gradeGroup: "唐",
     excerpt: "（语本）一劳永逸，长治久安",
   },
   {
@@ -7154,9 +7154,9 @@ window.POEMS_CHENGYU = [
     id: "cy-716",
     title: "余音绕梁",
     source: "《列子·汤问》",
-    dynasty: "清",
+    dynasty: "战国",
     author: "列御寇",
-    gradeGroup: "清",
+    gradeGroup: "战国",
     excerpt: "昔韩娥东之齐，匮粮，过雍门，鬻歌假食",
   },
   {
@@ -7174,9 +7174,9 @@ window.POEMS_CHENGYU = [
     id: "cy-718",
     title: "正本清源",
     source: "《晋书·武帝纪》",
-    dynasty: "清",
+    dynasty: "唐",
     author: "房玄龄",
-    gradeGroup: "清",
+    gradeGroup: "唐",
     excerpt: "（语本）正本清源，端本澄源",
   },
   {
@@ -7194,9 +7194,9 @@ window.POEMS_CHENGYU = [
     id: "cy-720",
     title: "捉襟见肘",
     source: "《庄子·让王》",
-    dynasty: "清",
+    dynasty: "战国",
     author: "庄周",
-    gradeGroup: "清",
+    gradeGroup: "战国",
     excerpt: "十年不制衣，正冠而缨绝，捉衿而肘见",
   },
   {
@@ -7204,9 +7204,9 @@ window.POEMS_CHENGYU = [
     id: "cy-721",
     title: "自怨自艾",
     source: "《孟子·万章上》",
-    dynasty: "清",
+    dynasty: "战国",
     author: "孟轲",
-    gradeGroup: "清",
+    gradeGroup: "战国",
     excerpt: "太甲悔过，自怨自艾，于桐处仁迁义",
   },
   {
@@ -7214,9 +7214,9 @@ window.POEMS_CHENGYU = [
     id: "cy-722",
     title: "左支右绌",
     source: "《史记·周本纪》",
-    dynasty: "清",
+    dynasty: "西汉",
     author: "司马迁",
-    gradeGroup: "清",
+    gradeGroup: "西汉",
     excerpt: "（语本）左支右绌，力不从心",
   },
   {
@@ -7224,9 +7224,9 @@ window.POEMS_CHENGYU = [
     id: "cy-723",
     title: "作壁上观",
     source: "《史记·项羽本纪》",
-    dynasty: "清",
+    dynasty: "西汉",
     author: "司马迁",
-    gradeGroup: "清",
+    gradeGroup: "西汉",
     excerpt: "诸侯军救巨鹿下者十余壁，莫敢纵兵",
   },
   {
@@ -7234,9 +7234,9 @@ window.POEMS_CHENGYU = [
     id: "cy-724",
     title: "安之若素",
     source: "《庄子·人间世》",
-    dynasty: "清",
+    dynasty: "战国",
     author: "庄周",
-    gradeGroup: "清",
+    gradeGroup: "战国",
     excerpt: "（语本）安之若素，泰然处之",
   },
   {
@@ -7244,9 +7244,9 @@ window.POEMS_CHENGYU = [
     id: "cy-725",
     title: "稗官野史",
     source: "《汉书·艺文志》",
-    dynasty: "清",
+    dynasty: "东汉",
     author: "班固",
-    gradeGroup: "清",
+    gradeGroup: "东汉",
     excerpt: "小说家者流，盖出于稗官",
   },
   {
@@ -7254,9 +7254,9 @@ window.POEMS_CHENGYU = [
     id: "cy-726",
     title: "暴殄天物",
     source: "《尚书·武成》",
-    dynasty: "清",
-    author: "",
-    gradeGroup: "清",
+    dynasty: "上古传说",
+    author: "佚名",
+    gradeGroup: "上古传说",
     excerpt: "今商王受无道，暴殄天物，害虐烝民",
   },
   {
@@ -7264,9 +7264,9 @@ window.POEMS_CHENGYU = [
     id: "cy-727",
     title: "不逞之徒",
     source: "《左传·襄公十年》",
-    dynasty: "清",
+    dynasty: "春秋",
     author: "左丘明",
-    gradeGroup: "清",
+    gradeGroup: "春秋",
     excerpt: "故五族聚群不逞之人，因公子之徒以作乱",
   },
   {
@@ -7274,9 +7274,9 @@ window.POEMS_CHENGYU = [
     id: "cy-728",
     title: "不即不离",
     source: "《圆觉经》",
-    dynasty: "清",
-    author: "",
-    gradeGroup: "清",
+    dynasty: "唐",
+    author: "佚名",
+    gradeGroup: "唐",
     excerpt: "不即不离，无缚无脱",
   },
   {
@@ -7284,9 +7284,9 @@ window.POEMS_CHENGYU = [
     id: "cy-729",
     title: "不容置喙",
     source: "《宋史》",
-    dynasty: "清",
+    dynasty: "元",
     author: "脱脱等",
-    gradeGroup: "清",
+    gradeGroup: "元",
     excerpt: "（语本）不容置喙，无由辩白",
   },
   {
@@ -7294,9 +7294,9 @@ window.POEMS_CHENGYU = [
     id: "cy-730",
     title: "不瘟不火",
     source: "《论语·先进》",
-    dynasty: "清",
-    author: "",
-    gradeGroup: "清",
+    dynasty: "春秋",
+    author: "佚名",
+    gradeGroup: "春秋",
     excerpt: "（语本《论语》「过犹不及」）不瘟不火，恰到好处",
   },
   {
@@ -7304,9 +7304,9 @@ window.POEMS_CHENGYU = [
     id: "cy-731",
     title: "不足为训",
     source: "《左传·昭公二十年》",
-    dynasty: "清",
+    dynasty: "春秋",
     author: "左丘明",
-    gradeGroup: "清",
+    gradeGroup: "春秋",
     excerpt: "（语本）不足为训，未可为准",
   },
   {
@@ -7314,9 +7314,9 @@ window.POEMS_CHENGYU = [
     id: "cy-732",
     title: "断鹤续凫",
     source: "《庄子·骈拇》",
-    dynasty: "清",
+    dynasty: "战国",
     author: "庄周",
-    gradeGroup: "清",
+    gradeGroup: "战国",
     excerpt: "长者不为有余，短者不为不足",
   },
   {
@@ -7324,9 +7324,9 @@ window.POEMS_CHENGYU = [
     id: "cy-733",
     title: "矫揉造作",
     source: "《文心雕龙》",
-    dynasty: "清",
+    dynasty: "两晋南北朝",
     author: "刘勰",
-    gradeGroup: "清",
+    gradeGroup: "两晋南北朝",
     excerpt: "（语本）矫揉造作，失其自然",
   },
   {
@@ -7334,9 +7334,9 @@ window.POEMS_CHENGYU = [
     id: "cy-734",
     title: "判若鸿沟",
     source: "《史记·高祖本纪》",
-    dynasty: "清",
+    dynasty: "西汉",
     author: "司马迁",
-    gradeGroup: "清",
+    gradeGroup: "西汉",
     excerpt: "项羽恐，乃与汉王约，中分天下，割鸿沟而西者为汉，",
   },
   {
@@ -7344,9 +7344,19 @@ window.POEMS_CHENGYU = [
     id: "cy-735",
     title: "旁征博引",
     source: "《文心雕龙》",
-    dynasty: "清",
+    dynasty: "两晋南北朝",
     author: "刘勰",
-    gradeGroup: "清",
+    gradeGroup: "两晋南北朝",
     excerpt: "（语本）旁征博引，辞采飞扬",
+  },
+  {
+    textRef: "chengyu-cy-736",
+    id: "cy-736",
+    title: "人浮于事",
+    source: "《礼记·坊记》",
+    dynasty: "西周",
+    author: "佚名",
+    gradeGroup: "西周",
+    excerpt: "故君子与其使食浮于人也，宁使人浮于食。",
   },
 ];
