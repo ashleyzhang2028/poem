@@ -9,7 +9,8 @@
       groupOrder: GROUP_ORDER,
       pageTitle: "中华成语故事",
       pageSub: "按朝代编排 · 每则给出最早出处的原文与白话译文",
-      extraFields: ["story", "meaning"],
+      // 收录进搜索范围的两栏：成语释义 + 摘句之外的补充
+      extraFields: ["meaning"],
       words: {
         list: "中华成语故事",
         unit: "则",

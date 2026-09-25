@@ -19,6 +19,29 @@ MASTER.forEach(function (m) {
   (m.entries || []).forEach(function (e) { ref[e] = m.id; });
 });
 
+// 拆过条的成语（data/chengyu-support.js 点名的那些）textRef 一律指回自身：
+// 它们本就是从同组里被「正文一致即同篇」误并进来的，判重表合出来的母条不适用。
+// 不在这里钉住的话，下一次重跑会把 textRef 又指回那个被拆走的错母条。
+const SELF_REF = {};
+try {
+  const supSandbox = { window: {}, console };
+  supSandbox.window = supSandbox;
+  vm.createContext(supSandbox);
+  vm.runInContext(fs.readFileSync(path.join(ROOT, 'data/chengyu-support.js'), 'utf8'),
+    supSandbox, { filename: 'data/chengyu-support.js' });
+  const cySandbox = { window: {}, console };
+  cySandbox.window = cySandbox;
+  vm.createContext(cySandbox);
+  vm.runInContext(fs.readFileSync(path.join(ROOT, 'data/poems-chengyu.js'), 'utf8'),
+    cySandbox, { filename: 'data/poems-chengyu.js' });
+  const named = {};
+  (supSandbox.CHENGYU_SUPPORT || []).forEach(function (x) { if (x && x.title) named[x.title] = true; });
+  (cySandbox.POEMS_CHENGYU || []).forEach(function (p) {
+    if (p && named[p.title]) SELF_REF['chengyu-' + p.id] = true;
+  });
+} catch (e) {  }
+Object.keys(SELF_REF).forEach(function (e) { ref[e] = e; });
+
 const BOOKS = [
   { file: 'data/poems-1.js', prefix: 'poems-' },
   { file: 'data/poems-2.js', prefix: 'poems-' },
@@ -136,6 +159,28 @@ BOOKS.forEach(function (b) {
     report.push('  ' + b.file + '  ' + fileTouched + ' 条');
   }
 });
+
+// 拆过条的成语：把 textRef 改回自身（原先指错了邻条）。只改这一行，别的不动。
+const selfFixed = [];
+Object.keys(SELF_REF).forEach(function (entryId) {
+  const book = BOOKS.filter(function (b) { return entryId.indexOf(b.prefix) === 0; })[0];
+  if (!book) return;
+  const abs = path.join(ROOT, book.file);
+  const innerId = entryId.slice(book.prefix.length);
+  const blocks = fs.readFileSync(abs, 'utf8').split(/\n(?=  \{)/);
+  const at = blocks.findIndex(function (b) {
+    return new RegExp('id:\\s*"' + innerId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '"').test(b);
+  });
+  if (at < 0) return;
+  const fixed = blocks[at].replace(/textRef:\s*"[^"]+"/, 'textRef: ' + JSON.stringify(entryId));
+  if (fixed === blocks[at]) return;
+  blocks[at] = fixed;
+  fs.writeFileSync(abs, blocks.join('\n'), 'utf8');
+  selfFixed.push(entryId);
+});
+if (selfFixed.length) {
+  console.log('✓ 拆过条的成语 textRef 已指回自身，共 ' + selfFixed.length + ' 条：' + selfFixed.join('、'));
+}
 
 const missingRef = [];
 Object.keys(ref).forEach(function (entryId) {

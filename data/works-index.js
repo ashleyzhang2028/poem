@@ -10,6 +10,22 @@
 
   var COURSE_BOOK = "poems";
 
+  // 「正文去标点后逐字相同」是全站的判重键，但它对成语故事有个已知例外：
+  // 语本类成语的正文常常**撞巧相同**（众志成城 / 众口铄金 同引《国语》那句
+  // 谚语；贻笑大方 / 大方之家 同引《庄子》「见笑于大方之家」），
+  // 而它们是两条成语、各有所属，不是同一篇作品。
+  // 名单由 data/chengyu-support.js 声明，data/works-map.js 里对应地拆开登记；
+  // 这里让判重键对它们失效，两边口径才一致。
+  var NO_AUTO_MERGE = {};
+  (window.CHENGYU_SUPPORT || []).forEach(function (x) {
+    if (x && x.title) NO_AUTO_MERGE[x.title] = true;
+  });
+  function autoMergeKey(p) {
+    // 只有「成语故事的条目」才看这份名单 —— 同一标题在别的集子里照旧判重
+    if (bookOf(p.id) === "chengyu" && NO_AUTO_MERGE[p.title]) return "";
+    return dedupKey(p.text);
+  }
+
   var BOOK_RANK = { poems: 0, chengyu: 2 };
   var DEFAULT_RANK = 1;
 
@@ -43,7 +59,7 @@
     (index || []).forEach(function (p) {
       if (!p || p.isBook || !p.id) return;
       var wid = byEntry[p.id];
-      var key = dedupKey(p.text);
+      var key = autoMergeKey(p);
       if (!wid) {
         if (key && byKey[key]) {
           wid = byKey[key];

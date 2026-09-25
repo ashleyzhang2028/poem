@@ -40,6 +40,7 @@
           source: p.source || "",
 
           selection: p.selection || "",
+          meaning: p.meaning || "",
           grade: p.grade,
           term: p.term,
           gradeGroup: p.gradeGroup || "",

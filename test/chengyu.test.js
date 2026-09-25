@@ -13,12 +13,14 @@ const { loadData, resolve } = require('./master-env');
 loadData(sandbox, ['data/poems-1.js', 'data/poems-2.js', 'data/poems-3.js', 'data/poems-4.js',
   'data/poems-5.js', 'data/poems-6.js', 'data/poems-7.js', 'data/poems-8.js',
   'data/poems-9.js', 'data/poems-10.js', 'data/poems-11.js', 'data/poems-12.js',
-  'data/index.js', 'data/poems-chengyu.js', 'data/poems-classic.js', 'data/site-index.js']);
+  'data/index.js', 'data/poems-chengyu.js', 'data/poems-classic.js',
+  'data/chengyu-support.js', 'data/site-index.js', 'data/works-map.js', 'data/works-index.js']);
 
 const CY = resolve(sandbox, sandbox.POEMS_CHENGYU, 'chengyu');
-chk(Array.isArray(CY) && CY.length === 736,
-  '中华成语故事共 736 则（第二批 143 则里 9 则并入古文 / 诗篇条目：309 - 9 + 435 + 1 = 736；' +
-  '实际 ' + (CY ? CY.length : 'undefined') + '）');
+chk(Array.isArray(CY) && CY.length === 787,
+  '中华成语故事共 787 则（第二批 143 则里 9 则并入古文 / 诗篇条目：309 - 9 + 435 + 1 = 736；' +
+  'Issue #339 再补第一档·义务教育教材常用成语 51 则 —— 库内原先全是「典故型」，' +
+  '治学型 / 品格型整类没进来；736 + 51 = 787。实际 ' + (CY ? CY.length : 'undefined') + '）');
 
 const ids = new Set();
 let dup = 0;
@@ -27,6 +29,9 @@ chk(dup === 0, '成语 id 无重复（重复 ' + dup + ' 个）');
 
 chk(CY.every(p => p.title && p.source && p.dynasty && p.text && p.translation),
   '每则都齐全：成语 / 出处 / 朝代 / 原文 / 译文');
+chk(CY.every(p => p.meaning && String(p.meaning).replace(/\s/g, '').length >= 8),
+  '每则都有成语释义（meaning），且不是占位短串（空 ' +
+  CY.filter(p => !p.meaning).length + ' 条）');
 chk(CY.every(p => p.excerpt), '每则都给了列表用摘句（excerpt）');
 chk(CY.every(p => ['public-domain', 'school', 'academic', 'modern'].indexOf(p.translationSource) >= 0),
   '译文来源取值都在允许范围内');
@@ -165,7 +170,7 @@ Object.keys(bookRule).forEach(t => {
 
 const IDX = sandbox.SITE_INDEX;
 const cyIdx = IDX.filter(x => x.book === 'chengyu' && !x.isBook);
-chk(cyIdx.length === 736, '总索引收了全部 736 则（实际 ' + cyIdx.length + '）');
+chk(cyIdx.length === 787, '总索引收了全部 787 则（实际 ' + cyIdx.length + '）');
 chk(cyIdx.every(x => x.text && x.translation), '进索引的每一则原文与译文齐备');
 chk(IDX.some(x => x.book === 'chengyu' && x.isBook),
   '「中华成语故事」本身也作为一条结果（搜集子名能直接进那一页）');
@@ -233,6 +238,68 @@ const strayed = CY.filter(p => {
 chk(strayed.length === 0,
   'Issue #339·全表没有「正文与摘句对不上」的条目（异常：' +
   (strayed.slice(0, 8).join('、') || '无') + '）');
+
+// ── Issue #339 第二轮：释义栏 / 语本占位 / 共用正文拆条 / 教材常用成语 ──
+const WORKS = (sandbox.WorksIndex && sandbox.WorksIndex.works) || [];
+
+// ① 释义栏（meaning）不再全空：736 则全有，且每条都进了全站索引
+chk(CY.filter(p => p.meaning).length === CY.length,
+  '成语释义栏 787/787 全有（原先 736 条一条没填，实际 ' +
+  CY.filter(p => p.meaning).length + ' 条）');
+chk(IDX.filter(x => x.book === 'chengyu' && !x.isBook).every(x => x.meaning),
+  '每一则的释义都进了全站索引（搜索释义里的词也能命中）');
+
+// ② 语本类成语的正文不再是编者自造的「（语本）某某」占位串
+const yubenLeft = CY.filter(p => /（语本）/.test(p.text || ''));
+chk(yubenLeft.length === 0,
+  '正文里没有「（语本）」占位串了（残余：' +
+  (yubenLeft.map(p => p.title).slice(0, 6).join('、') || '无') + '）');
+chk(CY.filter(x => x.title === '从长计议')[0].text === '筮短龟长，不如从长。',
+  '「（语本）」已换成可查证的原句（从长计议 → 《左传·僖公四年》）');
+
+// ③ 共用正文里「正文撞巧相同」的那一组已拆开，出处各归其主
+const zzcc = CY.filter(x => x.title === '众志成城')[0];
+const zksj = CY.filter(x => x.title === '众口铄金')[0];
+chk(zzcc.textRef === 'chengyu-cy-86' && zksj.textRef === 'chengyu-cy-616',
+  '众志成城 / 众口铄金 各自独立成条（' + zzcc.textRef + ' / ' + zksj.textRef + '）');
+chk(zksj.source === '《史记·鲁仲连邹阳列传》' &&
+  zksj.text.indexOf('众口铄金，积毁销骨') >= 0,
+  '众口铄金 改挂更权威的出处（邹阳《狱中上书》「众口铄金，积毁销骨」；实际 '
+  + zksj.source + '）');
+chk(!WORKS.some(w => (w.entries || []).length > 1 &&
+  w.entries.indexOf('chengyu-cy-86') >= 0 && w.entries.indexOf('chengyu-cy-616') >= 0),
+  '同篇表里 众志成城 与 众口铄金 不再被当作同一篇');
+
+// ④ 第一档教材常用成语补进来了，且与原有条目同口径
+const TIER1 = ['不耻下问', '举一反三', '温故知新', '日积月累', '锲而不舍',
+  '一丝不苟', '言而有信', '高瞻远瞩', '循序' + '渐进'];
+const tier1Hit = TIER1.filter(t => CY.filter(x => x.title === t).length === 1);
+chk(tier1Hit.length >= 8, '第一档·教材常用成语已补进库（命中 ' + tier1Hit.length + '/' + TIER1.length + '）');
+const tier1 = CY.filter(p => TIER1.indexOf(p.title) >= 0);
+chk(tier1.every(p => p.gradeGroup === p.dynasty && DYNASTIES_ALL.indexOf(p.dynasty) >= 0),
+  '新补的成语同样落在十九个朝代分组里（分组与书写朝代一致）');
+chk(tier1.every(p => p.source.indexOf('《') >= 0 && p.source.indexOf('》') >= 0),
+  '新补的成语出处同样写成《书名·篇名》');
+chk(tier1.every(p => p.excerpt && p.text.indexOf(p.excerpt) >= 0),
+  '新补的成语，正文命中自己的摘句');
+
+// ⑤ 语本类成语：正文是原句、译文是新写的（不能再是照占位串写的旧译文）
+const support = sandbox.CHENGYU_SUPPORT || [];
+const staleTrans = support.filter(x => {
+  const p = CY.filter(y => y.title === x.title)[0];
+  if (!p || !p.translation) return false;
+  const tr = String(p.translation).replace(/\s/g, '');
+  if (!x.translation) return false;             // 没给译文的沿用原文那一份，不强求
+  return Math.abs(tr.length - String(x.translation).replace(/\s/g, '').length) > 12;
+}).map(x => x.title);
+chk(staleTrans.length === 0,
+  '语本类成语的译文与补充材料给的一致（不一致：' +
+  (staleTrans.slice(0, 6).join('、') || '无') + '）');
+
+// ⑥ 数据文件与「补充材料」两份手工表对得上（漏一条不会静默通过）
+chk(support.length >= 76, '语本类成语的补充材料齐备（' + support.length + ' 条）');
+chk(support.every(x => CY.filter(p => p.title === x.title).length === 1),
+  '补充材料点名的成语在库里都有且只有一条');
 
 console.log('');
 console.log(fails ? '❌ ' + fails + ' 项失败' : '🎉 chengyu测试全部通过');

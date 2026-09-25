@@ -2,7 +2,7 @@
    同篇对照表（主表裁定规则的静态成果）
    --------------------------------------------------------------------------
    由 scripts/build-works-map.js 离线算出：**正文（去标点后）一致 = 同一篇作品**。
-   只登记「在两部及以上集子里重复出现」的那些作品（共 140 组），
+   只登记「在两部及以上集子里重复出现」的那些作品（共 139 组），
    单条的作品不必登记 —— 它本来就只出现一次，条目 id 自己就是作品 id。
 
    ⚠️ 这是**生成文件**，改动请改 scripts/build-works-map.js 后重跑，
@@ -64,7 +64,6 @@ window.WORKS_GROUPS = [
   { wid: "w-poems-xx5-12", title: "寸草春晖", titles: ["游子吟","寸草春晖"], entries: ["chengyu-cy-475","poems-xx5-12","tangshi-ts-67","yuefu-yf-48"] },
   { wid: "w-classic-gw-48", title: "卧薪尝胆", titles: ["卧薪尝胆"], entries: ["chengyu-cy-52","classic-gw-48"] },
   { wid: "w-tangshi-ts-281", title: "折戟沉沙", titles: ["赤壁","折戟沉沙"], entries: ["chengyu-cy-573","tangshi-ts-281"] },
-  { wid: "w-chengyu-cy-86", title: "众志成城", titles: ["众志成城","众口铄金"], entries: ["chengyu-cy-86","chengyu-cy-616"] },
 
   { wid: "w-poems-cz8-02", title: "答谢中书书", titles: ["答谢中书书"], entries: ["classic-gw-60","poems-cz8-02"] },
 

@@ -11,6 +11,7 @@ const LOAD = [
   'data/index.js', 'data/poems-classic.js', 'data/poems-tangshi.js',
   'data/poems-songci.js', 'data/poems-guwen.js', 'data/poems-zhaoming.js', 'data/poems-yuanqu.js',
   'data/poems-yuefu.js', 'data/poems-jinxiandai.js', 'data/poems-chengyu.js',
+  'data/chengyu-support.js',
   'data/site-index.js', 'data/works-map.js', 'data/works-index.js'
 ];
 
@@ -70,9 +71,11 @@ var RAW_ENTRIES = {};
     { f: 'data/poems-yuanqu.js', v: 'POEMS_YUANQU' },
     { f: 'data/poems-yuefu.js', v: 'POEMS_YUEFU' },
     { f: 'data/poems-jinxiandai.js', v: 'POEMS_JINXIANDAI' },
-    { f: 'data/poems-chengyu.js', v: 'POEMS_CHENGYU' }
+    { f: 'data/poems-chengyu.js', v: 'POEMS_CHENGYU' },
+    { f: 'data/chengyu-support.js', v: 'CHENGYU_SUPPORT' }
   ];
   FILES.forEach(function (o) {
+    if (o.v === 'CHENGYU_SUPPORT') return;             // 补充材料不是条目，另有去处
     var book = o.f.replace('data/poems-', '').replace('.js', '');
     if (/^\d+$/.test(book)) book = 'poems';
     (sandbox[o.v] || []).forEach(function (p) {
@@ -110,7 +113,7 @@ Object.keys(RAW_ENTRIES).forEach(function (id) {
     id: id, originId: localId, title: raw.title, author: raw.author || '',
     authorName: raw.authorName || '', dynasty: raw.dynasty || '',
     source: raw.source || '', selection: raw.selection || '',
-    gradeGroup: raw.gradeGroup || '', grade: raw.grade, term: raw.term,
+    gradeGroup: raw.gradeGroup || '', meaning: raw.meaning || '', grade: raw.grade, term: raw.term,
     text: t.text, translation: t.translation, translationSource: t.translationSource,
     book: book, bookName: book, page: book + '/'
   });
@@ -138,7 +141,7 @@ Object.keys(prev).forEach(function (id) {
     id: id, originId: id.slice(6), title: raw.title, author: raw.author || '',
     authorName: raw.authorName || '', dynasty: raw.dynasty || '',
     source: raw.source || '', selection: raw.selection || '',
-    gradeGroup: raw.gradeGroup || '', grade: raw.grade, term: raw.term,
+    gradeGroup: raw.gradeGroup || '', meaning: raw.meaning || '', grade: raw.grade, term: raw.term,
     text: t.text, translation: t.translation || '',
     translationSource: t.translationSource, book: 'poems', bookName: 'poems', page: '/'
   });
@@ -149,6 +152,26 @@ if (BOOTSTRAPPED.length) {
   console.log('（' + BOOTSTRAPPED.length + ' 条首次进入主表的条目：' +
     '它们原先只有 textRef、正文取不到，本轮先从原始数据文件那一段补回索引）');
 }
+
+// 拆过条的成语（data/chengyu-support.js 点名的）：先从同篇表里摘掉，再重建，
+// 否则 WI 会把它们又并回一组，后面 master 的 entries 也就跟着错。
+(function () {
+  const named = {};
+  (sandbox.CHENGYU_SUPPORT || []).forEach(function (x) { if (x && x.title) named[x.title] = true; });
+  const splitIds = {};
+  (sandbox.POEMS_CHENGYU || []).forEach(function (p) {
+    if (p && named[p.title]) splitIds['chengyu-' + p.id] = true;
+  });
+  if (!Object.keys(splitIds).length) return;
+  sandbox.WORKS_GROUPS = (sandbox.WORKS_GROUPS || []).map(function (g) {
+    const kept = (g.entries || []).filter(function (e) { return !splitIds[e]; });
+    if (kept.length === g.entries.length) return g;
+    if (kept.length < 2) return null;
+    return { wid: g.wid, title: g.title, titles: (g.titles || []).filter(function (t) {
+      return !named[t];
+    }), entries: kept };
+  }).filter(Boolean);
+})();
 
 sandbox.WorksIndex.rebuild(sandbox.SITE_INDEX);
 
@@ -174,6 +197,57 @@ WI.works.forEach(function (w) {
     translationSource: t.translationSource
   });
 });
+// ── 语本类成语的「拆条」────────────────────────────────────────────────────
+// data/chengyu-support.js 里点名的成语，证据表明它与同组的另一条不是同一篇
+// （最典型：众志成城 / 众口铄金 —— 两句谚语同源而语本各异，出处栏也各有所归）。
+// 这类条目要**脱离**判重表自动合成的母条，各建一条 entries 只含自己的母条，
+// 否则重跑本脚本会把它们又并回去。裁定写在补充材料里，这里是执行处。
+const SPLIT = {};
+(sandbox.CHENGYU_SUPPORT || []).forEach(function (s) {
+  if (s && s.title) SPLIT['chengyu-' + s.title] = true;
+});
+const splitTitles = {};
+(sandbox.POEMS_CHENGYU || []).forEach(function (p) {
+  if (p && SPLIT['chengyu-' + p.title]) splitTitles['chengyu-' + p.id] = p;
+});
+if (Object.keys(splitTitles).length) {
+  master.forEach(function (m) {
+    const keep = (m.entries || []).filter(function (e) { return !splitTitles[e]; });
+    if (keep.length === (m.entries || []).length) return;
+    if (!keep.length) return;                          // 全被拆走：这条母条整体作废
+    m.entries = keep;
+    // entries 变了，正文要跟着重新裁定 —— 原先是按「并在一起那一条」取的代表条目，
+    // 拆开之后必须改成「剩下的那一条自己」的代表条目，否则正文仍挂在被拆走的那一条上。
+    const rep = WI.repOf(keep[0]);
+    const repEntry = byId[rep] || byId[keep[0]];
+    if (!repEntry) return;
+    const t = textOfEntry(repEntry, rep);
+    m.work = WI.widOf(rep) || ('w-' + rep);
+    m.id = rep;
+    m.title = repEntry.title;
+    m.text = t.text;
+    m.translation = t.translation;
+    m.translationSource = t.translationSource;
+  });
+  Object.keys(splitTitles).forEach(function (id) {
+    if (master.some(function (m) { return m.id === id; })) return;
+    const p = byId[id];
+    if (!p) return;
+    const s = (sandbox.CHENGYU_SUPPORT || []).filter(function (x) {
+      return 'chengyu-' + x.title === 'chengyu-' + p.title;
+    })[0] || {};
+    master.push({
+      work: 'w-' + id,
+      id: id,
+      title: p.title,
+      entries: [id],
+      text: s.text || p.text || '',
+      translation: s.translation || p.translation || '',
+      translationSource: p.translationSource || 'public-domain'
+    });
+  });
+}
+
 master.sort(function (a, b) { return a.id < b.id ? -1 : 1; });
 
 const seen = {};

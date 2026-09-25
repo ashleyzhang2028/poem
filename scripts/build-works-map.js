@@ -11,6 +11,7 @@ const LOAD = [
   'data/index.js', 'data/poems-classic.js', 'data/poems-tangshi.js',
   'data/poems-songci.js', 'data/poems-guwen.js', 'data/poems-zhaoming.js', 'data/poems-yuanqu.js',
   'data/poems-yuefu.js', 'data/poems-jinxiandai.js', 'data/poems-chengyu.js',
+  'data/chengyu-support.js',
   'data/site-index.js', 'data/works-index.js'
 ];
 
@@ -85,6 +86,7 @@ LOAD.forEach(function (f) {
       id: id, originId: id.slice(book.length + 1), title: raw.title,
       author: raw.author || '', dynasty: raw.dynasty || '',
       source: raw.source || '', gradeGroup: raw.gradeGroup || '',
+      meaning: raw.meaning || '',
       text: t.text, translation: t.translation, translationSource: t.translationSource,
       book: book, bookName: book, page: book + '/'
     });
@@ -110,7 +112,29 @@ LOAD.forEach(function (f) {
   });
 })();
 
-sandbox.WorksIndex.rebuild(sandbox.SITE_INDEX);
+// ── 拆过条的成语：从同篇表里摘掉 ─────────────────────────────────────────
+// data/chengyu-support.js 点名的成语（如 众志成城 / 众口铄金）是「正文撞巧
+// 相同」被误并的，不是同一篇作品。这里在重建同篇表之前先把它们各自拆开，
+// 否则重跑本脚本又会把它们并回一组。裁定写在补充材料里，此处只是执行。
+(function () {
+  const named = {};
+  (sandbox.CHENGYU_SUPPORT || []).forEach(function (x) { if (x && x.title) named[x.title] = true; });
+  const splitIds = {};
+  (sandbox.POEMS_CHENGYU || []).forEach(function (p) {
+    if (p && named[p.title]) splitIds['chengyu-' + p.id] = true;
+  });
+  if (!Object.keys(splitIds).length) return;
+  // WORKS_GROUPS 里把这一条从组内摘掉；只剩一条的组整组删
+  sandbox.WORKS_GROUPS = (sandbox.WORKS_GROUPS || []).map(function (g) {
+    const kept = (g.entries || []).filter(function (e) { return !splitIds[e]; });
+    if (kept.length === g.entries.length) return g;
+    if (kept.length < 2) return null;
+    return { wid: g.wid, title: g.title, titles: (g.titles || []).filter(function (t) {
+      return !named[t];
+    }), entries: kept };
+  }).filter(Boolean);
+  sandbox.WorksIndex.rebuild(sandbox.SITE_INDEX);
+})();
 
 const WI = sandbox.WorksIndex;
 const byId0 = {};
