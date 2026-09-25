@@ -2801,6 +2801,14 @@ async function main() {
     //      换台设备名字就没了，管理端名录也认不出人。
     boot({ ALLOW_CODE_ECHO: "1" });
     const sv = await serve();
+    const sessionStore278 = require("../api/_lib/store.js").getStore(require("../api/_lib/config.js"));
+    const realPutSession278 = sessionStore278.putSession;
+    let sessionWrites278 = 0;
+    sessionStore278.putSession = function (record) {
+      if (sessionStore278._db.sessions[record.sid]) return Promise.reject(new Error("duplicate session sid"));
+      sessionWrites278++;
+      return realPutSession278(record);
+    };
     try {
       const POST = (p, b, cookie) => call(sv.base, "POST", p, b, cookie);
       const PATCH = (p, b, cookie) => call(sv.base, "PATCH", p, b, cookie);
@@ -2826,6 +2834,7 @@ async function main() {
 
       const v = await POST("/api/verify-email", { vid: vid, token: tok });
       eq(v.status, 200, "② 点开邮件里那条链接 → 200");
+      eq(sessionWrites278, 1, "② 邮箱确认只写一次会话（重复 sid 会被数据库拒绝）");
       eq(v.body.verified, true, "② 如实回 verified:true");
       eq(v.body.signedIn, true, "② **如实回 signedIn:true**（界面据它决定说「已登录」还是「去登录」）");
       chk(/^kbsid=/.test(String(v.setCookie || "")), "② **就在这一步签发了会话 Cookie**（原先一个字节都不发）");
@@ -2865,9 +2874,17 @@ async function main() {
       eq(rowM.nickname, "小明", "⑤ **库里那一列也写上了**（原先它只落本机 localStorage，这一列永远是空的）");
 
       const lg278 = await POST("/api/login", { email: "flow278@example.com", password: "hunter2hunter" });
+      eq(lg278.status, 200, "⑤ 密码登录在拒绝重复 sid 的数据库上仍成功");
+      eq(sessionWrites278, 2, "⑤ 密码登录只新增一次会话");
       const ck278 = String(lg278.setCookie || "").split(";")[0];
       const meC = await call(sv.base, "GET", "/api/me", undefined, ck278);
       eq(meC.body.nickname, "小明", "⑤ **换一个会话（= 换一台设备）登录，名字还在**（这正是「账号域」的含义）");
+
+      const code278 = await POST("/api/send-code", { email: "flow278@example.com" });
+      eq(code278.status, 202, "⑤ 快捷登录能发送验证码");
+      const codeLogin278 = await POST("/api/verify-code", { codeId: code278.body.codeId, code: code278.body.devCode });
+      eq(codeLogin278.status, 200, "⑤ 验证码登录在拒绝重复 sid 的数据库上仍成功");
+      eq(sessionWrites278, 3, "⑤ 验证码登录只新增一次会话");
 
       const long = await PATCH("/api/me", { nickname: "一二三四五六七八九十十一十二十三" }, cookie278);
       eq(long.body.nickname.length, 12, "⑤ 超长昵称截到 12 个字符（与服务端家族子用户同一档）");
@@ -2891,14 +2908,15 @@ async function main() {
         "⑦ 邮箱确认那条路也走它（**这一行就是 Issue #278 的修复本身**）");
 
       const handlerSrc278 = fs.readFileSync(path.join(ROOT, "api/_lib/handler.js"), "utf8");
-      chk(/function settleSession\(/.test(handlerSrc278), "⑦ 接口层有 settleSession（落库 + 响应整形只有一处）");
+      chk(/function settleSession\(/.test(handlerSrc278), "⑦ 接口层有 settleSession（响应整形只有一处）");
       ["api/_routes/auth/login.js", "api/_routes/auth/verify-email.js"].forEach(f => {
         chk(/handler\.settleSession\(/.test(fs.readFileSync(path.join(ROOT, f), "utf8")),
           "⑦ " + f + " 走的是 handler.settleSession（不再自己抄一段 putSession）");
       });
-      chk(/putSession/.test(handlerSrc278) &&
-        !/putSession/.test(fs.readFileSync(path.join(ROOT, "api/_routes/auth/login.js"), "utf8")),
-        "⑦ putSession 只在 handler.js 那一处（接口文件里不再各写一遍）");
+      chk(/store\.putSession\(/.test(coreSrc278) &&
+        !/store\.putSession\(/.test(handlerSrc278) &&
+        !/store\.putSession\(/.test(fs.readFileSync(path.join(ROOT, "api/_routes/verify-code.js"), "utf8")),
+        "⑦ 会话只在内核落库一次，登录 / 验码接口不再重复写入");
 
       const routes278 = require("../api/_lib/routes.js");
       chk(!!routes278.resolve("PATCH", "/api/me"), "⑦ PATCH /api/me 在路由表里（少一条就是按钮点了没反应）");
@@ -2927,7 +2945,7 @@ async function main() {
       const apiSrc278 = fs.readFileSync(path.join(ROOT, "js/auth-api.js"), "utf8");
       chk(/setNickname:\s*function/.test(apiSrc278), "⑧ 传输层接了 setNickname()（少一条就是按钮点了没反应）");
       chk(/call\("\/me", "PATCH"/.test(apiSrc278), "⑧ 它打的是 PATCH /api/me（不是另开一条 /api/nickname）");
-    } finally { await sv.close(); }
+    } finally { sessionStore278.putSession = realPutSession278; await sv.close(); }
   }
 
   fs.writeFileSync("/tmp/m205.txt", "REACHED-205\n");

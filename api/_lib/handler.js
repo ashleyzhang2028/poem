@@ -54,23 +54,10 @@ function withSession(req, d) {
     });
 }
 
-// 内核签了会话之后**必须**做的两件事（Issue #278）：把会话行落库、
-// 把响应整形干净（去掉 `_session`、留下 `cookies`）。
-//
-// 为什么要收成一处：这段代码原先长在 `_routes/auth/login.js` 里，
-// 而「邮箱确认」那条路根本不知道它的存在 —— 于是内核在确认里签了会话，
-// 接口既不落库也不发 Cookie。写成两处就必然有第三处漏掉，
-// 所以它跟 `make()` 放在一起，谁签会话谁调它。
+// 内核已经落库会话行；这里只整形响应，不再插入相同的 sid。
 function settleSession(d, r) {
   if (!r || r.status !== 200 || !r._session) return Promise.resolve(r);
-  var s = r._session;
-  return Promise.resolve(d.store.putSession({
-    sid: s.sid, uid: s.uid, iat: s.iat, exp: s.exp, revoked: 0
-  })).then(function () {
-    var out = { status: r.status, body: r.body, cookies: r.cookies };
-    delete r._session;
-    return out;
-  });
+  return Promise.resolve({ status: r.status, body: r.body, cookies: r.cookies });
 }
 
 // 读正文这一步的**硬上限**（Issue #276 后续）。
