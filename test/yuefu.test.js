@@ -152,14 +152,14 @@ chk(inline.length === 0,
 
 console.log('\n=== 四、注册与排序：乐府集在唐诗前，元曲在宋词后 ===');
 chk(sandbox.SITE_BOOKS.map(b => b.id).join(',') ===
-  'poems,classic,yuefu,tangshi,songci,yuanqu,guwen,jinxiandai,zhaoming',
-  'SITE_BOOKS 的次序正确（Issue #244）：课内 · 小古文 · 乐府集 · 唐诗 · 宋词 · 元曲 · 古文观止 · 近现代诗词 · 昭明文选');
+  'poems,classic,yuefu,tangshi,songci,yuanqu,guwen,jinxiandai,zhaoming,chengyu',
+  'SITE_BOOKS 的次序正确（Issue #244 / #308）：课内 · 小古文 · 乐府集 · 唐诗 · 宋词 · 元曲 · 古文观止 · 近现代诗词 · 昭明文选 · 中华成语故事');
 chk(sandbox.SITE_BOOKS.filter(b => b.id === 'yuefu')[0].name === '乐府集',
   '集子名写作「乐府集」');
 
 const lib = read('js/library.js');
 const libOrder = (lib.match(/id: "([a-z]+)",\n      name:/g) || []).map(s => s.match(/id: "([a-z]+)"/)[1]);
-chk(libOrder.join(',') === 'poems,classic,yuefu,tangshi,songci,yuanqu,guwen,jinxiandai,zhaoming',
+chk(libOrder.join(',') === 'poems,classic,yuefu,tangshi,songci,yuanqu,guwen,jinxiandai,zhaoming,chengyu',
   '入口页卡片次序与 SITE_BOOKS 同源（实际 ' + libOrder.join(',') + '）');
 
 const si = read('data/site-index.js');

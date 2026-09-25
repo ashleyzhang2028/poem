@@ -1,6 +1,1475 @@
+/* ==========================================================================
+   正文存储主表（同一篇作品的正文 / 译文只落一份）
+   --------------------------------------------------------------------------
+   由 scripts/build-text-master.js 离线算出，共 1638 条。
 
+   ⚠️ 这是**生成文件**，改动请改 scripts/build-text-master.js 后重跑，
+      不要手改这里 —— 下次重新生成会把手工改动覆盖掉。
 
+   ## 它解决什么
+   同一篇作品（《答谢中书书》课内八年级上 + 小古文、《登高》课内高一上 +
+   唐诗卷五……）此前在每一部集子的数据文件里**各存一份完整正文与译文**。
+   显示层虽已按 data/canonical-texts.js 统一成「课本那一份」，
+   但磁盘上仍是五份副本：改一处要改五处，漏一处就又不一致。
+
+   这一份把这份文本收归**一处**；其余集子的条目退化成只存归属 ——
+   条目上留 `textRef: "<主条目站点 id>"`，正文与译文
+   由引擎（js/reader-core.js）按 `textRef` 到这里取。
+
+   ## 收归范围（已收齐）
+     ① 「在两部及以上集子里重复出现」的作品 —— 判重表自动收；
+     ② FULL_BOOKS 点名的六部集子里**其余全部单篇**（历史声明，
+        六部收齐后本表已按「凡在册且带正文的条目一律全收」执行）。
+   于是：在册却还带内联正文的条目即为异常（同一个脚本里两处断言会点名）。
+
+   ## 与另外两张表的分工
+     data/works-map.js        哪些条目是**同一篇作品**（判重、搜索去重、排程合流）
+     data/canonical-texts.js  显示层：同一篇**显示**用哪一份正文（收归之后已收敛为空表，
+                              机制留着给日后真出现异文时用）
+     data/text-master.js      存储层：同一篇的正文 / 译文**只落一份**（本文件）
+   三张表由同一套口径算出（课内条目为主条目），一起重跑。
+
+   ## 字段
+     work        作品 id（与 data/works-map.js 的 wid 一致）
+     id          主条目站点索引 id（`poems-cz8-02`，课内优先）
+     title       主条目题名
+     entries     这一篇的全部站点条目 id（含主条目自己）
+     text        正文（**全站唯一一份**）
+     translation 白话译文
+     translationSource 译文来源
+   ========================================================================== */
 window.TEXT_MASTER = [
+  {
+    work: "w-chengyu-cy-1",
+    id: "chengyu-cy-1",
+    title: "女娲补天",
+    entries: ["chengyu-cy-1"],
+    text: "往古之时，四极废，九州裂，天不兼覆，地不周载，火爁焱而不灭，水浩洋而不息，猛兽食颛民，鸷鸟攫老弱。\n于是女娲炼五色石以补苍天，断鳌足以立四极，杀黑龙以济冀州，积芦灰以止淫水。",
+    translation: "远古的时候，天的四边塌了下来，九州大地裂开了，天不能覆盖万物，地不能承载万物；大火蔓延而不灭，洪水泛滥而不止，猛兽吞食善良的百姓，凶禽抓走老人和小孩。于是女娲熔炼五色石来补天上的窟窿，斩断大龟的脚来做撑天的四根柱子，杀死黑龙来拯救中原一带的百姓，堆积芦苇的灰来堵住泛滥的洪水。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-10",
+    id: "chengyu-cy-10",
+    title: "炼石补天",
+    entries: ["chengyu-cy-10"],
+    text: "于是女娲炼五色石以补苍天，断鳌足以立四极，杀黑龙以济冀州，积芦灰以止淫水。\n苍天补，四极正，淫水涸，冀州平，狡虫死，颛民生。",
+    translation: "于是女娲熔炼五色石来补天上的窟窿，斩断大龟的脚来做撑天的四柱，杀死黑龙来拯救冀州的百姓，堆积芦苇灰来堵住泛滥的洪水。天补好了，四柱立正了，洪水干涸了，冀州太平了，猛兽死了，善良的百姓得以生存。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-100",
+    id: "chengyu-cy-100",
+    title: "弱不禁风",
+    entries: ["chengyu-cy-100"],
+    text: "乱波分披已打岸，弱云狼藉不禁风。",
+    translation: "纷乱的波浪分散开来打着岸边，柔弱的云凌乱不堪、经不起风吹。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-101",
+    id: "chengyu-cy-101",
+    title: "倚马可待",
+    entries: ["chengyu-cy-101"],
+    text: "（桓温北征，需露布文，唤袁宏倚马前令作，手不辍笔，俄得七纸，殊可观。）",
+    translation: "（桓温北伐时急需一篇露布文，就叫袁宏倚在战马前起草，他手不停笔，一会儿就写了七张纸，写得非常好。）",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-102",
+    id: "chengyu-cy-102",
+    title: "满城风雨",
+    entries: ["chengyu-cy-102"],
+    text: "（潘大临答友人书曰）「满城风雨近重阳」，只此一句，催租人至，遂败意。",
+    translation: "（潘大临回信给友人说）「满城风雨近重阳」，只有这一句，因为催租的人来了，就败坏了诗兴。（后世用它比喻某事传得沸沸扬扬。）",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-103",
+    id: "chengyu-cy-103",
+    title: "一字之师",
+    entries: ["chengyu-cy-103"],
+    text: "（齐己作《早梅》诗「前村深雪里，昨夜数枝开」，郑谷改「数枝」为「一枝」，齐己下拜，人称郑谷为「一字师」。）",
+    translation: "（齐己作《早梅》诗有「前村深雪里，昨夜数枝开」，郑谷把「数枝」改为「一枝」，齐己佩服下拜，人们称郑谷为「一字师」。）",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-104",
+    id: "chengyu-cy-104",
+    title: "依样画葫芦",
+    entries: ["chengyu-cy-104"],
+    text: "官职须由生处有，才能不管用时无。堪笑翰林陶学士，年年依样画葫芦。",
+    translation: "官职要到该有的地方才有，才能到用得着的时候却用不上。可笑翰林院的陶学士，年年照着葫芦的样子画葫芦。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-105",
+    id: "chengyu-cy-105",
+    title: "解铃还须系铃人",
+    entries: ["chengyu-cy-105"],
+    text: "金陵清凉泰钦法灯禅师在众日，性豪逸，不事事，众易之。法眼独契重。眼一日问众：「虎项金铃，是谁解得？」众无对。师适至，眼举前语问，师曰：「系者解得。」",
+    translation: "金陵清凉寺的泰钦法灯禅师在僧众中时，性情豪放洒脱，不做什么事，大家都轻视他，只有法眼禅师看重他。一天法眼问众人：「老虎脖子上的金铃，谁能解得下来？」众人答不上来。法灯正好来到，法眼把前面的话问他，法灯说：「系铃的人能解得下来。」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-106",
+    id: "chengyu-cy-106",
+    title: "骑鹤扬州",
+    entries: ["chengyu-cy-106"],
+    text: "有客相从，各言所志：或愿为扬州刺史，或愿多赀财，或愿骑鹤上升。其一人曰：「腰缠十万贯，骑鹤上扬州。」欲兼三者。",
+    translation: "有几个人聚在一起，各自说自己的志向：有的想做扬州刺史，有的想有很多钱财，有的想骑着仙鹤升天。其中一个人说：「腰里缠着十万贯钱，骑着仙鹤到扬州去。」他想把三样都占全。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-107",
+    id: "chengyu-cy-107",
+    title: "开卷有益",
+    entries: ["chengyu-cy-107"],
+    text: "太宗日阅《御览》三卷，因事有阙，暇日追补之，尝曰：「开卷有益，朕不以为劳也。」",
+    translation: "宋太宗每天阅读《太平御览》三卷，如果因事耽误了就利用空闲补上，他曾说：「打开书本就有好处，我并不觉得辛苦。」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-108",
+    id: "chengyu-cy-108",
+    title: "胸有成竹",
+    entries: ["chengyu-cy-108"],
+    text: "故画竹必先得成竹于胸中，执笔熟视，乃见其所欲画者，急起从之，振笔直遂，以追其所见，如兔起鹘落，少纵则逝矣。",
+    translation: "所以画竹一定要先在胸中形成竹子的完整形象，拿起笔来细细审视，才能看见想要画的样子，赶紧起身追随它，挥笔一气呵成，去追摹所见到的形象，就像兔子一蹦、鹘鸟一落那样迅疾，稍一放松就消逝了。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-109",
+    id: "chengyu-cy-109",
+    title: "名落孙山",
+    entries: ["chengyu-cy-109"],
+    text: "（孙山）乡人问其子得失，山曰：「解名尽处是孙山，贤郎更在孙山外。」",
+    translation: "（孙山）同乡问他儿子考中没有，孙山说：「榜上最后一个名字是我孙山，您的儿子还在孙山之外呢。」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-110",
+    id: "chengyu-cy-110",
+    title: "出人头地",
+    entries: ["chengyu-cy-110"],
+    text: "老夫当避路，放他出一头地也。",
+    translation: "我应当给他让开路，让他高出我一头。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-111",
+    id: "chengyu-cy-111",
+    title: "大器晚成",
+    entries: ["chengyu-cy-111"],
+    text: "（援）少有大志，诸兄奇之。尝受《齐诗》，意不能守章句，乃辞兄，欲就边郡田牧。兄曰：「汝大才，当晚成。」",
+    translation: "（马援）少年时就有大志，几位兄长都认为他不寻常。他曾学《齐诗》，但不愿死守章句，就辞别兄长，想到边郡去种田放牧。兄长说：「你是大才，应当成就得晚一些。」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-112",
+    id: "chengyu-cy-112",
+    title: "河东狮吼",
+    entries: ["chengyu-cy-112"],
+    text: "龙丘居士亦可怜，谈空说有夜不眠。忽闻河东狮子吼，拄杖落手心茫然。",
+    translation: "龙丘居士（陈季常）也真是可怜，谈空说有通宵不睡。忽然听到河东狮子的吼声，手里的拄杖掉落，心里一片茫然。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-113",
+    id: "chengyu-cy-113",
+    title: "熟能生巧",
+    entries: ["chengyu-cy-113"],
+    text: "陈康肃公善射，当世无双，公亦以此自矜。尝射于家圃，有卖油翁释担而立，睨之久而不去。见其发矢十中八九，但微颔之。……乃取一葫芦置于地，以钱覆其口，徐以杓酌油沥之，自钱孔入，而钱不湿。因曰：「我亦无他，惟手熟尔。」",
+    translation: "陈尧咨善于射箭，当时天下无双，他也凭这个自夸。有一次他在自家的场地上射箭，有个卖油的老翁放下担子站着，斜着眼看了很久也不离开。见他射出的箭十支能中八九支，只是微微点头。……（老翁）就取来一个葫芦放在地上，用铜钱盖住葫芦口，慢慢地用勺子舀油往下滴，油从铜钱的方孔里穿过去，铜钱却没有沾湿。他说：「我也没别的本事，只是手熟罢了。」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-114",
+    id: "chengyu-cy-114",
+    title: "水滴石穿",
+    entries: ["chengyu-cy-114"],
+    text: "张乖崖为崇阳令，一吏自库中出，巾下有一钱。……乖崖援笔判曰：「一日一钱，千日一千，绳锯木断，水滴石穿。」",
+    translation: "张乖崖做崇阳县令时，一个吏员从库房里出来，头巾下藏着一文钱。……张乖崖提笔判道：「一天一文钱，一千天就是一千文。绳子能锯断木头，水滴能穿破石头。」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-115",
+    id: "chengyu-cy-115",
+    title: "近水楼台",
+    entries: ["chengyu-cy-115"],
+    text: "范文正公镇钱塘，兵官皆被荐，独巡检苏麟不见录，乃献诗云：「近水楼台先得月，向阳花木易为春。」",
+    translation: "范仲淹镇守钱塘时，手下的武官都得到推荐，只有巡检苏麟没有被录用，他就献诗说：「靠近水的楼台先得到月光，向着阳光的花木容易发芽开花。」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-116",
+    id: "chengyu-cy-116",
+    title: "柳暗花明",
+    entries: ["chengyu-cy-116"],
+    text: "山重水复疑无路，柳暗花明又一村。",
+    translation: "山峦重叠、水流曲折，正怀疑没有路了，忽然柳荫浓绿、鲜花明艳，眼前又出现一个村庄。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-117",
+    id: "chengyu-cy-117",
+    title: "囫囵吞枣",
+    entries: ["chengyu-cy-117"],
+    text: "（有客言枣能益脾而损齿，一人曰：「吾食枣但吞而不嚼。」）今人读书，多是囫囵吞枣。",
+    translation: "（有人说枣子能补脾却伤牙，一个人说：「我吃枣只吞不嚼。」）现在的人读书，多半是整颗枣子吞下去，不加咀嚼。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-118",
+    id: "chengyu-cy-118",
+    title: "一叶障目",
+    entries: ["chengyu-cy-118"],
+    text: "（古谚）一叶障目，不见泰山；两豆塞耳，不闻雷霆。",
+    translation: "一片树叶遮住眼睛，就看不见泰山；两颗豆子塞住耳朵，就听不见雷声。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-119",
+    id: "chengyu-cy-119",
+    title: "名缰利锁",
+    entries: ["chengyu-cy-119"],
+    text: "名缰利锁，天还知道，和天也瘦。",
+    translation: "名利的缰绳和锁链（把人困住），上天若是知道，连上天也会憔悴。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-12",
+    id: "chengyu-cy-12",
+    title: "居安思危",
+    entries: ["chengyu-cy-12"],
+    text: "《书》曰：「居安思危。」思则有备，有备无患。",
+    translation: "《尚书》里说：「处在安定的时候要想到可能出现的危险。」想到了就会有防备，有了防备就不会有祸患。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-120",
+    id: "chengyu-cy-120",
+    title: "雪泥鸿爪",
+    entries: ["chengyu-cy-120"],
+    text: "人生到处知何似，应似飞鸿踏雪泥。泥上偶然留指爪，鸿飞那复计东西。",
+    translation: "人生到处奔走像什么呢？应该像飞鸿踏在雪地上。雪泥上偶然留下几个爪印，鸿雁飞走之后哪里还计较东西南北。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-121",
+    id: "chengyu-cy-121",
+    title: "明日黄花",
+    entries: ["chengyu-cy-121"],
+    text: "相逢不用忙归去，明日黄花蝶也愁。",
+    translation: "既然相逢，就不必急着回去；过了重阳这天，菊花就成了明日黄花，连蝴蝶也要发愁了。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-122",
+    id: "chengyu-cy-122",
+    title: "水落石出",
+    entries: ["chengyu-cy-122"],
+    text: "山高月小，水落石出。",
+    translation: "山显得高了，月亮显得小了，水位落下，石头露了出来。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-123",
+    id: "chengyu-cy-123",
+    title: "胸无点墨",
+    entries: ["chengyu-cy-123"],
+    text: "（师）曰：「我这里无点墨，也无一文钱。」",
+    translation: "（禅师）说：「我这里没有一点墨，也没有一文钱。」（后世用以形容人没有学问。）",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-124",
+    id: "chengyu-cy-124",
+    title: "一笔勾销",
+    entries: ["chengyu-cy-124"],
+    text: "（范仲淹）公取班簿，视不才监司，每见一人姓名，一笔勾之。",
+    translation: "（范仲淹）取来官员名册，看那些不称职的监司，每见一人的姓名，就一笔勾掉。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-125",
+    id: "chengyu-cy-125",
+    title: "曲尽其妙",
+    entries: ["chengyu-cy-125"],
+    text: "（圣俞）覃思精微，以深远闲淡为意……状难写之景，如在目前；含不尽之意，见于言外。然后为至，曲尽其妙。",
+    translation: "（梅尧臣）思虑精深细微，以深远闲淡为意趣……描绘难以描摹的景物，就像在眼前一样；含藏说不尽的意味，显现在言语之外。这样才算到家，把其中的妙处委婉细致地表达穷尽。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-126",
+    id: "chengyu-cy-126",
+    title: "沧海一粟",
+    entries: ["chengyu-cy-126"],
+    text: "寄蜉蝣于天地，渺沧海之一粟。",
+    translation: "像蜉蝣一样寄身于天地之间，渺小得像大海里的一粒米。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-127",
+    id: "chengyu-cy-127",
+    title: "粗枝大叶",
+    entries: ["chengyu-cy-127"],
+    text: "《书序》恐不是孔安国做，汉文粗枝大叶，今《书序》细腻，只似六朝时文字。",
+    translation: "《书序》恐怕不是孔安国写的，汉代文章粗枝大叶，而如今的《书序》很细腻，只像是六朝人的文字。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-128",
+    id: "chengyu-cy-128",
+    title: "出类拔萃",
+    entries: ["chengyu-cy-128"],
+    text: "（刘盆子）年十五，被发徒跣，敝衣赭汗，见众拜，恐畏欲啼。……诸将以其刘氏近属，共立之。",
+    translation: "（注：该书引《孟子》「出于其类，拔乎其萃」之义）人们用「出类拔萃」形容才能远超同辈的人。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-129",
+    id: "chengyu-cy-129",
+    title: "稍纵即逝",
+    entries: ["chengyu-cy-129"],
+    text: "如兔起鹘落，少纵则逝矣。",
+    translation: "就像兔子一蹦、鹘鸟一落那样迅疾，稍一放松就消逝了。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-13",
+    id: "chengyu-cy-13",
+    title: "宾至如归",
+    entries: ["chengyu-cy-13"],
+    text: "宾至如归，无宁灾患？不畏寇盗，而亦不患燥湿。",
+    translation: "宾客来到这里就像回到自己家里一样，难道还会有什么灾祸吗？不必害怕盗贼，也不必担心屋里潮湿。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-130",
+    id: "chengyu-cy-130",
+    title: "叹为观止",
+    entries: ["chengyu-cy-130"],
+    text: "（吴公子季札）见舞《韶箾》者，曰：「德至矣哉，大矣！如天之无不帱也，如地之无不载也。虽甚盛德，其蔑以加于此矣，观止矣！」",
+    translation: "（吴国公子季札）看到《韶箾》之舞，说：「德行达到极点了，真是伟大啊！像天一样无所不覆盖，像地一样无所不承载。即使有更高的德行，也无法比这再好了，看到这里就可以停止了！」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-131",
+    id: "chengyu-cy-131",
+    title: "聚沙成塔",
+    entries: ["chengyu-cy-131"],
+    text: "聚沙成塔，积少成多。",
+    translation: "把沙子一点点聚拢也能成塔，积少便能成多。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-132",
+    id: "chengyu-cy-132",
+    title: "磨杵成针",
+    entries: ["chengyu-cy-132"],
+    text: "（李白）过是溪，逢老媪方磨铁杵。问之，曰：「欲作针。」太白感其意，还卒业。",
+    translation: "（李白）路过这条溪，遇见一个老妇正在磨一根铁棒。李白问她，她说：「要把它磨成针。」李白被她的意志感动，回去完成了学业。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-133",
+    id: "chengyu-cy-133",
+    title: "杀鸡取卵",
+    entries: ["chengyu-cy-133"],
+    text: "（如）杀鸡取卵，（取）一时之利。",
+    translation: "好比杀鸡取蛋，只图一时的好处。（后作「杀鸡取卵」。）",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-134",
+    id: "chengyu-cy-134",
+    title: "打草惊蛇",
+    entries: ["chengyu-cy-134"],
+    text: "（王鲁判案，百姓联名告他部下主簿贪污，鲁曰）：「汝虽打草，吾已蛇惊。」",
+    translation: "（王鲁判案时，百姓联名告他手下的主簿贪污，王鲁说）：「你们虽然只是打草，我这条蛇已经受惊了。」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-135",
+    id: "chengyu-cy-135",
+    title: "只许州官放火，不许百姓点灯",
+    entries: ["chengyu-cy-135"],
+    text: "田登作郡，自讳其名，触者必怒，吏卒多被榜笞。于是举州皆谓灯为火。上元放灯，许人入州治游观，吏人遂书榜揭于市曰：「本州依例放火三日。」",
+    translation: "田登做郡守时，忌讳自己的名字，谁冒犯了他必定发怒，吏卒大多被鞭打。于是全州都把「灯」说成「火」。元宵节放灯，允许百姓进州衙游玩观赏，吏员就写告示贴在街市上说：「本州照例放火三天。」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-136",
+    id: "chengyu-cy-136",
+    title: "人面兽心",
+    entries: ["chengyu-cy-136"],
+    text: "人面兽心，狼子野心。",
+    translation: "长着人的面孔，却是野兽的心肠；像狼崽子一样难以驯服、怀有野心。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-137",
+    id: "chengyu-cy-137",
+    title: "开宗明义",
+    entries: ["chengyu-cy-137"],
+    text: "（读书）须先开宗明义，识得他纲领。",
+    translation: "（读书）要先讲明宗旨要义，认清它的纲领。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-138",
+    id: "chengyu-cy-138",
+    title: "沆瀣一气",
+    entries: ["chengyu-cy-138"],
+    text: "（崔沆主考，录取崔瀣，人谓）「座主门生，沆瀣一气」。",
+    translation: "（崔沆主持考试，录取了崔瀣，人们说）「主考官和门生，就像夜里的露气一样，气味相投。」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-139",
+    id: "chengyu-cy-139",
+    title: "黄袍加身",
+    entries: ["chengyu-cy-139"],
+    text: "（陈桥兵变）诸将皆已擐甲执兵，直趋寝所，……以黄衣加太祖身。",
+    translation: "（陈桥兵变时）众将都已穿上铠甲、拿起兵器，径直赶往赵匡胤的寝所，……把黄袍披在他身上。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-14",
+    id: "chengyu-cy-14",
+    title: "风马牛不相及",
+    entries: ["chengyu-cy-14"],
+    text: "君处北海，寡人处南海，唯是风马牛不相及也。",
+    translation: "您住在北海之滨，我住在南海之滨，即使牛马发情狂奔，也不会跑到对方的境内去，真是毫不相干啊。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-140",
+    id: "chengyu-cy-140",
+    title: "杯酒释兵权",
+    entries: ["chengyu-cy-140"],
+    text: "（太祖）因晚朝，与石守信等饮酒。……曰：「吾欲使汝曹罢兵权，出守大藩，君臣之间，两无猜嫌，不亦善乎？」",
+    translation: "（宋太祖）趁着晚朝，与石守信等人饮酒。……说：「我想让你们交出兵权，到地方上做大藩镇的长官，这样君臣之间两无猜疑，不也很好吗？」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-141",
+    id: "chengyu-cy-141",
+    title: "大事不糊涂",
+    entries: ["chengyu-cy-141"],
+    text: "太宗欲相端，或曰：「端为人糊涂。」太宗曰：「端小事糊涂，大事不糊涂。」",
+    translation: "宋太宗想让吕端做宰相，有人说：「吕端为人糊涂。」太宗说：「吕端在小事上糊涂，在大事上不糊涂。」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-142",
+    id: "chengyu-cy-142",
+    title: "孤注一掷",
+    entries: ["chengyu-cy-142"],
+    text: "（寇准力劝真宗亲征，王钦若谮之曰）「陛下闻博乎？博者输钱欲尽，乃罄所有出之，谓之孤注。陛下，寇准之孤注也。」",
+    translation: "（寇准极力劝真宗亲征，王钦若进谗言说）「陛下听说过赌博吗？赌徒输光了钱，就把剩下的全部押上，这叫做孤注。陛下您，就是寇准的孤注啊。」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-143",
+    id: "chengyu-cy-143",
+    title: "残羹冷炙",
+    entries: ["chengyu-cy-143"],
+    text: "（剩菜残汤）如残羹冷炙，不足以待客。",
+    translation: "吃剩的汤菜，不值得用来待客。（比喻别人施舍的、不值一提的东西。）",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-144",
+    id: "chengyu-cy-144",
+    title: "掉以轻心",
+    entries: ["chengyu-cy-144"],
+    text: "故吾每为文章，未尝敢以轻心掉之。",
+    translation: "所以我每次写文章，从不敢用轻率的心情去对待它。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-145",
+    id: "chengyu-cy-145",
+    title: "坐井观天",
+    entries: ["chengyu-cy-145"],
+    text: "（如）坐井观天，所见者小。",
+    translation: "好比坐在井里看天，能看到的很小。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-146",
+    id: "chengyu-cy-146",
+    title: "一琴一鹤",
+    entries: ["chengyu-cy-146"],
+    text: "（赵抃）日所为事，入夜必衣冠露香以告于天……匹马入蜀，以一琴一鹤自随。",
+    translation: "（赵抃）白天所做的事，到了夜里一定穿戴整齐、露天焚香向上天禀告……他单枪匹马进入蜀地，只带着一张琴、一只鹤。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-147",
+    id: "chengyu-cy-147",
+    title: "巧取豪夺",
+    entries: ["chengyu-cy-147"],
+    text: "巧偷豪夺古来有，一笑谁似痴虎头。",
+    translation: "用巧计骗取、用强力夺取的事自古就有，谁像那痴痴的顾恺之那样一笑了之呢。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-148",
+    id: "chengyu-cy-148",
+    title: "水涨船高",
+    entries: ["chengyu-cy-148"],
+    text: "（师曰）水涨船高，泥多佛大。",
+    translation: "（禅师说）水涨了船就跟着升高，泥多了佛像就塑得大。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-149",
+    id: "chengyu-cy-149",
+    title: "分香卖履",
+    entries: ["chengyu-cy-149"],
+    text: "（曹操遗令）余香可分与诸夫人，诸舍中无所为，可学作组履卖也。",
+    translation: "（曹操的遗令说）剩下的香可以分给各位夫人，各房闲着没事做，可以学着编织鞋去卖。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-15",
+    id: "chengyu-cy-15",
+    title: "鞭长莫及",
+    entries: ["chengyu-cy-15"],
+    text: "古人有言曰：「虽鞭之长，不及马腹。」天方授楚，未可与争。",
+    translation: "古人有句话说：「马鞭虽然很长，也打不到马肚子上。」如今上天正把好运赐给楚国，不能和它相争。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-150",
+    id: "chengyu-cy-150",
+    title: "浮光掠影",
+    entries: ["chengyu-cy-150"],
+    text: "浮光随日度，漾影逐波深。",
+    translation: "水面的光随太阳流转，晃动的影子随波浪而沉浮。（后用以比喻印象不深、一晃而过。）",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-151",
+    id: "chengyu-cy-151",
+    title: "聚蚊成雷",
+    entries: ["chengyu-cy-151"],
+    text: "聚蚊成雷，积毁销骨。",
+    translation: "蚊子聚在一起声音能像雷响，毁谤积聚起来能熔化骨头。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-152",
+    id: "chengyu-cy-152",
+    title: "量体裁衣",
+    entries: ["chengyu-cy-152"],
+    text: "（裁缝）须先问主人有何功名、年纪多少，然后量身定衣。",
+    translation: "（裁缝）一定要先问清主人有什么功名、年纪多大，然后才按身材裁剪衣服。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-153",
+    id: "chengyu-cy-153",
+    title: "屠龙之技",
+    entries: ["chengyu-cy-153"],
+    text: "（学屠龙之术）技成而无所用其巧。",
+    translation: "（学了宰杀龙的本领）本领学成了，却没有地方施展这份技巧。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-154",
+    id: "chengyu-cy-154",
+    title: "信口雌黄",
+    entries: ["chengyu-cy-154"],
+    text: "（王衍）每捉玉柄麈尾，与手同色。义理有所不安，随即改更，世号「口中雌黄」。",
+    translation: "（王衍）常拿着玉柄的麈尾，柄色与手同色。讲论义理有不妥之处，随即更改，世人称他「口中雌黄」。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-155",
+    id: "chengyu-cy-155",
+    title: "束之高阁",
+    entries: ["chengyu-cy-155"],
+    text: "（高阁）束之高阁，以备不时。",
+    translation: "把它捆起来放在高高的架子上，以备不时之需。（后用以比喻搁置不用。）",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-156",
+    id: "chengyu-cy-156",
+    title: "洗耳恭听",
+    entries: ["chengyu-cy-156"],
+    text: "（师曰）洗耳恭听，犹恐不及。",
+    translation: "洗干净耳朵恭敬地听，还怕听不到。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-157",
+    id: "chengyu-cy-157",
+    title: "拾人牙慧",
+    entries: ["chengyu-cy-157"],
+    text: "殷中军云：「康伯未得我牙后慧。」",
+    translation: "殷浩说：「康伯还没有得到我牙后的余慧。」（后作「拾人牙慧」，指抄袭别人的言论。）",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-158",
+    id: "chengyu-cy-158",
+    title: "青出于蓝",
+    entries: ["chengyu-cy-158"],
+    text: "青，取之于蓝，而青于蓝；冰，水为之，而寒于水。",
+    translation: "青色是从蓝草里提取出来的，却比蓝草更青；冰是水凝成的，却比水更冷。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-159",
+    id: "chengyu-cy-159",
+    title: "自出机杼",
+    entries: ["chengyu-cy-159"],
+    text: "（文章）自出机杼，不蹈袭前人。",
+    translation: "（他的文章）自出心裁，不沿袭前人。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-16",
+    id: "chengyu-cy-16",
+    title: "尔虞我诈",
+    entries: ["chengyu-cy-16"],
+    text: "宋及楚平，华元为质。盟曰：「我无尔诈，尔无我虞。」",
+    translation: "宋国和楚国讲和，华元到楚国做人质。盟约上写着：「我不欺骗你，你也不必防备我。」（后人反用其意，作「尔虞我诈」。）",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-160",
+    id: "chengyu-cy-160",
+    title: "开门见山",
+    entries: ["chengyu-cy-160"],
+    text: "太白发句，谓之开门见山。",
+    translation: "李白诗的开头，叫做开门见山。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-161",
+    id: "chengyu-cy-161",
+    title: "举重若轻",
+    entries: ["chengyu-cy-161"],
+    text: "（文与人）举重若轻，绰有余裕。",
+    translation: "（他的文笔和为人）举起重物像举起轻物一样轻松，还显得绰绰有余。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-162",
+    id: "chengyu-cy-162",
+    title: "一波三折",
+    entries: ["chengyu-cy-162"],
+    text: "（书法）一波三折，如惊蛇入草。",
+    translation: "（写字）一笔之中有三次转折，像受惊的蛇钻入草丛。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-163",
+    id: "chengyu-cy-163",
+    title: "黄粱一梦",
+    entries: ["chengyu-cy-163"],
+    text: "（卢生于邯郸旅店，遇道士吕翁，授以瓷枕，梦历荣华五十年，醒来店主蒸黄粱米饭尚未熟。）",
+    translation: "（卢生在邯郸的旅店里遇见道士吕翁，吕翁给他一个瓷枕，他梦见自己经历了五十年的荣华富贵，醒来时店主人的黄粱米饭还没蒸熟。）",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-164",
+    id: "chengyu-cy-164",
+    title: "同流合污",
+    entries: ["chengyu-cy-164"],
+    text: "（士人）不肯同流合污，以自洁其身。",
+    translation: "（读书人）不肯和坏人一起干坏事，以保持自己的清白。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-165",
+    id: "chengyu-cy-165",
+    title: "急流勇退",
+    entries: ["chengyu-cy-165"],
+    text: "（士大夫）当急流勇退，以保全其身。",
+    translation: "（士大夫）应当在顺境中及时退身，以保全自己。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-166",
+    id: "chengyu-cy-166",
+    title: "贪小失大",
+    entries: ["chengyu-cy-166"],
+    text: "贪小利而失大计。",
+    translation: "贪图小的利益，却失掉了大的计划。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-17",
+    id: "chengyu-cy-17",
+    title: "外强中干",
+    entries: ["chengyu-cy-17"],
+    text: "乱气狡愤，阴血周作，张脉偾兴，外强中干。进退不可，周旋不能。",
+    translation: "（那匹马的）气血狂躁不安，阴血乱窜，脉管膨胀突起，外表看起来强壮，内里却已虚耗。要进不能进，要退不能退，回旋都做不到。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-18",
+    id: "chengyu-cy-18",
+    title: "病入膏肓",
+    entries: ["chengyu-cy-18"],
+    text: "公疾病，求医于秦。秦伯使医缓为之。未至，公梦疾为二竖子曰：「彼良医也，惧伤我，焉逃之？」其一曰：「居肓之上、膏之下，若我何？」医至，曰：「疾不可为也。在肓之上、膏之下，攻之不可，达之不及，药不至焉，不可为也。」",
+    translation: "晋景公病重，向秦国求医。秦伯派名医缓去医治。医生还没到，景公梦见病魔变成两个小孩，一个说：「那个人是良医，怕会伤害我们，往哪里躲呢？」另一个说：「躲到肓的上边、膏的下边，他能把我们怎么样？」医生到了，说：「这病已经治不好了。病在肓上膏下，艾灸不能用，针刺够不到，药力也达不到，治不了啦。」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-19",
+    id: "chengyu-cy-19",
+    title: "一鼓作气",
+    entries: ["chengyu-cy-19"],
+    text: "公与之乘，战于长勺。公将鼓之。刿曰：「未可。」齐人三鼓。刿曰：「可矣。」齐师败绩。\n既克，公问其故。对曰：「夫战，勇气也。一鼓作气，再而衰，三而竭。彼竭我盈，故克之。」",
+    translation: "鲁庄公和曹刿同乘一辆战车，在长勺作战。庄公将要击鼓进军，曹刿说：「还不行。」齐军擂了三通鼓之后，曹刿说：「可以了。」齐军大败。战胜之后，庄公问其中的缘故。曹刿回答说：「作战，靠的是勇气。第一次击鼓振作了士气，第二次击鼓士气就衰减了，第三次击鼓士气就耗尽了。敌方士气耗尽而我方士气正旺，所以能打败他们。」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-20",
+    id: "chengyu-cy-20",
+    title: "大义灭亲",
+    entries: ["chengyu-cy-20"],
+    text: "石碏使其宰獳羊肩涖杀石厚于陈。君子曰：「石碏，纯臣也，恶州吁而厚与焉。大义灭亲，其是之谓乎！」",
+    translation: "石碏派他的家臣獳羊肩到陈国去杀死了自己的儿子石厚。君子评论说：「石碏真是忠纯之臣，他痛恨州吁，而自己的儿子石厚也参与其中。为了大义而灭掉亲情，说的就是这种情况吧！」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-21",
+    id: "chengyu-cy-21",
+    title: "多行不义必自毙",
+    entries: ["chengyu-cy-21"],
+    text: "多行不义，必自毙，子姑待之。",
+    translation: "坏事干得多了，必定会自取灭亡，你姑且等着看吧。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-22",
+    id: "chengyu-cy-22",
+    title: "怀璧其罪",
+    entries: ["chengyu-cy-22"],
+    text: "初，虞叔有玉，虞公求旃，弗献。既而悔之，曰：「周谚有之：『匹夫无罪，怀璧其罪。』吾焉用此，其以贾害也？」乃献之。",
+    translation: "当初，虞叔有一块美玉，虞公向他索要，虞叔没有献出来。不久他就后悔了，说：「周地的谚语有这么一句：『老百姓本来没有罪，怀里藏着美玉就成了罪过。』我要这块玉做什么，难道用它来招祸吗？」于是把玉献了出去。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-23",
+    id: "chengyu-cy-23",
+    title: "假途灭虢",
+    entries: ["chengyu-cy-23"],
+    text: "晋侯复假道于虞以伐虢。宫之奇谏曰：「虢，虞之表也。虢亡，虞必从之。晋不可启，寇不可玩，一之谓甚，其可再乎？谚所谓『辅车相依，唇亡齿寒』者，其虞、虢之谓也。」",
+    translation: "晋献公又向虞国借路去攻打虢国。宫之奇劝谏说：「虢国是虞国的屏障。虢国灭亡了，虞国必定跟着灭亡。不能给晋国开口子，不能轻忽强盗，借路一次已经过分了，还能来第二次吗？谚语说的『面颊和牙床骨互相依靠，嘴唇没有了牙齿就会寒冷』，说的正是虞国和虢国啊。」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-24",
+    id: "chengyu-cy-24",
+    title: "唇亡齿寒",
+    entries: ["chengyu-cy-24"],
+    text: "谚所谓「辅车相依，唇亡齿寒」者，其虞、虢之谓也。",
+    translation: "谚语所说的「面颊和牙床骨互相依靠，嘴唇没有了牙齿就会寒冷」，说的正是虞国和虢国这样的关系啊。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-25",
+    id: "chengyu-cy-25",
+    title: "筚路蓝缕",
+    entries: ["chengyu-cy-25"],
+    text: "训之以若敖、蚡冒，筚路蓝缕，以启山林。",
+    translation: "（先王）用若敖、蚡冒的事迹训导百姓：他们驾着简陋的柴车、穿着破旧的衣裳，去开辟山林。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-26",
+    id: "chengyu-cy-26",
+    title: "上下其手",
+    entries: ["chengyu-cy-26"],
+    text: "穿封戌囚皇颉，公子围与之争之，正于伯州犁。……伯州犁曰：「子亦问之。」乃视之，曰：「夫子为王子围，寡君之贵介弟也。」举其手，曰：「子为穿封戌，方城外之县尹也。谁获子？」囚曰：「颉遇王子，弱焉。」",
+    translation: "穿封戌俘虏了皇颉，公子围同他争功，请伯州犁评判。……伯州犁说：「你也问问他吧。」于是看着皇颉，说：「这位是王子围，是我们国君尊贵的弟弟。」又举起手，说：「这位是穿封戌，是方城外的县官。是谁捉住你的？」俘虏说：「我遇见王子，被他打败了。」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-27",
+    id: "chengyu-cy-27",
+    title: "疲于奔命",
+    entries: ["chengyu-cy-27"],
+    text: "而因郄至，以间楚，楚必多败。……吴始伐楚，伐巢，伐徐，子重奔命。马陵之会，吴入州来，子重自郑奔命。子重、子反于是乎一岁七奔命。",
+    translation: "（楚国）因为连续用兵，一年之内子重、子反两人七次奉命奔走救急，往来疲于奔命。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-28",
+    id: "chengyu-cy-28",
+    title: "数典忘祖",
+    entries: ["chengyu-cy-28"],
+    text: "籍谈不能对。宾出，王曰：「籍父其无后乎！数典而忘其祖。」",
+    translation: "籍谈回答不上来。宾客退出后，周王说：「籍谈大概要没有后代了吧！他历数典籍，却把自己祖先的职守都忘了。」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-29",
+    id: "chengyu-cy-29",
+    title: "庆父不死，鲁难未已",
+    entries: ["chengyu-cy-29"],
+    text: "齐仲孙湫来省难。……归，曰：「不去庆父，鲁难未已。」",
+    translation: "齐国大夫仲孙湫来鲁国察看祸难。……回国后说：「不除掉庆父，鲁国的祸难就不会停止。」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-30",
+    id: "chengyu-cy-30",
+    title: "外怯中干（衍生）",
+    entries: ["chengyu-cy-30"],
+    text: "外强中干，进退不可，周旋不能。",
+    translation: "外表看起来强壮，内里却已虚耗，进不能进，退不能退，回旋都做不到。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-31",
+    id: "chengyu-cy-31",
+    title: "同仇敌忾",
+    entries: ["chengyu-cy-31"],
+    text: "岂曰无衣？与子同袍。王于兴师，修我戈矛，与子同仇。",
+    translation: "谁说我们没有衣裳？我与你同穿一件战袍。君王要出兵打仗，修好我们的戈和矛，我与你同仇敌忾。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-32",
+    id: "chengyu-cy-32",
+    title: "小心翼翼",
+    entries: ["chengyu-cy-32", "chengyu-cy-52"],
+    text: "维此文王，小心翼翼。昭事上帝，聿怀多福。",
+    translation: "这位文王，恭敬谨慎，小心行事。他光明磊落地事奉上帝，因此招来许多福气。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-33",
+    id: "chengyu-cy-33",
+    title: "未雨绸缪",
+    entries: ["chengyu-cy-33"],
+    text: "迨天之未阴雨，彻彼桑土，绸缪牖户。",
+    translation: "趁着天还没有阴天下雨，剥取桑树的根皮，把门窗修补缠结牢固。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-34",
+    id: "chengyu-cy-34",
+    title: "天作之合",
+    entries: ["chengyu-cy-34"],
+    text: "文王初载，天作之合。",
+    translation: "文王即位之初，上天为他配成了这桩美满的婚姻。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-35",
+    id: "chengyu-cy-35",
+    title: "如丧考妣",
+    entries: ["chengyu-cy-35"],
+    text: "二十有八载，帝乃殂落。百姓如丧考妣，三载，四海遏密八音。",
+    translation: "舜在位二十八年后去世。百姓像死了父母一样悲痛，三年之内，天下都停止奏乐。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-36",
+    id: "chengyu-cy-36",
+    title: "民惟邦本",
+    entries: ["chengyu-cy-36"],
+    text: "皇祖有训，民可近，不可下。民惟邦本，本固邦宁。",
+    translation: "先祖大禹有训诫：百姓可以亲近，不可以轻贱。百姓是国家的根本，根本牢固了，国家才安宁。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-37",
+    id: "chengyu-cy-37",
+    title: "锡土姓",
+    entries: ["chengyu-cy-37"],
+    text: "禹锡玄圭，告厥成功。\n中邦锡土、姓，祗台德先，不距朕行。",
+    translation: "禹被赐予黑色的圭玉，向天下宣告治水成功。天子给中原各诸侯赐予土地和姓氏，要求他们以敬重有德之人为先，不得违背天子的政令。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-38",
+    id: "chengyu-cy-38",
+    title: "网开一面",
+    entries: ["chengyu-cy-38"],
+    text: "汤出，见野张网四面，祝曰：「自天下四方皆入吾网。」汤曰：「嘻，尽之矣！」乃去其三面，祝曰：「欲左，左；欲右，右。不用命，乃入吾网。」诸侯闻之，曰：「汤德至矣，及禽兽。」",
+    translation: "商汤外出，看见野外有人四面张着网，祷告说：「从天南地北四方来的都进我的网里。」汤说：「唉，这样就把它们都捕尽了！」于是撤去三面，祷告说：「想往左就往左，想往右就往右；不听从命令的，才进我的网里。」诸侯听说这件事，说：「汤的仁德真是到了极点，连禽兽都沾了光。」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-39",
+    id: "chengyu-cy-39",
+    title: "助纣为虐",
+    entries: ["chengyu-cy-39"],
+    text: "今始入秦，即安其乐，此所谓「助桀为虐」。",
+    translation: "如今刚刚进入秦地，就安享它的逸乐，这正是所谓的「帮助夏桀做暴虐的事」。（后世多作「助纣为虐」。）",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-4",
+    id: "chengyu-cy-4",
+    title: "后羿射日",
+    entries: ["chengyu-cy-4"],
+    text: "逮至尧之时，十日并出，焦禾稼，杀草木，而民无所食。\n尧乃使羿诛凿齿于畴华之野，杀九婴于凶水之上，缴大风于青丘之泽，上射十日而下杀猰貐，断修蛇于洞庭，禽封豨于桑林。",
+    translation: "到了尧的时候，十个太阳一齐出来，晒焦了庄稼，枯死了草木，百姓没有东西可吃。尧就派后羿在畴华的荒野上诛杀凿齿，在凶水边杀死九婴，在青丘的水泽边射落大风，向天上射落十个太阳，又向下杀死猰貐，在洞庭斩断修蛇，在桑林活捉封豨。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-40",
+    id: "chengyu-cy-40",
+    title: "酒池肉林",
+    entries: ["chengyu-cy-40"],
+    text: "以酒为池，县肉为林，使男女裸相逐其间，为长夜之饮。",
+    translation: "（纣王）把酒倒满池子当水池，把肉悬挂起来当树林，让男男女女光着身子在其中追逐嬉戏，通宵饮酒。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-41",
+    id: "chengyu-cy-41",
+    title: "牝鸡司晨",
+    entries: ["chengyu-cy-41"],
+    text: "古人有言曰：「牝鸡无晨。牝鸡之晨，惟家之索。」",
+    translation: "古人有句话说：「母鸡不报晓。母鸡若报晓，这个家就要败落了。」（后用来比喻妇人掌权、越职行事。）",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-42",
+    id: "chengyu-cy-42",
+    title: "殷鉴不远",
+    entries: ["chengyu-cy-42"],
+    text: "殷鉴不远，在夏后之世。",
+    translation: "殷商可以借鉴的教训并不远，就在夏朝灭亡那一代。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-43",
+    id: "chengyu-cy-43",
+    title: "防民之口，甚于防川",
+    entries: ["chengyu-cy-43"],
+    text: "防民之口，甚于防川。川壅而溃，伤人必多，民亦如之。\n是故为川者决之使导，为民者宣之使言。",
+    translation: "堵塞百姓的嘴，比堵塞河流还要危险。河流被堵塞就会决口，伤的人一定很多，百姓也是如此。所以治水的人要疏通河道让它畅流，治理百姓的人要开导他们让他们说话。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-44",
+    id: "chengyu-cy-44",
+    title: "凤凰于飞",
+    entries: ["chengyu-cy-44"],
+    text: "凤凰于飞，翙翙其羽，亦傅于天。",
+    translation: "凤凰飞翔，翅膀发出翙翙的声响，一直飞到天上。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-45",
+    id: "chengyu-cy-45",
+    title: "天罗地网",
+    entries: ["chengyu-cy-45"],
+    text: "鱼网之设，鸿则离之。",
+    translation: "撒下渔网本为捕鱼，鸿雁却撞了进来。（后世「天罗地网」由此演为密布的罗网。）",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-46",
+    id: "chengyu-cy-46",
+    title: "惩前毖后",
+    entries: ["chengyu-cy-46"],
+    text: "予其惩，而毖后患。",
+    translation: "我要警戒从前的教训，谨慎防备日后的祸患。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-47",
+    id: "chengyu-cy-47",
+    title: "匪夷所思",
+    entries: ["chengyu-cy-47"],
+    text: "涣有丘，匪夷所思。",
+    translation: "涣散之后重又聚集，像一座小山，这不是平常人所能想到的。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-48",
+    id: "chengyu-cy-48",
+    title: "求之不得",
+    entries: ["chengyu-cy-48"],
+    text: "求之不得，寤寐思服。悠哉悠哉，辗转反侧。",
+    translation: "追求她却得不到，日日夜夜都在思念。思念绵绵不断，翻来覆去睡不着觉。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-49",
+    id: "chengyu-cy-49",
+    title: "兄弟阋墙",
+    entries: ["chengyu-cy-49"],
+    text: "兄弟阋于墙，外御其务。",
+    translation: "兄弟在家里争吵，但遇到外来的欺侮时，就一致对外。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-5",
+    id: "chengyu-cy-5",
+    title: "开天辟地",
+    entries: ["chengyu-cy-5"],
+    text: "天地混沌如鸡子，盘古生其中。万八千岁，天地开辟，阳清为天，阴浊为地。\n盘古在其中，一日九变，神于天，圣于地。\n天日高一丈，地日厚一丈，盘古日长一丈，如此万八千岁。",
+    translation: "天地最初混混沌沌，像个鸡蛋，盘古就生在里面。过了一万八千年，天地分开了：轻清的气上升成为天，重浊的气下沉成为地。盘古生在天地之间，一天之中变化九次，智慧超过天，能力超过地。天每天升高一丈，地每天加厚一丈，盘古也每天长高一丈，这样又过了一万八千年。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-50",
+    id: "chengyu-cy-50",
+    title: "凤鸣岐山",
+    entries: ["chengyu-cy-50"],
+    text: "周之兴也，鸑鷟鸣于岐山。",
+    translation: "周朝兴起的时候，凤凰在岐山上鸣叫。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-51",
+    id: "chengyu-cy-51",
+    title: "甘棠遗爱",
+    entries: ["chengyu-cy-51"],
+    text: "蔽芾甘棠，勿剪勿伐，召伯所茇。",
+    translation: "茂盛的甘棠树啊，不要修剪不要砍伐，那是召伯曾经歇息过的地方。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-53",
+    id: "chengyu-cy-53",
+    title: "一衣带水",
+    entries: ["chengyu-cy-53"],
+    text: "我为百姓父母，岂可限一衣带水不拯之乎？",
+    translation: "我是天下百姓的父母，怎么能被一条像衣带那么窄的江水挡住，不去拯救他们呢？",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-54",
+    id: "chengyu-cy-54",
+    title: "牛角挂书",
+    entries: ["chengyu-cy-54"],
+    text: "闻包恺在缑山，往从之。以蒲鞯乘牛，挂《汉书》一帙角上，行且读。",
+    translation: "（李密）听说包恺在缑山，就前去投奔求教。他坐着牛，牛背上铺着蒲草编的鞍垫，把一帙《汉书》挂在牛角上，一边走一边读。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-55",
+    id: "chengyu-cy-55",
+    title: "罄竹难书",
+    entries: ["chengyu-cy-55"],
+    text: "罄南山之竹，书罪无穷；决东海之波，流恶难尽。",
+    translation: "用完南山的竹子，也写不尽他（隋炀帝）的罪行；放尽东海的水，也冲刷不掉他的罪恶。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-56",
+    id: "chengyu-cy-56",
+    title: "暗箭伤人",
+    entries: ["chengyu-cy-56"],
+    text: "亦犹蓄众财而后行惠，以暗箭而射人。",
+    translation: "（这种做法）好比先聚敛财富再施舍小惠，如同用暗箭射人一样。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-57",
+    id: "chengyu-cy-57",
+    title: "各有千秋",
+    entries: ["chengyu-cy-57"],
+    text: "缛采郁于云霞，逸响振于金石。各有所长，不能定其优劣。",
+    translation: "（他们的文章）文采繁盛如云霞，声韵激越如金石。各有所长，很难断定谁优谁劣。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-58",
+    id: "chengyu-cy-58",
+    title: "黔驴技穷",
+    entries: ["chengyu-cy-58"],
+    text: "虎见之，庞然大物也，以为神。蔽林间窥之，稍出近之，憖憖然，莫相知。\n他日，驴一鸣，虎大骇，远遁，以为且噬己也，甚恐。然往来视之，觉无异能者。\n益习其声，又近出前后，终不敢搏。稍近益狎，荡倚冲冒。驴不胜怒，蹄之。\n虎因喜，计之曰：「技止此耳！」因跳踉大阚，断其喉，尽其肉，乃去。",
+    translation: "老虎看见驴，是个庞然大物，以为是神。躲在树林里偷偷看它，渐渐出来靠近它，小心谨慎，不知道它到底是什么东西。有一天，驴一叫，老虎非常害怕，远远逃开，以为它要咬自己，非常恐惧。可是来回观察它，觉得它并没有什么特别的本领。渐渐地听惯了它的叫声，又靠近它身前身后，但终究不敢扑上去。再靠近一点，态度更加轻慢，碰一碰、靠一靠、撞一撞、冒犯一下。驴子忍不住发怒，踢了老虎一脚。老虎于是大喜，盘算道：「本领不过如此罢了！」便跳起来大吼一声，咬断驴的喉咙，吃光它的肉，才离去。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-59",
+    id: "chengyu-cy-59",
+    title: "汗牛充栋",
+    entries: ["chengyu-cy-59"],
+    text: "其为书，处则充栋宇，出则汗牛马。",
+    translation: "他收藏的书，放在家里就堆满了屋子，运出去时牛马都累得出汗。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-6",
+    id: "chengyu-cy-6",
+    title: "钻木取火",
+    entries: ["chengyu-cy-6"],
+    text: "上古之世，人民少而禽兽众，人民不胜禽兽虫蛇。\n有圣人作，钻燧取火，以化腥臊，而民说之，使王天下，号之曰燧人氏。",
+    translation: "远古时代，人少而禽兽多，人们受不了禽兽虫蛇的侵害。这时出现了一位圣人，他钻木取火，用火来烧去食物的腥臊气味，百姓非常高兴，让他做天下的王，称他为燧人氏。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-60",
+    id: "chengyu-cy-60",
+    title: "南柯一梦",
+    entries: ["chengyu-cy-60"],
+    text: "（淳于棼梦入蚁穴，为南柯太守二十年，醒来方知是梦。）东平淳于棼，吴楚游侠之士，家住广陵郡东十里，宅南有大古槐一株。贞元七年九月，因沉醉致疾，梦入大槐安国，为南柯太守，凡二十年。",
+    translation: "（淳于棼梦见自己进了蚂蚁洞，做了二十年南柯太守，醒来才知道是一场梦。）东平的淳于棼是吴楚一带的游侠之士，家住广陵郡城东十里，宅子南边有一棵古老的大槐树。贞元七年九月，他因喝醉了酒而生病，梦见自己进了大槐安国，做了南柯太守，共二十年。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-61",
+    id: "chengyu-cy-61",
+    title: "炙手可热",
+    entries: ["chengyu-cy-61"],
+    text: "炙手可热势绝伦，慎莫近前丞相嗔。",
+    translation: "（杨氏兄妹）气焰之盛，热得烫手，无人能比，千万不要靠近，否则会惹丞相发怒。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-62",
+    id: "chengyu-cy-62",
+    title: "司空见惯",
+    entries: ["chengyu-cy-62"],
+    text: "高髻云鬟宫样妆，春风一曲《杜韦娘》。司空见惯浑闲事，断尽苏州刺史肠。",
+    translation: "高高的发髻如云，是宫中的妆扮，春风里唱一曲《杜韦娘》。这种事在李司空看来早已看惯、只是寻常事，却让我这苏州刺史柔肠寸断。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-63",
+    id: "chengyu-cy-63",
+    title: "呕心沥血",
+    entries: ["chengyu-cy-63"],
+    text: "（贺）每旦日出，骑弱马，从小奚奴，背古锦囊，遇所得，书投囊中。……母使婢探囊中，见所书多，即怒曰：「是儿要呕出心乃已耳！」",
+    translation: "李贺每天早晨出门，骑着一匹瘦马，带着一个小童，背着一只古锦囊，一有心得就写下来投入囊中。……他母亲让婢女去翻看囊中的字条，见写得很多，就生气地说：「这孩子是非要呕出心来才肯罢休啊！」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-64",
+    id: "chengyu-cy-64",
+    title: "火树银花",
+    entries: ["chengyu-cy-64"],
+    text: "火树银花合，星桥铁锁开。",
+    translation: "灯火如树、银光似花，交相辉映，护城河上的桥像银河般灿烂，城门大开。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-65",
+    id: "chengyu-cy-65",
+    title: "走马观花",
+    entries: ["chengyu-cy-65", "chengyu-cy-96"],
+    text: "春风得意马蹄疾，一日看尽长安花。",
+    translation: "春风中得意洋洋，马跑得飞快，一天之内就把长安城的花看遍了。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-66",
+    id: "chengyu-cy-66",
+    title: "桃李满门",
+    entries: ["chengyu-cy-66"],
+    text: "礼闱新榜动长安，九陌人人走马看。一日声名遍天下，满城桃李属春官。",
+    translation: "礼部放榜轰动了长安，大街小巷人人都骑着马去看。一天之内声名传遍天下，满城的桃李（门生）都出自春官（考官）门下。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-67",
+    id: "chengyu-cy-67",
+    title: "妙笔生花",
+    entries: ["chengyu-cy-67", "chengyu-cy-68"],
+    text: "李太白少时，梦所用之笔头上生花，后天才赡逸，名闻天下。",
+    translation: "李白年幼时，梦见自己用的笔笔头上开出了花，后来天才横溢，名声传遍天下。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-7",
+    id: "chengyu-cy-7",
+    title: "神农尝百草",
+    entries: ["chengyu-cy-7"],
+    text: "古者民茹草饮水，采树木之实，食蠃蚌之肉，时多疾病毒伤之害。\n于是神农乃始教民播种五谷，相土地宜燥湿肥墝高下，尝百草之滋味，水泉之甘苦，令民知所避就。\n当此之时，一日而遇七十毒。",
+    translation: "古时候百姓吃野草、喝生水，采树上的果子，吃螺蚌的肉，常常受到疾病和毒物的伤害。于是神农开始教百姓播种五谷，察看土地的干湿肥瘦和高低，亲口尝百草的滋味、泉水的好坏，让百姓知道什么能吃什么不能吃。那时候，他一天之内就中毒七十次。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-70",
+    id: "chengyu-cy-70",
+    title: "破镜重圆",
+    entries: ["chengyu-cy-70"],
+    text: "（徐德言与乐昌公主各执半镜，约他日以正月望日卖于都市。及陈亡，公主入杨素家。德言以诗示之，公主得诗悲泣，素因而还之，二人终得团圆。）",
+    translation: "（徐德言与乐昌公主各拿半边铜镜，约定日后在正月十五到集市上卖镜相寻。陈朝灭亡后，公主被纳入杨素家中。徐德言以诗相示，公主得到诗后悲泣，杨素因此让他们夫妻团聚。）",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-71",
+    id: "chengyu-cy-71",
+    title: "沧海桑田",
+    entries: ["chengyu-cy-71"],
+    text: "麻姑自说云：「接侍以来，已见东海三为桑田。向到蓬莱，水又浅于往者会时略半也，岂将复还为陵陆乎？」",
+    translation: "麻姑自己说道：「自从我侍奉您以来，已经见到东海三次变为桑田。刚才到蓬莱去，看见海水又比上次会面时浅了一半，莫非又要变回山陵陆地了吗？」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-72",
+    id: "chengyu-cy-72",
+    title: "天衣无缝",
+    entries: ["chengyu-cy-72"],
+    text: "徐视其衣并无缝。翰问之，谓曰：「天衣本非针线为也。」",
+    translation: "（郭翰）仔细看她的衣服，竟然没有一道缝。郭翰问她，她答道：「天上的衣服本来就不是用针线缝成的。」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-73",
+    id: "chengyu-cy-73",
+    title: "双管齐下",
+    entries: ["chengyu-cy-73"],
+    text: "能用一笔，一时齐下，一为生枝，一为枯枝，气傲烟霞，势凌风雨。",
+    translation: "（张璪画松时）能同时用两支笔一起挥下，一枝画活的枝条，一枝画枯的枝条，气势傲视烟霞，凌驾风雨。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-74",
+    id: "chengyu-cy-74",
+    title: "画龙点睛",
+    entries: ["chengyu-cy-74"],
+    text: "张僧繇于金陵安乐寺画四龙，不点目睛，云：「点之即飞去。」人以为妄，因点其一。须臾，雷电破壁，一龙乘云上天。",
+    translation: "张僧繇在金陵安乐寺画了四条龙，却没有点上眼睛，说：「一点上眼睛，龙就会飞走。」人们以为他胡说，就让他点了一条。一会儿，雷电击破墙壁，那条龙乘云飞上了天。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-75",
+    id: "chengyu-cy-75",
+    title: "别开生面",
+    entries: ["chengyu-cy-75"],
+    text: "凌烟功臣少颜色，将军下笔开生面。",
+    translation: "凌烟阁上的功臣画像已经暗淡失色，曹将军一下笔就开出了新的面貌。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-76",
+    id: "chengyu-cy-76",
+    title: "班门弄斧",
+    entries: ["chengyu-cy-76"],
+    text: "操斧于班、郢之门，斯强颜耳。",
+    translation: "在鲁班和郢人这样的匠师门前挥动斧头，这只是厚着脸皮罢了。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-77",
+    id: "chengyu-cy-77",
+    title: "抛砖引玉",
+    entries: ["chengyu-cy-77"],
+    text: "（常建欲得赵嘏诗，先题二句于壁，嘏见之，为续二句，人谓常建「抛砖引玉」。）",
+    translation: "（常建想得到赵嘏的诗句，就先在墙上题了两句，赵嘏看见后替他续了两句。人们说这叫「抛砖引玉」。）",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-78",
+    id: "chengyu-cy-78",
+    title: "雾里看花",
+    entries: ["chengyu-cy-78"],
+    text: "春水船如天上坐，老年花似雾中看。",
+    translation: "春水之上，坐在船里仿佛坐在天上；年纪老了，看花就像隔着迷雾一样模糊。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-79",
+    id: "chengyu-cy-79",
+    title: "为人作嫁",
+    entries: ["chengyu-cy-79"],
+    text: "苦恨年年压金线，为他人作嫁衣裳。",
+    translation: "最恨的是年年用金线刺绣，却都是替别人做嫁衣。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-8",
+    id: "chengyu-cy-8",
+    title: "刑天舞干戚",
+    entries: ["chengyu-cy-8"],
+    text: "刑天与帝至此争神，帝断其首，葬之常羊之山，乃以乳为目，以脐为口，操干戚以舞。",
+    translation: "刑天与天帝争夺神位，天帝砍下了他的头，把他葬在常羊山上。刑天就用两个乳头当眼睛，用肚脐当嘴巴，手里拿着盾和斧，挥舞着继续战斗。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-80",
+    id: "chengyu-cy-80",
+    title: "蚍蜉撼树",
+    entries: ["chengyu-cy-80"],
+    text: "李杜文章在，光焰万丈长。不知群儿愚，那用故谤伤。蚍蜉撼大树，可笑不自量。",
+    translation: "李白、杜甫的诗文还在，光芒万丈长。不知道那些愚顽的小子，为什么无端诽谤中伤。蚂蚁想摇动大树，可笑它不自量力。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-81",
+    id: "chengyu-cy-81",
+    title: "一日千里",
+    entries: ["chengyu-cy-81"],
+    text: "若比子之言，则一日千里。",
+    translation: "比起你所说的那些话，（他的进步）真可说是一日千里。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-82",
+    id: "chengyu-cy-82",
+    title: "一泻千里",
+    entries: ["chengyu-cy-82"],
+    text: "（文章）如川之流，一泻千里。",
+    translation: "（文章的气势）像江河奔流，一泻千里。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-83",
+    id: "chengyu-cy-83",
+    title: "虚有其表",
+    entries: ["chengyu-cy-83"],
+    text: "嚣奏曰：「嵩美须髯，然虚有其表。」",
+    translation: "萧嵩上奏说：「萧嵩有一副漂亮的胡须，但只是外表好看，内里空虚。」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-84",
+    id: "chengyu-cy-84",
+    title: "鸡犬升天",
+    entries: ["chengyu-cy-84"],
+    text: "（刘安得道升天，余药鸡犬舐之，皆得升天。）",
+    translation: "（刘安得道升天时，剩下的仙药被鸡和狗舐食，它们也都升上了天。）",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-85",
+    id: "chengyu-cy-85",
+    title: "仙风道骨",
+    entries: ["chengyu-cy-85"],
+    text: "此子仙风道骨，可与神游八极之表。",
+    translation: "这个人有神仙的风度、得道的气骨，可以同他一起神游于八方极远之处。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-86",
+    id: "chengyu-cy-86",
+    title: "蜀犬吠日",
+    entries: ["chengyu-cy-86"],
+    text: "屈子赋曰：「邑犬群吠，吠所怪也。」仆往闻庸、蜀之南，恒雨少日，日出则犬吠。",
+    translation: "屈原赋中说：「村里的狗成群乱叫，叫的是它们觉得奇怪的东西。」我从前听说庸、蜀以南的地方经常下雨、很少见到太阳，太阳一出来狗就对着它叫。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-87",
+    id: "chengyu-cy-87",
+    title: "吴牛喘月",
+    entries: ["chengyu-cy-87"],
+    text: "满奋畏风。在晋武帝坐，北窗作琉璃屏，实密似疏，奋有难色。帝笑之，奋答曰：「臣犹吴牛，见月而喘。」",
+    translation: "满奋怕风。在晋武帝座旁，北窗上装的是琉璃屏，实际很密却看着像有缝隙，满奋脸上露出为难的神色。武帝笑他，满奋回答说：「臣就像吴地的牛，看见月亮也以为是太阳，吓得直喘气。」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-88",
+    id: "chengyu-cy-88",
+    title: "生吞活剥",
+    entries: ["chengyu-cy-88"],
+    text: "有枣强尉张怀庆，好偷名士文章。……人为之谚曰：「活剥王昌龄，生吞郭正一。」",
+    translation: "枣强县尉张怀庆喜欢抄袭名士的文章。……人们因此编了谚语说：「活剥王昌龄，生吞郭正一。」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-89",
+    id: "chengyu-cy-89",
+    title: "海阔天空",
+    entries: ["chengyu-cy-89"],
+    text: "海阔天空，鸢飞鱼跃，各得其所。",
+    translation: "大海辽阔、天空高远，鸢飞于天、鱼跃于水，各自得到自己的去处。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-9",
+    id: "chengyu-cy-9",
+    title: "愚公移山",
+    entries: ["chengyu-cy-9"],
+    text: "太行、王屋二山，方七百里，高万仞。本在冀州之南，河阳之北。\n北山愚公者，年且九十，面山而居。惩山北之塞，出入之迂也，聚室而谋曰：「吾与汝毕力平险，指通豫南，达于汉阴，可乎？」杂然相许。",
+    translation: "太行、王屋两座山，方圆七百里，高七八千丈，本来在冀州南边、黄河北岸的北面。北山有个叫愚公的人，年近九十，面对着山住着。他苦于大山阻隔、出入绕远，便召集全家商量说：「我和你们尽全力铲平险峻的大山，让路一直通到豫州南部，到达汉水南岸，行吗？」大家纷纷表示赞同。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-90",
+    id: "chengyu-cy-90",
+    title: "白衣苍狗",
+    entries: ["chengyu-cy-90"],
+    text: "天上浮云如白衣，斯须改变如苍狗。",
+    translation: "天上的浮云起初像白色的衣裳，转眼之间就变成了苍灰色的狗。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-91",
+    id: "chengyu-cy-91",
+    title: "金瓯无缺",
+    entries: ["chengyu-cy-91"],
+    text: "我国家犹若金瓯，无一伤缺。",
+    translation: "我们的国家像一只完整的金盆，没有一处破损缺失。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-92",
+    id: "chengyu-cy-92",
+    title: "高谈阔论",
+    entries: ["chengyu-cy-92"],
+    text: "高谈阔论若无人，可惜明帝尚文墨。",
+    translation: "高谈阔论，旁若无人，可惜的是明帝只重视文墨。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-93",
+    id: "chengyu-cy-93",
+    title: "力透纸背",
+    entries: ["chengyu-cy-93"],
+    text: "当其用锋，常欲使其透过纸背，此功成之极矣。",
+    translation: "运笔用锋的时候，总要让笔力透过纸背，这样功夫就到家了。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-94",
+    id: "chengyu-cy-94",
+    title: "青梅竹马",
+    entries: ["chengyu-cy-94"],
+    text: "郎骑竹马来，绕床弄青梅。同居长干里，两小无嫌猜。",
+    translation: "你骑着竹马跑来，绕着井栏抛弄青梅。我们同住在长干里，两个小孩子天真无猜。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-95",
+    id: "chengyu-cy-95",
+    title: "两小无猜",
+    entries: ["chengyu-cy-95"],
+    text: "同居长干里，两小无嫌猜。",
+    translation: "我们同住在长干里，两个小孩子天真无猜。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-97",
+    id: "chengyu-cy-97",
+    title: "曾经沧海",
+    entries: ["chengyu-cy-97"],
+    text: "曾经沧海难为水，除却巫山不是云。",
+    translation: "曾经见过大海的人，别处的水就再也不能入眼了；除了巫山的云，别处的云就算不上云了。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-98",
+    id: "chengyu-cy-98",
+    title: "石破天惊",
+    entries: ["chengyu-cy-98"],
+    text: "女娲炼石补天处，石破天惊逗秋雨。",
+    translation: "（乐声仿佛）传到女娲炼石补天的地方，把石头震破、把天惊动，引得秋雨纷纷落下。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-99",
+    id: "chengyu-cy-99",
+    title: "寸草春晖",
+    entries: ["chengyu-cy-99"],
+    text: "谁言寸草心，报得三春晖。",
+    translation: "谁说小草般微弱的孝心，能报答得了春天阳光般的深厚母爱呢？",
+    translationSource: "public-domain"
+  },
   {
     work: "w-classic-gw-1",
     id: "classic-gw-1",
@@ -122,7 +1591,7 @@ window.TEXT_MASTER = [
     work: "w-classic-gw-19",
     id: "classic-gw-19",
     title: "夸父逐日",
-    entries: ["classic-gw-19"],
+    entries: ["classic-gw-19", "chengyu-cy-2"],
     text: "夸父与日逐走，入日；渴，欲得饮，饮于河、渭；河、渭不足，北饮大泽。\n未至，道渴而死。弃其杖，化为邓林。",
     translation: "夸父追赶太阳，一直追到太阳落下的地方。他口渴想喝水，就去喝黄河、渭河的水，两条河的水不够，又想到北方的大泽去喝。还没走到，半路就渴死了。他丢下的手杖，化作了一片桃林。",
     translationSource: "public-domain"
@@ -149,7 +1618,7 @@ window.TEXT_MASTER = [
     work: "w-classic-gw-21",
     id: "classic-gw-21",
     title: "鲧禹治水",
-    entries: ["classic-gw-21"],
+    entries: ["classic-gw-21", "chengyu-cy-11"],
     text: "洪水滔天，鲧窃帝之息壤以堙洪水，不待帝命，帝令祝融杀鲧于羽郊。\n鲧复生禹，帝乃命禹卒布土以定九州。",
     translation: "洪水漫天，鲧偷了天帝的息壤来堵塞洪水，没有等候天帝的命令，天帝便命祝融在羽山郊野杀了鲧。鲧死后生下禹，天帝于是命禹继续用息壤填土治水，终于安定了九州。",
     translationSource: "public-domain"
@@ -428,7 +1897,7 @@ window.TEXT_MASTER = [
     work: "w-classic-gw-5",
     id: "classic-gw-5",
     title: "精卫填海",
-    entries: ["classic-gw-5"],
+    entries: ["classic-gw-5", "chengyu-cy-3"],
     text: "又北二百里，曰发鸠之山，其上多柘木。\n有鸟焉，其状如乌，文首，白喙，赤足，名曰精卫，其鸣自詨。\n是炎帝之少女，名曰女娃。女娃游于东海，溺而不返，故为精卫。\n常衔西山之木石，以堙于东海。",
     translation: "再往北二百里有座发鸠山，山上多柘树。山中有一种鸟，形状像乌鸦，花脑袋、白嘴、红脚，名叫精卫，叫声像在呼唤自己的名字。它本是炎帝的小女儿女娃，在东海游玩时溺水身亡，化作精卫鸟，常常衔来西山的树枝石块，一心要填平东海。",
     translationSource: "public-domain"
@@ -7682,7 +9151,7 @@ window.TEXT_MASTER = [
     work: "w-yuefu-yf-96",
     id: "tangshi-ts-313",
     title: "题都城南庄",
-    entries: ["tangshi-ts-313", "yuefu-yf-96"],
+    entries: ["tangshi-ts-313", "yuefu-yf-96", "chengyu-cy-69"],
     text: "去年今日此门中，人面桃花相映红。\n人面不知何处去，桃花依旧笑春风。",
     translation: "去年的今天在这门中，人面和桃花互相映衬着红。人面不知到哪里去了，桃花依旧在春风中绽放。",
     translationSource: "public-domain"
@@ -13314,9 +14783,39 @@ window.TEXT_MASTER = [
   },
 ];
 
+/* ==========================================================================
+   近重复对：同一篇却有两种写法，**故意不合并**
+   --------------------------------------------------------------------------
+   下面是「差不多是同一篇、但正文有一字之差」的那些对，共 0 组。
+   它们**没有**被收进上面的主表 —— 因为一字之差往往不是录入出错，
+   而是两条并列的文本传统：
+
+     · 选本原貌（《文选》作「凤皇」、《古文观止》作「霪雨」）
+     · 教材 / 通行字（课本作「凤凰」，今通行本作「淫雨」）
+
+   裁定见 data/works-index.js：「课内以教材文本为准，选集以选本原貌为准，
+   冲突时分成两条并列的作品，各背各的」—— 所以这里**只登记事实**，
+   不去合并、也不改任何一份正文。主表收归的是「字面完全相同」的那些篇；
+   这一份清单是它的边界：谁要是把这几篇也并了，学生就会读到
+   与自己课本不一样的那一份《岳阳楼记》。
+
+   ⚠️ 这是**生成文件**，改动请改 scripts/build-text-master.js 后重跑。
+
+   字段：entries 两条（及以上）条目 id；reason 为什么它们「像同一篇而不合并」
+   ========================================================================== */
 window.TEXT_NEAR_DUP = [
 ];
 
+/* ==========================================================================
+   取数入口：把条目上的 textRef 展开成正文 / 译文
+   --------------------------------------------------------------------------
+   摘掉内联正文的条目只留一行 textRef，正文从这里取回。
+   各消费方（站点索引、阅读引擎、搜索页……）都调这一个函数 ——
+   各写一份迟早有一处忘了取，而表现只是「那一处正文空白」，不报错。
+
+   ⚠️ 没有 textRef、或主表里查不到时**原样返回**，不做任何猜测：
+      猜出来的正文比空白更糟 —— 空白一眼可见，取错一篇却看着正常。
+   ========================================================================== */
 (function () {
   "use strict";
 
@@ -13332,6 +14831,12 @@ window.TEXT_NEAR_DUP = [
     return byId;
   }
 
+  /**
+   * 取这一条的正文 / 译文。
+   * @param {Object} p      条目（可能带 textRef）
+   * @param {String} [book] 所属集子 id —— textRef 记的是集子内 id 时补前缀再查
+   * @returns {Object} 展开后的条目（无 textRef 或查不到时原样返回）
+   */
   window.masterTextOf = function (p, book) {
     if (!p || !p.textRef || p.text) return p;
     var m = map()[p.textRef];

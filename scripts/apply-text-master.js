@@ -40,7 +40,8 @@ const BOOKS = [
   { file: 'data/poems-zhaoming.js', prefix: 'zhaoming-' },
   { file: 'data/poems-yuanqu.js', prefix: 'yuanqu-' },
   { file: 'data/poems-yuefu.js', prefix: 'yuefu-' },
-  { file: 'data/poems-jinxiandai.js', prefix: 'jinxiandai-' }
+  { file: 'data/poems-jinxiandai.js', prefix: 'jinxiandai-' },
+  { file: 'data/poems-chengyu.js', prefix: 'chengyu-' }
 ];
 
 const FIELD = /^(\s+)(text|translation|translationSource):\s*"/;

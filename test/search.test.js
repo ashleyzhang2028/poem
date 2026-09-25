@@ -51,7 +51,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
    'data/poems-9.js', 'data/poems-10.js', 'data/poems-11.js', 'data/poems-12.js',
    'data/index.js', 'data/poems-classic.js', 'data/poems-tangshi.js',
    'data/poems-songci.js', 'data/poems-yuefu.js', 'data/poems-guwen.js', 'data/poems-zhaoming.js',
-   'data/poems-yuanqu.js', 'data/poems-jinxiandai.js',
+   'data/poems-yuanqu.js', 'data/poems-jinxiandai.js', 'data/poems-chengyu.js',
    'data/site-index.js', 'data/works-map.js', 'data/works-index.js']);
 
   const IDX = sandbox.SITE_INDEX;
@@ -64,21 +64,22 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     resolve(sandbox, sandbox.POEMS_YUANQU, 'yuanqu'),
     resolve(sandbox, sandbox.POEMS_GUWEN, 'guwen'),
     resolve(sandbox, sandbox.POEMS_ZHAOMING, 'zhaoming'),
-    resolve(sandbox, sandbox.POEMS_JINXIANDAI, 'jinxiandai')
+    resolve(sandbox, sandbox.POEMS_JINXIANDAI, 'jinxiandai'),
+    resolve(sandbox, sandbox.POEMS_CHENGYU, 'chengyu')
   ];
-  const BOOK_IDS = ['classic', 'yuefu', 'tangshi', 'songci', 'yuanqu', 'guwen', 'jinxiandai', 'zhaoming'];
+  const BOOK_IDS = ['classic', 'yuefu', 'tangshi', 'songci', 'yuanqu', 'guwen', 'jinxiandai', 'zhaoming', 'chengyu'];
 
   const zmIndexed = books[6].filter(p => p.text && p.translation).length;
 
   chk(IDX.length === sandbox.POEMS_ALL.length +
-      books.reduce((n, b) => n + b.filter(p => p.text && p.translation).length, 0) + 9,
-    '总索引 = 课内诗词 + 八部全集子（其中昭明 ' + zmIndexed + ' 篇）+ 9 条集子条目（实际 ' + IDX.length + '）');
+      books.reduce((n, b) => n + b.filter(p => p.text && p.translation).length, 0) + 10,
+    '总索引 = 课内诗词 + 各部全集子（其中昭明 ' + zmIndexed + ' 篇）+ 10 条集子条目（实际 ' + IDX.length + '）');
   BOOK_IDS.forEach(id => {
     chk(IDX.some(x => x.book === id && !x.isBook),
       '总索引含「' + id + '」这一部的篇目');
   });
-  chk(IDX.filter(x => x.isBook).length === 9,
-    '九部集子自身也各有一条（搜「唐诗三百首」能直接进那一页）');
+  chk(IDX.filter(x => x.isBook).length === 10,
+    '十部集子自身也各有一条（搜「唐诗三百首」能直接进那一页）');
 
   const ids = new Set();
   let dup = 0;
@@ -101,10 +102,10 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   const libJs = read('js/library.js');
   const orderInJs = (libJs.match(/id:\s*"([a-z]+)"/g) || [])
     .map(x => x.match(/id:\s*"([a-z]+)"/)[1]);
-  chk(orderInJs.slice(0, 9).join('/') ===
-      'poems/classic/yuefu/tangshi/songci/yuanqu/guwen/jinxiandai/zhaoming',
-    '九部的顺序以课内为首、乐府在唐诗前、元曲在宋词后、昭明与近现代在后' +
-    '（顺序的唯一来源在 js/library.js，Issue #244；实际 ' + orderInJs.slice(0, 9).join('/') + '）');
+  chk(orderInJs.slice(0, 10).join('/') ===
+      'poems/classic/yuefu/tangshi/songci/yuanqu/guwen/jinxiandai/zhaoming/chengyu',
+    '十部的顺序以课内为首、乐府在唐诗前、元曲在宋词后、昭明与近现代在后、成语殿后' +
+    '（顺序的唯一来源在 js/library.js，Issue #244 / #308；实际 ' + orderInJs.slice(0, 10).join('/') + '）');
 
   const swVer = (/poem-app-v(\d+)/.exec(read('sw.js')) || [])[1];
   chk(Number(swVer) >= 41, 'sw.js 缓存版本不低于 v41（实际 v' + swVer + '）');

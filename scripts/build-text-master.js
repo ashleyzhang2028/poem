@@ -10,7 +10,7 @@ const LOAD = [
   'data/poems-9.js', 'data/poems-10.js', 'data/poems-11.js', 'data/poems-12.js',
   'data/index.js', 'data/poems-classic.js', 'data/poems-tangshi.js',
   'data/poems-songci.js', 'data/poems-guwen.js', 'data/poems-zhaoming.js', 'data/poems-yuanqu.js',
-  'data/poems-yuefu.js', 'data/poems-jinxiandai.js',
+  'data/poems-yuefu.js', 'data/poems-jinxiandai.js', 'data/poems-chengyu.js',
   'data/site-index.js', 'data/works-map.js', 'data/works-index.js'
 ];
 
@@ -23,7 +23,7 @@ LOAD.forEach(function (f) {
 
 const WI = sandbox.WorksIndex;
 
-const FULL_BOOKS = ['zhaoming', 'guwen', 'songci', 'tangshi', 'classic', 'yuanqu', 'yuefu', 'jinxiandai'];
+const FULL_BOOKS = ['zhaoming', 'guwen', 'songci', 'tangshi', 'classic', 'yuanqu', 'yuefu', 'jinxiandai', 'chengyu'];
 
 const prev = {};
 try {
@@ -69,7 +69,8 @@ var RAW_ENTRIES = {};
     { f: 'data/poems-zhaoming.js', v: 'POEMS_ZHAOMING' },
     { f: 'data/poems-yuanqu.js', v: 'POEMS_YUANQU' },
     { f: 'data/poems-yuefu.js', v: 'POEMS_YUEFU' },
-    { f: 'data/poems-jinxiandai.js', v: 'POEMS_JINXIANDAI' }
+    { f: 'data/poems-jinxiandai.js', v: 'POEMS_JINXIANDAI' },
+    { f: 'data/poems-chengyu.js', v: 'POEMS_CHENGYU' }
   ];
   FILES.forEach(function (o) {
     var book = o.f.replace('data/poems-', '').replace('.js', '');
@@ -226,7 +227,7 @@ const BOOK_FILES = [
   'data/poems-9.js', 'data/poems-10.js', 'data/poems-11.js', 'data/poems-12.js',
   'data/poems-classic.js', 'data/poems-tangshi.js', 'data/poems-songci.js',
   'data/poems-guwen.js', 'data/poems-zhaoming.js', 'data/poems-yuanqu.js',
-  'data/poems-yuefu.js', 'data/poems-jinxiandai.js'
+  'data/poems-yuefu.js', 'data/poems-jinxiandai.js', 'data/poems-chengyu.js'
 ];
 
 void fullBooksReport;
