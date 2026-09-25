@@ -262,10 +262,16 @@
   // 管理后台入口（Issue #276）：**只认服务端下发的角色**（源头是数据库
   // `accounts.role`）。本机兜底已删 —— 未登录、或角色不够，这一颗就不画。
   // 与 /admin/ 的准入走同一个出口 `Entitlement.isOwner()`（不是各判各的）。
+  //
+  // ⚠️ 传参要带上 **uid**（Issue #276 后续）：`id.role` 只是「服务端说这台
+  // 机器上最后登录的那位是 owner」，不带 uid 就分不清是不是**当前这位**。
+  // 带上之后 `isOwner` 会核对缓存里那份答案的主人 —— 换了人登录，
+  // 上一个人的管理员身份不再被继承（这正是「未登录 / 非管理员时那颗键
+  // 压根不显示」的判据）。
   function renderAdmin(id) {
     var btn = $("btn-go-admin");
     if (!btn) return;
-    var owner = Ent.isOwner(backing, id && id.role ? { role: id.role } : undefined);
+    var owner = Ent.isOwner(backing, id ? { role: id.role, uid: id.uid } : undefined);
     if (owner && id && id.signedIn) {
       show(btn);
     } else {

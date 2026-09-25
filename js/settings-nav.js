@@ -115,6 +115,10 @@
   //    `poem_plan_v1` 里那份服务端答案，而那份答案可能比这一屏晚到
   //    （登录页回来、同步拉到角色）。所以这里**先不画**，等
   //    `entitlementchange` / 脚本就位后再补一次 —— 补的时候仍是同一个判据。
+  //    ⚠️ `entitlementchange` 由 `js/entitlement.js` 在**那份缓存被写**的
+  //       那一刻发（`writeTier` / `clearTier` 两个写入口各喊一声）。
+  //       Issue #276 后续之前这里只是**听着**，没人发 —— 于是管理员登录完
+  //       回到这一页，那一行要等下一次整页刷新才出现。
   function selfCheckRow() {
     var Ent = null;
     try { Ent = window.Entitlement || null; } catch (e) { Ent = null; }
@@ -126,8 +130,10 @@
     var id = null;
     try { id = Ent.identity({ backing: backing }); } catch (e) { id = null; }
 
+    // ⚠️ 带上 `uid`（Issue #276 后续）：判据是「服务端那份答案是不是当前
+    // 这位的」，不是「这台机器上最后一位管理员是谁」。
     var ok = false;
-    try { ok = !!Ent.isOwner(backing, id && id.role ? { role: id.role } : undefined); } catch (e) { ok = false; }
+    try { ok = !!Ent.isOwner(backing, id ? { role: id.role, uid: id.uid } : undefined); } catch (e) { ok = false; }
     if (!ok) return "";
     return kvRow(link("/self-check/", "自检"), "");
   }

@@ -370,6 +370,63 @@ console.log('\n=== 十、源码扫描：页面上不许自己拼 plan ===');
     '「谁能进管理后台」两页走同一个出口 Entitlement.isOwner()');
 }
 
+// ---------------------------------------------------------------------------
+// 权益一变就喊一声（Issue #276 后续）
+// ---------------------------------------------------------------------------
+// 按角色开关的界面（`/self-check/` 的入口那一行）在页面加载时就画过一遍，
+// 而角色是**异步到位**的。没有这一声，管理员登录完回到那一页，入口要等
+// 下一次整页刷新才出现 —— `settings-nav.js` 一直在听 `entitlementchange`，
+// 但从前的代码里没人发过它。
+console.log('\n=== 十之一、权益变了要喊一声（`entitlementchange`）===');
+{
+  // `announce()` 喊的是**全局**那个事件（浏览器里就是 window）。Node 的
+  // `globalThis` 没有 `dispatchEvent`，所以这一节用 jsdom 造一个真 window
+  // 来跑 —— 免得测的是一个「永远不发」的实现。
+  let JSDOM = null;
+  try { JSDOM = require("jsdom").JSDOM; } catch (e) { JSDOM = null; }
+
+  if (!JSDOM) {
+    console.log("  (未安装 jsdom，跳过这一节 —— run.sh 会先装好它)");
+  } else {
+    const dom = new JSDOM("<body></body>", { url: "https://local.test/", runScripts: "dangerously" });
+    const w = dom.window;
+    // 真页面里 `Entitlement` 是 **script 标签**加载的，挂在 window 上；
+    // 这一节也照办（`w.eval` 出来的 `this` 不是 window，UMD 会挂错地方），
+    // 于是 `announce()` 里的 `globalThis` 就是这份 window。
+    const tag = w.document.createElement("script");
+    tag.textContent = require("fs").readFileSync("js/entitlement.js", "utf8");
+    w.document.body.appendChild(tag);
+    const EW = w.Entitlement;
+
+    const fired = [];
+    w.addEventListener("entitlementchange", function () { fired.push(1); });
+
+    const makeMem = function () {
+      const m = {};
+      return {
+        getItem: k => (k in m ? m[k] : null),
+        setItem: (k, v) => { m[k] = String(v); },
+        removeItem: k => { delete m[k]; }
+      };
+    };
+    const b = makeMem();
+    EW.writeTier(b, "pro", null, { source: "server", role: "user", uid: "u1" });
+    eq(fired.length, 1, "写一版服务端答案 → 喊一声（界面据此重画那一行）");
+    EW.writeTier(b, "max", null, { source: "server", role: "owner", uid: "u1" });
+    eq(fired.length, 2, "再写一版（角色从 user 变 owner）→ 再喊一声");
+    EW.clearTier(b);
+    eq(fired.length, 3, "清掉那一份 → 也喊一声（退出登录时界面要跟着收起来）");
+  }
+
+  const src = require('fs').readFileSync('js/entitlement.js', 'utf8');
+  chk(/function announce\(/.test(src), "喊话收在一处 announce()（不是每个写入口各发一次）");
+  chk(/dispatchEvent\(new g\.Event\("entitlementchange"\)\)/.test(src),
+    "喊的就是 settings-nav.js 一直在听的那个名字（两边对得上）");
+  const nav = require('fs').readFileSync('js/settings-nav.js', 'utf8');
+  chk(/addEventListener\("entitlementchange"/.test(nav) && /function announce\(/.test(src),
+    "有人听、也有人发（从前只有前者，那一行永远等不到重画）");
+}
+
 console.log('\n=== 十一、管理员（role）：只认数据库那一列，本机兜底已删（Issue #276）===');
 {
   const mem = function (init) {
@@ -382,7 +439,17 @@ console.log('\n=== 十一、管理员（role）：只认数据库那一列，本
     };
   };
   // 服务端答案写进本机缓存的样子（源头是数据库 `accounts.role`）。
-  const serverRole = (role) => mem({ [E.NS]: JSON.stringify({ v: 1, tier: 'free', source: 'server', role }) });
+  //
+  // ⚠️ 这一份**必须带 `uid`**（Issue #276 后续）：答案是按浏览器存的，
+  //    不记「它属于谁」，换个人登录就会继承上一位的角色。
+  const UID = 'u-owner';
+  const serverRole = (role, uid) => mem({
+    [E.NS]: JSON.stringify({
+      v: 1, tier: 'free', source: 'server', role,
+      uid: uid === undefined ? UID : uid
+    })
+  });
+  const asUser = (uid) => ({ uid: uid });
 
   // 用户原话：「管理员页面只允许 belem@163.com 登录的邮箱访问（目前），
   // 未登录用户以及其他登录账户一律不允许访问。」
@@ -391,15 +458,33 @@ console.log('\n=== 十一、管理员（role）：只认数据库那一列，本
   eq(E.isOwner(mem({ poem_owner_v1: 'owner' })), false,
     '老的本机主人标记 `poem_owner_v1` 一个字都不认（清一次存储就能当管理员的东西不是权限）');
 
-  eq(E.isOwner(serverRole('owner')), true, '服务端说 owner → 放行');
-  eq(E.isOwner(serverRole('admin')), true, '服务端说 admin → 放行');
-  eq(E.isOwner(serverRole('user')), false, '服务端说 user → 不放行（这正是 Issue #276 要的那件事）');
+  eq(E.isOwner(serverRole('owner'), asUser(UID)), true, '服务端说 owner（且是当前这位的）→ 放行');
+  eq(E.isOwner(serverRole('admin'), asUser(UID)), true, '服务端说 admin（且是当前这位的）→ 放行');
+  eq(E.isOwner(serverRole('user'), asUser(UID)), false, '服务端说 user → 不放行（这正是 Issue #276 要的那件事）');
   eq(E.isOwner(mem({ [E.NS]: JSON.stringify({ v: 1, tier: 'max' }) })), false,
     '**本机自己写的**层级（没有 source:server）不带角色 → 不放行（层级高不等于管理员）');
-  eq(E.isOwner(serverRole('root')), false, '不认识的角色一律不放行（无兜底）');
+  eq(E.isOwner(serverRole('root'), asUser(UID)), false, '不认识的角色一律不放行（无兜底）');
+
+  // ⚠️ 这一节是 Issue #276 后续（用户 2026-09-25）报的那条真 bug：
+  //    「我的页面，如果用户未登录，而且即便登录也不是管理员的话，
+  //     管理后台按钮压根不应该显示吧」。
+  //    机器上那份服务端答案是**按浏览器**存的，换个人登录时它还留着
+  //    上一位的 `role: "owner"` —— 光看 role 就等于把上一位的管理员
+  //    借给了新登录的普通用户。
+  eq(E.isOwner(serverRole('owner'), asUser('u-someone-else')), false,
+    '服务端说 owner，但那位**不是当前登录的人**（换人了）→ 不放行（上一位的管理员不被继承）');
+  eq(E.isOwner(serverRole('owner'), asUser('')), false,
+    '服务端说 owner，但**当前没人登录** → 不放行（未登录的人不继承任何角色）');
+  eq(E.isOwner(serverRole('owner')), false,
+    '缓存里那份 owner 没记 uid、而本机也没有会话 → 不放行（不知道是谁的答案，不认）');
 
   eq(E.isOwner(mem(), { role: 'user' }), false, '显式传 role=user → 不放行');
-  eq(E.isOwner(serverRole('user'), { role: 'owner' }), true, '显式传入的 role 优先（调用方手里那一份更新）');
+  eq(E.isOwner(serverRole('user'), { role: 'owner', uid: UID }), false,
+    '显式传 role=owner，但缓存里那份是 user → 不放行（答案以缓存里那份「是谁的」为准）');
+  eq(E.isOwner(serverRole('owner'), { role: 'owner', uid: 'u-someone-else' }), false,
+    '显式传 role=owner，但 uid 对不上 → 不放行（光有 role 不能绕过「这是谁的答案」）');
+  eq(E.isOwner(serverRole('owner'), { role: 'owner', uid: UID }), true,
+    '显式传 role=owner 且 uid 对得上 → 放行');
 
   eq(typeof E.markOwner, 'undefined', 'markOwner 已删除（本机不再能把自己写成主人）');
   eq(typeof E.OWNER_NS, 'undefined', 'poem_owner_v1 这个键名也不在了');
@@ -410,9 +495,49 @@ console.log('\n=== 十一、管理员（role）：只认数据库那一列，本
   eq(E.isAdminRole('OWNER'), true, '大小写不敏感（与 core.isAdminRole 同源）');
   ['', null, 'root', '超级管理员'].forEach(r => eq(E.isAdminRole(r), false, 'isAdminRole(' + JSON.stringify(r) + ') 为假'));
 
-  const owner = E.identity({ backing: serverRole('owner'), authStore: null });
-  eq(owner.role, 'owner', '服务端说 owner：identity().role 是 owner');
+  // 没有会话时，identity() 不认识任何一份服务端答案（不知道是谁的）。
+  const guestWithCache = E.identity({ backing: serverRole('owner'), authStore: null });
+  eq(guestWithCache.role, 'user', '没有会话：缓存里那份 owner 不认（identity().role 是 user）');
+  eq(guestWithCache.signedIn, false, '…而且如实是游客');
+
+  // 有会话、uid 对得上时，角色照常认。
+  const A2 = require('../js/auth-core.js');
+  const b2 = serverRole('owner');
+  const st2 = A2.makeStore(b2);
+  // 直接构造一个「已登录 uid=u-owner」的会话（与缓存里那份答案的主人一致）。
+  const req2 = A2.requestCode(st2, { channel: 'email', value: 'owner@163.com' }, 'login', { code: '246810' });
+  const v2 = A2.verifyCode(st2, req2.codeId, '246810', 'login');
+  chk(v2.ok, '构造一个真会话（用来验证「答案是谁的」这条判据）');
+  const meUid = A2.session(st2).account.uid;
+  E.writeTier(b2, 'free', null, { source: 'server', role: 'owner', uid: meUid });
+  const owner = E.identity({ backing: b2, authStore: st2 });
+  eq(owner.role, 'owner', '服务端说 owner、且是当前这位的：identity().role 是 owner');
   eq(owner.tier, 'free', '…但层级仍是 free —— 管理员不是「买了 Max 的人」');
+  eq(E.isOwner(b2), true, '…与 isOwner() 的答案一致（同一个出口，uid 自己去会话里问）');
+
+  // 换个人登录（**同一台机器、同一份存储**：缓存里那份答案仍是上一位的）。
+  //
+  // ⚠️ 这里刻意复用**同一个 backing**（`b2`）：真实的「同一台机器换人登录」
+  //    就是同一份 localStorage 上的会话换了个 uid，缓存里那份答案没人动。
+  //    换一份新存储去测的话，验的就不是这件事了。
+  const st3 = A2.makeStore(b2);
+  A2.signOut(st3);
+  const req3 = A2.requestCode(st3, { channel: 'email', value: 'other@qq.com' }, 'login', { code: '135791' });
+  const v3 = A2.verifyCode(st3, req3.codeId, '135791', 'login');
+  chk(v3.ok, '第二位登录成功（同一台机器、缓存里那份答案还是上一位的）');
+  const otherUid = A2.session(st3).account.uid;
+  chk(otherUid !== meUid, '…确实是另一个人（uid 不同）');
+  const cached = JSON.parse(b2.getItem(E.NS));
+  eq(cached.role, 'owner', '缓存里那份答案**原样还在**（没人去清它），role 仍是 owner');
+  eq(cached.uid, meUid, '…但它记着的主人是上一位（uid 是上一位的）');
+  const other = E.identity({ backing: b2, authStore: st3 });
+  eq(other.role, 'user', '换个人登录：上一位的 owner 不被继承（role 是 user）');
+  eq(E.isOwner(b2), false, '…管理后台入口对他不画（isOwner() 也是 false）');
+
+  // 退出登录后也一并不认 —— 未登录的人不继承任何角色。
+  A2.signOut(st3);
+  eq(E.isOwner(b2), false, '退出登录之后：缓存里那份 owner 也不认（没人登录 → 没有答案）');
+
   const member = E.identity({ backing: serverRole('user'), authStore: null });
   eq(member.role, 'user', '服务端说 user：role 是 user');
   eq(member.role, 'user', '…与 isOwner 的答案一致（同一个出口）');

@@ -711,6 +711,81 @@ function boot(seed) {
       'buildIdentityRow 画完就叫一次 AvatarEdit.render（把文案与绑定补上）');
   }
 
+  // ---------------------------------------------------------------------------
+  // 管理后台入口：未登录 / 非管理员一律不显示（Issue #276 后续）
+  // ---------------------------------------------------------------------------
+  // 用户原话（2026-09-25）：「我的页面，如果用户未登录，而且即便登录也不是
+  // 管理员的话，管理后台按钮压根不应该显示吧」。
+  //
+  // 这一节守的是**那颗键的显隐判据**，不是「它藏在哪张卡里」。真出现过的
+  // 那条 bug 与藏哪儿无关：本机那份服务端答案是**按浏览器**存的，换了个人
+  // 登录时它还留着上一位的 `role: "owner"` —— 光看 role 就把上一位的管理员
+  // 借给了新登录的普通用户。所以判据只能是「这份答案**是当前这位的**吗」。
+  {
+    const A = w0.AuthCore;
+
+    // 造一份「这台机器上的服务端答案」+ 一个真会话，两者 uid 一致。
+    function signIn(w, seed, email) {
+      const store = A.makeStore(w.localStorage);
+      const r = A.requestCode(store, { channel: 'email', value: email || 'zhangmin@163.com' }, 'login', { code: '246810' });
+      const v = A.verifyCode(store, r.codeId, '246810', 'login');
+      return { store: store, uid: v.account.uid };
+    }
+
+    // ① 未登录：一颗都不许画（哪怕本机缓存里留着一份 owner 的答案）。
+    const wGuest = boot({
+      [w0.Entitlement.NS]: JSON.stringify({ v: 1, tier: 'free', source: 'server', role: 'owner', uid: 'u_someone' })
+    });
+    await new Promise(r => setTimeout(r, 250));
+    const adminGuest = wGuest.document.getElementById('btn-go-admin');
+    chk(!!adminGuest && adminGuest.hidden,
+      '（真页面）**未登录**时「管理后台」不显示（缓存里那份 owner 是别人的，不认）');
+
+    // ② 已登录、但服务端说他是普通用户：同样不显示。
+    const wUser = boot(null);
+    await new Promise(r => setTimeout(r, 200));
+    const sUser = signIn(wUser);
+    wUser.Entitlement.writeTier(wUser.localStorage, 'free', null,
+      { source: 'server', role: 'user', uid: sUser.uid });
+    wUser.MinePage.paint(wUser.AuthCore.session(sUser.store));
+    const adminUser = wUser.document.getElementById('btn-go-admin');
+    chk(!!adminUser && adminUser.hidden,
+      '（真页面）**已登录的普通用户**同样不显示「管理后台」');
+
+    // ③ 上一位是管理员、这一位换了个人登录：缓存没动，也不许显示。
+    const wSwitch = boot(null);
+    await new Promise(r => setTimeout(r, 200));
+    const sOwner = signIn(wSwitch, null, 'belem@163.com');
+    wSwitch.Entitlement.writeTier(wSwitch.localStorage, 'free', null,
+      { source: 'server', role: 'owner', uid: sOwner.uid });
+    wSwitch.MinePage.paint(wSwitch.AuthCore.session(sOwner.store));
+    chk(!wSwitch.document.getElementById('btn-go-admin').hidden,
+      '（真页面）服务端说 owner 且是当前这位 → 「管理后台」画出来（判据真的会放行）');
+
+    // 同机换个人登录（缓存里那份 owner 没被清）。
+    const stOther = A.makeStore(wSwitch.localStorage);
+    A.signOut(stOther);
+    const rOther = A.requestCode(stOther, { channel: 'email', value: 'other@qq.com' }, 'login', { code: '135791' });
+    A.verifyCode(stOther, rOther.codeId, '135791', 'login');
+    wSwitch.MinePage.paint(A.session(stOther));
+    const adminOther = wSwitch.document.getElementById('btn-go-admin');
+    chk(!!adminOther && adminOther.hidden,
+      '（真页面）**同一台机器换了个人登录**：上一位的 owner 不被继承（那颗键当场收起来）');
+
+    // ④ 管理员本人：画出来。
+    const wOwner = boot(null);
+    await new Promise(r => setTimeout(r, 200));
+    const sMe = signIn(wOwner, null, 'belem@163.com');
+    wOwner.Entitlement.writeTier(wOwner.localStorage, 'free', null,
+      { source: 'server', role: 'owner', uid: sMe.uid });
+    wOwner.MinePage.paint(wOwner.AuthCore.session(sMe.store));
+    const adminMe = wOwner.document.getElementById('btn-go-admin');
+    chk(!!adminMe && !adminMe.hidden,
+      '（真页面）管理员本人登录着：那颗键画出来（这一节不许把入口焊死）');
+    chk(adminMe.closest('#about-card'),
+      '（真页面）它仍在「关于」卡里（位置没被这一轮改动挪走）');
+  }
+
   console.log('\n' + (fails ? '❌ ' + fails + ' 项失败' : '🎉 「我的」页测试全部通过'));
   process.exit(fails ? 1 : 0);
 })().catch(e => {

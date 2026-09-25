@@ -5240,6 +5240,14 @@ DOM 节点，焦点与光标位置都会丢（测试里第二次编辑会打在�
 > · **入口那一行是异步长出来的**。角色要等 `/api/me` 回来才落进 `poem_plan_v1`，
 >   所以那一行先不画，等 `storage` / `entitlementchange` 再补 —— 管理员登录完
 >   回到设置页，不必再刷一次。
+>   ⚠️ `entitlementchange` 由 `js/entitlement.js` 在**那份缓存被写 / 被清**的
+>   一刻发（`writeTier()` / `clearTier()` 两个写入口各喊一声）。这个名字
+>   从前只有人在听、没人发 —— 于是那一行永远等不到重画（Issue #276 后续修掉）。
+> · **那份缓存记着「它是谁的答案」**。`poem_plan_v1` 是按**浏览器**存的，
+>   换个人登录时上一位的 `role` 还留着；`Entitlement.isOwner()` 现在要求
+>   缓存里的 `uid` 与当前会话相同才认它，否则退回 user / 游客。
+>   于是「未登录 / 非管理员不显示管理后台入口」这条才真的成立
+>   （详见 `docs/auth-design.md` §3 那张四行的表）。
 > · **拒绝时要连脚本都不请求**。`js/self-check.js` 在 HTML 里只是
 >   `<script id="self-check-script" type="text/plain">` 占位（浏览器不执行），
 >   只有放行时 `js/self-check-gate.js` 才把它换成真脚本。否则「不能访问」只是

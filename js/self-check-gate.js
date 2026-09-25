@@ -37,8 +37,11 @@
     if (!E || typeof E.isOwner !== "function") return false;
     var id = null;
     try { id = E.identity({ backing: backing }); } catch (e) { id = null; }
+    // ⚠️ 传参带上 **uid**（Issue #276 后续）：光有 role 分不清服务端那份
+    //    答案是不是**当前这位**的 —— 同一台机器换个人登录时，上一位的
+    //    owner 会被继承。`Entitlement.isOwner()` 会核对缓存里那份答案的主人。
     try {
-      return !!E.isOwner(backing, id && id.role ? { role: id.role } : undefined);
+      return !!E.isOwner(backing, id ? { role: id.role, uid: id.uid } : undefined);
     } catch (e) {
       return false;
     }
