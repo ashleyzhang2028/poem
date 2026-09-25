@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#2f6055" />
   <title>背诵 · 跬步</title>
-  <meta name="description" content="跬步设置 · 背诵：学段、年级、学期、背诵范围与每日数量，以及可切换的复习算法与进度总览入口。" />
+  <meta name="description" content="跬步设置 · 背诵：学段、年级、学期、背诵范围与每日数量，以及可切换的复习算法，和总揽全局的背诵进度。" />
   <meta name="format-detection" content="telephone=no" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -71,13 +71,6 @@
             </div>
           </div>
 
-          <div class="settings-item">
-            <label>进度总览</label>
-            <div class="settings-btns">
-              <a class="btn ghost-btn" href="/progress/">背诵进度</a>
-            </div>
-          </div>
-
           <div class="settings-item wide">
             <label>今日加背</label>
             <div class="daily-panel" id="daily-panel">
@@ -106,6 +99,17 @@
           <div class="settings-item">
             <label>复习间隔</label>
             <div class="settings-hint" id="algo-interval"></div>
+          </div>
+        </section>
+
+        <section class="settings-group" aria-labelledby="grp-progress">
+          <h2 class="settings-group-title" id="grp-progress">进度</h2>
+
+          <div class="settings-item">
+            <label>背诵进度</label>
+            <div class="settings-btns">
+              <a class="btn ghost-btn" id="link-progress" href="/progress/">打开进度总览</a>
+            </div>
           </div>
         </section>
       </div>
