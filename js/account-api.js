@@ -371,14 +371,14 @@
           message: "页面脚本版本对不上（刷新一次即可），这一轮没发出任何东西"
         });
       }
-      return ch.grant({ emailMask: o.emailMask, tier: o.tier, until: o.until }).then(function (r) {
+      return ch.grant({ uid: o.uid, emailMask: o.emailMask, tier: o.tier, until: o.until }).then(function (r) {
         if (r && r.ok) {
 
           return {
             ok: true, reason: REASON.OK,
             matched: r.matched, changed: r.changed, ambiguous: !!r.ambiguous,
             emailMask: r.emailMask, tier: r.tier, until: r.until == null ? null : r.until,
-            uid: r.uid, note: r.note
+            uid: r.uid, before: r.before, note: r.note
           };
         }
         var code = (r && r.code) || "E_OFFLINE";
