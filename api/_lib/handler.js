@@ -6,6 +6,7 @@ var session = require("./session");
 var core = require("./core");
 var game = require("./game");
 var H = require("./http");
+var upstream = require("./upstream");
 
 var limiter = core.makeRateLimiter();
 
@@ -134,6 +135,29 @@ function make(name, methods, run, opts) {
         });
       })
       .catch(function (e) {
+
+        // 「上游读不动」不许说成「服务端出了点问题」（Issue #276）。
+        //
+        // 现场：数据库项目被暂停 / 表没建 / 密钥填成 anon 时，**每一条**
+        // 碰库的接口（登录、注册、验证码、重设）都落到下面这一行，回
+        // 500 E_INTERNAL，前端翻成「**服务暂时不可用，请稍后重试。**」——
+        // 用户照着这句话「稍后重试」，而那句话背后的事情根本没有一件
+        // 会因为「稍后」而变好。
+        //
+        // 现在先按上游自己回的原文**分类**（`_lib/upstream.js`），
+        // 能认出哪一档就回哪一档的码与话（503 + 那句能指导下一步动作的
+        // 说明，或 400 + 「这一发没送对」）。认不出来才回落 E_INTERNAL。
+        var kind = e && e.kind ? e.kind : upstream.classify(e);
+        var v = upstream.verdict(kind, CONFIG);
+        if (v) {
+          H.log("api.upstream_failed", {
+            api: name,
+            kind: kind,
+            status: (e && e.status) || 0,
+            error: String(e && e.message || e).slice(0, 220)
+          });
+          return H.json(res, v.status, v.body);
+        }
 
         H.log("api.error", { api: name, error: String(e && e.message || e).slice(0, 300) });
         H.json(res, 500, { code: "E_INTERNAL", message: "服务端出了点问题，稍后再试；期间本站仍可完全离线使用。" });

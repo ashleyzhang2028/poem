@@ -9,6 +9,15 @@
 
   var TRANSPORT_ERR = {
     E_NOT_CONFIGURED: "这个站点还没开放云端账号，当前是本机体验版",
+
+    // 「上游读不动」（Issue #276）：数据库项目被暂停 / 表没建 / 密钥不对。
+    // ⚠️ 这三句是**兜底** —— 服务端 `_lib/upstream.js` 会给一句更具体的
+    //    （哪一档、该找谁），下面那一段认这个码时会优先用服务端那句。
+    //    留在这里是为了「服务端只回了个码、没带 message」的场合也有话说。
+    E_DB_UNREACHABLE: "账号服务器连不上（多半是数据库项目被暂停了）。云端登录 / 注册暂时用不了；本站的背诵功能不受影响。",
+    E_DB_MISSING_TABLE: "账号服务器上的表还没建好，请联系站点管理员跑一次 schema.sql。",
+    E_DB_BAD_KEY: "账号服务器的密钥不对，请联系站点管理员。",
+    E_BAD_REQUEST: "这一发请求没能被服务端读懂，请刷新页面重试。",
     E_OFFLINE: "无法连接服务器，请检查网络后重试。",
     E_TIMEOUT: "服务器响应超时，请稍后重试。",
     E_INTERNAL: "服务暂时不可用，请稍后重试。",
@@ -63,6 +72,11 @@
     E_OFFLINE: "无法连接服务器，请检查网络后重试。",
     E_TIMEOUT: "服务器响应超时，请稍后重试。",
     E_INTERNAL: "服务暂时不可用，请稍后重试。",
+
+    // 与上面 TRANSPORT_ERR 同源的兜底（服务端没给 message 时才有话说）
+    E_DB_UNREACHABLE: "账号服务器连不上（多半是数据库项目被暂停了）。云端登录 / 注册暂时用不了；本站的背诵功能不受影响。",
+    E_DB_MISSING_TABLE: "账号服务器上的表还没建好，请联系站点管理员跑一次 schema.sql。",
+    E_DB_BAD_KEY: "账号服务器的密钥不对，请联系站点管理员。",
     E_BAD_BODY: "这一发请求没能被服务端读懂，请刷新页面重试。",
     E_METHOD: "这一发请求的方式不对，请刷新页面重试。"
   };
@@ -152,15 +166,38 @@
             // 于是**收到一个 400 也会显示「服务暂时不可用」** —— 一句话说错，
             // 用户就去反复重试同一个坏请求了。
             var soft = res.status >= 400 && res.status < 500;
-            var softCode = soft ? "E_BAD_BODY" : "E_INTERNAL";
+            // 503 是**平台层**（Vercel / Supabase 网关）回的，不在 4xx 那一档 ——
+            // 但它说的正是「这一发现在做不了、过会儿再来」，不是「服务端崩了」。
+            // 原先它落进 E_INTERNAL（「服务暂时不可用，请稍后重试。」），
+            // 与数据库被暂停时**同一句话**，用户分不出是哪种。
+            var unavail = res.status === 503;
+            var softCode = soft ? "E_BAD_BODY" : (unavail ? "E_DB_UNREACHABLE" : "E_INTERNAL");
+            state.degraded = unavail ? true : state.degraded;
             state.lastError = softCode;
-            return { ok: false, code: softCode, message: em(softCode), status: res.status };
+            return { ok: false, code: softCode, message: em(softCode), retryable: unavail || undefined, status: res.status };
           }
 
+          // 503 = 「服务端在，但这一件事它现在做不了」。原先**整档**被改写成
+          // E_NOT_CONFIGURED（「这个站点还没开放云端账号，当前是本机体验版」）——
+          // 于是服务端好不容易说清楚的那一句（Issue #276 新增的
+          // 「账号服务器连不上（多半是数据库项目被暂停了）」）被**这一句顶掉**，
+          // 用户看到的还是一件跟现场无关的事，而且**该找谁、该做什么一个字都没露**。
+          //
+          // 现在的口径：**服务端给了码就用服务端的**，只在它没给（老服务端 /
+          // 平台层直接回 503 带 HTML）时才折算成 E_NOT_CONFIGURED。
           if (res.status === 503 || data.code === "E_NOT_CONFIGURED") {
             state.degraded = true;
-            state.lastError = "E_NOT_CONFIGURED";
-            return { ok: false, code: "E_NOT_CONFIGURED", message: em("E_NOT_CONFIGURED"), status: res.status };
+            var known = data.code && TRANSPORT_ERR[data.code] && data.code !== "E_INTERNAL";
+            var code503 = known ? data.code : "E_NOT_CONFIGURED";
+            state.lastError = code503;
+            return {
+              ok: false,
+              code: code503,
+              // ⚠️ 服务端那句优先于本地表：它知道是哪一档、也知道该找谁
+              message: known ? (data.message || em(code503)) : em("E_NOT_CONFIGURED"),
+              retryable: data.retryable,
+              status: res.status
+            };
           }
 
           if (res.status === 401) {
