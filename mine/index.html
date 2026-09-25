@@ -110,18 +110,19 @@
           <p class="account-msg" id="msg-conflict"></p>
         </div>
 
-        <div class="account-actions">
-          <button class="account-btn ghost" id="btn-go-admin" type="button" hidden>管理后台</button>
-        </div>
       </section>
 
-      <section class="account-card danger-zone" id="danger-card">
-        <h2 class="account-card-title danger-title">注销账号</h2>
-        <p class="account-lead">
-          注销会删掉账号与服务器上的云端进度（云端那份先导给你留档），<strong>不动本机背诵进度</strong>。想连本机一起清：<a class="kv-link" href="/settings/general/">清空进度</a>。
-        </p>
-        <div id="delete-step-1">
-          <button class="account-btn danger" id="btn-delete-start" type="button">我要注销账号</button>
+      <div class="bottom-actions" id="bottom-actions" hidden>
+        <button class="account-btn danger" id="btn-delete-start" type="button" hidden>注销账号</button>
+        <button class="account-btn ghost" id="btn-go-admin" type="button" hidden>管理后台</button>
+      </div>
+
+      <div class="danger-panel" id="danger-panel" hidden>
+        <div id="delete-step-1" hidden>
+          <p class="account-lead">
+            注销会删掉账号与服务器上的云端进度（云端那份先导给你留档），<strong>不动本机背诵进度</strong>。想连本机一起清：<a class="kv-link" href="/settings/general/">清空进度</a>。
+          </p>
+          <button class="account-btn danger" id="btn-delete-ask" type="button">我要注销账号</button>
         </div>
         <div id="delete-step-2" hidden>
           <div class="account-field">
@@ -140,7 +141,7 @@
             <p class="account-hint">注销时从服务器导出，存好它 —— 服务器上已经没有了。</p>
           </div>
         </div>
-      </section>
+      </div>
 
     </main>
 
