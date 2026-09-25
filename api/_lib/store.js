@@ -1,5 +1,7 @@
 "use strict";
 
+var upstream = require("./upstream");
+
 function memoryStore() {
   var db = { accounts: {}, codes: {}, sessions: {}, progress: {}, verifications: {}, resets: {}, reports: {} };
   var api = {
@@ -204,12 +206,53 @@ function supabaseStore(cfg) {
           var err = new Error("supabase " + r.status + ": " + String(t).slice(0, 300));
           err.status = r.status;
           err.upstream = String(t).slice(0, 300);
-          throw err;
+          // 分类（Issue #276）：让上层能把「上游读不动」与「我们自己的毛病」
+          // 分开说 —— 原先两者都被 handler 的 catch 笼统翻成
+          // 500 E_INTERNAL，前端于是回一句「服务暂时不可用，请稍后重试。」，
+          // 而那句话对着一个被暂停的数据库说一万遍也没用。
+          throw upstream.tag(err);
         });
       }
-      var ct = r.headers.get("content-type") || "";
-      if (ct.indexOf("json") < 0) return null;
-      return r.json();
+      // 上游回了 200，但身体**不是 JSON**（Supabase 暂停时前面那层网关会回
+      // 一个 HTML 说明页）。原先这里直接 `return null` —— 于是每一处
+      // `rows && rows[0]` 都读成「没这个账号」，登录会说「邮箱或密码不对」、
+      // 验码会说「请用最新收到的验证码」。**两句都是假话**：真相是这台
+      // 数据库根本读不动（Issue #276）。
+      //
+      // 现在按「上游读不动」如实抛出去 —— 上层分类成 E_DB_UNREACHABLE，
+      // 用户看到的是「账号服务器连不上，别再点了」，而不是一个假的密码错。
+      //
+      // ⚠️ 但**不能**只看 content-type：PostgREST 对 204 / 201 这类
+      //    「写成功、无返回体」的发子**根本不带 content-type**，它们的身体
+      //    是空的 —— 那是**正常**的，不是「读不动」。判据要落在
+      //    「有身体、却不是 JSON」上。原先这里只看 content-type，
+      //    会把 `Prefer: return=minimal` 那几发（PATCH / POST）全打成故障。
+      var ct = String(r.headers.get("content-type") || "").toLowerCase();
+      if (ct.indexOf("json") < 0) {
+        return r.text().then(function (body) {
+          // 空身体：PostgREST 的 204 / return=minimal，正常，如实回 null
+          if (!body || !body.trim()) return null;
+          var e0 = new Error("supabase " + r.status + ": 响应不是 JSON（content-type=" +
+            (ct || "空") + "，身体开头 " + JSON.stringify(body.slice(0, 60)) + "）");
+          e0.status = 0;
+          e0.upstream = "not-json";
+          e0.network = true;
+          throw upstream.tag(e0);
+        });
+      }
+      return r.json()["catch"](function (e) {
+        var err = new Error("supabase 200: 响应不是合法 JSON（" + String(e && e.message || e).slice(0, 120) + "）");
+        err.status = 0;
+        err.upstream = "not-json";
+        err.network = true;
+        throw upstream.tag(err);
+      });
+    })["catch"](function (e) {
+      // fetch 自己就拒了（DNS 解不出 / 连接被拒 / TLS 失败 / 项目暂停后
+      // 连接层直接断）—— 这一档连响应都没有，上面那几个分支一个都进不来。
+      // 它是**最典型**的「上游读不动」，必须也带上分类，否则又退回
+      // 「服务端出了点问题」那句笼统话。
+      throw upstream.tag(e);
     });
   }
 

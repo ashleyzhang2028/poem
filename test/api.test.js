@@ -6,6 +6,8 @@ const path = require("path");
 
 const ROOT = path.join(__dirname, "..");
 
+const globalThere = globalThis;
+
 function boot(envVars) {
   const saved = {};
   const keys = [
@@ -3724,6 +3726,193 @@ async function main() {
 
       const hSrc = fs.readFileSync(path.join(ROOT, "api/_lib/handler.js"), "utf8");
       chk(/BODY_TIMEOUT/.test(hSrc), "③ handler 里有一道读正文的**硬上限**（以后谁改坏了 readBody 也不会挂死函数）");
+    }
+  }
+
+  // =========================================================================
+  // 第廿八节 · 「上游读不动」不许说成「服务端出了点问题」（Issue #276）
+  // =========================================================================
+  //
+  // 用户的现场（2026-09-25）：登录 / 注册 / 输完随机验证码之后，页面回一句
+  //   「服务暂时不可用，请稍后重试。」
+  // 而这句话在前端 `js/auth-api.js` 里只对应一个码 —— **HTTP 500 E_INTERNAL**。
+  //
+  // 这一节把「服务端连到一台读不动的数据库上」这件事在**真 HTTP** 上复现出来：
+  // 把全局 fetch 换成一台会按剧本坏的假 Supabase，然后逐条打接口。
+  //
+  // 修前实测（就是用户看到的那句话）：
+  //   POST /api/register    -> 500 E_INTERNAL
+  //   POST /api/login       -> 500 E_INTERNAL
+  //   POST /api/verify-code -> 500 E_INTERNAL
+  //   GET  /api/config      -> 200（这条不碰库，好的）
+  //
+  // 这一节守两件事：
+  //   ① 碰库那几条**不许再回 500** —— 上游读不动是 503（或 400），不是「服务端崩了」；
+  //   ② 每一档回的话**都要能指导下一步动作**，不许出现「稍后重试」这四个字
+  //      —— 那句话正是用户抱怨的：对着一个被暂停的数据库说一万遍也没用。
+  {
+    const origFetch = globalThere.fetch;
+
+    // 一台会按剧本坏的假 Supabase。剧本只看 resp 的 status / 身体。
+    function fakeUpstream(script) {
+      return function (url, init) {
+        const u = String(url);
+        if (u.indexOf("/rest/v1") < 0) return origFetch(url, init);
+        return script(u, init);
+      };
+    }
+
+    const SCENARIOS = [
+      {
+        name: "数据库项目被暂停（连接层直接断）",
+        script: () => { const e = new TypeError("fetch failed"); e.cause = { code: "ECONNREFUSED" }; return Promise.reject(e); },
+        want: "E_DB_UNREACHABLE"
+      },
+      {
+        name: "上游回 HTML（暂停后前面那层网关）",
+        script: () => Promise.resolve(new Response("<html>Bad gateway</html>", { status: 500, headers: { "Content-Type": "text/html" } })),
+        want: "E_DB_UNREACHABLE"
+      },
+      {
+        name: "上游 502",
+        script: () => Promise.resolve(new Response("Bad Gateway", { status: 502, headers: { "Content-Type": "text/plain" } })),
+        want: "E_DB_UNREACHABLE"
+      },
+      {
+        name: "200 但不是 JSON",
+        script: () => Promise.resolve(new Response("not json at all", { status: 200, headers: { "Content-Type": "text/plain" } })),
+        want: "E_DB_UNREACHABLE"
+      },
+      {
+        name: "表没建（schema.sql 没跑）",
+        script: () => Promise.resolve(new Response(JSON.stringify({ code: "42P01", message: 'relation "public.accounts" does not exist' }), { status: 404, headers: { "Content-Type": "application/json" } })),
+        want: "E_DB_MISSING_TABLE"
+      },
+      {
+        name: "密钥不对（填了 anon key）",
+        script: () => Promise.resolve(new Response(JSON.stringify({ message: "Invalid API key" }), { status: 401, headers: { "Content-Type": "application/json" } })),
+        want: "E_DB_BAD_KEY"
+      }
+    ];
+
+    for (const sc of SCENARIOS) {
+      globalThere.fetch = fakeUpstream(sc.script);
+      boot({ SUPABASE_URL: "https://db.invalid", SUPABASE_SERVICE_KEY: "service-key", ALLOW_CODE_ECHO: "1" });
+      const sv = await serve();
+      try {
+        for (const [path, body] of [
+          ["/api/register", { email: "a@b.com", password: "hunter2hunter" }],
+          ["/api/login", { email: "a@b.com", password: "hunter2hunter" }],
+          ["/api/verify-code", { codeId: "c_x", code: "123456" }]
+        ]) {
+          const r = await call(sv.base, "POST", path, body);
+
+          chk(r.status !== 500,
+            "二十八·" + sc.name + "｜" + path + " 不许回 500（500 就是那句「服务暂时不可用」，实际 " + r.status + "）");
+          chk(r.body && r.body.code !== "E_INTERNAL",
+            "二十八·" + sc.name + "｜" + path + " 不许回 E_INTERNAL（实际 " + JSON.stringify(r.body && r.body.code) + "）");
+          eq(r.body && r.body.code, sc.want,
+            "二十八·" + sc.name + "｜" + path + " 如实回 " + sc.want);
+
+          // 「稍后重试」这四个字正是用户抱怨的那句 —— 它对着一个被暂停的
+          // 数据库说一万遍也没用。每一档都要能指导下一步动作。
+          const m = String((r.body && r.body.message) || "");
+          chk(m.indexOf("稍后重试") < 0,
+            "二十八·" + sc.name + "｜" + path + " 不许说「稍后重试」（那句指导不了任何动作）：" + m);
+          chk(m.length > 12, "二十八·" + sc.name + "｜" + path + " 有一句真话可说（实际：" + m + "）");
+        }
+
+        // 不碰库的那一条必须**照旧** -- 它本来就是好的，别被这一改牵连。
+        const cfgx = await call(sv.base, "GET", "/api/config");
+        eq(cfgx.status, 200, "二十八·" + sc.name + "｜GET /api/config 不碰库，照旧 200");
+      } finally {
+        await sv.close();
+      }
+    }
+    globalThere.fetch = origFetch;
+
+    // 分类器的单元口径：**认不出来就别乱归类**（宁可回落 E_INTERNAL）
+    {
+      const up = require("../api/_lib/upstream.js");
+
+      eq(up.classify(null), null, "二十八·classify(null) 不乱猜");
+      eq(up.classify({ message: "我们自己写错了" }), null,
+        "二十八·没有状态码也没有网络字样时不归类（这是我们自己的毛病，不是上游的）");
+      eq(up.classify({ status: 400, upstream: "42703 column accounts.role does not exist" }), "bad_request",
+        "二十八·旧形状的库（缺列）归 bad_request —— 这一发写坏了，不是「上游读不动」");
+      eq(up.classify({ status: 400, upstream: 'relation "public.accounts" does not exist' }), "missing_table",
+        "二十八·表没建归 missing_table");
+      eq(up.classify({ status: 401 }), "bad_key", "二十八·401 归 bad_key");
+      eq(up.classify({ status: 403 }), "bad_key", "二十八·403 归 bad_key");
+      eq(up.classify({ status: 503 }), "unreachable", "二十八·5xx 归 unreachable");
+      eq(up.classify({ message: "fetch failed" }), "unreachable", "二十八·fetch failed 归 unreachable");
+
+      // bad_request 那一档**不许**说成「上游坏了」：它是这一发请求写坏了，
+      // 回 400 + 「这一发没送对」，与 Issue #276 那条「400 不许说成 500」同源。
+      const vBad = up.verdict("bad_request", {});
+      eq(vBad.status, 400, "二十八·bad_request 回 400（不是 503，更不是 500）");
+      eq(vBad.body.code, "E_BAD_REQUEST", "二十八·bad_request 的码是 E_BAD_REQUEST");
+
+      for (const k of ["unreachable", "missing_table", "bad_key"]) {
+        const v = up.verdict(k, {});
+        eq(v.status, 503, "二十八·" + k + " 回 503（服务端在，只是这件事现在做不了）");
+        chk(String(v.body.message).indexOf("稍后重试") < 0,
+          "二十八·" + k + " 的说明里没有「稍后重试」这四个字");
+      }
+      eq(up.verdict("认不出来的档", {}), null, "二十八·认不出来的档不编话（回落 E_INTERNAL）");
+    }
+
+    // 前端：503 不许把服务端那句**顶掉**成「这个站点还没开放云端账号」
+    {
+      const api = require("../js/auth-api.js");
+
+      const mkRes = (status, body) => ({
+        status: status,
+        headers: { get: () => "application/json; charset=utf-8" },
+        text: async () => (typeof body === "string" ? body : JSON.stringify(body))
+      });
+
+      const cases = [
+        ["E_DB_UNREACHABLE", "账号服务器连不上（多半是数据库项目被暂停了）。"],
+        ["E_DB_MISSING_TABLE", "账号服务器上的表还没建好。"],
+        ["E_DB_BAD_KEY", "账号服务器的密钥不对。"]
+      ];
+      for (const [code, msg] of cases) {
+        const client = api.create({ fetch: async () => mkRes(503, { code: code, message: msg }) });
+        const r = await client.login({ email: "a@b.com", password: "hunter2hunter" });
+        eq(r.code, code, "二十八·前端原样保留服务端给的码 " + code + "（原先一律折成 E_NOT_CONFIGURED）");
+        eq(r.message, msg, "二十八·前端原样保留服务端那句话 —— 它知道是哪一档、也知道该找谁");
+        chk(r.message !== api.TRANSPORT_ERR.E_NOT_CONFIGURED,
+          "二十八·" + code + " 不许被顶成「这个站点还没开放云端账号」");
+        eq(client.degraded(), true, "二十八·" + code + " 之后 degraded=true（后续请求该走本机路）");
+      }
+
+      // 老服务端 / 平台层直接回 503 带 HTML：没有码可认，才折算成 E_NOT_CONFIGURED
+      {
+        const client = api.create({ fetch: async () => mkRes(503, "<html>Service Unavailable</html>") });
+        const r = await client.login({ email: "a@b.com", password: "hunter2hunter" });
+        eq(r.code, "E_DB_UNREACHABLE", "二十八·平台层 503（非 JSON）如实说「连不上」，不说「服务端出了点问题」");
+        chk(r.message !== api.TRANSPORT_ERR.E_INTERNAL,
+          "二十八·平台层 503 不许说成「服务暂时不可用，请稍后重试。」");
+      }
+
+      for (const c of ["E_DB_UNREACHABLE", "E_DB_MISSING_TABLE", "E_DB_BAD_KEY"]) {
+        chk(api.TRANSPORT_ERR[c], "二十八·前端码表认识 " + c);
+        chk(api.PASSWORD_ERR[c], "二十八·口令那几屏（PASSWORD_ERR）也认识 " + c);
+        chk(api.TRANSPORT_ERR[c] !== api.TRANSPORT_ERR.E_INTERNAL,
+          "二十八·" + c + " 与 E_INTERNAL 是两句不同的话");
+      }
+    }
+
+    // 登录页：服务端做不了这一件事时，**要把本机那条路给用户**
+    {
+      const loginSrc = fs.readFileSync(path.join(ROOT, "js/login.js"), "utf8");
+      chk(/SOFT_CODES/.test(loginSrc), "二十八·登录页把「服务端做不了」收成一条判据（SOFT_CODES）");
+      ["E_DB_UNREACHABLE", "E_DB_MISSING_TABLE", "E_DB_BAD_KEY"].forEach(c => {
+        chk(loginSrc.indexOf(c) >= 0, "二十八·登录页认得 " + c + "（否则用户拿到一句「用不了」就到此为止）");
+      });
+      chk(/serverCannot/.test(loginSrc),
+        "二十八·发码与验码两条路走**同一条**判据（写两处必然漏一处）");
     }
   }
 

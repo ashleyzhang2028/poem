@@ -574,14 +574,36 @@
     return Promise.resolve(sendCodeLocal("login", email, msgId));
   }
 
+  // 「服务端现在做不了这一件事」——**一条判据，两处用**（Issue #276）。
+  //
+  // 这一档包括：没配服务端（E_NOT_CONFIGURED）、网络不通（E_OFFLINE / E_TIMEOUT）、
+  // 以及**上游读不动**（E_DB_UNREACHABLE / E_DB_MISSING_TABLE / E_DB_BAD_KEY，
+  // 数据库项目被暂停 / 表没建 / 密钥不对）。它们的共同点是：
+  //   · 服务端没做错事，用户也没做错事；
+  //   · 「等一会儿再点一次」对前三档可能有用、对后三档没用 ——
+  //     但**不管哪一档，本站都还有一条能走通的路**（本机体验版）。
+  //
+  // 原先这里只列了前三档，于是数据库被暂停时，用户拿到一句
+  // 「暂时用不了」就**到此为止**了 —— 连「随机码登录」那条本机路都不给。
+  // 这与产品那条不可退让的边界（不注册也能用全部功能）正好相反。
+  var SOFT_CODES = ["E_NOT_CONFIGURED", "E_OFFLINE", "E_TIMEOUT",
+    "E_DB_UNREACHABLE", "E_DB_MISSING_TABLE", "E_DB_BAD_KEY"];
+
+  function serverCannot(code) { return SOFT_CODES.indexOf(String(code || "")) >= 0; }
+
   function sendCodeRemote(purpose, email, msgId) {
 
     if (turnstileBlocked(msgId)) return Promise.resolve(null);
     return api.sendCode({ email: email, purpose: purpose }).then(function (r) {
       turnstileReset();
       if (!r.ok) {
-        if (r.code === "E_NOT_CONFIGURED" || r.code === "E_OFFLINE" || r.code === "E_TIMEOUT") {
+        if (serverCannot(r.code)) {
+          // ⚠️ 顺序要紧：**先把服务端那句原话摆出来**（它知道是哪一档、
+          //    也知道该找谁），再退回本机那条路 —— 倒过来的话这句会被
+          //    `sendCodeLocal` 自己那句「随机码已生成」顶掉，用户就再也
+          //    看不到「数据库被暂停了」这个事实（Issue #276 的原现场）。
           msg(msgId, r.message, "warn");
+          showToast("云端暂时用不了，已改用本机随机码");
           return sendCodeLocal("login", email, msgId);
         }
         if (r.retryAfter) {
@@ -704,8 +726,11 @@
           setMode("verify");
           return;
         }
-        if (r.code === "E_OFFLINE" || r.code === "E_TIMEOUT" || r.code === "E_NOT_CONFIGURED") {
-          msg("msg-code", r.message, "warn");
+        if (serverCannot(r.code)) {
+          // 服务端读不动时**不能说一句就完**：用户手里这枚码是本机生成的，
+          // 得让他改走本机那条路（下面这一句就是那个出口），而不是对着
+          // 一个永远验不过的码一直点。
+          msg("msg-code", r.message + " 可以改用「本机随机码」：点「换个邮箱」重发一次，会在本机生成。", "warn");
           state.cooldown = 0;
           startTick(codeBoxes);
           return;
