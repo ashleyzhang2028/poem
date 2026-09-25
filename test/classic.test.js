@@ -717,23 +717,30 @@ setTimeout(() => {
 
   chk(!!phCss && /transform:\s*translateY\(var\(--search-placeholder-shift/.test(phCss[1]),
     '提示字上抬量也读 :root 的变量（回到框的水平中轴，只动伪元素，不动输入文字）');
-  // ⚠️ 这条位移的口径**改过两次**（Issue #278 第八轮 · CI 的来处）。
-  //    第一版按「输入行盒 = 14 × 1.25、提示行盒 = 13.5 × 1.2」推 0.65px ——
-  //    那个 × 1.2 的前提就不成立：`::placeholder` 是**行内盒**，行盒按 UA 的
-  //    `normal` 排，**不读 `line-height`**。
-  //    第二版按「两档行盒高度差 ÷ 2」推 2px —— 也不对：提示字与输入文字
-  //    **本来就不共用一个行盒**，差多少得看**各自行盒的中心**落在哪里。
-  //    ⇒ 现在只守「它等于真浏览器量出来的那个数」：手机档提示字比中轴低
-  //      1.5px、桌面档低 0.5px，取前者（手机档正中轴，桌面档高 1px）。
-  //      这个数是**实测**，重取的办法记在 css/style.css 的 :root 那一段，
-  //      以及 test/pwa.test.js 末尾那一节（按当前档现算，量不到就判红）。
+  // ⚠️ 这条位移的口径**改过三次**（Issue #278 第八轮 · 两次 CI 的来处）：
+  //    ① 写死 -0.65px（按「14px 那一档的乘积」算）—— 手机上必然错；
+  //    ② §4.53 改成写死 -1.5px（手机档**实测**的折中）—— 桌面档又错，
+  //       而且「一个数」给不出「两档差三倍」的形状；
+  //    ③ 现在（§4.54）：位移植跟着输入字号**现算**，一档一个数。
+  //    所以这里守的是「它是算式、不是数」：calc + 那三个来源变量 + 行高比；
+  //    窄屏那一档必须读 --input-font-narrow —— 至于每一档具体算成几，
+  //    由 pwa.test.js 在真浏览器里量（量不到就判红，不许按乘积放过）。
   const shVar = (rootVars.match(/--search-placeholder-shift:\s*([^;]+);/) || [])[1];
-  const shNum = shVar && parseFloat(shVar);
-  chk(!!shVar && Math.abs(shNum - -1.5) <= 1e-9,
-    '位移 = 真浏览器量出来的那一个数：' + shVar + '（手机档提示字比中轴低 1.5px、' +
-    '桌面档低 0.5px，取前者；⚠️ 不是按字号乘出来的 —— 见 :root 那一段的来历）');
-  chk(!/1\.2|1\.25/.test((rootVars.match(/--search-placeholder-shift[^;]*;/) || [''])[0]),
-    '位移这一条里不再出现「× 1.2 / × 1.25」那种乘积口径（提示字的行盒不读行高）');
+  chk(!!shVar && /^calc\(/.test(shVar.trim()) &&
+    /var\(--input-font\)/.test(shVar) &&
+    /var\(--search-placeholder-font\)/.test(shVar) &&
+    /var\(--search-input-lh-ratio\)/.test(shVar),
+    '位移是**算式**（calc，读 输入字号 / 提示字号 / 行高比 三个来源），不是写死的一个数：' +
+    shVar);
+  // ⚠️ 窄屏那一档重算写在 `@media (max-width: 700px) { :root { … } }` 里。
+  //    不能用 `@media…[\s\S]*?` 那种扫法：`:root` 的注释里也写着这一行
+  //    （说明「下面再算一次」），贪婪与非贪婪都分不清注释与真声明；
+  //    这里直接切出那个块来读。
+  const narrowBlock = (rootVars.match(/@media \(max-width: 700px\)\s*\{\s*:root\s*\{([^}]*)\}/) || [])[1] || '';
+  const narrowShift = (narrowBlock.match(/--search-placeholder-shift:\s*([^;]+);/) || [])[1];
+  chk(!!narrowShift && /^calc\(/.test(narrowShift.trim()) && /--input-font-narrow/.test(narrowShift),
+    '700px 及以下位移**重算过一次**（那一档输入字号 16px，行盒 20，不是 17.5）：' +
+    (narrowShift || '缺'));
 
   chk(!/padding(-top|-bottom)?\s*:/.test(phCss[1]) && !/line-height\s*:/.test(phCss[1]),
     '居中的修法不碰输入框本体（提示字用 transform，输入文字仍是居中的 16px）');

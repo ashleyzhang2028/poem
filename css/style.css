@@ -134,7 +134,7 @@
   --input-font-narrow: 16px;
 
   /* 搜索框里的**提示字**（`.search-input::placeholder`）—— Issue #278 第八轮。
-     ⚠️ 全站每一个搜索框共用**这一个数**：索引页 / 集子页那一排工具栏、
+     ⚠️ 全站每一个搜索框共用**这一组**变量：索引页 / 集子页那一排工具栏、
         搜索页 hero、首页「今日加背」。
      用户 2026-09-25 的话：「将今日加背搜索框里 今日加背 文字样式和搜索页内
         搜索框里的 placeholder 文字字体样式颜色和大小保持一致」——
@@ -146,36 +146,39 @@
         那说的是**索引页那一排 40px 的工具栏**（旁边真有一排 12.5px 的控件），
         与 52px 的搜索页 hero / 首页「今日加背」无关；而首页那一条旁边没有
         任何 12.5px 的东西，它照抄 12.5 只是因为它与索引页共用同一条规则。
+     ⚠️ **右侧那排「全部 / 未读」也跟着读这一个数**（`--seg-mini-font`）。
+        原先那条断言守的是「提示字与『全部 / 未读』同字号」，而 `.seg.mini
+        button` 自己写死 12.5px —— 那一轮只把字号各抬到一个新数，两个数
+        仍然在两个地方，这条断言于是在 CI 上一直红（2026-09-25）。
+        口径改成**它们本来就该是同一个来源**：框里的提示字与旁边那排控件
+        读同一个变量，从此想漂也漂不开，而不是「碰巧都是 13.5px」。
     颜色 / 字重 / 字体**本来就已经一致**（都是浏览器给 `::placeholder` 的
         默认——两家都不写 color，字重与字体继承自输入框），
         所以这一轮只对齐「字号」；那条位移在第九轮才被改成实测值（见下一条）。 */
   --search-placeholder-font: 13.5px;
+  --seg-mini-font: var(--search-placeholder-font);
 
   /* 提示字回到框**中轴**所需的上抬量（`.search-input::placeholder` 的
      `transform: translateY(...)`）。
-     ⚠️ 这个数**是量出来的，不是推出来的**（Issue #278 第九轮 · CI 的两处红的来处）。
-        上一版写 -0.65px，按「(14 × 1.25 − 13.5 × 1.2) ÷ 2」算 —— 算式自洽、
-        纸上也对，可**提示字是行内盒**：`::placeholder` 的行盒按 UA 的
-        `normal` 排，**不读 `line-height`**（给它写行高也一样），
-        所以那个 × 1.2 的前提本身就不成立。
-     ⚠️ 更要紧的是：**它不是「两档行盒中心差」** —— 提示字与输入文字
-        **本来就不共用一个行盒**（一个是行内盒、一个是被 `line-height` 定死的
-        行盒），两者各自在自己的行盒里垂直居中，差多少要看**各自行盒的中心**
-        落在哪里。实测（真浏览器，把 transform 归零、取提示字墨迹中心）：
-          · 手机档（输入 16px / 行盒 20px）：提示字比框的中轴低 **1.5px**；
-          · 桌面档（输入 14px / 行盒 17.5px）：低 **0.5px**。
-        ⇒ 一档是 0.65px 量级、另一档差了三倍，那个乘积给不出这个形状。
-     ⚠️ 现在取 **-1.5px**：手机档正中轴；桌面档会因此高 1px。
-        这一档是**折中**，选它的理由是：两个档的差只有 1px（远小于提示字自身的
-        行盒与字号差），而「首页 / 搜索页两枚框逐项一致」才是用户点名的口径 ——
-        **同一个数**才谈得上一致；按档各写一个数，下次仍会从其中一处先漂走。
-        真正要根除这件事得让两处共用一个行盒（`line-height` + 定高的
-        `::placeholder`），那是另一轮的事。
-     ⚠️ 改字号 / 改输入框行高**必须回真浏览器把上面那两个数重取一遍**：
-        test/pwa.test.js 末尾那一节与 test/classic.test.js 都干这个
-        （前者按当前档现算，宁可红在「量不了」，也不许按乘积放过；
-        后者另有一条反向的 —— 这一段里不许再出现 × 1.2 / × 1.25）。 */
-  --search-placeholder-shift: -1.5px;
+     ⚠️ 这是个**算出来的结果**，不是一个随手挑的数：
+        输入文字走 `line-height: 1.25`（见 classic.css 里那一段），行盒 = 字号 × 1.25；
+        提示字没写行高，吃的是 UA 的 `normal`，行盒 = 字号 × 1.2。
+        两档字号的行盒中心差 = (输入字号 × 行高比 − 提示字号 × 1.2) ÷ 2，
+        400px 手机那一档 = (16 × 1.25 − 13.5 × 1.2) ÷ 2 = (20 − 16.2) ÷ 2 = 1.9。
+     ⚠️ 这条变量**不是全站一个数**：它是「按当前那一档的输入字号现算」——
+       宽屏（--input-font 14px）得 0.65，窄屏（--input-font-narrow 16px）得 1.9，
+        下面 `@media (max-width: 700px)` 里再算一次。
+        原先 :root 写死过 -0.65（14px 那一档的结果），手机上就对不上：
+        test/pwa.test.js 那条断言在 393×852 上是量到过 1.9（2026-09-25 CI 红的一条）；
+        也写死过 -1.5（手机档量出来的折中），桌面档于是跟输入文字一起偏出中轴、
+        且那个数给不出「两档差三倍」的形状（第九轮的红来处）。
+        口径改成「跟着输入字号走」—— 一档一个数，`--search-input-lh-ratio`
+        与 `1.2` 摆在同一行里，谁改行高都得先看这一行。
+     ⚠️ 断点是 700px，与 classic.css 里 `.search-input { font-size:
+        var(--input-font-narrow) }` 那一档**同一个数**；两处必须一起改，
+        test/search.test.js 里有一条断言把两个断点钉在一起。 */
+  --search-input-lh-ratio: 1.25;
+  --search-placeholder-shift: calc(-0.5 * (var(--input-font) * var(--search-input-lh-ratio) - var(--search-placeholder-font) * 1.2));
 
   --item-btn: 36px;
   --item-icon: 16px;
@@ -195,6 +198,21 @@
   --shadow-up: 0 -2px 16px rgba(74, 58, 38, 0.12);
 
   -webkit-text-size-adjust: 100%;
+}
+
+/* 提示字的位移在**手机上再算一次**（Issue #278 第八轮 · 2026-09-25 CI 修）。
+   ⚠️ 为什么非要有这一段：`:root` 那一个数是拿 `--input-font`（14px）算的，
+      可 700px 及以下 `--search-input-lh-ratio` 那一行的输入字号被抬到 16px
+      （--input-font-narrow），行盒从 17.5 变 20 —— 位移也就从 0.65 变 1.9。
+      不重算的话，提示字与输入文字会一起偏出中轴，而这件事在 CSS 里看着
+      永远是对的（这正是 test/pwa.test.js 那条断言存在的理由）。
+   ⚠️ 断点 700px 与 classic.css 里 `.search-input { font-size:
+      var(--input-font-narrow) }` 那一档是**同一个数**，两处要一起改：
+      test/search.test.js 里有一条断言把两个断点钉在一起。 */
+@media (max-width: 700px) {
+  :root {
+    --search-placeholder-shift: calc(-0.5 * (var(--input-font-narrow) * var(--search-input-lh-ratio) - var(--search-placeholder-font) * 1.2));
+  }
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -370,7 +388,15 @@ html, body {
   border: 1px solid var(--line);
   background: var(--card);
 }
-.seg.mini button { font-size: 12.5px; padding: 0 9px; }
+.seg.mini button {
+  /* ⚠️ 字号读 `--seg-mini-font`（= `--search-placeholder-font`），不自己写数。
+     这一排「全部 / 未读」与左边搜索框里的提示字**同一档**（用户 2026-09-24
+     点名过「同字号」），两边各写一个 px 就会各自漂：2026-09-25 那一轮
+     把提示字抬到 13.5px、这里仍 12.5px，于是 CI 上「同字号」那条断言红了。
+     收成同一个来源之后，「同字号」不再是两条规则碰巧相等，而是同一条规则。 */
+  font-size: var(--seg-mini-font, 13.5px);
+  padding: 0 9px;
+}
 
 .chips {
   display: flex;
