@@ -27,7 +27,7 @@ chk(sandbox.SITE_BOOKS.length === 10 &&
   sandbox.SITE_BOOKS.map(b => b.page).join(',') ===
     '/,/classic/,/yuefu/,/tangshi/,/songci/,/yuanqu/,/guwen/,/jinxiandai/,/zhaoming/,/chengyu/',
   '十部集子的索引页地址依次为 / · /classic/ · /yuefu/ · /tangshi/ · /songci/ · /yuanqu/ · /guwen/ · /jinxiandai/ · /zhaoming/ · /chengyu/' +
-  '（乐府集排在唐诗之前、元曲排在宋词之后，Issue #244；成语故事居末，Issue #308）');
+  '（乐府集排在唐诗之前、元曲排在宋词之后、成语故事最后，Issue #244 / #308）');
 
 const only = sandbox.buildSiteIndex({ tangshi: [{ id: 'ts-1', title: '感遇·其一', author: '张九龄', dynasty: '唐' }] });
 chk(only.some(x => x.book === 'tangshi' && x.title === '感遇·其一') &&

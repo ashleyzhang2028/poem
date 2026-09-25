@@ -54,10 +54,18 @@ LOAD.forEach(function (f) {
     var raw = RAW[id];
     var t = { text: raw.text || '', translation: raw.translation || '',
       translationSource: raw.translationSource || '' };
+
+    // 只带 textRef 的条目（正文收归主表之后是常态）。
+    // ⚠️ textRef 记的是**站点索引 id**（`chengyu-cy-233`），而 RAW 的键是
+    // 「集子 + 集子内 id」（`chengyu-cy-233` 恰好同名，`classic-gw-25` 亦然，
+    // 但 `cy-*` 这类没有前缀），两种拼法不一定对得上 ——
+    // 所以 RAW 只当快路，真正兜底的是下面的 TEXT_MASTER。
     if (!t.text && raw.textRef && RAW[raw.textRef]) {
       var up = RAW[raw.textRef];
-      t = { text: up.text || '', translation: up.translation || '',
-        translationSource: up.translationSource || '' };
+      if (up.text || up.translation) {
+        t = { text: up.text || '', translation: up.translation || '',
+          translationSource: up.translationSource || '' };
+      }
     }
 
     if (!t.text) {

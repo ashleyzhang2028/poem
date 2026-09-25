@@ -16,8 +16,9 @@ loadData(sandbox, ['data/poems-1.js', 'data/poems-2.js', 'data/poems-3.js', 'dat
   'data/index.js', 'data/poems-chengyu.js', 'data/poems-classic.js', 'data/site-index.js']);
 
 const CY = resolve(sandbox, sandbox.POEMS_CHENGYU, 'chengyu');
-chk(Array.isArray(CY) && CY.length === 309,
-  '中华成语故事共 309 则（第二批，持续补齐）（实际 ' + (CY ? CY.length : 'undefined') + '）');
+chk(Array.isArray(CY) && CY.length === 735,
+  '中华成语故事共 735 则（第二批 143 则里 9 则并入古文 / 诗篇条目：309 - 9 + 435 = 735；' +
+  '实际 ' + (CY ? CY.length : 'undefined') + '）');
 
 const ids = new Set();
 let dup = 0;
@@ -27,14 +28,12 @@ chk(dup === 0, '成语 id 无重复（重复 ' + dup + ' 个）');
 chk(CY.every(p => p.title && p.source && p.dynasty && p.text && p.translation),
   '每则都齐全：成语 / 出处 / 朝代 / 原文 / 译文');
 chk(CY.every(p => p.excerpt), '每则都给了列表用摘句（excerpt）');
-
 chk(CY.every(p => ['public-domain', 'school', 'academic', 'modern'].indexOf(p.translationSource) >= 0),
   '译文来源取值都在允许范围内');
 
-const GROUPS = ['上古传说', '夏', '商', '西周', '春秋', '战国', '秦', '西汉', '东汉', '三国',
-  '两晋南北朝', '隋', '唐', '五代', '宋', '辽金', '元', '明', '清'];
+const GROUPS = ['上古传说', '先秦', '秦汉', '三国两晋南北朝', '唐五代', '宋辽金', '元', '明', '清'];
 chk(CY.every(p => GROUPS.indexOf(p.gradeGroup) >= 0),
-  '每则都归入十九个朝代分组之一');
+  '每则都归入九个时代之一');
 
 chk(CY.every(p => p.source.indexOf('《') >= 0 && p.source.indexOf('》') >= 0),
   '出处都写成《书名·篇名》的样子');
@@ -57,10 +56,12 @@ const spot = {
   '河东狮吼': ['宋', '《寄吴德仁兼简陈季常》'],
   '望洋兴叹': ['战国', '《庄子·秋水》'],
   '鸟尽弓藏': ['春秋', '《史记·越王勾践世家》'],
-  '破镜重圆': ['唐', '《本事诗·情感》']
+  '对牛弹琴': ['两晋南北朝', '《理惑论》'],
+  '百闻不如一见': ['西汉', '《汉书·赵充国传》'],
+  '手不释卷': ['三国', '《三国志·吴书·吕蒙传》裴松之注引《江表传》'],
+  '破镜重圆': ['唐', '《本事诗·情感》'],
+  '洛阳纸贵': ['两晋南北朝', '《晋书·左思传》']
 };
-// 对牛弹琴 / 百闻不如一见 / 手不释卷 / 洛阳纸贵 四则在本批尚未补齐，
-// 等后续批次收进来时再补回上面这张抽查表。
 Object.keys(spot).forEach(t => {
   const p = CY.filter(x => x.title === t)[0];
   if (!p) { chk(false, '缺条目：' + t); return; }
@@ -71,7 +72,7 @@ Object.keys(spot).forEach(t => {
 
 const IDX = sandbox.SITE_INDEX;
 const cyIdx = IDX.filter(x => x.book === 'chengyu' && !x.isBook);
-chk(cyIdx.length === 309, '总索引收了全部 309 则（实际 ' + cyIdx.length + '）');
+chk(cyIdx.length === 735, '总索引收了全部 735 则（实际 ' + cyIdx.length + '）');
 chk(cyIdx.every(x => x.text && x.translation), '进索引的每一则原文与译文齐备');
 chk(IDX.some(x => x.book === 'chengyu' && x.isBook),
   '「中华成语故事」本身也作为一条结果（搜集子名能直接进那一页）');

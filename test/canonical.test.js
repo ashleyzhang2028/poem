@@ -37,9 +37,9 @@ FULL_BOOKS.forEach(b => { FULL_BOOK_SET[b] = true; });
 
 const multiEntries = MASTER.filter(m => m.entries.length >= 2);
 const singleEntries = MASTER.filter(m => m.entries.length === 1);
-chk(multiEntries.length === 133,
-  '主表里有 133 条「跨集重复」的作品（乐府集与课内 / 其余集子重篇 + 成语故事原文与古文 / 诗篇同篇，' +
-  'Issue #244 / #308；二批的《求之不得》与《辗转反侧》同源，去重后少一组；实际 ' +
+chk(multiEntries.length === 142,
+  '主表里有 142 条「跨集重复」的作品（乐府集与课内 / 其余集子重篇 + 成语故事原文与古文 / 诗篇同篇，' +
+  'Issue #244 / #308；二批带来源的古文 / 诗篇条目并入原篇，再加《求之不得》↔《人言可畏》一类同源对；实际 ' +
   multiEntries.length + '）');
 const fullExpected = [];
 FULL_BOOKS.forEach(book => {
@@ -148,9 +148,9 @@ const uncovered = dupEntries.filter(e => !covered[e]);
 chk(uncovered.length === 0,
   '「同篇判重键下有两条及以上」的条目共 ' + dupEntries.length + ' 条，全部收进了主表（未收：' +
   (uncovered.slice(0, 6).join('、') || '无') + '）');
-chk(dupEntries.length === 282,
-  '重复条目恰为 282 条（133 篇：多数 × 2，少数 × 3；乐府集与成语故事收进来的一批重篇，' +
-  'Issue #244 / #308；二批同源的两则去重后少两条；实际 ' +
+chk(dupEntries.length === 303,
+  '重复条目恰为 303 条（142 篇：多数 × 2，少数 × 3 或 4；乐府集与成语故事收进来的一批重篇，' +
+  'Issue #244 / #308；实际 ' +
   dupEntries.length + '）');
 
 const expectFlat = dupEntries.slice();

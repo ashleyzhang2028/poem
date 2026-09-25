@@ -73,7 +73,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 
   chk(IDX.length === sandbox.POEMS_ALL.length +
       books.reduce((n, b) => n + b.filter(p => p.text && p.translation).length, 0) + 10,
-    '总索引 = 课内诗词 + 各部全集子（其中昭明 ' + zmIndexed + ' 篇）+ 10 条集子条目（实际 ' + IDX.length + '）');
+    '总索引 = 课内诗词 + 九部全集子（其中昭明 ' + zmIndexed + ' 篇）+ 10 条集子条目（实际 ' + IDX.length + '）');
   BOOK_IDS.forEach(id => {
     chk(IDX.some(x => x.book === id && !x.isBook),
       '总索引含「' + id + '」这一部的篇目');
@@ -93,7 +93,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 
   const libSrcForPages = read('js/library.js');
   const bookPages = { classic: '/classic/', yuefu: '/yuefu/', tangshi: '/tangshi/', songci: '/songci/',
-    yuanqu: '/yuanqu/', guwen: '/guwen/', zhaoming: '/zhaoming/' };
+    yuanqu: '/yuanqu/', guwen: '/guwen/', zhaoming: '/zhaoming/', chengyu: '/chengyu/' };
   const missingPage = Object.keys(bookPages).filter(id =>
     libSrcForPages.indexOf('page: "' + bookPages[id] + '"') < 0);
   chk(missingPage.length === 0,
@@ -104,7 +104,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     .map(x => x.match(/id:\s*"([a-z]+)"/)[1]);
   chk(orderInJs.slice(0, 10).join('/') ===
       'poems/classic/yuefu/tangshi/songci/yuanqu/guwen/jinxiandai/zhaoming/chengyu',
-    '十部的顺序以课内为首、乐府在唐诗前、元曲在宋词后、昭明与近现代在后、成语殿后' +
+    '十部的顺序以课内为首、乐府在唐诗前、元曲在宋词后、昭明 · 成语故事在后' +
     '（顺序的唯一来源在 js/library.js，Issue #244 / #308；实际 ' + orderInJs.slice(0, 10).join('/') + '）');
 
   const swVer = (/poem-app-v(\d+)/.exec(read('sw.js')) || [])[1];
