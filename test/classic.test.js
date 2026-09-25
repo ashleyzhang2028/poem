@@ -717,15 +717,23 @@ setTimeout(() => {
 
   chk(!!phCss && /transform:\s*translateY\(var\(--search-placeholder-shift/.test(phCss[1]),
     '提示字上抬量也读 :root 的变量（回到框的水平中轴，只动伪元素，不动输入文字）');
-  // ⚠️ 这条位移是**算出来的**，不是挑出来的：输入文字行盒 = 14 × 1.25 = 17.5、
-  //    提示字行盒 = 13.5 × 1.2 = 16.2（`normal`），中心差的一半 = 0.65。
-  //    改字号不重算位移，两档字会一起偏出中轴 —— 而这件事在 CSS 里看着永远对。
+  // ⚠️ 这条位移的口径**改过两次**（Issue #278 第八轮 · CI 的来处）。
+  //    第一版按「输入行盒 = 14 × 1.25、提示行盒 = 13.5 × 1.2」推 0.65px ——
+  //    那个 × 1.2 的前提就不成立：`::placeholder` 是**行内盒**，行盒按 UA 的
+  //    `normal` 排，**不读 `line-height`**。
+  //    第二版按「两档行盒高度差 ÷ 2」推 2px —— 也不对：提示字与输入文字
+  //    **本来就不共用一个行盒**，差多少得看**各自行盒的中心**落在哪里。
+  //    ⇒ 现在只守「它等于真浏览器量出来的那个数」：手机档提示字比中轴低
+  //      1.5px、桌面档低 0.5px，取前者（手机档正中轴，桌面档高 1px）。
+  //      这个数是**实测**，重取的办法记在 css/style.css 的 :root 那一段，
+  //      以及 test/pwa.test.js 末尾那一节（按当前档现算，量不到就判红）。
   const shVar = (rootVars.match(/--search-placeholder-shift:\s*([^;]+);/) || [])[1];
   const shNum = shVar && parseFloat(shVar);
-  const wantSh = -(((14 * 1.25) - (parseFloat(phVar) * 1.2)) / 2);
-  chk(!!shVar && Math.abs(shNum - wantSh) <= 1e-9,
-    '位移与字号没脱钩：' + shVar + ' 该是 ' + wantSh.toFixed(2) +
-    'px（= (输入字号 14 × 1.25 − 提示字号 ' + phVar + ' × 1.2) ÷ 2）');
+  chk(!!shVar && Math.abs(shNum - -1.5) <= 1e-9,
+    '位移 = 真浏览器量出来的那一个数：' + shVar + '（手机档提示字比中轴低 1.5px、' +
+    '桌面档低 0.5px，取前者；⚠️ 不是按字号乘出来的 —— 见 :root 那一段的来历）');
+  chk(!/1\.2|1\.25/.test((rootVars.match(/--search-placeholder-shift[^;]*;/) || [''])[0]),
+    '位移这一条里不再出现「× 1.2 / × 1.25」那种乘积口径（提示字的行盒不读行高）');
 
   chk(!/padding(-top|-bottom)?\s*:/.test(phCss[1]) && !/line-height\s*:/.test(phCss[1]),
     '居中的修法不碰输入框本体（提示字用 transform，输入文字仍是居中的 16px）');

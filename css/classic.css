@@ -96,7 +96,9 @@
 
    ⚠️ 字号与位移都读 :root 那一对变量，本文件不再自己写数：
       · `--search-placeholder-font`（13.5px）—— 全站每一个搜索框共用这一个数；
-      · `--search-placeholder-shift`（-0.65px）—— 由字号现算，不是挑出来的。
+      · `--search-placeholder-shift`（-1.5px）—— **真浏览器量出来的**：
+        手机档（输入 16px）提示字比中轴低 1.5px、桌面档（14px）低 0.5px，
+        取前者让手机档正中轴、桌面档高 1px。来历写在 :root 那一段里。
    原先这里写 12.5px，理由是「与右侧『全部 / 未读』同号」——那个理由说的是
    索引页那一排 40px 的工具栏（旁边真有一排 12.5px 的控件），而搜索页 hero 与
    首页「今日加背」都不是那一排：前者的覆写被 `.search-hero` 那条顶掉，
@@ -109,7 +111,7 @@
 .search-input::placeholder {
   font-size: var(--search-placeholder-font, 13.5px);
 
-  transform: translateY(var(--search-placeholder-shift, -0.65px));
+  transform: translateY(var(--search-placeholder-shift, -1.5px));
 }
 
 .search-input:focus {
