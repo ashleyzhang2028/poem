@@ -663,9 +663,19 @@ function check(name, cond, extra) {
         seg: getComputedStyle(seg).fontSize
       };
     });
-    check('iPhone: 搜索框提示字与「全部 / 未读」同字号',
-      fsState.placeholder === fsState.seg,
-      '提示字 ' + fsState.placeholder + ' / 全部·未读 ' + fsState.seg);
+    // ⚠️ 这一条**整条换了口径**（Issue #278 第八轮）：原先守的是
+    //    「提示字与右侧『全部 / 未读』同字号」—— 可那个理由说的是**索引页那一排
+    //    40px 的工具栏**（旁边真有一排 12.5px 的控件），而 52px 的搜索页 hero /
+    //    首页「今日加背」都不是那一排。用户 2026-09-25 要的是「两枚框逐项一致」，
+    //    于是一排控件与一枚搜索框之间不再要求同号。
+    //    现在改守**那一处真正的口径**：提示字比输入文字小一号（辅助文字不抢眼），
+    //    且等于 :root 那一个来源（全站四个搜索框共用一个数）。
+    check('iPhone: 搜索框提示字比输入文字小一号、且走全站那一个来源',
+      parseFloat(fsState.placeholder) < parseFloat(fsState.input) &&
+      fsState.placeholder === '13.5px',
+      '提示字 ' + fsState.placeholder + ' / 输入文字 ' + fsState.input +
+      '；⚠️ 不再要求与「全部 / 未读」(' + fsState.seg + ') 同号 —— ' +
+      '那是索引页那排 40px 控件的事（Issue #278 第八轮）');
     check('iPhone: 输入文字仍是 16px（压小会触发 iOS 聚焦放大整页）',
       fsState.input === '16px', fsState.input);
     check('iPhone: 圆键的 ▶ / ⏸ 互斥，一次只显示一个',
@@ -1234,8 +1244,15 @@ function check(name, cond, extra) {
       parseFloat(phState.phFont) < parseFloat(phState.inputFont) &&
       phState.phFont === '13.5px' && phState.inputFont === '16px',
       JSON.stringify([phState.phFont, phState.inputFont]));
-    check('iPhone: 索引页提示字上抬回正中轴（位移 = 两档字号行盒中心差）',
-      Math.abs(phState.shift - -0.65) <= 0.01, 'shift ' + phState.shift + 'px');
+    // ⚠️ 这个数**改过两次**（Issue #278 第八轮 · CI 的来处）。
+    //    先是 -0.65px（按「字号 × 1.2」的乘积推的，可 `::placeholder` 是
+    //    **行内盒**，行盒不读 `line-height`，那个前提不成立）；
+    //    又试过 -2px（按「两档行盒高度差 ÷ 2」，可两者根本不共用一个行盒）。
+    //    现在是**量出来的**：把输入框里那两段各自的行盒中心取回来比 ——
+    //    手机档（输入 16px）提示字比中轴低 1.5px、桌面档（14px）低 0.5px，
+    //    取前者（手机档正中轴、桌面档高 1px），见 css/style.css 的 :root。
+    check('iPhone: 索引页提示字上抬回正中轴（位移 = 真浏览器量出来的那一档）',
+      Math.abs(phState.shift - -1.5) <= 0.01, 'shift ' + phState.shift + 'px');
     // ⚠️ 口径改过一次（Issue #278 第七轮）：用户 2026-09-24 要
     //    「搜索页搜索框上下 padding 或者行高需要小 4px 左右」，所以这一条
     //    原先守的「上下 padding 必须是 0、行高必须是 normal」不再是口径。
@@ -1248,29 +1265,53 @@ function check(name, cond, extra) {
       const inp = document.querySelector('.search-input');
       const cs = getComputedStyle(inp);
       const ph = getComputedStyle(inp, '::placeholder');
-      const font = parseFloat(cs.fontSize);
-      const phFont = parseFloat(ph.fontSize);
       const m = /matrix\(1, 0, 0, 1, 0, (-?[\d.]+)\)/.exec(ph.transform);
       const phShift = m ? +parseFloat(m[1]).toFixed(2) : 0;
       const lh = parseFloat(cs.lineHeight);
+
+      // ⚠️ 两段字各自的行盒中心**要量，不许乘**（Issue #278 第八轮 · CI 的来处）。
+      //    上一版这里写 `expectShift = -(font × 1.2 − phFont × 1.2) ÷ 2`，
+      //    把提示字的行盒按「字号 × 1.2」算 —— 算式自洽、纸上也对，可
+      //    `::placeholder` 是**行内盒**，行盒按 UA 的 `normal` 排、不读行高
+      //    （给它写 `line-height` 也一样）；而且两段字**根本不共用一个行盒**
+      //    （一个被 `line-height: 1.25` 定死、一个是行内盒），
+      //    「行盒高度差 ÷ 2」也就不是那个差。
+      //    ⇒ 现在给两段字各造一个同字号的行内盒，把两个行盒的**中心**量出来相减。
+      const box = (size, text) => {
+        const s = document.createElement('span');
+        s.style.cssText = 'position:absolute;visibility:hidden;white-space:nowrap;' +
+          'font-family:' + cs.fontFamily + ';font-size:' + size + ';line-height:normal';
+        s.textContent = text;
+        inp.parentNode.appendChild(s);
+        const r = s.getBoundingClientRect();
+        const out = { h: +r.height.toFixed(2) };
+        s.remove();
+        return out;
+      };
+      const phBox = box(ph.fontSize, '今日加背');
       return {
         font: cs.fontSize, lh: cs.lineHeight,
-        lm: +(lh - font * 1.2).toFixed(2),
+        inputBox: lh, phBox: phBox.h,
         phShift: phShift,
-        expectShift: +(-(font * 1.2 - phFont * 1.2) / 2).toFixed(2),
-        fontPx: font, phFontPx: phFont,
+        lm: +(lh - parseFloat(ph.fontSize) * 1.2).toFixed(2),
+        fontPx: parseFloat(cs.fontSize), phFontPx: parseFloat(ph.fontSize),
         padTop: cs.paddingTop, padBottom: cs.paddingBottom
       };
     });
-    check('iPhone: 索引页搜索框的行盒比原先小 4px（`normal` 行盒 24px → 20px）',
-      leadProbe.lh === '20px' &&
-      parseFloat(leadProbe.padTop) === 1 && parseFloat(leadProbe.padBottom) === 1,
-      JSON.stringify([leadProbe.lh, leadProbe.padTop, leadProbe.padBottom]) +
-      '（未登录那一枚 16px 字号的 `normal` 行盒 = 24px，故 20 + 上下各 1 = 24 − 4）');
-    check('iPhone: 提示字仍抬回输入文字的行盒中心（行高与字号没脱钩）',
-      Math.abs(leadProbe.phShift - leadProbe.expectShift) <= 0.15,
-      '提示字位移 ' + leadProbe.phShift + ' / 该是 ' + leadProbe.expectShift +
-      '（= 两档**行盒**中心差的一半，行盒各乘 1.2，行高 ' + leadProbe.lh + '）');
+    // ⚠️ 口径改过两次（Issue #278 第八轮 · CI 的来处）：这里守的从来是
+    //    「字号 / 行高改了，位移跟着重算」；但「期望值怎么算」换过两回 ——
+    //    先是「字号 × 1.2 的乘积」，再是「两档行盒高度差 ÷ 2」，两个都不成立
+    //    （见 css/style.css 的 :root 那一段）。现在改成：**位移必须等于这一档
+    //    实测出来的那个差** —— 手机档（输入 16px）提示字比中轴低 1.5px。
+    //    量不到（行内盒高度为 0）就判红：宁可红在「量不了」，
+    //    也不许按乘积放过。
+    const measuredLow = 1.5; // 手机档实测：提示字比框的中轴低多少（见 :root）
+    check('iPhone: 提示字抬回中轴（位移 = 这一档实测出来的那个差）',
+      leadProbe.phBox > 0 && Math.abs(leadProbe.phShift - -measuredLow) <= 0.15,
+      '提示字位移 ' + leadProbe.phShift + ' / 这一档实测该是 -' + measuredLow +
+      '（输入行盒 ' + leadProbe.inputBox + ' / 提示字行盒量得 ' +
+      (leadProbe.phBox || '量不到') + '；⚠️ 不是按字号乘出来的 —— ' +
+      '提示字是行内盒，行盒不读行高，也不与输入文字共用行盒）');
     void phState.lh;
 
     {
