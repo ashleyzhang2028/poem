@@ -277,9 +277,62 @@ async function main() {
     eq(S.fromCookieHeader("a=1", "kbsid"), null, "没有那一枚时返回 null");
     eq(S.fromCookieHeader("", "kbsid"), null, "空头返回 null");
 
+    // 解不动的百分号编码：**不许抛**（Issue #276 后续，线上实测的那条）。
+    //
+    // `decodeURIComponent("abc%zz")` 抛 URIError，而 fromCookieHeader 是在
+    // 路由之前被调的 —— 一抛，handler.make 的 catch 把**任何**请求都回成
+    // 500 E_INTERNAL，前端翻成「服务暂时不可用，请稍后重试。」。
+    // 线上真这么炸过：Cookie 里存着一枚解不动的 Cookie，整站接口全哑。
+    ["abc%zz", "%", "%E4", "%GG", "a%2"].forEach(bad => {
+      let out = null, threw = null;
+      try { out = S.fromCookieHeader("kbsid=" + bad, "kbsid"); } catch (e) { threw = e; }
+      chk(!threw, "坏百分号编码 " + JSON.stringify(bad) + " 不抛异常（否则整站接口变 500）");
+      eq(out, bad, "坏编码按原样还回去（供签名校验如实否掉），而不是凭空造一个值");
+    });
+    eq(S.fromCookieHeader("kbsid=" + encodeURIComponent("x.y"), "kbsid"), "x.y",
+      "正常编码的值仍然解得动（与旧行为逐字相同）");
+
     const payload = JSON.parse(S._unb64url(s.token.split(".")[0]));
     eq(Object.keys(payload).sort().join(","), "e,i,s,u", "会话载荷只有 sid/uid/iat/exp");
     chk(!/nickname|email|plan|tier/.test(JSON.stringify(payload)), "会话里不固化权益与身份资料");
+  }
+
+  // 「服务暂时不可用，请稍后重试。」端到端那一条（Issue #276 后续）。
+  //
+  // 用户 2026-09-25 报：登录一直显示这句话。追下去是**一枚解不动的 Cookie**
+  // 把整套 /api/* 打成了 500 —— 与「服务端内部出错」是两件事，
+  // 但前端只会翻出那一句，用户完全看不到线索。
+  // 这一节在**真 HTTP** 上把那条路复现出来，并守住「修好之后它不再是 500」。
+  {
+    boot({});
+    const sv = await serve();
+    try {
+      const badCookies = ["kbsid=abc%zz", "kbsid=%", "foo=1; kbsid=%E4; bar=2"];
+
+      for (const ck of badCookies) {
+        const login = await call(sv.base, "POST", "/api/login",
+          { email: "a@b.com", password: "hunter2hunter", turnstileToken: "x" },
+          ck);
+        chk(login.status !== 500,
+          "坏 Cookie（" + ck + "）下 /api/login 不许 500（500 就是那句「服务暂时不可用」，实际 " + login.status + "）");
+        chk(login.body && login.body.code !== "E_INTERNAL",
+          "坏 Cookie 下 /api/login 不许回 E_INTERNAL（实际 " + JSON.stringify(login.body && login.body.code) + "）");
+
+        const cfgx = await call(sv.base, "GET", "/api/config", undefined, ck);
+        chk(cfgx.status !== 500,
+          "坏 Cookie（" + ck + "）下 /api/config 也不许 500（否则连「本站配没配人机」都问不出来，实际 " + cfgx.status + "）");
+
+        const me = await call(sv.base, "GET", "/api/me", undefined, ck);
+        chk(me.status !== 500,
+          "坏 Cookie（" + ck + "）下 /api/me 也不许 500（如实回未登录，实际 " + me.status + "）");
+        eq(me.status, 401, "坏 Cookie 按「没有会话」处理，如实回 401（不是 500）");
+      }
+
+      // 正面：同一颗 Cookie 位置换成一枚**正常编码**的值，行为一字不变
+      const ok = await call(sv.base, "GET", "/api/me", undefined,
+        "kbsid=" + encodeURIComponent("whatever.token"));
+      eq(ok.status, 401, "正常编码但签名不对的 Cookie 仍走 401（与坏编码同一条出口）");
+    } finally { await sv.close(); }
   }
 
   {

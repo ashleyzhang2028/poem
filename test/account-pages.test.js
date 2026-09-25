@@ -668,6 +668,30 @@ const LOGIN = strip(loginJs), MINE = strip(mineJs), ADMIN = strip(adminJs);
         const RJS = read('js/reset.js');
         chk(/bindEye\("btn-new-eye2",\s*"input-new-pw2"\)/.test(RJS),
           '④ 重设确认密码有独立显示按钮');
+
+        // 邮件链接里那一枚 token 是**从 URL 上读的**，而 URL 是用户/邮件客户端
+        // 一路带过来的 —— 只要里面有一个孤零零的 `%`，`decodeURIComponent`
+        // 就抛 URIError，页面**初始化那一句**当场停住。
+        // 症状（Issue #276 后续）：点开确认 / 重设链接，页面僵在出厂那一屏，
+        // 连「链接不完整」都不说。这两页必须走「解不动就按原样还回去」那条路。
+        const VJS = read('js/verify.js');
+        [['verify.js', VJS], ['reset.js', RJS]].forEach(function (pair) {
+          const name = pair[0], src = pair[1];
+          chk(/function safeDecodeParam\(/.test(src),
+            '⑤e ' + name + ' 有 safeDecodeParam（URL 参数解不动时不许把页面弄死）');
+          // 「只剩一个收口」的判据用**出现次数**，不靠正则去切函数体
+          // （那个 helper 里带嵌套大括号，非贪婪切法切不干净，会误报）。
+          // 数之前先把整行注释去掉 —— 注释里提到这个函数名是**说明**，
+          // 不是一次调用（把说明也算进来，判据会红在一个正确的地方上）。
+          const codeOnly = src.split('\n').map(l => l.replace(/^\s*\/\/.*$/, '')).join('\n');
+          const decCalls = (codeOnly.match(/decodeURIComponent\(/g) || []).length;
+          chk(decCalls === 1,
+            '⑤e ' + name + ' 里 decodeURIComponent 只剩那一个收口（实际 ' + decCalls + ' 处；别处再直接调一次就又埋回地雷）');
+          chk(/safeDecodeParam\(parts\[i\]\.slice\(eq \+ 1\)/.test(src),
+            '⑤e ' + name + ' 的取参数走 safeDecodeParam（值那一半）');
+          chk(/try\s*\{[\s\S]{0,80}decodeURIComponent\(raw\)[\s\S]{0,80}\}\s*catch/.test(src),
+            '⑤e ' + name + ' 的解码包在 try/catch 里（解不动就退回原样）');
+        });
         const authApi = read('js/auth-api.js');
         const authCopy = [LH, RH, LJS, RJS, authApi].join('\n');
         ['那颗', 'console 通道', 'npm run doctor', 'SPF/DKIM/DMARC', '/api/diag', '被拦', '照旧']

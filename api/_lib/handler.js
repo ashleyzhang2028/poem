@@ -21,17 +21,36 @@ function deps(req, body) {
   };
 }
 
+// 认会话这一步**只管「认不认得这个人」，不管「认不出来就报错」**。
+//
+// ⚠️ 它必须在**任何**坏 Cookie 之下都不抛（Issue #276 后续，线上实测）：
+//    这一段是在路由之前跑的，一抛异常 `handler.make` 的 catch 会把
+//    **一切**请求（包括登录、注册、发码）都回成 500 E_INTERNAL，
+//    前端 auth-api 翻成「**服务暂时不可用，请稍后重试。**」。
+//    实测：`Cookie: kbsid=abc%zz` → POST /api/login 与 GET /api/config 双双 500。
+//    `fromCookieHeader` 那边已经把「解不动的百分号编码」收成不抛了
+//    （见 `_lib/session.js` 的 `safeDecode`），这里是**第二道**：
+//    哪一天有人再往这里塞一个会抛的读法（比如换掉 session 的实现），
+//    后果也只是「这一发按未登录处理」，不是整站接口全哑。
 function withSession(req, d) {
   if (!CONFIG.hasSession()) return Promise.resolve(d);
-  var token = session.fromCookieHeader((req.headers || {}).cookie, CONFIG.cookieName);
-  var s = session.read(CONFIG, token, Date.now());
-  if (!s) return Promise.resolve(d);
-  return Promise.resolve(d.store.getSession(s.sid)).then(function (row) {
+  return Promise.resolve()
+    .then(function () {
+      var token = session.fromCookieHeader((req.headers || {}).cookie, CONFIG.cookieName);
+      var s = session.read(CONFIG, token, Date.now());
+      if (!s) return d;
+      return Promise.resolve(d.store.getSession(s.sid)).then(function (row) {
 
-    if (row && Number(row.revoked) === 1) return d;
-    d.account = { uid: s.uid, sid: s.sid };
-    return d;
-  });
+        if (row && Number(row.revoked) === 1) return d;
+        d.account = { uid: s.uid, sid: s.sid };
+        return d;
+      });
+    })
+    ["catch"](function (e) {
+
+      H.log("api.session_read_failed", { error: String(e && e.message || e).slice(0, 200) });
+      return d;
+    });
 }
 
 // 内核签了会话之后**必须**做的两件事（Issue #278）：把会话行落库、
