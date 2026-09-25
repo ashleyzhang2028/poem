@@ -119,7 +119,8 @@ chk(WI.same('poems-gz10-07', 'songci-sc-67'), '《念奴娇·赤壁怀古》课�
 chk(WI.same('poems-gz10-08', 'songci-sc-183'), '《永遇乐·京口北固亭怀古》课内与宋词三百首仍判为同一篇');
 
 chk(sb.WORKS_GROUPS.length === 142,
-  '同篇对照表 142 组（乐府集与成语故事收进来的一批重篇 + main 长文补全带来的同篇，Issue #244 / #308）（实际 ' +
+  '同篇对照表 142 组（乐府集与成语故事收进来的一批重篇 + 长文补全带来的同篇，Issue #244 / #308；' +
+  '二批带来源的古文 / 诗篇条目并回原篇；实际 ' +
   sb.WORKS_GROUPS.length + '）');
 
 const jys = byId['xx1-09'];

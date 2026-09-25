@@ -477,7 +477,7 @@ window.POEMS_CHENGYU = [
     dynasty: "春秋",
     author: "司马迁",
     gradeGroup: "先秦",
-    excerpt: "齐威王之时喜隐，好为淫乐长夜之饮，沈湎不治，委政",
+    excerpt: "此鸟不飞则已，一飞冲天；不鸣则已，一鸣惊人。",
   },
   {
     textRef: "chengyu-cy-49",
@@ -7348,15 +7348,5 @@ window.POEMS_CHENGYU = [
     author: "刘勰",
     gradeGroup: "清",
     excerpt: "（语本）旁征博引，辞采飞扬",
-  },
-  {
-    textRef: "chengyu-cy-736",
-    id: "cy-736",
-    title: "人浮于事",
-    source: "《礼记·坊记》",
-    dynasty: "清",
-    author: "",
-    gradeGroup: "清",
-    excerpt: "故君子与其使食浮于人也，宁使人浮于食",
   },
 ];
