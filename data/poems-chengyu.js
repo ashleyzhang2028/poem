@@ -7349,4 +7349,14 @@ window.POEMS_CHENGYU = [
     gradeGroup: "两晋南北朝",
     excerpt: "（语本）旁征博引，辞采飞扬",
   },
+  {
+    textRef: "chengyu-cy-736",
+    id: "cy-736",
+    title: "人浮于事",
+    source: "《礼记·坊记》",
+    dynasty: "西周",
+    author: "佚名",
+    gradeGroup: "西周",
+    excerpt: "故君子与其使食浮于人也，宁使人浮于食。",
+  },
 ];
