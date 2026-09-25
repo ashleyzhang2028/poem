@@ -39,8 +39,11 @@
 
   // 「谁能进管理后台」（Issue #276）：**只看服务端下发到本机缓存里的那个角色**
   // （源头是数据库 `accounts.role`）。本机兜底已删 —— 没有服务端答案就不放行。
+  // ⚠️ 传参带上 **uid**（Issue #276 后续）：光有 `role` 分不清那份服务端答案
+  // 是不是**当前这位**的 —— 同一台机器换个人登录时，上一个人的 owner
+  // 会被继承。`Entitlement.isOwner()` 会核对缓存里那份答案的主人。
   function isOwner(id) {
-    if (id && id.role) return Ent.isOwner(backing, { role: id.role });
+    if (id) return Ent.isOwner(backing, { role: id.role, uid: id.uid });
     return Ent.isOwner(backing);
   }
 

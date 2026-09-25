@@ -107,9 +107,13 @@
       var plan = (me && me.plan) || {};
       var tier = E.isTier(plan.tier) ? plan.tier : "free";
       var until = plan.until == null ? null : Number(plan.until);
+      // ⚠️ `uid` 一起写进去（Issue #276 后续）：这份答案**属于谁**必须跟着
+      // 一起存，否则同一台机器换个人登录时，上一个人的 `role: "owner"`
+      // 还是那一份 —— 新登录的普通用户会被当成管理员。
       var r = E.writeTier(D.backing, tier, until, {
         source: "server",
-        role: E.isRole(me && me.role) ? me.role : null
+        role: E.isRole(me && me.role) ? me.role : null,
+        uid: (me && me.uid) || ""
       });
 
       adoptAvatar(me);
@@ -143,7 +147,13 @@
       if (!E) return false;
 
       try {
-        if (E.readServerTier && E.readServerTier(D.backing)) {
+        // ⚠️ 判据从「有没有服务端层级」放宽到「**这一份是不是服务端的**」
+        //    （Issue #276 后续）：退出登录时要清掉的是**上一位的整个答案**
+        //    （tier 与 role 一起）。只看 tier 的话，一位 free 的管理员
+        //    退出后 `tier: "free"` 是假值，那一行 `role: "owner"` 反而留在
+        //    本机 —— 下一个登录的人就继承了他的管理后台入口。
+        var plan = E.readPlan ? E.readPlan(D.backing) : null;
+        if (plan && plan.source === "server") {
           if (E.clearTier) E.clearTier(D.backing);
 
           lastAccount = null;

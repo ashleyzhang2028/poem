@@ -1371,17 +1371,23 @@ async function main() {
     {
 
       const E = require("../js/entitlement.js");
+      // ⚠️ 对拍的是**「这个角色名算不算管理员」这一件事**，取 `E.isAdminRole()`
+      //    这个纯函数（Issue #276 后续）。原先拿 `E.isOwner(null, {role})` 对拍，
+      //    而 `isOwner` 现在还要核对「这份答案是不是当前登录那位的」——
+      //    它答的是另一个问题（放不放行），不是「角色名认不认」。
       ["owner", "admin", "user"].forEach(r => {
         const srv = core.isAdminRole(r);
-        const cli = E.isOwner(null, { role: r });
+        const cli = E.isAdminRole(r);
         chk(srv === cli, "角色 " + JSON.stringify(r) + " 两端一致（服务端 " + srv + " ↔ 客户端 " + cli + "）");
       });
 
       ["root", "", null].forEach(r => {
         chk(!core.isAdminRole(r), "服务端对不认识的角色 " + JSON.stringify(r) + " 一律不放行（无兜底）");
       });
-      chk(E.isOwner(null, { role: "root" }) === false,
+      chk(E.isAdminRole("root") === false,
         "客户端对不认识的角色一律不放行（Issue #276 之后连本机兜底也删了 —— 两边同一个答案）");
+      chk(E.isOwner(null, { role: "root" }) === false,
+        "而「放行」那条出口两端的口径也一致：不认识的 role 不放行（无兜底）");
     }
 
     boot({ ALLOW_CODE_ECHO: "1" });

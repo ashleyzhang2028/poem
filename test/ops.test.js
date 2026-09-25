@@ -469,6 +469,9 @@ const section9 = (async () => {
   const M = require(path.join(ROOT, "js/account-api.js"));
   const E = require(path.join(ROOT, "js/entitlement.js"));
   const A = require(path.join(ROOT, "js/auth-core.js"));
+  // 页面里 `Entitlement` / `AuthCore` 同屏（脚本顺序固定），这一节也照办：
+  // `isOwner()` 在调用方没传 uid 时要自己从会话里问一次，问的是这份 AuthCore。
+  if (E.setAuthCore) E.setAuthCore(A);
 
   const backing = (() => {
     const m = {};
@@ -482,12 +485,16 @@ const section9 = (async () => {
 
   const store = A.makeStore(backing);
   const rr = A.requestCode(store, { channel: "email", value: "c@163.com" }, "login", { code: "246810" });
-  A.verifyCode(store, rr.codeId, "246810", "login");
+  const rv = A.verifyCode(store, rr.codeId, "246810", "login");
+  // ⚠️ `/api/me` 的答案要带上 **uid**（Issue #276 后续）：本机那份缓存记着
+  //    「这份答案是谁的」，uid 对不上就不认它（换了人登录时上一位的角色
+  //    不许被继承）。真实的 `/api/me` 一直回 uid。
+  const meUid = (rv && rv.account && rv.account.uid) || "";
 
   const api = M.bind({
     api: {
       me: () => Promise.resolve({
-        ok: true, plan: { tier: "pro", until: null }, role: "user", mask: "c***@163.com",
+        ok: true, uid: meUid, plan: { tier: "pro", until: null }, role: "user", mask: "c***@163.com",
         channel: { mail: "sendgrid", delivered: true, db: "db", sms: false }
       }),
       deleteAccount: () => Promise.resolve({ ok: false, code: "E_OFFLINE" })

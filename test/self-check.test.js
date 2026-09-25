@@ -76,7 +76,7 @@ async function diagAt(base) {
 
     chk(/window\.Entitlement/.test(gate) && /E\.isOwner\(/.test(gate),
       "页面那道闸走 Entitlement.isOwner()（源头是服务端下发的 accounts.role）");
-    chk(/E\.isOwner\(backing, id && id\.role \? \{ role: id\.role \} : undefined\)/.test(gate),
+    chk(/E\.isOwner\(backing, id \? \{ role: id\.role, uid: id\.uid \} : undefined\)/.test(gate),
       "传参形状与 /admin/ 那一处逐字相同（两个地方各判一套迟早漂）");
     chk(/if \(allowed\(\)\) \{ arm\(\); return; \}/.test(gate) && /deny\(\);/.test(gate),
       "闸只有两支：放行（arm）与拒绝（deny），没有第三条模糊态");

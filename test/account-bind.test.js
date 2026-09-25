@@ -30,7 +30,7 @@ function signedInStore(backing, email) {
   const r = A.requestCode(store, { channel: "email", value: email || "zhangmin@163.com" }, "login", { code: "246810" });
   const v = A.verifyCode(store, r.codeId, "246810", "login");
   if (!v || !v.ok) throw new Error("用例里的登录没建立起来");
-  return { store, mask: v.account.identities[0].mask };
+  return { store, mask: v.account.identities[0].mask, uid: v.account.uid };
 }
 
 function fakeApi(answers) {
@@ -60,11 +60,14 @@ async function main() {
   console.log("=== 一、`/api/me` 的下发：层级与角色真的落到权益层 ===");
   {
     const b = mem();
-    const { store, mask } = signedInStore(b);
+    const { store, mask, uid } = signedInStore(b);
     eq(E.identity({ backing: b, authStore: store }).tier, "free", "起点：本机口径是 free");
     eq(E.identity({ backing: b, authStore: store }).tierSource, "local", "起点：层级来源是「本机登记」");
 
-    const api = M.bind({ api: fakeApi({ me: { ok: true, plan: { tier: "pro", until: null }, role: "owner", mask: mask } }), E: E, A: A, backing: b });
+    // ⚠️ `/api/me` 的答案要带上 **uid**（Issue #276 后续）：本机那份缓存
+    //    记着「这份答案是谁的」，换了人登录就不再认它。真实的 `/api/me`
+    //    一直都回 uid（`core.publicAccount()`），用例也跟着回。
+    const api = M.bind({ api: fakeApi({ me: { ok: true, uid: uid, plan: { tier: "pro", until: null }, role: "owner", mask: mask } }), E: E, A: A, backing: b });
     const r = await api.refreshMe();
 
     eq(r.ok, true, "/api/me 拿到了答案");
@@ -91,8 +94,8 @@ async function main() {
       "服务端说 role=user 时是 user");
 
     const b2 = mem({ poem_owner_v1: "member" });
-    const a2 = M.bind({ api: fakeApi({ me: { ok: true, plan: { tier: "free" }, role: "owner" } }), E: E, A: A, backing: b2 });
-    const { store: s2 } = signedInStore(b2);
+    const { store: s2, uid: uid2 } = signedInStore(b2);
+    const a2 = M.bind({ api: fakeApi({ me: { ok: true, uid: uid2, plan: { tier: "free" }, role: "owner" } }), E: E, A: A, backing: b2 });
     eq(E.identity({ backing: b2, authStore: s2 }).role, "user", "本机标记 `poem_owner_v1` 已经没人读了（一律 user）");
     await a2.refreshMe();
     eq(E.identity({ backing: b2, authStore: s2 }).role, "owner", "服务端说 owner 时以服务端为准");
@@ -696,10 +699,12 @@ async function bootPage(rel, url, answers) {
 
   if (w.Entitlement && w.Entitlement.setAuthCore) w.Entitlement.setAuthCore(w.AuthCore);
 
+  let sessionUid = "";
   if (w.AuthCore) {
     const store = w.AuthCore.makeStore(w.localStorage);
     const r = w.AuthCore.requestCode(store, { channel: "email", value: "zhangmin@163.com" }, "login", { code: "246810" });
-    w.AuthCore.verifyCode(store, r.codeId, "246810", "login");
+    const v = w.AuthCore.verifyCode(store, r.codeId, "246810", "login");
+    sessionUid = (v && v.account && v.account.uid) || "";
   }
   w.document.dispatchEvent(new w.Event("DOMContentLoaded"));
   await sleep(30);
@@ -708,6 +713,7 @@ async function bootPage(rel, url, answers) {
 
 async function bootAdminPage(opts) {
   opts = opts || {};
+  let sessionUid = "";
   const JSDOM = require("jsdom").JSDOM;
   const html = read("admin/index.html");
   const dom = new JSDOM(html, { url: "https://kuibu.app/admin/", runScripts: "outside-only", pretendToBeVisual: true });
@@ -726,7 +732,9 @@ async function bootAdminPage(opts) {
     calls.count += 1;
     if (url.indexOf("/api/me") >= 0) {
       calls.me += 1;
-      return Promise.resolve(jsonRes(200, { uid: "u_1", role: "owner", plan: { tier: "free", until: null }, mask: "a***@b.com", features: [] }));
+      // ⚠️ 回的 uid **必须与这份存储里的会话一致**（Issue #276 后续）：
+      //    本机那份服务端答案是「谁的就是谁的」，uid 对不上就不认它。
+      return Promise.resolve(jsonRes(200, { uid: sessionUid, role: "owner", plan: { tier: "free", until: null }, mask: "a***@b.com", features: [] }));
     }
     if (url.indexOf("/api/admin/grants") >= 0) {
       calls.listMethod = m;
@@ -790,17 +798,22 @@ async function bootAdminPage(opts) {
   });
   if (w.Entitlement && w.Entitlement.setAuthCore) w.Entitlement.setAuthCore(w.AuthCore);
 
+  // ⚠️ 先登录、再写那份服务端答案（Issue #276 后续）：答案要记「它是谁的」
+  //    （uid），而 uid 只有登录之后才有。次序反过来的话，写下的是一份
+  //    「没署名的 owner」，新版 `isOwner()` 如实不认它 —— 用例就白跑了。
+  if (w.AuthCore && !opts.signedOut) {
+    const store = w.AuthCore.makeStore(w.localStorage);
+    const r = w.AuthCore.requestCode(store, { channel: "email", value: "zhangmin@163.com" }, "login", { code: "246810" });
+    const v = w.AuthCore.verifyCode(store, r.codeId, "246810", "login");
+    sessionUid = (v && v.account && v.account.uid) || "";
+  }
   if (w.Entitlement) {
     // 服务端答案的缓存（Issue #276：本机发放名单已下线，这里是「上一次问到的」那份）。
     // 角色写 owner —— 否则新版 /admin/ 会如实拒绝（本机兜底已删）。
     if (!opts.signedOut) {
-      w.Entitlement.writeTier(w.localStorage, "free", null, { source: "server", role: opts.role || "owner" });
+      w.Entitlement.writeTier(w.localStorage, "free", null,
+        { source: "server", role: opts.role || "owner", uid: sessionUid });
     }
-  }
-  if (w.AuthCore && !opts.signedOut) {
-    const store = w.AuthCore.makeStore(w.localStorage);
-    const r = w.AuthCore.requestCode(store, { channel: "email", value: "zhangmin@163.com" }, "login", { code: "246810" });
-    w.AuthCore.verifyCode(store, r.codeId, "246810", "login");
   }
   w.document.dispatchEvent(new w.Event("DOMContentLoaded"));
   await sleep(40);

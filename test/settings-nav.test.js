@@ -290,8 +290,8 @@ const NAV = read('js/settings-nav.js');
     '那一行改由 renderSelfCheck() 渲染（不再直接写死在 renderAbout 的 innerHTML 里）');
   chk(/Ent\.isOwner\(/.test(nav) && /Entitlement/.test(nav),
     '它的判据是 Entitlement.isOwner()（与 /admin/ 走同一个出口，不另判一套）');
-  chk(/isOwner\(backing, id && id\.role \? \{ role: id\.role \} : undefined\)/.test(nav),
-    '传参形状与 /admin/ 那一处逐字相同（role 优先，其次才是本机那份 plan）');
+  chk(/isOwner\(backing, id \? \{ role: id\.role, uid: id\.uid \} : undefined\)/.test(nav),
+    '传参形状与 /admin/ 那一处逐字相同（带上 uid —— 判的是「这份答案是不是当前这位的」）');
   chk(/if \(!ok\) return "";/.test(nav),
     '不通过时**返回空串** —— 那一行压根不进 DOM（不是 hidden，也不是 CSS 遮住）');
   chk(/host\.hidden = !host\.innerHTML/.test(nav),
@@ -322,7 +322,7 @@ const NAV = read('js/settings-nav.js');
   chk(/id="self-check-script" type="text\/plain" data-src="\/js\/self-check\.js"/.test(scHtml),
     '自检脚本是**占位**（type=text/plain 不执行），放行时才换成真脚本');
   const gate = read('js/self-check-gate.js');
-  chk(/E\.isOwner\(backing, id && id\.role \? \{ role: id\.role \} : undefined\)/.test(gate) &&
+  chk(/E\.isOwner\(backing, id \? \{ role: id\.role, uid: id\.uid \} : undefined\)/.test(gate) &&
       /window\.Entitlement/.test(gate),
     '页面那道闸与入口那道闸走同一个出口 Entitlement.isOwner()（连传参形状都逐字相同）');
   chk(/page\.hidden = false/.test(gate),
