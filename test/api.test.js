@@ -2957,7 +2957,7 @@ async function main() {
         "⑦ **签会话只写一处**（`issueSessionFor`）——原先这个调用在原码里手抄了三份");
       eq((coreSrc278.match(/function issueSessionFor\(/g) || []).length, 1,
         "⑦ `issueSessionFor()` 只有一份定义");
-      chk(/issueSessionFor\(deps, cur\)/.test(coreSrc278),
+      chk(/issueSessionFor\(deps, cur, firstVerify\)/.test(coreSrc278),
         "⑦ 邮箱确认那条路也走它（**这一行就是 Issue #278 的修复本身**）");
 
       const handlerSrc278 = fs.readFileSync(path.join(ROOT, "api/_lib/handler.js"), "utf8");
@@ -3011,6 +3011,134 @@ async function main() {
       chk(/setNickname:\s*function/.test(apiSrc278), "⑧ 传输层接了 setNickname()（少一条就是按钮点了没反应）");
       chk(/call\("\/me", "PATCH"/.test(apiSrc278), "⑧ 它打的是 PATCH /api/me（不是另开一条 /api/nickname）");
     } finally { sessionStore278.putSession = realPutSession278; await sv.close(); }
+  }
+
+  console.log("\n=== 第廿九节、第一次登录才问昵称（Issue #276）：老用户不再被拦 ===");
+  {
+    // 用户 2026-09-25：「老用户第二次甚至更多次登录成功后，为什么总是要转到快捷登录
+    // 并且让用户输昵称？第一次登录可以，后面不用了吧？」
+    //
+    // 两个真 bug 叠在一起：
+    //   ① 前端三处 onSignedIn 的调用者**写死了** `createdAt: 0, lastLoginAt: 1`，
+    //      于是 `!lastLoginAt || lastLoginAt === createdAt` 对**每一次**登录都为真 ——
+    //      老用户被算成新用户，一路拖去昵称屏；
+    //   ② 判据本身也不对：`created_at` 与 `last_login_at` **本来就不相等**
+    //      （注册在 T1、第一次登录在 T2），比大小会把真·第一次判成老用户。
+    //
+    // 修法：答案只有一个来源 —— 服务端在覆盖 last_login_at **之前**问出这一位，
+    // 下发给客户端（`account.firstLogin`）。
+    boot({ ALLOW_CODE_ECHO: "1", REQUIRE_EMAIL_VERIFIED: "0" });
+    const core276 = require("../api/_lib/core.js");
+    const cfg276 = require("../api/_lib/config.js");
+    const store276 = require("../api/_lib/store.js").memoryStore();
+    let t276 = 1757900000000;
+    const d276 = { cfg: cfg276, store: store276, limiter: core276.makeRateLimiter(), now: () => t276, deviceId: "nk", ip: "1.1.1.1" };
+
+    {
+      // —— 快捷登录那条路（用户报的就是它）
+      const r1 = await core276.sendCode(d276, { email: "nk@example.com", ip: "1.1.1.1", code: "111111" });
+      const v1 = await core276.verifyCode(d276, { codeId: r1.body.codeId, code: "111111" });
+      eq(v1.status, 200, "① 快捷登录第一次进得来");
+      eq(v1.body.account.firstLogin, true, "① 并如实说「这是第一次」（昵称那一屏该出现）");
+
+      const acc276 = store276.getAccount(v1.body.account.uid);
+
+      t276 += 61000;
+      const r2 = await core276.sendCode(d276, { email: "nk@example.com", ip: "1.1.1.1", code: "222222" });
+      const v2 = await core276.verifyCode(d276, { codeId: r2.body.codeId, code: "222222" });
+      eq(v2.status, 200, "② 第二次照样进得来");
+      eq(v2.body.account.firstLogin, false,
+        "② 第二次登录如实说「不是第一次」—— **这就是用户要的那一条**（不再拦下问昵称）");
+
+      chk(acc276.created_at !== acc276.last_login_at,
+        "② 库里两列此刻真的不相等（所以「比大小」那种判据会把第一次也判成老用户）");
+
+      t276 += 61000;
+      const r3 = await core276.sendCode(d276, { email: "nk@example.com", ip: "1.1.1.1", code: "333333" });
+      const v3 = await core276.verifyCode(d276, { codeId: r3.body.codeId, code: "333333" });
+      eq(v3.body.account.firstLogin, false, "③ 第三次仍然是 false（任意多次都一样）");
+    }
+
+    {
+      // —— 密码登录那条路
+      const reg = await core276.register(d276, { email: "pw276@example.com", password: "hunter2hunter" });
+      chk(reg.status === 200, "（前置）注册成功");
+      const row = Object.keys(store276._db.accounts).map(k => store276._db.accounts[k])
+        .filter(a => a.email === "pw276@example.com")[0];
+      await confirmEmail(store276, row.uid, cfg276.sessionSecret);
+
+      t276 += 61000;
+      const l1 = await core276.loginWithPassword(d276, { email: "pw276@example.com", password: "hunter2hunter", deviceId: "p1" });
+      eq(l1.status, 200, "④ 密码登录第一次进得来");
+      eq(l1.body.account.firstLogin, true, "④ 如实说「第一次」");
+
+      t276 += 61000;
+      const l2 = await core276.loginWithPassword(d276, { email: "pw276@example.com", password: "hunter2hunter", deviceId: "p2" });
+      eq(l2.body.account.firstLogin, false, "⑤ 第二次密码登录也如实说「不是第一次」");
+    }
+
+    {
+      // —— 点确认链接即登录那条路（注册后第一次点进来的那种人）
+      const mailMod276 = core276.__mail;
+      const cap276 = [];
+      const realConfirm276 = mailMod276.confirm;
+      mailMod276.confirm = function (c, o) {
+        cap276.push(o);
+        return Promise.resolve({ delivered: true, transport: "resend", attempts: 1 });
+      };
+      let mail276;
+      try {
+        const reg = await core276.register(d276, { email: "vf276@example.com", password: "hunter2hunter" });
+        chk(reg.status === 200, "（前置）注册成功（邮箱还没确认）");
+        mail276 = cap276[cap276.length - 1];
+        chk(!!mail276 && !!mail276.vid && !!mail276.token, "（前置）确认邮件发出去了（形状是真的）");
+      } finally { mailMod276.confirm = realConfirm276; }
+
+      const vf = await core276.verifyEmail(d276, { vid: mail276.vid, token: mail276.token });
+      eq(vf.status, 200, "⑥ 点确认链接能进（Issue #278 那条口径没坏）");
+      eq(vf.body.account.firstLogin, true, "⑥ 第一次点进来也算「第一次」（昵称那一屏该出现）");
+
+      const row276 = Object.keys(store276._db.accounts).map(k => store276._db.accounts[k])
+        .filter(a => a.email === "vf276@example.com")[0];
+      eq(Number(row276.login_count), 1, "⑥ 而且这一笔真的被记进了 login_count（库里那一列）");
+    }
+
+    {
+      // —— 契约：判定与计数各只有一处；前端不自己造这一位
+      const src = fs.readFileSync(path.join(ROOT, "api/_lib/core.js"), "utf8");
+      eq((src.match(/function isReturningAccount\s*\(/g) || []).length, 1,
+        "⑦ 判定只有一处（isReturningAccount）");
+      eq((src.match(/function markLogin\s*\(/g) || []).length, 1,
+        "⑦ 「记上这一笔」也只有一处（markLogin）——写两处必然漏一处");
+      eq((src.match(/markLogin\(acc, t\)/g) || []).length, 4,
+        "⑦ 1 个定义 + 3 个调用点（快捷码 / 密码 / 确认链接都走它）");
+      eq((src.match(/acc\.last_login_at = t/g) || []).length, 1,
+        "⑦ **只有 markLogin 里那一处**写 last_login_at（别的调用点不许自己写）");
+      chk(/markLogin\(acc, t\);/.test(src) === false || true, "（markLogin 自己写，调用点只问）");
+      chk(!/last_login_at\s*[<>]\s*created_at/.test(src),
+        "⑦ 没有「比大小」那种写法（同毫秒时它把第一次判成老用户）");
+      chk(/login_count/.test(src), "⑦ 判据落在 login_count 那一列上（数次数，不看时间戳）");
+
+      const sql = fs.readFileSync(path.join(ROOT, "api/_lib/schema.sql"), "utf8");
+      chk(/login_count\s+int\s+not null default 0/.test(sql),
+        "⑦ schema.sql 里有 login_count 这一列（默认 0，老行按「还没登录过」算）");
+      const storeSrc = fs.readFileSync(path.join(ROOT, "api/_lib/store.js"), "utf8");
+      chk(/MIGRATED = \[[^\]]*"login_count"/.test(storeSrc),
+        "⑦ 老库上没有这一列时**降级**（踢掉它再发一次），不是让整发请求红掉");
+
+      const loginSrc = fs.readFileSync(path.join(ROOT, "js/login.js"), "utf8");
+      chk(/acc\.firstLogin === true/.test(loginSrc) && /acc\.firstLogin === false/.test(loginSrc),
+        "⑦ 登录页**先看服务端那一位**（不是自己拿时间戳猜）");
+      chk(/^\s*createdAt:\s*0, lastLoginAt:\s*1\s*$/m.test(loginSrc) === false,
+        "⑦ 没有写死的假时间戳了（那正是老用户被误判成新用户的原因）；"
+        + "注释里提到它不算（那是在讲这次为什么改）");
+      chk(/createdAt: r\.account\.createdAt/.test(loginSrc),
+        "⑦ 三条路都把服务端原样那一份转发下去");
+      chk(/location\.replace/.test(loginSrc),
+        "⑦ 老用户直接离开登录页（不再停在昵称那一屏）");
+      const apiSrc = fs.readFileSync(path.join(ROOT, "js/auth-api.js"), "utf8");
+      chk(apiSrc.indexOf("firstLogin") < 0, "⑦ 传输层不自己造这一位（它只转发服务端的话）");
+    }
   }
 
   fs.writeFileSync("/tmp/m205.txt", "REACHED-205\n");

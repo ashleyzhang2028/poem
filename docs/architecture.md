@@ -253,7 +253,7 @@ jobs:
                             │ supabase-js（service key，仅服务端）
 ┌───────────────────────────▼──────────────────────────────────────┐
 │  Supabase（免费档，探活见 §1.2 A）                                 │
-│    accounts      (uid, email, email_hash, email_mask,             │
+│    accounts      (uid, email, email_hash, login_count,            │
 │                   password_hash, password_salt, email_verified_at,│
 │                   plan, created_at…)                              │
 │    codes         (code_id, uid, purpose, code_hash, salt, expires…)│
@@ -478,6 +478,7 @@ x-vercel-error: NOT_FOUND            ← 平台层，函数压根没被调起来
 | 登录方式 | ① 邮箱随机码（6 位 / 10 分钟 / 单次）② 邮箱 + 密码（scrypt 摘要，见 `docs/auth-design.md` §4.4.3） |
 | 邮箱确认 | `accounts.email_verified_at` / `status`（`pending` → 点确认邮件 → `active`）。**没确认就登不进来**（用户 2026-09-16 在 Issue #197 裁决）；应急闸门 `REQUIRE_EMAIL_VERIFIED=0` 供未配发信商的实例使用，关掉时 `/api/me` 的 `channel.emailGate` 会如实自报 |
 | 会话 | **HttpOnly + Secure + SameSite=Lax 的签名 Cookie**，30 天 |
+| 第一次登录 | `accounts.login_count`（只增不减，0 = 还没登录过）。三条登录路（快捷码 / 密码 / 确认链接）都在**覆盖之前**问出这一位，随 `/api/me` 下发成 `account.firstLogin`。⚠️ **别拿 `last_login_at !== created_at` 去猜** —— 注册与第一次登录可能落在**同一毫秒**（本地服务与测试常见），那时两列相等，与「从没登录过」分不开（Issue #276 后续，用户报的「老用户每次都要填昵称」） |
 | 权益来源 | **只有 `/api/me`**，客户端一切 `plan` 字段都是显示用的缓存；唯一能写它的地方是 `POST /api/admin/grant`（2.2 已落地，见 §4.14） |
 | 权益由谁写 | 服务端：`accounts.plan` / `plan_until`。**不在客户端**，也不在本机（本机只留一份**服务端答案的缓存**，见 §4.14 / §4.30） |
 | 短信 | 只留口子（`channel` 枚举已就位），不实现 |

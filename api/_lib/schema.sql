@@ -31,6 +31,12 @@ create table if not exists public.accounts (
   role          text        not null default 'user',
   created_at    bigint      not null,
   last_login_at bigint      not null,
+  -- 「这个人以前登录过没有」的**唯一判据**（Issue #276 后续）。
+  --   ⚠️ 别拿 `last_login_at` 与 `created_at` 比大小去猜：注册与第一次登录
+  --      可能落在**同一毫秒**（测试里就是这么跑的，本地服务也常见），
+  --      那时两列相等 —— 与「从没登录过」完全分不开。
+  --   这一列只增不减：每成功签发一次会话 +1。0 = 还没登录过。
+  login_count   int         not null default 0,
   status        text        not null default 'active'
 );
 create unique index if not exists accounts_email_hash_key on public.accounts (email_hash);
