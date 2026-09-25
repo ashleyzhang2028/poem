@@ -586,17 +586,9 @@
     if (!box) return;
     var D = dailyMod();
 
-    var tip = $("#daily-tip");
     var tools = $("#daily-tools");
     var items = D ? D.list() : [];
 
-    if (tip) {
-      tip.hidden = items.length > 0;
-      if (!items.length) {
-        tip.textContent = "今天还没有加背的。到集子页或搜索页点篇目左边的「＋」即可加进来，"
-          + "也可以直接在首页顶部那一条里搜。";
-      }
-    }
     if (tools) tools.hidden = !items.length;
 
     if (!items.length) {
