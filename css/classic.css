@@ -65,6 +65,19 @@
 
   height: var(--toolbar-h);
   padding: 0 12px 0 34px;
+  /* Issue #278 第七轮 · 用户 2026-09-24：「搜索页搜索框上下 padding 或者行高
+     需要小 4px 左右」。这枚框是定高的（height: var(--toolbar-h)，40 / 52px），
+     所以「上下 padding 小 4px」在它身上落成「**行盒**小 4px」——
+     上下各 1px 内边距 + 2px 行高（4 = 1 + 2 + 1），框**高度不变**、
+     框里的字比原先贴近上下各 2px。
+     ⚠️ 行高**必须写像素**：搜索框这一列不吃控件档那把尺
+        （`input:not(.search-input)` 那条把它排除在外），也不许写回
+        `normal` —— 见 test/pwa.test.js「索引页输入框本体不做垂直方向的改动」
+        与 test/ui-consistency.test.js 那一节。1.25 × 字号（16 → 20px、
+        窄屏 14 → 17.5px）就是「小 4px」那一档，且随字号缩放。 */
+  line-height: 1.25;
+  padding-top: 1px;
+  padding-bottom: 1px;
   border: 1px solid var(--line);
 
   /* 搜索框是**输入框**，圆角归控件那一档（它自己那一档的高度来自 --toolbar-h）。 */
@@ -890,7 +903,13 @@ body.reader-open .dock { display: none; }
 .search-slash {
   position: absolute;
   top: 50%;
-  right: 12px;
+  /* ⚠️ 右缘要落在**输入框**的右缘内侧 12px 上（Issue #278 第七轮）。
+     它原先写 12px，量的是 `.search-wrap` —— 而输入框自己有左右内边距与边框，
+     1024–1439 那一档 `.search-wrap` 比输入框宽 15px（浏览器给 `<input>`
+     加的那条 UA 外边距），于是这枚「/」被推到框外 3px 处，看着像飘在框上。
+     算式里的三项与 `.search-input` 的横向盒模型逐项对应：
+     右侧 UA 外边距 2px + 框自己的右内边距 12px + 边框 1px = 15px。 */
+  right: calc(12px + 1px + 12px + 2px);
   transform: translateY(-50%);
   display: none;
   align-items: center;
@@ -1128,13 +1147,14 @@ body[data-nav="search"] .search-hero.kb-open .search-toolbar {
   margin-bottom: 0;
 }
 
-@media screen and (max-width: 700px) {
-  body[data-nav="search"] .search-hero.search-active,
-  body[data-nav="search"] .search-hero.kb-open {
-    padding-left: 8px;
-    padding-right: 8px;
-  }
-}
+/* ⚠️ 贴顶态**不许改左右内边距**（Issue #278 第七轮 · 用户 2026-09-24：
+      「当鼠标聚焦到输入框，输入框宽度变少了，或者搜索框左右 margin 变多了
+        需要维持宽度不变」）。
+      原先这里在 ≤700px 上给贴顶态加了左右各 8px 的内边距，于是同一枚框
+      聚焦前后**宽度差 16px**（393px 实测 365 → 349，左缘 14 → 22）——
+      这是「聚焦 → 上浮」那一下里唯一一处让框动尺寸的东西。
+      贴顶态本来就该与下面那张卡同宽（都是 `.app` 的内容宽），
+      所以这一条**整个撤掉**，不给它换一个更小的数。 */
 
 body[data-nav="search"] .search-hero.search-active .search-wrap,
 body[data-nav="search"] .search-hero.kb-open .search-wrap { transform: none; }

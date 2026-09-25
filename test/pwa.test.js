@@ -1231,10 +1231,42 @@ function check(name, cond, extra) {
       JSON.stringify([phState.phFont, phState.inputFont]));
     check('iPhone: 索引页提示字上抬回正中轴（位移 = 两档字号行盒中心差）',
       phState.shift === -2.25, 'shift ' + phState.shift + 'px');
-    check('iPhone: 索引页输入框本体不做垂直方向的 padding / line-height 改动',
-      parseFloat(phState.padTop) === 0 && parseFloat(phState.padBottom) === 0 &&
-      phState.lh === 'normal',
-      JSON.stringify([phState.padTop, phState.padBottom, phState.lh]));
+    // ⚠️ 口径改过一次（Issue #278 第七轮）：用户 2026-09-24 要
+    //    「搜索页搜索框上下 padding 或者行高需要小 4px 左右」，所以这一条
+    //    原先守的「上下 padding 必须是 0、行高必须是 normal」不再是口径。
+    //    改守**那 4px 换来的那件可量的事**：两档字号的**行盒中心都落在框的中轴上**
+    //    （提示字靠 ::placeholder 的 translateY 抬、输入文字靠上下等分的内边距）。
+    //    ⚠️ 这条守的是「字号与行高不许脱钩」—— 一旦有人只改行高不重算位移
+    //       （或只改位移不重算行高），两档字就会一起偏出中轴，而这件事
+    //       在 CSS 里看着永远是对的。
+    const leadProbe = await page.evaluate(() => {
+      const inp = document.querySelector('.search-input');
+      const cs = getComputedStyle(inp);
+      const ph = getComputedStyle(inp, '::placeholder');
+      const font = parseFloat(cs.fontSize);
+      const phFont = parseFloat(ph.fontSize);
+      const m = /matrix\(1, 0, 0, 1, 0, (-?[\d.]+)\)/.exec(ph.transform);
+      const phShift = m ? +parseFloat(m[1]).toFixed(2) : 0;
+      const lh = parseFloat(cs.lineHeight);
+      return {
+        font: cs.fontSize, lh: cs.lineHeight,
+        lm: +(lh - font * 1.2).toFixed(2),
+        phShift: phShift,
+        expectShift: +(-(font * 1.2 - phFont * 1.2) / 2).toFixed(2),
+        fontPx: font, phFontPx: phFont,
+        padTop: cs.paddingTop, padBottom: cs.paddingBottom
+      };
+    });
+    check('iPhone: 索引页搜索框的行盒比原先小 4px（`normal` 行盒 24px → 20px）',
+      leadProbe.lh === '20px' &&
+      parseFloat(leadProbe.padTop) === 1 && parseFloat(leadProbe.padBottom) === 1,
+      JSON.stringify([leadProbe.lh, leadProbe.padTop, leadProbe.padBottom]) +
+      '（未登录那一枚 16px 字号的 `normal` 行盒 = 24px，故 20 + 上下各 1 = 24 − 4）');
+    check('iPhone: 提示字仍抬回输入文字的行盒中心（行高与字号没脱钩）',
+      Math.abs(leadProbe.phShift - leadProbe.expectShift) <= 0.15,
+      '提示字位移 ' + leadProbe.phShift + ' / 该是 ' + leadProbe.expectShift +
+      '（= 两档**行盒**中心差的一半，行盒各乘 1.2，行高 ' + leadProbe.lh + '）');
+    void phState.lh;
 
     {
       const { page: sp } = await freshPage();
@@ -1254,9 +1286,12 @@ function check(name, cond, extra) {
             focused: document.activeElement === inp,
             inputTop: +ir.top.toFixed(1),
 
-            offset: +((ir.top + ir.height / 2) - (hr.top + hr.height / 2)).toFixed(1)
+            offset: +((ir.top + ir.height / 2) - (hr.top + hr.height / 2)).toFixed(1),
+            left: +ir.left.toFixed(2),
+            width: +ir.width.toFixed(2)
           };
         });
+        const restRect = { left: restState.left, width: restState.width };
         check('iPhone 搜索页：进页停在静止态（不自动聚焦、框压在页面中心）',
           !restState.focused && !/search-active/.test(restState.cls) &&
           Math.abs(restState.offset) <= 2 && restState.inputTop > 200,
@@ -1289,6 +1324,23 @@ function check(name, cond, extra) {
           focusState.border + ' / 聚焦 ' + focusState.focused);
         check('iPhone 搜索页：聚焦时框底是纸色（与全站输入框同一套口径）',
           /^rgb\(255, 253, 246\)$/.test(focusState.bg), focusState.bg);
+
+        // ⚠️ Issue #278 第七轮 · 用户 2026-09-24：
+        //    「当鼠标聚焦到输入框，输入框宽度变少了，或者搜索框左右 margin
+        //      变多了 需要维持宽度不变」。
+        //    病根是贴顶态在 ≤700px 上给 hero 加了左右各 8px 内边距 ——
+        //    同一枚框聚焦前后**宽度差 16px**（393px 实测 365 → 349、
+        //    左缘 14 → 22）。这一条守的就是那 16px 不许回来：
+        //    聚焦前后取同一枚框的矩形，宽与左缘都要一样。
+        const focusRect = await sp.evaluate(() => {
+          const r = document.querySelector('.search-hero .search-input').getBoundingClientRect();
+          return { left: +r.left.toFixed(2), width: +r.width.toFixed(2) };
+        });
+        check('iPhone 搜索页：聚焦前后搜索框的宽度与左缘一个像素都不变',
+          Math.abs(focusRect.width - restRect.width) <= 0.5 &&
+          Math.abs(focusRect.left - restRect.left) <= 0.5,
+          '静止 ' + restRect.width + 'px@' + restRect.left +
+          ' → 聚焦 ' + focusRect.width + 'px@' + focusRect.left);
       }
       await sp.type('#gw-search', '月', { delay: 10 });
       await new Promise(r => setTimeout(r, 250));
@@ -1603,6 +1655,76 @@ function check(name, cond, extra) {
         nick.border + ' / ' + nick.bg);
       check('iPhone 我的页：没有「保存」按钮（输完自动保存）', nick.hasSave === false, String(nick.hasSave));
       check('iPhone 我的页：没有权限对比那张卡', nick.hasUpsell === false, String(nick.hasUpsell));
+
+      // ⚠️ Issue #278 第七轮 · 用户 2026-09-24：
+      //    「我的页面 现在怎么彻底找不到上传头像和删除头像按钮了
+      //      也不知道从哪里登录」。
+      //    实测那一版（393px）：「登录」被压成 39px（两个字竖排）、
+      //    「退出登录」压住「上传头像」那一格、昵称列被压到 0 宽 ——
+      //    六格键挤成一团，看着就像「按钮没了」。
+      //    这一组守的是**每一格都读得出来**：宽度不与文字宽差出半颗字、
+      //    格子之间不重叠、那一行不溢出（折行可以，压扁与溢出不可以）。
+      const rowState = await sp.evaluate(() => {
+        const row = document.getElementById('identity-row');
+        const card = row.closest('.account-card').getBoundingClientRect();
+        const kids = [...row.children].map(e => {
+          const r = e.getBoundingClientRect();
+          return { id: e.id || String(e.className).split(' ')[0],
+                   l: +r.left.toFixed(1), r: +r.right.toFixed(1),
+                   w: +r.width.toFixed(1), h: +r.height.toFixed(1) };
+        });
+        const btns = [...row.querySelectorAll('#btn-account-entry, #btn-avatar-pick, #btn-avatar-clear')]
+          .filter(b => !b.hidden);
+        const squeezed = btns.filter(b => {
+          const r = b.getBoundingClientRect();
+          // 一颗键读得出来 = 它的宽度撑得住里面的字（字宽 + 两侧内边距）
+          const probe = document.createElement('span');
+          probe.style.cssText = 'position:absolute;left:-9999px;white-space:nowrap;' +
+            'font:' + getComputedStyle(b).font;
+          probe.textContent = b.textContent;
+          document.body.appendChild(probe);
+          const textW = probe.getBoundingClientRect().width;
+          probe.remove();
+          const cs = getComputedStyle(b);
+          const need = textW + parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight) +
+            parseFloat(cs.borderLeftWidth) + parseFloat(cs.borderRightWidth);
+          // ⚠️ 判据不能只看「宽度是否够放」——`overflow: visible` 的 flex 项
+          //    放不下时会**溢出到隔壁格子上**，量出来的宽度照样是「够」的
+          //    （实测旧版「登录」39px 宽、字自然宽 28px，看着「够」，
+          //     实际已把「退出登录」「上传头像」压成两层）。所以两条一起量：
+          //    ① 键与**文字自然宽**比，至少多出两倍内边距（四周留得住白）；
+          //    ② 键与**同一行里它前面的那一格**不许重叠。
+          //    ② 两侧留白各自 ≥ 8px：键的宽度至少要给到
+          //       「字自然宽 + 两侧各 8px 的呼吸」。旧版「登录」是 39px 宽
+          //       （字 28px + 两侧各 5.5px），压得字顶到框边上、两个字挤成竖排
+          //       —— 这一条正好把它咬住。
+          const need2 = textW + 16;
+          return { text: b.textContent, w: +r.width.toFixed(1), need: +need.toFixed(1),
+                   tight: +(need2 - r.width).toFixed(1),
+                   short: +(need - r.width).toFixed(1) };
+        });
+        return {
+          kids: kids,
+          overRows: new Set(kids.map(k => Math.round(k.l))).size,
+          scrollOver: +(row.scrollWidth - row.clientWidth).toFixed(1),
+          cardOver: +(row.getBoundingClientRect().right - card.right).toFixed(1),
+          squeezed: squeezed.filter(x => x.short > 0.5 || x.tight > 0.5)
+        };
+      });
+      check('iPhone 我的页：身份行不溢出（折行可以，撑破卡片不行）',
+        rowState.scrollOver <= 0.5 && rowState.cardOver <= 0.5,
+        '行内溢出 ' + rowState.scrollOver + ' / 出卡片 ' + rowState.cardOver + 'px');
+      check('iPhone 我的页：「登录 / 账号」「上传头像」这一簇每一颗都读得出来（没有被压成竖排）',
+        rowState.squeezed.length === 0,
+        rowState.squeezed.length
+          ? JSON.stringify(rowState.squeezed)
+          : '三颗键的宽度都撑得住自己的字，两侧也留得住白');
+      const flat = rowState.kids.map(k => k.id + ':' + k.w).join(' ');
+      // ⚠️ 昵称列不许被压成 0 宽：旧版（393px）实测 `identity-main:0` ——
+      //    名字那一格整个没了，一行的重心全压在那几颗键上。
+      const nickCol = rowState.kids.filter(k => k.id === 'identity-main')[0];
+      check('iPhone 我的页：昵称列没被压成 0 宽（名字是这一行的主角）',
+        !!nickCol && nickCol.w >= 60, flat);
 
       const glow = await sp.evaluate(async () => {
         const inp = document.getElementById('input-nickname');

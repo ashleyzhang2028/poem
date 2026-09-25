@@ -215,6 +215,50 @@ console.log("\n=== 八、接口与页面：拦在数据层，按钮之外也绕�
   const ver = parseInt((sw.match(/poem-app-v(\d+)/) || [0, "0"])[1], 10);
   chk(ver >= 160, "缓存版本已跟着提（Issue #229 第二轮动了 js/settings.js，实际 v" + ver + "）");
   has(read("settings/general/index.html"), "/js/export-core.js", "设置页加载了导出内核");
+
+  // ⚠️ 这一条是 Issue #278 第七轮补上的，守的是一个**真出过的故障**：
+  //    用户 2026-09-24「导出课内诗词显示 导出组件没有加载成功」。
+  //    病根不是导出内核，是**这一页少加载了两个脚本** ——
+  //    `exportPoems()` 那三样（ExportCore / Entitlement / identity）里
+  //    少了 `js/entitlement.js`，于是 `currentIdentity()` 恒为 null，
+  //    守卫当场判成「组件没加载成功」，而真正少的那一个谁也没点名。
+  //    ⚠️ 这条不写「页面里有这两行」的静态断言（那种断言挡不住
+  //       「行在但加载顺序错」这种坏法）：它直接**按 HTML 的加载次序**
+  //       把这两个脚本求出来，走一遍 `exportPoems()` 的前置判断。
+  //       `exportPoems()` 里那三样，一样都不许少。
+  {
+    const gen = read("settings/general/index.html");
+    const loaded = (gen.match(/<script src="([^"]+)"><\/script>/g) || [])
+      .map(t => t.match(/src="([^"]+)"/)[1]);
+
+    // 按页面里的**真实次序**在沙箱里跑一遍引擎那两个文件。
+    const sandbox = { window: {}, console: console, document: undefined };
+    sandbox.window = sandbox;
+    vm.createContext(sandbox);
+    ["js/auth-core.js", "js/entitlement.js",
+     "js/progress-store.js", "js/storage.js", "js/export-core.js"].forEach(f => {
+      if (loaded.indexOf("/" + f) < 0) return;      // 按页面的加载名对
+      vm.runInContext(read(f), sandbox, { filename: f });
+    });
+
+    chk(loaded.indexOf("/js/entitlement.js") >= 0,
+      "「通用」页按次序加载了 js/entitlement.js（少了它，导出按钮永远只会弹" +
+      "「导出组件没有加载成功」—— 用户 2026-09-24 报的就是这个）");
+    chk(loaded.indexOf("/js/auth-core.js") >= 0,
+      "「通用」页也加载了 js/auth-core.js（Entitlement.identity 认登录态要用它）");
+    chk(sandbox.Entitlement && typeof sandbox.Entitlement.can === "function",
+      "沙箱里 Entitlement 真的起来了（不是一句「页面里有那行 script」）");
+
+    const id = sandbox.Entitlement.identity({ backing: {
+      getItem: function () { return null; }, setItem: function () {}
+    } });
+    chk(!!id && typeof id === "object",
+      "currentIdentity() 这一支拿得到身份（未登录也有一份「游客」身份，" +
+      "不是 null —— 它正是那个「组件没加载成功」的判据）");
+    chk(sandbox.Entitlement.can("export.all", { tier: "pro", signedIn: true }).ok &&
+        !sandbox.Entitlement.can("export.all", { tier: "free", signedIn: true }).ok,
+      "Pro 放行 / Free 拦住（门槛没变）");
+  }
 }
 
 console.log("");
