@@ -68,7 +68,7 @@
       btn.type = "button";
       btn.className = "family-add";
       btn.id = "btn-family-add";
-      btn.textContent = unlimited ? "再建一个" : "再建一个（还可建 " + left + " 个）";
+      btn.textContent = unlimited ? "新建" : "新建（还可建 " + left + " 个）";
       box.appendChild(btn);
     }
 
