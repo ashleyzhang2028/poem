@@ -116,7 +116,10 @@ function repaint(p) {
   const URL_MINE = 'https://local.test/mine/';
 
   const entryBtn = (p) => p.doc.getElementById('btn-account-entry');
-  const actionsRow = (p) => p.doc.getElementById('account-actions');
+  // ⚠️ Issue #276 第九轮（用户 2026-09-25）：「登录」那颗键从卡里那一格
+  //    （#account-actions）搬进了身份卡第二行 #identity-btns —— 与
+  //    「上传 / 更新头像」并排，住在头像 + 昵称那一行的下面。
+  const actionsRow = (p) => p.doc.getElementById('identity-btns');
   const shownIds = (p) => [...actionsRow(p).querySelectorAll('button')]
     .filter(b => !b.hidden).map(b => b.id);
 
@@ -130,8 +133,13 @@ function repaint(p) {
 
   chk(entryBtn(p).textContent === '登录',
     '未登录时那颗键上只有一个词：登录（实际「' + entryBtn(p).textContent + '」）');
-  chk(shownIds(p).join(',') === 'btn-account-entry',
-    '未登录时那一行里只剩「登录」一颗（实际 ' + shownIds(p).join(',') + '）');
+  // ⚠️ 第九轮：这一行上现在**两颗**键（「登录」+「上传 / 更新头像」，
+  //    和头像键并列，见 .identity-btns）。这里守的是「登录那颗在其中、
+  //    且只有它这一颗账号键」—— 不是「这一行只有一颗键」。
+  chk(shownIds(p).join(',') === 'btn-account-entry,btn-avatar-pick',
+    '未登录时第二行上是「登录」+「上传头像」两颗（实际 ' + shownIds(p).join(',') + '）');
+  chk(shownIds(p).filter(id => /account/.test(id)).length === 1,
+    '账号键只有一颗（登录 / 退出是**同一个按钮的两个状态**，不并存）');
   chk(!/btn-go-plans/.test(SRC.mine) && !/btn-go-plans/.test(MINE_JS),
     '「用户对比」那颗键整颗撤了（用户 2026-09-18：从这里移出，' +
     '改成设置「关于」里的一行链接）');
@@ -167,8 +175,8 @@ function repaint(p) {
   //    未登录「登录」、已登录「退出登录」。
   chk(entryBtn(p).textContent === '退出登录',
     '已登录时那颗键换成「退出登录」（实际「' + entryBtn(p).textContent + '」）');
-  chk(shownIds(p).join(',') === 'btn-account-entry',
-    '已登录时那一格上也只有**一颗**键（实际 ' + shownIds(p).join(',') + '）');
+  chk(shownIds(p).join(',') === 'btn-account-entry,btn-avatar-pick',
+    '已登录时那一格上仍是**一颗**账号键 + 那颗头像键（实际 ' + shownIds(p).join(',') + '）');
   const innText = stripHtml(p.doc.getElementById('identity-row').outerHTML);
   chk(/游客|已登录/.test(innText), '已登录时身份行仍写着登录态那一句');
   chk(!/belem@example\.com/.test(innText), '页面上不出现明文邮箱（掩码之外一个字符都不露）');

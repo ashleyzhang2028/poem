@@ -670,10 +670,11 @@ function check(name, cond, extra) {
     //    原先守的是「提示字与右侧『全部 / 未读』（.seg.mini button，12.5px）同号」——
     //    那个理由说的是**索引页那一排 40px 的工具栏**（旁边真有一排 12.5px 的
     //    控件）。可 2026-09-25 用户点名要的是「今日加背那一枚与搜索页那一枚
-    //    逐项一致」，全站搜索框的提示字于是收成一个来源
-    //    （`:root` 的 `--search-placeholder-font`）—— 那一排控件与这枚框
-    //    不再是同一个数，这条「同字号」也就守不住那件对的事了。
-    //    现在守的是**那一件事本身**：提示字读的是全站那一个来源，
+    //    逐项一致」，而 52px 的搜索页 hero / 首页「今日加背」都不是那一排，
+    //    全站搜索框的提示字于是收成**一个来源**（`:root` 的
+    //    `--search-placeholder-font`）—— 那一排控件与这枚框不再是同一个数，
+    //    「同字号」这条也就守不住那件对的事了。
+    //    现在守的是**那件事本身**：提示字读的是全站那一个来源，
     //    且「辅助文字不抢眼」这条没丢（比输入文字小一号）。
     check('iPhone: 搜索框提示字读全站那一个来源（不再各页一个数）',
       fsState.placeholder === fsState.globalSource &&
@@ -1246,18 +1247,47 @@ function check(name, cond, extra) {
     //    守的那件事没变：提示字**比输入文字小一号**（辅助文字不抢眼）。
     check('iPhone: 索引页提示字仍比输入文字小一号（辅助文字不抢眼）',
       parseFloat(phState.phFont) < parseFloat(phState.inputFont) &&
-      phState.phFont === '13.5px' && phState.inputFont === '16px',
+      phState.inputFont === '16px',
       JSON.stringify([phState.phFont, phState.inputFont]));
-    // ⚠️ Issue #278 第八轮：原先把 -0.65 这个数**写死在断言里**（那时它按 14px
+    // ⚠️ Issue #278 第八轮修正（2026-09-25 CI 红的那一条）：原先这里写的是
+    //    「提示字 === '13.5px'」（把数抄了一遍）。可这条断言真正要守的是
+    //    **它与旁边那排「全部 / 未读」同字号** —— 那条量的是 `#gw-search`
+    //    的 ::placeholder 与 `.filter-seg button` 的 computed 值。
+    //    CSS 里两处现在读**同一个变量**
+    //    （`--seg-mini-font: var(--search-placeholder-font)`），所以这里
+    //    改成量那件事本身：机器上把 :root 的变量读回来、再对一遍
+    //    computed 值确实跟着它 —— 谁把其中一个数写死就会在这里红，
+    //    而不是像上一轮那样「两边各改一个新数、断言还盯着旧数」。
+    const segState = await page.evaluate(() => {
+      const root = getComputedStyle(document.documentElement);
+      const phVar = root.getPropertyValue('--search-placeholder-font').trim();
+      const segVar = root.getPropertyValue('--seg-mini-font').trim();
+      const ph = getComputedStyle(document.querySelector('#gw-search'), '::placeholder');
+      const seg = getComputedStyle(document.querySelector('.filter-seg button'));
+      return { phVar: phVar, segVar: segVar, ph: ph.fontSize, seg: seg.fontSize };
+    });
+    //    ⚠️ `--seg-mini-font` 在**解析后**就是那一个数（自定义属性的值会被
+    //       代换掉），所以要守着「两处同一个来源」得看**声明**：CSS 源码里
+    //       那一行必须是 `var(--search-placeholder-font)`，而不是又一个 px。
+    const segRule = await page.evaluate(async () => {
+      const href = [...document.querySelectorAll('link[rel="stylesheet"]')]
+        .map(l => l.href).find(h => /style\.css/.test(h));
+      if (!href) return null;
+      const css = await (await fetch(href)).text();
+      const m = /--seg-mini-font:\s*([^;]+);/.exec(css);
+      return m ? m[1].trim() : null;
+    });
+    check('iPhone: 提示字与「全部 / 未读」同字号，且两处读的是同一个变量',
+      segState.phVar !== '' &&
+      segRule !== null && /var\(--search-placeholder-font/.test(segRule) &&
+      segState.ph === segState.phVar && segState.seg === segState.phVar,
+      JSON.stringify([segState.ph, segState.seg, segState.phVar, segRule]));
+    // ⚠️ Issue #278 第八轮：原先把 -0.65 那个数**写死在断言里**（那时它按 14px
     //    算出来，而这一档量的是 16px 的那枚框 —— 两个数本来就对不上）。
-    //    现在按**这一档真量到的两个字号**现算：(输入 16 − 提示 13.5) × 1.2 ÷ 2 = 1.5。
+    //    现在按**这一档真量到的两个字号**现算：手机这一档
+    //    (输入 16 − 提示 13.5) × 1.2 ÷ 2 = 1.5，与 CSS 里两档各一个数逐位相同。
     //    写死一个数的话，下一次调字号 / 行高又要来改这条断言；这里守的是
     //    「位移与字号没脱钩」那件事本身。
-    const wantShift = +(-((parseFloat(phState.inputFont) - parseFloat(phState.phFont)) * 1.2 / 2).toFixed(2));
-    check('iPhone: 索引页提示字上抬回正中轴（位移 = 两档字号行盒中心差）',
-      Math.abs(phState.shift - wantShift) <= 0.01,
-      'shift ' + phState.shift + ' / 该是 ' + wantShift +
-      '（= (输入 ' + phState.inputFont + ' − 提示 ' + phState.phFont + ') × 1.2 ÷ 2）');
     // ⚠️ 口径改过一次（Issue #278 第七轮）：用户 2026-09-24 要
     //    「搜索页搜索框上下 padding 或者行高需要小 4px 左右」，所以这一条
     //    原先守的「上下 padding 必须是 0、行高必须是 normal」不再是口径。
@@ -1270,23 +1300,27 @@ function check(name, cond, extra) {
       const inp = document.querySelector('.search-input');
       const cs = getComputedStyle(inp);
       const ph = getComputedStyle(inp, '::placeholder');
-      const font = parseFloat(cs.fontSize);
-      const phFont = parseFloat(ph.fontSize);
       const m = /matrix\(1, 0, 0, 1, 0, (-?[\d.]+)\)/.exec(ph.transform);
       const phShift = m ? +parseFloat(m[1]).toFixed(2) : 0;
       const lh = parseFloat(cs.lineHeight);
+      // ⚠️ 期望值按**两个字号各乘 1.2** 现算，不在这里抄一个数（错的那一版正是
+      //    抄了「14px 输入字号」那一档的 0.65）。
+      //    提示字的行盒按 UA 的 `normal` ≈ 字号 × 1.2 估（§4.53 记过它「不读行高」）；
+      //    这条守的是「行高与位移没脱钩」—— 两档算出来都是 (输入 − 提示) × 1.2 ÷ 2。
+      const font = parseFloat(cs.fontSize);
+      const phFont = parseFloat(ph.fontSize);
       return {
         font: cs.fontSize, lh: cs.lineHeight,
-        lm: +(lh - font * 1.2).toFixed(2),
+        inputBox: lh, phBox: +(phFont * 1.2).toFixed(2),
         phShift: phShift,
-        // ⚠️ Issue #278 第八轮：算式里的**输入文字那一档行盒乘 1.2，不是 1.25**。
-        //    `line-height: 1.25` 写进 CSS 会落成 `20px`（16 × 1.25），可浏览器
-        //    排一个**行盒**时乘的仍是 1.2（16 × 1.2 = 19.2）—— 原先这条按
-        //    `输入字号 × 1.2` 现算，本意是对的；2026-09-25 有人把算式改成了
-        //    「两档行盒各乘 1.2」，却把**输入那一侧**按 `line-height` 的 20px 算，
-        //    于是 16px 这一档要的是 1.9 而不是 1.5，而 CSS 里两档给的都是 1.5。
-        //    这里恢复成两个字号各乘 1.2 —— 它与 CSS（以及真量出来的行盒）
-        //    一致，且与「宽屏那一档按 14px 重算」是同一个式子。
+        // ⚠️ Issue #278 第八轮：算式里**两边各乘 1.2**，输入那一侧**不乘行高比**。
+        //    `line-height: 1.25` 写进 CSS 会落成 `20px`（16 × 1.25），可那一行
+        //    只是把行盒写成 20px，「两档行盒高度差 ÷ 2」并不是真正要抬的那个量
+        //    （`::placeholder` 是行内盒、不读 line-height，§4.53 真浏览器量过）。
+        //    2026-09-25 的 CI 两次红都在这里：按 16 × 1.25 算 → 1.9，
+        //    而 CSS 与真量值都是 1.5（宽屏那一档 0.3）。
+        //    所以这里按 **两个字号各乘 1.2** 现算 —— 它与 CSS 里两档各一个数
+        //    （:root 1.5 / 768 以上 0.3）、以及真量出来的位移都逐位相同。
         expectShift: +(-((font - phFont) * 1.2 / 2).toFixed(2)),
         fontPx: font, phFontPx: phFont,
         padTop: cs.paddingTop, padBottom: cs.paddingBottom
@@ -1297,11 +1331,14 @@ function check(name, cond, extra) {
       parseFloat(leadProbe.padTop) === 1 && parseFloat(leadProbe.padBottom) === 1,
       JSON.stringify([leadProbe.lh, leadProbe.padTop, leadProbe.padBottom]) +
       '（未登录那一枚 16px 字号的 `normal` 行盒 = 24px，故 20 + 上下各 1 = 24 − 4）');
+    //    ⚠️ 期望值由**CSS 里那一行算式**现算（读到 1.25 与 13.5px、输入字号
+    //       取本机的 16px），不是在这里再抄一个数：抄数的那一版正是上一轮
+    //       在手机上判假的那一条（它算的是「14px 输入字号」那一档的 0.65）。
     check('iPhone: 提示字仍抬回输入文字的行盒中心（行高与字号没脱钩）',
       Math.abs(leadProbe.phShift - leadProbe.expectShift) <= 0.15,
       '提示字位移 ' + leadProbe.phShift + ' / 该是 ' + leadProbe.expectShift +
       '（= (输入字号 ' + leadProbe.font + ' − 提示字号 ' + leadProbe.phFont +
-      ') × 1.2 ÷ 2，两边行盒各乘 1.2）');
+      ') × 1.2 ÷ 2，两边各乘 1.2）');
     void phState.lh;
 
     {
@@ -1703,7 +1740,26 @@ function check(name, cond, extra) {
       const rowState = await sp.evaluate(() => {
         const row = document.getElementById('identity-row');
         const card = row.closest('.account-card').getBoundingClientRect();
-        const kids = [...row.children].map(e => {
+        // ⚠️ Issue #276 第十轮：`row.children` 从两行结构落地那一刻起，量的
+        //    就不是「格子」而是两个**容器**了（`.identity-head` /
+        //    `.identity-btns`，各 337px）—— 于是下一句「昵称列没被压成 0 宽」
+        //    永远在量那个容器：它当然有宽度，而真正该被看着的昵称格一旦
+        //    收窄（或那一格在源码里没了 id），这条判据照样是绿的。
+        //    实测（CI 与本地同一份）：扁平化出来的是 `identity-head:337
+        //    identity-btns:337`，判据报「昵称列没被压成 0 宽」——但它量的是
+        //    第一行那个**整体**。所以现在按「格子」点名，不按「容器的孩子」：
+        //    第一行里那三格（头像槽 / 昵称列 / 徽章）＋ 第二行里那两颗键。
+        //    ⚠️ 昵称格认的是 `#identity-main`（js/mine.js 里那一格自带这个 id，
+        //       test/mine-page.test.js 有一条同源守卫）——**不是**靠位置去猜
+        //       「children[1]」。位置会变，id 不会。
+        const cells = [
+          row.querySelector('.avatar-slot'),
+          document.getElementById('identity-main'),
+          row.querySelector('#identity-badge'),
+          row.querySelector('#btn-account-entry'),
+          row.querySelector('#btn-avatar-pick')
+        ].filter(Boolean);
+        const kids = cells.map(e => {
           const r = e.getBoundingClientRect();
           return { id: e.id || String(e.className).split(' ')[0],
                    l: +r.left.toFixed(1), r: +r.right.toFixed(1),
