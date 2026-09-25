@@ -70,6 +70,12 @@ var CONFIG = {
   mailRetryMax: intEnv("MAIL_RETRY_MAX", 2),
   mailRetryBudgetMs: intEnv("MAIL_RETRY_BUDGET_MS", 6000),
 
+  // 重试的退避基数（400ms × 3ⁿ 里那个 400）。留成旋钮是为了让**测试**
+  // 不必真的等到线上该等的时间：重试的判据（该不该重试、最多几次、
+  // 预算怎么算）与「等多久」是两件事，后者只该由生产口径决定
+  // （默认值不变，线上一个字都不改）—— Issue #278。
+  mailRetryBaseMs: intEnv("MAIL_RETRY_BASE_MS", 400),
+
   requireEmailVerified: env("REQUIRE_EMAIL_VERIFIED", "1") !== "0",
 
   wrongRoundsLimit: intEnv("WRONG_ROUNDS_LIMIT", 3),

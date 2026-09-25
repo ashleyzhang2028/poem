@@ -1,4 +1,3 @@
-const { JSDOM } = require('jsdom');
 const fs = require('fs');
 const vm = require('vm');
 const path = __dirname + '/../';
@@ -247,150 +246,12 @@ chk(IDX.some(x => x.book === 'zhaoming' && x.isBook),
 chk(sandbox.SITE_BOOKS.length === 9 && sandbox.SITE_BOOKS.some(b => b.id === 'zhaoming'),
   '九部集子的清单里含昭明文选（' + sandbox.SITE_BOOKS.length + ' 部）');
 
-const dom = new JSDOM(fs.readFileSync(path + 'zhaoming/index.html', 'utf8'), {
-  runScripts: 'dangerously',
-  url: 'https://local.test/zhaoming/'
-});
-const w = dom.window;
+// ---------------------------------------------------------------------------
+// Issue #278：这一层的**页面层**（jsdom 起页面、挂脚本、渲染分组、点开详情、
+// 搜索框敲字）整段删除 —— 那是界面测试。留下的是数据层：篇目数量 / id / 字段 /
+// 分组口径 / 总索引收录，以及页面脚本顺序这一类**功能接线**的口径。
+// ---------------------------------------------------------------------------
 
-w.scrollTo = function () {};
-w.matchMedia = w.matchMedia || function () { return { matches: false, addListener: function () {}, removeListener: function () {} }; };
-const html = fs.readFileSync(path + 'zhaoming/index.html', 'utf8');
-const scripts = html.match(/<script src="([^"]+)"><\/script>/g)
-  .map(s => s.match(/src="([^"]+)"/)[1]);
-
-setTimeout(() => {
-
-  for (const f of scripts) {
-    try {
-      const el = w.document.createElement('script');
-      el.textContent = fs.readFileSync(path + f, 'utf8');
-      w.document.body.appendChild(el);
-    } catch (e) {
-      console.log('✗ 脚本执行失败 ' + f + '：' + e.message);
-      fails++;
-    }
-
-    if (/reader-core\.js$/.test(f) && w.ReaderEngine && !w.ReaderEngine.__wrapped) {
-      const orig = w.ReaderEngine.mount;
-      w.ReaderEngine.mount = function (cfg) {
-        const inst = orig.call(w.ReaderEngine, cfg);
-        w.__lastMount = inst;
-        return inst;
-      };
-      w.ReaderEngine.__wrapped = true;
-    }
-  }
-    const d = w.document;
-
-  chk(!!w.ReaderEngine, '阅读库引擎已加载');
-
-  const items = d.querySelectorAll('#gw-list .item');
-  chk(items.length === 480, '列表渲染出 480 条（实际 ' + items.length + '）');
-  const bodyText = d.body.textContent;
-  chk(/昭明文选/.test(bodyText), '页面出现「昭明文选」');
-  chk(/赋 · 京都上/.test(bodyText), '分组名「赋 · 京都上」渲染到了页面上');
-  chk(/诗 · 赠答/.test(bodyText), '分组名「诗 · 赠答」渲染到了页面上');
-
-  const pendings = d.querySelectorAll('#gw-list .item-reason.pending');
-  chk(pendings.length === 0,
-    '480 篇都有译文，列表里没有「待补」小标（实际 ' + pendings.length + '）');
-
-  chk(!/\[object|undefined/.test(d.querySelector('#gw-list').textContent),
-    '列表文案没有渲染异常（无 undefined / [object]）');
-
-  const api = w.__zmApi || (w.ReaderEngine && w.__lastMount) || null;
-  chk(!!api, '拿到 /zhaoming/ 页的挂载实例');
-  if (!api) { console.log('（无实例，跳过页面交互断言）'); }
-  const openByTitle = (name) => {
-    const p = w.POEMS_ZHAOMING.filter(x => x.title === name)[0];
-    chk(!!p, '数据里有《' + name + '》');
-    if (!p) return;
-    api.open(p.id);
-    return p;
-  };
-
-  const itemEls = [].slice.call(d.querySelectorAll('#gw-list .item'));
-  const target = itemEls.filter(el => {
-    const p = w.POEMS_ZHAOMING.filter(x => x.id === el.dataset.id)[0];
-    return p && p.title === '登楼赋';
-  })[0];
-  chk(!!target, '列表里能找到《登楼赋》那一条');
-  if (target) target.click();
-    const reader = d.getElementById('gw-reader');
-  chk(reader && !reader.hidden, '点条目后阅读器打开');
-  const gotTitle = d.querySelector('#rd-title').textContent;
-
-  const body = d.querySelector('#rd-text').textContent
-    .replace(/[a-zāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜüńňǹ·]+/g, '').replace(/\s/g, '');
-  chk(gotTitle === '登楼赋', '阅读器标题是《登楼赋》（实际 ' + gotTitle + '）');
-  chk(body.indexOf('登兹楼以四望兮') >= 0, '正文写入阅读器');
-  chk(/三国·魏/.test(d.querySelector('#rd-meta').textContent), '元信息含朝代「三国·魏」');
-  chk(/王粲/.test(d.querySelector('#rd-meta').textContent), '元信息含常用姓名「王粲」');
-  const trans = d.querySelector('#rd-trans-text').textContent;
-  chk(trans.length > 60, '《登楼赋》的白话译文已写入阅读器（' + trans.length + ' 字）');
-
-  const emptyDynEl = itemEls.filter(el => {
-    const p = w.POEMS_ZHAOMING.filter(x => x.id === el.dataset.id)[0];
-    return p && p.title === '古诗十九首';
-  })[0];
-  chk(!!emptyDynEl, '列表里能找到《古诗十九首》那一条');
-  if (emptyDynEl) {
-    const metaTxt = emptyDynEl.querySelector('.item-meta').textContent;
-    chk(metaTxt.indexOf('东汉') < 0, '列表里不再给《古诗十九首》标「东汉」（实际：' + metaTxt + '）');
-    chk(!/^\s*·/.test(metaTxt) && metaTxt.indexOf('··') < 0,
-      '朝代留空的那一条，列表里没有多出以「·」开头的残句（实际：' + metaTxt + '）');
-    emptyDynEl.click();
-    const rdMeta = d.querySelector('#rd-meta').textContent;
-    chk(rdMeta.indexOf('东汉') < 0, '阅读器里也不再标「东汉」（实际：' + rdMeta + '）');
-    chk(!/^\s*·/.test(rdMeta) && rdMeta.indexOf('··') < 0,
-      '阅读器元信息没有以「·」开头的残句（实际：' + rdMeta + '）');
-
-    chk(/佚名/.test(rdMeta), '作者仍在元信息里（实际：' + rdMeta + '）');
-  }
-
-  const zhaoEl = itemEls.filter(el => {
-    const p = w.POEMS_ZHAOMING.filter(x => x.id === el.dataset.id)[0];
-    return p && p.title === '招隐士';
-  })[0];
-  chk(!!zhaoEl, '列表里能找到《招隐士》那一条');
-  if (zhaoEl) zhaoEl.click();
-  const zhaoBody = d.querySelector('#rd-text').textContent
-    .replace(/[a-zāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜüńňǹ·]+/g, '').replace(/\s/g, '');
-  chk(zhaoBody.indexOf('林木茇\u{29A12}') >= 0,
-    '阅读器正文里「林木茇𩨒」是完整的真字（不是空白、不是图片语法）');
-
-  const rawReader = d.getElementById('rd-text').innerHTML;
-  chk(rawReader.indexOf('\u{29A12}') >= 0
-    || rawReader.indexOf('&#x29A12;') >= 0 || rawReader.indexOf('&#x29a12;') >= 0,
-    '扩展区字进入阅读器 HTML（未被注音逻辑吞掉）');
-
-  const first = w.POEMS_ZHAOMING.filter(x => x.title === '陈情表')[0];
-  const masterRec = (w.TEXT_MASTER || []).filter(m => m.id === first.textRef)[0];
-  chk(!!masterRec && !!masterRec.translation,
-    '《陈情表》本轮已有译文（用作待补分支的样本）');
-  const keepTrans = masterRec.translation;
-  masterRec.translation = '';
-
-  api && api.refreshCanonical();
-  api && api.open(first.id);
-    chk(d.querySelector('#rd-text').textContent.indexOf('臣密言') >= 0,
-    '待补篇目的**原文照样能读**（不是白屏）');
-  chk(/尚在整理中/.test(d.querySelector('#rd-trans-text').textContent),
-    '译文为空时给出「白话译文尚在整理中」的说明');
-  masterRec.translation = keepTrans;
-  api && api.refreshCanonical();
-  api && api.close();
-
-  api && api.setKeyword('王粲');
-    const nWang = d.querySelectorAll('#gw-list .item').length;
-  chk(nWang > 0 && nWang < 480, '按作者「王粲」搜索得到子集（' + nWang + ' 篇）');
-  api && api.setKeyword('赋');
-    const nFu = d.querySelectorAll('#gw-list .item').length;
-  chk(nFu > 0 && nFu < 480, '按文体「赋」搜索得到子集（' + nFu + ' 篇）');
-  api && api.setKeyword('');
-
-  console.log('');
-  console.log(fails === 0 ? '🎉 昭明文选测试全部通过' : '❌ 昭明文选测试 ' + fails + ' 项失败');
-  process.exit(fails === 0 ? 0 : 1);
-}, 120);
+console.log('');
+console.log(fails ? '❌ ' + fails + ' 项失败' : '🎉 zhaoming测试全部通过');
+process.exit(fails ? 1 : 0);

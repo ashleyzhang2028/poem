@@ -179,6 +179,16 @@ var ENTRY = [
       "Serverless 里没有常驻进程，「过五分钟再试」需要一个真队列（Redis / 云任务），那是另一件事"
   },
   {
+    key: "MAIL_RETRY_BASE_MS",
+    level: "optional",
+    group: "发信",
+    secret: false,
+    what: "重试退避的**基数**（毫秒，默认 400；实际等待是 400 × 3ⁿ 再加抖动）",
+    missing: "用默认值 400",
+    how: "线上不必改。它是留给测试的旋钮：重试的**判据**（该不该重试 / 最多几次 / " +
+      "预算怎么算）与「等多久」是两件事，后者在测试里压到 1ms 就能把十几秒的白等还回来，判据一条不动"
+  },
+  {
     key: "COOKIE_NAME",
     level: "optional",
     group: "会话",

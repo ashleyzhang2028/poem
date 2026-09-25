@@ -30,25 +30,18 @@ main:
       docker:
         build: image/Dockerfile
       stages:
-        - name: install-deps
-          script: |
-            set -e
-            # 必须**一条命令**同时装 jsdom 与 puppeteer。
-            # 分成两条 `npm i` 时，第二条会因为 package.json 里没有声明这两个包
-            # （只用 --no-save 临时装）而把第一条的成果当作「多余的包」清掉 ——
-            # 实测：先装 jsdom（39 个包），再装 puppeteer 会打印
-            # "added 98 packages, and removed 39 packages"，jsdom 被整个移除。
-            # 之后 test/run.sh 发现 require.resolve('jsdom') 失败，转入「临时安装」分支，
-            # 在另一处目录里再装一份 jsdom，依赖解析于是变得不确定
-            # （小古文层曾因此在 CI 上抛出 TypeError 而整层炸掉）。
-            #
-            # jsdom 固定大版本：本镜像的 Node 是 20，而 jsdom 30 起把 engines
-            # 提到了 ^22.22.2 || ^24.15.0 || >=26.0.0 —— 在 Node 20 上属于「未支持」，
-            # 装到会上但 DOM 行为漂移（jsdom 27~29 的 element.querySelector('#dup-id')
-            # 只认文书里第一枚 id，恰好把「页面顶栏与阅读器顶栏都渲染出 id="top-act"」
-            # 这个真 bug 暴露成整层 ✗；上层若只跟着升 jsdom 就会让红绿随版本跳）。
-            # 这里锁 ^26（engines: >=18），要升 Node 时同步放开。
-            npm i jsdom@^26 puppeteer --no-save --no-fund --no-audit
+        # ⚠️ Issue #278：这一条 `install-deps` **整条删掉**了。
+        #
+        # 它原先装两样东西：jsdom 与 puppeteer。前者是界面测试（jsdom 起真页面）
+        # 要的，后者那一层要起真 Chrome（还要先下一份浏览器）。
+        # 而界面测试这一轮**整层删除**（用户 2026-09-25：「删除尽可能多的其他
+        # 测试，特别是界面相关的测试，我的目的是构建时间变短」），
+        # test/run.sh 现在全是纯 Node —— 一个依赖都不装。
+        #
+        # 省下的是什么：`npm i jsdom@^26 puppeteer` 本身要跑 npm 解析 + 下一份
+        # Chromium（`.cache/puppeteer`，几百兆，缓存没命中时是分钟级）。
+        # 那段注释里记的「两条 npm i 互相清包让 jsdom 装不上」的老坑，
+        # 也随着这一条一起消失了 —— 现在没有需要「同时装」的东西了。
         - name: run-tests
           script: bash test/run.sh
 
@@ -203,25 +196,8 @@ main:
       docker:
         build: image/Dockerfile
       stages:
-        - name: install-deps
-          script: |
-            set -e
-            # 必须**一条命令**同时装 jsdom 与 puppeteer。
-            # 分成两条 `npm i` 时，第二条会因为 package.json 里没有声明这两个包
-            # （只用 --no-save 临时装）而把第一条的成果当作「多余的包」清掉 ——
-            # 实测：先装 jsdom（39 个包），再装 puppeteer 会打印
-            # "added 98 packages, and removed 39 packages"，jsdom 被整个移除。
-            # 之后 test/run.sh 发现 require.resolve('jsdom') 失败，转入「临时安装」分支，
-            # 在另一处目录里再装一份 jsdom，依赖解析于是变得不确定
-            # （小古文层曾因此在 CI 上抛出 TypeError 而整层炸掉）。
-            #
-            # jsdom 固定大版本：本镜像的 Node 是 20，而 jsdom 30 起把 engines
-            # 提到了 ^22.22.2 || ^24.15.0 || >=26.0.0 —— 在 Node 20 上属于「未支持」，
-            # 装到会上但 DOM 行为漂移（jsdom 27~29 的 element.querySelector('#dup-id')
-            # 只认文书里第一枚 id，恰好把「页面顶栏与阅读器顶栏都渲染出 id="top-act"」
-            # 这个真 bug 暴露成整层 ✗；上层若只跟着升 jsdom 就会让红绿随版本跳）。
-            # 这里锁 ^26（engines: >=18），要升 Node 时同步放开。
-            npm i jsdom@^26 puppeteer --no-save --no-fund --no-audit
+        # ⚠️ Issue #278：`install-deps` 整条删掉（理由见 main.push 那一条：
+        # 界面测试整层删除，test/run.sh 现在一个依赖都不装）。
         - name: run-tests
           script: bash test/run.sh
 

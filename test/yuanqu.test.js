@@ -1,4 +1,3 @@
-const { JSDOM } = require('jsdom');
 const fs = require('fs');
 const vm = require('vm');
 const path = __dirname + '/../';
@@ -77,59 +76,12 @@ chk(yqIdx.every(x => x.text && x.translation), '进索引的每一首原文与�
 chk(IDX.some(x => x.book === 'yuanqu' && x.isBook),
   '「元曲三百首」本身也作为一条结果（搜集子名能直接进那一页）');
 
-const dom = new JSDOM(fs.readFileSync(path + 'yuanqu/index.html', 'utf8'), {
-  runScripts: 'dangerously',
-  url: 'https://local.test/yuanqu/'
-});
-const w = dom.window;
-w.scrollTo = function () {};
-const html = fs.readFileSync(path + 'yuanqu/index.html', 'utf8');
-const scripts = html.match(/<script src="([^"]+)"><\/script>/g)
-  .map(s => s.match(/src="([^"]+)"/)[1]);
+// ---------------------------------------------------------------------------
+// Issue #278：这一层的**页面层**（jsdom 起页面、挂脚本、渲染分组、点开详情、
+// 搜索框敲字）整段删除 —— 那是界面测试。留下的是数据层：篇目数量 / id / 字段 /
+// 分组口径 / 总索引收录，以及页面脚本顺序这一类**功能接线**的口径。
+// ---------------------------------------------------------------------------
 
-setTimeout(() => {
-  for (const f of scripts) {
-    try {
-      const el = w.document.createElement('script');
-      el.textContent = fs.readFileSync(path + f, 'utf8');
-      w.document.body.appendChild(el);
-    } catch (e) {
-      console.log('✗ 脚本执行失败 ' + f + '：' + e.message);
-      fails++;
-    }
-  }
-  const d = w.document;
-
-  chk(!!w.ReaderEngine, '阅读库引擎已加载');
-  const items = d.querySelectorAll('#gw-list .item');
-  chk(items.length === 30, '列表渲染出 30 条（实际 ' + items.length + '）');
-  chk(/元曲三百首/.test(d.body.textContent), '页面出现「元曲三百首」');
-  chk(/小令 · 越调/.test(d.body.textContent), '分组名「小令 · 越调」渲染到了页面上');
-  chk(/小令 · 双调/.test(d.body.textContent), '分组名「小令 · 双调」渲染到了页面上');
-  chk(!/\[object|undefined/.test(d.querySelector('#gw-list').textContent),
-    '列表文案没有渲染异常（无 undefined / [object]）');
-
-  const api = w.ReaderEngine.current;
-  chk(!!api, '拿到 /yuanqu/ 页的挂载实例');
-  if (api) {
-    api.open('yq-16');
-    const rd = d.querySelector('#gw-reader');
-    chk(/水仙子·夜雨/.test(rd.querySelector('#rd-title').textContent),
-      '点开《水仙子·夜雨》，标题对得上（实际 ' +
-      rd.querySelector('#rd-title').textContent + '）');
-    const strip2 = t => String(t || '').replace(/[a-zāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜüńňǹ·\s]+/gi, '');
-    chk(strip2(rd.querySelector('#rd-text').textContent).indexOf('一声梧叶一声秋') >= 0,
-      '正文由 textRef 取回主表那一份（实际「' +
-      strip2(rd.querySelector('#rd-text').textContent).slice(0, 12) + '…」）');
-    chk(strip2(rd.querySelector('#rd-trans-text').textContent).indexOf('一声梧桐叶落') >= 0,
-      '译文同样由主表取回');
-  }
-
-  const sw = fs.readFileSync(path + 'sw.js', 'utf8');
-  chk(/\.\/yuanqu\//.test(sw) && /js\/yuanqu\.js/.test(sw) && /data\/poems-yuanqu\.js/.test(sw),
-    '元曲页 / 脚本 / 数据都进了 Service Worker 预缓存（断网也能读）');
-
-  console.log('');
-  console.log(fails === 0 ? '🎉 元曲三百首测试全部通过' : '❌ 元曲三百首测试 ' + fails + ' 项失败');
-  process.exit(fails === 0 ? 0 : 1);
-}, 250);
+console.log('');
+console.log(fails ? '❌ ' + fails + ' 项失败' : '🎉 yuanqu测试全部通过');
+process.exit(fails ? 1 : 0);

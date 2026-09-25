@@ -565,7 +565,8 @@ console.log("一、服务端内核：创建 / 频控 / 每日上限 / 空内容�
     // 六档「报什么」必须**一行装得下**（用户原话：「正文 译文 注音... 其他
     // 这六个按钮一行显示 也许需要字体小一点 左右及上下 padding 小一点」）。
     // 这里量的是声明：字号、左右 padding、间距、以及它 `.modal-box` 的左右内边距。
-    // 真实换行由 Chromium 那一层量（见 test/pwa.test.js / 本目录说明）——
+    // 真实换行由人点一遍 / 真机验收量（原先那一层 Chromium 测试已按
+    // Issue #278 整层删除 —— 本目录顶部有说明）——
     // 算式在 css/style.css 那一段注释里：最窄的 320px 机上六颗 = 236px < 292px。
     const CSS = read("css/style.css").replace(/\/\*[\s\S]*?\*\//g, " ");
     const RJ = read("js/report.js");

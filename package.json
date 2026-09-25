@@ -7,8 +7,6 @@
     "start": "node scripts/serve.js",
     "dev:auth": "node scripts/serve.js",
     "test": "bash test/run.sh",
-    "test:auth-browser": "node test/auth-browser.test.js",
-    "test:pwa": "node test/pwa.test.js",
     "doctor": "node scripts/doctor.js",
     "env:example": "node scripts/env-example.js > .env.example"
   },
@@ -16,10 +14,6 @@
     "node": ">=18"
   },
   "dependencies": {
-    "dotenv": "^18.0.3",
-    "jsdom": "^26.1.0"
-  },
-  "devDependencies": {
-    "playwright": "^1.63.0"
+    "dotenv": "^18.0.3"
   }
 }

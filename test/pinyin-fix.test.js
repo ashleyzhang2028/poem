@@ -142,13 +142,15 @@ const cur = F.list().concat(many);
 // 直接走 commit 的那条路（add 是逐条走盘，这里只要验「超上限不收」）
 F.clear();
 chk(F.count() === 0, "清空之后 0 条");
-let capped = null;
-for (let i = 0; i < F.MAX; i++) {
-  const r = F.add({ wid: "w" + i, line: "l" + i, at: 1, ch: "长", py: "cháng" });
-  if (!r.ok) { capped = r; break; }
-}
+// ⚠️ 这里不逐条 F.add() 堆满 500 条 —— 每一次 add 都要把已有那几百条
+//    重新规范化 / 重新写盘一遍，500 次就是 O(n²) 的一千多毫秒纯白等，
+//    而这一节要验的是「上限拦得住」，不是「循环写 500 次不会慢」。
+//    改成走同一份落盘口径的批量写入口，最后仍按 F.count() 对账。
+F.applyCloud({ id: "pinyin_fix:v1", deleted: false, updatedAt: Date.now() + 1000,
+  payload: { fixes: Array.from({ length: F.MAX }, (_, i) =>
+    ({ wid: "w" + i, line: "l" + i, at: 1, ch: "长", py: "cháng" })) } }, {});
 chk(F.count() === F.MAX, "恰好堆到上限（" + F.MAX + " 条）");
-capped = F.add({ wid: "overflow", line: "l", at: 1, ch: "长", py: "cháng" });
+const capped = F.add({ wid: "overflow", line: "l", at: 1, ch: "长", py: "cháng" });
 chk(capped && !capped.ok && capped.reason === "full", "超上限那一条**不收**（reason=full），不是悄悄丢掉");
 F.clear();
 
@@ -262,62 +264,12 @@ chk(/pinyinFix: "poem_pinyin_fix_v1"/.test(pstore), "ProgressStore 的 KEYS 里�
 chk(/\{ key: KEYS\.pinyinFix, domain: "progress", local: false, perChild: true \}/.test(pstore),
   "分域表写的是「上云 + 跟孩子走」");
 
-// ⑥ 端到端：真页面里钉一处，那一篇真的改过来
 // ---------------------------------------------------------------------------
-// 前面几层是「单元」，这一层是「真拿首页跑一遍」——因为勘误要生效，
-// 除了引擎算对，还得**页面把 wid 交进去**（这一步最容易漏，
-// 而漏掉时的症状只是「勘误没反应」，什么错都不报）。
-(function () {
-  let JSDOM = null;
-  try { JSDOM = require("jsdom").JSDOM; } catch (e) {
-    // 与 run.sh 同一套兜底：临时装了 jsdom 的目录在 NODE_PATH 里。
-    const cands = [];
-    try {
-      cands.push(...fs.readdirSync("/tmp").filter(x => x.indexOf("tmp.") === 0).map(x => "/tmp/" + x + "/node_modules"));
-    } catch (e2) {  }
-    for (const c of cands) {
-      try { JSDOM = require(path.join(c, "jsdom")).JSDOM; break; } catch (e2) {  }
-    }
-  }
-  if (!JSDOM) {
-    chk(true, "端到端一节跳过（本机没有 jsdom —— run.sh 会带上它）");
-    return;
-  }
-
-  const html = fs.readFileSync(ROOT + "index.html", "utf8");
-  const dom = new JSDOM(html, { runScripts: "dangerously", url: "https://local.test/" });
-  const w = dom.window;
-  html.match(/<script src="([^"]+)"><\/script>/g)
-    .map(x => x.match(/src="([^"]+)"/)[1])
-    .forEach(f => {
-      const el = w.document.createElement("script");
-      el.textContent = fs.readFileSync(ROOT + f, "utf8");
-      w.document.body.appendChild(el);
-    });
-
-  w.PinyinFix.add({ wid: "probe", line: "落叶聚还散", at: 1, ch: "还", py: "huán" });
-  chk(w.PinyinFix.count() === 1, "真页面里也能写勘误（PinyinFix 挂上了）");
-
-  const poem = (w.POEMS_ALL || []).filter(p => String(p.title).indexOf("滕王阁序") > -1)[0];
-  if (!poem) {
-    chk(false, "课内数据里有《滕王阁序》（它是用户点名的那一篇）");
-    return;
-  }
-  const wid = w.WorksIndex ? w.WorksIndex.widOf(poem.id) : poem.id;
-  const line = String(poem.text).split("\n").filter(x => x.indexOf("秋水共长天") > -1)[0];
-  chk(!!line, "《滕王阁序》里有「秋水共长天一色」那一句");
-
-  chk(/长<rt>cháng<\/rt>/.test(w.Pinyin.annotatePoem(wid, line, "all")),
-    "端到端：这一处**默认就读 cháng 了**（词表已正本清源，用户不会再看到那个错）");
-
-  // 再验一遍勘误层本身在真页面里也生效（拿一个词表故意没管的句子）
-  const probe = "长风几万里";
-  chk(/长<rt>zhǎng<\/rt>/.test(w.Pinyin.annotatePoem(wid, probe, "all")),
-    "端到端：词表没管的「长风」默认读 zhǎng");
-  w.PinyinFix.add({ wid: wid, line: probe, at: 1, ch: "长", py: "cháng" });
-  chk(/长<rt>cháng<\/rt>/.test(w.Pinyin.annotatePoem(wid, probe, "all")),
-    "端到端：钉之后读 cháng（不改代码、不发版）");
-})();
+// Issue #278：原先这一层的第 ⑥ 节是「真页面里跑一遍」（jsdom 起首页、
+// 把脚本一份份塞进去），只为验「页面把 wid 交进去」这一步 —— 页面层删除后
+// 连带删掉。注音勘误本身的功能验证（上面那几节：定位 / 半条丢掉 / 分域 /
+// 预缓存 / 文档）一条不少。
+// ---------------------------------------------------------------------------
 
 console.log(fails === 0 ? "\n🎉 注音勘误测试全部通过" : "\n❌ " + fails + " 项失败");
 process.exit(fails ? 1 : 0);

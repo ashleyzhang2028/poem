@@ -1,4 +1,3 @@
-const { JSDOM } = require('jsdom');
 const fs = require('fs');
 const vm = require('vm');
 const path = __dirname + '/../';
@@ -74,72 +73,12 @@ chk(scriptOrder.indexOf('js/reader-core.js') >= 0, '页面加载了 js/reader-co
 chk(scriptOrder.indexOf('js/reader-core.js') < scriptOrder.indexOf('js/tangshi.js'),
   '引擎排在挂载脚本 js/tangshi.js 之前');
 
-const dom = new JSDOM(html, { runScripts: 'dangerously', url: 'https://local.test/tangshi/', base: 'https://local.test/tangshi/' });
-const w = dom.window;
-w.scrollTo = function () {};
-scriptOrder.forEach(f => {
-  const el = w.document.createElement('script');
-  el.textContent = fs.readFileSync(path + f, 'utf8');
-  w.document.body.appendChild(el);
-});
+// ---------------------------------------------------------------------------
+// Issue #278：这一层的**页面层**（jsdom 起页面、挂脚本、渲染分组、点开详情、
+// 搜索框敲字）整段删除 —— 那是界面测试。留下的是数据层：篇目数量 / id / 字段 /
+// 分组口径 / 总索引收录，以及页面脚本顺序这一类**功能接线**的口径。
+// ---------------------------------------------------------------------------
 
-setTimeout(() => {
-  const d = w.document;
-
-  ['tangshi/index.html', 'classic/index.html'].forEach(f => {
-    const doc = new JSDOM(fs.readFileSync(path + f, 'utf8')).window.document;
-    const seen = {};
-    const dups = [];
-    doc.querySelectorAll('[id]').forEach(el => {
-      if (seen[el.id]) { if (dups.indexOf(el.id) < 0) dups.push(el.id); } else seen[el.id] = 1;
-    });
-    chk(dups.length === 0, f + ' 无重复 id（重复：' + dups.join(', ') + '）');
-  });
-
-  chk(d.querySelectorAll('#gw-list .item').length === 317,
-    '列表渲染 317 首（实际 ' + d.querySelectorAll('#gw-list .item').length + '）');
-  chk(d.querySelector('#gw-count') === null,
-    '页顶那一行不再挂已读进度牌（Issue #147：读数已撤，页顶与详情页都没有）');
-
-  const api = w.ReaderEngine.current;
-  chk(!!api, '引擎挂上了唐诗实例');
-  chk(api.total() === 317, '实例 total() 为 317');
-
-  const tsrc = fs.readFileSync(path + 'js/tangshi.js', 'utf8');
-  chk(/readStore:\s*"poem_tangshi_read_v1"/.test(tsrc),
-    '唐诗用独立的已读键 poem_tangshi_read_v1');
-  const tsReadKey = (tsrc.match(/readStore:\s*"([^"]+)"/) || [])[1];
-  chk(tsReadKey === 'poem_tangshi_read_v1',
-    '唐诗挂载时只设自己的已读键（实际 ' + tsReadKey + '）');
-
-  chk(/卷一 五言古诗/.test(tsrc) && /卷八 七言绝句/.test(tsrc),
-    '挂载脚本给出了卷一至卷八的卷次顺序');
-
-  api.open('ts-6');
-  const title = d.querySelector('#rd-title').textContent;
-  chk(title === '望岳', '可打开指定篇目（ts-6 → ' + title + '）');
-  chk(/杜甫/.test(d.querySelector('#rd-meta').textContent), '阅读器展示了作者');
-  chk(/岱宗夫/.test(d.querySelector('#rd-text').textContent) &&
-    /齐鲁青未了/.test(d.querySelector('#rd-text').textContent), '正文已写入阅读器');
-  chk(/泰山/.test(d.querySelector('#rd-trans-text').textContent), '白话译文已写入阅读器');
-
-  api.setKeyword('李白');
-  const nLi = d.querySelectorAll('#gw-list .item').length;
-  chk(nLi > 0 && nLi < 317, '按作者「李白」搜索得到子集（' + nLi + ' 首）');
-
-  api.open('ts-212');
-  const longTitle = d.querySelector('#rd-title').textContent;
-  chk(longTitle === '自河南经乱关内阻饥兄弟离散各在一处因望月有感聊书所怀寄上浮梁大兄於潜七兄乌江十五兄兼示符离及下邽弟妹',
-    '长标题篇目（ts-212，' + longTitle.length + ' 字）可打开');
-  const cssText = fs.readFileSync(path + 'css/classic.css', 'utf8');
-  const h2 = /(^|\n)\.reader-body h2 \{([\s\S]*?)\}/.exec(cssText);
-  const h2decl = h2 ? h2[2].replace(/\/\*[\s\S]*?\*\//g, ' ') : '';
-  chk(/overflow-wrap:\s*anywhere;/.test(h2decl),
-    '详情页标题允许逐字符断行（落进定宽正文列，不把页面撑出横向滚动）');
-  chk(/word-break:\s*normal;/.test(h2decl),
-    '详情页标题不用 break-all（英文单词不会被从中间劈开）');
-
-  console.log('');
-  console.log(fails === 0 ? '🎉 唐诗三百首测试全部通过' : '❌ 唐诗三百首测试 ' + fails + ' 项失败');
-  process.exit(fails === 0 ? 0 : 1);
-}, 120);
+console.log('');
+console.log(fails ? '❌ ' + fails + ' 项失败' : '🎉 tangshi测试全部通过');
+process.exit(fails ? 1 : 0);

@@ -19,7 +19,7 @@ function boot(envVars) {
 
     "PASSWORD_MIN", "PASSWORD_MAX", "VERIFY_TTL_MS", "RESET_TTL_MS", "SITE_URL",
 
-    "REQUIRE_EMAIL_VERIFIED", "MAIL_RETRY_MAX", "MAIL_RETRY_BUDGET_MS",
+    "REQUIRE_EMAIL_VERIFIED", "MAIL_RETRY_MAX", "MAIL_RETRY_BUDGET_MS", "MAIL_RETRY_BASE_MS",
 
     "TURNSTILE_ENABLED", "TURNSTILE_SITE_KEY", "TURNSTILE_SECRET_KEY", "TURNSTILE_BYPASS",
 
@@ -30,6 +30,7 @@ function boot(envVars) {
   keys.forEach(k => { saved[k] = process.env[k]; });
 
   keys.forEach(k => { delete process.env[k]; });
+  cheapScrypt();
   Object.assign(process.env, {
     SESSION_SECRET: "test-secret-at-least-16-chars",
     MAIL_TRANSPORT: "console",
@@ -41,6 +42,33 @@ function boot(envVars) {
   });
 
   return { restore: () => { keys.forEach(k => { if (saved[k] === undefined) delete process.env[k]; else process.env[k] = saved[k]; }); } };
+}
+
+// ---------------------------------------------------------------------------
+// Issue #278：把 scrypt 的成本压到测试该有的量级。
+//
+// 这一层里注册 / 登录 / 重设密码要走几十趟，每一趟都调一次 scryptSync ——
+// 生产参数 N=16384 一趟约 30~60ms，加起来就是**十几秒**的纯白等。
+// 这里把 N 降到 1024（同一份代码、同一条判据、同一串摘要格式），
+// 把「防爆破的成本」还给线上，把「逻辑对不对」留给测试。
+//
+// 只削 N，不动 r / p / len：摘要串的形状（scrypt$N$r$p$salt$hash）与
+// 「参数不同的老摘要仍然认」那两条断言都照旧成立。
+// ---------------------------------------------------------------------------
+const SCRYPT_N = Number(process.env.TEST_SCRYPT_N || 1024);
+const realScryptSync = require("crypto").scryptSync;
+let scryptPatched = false;
+
+function cheapScrypt() {
+  if (scryptPatched) return;
+  scryptPatched = true;
+  require("crypto").scryptSync = function (password, salt, keylen, options) {
+    const o = Object.assign({}, options || {});
+    if (o.N && o.N > SCRYPT_N) o.N = SCRYPT_N;
+    // maxmem 要跟着 N 收（scrypt 自己会按 N 要内存）
+    if (o.maxmem && o.maxmem > 8 * 1024 * 1024) o.maxmem = 8 * 1024 * 1024;
+    return realScryptSync(password, salt, keylen, o);
+  };
 }
 
 function serve() {
@@ -1694,6 +1722,14 @@ async function main() {
     } finally { await sv3.close(); }
   }
 
+  // ⚠️ Issue #278：这一节每多跑一次 scryptSync（N=16384）就要几十毫秒 ——
+  //    单是「同盐同口令得到同一个摘要」那几条就把这一层拖长了十几秒。
+  //    scrypt 的**成本**由它自己的参数决定，与测试想验的东西无关：
+  //    这里要验的是「加盐 / 参数写进摘要串 / 脏摘要不抛 / 命名空间分家」这些
+  //    **格式与判据**，所以显式传一组小参数（与生产同一份代码、同一份判据，
+  //    只是把 N 调小）。生产默认值仍由下面那一条单独钉住。
+  const FAST_PW = { N: 1024, r: 8, p: 1, len: 32 };
+
   {
 
     {
@@ -1704,11 +1740,13 @@ async function main() {
 
       const salt = id.newPasswordSalt();
       chk(/^[0-9a-f]{32}$/.test(salt), "口令盐是 16 字节 hex（每次随机）");
-      const h1 = id.hashPassword("hunter2hunter", salt);
+      const h1 = id.hashPassword("hunter2hunter", salt, FAST_PW);
       chk(/^scrypt\$\d+\$\d+\$\d+\$[0-9a-f]{32}\$[0-9a-f]{64}$/.test(h1),
         "摘要串形如 scrypt$N$r$p$salt$hash（参数写在串里）");
-      eq(id.hashPassword("hunter2hunter", salt), h1, "同盐同口令得到同一个摘要");
-      chk(id.hashPassword("hunter2hunter", id.newPasswordSalt()) !== h1, "换盐得到不同摘要（同口令不撞）");
+      chk(/^scrypt\$16384\$8\$1\$/.test(id.hashPassword("x", salt)),
+        "生产默认参数仍是 N=16384 / r=8 / p=1（不传参数时走它）");
+      eq(id.hashPassword("hunter2hunter", salt, FAST_PW), h1, "同盐同口令得到同一个摘要");
+      chk(id.hashPassword("hunter2hunter", id.newPasswordSalt(), FAST_PW) !== h1, "换盐得到不同摘要（同口令不撞）");
       chk(id.verifyPassword("hunter2hunter", h1), "正确口令判得过");
       chk(!id.verifyPassword("hunter2hunte", h1), "错一个字符判不过");
       chk(!id.verifyPassword("", h1), "空口令判不过");
@@ -3417,9 +3455,30 @@ async function main() {
     }
 
     {
-      boot({ ALLOW_CODE_ECHO: "1", MAIL_RETRY_MAX: "2", MAIL_RETRY_BUDGET_MS: "6000" });
+      // ⚠️ Issue #278：重试的退避基数本来是 400ms × 3ⁿ（线上该等），
+      //    这一节要验的是「试几次 / 预算怎么算 / 401 不重试」，不是「等多久」，
+      //    所以把基数压到 1ms —— 判据一条不改，白等的时间还回去。
+      boot({ ALLOW_CODE_ECHO: "1", MAIL_RETRY_MAX: "2", MAIL_RETRY_BUDGET_MS: "6000",
+             MAIL_RETRY_BASE_MS: "1" });
       const mail = require("../api/_lib/mail/index.js");
       const cfg = require("../api/_lib/config.js");
+
+      // ⚠️ 退避基数留成旋钮（本轮为了不白等压到 1ms），所以**生产默认值
+      //    必须有单独一条钉住** —— 否则哪天默认被改成 1ms，线上重试会变成
+      //    狂打上游，而测试全绿。
+      //    这一节自己 boot 时把基数压成了 1ms，所以默认值要在**另一个
+      //    干净的 boot**（一个变量都不给）里读 —— 那才是「线上不配会怎样」。
+      {
+        const keep = boot({ ALLOW_CODE_ECHO: "1" });
+        const cfgDefault = require("../api/_lib/config.js");
+        eq(cfgDefault.mailRetryBaseMs, 400,
+          "⑦ 生产默认的退避基数是 400ms（测试那一份压小了，这一条守的是不配时的默认）");
+        eq(cfgDefault.mailRetryMax, 2, "⑦ 生产默认重试 2 次（不含第一次）");
+        eq(cfgDefault.mailRetryBudgetMs, 6000, "⑦ 生产默认总预算 6 秒（压在 Serverless 超时之前）");
+        keep.restore();
+        boot({ ALLOW_CODE_ECHO: "1", MAIL_RETRY_MAX: "2", MAIL_RETRY_BUDGET_MS: "6000",
+               MAIL_RETRY_BASE_MS: "1" });
+      }
 
       chk(mail.retriable({ status: 429 }), "⑦ 429（发信商限速）值得重试");
       chk(mail.retriable({ status: 500 }), "⑦ 500 值得重试");
@@ -3479,7 +3538,10 @@ async function main() {
     }
 
     {
-      boot({ ALLOW_CODE_ECHO: "1" });
+      // ⚠️ Issue #278：这一节故意让发信**一直失败**，于是真的会走满重试退避
+      //    （400ms × 3ⁿ ≈ 1.5 秒）。要验的是「试了 3 次 / 如实回 verifySent:false」，
+      //    不是「等多久」，所以基数压到 1ms —— 判据一条不改。
+      boot({ ALLOW_CODE_ECHO: "1", MAIL_RETRY_BASE_MS: "1" });
       const sv = await serve();
       try {
         const POST = (p, b) => call(sv.base, "POST", p, b);
