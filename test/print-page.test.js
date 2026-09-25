@@ -265,7 +265,7 @@ const FIXTURE = {
     chk(!/登录可用/.test(ft), '那张卡片里没有「登录可用」这句话（他已经登录了）');
     chk(!/用邮箱建一个账号/.test(ft), '那张卡片里没有创建账号的按钮');
     chk(!free.d.querySelector('[data-print-go]'), '那张卡片里没有往登录页去的键');
-    chk(/四种身份对比/.test(ft), '只留下如实的一句：层级由管理员发放 + 去哪看对照表');
+    chk(/四种用户对比/.test(ft), '只留下如实的一句：层级由管理员发放 + 去哪看对照表');
   }
   {
     const { w, d } = boot({ localStorage: FIXTURE });

@@ -6,13 +6,14 @@ let fails = 0;
 const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else console.log('✓ ' + m); };
 
 const Ent = require(path + 'js/entitlement.js');
+const { JSDOM } = require('jsdom');
 
 const pageHtml = read('plans/index.html');
 const pageJs = read('js/plans.js');
 const css = read('css/account.css');
 const sw = read('sw.js');
 // ⚠️ 原先这一档读 profile/index.html 与 js/profile.js（个人中心）。
-//    2026-09-20（Issue #244）那一页已删除，「层级对比」那一行搬到了
+//    2026-09-20（Issue #244）那一页已删除，「用户对比」那一行搬到了
 //    「我的」页的「关于」卡里 —— 守的还是同一条口径（它是一个 <a href="/plans/">）。
 const mineHtml = read('mine/index.html');
 const mineJs = read('js/mine.js');
@@ -293,7 +294,7 @@ const plansCommentOnly = pageJs;
   chk(/js\/entitlement\.js/.test(pageHtml), '加载 js/entitlement.js（权益总闸）');
   chk(/js\/plans\.js/.test(pageHtml), '加载 js/plans.js（本页逻辑）');
   chk(/<header class="topbar"/.test(pageHtml), '有顶栏挂载点');
-  chk(/data-page="层级对比"/.test(pageHtml), '声明页名「层级对比」');
+  chk(/data-page="用户对比"/.test(pageHtml), '声明页名「用户对比」');
 
   // Issue #229 第五轮：卡片顶上那一行（caption）文案收成「功能对比」，
   // 并按卡片里其它小标题的样子显示（与 .account-card-title 同一套字号 / 字重 / 颜色）。
@@ -333,24 +334,57 @@ const plansCommentOnly = pageJs;
 {
 
   // ⚠️ 用户 2026-09-21「哪些应该放到我的却放到了设置，等等」又回头捋了一遍：
-  //    层级对比是**一张表**（一页），不是「我的」这一页上的动作 ——
+  //    用户对比是**一张表**（一页），不是「我的」这一页上的动作 ——
   //    它已经在「设置 · 关于」里有一行（用户 2026-09-18 亲自点名的位置），
   //    「我的」页不再重复收一份。
   //    守的是两半：① 「我的」页不再有第二个入口；② 设置那一个还在、还是链接。
-  chk(!/\/plans\//.test(mineHtml), '「我的」页不再重复收「层级对比」的入口');
+  chk(!/\/plans\//.test(mineHtml), '「我的」页不再重复收「用户对比」的入口');
   chk(!/btn-go-plans/.test(mineHtml) && !/btn-go-plans/.test(mineJs),
     '那颗旧的按钮连 id 都不回来（不留一颗没人用的键）');
   chk(!/location\.href = "\/plans\//.test(mineJs),
     'js/mine.js 里没有为它绑的跳转');
 
   const nav = read('js/settings-nav.js');
-  chk(/link\("\/plans\/",\s*"层级对比"\)/.test(nav),
-    '「层级对比」那一行在「设置 · 关于」里（地址就写在 <a> 上，不点 JS）');
+  chk(/link\("\/plans\/",\s*"用户对比"\)/.test(nav),
+    '「用户对比」那一行在「设置 · 关于」里（地址就写在 <a> 上，不点 JS）');
   chk(!/>查看<\/a>/.test(nav), '它不另挂一颗「查看」（链接本身就说清了）');
 
   chk(/Ent\.compare\(/.test(PAGE), '对比表一律由 compare() 生成（清单的唯一一处）');
   chk(!/Ent\.matrix\(/.test(mineJs),
     '「我的」页不自己画一遍能力清单（同一件事只在一页说）');
+}
+
+{
+  // ⚠️ 用户 2026-09-25（Issue #278 第十轮）：「所有层级对比更改为 用户对比」。
+  //    这一页里**给用户看的字**只剩一个来源 —— 顶栏页名读的是
+  //    `<body data-page="...">`（js/chrome.js 的 pageTitle() 认这一个值），
+  //    所以这里直接用 jsdom 把那句话读回来，而不是只看 HTML 里有没有半句话。
+  const dom = new JSDOM(pageHtml, {
+    url: 'https://kuibu.app/plans/', runScripts: 'outside-only'
+  });
+  const win = dom.window;
+  const d = win.document;
+  const titleEl = d.querySelector('title');
+  chk(!!titleEl && titleEl.textContent.indexOf('用户对比') === 0,
+    '页签标题以「用户对比」开头（实际 ' + (titleEl ? titleEl.textContent : '(无 title)') + '）');
+  chk(!!titleEl && !/层级/.test(titleEl.textContent),
+    '页签标题里不再有「层级」二字（用户 2026-09-25：所有层级对比更改为 用户对比）');
+
+  //    （chrome.js 是 IIFE，靠它自己那句 `window.SiteChrome = {...}` 出口，
+  //      在 jsdom 里跑必须走 runScripts: 'outside-only'；顶栏是它自己在
+  //      DOMContentLoaded 上挂的，这里把那颗事件补派一次。）
+  win.eval(read('js/chrome.js'));
+  win.document.dispatchEvent(new win.Event('DOMContentLoaded'));
+  const brandText = win.document.querySelector('#brand-page-text');
+  chk(!!brandText && brandText.textContent === '用户对比',
+    '顶栏画出来的页名就是「用户对比」（实际 ' +
+      (brandText ? brandText.textContent : '(顶栏没画出来)') + '）');
+  const barText = (win.document.querySelector('.topbar') || {}).textContent || '';
+  chk(!/层级/.test(barText),
+    '整条顶栏里不再有「层级」二字（实际 ' + JSON.stringify(barText.trim()) + '）');
+
+  chk(!/层级对比/.test(stripHtml(pageHtml)),
+    '这张页上不再有「层级对比」四个字（换名要换干净，不留半处）');
 }
 
 {
@@ -512,5 +546,5 @@ const plansCommentOnly = pageJs;
     '对比表不写死任何「全站调色板里没有的」十六进制色值（实际 ' + [...new Set(hex)].join(',') + '）');
 }
 
-console.log('\n' + (fails ? '❌ ' + fails + ' 项失败' : '🎉 层级对比页测试全部通过'));
+console.log('\n' + (fails ? '❌ ' + fails + ' 项失败' : '🎉 用户对比页测试全部通过'));
 process.exit(fails ? 1 : 0);

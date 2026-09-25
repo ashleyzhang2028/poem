@@ -180,10 +180,10 @@ const css = read('css/style.css') + read('css/account.css');
   chk(!/\$\("btn-sign-out"\)/.test(strip(MINE_JS)),
     'js/mine.js 里也不再给那颗不存在的键绑退出（那会是一条永远不响的死线）');
   chk(!/id="btn-go-plans"/.test(MINE),
-    '首卡里不再有「层级对比」那颗键（用户 2026-09-18：从这里移出，改成设置「关于」里的一行链接）');
+    '首卡里不再有「用户对比」那颗键（用户 2026-09-18：从这里移出，改成设置「关于」里的一行链接）');
   chk(!/btn-go-plans/.test(strip(MINE_JS)), 'js/mine.js 里也不再有它的接线');
   chk(!/id="link-plans"/.test(MINE) && !/id="upsell-row"/.test(MINE),
-    '「我的」页不再有权限 / 层级对比那张卡（用户 2026-09-18：删除 我的页面的权限对比的卡片）');
+    '「我的」页不再有权限 / 用户对比那张卡（用户 2026-09-18：删除 我的页面的权限对比的卡片）');
   chk(!/link-plans/.test(strip(MINE_JS)) && !/upsell-row/.test(strip(MINE_JS)),
     'js/mine.js 里也不再有那条入口的接线（卡撤了，接线一并撤）');
   chk(!/location\.href = "\/plans\/"/.test(strip(MINE_JS)),
@@ -415,7 +415,7 @@ function boot(seed) {
   chk(order0.indexOf('family-item') >= 0 && order0.indexOf('family-item') < order0.indexOf('stats-card'),
     '（真页面）子用户卡在本机数据卡**上方**（实际 ' + order0.join(' → ') + '）');
   chk(order0.indexOf('upsell-row') < 0,
-    '（真页面）权限 / 层级对比那张卡整张撤了（实际 ' + order0.join(' → ') + '）');
+    '（真页面）权限 / 用户对比那张卡整张撤了（实际 ' + order0.join(' → ') + '）');
   chk(order0.indexOf('danger-card') === order0.length - 1,
     '（真页面）注销仍是最下面那张卡');
   // ⚠️ 用户 2026-09-18 原话是「从『关于』卡挪出，放到最下面」；
