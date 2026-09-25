@@ -111,8 +111,8 @@ body[data-nav="admin"] .account-page,
 #login-page {
   display: flex;
   flex-direction: column;
-  min-height: calc(100vh - 138px);
-  min-height: calc(100 * var(--app-vh) - 138px);
+  min-height: calc(100vh - 118px);
+  min-height: calc(100 * var(--app-vh) - 118px);
 }
 body[data-nav="login"] .account-page > .account-card,
 body[data-nav="reset"] .account-page > .account-card,
