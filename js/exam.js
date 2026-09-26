@@ -69,22 +69,16 @@
     return seen;
   }
 
+  // 名单的**次序**由这里定，页面照单摆。用户 2026-09-26 裁决：
+  //   「把 小学 初中 高中 放到顶部，全部的下面」—— 所以课内三学段排在
+  //   全部之后、各集子之前（不是原先的「集子先、课内三学段垫底」）。
   function scopes(corpus, opt) {
     var books = booksOf(opt);
     var have = examinable(corpus);
     var out = [{ id: "all", name: "全部", count: (corpus || []).length }];
 
-    books.forEach(function (b) {
-      if (!have[b.id]) return;
-      out.push({
-        id: "book:" + b.id, book: b.id, name: b.name,
-        count: (corpus || []).filter(function (p) { return p && p.book === b.id; }).length
-      });
-    });
-
-        var sets = gradeSets();
-    var hasPoems = have.poems;
-    if (hasPoems) {
+    var sets = gradeSets();
+    if (have.poems) {
       STAGES.forEach(function (st) {
         var grades = sets[st.id] || [];
         if (!grades.length) return;
@@ -95,6 +89,15 @@
         out.push({ id: "poems:" + st.id, book: "poems", name: st.name, count: hit.length });
       });
     }
+
+    books.forEach(function (b) {
+      if (!have[b.id]) return;
+      out.push({
+        id: "book:" + b.id, book: b.id, name: b.name,
+        count: (corpus || []).filter(function (p) { return p && p.book === b.id; }).length
+      });
+    });
+
     return out;
   }
 
