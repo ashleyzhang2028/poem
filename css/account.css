@@ -889,7 +889,13 @@ thead .plans-th-cap {
   border: 0;
   border-top: 1px solid var(--line);
   border-radius: 0;
-  padding: 9px 2px;
+  /* 左侧那 20px 是给选中时那道绿条留的位（2026-09-26 用户裁决：
+     「左边的绿色竖线和范围各项标题之间应该加 20px padding」）——
+     绿条 3px + 绿条右缘到标题 17px = 20px，所以这里左边给到 7px
+     （标题墨迹自己还留约 0.5px 边距）。绿条是内嵌阴影画的、不占位，
+     这 20px **未选中也留着**，十几行左右对齐一条线；
+     选中只是把绿条填进这段空里 —— 行不动、字不跳。 */
+  padding: 9px 2px 9px 7px;
   background: transparent;
   font: inherit;
   color: var(--ink);

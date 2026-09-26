@@ -207,6 +207,28 @@ console.log('\n=== 三e、范围那一段收在同一张卡里（2026-09-26 用�
     '清单是一条纵列（一行一个，不拐回多列格子）');
 }
 
+console.log('\n=== 三f、选中绿条与标题之间留 20px（2026-09-26 用户裁决） ===');
+{
+  // 用户原话：「左边的绿色竖线和范围各项标题之间应该加 20px padding」。
+  // 绿条是**内嵌阴影**画的（`inset 3px 0 0`，不占位），从前行内 padding-left
+  // 只有 2px —— 于是那 3px 的绿条**压在标题上**（真机量的：最左一列墨 12.25px、
+  // 绿条只到 10px，绿条右缘 → 标题墨迹只剩 2.25px）。
+  //
+  // 现口径：绿条 3px + 绿条右缘到标题 17px = 20px，写在 `padding-left: 7px` 上
+  //（标题墨迹自己还留约 0.5px 边距）。这一 20px **未选中也留着**，
+  // 十几行左右对齐一条线；选中只是把绿条填进这段空里 —— 行不动、字不跳。
+  const css = fs.readFileSync(path.join(ROOT, 'css/account.css'), 'utf8');
+  const bar = (css.match(/\.game-scope-pick\[data-on="1"\] \{[^}]*\}/) || [''])[0];
+  chk(/box-shadow:\s*inset 3px 0 0 var\(--green\)/.test(bar),
+    '绿条仍是 3px 的内嵌阴影（不占位、不换行）');
+
+  const base = (css.match(/\.game-scope-pick \{[\s\S]*?\n\}/) || [''])[0];
+  chk(/padding:\s*9px 2px 9px 7px/.test(base),
+    '行内左侧给到 7px（3px 绿条 + 绿条右缘到标题 17px = 20px）');
+  chk(!/padding:\s*9px 2px\s*;/.test(base),
+    '旧的「padding: 9px 2px」不留（那一版左侧只有 2px，绿条盖在字上）');
+}
+
 console.log('\n=== 四、组卷：范围 × 形态 × 题量，题上带 origin ===');
 {
   const plan = Ex.build(CORPUS, { kind: 'mock', scope: 'all', size: 8, seed: 's1' });
