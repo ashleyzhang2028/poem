@@ -100,8 +100,16 @@ console.log("\n=== 3b · 这一页是「考试页」，不是「集子」（Issu
 
   chk(!/集子/.test(gameCode.replace(/集子清单[\s\S]{0,200}/g, " ")) ||
       !/《古诗词大会》的集子/.test(game), "页面上不再把大会说成「《古诗词大会》的集子」");
-  chk(/这一页是<strong>飞花令与考试<\/strong>/.test(game),
-    "页头把这一页讲成「飞花令与考试」（题目 / 模拟 / 正式都在这里）");
+  // ⚠️ 页头那一句「这一页是飞花令与考试 —— 题目、模拟、正式考试都在这里……」
+  //    与页底那张「诚实说明」（题目与答案一起发给浏览器、不是防作弊……）
+  //    已按用户 2026-09-26 的第二轮原话**整段删掉**（「下面全部删除」/「删除
+  //    这一页是飞花令与考试……」）。这一页上不再摆任何说明卡。
+  chk(!/这一页是<strong>飞花令与考试<\/strong>/.test(game),
+    "页头那张「这一页是飞花令与考试……」说明卡已删（用户原话：删除）");
+  chk(!/<h2 class="account-card-title">这一页的诚实说明<\/h2>/.test(game),
+    "页底那张「这一页的诚实说明」卡已删（用户原话：下面全部删除）");
+  chk(!/不是防作弊|不是古诗词水平评估/.test(game),
+    "「诚实说明」那段话一个字都不留（连同「不是防作弊」「不是水平评估」）");
   chk(!/function renderEntryGate\(/.test(game),
     "**没有**一道整页的「集子闸」（renderEntryGate 已删）");
   chk(!/exam\.gathering/.test(game),
@@ -111,10 +119,42 @@ console.log("\n=== 3b · 这一页是「考试页」，不是「集子」（Issu
   chk(!/data-game-close/.test(game),
     "没有 data-game-close 了（那颗「返回诗词列表」随整页闸一起删，不留死监听）");
 
+  // ⚠️ 未登录时**页底只有一颗登录键，不另开卡片**（用户 2026-09-26 原话：
+  //    「如果需要登录，页底只显示那个登录 按钮即可，不要额外一张卡片，
+  //      然后卡片里只有一个 登录 按钮」）。
+  //    那一颗键是**玩法那张卡的最后一个孩子**，页面上不许再出现第二张卡。
+  const home = game.slice(game.indexOf("function renderHome"), game.indexOf("function renderFly"));
+  chk(!/gateCard/.test(game),
+    "gateCard() 整个函数已删（「怎么用上」那张卡随它一起删，不留死代码）");
+  chk(!/game-gate/.test(read("css/account.css")),
+    "`.game-gate` 那两条样式也随它一起删（没有元素再用这两个类名）");
+  chk(!/怎么用上/.test(home), "页面上不再有「怎么用上」这张卡");
+  chk(!/用邮箱建一个账号/.test(home),
+    "「用邮箱建一个账号」那颗键不再出现在这一页（游客也只给「登录」一颗）");
+  chk(/if \(!id\.signedIn\) \{\s*html \+= '<button class="account-btn" type="button" data-game-go="\/login\/">登录<\/button>';/.test(home),
+    "未登录时页底只加一颗「登录」键，**不开新卡片**");
+  chk((home.match(/<section class="account-card">/g) || []).length === 1,
+    "首页只渲染**一张**卡片（玩法那几张是同一条里循环出来的）");
+
   // 集子归 /library/：大会那一页不进课外阅读入口
   const libJs = read("js/library.js");
   chk(!/dahui/.test(libJs) && !/game/.test(libJs.replace(/game[\w-]*\s*[:=]\s*\{[^}]*\}/g, "")),
     "课外阅读入口 /library/ 里**不**收大会这一页（它没有集子）");
+}
+
+console.log("\n=== 3c · 大会那一页的卡片之间要有缝（Issue #356）===");
+{
+  // 用户 2026-09-26 原话：「这个页面的其他卡片之间需要间隔，不能一点空没有」。
+  // 真机量过（修前）：四张卡严丝合缝 —— 一张卡的下边缘与下一张卡的上边缘
+  // **是同一个像素**（197 / 578 / 718…）。根子与登录 / 后台那几页同源
+  // （Issue #319）：`.account-card` 自己没有外边距，一页好几张卡靠的是父层
+  // 的 `gap`，而 `.poems-game` 不是 `.account-page`，于是缝是 0。
+  const accountCss = read("css/account.css");
+  const block = accountCss.slice(accountCss.indexOf(".poems-game {", accountCss.indexOf(".poems-game[hidden]")));
+  chk(/display:\s*flex/.test(block) && /flex-direction:\s*column/.test(block) && /gap:\s*12px/.test(block),
+    "`.poems-game` 自己是一条 flex 纵列 + gap: 12px（与 .account-page 同一个数，不另立一套）");
+  chk(!/\.account-card\s*\{[^}]*margin-bottom/.test(accountCss.slice(accountCss.indexOf(".account-card {"))),
+    "没有回头去给 `.account-card` 加外边距（那条路 Issue #319 已裁定为「卡片之间缝是 0」的根子）");
 }
 
 console.log("\n=== 4 · 老地址改道：/poems/?game=1 → /dahui/ ===");

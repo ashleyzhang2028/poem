@@ -192,19 +192,6 @@
     return second ? [picked, second] : [picked];
   }
 
-  function gateCard(mode, id) {
-    var r = capAllowed(mode.cap, id);
-    if (r.ok) return "";
-
-    var why = Ent.denyReason(mode.cap, { tier: id.tier, signedIn: id.signedIn });
-    return '<div class="game-gate">' +
-      '<p class="game-gate-why">' + esc(why) + "</p>" +
-      (id.signedIn
-        ? '<p class="account-hint">层级由管理员在后台按账号发放。这一页的说明与对照见 <a href="/plans/">四种用户对比</a>。</p>'
-        : '<button class="account-btn" type="button" data-game-go="/login/">用邮箱建一个账号</button>') +
-      "</div>";
-  }
-
   function renderHome() {
     var id = identifier();
 
@@ -214,15 +201,11 @@
     //      · 页面上**没有诗词列表、没有阅读器**（`/dahui/index.html` 上不挂那两个
     //        挂载点），一屏全是玩法卡 —— 想读诗词的请去 `/poems/`；
     //      · **没有一道「整页的集子闸」**：不放行的那一档，画的也是这一页
-    //        （玩法卡各自标着门槛），与「集子访问」是两件事。集子归 `/library/`。
-    var html = '<section class="account-card">' +
-      '<h2 class="account-card-title">古诗词大会</h2>' +
-      '<p class="account-lead">这一页是<strong>飞花令与考试</strong> —— ' +
-      '题目、模拟、正式考试都在这里，同一份语料。' +
-      '练习与模拟答完当场判分，正式考试交卷后统一批。</p>' +
-      "</section>";
-
-    html += '<section class="account-card"><h2 class="account-card-title">选一个玩法</h2>';
+    //        （玩法卡各自标着门槛），与「集子访问」是两件事。集子归 `/library/`；
+    //      · **页面上不摆任何说明卡**：从前那两张（页头「这一页是飞花令与考试
+    //        —— 题目、模拟、正式考试都在这里……」与页底「这一页的诚实说明」）
+    //        已按用户原话整段删除，一进页面就是玩法卡。
+    var html = '<section class="account-card"><h2 class="account-card-title">选一个玩法</h2>';
     MODES.forEach(function (m) {
       var r = allowed(m, id);
       html += '<button class="game-mode" type="button" data-game-mode="' + m.id + '"' +
@@ -238,20 +221,16 @@
     });
     html += "</section>";
 
-    var locked = MODES.filter(function (m) { return !allowed(m, id).ok; });
-    if (locked.length) {
-      html += '<section class="account-card"><h2 class="account-card-title">怎么用上</h2>' +
-        gateCard(locked[0], id) + "</section>";
+    // 未登录时页底**只留那颗登录键**（Issue #356 用户原话：
+    //   「如果需要登录，页底只显示那个登录 按钮即可，不要额外一张卡片，
+    //     然后卡片里只有一个 登录 按钮」）。
+    //    所以即使没登录也**不另开一张卡**：那颗键直接就是玩法那张卡的
+    //    最后一个孩子。门槛本身玩法卡已经逐张标了（「Max · 登录可用」）。
+    //    已经登录、只是层级不够的，这里不出任何按钮 —— 那件事归玩法卡上
+    //    那句「层级不够」，页面不摆第二张卡去重复它。
+    if (!id.signedIn) {
+      html += '<button class="account-btn" type="button" data-game-go="/login/">登录</button>';
     }
-
-    html += '<section class="account-card"><h2 class="account-card-title">这一页的诚实说明</h2>' +
-      '<p class="account-hint">' +
-      "题目与答案是一起发给浏览器的，界面只是把答案遮住 —— 它是一份" +
-      "「先自己想一想再看」的自省工具，<strong>不是防作弊</strong>。" +
-      "模拟与正式考试的卷面记录只存在本机、<strong>不上云</strong>，" +
-      "答错也<strong>不影响</strong>每日复习计划；只报「这次几题对几题」，" +
-      "不是古诗词水平评估。" +
-      "</p></section>";
     return html;
   }
 
