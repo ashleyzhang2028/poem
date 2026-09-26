@@ -218,6 +218,11 @@
       "</section>";
     host.hidden = false;
     if (viewEl) viewEl.hidden = true;
+    // 拦住用户时**也算「站在大会这一层」**：底栏正中间那一格照亮点，
+    // 不然从底栏点进来只会看到「课外」亮着、右边冒出一张卡，
+    // 像点错了地方。抬起头的标题同样换成「古诗词大会」（卡片上就是这几个字）。
+    setDockNav("game");
+    paintHeader(true);
     bind();
     paintBack();
   }
@@ -725,6 +730,13 @@
     stopTimer();
     state.mode = "";
     host.hidden = true;
+    setDockNav("poems");
+    // 从底栏进来的那一条（`/poems/?game=1`）退出时把参数抹掉 ——
+    // 不抹的话地址栏留着 `game=1`：用户一刷新，这一层**又自己掀开**，
+    // 可方才明明是「返回诗词列表」退出来的。
+    // 用 `replaceState` 而不是重新 `location.href`：**不刷新**、
+    // 不丢列表滚动位置，只把那一个参数从地址栏上摘掉。
+    dropGameParam();
     if (viewEl) viewEl.hidden = false;
     paintHeader(null);
     paintBack();
@@ -753,6 +765,7 @@
     if (!host) return;
     if (viewEl) viewEl.hidden = true;
     host.hidden = false;
+    setDockNav("game");
     state.mode = "";
     render();
     paintHeader(true);
@@ -765,6 +778,24 @@
   }
 
   function isOpen() { return !!host && !host.hidden; }
+
+  // ---------------------------------------------------------------------
+  // 底栏那一格：掀开 / 收起时**就地**把它点亮 / 灭掉（Issue #342）
+  // ---------------------------------------------------------------------
+  // 大会是 `/poems/` 里就地叠的一层，地址栏不动 —— 可底栏正中间那一格
+  // 必须跟着亮，不然用户点了「大会」，底栏还亮着「课外」，像没反应。
+  //
+  // 做法：改 `body[data-nav]`，再喊 `SiteChrome.setDock()` 重画。
+  // 👉 **不写第二套「谁亮」的规则**：`dockKey()` 里 `game → game`
+  //    一条就够，底栏那 5 个 `<button>` 一个都不用碰。
+  // 👉 退出时**必须还原成 `poems`**（那一页原本的 `data-nav`）——
+  //    留着 `game` 的话，回到诗词列表底栏仍然点着「大会」。
+  function setDockNav(v) {
+    if (!document.body || !document.body.setAttribute) return;
+    document.body.setAttribute("data-nav", v);
+    var C = window.SiteChrome;
+    if (C && C.setDock) C.setDock();
+  }
 
   function init() {
     host = document.querySelector('[data-poems-view="game"]');
@@ -784,7 +815,39 @@
     document.addEventListener("keydown", function (e) {
       if (e.key === "Escape" && isOpen() && !state.mode) close();
     });
+
+    // 底栏中间那一格（`/poems/?game=1`）进来时要**当场把这层掀开** ——
+    // 不然用户点「大会」只落到诗词列表，还得再找一次那颗键。
+    //
+    // ⚠️ 先过权限：`exam.gathering` 是 Max 的门。不够就画那张「为什么点不动」
+    //    的卡（`renderEntryGate`），**不弹层、也不什么都不做** ——
+    //    底栏那颗键谁都看得见，得给个说法。
+    if (wantsGame()) {
+      if (!capAllowed(GATHERING_CAP, identifier()).ok) renderEntryGate();
+      else open();
+    }
+
     loadCorpusIntoView();
+  }
+
+  // 把地址栏上的 `game=1` 摘掉（不动历史、不刷新）。
+  // 只有从底栏那条路进来过才有得摘；裸 `/poems/` 上它是一个无操作。
+  function dropGameParam() {
+    var loc = window.location;
+    if (!wantsGame()) return;
+    if (!window.history || !window.history.replaceState) return;
+    var q = loc.search.replace(/^\?/, "").split("&").filter(function (kv) {
+      return kv !== "" && kv !== "game=1";
+    });
+    var next = loc.pathname + (q.length ? "?" + q.join("&") : "") + (loc.hash || "");
+    try { window.history.replaceState(window.history.state, "", next); } catch (e) { }
+  }
+
+  // 地址栏里有没有 `game=1`（`/poems/?game=1#…` 也算）。
+  // 只看这一个参数，别的一概不管 —— 底栏那颗键是它唯一的发出者。
+  function wantsGame() {
+    var q = (window.location && window.location.search) || "";
+    return /(?:^|[?&])game=1(?:&|$)/.test(q);
   }
 
   function loadCorpusIntoView() {
