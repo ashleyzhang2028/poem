@@ -23,7 +23,7 @@ function loadSiteIndex() {
   ).concat([
     "data/index.js", "data/poems-classic.js", "data/poems-tangshi.js",
     "data/poems-songci.js", "data/poems-guwen.js", "data/poems-zhaoming.js",
-    "data/site-index.js"
+    "data/site-books.js", "data/site-index.js"
   ]);
   files.forEach(f => vm.runInContext(read(f), sandbox, { filename: f }));
   return sandbox.SITE_INDEX;

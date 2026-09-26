@@ -8912,6 +8912,38 @@ function renderSignedIn(sess) {
 
 ---
 
+#### ⑪ 落地：P1 考试层内核与卷面（2026-09-26 · Issue #342）
+
+用户在末条回「同意，按你的规划去实现」，四件事一并点头（形态 / 改名 / 常识归 Pro / 顺序）。
+本轮只落 **P1**，P2、P3 各自另开 PR，不混着上（⑧ 那条）。
+
+**做了什么**
+
+- `js/exam.js`（内核，纯逻辑、零 DOM、Node 可跑，与 `js/quiz.js` 同款）：
+  - `VARIANTS` 三形态（`practice` / `mock` / `formal`），每个带自己的能力键、层级、
+    判分时机（`instant` / `after`）、限时、题量档 —— 页面的玩法卡从这里来，不再各写一份；
+  - `scopes()` / `select()`：范围名单**唯一来源是 `SITE_BOOKS`**（加第十二部集子时自动多一个范围），
+    再按学段切出小学 / 初中 / 高中；
+  - `build()`：卷面 = 范围 × 形态 × 题量，题上带 `origin: "kernel"`（人工题是 P3 的事）；
+  - `batch()`：只判对错、只报「这次 N 题对 M 题」，**不出水平分**（⑥ 那条）；
+  - `readRecords()` / `saveRecord()` / `clearRecords()`：本机键 `poem_exam_v1`，
+    **不上云、不进复习排期**，留最近 50 条。
+- `js/game.js`：玩法卡改为「飞花令 + 三形态」；
+  考试三形态多了「**卷面设置**」这一层（范围下拉 + 题量），流程是
+  **玩法卡 → 卷面设置 → 答题 → 卷面**；语料按集子打上 `book` 标记供范围筛；
+  正式考试交卷前不给对错、到点自动交卷、中途退出不评分不留记录。
+- 门槛三处同步：`js/entitlement.js` 的 `CAPS`（`exam.paper` 改名「模拟考试」，
+  新增 `exam.formal` Max / `exam.changshi` Pro）、`api/_lib/core.js` 的 `featuresFor()`、
+  `test/entitlement.test.js` 与 `test/ops.test.js` 的断言（`/plans/` 对比表当场问内核，自动跟着变）。
+- `js/sync-coverage.js` 登记 `poem_exam_v1`（不上云，理由是设备域）；
+  `poems/index.html` 挂 `js/exam.js` 与 `data/site-index.js`（范围名单的来源）。
+
+**验证**：新增 `test/exam.test.js`（形态表 / 范围与 SITE_BOOKS 同源 / 组卷 / 判分 / 记录 / 接线），
+`test/run.sh` 加一层；全套 `bash test/run.sh` 全绿。
+
+**这一轮没做**（按 ⑧）：题型补齐（填空 / 作者朝代 / 译文连线，P2）、
+常识自带题（P3）、错题回流（要走 `scheduler.js`，另立项）。
+
 ### 4.67 成语译文的质量：能查的交给脚本查，查不出的才动手改（2026-09-26 · 回答 Issue #339）
 
 用户三句话：

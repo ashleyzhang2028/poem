@@ -12,7 +12,7 @@ const LOAD = [
   'data/poems-songci.js', 'data/poems-guwen.js', 'data/poems-zhaoming.js', 'data/poems-yuanqu.js',
   'data/poems-yuefu.js', 'data/poems-jinxiandai.js', 'data/poems-chengyu.js',
   'data/chengyu-support.js',
-  'data/site-index.js', 'data/works-index.js'
+  'data/site-books.js', 'data/site-index.js', 'data/works-index.js'
 ];
 
 const sandbox = { window: {}, console };
