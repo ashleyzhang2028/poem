@@ -33,10 +33,10 @@
 
   function glyph() {
     return '<svg class="de-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
-      'stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">' +
+      'stroke-width="1" stroke-linecap="round" stroke-linejoin="round">' +
       '<path d="M12 5.4v13.2M5.4 12h13.2"/></svg>' +
       '<svg class="de-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
-      'stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">' +
+      'stroke-width="1" stroke-linecap="round" stroke-linejoin="round">' +
       '<path d="M5 12.5 10 17.5 19.5 7"/></svg>';
   }
 
