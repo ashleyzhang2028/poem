@@ -70,8 +70,11 @@
 
   --search-placeholder-shift: -1.5px;
 
-  --item-btn: 36px;
-  --item-icon: 16px;
+  /* 列表卡片右侧那一组圆钮（报告错误 / 加入今日背诵 / 加入背诵清单 / 播放）
+     统一缩到与分组卡片右上角「连续播放」同一尺寸（Issue #329）。
+     那一颗是 .gw-play-sm：26px 的圆 + 12px 的图标，写死在 css/classic.css。 */
+  --item-btn: 26px;
+  --item-icon: 12px;
 
   --item-gap: 8px;
 
@@ -2283,6 +2286,9 @@ html, body {
   gap: 12px;
   flex: none;
 
+  /* 「今日背诵」那张卡在深绿底上，圆钮要看得见，所以尺寸仍按 40px 走 ——
+     跟正文里的读者按钮同一档。卡片右侧列表项上的圆钮是另一档（--item-btn
+     26px，对齐分组卡片右上角的连读钮），两组尺寸是**有意**分开的。 */
   --today-btn-size: 40px;
   --today-btn-ring: 1px;
 

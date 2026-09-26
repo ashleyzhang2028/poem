@@ -175,15 +175,20 @@
 .group-name { font-size: 17px; font-weight: 700; color: var(--ink); }
 .group-count { font-size: 11.5px; color: var(--ink-2); }
 
+/* ⚠️ 26px 是「列表卡片右侧那一组圆钮」的基准（Issue #329）：
+   报告错误 / 加入今日背诵 / 加入背诵清单 / 播放 都按这个尺寸走，
+   变量在 css/style.css 的 --item-btn / --item-icon。改这里要一起改那边。 */
 .gw-play-sm {
   margin-left: auto;
   width: 26px;
   height: 26px;
   box-sizing: border-box;
 }
-.gw-play-sm svg { width: 12px; height: 12px; }
+/* 这一颗在分组卡片标题行里，跟分组名/字号标签挨着，所以图标按 15px 给，
+   略大于同一尺寸圆钮里的 12px —— 两者是「同大小的钮、各自配的图标」。 */
+.gw-play-sm svg { width: 15px; height: 15px; }
 
-.gw-play-sm .play-glyph-sm svg { width: 12px; height: 12px; }
+.gw-play-sm .play-glyph-sm svg { width: 15px; height: 15px; }
 .gw-play-sm:hover { border-color: var(--blue); background: var(--blue-light); }
 .gw-play-sm[data-menu="1"] { border-color: var(--blue); background: var(--blue-light); }
 
