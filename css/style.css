@@ -76,7 +76,11 @@
   --item-btn: 26px;
   --item-icon: 12px;
 
-  --item-gap: 8px;
+  /* 这四颗钮之间的缝隙（Issue #329 后续）：左右那一条是 .item-actions 的列间距，
+     上下那一条跟它的行高走（26px 纽 + 这条缝），到行尾箭头的一条用 margin-right。
+     8 → 4：26px 的钮配 8px 的缝太散，四颗钮之间像散了架；4px 才像「一组」。
+     ⚠️ 这个值只服务这一组，别再被别处借去当通用间距。 */
+  --item-gap: 4px;
 
   --trans-icon: 14px;
   --safe-top: env(safe-area-inset-top, 0px);

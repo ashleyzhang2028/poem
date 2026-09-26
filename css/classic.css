@@ -342,12 +342,17 @@
 .item-actions {
   display: grid;
   grid-template-columns: repeat(2, var(--item-btn));
-  grid-auto-rows: var(--item-btn);
-  gap: var(--item-gap);
-  flex: 0 0 auto;
+  /* 上下那一条缝：行高 = 26px（= --item-btn）+ 4px（= --item-gap）。
+     末行不留缝，所以这组钮整体比「两行钮」多出来的那点正好是它（Issue #329 后续）。 */
+  grid-auto-rows: calc(var(--item-btn) + var(--item-gap));
+  /* 左右那一条缝就在这儿；上下那条跟行高走 */
+  gap: 0 var(--item-gap);
+  /* 上下一起收：盒高 = 两行行距 + 最后一行钮高，钮在行里居中，于是两条缝一样宽 */
   align-content: center;
+  justify-items: center;
   justify-content: end;
 
+  flex: 0 0 auto;
   margin-right: var(--item-gap);
 }
 
