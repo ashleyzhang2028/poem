@@ -46,7 +46,37 @@
   // ---------------------------------------------------------------------
   // 范围（scope）：**名单的唯一来源是 SITE_BOOKS**（data/site-books.js）。
   // 加第十二部集子时，这里自动多一个范围 —— 不许在本文件再列一份集子名单。
+  //
+  // ⚠️ 范围分成**三块**摆在首页上（Issue #356 第九轮：范围提到首页、可多选）。
+  //    分块的**名字**在这里一处 —— 首页（`js/game.js` 的 `scopeRows()`）照着
+  //    这个次序摆，两边不各写一份中文名。
   // ---------------------------------------------------------------------
+  var SCOPES_GROUPS = ["全部", "课内诗词", "其他集子"];
+
+  // 一个范围落在哪一块（判 id，不按名字猜）：
+  //   · `all`            → 第 0 块（「全部」：整个语料混着抽）；
+  //   · `poems:<学段>`   → 第 1 块（课内诗词按小学 / 初中 / 高中切）；
+  //   · `book:<集子>`    → 第 2 块（其余集子，各住自己那一格）。
+  // ⚠️ 返回 `-1` 不是「第一块」—— 认不出的 id 应当**如实说认不出**，
+  //    而不是悄悄塞进「全部」（塞进去的后果是首页多出一格假的「全部」）。
+  //
+  // ⚠️ **`book:poems` 归 -1（不上首页）**：它与 `poems:primary` 那三格是
+  //    **同一份语料**的两种切法（整部书 vs 按学段），而课内那三格已经把整部
+  //    「课内诗词」切完了（小学 + 初中 + 高中 = 251 首，一个不多一个不少）。
+  //    再摆一格「课内诗词（251 条）」在「其他集子」里，用户看到的会是
+  //    **同一件事的第二遍**（真机核过：它原先就摆在「其他集子」的第一格）。
+  //    所以：有 `poems:` 那三格时，`book:poems` 这一格不上首页
+  //    —— 但它**照旧是一个合法 scope**（`select()` 认它），老链接不受影响。
+  var SCOPES_HIDDEN = { "book:poems": 1 };
+
+  function scopeGroupOf(scopeId) {
+    var id = String(scopeId == null ? "" : scopeId);
+    if (SCOPES_HIDDEN[id]) return -1;
+    if (id === "all") return 0;
+    if (id.indexOf("poems:") === 0) return 1;
+    if (id.indexOf("book:") === 0) return 2;
+    return -1;
+  }
   function booksOf(opt) {
     var o = opt || {};
     // 显式传入优先（测试与 Node 环境用），否则问 data/site-books.js。
@@ -102,10 +132,34 @@
   }
 
   // 取某一范围的条目。范围 id 不认识时如实回空数组（不悄悄退回全部）。
+  //
+  // ⚠️ **多选是合成 id**（Issue #356 第九轮）：首页那一段范围是**多选**的
+  //    （用户原话：「供用户多选」），而组卷只需要**一个** scope。所以约定
+  //    一个合成写法 `pick:<id1>+<id2>…` —— 由首页那一段拼（`js/game.js` 的
+  //    `pickScope()`），**取谁仍然只在这里判**。
+  //    为什么不把「筛好的语料」直接交给内核：`Exam.build()` 里还要按 scope
+  //    再筛一次（逐题判是不是这一范围内），两处筛法一旦不一样就会打架
+  //    （卷面写着 12 题、实际 8 题）。口径只有一处：**范围名单与取谁，全在这一节**。
+  // ⚠️ 多选是**并集**、按顺序去重：同一篇既算「唐诗三百首」又算「小学」时只出一次
+  //    （否则同一篇会被抽成两道同题）。
   function select(corpus, scopeId) {
     var id = String(scopeId == null ? "all" : scopeId);
     var cps = corpus || [];
     if (id === "all") return cps.slice();
+    if (id.indexOf("pick:") === 0) {
+      var parts = id.slice(5).split("+").filter(Boolean);
+      if (!parts.length) return cps.slice();
+      var seen = {}, out = [];
+      parts.forEach(function (one) {
+        select(cps, one).forEach(function (p) {
+          var key = p && p.id != null ? String(p.id) : "";
+          if (key && seen[key]) return;
+          if (key) seen[key] = 1;
+          out.push(p);
+        });
+      });
+      return out;
+    }
     if (id.indexOf("book:") === 0) {
       var book = id.slice(5);
       return cps.filter(function (p) { return p && p.book === book; });
@@ -226,6 +280,8 @@
   return {
     VARIANTS: VARIANTS,
     STAGES: STAGES,
+    SCOPES_GROUPS: SCOPES_GROUPS,
+    scopeGroupOf: scopeGroupOf,
     variant: variant,
     scopes: scopes,
     select: select,

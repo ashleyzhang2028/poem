@@ -33,37 +33,29 @@
   ];
 
   // ---------------------------------------------------------------------
-  // 首页的「考什么范围」：**把范围提到玩法前面**
+  // 首页的「范围」：**提在题型前面**，一行一块、多选
   // ---------------------------------------------------------------------
-  // 用户 2026-09-26 原话（Issue #356 第七轮）：
+  // 用户 2026-09-26 原话（Issue #356 第七轮起，到第九轮定形）：
   //   「这四张卡片目前是按题型来的，我记得还有按范围来的，例如只考唐诗三百首，
-  //     只考文学常识，只考成语故事，你觉得应该怎么组织合适？还是在点击四张
-  //     卡片后再设置范围？」
+  //     只考文学常识，只考成语故事，你觉得应该怎么组织合适？」（第七轮）
+  //   「要不还是合并范围和更多范围内容到古诗词大会的首页吧。」（第九轮）
+  //   「先显示范围，下面再显示题型和题型的田字格卡片。」
+  //   「范围用类似搜索的下拉框那种展现形式(直接每一行显示出来，不是下拉框)，
+  //     前面有个加号或减号，供用户多选。」
+  //   「这样设计，用户先多选范围，再按题型直接进入。」
   //
-  // 定下来的口径：**两类进首页（题型 + 常考的那几部集子），其余留「全部范围」**。
-  //   · 首页两条路：上半「考哪一类题」（玩法四张卡，与从前一样），
-  //     下半「考哪一部书」（常考集子各一张卡）；
-  //   · 「全部」（全站 2928 条混着抽）与「课内三学段」（小学 / 初中 / 高中）
-  //     不占首页的格子 —— 它们归「更多范围」那一层（`renderScopes()`）；
-  //   · 玩法卡点进去的「卷面设置」里**范围不再问第二遍**：首页选的那一部
-  //     已经带下去了（`start()` 把 `state.setup.scope` 先设好）。
+  // 定下来的口径（第九轮）：
+  //   · **范围在最上面**（用户先选范围），题型四张田字格在下面；
+  //   · 范围**一个不少**：三块（全部 / 课内诗词 / 其他集子）全在首页，
+  //     从前那层「更多范围」拆了 —— 没有「还有一半藏在下一层」这回事；
+  //   · 范围是**一块一块的清单**（前头一个加号），**不是卡片** —— 它是「考什么」，
+  //     不是「进哪一页」，视觉分量比题型那四张低一档；
+  //   · **可多选**：选中的格子上色（`data-on="1"`）；一格都没选 = 全部；
+  //   · 玩法卡点进去的「卷面设置」里**范围不再问第二遍**：首页选的已经带下去了。
   //
-  // ⚠️ 名单**不在这里另列一份**：下面的 `FEATURED` 只是「哪几部进首页 + 排第几」
-  //    的**次序表**，名字、条数、id 全部从 `Exam.scopes()`（→ `SITE_BOOKS`）现算。
-  //    加第十二部集子时这里一个字都不用改 —— 它自动落进「更多范围」那一层。
-  // ⚠️ 「全部」那一格写的不是 `all`，是 `poems:primary`？—— 不，「全部」与三学段
-  //    都归「更多范围」。首页四部（唐诗 / 文学常识 / 成语故事 + 课内诗词）
-  //    是**用户点名**的那三部 + 课内那一部（课内本来就有自己的页与语料）。
-  var FEATURED = [
-    { id: "book:tangshi",  hint: "按卷次，五言到乐府" },
-    { id: "book:changshi", hint: "文体、典籍、称谓、典故" },
-    { id: "book:chengyu",  hint: "原文带译文，一部一则" }
-  ];
-
-  // 「更多范围」那张卡（首页第四张）：说明与条数。
-  // ⚠️ 条数是**整个语料**（`all` 那一格的 count），不是「其余集子加起来」——
-  //    点进去之后最上面那一组就是「全部」，那句「2928 条」说的正是它。
-  var MORE_HINT = "全部 · 小学 · 初中 · 高中 · 其余集子";
+  // ⚠️ 名单**不在这里另列一份**：名字、条数、id 全部从 `Exam.scopes()`
+  //    （→ `SITE_BOOKS`）现算，分组只判 id（`all` / `poems:` / 其余集子）。
+  //    加第十二部集子时这里一个字都不用改 —— 它自己落进「其他集子」那一块。
 
   var state = {
     mode: "",
@@ -81,6 +73,14 @@
     // `scopeChosen` 记「范围是不是用户自己挑的」—— 挑过就一路带下去、
     // 不再在卷面设置里问第二遍（Issue #356 第七轮）。
     setup: { scope: "all", size: 0, scopeChosen: false },
+    // 首页那一段范围：**多选**（用户原话：「供用户多选」）。
+    //  · `scopes` 里是选中的范围 id（`[]` = 一格没选 = 全部）；
+    //  · `scopeOpen` 是「三块都展开着吗」—— 默认**展开**（用户原话：
+    //    「直接每一行显示出来」），点段头那颗键能整段收起 / 展开。
+    // ⚠️ 挑完范围接着点题型就直接进 —— 所以这两个状态**只在首页那一层用**，
+    //    进了卷面设置就换成 `setup.scopeChosen` 那一份（见 `start()`）。
+    scopes: [],
+    scopeOpen: true,
     left: 0,
     timer: null
   };
@@ -255,31 +255,35 @@
   function renderHome() {
     var id = identifier();
 
-    // ⚠️ 这一页是**飞花令 + 试题/**模拟/考试**那一页（Issue #356 用户的定调：
+    // ⚠️ 这一页是**飞花令 + 试题/模拟/考试**那一页（Issue #356 用户的定调：
     //    「我说的古诗词大会这个页面就是模拟和考试页面，不是古诗词大会集子」）。
-    //    所以：
-    //      · 页面上**没有诗词列表、没有阅读器**（`/dahui/index.html` 上不挂那两个
-    //        挂载点），一屏全是玩法卡 —— 想读诗词的请去 `/poems/`；
-    //      · **没有一道「整页的集子闸」**：不放行的那一档，画的也是这一页
-    //        （玩法卡各自标着门槛），与「集子访问」是两件事。集子归 `/library/`；
-    //      · **页面上不摆任何说明卡**：从前那两张（页头「这一页是飞花令与考试
-    //        —— 题目、模拟、正式考试都在这里……」与页底「这一页的诚实说明」）
-    //        已按用户原话整段删除，一进页面就是玩法卡。
+    //    所以：页面上**没有诗词列表、没有阅读器**（`/dahui/index.html` 上不挂那两个
+    //    挂载点）；**没有一道「整页的集子闸」**（不放行的那一档，画的也是这一页，
+    //    玩法卡各自标着门槛）；**页面上不摆任何说明卡**（两张都按用户原话整段删掉）。
     //
-    // ⚠️ 四个玩法**各自是一张卡**（用户 2026-09-26 原话：「飞花令四种玩法各自
-    //    一个卡片」）。从前它们是同一张卡里的四个按钮 —— 每张卡自带 `.account-card`
-    //    的背景、圆角与阴影，四张卡之间由 `.poems-game` 的 `gap` 留缝。
-    //    顺带一处**真 bug** 跟著消失：`renderHome()` 从前画的是
-    //    `<section class="account-card">`，四个按钮则靠 `.game-mode` 自己的
-    //    `margin-bottom: 8px` 相间 —— 而 `:last-child` 那条把它在卡底归零，
-    //    于是「卡内按钮之间」有缝、「卡底那颗按钮与这张卡的边缘」没有。
-    //    现在一颗按钮一张卡，缝只有一处（父层的 `gap`）。
-    // ⚠️ 首页有**两行**卡（Issue #356 第七轮）：
-    //    上一行是「考哪一类题」（玩法四张），下一行是「考哪一部书」（常考集子
-    //    各一张卡）。从前只有上一行，用户于是问「我记得还有按范围来的……你觉得
-    //    应该怎么组织合适？」—— 答案落在这里：**范围与题型并列，都在首页**。
-    //    两行由 `.poems-home-tag` 那两行小标题分开（见 `css/account.css`）。
-    var html = homeTag("题型");
+    // ⚠️ **第九轮改版（Issue #356 · 2026-09-26）** —— 首页现在是**一段范围 + 一片题型**，
+    //    范围在**上面**，题型在下面：
+    //
+    //      范围        ← 一行一块，前头一个加号；点开是这一块里的名目，可多选
+    //      [ 题型 ]    ← 四张田字格卡片，点一张直接进（范围已经选好了）
+    //
+    //    用户原话：
+    //      「要不还是合并范围和更多范围内容到古诗词大会的首页吧。」
+    //      「先显示范围，下面再显示题型和题型的田字格卡片。」
+    //      「范围用类似搜索的下拉框那种展现形式(直接每一行显示出来，不是下拉框)，
+    //        前面有个加号或减号，供用户多选。」
+    //      「这样设计，用户先多选范围，再按题型直接进入。」
+    //
+    //    所以从前那两样**都拆了**：
+    //      · 「更多范围」那一层（`renderScopes()`）没了 —— 全部范围就在首页上；
+    //      · 「常考那三部各一张卡」没了 —— 范围不再是「卡片」那种视觉分量，
+    //        而是一行一块的清单（用户点的是「考什么」，不是「进哪一页」）。
+    //
+    // ⚠️ 范围**默认展开**：用户说「直接每一行显示出来」—— 一进页面就该看见名目，
+    //    而不是先看见三行「范围」再一行行点开。那前后两个「加号」于是不是「藏/露」，
+    //    而是「一块、一整片」都能一键**收起来 / 全展开**（按钮名说清这件事）。
+    var html = scopeRows();
+    html += homeTag("题型");
     html += '<div class="poems-home-row">';
     MODES.forEach(function (m) {
       var r = allowed(m, id);
@@ -294,81 +298,113 @@
     });
     html += "</div>";
 
-    // 下一行：常考的那几部集子，各是一张卡 —— 点它就**带着这一部**进玩法选择。
-    // ⚠️ 这一行的卡是 `data-game-scope`（不是 `data-game-mode`）：点它就是
-    //    「我要考这一部书」，接着问玩哪种。进到玩法那一层时范围已经定了，
-    //    卷面设置里不再问第二遍（见 `start()` 与 `renderSetup()`）。
-    var scopes = scopeList();
-    var feat = FEATURED.filter(function (f) {
-      return scopes.filter(function (sc) { return sc.id === f.id; }).length > 0;
-    });
-    if (feat.length) {
-      html += homeTag("范围");
-      html += '<div class="poems-home-row">';
-      feat.forEach(function (f) {
-        var sc = null;
-        scopes.forEach(function (x) { if (x.id === f.id) sc = x; });
-        if (!sc) return;
-        html += scopeCard(sc, f.hint);
-      });
-      // ⚠️ 「更多范围」**也是这一行的一张卡**（Issue #356 第八轮用户原话：
-      //    「更多范围那里，以第四个卡片的形式展示」）。从前它是一条通栏的
-      //    `.account-btn.ghost` —— 第五条边、和上面三张卡都不是一套外观，
-      //    看着像「另一件事」。现在它就是第四张卡：同一套外观、同一行。
-      //    三张常考 + 这一张，正好凑满 2×2 的田字格（390px 上一行两张）。
-      // ⚠️ 它是 `data-game-scopes`（不是 `data-game-scope`）：点它不选范围，
-      //    而是**展开那一层**（全部 / 三学段 / 其余集子）。
-      html += '<button class="account-card game-mode game-scope game-scope-more" ' +
-        'type="button" data-game-scopes="1">' +
-        '<span class="game-mode-name">更多范围</span>' +
-        '<span class="game-mode-desc">' + esc(MORE_HINT) + "</span>" +
-        '<span class="game-mode-tier">' + esc(moreCount()) + " 条</span>" +
-        "</button>";
-      html += "</div>";
-    }
-
     // 未登录时页底**只留那颗登录键**（Issue #356 用户原话：
     //   「如果需要登录，页底只显示那个登录 按钮即可，不要额外一张卡片，
-    //     然后卡片里只有一个 登录 按钮」）。
-    //    所以即使没登录也**不另开一张卡**：那颗键直接摆在这一层里
-    //    （`&lt;section&gt;` 的兄弟），与玩法卡之间隔着同一个 `gap` ——
-    //    用户 2026-09-26 又补了一句：「登录按钮和卡片要有 gap 间隔，
-    //    而不是完全没有 margin」（从前的写法是 `.account-btn + .account-btn`
-    //    的 `margin-top`，它答的是「两颗按钮之间」，答不了「按钮与卡片之间」）。
-    //    已经登录、只是层级不够的，这里不出任何按钮 —— 那件事归玩法卡上
-    //    那句「层级不够」，页面不摆第二张卡去重复它。
+    //     然后卡片里只有一个 登录 按钮」）。它是这一层的兄弟，缝由父层的 `gap` 给。
     if (!id.signedIn) {
       html += '<button class="account-btn" type="button" data-game-go="/login/">登录</button>';
     }
     return html;
   }
 
-  // 一张范围卡（首页那一行「范围」：三张常考 + 一张「更多范围」）。
-  // ⚠️ 样子与玩法卡**同一套**（`.account-card.game-mode`）：同一行、同一格、
-  //    同一档标题与门槛小标 —— 用户要的是「更多范围也是第四个卡片」，
-  //    不是「三张卡加一条通栏键」。
-  function scopeCard(sc, hint) {
-    return '<button class="account-card game-mode game-scope" type="button" ' +
-      'data-game-scope="' + esc(sc.id) + '">' +
-      '<span class="game-mode-name">' + esc(sc.name) + "</span>" +
-      (hint ? '<span class="game-mode-desc">' + esc(hint) + "</span>" : "") +
-      '<span class="game-mode-tier">' + esc(sc.count) + " 条</span>" +
+  // ---------------------------------------------------------------------
+  // 首页那一段范围：**一行一块**（用户说的「类似搜索的下拉框那种展现形式」
+  // = 一块可展开的清单，**不做**浮层下拉）
+  // ---------------------------------------------------------------------
+  // 分组与次序：**全部 / 课内诗词 / 其他集子**三块。分块规则与那三个名字
+  // **不在这里** —— 在 `js/exam.js` 的 `SCOPES_GROUPS` / `scopeGroupOf()`
+  // 一处（那一头也要按同一套分法认范围，两处各写一份迟早会不一样）。
+  //
+  // ⚠️ 每一块**一个加号**（收起来时加号，展开时减号）—— 用户原话
+  //    「前面有个加号或减号」。它是 `<button>`，所以键盘 / 读屏也点得到；
+  //    「±」这个字形不进 DOM，由 CSS 画（见 `css/account.css` 的 `.game-scope-sign`）。
+  // ⚠️ 清单**默认全部展开**（用户原话「直接每一行显示出来」），段头另给一颗
+  //    「收起全部 / 展开全部」—— 一屏 15 行太长时一键收起来。
+  //
+  // ⚠️ 这一段**不是卡片**（没有背景、圆角、阴影）：它是「考什么」的清单，
+  //    视觉分量比下面那四张题型卡**低一档** —— 题型是「进哪一条路」，
+  //    范围是「路上带什么」。两样摆同一个分量，用户就分不清先点哪个。
+  function scopeRows() {
+    var scopes = scopeList();
+    var groups = [[], [], []];
+    scopes.forEach(function (sc) {
+      var g = Ex ? Ex.scopeGroupOf(sc.id) : -1;
+      if (g < 0) return;  // 认不出的范围不进首页（不塞进「全部」，不假装认识）
+      groups[g].push(sc);
+    });
+
+    var names = (Ex && Ex.SCOPES_GROUPS) || [];
+    var html = '<div class="game-scope-head">' +
+      '<p class="poems-home-tag">范围</p>' +
+      '<button class="game-scope-all" type="button" data-game-scope-all="1">' +
+      (state.scopeOpen ? "收起" : "展开") + "</button>" +
+      "</div>";
+    html += pickNote();
+    groups.forEach(function (rows, i) {
+      html += scopeGroup(names[i], rows);
+    });
+    return html;
+  }
+
+  // 那一段的**状态行**：选了什么、一共几篇。
+  // ⚠️ 它是「范围」这一段的收口 —— 用户多选时不用自己数哪几格亮着。
+  //    一格没选时写的是「一格没选 = 什么都考」，不写「全部」两字
+  //    （那会被读成「你选了全部」—— 是同一回事，但话不是这么说的）。
+  function pickNote() {
+    return '<p class="game-scope-note">' + esc(scopePickNote()) + "</p>";
+  }
+
+  // 一块范围：一个加号（`±` 由 CSS 画）+ 这一块的名字 + 条数，点开是这一块里的名目。
+  //
+  // ⚠️ 这一块**不是卡片**（没有背景、没有圆角、没有阴影）—— 它是一行**清单头**。
+  //    加号/减号在这一行的**最前面**（用户原话：「前面有个加号或减号」）。
+  // ⚠️ 名目本身是**多选**的：多选由「点没有，再点有」那一条 toggle 落地
+  //    （见 `bind()` 的 `data-game-scope`）—— 复选框原件在这里是多余的，
+  //    整块「行」点下去就是按下去，跟用户说的「给用户多选」一回事。
+  function scopeGroup(title, rows) {
+    if (!rows.length) return "";
+    var open = state.scopeOpen;
+    return '<div class="game-scope-row"' + (open ? "" : ' data-folded="1"') + ">" +
+      '<button class="game-scope-item" type="button" data-game-scope-fold="' + esc(title) + '"' +
+      ' aria-expanded="' + (open ? "true" : "false") + '">' +
+      '<span class="game-scope-sign" aria-hidden="true"></span>' +
+      '<span class="game-scope-name">' + esc(title) + "</span>" +
+      '<span class="game-scope-count">' + esc(scopeCountOf(rows)) + "</span>" +
+      "</button>" +
+      '<div class="game-scope-grid">' +
+      rows.map(scopePick).join("") +
+      "</div>" +
+      "</div>";
+  }
+
+  // 一块里有多少条：这一块自己那几格的条数加起来（「全部」那一块就是整个语料）。
+  // ⚠️ 它只是**名义上的规模**，用来让用户不必点开就知道这一块多大 ——
+  //    多选时「几块之和」不等于实际抽到的条数（同一篇可能落在两块里），
+  //    所以选完之后那行小标写的是「**稿子里真能考到的**」（见 `scopePickNote()`），
+  //    不是这两个数相加。
+  function scopeCountOf(rows) {
+    var n = 0;
+    rows.forEach(function (r) { n += Number(r.count) || 0; });
+    return n + " 条";
+  }
+
+  // 一格名目：**多选**的一个选项。选中与否只看状态（`data-on="1"`），不看按钮自己——
+  // 重画之后按钮是新的，状态留在 `state.picksScope` 上。
+  function scopePick(sc) {
+    var on = state.scopes.indexOf(sc.id) >= 0;
+    return '<button class="game-scope-pick" type="button" data-game-scope="' + esc(sc.id) + '"' +
+      (on ? ' data-on="1" aria-pressed="true"' : ' aria-pressed="false"') + ">" +
+      '<span class="game-scope-name">' + esc(sc.name) + "</span>" +
+      '<span class="game-scope-count">' + esc(sc.count) + " 条</span>" +
       "</button>";
   }
 
-  // 「更多范围」那张卡上写多少条：整个语料那一格的 count。
-  function moreCount() {
-    var n = scopeCount("all");
-    return n == null ? "" : n;
-  }
-
-  // 首页那两行小标题（「题型」/「范围」）。
+  // 首页那两行小标题（「范围」/「题型」）。
   // ⚠️ 它就是**一个词**（用户 2026-09-26 第八轮原话：「改成 题型 不要加任何
   //    其他废话」「改成 范围 不要任何其他废话」）—— 从前后面还跟着一句
   //    「同一份语料，四种玩法；想换书的请看下一行」那样的说明，已经删干净。
   // ⚠️ 它**不是** `.account-card-title`（那是卡**里面**的标题，13px 灰色小字），
-  //    也不是卡片（不带背景 / 圆角）—— 它只是横在卡片之间的一行字，
-  //    把这一层分成两段。样式见 `css/account.css` 的 `.poems-home-tag`。
+  //    也不是卡片（不带背景 / 圆角）—— 它只是横在卡片之间的一行字。
   function homeTag(title) {
     return '<p class="poems-home-tag">' + esc(title) + "</p>";
   }
@@ -494,85 +530,71 @@
     return "?";
   }
 
-  // ---------------------------------------------------------------------
-  // 「更多范围」那一层（Issue #356 第八轮重排）
-  // ---------------------------------------------------------------------
-  // 首页那一行摆四张卡：常考的三部（`FEATURED`）+「更多范围」自己一张。
-  // 剩下的一律在这一层，一个不少：
-  //   · 全部（全站语料混着抽，例：2928 条）；
-  //   · 课内三学段（小学 / 初中 / 高中 —— 由 `Exam.scopes()` 从年级算出来）；
-  //   · 其余集子（课内诗词 / 小古文 / 乐府 / 宋词 / 元曲 / 古文观止 /
-  //     昭明文选 / 近现代诗词）。
+  // 卷面设置里那一行「考什么范围」：把 `setup.scope` 那个 id 念成人话。
   //
-  // ⚠️ 这一层与首页那一行**同源**：都读 `scopeList()`（→ `Exam.scopes()`
-  //    → `SITE_BOOKS`）。首页那三张卡只是「从这里挑三张摆上去」，
-  //    名单永远只有一份。
-  // ⚠️ 点这里的任何一张 = 选好范围，接着问玩哪种（回首页那一行玩法卡）。
-  //    所以这里是「选范围 → 选玩法」，与首页「选玩法 → 选范围」是同一个漏斗的
-  //    两个入口，出口都是卷面设置。
-  //
-  // ⚠️ 首页那三张在这里**不重复出现**（`feat[sc.id]` 那一句跳掉的正是它们）：
-  //    它们是「常考的那几部」，已经在上一层的卡片里点得到。
-  function renderScopes() {
-    var scopes = scopeList();
-    var feat = {};
-    FEATURED.forEach(function (f) { feat[f.id] = 1; });
-
-    var all = [], stages = [], books = [];
-    scopes.forEach(function (sc) {
-      if (feat[sc.id]) return;
-      if (sc.id === "all") all.push(sc);
-      else if (sc.id.indexOf("poems:") === 0) stages.push(sc);
-      else books.push(sc);
-    });
-
-    // ⚠️ 这一层的版式整块重来（Issue #356 第八轮用户原话：
-    //    「点进 更多范围 页面，整个卡片和排版你是认真的吗，一塌糊涂！」）。
-    //
-    //    从前长这样，三处**真的坏了**：
-    //      · 标题卡里先是一颗「回到玩法」**按钮**（`<button>` 通栏、白底、有边），
-    //        再是「更多范围」这个卡内标题 —— 一颗键压在标题**上面**，主次翻了个；
-    //      · 每一组又是一张 `.account-card`，格子里每一颗范围键**自己也带**
-    //        `.account-card` —— **卡套卡套卡**：白底卡片里套着白底卡片，
-    //        边框一道套一道，哪一层是「一组」看不出；
-    //      · 格子是 flex `wrap` 不是 grid，每颗键**按内容定宽**（55～128px 不等），
-    //        没填满的那一行左边齐、右边空一大片（「其他集子」那一组尤其明显）。
-    //
-    //    现在：**一条小标题 + 一片格子**，就这两样。分组不再是卡片（小标题
-    //    自己就是分段的线），范围键也不再自带卡片外观（但保留 `.game-mode`
-    //    那套「这是一颗能点的键」—— 按下去要有反应、标题档次一致，见 `scopeCard()`）。
-    // ⚠️ 这一层里**不再有自己那颗「返回」**（Issue #370：全站的返回键只有
-    //    顶栏右上一处）。回退由顶栏那颗键管 —— `paintBack()` 在这一层上
-    //    把落点从「回首页」改成「**退出 /dahui/**」，与用户那句
-    //    「更多范围页面的后退应该后退到古诗词大会首页」是同一件事。
-    var html = "";
-
-    html += scopeGroup("全部", all);
-    html += scopeGroup("课内诗词", stages);
-    html += scopeGroup("其他集子", books);
-
-    if (state.setupNotice) {
-      html += '<p class="account-msg warn game-scopes-notice">' +
-        esc(state.setupNotice) + "</p>";
+  // ⚠️ 首页是**多选**，交给内核的是**合成 id**（`pick:a+b`，见 `pickScope()`）——
+  //    不认这一支的话，卷面设置上会原样印出 `pick:book:...` 那串内部标记
+  //    （用户看不懂）。所以这一处与 `pickScope()` 是配套的：
+  //    那边怎么拼，这边怎么拆。
+  function scopePickLabel(scopeId) {
+    var id = String(scopeId || "all");
+    if (id.indexOf("pick:") !== 0) {
+      var one = scopeCount(id);
+      return scopeName(id) + (one === "?" ? "" : "（" + one + " 条）");
     }
-    return html;
+    var ids = id.slice(5).split("+").filter(Boolean);
+    var n = null;
+    if (Ex && Ex.select) {
+      try { n = Ex.select(corpus(), id).length; } catch (e) { n = null; }
+    }
+    return ids.map(scopeName).join(" + ") + (n == null ? "" : "（" + n + " 条）");
   }
 
-  // 一组范围：一条小标题 + 一片格子。
-  // ⚠️ 小标题用 `.poems-home-tag`（与首页「题型」「范围」**同一个样式**）——
-  //    「分段」这件事全站只有这一个样子，不再为这一层另立一种。
-  function scopeGroup(title, rows) {
-    if (!rows.length) return "";
-    return '<p class="poems-home-tag">' + esc(title) + "</p>" +
-      '<div class="game-scope-grid">' +
-      rows.map(function (sc) {
-        return '<button class="game-scope-item" type="button" ' +
-          'data-game-scope="' + esc(sc.id) + '">' +
-          '<span class="game-scope-name">' + esc(sc.name) + "</span>" +
-          '<span class="game-scope-count">' + esc(sc.count) + " 条</span>" +
-          "</button>";
-      }).join("") +
-      "</div>";
+  // ---------------------------------------------------------------------
+  // 首页那一段范围：选中了哪几格 → 交给考试内核的 scope id
+  // ---------------------------------------------------------------------
+  // 用户先多选范围、再点题型（用户原话：「这样设计，用户先多选范围，
+  // 再按题型直接进入」）。所以「选中的那几格」要**折算成一个 scope 交给内核**
+  // —— 内核那一头（`js/exam.js` 的 `select()`）认的是**一个** scope id。
+  //
+  // 折算规则（四处，一句话一条）：
+  //   · 一格都没选            → `all`（整个语料）；
+  //   · 只选了「全部」这一格  → `all`；
+  //   · 只选了一格            → 就是它（照旧那一个 id）；
+  //   · 选了多格              → `pick:<id1>+<id2>…`（下面 `pickScope()` 拼）。
+  //
+  // ⚠️ 「选了多格」这一条**必须由内核认得**（`js/exam.js` 的 `select()` 里
+  //    多了一支：`pick:` 前缀）。不在这一层自己筛一遍语料、再把筛完的结果
+  //    塞给内核 —— 那样两次组卷（`Exam.build` 里那次也要筛）会各筛一遍，
+  //    迟早对不上；口径只有一处：**范围名单与取谁，全归 `js/exam.js`**。
+  function pickScope() {
+    var on = state.scopes.slice();
+    if (!on.length) return "all";
+    if (on.indexOf("all") >= 0) return "all";
+    if (on.length === 1) return on[0];
+    return "pick:" + on.join("+");
+  }
+
+  // 选中的那几格**落在几篇上**（真能考到的条数）。
+  // ⚠️ 它不等于各格「条数」相加：同一篇可能既在「唐诗三百首」又在「小学」里，
+  //    相加会把一篇数两遍（真机量过：三块之和比实际多）。所以这里问内核
+  //    `Exam.select()` —— 与组卷时取的是同一个函数，两个数因此一定对得上。
+  function pickCount() {
+    if (!Ex || !Ex.select) return null;
+    try { return Ex.select(corpus(), pickScope()).length; } catch (e) { return null; }
+  }
+
+  // 首页那一段范围的**状态行**：一句话说清「现在考什么、几篇」。
+  //
+  // ⚠️ 一格没选时不写「全部」那两个字（`scopeName("all")` 给的就是「全部」，
+  //    写在行里像「你选了全部」）—— 换一句说清「没选 = 什么都考」。
+  function scopePickNote() {
+    var n = pickCount();
+    var on = state.scopes.slice();
+    if (!on.length) return "一格没选 = 什么都考" + (n == null ? "" : "（" + n + " 篇）");
+    if (on.indexOf("all") >= 0) return "全部" + (n == null ? "" : "（" + n + " 篇）");
+    var names = on.map(scopeName);
+    return names.join(" + ") + (n == null ? "" : "（" + n + " 篇）");
   }
 
   // 卷面设置：范围 × 题量（形态在上一层的玩法卡里选）。
@@ -585,44 +607,32 @@
     var sizes = v.sizes || [];
     if (sizes.indexOf(state.setup.size) < 0) state.setup.size = v.size;
 
+    // 「换范围」回首页那一段清单（`data-game-back` 在 setup 层就是回首页）。
+    // 从前的名字是「换一个玩法」—— 第九轮之后**范围在卷面设置里是唯一能改的
+    // 那一件**（题型已经定了），所以这颗键说的就是它。
     var html = '<section class="account-card game-head">' +
-      '<button class="account-btn ghost game-back" type="button" data-game-back="1">换一个玩法</button>' +
+      '<button class="account-btn ghost game-back" type="button" data-game-back="1">换范围</button>' +
       '<h2 class="account-card-title">' + esc(m.name) + "</h2>" +
       '<p class="account-hint">' + esc(m.desc) +
       (v.timed ? " · 限时 " + v.minutes + " 分钟" : "") + "</p>" +
       "</section>";
 
-    // 范围：**首页已经选过的那一部，这里只念一遍、不再问第二遍**
-    // （Issue #356 第七轮）。用户点「唐诗三百首」那张卡进来，是来选玩法与题量的，
+    // 范围：**首页那一段多选里选好的，这里只念一遍、不再问第二遍**
+    // （Issue #356 第七／九轮）。用户点题型那张卡进来，是来选题量与开始的，
     // 不是来再审一次范围的 —— 再审一次等于把「选范围」问了两次。
-    // 想换书有两条现成的路：这张卡上的「换一部书」回首页，或去「更多范围」。
-    // ⚠️ 「全部」（`all`）是**默认档**，它本来就没在首页选过，所以照样给下拉 ——
-    //    否则从玩法卡直接进来的人会发现自己只能考「全部」。
-    var chosen = state.setup.scope && state.setup.scope !== "all";
-    if (chosen) {
-      html += '<section class="account-card"><h2 class="account-card-title">考什么范围</h2>' +
-        '<p class="account-lead">' + esc(scopeName(state.setup.scope)) +
-        "（" + esc(scopeCount(state.setup.scope)) + " 条）</p>" +
-        '<div class="game-nav">' +
-        '<button class="account-btn ghost" type="button" data-game-scopes="1">换一部书</button>' +
-        "</div>" +
-        '<p class="account-hint">范围在首页选的；换书就回那一层，不必在这里再审一遍。</p>' +
-        "</section>";
-    } else {
-      html += '<section class="account-card"><h2 class="account-card-title">考什么范围</h2>' +
-        '<div class="account-field">' +
-        '<label class="account-label" for="game-scope">范围</label>' +
-        '<select class="account-input" id="game-scope">' +
-        scopeList().map(function (sc) {
-          return '<option value="' + esc(sc.id) + '"' +
-            (sc.id === state.setup.scope ? " selected" : "") + ">" +
-            esc(sc.name) + "（" + sc.count + " 条）</option>";
-        }).join("") +
-        "</select></div>" +
-        '<p class="account-hint">名单从全站集子自己算出来 —— 加一部集子，这里就多一个范围。' +
-        "常考的几部（唐诗 / 文学常识 / 成语故事）在首页就有自己的卡。</p>" +
-        "</section>";
-    }
+    // 想改范围只有一条路：这一张上的「换范围」回首页那一段（`state.mode = ""`），
+    // 那一段是**多选**的清单，改了再点题型进来。
+    //
+    // ⚠️ 这一张卡**替掉了从前那个 `<select>` 下拉**（连 `readSetup()` 里
+    //    读 `#game-scope` 那一句一起删了）：范围在首页选，这里再摆一个下拉
+    //    等于把同一件事问两遍，而且两处的口径（多选 vs 单选）会打架。
+    html += '<section class="account-card"><h2 class="account-card-title">考什么范围</h2>' +
+      '<p class="account-lead">' + esc(scopePickLabel(state.setup.scope)) + "</p>" +
+      '<div class="game-nav">' +
+      '<button class="account-btn ghost" type="button" data-game-back="1">换范围</button>' +
+      "</div>" +
+      '<p class="account-hint">范围在首页那段清单里选的；要改就回首页，点一下格子就行。</p>' +
+      "</section>";
 
     html += '<section class="account-card"><h2 class="account-card-title">考多少题</h2>' +
       '<div class="seg mini" id="game-size" role="group" aria-label="题量">' +
@@ -661,7 +671,7 @@
       '<button class="account-btn ghost game-back" type="button" data-game-back="1">换一个玩法</button>' +
       '<h2 class="account-card-title">' + esc(m.name) + "</h2>" +
       '<p class="account-hint">第 ' + (i + 1) + " / " + total + " 题 · " +
-      esc(scopeName(state.setup.scope)) +
+      esc(scopePickLabel(state.setup.scope)) +
       (v.timed ? " · 剩余 " + timeLeftText() : "") +
       " · " +
       (state.server === "off" && reveal ? "本机判分（服务端没接通）" : "由服务器判分") + "</p>" +
@@ -714,9 +724,11 @@
 
   function render() {
     if (!host || !Q) return;
+    // ⚠️ 首页现在是**一段范围 + 一片题型**（`renderHome()`，Issue #356 第九轮）。
+    //    从前那个 `scopes` 层名（「更多范围」那一层）随拆页一起没了 ——
+    //    全部范围就在首页，没有第二层可去。
     var body;
     if (state.mode === "fly") body = renderFly();
-    else if (state.mode === "scopes") body = renderScopes();
     else if (state.mode === "setup") body = renderSetup();
     else if (state.mode) body = renderPaper();
     else body = renderHome();
@@ -724,8 +736,8 @@
     if (state.mode === "fly") {
       body += '<section class="account-card"><button class="account-btn ghost" type="button" ' +
         'data-game-restart="1">换一副令字</button></section>';
-    } else if (state.mode === "scopes" || state.mode === "setup") {
-      // 「更多范围」与「卷面设置」这两层自己就是一层，不再往下挂回退键。
+    } else if (state.mode === "setup") {
+      // 卷面设置自己就是一层，不再往下挂回退键。
     } else if (state.mode) {
       // 考试进行中给一条回设置的路（换范围 / 换题量重抽）；设置那一层自己就是那一层。
       body += '<section class="account-card"><button class="account-btn ghost" type="button" ' +
@@ -804,10 +816,12 @@
     if (!allowed(m, id).ok) { render(); return; }
 
     stopTimer();
-    // ⚠️ 范围**不在这里归零**（Issue #356 第七轮）：用户可能在首页那一行
-    //    「考哪一部书」里已经点过「唐诗三百首」，走到这一步是来挑玩法的。
-    //    归零 = 把他刚选的那部书悄悄扔掉，卷面设置里再问一遍「考什么范围」。
+    // ⚠️ 范围**不在这里归零**（Issue #356 第七／九轮）：用户已经在首页那一段
+    //    范围里多选好了（「先多选范围，再按题型直接进入」），走到这一步是来
+    //    挑题型的。归零 = 把他刚选的那几格悄悄扔掉，卷面设置里再问一遍范围。
     //    只有题量每次重来（那是「这一次要几题」，不是用户的长期选择）。
+    //    谁把范围落在 `setup.scope` 上：`bind()` 里 `data-game-mode` 那一支
+    //    （走 `pickScope()` 现算）—— 所以这里只**接力**，不重算。
     // ⚠️ 从题目里退回首页时也要留住 —— 见 `bind()` 的 `data-game-back`。
     var keepScope = state.setup && state.setup.scopeChosen ? state.setup.scope : "all";
     state.setup = { scope: keepScope, size: 0, scopeChosen: !!(state.setup && state.setup.scopeChosen) };
@@ -896,25 +910,17 @@
     });
   }
 
-  // 选好了范围、回首页等选玩法 —— 用那颗现成的 toast 说一声（页面角落那一颗，
-  // 不另开卡片）。文案只在这一处，`renderHome()` 不再自己写第二句。
-  function showScopeToast(text) {
-    var el = document.getElementById("toast");
-    if (!el) return;
-    el.textContent = text;
-    el.hidden = false;
-    clearTimeout(showScopeToast._t);
-    showScopeToast._t = setTimeout(function () { el.hidden = true; }, 2200);
-  }
-
-  function readSetup() {
-    var sel = $("#game-scope");
-    if (sel) {
-      state.setup.scope = sel.value || "all";
-      // 在这个下拉里亲手改过 → 也算「用户挑的范围」，后续一路带下去。
-      state.setup.scopeChosen = true;
-    }
-  }
+  // ⚠️ 从前这里有个 `showScopeToast()`（选好范围、回首页等选玩法时弹一句
+  //    「已选「唐诗三百首」—— 点一个玩法开始」）。第九轮改版后**不需要了**：
+  //    范围改成「就地多选、不换层」，选了什么**当场就在格子上**（`data-on="1"`
+  //    上色）+ 段头那行小标写着「现在考什么、几篇」—— 用不着再用 toast 说第二遍。
+  //    整条删掉，不留死代码。
+  // 卷面设置那一层从前有个「范围」下拉（`#game-scope`），范围就是从这里读的。
+  // ⚠️ 那个下拉已随第九轮改版**删掉**（范围改在首页那一段多选里选，见
+  //    `renderSetup()` 与 `bind()` 的 `data-game-mode`）—— 所以这个函数
+  //    从「读下拉」**收成空函数**了吗？没有，整条删干净更好：留着它，
+  //    下一个改这一页的人就会以为「这里还有一份范围要从 DOM 里读」。
+  //    `bind()` 里那几处 `readSetup()` 调用随之一起去掉（题量只改 `setup.size`）。
 
   function bind() {
     if (!host) return;
@@ -930,54 +936,68 @@
       var back = hit("data-game-back");
       if (back) {
         stopTimer();
-        // 三层各有各的回退：
-        //   · 「更多范围」→ 回首页（那一层只是首页那一行的展开）；
-        //   · 卷面设置    → 回首页（玩法与范围都在首页选过了）；
-        //   · 考试进行中  → 回卷面设置（换题量重抽）。
-        if (state.mode === "scopes" || state.mode === "setup") {
+        // 两层各有各的回退：
+        //   · 卷面设置   → 回首页（玩法与范围都在首页选过了）；
+        //   · 考试进行中 → 回卷面设置（换题量重抽）。
+        // ⚠️ 从前还有第三个去向（「更多范围」那一层 → 首页）—— 那一层已经
+        //    并在首页上了（Issue #356 第九轮），那一支随之删掉。
+        if (state.mode === "setup") {
           state.mode = "";
           state.pending = "";
         } else {
           state.mode = "setup";
-          readSetup();
         }
         render();
         return;
       }
 
-      // 「更多范围」那一层：首页那张通栏键。
-      var more = hit("data-game-scopes");
-      if (more) {
-        stopTimer();
-        state.mode = "scopes";
-        state.pending = "";
+      // 首页那一段范围：**一格一格的多选**（用户原话：「供用户多选」）。
+      // 点一下翻一格（点没有 → 有；再点 → 没有），**不换层**——
+      // 用户挑完范围接着点题型就进去了（见下面 `data-game-mode` 那一支）。
+      //
+      // ⚠️ 这里**不**用「原生复选框」：整块「格」本身是按钮，按下去就是选 /
+      //    取消，多选由状态（`state.scopes`）落地。原生复选框会多出第二个
+      //    对焦点与第二套样式，且一按就往「表单」那条路上走。
+      var pick = hit("data-game-scope");
+      if (pick) {
+        var sid = pick.getAttribute("data-game-scope");
+        var at = state.scopes.indexOf(sid);
+        if (at >= 0) state.scopes.splice(at, 1);
+        else state.scopes.push(sid);
         state.setupNotice = "";
         render();
         return;
       }
 
-      // 首页那一行「考哪一部书」的卡：**选好范围**，接着问玩哪种。
-      // 所以先把范围记下，再回首页那一行玩法卡（`state.mode = ""`）——
-      // 漏斗仍是一个：范围 → 玩法 → 卷面设置。
-      var sc0 = hit("data-game-scope");
-      if (sc0) {
-        var sid = sc0.getAttribute("data-game-scope");
-        state.setup.scope = sid;
-        state.setup.scopeChosen = true;
-        state.setupNotice = "";
-        state.mode = "";
-        state.pending = "";
+      // 一块范围的头：一个加号（展开时减号）—— 点它把这一块的名目收起 / 展开。
+      // ⚠️ `state.scopeOpen` 是**三块一起**的开关（点任一块的头都收放整段），
+      //    这样「收起全部」那颗键与这里的头才是一件事、两处写法只有一个状态。
+      var fold = hit("data-game-scope-fold");
+      if (fold) {
+        state.scopeOpen = !state.scopeOpen;
         render();
-        if (sid !== "all") {
-          showScopeToast("已选「" + scopeName(sid) + "」—— 点一个玩法开始");
-        }
         return;
       }
 
+      // 段头那颗「收起全部 / 展开全部」：与上面同一条状态。
+      var allFold = hit("data-game-scope-all");
+      if (allFold) {
+        state.scopeOpen = !state.scopeOpen;
+        render();
+        return;
+      }
+
+      // 题型那四张卡：**范围已经多选好了，这里直接进**（用户原话：
+      //   「这样设计，用户先多选范围，再按题型直接进入」）。
+      // 所以先把这一段范围折算成一个 scope 落到 `setup` 上，再 `start()` ——
+      // `start()` 那一头再也不问第二遍范围（见那边的 `scopeChosen`）。
       var mode = hit("data-game-mode");
       if (mode) {
         var mid = mode.getAttribute("data-game-mode");
         if (mode.getAttribute("data-locked")) return;
+        var scope = pickScope();
+        state.setup.scope = scope;
+        state.setup.scopeChosen = scope !== "all";
         start(mid);
         return;
       }
@@ -986,10 +1006,10 @@
       if (lv) { startFly(lv.getAttribute("data-game-level")); return; }
 
       var sz = hit("data-game-size");
-      if (sz) { readSetup(); state.setup.size = Number(sz.getAttribute("data-game-size")); render(); return; }
+      if (sz) { state.setup.size = Number(sz.getAttribute("data-game-size")); render(); return; }
 
       var beg = hit("data-game-begin");
-      if (beg) { readSetup(); beginExam(); return; }
+      if (beg) { beginExam(); return; }
 
       var rev = hit("data-game-reveal");
       if (rev) { state.revealed = !state.revealed; render(); return; }
@@ -1025,9 +1045,6 @@
       if (rset) { stopTimer(); state.mode = "setup"; render(); return; }
     };
 
-    // 范围下拉是原生 select，改一次就记一次（重画时不会丢）。
-    var scopeSel = $("#game-scope");
-    if (scopeSel) scopeSel.onchange = function () { readSetup(); };
   }
 
   // 点飞花令里的一句 → 去那一篇的详情页。
@@ -1100,11 +1117,10 @@
   //    顶上这一颗，落点按**当前在哪一层**算：
   //      · 玩法首页（`state.mode` 空）→ 退出到 `/poems/`（大会是独立页，
   //        「上一层」在址外面，只能是退出去）；
-  //      · 「更多范围」那一层    → **也在这一页**，回玩法首页（用户原话：
-  //        「更多范围页面的后退应该后退到古诗词大会首页」）；
-  //      · 卷面设置 / 考试进行中  → 回玩法首页（玩法与范围都在首页选过）；
-  //      · 飞花令进行中         → 回玩法首页。
+  //      · 卷面设置 / 考试进行中 / 飞花令 → 回玩法首页（玩法与范围都在首页选过）。
   //    所以下面只有两支：**在首页就退出去，不在首页就回首页**。
+  //    ⚠️ 从前还有一支「『更多范围』那一层 → 回玩法首页」—— 那一层已经并进了
+  //       首页（Issue #356 第九轮，见 §4.80），那一支随之删掉。
   //    真退出去时走 `location.href = "/poems/"`，那条路在 `close()` 里。
   function paintBack() {
     var C = window.SiteChrome;
@@ -1114,7 +1130,7 @@
     var inLayer = !!state.mode;
     C.setPageAction({
       // 不在首页那一层：回**这一页的玩法首页**（不是退出这一页）——
-      // 「更多范围」「卷面设置」「考试进行中」都只是首页底下的层。
+      // 「卷面设置」「考试进行中」都只是首页底下的层。
       // 在首页那一层：这一页就是大会自己的一层，退出去回诗词列表。
       label: inLayer ? "返回古诗词大会" : "返回诗词列表",
       onclick: function () {
@@ -1151,12 +1167,24 @@
     host.hidden = false;
     setDockNav("game");
     state.mode = "";
+    // 进这一页 = 回到首页那一段范围 + 一片题型：**收起上一层的东西**
+    // （范围多选与「展开」状态都归零，题型/卷面设置那边由 `state.mode` 管）。
+    // ⚠️ 只在**进页**时归零；在页内点来点去不走这里（那要留住用户选的范围）。
+    state.scopes = [];
+    state.scopeOpen = true;
+    state.setup = { scope: "all", size: 0, scopeChosen: false };
+    state.setupNotice = "";
+    state.pending = "";
     render();
     paintHeader(true);
     paintBack();
+    // ⚠️ 集子那几部是按需加载的：**第一次渲染时范围那一块只有课内那一批**
+    //    （「其他集子」那一块要靠它们），所以语料到位后补一次渲染。
+    //    判据是「还在首页那一层」（`!state.mode`）—— 用户在首页点来点去
+    //    （多选范围）时也补，不然他刚选的那一格会被这次补渲染清掉。
     ensureCorpus().then(function () {
 
-      if (state.mode) render();
+      if (!state.mode && host && !host.hidden) render();
     });
     window.scrollTo(0, 0);
   }
