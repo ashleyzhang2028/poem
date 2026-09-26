@@ -838,6 +838,22 @@ thead .plans-th-cap {
 .poems-game { padding: 4px 0 14px; }
 .poems-game[hidden] { display: none; }
 
+/* 大会那一页的卡片之间**要有缝**（Issue #356 用户原话：
+   「这个页面的其他卡片之间需要间隔，不能一点空没有」）。
+
+   根子与登录 / 后台那几页是**同一处**（Issue #319）：`.account-card` 自己
+   没有外边距，一页好几张卡靠的是父层 `.account-page` 的 `gap: 12px`。
+   可 `.poems-game` 不是 `.account-page`（它是诗词页与大会页共用的挂载点，
+   别处的排版都挂在它身上），于是四张卡严丝合缝地贴着 —— 真机量过：
+   一张卡的下边缘与下一张卡的上边缘**是同一个像素**。
+   修法与 Issue #319 逐字一致：不写第二套「谁留缝」的规则，
+   就给这一层一条 flex 纵列 + 同一个 `gap`。 */
+.poems-game {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
 .game-mode {
   display: block;
   width: 100%;
@@ -868,8 +884,6 @@ thead .plans-th-cap {
 .game-mode[data-locked] .game-mode-tier { color: var(--ink-3); background: var(--line); }
 .game-mode-desc { display: block; margin-top: 4px; font-size: 12px; color: var(--ink-3); line-height: 1.7; }
 
-.game-gate { margin-top: 4px; }
-.game-gate-why { margin: 0 0 8px; font-size: 13px; color: var(--ink-2); line-height: 1.8; }
 
 .game-head { position: relative; }
 .game-back { margin-bottom: 10px; }
