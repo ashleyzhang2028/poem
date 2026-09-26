@@ -231,9 +231,11 @@ function featuresFor(cfg, tier) {
   var pro = ["collections.many", "sync.multiDevice", "export.paper",
              "profile.family", "quiz.review", "export.all",
 
+             "exam.changshi",
+
              "algo.sm2"];
 
-  var max = ["feihualing", "exam.gathering", "exam.paper",
+  var max = ["feihualing", "exam.gathering", "exam.paper", "exam.formal",
 
              "algo.fsrs"];
 

@@ -9,7 +9,7 @@ const chk = (c, m) => { if (!c) { console.log('✗ ' + m); fails++; } else conso
 const sandbox = { window: {}, console };
 sandbox.window = sandbox;
 vm.createContext(sandbox);
-['data/poems-classic.js', 'data/site-index.js'].forEach(f =>
+['data/poems-classic.js', 'data/site-books.js', 'data/site-index.js'].forEach(f =>
   vm.runInContext(fs.readFileSync(path + f, 'utf8'), sandbox, { filename: f }));
 
 const IDX = sandbox.SITE_INDEX;

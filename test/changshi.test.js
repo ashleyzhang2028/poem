@@ -91,7 +91,7 @@ const lib = read('js/library.js');
 chk(/id: "changshi"/.test(lib) && /page: "\/changshi\/"/.test(lib),
   '入口页 ENTRIES 有这一部，且留着自己的页面地址');
 
-const books = read('data/site-index.js');
+const books = read('data/site-books.js');
 chk(books.indexOf('{ id: "changshi"') > books.indexOf('{ id: "chengyu"'),
   '站点索引里文学常识排在成语故事之后（加在末尾，不动既有次序）');
 
