@@ -506,9 +506,14 @@ chk(CY.every(p => p.version === sandbox.textVersionOf(p, 'chengyu')),
   'Issue #339·条目上的版次与 textVersionOf() 查到的同一个（两处不许各算一份）');
 
 const srcBefore = fs.readFileSync(path + 'data/text-master.js', 'utf8');
+// ⚠️ 口径变了（Issue #329，2026-09-26）：版次**不再**缀在译文那一行给用户看
+// —— 用户读到一串 `k3f9a2` 只会当成乱码。版次照旧存在、照旧由快照层比对，
+// 「看得见」改成断言它不再上行（见 test/trans-source.test.js）。
 const transChip = fs.readFileSync(path + 'js/reader-core.js', 'utf8');
-chk(/textVersionOf/.test(transChip), 'Issue #339·阅读器读得出这一条的版次（页面上看得见）');
+chk(transChip.indexOf('textVersionOf') < 0,
+  'Issue #329·阅读器不再把版次拼进译文注脚（版次只给快照比对用）');
 const collSrc = fs.readFileSync(path + 'js/collections.js', 'utf8');
+chk(/textVersionOf/.test(collSrc), 'Issue #339·快照层照旧读得出这一条的版次');
 chk(/version: versionOfEntry/.test(collSrc),
   'Issue #339·本机快照里存下了版次（存下之后改过能比出来）');
 const appSrc = fs.readFileSync(path + 'js/app.js', 'utf8');
