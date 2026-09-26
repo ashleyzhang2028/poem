@@ -52,7 +52,7 @@ main:
       <<: *push-to-github
 
   # ==========================================================================
-  # 2D · 配置与真开通：探活 + 备份（docs/architecture.md §4.12 的第 D 步）
+  # 2D · 配置与真开通：探活 + 备份（第 D 步；步骤见 node scripts/doctor.js --steps）
   # --------------------------------------------------------------------------
   # 定时任务写在这个仓库，而不是 GitHub Actions：CNB 是本仓库
   # （npu-gpu-cpu/poem）的主仓库，GitHub 那份是**同步出去的镜像**；密钥
@@ -128,7 +128,7 @@ main:
       #    abort（注意不是警告）：
       #      pg_dump: error: aborting because of server version mismatch
       #      pg_dump: detail: server version: 17.6; pg_dump version: 16.15
-      #    于是备份**一条都没产出**，还留下一个空文件 —— 见 docs/architecture.md §4.12 第 D 步。
+      #    于是备份**一条都没产出**，还留下一个空文件 —— 见 scripts/doctor.js --steps 的第 D 步。
       #    pg_dump 允许比服务端**高**，不允许低；所以镜像跟着服务端大版本走，
       #    这里用 postgres:17（自带 pg_dump 17）。服务端升到 18 时同步换 postgres:18。
       #    另：pg_dump 是客户端工具，**不需要**与服务端同发行版，
@@ -143,7 +143,7 @@ main:
             set -e
             : "${SUPABASE_DB_URL:?SUPABASE_DB_URL 未注入，请检查密钥仓库 supabase.yml}"
             command -v pg_dump >/dev/null 2>&1 || {
-              echo "本镜像没有 pg_dump —— 见 docs/architecture.md §4.12 第 D 步";
+              echo "本镜像没有 pg_dump —— 见 scripts/doctor.js --steps 的第 D 步";
               exit 1;
             }
             # ⚠️ pg_dump 从 URL 里**自己拆**主机名，不认 shell 的引号。密码含
