@@ -21,7 +21,7 @@
   <!-- ⚠️ `?v=`：本地开发时浏览器把 css 缓得很死（改一条规则、刷新却没变，
        正是这一轮调试踩到的坑）。给个版本记号就能当场看到改动；
        线上的缓存失效仍由 sw.js 的 CACHE 版本负责。发版时跟着 sw.js 一起加。 -->
-  <link rel="stylesheet" href="css/account.css?v=259" />
+  <link rel="stylesheet" href="css/account.css?v=260" />
 </head>
 
 <!-- 「古诗词大会」自成一页（Issue #356）。
@@ -33,7 +33,7 @@
         `/poems/?poem=<id>`（见那边的 `openPoem` 与 `hasReader`）。
      ⚠️ `data-nav="game"` 一处两用：底栏中间那一格点亮它，`js/game.js` 的
         `standalone()` 也认它 —— 同源，不另立标记。 -->
-<body data-nav="game" data-page="古诗词大会" data-sub="飞花令 · 题库复习 · 模拟考试 · 正式考试">
+<body data-nav="game" data-back="/dahui/" data-page="古诗词大会" data-sub="飞花令 · 题库复习 · 模拟考试 · 正式考试">
 
   <div class="app" data-gw-root>
 

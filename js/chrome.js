@@ -150,10 +150,23 @@
     if (/^\/settings\/?$/.test(p) || /^\/settings\/index\.html$/.test(p)) return "settings";
     if (/^\/progress\/?$/.test(p) || /^\/progress\/index\.html$/.test(p)) return "progress";
 
+    // 设置的四张二级页与几个「附在一页底下」的小页。
+    // ⚠️ 它们各有各的路由键，**不能一律并进 `settings`** —— 并了的话
+    //    `pageBackHref()` 那份表就无从区分「上一层是设置主页」与
+    //    「上一层是通用页」（自检在通用页底下）。
+    if (/^\/settings\/general\/?$/.test(p)) return "settings/general";
+    if (/^\/settings\/recite\/?$/.test(p)) return "settings/recite";
+    if (/^\/settings\/lists\/?$/.test(p)) return "settings/lists";
+    if (/^\/settings\/reader\/?$/.test(p)) return "settings/reader";
+    if (/^\/settings\/reports\/?$/.test(p)) return "settings/reports";
+
     if (/^\/login\/?$/.test(p) || /^\/login\/index\.html$/.test(p)) return "login";
     if (/^\/admin\/?$/.test(p) || /^\/admin\/index\.html$/.test(p)) return "admin";
 
     if (/^\/plans\/?$/.test(p) || /^\/plans\/index\.html$/.test(p)) return "plans";
+    if (/^\/self-check\/?$/.test(p) || /^\/self-check\/index\.html$/.test(p)) return "selfCheck";
+    if (/^\/terms\/?$/.test(p) || /^\/terms\/index\.html$/.test(p)) return "terms";
+    if (/^\/privacy\/?$/.test(p) || /^\/privacy\/index\.html$/.test(p)) return "privacy";
     return "home";
   }
 
@@ -207,7 +220,6 @@
   }
 
   function headerHtml(isReader) {
-    var key = pageKey();
     var sub = pageSub();
 
     var action = isReader ? topAction() : (readerLayerOpen() ? null : pageAction);
@@ -230,13 +242,13 @@
         '<button type="button" class="top-act" id="top-act">' +
         '<span class="top-act-icon" aria-hidden="true">' + GLYPHS.back + "</span>" +
         '<span class="sr-only">' + pageAction.label + "</span></button>";
-    } else if (key !== "home" && pageTopAction()) {
+    } else if (!topLevelPage() && pageTopAction()) {
 
       rightKey =
         '<a class="top-act" id="top-act-link" href="' + pageTopAction().href + '"' +
         ' title="' + escapeHtml(pageTopAction().label) + '" aria-label="' + escapeHtml(pageTopAction().label) + '">' +
         '<span class="top-act-icon" aria-hidden="true">' + pageTopAction().glyph + "</span></a>";
-    } else if (key !== "home") {
+    } else if (!topLevelPage()) {
 
       rightKey =
         '<a class="top-act" id="top-back" href="' + pageBackHref() + '"' +
@@ -274,16 +286,94 @@
     return null;
   }
 
-  // ⚠️ 兜底那一支从前去首页 —— 而顶栏上那颗键是「返回」（它的 title 与
-  // aria-label 都写着「返回」）。两者对不上时，那颗键落在哪儿谁也说不准：
-  // 后台那一页正因为没写 `data-back` 而走到这里（Issue #320 用户点了它，
-  // 落到的不是「我的」）。现在兜底认底栏那一颗「我的」，与 `data-back="/mine/"`
-  // 是同一个去处；底栏上的页面本来就点不亮它，所以首页那边不受影响。
+  // 这一页是不是**底栏五格那一层自己**（背诵 / 课外 / 大会 / 搜索 / 我的）。
+  //
+  // ⚠️ 这一层右上角**一律不摆返回键**（Issue #370 用户原话：「如果在……
+  //    这 5 个有底部导航栏的各自首页，右上角不应该再有后退按钮」）——
+  //    底栏就在脚下，五个首页之间彼此直达，「返回」这两个字在这一层
+  //    没有上一层可指。从前它们是「没写 `data-back` → 兜底去我的」，
+  //    于是每一页右上角都挂着一颗去「我的」的键，与底栏最后一格重复。
+  //
+  // ⚠️ 判据是 `pageKey()` 而不是「有没有底栏」—— 底栏那一层是这五个键，
+  //    「我的」页在底栏上但 `dockKey("settings")` 也是 `mine`；反过来
+  //    `/self-check/` 有底栏却**不是**首页（它挂在设置底下，要留返回键）。
+  function topLevelPage() {
+    var key = pageKey();
+    return key === "home" || key === "library" || key === "game" ||
+      key === "search" || key === "mine";
+  }
+
+  // 顶栏那颗返回键的落点。
+  //
+  // 三条判据，**次序就是这个优先级**：
+  //   ① 页面自己在 body 上写的 `data-back` —— 页面对「上一层是谁」比
+  //      chrome 清楚（`/reset/` 的上一层是登录页，不是「我的」）；
+  //   ② 没写的话按**路由**推一层（`pageBackRoute()` 那张表）——
+  //      「详情页回各自的索引页」就是靠这一条：`/classic/` → `/library/`、
+  //      `/settings/general/` → `/settings/`、`/progress/` → `/` ……
+  //   ③ 还落不下来（根那一页、或一张表里没登记的新页）才认底栏那一颗
+  //      「我的」。从前这一支直接去首页，而顶栏上那颗键的 title 与
+  //      aria-label 都写着「返回」—— 两者对不上时它落在哪儿谁也说不准
+  //      （后台那一页正因为没写 `data-back` 走到这里，Issue #320）。
+  //
+  // ⚠️ 顶部五格那一层**不该有这颗键**（见 `topLevelPage()`）；
+  //    `pageBackHref()` 自身不必再判首页。
   function pageBackHref() {
     var back = bodyData("back");
     if (back && /^\/[^\/\s]/.test(back)) return back;
+
+    var route = pageBackRoute(pageKey());
+    if (route) return route;
     if (dockEnabled()) return routeHref("mine");
     return ROUTES.home;
+  }
+
+  // 「这一页的上一层是谁」——**全站只在这一张表里给一次**（Issue #370）。
+  //
+  // 表里只写**上一层不是底栏五格**的那些页：
+  //   · 五个有底栏的首页（`/` `/library/` `/dahui/` `/search/` `/mine/`）
+  //     自己就是一层，右上角**不该有**返回键 —— 所以它们不在这张表里；
+  //   · 一部集子（`/classic/` `/tangshi/` …）的上一层是课外阅读入口
+  //     `/library/`；点进正文之后那颗键仍回**这一页自己**（阅读器那一层
+  //     由 `js/reader-core.js` 的 `backToList` 管），所以它得在表里；
+  //   · 设置的四张二级页、`/progress/`、自检、用户对比、法务三页同理。
+  //
+  // ⚠️ 这张表**不替代** `data-back`：页面上写着的仍然优先（见 `pageBackHref()`）。
+  //    两处写的是同一件事 —— 表这一处只是给「没写的页」一个正确的兜底，
+  //    免得它们一律掉到「我的」。
+  var BACK_ROUTES = {
+    poems: routeHref("library"),
+    classic: routeHref("library"),
+    yuefu: routeHref("library"),
+    tangshi: routeHref("library"),
+    songci: routeHref("library"),
+    guwen: routeHref("library"),
+    zhaoming: routeHref("library"),
+    yuanqu: routeHref("library"),
+    jinxiandai: routeHref("library"),
+    chengyu: routeHref("library"),
+    changshi: routeHref("library"),
+
+    settings: routeHref("mine"),
+
+    progress: ROUTES.home,
+
+    "settings/general": routeHref("settings"),
+    "settings/recite": routeHref("settings"),
+    "settings/lists": routeHref("settings"),
+    "settings/reader": routeHref("settings"),
+    "settings/reports": routeHref("settings"),
+
+    selfCheck: "/settings/general/",
+    plans: routeHref("settings"),
+    login: routeHref("mine"),
+
+    terms: ROUTES.home,
+    privacy: ROUTES.home
+  };
+
+  function pageBackRoute(key) {
+    return BACK_ROUTES[key] || "";
   }
 
   function pageTitle() {
