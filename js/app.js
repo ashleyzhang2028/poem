@@ -837,6 +837,11 @@
     $("#modal").hidden = false;
     document.body.style.overflow = "hidden";
     syncBottomGap();
+    // 详情铺开时，顶栏右上那颗键**从「没有」变成「返回」**（Issue #370）。
+    // 首页是底栏五格之一，平时不该有返回键；可详情是叠在这一页上的一层，
+    // 这一层得有一条明路退回去 —— 用户要的是「详情页的返回回到各自索引页」，
+    // 首页的索引就是它自己，所以这里是「收起详情」。
+    paintModalBack();
   }
 
   function pinyinWidOf(p) {
@@ -1143,6 +1148,18 @@
     currentPoem = null;
 
     syncBottomGap();
+    paintModalBack();
+  }
+
+  // 详情那一层的顶栏返回键：开着就挂一颗、收起就摘掉（`null`）。
+  // ⚠️ 只动 `#modal` 那一层，首页自己平时**不挂**返回键 ——
+  //    判据在 `paintModalBack()` 一处，不在样式里藏。
+  function paintModalBack() {
+    var C = window.SiteChrome;
+    if (!C || !C.setPageAction) return;
+    C.setPageAction($("#modal").hidden
+      ? null
+      : { label: "返回", onclick: closeModal });
   }
 
   function syncBottomGap() {

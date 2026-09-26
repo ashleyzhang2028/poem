@@ -94,6 +94,50 @@ console.log('\n=== 三、select：按范围取条目，不认识的范围如实�
   eq(Ex.select(CORPUS, 'poems:nope').length, 0, '不认识的学段回空');
 }
 
+console.log('\n=== 三b、多选（合成 id `pick:a+b`）：并集、去重、不认识的如实回空 ===');
+{
+  // 用户 2026-09-26 第九轮原话：「范围用类似搜索的下拉框那种展现形式……
+  //   供用户多选」—— 首页那一段范围是**多选**的，交给内核的是一个合成 id。
+  // 这一节守的就是那一支：并集、去重、空集。
+  const ts = Ex.select(CORPUS, 'book:tangshi');
+  const cs = Ex.select(CORPUS, 'book:changshi');
+  const both = Ex.select(CORPUS, 'pick:book:tangshi+book:changshi');
+  eq(both.length, ts.length + cs.length, '两格不相交时 = 两个范围加在一起');
+  chk(both.every(p => p.book === 'tangshi' || p.book === 'changshi'),
+    '并集里只许有这两部的条目');
+  // 同一篇落在两格里时只许出一次（不然同一篇会被抽成两道同题）。
+  const poemsTwice = Ex.select(CORPUS, 'book:poems+poems:primary');
+  const seenIds = {};
+  let dup = 0;
+  poemsTwice.forEach(p => { if (seenIds[p.id]) dup++; seenIds[p.id] = 1; });
+  eq(dup, 0, '同一篇既在两格里时只出一次（按 id 去重）');
+  eq(Ex.select(CORPUS, 'pick:').length, CORPUS.length, '`pick:` 后面空着 = 全部（不是空集）');
+  eq(Ex.select(CORPUS, 'pick:book:nope+poems:nope').length, 0,
+    '合成 id 里两格都不认识 → 如实回空，不悄悄退回全部');
+  // 组卷那一头：多选的范围**真出得来题**（真机修前是 0 题的那个坑邻近处）。
+  const plan = Ex.build(CORPUS, {
+    kind: 'practice', scope: 'pick:book:tangshi+book:changshi', size: 5, seed: 'pick'
+  });
+  eq(plan.questions.length, 5, '多选范围照样出得来 5 题');
+  chk(plan.questions.every(q => q.stem && q.answer), '每道题都有题干与答案（不是空壳）');
+}
+
+console.log('\n=== 三c、分块：三个名字与分块规则都只在本文件一处 ===');
+{
+  // 首页那一段范围要按**三块**摆（全部 / 课内诗词 / 其他集子）。分块规则
+  // 与那三个中文名都在这里 —— 首页照它摆，不另写一份。
+  eq(Ex.SCOPES_GROUPS.join(','), '全部,课内诗词,其他集子', '三块的名字在 SCOPES_GROUPS（顺序也是它）');
+  eq(Ex.scopeGroupOf('all'), 0, '`all` 是第一块（全部）');
+  eq(Ex.scopeGroupOf('poems:primary'), 1, '`poems:<学段>` 是第二块（课内诗词）');
+  eq(Ex.scopeGroupOf('book:tangshi'), 2, '`book:<集子>` 是第三块（其他集子）');
+  eq(Ex.scopeGroupOf('book:poems'), -1,
+    '`book:poems` 不上首页（它与课内三学段是同一份语料的两种切法，摆两遍是重复）');
+  eq(Ex.scopeGroupOf('nope'), -1, '认不出的 id 回 -1（不塞进「全部」，不假装认识）');
+  const poemsAll = Ex.select(CORPUS, 'book:poems');
+  chk(poemsAll.length > 0 && poemsAll.every(p => p.book === 'poems'),
+    '`book:poems` 照旧是**合法 scope**（只是不上首页）—— 课内整部都取得到');
+}
+
 console.log('\n=== 四、组卷：范围 × 形态 × 题量，题上带 origin ===');
 {
   const plan = Ex.build(CORPUS, { kind: 'mock', scope: 'all', size: 8, seed: 's1' });

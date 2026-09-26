@@ -829,6 +829,138 @@ thead .plans-th-cap {
 .poems-game > .poems-home-row .game-mode-desc { margin-top: 3px; line-height: 1.6; }
 .poems-game > .poems-home-row .game-mode-tier { padding-top: 6px; }
 
+.game-scope-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 2px;
+}
+.game-scope-all {
+  flex: 0 0 auto;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font: inherit;
+  font-size: 12px;
+  color: var(--green);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.game-scope-all:active { opacity: .6; }
+
+.game-scope-note {
+  margin: 0 2px 2px;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--ink-3);
+}
+
+.game-scope-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 8px;
+}
+
+.game-scope-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 0 2px;
+  border-top: 1px solid var(--line);
+}
+.game-scope-row .game-scope-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  background: transparent;
+  padding: 2px 2px 4px;
+  font: inherit;
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+  -webkit-tap-highlight-color: transparent;
+}
+.game-scope-row .game-scope-item:active { opacity: .6; }
+
+.game-scope-sign {
+  position: relative;
+  flex: 0 0 auto;
+  width: 12px;
+  height: 12px;
+}
+.game-scope-sign::before,
+.game-scope-sign::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 12px;
+  height: 1.5px;
+  margin-top: -0.75px;
+  background: var(--ink-2);
+  border-radius: 1px;
+}
+.game-scope-sign::after {
+  left: 50%;
+  top: 0;
+  width: 1.5px;
+  height: 12px;
+  margin: 0 0 0 -0.75px;
+  opacity: 0;
+  transition: opacity .12s;
+}
+.game-scope-row[data-folded="1"] .game-scope-sign::after { opacity: 1; }
+.game-scope-row[data-folded="1"] .game-scope-grid { display: none; }
+
+.game-scope-row .game-scope-name {
+  font: var(--title-2);
+  color: var(--ink);
+}
+.game-scope-row .game-scope-count {
+  margin-left: auto;
+  font-size: 11.5px;
+  color: var(--ink-3);
+}
+
+.game-scope-pick {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  box-sizing: border-box;
+  text-align: left;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px 8px;
+  background: var(--card-2);
+  font: inherit;
+  color: var(--ink);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.game-scope-pick:active { background: var(--card); }
+.game-scope-pick[data-on="1"] {
+  border-color: var(--green);
+  background: var(--green-light);
+}
+.game-scope-pick[data-on="1"] .game-scope-name { color: var(--green); }
+.game-scope-pick .game-scope-name {
+  font: var(--title-2);
+  color: var(--ink);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.game-scope-pick .game-scope-count {
+  font-size: 11.5px;
+  letter-spacing: .3px;
+  color: var(--ink-3);
+}
+
 @media (max-width: 360px) {
   .poems-game:has(.game-mode) { gap: 10px; }
   .poems-home-row { gap: 10px; }
@@ -892,52 +1024,11 @@ thead .plans-th-cap {
 .game-mode-tier[data-on="1"] { color: var(--green); }
 .game-mode[data-locked] .game-mode-tier { color: var(--ink-3); }
 
-.game-scopes .game-back,
 .poems-game > .game-back {
   width: auto;
   min-width: 96px;
   align-self: flex-start;
 }
-
-.game-scope-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  align-items: stretch;
-  gap: 10px;
-}
-
-.game-scope-item {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
-  box-sizing: border-box;
-  text-align: left;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  padding: 12px 12px 10px;
-  background: var(--card-2);
-  font: inherit;
-  color: var(--ink);
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-}
-.game-scope-item:active { background: var(--card); }
-.game-scope-name {
-  font: var(--title-2);
-  color: var(--ink);
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.game-scope-count {
-  font-size: 11.5px;
-  letter-spacing: .3px;
-  color: var(--ink-3);
-}
-
-.game-scopes-notice { margin: 0; }
 
 .game-head { position: relative; }
 .game-back { margin-bottom: 10px; }

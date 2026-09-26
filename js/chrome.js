@@ -129,10 +129,19 @@
     if (/^\/settings\/?$/.test(p) || /^\/settings\/index\.html$/.test(p)) return "settings";
     if (/^\/progress\/?$/.test(p) || /^\/progress\/index\.html$/.test(p)) return "progress";
 
+        if (/^\/settings\/general\/?$/.test(p)) return "settings/general";
+    if (/^\/settings\/recite\/?$/.test(p)) return "settings/recite";
+    if (/^\/settings\/lists\/?$/.test(p)) return "settings/lists";
+    if (/^\/settings\/reader\/?$/.test(p)) return "settings/reader";
+    if (/^\/settings\/reports\/?$/.test(p)) return "settings/reports";
+
     if (/^\/login\/?$/.test(p) || /^\/login\/index\.html$/.test(p)) return "login";
     if (/^\/admin\/?$/.test(p) || /^\/admin\/index\.html$/.test(p)) return "admin";
 
     if (/^\/plans\/?$/.test(p) || /^\/plans\/index\.html$/.test(p)) return "plans";
+    if (/^\/self-check\/?$/.test(p) || /^\/self-check\/index\.html$/.test(p)) return "selfCheck";
+    if (/^\/terms\/?$/.test(p) || /^\/terms\/index\.html$/.test(p)) return "terms";
+    if (/^\/privacy\/?$/.test(p) || /^\/privacy\/index\.html$/.test(p)) return "privacy";
     return "home";
   }
 
@@ -186,7 +195,6 @@
   }
 
   function headerHtml(isReader) {
-    var key = pageKey();
     var sub = pageSub();
 
     var action = isReader ? topAction() : (readerLayerOpen() ? null : pageAction);
@@ -209,13 +217,13 @@
         '<button type="button" class="top-act" id="top-act">' +
         '<span class="top-act-icon" aria-hidden="true">' + GLYPHS.back + "</span>" +
         '<span class="sr-only">' + pageAction.label + "</span></button>";
-    } else if (key !== "home" && pageTopAction()) {
+    } else if (!topLevelPage() && pageTopAction()) {
 
       rightKey =
         '<a class="top-act" id="top-act-link" href="' + pageTopAction().href + '"' +
         ' title="' + escapeHtml(pageTopAction().label) + '" aria-label="' + escapeHtml(pageTopAction().label) + '">' +
         '<span class="top-act-icon" aria-hidden="true">' + pageTopAction().glyph + "</span></a>";
-    } else if (key !== "home") {
+    } else if (!topLevelPage()) {
 
       rightKey =
         '<a class="top-act" id="top-back" href="' + pageBackHref() + '"' +
@@ -253,11 +261,55 @@
     return null;
   }
 
+    function topLevelPage() {
+    var key = pageKey();
+    return key === "home" || key === "library" || key === "game" ||
+      key === "search" || key === "mine";
+  }
+
     function pageBackHref() {
     var back = bodyData("back");
     if (back && /^\/[^\/\s]/.test(back)) return back;
+
+    var route = pageBackRoute(pageKey());
+    if (route) return route;
     if (dockEnabled()) return routeHref("mine");
     return ROUTES.home;
+  }
+
+    var BACK_ROUTES = {
+    poems: routeHref("library"),
+    classic: routeHref("library"),
+    yuefu: routeHref("library"),
+    tangshi: routeHref("library"),
+    songci: routeHref("library"),
+    guwen: routeHref("library"),
+    zhaoming: routeHref("library"),
+    yuanqu: routeHref("library"),
+    jinxiandai: routeHref("library"),
+    chengyu: routeHref("library"),
+    changshi: routeHref("library"),
+
+    settings: routeHref("mine"),
+
+    progress: ROUTES.home,
+
+    "settings/general": routeHref("settings"),
+    "settings/recite": routeHref("settings"),
+    "settings/lists": routeHref("settings"),
+    "settings/reader": routeHref("settings"),
+    "settings/reports": routeHref("settings"),
+
+    selfCheck: "/settings/general/",
+    plans: routeHref("settings"),
+    login: routeHref("mine"),
+
+    terms: ROUTES.home,
+    privacy: ROUTES.home
+  };
+
+  function pageBackRoute(key) {
+    return BACK_ROUTES[key] || "";
   }
 
   function pageTitle() {
@@ -292,11 +344,11 @@
   }
 
     var DOCK_ITEMS = [
-    { key: "home", href: "/", icon: GLYPHS.tabPoem, label: "背诵", desc: "课内古诗词，按复习算法安排" },
-    { key: "library", href: "/library/", icon: GLYPHS.tabLibrary, label: "课外", desc: "十一部集子，课外阅读都在这" },
-        { key: "game", href: "/dahui/", icon: GLYPHS.tabGame, label: "大会", desc: "比拼与考试" },
+    { key: "home", href: "/", icon: GLYPHS.tabPoem, label: "背诵", desc: "课内古诗词，按当前复习算法安排复习" },
+    { key: "library", href: "/library/", icon: GLYPHS.tabLibrary, label: "课外", desc: "课内诗词 / 小古文 / 乐府集 / 唐诗 / 宋词 / 元曲 / 古文观止 / 近现代诗词 / 昭明文选 / 中华成语故事 / 文学常识" },
+        { key: "game", href: "/dahui/", icon: GLYPHS.tabGame, label: "大会", desc: "古诗词大会：比拼与考试都在这一页" },
     { key: "search", href: "/search/", icon: GLYPHS.tabSearch, label: "搜索", desc: "全站篇目一次搜遍" },
-    { key: "mine", href: "/mine/", icon: GLYPHS.tabMineImg, label: "我的", desc: "头像 · 昵称 · 账号 · 本机数据" }
+    { key: "mine", href: "/mine/", icon: GLYPHS.tabMineImg, label: "我的", desc: "头像 / 昵称 / 账号 / 本机数据" }
   ];
 
   function dockKey(key) {

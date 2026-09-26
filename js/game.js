@@ -29,14 +29,6 @@
     { id: "hard",   name: "难字",   min: 6, hard: true }
   ];
 
-    var FEATURED = [
-    { id: "book:tangshi",  hint: "按卷次，五言到乐府" },
-    { id: "book:changshi", hint: "文体、典籍、称谓、典故" },
-    { id: "book:chengyu",  hint: "原文带译文，一部一则" }
-  ];
-
-    var MORE_HINT = "全部 · 小学 · 初中 · 高中 · 其余集子";
-
   var state = {
     mode: "",
     chars: [],
@@ -49,6 +41,8 @@
     graded: null,
     server: null,
         setup: { scope: "all", size: 0, scopeChosen: false },
+        scopes: [],
+    scopeOpen: true,
     left: 0,
     timer: null
   };
@@ -202,7 +196,8 @@
   function renderHome() {
     var id = identifier();
 
-        var html = homeTag("题型");
+        var html = scopeRows();
+    html += homeTag("题型");
     html += '<div class="poems-home-row">';
     MODES.forEach(function (m) {
       var r = allowed(m, id);
@@ -217,46 +212,67 @@
     });
     html += "</div>";
 
-        var scopes = scopeList();
-    var feat = FEATURED.filter(function (f) {
-      return scopes.filter(function (sc) { return sc.id === f.id; }).length > 0;
-    });
-    if (feat.length) {
-      html += homeTag("范围");
-      html += '<div class="poems-home-row">';
-      feat.forEach(function (f) {
-        var sc = null;
-        scopes.forEach(function (x) { if (x.id === f.id) sc = x; });
-        if (!sc) return;
-        html += scopeCard(sc, f.hint);
-      });
-            html += '<button class="account-card game-mode game-scope game-scope-more" ' +
-        'type="button" data-game-scopes="1">' +
-        '<span class="game-mode-name">更多范围</span>' +
-        '<span class="game-mode-desc">' + esc(MORE_HINT) + "</span>" +
-        '<span class="game-mode-tier">' + esc(moreCount()) + " 条</span>" +
-        "</button>";
-      html += "</div>";
-    }
-
         if (!id.signedIn) {
       html += '<button class="account-btn" type="button" data-game-go="/login/">登录</button>';
     }
     return html;
   }
 
-    function scopeCard(sc, hint) {
-    return '<button class="account-card game-mode game-scope" type="button" ' +
-      'data-game-scope="' + esc(sc.id) + '">' +
-      '<span class="game-mode-name">' + esc(sc.name) + "</span>" +
-      (hint ? '<span class="game-mode-desc">' + esc(hint) + "</span>" : "") +
-      '<span class="game-mode-tier">' + esc(sc.count) + " 条</span>" +
-      "</button>";
+    function scopeRows() {
+    var scopes = scopeList();
+    var groups = [[], [], []];
+    scopes.forEach(function (sc) {
+      var g = Ex ? Ex.scopeGroupOf(sc.id) : -1;
+      if (g < 0) return;
+      groups[g].push(sc);
+    });
+
+    var names = (Ex && Ex.SCOPES_GROUPS) || [];
+    var html = '<div class="game-scope-head">' +
+      '<p class="poems-home-tag">范围</p>' +
+      '<button class="game-scope-all" type="button" data-game-scope-all="1">' +
+      (state.scopeOpen ? "收起" : "展开") + "</button>" +
+      "</div>";
+    html += pickNote();
+    groups.forEach(function (rows, i) {
+      html += scopeGroup(names[i], rows);
+    });
+    return html;
   }
 
-    function moreCount() {
-    var n = scopeCount("all");
-    return n == null ? "" : n;
+    function pickNote() {
+    return '<p class="game-scope-note">' + esc(scopePickNote()) + "</p>";
+  }
+
+    function scopeGroup(title, rows) {
+    if (!rows.length) return "";
+    var open = state.scopeOpen;
+    return '<div class="game-scope-row"' + (open ? "" : ' data-folded="1"') + ">" +
+      '<button class="game-scope-item" type="button" data-game-scope-fold="' + esc(title) + '"' +
+      ' aria-expanded="' + (open ? "true" : "false") + '">' +
+      '<span class="game-scope-sign" aria-hidden="true"></span>' +
+      '<span class="game-scope-name">' + esc(title) + "</span>" +
+      '<span class="game-scope-count">' + esc(scopeCountOf(rows)) + "</span>" +
+      "</button>" +
+      '<div class="game-scope-grid">' +
+      rows.map(scopePick).join("") +
+      "</div>" +
+      "</div>";
+  }
+
+    function scopeCountOf(rows) {
+    var n = 0;
+    rows.forEach(function (r) { n += Number(r.count) || 0; });
+    return n + " 条";
+  }
+
+    function scopePick(sc) {
+    var on = state.scopes.indexOf(sc.id) >= 0;
+    return '<button class="game-scope-pick" type="button" data-game-scope="' + esc(sc.id) + '"' +
+      (on ? ' data-on="1" aria-pressed="true"' : ' aria-pressed="false"') + ">" +
+      '<span class="game-scope-name">' + esc(sc.name) + "</span>" +
+      '<span class="game-scope-count">' + esc(sc.count) + " 条</span>" +
+      "</button>";
   }
 
     function homeTag(title) {
@@ -360,45 +376,40 @@
     return "?";
   }
 
-    function renderScopes() {
-    var scopes = scopeList();
-    var feat = {};
-    FEATURED.forEach(function (f) { feat[f.id] = 1; });
-
-    var all = [], stages = [], books = [];
-    scopes.forEach(function (sc) {
-      if (feat[sc.id]) return;
-      if (sc.id === "all") all.push(sc);
-      else if (sc.id.indexOf("poems:") === 0) stages.push(sc);
-      else books.push(sc);
-    });
-
-        var html = '<button class="account-btn ghost game-back" type="button" ' +
-      'data-game-back="1">返回</button>';
-
-    html += scopeGroup("全部", all);
-    html += scopeGroup("课内诗词", stages);
-    html += scopeGroup("其他集子", books);
-
-    if (state.setupNotice) {
-      html += '<p class="account-msg warn game-scopes-notice">' +
-        esc(state.setupNotice) + "</p>";
+    function scopePickLabel(scopeId) {
+    var id = String(scopeId || "all");
+    if (id.indexOf("pick:") !== 0) {
+      var one = scopeCount(id);
+      return scopeName(id) + (one === "?" ? "" : "（" + one + " 条）");
     }
-    return html;
+    var ids = id.slice(5).split("+").filter(Boolean);
+    var n = null;
+    if (Ex && Ex.select) {
+      try { n = Ex.select(corpus(), id).length; } catch (e) { n = null; }
+    }
+    return ids.map(scopeName).join(" + ") + (n == null ? "" : "（" + n + " 条）");
   }
 
-    function scopeGroup(title, rows) {
-    if (!rows.length) return "";
-    return '<p class="poems-home-tag">' + esc(title) + "</p>" +
-      '<div class="game-scope-grid">' +
-      rows.map(function (sc) {
-        return '<button class="game-scope-item" type="button" ' +
-          'data-game-scope="' + esc(sc.id) + '">' +
-          '<span class="game-scope-name">' + esc(sc.name) + "</span>" +
-          '<span class="game-scope-count">' + esc(sc.count) + " 条</span>" +
-          "</button>";
-      }).join("") +
-      "</div>";
+    function pickScope() {
+    var on = state.scopes.slice();
+    if (!on.length) return "all";
+    if (on.indexOf("all") >= 0) return "all";
+    if (on.length === 1) return on[0];
+    return "pick:" + on.join("+");
+  }
+
+    function pickCount() {
+    if (!Ex || !Ex.select) return null;
+    try { return Ex.select(corpus(), pickScope()).length; } catch (e) { return null; }
+  }
+
+    function scopePickNote() {
+    var n = pickCount();
+    var on = state.scopes.slice();
+    if (!on.length) return "一格没选 = 什么都考" + (n == null ? "" : "（" + n + " 篇）");
+    if (on.indexOf("all") >= 0) return "全部" + (n == null ? "" : "（" + n + " 篇）");
+    var names = on.map(scopeName);
+    return names.join(" + ") + (n == null ? "" : "（" + n + " 篇）");
   }
 
     function renderSetup() {
@@ -408,38 +419,20 @@
     var sizes = v.sizes || [];
     if (sizes.indexOf(state.setup.size) < 0) state.setup.size = v.size;
 
-    var html = '<section class="account-card game-head">' +
-      '<button class="account-btn ghost game-back" type="button" data-game-back="1">换一个玩法</button>' +
+        var html = '<section class="account-card game-head">' +
+      '<button class="account-btn ghost game-back" type="button" data-game-back="1">换范围</button>' +
       '<h2 class="account-card-title">' + esc(m.name) + "</h2>" +
       '<p class="account-hint">' + esc(m.desc) +
       (v.timed ? " · 限时 " + v.minutes + " 分钟" : "") + "</p>" +
       "</section>";
 
-        var chosen = state.setup.scope && state.setup.scope !== "all";
-    if (chosen) {
-      html += '<section class="account-card"><h2 class="account-card-title">考什么范围</h2>' +
-        '<p class="account-lead">' + esc(scopeName(state.setup.scope)) +
-        "（" + esc(scopeCount(state.setup.scope)) + " 条）</p>" +
-        '<div class="game-nav">' +
-        '<button class="account-btn ghost" type="button" data-game-scopes="1">换一部书</button>' +
-        "</div>" +
-        '<p class="account-hint">范围在首页选的；换书就回那一层，不必在这里再审一遍。</p>' +
-        "</section>";
-    } else {
-      html += '<section class="account-card"><h2 class="account-card-title">考什么范围</h2>' +
-        '<div class="account-field">' +
-        '<label class="account-label" for="game-scope">范围</label>' +
-        '<select class="account-input" id="game-scope">' +
-        scopeList().map(function (sc) {
-          return '<option value="' + esc(sc.id) + '"' +
-            (sc.id === state.setup.scope ? " selected" : "") + ">" +
-            esc(sc.name) + "（" + sc.count + " 条）</option>";
-        }).join("") +
-        "</select></div>" +
-        '<p class="account-hint">名单从全站集子自己算出来 —— 加一部集子，这里就多一个范围。' +
-        "常考的几部（唐诗 / 文学常识 / 成语故事）在首页就有自己的卡。</p>" +
-        "</section>";
-    }
+        html += '<section class="account-card"><h2 class="account-card-title">考什么范围</h2>' +
+      '<p class="account-lead">' + esc(scopePickLabel(state.setup.scope)) + "</p>" +
+      '<div class="game-nav">' +
+      '<button class="account-btn ghost" type="button" data-game-back="1">换范围</button>' +
+      "</div>" +
+      '<p class="account-hint">范围在首页那段清单里选的；要改就回首页，点一下格子就行。</p>' +
+      "</section>";
 
     html += '<section class="account-card"><h2 class="account-card-title">考多少题</h2>' +
       '<div class="seg mini" id="game-size" role="group" aria-label="题量">' +
@@ -477,7 +470,7 @@
       '<button class="account-btn ghost game-back" type="button" data-game-back="1">换一个玩法</button>' +
       '<h2 class="account-card-title">' + esc(m.name) + "</h2>" +
       '<p class="account-hint">第 ' + (i + 1) + " / " + total + " 题 · " +
-      esc(scopeName(state.setup.scope)) +
+      esc(scopePickLabel(state.setup.scope)) +
       (v.timed ? " · 剩余 " + timeLeftText() : "") +
       " · " +
       (state.server === "off" && reveal ? "本机判分（服务端没接通）" : "由服务器判分") + "</p>" +
@@ -529,9 +522,8 @@
 
   function render() {
     if (!host || !Q) return;
-    var body;
+        var body;
     if (state.mode === "fly") body = renderFly();
-    else if (state.mode === "scopes") body = renderScopes();
     else if (state.mode === "setup") body = renderSetup();
     else if (state.mode) body = renderPaper();
     else body = renderHome();
@@ -539,13 +531,14 @@
     if (state.mode === "fly") {
       body += '<section class="account-card"><button class="account-btn ghost" type="button" ' +
         'data-game-restart="1">换一副令字</button></section>';
-    } else if (state.mode === "scopes" || state.mode === "setup") {
+    } else if (state.mode === "setup") {
           } else if (state.mode) {
             body += '<section class="account-card"><button class="account-btn ghost" type="button" ' +
         'data-game-reset="1">回到卷面设置</button></section>';
     }
     host.innerHTML = body;
     bind();
+        paintBack();
   }
 
   function startFly(levelId) {
@@ -694,23 +687,6 @@
     });
   }
 
-    function showScopeToast(text) {
-    var el = document.getElementById("toast");
-    if (!el) return;
-    el.textContent = text;
-    el.hidden = false;
-    clearTimeout(showScopeToast._t);
-    showScopeToast._t = setTimeout(function () { el.hidden = true; }, 2200);
-  }
-
-  function readSetup() {
-    var sel = $("#game-scope");
-    if (sel) {
-      state.setup.scope = sel.value || "all";
-            state.setup.scopeChosen = true;
-    }
-  }
-
   function bind() {
     if (!host) return;
     host.onclick = function (e) {
@@ -725,46 +701,48 @@
       var back = hit("data-game-back");
       if (back) {
         stopTimer();
-                if (state.mode === "scopes" || state.mode === "setup") {
+                if (state.mode === "setup") {
           state.mode = "";
           state.pending = "";
         } else {
           state.mode = "setup";
-          readSetup();
         }
         render();
         return;
       }
 
-            var more = hit("data-game-scopes");
-      if (more) {
-        stopTimer();
-        state.mode = "scopes";
-        state.pending = "";
+            var pick = hit("data-game-scope");
+      if (pick) {
+        var sid = pick.getAttribute("data-game-scope");
+        var at = state.scopes.indexOf(sid);
+        if (at >= 0) state.scopes.splice(at, 1);
+        else state.scopes.push(sid);
         state.setupNotice = "";
         render();
         return;
       }
 
-            var sc0 = hit("data-game-scope");
-      if (sc0) {
-        var sid = sc0.getAttribute("data-game-scope");
-        state.setup.scope = sid;
-        state.setup.scopeChosen = true;
-        state.setupNotice = "";
-        state.mode = "";
-        state.pending = "";
+            var fold = hit("data-game-scope-fold");
+      if (fold) {
+        state.scopeOpen = !state.scopeOpen;
         render();
-        if (sid !== "all") {
-          showScopeToast("已选「" + scopeName(sid) + "」—— 点一个玩法开始");
-        }
         return;
       }
 
-      var mode = hit("data-game-mode");
+            var allFold = hit("data-game-scope-all");
+      if (allFold) {
+        state.scopeOpen = !state.scopeOpen;
+        render();
+        return;
+      }
+
+            var mode = hit("data-game-mode");
       if (mode) {
         var mid = mode.getAttribute("data-game-mode");
         if (mode.getAttribute("data-locked")) return;
+        var scope = pickScope();
+        state.setup.scope = scope;
+        state.setup.scopeChosen = scope !== "all";
         start(mid);
         return;
       }
@@ -773,10 +751,10 @@
       if (lv) { startFly(lv.getAttribute("data-game-level")); return; }
 
       var sz = hit("data-game-size");
-      if (sz) { readSetup(); state.setup.size = Number(sz.getAttribute("data-game-size")); render(); return; }
+      if (sz) { state.setup.size = Number(sz.getAttribute("data-game-size")); render(); return; }
 
       var beg = hit("data-game-begin");
-      if (beg) { readSetup(); beginExam(); return; }
+      if (beg) { beginExam(); return; }
 
       var rev = hit("data-game-reveal");
       if (rev) { state.revealed = !state.revealed; render(); return; }
@@ -811,8 +789,6 @@
       if (rset) { stopTimer(); state.mode = "setup"; render(); return; }
     };
 
-        var scopeSel = $("#game-scope");
-    if (scopeSel) scopeSel.onchange = function () { readSetup(); };
   }
 
     function openPoem(id) {
@@ -830,8 +806,11 @@
     if (!host) return;
     stopTimer();
     state.mode = "";
-    setDockNav("poems");
-        if (standalone()) { location.href = "/poems/"; return; }
+
+        var onOwnPage = standalone();
+    setDockNav(onOwnPage ? "poems" : "game");
+    if (onOwnPage) { location.href = "/poems/"; return; }
+
     host.hidden = true;
     showList(true);
     paintHeader(null);
@@ -847,14 +826,21 @@
     C.setSub("飞花令 · 题库复习 · 模拟考试 · 正式考试");
   }
 
-  function paintBack() {
+    function paintBack() {
     var C = window.SiteChrome;
     if (!C || !C.setPageAction) return;
-    if (standalone()) return;
     if (!host || host.hidden) { C.setPageAction(null); return; }
+
+    var inLayer = !!state.mode;
     C.setPageAction({
-      label: "返回诗词列表",
-      onclick: function () { close(); }
+            label: inLayer ? "返回古诗词大会" : "返回诗词列表",
+      onclick: function () {
+        stopTimer();
+        state.mode = "";
+        state.pending = "";
+        if (inLayer) { render(); return; }
+        close();
+      }
     });
   }
 
@@ -870,12 +856,17 @@
     host.hidden = false;
     setDockNav("game");
     state.mode = "";
+        state.scopes = [];
+    state.scopeOpen = true;
+    state.setup = { scope: "all", size: 0, scopeChosen: false };
+    state.setupNotice = "";
+    state.pending = "";
     render();
     paintHeader(true);
     paintBack();
-    ensureCorpus().then(function () {
+        ensureCorpus().then(function () {
 
-      if (state.mode) render();
+      if (!state.mode && host && !host.hidden) render();
     });
     window.scrollTo(0, 0);
   }

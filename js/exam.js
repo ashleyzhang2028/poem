@@ -36,7 +36,19 @@
     return null;
   }
 
-    function booksOf(opt) {
+    var SCOPES_GROUPS = ["全部", "课内诗词", "其他集子"];
+
+    var SCOPES_HIDDEN = { "book:poems": 1 };
+
+  function scopeGroupOf(scopeId) {
+    var id = String(scopeId == null ? "" : scopeId);
+    if (SCOPES_HIDDEN[id]) return -1;
+    if (id === "all") return 0;
+    if (id.indexOf("poems:") === 0) return 1;
+    if (id.indexOf("book:") === 0) return 2;
+    return -1;
+  }
+  function booksOf(opt) {
     var o = opt || {};
         if (o.books) return o.books;
     var g = typeof globalThis !== "undefined" ? globalThis : null;
@@ -91,6 +103,20 @@
     var id = String(scopeId == null ? "all" : scopeId);
     var cps = corpus || [];
     if (id === "all") return cps.slice();
+    if (id.indexOf("pick:") === 0) {
+      var parts = id.slice(5).split("+").filter(Boolean);
+      if (!parts.length) return cps.slice();
+      var seen = {}, out = [];
+      parts.forEach(function (one) {
+        select(cps, one).forEach(function (p) {
+          var key = p && p.id != null ? String(p.id) : "";
+          if (key && seen[key]) return;
+          if (key) seen[key] = 1;
+          out.push(p);
+        });
+      });
+      return out;
+    }
     if (id.indexOf("book:") === 0) {
       var book = id.slice(5);
       return cps.filter(function (p) { return p && p.book === book; });
@@ -193,6 +219,8 @@
   return {
     VARIANTS: VARIANTS,
     STAGES: STAGES,
+    SCOPES_GROUPS: SCOPES_GROUPS,
+    scopeGroupOf: scopeGroupOf,
     variant: variant,
     scopes: scopes,
     select: select,
