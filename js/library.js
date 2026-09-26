@@ -183,6 +183,8 @@
     });
   }
 
+  var leavingBook = false;
+
   function paintHeader(entry) {
     var C = window.SiteChrome;
     if (!C) return;
@@ -237,7 +239,10 @@
       return function () { exitBook(); };
     };
 
-    cfg.onHideReader = function () { return true; };
+    // 返回键的归属由 openFrom 决定：读者态开着时是「回集子列表」，
+    // 列表就在原地，交给引擎还原滚动位置（Issue #347）；页面只在
+    // exitBook 里把整个集子拆掉，那时才告诉引擎别还。
+    cfg.onHideReader = function () { return leavingBook ? "drop-list" : true; };
 
     var api = window.ReaderEngine.mount(cfg);
     if (!api) return;
@@ -277,10 +282,12 @@
 
   function exitBook() {
 
+    leavingBook = true;
     if (window.ReaderEngine && window.ReaderEngine.current &&
         window.ReaderEngine.current.isOpen && window.ReaderEngine.current.isOpen()) {
       window.ReaderEngine.current.hideReader();
     }
+    leavingBook = false;
 
     if (window.ReaderEngine && window.ReaderEngine.unmount) {
       window.ReaderEngine.unmount(listHolder());
