@@ -122,20 +122,32 @@ console.log('\n=== 三b、多选（合成 id `pick:a+b`）：并集、去重、�
   chk(plan.questions.every(q => q.stem && q.answer), '每道题都有题干与答案（不是空壳）');
 }
 
-console.log('\n=== 三c、分块：三个名字与分块规则都只在本文件一处 ===');
+console.log('\n=== 三c、名单：一行一个，不分块（2026-09-26 用户裁决） ===');
 {
-  // 首页那一段范围要按**三块**摆（全部 / 课内诗词 / 其他集子）。分块规则
-  // 与那三个中文名都在这里 —— 首页照它摆，不另写一份。
-  eq(Ex.SCOPES_GROUPS.join(','), '全部,课内诗词,其他集子', '三块的名字在 SCOPES_GROUPS（顺序也是它）');
-  eq(Ex.scopeGroupOf('all'), 0, '`all` 是第一块（全部）');
-  eq(Ex.scopeGroupOf('poems:primary'), 1, '`poems:<学段>` 是第二块（课内诗词）');
-  eq(Ex.scopeGroupOf('book:tangshi'), 2, '`book:<集子>` 是第三块（其他集子）');
-  eq(Ex.scopeGroupOf('book:poems'), -1,
-    '`book:poems` 不上首页（它与课内三学段是同一份语料的两种切法，摆两遍是重复）');
-  eq(Ex.scopeGroupOf('nope'), -1, '认不出的 id 回 -1（不塞进「全部」，不假装认识）');
+  // 用户原话：「全部 2928条 / 课内小学 119条 / 课外小古文 102条
+  //   这些都应该一行显示 上一级不要再分类」—— 所以内核里**不再有分块**：
+  // 名单给一行一个（名字 + 条数），要不要分组是页面的事、而页面不再分。
+  chk(!('SCOPES_GROUPS' in Ex) && !('scopeGroupOf' in Ex),
+    '分块表与分块函数都从内核里拿掉了（不留一个没人用的出口）');
+
+  eq(Ex.scopeVisible('all'), true, '「全部」在名单里');
+  eq(Ex.scopeVisible('poems:primary'), true, '课内小学在名单里');
+  eq(Ex.scopeVisible('book:classic'), true, '课外小古文这类集子在名单里');
+  eq(Ex.scopeVisible('book:poems'), false,
+    '`book:poems` 不上名单（它与课内三学段是同一份语料的两种切法，摆两遍是重复）');
+  eq(Ex.scopeVisible('nope'), false, '认不出的 id 不上名单（不塞进「全部」，不假装认识）');
+
+  // 名单给的是**平铺的一串**：一行一个，名与条数都在，顺序由 scopes() 定。
+  const bookList = [{ id: 'poems', name: '课内诗词' }, { id: 'tangshi', name: '唐诗三百首' },
+    { id: 'changshi', name: '文学常识' }];
+  const list = Ex.scopes(CORPUS, { books: bookList }).filter(sc => Ex.scopeVisible(sc.id));
+  chk(list.every(sc => sc.name && sc.count > 0),
+    '名单上每行都有名字与条数（' + list.length + ' 行）');
+  chk(list.map(sc => sc.id).join(',').indexOf('book:poems') < 0,
+    '名单里不出现 book:poems');
   const poemsAll = Ex.select(CORPUS, 'book:poems');
   chk(poemsAll.length > 0 && poemsAll.every(p => p.book === 'poems'),
-    '`book:poems` 照旧是**合法 scope**（只是不上首页）—— 课内整部都取得到');
+    '`book:poems` 照旧是**合法 scope**（只是不上名单）—— 课内整部都取得到');
 }
 
 console.log('\n=== 四、组卷：范围 × 形态 × 题量，题上带 origin ===');
