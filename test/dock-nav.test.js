@@ -115,10 +115,11 @@ console.log("\n=== 4 · 掀开 / 收起时底栏当场变亮 ===");
   const closeBody = game.slice(game.indexOf("function close()"), game.indexOf("function standalone"));
   chk(/setDockNav\("poems"\)/.test(closeBody), 'close() 里**还原**成 "poems"（不然退出后底栏还点着「大会」）');
 
-  // 拦住用户那一支（层级不够）：也算「站在大会这一层」，否则从底栏点进来
-  // 只会看到「课外」亮着、右边冒出一张卡，像点错了地方。
-  const gateBody = game.slice(game.indexOf("function renderEntryGate()"), game.indexOf("function renderHome()"));
-  chk(/setDockNav\("game"\)/.test(gateBody), "权限不够、画那张拦住卡时，底栏也照亮点「大会」");
+  // ⚠️ 不再有「整页一道集子闸」（Issue #356 用户定调：「古诗词大会这个页面就是
+  //    模拟和考试页面，不是古诗词大会集子」）。那一页进来即铺开，放不放行由
+  //    **玩法卡各自**标门槛（`renderHome` 里那张 `data-locked`）—— 集子归 /library/。
+  chk(!/function renderEntryGate\(/.test(game), "不再有 renderEntryGate()（整页那道「集子闸」已删）");
+  chk(!/GATHERING_CAP/.test(game), "js/game.js 不再引 exam.gathering（页面级强制点没了）");
 
   // ⚠️ 从前的 `dropGameParam()`（退出时把参数从地址栏摘掉）随叠层一起删了：
   //    大会有了自己的页，地址栏上没有参数可摘。
@@ -133,8 +134,8 @@ console.log("\n=== 4 · 掀开 / 收起时底栏当场变亮 ===");
   chk(/data-nav"\s*\)\s*===\s*"game"/.test(game), "判断据取 body[data-nav=\"game\"]（与底栏「谁亮」同源，不另立标记）");
   const initBody = game.slice(game.indexOf("function init()"), game.indexOf("function loadCorpusIntoView"));
   chk(/standalone\(\)/.test(initBody), "init() 里认这一页");
-  chk(/capAllowed\(GATHERING_CAP/.test(initBody), "进来**先过权限**（exam.gathering 的门不许绕）");
-  chk(/renderEntryGate\(\)/.test(initBody), "不够层级就画那张「为什么点不动」的卡，不留白");
+  chk(/if \(standalone\(\)\) \{\s*open\(\);/.test(initBody),
+    "独立页进来即 open()，不再先过一道整页的闸（各玩法的门槛由玩法卡自己拦）");
 
   // 老地址改道：/poems/?game=1 → /dahui/
   chk(/function redirectOldGameLink\(\)/.test(read("js/poems.js")), "js/poems.js 有 redirectOldGameLink()（老地址改道）");

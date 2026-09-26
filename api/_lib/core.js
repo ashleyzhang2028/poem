@@ -235,6 +235,10 @@ function featuresFor(cfg, tier) {
 
              "algo.sm2"];
 
+  // ⚠️ `exam.gathering` 是**台账/对比表**上那一行（「古诗词 大会」），不是
+  //    「集子闸」（Issue #356：大会那一页是飞花令与考试，不是集子；集子归
+  //    /library/）。页面上不再有它的强制点，但**键名一个字不动** ——
+  //    两端（这里与 js/entitlement.js）靠它逐字对拍。
   var max = ["feihualing", "exam.gathering", "exam.paper", "exam.formal",
 
              "algo.fsrs"];

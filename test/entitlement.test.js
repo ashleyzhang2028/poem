@@ -111,9 +111,9 @@ console.log('\n=== 三、pro / max 只加不减：层级越高能力单调不减
   chk(!E.can('exam.changshi', free).ok && E.can('exam.changshi', pro).ok && E.can('exam.changshi', max).ok,
     '文学常识考试：free 不可、pro 起（用户点名「pro 及 max」，§4.66 ⑤）');
 
-  chk(!!E.cap('exam.gathering'), 'exam.gathering 是**独立的一条**能力（集子访问）');
+  chk(!!E.cap('exam.gathering'), 'exam.gathering 是**独立的一条**能力（对比表上那一行「古诗词 大会」）');
   chk(!E.can('exam.gathering', pro).ok && E.can('exam.gathering', max).ok,
-    '古诗词大会集子：pro 不可、max 可用（与试题模拟同一条口径）');
+    '古诗词大会（对比表那行）：pro 不可、max 可用 —— 页面上不再有它的强制点（Issue #356）');
   chk(E.cap('exam.gathering').name === '古诗词 大会',
     '它的名字就叫「古诗词 大会」（一格说一件事）');
 

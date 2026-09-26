@@ -1595,9 +1595,9 @@ async function main() {
       chk(core.gameAllowed(cfg, "max", "exam.paper"), "试题模拟：Max 放行");
 
       chk(core.featuresFor(cfg, "max").indexOf("exam.gathering") >= 0,
-        "服务端 max 档下发 exam.gathering（集子访问）");
+        "服务端 max 档下发 exam.gathering（对比表那行「古诗词 大会」）");
       chk(core.featuresFor(cfg, "pro").indexOf("exam.gathering") < 0,
-        "服务端 pro 档**不**下发 exam.gathering（与试题模拟同一条口径）");
+        "服务端 pro 档**不**下发 exam.gathering（两端逐字对拍）");
       chk(!core.gameAllowed(cfg, "free", "quiz.review"), "free 一样都拿不到");
 
       const anon = await core.gameAnswer(d, { kind: "review", poemId: "xx1-01", chosen: "鹅" });
