@@ -76,6 +76,7 @@ const ENTRY_START = /^\s*\{/;
 const ENTRY_END = /^\s*\},?\s*$/;
 
 const ID_LINE = /(?:^\s*|\{\s*)id:\s*"([^"]+)"/m;
+const REF_LINE = /^\s*textRef:\s*"[^"]*",?\s*$/;
 
 function rewriteEntry(block, masterId) {
   const lines = block.split('\n');
@@ -94,6 +95,7 @@ function rewriteEntry(block, masterId) {
       i += 1;
       continue;
     }
+    if (REF_LINE.test(line)) continue;
     kept.push(line);
   }
   if (removed !== 3) {
@@ -106,10 +108,14 @@ function rewriteEntry(block, masterId) {
 
   const isCompact = /^\s*\{/.test(kept[idAt]);
   const indent = isCompact ? '    ' : ((kept[idAt].match(/^(\s+)/) || ['', '    '])[1]);
+
+  // textRef 一律摘掉后重插一行 —— 手工表（如 chengyu-tier1.js）写条目时已经带了
+  // textRef，早先的写法会在它前面再插一行，留下两行同名字段（历史数据里存了 51 处）。
+  const refLine = indent + 'textRef: ' + JSON.stringify(masterId) + ',';
   if (isCompact) {
-    kept.splice(idAt + 1, 0, indent + 'textRef: ' + JSON.stringify(masterId) + ',');
+    kept.splice(idAt + 1, 0, refLine);
   } else {
-    kept.splice(idAt, 0, indent + 'textRef: ' + JSON.stringify(masterId) + ',');
+    kept.splice(idAt, 0, refLine);
   }
   return kept.join('\n');
 }
