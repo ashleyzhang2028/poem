@@ -219,51 +219,24 @@
   }
 
     function scopeRows() {
-    var scopes = scopeList();
-    var groups = [[], [], []];
-    scopes.forEach(function (sc) {
-      var g = Ex ? Ex.scopeGroupOf(sc.id) : -1;
-      if (g < 0) return;
-      groups[g].push(sc);
+    var scopes = scopeList().filter(function (sc) {
+      return Ex ? Ex.scopeVisible(sc.id) : true;
     });
 
-    var names = (Ex && Ex.SCOPES_GROUPS) || [];
-    var html = '<div class="game-scope-head">' +
+        var html = '<div class="game-scope-head">' +
       '<p class="poems-home-tag">范围</p>' +
       '<button class="game-scope-all" type="button" data-game-scope-all="1">' +
       (state.scopeOpen ? "收起" : "展开") + "</button>" +
       "</div>";
     html += pickNote();
-    groups.forEach(function (rows, i) {
-      html += scopeGroup(names[i], rows);
-    });
+    html += '<div class="game-scope-grid"' + (state.scopeOpen ? "" : ' data-folded="1"') + ">" +
+      scopes.map(scopePick).join("") +
+      "</div>";
     return html;
   }
 
     function pickNote() {
     return '<p class="game-scope-note">' + esc(scopePickNote()) + "</p>";
-  }
-
-    function scopeGroup(title, rows) {
-    if (!rows.length) return "";
-    var open = state.scopeOpen;
-    return '<div class="game-scope-row"' + (open ? "" : ' data-folded="1"') + ">" +
-      '<button class="game-scope-item" type="button" data-game-scope-fold="' + esc(title) + '"' +
-      ' aria-expanded="' + (open ? "true" : "false") + '">' +
-      '<span class="game-scope-sign" aria-hidden="true"></span>' +
-      '<span class="game-scope-name">' + esc(title) + "</span>" +
-      '<span class="game-scope-count">' + esc(scopeCountOf(rows)) + "</span>" +
-      "</button>" +
-      '<div class="game-scope-grid">' +
-      rows.map(scopePick).join("") +
-      "</div>" +
-      "</div>";
-  }
-
-    function scopeCountOf(rows) {
-    var n = 0;
-    rows.forEach(function (r) { n += Number(r.count) || 0; });
-    return n + " 条";
   }
 
     function scopePick(sc) {
@@ -718,13 +691,6 @@
         if (at >= 0) state.scopes.splice(at, 1);
         else state.scopes.push(sid);
         state.setupNotice = "";
-        render();
-        return;
-      }
-
-            var fold = hit("data-game-scope-fold");
-      if (fold) {
-        state.scopeOpen = !state.scopeOpen;
         render();
         return;
       }

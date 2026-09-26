@@ -36,18 +36,17 @@
     return null;
   }
 
-    var SCOPES_GROUPS = ["全部", "课内诗词", "其他集子"];
+  var SCOPES_HIDDEN = { "book:poems": 1 };
 
-    var SCOPES_HIDDEN = { "book:poems": 1 };
-
-  function scopeGroupOf(scopeId) {
+  function scopeVisible(scopeId) {
     var id = String(scopeId == null ? "" : scopeId);
-    if (SCOPES_HIDDEN[id]) return -1;
-    if (id === "all") return 0;
-    if (id.indexOf("poems:") === 0) return 1;
-    if (id.indexOf("book:") === 0) return 2;
-    return -1;
+    if (SCOPES_HIDDEN[id]) return false;
+    if (id === "all") return true;
+    if (id.indexOf("poems:") === 0) return true;
+    if (id.indexOf("book:") === 0) return true;
+    return false;
   }
+
   function booksOf(opt) {
     var o = opt || {};
         if (o.books) return o.books;
@@ -219,8 +218,7 @@
   return {
     VARIANTS: VARIANTS,
     STAGES: STAGES,
-    SCOPES_GROUPS: SCOPES_GROUPS,
-    scopeGroupOf: scopeGroupOf,
+    scopeVisible: scopeVisible,
     variant: variant,
     scopes: scopes,
     select: select,
