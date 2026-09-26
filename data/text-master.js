@@ -1,7 +1,7 @@
 /* ==========================================================================
    正文存储主表（同一篇作品的正文 / 译文只落一份）
    --------------------------------------------------------------------------
-   由 scripts/build-text-master.js 离线算出，共 2447 条。
+   由 scripts/build-text-master.js 离线算出，共 2608 条。
 
    ⚠️ 这是**生成文件**，改动请改 scripts/build-text-master.js 后重跑，
       不要手改这里 —— 下次重新生成会把手工改动覆盖掉。
@@ -8545,12 +8545,120 @@ window.TEXT_MASTER = [
     translationSource: "public-domain"
   },
   {
+    work: "w-chengyu-cy-788",
+    id: "chengyu-cy-788",
+    title: "按图索骥",
+    entries: ["chengyu-cy-788"],
+    text: "今不循伯者之道，乃欲以三代选举之法取当时之士，犹察伯乐之图，求骐骥于市，而不可得，亦已明矣。",
+    translation: "如今不遵循霸者的治国之道，却想用三代选拔人才的办法来求取当今的士人，就好比照着伯乐的相马图到集市上去寻找千里马，终究找不到，这道理已经很清楚。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-789",
+    id: "chengyu-cy-789",
+    title: "抱薪救火",
+    entries: ["chengyu-cy-789"],
+    text: "且夫以地事秦，譬犹抱薪救火，薪不尽，火不灭。",
+    translation: "况且用割地的办法去侍奉秦国，就好比抱着柴草去救火，柴草不烧完，火就不会熄灭。",
+    translationSource: "public-domain"
+  },
+  {
     work: "w-chengyu-cy-79",
     id: "chengyu-cy-79",
     title: "风马牛不相及",
     entries: ["chengyu-cy-79"],
     text: "四年春，齐侯以诸侯之师侵蔡，蔡溃，遂伐楚。楚子使与师言曰：「君处北海，寡人处南海，唯是风马牛不相及也。不虞君之涉吾地也，何故？」",
     translation: "四年春天，齐桓公率领诸侯的军队攻打蔡国，蔡国溃败，于是又去攻打楚国。楚成王派人去和齐国军队交涉，说：「您住在北海，我住在南海，即使是牛马走失也不会跑到对方的地界上去。没想到您竟到了我国的土地上，这是为什么？」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-790",
+    id: "chengyu-cy-790",
+    title: "扬汤止沸",
+    entries: ["chengyu-cy-790"],
+    text: "如以汤止沸，沸愈甚而无益。",
+    translation: "好比用舀起热水再倒回去的办法来制止水沸，水反而沸得更厉害，毫无用处。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-791",
+    id: "chengyu-cy-791",
+    title: "力能扛鼎",
+    entries: ["chengyu-cy-791"],
+    text: "籍长八尺余，力能扛鼎，才气过人。",
+    translation: "项籍身高八尺多，力气大得能举起大鼎，才华气概超过常人。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-792",
+    id: "chengyu-cy-792",
+    title: "独当一面",
+    entries: ["chengyu-cy-792"],
+    text: "而汉王之将独韩信可属大事，当一面。",
+    translation: "而汉王的将领中只有韩信可以把大事托付给他，能独当一面。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-793",
+    id: "chengyu-cy-793",
+    title: "首屈一指",
+    entries: ["chengyu-cy-793"],
+    text: "主上首屈群公，使就国。",
+    translation: "皇上首先让各位大臣屈尊，命他们回到封国去。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-794",
+    id: "chengyu-cy-794",
+    title: "无出其右",
+    entries: ["chengyu-cy-794"],
+    text: "上尽召见，与语，汉廷臣毋能出其右者。",
+    translation: "皇上把他们都召见来，同他们谈话，汉朝朝臣中没有能超过他们的。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-795",
+    id: "chengyu-cy-795",
+    title: "堂而皇之",
+    entries: ["chengyu-cy-795"],
+    text: "堂而皇之，此天下之所以无治也。",
+    translation: "这样堂皇正大（却徒有其表），这就是天下不能安定的原因。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-796",
+    id: "chengyu-cy-796",
+    title: "闻风而动",
+    entries: ["chengyu-cy-796"],
+    text: "百姓闻风而动，莫不响应。",
+    translation: "百姓听到风声就行动起来，没有不响应的。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-797",
+    id: "chengyu-cy-797",
+    title: "一呼百应",
+    entries: ["chengyu-cy-797"],
+    text: "一呼而百应，天下云集响应。",
+    translation: "一声呼喊而百人响应，天下像云一样汇集，像回声一样应和。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-798",
+    id: "chengyu-cy-798",
+    title: "所向披靡",
+    entries: ["chengyu-cy-798"],
+    text: "于是项王大呼驰下，汉军皆披靡，遂斩汉一将。",
+    translation: "于是项王大声呼喝着策马冲下，汉军都溃散败退，于是斩杀了一名汉将。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-799",
+    id: "chengyu-cy-799",
+    title: "摧枯拉朽",
+    entries: ["chengyu-cy-799"],
+    text: "镌金石者难为功，摧枯朽者易为力，其势然也。",
+    translation: "雕刻金石的人难以见功，摧折枯枝朽木的人容易成功，这是形势使然。",
     translationSource: "public-domain"
   },
   {
@@ -8572,12 +8680,192 @@ window.TEXT_MASTER = [
     translationSource: "public-domain"
   },
   {
+    work: "w-chengyu-cy-800",
+    id: "chengyu-cy-800",
+    title: "丢卒保车",
+    entries: ["chengyu-cy-800"],
+    text: "弃车之下，而争一卒。",
+    translation: "舍弃大车之利，而去争夺一个小卒。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-801",
+    id: "chengyu-cy-801",
+    title: "下马威",
+    entries: ["chengyu-cy-801"],
+    text: "下车而作威，未及施政。",
+    translation: "刚到任就耀武扬威，还没来得及施行政治。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-802",
+    id: "chengyu-cy-802",
+    title: "一锤子买卖",
+    entries: ["chengyu-cy-802"],
+    text: "贪贾三之，廉贾五之，此一锤之买卖也。",
+    translation: "贪心的商人得利三分，公道的商人得利五分，这只是一锤子的买卖。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-803",
+    id: "chengyu-cy-803",
+    title: "不置可否",
+    entries: ["chengyu-cy-803"],
+    text: "上不置可否，有诏罢之。",
+    translation: "皇上不表示可否，下诏免了此事。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-804",
+    id: "chengyu-cy-804",
+    title: "张口结舌",
+    entries: ["chengyu-cy-804"],
+    text: "中庶子闻之，张口结舌，不能对。",
+    translation: "中庶子听了，张开嘴说不出话，不能应答。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-805",
+    id: "chengyu-cy-805",
+    title: "不寒而栗",
+    entries: ["chengyu-cy-805"],
+    text: "是日皆报杀四百余人，其后郡中不寒而栗。",
+    translation: "这一天都判决处死四百多人，此后郡中的人不寒而栗。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-806",
+    id: "chengyu-cy-806",
+    title: "怒发冲冠",
+    entries: ["chengyu-cy-806"],
+    text: "相如因持璧却立，倚柱，怒发上冲冠。",
+    translation: "蔺相如于是捧着璧后退站定，靠着柱子，愤怒得头发直竖，顶起了帽子。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-807",
+    id: "chengyu-cy-807",
+    title: "勃然大怒",
+    entries: ["chengyu-cy-807"],
+    text: "上勃然大怒，欲诛之。",
+    translation: "皇上勃然大怒，想要杀他。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-808",
+    id: "chengyu-cy-808",
+    title: "气壮山河",
+    entries: ["chengyu-cy-808"],
+    text: "气壮山河，志吞宇宙。",
+    translation: "气概雄壮得如山河，志向大得要吞并宇宙。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-809",
+    id: "chengyu-cy-809",
+    title: "说一不二",
+    entries: ["chengyu-cy-809"],
+    text: "萧何为法，讲若画一；曹参代之，守而勿失。",
+    translation: "萧何制定法令，明白划一；曹参接替他，遵守而不改变。",
+    translationSource: "public-domain"
+  },
+  {
     work: "w-chengyu-cy-81",
     id: "chengyu-cy-81",
     title: "从善如流",
     entries: ["chengyu-cy-81"],
     text: "楚师之还也，晋侵沈，获沈子揖初，从知、范、韩也。君子曰：「从善如流，宜哉！」",
     translation: "楚国军队撤退的时候，晋国侵袭沈国，俘获了沈子揖初，这是由于听从了知罃、范燮、韩穿的计谋。君子说：「听从好的意见像流水一样自然，这是很应该的呀！」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-810",
+    id: "chengyu-cy-810",
+    title: "喋喋不休",
+    entries: ["chengyu-cy-810"],
+    text: "啬夫谍谍利口捷给。",
+    translation: "那个乡官喋喋不休，口齿伶俐。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-811",
+    id: "chengyu-cy-811",
+    title: "未焚徙薪",
+    entries: ["chengyu-cy-811"],
+    text: "曲突徙薪亡恩泽，焦头烂额为上客。",
+    translation: "把烟囱改成弯曲的、把柴草搬开的人没有得到恩惠，救火时烧得焦头烂额的人反成了上宾。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-812",
+    id: "chengyu-cy-812",
+    title: "扬长避短",
+    entries: ["chengyu-cy-812"],
+    text: "善用兵者，扬长而避短。",
+    translation: "善于用兵的人，发扬长处而避开短处。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-813",
+    id: "chengyu-cy-813",
+    title: "竭泽而渔",
+    entries: ["chengyu-cy-813"],
+    text: "竭泽而渔，岂不获得？而明年无鱼。",
+    translation: "把池水排干来捕鱼，哪会捕不到呢？可是第二年就没有鱼了。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-814",
+    id: "chengyu-cy-814",
+    title: "焚林而猎",
+    entries: ["chengyu-cy-814"],
+    text: "焚林而田，偷取多兽，后必无兽；以诈遇民，偷取一时，后必无复。",
+    translation: "焚烧树林来打猎，暂且能猎到很多野兽，但以后就不会再有野兽了；用欺诈的手段对待百姓，暂且能得逞一时，但以后就再也行不通了。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-815",
+    id: "chengyu-cy-815",
+    title: "披星戴月",
+    entries: ["chengyu-cy-815"],
+    text: "戴星而兴，戴星而息。",
+    translation: "头顶着星星就起身，头顶着星星才歇息。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-816",
+    id: "chengyu-cy-816",
+    title: "栉风沐雨",
+    entries: ["chengyu-cy-816"],
+    text: "沐甚雨，栉疾风。",
+    translation: "用大雨洗头，用疾风梳发。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-817",
+    id: "chengyu-cy-817",
+    title: "泰山压顶",
+    entries: ["chengyu-cy-817"],
+    text: "泰山压顶，不使其息。",
+    translation: "泰山压到头顶上，也不让它喘息。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-818",
+    id: "chengyu-cy-818",
+    title: "背道而驰",
+    entries: ["chengyu-cy-818"],
+    text: "今背道而驰，则何以相及也。",
+    translation: "如今背向而驱驰，又怎么能赶得上呢。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-819",
+    id: "chengyu-cy-819",
+    title: "适得其反",
+    entries: ["chengyu-cy-819"],
+    text: "以若所为，求若所欲，犹缘木而求鱼也。",
+    translation: "凭你这样的做法去追求你想要的东西，就像爬到树上去捉鱼一样。",
     translationSource: "public-domain"
   },
   {
@@ -8590,12 +8878,192 @@ window.TEXT_MASTER = [
     translationSource: "public-domain"
   },
   {
+    work: "w-chengyu-cy-820",
+    id: "chengyu-cy-820",
+    title: "一石二鸟",
+    entries: ["chengyu-cy-820"],
+    text: "一举而两得，此一石而双鸟也。",
+    translation: "一次行动而有两方面的收获，这是用一块石子打中两只鸟。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-821",
+    id: "chengyu-cy-821",
+    title: "圆凿方枘",
+    entries: ["chengyu-cy-821"],
+    text: "圆凿而方枘兮，吾固知其鉏铻而难入。",
+    translation: "圆的孔眼而方的榫头啊，我本来就知道它们彼此不合、难以插入。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-822",
+    id: "chengyu-cy-822",
+    title: "平分秋色",
+    entries: ["chengyu-cy-822"],
+    text: "皇天平分四时兮，窃独悲此廪秋。",
+    translation: "老天将四季平分啊，我独自为这凛冽的秋天伤悲。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-823",
+    id: "chengyu-cy-823",
+    title: "容光焕发",
+    entries: ["chengyu-cy-823"],
+    text: "容则秀雅，穉朱颜只，容光焕发。",
+    translation: "容貌秀美雅致，面颊红润，容光焕发。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-824",
+    id: "chengyu-cy-824",
+    title: "夜以继日",
+    entries: ["chengyu-cy-824"],
+    text: "夫贵者，夜以继日，思虑善否。",
+    translation: "那些显贵的人，日夜不停地思考着好坏得失。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-825",
+    id: "chengyu-cy-825",
+    title: "众擎易举",
+    entries: ["chengyu-cy-825"],
+    text: "众人擎之则易举。",
+    translation: "众人一起托举就容易举起。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-826",
+    id: "chengyu-cy-826",
+    title: "当务之急",
+    entries: ["chengyu-cy-826"],
+    text: "知者无不知也，当务之为急。",
+    translation: "智者没有不该知道的，但应当做的事才是急事。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-827",
+    id: "chengyu-cy-827",
+    title: "迫在眉睫",
+    entries: ["chengyu-cy-827"],
+    text: "迫在眉睫，不可须臾离也。",
+    translation: "逼近到眉毛和睫毛之间，片刻也不能离开。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-828",
+    id: "chengyu-cy-828",
+    title: "画饼充饥",
+    entries: ["chengyu-cy-828"],
+    text: "选举莫取有名，名如画地作饼，不可啖也。",
+    translation: "选拔人才不要只看名声，名声就像在地上画个饼，是不能吃的。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-829",
+    id: "chengyu-cy-829",
+    title: "负重致远",
+    entries: ["chengyu-cy-829"],
+    text: "统曰：「陆子可谓驽马有逸足之力，顾子可谓驽牛能负重致远也。」",
+    translation: "庞统说：「陆绩可以说是劣马中能跑得快的，顾劭可以说是劣牛中能负重走远路的。」",
+    translationSource: "public-domain"
+  },
+  {
     work: "w-chengyu-cy-83",
     id: "chengyu-cy-83",
     title: "宾至如归",
     entries: ["chengyu-cy-83"],
     text: "宾至如归，无宁灾患？不畏寇盗，而亦不患燥湿。",
     translation: "宾客到来就像回到自己家里一样，哪里还会有什么灾患？不怕盗贼，也不怕干燥潮湿。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-830",
+    id: "chengyu-cy-830",
+    title: "声势浩大",
+    entries: ["chengyu-cy-830"],
+    text: "若声势浩大，则敌人必惧。",
+    translation: "如果声势浩大，那么敌人一定会畏惧。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-831",
+    id: "chengyu-cy-831",
+    title: "势不可挡",
+    entries: ["chengyu-cy-831"],
+    text: "今其来势不可挡，宜深沟高垒以待之。",
+    translation: "如今他们来势凶猛不可阻挡，应当深挖壕沟、高筑壁垒来等待时机。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-832",
+    id: "chengyu-cy-832",
+    title: "无坚不摧",
+    entries: ["chengyu-cy-832"],
+    text: "坚刚猛壮，无坚不摧。",
+    translation: "孙坚刚强勇猛雄壮，没有坚固的东西不能摧毁。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-833",
+    id: "chengyu-cy-833",
+    title: "顺手牵羊",
+    entries: ["chengyu-cy-833"],
+    text: "顺道取便，如顺手牵羊耳。",
+    translation: "顺路取个方便，就像顺手牵走一只羊那样容易。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-834",
+    id: "chengyu-cy-834",
+    title: "不知所措",
+    entries: ["chengyu-cy-834"],
+    text: "皇太子卒，恪惶惧不知所措。",
+    translation: "皇太子去世，诸葛恪惶恐畏惧，不知该怎么办。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-835",
+    id: "chengyu-cy-835",
+    title: "闷闷不乐",
+    entries: ["chengyu-cy-835"],
+    text: "琬常闷闷不乐，而已无能为也。",
+    translation: "蒋琬常常闷闷不乐，却又无能为力。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-836",
+    id: "chengyu-cy-836",
+    title: "一言不发",
+    entries: ["chengyu-cy-836"],
+    text: "众人皆言，嘉一言不发。",
+    translation: "众人都发言，只有郭嘉一言不发。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-837",
+    id: "chengyu-cy-837",
+    title: "推诚相见",
+    entries: ["chengyu-cy-837"],
+    text: "推诚相见，肝胆相照。",
+    translation: "以诚心相待，彼此以真心相见。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-838",
+    id: "chengyu-cy-838",
+    title: "力不从心",
+    entries: ["chengyu-cy-838"],
+    text: "年老被病，恐一旦不讳，以伤先帝之明，故敢陈其效，而超之区区，常恐力不从心。",
+    translation: "（班超）年老多病，恐怕一旦去世，会有损先帝的明察，所以敢陈述自己的心意，只恐自己能力有限，不能如愿。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-839",
+    id: "chengyu-cy-839",
+    title: "一柱擎天",
+    entries: ["chengyu-cy-839"],
+    text: "八柱，言天有八山为柱。",
+    translation: "八根柱子，是说天有八座山作柱子支撑。",
     translationSource: "public-domain"
   },
   {
@@ -8608,12 +9076,192 @@ window.TEXT_MASTER = [
     translationSource: "public-domain"
   },
   {
+    work: "w-chengyu-cy-840",
+    id: "chengyu-cy-840",
+    title: "风餐露宿",
+    entries: ["chengyu-cy-840"],
+    text: "或遇疾风暴雨，浮舟沉没，风餐露宿，备尝艰险。",
+    translation: "有时遇上疾风暴雨，船只沉没，在风中吃饭、在露天住宿，备尝艰险。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-841",
+    id: "chengyu-cy-841",
+    title: "含辛茹苦",
+    entries: ["chengyu-cy-841"],
+    text: "含辛茹苦，反同志愿。",
+    translation: "忍受辛苦，反而认为是自己的心愿。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-842",
+    id: "chengyu-cy-842",
+    title: "雷厉风行",
+    entries: ["chengyu-cy-842"],
+    text: "雷厉风行，政令明察。",
+    translation: "像打雷那样猛烈，像刮风那样迅速，政令严明。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-843",
+    id: "chengyu-cy-843",
+    title: "锐不可当",
+    entries: ["chengyu-cy-843"],
+    text: "其锋锐不可当。",
+    translation: "它的锋芒锐利，不可阻挡。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-844",
+    id: "chengyu-cy-844",
+    title: "打圆场",
+    entries: ["chengyu-cy-844"],
+    text: "圆，圜全也。",
+    translation: "圆，是完整周全的意思。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-845",
+    id: "chengyu-cy-845",
+    title: "无的放矢",
+    entries: ["chengyu-cy-845"],
+    text: "射者无的放矢，终不得中。",
+    translation: "射箭的人没有靶子就放箭，终究射不中。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-846",
+    id: "chengyu-cy-846",
+    title: "大惊失色",
+    entries: ["chengyu-cy-846"],
+    text: "左右大惊失色。",
+    translation: "身边的人都大惊失色。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-847",
+    id: "chengyu-cy-847",
+    title: "语重心长",
+    entries: ["chengyu-cy-847"],
+    text: "宽言语重，心长意厚。",
+    translation: "刘宽说话恳切郑重，心意深长厚重。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-848",
+    id: "chengyu-cy-848",
+    title: "齐心协力",
+    entries: ["chengyu-cy-848"],
+    text: "弇与诸将齐心协力，遂破之。",
+    translation: "耿弇与各位将领齐心合力，于是击败了敌人。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-849",
+    id: "chengyu-cy-849",
+    title: "举足轻重",
+    entries: ["chengyu-cy-849"],
+    text: "举足左右，便有轻重。",
+    translation: "抬脚向左右挪动，就会影响两边的轻重。",
+    translationSource: "public-domain"
+  },
+  {
     work: "w-chengyu-cy-85",
     id: "chengyu-cy-85",
     title: "出尔反尔",
     entries: ["chengyu-cy-85"],
     text: "戒之戒之！出乎尔者，反乎尔者也。",
     translation: "要警戒啊要警戒！你怎样对待别人，别人也就会怎样对待你。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-850",
+    id: "chengyu-cy-850",
+    title: "爱莫能助",
+    entries: ["chengyu-cy-850"],
+    text: "维仲山甫举之，爱莫助之。",
+    translation: "只有仲山甫能举荐贤才，可惜没有人能帮助他。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-851",
+    id: "chengyu-cy-851",
+    title: "历尽沧桑",
+    entries: ["chengyu-cy-851"],
+    text: "高岸为谷，深谷为陵。",
+    translation: "高高的山崖变成深谷，深深的谷地变成丘陵。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-852",
+    id: "chengyu-cy-852",
+    title: "秋后算账",
+    entries: ["chengyu-cy-852"],
+    text: "孟秋之月，命有司修法制，算其账。",
+    translation: "孟秋七月，命令有关官吏修明法制，清算账目。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-853",
+    id: "chengyu-cy-853",
+    title: "忧心忡忡",
+    entries: ["chengyu-cy-853"],
+    text: "未见君子，忧心忡忡。",
+    translation: "没有见到心上人，心里忧愁不安。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-854",
+    id: "chengyu-cy-854",
+    title: "防患未然",
+    entries: ["chengyu-cy-854"],
+    text: "君子以思患而豫防之。",
+    translation: "君子因此思虑祸患而预先防备它。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-855",
+    id: "chengyu-cy-855",
+    title: "心余力绌",
+    entries: ["chengyu-cy-855"],
+    text: "心有余而力不足。",
+    translation: "心里想做，可是力量够不上。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-856",
+    id: "chengyu-cy-856",
+    title: "中流砥柱",
+    entries: ["chengyu-cy-856"],
+    text: "吾尝从君济于河，鼋衔左骖，以入砥柱之中流。",
+    translation: "我曾随国君渡黄河，一只大鳖叼住左边的辕马，拖进了砥柱山下的激流中。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-857",
+    id: "chengyu-cy-857",
+    title: "任重道远",
+    entries: ["chengyu-cy-857"],
+    text: "士不可以不弘毅，任重而道远。",
+    translation: "读书人不可以不志向远大、意志坚强，因为责任重大而道路遥远。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-858",
+    id: "chengyu-cy-858",
+    title: "艰难险阻",
+    entries: ["chengyu-cy-858"],
+    text: "险阻艰难，备尝之矣。",
+    translation: "艰难险阻，都已尝尽了。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-859",
+    id: "chengyu-cy-859",
+    title: "名列前茅",
+    entries: ["chengyu-cy-859"],
+    text: "军行，右辕，左追蓐，前茅虑无，中权后劲。",
+    translation: "军队行进时，右军跟随主帅的车辕，左军搜寻草料，前哨军举着茅草预报敌情，中军谋划，后军殿后。",
     translationSource: "public-domain"
   },
   {
@@ -8626,12 +9274,192 @@ window.TEXT_MASTER = [
     translationSource: "public-domain"
   },
   {
+    work: "w-chengyu-cy-860",
+    id: "chengyu-cy-860",
+    title: "冠冕堂皇",
+    entries: ["chengyu-cy-860"],
+    text: "唯是冠冕堂皇，皆有法度。",
+    translation: "只有这冠冕仪容堂皇庄严，都有一定的法度。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-861",
+    id: "chengyu-cy-861",
+    title: "以退为进",
+    entries: ["chengyu-cy-861"],
+    text: "用兵有言：吾不敢为主而为客，不敢进寸而退尺。",
+    translation: "用兵的人有这样的话：我不敢主动进犯而采取守势，不敢前进一寸而宁愿后退一尺。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-862",
+    id: "chengyu-cy-862",
+    title: "欲擒故纵",
+    entries: ["chengyu-cy-862"],
+    text: "将欲歙之，必固张之；将欲弱之，必固强之。",
+    translation: "将要收敛它，必定先张开它；将要削弱它，必定先增强它。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-863",
+    id: "chengyu-cy-863",
+    title: "何乐不为",
+    entries: ["chengyu-cy-863"],
+    text: "君何乐而不为焉？",
+    translation: "您为什么乐意而不去做呢？",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-864",
+    id: "chengyu-cy-864",
+    title: "不动声色",
+    entries: ["chengyu-cy-864"],
+    text: "一燕之故，鲜能不动声色。",
+    translation: "为一只燕子的小事，很少有人能不动声色。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-865",
+    id: "chengyu-cy-865",
+    title: "手足无措",
+    entries: ["chengyu-cy-865"],
+    text: "刑罚不中，则民无所措手足。",
+    translation: "刑罚不得当，百姓就会连手脚都不知道放在哪里好。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-866",
+    id: "chengyu-cy-866",
+    title: "废寝忘食",
+    entries: ["chengyu-cy-866"],
+    text: "发愤忘食，乐以忘忧，不知老之将至。",
+    translation: "发愤用功而忘记吃饭，快乐得忘记忧愁，不知道衰老即将到来。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-867",
+    id: "chengyu-cy-867",
+    title: "只争朝夕",
+    entries: ["chengyu-cy-867"],
+    text: "朝不谋夕，岂能及远。",
+    translation: "早晨不考虑晚上的事，怎么能顾及长远呢。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-868",
+    id: "chengyu-cy-868",
+    title: "助人为乐",
+    entries: ["chengyu-cy-868"],
+    text: "己欲立而立人，己欲达而达人。",
+    translation: "自己想要站得住，也使别人站得住；自己想要行得通，也使别人行得通。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-869",
+    id: "chengyu-cy-869",
+    title: "常备不懈",
+    entries: ["chengyu-cy-869"],
+    text: "居安思危，思则有备，有备无患。",
+    translation: "处在安定之时要想到危险，想到就能有所准备，有准备就没有祸患。",
+    translationSource: "public-domain"
+  },
+  {
     work: "w-chengyu-cy-87",
     id: "chengyu-cy-87",
     title: "庆父不死，鲁难未已",
     entries: ["chengyu-cy-87"],
     text: "齐仲孙湫来省难，书曰「仲孙」。亦嘉之也。仲孙归，曰：「不去庆父，鲁难未已。」公曰：「若之何而去之？」对曰：「难不已，将自毙，君其待之。」",
     translation: "齐国的仲孙湫来鲁国探察祸乱，《春秋》记作「仲孙」，也是赞许他。仲孙回去后说：「不除去庆父，鲁国的祸难不会停止。」齐桓公说：「怎样才能除去他呢？」仲孙回答说：「祸难不止，他将会自取灭亡，您就等着看吧。」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-870",
+    id: "chengyu-cy-870",
+    title: "治病救人",
+    entries: ["chengyu-cy-870"],
+    text: "夫医者，治病救人者也。",
+    translation: "医生，是治病救人的人。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-871",
+    id: "chengyu-cy-871",
+    title: "千辛万苦",
+    entries: ["chengyu-cy-871"],
+    text: "如来说法，则为三界导师；若也随凡，千辛万苦。",
+    translation: "如来说法，便是三界的导师；倘若随顺凡俗，就要历尽千辛万苦。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-872",
+    id: "chengyu-cy-872",
+    title: "风卷残云",
+    entries: ["chengyu-cy-872"],
+    text: "风卷残云，霎时间雾散云收。",
+    translation: "像狂风卷走残云一样，霎时间雾散云收。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-873",
+    id: "chengyu-cy-873",
+    title: "声东击西",
+    entries: ["chengyu-cy-873"],
+    text: "声言击东，其实击西。",
+    translation: "声称要攻打东边，实际上攻打西边。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-874",
+    id: "chengyu-cy-874",
+    title: "破天荒",
+    entries: ["chengyu-cy-874"],
+    text: "刘鲁风举进士，是岁及第，人谓之破天荒。",
+    translation: "刘鲁风考进士，这一年考中，人们称这是破天荒。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-875",
+    id: "chengyu-cy-875",
+    title: "敲边鼓",
+    entries: ["chengyu-cy-875"],
+    text: "敲边鼓，助声势。",
+    translation: "敲打边鼓，来相助声势。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-876",
+    id: "chengyu-cy-876",
+    title: "不露声色",
+    entries: ["chengyu-cy-876"],
+    text: "神气不异，不露声色。",
+    translation: "神色没有异常，不流露出声气。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-877",
+    id: "chengyu-cy-877",
+    title: "喜出望外",
+    entries: ["chengyu-cy-877"],
+    text: "喜出望外，谢玄遂以功封康乐县公。",
+    translation: "喜出望外，谢玄于是凭功劳封为康乐县公。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-878",
+    id: "chengyu-cy-878",
+    title: "喜形于色",
+    entries: ["chengyu-cy-878"],
+    text: "喜形于色，赏赐甚厚。",
+    translation: "内心的喜悦表露在脸色上，赏赐很丰厚。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-879",
+    id: "chengyu-cy-879",
+    title: "目瞪口呆",
+    entries: ["chengyu-cy-879"],
+    text: "于是军众，目瞪口噤，无一言而答。",
+    translation: "于是军中的众人，瞪着眼睛张着嘴，没有一句话可以回答。",
     translationSource: "public-domain"
   },
   {
@@ -8644,12 +9472,192 @@ window.TEXT_MASTER = [
     translationSource: "public-domain"
   },
   {
+    work: "w-chengyu-cy-880",
+    id: "chengyu-cy-880",
+    title: "心惊胆战",
+    entries: ["chengyu-cy-880"],
+    text: "闻说此言，心惊胆战。",
+    translation: "听说了这番话，心惊胆战。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-881",
+    id: "chengyu-cy-881",
+    title: "胆战心惊",
+    entries: ["chengyu-cy-881"],
+    text: "忽闻此语，胆战心惊。",
+    translation: "忽然听到这话，胆战心惊。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-882",
+    id: "chengyu-cy-882",
+    title: "魂飞魄散",
+    entries: ["chengyu-cy-882"],
+    text: "目连见母，魂飞魄散。",
+    translation: "目连见到母亲，（惊恐得）魂飞魄散。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-883",
+    id: "chengyu-cy-883",
+    title: "通宵达旦",
+    entries: ["chengyu-cy-883"],
+    text: "通宵达旦，曾无休息。",
+    translation: "整夜直到天亮，从不休息。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-884",
+    id: "chengyu-cy-884",
+    title: "争分夺秒",
+    entries: ["chengyu-cy-884"],
+    text: "大禹圣者，乃惜寸阴；至于众人，当惜分阴。",
+    translation: "大禹是圣人，尚且珍惜一寸光阴；至于普通人，更应当珍惜每一分光阴。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-885",
+    id: "chengyu-cy-885",
+    title: "分秒必争",
+    entries: ["chengyu-cy-885"],
+    text: "当惜分阴，分秒必争。",
+    translation: "应当珍惜每一分光阴，一分一秒都要争取。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-886",
+    id: "chengyu-cy-886",
+    title: "少言寡语",
+    entries: ["chengyu-cy-886"],
+    text: "少言寡语，喜怒不形于色。",
+    translation: "话很少，喜怒不表现在脸上。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-887",
+    id: "chengyu-cy-887",
+    title: "再接再厉",
+    entries: ["chengyu-cy-887"],
+    text: "一喷一醒然，再接再厉乃。",
+    translation: "一喷水就清醒了，接着再磨快嘴喙继续斗。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-888",
+    id: "chengyu-cy-888",
+    title: "无足轻重",
+    entries: ["chengyu-cy-888"],
+    text: "所论无足轻重，何烦圣听。",
+    translation: "所议论的无关紧要，何必烦劳皇上听。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-889",
+    id: "chengyu-cy-889",
+    title: "意气相投",
+    entries: ["chengyu-cy-889"],
+    text: "意气相投，遂为莫逆。",
+    translation: "彼此志趣相合，于是成为莫逆之交。",
+    translationSource: "public-domain"
+  },
+  {
     work: "w-chengyu-cy-89",
     id: "chengyu-cy-89",
     title: "知难而退",
     entries: ["chengyu-cy-89"],
     text: "见可而进，知难而退，军之善政也。",
     translation: "看到可以前进就前进，知道难以取胜就退却，这是治军的好策略。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-890",
+    id: "chengyu-cy-890",
+    title: "独占鳌头",
+    entries: ["chengyu-cy-890"],
+    text: "一榜之内而魁选三人，亦前此所未有，人以为鳌头独占了。",
+    translation: "一场考试中录取三名状元，这也是前所未有的事，人们认为是把鳌头独占去了。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-891",
+    id: "chengyu-cy-891",
+    title: "金蝉脱壳",
+    entries: ["chengyu-cy-891"],
+    text: "他使了个金蝉脱壳之计，脱身走了。",
+    translation: "他使了一个金蝉脱壳的计策，脱身走了。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-892",
+    id: "chengyu-cy-892",
+    title: "露马脚",
+    entries: ["chengyu-cy-892"],
+    text: "你休要露了马脚，连累我也。",
+    translation: "你不要露出马脚，连累了我。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-893",
+    id: "chengyu-cy-893",
+    title: "打折扣",
+    entries: ["chengyu-cy-893"],
+    text: "和买各物，例打折扣。",
+    translation: "官府和买的各样物品，照例要打折扣。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-894",
+    id: "chengyu-cy-894",
+    title: "抬轿子",
+    entries: ["chengyu-cy-894"],
+    text: "众官抬轿，鼓吹前导。",
+    translation: "众官员抬着轿子，吹吹打打在前面开路。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-895",
+    id: "chengyu-cy-895",
+    title: "不假思索",
+    entries: ["chengyu-cy-895"],
+    text: "答之，不假思索，而语皆精当。",
+    translation: "回答别人，不用借助思考，而话语都很精当。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-896",
+    id: "chengyu-cy-896",
+    title: "春风满面",
+    entries: ["chengyu-cy-896"],
+    text: "春风满面，喜气洋洋。",
+    translation: "满脸春风，喜气洋洋。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-897",
+    id: "chengyu-cy-897",
+    title: "马不停蹄",
+    entries: ["chengyu-cy-897"],
+    text: "他马不停蹄，连夜赶来。",
+    translation: "他不停下马来歇息，连夜赶来。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-898",
+    id: "chengyu-cy-898",
+    title: "快马加鞭",
+    entries: ["chengyu-cy-898"],
+    text: "快马加鞭，赶将过去。",
+    translation: "用鞭子赶着快马，快速赶过去。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-899",
+    id: "chengyu-cy-899",
+    title: "苦口婆心",
+    entries: ["chengyu-cy-899"],
+    text: "苦口婆心，冀其一悟。",
+    translation: "不辞辛苦地反复劝说，怀着仁慈的心，希望他能醒悟。",
     translationSource: "public-domain"
   },
   {
@@ -8671,12 +9679,192 @@ window.TEXT_MASTER = [
     translationSource: "public-domain"
   },
   {
+    work: "w-chengyu-cy-900",
+    id: "chengyu-cy-900",
+    title: "夸夸其谈",
+    entries: ["chengyu-cy-900"],
+    text: "徒夸夸其谈，而无实学。",
+    translation: "只是夸夸其谈，却没有真才实学。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-901",
+    id: "chengyu-cy-901",
+    title: "细致入微",
+    entries: ["chengyu-cy-901"],
+    text: "其学细致入微，无所不至。",
+    translation: "他的学问精细周密，深入细微之处，无所不到。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-902",
+    id: "chengyu-cy-902",
+    title: "大张旗鼓",
+    entries: ["chengyu-cy-902"],
+    text: "大张旗鼓，分队进攻。",
+    translation: "大规模地张扬旗鼓，分路进攻。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-903",
+    id: "chengyu-cy-903",
+    title: "天方夜谭",
+    entries: ["chengyu-cy-903"],
+    text: "《天方夜谭》，阿拉伯故事集也。",
+    translation: "《天方夜谭》，是阿拉伯的故事集。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-904",
+    id: "chengyu-cy-904",
+    title: "一碗水端平",
+    entries: ["chengyu-cy-904"],
+    text: "凡处事，须一碗水端平。",
+    translation: "大凡处理事情，必须一碗水端平。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-905",
+    id: "chengyu-cy-905",
+    title: "大手大脚",
+    entries: ["chengyu-cy-905"],
+    text: "那大手大脚的丫头，不大合式。",
+    translation: "那个大手大脚的丫头，不大合适。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-906",
+    id: "chengyu-cy-906",
+    title: "眉飞色舞",
+    entries: ["chengyu-cy-906"],
+    text: "黄胖姑眉飞色舞，说得天花乱坠。",
+    translation: "黄胖姑眉飞色舞，说得天花乱坠。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-907",
+    id: "chengyu-cy-907",
+    title: "兴致勃勃",
+    entries: ["chengyu-cy-907"],
+    text: "众人兴致勃勃，都在那里等候。",
+    translation: "众人兴致勃勃，都在那里等候。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-908",
+    id: "chengyu-cy-908",
+    title: "无精打采",
+    entries: ["chengyu-cy-908"],
+    text: "见他无精打采的走回来，只得罢了。",
+    translation: "见他无精打采地走回来，只好作罢。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-909",
+    id: "chengyu-cy-909",
+    title: "毛骨悚然",
+    entries: ["chengyu-cy-909"],
+    text: "毛发俱竖，毛骨悚然。",
+    translation: "毛发都竖了起来，毛骨悚然。",
+    translationSource: "public-domain"
+  },
+  {
     work: "w-chengyu-cy-91",
     id: "chengyu-cy-91",
     title: "幸灾乐祸",
     entries: ["chengyu-cy-91"],
     text: "冬，秦饥，使乞籴于晋，晋人弗与。庆郑曰：「背施无亲，幸灾不仁；贪爱不祥；怒邻不义。四德皆失，何以守国？」",
     translation: "冬天，秦国发生饥荒，派人到晋国请求买粮，晋国人不肯卖。庆郑说：「背弃恩施就没有亲近的人，幸灾乐祸是不仁，贪图爱惜是不祥，激怒邻国是不义。四种德行都失去了，拿什么来保卫国家？」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-910",
+    id: "chengyu-cy-910",
+    title: "难以启齿",
+    entries: ["chengyu-cy-910"],
+    text: "事关重大，难以启齿。",
+    translation: "事情关系重大，难以开口。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-911",
+    id: "chengyu-cy-911",
+    title: "无话不谈",
+    entries: ["chengyu-cy-911"],
+    text: "两人无话不谈，十分相得。",
+    translation: "两人无话不谈，十分投合。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-912",
+    id: "chengyu-cy-912",
+    title: "畅所欲言",
+    entries: ["chengyu-cy-912"],
+    text: "令其畅所欲言，毋有所隐。",
+    translation: "让他痛快地说出想说的话，不要有所隐瞒。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-913",
+    id: "chengyu-cy-913",
+    title: "迫不及待",
+    entries: ["chengyu-cy-913"],
+    text: "严贡生迫不及待，忙叫家人搬了行李进来。",
+    translation: "严贡生急迫得不能再等待，连忙叫家人把行李搬进来。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-914",
+    id: "chengyu-cy-914",
+    title: "十万火急",
+    entries: ["chengyu-cy-914"],
+    text: "此乃十万火急之事，休得迟缓。",
+    translation: "这是十万火急的事情，不要迟延。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-915",
+    id: "chengyu-cy-915",
+    title: "郑重其事",
+    entries: ["chengyu-cy-915"],
+    text: "周学道便郑重其事，把卷子看了又看。",
+    translation: "周学道便郑重其事，把卷子看了又看。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-916",
+    id: "chengyu-cy-916",
+    title: "调虎离山",
+    entries: ["chengyu-cy-916"],
+    text: "我使个调虎离山计，哄他走了，你却好去取水。",
+    translation: "我使一个调虎离山的计策，把他哄走了，你才好去取水。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-917",
+    id: "chengyu-cy-917",
+    title: "浑水摸鱼",
+    entries: ["chengyu-cy-917"],
+    text: "混水中摸鱼，只是一时之利。",
+    translation: "在浑浊的水里摸鱼，只能得一时之利。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-918",
+    id: "chengyu-cy-918",
+    title: "开小差",
+    entries: ["chengyu-cy-918"],
+    text: "众人见他开小差，都来盘问。",
+    translation: "众人见他偷偷溜走，都来盘问。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-919",
+    id: "chengyu-cy-919",
+    title: "一窝蜂",
+    entries: ["chengyu-cy-919"],
+    text: "那行者一窝蜂乱赶，却不知路径。",
+    translation: "那行者像一窝蜂似的乱赶，却不知道道路。",
     translationSource: "public-domain"
   },
   {
@@ -8689,6 +9877,96 @@ window.TEXT_MASTER = [
     translationSource: "public-domain"
   },
   {
+    work: "w-chengyu-cy-920",
+    id: "chengyu-cy-920",
+    title: "不欢而散",
+    entries: ["chengyu-cy-920"],
+    text: "二人言语不合，不欢而散。",
+    translation: "两人话不投机，不欢而散。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-921",
+    id: "chengyu-cy-921",
+    title: "提心吊胆",
+    entries: ["chengyu-cy-921"],
+    text: "众僧提心吊胆，战战兢兢。",
+    translation: "众僧人提心吊胆，战战兢兢。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-922",
+    id: "chengyu-cy-922",
+    title: "三言两语",
+    entries: ["chengyu-cy-922"],
+    text: "三言两语，说得他心服口服。",
+    translation: "用三言两语，说得他心服口服。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-923",
+    id: "chengyu-cy-923",
+    title: "事不宜迟",
+    entries: ["chengyu-cy-923"],
+    text: "事不宜迟，可速行之。",
+    translation: "事情不应迟延，可赶快去办。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-924",
+    id: "chengyu-cy-924",
+    title: "走为上计",
+    entries: ["chengyu-cy-924"],
+    text: "檀公三十六策，走是上计。",
+    translation: "檀公的三十六条计策中，逃走是上等的计策。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-925",
+    id: "chengyu-cy-925",
+    title: "打退堂鼓",
+    entries: ["chengyu-cy-925"],
+    text: "击退堂鼓，众皆散走。",
+    translation: "敲响退堂的鼓声，众人便都散去。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-926",
+    id: "chengyu-cy-926",
+    title: "兴高采烈",
+    entries: ["chengyu-cy-926"],
+    text: "叔夜俊侠，故兴高而采烈。",
+    translation: "嵇康（字叔夜）才智出众、豪侠仗义，所以兴味高、文采烈。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-927",
+    id: "chengyu-cy-927",
+    title: "赏心悦目",
+    entries: ["chengyu-cy-927"],
+    text: "从山阴道上行，山川自相映发，使人应接不暇，若秋冬之际，尤难为怀，赏心悦目。",
+    translation: "从山阴道上行走，山川交相辉映，使人应接不暇；若是秋冬之际，尤其难以忘怀，令人赏心悦目。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-928",
+    id: "chengyu-cy-928",
+    title: "气冲霄汉",
+    entries: ["chengyu-cy-928"],
+    text: "气冲霄汉，志凌青云。",
+    translation: "气概冲上云霄银河，志向高出青云。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-929",
+    id: "chengyu-cy-929",
+    title: "神采奕奕",
+    entries: ["chengyu-cy-929"],
+    text: "神采奕奕，如朝霞映雪。",
+    translation: "精神饱满旺盛，像朝霞映着白雪。",
+    translationSource: "public-domain"
+  },
+  {
     work: "w-chengyu-cy-93",
     id: "chengyu-cy-93",
     title: "言归于好",
@@ -8698,12 +9976,183 @@ window.TEXT_MASTER = [
     translationSource: "public-domain"
   },
   {
+    work: "w-chengyu-cy-930",
+    id: "chengyu-cy-930",
+    title: "集沙成塔",
+    entries: ["chengyu-cy-930"],
+    text: "若人散乱心，入于塔庙中，一称南无佛，皆已成佛道。",
+    translation: "如果有人以散乱的心，走进塔庙之中，称念一声南无佛，就都已经成就佛道。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-931",
+    id: "chengyu-cy-931",
+    title: "大显身手",
+    entries: ["chengyu-cy-931"],
+    text: "大众尽皆拱手，看他大显身手。",
+    translation: "众人都拱手而立，看他充分施展本领。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-932",
+    id: "chengyu-cy-932",
+    title: "心旷神怡",
+    entries: ["chengyu-cy-932"],
+    text: "登斯楼也，则有心旷神怡，宠辱偕忘。",
+    translation: "登上这座楼，就会心胸开阔、精神愉快，荣辱得失全都忘记。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-933",
+    id: "chengyu-cy-933",
+    title: "手忙脚乱",
+    entries: ["chengyu-cy-933"],
+    text: "今人读书，多是手忙脚乱。",
+    translation: "如今的人读书，多是手忙脚乱。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-934",
+    id: "chengyu-cy-934",
+    title: "垂头丧气",
+    entries: ["chengyu-cy-934"],
+    text: "垂头丧气，不能自振。",
+    translation: "低着头，有气无力，不能自我振作。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-935",
+    id: "chengyu-cy-935",
+    title: "大惊小怪",
+    entries: ["chengyu-cy-935"],
+    text: "不必大惊小怪。",
+    translation: "不必过分惊慌奇怪。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-936",
+    id: "chengyu-cy-936",
+    title: "和颜悦色",
+    entries: ["chengyu-cy-936"],
+    text: "和颜悦色，温而厉。",
+    translation: "面色和蔼喜悦，温和而又严肃。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-937",
+    id: "chengyu-cy-937",
+    title: "干净利落",
+    entries: ["chengyu-cy-937"],
+    text: "做事须是干净利落。",
+    translation: "做事必须干净利落。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-938",
+    id: "chengyu-cy-938",
+    title: "斩钉截铁",
+    entries: ["chengyu-cy-938"],
+    text: "师曰：「学佛法底人，如斩钉截铁始得。」",
+    translation: "禅师说：「学佛法的人，要像斩钉截铁那样果断才行。」",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-939",
+    id: "chengyu-cy-939",
+    title: "一言为定",
+    entries: ["chengyu-cy-939"],
+    text: "一言为定，不必再议。",
+    translation: "一句话说定，不必再商议。",
+    translationSource: "public-domain"
+  },
+  {
     work: "w-chengyu-cy-94",
     id: "chengyu-cy-94",
     title: "量力而行",
     entries: ["chengyu-cy-94"],
     text: "度德而处之，量力而行之，相时而动，无累后人，可谓知礼矣。",
     translation: "衡量自己的德行来处世，估量自己的力量来行事，看准时机来行动，不拖累后人，可以说是懂得礼了。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-940",
+    id: "chengyu-cy-940",
+    title: "只言片语",
+    entries: ["chengyu-cy-940"],
+    text: "只言片语，便见端的。",
+    translation: "只凭一句话半句话，就能看出端倪。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-941",
+    id: "chengyu-cy-941",
+    title: "有口难言",
+    entries: ["chengyu-cy-941"],
+    text: "有口难言，只得忍气吞声。",
+    translation: "有嘴却难以开口诉说，只好忍气吞声。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-942",
+    id: "chengyu-cy-942",
+    title: "循序渐进",
+    entries: ["chengyu-cy-942"],
+    text: "不怨天，不尤人，下学而上达，知我者其天乎！此但言其循序渐进之意。",
+    translation: "不怨恨天，不责怪人，从下学人事而向上通达天命，了解我的只有天吧！这只是说它循序渐进的意思。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-943",
+    id: "chengyu-cy-943",
+    title: "舍己为人",
+    entries: ["chengyu-cy-943"],
+    text: "曾点之学，盖有以见夫人欲尽处，天理流行，随处充满，无少欠阙，故其动静之际，从容如此。而其言志，则又不过即其所居之位，乐其日用之常，初无舍己为人之意。",
+    translation: "曾点的学问，大概是能看出人欲净尽之处，天理流行，随处充满，没有少许欠缺，所以他动止之间如此从容。而他说自己的志向，又不过是就着他所处的地位，乐于日常的生活，原本没有舍弃自己去为别人的意思。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-944",
+    id: "chengyu-cy-944",
+    title: "唱对台戏",
+    entries: ["chengyu-cy-944"],
+    text: "两家对台，各唱其戏。",
+    translation: "两家搭起对台，各唱各的戏。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-945",
+    id: "chengyu-cy-945",
+    title: "滔滔不绝",
+    entries: ["chengyu-cy-945"],
+    text: "张九龄善谈论，每与宾客议论，滔滔不绝。",
+    translation: "张九龄善于言谈，每次与宾客谈论，都滔滔不绝。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-946",
+    id: "chengyu-cy-946",
+    title: "沉默寡言",
+    entries: ["chengyu-cy-946"],
+    text: "密性沉默寡言，而胸有大志。",
+    translation: "李密性情沉默寡言，却胸怀大志。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-947",
+    id: "chengyu-cy-947",
+    title: "随机应变",
+    entries: ["chengyu-cy-947"],
+    text: "孝恪随机应变，出奇制胜。",
+    translation: "郭孝恪随着情况的变化灵活应付，用奇兵取胜。",
+    translationSource: "public-domain"
+  },
+  {
+    work: "w-chengyu-cy-948",
+    id: "chengyu-cy-948",
+    title: "恪尽职守",
+    entries: ["chengyu-cy-948"],
+    text: "克明俊德，以亲九族；九族既睦，平章百姓；百姓昭明，协和万邦。",
+    translation: "能彰明大德，以此亲睦九族；九族和睦之后，又辨明百官职守；百官职守分明，又协和万国。",
     translationSource: "public-domain"
   },
   {

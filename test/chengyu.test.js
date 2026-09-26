@@ -17,10 +17,11 @@ loadData(sandbox, ['data/poems-1.js', 'data/poems-2.js', 'data/poems-3.js', 'dat
   'data/chengyu-support.js', 'data/site-index.js', 'data/works-map.js', 'data/works-index.js']);
 
 const CY = resolve(sandbox, sandbox.POEMS_CHENGYU, 'chengyu');
-chk(Array.isArray(CY) && CY.length === 787,
-  '中华成语故事共 787 则（第二批 143 则里 9 则并入古文 / 诗篇条目：309 - 9 + 435 + 1 = 736；' +
-  'Issue #339 再补第一档·义务教育教材常用成语 51 则 —— 库内原先全是「典故型」，' +
-  '治学型 / 品格型整类没进来；736 + 51 = 787。实际 ' + (CY ? CY.length : 'undefined') + '）');
+chk(Array.isArray(CY) && CY.length === 948,
+  '中华成语故事共 948 则（第二批 143 则里 9 则并入古文 / 诗篇条目：309 - 9 + 435 + 1 = 736；' +
+  'Issue #339 第一轮补第一档·义务教育教材常用成语 51 则（736 + 51 = 787）；' +
+  '第二轮再补第二至五档 161 则（典故型 / 三字俗语型 / 描写型 / 近现代外来，787 + 161 = 948）。' +
+  '实际 ' + (CY ? CY.length : 'undefined') + '）');
 
 const ids = new Set();
 let dup = 0;
@@ -170,7 +171,7 @@ Object.keys(bookRule).forEach(t => {
 
 const IDX = sandbox.SITE_INDEX;
 const cyIdx = IDX.filter(x => x.book === 'chengyu' && !x.isBook);
-chk(cyIdx.length === 787, '总索引收了全部 787 则（实际 ' + cyIdx.length + '）');
+chk(cyIdx.length === 948, '总索引收了全部 948 则（实际 ' + cyIdx.length + '）');
 chk(cyIdx.every(x => x.text && x.translation), '进索引的每一则原文与译文齐备');
 chk(IDX.some(x => x.book === 'chengyu' && x.isBook),
   '「中华成语故事」本身也作为一条结果（搜集子名能直接进那一页）');
@@ -244,7 +245,7 @@ const WORKS = (sandbox.WorksIndex && sandbox.WorksIndex.works) || [];
 
 // ① 释义栏（meaning）不再全空：736 则全有，且每条都进了全站索引
 chk(CY.filter(p => p.meaning).length === CY.length,
-  '成语释义栏 787/787 全有（原先 736 条一条没填，实际 ' +
+  '成语释义栏 948/948 全有（原先 736 条一条没填，实际 ' +
   CY.filter(p => p.meaning).length + ' 条）');
 chk(IDX.filter(x => x.book === 'chengyu' && !x.isBook).every(x => x.meaning),
   '每一则的释义都进了全站索引（搜索释义里的词也能命中）');
@@ -282,6 +283,30 @@ chk(tier1.every(p => p.source.indexOf('《') >= 0 && p.source.indexOf('》') >= 
   '新补的成语出处同样写成《书名·篇名》');
 chk(tier1.every(p => p.excerpt && p.text.indexOf(p.excerpt) >= 0),
   '新补的成语，正文命中自己的摘句');
+
+// ④b Issue #339 第二轮：第二至五档 161 则（典故 / 三字俗语 / 描写 / 近现代）
+const TIER2 = ['按图索骥', '竭泽而渔', '披星戴月', '任重道远', '独占鳌头',
+  '调虎离山', '金蝉脱壳', '走为上计',        // 第二档
+  '破天荒', '一窝蜂', '打退堂鼓', '平分秋色', // 第三档
+  '眉飞色舞', '心旷神怡', '废寝忘食', '斩钉截铁', '畅所欲言', // 第四档
+  '一石二鸟', '大显身手', '天方夜谭', '圆凿方枘'];           // 第五档
+const tier2Hit = TIER2.filter(t => CY.filter(x => x.title === t).length === 1);
+chk(tier2Hit.length === TIER2.length,
+  '第二至五档成语已补进库（命中 ' + tier2Hit.length + '/' + TIER2.length + '）');
+const tier2 = CY.filter(p => TIER2.indexOf(p.title) >= 0);
+chk(tier2.every(p => p.gradeGroup === p.dynasty && DYNASTIES_ALL.indexOf(p.dynasty) >= 0),
+  '第二至五档同样落在十九个朝代分组里（分组与书写朝代一致）');
+chk(tier2.every(p => p.source.indexOf('《') >= 0 && p.source.indexOf('》') >= 0),
+  '第二至五档的出处同样写成《书名·篇名》');
+chk(tier2.every(p => p.meaning && String(p.meaning).replace(/\s/g, '').length >= 8),
+  '第二至五档每条都有释义（不是占位短串）');
+chk(tier2.every(p => p.excerpt && p.text.indexOf(p.excerpt) >= 0),
+  '第二至五档的正文命中自己的摘句');
+// 数据表与库内条数对得上（漏落库不会静默通过）
+const tier2Src = require('./../scripts/chengyu-tier2.js').ENTRIES;
+chk(tier2Src.length === 161, '第二至五档数据表共 161 条（实际 ' + tier2Src.length + '）');
+chk(tier2Src.every(e => CY.filter(p => p.title === e[0]).length === 1),
+  '第二至五档数据表点名的成语在库里都有且只有一条');
 
 // ⑤ 语本类成语：正文是原句、译文是新写的（不能再是照占位串写的旧译文）
 const support = sandbox.CHENGYU_SUPPORT || [];
