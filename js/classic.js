@@ -17,7 +17,7 @@
       id: "classic",
       groupOrder: GROUP_ORDER,
 
-      pageTitle: "课外必背小古文",
+      pageTitle: "小古文",
       pageSub: "百字上下，最适合起步",
       words: {
         list: "小古文",
