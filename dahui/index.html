@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#2f6055" />
+  <title>跬步 · 古诗词大会</title>
+  <meta name="description" content="跬步古诗词大会：飞花令、题库复习、模拟考试、正式考试 —— 一份语料，四种玩法，答完当场判分或交卷统一批。" />
+  <meta name="format-detection" content="telephone=no" />
+
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="古诗词大会" />
+  <meta name="mobile-web-app-capable" content="yes" />
+
+  <base href="/" />
+  <link rel="icon" href="/icons/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/classic.css" />
+  <link rel="stylesheet" href="css/account.css" />
+</head>
+
+<!-- 「古诗词大会」自成一页（Issue #356）。
+     ⚠️ 这一页上**没有诗词列表、也没有阅读器** —— 用户要的就是这个：
+        「不应该显示各个古诗列表和详情页，而是各种试题，模拟及竞赛」。
+        所以 body 上只有 `data-poems-view="game"` 那一个挂载点，
+        `[data-gw="list"]` 与 `[data-gw="reader"]` 一个都不摆：
+        `js/game.js` 靠「阅读器在不在」判断点了句子之后是就地叠还是跳去
+        `/poems/?poem=<id>`（见那边的 `openPoem` 与 `hasReader`）。
+     ⚠️ `data-nav="game"` 一处两用：底栏中间那一格点亮它，`js/game.js` 的
+        `standalone()` 也认它 —— 同源，不另立标记。 -->
+<body data-nav="game" data-page="古诗词大会" data-sub="飞花令 · 题库复习 · 模拟考试 · 正式考试">
+
+  <div class="app" data-gw-root>
+
+    <header class="topbar"></header>
+
+    <div class="poems-game" data-poems-view="game" hidden></div>
+
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+
+  <!-- 课内诗词 12 册（飞花令与试卷都从这一份语料里抽） -->
+  <script src="data/poems-1.js"></script>
+  <script src="data/poems-2.js"></script>
+  <script src="data/poems-3.js"></script>
+  <script src="data/poems-4.js"></script>
+  <script src="data/poems-5.js"></script>
+  <script src="data/poems-6.js"></script>
+  <script src="data/poems-7.js"></script>
+  <script src="data/poems-8.js"></script>
+  <script src="data/poems-9.js"></script>
+  <script src="data/poems-10.js"></script>
+  <script src="data/poems-11.js"></script>
+  <script src="data/poems-12.js"></script>
+  <script src="data/text-master.js"></script>
+  <script src="data/index.js"></script>
+
+  <!-- 试卷的**范围名单**取自这一份清单（`js/exam.js` 的 `scopes()`）：
+       「全部 / 单部集子 / 小学·初中·高中」都是照着它算的。只加载清单、
+       不加载整张索引 —— 与 `/poems/` 同一句注释、同一个理由。 -->
+  <script src="data/site-books.js"></script>
+
+  <!-- 集子那十部由 `js/game.js` 按需加载（`WANTED` 那份清单），这里不预置：
+       与 `/poems/` 同一套做法，少一份迟早对不上的名单。 -->
+
+  <script src="data/pinyin-table.js"></script>
+  <script src="data/common-chars.js"></script>
+  <script src="js/pinyin-edit.js"></script>
+  <script src="js/pinyin.js"></script>
+
+  <script src="js/auth-core.js"></script>
+  <script src="js/auth-api.js"></script>
+  <script src="js/account-api.js"></script>
+  <script src="js/entitlement.js"></script>
+
+  <!-- ⚠️ 次序按全站口径：`js/family.js` → `js/progress-store.js` → `js/storage.js`
+       （`storage.js` 是引擎的**转发层**；反了不报错，只是永远读不到带后缀的键）。
+       这一页不碰进度与已读，但 `js/game.js` 经 `Entitlement.identity()` 读的
+       就是这一份存储 —— 引擎缺了整层都不在。 -->
+  <script src="js/family.js"></script>
+  <script src="js/progress-store.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/quiz.js"></script>
+  <script src="js/exam.js"></script>
+  <script src="js/game.js"></script>
+
+  <script src="js/avatar.js"></script>
+  <script src="js/avatar-image.js"></script>
+  <script src="js/chrome.js"></script>
+  <script src="js/pwa.js"></script>
+</body>
+</html>
