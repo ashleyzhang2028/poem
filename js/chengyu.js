@@ -9,8 +9,8 @@
       groupOrder: GROUP_ORDER,
       pageTitle: "中华成语故事",
       pageSub: "按朝代编排 · 每则给出最早出处的原文与白话译文",
-      // 收录进搜索范围的两栏：成语释义 + 摘句之外的补充
-      extraFields: ["meaning"],
+      // 收录进搜索范围的三栏：成语释义 + 语源 / 典故说明
+      extraFields: ["meaning", "gloss"],
       words: {
         list: "中华成语故事",
         unit: "则",
@@ -20,7 +20,7 @@
         backToList: "返回成语列表",
         readStore: "poem_chengyu_read_v1",
         playerTitle: "成语朗读",
-        searchPlaceholder: "搜索成语 / 出处 / 朝代 / 作者"
+        searchPlaceholder: "搜索成语 / 释义 / 出处 / 朝代 / 作者"
       }
     };
   }

@@ -43,11 +43,13 @@ const NO_TRANS = ['changshi'];
 
 const multiEntries = MASTER.filter(m => m.entries.length >= 2);
 const singleEntries = MASTER.filter(m => m.entries.length === 1);
-chk(multiEntries.length === 139,
-  '主表里有 139 条「跨集重复」的作品（乐府集与课内 / 其余集子重篇 + 成语故事原文与古文 / 诗篇同篇，' +
+chk(multiEntries.length === 141,
+  '主表里有 141 条「跨集重复」的作品（乐府集与课内 / 其余集子重篇 + 成语故事原文与古文 / 诗篇同篇，' +
   'Issue #244 / #308；二批带来源的古文 / 诗篇条目并入原篇，再加《求之不得》↔《人言可畏》一类同源对；' +
   'Issue #339 拆掉 5 组错并（愚公移山 / 卧薪尝胆 / 礼贤下士 / 不自量力 / 东道主），' +
-  '又合入 1 组真同篇（卧薪尝胆 ↔ 小古文《卧薪尝胆》）；实际 ' +
+  '又合入 1 组真同篇（卧薪尝胆 ↔ 小古文《卧薪尝胆》），再拆开 众志成城 / 众口铄金 一组；' +
+  '本轮把正文里的编者括注搬走、正文露出本来面目后，蚌鹬相持/坐收渔利、' +
+  '近水楼台/近水楼台先得月 两组判为同篇；实际 ' +
   multiEntries.length + '）');
 const fullExpected = [];
 FULL_BOOKS.forEach(book => {
@@ -156,10 +158,11 @@ const uncovered = dupEntries.filter(e => !covered[e]);
 chk(uncovered.length === 0,
   '「同篇判重键下有两条及以上」的条目共 ' + dupEntries.length + ' 条，全部收进了主表（未收：' +
   (uncovered.slice(0, 6).join('、') || '无') + '）');
-chk(dupEntries.length === 295,
-  '重复条目恰为 295 条（139 篇：多数 × 2，少数 × 3 或 4；乐府集与成语故事收进来的一批重篇，' +
+chk(dupEntries.length === 299,
+  '重复条目恰为 299 条（141 篇：多数 × 2，少数 × 3 或 4；乐府集与成语故事收进来的一批重篇，' +
   'Issue #244 / #308；Issue #339 拆开 5 组错并后由 303 降为 297；' +
-  '本轮又把 众志成城 / 众口铄金 这一组「正文撞巧相同」的拆开，降为 295；实际 ' +
+  '又拆开 众志成城 / 众口铄金 一组降为 295；' +
+  '本轮正文括注搬走后新增 蚌鹬相持/坐收渔利、近水楼台/近水楼台先得月 两组，升为 299；实际 ' +
   dupEntries.length + '）');
 
 const expectFlat = dupEntries.slice();
