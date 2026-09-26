@@ -106,7 +106,10 @@ console.log('\n=== 三、pro / max 只加不减：层级越高能力单调不减
   });
 
   chk(!E.can('feihualing', pro).ok && E.can('feihualing', max).ok, '飞花令：pro 不可、max 可用（用户指定）');
-  chk(!E.can('exam.paper', pro).ok && E.can('exam.paper', max).ok, '试题模拟：pro 不可、max 可用（用户指定）');
+  chk(!E.can('exam.paper', pro).ok && E.can('exam.paper', max).ok, '模拟考试：pro 不可、max 可用（用户指定）');
+  chk(!E.can('exam.formal', pro).ok && E.can('exam.formal', max).ok, '正式考试：pro 不可、max 可用（§4.66 ⑩-②）');
+  chk(!E.can('exam.changshi', free).ok && E.can('exam.changshi', pro).ok && E.can('exam.changshi', max).ok,
+    '文学常识考试：free 不可、pro 起（用户点名「pro 及 max」，§4.66 ⑤）');
 
   chk(!!E.cap('exam.gathering'), 'exam.gathering 是**独立的一条**能力（集子访问）');
   chk(!E.can('exam.gathering', pro).ok && E.can('exam.gathering', max).ok,
@@ -148,7 +151,8 @@ console.log('\n=== 三、pro / max 只加不减：层级越高能力单调不减
     'collections.many': '自选清单', 'sync.multiDevice': '设备同步',
     'export.paper': 'PDF / 打印', 'profile.family': '子用户',
     'quiz.review': '题库', 'export.all': '课内诗词 导出',
-    'exam.gathering': '古诗词 大会', 'exam.paper': '试题模拟'
+    'exam.gathering': '古诗词 大会', 'exam.paper': '模拟考试',
+    'exam.formal': '正式考试', 'exam.changshi': '文学常识考试'
   };
   Object.keys(renames).forEach(function (k) {
     eq(E.cap(k).name, renames[k], 'Issue #163 改名：' + k + ' → 「' + renames[k] + '」');

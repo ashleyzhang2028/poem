@@ -892,6 +892,33 @@
         el.scrollIntoView({ block: "center", behavior: "smooth" });
       } catch (e) {  }
     }
+    // 连读时画面在往下滚，浏览位置跟着走，退出读者态才停在读者最后看到的那一条
+    rememberListScroll();
+  }
+
+  // 列表滚的是 window（页面本身），窗口滚动量就是浏览位置。
+  // ⚠️ 别在这里顺手存 scrollX：地址栏收放那点横向抖动也得算进去的话，
+  // 存回来的就是一个跟用户无关的数。
+  function listScrollY() {
+    if (window.scrollX || window.scrollY) return window.scrollY;
+    return (document.scrollingElement && document.scrollingElement.scrollTop) || 0;
+  }
+
+  function rememberListScroll() {
+    if (!live || !live.items || !live.items.length || readerShown()) return;
+    live.listScroll = listScrollY();
+  }
+
+  // 打开详情页会把窗口滚到顶，返回时按记下的位置放回去 —— 否则不管从列表
+  // 多深点进去，退出来一律回到第一条（Issue #347）。
+  // 恢复必须等详情层的布局做完：这里还在 overflow:hidden 的 body 上，
+  // 文档自身的高度被压成窗口高，此刻写 scrollTo 会被浏览器当成越界而置 0。
+  function restoreListScroll(y) {
+    if (!y) return;
+    setDoubleRaf(function () {
+      if (readerShown()) return;
+      window.scrollTo(0, y);
+    });
   }
 
   function clearHighlight() {
@@ -927,6 +954,9 @@
   function openReader(p) {
 
     if (p && p.id && itemsById[p.id]) p = itemsById[p.id];
+    // 第一次打开才记：连读从一篇换到下一篇时也走这里，跟着记就等于把
+    // 读者刚离开的那一条当成浏览位置，返回时落点越来越深。
+    if (!readerShown()) rememberListScroll();
     current = p;
     var idx = idIndex(p);
     var el = rd("reader");
@@ -1003,6 +1033,7 @@
 
     var printBtn = document.querySelector("[data-print-open]");
     if (printBtn) printBtn.setAttribute("data-print-poem", p.id || "");
+    // 读者态铺满整屏，底下列表多深都看不见 —— 从正文开头读起才是对的
     window.scrollTo(0, 0);
   }
 
@@ -1253,6 +1284,19 @@
     if (label) label.textContent = on ? "停止朗读" : "朗读译文";
   }
 
+  function readerShown() {
+    var el = box || (root && root.querySelector('[data-gw="reader"]')) ||
+      document.querySelector('[data-gw="reader"]');
+    return !!el && !el.hidden;
+  }
+
+  // 两次 rAF：一次等样式落地，一次等这次重排被浏览器采纳，之后才量得到
+  // 去掉 overflow:hidden 之后的真实文档高度。
+  function setDoubleRaf(fn) {
+    if (typeof window.requestAnimationFrame !== "function") { setTimeout(fn, 0); return; }
+    window.requestAnimationFrame(function () { window.requestAnimationFrame(fn); });
+  }
+
   function hideReader() {
     if (window.Speech) window.Speech.stop();
     autoReading = false;
@@ -1268,7 +1312,17 @@
       window.SiteChrome.setHeaderAction(null);
     }
 
-    return typeof CFG.onHideReader === "function" ? CFG.onHideReader() !== false : false;
+    var backTo = live ? live.listScroll : 0;
+    if (live) live.listScroll = 0;
+
+    // onHideReader 的返回值管的是「顶栏交给页面自己收」，跟还原滚动位置是
+    // 两件事：课外阅读先收顶栏、再由页面自己决定退回书架还是留在集子 ——
+    // 留在集子时列表就在原地，位置照样得还（Issue #347）。只有页面明说
+    // 这次连列表一起拆（返回 "drop-list"）才跳过，交给下次进列表重来。
+    var verdict = typeof CFG.onHideReader === "function" ? CFG.onHideReader() : false;
+    var dropped = verdict === "drop-list";
+    if (!dropped) restoreListScroll(backTo);
+    return verdict !== false && !dropped;
   }
 
   function closeReader() {
@@ -1929,6 +1983,7 @@
       items: cfg.items.map(function (p) { return canonicalOf(p, cfg.id); }),
       byId: {},
       current: null,
+      listScroll: 0,
       keyword: "",
       filter: cfg.initialFilter || "all",
       autoReading: false,

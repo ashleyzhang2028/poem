@@ -242,8 +242,11 @@ console.log('\n=== 七、接线：能力键名两端同源、页面不提前渲�
   chk(/fly:\s*"feihualing"/.test(caps), '服务端：飞花令那一档写作 feihualing');
   chk(/paper:\s*"exam\.paper"/.test(caps), '服务端：试题模拟那一档写作 exam.paper');
   chk(/review:\s*"quiz\.review"/.test(caps), '服务端：题库复习那一档写作 quiz.review');
-  ['feihualing', 'exam.paper', 'quiz.review'].forEach(cap => {
-    chk(gameSrc.indexOf('"' + cap + '"') >= 0, 'js/game.js 里用的是同一个键名：' + cap);
+  // 考试三形态的能力键从 js/exam.js 的 VARIANTS 来，game.js 不再各写一份。
+  const examSrc = fs.readFileSync(path.join(ROOT, 'js/exam.js'), 'utf8');
+  ['feihualing', 'exam.paper', 'quiz.review', 'exam.formal'].forEach(cap => {
+    chk(examSrc.indexOf('"' + cap + '"') >= 0 || gameSrc.indexOf('"' + cap + '"') >= 0,
+      '考试层里用的是同一个键名：' + cap);
   });
 
   const Ent = require(path.join(ROOT, 'js/entitlement.js'));
@@ -294,7 +297,11 @@ console.log('\n=== 七、接线：能力键名两端同源、页面不提前渲�
   chk(!/answer:\s*q\.answer/.test(body), '交卷时**不传** answer（传了也不会被采信）');
 
   chk(gameSrc.indexOf('poem_poems_read_v1') < 0 && gameSrc.indexOf('poem_recite_progress_v1') < 0,
-    'js/game.js 不碰任何进度 / 已读存储键（答题不留记录）');
+    'js/game.js 不碰进度 / 已读存储键（答错不回流复习排期，§4.15 ④）');
+  chk(examSrc.indexOf('poem_recite_progress_v1') < 0,
+    'js/exam.js 也不碰背诵进度键 —— 批改权只归 js/scheduler.js');
+  chk(/"poem_exam_v1"/.test(examSrc),
+    '考试记录落在自己的键 poem_exam_v1（本机一份练习记录，不上云）');
 }
 
 console.log('\n' + (fails ? '❌ ' + fails + ' 项失败' : '🎉 古诗词大会内核测试全部通过'));

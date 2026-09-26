@@ -54,9 +54,9 @@
       </button>
 
       <button class="poems-game-entry" type="button" data-game-open="1"
-        title="古诗词大会：试题模拟 · 飞花令 · 题库复习">
+        title="古诗词大会：飞花令 · 题库复习 · 模拟考试 · 正式考试">
         <span class="poems-game-name">古诗词大会</span>
-        <span class="poems-game-sub">试题模拟 · 飞花令 · 题库复习</span>
+        <span class="poems-game-sub">飞花令 · 题库复习 · 模拟考试</span>
       </button>
     </div>
 
@@ -242,6 +242,8 @@
   <div class="toast" id="toast" hidden></div>
 
   <script src="data/group-order.js"></script>
+  <!-- 考试层的范围名单取自 SITE_BOOKS（与入口页同一份）—— 只加载清单，不加载整张索引 -->
+  <script src="data/site-books.js"></script>
 
   <script src="data/poems-1.js"></script>
   <script src="data/poems-2.js"></script>
@@ -292,6 +294,7 @@
   <script src="js/account-api.js"></script>
 
   <script src="js/quiz.js"></script>
+  <script src="js/exam.js"></script>
   <script src="js/game.js"></script>
 
   <script src="js/print-core.js"></script>
