@@ -901,27 +901,21 @@ thead .plans-th-cap {
       **不是一回事**：那个是「这一张卡叫什么」，这个是「下面这一段是什么」。
       同页出现两种「标题」是有意的 —— 混成一个，用户就分不清「这是卡名」
       还是「这是下一段」。 */
+/* ⚠️ 小标题**就是一个词**（「题型」「范围」「全部」「课内诗词」「其他集子」）——
+   Issue #356 第八轮用户原话：「改成 题型 不要加任何其他废话」「改成 范围
+   不要任何其他废话」。所以它不再有两截（名字 + 说明），
+   从前那两个 span（`.poems-home-tag-name` / `.poems-home-tag-note`）连同
+   对应的 JS 一起删了 —— 留着一个用不到的类名，下次就会有人往里塞第二句话。 */
 .poems-home-tag {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  flex-wrap: wrap;
   padding: 0 2px;
   /* 小标题与它下面那一行卡之间借一点负外边距：父层 `gap` 已给 12px，
      再借 6px 出去，缝约 6px —— 够分开，又不浪费一屏的高度。 */
   margin: 0 0 -6px;
-}
-.poems-home-tag ~ .poems-home-tag { margin-top: 2px; }
-.poems-home-tag-name {
   font: var(--title-2);
   color: var(--ink-2);
   letter-spacing: .3px;
 }
-.poems-home-tag-note {
-  font-size: 11.5px;
-  color: var(--ink-3);
-  line-height: 1.6;
-}
+.poems-home-tag ~ .poems-home-tag { margin-top: 2px; }
 
 /* 首页那些卡：内边距比别处窄一档 —— 首页是「浏览」不是「阅读」，
    一屏要摆下两行卡 + 一条通栏键。 */
@@ -929,8 +923,10 @@ thead .plans-th-cap {
 .poems-game > .poems-home-row .game-mode-desc { margin-top: 3px; line-height: 1.6; }
 .poems-game > .poems-home-row .game-mode-tier { padding-top: 6px; }
 
-/* 「更多范围」那颗通栏键：与小标题之间按同一档收紧。 */
-.game-scope-more { margin-top: -6px; }
+/* 「更多范围」现在是首页那一行的**第四张卡**（Issue #356 第八轮用户原话：
+   「更多范围那里，以第四个卡片的形式展示」），与另三张同一套外观，
+   不再需要单独一条样式 —— 唯一一点差别是它按下去是「展开一层」，
+   不是「选好一个范围」，这一件事由 JS 的 `data-game-scopes` 认。 */
 
 /* 手机竖屏一行两张（上面已经是一行两张了，这一条只管**收窄**到窄屏时
    把缝收小一点 —— 320px 上两张卡各 148px，`gap: 12px` 占掉的比例偏大）。
@@ -1054,6 +1050,83 @@ thead .plans-th-cap {
 .game-mode-tier[data-on="1"] { color: var(--green); }
 .game-mode[data-locked] .game-mode-tier { color: var(--ink-3); }
 
+
+/* ---------------------------------------------------------------------
+   「更多范围」那一层：一条小标题 + 一片格子（Issue #356 第八轮重排）
+   ---------------------------------------------------------------------
+   用户原话：「点进 更多范围 页面，整个卡片和排版你是认真的吗，一塌糊涂！
+   回到玩法 这个不需要卡片，只要一个 返回 按钮即可」。
+
+   从前那一页是三处**真的坏了**（不是「不好看」，是版式错）：
+     · 标题卡里先一颗通栏的「回到玩法」按钮，再是卡内标题「更多范围」——
+       一颗键压在标题上面，主次翻了个；
+     · 每一组是一张 `.account-card`，格子里每颗范围键**自己也带**
+       `.account-card` —— 白底卡片里套白底卡片，边框一道套一道；
+     · 格子是 flex `wrap`，每颗键**按内容定宽**（真机量到 55 / 58 / 84 / 128px
+       四种宽度），没填满的那一行左边齐、右边空一大片。
+
+   现在：`grid-template-columns: repeat(2, minmax(0, 1fr))` —— 一行两张、
+   两张**等宽**（`minmax(0, 1fr)` 那个 0 是防长名字撑破格子），
+   与首页那一行的分栏**同一个数**；分组只剩一条 `.poems-home-tag`；
+   范围键本身不带卡片外观（`.game-scope-item` 自己画一条底）。 */
+
+/* 返回键：**不是卡片**（用户原话：「回到玩法 这个不需要卡片，只要一个
+   返回 按钮即可」）。它现在直接摆在这一层的顶上 —— 与首页那颗「登录」
+   同一个位置逻辑（这一层的直接子，缝由父层的 `gap` 给）。
+   ⚠️ 宽度写死 auto（`.account-btn` 默认是 `width: 100%` 的通栏键）：
+     一颗通栏的「返回」横在顶上，与从前那张卡没有区别。 */
+.game-scopes .game-back,
+.poems-game > .game-back {
+  width: auto;
+  min-width: 96px;
+  align-self: flex-start;
+}
+
+.game-scope-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 10px;
+}
+
+/* 一颗范围键：**不是卡片** —— 没有阴影、没有底色，只有一条边框线。
+   ⚠️ 从前它与首页那三张一样是 `.account-card`，于是「卡套卡」；
+      这一层里它只是格子里的一个选项，不占「卡片」那一档视觉分量。
+   ⚠️ 但「能点」这件事要留着：按下去有反应、标题不继承浏览器的 `<button>`
+      默认样式 —— 那两条从 `.game-mode` 那一套同源。 */
+.game-scope-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  box-sizing: border-box;
+  text-align: left;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 12px 12px 10px;
+  background: var(--card-2);
+  font: inherit;
+  color: var(--ink);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.game-scope-item:active { background: var(--card); }
+.game-scope-name {
+  font: var(--title-2);
+  color: var(--ink);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.game-scope-count {
+  font-size: 11.5px;
+  letter-spacing: .3px;
+  color: var(--ink-3);
+}
+
+/* 这一层凑不够题量时那句话（含 notice）：与页面同宽、不套卡片。 */
+.game-scopes-notice { margin: 0; }
 
 .game-head { position: relative; }
 .game-back { margin-bottom: 10px; }

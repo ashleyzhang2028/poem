@@ -20,7 +20,7 @@
       id: "mock", cap: "exam.paper", tier: "max", name: "模拟考试",
       judge: "instant", timed: false, record: true,
       sizes: [8, 10, 20], size: 8,
-      desc: "抽一套卷子当场做，答完立刻说对错，留一份练习记录"
+      desc: "抽一套卷子当场做，答完立刻说对错"
     },
     {
       id: "formal", cap: "exam.formal", tier: "max", name: "正式考试",

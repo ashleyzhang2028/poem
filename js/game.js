@@ -60,6 +60,11 @@
     { id: "book:chengyu",  hint: "原文带译文，一部一则" }
   ];
 
+  // 「更多范围」那张卡（首页第四张）：说明与条数。
+  // ⚠️ 条数是**整个语料**（`all` 那一格的 count），不是「其余集子加起来」——
+  //    点进去之后最上面那一组就是「全部」，那句「2928 条」说的正是它。
+  var MORE_HINT = "全部 · 小学 · 初中 · 高中 · 其余集子";
+
   var state = {
     mode: "",
     chars: [],
@@ -274,7 +279,7 @@
     //    各一张卡）。从前只有上一行，用户于是问「我记得还有按范围来的……你觉得
     //    应该怎么组织合适？」—— 答案落在这里：**范围与题型并列，都在首页**。
     //    两行由 `.poems-home-tag` 那两行小标题分开（见 `css/account.css`）。
-    var html = homeTag("考哪一类题", "同一份语料，四种玩法；想换书的请看下一行");
+    var html = homeTag("题型");
     html += '<div class="poems-home-row">';
     MODES.forEach(function (m) {
       var r = allowed(m, id);
@@ -298,22 +303,28 @@
       return scopes.filter(function (sc) { return sc.id === f.id; }).length > 0;
     });
     if (feat.length) {
-      html += homeTag("考哪一部书", "只考一部，或点上面的玩法考全部");
+      html += homeTag("范围");
       html += '<div class="poems-home-row">';
       feat.forEach(function (f) {
         var sc = null;
         scopes.forEach(function (x) { if (x.id === f.id) sc = x; });
         if (!sc) return;
-        html += '<button class="account-card game-mode game-scope" type="button" ' +
-          'data-game-scope="' + esc(sc.id) + '">' +
-          '<span class="game-mode-name">' + esc(sc.name) + "</span>" +
-          '<span class="game-mode-desc">' + esc(f.hint) + "</span>" +
-          '<span class="game-mode-tier">' + esc(sc.count) + " 条</span>" +
-          "</button>";
+        html += scopeCard(sc, f.hint);
       });
+      // ⚠️ 「更多范围」**也是这一行的一张卡**（Issue #356 第八轮用户原话：
+      //    「更多范围那里，以第四个卡片的形式展示」）。从前它是一条通栏的
+      //    `.account-btn.ghost` —— 第五条边、和上面三张卡都不是一套外观，
+      //    看着像「另一件事」。现在它就是第四张卡：同一套外观、同一行。
+      //    三张常考 + 这一张，正好凑满 2×2 的田字格（390px 上一行两张）。
+      // ⚠️ 它是 `data-game-scopes`（不是 `data-game-scope`）：点它不选范围，
+      //    而是**展开那一层**（全部 / 三学段 / 其余集子）。
+      html += '<button class="account-card game-mode game-scope game-scope-more" ' +
+        'type="button" data-game-scopes="1">' +
+        '<span class="game-mode-name">更多范围</span>' +
+        '<span class="game-mode-desc">' + esc(MORE_HINT) + "</span>" +
+        '<span class="game-mode-tier">' + esc(moreCount()) + " 条</span>" +
+        "</button>";
       html += "</div>";
-      html += '<button class="account-btn ghost game-scope-more" type="button" ' +
-        'data-game-scopes="1">更多范围（全部 · 小学 · 初中 · 高中 · 其余集子）</button>';
     }
 
     // 未登录时页底**只留那颗登录键**（Issue #356 用户原话：
@@ -332,15 +343,34 @@
     return html;
   }
 
-  // 首页那两行小标题（「考哪一类题」/「考哪一部书」）。
+  // 一张范围卡（首页那一行「范围」：三张常考 + 一张「更多范围」）。
+  // ⚠️ 样子与玩法卡**同一套**（`.account-card.game-mode`）：同一行、同一格、
+  //    同一档标题与门槛小标 —— 用户要的是「更多范围也是第四个卡片」，
+  //    不是「三张卡加一条通栏键」。
+  function scopeCard(sc, hint) {
+    return '<button class="account-card game-mode game-scope" type="button" ' +
+      'data-game-scope="' + esc(sc.id) + '">' +
+      '<span class="game-mode-name">' + esc(sc.name) + "</span>" +
+      (hint ? '<span class="game-mode-desc">' + esc(hint) + "</span>" : "") +
+      '<span class="game-mode-tier">' + esc(sc.count) + " 条</span>" +
+      "</button>";
+  }
+
+  // 「更多范围」那张卡上写多少条：整个语料那一格的 count。
+  function moreCount() {
+    var n = scopeCount("all");
+    return n == null ? "" : n;
+  }
+
+  // 首页那两行小标题（「题型」/「范围」）。
+  // ⚠️ 它就是**一个词**（用户 2026-09-26 第八轮原话：「改成 题型 不要加任何
+  //    其他废话」「改成 范围 不要任何其他废话」）—— 从前后面还跟着一句
+  //    「同一份语料，四种玩法；想换书的请看下一行」那样的说明，已经删干净。
   // ⚠️ 它**不是** `.account-card-title`（那是卡**里面**的标题，13px 灰色小字），
   //    也不是卡片（不带背景 / 圆角）—— 它只是横在卡片之间的一行字，
   //    把这一层分成两段。样式见 `css/account.css` 的 `.poems-home-tag`。
-  function homeTag(title, note) {
-    return '<p class="poems-home-tag"><span class="poems-home-tag-name">' +
-      esc(title) + "</span>" +
-      (note ? '<span class="poems-home-tag-note">' + esc(note) + "</span>" : "") +
-      "</p>";
+  function homeTag(title) {
+    return '<p class="poems-home-tag">' + esc(title) + "</p>";
   }
 
   // 玩法卡上那颗门槛小标：**已经能用的说层级名字，用不上的说「X 可用」**。
@@ -465,12 +495,14 @@
   }
 
   // ---------------------------------------------------------------------
-  // 「更多范围」那一层（Issue #356 第七轮）
+  // 「更多范围」那一层（Issue #356 第八轮重排）
   // ---------------------------------------------------------------------
-  // 首页只摆**常考的那几部**（`FEATURED`）；剩下的一律在这里，一个不少：
+  // 首页那一行摆四张卡：常考的三部（`FEATURED`）+「更多范围」自己一张。
+  // 剩下的一律在这一层，一个不少：
   //   · 全部（全站语料混着抽，例：2928 条）；
   //   · 课内三学段（小学 / 初中 / 高中 —— 由 `Exam.scopes()` 从年级算出来）；
-  //   · 其余集子（乐府 / 宋词 / 元曲 / 古文观止 / 昭明文选 / 近现代 / 小古文）。
+  //   · 其余集子（课内诗词 / 小古文 / 乐府 / 宋词 / 元曲 / 古文观止 /
+  //     昭明文选 / 近现代诗词）。
   //
   // ⚠️ 这一层与首页那一行**同源**：都读 `scopeList()`（→ `Exam.scopes()`
   //    → `SITE_BOOKS`）。首页那三张卡只是「从这里挑三张摆上去」，
@@ -478,6 +510,9 @@
   // ⚠️ 点这里的任何一张 = 选好范围，接着问玩哪种（回首页那一行玩法卡）。
   //    所以这里是「选范围 → 选玩法」，与首页「选玩法 → 选范围」是同一个漏斗的
   //    两个入口，出口都是卷面设置。
+  //
+  // ⚠️ 首页那三张在这里**不重复出现**（`feat[sc.id]` 那一句跳掉的正是它们）：
+  //    它们是「常考的那几部」，已经在上一层的卡片里点得到。
   function renderScopes() {
     var scopes = scopeList();
     var feat = {};
@@ -491,36 +526,50 @@
       else books.push(sc);
     });
 
-    var html = '<section class="account-card game-head">' +
-      '<button class="account-btn ghost game-back" type="button" data-game-back="1">回到玩法</button>' +
-      '<h2 class="account-card-title">更多范围</h2>' +
-      '<p class="account-hint">选一部书或一个学段，然后挑玩哪种。首页那三张是常考的几部。</p>' +
-      "</section>";
+    // ⚠️ 这一层的版式整块重来（Issue #356 第八轮用户原话：
+    //    「点进 更多范围 页面，整个卡片和排版你是认真的吗，一塌糊涂！」）。
+    //
+    //    从前长这样，三处**真的坏了**：
+    //      · 标题卡里先是一颗「回到玩法」**按钮**（`<button>` 通栏、白底、有边），
+    //        再是「更多范围」这个卡内标题 —— 一颗键压在标题**上面**，主次翻了个；
+    //      · 每一组又是一张 `.account-card`，格子里每一颗范围键**自己也带**
+    //        `.account-card` —— **卡套卡套卡**：白底卡片里套着白底卡片，
+    //        边框一道套一道，哪一层是「一组」看不出；
+    //      · 格子是 flex `wrap` 不是 grid，每颗键**按内容定宽**（55～128px 不等），
+    //        没填满的那一行左边齐、右边空一大片（「其他集子」那一组尤其明显）。
+    //
+    //    现在：**一条小标题 + 一片格子**，就这两样。分组不再是卡片（小标题
+    //    自己就是分段的线），范围键也不再自带卡片外观（但保留 `.game-mode`
+    //    那套「这是一颗能点的键」—— 按下去要有反应、标题档次一致，见 `scopeCard()`）。
+    var html = '<button class="account-btn ghost game-back" type="button" ' +
+      'data-game-back="1">返回</button>';
 
-    html += scopeGroup("整个语料", all);
-    html += scopeGroup("课内诗词按学段", stages);
+    html += scopeGroup("全部", all);
+    html += scopeGroup("课内诗词", stages);
     html += scopeGroup("其他集子", books);
 
     if (state.setupNotice) {
-      html += '<section class="account-card"><p class="account-msg warn">' +
-        esc(state.setupNotice) + "</p></section>";
+      html += '<p class="account-msg warn game-scopes-notice">' +
+        esc(state.setupNotice) + "</p>";
     }
     return html;
   }
 
+  // 一组范围：一条小标题 + 一片格子。
+  // ⚠️ 小标题用 `.poems-home-tag`（与首页「题型」「范围」**同一个样式**）——
+  //    「分段」这件事全站只有这一个样子，不再为这一层另立一种。
   function scopeGroup(title, rows) {
     if (!rows.length) return "";
-    return '<section class="account-card"><h2 class="account-card-title">' + esc(title) +
-      "</h2>" +
+    return '<p class="poems-home-tag">' + esc(title) + "</p>" +
       '<div class="game-scope-grid">' +
       rows.map(function (sc) {
-        return '<button class="account-card game-mode game-scope" type="button" ' +
+        return '<button class="game-scope-item" type="button" ' +
           'data-game-scope="' + esc(sc.id) + '">' +
-          '<span class="game-mode-name">' + esc(sc.name) + "</span>" +
-          '<span class="game-mode-tier">' + esc(sc.count) + " 条</span>" +
+          '<span class="game-scope-name">' + esc(sc.name) + "</span>" +
+          '<span class="game-scope-count">' + esc(sc.count) + " 条</span>" +
           "</button>";
       }).join("") +
-      "</div></section>";
+      "</div>";
   }
 
   // 卷面设置：范围 × 题量（形态在上一层的玩法卡里选）。
