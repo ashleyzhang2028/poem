@@ -320,12 +320,16 @@
   function renderAdmin(id) {
     var btn = $("btn-go-admin");
     if (!btn) return;
-    var owner = Ent.isOwner(backing, id ? { role: id.role, uid: id.uid } : undefined);
-    if (owner && id && id.signedIn) {
-      show(btn);
-    } else {
+    // ⚠️ **先看登录状态，再看角色**（Issue #363）。次序反过来的话，一份还没
+    //    被清掉的服务端答案（`Entitlement.isOwner()` 读的正是它）会让这颗键
+    //    在登出之后重新长出来 —— 见 `paint()` 上面那一段。
+    if (!id || !id.signedIn) {
       hide(btn);
+      renderBottomActions();
+      return;
     }
+    var owner = Ent.isOwner(backing, { role: id.role, uid: id.uid });
+    if (owner) show(btn); else hide(btn);
     renderBottomActions();
   }
 
@@ -379,10 +383,15 @@
       ? Promise.resolve(M.signOut({ backing: backing, E: Ent, A: A }))
       : Promise.resolve(null);
 
+    // ⚠️ 这一声喊在**服务端那一发回来之前**（Issue #363）：退出登录的第一件事
+    //    就是让页面**立刻**不再是「登录着的样子」—— 页底那两颗键（注销账号 /
+    //    管理后台）跟着这一声收起来，不用等 `/api/logout` 的往返。
     paint(A.session(store));
     showToast("已退出登录（进度没动）");
 
     wait.then(function () {
+      // 服务端撤完再画一遍：这时本机那份「服务端答案」缓存也清了，
+      // 两条路结果一致（`renderAdmin()` 不再有「缓存还在」的窗口）。
       paint(A.session(store));
       renderIdentity(identity());
     })["catch"](function () { });
@@ -643,14 +652,34 @@
   function paint(sess) {
     var id = identity();
     if (!id) return;
+    // 用户原话（Issue #363）：「我已经登出了，能不能我的页面 不要显示
+    // 注销账号 和 管理后台按钮？」
+    //
+    // 页底那两颗键（`#btn-delete-start` / `#btn-go-admin`）的可见性，
+    // **由 `paint()` 一处说了算**，而且**先问登录、再问角色**，两条缺一不可：
+    //
+    //   ① 次序：`renderAdmin()` 问的 `Ent.isOwner()` 读的是本机那份
+    //      「服务端答案」缓存（`poem_plan_v1`）。它只答得了「这本机上最后一位
+    //      管理员是谁」，答不了「他现在登录着没」—— 所以**先看 `signedIn`**，
+    //      没登录就连角色都不问。
+    //   ② 口径：光靠 ① 不够（登出那一刻 `identity().signedIn` **也是 true**，
+    //      因为 `Entitlement.cookieSession()` 会认那份还在的答案）。所以
+    //      `js/account-api.js` 的 `signOut()` 改成**先**当场撕掉本机那份答案、
+    //      **再**叫服务端撤（从前是等 `POST /api/logout` 回来才撕）。
+    //      两条说的是同一句：**登出之后，本机立刻不知道「我是谁」**。
+    //
+    // ⚠️ 两颗键的**次序也一起定了**（从前是 `renderSignedIn()` 在
+    //    `renderAdmin()` 前、靠「谁后画谁说了算」）：`renderAdmin()` 先说，
+    //    `renderSignedIn()` 收尾 —— 最后说话的这一个只认
+    //    `identity().signedIn`，认不了缓存。
     renderIdentity(id);
+    renderAdmin(id);
     paintEmailToggle();
     renderStats();
     renderSignedIn(sess);
     renderVerifyState();
     renderNickname();
     renderSync();
-    renderAdmin(id);
     renderBottomActions();
   }
 

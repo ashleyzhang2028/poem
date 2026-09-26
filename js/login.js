@@ -177,6 +177,36 @@
     try { return TS.token() || ""; } catch (e) { return ""; }
   }
 
+  // 「这一发请求没能被服务端读懂」要不要配一颗「刷新页面重试」（Issue #363）。
+  //
+  // 用户报的就是这一句。它多半意味着**页面还是旧的一版**（浏览器装了旧缓存、
+  // 上一版的脚本与这一版服务端对不上），所以那句话里「刷新页面重试」不是
+  // 客套 —— 刷新正是唯一真正管用的那一步。既然说了，就把它做成一颗能点的键：
+  // 让用户去地址栏找刷新键，是把我们已经知道的事又推回去让他猜。
+  //
+  // ⚠️ 只用**码**判，不认文案：`E_BAD_BODY` 是两个入口共用的一档
+  //    （`handler.js` 的「没读懂」与「等超时」都回它），两颗键都不冤 ——
+  //    这两种情况下刷新都是对的下一步。
+  var RELOAD_CODES = { E_BAD_BODY: true };
+
+  function hideReloadBtn() {
+    var btn = $("btn-reg-refresh");
+    if (!btn) return;
+    btn.hidden = true;
+    btn.setAttribute("aria-hidden", "true");
+  }
+
+  function showReloadBtn() {
+    var btn = $("btn-reg-refresh");
+    if (!btn) return;
+    if (!btn.dataset.bound) {
+      btn.dataset.bound = "1";
+      btn.addEventListener("click", function () { location.reload(); });
+    }
+    btn.hidden = false;
+    btn.removeAttribute("aria-hidden");
+  }
+
   var MODES = ["pw", "code", "register", "verify", "unverified", "forgot", "done"];
   function setMode(mode) {
     if (MODES.indexOf(mode) < 0) mode = "pw";
@@ -362,12 +392,24 @@
 
       turnstileReset();
 
-      if ($("input-reg-pw")) $("input-reg-pw").value = "";
-      if ($("input-reg-pw2")) $("input-reg-pw2").value = "";
+      // ⚠️ **先看清这一发成不成，再决定清不清那两格**（Issue #363）。
+      //
+      // 从前这两行挡在前面、不看结果：密码框一律被清空。这一发要是没成功
+      // （比如「这一发请求没能被服务端读懂」，用户刷新一下页面重来），
+      // 用户回来看到的是**密码没了、邮箱还在**——他得把两格都重填一遍，
+      // 而其实只有密码那一格是必须重打的（它也**必须**重打：浏览器不许我们
+      // 把它留在页面上）。
+      //
+      // 现在的次序：成了才清（那是「已经用掉了」，留着反而是原文重放）；
+      // 没成就留着，用户只需要再点一次「注册」。邮箱这一格**任何时候都不清**。
       if (!r.ok) {
         msg("msg-reg", r.message, "warn");
+        if (RELOAD_CODES[r.code]) showReloadBtn(); else hideReloadBtn();
         return null;
       }
+      hideReloadBtn();
+      if ($("input-reg-pw")) $("input-reg-pw").value = "";
+      if ($("input-reg-pw2")) $("input-reg-pw2").value = "";
       // 明文邮箱（Issue #320）：从前记的是掩码，界面据此说
       // 「验证邮件已发往 b***@163.com」—— 用户自己刚填的那个邮箱。
       state.regEmail = String(r.email || email || "");
@@ -957,7 +999,11 @@
     $("btn-resend-verify").addEventListener("click", onResendVerify);
     $("btn-unverified-resend").addEventListener("click", onUnverifiedResend);
     $("btn-unverified-back").addEventListener("click", function () { setMode("pw"); });
-    $("btn-go-register").addEventListener("click", function () { setMode("register"); msg("msg-reg", ""); });
+    $("btn-go-register").addEventListener("click", function () {
+      setMode("register");
+      msg("msg-reg", "");
+      hideReloadBtn();
+    });
     $("btn-forgot").addEventListener("click", function () { setMode("forgot"); msg("msg-forgot", ""); });
     $("btn-back-login").addEventListener("click", function () { setMode("pw"); });
     $("btn-back-login2").addEventListener("click", function () { setMode("pw"); });
