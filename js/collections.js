@@ -87,8 +87,22 @@
       dynasty: p.dynasty || "", source: p.source || "", selection: p.selection || "",
       book: p.book || "", bookName: p.bookName || "", page: p.page || "",
       text: p.text || "", translation: p.translation || "",
-      translationSource: p.translationSource
+      translationSource: p.translationSource,
+      // 这一条当时的版次。底本改了正文 / 译文，版次就变 —— 拿它与本机存下的
+      // 比一比，就能认出「存下之后这一条改过」，不必等用户哪天翻到旧的一行。
+      version: versionOfEntry(entryId, list)
     };
+  }
+
+  function versionOfEntry(entryId, index) {
+    var list = index || window.SITE_INDEX || [];
+    for (var i = 0; i < list.length; i++) {
+      var p = list[i];
+      if (p.id !== entryId) continue;
+      if (typeof window.textVersionOf !== "function") return "";
+      return window.textVersionOf(p, p.book) || "";
+    }
+    return "";
   }
 
   function displayTitle(title) {

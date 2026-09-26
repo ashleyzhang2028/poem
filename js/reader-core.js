@@ -56,8 +56,12 @@
     return null;
   }
 
+  // 带 textRef 的条目**一律以主表为准**，哪怕数据文件里还内联着正文。
+  // 两处各存一份就是两个真相：换正文 / 换译文时改一处忘一处，表现是「同一部
+  // 作品在两个页面上读到两种白话」。同一判据在 data/text-master.js 的
+  // masterTextOf 里 —— 那边是生成物，两处由 scripts/build-text-master.js 对齐。
   function withMasterText(p, bookId) {
-    if (!p || !p.textRef || p.text) return p;
+    if (!p || !p.textRef) return p;
     var book = bookId || (CFG && CFG.id) || "";
     if (typeof window !== "undefined" && typeof window.masterTextOf === "function") {
       return window.masterTextOf(p, book);
@@ -687,10 +691,17 @@
 
     el.querySelector('.rd-trans-text, #rd-trans-text').textContent = p.translation || W.pendingTranslation;
 
+    // 出处那一行右侧带上这一条的版次：底本一处文字改了，这个号就变。
+    // 已加入背诵 / 自选清单的条目在用户本机存着当时的快照，客户端拿这个号与
+    // 存下的比一比，就能认出「这一条在上次存下之后改过」——界面不必等用户
+    // 哪天翻到旧的一行、读了旧的白话才发现（js/collections.js 的
+    // refreshSnapshots / markStale）。
     var srcEl = el.querySelector('.rd-trans-src, #rd-trans-src');
     if (srcEl) {
-      srcEl.textContent = p.translation && window.translationSourceText
+      var srcText = p.translation && window.translationSourceText
         ? window.translationSourceText(p) : "";
+      var ver = window.textVersionOf ? window.textVersionOf(p, CFG && CFG.id) : 0;
+      srcEl.textContent = ver ? srcText + " · " + ver : srcText;
     }
 
     // 词条式集子（文学常识一类）：正文即释义，本来就没有白话译文

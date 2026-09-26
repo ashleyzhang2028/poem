@@ -604,6 +604,32 @@
     if (C.markStale) C.markStale(window.SITE_INDEX || []);
   }
 
+  // 本机存着快照的条目，改过就刷新。
+  // 已加入背诵 / 自选清单的条目会存一份快照（篇名、出处、正文、译文），
+  // 底本改了正文或译文，快照不会自己跟着变 —— 用户读到的是旧的那一份，
+  // 而界面上看不出任何异常。主表给每条正文留了一个「版次」，这里拿它与存下的
+  // 比一比，对不上就重取（js/collections.js 的 refreshSnapshots）。
+  // ⚠️ 只在启动时做一次，且只在真有对不上的时候才写回本机 —— 每次进页面都
+  //    全量重写一份存储，是在拿一个「内容更新」去换一次无谓的写盘。
+  function refreshSnapshotsForBooks() {
+    const C = window.ReciteCollections;
+    if (!C || !C.refreshSnapshots || !C.list) return 0;
+    const idx = window.SITE_INDEX || [];
+    const byId = {};
+    idx.forEach(function (p) { byId[p.id] = p; });
+    const books = {};
+    C.list().forEach(function (col) {
+      (col.items || []).forEach(function (it) {
+        if (!it || typeof it !== "object" || !it.id) return;
+        const p = byId[it.id];
+        if (!p || !p.book) return;
+        books[p.book] = true;
+      });
+    });
+    const inUse = idx.filter(function (p) { return p.book && books[p.book]; });
+    return inUse.length ? C.refreshSnapshots(inUse) : 0;
+  }
+
   const BOOK_SOURCES = {
     classic: { file: "data/poems-classic.js", global: "POEMS_CLASSIC" },
     yuefu: { file: "data/poems-yuefu.js", global: "POEMS_YUEFU" },
@@ -1433,6 +1459,7 @@
     bindEvents();
     bindTodaySearch();
     backfillSnapshots();
+    refreshSnapshotsForBooks();
 
     openDeepLink();
 

@@ -28,7 +28,8 @@ const STEPS = [
   ['apply-text-master.js', '摘去内联正文副本'],
   ['apply-chengyu-yuben.js', '把「（语本）」占位换成原句并同步摘句'],
   ['apply-chengyu-gloss.js', '把正文里的编者括注搬进「语源 / 典故」栏'],
-  ['build-works-map.js', '重算同篇对照表']
+  ['build-works-map.js', '重算同篇对照表'],
+  ['apply-chengyu-trans-fix.js', '把手工表里的译文修订落到译文上']
 ];
 
 STEPS.forEach(function (s) {

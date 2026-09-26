@@ -183,6 +183,18 @@ sandbox.SITE_INDEX.forEach(function (p) { byId[p.id] = p; });
 const sig = function (t) { return String(t || '').replace(/\s+/g, ''); };
 
 const master = [];
+
+// 这一条正文 / 译文的「版次」：内容的短摘要。
+// 底本一处文字改了（改错字、换正文、修译文），这个号就变 —— 客户端拿它与
+// 用户本机存下的快照比一比，就能认出「这一条在上次存下之后改过」。没有它，
+// 改过内容的老用户仍然读着旧的白话，界面上看不出任何异常。
+// 摘要只求「内容相同则号相同、内容变了号就变」，不求防篡改。
+function versionOf(m) {
+  const raw = [m.text, m.translation, m.translationSource].join('\u0001');
+  let h = 5381;
+  for (let i = 0; i < raw.length; i += 1) h = ((h * 33) ^ raw.charCodeAt(i)) >>> 0;
+  return h.toString(36);
+}
 WI.works.forEach(function (w) {
   if (w.entries.length < 2) return;
   const rep = WI.repOf(w.entries[0]);
@@ -459,6 +471,8 @@ out += '     entries     这一篇的全部站点条目 id（含主条目自己�
 out += '     text        正文（**全站唯一一份**）\n';
 out += '     translation 白话译文\n';
 out += '     translationSource 译文来源\n';
+out += '     version     内容的短摘要（版次）—— 客户端据它认出「这一条改过」，\n';
+out += '                 好把本机存的老快照刷新掉（见 scripts/build-text-master.js）\n';
 out += '   ========================================================================== */\n';
 out += 'window.TEXT_MASTER = [\n';
 master.forEach(function (m) {
@@ -469,7 +483,8 @@ master.forEach(function (m) {
   out += '    entries: [' + m.entries.map(function (e) { return JSON.stringify(e); }).join(', ') + '],\n';
   out += '    text: ' + JSON.stringify(m.text) + ',\n';
   out += '    translation: ' + JSON.stringify(m.translation) + ',\n';
-  out += '    translationSource: ' + JSON.stringify(m.translationSource) + '\n';
+  out += '    translationSource: ' + JSON.stringify(m.translationSource) + ',\n';
+  out += '    version: ' + JSON.stringify(versionOf(m)) + '\n';
   out += '  },\n';
 });
 out += '];\n';
@@ -510,6 +525,11 @@ out += '   摘掉内联正文的条目只留一行 textRef，正文从这里取�
 out += '   各消费方（站点索引、阅读引擎、搜索页……）都调这一个函数 ——\n';
 out += '   各写一份迟早有一处忘了取，而表现只是「那一处正文空白」，不报错。\n';
 out += '\n';
+out += '   ⚠️ 带 textRef 的条目**一律以主表为准**，哪怕它在数据文件里还内联着一份\n';
+out += '      正文。两处各存一份就是两个真相：换正文 / 换译文时改一处忘一处，\n';
+out += '      表现是「同一部作品在两个页面上读到两种白话」——读者只会来问哪个对\n';
+out += '      （Issue #339 要求「精准精确」，这一条是它的落点）。\n';
+out += '\n';
 out += '   ⚠️ 没有 textRef、或主表里查不到时**原样返回**，不做任何猜测：\n';
 out += '      猜出来的正文比空白更糟 —— 空白一眼可见，取错一篇却看着正常。\n';
 out += '   ========================================================================== */\n';
@@ -535,7 +555,7 @@ out += '   * @param {String} [book] 所属集子 id —— textRef 记的是集�
 out += '   * @returns {Object} 展开后的条目（无 textRef 或查不到时原样返回）\n';
 out += '   */\n';
 out += '  window.masterTextOf = function (p, book) {\n';
-out += '    if (!p || !p.textRef || p.text) return p;\n';
+out += '    if (!p || !p.textRef) return p;\n';
 out += '    var m = map()[p.textRef];\n';
 out += '    if (!m && book) m = map()[book + "-" + p.textRef];\n';
 out += '    if (!m) return p;\n';
@@ -544,7 +564,21 @@ out += '    Object.keys(p).forEach(function (k) { if (k !== "text" && k !== "tra
 out += '    out.text = m.text || "";\n';
 out += '    out.translation = m.translation || "";\n';
 out += '    out.translationSource = m.translationSource || p.translationSource;\n';
+out += '    out.version = m.version || "";\n';
 out += '    return out;\n';
+out += '  };\n';
+out += '\n';
+out += '  /**\n';
+out += '   * 取这一条的**版次**（内容摘要）。\n';
+out += '   * @param {Object} p      条目（可能带 textRef）\n';
+out += '   * @param {String} [book] 所属集子 id\n';
+out += '   * @returns {String} 版次；主表里查不到时回空串（不猜）\n';
+out += '   */\n';
+out += '  window.textVersionOf = function (p, book) {\n';
+out += '    if (!p || !p.textRef) return "";\n';
+out += '    var m = map()[p.textRef];\n';
+out += '    if (!m && book) m = map()[book + "-" + p.textRef];\n';
+out += '    return (m && m.version) || "";\n';
 out += '  };\n';
 out += '})();\n';
 out += '\n';
