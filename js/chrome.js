@@ -35,6 +35,22 @@
       '<circle cx="10.6" cy="10.6" r="6.2"/>' +
       '<path d="M15.2 15.2 20.4 20.4"/></svg>',
 
+    // 「古诗词大会」那一格（底栏正中间那一颗）。形状是**五瓣花** ——
+    // 取自「飞花令」：五片等分花瓣（每片 72°）加一颗花心。
+    // 花心用**暖金实心**（#cf9a4a），是五格里唯一一处彩色 ——
+    // 底栏其余四格都是素色线稿（`currentColor`），中间这一颗靠这一点暖色
+    // 「跳出来」，不用光晕、不用底衬，也不随选中态变色（Issue #342）。
+    // 花瓣路径只写一片，其余四片用 `<g rotate>` 绕 (12,12) 转 72° 得来：
+    // 这样五瓣**严格等分**，手写五个路径一定会歪。
+    tabGame:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<g transform="rotate(0 12 12)"><path d="M12 12.7c-1.95-1.55-2.95-3.4-2.95-5.3 0-1.95 1.02-3.6 2.95-5.5 1.93 1.9 2.95 3.55 2.95 5.5 0 1.9-1 3.75-2.95 5.3Z"/></g>' +
+      '<g transform="rotate(72 12 12)"><path d="M12 12.7c-1.95-1.55-2.95-3.4-2.95-5.3 0-1.95 1.02-3.6 2.95-5.5 1.93 1.9 2.95 3.55 2.95 5.5 0 1.9-1 3.75-2.95 5.3Z"/></g>' +
+      '<g transform="rotate(144 12 12)"><path d="M12 12.7c-1.95-1.55-2.95-3.4-2.95-5.3 0-1.95 1.02-3.6 2.95-5.5 1.93 1.9 2.95 3.55 2.95 5.5 0 1.9-1 3.75-2.95 5.3Z"/></g>' +
+      '<g transform="rotate(216 12 12)"><path d="M12 12.7c-1.95-1.55-2.95-3.4-2.95-5.3 0-1.95 1.02-3.6 2.95-5.5 1.93 1.9 2.95 3.55 2.95 5.5 0 1.9-1 3.75-2.95 5.3Z"/></g>' +
+      '<g transform="rotate(288 12 12)"><path d="M12 12.7c-1.95-1.55-2.95-3.4-2.95-5.3 0-1.95 1.02-3.6 2.95-5.5 1.93 1.9 2.95 3.55 2.95 5.5 0 1.9-1 3.75-2.95 5.3Z"/></g>' +
+      '<circle cx="12" cy="12" r="1.55" fill="#cf9a4a" stroke="none"/></svg>',
+
     gear:
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
       '<circle cx="12" cy="12" r="3.2"/>' +
@@ -59,6 +75,12 @@
 
   var ROUTES = {
     home: "/",
+
+    // 「古诗词大会」那一格的去处：`/poems/` 上**带一个参数**。
+    // 大会是 `/poems/` 里的**一层**（就地叠层，不新开页面 —— §4.15 ⑧ 的老口径），
+    // 所以这一格的路由是「诗词页 + game=1」，`js/game.js` 见到它就当场把那层掀开。
+    // 不新开 `/game/` 页面的理由：那一层用的是 `/poems/` 的整份语料与容器。
+    game: "/poems/?game=1",
     poems: "/poems/",
     library: "/library/",
     classic: "/classic/",
@@ -260,6 +282,7 @@
     if (v != null) return v;
     var k = pageKey();
     if (k === "library") return "课外阅读";
+    if (k === "game") return "古诗词大会";
     if (k === "poems") return "课内古诗词";
     if (k === "mine") return "我的";
     if (k === "search") return "搜索";
@@ -283,19 +306,41 @@
     });
   }
 
+  // 底栏五格（Issue #342：用户要求把「古诗词大会」挪进导航栏正中间）。
+  //
+  // ⚠️ 次序是**有含义的**，不是随手排的：「大会」插在**第三格**，
+  //    因为它左边两格（背诵 / 课外）都是「读」，右边两格（搜索 / 我的）都是「用」，
+  //    中间这一格是「玩」—— 五格正中最醒目，正是用户要的「很吸引人」。
+  //    改次序前先读这一节：`docs/architecture.md` §4.66 ①。
+  //
+  // ⚠️ 这一条**推翻**了 §4.66 ⑨ 那句「不在底栏加第五格（底栏四格已满）」。
+  //    那是当时（还在谈考试层落点）的不加，用户 2026-09-26 明确要求加 ——
+  //    口径改了，文档也跟着改，不是不管它。
   var DOCK_ITEMS = [
     { key: "home", href: "/", icon: GLYPHS.tabPoem, label: "背诵", desc: "课内古诗词，按当前复习算法安排复习" },
     { key: "library", href: "/library/", icon: GLYPHS.tabLibrary, label: "课外", desc: "课内诗词 / 小古文 / 乐府集 / 唐诗 / 宋词 / 元曲 / 古文观止 / 近现代诗词 / 昭明文选 / 中华成语故事 / 文学常识" },
+    // ⚠️ 这一格的 `desc`（就是 `title`）**不许把四个玩法的名字列出来** ——
+    //    「飞花令 / 题库复习 / 模拟考试 / 正式考试」这几个名字的落点只有三处：
+    //    `js/entitlement.js`（能力表）、`js/exam.js`（形态表）、`js/game.js`（页面层）。
+    //    底栏这里再抄一份，就多一处迟早对不上的（`test/ops.test.js` 有断言守着）。
+    { key: "game", href: "/poems/?game=1", icon: GLYPHS.tabGame, label: "大会", desc: "古诗词大会：比拼与考试都在这一层" },
     { key: "search", href: "/search/", icon: GLYPHS.tabSearch, label: "搜索", desc: "全站篇目一次搜遍" },
     { key: "mine", href: "/mine/", icon: GLYPHS.tabMineImg, label: "我的", desc: "头像 / 昵称 / 账号 / 本机数据" }
   ];
 
   function dockKey(key) {
     if (key === "settings") return "mine";
+
+    // `/poems/` 上的「大会」那一层掀开时，`js/game.js` 会把 body 的
+    // `data-nav` 改成 `game` —— 于是这里不必猜、也不必看查询串：
+    // 底栏中点亮的正是中间那一格。
+    if (key === "game") return "game";
+
     if (key === "classic" || key === "yuefu" || key === "tangshi" || key === "songci" ||
         key === "guwen" || key === "zhaoming" || key === "yuanqu" ||
         key === "jinxiandai" || key === "chengyu" || key === "changshi") return "library";
 
+    // `/poems/`（大会那层没掀开时）仍归「课外」—— 它先是诗词列表。
     if (key === "poems") return "library";
 
     if (key === "progress") return "home";
@@ -483,18 +528,39 @@
     return p || "/";
   }
 
+  // 当前这一页是哪个「路由键」。
+  //
+  // ⚠️ **先按整条地址（含查询串）比，再退回去掉查询串比** —— 次序不能反。
+  //    反了会撞车：「古诗词大会」那一格的地址是 `/poems/?game=1`，而
+  //    `/poems/` 自己也有一条路由（`poems`）。两条路由**路径相同、只差一个参数**，
+  //    只看 pathname 的话 `game` 会把 `poems` 整个盖住 —— 于是站在诗词列表
+  //    点「课外」时，程序以为自己在「大会」页，那颗键就不再带你去课外了。
+  //    现在的口径：带 `game=1` 是「大会」，不带是「诗词列表」，各认各的。
   function currentRoute() {
+    var here = (location.pathname || "") + (location.search || "");
+    here = here.replace(/\/index\.html$/, "/").replace(/\/+$/, "");
+    if (!here) here = "/";
+
+    var key;
+    for (key in ROUTES) {
+      if (trimHref(routeHref(key)) === here) return key;
+    }
     var p = currentPath();
-    for (var key in ROUTES) {
+    for (key in ROUTES) {
       if (currentPathOf(routeHref(key)) === p) return key;
     }
     return "home";
   }
 
-  function currentPathOf(href) {
-    var v = String(href).split("#")[0].split("?")[0];
+  // 去掉 `#…`，规范化结尾的 `/`（**保留**查询串）。
+  function trimHref(href) {
+    var v = String(href).split("#")[0];
     v = v.replace(/\/index\.html$/, "/").replace(/\/+$/, "");
     return v || "/";
+  }
+
+  function currentPathOf(href) {
+    return trimHref(String(href).split("?")[0]);
   }
 
   function openSettings() {
@@ -541,6 +607,25 @@
     if (!want || ic.innerHTML === want) return;
 
     ic.innerHTML = GLYPHS.tabMineImg.replace("__SRC__", "");
+  }
+
+  // 底栏「哪一格亮着」的就地重画。**只有 `active` 这一个属性会变**，
+  // 所以不重挂 `<nav>`（重挂会把 `bindDock` 的监听与 `.dock` 的入场动画一起丢掉）。
+  // 谁要它：`/poems/` 上那层「古诗词大会」掀开 / 收起时（`js/game.js`），
+  // 地址栏不动、页面不刷新，可底栏正中间那一格必须当场亮起来 / 灭掉。
+  // 判据仍是 `dockKey(pageKey())` 一处算 —— 不在这里另写一套「谁亮」的规则。
+  function paintDock() {
+    var nav = document.getElementById("site-dock");
+    if (!nav) return;
+    var on = dockKey(pageKey());
+    var items = nav.querySelectorAll(".dock-item");
+    for (var i = 0; i < items.length; i++) {
+      var it = items[i];
+      var hit = it.getAttribute("data-nav-go") === on;
+      if (it.classList) it.classList.toggle("active", hit);
+      if (hit) it.setAttribute("aria-current", "page");
+      else it.removeAttribute("aria-current");
+    }
   }
 
   function mountDockAvatarWatch() {
@@ -614,6 +699,9 @@
     },
 
     openSettings: openSettings,
+
+    // 见 `paintDock`：给「就地掀一层、地址栏不动」的那些页面用（目前只有大会）。
+    setDock: function () { paintDock(); },
 
     setPage: function (name) {
       pageOverride = name == null ? "" : String(name);
