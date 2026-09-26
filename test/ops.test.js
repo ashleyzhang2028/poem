@@ -453,8 +453,10 @@ console.log("\n=== 十、3 期那三件：口径写清了，而且**不许偷偷
   const holders = files.filter(f => /飞花令|现场考试|试题模拟|题库/.test(
     read("js/" + f).replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^\s*\/\/.*$/gm, " ")));
 
-  eq(holders.sort().join(","), "entitlement.js,game.js",
-    "js/ 下**代码里**提到这几件事的只有内核能力表 + 出题内核（页面文案归页面）");
+  // 名字的三个落点：内核能力表（`entitlement.js`）、考试层内核（`exam.js` 的 VARIANTS）、
+  // 页面层（`game.js`）。别处不许再出现这些名字 —— 多一处就多一处会对不上的。
+  eq(holders.sort().join(","), "entitlement.js,exam.js,game.js",
+    "js/ 下**代码里**提到这几件事的只有能力表 + 考试层内核 + 出题内核（页面文案归页面）");
   chk(/poems:open/.test(read("js/poems.js")) && /poems:open/.test(read("js/game.js")),
     "索引页与本层的唯一接口 `poems:open` 两端都接上了（点一句 → 打开那一篇的原文）");
   const gameSrc = read("js/game.js").replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^\s*\/\/.*$/gm, " ");

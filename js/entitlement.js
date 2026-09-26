@@ -70,7 +70,13 @@
     // 「古诗词」一行、「大会」一行（Issue #229 第五轮）。
     "exam.gathering":    { minTier: "max",  login: true,  quota: null, name: "古诗词 大会",
                            breaks: ["大会"] },
-    "exam.paper":        { minTier: "max",  login: true,  quota: null, name: "试题模拟" }
+    // 「试题模拟」收成「模拟考试」，与新增的「正式考试」成对（Issue #342 · §4.66 ⑩-②）。
+    // ⚠️ 键名 `exam.paper` 一个字不动 —— 服务端靠它对拍（api/_lib/core.js 的 featuresFor()）。
+    "exam.paper":        { minTier: "max",  login: true,  quota: null, name: "模拟考试" },
+    // 正式考试：交卷后统一批、限时、留记录（§4.66 ③ 旋钮二）。
+    "exam.formal":       { minTier: "max",  login: true,  quota: null, name: "正式考试" },
+    // 文学常识考试：日常练习，放 Pro 不放 Max（§4.66 ⑤）—— 放 Max 等于绝大多数人看不到。
+    "exam.changshi":     { minTier: "pro",  login: true,  quota: null, name: "文学常识考试" }
 
   };
 

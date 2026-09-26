@@ -169,7 +169,7 @@ const libOrder = (lib.match(/id: "([a-z]+)",\n      name:/g) || []).map(s => s.m
 chk(libOrder.join(',') === sandbox.SITE_BOOKS.map(b => b.id).join(','),
   '入口页卡片次序与 SITE_BOOKS 同源（实际 ' + libOrder.join(',') + '）');
 
-const si = read('data/site-index.js');
+const si = read('data/site-books.js');
 chk(si.indexOf('{ id: "yuefu"') > -1 && si.indexOf('{ id: "yuefu"') < si.indexOf('{ id: "tangshi"'),
   '站点索引里乐府集排在唐诗之前');
 chk(si.indexOf('{ id: "yuanqu"') < si.indexOf('{ id: "guwen"'),

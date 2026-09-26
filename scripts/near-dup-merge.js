@@ -98,6 +98,7 @@ vm.createContext(sandbox);
   'data/index.js', 'data/poems-classic.js', 'data/poems-tangshi.js',
   'data/poems-songci.js', 'data/poems-guwen.js', 'data/poems-zhaoming.js',
   'data/poems-yuanqu.js', 'data/poems-yuefu.js',
+  'data/site-books.js',
   'data/site-index.js'
 ].forEach(function (f) {
   vm.runInContext(fs.readFileSync(path.join(ROOT, f), 'utf8'), sandbox, { filename: f });

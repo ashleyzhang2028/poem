@@ -12,7 +12,7 @@ vm.createContext(sandbox);
 vm.runInContext(fs.readFileSync(path + 'data/text-master.js', 'utf8'), sandbox,
   { filename: 'text-master.js' });
 ['data/poems-classic.js', 'data/poems-guwen.js', 'data/poems-zhaoming.js', 'data/poems-yuanqu.js',
- 'data/site-index.js'].forEach(f =>
+ 'data/site-books.js', 'data/site-index.js'].forEach(f =>
   vm.runInContext(fs.readFileSync(path + f, 'utf8'), sandbox, { filename: f }));
 
 function resolveZm(list) {
