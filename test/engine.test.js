@@ -21,7 +21,7 @@ IDX.forEach(x => { if (ids.has(x.id)) dup++; ids.add(x.id); });
 chk(dup === 0, '总索引 id 全站唯一（每部集子带自己的前缀）');
 chk(IDX.every(x => x.title && x.book && x.bookName && x.page),
   '每条结果都带齐 篇名 / 所属集子 / 集子名 / 跳转地址');
-chk(IDX.some(x => x.isBook && x.title === '课外必背小古文'),
+chk(IDX.some(x => x.isBook && x.title === '小古文'),
   '集子自身也是一条结果（搜「小古文」能直接进那一页）');
 // 不写死「几部」，只守有业务含义的相对次序：乐府在唐诗前、元曲在宋词后、
 // 昭明与成语在近现代之后（Issue #244 / #308）。集子总数与名单交给下面的同源比对。

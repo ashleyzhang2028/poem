@@ -13,7 +13,7 @@
     },
     {
       id: "classic",
-      name: "课外必背小古文",
+      name: "小古文",
       book: "ClassicBook",
       short: "小古文",
       page: "/classic/",

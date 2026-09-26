@@ -871,23 +871,35 @@ thead .plans-th-cap {
   color: var(--ink-3);
 }
 
-/* 清单：一行一个，一行就是一行 —— 行里不再各带一张卡。
-   行的边界靠一条细线，最后一行下面不画线。 */
+/* 清单：手机竖屏**两列**（用户 2026-09-26：「手机竖屏每行显示两列 应该放得下」）——
+   14 行摊成 7 行，一屏收得住；宽屏仍是一行一个。
+   `flex-wrap: wrap` 而不是 grid：一行里的**自动换行**由浏览器按各列自己的
+   最小内容宽来算，名字**永远不会被压到换行或溢出**（grid 的 `1fr` 会把
+   长名字硬塞进半屏，窄屏上顶到列外）。两列的宽窄在窄屏上**允许不等**
+   —— 竖屏上名字长度本来就差着档次（「全部」对「中华成语故事」），
+   与其把两边都撑成一样宽、把长名字截成省略号，不如让短的短、长的长。 */
 .game-scope-list {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
+  align-items: stretch;
 }
 .game-scope-list[data-folded="1"] { display: none; }
 
+/* 列的收放由两层控制：
+   ① 默认（≥ 721px）`flex: 0 0 100%` —— 一行一个，桌面 / 平板老口径不变；
+   ② 手机竖屏（见下面 `@media (max-width: 720px)`）`flex: 1 1 auto` ——
+      两列各自按内容宽排，排不开的自动落到下一行。 */
 .game-scope-pick {
   display: flex;
   align-items: baseline;
   gap: 8px;
   box-sizing: border-box;
-  width: 100%;
+  flex: 0 0 100%;
   text-align: left;
   border: 0;
-  border-top: 1px solid var(--line);
+  /* 行的边界画在**下面**那条细线：两列时每一行有两格，画在上面会多出一道
+     压在卡片头上的线；画在下面只需给最后一行收掉。 */
+  border-bottom: 1px solid var(--line);
   border-radius: 0;
   /* 左侧那 20px 是给选中时那道绿条留的位（2026-09-26 用户裁决：
      「左边的绿色竖线和范围各项标题之间应该加 20px padding」）——
@@ -902,7 +914,9 @@ thead .plans-th-cap {
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
-.game-scope-pick:first-child { border-top: 0; }
+/* 最后一行（两列时是最后两格）下面不画线 —— 卡底自己有一道。 */
+.game-scope-pick:last-child { border-bottom: 0; }
+.game-scope-pick:nth-last-child(2):nth-child(even) { border-bottom: 0; }
 .game-scope-pick:active { background: var(--card-2); }
 /* 选中三处一起变（绿名 + 淡绿底 + 左侧一道绿条）——
    一屏十几行里只看一道色容易漏；左侧那条用内嵌阴影画，不占位、不换行。 */
@@ -926,6 +940,26 @@ thead .plans-th-cap {
   letter-spacing: .3px;
   white-space: nowrap;
   color: var(--ink-3);
+}
+
+/* 手机竖屏：范围那一段**一行两列**（用户 2026-09-26 裁决）。
+   720px 这条线按「手机竖屏」划 —— 720×1280 / 768×1024 那类平板仍走一行一个
+   （平板本来就一屏放得下，摊成两列反而每格都挤）。 */
+@media (max-width: 720px) {
+  /* **一行就是两格**：每格占半行（减掉两格之间的 8px 缝）。
+     为什么用 `calc` 而不是 `1fr` 的两列网格：格子宽写在**半行**上，
+     名字栏带着 `text-overflow: ellipsis` —— 名字长了截成省略号，
+     但它**跟着格子动不了**（这条线守的就是「两列、不溢出」）。
+     `min-width: 0` 是必须的：不写的话 flex 项自带的「最小内容宽」会把
+     「中华成语故事」那一格撑过半行，两列一起顶出卡外。 */
+  .game-scope-list .game-scope-pick {
+    flex: 0 0 auto;
+    min-width: 0;
+    width: calc(50% - 4px);
+  }
+  /* 两格之间的 8px：奇数格（左列）留在左边，偶数格（右列）推到右端。
+     只在**同一行内**推开，不影响换行 —— 所以右列与本行的左列同高。 */
+  .game-scope-list .game-scope-pick:nth-child(even) { margin-left: auto; }
 }
 
 @media (max-width: 360px) {

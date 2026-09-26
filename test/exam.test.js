@@ -82,6 +82,43 @@ console.log('\n=== 二、范围：名单的唯一来源是 SITE_BOOKS，不另�
     '每一个范围都真的有内容（count > 0，不摆空壳）');
 }
 
+console.log('\n=== 二b、小古文那一条的名字（2026-09-26 用户裁决） ===');
+{
+  // 用户原话：「把 课外必背小古文 改为 小古文」。
+  //
+  // 名字只有一份来源（`data/site-books.js` 的 `name`），范围那一段直接照单摆；
+  // 改一处，范围 / 课外阅读入口 / 集子页抬头一起跟着变。
+  const books = (function () {
+    const box = { window: {}, console };
+    box.window = box; box.globalThis = box;
+    vm.createContext(box);
+    loadData(box, ['data/site-books.js']);
+    return box.SITE_BOOKS;
+  })();
+  const classic = books.filter(b => b.id === 'classic')[0];
+  chk(!!classic, '集子清单里有 classic 这一部');
+  eq(classic.name, '小古文', 'classic 的显示名是「小古文」（不再是「课外必背小古文」）');
+  eq(classic.page, '/classic/', '它的页面地址没变（换的是名字，不是地址）');
+
+  // 范围那一段照单摆 —— 名字要一模一样地出现在名单里。
+  // （本用例的 CORPUS 只装了课内 + 唐诗 + 文学常识，所以这里补一篇小古文，
+  //   让那一行真的出现在名单上，而不是靠「语料里没有就不出现」蒙过去。）
+  const withClassic = CORPUS.concat([{ id: 'cl-1', book: 'classic', title: 'x', text: '甲。乙。' }]);
+  const list = Ex.scopes(withClassic, { books: books }).filter(sc => Ex.scopeVisible(sc.id));
+  const row = list.filter(sc => sc.id === 'book:classic')[0];
+  chk(!!row, '范围名单里有小古文这一行');
+  eq(row.name, '小古文', '范围名单上写的是「小古文」');
+  eq(row.count, 1, '条数跟着语料算（这里 1 条）');
+
+  // 「课外必背小古文」这六个字在全站的显示名里不该再出现（页面标题 / 卡片名 /
+  // META 描述）；文档与历史裁决记录不算。
+  const files = ['data/site-books.js', 'js/library.js', 'js/classic.js',
+    'classic/index.html', 'library/index.html'];
+  const bad = files.filter(f =>
+    fs.readFileSync(path.join(ROOT, f), 'utf8').indexOf('课外必背小古文') >= 0);
+  eq(bad.join(','), '', '显示名里不再出现「课外必背小古文」（' + files.length + ' 个文件都换过）');
+}
+
 console.log('\n=== 三、select：按范围取条目，不认识的范围如实回空 ===');
 {
   eq(Ex.select(CORPUS, 'all').length, CORPUS.length, '「全部」= 整个语料');
@@ -156,7 +193,7 @@ console.log('\n=== 三d、名单的次序：全部 → 课内三学段 → 各�
   // 次序是**内核给的口径**（页面照单摆），所以在这一层钉住：
   // 全部最前、课内三学段紧跟、各集子排在它们之后。
   const bookList = [
-    { id: 'classic', name: '课外必背小古文' }, { id: 'tangshi', name: '唐诗三百首' },
+    { id: 'classic', name: '小古文' }, { id: 'tangshi', name: '唐诗三百首' },
     { id: 'changshi', name: '文学常识' }
   ];
   const list = Ex.scopes(CORPUS, { books: bookList, }).filter(sc => Ex.scopeVisible(sc.id));
@@ -201,10 +238,53 @@ console.log('\n=== 三e、范围那一段收在同一张卡里（2026-09-26 用�
   chk(/border:\s*0/.test(rule) || /border:\s*none/.test(rule),
     '每一行自己不带边框（行的边界靠卡内一条细线）');
   chk(/border-radius:\s*0/.test(rule), '每一行不带自己的圆角（不是一张张小卡）');
-  const first = (css.match(/\.game-scope-pick:first-child \{[^}]*\}/) || [''])[0];
-  chk(/border-top:\s*0/.test(first), '第一行上面不画线（贴在卡内那一头下面）');
-  chk(/\.game-scope-list \{[^}]*display:\s*flex[^}]*flex-direction:\s*column/.test(css),
-    '清单是一条纵列（一行一个，不拐回多列格子）');
+}
+
+console.log('\n=== 三g、手机竖屏两列、桌面一行一个（2026-09-26 用户裁决） ===');
+{
+  // 用户原话：「手机竖屏每行显示两列 应该放得下」。
+  //
+  // 这一层钉住两件事：
+  //   ① **一行一个仍是默认**（桌面 / 平板口径不变）——
+  //      `.game-scope-pick { flex: 0 0 100% }` 是基线；
+  //   ② **手机竖屏（≤ 720px）改两列** —— 靠 `flex-wrap: wrap` +
+  //      `flex: 1 1 auto` 让两列按内容宽排，`nth-child(even)` 的
+  //      `margin-left: auto` 把右边那一格拉到右端。
+  //
+  // 为什么不是 grid 两列：`1fr` 会把「中华成语故事」硬塞进半屏，
+  // 窄屏上顶到列外（名字要么截成省略号、要么溢出）。
+  const css = fs.readFileSync(path.join(ROOT, 'css/account.css'), 'utf8');
+
+  const list = (css.match(/\.game-scope-list \{[\s\S]*?\n\}/) || [''])[0];
+  chk(/display:\s*flex/.test(list) && /flex-wrap:\s*wrap/.test(list),
+    '清单是能换行的 flex（两列靠 wrap 排，不用 grid 的 1fr 硬塞）');
+  chk(!/grid-template-columns/.test(list),
+    '清单不用 grid 的两列模板（`1fr` 会把长名字硬塞进半屏、顶出卡外）');
+
+  const base = (css.match(/\.game-scope-pick \{[\s\S]*?\n\}/) || [''])[0];
+  chk(/flex:\s*0 0 100%/.test(base),
+    '默认一行一个（桌面 / 平板口径不变：每格占满整行）');
+
+  // 手机竖屏那一段：整个 `@media (max-width: 720px)` 块。
+  const mobile = (css.match(/@media \(max-width: 720px\) \{[\s\S]*?\n\}/) || [''])[0];
+  chk(mobile.length > 0, '有手机竖屏那一档（@media (max-width: 720px)）');
+  chk(/\.game-scope-list \.game-scope-pick \{[^}]*width:\s*calc\(50%/.test(mobile),
+    '手机竖屏上每格占半行（一行就是两格，宽写在 calc(50% - 4px) 上）');
+  chk(/\.game-scope-list \.game-scope-pick \{[^}]*min-width:\s*0/.test(mobile),
+    '手机竖屏上给 flex 项解掉最小内容宽（否则长名字把两列顶出卡外）');
+  chk(/:nth-child\(even\) \{[^}]*margin-left:\s*auto/.test(mobile),
+    '偶数格拉到右端（右列对齐，不会贴着左列）');
+
+  // 行的边界改画在**下面**那条线（两列时画在上面会在卡片头上多出一道），
+  // 并且最后一行（两格）都收掉 —— 卡底自己有一道。
+  chk(/border-bottom:\s*1px solid var\(--line\)/.test(base),
+    '行的细线画在格子下面（两列时画在上面会多一道压在卡头上）');
+  chk(!/border-top:\s*1px solid var\(--line\)/.test(base),
+    '旧的「画在上面」不留（两列时它会多出一道线）');
+  chk(/\.game-scope-pick:last-child \{[^}]*border-bottom:\s*0/.test(css),
+    '最后一格下面不画线');
+  chk(/\.game-scope-pick:nth-last-child\(2\):nth-child\(even\) \{[^}]*border-bottom:\s*0/.test(css),
+    '两列时的倒数第二格（也是最后一行）下面不画线');
 }
 
 console.log('\n=== 三f、选中绿条与标题之间留 20px（2026-09-26 用户裁决） ===');

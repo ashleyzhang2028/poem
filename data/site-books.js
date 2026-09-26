@@ -3,7 +3,7 @@
 
   var BOOKS = [
     { id: "poems", name: "课内诗词", page: "/", varName: "POEMS_ALL", unit: "首" },
-    { id: "classic", name: "课外必背小古文", page: "/classic/", varName: "POEMS_CLASSIC", unit: "篇" },
+    { id: "classic", name: "小古文", page: "/classic/", varName: "POEMS_CLASSIC", unit: "篇" },
     { id: "yuefu", name: "乐府集", page: "/yuefu/", varName: "POEMS_YUEFU", unit: "首" },
     { id: "tangshi", name: "唐诗三百首", page: "/tangshi/", varName: "POEMS_TANGSHI", unit: "首" },
     { id: "songci", name: "宋词三百首", page: "/songci/", varName: "POEMS_SONGCI", unit: "首" },
