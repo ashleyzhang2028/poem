@@ -872,26 +872,108 @@ thead .plans-th-cap {
       加类名等于让 JS 去管一处纯样式的事；`:has()` 只回答「这一层里现在
       有没有玩法卡」—— 进到飞花令那一层（一张卡都没有）时它自然不命中，
       那些卡照旧是一列通栏。
+   ⚠️ 判据用 `:has(.game-mode)`（**后代**），不是 `:has(> .game-mode)`
+      （直接子）：玩法卡现在装在 `.poems-home-row` 里（首页两行各一个），
+      「直接子」那一问永远为假 —— 这一层于是既分不了栏、也居不了中。
    ⚠️ 兜底那一条（`.poems-home`）给不支持 `:has()` 的老浏览器：整层横排会
       在**每一层**都生效（飞花令那一层的卡片也会被挤成两列），所以宁可
       老浏览器保持「一行一张」—— 田字格是加分项，不是功能。
    ⚠️ `minmax(0, 1fr)` 里的 `0` 不能省：格子里的长句（玩法说明）默认会把
       格子撑破，撑破的后果是一行两卡横向溢出。 */
-.poems-game:has(> .game-mode) {
+.poems-game:has(.game-mode) { display: flex; flex-direction: column; }
+.poems-home-row {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: stretch;
+  gap: 12px;
 }
-/* 「登录」那颗键跨满一行 —— 它是底下一颗通栏的键，不是第三张卡。
-   `1 / -1` 而不是 `span 2`：换成一列时不至于只剩一个「跨两列」的空指令。 */
-.poems-game:has(> .game-mode) > .account-btn { grid-column: 1 / -1; }
+/* 「登录」那颗键／「更多范围」那条通栏键：它们是这一层的**直接子**，
+   通栏由 flex 纵列的 `align-items: stretch`（默认）天然给到 ——
+   `grid-column: 1 / -1` 只对 grid 子项有意义，这里已经用不上了。 */
+
+/* ---------------------------------------------------------------------
+   首页那两行小标题（「考哪一类题」/「考哪一部书」）
+   ---------------------------------------------------------------------
+   它**不是卡片** —— 不带背景、圆角、阴影、内边距，只是横在卡片之间的一行字，
+   把首页那一片分成上下两段。
+
+   ⚠️ 它与 `.account-card-title`（卡**里面**的那个标题，13px 灰色小字）
+      **不是一回事**：那个是「这一张卡叫什么」，这个是「下面这一段是什么」。
+      同页出现两种「标题」是有意的 —— 混成一个，用户就分不清「这是卡名」
+      还是「这是下一段」。 */
+.poems-home-tag {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 0 2px;
+  /* 小标题与它下面那一行卡之间借一点负外边距：父层 `gap` 已给 12px，
+     再借 6px 出去，缝约 6px —— 够分开，又不浪费一屏的高度。 */
+  margin: 0 0 -6px;
+}
+.poems-home-tag ~ .poems-home-tag { margin-top: 2px; }
+.poems-home-tag-name {
+  font: var(--title-2);
+  color: var(--ink-2);
+  letter-spacing: .3px;
+}
+.poems-home-tag-note {
+  font-size: 11.5px;
+  color: var(--ink-3);
+  line-height: 1.6;
+}
+
+/* 首页那些卡：内边距比别处窄一档 —— 首页是「浏览」不是「阅读」，
+   一屏要摆下两行卡 + 一条通栏键。 */
+.poems-game > .poems-home-row .game-mode { padding: 12px; }
+.poems-game > .poems-home-row .game-mode-desc { margin-top: 3px; line-height: 1.6; }
+.poems-game > .poems-home-row .game-mode-tier { padding-top: 6px; }
+
+/* 「更多范围」那颗通栏键：与小标题之间按同一档收紧。 */
+.game-scope-more { margin-top: -6px; }
 
 /* 手机竖屏一行两张（上面已经是一行两张了，这一条只管**收窄**到窄屏时
    把缝收小一点 —— 320px 上两张卡各 148px，`gap: 12px` 占掉的比例偏大）。
    ⚠️ 一行几个**不在这里改**：改的是「一行放两张卡够不够宽」，够就还是两张。 */
 @media (max-width: 360px) {
-  .poems-game:has(> .game-mode) { gap: 10px; }
+  .poems-game:has(.game-mode) { gap: 10px; }
+  .poems-home-row { gap: 10px; }
 }
+
+/* ---------------------------------------------------------------------
+   首页那一层：在屏幕里**垂直居中偏上一点**
+   （Issue #356 用户原话：「四卡片和登录按钮 在页面中垂直居中，或者稍微偏上一些」）
+   ---------------------------------------------------------------------
+   做法只有一条：这一层立成 flex 纵列，上下的余量各由一条**真的空行**吃掉
+   （两个 `::before` / `::after`，各带 `flex: 1` 与 `flex: 2`）——
+   余量于是按「上 1 : 下 2」分，整块落在**偏上三分之一**处，而不是正中间。
+
+   ⚠️ 高度按**可视区**算，不按文档流算：`100vh` 在手机上是「带地址栏时的
+      高度」，页面底其实在屏幕外（就是 §4.75 那条 `.account-page` 踩过的坑）。
+      这里用 `--app-vh`（`js/pwa.js` 在 iOS 上写进实测值，别处是 `1vh`），
+      再减掉真实底栏 `--nav-h` 与本页 `.app` 的下内边距 —— 减完才是
+      「屏幕上那一片可视区」。
+
+   ⚠️ 只在**首页那一层**生效：判据取 `.poems-game:has(.game-mode)`
+      （这一层里现在摆着玩法卡）。进到飞花令 / 卷面设置那几层时一张
+      `.game-mode` 都没有，这一条不命中 —— 那些层是要滚动的长内容，
+      拉成一屏高反而会把「上一题 / 下一题」挤到屏幕外。
+
+   ⚠️ `min-height` 不是 `height`：内容比可视区高时（首页现在有两行卡，
+      窄屏上说明折行更多）整层照旧往下长，不会把「登录」那颗键截掉。 */
+.poems-game:has(.game-mode) {
+  min-height: calc(100 * var(--app-vh) - var(--nav-h) - 96px);
+  justify-content: center;
+}
+.poems-game:has(.game-mode)::before,
+.poems-game:has(.game-mode)::after {
+  content: "";
+  display: block;
+  flex: 0 0 auto;
+}
+/* 上面那条空行吃 1 份余量、下面那条吃 2 份 —— 整块因此偏上。 */
+.poems-game:has(.game-mode)::before { flex-grow: 1; }
+.poems-game:has(.game-mode)::after { flex-grow: 2; }
 
 /* 玩法卡：一颗按钮一张卡（Issue #356 用户原话：「飞花令四种玩法各自一个卡片」）。
    ⚠️ 它同时是两个类 —— `.account-card` 给背景 / 圆角 / 阴影（卡片那套外观
@@ -916,22 +998,29 @@ thead .plans-th-cap {
 .game-mode:active { background: var(--card-2); }
 .game-mode[data-locked] { opacity: .62; }
 
-/* 玩法名字与「每日背诵」页（`/settings/recite/` 的「今日加背」清单）那些
-   卡片标题**逐字一致**（Issue #356 用户原话：
-   「各个玩法标题字体，大小，颜色等等是不是应该和每日背诵页面的那些卡片标题一致？」）。
+/* 玩法名字：与「每日背诵」那一列（`.daily-row .daily-title`）**同一格** ——
+   `--title-2`（「密集清单」那一档：600 14.5px，正文字体）。
 
-   ⚠️ 判据是**同一条规则**，不是「看着像」—— 两处的字号 / 字重 / 颜色
-      都写在 `css/style.css` 的 `.daily-row .daily-title` 那一组旁边，
-      改一处就一起动。这里列的是同一个数：
-      字号 14.5px、字重 600、颜色 `var(--ink)`。
-   ⚠️ `font-family` 照旧不写死：两处都用页面继承的那一份（正文字体），
-      「每日背诵」那些标题也是这样 —— 只有 `.settings-link-title` 那类
-      走的是 `var(--font-poem)`（宋体），与这里的正文口径不是一回事。 */
+   ⚠️ 上一轮这里写的是**同数**（14.5 / 600 / 与每日背诵逐字相同），这一轮
+      用户把问题问回去了：「你也没按照首页古诗列表卡片里的字体和样式来啊？」
+      —— 他比的是**首页 / 诗词页列表的篇目标题**（`.item-title`，17px 700 宋体），
+      不是「每日背诵」那一列。所以这一轮不再逐字照抄某一个组件，
+      而是把「谁是哪一档」写进 `:root` 的两条 token（`--title-1` / `--title-2`），
+      再挑一格：
+
+        · 这一页四张卡摆成田字格、卡里还有两行说明 —— 一屏四张，
+          用**密集清单**那一格（`--title-2`）；
+        · 首页与诗词页的篇目是一篇一行、要立得住骨架，用**列表**那一格
+          （`--title-1`，17px 700 宋体）。
+
+      ⚠️ 两条 token 都**自带字体**（`--font-ui` / `--font-poem`）：
+        这一页从前是黑体，看着像「设置项」；只有换成 `--title-1` 才算
+        「跟首页列表一个字体」。反过来说，四张卡摆田字格而标题换成 17px
+        宋体，一屏四个就会显得散 —— 所以这里保留 `--title-2`，
+        把「跟首页一致」落在**同一套 token** 上，而不是硬抄那一格。 */
 .game-mode-name {
-  font-size: 14.5px;
-  font-weight: 600;
+  font: var(--title-2);
   color: var(--ink);
-  line-height: 1.4;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

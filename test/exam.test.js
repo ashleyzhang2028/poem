@@ -219,4 +219,59 @@ console.log('\n=== 七、接线：范围名单与 SITE_BOOKS 同源、页面层�
   chk(/exam\.formal/.test(coreSrc.split('var max')[1].slice(0, 200)), 'exam.formal 落在 max 那一档');
 }
 
+console.log('\n=== 八、语料必须带正文：集子那几部不能是空条目（Issue #356 第七轮）===');
+{
+  // 这是查出来的**真 bug**：集子那十部数据文件里一个字的正文都没有 ——
+  // 正文存在 data/text-master.js 那一张主表里，靠 textRef 取。
+  // 从前 js/game.js 的 corpus() 直接拿 window[w.v] 原样返回，于是那些条目
+  // `text` 是空的：**「考哪一部书」这些范围一道题都出不来**。
+  // （真机量过修前：Exam.build(corpus, {scope:'book:tangshi'}) → 0 题。）
+  //
+  // 这一节守两件事：
+  //   ① 数据文件里确实没有正文（所以「展开」这一步不能省）；
+  //   ② 展开之后每一条都有正文，且范围里每一部都能出题。
+  const tangshiRaw = (function () {
+    const box = { window: {}, console };
+    box.window = box; box.globalThis = box;
+    vm.createContext(box);
+    loadData(box, ['data/poems-tangshi.js']);
+    return box.POEMS_TANGSHI || [];
+  })();
+  const withTextRaw = tangshiRaw.filter(p => p && p.text && String(p.text).trim()).length;
+  eq(withTextRaw, 0, '数据文件里**没有**内联正文（正文在主表里，靠 textRef 取）');
+
+  const expanded = resolve(sandbox, sandbox.POEMS_TANGSHI, 'tangshi');
+  const withTextExpanded = expanded.filter(p => p && p.text && String(p.text).trim()).length;
+  eq(withTextExpanded, expanded.length, '过了 masterTextOf 之后**每一条**都有正文');
+
+  // 拿修好的那一步（expand 同一句）喂给内核，看是不是真能出题。
+  const cps = CORPUS;
+  chk(cps.every(p => p && p.text && String(p.text).trim()),
+    '本用例的语料每条都带正文（CORPUS 走的就是 expand 那一句）');
+
+  ['all', 'book:poems', 'book:tangshi', 'book:changshi'].forEach(scope => {
+    const plan = Ex.build(cps, { kind: 'practice', scope: scope, size: 5, seed: 'exp' });
+    chk(plan.questions.length > 0,
+      scope + ' 出得来题（实际 ' + plan.questions.length + ' 题）');
+    chk(plan.questions.every(q => q.stem && q.answer),
+      scope + ' 每道题都有题干与答案（不是空壳）');
+  });
+
+  // 范围里每一部都要出得来题 —— 一部都不许是空壳。
+  const books = Ex.scopes(cps, { books: booksOf(sandbox) })
+    .filter(sc => sc.id.indexOf('book:') === 0);
+  chk(books.length > 0, '语料里有可考的集子（' + books.length + ' 部）');
+  books.forEach(sc => {
+    const plan = Ex.build(cps, { kind: 'practice', scope: sc.id, size: 3, seed: 'b' });
+    chk(plan.questions.length > 0,
+      sc.name + '（' + sc.id + '）出得来题（' + plan.questions.length + ' 题）');
+  });
+}
+
+function booksOf(box) {
+  const src = fs.readFileSync(path.join(ROOT, 'data/site-books.js'), 'utf8');
+  const ids = (src.match(/id:\s*"([a-z]+)"/g) || []).map(x => x.match(/"([a-z]+)"/)[1]);
+  return ids.map(id => ({ id: id, name: id }));
+}
+
 console.log('\n' + (fails ? '❌ ' + fails + ' 项失败' : '🎉 考试层内核测试全部通过'));

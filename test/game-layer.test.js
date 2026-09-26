@@ -166,19 +166,40 @@ console.log("\n=== 3c · 四张玩法卡：各自一张、一行两张、与「�
   //    `.game-mode`（能点的键）—— 两套外观各写一次，不再互相套着。
   chk(/class="account-card game-mode"/.test(home),
     "四个玩法**各自是一张卡**（同一颗按钮既是 .account-card 又是 .game-mode）");
-  chk(!/account-card-title/.test(home) && !/game-mode-main/.test(game),
+  chk(!/game-mode-main/.test(game),
     "「选一个玩法」那张外套卡整个撤掉（连着它那个 .game-mode-main 也让位了）");
+  // ⚠️ 首页现在**多了一行小标题**（「考哪一类题」/「考哪一部书」，Issue #356
+  //    第七轮），它是 `<p class="poems-home-tag">` —— 不是 `.account-card-title`
+  //    （那是卡**里面**的标题）。所以判据收窄成「玩法卡那一行里没有卡内标题」，
+  //    而不是「整个 renderHome() 里不许出现这个类名」。
+  const homeRow = home.slice(home.indexOf("poems-home-row"), home.indexOf("考哪一部书"));
+  chk(!/account-card-title/.test(homeRow),
+    "玩法那一行不再有卡内标题（小标题是层与层之间的 `.poems-home-tag`，不是卡名）");
 
   // ② 标题与「每日背诵」页（/settings/recite/ 的今日加背清单）逐字同档。
   //    ⚠️ 判据写成**两边同数**：任一边单独改动都会红。
-  const titleRule = styleCss.slice(styleCss.indexOf(".daily-row .daily-title"));
-  chk(/font-size:\s*14\.5px/.test(titleRule) && /font-weight:\s*600/.test(titleRule) &&
-      /color:\s*var\(--ink\)/.test(titleRule),
-    "「每日背诵」的卡片标题是 14.5px / 600 / var(--ink)（这一档口径的唯一一份）");
-  const nameRule = accountCss.slice(accountCss.indexOf(".game-mode-name {"));
-  chk(/font-size:\s*14\.5px/.test(nameRule.slice(0, nameRule.indexOf("}"))), "玩法标题的字号 14.5px（与上一行同数）");
-  chk(/font-weight:\s*600/.test(nameRule.slice(0, nameRule.indexOf("}"))), "字重 600（同数）");
-  chk(/color:\s*var\(--ink\)/.test(nameRule.slice(0, nameRule.indexOf("}"))), "颜色 var(--ink)（同数）");
+  // ⚠️ 上一轮这里判的是「玩法标题与每日背诵**逐字同数**」；这一轮用户把问题
+  //    问回去了：「你也没按照首页古诗列表卡片里的字体和样式来啊？」——
+  //    他比的是**首页列表的篇目标题**（17px / 700 / 宋体），不是「每日背诵」。
+  //    所以判据换成「三处的数字都出自 `:root` 那两条 token」，而不是
+  //    「某两处写着一模一样的字」：写死的数字从三份收成一份。
+  const rootRule = styleCss.slice(styleCss.indexOf("--title-1:"));
+  chk(/--title-1:\s*700 17px\/1\.5 var\(--font-poem\)/.test(rootRule),
+    "`--title-1`（列表 / 卡片那一档）是 700 17px 宋体 —— 首页与诗词页的篇目就是它");
+  chk(/--title-2:\s*600 14\.5px\/1\.4 var\(--font-ui\)/.test(rootRule),
+    "`--title-2`（密集清单那一档）是 600 14.5px 黑体");
+  chk(!/font-size:\s*17px/.test(styleCss.slice(styleCss.indexOf(".settings-group-title,"), styleCss.indexOf(".settings-group-title,") + 400)),
+    "`.item-title` 那一组不再自己写 17px（数字只在 `--title-1` 一处）");
+  // ⚠️ 从**规则体那一处**起算（`.daily-row .daily-title {` 这个字面量在
+  //    `:root` 那段注释里也出现过 —— 拿 `indexOf(".daily-row .daily-title")`
+  //    起算会切到注释里，`}` 也就在注释里，永远判不出真话来）。
+  const dailyRule = styleCss.slice(styleCss.indexOf("\n.daily-row .daily-title {"));
+  chk(/font:\s*var\(--title-2\)/.test(dailyRule.slice(0, dailyRule.indexOf("}"))),
+    "「每日背诵」的标题走 `--title-2`（不再自己写第二份数字）");
+  const nameRule = accountCss.slice(accountCss.indexOf("\n.game-mode-name {"));
+  chk(/font:\s*var\(--title-2\)/.test(nameRule.slice(0, nameRule.indexOf("}"))),
+    "玩法标题也走 `--title-2`（同一格，不是硬抄别处的字）");
+  chk(/color:\s*var\(--ink\)/.test(nameRule.slice(0, nameRule.indexOf("}"))), "颜色 var(--ink)");
 
   // ③ 门槛小标：「Pro 可用」/「Max 可用」，放行的说层级名字。
   chk(/function tierText\(m, r\)/.test(game), "门槛文案收在 tierText() 一处");
@@ -196,8 +217,13 @@ console.log("\n=== 3c · 四张玩法卡：各自一张、一行两张、与「�
   // ④ 手机竖屏一行两张卡（田字格）。
   chk(/grid-template-columns:\s*repeat\(2, minmax\(0, 1fr\)\)/.test(accountCss),
     "一行两张卡（repeat(2, minmax(0, 1fr))）—— minmax 里的 0 是防长句撑破格子");
-  chk(/\.poems-game:has\(> \.game-mode\) \{/.test(accountCss),
-    "分列的判据取 `:has(> .game-mode)`：有玩法卡才分栏，进到别的层自然落回一列");
+  // ⚠️ 判据用 `:has(.game-mode)`（**后代**）而不是 `:has(> .game-mode)`
+  //    （直接子）：玩法卡现在装在 `.poems-home-row` 里（首页两行各一个），
+  //    「直接子」那一问永远为假 —— 这一层于是既分不了栏、也居不了中。
+  chk(/\.poems-game:has\(\.game-mode\)/.test(accountCss),
+    "分列的判据取 `:has(.game-mode)`（后代）：有玩法卡才分栏，别的层自然落回一列");
+  chk(!/\.poems-game:has\(> \.game-mode\)/.test(accountCss),
+    "**没有** `:has(> .game-mode)` 那种直接子写法（卡在 .poems-home-row 里，那样写永远不命中）");
   chk(!/max-width:\s*768px[\s\S]{0,300}grid-template-columns/.test(accountCss),
     "不按设备类型 / 屏宽分栏（横屏放得下就该还是两张）");
 
@@ -216,6 +242,76 @@ console.log("\n=== 3c · 四张玩法卡：各自一张、一行两张、与「�
   chk(!/margin/.test(modeRule),
     "`.game-mode` 自己不带 margin（缝只有父层 gap 一处 —— 从前那条 margin-bottom " +
     "让「卡内按钮之间」有缝、「卡底按钮与卡片边缘」没缝）");
+}
+
+console.log("\n=== 3d · 首页两行卡：题型与范围并列、垂直居中偏上、集子范围真能出题 ===");
+{
+  // 用户 2026-09-26 第七轮原话，这就是这一节的全部目标：
+  //   「飞花令四张卡片标题字体，样式，大小，颜色 你也没按照首页古诗列表卡片里的
+  //     字体和样式来啊？」
+  //   「四卡片和登录按钮 在页面中垂直居中，或者稍微偏上一些」
+  //   「登录可用 改成 Pro 可用，Max 可用，按用户对比里的权限设置来」
+  //   「这四张卡片目前是按题型来的，我记得还有按范围来的，例如只考唐诗三百首，
+  //     只考文学常识，只考成语故事，你觉得应该怎么组织合适？还是在点击四张
+  //     卡片后再设置范围？」
+  const accountCss = read("css/account.css");
+  const home = game.slice(game.indexOf("function renderHome"), game.indexOf("function homeTag"));
+
+  // ① 首页两行：题型一行、范围一行，各由 `.poems-home-row` 装着。
+  chk(/homeTag\("考哪一类题"/.test(home), "首页上一行的小标题是「考哪一类题」");
+  chk(/homeTag\("考哪一部书"/.test(home), "首页下一行的小标题是「考哪一部书」");
+  chk(/class="poems-home-row"/.test(home), "两行各装在一个 `.poems-home-row` 里（分栏只管一行）");
+  chk(/data-game-scope=/.test(home), "范围卡带 `data-game-scope`（不是 data-game-mode）");
+  chk(/data-game-scopes="1"/.test(home), "有「更多范围」那颗通栏键");
+
+  // ② 首页那三张范围卡**不在这里另列名单**：名字与条数全从 Exam.scopes() 现算。
+  chk(/var FEATURED = \[/.test(game), "首页那三部由 `FEATURED` 一张次序表点出来");
+  const feat = game.slice(game.indexOf("var FEATURED"), game.indexOf("];", game.indexOf("var FEATURED")));
+  chk(/book:tangshi/.test(feat) && /book:changshi/.test(feat) && /book:chengyu/.test(feat),
+    "FEATURED 里是用户点名的那三部（唐诗 / 文学常识 / 成语故事）");
+  chk(!/name:\s*"/.test(feat), "FEATURED 里**不写名字**（名字从 SITE_BOOKS 现算，不另列一份）");
+  chk(/scopeList\(\)/.test(home), "首页那一行读 scopeList()（→ Exam.scopes() → SITE_BOOKS）");
+
+  // ③ 「更多范围」那一层：全部 / 课内三学段 / 其余集子，一个不少。
+  chk(/function renderScopes\(\)/.test(game), "有 renderScopes() 那一层");
+  chk(/state\.mode === "scopes"/.test(game), "render() 认 `scopes` 这个层名");
+  chk(/scopeGroup\("整个语料"/.test(game) && /scopeGroup\("课内诗词按学段"/.test(game) &&
+      /scopeGroup\("其他集子"/.test(game),
+    "那一层分三组：整个语料 / 课内诗词按学段 / 其他集子");
+  chk(/sc\.id === "all"/.test(game) && /indexOf\("poems:"\) === 0/.test(game),
+    "分组按 id 判（all / poems: / 其余集子），不按名字猜");
+
+  // ④ 范围**不再问第二遍**：选过的那一部，卷面设置里只念一遍。
+  chk(/scopeChosen/.test(game), "`state.setup.scopeChosen` 记「范围是不是用户挑的」");
+  chk(/var chosen = state\.setup\.scope && state\.setup\.scope !== "all";/.test(game),
+    "范围不是默认的「全部」时，卷面设置里不再摆那个下拉");
+  chk(/换一部书/.test(game), "改写：那一张卡给一颗「换一部书」回首页/更多范围");
+  const start = game.slice(game.indexOf("function start(modeId)"), game.indexOf("function beginExam"));
+  chk(/scopeChosen \? state\.setup\.scope : "all"/.test(start),
+    "start() **不把范围归零**（用户刚选的那一部要带到卷面设置去）");
+
+  // ⑤ 垂直居中偏上：两条 `flex-grow` 按 1 : 2 分余量。
+  chk(/min-height: calc\(100 \* var\(--app-vh\) - var\(--nav-h\) - 96px\)/.test(accountCss),
+    "首页那一层按**可视区**给 min-height（--app-vh 减真实底栏 --nav-h）");
+  chk(/\.poems-game:has\(\.game-mode\)::before \{ flex-grow: 1; \}/.test(accountCss) &&
+      /\.poems-game:has\(\.game-mode\)::after \{ flex-grow: 2; \}/.test(accountCss),
+    "上 1 : 下 2 两条空行 —— 整块因此落在偏上三分之一处，不是正中间");
+  chk(/justify-content: center/.test(accountCss.slice(accountCss.indexOf("min-height: calc(100 * var(--app-vh) - var(--nav-h) - 96px)"), accountCss.indexOf("min-height: calc(100 * var(--app-vh) - var(--nav-h) - 96px)") + 200)),
+    "那一层同时 justify-content: center（居中由这一条收口）");
+
+  // ⑥ **真 bug**：`corpus()` 从前不展开正文 —— 集子那几部上出 0 题。
+  //    真机量过（修前）：`Exam.build(corpus, {scope:'book:tangshi'})` → 0 题。
+  //    这里判「修的那一句在不在」：`corpus()` 必须过一遍 `masterTextOf`。
+  // ⚠️ `expand()` 排在 `corpus()` **后面**（函数声明抬升，调用没问题）——
+  //    截到 `function expand(` 会得到一个空的语料函数体。截到它的**注释头**为止。
+  const corpus = game.slice(game.indexOf("function corpus()"),
+    game.indexOf("// 展开一条的正文"));
+  chk(/function expand\(p, book\)/.test(game), "有 expand()：textRef → data/text-master.js 那一份正文");
+  chk(/window\.masterTextOf/.test(game), "expand() 调的是 window.masterTextOf（与 data/index.js 同一句）");
+  chk(/expand\(p, "poems"\)/.test(corpus) && /expand\(p, w\.id\)/.test(corpus),
+    "corpus() 里课内与集子**都**过 expand()（从前集子那一半没过，于是正文是空的）");
+  chk(/if \(!m && book\) m = map\(\).*\n?/.test(game) || /masterTextOf\(p, book\)/.test(game),
+    "主表查不到时原样返回（不猜、不塞空串）");
 }
 
 console.log("\n=== 4 · 老地址改道：/poems/?game=1 → /dahui/ ===");
