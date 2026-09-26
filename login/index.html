@@ -144,6 +144,12 @@
           <div class="turnstile-slot" id="ts-reg" hidden></div>
           <div class="account-note warn" id="ts-broken-ts-reg" hidden></div>
           <button class="account-btn" id="btn-register" type="button">注册</button>
+          <!-- 「这一发没能送达」时的第二个出口（Issue #363）：
+               `E_BAD_BODY` 那一句自己就写着「刷新一下页面再提交一次」，
+               那就把「刷新」做成**一颗能点的键**放在那句话下面 ——
+               页面是旧缓存时，刷新正是唯一真正管用的那一步。
+               文案由 `js/login.js` 的话术表填（这里只留空壳）。 -->
+          <button class="account-btn ghost" id="btn-reg-refresh" type="button" hidden aria-hidden="true">刷新页面重试</button>
           <p class="account-msg" id="msg-reg"></p>
 
           <p class="account-hint">注册后请查收电子邮件，<strong>点击链接验证后登录</strong>（点开即登录，不必再输一次密码）。链接 24 小时内有效。</p>

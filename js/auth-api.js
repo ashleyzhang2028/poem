@@ -70,11 +70,26 @@
     E_METHOD: "这一发请求的方式不对，请刷新页面重试。"
   };
 
+  // 「服务端说清了这一发为什么不成」的那几个码（Issue #363）。
+  //
+  // 从前 `messageOf()` 是「**码在前、服务端那句话在后**」——只要码在字典里，
+  // 服务端原样给的那句人话就被丢掉。而 `E_BAD_BODY` 恰恰是**服务端比前端清楚**
+  // 的一档：到底是「没读懂」还是「等超时了」，只有收到请求的那一头知道。
+  // 于是这几个码反过来：服务端给了话就用服务端的话（那是它会随现场变的），
+  // 它没说才回落到字典 —— 字典里那句留着当兜底，不是当唯一答案。
+  //
+  // ⚠️ 只列 `E_BAD_BODY`，不写成「凡有 data.message 就用它」：
+  //    别的码上服务端那句是**给开发看的**（比如「请求体不是合法的 JSON」），
+  //    而字典里那几句是**给用户看的**，两边都改过了、不许互相顶掉。
+  var SERVER_WORD_FIRST = { E_BAD_BODY: true };
+
   function messageOf(code, fallback) {
+    if (SERVER_WORD_FIRST[code] && fallback) return String(fallback);
     return TRANSPORT_ERR[code] || fallback || "操作没成功，请稍后再试";
   }
 
   function passwordMessageOf(code, fallback) {
+    if (SERVER_WORD_FIRST[code] && fallback) return String(fallback);
     return PASSWORD_ERR[code] || messageOf(code, fallback);
   }
 

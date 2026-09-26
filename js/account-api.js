@@ -598,11 +598,33 @@
     //    的那一刻最需要它（`poem_plan_v1` 被清掉之后 `cookieSession()` 就没人
     //    答得上来了）。服务端本来不认识这枚 Cookie 也回 200（幂等）。
     //
+    // 退出登录（Issue #274 / #363）：**本机那份答案当场就撕掉**，再去叫服务端撤。
+    //
     // ⚠️ 退出的结果是**干净的一份**：服务端撤会话 + 清掉那份服务端答案缓存
     //    （`clearServerTier()`）—— 后者是界面「登录了没」的判据，不清的话
     //    界面上那颗键会一直写着「退出登录」。
+    //
+    // ⚠️ 次序就是这件事的全部（Issue #363）。从前本机那份「服务端答案」
+    //    (`poem_plan_v1`) 是**等 `POST /api/logout` 回来之后**才清的
+    //    （`done()` 里那一句 `clearServerTier()`）。而 `js/mine.js` 的
+    //    `onSignOut()` 要**立刻**让页面不再是「登录着的样子」（那一发是异步的，
+    //    不能等它回来才变脸）—— 于是中间这一段里：
+    //      · 本机会话已经清了；
+    //      · 那份答案还在、水位线还对得上 → `Entitlement.cookieSession()` 认它
+    //        → `identity().signedIn` 仍然是 **true**；
+    //      · `Entitlement.isOwner()` 读的也是它 → 照样回「是管理员」。
+    //    用户看到的就是「已经登出了，我的页面还挂着『注销账号』和『管理后台』」。
+    //
+    // 所以**先清本机那一份、再叫服务端**：这一发回来之前页面就已经不是
+    // 「登录着」了，两颗键当场收起来。这也是「两处口径不许各说各话」那条纪律
+    // 的同一件事 —— 见 `Entitlement.cookieSession()` 的注释。
+    //
+    // ⚠️ `clearServerTier()` 仍然是唯一的清法（它认的是「这一份是不是服务端的」，
+    //    不是「有没有服务端层级」—— 一位 free 的管理员退出后 `tier: "free"`
+    //    是假值，那一行 `role: "owner"` 反而会留在本机）。
     function signOut() {
       var ch = usable(D.api) || (D.make ? safeCreate(D.make) : null);
+      clearServerTier();
       var done = function (reason) {
         clearServerTier();
         return { ok: true, reason: reason || REASON.OK, signedOut: true };
