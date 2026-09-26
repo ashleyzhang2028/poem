@@ -2,7 +2,7 @@
    同篇对照表（主表裁定规则的静态成果）
    --------------------------------------------------------------------------
    由 scripts/build-works-map.js 离线算出：**正文（去标点后）一致 = 同一篇作品**。
-   只登记「在两部及以上集子里重复出现」的那些作品（共 139 组），
+   只登记「在两部及以上集子里重复出现」的那些作品（共 141 组），
    单条的作品不必登记 —— 它本来就只出现一次，条目 id 自己就是作品 id。
 
    ⚠️ 这是**生成文件**，改动请改 scripts/build-works-map.js 后重跑，
@@ -47,6 +47,7 @@ window.WORKS_GROUPS = [
   { wid: "w-classic-gw-33", title: "滥竽充数", titles: ["滥竽充数"], entries: ["chengyu-cy-120","classic-gw-33"] },
   { wid: "w-classic-gw-76", title: "邯郸学步", titles: ["邯郸学步"], entries: ["chengyu-cy-122","classic-gw-76"] },
   { wid: "w-classic-gw-26", title: "刻舟求剑", titles: ["刻舟求剑"], entries: ["chengyu-cy-123","classic-gw-26"] },
+  { wid: "w-chengyu-cy-130", title: "蚌鹬相持", titles: ["蚌鹬相持","坐收渔利"], entries: ["chengyu-cy-130","chengyu-cy-622"] },
   { wid: "w-classic-gw-21", title: "鲧禹治水", titles: ["鲧禹治水"], entries: ["chengyu-cy-14","classic-gw-21"] },
   { wid: "w-chengyu-cy-155", title: "贻笑大方", titles: ["贻笑大方","大方之家"], entries: ["chengyu-cy-155","chengyu-cy-200"] },
   { wid: "w-classic-gw-32", title: "揠苗助长", titles: ["揠苗助长"], entries: ["chengyu-cy-188","classic-gw-32"] },
@@ -62,6 +63,7 @@ window.WORKS_GROUPS = [
   { wid: "w-tangshi-ts-276", title: "淡扫蛾眉", titles: ["集灵台·其二","淡扫蛾眉"], entries: ["chengyu-cy-465","tangshi-ts-276"] },
   { wid: "w-chengyu-cy-471", title: "春风得意", titles: ["春风得意","走马看花"], entries: ["chengyu-cy-471","chengyu-cy-472"] },
   { wid: "w-poems-xx5-12", title: "寸草春晖", titles: ["游子吟","寸草春晖"], entries: ["chengyu-cy-475","poems-xx5-12","tangshi-ts-67","yuefu-yf-48"] },
+  { wid: "w-chengyu-cy-504", title: "近水楼台", titles: ["近水楼台","近水楼台先得月"], entries: ["chengyu-cy-504","chengyu-cy-524"] },
   { wid: "w-classic-gw-48", title: "卧薪尝胆", titles: ["卧薪尝胆"], entries: ["chengyu-cy-52","classic-gw-48"] },
   { wid: "w-tangshi-ts-281", title: "折戟沉沙", titles: ["赤壁","折戟沉沙"], entries: ["chengyu-cy-573","tangshi-ts-281"] },
 

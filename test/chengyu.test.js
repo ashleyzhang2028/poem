@@ -14,7 +14,8 @@ loadData(sandbox, ['data/poems-1.js', 'data/poems-2.js', 'data/poems-3.js', 'dat
   'data/poems-5.js', 'data/poems-6.js', 'data/poems-7.js', 'data/poems-8.js',
   'data/poems-9.js', 'data/poems-10.js', 'data/poems-11.js', 'data/poems-12.js',
   'data/index.js', 'data/poems-chengyu.js', 'data/poems-classic.js',
-  'data/chengyu-support.js', 'data/site-index.js', 'data/works-map.js', 'data/works-index.js']);
+  'data/chengyu-support.js', 'data/chengyu-gloss.js',
+  'data/site-index.js', 'data/works-map.js', 'data/works-index.js']);
 
 const CY = resolve(sandbox, sandbox.POEMS_CHENGYU, 'chengyu');
 chk(Array.isArray(CY) && CY.length === 948,
@@ -37,7 +38,11 @@ chk(CY.every(p => p.excerpt), '每则都给了列表用摘句（excerpt）');
 chk(CY.every(p => ['public-domain', 'school', 'academic', 'modern'].indexOf(p.translationSource) >= 0),
   '译文来源取值都在允许范围内');
 
-const DYNASTIES_ALL = ['上古传说', '夏', '商', '西周', '春秋', '战国', '秦', '西汉', '东汉', '三国',
+// 第四批定的十九个朝代之外，本轮新增「先秦」一档 —— 造像「杀鸡取卵」这类
+// 外来寓言，出处是古希腊《伊索寓言》，既不是十九朝里的任何一朝，也不能
+// 硬挂到「宋」（明代才随《况义》等汉译本传入）。归「先秦」是「成书早于秦」
+// 这一档，与「宋」那种张冠李戴比，是更老实的写法。
+const DYNASTIES_ALL = ['上古传说', '先秦', '夏', '商', '西周', '春秋', '战国', '秦', '西汉', '东汉', '三国',
   '两晋南北朝', '隋', '唐', '五代', '宋', '辽金', '元', '明', '清'];
 chk(CY.every(p => DYNASTIES_ALL.indexOf(p.gradeGroup) >= 0),
   '每则都归入十九个朝代之一（第四批：分组键由九时代改为精确朝代）');
@@ -47,7 +52,7 @@ chk(CY.every(p => p.gradeGroup === p.dynasty),
 chk(CY.every(p => p.source.indexOf('《') >= 0 && p.source.indexOf('》') >= 0),
   '出处都写成《书名·篇名》的样子');
 
-const DYNASTIES = ['上古传说', '夏', '商', '西周', '春秋', '战国', '秦', '西汉', '东汉', '三国',
+const DYNASTIES = ['上古传说', '先秦', '夏', '商', '西周', '春秋', '战国', '秦', '西汉', '东汉', '三国',
   '两晋南北朝', '隋', '唐', '五代', '宋', '辽金', '元', '明', '清'];
 chk(CY.every(p => DYNASTIES.indexOf(p.dynasty) >= 0),
   '朝代取值都在校正后的朝代表内');
@@ -325,6 +330,85 @@ chk(staleTrans.length === 0,
 chk(support.length >= 76, '语本类成语的补充材料齐备（' + support.length + ' 条）');
 chk(support.every(x => CY.filter(p => p.title === x.title).length === 1),
   '补充材料点名的成语在库里都有且只有一条');
+
+// ── Issue #339 第三轮：正文里的编者括注搬进「语源 / 典故」栏 ──────────
+// 首版录入时，151 则的正文里挂着编者括注（「（佛典）」「（语本元曲）」
+// 「（苏秦）」…）。那不是任何一本书里的句子，却和原文混在同一栏 ——
+// 读者分不清哪句是古人说的。现已搬进 gloss 一栏，这里钉死三件事：
+//   ① 正文里再没有那类括注；② 摘句跟着去掉括注、且仍是正文的一段；
+//   ③ gloss 一栏与 data/chengyu-gloss.js 那份手工表一一对应。
+const GLOSS_SRC = sandbox.CHENGYU_GLOSS || {};
+const STAMP = /（[^（）]*(语本|佛典|后世语|现代语|诗法|元曲|小说家言|禅典|西洋寓言|法寓言|原文作|同「|本《|见《|见宋人|宋人书|贾谊《|元诗选)/;
+
+const stamped = CY.filter(p => {
+  const t = sandbox.masterTextOf ? sandbox.masterTextOf(p, 'chengyu') : p;
+  return STAMP.test(t.text || '');
+}).map(p => p.title);
+chk(stamped.length === 0,
+  '正文里没有编者括注了（「（佛典）」「（语本元曲）」「（苏秦）」这类，残余：' +
+  (stamped.slice(0, 6).join('、') || '无') + '）');
+
+const leadParen = CY.filter(p => {
+  const t = sandbox.masterTextOf ? sandbox.masterTextOf(p, 'chengyu') : p;
+  return /^（[^（）]*）/.test(t.text || '');
+}).map(p => p.title);
+chk(leadParen.length === 0,
+  '正文不再以括注开头（残余：' + (leadParen.slice(0, 6).join('、') || '无') + '）');
+
+chk(CY.filter(p => /（/.test(p.excerpt || '')).length <= 3,
+  '摘句也去掉了编者括注（仍带括注的 ≤ 3 条，是原书里的人名夹注，实际 ' +
+  CY.filter(p => /（/.test(p.excerpt || '')).length + ' 条）');
+const exParen = CY.filter(p => /（/.test(p.excerpt || '')).map(p => p.title);
+chk(exParen.every(t => ['面壁功深', '依样画葫芦', '画虎类犬'].indexOf(t) >= 0),
+  '摘句里仅剩的三处括注都是原书夹注（人名 / 说话人），不是编者标记（实际 ' +
+  (exParen.join('、') || '无') + '）');
+
+// 括注搬走之后，正文要露出本来面目 —— 点名几处
+const movedSpot = {
+  '守口如瓶': '守口如瓶，防意如城。',
+  '众志成城': '故谚曰：「众心成城，众口铄金。」',
+  '盲人摸象': '如彼盲人，各各摸象，不得象之实相。'
+};
+Object.keys(movedSpot).forEach(t => {
+  const p = CY.filter(x => x.title === t)[0];
+  const tx = p && sandbox.masterTextOf ? sandbox.masterTextOf(p, 'chengyu').text : '';
+  chk(tx === movedSpot[t], 'Issue #339·' + t + ' 正文已去掉编者括注（实际 ' + tx.slice(0, 24) + '）');
+});
+
+// gloss 一栏与手工表一一对应（漏一条 / 多一条都不会静默通过）
+const glosscoded = CY.filter(p => p.gloss);
+chk(glosscoded.length === Object.keys(GLOSS_SRC).length,
+  'gloss 一栏条数与手工表一致（条目 ' + glosscoded.length + ' / 表 ' +
+  Object.keys(GLOSS_SRC).length + '）');
+chk(Object.keys(GLOSS_SRC).every(t => CY.filter(p => p.title === t).length === 1),
+  '手工表点名的成语在库里都有且只有一条');
+chk(Object.keys(GLOSS_SRC).every(t => {
+  const p = CY.filter(x => x.title === t)[0];
+  return p && p.gloss === GLOSS_SRC[t];
+}), '每则的 gloss 与手工表逐字一致（不是另一份抄来的）');
+// gloss 也进全站索引 —— 搜「佛典」能搜到「守口如瓶」，搜「语本元曲」能搜到「虎头蛇尾」
+const idxGloss = IDX.filter(x => x.book === 'chengyu' && !x.isBook && x.gloss);
+chk(idxGloss.length === glosscoded.length,
+  '每则的语源 / 典故都进了全站索引（索引 ' + idxGloss.length + ' / 条目 ' + glosscoded.length + '）');
+const bySiteId = {};
+CY.forEach(p => { bySiteId['chengyu-' + p.id] = p; });
+chk(idxGloss.every(x => x.gloss === (bySiteId[x.id] || {}).gloss),
+  '索引里的 gloss 与条目逐字一致');
+chk(IDX.filter(x => x.book === 'chengyu' && !x.isBook && !x.gloss)
+  .every(x => !(bySiteId[x.id] || {}).gloss),
+  '条目没有 gloss 的，索引里也不留空串（整卡不出现，不是空白框）');
+
+chk(glosscoded.every(p => String(p.gloss).replace(/\s/g, '').length >= 4),
+  'gloss 都写成了完整的话（没有光秃秃的标记；最短的一则是「现代语。」，实际最短 ' +
+  Math.min.apply(null, glosscoded.map(p => String(p.gloss).replace(/\s/g, '').length)) + ' 字）');
+
+// 第五档口径：近现代 / 外来成语的朝代不得挂到「清」以外的旧朝代
+const FOREIGN = { '杀鸡取卵': '先秦', '火中取栗': '清', '计日程功': '清', '天方夜谭': '清' };
+Object.keys(FOREIGN).forEach(t => {
+  const p = CY.filter(x => x.title === t)[0];
+  chk(p && p.dynasty === FOREIGN[t] && p.gradeGroup === FOREIGN[t],
+    'Issue #339·' + t + ' 归 ' + FOREIGN[t] + '（实际 ' + (p ? p.dynasty : '缺') + '）');
+});
 
 console.log('');
 console.log(fails ? '❌ ' + fails + ' 项失败' : '🎉 chengyu测试全部通过');

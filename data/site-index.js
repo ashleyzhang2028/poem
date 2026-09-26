@@ -43,6 +43,7 @@
 
           selection: p.selection || "",
           meaning: p.meaning || "",
+          gloss: p.gloss || "",
           grade: p.grade,
           term: p.term,
           gradeGroup: p.gradeGroup || "",

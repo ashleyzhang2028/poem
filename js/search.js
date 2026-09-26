@@ -59,7 +59,7 @@
     var title = String(p.title || "").toLowerCase();
     var author = String(p.author || "").toLowerCase();
     var rest = [p.bookName, p.source, p.selection, p.dynasty, p.gradeGroup, p.authorName].join(" ").toLowerCase();
-    var body = [p.text, p.translation].join(" ").toLowerCase();
+    var body = [p.text, p.translation, p.meaning, p.gloss].join(" ").toLowerCase();
     if (title.indexOf(q) >= 0) return 4;
     if (author.indexOf(q) >= 0) return 3;
     if (rest.indexOf(q) >= 0) return 2;
@@ -416,7 +416,7 @@
       groupOrder: [],
       pageTitle: "搜索",
       pageSub: "全站篇目，一搜就到",
-      extraFields: ["text", "translation", "bookName", "gradeGroup"],
+      extraFields: ["text", "translation", "bookName", "gradeGroup", "meaning", "gloss"],
       words: {
         list: "篇目",
         unit: "篇",

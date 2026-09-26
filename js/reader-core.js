@@ -666,6 +666,16 @@
 
     renderReaderText();
 
+    // 语源 / 典故卡（成语页专属）：正文只放原书那一句，编者过去写在正文括注里的
+    // 「（佛典）」「（语本元曲）」「（原文作某某）」搬到这里。没有 gloss 的集子整卡不出现。
+    var glossBox = rd("gloss");
+    var glossEl = rd("gloss-text");
+    if (glossBox) {
+      var gloss = p.gloss ? String(p.gloss) : "";
+      glossBox.hidden = !gloss;
+      if (glossEl) glossEl.textContent = gloss;
+    }
+
     // 释义卡（成语页专属）：没有 meaning 的集子整卡不出现，不留空白框
     var meanBox = rd("meaning");
     var meanEl = rd("meaning-text");
