@@ -524,7 +524,7 @@
 
       var read = isRead(p.id);
 
-      var pending = !p.text || !p.translation;
+      var pending = !p.text || (!p.translation && !CFG.noTranslation);
       var el = document.createElement("div");
       el.className = "item" + (read ? " done" : "") + (pending ? " pending" : "") +
         (p.gradeGroup === W.matchGroup ? "" : " in-book");
@@ -682,6 +682,11 @@
       srcEl.textContent = p.translation && window.translationSourceText
         ? window.translationSourceText(p) : "";
     }
+
+    // 词条式集子（文学常识一类）：正文即释义，本来就没有白话译文
+    // —— 译文开关藏起来，免得点开是空的
+    var transBtn = rd("trans-toggle");
+    if (transBtn) transBtn.hidden = !!CFG.noTranslation;
 
     showTransBox(false);
     speakingTarget = "原文";

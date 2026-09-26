@@ -11,7 +11,8 @@
     { id: "guwen", name: "古文观止", page: "/guwen/", varName: "POEMS_GUWEN", unit: "篇" },
     { id: "jinxiandai", name: "近现代诗词", page: "/jinxiandai/", varName: "POEMS_JINXIANDAI", unit: "首" },
     { id: "zhaoming", name: "昭明文选", page: "/zhaoming/", varName: "POEMS_ZHAOMING", unit: "篇" },
-    { id: "chengyu", name: "中华成语故事", page: "/chengyu/", varName: "POEMS_CHENGYU", unit: "则" }
+    { id: "chengyu", name: "中华成语故事", page: "/chengyu/", varName: "POEMS_CHENGYU", unit: "则" },
+    { id: "changshi", name: "文学常识", page: "/changshi/", varName: "POEMS_CHANGSHI", unit: "条" }
   ];
 
   function buildSiteIndex(extra) {
@@ -26,9 +27,10 @@
         var p = (typeof window.masterTextOf === "function")
           ? window.masterTextOf(raw, b.id) : raw;
 
-        if ((b.id === "guwen" || b.id === "yuanqu" || b.id === "zhaoming" ||
-            b.id === "yuefu" || b.id === "jinxiandai" || b.id === "chengyu") &&
-            (!p.text || !p.translation)) return;
+        var NEED_TRANS = ["guwen", "yuanqu", "zhaoming", "yuefu", "jinxiandai", "chengyu"];
+        if (NEED_TRANS.indexOf(b.id) >= 0 && (!p.text || !p.translation)) return;
+        // 文学常识是词条式：正文即释义，本就没有白话译文，只要求有正文
+        if (b.id === "changshi" && !p.text) return;
         out.push({
           id: b.id + "-" + p.id,
           originId: p.id,

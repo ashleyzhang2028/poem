@@ -242,8 +242,10 @@ chk(zmIdx.every(x => x.text && x.translation),
   '进索引的每一篇都原文与译文齐备');
 chk(IDX.some(x => x.book === 'zhaoming' && x.isBook),
   '「昭明文选」本身也作为一条结果（搜集子名能直接进那一页）');
-chk(sandbox.SITE_BOOKS.length === 10 && sandbox.SITE_BOOKS.some(b => b.id === 'zhaoming'),
-  '十部集子的清单里含昭明文选（' + sandbox.SITE_BOOKS.length + ' 部）');
+// 不写死「几部」，只守「昭明在册 + 每部都有页面地址」；
+// 部数与名单交给 engine.test.js 与 library.js 的同源比对
+chk(sandbox.SITE_BOOKS.some(b => b.id === 'zhaoming' && b.page === '/zhaoming/'),
+  '集子清单里含昭明文选并各带自己的页面地址（共 ' + sandbox.SITE_BOOKS.length + ' 部）');
 
 console.log('');
 console.log(fails ? '❌ ' + fails + ' 项失败' : '🎉 zhaoming测试全部通过');
