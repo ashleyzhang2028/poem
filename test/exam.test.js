@@ -150,6 +150,63 @@ console.log('\n=== 三c、名单：一行一个，不分块（2026-09-26 用户�
     '`book:poems` 照旧是**合法 scope**（只是不上名单）—— 课内整部都取得到');
 }
 
+console.log('\n=== 三d、名单的次序：全部 → 课内三学段 → 各集子（2026-09-26 用户裁决） ===');
+{
+  // 用户原话：「把 小学 初中 高中 放到顶部，全部的下面」——
+  // 次序是**内核给的口径**（页面照单摆），所以在这一层钉住：
+  // 全部最前、课内三学段紧跟、各集子排在它们之后。
+  const bookList = [
+    { id: 'classic', name: '课外必背小古文' }, { id: 'tangshi', name: '唐诗三百首' },
+    { id: 'changshi', name: '文学常识' }
+  ];
+  const list = Ex.scopes(CORPUS, { books: bookList, }).filter(sc => Ex.scopeVisible(sc.id));
+  const ids = list.map(sc => sc.id);
+  eq(ids[0], 'all', '第一行是「全部」');
+  eq(ids.slice(1, 4).join(','), 'poems:primary,poems:middle,poems:high',
+    '课内三学段（小学 / 初中 / 高中）紧跟在「全部」下面');
+  chk(ids.slice(4).every(id => id.indexOf('poems:') !== 0),
+    '三学段之后再没有别的学段（三行连着，不被集子隔开）');
+  eq(list.find(sc => sc.id === 'poems:primary').name, '小学', '第二行写的是「小学」');
+  eq(list.find(sc => sc.id === 'poems:middle').name, '初中', '第三行写的是「初中」');
+  eq(list.find(sc => sc.id === 'poems:high').name, '高中', '第四行写的是「高中」');
+
+  // 课内没有语料时，那三行如实不出现（不摆空壳），次序也不塌。
+  const noPoems = CORPUS.filter(p => p.book !== 'poems');
+  const bare = Ex.scopes(noPoems, { books: bookList }).filter(sc => Ex.scopeVisible(sc.id));
+  eq(bare.map(s => s.id).join(','), 'all,book:tangshi,book:changshi',
+    '课内没语料时三学段不出现（不摆空壳），其余照旧依次排');
+}
+
+console.log('\n=== 三e、范围那一段收在同一张卡里（2026-09-26 用户裁决） ===');
+{
+  // 用户原话：「将范围这么多列表放在一个卡片显示，而不是看上去一个选项一个卡片」——
+  // 这一层从源码钉住两件事：范围那一段有**一张**卡（.game-scope-card），
+  // 卡里那份清单是**一行一个**（.game-scope-list 里全是 .game-scope-pick），
+  // 行里不再各带一张卡。
+  const gameSrc = fs.readFileSync(path.join(ROOT, 'js/game.js'), 'utf8');
+  const html = (gameSrc.match(/function scopeRows\(\)[\s\S]*?\n  }/) || [''])[0];
+  chk(html.indexOf('account-card game-scope-card') >= 0,
+    '范围那一段摆的是一张卡（account-card game-scope-card）');
+  chk(html.indexOf('game-scope-list') >= 0 && html.indexOf('game-scope-grid') < 0,
+    '清单容器是 game-scope-list（旧的 game-scope-grid 名字不留）');
+  chk(html.indexOf('game-scope-card-head') >= 0,
+    '「收起」与说明行收进卡内那一头（段头只剩「范围」两个字）');
+  chk((html.match(/account-card/g) || []).length === 1,
+    '这一段里只许有一张卡（多一张就是「一个选项一个卡片」长回来了）');
+  chk(gameSrc.indexOf('pickNote()') >= 0 && gameSrc.indexOf('scopePick') >= 0,
+    '15 行照样由 scopePick() 一行一个地摆出来');
+
+  const css = fs.readFileSync(path.join(ROOT, 'css/account.css'), 'utf8');
+  const rule = (css.match(/\.game-scope-pick \{[^}]*\}/) || [''])[0];
+  chk(/border:\s*0/.test(rule) || /border:\s*none/.test(rule),
+    '每一行自己不带边框（行的边界靠卡内一条细线）');
+  chk(/border-radius:\s*0/.test(rule), '每一行不带自己的圆角（不是一张张小卡）');
+  const first = (css.match(/\.game-scope-pick:first-child \{[^}]*\}/) || [''])[0];
+  chk(/border-top:\s*0/.test(first), '第一行上面不画线（贴在卡内那一头下面）');
+  chk(/\.game-scope-list \{[^}]*display:\s*flex[^}]*flex-direction:\s*column/.test(css),
+    '清单是一条纵列（一行一个，不拐回多列格子）');
+}
+
 console.log('\n=== 四、组卷：范围 × 形态 × 题量，题上带 origin ===');
 {
   const plan = Ex.build(CORPUS, { kind: 'mock', scope: 'all', size: 8, seed: 's1' });

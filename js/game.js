@@ -196,7 +196,7 @@
   function renderHome() {
     var id = identifier();
 
-        var html = scopeRows();
+    var html = scopeRows();
     html += homeTag("题型");
     html += '<div class="poems-home-row">';
     MODES.forEach(function (m) {
@@ -212,34 +212,45 @@
     });
     html += "</div>";
 
-        if (!id.signedIn) {
+    if (!id.signedIn) {
       html += '<button class="account-btn" type="button" data-game-go="/login/">登录</button>';
     }
     return html;
   }
 
-    function scopeRows() {
+  // 范围那一段。用户 2026-09-26 裁决两件事：
+  //   ① 「将范围这么多列表放在一个卡片显示，而不是看上去一个选项一个卡片」——
+  //      所以 15 行**收进同一张卡**（`.game-scope-card`）；行里不再各有自己的
+  //      边框与圆角，行的边界靠卡内一条细线（`.game-scope-pick { border-top }`）。
+  //      「收起」那一颗从前摆在段头（与「范围」同一行），也收进了卡里 ——
+  //      段头只有「范围」两个字，卡片管自己那一份清单。
+  //   ② 次序（小学 / 初中 / 高中 紧跟全部）由 Exam.scopes() 定，这一层照单摆。
+  function scopeRows() {
     var scopes = scopeList().filter(function (sc) {
       return Ex ? Ex.scopeVisible(sc.id) : true;
     });
 
-        var html = '<div class="game-scope-head">' +
+    var html = '<div class="game-scope-head">' +
       '<p class="poems-home-tag">范围</p>' +
+      "</div>";
+
+    html += '<section class="account-card game-scope-card">' +
+      '<div class="game-scope-card-head">' +
+      pickNote() +
       '<button class="game-scope-all" type="button" data-game-scope-all="1">' +
       (state.scopeOpen ? "收起" : "展开") + "</button>" +
-      "</div>";
-    html += pickNote();
-    html += '<div class="game-scope-grid"' + (state.scopeOpen ? "" : ' data-folded="1"') + ">" +
+      "</div>" +
+      '<div class="game-scope-list"' + (state.scopeOpen ? "" : ' data-folded="1"') + ">" +
       scopes.map(scopePick).join("") +
-      "</div>";
+      "</div></section>";
     return html;
   }
 
-    function pickNote() {
+  function pickNote() {
     return '<p class="game-scope-note">' + esc(scopePickNote()) + "</p>";
   }
 
-    function scopePick(sc) {
+  function scopePick(sc) {
     var on = state.scopes.indexOf(sc.id) >= 0;
     return '<button class="game-scope-pick" type="button" data-game-scope="' + esc(sc.id) + '"' +
       (on ? ' data-on="1" aria-pressed="true"' : ' aria-pressed="false"') + ">" +
@@ -248,11 +259,11 @@
       "</button>";
   }
 
-    function homeTag(title) {
+  function homeTag(title) {
     return '<p class="poems-home-tag">' + esc(title) + "</p>";
   }
 
-    function tierText(m, r) {
+  function tierText(m, r) {
     if (r.ok) return Ent.tierLabel(m.tier);
     var why = Ent.denyReason(m.cap, { tier: identifier().tier, signedIn: !!(r.reason !== "login") });
     if (r.reason === "login") return why || "登录可用";
@@ -310,7 +321,7 @@
     return html;
   }
 
-    function bookName(source) {
+  function bookName(source) {
     var bits = String(source == null ? "" : source).split(" · ");
     var books = window.SITE_BOOKS || [];
     for (var i = 0; i < books.length; i++) {
@@ -343,13 +354,13 @@
     return "全部";
   }
 
-    function scopeCount(scopeId) {
+  function scopeCount(scopeId) {
     var list = scopeList();
     for (var i = 0; i < list.length; i++) if (list[i].id === scopeId) return list[i].count;
     return "?";
   }
 
-    function scopePickLabel(scopeId) {
+  function scopePickLabel(scopeId) {
     var id = String(scopeId || "all");
     if (id.indexOf("pick:") !== 0) {
       var one = scopeCount(id);
@@ -363,7 +374,7 @@
     return ids.map(scopeName).join(" + ") + (n == null ? "" : "（" + n + " 条）");
   }
 
-    function pickScope() {
+  function pickScope() {
     var on = state.scopes.slice();
     if (!on.length) return "all";
     if (on.indexOf("all") >= 0) return "all";
@@ -371,12 +382,12 @@
     return "pick:" + on.join("+");
   }
 
-    function pickCount() {
+  function pickCount() {
     if (!Ex || !Ex.select) return null;
     try { return Ex.select(corpus(), pickScope()).length; } catch (e) { return null; }
   }
 
-    function scopePickNote() {
+  function scopePickNote() {
     var n = pickCount();
     var on = state.scopes.slice();
     if (!on.length) return "一格没选 = 什么都考" + (n == null ? "" : "（" + n + " 篇）");
@@ -385,8 +396,8 @@
     return names.join(" + ") + (n == null ? "" : "（" + n + " 篇）");
   }
 
-    function renderSetup() {
-        var m = modeOf(state.pending);
+  function renderSetup() {
+    var m = modeOf(state.pending);
     var v = variantOf(state.pending);
     if (!m || !v) return "";
     var sizes = v.sizes || [];

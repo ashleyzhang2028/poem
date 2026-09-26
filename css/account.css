@@ -829,12 +829,27 @@ thead .plans-th-cap {
 .poems-game > .poems-home-row .game-mode-desc { margin-top: 3px; line-height: 1.6; }
 .poems-game > .poems-home-row .game-mode-tier { padding-top: 6px; }
 
+/* 范围那一段：段头只有「范围」一个词 —— 卡片管自己的头与清单。 */
 .game-scope-head {
+  display: flex;
+  align-items: baseline;
+  padding: 0 2px;
+}
+
+/* 15 行收进**同一张卡**（用户 2026-09-26：「放在一个卡片显示，
+   而不是看上去一个选项一个卡片」）。卡片外观取自 .account-card，
+   这里只管卡内那一条头与清单的排布。 */
+.game-scope-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+}
+.game-scope-card-head {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: 8px;
-  padding: 0 2px;
 }
 .game-scope-all {
   flex: 0 0 auto;
@@ -850,18 +865,19 @@ thead .plans-th-cap {
 .game-scope-all:active { opacity: .6; }
 
 .game-scope-note {
-  margin: 0 2px 2px;
+  margin: 0;
   font-size: 11.5px;
   line-height: 1.5;
   color: var(--ink-3);
 }
 
-.game-scope-grid {
+/* 清单：一行一个，一行就是一行 —— 行里不再各带一张卡。
+   行的边界靠一条细线，最后一行下面不画线。 */
+.game-scope-list {
   display: flex;
   flex-direction: column;
-  gap: 6px;
 }
-.game-scope-grid[data-folded="1"] { display: none; }
+.game-scope-list[data-folded="1"] { display: none; }
 
 .game-scope-pick {
   display: flex;
@@ -870,19 +886,23 @@ thead .plans-th-cap {
   box-sizing: border-box;
   width: 100%;
   text-align: left;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  padding: 9px 12px;
-  background: var(--card-2);
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+  padding: 9px 2px;
+  background: transparent;
   font: inherit;
   color: var(--ink);
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
-.game-scope-pick:active { background: var(--card); }
+.game-scope-pick:first-child { border-top: 0; }
+.game-scope-pick:active { background: var(--card-2); }
+/* 选中三处一起变（绿名 + 淡绿底 + 左侧一道绿条）——
+   一屏十几行里只看一道色容易漏；左侧那条用内嵌阴影画，不占位、不换行。 */
 .game-scope-pick[data-on="1"] {
-  border-color: var(--green);
   background: var(--green-light);
+  box-shadow: inset 3px 0 0 var(--green);
 }
 .game-scope-pick[data-on="1"] .game-scope-name { color: var(--green); }
 .game-scope-pick .game-scope-name {
