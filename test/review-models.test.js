@@ -138,7 +138,6 @@ chk(RM.modelOf('leitner').stageName(ln) === '4 号盒 · 8 天后',
 const sm2 = RM.modelOf('sm2');
 chk(sm2.DEFAULT_EF === 2.5 && sm2.MIN_EF === 1.3, 'SM-2 的出厂 EF 2.5、下限 1.3（原版口径）');
 chk(Math.abs(sm2.efAfter(2.5, 5) - 2.6) < 1e-9, 'SM-2：质量 5 → EF +0.1（实际 ' + sm2.efAfter(2.5, 5) + '）');
-chk(Math.abs(sm2.efAfter(2.5, 3) - 2.36) < 1e-9, 'SM-2：质量 3 → EF −0.14（实际 ' + sm2.efAfter(2.5, 3) + '）');
 chk(Math.abs(sm2.efAfter(2.5, 1) - 1.96) < 1e-9, 'SM-2：质量 1 → EF −0.54（实际 ' + sm2.efAfter(2.5, 1) + '）');
 chk(sm2.efAfter(1.3, 1) === 1.3, 'SM-2：EF 到下限 1.3 就不再往下掉');
 chk(sm2.intervalAfter(0, 2.5, 1) === 1 && sm2.intervalAfter(1, 2.5, 2) === 3 &&

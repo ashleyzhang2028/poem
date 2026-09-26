@@ -239,9 +239,6 @@
       return function () { exitBook(); };
     };
 
-    // 返回键的归属由 openFrom 决定：读者态开着时是「回集子列表」，
-    // 列表就在原地，交给引擎还原滚动位置（Issue #347）；页面只在
-    // exitBook 里把整个集子拆掉，那时才告诉引擎别还。
     cfg.onHideReader = function () { return leavingBook ? "drop-list" : true; };
 
     var api = window.ReaderEngine.mount(cfg);

@@ -175,17 +175,12 @@
 .group-name { font-size: 17px; font-weight: 700; color: var(--ink); }
 .group-count { font-size: 11.5px; color: var(--ink-2); }
 
-/* ⚠️ 26px 是「列表卡片右侧那一组圆钮」的基准（Issue #329）：
-   报告错误 / 加入今日背诵 / 加入背诵清单 / 播放 都按这个尺寸走，
-   变量在 css/style.css 的 --item-btn / --item-icon。改这里要一起改那边。 */
 .gw-play-sm {
   margin-left: auto;
   width: 26px;
   height: 26px;
   box-sizing: border-box;
 }
-/* 这一颗在分组卡片标题行里，跟分组名/字号标签挨着，所以图标按 15px 给，
-   略大于同一尺寸圆钮里的 12px —— 两者是「同大小的钮、各自配的图标」。 */
 .gw-play-sm svg { width: 15px; height: 15px; }
 
 .gw-play-sm .play-glyph-sm svg { width: 15px; height: 15px; }
@@ -277,28 +272,7 @@
     max-width: calc(50% - 11px);
   }
 
-  /* 两列一组卡片的顶线（Issue #329）
-     ------------------------------------------------------------------
-     从前这里靠「第几行 = 第几项」数着抹线：抹掉 `.item:nth-of-type(2)` /
-     `(3) / (4)` 的 border-top，好让**视觉上第一行**的两条不画线。
-     但 .item 用 `flex: 1 1 calc(50% - 11px)` —— 能长也能缩的 flex 项，
-     各列剩多少空间，浏览器就按各自的 base 大小再摊一遍。两列里只要有一
-     列的内容高一点/宽一点，两组 `flex-grow` 分到的增量就不相等，该项会
-     换行「浮」在左边下一位上：
-       1三字经(左) 2弟子规(右)
-       空          空          ← 3菊 浮到上一行左边
-       3菊(左) 4莲(右) 5千字文(左)
-       6百家姓(右)
-     于是 DOM 序 `1,2,3,4,5,6` 与视觉序 `1,3,2,5,4,6` 错位，**第 3、4、5、6
-     项都落在了两边**：nth-of-type(2)/(3) 抹过线的 2 和 3 恰好一右一左，
-     「抹掉第二行」这件事就只抹掉了一半 —— 左列有线、右列没线。
-     改法：不要「按序数抹线」，改成「在每一个视觉行里：左侧那条擦掉
-     分隔线、右侧那条留着」。行的范围与左右位置由浏览器自己算，不再靠
-     我们数序号，多长多宽的卡片都不会错位。
-     写法解释：`.group-head` 也是 .group-card 的子元素，它把「视觉第 1 行」
-     整行占满（`.group-card > .group-head` 有 `:nth-of-type(1)` 那份 flex
-     定义），所以头一行天然被它挤到第 2 行，正好对应 `.item:first-of-type`。 */
-  .group-card > .item:first-of-type,
+    .group-card > .item:first-of-type,
   .group-card > .item:nth-of-type(3n + 2) {
     border-top: none;
   }
@@ -342,13 +316,9 @@
 .item-actions {
   display: grid;
   grid-template-columns: repeat(2, var(--item-btn));
-  /* 上下那一条缝：行高 = 26px（= --item-btn）+ 4px（= --item-gap）。
-     末行不留缝，所以这组钮整体比「两行钮」多出来的那点正好是它（Issue #329 后续）。 */
-  grid-auto-rows: calc(var(--item-btn) + var(--item-gap));
-  /* 左右那一条缝就在这儿；上下那条跟行高走 */
-  gap: 0 var(--item-gap);
-  /* 上下一起收：盒高 = 两行行距 + 最后一行钮高，钮在行里居中，于是两条缝一样宽 */
-  align-content: center;
+    grid-auto-rows: calc(var(--item-btn) + var(--item-gap));
+    gap: 0 var(--item-gap);
+    align-content: center;
   justify-items: center;
   justify-content: end;
 
@@ -711,7 +681,6 @@ body.reader-open .dock { display: none; }
   color: var(--ink-2);
 }
 
-/* 语源 / 典故：正文里曾经的编者括注（「（佛典）」「（语本元曲）」）搬到这里 */
 .gloss-box {
   border-left: 3px solid var(--ink-3);
 }
@@ -722,7 +691,6 @@ body.reader-open .dock { display: none; }
   color: var(--ink-2);
 }
 
-/* 成语释义：与白话译文同一种「引文卡」的样式，只在成语页出现 */
 .meaning-box {
   border-left: 3px solid var(--green);
 }

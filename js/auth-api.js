@@ -70,17 +70,6 @@
     E_METHOD: "这一发请求的方式不对，请刷新页面重试。"
   };
 
-  // 「服务端说清了这一发为什么不成」的那几个码（Issue #363）。
-  //
-  // 从前 `messageOf()` 是「**码在前、服务端那句话在后**」——只要码在字典里，
-  // 服务端原样给的那句人话就被丢掉。而 `E_BAD_BODY` 恰恰是**服务端比前端清楚**
-  // 的一档：到底是「没读懂」还是「等超时了」，只有收到请求的那一头知道。
-  // 于是这几个码反过来：服务端给了话就用服务端的话（那是它会随现场变的），
-  // 它没说才回落到字典 —— 字典里那句留着当兜底，不是当唯一答案。
-  //
-  // ⚠️ 只列 `E_BAD_BODY`，不写成「凡有 data.message 就用它」：
-  //    别的码上服务端那句是**给开发看的**（比如「请求体不是合法的 JSON」），
-  //    而字典里那几句是**给用户看的**，两边都改过了、不许互相顶掉。
   var SERVER_WORD_FIRST = { E_BAD_BODY: true };
 
   function messageOf(code, fallback) {
@@ -209,9 +198,7 @@
             retryAfter: data.retryAfter,
             remaining: data.remaining,
 
-            // 失败时也把明文邮箱带出去（Issue #320）：从前这里是 `emailMask`，
-            // 界面拿它说「验证邮件已发往 b***@163.com」。
-            email: data.email,
+                        email: data.email,
             verifySent: data.verifySent,
             verifyTransport: data.verifyTransport,
             emailVerified: data.emailVerified,
@@ -283,13 +270,7 @@
         return post("/verify-email", { vid: input.vid, token: input.token }, PASSWORD_ERR);
       },
 
-      // 退出登录（Issue #274）：**服务端那一枚会话也得撤掉**。
-      // 从前界面上那颗「退出登录」只清本机（`AuthCore.signOut`），于是
-      // 服务端登录的人点了退出，Cookie 还在 —— 刷新一下又「登录着」，
-      // 或者界面以为退了、服务端还认他（两边的登录状态各说各话）。
-      // 服务端本来没配会话（503）或不认识这枚 Cookie（401）都**不算失败**：
-      // 要的结果是「出去」，而票在客户端这边照样被撕掉。
-      logout: function () {
+            logout: function () {
         return post("/logout", {}).then(function (r) {
           if (r && r.ok) return r;
           var code = (r && r.code) || "E_OFFLINE";
@@ -396,8 +377,7 @@
         return post("/sync/push", { recs: input.recs || [], deviceId: deviceId });
       },
 
-      // 发 / 收层级**只认 uid**（Issue #320）：掩码那一条认人路整块撤掉了。
-      grant: function (input) {
+            grant: function (input) {
         input = input || {};
         return post("/admin/grant", {
           uid: input.uid,

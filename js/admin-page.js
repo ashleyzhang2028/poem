@@ -10,8 +10,6 @@
 
   var currentAccounts = [];
 
-  // 这一页启动时读到的那一份身份（uid / role）。改角色与层级都要拿它判权限：
-  // 权限判的是**当前这个人的**那份答案，不能另起一次「自己猜 uid」的读取。
   var myId = null;
 
   var ROLE_LABEL = { owner: "主人（种子）", admin: "管理员", user: "普通用户" };
@@ -44,11 +42,7 @@
     return ROLE_LABEL[r] || r;
   }
 
-  // 判「我是不是主人」**必须带上刚读到的这一份身份**（uid 一起给）。
-  // 只给 backing 的话，Entitlement 会自己去本机那份口令会话里取 uid ——
-  // 而**服务器发的会话（cookie）**在本机没有那一份记录，于是
-  // 「在服务端是 owner、这一页却说没权限」（Issue #319 实测顶出来的）。
-  function isOwner(id) {
+    function isOwner(id) {
     if (!id) return Ent.isOwner(backing);
     return Ent.isOwner(backing, { role: id.role, uid: id.uid });
   }
@@ -85,10 +79,7 @@
     return out;
   }
 
-  // 命中列表在这一页有两种用途：搜篇目、从正文里挑一句。
-  // 两种都画在 #pf-hits，区别写在按钮的 data-pick / data-line 上
-  // （按用途给属性，不靠「这一行的文字长得像篇名」去猜）。
-  function hits(list) {
+    function hits(list) {
     var box = $("pf-hits");
     if (!box) return;
     if (!list.length) { box.hidden = true; box.innerHTML = ""; return; }
@@ -251,10 +242,7 @@
     msg("msg-pf", "这个浏览器不给复制，请手动抄下：" + text, "warn");
   }
 
-  // ---- 账号与角色（表格：一格邮箱、一格角色）-----------------------------
-  // 角色与层级同属一份数据，所以合成一张表：改角色与改层级都落库，
-  // 但层级只对非 Free 的画在「已发放层级」那张表里，各管一件事。
-  function renderAccounts(data) {
+    function renderAccounts(data) {
     var box = $("accounts-body");
     if (!box) return;
     var list = (data && data.accounts) || [];
@@ -375,11 +363,7 @@
     });
   }
 
-  // ---- 层级（同一张表，第二个动作）---------------------------------------
-  // 原先这里是一张独立的「发放层级」表单：填邮箱掩码、选层级、点发放。
-  // 现在改成直接在表里改：选谁，就在他那一行把层级从 free 拨到 pro / max。
-  // 走的是同一个服务端接口，认人一律按 **uid**（Issue #320 起接口也只收 uid）。
-  function onTierChange(e) {
+    function onTierChange(e) {
     var sel = e.target.closest ? e.target.closest("select[data-tier-of]") : null;
     if (!sel) return;
     var uid = sel.getAttribute("data-tier-of");
@@ -442,10 +426,7 @@
     }).join("");
   }
 
-  // 收回**按 uid**（Issue #320）：从前是按邮箱掩码找那一行，而掩码
-  // 这一整条设计已经撤掉了。按钮上带 `data-revoke`（uid）与
-  // `data-revoke-mail`（那一行显示的名字，只用来写那句回话）。
-  function onRevokeClick(e) {
+    function onRevokeClick(e) {
     var b = e.target.closest ? e.target.closest("button[data-revoke]") : null;
     if (!b) return;
     var uid = b.getAttribute("data-revoke");
@@ -614,8 +595,7 @@
           var R = window.Report;
           if (li) {
             li.className = "report-row admin-report-row report-st-" + status;
-            // 就地更新那一行（不重拉整张表，否则滚动位置被打回顶部）
-            var s = li.querySelector(".report-status");  // stay：就地换那一行的状态，不重拉整张表
+                        var s = li.querySelector(".report-status");
             if (s) s.textContent = R ? R.labelOfStatus(status) : status;
           }
           reportsMsg("已改成「" + (window.Report ? window.Report.labelOfStatus(status) : status) + "」", "ok");
@@ -630,16 +610,7 @@
       });
   }
 
-  // 这一页开面第一件事就是问「我是不是主人」，而**身份是异步到位的**：
-  // 服务器发的会话要等 `js/chrome.js` 那一发 `/api/me` 回来，才写进
-  // `poem_plan_v1`。照面就判的话，管理员在自己机器上刷新这一页只会拿到
-  // 「没有权限」—— 他确实是主人，只是答案还没到。
-  //
-  // 所以：先按手上那份判一次，判不成**不急着关人**，挂上
-  // `entitlementchange`（`Entitlement.writeTier` 写完缓存时喊的那一声），
-  // 答案到了再判一次。真的没权限（游客 / 普通用户）时那一声不会来，
-  // 关人的话由 `paintDeny()` 在超时后如实说出。
-  var painted = false;
+    var painted = false;
   var paintTimer = null;
 
   function paintDeny(text) {
@@ -654,9 +625,7 @@
     myId = id;
 
     if (!isOwner(id)) {
-      // `/api/me` 那一发还没回来（本机这一份既没有 uid 也没有角色）——
-      // 给它一点时间。真的没权限时 `show()` 不会来，下面那一手兜住。
-      if (!painted && (!id || !id.uid)) {
+            if (!painted && (!id || !id.uid)) {
         if (!paintTimer) {
           paintTimer = setTimeout(function () {
             if (!painted) paintDeny("只对管理员开放。");
@@ -707,10 +676,7 @@
   }
 
   function init() {
-    // `announce()` 是往 `window` 上发的（见 `js/entitlement.js`）；
-    // `js/mine.js` / `js/settings-nav.js` 两处也都是 `window` + `document`
-    // 各挂一份 —— 这里同样两份都挂，谁先就位都听得到。
-    window.addEventListener("entitlementchange", paint);
+        window.addEventListener("entitlementchange", paint);
     document.addEventListener("entitlementchange", paint);
     paint();
   }

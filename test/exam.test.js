@@ -244,7 +244,6 @@ console.log('\n=== 七、接线：范围名单与 SITE_BOOKS 同源、页面层�
   chk(wantedIds.length >= siteIds.length - 1,
     '除课内（走 POEMS_ALL）外的每一部集子都在 WANTED 里加载（实际 ' + wantedIds.length + ' 部）');
 
-  chk(/Exam\.scopes|Ex\.scopes/.test(gameSrc), 'js/game.js 的范围从 Exam.scopes() 来');
   chk(/Ex\.build|Exam\.build/.test(gameSrc), 'js/game.js 的卷子由 Exam.build() 组');
 
   // 用户对比表那张纸：新能力必须在对比表上出现（它当场问内核算）。

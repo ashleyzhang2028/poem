@@ -604,13 +604,6 @@
     if (C.markStale) C.markStale(window.SITE_INDEX || []);
   }
 
-  // 本机存着快照的条目，改过就刷新。
-  // 已加入背诵 / 自选清单的条目会存一份快照（篇名、出处、正文、译文），
-  // 底本改了正文或译文，快照不会自己跟着变 —— 用户读到的是旧的那一份，
-  // 而界面上看不出任何异常。主表给每条正文留了一个「版次」，这里拿它与存下的
-  // 比一比，对不上就重取（js/collections.js 的 refreshSnapshots）。
-  // ⚠️ 只在启动时做一次，且只在真有对不上的时候才写回本机 —— 每次进页面都
-  //    全量重写一份存储，是在拿一个「内容更新」去换一次无谓的写盘。
   function refreshSnapshotsForBooks() {
     const C = window.ReciteCollections;
     if (!C || !C.refreshSnapshots || !C.list) return 0;
@@ -829,25 +822,21 @@
           "</b></span>"
       );
     } else {
-      info.push("<span>还没有学习记录，选择下方结果开始记忆</span>");
+      info.push("<span>还没有学习记录</span>");
     }
     $("#m-progress").innerHTML = info.join("");
 
     $("#m-hint").textContent = planItem
       ? planItem.reason === "review"
-        ? "这首诗按" + algoShort() + "到期了，复习后请如实选择掌握程度"
+        ? "这一首按" + algoShort() + "到期"
         : planItem.reason === "pinned"
-          ? "今天临时加背的，复习后同样按" + algoShort() + "排下次"
-          : "新学的诗，今天先记一遍"
-      : "背诵后点击按钮，系统会安排下次复习时间";
+          ? "今天加背的，按" + algoShort() + "排下次"
+          : "新学，今天先记一遍"
+      : "背诵后安排下次复习时间";
 
     $("#modal").hidden = false;
     document.body.style.overflow = "hidden";
     syncBottomGap();
-    // 详情铺开时，顶栏右上那颗键**从「没有」变成「返回」**（Issue #370）。
-    // 首页是底栏五格之一，平时不该有返回键；可详情是叠在这一页上的一层，
-    // 这一层得有一条明路退回去 —— 用户要的是「详情页的返回回到各自索引页」，
-    // 首页的索引就是它自己，所以这里是「收起详情」。
     paintModalBack();
   }
 
@@ -1158,10 +1147,7 @@
     paintModalBack();
   }
 
-  // 详情那一层的顶栏返回键：开着就挂一颗、收起就摘掉（`null`）。
-  // ⚠️ 只动 `#modal` 那一层，首页自己平时**不挂**返回键 ——
-  //    判据在 `paintModalBack()` 一处，不在样式里藏。
-  function paintModalBack() {
+    function paintModalBack() {
     var C = window.SiteChrome;
     if (!C || !C.setPageAction) return;
     C.setPageAction($("#modal").hidden

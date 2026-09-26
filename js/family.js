@@ -8,8 +8,6 @@
 
   var LEGACY_PROFILE_NS = "poem_profile_v1";
 
-  // 本机那份头像字节（Issue #320 起跟着子用户走）。真名归 `Avatar.LOCAL_NS`，
-  // 这里只借它判「是不是这一族」——写死一份字面量就会有两份真相。
   function avatarLocalNS() {
     var g = typeof globalThis !== "undefined" ? globalThis : null;
     var A = g && g.Avatar;
@@ -199,18 +197,7 @@
     return moved;
   }
 
-  // 把「不分家那份头像字节」搬到第一个子用户名下（Issue #320）。
-  //
-  // 老用户第一次升级到这里时发生一次（`ensure()` 末尾）：
-  // 老键上那一张图归**第一个孩子**，然后老键本身撤掉 ——
-  // 同一份字节留两处就是第二份真相，而下一回「切孩子」还会按老键画错一次。
-  //
-  // `adoptAvatarBytes()`（模块出口那一个）是另一件事：它给「另外几个孩子
-  // 一个字节都没有」的那些设备用 —— 老键只能搬一次，搬不到第二个孩子头上，
-  // 与其让他们顶着别人那张脸，不如回到自己的首字印。
-  //
-  // ⚠️ 搬完就把老键删掉。
-  function moveAvatarBytes(b, fromKey, toKey) {
+    function moveAvatarBytes(b, fromKey, toKey) {
     if (!b || !fromKey || !toKey || fromKey === toKey) return false;
     var text = safeGet(b, fromKey);
     if (!text) return false;
@@ -386,11 +373,7 @@
     if (k === K.profile) return false;
     if (k === K.device) return false;
 
-    // 本机那份头像字节（Issue #320）：它画的是「这个孩子长什么样」，
-    // 与昵称同属「你是谁」。从前它按设备域不分家 —— 于是切了子用户，
-    // 昵称换了、头像还是上一个孩子那张脸（用户报的就是这个）。
-    // ⚠️ 它同时是同步域里唯一一份「按子用户分家」的（见 sync-store.perChildKey）。
-    if (k === avatarLocalNS() || k.indexOf(avatarLocalNS() + "::") === 0) return true;
+        if (k === avatarLocalNS() || k.indexOf(avatarLocalNS() + "::") === 0) return true;
 
     if (/^poem_.*_read_v1$/.test(k)) return true;
 

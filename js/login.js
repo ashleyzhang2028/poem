@@ -177,16 +177,6 @@
     try { return TS.token() || ""; } catch (e) { return ""; }
   }
 
-  // 「这一发请求没能被服务端读懂」要不要配一颗「刷新页面重试」（Issue #363）。
-  //
-  // 用户报的就是这一句。它多半意味着**页面还是旧的一版**（浏览器装了旧缓存、
-  // 上一版的脚本与这一版服务端对不上），所以那句话里「刷新页面重试」不是
-  // 客套 —— 刷新正是唯一真正管用的那一步。既然说了，就把它做成一颗能点的键：
-  // 让用户去地址栏找刷新键，是把我们已经知道的事又推回去让他猜。
-  //
-  // ⚠️ 只用**码**判，不认文案：`E_BAD_BODY` 是两个入口共用的一档
-  //    （`handler.js` 的「没读懂」与「等超时」都回它），两颗键都不冤 ——
-  //    这两种情况下刷新都是对的下一步。
   var RELOAD_CODES = { E_BAD_BODY: true };
 
   function hideReloadBtn() {
@@ -392,17 +382,7 @@
 
       turnstileReset();
 
-      // ⚠️ **先看清这一发成不成，再决定清不清那两格**（Issue #363）。
-      //
-      // 从前这两行挡在前面、不看结果：密码框一律被清空。这一发要是没成功
-      // （比如「这一发请求没能被服务端读懂」，用户刷新一下页面重来），
-      // 用户回来看到的是**密码没了、邮箱还在**——他得把两格都重填一遍，
-      // 而其实只有密码那一格是必须重打的（它也**必须**重打：浏览器不许我们
-      // 把它留在页面上）。
-      //
-      // 现在的次序：成了才清（那是「已经用掉了」，留着反而是原文重放）；
-      // 没成就留着，用户只需要再点一次「注册」。邮箱这一格**任何时候都不清**。
-      if (!r.ok) {
+            if (!r.ok) {
         msg("msg-reg", r.message, "warn");
         if (RELOAD_CODES[r.code]) showReloadBtn(); else hideReloadBtn();
         return null;
@@ -410,9 +390,7 @@
       hideReloadBtn();
       if ($("input-reg-pw")) $("input-reg-pw").value = "";
       if ($("input-reg-pw2")) $("input-reg-pw2").value = "";
-      // 明文邮箱（Issue #320）：从前记的是掩码，界面据此说
-      // 「验证邮件已发往 b***@163.com」—— 用户自己刚填的那个邮箱。
-      state.regEmail = String(r.email || email || "");
+            state.regEmail = String(r.email || email || "");
       var vInput = $("input-verify-email");
       if (vInput) vInput.value = email;
 
@@ -579,8 +557,7 @@
       state.purpose = "login";
       state.codeId = r.codeId;
       state.code = r.devCode || "";
-      // 明文（Issue #320）：这一句就是「已发往 xxx@yyy」。
-      state.sentTo = String(email || "");
+            state.sentTo = String(email || "");
       state.expiresAt = r.expiresAt;
       state.cooldown = Date.now() + (r.cooldown || 60) * 1000;
       state.remote = true;
@@ -718,25 +695,7 @@
     });
   }
 
-  // 这一次登录是不是**第一次**（决定要不要停下来问昵称）。
-  //
-  // ⚠️ 口径：**服务端说了算**（`publicAccount` 下发的 `firstLogin` 那一列）。
-  //    客户端不猜、不算、不比自己编的时间戳。
-  //
-  //    从前这里是：
-  //        var isNew = !r.account.lastLoginAt || r.account.lastLoginAt === r.account.createdAt;
-  //    这句话有两处都不成立：
-  //      ① 喂进来的那一份是**编的** —— 三处 onSignedIn 的调用者都写死了
-  //         `createdAt: 0, lastLoginAt: 1`（那两个数凭空来的），于是**老用户
-  //         每一次登录都被算成「第一次」**，被一路拖去「快捷登录」那一屏填昵称
-  //         （这就是用户 2026-09-25 报的那一条）；
-  //      ② 判据本身也不对 —— `created_at` 与 `last_login_at` **本来就不相等**
-  //         （注册在 T1、第一次登录在 T2，真浏览器实测差了 1.6 秒），比大小
-  //         会把**真·第一次**判成老用户，于是新用户永远见不到昵称那一屏。
-  //
-  //    现在两边都当真：服务端在覆盖 `last_login_at` **之前**问出这一位，
-  //    客户端照它说；问不到（老服务端 / 本机路径没带）才退回时间戳比对。
-  function isFirstLogin(account) {
+    function isFirstLogin(account) {
     var acc = account || {};
     if (acc.firstLogin === true) return true;
     if (acc.firstLogin === false) return false;
@@ -748,9 +707,7 @@
     return Number(acc.lastLoginAt) === Number(acc.createdAt);
   }
 
-  // 已经登录过的人**不再**被拦下来填昵称：直接落到 /mine/（或 ?next= 指的那页）。
-  // 昵称/头像照旧随时能在「我的 → 编辑资料」里改。
-  function leaveWithoutNickname() {
+    function leaveWithoutNickname() {
     var next = nextUrl() || "/mine/";
     location.replace(next);
     return null;
@@ -932,9 +889,7 @@
     var acc = A.trustedAccount(store);
     var panel = $("trust-panel");
     if (!acc) { hide(panel); return; }
-    // 明文邮箱（Issue #320）：这是**本机的**那份账号（没有服务器时的
-    // 唯一记法），本来就只有用户自己看得到。
-    var mail = (acc.identities[0] && acc.identities[0].value) || "";
+        var mail = (acc.identities[0] && acc.identities[0].value) || "";
     var btn = $("btn-trust");
     if (btn) btn.textContent = mail ? "继续以 " + mail + " 进入" : "继续进入";
     show(panel);

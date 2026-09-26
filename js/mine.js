@@ -34,21 +34,6 @@
 
   function identityRow() { return $("identity-row"); }
 
-  // ---- 「我的邮箱」那一颗（Issue #320）----------------------------------
-  //
-  // 用户原话：「我的那里将掩码邮箱换成真实邮箱，但用户需要点击 我的邮箱
-  // 按钮才显示」。
-  //
-  // 所以身份行底下那一句是**两段**：左边永远写着「已登录」，
-  // 右边那一小段是邮箱 —— 默认收成「我的邮箱」四个字，点一下才换成
-  // 真邮箱，再点一下收回去。
-  //
-  // ⚠️ **这是本机的临时显示状态**，不是数据：邮箱本身一直在手上
-  //    （`identity().email`），收起来只是少画一段文字。所以
-  //      · 不落存储（刷新一下又是收起的，符合「要你点才显示」）；
-  //      · 不参与同步（它是「这一屏看不看得到」，不是「你是谁」）；
-  //      · 换个人登录 / 退出登录时**自动收起**（别人走过来时不该停在他
-  //        上一位的邮箱上）。
   var EMAIL_OPEN = false;
 
   function identityEmail() {
@@ -74,8 +59,7 @@
       hide(btn); hide(box); box.textContent = "";
       return;
     }
-    // 换人 / 退出登录之后自动收回去（见上面那一条）。
-    if (paintEmailToggle._who !== identity().uid) {
+        if (paintEmailToggle._who !== identity().uid) {
       paintEmailToggle._who = identity().uid;
       EMAIL_OPEN = false;
     }
@@ -99,9 +83,7 @@
 
       '<input id="input-nickname" class="nickname-input" type="text" maxlength="12"' +
       ' size="1" placeholder="起个名字" autocomplete="off" enterkeyhint="done" />' +
-      // 身份行第二行：左边「已登录 / 游客」，右边一颗「我的邮箱」——
-      // 点了才把那串真邮箱画出来（Issue #320，见 `paintEmailToggle()`）。
-      '<span class="identity-sub" id="identity-sub">' +
+            '<span class="identity-sub" id="identity-sub">' +
       '<span id="identity-state"></span>' +
       '<button class="identity-mail-btn" id="btn-my-email" type="button" hidden' +
       ' aria-expanded="false">我的邮箱</button>' +
@@ -141,10 +123,7 @@
     var slot = $("avatar-slot");
     if (slot) slot.innerHTML = window.Avatar ? Avatar.html(backing) : "";
 
-    // ⚠️ 这里**只写「已登录 / 游客」**这一段（Issue #320）。
-    //    邮箱是旁边那一颗「我的邮箱」点开才画的东西，交给
-    //    `paintEmailToggle()` —— 从前这一行是「已登录 · b***@163.com」。
-    var stateEl = $("identity-state");
+        var stateEl = $("identity-state");
     if (stateEl) stateEl.textContent = id.signedIn ? "已登录" : "游客";
     paintEmailToggle();
 
@@ -206,41 +185,7 @@
     }).join("");
   }
 
-  // 「账号」那一张卡已经**整块删掉**（Issue #320 用户第二句话）。
-  //
-  // 用户原话：
-  //   账号 / 邮箱 / belem@163.com / 邮箱确认 / 已确认 / 换一个账号登录
-  //   「这张卡片删掉吧，莫名其妙放在这里」
-  //
-  // ⚠️ 这张卡是 Issue #274 那段历史的遗留 —— 那时候「我的」页上没有别的地方
-  //    认得出「我登录的是谁」，于是专门开一张卡写账号那几件事。后来身份行
-  //    本身就把这些说清楚了：
-  //      · 是不是登录着 —— 身份行第二行「已登录 / 游客」；
-  //      · 邮箱是什么   —— 同一行那颗「我的邮箱」，点一下才显示（Issue #320 前一句）；
-  //      · 确认了没     —— 邮箱没确认时，身份行下面本来就有「重发确认邮件」；
-  //      · 想换个人登录 —— 身份行那颗「登录 / 退出登录」就是出口。
-  //    于是这张卡在页面上只剩一个作用：把身份行刚说过的话**再说一遍**。
-  //
-  // 所以这一轮连卡带内容一起撤：
-  //   · HTML：`#account-card`（含标题、`#account-list`、`#verify-row`、
-  //     `#btn-account-open`）整段删，不留空壳；
-  //   · 这里：`renderAccount()` / `renderVerifyState()` / `onResendVerify()`
-  //     三个函数一起删（元素没了，留着就是死代码）；`init()` 里那颗
-  //     「换一个账号登录」的绑定也删；
-  //   · **没动**：页底「注销账号 / 管理后台」那一排（它们本来就在卡外）、
-  //     身份行、同步、子用户、本机数据。
-  //
-  // 那三件事（注销入口可见性 / 管理入口可见性 / 页底那一排）从前是搭在
-  // `renderAccount()` 的尾巴上的，现在单独拿出来，**登录状态一变照样重画**。
-  //
-  // ⚠️ **没登录就两颗都不画**（Issue #320 用户最后一句：「如果用户已经登出，
-  //    不要显示 注销账号和 管理后台 按钮」）。
-  //    从前这里只处理「登录了」那一档 —— 未登录时它一声不响地 `return`，
-  //    两颗键的 `hidden` 于是**指望上一次画的时候留下的状态**：登出前画成
-  //    `hidden=false`，登出后没人再关它，键就留在屏幕上。而登出这条路会
-  //    连本机那份会话一起清，`identity()` 随即回「未登录」—— 正是这一档。
-  //    所以「未登录」必须**明确地把两颗键关掉**，不能靠「什么都没做」。
-  function renderSignedIn(sess) {
+    function renderSignedIn(sess) {
     var id = identity();
     if (!id || !id.signedIn) {
       hide($("btn-delete-start"));
@@ -253,14 +198,7 @@
     renderBottomActions();
   }
 
-  // ⚠️ 邮箱「还没确认」这件事仍然要有人管（Issue #268）。
-  //
-  // 从前它住在账号卡那块 `#verify-row` 里。卡删了，这一块就得换个家 ——
-  // 挂到**身份行下面**：那是「我是谁」的地方，「这个邮箱还没确认」本来就是
-  // 同一件事的下半句。所以不删功能，只挪位置：元素 id 全不变
-  // （`#verify-row` / `#verify-state` / `#btn-resend-verify`），
-  // 下面这两个函数与 `init()` 里那颗按钮的绑定都原样留着。
-  function renderVerifyState() {
+    function renderVerifyState() {
     var row = $("verify-row");
     if (!row) return;
     var id = identity();
@@ -312,18 +250,10 @@
     });
   }
 
-  // ⚠️ `renderAdmin()` 跑在 `renderSignedIn()` **之后**，所以它的
-  //    `show()` 能覆盖上一步刚关掉的那颗键（Issue #320 用户最后一句）。
-  //    于是它自己也得先看登录状态：`Entitlement.isOwner()` 只回答「这个人是不是
-  //    管理员」，答不了「他现在登录着没」—— 一份还没被清掉的服务端答案
-  //    会让它照样回 true。两个字都要看，缺一个就是「登出了还显示管理后台」。
-  function renderAdmin(id) {
+    function renderAdmin(id) {
     var btn = $("btn-go-admin");
     if (!btn) return;
-    // ⚠️ **先看登录状态，再看角色**（Issue #363）。次序反过来的话，一份还没
-    //    被清掉的服务端答案（`Entitlement.isOwner()` 读的正是它）会让这颗键
-    //    在登出之后重新长出来 —— 见 `paint()` 上面那一段。
-    if (!id || !id.signedIn) {
+        if (!id || !id.signedIn) {
       hide(btn);
       renderBottomActions();
       return;
@@ -359,21 +289,7 @@
     }
   }
 
-  // 退出登录 = **两份凭据一起清**（Issue #274）。
-  //
-  // ⚠️ 从前这里只做 `A.signOut(store)`（清本机的 `poem_auth_v1.sessions`）
-  //    与 `clearServerTier()`（清本机那份「服务端答案」缓存）。服务端登录的
-  //    人那样点一下**根本退不出去**：`kbsid` 那枚 Cookie 还在浏览器里，
-  //    服务端照旧认他，下一次 `/api/me` 又把同一份答案写回来 —— 界面上那颗键
-  //    还是「退出登录」。现在多打一发 `POST /api/logout`：服务端把会话标成
-  //    `revoked` 并回一发过期 Cookie，票当场撕掉。
-  //
-  // ⚠️ 次序：**先叫服务端撤，再清本机**。反过来的话，本机那份答案先没了、
-  //    服务端还认这枚 Cookie，中间这一小段里界面说「没登录」而服务端说
-  //    「登录着」——正好是我们要消灭的那种不一致。
-  //    `AccountApi.signOut()` 自己就带 `clearServerTier()`（而且它是唯一
-  //    知道「退到什么程度」的地方），所以这里不再自己清一遍。
-  function onSignOut() {
+    function onSignOut() {
     var r = A.signOut(store);
     if (!r.ok) return;
     try { if (window.SyncStore && window.SyncStore.forget) window.SyncStore.forget(); } catch (e) { }
@@ -383,16 +299,11 @@
       ? Promise.resolve(M.signOut({ backing: backing, E: Ent, A: A }))
       : Promise.resolve(null);
 
-    // ⚠️ 这一声喊在**服务端那一发回来之前**（Issue #363）：退出登录的第一件事
-    //    就是让页面**立刻**不再是「登录着的样子」—— 页底那两颗键（注销账号 /
-    //    管理后台）跟着这一声收起来，不用等 `/api/logout` 的往返。
-    paint(A.session(store));
+        paint(A.session(store));
     showToast("已退出登录（进度没动）");
 
     wait.then(function () {
-      // 服务端撤完再画一遍：这时本机那份「服务端答案」缓存也清了，
-      // 两条路结果一致（`renderAdmin()` 不再有「缓存还在」的窗口）。
-      paint(A.session(store));
+            paint(A.session(store));
       renderIdentity(identity());
     })["catch"](function () { });
   }
@@ -652,27 +563,7 @@
   function paint(sess) {
     var id = identity();
     if (!id) return;
-    // 用户原话（Issue #363）：「我已经登出了，能不能我的页面 不要显示
-    // 注销账号 和 管理后台按钮？」
-    //
-    // 页底那两颗键（`#btn-delete-start` / `#btn-go-admin`）的可见性，
-    // **由 `paint()` 一处说了算**，而且**先问登录、再问角色**，两条缺一不可：
-    //
-    //   ① 次序：`renderAdmin()` 问的 `Ent.isOwner()` 读的是本机那份
-    //      「服务端答案」缓存（`poem_plan_v1`）。它只答得了「这本机上最后一位
-    //      管理员是谁」，答不了「他现在登录着没」—— 所以**先看 `signedIn`**，
-    //      没登录就连角色都不问。
-    //   ② 口径：光靠 ① 不够（登出那一刻 `identity().signedIn` **也是 true**，
-    //      因为 `Entitlement.cookieSession()` 会认那份还在的答案）。所以
-    //      `js/account-api.js` 的 `signOut()` 改成**先**当场撕掉本机那份答案、
-    //      **再**叫服务端撤（从前是等 `POST /api/logout` 回来才撕）。
-    //      两条说的是同一句：**登出之后，本机立刻不知道「我是谁」**。
-    //
-    // ⚠️ 两颗键的**次序也一起定了**（从前是 `renderSignedIn()` 在
-    //    `renderAdmin()` 前、靠「谁后画谁说了算」）：`renderAdmin()` 先说，
-    //    `renderSignedIn()` 收尾 —— 最后说话的这一个只认
-    //    `identity().signedIn`，认不了缓存。
-    renderIdentity(id);
+        renderIdentity(id);
     renderAdmin(id);
     paintEmailToggle();
     renderStats();
@@ -723,30 +614,16 @@
     }
     paint(A.session(store));
 
-    // ⚠️ **每次打开这一页都问一次服务端「我是谁」**（Issue #274）。
-    //
-    // 从前这里挂着 `if (M && sess)`（有**本机**会话才问），而服务端登录的人
-    // 本机一份会话都没有 —— 于是 `/api/me` 从来没被调用过，这一页只能一直
-    // 画「游客」。现在无条件问一次：服务端回 401 才是真的没登录。
-    //
-    // ⚠️ 问到了要把**整个身份行重画**（不只是那一份账号卡）：那颗键的文案、
-    //    身份行那一句、账号卡、注销区都由 `identity()` 决定，而它认的正是
-    //    这一发写下的那份服务端答案。
-    var M = acct();
+        var M = acct();
     if (M) {
       Promise.resolve(M.refreshMe({ backing: backing, A: A, E: Ent })).then(function (r) {
         if (!r || !r.ok) return;
-        // `paint()` 一处出全部（身份行 / 账号卡 / 同步开关 / 管理入口）——
-        // 不许在这里另挑几处单独重画（漏一处就是「有的地方认、有的地方不认」）。
-        paint(A.session(store));
+                paint(A.session(store));
       })["catch"](function () { });
     }
 
     window.addEventListener("storage", function () { paint(A.session(store)); });
-    // 服务端那份答案到位了就重画一遍（Issue #274）。`js/chrome.js` 在顶栏
-    // 就位时问一次 `/api/me`，答完喊这一声 —— 页面只管听，不自己再问一遍
-    // （两个地方各问一次，就有一处会先画错、后画对，用户看到闪一下）。
-    document.addEventListener("account:ready", function () { paint(A.session(store)); });
+        document.addEventListener("account:ready", function () { paint(A.session(store)); });
     document.addEventListener("entitlementchange", function () { paint(A.session(store)); });
 
     function onFamilyChange() { paint(A.session(store)); }
@@ -831,13 +708,7 @@
     }
   }
 
-  // 「登录了没」——**问唯一出口**，不是问本机（Issue #274）。
-  //
-  // ⚠️ 原先这里是 `A.session(store)`（只读本机 `poem_auth_v1.sessions`）。
-  //    服务端登录的人本机一份都没有，于是这一页上凡是绕到它这里的地方
-  //    都答「未登录」—— 冲突裁决那一屏会多写一句「请先登录再选」，
-  //    而他已经登录了。判据只有一处：`Entitlement.cookieSession()`。
-  function sess() {
+    function sess() {
     var ok = false;
     try { ok = !!(Ent && Ent.cookieSession && Ent.cookieSession({ backing: backing })); } catch (e) { ok = false; }
     return ok ? {} : null;

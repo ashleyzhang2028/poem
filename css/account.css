@@ -2,21 +2,12 @@
   padding: 4px 0 14px;
 }
 
-/* 卡片之间一律留出间距：原先靠 .account-card 的 margin-bottom，
-   但「登录/重设/后台」这几页额外的 margin: auto 归零把那一条盖掉了，
-   于是卡片首尾相接、一条缝都没有（Issue #319）。改用 gap，谁也不压谁。 */
 .account-page {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
-/* ⚠️ 「卡片挨得紧、中间没有缝」的根子在这里（Issue #319）：
-   从前是**每张卡片各自 `margin: auto`**。一页只有一张卡时那是「往下居中」，
-   一页好几张时（后台）就变成「多出来的空间按卡片数**均摊**」——
-   于是卡片被撑开几十上百像素。
-   现在只有「一页就一张卡」时才对那一张用 `margin: auto` 居中，
-   多张卡的一页交给上面的 `gap` 排（见 `.account-page`）。 */
 body[data-nav="login"] .account-page,
 body[data-nav="reset"] .account-page,
 body[data-nav="verify"] .account-page,
@@ -28,13 +19,6 @@ body[data-nav="admin"] .account-page,
   min-height: calc(100 * var(--app-vh) - 118px);
 }
 
-/* ⚠️ 上面那 118px 是「顶栏 + 页边距」的老估值 —— 写死它的那一天底栏还是
-   0（`--nav-h` 的初值）。而今天底栏是**实测**的（`js/pwa.js` 的
-   `syncBottomGap()` 把量出来的高度写进 `--nav-h`；手机上一颗图标的底栏
-   约 56px）。于是这一页比「屏幕上那一片可视区」高出整整一条底栏：
-   往下居中的卡片因此比屏幕正中低半条底栏，看着贴向屏幕底
-   （Issue #320 原话：「这张卡片在屏幕中怎么显示得那么往下？」）。
-   把真实底栏高度减掉 —— 减掉的量跟着底栏走，底栏多高就减多少。 */
 body[data-nav="login"] .account-page,
 body[data-nav="reset"] .account-page,
 body[data-nav="verify"] .account-page,
@@ -44,8 +28,6 @@ body[data-nav="admin"] .account-page,
   min-height: calc(100 * var(--app-vh) - 118px - var(--nav-h, 0px));
 }
 
-/* 一页只有**一张卡**（登录 / 重设 / 验证）时才往下居中；后台那类一页好几张的
-   交由普通流从上往下排 —— 每张都居中会让卡片之间张出几十上百像素（Issue #319）。 */
 body[data-nav="login"] .account-page > .account-card:only-of-type,
 body[data-nav="reset"] .account-page > .account-card:only-of-type,
 body[data-nav="verify"] .account-page > .account-card:only-of-type,
@@ -56,20 +38,6 @@ body[data-nav="verify"] .account-page > .account-card:only-of-type,
 
 #deny-card .account-btn { width: auto; min-width: 132px; }
 
-/* 后台只有「没有权限」那一张可见时，这一页就是「一张卡的页」——
-   与登录页同样地把它摆到中间（其余四张还带着 `hidden`，`:only-of-type`
-   数不上它们）。⚠️ 不能用 `:has(> #deny-card:not([hidden]))` 判：
-   `:has` 认的是「页面里有没有这一张」，与「现在看得见几张」不是一回事，
-   于是「主人打开这一页」时它也会跟着命中，把一页四张卡也从中间分成两半。
-   `min-height: 0` 同理——本来就不想让它撑满一屏。 */
-/* ⚠️ 这一页的「居中」全靠 `margin-top: auto` 一处 —— 兜底那条
-   `margin-bottom: auto` 在这里**等于 0**（一页四张卡的位置被
-   `margin: auto` 收成 0，这是 Issue #319 的裁定）。
-   于是卡片落在「`顶栏底`与`页面底`的正中」，而「页面底」在**底栏下面**：
-   比屏幕正中低半条底栏（手机上一颗图标的底栏约 56px → 约 28px）。
-   Issue #320 的原话就是这个：「这张卡片在屏幕中怎么显示得那么往下？」
-   修的方式在上面那两条 `min-height` 里 —— 把真实底栏高度减掉，
-   让「页面底」回到屏幕上那一片可视区的底，居中就落回屏幕正中了。 */
 body[data-nav="admin"] .account-page > #deny-card:not([hidden]) {
   margin-top: auto;
   margin-bottom: auto;
@@ -413,9 +381,6 @@ body[data-nav="login"] .app {
   color: var(--ink-3);
 }
 
-/* 「我的邮箱」那一颗（Issue #320）—— 收着的时候是四个字，点开才多出
-   一串真邮箱。它长得像链接而不像按钮：它与旁边那句「已登录」是同一条
-   说明的一部分，不是这一页的主要动作。 */
 .identity-mail-btn {
   background: none;
   border: none;
@@ -433,7 +398,6 @@ body[data-nav="login"] .app {
 .identity-mail-btn:hover,
 .identity-mail-btn:focus-visible { color: var(--green-dark); }
 
-/* 点开之后的真邮箱。**可换行**（邮箱里有 @ 与长域名，硬撑会溢出）。 */
 .identity-email {
   min-width: 0;
   color: var(--ink-2);
@@ -838,48 +802,12 @@ thead .plans-th-cap {
 .poems-game { padding: 4px 0 14px; }
 .poems-game[hidden] { display: none; }
 
-/* 大会那一页的卡片之间**要有缝**（Issue #356 用户原话：
-   「这个页面的其他卡片之间需要间隔，不能一点空没有」）。
-
-   根子与登录 / 后台那几页是**同一处**（Issue #319）：`.account-card` 自己
-   没有外边距，一页好几张卡靠的是父层 `.account-page` 的 `gap: 12px`。
-   可 `.poems-game` 不是 `.account-page`（它是诗词页与大会页共用的挂载点，
-   别处的排版都挂在它身上），于是四张卡严丝合缝地贴着 —— 真机量过：
-   一张卡的下边缘与下一张卡的上边缘**是同一个像素**。
-   修法与 Issue #319 逐字一致：不写第二套「谁留缝」的规则，
-   就给这一层一条 flex 纵列 + 同一个 `gap`。
-
-   ⚠️ 这条 `gap` 现在**同时管着页底那颗「登录」键**（Issue #356 用户第二轮原话：
-      「登录按钮和卡片要有 gap 间隔，而不是完全没有 margin」）。
-      从前那颗键是玩法卡**里面的最后一个孩子** —— 卡片的内边距把「键与卡片
-      边缘」那条缝吃掉，于是它离上面的玩法卡只有 `gap`、离卡片边缘只有
-      `padding`，两处看着不一样。现在它是这一层的兄弟，缝只有一处（同一条 `gap`）。
-
-   ⚠️ 一行两张卡（田字格）也是**在这一层**分栏（Issue #356 用户第二轮原话：
-      「你看看可不可以手机屏幕中 一行显示两个卡片，这样就是田字格四个卡片」）。
-      见下面 `grid-template-columns` 那一条 —— 玩法卡自己不知道「一行几个」。 */
 .poems-game {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
-/* 玩法那四张卡**一行两张**（手机竖屏），于是四个玩法凑成一个田字格。
-   ⚠️ 分列的判据取**宽度**，不取设备类型：同一台手机横过来就是一列放得下
-      两张卡还富余，而「是不是手机」不变 —— 按设备分栏会在横屏上留出格子空着。
-   ⚠️ 用 `:has()` 而不是给 `renderHome()` 的 HTML 加一个类名：这一层是
-      `/poems/` 与 `/dahui/` **共用**的挂载点（别处的排版都挂在它身上），
-      加类名等于让 JS 去管一处纯样式的事；`:has()` 只回答「这一层里现在
-      有没有玩法卡」—— 进到飞花令那一层（一张卡都没有）时它自然不命中，
-      那些卡照旧是一列通栏。
-   ⚠️ 判据用 `:has(.game-mode)`（**后代**），不是 `:has(> .game-mode)`
-      （直接子）：玩法卡现在装在 `.poems-home-row` 里（首页两行各一个），
-      「直接子」那一问永远为假 —— 这一层于是既分不了栏、也居不了中。
-   ⚠️ 兜底那一条（`.poems-home`）给不支持 `:has()` 的老浏览器：整层横排会
-      在**每一层**都生效（飞花令那一层的卡片也会被挤成两列），所以宁可
-      老浏览器保持「一行一张」—— 田字格是加分项，不是功能。
-   ⚠️ `minmax(0, 1fr)` 里的 `0` 不能省：格子里的长句（玩法说明）默认会把
-      格子撑破，撑破的后果是一行两卡横向溢出。 */
 .poems-game:has(.game-mode) { display: flex; flex-direction: column; }
 .poems-home-row {
   display: grid;
@@ -887,64 +815,20 @@ thead .plans-th-cap {
   align-items: stretch;
   gap: 12px;
 }
-/* 「登录」那颗键是这一层的**直接子**，通栏由 flex 纵列的
-   `align-items: stretch`（默认）天然给到 —— `grid-column: 1 / -1`
-   只对 grid 子项有意义，这里已经用不上了。
-   ⚠️ 范围那一段（`.game-scope-head` / `.game-scope-row`）也在这条路上：
-   它也是这一层的直接子、也是通栏，但它**自带**排版（见下面那一节）。 */
 
-/* ---------------------------------------------------------------------
-   首页那两行小标题（「范围」/「题型」）
-   ---------------------------------------------------------------------
-   它**不是卡片** —— 不带背景、圆角、阴影、内边距，只是横在卡片之间的一行字，
-   把首页那一片分成上下两段。
-
-   ⚠️ 它与 `.account-card-title`（卡**里面**的那个标题，13px 灰色小字）
-      **不是一回事**：那个是「这一张卡叫什么」，这个是「下面这一段是什么」。
-      同页出现两种「标题」是有意的 —— 混成一个，用户就分不清「这是卡名」
-      还是「这是下一段」。 */
-/* ⚠️ 小标题**就是一个词**（「范围」「题型」「全部」「课内诗词」「其他集子」）——
-   Issue #356 第八轮用户原话：「改成 题型 不要加任何其他废话」「改成 范围
-   不要任何其他废话」。所以它不再有两截（名字 + 说明），
-   从前那两个 span（`.poems-home-tag-name` / `.poems-home-tag-note`）连同
-   对应的 JS 一起删了 —— 留着一个用不到的类名，下次就会有人往里塞第二句话。 */
 .poems-home-tag {
   padding: 0 2px;
-  /* 小标题与它下面那一行卡之间借一点负外边距：父层 `gap` 已给 12px，
-     再借 6px 出去，缝约 6px —— 够分开，又不浪费一屏的高度。 */
-  margin: 0 0 -6px;
+    margin: 0 0 -6px;
   font: var(--title-2);
   color: var(--ink-2);
   letter-spacing: .3px;
 }
 .poems-home-tag ~ .poems-home-tag { margin-top: 2px; }
 
-/* 首页那些卡：内边距比别处窄一档 —— 首页是「浏览」不是「阅读」，
-   一屏要摆下四张题型卡 + 一段范围。 */
 .poems-game > .poems-home-row .game-mode { padding: 12px; }
 .poems-game > .poems-home-row .game-mode-desc { margin-top: 3px; line-height: 1.6; }
 .poems-game > .poems-home-row .game-mode-tier { padding-top: 6px; }
 
-/* ---------------------------------------------------------------------
-   首页那一段范围：**一行一块的清单，可多选**（Issue #356 第九轮）
-   ---------------------------------------------------------------------
-   用户原话，这就是这一段的全部目标：
-     「要不还是合并范围和更多范围内容到古诗词大会的首页吧。」
-     「先显示范围，下面再显示题型和题型的田字格卡片。」
-     「范围用类似搜索的下拉框那种展现形式(直接每一行显示出来，不是下拉框)，
-       前面有个加号或减号，供用户多选。」
-     「这样设计，用户先多选范围，再按题型直接进入。」
-
-   ⚠️ 「类似搜索的下拉框」说的是**那种展开的清单**，**不是**浮层下拉
-      （用户紧接着补了一句「直接每一行显示出来，不是下拉框」）。
-      所以这里没有 `<select>`、没有浮层、没有绝对定位 —— 就是文档流里的
-      几行，行头一个加号。
-
-   ⚠️ 这一段**整体不是卡片**：没有背景、圆角、阴影。它是「考什么」的清单，
-      视觉分量比下面那四张题型卡低一档（题型是「进哪一条路」，范围是
-      「路上带什么」）。 */
-
-/* 段头：`范围` 这个两个字的小标题 + 一颗「收起 / 展开」。 */
 .game-scope-head {
   display: flex;
   align-items: baseline;
@@ -952,8 +836,6 @@ thead .plans-th-cap {
   gap: 8px;
   padding: 0 2px;
 }
-/* ⚠️ 段头里那颗键**不是** `.account-btn`（那是通栏的大键）：它跟小标题
-   同一行、同一个小号，是一件「顺手收起来」的小动作。 */
 .game-scope-all {
   flex: 0 0 auto;
   border: 0;
@@ -967,8 +849,6 @@ thead .plans-th-cap {
 }
 .game-scope-all:active { opacity: .6; }
 
-/* 状态行：现在选了什么、一共几篇。它是这一段的收口 —— 用户多选时
-   不用自己数哪几格亮着。 */
 .game-scope-note {
   margin: 0 2px 2px;
   font-size: 11.5px;
@@ -976,7 +856,6 @@ thead .plans-th-cap {
   color: var(--ink-3);
 }
 
-/* 一块范围：行头（加号 + 名字 + 条数）+ 这一块的格子。 */
 .game-scope-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -984,13 +863,6 @@ thead .plans-th-cap {
   gap: 8px;
 }
 
-/* 行头：**加号或减号在最前面**（用户原话：「前面有个加号或减号」）。
-   ⚠️ 「±」这个字形**不进 DOM** —— 由 CSS 画（两条线，收起时只留竖线那条
-      = 加号；展开时两条都在 = 减号）。这样加号与减号是**同一个元素的两态**，
-      不会出现「两种标记各写一遍、有一处忘改」那种事；
-      也免得读屏把那两个符号念出来（`aria-hidden` 那一条）。
-   ⚠️ 行头也**不是卡片**（没有背景、圆角、阴影），只有一条下边线当分隔 ——
-      它是一条「清单头」，不是一格里的一格。 */
 .game-scope-row {
   display: flex;
   flex-direction: column;
@@ -1013,11 +885,6 @@ thead .plans-th-cap {
 }
 .game-scope-row .game-scope-item:active { opacity: .6; }
 
-/* 加号 / 减号：一个 12×12 的方块，里面两条 1.5px 的线。
-   展开态 = **减号**（只剩横线那条）；收起态 = **加号**（横线 + 竖线）。
-   ⚠️ 也就是平时常见的那一对：`−` 点下去收起来、`+` 点下去展开。
-   ⚠️ 方向容易写反，这里把判据说白：**收起时才画竖线**（`[data-folded="1"]`
-      那一条），展开时竖线透明。真机两态都截过（390×844）。 */
 .game-scope-sign {
   position: relative;
   flex: 0 0 auto;
@@ -1036,8 +903,6 @@ thead .plans-th-cap {
   background: var(--ink-2);
   border-radius: 1px;
 }
-/* 竖线那条：**默认透明**（展开态只剩横线 = 减号）；
-   收起时才亮出来（两条都在 = 加号）。 */
 .game-scope-sign::after {
   left: 50%;
   top: 0;
@@ -1048,12 +913,8 @@ thead .plans-th-cap {
   transition: opacity .12s;
 }
 .game-scope-row[data-folded="1"] .game-scope-sign::after { opacity: 1; }
-/* 收起时这一块的格子**整体不画** —— 不是 `display: none` 一条了事？
-   对，一条就够了：格子里没有需要留住的输入（选中状态在 JS 的
-   `state.scopes` 上，重画就回来）。 */
 .game-scope-row[data-folded="1"] .game-scope-grid { display: none; }
 
-/* 行头那几个字：名字用 `--title-2`（与玩法卡同一档），条数小一号灰色。 */
 .game-scope-row .game-scope-name {
   font: var(--title-2);
   color: var(--ink);
@@ -1064,10 +925,6 @@ thead .plans-th-cap {
   color: var(--ink-3);
 }
 
-/* 一格名目：**多选的一个选项**。
-   ⚠️ 选中与否只看 `data-on="1"`（状态在 JS 上，重画之后按钮是新的）。
-      选中时：绿边 + 淡绿底 + 名字变绿 —— 三处一起变，一屏十几格里
-      一眼看得出哪几格亮着（只看一道边框容易漏）。 */
 .game-scope-pick {
   display: flex;
   flex-direction: column;
@@ -1104,35 +961,11 @@ thead .plans-th-cap {
   color: var(--ink-3);
 }
 
-/* 手机竖屏一行两张（上面已经是一行两张了，这一条只管**收窄**到窄屏时
-   把缝收小一点 —— 320px 上两张卡各 148px，`gap: 12px` 占掉的比例偏大）。
-   ⚠️ 一行几个**不在这里改**：改的是「一行放两张卡够不够宽」，够就还是两张。 */
 @media (max-width: 360px) {
   .poems-game:has(.game-mode) { gap: 10px; }
   .poems-home-row { gap: 10px; }
 }
 
-/* ---------------------------------------------------------------------
-   首页那一层：在屏幕里**垂直居中偏上一点**
-   （Issue #356 用户原话：「四卡片和登录按钮 在页面中垂直居中，或者稍微偏上一些」）
-   ---------------------------------------------------------------------
-   做法只有一条：这一层立成 flex 纵列，上下的余量各由一条**真的空行**吃掉
-   （两个 `::before` / `::after`，各带 `flex: 1` 与 `flex: 2`）——
-   余量于是按「上 1 : 下 2」分，整块落在**偏上三分之一**处，而不是正中间。
-
-   ⚠️ 高度按**可视区**算，不按文档流算：`100vh` 在手机上是「带地址栏时的
-      高度」，页面底其实在屏幕外（就是 §4.75 那条 `.account-page` 踩过的坑）。
-      这里用 `--app-vh`（`js/pwa.js` 在 iOS 上写进实测值，别处是 `1vh`），
-      再减掉真实底栏 `--nav-h` 与本页 `.app` 的下内边距 —— 减完才是
-      「屏幕上那一片可视区」。
-
-   ⚠️ 只在**首页那一层**生效：判据取 `.poems-game:has(.game-mode)`
-      （这一层里现在摆着玩法卡）。进到飞花令 / 卷面设置那几层时一张
-      `.game-mode` 都没有，这一条不命中 —— 那些层是要滚动的长内容，
-      拉成一屏高反而会把「上一题 / 下一题」挤到屏幕外。
-
-   ⚠️ `min-height` 不是 `height`：内容比可视区高时（首页现在有两行卡，
-      窄屏上说明折行更多）整层照旧往下长，不会把「登录」那颗键截掉。 */
 .poems-game:has(.game-mode) {
   min-height: calc(100 * var(--app-vh) - var(--nav-h) - 96px);
   justify-content: center;
@@ -1143,17 +976,9 @@ thead .plans-th-cap {
   display: block;
   flex: 0 0 auto;
 }
-/* 上面那条空行吃 1 份余量、下面那条吃 2 份 —— 整块因此偏上。 */
 .poems-game:has(.game-mode)::before { flex-grow: 1; }
 .poems-game:has(.game-mode)::after { flex-grow: 2; }
 
-/* 玩法卡：一颗按钮一张卡（Issue #356 用户原话：「飞花令四种玩法各自一个卡片」）。
-   ⚠️ 它同时是两个类 —— `.account-card` 给背景 / 圆角 / 阴影（卡片那套外观
-      与每日背诵页的卡片同源），`.game-mode` 给「这一颗是能点的键」（去掉
-      浏览器给 `<button>` 的默认样式、按下去要有反应）。
-   ⚠️ 不许再写 `margin`：缝只由父层的 `gap` 一处给（从前那条
-      `.game-mode { margin-bottom: 8px }` + `:last-child { margin-bottom: 0 }`
-      让「卡内按钮之间」有缝、「卡底按钮与卡片边缘」没缝，同一张卡里两处不一样）。 */
 .game-mode {
   display: flex;
   flex-direction: column;
@@ -1170,26 +995,6 @@ thead .plans-th-cap {
 .game-mode:active { background: var(--card-2); }
 .game-mode[data-locked] { opacity: .62; }
 
-/* 玩法名字：与「每日背诵」那一列（`.daily-row .daily-title`）**同一格** ——
-   `--title-2`（「密集清单」那一档：600 14.5px，正文字体）。
-
-   ⚠️ 上一轮这里写的是**同数**（14.5 / 600 / 与每日背诵逐字相同），这一轮
-      用户把问题问回去了：「你也没按照首页古诗列表卡片里的字体和样式来啊？」
-      —— 他比的是**首页 / 诗词页列表的篇目标题**（`.item-title`，17px 700 宋体），
-      不是「每日背诵」那一列。所以这一轮不再逐字照抄某一个组件，
-      而是把「谁是哪一档」写进 `:root` 的两条 token（`--title-1` / `--title-2`），
-      再挑一格：
-
-        · 这一页四张卡摆成田字格、卡里还有两行说明 —— 一屏四张，
-          用**密集清单**那一格（`--title-2`）；
-        · 首页与诗词页的篇目是一篇一行、要立得住骨架，用**列表**那一格
-          （`--title-1`，17px 700 宋体）。
-
-      ⚠️ 两条 token 都**自带字体**（`--font-ui` / `--font-poem`）：
-        这一页从前是黑体，看着像「设置项」；只有换成 `--title-1` 才算
-        「跟首页列表一个字体」。反过来说，四张卡摆田字格而标题换成 17px
-        宋体，一屏四个就会显得散 —— 所以这里保留 `--title-2`，
-        把「跟首页一致」落在**同一套 token** 上，而不是硬抄那一格。 */
 .game-mode-name {
   font: var(--title-2);
   color: var(--ink);
@@ -1204,16 +1009,10 @@ thead .plans-th-cap {
   font-size: 12px;
   color: var(--ink-3);
   line-height: 1.7;
-  /* 一行两张卡时，说明那两行也被格子收着 —— 不许撑破格子（撑破就是横向溢出）。 */
-  min-width: 0;
+    min-width: 0;
   overflow-wrap: anywhere;
 }
 
-/* 门槛小标：「Pro」「Max 可用」「登录可用」（Issue #356 用户原话：
-   「pro 登录可用，直接改成 Pro 可用 和 Max 可用」）。
-   ⚠️ 它从「名字右边那一颗胶囊」挪到**卡底**：名字要跟每日背诵的标题对齐
-      （上面那条），一行文本里再挤一颗胶囊就不是对齐而是并排了；
-      而卡片排成田字格之后，卡底那一行才是「四张卡能一眼横着比门槛」的位置。 */
 .game-mode-tier {
   display: inline-block;
   margin-top: auto;
@@ -1222,22 +1021,9 @@ thead .plans-th-cap {
   letter-spacing: .4px;
   color: var(--ink-3);
 }
-/* 已经能用（`data-on="1"`）时说「这张卡要哪一档」—— 用绿色，与锁住那几张分得开。 */
 .game-mode-tier[data-on="1"] { color: var(--green); }
 .game-mode[data-locked] .game-mode-tier { color: var(--ink-3); }
 
-
-/* 「更多范围」那一层（Issue #356 第八轮重排的那一版）**整块删了** ——
-   第九轮把范围并进了首页（用户原话：「要不还是合并范围和更多范围内容到
-   古诗词大会的首页吧」），那一层不存在了，`.game-scopes .game-back` /
-   `.game-scope-grid` / `.game-scope-item` / `.game-scope-name` /
-   `.game-scope-count` / `.game-scopes-notice` 这些类名一个都不留。
-   范围那一段的样式现在在**首页那一段**里（见上面「首页那一段范围」一节）：
-   `.game-scope-head` / `.game-scope-row` / `.game-scope-sign` /
-   `.game-scope-grid` / `.game-scope-pick`。
-
-   ⚠️ 只留这一条：飞花令 / 卷面设置 / 考试那三层顶上那颗回退键仍是
-      `.poems-game > .game-back`（宽度 auto，不是通栏），照旧要留着。 */
 .poems-game > .game-back {
   width: auto;
   min-width: 96px;
@@ -1744,10 +1530,6 @@ thead .plans-th-cap {
   .identity-btns { gap: 5px; }
 }
 
-/* ---- 管理后台（Issue #319）--------------------------------------------
-   这一页的几块：两张表（账号与角色 / 已发放层级）、注音勘误的分步表单、
-   已钉清单、用户报告。样式都收在这一个前缀下，别的地方不受影响。 */
-
 .admin-table-scroll {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
@@ -1849,7 +1631,6 @@ thead .plans-th-cap {
 .admin-revoke:hover { opacity: .82; }
 .admin-revoke:disabled { opacity: .45; cursor: not-allowed; }
 
-/* 注音勘误：分步表单 */
 .admin-steps {
   display: flex;
   flex-direction: column;
@@ -1945,19 +1726,5 @@ thead .plans-th-cap {
   .admin-line-row .account-btn { width: 100%; }
 }
 
-/* ---------------------------------------------------------------------------
-   「账户 / 邮箱还没确认」那一块（Issue #320）
-   ---------------------------------------------------------------------------
-   它从前住在「账号」那张卡里（`.account-card` 自带 `gap` 排开孩子）。
-   卡整块删了之后，它挪进**身份行那张卡**，成了 `.account-card` 的下一个直属
-   孩子 —— 而那张卡的 `gap` 是给「身份行 / 裁切层」这两块留的，
-   这里按 `#stats-card .settings-btns` 同一个口径补一点上边距，别贴住身份行。
---------------------------------------------------------------------------- */
 #verify-row { margin-top: 12px; }
 
-/* ⛔ 这里从前有两条选择器（`.poems-game:not([hidden]) ~ #gw-list[hidden]` 等），
- *    管的是「`/poems/` 上掀开大会时，底下的诗词列表要真的藏住」（Issue #356 前半）。
- *    大会拆成 `/dahui/` 一页之后，`/poems/` 上**没有那一层**了 ——
- *    既没有那层，也就没有「它底下的列表」这回事，两条选择器都是死规则，删掉。
- *    （`css/style.css` 里 `.list:where([hidden])` 那条**留着**：它与大会无关，
- *     是给任何一处 `.list` 上的 `hidden` 兜底的。） */

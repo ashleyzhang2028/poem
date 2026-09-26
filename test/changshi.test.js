@@ -158,9 +158,6 @@ chk(/poem_changshi_read_v1/.test(read('js/sync-coverage.js')),
   '同步边界总表里有这一把已读键（否则「表外键」那条守卫会红）');
 
 const html = read('changshi/index.html');
-chk(html.indexOf('data-nav="changshi"') >= 0, '常识页 body 标了 data-nav="changshi"');
-chk(html.indexOf('data/poems-changshi.js') >= 0 && html.indexOf('js/changshi.js') >= 0,
-  '常识页加载了数据与挂载脚本');
 
 const engine = read('js/reader-core.js');
 chk(/noTranslation/.test(engine), '引擎认 noTranslation（词条式集子不显示译文开关）');

@@ -56,11 +56,6 @@ LOAD.forEach(function (f) {
     var t = { text: raw.text || '', translation: raw.translation || '',
       translationSource: raw.translationSource || '' };
 
-    // 只带 textRef 的条目（正文收归主表之后是常态）。
-    // ⚠️ textRef 记的是**站点索引 id**（`chengyu-cy-233`），而 RAW 的键是
-    // 「集子 + 集子内 id」（`chengyu-cy-233` 恰好同名，`classic-gw-25` 亦然，
-    // 但 `cy-*` 这类没有前缀），两种拼法不一定对得上 ——
-    // 所以 RAW 只当快路，真正兜底的是下面的 TEXT_MASTER。
     if (!t.text && raw.textRef && RAW[raw.textRef]) {
       var up = RAW[raw.textRef];
       if (up.text || up.translation) {
@@ -112,10 +107,6 @@ LOAD.forEach(function (f) {
   });
 })();
 
-// ── 拆过条的成语：从同篇表里摘掉 ─────────────────────────────────────────
-// data/chengyu-support.js 点名的成语（如 众志成城 / 众口铄金）是「正文撞巧
-// 相同」被误并的，不是同一篇作品。这里在重建同篇表之前先把它们各自拆开，
-// 否则重跑本脚本又会把它们并回一组。裁定写在补充材料里，此处只是执行。
 (function () {
   const named = {};
   (sandbox.CHENGYU_SUPPORT || []).forEach(function (x) { if (x && x.title) named[x.title] = true; });
@@ -124,8 +115,7 @@ LOAD.forEach(function (f) {
     if (p && named[p.title]) splitIds['chengyu-' + p.id] = true;
   });
   if (!Object.keys(splitIds).length) return;
-  // WORKS_GROUPS 里把这一条从组内摘掉；只剩一条的组整组删
-  sandbox.WORKS_GROUPS = (sandbox.WORKS_GROUPS || []).map(function (g) {
+    sandbox.WORKS_GROUPS = (sandbox.WORKS_GROUPS || []).map(function (g) {
     const kept = (g.entries || []).filter(function (e) { return !splitIds[e]; });
     if (kept.length === g.entries.length) return g;
     if (kept.length < 2) return null;
@@ -140,9 +130,6 @@ const WI = sandbox.WorksIndex;
 const byId0 = {};
 (sandbox.SITE_INDEX || []).forEach(function (p) { if (p && p.id) byId0[p.id] = p; });
 
-// 条目次序：主条目在最前。主条目 = 课内优先，其次出处集子优先于成语故事，
-// 同档取「序号小」的那一条（chengyu-cy-48 排在 chengyu-cy-217 之前）——
-// 与 data/works-index.js 的 repOf 同口径，只是同档时按数字序号而非字典序。
 function orderKey(e) {
   const m = String(e).match(/^(.*?)(\d+)$/);
   return [m ? m[1] : e, m ? Number(m[2]) : 0, e];

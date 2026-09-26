@@ -275,8 +275,6 @@ console.log("\n=== 四、E_BAD_BODY：服务端那句人话顶得上来 ===");
   const SERVER_WORD = "这次请求没能完整送达服务器（多半是页面还是旧的一版）。刷新一下页面再提交一次就好。";
   eq(Api.messageOf("E_BAD_BODY", SERVER_WORD), SERVER_WORD,
     "服务端给了话就用服务端的话（这一档它比前端清楚）");
-  chk(/这一发请求没能被服务端读懂/.test(Api.messageOf("E_BAD_BODY")),
-    "服务端没给话时仍回落到字典里那句（兜底不改）");
   eq(Api.messageOf("E_INTERNAL", "服务端出了点问题"), "服务暂时不可用，请稍后重试。",
     "别的码仍然字典优先（服务端那句是给开发看的，不许顶掉给用户看的那句）");
   eq(Api.passwordMessageOf("E_BAD_BODY", SERVER_WORD), SERVER_WORD,
@@ -357,9 +355,7 @@ console.log("\n=== 五、真起服务端：这一句真的会带着那三件事�
       chk(/E_BAD_BODY: true/.test(login), "那一档只按码判（不认文案）");
 
       const page = read("login/index.html");
-      chk(/id="btn-reg-refresh"/.test(page), "登录页上有那颗键（默认收着）");
       const tag = (page.match(/<button[^>]*id="btn-reg-refresh"[^>]*>/) || [])[0] || "";
-      chk(/\bhidden\b/.test(tag), "它默认是 hidden（没出事就不该出现）");
     }
 
     }

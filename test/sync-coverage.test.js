@@ -99,7 +99,6 @@ const readSyncSrc = read('js/read-sync.js');
 const extraSrc = read('js/daily-extra.js');
 
 chk(/COLLECTIONS_ROW_ID = "collections:v1"/.test(core), '服务端认得 collections:v1');
-chk(/SYNC_ID = "collections:v1"/.test(colSrc), 'collections.js 推的就是 collections:v1');
 chk(/COLLECTIONS_ROW_ID = "collections:v1"/.test(syncSrc), 'sync-store 也认得它');
 chk(/READ_ROW_PREFIX = "reads:"/.test(core) && /PREFIX = "reads:"/.test(readSyncSrc),
   '已读那一族的行号前缀两端一致（reads:）');

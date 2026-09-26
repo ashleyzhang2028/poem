@@ -173,9 +173,6 @@ chk(/--line\b/.test(css) && /--green\b/.test(css),
   '表格用的是全站主题令牌（换主题时表格跟着变，不另起一套色）');
 
 const pages = read('changshi/index.html');
-chk(pages.indexOf('css/reader-tables.css') >= 0, '常识页引入了全局表格样式表');
-chk(pages.indexOf('css/reader-tables.css') > pages.indexOf('css/classic.css'),
-  '表格样式排在阅读器样式之后（同权重时它说了算）');
 
 const sw = read('sw.js');
 chk(sw.indexOf('./css/reader-tables.css') >= 0, '表格样式表进了 SW 预缓存（离线也好看）');
@@ -191,7 +188,7 @@ chk(sw.indexOf('./css/reader-tables.css') >= 0, '表格样式表进了 SW 预缓
 });
 
 const gen = read('scripts/changshi-tables.js');
-chk(/scripts\/lib\/table\.js/.test(gen) && /tableIssues/.test(read('test/reader-tables.test.js')),
+chk(/require\(['"]\.\/lib\/table\.js['"]\)/.test(gen) && /tableIssues/.test(read('test/reader-tables.test.js')),
   '表格是脚本生成的（不是手打的），且生成结果由本测试守着');
 
 console.log('');

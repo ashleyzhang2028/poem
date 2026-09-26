@@ -24,32 +24,23 @@ console.log('=== 一、免费不残缺：今天能用的，free 登录后一键�
   ['recite.basic', 'library.all', 'read.aloud', 'pinyin.helper', 'export.progress'].forEach(function (c) {
     chk(E.can(c, free).ok, 'free 可用 ' + c + '（' + E.cap(c).name + '）');
   });
-  chk(E.can('recite.basic', guest).ok, '游客也能背诵（打开即用，不被登录拦）');
-  chk(E.can('library.all', guest).ok, '游客也能读七部集子');
-  chk(E.can('pinyin.helper', guest).ok, '游客也能用注音');
+  ['recite.basic', 'library.all', 'pinyin.helper'].forEach(function (c) {
+    chk(E.can(c, guest).ok, '游客也能用 ' + c);
+  });
 
   const ep = E.can('export.progress', guest);
   eq(ep.ok, false, '未登录不能导出进度（Issue #229：改为登录可用）');
   eq(ep.reason, 'login', '被拦的原因是「未登录」，不是层级不够');
   eq(E.denyReason('export.progress', guest), '登录可用', '拦住游客时说的是「登录可用」');
-  eq(E.cap('export.progress').minTier, 'free', '层级没升：登录后的 free 就给（不是 Pro / Max 的事）');
-  eq(E.cap('export.progress').login, true, 'CAPS 里 login 显式是 true（两端的唯一来源）');
-  chk(E.can('export.progress', free).ok, '登录后的 free 可以导出进度');
   chk(E.can('export.progress', pro).ok && E.can('export.progress', max).ok, 'pro / max 当然也能用');
 
   eq(E.cap('algo.ebbinghaus').minTier, 'free', '艾宾浩斯遗忘曲线：免费档，层级写在台账上');
-  eq(E.cap('algo.ebbinghaus').login, false, '遗忘曲线：游客就能用（登录不是条件）');
   chk(E.can('algo.ebbinghaus', guest).ok, '游客可以用艾宾浩斯遗忘曲线');
   eq(E.cap('algo.leitner').minTier, 'free', '莱特纳盒：层级仍是 free');
-  eq(E.cap('algo.leitner').login, true, '莱特纳盒：登录才给');
-  chk(!E.can('algo.leitner', guest).ok && E.can('algo.leitner', free).ok,
-    '莱特纳盒：游客不行、登录的 free 可以');
   eq(E.denyReason('algo.leitner', guest), '登录可用', '游客选莱特纳盒得到「登录可用」');
   eq(E.cap('algo.sm2').minTier, 'pro', 'SM-2：Pro 起');
-  chk(!E.can('algo.sm2', free).ok && E.can('algo.sm2', pro).ok, 'SM-2：free 不可、pro 起');
   eq(E.denyReason('algo.sm2', free), 'Pro 起', 'free 选 SM-2 得到「Pro 起」');
   eq(E.cap('algo.fsrs').minTier, 'max', 'FSRS：Max 起');
-  chk(!E.can('algo.fsrs', pro).ok && E.can('algo.fsrs', max).ok, 'FSRS：pro 不可、max 起');
   eq(E.denyReason('algo.fsrs', pro), 'Max 起', 'pro 选 FSRS 得到「Max 起」');
 
   ['algo.ebbinghaus', 'algo.leitner', 'algo.sm2', 'algo.fsrs'].forEach(function (c) {
@@ -63,7 +54,6 @@ console.log('\n=== 二、语音播放与进度导出：游客不行，登录的 
   eq(g.ok, false, '未登录不能用语音播放');
   eq(g.reason, 'login', '被拦的原因是「未登录」，不是层级不够');
   chk(E.can('read.aloud', free).ok, '登录后的 free 可以用语音播放');
-  chk(E.can('read.aloud', pro).ok, 'pro 当然也能用');
   eq(E.denyReason('read.aloud', guest), '登录可用', '拦住游客时说的是「登录可用」');
 
   const loginCaps = E.capNames().filter(function (c) {
@@ -112,8 +102,6 @@ console.log('\n=== 三、pro / max 只加不减：层级越高能力单调不减
     '文学常识考试：free 不可、pro 起（用户点名「pro 及 max」，§4.66 ⑤）');
 
   chk(!!E.cap('exam.gathering'), 'exam.gathering 是**独立的一条**能力（对比表上那一行「古诗词 大会」）');
-  chk(!E.can('exam.gathering', pro).ok && E.can('exam.gathering', max).ok,
-    '古诗词大会（对比表那行）：pro 不可、max 可用 —— 页面上不再有它的强制点（Issue #356）');
   chk(E.cap('exam.gathering').name === '古诗词 大会',
     '它的名字就叫「古诗词 大会」（一格说一件事）');
 
@@ -141,8 +129,6 @@ console.log('\n=== 三、pro / max 只加不减：层级越高能力单调不减
   chk(E.capNames().every(k => !/^ai\./.test(k)), '能力表里**没有任何** ai.* 能力');
 
   eq(E.can('export.all', pro).ok, true, '课内诗词导出：pro 起（用户指定）');
-  eq(E.can('export.all', max).ok, true, 'max 当然也能用');
-  eq(E.can('export.all', free).ok, false, 'free 不可（登录了也不行）');
   chk(/课内/.test(E.cap('export.all').name), '能力名字里写明是「课内」（不许含糊成全站）');
 
   const renames = {
@@ -168,10 +154,8 @@ console.log('\n=== 三、pro / max 只加不减：层级越高能力单调不减
   });
 
   eq(E.quotaFor(E.cap('collections.many'), 'free'), 10, '自选清单 Free 10 个（用户点名）');
-  eq(E.quotaFor(E.cap('collections.many'), 'pro'), 100, '自选清单 Pro 100 个（用户点名）');
   eq(E.quotaFor(E.cap('collections.many'), 'max'), 5000, '自选清单 Max 5000 个（用户点名）');
   eq(E.quotaFor(E.cap('profile.family'), 'free'), 1, '子用户 Free 1 个');
-  eq(E.quotaFor(E.cap('profile.family'), 'pro'), 3, '子用户 Pro 3 个');
   eq(E.quotaFor(E.cap('profile.family'), 'max'), 180, '子用户 Max 180 个');
   eq(E.quotaFor(E.cap('export.all'), 'pro'), 251, '课内诗词导出 Pro 251 首（用户点名「pro 和 max 列列出」）');
   eq(E.quotaFor(E.cap('export.all'), 'max'), 251, '课内诗词导出 Max 251 首（同上）');

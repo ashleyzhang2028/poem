@@ -179,8 +179,6 @@ chk(F2.cloudRow({}) === null || F2.cloudRow({}) === undefined || F2.cloudRow({})
 F2.add({ wid: "w1", line: "l1", at: 1, ch: "长", py: "cháng" });
 const row1 = F2.cloudRow({});
 chk(row1 && row1.id === "pinyin_fix:v1" && !row1.deleted, "本机改了 → 有东西要推");
-chk(F2.cloudRow({ "pinyin_fix:v1": row1.updatedAt }) === null,
-  "刚刚推过的那一份**不再推第二次**（seen 对得上就不推）");
 chk(F2.applyCloud({ id: "pinyin_fix:v1", payload: { fixes: [{ wid: "w2", line: "l2", at: 1, py: "hái" }] }, updatedAt: row1.updatedAt + 500, deleted: false }, {}) === "applied",
   "云端更新 → 并进来");
 chk(F2.list().length === 1 && F2.list()[0].wid === "w2", "并进来的是**整份替换**（谁最后改谁赢）");

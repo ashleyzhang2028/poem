@@ -56,10 +56,6 @@
     return null;
   }
 
-  // 带 textRef 的条目**一律以主表为准**，哪怕数据文件里还内联着正文。
-  // 两处各存一份就是两个真相：换正文 / 换译文时改一处忘一处，表现是「同一部
-  // 作品在两个页面上读到两种白话」。同一判据在 data/text-master.js 的
-  // masterTextOf 里 —— 那边是生成物，两处由 scripts/build-text-master.js 对齐。
   function withMasterText(p, bookId) {
     if (!p || !p.textRef) return p;
     var book = bookId || (CFG && CFG.id) || "";
@@ -413,39 +409,11 @@
     return out;
   }
 
-
-  /* =========================================================================
-     正文里的表格 · Issue #347
-     -------------------------------------------------------------------------
-     详情页的正文是**作者只写文字的纯文本**（`data/text-master.js` 的 `text`），
-     所以要画表格，也只能让作者在纯文本里画。这里认两种画法：
-
-       ┌───────┬────────┐    ① 有框表：画了框线的，整块连续的行 = 一张表
-       │ 年号  │ 帝王   │       首行是表头；`├ ┤` / `└ ┘` 那两行只作分隔。
-       ├───────┼────────┤       表格**只用竖线分列**，没有跨行跨列 ——
-       │ 建元  │ 汉武帝 │       框线的横线画在哪里，渲染时都不作数。
-       └───────┴────────┘
-
-       建元 ｜ 汉武帝 ｜ 第一   ② 无框对齐表：两列以上、行行竖线数相同，
-       元光 ｜ 汉武帝 ｜ 第二   整块连续的行 = 一张表。首行是不是表头，
-       元朔 ｜ 汉武帝 ｜ 第三   看它跟下一行之间有没有那条 `─────` 分隔线。
-
-     为什么先切成「字符 → 单元格 → 行」再插 `<ruby>`（注音）：
-     全文注音是逐字符插注音，插进表格的格线里就是「一列汉字一列拼音」的乱码。
-     所以表格在注音**之前**切成结构，注音只在单元格内部做（`annotate` 回调）。
-
-     认不出来一律**原样输出**：老正文里用 `｜` 分隔的排比句、全篇只出现一两行
-     `│` 的正文，都不该被当成表格 —— 宁可排得平一点，不能把正文改坏。
-     ========================================================================= */
-
   function splitCells(line) {
     return line.split("│").slice(1, -1).map(function (s) { return s.trim(); });
   }
 
-  /* 「│ a │ b │」→ ["a","b"]；不是这样一个框行就返回 null */
-  /* 「│ 甲 │ 乙 │」→ ["甲","乙"]。**至少要分出两格**才算一个框行 ——
-     「│ 一整句话 │」这种一根竖线包住一句话的写法不是表格，只是有人爱那么写。 */
-  function boxRow(line) {
+      function boxRow(line) {
     var t = String(line).trim();
     var n = t.length;
     if (n < 3 || t.charAt(0) !== "│" || t.charAt(n - 1) !== "│") return null;
@@ -453,17 +421,11 @@
     return cells.length > 1 ? cells : null;
   }
 
-  /* 框线行（只有 ┌─┬┐ 这一族字符）。连不连续由调用处按整段的框行一起判 */
-  function boxRule(line) {
+    function boxRule(line) {
     return /^[┌┬┐├┼┤└┴┘─]+$/.test(String(line).trim());
   }
 
-  /* 无框表的一行：「a ｜ b ｜ c」—— 两列以上，且竖线两侧都得有内容。
-     竖线两种写法都认：全角「｜」（中文正文里好打、也好与框线区分）与半角「|」，
-     但一张表里只许用同一种，混着写的一行不算数，整段退回纯文本。
-     ⚠️ 「一行里有竖线」不等于「这是个表」—— 判表交给 `blockRows`
-     （连续两行以上、行行竖线数相同），句中的「一 ｜ 二」因此不会被误判。 */
-  function gridRow(line) {
+    function gridRow(line) {
     var t = String(line).trim();
     var full = t.indexOf("｜") >= 0;
     var half = t.indexOf("|") >= 0;
@@ -474,17 +436,12 @@
     return cells;
   }
 
-  /* 一条「────—」分隔线（无框表里用来分表头 / 分节） */
-  function gridRule(line) {
+    function gridRule(line) {
     var t = String(line).trim();
     return t.length > 0 && /^[-─—\s]+$/.test(t) && /[-─—]{3,}/.test(t);
   }
 
-  /* 自查：正文里的表格块必须**画得端正** ——
-     同一张表里每一行的列数要一致，竖线数不一样的那一行会被整段退回纯文本
-     （症状是「表格没生效」，而那种症状肉眼很难第一时间归因到少打一根竖线）。
-     开发时 `ReaderEngine.checkCorpus()` 引一声，测试里也拿它守。 */
-  function tableIssues(text) {
+    function tableIssues(text) {
     var lines = String(text == null ? "" : text).split("\n");
     var bad = [];
 
@@ -501,8 +458,7 @@
         box.push(lines[k]);
         k++;
       }
-      /* 只有一行框行不成表（页面上会原样显示成一行带竖线的字） */
-      if (k === i + 1) bad.push({ line: i + 1, text: String(lines[i]).trim(), want: first.length });
+            if (k === i + 1) bad.push({ line: i + 1, text: String(lines[i]).trim(), want: first.length });
       i = k - 1;
     }
 
@@ -526,14 +482,10 @@
     return bad;
   }
 
-  /* 一条「─────」分隔线（无框表里用来分表头 / 分节）。
-     写法是「横线 ｜ 横线 ｜ 横线」—— 每格都是横线，格数没写全的那一行
-     不算分隔线，会当成普通单元格原样显示（宁可看着怪，也不删用户写的字）。 */
-  function gridIsRule(line) {
+    function gridIsRule(line) {
     var cells = gridRow(line);
     if (rowIsRule(cells)) return true;
-    /* 也认整行只有横线、不分格的一种写法 */
-    var t = String(line).trim();
+        var t = String(line).trim();
     return t.length > 0 && /^[-─—\s]+$/.test(t) && /[-─—]{3,}/.test(t);
   }
 
@@ -557,8 +509,7 @@
     return out;
   }
 
-  /* 整段的框行 → 一张表。表头取第一个框行；其余框行只当分隔，不作行 */
-  function boxTableHtml(lines, cols, annotate) {
+    function boxTableHtml(lines, cols, annotate) {
     var head = null;
     var body = "";
     for (var i = 0; i < lines.length; i++) {
@@ -576,9 +527,7 @@
       "</thead><tbody>" + body + "</tbody></table></div>";
   }
 
-  /* 整段的无框行 → 一张表（或「表前小标题 + 表」）。首行之下若是分隔线，
-     首行即表头；分隔线只作分节，不渲染成行 */
-  function gridHtml(lines, cols, annotate) {
+    function gridHtml(lines, cols, annotate) {
     var parts = [];
     var cur = [];
     lines.forEach(function (line) {
@@ -619,23 +568,12 @@
     return out;
   }
 
-  /* 正文 → HTML：认得出表格就画表，认不出就按老样子（换行 + 注音 + 转义）。
-     `annotate` 是注音回调（把纯文本变成带 `<ruby>` 的 HTML），
-     表格里只对**单元格内部**调它，格线不吃注音。 */
-  function textToHtml(text, annotate) {
+    function textToHtml(text, annotate) {
     var src = String(text == null ? "" : text);
     return renderBlocks(src.split("\n"), annotate || esc);
   }
 
-  /* 一张表至少要两行 —— 一行竖线排比句不是表（老正文里这种句子不少）。
-     所以「连续两行以上、行行竖线数相同」才算表，否则整段原样输出。
-     ⚠️ 表体里**不许出现空行**：空行是「这张表到此为止」的信号。否则
-        「谥号 ｜ 评行迹」（孤零零一句）
-        「空行」
-        「另一句带竖线的话 ｜ 又是一句」
-     会被拼成一张两行的表 —— 两句话各占一行、还共用一套列宽，正是老正文里
-     最容易被误伤的那种排比句。分开写就是两张表。 */
-  function blockRows(lines, i) {
+    function blockRows(lines, i) {
     var need = null;
     var grid = [];
     for (var k = i; k < lines.length; k++) {
@@ -661,27 +599,17 @@
     }
 
     for (var i = 0; i < lines.length; ) {
-      /* 起点可以是框行，也可以是那圈框线的第一笔（┌─┬┐）——
-         只有框行才起表，光有框线没有内容行的一整段（罕见）才退回纯文本。 */
-      if (boxRow(lines[i]) || boxRule(lines[i])) {
+            if (boxRow(lines[i]) || boxRule(lines[i])) {
         var box = [];
         var first = null;
-        /* 画出来的框线（┌─┬┐ 那一族）**不渲染**：渲染出来的 <table> 自带边框，
-           正文里那圈 ASCII 框线再跟着显示，同一张表就有了两道框。
-           一段里凡「框行」都收进表、「框线行」都跳过 —— 作者在代码里维护的是
-           一张画得像表的 ASCII 稿，读者看到的是真表。 */
-        while (i < lines.length) {
+                while (i < lines.length) {
           var r = boxRow(lines[i]);
           if (r) { if (!first) first = r; box.push(lines[i]); i++; continue; }
           if (boxRule(lines[i])) { i++; continue; }
           break;
         }
-        /* 一行内容的框表**也算表**：作者既然画了框线（┌─┬┐ 那一族），
-           意图就是表，一行也照画 —— 这与无框表那条「至少两行」的规则不同：
-           无框表靠「连着几行、行行对齐」认，一行认不出来。 */
-        if (first) { out += boxTableHtml(box, first.length, annotate); continue; }
-        /* 一段里只有框线、一行内容都没有（罕见）：整段跳过，不留一坨框线 */
-        continue;
+                if (first) { out += boxTableHtml(box, first.length, annotate); continue; }
+                continue;
       }
 
       if (gridRow(lines[i])) {
@@ -726,9 +654,7 @@
   function playSmGlyph() {
     return (
       '<span class="play-glyph-sm" aria-hidden="true">' +
-      // 三角放大到 11.4 → 18（贴 recentre 过的 viewBox），配上 26px 的圆钮，
-      // 视觉分量跟右侧那一组 .item-read 一致（Issue #329）。
-      '<svg viewBox="0 0 24 24"><path d="M7.8 5.4 19 12 7.8 18.6Z" fill="none" stroke="currentColor" stroke-width="1" stroke-linejoin="round" stroke-linecap="round" />' +
+            '<svg viewBox="0 0 24 24"><path d="M7.8 5.4 19 12 7.8 18.6Z" fill="none" stroke="currentColor" stroke-width="1" stroke-linejoin="round" stroke-linecap="round" />' +
       "</svg></span>"
     );
   }
@@ -753,7 +679,7 @@
       showToast("已停止朗读");
     } else {
       const ok = window.Speech.speak(speechText(p));
-      showToast(ok ? "开始朗读《" + p.title + "》" : "朗读启动失败，请重试");
+      showToast(ok ? "开始朗读《" + p.title + "》" : "朗读启动失败");
     }
     syncAllReadState();
     setTimeout(syncAllReadState, 80);
@@ -898,14 +824,10 @@
         el.scrollIntoView({ block: "center", behavior: "smooth" });
       } catch (e) {  }
     }
-    // 连读时画面在往下滚，浏览位置跟着走，退出读者态才停在读者最后看到的那一条
-    rememberListScroll();
+        rememberListScroll();
   }
 
-  // 列表滚的是 window（页面本身），窗口滚动量就是浏览位置。
-  // ⚠️ 别在这里顺手存 scrollX：地址栏收放那点横向抖动也得算进去的话，
-  // 存回来的就是一个跟用户无关的数。
-  function listScrollY() {
+    function listScrollY() {
     if (window.scrollX || window.scrollY) return window.scrollY;
     return (document.scrollingElement && document.scrollingElement.scrollTop) || 0;
   }
@@ -915,11 +837,7 @@
     live.listScroll = listScrollY();
   }
 
-  // 打开详情页会把窗口滚到顶，返回时按记下的位置放回去 —— 否则不管从列表
-  // 多深点进去，退出来一律回到第一条（Issue #347）。
-  // 恢复必须等详情层的布局做完：这里还在 overflow:hidden 的 body 上，
-  // 文档自身的高度被压成窗口高，此刻写 scrollTo 会被浏览器当成越界而置 0。
-  function restoreListScroll(y) {
+    function restoreListScroll(y) {
     if (!y) return;
     setDoubleRaf(function () {
       if (readerShown()) return;
@@ -960,9 +878,7 @@
   function openReader(p) {
 
     if (p && p.id && itemsById[p.id]) p = itemsById[p.id];
-    // 第一次打开才记：连读从一篇换到下一篇时也走这里，跟着记就等于把
-    // 读者刚离开的那一条当成浏览位置，返回时落点越来越深。
-    if (!readerShown()) rememberListScroll();
+        if (!readerShown()) rememberListScroll();
     current = p;
     var idx = idIndex(p);
     var el = rd("reader");
@@ -983,9 +899,7 @@
 
     renderReaderText();
 
-    // 语源 / 典故卡（成语页专属）：正文只放原书那一句，编者过去写在正文括注里的
-    // 「（佛典）」「（语本元曲）」「（原文作某某）」搬到这里。没有 gloss 的集子整卡不出现。
-    var glossBox = rd("gloss");
+        var glossBox = rd("gloss");
     var glossEl = rd("gloss-text");
     if (glossBox) {
       var gloss = p.gloss ? String(p.gloss) : "";
@@ -993,8 +907,7 @@
       if (glossEl) glossEl.textContent = gloss;
     }
 
-    // 释义卡（成语页专属）：没有 meaning 的集子整卡不出现，不留空白框
-    var meanBox = rd("meaning");
+        var meanBox = rd("meaning");
     var meanEl = rd("meaning-text");
     if (meanBox) {
       var mean = p.meaning ? String(p.meaning) : "";
@@ -1004,20 +917,13 @@
 
     el.querySelector('.rd-trans-text, #rd-trans-text').textContent = p.translation || W.pendingTranslation;
 
-    // 译文下面那一行：只说这段白话是照什么口径译的（data/index.js 的
-    // TRANSLATION_SOURCES）。**不挂版次号** —— 版次是给程序看的（比对用户
-    // 本机存的快照，见 js/collections.js 的 refreshSnapshots / markStale），
-    // 一串 `k3f9a2` 摆在译文底下，对读者没有任何用处，只会像一句乱码
-    // （2026-09-26 用户问：「很多译文后面的这段英文字母是什么意思？」）。
-    var srcEl = el.querySelector('.rd-trans-src, #rd-trans-src');
+        var srcEl = el.querySelector('.rd-trans-src, #rd-trans-src');
     if (srcEl) {
       srcEl.textContent = p.translation && window.translationSourceText
         ? window.translationSourceText(p) : "";
     }
 
-    // 词条式集子（文学常识一类）：正文即释义，本来就没有白话译文
-    // —— 译文开关藏起来，免得点开是空的
-    var transBtn = rd("trans-toggle");
+        var transBtn = rd("trans-toggle");
     if (transBtn) transBtn.hidden = !!CFG.noTranslation;
 
     showTransBox(false);
@@ -1044,8 +950,7 @@
 
     var printBtn = document.querySelector("[data-print-open]");
     if (printBtn) printBtn.setAttribute("data-print-poem", p.id || "");
-    // 读者态铺满整屏，底下列表多深都看不见 —— 从正文开头读起才是对的
-    window.scrollTo(0, 0);
+        window.scrollTo(0, 0);
   }
 
   function renderNav() {
@@ -1086,17 +991,13 @@
     return id;
   }
 
-  /* 页面层唯一的「正文 → HTML」入口：表格 + 注音一起做。
-     `plain` 为真时只转义不注音（注音关着，但正文里有表格） */
-  function pageTextHtml(text, mode, plain) {
+    function pageTextHtml(text, mode, plain) {
     return textToHtml(text, plain ? esc : function (line) {
       return annotateLine(readerWid(current), line, mode);
     });
   }
 
-  /* 一行正文 → HTML。**勘误是按篇（wid）命中**的，所以这里只认 annotatePoem；
-     引擎没加载勘误层（老缓存）时退回不带勘误的 annotateHtml，不静默变成不注音。 */
-  function annotateLine(wid, line, mode) {
+    function annotateLine(wid, line, mode) {
     if (!window.Pinyin) return esc(line);
     return window.Pinyin.annotatePoem
       ? window.Pinyin.annotatePoem(wid, line, mode)
@@ -1122,9 +1023,7 @@
     }
     var mode = pinyinMode();
 
-    /* 正文里有表格（`│` / 框线）时必须走 HTML 那条路 —— 纯文本的 `<pre>` 里
-       表格画不出来。判断只做一次、只按正文内容，跟注音开关无关 */
-    if (mode !== "off" || hasTable(current.text)) {
+        if (mode !== "off" || hasTable(current.text)) {
       el.innerHTML = pageTextHtml(current.text, mode === "all" ? "all" : "rare", mode === "off");
       el.classList.toggle("with-pinyin", mode !== "off" && !!window.Pinyin);
     } else {
@@ -1226,7 +1125,7 @@
     } else {
       speakingTarget = "原文";
       const ok = window.Speech.speak(speechText(current));
-      showToast(ok ? "开始朗读" : "朗读启动失败，请重试");
+      showToast(ok ? "开始朗读" : "朗读启动失败");
     }
     syncAllReadState();
     setTimeout(syncAllReadState, 60);
@@ -1301,9 +1200,7 @@
     return !!el && !el.hidden;
   }
 
-  // 两次 rAF：一次等样式落地，一次等这次重排被浏览器采纳，之后才量得到
-  // 去掉 overflow:hidden 之后的真实文档高度。
-  function setDoubleRaf(fn) {
+    function setDoubleRaf(fn) {
     if (typeof window.requestAnimationFrame !== "function") { setTimeout(fn, 0); return; }
     window.requestAnimationFrame(function () { window.requestAnimationFrame(fn); });
   }
@@ -1326,11 +1223,7 @@
     var backTo = live ? live.listScroll : 0;
     if (live) live.listScroll = 0;
 
-    // onHideReader 的返回值管的是「顶栏交给页面自己收」，跟还原滚动位置是
-    // 两件事：课外阅读先收顶栏、再由页面自己决定退回书架还是留在集子 ——
-    // 留在集子时列表就在原地，位置照样得还（Issue #347）。只有页面明说
-    // 这次连列表一起拆（返回 "drop-list"）才跳过，交给下次进列表重来。
-    var verdict = typeof CFG.onHideReader === "function" ? CFG.onHideReader() : false;
+        var verdict = typeof CFG.onHideReader === "function" ? CFG.onHideReader() : false;
     var dropped = verdict === "drop-list";
     if (!dropped) restoreListScroll(backTo);
     return verdict !== false && !dropped;
@@ -2067,9 +1960,7 @@
           syncRandomReadButton();
         });
       },
-      /* 打印 / 快照要用的一行行正文：与阅读器同一条注音出口（含勘误），
-         表格也照画 —— 打印出来的表与屏幕上的一致 */
-      annotate: function () {
+            annotate: function () {
         return withSession(session, function () {
           return pageTextHtml(current ? current.text : "", "rare");
         });
@@ -2447,11 +2338,9 @@
     words: DEFAULT_WORDS,
     totalItems: function () { return items.length; },
 
-    /* 正文 → HTML（表格 + 注音）。默认用裸转义，页面层由 ClassicProse.annotate 走它 */
-    textToHtml: textToHtml,
+        textToHtml: textToHtml,
 
-    /* 自查：语料里画歪的表格（列数不一致 / 只剩一行）。测试与开发时引一声 */
-    tableIssues: tableIssues
+        tableIssues: tableIssues
   };
 
   window.ClassicProse = {

@@ -53,12 +53,6 @@
         <span class="sr-only" id="gw-random-read-text">随机连读</span>
       </button>
 
-      <!-- 这里是**去大会那一页**的一条路（Issue #356 拆页）。
-           从前的 `data-game-open` 按钮是「就地掀开叠在这一页上的一层」——
-           用户 2026-09-26 要求「拆成独立页」，于是那一层搬去了 `/dahui/`，
-           这一颗改成普通链接，**不再在这一页里叠任何东西**。
-           入口留在这里的理由：这一页是第一屏，读者读完一首想考一考时，
-           手边就有这颗键（与底栏中间那一格是**两条入口、一页**）。 -->
       <a class="poems-game-entry" href="/dahui/"
         title="古诗词大会：飞花令 · 题库复习 · 模拟考试 · 正式考试">
         <span class="poems-game-name">古诗词大会</span>
@@ -67,9 +61,6 @@
     </div>
 
     <div class="list" id="gw-list" data-gw="list" data-poems-view="list"></div>
-
-    <!-- ⛔ 这一页上**没有**「大会」那一层了（Issue #356）：它自成一页 `/dahui/`。
-         底下的 `[data-gw="list"]` 与阅读器照旧，大会不再借用它们。 -->
 
     <div class="poems-print" data-print-view="sheet" hidden></div>
 
@@ -249,7 +240,7 @@
   <div class="toast" id="toast" hidden></div>
 
   <script src="data/group-order.js"></script>
-  <!-- 考试层的范围名单取自 SITE_BOOKS（与入口页同一份）—— 只加载清单，不加载整张索引 -->
+
   <script src="data/site-books.js"></script>
 
   <script src="data/poems-1.js"></script>

@@ -70,43 +70,12 @@
 
   --search-placeholder-shift: -1.5px;
 
-  /* 列表卡片右侧那一组圆钮（报告错误 / 加入今日背诵 / 加入背诵清单 / 播放）
-     统一缩到与分组卡片右上角「连续播放」同一尺寸（Issue #329）。
-     那一颗是 .gw-play-sm：26px 的圆 + 12px 的图标，写死在 css/classic.css。 */
   --item-btn: 26px;
   --item-icon: 12px;
 
-  /* 这四颗钮之间的缝隙（Issue #329 后续）：左右那一条是 .item-actions 的列间距，
-     上下那一条跟它的行高走（26px 纽 + 这条缝），到行尾箭头的一条用 margin-right。
-     8 → 4：26px 的钮配 8px 的缝太散，四颗钮之间像散了架；4px 才像「一组」。
-     ⚠️ 这个值只服务这一组，别再被别处借去当通用间距。 */
-  --item-gap: 4px;
+    --item-gap: 4px;
 
-  /* ========================================================================
-     「标题」这一档：**全站只有这一份**（Issue #356 第七轮）
-     ------------------------------------------------------------------------
-     用户 2026-09-26 一轮挑了三处标题（大会四张卡 / 详情页 / 首页列表），
-     说「你也没按照首页古诗列表卡片里的字体和样式来啊？」—— 从前它们是
-     **三套各写一遍**的数字，谁也不跟谁：
-
-     | 标题 | 从前 |
-     |---|---|
-     | 首页 / 诗词页列表的篇目标题（`.item-title`） | 17px / 700 / `var(--font-poem)`（宋体） |
-     | 大会四张玩法卡的名字（`.game-mode-name`） | 14.5px / 600 / `var(--font-ui)`（黑体） |
-     | 每日背诵那一列（`.daily-row .daily-title`） | 14.5px / 600 / `var(--font-ui)` |
-
-     现在收成**两条 token**，容器各按自己的密度挑一格：
-
-       · `--title-1`：**列表 / 卡片**那一档（篇目、卡片主标题），
-         17px / 700 / 宋体 —— 首页与诗词页那些篇目就是它；
-       · `--title-2`：**密集清单**那一档（一屏要摆好几行），
-         14.5px / 600 —— 每日背诵的「今日加背」用它，大会四张卡也用它。
-
-     ⚠️ 字重与颜色**不进 token**：`font-weight` 用简写会连字号一起吃掉，
-        颜色本来就只有 `var(--ink)` 一个（列表、卡片、清单都同色）。
-     ⚠️ 挑哪一格是**容器的事**：同一页里两种密度都有时（比如设置页），
-        按「这一块是列表还是清单」挑，不按「这一块归谁管」挑。 */
-  --title-1: 700 17px/1.5 var(--font-poem);
+    --title-1: 700 17px/1.5 var(--font-poem);
   --title-2: 600 14.5px/1.4 var(--font-ui);
 
   --trans-icon: 14px;
@@ -329,14 +298,6 @@ html, body {
 
 .list { display: flex; flex-direction: column; gap: 10px; }
 
-/* ⚠️ 这一条不是「重复一遍默认样式」，是**必须写**的（Issue #356）：
- *    `hidden` 属性只在浏览器默认样式表里是一条 `[hidden] { display: none }`，
- *    它输给上面那条 `.list { display: flex }`（元素上的声明 > 默认样式表）。
- *    于是任何一处 `listEl.hidden = true` 都**看着设了、其实没藏住** ——
- *    `/poems/` 上掀开古诗词大会时用户看到的仍是那张诗词列表，就是它。
- *    `:where()` 让这一条**不占优先级**（0,0,0），别处照旧压得住它；
- *    老一点的浏览器由 `css/account.css` 里那条更具体的
- *    `.poems-game:not([hidden]) ~ #gw-list[hidden]` 兜住。 */
 .list:where([hidden]) { display: none; }
 
 @media (min-width: 768px) {
@@ -1608,10 +1569,7 @@ body.has-install-tip #app {
 .settings-link-title,
 .account-entry-name,
 .item-title {
-  /* 「列表 / 卡片」那一档（`--title-1`）。这一组从前各自写死 17px / 700，
-     字体则由下面 `.item-title` 那一条补上宋体 —— 现在字号与字体一起来自
-     同一条 token，改口径只改 `:root` 里那两行。 */
-  font: var(--title-1);
+    font: var(--title-1);
   color: var(--ink);
 }
 
@@ -1717,13 +1675,6 @@ body.has-install-tip #app {
 
 .settings-about .kv-list { padding: 0 2px; }
 
-/* ---- 一行一条的「键 · 值」列表（Issue #329）------------------------------
-   .kv-list 出现在「我的」页（本机数据 / 账号 / 关于）与「设置 · 关于」，
-   一律「一个 .kv-list 就是一块表」，拼在一张卡片里的多个 .kv-list 之间
-   垫一条同样的分隔线 —— 从前只有块内的行有 .kv-row:nth-child 那条线，
-   块的最后一行（:last-child）被抹掉，于是同一张卡片里
-     「离线缓存」（块尾）没线、「用户对比」（下一块首行）有线，
-   看着就像「有的有底线有的没有」。 */
 .kv-list + .kv-list {
   margin-top: 6px;
   padding-top: 6px;
@@ -1744,15 +1695,6 @@ body.has-install-tip #app {
   border-bottom: 1px solid var(--line-2);
 }
 
-/* ⚠️ 行高会变的这一族（Issue #329）：
-   左边若是 <a>（.kv-k a 自带 min-height:30px），行里最高的一节就有 30px，
-   右边那节只有文字本身（约 20.8px）——align-items: center 是把**各自**的
-   内容盒在行内居中，两节高度不同就各自居中，一块表格里掺上几行这样的，
-   行高与基线就一高一低。所以：
-     · 行盒用「上下等 paddding + min-height」而不是光写 min-height，
-       任何一行都被撑到同样的高度，两条分隔线之间也等距；
-     · 行里的每一节都拉满行高（align-self: stretch + 自己再居中），
-       左右两节因此共享同一条中线，也与上下两条线等距。 */
 .kv-list .kv-row { min-height: var(--kv-row-h, 42px); }
 .kv-row > .kv-k,
 .kv-row > .kv-v {
@@ -1863,9 +1805,7 @@ body.has-install-tip #app {
 .brand-name-row { font-weight: 600; }
 
 .item-title {
-  /* 字体已由 `--title-1` 带过来（宋体），这里只留字距 —— 字距不是「标题档次」，
-     是这一族列表自己的排版脾气，别处借不走。 */
-  letter-spacing: .6px;
+    letter-spacing: .6px;
 }
 .item-meta {
   font-family: var(--font-poem);
@@ -2329,10 +2269,7 @@ html, body {
   gap: 12px;
   flex: none;
 
-  /* 「今日背诵」那张卡在深绿底上，圆钮要看得见，所以尺寸仍按 40px 走 ——
-     跟正文里的读者按钮同一档。卡片右侧列表项上的圆钮是另一档（--item-btn
-     26px，对齐分组卡片右上角的连读钮），两组尺寸是**有意**分开的。 */
-  --today-btn-size: 40px;
+    --today-btn-size: 40px;
   --today-btn-ring: 1px;
 
   --today-btn-inner: 17px;
@@ -2559,10 +2496,7 @@ html, body {
   gap: 8px;
 }
 .daily-row .daily-title {
-  /* 数字来自 `--title-2`（「密集清单」那一档），不再在这里写第二份 ——
-     大会那四张玩法卡的标题也用同一格（`css/account.css` 的 `.game-mode-name`）。
-     改口径改 `:root` 里那两行，这一处与那一处一起动。 */
-  font: var(--title-2);
+    font: var(--title-2);
   color: var(--ink);
   overflow: hidden;
   text-overflow: ellipsis;

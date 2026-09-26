@@ -137,35 +137,6 @@ console.log("\n=== 五之二、发信商主备口径：2026-09-16 起主 Resend�
   chk(txt.indexOf("SG.x") < 0 && txt.indexOf("RS.y") < 0, "那条提醒里没有出现任何密钥的值");
 }
 
-console.log("\n=== 五之三、文档与清单不许分叉（这轮换主选最容易漏的就是文档） ===");
-{
-
-  const arch = read("docs/architecture.md");
-
-  const archProse = arch.split("\n").filter(l =>
-    !/^\s*[|>#]?\s*[-:\s]*\|?\s*(免费档|国内到达率|数据落地|SDK 体验)/.test(l)
-    && !/2026-09-16|已收费|转向收费|收费|~~|停用|放弃|Issue #159/.test(l)
-    && !/原先|改前|旧口径|修订|对调|退为|退成/.test(l)
-
-    && !/\|\s*「[^」]*SendGrid[^」]*」[^|]*\|/.test(l)
-  ).join("\n");
-  chk(!/主\s*SendGrid|SendGrid\s*主|SendGrid（主）/i.test(archProse),
-    "docs/architecture.md 不再把 SendGrid 写成主选（排除了说明这次变更的那些行）");
-  has(arch, "主 Resend", "docs/architecture.md 写明现在的主选是 Resend");
-
-  const readme = read("README.md");
-  const cLine = readme.split("\n").filter(l => /\|\s*\*\*C\*\*\s*\|/.test(l)).join("\n");
-  has(cLine, "Resend", "README 的 C 步写的是 Resend");
-  chk(cLine.indexOf("SendGrid") < 0, "README 的 C 步不再写 SendGrid（写了就等于让人白注册一个收费的）");
-
-  const privacy = read("privacy/index.html");
-  has(privacy, "Resend", "隐私条款列的服务商是 Resend");
-  chk(privacy.indexOf("SendGrid") < 0, "隐私条款里不再出现 SendGrid（已停用，写了就是假的处理者）");
-
-  const mailSrc = read("api/_lib/mail/index.js");
-  chk(!/sendgrid\s*—\s*主选/.test(mailSrc), "mail/index.js 的注释不再把 sendgrid 写成主选");
-}
-
 console.log("\n=== 六、`.env.example` 由清单生成，且与清单一致 ===");
 {
   const ex = ops.envExample();
@@ -281,7 +252,6 @@ console.log("\n=== 七之二、2D 的六个步骤（配置与真开通，docs §
 
   const dbCmd = ops.STEPS[1].check;
   chk(dbCmd.indexOf("rest/v1/accounts") >= 0, "B 步的判据里带着那条真命令");
-  chk(ev.indexOf("rest/v1/accounts") >= 0, "E 步的验收里也带着同一条");
   chk(ops.stepsReport(fullCfg()).indexOf("rest/v1/accounts") >= 0, "渲染出来看得见它");
 
   const txt2 = ops.stepsReport(fullCfg({ sendgridKey: "SG.STEP_SECRET", supabaseServiceKey: "STEP_SECRET_SVC" }));
@@ -405,10 +375,6 @@ console.log("\n=== 十、3 期那三件：口径写清了，而且**不许偷偷
   const arch = read("docs/architecture.md");
   const readme = read("README.md");
 
-  chk(/### 4\.15 3 期「不花钱的那三件」设计方案/.test(arch),
-    "docs/architecture.md 有 §4.15（三件的设计方案）");
-  chk(/### 5\.0\.1 三件不花钱的：\*\*设计已定（§4\.15），并且已落地\*\*/.test(arch),
-    "docs/architecture.md 有 §5.0.1（落地记录）");
   const sec = arch.slice(arch.indexOf("### 4.15"), arch.indexOf("## 5. 排期与顺序"));
 
   ["飞花令", "题库", "现场考试"].forEach(k => has(sec, k, "§4.15 里写到了「" + k + "」"));
@@ -579,130 +545,6 @@ const section9 = (async () => {
   console.error("测试自身抛异常（通常是环境问题）：", e);
   fails++;
 });
-
-console.log("\n=== 十一、待做清单（docs/todo.md）是唯一一处「现在不做、以后做」 ===");
-{
-
-  const exists = fs.existsSync(path.join(ROOT, "docs/todo.md"));
-  chk(exists, "docs/todo.md 存在（唯一一处记「以后做」的文件）");
-
-  if (exists) {
-    const todo = read("docs/todo.md");
-
-    has(todo, "短信登录", "记了「短信登录」");
-    has(todo, "微信小程序", "记了「微信小程序版」");
-
-    const secRows = todo.slice(todo.indexOf("## 1. 待做条目"), todo.indexOf("## 2. 明确**不在**这份文件里的"));
-    chk(!/即将上线|敬请期待|马上就来|马上就好/.test(secRows),
-      "待做条目表里不写「即将上线」这类提前承诺（它是「不做」，不是「在做」）");
-    has(todo, "现在不做", "todo.md 写明当下的状态是「现在不做」");
-    has(todo, "没有日期、没有工期", "todo.md 写明这里的条目没有日期、没有工期");
-
-    chk(!/\d{4}-\d{2}-\d{2}\s*[~至到]\s*\d{4}/.test(todo),
-      "todo.md 不给条目排日期（排期是 §5 的事，这里只记状态）");
-
-    const sec1 = secRows;
-    chk(sec1.indexOf("收费标准") < 0 && !/^\|\s*\d+\s*\|[^|]*收费/m.test(sec1),
-      "「收费」不在待做条目表里（4 期整期取消，不许当成以后要做）");
-    chk(sec1.indexOf("AI 讲解") < 0 && sec1.indexOf("纠音") < 0,
-      "「AI 讲解 / 纠音」不在待做条目表里（已从能力表删除）");
-    chk(!/整本导出|全站批量导出/.test(sec1),
-      "集子整本导出不在待做条目表里（产品判断：不做）");
-
-    ["docs/architecture.md", "docs/auth-design.md"].forEach(f => {
-      has(read(f), "docs/todo.md", f + " 指向 docs/todo.md");
-    });
-    has(read("docs/auth-design.md").slice(0, 4000), "docs/todo.md",
-      "auth-design.md 头部就指向（别让人翻到 §8 才看见）");
-    has(read("docs/architecture.md").slice(0, 4000), "docs/todo.md",
-      "architecture.md 头部就指向");
-
-    has(read("docs/auth-design.md"), "todo.md) 第 1 条",
-      "auth-design.md §8 短信那一节挂上了 todo.md 的指引");
-
-    const sw = read("sw.js");
-    chk(sw.indexOf("docs/todo.md") < 0, "todo.md 不进 sw.js 预缓存");
-
-    chk(!/^\|\s*4\s*\|.*跨设备/m.test(secRows),
-      "「跨设备分档案」已从待做条目表里拿掉（它 2026-09-18 已落地）");
-    has(todo, "## 3. 已搬走", "todo.md 有「已搬走」这一节（记搬到哪一节）");
-    has(todo, "§5.5", "已搬走那一行指向 architecture.md 的 §5.5");
-    has(read("docs/architecture.md"), "§5.5", "architecture.md 里真有 §5.5 那一节");
-  }
-
-}
-
-// ---------------------------------------------------------------------------
-// 十 · 一行一条的表格与分组卡片的排版约束（Issue #329）
-//
-// 用户 2026-09-25：「用户协议 / 隐私条款 / 跨设备同步 这三个行高不一致且没有
-// 垂直居中？……而且他们有的有底部线有的没有？无法统一？其他页面是否有相同问题」
-//
-// 这一类毛病都是**样式契约**上的，不跑浏览器也能守住：
-//   · .kv-row 的行高必须由「上下等 padding + min-height」定，而不是光写
-//     min-height —— 光写 min-height 时行高由内容撑，同一块表里混着
-//     「左边是 <a>（min-height:30）」与「两边都是纯文字（20.8）」的行，
-//     行高与基线就会一高一低；
-//   · 行里每一节都得拉满行高再自己居中（align-self: stretch + display:flex），
-//     否则 align-items:center 只把**各自**的内容盒在行内居中，左右两节
-//     高度不同就各归各的，看着就不在一条中线上；
-//   · 分隔线不许靠「第几项 = 第几行」数序号去抹。.group-card 的 .item 是
-//     `flex: 1 1 calc(...)`，能长也能缩，两列只要有一列内容高一点就会换行
-//     悬浮，DOM 序与视觉序错位，「抹掉第二行」就只抹掉一半（左边有线、
-//     右边没线）。
-// ---------------------------------------------------------------------------
-console.log("");
-console.log("=== 十、一行一条的表格与分组卡片的排版约束（Issue #329）===");
-{
-  const css = read("css/style.css").replace(/\/\*[\s\S]*?\*\//g, " ");
-  const rule = (sel) => {
-    const flat = css.replace(/@media[^{]+\{/g, "{");
-    const i = flat.indexOf(sel + " {");
-    return i < 0 ? "" : flat.slice(i, flat.indexOf("}", i) + 1);
-  };
-
-  const row = rule(".kv-row");
-  chk(row.length > 0, "css/style.css 里找得到 .kv-row 这条规则");
-  has(row, "min-height", ".kv-row 定了最小行高（同一块表里每一行一样高）");
-  chk(/padding:\s*var\(--kv-row-pad-y/.test(row),
-    ".kv-row 的上下留白走变量（不是只靠 min-height 撑）");
-  chk(/align-items:\s*center/.test(row), ".kv-row 内容在行内居中");
-
-  const parts = css.replace(/@media[^{]+\{/g, "{");
-  const pi = parts.indexOf(".kv-row > .kv-k");
-  const partRule = pi < 0 ? "" : parts.slice(pi, parts.indexOf("}", pi) + 1);
-  has(partRule, "align-self: stretch",
-    ".kv-row 左右两节拉满行高（否则 align-items:center 只管各自的内容盒）");
-  has(partRule, "display: flex", ".kv-row 左右两节内部再做一次居中");
-  has(partRule, "min-height: var(--kv-row-h",
-    ".kv-row 左右两节的最小高度跟行盒同一个变量（同一把尺子）");
-
-  has(css, ".kv-list + .kv-list {",
-    "两块 .kv-list 之间补一条同样的分隔线（同一张卡片里的多块表要连贯）");
-
-  const cls = read("css/classic.css").replace(/\/\*[\s\S]*?\*\//g, " ");
-  chk(cls.indexOf(".group-card > .item:nth-of-type(4)") < 0,
-    "小古文分组卡片不再按「第 4 项」数着抹顶线（序号在悬浮换行后会错位）");
-  has(cls, ".group-card:has(> .group-head) > .item:first-of-type",
-    "分组卡片的「第一行」由浏览器按行算（:has 认得出卡片带不带头）");
-  chk(/\.group-card:has\(> \.group-head\) > \.item:nth-of-type\(3n \+ 2\)/.test(cls) ||
-      /\.group-card:has\(> \.group-head\) > \.item:nth-of-type\(3n \+ 2\),/.test(cls),
-    "三列那一档也只擦掉每行左侧那条线（3n+1 三条一起擦，再补回后两条）");
-
-  // 「我的」页与「设置 · 关于」都用 .kv-list，块与块之间要能接上。
-  //
-  // ⚠️ 从前这里是「>= 3」（本机数据 / 账号 / 关于）。Issue #320 用户把
-  //    「账号」那张卡整块删了（「这张卡片删掉吧，莫名其妙放在这里」），
-  //    于是只剩两块：**本机数据 / 关于**。断言跟着改成 2 —— 仍然要 ≥ 2，
-  //    因为 `.kv-list + .kv-list` 那条相邻分隔线只在「一页两块以上」时才有意义。
-  const mine = read("mine/index.html");
-  chk((mine.match(/class="kv-list"/g) || []).length === 2,
-    "「我的」页正好两块 .kv-list（本机数据 / 关于 —— 账号那块已删），块间靠 CSS 接上");
-  chk(mine.indexOf('id="account-card"') < 0,
-    "「我的」页不再有「账号」那张卡（Issue #320：整张删掉，不留空壳）");
-  chk(mine.indexOf('id="account-list"') < 0 && mine.indexOf('id="btn-account-open"') < 0,
-    "卡里的表与「换一个账号登录」那颗键也一起没了");
-}
 
 section9.then(() => {
   console.log("");

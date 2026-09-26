@@ -69,8 +69,6 @@
       sync();
     });
     btnPrev.addEventListener("click", function () {
-      // 以引擎的实时索引为准：queueInfo.index 是上一次回调的快照，
-      // 直接拿它减一会慢半拍（第一下像是没反应）。
       const cur = window.Speech && typeof window.Speech.index === "function" ? window.Speech.index() : queueInfo.index;
       if (cur > 0) queueInfo.index = cur;
       if (prevItem()) sync();
