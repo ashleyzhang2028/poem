@@ -422,7 +422,7 @@
   function playGlyph() {
     return (
       '<span class="play-glyph" aria-hidden="true">' +
-      '<svg viewBox="0 0 24 24"><path d="M8.4 6.1 18.3 12 8.4 17.9Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" /></svg>' +
+      '<svg viewBox="0 0 24 24"><path d="M8.4 6.1 18.3 12 8.4 17.9Z" fill="none" stroke="currentColor" stroke-width="1" stroke-linejoin="round" stroke-linecap="round" /></svg>' +
       "</span>" +
       '<span class="pause-glyph" aria-hidden="true">' +
       '<svg viewBox="0 0 24 24"><path d="M8.2 5h2.9v14H8.2Z M12.9 5h2.9v14h-2.9Z" fill="currentColor" stroke="none" /></svg>' +
@@ -441,7 +441,9 @@
   function playSmGlyph() {
     return (
       '<span class="play-glyph-sm" aria-hidden="true">' +
-      '<svg viewBox="0 0 24 24"><path d="M9.4 6.6 18 12 9.4 17.4Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" />' +
+      // 三角放大到 11.4 → 18（贴 recentre 过的 viewBox），配上 26px 的圆钮，
+      // 视觉分量跟右侧那一组 .item-read 一致（Issue #329）。
+      '<svg viewBox="0 0 24 24"><path d="M7.8 5.4 19 12 7.8 18.6Z" fill="none" stroke="currentColor" stroke-width="1" stroke-linejoin="round" stroke-linecap="round" />' +
       "</svg></span>"
     );
   }
@@ -1906,7 +1908,7 @@
 
   function reciteGlyph() {
 
-    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" ' +
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" ' +
       'stroke-linecap="round" stroke-linejoin="round">' +
       '<path d="M7 4.6h10a1.4 1.4 0 0 1 1.4 1.4v13.4l-6.4-4.1-6.4 4.1V6a1.4 1.4 0 0 1 1.4-1.4Z"/>' +
       "</svg>";
@@ -2019,7 +2021,7 @@
       return '<button type="button" class="recite-col' + (on ? " on" : "") + '"' +
         ' data-col="' + esc(c.id) + '" aria-pressed="' + (on ? "true" : "false") + '">' +
         '<span class="recite-col-tick" aria-hidden="true">' +
-        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" ' +
         'stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5 10 17.5 19.5 7"/></svg>' +
         "</span>" +
         '<span class="recite-col-name">' + esc(c.name) + "</span>" +
