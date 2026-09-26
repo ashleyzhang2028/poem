@@ -82,6 +82,33 @@
      ⚠️ 这个值只服务这一组，别再被别处借去当通用间距。 */
   --item-gap: 4px;
 
+  /* ========================================================================
+     「标题」这一档：**全站只有这一份**（Issue #356 第七轮）
+     ------------------------------------------------------------------------
+     用户 2026-09-26 一轮挑了三处标题（大会四张卡 / 详情页 / 首页列表），
+     说「你也没按照首页古诗列表卡片里的字体和样式来啊？」—— 从前它们是
+     **三套各写一遍**的数字，谁也不跟谁：
+
+     | 标题 | 从前 |
+     |---|---|
+     | 首页 / 诗词页列表的篇目标题（`.item-title`） | 17px / 700 / `var(--font-poem)`（宋体） |
+     | 大会四张玩法卡的名字（`.game-mode-name`） | 14.5px / 600 / `var(--font-ui)`（黑体） |
+     | 每日背诵那一列（`.daily-row .daily-title`） | 14.5px / 600 / `var(--font-ui)` |
+
+     现在收成**两条 token**，容器各按自己的密度挑一格：
+
+       · `--title-1`：**列表 / 卡片**那一档（篇目、卡片主标题），
+         17px / 700 / 宋体 —— 首页与诗词页那些篇目就是它；
+       · `--title-2`：**密集清单**那一档（一屏要摆好几行），
+         14.5px / 600 —— 每日背诵的「今日加背」用它，大会四张卡也用它。
+
+     ⚠️ 字重与颜色**不进 token**：`font-weight` 用简写会连字号一起吃掉，
+        颜色本来就只有 `var(--ink)` 一个（列表、卡片、清单都同色）。
+     ⚠️ 挑哪一格是**容器的事**：同一页里两种密度都有时（比如设置页），
+        按「这一块是列表还是清单」挑，不按「这一块归谁管」挑。 */
+  --title-1: 700 17px/1.5 var(--font-poem);
+  --title-2: 600 14.5px/1.4 var(--font-ui);
+
   --trans-icon: 14px;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -1581,8 +1608,10 @@ body.has-install-tip #app {
 .settings-link-title,
 .account-entry-name,
 .item-title {
-  font-size: 17px;
-  font-weight: 700;
+  /* 「列表 / 卡片」那一档（`--title-1`）。这一组从前各自写死 17px / 700，
+     字体则由下面 `.item-title` 那一条补上宋体 —— 现在字号与字体一起来自
+     同一条 token，改口径只改 `:root` 里那两行。 */
+  font: var(--title-1);
   color: var(--ink);
 }
 
@@ -1834,8 +1863,8 @@ body.has-install-tip #app {
 .brand-name-row { font-weight: 600; }
 
 .item-title {
-
-  font-family: var(--font-poem);
+  /* 字体已由 `--title-1` 带过来（宋体），这里只留字距 —— 字距不是「标题档次」，
+     是这一族列表自己的排版脾气，别处借不走。 */
   letter-spacing: .6px;
 }
 .item-meta {
@@ -2530,12 +2559,10 @@ html, body {
   gap: 8px;
 }
 .daily-row .daily-title {
-  /* ⚠️ 这四个数（14.5px / 600 / var(--ink) / 1.4）是「卡片标题」这一档的**唯一
-     一份口径**，大会那页四张玩法卡的标题逐字照抄（`css/account.css` 的
-     `.game-mode-name`，Issue #356 用户原话：「各个玩法标题字体，大小，颜色等等
-     是不是应该和每日背诵页面的那些卡片标题一致？」）。改这里要顺手改那边。 */
-  font-size: 14.5px;
-  font-weight: 600;
+  /* 数字来自 `--title-2`（「密集清单」那一档），不再在这里写第二份 ——
+     大会那四张玩法卡的标题也用同一格（`css/account.css` 的 `.game-mode-name`）。
+     改口径改 `:root` 里那两行，这一处与那一处一起动。 */
+  font: var(--title-2);
   color: var(--ink);
   overflow: hidden;
   text-overflow: ellipsis;

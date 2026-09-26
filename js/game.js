@@ -32,6 +32,34 @@
     { id: "hard",   name: "难字",   min: 6, hard: true }
   ];
 
+  // ---------------------------------------------------------------------
+  // 首页的「考什么范围」：**把范围提到玩法前面**
+  // ---------------------------------------------------------------------
+  // 用户 2026-09-26 原话（Issue #356 第七轮）：
+  //   「这四张卡片目前是按题型来的，我记得还有按范围来的，例如只考唐诗三百首，
+  //     只考文学常识，只考成语故事，你觉得应该怎么组织合适？还是在点击四张
+  //     卡片后再设置范围？」
+  //
+  // 定下来的口径：**两类进首页（题型 + 常考的那几部集子），其余留「全部范围」**。
+  //   · 首页两条路：上半「考哪一类题」（玩法四张卡，与从前一样），
+  //     下半「考哪一部书」（常考集子各一张卡）；
+  //   · 「全部」（全站 2928 条混着抽）与「课内三学段」（小学 / 初中 / 高中）
+  //     不占首页的格子 —— 它们归「更多范围」那一层（`renderScopes()`）；
+  //   · 玩法卡点进去的「卷面设置」里**范围不再问第二遍**：首页选的那一部
+  //     已经带下去了（`start()` 把 `state.setup.scope` 先设好）。
+  //
+  // ⚠️ 名单**不在这里另列一份**：下面的 `FEATURED` 只是「哪几部进首页 + 排第几」
+  //    的**次序表**，名字、条数、id 全部从 `Exam.scopes()`（→ `SITE_BOOKS`）现算。
+  //    加第十二部集子时这里一个字都不用改 —— 它自动落进「更多范围」那一层。
+  // ⚠️ 「全部」那一格写的不是 `all`，是 `poems:primary`？—— 不，「全部」与三学段
+  //    都归「更多范围」。首页四部（唐诗 / 文学常识 / 成语故事 + 课内诗词）
+  //    是**用户点名**的那三部 + 课内那一部（课内本来就有自己的页与语料）。
+  var FEATURED = [
+    { id: "book:tangshi",  hint: "按卷次，五言到乐府" },
+    { id: "book:changshi", hint: "文体、典籍、称谓、典故" },
+    { id: "book:chengyu",  hint: "原文带译文，一部一则" }
+  ];
+
   var state = {
     mode: "",
     chars: [],
@@ -44,7 +72,10 @@
     graded: null,
     server: null,
     // 考试层的卷面设置（范围 × 题量）：进去之后默认「全部 · 该形态的默认题量」。
-    setup: { scope: "all", size: 0 },
+    // 卷面设置（范围 × 题量）：进去之后默认「全部 · 该形态的默认题量」。
+    // `scopeChosen` 记「范围是不是用户自己挑的」—— 挑过就一路带下去、
+    // 不再在卷面设置里问第二遍（Issue #356 第七轮）。
+    setup: { scope: "all", size: 0, scopeChosen: false },
     left: 0,
     timer: null
   };
@@ -103,17 +134,41 @@
   // 每条都打上所属集子（`book`）—— 考试层的范围（scope）靠它筛。
   // 课内那一批的 `POEMS_ALL` 本身没有 book 字段，在这里补成 "poems"；
   // 集子那几部按 WANTED 的 id 打标（id 与 SITE_BOOKS 同源）。
+  //
+  // ⚠️ **必须展开正文**（Issue #356 第七轮查出的真 bug）：
+  //    集子那十部数据文件里**一个字的正文都没有** —— 位置由 `textRef` 记着，
+  //    正文存在 `data/text-master.js` 那一张主表里（同一篇只落一份，见那张表的
+  //    文件头）。从前这里直接拿 `window[w.v]` 原样返回，于是 `p.text` 是空的：
+  //    「考哪一部书」（唐诗 / 宋词 / 古文观止……）这些范围**一道题都出不来**
+  //    （真机量过：`Exam.build(corpus, {scope:'book:tangshi'})` → 0 题）。
+  //    课内那一批看着正常，只是因为 `data/index.js` 在建 `POEMS_ALL` 时
+  //    自己已经过了一遍 `masterTextOf` —— 两处做法不一致，问题就藏在会读出
+  //    0 题的那半边。
+  //    修法与 `data/index.js` 同一句：调 `window.masterTextOf(p, book)`；
+  //    主表不在（脚本没挂上）时它原样返回，不会把课内那批弄丢。
   function corpus() {
     var out = (window.POEMS_ALL || []).map(function (p) {
-      return p && p.book ? p : tag(p, "poems");
+      return p && p.book ? p : expand(p, "poems");
     });
     WANTED.forEach(function (w) {
       var list = window[w.v];
       if (list && list.length) {
-        out = out.concat(list.map(function (p) { return tag(p, w.id); }));
+        out = out.concat(list.map(function (p) { return expand(p, w.id); }));
       }
     });
     return out;
+  }
+
+  // 展开一条的正文（`textRef` → `data/text-master.js`），再打上集子标。
+  // 主表没挂上 / 这一条没有 `textRef` 时**原样返回** —— 不猜、不塞空串，
+  // 于是「语料不够」那句话会如实说出来，而不是悄悄出一张空卷。
+  function expand(p, book) {
+    if (!p) return p;
+    var m = p;
+    if (typeof window.masterTextOf === "function" && p.textRef) {
+      try { m = window.masterTextOf(p, book); } catch (e) { m = p; }
+    }
+    return tag(m, book);
   }
 
   function tag(p, book) {
@@ -214,7 +269,13 @@
     //    `margin-bottom: 8px` 相间 —— 而 `:last-child` 那条把它在卡底归零，
     //    于是「卡内按钮之间」有缝、「卡底那颗按钮与这张卡的边缘」没有。
     //    现在一颗按钮一张卡，缝只有一处（父层的 `gap`）。
-    var html = '';
+    // ⚠️ 首页有**两行**卡（Issue #356 第七轮）：
+    //    上一行是「考哪一类题」（玩法四张），下一行是「考哪一部书」（常考集子
+    //    各一张卡）。从前只有上一行，用户于是问「我记得还有按范围来的……你觉得
+    //    应该怎么组织合适？」—— 答案落在这里：**范围与题型并列，都在首页**。
+    //    两行由 `.poems-home-tag` 那两行小标题分开（见 `css/account.css`）。
+    var html = homeTag("考哪一类题", "同一份语料，四种玩法；想换书的请看下一行");
+    html += '<div class="poems-home-row">';
     MODES.forEach(function (m) {
       var r = allowed(m, id);
       html += '<button class="account-card game-mode" type="button" ' +
@@ -226,6 +287,34 @@
         "</span>" +
         "</button>";
     });
+    html += "</div>";
+
+    // 下一行：常考的那几部集子，各是一张卡 —— 点它就**带着这一部**进玩法选择。
+    // ⚠️ 这一行的卡是 `data-game-scope`（不是 `data-game-mode`）：点它就是
+    //    「我要考这一部书」，接着问玩哪种。进到玩法那一层时范围已经定了，
+    //    卷面设置里不再问第二遍（见 `start()` 与 `renderSetup()`）。
+    var scopes = scopeList();
+    var feat = FEATURED.filter(function (f) {
+      return scopes.filter(function (sc) { return sc.id === f.id; }).length > 0;
+    });
+    if (feat.length) {
+      html += homeTag("考哪一部书", "只考一部，或点上面的玩法考全部");
+      html += '<div class="poems-home-row">';
+      feat.forEach(function (f) {
+        var sc = null;
+        scopes.forEach(function (x) { if (x.id === f.id) sc = x; });
+        if (!sc) return;
+        html += '<button class="account-card game-mode game-scope" type="button" ' +
+          'data-game-scope="' + esc(sc.id) + '">' +
+          '<span class="game-mode-name">' + esc(sc.name) + "</span>" +
+          '<span class="game-mode-desc">' + esc(f.hint) + "</span>" +
+          '<span class="game-mode-tier">' + esc(sc.count) + " 条</span>" +
+          "</button>";
+      });
+      html += "</div>";
+      html += '<button class="account-btn ghost game-scope-more" type="button" ' +
+        'data-game-scopes="1">更多范围（全部 · 小学 · 初中 · 高中 · 其余集子）</button>';
+    }
 
     // 未登录时页底**只留那颗登录键**（Issue #356 用户原话：
     //   「如果需要登录，页底只显示那个登录 按钮即可，不要额外一张卡片，
@@ -241,6 +330,17 @@
       html += '<button class="account-btn" type="button" data-game-go="/login/">登录</button>';
     }
     return html;
+  }
+
+  // 首页那两行小标题（「考哪一类题」/「考哪一部书」）。
+  // ⚠️ 它**不是** `.account-card-title`（那是卡**里面**的标题，13px 灰色小字），
+  //    也不是卡片（不带背景 / 圆角）—— 它只是横在卡片之间的一行字，
+  //    把这一层分成两段。样式见 `css/account.css` 的 `.poems-home-tag`。
+  function homeTag(title, note) {
+    return '<p class="poems-home-tag"><span class="poems-home-tag-name">' +
+      esc(title) + "</span>" +
+      (note ? '<span class="poems-home-tag-note">' + esc(note) + "</span>" : "") +
+      "</p>";
   }
 
   // 玩法卡上那颗门槛小标：**已经能用的说层级名字，用不上的说「X 可用」**。
@@ -357,6 +457,72 @@
     return "全部";
   }
 
+  // 某个范围有多少条（择不出时回 "?"，不假装知道）。
+  function scopeCount(scopeId) {
+    var list = scopeList();
+    for (var i = 0; i < list.length; i++) if (list[i].id === scopeId) return list[i].count;
+    return "?";
+  }
+
+  // ---------------------------------------------------------------------
+  // 「更多范围」那一层（Issue #356 第七轮）
+  // ---------------------------------------------------------------------
+  // 首页只摆**常考的那几部**（`FEATURED`）；剩下的一律在这里，一个不少：
+  //   · 全部（全站语料混着抽，例：2928 条）；
+  //   · 课内三学段（小学 / 初中 / 高中 —— 由 `Exam.scopes()` 从年级算出来）；
+  //   · 其余集子（乐府 / 宋词 / 元曲 / 古文观止 / 昭明文选 / 近现代 / 小古文）。
+  //
+  // ⚠️ 这一层与首页那一行**同源**：都读 `scopeList()`（→ `Exam.scopes()`
+  //    → `SITE_BOOKS`）。首页那三张卡只是「从这里挑三张摆上去」，
+  //    名单永远只有一份。
+  // ⚠️ 点这里的任何一张 = 选好范围，接着问玩哪种（回首页那一行玩法卡）。
+  //    所以这里是「选范围 → 选玩法」，与首页「选玩法 → 选范围」是同一个漏斗的
+  //    两个入口，出口都是卷面设置。
+  function renderScopes() {
+    var scopes = scopeList();
+    var feat = {};
+    FEATURED.forEach(function (f) { feat[f.id] = 1; });
+
+    var all = [], stages = [], books = [];
+    scopes.forEach(function (sc) {
+      if (feat[sc.id]) return;
+      if (sc.id === "all") all.push(sc);
+      else if (sc.id.indexOf("poems:") === 0) stages.push(sc);
+      else books.push(sc);
+    });
+
+    var html = '<section class="account-card game-head">' +
+      '<button class="account-btn ghost game-back" type="button" data-game-back="1">回到玩法</button>' +
+      '<h2 class="account-card-title">更多范围</h2>' +
+      '<p class="account-hint">选一部书或一个学段，然后挑玩哪种。首页那三张是常考的几部。</p>' +
+      "</section>";
+
+    html += scopeGroup("整个语料", all);
+    html += scopeGroup("课内诗词按学段", stages);
+    html += scopeGroup("其他集子", books);
+
+    if (state.setupNotice) {
+      html += '<section class="account-card"><p class="account-msg warn">' +
+        esc(state.setupNotice) + "</p></section>";
+    }
+    return html;
+  }
+
+  function scopeGroup(title, rows) {
+    if (!rows.length) return "";
+    return '<section class="account-card"><h2 class="account-card-title">' + esc(title) +
+      "</h2>" +
+      '<div class="game-scope-grid">' +
+      rows.map(function (sc) {
+        return '<button class="account-card game-mode game-scope" type="button" ' +
+          'data-game-scope="' + esc(sc.id) + '">' +
+          '<span class="game-mode-name">' + esc(sc.name) + "</span>" +
+          '<span class="game-mode-tier">' + esc(sc.count) + " 条</span>" +
+          "</button>";
+      }).join("") +
+      "</div></section>";
+  }
+
   // 卷面设置：范围 × 题量（形态在上一层的玩法卡里选）。
   function renderSetup() {
     // 设置这一层是「考试三形态共用的一层」：形态在 state.pending 上，
@@ -374,18 +540,37 @@
       (v.timed ? " · 限时 " + v.minutes + " 分钟" : "") + "</p>" +
       "</section>";
 
-    html += '<section class="account-card"><h2 class="account-card-title">考什么范围</h2>' +
-      '<div class="account-field">' +
-      '<label class="account-label" for="game-scope">范围</label>' +
-      '<select class="account-input" id="game-scope">' +
-      scopeList().map(function (sc) {
-        return '<option value="' + esc(sc.id) + '"' +
-          (sc.id === state.setup.scope ? " selected" : "") + ">" +
-          esc(sc.name) + "（" + sc.count + " 条）</option>";
-      }).join("") +
-      "</select></div>" +
-      '<p class="account-hint">名单从全站集子自己算出来 —— 加一部集子，这里就多一个范围。</p>' +
-      "</section>";
+    // 范围：**首页已经选过的那一部，这里只念一遍、不再问第二遍**
+    // （Issue #356 第七轮）。用户点「唐诗三百首」那张卡进来，是来选玩法与题量的，
+    // 不是来再审一次范围的 —— 再审一次等于把「选范围」问了两次。
+    // 想换书有两条现成的路：这张卡上的「换一部书」回首页，或去「更多范围」。
+    // ⚠️ 「全部」（`all`）是**默认档**，它本来就没在首页选过，所以照样给下拉 ——
+    //    否则从玩法卡直接进来的人会发现自己只能考「全部」。
+    var chosen = state.setup.scope && state.setup.scope !== "all";
+    if (chosen) {
+      html += '<section class="account-card"><h2 class="account-card-title">考什么范围</h2>' +
+        '<p class="account-lead">' + esc(scopeName(state.setup.scope)) +
+        "（" + esc(scopeCount(state.setup.scope)) + " 条）</p>" +
+        '<div class="game-nav">' +
+        '<button class="account-btn ghost" type="button" data-game-scopes="1">换一部书</button>' +
+        "</div>" +
+        '<p class="account-hint">范围在首页选的；换书就回那一层，不必在这里再审一遍。</p>' +
+        "</section>";
+    } else {
+      html += '<section class="account-card"><h2 class="account-card-title">考什么范围</h2>' +
+        '<div class="account-field">' +
+        '<label class="account-label" for="game-scope">范围</label>' +
+        '<select class="account-input" id="game-scope">' +
+        scopeList().map(function (sc) {
+          return '<option value="' + esc(sc.id) + '"' +
+            (sc.id === state.setup.scope ? " selected" : "") + ">" +
+            esc(sc.name) + "（" + sc.count + " 条）</option>";
+        }).join("") +
+        "</select></div>" +
+        '<p class="account-hint">名单从全站集子自己算出来 —— 加一部集子，这里就多一个范围。' +
+        "常考的几部（唐诗 / 文学常识 / 成语故事）在首页就有自己的卡。</p>" +
+        "</section>";
+    }
 
     html += '<section class="account-card"><h2 class="account-card-title">考多少题</h2>' +
       '<div class="seg mini" id="game-size" role="group" aria-label="题量">' +
@@ -479,6 +664,7 @@
     if (!host || !Q) return;
     var body;
     if (state.mode === "fly") body = renderFly();
+    else if (state.mode === "scopes") body = renderScopes();
     else if (state.mode === "setup") body = renderSetup();
     else if (state.mode) body = renderPaper();
     else body = renderHome();
@@ -486,7 +672,9 @@
     if (state.mode === "fly") {
       body += '<section class="account-card"><button class="account-btn ghost" type="button" ' +
         'data-game-restart="1">换一副令字</button></section>';
-    } else if (state.mode && state.mode !== "setup") {
+    } else if (state.mode === "scopes" || state.mode === "setup") {
+      // 「更多范围」与「卷面设置」这两层自己就是一层，不再往下挂回退键。
+    } else if (state.mode) {
       // 考试进行中给一条回设置的路（换范围 / 换题量重抽）；设置那一层自己就是那一层。
       body += '<section class="account-card"><button class="account-btn ghost" type="button" ' +
         'data-game-reset="1">回到卷面设置</button></section>';
@@ -561,7 +749,13 @@
     if (!allowed(m, id).ok) { render(); return; }
 
     stopTimer();
-    state.setup = { scope: "all", size: 0 };
+    // ⚠️ 范围**不在这里归零**（Issue #356 第七轮）：用户可能在首页那一行
+    //    「考哪一部书」里已经点过「唐诗三百首」，走到这一步是来挑玩法的。
+    //    归零 = 把他刚选的那部书悄悄扔掉，卷面设置里再问一遍「考什么范围」。
+    //    只有题量每次重来（那是「这一次要几题」，不是用户的长期选择）。
+    // ⚠️ 从题目里退回首页时也要留住 —— 见 `bind()` 的 `data-game-back`。
+    var keepScope = state.setup && state.setup.scopeChosen ? state.setup.scope : "all";
+    state.setup = { scope: keepScope, size: 0, scopeChosen: !!(state.setup && state.setup.scopeChosen) };
     state.setupNotice = "";
 
     if (modeId === "fly") {
@@ -647,9 +841,24 @@
     });
   }
 
+  // 选好了范围、回首页等选玩法 —— 用那颗现成的 toast 说一声（页面角落那一颗，
+  // 不另开卡片）。文案只在这一处，`renderHome()` 不再自己写第二句。
+  function showScopeToast(text) {
+    var el = document.getElementById("toast");
+    if (!el) return;
+    el.textContent = text;
+    el.hidden = false;
+    clearTimeout(showScopeToast._t);
+    showScopeToast._t = setTimeout(function () { el.hidden = true; }, 2200);
+  }
+
   function readSetup() {
     var sel = $("#game-scope");
-    if (sel) state.setup.scope = sel.value || "all";
+    if (sel) {
+      state.setup.scope = sel.value || "all";
+      // 在这个下拉里亲手改过 → 也算「用户挑的范围」，后续一路带下去。
+      state.setup.scopeChosen = true;
+    }
   }
 
   function bind() {
@@ -666,10 +875,47 @@
       var back = hit("data-game-back");
       if (back) {
         stopTimer();
-        // 卷面设置那一层退回玩法卡；考试进行中退回设置（重选范围 / 题量）。
-        if (state.mode === "setup") { state.mode = ""; state.pending = ""; }
-        else { state.mode = "setup"; readSetup(); }
+        // 三层各有各的回退：
+        //   · 「更多范围」→ 回首页（那一层只是首页那一行的展开）；
+        //   · 卷面设置    → 回首页（玩法与范围都在首页选过了）；
+        //   · 考试进行中  → 回卷面设置（换题量重抽）。
+        if (state.mode === "scopes" || state.mode === "setup") {
+          state.mode = "";
+          state.pending = "";
+        } else {
+          state.mode = "setup";
+          readSetup();
+        }
         render();
+        return;
+      }
+
+      // 「更多范围」那一层：首页那张通栏键。
+      var more = hit("data-game-scopes");
+      if (more) {
+        stopTimer();
+        state.mode = "scopes";
+        state.pending = "";
+        state.setupNotice = "";
+        render();
+        return;
+      }
+
+      // 首页那一行「考哪一部书」的卡：**选好范围**，接着问玩哪种。
+      // 所以先把范围记下，再回首页那一行玩法卡（`state.mode = ""`）——
+      // 漏斗仍是一个：范围 → 玩法 → 卷面设置。
+      var sc0 = hit("data-game-scope");
+      if (sc0) {
+        var sid = sc0.getAttribute("data-game-scope");
+        state.setup.scope = sid;
+        state.setup.scopeChosen = true;
+        state.setupNotice = "";
+        state.mode = "";
+        state.pending = "";
+        render();
+        if (sid !== "all") {
+          showScopeToast("已选「" + scopeName(sid) + "」—— 点一个玩法开始");
+        }
         return;
       }
 
@@ -901,8 +1147,15 @@
     return /(?:^|[?&])game=1(?:&|$)/.test(q);
   }
 
+  // 集子那几部是**按需加载**的（`WANTED` 那份清单，首页先不拉），所以
+  // 首页第一次渲染时 `corpus()` 里只有课内那一批 —— 「考哪一部书」那一行
+  // 靠 `scopeList()` 算，算出来是空的，那三张卡就不会出现。
+  // 语料到位后补一次渲染：只在首页那一层补（别处的渲染不依赖集子加载完，
+  // 补一次会把用户正在做的题重画掉）。
   function loadCorpusIntoView() {
-    ensureCorpus().then(function () {  });
+    ensureCorpus().then(function () {
+      if (!state.mode && host && !host.hidden) render();
+    });
   }
 
   if (document.readyState === "loading") {
