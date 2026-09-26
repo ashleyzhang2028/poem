@@ -410,6 +410,139 @@ Object.keys(FOREIGN).forEach(t => {
     'Issue #339·' + t + ' 归 ' + FOREIGN[t] + '（实际 ' + (p ? p.dynasty : '缺') + '）');
 });
 
+
+// ── Issue #339 第三轮：译文质量（精准精确） ──────────────────────────────
+// 用户的目标是「精准精确」。这一组钉四件事，全部由 scripts/audit-chengyu-translations.js
+// 那套判据复核（体检脚本只报「可动手」的，改完要能回到全绿）：
+//   ① 译文栏里不再有编者的话（说明的归处是「语源 / 典故」栏）
+//   ② 正文有几段、译文就有几段的交代（漏译）
+//   ③ 译文讲的是自己那一段，不是同一段语料里另一条的
+//   ④ 同一段语料的各条目，译文逐字共用一份（不许各译一份）
+const EDITOR_NOTE = /（(?:语意|字面意思是|此为小说家言|此语出|语出|本指|本意|后世喻|后世语|喻指|即|原文作|同「)[^（）]*）/;
+const fixNote = CY.filter(p => EDITOR_NOTE.test(String(p.translation || '')));
+chk(fixNote.length === 0,
+  'Issue #339·译文栏里没有编者的话了（说明在「语源 / 典故」栏；残余：' +
+  (fixNote.map(p => p.title).slice(0, 6).join('、') || '无') + '）');
+
+const FIXED = {
+  '惊世骇俗': '他的学说衰微之后，天下之士纷纷闻风而从。',
+  '霍然而愈': '秦国逢氏的孩子小时候很聪明，到了壮年却得了神志昏乱的病。',
+  '穷途末路': '走投无路时放声痛哭，穷途末路处生出的悲伤。',
+  '面壁功深': '达摩禅师整天面朝石壁坐着。',
+  '一步一计': '走一步就想出一个计策，谋划周全，没有失算。'
+};
+Object.keys(FIXED).forEach(t => {
+  const p = CY.filter(x => x.title === t)[0];
+  if (!p) { chk(false, '缺条目：' + t); return; }
+  chk(p.translation === FIXED[t],
+    'Issue #339·' + t + ' 的译文只留白话（实际「' + String(p.translation).slice(0, 24) + '…」）');
+});
+
+// 译文与正文的段数交代：正文 ≥ 4 段的，译文不许不到一半
+function segCount(s) {
+  return String(s || '').split(/[。！？；\n]+/)
+    .map(function (x) { return x.trim(); })
+    .filter(function (x) { return x && x !== '……'; }).length;
+}
+const underTrans = CY.filter(p => segCount(p.text) >= 4 && segCount(p.translation) * 2 < segCount(p.text));
+chk(underTrans.length === 0,
+  'Issue #339·正文分几段译文就交代几段，没有整块漏译（异常：' +
+  (underTrans.map(p => p.title).slice(0, 6).join('、') || '无') + '）');
+
+// 译文讲的是自己那一段：与自己正文「四字以上连续重合」为零的，要么是正常意译
+// （短条目整句重组），要么是串了。这里钉的是**长条目**：正文 ≥ 40 字的，
+// 译文至少要能与正文对上 4 个字。
+function lcsLen(a, b) {
+  let best = 0;
+  for (let i = 0; i < a.length; i += 1) {
+    for (let j = i + best + 1; j <= a.length; j += 1) {
+      if (b.indexOf(a.slice(i, j)) >= 0) { best = j - i; } else break;
+    }
+  }
+  return best;
+}
+const plain = s => String(s || '').replace(/\s/g, '');
+// 判据是**相对**的：文言译成白话本来就不逐字对应，绝对重合度说明不了什么。
+// 真正串了的样子是「译文与自己正文几乎不沾，却整块是另一条的正文」——
+// 拿兄弟条目作对照，与兄弟的连续重合明显高过与自己的，才是串了。
+const misAttributed = CY.filter(p => {
+  const t = plain(p.text);
+  const tr = plain(p.translation);
+  if (t.length < 40 || tr.length < 40) return false;
+  const own = lcsLen(t, tr);
+  return CY.some(o => {
+    if (o === p) return false;
+    const ot = plain(o.text);
+    if (ot.length < 12) return false;
+    if (Math.max(ot.length, t.length) > Math.min(ot.length, t.length) * 2) return false;
+    return lcsLen(ot, tr) >= 10 && lcsLen(ot, tr) > own + 4;
+  });
+}).map(p => p.title);
+chk(misAttributed.length === 0,
+  'Issue #339·没有「译文讲的是同一段语料里另一条」的（异常：' +
+  (misAttributed.slice(0, 6).join('、') || '无') + '）');
+
+// 同一段语料的各条目，译文共用一份
+let forkedPairs = [];
+for (let i = 0; i < CY.length; i += 1) {
+  for (let j = i + 1; j < CY.length; j += 1) {
+    if (plain(CY[i].text) !== plain(CY[j].text)) continue;
+    if (plain(CY[i].text).length < 20) continue;
+    if (plain(CY[i].translation) !== plain(CY[j].translation)) {
+      forkedPairs.push(CY[i].title + ' / ' + CY[j].title);
+    }
+  }
+}
+chk(forkedPairs.length === 0,
+  'Issue #339·同一段语料的条目译文共用一份（各译一份的：' +
+  (forkedPairs.slice(0, 6).join('、') || '无') + '）');
+
+// ── Issue #339 第三轮：底本改了，本机存的快照要认得出来 ────────────────
+// 已加入背诵 / 自选清单的条目在本机存着快照。底本改了正文或译文，快照不会自己
+// 变 —— 没有「版次」，用户会一直读着旧的那一份，而界面上看不出异常。
+chk(CY.every(p => p.version && String(p.version).length > 0),
+  'Issue #339·每条正文都有版次（改动后客户端才认得出「这一条改过」）');
+chk(CY.every(p => p.version === sandbox.textVersionOf(p, 'chengyu')),
+  'Issue #339·条目上的版次与 textVersionOf() 查到的同一个（两处不许各算一份）');
+
+const srcBefore = fs.readFileSync(path + 'data/text-master.js', 'utf8');
+const transChip = fs.readFileSync(path + 'js/reader-core.js', 'utf8');
+chk(/textVersionOf/.test(transChip), 'Issue #339·阅读器读得出这一条的版次（页面上看得见）');
+const collSrc = fs.readFileSync(path + 'js/collections.js', 'utf8');
+chk(/version: versionOfEntry/.test(collSrc),
+  'Issue #339·本机快照里存下了版次（存下之后改过能比出来）');
+const appSrc = fs.readFileSync(path + 'js/app.js', 'utf8');
+chk(/refreshSnapshotsForBooks/.test(appSrc),
+  'Issue #339·启动时按集子刷新用到的快照（不是每次全量重写）');
+chk(srcBefore.length > 0, 'Issue #339·主表读得回来（占位断言，守住上面几次读取不空跑）');
+
+// ── Issue #339 第三轮：体检脚本与修订表都在，且体检能跑绿 ───────────────
+const audit = require('child_process').execFileSync(process.execPath,
+  [path + 'scripts/audit-chengyu-translations.js'], { encoding: 'utf8' });
+chk(/体检通过/.test(audit),
+  'Issue #339·译文体检脚本跑得通、且全绿（scripts/audit-chengyu-translations.js）');
+const fixBox = { window: {}, console };
+vm.createContext(fixBox);
+vm.runInContext(fs.readFileSync(path + 'data/chengyu-trans-fix.js', 'utf8'), fixBox,
+  { filename: 'data/chengyu-trans-fix.js' });
+const TRANS_FIX = (fixBox.window && fixBox.window.CHENGYU_TRANS_FIX) || {};
+chk(Object.keys(TRANS_FIX).length >= 5,
+  'Issue #339·译文修订表在（data/chengyu-trans-fix.js，' +
+  Object.keys(TRANS_FIX).length + ' 条）');
+chk(Object.keys(TRANS_FIX).every(t => TRANS_FIX[t].why),
+  'Issue #339·修订表每条都写了「为什么改」（后人翻到时看得懂）');
+
+// ── Issue #339 第三轮：同篇不共用正文时，读到的仍是主表那一份 ────────────
+// 带 textRef 的条目一律以主表为准 —— 数据文件里若还内联着一份，那两份就是两个
+// 真相（改一处忘一处，同篇在两处读出两种白话）。
+const misInline = IDX.filter(x => x.book === 'chengyu' && !x.isBook).filter(x => {
+  const m = sandbox.textVersionOf(x, 'chengyu');
+  return !m && x.textRef;
+}).map(x => x.id);
+chk(misInline.length === 0,
+  'Issue #339·带 textRef 的条目都能从主表取到正文（取不到的：' +
+  (misInline.slice(0, 6).join('、') || '无') + '）');
+
 console.log('');
 console.log(fails ? '❌ ' + fails + ' 项失败' : '🎉 chengyu测试全部通过');
 process.exit(fails ? 1 : 0);
