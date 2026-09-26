@@ -31,7 +31,9 @@
 
     jinxiandai: window.JINXIANDAI_GROUP_ORDER || null,
 
-    chengyu: window.CHENGYU_GROUP_ORDER || null
+    chengyu: window.CHENGYU_GROUP_ORDER || null,
+
+    changshi: window.CHANGSHI_GROUP_ORDER || null
   };
 
   window.GROUP_ORDER = GROUPS;

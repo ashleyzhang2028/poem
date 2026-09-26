@@ -264,7 +264,10 @@ const uncov = [];
 chk(uncov.length === 0,
   '判重表 117 组的每一条条目都在存储主表里（未覆盖：' + (uncov.slice(0, 6).join('、') || '无') + '）');
 
-const FULL_BOOKS = ['zhaoming', 'guwen', 'songci', 'tangshi', 'classic', 'yuanqu', 'yuefu', 'jinxiandai', 'chengyu'];
+// 「全量收归主表」的各部：除课内（poems）外的每一部集子，一律从 SITE_BOOKS 取，
+// 不写死名单 —— 加第十一部时这里自己跟着算（Issue #342）
+const FULL_BOOKS = (sb.SITE_BOOKS || []).map(function (b) { return b.id; })
+  .filter(function (id) { return id !== 'poems'; });
 const inFullBooks = e => FULL_BOOKS.some(b => e.indexOf(b + '-') === 0);
 const masterInGroups = [];
 Object.keys(masterEntries).forEach(e => {

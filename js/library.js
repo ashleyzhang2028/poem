@@ -91,6 +91,15 @@
       page: "/chengyu/",
       unit: "则",
       desc: "七百三十六则成语，逐条考订朝代、作者与出处，正文取经史子集原文"
+    },
+    {
+      id: "changshi",
+      name: "文学常识",
+      book: "ChangshiBook",
+      short: "常识",
+      page: "/changshi/",
+      unit: "条",
+      desc: "文体 / 作家 / 流派 / 典籍 / 称谓 / 制度 / 典故 / 现当代文学史事件八组，高中及以前考点"
     }
   ];
 
@@ -114,7 +123,8 @@
       zhaoming: "POEMS_ZHAOMING",
       yuanqu: "POEMS_YUANQU",
       jinxiandai: "POEMS_JINXIANDAI",
-      chengyu: "POEMS_CHENGYU"
+      chengyu: "POEMS_CHENGYU",
+      changshi: "POEMS_CHANGSHI"
     };
     var key = VARS[bookId];
     var list = key ? window[key] : null;
