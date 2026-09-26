@@ -6048,3 +6048,58 @@ main 已经走到 v242，本分支的 ⑫ 是从 v241 起的 **v242**，两边�
 - `sw.js` v246 → **v247**（`js/` 与 `css/` 都动过），`js/settings-nav.js` 的版本号同步跟上。
   ⚠️ 这一节的编号跟着 main 走：立项时 main 停在 §4.66，落地时已被 §4.67～§4.69 占掉，
   本节顺延为 **§4.70**；缓存版本同理（编辑这段时 main 已推到 v246，本节取 **v247**）。
+
+---
+
+### 4.71 「大会」那一层掀开了，底下的列表却盖满整屏（2026-09-26 · 回答 Issue #356）
+
+> 用户原话：
+> 「现在古诗词大会首页显示的还是普通古诗词列表，再点还是详情页，
+>  没看出来各种考试，模拟，答题 什么的？」
+
+---
+
+#### ① 不是「层没掀开」，是「底下那张没藏住」
+
+`host.hidden = false` 是生效的 —— 大会那一层确实在页面上（237px 处），
+四种玩法卡也确实画出来了。问题在**它底下**：
+
+```
+.poems-game（大会那一层，237px）        ← 真的掀开了
+#gw-list  .list { display: flex }      ← 14879px，照旧摊着，盖满整屏
+```
+
+`hidden` 属性只在**浏览器默认样式表**里是一条 `[hidden] { display: none }`。
+元素上的 `.list { display: flex }`（1024px 起 `display: grid`）**压得住它** ——
+于是 `viewEl.hidden = true` 看着设了、属性也真的在 DOM 上，
+**可计算出来的 `display` 还是 `flex`**，列表照旧铺在那一层底下。
+
+用户点开的确实是「大会」，看到的却是那张诗词列表；再点一行，进的是详情页 ——
+报告里那两句，一句一个现象，根因是同一个。
+
+---
+
+#### ② 三处收口，各管一段
+
+| 位置 | 作用 |
+|---|---|
+| `css/style.css` → `.list:where([hidden]) { display: none }` | 治根：`.list` 上的 `hidden` 从此真的藏得住。`:where()` 让它**不占优先级**（0,0,0），别处照旧压得住它 |
+| `css/account.css` → `.poems-game:not([hidden]) ~ #gw-list[hidden]` | 退路：老浏览器不认 `:where()` 时由这条更具体的收口（与 `classic.css` 里 `.library-grid[hidden]` 是同一套做法） |
+| `js/game.js` → `showList(on)` | 一处管住列表的显隐，`open` / `close` / `renderEntryGate` 三处都调它 |
+
+⚠️ **JS 不自己摸 `style.display`**：就地改内联样式会与「阅读器关上再回来」的整页重画
+打架（两处各写一次，迟早对不上）。藏与不藏都在 CSS 里声明，
+JS 只负责**属性在不在**（用 `setAttribute` / `removeAttribute`，不是 `= true / false`）。
+
+---
+
+#### ③ 验证
+
+- **真浏览器核过**（Chromium + CDP，`/poems/?game=1`）：
+  - 修前：`#gw-list` 的 `display` 是 `flex`、高 **14879px**（整屏都是列表）；
+  - 修后：`display: none`、高 **0**；`PoemGame.close()` 之后回到 `flex` / 14879px；
+  - Max 档下四张玩法卡（飞花令 / 题库复习 / 模拟考试 / 正式考试）如实出现。
+- `test/game-layer.test.js` **新增一层**（第 29 层）：`hidden` 兜底、那条退路选择器的
+  **兄弟次序**（`~` 靠它）、以及「不再有 `viewEl.hidden = …`」；
+- `bash test/run.sh` 全绿；
+- `sw.js` v247 → **v248**（`css/` 与 `js/` 都动过）。

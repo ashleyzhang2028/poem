@@ -217,7 +217,7 @@
       '<button class="account-btn ghost" type="button" data-game-close="1">返回诗词列表</button>' +
       "</section>";
     host.hidden = false;
-    if (viewEl) viewEl.hidden = true;
+    showList(false);
     // 拦住用户时**也算「站在大会这一层」**：底栏正中间那一格照亮点，
     // 不然从底栏点进来只会看到「课外」亮着、右边冒出一张卡，
     // 像点错了地方。抬起头的标题同样换成「古诗词大会」（卡片上就是这几个字）。
@@ -737,7 +737,7 @@
     // 用 `replaceState` 而不是重新 `location.href`：**不刷新**、
     // 不丢列表滚动位置，只把那一个参数从地址栏上摘掉。
     dropGameParam();
-    if (viewEl) viewEl.hidden = false;
+    showList(true);
     paintHeader(null);
     paintBack();
     window.scrollTo(0, 0);
@@ -761,9 +761,26 @@
     });
   }
 
+  // 掀开 / 收起这一层时，**列表的显示也一并管住**。
+  //
+  // ⚠️ 为什么要单独写一句（Issue #356）：`#gw-list` 是 `.list`，而
+  //    `css/style.css` 里 `.list { display: flex }`（1024px 起 `display: grid`）——
+  //    元素上的 display 比浏览器默认样式表里给 `[hidden]` 的 `display: none`
+  //    优先级高，于是从前的 `viewEl.hidden = true` **看着设了、其实没藏住**：
+  //    大会那一层铺在 237px 处，底下 14879px 的诗词列表照旧摊着 ——
+  //    用户看到的就是「首页还是普通古诗词列表」（报告原话）。
+  //    藏的这一句是**声明式**的（`.list:where([hidden])` 与新写的
+  //    `.poems-game:not([hidden]) ~ #gw-list[hidden]` 两条），JS 不自己摸
+  //    `style.display` —— 就地改 style 会与「阅读器关上再回来」的整页重画打架。
+  function showList(on) {
+    if (!viewEl) return;
+    if (on) viewEl.removeAttribute("hidden");
+    else viewEl.setAttribute("hidden", "");
+  }
+
   function open() {
     if (!host) return;
-    if (viewEl) viewEl.hidden = true;
+    showList(false);
     host.hidden = false;
     setDockNav("game");
     state.mode = "";

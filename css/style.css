@@ -298,6 +298,16 @@ html, body {
 
 .list { display: flex; flex-direction: column; gap: 10px; }
 
+/* ⚠️ 这一条不是「重复一遍默认样式」，是**必须写**的（Issue #356）：
+ *    `hidden` 属性只在浏览器默认样式表里是一条 `[hidden] { display: none }`，
+ *    它输给上面那条 `.list { display: flex }`（元素上的声明 > 默认样式表）。
+ *    于是任何一处 `listEl.hidden = true` 都**看着设了、其实没藏住** ——
+ *    `/poems/` 上掀开古诗词大会时用户看到的仍是那张诗词列表，就是它。
+ *    `:where()` 让这一条**不占优先级**（0,0,0），别处照旧压得住它；
+ *    老一点的浏览器由 `css/account.css` 里那条更具体的
+ *    `.poems-game:not([hidden]) ~ #gw-list[hidden]` 兜住。 */
+.list:where([hidden]) { display: none; }
+
 @media (min-width: 768px) {
   .list {
     flex-direction: row;
