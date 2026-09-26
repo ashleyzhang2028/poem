@@ -152,9 +152,18 @@ chk(/pinyinWidOf/.test(appSrc) && /WorksIndex\.widOf/.test(appSrc),
   "首页用 WorksIndex 归并后的 wid 绑勘误（同一篇在几部集子里共用一处勘误）");
 
 const rdSrc = src("js/reader-core.js");
-chk(/window\.Pinyin\.annotatePoem/.test(rdSrc), "集子阅读器走 annotatePoem");
-chk((rdSrc.match(/annotatePoem\(/g) || []).length >= 3,
-  "阅读器的三个注音出口（正文 / 打印 / 逐句）都走 annotatePoem");
+
+/* 阅读器的注音**只有一个出口**（Issue #347 起）：
+   正文要把「表格」与「注音」一起渲染，三个调用点各写一遍迟早有一处漏掉，
+   所以收成一个 `annotateLine(wid, line, mode)` —— 正文、打印、逐句都从它走。
+   判据也跟着改：认「出口只有一个」，而不是数调用点有几次。 */
+chk(/function annotateLine\(wid, line, mode\)/.test(rdSrc),
+  "集子阅读器的注音收成一个出口 annotateLine（wid / 行 / 模式）");
+chk(/window\.Pinyin\.annotatePoem/.test(rdSrc), "那个出口走 annotatePoem（传 wid，勘误才命中）");
+chk((rdSrc.match(/annotateLine\(/g) || []).length >= 3,
+  "正文 / 打印 / 逐句三处都经 annotateLine（不再各写一遍）");
+chk(!/annotateHtml\(current/.test(rdSrc),
+  "页面层不再直接把整篇丢给 annotateHtml（那样表格画不出来）");
 
 const syncSrc = src("js/sync-store.js");
 chk(/PINYIN_FIX_ROW_ID\s*=\s*"pinyin_fix:v1"/.test(syncSrc), "同步层认识 pinyin_fix:v1 这一行");

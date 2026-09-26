@@ -1,0 +1,159 @@
+/* ===========================================================================
+   详情页表格（全站一套样式）· Issue #347
+   ---------------------------------------------------------------------------
+
+   用户原话：「新加的这些内容有些内容可不可以以表格形式显示？例如年表，
+   恶谥，这些，全是一段一段文字显得杂乱。请使用一个为详情页准备的全局的
+   样式表，那样所有详情页中的表格都将一个样式，精美显示。」
+
+   所以这个文件是**唯一**给详情页表格上样式的地方（十一部集子的阅读器共用
+   同一份 `.reader-body`）。哪一部集子的正文里出现表格，都长成这里的样子；
+   要调表格长相，只调这里。
+
+   ── 表格是怎么来的 ──────────────────────────────────────────────────
+   正文是**纯文本**（`data/text-master.js` 里的 `text` 字段，作者只写文字）。
+   表格因此也写成纯文本，由 `js/reader-core.js` 的 `textToHtml()` 认出来：
+
+     ┌──────┬──────┐      有边框的表格（画了框线）
+     │ 表头 │ 表头 │
+     ├──────┼──────┤      ↑ 一整块连续的行 = 一张表
+     │ 单元格│ 单元格│
+     └──────┴──────┘
+
+     年号 ｜ 帝王 ｜ 说明    无框的对齐表：两列以上、行行竖线数相同
+     建元 ｜ 汉武帝 ｜ 第一   ↑ 同样是一整块连续的行 = 一张表
+
+   判别规则与「认不出来就原样输出」的退路都在 `js/reader-core.js`，这里只管长相。
+
+   ── 两条硬约束（不这么写就会坏） ────────────────────────────────────
+   1. **注音不能把表格冲散。** 全文注音是逐字符插 `<ruby>`，插在表格的边框
+      格线里就成了「一列汉字一列拼音」的乱码。所以表格在注音**之前**就被切成
+      `字符 → 单元格 → 行` 的结构，注音只在单元格内部做（`textToHtml` 的
+      `annotate` 回调）。
+   2. **右对齐不能作用在边框上。** `.reader-text` 是居中 / 右对齐的整块，
+      表格作为整块跟着走没问题，但格子里的文字一律左对齐、数字列不居中 ——
+      所以表内显式收掉 `text-align`。
+   =========================================================================== */
+
+/* ---- 一、表格这一块自身：不撑破纸面，窄屏能横向滑动 -------------------- */
+.reader-body .reader-text .rd-scroll {
+  /* ⚠️ 不能写 `margin: 0 auto`：居中的 `<pre>` 里 auto 外边距与
+     `max-width: fit-content` 一起会算出 0 打印宽度（宽度塌成一条线）。
+     与注音那一条同样的坑，见 css/classic.css 的 `.reader-text.with-pinyin`。 */
+  margin: 14px 0;
+
+  box-sizing: border-box;
+  text-align: left;
+  letter-spacing: normal;
+
+  /* 窄屏上宁可横向滑动，也不把表格压成一列读不出对齐关系。
+     ⚠️ 这一条写在**壳**上、不写在 `<table>` 上：表格自身的 `overflow-x`
+     在 border-collapse 的表格布局下算出来仍是 `visible`（实测如此），
+     包一层 div 才真的滚得起来。 */
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.reader-body .reader-text .rd-scroll > .rd-table,
+.reader-body .reader-text .rd-scroll > .rd-grid {
+  width: 100%;
+  font-family: var(--font-ui);
+}
+
+/* 表头与单元格一律左对齐：`.reader-text[data-align="right"]` 会继承下来 */
+.reader-body .reader-text .rd-table th,
+.reader-body .reader-text .rd-table td,
+.reader-body .reader-text .rd-grid span {
+  text-align: left;
+}
+
+/* ---- 二、有框表格（年表 / 对照表） ------------------------------------- */
+.rd-table {
+  border-collapse: collapse;
+  width: 100%;
+
+  font-size: .82em;
+  line-height: 1.6;
+  color: var(--ink);
+
+  background: var(--card);
+}
+
+.rd-table th,
+.rd-table td {
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+
+  vertical-align: top;
+  white-space: normal;
+  word-break: break-word;
+
+  /* 列宽下限：六列的表（常见帝王称谓对照表）在手机宽度下若把纸面六等分，
+     每列不到 60px，「建元等 11 号」会被拆成一字一行、完全读不出对齐关系。
+     有了下限，列的总宽超出纸面时由 .rd-table 的 overflow-x 横向滑动兜底，
+     读者滑一下就能看到完整的一行。 */
+  min-width: 4.6em;
+}
+
+/* 首列是「朝代 / 谥字」这类短标签，不折行 —— 省下来的宽度全给说明列 */
+.rd-table th:first-child,
+.rd-table td:first-child {
+  white-space: nowrap;
+}
+
+.rd-table th {
+  background: var(--green-light);
+  color: var(--green);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* 隔行浅上一层底：长表（历朝全录那种二三十行）眼睛才不会串行 */
+.rd-table tbody tr:nth-child(even) td {
+  background: rgba(47, 96, 85, .035);
+}
+
+/* ---- 三、无框对齐表（美谥 / 恶谥 / 年号取字这一族的「字 → 释义」） ----- */
+.rd-grid {
+  border-collapse: collapse;
+  width: 100%;
+
+  font-size: .82em;
+  line-height: 1.75;
+  color: var(--ink);
+}
+
+.rd-grid th,
+.rd-grid td {
+  padding: 5px 10px;
+  vertical-align: top;
+  white-space: normal;
+  word-break: break-word;
+}
+
+.rd-grid th {
+  color: var(--green);
+  font-weight: 600;
+  white-space: nowrap;
+
+  border-bottom: 1px solid var(--line);
+}
+
+.rd-grid td {
+  border-bottom: 1px solid var(--line-2);
+}
+
+.rd-grid tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* 窄屏：去掉内边距，字与释义之间只留一格空隙，省下来的宽度全给释义列 */
+@media (max-width: 560px) {
+  .rd-table th,
+  .rd-table td { padding: 6px 7px; }
+
+  .rd-grid th,
+  .rd-grid td { padding: 5px 7px; }
+}
