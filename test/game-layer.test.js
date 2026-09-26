@@ -176,13 +176,16 @@ console.log("\n=== 3c · 四张玩法卡：各自一张、一行两张、与「�
     "四个玩法**各自是一张卡**（同一颗按钮既是 .account-card 又是 .game-mode）");
   chk(!/game-mode-main/.test(game),
     "「选一个玩法」那张外套卡整个撤掉（连着它那个 .game-mode-main 也让位了）");
-  // ⚠️ 首页现在**多了一行小标题**（「考哪一类题」/「考哪一部书」，Issue #356
-  //    第七轮），它是 `<p class="poems-home-tag">` —— 不是 `.account-card-title`
-  //    （那是卡**里面**的标题）。所以判据收窄成「玩法卡那一行里没有卡内标题」，
+  // ⚠️ 首页那两段的小标题（「范围」/「题型」，Issue #356 第九轮）是
+  //    `<p class="poems-home-tag">` —— 不是 `.account-card-title`
+  //    （那是卡**里面**的标题）。所以判据收窄成「题型那四张卡那一段里没有卡内标题」，
   //    而不是「整个 renderHome() 里不许出现这个类名」。
-  const homeRow = home.slice(home.indexOf("poems-home-row"), home.indexOf("考哪一部书"));
+  // ⚠️ 截到「题型那一段结束」为止（`renderHome()` 那个 `return html;`）——
+  //    往后截会把 `renderFly()` 那些卡**里面**的标题一并带进来，判据就变成了
+  //    「整份文件里有没有卡内标题」，与这一条问的不是一回事。
+  const homeRow = home.slice(home.indexOf('homeTag("题型")'), home.indexOf("return html;", home.indexOf('homeTag("题型")')));
   chk(!/account-card-title/.test(homeRow),
-    "玩法那一行不再有卡内标题（小标题是层与层之间的 `.poems-home-tag`，不是卡名）");
+    "题型那一段不再有卡内标题（小标题是层与层之间的 `.poems-home-tag`，不是卡名）");
 
   // ② 标题与「每日背诵」页（/settings/recite/ 的今日加背清单）逐字同档。
   //    ⚠️ 判据写成**两边同数**：任一边单独改动都会红。
@@ -252,7 +255,7 @@ console.log("\n=== 3c · 四张玩法卡：各自一张、一行两张、与「�
     "让「卡内按钮之间」有缝、「卡底按钮与卡片边缘」没缝）");
 }
 
-console.log("\n=== 3d · 首页两行卡：题型与范围并列、垂直居中偏上、集子范围真能出题 ===");
+console.log("\n=== 3d · 首页两行：范围在上、题型在下、垂直居中偏上、集子范围真能出题 ===");
 {
   // 用户 2026-09-26 第七轮原话，这就是这一节的全部目标：
   //   「飞花令四张卡片标题字体，样式，大小，颜色 你也没按照首页古诗列表卡片里的
@@ -263,40 +266,45 @@ console.log("\n=== 3d · 首页两行卡：题型与范围并列、垂直居中�
   //     只考文学常识，只考成语故事，你觉得应该怎么组织合适？还是在点击四张
   //     卡片后再设置范围？」
   const accountCss = read("css/account.css");
-  const home = game.slice(game.indexOf("function renderHome"), game.indexOf("function homeTag"));
+  const home = game.slice(game.indexOf("function renderHome"), game.indexOf("function scopeRows"));
 
-  // ① 首页两行：题型一行、范围一行，各由 `.poems-home-row` 装着。
-  chk(/homeTag\("题型"\)/.test(home), "首页上一行的小标题是「题型」");
-  chk(/homeTag\("范围"\)/.test(home), "首页下一行的小标题是「范围」");
-  chk(/class="poems-home-row"/.test(home), "两行各装在一个 `.poems-home-row` 里（分栏只管一行）");
-  chk(/data-game-scope=/.test(home), "范围卡带 `data-game-scope`（不是 data-game-mode）");
-  chk(/data-game-scopes="1"/.test(home), "有「更多范围」那颗键");
+  // ① 首页两段：**范围在上、题型在下**（第九轮把它定成这个次序）。
+  chk(/homeTag\("题型"\)/.test(home), "首页下一段的小标题是「题型」");
+  chk(/var html = scopeRows\(\);/.test(home),
+    "范围那一段排在最前面（用户原话：「先显示范围，下面再显示题型」）");
+  chk(home.indexOf("scopeRows()") < home.indexOf('homeTag("题型")'),
+    "次序判据：scopeRows() 在 homeTag(\"题型\") **之前**");
+  chk(/class="poems-home-row"/.test(home), "题型那四张装在一个 `.poems-home-row` 里（分栏只管那一行）");
+  chk(/var scopeRows = /.test(game) || /function scopeRows\(\)/.test(game), "范围那一段由 scopeRows() 画");
 
-  // ② 首页那三张范围卡**不在这里另列名单**：名字与条数全从 Exam.scopes() 现算。
-  chk(/var FEATURED = \[/.test(game), "首页那三部由 `FEATURED` 一张次序表点出来");
-  const feat = game.slice(game.indexOf("var FEATURED"), game.indexOf("];", game.indexOf("var FEATURED")));
-  chk(/book:tangshi/.test(feat) && /book:changshi/.test(feat) && /book:chengyu/.test(feat),
-    "FEATURED 里是用户点名的那三部（唐诗 / 文学常识 / 成语故事）");
-  chk(!/name:\s*"/.test(feat), "FEATURED 里**不写名字**（名字从 SITE_BOOKS 现算，不另列一份）");
-  chk(/scopeList\(\)/.test(home), "首页那一行读 scopeList()（→ Exam.scopes() → SITE_BOOKS）");
+  // ② 名单**不另列一份**：都从 Exam.scopes()（→ SITE_BOOKS）现算。
+  chk(!/var FEATURED = \[/.test(game),
+    "`FEATURED`（哪几部进首页那张次序表）已删 —— 范围一个不少、全在首页");
+  chk(!/MORE_HINT/.test(game), "`MORE_HINT` 也删了（没有「更多范围」那一层可提示）");
+  chk(/scopeList\(\)/.test(home) || /scopeList\(\)/.test(game),
+    "范围读 scopeList()（→ Exam.scopes() → SITE_BOOKS）");
 
-  // ③ 「更多范围」那一层：全部 / 课内三学段 / 其余集子，一个不少。
-  chk(/function renderScopes\(\)/.test(game), "有 renderScopes() 那一层");
-  chk(/state\.mode === "scopes"/.test(game), "render() 认 `scopes` 这个层名");
-  chk(/scopeGroup\("全部"/.test(game) && /scopeGroup\("课内诗词"/.test(game) &&
-      /scopeGroup\("其他集子"/.test(game),
-    "那一层分三组：全部 / 课内诗词 / 其他集子");
-  chk(/sc\.id === "all"/.test(game) && /indexOf\("poems:"\) === 0/.test(game),
-    "分组按 id 判（all / poems: / 其余集子），不按名字猜");
+  // ③ 分组与次序：**在 js/exam.js 一处**（不许在页面里再写一份中文名）。
+  const exam = read("js/exam.js");
+  chk(/var SCOPES_GROUPS = \["全部", "课内诗词", "其他集子"\]/.test(exam),
+    "三块的名字在 `js/exam.js` 一处（SCOPES_GROUPS）");
+  chk(/function scopeGroupOf\(scopeId\)/.test(exam), "分块规则也在那里（scopeGroupOf()，判 id 不按名字猜）");
+  // ⚠️ 剥掉注释再判：那一节的注释里写着 `SCOPES_GROUPS` 这个字面量。
+  const gameLiveD = game.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^\s*\/\/.*$/gm, " ");
+  chk(!/SCOPES_GROUPS/.test(gameLiveD.replace(/Ex\.SCOPES_GROUPS/g, "")),
+    "页面**不另写**那三个中文名（一律经 Ex.SCOPES_GROUPS）");
+  chk(/Ex\.scopeGroupOf\(sc\.id\)/.test(game), "页面按 Ex.scopeGroupOf() 分块");
 
-  // ④ 范围**不再问第二遍**：选过的那一部，卷面设置里只念一遍。
+  // ④ 范围**不再问第二遍**：选过的那几格，卷面设置里只念一遍。
   chk(/scopeChosen/.test(game), "`state.setup.scopeChosen` 记「范围是不是用户挑的」");
-  chk(/var chosen = state\.setup\.scope && state\.setup\.scope !== "all";/.test(game),
-    "范围不是默认的「全部」时，卷面设置里不再摆那个下拉");
-  chk(/换一部书/.test(game), "改写：那一张卡给一颗「换一部书」回首页/更多范围");
+  chk(/function pickScope\(\)/.test(game), "有 pickScope()：把多选的格子折成一个 scope 交给内核");
+  chk(/function scopePickLabel\(/.test(game), "有 scopePickLabel()：那一行把 id 念成人话（含多选合成 id）");
   const start = game.slice(game.indexOf("function start(modeId)"), game.indexOf("function beginExam"));
   chk(/scopeChosen \? state\.setup\.scope : "all"/.test(start),
-    "start() **不把范围归零**（用户刚选的那一部要带到卷面设置去）");
+    "start() **不把范围归零**（用户刚选的那几格要带到卷面设置去）");
+  chk(!/id="game-scope"/.test(game),
+    "卷面设置里那个 `#game-scope` 下拉**删了**（范围在首页选，不问第二遍）");
+  chk(!/function readSetup\(/.test(game), "readSetup()（读那个下拉的）整条删了");
 
   // ⑤ 垂直居中偏上：两条 `flex-grow` 按 1 : 2 分余量。
   chk(/min-height: calc\(100 \* var\(--app-vh\) - var\(--nav-h\) - 96px\)/.test(accountCss),
@@ -309,29 +317,26 @@ console.log("\n=== 3d · 首页两行卡：题型与范围并列、垂直居中�
 
   // ⑥ **真 bug**：`corpus()` 从前不展开正文 —— 集子那几部上出 0 题。
   //    真机量过（修前）：`Exam.build(corpus, {scope:'book:tangshi'})` → 0 题。
-  //    这里判「修的那一句在不在」：`corpus()` 必须过一遍 `masterTextOf`。
-  // ⚠️ `expand()` 排在 `corpus()` **后面**（函数声明抬升，调用没问题）——
-  //    截到 `function expand(` 会得到一个空的语料函数体。截到它的**注释头**为止。
   const corpus = game.slice(game.indexOf("function corpus()"),
     game.indexOf("// 展开一条的正文"));
   chk(/function expand\(p, book\)/.test(game), "有 expand()：textRef → data/text-master.js 那一份正文");
   chk(/window\.masterTextOf/.test(game), "expand() 调的是 window.masterTextOf（与 data/index.js 同一句）");
   chk(/expand\(p, "poems"\)/.test(corpus) && /expand\(p, w\.id\)/.test(corpus),
     "corpus() 里课内与集子**都**过 expand()（从前集子那一半没过，于是正文是空的）");
-  chk(/if \(!m && book\) m = map\(\).*\n?/.test(game) || /masterTextOf\(p, book\)/.test(game),
-    "主表查不到时原样返回（不猜、不塞空串）");
 }
 
-console.log("\n=== 3e · 首页小标题收成两个词、「更多范围」是第四张卡、那一层重排 ===");
+console.log("\n=== 3e · 范围并进首页：一行一块的清单、加减号、可多选、题型在下面 ===");
 {
-  // 用户 2026-09-26 第八轮原话，这就是这一节的全部目标：
-  //   「考哪一类题 同一份语料，四种玩法；想换书的请看下一行 改成 题型 不要加任何其他废话」
-  //   「考哪一部书 只考一部，或点上面的玩法考全部 改成 范围 不要任何其他废话」
-  //   「删除 ，留一份练习记录」
-  //   「更多范围那里，以第四个卡片的形式展示」
-  //   「点进 更多范围 页面，整个卡片和排版你是认真的吗，一塌糊涂！
-  //     回到玩法 这个不需要卡片，只要一个 返回 按钮即可」
-  //   「其他界面必须改进」
+  // 用户 2026-09-26 **第九轮**原话，这就是这一节的全部目标：
+  //   「要不还是合并范围和更多范围内容到古诗词大会的首页吧。」
+  //   「先显示范围，下面再显示题型和题型的田字格卡片。」
+  //   「范围用类似搜索的下拉框那种展现形式(直接每一行显示出来，不是下拉框)，
+  //     前面有个加号或减号，供用户多选。」
+  //   「这样设计，用户先多选范围，再按题型直接进入。」
+  //
+  // 第八轮那几条（小标题收成两个词、「更多范围」第四张卡、那一层重排）在这一轮
+  // **作废了两条**：「更多范围」那一张卡与那一层都不存在了（并进了首页）。
+  // 但「小标题只许一个词」「那句『留一份练习记录』删掉」照旧守着。
   const accountCss = read("css/account.css");
   const exam = read("js/exam.js");
   // ⚠️ 判「某句话还在不在**界面上**」必须剥掉注释再判：这几句老文案在**历史注释**里
@@ -339,69 +344,91 @@ console.log("\n=== 3e · 首页小标题收成两个词、「更多范围」是�
   //    第一次写时踩过的同一个坑。
   const gameLive = game.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^\s*\/\/.*$/gm, " ");
   const cssLive = accountCss.replace(/\/\*[\s\S]*?\*\//g, " ");
-  const home = game.slice(game.indexOf("function renderHome"), game.indexOf("function homeTag"));
-  const scopesSrc = game.slice(game.indexOf("function renderScopes"), game.indexOf("// 卷面设置：范围 × 题量"));
 
-  // ① 小标题**就是一个词**：不许再跟着第二句话。
+  // ① 小标题**就是一个词**，且两段的次序是「范围」在前。
   chk(!/同一份语料，四种玩法/.test(gameLive),
     "「同一份语料，四种玩法；想换书的请看下一行」整句删掉（用户原话：不要加任何其他废话）");
   chk(!/只考一部，或点上面的玩法考全部/.test(gameLive),
     "「只考一部，或点上面的玩法考全部」整句删掉（用户原话：不要任何其他废话）");
-  // ⚠️ homeTag() 只收一个参数 —— 从前的两截（名字 + 说明）连类名一起没了。
   const tagFn = game.slice(game.indexOf("  function homeTag("), game.indexOf("\n  }\n", game.indexOf("  function homeTag(")) + 4);
   chk(/function homeTag\(title\)/.test(tagFn), "homeTag() 只收一个标题（不再有第二个「说明」参数）");
   chk(!/poems-home-tag-name|poems-home-tag-note/.test(gameLive),
     "两个 span（名字 / 说明）连同它们的类名一起删了");
   chk(!/poems-home-tag-name|poems-home-tag-note/.test(cssLive),
     "CSS 里也不留这两个用不到的类名（留着下次就会有人往里塞第二句话）");
+  chk(/<p class="poems-home-tag">范围<\/p>/.test(game),
+    "那一段的小标题就是「范围」两个字");
 
-  // ② 「删除 ，留一份练习记录」—— 模拟考试那句说明里的尾巴。
+  // ② 「删除 ，留一份练习记录」—— 模拟考试那句说明里的尾巴（照旧守着）。
   chk(!/留一份练习记录/.test(exam),
     "模拟考试的 desc 里不再有「留一份练习记录」（用户原话：删除）");
   chk(/desc: "抽一套卷子当场做，答完立刻说对错"/.test(exam),
     "那句现在是「抽一套卷子当场做，答完立刻说对错」");
-  chk(!/留一份练习记录/.test(home), "首页上也不出现这句话");
-
-  // ③ 「更多范围」是首页**那一行的第四张卡**，不是一条通栏键。
-  chk(/class="account-card game-mode game-scope game-scope-more"/.test(home),
-    "「更多范围」与另三张**同一套外观**（account-card + game-mode + game-scope）");
-  chk(!/account-btn ghost game-scope-more/.test(game),
-    "不再是那条 `.account-btn.ghost` 通栏键");
-  chk(/scopeCard\(sc, f\.hint\)/.test(home),
-    "三张常考卡也走同一个 scopeCard()（一排四张同一套写法）");
-  chk(!/game-scope-more \{/.test(accountCss),
-    "CSS 里那条通栏键的负外边距也删了（不再是通栏键）");
-
-  // ④ 「更多范围」那一层：一条小标题 + 一片格子，**卡套卡**没有了。
-  //
-  // ⚠️ Issue #370 把这一层里那颗「返回」也撤掉了：全站的返回键**只有顶栏
-  //    右上一处**（用户原话：「如果在……这 5 个有底部导航栏的各自首页，
-  //    右上角不应该再有后退按钮」——反过来，别处也别各摆一颗）。
-  //    这一层的回退改由顶栏那颗键管，落点是 `/dahui/`（见 `paintBack()`）。
-  chk(!/data-game-back="1">返回<\/button>/.test(scopesSrc),
-    "这一层里**不再有自己那颗「返回」**（返回键只留顶栏一处，Issue #370）");
-  chk(!/回到玩法/.test(gameLive), "「回到玩法」这个名字一个字不留");
-  chk(!/class="account-card game-head"/.test(scopesSrc),
-    "那一层不再有「标题卡」（一颗键压着标题那种版式）");
-  chk(!/class="account-card"><h2 class="account-card-title">' \+ esc\(title\)/.test(game),
-    "每一组不再是一张 `.account-card`（卡套卡从这一处拆掉）");
-  chk(/class="poems-home-tag">' \+ esc\(title\)/.test(game),
-    "分组只剩一条 `.poems-home-tag` 小标题（与首页「题型」「范围」同一个样式）");
-  chk(/class="game-scope-item"/.test(game),
-    "范围键是 `.game-scope-item`（自己画一条边框，**不带**卡片外观）");
-  chk(!/game-scope-item[\s\S]{0,40}account-card/.test(accountCss),
-    "`.game-scope-item` 也不是卡片（没有阴影、没有卡片底色）");
-  // ⑤ 格子是 grid、一行两张、两张等宽（从前是 flex wrap，每颗按内容定宽）。
-  chk(/\.game-scope-grid \{[\s\S]*?grid-template-columns:\s*repeat\(2, minmax\(0, 1fr\)\)/.test(accountCss),
-    "那一层的格子是 grid 一行两张、两张等宽（minmax 里的 0 防长名字撑破）");
-  chk(/\.game-scopes \.game-back,[\s\S]*?width: auto/.test(accountCss),
-    "「返回」那颗键宽度 auto（不是 `.account-btn` 默认的通栏）");
-  chk(/\.poems-game > \.game-back/.test(accountCss),
-    "「返回」是这一层的直接子（不是卡片里的孩子）");
-
-  // ⑥ 其他界面：卷面设置里那句「卷面记录留在本机」也跟着「删除」一起收干净。
   chk(!/留一份练习记录/.test(game) && !/留一份练习记录/.test(accountCss),
     "「留一份练习记录」在这个页面的任何角落都不再出现");
+
+  // ③ 「更多范围」那一张卡与那一层**都没了** —— 并进了首页。
+  chk(!/data-game-scopes/.test(gameLive), "「更多范围」那颗键（data-game-scopes）整条删了");
+  chk(!/game-scope-more/.test(gameLive) && !/game-scope-more/.test(cssLive),
+    "`.game-scope-more` 那个类名连 CSS 一起删了");
+  chk(!/renderScopes/.test(gameLive), "renderScopes()（那一层）整个函数删了");
+  chk(!/"scopes"/.test(gameLive), '`render()` 里那个 `"scopes"` 层名也删了（没有第二层可去）');
+  chk(!/回到玩法/.test(gameLive), "「回到玩法」这个名字一个字不留");
+  chk(!/换一部书/.test(gameLive), "「换一部书」也随那一层一起改了（现在是「换范围」）");
+  chk(/data-game-scope-fold/.test(game), "一块范围的头带 `data-game-scope-fold`（点它收放这一块）");
+  chk(/data-game-scope-all/.test(game), "段头另有一颗「收起 / 展开」（一块、一整片都能一键收放）");
+
+  // ④ 一行一块的清单：**前头一个加号或减号**，加减号由 CSS 画。
+  chk(/class="game-scope-sign" aria-hidden="true"/.test(game),
+    "每块行头最前面有个 `.game-scope-sign`（加号 / 减号那个方块）");
+  chk(/\.game-scope-sign::before,[\s\S]*?\.game-scope-sign::after \{/.test(accountCss) ||
+      /\.game-scope-sign::before,[\s\S]*?content: ""/.test(accountCss),
+    "加号 / 减号是 CSS 画的（两条线，不是一个 ± 字面量进 DOM）");
+  chk(/\.game-scope-row\[data-folded="1"\] \.game-scope-sign::after \{ opacity: 1; \}/.test(accountCss),
+    "收起时才画竖线（两条线都在 = 加号）；展开态只剩横线 = 减号");
+  chk(!/±/.test(gameLive), "页面上不出现「±」这个字形（由 CSS 画）");
+
+  // ⑤ 清单**默认展开**（用户原话「直接每一行显示出来」）。
+  chk(/scopeOpen: true/.test(game), "`state.scopeOpen` 默认 **true** —— 一进页面就把名目摆出来");
+  chk(!/<select/.test(gameLive), "**不是** `<select>` 下拉（用户紧接着补了一句「不是下拉框」）");
+
+  // ⑥ **可多选**：格子是按钮，选中态落在 JS 的状态上。
+  chk(/state: \(\) => state/.test(game) || /state: function \(\) \{ return state; \}/.test(game),
+    "状态有出口（`PoemGame.state()`），多选状态在 `state.scopes` 上");
+  chk(/scopes: \[\]/.test(game), "`state.scopes` 是选中的范围 id（`[]` = 一格没选 = 全部）");
+  chk(/var at = state\.scopes\.indexOf\(sid\);/.test(game) &&
+      /state\.scopes\.push\(sid\)/.test(game) && /state\.scopes\.splice\(at, 1\)/.test(game),
+    "点一格翻一格（有就删、没有就加）—— 这就是「多选」那一条");
+  chk(/data-on="1" aria-pressed="true"/.test(game), "选中的格子带 `data-on=\"1\"`（多选是**就地**上色，不换层）");
+  chk(/\.game-scope-pick\[data-on="1"\] \{/.test(accountCss),
+    "选中态有样式（`.game-scope-pick[data-on=\"1\"]`）");
+  chk(!/type="checkbox"/.test(game), "不拿原生复选框当多选（整块格子本身就是那颗键）");
+
+  // ⑦ 多选折成一个 scope：**合成 id 由内核认**（口径只有一处）。
+  chk(/function pickScope\(\)/.test(game), "有 pickScope()：多选 → 一个 scope");
+  chk(/if \(!on\.length\) return "all";/.test(game), "一格没选 → `all`（什么都考）");
+  chk(/if \(on\.indexOf\("all"\) >= 0\) return "all";/.test(game), "选了「全部」那一格 → `all`");
+  chk(/if \(on\.length === 1\) return on\[0\];/.test(game), "只选一格 → 就是它（老口径照旧）");
+  chk(/return "pick:" \+ on\.join\("\+"\);/.test(game), "选多格 → `pick:<id>+<id>` 合成写法");
+  chk(/id\.indexOf\("pick:"\) === 0/.test(exam),
+    "内核（js/exam.js 的 select()）认得 `pick:` 这一支 —— 取谁只在这一处判");
+  chk(/select\(cps, one\)\.forEach/.test(exam),
+    "多选是**并集**（逐格取、再按 id 去重，同一篇不会出两次）");
+  chk(/var SCOPES_HIDDEN = \{ "book:poems": 1 \}/.test(exam),
+    "`book:poems` 不上首页那一层（它与课内三学段是同一份语料的两种切法，摆两遍是重复）");
+
+  // ⑧ 挑完范围接着点题型**直接进**（用户原话：「再按题型直接进入」）。
+  chk(/var scope = pickScope\(\);/.test(game) && /state\.setup\.scope = scope;/.test(game),
+    "点题型那一支先把多选折成 scope 落进 setup，再 start()");
+  chk(/state\.setup\.scopeChosen = scope !== "all";/.test(game),
+    "`scopeChosen` 跟着这个 scope 走（不是 all 才算挑过）");
+
+  // ⑨ 那一层的版式：格子是 grid、一行两张、两张等宽。
+  chk(/\.game-scope-grid \{[\s\S]*?grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/.test(accountCss),
+    "格子是 grid 一行两张、两张等宽（minmax 里的 0 防长名字撑破）");
+  chk(/\.poems-game > \.game-back \{[\s\S]*?width: auto/.test(accountCss),
+    "飞花令 / 卷面设置 / 考试那三层顶上那颗回退键宽度 auto（不是 `.account-btn` 默认的通栏）");
+  chk(!/game-scopes-notice/.test(cssLive), "那一层那句 notice 的样式也随层一起删了");
 }
 
 console.log("\n=== 4 · 老地址改道：/poems/?game=1 → /dahui/ ===");

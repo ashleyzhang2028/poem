@@ -887,12 +887,14 @@ thead .plans-th-cap {
   align-items: stretch;
   gap: 12px;
 }
-/* 「登录」那颗键／「更多范围」那条通栏键：它们是这一层的**直接子**，
-   通栏由 flex 纵列的 `align-items: stretch`（默认）天然给到 ——
-   `grid-column: 1 / -1` 只对 grid 子项有意义，这里已经用不上了。 */
+/* 「登录」那颗键是这一层的**直接子**，通栏由 flex 纵列的
+   `align-items: stretch`（默认）天然给到 —— `grid-column: 1 / -1`
+   只对 grid 子项有意义，这里已经用不上了。
+   ⚠️ 范围那一段（`.game-scope-head` / `.game-scope-row`）也在这条路上：
+   它也是这一层的直接子、也是通栏，但它**自带**排版（见下面那一节）。 */
 
 /* ---------------------------------------------------------------------
-   首页那两行小标题（「考哪一类题」/「考哪一部书」）
+   首页那两行小标题（「范围」/「题型」）
    ---------------------------------------------------------------------
    它**不是卡片** —— 不带背景、圆角、阴影、内边距，只是横在卡片之间的一行字，
    把首页那一片分成上下两段。
@@ -901,7 +903,7 @@ thead .plans-th-cap {
       **不是一回事**：那个是「这一张卡叫什么」，这个是「下面这一段是什么」。
       同页出现两种「标题」是有意的 —— 混成一个，用户就分不清「这是卡名」
       还是「这是下一段」。 */
-/* ⚠️ 小标题**就是一个词**（「题型」「范围」「全部」「课内诗词」「其他集子」）——
+/* ⚠️ 小标题**就是一个词**（「范围」「题型」「全部」「课内诗词」「其他集子」）——
    Issue #356 第八轮用户原话：「改成 题型 不要加任何其他废话」「改成 范围
    不要任何其他废话」。所以它不再有两截（名字 + 说明），
    从前那两个 span（`.poems-home-tag-name` / `.poems-home-tag-note`）连同
@@ -918,15 +920,189 @@ thead .plans-th-cap {
 .poems-home-tag ~ .poems-home-tag { margin-top: 2px; }
 
 /* 首页那些卡：内边距比别处窄一档 —— 首页是「浏览」不是「阅读」，
-   一屏要摆下两行卡 + 一条通栏键。 */
+   一屏要摆下四张题型卡 + 一段范围。 */
 .poems-game > .poems-home-row .game-mode { padding: 12px; }
 .poems-game > .poems-home-row .game-mode-desc { margin-top: 3px; line-height: 1.6; }
 .poems-game > .poems-home-row .game-mode-tier { padding-top: 6px; }
 
-/* 「更多范围」现在是首页那一行的**第四张卡**（Issue #356 第八轮用户原话：
-   「更多范围那里，以第四个卡片的形式展示」），与另三张同一套外观，
-   不再需要单独一条样式 —— 唯一一点差别是它按下去是「展开一层」，
-   不是「选好一个范围」，这一件事由 JS 的 `data-game-scopes` 认。 */
+/* ---------------------------------------------------------------------
+   首页那一段范围：**一行一块的清单，可多选**（Issue #356 第九轮）
+   ---------------------------------------------------------------------
+   用户原话，这就是这一段的全部目标：
+     「要不还是合并范围和更多范围内容到古诗词大会的首页吧。」
+     「先显示范围，下面再显示题型和题型的田字格卡片。」
+     「范围用类似搜索的下拉框那种展现形式(直接每一行显示出来，不是下拉框)，
+       前面有个加号或减号，供用户多选。」
+     「这样设计，用户先多选范围，再按题型直接进入。」
+
+   ⚠️ 「类似搜索的下拉框」说的是**那种展开的清单**，**不是**浮层下拉
+      （用户紧接着补了一句「直接每一行显示出来，不是下拉框」）。
+      所以这里没有 `<select>`、没有浮层、没有绝对定位 —— 就是文档流里的
+      几行，行头一个加号。
+
+   ⚠️ 这一段**整体不是卡片**：没有背景、圆角、阴影。它是「考什么」的清单，
+      视觉分量比下面那四张题型卡低一档（题型是「进哪一条路」，范围是
+      「路上带什么」）。 */
+
+/* 段头：`范围` 这个两个字的小标题 + 一颗「收起 / 展开」。 */
+.game-scope-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 2px;
+}
+/* ⚠️ 段头里那颗键**不是** `.account-btn`（那是通栏的大键）：它跟小标题
+   同一行、同一个小号，是一件「顺手收起来」的小动作。 */
+.game-scope-all {
+  flex: 0 0 auto;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font: inherit;
+  font-size: 12px;
+  color: var(--green);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.game-scope-all:active { opacity: .6; }
+
+/* 状态行：现在选了什么、一共几篇。它是这一段的收口 —— 用户多选时
+   不用自己数哪几格亮着。 */
+.game-scope-note {
+  margin: 0 2px 2px;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--ink-3);
+}
+
+/* 一块范围：行头（加号 + 名字 + 条数）+ 这一块的格子。 */
+.game-scope-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 8px;
+}
+
+/* 行头：**加号或减号在最前面**（用户原话：「前面有个加号或减号」）。
+   ⚠️ 「±」这个字形**不进 DOM** —— 由 CSS 画（两条线，收起时只留竖线那条
+      = 加号；展开时两条都在 = 减号）。这样加号与减号是**同一个元素的两态**，
+      不会出现「两种标记各写一遍、有一处忘改」那种事；
+      也免得读屏把那两个符号念出来（`aria-hidden` 那一条）。
+   ⚠️ 行头也**不是卡片**（没有背景、圆角、阴影），只有一条下边线当分隔 ——
+      它是一条「清单头」，不是一格里的一格。 */
+.game-scope-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 0 2px;
+  border-top: 1px solid var(--line);
+}
+.game-scope-row .game-scope-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  background: transparent;
+  padding: 2px 2px 4px;
+  font: inherit;
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+  -webkit-tap-highlight-color: transparent;
+}
+.game-scope-row .game-scope-item:active { opacity: .6; }
+
+/* 加号 / 减号：一个 12×12 的方块，里面两条 1.5px 的线。
+   展开态 = **减号**（只剩横线那条）；收起态 = **加号**（横线 + 竖线）。
+   ⚠️ 也就是平时常见的那一对：`−` 点下去收起来、`+` 点下去展开。
+   ⚠️ 方向容易写反，这里把判据说白：**收起时才画竖线**（`[data-folded="1"]`
+      那一条），展开时竖线透明。真机两态都截过（390×844）。 */
+.game-scope-sign {
+  position: relative;
+  flex: 0 0 auto;
+  width: 12px;
+  height: 12px;
+}
+.game-scope-sign::before,
+.game-scope-sign::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 12px;
+  height: 1.5px;
+  margin-top: -0.75px;
+  background: var(--ink-2);
+  border-radius: 1px;
+}
+/* 竖线那条：**默认透明**（展开态只剩横线 = 减号）；
+   收起时才亮出来（两条都在 = 加号）。 */
+.game-scope-sign::after {
+  left: 50%;
+  top: 0;
+  width: 1.5px;
+  height: 12px;
+  margin: 0 0 0 -0.75px;
+  opacity: 0;
+  transition: opacity .12s;
+}
+.game-scope-row[data-folded="1"] .game-scope-sign::after { opacity: 1; }
+/* 收起时这一块的格子**整体不画** —— 不是 `display: none` 一条了事？
+   对，一条就够了：格子里没有需要留住的输入（选中状态在 JS 的
+   `state.scopes` 上，重画就回来）。 */
+.game-scope-row[data-folded="1"] .game-scope-grid { display: none; }
+
+/* 行头那几个字：名字用 `--title-2`（与玩法卡同一档），条数小一号灰色。 */
+.game-scope-row .game-scope-name {
+  font: var(--title-2);
+  color: var(--ink);
+}
+.game-scope-row .game-scope-count {
+  margin-left: auto;
+  font-size: 11.5px;
+  color: var(--ink-3);
+}
+
+/* 一格名目：**多选的一个选项**。
+   ⚠️ 选中与否只看 `data-on="1"`（状态在 JS 上，重画之后按钮是新的）。
+      选中时：绿边 + 淡绿底 + 名字变绿 —— 三处一起变，一屏十几格里
+      一眼看得出哪几格亮着（只看一道边框容易漏）。 */
+.game-scope-pick {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  box-sizing: border-box;
+  text-align: left;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px 8px;
+  background: var(--card-2);
+  font: inherit;
+  color: var(--ink);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.game-scope-pick:active { background: var(--card); }
+.game-scope-pick[data-on="1"] {
+  border-color: var(--green);
+  background: var(--green-light);
+}
+.game-scope-pick[data-on="1"] .game-scope-name { color: var(--green); }
+.game-scope-pick .game-scope-name {
+  font: var(--title-2);
+  color: var(--ink);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.game-scope-pick .game-scope-count {
+  font-size: 11.5px;
+  letter-spacing: .3px;
+  color: var(--ink-3);
+}
 
 /* 手机竖屏一行两张（上面已经是一行两张了，这一条只管**收窄**到窄屏时
    把缝收小一点 —— 320px 上两张卡各 148px，`gap: 12px` 占掉的比例偏大）。
@@ -1051,82 +1227,22 @@ thead .plans-th-cap {
 .game-mode[data-locked] .game-mode-tier { color: var(--ink-3); }
 
 
-/* ---------------------------------------------------------------------
-   「更多范围」那一层：一条小标题 + 一片格子（Issue #356 第八轮重排）
-   ---------------------------------------------------------------------
-   用户原话：「点进 更多范围 页面，整个卡片和排版你是认真的吗，一塌糊涂！
-   回到玩法 这个不需要卡片，只要一个 返回 按钮即可」。
+/* 「更多范围」那一层（Issue #356 第八轮重排的那一版）**整块删了** ——
+   第九轮把范围并进了首页（用户原话：「要不还是合并范围和更多范围内容到
+   古诗词大会的首页吧」），那一层不存在了，`.game-scopes .game-back` /
+   `.game-scope-grid` / `.game-scope-item` / `.game-scope-name` /
+   `.game-scope-count` / `.game-scopes-notice` 这些类名一个都不留。
+   范围那一段的样式现在在**首页那一段**里（见上面「首页那一段范围」一节）：
+   `.game-scope-head` / `.game-scope-row` / `.game-scope-sign` /
+   `.game-scope-grid` / `.game-scope-pick`。
 
-   从前那一页是三处**真的坏了**（不是「不好看」，是版式错）：
-     · 标题卡里先一颗通栏的「回到玩法」按钮，再是卡内标题「更多范围」——
-       一颗键压在标题上面，主次翻了个；
-     · 每一组是一张 `.account-card`，格子里每颗范围键**自己也带**
-       `.account-card` —— 白底卡片里套白底卡片，边框一道套一道；
-     · 格子是 flex `wrap`，每颗键**按内容定宽**（真机量到 55 / 58 / 84 / 128px
-       四种宽度），没填满的那一行左边齐、右边空一大片。
-
-   现在：`grid-template-columns: repeat(2, minmax(0, 1fr))` —— 一行两张、
-   两张**等宽**（`minmax(0, 1fr)` 那个 0 是防长名字撑破格子），
-   与首页那一行的分栏**同一个数**；分组只剩一条 `.poems-home-tag`；
-   范围键本身不带卡片外观（`.game-scope-item` 自己画一条底）。 */
-
-/* 返回键：**不是卡片**（用户原话：「回到玩法 这个不需要卡片，只要一个
-   返回 按钮即可」）。它现在直接摆在这一层的顶上 —— 与首页那颗「登录」
-   同一个位置逻辑（这一层的直接子，缝由父层的 `gap` 给）。
-   ⚠️ 宽度写死 auto（`.account-btn` 默认是 `width: 100%` 的通栏键）：
-     一颗通栏的「返回」横在顶上，与从前那张卡没有区别。 */
-.game-scopes .game-back,
+   ⚠️ 只留这一条：飞花令 / 卷面设置 / 考试那三层顶上那颗回退键仍是
+      `.poems-game > .game-back`（宽度 auto，不是通栏），照旧要留着。 */
 .poems-game > .game-back {
   width: auto;
   min-width: 96px;
   align-self: flex-start;
 }
-
-.game-scope-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  align-items: stretch;
-  gap: 10px;
-}
-
-/* 一颗范围键：**不是卡片** —— 没有阴影、没有底色，只有一条边框线。
-   ⚠️ 从前它与首页那三张一样是 `.account-card`，于是「卡套卡」；
-      这一层里它只是格子里的一个选项，不占「卡片」那一档视觉分量。
-   ⚠️ 但「能点」这件事要留着：按下去有反应、标题不继承浏览器的 `<button>`
-      默认样式 —— 那两条从 `.game-mode` 那一套同源。 */
-.game-scope-item {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
-  box-sizing: border-box;
-  text-align: left;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  padding: 12px 12px 10px;
-  background: var(--card-2);
-  font: inherit;
-  color: var(--ink);
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-}
-.game-scope-item:active { background: var(--card); }
-.game-scope-name {
-  font: var(--title-2);
-  color: var(--ink);
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.game-scope-count {
-  font-size: 11.5px;
-  letter-spacing: .3px;
-  color: var(--ink-3);
-}
-
-/* 这一层凑不够题量时那句话（含 notice）：与页面同宽、不套卡片。 */
-.game-scopes-notice { margin: 0; }
 
 .game-head { position: relative; }
 .game-back { margin-bottom: 10px; }
