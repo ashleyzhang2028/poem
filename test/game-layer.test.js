@@ -122,8 +122,11 @@ console.log("\n=== 3b · 这一页是「考试页」，不是「集子」（Issu
   // ⚠️ 未登录时**页底只有一颗登录键，不另开卡片**（用户 2026-09-26 原话：
   //    「如果需要登录，页底只显示那个登录 按钮即可，不要额外一张卡片，
   //      然后卡片里只有一个 登录 按钮」）。
-  //    那一颗键是**玩法那张卡的最后一个孩子**，页面上不许再出现第二张卡。
-  const home = game.slice(game.indexOf("function renderHome"), game.indexOf("function renderFly"));
+  //    那一颗键是**这一层里的兄弟**（不再是某张卡里的最后一个孩子 —— 见下一节）。
+  // ⚠️ 剥掉注释再判（那一节的注释里就写着 `<section class=\"account-card\">` 这个字面量，
+  //    拿带注释的原文去判「还有没有」会永远为真 —— 这是本节第一次写时踩的坑）。
+  const home = game.slice(game.indexOf("function renderHome"), game.indexOf("function tierText"))
+    .replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^\s*\/\/.*$/gm, " ");
   chk(!/gateCard/.test(game),
     "gateCard() 整个函数已删（「怎么用上」那张卡随它一起删，不留死代码）");
   chk(!/game-gate/.test(read("css/account.css")),
@@ -133,8 +136,10 @@ console.log("\n=== 3b · 这一页是「考试页」，不是「集子」（Issu
     "「用邮箱建一个账号」那颗键不再出现在这一页（游客也只给「登录」一颗）");
   chk(/if \(!id\.signedIn\) \{\s*html \+= '<button class="account-btn" type="button" data-game-go="\/login\/">登录<\/button>';/.test(home),
     "未登录时页底只加一颗「登录」键，**不开新卡片**");
-  chk((home.match(/<section class="account-card">/g) || []).length === 1,
-    "首页只渲染**一张**卡片（玩法那几张是同一条里循环出来的）");
+  chk(!/<section class="account-card">/.test(home),
+    "首页不再渲染「一张围着四颗按钮的卡」（四颗按钮**各自**就是一张卡）");
+  chk(!/<section class="game-modes"/.test(home),
+    "也没有一层「装四张卡」的外套（那一层在 CSS 上就是 .poems-game 自己）");
 
   // 集子归 /library/：大会那一页不进课外阅读入口
   const libJs = read("js/library.js");
@@ -142,19 +147,75 @@ console.log("\n=== 3b · 这一页是「考试页」，不是「集子」（Issu
     "课外阅读入口 /library/ 里**不**收大会这一页（它没有集子）");
 }
 
-console.log("\n=== 3c · 大会那一页的卡片之间要有缝（Issue #356）===");
+console.log("\n=== 3c · 四张玩法卡：各自一张、一行两张、与「每日背诵」的标题同一个口径 ===");
 {
-  // 用户 2026-09-26 原话：「这个页面的其他卡片之间需要间隔，不能一点空没有」。
-  // 真机量过（修前）：四张卡严丝合缝 —— 一张卡的下边缘与下一张卡的上边缘
-  // **是同一个像素**（197 / 578 / 718…）。根子与登录 / 后台那几页同源
-  // （Issue #319）：`.account-card` 自己没有外边距，一页好几张卡靠的是父层
-  // 的 `gap`，而 `.poems-game` 不是 `.account-page`，于是缝是 0。
+  // 用户 2026-09-26 第二轮原话，这就是这一节的全部目标：
+  //   「飞花令四种玩法各自一个卡片」
+  //   「各个玩法标题字体，大小，颜色等等是不是应该和每日背诵页面的那些卡片标题一致？」
+  //   「pro 登录可用，直接改成 Pro 可用 和 Max 可用」
+  //   「你看看可不可以手机屏幕中 一行显示两个卡片，这样就是田字格四个卡片」
+  //   「登录按钮和卡片要有 gap 间隔，而不是完全没有 margin」
   const accountCss = read("css/account.css");
-  const block = accountCss.slice(accountCss.indexOf(".poems-game {", accountCss.indexOf(".poems-game[hidden]")));
-  chk(/display:\s*flex/.test(block) && /flex-direction:\s*column/.test(block) && /gap:\s*12px/.test(block),
-    "`.poems-game` 自己是一条 flex 纵列 + gap: 12px（与 .account-page 同一个数，不另立一套）");
-  chk(!/\.account-card\s*\{[^}]*margin-bottom/.test(accountCss.slice(accountCss.indexOf(".account-card {"))),
-    "没有回头去给 `.account-card` 加外边距（那条路 Issue #319 已裁定为「卡片之间缝是 0」的根子）");
+  const styleCss = read("css/style.css");
+  const home = game.slice(game.indexOf("function renderHome"), game.indexOf("function tierText"));
+  // ⚠️ tierText() 排在 renderFly() **后面** —— 截到 renderFly 会得到一个空串，
+  //    于是「有没有那句」永远为假。截到下一个函数（renderPaper）为止。
+  const tier = game.slice(game.indexOf("function tierText"), game.indexOf("\n  }\n", game.indexOf("function tierText")) + 4);
+
+  // ① 四种玩法各自一张卡：一颗按钮同时是 `.account-card`（卡片外观）与
+  //    `.game-mode`（能点的键）—— 两套外观各写一次，不再互相套着。
+  chk(/class="account-card game-mode"/.test(home),
+    "四个玩法**各自是一张卡**（同一颗按钮既是 .account-card 又是 .game-mode）");
+  chk(!/account-card-title/.test(home) && !/game-mode-main/.test(game),
+    "「选一个玩法」那张外套卡整个撤掉（连着它那个 .game-mode-main 也让位了）");
+
+  // ② 标题与「每日背诵」页（/settings/recite/ 的今日加背清单）逐字同档。
+  //    ⚠️ 判据写成**两边同数**：任一边单独改动都会红。
+  const titleRule = styleCss.slice(styleCss.indexOf(".daily-row .daily-title"));
+  chk(/font-size:\s*14\.5px/.test(titleRule) && /font-weight:\s*600/.test(titleRule) &&
+      /color:\s*var\(--ink\)/.test(titleRule),
+    "「每日背诵」的卡片标题是 14.5px / 600 / var(--ink)（这一档口径的唯一一份）");
+  const nameRule = accountCss.slice(accountCss.indexOf(".game-mode-name {"));
+  chk(/font-size:\s*14\.5px/.test(nameRule.slice(0, nameRule.indexOf("}"))), "玩法标题的字号 14.5px（与上一行同数）");
+  chk(/font-weight:\s*600/.test(nameRule.slice(0, nameRule.indexOf("}"))), "字重 600（同数）");
+  chk(/color:\s*var\(--ink\)/.test(nameRule.slice(0, nameRule.indexOf("}"))), "颜色 var(--ink)（同数）");
+
+  // ③ 门槛小标：「Pro 可用」/「Max 可用」，放行的说层级名字。
+  chk(/function tierText\(m, r\)/.test(game), "门槛文案收在 tierText() 一处");
+  chk(/if \(r\.ok\) return Ent\.tierLabel\(m\.tier\)/.test(tier),
+    "放行时只说层级名字（「Pro」/「Max」）");
+  chk(/\+ " 可用"/.test(tier) && /tierLabel\(r\.minTier/.test(tier),
+    "拦住时说「X 可用」，层级取自**能力本身** r.minTier（不是玩法表里那个字面量）");
+  chk(/Ent\.denyReason\(m\.cap/.test(tier),
+    "「登录可用」那句照抄 denyReason()（一句话的出处只有一处，页面不自造）");
+  chk(/"登录可用"/.test(tier) && !/登录可用" \+/.test(tier),
+    "没登录时说「登录可用」（一处只念一件事，不再叠成「Pro · 登录可用」）");
+  chk(!/Ent\.tierLabel\(m\.tier\) \+/.test(home),
+    "玩法卡不再把「层级」与「拒绝原因」拼在一行里");
+
+  // ④ 手机竖屏一行两张卡（田字格）。
+  chk(/grid-template-columns:\s*repeat\(2, minmax\(0, 1fr\)\)/.test(accountCss),
+    "一行两张卡（repeat(2, minmax(0, 1fr))）—— minmax 里的 0 是防长句撑破格子");
+  chk(/\.poems-game:has\(> \.game-mode\) \{/.test(accountCss),
+    "分列的判据取 `:has(> .game-mode)`：有玩法卡才分栏，进到别的层自然落回一列");
+  chk(!/max-width:\s*768px[\s\S]{0,300}grid-template-columns/.test(accountCss),
+    "不按设备类型 / 屏宽分栏（横屏放得下就该还是两张）");
+
+  // ⑤「登录」那颗键与卡片之间留缝：缝只由父层的 gap 一处给。
+  chk(/grid-column:\s*1 \/ -1/.test(accountCss),
+    "「登录」那颗键跨满一行（它是底下一颗通栏的键，不是第三张卡）");
+  const gapRule = accountCss.slice(accountCss.indexOf(".poems-game {"), accountCss.indexOf(".poems-game:has"));
+  chk(/display:\s*flex/.test(gapRule) && /gap:\s*12px/.test(gapRule),
+    "`.poems-game` 是 flex 纵列 + gap: 12px（卡片之间、卡片与登录键之间都是这一条）");
+  // `.game-mode` 那条规则体里**不许有 margin** —— 缝只由父层的 gap 一处给。
+  // ⚠️ 只查 `.game-mode` 自己这一条，不查它里面两个孩子（`.game-mode-desc` 的
+  //    `margin-top: 4px` 是卡**里面**的间距、`.game-mode-tier` 的 `margin-top: auto`
+  //    是把门槛那行顶到卡底 —— 都不是「卡片之间那条缝」）。
+  // 从**规则体**那一处起算（`.game-mode {` 这个字面量在注释里也出现过一次）。
+  const modeRule = accountCss.slice(accountCss.indexOf("\n.game-mode {"), accountCss.indexOf("\n}", accountCss.indexOf("\n.game-mode {")));
+  chk(!/margin/.test(modeRule),
+    "`.game-mode` 自己不带 margin（缝只有父层 gap 一处 —— 从前那条 margin-bottom " +
+    "让「卡内按钮之间」有缝、「卡底按钮与卡片边缘」没缝）");
 }
 
 console.log("\n=== 4 · 老地址改道：/poems/?game=1 → /dahui/ ===");

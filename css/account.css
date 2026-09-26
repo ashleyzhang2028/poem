@@ -847,42 +847,123 @@ thead .plans-th-cap {
    别处的排版都挂在它身上），于是四张卡严丝合缝地贴着 —— 真机量过：
    一张卡的下边缘与下一张卡的上边缘**是同一个像素**。
    修法与 Issue #319 逐字一致：不写第二套「谁留缝」的规则，
-   就给这一层一条 flex 纵列 + 同一个 `gap`。 */
+   就给这一层一条 flex 纵列 + 同一个 `gap`。
+
+   ⚠️ 这条 `gap` 现在**同时管着页底那颗「登录」键**（Issue #356 用户第二轮原话：
+      「登录按钮和卡片要有 gap 间隔，而不是完全没有 margin」）。
+      从前那颗键是玩法卡**里面的最后一个孩子** —— 卡片的内边距把「键与卡片
+      边缘」那条缝吃掉，于是它离上面的玩法卡只有 `gap`、离卡片边缘只有
+      `padding`，两处看着不一样。现在它是这一层的兄弟，缝只有一处（同一条 `gap`）。
+
+   ⚠️ 一行两张卡（田字格）也是**在这一层**分栏（Issue #356 用户第二轮原话：
+      「你看看可不可以手机屏幕中 一行显示两个卡片，这样就是田字格四个卡片」）。
+      见下面 `grid-template-columns` 那一条 —— 玩法卡自己不知道「一行几个」。 */
 .poems-game {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
+/* 玩法那四张卡**一行两张**（手机竖屏），于是四个玩法凑成一个田字格。
+   ⚠️ 分列的判据取**宽度**，不取设备类型：同一台手机横过来就是一列放得下
+      两张卡还富余，而「是不是手机」不变 —— 按设备分栏会在横屏上留出格子空着。
+   ⚠️ 用 `:has()` 而不是给 `renderHome()` 的 HTML 加一个类名：这一层是
+      `/poems/` 与 `/dahui/` **共用**的挂载点（别处的排版都挂在它身上），
+      加类名等于让 JS 去管一处纯样式的事；`:has()` 只回答「这一层里现在
+      有没有玩法卡」—— 进到飞花令那一层（一张卡都没有）时它自然不命中，
+      那些卡照旧是一列通栏。
+   ⚠️ 兜底那一条（`.poems-home`）给不支持 `:has()` 的老浏览器：整层横排会
+      在**每一层**都生效（飞花令那一层的卡片也会被挤成两列），所以宁可
+      老浏览器保持「一行一张」—— 田字格是加分项，不是功能。
+   ⚠️ `minmax(0, 1fr)` 里的 `0` 不能省：格子里的长句（玩法说明）默认会把
+      格子撑破，撑破的后果是一行两卡横向溢出。 */
+.poems-game:has(> .game-mode) {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
+}
+/* 「登录」那颗键跨满一行 —— 它是底下一颗通栏的键，不是第三张卡。
+   `1 / -1` 而不是 `span 2`：换成一列时不至于只剩一个「跨两列」的空指令。 */
+.poems-game:has(> .game-mode) > .account-btn { grid-column: 1 / -1; }
+
+/* 手机竖屏一行两张（上面已经是一行两张了，这一条只管**收窄**到窄屏时
+   把缝收小一点 —— 320px 上两张卡各 148px，`gap: 12px` 占掉的比例偏大）。
+   ⚠️ 一行几个**不在这里改**：改的是「一行放两张卡够不够宽」，够就还是两张。 */
+@media (max-width: 360px) {
+  .poems-game:has(> .game-mode) { gap: 10px; }
+}
+
+/* 玩法卡：一颗按钮一张卡（Issue #356 用户原话：「飞花令四种玩法各自一个卡片」）。
+   ⚠️ 它同时是两个类 —— `.account-card` 给背景 / 圆角 / 阴影（卡片那套外观
+      与每日背诵页的卡片同源），`.game-mode` 给「这一颗是能点的键」（去掉
+      浏览器给 `<button>` 的默认样式、按下去要有反应）。
+   ⚠️ 不许再写 `margin`：缝只由父层的 `gap` 一处给（从前那条
+      `.game-mode { margin-bottom: 8px }` + `:last-child { margin-bottom: 0 }`
+      让「卡内按钮之间」有缝、「卡底按钮与卡片边缘」没缝，同一张卡里两处不一样）。 */
 .game-mode {
-  display: block;
-  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  box-sizing: border-box;
   text-align: left;
-  padding: 12px 13px;
-  margin-bottom: 8px;
   border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  background: var(--bg);
+  padding: 14px 12px;
   font: inherit;
   color: var(--ink);
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
-.game-mode:last-child { margin-bottom: 0; }
-
 .game-mode:active { background: var(--card-2); }
-.game-mode[data-locked] { opacity: .62; background: var(--bg-soft); }
-.game-mode-main { display: flex; align-items: baseline; gap: 8px; }
-.game-mode-name { font-size: 14px; font-weight: 600; }
+.game-mode[data-locked] { opacity: .62; }
+
+/* 玩法名字与「每日背诵」页（`/settings/recite/` 的「今日加背」清单）那些
+   卡片标题**逐字一致**（Issue #356 用户原话：
+   「各个玩法标题字体，大小，颜色等等是不是应该和每日背诵页面的那些卡片标题一致？」）。
+
+   ⚠️ 判据是**同一条规则**，不是「看着像」—— 两处的字号 / 字重 / 颜色
+      都写在 `css/style.css` 的 `.daily-row .daily-title` 那一组旁边，
+      改一处就一起动。这里列的是同一个数：
+      字号 14.5px、字重 600、颜色 `var(--ink)`。
+   ⚠️ `font-family` 照旧不写死：两处都用页面继承的那一份（正文字体），
+      「每日背诵」那些标题也是这样 —— 只有 `.settings-link-title` 那类
+      走的是 `var(--font-poem)`（宋体），与这里的正文口径不是一回事。 */
+.game-mode-name {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+.game-mode-desc {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--ink-3);
+  line-height: 1.7;
+  /* 一行两张卡时，说明那两行也被格子收着 —— 不许撑破格子（撑破就是横向溢出）。 */
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* 门槛小标：「Pro」「Max 可用」「登录可用」（Issue #356 用户原话：
+   「pro 登录可用，直接改成 Pro 可用 和 Max 可用」）。
+   ⚠️ 它从「名字右边那一颗胶囊」挪到**卡底**：名字要跟每日背诵的标题对齐
+      （上面那条），一行文本里再挤一颗胶囊就不是对齐而是并排了；
+      而卡片排成田字格之后，卡底那一行才是「四张卡能一眼横着比门槛」的位置。 */
 .game-mode-tier {
+  display: inline-block;
+  margin-top: auto;
+  padding-top: 8px;
   font-size: 10.5px;
   letter-spacing: .4px;
-  color: var(--green);
-  background: var(--green-light);
-  border-radius: 999px;
-  padding: 1px 7px;
+  color: var(--ink-3);
 }
-.game-mode[data-locked] .game-mode-tier { color: var(--ink-3); background: var(--line); }
-.game-mode-desc { display: block; margin-top: 4px; font-size: 12px; color: var(--ink-3); line-height: 1.7; }
+/* 已经能用（`data-on="1"`）时说「这张卡要哪一档」—— 用绿色，与锁住那几张分得开。 */
+.game-mode-tier[data-on="1"] { color: var(--green); }
+.game-mode[data-locked] .game-mode-tier { color: var(--ink-3); }
 
 
 .game-head { position: relative; }

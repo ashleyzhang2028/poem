@@ -2530,6 +2530,10 @@ html, body {
   gap: 8px;
 }
 .daily-row .daily-title {
+  /* ⚠️ 这四个数（14.5px / 600 / var(--ink) / 1.4）是「卡片标题」这一档的**唯一
+     一份口径**，大会那页四张玩法卡的标题逐字照抄（`css/account.css` 的
+     `.game-mode-name`，Issue #356 用户原话：「各个玩法标题字体，大小，颜色等等
+     是不是应该和每日背诵页面的那些卡片标题一致？」）。改这里要顺手改那边。 */
   font-size: 14.5px;
   font-weight: 600;
   color: var(--ink);

@@ -205,33 +205,66 @@
     //      · **页面上不摆任何说明卡**：从前那两张（页头「这一页是飞花令与考试
     //        —— 题目、模拟、正式考试都在这里……」与页底「这一页的诚实说明」）
     //        已按用户原话整段删除，一进页面就是玩法卡。
-    var html = '<section class="account-card"><h2 class="account-card-title">选一个玩法</h2>';
+    //
+    // ⚠️ 四个玩法**各自是一张卡**（用户 2026-09-26 原话：「飞花令四种玩法各自
+    //    一个卡片」）。从前它们是同一张卡里的四个按钮 —— 每张卡自带 `.account-card`
+    //    的背景、圆角与阴影，四张卡之间由 `.poems-game` 的 `gap` 留缝。
+    //    顺带一处**真 bug** 跟著消失：`renderHome()` 从前画的是
+    //    `<section class="account-card">`，四个按钮则靠 `.game-mode` 自己的
+    //    `margin-bottom: 8px` 相间 —— 而 `:last-child` 那条把它在卡底归零，
+    //    于是「卡内按钮之间」有缝、「卡底那颗按钮与这张卡的边缘」没有。
+    //    现在一颗按钮一张卡，缝只有一处（父层的 `gap`）。
+    var html = '';
     MODES.forEach(function (m) {
       var r = allowed(m, id);
-      html += '<button class="game-mode" type="button" data-game-mode="' + m.id + '"' +
-        (r.ok ? "" : ' data-locked="1"') + '>' +
-        '<span class="game-mode-main">' +
+      html += '<button class="account-card game-mode" type="button" ' +
+        'data-game-mode="' + m.id + '"' + (r.ok ? "" : ' data-locked="1"') + '>' +
         '<span class="game-mode-name">' + esc(m.name) + "</span>" +
-        '<span class="game-mode-tier">' + esc(Ent.tierLabel(m.tier)) +
-        (r.ok ? "" : " · " + esc(Ent.denyReason(m.cap, { tier: id.tier, signedIn: id.signedIn }))) +
-        "</span>" +
-        "</span>" +
         '<span class="game-mode-desc">' + esc(m.desc) + "</span>" +
+        '<span class="game-mode-tier"' + (r.ok ? ' data-on="1"' : "") + '>' +
+        esc(tierText(m, r)) +
+        "</span>" +
         "</button>";
     });
-    html += "</section>";
 
     // 未登录时页底**只留那颗登录键**（Issue #356 用户原话：
     //   「如果需要登录，页底只显示那个登录 按钮即可，不要额外一张卡片，
     //     然后卡片里只有一个 登录 按钮」）。
-    //    所以即使没登录也**不另开一张卡**：那颗键直接就是玩法那张卡的
-    //    最后一个孩子。门槛本身玩法卡已经逐张标了（「Max · 登录可用」）。
+    //    所以即使没登录也**不另开一张卡**：那颗键直接摆在这一层里
+    //    （`&lt;section&gt;` 的兄弟），与玩法卡之间隔着同一个 `gap` ——
+    //    用户 2026-09-26 又补了一句：「登录按钮和卡片要有 gap 间隔，
+    //    而不是完全没有 margin」（从前的写法是 `.account-btn + .account-btn`
+    //    的 `margin-top`，它答的是「两颗按钮之间」，答不了「按钮与卡片之间」）。
     //    已经登录、只是层级不够的，这里不出任何按钮 —— 那件事归玩法卡上
     //    那句「层级不够」，页面不摆第二张卡去重复它。
     if (!id.signedIn) {
       html += '<button class="account-btn" type="button" data-game-go="/login/">登录</button>';
     }
     return html;
+  }
+
+  // 玩法卡上那颗门槛小标：**已经能用的说层级名字，用不上的说「X 可用」**。
+  //
+  // ⚠️ 用户 2026-09-26 原话：「pro 登录可用，直接改成 Pro 可用 和 Max 可用」。
+  //    从前写的是「Pro · 登录可用」—— 前半截是层级、后半截是**拒绝原因**
+  //    （`Entitlement.denyReason()` 给的「登录可用」），叠在一起就成了
+  //    「Pro · 登录可用」这种要把两件事连起来读才懂的短语。
+  //    现在一处只念一件事，两个词形：
+  //      · 放行（`r.ok`）→ 说这张卡要哪一档：「Max」/「Pro」/「Free」；
+  //      · 拦住 → 「Max 可用」/「Pro 可用」（层级不够）或「登录可用」（没登录）。
+  //    ⚠️ 「登录可用」那句**照抄 `denyReason()`**，第二个词形在这里拼 ——
+  //       一句话的出处只许有一处（页面不自造），而 `denyReason()` 给层级那一档
+  //       的原话是「Max 起」（用户不要这个说法）。所以：登录那一档直接用它，
+  //       层级那一档只用它认层级（`cap(...).minTier`），说法换成「X 可用」。
+  //    ⚠️ 层级取自**能力本身**（`r.minTier` / `Ent.cap(m.cap).minTier`），
+  //       不是玩法表上那个 `tier` 字面量 —— 玩法表那份与 `Entitlement.CAPS`
+  //       是两处，两处对不上时以**权益表**为准（它才是判行不行的那一处，
+  //       `api/_lib/core.js` 同源）。
+  function tierText(m, r) {
+    if (r.ok) return Ent.tierLabel(m.tier);
+    var why = Ent.denyReason(m.cap, { tier: identifier().tier, signedIn: !!(r.reason !== "login") });
+    if (r.reason === "login") return why || "登录可用";
+    return Ent.tierLabel(r.minTier || Ent.cap(m.cap).minTier) + " 可用";
   }
 
   function renderFly() {
