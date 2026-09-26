@@ -52,6 +52,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
    'data/index.js', 'data/poems-classic.js', 'data/poems-tangshi.js',
    'data/poems-songci.js', 'data/poems-yuefu.js', 'data/poems-guwen.js', 'data/poems-zhaoming.js',
    'data/poems-yuanqu.js', 'data/poems-jinxiandai.js', 'data/poems-chengyu.js',
+   'data/poems-changshi.js',
    'data/site-index.js', 'data/works-map.js', 'data/works-index.js']);
 
   const IDX = sandbox.SITE_INDEX;
@@ -65,21 +66,32 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     resolve(sandbox, sandbox.POEMS_GUWEN, 'guwen'),
     resolve(sandbox, sandbox.POEMS_ZHAOMING, 'zhaoming'),
     resolve(sandbox, sandbox.POEMS_JINXIANDAI, 'jinxiandai'),
-    resolve(sandbox, sandbox.POEMS_CHENGYU, 'chengyu')
+    resolve(sandbox, sandbox.POEMS_CHENGYU, 'chengyu'),
+    resolve(sandbox, sandbox.POEMS_CHANGSHI, 'changshi')
   ];
-  const BOOK_IDS = ['classic', 'yuefu', 'tangshi', 'songci', 'yuanqu', 'guwen', 'jinxiandai', 'zhaoming', 'chengyu'];
+  const BOOK_IDS = ['classic', 'yuefu', 'tangshi', 'songci', 'yuanqu', 'guwen', 'jinxiandai', 'zhaoming', 'chengyu', 'changshi'];
 
   const zmIndexed = books[6].filter(p => p.text && p.translation).length;
 
-  chk(IDX.length === sandbox.POEMS_ALL.length +
-      books.reduce((n, b) => n + b.filter(p => p.text && p.translation).length, 0) + 10,
-    '总索引 = 课内诗词 + 九部全集子（其中昭明 ' + zmIndexed + ' 篇）+ 10 条集子条目（实际 ' + IDX.length + '）');
+  // 不写死「几部」「几条」：集子条目数 = SITE_BOOKS 的部数（每部一条），
+  // 加第十一部时这里自己跟着算
+  const bookCount = sandbox.SITE_BOOKS.length;
+  // 各部的收录条件与 data/site-index.js 保持一致：多数集子要求原文 + 译文齐备，
+  // 词条式的文学常识（changshi）只要求有正文
+  const inIdx = (p, id) => id === 'changshi' ? !!p.text : !!(p.text && p.translation);
+  const bookEntryCount = books.reduce((n, b, i) =>
+    n + b.filter(p => inIdx(p, BOOK_IDS[i])).length, 0);
+  chk(IDX.length === sandbox.POEMS_ALL.length + bookEntryCount + bookCount,
+    '总索引 = 课内诗词 + ' + books.length + ' 部全集子的入选篇目（其中昭明 ' + zmIndexed +
+    ' 篇）+ ' + bookCount + ' 条集子条目（实际 ' + IDX.length + '）');
   BOOK_IDS.forEach(id => {
     chk(IDX.some(x => x.book === id && !x.isBook),
       '总索引含「' + id + '」这一部的篇目');
   });
-  chk(IDX.filter(x => x.isBook).length === 10,
-    '十部集子自身也各有一条（搜「唐诗三百首」能直接进那一页）');
+  chk(IDX.filter(x => x.isBook).length === sandbox.SITE_BOOKS.length &&
+    sandbox.SITE_BOOKS.every(b => IDX.some(x => x.isBook && x.book === b.id)),
+    '每一部集子自身都有一条（搜「唐诗三百首」能直接进那一页；共 ' +
+    IDX.filter(x => x.isBook).length + ' 条）');
 
   const ids = new Set();
   let dup = 0;
@@ -93,7 +105,8 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 
   const libSrcForPages = read('js/library.js');
   const bookPages = { classic: '/classic/', yuefu: '/yuefu/', tangshi: '/tangshi/', songci: '/songci/',
-    yuanqu: '/yuanqu/', guwen: '/guwen/', zhaoming: '/zhaoming/', chengyu: '/chengyu/' };
+    yuanqu: '/yuanqu/', guwen: '/guwen/', zhaoming: '/zhaoming/', chengyu: '/chengyu/',
+    changshi: '/changshi/' };
   const missingPage = Object.keys(bookPages).filter(id =>
     libSrcForPages.indexOf('page: "' + bookPages[id] + '"') < 0);
   chk(missingPage.length === 0,
@@ -102,10 +115,13 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   const libJs = read('js/library.js');
   const orderInJs = (libJs.match(/id:\s*"([a-z]+)"/g) || [])
     .map(x => x.match(/id:\s*"([a-z]+)"/)[1]);
-  chk(orderInJs.slice(0, 10).join('/') ===
-      'poems/classic/yuefu/tangshi/songci/yuanqu/guwen/jinxiandai/zhaoming/chengyu',
-    '十部的顺序以课内为首、乐府在唐诗前、元曲在宋词后、昭明 · 成语故事在后' +
-    '（顺序的唯一来源在 js/library.js，Issue #244 / #308；实际 ' + orderInJs.slice(0, 10).join('/') + '）');
+  // 只守有业务含义的相对次序，不守「是不是 10 部」：
+  // 课内为首、乐府在唐诗前、元曲在宋词后、昭明 · 成语故事在后（Issue #244 / #308）
+  const seq = id => orderInJs.indexOf(id);
+  chk(seq('poems') === 0 && seq('yuefu') < seq('tangshi') && seq('songci') < seq('yuanqu') &&
+      seq('jinxiandai') < seq('zhaoming') && seq('zhaoming') < seq('chengyu'),
+    '集子次序以课内为首、乐府在唐诗前、元曲在宋词后、昭明 · 成语故事在后' +
+    '（顺序的唯一来源在 js/library.js，Issue #244 / #308；实际 ' + orderInJs.join('/') + '）');
 
   const swVer = (/poem-app-v(\d+)/.exec(read('sw.js')) || [])[1];
   chk(Number(swVer) >= 41, 'sw.js 缓存版本不低于 v41（实际 v' + swVer + '）');

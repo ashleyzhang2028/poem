@@ -1,7 +1,7 @@
 /* ==========================================================================
    正文存储主表（同一篇作品的正文 / 译文只落一份）
    --------------------------------------------------------------------------
-   由 scripts/build-text-master.js 离线算出，共 2404 条。
+   由 scripts/build-text-master.js 离线算出，共 2447 条。
 
    ⚠️ 这是**生成文件**，改动请改 scripts/build-text-master.js 后重跑，
       不要手改这里 —— 下次重新生成会把手工改动覆盖掉。
@@ -39,6 +39,1842 @@
      translationSource 译文来源
    ========================================================================== */
 window.TEXT_MASTER = [
+  {
+    work: "w-changshi-cs-1",
+    id: "changshi-cs-1",
+    title: "诗",
+    entries: ["changshi-cs-1"],
+    text: "诗：最早见于《尚书·舜典》「诗言志」。以有节奏、有韵律的语言抒情言志，是中国最早的文学体裁。先秦多四言，汉代发展出五言，唐代定型为格律严整的近体诗，是中国古典文学的正宗。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-10",
+    id: "changshi-cs-10",
+    title: "乐府",
+    entries: ["changshi-cs-10"],
+    text: "乐府：本为汉武帝时掌管音乐的官署，后指乐府机关采集、配乐演唱的诗歌，故称「乐府诗」。宋郭茂倩《乐府诗集》为总集，《孔雀东南飞》为长篇叙事诗代表，后世「新乐府」则不再入乐。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-100",
+    id: "changshi-cs-100",
+    title: "《韩非子》",
+    entries: ["changshi-cs-100"],
+    text: "《韩非子》：战国韩非所著，法家思想的集大成之作。融合「法、术、势」，文章峻峭犀利，善用寓言，《守株待兔》《郑人买履》《智子疑邻》出于此。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-101",
+    id: "changshi-cs-101",
+    title: "《墨子》",
+    entries: ["changshi-cs-101"],
+    text: "《墨子》：战国墨翟及其后学所著。主张「兼爱」「非攻」「尚贤」「节用」，文章质朴，逻辑严密，《公输》一篇记墨子止楚攻宋事。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-102",
+    id: "changshi-cs-102",
+    title: "《老子》",
+    entries: ["changshi-cs-102"],
+    text: "《老子》：又称《道德经》，春秋李耳（老子）所著，道家首部经典。全书五千余言，分《道经》《德经》，以「道」为核心，主张自然无为，是先秦哲学与文学的重要典籍。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-103",
+    id: "changshi-cs-103",
+    title: "《楚辞》",
+    entries: ["changshi-cs-103"],
+    text: "《楚辞》：西汉刘向辑录屈原、宋玉等人辞赋而成，我国第一部浪漫主义诗歌总集。以屈原作品为主，句式参差、多用「兮」字，与《诗经》并称「风骚」，是中国浪漫主义文学的源头。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-104",
+    id: "changshi-cs-104",
+    title: "《玉台新咏》",
+    entries: ["changshi-cs-104"],
+    text: "《玉台新咏》：南朝陈徐陵编，选录汉魏至梁写女性题材的诗歌，是继《诗经》《楚辞》后又一部重要的诗歌总集，《孔雀东南飞》最早见于此书。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-105",
+    id: "changshi-cs-105",
+    title: "《全唐诗》",
+    entries: ["changshi-cs-105"],
+    text: "《全唐诗》：清代彭定求等奉敕编成，康熙时刊行。收录唐代 2200 余位诗人的诗作 48900 余首，共 900 卷，是研究唐代诗歌最完备的总集。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-106",
+    id: "changshi-cs-106",
+    title: "《四库全书》",
+    entries: ["changshi-cs-106"],
+    text: "《四库全书》：清代乾隆年间纪昀（纪晓岚）等编纂，分经、史、子、集四部，收书 3400 余种、79000 余卷，是我国古代规模最大的丛书，另有《四库全书总目提要》记各书源流。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-107",
+    id: "changshi-cs-107",
+    title: "四书五经",
+    entries: ["changshi-cs-107"],
+    text: "四书五经：儒家经典的核心。「四书」指《大学》《中庸》《论语》《孟子》，由南宋朱熹合编并作注；「五经」指《诗》《书》《礼》《易》《春秋》，为汉代确立的儒家经典。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-108",
+    id: "changshi-cs-108",
+    title: "十三经",
+    entries: ["changshi-cs-108"],
+    text: "十三经：儒家十三部经典的总称，即《周易》《尚书》《诗经》《周礼》《仪礼》《礼记》《春秋左传》《春秋公羊传》《春秋谷梁传》《论语》《孝经》《尔雅》《孟子》，为历代科举取士的基本典籍。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-109",
+    id: "changshi-cs-109",
+    title: "二十四史",
+    entries: ["changshi-cs-109"],
+    text: "二十四史：中国古代二十四部纪传体正史的总称，自《史记》至《明史》，共三千余卷，记上古至明末史事，由乾隆时最后确定，是研究中国历史的基本文献。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-11",
+    id: "changshi-cs-11",
+    title: "古体诗",
+    entries: ["changshi-cs-11"],
+    text: "古体诗：与近体诗（格律诗）相对，又称古风。句式、字数、平仄、用韵都较自由，不拘对仗，可长可短。含四言、五言、七言、杂言诸体，唐代五言古诗、七言歌行皆属此类。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-110",
+    id: "changshi-cs-110",
+    title: "《千家诗》",
+    entries: ["changshi-cs-110"],
+    text: "《千家诗》：旧时蒙学诗歌选本，与《三字经》《百家姓》《千字文》并称「三、百、千、千」。选唐宋浅近诗作，按四时分卷，便于初学记诵流传甚广。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-111",
+    id: "changshi-cs-111",
+    title: "《古诗源》",
+    entries: ["changshi-cs-111"],
+    text: "《古诗源》：清代沈德潜编选，选录上古至隋的诗歌，共 14 卷。取其「古诗之源」之意，与《唐诗别裁集》相连，是研习唐前诗歌的通行选本。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-112",
+    id: "changshi-cs-112",
+    title: "名与字",
+    entries: ["changshi-cs-112"],
+    text: "名与字：古人既有名又有字。名用于自称与尊长称呼，字用于平辈相称。「幼名，冠字」，男子二十行冠礼取字，女子十五行笄礼取字，字与名多义相呼应。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-113",
+    id: "changshi-cs-113",
+    title: "谥号",
+    entries: ["changshi-cs-113"],
+    text: "谥号：古代帝王、诸侯、大臣等死后，依其生平事迹给予的称号。帝谥由礼官议定，臣谥由朝廷赐予，有褒、贬、平三类，如「文」「武」为褒，「炀」「厉」为贬，「哀」「怀」为平。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-114",
+    id: "changshi-cs-114",
+    title: "庙号",
+    entries: ["changshi-cs-114"],
+    text: "庙号：帝王死后在太庙中奉祀时追尊的名号。开国之君多称「祖」，如汉高祖、唐高祖；继业之君多称「宗」，如唐太宗、宋仁宗。汉代庙号极严，唐代以后渐趋普遍。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-115",
+    id: "changshi-cs-115",
+    title: "年号",
+    entries: ["changshi-cs-115"],
+    text: "年号：帝王纪年的名号。汉武帝即位后首创「建元」年号，此后历代沿用。新君即位多改元，明清两代一帝一号，故常用年号代称帝王，如「洪武」「康熙」。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-116",
+    id: "changshi-cs-116",
+    title: "避讳",
+    entries: ["changshi-cs-116"],
+    text: "避讳：古代对君主或尊长的名字不得直接书写或称呼的礼俗。有「国讳」「家讳」之分，避讳之法有改字、缺笔、空字、改音等，如避唐太宗讳改「民部」为「户部」。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-117",
+    id: "changshi-cs-117",
+    title: "弱冠",
+    entries: ["changshi-cs-117"],
+    text: "弱冠：男子二十岁的代称。古时男子二十行冠礼，束发加冠，表示成年，因体犹未壮，故称「弱冠」。语出《礼记·曲礼上》「二十曰弱，冠」。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-118",
+    id: "changshi-cs-118",
+    title: "而立",
+    entries: ["changshi-cs-118"],
+    text: "而立：三十岁的代称，出自《论语·为政》孔子自述「三十而立」。同源者还有：不惑（四十）、知天命（五十）、耳顺（六十）、从心（七十）。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-119",
+    id: "changshi-cs-119",
+    title: "花甲",
+    entries: ["changshi-cs-119"],
+    text: "花甲：六十岁的代称。因干支纪年六十年一循环、干支名号错综参互而得名。另有耳顺、耆（六十）、古稀（七十，语出杜甫「人生七十古来稀」）、耄耋（八九十岁）等。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-12",
+    id: "changshi-cs-12",
+    title: "近体诗",
+    entries: ["changshi-cs-12"],
+    text: "近体诗：又称格律诗，唐代定型。句数、字数、平仄、对仗、押韵都有严格规定，分绝句（四句）、律诗（八句）、排律（十句以上），每首限定五言或七言，是唐代诗歌的最高成就形式。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-120",
+    id: "changshi-cs-120",
+    title: "期颐",
+    entries: ["changshi-cs-120"],
+    text: "期颐：一百岁的代称，语出《礼记·曲礼上》「百年曰期，颐」。谓百岁之人饮食起居待人养护，另有耄（八九十）、耋（七八十）等称谓。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-121",
+    id: "changshi-cs-121",
+    title: "崩薨卒",
+    entries: ["changshi-cs-121"],
+    text: "崩薨卒：古代不同身份者死称不同。天子死曰「崩」，诸侯死曰「薨」，大夫死曰「卒」，士死曰「不禄」，庶人死曰「死」，体现了古代的等级礼制。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-122",
+    id: "changshi-cs-122",
+    title: "九族",
+    entries: ["changshi-cs-122"],
+    text: "九族：古代对亲属范围的称谓。一说指高祖至玄孙的九代同姓亲族；一说包含父族四、母族三、妻族二。古代宗法以九族为亲疏之限，株连之刑亦以「诛九族」为极。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-123",
+    id: "changshi-cs-123",
+    title: "宗法",
+    entries: ["changshi-cs-123"],
+    text: "宗法：以血缘关系为纽带、以嫡长子继承制为核心的家族制度。有大宗、小宗之分，嫡长子为大宗，承祭祀、统族人；余子为小宗。宗法与分封制、礼制相表里，是西周重要的社会制度。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-124",
+    id: "changshi-cs-124",
+    title: "服丧五服",
+    entries: ["changshi-cs-124"],
+    text: "服丧五服：古代依亲疏关系确定的五种丧服，即斩衰、齐衰、大功、小功、缌麻。服期由三年递减至三月，超出五服则无服，故常以「出五服」表示血缘已疏远。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-125",
+    id: "changshi-cs-125",
+    title: "社稷",
+    entries: ["changshi-cs-125"],
+    text: "社稷：古代帝王祭祀的土神（社）与谷神（稷）的合称，因祭祀为国家大事，遂代指国家政权。《左传》「社稷之臣」即指安邦治国之臣。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-126",
+    id: "changshi-cs-126",
+    title: "牺牲玉帛",
+    entries: ["changshi-cs-126"],
+    text: "牺牲玉帛：古代祭祀用品。「牺牲」指供祭祀用的纯色整只牲畜（牛、羊、豕），「玉帛」指玉器与丝织品。语出《曹刿论战》，后「牺牲」一词引申为为正义捐弃生命。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-127",
+    id: "changshi-cs-127",
+    title: "跪拜之礼",
+    entries: ["changshi-cs-127"],
+    text: "跪拜之礼：《周礼》所载九种拜礼，以稽首最重（臣拜君）、顿首次之、空首为君答臣之礼，另有振动、吉拜、凶拜、奇拜、褒拜、肃拜。后泛指各种跪拜礼节。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-128",
+    id: "changshi-cs-128",
+    title: "斋戒",
+    entries: ["changshi-cs-128"],
+    text: "斋戒：古人在祭祀、大典或重要事前沐浴更衣、独居素食、清心洁身以表示诚敬。「斋」谓内洁其心，「戒」谓外洁其行，合称斋戒。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-129",
+    id: "changshi-cs-129",
+    title: "座次礼节",
+    entries: ["changshi-cs-129"],
+    text: "座次礼节：古人室内座次以东向为尊，次为南向，再次为北向，西向侍坐最卑。语见《鸿门宴》「项王、项伯东向坐」，故项羽坐尊位；堂上则以南面为尊，多用于帝王。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-13",
+    id: "changshi-cs-13",
+    title: "小令",
+    entries: ["changshi-cs-13"],
+    text: "小令：元散曲的一种，又称「叶儿」，是单支独立的曲子。另有「带过曲」，由两支或三支同宫调的曲牌相连。马致远《天净沙·秋思》即为小令名篇。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-130",
+    id: "changshi-cs-130",
+    title: "称谓敬谦",
+    entries: ["changshi-cs-130"],
+    text: "称谓敬谦：古人称谓有敬称与谦称之别。敬称对方如「陛下」「阁下」「令尊」「令爱」；谦称自己如「臣」「仆」「愚」「鄙人」「家父」「犬子」，体现「自卑而尊人」的礼俗。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-131",
+    id: "changshi-cs-131",
+    title: "巾帼须眉",
+    entries: ["changshi-cs-131"],
+    text: "巾帼须眉：代称妇女与男子。「巾帼」本为古代妇女的头巾发饰，「须眉」指男子。语出诸葛亮赠司马懿巾帽以激其出战。今「巾帼英雄」指女中豪杰。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-132",
+    id: "changshi-cs-132",
+    title: "科举制",
+    entries: ["changshi-cs-132"],
+    text: "科举制：古代分科考试选拔官员的制度，始于隋、成于唐、盛于明清，光绪三十一年（1905）废止，共 1300 余年。破门阀之限，为寒门士子开辟仕途，影响深远。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-133",
+    id: "changshi-cs-133",
+    title: "进士",
+    entries: ["changshi-cs-133"],
+    text: "进士：科举中最高一级的科第名。唐代进士科最难，录取极少，有「三十老明经，五十少进士」之说；明清时须经殿试及第，前三名依次为状元、榜眼、探花。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-134",
+    id: "changshi-cs-134",
+    title: "乡试会试殿试",
+    entries: ["changshi-cs-134"],
+    text: "乡试会试殿试：明清科举的三级考试。乡试在省城，三年一科，中者称「举人」，第一名叫解元；会试在京城，中者称「贡士」，第一名叫会元；殿试由皇帝亲策，中者称「进士」，第一名称状元。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-135",
+    id: "changshi-cs-135",
+    title: "八股文",
+    entries: ["changshi-cs-135"],
+    text: "八股文：明清科举考试规定的文体，又称制义、时文。每篇由破题、承题、起讲、入题、起股、中股、后股、束股八部分组成，后四股各有对偶两股，故称八股。内容须代圣贤立言，格式与题义皆受严格限制。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-136",
+    id: "changshi-cs-136",
+    title: "三省六部",
+    entries: ["changshi-cs-136"],
+    text: "三省六部：隋唐中央官制。三省为中书省（草拟诏令，长官中书令）、门下省（审核封驳，长官侍中）、尚书省（执行政令，长官尚书令）；尚书省下辖吏、户、礼、兵、刑、工六部，此制沿用至清。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-137",
+    id: "changshi-cs-137",
+    title: "九品中正制",
+    entries: ["changshi-cs-137"],
+    text: "九品中正制：魏晋南北朝的选官制度，由曹魏陈群创行。各州郡设中正官品评人才为九等，供吏部授官。后中正多出士族，遂形成「上品无寒门，下品无势族」的门阀局面，隋唐为科举所代。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-138",
+    id: "changshi-cs-138",
+    title: "察举征辟",
+    entries: ["changshi-cs-138"],
+    text: "察举征辟：汉代的选官制度。「察举」由地方长官考察推荐人才（如孝廉、秀才），「征辟」指皇帝征召与公府辟举。武帝时确立，是两汉入仕的主要途径之一。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-139",
+    id: "changshi-cs-139",
+    title: "封禅",
+    entries: ["changshi-cs-139"],
+    text: "封禅：古代帝王祭祀天地的盛典。「封」为在泰山筑坛祭天，「禅」为在泰山下小丘除地祭地。告成于天、报功于地，秦始皇、汉武帝、唐玄宗、宋真宗皆曾封禅。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-14",
+    id: "changshi-cs-14",
+    title: "套数",
+    entries: ["changshi-cs-14"],
+    text: "套数：又称套曲、散套，元散曲的一种。由同一宫调的两支以上曲子连缀而成，全套押同一韵，末尾有「煞」「尾」作结。与杂剧的一本四折相类但无科白。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-140",
+    id: "changshi-cs-140",
+    title: "干支纪年",
+    entries: ["changshi-cs-140"],
+    text: "干支纪年：以十天干（甲乙丙丁戊己庚辛壬癸）与十二地支（子丑寅卯辰巳午未申酉戌亥）相配纪年，六十年一循环，称「六十甲子」。另有干支纪日，商代已用之，是世界上使用最久的纪日法。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-141",
+    id: "changshi-cs-141",
+    title: "二十四节气",
+    entries: ["changshi-cs-141"],
+    text: "二十四节气：反映太阳周年运动的历法补充，依次为立春、雨水、惊蛰、春分、清明、谷雨、立夏、小满、芒种、夏至、小暑、大暑、立秋、处暑、白露、秋分、寒露、霜降、立冬、小雪、大雪、冬至、小寒、大寒。名称完整见于《淮南子》，用于指导农事。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-142",
+    id: "changshi-cs-142",
+    title: "朔望晦",
+    entries: ["changshi-cs-142"],
+    text: "朔望晦：古代以月的盈亏纪日的称谓。每月初一日为「朔」，十五日为「望」，末日为「晦」，与月相相应，常出现在诗文中。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-143",
+    id: "changshi-cs-143",
+    title: "阴阳五行",
+    entries: ["changshi-cs-143"],
+    text: "阴阳五行：古代哲学学说。战国邹衍等以阴阳消长与五行（水、火、木、金、土）相生相克解释万物变化，深入天文、历法、医学、文学与政治制度。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-144",
+    id: "changshi-cs-144",
+    title: "九州",
+    entries: ["changshi-cs-144"],
+    text: "九州：古代对中国疆域的划分。相传大禹治水分天下为冀、兖、青、徐、扬、荆、豫、梁、雍九州，后「九州」遂成为中国的代称，如龚自珍「九州生气恃风雷」。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-145",
+    id: "changshi-cs-145",
+    title: "中原",
+    entries: ["changshi-cs-145"],
+    text: "中原：又称中土、中州，指黄河中下游一带，是中华文明的发祥地。与「四方」「边陲」相对，古时常代指天下或国家中心地区。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-146",
+    id: "changshi-cs-146",
+    title: "关中",
+    entries: ["changshi-cs-146"],
+    text: "关中：指函谷关以西、秦岭以北的渭河平原（今陕西中部）。土地肥沃、形势险固，秦、汉、隋、唐皆都于此。与之相对，「关东」「山东」指函谷关以东地区。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-147",
+    id: "changshi-cs-147",
+    title: "江宁与南京",
+    entries: ["changshi-cs-147"],
+    text: "江宁：南京旧称之一。南京古名金陵、秣陵、建业、建康、江宁、应天等。隋灭陈后改称蒋州，唐为升州，明清为江宁府。民国时定名南京。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-148",
+    id: "changshi-cs-148",
+    title: "江南",
+    entries: ["changshi-cs-148"],
+    text: "江南：泛指长江以南地区。狭义指今江苏南部、浙江一带，为鱼米之乡、文化渊薮。唐代设江南道，清代设江南省（后分为江苏、安徽）。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-149",
+    id: "changshi-cs-149",
+    title: "塞外",
+    entries: ["changshi-cs-149"],
+    text: "塞外：指长城以北的边地，又称塞北、关外。古代为游牧民族居地，是边塞诗常见的背景，如「大漠孤烟直，长河落日圆」。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-15",
+    id: "changshi-cs-15",
+    title: "奏疏",
+    entries: ["changshi-cs-15"],
+    text: "奏疏：古代臣下向君主进言的公文，含奏、议、疏、表、对策等类。贾谊《论积贮疏》、晁错《论贵粟疏》、诸葛亮《出师表》、魏征《谏太宗十思疏》皆为其名篇。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-150",
+    id: "changshi-cs-150",
+    title: "五岳",
+    entries: ["changshi-cs-150"],
+    text: "五岳：中国五座名山的合称。东岳泰山（山东）、西岳华山（陕西）、南岳衡山（湖南）、北岳恒山（山西）、中岳嵩山（河南）。古代帝王多临泰山封禅。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-151",
+    id: "changshi-cs-151",
+    title: "四夷",
+    entries: ["changshi-cs-151"],
+    text: "四夷：古代对中原以外四方民族的泛称，即东夷、西戎、南蛮、北狄。反映了古代以中原为中心的地理观念，相关称谓亦见于史书与诗文。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-152",
+    id: "changshi-cs-152",
+    title: "郡县制",
+    entries: ["changshi-cs-152"],
+    text: "郡县制：以郡统县的地方行政制度，春秋战国时萌芽，秦统一后推行全国，分天下为三十六郡，郡下设县，长官由中央任免。取代分封制，为历代地方行政基础。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-153",
+    id: "changshi-cs-153",
+    title: "诗经六义",
+    entries: ["changshi-cs-153"],
+    text: "诗经六义：指《诗经》的「风、雅、颂、赋、比、兴」。前三者为内容分类：风为地方民歌，雅为朝廷正乐，颂为宗庙祭祀之乐；后三者为主要表现手法：赋为铺陈直叙，比为打比方，兴为先言他物以引起所咏之词。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-154",
+    id: "changshi-cs-154",
+    title: "四书五经名句",
+    entries: ["changshi-cs-154"],
+    text: "四书五经名句：如《论语》「学而时习之，不亦说乎」「三人行，必有我师焉」，《孟子》「天将降大任于是人也」，《大学》「苟日新，日日新，又日新」，皆为历代传诵的名句。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-155",
+    id: "changshi-cs-155",
+    title: "风骚",
+    entries: ["changshi-cs-155"],
+    text: "风骚：「风」指《诗经》国风，「骚」指屈原《离骚》，合称代指《诗经》与《楚辞》，为中国诗歌现实主义与浪漫主义两大源头，后引申指文学才华或文坛地位，如「独领风骚」。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-156",
+    id: "changshi-cs-156",
+    title: "乐府双璧",
+    entries: ["changshi-cs-156"],
+    text: "乐府双璧：指汉乐府《孔雀东南飞》与北朝乐府《木兰诗》。前者是现存最长的古代叙事诗，写焦仲卿与刘兰芝的爱情悲剧；后者写木兰女扮男装代父从军，皆为中国叙事诗的杰作。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-157",
+    id: "changshi-cs-157",
+    title: "三吏三别",
+    entries: ["changshi-cs-157"],
+    text: "三吏三别：杜甫安史之乱期间所作六首诗。「三吏」为《新安吏》《石壕吏》《潼关吏》，「三别」为《新婚别》《垂老别》《无家别》，深刻反映战乱给百姓带来的苦难，是其现实主义诗作的代表。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-158",
+    id: "changshi-cs-158",
+    title: "推敲",
+    entries: ["changshi-cs-158"],
+    text: "推敲：典出唐代诗人贾岛「鸟宿池边树，僧敲月下门」一句，初拟「推」字，遇韩愈而定用「敲」。后以「推敲」比喻反复琢磨、斟酌字句。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-159",
+    id: "changshi-cs-159",
+    title: "咏絮之才",
+    entries: ["changshi-cs-159"],
+    text: "咏絮之才：典出《世说新语》，谢安问雪何所似，谢朗答「撒盐空中差可拟」，谢道韫答「未若柳絮因风起」，众皆称善。后以「咏絮之才」称女子有文才。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-16",
+    id: "changshi-cs-16",
+    title: "序",
+    entries: ["changshi-cs-16"],
+    text: "序：一种文体。或为书序（介绍、评述著作，如《兰亭集序》《滕王阁序》），或为赠序（临别赠言，如《送东阳马生序》）。书序一般写在书前，也可置于书后称「跋」。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-160",
+    id: "changshi-cs-160",
+    title: "洛阳纸贵",
+    entries: ["changshi-cs-160"],
+    text: "洛阳纸贵：典出左思写成《三都赋》后，为时人推崇，豪贵之家竞相传抄，洛阳纸张供不应求而涨价。后比喻著作广为流传、风行一时。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-161",
+    id: "changshi-cs-161",
+    title: "入木三分",
+    entries: ["changshi-cs-161"],
+    text: "入木三分：典出王羲之题字，墨迹渗入木板三分。原形容书法笔力遒劲，后比喻见解、议论深刻透彻。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-162",
+    id: "changshi-cs-162",
+    title: "梦笔生花",
+    entries: ["changshi-cs-162"],
+    text: "梦笔生花：典出李白少时梦见笔头生花，从此才思敏捷。后以「梦笔生花」称人文思俊逸、才华出众。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-163",
+    id: "changshi-cs-163",
+    title: "铁杵成针",
+    entries: ["changshi-cs-163"],
+    text: "铁杵成针：相传李白少时遇老媪磨铁杵欲作针，大受触动而发奋读书。后以「铁杵成针」比喻只要持之以恒，再难的事也能做成。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-164",
+    id: "changshi-cs-164",
+    title: "韦编三绝",
+    entries: ["changshi-cs-164"],
+    text: "韦编三绝：语出《史记·孔子世家》，孔子晚年喜《易》，反复研读以致串联竹简的皮绳磨断了三次。后以「韦编三绝」形容读书勤奋刻苦。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-165",
+    id: "changshi-cs-165",
+    title: "囊萤映雪",
+    entries: ["changshi-cs-165"],
+    text: "囊萤映雪：囊萤指车胤家贫以练囊盛萤火虫照书夜读；映雪指孙康冬日映雪光读书。后以「囊萤映雪」形容家境贫寒而勤学不辍。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-166",
+    id: "changshi-cs-166",
+    title: "凿壁偷光",
+    entries: ["changshi-cs-166"],
+    text: "凿壁偷光：典出匡衡家贫无烛，凿壁引邻舍之光读书。后以「凿壁偷光」比喻在艰苦条件下刻苦求学。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-167",
+    id: "changshi-cs-167",
+    title: "悬梁刺股",
+    entries: ["changshi-cs-167"],
+    text: "悬梁刺股：悬梁指孙敬读书时以绳系发悬于梁上，防瞌睡；刺股指苏秦读书欲睡时以锥刺股。后以「悬梁刺股」形容刻苦自励、发愤读书。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-168",
+    id: "changshi-cs-168",
+    title: "程门立雪",
+    entries: ["changshi-cs-168"],
+    text: "程门立雪：典出杨时与游酢拜见程颐，见其闭目而坐，遂侍立门外等候，程颐醒时门外已雪深一尺。后以「程门立雪」比喻尊师重道、虔诚求教。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-169",
+    id: "changshi-cs-169",
+    title: "高山流水",
+    entries: ["changshi-cs-169"],
+    text: "高山流水：典出伯牙善鼓琴，钟子期能听懂「巍巍乎若泰山」「洋洋乎若江河」。子期死后，伯牙破琴绝弦。后以「高山流水」喻知音难遇或乐曲高雅。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-17",
+    id: "changshi-cs-17",
+    title: "铭",
+    entries: ["changshi-cs-17"],
+    text: "铭：本指刻在器物、碑石上的文字，后成为一种文体。多押韵，篇幅短小，用以颂功德或自警自勉。刘禹锡《陋室铭》、苏轼《三槐堂铭》为代表。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-170",
+    id: "changshi-cs-170",
+    title: "破釜沉舟",
+    entries: ["changshi-cs-170"],
+    text: "破釜沉舟：典出项羽渡河救巨鹿，沉船破釜、烧庐舍、持三日粮以示必死，大破秦军。后比喻下定决心、不留退路，必求成功。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-171",
+    id: "changshi-cs-171",
+    title: "卧薪尝胆",
+    entries: ["changshi-cs-171"],
+    text: "卧薪尝胆：典出越王勾践为吴所败，归国后卧薪柴、尝苦胆，以自警发愤，终于灭吴。后比喻刻苦自励、发愤图强。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-172",
+    id: "changshi-cs-172",
+    title: "背水一战",
+    entries: ["changshi-cs-172"],
+    text: "背水一战：典出韩信攻赵，背水列阵使士卒无退路而拼死作战，大败赵军。后比喻处于绝境而决一死战。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-173",
+    id: "changshi-cs-173",
+    title: "指鹿为马",
+    entries: ["changshi-cs-173"],
+    text: "指鹿为马：典出赵高牵鹿献给秦二世而称马，问群臣以试其是否顺从，凡言鹿者皆遭害。后比喻故意颠倒黑白、混淆是非。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-174",
+    id: "changshi-cs-174",
+    title: "完璧归赵",
+    entries: ["changshi-cs-174"],
+    text: "完璧归赵：典出蔺相如奉命携和氏璧赴秦换城，见秦王无诚意，以死相逼保全璧玉归赵。后比喻将原物完好无损地归还。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-175",
+    id: "changshi-cs-175",
+    title: "负荆请罪",
+    entries: ["changshi-cs-175"],
+    text: "负荆请罪：典出廉颇不服蔺相如位居己上，扬言侮辱，后知相如以国事为重，遂肉袒负荆上门请罪，二人结为刎颈之交。后比喻主动认错、请求责罚。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-176",
+    id: "changshi-cs-176",
+    title: "一字千金",
+    entries: ["changshi-cs-176"],
+    text: "一字千金：典出吕不韦编《吕氏春秋》成，悬于咸阳市门，称能增损一字者赏千金。后形容著作评价极高或文字精炼可贵。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-177",
+    id: "changshi-cs-177",
+    title: "腹有诗书气自华",
+    entries: ["changshi-cs-177"],
+    text: "腹有诗书气自华：苏轼《和董传留别》句，谓读书多自然气质不凡。常用以劝学，强调读书对气度修养的滋养。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-178",
+    id: "changshi-cs-178",
+    title: "三人行必有我师",
+    entries: ["changshi-cs-178"],
+    text: "三人行必有我师：语出《论语·述而》，谓几个人同行，其中必有可作自己老师的人。强调虚心好学、择善而从。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-179",
+    id: "changshi-cs-179",
+    title: "锲而不舍",
+    entries: ["changshi-cs-179"],
+    text: "锲而不舍：语出《荀子·劝学》，以雕刻为喻，谓坚持不懈地雕刻不停，金石也可雕镂。后比喻持之以恒、坚持不懈。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-18",
+    id: "changshi-cs-18",
+    title: "记",
+    entries: ["changshi-cs-18"],
+    text: "记：一种以记叙为主的文体。可记人、记事、记物、记游，如范仲淹《岳阳楼记》、柳宗元《小石潭记》、欧阳修《醉翁亭记》、姚鼐《登泰山记》，常于写景叙事中寄寓情怀议论。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-180",
+    id: "changshi-cs-180",
+    title: "不积跬步",
+    entries: ["changshi-cs-180"],
+    text: "不积跬步：语出《荀子·劝学》，谓不一点一滴地积累半步，就无法到达千里之外。强调积累与坚持，与本项目「跬步」之名义相通。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-181",
+    id: "changshi-cs-181",
+    title: "《新青年》",
+    entries: ["changshi-cs-181"],
+    text: "《新青年》：1915 年陈独秀在上海创办（初名《青年杂志》，次年改名《新青年》）。倡导民主与科学，1917 年发表胡适《文学改良刍议》、陈独秀《文学革命论》，成为新文化运动与文学革命的主要阵地。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-182",
+    id: "changshi-cs-182",
+    title: "文学革命",
+    entries: ["changshi-cs-182"],
+    text: "文学革命：1917 年由《新青年》倡导的文学变革。胡适《文学改良刍议》提出「八事」主张，陈独秀《文学革命论》提出「三大主义」，核心是提倡白话文、反对文言文，提倡新文学、反对旧文学，是中国文学由古典转向现代的起点。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-183",
+    id: "changshi-cs-183",
+    title: "新文化运动",
+    entries: ["changshi-cs-183"],
+    text: "新文化运动：1915 年起由《新青年》发动的思想文化运动。提倡民主与科学、反对专制与迷信，提倡新道德、新文学。陈独秀、李大钊、胡适、鲁迅、钱玄同等为主将，为五四运动作了思想准备。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-184",
+    id: "changshi-cs-184",
+    title: "五四运动",
+    entries: ["changshi-cs-184"],
+    text: "五四运动：1919 年 5 月 4 日北京学生发起的爱国运动。反对巴黎和会对中国主权的处置，提出「外争主权，内除国贼」。它推动新文化运动走向高潮，新文学由理论倡导进入创作实践，标志中国现代文学的开端。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-185",
+    id: "changshi-cs-185",
+    title: "白话文运动",
+    entries: ["changshi-cs-185"],
+    text: "白话文运动：文学革命的核心内容之一。胡适提出「国语的文学，文学的国语」，主张以白话代替文言作为书面语。1920 年教育部令小学国文改为语体文，白话文取得合法地位，是中国语言文学的一大变革。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-186",
+    id: "changshi-cs-186",
+    title: "创造社",
+    entries: ["changshi-cs-186"],
+    text: "创造社：1921 年 6 月成立于日本东京的新文学社团。主要成员有郭沫若、郁达夫、成仿吾、田汉等，初主张「为艺术而艺术」，强调自我表现与浪漫主义，与主张「为人生而艺术」的文学研究会形成双峰并峙。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-187",
+    id: "changshi-cs-187",
+    title: "文学研究会",
+    entries: ["changshi-cs-187"],
+    text: "文学研究会：1921 年 1 月成立于北京的新文学社团，发起人有周作人、郑振铎、沈雁冰（茅盾）、叶绍钧等。主张「为人生而艺术」，提倡现实主义，主办《小说月报》，是新文学成立最早、影响最大的社团之一。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-188",
+    id: "changshi-cs-188",
+    title: "左联",
+    entries: ["changshi-cs-188"],
+    text: "左联：中国左翼作家联盟的简称，1930 年 3 月成立于上海。鲁迅、茅盾、冯雪峰、柔石、丁玲等为核心，鲁迅在成立大会上发表《对于左翼作家联盟的意见》。它推动革命文学运动，1936 年为抗日救亡而自动解散。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-189",
+    id: "changshi-cs-189",
+    title: "创造社与太阳社",
+    entries: ["changshi-cs-189"],
+    text: "太阳社：1927 年成立于上海的革命文学社团，主要成员有蒋光慈、钱杏邨（阿英）、孟超等，主办《太阳月刊》。它与创造社共同倡导「革命文学」，与鲁迅、茅盾等展开论争，是左翼文学运动的前奏。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-19",
+    id: "changshi-cs-19",
+    title: "说",
+    entries: ["changshi-cs-19"],
+    text: "说：一种议论文体，多以「托物言志」方式说理。可写事物说明（如《核舟记》），也可议论说理（如韩愈《师说》、柳宗元《捕蛇者说》、周敦颐《爱莲说》）。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-190",
+    id: "changshi-cs-190",
+    title: "语丝社",
+    entries: ["changshi-cs-190"],
+    text: "语丝社：1924 年成立于北京的散文社团，因《语丝》周刊得名。主要成员有周作人、鲁迅、钱玄同、林语堂、孙伏园等。文风泼辣幽默，以杂感、随笔见长，鲁迅称其特色为「任意而谈，无所顾忌」。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-191",
+    id: "changshi-cs-191",
+    title: "新月社",
+    entries: ["changshi-cs-191"],
+    text: "新月社：1923 年成立于北京的新文学社团，后期以《新月》月刊为中心。主要成员有徐志摩、闻一多、胡适、梁实秋等。主张新诗的格律化，闻一多提出「音乐美、绘画美、建筑美」的「三美」理论。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-192",
+    id: "changshi-cs-192",
+    title: "太阳与左翼文学",
+    entries: ["changshi-cs-192"],
+    text: "左翼文学：1920 年代末至 1930 年代的无产阶级文学潮流。由「革命文学」论争发展而来，以左联成立为标志，提倡文学为现实斗争服务。鲁迅、茅盾、丁玲、蒋光慈等为代表，后因抗战而转向国防文学。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-193",
+    id: "changshi-cs-193",
+    title: "延安文艺座谈会",
+    entries: ["changshi-cs-193"],
+    text: "延安文艺座谈会：1942 年 5 月在延安召开，毛泽东发表《在延安文艺座谈会上的讲话》，提出文艺为工农兵服务、为无产阶级政治服务，是解放区文艺运动的指导文献，深刻影响此后中国文学的方向。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-194",
+    id: "changshi-cs-194",
+    title: "荷花淀派",
+    entries: ["changshi-cs-194"],
+    text: "荷花淀派：以孙犁为代表的当代小说流派，因代表作《荷花淀》得名。主要作家有刘绍棠、丛维熙等，多在河北一带。作品语言清新、富有诗情画意，多写冀中农村生活与抗日斗争。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-195",
+    id: "changshi-cs-195",
+    title: "山药蛋派",
+    entries: ["changshi-cs-195"],
+    text: "山药蛋派：以赵树理为代表的当代小说流派，又称「山西派」。主要作家有马烽、西戎、束为等。作品多取材山西农村，语言通俗生动，富有乡土气息与幽默感，代表作有《小二黑结婚》《李有才板话》。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-196",
+    id: "changshi-cs-196",
+    title: "朦胧诗",
+    entries: ["changshi-cs-196"],
+    text: "朦胧诗：1970 年代末至 1980 年代的新诗潮流，因诗风朦胧含蓄而得名。代表诗人有北岛、舒婷、顾城、江河、杨炼等。作品多用象征与意象，强调自我与反思，代表作有北岛《回答》、舒婷《致橡树》、顾城《一代人》。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-197",
+    id: "changshi-cs-197",
+    title: "伤痕文学",
+    entries: ["changshi-cs-197"],
+    text: "伤痕文学：1970 年代末出现的文学潮流，因卢新华小说《伤痕》得名。作品揭露「文革」给人们造成的创伤，宣泄悲愤、呼唤人性，代表作有刘心武《班主任》、卢新华《伤痕》，是新时期文学的开端。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-198",
+    id: "changshi-cs-198",
+    title: "反思文学",
+    entries: ["changshi-cs-198"],
+    text: "反思文学：1970 年代末至 1980 年代初继伤痕文学之后的文学潮流。作品超越单纯的情感宣泄，从历史与文化的层面反思「文革」及其根源，代表作有王蒙《蝴蝶》、高晓声《李顺大造屋》、谌容《人到中年》。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-199",
+    id: "changshi-cs-199",
+    title: "寻根文学",
+    entries: ["changshi-cs-199"],
+    text: "寻根文学：1980 年代中期出现的文学潮流。韩少功发表《文学的根》倡导「寻根」，主张挖掘民族文化传统与地域文化。代表作有韩少功《爸爸爸》、阿城《棋王》、王安忆《小鲍庄》。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-2",
+    id: "changshi-cs-2",
+    title: "词",
+    entries: ["changshi-cs-2"],
+    text: "词：起于隋唐、盛于两宋，本是配燕乐歌唱的歌词，故又称「曲子词」「长短句」「诗余」。句式长短不齐，按词牌填词，分小令、中调、长调，宋以后与诗并称「一代之文学」。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-20",
+    id: "changshi-cs-20",
+    title: "语录体",
+    entries: ["changshi-cs-20"],
+    text: "语录体：以记录人物言语为主的文体，多短章片段，不作铺陈。《论语》为其代表，宋儒《朱子语类》、禅宗《坛经》亦用此体。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-200",
+    id: "changshi-cs-200",
+    title: "先锋文学",
+    entries: ["changshi-cs-200"],
+    text: "先锋文学：1980 年代中后期出现的文学潮流，又称「实验小说」。代表作家有马原、余华、苏童、格非、孙甘露等。作品在叙事形式上进行实验，打破传统情节与时间顺序，注重语言与结构的探索。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-201",
+    id: "changshi-cs-201",
+    title: "中国现代文学",
+    entries: ["changshi-cs-201"],
+    text: "中国现代文学：指 1917 年文学革命至 1949 年间的中国文学。以白话文为工具，以鲁迅《狂人日记》为奠基之作，含小说、新诗、话剧、散文诸体裁，贯彻启蒙与救亡的双重主题，完成了中国文学由古典向现代的转型。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-202",
+    id: "changshi-cs-202",
+    title: "当代文学与十七年",
+    entries: ["changshi-cs-202"],
+    text: "十七年文学：指 1949 年至 1966 年间的中国大陆文学。以革命历史题材与农村题材为主，长篇小说成就突出，代表作有梁斌《红旗谱》、杨沫《青春之歌》、柳青《创业史》、曲波《林海雪原》。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-203",
+    id: "changshi-cs-203",
+    title: "新写实小说",
+    entries: ["changshi-cs-203"],
+    text: "新写实小说：1980 年代末至 1990 年代初出现的文学潮流。代表作家有池莉、方方、刘震云、刘恒等。作品以「零度情感」的态度描写普通人的日常生活与烦恼，还原生活原生态，代表作有池莉《烦恼人生》、方方《风景》。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-204",
+    id: "changshi-cs-204",
+    title: "现代诗与新月派",
+    entries: ["changshi-cs-204"],
+    text: "现代新诗：1917 年文学革命后产生的白话诗，又称新诗。以胡适《尝试集》为开端，经郭沫若《女神》、新月派格律诗、现代派、七月派到朦胧诗，逐步建立现代汉语诗歌的形态与格局。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-21",
+    id: "changshi-cs-21",
+    title: "寓言",
+    entries: ["changshi-cs-21"],
+    text: "寓言：寄寓道理于虚构故事的文体。先秦诸子多用，《庄子》《韩非子》《战国策》保存最多，如「揠苗助长」「守株待兔」「刻舟求剑」，常以短小故事说明深刻道理。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-22",
+    id: "changshi-cs-22",
+    title: "神话",
+    entries: ["changshi-cs-22"],
+    text: "神话：古代先民关于神、英雄与自然现象的故事。散见于《山海经》《淮南子》《楚辞》等，《女娲补天》《夸父逐日》《精卫填海》《后羿射日》为代表，是中国文学的源头之一。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-23",
+    id: "changshi-cs-23",
+    title: "楚辞",
+    entries: ["changshi-cs-23"],
+    text: "楚辞：战国时屈原在楚地民歌基础上创造的新诗体，又称「骚体」。句式参差、多用「兮」字、富于浪漫色彩。刘向辑《楚辞》为总集，屈原《离骚》《九歌》为代表，与《诗经》并称「风骚」。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-24",
+    id: "changshi-cs-24",
+    title: "竹枝词",
+    entries: ["changshi-cs-24"],
+    text: "竹枝词：源出巴渝民歌，唐代刘禹锡仿作并使之文人化。七言四句，多咏风土人情与男女之情，语言清新，白居易、刘禹锡皆有佳作。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-25",
+    id: "changshi-cs-25",
+    title: "弹词",
+    entries: ["changshi-cs-25"],
+    text: "弹词：明清南方说唱文学。以琵琶、三弦伴奏，说白与唱词相间，以唱为主。多长篇，写才子佳人与历史故事，陈端生《再生缘》为代表。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-26",
+    id: "changshi-cs-26",
+    title: "鼓词",
+    entries: ["changshi-cs-26"],
+    text: "鼓词：明清北方说唱文学。以鼓、板击节，说唱相间，多为长篇历史与英雄故事，与南方弹词相对，又称「大鼓书」。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-27",
+    id: "changshi-cs-27",
+    title: "屈原",
+    entries: ["changshi-cs-27"],
+    text: "屈原（约前340—前278）：战国楚人，名平，字原。曾任左徒、三闾大夫，后遭谗被逐，自沉汨罗江。作《离骚》《九歌》《九章》《天问》，开创「楚辞」体，是中国浪漫主义诗歌的奠基人。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-28",
+    id: "changshi-cs-28",
+    title: "司马迁",
+    entries: ["changshi-cs-28"],
+    text: "司马迁（约前145—约前87）：字子长，西汉史学家、文学家。承父志著《史记》，受宫刑而不辍，成「史家之绝唱，无韵之离骚」（鲁迅语），首创纪传体通史。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-29",
+    id: "changshi-cs-29",
+    title: "陶渊明",
+    entries: ["changshi-cs-29"],
+    text: "陶渊明（365—427）：名潜，字元亮，世称靖节先生。东晋田园诗派开创者，曾任彭泽令，因不愿折腰事权贵而归隐。作《归去来兮辞》《桃花源记》《饮酒》诸篇，诗风平淡自然。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-3",
+    id: "changshi-cs-3",
+    title: "曲",
+    entries: ["changshi-cs-3"],
+    text: "曲：元代兴起的新兴诗体，包括散曲（小令、套数）与杂剧。用北曲演唱，句式灵活，可加衬字，语言质朴自然。关汉卿《窦娥冤》、王实甫《西厢记》为代表。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-30",
+    id: "changshi-cs-30",
+    title: "李白",
+    entries: ["changshi-cs-30"],
+    text: "李白（701—762）：字太白，号青莲居士。唐代浪漫主义诗人，人称「诗仙」。诗风豪放飘逸、想象奇诡，善用夸张与神话。有《蜀道难》《将进酒》《梦游天姥吟留别》等，与杜甫并称「李杜」。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-31",
+    id: "changshi-cs-31",
+    title: "杜甫",
+    entries: ["changshi-cs-31"],
+    text: "杜甫（712—770）：字子美，自号少陵野老。唐代现实主义诗人，人称「诗圣」，其诗称「诗史」。诗风沉郁顿挫，忧国忧民，有「三吏」「三别」及《茅屋为秋风所破歌》等。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-32",
+    id: "changshi-cs-32",
+    title: "王维",
+    entries: ["changshi-cs-32"],
+    text: "王维（701—761）：字摩诘。唐代山水田园诗派代表，通音律、精绘画，苏轼评其「诗中有画，画中有诗」。晚年居辋川，诗风空灵淡远，有《山居秋暝》《使至塞上》等。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-33",
+    id: "changshi-cs-33",
+    title: "白居易",
+    entries: ["changshi-cs-33"],
+    text: "白居易（772—846）：字乐天，号香山居士。唐代新乐府运动倡导者，主张「文章合为时而著，歌诗合为事而作」。诗风平易通俗，有《长恨歌》《琵琶行》《卖炭翁》等。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-34",
+    id: "changshi-cs-34",
+    title: "韩愈",
+    entries: ["changshi-cs-34"],
+    text: "韩愈（768—824）：字退之，世称韩昌黎。唐代古文运动领袖，苏轼称其「文起八代之衰」。散文雄奇奔放，为「唐宋八大家」之首，有《师说》《马说》《进学解》等。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-35",
+    id: "changshi-cs-35",
+    title: "柳宗元",
+    entries: ["changshi-cs-35"],
+    text: "柳宗元（773—819）：字子厚，世称柳河东。唐代古文运动主将，与韩愈并称「韩柳」。散文与山水游记俱佳，有《永州八记》《捕蛇者说》《三戒》等。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-36",
+    id: "changshi-cs-36",
+    title: "苏轼",
+    entries: ["changshi-cs-36"],
+    text: "苏轼（1037—1101）：字子瞻，号东坡居士。北宋文学家、书画家，诗、词、文、书、画皆精，「唐宋八大家」之一，豪放词派开创者。有《念奴娇·赤壁怀古》《赤壁赋》等。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-37",
+    id: "changshi-cs-37",
+    title: "李清照",
+    entries: ["changshi-cs-37"],
+    text: "李清照（1084—约1155）：号易安居士。宋代婉约词派代表，词风前期清丽、后期沉郁，人称「易安体」。有《如梦令》《醉花阴》《声声慢》《夏日绝句》等，亦工诗能文。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-38",
+    id: "changshi-cs-38",
+    title: "辛弃疾",
+    entries: ["changshi-cs-38"],
+    text: "辛弃疾（1140—1207）：字幼安，号稼轩。南宋豪放词派代表，一生力主抗金。词风雄浑悲壮，有《破阵子·为陈同甫赋壮词以寄之》《永遇乐·京口北固亭怀古》等，与苏轼并称「苏辛」。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-39",
+    id: "changshi-cs-39",
+    title: "关汉卿",
+    entries: ["changshi-cs-39"],
+    text: "关汉卿（约1234—约1300）：号已斋叟，元杂剧奠基人，「元曲四大家」之首。作杂剧六十余种，今存《窦娥冤》《救风尘》《单刀会》等，语言本色当行。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-4",
+    id: "changshi-cs-4",
+    title: "赋",
+    entries: ["changshi-cs-4"],
+    text: "赋：铺采摛文、体物写志之作。源于《诗经》与楚辞，荀子《赋篇》为名之始，汉代蔚为大观，分骚赋、大赋、小赋，讲究铺陈排比、问答成篇，司马相如《子虚赋》《上林赋》为其代表。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-40",
+    id: "changshi-cs-40",
+    title: "罗贯中",
+    entries: ["changshi-cs-40"],
+    text: "罗贯中（约1330—约1400）：名本，字贯中。元末明初小说家，据史传与话本著《三国志通俗演义》，是中国第一部长篇章回小说，奠定历史演义体例。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-41",
+    id: "changshi-cs-41",
+    title: "施耐庵",
+    entries: ["changshi-cs-41"],
+    text: "施耐庵（约1296—约1370）：元末明初小说家。相传曾参与《三国演义》创作，以《水浒传》著名，写北宋末年农民起义，塑造一百单八将群像，是英雄传奇小说的代表。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-42",
+    id: "changshi-cs-42",
+    title: "吴承恩",
+    entries: ["changshi-cs-42"],
+    text: "吴承恩（约1500—约1582）：字汝忠，号射阳山人。明代小说家，在民间传说与戏曲基础上著《西游记》，写唐僧师徒取经故事，是中国神魔小说的巅峰之作。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-43",
+    id: "changshi-cs-43",
+    title: "曹雪芹",
+    entries: ["changshi-cs-43"],
+    text: "曹雪芹（约1715—约1763）：名霑，字梦阮，号雪芹。清代小说家，早年富贵、晚年潦倒，著《红楼梦》前八十回，以贾府兴衰与宝黛爱情为线，是中国古典小说的顶峰。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-44",
+    id: "changshi-cs-44",
+    title: "蒲松龄",
+    entries: ["changshi-cs-44"],
+    text: "蒲松龄（1640—1715）：字留仙，号柳泉居士。清代文学家，穷毕生之力著《聊斋志异》，借狐鬼花妖故事讽喻现实，文言短篇小说成就极高。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-45",
+    id: "changshi-cs-45",
+    title: "吴敬梓",
+    entries: ["changshi-cs-45"],
+    text: "吴敬梓（1701—1754）：字敏轩，号粒民。清代小说家，著《儒林外史》，以连缀式结构讽刺科举制度与士林百态，是中国古典讽刺小说的代表。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-46",
+    id: "changshi-cs-46",
+    title: "龚自珍",
+    entries: ["changshi-cs-46"],
+    text: "龚自珍（1792—1841）：字璱人，号定盦。清代思想家、文学家，主张改革，诗风瑰丽奇肆。有《己亥杂诗》「我劝天公重抖擞，不拘一格降人才」等名句，开近代文学风气之先。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-47",
+    id: "changshi-cs-47",
+    title: "鲁迅",
+    entries: ["changshi-cs-47"],
+    text: "鲁迅（1881—1936）：原名周树人，字豫才，浙江绍兴人。中国现代文学奠基人。1918年发表《狂人日记》，是中国现代文学史上第一篇白话小说。有小说集《呐喊》《彷徨》《故事新编》与杂文集多种。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-48",
+    id: "changshi-cs-48",
+    title: "郭沫若",
+    entries: ["changshi-cs-48"],
+    text: "郭沫若（1892—1978）：原名郭开贞，四川乐山人。现代诗人、剧作家、历史学家。诗集《女神》以狂飙突进的浪漫主义精神，成为中国现代新诗的奠基之作。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-49",
+    id: "changshi-cs-49",
+    title: "茅盾",
+    entries: ["changshi-cs-49"],
+    text: "茅盾（1896—1981）：原名沈德鸿，字雁冰，浙江桐乡人。现代作家、文学评论家。著长篇小说《子夜》与农村三部曲《春蚕》《秋收》《残冬》，是社会剖析派小说的代表。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-5",
+    id: "changshi-cs-5",
+    title: "骈文",
+    entries: ["changshi-cs-5"],
+    text: "骈文：又称骈体文、四六文。全篇以对偶句为主，讲究对仗工整、声律和谐、用典藻饰，多四字六字相间。形成于魏晋，盛于南北朝，庾信《哀江南赋》为代表，唐代称之为「今体」，与古文对立。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-50",
+    id: "changshi-cs-50",
+    title: "老舍",
+    entries: ["changshi-cs-50"],
+    text: "老舍（1899—1966）：原名舒庆春，字舍予，北京人。现代作家，以京味语言著称。著《骆驼祥子》《四世同堂》《茶馆》《龙须沟》等，被誉为「人民艺术家」。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-51",
+    id: "changshi-cs-51",
+    title: "巴金",
+    entries: ["changshi-cs-51"],
+    text: "巴金（1904—2005）：原名李尧棠，四川成都人。现代作家，著「激流三部曲」《家》《春》《秋》与《寒夜》等，作品影响几代青年。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-52",
+    id: "changshi-cs-52",
+    title: "曹禺",
+    entries: ["changshi-cs-52"],
+    text: "曹禺（1910—1996）：原名万家宝，湖北潜江人。现代剧作家，23岁写成《雷雨》，另有《日出》《原野》《北京人》，是中国现代话剧的奠基之作。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-53",
+    id: "changshi-cs-53",
+    title: "朱自清",
+    entries: ["changshi-cs-53"],
+    text: "朱自清（1898—1948）：字佩弦，江苏扬州人。现代散文家、诗人、学者，以《背影》《荷塘月色》《绿》《匆匆》等散文名世，语言洗练、情感真挚。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-54",
+    id: "changshi-cs-54",
+    title: "冰心",
+    entries: ["changshi-cs-54"],
+    text: "冰心（1900—1999）：原名谢婉莹，福建长乐人。现代作家，以《繁星》《春水》的小诗体与《寄小读者》的散文著称，文字清丽温婉，充满爱与童心。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-55",
+    id: "changshi-cs-55",
+    title: "建安七子",
+    entries: ["changshi-cs-55"],
+    text: "建安七子：汉末建安年间七位文学家的合称，语出曹丕《典论·论文》：孔融、陈琳、王粲、徐干、阮瑀、应玚、刘桢。以王粲成就最高，与「三曹」共为建安文学代表。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-56",
+    id: "changshi-cs-56",
+    title: "竹林七贤",
+    entries: ["changshi-cs-56"],
+    text: "竹林七贤：魏晋间七位名士的合称——嵇康、阮籍、山涛、向秀、刘伶、王戎、阮咸。崇尚老庄、任性放达，以诗文与清谈著称，是正始文学的代表。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-57",
+    id: "changshi-cs-57",
+    title: "唐宋八大家",
+    entries: ["changshi-cs-57"],
+    text: "唐宋八大家：唐代韩愈、柳宗元和宋代欧阳修、苏洵、苏轼、苏辙、王安石、曾巩八位散文家的合称。均为唐宋古文运动的核心人物，明代茅坤编《唐宋八大家文钞》后此名流行。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-58",
+    id: "changshi-cs-58",
+    title: "元曲四大家",
+    entries: ["changshi-cs-58"],
+    text: "元曲四大家：元代四位杂剧大家的合称——关汉卿、马致远、郑光祖、白朴。一说含王实甫。代表作分别为《窦娥冤》《汉宫秋》《倩女离魂》《梧桐雨》。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-59",
+    id: "changshi-cs-59",
+    title: "初唐四杰",
+    entries: ["changshi-cs-59"],
+    text: "初唐四杰：唐代初期四位诗人的合称——王勃、杨炯、卢照邻、骆宾王。杜甫有「王杨卢骆当时体」之句，四人扭转绮靡诗风，为盛唐诗歌开路。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-6",
+    id: "changshi-cs-6",
+    title: "散文",
+    entries: ["changshi-cs-6"],
+    text: "散文：与韵文相对，不押韵、不重排偶的散体文章。先秦诸子、历史散文为源头，唐宋古文运动后成为叙事、议论、抒情的主要载体，「唐宋八大家」即散文大家。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-60",
+    id: "changshi-cs-60",
+    title: "汉赋四大家",
+    entries: ["changshi-cs-60"],
+    text: "汉赋四大家：汉代四位辞赋大家的合称——司马相如、扬雄、班固、张衡。司马相如《子虚赋》《上林赋》为汉大赋的代表。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-61",
+    id: "changshi-cs-61",
+    title: "苏门四学士",
+    entries: ["changshi-cs-61"],
+    text: "苏门四学士：北宋黄庭坚、秦观、晁补之、张耒的合称，四人皆出苏轼门下。其中黄庭坚开创「江西诗派」，秦观为婉约词名家。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-62",
+    id: "changshi-cs-62",
+    title: "婉约派",
+    entries: ["changshi-cs-62"],
+    text: "婉约派：宋词一大流派，与豪放派相对。题材多写离愁别恨与儿女之情，语言含蓄柔婉、音律谐美。代表词人有柳永、李清照、周邦彦、姜夔、秦观等。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-63",
+    id: "changshi-cs-63",
+    title: "豪放派",
+    entries: ["changshi-cs-63"],
+    text: "豪放派：宋词一大流派，由苏轼开创、辛弃疾光大。题材广阔，气象恢弘，多写报国之志与人生感慨，语言雄浑奔放，故又称「苏辛词派」。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-64",
+    id: "changshi-cs-64",
+    title: "山水田园诗派",
+    entries: ["changshi-cs-64"],
+    text: "山水田园诗派：唐代诗歌流派，上承陶渊明、谢灵运，代表为王维、孟浩然。多写山水田园风光与隐逸情趣，风格清幽淡远，故又称「王孟诗派」。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-65",
+    id: "changshi-cs-65",
+    title: "边塞诗派",
+    entries: ["changshi-cs-65"],
+    text: "边塞诗派：唐代诗歌流派，代表为高适、岑参，另有王昌龄、王之涣等。多写边塞风光、征戍之苦与报国之志，气象雄浑、格调悲壮。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-66",
+    id: "changshi-cs-66",
+    title: "江西诗派",
+    entries: ["changshi-cs-66"],
+    text: "江西诗派：北宋以黄庭坚为首的诗歌流派，南宋吕本中作《江西诗社宗派图》得名。主张「夺胎换骨」「点铁成金」，即借鉴前人而自出新意，对宋诗影响深远。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-67",
+    id: "changshi-cs-67",
+    title: "桐城派",
+    entries: ["changshi-cs-67"],
+    text: "桐城派：清代最大散文流派，因代表人物方苞、刘大櫆、姚鼐皆安徽桐城人而得名。主张「义理、考据、辞章」并重，编选《古文辞类纂》，影响清代文坛两百余年。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-68",
+    id: "changshi-cs-68",
+    title: "公安派",
+    entries: ["changshi-cs-68"],
+    text: "公安派：明代文学流派，代表人物袁宏道、袁宗道、袁中道兄弟，因籍贯湖北公安得名。主张「独抒性灵，不拘格套」，反对前后七子的复古模拟。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-69",
+    id: "changshi-cs-69",
+    title: "前后七子",
+    entries: ["changshi-cs-69"],
+    text: "前后七子：明代两个复古文学流派。前七子以李梦阳、何景明为首，后七子以李攀龙、王世贞为首，皆倡「文必秦汉，诗必盛唐」，影响明中叶文坛。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-7",
+    id: "changshi-cs-7",
+    title: "传奇",
+    entries: ["changshi-cs-7"],
+    text: "传奇：唐代文言短篇小说。晚唐裴铏小说集名《传奇》，后人遂以之通称。情节曲折、人物鲜明，标志中国古典小说成熟，元稹《莺莺传》、李公佐《南柯太守传》为代表，宋元以后戏曲多取材于此。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-70",
+    id: "changshi-cs-70",
+    title: "三曹",
+    entries: ["changshi-cs-70"],
+    text: "三曹：汉末魏初曹操与其子曹丕、曹植的合称。父子三人皆善诗文，是建安文学的核心，曹植《洛神赋》、曹操《短歌行》为代表。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-71",
+    id: "changshi-cs-71",
+    title: "唐宋古文运动",
+    entries: ["changshi-cs-71"],
+    text: "唐宋古文运动：唐韩愈、柳宗元与宋欧阳修等相继倡导的文体改革，主张恢复先秦两汉散体文传统（称「古文」），反对六朝以来浮艳的骈文，强调「文以明道」。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-72",
+    id: "changshi-cs-72",
+    title: "新乐府运动",
+    entries: ["changshi-cs-72"],
+    text: "新乐府运动：唐代中期由白居易、元稹倡导的诗歌革新运动。主张用新题写时事，诗歌须「为时而著」「为事而作」，发挥补察时政的作用，代表作品为白居易《新乐府》五十首。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-73",
+    id: "changshi-cs-73",
+    title: "花间派",
+    entries: ["changshi-cs-73"],
+    text: "花间派：晚唐五代词派，因后蜀赵崇祚编《花间集》得名。代表为温庭筠、韦庄。多写闺情离思，辞采秾艳、格调柔靡，是文人词的早期形态。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-74",
+    id: "changshi-cs-74",
+    title: "南唐词",
+    entries: ["changshi-cs-74"],
+    text: "南唐词：五代南唐君臣的词作，代表为李璟、李煜、冯延巳。李煜亡国后所作「问君能有几多愁，恰似一江春水向东流」等，将词的境界由艳情转向人生感慨。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-75",
+    id: "changshi-cs-75",
+    title: "辛派词人",
+    entries: ["changshi-cs-75"],
+    text: "辛派词人：南宋受辛弃疾影响的爱国词人群体，代表为陈亮、刘过、刘克庄、刘辰翁。词风豪迈悲壮，多写抗金复国之志，是豪放词在南宋的延续。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-76",
+    id: "changshi-cs-76",
+    title: "《诗经》",
+    entries: ["changshi-cs-76"],
+    text: "《诗经》：我国最早的诗歌总集，收录西周初年至春秋中叶诗歌 305 篇，又称「诗三百」。分风、雅、颂三部分，多用赋、比、兴手法，为儒家「五经」之一，是中国现实主义文学的源头。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-77",
+    id: "changshi-cs-77",
+    title: "《尚书》",
+    entries: ["changshi-cs-77"],
+    text: "《尚书》：又称《书》《书经》，我国最早的散文总集，记载虞、夏、商、周四代典章与训诰誓命，为儒家「五经」之一。名篇有《尧典》《禹贡》《盘庚》《无逸》等。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-78",
+    id: "changshi-cs-78",
+    title: "《左传》",
+    entries: ["changshi-cs-78"],
+    text: "《左传》：相传为左丘明所作，又称《左氏春秋》《春秋左氏传》。我国第一部叙事完备的编年体史书，记事起于鲁隐公元年，长于战争描写与外交辞令，《曹刿论战》《烛之武退秦师》出于此。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-79",
+    id: "changshi-cs-79",
+    title: "《战国策》",
+    entries: ["changshi-cs-79"],
+    text: "《战国策》：西汉刘向整理编订的国别体史书，记战国谋臣策士的言行。文章铺张扬厉、纵横捭阖，《邹忌讽齐王纳谏》《唐雎不辱使命》出于此。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-8",
+    id: "changshi-cs-8",
+    title: "话本",
+    entries: ["changshi-cs-8"],
+    text: "话本：宋元民间「说话」艺人讲唱的底本，多为白话短篇小说。分小说、讲史、说经、合生四家，讲史话本后发展为章回小说。今存《京本通俗小说》《清平山堂话本》及「三言二拍」中的宋元旧篇。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-80",
+    id: "changshi-cs-80",
+    title: "《史记》",
+    entries: ["changshi-cs-80"],
+    text: "《史记》：司马迁所著，原名《太史公书》。我国第一部纪传体通史，记上起黄帝、下至汉武帝三千年史事，分本纪、表、书、世家、列传五体，共 130 篇，被誉为「史家之绝唱，无韵之离骚」。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-81",
+    id: "changshi-cs-81",
+    title: "《汉书》",
+    entries: ["changshi-cs-81"],
+    text: "《汉书》：班固所著，我国第一部纪传体断代史，记西汉一朝 230 年史事，体例沿《史记》而改「书」为「志」、取消「世家」，共 100 篇。与《史记》《后汉书》《三国志》合称「前四史」。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-82",
+    id: "changshi-cs-82",
+    title: "《后汉书》",
+    entries: ["changshi-cs-82"],
+    text: "《后汉书》：南朝宋范晔所著，纪传体东汉史，与《史记》《汉书》《三国志》合称「前四史」。其中「志」部分取自司马彪《续汉书》。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-83",
+    id: "changshi-cs-83",
+    title: "《三国志》",
+    entries: ["changshi-cs-83"],
+    text: "《三国志》：西晋陈寿所著，纪传体国别史，分魏、蜀、吴三书，记三国史事。与《史记》《汉书》《后汉书》合称「前四史」，裴松之注为其增补大量史料。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-84",
+    id: "changshi-cs-84",
+    title: "《资治通鉴》",
+    entries: ["changshi-cs-84"],
+    text: "《资治通鉴》：北宋司马光主编，我国第一部编年体通史，记战国至五代 1362 年史事，共 294 卷，以「鉴于往事，有资于治道」为宗旨，为帝王治国之鉴，与《史记》并称「史学双璧」。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-85",
+    id: "changshi-cs-85",
+    title: "《世说新语》",
+    entries: ["changshi-cs-85"],
+    text: "《世说新语》：南朝宋刘义庆编，志人小说（笔记小说）的代表作。分德行、言语、政事、文学等三十六门，记汉末至东晋名士的言行轶事，语言精练隽永，《咏雪》《陈太丘与友期》出于此。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-86",
+    id: "changshi-cs-86",
+    title: "《搜神记》",
+    entries: ["changshi-cs-86"],
+    text: "《搜神记》：东晋干宝所著，志怪小说的代表作。记录神鬼怪异故事，保存大量古代神话与民间传说，《干将莫邪》《韩凭夫妇》出于此。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-87",
+    id: "changshi-cs-87",
+    title: "《文心雕龙》",
+    entries: ["changshi-cs-87"],
+    text: "《文心雕龙》：南朝梁刘勰所著，我国第一部体系完整的文学理论专著。全书 50 篇，分总论、文体论、创作论、批评论，主张「文之思也，其神远矣」，是古代文论的集大成之作。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-88",
+    id: "changshi-cs-88",
+    title: "《诗品》",
+    entries: ["changshi-cs-88"],
+    text: "《诗品》：南朝梁钟嵘所著，我国第一部诗歌评论专著。品评汉至梁 122 位五言诗人，分上、中、下三品，《诗品序》提出「滋味说」，与《文心雕龙》并称古代文论双璧。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-89",
+    id: "changshi-cs-89",
+    title: "《昭明文选》",
+    entries: ["changshi-cs-89"],
+    text: "《昭明文选》：南朝梁昭明太子萧统编，又称《文选》。现存最早的诗文总集，选录先秦至梁诗文，按赋、诗、骚、七等三十九类编排，是研究先秦至梁文学的重要选本，唐代有「《文选》烂，秀才半」之谚。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-9",
+    id: "changshi-cs-9",
+    title: "章回小说",
+    entries: ["changshi-cs-9"],
+    text: "章回小说：中国古典长篇小说的唯一形式。由宋元讲史话本发展而来，分回标目，每回有回目、以「话说」「且听下回分解」起结。明清鼎盛，《三国演义》《水浒传》《西游记》《红楼梦》为四大名著。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-90",
+    id: "changshi-cs-90",
+    title: "《乐府诗集》",
+    entries: ["changshi-cs-90"],
+    text: "《乐府诗集》：北宋郭茂倩编，辑录汉魏至唐五代乐府诗，按郊庙歌辞、燕射歌辞、相和歌辞、清商曲辞等十二类编排，是现存最完备的乐府诗总集，《孔雀东南飞》《木兰诗》皆赖此保存。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-91",
+    id: "changshi-cs-91",
+    title: "《古诗十九首》",
+    entries: ["changshi-cs-91"],
+    text: "《古诗十九首》：东汉末年文人五言诗的合称，因收入《昭明文选》得名。多写游子思妇的离愁与人生短促的感慨，语言浅近而意蕴深远，刘勰称其「五言之冠冕」，标志五言诗的成熟。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-92",
+    id: "changshi-cs-92",
+    title: "《唐诗三百首》",
+    entries: ["changshi-cs-92"],
+    text: "《唐诗三百首》：清代蘅塘退士孙洙编选，成书于乾隆年间。选唐诗三百余首，按体裁分卷，兼顾名家与各体，是两百年来流传最广、影响最大的唐诗普及选本。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-93",
+    id: "changshi-cs-93",
+    title: "《古文观止》",
+    entries: ["changshi-cs-93"],
+    text: "《古文观止》：清代吴楚材、吴调侯编选，成书于康熙年间。选先秦至明末散文 222 篇，按时代与文体编排，选目精当、评注简要，是流传最广的古文启蒙选本。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-94",
+    id: "changshi-cs-94",
+    title: "《说文解字》",
+    entries: ["changshi-cs-94"],
+    text: "《说文解字》：东汉许慎所著，我国第一部系统分析字形、考究字源的字典。收字 9353 个，首创 540 部首编排法，以小篆为字头，为文字学奠基之作。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-95",
+    id: "changshi-cs-95",
+    title: "《尔雅》",
+    entries: ["changshi-cs-95"],
+    text: "《尔雅》：我国最早的词典，约成书于战国至西汉初。按释诂、释言、释训、释亲等十九类编排，解释经传中的词语名物，为儒家「十三经」之一。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-96",
+    id: "changshi-cs-96",
+    title: "《论语》",
+    entries: ["changshi-cs-96"],
+    text: "《论语》：记录孔子及其弟子言行的语录体散文集，由孔子弟子及再传弟子编纂。共 20 篇，集中体现孔子「仁」「礼」的思想，为儒家「四书」之一，《子路、曾皙、冉有、公西华侍坐》出于此。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-97",
+    id: "changshi-cs-97",
+    title: "《孟子》",
+    entries: ["changshi-cs-97"],
+    text: "《孟子》：战国孟轲及其弟子所著，儒家「四书」之一。文章气势磅礴、长于论辩，善用比喻排比，提出「民为贵，社稷次之，君为轻」的民本思想。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-98",
+    id: "changshi-cs-98",
+    title: "《庄子》",
+    entries: ["changshi-cs-98"],
+    text: "《庄子》：战国庄周及其后学所著，道家经典，又称《南华经》。文章想象奇诡、汪洋恣肆，多寓言，《逍遥游》《齐物论》《养生主》为代表。",
+    translation: "",
+    translationSource: ""
+  },
+  {
+    work: "w-changshi-cs-99",
+    id: "changshi-cs-99",
+    title: "《荀子》",
+    entries: ["changshi-cs-99"],
+    text: "《荀子》：战国荀况（荀子）所著，先秦儒家的重要著作。主张「制天命而用之」「化性起伪」，文章说理缜密、长于譬喻，《劝学》《天论》为其名篇。",
+    translation: "",
+    translationSource: ""
+  },
   {
     work: "w-chengyu-cy-1",
     id: "chengyu-cy-1",

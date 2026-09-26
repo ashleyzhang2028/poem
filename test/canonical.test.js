@@ -20,7 +20,7 @@ loadData(sb, [
   'data/poems-6.js', 'data/poems-7.js', 'data/poems-8.js', 'data/poems-9.js', 'data/poems-10.js',
   'data/poems-11.js', 'data/poems-12.js', 'data/index.js', 'data/poems-classic.js',
   'data/poems-yuefu.js', 'data/poems-tangshi.js', 'data/poems-songci.js', 'data/poems-guwen.js', 'data/poems-zhaoming.js', 'data/poems-yuanqu.js',
-  'data/poems-jinxiandai.js', 'data/poems-chengyu.js',
+  'data/poems-jinxiandai.js', 'data/poems-chengyu.js', 'data/poems-changshi.js',
   'data/site-index.js', 'data/works-map.js', 'data/works-index.js',
   'data/canonical-texts.js'
 ]);
@@ -31,9 +31,15 @@ const WI = sb.WorksIndex;
 const byId = {};
 sb.SITE_INDEX.forEach(p => { byId[p.id] = p; });
 
-const FULL_BOOKS = ['zhaoming', 'guwen', 'songci', 'tangshi', 'classic', 'yuanqu', 'yuefu', 'jinxiandai', 'chengyu'];
+// 「全量收归主表」的各部：除课内（poems）外的每一部集子，一律从 SITE_BOOKS 取，
+// 不写死名单 —— 加第十一部时这里自己跟着算（Issue #342）
+const FULL_BOOKS = (sb.SITE_BOOKS || []).map(function (b) { return b.id; })
+  .filter(function (id) { return id !== 'poems'; });
 const FULL_BOOK_SET = {};
 FULL_BOOKS.forEach(b => { FULL_BOOK_SET[b] = true; });
+
+// 词条式集子（文学常识一类）：正文即释义，本来就没有白话译文
+const NO_TRANS = ['changshi'];
 
 const multiEntries = MASTER.filter(m => m.entries.length >= 2);
 const singleEntries = MASTER.filter(m => m.entries.length === 1);
@@ -47,7 +53,7 @@ const fullExpected = [];
 FULL_BOOKS.forEach(book => {
   sb.SITE_INDEX.forEach(p => {
     if (!p || p.isBook || p.book !== book || !p.id) return;
-    if (!p.text && !p.translation) return;
+    if (NO_TRANS.indexOf(book) >= 0 ? !p.text : (!p.text || !p.translation)) return;
     fullExpected.push(p.id);
   });
 });
@@ -64,8 +70,8 @@ chk(fullExpected.every(id => singleEntries.some(m => m.id === id)) ||
   (fullExpected.filter(id => !MASTER.some(m => (m.entries || []).indexOf(id) >= 0)).slice(0, 6).join('、') || '无') + '）');
 chk(MASTER.every(m => m.id && m.work && Array.isArray(m.entries) && m.entries.length >= 1),
   '每条都带 id / work / entries（跨集重复至少两条条目指它）');
-chk(MASTER.every(m => m.text && m.translation),
-  '每条都有正文与译文（主表是唯一一份正文，不许有空文）');
+chk(MASTER.every(m => m.text && (m.translation || NO_TRANS.some(b => m.id.indexOf(b + '-') === 0))),
+  '每条都有正文（词条式集子无译文，其余都要求正文与译文齐备；主表是唯一一份正文，不许有空文）');
 
 const noCourse = multiEntries.filter(m => m.id.indexOf('poems-') !== 0);
 chk(noCourse.every(m => m.entries.every(e => e.indexOf('poems-') !== 0)),
@@ -206,7 +212,8 @@ const BOOK_VARS = {
   yuanqu: ['data/poems-yuanqu.js'],
   yuefu: ['data/poems-yuefu.js'],
   jinxiandai: ['data/poems-jinxiandai.js'],
-  chengyu: ['data/poems-chengyu.js']
+  chengyu: ['data/poems-chengyu.js'],
+  changshi: ['data/poems-changshi.js']
 };
 
 const stripped = [];

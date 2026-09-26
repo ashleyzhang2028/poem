@@ -64,7 +64,8 @@ const BOOKS = [
   { file: 'data/poems-yuanqu.js', prefix: 'yuanqu-' },
   { file: 'data/poems-yuefu.js', prefix: 'yuefu-' },
   { file: 'data/poems-jinxiandai.js', prefix: 'jinxiandai-' },
-  { file: 'data/poems-chengyu.js', prefix: 'chengyu-' }
+  { file: 'data/poems-chengyu.js', prefix: 'chengyu-' },
+  { file: 'data/poems-changshi.js', prefix: 'changshi-' }
 ];
 
 const FIELD = /^(\s+)(text|translation|translationSource):\s*"/;
@@ -82,6 +83,9 @@ function rewriteEntry(block, masterId) {
   const lines = block.split('\n');
   const kept = [];
   let removed = 0;
+  // 词条式集子（文学常识一类）正文即释义，本来就没有白话译文 ——
+  // 只有 text 一行该摘；其余各部的条目照旧是 text/translation/translationSource 三行
+  const expected = /^\s*translation:\s*"/m.test(block) ? 3 : 1;
   for (let i = 0; i < lines.length; i += 1) {
     const line = lines[i];
     if (FIELD.test(line)) { removed += 1; continue; }
@@ -98,8 +102,9 @@ function rewriteEntry(block, masterId) {
     if (REF_LINE.test(line)) continue;
     kept.push(line);
   }
-  if (removed !== 3) {
-    throw new Error('条目应恰好含 text / translation / translationSource 三行，实际摘掉 ' +
+  if (removed !== expected) {
+    throw new Error('条目应恰好摘掉 ' + expected + ' 行（' +
+      (expected === 3 ? 'text / translation / translationSource' : 'text') + '），实际摘掉 ' +
       removed + ' 行 —— 数据文件写法变了，脚本要跟着改\n' + block.slice(0, 200));
   }
 

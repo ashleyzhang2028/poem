@@ -151,15 +151,22 @@ chk(inline.length === 0,
   'data/poems-yuefu.js 里正文只留 textRef（不内联副本；实际残留 ' + inline.length + ' 处）');
 
 console.log('\n=== 四、注册与排序：乐府集在唐诗前，元曲在宋词后 ===');
-chk(sandbox.SITE_BOOKS.map(b => b.id).join(',') ===
-  'poems,classic,yuefu,tangshi,songci,yuanqu,guwen,jinxiandai,zhaoming,chengyu',
-  'SITE_BOOKS 的次序正确（Issue #244 / #308）：课内 · 小古文 · 乐府集 · 唐诗 · 宋词 · 元曲 · 古文观止 · 近现代诗词 · 昭明文选 · 中华成语故事');
+// 只守有业务含义的相对次序，不写死完整名单（加第十一部时这里不该红）
+(function () {
+  const ids = sandbox.SITE_BOOKS.map(b => b.id);
+  const at = id => ids.indexOf(id);
+  chk(at('poems') === 0 && at('yuefu') >= 0 && at('yuefu') < at('tangshi') &&
+      at('songci') < at('yuanqu') && at('jinxiandai') < at('zhaoming') &&
+      at('zhaoming') < at('chengyu'),
+    'SITE_BOOKS 的相对次序正确（Issue #244 / #308）：课内为首 · 乐府在唐诗前 · 元曲在宋词后 · 昭明与成语在后' +
+    '（实际 ' + ids.join(',') + '）');
+})();
 chk(sandbox.SITE_BOOKS.filter(b => b.id === 'yuefu')[0].name === '乐府集',
   '集子名写作「乐府集」');
 
 const lib = read('js/library.js');
 const libOrder = (lib.match(/id: "([a-z]+)",\n      name:/g) || []).map(s => s.match(/id: "([a-z]+)"/)[1]);
-chk(libOrder.join(',') === 'poems,classic,yuefu,tangshi,songci,yuanqu,guwen,jinxiandai,zhaoming,chengyu',
+chk(libOrder.join(',') === sandbox.SITE_BOOKS.map(b => b.id).join(','),
   '入口页卡片次序与 SITE_BOOKS 同源（实际 ' + libOrder.join(',') + '）');
 
 const si = read('data/site-index.js');
