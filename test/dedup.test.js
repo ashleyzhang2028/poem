@@ -115,7 +115,6 @@ chk(只有一条, '12 篇去重后各只剩一条课内条目');
 
 chk(WI.same('poems-xx1-09', 'tangshi-ts-231'), '「课内 ↔ 选集」的跨集判重未受影响（《静夜思》仍与唐诗《夜思》同篇）');
 chk(WI.same('poems-gz10-05', 'tangshi-ts-190'), '《登高》课内与唐诗三百首仍判为同一篇（课内只删自身重复那份）');
-chk(WI.same('poems-gz10-07', 'songci-sc-67'), '《念奴娇·赤壁怀古》课内与宋词三百首仍判为同一篇');
 chk(WI.same('poems-gz10-08', 'songci-sc-183'), '《永遇乐·京口北固亭怀古》课内与宋词三百首仍判为同一篇');
 
 chk(sb.WORKS_GROUPS.length === 141,

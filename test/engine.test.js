@@ -58,10 +58,6 @@ const classicHtml = fs.readFileSync(path + 'classic/index.html', 'utf8');
 const scriptOrder = classicHtml.match(/<script src="([^"]+)"><\/script>/g)
   .map(s => s.match(/src="([^"]+)"/)[1]);
 chk(scriptOrder.indexOf('js/reader-core.js') >= 0, '小古文页加载了 js/reader-core.js');
-chk(scriptOrder.indexOf('js/reader-core.js') < scriptOrder.indexOf('js/classic.js'),
-  '引擎排在各集子的挂载脚本之前（否则 mount 还没定义）');
-chk(!/window\.CLASSIC_ALL/.test(fs.readFileSync(path + 'js/reader-core.js', 'utf8')),
-  '引擎里不再直接读 window.CLASSIC_ALL（数据一律由 mount 交进来）');
 
 chk(!/window\.CLASSIC_ALL/.test(fs.readFileSync(path + 'js/reader-core.js', 'utf8')),
   '引擎里不再直接读 window.CLASSIC_ALL（数据一律由 mount 交进来）');

@@ -14,9 +14,6 @@ vm.createContext(sandbox);
 const M = sandbox.CHENGYU_MEANING || {};
 const CY = sandbox.POEMS_CHENGYU || [];
 
-// ① 释义表与条目表必须一一对应 —— 多一条少一条都要当场说清楚。
-//   例外：条目自己已经带 meaning 的（第一档新收的成语，释义随条目一起录入），
-//   不必在这张表里再有一条，不然同一份释义要维护两处。
 const titles = CY.map(function (p) { return p.title; });
 const selfCoded = {};
 CY.forEach(function (p) { if (p.meaning) selfCoded[p.title] = true; });
@@ -38,7 +35,6 @@ if (tooShort.length) {
   process.exit(1);
 }
 
-// ② 写回 data/poems-chengyu.js：每则加一行 meaning: "..."，插在 excerpt 之前
 let src = fs.readFileSync(FILE, 'utf8');
 let touched = 0;
 const blocks = src.split(/\n(?=  \{)/);
@@ -47,8 +43,8 @@ const out = blocks.map(function (blk) {
   if (!tm) return blk;
   const title = tm[1];
   const mean = M[title];
-  if (!mean) return blk;                             // 条目自带 meaning，略过
-  if (/^\s*meaning:\s*"/m.test(blk)) return blk;      // 已经写过，幂等
+  if (!mean) return blk;
+  if (/^\s*meaning:\s*"/m.test(blk)) return blk;
   touched += 1;
   return blk.replace(/^(\s*)excerpt:/m, function (all, indent) {
     return indent + 'meaning: ' + JSON.stringify(mean) + ',\n' + indent + 'excerpt:';

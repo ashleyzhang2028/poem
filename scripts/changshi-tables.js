@@ -1,22 +1,3 @@
-/* ===========================================================================
-   文学常识 · 谥号 / 庙号 / 年号三题改表格（Issue #347 内容侧）
-   ---------------------------------------------------------------------------
-
-   用户原话：「新加的这些内容有些内容可不可以以表格形式显示？例如年表，
-   恶谥，这些，全是一段一段文字显得杂乱。」
-
-   三题里「字 → 释义」「人 → 三个称号」「帝 → 年号」这些天生是表的内容，
-   原先按「· 一行一句」排，读起来是一段一段文字。本脚本把它们改写成
-   `scripts/lib/table.js` 生成的**纯文本表格**（阅读器会渲染成真 `<table>`）。
-
-   为什么单独一个脚本、而不是直接改 data/text-master.js：
-     那份是生成文件（scripts/build-text-master.js 出的），手改会被下次重跑覆盖。
-     文本的**源头在磁盘上只剩这一份**，所以改写也落在这一份里、当场写回。
-     脚本幂等：已经是表格的段落跳过不重写。
-
-   用法：node scripts/changshi-tables.js
-   ========================================================================== */
-
 const fs = require('fs');
 const path = require('path');
 const T = require('./lib/table.js');
@@ -38,9 +19,6 @@ if (!MASTER.length) {
 const byId = {};
 MASTER.forEach(function (m) { if (m && m.id) byId[m.id] = m; });
 
-/* ── 一、美谥 / 恶谥字义表 ──────────────────────────────────────────────
-   原文一行一字：「文　经纬天地、道德博闻、学勤好问、慈惠爱民。」
-   改成两列：谥字 ｜ 字义（字义里的顿号保留，一列读完） */
 const MEI = [
   ['文', '经纬天地、道德博闻、学勤好问、慈惠爱民、锡民爵位'],
   ['武', '刚强直理、威强敵德、克定祸乱、刑民克服、夸志多穷'],
@@ -84,7 +62,6 @@ const E = [
   ['缪（穆）', '名与实爽', '秦穆公一作秦缪公（通假，非恶谥）']
 ];
 
-
 const FENLEI = [
   ['上谥（美谥 / 褒谥）', '扬善赋美，表彰功业德行', '文、武、成、康、昭、宣、明、元、孝、献'],
   ['中谥（平谥）', '平庸之主与遭遇不幸者，同情多于责难', '哀、愍、怀、殇、悼、慧、僖'],
@@ -100,8 +77,6 @@ const NIANHAO_ZI = [
   ['道德文教类', '崇尚儒学、标榜文治', '文德、贞观、文治、崇文、明道、崇宁、宣和、咸淳']
 ];
 
-/* ── 二、历代帝王谥号 / 庙号 / 年号 / 对照表 ──────────────────────────
-   一律三列：朝代 / 序 ｜ 称号 ｜ 人 + 说明 */
 const SHI_PRE = [
   ['周', '太王、王季（皆追尊）', '古公亶父、季历，谥法最早的实践'],
   ['周', '文王昌、武王发', '西周开国之君，美谥'],
@@ -400,14 +375,6 @@ const DUIZHAO = [
   ['清', '载湉', '德宗', '景皇帝', '光绪', '光绪帝']
 ];
 
-/* ── 三、写回 ────────────────────────────────────────────────────────────
-   text-master.js 是生成文件，但这里的改写**不能**靠重跑 build 脚本还原：
-   正文的源头在磁盘上只剩这一份。所以改写直接落回该文件的字面量里，
-   只动指定条目的 `text:` 那一行，其余一字不碰。
-   格式（build-text-master.js 的 out += …）：
-       `  {\n    work: "…",\n    id: "…",\n    …\n    text: "<JSON>",\n`
-   所以「从 `    text: "` 到该行行尾」正好是一个 JSON 字符串，可以就地替换。 */
-
 const REWRITE = {};
 
 function put(id, text) {
@@ -419,7 +386,6 @@ function put(id, text) {
   REWRITE[id] = text;
 }
 
-/* 美谥 / 恶谥：标题 + 空行 + 表 + 空行 + 结语 */
 put('changshi-cs-207', [
   '常用于褒扬的美谥（上谥）字义速查。同一字在不同典籍与朝代可有多条字义，',
   '议谥时择其一以合行迹，故史书中同一谥字用于不同人时取义可以不同。',
@@ -534,8 +500,6 @@ put('changshi-cs-221', [
   '④ 谥号通常最长（明清达二十余字），年号最短（二字），故日常记忆多以年号为主。'
 ].join('\n'));
 
-/* ── 四、改写（幂等：已经是表格的条目原样跳过）───────────────────────── */
-
 const escLine = function (id) {
   const s = JSON.stringify(id);
   return '    id: ' + s + ',';
@@ -557,8 +521,7 @@ Object.keys(REWRITE).forEach(function (id) {
     console.error('✗ 在文件里找不到 ' + id + ' 那一条');
     process.exit(1);
   }
-  /* 该条目的 text 行：从 id 行往后第一个 `    text: "`，到行尾 */
-  const from = out.indexOf('    text: ', at);
+    const from = out.indexOf('    text: ', at);
   const lineEnd = out.indexOf('\n', from);
   const oldLine = out.slice(from, lineEnd);
   const oldValue = JSON.parse(oldLine.slice('    text: '.length).replace(/,$/, ''));
@@ -569,8 +532,7 @@ Object.keys(REWRITE).forEach(function (id) {
   out = out.slice(0, from) + '    text: ' + JSON.stringify(newText) + ',' + out.slice(lineEnd);
   changed++;
 
-  /* 摘句（列表页那一行）也要跟着换，否则列表里还写着旧的一句话 */
-  void escLine;
+    void escLine;
 });
 
 fs.writeFileSync(FILE, out);

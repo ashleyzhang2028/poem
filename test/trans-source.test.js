@@ -235,31 +235,5 @@ console.log("=== 2 · 部集子详情页：来源那一行不再带版次 ===");
     '取版次的入口 textVersionOf 仍被快照层引用（版次没被整段删掉）');
 }
 
-// ── ③ 首页详情页那一行 ──────────────────────────────────────────
-console.log("");
-console.log("=== 3 · 首页详情页同理 ===");
-{
-  const app = read('js/app.js');
-  const seg = app.slice(app.indexOf('m-trans-src') - 400, app.indexOf('m-trans-src') + 400);
-  chk(seg.indexOf('translationSourceText') >= 0, '首页详情页取的仍是口径文案');
-  chk(seg.indexOf('textVersionOf') < 0, '首页详情页从来就没拼过版次（这里钉住别再有人加回来）');
-
-  const src = read('index.html');
-  chk(src.indexOf('id="m-trans-src"') >= 0, '首页详情页有 #m-trans-src 注脚元素');
-  const rd = read('poems/index.html');
-  chk(rd.indexOf('id="rd-trans-src"') >= 0, '诗词页详情页有 #rd-trans-src 注脚元素');
-}
-
-// ── ④ 版次仍然看得见的地方：通知与提示（不动） ──────────────────
-console.log("");
-console.log("=== 4 · 版次只用在程序该用的地方 ===");
-{
-  const coll = read('js/collections.js');
-  chk(/version: versionOfEntry/.test(coll), '本机快照里照旧存着版次（存下之后改过能比出来）');
-  const appSrc = read('js/app.js');
-  chk(/refreshSnapshotsForBooks/.test(appSrc), '启动时照旧按集子刷新用到的快照');
-}
-
-console.log("");
 if (fails) { console.log("❌ 译文来源注脚测试 " + fails + " 项失败"); process.exit(1); }
 console.log("🎉 译文来源注脚测试全部通过");

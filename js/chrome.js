@@ -35,13 +35,6 @@
       '<circle cx="10.6" cy="10.6" r="6.2"/>' +
       '<path d="M15.2 15.2 20.4 20.4"/></svg>',
 
-    // 「古诗词大会」那一格（底栏正中间那一颗）。形状是**五瓣花** ——
-    // 取自「飞花令」：五片等分花瓣（每片 72°）加一颗花心。
-    // 花心用**暖金实心**（#cf9a4a），是五格里唯一一处彩色 ——
-    // 底栏其余四格都是素色线稿（`currentColor`），中间这一颗靠这一点暖色
-    // 「跳出来」，不用光晕、不用底衬，也不随选中态变色（Issue #342）。
-    // 花瓣路径只写一片，其余四片用 `<g rotate>` 绕 (12,12) 转 72° 得来：
-    // 这样五瓣**严格等分**，手写五个路径一定会歪。
     tabGame:
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
       '<g transform="rotate(0 12 12)"><path d="M12 12.7c-1.95-1.55-2.95-3.4-2.95-5.3 0-1.95 1.02-3.6 2.95-5.5 1.93 1.9 2.95 3.55 2.95 5.5 0 1.9-1 3.75-2.95 5.3Z"/></g>' +
@@ -76,21 +69,7 @@
   var ROUTES = {
     home: "/",
 
-    // 「古诗词大会」那一格的去处：**它自己的一页** `/dahui/`（Issue #356）。
-    //
-    // ⚠️ 这一条**推翻**了两条老口径，别再把它们当依据：
-    //    ① §4.15 ⑧「不新开页面，就地叠在 `/poems/` 那一层」——
-    //       用户 2026-09-26 明确要求「拆成独立页，不应该显示各个古诗列表和详情页，
-    //       而是各种试题，模拟及竞赛」，于是大会有了自己的页；
-    //    ② §4.70 ④「那一格指向 `/poems/?game=1`」—— 那是叠层时代的地址，
-    //       现在是 `/dahui/`；老地址留着一条**改道**（见 `js/game.js` 的 `init()`）。
-    //
-    // 用具名目录而不是查询参数的理由有两条：全站所有页面都是
-    // 「目录 + 自己的 index.html」（`/poems/`、`/library/`、`/mine/` ……），
-    // `?game=1` 是全站唯一一条参数路由，得靠 `currentRoute()` 专门特判；
-    // 而且参数路由给出的地址**不是一页**，用户存下来的书签也就不是。
-    // 名字取拼音 `dahui`：与 `/yuanqu/`、`/chengyu/`、`/zhaoming/` 同一条命名习惯。
-    game: "/dahui/",
+        game: "/dahui/",
     poems: "/poems/",
     library: "/library/",
     classic: "/classic/",
@@ -274,12 +253,7 @@
     return null;
   }
 
-  // ⚠️ 兜底那一支从前去首页 —— 而顶栏上那颗键是「返回」（它的 title 与
-  // aria-label 都写着「返回」）。两者对不上时，那颗键落在哪儿谁也说不准：
-  // 后台那一页正因为没写 `data-back` 而走到这里（Issue #320 用户点了它，
-  // 落到的不是「我的」）。现在兜底认底栏那一颗「我的」，与 `data-back="/mine/"`
-  // 是同一个去处；底栏上的页面本来就点不亮它，所以首页那边不受影响。
-  function pageBackHref() {
+    function pageBackHref() {
     var back = bodyData("back");
     if (back && /^\/[^\/\s]/.test(back)) return back;
     if (dockEnabled()) return routeHref("mine");
@@ -317,43 +291,24 @@
     });
   }
 
-  // 底栏五格（Issue #342：用户要求把「古诗词大会」挪进导航栏正中间）。
-  //
-  // ⚠️ 次序是**有含义的**，不是随手排的：「大会」插在**第三格**，
-  //    因为它左边两格（背诵 / 课外）都是「读」，右边两格（搜索 / 我的）都是「用」，
-  //    中间这一格是「玩」—— 五格正中最醒目，正是用户要的「很吸引人」。
-  //    改次序前先读这一节：`docs/architecture.md` §4.66 ①。
-  //
-  // ⚠️ 这一条**推翻**了 §4.66 ⑨ 那句「不在底栏加第五格（底栏四格已满）」。
-  //    那是当时（还在谈考试层落点）的不加，用户 2026-09-26 明确要求加 ——
-  //    口径改了，文档也跟着改，不是不管它。
-  var DOCK_ITEMS = [
-    { key: "home", href: "/", icon: GLYPHS.tabPoem, label: "背诵", desc: "课内古诗词，按当前复习算法安排复习" },
-    { key: "library", href: "/library/", icon: GLYPHS.tabLibrary, label: "课外", desc: "课内诗词 / 小古文 / 乐府集 / 唐诗 / 宋词 / 元曲 / 古文观止 / 近现代诗词 / 昭明文选 / 中华成语故事 / 文学常识" },
-    // ⚠️ 这一格的 `desc`（就是 `title`）**不许把四个玩法的名字列出来** ——
-    //    「飞花令 / 题库复习 / 模拟考试 / 正式考试」这几个名字的落点只有三处：
-    //    `js/entitlement.js`（能力表）、`js/exam.js`（形态表）、`js/game.js`（页面层）。
-    //    底栏这里再抄一份，就多一处迟早对不上的（`test/ops.test.js` 有断言守着）。
-    { key: "game", href: "/dahui/", icon: GLYPHS.tabGame, label: "大会", desc: "古诗词大会：比拼与考试都在这一页" },
+    var DOCK_ITEMS = [
+    { key: "home", href: "/", icon: GLYPHS.tabPoem, label: "背诵", desc: "课内古诗词，按复习算法安排" },
+    { key: "library", href: "/library/", icon: GLYPHS.tabLibrary, label: "课外", desc: "十一部集子，课外阅读都在这" },
+        { key: "game", href: "/dahui/", icon: GLYPHS.tabGame, label: "大会", desc: "比拼与考试" },
     { key: "search", href: "/search/", icon: GLYPHS.tabSearch, label: "搜索", desc: "全站篇目一次搜遍" },
-    { key: "mine", href: "/mine/", icon: GLYPHS.tabMineImg, label: "我的", desc: "头像 / 昵称 / 账号 / 本机数据" }
+    { key: "mine", href: "/mine/", icon: GLYPHS.tabMineImg, label: "我的", desc: "头像 · 昵称 · 账号 · 本机数据" }
   ];
 
   function dockKey(key) {
     if (key === "settings") return "mine";
 
-    // `/dahui/` 那一页的 body 上写的就是 `data-nav="game"`（`pageKey()` 取它），
-    // 于是这里不必猜、也不必看查询串：底栏中点亮的正是中间那一格。
-    // `/poems/` 上那颗「古诗词大会」入口**不再**就地掀层（Issue #356 拆页），
-    // 于是 `js/game.js` 也不必再临时改 `data-nav` 了。
-    if (key === "game") return "game";
+        if (key === "game") return "game";
 
     if (key === "classic" || key === "yuefu" || key === "tangshi" || key === "songci" ||
         key === "guwen" || key === "zhaoming" || key === "yuanqu" ||
         key === "jinxiandai" || key === "chengyu" || key === "changshi") return "library";
 
-    // `/poems/`（大会那层没掀开时）仍归「课外」—— 它先是诗词列表。
-    if (key === "poems") return "library";
+        if (key === "poems") return "library";
 
     if (key === "progress") return "home";
     return key;
@@ -458,22 +413,7 @@
     document.dispatchEvent(ev);
   }
 
-  // 顶栏就位时**问一次服务端「我是谁」**（Issue #274）。
-  //
-  // 为什么放在这里、而不是各页各自写一遍：`js/chrome.js` 是**每一张有导航的
-  // 页面都要加载的那一份**（它负责把顶栏 / 底栏装上去），所以这里的一发
-  // 覆盖「从首页到设置」全部页面 —— 而各页自己写的话，就是「有的页认、
-  // 有的页不认」，正是用户报的那个症状。
-  //
-  // ⚠️ 它只做一件事：把服务端那份答案取回来（`AccountApi.refreshMe()`
-  //    会写进 `poem_plan_v1`，并喊一声 `entitlementchange`），
-  //    **不碰任何界面**。要跟着这一份答案重画的页面去听那个事件
-  //    （`js/settings-nav.js` 早就在听了），页面自己那一处该不该重画、
-  //    画成什么样，仍归页面自己。
-  //
-  // ⚠️ 结果与三档：`E_NO_SESSION`（真的没登录）/ 没配服务端 / 连不上，
-  //    都**什么都不做** —— 未登录是正常状态，不是错误，不该弹任何提示。
-  function refreshAccount() {
+    function refreshAccount() {
     var g = typeof globalThis !== "undefined" ? globalThis : null;
     var M = (g && g.AccountApi) || null;
     if (!M || typeof M.refreshMe !== "function") return;
@@ -540,14 +480,7 @@
     return p || "/";
   }
 
-  // 当前这一页是哪个「路由键」。
-  //
-  // ⚠️ 这里从前有一段特判：**先按整条地址（含查询串）比，再退回去掉查询串比** ——
-  //    因为那时「大会」那一格的地址是 `/poems/?game=1`，与 `/poems/` 自己的路由
-  //    **路径相同、只差一个查询串**，只看 pathname 的话 `game` 会把 `poems` 盖住。
-  //    大会拆成 `/dahui/` 一页之后（Issue #356），两条路由的路径**不同了**，
-  //    查询串不再是判据 —— 那段特判连同它的坑一起删掉。
-  function currentRoute() {
+    function currentRoute() {
     var p = currentPath();
     var key;
     for (key in ROUTES) {
@@ -556,9 +489,7 @@
     return "home";
   }
 
-  // 去掉查询串与 `#…`，规范化结尾的 `/`。
-  // 路由一律**只认路径**：网址上带什么参数都不改变「这是哪一页」。
-  function trimHref(href) {
+    function trimHref(href) {
     var v = String(href).split("#")[0].split("?")[0];
     v = v.replace(/\/index\.html$/, "/").replace(/\/+$/, "");
     return v || "/";
@@ -584,23 +515,14 @@
     var ic = item ? item.querySelector(".dock-icon") : null;
     if (!ic) return;
 
-    // ⚠️ 换子用户时**必然重画**、且把旧的那张 `<img>` 拆掉再插新的
-    //    （Issue #320）。理由有两条，都不是「多此一举」：
-    //    ① 旧 `<img>` 还挂着上一个孩子那张图 —— 内容一样就不重画的话，
-    //       它就一直挂在那儿；
-    //    ② 「本机那份字节优先」意味着换的是这个 `<img>` 自己看到的地址，
-    //       同一个 src 连画两次，浏览器拿的还是它手里那份缓存。
-    //    代价只是切档那一瞬间一次重排，底栏一颗 26px 的圆。
-    clearDockAvatar();
+        clearDockAvatar();
     var want = dockMineHtml();
     if (!want || ic.innerHTML === want) return;
 
     ic.innerHTML = want;
   }
 
-  // 把底栏那颗头像的空槽清出来（没有头像字节时它画的是「诗」这个字印，
-  // 所以不留旧 `<img>` 也一样看得见东西）。
-  function clearDockAvatar() {
+    function clearDockAvatar() {
     var item = dockMineItem();
     var ic = item ? item.querySelector(".dock-icon") : null;
     if (!ic || !ic.innerHTML) return;
@@ -610,12 +532,7 @@
     ic.innerHTML = GLYPHS.tabMineImg.replace("__SRC__", "");
   }
 
-  // 底栏「哪一格亮着」的就地重画。**只有 `active` 这一个属性会变**，
-  // 所以不重挂 `<nav>`（重挂会把 `bindDock` 的监听与 `.dock` 的入场动画一起丢掉）。
-  // 谁要它：`/poems/` 上那层「古诗词大会」掀开 / 收起时（`js/game.js`），
-  // 地址栏不动、页面不刷新，可底栏正中间那一格必须当场亮起来 / 灭掉。
-  // 判据仍是 `dockKey(pageKey())` 一处算 —— 不在这里另写一套「谁亮」的规则。
-  function paintDock() {
+    function paintDock() {
     var nav = document.getElementById("site-dock");
     if (!nav) return;
     var on = dockKey(pageKey());
@@ -636,9 +553,7 @@
     window.addEventListener("pageshow", refreshDockAvatar);
     window.addEventListener("storage", refreshDockAvatar);
     window.addEventListener("poem:avatar-change", refreshDockAvatar);
-    // 子用户切走之后（`family-change`），底栏那颗头像必须重画 ——
-    // 顶栏那份由各页自己重画（TopBar/brand 与头像无关），底栏这一颗归这里。
-    window.addEventListener("family-change", refreshDockAvatar);
+        window.addEventListener("family-change", refreshDockAvatar);
     document.addEventListener("family-change", refreshDockAvatar);
   }
 
@@ -701,8 +616,7 @@
 
     openSettings: openSettings,
 
-    // 见 `paintDock`：给「就地掀一层、地址栏不动」的那些页面用（目前只有大会）。
-    setDock: function () { paintDock(); },
+        setDock: function () { paintDock(); },
 
     setPage: function (name) {
       pageOverride = name == null ? "" : String(name);

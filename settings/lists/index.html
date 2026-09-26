@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#2f6055" />
   <title>我的清单 · 跬步</title>
-  <meta name="description" content="跬步设置 · 我的清单：自选背诵的导入、导出、改名、删除、整组移出与顺序调整。" />
+  <meta name="description" content="跬步设置 · 我的清单：自选背诵的增删改查。" />
   <meta name="format-detection" content="telephone=no" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -94,12 +94,7 @@
   <script src="/data/site-index.js"></script>
 
   <script src="/js/auth-core.js"></script>
-    <!--
-    登录状态（Issue #274）：`js/account-api.js` 是**问服务端「我是谁」**的唯一出口，
-    而 `js/chrome.js` 在顶栏就位时会问一次（答完喊 `account:ready`）。
-    这两份脚本因此是**每一张有导航的页面**都要有的：缺一张，那一张就永远
-    说自己是游客 —— 而用户看到的正是「从首页到设置各页面还是没登录」。
-  -->
+
   <script src="/js/auth-api.js"></script>
   <script src="/js/account-api.js"></script>
   <script src="/js/entitlement.js"></script>

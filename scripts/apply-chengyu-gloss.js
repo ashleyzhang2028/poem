@@ -1,24 +1,4 @@
 #!/usr/bin/env node
-/* 把正文里的编者括注搬进「语源 / 典故」栏
-   --------------------------------------------------------------------------
-   首版录入时，151 则成语的正文前面（或后面、或夹在中间）挂着一段编者写的
-   括注：「（佛典）」「（语本元曲）」「（苏秦）」「（原文作『众心成城』）」……
-   那不是任何一本书里的句子，却和原文混在同一栏里 —— 读者分不清哪句是古人
-   说的、哪句是编者加的。
-
-   本脚本做三件事（幂等，反复跑结果不变）：
-
-     ① 正文（text）：把那段括注摘掉，只留干净的原文；
-     ② 译文（translation）：译文里若混着同一段括注的直译（「（字面意思是）…」
-        「（此为小说家言）」），一并摘掉；
-     ③ 「语源 / 典故」（gloss）：从 data/chengyu-gloss.js 写入一句大白话说明。
-
-   data/text-master.js 是生成物，所以正文与译文的改动**落在这里、放在流水线
-   最后**：scripts/apply-chengyu-gloss.js 排在 build-works-map.js 之后，
-   重跑 build-text-master.js 也不会把改动丢掉（它从 data/poems-chengyu.js
-   的差异里恢复会失效，故本脚本直接改主表，并在 data/poems-chengyu.js 上
-   同步 gloss 一栏 —— 两处都改，一处不落）。
-*/
 const fs = require('fs');
 const vm = require('vm');
 const path = require('path');
@@ -38,10 +18,7 @@ const CY = sandbox.POEMS_CHENGYU || [];
 const idOf = {};
 CY.forEach(function (p) { idOf[p.title] = 'chengyu-' + p.id; });
 
-// 括注：一段「（…）」，正文里至多两处（开头、结尾，或开头 + 中间），
-// 中间那处后面还跟着正文时不算（那是原书里的人物夹注，如「师（达摩）终日面壁」）。
 const LEAD = /^（[^（）]*）\s*/;
-// 译文里的编者附注：整句括起来的「（字面意思是…）」「（此为小说家言…）」等
 const TRANS_ANN = /（(?:字面意思是|此为小说家言|此语出|语出|本指|喻指|即|原文作|同)[^（）]*）/g;
 
 function stripText(text) {
@@ -55,10 +32,7 @@ function stripText(text) {
   }
   const tail = t.match(/（[^（）]*）\s*$/);
   if (tail) { t = t.slice(0, t.length - tail[0].length); moved += 1; }
-  // 剩下的中间括注：只有整句括注、且括注里含「语本 / 佛典 / 后世语 / 现代语 /
-  // 诗法 / 元曲 / 小说家言 / 禅典 / 西洋寓言 / 法寓言 / 原文作 / 同「」这类
-  // 编者标记时才摘 —— 原书的人物夹注留着。
-  const MID = /（[^（）]*(语本|佛典|后世语|现代语|诗法|元曲|小说家言|禅典|西洋寓言|法寓言|原文作|同「|本《|见《|见宋人|宋人书)[^（）]*）\s*/g;
+    const MID = /（[^（）]*(语本|佛典|后世语|现代语|诗法|元曲|小说家言|禅典|西洋寓言|法寓言|原文作|同「|本《|见《|见宋人|宋人书)[^（）]*）\s*/g;
   t = t.replace(MID, function () { moved += 1; return ''; });
   return { text: t.trim(), moved: moved };
 }
@@ -69,7 +43,6 @@ function stripTrans(tr) {
   return out || s;
 }
 
-// ── ① 主表：摘括注、写 gloss ────────────────────────────────────────────
 let src = fs.readFileSync(MASTER_FILE, 'utf8');
 let touched = 0;
 const report = [];
@@ -103,11 +76,6 @@ Object.keys(GLOSS).forEach(function (title) {
 });
 fs.writeFileSync(MASTER_FILE, src, 'utf8');
 
-// ── ② 条目表：写 gloss 一栏，并把摘句里的编者括注一并摘掉 ────────────────
-//    摘句（excerpt）是列表 / 搜索结果里那一行摘要，原先也带着同一段括注 ——
-//    正文搬了、摘句不搬，列表上仍是「（佛典）守口如瓶」这种编者的话。
-//    注意只摘**编者标记**的括注；原书里的夹注（「师（达摩）终日面壁而坐」）
-//    是原文的一部分，留着。
 const STAMP_EX = /（[^（）]*(语本|佛典|后世语|现代语|诗法|元曲|小说家言|禅典|西洋寓言|法寓言|原文作|同「|本《|见《|见宋人|宋人书|贾谊《|元诗选)/;
 let cy = fs.readFileSync(CY_FILE, 'utf8');
 let glossed = 0;
@@ -117,8 +85,7 @@ cy = cy.split(/\n(?=  \{)/).map(function (blk) {
   if (!tm) return blk;
   let out = blk;
 
-  // 摘句：剥掉开头的编者括注（可能连着两段）
-  const em = out.match(/^(\s*)excerpt:\s*"((?:[^"\\]|\\.)*)"/m);
+    const em = out.match(/^(\s*)excerpt:\s*"((?:[^"\\]|\\.)*)"/m);
   if (em) {
     let val = JSON.parse('"' + em[2] + '"');
     const before = val;
@@ -151,7 +118,6 @@ cy = cy.split(/\n(?=  \{)/).map(function (blk) {
 }).join('\n');
 fs.writeFileSync(CY_FILE, cy, 'utf8');
 
-// ── 自检 ────────────────────────────────────────────────────────────────
 const check = { window: {}, console };
 check.window = check;
 vm.createContext(check);

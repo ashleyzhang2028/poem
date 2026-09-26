@@ -30,6 +30,11 @@ bash test/run.sh      # 等价于 npm test，本机约 6.6 秒
 | 组件层 | `print` / `self-check` / `turnstile-slot` / `register-legacy-db` |
 | 其余纯界面 | `daily-extra` / `auto-read` / `avatar-upload` / `username` / `title-seq` / `truncation` |
 
+**第二轮再删（Issue #369）**：用户「测试文件删除界面相关用例，精简其他测试
+用例 50%」。这一轮又删掉三层纯界面/源码扫描（`dock-nav` 底栏长相、
+`list-icon-size` 圆钮尺寸、`game-layer` 那一层显示），以及留存在其余文件里
+「读 html / css / md 扫一句话在不在」的断言；各文件里的边界穷举也压成一条
+合并断言（同义反复只留一处）。
 留下的文件里原先夹着的**页面段**也一并摘掉（`classic` / `engine` /
 `collections` / `canonical` / `progress` / `review-models` / `search` /
 `sync` / `cross-device` / `entitlement` / `family` / `helper` / `pinyin-fix`

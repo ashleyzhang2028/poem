@@ -946,9 +946,6 @@
             .filter(function (k) {
               return k.indexOf("poem_") === 0;
             })
-            // ⚠️ 本机那份头像字节**不归这一颗键管**（它说的是「这个孩子长什么样」，
-            //    不是「背到哪一步」，见 Issue #320）。「清空进度」从前会把整把
-            //    `poem_` 兜走 —— 顺手动掉用户的头像不是这件事的意思。
             .filter(function (k) {
               return k.indexOf("poem_avatar_local_v1") !== 0;
             })

@@ -144,9 +144,6 @@
       return;
     }
 
-    // 这一条 utterance 属于哪一篇 —— 记死，别用相对 +1。
-    // 用相对 +1 的话，cancel 触发的"残响"回调会从当前位置再往前推一格，
-    // 把中间那篇整个跨过去（就是用户看到的"点一次跳一首"）。
     const at = q.index;
 
     if (typeof it.onStart === "function") {
@@ -158,8 +155,7 @@
 
     function advance() {
       if (!queue || queue !== q) return;
-      // 已经不在这一篇上了（被主动跳转打断 / 已被别的回调推进过）：忽略残响
-      if (q.index !== at) return;
+            if (q.index !== at) return;
       q.current = null;
       q.index = at + 1;
       readNext();
@@ -201,9 +197,7 @@
       index: 0,
       paused: false,
       current: null,
-      // 主动跳转（点上一首/下一首）期间为 true：此间由 cancel 触发的
-      // onend 是"被打断"的残响，必须忽略，否则索引会被多推一格。
-      seeking: false
+            seeking: false
     };
     readNext();
     return controller;

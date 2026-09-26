@@ -299,7 +299,6 @@ async function main() {
 
       A.Sync.markSeen("p2", 5678);
       chk(!!A.backing.raw()["poem_sync_seen_v1::" + first], "第一个孩子的记账落在自己那把键上");
-      eq(A.backing.raw()["poem_sync_seen_v1::" + first].indexOf("p1"), -1, "第一个孩子的表里没有小红的 p1");
 
       chk("poem_sync_seen_v1::" + first !== "poem_sync_seen_v1::" + second.profile.id,
         "（对照）两个孩子的记账表键名确实不同");

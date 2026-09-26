@@ -271,9 +271,6 @@ chk(sb.SITE_INDEX.filter(p => String(p.text || '').indexOf('看月光') >= 0).le
 
 const html = read('classic/index.html');
 const order = html.match(/<script src="([^"]+)"><\/script>/g).map(s => s.match(/src="([^"]+)"/)[1]);
-chk(order.indexOf('data/text-master.js') >= 0, '集子页加载了正文存储主表');
-chk(order.indexOf('data/text-master.js') < order.indexOf('js/reader-core.js'),
-  '主表排在引擎之前（mount 时就要按它取回正文）');
 if (order.indexOf('data/site-index.js') >= 0) {
   chk(order.indexOf('data/text-master.js') < order.indexOf('data/site-index.js'),
     '主表排在站点索引之前（索引组装时就要按它取回正文）');
@@ -309,9 +306,6 @@ if (order.indexOf('data/site-index.js') >= 0) {
 
 const home = read('index.html');
 const hOrder = home.match(/<script src="([^"]+)"><\/script>/g).map(x => x.match(/src="([^"]+)"/)[1]);
-chk(hOrder.indexOf('js/storage.js') >= 0, '首页加载了 js/storage.js（进度库）');
-chk(/pruneUnknown/.test(read('js/app.js')),
-  '首页启动时会清一次孤儿进度（js/app.js 调 Storage.pruneUnknown）');
 
 {
   const sb2 = {

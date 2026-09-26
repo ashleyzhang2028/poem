@@ -117,10 +117,6 @@ function makeRateLimiter() {
   };
 }
 
-// 建一行新账号。**没有 `email_mask` 了**（Issue #320）：
-// 这一列从前存的是 `b***@163.com`，界面靠它回显「已登录 · b***@163.com」、
-// 管理员按它发层级。现在邮箱一律**明文**（`email` 那一列就是唯一的一份），
-// 掩码只剩界面上的一个「点开才显示」的临时状态，不落库、不下发。
 function accountRow(identityValue, hash, now) {
   var plain = id.normalizeEmailForStore(identityValue);
   return {
@@ -141,8 +137,7 @@ function accountRow(identityValue, hash, now) {
     created_at: now,
     last_login_at: now,
 
-    // 0 = 还没成功登录过（见 isReturningAccount 与 schema.sql 里那一列上的说明）。
-    login_count: 0,
+        login_count: 0,
 
     status: "pending"
   };
@@ -158,22 +153,14 @@ function publicAccount(cfg, acc) {
     role: role,
     features: featuresFor(cfg, planTier(acc)),
 
-    // ⚠️ 只有 `email`（明文），**没有 `mask`**（Issue #320）。
-    //    界面上那个「点一下才显示」是**本机的临时状态**（`js/mine.js`），
-    //    不是服务端下发的字段 —— 服务端不再为它维持一列。
-    email: String(acc.email || ""),
+        email: String(acc.email || ""),
 
     emailVerifiedAt: acc.email_verified_at == null ? null : Number(acc.email_verified_at),
     emailVerified: acc.email_verified_at != null,
 
     avatar: avatarUrlOf(cfg, acc.uid),
 
-    // ⚠️ 这两项与名录（`adminAccounts`）下发的是**同一对字段**（Issue #276 后续）：
-    //    「这是第一次登录，还是第 N 次」由服务端说了算，不由客户端猜（见 js/login.js 的 isFirstLogin）。
-    //    从前登录响应里不带它们，前端只能拿 `createdAt: 0, lastLoginAt: 1` 那种写死的假值去比，
-    //    结果**老用户每一次登录都被认成新用户** —— 于是被拖去「快捷登录」那一屏填昵称。
-    //    这里如实下发库里那两列：created_at 与 last_login_at。
-    createdAt: Number(acc.created_at) || 0,
+        createdAt: Number(acc.created_at) || 0,
     lastLoginAt: Number(acc.last_login_at) || 0,
 
     channel: channelFacts(cfg)
@@ -235,11 +222,7 @@ function featuresFor(cfg, tier) {
 
              "algo.sm2"];
 
-  // ⚠️ `exam.gathering` 是**台账/对比表**上那一行（「古诗词 大会」），不是
-  //    「集子闸」（Issue #356：大会那一页是飞花令与考试，不是集子；集子归
-  //    /library/）。页面上不再有它的强制点，但**键名一个字不动** ——
-  //    两端（这里与 js/entitlement.js）靠它逐字对拍。
-  var max = ["feihualing", "exam.gathering", "exam.paper", "exam.formal",
+    var max = ["feihualing", "exam.gathering", "exam.paper", "exam.formal",
 
              "algo.fsrs"];
 
@@ -314,9 +297,7 @@ function normIdentity(input) {
   }
   var phone = id.normalizePhone(raw);
   if (!id.isPhoneShape(phone)) return { bad: "E_PHONE_FORMAT", message: "这个手机号看起来不太对，再检查一下" };
-  // ⚠️ 只有**短信**带 `mask`（`sent_to` 那一列与界面回显用它）。
-  //    邮箱那条路不再有 `who.mask` —— 邮箱明文到处都是（Issue #320）。
-  return { channel: ch, value: phone, raw: phone, mask: id.maskPhone(phone), bucket: "phone", key: phone };
+    return { channel: ch, value: phone, raw: phone, mask: id.maskPhone(phone), bucket: "phone", key: phone };
 }
 
 function smsReady(cfg) {
@@ -413,9 +394,7 @@ function sendCodeAfterGuard(deps, input, who, isSms, purpose, device, ip) {
       uid: acc.uid,
       purpose: purpose,
       channel: who.channel,
-      // 邮箱落**明文**、短信落掩码（Issue #320）。这一列是「这一枚码发往哪儿」，
-      // 界面上本来就要给用户看「已发往 xxx@yyy」，掩成 b***@163.com 反而是错的。
-      sent_to: who.channel === "sms" ? who.mask : who.value,
+            sent_to: who.channel === "sms" ? who.mask : who.value,
       code_hash: id.codeHash(acc.uid, purpose, rawCode, salt, pepperOf(cfg)),
       salt: salt,
       issued_at: t,
@@ -459,9 +438,7 @@ function sendCodeAfterGuard(deps, input, who, isSms, purpose, device, ip) {
 }
 
 function sendVia(cfg, who, code) {
-  // ⚠️ 邮箱那条路**不再传 `mask`**（Issue #320）：`who.mask` 只在短信那一路
-  //    才有值，邮件正文与日志用的都是真收件人 `who.value`。
-  if (who.channel !== "sms") {
+    if (who.channel !== "sms") {
     return mail.send(cfg, { to: who.value, code: code });
   }
 
@@ -575,8 +552,7 @@ function verifyCode_(deps, input) {
 
         var gate = emailGate(deps, acc);
         if (gate) return Promise.resolve(gate);
-        // 「这次算不算第一次登录」要在**记上这一笔之前**问出来（Issue #276 后续）。
-        var first = !markLogin(acc, t);
+                var first = !markLogin(acc, t);
         return Promise.resolve(store.putAccount(acc)).then(function (saved) {
 
           return claimOwnerRole(store, cfg, saved || acc).then(function () { return saved || acc; });
@@ -608,24 +584,6 @@ function requireVerified(cfg) {
   return cfg.requireEmailVerified !== false;
 }
 
-// ⚠️ `firstLogin` 这一位是 Issue #276 后续补的：**「是不是第一次登录」由这里说了算**。
-//
-//    从前客户端拿 `last_login_at === created_at` 去猜，可这两个时刻**本来就不相等** ——
-//    注册发生在 T1，第一次登录发生在 T2（真浏览器实测差了 1.6 秒），于是连**真·第一次**
-//    都被算成「老用户」；再加上三处调用者写死的 `createdAt: 0, lastLoginAt: 1`，
-//    老用户又被算成「新用户」—— 两头都不准。现在答案只有一个来源：这里。
-// 「这个人以前登录过没有」——**只看库里那一列**，不问客户端。
-//
-// 判据是 `login_count`：每成功签发一次会话 +1，只增不减，0 = 还没登录过。
-//
-// ⚠️ 为什么不用 `last_login_at !== created_at`（这一版一开始就是这么写的，错的）：
-//    注册与第一次登录**可能落在同一毫秒** —— 测试里 `now()` 是固定的，
-//    本地那台服务也常见（点完「注册」立刻点「快捷登录」）。那时两列**完全相等**，
-//    与「从没登录过」分不开，于是第二次登录还会被认成第一次（真机上验出来的）。
-//    时间戳只说明「什么时候」，说不清「有没有过」；要分清就得有一列专门数次数。
-//
-// 老库还没有 `login_count` 那一列时（读回来是 undefined）退回时间戳比对：
-// 宁可**少问一次**昵称（第一次刚好同毫秒的那种），也绝不**多问**（那才是用户报的毛病）。
 function isReturningAccount(acc) {
   if (!acc) return false;
   var n = Number(acc.login_count);
@@ -638,10 +596,6 @@ function isReturningAccount(acc) {
   return last !== created;
 }
 
-// **唯一一处**把「这一次登录」写进账号行 —— 三条登录路（快捷码 / 密码 / 确认链接）都走它。
-//
-// 问与写分开：`wasReturning` 必须在**这里**（覆盖之前）问出来，答完就把这一列推上去。
-// 写两处迟早漏一处，所以只留这一个出口。
 function markLogin(acc, t) {
   var wasReturning = isReturningAccount(acc);
   acc.last_login_at = t;
@@ -783,10 +737,7 @@ function registerAfterGuard(deps, input) {
           created: r.created,
           store: store.kind,
           emailVerified: true,
-          // 回明文（Issue #320）：注册响应里从前回掩码，界面据此说
-          // 「验证邮件已发往 b***@163.com」—— 用户自己刚填的邮箱，
-          // 掩起来只是让他多确认一遍自己写对了没有。
-          email: String(cur.email || email),
+                    email: String(cur.email || email),
           verifySent: false,
           verifyTransport: null,
           note: "邮箱已经在确认过了 —— 这次只更新了密码，确认状态保持不变。"
@@ -894,9 +845,7 @@ function verifyEmail(deps, input) {
         acc.email_verified_at = t;
 
         if (acc.status === "pending") acc.status = "active";
-        // 点确认链接即登录 —— 这一发也可能就是**第一次登录**（注册时邮箱没确认、
-        // 之后第一次点进来的那种人）。同 verifyCode_：markLogin 先问、再记。
-        var firstVerify = !markLogin(acc, t);
+                var firstVerify = !markLogin(acc, t);
         return Promise.resolve(store.putAccount(acc)).then(function (saved) {
           return claimOwnerRole(store, cfg, saved || acc).then(function () { return saved || acc; });
         }).then(function (saved) {
@@ -984,8 +933,7 @@ function loginWithPasswordAfterGuard(deps, input) {
       if (gatePw) return Promise.resolve(gatePw);
 
       if (limiter.clearFails) limiter.clearFails("login", "uid:" + acc.uid);
-      // 同 verifyCode_：markLogin 先问、再记（只有这一处写这两列）。
-      var firstPw = !markLogin(acc, t);
+            var firstPw = !markLogin(acc, t);
       return Promise.resolve(store.putAccount(acc)).then(function (saved) {
 
         return claimOwnerRole(store, cfg, saved || acc).then(function () { return saved || acc; });
@@ -1136,9 +1084,7 @@ function resetConfirm(deps, input) {
           .then(function () {
             return ok({
               reset: true,
-              // 回明文（Issue #320）：这是**他自己的**邮箱，界面拿它说
-              // 「已发往哪儿」，掩起来没有一处受益。
-              email: String(acc.email || ""),
+                            email: String(acc.email || ""),
               sessionsRevoked: true,
 
               emailVerified: acc.email_verified_at != null,
@@ -1661,9 +1607,6 @@ function adminGate(deps, cfg) {
   return null;
 }
 
-// ⚠️ `MASK_RE` 连同「按掩码认人」那一条岔路一起删掉了（Issue #320）：
-//    掩码这个设计整块撤掉，认人只剩 uid 一条路（名录里每一行都带着它）。
-
 function normGrantInput(input) {
   var tier = String((input && input.tier) || "").toLowerCase();
   if (["free", "pro", "max"].indexOf(tier) < 0) {
@@ -1674,18 +1617,13 @@ function normGrantInput(input) {
     return { bad: "E_UNTIL", message: "到期时刻看不懂（要毫秒时间戳，留空即永久）" };
   }
 
-  // **只认 uid**（Issue #320 起）。从前还有一条「按邮箱掩码认人」的岔路
-  // （掩码在库里可能对上不止一行，那一段注释本身就是为它写的告警）——
-  // 掩码这条设计整块撤掉了，发层级也只剩 uid 一条路：
-  // 后台名录那张表点着改（Issue #319），脚本调这一条接口时自己带 uid。
-  var uid = String((input && input.uid) || "").trim();
+    var uid = String((input && input.uid) || "").trim();
   if (!uid) {
     return { bad: "E_UID", message: "要说清改谁的：填 uid（后台名录那一列，或 /api/admin/accounts 里拿）" };
   }
   return { tier: tier, uid: uid, until: until };
 }
 
-// 认人：按 uid 取（Issue #320 起只有这一条路）。
 function adminTarget(store, who) {
   return Promise.resolve(store.getAccount(who.uid)).then(function (a) {
     if (!a || a.status === "deleted") return { hits: [] };
@@ -1725,9 +1663,7 @@ function adminGrant(deps, input) {
         });
       }
 
-      // 层级没变的就不写库（回话照样说清楚是「本来就是这样」），
-      // 免得界面那颗下拉一动就落一次写。
-      var before = planTier(target);
+            var before = planTier(target);
       var same = before === who.tier &&
         (target.plan_until == null ? null : Number(target.plan_until)) === who.until;
       var done = function () {
@@ -1801,9 +1737,7 @@ function adminAccounts(deps) {
         accounts: list,
         total: list.length,
         store: store.kind,
-        // uid 是「改这一行的角色 / 层级」要用的那一把钥匙：名录按名字列人，
-        // 但写回得认 uid（邮箱明文改一行就找不着人了）。
-        note: "这里列的是**注册过的账号**（含邮箱明文），每行带 uid 与到期，界面据此改角色与层级。"
+                note: "这里列的是**注册过的账号**（含邮箱明文），每行带 uid 与到期，界面据此改角色与层级。"
       });
     });
   });
@@ -1869,8 +1803,7 @@ function adminRevoke(deps, input) {
   var cfg = deps.cfg, store = deps.store, t = deps.now();
   var gate = adminGate(deps, cfg);
   if (gate) return Promise.resolve(gate);
-  // 收回也**只认 uid**（Issue #320）：从前是按掩码找那一行。
-  var uid = String((input && input.uid) || "").trim();
+    var uid = String((input && input.uid) || "").trim();
   if (!uid) return Promise.resolve(err(400, "E_UID", "要说清收回谁的：填 uid（后台名录里那一列）"));
   return Promise.resolve(store.getAccount(deps.account.uid)).then(function (me) {
     if (!me || me.status === "deleted") return err(401, "E_NO_SESSION", "还没有登录");
@@ -2017,10 +1950,7 @@ function reportCreate(deps, input) {
         rid: rid,
         uid: deps.account.uid,
 
-        // 快照落**明文**（Issue #320）：从前落掩码，于是账号注销之后管理员
-        // 看到的是 `b***@163.com` —— 认不出这条报告是谁提的，掩码本身
-        // 又不可逆。明文快照至少在账号没了之后还看得出「这是谁报的」。
-        email: String(me.email || ""),
+                email: String(me.email || ""),
         nickname: String(me.nickname || ""),
         kind: who.kind,
         status: "new",

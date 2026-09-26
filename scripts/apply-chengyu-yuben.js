@@ -1,18 +1,4 @@
 #!/usr/bin/env node
-/* 把「（语本）」占位正文换成可查证的原句
-   --------------------------------------------------------------------------
-   原先 76 则语本类成语的正文与摘句都写着「（语本）某某」—— 那不是任何一部
-   书里的句子，是编者自造的占位串。真正的原句住在 data/chengyu-support.js
-   里，本脚本做两件事：
-
-     ① 正文（text）换成补充材料给的原句，译文缺的补上；
-     ② 摘句（excerpt）跟着改成新正文的前一段 —— 原来的摘句也是占位串，
-        不改的话「摘句与正文对不上」的防回归断言会红。
-
-   为什么不直接改 data/text-master.js：那是一份**生成文件**，重跑
-   build-text-master.js 会把手工改动覆盖掉。真身在补充材料，这里是执行处；
-   在 scripts/build-chengyu.js 的流水线里排在收归主表之后、重算同篇表之前。
-*/
 const fs = require('fs');
 const vm = require('vm');
 const path = require('path');
@@ -32,7 +18,6 @@ const CY = sandbox.POEMS_CHENGYU || [];
 const idOfTitle = {};
 CY.forEach(function (p) { idOfTitle[p.title] = 'chengyu-' + p.id; });
 
-// 摘句取正文的第一句（到第一个句号 / 感叹号 / 问号为止），最多 24 字
 function excerptOf(text) {
   const flat = String(text || '').replace(/\n/g, '').trim();
   const m = flat.match(/^[^。！？]*[。！？]/);
@@ -64,9 +49,6 @@ if (misses.length) {
 }
 fs.writeFileSync(MASTER_FILE, src, 'utf8');
 
-// 出处与朝代也照补充材料对齐：语本类成语常被后人挂到「成书更早、但不是它」
-// 的那部书上（最典型：众口铄金 被挂到《国语》那条谚语下，而它的书证是
-// 邹阳《狱中上书》）。补充材料给的出处是这一轮核校后的裁定。
 let cyc = fs.readFileSync(CY_FILE, 'utf8');
 let resourced = 0;
 cyc = cyc.split(/\n(?=  \{)/).map(function (blk) {
@@ -88,7 +70,6 @@ cyc = cyc.split(/\n(?=  \{)/).map(function (blk) {
 }).join('\n');
 fs.writeFileSync(CY_FILE, cyc, 'utf8');
 
-// 摘句：只改 supplement 点名的那些条目
 let cy = fs.readFileSync(CY_FILE, 'utf8');
 const named = {};
 SUPPORT.forEach(function (s) { named[s.title] = s.text; });

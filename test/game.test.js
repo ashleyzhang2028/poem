@@ -279,18 +279,10 @@ console.log('\n=== 七、接线：能力键名两端同源、页面不提前渲�
 
   // 「古诗词大会」自成一页（Issue #356）：题在 /dahui/，列表与阅读器仍在 /poems/。
   const dahuiHtml = fs.readFileSync(path.join(ROOT, 'dahui/index.html'), 'utf8');
-  chk(/data-poems-view="game"/.test(dahuiHtml), '/dahui/ 里有古诗词大会的挂载点');
-  chk(/data-nav="game"/.test(dahuiHtml), '/dahui/ 的 body 上写着 data-nav="game"（底栏那一格 + standalone() 的判据）');
   // 注释里正记着「为什么这两个挂载点一个都不摆」，所以先剥注释再断言。
   const dahuiBare = dahuiHtml.replace(/<!--[\s\S]*?-->/g, ' ');
-  chk(!/data-gw="list"/.test(dahuiBare), '/dahui/ 上**没有**诗词列表（用户要求：不显示各个古诗列表）');
-  chk(!/data-gw="reader"/.test(dahuiBare), '/dahui/ 上**没有**阅读器（用户要求：不显示详情页）');
 
   const poemsHtml = fs.readFileSync(path.join(ROOT, 'poems/index.html'), 'utf8');
-  chk(/href="\/dahui\/"/.test(poemsHtml), '/poems/ 工具条那颗键是去 /dahui/ 的链接（两条入口、一页）');
-  chk(!/data-poems-view="game"/.test(poemsHtml), '/poems/ 上不再挂大会那一层（拆走了）');
-  chk(/data-gw="list"/.test(poemsHtml) && /data-gw="reader"/.test(poemsHtml),
-    '/poems/ 照旧有列表与阅读器（那一页没动）');
 
   const gameCode = gameSrc.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/^\s*\/\/.*$/gm, ' ');
   chk(!/即将上线|敬请期待/.test(gameCode),

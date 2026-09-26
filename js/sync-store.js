@@ -6,8 +6,6 @@
 
     seen: "poem_sync_seen_v1",
     premerge: "poem_pre_merge_backup_v1",
-    // 本机那份头像字节（Issue #320 起跟着子用户走）。键名**不在**这里另写一份，
-    // 真名是 `Avatar.LOCAL_NS`，这里只借它判「是不是这一族」。
     avatarLocal: "poem_avatar_local_v1"
   };
 
@@ -302,21 +300,7 @@
     });
   }
 
-  // 「登录了没」——**唯一出口**（Issue #274）。
-  //
-  // 判据只有一条：`Entitlement.cookieSession()`（服务端认过人那份答案还在）。
-  // 它同时兜住「本机会话」与「Cookie 会话」，所以从前那句
-  // `deps.signedIn()` 注入**不再需要**，也就不会再有人从别处拼一份判据。
-  //
-  // 起因（用户原话）：「用户登录所有页面需要变成登录状态，从首页到设置等等页面，
-  // 目前登录了各页面还是认为没有登录」。同步开关那一句「已开启，登录后才会真的
-  // 同步」就是同一个病根的一个出口 —— 它读的是**本机**会话，而服务端登录的人
-  // 本机一份都没有。
-  //
-  // ⚠️ **没有 Entitlement 时按「已登录」放行**（老行为）：同步是否真的能跑，
-  //    最终由服务端那一发说了算（回 401 就是没登录）—— 这里的答只是「要不要
-  //    把「登录后才同步」那句话摆出来」，判不出来的话不该拦人。
-  function signedIn() {
+    function signedIn() {
     var E = deps.Entitlement ||
       ((typeof window !== "undefined" && window.Entitlement) || null);
     if (!E || typeof E.cookieSession !== "function") return true;
@@ -842,9 +826,7 @@
           var id = p && p.id ? String(p.id) : "";
           if (!id) return;
           keys.push(NS.seen + "::" + id);
-          // 本机那份头像字节也跟着子用户走（Issue #320）—— 退出登录 /
-          // 换个人登录时它必须一起清，否则新登录的人看到的是上一位那张脸。
-          keys.push(avatarLocalKey(id));
+                    keys.push(avatarLocalKey(id));
         });
       }
     } catch (e) {  }
@@ -862,14 +844,7 @@
     return api;
   }
 
-  // 本机那份头像字节（`poem_avatar_local_v1`）现在**跟着子用户走**
-  // （Issue #320）：每个子用户一份，按 `Family.keyFor()` 拼后缀。
-  //
-  // ⚠️ 这里只给出「清哪一种键」这一件事，**拼法不在这儿再写一遍**
-  //    （`::` 只许出现在 family.js 一处，`test/family.test.js` 第五节红着）。
-  //    两个调用点：① 复位（`clearLocalImages()`）—— 每个孩子的都要清；
-  //    ② 某条路径在切走之后才被改掉 —— 让那个孩子下次再画一次（见 api.dropLocal）。
-  function avatarLocalKey(profileId) {
+    function avatarLocalKey(profileId) {
     var F = typeof window !== "undefined" ? window.Family : null;
     var AV = typeof window !== "undefined" ? window.Avatar : null;
     var base = (AV && AV.LOCAL_NS) || "poem_avatar_local_v1";
@@ -895,12 +870,7 @@
     COLLECTIONS_ROW_ID: COLLECTIONS_ROW_ID,
     PINYIN_FIX_ROW_ID: PINYIN_FIX_ROW_ID,
     READ_ROW_PREFIX: READ_ROW_PREFIX,
-    // 清掉**某一个子用户**本机那份头像字节（默认：当前那一个）。
-    //
-    // ⚠️ 它存在的理由只有一个（Issue #320）：页面把头像写完 / 切走之后，
-    //    服务端那条地址与「这个孩子本机那份字节」可能对不上，而显示是
-    //    **本机那份优先**的。不清掉它就永远是旧那张脸。
-    dropLocal: function (profileId, opt) {
+        dropLocal: function (profileId, opt) {
       var o = opt || {};
       var b = o.backing === undefined ? backing() : o.backing;
       if (!b) return false;
@@ -912,8 +882,7 @@
       var ok = false;
       var k = avatarLocalKey(pid);
       try { b.removeItem(k); ok = true; } catch (e) {  }
-      // 老键（不分家的那一把）顺手也清：它只在迁移前有内容。
-      try { b.removeItem(avatarLocalKey("")); ok = true; } catch (e) {  }
+            try { b.removeItem(avatarLocalKey("")); ok = true; } catch (e) {  }
       return ok;
     },
 

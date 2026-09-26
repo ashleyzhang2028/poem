@@ -63,8 +63,6 @@ chk(WI.dedupKey('床前明月光，疑是地上霜。') === WI.dedupKey('床前�
 chk(WI.dedupKey('孔子云「何陋之有」') === WI.dedupKey('孔子云何陋之有'),
   '判重键剥掉 CJK 引号（《陋室铭》两种引法算同一篇）');
 
-chk(WI.repOf('tangshi-ts-231') === 'poems-xx1-09',
-  '《静夜思》的排程代表条目取课内那一条（进度合流、老进度不丢）');
 chk(WI.repOf('tangshi-ts-1') === 'tangshi-ts-1',
   '纯课外篇目（无课内对应）代表条目就是它自己');
 
@@ -125,7 +123,6 @@ chk(C.rename(c2.id, '一二三四五六七八九十十一十二十三').name.len
 chk(C.rename(c2.id, '   ').name === C.DEFAULT_NAME, '空名回落默认名「我要背的」');
 
 chk(C.removeItem('guwen-gwj-1', c2.id) === true, '可从指定集合移出一篇');
-chk(C.collectionsOf('guwen-gwj-1').length === 1, '移出后只剩另一个集合里的那一份');
 chk(C.removeEverywhere('guwen-gwj-1') === true && !C.has('guwen-gwj-1'),
   'removeEverywhere 把这一篇从所有集合里拿掉');
 

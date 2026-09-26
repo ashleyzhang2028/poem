@@ -85,14 +85,6 @@
     return "当前 " + count + " / " + quoText(lim) + " 个";
   }
 
-  // 切子用户（Issue #320）。
-  //
-  // ⚠️ 顺序是有讲究的：**先让位、再切**。
-  //    本机那份头像字节（`poem_avatar_local_v1`）跟着子用户走，
-  //    而「搬字节」只发生在 `ensure()` / `adoptAvatarBytes()` 上。
-  //    这里在切走之前先看一眼当前这个孩子是不是**一个字节都没有**
-  //    （老键上还留着上一版不分家那张图的那类设备）——是的话赶紧认领，
-  //    免得它被切走之后就再也认不着了。
   function switchFamily(id) {
     const F = familyMod();
     if (!F) return;
@@ -117,13 +109,13 @@
         const name = E && E.CAPS["profile.family"] ? E.CAPS["profile.family"].name : "家庭子用户";
         showToast("子用户已达上限（" + name + "）");
       } else {
-        showToast("这一台设备上写不进去（隐私模式？）");
+        showToast("这台设备写不进去（隐私模式？）");
       }
       return;
     }
     F.select(r.profile.id, { backing: window.localStorage });
     render();
-    showToast("建好了，顺手切了过来。给它起个名字。");
+    showToast("建好了，已切过来，给它起个名");
     syncNicknameInput();
     const inp = $("#family-rename-input");
     if (inp) inp.focus();
@@ -171,7 +163,7 @@
     if (!F) return;
     const p = F.list({ backing: window.localStorage }).filter(function (x) { return x.id === id; })[0];
     const name = (p && p.nickname) || "未起名";
-    if (!window.confirm("删除子用户「" + name + "」？\n\n名册里不再有它；它背过的进度数据仍留在本机（不会连带删除）。")) return;
+    if (!window.confirm("删除子用户「" + name + "」？\n\n名册里不再有它；它的进度仍留本机。")) return;
     const r = F.remove(id, { backing: window.localStorage });
     if (!r.ok) {
       if (r.code === "E_LAST") showToast("至少要留一个子用户");
@@ -179,7 +171,7 @@
       render();
       return;
     }
-    showToast("已从名册里删掉「" + name + "」");
+    showToast("已删掉「" + name + "」");
     reloadAll();
   }
 
@@ -191,11 +183,7 @@
   function reloadAll() {
     if (typeof window.__reloadSettingsControls === "function") window.__reloadSettingsControls();
     render();
-    // ⚠️ 把**两处头像**都重画一遍：底栏那颗（`SiteChrome.refreshUser`）、
-    //    「我的」页那一版（`family-change` 的听众）。
-    //    昵称从前会自己换 —— 它读的是名册；头像读的是本机那份字节，
-    //    而它从前**不在**这一条链上，于是切完还是上一个孩子那张脸（Issue #320）。
-    try { document.dispatchEvent(new Event("family-change")); } catch (e) { }
+        try { document.dispatchEvent(new Event("family-change")); } catch (e) { }
     if (window.SiteChrome && window.SiteChrome.refreshUser) window.SiteChrome.refreshUser();
   }
 

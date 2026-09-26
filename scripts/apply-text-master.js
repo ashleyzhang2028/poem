@@ -19,9 +19,6 @@ MASTER.forEach(function (m) {
   (m.entries || []).forEach(function (e) { ref[e] = m.id; });
 });
 
-// 拆过条的成语（data/chengyu-support.js 点名的那些）textRef 一律指回自身：
-// 它们本就是从同组里被「正文一致即同篇」误并进来的，判重表合出来的母条不适用。
-// 不在这里钉住的话，下一次重跑会把 textRef 又指回那个被拆走的错母条。
 const SELF_REF = {};
 try {
   const supSandbox = { window: {}, console };
@@ -83,9 +80,7 @@ function rewriteEntry(block, masterId) {
   const lines = block.split('\n');
   const kept = [];
   let removed = 0;
-  // 词条式集子（文学常识一类）正文即释义，本来就没有白话译文 ——
-  // 只有 text 一行该摘；其余各部的条目照旧是 text/translation/translationSource 三行
-  const expected = /^\s*translation:\s*"/m.test(block) ? 3 : 1;
+    const expected = /^\s*translation:\s*"/m.test(block) ? 3 : 1;
   for (let i = 0; i < lines.length; i += 1) {
     const line = lines[i];
     if (FIELD.test(line)) { removed += 1; continue; }
@@ -114,9 +109,7 @@ function rewriteEntry(block, masterId) {
   const isCompact = /^\s*\{/.test(kept[idAt]);
   const indent = isCompact ? '    ' : ((kept[idAt].match(/^(\s+)/) || ['', '    '])[1]);
 
-  // textRef 一律摘掉后重插一行 —— 手工表（如 chengyu-tier1.js）写条目时已经带了
-  // textRef，早先的写法会在它前面再插一行，留下两行同名字段（历史数据里存了 51 处）。
-  const refLine = indent + 'textRef: ' + JSON.stringify(masterId) + ',';
+    const refLine = indent + 'textRef: ' + JSON.stringify(masterId) + ',';
   if (isCompact) {
     kept.splice(idAt + 1, 0, refLine);
   } else {
@@ -171,7 +164,6 @@ BOOKS.forEach(function (b) {
   }
 });
 
-// 拆过条的成语：把 textRef 改回自身（原先指错了邻条）。只改这一行，别的不动。
 const selfFixed = [];
 Object.keys(SELF_REF).forEach(function (entryId) {
   const book = BOOKS.filter(function (b) { return entryId.indexOf(b.prefix) === 0; })[0];

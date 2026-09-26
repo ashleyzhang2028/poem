@@ -88,8 +88,6 @@
       book: p.book || "", bookName: p.bookName || "", page: p.page || "",
       text: p.text || "", translation: p.translation || "",
       translationSource: p.translationSource,
-      // 这一条当时的版次。底本改了正文 / 译文，版次就变 —— 拿它与本机存下的
-      // 比一比，就能认出「存下之后这一条改过」，不必等用户哪天翻到旧的一行。
       version: versionOfEntry(entryId, list)
     };
   }

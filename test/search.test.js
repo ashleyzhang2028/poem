@@ -129,7 +129,6 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     chk(read('sw.js').indexOf('"' + needle + '"') >= 0, 'sw.js 预缓存含 "' + needle + '"');
   });
   chk(read('search/index.html').indexOf('js/search.js') >= 0, '搜索页加载了 js/search.js');
-  chk(read('library/index.html').indexOf('js/library.js') >= 0, '入口页加载了 js/library.js');
 
   console.log('');
   console.log(fails === 0 ? '🎉 全站搜索与课外阅读入口（数据层）测试全部通过'

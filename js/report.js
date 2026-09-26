@@ -102,12 +102,6 @@
     return out.slice(0, LOCAL_MAX);
   }
 
-  // 「登录了没」——问**唯一出口** `Entitlement.cookieSession()`（Issue #274），
-  // 它同时兜住本机会话与服务端那枚 Cookie。
-  //
-  // ⚠️ 它只回答「现在这一眼看上去登录了没」（本机判据，同步返回）。
-  //    「服务端认不认这个人」是另一件事，由 `mine()` 真打一发 `GET /api/report`
-  //    回答 —— 本机判据与服务端判据**谁都不许替代谁**（Issue #327）。
   function signedIn() {
     var Ent = window.Entitlement || null;
     if (!Ent || typeof Ent.cookieSession !== "function") return false;
@@ -189,24 +183,7 @@
     });
   }
 
-  // 「我报过的」：**只在服务端那张台账上**。
-  //
-  // ⚠️ 这一处原先有一道 `|| !signedIn()`（Issue #327）。它的后果不是「少问一次
-  //    服务端」，而是**答错**：本机判据（`Entitlement.cookieSession()` 读的是
-  //    `poem_plan_v1` 那份缓存）在服务端刚登录、`/api/me` 那一发还没落地时是
-  //    false —— 于是明明登录着、服务端也存着他的报告，页面却说
-  //    「登录后才能报告」＋「本机的（服务端暂时读不到）」＋「还没有报过」。
-  //
-  // 现在只按服务端那一发的结果说话，四种答案各有各的话：
-  //   ok            → 列出来（并上本机存稿：那是发不出去的那几条）
-  //   guest（401）  → 真的没登录，页面说「登录后才能报告」
-  //   guest（连不上）→ **不许说人家没登录**，只说读不到，本机存稿照列
-  //   其它          → 先看本机存稿
-  //
-  // ⚠️ `localOnly: true` 只给「这一条**还没发出去**」用（`create()` 里那份）。
-  //    从服务端读回来的一律 `localOnly: false` —— 本机那份只是同一批数据的副本，
-  //    不是另一类数据。
-  function mine(opt) {
+    function mine(opt) {
     var A = accountApi();
     var local = readLocal();
     if (!A || typeof A.myReports !== "function") {
@@ -630,11 +607,7 @@
     var list = reports || [];
     var o = opt || {};
 
-    // 空列表那两句各有各的适用场合（Issue #327）：
-    //   · 从服务端读回来、真的零条 → 「还没有报过」＋那颗旗子怎么用（对用户有用）
-    //   · 只是服务端暂时读不到 → 只留一句「服务端暂时读不到（本机这几条在下面）」
-    // 从前两种都拼成同一句，于是「读不到」被说成「你没报过」。
-    var unreachable = '<p class="account-hint">服务端暂时读不到。</p>';
+        var unreachable = '<p class="account-hint">服务端暂时读不到。</p>';
 
     if (!list.length) {
       host.innerHTML = o.unreachable

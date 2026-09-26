@@ -604,13 +604,6 @@
     if (C.markStale) C.markStale(window.SITE_INDEX || []);
   }
 
-  // 本机存着快照的条目，改过就刷新。
-  // 已加入背诵 / 自选清单的条目会存一份快照（篇名、出处、正文、译文），
-  // 底本改了正文或译文，快照不会自己跟着变 —— 用户读到的是旧的那一份，
-  // 而界面上看不出任何异常。主表给每条正文留了一个「版次」，这里拿它与存下的
-  // 比一比，对不上就重取（js/collections.js 的 refreshSnapshots）。
-  // ⚠️ 只在启动时做一次，且只在真有对不上的时候才写回本机 —— 每次进页面都
-  //    全量重写一份存储，是在拿一个「内容更新」去换一次无谓的写盘。
   function refreshSnapshotsForBooks() {
     const C = window.ReciteCollections;
     if (!C || !C.refreshSnapshots || !C.list) return 0;
@@ -829,17 +822,17 @@
           "</b></span>"
       );
     } else {
-      info.push("<span>还没有学习记录，选择下方结果开始记忆</span>");
+      info.push("<span>还没有学习记录</span>");
     }
     $("#m-progress").innerHTML = info.join("");
 
     $("#m-hint").textContent = planItem
       ? planItem.reason === "review"
-        ? "这首诗按" + algoShort() + "到期了，复习后请如实选择掌握程度"
+        ? "这一首按" + algoShort() + "到期"
         : planItem.reason === "pinned"
-          ? "今天临时加背的，复习后同样按" + algoShort() + "排下次"
-          : "新学的诗，今天先记一遍"
-      : "背诵后点击按钮，系统会安排下次复习时间";
+          ? "今天加背的，按" + algoShort() + "排下次"
+          : "新学，今天先记一遍"
+      : "背诵后安排下次复习时间";
 
     $("#modal").hidden = false;
     document.body.style.overflow = "hidden";

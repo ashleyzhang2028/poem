@@ -12,8 +12,6 @@
       groupOrder: GROUP_ORDER,
       pageTitle: "文学常识",
       pageSub: "按考纲范围分八组 · 文体 / 作家 / 流派 / 典籍 / 称谓 / 制度 / 典故 / 现当代文学史事件",
-      // 词条式：正文即释义，本来就没有白话译文 ——
-      // 引擎据此不做「待整理」标记，也不显示译文开关
       noTranslation: true,
       words: {
         list: "文学常识",

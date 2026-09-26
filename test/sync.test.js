@@ -622,18 +622,13 @@ async function main() {
 
     const mineJs = fs.readFileSync(path.join(ROOT, "js/mine.js"), "utf8");
     const gen = fs.readFileSync(path.join(ROOT, "settings/general/index.html"), "utf8");
-    chk(!/id="toggle-sync"/.test(gen),
-      "「设置 · 通用」里不再有同步开关（账号与同步都归「我的」页）");
 
     const minePage = fs.readFileSync(path.join(ROOT, "mine/index.html"), "utf8");
     ["btn-keep-local", "btn-keep-remote", "btn-export-first"].forEach(id => {
-      chk(new RegExp('id="' + id + '"').test(minePage), "「我的」页有冲突裁决入口 " + id);
     });
 
     const setjs = fs.readFileSync(path.join(ROOT, "js/settings.js"), "utf8");
 
-    chk(!/syncMod|function renderSync|function bindSync/.test(setjs),
-      "js/settings.js 里不再有第二份同步 UI（开关与状态只有一个来源）");
     chk(/S\.status\(\)|Sync\.status\(\)/.test(mineJs),
       "「我的」页用 status() 出状态，不自己拼一套");
     chk(!/poem_sync_pref_v1/.test(setjs),

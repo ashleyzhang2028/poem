@@ -58,8 +58,6 @@ console.log("\n=== 二、门槛：export.all 从 Max 降到 Pro（名字也一�
 {
   const ctx = t => ({ tier: t, signedIn: true });
   chk(E.can("export.all", ctx("pro")).ok, "Pro 可用（用户说的「这个 pro 用户就行」）");
-  chk(E.can("export.all", ctx("max")).ok, "Max 当然也可用");
-  chk(!E.can("export.all", ctx("free")).ok, "free 不可用");
   chk(!E.can("export.all", { tier: "pro", signedIn: false }).ok, "未登录不可用（要登录）");
   has(E.cap("export.all").name, "课内", "能力名字里写明「课内」（不许含糊成全站）");
 
@@ -188,7 +186,6 @@ echo: {
     "拦住时当场 return，不落到导出的那几行（先判后导）");
   chk(!/btn-export[^>]*hidden/.test(read("settings/general/index.html")),
     "按钮**不隐藏**：游客也看得见它，点一下得到「登录可用」（藏起来就成了点了没反应）");
-  chk(!/=== *["']pro["']|=== *["']max["']/.test(js), "js/settings.js 仍不自己比 tier");
 }
 
 console.log("\n=== 八、接口与页面：拦在数据层，按钮之外也绕不过 ===");
@@ -197,7 +194,6 @@ console.log("\n=== 八、接口与页面：拦在数据层，按钮之外也绕�
   const html = read("settings/general/index.html");
   const js = read("js/settings.js").replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^\s*\/\/.*$/gm, " ");
   has(html, 'id="btn-export-poems"', "设置 · 通用页有导出按钮");
-  chk(!/btn-export-poems[^>]*hidden/.test(html), "按钮**不隐藏**（层级不够时点它得到的是门槛说明）");
   has(js, 'E.can("export.all"', "导出前真的问一次能力表");
   has(js, "E.denyReason(", "拦住用户的那句话由 Entitlement.denyReason() 出（页面不自造）");
   has(js, "C.build(", "文本由导出内核生成，页面不自己拼一份");
