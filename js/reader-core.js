@@ -1004,17 +1004,15 @@
 
     el.querySelector('.rd-trans-text, #rd-trans-text').textContent = p.translation || W.pendingTranslation;
 
-    // 出处那一行右侧带上这一条的版次：底本一处文字改了，这个号就变。
-    // 已加入背诵 / 自选清单的条目在用户本机存着当时的快照，客户端拿这个号与
-    // 存下的比一比，就能认出「这一条在上次存下之后改过」——界面不必等用户
-    // 哪天翻到旧的一行、读了旧的白话才发现（js/collections.js 的
-    // refreshSnapshots / markStale）。
+    // 译文下面那一行：只说这段白话是照什么口径译的（data/index.js 的
+    // TRANSLATION_SOURCES）。**不挂版次号** —— 版次是给程序看的（比对用户
+    // 本机存的快照，见 js/collections.js 的 refreshSnapshots / markStale），
+    // 一串 `k3f9a2` 摆在译文底下，对读者没有任何用处，只会像一句乱码
+    // （2026-09-26 用户问：「很多译文后面的这段英文字母是什么意思？」）。
     var srcEl = el.querySelector('.rd-trans-src, #rd-trans-src');
     if (srcEl) {
-      var srcText = p.translation && window.translationSourceText
+      srcEl.textContent = p.translation && window.translationSourceText
         ? window.translationSourceText(p) : "";
-      var ver = window.textVersionOf ? window.textVersionOf(p, CFG && CFG.id) : 0;
-      srcEl.textContent = ver ? srcText + " · " + ver : srcText;
     }
 
     // 词条式集子（文学常识一类）：正文即释义，本来就没有白话译文

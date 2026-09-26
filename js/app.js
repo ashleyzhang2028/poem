@@ -804,7 +804,7 @@
       : gradeName(p.grade) + " " + termName(p.term);
     $("#m-trans-text").textContent = hasTranslation(p) ? p.translation : "（暂未收录译文）";
 
-    const srcEl = $("#m-trans-src");
+    var srcEl = document.getElementById("m-trans-src");
     if (srcEl) {
       srcEl.textContent = hasTranslation(p) && window.translationSourceText
         ? window.translationSourceText(p) : "";
