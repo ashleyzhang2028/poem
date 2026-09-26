@@ -68,8 +68,16 @@ console.log("\n=== 3 · `js/game.js`：进来就铺开；点句子按「有没�
   // 独立页：进来即铺开，没有「先落列表再找键」，也没有「收起一层」
   chk(/if \(standalone\(\)\) \{\s*open\(\);/.test(game),
     "standalone() 时直接 open()（不再先过一道整页的闸）");
-  chk(/if \(standalone\(\)\) \{ location\.href = "\/poems\/"; return; \}/.test(gameCode),
+  // ⚠️ 这一条 Issue #370 改过判据：独立页上「退出去」那一支从前写在
+  //    `setDockNav("poems")` **之后**，而 `standalone()` 读的正是那个属性 ——
+  //    于是它在独立页上永远回 false，那一支永远走不到（顶栏那颗「返回诗词列表」
+  //    按下去一动不动）。现在先问一次、**再**改属性，判据也跟着改成
+  //    「`standalone()` 在改属性之前被问过一次」。
+  chk(/var onOwnPage = standalone\(\);/.test(gameCode) &&
+    /if \(onOwnPage\) \{ location\.href = "\/poems\/"; return; \}/.test(gameCode),
     'close() 在独立页上是**退出去**（回 /poems/），不是「收起一层」');
+  chk(gameCode.indexOf("standalone()") < gameCode.indexOf('setDockNav(onOwnPage'),
+    "`standalone()` 在 `setDockNav()` **之前**问 —— 倒过来写它永远回 false（这是一个真 bug）");
 
   // 点句子：有阅读器就地叠，没有就带着 id 跳过去
   chk(/function hasReader\(\)/.test(game), "有 hasReader()：认这一页上有没有阅读器");
@@ -365,8 +373,13 @@ console.log("\n=== 3e · 首页小标题收成两个词、「更多范围」是�
     "CSS 里那条通栏键的负外边距也删了（不再是通栏键）");
 
   // ④ 「更多范围」那一层：一条小标题 + 一片格子，**卡套卡**没有了。
-  chk(/data-game-back="1">返回<\/button>/.test(scopesSrc),
-    "回退键写的是「返回」（用户原话：回到玩法 改成 返回 即可）");
+  //
+  // ⚠️ Issue #370 把这一层里那颗「返回」也撤掉了：全站的返回键**只有顶栏
+  //    右上一处**（用户原话：「如果在……这 5 个有底部导航栏的各自首页，
+  //    右上角不应该再有后退按钮」——反过来，别处也别各摆一颗）。
+  //    这一层的回退改由顶栏那颗键管，落点是 `/dahui/`（见 `paintBack()`）。
+  chk(!/data-game-back="1">返回<\/button>/.test(scopesSrc),
+    "这一层里**不再有自己那颗「返回」**（返回键只留顶栏一处，Issue #370）");
   chk(!/回到玩法/.test(gameLive), "「回到玩法」这个名字一个字不留");
   chk(!/class="account-card game-head"/.test(scopesSrc),
     "那一层不再有「标题卡」（一颗键压着标题那种版式）");

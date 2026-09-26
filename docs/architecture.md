@@ -6937,3 +6937,132 @@ game-scope-more`，与另三张**同一套写法**（连常考那三张也收进
 - `sw.js` v258 → **v259**、`js/settings-nav.js` 的 `APP_VERSION` 一起
   （`css/account.css`、`js/game.js`、`js/exam.js`、`dahui/index.html` 都动过，
   登录后请强刷一次）。
+
+### 4.79 顶栏右上那颗返回键：落点按「上一层是谁」分，五格首页不摆（2026-09-26 · 回答 Issue #370）
+
+用户 2026-09-26 原话，逐条落：
+
+> 「关于所有页面右上角的后退按钮，详情页的返回应该回到各自索引页。」
+> 「古诗词大会更多范围页面的 后退应该后退到古诗词大会首页。」
+> 「如果在背诵，课外，搜索，古诗词首页，我的页面，这 5 个有底部导航栏的
+>   各自首页，右上角不应该再有后退按钮。」
+> 「请按此逻辑梳理所有页面。设置页各项右上角返回应该返回到我的页面。」
+> 「登录页各项返回应该返回到我的页面。」
+
+#### ① 落点从前散在四处，现在收成一处
+
+从前「这一页的返回键落在哪」有四种答法，谁也不管谁：
+
+| 谁 | 怎么答的 |
+|---|---|
+| 页面自己 | body 上写 `data-back="/mine/"`（只 11 页写了） |
+| `pageBackHref()` 的兜底 | **没写的 → 去 `/mine/`**（「我的」）；后台那一页从前因此走岔过（§4.30 的 Issue #320） |
+| 阅读器 | `js/reader-core.js` 的 `backToList` 就地收起那一层 |
+| 有点击逻辑的页 | `setPageAction()` 挂一颗 `<button>`（课外阅读进了集子、大会、打印页） |
+
+症状是「同一颗键，有的页去上一级、有的页去『我的』、有的页干脆没有」。
+现在**只剩三档，且次序固定**（`js/chrome.js` 的 `pageBackHref()`）：
+
+1. 页面自己写的 `data-back` —— 页面对「上一层是谁」比 chrome 清楚
+   （`/reset/` 的上一层是登录页，不是「我的」）；
+2. 没写就查 **`BACK_ROUTES` 那张表**（新增，全站只此一处）：
+
+   | 这一页 | 上一层 |
+   |---|---|
+   | 一部集子（`/classic/` `/tangshi/` … 共 11 条） | `/library/`（课外阅读入口） |
+   | `/poems/`（课内诗词索引） | `/library/` |
+   | `/settings/` | `/mine/` |
+   | 设置四张二级页 + `/settings/reports/` | `/settings/` |
+   | `/self-check/` | `/settings/general/` |
+   | `/plans/`（用户对比） | `/settings/` |
+   | `/login/` | `/mine/` |
+   | `/progress/` `/terms/` `/privacy/` | `/` |
+
+3. 还落不下来（根那一页、或新加的页还没登记）才认底栏那颗「我的」。
+
+**「详情页的返回回到各自索引页」**因此在两处落地，看在哪一层：
+集子里点进正文，那颗键由**阅读器**管、就地回集子索引（列表就在原地，
+滚动位置照旧由 `onHideReader` 还，§4.x 的 Issue #347 一个字没动）；
+集子索引本身那一层，那颗键就是上表第 2 档 —— 回 `/library/`。
+首页 `/` 的详情是一个叠上去的 modal，索引就是它自己，见 ④。
+
+#### ② 底栏五格那一层：**不摆**返回键
+
+新增 `topLevelPage()`：`pageKey()` 是 `home` / `library` / `game` /
+`search` / `mine` 之一即真。`headerHtml()` 里两颗键（设置齿轮 / 返回）
+都改判 `!topLevelPage()`（从前判的是 `key !== "home"` 一条）。
+
+用户点名的正是这五个 —— 底栏就在脚下，五格彼此直达，
+「返回」在这一层没有上一层可指；从前它们挂着的是兜底那颗去「我的」的键，
+与底栏最后一格重复。**「我的」页那颗齿轮不属于「返回」**，照留。
+
+⚠️ 判据取 `pageKey()` 而不是「这一页有没有底栏」：`/self-check/` 有底栏
+（`data-nav="settings"` → `dockKey` 归 `mine`）却不是首页，它挂在设置底下、
+**要**留返回键。两者不是一回事。
+
+#### ③ 顺带修掉一个真 bug：独立页上 `close()` 一动不动
+
+`/dahui/` 上那颗「返回诗词列表」按下去**没反应**（能按、也重画了键，
+页就是不走）。根因在 `js/game.js` 的 `close()`：
+
+```js
+setDockNav("poems");                              // ← 先把 body[data-nav] 改成 poems
+if (standalone()) { location.href = "/poems/"; }  // ← standalone() 读的正是它 → 永远 false
+```
+
+`standalone()` 读 `body[data-nav]`，而 `setDockNav("poems")` 改的就是它 ——
+两句倒过来写，独立页上「退出去」那一支永远走不到。现在**先问一次、再改**：
+
+```js
+var onOwnPage = standalone();
+setDockNav(onOwnPage ? "poems" : "game");
+if (onOwnPage) { location.href = "/poems/"; return; }
+```
+
+#### ④ 首页详情那一层
+
+首页是五格之一，平时**不挂**返回键；可详情（`#modal`）是叠在它上面的一层，
+得有一条明路退回去。新增 `paintModalBack()`：`openPoem()` 挂一颗「返回」，
+`closeModal()` 摘掉，判据只看 `#modal` 的 `hidden` 一处。
+
+**不写第二套历史** —— 这颗键就是「收起详情」（`closeModal`），
+不走 `location.href`、也不调 `history.back()`：全站没有一处用浏览器历史
+表达「前后页」，弹层只是弹层（Esc 早就做的是同一件事）。
+
+#### ⑤ 大会那一页：回退只剩顶栏一颗，三层各一个落点
+
+从前这一页三层里各摆一颗自己的键（「返回」/「换一个玩法」/「回到卷面设置」），
+加上顶栏那颗「返回诗词列表」，同一屏上最多两颗「返回」。现在：
+
+- **页内那颗一律撤掉**（`renderScopes()` 里那颗 `data-game-back`）；
+- 顶栏那一颗的落点跟着层走（`paintBack()` 在每次 `render()` 末尾重画）：
+  在「更多范围 / 卷面设置 / 考试进行中」→ **回这一页的玩法首页**
+  （用户：「更多范围页面的后退应该后退到古诗词大会首页」）；
+  在玩法首页 → `close()`，退出到 `/poems/`；
+- `dahui/index.html` 补一句 `data-back="/dahui/"`：顶栏由 chrome 画，
+  `paintBack()` 只负责覆盖 onclick，`href` 那一档得有个对的兜底。
+
+`data-game-back` 那条点击分支（`bind()` 里）**留着**：它是各层页内可能
+再挂回退时的现成口径，本轮只是不再有页内键去触发它。
+
+#### ⑥ 验证
+
+- 真浏览器（Chromium 153 · CDP）逐页核过 **31 个页面**的顶栏右上一格
+  （`/` `/library/` `/poems/` `/dahui/` `/search/` `/mine/` 三张设置页
+  五张设置二级页 11 部集子 `/progress/` `/login/` `/reset/` `/verify/`
+  `/terms/` `/privacy/` `/plans/` `/self-check/` `/admin/`）：
+
+  - 五格首页**一颗都没有**；
+  - 11 部集子 + `/poems/` → `/library/`；设置五张 → `/settings/`；
+    `/settings/` `/login/` `/admin/` → `/mine/`；`/progress/` `/terms/`
+    `/privacy/` → `/`；`/self-check/` → `/settings/general/`；
+    `/reset/` `/verify/` → `/login/`；`/plans/` → `/settings/`；
+  - 大会三层：首页 → 退出去回 `/poems/`；「更多范围」→ 回大会首页；
+  - 集子「索引 → 正文 → 返回」逐层收回，首页详情「铺开 → 返回 → 收起」；
+- 新增 `test/back-nav.test.js`（**63 条**，纯源码断言不 jsdom）钉住上面五件；
+  `test/game-layer.test.js` 两条改口径（那一层不再有页内返回键、
+  `standalone()` 必须在 `setDockNav()` 之前问），并**新加一条**守那个 bug；
+- `bash test/run.sh` **全绿**（5778 条）；
+- `sw.js` v259 → **v260**、`js/settings-nav.js` 的 `APP_VERSION` 一起
+  （`js/chrome.js`、`js/game.js`、`js/app.js`、`dahui/index.html` 都动过，
+  登录后请强刷一次）。

@@ -541,8 +541,11 @@
     //    现在：**一条小标题 + 一片格子**，就这两样。分组不再是卡片（小标题
     //    自己就是分段的线），范围键也不再自带卡片外观（但保留 `.game-mode`
     //    那套「这是一颗能点的键」—— 按下去要有反应、标题档次一致，见 `scopeCard()`）。
-    var html = '<button class="account-btn ghost game-back" type="button" ' +
-      'data-game-back="1">返回</button>';
+    // ⚠️ 这一层里**不再有自己那颗「返回」**（Issue #370：全站的返回键只有
+    //    顶栏右上一处）。回退由顶栏那颗键管 —— `paintBack()` 在这一层上
+    //    把落点从「回首页」改成「**退出 /dahui/**」，与用户那句
+    //    「更多范围页面的后退应该后退到古诗词大会首页」是同一件事。
+    var html = "";
 
     html += scopeGroup("全部", all);
     html += scopeGroup("课内诗词", stages);
@@ -730,6 +733,9 @@
     }
     host.innerHTML = body;
     bind();
+    // 顶栏那颗返回键的落点跟着这一层走（Issue #370）：进来画一次，
+    // 每换一层也重画一次 —— 「在首页就退出去、不在首页就回首页」。
+    paintBack();
   }
 
   function startFly(levelId) {
@@ -1054,11 +1060,21 @@
     if (!host) return;
     stopTimer();
     state.mode = "";
-    setDockNav("poems");
+
     // 独立页（`/dahui/`）：**退出去**，回诗词列表。
     // 这里不能走「收起一层」那条路 —— 那一层的底下就是这一页自己的题，
     // 收起来只剩一张白纸；而用户要的正是「大会自己是一页」。
-    if (standalone()) { location.href = "/poems/"; return; }
+    //
+    // ⚠️ `standalone()` **必须在 `setDockNav("poems")` 之前问一次**
+    //    （Issue #370 顺手修掉的真 bug）：它读的是 `body[data-nav]`，而
+    //    `setDockNav("poems")` 干的正是把这个属性改成 `poems` —— 两句
+    //    倒过来写，独立页上 `standalone()` 永远回 false，于是「退出去」
+    //    那一支永远走不到：顶栏那颗「返回诗词列表」按下去**一动不动**
+    //    （把属性改了、页却没走）。现在先问、再改。
+    var onOwnPage = standalone();
+    setDockNav(onOwnPage ? "poems" : "game");
+    if (onOwnPage) { location.href = "/poems/"; return; }
+
     host.hidden = true;
     showList(true);
     paintHeader(null);
@@ -1076,14 +1092,38 @@
     C.setSub("飞花令 · 题库复习 · 模拟考试 · 正式考试");
   }
 
+  // 顶栏右上那颗键在这一页上的落点：**三层各不一样**。
+  //
+  // ⚠️ Issue #370：全站的返回键**只有顶栏右上一处**。这一页从前三层里
+  //    各自摆一颗自己的「返回 / 换一个玩法」按钮，用户看到的是「有的页
+  //    有两颗返回、有的页一颗也没有」。现在页内那颗一律撤掉，回退只有
+  //    顶上这一颗，落点按**当前在哪一层**算：
+  //      · 玩法首页（`state.mode` 空）→ 退出到 `/poems/`（大会是独立页，
+  //        「上一层」在址外面，只能是退出去）；
+  //      · 「更多范围」那一层    → **也在这一页**，回玩法首页（用户原话：
+  //        「更多范围页面的后退应该后退到古诗词大会首页」）；
+  //      · 卷面设置 / 考试进行中  → 回玩法首页（玩法与范围都在首页选过）；
+  //      · 飞花令进行中         → 回玩法首页。
+  //    所以下面只有两支：**在首页就退出去，不在首页就回首页**。
+  //    真退出去时走 `location.href = "/poems/"`，那条路在 `close()` 里。
   function paintBack() {
     var C = window.SiteChrome;
     if (!C || !C.setPageAction) return;
-    if (standalone()) return;
     if (!host || host.hidden) { C.setPageAction(null); return; }
+
+    var inLayer = !!state.mode;
     C.setPageAction({
-      label: "返回诗词列表",
-      onclick: function () { close(); }
+      // 不在首页那一层：回**这一页的玩法首页**（不是退出这一页）——
+      // 「更多范围」「卷面设置」「考试进行中」都只是首页底下的层。
+      // 在首页那一层：这一页就是大会自己的一层，退出去回诗词列表。
+      label: inLayer ? "返回古诗词大会" : "返回诗词列表",
+      onclick: function () {
+        stopTimer();
+        state.mode = "";
+        state.pending = "";
+        if (inLayer) { render(); return; }
+        close();
+      }
     });
   }
 
