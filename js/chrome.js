@@ -76,11 +76,21 @@
   var ROUTES = {
     home: "/",
 
-    // 「古诗词大会」那一格的去处：`/poems/` 上**带一个参数**。
-    // 大会是 `/poems/` 里的**一层**（就地叠层，不新开页面 —— §4.15 ⑧ 的老口径），
-    // 所以这一格的路由是「诗词页 + game=1」，`js/game.js` 见到它就当场把那层掀开。
-    // 不新开 `/game/` 页面的理由：那一层用的是 `/poems/` 的整份语料与容器。
-    game: "/poems/?game=1",
+    // 「古诗词大会」那一格的去处：**它自己的一页** `/dahui/`（Issue #356）。
+    //
+    // ⚠️ 这一条**推翻**了两条老口径，别再把它们当依据：
+    //    ① §4.15 ⑧「不新开页面，就地叠在 `/poems/` 那一层」——
+    //       用户 2026-09-26 明确要求「拆成独立页，不应该显示各个古诗列表和详情页，
+    //       而是各种试题，模拟及竞赛」，于是大会有了自己的页；
+    //    ② §4.70 ④「那一格指向 `/poems/?game=1`」—— 那是叠层时代的地址，
+    //       现在是 `/dahui/`；老地址留着一条**改道**（见 `js/game.js` 的 `init()`）。
+    //
+    // 用具名目录而不是查询参数的理由有两条：全站所有页面都是
+    // 「目录 + 自己的 index.html」（`/poems/`、`/library/`、`/mine/` ……），
+    // `?game=1` 是全站唯一一条参数路由，得靠 `currentRoute()` 专门特判；
+    // 而且参数路由给出的地址**不是一页**，用户存下来的书签也就不是。
+    // 名字取拼音 `dahui`：与 `/yuanqu/`、`/chengyu/`、`/zhaoming/` 同一条命名习惯。
+    game: "/dahui/",
     poems: "/poems/",
     library: "/library/",
     classic: "/classic/",
@@ -123,6 +133,7 @@
     var p = currentPath();
     if (/^\/library\/?$/.test(p) || /^\/library\/index\.html$/.test(p)) return "library";
     if (/^\/poems\/?$/.test(p) || /^\/poems\/index\.html$/.test(p)) return "poems";
+    if (/^\/dahui\/?$/.test(p) || /^\/dahui\/index\.html$/.test(p)) return "game";
     if (/^\/search\/?$/.test(p) || /^\/search\/index\.html$/.test(p)) return "search";
     if (/^\/classic\/?$/.test(p) || /^\/classic\/index\.html$/.test(p)) return "classic";
     if (/^\/yuefu\/?$/.test(p) || /^\/yuefu\/index\.html$/.test(p)) return "yuefu";
@@ -323,7 +334,7 @@
     //    「飞花令 / 题库复习 / 模拟考试 / 正式考试」这几个名字的落点只有三处：
     //    `js/entitlement.js`（能力表）、`js/exam.js`（形态表）、`js/game.js`（页面层）。
     //    底栏这里再抄一份，就多一处迟早对不上的（`test/ops.test.js` 有断言守着）。
-    { key: "game", href: "/poems/?game=1", icon: GLYPHS.tabGame, label: "大会", desc: "古诗词大会：比拼与考试都在这一层" },
+    { key: "game", href: "/dahui/", icon: GLYPHS.tabGame, label: "大会", desc: "古诗词大会：比拼与考试都在这一页" },
     { key: "search", href: "/search/", icon: GLYPHS.tabSearch, label: "搜索", desc: "全站篇目一次搜遍" },
     { key: "mine", href: "/mine/", icon: GLYPHS.tabMineImg, label: "我的", desc: "头像 / 昵称 / 账号 / 本机数据" }
   ];
@@ -331,9 +342,10 @@
   function dockKey(key) {
     if (key === "settings") return "mine";
 
-    // `/poems/` 上的「大会」那一层掀开时，`js/game.js` 会把 body 的
-    // `data-nav` 改成 `game` —— 于是这里不必猜、也不必看查询串：
-    // 底栏中点亮的正是中间那一格。
+    // `/dahui/` 那一页的 body 上写的就是 `data-nav="game"`（`pageKey()` 取它），
+    // 于是这里不必猜、也不必看查询串：底栏中点亮的正是中间那一格。
+    // `/poems/` 上那颗「古诗词大会」入口**不再**就地掀层（Issue #356 拆页），
+    // 于是 `js/game.js` 也不必再临时改 `data-nav` 了。
     if (key === "game") return "game";
 
     if (key === "classic" || key === "yuefu" || key === "tangshi" || key === "songci" ||
@@ -530,37 +542,26 @@
 
   // 当前这一页是哪个「路由键」。
   //
-  // ⚠️ **先按整条地址（含查询串）比，再退回去掉查询串比** —— 次序不能反。
-  //    反了会撞车：「古诗词大会」那一格的地址是 `/poems/?game=1`，而
-  //    `/poems/` 自己也有一条路由（`poems`）。两条路由**路径相同、只差一个参数**，
-  //    只看 pathname 的话 `game` 会把 `poems` 整个盖住 —— 于是站在诗词列表
-  //    点「课外」时，程序以为自己在「大会」页，那颗键就不再带你去课外了。
-  //    现在的口径：带 `game=1` 是「大会」，不带是「诗词列表」，各认各的。
+  // ⚠️ 这里从前有一段特判：**先按整条地址（含查询串）比，再退回去掉查询串比** ——
+  //    因为那时「大会」那一格的地址是 `/poems/?game=1`，与 `/poems/` 自己的路由
+  //    **路径相同、只差一个查询串**，只看 pathname 的话 `game` 会把 `poems` 盖住。
+  //    大会拆成 `/dahui/` 一页之后（Issue #356），两条路由的路径**不同了**，
+  //    查询串不再是判据 —— 那段特判连同它的坑一起删掉。
   function currentRoute() {
-    var here = (location.pathname || "") + (location.search || "");
-    here = here.replace(/\/index\.html$/, "/").replace(/\/+$/, "");
-    if (!here) here = "/";
-
+    var p = currentPath();
     var key;
     for (key in ROUTES) {
-      if (trimHref(routeHref(key)) === here) return key;
-    }
-    var p = currentPath();
-    for (key in ROUTES) {
-      if (currentPathOf(routeHref(key)) === p) return key;
+      if (trimHref(routeHref(key)) === p) return key;
     }
     return "home";
   }
 
-  // 去掉 `#…`，规范化结尾的 `/`（**保留**查询串）。
+  // 去掉查询串与 `#…`，规范化结尾的 `/`。
+  // 路由一律**只认路径**：网址上带什么参数都不改变「这是哪一页」。
   function trimHref(href) {
-    var v = String(href).split("#")[0];
+    var v = String(href).split("#")[0].split("?")[0];
     v = v.replace(/\/index\.html$/, "/").replace(/\/+$/, "");
     return v || "/";
-  }
-
-  function currentPathOf(href) {
-    return trimHref(String(href).split("?")[0]);
   }
 
   function openSettings() {

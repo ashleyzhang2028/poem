@@ -1,32 +1,22 @@
 "use strict";
 
 // ---------------------------------------------------------------------------
-// 大会那一层掀开时，底下的诗词列表**必须真的看不见**（Issue #356）
+// 「古诗词大会」那一页，只有题 —— 没有古诗列表、也没有详情页（Issue #356）
 // ---------------------------------------------------------------------------
-// 用户 2026-09-26：
+// 用户 2026-09-26 两句原话，就是这一层的全部目标：
 //   「现在古诗词大会首页显示的还是普通古诗词列表，再点还是详情页，
-//     没看出来各种考试，模拟，答题什么的？」
+//     没看出来各种考试，模拟，答题 什么的？」
+//   「拆成独立页 不应该显示各个古诗列表和详情页，而是各种试题，模拟及竞赛吧？」
 //
-// 根因不是「那一层没掀开」—— 它掀开了（`host.hidden = false` 确实生效），
-// 是**底下那张列表根本没被藏住**：
+// 第一句（底下那张列表没藏住）已经随拆页**从根上**解决了：那一页上
+// 压根没有列表这一层，不必再靠 CSS 去压它。所以这一层换成钉「拆页之后
+// 两边各有什么」，全是**纯源码断言**（不起浏览器）：
 //
-//   · `#gw-list` 是 `.list`，`css/style.css` 里 `.list { display: flex }`
-//     （1024px 起 `display: grid`）；
-//   · 而 `hidden` 属性只在浏览器默认样式表里是一条 `[hidden] { display: none }`，
-//     **输给**元素上的 `.list { display: ... }`；
-//   · 于是 `viewEl.hidden = true` 看着设了、其实没藏住 —— 大会那一层铺在
-//     237px 处，底下 14879px 的诗词列表照旧摊着，占满整屏。
-//
-// 所以这一层钉三件事（**纯源码断言**，不起浏览器）：
-//
-//   1. `.list` 有一条 `[hidden] { display: none }` 兜底（声明式，别处照旧压得住）；
-//   2. 大会那层的容器一亮，底下的列表**在 CSS 里**也必须被压住
-//      （老浏览器不支持 `:where()` 时的那条退路）；
-//   3. `js/game.js` 掀开 / 收起走的是同一处 `showList()`，不再各写各的
-//      `hidden = true / false`。
-//
-// ⚠️ 这一条**不是**「重复一遍浏览器的默认行为」：`.list` 自己有 display，
-//    默认那条就压不住它。不加这一条，谁在 `.list` 上设 `hidden` 都会踩同一个坑。
+//   1. `/dahui/` 上只有玩法那一个挂载点，没有列表、没有阅读器；
+//   2. `/poems/` 上列表与阅读器照旧，大会那一层搬走了；
+//   3. `js/game.js` 的两种模式：独立页进来就铺开；点句子按「有没有阅读器」
+//      决定就地叠还是跳 `/poems/?poem=<id>`；
+//   4. 老地址 `/poems/?game=1` 改道 `/dahui/`。
 // ---------------------------------------------------------------------------
 
 const fs = require("fs");
@@ -36,67 +26,82 @@ const read = f => fs.readFileSync(path.join(ROOT, f), "utf8");
 
 let fails = 0;
 const chk = (c, m) => { if (!c) { console.log("✗ " + m); fails++; } else console.log("✓ " + m); };
-const has = (src, s, m) => chk(src.indexOf(s) >= 0, m);
 
-const style = read("css/style.css");
-const account = read("css/account.css");
 const game = read("js/game.js");
 const poemsHtml = read("poems/index.html");
+const dahuiHtml = read("dahui/index.html");
+const poemsJs = read("js/poems.js");
+const gameCode = game.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^\s*\/\/.*$/gm, " ");
+const dahuiBare = dahuiHtml.replace(/<!--[\s\S]*?-->/g, " ");
+const poemsBare = poemsHtml.replace(/<!--[\s\S]*?-->/g, " ");
 
-console.log("\n=== 1 · `.list` 上的 `hidden` 真的藏得住 ===");
+console.log("\n=== 1 · `/dahui/` 只有题：一个挂载点，没有列表、没有阅读器 ===");
 {
-  // `.list` 自己的 display 就在这一条前面几行 —— 两处必须离得近、成对看
-  has(style, ".list { display: flex; flex-direction: column; gap: 10px; }",
-    "`.list` 有 display: flex（这就是默认那条 [hidden] 压不住它的原因）");
-  chk(/\.list:where\(\[hidden\]\)\s*\{\s*display:\s*none;?\s*\}/.test(style),
-    "`.list` 有一条 [hidden] 兜底：`.list:where([hidden]) { display: none }`");
-  chk(/:where\(/.test(style.split(".list:where([hidden])")[0].split("\n").slice(-12).join("\n")),
-    "那条用它 :where() —— 不占优先级（0,0,0），别处照旧压得住它");
-
-  // `:where([hidden])` 之后的规则里不许再出现 `.list { display: ... }` 把它顶掉
-  const after = style.split(".list:where([hidden])")[1] || "";
-  chk(!/^\s*\.list\s*\{[^}]*display\s*:/m.test(after.slice(0, 400)),
-    "紧跟着没有第二条 `.list { display: … }` 又把它顶回去");
+  chk(/data-poems-view="game"/.test(dahuiBare), "有大会那一个挂载点");
+  chk(/data-nav="game"/.test(dahuiBare), 'body 上写着 data-nav="game"（底栏那一格与 standalone() 同源）');
+  chk(!/data-gw="list"/.test(dahuiBare), "**没有**诗词列表（用户要求：不显示各个古诗列表）");
+  chk(!/data-gw="reader"/.test(dahuiBare), "**没有**阅读器（用户要求：不显示详情页）");
+  chk(!/data-poems-view="list"/.test(dahuiBare), "也没有列表那个书面名字的挂载点");
+  chk(/js\/game\.js/.test(dahuiBare), "这一页跑的是同一个 js/game.js（玩法只有一套实现）");
+  chk(/js\/quiz\.js/.test(dahuiBare) && /js\/exam\.js/.test(dahuiBare),
+    "出题与组卷两个内核都挂上（题从这两个来）");
+  chk(/data\/site-books\.js/.test(dahuiBare), "范围名单的来源（SITE_BOOKS）也挂上 —— 不加载整张索引");
 }
 
-console.log("\n=== 2 · 大会那层一亮，列表在 CSS 里就被压住（老浏览器的退路）===");
+console.log("\n=== 2 · `/poems/` 照旧：列表与阅读器都在，大会那一层搬走了 ===");
 {
-  has(account, '.poems-game:not([hidden]) ~ [data-poems-view="list"][hidden]',
-    "account.css 有 `[data-poems-view=\"list\"][hidden]` 那条（书面名字）");
-  has(account, ".poems-game:not([hidden]) ~ #gw-list[hidden]",
-    "account.css 也有 `#gw-list[hidden]` 那条（它现在的 id）");
-  chk(/display:\s*none\s*!important/.test(account.split("poems-game:not([hidden]) ~ #gw-list[hidden]")[1].slice(0, 120)),
-    "两条都用 display: none !important 收口（不然又输给 .list 的 display）");
-
-  // 选择器靠得住的前提：两个元素真是兄弟，而且次序是 game 在前、list 在后
-  const g = poemsHtml.indexOf('data-poems-view="game"');
-  const l = poemsHtml.indexOf('data-poems-view="list"');
-  chk(g >= 0 && l >= 0, "poems/index.html 里那两个容器都在（game 与 list）");
-  chk(l < g, "列表在**前**、大会那层在后 —— `~` 才选得中（次序反了这条规则就哑了）");
-  chk(poemsHtml.slice(l - 200, l + 80).indexOf("class=\"list\"") >= 0,
-    "列表那个容器就是 `.list`（与 style.css 那条对得上）");
+  chk(/data-gw="list"/.test(poemsBare), "列表挂载点还在（那一页没动）");
+  chk(/data-gw="reader"/.test(poemsBare), "阅读器也还在");
+  chk(!/data-poems-view="game"/.test(poemsBare), "大会那一层不在这一页上了");
+  chk(/href="\/dahui\/"/.test(poemsBare), "工具条那颗键改成了去 /dahui/ 的链接");
+  chk(!/js\/game\.js/.test(poemsBare), "这一页不再加载 js/game.js（玩法整份搬走）");
+  chk(!/js\/quiz\.js/.test(poemsBare) && !/js\/exam\.js/.test(poemsBare),
+    "出题与组卷两个内核也不再跟着这一页加载");
 }
 
-console.log("\n=== 3 · 掀开 / 收起走同一处 showList() ===");
+console.log("\n=== 3 · `js/game.js`：进来就铺开；点句子按「有没有阅读器」分两条路 ===");
 {
-  chk(/function showList\(on\)/.test(game), "js/game.js 有 showList(on) 一处");
-  chk(/viewEl\.removeAttribute\("hidden"\)/.test(game), "on 时 removeAttribute('hidden')（不是 = false）");
-  chk(/viewEl\.setAttribute\("hidden", ""\)/.test(game), "off 时 setAttribute('hidden')（不是 = true —— 属性在不在是判据）");
+  chk(/function standalone\(\)/.test(game), "有 standalone() 认「这是大会自己的一页」");
+  chk(/getAttribute\("data-nav"\) === "game"/.test(gameCode),
+    '判据取 body[data-nav="game"]（与底栏「谁亮」同源，不另立标记）');
 
-  // 三处该管列表的地方都调它：open / close / renderEntryGate
-  const calls = (game.match(/showList\((true|false)\)/g) || []).length;
-  chk(calls >= 3, "open / close / renderEntryGate 三处都走 showList()（实际 " + calls + " 处）");
-  // 注释里提到老写法是**允许的**（那正是它被换掉的原因），所以先把注释剥掉再断言
-  const gameCode = game.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^\s*\/\/.*$/gm, " ");
-  chk(!/viewEl\.hidden\s*=/.test(gameCode), "不再有 `viewEl.hidden = …` 那种写法（两处各写一次就是坑）");
+  // 独立页：进来即铺开，没有「先落列表再找键」，也没有「收起一层」
+  chk(/if \(standalone\(\)\) \{[\s\S]*?renderEntryGate\(\)[\s\S]*?open\(\)/.test(game),
+    "standalone() 时直接 open()；不够层级就画拦住卡（不静默、不留白）");
+  chk(/if \(standalone\(\)\) \{ location\.href = "\/poems\/"; return; \}/.test(gameCode),
+    'close() 在独立页上是**退出去**（回 /poems/），不是「收起一层」');
 
-  // `isOpen()` 认的仍是 host.hidden，不是列表
-  chk(/function isOpen\(\)\s*\{\s*return !!host && !host\.hidden;\s*\}/.test(game),
-    "isOpen() 判的是大会那层自己（host.hidden），与列表无关");
+  // 点句子：有阅读器就地叠，没有就带着 id 跳过去
+  chk(/function hasReader\(\)/.test(game), "有 hasReader()：认这一页上有没有阅读器");
+  chk(/document\.querySelector\('\[data-gw="reader"\]'\)/.test(game),
+    "判据取那个挂载点在不在（不靠路径名去猜）");
+  chk(/location\.href = "\/poems\/\?poem=" \+ encodeURIComponent\(id\)/.test(gameCode),
+    "没有阅读器时跳 /poems/?poem=<id>（详情页仍住在诗词页那一层）");
+  chk(/dispatchEvent\(ev\)/.test(game) && /poems:open/.test(poemsJs),
+    "有阅读器那一条仍是老路：发 `poems:open`，由 js/poems.js 就地叠上去");
+  chk(!/!document\.dispatchEvent/.test(gameCode),
+    "判据不许拿 dispatchEvent() 的返回值当「有没有人接」（那一处监听并不 preventDefault）");
+
+  // 深链那一头：/poems/ 认 `?poem=`
+  chk(/function deepLinkId\(\)/.test(poemsJs), "js/poems.js 认 ?poem=<id> 深链");
+  chk(/function clearDeepLink\(\)/.test(poemsJs), "打开之后把参数从地址栏抹掉（刷新不再自己铺开）");
+  chk(/engine\.open\(want\)/.test(poemsJs), "走的是引擎那一处 open（不许另写一套开法）");
+
+  // 独立页上不再有「掀层 / 藏列表」这套动作
+  chk(!/function dropGameParam\(/.test(game), "没有 dropGameParam()（叠层时代的补丁，已删）");
+}
+
+console.log("\n=== 4 · 老地址改道：/poems/?game=1 → /dahui/ ===");
+{
+  chk(/function redirectOldGameLink\(\)/.test(poemsJs), "js/poems.js 有 redirectOldGameLink()");
+  chk(/\/\(\?:\^\|\[\?&\]\)game=1/.test(poemsJs), "只认 game=1 这一个参数");
+  chk(/location\.replace\("\/dahui\/"\)/.test(poemsJs), "用 replace 跳（不留一条「回退又跳回来」的历史）");
+  const boot = poemsJs.slice(poemsJs.indexOf("function boot()"), poemsJs.indexOf("if (document.readyState"));
+  chk(/redirectOldGameLink\(\)/.test(boot), "boot() 头一件事就是改道（别先渲染一遍列表再跳）");
 }
 
 if (fails) {
-  console.log("\n✗ 大会那一层的显示测试未通过（" + fails + " 项）");
+  console.log("\n✗ 大会那一页的显示测试未通过（" + fails + " 项）");
   process.exit(1);
 }
-console.log("\n🎉 大会那一层的显示测试全部通过");
+console.log("\n🎉 大会那一页的显示测试全部通过");

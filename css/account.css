@@ -1582,19 +1582,9 @@ thead .plans-th-cap {
 --------------------------------------------------------------------------- */
 #verify-row { margin-top: 12px; }
 
-/* `/poems/` 上「古诗词大会」那一层掀开时，底下的诗词列表要真的看不见。
- *
- * ⚠️ **光靠 `hidden` 属性不够**（Issue #356 的根因）：`#gw-list` 是
- *    `.list`（`css/style.css` 里 `display: flex`，1024px 起 `display: grid`），
- *    而那个 display 是**元素上的声明**，比浏览器默认样式表里给 `[hidden]`
- *    的 `display: none` 优先级高 —— 于是 `listEl.hidden = true` 只改了属性、
- *    列表照旧铺在那一层底下，用户看到的就是「首页还是普通古诗词列表」。
- *    这里与 `css/classic.css` 里 `.library-grid[hidden]`（课外阅读那三层
- *    就地叠放的同一套做法）用同一句 `display: none !important` 收口。
- *
- * 两个选择器一起写：`[data-poems-view="list"]` 是这一层的书面名字，
- * `#gw-list` 是它现在的 id —— 换掉任一个，这条规则都还认得它。 */
-.poems-game:not([hidden]) ~ [data-poems-view="list"][hidden],
-.poems-game:not([hidden]) ~ #gw-list[hidden] {
-  display: none !important;
-}
+/* ⛔ 这里从前有两条选择器（`.poems-game:not([hidden]) ~ #gw-list[hidden]` 等），
+ *    管的是「`/poems/` 上掀开大会时，底下的诗词列表要真的藏住」（Issue #356 前半）。
+ *    大会拆成 `/dahui/` 一页之后，`/poems/` 上**没有那一层**了 ——
+ *    既没有那层，也就没有「它底下的列表」这回事，两条选择器都是死规则，删掉。
+ *    （`css/style.css` 里 `.list:where([hidden])` 那条**留着**：它与大会无关，
+ *     是给任何一处 `.list` 上的 `hidden` 兜底的。） */
