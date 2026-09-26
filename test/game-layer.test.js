@@ -66,8 +66,8 @@ console.log("\n=== 3 · `js/game.js`：进来就铺开；点句子按「有没�
     '判据取 body[data-nav="game"]（与底栏「谁亮」同源，不另立标记）');
 
   // 独立页：进来即铺开，没有「先落列表再找键」，也没有「收起一层」
-  chk(/if \(standalone\(\)\) \{[\s\S]*?renderEntryGate\(\)[\s\S]*?open\(\)/.test(game),
-    "standalone() 时直接 open()；不够层级就画拦住卡（不静默、不留白）");
+  chk(/if \(standalone\(\)\) \{\s*open\(\);/.test(game),
+    "standalone() 时直接 open()（不再先过一道整页的闸）");
   chk(/if \(standalone\(\)\) \{ location\.href = "\/poems\/"; return; \}/.test(gameCode),
     'close() 在独立页上是**退出去**（回 /poems/），不是「收起一层」');
 
@@ -89,6 +89,32 @@ console.log("\n=== 3 · `js/game.js`：进来就铺开；点句子按「有没�
 
   // 独立页上不再有「掀层 / 藏列表」这套动作
   chk(!/function dropGameParam\(/.test(game), "没有 dropGameParam()（叠层时代的补丁，已删）");
+}
+
+console.log("\n=== 3b · 这一页是「考试页」，不是「集子」（Issue #356）===");
+{
+  // 用户 2026-09-26 原话：「我说的古诗词大会这个页面就是模拟和考试页面，
+  // 不是古诗词大会集子，如果是集子，那还是应该放到课外阅读那里去」。
+  // 所以这一页上**不许**再有「古诗词大会的集子」这种说法，也不许有一道
+  // 把整页堵住的「集子闸」—— 门槛按玩法各算各的（玩法卡自己标）。
+
+  chk(!/集子/.test(gameCode.replace(/集子清单[\s\S]{0,200}/g, " ")) ||
+      !/《古诗词大会》的集子/.test(game), "页面上不再把大会说成「《古诗词大会》的集子」");
+  chk(/这一页是<strong>飞花令与考试<\/strong>/.test(game),
+    "页头把这一页讲成「飞花令与考试」（题目 / 模拟 / 正式都在这里）");
+  chk(!/function renderEntryGate\(/.test(game),
+    "**没有**一道整页的「集子闸」（renderEntryGate 已删）");
+  chk(!/exam\.gathering/.test(game),
+    "js/game.js 不再把 exam.gathering（旧的「集子访问」）当门槛");
+  chk(/data-game-mode=/.test(game) && /data-locked="1"/.test(game),
+    "放不放行由**玩法卡各自**标（锁定那一张写着门槛）");
+  chk(!/data-game-close/.test(game),
+    "没有 data-game-close 了（那颗「返回诗词列表」随整页闸一起删，不留死监听）");
+
+  // 集子归 /library/：大会那一页不进课外阅读入口
+  const libJs = read("js/library.js");
+  chk(!/dahui/.test(libJs) && !/game/.test(libJs.replace(/game[\w-]*\s*[:=]\s*\{[^}]*\}/g, "")),
+    "课外阅读入口 /library/ 里**不**收大会这一页（它没有集子）");
 }
 
 console.log("\n=== 4 · 老地址改道：/poems/?game=1 → /dahui/ ===");

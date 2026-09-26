@@ -68,6 +68,13 @@
 
     "feihualing":        { minTier: "max",  login: true,  quota: null, name: "飞花令" },
     // 「古诗词」一行、「大会」一行（Issue #229 第五轮）。
+    // ⚠️ 这一条**不是「集子能不能进」**（Issue #356 用户定调：「古诗词大会这个页面
+    //    就是模拟和考试页面，不是古诗词大会集子，如果是集子，那还是应该放到课外阅读那里去」）。
+    //    集子归 `/library/`；大会那一页 `/dahui/` 是飞花令与考试，
+    //    门槛按玩法各算各的（`feihualing` / `quiz.review` / `exam.paper` / `exam.formal`），
+    //    **没有**一道把整页堵住的闸。这一条留着是**对外台账 / 对比表**上那一行
+    //    （`/plans/` 的「古诗词 大会」），键名不动 —— 服务端靠它对拍（api/_lib/core.js）。
+    //    页面上不再有它的强制点（见 `js/game.js` 的 `renderHome()`）。
     "exam.gathering":    { minTier: "max",  login: true,  quota: null, name: "古诗词 大会",
                            breaks: ["大会"] },
     // 「试题模拟」收成「模拟考试」，与新增的「正式考试」成对（Issue #342 · §4.66 ⑩-②）。

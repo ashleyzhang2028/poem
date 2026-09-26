@@ -4,8 +4,6 @@
   var Ent = window.Entitlement;
   var Q = window.Quiz;
 
-  var GATHERING_CAP = "exam.gathering";
-
   var Ex = window.Exam;
 
   // 玩法卡：飞花令 + 考试层的三种形态（练习 / 模拟 / 正式）。
@@ -207,32 +205,20 @@
       "</div>";
   }
 
-  function renderEntryGate() {
-    if (!host) return;
-    var id = identifier();
-    host.innerHTML = '<section class="account-card">' +
-      '<h2 class="account-card-title">古诗词大会</h2>' +
-      '<p class="account-lead">这一项是《古诗词大会》的集子，与考试（模拟 / 正式）分开。</p>' +
-      gateCard({ cap: GATHERING_CAP }, id) +
-      '<button class="account-btn ghost" type="button" data-game-close="1">返回诗词列表</button>' +
-      "</section>";
-    host.hidden = false;
-    showList(false);
-    // 拦住用户时**也算「站在大会这一层」**：底栏正中间那一格照亮点，
-    // 不然从底栏点进来只会看到「课外」亮着、右边冒出一张卡，
-    // 像点错了地方。抬起头的标题同样换成「古诗词大会」（卡片上就是这几个字）。
-    setDockNav("game");
-    paintHeader(true);
-    bind();
-    paintBack();
-  }
-
   function renderHome() {
     var id = identifier();
 
+    // ⚠️ 这一页是**飞花令 + 试题/**模拟/考试**那一页（Issue #356 用户的定调：
+    //    「我说的古诗词大会这个页面就是模拟和考试页面，不是古诗词大会集子」）。
+    //    所以：
+    //      · 页面上**没有诗词列表、没有阅读器**（`/dahui/index.html` 上不挂那两个
+    //        挂载点），一屏全是玩法卡 —— 想读诗词的请去 `/poems/`；
+    //      · **没有一道「整页的集子闸」**：不放行的那一档，画的也是这一页
+    //        （玩法卡各自标着门槛），与「集子访问」是两件事。集子归 `/library/`。
     var html = '<section class="account-card">' +
       '<h2 class="account-card-title">古诗词大会</h2>' +
-      '<p class="account-lead">飞花令与三种形态的考试，同一份语料。' +
+      '<p class="account-lead">这一页是<strong>飞花令与考试</strong> —— ' +
+      '题目、模拟、正式考试都在这里，同一份语料。' +
       '练习与模拟答完当场判分，正式考试交卷后统一批。</p>' +
       "</section>";
 
@@ -675,9 +661,6 @@
         return;
       }
 
-      var cl = hit("data-game-close");
-      if (cl) { close(); return; }
-
       var mode = hit("data-game-mode");
       if (mode) {
         var mid = mode.getAttribute("data-game-mode");
@@ -866,8 +849,7 @@
     // 独立页（`/dahui/`）：这一页**就是**大会，进来即铺开 —— 没有「先落列表
     // 再找键」这一步，也没有「收起一层」这个状态。
     if (standalone()) {
-      if (!capAllowed(GATHERING_CAP, identifier()).ok) renderEntryGate();
-      else open();
+      open();
       loadCorpusIntoView();
       return;
     }
