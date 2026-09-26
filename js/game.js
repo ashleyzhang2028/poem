@@ -301,7 +301,7 @@
             return '<div class="game-line" data-id="' + esc(r.id) + '">' +
               '<span class="game-line-text">' + mark(r.text, state.chars) + "</span>" +
               '<span class="game-line-src">' + esc(r.title) +
-              (r.source ? " · " + esc(r.source) : "") + "</span>" +
+              (r.source ? " · " + esc(bookName(r.source)) : "") + "</span>" +
               "</div>";
           }).join("") : '<p class="account-hint">这一份语料里没有带这些字的句子。</p>') + "</div>"
         : '<p class="account-hint">先自己想，想完了再点开对一对。点开之后可以点任意一句跳到原文。</p>') +
@@ -318,6 +318,21 @@
       '<p class="account-hint">判分是逐字比对：写出来的这一句要能在合集里一字不差地找到。</p>' +
       "</section>";
     return html;
+  }
+
+  // 句子的来源尾巴：`js/quiz.js` 的 `sourceOf()` 在集子那几部上给的是**book id**
+  // （`poems` / `jinxiandai` / `tianshi` ……），直接摆出来是「《渔家傲·秋思》·
+  // poems · 宋 · 范仲淹」—— 用户看不懂那个 `poems`。
+  // 这里把开头的那个 id 换成集子的中文名（`data/site-books.js` 是名单的唯一来源）。
+  // ⚠️ 只换**第一段**、且只在它与某个 book id 逐字相同时换：`gradeGroup`
+  //    （「三年级上」）与 `selection`（卷次）照旧原样过去，不乱动。
+  function bookName(source) {
+    var bits = String(source == null ? "" : source).split(" · ");
+    var books = window.SITE_BOOKS || [];
+    for (var i = 0; i < books.length; i++) {
+      if (bits[0] === books[i].id) { bits[0] = books[i].name; break; }
+    }
+    return bits.join(" · ");
   }
 
   function mark(text, chars) {
@@ -719,33 +734,53 @@
     if (scopeSel) scopeSel.onchange = function () { readSetup(); };
   }
 
+  // 点飞花令里的一句 → 去那一篇的详情页。
+  //
+  // ⚠️ 两条路，按**这个页面上有没有阅读器**分（Issue #356 拆页之后才有的第二种）：
+  //    · `/poems/` 上：`poems/index.html` 里挂着 `js/poems.js` 的阅读器，
+  //      发一声 `poems:open` 就地叠上去（老路，一个字没改）；
+  //    · `/dahui/` 上：这一页**只有题，没有列表也没有阅读器**（用户的要求），
+  //      于是带着篇目 id 走 `/poems/?poem=<id>` —— 详情页仍在诗词页那一层，
+  //      不在这里冒出来。`?poem=` 这个深链口径与首页 `/` 的同名参数一致。
   function openPoem(id) {
     if (!id) return;
+    // 判据是「这一页有没有阅读器」，**不看有没有监听者**：
+    // `dispatchEvent()` 的返回值只回答「有没有人 preventDefault 过」，
+    // 而 `js/poems.js` 那一处监听是「收到就开」，它并没拦 —— 拿返回值当判据
+    // 会把「有人开、且开成了」误判成「没人接」，于是紧跟着又跳一次页。
+    if (!hasReader()) { location.href = "/poems/?poem=" + encodeURIComponent(id); return; }
     var ev = new CustomEvent("poems:open", { detail: { id: id }, cancelable: true });
     document.dispatchEvent(ev);
+  }
+
+  // 这一页上有没有「就地铺开阅读器」的那一层（`/poems/` 有，`/dahui/` 没有）。
+  // 判据只有一处：那个挂载点在不在。独立页不摆它，于是自然走外链，
+  // **不靠路径名去猜**（猜路径的代码，换一次目录名就得跟着改）。
+  function hasReader() {
+    return !!document.querySelector('[data-gw="reader"]');
   }
 
   function close() {
     if (!host) return;
     stopTimer();
     state.mode = "";
-    host.hidden = true;
     setDockNav("poems");
-    // 从底栏进来的那一条（`/poems/?game=1`）退出时把参数抹掉 ——
-    // 不抹的话地址栏留着 `game=1`：用户一刷新，这一层**又自己掀开**，
-    // 可方才明明是「返回诗词列表」退出来的。
-    // 用 `replaceState` 而不是重新 `location.href`：**不刷新**、
-    // 不丢列表滚动位置，只把那一个参数从地址栏上摘掉。
-    dropGameParam();
+    // 独立页（`/dahui/`）：**退出去**，回诗词列表。
+    // 这里不能走「收起一层」那条路 —— 那一层的底下就是这一页自己的题，
+    // 收起来只剩一张白纸；而用户要的正是「大会自己是一页」。
+    if (standalone()) { location.href = "/poems/"; return; }
+    host.hidden = true;
     showList(true);
     paintHeader(null);
     paintBack();
     window.scrollTo(0, 0);
   }
 
+  // 抬头那一行字：独立页**写在 HTML 上**（`data-page` / `data-sub`），
+  // 一进页面就是对的 —— 这里不必再画一遍，收起时也没什么好清（这一页就是它）。
   function paintHeader(mode) {
     var C = window.SiteChrome;
-    if (!C) return;
+    if (!C || standalone()) return;
     if (!mode) { C.setPage(""); C.setSub(""); return; }
     C.setPage("古诗词大会");
     C.setSub("飞花令 · 题库复习 · 模拟考试 · 正式考试");
@@ -754,6 +789,7 @@
   function paintBack() {
     var C = window.SiteChrome;
     if (!C || !C.setPageAction) return;
+    if (standalone()) return;
     if (!host || host.hidden) { C.setPageAction(null); return; }
     C.setPageAction({
       label: "返回诗词列表",
@@ -773,6 +809,7 @@
   //    `.poems-game:not([hidden]) ~ #gw-list[hidden]` 两条），JS 不自己摸
   //    `style.display` —— 就地改 style 会与「阅读器关上再回来」的整页重画打架。
   function showList(on) {
+    // 独立页上没有那张列表（`/dahui/` 只有题），这就是一条无操作。
     if (!viewEl) return;
     if (on) viewEl.removeAttribute("hidden");
     else viewEl.setAttribute("hidden", "");
@@ -820,48 +857,51 @@
     if (!host) return;
     host.hidden = true;
 
-    var entry = document.querySelector("[data-game-open]");
-    if (entry) {
-      entry.addEventListener("click", function (e) {
-        e.preventDefault();
-        if (!capAllowed(GATHERING_CAP, identifier()).ok) { renderEntryGate(); return; }
-        open();
-      });
+    // 老地址（`/poems/?game=1`）改道 `/dahui/`。
+    // 这一条只为**已经发出去的链接**留着（底栏、README、用户存的 `#1` 都改成
+    // `/dahui/` 了，可外面点进来的旧链接还在）。它是**跳转**，不是兼容层：
+    // 那一层不在这里掀，掀开的那一页是 `/dahui/`。见 §4.72。
+    if (wantsGame() && !standalone()) { location.replace("/dahui/"); return; }
+
+    // 独立页（`/dahui/`）：这一页**就是**大会，进来即铺开 —— 没有「先落列表
+    // 再找键」这一步，也没有「收起一层」这个状态。
+    if (standalone()) {
+      if (!capAllowed(GATHERING_CAP, identifier()).ok) renderEntryGate();
+      else open();
+      loadCorpusIntoView();
+      return;
     }
+
+    // ⚠️ 从前的 `[data-game-open]`（`/poems/` 工具条上那颗「就地掀层」的键）
+    //    随拆页一起没了：那一页上那颗现在是**一条去 /dahui/ 的链接**，
+    //    掀层这件事不存在了，这一段监听也就没有对象可挂，删掉。
+    //    这一页真正的入口只有一条路：进来就铺开（上面 `standalone()` 那一段）。
 
     document.addEventListener("keydown", function (e) {
       if (e.key === "Escape" && isOpen() && !state.mode) close();
     });
 
-    // 底栏中间那一格（`/poems/?game=1`）进来时要**当场把这层掀开** ——
-    // 不然用户点「大会」只落到诗词列表，还得再找一次那颗键。
-    //
-    // ⚠️ 先过权限：`exam.gathering` 是 Max 的门。不够就画那张「为什么点不动」
-    //    的卡（`renderEntryGate`），**不弹层、也不什么都不做** ——
-    //    底栏那颗键谁都看得见，得给个说法。
-    if (wantsGame()) {
-      if (!capAllowed(GATHERING_CAP, identifier()).ok) renderEntryGate();
-      else open();
-    }
-
     loadCorpusIntoView();
   }
 
-  // 把地址栏上的 `game=1` 摘掉（不动历史、不刷新）。
-  // 只有从底栏那条路进来过才有得摘；裸 `/poems/` 上它是一个无操作。
-  function dropGameParam() {
-    var loc = window.location;
-    if (!wantsGame()) return;
-    if (!window.history || !window.history.replaceState) return;
-    var q = loc.search.replace(/^\?/, "").split("&").filter(function (kv) {
-      return kv !== "" && kv !== "game=1";
-    });
-    var next = loc.pathname + (q.length ? "?" + q.join("&") : "") + (loc.hash || "");
-    try { window.history.replaceState(window.history.state, "", next); } catch (e) { }
+  // 这一页是不是「大会自己的一页」（`/dahui/`）。
+  //
+  // ⚠️ 判据取 `body[data-nav="game"]` 一处 —— 底栏「谁亮」用的也是它
+  //    （`js/chrome.js` 的 `dockKey`），两处同源，不另立一个标记。
+  //    隐藏的后果是真正的差别：独立页上「收起一层」无处可收（底下就是这一页
+  //    自己的题），退出去只有一条路 —— 回 `/poems/`。
+  function standalone() {
+    return !!(document.body && document.body.getAttribute &&
+      document.body.getAttribute("data-nav") === "game");
   }
 
-  // 地址栏里有没有 `game=1`（`/poems/?game=1#…` 也算）。
-  // 只看这一个参数，别的一概不管 —— 底栏那颗键是它唯一的发出者。
+  // 地址栏里有没有 `game=1`（`/poems/?game=1#…` 也算）—— 老地址的记号。
+  //
+  // ⚠️ 从前的 `dropGameParam()`（退出时把参数从地址栏摘掉）**已经删了**：
+  //    那是「就地叠层」时代的补丁（不摘的话一刷新那层又自己掀开）。
+  //    大会有了自己的页（`/dahui/`）之后，地址栏上没有参数可摘，
+  //    这个函数就成了一段没人调的死代码。
+  //    这一条判据留着只有一个用处：把老地址**改道**去 `/dahui/`。
   function wantsGame() {
     var q = (window.location && window.location.search) || "";
     return /(?:^|[?&])game=1(?:&|$)/.test(q);
