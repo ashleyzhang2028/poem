@@ -117,5 +117,32 @@ console.log("=== 4 · 各页面内联的同一批图标也是 1px ===");
 }
 
 console.log("");
+console.log("=== 5 · 四颗钮之间的缝隙（Issue #329 后续）===");
+{
+  // 用户 2026-09-26：
+  //   「减少 报告错误 / 加入今日背诵 / 加入背诵清单 / 播放 四个按钮左右及上下的 gap 间距」
+  const st = strip(read("css/style.css"));
+  const cls = strip(read("css/classic.css"));
+
+  const g = /--item-gap:\s*(\d+)px/.exec(st);
+  chk(!!g, "css/style.css 里写了 --item-gap（这四颗钮的缝隙）");
+  chk(g && Number(g[1]) < 8, "缝隙比原来的 8px 小（实际 " + (g && g[1]) + "px）");
+
+  has(cls, "gap: 0 var(--item-gap)",
+    "左右那一条缝吃 --item-gap（不再由 gap 简写顺带管上下）");
+  has(cls, "grid-auto-rows: calc(var(--item-btn) + var(--item-gap))",
+    "上下那一条缝也在：行高 = 钮高 + 这一条缝");
+  chk(/grid-auto-rows:\s*calc\(var\(--item-btn\)\s*\+\s*var\(--item-gap\)\)/.test(cls),
+    "行高写成 calc，不是把两行钮硬压在一起");
+  has(cls, "margin-right: var(--item-gap)",
+    "到行尾箭头那条缝跟着一起收");
+
+  // ⚠️ 别写 1fr / auto：那样行高会被 .item 的 line-height 带跑偏（26 → 27.19），
+  //    两条缝就不一样宽了。这一条守住「行高只由两个变量算出来」。
+  chk(!/grid-auto-rows:\s*(1fr|auto|min-content|max-content)/.test(cls),
+    "行高不写成 1fr / auto（会被 line-height 带跑偏）");
+}
+
+console.log("");
 if (fails) { console.log("❌ 列表圆钮尺寸 / 线宽测试 " + fails + " 项失败"); process.exit(1); }
 console.log("🎉 列表圆钮尺寸 / 线宽测试全部通过");
