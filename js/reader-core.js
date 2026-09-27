@@ -695,6 +695,99 @@
     return el;
   }
 
+  // ---------------------------------------------------------------------------
+  // 集子列表页顶上的**索引卡片**（Issue #370 用户裁决）：
+  //   「课外阅读具体某个集子列表页（例如课内诗词列表页，乐府集列表页，古文观止
+  //     列表页），各自在顶部添加一个索引卡片（像古诗词大会首页顶部范围的双列
+  //     展示的卡片类似），基本以各自分类为索引，用户点击后，直接转到分类所在
+  //     的卡片。例如课内古诗词，点击索引卡片里的「五年级上 11」，直接跳转到
+  //     五年级上。」
+  //
+  // 摆法照抄 `.game-scope-card` 那一张（大会首页顶上的「范围」）：一张卡里
+  // 摊开各分类（`.group-card` 的那一份 `gradeGroup`），手机竖屏**一行两列**、
+  // 宽屏一行一个；行里左名右数，数就是该分类的篇目数。
+  //
+  // 点击不换页 —— 就地滚到那一段的 `.group-card` 上去，滚完给它一道短促的
+  // 高亮（`.group-card.flash`），让人一眼认出落点。滚动交给浏览器
+  // `scrollIntoView`，不自己算坐标（底栏是 fixed，行高改一处就跟着错）。
+  //
+  // 只在「没在搜索 / 筛选、且分类多于一段」时出现：搜出来的是一小撮，
+  // 拿全局的分类表去索引对不上；只有一段（例如某部集子只有一卷）也不必索引。
+
+  // 分类一多（宋词按词牌 147 段、文选按文体 91 段），整张表铺开比整页还长
+  // —— 卡片自己会把底下的正文顶到十几屏以外。所以超过这么多段就**先折起来**：
+  // 默认只露头 6 行（手机竖屏两列 = 12 格），卡头右侧一颗「展开」把全表放出来。
+  // 折的口径与大会首页那张「范围」卡一致（同一颗键、同一个意思）。
+  var INDEX_FOLD_AT = 12;
+  // 用户点过「展开」没有 —— 只在本次会话里记着，不落盘（这不是设置项）。
+  var indexOpen = false;
+
+  function indexCard(shown) {
+    var groups = [];
+    var seen = {};
+    allItems().forEach(function (p) {
+      if (!p.gradeGroup || seen[p.gradeGroup]) return;
+      seen[p.gradeGroup] = true;
+      groups.push(p.gradeGroup);
+    });
+    if (groups.length < 2) return null;
+    if (keyword.trim() || (filter && filter !== "all")) return null;
+
+    var shownGroups = {};
+    shown.forEach(function (p) { if (p.gradeGroup) shownGroups[p.gradeGroup] = true; });
+
+    var FOLD = INDEX_FOLD_AT;
+    var folded = groups.length > FOLD && !indexOpen;
+
+    var sec = document.createElement("section");
+    sec.className = "group-index-card";
+    sec.setAttribute("data-index-card", "1");
+    sec.innerHTML =
+      '<div class="group-index-head">' +
+      '<p class="group-index-tag">' + esc(W.indexTitle || "索引") + "</p>" +
+      (groups.length > FOLD
+        ? '<button class="group-index-all" type="button" data-index-all="1">' +
+          (indexOpen ? "收起" : "展开") + "</button>"
+        : '<span class="group-index-count">' + groups.length + " 类</span>") +
+      "</div>" +
+      '<div class="group-index-list"' + (folded ? ' data-folded="1"' : "") + ">" +
+      groups.map(function (g) {
+        var n = allItems().filter(function (x) { return x.gradeGroup === g; }).length;
+        var on = shownGroups[g];
+        return '<button type="button" class="group-index-pick"' +
+          (on ? "" : ' data-empty="1"') +
+          ' data-index-group="' + esc(g) + '"' +
+          ' aria-label="跳到 ' + esc(g) + '">' +
+          '<span class="group-index-name">' + esc(g) + "</span>" +
+          '<span class="group-index-num">' + n + " " + esc(W.unit) + "</span>" +
+          "</button>";
+      }).join("") +
+      "</div>";
+    return sec;
+  }
+
+  // 就地滚到某一分类那一段。`.group-card` 是渲染时按 `data-group` 落的，
+  // 取第一张同名卡即可（分类名在表里唯一）。
+  function jumpToGroup(name) {
+    var listEl = listBox();
+    if (!listEl) return;
+    var hit = null;
+    $$(".group-card", listEl).forEach(function (c) {
+      if (!hit && c.getAttribute("data-group") === name) hit = c;
+    });
+    if (!hit) return;
+    try {
+      hit.scrollIntoView({ block: "start", behavior: "smooth" });
+    } catch (e) {
+      hit.scrollIntoView(true);
+    }
+    hit.classList.remove("flash");
+    // 强制回流一次，连着点同一项时动画能重新起一遍
+    void hit.offsetWidth;
+    hit.classList.add("flash");
+    setTimeout(function () { hit.classList.remove("flash"); }, 1200);
+  }
+
   function renderList() {
     var listEl = listBox();
     if (!listEl) return;
@@ -706,6 +799,9 @@
         (total ? esc(W.empty) : esc(W.loadingFailed)) + "</div>";
       return;
     }
+
+    var ic = indexCard(shown);
+    if (ic) listEl.appendChild(ic);
 
     var index = 0;
     var groupCard = null;
@@ -1561,6 +1657,29 @@
         var target = e.target;
         if (!target || !target.closest) return;
         claim(e);
+
+        // 索引卡的「展开 / 收起」：只翻这一张卡，不重画整张列表。
+        var iAll = target.closest("[data-index-all]");
+        if (iAll) {
+          e.stopPropagation();
+          indexOpen = !indexOpen;
+          iAll.textContent = indexOpen ? "收起" : "展开";
+          var ilist = iAll.closest("[data-index-card]").querySelector(".group-index-list");
+          if (ilist) {
+            if (indexOpen) ilist.removeAttribute("data-folded");
+            else ilist.setAttribute("data-folded", "1");
+          }
+          return;
+        }
+
+        // 索引卡：就地滚到那一分类（Issue #370）。与「随机连读」那颗不同，
+        // 这里点一下就是点一下 —— 不牵扯长按菜单，先判先走。
+        var idx = target.closest("[data-index-group]");
+        if (idx) {
+          e.stopPropagation();
+          jumpToGroup(idx.getAttribute("data-index-group"));
+          return;
+        }
 
         var mi = target.closest(".gw-menu-item");
         if (mi) {
