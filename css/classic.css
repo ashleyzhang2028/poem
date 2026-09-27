@@ -1480,3 +1480,156 @@ body[data-nav="search"] #gw-list .empty[data-empty="idle"] { padding: 0; }
   color: var(--amber);
 }
 .duelist-items.late .duelist-item { padding-left: 8px; }
+
+/* ===========================================================================
+   集子列表页顶上的**索引卡片**（Issue #370）
+   ---------------------------------------------------------------------------
+   用户：「课外阅读具体某个集子列表页（例如课内诗词列表页，乐府集列表页，
+   古文观止列表页），各自在顶部添加一个索引卡片（像古诗词大会首页顶部范围
+   的双列展示的卡片类似），基本以各自分类为索引，用户点击后，直接转到分类
+   所在的卡片。例如课内古诗词，点击索引卡片里的「五年级上 11」，直接跳转到
+   五年级上。」
+
+   外观照 `.game-scope-card` 那份（大会首页顶上的「范围」）：一张卡、卡内
+   摊开各分类，手机竖屏一行两列、宽屏一行一个；左名右数。点击不换页，
+   就地滚到那一段的 `.group-card`，滚完给一道短促的高亮。
+   =========================================================================== */
+.group-index-card {
+  box-sizing: border-box;
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* 卡片头：左边「索引」两个字，右边分类数。段头那两个字用与大会
+   「范围」同一档（`.poems-home-tag` 的口径），一眼认出这是一段标题。 */
+.group-index-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.group-index-tag {
+  margin: 0;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  color: var(--ink-3);
+}
+.group-index-count {
+  flex: 0 0 auto;
+  font-size: 11.5px;
+  letter-spacing: .3px;
+  color: var(--ink-3);
+}
+
+/* 清单：宽屏（默认）一行一个；手机竖屏两列（见下面 max-width: 720px）。
+   `flex-wrap` 而不是 grid —— 一行里怎么换行由各格自己的最小内容宽算，
+   名字长的那一格不会被硬塞进半屏、顶出卡外（grid 的 1fr 会）。 */
+.group-index-list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+}
+/* 折起来：只露头几行（`.group-index-pick` 自带 `flex: 0 0 100%`，
+   手机竖屏是半行宽；这里用 `max-height` 卡住可视行数 —— 行高约 41px，
+   12 格两列 = 6 行 ≈ 246px，多给一点余量到 260px）。 */
+.group-index-list[data-folded="1"] {
+  max-height: 236px;
+  overflow: hidden;
+}
+
+/* 卡头右侧那颗「展开 / 收起」：与大会「范围」那张卡同一颗口径
+   （见 css/account.css 的 .game-scope-all）—— 无框、小字、绿。 */
+.group-index-all {
+  flex: 0 0 auto;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font: inherit;
+  font-size: 12px;
+  color: var(--green);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.group-index-all:active { opacity: .6; }
+
+/* 一格：左名右数，行的边界画在**下面**那条细线（两列时每行两格，
+   画在上面会多出一道压在卡头上的线）。左侧 3px 的空位与范围那一张同口径，
+   保证十几格左右对齐一条线、点了也不跳。 */
+.group-index-pick {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  box-sizing: border-box;
+  flex: 0 0 100%;
+  min-width: 0;
+  text-align: left;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  padding: 9px 2px 9px 7px;
+  background: transparent;
+  font: inherit;
+  color: var(--ink);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.group-index-pick:last-child { border-bottom: 0; }
+.group-index-pick:nth-last-child(2):nth-child(even) { border-bottom: 0; }
+.group-index-pick:active { background: var(--card-2); }
+
+.group-index-name {
+  font: var(--title-2);
+  color: var(--ink);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* 篇目数：右端一列，与名字之间自动撑开。 */
+.group-index-num {
+  flex: 0 0 auto;
+  margin-left: auto;
+  font-size: 11.5px;
+  letter-spacing: .3px;
+  white-space: nowrap;
+  color: var(--ink-3);
+}
+
+/* 这一分类当前被筛没了的（例如「未读」筛选下一条不剩）：压淡，
+   仍可点（点了滚到那段，那头自己会说「没有匹配的」）。 */
+.group-index-pick[data-empty="1"] { opacity: .45; }
+
+/* 手机竖屏两列：每格占半行（减掉两格之间的 8px 缝）。
+   `min-width: 0` 是必须的 —— 不写的话 flex 项自带的「最小内容宽」会把
+   「现当代文学史事件」那一格撑过半行，两列一起顶出卡外。 */
+@media (max-width: 720px) {
+  .group-index-list .group-index-pick {
+    flex: 0 0 auto;
+    width: calc(50% - 4px);
+  }
+  .group-index-list .group-index-pick:nth-child(even) { margin-left: auto; }
+}
+
+/* 宽屏时列表是 grid（见 css/style.css），索引卡得**占满整行**，
+   否则会与某一段挤在同一格。 */
+@media (min-width: 768px) {
+  .list > .group-index-card,
+  #gw-list > .group-index-card {
+    grid-column: 1 / -1;
+    justify-self: stretch;
+  }
+}
+
+/* 跳过去那一段给一道短促高亮：左起一道绿条 + 淡绿底，1.2s 后自己退掉
+   （不加到 `.group-card` 本体上，免得与它的圆角 / 阴影打架）。 */
+.group-card.flash {
+  box-shadow: 0 0 0 2px var(--green), var(--shadow);
+  background: var(--green-light);
+  transition: box-shadow .25s, background .25s;
+}
