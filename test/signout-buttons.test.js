@@ -361,6 +361,18 @@ console.log("\n=== 五、真起服务端：这一句真的会带着那三件事�
     }
   }
 
+  {
+    // 真浏览器里 `hidden` 会被作者样式的 display 盖掉：`.account-btn { display: inline-flex }`、
+    // `.bottom-actions { display: flex }` —— JS 把 hidden 设对了，「注销账号」「管理后台」照样画在屏上。
+    // jsdom 不算样式，前面那几节全绿也照不出来，所以这里直接守那一条全局规则。
+    const css = read("css/style.css").replace(/\/\*[\s\S]*?\*\//g, " ");
+    chk(/(^|\n)\s*\[hidden\]\s*\{\s*display\s*:\s*none\s*!important\s*;?\s*\}/.test(css),
+      "style.css 有全局 `[hidden] { display: none !important }`（否则带 display 的类会让 hidden 失效）");
+    const acct = read("css/account.css");
+    chk(/\.bottom-actions\s*\{[^}]*display\s*:\s*flex/.test(acct) && /\.account-btn/.test(read("css/style.css")),
+      "（前提）页底那一排与按钮本身都写了 display —— 正是需要上面那条的原因");
+  }
+
   console.log("");
   if (fails) {
     console.log("✗ 登出后那两颗键 / 「没能读懂」那一句：失败 " + fails + " 项");

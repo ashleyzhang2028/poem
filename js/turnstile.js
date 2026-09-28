@@ -107,9 +107,11 @@
 
   function loadScript(d) {
 
-    if (d.querySelector && d.querySelector('script[data-kb-turnstile="1"]')) return Promise.resolve();
     if (root.turnstile && typeof root.turnstile.render === "function") return Promise.resolve();
     if (scriptPromise) return scriptPromise;
+    // A tag left over from a failed attempt would otherwise make every later mount "succeed" with no API.
+    var stale = d.querySelector && d.querySelector('script[data-kb-turnstile="1"]');
+    if (stale && stale.parentNode) stale.parentNode.removeChild(stale);
 
     scriptPromise = new Promise(function (resolve, reject) {
       var s = d.createElement("script");
@@ -117,9 +119,19 @@
       s.async = true;
       s.defer = true;
       s.setAttribute("data-kb-turnstile", "1");
-      var timer = setTimeout(function () { scriptPromise = null; reject("script_timeout"); }, LOAD_TIMEOUT_MS);
-      s.onload = function () { clearTimeout(timer); resolve(); };
-      s.onerror = function () { clearTimeout(timer); scriptPromise = null; reject("script_error"); };
+      function fail(why) {
+        clearTimeout(timer);
+        scriptPromise = null;
+        if (s.parentNode) s.parentNode.removeChild(s);
+        reject(why);
+      }
+      var timer = setTimeout(function () { fail("script_timeout"); }, LOAD_TIMEOUT_MS);
+      s.onload = function () {
+        clearTimeout(timer);
+        if (root.turnstile && typeof root.turnstile.render === "function") resolve();
+        else fail("no_render_api");
+      };
+      s.onerror = function () { fail("script_error"); };
       (d.head || d.body).appendChild(s);
     });
     return scriptPromise;
@@ -162,14 +174,19 @@
         callback: function (tok) {
           st.tokenValue = String(tok || "");
           st.ready = true;
+          st.err = null;
           if (onTokenCb) onTokenCb(st.tokenValue);
         },
         "error-callback": function () {
+          st.tokenValue = "";
           st.err = "widget_error";
           return true;
         },
         "expired-callback": function () {
 
+          st.tokenValue = "";
+        },
+        "timeout-callback": function () {
           st.tokenValue = "";
         }
       });

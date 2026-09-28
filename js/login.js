@@ -122,15 +122,28 @@
     verify: "ts-verify",
     unverified: "ts-unverified"
   };
+  var TS_CODE_RESEND = "ts-code-resend";
+
+  function codeStepShown() {
+    var el = $("step-code");
+    return !!(el && !el.hidden);
+  }
+
+  // The code pane has two steps; 「重新发送」 lives in the second, so the widget must follow it there.
+  function slotOf(mode) {
+    if (mode === "code" && codeStepShown()) return TS_CODE_RESEND;
+    return TS_SLOTS[mode];
+  }
 
   function mountTurnstile(slotKey) {
     if (!TS || !TS.mount || !slotKey) return;
-    var slotId = TS_SLOTS[slotKey];
+    var slotId = slotOf(slotKey);
     var el = slotId ? $(slotId) : null;
     if (!el) return;
+    if (slotKey === "code") hide($(slotId === TS_CODE_RESEND ? TS_SLOTS.code : TS_CODE_RESEND));
     TS.mount(el, { siteKey: tsConfig.siteKey, enabled: tsConfig.enabled }).then(function (st) {
 
-      if (st && st.configured && state.mode === slotKey) show(el);
+      if (st && st.configured && state.mode === slotKey && slotOf(state.mode) === slotId) show(el);
       turnstileBrokenNote(slotId);
     });
   }
@@ -145,7 +158,7 @@
     var note = $("ts-broken-" + slotId);
     if (!note) return;
 
-    if (note.hidden && TS_SLOTS[state.mode] !== slotId) return;
+    if (note.hidden && slotOf(state.mode) !== slotId) return;
     if (!TS.failed()) { hide(note); text(note, ""); return; }
     text(note, (TS.why ? TS.why() + " " : "") +
       "请刷新页面重试。如问题持续，请联系管理员。");
@@ -157,13 +170,13 @@
     var why = TS.gate();
     if (!why) return false;
     msg(msgId, why, "warn");
-    if (TS.failed && TS.failed()) turnstileBrokenNote(TS_SLOTS[state.mode]);
+    if (TS.failed && TS.failed()) turnstileBrokenNote(slotOf(state.mode));
     return true;
   }
 
   function turnstileHideNotes() {
-    Object.keys(TS_SLOTS).forEach(function (k) {
-      var note = $("ts-broken-" + TS_SLOTS[k]);
+    Object.keys(TS_SLOTS).map(function (k) { return TS_SLOTS[k]; }).concat([TS_CODE_RESEND]).forEach(function (id) {
+      var note = $("ts-broken-" + id);
       if (note) { hide(note); text(note, ""); }
     });
   }
@@ -221,6 +234,7 @@
       var slot = $(TS_SLOTS[k]);
       if (slot && k !== mode) hide(slot);
     });
+    if (mode !== "code") hide($(TS_CODE_RESEND));
 
     if (mode === "done") show($("step-done")); else hide($("step-done"));
     if (mode === "unverified") show($("step-unverified")); else hide($("step-unverified"));
@@ -395,39 +409,38 @@
       if (vInput) vInput.value = email;
 
       var gated = r.requiresVerification === true;
-      if (!gated) {
 
-        if (r.verifySent) {
-          note("verify-fail-note", "当前无需验证邮箱即可登录；完成验证后可使用密码找回功能。", "warn");
-          text($("verify-lead"), "验证邮件已发往 " + state.regEmail + "。");
-        } else {
-          text($("verify-lead"), "账号已创建。验证邮件暂时无法发送，请稍后重试。");
-          note("verify-fail-note", "当前无需验证邮箱即可登录；完成验证后可使用密码找回功能。", "warn");
-        }
-      } else if (r.verifySent) {
+      // Register never signs anyone in: an existing account, or a server with the
+      // email gate off, both continue on the password screen instead of faking a login.
+      if (r.existing && !gated) {
+        setMode("pw");
+        if ($("input-pw-email")) $("input-pw-email").value = email;
+        msg("msg-pw", r.note || "这个邮箱已经注册过，请直接登录。", "warn");
+        return r;
+      }
+      if (!gated) {
+        setMode("pw");
+        if ($("input-pw-email")) $("input-pw-email").value = email;
+        msg("msg-pw", r.verifySent
+          ? "账号已建好，请用刚设的密码登录。验证邮件已发往 " + state.regEmail + "，确认后可用于找回密码。"
+          : "账号已建好，请用刚设的密码登录。", "ok");
+        showToast("账号已建好");
+        return r;
+      }
+      if (r.existing) {
+        note("verify-fail-note", "", "");
+        text($("verify-lead"), "这个邮箱已经注册过、还没确认。请打开当初那封确认邮件里的链接。");
+        note("verify-fail-note", "没收到就点下面的「重发验证邮件」；密码仍是第一次注册时设的那个。", "warn");
+        setMode("verify");
+        return r;
+      }
+      if (r.verifySent) {
         note("verify-fail-note", "", "");
         text($("verify-lead"), "验证邮件已发往 " + state.regEmail + "。完成验证后即可登录。");
         note("verify-fail-note", "请打开收件箱中的链接验证邮箱。", "warn");
       } else {
         text($("verify-lead"), "账号已创建。验证邮件暂时无法发送，请稍后重试。");
         note("verify-fail-note", "完成邮箱验证后才能登录。如问题持续，请联系管理员。", "warn");
-      }
-
-      if (!gated) {
-        showToast(r.created ? "账号已建好，已登录" : "账号信息已更新");
-        onSignedIn({
-          account: {
-            uid: r.uid || "",
-            nickname: r.nickname || "",
-            identities: [{ channel: "email", value: r.email || state.regEmail || "" }],
-            createdAt: Number(r.createdAt) || 0,
-            lastLoginAt: Number(r.lastLoginAt) || Number(r.createdAt) || 0,
-            firstLogin: r.created === true
-          },
-          remote: true,
-          emailVerified: r.emailVerified === true
-        });
-        return r;
       }
 
       showToast(r.created ? "账号已建好" : "账号信息已更新");
@@ -516,7 +529,7 @@
 
   function sendCode() {
     if (!store) { msg("msg-email", "浏览器不允许保存数据，本次登录刷新后会失效", "warn"); }
-    var msgId = "msg-email";
+    var msgId = codeStepShown() ? "msg-code" : "msg-email";
     var email = (($("input-email") || {}).value || "").trim();
 
     var shaped = A.isEmailShape(A.normalizeEmail(email));
@@ -525,7 +538,9 @@
       return Promise.resolve(null);
     }
 
-    if (api && !api.degraded()) return sendCodeRemote("login", email, msgId);
+    // Always ask the server first: `degraded()` is sticky after one blip, and a silent
+    // local code would never reach the mailbox. sendCodeRemote falls back on its own.
+    if (api) return sendCodeRemote("login", email, msgId);
     return Promise.resolve(sendCodeLocal("login", email, msgId));
   }
 
@@ -595,6 +610,7 @@
     setMode("code");
     hide($("step-email"));
     show($("step-code"));
+    mountTurnstile("code");
     codeBoxes = buildCodeRow("code-row");
     setCode(codeBoxes, "");
     if (codeBoxes[0]) codeBoxes[0].focus();
@@ -973,6 +989,7 @@
     $("btn-edit-email").addEventListener("click", function () {
       hide($("step-code"));
       show($("step-email"));
+      mountTurnstile("code");
       stopTick();
       msg("msg-code", "");
       msg("msg-email", "");

@@ -194,7 +194,7 @@
       return;
     }
     show($("btn-delete-start"));
-    show($("btn-go-admin"));
+    renderAdmin(id);
     renderBottomActions();
   }
 
@@ -259,7 +259,7 @@
       return;
     }
     var owner = Ent.isOwner(backing, { role: id.role, uid: id.uid });
-    if (owner) show(btn); else hide(btn);
+    if (owner && id && id.signedIn) show(btn); else hide(btn);
     renderBottomActions();
   }
 

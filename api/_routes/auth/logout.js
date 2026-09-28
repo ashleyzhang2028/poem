@@ -11,7 +11,9 @@ module.exports = handler.make("auth.logout", ["POST"], function (d) {
   var clear = { status: 200, body: { ok: true, signedOut: true }, cookies: [session.clearCookieHeader(d.cfg)] };
   if (!d.account) return clear;
 
-  return Promise.resolve(d.store.revokeSessions(d.account.uid)).then(function () {
+  return Promise.resolve(d.store.revokeSession
+    ? d.store.revokeSession(d.account.sid)
+    : d.store.revokeSessions(d.account.uid)).then(function () {
     return {
       status: 200,
       body: { ok: true, signedOut: true, note: "本机进度不受影响。" },

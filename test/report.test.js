@@ -345,6 +345,30 @@ console.log("一、服务端内核：创建 / 频控 / 每日上限 / 空内容�
     });
   }
 
+  {
+    // Supabase 那一份的报告方法挂在模块作用域上，原先直接用了 supabaseStore 里的
+    // `call` / `q` —— 线上每一条报告接口都是 ReferenceError（memoryStore 全绿，看不出来）。
+    const realFetch = global.fetch;
+    const seen = [];
+    global.fetch = async (u, o) => {
+      seen.push({ u: String(u), m: (o && o.method) || "GET" });
+      return { ok: true, status: 200, headers: { get: () => "application/json" }, json: async () => [], text: async () => "[]" };
+    };
+    try {
+      const sb = require("../api/_lib/store.js").supabaseStore({ supabaseUrl: "https://x.supabase.co", supabaseServiceKey: "k" });
+      let threw = null;
+      try {
+        await sb.putReport({ rid: "rp_1" });
+        await sb.listReports({ status: "new", uid: "u 1" }, 5);
+        await sb.countReports({});
+        await sb.countReportsByUid("u_1", Date.now());
+      } catch (e) { threw = e; }
+      chk(!threw, "supabase 实现的报告方法**真的能跑**（实际 " + (threw ? threw.message : "ok") + "）");
+      chk(seen.some(x => x.m === "POST" && /\/reports$/.test(x.u)), "putReport 真的 POST 到 /reports");
+      chk(seen.some(x => /uid=eq\.u%201/.test(x.u)), "过滤条件照样做了 URL 编码");
+    } finally { global.fetch = realFetch; }
+  }
+
   console.log("");
   console.log(fails ? ("✗ report.test.js：" + fails + " 条不通过") : "✓ report.test.js 全通过");
   process.exit(fails ? 1 : 0);

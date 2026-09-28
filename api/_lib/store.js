@@ -35,7 +35,7 @@ function memoryStore() {
       if (!a) return false;
 
       ["plan", "plan_until", "role", "last_login_at", "login_count", "nickname", "status",
-        "email", "email_verified_at", "password_hash", "password_salt"].forEach(function (k) {
+        "email", "email_verified_at", "password_hash", "password_salt", "locked_until"].forEach(function (k) {
         if (patch && Object.prototype.hasOwnProperty.call(patch, k)) a[k] = patch[k];
       });
       return true;
@@ -89,6 +89,10 @@ function memoryStore() {
 
     putSession: function (s) { db.sessions[s.sid] = s; return s; },
     getSession: function (sid) { return db.sessions[sid] || null; },
+    revokeSession: function (sid) {
+      if (db.sessions[sid]) db.sessions[sid].revoked = 1;
+      return true;
+    },
     revokeSessions: function (uid) {
       Object.keys(db.sessions).forEach(function (k) { if (db.sessions[k].uid === uid) db.sessions[k].revoked = 1; });
       return true;
@@ -225,7 +229,7 @@ function supabaseStore(cfg) {
 
   var degraded = [];
 
-  var MIGRATED = ["email", "email_verified_at", "password_hash", "password_salt", "login_count"];
+  var MIGRATED = ["email", "email_verified_at", "password_hash", "password_salt", "login_count", "locked_until"];
 
   function isMissingColumn(err) {
     if (!err || err.status !== 400) return false;
@@ -261,8 +265,15 @@ function supabaseStore(cfg) {
   }
 
   function readAccount(filter, hash) {
-    return call("/accounts?" + filter + "&select=" + COLS + "&limit=1").then(function (rows) {
+    return call("/accounts?" + filter + "&select=" + COLS + ",locked_until&limit=1").then(function (rows) {
       return rows && rows[0] ? rows[0] : null;
+    })["catch"](function (err) {
+      if (!isMissingColumn(err)) throw err;
+      // Only section 8 (locked_until) missing: keep every other column readable.
+      return call("/accounts?" + filter + "&select=" + COLS + "&limit=1").then(function (rows) {
+        noteDegrade(["locked_until"]);
+        return rows && rows[0] ? rows[0] : null;
+      });
     })["catch"](function (err) {
 
       if (!isMissingColumn(err)) throw err;
@@ -301,6 +312,20 @@ function supabaseStore(cfg) {
         return saved;
       })["catch"](function (err) {
         if (!isMissingColumn(err)) throw err;
+        if (Object.prototype.hasOwnProperty.call(rest, "locked_until")) {
+          // Schema section 9 not applied yet: still write the credential columns.
+          var noLock = Object.assign({}, rest);
+          delete noLock.locked_until;
+          noteDegrade(["locked_until"]);
+          if (!Object.keys(noLock).length) return saved;
+          return call("/accounts?uid=eq." + q(acc.uid), {
+            method: "PATCH", body: noLock, prefer: "return=minimal"
+          }).then(function () { return saved; })["catch"](function (err2) {
+            if (!isMissingColumn(err2)) throw err2;
+            noteDegrade(Object.keys(noLock));
+            return saved;
+          });
+        }
         noteDegrade(Object.keys(rest));
         return saved;
       });
@@ -349,13 +374,22 @@ function supabaseStore(cfg) {
     patchAccount: function (uid, patch) {
       var body = {};
       ["plan", "plan_until", "role", "last_login_at", "login_count", "nickname", "status",
-        "email", "email_verified_at", "password_hash", "password_salt"].forEach(function (k) {
+        "email", "email_verified_at", "password_hash", "password_salt", "locked_until"].forEach(function (k) {
         if (patch && Object.prototype.hasOwnProperty.call(patch, k)) body[k] = patch[k];
       });
       if (!Object.keys(body).length) return Promise.resolve(true);
       return call("/accounts?uid=eq." + q(uid), {
         method: "PATCH", body: body, prefer: "return=minimal"
-      }).then(function () { return true; });
+      }).then(function () { return true; })["catch"](function (err) {
+        if (!isMissingColumn(err) || !Object.prototype.hasOwnProperty.call(body, "locked_until")) throw err;
+        noteDegrade(["locked_until"]);
+        var rest = Object.assign({}, body);
+        delete rest.locked_until;
+        if (!Object.keys(rest).length) return true;
+        return call("/accounts?uid=eq." + q(uid), {
+          method: "PATCH", body: rest, prefer: "return=minimal"
+        }).then(function () { return true; });
+      });
     },
     listAccounts: function () {
       return call("/accounts?select=" + COLS + "&order=created_at.desc&limit=500")
@@ -400,6 +434,10 @@ function supabaseStore(cfg) {
     getSession: function (sid) {
       return call("/sessions?sid=eq." + q(sid) + "&limit=1").then(function (rows) { return rows && rows[0] ? rows[0] : null; });
     },
+    revokeSession: function (sid) {
+      return call("/sessions?sid=eq." + q(sid), { method: "PATCH", body: { revoked: 1 }, prefer: "return=minimal" })
+        .then(function () { return true; });
+    },
     revokeSessions: function (uid) {
       return call("/sessions?uid=eq." + q(uid), { method: "PATCH", body: { revoked: 1 }, prefer: "return=minimal" })
         .then(function () { return true; });
@@ -428,12 +466,12 @@ function supabaseStore(cfg) {
     }
   };
 
-  return attachReportApi(api);
+  return attachReportApi(api, call);
 }
 
 var REPORT_COLS = "rid,uid,email,nickname,kind,status,poem_id,poem_title,book," +
   "quote,context,note,suggestion,device,ua,created_at,updated_at,handled_at,handled_by,reply";
-
+var q = encodeURIComponent;
 function reportFilterQs(filter) {
   var parts = [];
   if (filter && filter.uid) parts.push("uid=eq." + q(filter.uid));
@@ -442,7 +480,7 @@ function reportFilterQs(filter) {
   return parts.length ? "&" + parts.join("&") : "";
 }
 
-function attachReportApi(api) {
+function attachReportApi(api, call) {
   api.putReport = function (row) {
     return call("/reports", { method: "POST", body: row, prefer: "return=minimal" }).then(function () {
       return { rid: row.rid };
