@@ -42,6 +42,13 @@ bash test/run.sh      # 等价于 npm test，本机约 6.6 秒
 
 ⚠️ 摘页面段时不是简单「删掉结尾」：有几处（`collections` / `canonical`）
 本来靠 jsdom 只是要一个 `window` + `localStorage`，正文里跑的全是数据层断言。
+
+**第三轮再删（2026-09-28）**：用户「删掉 50% 不那么重要的测试」。留下账号 / 接口 /
+同步 / 存储 / 调度算法 / 权益 / 判重与正文主表 / 注音这些核心层；删掉各部集子的
+数据层（`classic` / `engine` / `tangshi` / `songci` / `guwen` / `zhaoming` /
+`yuanqu` / `yuefu` / `jinxiandai` / `chengyu` / `changshi`）、`search` / `game` /
+`exam` / `ops` / `speech-nav`，以及详情页 / 列表页那几层（`index-card` /
+`reader-back` / `reader-tables` / `trans-source` / `signout-buttons`）。
 这些换成了 `vm` 沙盒 —— 断言一条不减，只是不再起 DOM。
 
 ## 界面回归改由谁盯

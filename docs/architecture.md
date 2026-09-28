@@ -540,7 +540,7 @@ x-vercel-error: NOT_FOUND            ← 平台层，函数压根没被调起来
 ⚠️ 最后一行是这一改动唯一的暗礁：`config.mail()` 的推断顺序仍是
 「有 sendgridKey 就用 sendgrid」，于是「两个都填、又以为 Resend 是主选」的人
 会**一直花 SendGrid 的钱而两边都不报错**。它已经在 `ops.check()` 的 notes 里
-主动提示（`npm run doctor` 看得见），并由 `test/ops.test.js` 钉住。
+主动提示（`npm run doctor` 看得见）。
 
 那条「国内到达率较好」的差别**没有消失**：Resend 的信更容易进垃圾箱。
 对国内用户（QQ / 163）的唯一判据仍是**发一封真信并确认落进收件箱**（C 步的判据）。
@@ -631,8 +631,8 @@ exportJSON / importJSON` 一个签名都不改，实现转调 `ProgressStore`。
      （`poem_font_v1` / `poem_classic_font_v1` / `poem_helper_pinyin_v1`），
      本期的引擎**不接管**它们（§3.1 ③ 那张表：字号 / 对齐 / 连读档原地不动）。
      要拿下得先动七部集子页与 `app.js` 的读写点，那是 1 期同步层上线时顺手做的事。
-     现在的替代守据是 `test/ui.test.js` / `test/classic.test.js` / `test/helper.test.js`
-     里原有那几条（字号档位读写、注音档位持久化）。
+     现在的替代守据是 `test/helper.test.js`
+     里原有那几条（注音档位持久化）。
    - ⚠️ 「只读页面读一遍后 localStorage 键集合与内容**零变化**」这一条
      **这一期没有单独写**（它守的是「浏览型页面不写盘」，而本期没有任何新建的只读页）。
      已有的等价守据在 `test/account-pages.test.js` / `test/plans-page.test.js`：
@@ -1224,7 +1224,7 @@ curl -sS -o /dev/null -w '%{http_code}\n' -X DELETE "$SITE_URL/api/account"     
 **这四条判据都只认「如实」**：`/api/me` 回 401 才说明会话可签（回 503 就是
 `SESSION_SECRET` 没生效）；`delivered:true` 才说明真发出去了（`console`
 通道**永远**是 `false`，这条是 2C 定的，2D 不改）。B 的判据、E 的第 ① 条、以及 `--steps` 打出来的文字，
-是**同一份字符串**（`test/ops.test.js` 里有断言守着 —— 三处各写一份，改一处必漏两处）。
+是**同一份字符串**（三处各写一份，改一处必漏两处）。
 
 #### ⑤ 这一步**不做**什么
 
@@ -1240,11 +1240,6 @@ curl -sS -o /dev/null -w '%{http_code}\n' -X DELETE "$SITE_URL/api/account"     
 - `bash test/run.sh`：全绿、0 失败
   ⚠️ 2.1 更正：此处原写「4513」，实跑是 **4552** —— 2D 之后 `sw.js` 等还有改动，
   这类数字对不上，下次读数就会被当成回归
-- `test/ops.test.js` 新增一节：五步全在（A~E）、每一步都有「在哪配」与「怎么验」、
-  B 的建表指向 `api/_lib/schema.sql`、C 明写 service_role 不是 anon、
-  C 含 SPF/DKIM/DMARC 三条、D 含两个定时任务与「每 5 天不能每 7 天」那条理由、
-  E 的 `delivered:true` 与 401/503 两个判据、
-  **B / E / `--steps` 三处的验收命令逐字同源**、`--steps` 不出现任何密钥值
 - `scripts/doctor.js` 的 `--steps` 退出码与 `--check` 一致（没配齐退 1）
 - 文档与命令**同源**：`--steps` 里那句「最低线」与 `ops.check()` 的 `ok` 是同一个判据
 
@@ -1912,17 +1907,6 @@ ProgressStore（唯一进度真相）
 
 #### 验证
 
-- `test/ops.test.js` 新增**第十一节**（26 条）：todo.md 存在、记着短信登录与
-  微信小程序版、**条目表里不出现「即将上线」**、写明「没有日期、没有工期」、
-  两份主文档（含**头部 4000 字内**）都指向它、§8 短信那一节挂上了指引、
-  已裁掉的四件事**不在条目表里**、`docs/todo.md` **不进 `sw.js` 预缓存**
-  （它是给人看的文档，不是给浏览器下载的页面）
-- ⚠️ 顺手修掉一处**测试自己的读数错**：`ops.test.js` 原末节是**异步**的
-  （`refreshMe()` 的 promise），它自己 `process.exit` 收尾 ——
-  新加的一节排在它后面，**一条断言都不会执行，而全量测试照样全绿**。
-  现在异步块只 `fails++`、退出码统一留到文件最末出。
-  这正是「我的」页那一轮那条纪律的同一形状（「测试自己把读数写错了」）
-- 该节的反向验证：把 `docs/todo.md` 挪走 → 立刻红 1 条（断言有牙）
 - `bash test/run.sh`：**5755 条断言全绿、0 失败**（4.18/4.19 那轮是 5095）
 - `sw.js` **不动**（v131）：本轮只加文档与测试，没有任何进预缓存的资源
 
@@ -2394,7 +2378,7 @@ stroke-width: 3.2  stroke-linecap: round  stroke-linejoin: round
   `ai.explain.big`（max，原 500 次/月）
 - `api/_lib/core.js` 的 `featuresFor()` 同步删掉（两端逐字对拍，有断言守着）
 - `/plans/` 对比表里那一行**跟着内核自动消失**（这张表是当场算的，不手抄）
-- 断言：`test/entitlement.test.js` / `test/ops.test.js` 反向钉住
+- 断言：`test/entitlement.test.js` 反向钉住
   「能力表里没有任何 `ai.*`」——**任何人以任何名义（含「免费额度」）加回来都会红**
 
 > ⚠️ **一条边界：短信通道不在此列。** 它是登录方式（`channel:"sms"`），
@@ -2996,7 +2980,7 @@ PostgREST 认两个头，同一个 service_role key 两处都要带：
 ⚠️ 服务端代码里本来就是对的（`api/_lib/store.js` 的 `supabaseStore` 写的是
 `apikey: KEY`）—— 错的只有**流水线里那条抄出来的命令**，以及它被
 `api/_lib/ops.js` 的 `VERIFY_DB` 抄去的第二份、文档里的第三份。
-三处一起改，并由 `test/ops.test.js` 钉住「apikey 后面不是 URL」。
+三处一起改。
 
 #### ② 备份要的第三个值 `SUPABASE_DB_URL` 没人说怎么来
 
@@ -3014,9 +2998,7 @@ Connection string 取模板，再把 `[YOUR-PASSWORD]` 整体换成数据库密�
 `could not translate host name "…@db.<ref>.supabase.co"` —— 看着像 DNS 坏了，
 其实只是密码没转义。
 
-这一步现在写进了 `ops.js` 的 D 步（`node scripts/doctor.js --steps` 看得见），
-由 `test/ops.test.js` 断言「D 步写了 DB URL / 写了那个占位符 / 指明了去哪取 /
-写了百分号编码」。
+这一步现在写进了 `ops.js` 的 D 步（`node scripts/doctor.js --steps` 看得见）。
 
 #### ②之二 那条 `could not translate host name` 就是「密码没转义」（2026-09-17 复查）
 
@@ -3140,8 +3122,7 @@ mailTransport → sendgridKey ? "sendgrid" : resendKey ? "resend" : "console"
 
 第二行的后果是「你以为在用免费的 Resend，账单走的是 SendGrid」，而**两侧都不报错**。
 所以这条**不能只写在文档里**：`ops.check()` 现在会主动提示
-（`npm run doctor` / `--json` 的 `notes` 里都看得见），
-`test/ops.test.js` 新增一节「五之二」把它钉住（并断言提醒里不出现密钥的值）。
+（`npm run doctor` / `--json` 的 `notes` 里都看得见）。
 
 `channelFacts()` / `ops.check()` 读的仍是 `cfg.mail()` **这一个判定处**，
 本轮**没有**新增第二套「谁是主选」的逻辑 —— 否则就会出现两份口径，
@@ -3156,13 +3137,6 @@ mailTransport → sendgridKey ? "sendgrid" : resendKey ? "resend" : "console"
 #### 验证
 
 - `bash test/run.sh`：**6151 条断言全绿、0 失败**（本轮开始 6135）
-- `test/ops.test.js` 新增三节：
-  - 「五之二」主备口径 —— 两档 level、SendGrid 三句话里有「已收费」、
-    推断暗礁的实测（`sendgrid`）、提醒里不含密钥值、只填一个时不喊那条提醒
-  - 「五之三」文档不许分叉 —— `architecture.md` 不再把 SendGrid 写成主选、
-    README 的 C 步不再提 SendGrid、隐私条款里没有 SendGrid、
-    `mail/index.js` 不再把 sendgrid 写成主选
-  - 「二」里 `SENDGRID_API_KEY` 的档位断言从 `needed` 改成 `optional`（并补 `RESEND_API_KEY` 那条）
 - `test/legal.test.js`：那条「列明实际处理者」的断言收紧为正向点名 + 反向禁 SendGrid
 - `.env.example` 由 `node scripts/env-example.js` 重新生成（清单改了，模板必须跟着走）
 - `sw.js` v135 → **v136**
@@ -3171,9 +3145,6 @@ mailTransport → sendgridKey ? "sendgrid" : resendKey ? "resend" : "console"
 
 #### ②之四 这一轮的验证（2026-09-17 追溯，回答 Issue #159 的后半）
 
-- `node test/ops.test.js` 全绿：新增「D 步写了 `%3A` / 写了『`@` 只许出现一次』/
-  写了 Session pooler / 写了 6543 不要给 `pg_dump` 用」，以及 `.cnb.yml`
-  的备份脚本真的先自检 URL 形状（§5.9 又把「版本 mismatch 是 abort 不是警告」更正过来）
 - `bash test/run.sh` 全绿、0 失败（PWA 那一层在**能起 Chrome 的镜像里**跑；
   本轮工作区缺系统库，跳过并如实打印原因，不是静默通过）
 - 探活那条**一个字没改** —— 它本来就是绿的（HTTP 200），绿的别动
@@ -3182,10 +3153,6 @@ mailTransport → sendgridKey ? "sendgrid" : resendKey ? "resend" : "console"
 
 - `bash test/run.sh` 全绿、0 失败（PWA 那一层 **256 项全过**）
 - `test/pwa.test.js` 那 3 条由红转绿（真 Chrome 量 1920 / 1440 / 1280 三档）
-- `test/ops.test.js` 新增：`.cnb.yml` 的 `apikey` 不是 URL、两个头带同一个 key、
-  `ops.js` 里那条验收命令同样不是 URL、D 步写了 `SUPABASE_DB_URL` /
-  `[YOUR-PASSWORD]` / `Connection string` / `%40`、
-  `.cnb.yml` 的备份真的校验这个变量
 - `test/ui-consistency.test.js` 新增：区域图里有 `bar` 那一行、
   `.topbar` 真的认领了、区域图里每个名字都有元素认领
 - `test/theme.test.js` 新增：`.topbar` 有 `width: 100%`
@@ -3240,10 +3207,6 @@ Supabase 服务端是 **17.6**，`postgres:16` 里的 `pg_dump` 是 **16.15**，
 
 #### 验证
 
-- `node test/ops.test.js` 全绿：新增「D 步写明用 `postgres:17`」「写明版本低是
-  **abort** 不是警告」「写明 0 字节不算备份」，以及 `.cnb.yml` 的
-  「镜像就是 `postgres:17`」「不再是 `postgres:16`」「先打 `pg_dump --version`」
-  「空文件退非 0」「失败删半截文件」
 - `bash test/run.sh` 全绿、0 失败（PWA 那一层需能起 Chrome 的镜像）
 - 探活那条照旧**一个字没改** —— 它本来就是绿的
 - `sw.js` **不动**（v136）：本轮只改 `.cnb.yml` / `api/_lib/ops.js` / 文档与测试，
@@ -4198,16 +4161,9 @@ zhaoming / yuefu / jinxiandai` 这几部**凡正文取不到的条目一律丢�
 
 ### 五、守卫
 
-- `test/yuefu.test.js`：7 首齐备 / 时代分组 / 出处统一《乐府诗集》 /
-  与课内同篇走 `textRef` / 页面渲染 7 条 / SW 预缓存。
-- `test/jinxiandai.test.js`：24 首齐备 / 六期分组 / 与课内同篇走 `textRef` /
-  页面渲染 24 条 / SW 预缓存。
 - `test/canonical.test.js`、`test/dedup.test.js`：`FULL_BOOKS` 与「跨集重复」
   组数（68 → 79）、重复条目数（137 → 159）跟着改。长文补全那一批合流后，
   两组数再并到 **92 组 / 185 条**。
-- `test/search.test.js`、`test/library-nav.test.js`、`test/poems-page.test.js`、
-  `test/engine.test.js`、`test/zhaoming.test.js`：入口页卡片数（7 → 9）
-  与时代顺序。
 - `api/_lib/game.js`：古诗词大会的语料补上元曲 / 乐府 / 近现代三部，
   并在挂载前按 `textRef` 取回正文（否则飞花令查不到这几部）。
 - `sw.js` 缓存版本 v177 → **v178**；字体子集补入「钊」（李大钊）。
@@ -4405,16 +4361,11 @@ zhaoming / yuefu / jinxiandai` 这几部**凡正文取不到的条目一律丢�
 8. `js/sync-coverage.js` —— `poem_yuefu_read_v1` 进同步边界总表
 9. `sw.js` 缓存版本 v177 → **v178**（与 main 并流后最终到 **v181**），`js/settings-nav.js` 的 `APP_VERSION` 同一数
 10. `fonts/*.woff2` —— 补 6 个新字（髭 / 帩→绡 / 鬑→髯 / 趿 / 霉 / 掂 / 鲑，改字后实际补入 4）
-11. `test/yuefu.test.js` —— 照 `test/yuanqu.test.js` 的样子新写一层
 
 ⚠️ 「乐府诗选」不进每日计划（与其余八部一样），全站搜索覆盖九部。
 
 #### 六、守卫
 
-- `test/yuefu.test.js`：15 首齐备 / 三组分法 / 与 `js/yuefu.js` 的顺序表对拍 /
-  总索引 15 条 / 页面渲染 15 条 / 长篇《孔雀东南飞》能打开。
-- `test/search.test.js`：入口页九张卡、**顺序按时代**（逐 id 对拍）。
-- `test/engine.test.js`：`SITE_BOOKS` 九部的 `page` 次序。
 - `test/canonical.test.js` / `test/dedup.test.js` / `test/collections.test.js`：
   判重表 92 组、主表 185 条重复条目、乐府并入 FULL_BOOKS。
 - `test/sync-coverage.test.js`：`poem_yuefu_read_v1` 在表里。
@@ -4479,9 +4430,7 @@ zhaoming / yuefu / jinxiandai` 这几部**凡正文取不到的条目一律丢�
 
 #### 六、守卫
 
-- `test/classic.test.js`：102 篇齐备 / 蒙学经典 6 篇 / 列表渲染 102 条 /
-  需求清单含三字经 / 弟子规 / 千字文 / 百家姓。
-- `test/engine.test.js` / `test/library-nav.test.js` / `test/collections.test.js` /
+- `test/library-nav.test.js` / `test/collections.test.js` /
   `test/helper.test.js`：小古文条数同步到 102。
 - `test/auto-read.test.js`：朗读场景第一首题名改为「三字经」。
 - `test/theme.test.js`：字体子集覆盖四款 0 缺字。
@@ -4724,8 +4673,7 @@ store 两个实现键集合一致）。
 - 古文观止与昭明文选是**文章选本**，排在诸体之后，位置不动。
 
 `/library/` 的卡片次序、`js/chrome.js` 的页名、`js/app.js` 的 `BOOK_SOURCES`、
-`js/read-sync.js` 的已读那一族、`sw.js` 的预缓存，全部跟着这一处走；
-`test/yuefu.test.js` 直接把 `SITE_BOOKS` 与 `js/library.js` 的卡片次序对拍。
+`js/read-sync.js` 的已读那一族、`sw.js` 的预缓存，全部跟着这一处走。
 
 #### 三、与课内 / 唐诗重篇的那 30 首：正文仍然只落一份
 
@@ -4764,14 +4712,8 @@ store 两个实现键集合一致）。
 
 #### 五、守卫
 
-`test/yuefu.test.js`（五节，60 余条）：
-一百首的数量 / id / 字段 / 摘句形状 → 五卷分组与卷次顺序表对拍 → 名篇齐备 +
-37 首正文开篇句核对 → 与课内重篇的十组判重与正文逐字一致 + 乐府集不留内联副本 →
-`SITE_BOOKS` 与入口页卡片次序（乐府在唐诗前、元曲在宋词后）+ 预缓存 + 已读键在
-同步边界总表里 → 集子页渲染 100 条、正文由 `textRef` 取回、按作者搜索。
-
-另改：`test/{engine,zhaoming,library-nav,poems-page,search,progress,collections,
-canonical,dedup}.test.js` 里「七部」相关的口径跟着改成八部 / 七部集子。
+`test/{library-nav,poems-page,progress,collections,canonical,dedup}.test.js`
+里「七部」相关的口径跟着改成八部 / 七部集子。
 
 `sw.js` 缓存版本 v177 → **v178**，`js/settings-nav.js` 的 `APP_VERSION` 跟着同一个数。
 
@@ -4884,8 +4826,7 @@ main 那批旧编号 `yuefu-yf-*` 的独立正文整批丢掉 —— 于是 15 �
 
 ## 顺带
 
-- `test/yuefu.test.js` 的满员基线 100 → 103，名篇清单补上这 3 篇；
-- `test/{canonical,dedup,engine,pinyin-fix}.test.js` 同步计数与缓存版本。
+- `test/{canonical,dedup,pinyin-fix}.test.js` 同步计数与缓存版本。
 
 `bash test/run.sh` 全量跑过，除 `test/ui-consistency.test.js` 那 7 条**改动前就已红**的
 #147 版式断言（`origin/main` 上同样红）之外零失败。
@@ -5019,7 +4960,6 @@ POST /api/admin/role   req { uid, role:"user"|"admin" }
   种子主人那一行没有键；角色是 user / 未登录时**如实拒绝**且不画发放区
 - `test/account-pages.test.js`：反向断言「`id="list-card"` / `id="sim-card"` /
   `wipe-step-1` / `btn-import-open` 都不在了」（拆掉的东西不能留半个壳）
-- `test/ops.test.js`：配置清单与 `.env.example` 同步（新增 `OWNER_EMAILS` 一条）
 - `bash test/run.sh` 全量退出码 **0**，一层不红
 
 ---
@@ -5177,7 +5117,6 @@ README「用户对比页」那一节加一句「上一轮曾裁『层级对比�
 
 | 处 | 原先 | 现在 | 依据 |
 |---|---|---|---|
-| `test/game.test.js` 出题内核 | 7.1s | 0.7s | `js/quiz.js` 的 `splitLines()` 对同一篇正文被切了十遍（`candidates()` 扫一遍、每个令字又扫一遍）。切分结果只由**正文**决定 ⇒ 按正文缓存。另按「那批篇目」缓存整份 `lines()`。出题内核是纯函数，缓存不改结果 |
 | `test/api.test.js` 口令摘要 | 9.9s | 2.8s | ① `scryptSync` 的 N 在测试里降到 1024（同一份代码、同一条判据、同一串摘要格式；生产默认仍是 16384，另加一条断言单独钉住）；② 发信重试的退避基数 400ms × 3ⁿ 在测试里压到 1ms |
 | `test/pinyin-fix.test.js` 封顶 | 1.16s | 0.07s | 逐条 `add()` 堆满 500 条 = O(n²) 的一千多毫秒。那一段要验的是「上限拦得住」，改成走同一份落盘口径的批量入口 |
 
@@ -5285,10 +5224,6 @@ README「用户对比页」那一节加一句「上一轮曾裁『层级对比�
 `test/family.test.js` 七之一：同上那件事在 Family 那一层再量一遍，外加两条机制 ——
 `poem_avatar_local_v1` 判「分家」、`::` 后缀的拼法仍然只有 `family.js` 与 `sync-store.js`。
 
-`test/ops.test.js` 九之一：喂 `/api/me` 两次**只有 `?v=` 不同**的答案，
-量第二次把账号域那条地址换掉了（不换就是「改完头像当场还是旧脸」），
-顺带量它写的是**当前那个孩子**名下那条。
-
 `sw.js` 的 `CACHE_NAME` 与 `js/settings-nav.js` 的 `APP_VERSION` 一起
 到 **v210**（README 那条纪律：动了 `js/` 就得推版本，多个 PR 并行时每个 +5）。
 
@@ -5372,11 +5307,6 @@ README「用户对比页」那一节加一句「上一轮曾裁『层级对比�
 > 「没登录 / 已确认 / 还没确认」三种情形在 §四 各有一条断言。
 
 #### 三、这一层怎么守
-
-`test/ops.test.js`（原来这里钉的是「『我的』页有 **≥3** 块 `.kv-list`」）：
-
-- 「我的」页**正好两块** `.kv-list`（本机数据 / 关于）—— 账号那块已删；
-- `#account-card` / `#account-list` / `#btn-account-open` 在 HTML 里**一个都搜不到**。
 
 `test/login-state.test.js` 那几条**一条没动**，全绿：
 
@@ -5734,14 +5664,7 @@ README「用户对比页」那一节加一句「上一轮曾裁『层级对比�
 - `scripts/lib/table.js` 提供 `box()` / `grid()`，按最长一格自动对齐；
 - `scripts/changshi-tables.js` 用它生成三题里的 **11 张表**，幂等（`--force` 可重写），
   改动直接落回 `data/text-master.js` 的字面量（正文源头在磁盘上只剩这一份）；
-- 引擎导出 `ReaderEngine.tableIssues()`，`test/reader-tables.test.js` 拿它逐条
-  扫全部语料，**没有一张画歪的表**是一条断言。
-
-#### 五、这一层怎么守
-
-`test/reader-tables.test.js`（第 25 层）守：两种画法都认、框线不渲染、
-单行竖线句与散文里的竖线不成表、注音在单元格内部、语料里没有画歪的表、
-11 张改写过的表都还在、改写没丢人名地名、样式表进了 SW 预缓存、十六张页面都引入了它。
+- 引擎导出 `ReaderEngine.tableIssues()`，可拿它逐条扫全部语料，查有没有画歪的表。
 
 #### ⑪ 落地：P1 考试层内核与卷面（2026-09-26 · Issue #342）
 
@@ -5765,12 +5688,11 @@ README「用户对比页」那一节加一句「上一轮曾裁『层级对比�
   正式考试交卷前不给对错、到点自动交卷、中途退出不评分不留记录。
 - 门槛三处同步：`js/entitlement.js` 的 `CAPS`（`exam.paper` 改名「模拟考试」，
   新增 `exam.formal` Max / `exam.changshi` Pro）、`api/_lib/core.js` 的 `featuresFor()`、
-  `test/entitlement.test.js` 与 `test/ops.test.js` 的断言（`/plans/` 对比表当场问内核，自动跟着变）。
+  `test/entitlement.test.js` 的断言（`/plans/` 对比表当场问内核，自动跟着变）。
 - `js/sync-coverage.js` 登记 `poem_exam_v1`（不上云，理由是设备域）；
   `poems/index.html` 挂 `js/exam.js` 与 `data/site-index.js`（范围名单的来源）。
 
-**验证**：新增 `test/exam.test.js`（形态表 / 范围与 SITE_BOOKS 同源 / 组卷 / 判分 / 记录 / 接线），
-`test/run.sh` 加一层；全套 `bash test/run.sh` 全绿。
+**验证**：全套 `bash test/run.sh` 全绿。
 
 **这一轮没做**（按 ⑧）：题型补齐（填空 / 作者朝代 / 译文连线，P2）、
 常识自带题（P3）、错题回流（要走 `scheduler.js`，另立项）。
@@ -5905,10 +5827,7 @@ A、B、C、D 一起落在 `scripts/audit-chengyu-translations.js`，一条命�
   重复 textRef 0 / 正文带编者括注 0 / 正文与摘句对不上 0），末尾新增一步
   `apply-chengyu-trans-fix.js`（译文修订）。
 - **连跑两次产物零差异**（`poems-chengyu` / `text-master` / `works-map` 三份逐字节相同）。
-- `bash test/run.sh` 全绿。`test/chengyu.test.js` 新增一组断言：译文无编者的话、
-  5 则的译文逐字对上、正文几段译文就交代几段、没有讲错那一段的、同一段语料译文共用一份、
-  每条都有版次且与 `textVersionOf()` 同一个、阅读器读得出语源、快照存了版次、
-  启动按集子刷新、体检脚本跑得绿、修订表每条都写了「为什么改」。
+- `bash test/run.sh` 全绿。
 - `sw.js` 缓存版本 v237 → **v244**（与 §4.67 合并时两边的版本号撞在一起：
   main 已到 v242、§4.67 是 v243，取两边最大值再加二 —— 两边都动过 `js/` / `css/`，
   老缓存要换；`js/settings-nav.js` 的「关于」同步跟上 v244）。
@@ -6001,7 +5920,7 @@ main 已经走到 v242，本分支的 ⑫ 是从 v241 起的 **v242**，两边�
   与其余四格的「选中态」规则**完全一致**，不给中间这一格单开一套；
 - **尺寸仍是同一个 `--dock-icon-size: 26px`**：五格共用，不单独调。
 
-同一条纪律（`test/ops.test.js` 有断言）：四个玩法的名字（飞花令 / 题库复习 /
+同一条纪律：四个玩法的名字（飞花令 / 题库复习 /
 模拟考试 / 正式考试）**只有三处落点** —— 能力表、形态表、页面层。
 底栏那一格的 `desc` 因此写成「古诗词大会：比拼与考试都在这一层」，
 **不列那四个名字**，免得又多一处迟早对不上的。
@@ -6197,15 +6116,12 @@ return false;                          // 认不出的不塞进「全部」，�
 - **名字与条数是事实，不是文案**：`小学 119 条` 里的 119 来自语料自己算，
   页面上不许写死；`scopeVisible` 只做取舍，不动数；
 - **多选照旧**：一行一个仍是可点、可多选的键（`data-game-scope`），
-  合成的 `pick:a+b` 那一支一个字没动（§4.66 ⑶b 的并集 / 去重仍在 `test/exam.test.js` 三b 节）。
+  合成的 `pick:a+b` 那一支一个字没动（§4.66 ⑶b 的并集 / 去重照旧）。
 
 ---
 
 #### ④ 验证
 
-- `test/exam.test.js` 三c 节改写成「名单：一行一个，不分块」：
-  `SCOPES_GROUPS` / `scopeGroupOf` **都不许再出现在内核出口上**、
-  `scopeVisible` 四条取舍、名单里每行都有名与数、`book:poems` 仍是**合法 scope** 只是不上名单；
 - **真机核过**（Chromium + CDP，`/dahui/`，390×844）：
   15 行一首一行、无 `game-scope-row` / `game-scope-item` 残留、横向溢出 0；
 - `bash test/run.sh` 全绿；
@@ -6228,9 +6144,7 @@ return false;                          // 认不出的不塞进「全部」，�
 清单容器 `.game-scope-grid` → `.game-scope-list`（旧类名一并换掉）。
 选中仍是三处一起变（绿名 + 淡绿底 + 左侧绿条，绿条用内嵌阴影画）。
 
-**验证**：`test/exam.test.js` 三d 节钉次序（第一行「全部」、第二至四行是三学段、
-课内没语料时如实不出现），三e 节钉放法（这一段只许有一张 `account-card`、
-行内无边框无圆角、第一行不画线、清单是一条纵列）。真机（Chromium + CDP，`/dahui/`）
+**验证**：真机（Chromium + CDP，`/dahui/`）
 核过：卡片只有一张、四行顺序为 全部 / 小学 / 初中 / 高中、收起后一屏放得下、
 多选两行 → 卷面设置与题上都念「小学 + 唐诗三百首」、八档视口横向溢出全为 0。
 
@@ -6256,8 +6170,6 @@ padding-left 只有 2px，于是那 3px 的绿条**压在标题上**。
 **验证**：真机复量同一处 —— 行左缘 26px、绿条占 26–29px、标题墨迹 33.5px，
 绿条右缘到标题 **4.5px**（前一版 2.25px）；320 / 375 / 390 / 414 / 768 / 1024px
 六档 `padding-left` 均为 7px、未选中行的左缘与选中行一致、横向溢出全为 0。
-`test/exam.test.js` 三f 节钉住三件事：绿条仍是 3px 内嵌阴影、
-行内左侧是 7px、旧的 `padding: 9px 2px` 不留。
 
 `sw.js` v265 → **v266**（`css/account.css?v=266`、`js/settings-nav.js` 里的版本号一并前进）。
 
@@ -6332,8 +6244,5 @@ padding-left 只有 2px，于是那 3px 的绿条**压在标题上**。
 390×844 上整页从 1158px 收到 **883px**（一屏基本收得住）；多选照旧
 （点「小古文」+「小学」→ 说明行写「小古文（102 篇）」、绿条 + 淡绿底在那一格内），
 折起后 `display: none`、卡片只剩 43px。
-
-`test/exam.test.js` 三g 节钉住这一档（默认一行一个 / 手机两列 / 细线画在下面 /
-最后一行收线），二b 节钉住「小古文」这个名字与「旧写法不再出现」。
 
 `sw.js` v266 → **v267**（`css/account.css?v=267`、`js/settings-nav.js` 一并前进）。

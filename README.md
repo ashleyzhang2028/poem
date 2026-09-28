@@ -193,7 +193,7 @@ node test/run.sh                               # 测试
 
 表格样式**全站只有一处**：`css/reader-tables.css`。长表窄屏可横滑。
 
-长表不要手打 —— 竖线少一根整段就会退回纯文本。用 `scripts/lib/table.js` 的 `box()` / `grid()` 生成，`test/reader-tables.test.js` 拿 `tableIssues()` 逐条过。文学常识那十一张表即由此来（`node scripts/changshi-tables.js`）。
+长表不要手打 —— 竖线少一根整段就会退回纯文本。用 `scripts/lib/table.js` 的 `box()` / `grid()` 生成，可用 `ReaderEngine.tableIssues()` 逐条过。文学常识那十一张表即由此来（`node scripts/changshi-tables.js`）。
 
 ## Service Worker 约定
 
