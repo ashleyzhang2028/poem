@@ -72,7 +72,7 @@ function timingSafeEqual(a, b) {
 }
 
 function newUid() {
-  return "u_" + crypto.randomBytes(4).toString("hex");
+  return "u_" + crypto.randomBytes(8).toString("hex");
 }
 
 function newSid() {

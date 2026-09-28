@@ -8,6 +8,7 @@ module.exports = handler.make("account", ["DELETE"], function (d, body) {
   }
   return handler.core.accountDelete(d, {
     confirm: body.confirm === true,
+    email: body.email,
     deviceId: body.deviceId || d.deviceId
   });
 });

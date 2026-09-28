@@ -1560,7 +1560,7 @@
 
   function applyFont() {
     var el = rd("text");
-    if (el) el.style.fontSize = FONT_SIZES[fontIdx()] + "px";
+    if (el) el.style.fontSize = "calc(" + FONT_SIZES[fontIdx()] + "px * var(--reader-scale, 1))";
   }
 
   function changeFont(step) {
@@ -1840,6 +1840,17 @@
     }
 
     document.addEventListener("keydown", function (e) {
+      if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+        if (e.ctrlKey || e.metaKey || e.altKey || e.defaultPrevented) return;
+        var t = e.target;
+        if (t && (/INPUT|TEXTAREA|SELECT/.test(t.tagName) || t.isContentEditable)) return;
+        // The player bar owns the arrow keys while it is showing.
+        if (document.querySelector(".player-bar:not([hidden])")) return;
+        var box = document.querySelector(".reader:not([hidden])");
+        var btn = box && box.querySelector(e.key === "ArrowLeft" ? ".reader-nav .prev" : ".reader-nav .next");
+        if (btn && !btn.disabled) { e.preventDefault(); btn.click(); }
+        return;
+      }
       if (e.key !== "Escape") return;
       var open = activeMount();
       if (open) open.close();

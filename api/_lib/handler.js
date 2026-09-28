@@ -31,7 +31,8 @@ function withSession(req, d) {
       if (!s) return d;
       return Promise.resolve(d.store.getSession(s.sid)).then(function (row) {
 
-        if (row && Number(row.revoked) === 1) return d;
+        // A signed token alone is not enough: the row vanishes when the account is deleted.
+        if (!row || Number(row.revoked) === 1 || String(row.uid) !== s.uid) return d;
         d.account = { uid: s.uid, sid: s.sid };
         return d;
       });

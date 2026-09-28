@@ -267,7 +267,7 @@ async function main() {
       await store.putProgress("u_1", "f-a", [{ poem_id: "p1", payload: { level: 5 }, updated_at: 12 }]);
       await store.putProgress("u_1", "f-b", [{ poem_id: "p2", payload: { level: 3 }, updated_at: 13 }]);
 
-      const out = await core.accountDelete(d, { confirm: true });
+      const out = await core.accountDelete(d, { confirm: true, email: "a@qq.com" });
       eq(out.status, 200, "注销成功");
       const recs = out.body.export.recs;
       const kids = {};

@@ -241,6 +241,28 @@ function pepperOf(cfg) {
   return String(cfg.sessionSecret || cfg.sessionKey || "");
 }
 
+// Locks live in `locked_until`; `status` keeps meaning pending/active so an
+// expired lock can never promote an unverified account to active.
+function isLocked(acc, t) {
+  return (Number(acc && acc.locked_until) || 0) > t;
+}
+
+function lockRetryAfter(acc, t) {
+  return Math.max(1, Math.ceil(((Number(acc.locked_until) || 0) - t) / 1000));
+}
+
+// Rows written by the old code carry status "locked" with no expiry.
+function repairLegacyLock(acc) {
+  if (acc && acc.status === "locked") acc.status = acc.email_verified_at != null ? "active" : "pending";
+  return acc;
+}
+
+function lockAccount(store, acc, until) {
+  acc.locked_until = until;
+  repairLegacyLock(acc);
+  return Promise.resolve(store.patchAccount(acc.uid, { locked_until: until, status: acc.status }));
+}
+
 function ownerEmailsOf(cfg) {
   var raw = String((cfg && cfg.ownerEmails) || "");
   if (!raw) return [];
@@ -375,17 +397,15 @@ function sendCodeAfterGuard(deps, input, who, isSms, purpose, device, ip) {
   return findOrCreateAccount(store, cfg, who, t).then(function (r) {
     var acc = r.acc;
 
-    if (acc.status === "locked") {
-      var until = Number(acc.locked_until) || 0;
-      if (until > t) {
-        return err(423, "E_LOCKED", "为了安全，这个账号暂时不能收验证码",
-          { retryAfter: Math.max(1, Math.ceil((until - t) / 1000)) });
-      }
-      acc.status = "active";
-      acc.locked_until = null;
-
+    if (isLocked(acc, t)) {
+      return err(423, "E_LOCKED", "为了安全，这个账号暂时不能收验证码",
+        { retryAfter: lockRetryAfter(acc, t) });
+    }
+    if (acc.locked_until || acc.status === "locked") {
       limiter._hits[WRONG.uid + "|" + acc.uid] = [];
-      store.putAccount(acc);
+      acc.locked_until = null;
+      repairLegacyLock(acc);
+      store.patchAccount(acc.uid, { locked_until: null, status: acc.status });
     }
 
     var codeId = id.newCodeId();
@@ -454,9 +474,7 @@ function bumpWrongRound(deps, uid, t) {
 
     return Promise.resolve(deps.store.getAccount(uid)).then(function (acc) {
       if (!acc) return null;
-      acc.status = "locked";
-      acc.locked_until = t + (Number(cfg.lockMs) || 86400000);
-      return deps.store.putAccount(acc);
+      return lockAccount(deps.store, acc, t + (Number(cfg.lockMs) || 86400000));
     });
   }
   return null;
@@ -549,16 +567,43 @@ function verifyCode_(deps, input) {
       .then(function () { return store.getAccount(rec.uid); })
       .then(function (acc) {
         if (!acc || acc.status === "deleted") return err(400, "E_CODE_VOID", "请用最新收到的验证码");
+        if (isLocked(acc, t)) {
+          return err(423, "E_LOCKED", "为了安全，请稍后再试", { retryAfter: lockRetryAfter(acc, t) });
+        }
+        repairLegacyLock(acc);
+
+        // A code delivered to the mailbox proves ownership just like the confirm link.
+        var passwordCleared = false;
+        if (rec.channel !== "sms" && acc.email_verified_at == null) {
+          acc.email_verified_at = t;
+          if (acc.status === "pending") acc.status = "active";
+          // A password set before anyone proved ownership may belong to someone else.
+          if (acc.password_hash) {
+            acc.password_hash = "";
+            acc.password_salt = "";
+            passwordCleared = true;
+          }
+        }
 
         var gate = emailGate(deps, acc);
         if (gate) return Promise.resolve(gate);
                 var first = !markLogin(acc, t);
         return Promise.resolve(store.putAccount(acc)).then(function (saved) {
+          // Sessions opened with the voided password belong to whoever typed it.
+          if (!passwordCleared) return saved;
+          return Promise.resolve(store.revokeSessions(acc.uid)).then(function () { return saved; });
+        }).then(function (saved) {
 
           return claimOwnerRole(store, cfg, saved || acc).then(function () { return saved || acc; });
         }).then(function (saved) {
 
-          return issueSessionFor(deps, saved || acc, first);
+          return issueSessionFor(deps, saved || acc, first).then(function (sess) {
+            if (passwordCleared && sess && sess.body) {
+              sess.body.passwordCleared = true;
+              sess.body.note = "邮箱已确认。注册时设的密码在确认之前填写，为了安全已作废；需要密码登录请用「忘记密码」重新设置。";
+            }
+            return sess;
+          });
         });
       });
   });
@@ -624,7 +669,7 @@ function emailGate(deps, acc) {
   if (!requireVerified(cfg)) return null;
   if (acc && acc.email_verified_at != null) return null;
 
-  if (!(acc && acc.status === "pending")) return null;
+  if (!(acc && (acc.status === "pending" || acc.status === "locked"))) return null;
   return err(403, "E_EMAIL_UNVERIFIED",
     "邮箱还没确认：请点开注册时那封确认邮件里的链接。没收到就点「重新发一封」。",
     {
@@ -702,18 +747,27 @@ function registerAfterGuard(deps, input) {
 
   return findOrCreateAccount(store, cfg, { channel: "email", value: email }, t).then(function (r) {
     var acc = r.acc;
-    if (acc.status === "locked") return err(423, "E_LOCKED", "为了安全，请稍后再试", { retryAfter: 3600 });
+    if (isLocked(acc, t)) return err(423, "E_LOCKED", "为了安全，请稍后再试", { retryAfter: lockRetryAfter(acc, t) });
+    repairLegacyLock(acc);
 
-    if (!r.created && acc.password_hash) {
-      return ok(withDegrade(store, {
+    // An account whose owner is already proven must never get a password from an
+    // unauthenticated request: that would let anyone take it over.
+    var proven = acc.email_verified_at != null || acc.status === "active";
+    if (!r.created && (acc.password_hash || proven)) {
+      var body = {
         uid: acc.uid,
         registerRequested: true,
         created: false,
-
         existing: true,
         store: store.kind,
-        note: "如果这个邮箱已经注册过，请直接用「密码登录」；忘了密码就用「忘记密码」重设。"
-      }));
+        email: String(acc.email || email),
+        emailVerified: acc.email_verified_at != null,
+        requiresVerification: !proven && requireVerified(cfg),
+        note: acc.password_hash
+          ? "这个邮箱已经注册过，请直接用「密码登录」；忘了密码就用「忘记密码」重设。"
+          : "这个邮箱已经用随机码登录过，还没有设密码。请用「快捷登录」进入，或用「忘记密码」给它设一个密码。"
+      };
+      return ok(withDegrade(store, body));
     }
 
     var salt = id.newPasswordSalt();
@@ -730,19 +784,6 @@ function registerAfterGuard(deps, input) {
 
       return claimOwnerRole(store, cfg, cur).then(function () { return cur; });
     }).then(function (cur) {
-      if (cur.email_verified_at != null) {
-        return ok(withDegrade(store, {
-          uid: cur.uid,
-          registerRequested: true,
-          created: r.created,
-          store: store.kind,
-          emailVerified: true,
-                    email: String(cur.email || email),
-          verifySent: false,
-          verifyTransport: null,
-          note: "邮箱已经在确认过了 —— 这次只更新了密码，确认状态保持不变。"
-        }));
-      }
       return issueVerification(deps, cur).then(function (v) {
         return ok(withDegrade(store, {
           uid: cur.uid,
@@ -782,8 +823,8 @@ function issueVerification(deps, acc) {
   var rec = {
     vid: vid,
     uid: acc.uid,
-    email_hash: id.emailHash(acc.email, cfg.sessionSecret || "no-pepper"),
-    token_hash: id.tokenHash(acc.uid, "verify", token, cfg.sessionSecret || "no-pepper"),
+    email_hash: id.emailHash(acc.email, pepperOf(cfg)),
+    token_hash: id.tokenHash(acc.uid, "verify", token, pepperOf(cfg)),
     salt: salt,
     issued_at: t,
     expires_at: t + (cfg.verifyTtlMs || 86400000),
@@ -832,7 +873,7 @@ function verifyEmail(deps, input) {
 
       return err(400, "E_TOKEN_INVALID", "这个确认链接不对，请重新发一封确认邮件");
     }
-    var expect = id.tokenHash(rec.uid, "verify", String(input.token), cfg.sessionSecret || "no-pepper");
+    var expect = id.tokenHash(rec.uid, "verify", String(input.token), pepperOf(cfg));
     if (!id.timingSafeEqual(expect, rec.token_hash)) {
       var next = Number(rec.attempts || 0) + 1;
       return Promise.resolve(store.patchVerification ? store.patchVerification(rec.vid, { attempts: next }) : null)
@@ -842,8 +883,11 @@ function verifyEmail(deps, input) {
       .then(function () { return store.getAccount(rec.uid); })
       .then(function (acc) {
         if (!acc || acc.status === "deleted") return err(400, "E_TOKEN_INVALID", "这个确认链接不对，请重新发一封确认邮件");
+        if (isLocked(acc, t)) {
+          return err(423, "E_LOCKED", "为了安全，请稍后再试", { retryAfter: lockRetryAfter(acc, t) });
+        }
         acc.email_verified_at = t;
-
+        repairLegacyLock(acc);
         if (acc.status === "pending") acc.status = "active";
                 var firstVerify = !markLogin(acc, t);
         return Promise.resolve(store.putAccount(acc)).then(function (saved) {
@@ -904,7 +948,7 @@ function loginWithPasswordAfterGuard(deps, input) {
     }
   }
 
-  return Promise.resolve(store.getAccountByHash(id.emailHash(email, cfg.sessionSecret || "no-pepper")))
+  return Promise.resolve(store.getAccountByHash(id.emailHash(email, pepperOf(cfg))))
     .then(function (acc) {
       if (!acc) {
 
@@ -912,8 +956,9 @@ function loginWithPasswordAfterGuard(deps, input) {
           .replace(/\$[0-9a-f]{32}\$/, "$00000000000000000000000000000000$"));
         return err(401, GREY.code, GREY.message);
       }
-      if (acc.status === "locked") return err(423, "E_LOCKED", "为了安全，请稍后再试", { retryAfter: 3600 });
       if (acc.status === "deleted") return err(401, GREY.code, GREY.message);
+      if (isLocked(acc, t)) return err(423, "E_LOCKED", "为了安全，请稍后再试", { retryAfter: lockRetryAfter(acc, t) });
+      repairLegacyLock(acc);
 
       var okPw = !!acc.password_hash && id.verifyPassword(pw, acc.password_hash);
       if (!okPw) {
@@ -921,10 +966,13 @@ function loginWithPasswordAfterGuard(deps, input) {
         var fails = (limiter.fails ? limiter.fails("login", "uid:" + acc.uid, t) : 0) + 1;
         if (limiter.fail) limiter.fail("login", "uid:" + acc.uid, t);
         if (fails >= 10) {
-          acc.status = "locked";
-          return Promise.resolve(store.putAccount(acc)).then(function () {
-            return err(423, "E_LOCKED", "密码连续输错太多次，1 小时后再试", { retryAfter: 3600 });
+          if (limiter.clearFails) limiter.clearFails("login", "uid:" + acc.uid);
+          return lockAccount(store, acc, t + 3600000).then(function () {
+            return err(423, "E_LOCKED", "密码连续输错太多次，1 小时后再试（也可以用「忘记密码」重设）", { retryAfter: 3600 });
           });
+        }
+        if (!acc.password_hash) {
+          return err(401, GREY.code, "这个账号还没有设密码（之前用随机码登录）。请用「快捷登录」，或用「忘记密码」设一个。");
         }
         return err(401, GREY.code, GREY.message, { remaining: Math.max(0, 10 - fails) });
       }
@@ -982,7 +1030,7 @@ function resetRequestAfterGuard(deps, input) {
     }
   }
 
-  return Promise.resolve(store.getAccountByHash(id.emailHash(email, cfg.sessionSecret || "no-pepper")))
+  return Promise.resolve(store.getAccountByHash(id.emailHash(email, pepperOf(cfg))))
     .then(function (acc) {
       if (!acc || acc.status === "deleted") return null;
       return issueReset(deps, acc, email).then(function (r) {
@@ -1002,7 +1050,7 @@ function issueReset(deps, acc, email) {
     uid: acc.uid,
 
     email: id.normalizeEmailForStore(email),
-    token_hash: id.tokenHash(acc.uid, "reset", token, cfg.sessionSecret || "no-pepper"),
+    token_hash: id.tokenHash(acc.uid, "reset", token, pepperOf(cfg)),
     salt: id.newSalt(),
     issued_at: t,
     expires_at: t + (cfg.resetTtlMs || 3600000),
@@ -1061,7 +1109,7 @@ function resetConfirm(deps, input) {
     if (t < Number(rec.issued_at) - 120000) return err(400, "E_TOKEN_INVALID", "这个重设链接不对，请重新发一封邮件");
     if (Number(rec.expires_at) <= t) return err(400, "E_TOKEN_EXPIRED", "重设链接已过期，请重新发一封邮件");
     if (!input.token) return err(400, "E_TOKEN_INVALID", "这个重设链接不对，请重新发一封邮件");
-    var expect = id.tokenHash(rec.uid, "reset", String(input.token), cfg.sessionSecret || "no-pepper");
+    var expect = id.tokenHash(rec.uid, "reset", String(input.token), pepperOf(cfg));
     if (!id.timingSafeEqual(expect, rec.token_hash)) {
       var next = Number(rec.attempts || 0) + 1;
       return Promise.resolve(store.patchReset ? store.patchReset(rid, { attempts: next }) : null)
@@ -1076,8 +1124,12 @@ function resetConfirm(deps, input) {
         acc.password_hash = id.hashPassword(String(input.password), salt);
         acc.password_salt = salt;
 
-        if (acc.status === "locked") acc.status = "active";
-        if (acc.status === "pending") {  }
+        // The reset link reached the mailbox, which proves ownership and ends any lock.
+        if (acc.email_verified_at == null) acc.email_verified_at = t;
+        acc.locked_until = null;
+        acc.status = "active";
+        if (limiter.clearFails) limiter.clearFails("login", "uid:" + acc.uid);
+        limiter._hits[WRONG.uid + "|" + acc.uid] = [];
 
         return Promise.resolve(store.putAccount(acc))
           .then(function () { return store.revokeSessions(acc.uid); })
@@ -1087,10 +1139,8 @@ function resetConfirm(deps, input) {
                             email: String(acc.email || ""),
               sessionsRevoked: true,
 
-              emailVerified: acc.email_verified_at != null,
-              note: acc.email_verified_at != null
-                ? "密码已重设。为了安全，其它设备上的登录已全部退出，请用新密码重新登录。"
-                : "密码已重设。为了安全，其它设备上的登录已全部退出。**但这个邮箱还没确认，暂时登录不了** —— 请到登录页点「重新发一封确认邮件」，点开那封邮件里的链接之后再用新密码登录。"
+              emailVerified: true,
+              note: "密码已重设。为了安全，其它设备上的登录已全部退出，请用新密码重新登录。"
             });
           });
       });
@@ -2172,6 +2222,18 @@ function accountDelete(deps, input) {
   if (!g.ok) return Promise.resolve(err(429, "E_RATE_DEVICE", "操作太频繁了，请稍后再试", { retryAfter: g.retryAfter }));
   deps.limiter.hit("device", "del:" + String(input.deviceId || "unknown"), t);
 
+  return Promise.resolve(store.getAccount(uid)).then(function (acc) {
+    if (!acc || acc.status === "deleted") return err(401, "E_NO_SESSION", "还没有登录");
+    var want = id.normalizeEmail(acc.email);
+    if (want && id.normalizeEmail(input.email) !== want) {
+      return err(400, "E_CONFIRM_EMAIL", "请输入这个账号注册时用的完整邮箱以确认注销");
+    }
+    return deleteAccountData(deps, uid, t);
+  });
+}
+
+function deleteAccountData(deps, uid, t) {
+  var store = deps.store, cfg = deps.cfg;
   return Promise.resolve(exportAllProgress(deps, uid)).then(function (rows) {
 
     var dump = {
@@ -2184,6 +2246,13 @@ function accountDelete(deps, input) {
     };
     return Promise.resolve(store.deleteProgress(uid))
       .then(function () { return store.revokeSessions(uid); })
+      .then(function () {
+        // The avatar sits in a public bucket; leaving it would outlive the account.
+        try {
+          var av = require("./avatar-store").getAvatarStore(cfg);
+          return Promise.resolve(av && av.remove ? av.remove(uid) : null)["catch"](function () { return null; });
+        } catch (e) { return null; }
+      })
       .then(function () { return store.deleteAccount(uid); })
       .then(function () {
         return {

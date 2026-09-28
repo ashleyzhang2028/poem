@@ -223,18 +223,27 @@
         });
       }
 
-      return channel.deleteAccount({ confirm: true }).then(function (r) {
+      return channel.deleteAccount({ confirm: true, email: opt2.email }).then(function (r) {
         if (r && r.ok) {
           exportData = r.export || null;
+          clearServerTier();
           var l2 = finishLocal();
+          // Cookie-only sign-ins have no local account to match; the server copy is gone either way.
+          if (!l2.ok) {
+            try { if (A && A.signOut && A.makeStore && D.backing) A.signOut(A.makeStore(D.backing)); } catch (e) {  }
+            l2 = { ok: true };
+          }
           return {
-            ok: l2.ok, remote: "deleted", reason: REASON.OK,
+            ok: true, remote: "deleted", reason: REASON.OK,
             export: exportData, local: l2, message: l2.message
           };
         }
         var code = (r && r.code) || "E_OFFLINE";
+        if (code === "E_CONFIRM_EMAIL" || code === "E_CONFIRM" || code === "E_RATE_DEVICE") {
+          return { ok: false, remote: "refused", reason: REASON.OK, code: code, message: r && r.message };
+        }
         if (code === "E_NO_SESSION") {
-
+          clearServerTier();
           var l3 = finishLocal();
           return { ok: l3.ok, remote: "none", reason: REASON.GUEST, local: l3, message: l3.message };
         }
@@ -629,6 +638,7 @@
     REASON: REASON,
     bind: bind,
     refreshMe: refreshOnce,
+    refreshNow: function (o) { globalPromise = null; return refreshOnce(o); },
 
     deleteAccount: function (o) { return boundOnce(o).deleteAccount(o); },
 

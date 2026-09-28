@@ -250,7 +250,7 @@ async function main() {
 
     const c = id.newCode(6);
     chk(/^\d{6}$/.test(c), "验证码是 6 位纯数字（实际 " + c + "）");
-    chk(id.newUid().indexOf("u_") === 0 && id.newUid().length === 10, "uid 形如 u_ + 8 位");
+    chk(id.newUid().indexOf("u_") === 0 && id.newUid().length === 18, "uid 形如 u_ + 16 位");
     chk(id.newSid().indexOf("s_") === 0, "sid 形如 s_ + 16 位");
   }
 
@@ -415,15 +415,16 @@ async function main() {
     eq(w1.body.code, "E_CODE_WRONG", "错码的错误码正确");
     eq(w1.body.remaining, 4, "错码回剩余次数 4");
 
+    // 码是发到邮箱里的：填对了就证明邮箱可达，与点确认链接等价 —— 不再让人另等一封确认信。
     const gated = await core.verifyCode(d, { codeId: r1.body.codeId, code: "111111" });
-    eq(gated.status, 403, "**码是对的、但邮箱没确认 → 403**（这是这一节的核心口径）");
-    eq(gated.body.code, "E_EMAIL_UNVERIFIED", "码是 E_EMAIL_UNVERIFIED");
-    chk(/确认/.test(gated.body.message), "文案里说了要去点确认（这是用户唯一的下一步）");
-    eq(gated.body.email, "Parent@Example.com", "带出**明文邮箱**（Issue #320），界面据此回显「发往哪儿」");
-    chk(gated.cookies === undefined, "**一枚 Cookie 都不发**（判在前、签在后）");
+    eq(gated.status, 200, "**码是对的、邮箱还没确认 → 码本身就是确认**，直接登录");
+    chk(Array.isArray(gated.cookies) && gated.cookies.length === 1, "签发了一枚 Cookie");
+    chk(gated.body.account.emailVerified === true, "响应如实说「邮箱已确认」");
+    chk(store.getAccount(acc.uid).email_verified_at != null, "库里 email_verified_at 已写上");
+    eq(store.getAccount(acc.uid).status, "active", "status 由 pending 提成 active");
 
     eq((await core.verifyCode(d, { codeId: r1.body.codeId, code: "111111" })).body.code, "E_CODE_USED",
-      "被拦那一次**已经把码消费掉了**（不留「回头再填一次」这条路）");
+      "那一枚码**已经消费掉了**（不留「回头再填一次」这条路）");
 
     await confirmEmail(store, acc.uid, cfg.sessionSecret);
     const r1b = await core.sendCode(Object.assign({}, d, { limiter: core.makeRateLimiter() }),
@@ -817,7 +818,12 @@ async function main() {
     eq(noConfirm.status, 400, "没有 confirm 时拒绝注销");
     eq(noConfirm.body.code, "E_CONFIRM", "错误码 E_CONFIRM");
 
-    const del = await core.accountDelete(Object.assign({}, d, { account: { uid } }), { confirm: true });
+    const wrongMail = await core.accountDelete(Object.assign({}, d, { account: { uid } }), { confirm: true, email: "other@example.com" });
+    eq(wrongMail.status, 400, "邮箱对不上时服务端也拒绝注销（不只靠前端那一道）");
+    eq(wrongMail.body.code, "E_CONFIRM_EMAIL", "错误码 E_CONFIRM_EMAIL");
+    chk(!!store.getAccount(uid), "拒绝之后账号还在");
+
+    const del = await core.accountDelete(Object.assign({}, d, { account: { uid } }), { confirm: true, email: " BYE@example.com " });
     eq(del.status, 200, "确认后注销成功");
     eq(del.body.deleted, true, "回 deleted: true");
     eq(del.body.export.recs.length, 1, "导出随响应回（先导出再删）");
@@ -957,7 +963,7 @@ async function main() {
         eq(pull.status, 200, "带 Cookie 的 sync/pull 成功");
         eq(pull.body.recs.length, 1, "pull 到刚推的那一条");
 
-        const del = await call(sv2.base, "DELETE", "/api/account", { confirm: true }, cookie);
+        const del = await call(sv2.base, "DELETE", "/api/account", { confirm: true, email: me1.body.email }, cookie);
         eq(del.status, 200, "注销成功");
         chk(/Max-Age=0/.test(del.setCookie || ""), "注销响应清掉 Cookie");
         const after = await call(sv2.base, "GET", "/api/me", undefined, cookie);
@@ -1953,15 +1959,15 @@ async function main() {
       const ridU = Object.keys(store._db.resets)
         .filter(k => !store._db.resets[k].consumed_at)
         .sort((a, b) => store._db.resets[b].issued_at - store._db.resets[a].issued_at)[0];
+      // 重设链接只发到那个邮箱里：点开并设好新密码，就证明了邮箱可达 —— 顺带完成确认，
+      // 不再出现「密码重设成功，却仍然登不进去」的死胡同。
       const rcU = await core.resetConfirm(d, { rid: ridU, token: rrU.body.devResetToken, password: "new-pw-99999" });
-      eq(rcU.status, 200, "重设成功（这一件事本身是做成了的）");
-      eq(rcU.body.emailVerified, false, "**如实回 emailVerified:false**（这个人还是登不进去）");
-      chk(/还没确认|确认/.test(rcU.body.note), "那一句 note 里说了「还有一步」（实际「" + rcU.body.note.slice(0, 60) + "…」）");
-      eq(store._db.accounts[regU.body.uid].email_verified_at, null,
-        "**重设不顺手动确认状态**（收到了重设邮件 ≠ 点过确认链接）");
-      const stillBlocked = await core.loginWithPassword(d, { email: "unverified-reset@example.com", password: "new-pw-99999", deviceId: "du2" });
-      eq(stillBlocked.status, 403, "新口令对了，但**仍然登不进去**（这正是界面必须说出来的那一格）");
-      eq(stillBlocked.body.code, "E_EMAIL_UNVERIFIED", "码还是那一个（用户的下一步没变：去点确认）");
+      eq(rcU.status, 200, "重设成功");
+      eq(rcU.body.emailVerified, true, "**重设即确认**：响应回 emailVerified:true");
+      chk(store._db.accounts[regU.body.uid].email_verified_at != null,
+        "库里 email_verified_at 已写上（重设链接同样证明了邮箱可达）");
+      const nowIn = await core.loginWithPassword(d, { email: "unverified-reset@example.com", password: "new-pw-99999", deviceId: "du2" });
+      eq(nowIn.status, 200, "新口令直接就能登进来");
     }
 
     {
@@ -1991,6 +1997,12 @@ async function main() {
       chk(locked, "口令连续失败会锁号（撞库打的是同一个账号，所以按账号计数）");
       const after = await core.loginWithPassword(d, { email: "lock@example.com", password: "hunter2hunter", deviceId: "dev-fresh" });
       eq(after.status, 423, "**锁着的时候连对的口令也进不来**（锁是终态，不是「再试一次就好」）");
+      const lockedAcc = store._db.accounts[uid];
+      eq(lockedAcc.status, "active", "锁定**不改** status（原先写成 'locked' 且没有到期时间 = 永久锁死）");
+      chk(Number(lockedAcc.locked_until) > Date.now() + 3500000, "锁定写的是 locked_until（约 1 小时后）");
+      lockedAcc.locked_until = Date.now() - 1;
+      const unlocked = await core.loginWithPassword(d, { email: "lock@example.com", password: "hunter2hunter", deviceId: "dev-later" });
+      eq(unlocked.status, 200, "**到点自动解锁**，对的口令又能进来");
     }
 
     boot({ ALLOW_CODE_ECHO: "1" });
@@ -2176,59 +2188,42 @@ async function main() {
 
       const sc = await POST("/api/send-code", { email: "gate@example.com" });
       eq(sc.status, 202, "随机码照常发得出去（发码那条路不受影响）");
-      const codeBlocked = await POST("/api/verify-code", { codeId: sc.body.codeId, code: sc.body.devCode });
-      eq(codeBlocked.status, 403, "**随机码登录：邮箱没确认 → 403**（两条路是同一件事的两半）");
-      eq(codeBlocked.body.code, "E_EMAIL_UNVERIFIED", "同一个码、同一句话");
 
       const wrong = await POST("/api/login", { email: "gate@example.com", password: "definitely-wrong-1" });
       eq(wrong.body.code, "E_LOGIN_FAIL", "口令错走的是统一的那一句（防枚举）");
       chk(wrong.body.message !== pwBlocked.body.message,
         "**「口令不对」与「没确认」不是同一句话** —— 说成一样，用户就不知道该做什么");
 
+      // 码是发进邮箱的：填对就证明邮箱可达，与点确认链接等价。
+      const codeIn = await POST("/api/verify-code", { codeId: sc.body.codeId, code: sc.body.devCode });
+      eq(codeIn.status, 200, "**随机码登录：码本身就是邮箱确认**，直接登录");
+      chk(/kbsid=/.test(String(codeIn.setCookie || "")), "签发了会话 Cookie");
+      eq(codeIn.body.passwordCleared, true,
+        "确认之前填的口令**作废**（防「抢注」：别人先用你的邮箱注册、等你确认后用他的口令进来）");
+      const preClaim = await POST("/api/login", { email: "gate@example.com", password: "hunter2hunter" });
+      eq(preClaim.status, 401, "确认之前那个口令进不来了");
+      chk(/忘记密码/.test(preClaim.body.message), "提示里说了下一步（用「忘记密码」设一个）");
+
       const legacy = await POST("/api/send-code", { email: "legacy-gate@example.com" });
       eq(legacy.status, 202, "（前置）老账号：发码那条路建的，未确认");
-      const legacyBlocked = await POST("/api/verify-code", { codeId: legacy.body.codeId, code: legacy.body.devCode });
-      eq(legacyBlocked.status, 403, "老账号同样被拦（口径对**所有**未确认账号一视同仁）");
-      eq(legacyBlocked.body.email, "legacy-gate@example.com",
-        "被拦时带出**明文邮箱**（Issue #320），界面据此回显发往哪儿");
-      eq(legacyBlocked.body.verifySent, false,
-        "**登录这条路被拦时不顺手发信**（否则拿一个已知的未确认邮箱反复点登录即可给人发垃圾邮件）");
+      const legacyIn = await POST("/api/verify-code", { codeId: legacy.body.codeId, code: legacy.body.devCode });
+      eq(legacyIn.status, 200, "老账号同样：码对了就确认并登录");
+      eq(legacyIn.body.account.emailVerified, true, "响应如实说「邮箱已确认」");
 
       const resend = await POST("/api/resend-verification-by-email", { email: "legacy-gate@example.com" });
-      eq(resend.status, 200, "匿名重发那条路走得通（它是这条口径下**唯一的出路**）");
+      eq(resend.status, 200, "匿名重发那条路仍然走得通");
 
       eq(resend.body.devVerifyToken, undefined,
         "匿名重发口**不回明文令牌**（回了就等于「凭邮箱确认别人的邮箱」）");
       chk(!/emailMask|@/.test(JSON.stringify(resend.body)),
         "匿名重发口**连邮箱都不回**（回一句就从「这个邮箱存在」推出来了）");
 
-      const storeG = require("../api/_lib/store.js").getStore(require("../api/_lib/config.js"));
-      const regG = await POST("/api/register", { email: "legacy-gate@example.com", password: "hunter2hunter" });
-      chk(/^[0-9a-f]{64}$/.test(String(regG.body.devVerifyToken || "")),
-        "（冒烟档）注册那条路给得出明文令牌（令牌只该从「会把它发出去」的那条路拿）");
-      const vidG = Object.keys(storeG._db.verifications)
-        .filter(k => !storeG._db.verifications[k].consumed_at)
-        .sort((a, b) => storeG._db.verifications[b].issued_at - storeG._db.verifications[a].issued_at)[0];
-      const vokG = await POST("/api/verify-email", { vid: vidG, token: regG.body.devVerifyToken });
-      eq(vokG.status, 200, "点邮件里那条链接就确认了（同样**不需要登录**）");
-
-      const sc2 = await POST("/api/send-code", { email: "legacy-ok@example.com" });
-      eq(sc2.status, 202, "（前置）再建一个老账号");
-      const blocked2 = await POST("/api/verify-code", { codeId: sc2.body.codeId, code: sc2.body.devCode });
-      eq(blocked2.status, 403, "（前置）它同样被拦");
-      chk(await confirmViaHttp(sv.base, "legacy-ok@example.com", call), "（前置）走那条唯一的出路把它确认掉");
-
-      chk(await confirmViaHttp(sv.base, "gate@example.com", call), "（前置）把 gate@example.com 也确认掉");
-      const lgOk = await POST("/api/login", { email: "gate@example.com", password: "hunter2hunter" });
-      eq(lgOk.status, 200, "**确认之后口令那条路放行**（403 变 200）");
-      chk(/kbsid=/.test(String(lgOk.setCookie || "")), "签发了会话 Cookie");
-      const vOk = lgOk;
-
-      const pwOk = await POST("/api/register", { email: "legacy-ok@example.com", password: "hunter2hunter" });
-      eq(pwOk.body.emailVerified, true, "已确认的人重新注册：如实回 emailVerified:true");
-      eq(pwOk.body.verifySent, false, "已确认的人重新注册**不再发确认邮件**（省一封垃圾邮件）");
-      const pwOkLogin = await POST("/api/login", { email: "legacy-ok@example.com", password: "hunter2hunter" });
-      eq(pwOkLogin.status, 200, "重新注册补了口令之后，口令那条路也能进（确认状态没被退回）");
+      // 账号接管回归：已确认、还没有口令的账号，不许靠一次匿名「注册」补上口令。
+      const regG = await POST("/api/register", { email: "legacy-gate@example.com", password: "attacker-pw-1" });
+      eq(regG.body.existing, true, "已确认的账号再注册：如实标 existing");
+      eq(regG.body.devVerifyToken, undefined, "不发确认令牌");
+      const takeover = await POST("/api/login", { email: "legacy-gate@example.com", password: "attacker-pw-1" });
+      eq(takeover.status, 401, "**匿名注册填的口令进不来**（没证明邮箱就不能给别人的账号设口令）");
 
       for (const p of ["/api/resend-verification-by-email"]) {
         const g = await call(sv.base, "GET", p);
@@ -2337,7 +2332,8 @@ async function main() {
       const later = await send(r.d, "victim@example.com", "third-device", "203.0.113.8");
       eq(later.status, 200, "① 24 小时之后自动解锁（锁不是终态）");
       const acc = Object.values(r.d.store._db.accounts)[0];
-      eq(acc.status, "active", "① 解锁时把账号状态改回 active（不留在 locked 上）");
+      eq(acc.status, "pending",
+        "① 解锁**不改** status：这个账号从没确认过，解锁不许顺手把它提成 active（那等于绕过邮箱确认）");
       eq(acc.locked_until, null, "① 解锁时清掉 locked_until");
       eq((r.d.limiter._hits["wrong|" + acc.uid] || []).length, 0,
         "① 解锁时连错轮数的账一并清掉（不清的话用户回来错一枚码就又被锁一天）");
@@ -3175,9 +3171,10 @@ async function main() {
       const s1 = await core.sendCode(d, { email: "gate@example.com", purpose: "login", deviceId: "v1", ip: "1.1.1.1" });
       eq(s1.status, 200, "① 未确认的账号照常能**收到**码（发码不是登录，不该被拦）");
       const v1 = await core.verifyCode(d, { codeId: s1.body.codeId, code: s1.body.devCode, deviceId: "v1", ip: "1.1.1.1" });
-      eq(v1.status, 403, "① 随机码那条路：码对但邮箱没确认 → **403**（原先根本不看账号状态，直接发会话）");
-      eq(v1.body.code, "E_EMAIL_UNVERIFIED", "① 码是 E_EMAIL_UNVERIFIED（不是含糊的 E_LOGIN_FAIL）");
-      chk(!v1.cookies && !v1._session, "① 被拦时**不签发会话**（拦在半路等于没拦）");
+      eq(v1.status, 200, "① 随机码那条路：码是发进邮箱的，填对即证明邮箱可达 → 确认并登录");
+      chk(Array.isArray(v1.cookies) && v1.cookies.length === 1, "① 签发了会话");
+      chk(Object.values(store._db.accounts).filter(a => a.email === "gate@example.com")[0].email_verified_at != null,
+        "① email_verified_at 写上了");
 
       const regG = await core.register(d, { email: "gate2@example.com", password: "hunter2hunter", deviceId: "v2" });
       const gAcc = Object.values(store._db.accounts).filter(a => a.email === "gate2@example.com")[0];
@@ -3537,7 +3534,15 @@ async function main() {
 
       boot({ TURNSTILE_ENABLED: "1", TURNSTILE_SECRET_KEY: "sk-x" });
       const cfg3 = require("../api/_lib/config.js");
-      chk(turnstile.turnstileReady(cfg3) === true, "② 开关 + secret 都在 → 才真的校验");
+      chk(turnstile.turnstileReady(cfg3) === false,
+        "② 开关 + secret 但**没有 site key** → 不校验（前端画不出方框，校验只会把所有人挡在门外）");
+
+      boot({ TURNSTILE_ENABLED: "1", TURNSTILE_SECRET_KEY: "sk-x", TURNSTILE_SITE_KEY: "1x000" });
+      const cfg3b = require("../api/_lib/config.js");
+      chk(turnstile.turnstileReady(cfg3b) === true, "② 开关 + secret + site key 都在 → 才真的校验");
+      chk(cfg3b.turnstileReady() === true, "② config 自己那份 turnstileReady 与之同一口径");
+      eq(turnstile.hostOf("http://localhost:8080/x"), "localhost",
+        "② hostOf 不带端口（Cloudflare 回的 hostname 本来就不带）");
 
       boot({ TURNSTILE_ENABLED: "1", TURNSTILE_SECRET_KEY: "sk-x", TURNSTILE_BYPASS: "1" });
       const cfg4 = require("../api/_lib/config.js");
@@ -3606,6 +3611,27 @@ async function main() {
 
         const cfgJson = JSON.stringify(good.body) + JSON.stringify(noTok.body);
         chk(!/bypass/i.test(cfgJson), "⑤ 「旁路」这件事不出现在任何响应体里");
+
+        // 失败要分得清：令牌用过/过期、Cloudflare 连不上、secret 配错 —— 同一句「请刷新」对三者都不对。
+        const reply = (data) => () => Promise.resolve({ status: 200, text: () => Promise.resolve(JSON.stringify(data)) });
+        CONFIG.turnstileFetch = reply({ success: false, "error-codes": ["timeout-or-duplicate"] });
+        const dup = await POST("/api/send-code", { email: "ts-h@example.com", turnstileToken: "used" });
+        eq(dup.body.turnstile, "expired", "⑥ 令牌用过 / 过期（Cloudflare 的 `error-codes` 字段）→ expired");
+        chk(!/刷新页面/.test(dup.body.message), "⑥ 不再劝「刷新页面」（方框自己会重新通过）");
+        CONFIG.turnstileFetch = reply({ success: false, "error-codes": ["invalid-input-secret"] });
+        const badSecret = await POST("/api/send-code", { email: "ts-i@example.com", turnstileToken: "t" });
+        eq(badSecret.body.turnstile, "config", "⑥ secret 配错 → config（让用户去找管理员，而不是一直重试）");
+        CONFIG.turnstileFetch = () => Promise.reject(new Error("ECONNRESET"));
+        const down = await POST("/api/send-code", { email: "ts-j@example.com", turnstileToken: "t" });
+        eq(down.status, 400, "⑥ Cloudflare 连不上仍是 400（不触发前端的 503「整站降级」）");
+        eq(down.body.turnstile, "unavailable", "⑥ 连不上 → unavailable");
+        CONFIG.turnstileFetch = reply({ success: true, hostname: "www.kuibu.app" });
+        const www = await POST("/api/send-code", { email: "ts-k@example.com", turnstileToken: "t" });
+        eq(www.status, 202, "⑥ www 子域名上拿到的令牌照样放行");
+        CONFIG.turnstileFetch = reply({ success: true, hostname: "evil.example.com" });
+        const evil = await POST("/api/send-code", { email: "ts-l@example.com", turnstileToken: "t" });
+        eq(evil.status, 400, "⑥ 别的域名上拿到的令牌仍然拒绝");
+        delete CONFIG.turnstileFetch;
       } finally { await sv.close(); }
     }
 
@@ -3653,7 +3679,7 @@ async function main() {
 
     {
       const turnstile = require("../api/_lib/turnstile.js");
-      const cfg = { turnstileEnabled: true, turnstileSecretKey: "sk", siteUrl: "https://kuibu.app" };
+      const cfg = { turnstileEnabled: true, turnstileSecretKey: "sk", turnstileSiteKey: "1x000", siteUrl: "https://kuibu.app" };
       const mk = (payload) => (url, init) => Promise.resolve({
         status: 200, text: () => Promise.resolve(JSON.stringify(payload))
       });

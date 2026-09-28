@@ -539,7 +539,12 @@ body[data-nav="login"] .app {
 }
 
 @media (min-width: 1024px) {
-  .account-page { max-width: 560px; }
+  /* In the login page's flex column, auto side margins alone would shrink the card to its content. */
+  .account-page { width: 100%; max-width: 560px; margin-left: auto; margin-right: auto; }
+  body[data-nav="login"] .account-page,
+  body[data-nav="reset"] .account-page,
+  body[data-nav="verify"] .account-page { max-width: 440px; }
+  body[data-nav="admin"] .account-page { max-width: var(--block-w); }
 
   #login-page {
     min-height: calc(100vh - 77px);
@@ -962,6 +967,15 @@ thead .plans-th-cap {
   .game-scope-list .game-scope-pick:nth-child(even) { margin-left: auto; }
 }
 
+@media (min-width: 1024px) {
+  .game-scope-list:not([data-folded="1"]) {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    column-gap: 28px;
+  }
+  .game-scope-list .game-scope-pick { border-bottom: 1px solid var(--line); }
+}
+
 @media (max-width: 360px) {
   .poems-game:has(.game-mode) { gap: 10px; }
   .poems-home-row { gap: 10px; }
@@ -1187,6 +1201,18 @@ thead .plans-th-cap {
 
   border-bottom: 1px solid var(--line);
 }
+
+.auth-title {
+  margin: 0 0 14px;
+  font-family: var(--font-poem);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: var(--ink);
+}
+
+.code-tools { margin-top: 10px; }
+.reports-tools { margin-bottom: 10px; }
 
 .auth-tab {
   appearance: none;
@@ -1434,6 +1460,26 @@ thead .plans-th-cap {
   color: var(--ink-2);
 }
 
+#sync-card .sync-row { margin-top: 0; padding-top: 0; border-top: 0; }
+#sync-card .switch-hint:empty { display: none; }
+
+.nav-list + .nav-list,
+.kv-list + .nav-list { margin-top: 2px; border-top: 1px solid var(--line-2); }
+a.kv-row.nav-row {
+  color: var(--ink);
+  text-decoration: none;
+  cursor: pointer;
+  transition: color .15s ease;
+}
+a.kv-row.nav-row[hidden] { display: none; }
+a.kv-row.nav-row .kv-k { color: inherit; }
+a.kv-row.nav-row:hover,
+a.kv-row.nav-row:focus-visible { color: var(--green); }
+.nav-go { color: var(--ink-3); font-size: 18px; line-height: 1; }
+a.kv-row.nav-row:hover .nav-go { color: var(--green); }
+
+.identity-row a.tier-badge { text-decoration: none; cursor: pointer; }
+
 .nickname-input {
   display: block;
 
@@ -1639,6 +1685,18 @@ thead .plans-th-cap {
   margin: 0 0 12px;
 }
 .admin-steps .account-field { margin-bottom: 0; }
+.admin-steps .account-label {
+  position: static;
+  width: auto;
+  height: auto;
+  margin: 0 0 4px;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+  display: block;
+  font-size: 12px;
+  color: var(--ink-3);
+}
 
 .admin-line-row { display: flex; gap: 8px; align-items: center; }
 .admin-line-row .account-input { flex: 1 1 auto; min-width: 0; }

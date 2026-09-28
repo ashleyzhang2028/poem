@@ -122,15 +122,28 @@
     verify: "ts-verify",
     unverified: "ts-unverified"
   };
+  var TS_CODE_RESEND = "ts-code-resend";
+
+  function codeStepShown() {
+    var el = $("step-code");
+    return !!(el && !el.hidden);
+  }
+
+  // The code pane has two steps; 「重新发送」 lives in the second, so the widget must follow it there.
+  function slotOf(mode) {
+    if (mode === "code" && codeStepShown()) return TS_CODE_RESEND;
+    return TS_SLOTS[mode];
+  }
 
   function mountTurnstile(slotKey) {
     if (!TS || !TS.mount || !slotKey) return;
-    var slotId = TS_SLOTS[slotKey];
+    var slotId = slotOf(slotKey);
     var el = slotId ? $(slotId) : null;
     if (!el) return;
+    if (slotKey === "code") hide($(slotId === TS_CODE_RESEND ? TS_SLOTS.code : TS_CODE_RESEND));
     TS.mount(el, { siteKey: tsConfig.siteKey, enabled: tsConfig.enabled }).then(function (st) {
 
-      if (st && st.configured && state.mode === slotKey) show(el);
+      if (st && st.configured && state.mode === slotKey && slotOf(state.mode) === slotId) show(el);
       turnstileBrokenNote(slotId);
     });
   }
@@ -145,7 +158,7 @@
     var note = $("ts-broken-" + slotId);
     if (!note) return;
 
-    if (note.hidden && TS_SLOTS[state.mode] !== slotId) return;
+    if (note.hidden && slotOf(state.mode) !== slotId) return;
     if (!TS.failed()) { hide(note); text(note, ""); return; }
     text(note, (TS.why ? TS.why() + " " : "") +
       "请刷新页面重试。如问题持续，请联系管理员。");
@@ -157,13 +170,13 @@
     var why = TS.gate();
     if (!why) return false;
     msg(msgId, why, "warn");
-    if (TS.failed && TS.failed()) turnstileBrokenNote(TS_SLOTS[state.mode]);
+    if (TS.failed && TS.failed()) turnstileBrokenNote(slotOf(state.mode));
     return true;
   }
 
   function turnstileHideNotes() {
-    Object.keys(TS_SLOTS).forEach(function (k) {
-      var note = $("ts-broken-" + TS_SLOTS[k]);
+    Object.keys(TS_SLOTS).map(function (k) { return TS_SLOTS[k]; }).concat([TS_CODE_RESEND]).forEach(function (id) {
+      var note = $("ts-broken-" + id);
       if (note) { hide(note); text(note, ""); }
     });
   }
@@ -221,6 +234,7 @@
       var slot = $(TS_SLOTS[k]);
       if (slot && k !== mode) hide(slot);
     });
+    if (mode !== "code") hide($(TS_CODE_RESEND));
 
     if (mode === "done") show($("step-done")); else hide($("step-done"));
     if (mode === "unverified") show($("step-unverified")); else hide($("step-unverified"));
@@ -247,7 +261,7 @@
 
   function passwordChannel(msgId) {
     if (!api) {
-      msg(msgId, "这个站点没有连上服务器，暂时不能注册或改密码。你仍然可以用「快捷登录」的随机码进来。", "warn");
+      msg(msgId, "暂时无法连接服务器，暂不能注册或修改密码。可改用验证码登录。", "warn");
       return null;
     }
     return api;
@@ -373,7 +387,7 @@
     }
     if (!pw) { msg("msg-reg", ch.messageOf("E_PW_EMPTY") || "请先填密码", "warn"); return; }
     if (pw.length < 8) { msg("msg-reg", "密码至少 8 位", "warn"); return; }
-    if (pw !== pw2) { msg("msg-reg", "两次填的密码不一样", "warn"); return; }
+    if (pw !== pw2) { msg("msg-reg", "两次输入的密码不一致", "warn"); return; }
 
     if (turnstileBlocked("msg-reg")) return;
 
@@ -395,16 +409,32 @@
       if (vInput) vInput.value = email;
 
       var gated = r.requiresVerification === true;
-      if (!gated) {
 
-        if (r.verifySent) {
-          note("verify-fail-note", "当前无需验证邮箱即可登录；完成验证后可使用密码找回功能。", "warn");
-          text($("verify-lead"), "验证邮件已发往 " + state.regEmail + "。");
-        } else {
-          text($("verify-lead"), "账号已创建。验证邮件暂时无法发送，请稍后重试。");
-          note("verify-fail-note", "当前无需验证邮箱即可登录；完成验证后可使用密码找回功能。", "warn");
-        }
-      } else if (r.verifySent) {
+      // Register never signs anyone in: an existing account, or a server with the
+      // email gate off, both continue on the password screen instead of faking a login.
+      if (r.existing && !gated) {
+        setMode("pw");
+        if ($("input-pw-email")) $("input-pw-email").value = email;
+        msg("msg-pw", r.note || "这个邮箱已经注册过，请直接登录。", "warn");
+        return r;
+      }
+      if (!gated) {
+        setMode("pw");
+        if ($("input-pw-email")) $("input-pw-email").value = email;
+        msg("msg-pw", r.verifySent
+          ? "账号已建好，请用刚设的密码登录。验证邮件已发往 " + state.regEmail + "，确认后可用于找回密码。"
+          : "账号已建好，请用刚设的密码登录。", "ok");
+        showToast("账号已建好");
+        return r;
+      }
+      if (r.existing) {
+        note("verify-fail-note", "", "");
+        text($("verify-lead"), "该邮箱已注册但尚未验证，请打开验证邮件中的链接。");
+        note("verify-fail-note", "未收到可重新发送；密码仍为首次注册时设置的密码。", "warn");
+        setMode("verify");
+        return r;
+      }
+      if (r.verifySent) {
         note("verify-fail-note", "", "");
         text($("verify-lead"), "验证邮件已发往 " + state.regEmail + "。完成验证后即可登录。");
         note("verify-fail-note", "请打开收件箱中的链接验证邮箱。", "warn");
@@ -413,28 +443,11 @@
         note("verify-fail-note", "完成邮箱验证后才能登录。如问题持续，请联系管理员。", "warn");
       }
 
-      if (!gated) {
-        showToast(r.created ? "账号已建好，已登录" : "账号信息已更新");
-        onSignedIn({
-          account: {
-            uid: r.uid || "",
-            nickname: r.nickname || "",
-            identities: [{ channel: "email", value: r.email || state.regEmail || "" }],
-            createdAt: Number(r.createdAt) || 0,
-            lastLoginAt: Number(r.lastLoginAt) || Number(r.createdAt) || 0,
-            firstLogin: r.created === true
-          },
-          remote: true,
-          emailVerified: r.emailVerified === true
-        });
-        return r;
-      }
-
       showToast(r.created ? "账号已建好" : "账号信息已更新");
       setMode("verify");
       return r;
     }, function () {
-      msg("msg-reg", "连不上服务器，请稍后再试", "warn");
+      msg("msg-reg", "无法连接服务器，请稍后再试", "warn");
     });
     });
   }
@@ -480,7 +493,7 @@
 
       return r;
     }, function () {
-      msg("msg-pw", "连不上服务器，请稍后再试", "warn");
+      msg("msg-pw", "无法连接服务器，请稍后再试", "warn");
     });
     });
   }
@@ -509,14 +522,14 @@
       showToast("请查收邮件");
       return r;
     }, function () {
-      msg("msg-forgot", "连不上服务器，请稍后再试", "warn");
+      msg("msg-forgot", "无法连接服务器，请稍后再试", "warn");
     });
     });
   }
 
   function sendCode() {
     if (!store) { msg("msg-email", "浏览器不允许保存数据，本次登录刷新后会失效", "warn"); }
-    var msgId = "msg-email";
+    var msgId = codeStepShown() ? "msg-code" : "msg-email";
     var email = (($("input-email") || {}).value || "").trim();
 
     var shaped = A.isEmailShape(A.normalizeEmail(email));
@@ -525,7 +538,9 @@
       return Promise.resolve(null);
     }
 
-    if (api && !api.degraded()) return sendCodeRemote("login", email, msgId);
+    // Always ask the server first: `degraded()` is sticky after one blip, and a silent
+    // local code would never reach the mailbox. sendCodeRemote falls back on its own.
+    if (api) return sendCodeRemote("login", email, msgId);
     return Promise.resolve(sendCodeLocal("login", email, msgId));
   }
 
@@ -561,8 +576,8 @@
       state.expiresAt = r.expiresAt;
       state.cooldown = Date.now() + (r.cooldown || 60) * 1000;
       state.remote = true;
-      return afterSent("login", r.delivered ? "已发往 " + state.sentTo : "已生成随机码，将发往 " + state.sentTo,
-        r.delivered ? "验证码已发出" : "已生成随机码");
+      return afterSent("login", r.delivered ? "验证码已发送至 " + state.sentTo : "已生成随机码，将发往 " + state.sentTo,
+        r.delivered ? "验证码已发送" : "已生成随机码");
     });
   }
 
@@ -595,6 +610,7 @@
     setMode("code");
     hide($("step-email"));
     show($("step-code"));
+    mountTurnstile("code");
     codeBoxes = buildCodeRow("code-row");
     setCode(codeBoxes, "");
     if (codeBoxes[0]) codeBoxes[0].focus();
@@ -660,7 +676,7 @@
       if (!r.ok) {
         if (r.code === "E_EMAIL_UNVERIFIED") {
 
-          text($("verify-lead"), "这个邮箱还没确认。");
+          text($("verify-lead"), "该邮箱尚未验证。");
 
           note("verify-fail-note", "请打开收件箱中的验证邮件；未收到可重新发送。", "warn");
           setMode("verify");
@@ -668,7 +684,7 @@
         }
         if (serverCannot(r.code)) {
 
-          msg("msg-code", r.message + " 可以改用「本机随机码」：点「换个邮箱」重发一次，会在本机生成。", "warn");
+          msg("msg-code", r.message, "warn");
           state.cooldown = 0;
           startTick(codeBoxes);
           return;
@@ -722,7 +738,7 @@
 
     setMode("done");
 
-    text($("done-lead"), "账号已建好 · " +
+    text($("done-lead"), "登录成功 · " +
       (Ent ? Ent.tierLabel(Ent.identity().tier) : "Free") +
       (doneMail ? " · " + doneMail : ""));
 
@@ -734,11 +750,11 @@
     }
 
     if (r.remote) {
-      showToast("账号已建好：进度已可跨设备同步");
+      showToast("登录成功");
     } else if (r.isLocalOnly) {
-      showToast("浏览器不允许保存数据：本次登录刷新后会失效");
+      showToast("浏览器未能保存数据，刷新后需重新登录");
     } else {
-      showToast("账号已建好（本机体验版）");
+      showToast("登录成功（本机模式）");
     }
   }
 
@@ -808,12 +824,12 @@
     var ch = passwordChannel("msg-unverified");
     if (!ch) return;
     if (!ch.resendVerificationByEmail) {
-      msg("msg-unverified", "这个页面是旧缓存，刷新一下再试", "warn");
+      msg("msg-unverified", "页面已更新，请刷新后重试", "warn");
       return;
     }
     var email = (($("input-pw-email") || {}).value || (($("input-email") || {}).value || "")).trim();
     if (!A.isEmailShape(A.normalizeEmail(email))) {
-      msg("msg-unverified", "请回到登录那一屏填上邮箱，再点这颗键", "warn");
+      msg("msg-unverified", "请返回登录页填写邮箱后再试", "warn");
       return;
     }
     if (turnstileBlocked("msg-unverified")) return;
@@ -823,15 +839,15 @@
       if (!r.ok) { msg("msg-unverified", r.message, "warn"); return null; }
 
       if (r.alreadyVerified) {
-        msg("msg-unverified", "这个邮箱已经确认过了，直接回「密码登录」进来即可。", "ok");
+        msg("msg-unverified", "该邮箱已验证，请直接使用密码登录。", "ok");
       } else if (r.verifySent) {
         msg("msg-unverified", "验证邮件已发往 " + (r.email || "你的邮箱") + "。", "ok");
       } else {
-        msg("msg-unverified", "这台服务器现在没能把邮件发出去（发信商还没配好），稍后再试。", "warn");
+        msg("msg-unverified", "邮件暂时无法发送，请稍后再试。", "warn");
       }
       return r;
     }, function () {
-      msg("msg-unverified", "连不上服务器，请稍后再试", "warn");
+      msg("msg-unverified", "无法连接服务器，请稍后再试", "warn");
     });
     });
   }
@@ -841,7 +857,7 @@
     var ch = passwordChannel("msg-verify");
     if (!ch) return;
     if (!ch.resendVerification) {
-      msg("msg-verify", "这个页面是旧缓存，刷新一下再试", "warn");
+      msg("msg-verify", "页面已更新，请刷新后重试", "warn");
       return;
     }
 
@@ -859,7 +875,7 @@
       turnstileReset();
       if (!r.ok) { msg("msg-verify", r.message, "warn"); return null; }
       if (r.alreadyVerified) {
-        msg("msg-verify", "这个邮箱已经确认过了，不用再发。", "ok");
+        msg("msg-verify", "该邮箱已验证，无需重复发送。", "ok");
         return r;
       }
 
@@ -869,8 +885,7 @@
           r.email || state.regEmail), mailDelivered === false ? "warn" : "ok");
       } else if (signedIn) {
 
-        msg("msg-verify", "这台服务器现在没能把邮件发出去（已试 " + (Number(r.verifyAttempts) || 1)
-          + " 次）。稍后再试。", "warn");
+        msg("msg-verify", "邮件暂时无法发送，请稍后再试。", "warn");
       } else {
 
         msg("msg-verify", mailDelivered === false
@@ -880,7 +895,7 @@
       }
       return r;
     }, function () {
-      msg("msg-verify", "连不上服务器，请稍后再试", "warn");
+      msg("msg-verify", "无法连接服务器，请稍后再试", "warn");
     });
     });
   }
@@ -973,6 +988,7 @@
     $("btn-edit-email").addEventListener("click", function () {
       hide($("step-code"));
       show($("step-email"));
+      mountTurnstile("code");
       stopTick();
       msg("msg-code", "");
       msg("msg-email", "");

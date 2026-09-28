@@ -38,7 +38,7 @@
 
     E_EMAIL_UNVERIFIED: "邮箱还没确认：请打开验证邮件里的链接，点开即完成确认并登录。",
 
-    E_TURNSTILE: "人机校验没通过，请刷新页面再试一次",
+    E_TURNSTILE: "人机校验没通过，请等方框重新通过后再试一次",
 
     E_BAD_BODY: "这一发请求没能被服务端读懂，请刷新页面重试。",
     E_METHOD: "这一发请求的方式不对，请刷新页面重试。"
@@ -70,7 +70,7 @@
     E_METHOD: "这一发请求的方式不对，请刷新页面重试。"
   };
 
-  var SERVER_WORD_FIRST = { E_BAD_BODY: true };
+  var SERVER_WORD_FIRST = { E_BAD_BODY: true, E_TURNSTILE: true };
 
   function messageOf(code, fallback) {
     if (SERVER_WORD_FIRST[code] && fallback) return String(fallback);
@@ -404,7 +404,7 @@
 
       deleteAccount: function (input) {
         input = input || {};
-        return call("/account", "DELETE", { confirm: input.confirm === true, deviceId: deviceId });
+        return call("/account", "DELETE", { confirm: input.confirm === true, email: input.email || "", deviceId: deviceId });
       },
 
       gameAnswer: function (input) {

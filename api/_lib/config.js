@@ -92,6 +92,7 @@ var CONFIG = {
 CONFIG.turnstileReady = function () {
   var c = (this && this.turnstileEnabled !== undefined) ? this : CONFIG;
   if (c.turnstileBypass === true) return false;
+  if (!String(c.turnstileSiteKey || "").trim()) return false;
   return c.turnstileEnabled === true && String(c.turnstileSecretKey || "").length > 0;
 };
 

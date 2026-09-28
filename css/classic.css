@@ -307,6 +307,24 @@
   }
 }
 
+/* Wide screens: rows are 4 / 5 cards, so the 3-column border pattern above no longer fits. */
+@media (min-width: 1680px) {
+  .group-card > .item {
+    flex: 1 1 calc(25% - 16.5px);
+    max-width: calc(25% - 16.5px);
+  }
+  .group-card > .item:nth-of-type(n) { border-top: 1px solid var(--line); }
+  .group-card:not(:has(> .group-head)) > .item:nth-of-type(-n + 4) { border-top: none; }
+}
+
+@media (min-width: 2400px) {
+  .group-card > .item {
+    flex: 1 1 calc(20% - 17.6px);
+    max-width: calc(20% - 17.6px);
+  }
+  .group-card:not(:has(> .group-head)) > .item:nth-of-type(5) { border-top: none; }
+}
+
 .group-card .item-read {
   margin-left: 0;
 
@@ -331,6 +349,15 @@
 .item-actions > .item-recite,
 .item-actions > .item-read {
   margin: 0;
+}
+
+/* Desktop has room for the buttons in one row; stacking them overlapped the snippet. */
+@media (min-width: 1024px) {
+  .item-actions {
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: var(--item-btn);
+  }
 }
 
 #gw-list .item { border-left-color: var(--blue); }
@@ -808,6 +835,44 @@ body.reader-open .dock { display: none; }
   }
 }
 
+@media (min-width: 1024px) {
+  .reader-body { --reader-scale: 1.2; }
+  .reader-body h2 { font-size: 30px; }
+  .reader-body .trans-box p { font-size: 16px; }
+}
+
+/* Wide screens: original on the left, translation beside it instead of below. */
+@media (min-width: 1280px) {
+  body:not([data-nav="changshi"]) .reader-body:has(> #rd-trans:not([hidden])):not(:has(> .gloss-box:not([hidden]))) {
+    width: min(var(--content-w), 1160px);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: 48px;
+    align-items: start;
+    align-content: start;
+  }
+  body:not([data-nav="changshi"]) .reader-body:has(> #rd-trans:not([hidden])):not(:has(> .gloss-box:not([hidden]))) > * {
+    grid-column: 1 / -1;
+  }
+  body:not([data-nav="changshi"]) .reader-body:has(> #rd-trans:not([hidden])):not(:has(> .gloss-box:not([hidden]))) > .reader-text {
+    grid-column: 1;
+  }
+  body:not([data-nav="changshi"]) .reader-body:has(> #rd-trans:not([hidden])):not(:has(> .gloss-box:not([hidden]))) > #rd-trans {
+    grid-column: 2;
+    margin-top: 18px;
+  }
+}
+
+@media (min-width: 1920px) {
+  :root { --read-w: 860px; }
+  .reader-body { --reader-scale: 1.35; }
+  .reader-body h2 { font-size: 34px; }
+  .reader-body .trans-box p { font-size: 17px; }
+  body:not([data-nav="changshi"]) .reader-body:has(> #rd-trans:not([hidden])):not(:has(> .gloss-box:not([hidden]))) {
+    width: min(var(--content-w), 1400px);
+  }
+}
+
 .reader-text.with-pinyin {
 
   line-height: 2.5;
@@ -1170,6 +1235,10 @@ body[data-nav="search"] #gw-list .empty[data-empty="idle"] { padding: 0; }
     flex: none;
     max-width: none;
   }
+}
+
+@media (min-width: 1680px) {
+  .library-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
 
 .library-card {
@@ -1614,6 +1683,15 @@ body[data-nav="search"] #gw-list .empty[data-empty="idle"] { padding: 0; }
     width: calc(50% - 4px);
   }
   .group-index-list .group-index-pick:nth-child(even) { margin-left: auto; }
+}
+
+@media (min-width: 1024px) {
+  .group-index-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    column-gap: 28px;
+  }
+  .group-index-list .group-index-pick { border-bottom: 1px solid var(--line); }
 }
 
 /* 宽屏时列表是 grid（见 css/style.css），索引卡得**占满整行**，

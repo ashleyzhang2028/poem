@@ -390,8 +390,64 @@ alter table public.accounts drop column if exists email_mask;
 --    ⚠️ **没有回填** —— 掩码不可逆，`b***@163.com` 还原不出真实邮箱。
 --       已有的那些行如实留空（界面遇到空值直接不显示「谁报的」那一小段），
 --       比编一个出来强。新报告从这一版起落明文快照。
-alter table public.reports rename column email_mask to email;
+-- ⚠️ 必须包在 DO 块里：新库建表时这一列已经叫 `email`，重跑时旧列也早没了，
+--    裸写 `rename column` 会直接报错，把后面几节一起挡掉（「幂等可重跑」就不成立了）。
+do $$
+begin
+  if exists (select 1 from information_schema.columns
+              where table_schema = 'public' and table_name = 'reports' and column_name = 'email_mask') then
+    alter table public.reports rename column email_mask to email;
+  end if;
+end $$;
 update public.reports set email = '' where email like '%*%';
 
 -- ③ 老库如果还留着 `email_hash`（登录查找用得到）就**不要动它** ——
 --    它跟掩码不是一回事，登录查找一直走它，且它不可逆（那是它的本意）。
+
+-- ==========================================================================
+-- 9. 登录流程体检（锁定 / 外键 / 函数权限）
+-- ==========================================================================
+-- ① login_count：建表语句里有，但**老库没有任何一条 alter 补它** ——
+--    store.js 的 select 带着这一列，老库上登录 / 注册会整条 400。
+alter table public.accounts add column if not exists login_count int not null default 0;
+
+-- ② 锁定改成「锁到几点」：原先把 status 写成 'locked'，而 `locked_until`
+--    这一列库里根本没有（写不进去、也读不回来），于是
+--      · 输错 10 次密码 → 永久锁死（没有到期时间，只有重设密码能解）；
+--      · 未确认邮箱的账号被锁一次再解锁 → status 变成 'active'，绕过了邮箱确认。
+--    现在 status 只表示 pending / active，锁定只看 locked_until。
+alter table public.accounts add column if not exists locked_until bigint;
+update public.accounts
+   set status = case when email_verified_at is not null then 'active' else 'pending' end
+ where status = 'locked';
+
+-- ③ 报告不随账号删除：第 7 节的口径是「账号注销之后管理员仍认得出这条报告」，
+--    可外键写的是 on delete cascade —— 注销一个账号，他报的错就一起没了。
+--    改成 set null（uid 允许为空），email 快照留着认人。
+alter table public.reports alter column uid drop not null;
+alter table public.reports drop constraint if exists reports_uid_fkey;
+alter table public.reports
+  add constraint reports_uid_fkey foreign key (uid)
+  references public.accounts(uid) on delete set null;
+
+-- ④ 过期记录清理把会话表也带上（它只增不减）。
+create or replace function public.kb_purge_expired(now_ms bigint)
+returns void
+language sql
+security definer
+set search_path = public
+as $$
+  delete from public.codes         where expires_at < now_ms;
+  delete from public.verifications where expires_at < now_ms;
+  delete from public.resets        where expires_at < now_ms;
+  delete from public.sessions      where exp < now_ms;
+$$;
+
+-- ⑤ security definer 函数默认对 PUBLIC 可执行 —— 也就是 anon key 能直接
+--    POST /rest/v1/rpc/kb_upsert_progress，替任意 uid 写进度，绕过 RLS。
+--    只留给 service_role（服务端用的就是它）。
+alter function public.kb_upsert_progress(jsonb) set search_path = public;
+revoke all on function public.kb_upsert_progress(jsonb) from public, anon, authenticated;
+revoke all on function public.kb_purge_expired(bigint) from public, anon, authenticated;
+grant execute on function public.kb_upsert_progress(jsonb) to service_role;
+grant execute on function public.kb_purge_expired(bigint) to service_role;

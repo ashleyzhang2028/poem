@@ -21,7 +21,7 @@
   <link rel="stylesheet" href="css/account.css" />
 </head>
 
-<body data-nav="verify" data-dock="off" data-back="/login/" data-page="确认邮箱" data-sub="邮件里的那条链接（点一下就登录）">
+<body data-nav="verify" data-dock="off" data-back="/login/" data-page="确认邮箱" data-sub="验证完成后自动登录">
   <div class="app">
     <header class="topbar"></header>
 
@@ -30,7 +30,7 @@
 
         <div id="verify-none" hidden>
           <p class="account-lead">这条链接不完整。</p>
-          <p class="account-hint">请直接点邮件里那颗按钮，或者把整条链接完整地打开一次。</p>
+          <p class="account-hint">请点击邮件中的按钮，或完整打开邮件中的链接。</p>
           <div class="account-actions">
             <button class="account-btn" id="btn-verify-to-login" type="button">去登录</button>
           </div>
@@ -51,7 +51,7 @@
 
         <div id="verify-bad" hidden>
           <p class="account-lead" id="verify-bad-lead"></p>
-          <p class="account-hint">确认链接 24 小时内有效、且只能用一次。登录之后可以在「个人中心」里重发一封。</p>
+          <p class="account-hint">验证链接 24 小时内有效且只能使用一次。如已失效，请在登录页重新发送验证邮件。</p>
           <div class="account-actions">
             <button class="account-btn" id="btn-verify-retry-login" type="button">去登录</button>
           </div>

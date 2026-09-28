@@ -8,6 +8,8 @@
 
     var SEEN = "poem_plan_seen_v1";
 
+  var NOTICE = "poem_plan_notice_v1";
+
   var TIERS = ["free", "pro", "max"];
 
   var ROLES = ["owner", "admin", "user"];
@@ -147,6 +149,8 @@
     if (o.role && isRole(o.role)) payload.role = o.role;
         if (o.email) payload.email = String(o.email);
     if (o.uid) payload.uid = String(o.uid);
+    // Plans only change through the admin page, so a server-confirmed rise for the same user is an upgrade.
+    var before = payload.source === "server" && payload.uid ? readServerTier(backing, payload.uid) : null;
     try {
       backing.setItem(NS, JSON.stringify(payload));
             if (payload.source === "server") backing.setItem(SEEN, stampOf(payload));
@@ -154,8 +158,39 @@
     } catch (e) {
       return { ok: false, code: "E_STORAGE", message: "浏览器不允许保存数据" };
     }
+    if (payload.source === "server" && payload.uid) noteUpgrade(backing, payload, before);
     announce();
     return { ok: true };
+  }
+
+  function noteUpgrade(backing, payload, before) {
+    var pending = readNotice(backing, payload.uid);
+    try {
+      if (before && tierIndex(payload.tier) > tierIndex(before)) {
+        backing.setItem(NOTICE, JSON.stringify({
+          v: 1, uid: payload.uid, from: before, to: payload.tier, until: payload.until, at: Date.now()
+        }));
+      } else if (pending && tierIndex(payload.tier) < tierIndex(pending.to)) {
+        backing.removeItem(NOTICE);
+      }
+    } catch (e) {  }
+  }
+
+  function readNotice(backing, uid) {
+    var b = backing || defaultBacking();
+    if (!b) return null;
+    var o = null;
+    try { o = JSON.parse(b.getItem(NOTICE) || "null"); } catch (e) { o = null; }
+    if (!o || typeof o !== "object" || !isTier(o.to) || !o.uid) return null;
+    if (uid !== undefined && String(o.uid) !== String(uid || "")) return null;
+    return o;
+  }
+
+  function clearNotice(backing) {
+    var b = backing || defaultBacking();
+    if (!b) return false;
+    try { b.removeItem(NOTICE); } catch (e) { return false; }
+    return true;
   }
 
   function clearTier(backing) {
@@ -458,6 +493,7 @@
     isOwner: isOwner, isAdminRole: isAdminRole, ownsPlan: ownsPlan, sessionUid: sessionUid,
     identity: identity, guestIdentity: guestIdentity,
     cookieSession: cookieSession, SEEN: SEEN, setAuthCore: setAuthCore,
+    NOTICE: NOTICE, readNotice: readNotice, clearNotice: clearNotice,
     defaultBacking: defaultBacking
   };
 });

@@ -89,6 +89,10 @@
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
+/* Any class that sets `display` (e.g. .account-btn inline-flex, .bottom-actions flex)
+   would otherwise override the UA rule and make `hidden` elements visible. */
+[hidden] { display: none !important; }
+
 a { text-decoration: none; color: var(--green); }
 
 a:hover,
@@ -275,15 +279,14 @@ html, body {
 .today-title { font-size: 16px; font-weight: 600; }
 .today-sub { font-size: 12.5px; opacity: .88; }
 .ring {
-
   position: relative;
   flex: none;
-  width: var(--today-btn-size, 40px);
-  height: var(--today-btn-size, 40px);
+  width: 44px;
+  height: 44px;
   min-height: 0;
 }
 .ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
-.ring path { fill: none; stroke-width: 3; stroke-linecap: round; }
+.ring path { fill: none; stroke-width: 1; stroke-linecap: round; }
 .ring-bg { stroke: rgba(255, 255, 255, .28); }
 .ring-fg { stroke: var(--gold); transition: stroke-dasharray .4s ease; }
 .ring span {
@@ -904,6 +907,13 @@ select { padding-top: 0; padding-bottom: 0; }
     max-width: calc(50% - 4px);
   }
 }
+
+/* Desktop settings columns are ~300px wide, too narrow for two option cards per row. */
+@media (min-width: 1024px) {
+  #seg-algo .algo-opt,
+  #seg-play .play-mode-opt { flex-basis: 100%; max-width: none; min-width: 0; }
+}
+.algo-name { flex-wrap: wrap; }
 .play-mode-opt {
   display: flex;
   flex-direction: column;
@@ -1545,6 +1555,8 @@ body.has-install-tip #app {
     flex: 1 1 calc(50% - 18px);
     max-width: calc(50% - 18px);
   }
+  /* Groups sit side by side here; row-gap spaces the rows, so tops must match. */
+  .settings-groups > .settings-group { margin-top: 4px; }
 
   .settings-item.wide {
     flex: 1 1 100%;
@@ -1647,6 +1659,29 @@ body.has-install-tip #app {
 }
 .tier-badge.tier-pro { color: var(--green); border-color: rgba(47, 96, 85, .45); }
 .tier-badge.tier-max { color: #8a6a2f; border-color: rgba(214, 178, 106, .7); background: rgba(214, 178, 106, .12); }
+
+.plan-notice { z-index: 90; align-items: center; }
+.plan-notice .modal-box.plan-notice-box {
+  width: calc(100% - 32px);
+  max-width: 400px;
+  margin: auto;
+  padding: 28px 22px 22px;
+  border-radius: 22px;
+  text-align: center;
+}
+.plan-notice .tier-badge { display: inline-block; padding: 2px 12px; font-size: 12px; font-weight: 600; }
+.plan-notice-title {
+  margin: 12px 0 8px;
+  font-family: var(--font-poem);
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: var(--ink);
+}
+.plan-notice-text { margin: 0; font-size: 14px; line-height: 1.8; color: var(--ink-2); }
+.plan-notice-until { margin: 6px 0 0; font-size: 12px; color: var(--ink-3); }
+.plan-notice-actions { margin-top: 22px; }
+.plan-notice-actions .btn { flex: 1 1 0; min-width: 0; text-decoration: none; }
 .account-caps { list-style: none; margin: 0 0 10px; padding: 0; }
 .account-cap {
   display: flex;
@@ -1674,6 +1709,7 @@ body.has-install-tip #app {
 }
 
 .settings-about .kv-list { padding: 0 2px; }
+.settings-about .kv-list + .settings-about-title { margin-top: 22px; }
 
 .kv-list + .kv-list {
   margin-top: 6px;
@@ -1756,12 +1792,16 @@ body.has-install-tip #app {
   line-height: 1.05;
 }
 
+/* The subset fonts carry broken advance widths for Latin/ASCII (space ≈ 65em), so only CJK ranges use them. */
 @font-face {
   font-family: "Poem Sans SC";
   src: url("../fonts/NotoSansSC-400.woff2") format("woff2");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
+  unicode-range: U+2010-2027, U+2030-2038, U+203B-205E, U+2E80-2FD5, U+3000-303F, U+31C0-31E5,
+    U+3200-321E, U+3220-33FF, U+3400-4DBF, U+4E00-9FFF, U+F900-FA6D, U+FE10-FE19, U+FE30-FE4F,
+    U+FF01-FF60, U+FFE0-FFE6, U+20000-2FA1F;
 }
 @font-face {
   font-family: "Poem Sans SC";
@@ -1769,6 +1809,9 @@ body.has-install-tip #app {
   font-weight: 600 700;
   font-style: normal;
   font-display: swap;
+  unicode-range: U+2010-2027, U+2030-2038, U+203B-205E, U+2E80-2FD5, U+3000-303F, U+31C0-31E5,
+    U+3200-321E, U+3220-33FF, U+3400-4DBF, U+4E00-9FFF, U+F900-FA6D, U+FE10-FE19, U+FE30-FE4F,
+    U+FF01-FF60, U+FFE0-FFE6, U+20000-2FA1F;
 }
 @font-face {
   font-family: "Poem Serif SC";
@@ -1776,6 +1819,9 @@ body.has-install-tip #app {
   font-weight: 400;
   font-style: normal;
   font-display: swap;
+  unicode-range: U+2010-2027, U+2030-2038, U+203B-205E, U+2E80-2FD5, U+3000-303F, U+31C0-31E5,
+    U+3200-321E, U+3220-33FF, U+3400-4DBF, U+4E00-9FFF, U+F900-FA6D, U+FE10-FE19, U+FE30-FE4F,
+    U+FF01-FF60, U+FFE0-FFE6, U+20000-2FA1F;
 }
 @font-face {
   font-family: "Poem Serif SC";
@@ -1783,6 +1829,9 @@ body.has-install-tip #app {
   font-weight: 600 700;
   font-style: normal;
   font-display: swap;
+  unicode-range: U+2010-2027, U+2030-2038, U+203B-205E, U+2E80-2FD5, U+3000-303F, U+31C0-31E5,
+    U+3200-321E, U+3220-33FF, U+3400-4DBF, U+4E00-9FFF, U+F900-FA6D, U+FE10-FE19, U+FE30-FE4F,
+    U+FF01-FF60, U+FFE0-FFE6, U+20000-2FA1F;
 }
 
 :root {
@@ -2578,7 +2627,7 @@ html, body {
   body[data-nav="home"] .app {
     display: grid;
     grid-template-columns: minmax(0, 340px) minmax(0, 1fr);
-
+    grid-template-rows: auto auto 1fr auto;
     grid-template-areas:
       "bar    bar"
       "today  card"
@@ -2612,9 +2661,9 @@ html, body {
   body[data-nav="home"] .today-bar,
   body[data-nav="home"] .all-section { margin-bottom: 0; }
 
-  body[data-nav="home"] .today-search { margin-bottom: 26px; }
+  body[data-nav="home"] .today-search { margin: 14px 0 26px; }
 
-  body[data-nav="home"] .today-search { width: 520px; }
+  body[data-nav="home"] .today-search { width: 100%; max-width: none; }
 
   .list {
     display: grid;
@@ -2648,6 +2697,8 @@ html, body {
     margin-right: auto;
 
   }
+  .settings-index > .settings-link { flex: 1 1 0; min-width: 0; margin: 0; }
+  .settings-about { max-width: var(--block-w); margin-left: auto; margin-right: auto; }
   .legal { max-width: var(--block-w); margin-left: auto; margin-right: auto; }
 }
 
@@ -3235,7 +3286,10 @@ html, body {
   flex-wrap: wrap;
   gap: 8px;
   align-items: center;
-  margin: 0 0 10px;
+  justify-content: space-between;
+  margin: 0 0 4px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line-2);
 }
 .admin-report-tools select {
   flex: 1 1 160px;
@@ -3248,14 +3302,13 @@ html, body {
   color: var(--ink);
   font-size: 13px;
 }
-.admin-report-tools .account-btn { width: auto; flex: none; margin-top: 0; padding: 0 14px; }
+.admin-report-tools .account-btn { width: auto; flex: none; margin-top: 0; padding: 0 14px; height: var(--ctl-h-sm); font-size: var(--ctl-font-sm); }
 .admin-report-counts {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin: 0 0 4px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--line-2);
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .admin-report-counts button {
@@ -3344,7 +3397,77 @@ html, body {
 }
 .admin-report-acts button:hover { background: var(--ctl-hover); border-color: var(--celadon); }
 .admin-report-acts button:active { background: var(--ctl-press); }
+.admin-report-acts button.active { background: var(--green); border-color: var(--green); color: #fdfaf2; }
 .admin-report-acts button[disabled] { opacity: .45; cursor: not-allowed; }
 .admin-report-acts button.danger { color: var(--red); }
 .admin-report-acts button.danger:hover { background: var(--danger-hover); border-color: var(--red); }
 .admin-report-acts button.danger:active { background: var(--danger-press); }
+
+/* Desktop layer: the bottom tab bar becomes a left rail, pages share one width scale. */
+@media (min-width: 1024px) {
+  :root { --rail-w: 92px; --page-w: clamp(1200px, 86vw, 2200px); }
+
+  body:not(.no-dock) { padding-left: var(--rail-w); }
+
+  .dock {
+    top: 0;
+    right: auto;
+    width: var(--rail-w);
+    padding: calc(20px + var(--safe-top)) 10px 20px calc(10px + var(--safe-left));
+    border-top: 0;
+    border-right: 1px solid rgba(165, 92, 25, .14);
+    box-shadow: 4px 0 20px rgba(74, 58, 38, .06);
+    animation: none;
+  }
+  .dock::before {
+    top: 0;
+    bottom: 0;
+    left: auto;
+    right: 0;
+    width: 1px;
+    height: auto;
+    background: linear-gradient(180deg, transparent, rgba(240, 205, 124, .6), transparent);
+  }
+  .dock-inner {
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: 8px;
+    max-width: none;
+    margin: 0;
+  }
+  .dock-item {
+    flex: 0 0 auto;
+    gap: 6px;
+    padding: 12px 4px 10px;
+    font-size: 12px;
+  }
+  .dock-item:hover { color: var(--green); background: rgba(47, 96, 85, .06); }
+  .dock-item:focus-visible { outline: 2px solid var(--celadon); outline-offset: -2px; }
+  .dock-item.active .dock-icon { transform: none; }
+
+  body.has-audio-player .dock { visibility: visible; pointer-events: auto; }
+  body:not(.no-dock) .player-bar { left: var(--rail-w); }
+
+  .app, #app { max-width: calc(var(--page-w) + 2 * var(--col-side)); }
+  .app:has(> .progress-main),
+  .app:has(> .settings-page),
+  .app:has(> .poems-game),
+  .app:has(.legal),
+  .app:has(> #admin-page) { max-width: calc(var(--block-w) + 2 * var(--col-side)); }
+  .app:has(> .account-page:not(#admin-page)) { max-width: calc(560px + 2 * var(--col-side)); }
+  /* Vertical centering suits a phone screen; on a tall desktop it leaves a hole above the content. */
+  body .poems-game:has(.game-mode) { min-height: 0; }
+  body .poems-game:has(.game-mode)::before,
+  body .poems-game:has(.game-mode)::after { flex-grow: 0; }
+}
+
+@media (min-width: 1680px) {
+  :root { --block-w: 1100px; }
+  body[data-nav="home"] .app { grid-template-columns: minmax(0, 400px) minmax(0, 1fr); }
+}
+
+@media (hover: hover) and (min-width: 1024px) {
+  .list .item { transition: box-shadow .16s ease, transform .16s ease; }
+  .list .item:hover { box-shadow: 0 0 0 1px var(--celadon), var(--shadow); }
+}
+.list .item:focus-visible { outline: 2px solid var(--celadon); outline-offset: 2px; }

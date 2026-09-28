@@ -10,7 +10,7 @@
   var GLYPHS = {
 
     mark:
-      '<img src="/icons/icon.svg" alt="" aria-hidden="true" width="44" height="42" style="display:block;width:44px;height:42px;object-fit:contain;">',
+      '<img src="/icons/icon.svg" alt="" aria-hidden="true" width="42" height="42" style="display:block;width:42px;height:42px;">',
 
     tabPoem:
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
@@ -217,7 +217,7 @@
         '<button type="button" class="top-act" id="top-act">' +
         '<span class="top-act-icon" aria-hidden="true">' + GLYPHS.back + "</span>" +
         '<span class="sr-only">' + pageAction.label + "</span></button>";
-    } else if (!topLevelPage() && pageTopAction()) {
+    } else if (pageTopAction()) {
 
       rightKey =
         '<a class="top-act" id="top-act-link" href="' + pageTopAction().href + '"' +
@@ -298,7 +298,7 @@
     "settings/recite": routeHref("settings"),
     "settings/lists": routeHref("settings"),
     "settings/reader": routeHref("settings"),
-    "settings/reports": routeHref("settings"),
+    "settings/reports": routeHref("mine"),
 
     selfCheck: "/settings/general/",
     plans: routeHref("settings"),
@@ -383,7 +383,7 @@
         ' title="' + it.desc + '">' +
         '<span class="dock-icon" aria-hidden="true">' + dockIcon(it) + "</span>" +
         '<span class="dock-label">' + it.label + "</span>" +
-        "</button>";
+        "</" + tag + ">";
     });
     return html + "</div></nav>";
   }
@@ -443,6 +443,7 @@
       (app || document.body).insertBefore(bar, (app || document.body).firstChild);
     }
     bindHeader();
+    bindItemKeys();
 
     if (!dockEnabled()) {
       document.body.classList.add("no-dock");
@@ -459,18 +460,23 @@
     }
 
     refreshAccount();
+    bindPlanNotice();
 
     var ev = document.createEvent("Event");
     ev.initEvent("chrome:ready", true, true);
     document.dispatchEvent(ev);
   }
 
-    function refreshAccount() {
+  var lastRefresh = 0;
+
+    function refreshAccount(force) {
     var g = typeof globalThis !== "undefined" ? globalThis : null;
     var M = (g && g.AccountApi) || null;
     if (!M || typeof M.refreshMe !== "function") return;
+    lastRefresh = Date.now();
+    var run = force && typeof M.refreshNow === "function" ? M.refreshNow : M.refreshMe;
     try {
-      Promise.resolve(M.refreshMe({})).then(function (r) {
+      Promise.resolve(run({})).then(function (r) {
         if (!r || !r.ok) return;
         var ev = document.createEvent("Event");
         ev.initEvent("account:ready", true, true);
@@ -479,8 +485,121 @@
     } catch (e) {  }
   }
 
+  var PLAN_RECHECK_MS = 60000;
+
+  function entMod() {
+    return (typeof globalThis !== "undefined" && globalThis.Entitlement) || null;
+  }
+
+  function pendingPlanNotice() {
+    var E = entMod();
+    if (!E || typeof E.readNotice !== "function") return null;
+    var b = backingStore();
+    var id = null;
+    try { id = E.identity({ backing: b }); } catch (e) { id = null; }
+    if (!id || !id.signedIn || !id.uid) return null;
+    return E.readNotice(b, id.uid);
+  }
+
+  function planUntilText(until) {
+    var t = Number(until);
+    if (!until || !isFinite(t) || t <= 0) return "";
+    var d = new Date(t);
+    return d.getFullYear() + " 年 " + (d.getMonth() + 1) + " 月 " + d.getDate() + " 日";
+  }
+
+  function closePlanNotice(clear) {
+    var box = document.getElementById("plan-notice");
+    if (!box) return;
+    if (clear) {
+      var E = entMod();
+      if (E && E.clearNotice) E.clearNotice(backingStore());
+    }
+    box.parentNode.removeChild(box);
+  }
+
+  function showPlanNotice() {
+    var n = pendingPlanNotice();
+    if (!n) { closePlanNotice(false); return; }
+    if (document.getElementById("plan-notice")) return;
+    var E = entMod();
+    var label = E && E.tierLabel ? E.tierLabel(n.to) : n.to;
+    var until = planUntilText(n.until);
+
+    var box = document.createElement("div");
+    box.className = "modal plan-notice";
+    box.id = "plan-notice";
+    box.innerHTML =
+      '<div class="modal-mask" data-plan-close="1"></div>' +
+      '<div class="modal-box small plan-notice-box" role="dialog" aria-modal="true"' +
+      ' aria-labelledby="plan-notice-title" aria-describedby="plan-notice-text">' +
+      '<span class="tier-badge tier-' + escapeHtml(n.to) + '">' + escapeHtml(label) + "</span>" +
+      '<h2 class="plan-notice-title" id="plan-notice-title">账号已升级为 ' + escapeHtml(label) + "</h2>" +
+      '<p class="plan-notice-text" id="plan-notice-text">恭喜！跬步管理员已将你的账号升级为 ' +
+      escapeHtml(label) + "，更多功能现已为你开放。</p>" +
+      (until ? '<p class="plan-notice-until">有效期至 ' + escapeHtml(until) + "</p>" : "") +
+      '<div class="actions plan-notice-actions">' +
+      '<a class="btn ghost-btn" href="' + routeHref("plans") + '" data-plan-close="1">查看权益</a>' +
+      '<button type="button" class="btn primary" id="plan-notice-ok" data-plan-close="1">知道了</button>' +
+      "</div></div>";
+    box.addEventListener("click", function (e) {
+      var hit = e.target && e.target.closest ? e.target.closest("[data-plan-close]") : null;
+      if (hit) closePlanNotice(true);
+    });
+    box.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") { e.stopPropagation(); closePlanNotice(true); }
+    });
+    document.body.appendChild(box);
+    var ok = document.getElementById("plan-notice-ok");
+    if (ok) ok.focus();
+  }
+
+  function bindPlanNotice() {
+    var E = entMod();
+    if (!E || typeof E.readNotice !== "function") return;
+    showPlanNotice();
+    window.addEventListener("entitlementchange", showPlanNotice);
+    document.addEventListener("entitlementchange", showPlanNotice);
+    // Another tab may have shown and dismissed it already.
+    window.addEventListener("storage", function (e) {
+      if (!e || e.key === E.NOTICE || e.key === null) showPlanNotice();
+    });
+    document.addEventListener("visibilitychange", function () {
+      if (document.hidden) return;
+      if (Date.now() - lastRefresh >= PLAN_RECHECK_MS) refreshAccount(true);
+    });
+  }
+
   function bindHeader() {
 
+  }
+
+  // List cards are clickable divs; make them reachable and openable from the keyboard.
+  function bindItemKeys() {
+    var doc = document;
+    var queued = false;
+    var mark = function () {
+      queued = false;
+      // The window may already be gone when a queued pass runs (page teardown).
+      if (!doc || !doc.defaultView) return;
+      var items = doc.querySelectorAll(".list .item:not([tabindex])");
+      for (var i = 0; i < items.length; i++) items[i].setAttribute("tabindex", "0");
+    };
+    mark();
+    if (typeof MutationObserver === "function") {
+      new MutationObserver(function () {
+        if (queued) return;
+        queued = true;
+        Promise.resolve().then(mark);
+      }).observe(document.body, { childList: true, subtree: true });
+    }
+    document.addEventListener("keydown", function (e) {
+      if (e.key !== "Enter" && e.key !== " ") return;
+      var t = e.target;
+      if (!t || !t.classList || !t.classList.contains("item") || !t.closest(".list")) return;
+      e.preventDefault();
+      t.click();
+    });
   }
 
   function readBars() {

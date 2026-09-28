@@ -19,7 +19,7 @@
   <link rel="stylesheet" href="css/style.css" />
   <link rel="stylesheet" href="css/account.css" />
 </head>
-<body data-nav="admin" data-dock="off" data-back="/mine/" data-page="管理后台" data-sub="账号名录 · 角色与层级 · 报告与勘误">
+<body data-nav="admin" data-dock="off" data-back="/mine/" data-page="管理后台" data-sub="账号管理 · 用户报告 · 注音勘误">
   <div class="app">
     <header class="topbar"></header>
 
@@ -32,69 +32,66 @@
       </section>
 
       <section class="account-card" id="grant-card" hidden>
-        <h2 class="account-card-title">账号与角色</h2>
-        <p class="account-lead">下面是这张表里的每一个账号：左边是明文邮箱，右边直接选角色 —— 选完即写进数据库（<code>accounts.role</code> / <code>accounts.plan</code>）。</p>
+        <h2 class="account-card-title">账号管理</h2>
+        <p class="account-lead">修改角色或层级后立即保存，对方刷新页面后生效。</p>
         <div class="admin-table-scroll">
           <table class="admin-table">
             <thead>
               <tr>
-                <th scope="col">用户邮箱</th>
+                <th scope="col">用户</th>
                 <th scope="col">角色</th>
+                <th scope="col">层级</th>
               </tr>
             </thead>
             <tbody id="accounts-body"></tbody>
           </table>
         </div>
-        <p class="account-hint" id="accounts-empty" hidden>还没有账号。</p>
+        <p class="account-hint" id="accounts-empty" hidden>暂无账号。</p>
         <p class="account-hint" id="accounts-note" hidden></p>
         <p class="account-msg" id="msg-accounts"></p>
       </section>
 
-      <section class="account-card" id="server-card" hidden>
-        <h2 class="account-card-title">全部账号 · 层级</h2>
-        <p class="account-lead">名录里的每个账号都在这里：把谁从 Free 拨到 Pro / Max，选完即写进数据库。「收回」是把那一行拨回 Free 并把到期清掉。</p>
-        <div class="admin-table-scroll">
-          <table class="admin-table">
-            <thead>
-              <tr>
-                <th scope="col">用户邮箱</th>
-                <th scope="col">层级</th>
-                <th scope="col">操作</th>
-              </tr>
-            </thead>
-            <tbody id="grants-body"></tbody>
-          </table>
+      <section class="account-card" id="reports-card" hidden>
+        <h2 class="account-card-title">用户报告</h2>
+        <p class="account-lead" id="reports-intro">用户在篇目页提交的问题。更新状态后，用户可在「我的报告」中看到；注音类问题可在下方「注音勘误」中直接修正。</p>
+
+        <div class="admin-report-tools">
+          <div class="admin-report-counts" id="report-counts" role="group" aria-label="按状态筛选"></div>
+          <button class="account-btn ghost" id="btn-reports-reload" type="button">刷新</button>
         </div>
-        <p class="account-hint" id="server-empty" hidden>还没有账号。</p>
-        <p class="account-msg" id="msg-grants"></p>
+
+        <ul class="report-list" id="reports-list"></ul>
+        <p class="account-hint" id="reports-empty" hidden>暂无报告。</p>
+        <p class="account-hint" id="reports-note" hidden></p>
+        <p class="account-msg" id="msg-reports"></p>
       </section>
 
       <section class="account-card" id="pinyin-card" hidden>
         <h2 class="account-card-title">注音勘误</h2>
-        <p class="account-lead">机器按字查表算注音，古籍里总有读错的。第 ① 步搜篇目，第 ② 步点「挑一句」把那一句填进来，再填第几次出现的哪个字该读什么 —— 钉住立刻生效。</p>
+        <p class="account-lead">自动注音偶有读错。搜索并选中篇目，点「选句」选出原句，再填写第几个字及其正确读音，保存后立即生效。</p>
 
         <div class="admin-steps">
           <div class="account-field">
-            <label class="account-label" for="pf-wid">① 篇目</label>
+            <label class="account-label" for="pf-wid">篇目</label>
             <input id="pf-wid" class="account-input" type="text" autocomplete="off"
-                   spellcheck="false" placeholder="滕王阁序" maxlength="40" />
+                   spellcheck="false" placeholder="输入篇名搜索，如 滕王阁序" maxlength="40" />
           </div>
           <div class="account-field">
-            <label class="account-label" for="pf-line">② 那一句原文</label>
+            <label class="account-label" for="pf-line">原句</label>
             <div class="admin-line-row">
               <input id="pf-line" class="account-input" type="text" autocomplete="off"
-                     spellcheck="false" placeholder="秋水共长天一色。" maxlength="120" />
-              <button class="account-btn ghost" id="btn-pf-fill" type="button">挑一句</button>
+                     spellcheck="false" placeholder="如 秋水共长天一色。" maxlength="120" />
+              <button class="account-btn ghost" id="btn-pf-fill" type="button">选句</button>
             </div>
           </div>
           <p class="account-hint" id="pf-picked" hidden></p>
           <div class="admin-step-pair">
             <div class="account-field">
-              <label class="account-label" for="pf-at">③ 第几次出现</label>
+              <label class="account-label" for="pf-at">第几个字</label>
               <input id="pf-at" class="account-input" type="number" min="1" step="1" value="1" />
             </div>
             <div class="account-field">
-              <label class="account-label" for="pf-py">④ 应读作</label>
+              <label class="account-label" for="pf-py">正确读音</label>
               <input id="pf-py" class="account-input" type="text" autocomplete="off"
                      spellcheck="false" placeholder="带声调，如 cháng" maxlength="12" />
             </div>
@@ -102,42 +99,18 @@
         </div>
 
         <ul class="admin-hits" id="pf-hits" hidden></ul>
-        <button class="account-btn" id="btn-pf-add" type="button">钉住</button>
+        <button class="account-btn" id="btn-pf-add" type="button">保存勘误</button>
         <p class="account-msg" id="msg-pf"></p>
 
         <div class="admin-sub">
-          <h3 class="admin-sub-title">已钉住的 <span class="admin-count" id="pf-count">0</span> 处</h3>
+          <h3 class="admin-sub-title">已保存的勘误 <span class="admin-count" id="pf-count">0</span></h3>
           <ul class="admin-fix-list" id="pf-list"></ul>
-          <p class="account-hint" id="pf-empty" hidden>一处都没钉过。</p>
+          <p class="account-hint" id="pf-empty" hidden>暂无勘误。</p>
           <p class="account-hint" id="pf-note" hidden></p>
         </div>
         <div class="confirm-row admin-reload-row">
-          <button class="account-btn ghost" id="btn-pf-export" type="button">导出勘误表</button>
+          <button class="account-btn ghost" id="btn-pf-export" type="button">复制勘误表</button>
         </div>
-      </section>
-
-      <section class="account-card" id="reports-card" hidden>
-        <h2 class="account-card-title">用户报告</h2>
-        <p class="account-lead" id="reports-intro">用户在篇目页点小旗报上来的问题（存在服务端 <code>public.reports</code>）。标状态只改这一条记录 —— 真的修复是改源码（<code>data/</code>），注音那一类改源码也可以省：在下面「注音勘误」钉住即生效。</p>
-
-        <div class="admin-report-tools">
-          <select id="report-filter" aria-label="只看某一类的报告">
-            <option value="new">已收到（还没看）</option>
-            <option value="all">全部</option>
-            <option value="read">已看过</option>
-            <option value="accepted">已确认</option>
-            <option value="fixed">已修复</option>
-            <option value="rejected">未采纳</option>
-          </select>
-          <button class="account-btn ghost" id="btn-reports-reload" type="button">刷新</button>
-        </div>
-
-        <div class="admin-report-counts" id="report-counts"></div>
-
-        <ul class="report-list" id="reports-list"></ul>
-        <p class="account-hint" id="reports-empty" hidden>还没有人报过错。</p>
-        <p class="account-hint" id="reports-note" hidden></p>
-        <p class="account-msg" id="msg-reports"></p>
       </section>
 
     </main>
