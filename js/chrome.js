@@ -383,7 +383,7 @@
         ' title="' + it.desc + '">' +
         '<span class="dock-icon" aria-hidden="true">' + dockIcon(it) + "</span>" +
         '<span class="dock-label">' + it.label + "</span>" +
-        "</button>";
+        "</" + tag + ">";
     });
     return html + "</div></nav>";
   }
@@ -443,6 +443,7 @@
       (app || document.body).insertBefore(bar, (app || document.body).firstChild);
     }
     bindHeader();
+    bindItemKeys();
 
     if (!dockEnabled()) {
       document.body.classList.add("no-dock");
@@ -481,6 +482,34 @@
 
   function bindHeader() {
 
+  }
+
+  // List cards are clickable divs; make them reachable and openable from the keyboard.
+  function bindItemKeys() {
+    var doc = document;
+    var queued = false;
+    var mark = function () {
+      queued = false;
+      // The window may already be gone when a queued pass runs (page teardown).
+      if (!doc || !doc.defaultView) return;
+      var items = doc.querySelectorAll(".list .item:not([tabindex])");
+      for (var i = 0; i < items.length; i++) items[i].setAttribute("tabindex", "0");
+    };
+    mark();
+    if (typeof MutationObserver === "function") {
+      new MutationObserver(function () {
+        if (queued) return;
+        queued = true;
+        Promise.resolve().then(mark);
+      }).observe(document.body, { childList: true, subtree: true });
+    }
+    document.addEventListener("keydown", function (e) {
+      if (e.key !== "Enter" && e.key !== " ") return;
+      var t = e.target;
+      if (!t || !t.classList || !t.classList.contains("item") || !t.closest(".list")) return;
+      e.preventDefault();
+      t.click();
+    });
   }
 
   function readBars() {

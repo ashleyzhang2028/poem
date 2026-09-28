@@ -2595,7 +2595,7 @@ html, body {
   body[data-nav="home"] .app {
     display: grid;
     grid-template-columns: minmax(0, 340px) minmax(0, 1fr);
-
+    grid-template-rows: auto auto 1fr auto;
     grid-template-areas:
       "bar    bar"
       "today  card"
@@ -2629,7 +2629,7 @@ html, body {
   body[data-nav="home"] .today-bar,
   body[data-nav="home"] .all-section { margin-bottom: 0; }
 
-  body[data-nav="home"] .today-search { margin-bottom: 26px; }
+  body[data-nav="home"] .today-search { margin: 14px 0 26px; }
 
   body[data-nav="home"] .today-search { width: 100%; max-width: none; }
 
@@ -3367,3 +3367,72 @@ html, body {
 .admin-report-acts button.danger { color: var(--red); }
 .admin-report-acts button.danger:hover { background: var(--danger-hover); border-color: var(--red); }
 .admin-report-acts button.danger:active { background: var(--danger-press); }
+
+/* Desktop layer: the bottom tab bar becomes a left rail, pages share one width scale. */
+@media (min-width: 1024px) {
+  :root { --rail-w: 92px; --page-w: clamp(1200px, 86vw, 2200px); }
+
+  body:not(.no-dock) { padding-left: var(--rail-w); }
+
+  .dock {
+    top: 0;
+    right: auto;
+    width: var(--rail-w);
+    padding: calc(20px + var(--safe-top)) 10px 20px calc(10px + var(--safe-left));
+    border-top: 0;
+    border-right: 1px solid rgba(165, 92, 25, .14);
+    box-shadow: 4px 0 20px rgba(74, 58, 38, .06);
+    animation: none;
+  }
+  .dock::before {
+    top: 0;
+    bottom: 0;
+    left: auto;
+    right: 0;
+    width: 1px;
+    height: auto;
+    background: linear-gradient(180deg, transparent, rgba(240, 205, 124, .6), transparent);
+  }
+  .dock-inner {
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: 8px;
+    max-width: none;
+    margin: 0;
+  }
+  .dock-item {
+    flex: 0 0 auto;
+    gap: 6px;
+    padding: 12px 4px 10px;
+    font-size: 12px;
+  }
+  .dock-item:hover { color: var(--green); background: rgba(47, 96, 85, .06); }
+  .dock-item:focus-visible { outline: 2px solid var(--celadon); outline-offset: -2px; }
+  .dock-item.active .dock-icon { transform: none; }
+
+  body.has-audio-player .dock { visibility: visible; pointer-events: auto; }
+  body:not(.no-dock) .player-bar { left: var(--rail-w); }
+
+  .app, #app { max-width: calc(var(--page-w) + 2 * var(--col-side)); }
+  .app:has(> .progress-main),
+  .app:has(> .settings-page),
+  .app:has(> .poems-game),
+  .app:has(.legal),
+  .app:has(> #admin-page) { max-width: calc(var(--block-w) + 2 * var(--col-side)); }
+  .app:has(> .account-page:not(#admin-page)) { max-width: calc(560px + 2 * var(--col-side)); }
+  /* Vertical centering suits a phone screen; on a tall desktop it leaves a hole above the content. */
+  body .poems-game:has(.game-mode) { min-height: 0; }
+  body .poems-game:has(.game-mode)::before,
+  body .poems-game:has(.game-mode)::after { flex-grow: 0; }
+}
+
+@media (min-width: 1680px) {
+  :root { --block-w: 1100px; }
+  body[data-nav="home"] .app { grid-template-columns: minmax(0, 400px) minmax(0, 1fr); }
+}
+
+@media (hover: hover) and (min-width: 1024px) {
+  .list .item { transition: box-shadow .16s ease, transform .16s ease; }
+  .list .item:hover { box-shadow: 0 0 0 1px var(--celadon), var(--shadow); }
+}
+.list .item:focus-visible { outline: 2px solid var(--celadon); outline-offset: 2px; }

@@ -198,7 +198,14 @@
       return r.height > 0 ? r.height : 0;
     }
 
-    var navH = Math.max(h(bar), h(dock));
+    // On desktop the dock is a full-height side rail, not a bottom bar.
+    function dockH() {
+      if (!dock) return 0;
+      var r = dock.getBoundingClientRect();
+      return r.height >= window.innerHeight * 0.5 ? 0 : h(dock);
+    }
+
+    var navH = Math.max(h(bar), dockH());
 
     if (tip && keep.tip && !keep.tip[0]) {
       navH += h(tip) + 8;
