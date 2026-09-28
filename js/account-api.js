@@ -638,6 +638,7 @@
     REASON: REASON,
     bind: bind,
     refreshMe: refreshOnce,
+    refreshNow: function (o) { globalPromise = null; return refreshOnce(o); },
 
     deleteAccount: function (o) { return boundOnce(o).deleteAccount(o); },
 

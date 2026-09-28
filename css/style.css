@@ -279,15 +279,14 @@ html, body {
 .today-title { font-size: 16px; font-weight: 600; }
 .today-sub { font-size: 12.5px; opacity: .88; }
 .ring {
-
   position: relative;
   flex: none;
-  width: var(--today-btn-size, 40px);
-  height: var(--today-btn-size, 40px);
+  width: 44px;
+  height: 44px;
   min-height: 0;
 }
 .ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
-.ring path { fill: none; stroke-width: 3; stroke-linecap: round; }
+.ring path { fill: none; stroke-width: 1; stroke-linecap: round; }
 .ring-bg { stroke: rgba(255, 255, 255, .28); }
 .ring-fg { stroke: var(--gold); transition: stroke-dasharray .4s ease; }
 .ring span {
@@ -1660,6 +1659,29 @@ body.has-install-tip #app {
 }
 .tier-badge.tier-pro { color: var(--green); border-color: rgba(47, 96, 85, .45); }
 .tier-badge.tier-max { color: #8a6a2f; border-color: rgba(214, 178, 106, .7); background: rgba(214, 178, 106, .12); }
+
+.plan-notice { z-index: 90; align-items: center; }
+.plan-notice .modal-box.plan-notice-box {
+  width: calc(100% - 32px);
+  max-width: 400px;
+  margin: auto;
+  padding: 28px 22px 22px;
+  border-radius: 22px;
+  text-align: center;
+}
+.plan-notice .tier-badge { display: inline-block; padding: 2px 12px; font-size: 12px; font-weight: 600; }
+.plan-notice-title {
+  margin: 12px 0 8px;
+  font-family: var(--font-poem);
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: var(--ink);
+}
+.plan-notice-text { margin: 0; font-size: 14px; line-height: 1.8; color: var(--ink-2); }
+.plan-notice-until { margin: 6px 0 0; font-size: 12px; color: var(--ink-3); }
+.plan-notice-actions { margin-top: 22px; }
+.plan-notice-actions .btn { flex: 1 1 0; min-width: 0; text-decoration: none; }
 .account-caps { list-style: none; margin: 0 0 10px; padding: 0; }
 .account-cap {
   display: flex;

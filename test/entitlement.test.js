@@ -346,6 +346,53 @@ console.log('\n=== 十、源码扫描：页面上不许自己拼 plan ===');
     '「谁能进管理后台」两页走同一个出口 Entitlement.isOwner()');
 }
 
+console.log('\n=== 升级提醒：管理员升级后，本人下次同步到服务端答案时提醒一次 ===');
+{
+  const S = (tier, uid, until) => ({ source: 'server', role: 'user', uid: uid || 'u_a', until });
+  const up = (b, tier, uid, until) => E.writeTier(b, tier, until == null ? null : until, S(tier, uid));
+
+  const b = mem();
+  up(b, 'free');
+  eq(E.readNotice(b, 'u_a'), null, '第一次拿到服务端答案（Free）不提醒');
+  up(b, 'pro');
+  const n = E.readNotice(b, 'u_a');
+  chk(!!n && n.from === 'free' && n.to === 'pro', 'Free → Pro：留下一条待提醒（from free, to pro）');
+  eq(E.readNotice(b, 'u_b'), null, '换了账号读不到别人的提醒');
+  up(b, 'pro');
+  chk(!!E.readNotice(b, 'u_a'), '同一层级再同步一次，提醒还在（等本人看到）');
+  E.clearNotice(b);
+  up(b, 'pro');
+  eq(E.readNotice(b, 'u_a'), null, '看过之后不再重复提醒');
+  up(b, 'max');
+  eq((E.readNotice(b, 'u_a') || {}).to, 'max', 'Pro → Max 也提醒');
+
+  const b2 = mem();
+  up(b2, 'pro');
+  eq(E.readNotice(b2, 'u_a'), null, '这台设备上第一次登录就是 Pro：不当成升级');
+
+  const b3 = mem();
+  up(b3, 'free');
+  up(b3, 'max');
+  up(b3, 'free');
+  eq(E.readNotice(b3, 'u_a'), null, '没来得及看就被降回 Free：那条提醒收回');
+
+  const b4 = mem();
+  up(b4, 'free', 'u_a');
+  up(b4, 'pro', 'u_b');
+  eq(E.readNotice(b4, 'u_b'), null, '换账号登录（上一位是 Free、这一位是 Pro）不算升级');
+
+  const b5 = mem();
+  E.writeTier(b5, 'free');
+  up(b5, 'pro');
+  eq(E.readNotice(b5, 'u_a'), null, '本机临时写的层级不作为「升级前」的依据');
+
+  const b6 = mem();
+  up(b6, 'free');
+  const until = Date.now() + 30 * 86400000;
+  up(b6, 'pro', 'u_a', until);
+  eq((E.readNotice(b6, 'u_a') || {}).until, until, '有到期日的升级，提醒里带着到期日');
+}
+
 console.log('');
 if (fails) {
   console.log('✗ 权益分层测试失败 ' + fails + ' 项');
