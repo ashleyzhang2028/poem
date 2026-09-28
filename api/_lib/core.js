@@ -589,6 +589,10 @@ function verifyCode_(deps, input) {
         if (gate) return Promise.resolve(gate);
                 var first = !markLogin(acc, t);
         return Promise.resolve(store.putAccount(acc)).then(function (saved) {
+          // Sessions opened with the voided password belong to whoever typed it.
+          if (!passwordCleared) return saved;
+          return Promise.resolve(store.revokeSessions(acc.uid)).then(function () { return saved; });
+        }).then(function (saved) {
 
           return claimOwnerRole(store, cfg, saved || acc).then(function () { return saved || acc; });
         }).then(function (saved) {

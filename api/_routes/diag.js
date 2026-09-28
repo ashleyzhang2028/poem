@@ -273,6 +273,16 @@ function mailReport(d) {
 }
 
 module.exports = handler.make("diag", ["GET"], function (d, body, req) {
+  // Public by design, but each call fans out to the DB with the service key.
+  var t0 = d.now();
+  var gates = [["ip", "diag:" + d.ip], ["global", "diag"]];
+  for (var gi = 0; gi < gates.length; gi++) {
+    var g = d.limiter.take(d.cfg, gates[gi][0], gates[gi][1], t0);
+    if (!g.ok) {
+      var rc = handler.core.rateCode(gates[gi][0]);
+      return { status: 429, body: { code: rc, message: handler.core.RATE_MSG[rc], retryAfter: g.retryAfter } };
+    }
+  }
   var o = originOf(d, req);
   var r = {
     generatedAt: new Date().toISOString(),

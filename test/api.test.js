@@ -250,7 +250,7 @@ async function main() {
 
     const c = id.newCode(6);
     chk(/^\d{6}$/.test(c), "验证码是 6 位纯数字（实际 " + c + "）");
-    chk(id.newUid().indexOf("u_") === 0 && id.newUid().length === 10, "uid 形如 u_ + 8 位");
+    chk(id.newUid().indexOf("u_") === 0 && id.newUid().length === 18, "uid 形如 u_ + 16 位");
     chk(id.newSid().indexOf("s_") === 0, "sid 形如 s_ + 16 位");
   }
 
