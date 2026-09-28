@@ -7,6 +7,10 @@
         "/^node -e \"const \\{chromium\\}=require\\('playwright'\\);\\(async\\(\\)=>\\{const b=await chromium\\.launch\\(\\{channel:'msedge'\\}\\);const pg=await b\\.newPage\\(\\);await pg\\.goto\\('http://localhost:8080/mine/',\\{waitUntil:'networkidle'\\}\\);const r=await pg\\.evaluate\\(\\(\\)=>\\['bottom-actions','btn-delete-start','btn-go-admin','danger-panel'\\]\\.map\\(id=>\\{const e=document\\.getElementById\\(id\\);return id\\+': hidden='\\+\\(e&&e\\.hidden\\)\\+' display='\\+\\(e&&getComputedStyle\\(e\\)\\.display\\)\\}\\)\\);console\\.log\\(r\\.join\\('\\\\n'\\)\\);await b\\.close\\(\\);\\}\\)\\(\\)\\.catch\\(e=>\\{console\\.log\\('ERR',e\\.message\\.slice\\(0,200\\)\\);process\\.exit\\(1\\)\\}\\)\"$/": {
             "approve": true,
             "matchCommandLine": true
+        },
+        "/^python --version; py --version; pip show fonttools 2>&1 \\| Select-Object -First 2$/": {
+            "approve": true,
+            "matchCommandLine": true
         }
     }
 }

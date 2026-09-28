@@ -1760,12 +1760,16 @@ body.has-install-tip #app {
   line-height: 1.05;
 }
 
+/* The subset fonts carry broken advance widths for Latin/ASCII (space ≈ 65em), so only CJK ranges use them. */
 @font-face {
   font-family: "Poem Sans SC";
   src: url("../fonts/NotoSansSC-400.woff2") format("woff2");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
+  unicode-range: U+2010-2027, U+2030-2038, U+203B-205E, U+2E80-2FD5, U+3000-303F, U+31C0-31E5,
+    U+3200-321E, U+3220-33FF, U+3400-4DBF, U+4E00-9FFF, U+F900-FA6D, U+FE10-FE19, U+FE30-FE4F,
+    U+FF01-FF60, U+FFE0-FFE6, U+20000-2FA1F;
 }
 @font-face {
   font-family: "Poem Sans SC";
@@ -1773,6 +1777,9 @@ body.has-install-tip #app {
   font-weight: 600 700;
   font-style: normal;
   font-display: swap;
+  unicode-range: U+2010-2027, U+2030-2038, U+203B-205E, U+2E80-2FD5, U+3000-303F, U+31C0-31E5,
+    U+3200-321E, U+3220-33FF, U+3400-4DBF, U+4E00-9FFF, U+F900-FA6D, U+FE10-FE19, U+FE30-FE4F,
+    U+FF01-FF60, U+FFE0-FFE6, U+20000-2FA1F;
 }
 @font-face {
   font-family: "Poem Serif SC";
@@ -1780,6 +1787,9 @@ body.has-install-tip #app {
   font-weight: 400;
   font-style: normal;
   font-display: swap;
+  unicode-range: U+2010-2027, U+2030-2038, U+203B-205E, U+2E80-2FD5, U+3000-303F, U+31C0-31E5,
+    U+3200-321E, U+3220-33FF, U+3400-4DBF, U+4E00-9FFF, U+F900-FA6D, U+FE10-FE19, U+FE30-FE4F,
+    U+FF01-FF60, U+FFE0-FFE6, U+20000-2FA1F;
 }
 @font-face {
   font-family: "Poem Serif SC";
@@ -1787,6 +1797,9 @@ body.has-install-tip #app {
   font-weight: 600 700;
   font-style: normal;
   font-display: swap;
+  unicode-range: U+2010-2027, U+2030-2038, U+203B-205E, U+2E80-2FD5, U+3000-303F, U+31C0-31E5,
+    U+3200-321E, U+3220-33FF, U+3400-4DBF, U+4E00-9FFF, U+F900-FA6D, U+FE10-FE19, U+FE30-FE4F,
+    U+FF01-FF60, U+FFE0-FFE6, U+20000-2FA1F;
 }
 
 :root {
@@ -2618,7 +2631,7 @@ html, body {
 
   body[data-nav="home"] .today-search { margin-bottom: 26px; }
 
-  body[data-nav="home"] .today-search { width: 520px; }
+  body[data-nav="home"] .today-search { width: 100%; max-width: none; }
 
   .list {
     display: grid;
