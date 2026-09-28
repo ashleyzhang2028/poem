@@ -16,7 +16,7 @@
   <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
   <link rel="stylesheet" href="css/style.css" />
 </head>
-<body data-nav="settings" data-back="/settings/" data-page="背诵" data-sub="今天背哪几首 · 复习算法">
+<body data-nav="settings" data-back="/settings/" data-page="背诵" data-sub="背诵范围 · 每日数量 · 复习算法">
   <div class="app">
     <header class="topbar"></header>
 
@@ -89,25 +89,13 @@
           <h2 class="settings-group-title" id="grp-algo">复习算法</h2>
 
           <div class="settings-item">
-            <label id="algo-label">复习算法</label>
-            <div class="algo-modes" id="seg-algo" role="radiogroup" aria-labelledby="algo-label"></div>
+            <div class="algo-modes" id="seg-algo" role="radiogroup" aria-labelledby="grp-algo"></div>
             <div class="settings-hint" id="algo-hint"></div>
           </div>
 
           <div class="settings-item">
             <label>复习间隔</label>
             <div class="settings-hint" id="algo-interval"></div>
-          </div>
-        </section>
-
-        <section class="settings-group" aria-labelledby="grp-progress">
-          <h2 class="settings-group-title" id="grp-progress">进度</h2>
-
-          <div class="settings-item">
-            <label>背诵进度</label>
-            <div class="settings-btns">
-              <a class="btn ghost-btn" id="link-progress" href="/progress/">打开进度总览</a>
-            </div>
           </div>
         </section>
       </div>
@@ -148,6 +136,7 @@
   <script src="/data/poems-11.js"></script>
   <script src="/data/poems-12.js"></script>
   <script src="/data/index.js"></script>
+  <script src="/data/site-books.js"></script>
   <script src="/data/site-index.js"></script>
 
   <script src="/js/auth-core.js"></script>

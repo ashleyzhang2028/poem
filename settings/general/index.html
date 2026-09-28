@@ -16,7 +16,7 @@
   <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
   <link rel="stylesheet" href="css/style.css" />
 </head>
-<body data-nav="settings" data-back="/settings/" data-page="通用" data-sub="数据备份 · 课内诗词导出">
+<body data-nav="settings" data-back="/settings/" data-page="通用" data-sub="备份与恢复 · 导出 · 清空进度">
   <div class="app">
     <header class="topbar"></header>
 
@@ -26,18 +26,27 @@
         <section class="settings-group">
 
           <div class="settings-item">
-            <label>数据管理</label>
+            <label>备份与恢复</label>
             <div class="settings-btns">
               <button class="btn ghost-btn" id="btn-export">导出备份</button>
               <button class="btn ghost-btn" id="btn-import">导入备份</button>
-              <button class="btn danger-btn" id="btn-reset">清空进度</button>
+            </div>
+            <div class="settings-hint">备份文件可用于换设备或恢复数据。</div>
+          </div>
+
+          <div class="settings-item">
+            <label>导出</label>
+            <div class="settings-btns">
+              <button class="btn ghost-btn" id="btn-export-poems">导出课内诗词</button>
             </div>
           </div>
 
           <div class="settings-item">
+            <label>清空进度</label>
             <div class="settings-btns">
-              <button class="btn ghost-btn" id="btn-export-poems">导出课内诗词</button>
+              <button class="btn danger-btn" id="btn-reset">清空本机进度</button>
             </div>
+            <div class="settings-hint">此操作无法撤销，建议先导出备份。</div>
           </div>
         </section>
       </div>
@@ -78,6 +87,7 @@
   <script src="/data/poems-11.js"></script>
   <script src="/data/poems-12.js"></script>
   <script src="/data/index.js"></script>
+  <script src="/data/site-books.js"></script>
   <script src="/data/site-index.js"></script>
 
   <script src="/js/auth-core.js"></script>

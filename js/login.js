@@ -261,7 +261,7 @@
 
   function passwordChannel(msgId) {
     if (!api) {
-      msg(msgId, "这个站点没有连上服务器，暂时不能注册或改密码。你仍然可以用「快捷登录」的随机码进来。", "warn");
+      msg(msgId, "暂时无法连接服务器，暂不能注册或修改密码。可改用验证码登录。", "warn");
       return null;
     }
     return api;
@@ -387,7 +387,7 @@
     }
     if (!pw) { msg("msg-reg", ch.messageOf("E_PW_EMPTY") || "请先填密码", "warn"); return; }
     if (pw.length < 8) { msg("msg-reg", "密码至少 8 位", "warn"); return; }
-    if (pw !== pw2) { msg("msg-reg", "两次填的密码不一样", "warn"); return; }
+    if (pw !== pw2) { msg("msg-reg", "两次输入的密码不一致", "warn"); return; }
 
     if (turnstileBlocked("msg-reg")) return;
 
@@ -429,8 +429,8 @@
       }
       if (r.existing) {
         note("verify-fail-note", "", "");
-        text($("verify-lead"), "这个邮箱已经注册过、还没确认。请打开当初那封确认邮件里的链接。");
-        note("verify-fail-note", "没收到就点下面的「重发验证邮件」；密码仍是第一次注册时设的那个。", "warn");
+        text($("verify-lead"), "该邮箱已注册但尚未验证，请打开验证邮件中的链接。");
+        note("verify-fail-note", "未收到可重新发送；密码仍为首次注册时设置的密码。", "warn");
         setMode("verify");
         return r;
       }
@@ -447,7 +447,7 @@
       setMode("verify");
       return r;
     }, function () {
-      msg("msg-reg", "连不上服务器，请稍后再试", "warn");
+      msg("msg-reg", "无法连接服务器，请稍后再试", "warn");
     });
     });
   }
@@ -493,7 +493,7 @@
 
       return r;
     }, function () {
-      msg("msg-pw", "连不上服务器，请稍后再试", "warn");
+      msg("msg-pw", "无法连接服务器，请稍后再试", "warn");
     });
     });
   }
@@ -522,7 +522,7 @@
       showToast("请查收邮件");
       return r;
     }, function () {
-      msg("msg-forgot", "连不上服务器，请稍后再试", "warn");
+      msg("msg-forgot", "无法连接服务器，请稍后再试", "warn");
     });
     });
   }
@@ -576,8 +576,8 @@
       state.expiresAt = r.expiresAt;
       state.cooldown = Date.now() + (r.cooldown || 60) * 1000;
       state.remote = true;
-      return afterSent("login", r.delivered ? "已发往 " + state.sentTo : "已生成随机码，将发往 " + state.sentTo,
-        r.delivered ? "验证码已发出" : "已生成随机码");
+      return afterSent("login", r.delivered ? "验证码已发送至 " + state.sentTo : "已生成随机码，将发往 " + state.sentTo,
+        r.delivered ? "验证码已发送" : "已生成随机码");
     });
   }
 
@@ -676,7 +676,7 @@
       if (!r.ok) {
         if (r.code === "E_EMAIL_UNVERIFIED") {
 
-          text($("verify-lead"), "这个邮箱还没确认。");
+          text($("verify-lead"), "该邮箱尚未验证。");
 
           note("verify-fail-note", "请打开收件箱中的验证邮件；未收到可重新发送。", "warn");
           setMode("verify");
@@ -684,7 +684,7 @@
         }
         if (serverCannot(r.code)) {
 
-          msg("msg-code", r.message + " 可以改用「本机随机码」：点「换个邮箱」重发一次，会在本机生成。", "warn");
+          msg("msg-code", r.message, "warn");
           state.cooldown = 0;
           startTick(codeBoxes);
           return;
@@ -738,7 +738,7 @@
 
     setMode("done");
 
-    text($("done-lead"), "账号已建好 · " +
+    text($("done-lead"), "登录成功 · " +
       (Ent ? Ent.tierLabel(Ent.identity().tier) : "Free") +
       (doneMail ? " · " + doneMail : ""));
 
@@ -750,11 +750,11 @@
     }
 
     if (r.remote) {
-      showToast("账号已建好：进度已可跨设备同步");
+      showToast("登录成功");
     } else if (r.isLocalOnly) {
-      showToast("浏览器不允许保存数据：本次登录刷新后会失效");
+      showToast("浏览器未能保存数据，刷新后需重新登录");
     } else {
-      showToast("账号已建好（本机体验版）");
+      showToast("登录成功（本机模式）");
     }
   }
 
@@ -824,12 +824,12 @@
     var ch = passwordChannel("msg-unverified");
     if (!ch) return;
     if (!ch.resendVerificationByEmail) {
-      msg("msg-unverified", "这个页面是旧缓存，刷新一下再试", "warn");
+      msg("msg-unverified", "页面已更新，请刷新后重试", "warn");
       return;
     }
     var email = (($("input-pw-email") || {}).value || (($("input-email") || {}).value || "")).trim();
     if (!A.isEmailShape(A.normalizeEmail(email))) {
-      msg("msg-unverified", "请回到登录那一屏填上邮箱，再点这颗键", "warn");
+      msg("msg-unverified", "请返回登录页填写邮箱后再试", "warn");
       return;
     }
     if (turnstileBlocked("msg-unverified")) return;
@@ -839,15 +839,15 @@
       if (!r.ok) { msg("msg-unverified", r.message, "warn"); return null; }
 
       if (r.alreadyVerified) {
-        msg("msg-unverified", "这个邮箱已经确认过了，直接回「密码登录」进来即可。", "ok");
+        msg("msg-unverified", "该邮箱已验证，请直接使用密码登录。", "ok");
       } else if (r.verifySent) {
         msg("msg-unverified", "验证邮件已发往 " + (r.email || "你的邮箱") + "。", "ok");
       } else {
-        msg("msg-unverified", "这台服务器现在没能把邮件发出去（发信商还没配好），稍后再试。", "warn");
+        msg("msg-unverified", "邮件暂时无法发送，请稍后再试。", "warn");
       }
       return r;
     }, function () {
-      msg("msg-unverified", "连不上服务器，请稍后再试", "warn");
+      msg("msg-unverified", "无法连接服务器，请稍后再试", "warn");
     });
     });
   }
@@ -857,7 +857,7 @@
     var ch = passwordChannel("msg-verify");
     if (!ch) return;
     if (!ch.resendVerification) {
-      msg("msg-verify", "这个页面是旧缓存，刷新一下再试", "warn");
+      msg("msg-verify", "页面已更新，请刷新后重试", "warn");
       return;
     }
 
@@ -875,7 +875,7 @@
       turnstileReset();
       if (!r.ok) { msg("msg-verify", r.message, "warn"); return null; }
       if (r.alreadyVerified) {
-        msg("msg-verify", "这个邮箱已经确认过了，不用再发。", "ok");
+        msg("msg-verify", "该邮箱已验证，无需重复发送。", "ok");
         return r;
       }
 
@@ -885,8 +885,7 @@
           r.email || state.regEmail), mailDelivered === false ? "warn" : "ok");
       } else if (signedIn) {
 
-        msg("msg-verify", "这台服务器现在没能把邮件发出去（已试 " + (Number(r.verifyAttempts) || 1)
-          + " 次）。稍后再试。", "warn");
+        msg("msg-verify", "邮件暂时无法发送，请稍后再试。", "warn");
       } else {
 
         msg("msg-verify", mailDelivered === false
@@ -896,7 +895,7 @@
       }
       return r;
     }, function () {
-      msg("msg-verify", "连不上服务器，请稍后再试", "warn");
+      msg("msg-verify", "无法连接服务器，请稍后再试", "warn");
     });
     });
   }

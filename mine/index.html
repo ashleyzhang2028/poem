@@ -68,20 +68,12 @@
       <section class="account-card" id="stats-card">
         <h2 class="account-card-title">本机数据</h2>
         <div class="kv-list" id="stats-list"></div>
-
-        <p class="settings-link-row">
-          <a class="account-link" id="link-progress" href="/progress/">背诵进度</a>
-        </p>
+        <div class="kv-list nav-list">
+          <a class="kv-row nav-row" id="link-progress" href="/progress/"><span class="kv-k">查看背诵进度</span><span class="nav-go" aria-hidden="true">›</span></a>
+        </div>
       </section>
 
-      <section class="account-card" id="about-card">
-        <h2 class="account-card-title">关于</h2>
-
-        <div class="kv-list">
-          <div class="kv-row"><span class="kv-k"><a class="kv-link" href="/terms/">用户协议</a></span><span class="kv-v"></span></div>
-          <div class="kv-row"><span class="kv-k"><a class="kv-link" href="/privacy/">隐私条款</a></span><span class="kv-v"></span></div>
-        </div>
-
+      <section class="account-card" id="sync-card">
         <label class="switch sync-row" id="sync-row">
           <span class="settings-label" id="sync-name">跨设备同步</span>
           <input id="toggle-sync" class="switch-input" type="checkbox"
@@ -94,31 +86,38 @@
           <p class="account-hint" id="conflict-lead"></p>
           <div class="settings-btns">
             <button class="account-btn" id="btn-keep-local" type="button">保留本机</button>
-            <button class="account-btn ghost" id="btn-keep-remote" type="button">保留账号</button>
-            <button class="account-btn ghost" id="btn-export-first" type="button">先导出再决定</button>
+            <button class="account-btn ghost" id="btn-keep-remote" type="button">保留云端</button>
+            <button class="account-btn ghost" id="btn-export-first" type="button">导出备份</button>
           </div>
           <p class="account-msg" id="msg-conflict"></p>
         </div>
+      </section>
 
+      <section class="account-card" id="about-card">
+        <h2 class="account-card-title">更多</h2>
+        <div class="kv-list nav-list">
+          <a class="kv-row nav-row" href="/settings/"><span class="kv-k">设置</span><span class="nav-go" aria-hidden="true">›</span></a>
+          <a class="kv-row nav-row" href="/settings/reports/"><span class="kv-k">我的报告</span><span class="nav-go" aria-hidden="true">›</span></a>
+          <a class="kv-row nav-row" id="btn-go-admin" href="/admin/" hidden><span class="kv-k">管理后台</span><span class="nav-go" aria-hidden="true">›</span></a>
+        </div>
       </section>
 
       <div class="bottom-actions" id="bottom-actions" hidden>
         <button class="account-btn danger" id="btn-delete-start" type="button" hidden>注销账号</button>
-        <button class="account-btn ghost" id="btn-go-admin" type="button" hidden>管理后台</button>
       </div>
 
       <div class="danger-panel" id="danger-panel" hidden>
         <div id="delete-step-1" hidden>
           <p class="account-lead">
-            注销会删掉账号与服务器上的云端进度（云端那份先导给你留档），<strong>不动本机背诵进度</strong>。想连本机一起清：<a class="kv-link" href="/settings/general/">清空进度</a>。
+            注销将删除账号及云端进度，删除前会导出一份供你留存；<strong>本机背诵进度不受影响</strong>。如需同时清空本机数据，请前往<a class="kv-link" href="/settings/general/">设置 · 通用</a>。
           </p>
-          <button class="account-btn danger" id="btn-delete-ask" type="button">我要注销账号</button>
+          <button class="account-btn danger" id="btn-delete-ask" type="button">继续注销</button>
         </div>
         <div id="delete-step-2" hidden>
           <div class="account-field">
-            <label class="account-label" for="input-delete-email">再输一次注册时用的完整邮箱以确认</label>
+            <label class="account-label" for="input-delete-email">请输入账号邮箱以确认注销</label>
             <input id="input-delete-email" class="account-input" type="email" inputmode="email"
-                   autocomplete="off" spellcheck="false" placeholder="you@example.com" maxlength="120" />
+                   autocomplete="off" spellcheck="false" placeholder="请输入账号邮箱以确认" maxlength="120" />
           </div>
           <div class="confirm-row">
             <button class="account-btn danger" id="btn-delete-confirm" type="button">确认注销</button>
@@ -127,8 +126,8 @@
           <p class="account-msg" id="msg-delete"></p>
 
           <div id="delete-export" hidden>
-            <button class="account-btn ghost" id="btn-delete-export" type="button">下载云端那一份</button>
-            <p class="account-hint">注销时从服务器导出，存好它 —— 服务器上已经没有了。</p>
+            <button class="account-btn ghost" id="btn-delete-export" type="button">下载云端数据备份</button>
+            <p class="account-hint">这是注销前从服务器导出的数据，服务器上已不再保留，请妥善保存。</p>
           </div>
         </div>
       </div>

@@ -144,6 +144,8 @@
     mark("#seg-scope", "scope", settings.scope);
     mark("#seg-count", "count", settings.dailyCount);
     mark("#seg-helper", "helper", settings.helper === "on" ? "on" : "off");
+    var helperToggle = $("#toggle-helper");
+    if (helperToggle) helperToggle.checked = settings.helper === "on";
 
     renderAlgos();
     renderPlayModes();
@@ -374,7 +376,7 @@
     const tip = $("#collections-tip");
     if (tip) {
       tip.hidden = total > 0;
-      if (!total) tip.textContent = "到任一集子页或搜索页点篇目右边的书签即可加进来。";
+      if (!total) tip.textContent = "在任意列表或搜索结果中点击篇目右侧的书签，即可加入清单。";
     }
 
     const tools = $("#collections-tools");
@@ -592,7 +594,7 @@
     if (tools) tools.hidden = !items.length;
 
     if (!items.length) {
-      box.innerHTML = "";
+      box.innerHTML = '<p class="settings-hint">暂无加背篇目，可在首页「今日加背」搜索添加。</p>';
       return;
     }
 
@@ -913,9 +915,19 @@
         settings.helper = b.dataset.helper === "on" ? "on" : "off";
         saveSettings();
         renderControls();
-        showToast(settings.helper === "on" ? "自动注音已开启：打开诗词自动注音" : "自动注音已关闭：打开诗词为纯文本");
+        showToast(settings.helper === "on" ? "已开启自动注音" : "已关闭自动注音");
       });
     });
+
+    const helperToggle = $("#toggle-helper");
+    if (helperToggle) {
+      helperToggle.addEventListener("change", function () {
+        settings.helper = helperToggle.checked ? "on" : "off";
+        saveSettings();
+        renderControls();
+        showToast(settings.helper === "on" ? "已开启自动注音" : "已关闭自动注音");
+      });
+    }
 
     const playBox = $("#seg-play");
     if (playBox) {

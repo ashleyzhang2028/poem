@@ -217,7 +217,7 @@
         '<button type="button" class="top-act" id="top-act">' +
         '<span class="top-act-icon" aria-hidden="true">' + GLYPHS.back + "</span>" +
         '<span class="sr-only">' + pageAction.label + "</span></button>";
-    } else if (!topLevelPage() && pageTopAction()) {
+    } else if (pageTopAction()) {
 
       rightKey =
         '<a class="top-act" id="top-act-link" href="' + pageTopAction().href + '"' +
@@ -298,7 +298,7 @@
     "settings/recite": routeHref("settings"),
     "settings/lists": routeHref("settings"),
     "settings/reader": routeHref("settings"),
-    "settings/reports": routeHref("settings"),
+    "settings/reports": routeHref("mine"),
 
     selfCheck: "/settings/general/",
     plans: routeHref("settings"),

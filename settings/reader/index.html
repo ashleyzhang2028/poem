@@ -16,7 +16,7 @@
   <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
   <link rel="stylesheet" href="css/style.css" />
 </head>
-<body data-nav="settings" data-back="/settings/" data-page="朗读" data-sub="自动注音 · 连读方式">
+<body data-nav="settings" data-back="/settings/" data-page="阅读与朗读" data-sub="自动注音 · 连读方式">
   <div class="app">
     <header class="topbar"></header>
 
@@ -26,11 +26,13 @@
         <section class="settings-group">
 
           <div class="settings-item">
-            <label>自动注音</label>
-            <div class="seg small" id="seg-helper">
-              <button data-helper="off" class="active">关闭</button>
-              <button data-helper="on">开启</button>
-            </div>
+            <label class="switch">
+              <span class="settings-label" id="helper-name">自动注音</span>
+              <input id="toggle-helper" class="switch-input" type="checkbox"
+                     role="switch" aria-labelledby="helper-name" />
+              <span class="switch-toggle" aria-hidden="true"></span>
+            </label>
+            <p class="switch-hint">打开诗词时默认显示注音。</p>
           </div>
 
           <div class="settings-item">
@@ -76,6 +78,7 @@
   <script src="/data/poems-11.js"></script>
   <script src="/data/poems-12.js"></script>
   <script src="/data/index.js"></script>
+  <script src="/data/site-books.js"></script>
   <script src="/data/site-index.js"></script>
 
   <script src="/js/auth-core.js"></script>

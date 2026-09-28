@@ -196,16 +196,15 @@ function tick(ms) { return new Promise(r => setTimeout(r, ms || 30)); }
       eq(win.document.getElementById("btn-account-entry").dataset.action, "sign-out", "它的落点是退出，不是再跳一次登录页");
       chk(win.document.getElementById("btn-go-admin").hidden !== false, "非管理员看不到管理入口（角色也来自服务端）");
 
-      // 页底那一排（Issue #323）：注销账号 + 管理后台住在一起，**都在卡外**。
-      // 已登录的非管理员：只看得到「注销账号」一颗；两颗都不在卡片里。
+      // 页底只留「注销账号」这一颗危险操作，在卡外；「管理后台」是导航，归「更多」那张卡。
       const del = win.document.getElementById("btn-delete-start");
       chk(!!del, "页底有「注销账号」那颗键（从前它是危险区卡里的一颗满宽键）");
       chk(!!del && !del.hasAttribute("hidden"), "已登录的人看得到「注销账号」（实际 hidden 属性 = " + (del && del.getAttribute("hidden")) + "）");
       eq(del && String(del.textContent || "").trim(), "注销账号", "它的字就是「注销账号」");
       chk(del && !del.closest(".account-card"), "它在**卡外**（页底那一排，不是卡片里的一颗键）");
       const adminBtn = win.document.getElementById("btn-go-admin");
-      chk(adminBtn && !adminBtn.closest(".account-card"), "「管理后台」也在卡外，与注销那颗同一排");
-      eq(!!(adminBtn && adminBtn.parentNode === del.parentNode), true, "两颗键是同一个容器里的兄弟（摆在一起）");
+      chk(adminBtn && !!adminBtn.closest("#about-card"), "「管理后台」在「更多」卡里，是一条导航");
+      chk(adminBtn && adminBtn.parentNode !== del.parentNode, "它不再和危险操作摆在一起");
       chk(!win.document.getElementById("danger-card"), "那一张「注销账号」卡片整块没了（连标题一起）");
       win.close();
     }

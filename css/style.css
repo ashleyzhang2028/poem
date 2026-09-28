@@ -908,6 +908,13 @@ select { padding-top: 0; padding-bottom: 0; }
     max-width: calc(50% - 4px);
   }
 }
+
+/* Desktop settings columns are ~300px wide, too narrow for two option cards per row. */
+@media (min-width: 1024px) {
+  #seg-algo .algo-opt,
+  #seg-play .play-mode-opt { flex-basis: 100%; max-width: none; min-width: 0; }
+}
+.algo-name { flex-wrap: wrap; }
 .play-mode-opt {
   display: flex;
   flex-direction: column;
@@ -1549,6 +1556,8 @@ body.has-install-tip #app {
     flex: 1 1 calc(50% - 18px);
     max-width: calc(50% - 18px);
   }
+  /* Groups sit side by side here; row-gap spaces the rows, so tops must match. */
+  .settings-groups > .settings-group { margin-top: 4px; }
 
   .settings-item.wide {
     flex: 1 1 100%;
@@ -1678,6 +1687,7 @@ body.has-install-tip #app {
 }
 
 .settings-about .kv-list { padding: 0 2px; }
+.settings-about .kv-list + .settings-about-title { margin-top: 22px; }
 
 .kv-list + .kv-list {
   margin-top: 6px;
@@ -3254,7 +3264,10 @@ html, body {
   flex-wrap: wrap;
   gap: 8px;
   align-items: center;
-  margin: 0 0 10px;
+  justify-content: space-between;
+  margin: 0 0 4px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line-2);
 }
 .admin-report-tools select {
   flex: 1 1 160px;
@@ -3267,14 +3280,13 @@ html, body {
   color: var(--ink);
   font-size: 13px;
 }
-.admin-report-tools .account-btn { width: auto; flex: none; margin-top: 0; padding: 0 14px; }
+.admin-report-tools .account-btn { width: auto; flex: none; margin-top: 0; padding: 0 14px; height: var(--ctl-h-sm); font-size: var(--ctl-font-sm); }
 .admin-report-counts {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin: 0 0 4px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--line-2);
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .admin-report-counts button {
@@ -3363,6 +3375,7 @@ html, body {
 }
 .admin-report-acts button:hover { background: var(--ctl-hover); border-color: var(--celadon); }
 .admin-report-acts button:active { background: var(--ctl-press); }
+.admin-report-acts button.active { background: var(--green); border-color: var(--green); color: #fdfaf2; }
 .admin-report-acts button[disabled] { opacity: .45; cursor: not-allowed; }
 .admin-report-acts button.danger { color: var(--red); }
 .admin-report-acts button.danger:hover { background: var(--danger-hover); border-color: var(--red); }

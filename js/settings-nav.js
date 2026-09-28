@@ -6,30 +6,30 @@
       key: "general",
       href: "/settings/general/",
       title: "通用",
-      desc: "数据备份 · 课内诗词导出"
+      desc: "备份与恢复 · 导出 · 清空进度"
     },
     {
       key: "recite",
       href: "/settings/recite/",
       title: "背诵",
-      desc: "学段 / 年级 / 学期 / 范围 / 数量",
+      desc: "学段 · 范围 · 每日数量",
       extra: "复习算法"
     },
     {
       key: "lists",
       href: "/settings/lists/",
       title: "清单",
-      desc: "自选背诵的增删改查"
+      desc: "管理自选背诵清单"
     },
     {
       key: "reader",
       href: "/settings/reader/",
-      title: "朗读",
+      title: "阅读与朗读",
       desc: "自动注音 · 连读方式"
     }
   ];
 
-  var APP_VERSION = "1.0 (v273)";
+  var APP_VERSION = "1.0 (v274)";
   var APP_VERSION_NAME = "跬步 · 古诗词背诵";
 
   function esc(s) {
@@ -84,12 +84,11 @@
       kvRow("离线缓存", esc(cached)) +
       "</div>" +
 
-      '<h2 class="settings-about-title">页面</h2>' +
+      '<h2 class="settings-about-title">更多</h2>' +
       '<div class="kv-list">' +
-      kvRow(link("/plans/", "用户对比"), "") +
+      kvRow(link("/plans/", "权益对比"), "") +
       kvRow(link("/terms/", "用户协议"), "") +
       kvRow(link("/privacy/", "隐私条款"), "") +
-      kvRow(link("/settings/reports/", "我的报告"), "") +
       "</div>";
   }
 

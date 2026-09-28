@@ -17,7 +17,7 @@
   <link rel="stylesheet" href="css/style.css" />
   <link rel="stylesheet" href="css/account.css" />
 </head>
-<body data-nav="settings" data-back="/settings/" data-page="我的报告" data-sub="报过的问题处理到哪一步">
+<body data-nav="settings" data-back="/mine/" data-page="我的报告" data-sub="反馈处理进度">
   <div class="app">
     <header class="topbar"></header>
 
@@ -26,13 +26,13 @@
       <div class="settings-groups">
         <section class="settings-group">
           <div class="settings-item wide">
-            <label>我报过的</label>
+            <label>提交记录</label>
 
             <p class="account-hint" id="reports-guest" hidden>
-              <a class="report-login-link" href="/login/">登录</a>后才能报告。
+              <a class="report-login-link" href="/login/">登录</a>后可查看你提交的报告。
             </p>
 
-            <div class="settings-btns" style="margin-bottom:10px">
+            <div class="settings-btns reports-tools">
               <button class="btn ghost-btn" type="button" id="btn-reports-refresh">刷新</button>
               <button class="btn ghost-btn" type="button" id="btn-reports-send" hidden>重发</button>
             </div>

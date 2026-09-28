@@ -21,7 +21,7 @@
   <link rel="stylesheet" href="css/account.css" />
 </head>
 
-<body data-nav="login" data-dock="off" data-back="/mine/" data-page="登录" data-sub="邮箱 · 密码 · 验证码">
+<body data-nav="login" data-dock="off" data-back="/mine/" data-page="登录" data-sub="邮箱登录或注册">
   <div class="app">
     <header class="topbar"></header>
 
@@ -30,15 +30,15 @@
 
         <div id="trust-panel" hidden>
           <button class="account-btn" id="btn-trust" type="button"></button>
-          <button class="account-btn ghost" id="btn-trust-other" type="button">用别的邮箱</button>
-          <p class="account-hint">信任期 30 天。也可使用其他邮箱登录。</p>
+          <button class="account-btn ghost" id="btn-trust-other" type="button">使用其他邮箱</button>
+          <p class="account-hint">30 天内在这台设备上免验证登录。</p>
         </div>
 
         <div class="auth-tabs" id="auth-tabs" role="tablist" aria-label="登录方式">
           <button class="auth-tab" id="tab-pw" type="button" role="tab"
                   aria-selected="true" aria-controls="pane-pw" data-pane="pw">密码登录</button>
           <button class="auth-tab" id="tab-code" type="button" role="tab"
-                  aria-selected="false" aria-controls="pane-code" data-pane="code">快捷登录</button>
+                  aria-selected="false" aria-controls="pane-code" data-pane="code">验证码登录</button>
         </div>
 
         <div class="auth-pane" id="pane-pw" role="tabpanel" aria-labelledby="tab-pw">
@@ -53,7 +53,7 @@
             <div class="pw-row">
               <input id="input-pw" class="account-input" type="password"
                      autocomplete="current-password" spellcheck="false" enterkeyhint="go"
-                     placeholder="密码（至少 8 位）" maxlength="72" aria-label="密码" />
+                     placeholder="密码" maxlength="72" aria-label="密码" />
               <button class="pw-eye" id="btn-pw-eye" type="button" aria-label="显示密码" aria-pressed="false" title="显示密码">
                 <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6S2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="2.5"/></svg>
               </button>
@@ -101,13 +101,13 @@
             <p class="account-msg" id="msg-code"></p>
 
             <div class="account-note" id="remote-note" hidden>
-              进度会保存到服务器以便跨设备同步。点「确定」即表示同意；可在「我的」页关掉。
+              登录即表示同意<a class="kv-link" href="/terms/">用户协议</a>与<a class="kv-link" href="/privacy/">隐私条款</a>。
             </div>
 
             <div class="account-note" id="local-note" hidden>
               <strong>本地体验版</strong>：本应用没有服务器，随机码由这台设备生成，自己保管，别转给别人。
             </div>
-            <div class="account-field" id="code-tools" style="margin-top:10px">
+            <div class="account-field code-tools" id="code-tools">
               <button class="account-btn ghost" id="btn-copy-code" type="button">复制验证码</button>
               <button class="account-btn ghost" id="btn-mail-code" type="button">用邮箱客户端发送</button>
             </div>
@@ -115,6 +115,7 @@
         </div>
 
         <div class="auth-pane" id="pane-register" role="tabpanel" hidden>
+          <h2 class="auth-title">注册账号</h2>
           <div class="account-field">
             <label class="account-label" for="input-reg-email"><span class="sr-only">邮箱</span></label>
             <input id="input-reg-email" class="account-input" type="email" inputmode="email"
@@ -150,11 +151,12 @@
           <button class="account-btn ghost" id="btn-reg-refresh" type="button" hidden aria-hidden="true">刷新页面重试</button>
           <p class="account-msg" id="msg-reg"></p>
 
-          <p class="account-hint">注册后请查收电子邮件，<strong>点击链接验证后登录</strong>（点开即登录，不必再输一次密码）。链接 24 小时内有效。</p>
-          <p class="auth-links"><button class="link-btn" id="btn-back-login" type="button">返回登录</button></p>
+          <p class="account-hint">注册后请查收验证邮件，<strong>点击链接验证后登录</strong>。链接 24 小时内有效。</p>
+          <p class="auth-links">已有账号？<button class="link-btn" id="btn-back-login" type="button">登录</button></p>
         </div>
 
         <div class="auth-pane" id="pane-verify" role="tabpanel" hidden>
+          <h2 class="auth-title">验证邮箱</h2>
           <p class="account-lead" id="verify-lead"></p>
           <div class="account-note" id="verify-fail-note" hidden></div>
           <div class="account-field">
@@ -170,11 +172,12 @@
           <button class="account-btn ghost" id="btn-verify-later" type="button">返回登录</button>
           <p class="account-msg" id="msg-verify"></p>
 
-          <p class="account-hint">链接 24 小时内有效，未收到可重发。点开链接即完成邮箱验证后登录。</p>
+          <p class="account-hint">链接 24 小时内有效，点击后即完成验证并登录。</p>
         </div>
 
         <div class="auth-pane" id="pane-forgot" role="tabpanel" hidden>
-          <p class="account-lead">填注册时的邮箱，我们发一条重设链接。</p>
+          <h2 class="auth-title">找回密码</h2>
+          <p class="account-lead">输入注册邮箱，我们将发送重设密码的链接。</p>
           <div class="account-field">
             <label class="account-label" for="input-forgot-email"><span class="sr-only">邮箱</span></label>
             <input id="input-forgot-email" class="account-input" type="email" inputmode="email"
@@ -186,12 +189,12 @@
           <button class="account-btn" id="btn-forgot-send" type="button">发送重设邮件</button>
           <p class="account-msg" id="msg-forgot"></p>
 
-          <p class="account-hint">没收到先看垃圾邮件；或改用「快捷登录」的随机码。</p>
-          <p class="account-hint">邮箱尚未验证时，请先在登录页重新发送验证邮件。</p>
+          <p class="account-hint">没收到？请检查垃圾邮件，或改用验证码登录。</p>
           <p class="auth-links"><button class="link-btn" id="btn-back-login2" type="button">返回登录</button></p>
         </div>
 
         <div class="account-step" id="step-unverified" hidden>
+          <h2 class="auth-title">邮箱尚未验证</h2>
           <p class="account-lead" id="unverified-lead"></p>
           <div class="account-note" id="unverified-note" hidden></div>
           <div class="turnstile-slot" id="ts-unverified" hidden></div>
@@ -199,10 +202,11 @@
           <button class="account-btn" id="btn-unverified-resend" type="button">重新发送验证邮件</button>
           <button class="account-btn ghost" id="btn-unverified-back" type="button">返回登录</button>
           <p class="account-msg" id="msg-unverified"></p>
-          <p class="account-hint">完成邮箱验证前无法登录，背诵功能不受影响。</p>
+          <p class="account-hint">完成邮箱验证后才能登录，背诵功能不受影响。</p>
         </div>
 
         <div class="account-step" id="step-done" hidden>
+          <h2 class="auth-title">欢迎加入</h2>
           <p class="account-lead" id="done-lead"></p>
           <div class="account-field">
             <label class="account-label" for="input-nickname"><span class="sr-only">昵称（可留空）</span></label>
@@ -212,8 +216,7 @@
           <button class="account-btn" id="btn-finish" type="button">完成</button>
           <p class="account-msg" id="msg-done"></p>
           <div class="account-note warn" id="done-note" hidden></div>
-          <p class="account-hint">请只填小名。昵称会跟着账号走，换设备也在。</p>
-          <p class="account-hint">只有第一次登录会问一次；以后直接进「我的」，想改再改。</p>
+          <p class="account-hint">建议只填小名。昵称随账号同步，之后可在「我的」中修改。</p>
         </div>
       </section>
 

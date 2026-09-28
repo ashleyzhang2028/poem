@@ -90,7 +90,7 @@
       '<span class="identity-email" id="identity-email" hidden></span>' +
       "</span>" +
       "</span>" +
-      '<span class="tier-badge" id="identity-badge"></span>' +
+      '<a class="tier-badge" id="identity-badge" href="/plans/" title="查看权益对比"></a>' +
       "</div>" +
 
       '<div class="identity-btns" id="identity-btns">' +
@@ -174,9 +174,9 @@
     });
     var avg = learned ? Math.round(masterySum / learned) : 0;
     var rows = [
-      ["有记录的篇目", ids.length ? ids.length + " 篇" : "还没有"],
-      ["已开始记忆", learned ? learned + " 篇" : "还没有"],
-      ["今天到期", due ? due + " 篇" : "没有"]
+      ["有记录的篇目", ids.length + " 篇"],
+      ["已开始记忆", learned + " 篇"],
+      ["今天到期", due + " 篇"]
     ];
     if (learned) rows.push(["平均掌握度", avg + "%"]);
     box.innerHTML = rows.map(function (r) {
@@ -211,11 +211,11 @@
     var deliverable = ch && ch.emailDeliverable === true;
     if (el) {
       if (gated && !deliverable) {
-        el.textContent = "邮箱还没确认；邮件也还没发出去（发信商没配好）。先点下面那颗重发。";
+        el.textContent = "邮箱尚未验证，验证邮件未能发出，请点击下方按钮重新发送。";
       } else if (gated) {
-        el.textContent = "邮箱还没确认；这台服务器当前没有拦它。";
+        el.textContent = "邮箱尚未验证。";
       } else {
-        el.textContent = "邮箱还没确认；确认只影响将来找回密码。";
+        el.textContent = "邮箱尚未验证，验证后可用于找回密码。";
       }
     }
     show(row);
@@ -226,27 +226,27 @@
     var el = $("verify-state");
     var M = acct();
     if (!M || typeof M.resendVerification !== "function") {
-      if (el) el.textContent = "这个页面是旧缓存，刷新一下再试。";
+      if (el) el.textContent = "页面已更新，请刷新后重试。";
       return;
     }
     if (btn) btn.disabled = true;
     M.resendVerification().then(function (r) {
       if (btn) btn.disabled = false;
-      if (!r.ok) { if (el) el.textContent = r.message || "没能发出去，稍后再试。"; return; }
+      if (!r.ok) { if (el) el.textContent = r.message || "发送失败，请稍后再试。"; return; }
       if (r.alreadyVerified) {
-        if (el) el.textContent = "这个邮箱已经确认过了。";
+        if (el) el.textContent = "该邮箱已验证。";
         if (btn) btn.disabled = true;
         return;
       }
       if (el) {
         el.textContent = r.verifySent
-          ? "确认邮件已发往 " + (r.email || identityEmail() || "你的邮箱") + "。"
-          : "邮件没发出去（已试 " + (Number(r.verifyAttempts) || 1) + " 次），稍后再试。";
+          ? "验证邮件已发送至 " + (r.email || identityEmail() || "你的邮箱") + "。"
+          : "邮件发送失败，请稍后再试。";
       }
-      showToast(r.verifySent ? "确认邮件已发出" : "没能发出去");
+      showToast(r.verifySent ? "验证邮件已发送" : "发送失败");
     }, function () {
       if (btn) btn.disabled = false;
-      if (el) el.textContent = "连不上服务器，请稍后再试。";
+      if (el) el.textContent = "无法连接服务器，请稍后再试。";
     });
   }
 
@@ -300,7 +300,7 @@
       : Promise.resolve(null);
 
         paint(A.session(store));
-    showToast("已退出登录（进度没动）");
+    showToast("已退出登录，本机进度保留");
 
     wait.then(function () {
             paint(A.session(store));
@@ -364,13 +364,13 @@
     Promise.resolve(p).then(function (r) {
       if (btn) btn.disabled = false;
       if (!r.ok) {
-        if (msg) { msg.textContent = r.message || "注销没成功，请刷新页面重试"; msg.className = "account-msg warn"; }
+        if (msg) { msg.textContent = r.message || "注销失败，请刷新页面后重试"; msg.className = "account-msg warn"; }
         return;
       }
       afterDeleted(r, msg);
     })["catch"](function () {
       if (btn) btn.disabled = false;
-      if (msg) { msg.textContent = "注销没成功，请刷新页面重试"; msg.className = "account-msg warn"; }
+      if (msg) { msg.textContent = "注销失败，请刷新页面后重试"; msg.className = "account-msg warn"; }
     });
   }
 
@@ -390,14 +390,14 @@
 
     var line;
     if (r.remote === "deleted") {
-      line = "账号与云端进度都已删除，那一份已导出给你；本机背诵进度仍在。";
+      line = "账号及云端进度已删除，备份已导出；本机进度保留。";
     } else if (r.remote === "skipped") {
-      line = "本机账号已注销；没连上服务器，云端那一份还在 —— 联网后再注销一次。";
+      line = "已在本机退出账号，但未能连接服务器，云端数据仍在。请联网后重试。";
     } else {
-      line = "账号已注销；本机背诵进度仍在。";
+      line = "账号已注销；本机进度保留。";
     }
     if (msg) { msg.textContent = line; msg.className = "account-msg " + (r.remote === "skipped" ? "warn" : "ok"); }
-    showToast(r.remote === "skipped" ? "已注销本机账号；云端那一份没删掉" : "账号已注销，背诵进度仍在");
+    showToast(r.remote === "skipped" ? "云端数据未删除，请联网后重试" : "账号已注销");
     renderDanger();
     if (r.remote === "skipped") return;
     setTimeout(function () { paint(A.session(store)); }, 900);
@@ -413,7 +413,7 @@
       a.click();
       URL.revokeObjectURL(a.href);
     } catch (e) {
-      showToast("这份浏览器不允许直接下载文件，请换个浏览器再来");
+      showToast("当前浏览器不支持直接下载文件");
     }
   }
 
@@ -579,8 +579,6 @@
 
     var resend = $("btn-resend-verify");
     if (resend) resend.addEventListener("click", onResendVerify);
-    var admin = $("btn-go-admin");
-    if (admin) admin.addEventListener("click", function () { location.href = "/admin/"; });
     var dStart = $("btn-delete-start");
     if (dStart) {
       dStart.setAttribute("aria-expanded", "false");
@@ -655,7 +653,7 @@
 
     if (!S) {
       input.disabled = true;
-      hint.textContent = "同步层没加载出来，刷新页面重试。";
+      hint.textContent = "同步功能加载失败，请刷新页面重试。";
       hide($("sync-conflict"));
       return;
     }
@@ -668,15 +666,15 @@
     input.disabled = (st === "unavailable");
 
     hint.textContent = n
-      ? "有 " + n + " 篇需要你选一下（下面），选完之前不会自动合并。"
+      ? "有 " + n + " 篇进度存在冲突，请在下方选择保留哪一份。"
       : st === "unavailable"
-      ? "本站未开放同步，进度只存本机。"
+      ? "暂未开放云同步，进度仅保存在本机。"
       : st === "tier"
-        ? "跨设备云同步要 Pro 起（当前没到这一层）。进度仍在本机、一字不少。"
+        ? "跨设备同步需 Pro 及以上，进度仍完整保存在本机。"
         : st === "off"
-          ? ""
+          ? "开启后，进度会在登录同一账号的设备间同步。"
           : st === "signin"
-            ? "已开启，登录后才会真的同步。"
+            ? "已开启，登录后开始同步。"
             : "";
 
     renderConflict(S, !!sess());
@@ -690,8 +688,8 @@
     if (!r || !r.ok) {
       input.checked = !!S.enabled();
       showToast(r && r.code === "E_TIER"
-        ? (r.hint || "跨设备云同步要 Pro 起")
-        : "浏览器不允许保存设置，这次改动没生效");
+        ? (r.hint || "跨设备同步需 Pro 及以上")
+        : "浏览器未能保存设置，请重试");
       renderSync();
       return;
     }
@@ -702,9 +700,9 @@
         var first = S.firstSync();
         if (first && first.then) first.then(function () { renderSync(); }, function () {  });
       } catch (e) {  }
-      showToast(S.status() === "signin" ? "已开启，登录后才会真的同步" : "已开启跨设备同步");
+      showToast(S.status() === "signin" ? "已开启，登录后开始同步" : "已开启跨设备同步");
     } else {
-      showToast("已关闭同步，进度仍在本机");
+      showToast("已关闭同步，进度仍保存在本机");
     }
   }
 
@@ -724,8 +722,8 @@
     var localCount = 0;
     try { localCount = Object.keys(window.ProgressStore.all() || {}).length; } catch (e) { localCount = 0; }
     if (lead) {
-      lead.textContent = "这 " + list.length + " 篇两边都改过，需要你选一份（这边一共 " + localCount + " 篇）。" +
-        (signedIn ? "" : "请先登录再选。");
+      lead.textContent = "这 " + list.length + " 篇在本机和云端都有修改，请选择保留哪一份（本机共 " + localCount + " 篇）。" +
+        (signedIn ? "" : "请先登录。");
     }
     show(box);
   }
@@ -736,7 +734,7 @@
     if (!S) return;
     var r = S.resolveConflict(mode);
     if (!r || !r.ok) {
-      if (msg) { msg.textContent = (r && r.message) || "没能完成这一步"; msg.className = "account-msg warn"; }
+      if (msg) { msg.textContent = (r && r.message) || "操作未完成，请重试"; msg.className = "account-msg warn"; }
       return;
     }
     if (mode === "exportFirst") {
@@ -749,14 +747,14 @@
         a.download = "跬步-同步快照-" + new Date().toISOString().slice(0, 10) + ".json";
         a.click();
         URL.revokeObjectURL(a.href);
-        if (msg) { msg.textContent = "快照已导出，冲突还没处理，你想好了再回来选。"; msg.className = "account-msg"; }
+        if (msg) { msg.textContent = "备份已导出，冲突尚未处理，请稍后选择。"; msg.className = "account-msg"; }
       } catch (e) {
-        if (msg) { msg.textContent = "这份浏览器不允许直接下载文件，请到「设置 · 通用」用导出备份。"; msg.className = "account-msg warn"; }
+        if (msg) { msg.textContent = "当前浏览器不支持直接下载，请在「设置 · 通用」中导出备份。"; msg.className = "account-msg warn"; }
       }
       return;
     }
     renderSync();
-    showToast(mode === "keepLocal" ? "已按本机这一份处理，稍后会同步上去" : "已按账号这一份处理");
+    showToast(mode === "keepLocal" ? "已保留本机进度，稍后同步到云端" : "已保留云端进度");
   }
 
   window.MinePage = { paint: paint, esc: esc, renderSync: renderSync };
