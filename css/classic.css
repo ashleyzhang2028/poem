@@ -333,6 +333,15 @@
   margin: 0;
 }
 
+/* Desktop has room for the buttons in one row; stacking them overlapped the snippet. */
+@media (min-width: 1024px) {
+  .item-actions {
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: var(--item-btn);
+  }
+}
+
 #gw-list .item { border-left-color: var(--blue); }
 #gw-list .item.in-book { border-left-color: var(--green); }
 #gw-list .item.done { opacity: .62; }
@@ -1614,6 +1623,15 @@ body[data-nav="search"] #gw-list .empty[data-empty="idle"] { padding: 0; }
     width: calc(50% - 4px);
   }
   .group-index-list .group-index-pick:nth-child(even) { margin-left: auto; }
+}
+
+@media (min-width: 1024px) {
+  .group-index-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    column-gap: 28px;
+  }
+  .group-index-list .group-index-pick { border-bottom: 1px solid var(--line); }
 }
 
 /* 宽屏时列表是 grid（见 css/style.css），索引卡得**占满整行**，

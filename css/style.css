@@ -2665,6 +2665,8 @@ html, body {
     margin-right: auto;
 
   }
+  .settings-index > .settings-link { flex: 1 1 0; min-width: 0; margin: 0; }
+  .settings-about { max-width: var(--block-w); margin-left: auto; margin-right: auto; }
   .legal { max-width: var(--block-w); margin-left: auto; margin-right: auto; }
 }
 

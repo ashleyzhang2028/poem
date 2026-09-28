@@ -539,7 +539,8 @@ body[data-nav="login"] .app {
 }
 
 @media (min-width: 1024px) {
-  .account-page { max-width: 560px; }
+  .account-page { max-width: 560px; margin-left: auto; margin-right: auto; }
+  body[data-nav="admin"] .account-page { max-width: var(--block-w); }
 
   #login-page {
     min-height: calc(100vh - 77px);
@@ -960,6 +961,15 @@ thead .plans-th-cap {
   /* 两格之间的 8px：奇数格（左列）留在左边，偶数格（右列）推到右端。
      只在**同一行内**推开，不影响换行 —— 所以右列与本行的左列同高。 */
   .game-scope-list .game-scope-pick:nth-child(even) { margin-left: auto; }
+}
+
+@media (min-width: 1024px) {
+  .game-scope-list:not([data-folded="1"]) {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    column-gap: 28px;
+  }
+  .game-scope-list .game-scope-pick { border-bottom: 1px solid var(--line); }
 }
 
 @media (max-width: 360px) {
