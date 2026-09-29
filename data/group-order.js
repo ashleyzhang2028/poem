@@ -33,7 +33,11 @@
 
     chengyu: window.CHENGYU_GROUP_ORDER || null,
 
-    changshi: window.CHANGSHI_GROUP_ORDER || null
+    changshi: window.CHANGSHI_GROUP_ORDER || null,
+
+    mingshu: window.MINGSHU_GROUP_ORDER || null,
+
+    mingren: window.MINGREN_GROUP_ORDER || null
   };
 
   window.GROUP_ORDER = GROUPS;

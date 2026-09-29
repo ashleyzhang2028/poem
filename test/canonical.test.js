@@ -21,6 +21,7 @@ loadData(sb, [
   'data/poems-11.js', 'data/poems-12.js', 'data/index.js', 'data/poems-classic.js',
   'data/poems-yuefu.js', 'data/poems-tangshi.js', 'data/poems-songci.js', 'data/poems-guwen.js', 'data/poems-zhaoming.js', 'data/poems-yuanqu.js',
   'data/poems-jinxiandai.js', 'data/poems-chengyu.js', 'data/poems-changshi.js',
+  'data/poems-mingshu.js', 'data/poems-mingren.js',
   'data/site-index.js', 'data/works-map.js', 'data/works-index.js',
   'data/canonical-texts.js'
 ]);
@@ -39,7 +40,7 @@ const FULL_BOOK_SET = {};
 FULL_BOOKS.forEach(b => { FULL_BOOK_SET[b] = true; });
 
 // 词条式集子（文学常识一类）：正文即释义，本来就没有白话译文
-const NO_TRANS = ['changshi'];
+const NO_TRANS = ['changshi', 'mingshu', 'mingren'];
 
 const multiEntries = MASTER.filter(m => m.entries.length >= 2);
 const singleEntries = MASTER.filter(m => m.entries.length === 1);
@@ -138,6 +139,36 @@ MASTER.forEach(m => {
 chk(mismatch.length === 0,
   '60 篇作品在七部集子里读到的正文逐字相同（不一致：' + (mismatch.slice(0, 5).join('、') || '无') + '）');
 
+// 词条式集子（文学常识 / 名著导读 / 历代名家）：正文是排版好的项目表，
+// 一个「类」占一条；列表用 excerpt，正文由阅读器认成真 <table>。
+// 这三部各有自己的用例文件（test/mingshu.test.js / test/mingren.test.js），
+// 这里只核最要紧的一条：正文里那张表真的解得出来，不是一坨竖线。
+(function () {
+  const TABLE_BOOKS = ['mingshu', 'mingren'];
+  const LISTS = { mingshu: sb.POEMS_MINGSHU, mingren: sb.POEMS_MINGREN };
+  const bad = [];
+  TABLE_BOOKS.forEach(book => {
+    (LISTS[book] || []).forEach(p => {
+      const t = resolveOne(p, book).text || '';
+      const lines = t.split('\n');
+      let rows = 0;
+      let cols = 0;
+      lines.forEach((line, i) => {
+        const s = line.trim();
+        if (s.charAt(0) !== '│' || s.charAt(s.length - 1) !== '│') return;
+        const cells = s.split('│').slice(1, -1).map(x => x.trim());
+        if (i === 0 || cells.length < 2) return;
+        if (!cols) cols = cells.length;
+        if (cells.length !== cols) bad.push(p.id + ' 第 ' + (i + 1) + ' 行 ' + cells.length + ' 列（应为 ' + cols + '）');
+        rows++;
+      });
+      if (rows < 2) bad.push(p.id + ' 正文里没有可解析的表格行');
+    });
+  });
+  chk(bad.length === 0,
+    '名著导读与历代名家的正文都画得出真表格（列数齐、行数足；异常：' + (bad.slice(0, 5).join('、') || '无') + '）');
+})();
+
 const masterFlat = [];
 MASTER.forEach(m => (m.entries || []).forEach(e => masterFlat.push(e)));
 
@@ -216,7 +247,9 @@ const BOOK_VARS = {
   yuefu: ['data/poems-yuefu.js'],
   jinxiandai: ['data/poems-jinxiandai.js'],
   chengyu: ['data/poems-chengyu.js'],
-  changshi: ['data/poems-changshi.js']
+  changshi: ['data/poems-changshi.js'],
+  mingshu: ['data/poems-mingshu.js'],
+  mingren: ['data/poems-mingren.js']
 };
 
 const stripped = [];

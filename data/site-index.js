@@ -18,7 +18,7 @@
 
         var NEED_TRANS = ["guwen", "yuanqu", "zhaoming", "yuefu", "jinxiandai", "chengyu"];
         if (NEED_TRANS.indexOf(b.id) >= 0 && (!p.text || !p.translation)) return;
-                if (b.id === "changshi" && !p.text) return;
+                if ((b.id === "changshi" || b.id === "mingshu" || b.id === "mingren") && !p.text) return;
         out.push({
           id: b.id + "-" + p.id,
           originId: p.id,

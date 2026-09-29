@@ -95,6 +95,19 @@
   border-bottom: none;
 }
 
+/* 宽度锁死的表（`tableIssues()` 点名的那些）：整表按列宽排版，窄屏横滑看全。
+   不锁的话 `width: 100%` 会把最宽的那一列压成一条竖线 —— 表还在，
+   只是没法读了。Issue #381 的长行表格即由此。 */
+.reader-body .reader-text .rd-scroll > .rd-width-locked {
+  width: auto;
+  min-width: 100%;
+}
+
+.reader-body .reader-text .rd-width-locked th,
+.reader-body .reader-text .rd-width-locked td {
+  min-width: 5em;
+}
+
 @media (max-width: 560px) {
   .rd-table th,
   .rd-table td { padding: 6px 7px; }
