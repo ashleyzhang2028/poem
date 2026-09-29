@@ -89,6 +89,49 @@ const DROP_EARLY = ROUND5.DROP;
 const dropSetEarly = {};
 DROP_EARLY.forEach(function (t) { dropSetEarly[t] = true; });
 
+/* ── 不许进册的 · 明治维新以后的日本政治 / 军事人物 ─────────────────────
+   用户原话（Issue #381）：「轴心国除了日本的政治军事家，其他国家的政治，
+   军事家可以添加，但是要从雅尔塔会议，开罗宣言以及二战后的国际秩序角度
+   进行评价。帮我清理删除明治维新以后的日本的政治家军事家，如果有的话」
+
+   尺子一条：**明治维新（1868）以后**的日本**政治 / 军事人物**全删
+   （含明治、大正、昭和三个时期）；文学家、艺术家、科学家照旧保留 ——
+   川端康成 / 夏目漱石 / 芥川龙之介 / 三岛由纪夫是作家，留。
+   收进来之前先过一遍这条尺子，别等收了再删（另见 scripts/remove-mingren-jp.js：
+   那一份负责排查「已在壳里的」，这一道闸负责拦截「还没进册的」）。
+
+   判据是「分组 + 国别 + 生卒」三件套，两个坑写在下面。 */
+/* 判据三件套：① 身份落在政治 / 军事两组；② 朝代 / 国别栏是日本；
+   ③ **活在明治维新（1868）以后**。三条同时成立才拦。
+
+   ③ 这条为什么不用「生于 1868 以后」：
+   明治维新的主角大多**生在 1868 以前** —— 伊藤博文（1841—1909）、
+   大久保利通（1830—1878）、山县有朋（1838—1922）、东乡平八郎（1848—1934）
+   都是幕末出生、明治当政。按生年卡，这几位会一个个从尺子里漏过去，
+   而用户点名的正是他们。所以判的是**卒年**：卒于 1868 年以后的，
+   说明他的政治 / 军事生涯横跨明治维新之后，拦下。
+
+   ⚠️ 另两个坑（也都真踩过）：
+   · **不能只看年代**：丘吉尔（1874—1965）、戴高乐（1890—1970）、
+     甘地（1869—1948）卒年都在 1868 之后 —— 只看年份会把上一轮刚收的
+     外国政治家一并误杀。国别那一栏是必须的。
+   · **不能只看国别**：在册的 4 位日本文学家（川端康成 / 夏目漱石 /
+     芥川龙之介 / 三岛由纪夫）朝代栏写的正是「日本」，但那一条靠
+     「分组不是政治 / 军事」留下来 —— 文学家、艺术家、科学家照旧保留。 */
+const MEIJI = 1868;
+function isPostMeijiJapanPolitical(group, dynasty, life) {
+  if (group !== '政治家' && group !== '军事家') return false;
+  if (!/日本/.test(String(dynasty || ''))) return false;
+  /* 生卒栏形如「1841—1909」「1890—1970」「1841—（在世）」「？—1945」。
+     取**最后一个** 3—4 位数字当卒年（在世 / 卒年不详 → 当作活到 1868 之后）。
+     带「前」的（公元前）一律不算明治以后。 */
+  const t = String(life || '');
+  if (/前s*\d/.test(t)) return false;
+  const ys = t.match(/\d{3,4}/g);
+  if (!ys) return true;
+  return parseInt(ys[ys.length - 1], 10) >= MEIJI;
+}
+
 const FIELDS = ['姓名', '朝代', '字 / 号', '生卒', '籍贯', '家世亲属',
   '生平', '作品风格', '流派', '主要作品 / 贡献', '特殊意义'];
 const MIN_TOTAL = 400;   // 正文净字数下限（表格线不计）
@@ -153,6 +196,11 @@ PLAN.forEach(function (plan) {
     }
     /* 前几轮的名单里可能有本轮要删的人（名单是累积的）—— 删的优先级最高 */
     if (dropSetEarly[r[0]]) return;
+    /* 明治维新以后的日本政治 / 军事人物：名单里有也直接跳过，不进册 */
+    if (isPostMeijiJapanPolitical(plan.group, r[1], r[3])) {
+      problems.push('明治维新以后的日本政治 / 军事人物不得入册：' + r[0]);
+      return;
+    }
     if (seenName[r[0]]) { problems.push('名单里出现两次：' + r[0]); return; }
     seenName[r[0]] = true;
     added.push({ group: plan.group, row: r });
@@ -193,6 +241,7 @@ mrOf.forEach(function (m) {
     problems.push(m.title + ' 的分组不在 GROUP_ORDER：' + group);
     return;
   }
+  if (isPostMeijiJapanPolitical(group, dynastyOf(m.text), lifeOf(m.text))) return;
   kept.push({
     title: m.title, group: group, oldId: m.id,
     /* 名单里重给过的，正文一并换新（名单是更新的一份） */
@@ -213,6 +262,7 @@ const FRESH = [];
 added.forEach(function (a) {
   const n = a.row[0];
   if (byTitle[n]) return;                 // 已在册，上面处理过了（含换组与换正文）
+  if (isPostMeijiJapanPolitical(a.group, a.row[1], a.row[3])) return;
   const rec = { title: n, group: a.group, text: bodyOf(a.row), row: a.row, replace: false };
   ROSTER.push(rec);
   FRESH.push(rec);
@@ -229,6 +279,7 @@ PEOPLE.forEach(function (p) {
     problems.push('素材表的 ' + p.name + ' 分组不在 GROUP_ORDER：' + group);
     return;
   }
+  if (isPostMeijiJapanPolitical(group, p.era, p.life)) return;
   const rec = {
     title: p.name, group: group,
     text: bodyOf2(p), row: null, replace: false
