@@ -182,6 +182,10 @@ add(require('./corpus/fill-poetry-20.js'));
 /* 《古拉格群岛》单装一册 —— 用户 2026-09-29 复核：不是禁书，放回原处。
    与下面 BANNED 里那 8 部不同，它 2015 年起在大陆有正式出版物。 */
 add(require('./corpus/fill-gulag.js'));
+/* ── Issue #381 第十六轮（批次四·戏剧）· 中国现代戏剧 ─────────────────
+   按计划「诗歌 → 戏剧 → 外国文学」往下填。这一组书目表 42 部，已交 1 部
+   （雷雨），余 41 部按每册 5—10 部往下填。 */
+add(require('./corpus/fill-drama-1.js'));
 
 /* 余下的书按组分册，避免单文件过大 */
 add(require('./mingshu-corpus-stub.js'));

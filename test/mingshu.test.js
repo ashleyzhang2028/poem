@@ -335,7 +335,17 @@ chk(Math.min.apply(null, MS_PEOPLE) >= 15,
   chk(CONTEMP_DONE.every(t => modernInShell.has(t)),
     '这一批交的 ' + CONTEMP_DONE.length + ' 部当代小说都进了列表页（缺：' +
     (CONTEMP_DONE.filter(t => !modernInShell.has(t)).join('、') || '无') + '）');
-  chk(MS.length >= 322, '名著导读已交付 322 部以上（实际 ' + MS.length + '）');
+  chk(MS.length >= 327, '名著导读已交付 327 部以上（实际 ' + MS.length + '）');
+
+  /* Issue #381 第十六轮（批次四·戏剧）：按计划「诗歌 → 戏剧 → 外国文学」，
+     这一册开「中国现代戏剧」这一组（书目表 42 部，已交 1 部），本册交
+     曹禺 5 部。守的是**这一组真在涨**，并逐部点名，谁删掉当场点名。 */
+  chk(BY('中国现代戏剧') >= 6,
+    '中国现代戏剧已填 6 部以上（实际 ' + BY('中国现代戏剧') + '）');
+  const DRAMA_5 = ['日出（戏剧）', '原野', '北京人', '胆剑篇', '王昭君'];
+  chk(DRAMA_5.every(t => modernInShell.has(t)),
+    '这一批写的 5 部曹禺剧作都进了列表页（缺：' +
+    (DRAMA_5.filter(t => !modernInShell.has(t)).join('、') || '无') + '）');
 
   /* Issue #381 第十五轮（批次三）· 中国现当代诗歌整组补齐。
      按计划「诗歌 → 戏剧 → 外国文学」往下填：这一册把「中国现当代诗歌」

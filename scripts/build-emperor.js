@@ -27,6 +27,16 @@
      【政治】【经济】【军事】【文化】【民族外交】【个人】  ← 六维评价
      【一句话】…
 
+   ## 白话译文（只有东周诸侯那一段有）
+     诸侯这 253 位另给一篇**列传体的白话**（scripts/data/emperor/vassal-
+     translation-1/2/3.js）：一段话写完一位君主 —— 他是谁、在位多少年、
+     做过哪几件要紧事、怎么死的、传给了谁。用户要「补齐数据」，列传体的
+     白话正好是史料的现代读法：原文的正文是《史记》世家与《左传》的
+     成句，逐句对译会失真；写成一段小传，一国的译文连着读就是一部
+     小型的世家。
+     ⚠️ 有了译文，「待补」标记就不能再按「全书都没有译文」来算 ——
+        见下面 NO_TRANSLATION_SHIM（壳里给 js/reader-core.js 的接线）。
+
    ## 号段与次序
      中国卷 em-c-01 …，外国卷 em-w-01 …；每卷各自按**在位时间**先后排
      （分期的次序 + 期内在位起始年升序）。id 一旦发出就不再动 ——
@@ -59,9 +69,17 @@ const CN_ROWS = [].concat(
   require('./data/emperor/emperor-cn-2.js').CN_2,
   require('./data/emperor/emperor-cn-3.js').CN_3,
   require('./data/emperor/emperor-cn-4.js').CN_4,
-  require('./data/emperor/emperor-legend.js').CN_LEGEND
+  require('./data/emperor/emperor-legend.js').CN_LEGEND,
+  require('./data/emperor/emperor-cn-vassal-1.js').CN_VASSAL_1,
+  require('./data/emperor/emperor-cn-vassal-2.js').CN_VASSAL_2
 );
 const FOREIGN = require('./data/emperor/emperor-foreign.js');
+
+/* 诸侯那一段的白话译文（列传体，一段一位）。三份按国分卷。 */
+const VASSAL_TR = Object.assign({},
+  require('./data/emperor/vassal-translation-1.js').VASSAL_TR_1,
+  require('./data/emperor/vassal-translation-2.js').VASSAL_TR_2,
+  require('./data/emperor/vassal-translation-3.js').VASSAL_TR_3);
 
 const ROOT = path.join(__dirname, '..');
 const SHELL_CN = path.join(ROOT, 'data/poems-emperor-cn.js');
@@ -84,6 +102,17 @@ const GROUP_ORDER_CN = DYNASTIES
 
 const GROUP_ORDER_FOREIGN = require('./data/emperor/emperor-foreign.js').GROUP_ORDER;
 
+/* ── 一国之内的世系图（Issue #407 追问：「世系及数据」） ──────────────
+   东周诸侯那一段的抬头（第一格）除了国名，还给一张该国的**世系图**：
+   按源表次序（就是在位先后）把这一国诸君连起来写。它回答的是「世系」，
+   与第七格「谱系」（承谁之统、传与谁）互为表里 —— 后者是一位一条，
+   前者是一国一条。别的段（天子、传说时代等）不画。 */
+function lineageOf(list, country) {
+  return list.filter(function (r) { return r.country === country; })
+    .map(function (r, i) { return (i === 0 ? '' : ' → ') + r.name + '（' + r.reign + '）'; })
+    .join('');
+}
+
 /* ── 正文装配 ─────────────────────────────────────────────────────────── */
 const IDENT_ROWS = [
   ['姓名', 'name'], ['年号', 'era'], ['在位', 'reign'],
@@ -94,6 +123,9 @@ const DIM = [
   ['culture', '文化'], ['diplomacy', '民族外交'], ['person', '个人']
 ];
 
+/* 诸侯那一段的段名。世系图只在这一段出现（见 lineageOf）。 */
+const VASSAL_GROUP = '东周·诸侯（春秋战国）';
+
 function bodyOf(rec, group) {
   const n = NOTE[rec.name];
   if (!n) throw new Error('缺六维素材：' + rec.name);
@@ -102,12 +134,18 @@ function bodyOf(rec, group) {
   if (miss.length) throw new Error(rec.name + ' 缺字段：' + miss.join('/'));
 
   const rows = [['皇号', rec.name + '（' + rec.dynastyLabel + '）']];
+  if (rec.period === VASSAL_GROUP) rows.push(['世系', rec.lineageChart]);
   IDENT_ROWS.forEach(function (r) { rows.push([r[0], String(rec[r[1]] == null ? '—' : rec[r[1]])]); });
   const out = [T.box(rows)];
   out.push('【生平】' + n.life);
   DIM.forEach(function (d) { out.push('【' + d[1] + '】' + n[d[0]]); });
   out.push('【一句话】' + rec.tag);
-  return out.join('\n');
+  /* 段间一个空行（Issue #407 第四次追问：「生平，政治，经济，军事，文化，
+     民族外交，个人以及一句话 直接增加间隔（或者空白行）」）。
+     阅读器的渲染把空行译成一次换行（renderBlocks 的 plain）——
+     正文是词条式的长段，段与段不空开就糊成一大片，八段挤在一起分不出眉眼。
+     表格与【生平】之间同样留一行，不贴在框线上。 */
+  return out.join('\n\n');
 }
 
 /* ── 条目 ─────────────────────────────────────────────────────────────── */
@@ -145,6 +183,21 @@ function groupSort(list, groupOrder) {
 }
 
 const CN = groupSort(buildRows(CN_ROWS, false), GROUP_ORDER_CN);
+
+/* 诸侯那一段：按国别给每位补一张一国的世系图。
+   ⚠️ 国别取自源表第 3 格（「晋」「楚」「齐」…），与段名分开 ——
+      表头第一格写「国别（分期）」，与全卷同一套形状。
+   ⚠️ 分两步走：先**全部**标上国别，再算世系图。若在同一个 forEach 里
+      边标边算，算到第一条时后面的条目还没有 country，lineageOf 只能
+      捕到当前这一条 —— 世系图会退化成一个人（第一版就是这么错的）。 */
+CN.forEach(function (r) {
+  if (r.period !== VASSAL_GROUP) return;
+  r.country = r.dynastyLabel;
+});
+CN.forEach(function (r) {
+  if (r.period !== VASSAL_GROUP) return;
+  r.lineageChart = lineageOf(CN, r.country);
+});
 const FOREIGN_ROWS = groupSort(buildRows(FOREIGN.ROWS, true), GROUP_ORDER_FOREIGN);
 
 console.log('帝王「中国」' + CN.length + ' 位 · 帝王「外国」' + FOREIGN_ROWS.length + ' 位');
@@ -157,6 +210,19 @@ CN.concat(FOREIGN_ROWS).forEach(function (r) {
   ['life'].concat(DIM.map(function (d) { return d[0]; })).forEach(function (k) {
     if (!n[k]) problems.push(r.name + ' 缺 ' + k);
   });
+});
+/* 诸侯那一段：每位都要有白话译文，缺一篇就点名（不静默出一条没有译文的）。 */
+CN.forEach(function (r) {
+  if (r.period !== VASSAL_GROUP) return;
+  const t = VASSAL_TR[r.name];
+  if (!t) { problems.push(r.name + ' 缺白话译文'); return; }
+  if (String(t).length < 40) problems.push(r.name + ' 的白话译文过短（' + String(t).length + ' 字）');
+});
+/* 反向：译文表里不能有源表没有的键（拼错了名字会静默多出一条没人用的译文） */
+Object.keys(VASSAL_TR).forEach(function (k) {
+  if (!CN.some(function (r) { return r.name === k && r.period === VASSAL_GROUP; })) {
+    problems.push('译文表里有源表没有的键：' + k);
+  }
 });
 if (problems.length) {
   console.error('✗ ' + problems.length + ' 处缺漏：');
@@ -173,14 +239,21 @@ if (problems.length) {
 function shells(list, prefix, varName, bookId) {
   const lines = ['window.' + varName + ' = ['];
   let legend = 0;
+  let vassal = 0;
   let seq = 0;
   list.forEach(function (r) {
     /* 传说时代那一段另起号（见上），其余按位次 —— 老 id 一位不动。
        ⚠️ 位次 **不数传说时代那几位**：它们排在卷首，却是后补的，
           若把它们的位次算进去，老条目照样整体推后一位。 */
+    /* ⚠️ 与传说时代同一条纪律：这一段排在东周两段之后、秦之前（组序见
+       GROUP_ORDER_CN），若照样按位次编号，已有 356 位的 id 会从「秦」起
+       整体推后 —— 又是名著导读踩过的那个坑。所以诸侯那一段**另起号段**
+       em-c-vassal-NN，老号段一位不动，两段新老之间互不影响。 */
     const id = (prefix === 'em-c' && r.period === '传说时代')
       ? 'em-c-legend-' + String((legend += 1)).padStart(2, '0')
-      : (prefix === 'em-c' ? 'em-c' : 'em-w') + '-' + String((seq += 1)).padStart(2, '0');
+      : (prefix === 'em-c' && r.period === VASSAL_GROUP)
+        ? 'em-c-vassal-' + String((vassal += 1)).padStart(2, '0')
+        : (prefix === 'em-c' ? 'em-c' : 'em-w') + '-' + String((seq += 1)).padStart(2, '0');
     r.id = id;
     const sh = {
       textRef: 'dwang-' + id,
@@ -193,6 +266,13 @@ function shells(list, prefix, varName, bookId) {
       source: '《' + r.name + '》·' + r.reign,
       excerpt: r.tag
     };
+    /* 白话译文：只有诸侯那一段有（列传体）。**不内联在壳里** ——
+       data/text-master.js 是正文与译文的唯一一份（Issue #342 起各部一律
+       如此，test/canonical.test.js 也守着这一条）。这里只留一个
+       `hasTranslation` 的标记：列表页据它决定要不要挂「译文」入口。 */
+    if (prefix === 'em-c' && r.period === VASSAL_GROUP) {
+      sh.hasTranslation = true;
+    }
     lines.push('  {');
     Object.keys(sh).forEach(function (k){
       lines.push('    ' + k + ': ' + JSON.stringify(sh[k]) + ',');
@@ -224,12 +304,17 @@ if (WANT_MASTER) {
   const P = require('./lib/entry-patch.js');
   const state = P.load();
   const all = CN.concat(FOREIGN_ROWS).map(function (r) {
-    return {
+    const it = {
       id: 'dwang-' + r.id,
       title: r.name,
       entries: ['dwang-' + r.id],
       text: bodyOf(r, r.period)
     };
+    /* 白话译文也要进主表 —— 主表是正文与译文的唯一一份（Issue #342 起
+       各部的正文都收归主表，壳体只留 textRef）。诸侯这 253 位是唯一
+       带译文的帝王条目。 */
+    if (r.period === VASSAL_GROUP) it.translation = VASSAL_TR[r.name];
+    return it;
   });
   const fresh = all.filter(function (it) { return !state.byId[it.id]; });
   if (fresh.length) {
@@ -238,7 +323,11 @@ if (WANT_MASTER) {
     console.log('✓ data/text-master.js 追加 ' + ins.added.length + ' 条');
   }
   const patch = {};
-  all.forEach(function (it) { patch[it.id] = it.text; });
+  all.forEach(function (it) {
+    patch[it.id] = it.translation == null
+      ? it.text
+      : { text: it.text, translation: it.translation };
+  });
   const res = P.applyAll(patch, { force: argv.indexOf('--force') >= 0, syncVersion: true });
   P.write(res.src);
   console.log('✓ data/text-master.js 改写 ' + res.changed.length + ' 条' +
