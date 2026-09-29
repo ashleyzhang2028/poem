@@ -1,7 +1,7 @@
 /* ==========================================================================
    历代名家 · 装机（脚本）
    --------------------------------------------------------------------------
-   这个脚本有两件事：**改正文主表**（增 / 删 / 重编 id）与**出壳文件**
+   两件事：**改正文主表**（增 / 删 / 重编 id）与**出壳文件**
    （data/poems-mingren.js）。壳文件不再是手改的 —— 它由主表生成。
 
    ## 为什么这样改（Issue #381 第六轮的教训）
@@ -18,16 +18,19 @@
        对照表**不落盘**，每次现算 —— 落了盘，下一次运行就会把过期的
        对照当成既成事实（上一轮真踩过这个坑）。
 
-   ## 分组从哪来
-   data/text-master.js 的条目本身不带分组，分组只在名单里。所以每次运行的
-   输入 = 现存的（title, 正文）+ 名单里的（title → 分组）+ DROP 名单。
-   想给某人换组，就在名单里重给一行 —— 按名字认，不按 id 认。
+   ## 分组从哪来（merge origin/main 之后的新口径）
+   主表条目不带分组。分组的唯一出处是**壳里已记的组 + 本轮名单**：
+     · 主表现存的每一条，分组从壳读回来（`p.title → p.group`）——
+       所以 PR #388 刚落的十四组中国 + 九组外国原样保留，不动一格；
+     · 本轮名单（politics / military / mingren-new / mingren-corpus）
+       给的行可以**重给分组**，这是「换组」的唯一入口，按名字认、不按 id 认。
+   历史上这里还跑过一份 `CN_CATS / WORLD_CATS` 归类表 —— 那是 #388 那一支
+   自己造号时用的，与本支的「重编号」叠着用会被覆盖掉，已删。
 
    用具：
      node scripts/build-mingren.js             # 只出壳（不动主表）
      node scripts/build-mingren.js --master    # 同时改写 data/text-master.js
      node scripts/build-mingren.js --check     # 只校验，不写盘
-     node scripts/build-mingren.js --renumber  # 只重编号（同上，写盘）
    ========================================================================== */
 'use strict';
 
@@ -36,53 +39,72 @@ const path = require('path');
 const vm = require('vm');
 const T = require('./lib/table.js');
 const P = require('./lib/entry-patch.js');
+const M = require('./data/mingren-corpus.js');
+const LEGACY_SHELL_ROWS = require('./data/mingren-legacy-shell.js').LEGACY_SHELL;
 
 const ROOT = path.join(__dirname, '..');
-const SHELL = path.join(ROOT, 'data/poems-mingren.js');
 const MASTER_FILE = path.join(ROOT, 'data/text-master.js');
+const SHELL = path.join(ROOT, 'data/poems-mingren.js');
 
-/* ── 本轮名单（Input）────────────────────────────────────────────────── */
-const ROUND5 = require('./data/mingren-round5.js');   // 要删的（按名字）
-const POL = require('./data/mingren-politics.js');    // 政治家 中外
-const MIL = require('./data/mingren-military.js');    // 军事家 中外
-const OLD = require('./data/mingren-new.js');         // 前几轮的名单
 
-/* ── 分组次序：与 js/mingren.js 的 MINGREN_GROUP_ORDER 一字不差 ───────── */
+/* ── 名单来源 ────────────────────────────────────────────────────────── */
+const LEGACY = M.LEGACY;                     // 已上线的 135 位（id 台账）
+const PEOPLE = M.PEOPLE;                     // 第四轮起的素材总表（真源）
+const ROUND5   = require('./data/mingren-round5.js');    // 第六轮：要删的
+const POL      = require('./data/mingren-politics.js');  // 第六轮：政治家 中外
+const MIL      = require('./data/mingren-military.js');  // 第六轮：军事家 中外
+const OLD      = require('./data/mingren-new.js');       // 第四轮：文学 / 思想 / 哲学
+
+/* ── 分组次序：与 js/mingren.js 的 MINGREN_GROUP_ORDER 一字不差 ─────────
+   中国在前、外国在后，各自内部「文学与思想 → 艺术 → 专门之学」。 */
 const GROUP_ORDER = [
   '政治家', '文学家', '史学家', '思想家', '哲学家', '军事家',
-  '科学家', '医学家', '音乐家', '建筑家', '戏曲家',
+  // 中国：艺术
+  '书法家', '画家', '戏曲家', '音乐家',
+  // 中国：专门之学
+  '科学家', '医学家', '天文学家（中国）', '生物学家（中国）', '建筑家',
+  // 外国：按学科
+  '外国数学家', '外国物理学家', '外国化学家', '外国生物学家', '外国天文学家',
+  '外国医学家', '外国文学家', '外国艺术家', '外国建筑家',
   '外国名人'
 ];
 
-/* 本轮名单：分组 → 行。同一名字出现两次即报错（一人一处）。 */
-/* 本轮要删的（先算出来，PLAN 校验与装配都要用） */
-const DROP_EARLY = require('./data/mingren-round5.js').DROP;
-const dropSetEarly = {};
-DROP_EARLY.forEach(function (t) { dropSetEarly[t] = true; });
-
+/* 本轮名单：分组 → 行。同一名字出现两次即报错（一人一处）。
+   ⚠️ 顺序即「组内次序」：已在册的按旧号排，本轮新开的按这里给的次序排。 */
 const PLAN = [
   { group: '政治家', rows: POL.TP_CN },
   { group: '政治家', rows: POL.TP_WORLD },
+  { group: '军事家', rows: MIL.TB_CN },
+  { group: '军事家', rows: MIL.TB_WORLD },
+  /* 第四轮的名单仍要过一遍：它们大多已在册（按旧号排），少数几条
+     （#388 之后新落的素材）会在这里第一次开条。 */
   { group: '文学家', rows: OLD.TY },
   { group: '思想家', rows: OLD.TZ },
   { group: '哲学家', rows: OLD.TW },
-  { group: '军事家', rows: MIL.TB_CN },
-  { group: '军事家', rows: MIL.TB_WORLD },
   { group: '外国名人', rows: OLD.TA }
 ];
 
+/* 本轮要删的（先算出来，PLAN 校验与装配都要用） */
+const DROP_EARLY = ROUND5.DROP;
+const dropSetEarly = {};
+DROP_EARLY.forEach(function (t) { dropSetEarly[t] = true; });
+
 const FIELDS = ['姓名', '朝代', '字 / 号', '生卒', '籍贯', '家世亲属',
   '生平', '作品风格', '流派', '主要作品 / 贡献', '特殊意义'];
-const MIN_TOTAL = 400;   // 正文净字数下限
+const MIN_TOTAL = 400;   // 正文净字数下限（表格线不计）
 
+const problems = [];     // 校验积攒下来的问题，有一条就不写盘
+
+/* 正文净字数：表格线与标点都不算 */
 const PUNCT = /[\s·，。、；：「」『』（）()《》〈〉—…？！“”‘’\-－/、]+/g;
 function nchars(s) { return String(s == null ? '' : s).replace(PUNCT, '').length; }
 
-/* 正文：十一行表 + 一句话。与前几轮同一种形状。 */
+/* ── 正文：十一行表 + 一句话。与前几轮同一种形状 ──────────────────────── */
 function bodyOf(r) {
   const rows = FIELDS.map(function (label, i) { return [label, r[i]]; });
   return [T.box(rows), '', '【一句话】' + r[r.length - 1]].join('\n');
 }
+
 
 /* ── 主表：唯一真相来源 ─────────────────────────────────────────────── */
 let SRC = fs.readFileSync(MASTER_FILE, 'utf8');
@@ -95,8 +117,8 @@ const MASTER = (function () {
 })();
 const mrOf = MASTER.filter(function (m) { return /^mingren-mr-\d+$/.test(String(m.id)); });
 
-/* 在册条目的当前分组：从壳文件读（壳是上一轮的产物，但分组信息只在它里面；
-   本轮名单里重给的行会覆盖它 —— 这就是「换组」的入口）。 */
+/* 在册条目的当前分组：从壳文件读回来。壳是上一轮的产物，但**分组信息只在它
+   里面** —— 本轮名单里重给的行会覆盖它，这就是「换组」的入口。 */
 const SHELL_GROUP = (function () {
   const s = { window: {}, console };
   s.window = s;
@@ -111,7 +133,6 @@ const byTitle = {};
 mrOf.forEach(function (m) { byTitle[m.title] = m; });
 
 /* ── 校验名单 ────────────────────────────────────────────────────────── */
-const problems = [];
 const seenName = {};
 const added = [];
 PLAN.forEach(function (plan) {
@@ -154,50 +175,102 @@ DROP.forEach(function (t) { dropSet[t] = true; });
 const REPLAN = {};
 added.forEach(function (a) { REPLAN[a.row[0]] = a; });
 
+/* 一人一处：姓名 → PLAN 给的组，本轮的名单优先于壳里记的组 */
+const NAME_GROUP = {};
+Object.keys(SHELL_GROUP).forEach(function (t) { NAME_GROUP[t] = SHELL_GROUP[t]; });
+added.forEach(function (a) { NAME_GROUP[a.row[0]] = a.group; });
+
 const ROSTER = [];
-/* ① 在册未删的：正文与 title 从主表来，分组从名单 / 壳来 */
+/* ① 在册未删的：正文与 title 从主表来，分组从名单 / 壳来。
+      排序先按**组**、再按**旧号** —— 组内次序即老名次，一点不乱。 */
+const kept = [];
 mrOf.forEach(function (m) {
   if (dropSet[m.title]) return;
   const a = REPLAN[m.title];
-  const group = a ? a.group : (SHELL_GROUP[m.title] || '文学家');
+  const group = NAME_GROUP[m.title];
+  if (!group) { problems.push(m.title + ' 没有分组（壳里也没记）'); return; }
   if (GROUP_ORDER.indexOf(group) < 0) {
     problems.push(m.title + ' 的分组不在 GROUP_ORDER：' + group);
     return;
   }
-  /* 名单里重给过的，正文一并换新（名单是更新的一份） */
-  ROSTER.push({
+  kept.push({
     title: m.title, group: group, oldId: m.id,
+    /* 名单里重给过的，正文一并换新（名单是更新的一份） */
     text: a ? bodyOf(a.row) : m.text,
+    row: a ? a.row : null,
     replace: !!a
   });
 });
-/* ② 新开条的：正文算出来 */
+kept.sort(function (a, b) {
+  const ga = GROUP_ORDER.indexOf(a.group), gb = GROUP_ORDER.indexOf(b.group);
+  if (ga !== gb) return ga - gb;
+  return parseInt(a.oldId.slice(3), 10) - parseInt(b.oldId.slice(3), 10);
+});
+kept.forEach(function (r) { ROSTER.push(r); });
+
+/* ② 本轮新开条的：正文算出来，次序照 PLAN 给的 */
 const FRESH = [];
 added.forEach(function (a) {
-  if (byTitle[a.row[0]]) return;      // 已在册，上面处理过了
-  const rec = { title: a.row[0], group: a.group, text: bodyOf(a.row), row: a.row, replace: false };
+  const n = a.row[0];
+  if (byTitle[n]) return;                 // 已在册，上面处理过了（含换组与换正文）
+  const rec = { title: n, group: a.group, text: bodyOf(a.row), row: a.row, replace: false };
   ROSTER.push(rec);
   FRESH.push(rec);
 });
 
-if (problems.length) {
-  console.error('✗ 有 ' + problems.length + ' 项不合规（前 20）：' + problems.slice(0, 20).join('、'));
-  process.exit(1);
+/* ③ 素材总表（mingren-corpus）里的人：本轮名单没点名、主表里也没有的，
+      按 PEOPLE 里记的组补开条 —— 只在 #388 落过素材、且本轮名单未收时才走到。 */
+const ROSTER_NAME = {};
+ROSTER.forEach(function (r) { ROSTER_NAME[r.title] = true; });
+PEOPLE.forEach(function (p) {
+  if (ROSTER_NAME[p.name] || dropSetEarly[p.name]) return;
+  const group = p.group || GROUP_ORDER[1];
+  if (GROUP_ORDER.indexOf(group) < 0) {
+    problems.push('素材表的 ' + p.name + ' 分组不在 GROUP_ORDER：' + group);
+    return;
+  }
+  const rec = {
+    title: p.name, group: group,
+    text: bodyOf2(p), row: null, replace: false
+  };
+  ROSTER.push(rec);
+  FRESH.push(rec);
+  ROSTER_NAME[p.name] = true;
+});
+
+/* 素材对象 ⇄ 行 两种输入，正文同一个出法 */
+function bodyOf2(p) {
+  const r = [p.name, p.era, p.zi, p.life, p.origin, p.family,
+    p.bio, p.style, p.school, p.works, p.worth, p.tag];
+  return bodyOf(r);
 }
 
-/* ── 号段 ────────────────────────────────────────────────────────────── */
-function oldOrder(rec) {
-  if (!rec.oldId) return 1e9;
-  return parseInt(String(rec.oldId).replace(/^mingren-mr-/, ''), 10);
-}
-ROSTER.sort(function (a, b) {
-  const ga = GROUP_ORDER.indexOf(a.group), gb = GROUP_ORDER.indexOf(b.group);
-  if (ga !== gb) return ga - gb;
-  const oa = oldOrder(a), ob = oldOrder(b);
-  if (oa !== ob) return oa - ob;
-  /* 都是新人：按名单给的次序 */
-  return 0;
+/* ── 四、守卫：条数 / 分组 / 字段 / 净字数 ─────────────────────────────── */
+const countOf = {};
+ROSTER.forEach(function (rec) { countOf[rec.group] = (countOf[rec.group] || 0) + 1; });
+
+console.log('主表在册 ' + mrOf.length + ' 位');
+console.log('删除 ' + DROP.length + ' 位' +
+  (dropGone.length ? '（其中 ' + dropGone.length + ' 位早已不在主表）' : '') +
+  '：' + DROP.join('、'));
+console.log('名单 ' + added.length + ' 位：已在册 ' + (added.length - FRESH.length > 0 ? added.length - FRESH.length : 0) +
+  ' 位、本轮新开条 ' + FRESH.length + ' 位');
+const BODY_COUNT = {};
+Object.keys(countOf).forEach(function (g) { BODY_COUNT[g] = countOf[g]; });
+console.log('名册共 ' + ROSTER.length + ' 位，号段 mr-01 … mr-' +
+  String(ROSTER.length).padStart(2, '0'));
+console.log('分组：' + GROUP_ORDER.map(function (g) {
+  return g + ' ' + (countOf[g] || 0);
+}).join(' · '));
+
+const bodySeen = {};
+FRESH.forEach(function (rec) {
+  const n = nchars(rec.text);
+  if (n < MIN_TOTAL) problems.push(rec.title + ' 正文 ' + n + ' 字（下限 ' + MIN_TOTAL + '）');
+  bodySeen[rec.title] = true;
 });
+
+/* ── 号段 ────────────────────────────────────────────────────────────── */
 const RENUMBER = {};
 ROSTER.forEach(function (rec, i) {
   const newId = 'mr-' + String(i + 1).padStart(2, '0');
@@ -205,15 +278,12 @@ ROSTER.forEach(function (rec, i) {
   rec.newId = newId;
 });
 
-console.log('主表在册 ' + mrOf.length + ' 位');
-console.log('删除 ' + DROP.length + ' 位：' + DROP.join('、'));
-console.log('名单 ' + added.length + ' 位：已在册 ' + (added.length - FRESH.length) +
-  ' 位、本轮新开条 ' + FRESH.length + ' 位');
-console.log('名册共 ' + ROSTER.length + ' 位，号段 mr-01 … mr-' +
-  String(ROSTER.length).padStart(2, '0'));
-const g2n = {};
-ROSTER.forEach(function (r) { g2n[r.group] = (g2n[r.group] || 0) + 1; });
-GROUP_ORDER.forEach(function (g) { if (g2n[g]) console.log('  ' + g + ' ' + g2n[g] + ' 位'); });
+if (problems.length) {
+  console.error('✗ 有 ' + problems.length + ' 项不合规（前 20）：' +
+    problems.slice(0, 20).join('、'));
+  process.exit(1);
+}
+
 
 /* ── 写主表 ──────────────────────────────────────────────────────────── */
 if (process.argv.indexOf('--check') >= 0) process.exit(problems.length ? 1 : 0);
@@ -285,7 +355,7 @@ shells.forEach(function (s) {
   lines.push('    dynasty: ' + JSON.stringify(s.dynasty) + ',');
   lines.push('    author: ' + JSON.stringify(s.title) + ',');
   lines.push('    source: ' + JSON.stringify(s.source) + ',');
-  lines.push('    excerpt: ' + JSON.stringify(s.excerpt) + ',');
+  lines.push('    excerpt: ' + JSON.stringify(s.excerpt));
   lines.push('  },');
 });
 lines.push('];');
@@ -336,13 +406,12 @@ function insertEntry(src, id, title, text) {
     '    version: ' + JSON.stringify(version),
     '  },'
   ].join('\n');
-  /* 找 mingren-* 段的最后一条的收尾处 */
   const lastAt = src.lastIndexOf('    id: "mingren-');
   if (lastAt < 0) throw new Error('主表里没有 mingren-* 那一段');
   const end = src.indexOf('\n  },', lastAt) + 5;
   return src.slice(0, end) + '\n' + block + src.slice(end);
 }
-/* 重排 mingren-* 那一段：按 ROSTER 的次序、按 RENUMBER 换号 */
+/* 重排 mingren-* 那一段：按 ROSTER 的次序、按新号换 id / work / entries */
 function rebuildBlock(src, roster, tmpIds) {
   const tmpMap = {};
   tmpIds.forEach(function (t) { tmpMap[t.rec] = t.tmp; });
@@ -374,7 +443,6 @@ function rebuildBlock(src, roster, tmpIds) {
     const newId = 'mr-' + String(idx + 1).padStart(2, '0');
     let b = byKey[rec.title];
     if (!b) {
-      /* 新开条：按临时 id 找 */
       const tmp = tmpMap[rec];
       const at = src.indexOf('    id: ' + JSON.stringify(tmp) + ',');
       if (at < 0) throw new Error('找不到新条目 ' + rec.title);
