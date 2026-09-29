@@ -152,6 +152,7 @@ add(require('./corpus/fill-poems-10.js'));
 add(require('./corpus/fill-drama-1.js'));
 add(require('./corpus/fill-drama-2.js'));
 add(require('./corpus/fill-drama-3.js'));
+add(require('./corpus/fill-drama-4.js'));
 
 /* 中国现当代诗歌 69 部至此整组补齐 */
 
