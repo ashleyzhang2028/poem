@@ -3520,6 +3520,17 @@ window.POEMS_MINGSHU = [
     excerpt: "只要热爱生命"
   },
   {
+    textRef: "mingshu-ms-646",
+    id: "ms-646",
+    title: "日出（戏剧）",
+    group: "中国现代戏剧",
+    gradeGroup: "中国现代戏剧",
+    dynasty: "近现代",
+    author: "曹禺",
+    source: "《日出（戏剧）》",
+    excerpt: "太阳升起来了，黑暗留在后面"
+  },
+  {
     textRef: "mingshu-ms-11",
     id: "ms-11",
     title: "雷雨",
@@ -3529,6 +3540,50 @@ window.POEMS_MINGSHU = [
     author: "曹禺",
     source: "《雷雨》",
     excerpt: "一个雷雨之夜的崩坏"
+  },
+  {
+    textRef: "mingshu-ms-647",
+    id: "ms-647",
+    title: "原野",
+    group: "中国现代戏剧",
+    gradeGroup: "中国现代戏剧",
+    dynasty: "近现代",
+    author: "曹禺",
+    source: "《原野》",
+    excerpt: "复仇与荒原"
+  },
+  {
+    textRef: "mingshu-ms-648",
+    id: "ms-648",
+    title: "北京人",
+    group: "中国现代戏剧",
+    gradeGroup: "中国现代戏剧",
+    dynasty: "近现代",
+    author: "曹禺",
+    source: "《北京人》",
+    excerpt: "一个家庭的解体"
+  },
+  {
+    textRef: "mingshu-ms-649",
+    id: "ms-649",
+    title: "胆剑篇",
+    group: "中国现代戏剧",
+    gradeGroup: "中国现代戏剧",
+    dynasty: "当代",
+    author: "曹禺",
+    source: "《胆剑篇》",
+    excerpt: "越王勾践"
+  },
+  {
+    textRef: "mingshu-ms-650",
+    id: "ms-650",
+    title: "王昭君",
+    group: "中国现代戏剧",
+    gradeGroup: "中国现代戏剧",
+    dynasty: "当代",
+    author: "曹禺",
+    source: "《王昭君》",
+    excerpt: "一位和亲的宫女"
   },
   {
     textRef: "mingshu-ms-24",
