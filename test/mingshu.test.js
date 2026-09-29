@@ -223,6 +223,38 @@ const MS_PEOPLE = MS.map(p => (p.text.match(/【主要人物】([\s\S]*?)【主�
 chk(Math.min.apply(null, MS_PEOPLE) >= 15,
   '每一部至少列出 15 位主要人物（最少 ' + Math.min.apply(null, MS_PEOPLE) + ' 位）');
 
+/* Issue #381 第五轮：正文素材开始一批批往上填。这一条守两件事 ——
+   ① 书目表里排在前面的那几组（古典小说已齐、现代小说与散文已开张）真在涨价，
+      而不是只把数字报上去；
+   ② 每一条正文都能在**主表**里按 textRef 取到，且取到的那条的 title
+      与壳里的 title 一致（错位过一次，就不再靠人记得）。 */
+(function () {
+  const BY = g => MS.filter(p => p.gradeGroup === g).length;
+  chk(BY('中国古典小说') === 6, '中国古典小说六部已全部有素材（实际 ' + BY('中国古典小说') + '）');
+  chk(BY('中国现代小说') >= 25, '中国现代小说已填 25 部以上（实际 ' + BY('中国现代小说') + '）');
+  chk(BY('中国现代散文') >= 8, '中国现代散文已填 8 部以上（实际 ' + BY('中国现代散文') + '）');
+  chk(MS.length >= 45, '名著导读已交付 45 部以上（实际 ' + MS.length + '）');
+
+  /* 素材全覆盖：书目表里「有素材」的那些书，壳里一条不落 */
+  const BOOKS = require('../scripts/data/mingshu-books.js');
+  const CORPUS = require('../scripts/data/mingshu-corpus.js').CORPUS;
+  const inShell = new Set(MS.map(p => p.title));
+  const lack = Object.keys(CORPUS).filter(t => !inShell.has(t));
+  chk(lack.length === 0, '有素材的书一条不落地进了列表页（缺：' + (lack.join('、') || '无') + '）');
+
+  /* 壳与主表对得上：title 一致、正文里画了表格 */
+  const bad = MS.filter(p => {
+    const line = (p.text || '').split('\n').find(l => l.indexOf('书名') >= 0);
+    if (!line) return true;
+    const cells = line.split('│');
+    const name = cells.length > 2 ? cells[2].trim() : '';
+    return name && name !== p.title;
+  });
+  chk(bad.length === 0,
+    '名著导读每一条正文里的「书名」与标题一致（错位：' +
+    (bad.slice(0, 5).map(p => p.title).join('、') || '无') + '）');
+})();
+
 /* 历代名家：用户点名的十一个字段一个都不能缺 */
 const MR_FIELDS = ['姓名', '朝代', '字', '号', '生卒', '籍贯', '家世亲属', '生平', '作品风格', '流派', '主要作品', '特殊意义'];
 const MR_THIN = [];

@@ -282,6 +282,27 @@ console.log('✓ data/poems-mingshu.js 已写出，共 ' + items.length + ' 条'
 /* 写主表 */
 if (WANT_MASTER) {
   const P = require('./lib/entry-patch.js');
+
+  /* 第五轮起，正文一条也不再手写进主表 —— 上一轮那 36 部是手写的，其余
+     全靠这一步生成。于是分两件事：
+       · 主表里已有的（上一轮那批）→ 定点改写
+       · 主表里还没有的（这一批新书）→ 追加到主表末尾
+     顺序要紧：先 append 再 applyAll —— 否则新书没有条目可改。 */
+  const state = P.load();
+  const fresh = items.filter(function (it) { return !state.byId['mingshu-' + it.id]; });
+  if (fresh.length) {
+    const ins = P.insertAll(fresh.map(function (it) {
+      return {
+        id: 'mingshu-' + it.id,
+        title: it.book.title,
+        entries: ['mingshu-' + it.id],
+        text: it.text
+      };
+    }));
+    P.write(ins.src);
+    console.log('✓ data/text-master.js 已追加 ' + ins.added.length + ' 条新条目');
+  }
+
   const patch = {};
   items.forEach(function (it) { patch['mingshu-' + it.id] = it.text; });
   const res = P.applyAll(patch, {

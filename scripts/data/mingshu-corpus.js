@@ -46,6 +46,14 @@ function add(c) { Object.keys(c).forEach(function (k) { CORPUS[k] = c[k]; }); }
 // 顺带把当时「一段话可替换」的地方改成各自的具体内容。
 add(require('./mingshu-corpus-old36.js'));
 
+/* ── 二、Issue #381 第五轮：书目表 800 部里接着填素材 ─────────────────
+   分册装，一个行当（或一批）一个文件，避免单文件过大。
+   本批交付 43 部：中国古典小说已齐（6/6）、中国现代小说 25/61、
+   中国现代散文 8/52。其余各组按批次继续填。 */
+add(require('./corpus/fill-modern-novels-1.js'));
+add(require('./corpus/fill-modern-novels-2.js'));
+add(require('./corpus/fill-essays-1.js'));
+
 /* 余下的书按组分册，避免单文件过大 */
 add(require('./mingshu-corpus-stub.js'));
 
