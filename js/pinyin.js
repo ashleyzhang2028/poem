@@ -163,11 +163,12 @@
     return n;
   }
 
+  // Stored lines are capped at 120 chars (PinyinFix.LINE_MAX), so match on the same prefix.
   function fixAt(ch, chars, i) {
     if (!FIX_MAP || !FIX_LINE) return "";
     if (!isPolyphone(ch)) return "";
-    var key = FIX_LINE + "\u0000" + nthIn(chars, i);
-    var v = FIX_MAP[key];
+    var base = FIX_LINE.slice(0, 120) + "\u0000" + nthIn(chars, i) + "\u0000";
+    var v = FIX_MAP[base + ch] || FIX_MAP[base];
     return v ? String(v) : "";
   }
 
@@ -364,6 +365,7 @@
     needAnnotate: needAnnotate,
     isPolyphone: isPolyphone,
     readOf: function (ch, text, i) { return readOf(ch, text || ch, i || 0); },
+    readings: function (ch) { return readings(ch).slice(); },
     read: read,
     has: function (ch) { return !!TABLE[ch]; },
     size: function () { return Object.keys(TABLE).length; },

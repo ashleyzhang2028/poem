@@ -154,13 +154,99 @@
     return { ok: true, removed: n };
   }
 
+  // -------------------------------------------------------------------------
+  // 全站生效的注音（Issue #348）：管理员提议 → 审核批准之后，服务端把它们放进
+  // GET /api/pinyin-fixes（公开、不认登录）。这里只是**只读缓存**这份数据——
+  // 写入（提议 / 审核）走 AccountApi，只有 /admin/ 页面用得到。本机的个人
+  // 勘误（上面 add() 存的那些）优先于这份全站数据：正在核对的那一条如果
+  // 还没批准，管理员在自己屏幕上先用个人勘误预览效果不受影响。
+  // -------------------------------------------------------------------------
+  var GLOBAL_KEY = "poem_pinyin_global_v1";
+  var GLOBAL_TTL_MS = 6 * 3600 * 1000;
+  var globalIndex = null;
+
+  function rawStore() {
+    try { return typeof window !== "undefined" ? window.localStorage : null; } catch (e) { return null; }
+  }
+
+  function readGlobalCache() {
+    var s = rawStore();
+    if (!s) return null;
+    try {
+      var o = JSON.parse(s.getItem(GLOBAL_KEY) || "null");
+      return (o && typeof o === "object" && Array.isArray(o.fixes)) ? o : null;
+    } catch (e) { return null; }
+  }
+
+  function writeGlobalCache(fixes, version) {
+    var s = rawStore();
+    if (!s) return;
+    try {
+      s.setItem(GLOBAL_KEY, JSON.stringify({ v: 1, fetchedAt: nowTs(), version: Number(version) || 0, fixes: fixes || [] }));
+    } catch (e) {  }
+  }
+
+  function buildGlobalIndex(fixes) {
+    var idx = {};
+    (fixes || []).forEach(function (f) {
+      var o = normOne(f);
+      if (!o) return;
+      var byWid = idx[o.wid] || (idx[o.wid] = {});
+      byWid[o.line + "\u0000" + o.at + "\u0000" + (o.ch || "")] = o.py;
+    });
+    return idx;
+  }
+
+  function ensureGlobalIndex() {
+    if (globalIndex) return globalIndex;
+    var cache = readGlobalCache();
+    globalIndex = buildGlobalIndex(cache ? cache.fixes : []);
+    return globalIndex;
+  }
+
+  function globalMapOf(wid) {
+    var idx = ensureGlobalIndex();
+    return idx[String(wid == null ? "" : wid)] || {};
+  }
+
+  function globalCount() {
+    var cache = readGlobalCache();
+    return cache ? cache.fixes.length : 0;
+  }
+
+  function refreshGlobal(opt) {
+    var o = opt || {};
+    if (typeof fetch !== "function") return Promise.resolve(false);
+    if (!o.force) {
+      var cache = readGlobalCache();
+      if (cache && (nowTs() - Number(cache.fetchedAt || 0)) < GLOBAL_TTL_MS) return Promise.resolve(false);
+    }
+    return fetch("/api/pinyin-fixes", { credentials: "same-origin" }).then(function (res) {
+      return res.ok ? res.json() : null;
+    }).then(function (data) {
+      if (!data || !data.ok || !Array.isArray(data.fixes)) return false;
+      writeGlobalCache(data.fixes, data.version);
+      globalIndex = buildGlobalIndex(data.fixes);
+      emit();
+      return true;
+    })["catch"](function () { return false; });
+  }
+
+  try {
+    if (typeof window !== "undefined" && typeof window.setTimeout === "function") {
+      window.setTimeout(function () { refreshGlobal(); }, 0);
+    }
+  } catch (e) {  }
+
   function mapOf(wid) {
     var w = String(wid == null ? "" : wid);
     var out = {};
     if (!w) return out;
+    var base = globalMapOf(w);
+    Object.keys(base).forEach(function (k) { out[k] = base[k]; });
     read().fixes.forEach(function (f) {
       if (f.wid !== w) return;
-      out[f.line + "\u0000" + f.at] = f.py;
+      out[f.line + "\u0000" + f.at + "\u0000" + (f.ch || "")] = f.py;
     });
     return out;
   }
@@ -240,7 +326,12 @@
     emit: emit,
 
     cloudRow: cloudRow,
-    applyCloud: applyCloud
+    applyCloud: applyCloud,
+
+    GLOBAL_KEY: GLOBAL_KEY,
+    globalMapOf: globalMapOf,
+    globalCount: globalCount,
+    refreshGlobal: refreshGlobal
   };
 })();
 

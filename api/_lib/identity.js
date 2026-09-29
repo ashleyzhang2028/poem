@@ -142,6 +142,10 @@ function newReportId() {
   return "rp_" + crypto.randomBytes(8).toString("hex");
 }
 
+function newPinyinProposalId() {
+  return "pf_" + crypto.randomBytes(8).toString("hex");
+}
+
 function newSalt() {
   return crypto.randomBytes(8).toString("hex");
 }
@@ -157,6 +161,7 @@ module.exports = {
   newVerifyId: newVerifyId,
   newResetId: newResetId,
   newReportId: newReportId,
+  newPinyinProposalId: newPinyinProposalId,
   normalizePhone: normalizePhone,
   isPhoneShape: isPhoneShape,
   maskPhone: maskPhone,

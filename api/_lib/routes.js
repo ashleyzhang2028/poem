@@ -22,6 +22,8 @@ var ROUTES = {
   "POST /admin/accounts": "./../_routes/admin/accounts.js",
   "POST /admin/role": "./../_routes/admin/role.js",
   "POST /admin/reports": "./../_routes/admin/reports.js",
+  "POST /admin/pinyin": "./../_routes/admin/pinyin.js",
+  "GET /pinyin-fixes": "./../_routes/pinyin-fixes.js",
 
   "GET /report": "./../_routes/report/index.js",
   "POST /report": "./../_routes/report/index.js",

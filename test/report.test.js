@@ -235,6 +235,9 @@ console.log("一、服务端内核：创建 / 频控 / 每日上限 / 空内容�
     r = await core.adminReportPatch(d, { rid: "rpX", status: "new" });
     chk(r.body.report.handledAt === 0 || r.body.report.handledAt === null || !r.body.report.handledAt,
       "退回 new 时**清掉**处理人 / 处理时刻（否则「处理过几条」会把「只看了一眼」算进去）");
+    chk(r.body.report.reply === "已改", "只改状态、不带 reply 时**保留**原回复（不再被清空）");
+    r = await core.adminReportPatch(d, { rid: "rpX", status: "new", reply: "" });
+    chk(r.body.report.reply === "", "明确传空串才清掉回复");
 
     r = await core.adminReportPatch(d, { rid: "rpX", status: "open" });
     chk(r.status === 200 && r.body.report.status === "new", "别名 open → new（老叫法仍认）");

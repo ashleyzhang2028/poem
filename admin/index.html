@@ -53,7 +53,7 @@
 
       <section class="account-card" id="reports-card" hidden>
         <h2 class="account-card-title">用户报告</h2>
-        <p class="account-lead" id="reports-intro">用户在篇目页提交的问题。更新状态后，用户可在「我的报告」中看到；注音类问题可在下方「注音勘误」中直接修正。</p>
+        <p class="account-lead">用户在篇目页点小旗提交的问题。点下方按钮标记处理进度，可以附一句回复；用户会在「我的报告」里看到。</p>
 
         <div class="admin-report-tools">
           <div class="admin-report-counts" id="report-counts" role="group" aria-label="按状态筛选"></div>
@@ -61,55 +61,54 @@
         </div>
 
         <ul class="report-list" id="reports-list"></ul>
-        <p class="account-hint" id="reports-empty" hidden>暂无报告。</p>
+        <p class="account-hint" id="reports-empty" hidden></p>
         <p class="account-hint" id="reports-note" hidden></p>
         <p class="account-msg" id="msg-reports"></p>
       </section>
 
       <section class="account-card" id="pinyin-card" hidden>
         <h2 class="account-card-title">注音勘误</h2>
-        <p class="account-lead">自动注音偶有读错。搜索并选中篇目，点「选句」选出原句，再填写第几个字及其正确读音，保存后立即生效。</p>
+        <p class="account-lead">多音字偶尔会被自动注音读错。找到篇目，点读错的字，选正确的读音，再提交给所有人。</p>
+        <p class="pf-scope">选好读音会先在<strong>你自己的屏幕</strong>上立即生效，方便核对；点「提交给所有人」后进入待审核，<strong>批准后全站读者才会看到</strong>（本机缓存至多几小时后自动刷新）。</p>
 
-        <div class="admin-steps">
-          <div class="account-field">
-            <label class="account-label" for="pf-wid">篇目</label>
-            <input id="pf-wid" class="account-input" type="text" autocomplete="off"
-                   spellcheck="false" placeholder="输入篇名搜索，如 滕王阁序" maxlength="40" />
-          </div>
-          <div class="account-field">
-            <label class="account-label" for="pf-line">原句</label>
-            <div class="admin-line-row">
-              <input id="pf-line" class="account-input" type="text" autocomplete="off"
-                     spellcheck="false" placeholder="如 秋水共长天一色。" maxlength="120" />
-              <button class="account-btn ghost" id="btn-pf-fill" type="button">选句</button>
-            </div>
-          </div>
-          <p class="account-hint" id="pf-picked" hidden></p>
-          <div class="admin-step-pair">
-            <div class="account-field">
-              <label class="account-label" for="pf-at">第几个字</label>
-              <input id="pf-at" class="account-input" type="number" min="1" step="1" value="1" />
-            </div>
-            <div class="account-field">
-              <label class="account-label" for="pf-py">正确读音</label>
-              <input id="pf-py" class="account-input" type="text" autocomplete="off"
-                     spellcheck="false" placeholder="带声调，如 cháng" maxlength="12" />
-            </div>
-          </div>
+        <div class="account-field pf-step">
+          <label class="account-label" for="pf-q"><span class="pf-no">1</span>找到篇目</label>
+          <input id="pf-q" class="account-input" type="search" autocomplete="off" spellcheck="false"
+                 placeholder="输入篇名、作者或其中一句，如 滕王阁序" maxlength="40" />
         </div>
+        <ul class="pf-results" id="pf-results" hidden></ul>
+        <p class="account-hint" id="pf-search-hint" hidden></p>
 
-        <ul class="admin-hits" id="pf-hits" hidden></ul>
-        <button class="account-btn" id="btn-pf-add" type="button">保存勘误</button>
+        <div class="pf-work" id="pf-work" hidden>
+          <div class="pf-work-head">
+            <div class="pf-work-title" id="pf-work-title"></div>
+            <button class="account-btn ghost" id="btn-pf-change" type="button">换一篇</button>
+          </div>
+          <p class="account-label pf-step-label"><span class="pf-no">2</span>点读错的字</p>
+          <p class="account-hint pf-legend">
+            <span class="pf-ch is-poly">虚线</span>是多音字，可以点；<span class="pf-ch is-poly is-fixed">绿色</span>是已经改过的。其他字只有一个读音，不需要改。
+          </p>
+          <div class="pf-lines" id="pf-lines"></div>
+        </div>
         <p class="account-msg" id="msg-pf"></p>
 
         <div class="admin-sub">
-          <h3 class="admin-sub-title">已保存的勘误 <span class="admin-count" id="pf-count">0</span></h3>
+          <h3 class="admin-sub-title">这台设备上的改动 <span class="admin-count" id="pf-count">0</span></h3>
+          <p class="account-hint">只在你自己屏幕上生效，用来核对读音；确认没问题后请在上面点「提交给所有人」。</p>
           <ul class="admin-fix-list" id="pf-list"></ul>
-          <p class="account-hint" id="pf-empty" hidden>暂无勘误。</p>
-          <p class="account-hint" id="pf-note" hidden></p>
+          <p class="account-hint" id="pf-empty" hidden>还没有改过读音。</p>
         </div>
-        <div class="confirm-row admin-reload-row">
-          <button class="account-btn ghost" id="btn-pf-export" type="button">复制勘误表</button>
+
+        <div class="admin-sub">
+          <h3 class="admin-sub-title">全站生效审核</h3>
+          <p class="account-hint">批准后全站读者都会读到这个音；驳回或下线则恢复自动注音。</p>
+          <div class="admin-report-tools">
+            <div class="admin-report-counts" id="pf-queue-counts" role="group" aria-label="按状态筛选"></div>
+            <button class="account-btn ghost" id="btn-pf-queue-reload" type="button">刷新</button>
+          </div>
+          <ul class="report-list" id="pf-queue-list"></ul>
+          <p class="account-hint" id="pf-queue-empty" hidden></p>
+          <p class="account-msg" id="msg-pf-queue"></p>
         </div>
       </section>
 
@@ -144,8 +143,8 @@
   <script src="/data/poems-10.js"></script>
   <script src="/data/poems-11.js"></script>
   <script src="/data/poems-12.js"></script>
-  <script src="/data/text-master.js"></script>
   <script src="/data/index.js"></script>
+  <script src="/data/site-books.js"></script>
   <script src="/js/pinyin-edit.js"></script>
   <script src="/js/pinyin.js"></script>
   <script src="/js/admin-page.js"></script>

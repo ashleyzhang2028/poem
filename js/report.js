@@ -12,24 +12,42 @@
   };
 
   var KINDS = [
-    { key: "text", label: "正文", hint: "正文有错字、漏字、缺段", seed: "正文" },
-    { key: "translation", label: "译文", hint: "白话译文译错了或漏了", seed: "译文" },
-    { key: "pinyin", label: "注音", hint: "拼音标错了（如「长」「行」这类多音字）", seed: "注音" },
-    { key: "audio", label: "朗读", hint: "读出来的音不对、断句不对", seed: "朗读" },
-    { key: "ui", label: "界面", hint: "排版、按钮、显示不对", seed: "界面" },
-    { key: "other", label: "其它", hint: "上面都不是", seed: "" }
+    { key: "text", label: "错字", hint: "原文有错字、漏字、多字或缺段",
+      example: "例：第二句「疑是地上霜」写成了「疑似地上霜」", sugg: "例：疑是地上霜" },
+    { key: "pinyin", label: "注音", hint: "拼音标错了，常见于「长」「行」「还」这类多音字",
+      example: "例：「秋水共长天一色」的「长」标成了 zhǎng", sugg: "例：cháng" },
+    { key: "translation", label: "译文", hint: "白话译文或注释译错了、漏译了",
+      example: "例：「床」在这里指井栏，译文写成了睡床", sugg: "例：井栏" },
+    { key: "audio", label: "朗读", hint: "朗读的读音或停顿不对",
+      example: "例：朗读把「一骑红尘」的「骑」读成了 qí", sugg: "例：jì" },
+    { key: "ui", label: "显示", hint: "排版错乱、按钮失灵、文字被挡住等",
+      example: "例：手机上译文被底部按钮挡住了", sugg: "" },
+    { key: "other", label: "其它", hint: "不属于上面几类的问题或建议",
+      example: "简单写一句哪里不对", sugg: "" }
   ];
 
   var STATUS_LABEL = {
-    new: "已收到",
-    read: "已看过",
+    new: "待处理",
+    read: "核实中",
     accepted: "已确认",
     fixed: "已修复",
     rejected: "未采纳"
   };
 
+  var STATUS_DESC = {
+    new: "已送达，等待管理员查看",
+    read: "管理员已看到，正在核实",
+    accepted: "确认有误，会尽快改正",
+    fixed: "已改正，重新打开这一篇即可看到",
+    rejected: "核实后认为原文无误，暂不修改"
+  };
+
+  function descOfStatus(s) {
+    return STATUS_DESC[String(s || "new")] || STATUS_DESC.new;
+  }
+
   function labelOfStatus(s) {
-    return STATUS_LABEL[String(s || "new")] || "已收到";
+    return STATUS_LABEL[String(s || "new")] || STATUS_LABEL.new;
   }
 
   function labelOfKind(k) {
@@ -297,8 +315,14 @@
 
   var box = null;
   var ctx = { poemId: "", poemTitle: "", book: "", quote: "", context: "" };
-  var pickedKind = "other";
+  var pickedKind = "";
   var onDone = null;
+
+  function loginHref() {
+    var here = "/";
+    try { here = location.pathname + location.search; } catch (e) { }
+    return "/login/?next=" + encodeURIComponent(here);
+  }
 
   function ensureBox() {
     if (box) return box;
@@ -314,24 +338,31 @@
       '<div class="modal-head"><h2 id="report-dialog-title">报告错误</h2></div>' +
       '<p class="report-sub" id="report-sub"></p>' +
 
-      '<div class="report-kinds" id="report-kinds" role="group" aria-label="报哪一类问题"></div>' +
+      '<p class="report-guest" id="report-guest" hidden>需要先登录才能发送，这样处理结果才能回复给你。' +
+      '<a class="report-login-link" id="report-login" href="/login/">去登录</a></p>' +
 
-      '<div class="report-quote" id="report-quote-wrap" hidden>' +
-      '<span class="report-quote-label">这一段</span>' +
-      '<blockquote id="report-quote"></blockquote>' +
+      '<div class="account-field">' +
+      '<span class="account-label" id="report-kinds-label">问题类型（选填）</span>' +
+      '<div class="report-kinds" id="report-kinds" role="group" aria-labelledby="report-kinds-label"></div>' +
+      '<p class="report-kind-hint" id="report-kind-hint"></p>' +
+      "</div>" +
+
+      '<div class="account-field">' +
+      '<label class="account-label" for="report-quote">出错的句子（选填）</label>' +
+      '<input id="report-quote" class="account-input" type="text" autocomplete="off" ' +
+      'maxlength="' + LIMITS.quote + '" placeholder="可复制粘贴原文里的那一句" />' +
       "</div>" +
 
       '<div class="account-field">' +
       '<label class="account-label" for="report-note">哪里不对</label>' +
       '<textarea id="report-note" class="account-input report-textarea" rows="2" ' +
-      'maxlength="' + LIMITS.note + '" placeholder="例：「长」这里该读 cháng，不是 zhǎng"></textarea>' +
-      '<p class="account-hint" id="report-note-hint"></p>' +
+      'maxlength="' + LIMITS.note + '"></textarea>' +
       "</div>" +
 
       '<div class="account-field">' +
-      '<label class="account-label" for="report-suggestion">应该是什么（可留空）</label>' +
-      '<textarea id="report-suggestion" class="account-input report-textarea" rows="2" ' +
-      'maxlength="' + LIMITS.suggestion + '" placeholder="例：应读 cháng，或写作「明月光」"></textarea>' +
+      '<label class="account-label" for="report-suggestion">正确的应该是（选填）</label>' +
+      '<input id="report-suggestion" class="account-input" type="text" autocomplete="off" ' +
+      'maxlength="' + LIMITS.suggestion + '" />' +
       "</div>" +
 
       '<p class="account-msg" id="report-msg"></p>' +
@@ -340,7 +371,7 @@
       '<button type="button" class="btn" id="report-cancel">取消</button>' +
       '<button type="button" class="btn good primary-btn" id="report-send">发送</button>' +
       "</div>" +
-      '<p class="report-foot" id="report-foot"></p>' +
+      '<p class="report-foot">发送后可在「我的 → 我的报告」查看处理进度。</p>' +
       "</div>";
 
     document.body.appendChild(box);
@@ -358,7 +389,9 @@
     if (cancel) cancel.addEventListener("click", function () { close(); });
 
     document.addEventListener("keydown", function (e) {
-      if (e.key === "Escape" && box && !box.hidden) close();
+      if (!box || box.hidden) return;
+      if (e.key === "Escape") close();
+      else if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) submit();
     });
 
     renderKinds();
@@ -372,17 +405,22 @@
       var on = k.key === pickedKind;
       return '<button type="button" data-kind="' + k.key + '"' +
         (on ? ' class="active" aria-pressed="true"' : ' aria-pressed="false"') +
-        ' title="' + esc(k.hint) + '">' + esc(k.label) + "</button>";
+        ">" + esc(k.label) + "</button>";
     }).join("");
+
+    var k = pickedKind ? kindOf(pickedKind) : null;
+    var hint = $("#report-kind-hint", box);
+    if (hint) hint.textContent = k ? k.hint : "选一类能帮管理员更快定位；拿不准就不选。";
+    var note = $("#report-note", box);
+    if (note) note.placeholder = k ? k.example : "简单写一句哪里不对";
+    var sug = $("#report-suggestion", box);
+    if (sug) sug.placeholder = (k && k.sugg) || "知道正确写法可以填在这里";
   }
 
   function pickKind(key) {
-    pickedKind = kindOf(key).key;
+    var next = kindOf(key).key;
+    pickedKind = next === pickedKind ? "" : next;
     renderKinds();
-
-    var note = $("#report-note", box);
-    var seed = kindOf(pickedKind).seed;
-    if (note && seed && !note.dataset.touched) note.value = seed;
   }
 
   function open(o) {
@@ -395,7 +433,7 @@
       quote: clip(opt.quote, LIMITS.quote),
       context: clip(opt.context, LIMITS.context)
     };
-    pickedKind = kindOf(opt.kind || "other").key;
+    pickedKind = opt.kind && opt.kind !== "other" ? kindOf(opt.kind).key : "";
 
     var sub = $("#report-sub", box);
     if (sub) {
@@ -404,21 +442,20 @@
         : "把看到的问题告诉管理员";
     }
 
-    var qw = $("#report-quote-wrap", box);
-    var q = $("#report-quote", box);
-    if (qw && q) {
-      if (ctx.quote) { q.textContent = ctx.quote; qw.hidden = false; } else { qw.hidden = true; }
-    }
+    var guest = $("#report-guest", box);
+    if (guest) guest.hidden = signedIn();
+    var login = $("#report-login", box);
+    if (login) login.href = loginHref();
 
+    var q = $("#report-quote", box);
+    if (q) q.value = ctx.quote;
     var note = $("#report-note", box);
-    if (note) {
-      note.value = "";
-      note.dataset.touched = "";
-      var seed = kindOf(pickedKind).seed;
-      if (seed && !opt.quote) note.value = seed;
-    }
+    if (note) note.value = "";
     var sug = $("#report-suggestion", box);
     if (sug) sug.value = "";
+
+    var btn = $("#report-send", box);
+    if (btn) btn.disabled = false;
 
     msg("", "");
     renderKinds();
@@ -443,12 +480,15 @@
   function submit() {
     var note = $("#report-note", box);
     var sug = $("#report-suggestion", box);
+    var q = $("#report-quote", box);
     var btn = $("#report-send", box);
+    if (btn && btn.disabled) return;
     var noteText = note ? note.value : "";
     var sugText = sug ? sug.value : "";
+    var quoteText = String(q ? q.value : ctx.quote).trim();
 
-    if (!String(noteText).trim() && !ctx.quote && !String(sugText).trim()) {
-      msg("请写一句「哪里不对」（哪怕两个字：如「注音」）", "warn");
+    if (!String(noteText).trim()) {
+      msg("请写一句哪里不对。", "warn");
       if (note && note.focus) note.focus();
       return;
     }
@@ -457,19 +497,19 @@
     msg("正在发送……", "");
 
     create({
-      kind: pickedKind,
+      kind: pickedKind || "other",
       poemId: ctx.poemId,
       poemTitle: ctx.poemTitle,
       book: ctx.book,
-      quote: ctx.quote,
-      context: ctx.context,
+      quote: quoteText,
+      context: quoteText === ctx.quote ? ctx.context : "",
       note: noteText,
       suggestion: sugText
     }).then(function (r) {
       if (btn) btn.disabled = false;
       if (r && r.ok) {
         close();
-        toast("收到了，管理员会看到这一条");
+        toast("已发送，可在「我的 → 我的报告」查看进度");
         if (typeof onDone === "function") onDone(r);
         try {
           window.dispatchEvent(new CustomEvent("report-created", { detail: r }));
@@ -478,8 +518,9 @@
       }
       var reason = r && r.reason;
       if (reason === "guest") {
-        msg("报告要登录后才能发。点「去登录」—— 登录后回来再点一次「发送」，写好的内容还在。", "warn");
-        showLoginHint();
+        var guest = $("#report-guest", box);
+        if (guest) guest.hidden = false;
+        msg("还没有登录，这一条没有发出去。", "warn");
         return;
       }
       msg((r && r.message) || "没发出去，稍后再试。", "warn");
@@ -487,12 +528,6 @@
       if (btn) btn.disabled = false;
       msg("没发出去，稍后再试。", "warn");
     });
-  }
-
-  function showLoginHint() {
-    var foot = box ? $("#report-foot", box) : null;
-    if (!foot) return;
-    foot.innerHTML = '<a class="report-login-link" href="/login/">去登录</a>';
   }
 
   function toast(text) {
@@ -607,13 +642,13 @@
     var list = reports || [];
     var o = opt || {};
 
-        var unreachable = '<p class="account-hint">服务端暂时读不到。</p>';
+    var unreachable = '<p class="account-hint">暂时连不上服务器，下面是这台设备上的记录，状态可能不是最新。</p>';
 
     if (!list.length) {
       host.innerHTML = o.unreachable
-        ? unreachable + '<p class="account-hint">本机没有存稿。</p>'
-        : '<p class="account-hint">还没有报过。<br>看到错字、标错的注音、翻错的译文，' +
-          '点篇目上方那颗<strong>小旗</strong>就能报。</p>';
+        ? '<p class="account-hint">暂时连不上服务器，稍后点「刷新」再试。</p>'
+        : '<p class="account-hint">还没有报告过问题。<br>阅读时看到错字、注音或译文不对，' +
+          '点篇目右上角的<strong>小旗</strong>即可报告。</p>';
       return;
     }
     var head = o.unreachable ? unreachable : "";
@@ -622,13 +657,14 @@
       return '<li class="report-row report-st-' + esc(st) + '">' +
         '<div class="report-row-head">' +
         '<span class="report-kind">' + esc(labelOfKind(r.kind)) + "</span>" +
-        '<span class="report-title">' + esc(r.poemTitle || "（未指定篇目）") + "</span>" +
+        '<span class="report-title">' + esc(r.poemTitle ? "《" + r.poemTitle + "》" : "（未指定篇目）") + "</span>" +
         '<span class="report-status">' + esc(labelOfStatus(st)) + "</span>" +
         "</div>" +
-        (r.quote ? '<div class="report-row-quote">「' + esc(r.quote) + "」</div>" : "") +
+        (r.quote ? '<div class="report-row-quote">' + esc(r.quote) + "</div>" : "") +
         (r.note ? '<div class="report-row-note">' + esc(r.note) + "</div>" : "") +
-        (r.reply ? '<div class="report-row-reply">管理员：' + esc(r.reply) + "</div>" : "") +
-        '<div class="report-row-time">' + esc(timeText(r.createdAt)) + "</div>" +
+        (r.suggestion ? '<div class="report-row-note"><span class="report-row-k">建议</span>' + esc(r.suggestion) + "</div>" : "") +
+        (r.reply ? '<div class="report-row-reply"><span class="report-row-k">管理员回复</span>' + esc(r.reply) + "</div>" : "") +
+        '<div class="report-row-time">' + esc(timeText(r.createdAt)) + " · " + esc(descOfStatus(st)) + "</div>" +
         "</li>";
     }).join("") + "</ul>";
   }
@@ -648,9 +684,11 @@
     KINDS: KINDS,
     LIMITS: LIMITS,
     STATUS_LABEL: STATUS_LABEL,
+    STATUS_DESC: STATUS_DESC,
     KEY: KEY,
     labelOfKind: labelOfKind,
     labelOfStatus: labelOfStatus,
+    descOfStatus: descOfStatus,
     flagGlyph: flagGlyph,
     detailBtn: detailBtn,
     itemBtn: itemBtn,

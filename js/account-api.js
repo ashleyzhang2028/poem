@@ -445,6 +445,71 @@
       })["catch"](function () { return { ok: false, reason: REASON.UNAVAILABLE }; });
     }
 
+    function pinyinFixes() {
+      var ch = usable(D.api) || (D.make ? safeCreate(D.make) : null);
+      if (!ch || typeof ch.pinyinFixes !== "function") {
+        return Promise.resolve({ ok: false, reason: REASON_NO_CHANNEL });
+      }
+      // Public, no-auth data (approved readings): every reader needs it, logged in or not.
+      return ch.pinyinFixes().then(function (r) {
+        if (r && r.ok) return { ok: true, reason: REASON.OK, fixes: r.fixes || [], version: r.version || 0 };
+        return { ok: false, reason: REASON.UNAVAILABLE };
+      })["catch"](function () { return { ok: false, reason: REASON.UNAVAILABLE }; });
+    }
+
+    function adminPinyinPropose(input) {
+      var o = input || {};
+      if (!signedIn()) return Promise.resolve({ ok: false, reason: REASON.GUEST });
+      var ch = usable(D.api) || (D.make ? safeCreate(D.make) : null);
+      if (!ch || typeof ch.adminPinyinPropose !== "function") {
+        return Promise.resolve({ ok: false, reason: REASON_NO_CHANNEL });
+      }
+      return ch.adminPinyinPropose(o).then(function (r) {
+        if (r && r.ok) return { ok: true, reason: REASON.OK, proposal: r.proposal, replaced: r.replaced, note: r.note };
+        var code = (r && r.code) || "E_OFFLINE";
+        if (code === "E_NOT_CONFIGURED") return { ok: false, reason: REASON.NOT_CONFIGURED };
+        if (code === "E_NO_SESSION") return { ok: false, reason: REASON.GUEST };
+        if (code === "E_FORBIDDEN" || code === "E_BAD_FIX") return { ok: false, reason: REASON.OK, code: code, message: r && r.message };
+        return { ok: false, reason: REASON.UNAVAILABLE };
+      })["catch"](function () { return { ok: false, reason: REASON.UNAVAILABLE }; });
+    }
+
+    function adminPinyinList(input) {
+      var o = input || {};
+      if (!signedIn()) return Promise.resolve({ ok: false, reason: REASON.GUEST });
+      var ch = usable(D.api) || (D.make ? safeCreate(D.make) : null);
+      if (!ch || typeof ch.adminPinyinList !== "function") {
+        return Promise.resolve({ ok: false, reason: REASON_NO_CHANNEL });
+      }
+      return ch.adminPinyinList(o).then(function (r) {
+        if (r && r.ok) return { ok: true, reason: REASON.OK, proposals: r.proposals || [], counts: r.counts || {} };
+        var code = (r && r.code) || "E_OFFLINE";
+        if (code === "E_NOT_CONFIGURED") return { ok: false, reason: REASON.NOT_CONFIGURED };
+        if (code === "E_NO_SESSION") return { ok: false, reason: REASON.GUEST };
+        if (code === "E_FORBIDDEN") return { ok: false, reason: REASON.OK, code: code, message: r && r.message };
+        return { ok: false, reason: REASON.UNAVAILABLE };
+      })["catch"](function () { return { ok: false, reason: REASON.UNAVAILABLE }; });
+    }
+
+    function adminPinyinReview(input) {
+      var o = input || {};
+      if (!signedIn()) return Promise.resolve({ ok: false, reason: REASON.GUEST });
+      var ch = usable(D.api) || (D.make ? safeCreate(D.make) : null);
+      if (!ch || typeof ch.adminPinyinReview !== "function") {
+        return Promise.resolve({ ok: false, reason: REASON_NO_CHANNEL });
+      }
+      return ch.adminPinyinReview(o).then(function (r) {
+        if (r && r.ok) return { ok: true, reason: REASON.OK, proposal: r.proposal, note: r.note };
+        var code = (r && r.code) || "E_OFFLINE";
+        if (code === "E_NOT_CONFIGURED") return { ok: false, reason: REASON.NOT_CONFIGURED };
+        if (code === "E_NO_SESSION") return { ok: false, reason: REASON.GUEST };
+        if (code === "E_FORBIDDEN" || code === "E_STATE" || code === "E_NO_FIX") {
+          return { ok: false, reason: REASON.OK, code: code, message: r && r.message };
+        }
+        return { ok: false, reason: REASON.UNAVAILABLE };
+      })["catch"](function () { return { ok: false, reason: REASON.UNAVAILABLE }; });
+    }
+
         function adminSetRole(input) {
       var o = input || {};
       if (!signedIn()) return Promise.resolve({ ok: false, reason: REASON.GUEST });
@@ -606,6 +671,11 @@
       adminReports: adminReports,
       adminReportPatch: adminReportPatch,
 
+      pinyinFixes: pinyinFixes,
+      adminPinyinPropose: adminPinyinPropose,
+      adminPinyinList: adminPinyinList,
+      adminPinyinReview: adminPinyinReview,
+
       gameAnswer: gameAnswer
     };
   }
@@ -651,6 +721,11 @@
     myReports: function (o) { return boundOnce(o).myReports(o); },
     adminReports: function (o) { return boundOnce(o).adminReports(o); },
     adminReportPatch: function (o) { return boundOnce(o).adminReportPatch(o); },
+
+    pinyinFixes: function (o) { return boundOnce(o).pinyinFixes(o); },
+    adminPinyinPropose: function (o) { return boundOnce(o).adminPinyinPropose(o); },
+    adminPinyinList: function (o) { return boundOnce(o).adminPinyinList(o); },
+    adminPinyinReview: function (o) { return boundOnce(o).adminPinyinReview(o); },
 
     uploadAvatar: function (o) { return boundOnce(o).uploadAvatar(o); },
     deleteAvatar: function (o) { return boundOnce(o).deleteAvatar(o); },

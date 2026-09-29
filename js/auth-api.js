@@ -351,6 +351,26 @@
         return post("/admin/reports", { rid: input.rid, status: input.status, reply: input.reply });
       },
 
+      pinyinFixes: function () { return call("/pinyin-fixes", "GET"); },
+
+      adminPinyinPropose: function (input) {
+        input = input || {};
+        return post("/admin/pinyin", {
+          op: "submit", wid: input.wid, line: input.line, at: input.at, ch: input.ch, py: input.py,
+          poemTitle: input.poemTitle, book: input.book
+        });
+      },
+
+      adminPinyinList: function (input) {
+        input = input || {};
+        return post("/admin/pinyin", { op: "list", status: input.status, limit: input.limit });
+      },
+
+      adminPinyinReview: function (input) {
+        input = input || {};
+        return post("/admin/pinyin", { op: "review", fid: input.fid, decision: input.decision, note: input.note });
+      },
+
       me: function () { return call("/me", "GET"); },
 
       setNickname: function (input) {

@@ -451,3 +451,61 @@ revoke all on function public.kb_upsert_progress(jsonb) from public, anon, authe
 revoke all on function public.kb_purge_expired(bigint) from public, anon, authenticated;
 grant execute on function public.kb_upsert_progress(jsonb) to service_role;
 grant execute on function public.kb_purge_expired(bigint) to service_role;
+
+-- ==========================================================================
+-- 10. 注音勘误 · 全站生效（Issue #348 · 用户原话）
+-- ==========================================================================
+-- 用户原话（2026-09-29）：
+--
+--   「把注音勘误改成对所有用户生效，这个需要做，但是需要管理员审核并批准
+--     后生效。我不觉得用户知道怎么发送 JSON，他们根本不懂，怎么简化？」
+--
+-- 原来的「注音勘误」（`pinyin_fix:v1` 那一行，第 4.40 节）**只对做勘误的
+-- 那个账号生效**——它落在 progress 表里，按 uid 分区，天生就是私有数据。
+-- 要让所有用户都读对，唯一的路是管理员把改动整理成 JSON 贴给开发者，
+-- developer 手工塞进 `js/pinyin.js` 的词表再发版。这条路对**不写代码的
+-- 管理员**不成立——本节把它换成一张服务端表 + 一个「提交 → 审核 → 生效」
+-- 的两步闸，不用发版就能让全站读者读对。
+--
+-- 设计要点：
+--   · **一行 = 一处勘误的一个「版本」**。同一处（wid+line+at）可能同时
+--     存在一条 `approved`（当前全站在读的那个版本）与一条 `pending`
+--     （有人建议改成另一个读音，还没批）——这样「审核中」不会先把线上
+--     那个正确读音撤下来，避免出现「提交就致空档」的空窗期。
+--   · **批准时把同一处旧的 `approved` 标成 `superseded`**（不删，留痕迹），
+--     再把这一条转正——任一时刻每处最多一条 `approved`。
+--   · **谁都能提交，但生效要过审**：`status` 默认 `pending`；
+--     只有 `accounts.role` 是 owner / admin 的人能把它转成 `approved`
+--     （与「用户报告」同一条闸：`adminGate` + `isAdminRole`）。
+--   · **公开只读**：`GET /api/pinyin-fixes` 不认登录（游客也要看到正确读音），
+--     所以只选 `status='approved'` 的四个字段，其余字段（谁提的、审核记录）
+--     一律不对外。RLS 全开、不给策略——service_role 建库读写，anon 读不到
+--     半点管理信息。
+-- ==========================================================================
+
+create table if not exists public.pinyin_proposals (
+  fid           text primary key,
+  wid           text   not null,
+  line          text   not null,
+  at            int    not null default 0,
+  ch            text   not null default '',
+  py            text   not null,
+  prev_py       text   not null default '',
+  poem_title    text   not null default '',
+  book          text   not null default '',
+  status        text   not null default 'pending',
+  proposed_by      text not null default '',
+  proposed_by_name text not null default '',
+  note             text not null default '',
+  created_at    bigint not null,
+  updated_at    bigint not null,
+  reviewed_by   text   not null default '',
+  reviewed_at   bigint
+);
+
+-- 「这一处现在哪一条在生效」按 (wid,line,at,status) 翻
+create index if not exists pinyin_proposals_key_idx on public.pinyin_proposals (wid, line, at, status);
+-- 公开只读接口按 status='approved' 整表扫
+create index if not exists pinyin_proposals_status_idx on public.pinyin_proposals (status, updated_at);
+
+alter table public.pinyin_proposals enable row level security;

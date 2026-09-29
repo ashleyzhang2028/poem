@@ -140,6 +140,15 @@
            "本机这一把只是没登录 / 断网时的兜底（Issue #243 第四轮）。"
     },
     {
+      key: "poem_pinyin_global_v1", sync: false, row: "", merge: "", cap: WHY.server,
+      why: "全站生效的注音勘误（Issue #348）：只读缓存 GET /api/pinyin-fixes 的应答。" +
+           "权威答案在服务端 public.pinyin_proposals（status=approved），这里只是" +
+           "「省一次请求」的本机副本，几小时后台自动刷新一次；参与同步的下场是" +
+           "「一台设备批准的东西，靠同步（而不是服务端审核）就传到了别的设备」——" +
+           "绕开了审核这道闸。个人预览（poem_pinyin_fix_v1）与它是两回事：" +
+           "前者只对做勘误的那个账号生效，这一把才是所有人都读到的那份。"
+    },
+    {
       key: "poem_font_v1", sync: false, row: "", merge: "", cap: WHY.device,
       why: "首页正文的字号档。"
     },

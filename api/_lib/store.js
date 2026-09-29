@@ -3,7 +3,7 @@
 var upstream = require("./upstream");
 
 function memoryStore() {
-  var db = { accounts: {}, codes: {}, sessions: {}, progress: {}, verifications: {}, resets: {}, reports: {} };
+  var db = { accounts: {}, codes: {}, sessions: {}, progress: {}, verifications: {}, resets: {}, reports: {}, pinyinProposals: {} };
   var api = {
     kind: "memory",
     ready: function () { return true; },
@@ -169,6 +169,34 @@ function memoryStore() {
         if (r.uid === uid && Number(r.created_at || 0) > day) n += 1;
       });
       return Promise.resolve(n);
+    },
+
+    putPinyinProposal: function (row) { db.pinyinProposals[row.fid] = row; return Promise.resolve({ fid: row.fid }); },
+    getPinyinProposal: function (fid) { return Promise.resolve(db.pinyinProposals[fid] || null); },
+    listPinyinProposals: function (filter, limit) {
+      var f = filter || {};
+      var out = Object.keys(db.pinyinProposals).map(function (k) { return db.pinyinProposals[k]; });
+      if (f.status) out = out.filter(function (r) { return r.status === f.status; });
+      if (f.wid != null) out = out.filter(function (r) { return r.wid === f.wid; });
+      if (f.line != null) out = out.filter(function (r) { return r.line === f.line; });
+      if (f.at != null) out = out.filter(function (r) { return Number(r.at) === Number(f.at); });
+      out.sort(function (a, b) { return (b.updated_at || 0) - (a.updated_at || 0); });
+      return Promise.resolve(out.slice(0, limit || 300));
+    },
+    patchPinyinProposal: function (fid, patch) {
+      var r = db.pinyinProposals[fid];
+      if (!r) return Promise.resolve(null);
+      Object.keys(patch || {}).forEach(function (k) { r[k] = patch[k]; });
+      return Promise.resolve(r);
+    },
+    countPinyinProposals: function () {
+      var counts = { all: 0 };
+      Object.keys(db.pinyinProposals).forEach(function (k) {
+        var r = db.pinyinProposals[k];
+        counts.all += 1;
+        counts[r.status || "pending"] = (counts[r.status || "pending"] || 0) + 1;
+      });
+      return Promise.resolve(counts);
     }
   };
   return api;
@@ -466,7 +494,7 @@ function supabaseStore(cfg) {
     }
   };
 
-  return attachReportApi(api, call);
+  return attachPinyinProposalApi(attachReportApi(api, call), call);
 }
 
 var REPORT_COLS = "rid,uid,email,nickname,kind,status,poem_id,poem_title,book," +
@@ -518,6 +546,52 @@ function attachReportApi(api, call) {
     var day = Number(since) - 86400000;
     return call("/reports?select=rid&uid=eq." + q(uid) + "&created_at=gt." + q(day) + "&limit=1000")
       .then(function (rows) { return (rows || []).length; });
+  };
+  return api;
+}
+
+var PINYIN_PROPOSAL_COLS = "fid,wid,line,at,ch,py,prev_py,poem_title,book,status," +
+  "proposed_by,proposed_by_name,note,created_at,updated_at,reviewed_by,reviewed_at";
+
+function pinyinProposalFilterQs(filter) {
+  var parts = [];
+  if (filter && filter.status) parts.push("status=eq." + q(filter.status));
+  if (filter && filter.wid != null) parts.push("wid=eq." + q(filter.wid));
+  if (filter && filter.line != null) parts.push("line=eq." + q(filter.line));
+  if (filter && filter.at != null) parts.push("at=eq." + q(String(filter.at)));
+  return parts.length ? "&" + parts.join("&") : "";
+}
+
+function attachPinyinProposalApi(api, call) {
+  api.putPinyinProposal = function (row) {
+    return call("/pinyin_proposals", { method: "POST", body: row, prefer: "return=minimal" }).then(function () {
+      return { fid: row.fid };
+    });
+  };
+  api.getPinyinProposal = function (fid) {
+    return call("/pinyin_proposals?fid=eq." + q(fid) + "&select=" + PINYIN_PROPOSAL_COLS + "&limit=1")
+      .then(function (rows) { return rows && rows[0] ? rows[0] : null; });
+  };
+  api.listPinyinProposals = function (filter, limit) {
+    var p = "/pinyin_proposals?select=" + PINYIN_PROPOSAL_COLS + pinyinProposalFilterQs(filter) +
+      "&order=updated_at.desc&limit=" + encodeURIComponent(String(limit || 300));
+    return call(p).then(function (rows) { return rows || []; });
+  };
+  api.patchPinyinProposal = function (fid, patch) {
+    return call("/pinyin_proposals?fid=eq." + q(fid), {
+      method: "PATCH", body: patch, prefer: "return=representation"
+    }).then(function (rows) { return rows && rows[0] ? rows[0] : null; });
+  };
+  api.countPinyinProposals = function () {
+    return call("/pinyin_proposals?select=status&limit=5000").then(function (rows) {
+      var out = { all: 0 };
+      (rows || []).forEach(function (r) {
+        out.all += 1;
+        var st = String((r && r.status) || "pending");
+        out[st] = (out[st] || 0) + 1;
+      });
+      return out;
+    });
   };
   return api;
 }

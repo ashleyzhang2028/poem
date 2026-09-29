@@ -3073,9 +3073,8 @@ html, body {
 .report-kinds {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
   gap: 6px;
-  margin: 0 0 14px;
+  margin: 0;
 }
 .report-kinds button {
   flex: none;
@@ -3104,31 +3103,25 @@ html, body {
   .report-kinds button { padding: 6px 7px; font-size: 12px; }
 }
 
-.report-quote {
-  display: flex;
-  gap: 8px;
-  align-items: flex-start;
+.report-kind-hint {
+  margin: 6px 0 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--ink-3);
+}
+
+.report-guest {
   margin: 0 0 14px;
   padding: 9px 12px;
-  border: 1px solid var(--line-2);
   border-left: 3px solid var(--gold);
-  border-radius: var(--radius-sm);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
   background: var(--bg);
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: var(--ink-2);
 }
-.report-quote[hidden] { display: none; }
-.report-quote-label {
-  flex: none;
-  font-size: 11.5px;
-  color: var(--ink-3);
-  padding-top: 2px;
-}
-.report-quote blockquote {
-  margin: 0;
-  font-size: 13.5px;
-  line-height: 1.6;
-  color: var(--ink);
-  word-break: break-word;
-}
+.report-guest[hidden] { display: none; }
+.report-guest .report-login-link { margin-left: 6px; }
 
 .report-actions { margin-top: 4px; }
 
@@ -3136,8 +3129,14 @@ html, body {
 .report-modal .account-field:last-child { margin-bottom: 0; }
 
 .report-modal .account-label {
+  position: static;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
   display: block;
-  margin-bottom: 6px;
+  margin: 0 0 6px;
   font-size: 12.5px;
   color: var(--ink-2);
 }
@@ -3192,7 +3191,8 @@ html, body {
 .report-foot {
   margin: 10px 0 0;
   text-align: center;
-  min-height: 18px;
+  font-size: 11.5px;
+  color: var(--ink-3);
 }
 
 .report-login-link {
@@ -3279,6 +3279,12 @@ html, body {
   margin: 5px 0 0;
   font-size: 11.5px;
   color: var(--ink-3);
+}
+.report-row-k {
+  margin-right: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  opacity: .8;
 }
 
 .admin-report-tools {

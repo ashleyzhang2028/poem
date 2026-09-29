@@ -58,6 +58,14 @@ chk(r1.ok && !r1.replaced, "钉下第一处勘误");
 const after = P.annotatePoem(POEM_WID, FIX_LINE, "all");
 chk(/长<rt>cháng<\/rt>/.test(after), "钉住之后「长」读 cháng");
 chk(after.indexOf("zhǎng") === -1, "这一句里不再出现 zhǎng");
+chk(!/会<rt>cháng<\/rt>/.test(after),
+  "勘误只认**那个字**：同一句里别的多音字（「会」）第 1 次出现不会被套上「长」的读音");
+
+const LONG = "长" + "天".repeat(130) + "长";
+F.add({ wid: POEM_WID, line: LONG.slice(0, F.LINE_MAX), at: 2, ch: "长", py: "cháng" });
+chk(/长<rt>cháng<\/rt><\/ruby>$/.test(P.annotatePoem(POEM_WID, LONG, "all")),
+  "超过 " + F.LINE_MAX + " 字的长段落：按截断后的那一句也能命中");
+F.remove(F.keyOf({ wid: POEM_WID, line: LONG.slice(0, F.LINE_MAX), at: 2 }));
 
 chk(P.annotatePoem("book-other", FIX_LINE, "all").indexOf("cháng") === -1,
   "**别的篇**不受影响（勘误按篇绑定，别的篇里的「长风」照旧读 zhǎng）");

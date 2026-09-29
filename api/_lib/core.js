@@ -2096,11 +2096,11 @@ function adminReportPatch(deps, input) {
     if (!me || me.status === "deleted") return err(401, "E_NO_SESSION", "还没有登录");
     if (!isAdminRole(me.role)) return err(403, "E_FORBIDDEN", "这一条只对管理员开放");
 
-    var patch = {
-      status: status,
-      updated_at: t,
-      reply: clip(input && input.reply, REPORT_LIMITS.suggestion).trim()
-    };
+    var patch = { status: status, updated_at: t };
+    // Omitted reply keeps the existing one; a status click must not erase it.
+    if (input && typeof input.reply === "string") {
+      patch.reply = clip(input.reply, REPORT_LIMITS.suggestion).trim();
+    }
 
     if (status === "accepted" || status === "fixed" || status === "rejected") {
       patch.handled_at = t;
@@ -2117,6 +2117,211 @@ function adminReportPatch(deps, input) {
         note: "这一条只改了服务端那一份。界面上的正文要**真的改源码**才算修好 —— 报告台账不是数据源。"
       });
     });
+  });
+}
+
+// ---------------------------------------------------------------------------
+// 注音勘误 · 全站生效（Issue #348）：提交 → 审核 → 生效，见 schema.sql 第 10 节。
+// ---------------------------------------------------------------------------
+
+var PINYIN_PROPOSAL_STATUSES = ["pending", "approved", "rejected", "superseded"];
+
+var PINYIN_PROPOSAL_LIMITS = { wid: 80, line: 120, ch: 1, py: 12, poemTitle: 120, book: 60, note: 500 };
+
+function pinyinProposalPublic(row) {
+  if (!row) return null;
+  return {
+    fid: String(row.fid || ""),
+    wid: String(row.wid || ""),
+    line: String(row.line || ""),
+    at: Number(row.at) || 0,
+    ch: String(row.ch || ""),
+    py: String(row.py || ""),
+    prevPy: String(row.prev_py || ""),
+    poemTitle: String(row.poem_title || ""),
+    book: String(row.book || ""),
+    status: String(row.status || "pending"),
+    proposedBy: String(row.proposed_by || ""),
+    proposedByName: String(row.proposed_by_name || ""),
+    note: String(row.note || ""),
+    createdAt: Number(row.created_at) || 0,
+    updatedAt: Number(row.updated_at) || 0,
+    reviewedBy: String(row.reviewed_by || ""),
+    reviewedAt: Number(row.reviewed_at) || 0
+  };
+}
+
+function normPinyinProposalInput(input) {
+  var wid = clip(input && input.wid, PINYIN_PROPOSAL_LIMITS.wid).trim();
+  var line = clip(input && input.line, PINYIN_PROPOSAL_LIMITS.line).trim();
+  var py = clip(input && input.py, PINYIN_PROPOSAL_LIMITS.py).trim();
+  if (!wid || !line || !py) {
+    return { bad: "E_BAD_FIX", message: "篇目 / 原句 / 读音三样缺一样都不收" };
+  }
+  var at = Number(input && input.at);
+  at = isFinite(at) && at >= 1 ? Math.round(at) : 1;
+  return {
+    wid: wid,
+    line: line,
+    at: at,
+    ch: clip(input && input.ch, PINYIN_PROPOSAL_LIMITS.ch).trim(),
+    py: py,
+    poemTitle: clip(input && input.poemTitle, PINYIN_PROPOSAL_LIMITS.poemTitle).trim(),
+    book: clip(input && input.book, PINYIN_PROPOSAL_LIMITS.book).trim()
+  };
+}
+
+function pinyinProposalSubmit(deps, input) {
+  var cfg = deps.cfg, store = deps.store, t = deps.now();
+  var gate = adminGate(deps, cfg);
+  if (gate) return Promise.resolve(gate);
+
+  var who = normPinyinProposalInput(input);
+  if (who.bad) return Promise.resolve(err(400, who.bad, who.message));
+
+  return Promise.resolve(store.getAccount(deps.account.uid)).then(function (me) {
+    if (!me || me.status === "deleted") return err(401, "E_NO_SESSION", "还没有登录");
+    if (!isAdminRole(me.role)) return err(403, "E_FORBIDDEN", "这一条只对管理员开放");
+
+    return Promise.resolve(store.listPinyinProposals({ wid: who.wid, line: who.line, at: who.at }, 10))
+      .then(function (rows) {
+        var pending = null, approved = null;
+        (rows || []).forEach(function (r) {
+          if (r.status === "pending") pending = r;
+          else if (r.status === "approved") approved = r;
+        });
+        var prevPy = approved ? String(approved.py || "") : "";
+        var name = String(me.nickname || me.email || "");
+
+        if (pending) {
+          var patch = {
+            ch: who.ch, py: who.py, prev_py: prevPy,
+            poem_title: who.poemTitle, book: who.book,
+            proposed_by: me.uid, proposed_by_name: name, updated_at: t
+          };
+          return Promise.resolve(store.patchPinyinProposal(pending.fid, patch)).then(function (row) {
+            return ok({ proposal: pinyinProposalPublic(row || Object.assign({}, pending, patch)), replaced: true,
+              note: "已更新这一条待审核的提议。" });
+          });
+        }
+
+        var row = {
+          fid: id.newPinyinProposalId(),
+          wid: who.wid, line: who.line, at: who.at, ch: who.ch, py: who.py, prev_py: prevPy,
+          poem_title: who.poemTitle, book: who.book,
+          status: "pending",
+          proposed_by: me.uid, proposed_by_name: name, note: "",
+          created_at: t, updated_at: t, reviewed_by: "", reviewed_at: null
+        };
+        return Promise.resolve(store.putPinyinProposal(row)).then(function () {
+          return ok({
+            proposal: pinyinProposalPublic(row), replaced: false,
+            note: "已提交，等待管理员审核批准；批准前全站读者仍看到" +
+              (prevPy ? "当前生效的读音（" + prevPy + "）" : "自动注音") + "。"
+          });
+        });
+      });
+  });
+}
+
+function pinyinProposalList(deps, input) {
+  var cfg = deps.cfg, store = deps.store;
+  var gate = adminGate(deps, cfg);
+  if (gate) return Promise.resolve(gate);
+
+  var status = String((input && input.status) || "pending").trim();
+  var wantStatus = status && status !== "all" ? status : "";
+  if (wantStatus && PINYIN_PROPOSAL_STATUSES.indexOf(wantStatus) < 0) {
+    return Promise.resolve(err(400, "E_STATUS", "状态只认 " + PINYIN_PROPOSAL_STATUSES.join(" / ") + "（或 all）"));
+  }
+
+  return Promise.resolve(store.getAccount(deps.account.uid)).then(function (me) {
+    if (!me || me.status === "deleted") return err(401, "E_NO_SESSION", "还没有登录");
+    if (!isAdminRole(me.role)) return err(403, "E_FORBIDDEN", "这一条只对管理员开放");
+
+    var limit = Math.max(1, Math.min(500, Number(input && input.limit) || 200));
+    var filter = wantStatus ? { status: wantStatus } : {};
+    return Promise.resolve(store.listPinyinProposals(filter, limit)).then(function (rows) {
+      return Promise.resolve(store.countPinyinProposals()).then(function (counts) {
+        return ok({ proposals: (rows || []).map(pinyinProposalPublic), counts: counts || {}, store: store.kind });
+      });
+    });
+  });
+}
+
+function pinyinProposalReview(deps, input) {
+  var cfg = deps.cfg, store = deps.store, t = deps.now();
+  var gate = adminGate(deps, cfg);
+  if (gate) return Promise.resolve(gate);
+
+  var fid = clip(input && input.fid, 64).trim();
+  if (!fid) return Promise.resolve(err(400, "E_FID", "缺 fid"));
+  var decision = String((input && input.decision) || "").trim();
+  if (["approve", "reject"].indexOf(decision) < 0) {
+    return Promise.resolve(err(400, "E_DECISION", "decision 只认 approve / reject"));
+  }
+
+  return Promise.resolve(store.getAccount(deps.account.uid)).then(function (me) {
+    if (!me || me.status === "deleted") return err(401, "E_NO_SESSION", "还没有登录");
+    if (!isAdminRole(me.role)) return err(403, "E_FORBIDDEN", "这一条只对管理员开放");
+
+    return Promise.resolve(store.getPinyinProposal(fid)).then(function (row) {
+      if (!row) return err(404, "E_NO_FIX", "没有 fid 是 " + fid + " 的那一条");
+
+      if (decision === "reject") {
+        if (["pending", "approved"].indexOf(row.status) < 0) {
+          return err(409, "E_STATE", "这一条现在是「" + row.status + "」，驳回不了");
+        }
+        var wasLive = row.status === "approved";
+        return Promise.resolve(store.patchPinyinProposal(fid, {
+          status: "rejected", reviewed_by: me.uid, reviewed_at: t, updated_at: t,
+          note: clip(input && input.note, PINYIN_PROPOSAL_LIMITS.note).trim()
+        })).then(function (updated) {
+          return ok({
+            proposal: pinyinProposalPublic(updated || row),
+            note: wasLive ? "已下线：这一处恢复为自动注音。" : "已驳回，这一条不会生效。"
+          });
+        });
+      }
+
+      if (row.status !== "pending") {
+        return err(409, "E_STATE", "这一条现在是「" + row.status + "」，只有待审核的才能批准");
+      }
+
+      return Promise.resolve(store.listPinyinProposals({ wid: row.wid, line: row.line, at: row.at, status: "approved" }, 5))
+        .then(function (siblings) {
+          var chain = Promise.resolve();
+          (siblings || []).forEach(function (s) {
+            if (s.fid === fid) return;
+            chain = chain.then(function () {
+              return store.patchPinyinProposal(s.fid, { status: "superseded", updated_at: t });
+            });
+          });
+          return chain.then(function () {
+            return Promise.resolve(store.patchPinyinProposal(fid, {
+              status: "approved", reviewed_by: me.uid, reviewed_at: t, updated_at: t
+            })).then(function (updated) {
+              return ok({
+                proposal: pinyinProposalPublic(updated || row),
+                note: "已批准，全站读者下次打开这一篇即可看到（本机缓存至多几小时后自动刷新）。"
+              });
+            });
+          });
+        });
+    });
+  });
+}
+
+function pinyinFixesPublic(deps) {
+  var store = deps.store;
+  return Promise.resolve(store.listPinyinProposals({ status: "approved" }, 5000)).then(function (rows) {
+    var list = rows || [];
+    var version = 0;
+    var fixes = list.map(function (r) {
+      version = Math.max(version, Number(r.updated_at) || 0);
+      return { wid: String(r.wid || ""), line: String(r.line || ""), at: Number(r.at) || 0, ch: String(r.ch || ""), py: String(r.py || "") };
+    });
+    return ok({ fixes: fixes, version: version, count: fixes.length });
   });
 }
 
@@ -2337,6 +2542,15 @@ module.exports = {
   normReportInput: normReportInput,
   reportPublic: reportPublic,
   reportAdmin: reportAdmin,
+
+  pinyinProposalSubmit: pinyinProposalSubmit,
+  pinyinProposalList: pinyinProposalList,
+  pinyinProposalReview: pinyinProposalReview,
+  pinyinFixesPublic: pinyinFixesPublic,
+  pinyinProposalPublic: pinyinProposalPublic,
+  PINYIN_PROPOSAL_STATUSES: PINYIN_PROPOSAL_STATUSES,
+  PINYIN_PROPOSAL_LIMITS: PINYIN_PROPOSAL_LIMITS,
+
   normGrantInput: normGrantInput,
   publicAccount: publicAccount,
   channelFacts: channelFacts,
