@@ -968,6 +968,28 @@ window.POEMS_MINGSHU = [
     excerpt: "为故乡立碑"
   },
   {
+    textRef: "mingshu-ms-442",
+    id: "ms-442",
+    title: "檀香刑",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "莫言",
+    source: "《檀香刑》",
+    excerpt: "一场酷刑与一出戏"
+  },
+  {
+    textRef: "mingshu-ms-443",
+    id: "ms-443",
+    title: "生死疲劳",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "莫言",
+    source: "《生死疲劳》",
+    excerpt: "六道轮回看人间"
+  },
+  {
     textRef: "mingshu-ms-16",
     id: "ms-16",
     title: "平凡的世界",
