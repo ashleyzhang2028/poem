@@ -292,14 +292,18 @@ chk(Math.min.apply(null, MS_PEOPLE) >= 15,
   chk(CONTEMP_5.every(t => modernInShell.has(t)),
     '这一批写的 5 部当代小说都进了列表页（缺：' +
     (CONTEMP_5.filter(t => !modernInShell.has(t)).join('、') || '无') + '）');
-  chk(BY('中国当代小说') >= 29,
-    '中国当代小说已填 29 部以上（实际 ' + BY('中国当代小说') + '）');
+  chk(BY('中国当代小说') >= 34,
+    '中国当代小说已填 34 部以上（实际 ' + BY('中国当代小说') + '）');
   const CONTEMP_10 = ['受活', '玫瑰门', '哦，香雪', '大浴女', '芙蓉镇',
     '将军吟', '冬天里的春天', '钟鼓楼', '抉择', '南渡北归'];
   chk(CONTEMP_10.every(t => modernInShell.has(t)),
     '本批写的 10 部当代小说都进了列表页（缺：' +
     (CONTEMP_10.filter(t => !modernInShell.has(t)).join('、') || '无') + '）');
-  chk(MS.length >= 167, '名著导读已交付 167 部以上（实际 ' + MS.length + '）');
+  const CONTEMP_5B = ['亮剑', '狼图腾', '暗算', '解密', '风声'];
+  chk(CONTEMP_5B.every(t => modernInShell.has(t)),
+    '本批写的 5 部当代小说都进了列表页（缺：' +
+    (CONTEMP_5B.filter(t => !modernInShell.has(t)).join('、') || '无') + '）');
+  chk(MS.length >= 172, '名著导读已交付 172 部以上（实际 ' + MS.length + '）');
 
   /* 素材全覆盖：书目表里「有素材」的那些书，壳里一条不落 */
   const BOOKS = require('../scripts/data/mingshu-books.js');

@@ -1199,6 +1199,39 @@ window.POEMS_MINGSHU = [
     excerpt: "四个女人的成长"
   },
   {
+    textRef: "mingshu-ms-486",
+    id: "ms-486",
+    title: "亮剑",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "都梁",
+    source: "《亮剑》",
+    excerpt: "狭路相逢勇者胜"
+  },
+  {
+    textRef: "mingshu-ms-489",
+    id: "ms-489",
+    title: "解密",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "麦家",
+    source: "《解密》",
+    excerpt: "一个数学天才与密码"
+  },
+  {
+    textRef: "mingshu-ms-488",
+    id: "ms-488",
+    title: "暗算",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "麦家",
+    source: "《暗算》",
+    excerpt: "听风者"
+  },
+  {
     textRef: "mingshu-ms-476",
     id: "ms-476",
     title: "受活",
@@ -1208,6 +1241,28 @@ window.POEMS_MINGSHU = [
     author: "阎连科",
     source: "《受活》",
     excerpt: "一个会绝活的村庄"
+  },
+  {
+    textRef: "mingshu-ms-487",
+    id: "ms-487",
+    title: "狼图腾",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "姜戎",
+    source: "《狼图腾》",
+    excerpt: "草原与狼"
+  },
+  {
+    textRef: "mingshu-ms-490",
+    id: "ms-490",
+    title: "风声",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "麦家",
+    source: "《风声》",
+    excerpt: "谁是老鬼"
   },
   {
     textRef: "mingshu-ms-465",
