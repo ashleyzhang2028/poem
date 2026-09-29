@@ -1,5 +1,16 @@
 window.POEMS_MINGSHU = [
   {
+    textRef: "mingshu-ms-227",
+    id: "ms-227",
+    title: "世说新语",
+    group: "中国古典小说",
+    gradeGroup: "中国古典小说",
+    dynasty: "南朝宋",
+    author: "刘义庆",
+    source: "《世说新语》",
+    excerpt: "名士的言谈与风骨"
+  },
+  {
     textRef: "mingshu-ms-03",
     id: "ms-03",
     title: "水浒传",
@@ -33,6 +44,94 @@ window.POEMS_MINGSHU = [
     excerpt: "取经路上八十一难"
   },
   {
+    textRef: "mingshu-ms-222",
+    id: "ms-222",
+    title: "封神演义",
+    group: "中国古典小说",
+    gradeGroup: "中国古典小说",
+    dynasty: "明",
+    author: "许仲琳",
+    source: "《封神演义》",
+    excerpt: "神魔斗法，子牙封神"
+  },
+  {
+    textRef: "mingshu-ms-223",
+    id: "ms-223",
+    title: "东周列国志",
+    group: "中国古典小说",
+    gradeGroup: "中国古典小说",
+    dynasty: "明",
+    author: "冯梦龙",
+    source: "《东周列国志》",
+    excerpt: "列国五百年的兴亡"
+  },
+  {
+    textRef: "mingshu-ms-229",
+    id: "ms-229",
+    title: "喻世明言",
+    group: "中国古典小说",
+    gradeGroup: "中国古典小说",
+    dynasty: "明",
+    author: "冯梦龙",
+    source: "《喻世明言》",
+    excerpt: "三言：世态人情的短篇"
+  },
+  {
+    textRef: "mingshu-ms-230",
+    id: "ms-230",
+    title: "警世通言",
+    group: "中国古典小说",
+    gradeGroup: "中国古典小说",
+    dynasty: "明",
+    author: "冯梦龙",
+    source: "《警世通言》",
+    excerpt: "三言：公案与知己之交"
+  },
+  {
+    textRef: "mingshu-ms-231",
+    id: "ms-231",
+    title: "醒世恒言",
+    group: "中国古典小说",
+    gradeGroup: "中国古典小说",
+    dynasty: "明",
+    author: "冯梦龙",
+    source: "《醒世恒言》",
+    excerpt: "三言：市井间的百态"
+  },
+  {
+    textRef: "mingshu-ms-232",
+    id: "ms-232",
+    title: "初刻拍案惊奇",
+    group: "中国古典小说",
+    gradeGroup: "中国古典小说",
+    dynasty: "明",
+    author: "凌濛初",
+    source: "《初刻拍案惊奇》",
+    excerpt: "二拍：奇闻与果报"
+  },
+  {
+    textRef: "mingshu-ms-233",
+    id: "ms-233",
+    title: "二刻拍案惊奇",
+    group: "中国古典小说",
+    gradeGroup: "中国古典小说",
+    dynasty: "明",
+    author: "凌濛初",
+    source: "《二刻拍案惊奇》",
+    excerpt: "二拍：吏治与市井"
+  },
+  {
+    textRef: "mingshu-ms-228",
+    id: "ms-228",
+    title: "隋唐演义",
+    group: "中国古典小说",
+    gradeGroup: "中国古典小说",
+    dynasty: "清",
+    author: "褚人获",
+    source: "《隋唐演义》",
+    excerpt: "隋末群雄与瓦岗英雄"
+  },
+  {
     textRef: "mingshu-ms-06",
     id: "ms-06",
     title: "聊斋志异",
@@ -42,6 +141,17 @@ window.POEMS_MINGSHU = [
     author: "蒲松龄",
     source: "《聊斋志异》",
     excerpt: "写鬼写妖，高人一等"
+  },
+  {
+    textRef: "mingshu-ms-226",
+    id: "ms-226",
+    title: "说岳全传",
+    group: "中国古典小说",
+    gradeGroup: "中国古典小说",
+    dynasty: "清",
+    author: "钱彩",
+    source: "《说岳全传》",
+    excerpt: "精忠报国的岳飞"
   },
   {
     textRef: "mingshu-ms-05",
@@ -64,6 +174,72 @@ window.POEMS_MINGSHU = [
     author: "曹雪芹",
     source: "《红楼梦》",
     excerpt: "满纸荒唐言，一把辛酸泪"
+  },
+  {
+    textRef: "mingshu-ms-224",
+    id: "ms-224",
+    title: "镜花缘",
+    group: "中国古典小说",
+    gradeGroup: "中国古典小说",
+    dynasty: "清",
+    author: "李汝珍",
+    source: "《镜花缘》",
+    excerpt: "君子国里的女儿家"
+  },
+  {
+    textRef: "mingshu-ms-225",
+    id: "ms-225",
+    title: "三侠五义",
+    group: "中国古典小说",
+    gradeGroup: "中国古典小说",
+    dynasty: "清",
+    author: "石玉昆",
+    source: "《三侠五义》",
+    excerpt: "包公案与江湖义士"
+  },
+  {
+    textRef: "mingshu-ms-234",
+    id: "ms-234",
+    title: "官场现形记",
+    group: "中国古典小说",
+    gradeGroup: "中国古典小说",
+    dynasty: "清",
+    author: "李宝嘉",
+    source: "《官场现形记》",
+    excerpt: "晚清官场的百丑图"
+  },
+  {
+    textRef: "mingshu-ms-235",
+    id: "ms-235",
+    title: "二十年目睹之怪现状",
+    group: "中国古典小说",
+    gradeGroup: "中国古典小说",
+    dynasty: "清",
+    author: "吴趼人",
+    source: "《二十年目睹之怪现状》",
+    excerpt: "九死一生的所见所闻"
+  },
+  {
+    textRef: "mingshu-ms-236",
+    id: "ms-236",
+    title: "老残游记",
+    group: "中国古典小说",
+    gradeGroup: "中国古典小说",
+    dynasty: "清末",
+    author: "刘鹗",
+    source: "《老残游记》",
+    excerpt: "一个走方郎中的游历"
+  },
+  {
+    textRef: "mingshu-ms-237",
+    id: "ms-237",
+    title: "孽海花",
+    group: "中国古典小说",
+    gradeGroup: "中国古典小说",
+    dynasty: "清末",
+    author: "曾朴",
+    source: "《孽海花》",
+    excerpt: "状元与名花的三十年"
   },
   {
     textRef: "mingshu-ms-40",

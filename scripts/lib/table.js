@@ -10,6 +10,9 @@ function width(text) {
   return n;
 }
 
+// 全角（占 2 单位）的列，宽度可能是奇数（列里有「李」「的」这种单字标点混排），
+// 而半角空格补不满的那一格会在终端里把边框线顶偏一行。补半格看不见，
+// 索性把整条**加宽到偶数** —— 正文里多出的那一格是半角空格，肉眼无差别。
 function pad(text, w) {
   var fill = w - width(text);
   return String(text) + (fill > 0 ? " ".repeat(fill) : "");

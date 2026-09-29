@@ -169,11 +169,38 @@ function shellOf(id, book, group) {
 }
 
 /* ── 主流程 ───────────────────────────────────────────────────────────── */
-/* id 的分配：上一轮那 36 部沿用原来的号（ms-01 … ms-36），
-   新书从 ms-37 起续编。已读记录、搜索索引、外链都在旧 id 上，不能动。 */
+/* id 的分配：上一轮那 36 部沿用原来的号（ms-01 … ms-36），新书从 ms-37 起续编。
+   已读记录、搜索索引、外链都在旧 id 上，不能动。
+
+   ⚠️ 一条踩过的坑（第十一轮）：原来的号是「沿着书目表走一遍、遇到没有素材的
+   就跳过、按次序接着给」——于是**往书目表中间插一部书，会让它后面所有已经
+   发过号的书统统改号**。第十一轮往「中国古典小说」组里插了 16 部，`坟`
+   就从 ms-211 变成了 ms-226，`匆匆` 从 ms-221 变成 ms-237：列表页读的是
+   `data/poems-mingshu.js`，而正文按 `textRef` 读主表，两边一起动，页面上
+   看不出来，但已读记录与外部链接会指到别人头上。
+
+   所以号改成**黏住**的：先把现有壳文件里已经发出去的号整份读进来当底册，
+   书目表里凡是在底册上的，一律沿用；只有底册上没有的（真正的新书）才从
+   「底册的最大号 + 1」往后续编。这样「往中间插书」永远不会让旧号移动。 */
+const prevPath = path.join(ROOT, 'data/poems-mingshu.js');
 const idOf = {};
 LEGACY.forEach(function (t, i) { idOf[t] = 'ms-' + String(i + 1).padStart(2, '0'); });
-let nextAuto = LEGACY.length + 1;
+let maxIssued = LEGACY.length;
+try {
+  const prevSrc = fs.readFileSync(prevPath, 'utf8');
+  const re = /title:\s*"((?:[^"\\]|\\.)*)"[\s\S]*?id:\s*"(ms-(\d+))"/g;
+  // 壳文件里 title 在前、id 在后（shellOf 的字段次序），所以逐个 {} 块取
+  prevSrc.split('\n  },').forEach(function (chunk) {
+    const t = chunk.match(/title:\s*"((?:[^"\\]|\\.)*)"/);
+    const i = chunk.match(/\bid:\s*"(ms-(\d+))"/);
+    if (!t || !i) return;
+    const title = JSON.parse('"' + t[1] + '"');
+    const num = parseInt(i[2], 10);
+    if (!(title in idOf) || parseInt(idOf[title].slice(3), 10) > num) idOf[title] = i[1];
+    if (num > maxIssued) maxIssued = num;
+  });
+} catch (e) { /* 首次生成时没有壳文件，按 LEGACY 起算 */ }
+let nextAuto = maxIssued + 1;
 function idFor(title) {
   if (idOf[title]) return idOf[title];
   idOf[title] = 'ms-' + String(nextAuto).padStart(2, '0');

@@ -54,6 +54,22 @@ add(require('./corpus/fill-modern-novels-1.js'));
 add(require('./corpus/fill-modern-novels-2.js'));
 add(require('./corpus/fill-essays-1.js'));
 
+/* ── 三、Issue #381 第十一轮：用户点名的中国古典小说 22 部 ─────────────
+   用户原话先列了 22 部书名（《三国演义》到《孽海花》），再让「按你的计划
+   继续补充」。前六部（四大名著 + 儒林外史 + 聊斋志异）上一轮已在，其余
+   十六部书目表里原本没有，这一轮按「演义 / 神魔 / 话本 / 笔记 / 侠义公案 /
+   晚清谴责」几片补进来，书目表 800 → 816 部，中国古典小说组 6 → 22 部。
+   分四册装：
+     fill-classic-1.js  世说新语 / 封神演义 / 东周列国志 / 隋唐演义 / 说岳全传 / 镜花缘
+     fill-classic-2.js  喻世明言 / 警世通言 / 醒世恒言 / 初刻拍案惊奇 / 二刻拍案惊奇
+     fill-classic-3.js  官场现形记 / 二十年目睹之怪现状 / 老残游记 / 孽海花
+     fill-classic-4.js  三侠五义（单列一册：侠义公案一类的开端，「续小五义」
+                        一类要收时接着往这一册里添） */
+add(require('./corpus/fill-classic-1.js'));
+add(require('./corpus/fill-classic-2.js'));
+add(require('./corpus/fill-classic-3.js'));
+add(require('./corpus/fill-classic-4.js'));
+
 /* 余下的书按组分册，避免单文件过大 */
 add(require('./mingshu-corpus-stub.js'));
 
