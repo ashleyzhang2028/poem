@@ -66,6 +66,105 @@ window.POEMS_MINGSHU = [
     excerpt: "满纸荒唐言，一把辛酸泪"
   },
   {
+    textRef: "mingshu-ms-40",
+    id: "ms-40",
+    title: "月牙儿",
+    group: "中国现代小说",
+    gradeGroup: "中国现代小说",
+    dynasty: "近现代",
+    author: "老舍",
+    source: "《月牙儿》",
+    excerpt: "母女两代女人的路"
+  },
+  {
+    textRef: "mingshu-ms-41",
+    id: "ms-41",
+    title: "猫城记",
+    group: "中国现代小说",
+    gradeGroup: "中国现代小说",
+    dynasty: "近现代",
+    author: "老舍",
+    source: "《猫城记》",
+    excerpt: "火星上的猫国"
+  },
+  {
+    textRef: "mingshu-ms-42",
+    id: "ms-42",
+    title: "二马",
+    group: "中国现代小说",
+    gradeGroup: "中国现代小说",
+    dynasty: "近现代",
+    author: "老舍",
+    source: "《二马》",
+    excerpt: "一对父子在伦敦"
+  },
+  {
+    textRef: "mingshu-ms-47",
+    id: "ms-47",
+    title: "林家铺子",
+    group: "中国现代小说",
+    gradeGroup: "中国现代小说",
+    dynasty: "近现代",
+    author: "茅盾",
+    source: "《林家铺子》",
+    excerpt: "一家小店的倒闭"
+  },
+  {
+    textRef: "mingshu-ms-48",
+    id: "ms-48",
+    title: "春蚕",
+    group: "中国现代小说",
+    gradeGroup: "中国现代小说",
+    dynasty: "近现代",
+    author: "茅盾",
+    source: "《春蚕》",
+    excerpt: "丰收反而成了灾"
+  },
+  {
+    textRef: "mingshu-ms-51",
+    id: "ms-51",
+    title: "湘行散记",
+    group: "中国现代小说",
+    gradeGroup: "中国现代小说",
+    dynasty: "近现代",
+    author: "沈从文",
+    source: "《湘行散记》",
+    excerpt: "沅水上写给妻子的信"
+  },
+  {
+    textRef: "mingshu-ms-54",
+    id: "ms-54",
+    title: "小城三月",
+    group: "中国现代小说",
+    gradeGroup: "中国现代小说",
+    dynasty: "近现代",
+    author: "萧红",
+    source: "《小城三月》",
+    excerpt: "一个少女的春天"
+  },
+  {
+    textRef: "mingshu-ms-57",
+    id: "ms-57",
+    title: "故都的秋",
+    group: "中国现代小说",
+    gradeGroup: "中国现代小说",
+    dynasty: "近现代",
+    author: "郁达夫",
+    source: "《故都的秋》",
+    excerpt: "梧桐叶与北国的秋"
+  },
+  {
+    textRef: "mingshu-ms-55",
+    id: "ms-55",
+    title: "沉沦",
+    group: "中国现代小说",
+    gradeGroup: "中国现代小说",
+    dynasty: "近现代",
+    author: "郁达夫",
+    source: "《沉沦》",
+    excerpt: "一个留日学生的苦闷"
+  },
+  {
     textRef: "mingshu-ms-09",
     id: "ms-09",
     title: "呐喊",
@@ -75,6 +174,28 @@ window.POEMS_MINGSHU = [
     author: "鲁迅",
     source: "《呐喊》",
     excerpt: "铁屋子里的喊声"
+  },
+  {
+    textRef: "mingshu-ms-56",
+    id: "ms-56",
+    title: "春风沉醉的晚上",
+    group: "中国现代小说",
+    gradeGroup: "中国现代小说",
+    dynasty: "近现代",
+    author: "郁达夫",
+    source: "《春风沉醉的晚上》",
+    excerpt: "夜上海的两个人"
+  },
+  {
+    textRef: "mingshu-ms-37",
+    id: "ms-37",
+    title: "彷徨",
+    group: "中国现代小说",
+    gradeGroup: "中国现代小说",
+    dynasty: "近现代",
+    author: "鲁迅",
+    source: "《彷徨》",
+    excerpt: "路正长，夜也正长"
   },
   {
     textRef: "mingshu-ms-08",
@@ -88,6 +209,17 @@ window.POEMS_MINGSHU = [
     excerpt: "四世同堂的牢笼"
   },
   {
+    textRef: "mingshu-ms-46",
+    id: "ms-46",
+    title: "子夜",
+    group: "中国现代小说",
+    gradeGroup: "中国现代小说",
+    dynasty: "近现代",
+    author: "茅盾",
+    source: "《子夜》",
+    excerpt: "上海的证券与工厂"
+  },
+  {
     textRef: "mingshu-ms-13",
     id: "ms-13",
     title: "边城",
@@ -99,6 +231,28 @@ window.POEMS_MINGSHU = [
     excerpt: "等一个人，也许永远不回来"
   },
   {
+    textRef: "mingshu-ms-53",
+    id: "ms-53",
+    title: "生死场",
+    group: "中国现代小说",
+    gradeGroup: "中国现代小说",
+    dynasty: "近现代",
+    author: "萧红",
+    source: "《生死场》",
+    excerpt: "北方农村的生与死"
+  },
+  {
+    textRef: "mingshu-ms-38",
+    id: "ms-38",
+    title: "故事新编",
+    group: "中国现代小说",
+    gradeGroup: "中国现代小说",
+    dynasty: "近现代",
+    author: "鲁迅",
+    source: "《故事新编》",
+    excerpt: "把古人拉进现代"
+  },
+  {
     textRef: "mingshu-ms-07",
     id: "ms-07",
     title: "骆驼祥子",
@@ -108,6 +262,72 @@ window.POEMS_MINGSHU = [
     author: "老舍",
     source: "《骆驼祥子》",
     excerpt: "一个车夫的堕落史"
+  },
+  {
+    textRef: "mingshu-ms-43",
+    id: "ms-43",
+    title: "春",
+    group: "中国现代小说",
+    gradeGroup: "中国现代小说",
+    dynasty: "近现代",
+    author: "巴金",
+    source: "《春》",
+    excerpt: "春天总会来"
+  },
+  {
+    textRef: "mingshu-ms-50",
+    id: "ms-50",
+    title: "长河",
+    group: "中国现代小说",
+    gradeGroup: "中国现代小说",
+    dynasty: "近现代",
+    author: "沈从文",
+    source: "《长河》",
+    excerpt: "辰河上的一条船"
+  },
+  {
+    textRef: "mingshu-ms-44",
+    id: "ms-44",
+    title: "秋",
+    group: "中国现代小说",
+    gradeGroup: "中国现代小说",
+    dynasty: "近现代",
+    author: "巴金",
+    source: "《秋》",
+    excerpt: "高家的最后一批人"
+  },
+  {
+    textRef: "mingshu-ms-52",
+    id: "ms-52",
+    title: "呼兰河传",
+    group: "中国现代小说",
+    gradeGroup: "中国现代小说",
+    dynasty: "近现代",
+    author: "萧红",
+    source: "《呼兰河传》",
+    excerpt: "祖父的园子与后花园"
+  },
+  {
+    textRef: "mingshu-ms-49",
+    id: "ms-49",
+    title: "腐蚀",
+    group: "中国现代小说",
+    gradeGroup: "中国现代小说",
+    dynasty: "近现代",
+    author: "茅盾",
+    source: "《腐蚀》",
+    excerpt: "一本日记里的堕落"
+  },
+  {
+    textRef: "mingshu-ms-39",
+    id: "ms-39",
+    title: "四世同堂",
+    group: "中国现代小说",
+    gradeGroup: "中国现代小说",
+    dynasty: "近现代",
+    author: "老舍",
+    source: "《四世同堂》",
+    excerpt: "小羊圈胡同的八年"
   },
   {
     textRef: "mingshu-ms-12",
@@ -165,6 +385,83 @@ window.POEMS_MINGSHU = [
     excerpt: "为了活着本身而活着"
   },
   {
+    textRef: "mingshu-ms-211",
+    id: "ms-211",
+    title: "坟",
+    group: "中国现代散文",
+    gradeGroup: "中国现代散文",
+    dynasty: "近现代",
+    author: "鲁迅",
+    source: "《坟》",
+    excerpt: "一面是坟，一面是路"
+  },
+  {
+    textRef: "mingshu-ms-212",
+    id: "ms-212",
+    title: "华盖集",
+    group: "中国现代散文",
+    gradeGroup: "中国现代散文",
+    dynasty: "近现代",
+    author: "鲁迅",
+    source: "《华盖集》",
+    excerpt: "横眉冷对千夫指"
+  },
+  {
+    textRef: "mingshu-ms-213",
+    id: "ms-213",
+    title: "且介亭杂文",
+    group: "中国现代散文",
+    gradeGroup: "中国现代散文",
+    dynasty: "近现代",
+    author: "鲁迅",
+    source: "《且介亭杂文》",
+    excerpt: "在租界亭子间写的"
+  },
+  {
+    textRef: "mingshu-ms-214",
+    id: "ms-214",
+    title: "两地书",
+    group: "中国现代散文",
+    gradeGroup: "中国现代散文",
+    dynasty: "近现代",
+    author: "鲁迅 / 许广平",
+    source: "《两地书》",
+    excerpt: "两个人的通信"
+  },
+  {
+    textRef: "mingshu-ms-220",
+    id: "ms-220",
+    title: "荷塘月色",
+    group: "中国现代散文",
+    gradeGroup: "中国现代散文",
+    dynasty: "近现代",
+    author: "朱自清",
+    source: "《荷塘月色》",
+    excerpt: "这一片天地是我的"
+  },
+  {
+    textRef: "mingshu-ms-221",
+    id: "ms-221",
+    title: "匆匆",
+    group: "中国现代散文",
+    gradeGroup: "中国现代散文",
+    dynasty: "近现代",
+    author: "朱自清",
+    source: "《匆匆》",
+    excerpt: "燕子去了，有再来的时候"
+  },
+  {
+    textRef: "mingshu-ms-210",
+    id: "ms-210",
+    title: "野草",
+    group: "中国现代散文",
+    gradeGroup: "中国现代散文",
+    dynasty: "近现代",
+    author: "鲁迅",
+    source: "《野草》",
+    excerpt: "我自爱我的野草"
+  },
+  {
     textRef: "mingshu-ms-10",
     id: "ms-10",
     title: "朝花夕拾",
@@ -174,6 +471,17 @@ window.POEMS_MINGSHU = [
     author: "鲁迅",
     source: "《朝花夕拾》",
     excerpt: "从百草园到三味书屋"
+  },
+  {
+    textRef: "mingshu-ms-219",
+    id: "ms-219",
+    title: "背影",
+    group: "中国现代散文",
+    gradeGroup: "中国现代散文",
+    dynasty: "近现代",
+    author: "朱自清",
+    source: "《背影》",
+    excerpt: "父亲的背影"
   },
   {
     textRef: "mingshu-ms-18",
