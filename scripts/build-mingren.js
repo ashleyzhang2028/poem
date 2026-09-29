@@ -255,7 +255,11 @@ const FOREIGN_MARK = ['古希腊', '古罗马', '古马其顿', '东罗马', '�
   '尼泊尔', '不丹', '沙特', '约旦', '也门', '阿曼', '卡塔尔', '科威特', '摩洛哥',
   '突尼斯', '利比亚', '苏丹', '埃塞俄比亚', '肯尼亚', '尼日利亚', '加纳', '刚果',
   '安哥拉', '赞比亚', '津巴布韦', '坦桑尼亚', '乌干达', '塞内加尔', '马里',
-  '塞尔柱', '奥斯曼', '拜占庭', '安纳托利亚'];
+  '塞尔柱', '奥斯曼', '拜占庭', '安纳托利亚',
+  /* 第十四轮：正则修好后，仍有一批沙俄人物只写「俄国」（词表里只有
+     「俄罗斯」），一并补齐变体 —— 漏一个词就落错卷（普希金、托尔斯泰这
+     一批就是这么进的「中国」卷）。 */
+  '俄国', '沙俄', '沙皇', '拜占廷', '鄂图曼', '大食', '天竺', '罗刹'];
 const FOREIGN_NAME = [
   '波普尔', '阿伦特', '乔姆斯基', '纳什', '陈省身', '陶哲轩',
   '海森堡', '狄拉克', '费曼', '朗道', '吴健雄', '丁肇中',
@@ -270,7 +274,10 @@ const FOREIGN_NAME = [
    现在落在**字段**上，不再靠组名暗示。 */
 function isForeignEntry(title, text) {
   if (FOREIGN_NAME.indexOf(title) >= 0) return true;
-  const dyn = (String(text || '').match(/│ 朝代 *│([^│]*)│/) || ['', ''])[1];
+  /* ⚠️ 正文「朝代」那一栏现在写的是「│ 朝代 / 国别 │」（自 Issue #381 起），
+     早先那条 `│ 朝代 *│` 认不出它 —— 于是国别整路落空、全册回落到「中国」，
+     贝多芬就这样进了中国卷（Issue #399 用户点名）。与下面的 dynastyOf() 对齐。 */
+  const dyn = (String(text || '').match(/│ 朝代(?: \/ 国别)? *│([^│]*)│/) || ['', ''])[1];
   return FOREIGN_MARK.some(function (k) { return dyn.indexOf(k) >= 0; });
 }
 
@@ -515,6 +522,10 @@ const FRESH = [];
 added.forEach(function (a) {
   const n = a.row[0];
   if (byTitle[n]) return;                 // 已在册，上面处理过了（含换组与换正文）
+  /* ⚠️ 名单里点过、但主表里已被删的人（#407 归位到帝王两卷的 6 位君主等），
+     不能再当「新开条」补回来 —— 少了这一道，`--master` 重跑一次就把它们
+     从名单里复活（主表里没有 → 走 FRESH 分支），与 #407 的口径相抵。 */
+  if (dropSet[n]) return;
   if (isPostMeijiJapanPolitical(a.group, a.row[1], a.row[3])) return;
   const rec = { title: n, group: a.group, text: withIdentity(bodyOf(a.row), a.group, n), row: a.row, replace: false };
   ROSTER.push(rec);
