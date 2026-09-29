@@ -1206,39 +1206,94 @@ body[data-nav="search"] #gw-list .empty[data-empty="idle"] { padding: 0; }
 [data-lib-view="book"] > .toolbar,
 [data-lib-view="book"] > .list { padding-left: 0; padding-right: 0; }
 
+/* 课内诗词单列一张卡，其余三组各一张分组卡 —— 分组卡里是一格一格的子入口，
+   没有介绍文字（Issue #407）。 */
+.library-solo { width: 100%; }
+
+.library-group {
+  box-sizing: border-box;
+  padding: 14px 16px 16px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--green);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow);
+}
+
+.library-group[data-group="wen"] { border-left-color: var(--gold); }
+.library-group[data-group="renwu"] { border-left-color: var(--blue); }
+.library-group[data-group="changshi"] { border-left-color: var(--ink-3); }
+
+.library-group-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.library-group-name {
+  font-family: var(--font-poem);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: .5px;
+}
+.library-group-note {
+  flex: none;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+.library-subs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.library-sub {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  box-sizing: border-box;
+  width: 100%;
+  padding: 10px 12px;
+  font: inherit;
+  font-size: inherit;
+  text-align: left;
+  cursor: pointer;
+  background: var(--green-light);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  color: inherit;
+  transition: background .18s, border-color .18s;
+}
+.library-sub:hover { background: var(--card); border-color: var(--green); }
+.library-sub:active { transform: scale(.995); }
+.library-sub-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.5;
+}
+.library-sub-count {
+  flex: none;
+  font-size: 11.5px;
+  color: var(--ink-3);
+}
+
+@media (max-width: 360px) {
+  .library-sub { padding: 9px 10px; }
+  .library-sub-name { font-size: 13px; }
+  .library-sub-count { font-size: 11px; }
+}
+
 @media (min-width: 560px) {
-  .library-grid {
-    flex-direction: row;
-    flex-wrap: wrap;
-  }
-  .library-card {
-    flex: 1 1 calc(50% - 6px);
-    max-width: calc(50% - 6px);
-  }
+  .library-subs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
 @media (min-width: 768px) {
-  .library-card {
-    flex: 1 1 calc(33.333% - 8px);
-    max-width: calc(33.333% - 8px);
-  }
-}
-
-@media (min-width: 1024px) {
-  .library-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    column-gap: 12px;
-    row-gap: 12px;
-  }
-  .library-card {
-    flex: none;
-    max-width: none;
-  }
-}
-
-@media (min-width: 1680px) {
-  .library-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .library-subs { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
 
 .library-card {
@@ -1261,9 +1316,6 @@ body[data-nav="search"] #gw-list .empty[data-empty="idle"] { padding: 0; }
   box-shadow: var(--shadow);
   transition: background .18s, border-color .18s, box-shadow .18s;
 }
-.library-card[data-book="tangshi"] { border-left-color: var(--gold); }
-.library-card[data-book="songci"] { border-left-color: var(--blue); }
-.library-card[data-book="guwen"] { border-left-color: var(--ink-3); }
 .library-card:hover { background: var(--green-light); }
 .library-card:active { transform: scale(.995); }
 
