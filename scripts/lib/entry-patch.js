@@ -91,4 +91,65 @@ function applyAll(patch, opt) {
 
 function write(src) { fs.writeFileSync(FILE, src, 'utf8'); }
 
-module.exports = { load: load, applyAll: applyAll, write: write, FILE: FILE, ROOT: ROOT };
+
+/* ==========================================================================
+   新增条目（主表里还没有的那些）
+   --------------------------------------------------------------------------
+   applyAll 只管「改已有的」，新人（历代名家第四轮一次加五百余位）没有
+   现成的条目可改 —— 需要「排到文件末尾、按同一套字段形状追加」。两个函数
+   分开是刻意的：改正与新增是两件事，混在一起出错不好定位。
+
+   字段顺序与生成文件一致：work / id / title / entries / text / translation /
+   translationSource / version。version 由内容算出（与 build-text-master.js
+   同一套 djb2 摘要），这样客户端能据它认出「这一条是新的」。
+   ========================================================================== */
+function versionOf(text, translation, src) {
+  const raw = [text, translation || '', src || ''].join('\u0001');
+  let h = 5381;
+  for (let i = 0; i < raw.length; i += 1) h = ((h * 33) ^ raw.charCodeAt(i)) >>> 0;
+  return h.toString(36);
+}
+
+function entryBlock(o) {
+  const q = function (v) { return JSON.stringify(v == null ? '' : v); };
+  return [
+    '  {',
+    '    work: ' + q(o.work || ('w-' + o.id)) + ',',
+    '    id: ' + q(o.id) + ',',
+    '    title: ' + q(o.title) + ',',
+    '    entries: [' + JSON.stringify(o.id) + '],',
+    '    text: ' + q(o.text) + ',',
+    '    translation: ' + q(o.translation) + ',',
+    '    translationSource: ' + q(o.translationSource) + ',',
+    '    version: ' + q(versionOf(o.text, o.translation, o.translationSource)),
+    '  },'
+  ].join('\n');
+}
+
+/** 把一批新条目追加到主表末尾（只加主表里没有的 id）。 */
+function insertAll(list, opt) {
+  const o = opt || {};
+  const state = load();
+  let src = fs.readFileSync(FILE, 'utf8');
+  const added = [];
+  const exists = [];
+  const blocks = [];
+  list.forEach(function (it) {
+    if (!it || !it.id) return;
+    if (state.byId[it.id]) { exists.push(it.id); return; }
+    blocks.push(entryBlock(it));
+    added.push(it.id);
+  });
+  if (!blocks.length) return { added: added, exists: exists, src: src };
+  // 主表数组的结尾从**第一行 `];`** 处找 —— 这个文件后面还有别的数组
+  // （近重复对、站点索引那一段），用 lastIndexOf 会追加到别处去。
+  const start = src.indexOf('window.TEXT_MASTER = [');
+  if (start < 0) throw new Error('找不到 window.TEXT_MASTER = [ —— 文件形状变了，脚本要跟着改');
+  const at = src.indexOf('\n];', start);
+  if (at < 0) throw new Error('主表数组的结尾（第一处「\n];」）找不到 —— 文件形状变了');
+  src = src.slice(0, at) + (src.charAt(at - 1) === ',' ? '' : ',') + '\n' +
+    blocks.join('\n') + src.slice(at);
+  return { added: added, exists: exists, src: src };
+}
+
+module.exports = { load: load, applyAll: applyAll, insertAll: insertAll, versionOf: versionOf, write: write, FILE: FILE, ROOT: ROOT };
