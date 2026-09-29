@@ -105,6 +105,8 @@ add(require('./corpus/fill-contemporary-novels-3.js'));
 add(require('./corpus/fill-contemporary-novels-4.js'));
 add(require('./corpus/fill-contemporary-novels-5.js'));
 add(require('./corpus/fill-contemporary-novels-6.js'));
+add(require('./corpus/fill-contemporary-novels-7.js'));
+add(require('./corpus/fill-contemporary-novels-8.js'));
 
 /* ── 三、Issue #381 第十一轮：用户点名的中国古典小说 22 部 ─────────────
    用户原话先列了 22 部书名（《三国演义》到《孽海花》），再让「按你的计划

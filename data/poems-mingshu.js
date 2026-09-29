@@ -990,6 +990,50 @@ window.POEMS_MINGSHU = [
     excerpt: "六道轮回看人间"
   },
   {
+    textRef: "mingshu-ms-481",
+    id: "ms-481",
+    title: "将军吟",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "莫应丰",
+    source: "《将军吟》",
+    excerpt: "一位将军的沉浮"
+  },
+  {
+    textRef: "mingshu-ms-480",
+    id: "ms-480",
+    title: "芙蓉镇",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "古华",
+    source: "《芙蓉镇》",
+    excerpt: "一个小镇的风雨"
+  },
+  {
+    textRef: "mingshu-ms-482",
+    id: "ms-482",
+    title: "冬天里的春天",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "李国文",
+    source: "《冬天里的春天》",
+    excerpt: "一个人与一段历史"
+  },
+  {
+    textRef: "mingshu-ms-478",
+    id: "ms-478",
+    title: "哦，香雪",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "铁凝",
+    source: "《哦，香雪》",
+    excerpt: "大山里的一只文具盒"
+  },
+  {
     textRef: "mingshu-ms-444",
     id: "ms-444",
     title: "透明的红萝卜",
@@ -999,6 +1043,17 @@ window.POEMS_MINGSHU = [
     author: "莫言",
     source: "《透明的红萝卜》",
     excerpt: "一个孩子的哭声"
+  },
+  {
+    textRef: "mingshu-ms-483",
+    id: "ms-483",
+    title: "钟鼓楼",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "刘心武",
+    source: "《钟鼓楼》",
+    excerpt: "一天之内的北京"
   },
   {
     textRef: "mingshu-ms-16",
@@ -1032,6 +1087,17 @@ window.POEMS_MINGSHU = [
     author: "霍达",
     source: "《穆斯林的葬礼》",
     excerpt: "一个家族与一座玉城"
+  },
+  {
+    textRef: "mingshu-ms-477",
+    id: "ms-477",
+    title: "玫瑰门",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "铁凝",
+    source: "《玫瑰门》",
+    excerpt: "三代女人的一门"
   },
   {
     textRef: "mingshu-ms-15",
@@ -1111,6 +1177,39 @@ window.POEMS_MINGSHU = [
     excerpt: "上海小姐的一生"
   },
   {
+    textRef: "mingshu-ms-484",
+    id: "ms-484",
+    title: "抉择",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "张平",
+    source: "《抉择》",
+    excerpt: "一场国企改革"
+  },
+  {
+    textRef: "mingshu-ms-479",
+    id: "ms-479",
+    title: "大浴女",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "铁凝",
+    source: "《大浴女》",
+    excerpt: "四个女人的成长"
+  },
+  {
+    textRef: "mingshu-ms-476",
+    id: "ms-476",
+    title: "受活",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "阎连科",
+    source: "《受活》",
+    excerpt: "一个会绝活的村庄"
+  },
+  {
     textRef: "mingshu-ms-465",
     id: "ms-465",
     title: "推拿",
@@ -1120,6 +1219,17 @@ window.POEMS_MINGSHU = [
     author: "毕飞宇",
     source: "《推拿》",
     excerpt: "盲人推拿师的世界"
+  },
+  {
+    textRef: "mingshu-ms-485",
+    id: "ms-485",
+    title: "南渡北归",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "岳南",
+    source: "《南渡北归》",
+    excerpt: "一代知识分子的迁徙"
   },
   {
     textRef: "mingshu-ms-211",
