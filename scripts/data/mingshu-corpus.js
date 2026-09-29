@@ -118,6 +118,27 @@ add(require('./corpus/fill-contemporary-novels-12.js'));
 add(require('./corpus/fill-contemporary-novels-13.js'));
 add(require('./corpus/fill-contemporary-novels-14.js'));
 
+/* ── Issue #381 第十四轮（批次二·续一）· 中国当代小说续填 ────────────────
+   用户原话「继续按计划完成」。这一步接着把「中国当代小说」这一组填满
+   （书目表 121 部里还缺 59 部），然后依次是诗歌、戏剧、外国文学。
+   本册 6 部：棋王 / 树王 / 孩子王 / 北方的河 / 黑骏马（张承志） / 心灵史 */
+add(require('./corpus/fill-contemporary-novels-15.js'));
+add(require('./corpus/fill-contemporary-novels-16.js'));
+add(require('./corpus/fill-contemporary-novels-17.js'));
+add(require('./corpus/fill-contemporary-novels-18.js'));
+add(require('./corpus/fill-contemporary-novels-19.js'));
+add(require('./corpus/fill-contemporary-novels-20.js'));
+add(require('./corpus/fill-contemporary-novels-21.js'));
+add(require('./corpus/fill-contemporary-novels-22.js'));
+add(require('./corpus/fill-contemporary-novels-23.js'));
+add(require('./corpus/fill-contemporary-novels-24.js'));
+add(require('./corpus/fill-contemporary-novels-25.js'));
+add(require('./corpus/fill-contemporary-novels-26.js'));
+
+/* 中国当代小说 121 部整组补齐（batch 2 第一批） */
+
+/* 中国当代小说至此整组补齐（书目表 121 部全部有素材） */
+
 /* ── 三、Issue #381 第十一轮：用户点名的中国古典小说 22 部 ─────────────
    用户原话先列了 22 部书名（《三国演义》到《孽海花》），再让「按你的计划
    继续补充」。前六部（四大名著 + 儒林外史 + 聊斋志异）上一轮已在，其余
