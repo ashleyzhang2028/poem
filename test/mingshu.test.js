@@ -335,7 +335,19 @@ chk(Math.min.apply(null, MS_PEOPLE) >= 15,
   chk(CONTEMP_DONE.every(t => modernInShell.has(t)),
     '这一批交的 ' + CONTEMP_DONE.length + ' 部当代小说都进了列表页（缺：' +
     (CONTEMP_DONE.filter(t => !modernInShell.has(t)).join('、') || '无') + '）');
-  chk(MS.length >= 363, '名著导读已交付 363 部以上（实际 ' + MS.length + '）');
+  chk(MS.length >= 377, '名著导读已交付 377 部以上（实际 ' + MS.length + '）');
+
+  /* Issue #381 第十七轮（批次五·外国文学）：外国文学这一组开张，本册交
+     英国古典与必读一批 14 部（狄更斯 5 + 勃朗特姐妹 2 + 奥斯汀 3 +
+     笛福 / 斯威夫特 / 史蒂文森 3）。守的是这一组真在涨，并逐部点名。 */
+  chk(BY('外国文学') >= 15,
+    '外国文学已填 15 部以上（实际 ' + BY('外国文学') + '）');
+  const FOREIGN_14 = ['昆虫记', '雾都孤儿', '双城记', '远大前程', '大卫·科波菲尔',
+    '圣诞颂歌', '简·爱', '呼啸山庄', '傲慢与偏见', '理智与情感', '爱玛',
+    '鲁滨逊漂流记', '格列佛游记', '金银岛', '化身博士'];
+  chk(FOREIGN_14.every(t => modernInShell.has(t)),
+    '这一批写的 14 部外国文学都进了列表页（缺：' +
+    (FOREIGN_14.filter(t => !modernInShell.has(t)).join('、') || '无') + '）');
 
   /* Issue #381 第十六轮（批次四·戏剧）：按计划「诗歌 → 戏剧 → 外国文学」，
      这一册开「中国现代戏剧」这一组（书目表 42 部，已交 1 部），本册交

@@ -188,6 +188,11 @@ add(require('./corpus/fill-drama-3.js'));
 add(require('./corpus/fill-drama-4.js'));
 add(require('./corpus/fill-drama-5.js'));
 
+/* ── Issue #381 第十七轮（批次五·外国文学）─────────────────────────────
+   「外国文学」书目表 445 部，是本轮最大的一段，按国别 / 语种分册往下填。
+   本册英国古典与必读一批 14 部。 */
+add(require('./corpus/fill-foreign-1.js'));
+
 /* 余下的书按组分册，避免单文件过大 */
 add(require('./mingshu-corpus-stub.js'));
 
