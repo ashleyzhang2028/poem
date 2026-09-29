@@ -109,6 +109,15 @@ add(require('./corpus/fill-contemporary-novels-7.js'));
 add(require('./corpus/fill-contemporary-novels-8.js'));
 add(require('./corpus/fill-contemporary-novels-9.js'));
 
+/* ── Issue #381 第十三轮（批次一）· 中国当代小说续填 ────────────────────
+   用户原话「每批 200 部，提交全部 pr 直至全部完成」。这一批 200 部里
+   当代小说占 87 部，按每册 6 部往下填。 */
+add(require('./corpus/fill-contemporary-novels-10.js'));
+add(require('./corpus/fill-contemporary-novels-11.js'));
+add(require('./corpus/fill-contemporary-novels-12.js'));
+add(require('./corpus/fill-contemporary-novels-13.js'));
+add(require('./corpus/fill-contemporary-novels-14.js'));
+
 /* ── 三、Issue #381 第十一轮：用户点名的中国古典小说 22 部 ─────────────
    用户原话先列了 22 部书名（《三国演义》到《孽海花》），再让「按你的计划
    继续补充」。前六部（四大名著 + 儒林外史 + 聊斋志异）上一轮已在，其余
