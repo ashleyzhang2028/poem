@@ -266,6 +266,19 @@ chk(Math.min.apply(null, MS_PEOPLE) >= 15,
   chk(BY('中国现代散文') >= 8, '中国现代散文已填 8 部以上（实际 ' + BY('中国现代散文') + '）');
   chk(MS.length >= 97, '名著导读已交付 97 部以上（实际 ' + MS.length + '）');
 
+  /* Issue #381 第十二轮（批次三·续五）：第 3 步「中国当代小说」按批往上填。
+     这一步书目表里共 121 部，量大，分批交；守的是**当代小说这一组真在涨**，
+     而不是只把数字报上去。这一批交了 5 部（透明的红萝卜 / 长恨歌 /
+     尘埃落定 / 穆斯林的葬礼 / 推拿），当代小说组 14 → 19 部，列表页 152 → 157。
+     点名的这 5 部必须都在列表页 —— 以后谁删掉其中任何一部，测试当场点名。 */
+  chk(BY('中国当代小说') >= 19,
+    '中国当代小说已填 19 部以上（实际 ' + BY('中国当代小说') + '）');
+  const CONTEMP_5 = ['透明的红萝卜', '长恨歌', '尘埃落定', '穆斯林的葬礼', '推拿'];
+  chk(CONTEMP_5.every(t => modernInShell.has(t)),
+    '这一批写的 5 部当代小说都进了列表页（缺：' +
+    (CONTEMP_5.filter(t => !modernInShell.has(t)).join('、') || '无') + '）');
+  chk(MS.length >= 157, '名著导读已交付 157 部以上（实际 ' + MS.length + '）');
+
   /* 素材全覆盖：书目表里「有素材」的那些书，壳里一条不落 */
   const BOOKS = require('../scripts/data/mingshu-books.js');
   const CORPUS = require('../scripts/data/mingshu-corpus.js').CORPUS;

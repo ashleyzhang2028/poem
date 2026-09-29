@@ -990,6 +990,17 @@ window.POEMS_MINGSHU = [
     excerpt: "六道轮回看人间"
   },
   {
+    textRef: "mingshu-ms-444",
+    id: "ms-444",
+    title: "透明的红萝卜",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "莫言",
+    source: "《透明的红萝卜》",
+    excerpt: "一个孩子的哭声"
+  },
+  {
     textRef: "mingshu-ms-16",
     id: "ms-16",
     title: "平凡的世界",
@@ -1010,6 +1021,17 @@ window.POEMS_MINGSHU = [
     author: "莫言",
     source: "《红高粱家族》",
     excerpt: "高密东北乡的传奇"
+  },
+  {
+    textRef: "mingshu-ms-475",
+    id: "ms-475",
+    title: "穆斯林的葬礼",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "霍达",
+    source: "《穆斯林的葬礼》",
+    excerpt: "一个家族与一座玉城"
   },
   {
     textRef: "mingshu-ms-15",
@@ -1045,6 +1067,17 @@ window.POEMS_MINGSHU = [
     excerpt: "一座城的浮世"
   },
   {
+    textRef: "mingshu-ms-461",
+    id: "ms-461",
+    title: "尘埃落定",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "阿来",
+    source: "《尘埃落定》",
+    excerpt: "一个土司的傻儿子"
+  },
+  {
     textRef: "mingshu-ms-433",
     id: "ms-433",
     title: "许三观卖血记",
@@ -1065,6 +1098,28 @@ window.POEMS_MINGSHU = [
     author: "莫言",
     source: "《丰乳肥臀》",
     excerpt: "一位母亲的百年"
+  },
+  {
+    textRef: "mingshu-ms-446",
+    id: "ms-446",
+    title: "长恨歌",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "王安忆",
+    source: "《长恨歌》",
+    excerpt: "上海小姐的一生"
+  },
+  {
+    textRef: "mingshu-ms-465",
+    id: "ms-465",
+    title: "推拿",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "毕飞宇",
+    source: "《推拿》",
+    excerpt: "盲人推拿师的世界"
   },
   {
     textRef: "mingshu-ms-211",
