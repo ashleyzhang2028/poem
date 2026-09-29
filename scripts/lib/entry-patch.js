@@ -293,8 +293,43 @@ function insertAll(list, opt) {
   return { added: added, exists: exists, src: src };
 }
 
+/** 从主表里整条删掉若干个 id（与 insertAll 相对）。
+    「删除」也要走脚本，别用手改 —— 主表是唯一一份正文，手改容易删错行、
+    或者留下半条；这一支用于「禁书剔除」这类**下架**的场景（Issue #381）：
+    书目表里删了这一部，主表里那条也得跟着走，否则会留下没人指的影子条目
+    （test/canonical.test.js 会当场抓出来）。
+    只删 id 对得上的那一个 `  {` … `  },` 块，别的一个字不动。 */
+function removeAll(ids, opt) {
+  const o = opt || {};
+  const state = load();
+  let src = fs.readFileSync(FILE, 'utf8');
+  const removed = [];
+  const missing = [];
+  (ids || []).forEach(function (id) {
+    if (!id) return;
+    if (!state.byId[id]) { missing.push(id); return; }
+    const marker = '  {\n    work: ' + JSON.stringify(state.byId[id].work || ('w-' + id)) + ',';
+    let at = src.indexOf(marker);
+    if (at < 0) at = src.indexOf('    id: ' + JSON.stringify(id) + ',');
+    if (at < 0) throw new Error('文件里找不到 ' + id + ' 那一条');
+    // 回退到这一块的 `  {` 开头
+    const blockStart = src.lastIndexOf('\n  {', at);
+    if (blockStart < 0) throw new Error(id + ' 那一条的块首找不到');
+    // 这一块的结尾：从块首往后第一处「\n  },」
+    const blockEnd = src.indexOf('\n  },', at);
+    if (blockEnd < 0) throw new Error(id + ' 那一条的块尾找不到');
+    let end = blockEnd + '\n  },'.length;
+    // 连同后面的换行一起去掉，避免留下空行
+    if (src.charAt(end) === '\n') end++;
+    src = src.slice(0, blockStart + 1) + src.slice(end);
+    removed.push(id);
+  });
+  return { removed: removed, missing: missing, src: src };
+}
+
 module.exports = {
   load: load, applyAll: applyAll, insertAll: insertAll, rehashAll: rehashAll,
+  removeAll: removeAll,
   versionOf: versionOf, versionMatches: versionMatches, identityOf: identityOf,
   write: write, FILE: FILE, ROOT: ROOT
 };

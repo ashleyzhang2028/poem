@@ -155,7 +155,61 @@ add(require('./corpus/fill-classic-2.js'));
 add(require('./corpus/fill-classic-3.js'));
 add(require('./corpus/fill-classic-4.js'));
 
+/* ── Issue #381 第十五轮（批次三）· 中国现当代诗歌 ─────────────────────
+   按计划「诗歌 → 戏剧 → 外国文学」往下填。这一组书目表 69 部，已交 1 部
+   （艾青诗选），余 68 部按每册 3—10 部往下填。 */
+add(require('./corpus/fill-poetry-1.js'));
+add(require('./corpus/fill-poetry-2.js'));
+add(require('./corpus/fill-poetry-3.js'));
+add(require('./corpus/fill-poetry-4.js'));
+add(require('./corpus/fill-poetry-5.js'));
+add(require('./corpus/fill-poetry-6.js'));
+add(require('./corpus/fill-poetry-7.js'));
+add(require('./corpus/fill-poetry-8.js'));
+add(require('./corpus/fill-poetry-9.js'));
+add(require('./corpus/fill-poetry-10.js'));
+add(require('./corpus/fill-poetry-11.js'));
+add(require('./corpus/fill-poetry-12.js'));
+add(require('./corpus/fill-poetry-13.js'));
+add(require('./corpus/fill-poetry-14.js'));
+add(require('./corpus/fill-poetry-15.js'));
+add(require('./corpus/fill-poetry-16.js'));
+add(require('./corpus/fill-poetry-17.js'));
+add(require('./corpus/fill-poetry-18.js'));
+add(require('./corpus/fill-poetry-19.js'));
+add(require('./corpus/fill-poetry-20.js'));
+
+/* ── Issue #381 第十六轮（批次四·戏剧）· 中国现代戏剧 ─────────────────
+   按计划「诗歌 → 戏剧 → 外国文学」往下填。这一组书目表 42 部，已交 1 部
+   （雷雨），余 41 部按每册 5—10 部往下填。 */
+add(require('./corpus/fill-drama-1.js'));
+
 /* 余下的书按组分册，避免单文件过大 */
 add(require('./mingshu-corpus-stub.js'));
 
-module.exports = { CORPUS: CORPUS };
+/* ── 五、国内外禁书剔除（Issue #381 · 用户原话）─────────────────────────
+   用户原话：「如果含有国内外禁书的，一律删除」。
+
+   口径：**在大陆不能公开出版、发行，或曾遭明令查禁**的图书，一律不收
+   （国内与国外同一把尺子）。下面是逐部核过的名单，连同查禁的来由记在
+   这里，免得日后有人又当漏收的补回来：
+
+     废都        贾平凹，1993 年出版后遭查禁，1997 年出删节本，
+                 长期被当作「禁书」的代表
+     心灵史      张承志，1991 年出版后因宗教内容遭限制、下架
+     晚霞消失的时候  礼平，1980 年代初受批判并停止发行
+     公开的情书  靳凡，文革后「地下文学」，长期未能正式出版
+     波动        赵振开（北岛），「地下文学」，长期未能正式出版
+     绝对信号 / 车站 / 野人   高行健的三部剧作，其作品在大陆被禁
+     古拉格群岛  索尔仁尼琴，在大陆从未正式出版
+
+   做法：书目表（mingshu-books.js）里已把这 9 部整行删去；素材库里若还
+   留着它们的旧稿，在这里统一滤掉 —— 单点剔除，不散在几个分册文件里，
+   删了哪几部一眼看得见。守卫见 test/mingshu-books.test.js「禁书」那一节。 */
+const BANNED = [
+  '废都', '心灵史', '晚霞消失的时候', '公开的情书', '波动',
+  '绝对信号', '车站', '野人', '古拉格群岛'
+];
+BANNED.forEach(function (t) { delete CORPUS[t]; });
+
+module.exports = { CORPUS: CORPUS, BANNED: BANNED };

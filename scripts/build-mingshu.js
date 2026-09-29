@@ -320,6 +320,26 @@ if (WANT_MASTER) {
        · 主表里已有的（上一轮那批）→ 定点改写
        · 主表里还没有的（这一批新书）→ 追加到主表末尾
      顺序要紧：先 append 再 applyAll —— 否则新书没有条目可改。 */
+  /* 禁书下架（Issue #381 · 用户原话「如果含有国内外禁书的，一律删除」）。
+     书目表里删了这几部，主表里对应的旧条目也要跟着走 —— 否则会留下没人
+     指的「影子条目」，test/canonical.test.js 会当场抓出来。名单与来由在
+     scripts/data/mingshu-corpus.js 的 BANNED。 */
+  const BANNED = require('./data/mingshu-corpus.js').BANNED || [];
+  const state0 = P.load();
+  const liveIds = {};
+  items.forEach(function (it) { liveIds['mingshu-' + it.id] = true; });
+  const ghosts = Object.keys(state0.byId).filter(function (id) {
+    if (liveIds[id]) return false;
+    const t = (state0.byId[id] || {}).title || '';
+    return BANNED.indexOf(t) >= 0;
+  });
+  if (ghosts.length) {
+    const del = P.removeAll(ghosts);
+    P.write(del.src);
+    console.log('✓ data/text-master.js 已下架 ' + del.removed.length + ' 条禁书：' +
+      del.removed.join('、'));
+  }
+
   const state = P.load();
   const fresh = items.filter(function (it) { return !state.byId['mingshu-' + it.id]; });
   if (fresh.length) {
