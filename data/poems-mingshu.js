@@ -1375,17 +1375,6 @@ window.POEMS_MINGSHU = [
     excerpt: "一位老部长的回忆"
   },
   {
-    textRef: "mingshu-ms-569",
-    id: "ms-569",
-    title: "公开的情书",
-    group: "中国当代小说",
-    gradeGroup: "中国当代小说",
-    dynasty: "当代",
-    author: "靳凡",
-    source: "《公开的情书》",
-    excerpt: "四封书信"
-  },
-  {
     textRef: "mingshu-ms-480",
     id: "ms-480",
     title: "芙蓉镇",
@@ -1417,28 +1406,6 @@ window.POEMS_MINGSHU = [
     author: "杨绛",
     source: "《干校六记》",
     excerpt: "下放的日子"
-  },
-  {
-    textRef: "mingshu-ms-568",
-    id: "ms-568",
-    title: "晚霞消失的时候",
-    group: "中国当代小说",
-    gradeGroup: "中国当代小说",
-    dynasty: "当代",
-    author: "礼平",
-    source: "《晚霞消失的时候》",
-    excerpt: "一代人的对话"
-  },
-  {
-    textRef: "mingshu-ms-570",
-    id: "ms-570",
-    title: "波动",
-    group: "中国当代小说",
-    gradeGroup: "中国当代小说",
-    dynasty: "当代",
-    author: "赵振开",
-    source: "《波动》",
-    excerpt: "一代青年的波动"
   },
   {
     textRef: "mingshu-ms-573",
@@ -1738,17 +1705,6 @@ window.POEMS_MINGSHU = [
     excerpt: "九龙夺嫡"
   },
   {
-    textRef: "mingshu-ms-563",
-    id: "ms-563",
-    title: "心灵史",
-    group: "中国当代小说",
-    gradeGroup: "中国当代小说",
-    dynasty: "当代",
-    author: "张承志",
-    source: "《心灵史》",
-    excerpt: "一部哲合忍耶的书写"
-  },
-  {
     textRef: "mingshu-ms-15",
     id: "ms-15",
     title: "活着",
@@ -1769,17 +1725,6 @@ window.POEMS_MINGSHU = [
     author: "陈忠实",
     source: "《白鹿原》",
     excerpt: "一个原上的两家人"
-  },
-  {
-    textRef: "mingshu-ms-438",
-    id: "ms-438",
-    title: "废都",
-    group: "中国当代小说",
-    gradeGroup: "中国当代小说",
-    dynasty: "当代",
-    author: "贾平凹",
-    source: "《废都》",
-    excerpt: "一座城的浮世"
   },
   {
     textRef: "mingshu-ms-530",
@@ -3927,28 +3872,6 @@ window.POEMS_MINGSHU = [
     excerpt: "一条胡同的四十年"
   },
   {
-    textRef: "mingshu-ms-677",
-    id: "ms-677",
-    title: "绝对信号",
-    group: "中国现代戏剧",
-    gradeGroup: "中国现代戏剧",
-    dynasty: "当代",
-    author: "高行健",
-    source: "《绝对信号》",
-    excerpt: "一次实验戏剧"
-  },
-  {
-    textRef: "mingshu-ms-678",
-    id: "ms-678",
-    title: "车站",
-    group: "中国现代戏剧",
-    gradeGroup: "中国现代戏剧",
-    dynasty: "当代",
-    author: "高行健",
-    source: "《车站》",
-    excerpt: "一群等车的人"
-  },
-  {
     textRef: "mingshu-ms-676",
     id: "ms-676",
     title: "寻找男子汉",
@@ -3958,17 +3881,6 @@ window.POEMS_MINGSHU = [
     author: "沙叶新",
     source: "《寻找男子汉》",
     excerpt: "一部话剧"
-  },
-  {
-    textRef: "mingshu-ms-679",
-    id: "ms-679",
-    title: "野人",
-    group: "中国现代戏剧",
-    gradeGroup: "中国现代戏剧",
-    dynasty: "当代",
-    author: "高行健",
-    source: "《野人》",
-    excerpt: "一部探索剧"
   },
   {
     textRef: "mingshu-ms-680",
