@@ -139,6 +139,8 @@ add(require('./corpus/fill-contemporary-novels-26.js'));
    用户点的 1 2 3 4 里第 3 步的后半段：诗歌 68 部、戏剧 44 部。 */
 add(require('./corpus/fill-poems-1.js'));
 add(require('./corpus/fill-poems-2.js'));
+add(require('./corpus/fill-poems-3.js'));
+add(require('./corpus/fill-poems-4.js'));
 
 /* 中国当代小说 121 部整组补齐（batch 2 第一批） */
 
