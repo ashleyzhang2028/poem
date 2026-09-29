@@ -148,6 +148,9 @@ add(require('./corpus/fill-poems-8.js'));
 add(require('./corpus/fill-poems-9.js'));
 add(require('./corpus/fill-poems-10.js'));
 
+/* ── Issue #381 第十四轮（批次四·戏剧）· 中国现代戏剧（整组补齐） */
+add(require('./corpus/fill-drama-1.js'));
+
 /* 中国现当代诗歌 69 部至此整组补齐 */
 
 /* 中国当代小说 121 部整组补齐（batch 2 第一批） */
