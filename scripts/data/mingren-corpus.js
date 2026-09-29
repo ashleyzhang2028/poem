@@ -25,13 +25,14 @@ const { CN_TEXT_4 } = require('./mingren-text-cn4.js');
 const { CN_TEXT_5 } = require('./mingren-text-cn5.js');
 const { CN_TEXT_6 } = require('./mingren-text-cn6.js');
 const { CN_TEXT_7 } = require('./mingren-text-cn7.js');
+const { CN_TEXT_8 } = require('./mingren-text-cn8.js');
 const { WORLD_TEXT_1 } = require('./mingren-text-world1.js');
 const { WORLD_TEXT_2 } = require('./mingren-text-world2.js');
 const { WORLD_TEXT_3 } = require('./mingren-text-world3.js');
 const { WORLD_TEXT_4 } = require('./mingren-text-world4.js');
 
 const TEXT = {};
-[CN_TEXT_1, CN_TEXT_2, CN_TEXT_3, CN_TEXT_4, CN_TEXT_5, CN_TEXT_6, CN_TEXT_7,
+[CN_TEXT_1, CN_TEXT_2, CN_TEXT_3, CN_TEXT_4, CN_TEXT_5, CN_TEXT_6, CN_TEXT_7, CN_TEXT_8,
   WORLD_TEXT_1, WORLD_TEXT_2, WORLD_TEXT_3, WORLD_TEXT_4].forEach(function (m) {
   Object.keys(m).forEach(function (k) { TEXT[k] = m[k]; });
 });

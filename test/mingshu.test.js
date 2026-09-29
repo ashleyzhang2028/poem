@@ -71,9 +71,9 @@ const MR = book('历代名家', 'POEMS_MINGREN', MINGREN_GROUPS, '家');
    总目标由 test/mingshu-books.test.js 守。 */
 chk(MS.length >= 19, '名著导读已交付至少 19 部（实际 ' + MS.length + '）');
 chk(MS.length <= 1614, '名著导读不超过书目表总数 1614 部（实际 ' + MS.length + '）');
-chk(MR.length === 649, '历代名家共 649 位（实际 ' + MR.length + '）');
-chk(MR.filter(p => p.gradeGroup.indexOf('外国') === 0).length === 289,
-  '外国名家 289 位（上一轮只有 14 位 —— 用户要求「扩充 10 倍」；实际 ' +
+chk(MR.length === 677, '历代名家共 677 位（实际 ' + MR.length + '）');
+chk(MR.filter(p => p.gradeGroup.indexOf('外国') === 0).length === 292,
+  '外国名家 292 位（上一轮只有 14 位 —— 用户要求「扩充 10 倍」；实际 ' +
   MR.filter(p => p.gradeGroup.indexOf('外国') === 0).length + '）');
 
 /* 名著导读：四个必修项（背景 / 情节 / 人物 / 主旨）一条都不能少，
@@ -194,10 +194,10 @@ const NEW_SPOT = [
   ['管子', '仓廪实'], ['玄奘', '大唐西域记'], ['慧能', '坛经'],
   ['程颢', '识仁'], ['陆九渊', '吾心'], ['李贽', '童心'],
   ['顾准', '经验主义'], ['梁漱溟', '东西文化'],
-  ['苏格拉底', '认识你自己'], ['斯宾诺莎', '伦理学'], ['维特根斯坦', '语言游戏'],
+  ['苏格拉底', '一无所知'], ['斯宾诺莎', '伦理学'], ['维特根斯坦', '语言游戏'],
   ['海德格尔', '存在与时间'], ['波伏娃', '第二性'], ['加缪', '荒诞'],
   ['高斯', '数学王子'], ['麦克斯韦', '电磁'], ['门捷列夫', '周期律'],
-  ['诺贝尔', '诺贝尔奖'], ['冯·诺依曼', '存储程序'], ['霍金', '黑洞']
+  ['诺贝尔', '诺贝尔奖'], ['冯·诺依曼', '普林斯顿'], ['霍金', '黑洞']
 ];
 const NEW_MISS = NEW_SPOT.filter(r => !mrByName[r[0]]).map(r => r[0]);
 chk(NEW_MISS.length === 0,
@@ -286,6 +286,22 @@ MR_SPOT3.forEach(row => {
   chk(!!p && (p.text || '').indexOf(row[1]) >= 0,
     row[0] + ' 一条里写到了「' + row[1] + '」');
 });
+
+/* 一行一人的完整性：正文里的「姓名」那一行必须与标题一致。
+   这一条是给批量生成器兜底的 —— id 与正文的配对错位过一次（新人与并行那一轮
+   的旧号撞号），表里看不出、列表上看不出，只有把每一行读出来才对得上。 */
+(function () {
+  const bad = MR.filter(p => {
+    const line = (p.text || '').split('\n').find(l => l.indexOf('姓名') >= 0);
+    if (!line) return false;
+    const cells = line.split('│');
+    const name = cells.length > 2 ? cells[2].trim() : '';
+    return name && name !== p.title;
+  });
+  chk(bad.length === 0,
+    '历代名家每一条正文里的「姓名」与标题一致（错位：' +
+    (bad.slice(0, 5).map(p => p.title).join('、') || '无') + '）');
+})();
 
 /* 一人一处：每一位只在一个分组里（同一人不得出现两次） */
 (function () {
