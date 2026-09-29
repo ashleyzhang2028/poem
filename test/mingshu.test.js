@@ -54,28 +54,27 @@ const MINGSHU_GROUPS = [
 // Issue #381 第六轮：「军事家」组照旧留着（在册 7 位：孙武 / 孙膑 / 韩信 /
 // 诸葛亮 / 李靖 / 岳飞 / 戚继光）—— 用户这一轮删的是明治维新以后的日本政治 /
 // 军事人物，不是军事家这一组；中国兵家与外国名将都还在。
+// Issue #381 第八轮（本轮）：用户原话「将外国和中国的各个家合并，不区分
+// 中国外国两大类，按时间顺序排列」—— 二十五组并成十五个**行当组**：
+// 原来那几个「外国 ××家」组改回通用组名，中外一位同组；组名里不再带国别。
 const MINGREN_GROUPS = [
-  // 中国：文学与思想
   '政治家', '文学家', '史学家', '思想家', '哲学家', '军事家',
-  // 中国：艺术
   '书法家', '画家', '戏曲家', '音乐家',
-  // 中国：专门之学
-  '科学家', '医学家', '天文地理学家', '生物学家', '建筑家',
-  // 外国：按学科
-  '外国数学家', '外国物理学家', '外国化学家',
-  '外国生物学家', '外国天文学家', '外国医学家',
-  '外国文学家', '外国艺术家', '外国建筑家',
-  '外国名人'
+  '科学家', '医学家', '天文地理学家', '生物学家', '建筑家'
 ];
 
 const MS = book('名著导读', 'POEMS_MINGSHU', MINGSHU_GROUPS, '部');
 const MR = book('历代名家', 'POEMS_MINGREN', MINGREN_GROUPS, '家');
 
-/* ── 排序：Issue #381 第七轮 · 用户原话 ────────────────────────────────
-   「所有类别的名家按出生时间顺序排序。名著也按时间顺序排序。」
-   两组守：历代名家**每组内**按生年升序；名著**每组内**按成书 / 出版年升序。
-   生年/年份都从壳里的 source 取不出时按 build 脚本同一套口径算，这里只
-   验「相邻两条不倒挂」——同一年的（如王翦与廉颇同记「约前 3 世纪」）放过。 */
+/* ── 排序：Issue #381 第七、八轮 · 用户原话 ─────────────────────────────
+   第七轮：「所有类别的名家按出生时间顺序排序。名著也按时间顺序排序。」
+   第八轮：「将外国和中国的各个家合并，不区分中国外国两大类，按时间顺序排列。」
+
+   所以历代名家守的是**整册一条时间线**（不是「组内各排各的」）—— 上一轮
+   按组排，组界一换就把时间线剪断一次，全册有 24 处倒挂（曼德拉 1918 后面
+   直接跟屈原 −340）。这一轮的断言是：相邻两条，后一位的出生年不得早于
+   前一位。生年由主表正文的「生卒」行按 build 脚本同一套口径算。
+   名著仍是**每组内**按成书 / 出版年升序（用户这一轮只点了名家要合并）。 */
 const LY = require('../scripts/lib/life-year.js');
 const MYEARS = require('../scripts/data/mingshu-years.js');
 
@@ -113,9 +112,20 @@ function mrLife(p) {
   const m = String(t).match(/│ 生卒 *│([^│]*)│/);
   return m ? m[1].trim() : '';
 }
-const mrBad = orderViolations(MR, p => LY.birthYearOf(mrLife(p)).year);
-chk(mrBad.length === 0,
-  '历代名家每组按出生时间排序（倒挂：' + (mrBad.join('、') || '无') + '）');
+(function () {
+  const bad = [];
+  for (let i = 1; i < MR.length; i++) {
+    const a = LY.birthYearOf(mrLife(MR[i - 1])).year;
+    const b = LY.birthYearOf(mrLife(MR[i])).year;
+    if (a == null || b == null) continue;
+    if (b < a) {
+      bad.push(MR[i - 1].title + '（' + a + '）→ ' + MR[i].title + '（' + b + '）');
+    }
+  }
+  chk(bad.length === 0,
+    '历代名家**整册**按出生时间排序，中外一位同一条时间线（倒挂：' +
+    (bad.slice(0, 5).join('、') || '无') + '）');
+})();
 
 const msBad = orderViolations(MS, p => MYEARS.yearOf(p.title, p.dynasty));
 chk(msBad.length === 0,
@@ -134,12 +144,7 @@ chk(MS.length <= 1614, '名著导读不超过书目表总数 1614 部（实际 '
    的口径删掉 44 位。这里守**结构**：每一组都得真厚起来，而不只是追总数。 */
 const MR_BY_GROUP = {};
 MR.forEach(p => { MR_BY_GROUP[p.group] = (MR_BY_GROUP[p.group] || 0) + 1; });
-const MR_CN = MR.filter(p => p.gradeGroup.indexOf('外国') !== 0);
-const MR_WORLD = MR.filter(p => p.gradeGroup.indexOf('外国') === 0);
 chk(MR.length === 706, '历代名家共 706 位（实际 ' + MR.length + '）');
-chk(MR_WORLD.length === 290,
-  '外国名家 290 位（上一轮只有 14 位 —— 用户要求「扩充 10 倍」；实际 ' +
-  MR_WORLD.length + '）');
 /* Issue #381 第六轮：新开「政治家」一组，军事家覆盖中外 */
 chk((MR_BY_GROUP['政治家'] || 0) >= 30,
   '政治家补到 30 位以上（实际 ' + (MR_BY_GROUP['政治家'] || 0) + '）');
@@ -149,13 +154,26 @@ chk((MR_BY_GROUP['思想家'] || 0) >= 30,
   '思想家补到 30 位以上（实际 ' + (MR_BY_GROUP['思想家'] || 0) + '）');
 chk((MR_BY_GROUP['哲学家'] || 0) >= 30,
   '哲学家补到 30 位以上（实际 ' + (MR_BY_GROUP['哲学家'] || 0) + '）');
-chk((MR_BY_GROUP['外国名人'] || 0) >= 30,
-  '外国名人补到 30 位以上（实际 ' + (MR_BY_GROUP['外国名人'] || 0) + '）');
-/* 组数：中国十五 + 外国十 = 二十五组 */
-chk(new Set(MR.map(p => p.group)).size === 25,
-  '历代名家分二十五组（实际 ' + new Set(MR.map(p => p.group)).size + '）');
-chk(MR_CN.filter(p => p.group.indexOf('外国') === 0).length === 0,
-  '中国条目不得落进外国那几组');
+/* Issue #381 第八轮：中外合并 —— 组名里不得再有「外国」「（中国）」这类
+   国别字样，也不得再出现上一版那几个「外国 ××家」组名。 */
+const OLD_FOREIGN_GROUPS = ['外国数学家', '外国物理学家', '外国化学家',
+  '外国生物学家', '外国天文学家', '外国医学家', '外国文学家',
+  '外国艺术家', '外国建筑家', '外国名人'];
+chk(MR.every(p => OLD_FOREIGN_GROUPS.indexOf(p.group) < 0),
+  '上一版那十个「外国 ××家」组已经并掉（残留：' +
+  (MR.filter(p => OLD_FOREIGN_GROUPS.indexOf(p.group) >= 0)
+    .map(p => p.group + ' ' + p.title).slice(0, 5).join('、') || '无') + '）');
+chk(MR.every(p => p.group.indexOf('外国') < 0 && p.group.indexOf('（中国）') < 0),
+  '组名里不再带国别（「外国」「（中国）」）');
+/* 组数：十五个行当组（上一版二十五组 = 中国十五 + 外国十，已合并） */
+chk(new Set(MR.map(p => p.group)).size === 15,
+  '历代名家分十五个行当组（实际 ' + new Set(MR.map(p => p.group)).size + '）');
+/* 每一组都是「中外同组」—— 这就是「合并」这件事的效果 */
+const MIXED_OK = MR.filter(p => p.gradeGroup === '文学家' || p.gradeGroup === '科学家' ||
+  p.gradeGroup === '政治家' || p.gradeGroup === '军事家' || p.gradeGroup === '哲学家');
+chk(MIXED_OK.length >= 400,
+  '中外同组的组已经真的合起来（文学家 / 科学家 / 政治家 / 军事家 / ' +
+  '哲学家五组共 ' + MIXED_OK.length + ' 位）');
 
 /* 名著导读：四个必修项（背景 / 情节 / 人物 / 主旨）一条都不能少，
    而且不许一句话敷衍 —— 用户原话「不要过分简略」。 */
@@ -273,7 +291,7 @@ chk(JP_POL_MIL.length === 0,
   (JP_POL_MIL.map(p => p.title).join('、') || '无') + '）');
 
 const JP_ALL = MR.filter(p => /日本/.test(p.dynasty || ''));
-chk(JP_ALL.length === 4 && JP_ALL.every(p => p.gradeGroup === '外国文学家'),
+chk(JP_ALL.length === 4 && JP_ALL.every(p => p.gradeGroup === '文学家'),
   '在册的日本人物只剩 4 位文学家（川端康成 / 夏目漱石 / 芥川龙之介 / ' +
   '三岛由纪夫）—— 作家不在「政治 / 军事人物」的尺子内（实际：' +
   (JP_ALL.map(p => p.title + '（' + p.gradeGroup + '）').join('、') || '无') + '）');
@@ -349,10 +367,13 @@ NEW_SPOT.forEach(r => {
 // Issue #381 后续：徐霞客从「生物学家」移到「天文地理学家」
 // （用户原话「徐霞客应该从生物学家移到天文地理学家」），
 // 生物学家由 5 位减为 4 位，下限随之下调。
-[['书法家', 15], ['画家', 30], ['天文地理学家', 7], ['生物学家', 4],
- ['外国数学家', 20], ['外国物理学家', 12], ['外国化学家', 14],
- ['外国生物学家', 12], ['外国天文学家', 8], ['外国医学家', 8],
- ['外国文学家', 80], ['外国艺术家', 60], ['外国建筑家', 8]].forEach(row => {
+/* Issue #381 第八轮：上一版那九个「外国 ××家」组已并回行当组
+   （数学家 → 科学家、艺术家 → 画家、文学家 → 文学家……），所以这里
+   守的不再是「外国那几组各有多少」，而是**合并之后每个行当组的规模**：
+   上一轮中外两组相加的数字，就是这一轮各组的下限。 */
+[['书法家', 15], ['画家', 100], ['天文地理学家', 9], ['生物学家', 15],
+ ['科学家', 80], ['医学家', 12], ['文学家', 200], ['建筑家', 16],
+ ['哲学家', 45], ['军事家', 50], ['政治家', 40]].forEach(row => {
   const n = MR.filter(p => p.gradeGroup === row[0]).length;
   chk(n >= row[1], '新增的「' + row[0] + '」组有 ' + n + ' 位（≥' + row[1] + '）');
 });

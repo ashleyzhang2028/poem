@@ -57,22 +57,64 @@ const MIL      = require('./data/mingren-military.js');  // 第六轮：军事�
 const OLD      = require('./data/mingren-new.js');       // 第四轮：文学 / 思想 / 哲学
 const AXIS     = require('./data/mingren-axis.js');      // 第七轮：德 / 意 政治与军事
 
-/* ── 分组次序：与 js/mingren.js 的 MINGREN_GROUP_ORDER 一字不差 ─────────
-   中国在前、外国在后，各自内部「文学与思想 → 艺术 → 专门之学」。 */
+/* ── 分组：十五个行当，不分中国 / 外国两类 ──────────────────────────────
+   用户原话（Issue #381 · 本轮）：「将外国和中国的各个家合并，不区分中国
+   外国两大类，按时间顺序排列。」
+
+   所以上一版那二十五组（中国十五 + 外国十）并成十五组：组就是**行当**，
+   中外一位同组。原来那几个「外国 ××家」组改回通用组名，中国那几组的
+   「（中国）」括注也一并去掉 —— 名字里不该再带国别。
+
+   组与组的先后只是**版面上**的次序（列表页一段一段摊开），一位归哪一组
+   看的是「世所公认的第一身份」；**整个册子的次序是出生时间**，不是组。 */
 const GROUP_ORDER = [
   '政治家', '文学家', '史学家', '思想家', '哲学家', '军事家',
-  // 中国：艺术
   '书法家', '画家', '戏曲家', '音乐家',
-  // 中国：专门之学
-  '科学家', '医学家', '天文地理学家', '生物学家', '建筑家',
-  // 外国：按学科
-  '外国数学家', '外国物理学家', '外国化学家', '外国生物学家', '外国天文学家',
-  '外国医学家', '外国文学家', '外国艺术家', '外国建筑家',
-  '外国名人'
+  '科学家', '医学家', '天文地理学家', '生物学家', '建筑家'
 ];
 
+/* 组名映射：上一版的分组 → 本轮的分组（合并中外，去「外国」「（中国）」前缀）。
+   只在**能唯一定位**时才映射；映射表管不到的（「外国名人」）由下面的
+   SCIENCE_OF_NAME 按人名认回各科。 */
+const GROUP_MERGE = {
+  '外国数学家': '科学家',
+  '外国物理学家': '科学家',
+  '外国化学家': '科学家',
+  '外国生物学家': '生物学家',
+  '外国天文学家': '天文地理学家',
+  '外国医学家': '医学家',
+  '外国文学家': '文学家',
+  '外国艺术家': '画家',
+  '外国建筑家': '建筑家'
+};
+
+/* 「外国名人」拆回各科：这一组是上一轮留下的筐（数学 / 物理 / 化学 / 生物 /
+   天文 / 医学 / 工程各科的人都在里面）。合并中外时按人名一一认回各科 ——
+   认的是「他的第一身份是哪一科」，写在下面这张表里，而不是按朝代栏猜。
+   不在表里的（真·跨行业的名人）落「科学家」。 */
+const SCIENCE_OF_NAME = {
+  // 数学家
+  '欧拉': '科学家', '高斯': '科学家',
+  // 物理学家
+  '牛顿': '科学家', '法拉第': '科学家', '焦耳': '科学家', '开尔文': '科学家',
+  '麦克斯韦': '科学家', '伦琴': '科学家', '普朗克': '科学家', '爱因斯坦': '科学家',
+  '玻尔': '科学家', '费米': '科学家', '图灵': '科学家', '杨振宁': '科学家', '霍金': '科学家',
+  // 化学家
+  '道尔顿': '科学家', '拉瓦锡': '科学家', '门捷列夫': '科学家', '居里夫人': '科学家',
+  // 生物学家
+  '达尔文': '生物学家', '孟德尔': '生物学家', '巴斯德': '生物学家', '林奈': '生物学家',
+  '哈维': '生物学家', '波特': '生物学家',
+  // 医学家
+  '盖伦': '医学家',
+  // 发明家 / 工程
+  '富兰克林': '科学家', '莫尔斯': '科学家', '诺贝尔': '科学家',
+  '贝尔': '科学家', '莱特兄弟': '科学家', '冯·诺依曼': '科学家'
+};
+
 /* 本轮名单：分组 → 行。同一名字出现两次即报错（一人一处）。
-   ⚠️ 顺序即「组内次序」：已在册的按旧号排，本轮新开的按这里给的次序排。 */
+   ⚠️ 本轮起「组内次序」不再由这张表决定 —— 整个册子按出生时间排
+   （见下面的 sortByBirth）。这里给的组名仍有效：它是新开条归哪一组、
+   以及换组的唯一入口。 */
 const PLAN = [
   { group: '政治家', rows: POL.TP_CN },
   { group: '政治家', rows: POL.TP_WORLD },
@@ -183,7 +225,9 @@ mrOf.forEach(function (m) { byTitle[m.title] = m; });
 const seenName = {};
 const added = [];
 PLAN.forEach(function (plan) {
-  if (GROUP_ORDER.indexOf(plan.group) < 0) {
+  /* PLAN 里给的组名是**上一版**的叫法（「外国名人」等），合并映射之后
+     才能对 GROUP_ORDER 比对 —— 认的仍是这一张表，不另开一份名单。 */
+  if (GROUP_ORDER.indexOf(groupOf(plan.group, plan.rows[0] && plan.rows[0][0])) < 0) {
     problems.push('分组不在 GROUP_ORDER：' + plan.group);
     return;
   }
@@ -239,12 +283,8 @@ const kept = [];
 mrOf.forEach(function (m) {
   if (dropSet[m.title]) return;
   const a = REPLAN[m.title];
-  const group = NAME_GROUP[m.title];
+  const group = groupOf(NAME_GROUP[m.title], m.title);
   if (!group) { problems.push(m.title + ' 没有分组（壳里也没记）'); return; }
-  if (GROUP_ORDER.indexOf(group) < 0) {
-    problems.push(m.title + ' 的分组不在 GROUP_ORDER：' + group);
-    return;
-  }
   if (isPostMeijiJapanPolitical(group, dynastyOf(m.text), lifeOf(m.text))) return;
   kept.push({
     title: m.title, group: group, oldId: m.id,
@@ -260,6 +300,20 @@ kept.sort(function (a, b) {
   return parseInt(a.oldId.slice(3), 10) - parseInt(b.oldId.slice(3), 10);
 });
 kept.forEach(function (r) { ROSTER.push(r); });
+
+/* 分组归一：中国那几组「（中国）」括注去掉之后与通用组同名；
+   外国那几组按 GROUP_MERGE 并回行当组。
+   —— 这是「合并中外」这件事的**落点**，见上面的 GROUP_ORDER 说明。 */
+function groupOf(g, name) {
+  if (!g) return g;
+  if (GROUP_MERGE[g]) return GROUP_MERGE[g];
+  if (GROUP_ORDER.indexOf(g) >= 0) return g;
+  /* 「外国名人」这一组里是数学 / 物理 / 化学 / 生物 / 天文 / 医学各科的人，
+     拆回各科要按人名一一认（认的是「第一身份是哪一科」），认不出的按「科学家」。
+     表见上面的 SCIENCE_OF_NAME。 */
+  if (g === '外国名人') return SCIENCE_OF_NAME[name] || '科学家';
+  return g;
+}
 
 /* ② 本轮新开条的：正文算出来，次序照 PLAN 给的 */
 const FRESH = [];
@@ -278,7 +332,7 @@ const ROSTER_NAME = {};
 ROSTER.forEach(function (r) { ROSTER_NAME[r.title] = true; });
 PEOPLE.forEach(function (p) {
   if (ROSTER_NAME[p.name] || dropSetEarly[p.name]) return;
-  const group = p.group || GROUP_ORDER[1];
+  const group = groupOf(p.group || GROUP_ORDER[1], p.name);
   if (GROUP_ORDER.indexOf(group) < 0) {
     problems.push('素材表的 ' + p.name + ' 分组不在 GROUP_ORDER：' + group);
     return;
@@ -300,25 +354,33 @@ function bodyOf2(p) {
   return bodyOf(r);
 }
 
-/* ── 按出生时间排（Issue #381 · 用户原话）────────────────────────────────
-   「所有类别的名家按出生时间顺序排序。」
+/* ── 按出生时间排（Issue #381 · 本轮用户原话）──────────────────────────
+   「将外国和中国的各个家合并，不区分中国外国两大类，按时间顺序排列。」
 
-   组与组的先后照 GROUP_ORDER（中国在前、外国在后，各组内部再按生年）。
-   组内一律按**生年**升序；生年无从考的用 scripts/lib/life-year.js 的
-   粗估键（卒年回推 / 世纪折中），仍排不出的一律沉到该组末尾，且保持
-   原有相对次序（Array#sort 在现代 V8 上稳定）。
-   生年相同的（如王翦与廉颇同记「约前 3 世纪」）按现有次序，不动。 */
+   上一版是「先分组、组内按生年」—— 那还是把中外分成两摞（中国十五组
+   在前、外国十组在后），一位唐代诗人与一位同时期的外国诗人隔着几百行。
+   本轮**整个册子一条时间线**：梭伦挨着管仲，康德挨着戴震，谁生在先谁在前。
+
+   生年取主表正文的「生卒」行，交给 scripts/lib/life-year.js 出一个可比较
+   的数值键（生年不详的用卒年回推 / 世纪折中）。键相同的（如王翦与廉颇同记
+   「约前 3 世纪」）按上一版的名次定序 —— 不随机、每次跑出来一样。 */
+const PREV_RANK = {};
+mrOf.forEach(function (m, i) { PREV_RANK[m.title] = i; });
+
 (function sortByBirth() {
   const birthOf = {};
-  ROSTER.forEach(function (rec) {
+  ROSTER.forEach(function (rec, i) {
     const life = rec.row ? rec.row[3] : lifeOf(rec.text);
     birthOf[rec.title] = LY.birthYearOf(life);
+    if (PREV_RANK[rec.title] == null) PREV_RANK[rec.title] = 10000 + i;
   });
   ROSTER.sort(function (a, b) {
+    const c = LY.compareBirth(birthOf[a.title], birthOf[b.title]);
+    if (c) return c;
+    /* 同年（或同年粗估）的：组名先排（版面上同类相邻），再按上一版名次 */
     const ga = GROUP_ORDER.indexOf(a.group), gb = GROUP_ORDER.indexOf(b.group);
     if (ga !== gb) return ga - gb;
-    const c = LY.compareBirth(birthOf[a.title], birthOf[b.title]);
-    return c;
+    return PREV_RANK[a.title] - PREV_RANK[b.title];
   });
 })();
 

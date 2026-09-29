@@ -37,9 +37,11 @@ vm.createContext(sb);
 loadData(sb, ['data/poems-mingren.js']);
 
 const MR = resolve(sb, sb.POEMS_MINGREN, '历代名家');
+/* Issue #381 第八轮：二十五组并成十五个行当组（中外合并）。 */
 const MR_GROUPS = [
   '政治家', '文学家', '史学家', '思想家', '哲学家', '军事家',
-  '科学家', '医学家', '音乐家', '建筑家', '戏曲家', '外国名人'
+  '书法家', '画家', '戏曲家', '音乐家',
+  '科学家', '医学家', '天文地理学家', '生物学家', '建筑家'
 ];
 
 /* ── 一、违禁词 ──────────────────────────────────────────────────────── */
@@ -213,6 +215,29 @@ MR_GROUPS.forEach(g => {
   const n = MR.filter(p => p.gradeGroup === g).length;
   chk(n > 0, '分组铺到：' + g + ' 有 ' + n + ' 位');
 });
+/* Issue #381 第八轮：用户原话「将外国和中国的各个家合并，不区分中国外国
+   两大类，按时间顺序排列」。两条断言：
+     ① 组名里不再带国别（上一版那十个「外国 ××家」组已经并掉）；
+     ② 整册一条时间线 —— 相邻两条，后一位的出生年不得早于前一位
+        （上一轮按组排，全册有 24 处倒挂，这一条就是给那件事兜底的）。 */
+chk(MR.every(p => p.group.indexOf('外国') < 0 && p.group.indexOf('（中国）') < 0),
+  '组名里不再带国别（「外国」「（中国）」）');
+chk(new Set(MR.map(p => p.group)).size === 15,
+  '历代名家分十五个行当组（实际 ' + new Set(MR.map(p => p.group)).size + '）');
+(function () {
+  const LY = require('../scripts/lib/life-year.js');
+  const lifeOf = p => ((String(p.text).match(/│ 生卒 *│([^│]*)│/) || ['', ''])[1]).trim();
+  const bad = [];
+  for (let i = 1; i < MR.length; i++) {
+    const a = LY.birthYearOf(lifeOf(MR[i - 1])).year;
+    const b = LY.birthYearOf(lifeOf(MR[i])).year;
+    if (a == null || b == null) continue;
+    if (b < a) bad.push(MR[i - 1].title + ' → ' + MR[i].title);
+  }
+  chk(bad.length === 0,
+    '历代名家整册按出生时间排序、中外同一条时间线（倒挂：' +
+    (bad.slice(0, 5).join('、') || '无') + '）');
+})();
 chk(MR.length >= 280, '历代名家不少于 280 位（实际 ' + MR.length + '）');
 chk((MR.filter(p => p.gradeGroup === '政治家').length) >= 30,
   '政治家不少于 30 位（实际 ' + MR.filter(p => p.gradeGroup === '政治家').length + '）');
