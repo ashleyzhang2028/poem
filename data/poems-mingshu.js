@@ -3982,6 +3982,105 @@ window.POEMS_MINGSHU = [
     excerpt: "一个眷村的故事"
   },
   {
+    textRef: "mingshu-ms-20",
+    id: "ms-20",
+    title: "鲁滨逊漂流记",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "英国",
+    author: "笛福",
+    source: "《鲁滨逊漂流记》",
+    excerpt: "一个人在岛上过二十八年"
+  },
+  {
+    textRef: "mingshu-ms-19",
+    id: "ms-19",
+    title: "格列佛游记",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "英国",
+    author: "斯威夫特",
+    source: "《格列佛游记》",
+    excerpt: "小人国、大人国与慧骃国"
+  },
+  {
+    textRef: "mingshu-ms-28",
+    id: "ms-28",
+    title: "傲慢与偏见",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "英国",
+    author: "简·奥斯汀",
+    source: "《傲慢与偏见》",
+    excerpt: "第一印象常常是靠不住的"
+  },
+  {
+    textRef: "mingshu-ms-916",
+    id: "ms-916",
+    title: "雾都孤儿",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "英国",
+    author: "狄更斯",
+    source: "《雾都孤儿》",
+    excerpt: "孤儿在雾都问路"
+  },
+  {
+    textRef: "mingshu-ms-25",
+    id: "ms-25",
+    title: "简·爱",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "英国",
+    author: "夏洛蒂·勃朗特",
+    source: "《简·爱》",
+    excerpt: "我们的精神是平等的"
+  },
+  {
+    textRef: "mingshu-ms-920",
+    id: "ms-920",
+    title: "呼啸山庄",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "英国",
+    author: "艾米莉·勃朗特",
+    source: "《呼啸山庄》",
+    excerpt: "一场跨越两代的爱与复仇"
+  },
+  {
+    textRef: "mingshu-ms-31",
+    id: "ms-31",
+    title: "大卫·科波菲尔",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "英国",
+    author: "狄更斯",
+    source: "《大卫·科波菲尔》",
+    excerpt: "他把自己写进了书里"
+  },
+  {
+    textRef: "mingshu-ms-917",
+    id: "ms-917",
+    title: "双城记",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "英国",
+    author: "狄更斯",
+    source: "《双城记》",
+    excerpt: "这是最好的时代，也是最坏的时代"
+  },
+  {
+    textRef: "mingshu-ms-918",
+    id: "ms-918",
+    title: "远大前程",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "英国",
+    author: "狄更斯",
+    source: "《远大前程》",
+    excerpt: "一场空欢喜的馈赠"
+  },
+  {
     textRef: "mingshu-ms-24",
     id: "ms-24",
     title: "昆虫记",
@@ -3991,6 +4090,61 @@ window.POEMS_MINGSHU = [
     author: "法布尔",
     source: "《昆虫记》",
     excerpt: "荒石园里的观察者"
+  },
+  {
+    textRef: "mingshu-ms-919",
+    id: "ms-919",
+    title: "圣诞颂歌",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "英国",
+    author: "狄更斯",
+    source: "《圣诞颂歌》",
+    excerpt: "守财奴的一夜三梦"
+  },
+  {
+    textRef: "mingshu-ms-921",
+    id: "ms-921",
+    title: "理智与情感",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "英国",
+    author: "简·奥斯汀",
+    source: "《理智与情感》",
+    excerpt: "姐姐用脑子，妹妹用心"
+  },
+  {
+    textRef: "mingshu-ms-922",
+    id: "ms-922",
+    title: "爱玛",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "英国",
+    author: "简·奥斯汀",
+    source: "《爱玛》",
+    excerpt: "爱替人做媒的姑娘"
+  },
+  {
+    textRef: "mingshu-ms-923",
+    id: "ms-923",
+    title: "金银岛",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "英国",
+    author: "史蒂文森",
+    source: "《金银岛》",
+    excerpt: "一张藏宝图引出的远航"
+  },
+  {
+    textRef: "mingshu-ms-924",
+    id: "ms-924",
+    title: "化身博士",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "英国",
+    author: "史蒂文森",
+    source: "《化身博士》",
+    excerpt: "同一个人身上的两个人"
   },
   {
     textRef: "mingshu-ms-912",
