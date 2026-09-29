@@ -3982,6 +3982,72 @@ window.POEMS_MINGSHU = [
     excerpt: "一个眷村的故事"
   },
   {
+    textRef: "mingshu-ms-916",
+    id: "ms-916",
+    title: "雾都孤儿",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "英国",
+    author: "狄更斯",
+    source: "《雾都孤儿》",
+    excerpt: "孤儿在雾都问路"
+  },
+  {
+    textRef: "mingshu-ms-25",
+    id: "ms-25",
+    title: "简·爱",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "英国",
+    author: "夏洛蒂·勃朗特",
+    source: "《简·爱》",
+    excerpt: "我们的精神是平等的"
+  },
+  {
+    textRef: "mingshu-ms-31",
+    id: "ms-31",
+    title: "大卫·科波菲尔",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "英国",
+    author: "狄更斯",
+    source: "《大卫·科波菲尔》",
+    excerpt: "他把自己写进了书里"
+  },
+  {
+    textRef: "mingshu-ms-917",
+    id: "ms-917",
+    title: "双城记",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "英国",
+    author: "狄更斯",
+    source: "《双城记》",
+    excerpt: "这是最好的时代，也是最坏的时代"
+  },
+  {
+    textRef: "mingshu-ms-918",
+    id: "ms-918",
+    title: "远大前程",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "英国",
+    author: "狄更斯",
+    source: "《远大前程》",
+    excerpt: "一场空欢喜的馈赠"
+  },
+  {
+    textRef: "mingshu-ms-913",
+    id: "ms-913",
+    title: "悲惨世界",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "法国",
+    author: "雨果",
+    source: "《悲惨世界》",
+    excerpt: "冉阿让与一块面包"
+  },
+  {
     textRef: "mingshu-ms-24",
     id: "ms-24",
     title: "昆虫记",
