@@ -4103,6 +4103,28 @@ window.POEMS_MINGSHU = [
     excerpt: "荒石园里的观察者"
   },
   {
+    textRef: "mingshu-ms-928",
+    id: "ms-928",
+    title: "金银岛",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "英国",
+    author: "史蒂文森",
+    source: "《金银岛》",
+    excerpt: "一张藏宝图引出的远航"
+  },
+  {
+    textRef: "mingshu-ms-929",
+    id: "ms-929",
+    title: "化身博士",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "英国",
+    author: "史蒂文森",
+    source: "《化身博士》",
+    excerpt: "同一个人身上的两个人"
+  },
+  {
     textRef: "mingshu-ms-912",
     id: "ms-912",
     title: "古拉格群岛",
