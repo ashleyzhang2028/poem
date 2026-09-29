@@ -275,6 +275,17 @@ window.POEMS_MINGSHU = [
     excerpt: "一对父子在伦敦"
   },
   {
+    textRef: "mingshu-ms-238",
+    id: "ms-238",
+    title: "寒夜",
+    group: "中国现代小说",
+    gradeGroup: "中国现代小说",
+    dynasty: "近现代",
+    author: "巴金",
+    source: "《寒夜》",
+    excerpt: "一个小职员的冬天"
+  },
+  {
     textRef: "mingshu-ms-47",
     id: "ms-47",
     title: "林家铺子",
@@ -330,6 +341,215 @@ window.POEMS_MINGSHU = [
     excerpt: "梧桐叶与北国的秋"
   },
   {
+    textRef: "mingshu-ms-242",
+    id: "ms-242",
+    title: "莎菲女士的日记",
+    group: "中国现代小说",
+    gradeGroup: "中国现代小说",
+    dynasty: "近现代",
+    author: "丁玲",
+    source: "《莎菲女士的日记》",
+    excerpt: "一个女人的内心"
+  },
+  {
+    textRef: "mingshu-ms-246",
+    id: "ms-246",
+    title: "稻草人",
+    group: "中国现代小说",
+    gradeGroup: "中国现代小说",
+    dynasty: "近现代",
+    author: "叶圣陶",
+    source: "《稻草人》",
+    excerpt: "童话里的田野"
+  },
+  {
+    textRef: "mingshu-ms-247",
+    id: "ms-247",
+    title: "潘先生在难中",
+    group: "中国现代小说",
+    gradeGroup: "中国现代小说",
+    dynasty: "近现代",
+    author: "叶圣陶",
+    source: "《潘先生在难中》",
+    excerpt: "一个老师的狼狈"
+  },
+  {
+    textRef: "mingshu-ms-248",
+    id: "ms-248",
+    title: "果园城记",
+    group: "中国现代小说",
+    gradeGroup: "中国现代小说",
+    dynasty: "近现代",
+    author: "师陀",
+    source: "《果园城记》",
+    excerpt: "一座小城的人物志"
+  },
+  {
+    textRef: "mingshu-ms-250",
+    id: "ms-250",
+    title: "山乡巨变",
+    group: "中国现代小说",
+    gradeGroup: "中国现代小说",
+    dynasty: "近现代",
+    author: "周立波",
+    source: "《山乡巨变》",
+    excerpt: "合作社里的新生活"
+  },
+  {
+    textRef: "mingshu-ms-251",
+    id: "ms-251",
+    title: "铁道游击队",
+    group: "中国现代小说",
+    gradeGroup: "中国现代小说",
+    dynasty: "近现代",
+    author: "刘知侠",
+    source: "《铁道游击队》",
+    excerpt: "扒火车的英雄"
+  },
+  {
+    textRef: "mingshu-ms-252",
+    id: "ms-252",
+    title: "林海雪原",
+    group: "中国现代小说",
+    gradeGroup: "中国现代小说",
+    dynasty: "近现代",
+    author: "曲波",
+    source: "《林海雪原》",
+    excerpt: "穿林海跨雪原"
+  },
+  {
+    textRef: "mingshu-ms-253",
+    id: "ms-253",
+    title: "红旗谱",
+    group: "中国现代小说",
+    gradeGroup: "中国现代小说",
+    dynasty: "近现代",
+    author: "梁斌",
+    source: "《红旗谱》",
+    excerpt: "三代农民的斗争"
+  },
+  {
+    textRef: "mingshu-ms-255",
+    id: "ms-255",
+    title: "保卫延安",
+    group: "中国现代小说",
+    gradeGroup: "中国现代小说",
+    dynasty: "近现代",
+    author: "杜鹏程",
+    source: "《保卫延安》",
+    excerpt: "一场战役的正面"
+  },
+  {
+    textRef: "mingshu-ms-256",
+    id: "ms-256",
+    title: "红日",
+    group: "中国现代小说",
+    gradeGroup: "中国现代小说",
+    dynasty: "近现代",
+    author: "吴强",
+    source: "《红日》",
+    excerpt: "孟良崮上的三天"
+  },
+  {
+    textRef: "mingshu-ms-258",
+    id: "ms-258",
+    title: "三家巷",
+    group: "中国现代小说",
+    gradeGroup: "中国现代小说",
+    dynasty: "近现代",
+    author: "欧阳山",
+    source: "《三家巷》",
+    excerpt: "广州一条巷子的三家"
+  },
+  {
+    textRef: "mingshu-ms-259",
+    id: "ms-259",
+    title: "苦菜花",
+    group: "中国现代小说",
+    gradeGroup: "中国现代小说",
+    dynasty: "近现代",
+    author: "冯德英",
+    source: "《苦菜花》",
+    excerpt: "一位母亲的抗战"
+  },
+  {
+    textRef: "mingshu-ms-260",
+    id: "ms-260",
+    title: "小兵张嘎",
+    group: "中国现代小说",
+    gradeGroup: "中国现代小说",
+    dynasty: "近现代",
+    author: "徐光耀",
+    source: "《小兵张嘎》",
+    excerpt: "嘎子的枪"
+  },
+  {
+    textRef: "mingshu-ms-261",
+    id: "ms-261",
+    title: "小英雄雨来",
+    group: "中国现代小说",
+    gradeGroup: "中国现代小说",
+    dynasty: "近现代",
+    author: "管桦",
+    source: "《小英雄雨来》",
+    excerpt: "我们是中国儿童团"
+  },
+  {
+    textRef: "mingshu-ms-262",
+    id: "ms-262",
+    title: "鸡毛信",
+    group: "中国现代小说",
+    gradeGroup: "中国现代小说",
+    dynasty: "近现代",
+    author: "华山",
+    source: "《鸡毛信》",
+    excerpt: "一封三根鸡毛的信"
+  },
+  {
+    textRef: "mingshu-ms-263",
+    id: "ms-263",
+    title: "闪闪的红星",
+    group: "中国现代小说",
+    gradeGroup: "中国现代小说",
+    dynasty: "近现代",
+    author: "李心田",
+    source: "《闪闪的红星》",
+    excerpt: "潘冬子的红星"
+  },
+  {
+    textRef: "mingshu-ms-264",
+    id: "ms-264",
+    title: "社戏",
+    group: "中国现代小说",
+    gradeGroup: "中国现代小说",
+    dynasty: "近现代",
+    author: "鲁迅",
+    source: "《社戏》",
+    excerpt: "那一夜的好豆好戏"
+  },
+  {
+    textRef: "mingshu-ms-265",
+    id: "ms-265",
+    title: "孔乙己",
+    group: "中国现代小说",
+    gradeGroup: "中国现代小说",
+    dynasty: "近现代",
+    author: "鲁迅",
+    source: "《孔乙己》",
+    excerpt: "穿长衫站着喝酒的人"
+  },
+  {
+    textRef: "mingshu-ms-272",
+    id: "ms-272",
+    title: "可爱的中国",
+    group: "中国现代小说",
+    gradeGroup: "中国现代小说",
+    dynasty: "近现代",
+    author: "方志敏",
+    source: "《可爱的中国》",
+    excerpt: "狱中写给将来的中国"
+  },
+  {
     textRef: "mingshu-ms-55",
     id: "ms-55",
     title: "沉沦",
@@ -374,6 +594,39 @@ window.POEMS_MINGSHU = [
     excerpt: "路正长，夜也正长"
   },
   {
+    textRef: "mingshu-ms-245",
+    id: "ms-245",
+    title: "倪焕之",
+    group: "中国现代小说",
+    gradeGroup: "中国现代小说",
+    dynasty: "近现代",
+    author: "叶圣陶",
+    source: "《倪焕之》",
+    excerpt: "一个小学教师的十年"
+  },
+  {
+    textRef: "mingshu-ms-244",
+    id: "ms-244",
+    title: "二月",
+    group: "中国现代小说",
+    gradeGroup: "中国现代小说",
+    dynasty: "近现代",
+    author: "柔石",
+    source: "《二月》",
+    excerpt: "一个青年的彷徨"
+  },
+  {
+    textRef: "mingshu-ms-239",
+    id: "ms-239",
+    title: "啼笑因缘",
+    group: "中国现代小说",
+    gradeGroup: "中国现代小说",
+    dynasty: "近现代",
+    author: "张恨水",
+    source: "《啼笑因缘》",
+    excerpt: "大鼓书女与两个男人"
+  },
+  {
     textRef: "mingshu-ms-08",
     id: "ms-08",
     title: "家",
@@ -383,6 +636,17 @@ window.POEMS_MINGSHU = [
     author: "巴金",
     source: "《家》",
     excerpt: "四世同堂的牢笼"
+  },
+  {
+    textRef: "mingshu-ms-240",
+    id: "ms-240",
+    title: "金粉世家",
+    group: "中国现代小说",
+    gradeGroup: "中国现代小说",
+    dynasty: "近现代",
+    author: "张恨水",
+    source: "《金粉世家》",
+    excerpt: "一个家族的盛衰"
   },
   {
     textRef: "mingshu-ms-46",
@@ -462,6 +726,17 @@ window.POEMS_MINGSHU = [
     excerpt: "辰河上的一条船"
   },
   {
+    textRef: "mingshu-ms-241",
+    id: "ms-241",
+    title: "京华烟云",
+    group: "中国现代小说",
+    gradeGroup: "中国现代小说",
+    dynasty: "近现代",
+    author: "林语堂",
+    source: "《京华烟云》",
+    excerpt: "三分儒道，一片烟云"
+  },
+  {
     textRef: "mingshu-ms-44",
     id: "ms-44",
     title: "秋",
@@ -517,6 +792,50 @@ window.POEMS_MINGSHU = [
     excerpt: "城里的人想逃出来"
   },
   {
+    textRef: "mingshu-ms-243",
+    id: "ms-243",
+    title: "太阳照在桑干河上",
+    group: "中国现代小说",
+    gradeGroup: "中国现代小说",
+    dynasty: "近现代",
+    author: "丁玲",
+    source: "《太阳照在桑干河上》",
+    excerpt: "土改中的一个村子"
+  },
+  {
+    textRef: "mingshu-ms-249",
+    id: "ms-249",
+    title: "暴风骤雨",
+    group: "中国现代小说",
+    gradeGroup: "中国现代小说",
+    dynasty: "近现代",
+    author: "周立波",
+    source: "《暴风骤雨》",
+    excerpt: "一场土改的风暴"
+  },
+  {
+    textRef: "mingshu-ms-254",
+    id: "ms-254",
+    title: "青春之歌",
+    group: "中国现代小说",
+    gradeGroup: "中国现代小说",
+    dynasty: "近现代",
+    author: "杨沫",
+    source: "《青春之歌》",
+    excerpt: "一个知识女性的道路"
+  },
+  {
+    textRef: "mingshu-ms-257",
+    id: "ms-257",
+    title: "创业史",
+    group: "中国现代小说",
+    gradeGroup: "中国现代小说",
+    dynasty: "近现代",
+    author: "柳青",
+    source: "《创业史》",
+    excerpt: "蛤蟆滩上的一代人"
+  },
+  {
     textRef: "mingshu-ms-17",
     id: "ms-17",
     title: "红岩",
@@ -526,6 +845,72 @@ window.POEMS_MINGSHU = [
     author: "罗广斌 / 杨益言",
     source: "《红岩》",
     excerpt: "在烈火中永生"
+  },
+  {
+    textRef: "mingshu-ms-266",
+    id: "ms-266",
+    title: "野火春风斗古城",
+    group: "中国现代小说",
+    gradeGroup: "中国现代小说",
+    dynasty: "当代",
+    author: "李英儒",
+    source: "《野火春风斗古城》",
+    excerpt: "城里的地下工作"
+  },
+  {
+    textRef: "mingshu-ms-267",
+    id: "ms-267",
+    title: "平原枪声",
+    group: "中国现代小说",
+    gradeGroup: "中国现代小说",
+    dynasty: "当代",
+    author: "李晓明 / 韩安庆",
+    source: "《平原枪声》",
+    excerpt: "平原上的游击"
+  },
+  {
+    textRef: "mingshu-ms-268",
+    id: "ms-268",
+    title: "敌后武工队",
+    group: "中国现代小说",
+    gradeGroup: "中国现代小说",
+    dynasty: "当代",
+    author: "冯志",
+    source: "《敌后武工队》",
+    excerpt: "一支武工队"
+  },
+  {
+    textRef: "mingshu-ms-269",
+    id: "ms-269",
+    title: "烈火金钢",
+    group: "中国现代小说",
+    gradeGroup: "中国现代小说",
+    dynasty: "当代",
+    author: "刘流",
+    source: "《烈火金钢》",
+    excerpt: "一场反扫荡"
+  },
+  {
+    textRef: "mingshu-ms-270",
+    id: "ms-270",
+    title: "新儿女英雄传",
+    group: "中国现代小说",
+    gradeGroup: "中国现代小说",
+    dynasty: "当代",
+    author: "袁静 / 孔厥",
+    source: "《新儿女英雄传》",
+    excerpt: "白洋淀上的新人"
+  },
+  {
+    textRef: "mingshu-ms-271",
+    id: "ms-271",
+    title: "吕梁英雄传",
+    group: "中国现代小说",
+    gradeGroup: "中国现代小说",
+    dynasty: "当代",
+    author: "马烽 / 西戎",
+    source: "《吕梁英雄传》",
+    excerpt: "吕梁山上的民兵"
   },
   {
     textRef: "mingshu-ms-14",

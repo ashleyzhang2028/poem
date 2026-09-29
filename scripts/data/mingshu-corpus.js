@@ -54,6 +54,23 @@ add(require('./corpus/fill-modern-novels-1.js'));
 add(require('./corpus/fill-modern-novels-2.js'));
 add(require('./corpus/fill-essays-1.js'));
 
+/* ── 四、Issue #381 第十二轮（批次一）：中国现代小说补齐 ─────────────────
+   用户原话「按 1 2 3 4 顺序来，可能要创建多个 PR」——第 1 步是「中国现代
+   小说余下 35 部」。这一批把书目表里「中国现代小说」组的 61 部全部写完，
+   列表页由 47 部到 82 部。分十二册装（一册 2—4 部），便于分批校读。 */
+add(require('./corpus/fill-modern-novels-3.js'));
+add(require('./corpus/fill-modern-novels-4.js'));
+add(require('./corpus/fill-modern-novels-5.js'));
+add(require('./corpus/fill-modern-novels-6.js'));
+add(require('./corpus/fill-modern-novels-7.js'));
+add(require('./corpus/fill-modern-novels-8.js'));
+add(require('./corpus/fill-modern-novels-9.js'));
+add(require('./corpus/fill-modern-novels-10.js'));
+add(require('./corpus/fill-modern-novels-11.js'));
+add(require('./corpus/fill-modern-novels-12.js'));
+add(require('./corpus/fill-modern-novels-13.js'));
+add(require('./corpus/fill-modern-novels-14.js'));
+
 /* ── 三、Issue #381 第十一轮：用户点名的中国古典小说 22 部 ─────────────
    用户原话先列了 22 部书名（《三国演义》到《孽海花》），再让「按你的计划
    继续补充」。前六部（四大名著 + 儒林外史 + 聊斋志异）上一轮已在，其余
