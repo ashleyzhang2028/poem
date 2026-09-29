@@ -33,11 +33,18 @@ function box(rows) {
     w.push(m);
   }
 
+  // 规则线要与正文行**同宽**。列宽 n 是 width() 算出来的显示单位（全角 2 / 半角 1），
+  // 而 "─" 自己也是全角（占 2 单位），一段 n + 2 单位恰好要 (n + 2) / 2 个。
+  // 原先写 repeat(n + 2)，规则线整整比正文宽一倍 —— 一百多张表全中招，
+  // 只是终端与比例字体里看着"像个框"，没被当回事（Issue #381 的长行表上尤其扎眼）。
+  // 列宽含半角字（n 为奇数）时除不尽，就让**正文**多补半格把每列凑成偶数，
+  // 差的那一格补在列尾看不见；反过来在规则线上补半角 "-" 一眼就能看见。
+  var wEven = w.map(function (n) { return n + (n % 2); });
   var line = function (left, mid, right) {
-    return left + w.map(function (n) { return "─".repeat(n + 2); }).join(mid) + right;
+    return left + wEven.map(function (n) { return "─".repeat((n + 2) / 2); }).join(mid) + right;
   };
   var body = function (r) {
-    return PIPE + " " + r.map(function (cell, i) { return pad(cell, w[i]); }).join(" " + PIPE + " ") + " " + PIPE;
+    return PIPE + " " + r.map(function (cell, i) { return pad(cell, wEven[i]); }).join(" " + PIPE + " ") + " " + PIPE;
   };
 
   var out = [line("┌", "┬", "┐"), body(rows[0]), line("├", "┼", "┤")];
