@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  // Issue #381 第六轮：历代名家 255 → 726 位、十一组 → 二十五组。
+  // Issue #381 第七轮：历代名家 706 位，二十五组；各组内部按出生时间排。
   // 组序按「先中国后外国，中国内按文学与思想—艺术—专门之学，
   // 外国内按学科」排，与 scripts/build-mingren.js 的 GROUP_ORDER 一字不差。
   var GROUP_ORDER = window.MINGREN_GROUP_ORDER = [
@@ -23,7 +23,7 @@
       id: "mingren",
       groupOrder: GROUP_ORDER,
       pageTitle: "历代名家",
-      pageSub: "中国十五组（政治 / 文学 / 史学 / 思想 / 哲学 / 军事 / 书法 / 绘画 / 戏曲 / 音乐 / 科学 / 医学 / 天文 / 生物 / 建筑），外国十组按学科分 · 每位的字 / 号 / 生卒 / 亲属 / 生平 / 流派",
+      pageSub: "中国十五组（政治 / 文学 / 史学 / 思想 / 哲学 / 军事 / 书法 / 绘画 / 戏曲 / 音乐 / 科学 / 医学 / 天文 / 生物 / 建筑），外国十组按学科分 · 各组按出生时间先后排 · 每位的字 / 号 / 生卒 / 亲属 / 生平 / 流派",
       // 词条式：正文即词条表，本来就没有白话译文
       noTranslation: true,
       words: {

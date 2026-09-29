@@ -51,6 +51,15 @@ const BOOKS_DEF = require('./data/mingshu-books.js');
 const BOOKS = BOOKS_DEF.GROUPS;
 const LEGACY = BOOKS_DEF.LEGACY || [];
 const CORPUS = require('./data/mingshu-corpus.js').CORPUS;
+const MYEARS = require('./data/mingshu-years.js');
+
+/* 分组次序：与 js/mingshu.js 的 MINGSHU_GROUP_ORDER 一字不差。
+   「按时间顺序排序」= 先按这一组的先后（古典 → 现代 → 当代 → … ），
+   组内再按成书 / 出版年升序。 */
+const GROUP_ORDER = [
+  '中国古典小说', '中国现代小说', '中国当代小说',
+  '中国现代散文', '中国现当代诗歌', '中国现代戏剧', '外国文学'
+];
 
 const argv = process.argv.slice(2);
 const WANT_MASTER = argv.indexOf('--master') >= 0;
@@ -200,8 +209,17 @@ BOOKS.forEach(function (pair) {
   });
 });
 
+/* ── 按时间顺序排（Issue #381 · 用户原话「名著也按时间顺序排序」）────────
+   先按分组的先后，组内按成书 / 出版年升序。年份取自
+   scripts/data/mingshu-years.js；那里没有的书按「国别 / 时代」栏兜个粗档。
+   同年（如《三国演义》与《水浒传》都在明）按原有相对次序，不动。 */
+items.forEach(function (it) {
+  it.year = MYEARS.yearOf(it.book.title, it.book.country);
+});
 items.sort(function (a, b) {
-  return parseInt(a.id.slice(3), 10) - parseInt(b.id.slice(3), 10);
+  const ga = GROUP_ORDER.indexOf(a.group), gb = GROUP_ORDER.indexOf(b.group);
+  if (ga !== gb) return (ga < 0 ? GROUP_ORDER.length : ga) - (gb < 0 ? GROUP_ORDER.length : gb);
+  return a.year - b.year;
 });
 console.log('书目 ' + (LEGACY.length + nextAuto - LEGACY.length - 1) + ' 部；有素材 ' +
   items.length + ' 部；缺素材 ' + missing.length + ' 部');
