@@ -183,6 +183,10 @@ add(require('./corpus/fill-poetry-20.js'));
    按计划「诗歌 → 戏剧 → 外国文学」往下填。这一组书目表 42 部，已交 1 部
    （雷雨），余 41 部按每册 5—10 部往下填。 */
 add(require('./corpus/fill-drama-1.js'));
+add(require('./corpus/fill-drama-2.js'));
+add(require('./corpus/fill-drama-3.js'));
+add(require('./corpus/fill-drama-4.js'));
+add(require('./corpus/fill-drama-5.js'));
 
 /* 余下的书按组分册，避免单文件过大 */
 add(require('./mingshu-corpus-stub.js'));
