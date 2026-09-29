@@ -150,6 +150,17 @@
     }
   ];
 
+  /* Issue #407：入口页 16 张卡压成 4 张 —— 课内诗词单列，其余按「诗文典籍 /
+     人物 / 文史常识」三组并进分组卡；分组卡里只列名字与条数，不写介绍。 */
+  var GROUPS = [
+    { id: "wen", name: "诗文典籍", note: "蒙学古文 · 诗词曲选 · 历代总集", members: ["classic", "guwen", "yuefu", "tangshi", "songci", "yuanqu", "jinxiandai", "zhaoming"] },
+    { id: "renwu", name: "人物", note: "帝王与名家 · 中外各一卷", members: ["dwang", "dwang-waiguo", "mingren", "mingren-waiguo"] },
+    { id: "changshi", name: "文史常识", note: "成语 · 文学常识 · 名著导读", members: ["chengyu", "changshi", "mingshu"] }
+  ];
+
+  /* 课内诗词单列（不入 GROUPS），排第一 —— 这是 App 的初心与头号功能。 */
+  var SOLO = ["poems"];
+
   function esc(s) {
     return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
@@ -190,29 +201,56 @@
     return null;
   }
 
+  var CHEVRON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" ' +
+    'stroke-linecap="round" stroke-linejoin="round"><path d="M9.4 5.6 15.8 12l-6.4 6.4"/></svg>';
+
+  /* 一张子入口：名字 + 条数，点它就地进集子（与旧卡片同一条路）。 */
+  function subItemHtml(it) {
+    var tag = it.book ? "button" : "a";
+    var attr = it.book ? ' type="button"' : ' href="' + it.page + '"';
+    return "<" + tag + ' class="library-sub" data-book="' + it.id + '"' + attr + ">" +
+      '<span class="library-sub-name">' + esc(it.name) + "</span>" +
+      '<span class="library-sub-count">' + countOf(it.id) + " " + esc(it.unit) + "</span>" +
+      "</" + tag + ">";
+  }
+
+  /* 分组卡：卡头一行名字 + 一句短注，下面是子入口网格，没有 desc。 */
+  function groupCardHtml(g) {
+    var members = g.members.map(entryOf).filter(Boolean);
+    if (!members.length) return "";
+    return '<section class="library-group" data-group="' + g.id + '">' +
+      '<header class="library-group-head">' +
+      '<span class="library-group-name">' + esc(g.name) + "</span>" +
+      '<span class="library-group-note">' + esc(g.note) + "</span>" +
+      "</header>" +
+      '<div class="library-subs">' + members.map(subItemHtml).join("") + "</div>" +
+      "</section>";
+  }
+
   function render() {
     var grid = document.getElementById("library-grid");
     if (!grid) return;
-    var html = "";
-    ENTRIES.forEach(function (it) {
-      var n = countOf(it.id);
 
+    var html = "";
+    SOLO.forEach(function (id) {
+      var it = entryOf(id);
+      if (!it) return;
       var tag = it.book ? "button" : "a";
       var attr = it.book ? ' type="button"' : ' href="' + it.page + '"';
       html +=
-        "<" + tag + ' class="library-card" data-book="' + it.id + '"' + attr + ">" +
+        "<" + tag + ' class="library-card library-solo" data-book="' + it.id + '"' + attr + ">" +
         '<span class="library-card-head">' +
         '<span class="library-card-name">' + esc(it.name) + "</span>" +
-        '<span class="library-card-count">' + n + " " + it.unit + "</span>" +
+        '<span class="library-card-count">' + countOf(it.id) + " " + it.unit + "</span>" +
         "</span>" +
         '<span class="library-card-desc">' + esc(it.desc) + "</span>" +
-        '<span class="library-card-go" aria-hidden="true">' +
-        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" ' +
-        'stroke-linecap="round" stroke-linejoin="round"><path d="M9.4 5.6 15.8 12l-6.4 6.4"/></svg>' +
-        "</span>" +
+        '<span class="library-card-go" aria-hidden="true">' + CHEVRON + "</span>" +
         (it.book ? '<span class="sr-only">进入' + esc(it.name) + "</span>" : "") +
         "</" + tag + ">";
     });
+
+    GROUPS.forEach(function (g) { html += groupCardHtml(g); });
+
     grid.innerHTML = html;
   }
 
@@ -355,7 +393,7 @@
     if (!grid || grid.dataset.bound) return;
     grid.dataset.bound = "1";
     grid.addEventListener("click", function (e) {
-      var card = e.target && e.target.closest ? e.target.closest(".library-card") : null;
+      var card = e.target && e.target.closest ? e.target.closest("[data-book]") : null;
       if (!card) return;
       var entry = entryOf(card.getAttribute("data-book"));
       if (!entry || !entry.book) return;
