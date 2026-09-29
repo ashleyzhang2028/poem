@@ -2816,6 +2816,61 @@ window.POEMS_MINGSHU = [
     excerpt: "一些小城的故事"
   },
   {
+    textRef: "mingshu-ms-578",
+    id: "ms-578",
+    title: "大堰河——我的保姆",
+    group: "中国现当代诗歌",
+    gradeGroup: "中国现当代诗歌",
+    dynasty: "现当代",
+    author: "艾青",
+    source: "《大堰河——我的保姆》",
+    excerpt: "大堰河，我的保姆"
+  },
+  {
+    textRef: "mingshu-ms-584",
+    id: "ms-584",
+    title: "雪落在中国的土地上",
+    group: "中国现当代诗歌",
+    gradeGroup: "中国现当代诗歌",
+    dynasty: "现当代",
+    author: "艾青",
+    source: "《雪落在中国的土地上》",
+    excerpt: "寒冷在封锁着中国"
+  },
+  {
+    textRef: "mingshu-ms-579",
+    id: "ms-579",
+    title: "向太阳",
+    group: "中国现当代诗歌",
+    gradeGroup: "中国现当代诗歌",
+    dynasty: "现当代",
+    author: "艾青",
+    source: "《向太阳》",
+    excerpt: "太阳向我滚来"
+  },
+  {
+    textRef: "mingshu-ms-583",
+    id: "ms-583",
+    title: "北方",
+    group: "中国现当代诗歌",
+    gradeGroup: "中国现当代诗歌",
+    dynasty: "现当代",
+    author: "艾青",
+    source: "《北方》",
+    excerpt: "北方的雪与土地"
+  },
+  {
+    textRef: "mingshu-ms-580",
+    id: "ms-580",
+    title: "黎明的通知",
+    group: "中国现当代诗歌",
+    gradeGroup: "中国现当代诗歌",
+    dynasty: "现当代",
+    author: "艾青",
+    source: "《黎明的通知》",
+    excerpt: "请叫醒一切的人"
+  },
+  {
     textRef: "mingshu-ms-18",
     id: "ms-18",
     title: "艾青诗选",
@@ -2825,6 +2880,28 @@ window.POEMS_MINGSHU = [
     author: "艾青",
     source: "《艾青诗选》",
     excerpt: "为什么我的眼里常含泪水"
+  },
+  {
+    textRef: "mingshu-ms-581",
+    id: "ms-581",
+    title: "光的赞歌",
+    group: "中国现当代诗歌",
+    gradeGroup: "中国现当代诗歌",
+    dynasty: "现当代",
+    author: "艾青",
+    source: "《光的赞歌》",
+    excerpt: "让光去照彻一切"
+  },
+  {
+    textRef: "mingshu-ms-582",
+    id: "ms-582",
+    title: "归来的歌",
+    group: "中国现当代诗歌",
+    gradeGroup: "中国现当代诗歌",
+    dynasty: "现当代",
+    author: "艾青",
+    source: "《归来的歌》",
+    excerpt: "二十年后的重新歌唱"
   },
   {
     textRef: "mingshu-ms-11",
