@@ -35,6 +35,35 @@ function load() {
   return { MASTER: MASTER, byId: byId };
 }
 
+/* 正文里这一条的**身份行** —— 表格第一行「皇号」或「书名 / 篇名」那一格。
+   摘要（version）不等，说明内容真的变了；
+   表头摘出来的名字不等，说明**改错了地方**。 */
+function identityOf(text) {
+  const m = String(text || '').match(/^[^\n]*\n│[^│]*│\s*([^│]+?)\s*│/);
+  return m ? m[1] : '';
+}
+
+/* version 与「正文的摘要」是不是一致。
+   摘要的算法与 build-text-master.js 同一套（下面 versionOf 就是它）。
+   这条断言是补课：曾经有一次批量改写把 id 整体挪了位，
+   四百多条的正文互相串了门，一路写到磁盘上都没人吭声
+   （表头的名字与 title 对不上，肉眼也看得出，可是没人去比）。 */
+function versionMatches(m) {
+  if (!m) return false;
+  return m.version === versionOf(m.text, m.translation, m.translationSource);
+}
+
+/* 就地改写某一条的 version 一行（只动这一行，别的一个字不动）。 */
+function rewriteVersion(src, id, value) {
+  const marker = '    id: ' + JSON.stringify(id) + ',';
+  const at = src.indexOf(marker);
+  if (at < 0) throw new Error('文件里找不到 ' + id + ' 那一条');
+  const from = src.indexOf('    version: ', at);
+  if (from < 0) throw new Error(id + ' 那一条没有 version 字段');
+  const lineEnd = src.indexOf('\n', from);
+  return src.slice(0, from) + '    version: ' + JSON.stringify(value) + ',' + src.slice(lineEnd);
+}
+
 /** 只替换某一个 id 那一条的 text（可选 translation）。 */
 function apply(id, newText, opt) {
   const o = opt || {};
@@ -60,8 +89,20 @@ function apply(id, newText, opt) {
     m[field] = value;
   };
 
+  const oldText = m.text;
   replaceField('text', newText);
   if (o.translation != null) replaceField('translation', o.translation);
+
+  /* 身份行校对：一条正文的**第一格**（皇号 / 书名）与它自己的标题
+     对不上时当场报错。既往不咎 —— 只有「换上去的正文身份行写明了别的名字、
+     而这一条本来不是那个名字」才算挪位（老数据里本来就有几处表头与 title
+     不一致，那些不能拦）。 */
+  const wasName = identityOf(oldText);
+  const nowName = identityOf(String(newText));
+  if (nowName && wasName && nowName !== wasName && nowName !== m.title) {
+    throw new Error(id + ' 的正文身份行是「' + nowName + '」，与这条的标题「' +
+      m.title + '」及原身份行「' + wasName + '」都不符 —— 多半是 id 挪位了，先别写盘');
+  }
   return out;
 }
 
@@ -80,10 +121,35 @@ function applyAll(patch, opt) {
     const v = patch[id];
     const text = typeof v === 'string' ? v : v.text;
     if (already(state.byId[id], id) && !o.force) { skipped.push(id); return; }
+
+    /* 换了正文而 version 没跟上，客户端就认不出「这条是新的」——
+       mingshu-ms-440 / 441 两条正是这么留下的（正文改了、version 是旧的）。
+       这里当场拦住，并把两边都点出来：改对了就传 { syncVersion: true }，
+       改错了（id 撞了、正文串了门）也能一眼看出是哪个 id 出了问题。 */
+    if (!o.syncVersion) {
+      const before = state.byId[id];
+      if (before && text !== before.text) {
+        const wasName = identityOf(before.text), nowName = identityOf(text);
+        throw new Error(id + ' 的正文要被换掉，而这条现在的身份行是「' + (wasName || '—') +
+          '」、要换上去的是「' + (nowName || '—') + '」。\n' +
+          '   · 若这一条本来就该换：传 { syncVersion: true }，version 会照新正文重算；\n' +
+          '   · 若不是：多半是 id 挪位了（新段插在源表最前，把已有条目的 id 整体推走了一位）——\n' +
+          '     源表的次序要与壳里的 id 次序一致，别在中间插队。');
+      }
+    }
+    const tNew = typeof v === 'string' ? null : v.translation;
     src = apply(id, text, {
       state: state, src: src, force: o.force,
-      translation: typeof v === 'string' ? null : v.translation
+      translation: tNew
     });
+    /* version 一步不能落下：换了 text（或 translation）就必须重算，
+       否则客户端据 version 判「这条是不是新的」时会漏掉这一条。 */
+    const after = state.byId[id];
+    const want = versionOf(after.text, after.translation, after.translationSource);
+    if (after.version !== want) {
+      src = rewriteVersion(src, id, want);
+      after.version = want;
+    }
     changed.push(id);
   });
   return { changed: changed, skipped: skipped, src: src };
@@ -181,6 +247,27 @@ function entryBlock(o) {
 }
 
 /** 把一批新条目追加到主表末尾（只加主表里没有的 id）。 */
+/* 只改内容哈希，不动文本 —— 客户端据 version 判「这一条是不是新的」。
+   用于「文本原样、但服务端那条记录对不上了」的场合（见 build-emperor.js
+   的 --rehash：主表里已经有这些正文，但 version 与算出来的对不上，
+   多半是 INSERT 时自作主张把空串塞进了 NOT NULL 列）。 */
+function rehashAll(ids, opt) {
+  const o = opt || {};
+  const state = load();
+  let src = fs.readFileSync(FILE, 'utf8');
+  const changed = [];
+  const missing = [];
+  ids.forEach(function (id) {
+    const m = state.byId[id];
+    if (!m) { missing.push(id); return; }
+    const want = versionOf(m.text, m.translation, m.translationSource);
+    if (m.version === want) return;
+    src = rewriteVersion(src, id, want);
+    changed.push(id);
+  });
+  return { changed: changed, missing: missing, src: src };
+}
+
 function insertAll(list, opt) {
   const o = opt || {};
   const state = load();
@@ -206,4 +293,8 @@ function insertAll(list, opt) {
   return { added: added, exists: exists, src: src };
 }
 
-module.exports = { load: load, applyAll: applyAll, insertAll: insertAll, versionOf: versionOf, write: write, FILE: FILE, ROOT: ROOT };
+module.exports = {
+  load: load, applyAll: applyAll, insertAll: insertAll, rehashAll: rehashAll,
+  versionOf: versionOf, versionMatches: versionMatches, identityOf: identityOf,
+  write: write, FILE: FILE, ROOT: ROOT
+};

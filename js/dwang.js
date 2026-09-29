@@ -12,8 +12,11 @@
          列表页的索引卡按它分段。
      ========================================================================== */
 
-  /* 与中国卷的 GROUP_ORDER_CN 一字不差（scripts/build-emperor.js 同一份口径） */
+  /* 与中国卷的 GROUP_ORDER_CN 一字不差（scripts/build-emperor.js 同一份口径）。
+     ⚠️ 首段「传说时代」是 Issue #407 追问之后加的：三皇五帝与同时诸家
+     另立一段，不混进「夏」（见 scripts/data/emperor/facts-legend.js 的抬头）。 */
   var GROUPS_CN = window.DWANG_GROUP_ORDER = [
+    "传说时代",
     "夏", "商", "西周", "东周（春秋）", "东周（战国）", "秦",
     "西汉", "新", "东汉", "三国", "西晋", "东晋", "十六国", "南北朝",
     "隋", "唐", "五代十国", "辽", "北宋", "西夏", "金", "南宋",
@@ -32,7 +35,7 @@
       page: "/dwang/",
       readStore: "poem_dwang_cn_read_v1",
       groupOrder: GROUPS_CN,
-      pageSub: "自夏商周至清末 · 按在位先后排 · 每位给姓名 / 年号 / 在位 / 谥号 / 庙号 / 谱系与六维评价"
+      pageSub: "传说时代（三皇五帝）与夏商周至清末 · 按在位先后排 · 每位给姓名 / 年号 / 在位 / 谥号 / 庙号 / 谱系与六维评价"
     },
     foreign: {
       key: "foreign",
