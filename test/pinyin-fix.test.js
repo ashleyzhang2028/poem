@@ -47,6 +47,13 @@ chk(/长<rt>cháng<\/rt>/.test(P.annotateHtml("长空万里", "all")),
 chk(/长<rt>zhǎng<\/rt>/.test(P.annotateHtml("长大", "all")),
   "补词没有连累别的：「长大」照旧读 zhǎng dà");
 
+/* 「作为」是历代名家条目的字段标签（每一条都有），「为」的首读是 wèi，
+   不固定住就会被读成「作 wèi」。作名词与作动词都读 wéi。 */
+chk(/作<rt>zuò<\/rt><\/ruby><ruby>为<rt>wéi<\/rt>/.test(P.annotateHtml("作为", "all")),
+  "「作为」固定读 zuò wéi（「为」的首读是 wèi，不固定会被标错）");
+chk(P.annotateHtml("作为", "all").indexOf("<rt>wèi</rt>") === -1,
+  "「作为」不再读 wèi");
+
 chk(P.annotatePoem("", LINE, "all") === P.annotateHtml(LINE, "all"),
   "不传 wid 时 annotatePoem 与 annotateHtml 输出**逐字相同**（纯增强）");
 chk(P.annotatePoem(POEM_WID, LINE, "all") === P.annotateHtml(LINE, "all"),

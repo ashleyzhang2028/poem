@@ -235,6 +235,19 @@ chk(MR_THIN.length === 0,
   '历代名家每位都有字 / 号 / 生卒 / 籍贯 / 家世亲属 / 生平 / 风格 / 流派 / 作品 / 意义（异常：' +
   (MR_THIN.slice(0, 5).join('、') || '无') + '）');
 
+/* 字段名「贡献」→「作为」：这一部里收着希特勒、墨索里尼这一类人，
+   「贡献：第二次世界大战、犹太人大屠杀」是荒谬的 ——「贡献」预设了正面价值。
+   守卫两条：① 新标签「主要作品 / 作为」每位都要有；② 旧「贡献」标签零残留。 */
+const MR_NEUTRAL_BAD = [];
+MR.forEach(p => {
+  const t = p.text || '';
+  if (t.indexOf('主要作品 / 作为') < 0) MR_NEUTRAL_BAD.push(p.title + ' 缺中性标签');
+  if (t.indexOf('主要作品 / 贡献') >= 0) MR_NEUTRAL_BAD.push(p.title + ' 残留旧标签');
+});
+chk(MR_NEUTRAL_BAD.length === 0,
+  '历代名家统一用中性的「主要作品 / 作为」标签，无旧「贡献」残留（异常：' +
+  (MR_NEUTRAL_BAD.slice(0, 5).join('、') || '无') + '）');
+
 /* 点名抽查：人物与要义不得张冠李戴 */
 const SPOT = [
   ['西游记', '吴承恩', '孙悟空'],
