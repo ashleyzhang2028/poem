@@ -2816,6 +2816,94 @@ window.POEMS_MINGSHU = [
     excerpt: "一些小城的故事"
   },
   {
+    textRef: "mingshu-ms-586",
+    id: "ms-586",
+    title: "凤凰涅槃",
+    group: "中国现当代诗歌",
+    gradeGroup: "中国现当代诗歌",
+    dynasty: "近现代",
+    author: "郭沫若",
+    source: "《凤凰涅槃》",
+    excerpt: "凤凰在火里重生"
+  },
+  {
+    textRef: "mingshu-ms-587",
+    id: "ms-587",
+    title: "天上的街市",
+    group: "中国现当代诗歌",
+    gradeGroup: "中国现当代诗歌",
+    dynasty: "近现代",
+    author: "郭沫若",
+    source: "《天上的街市》",
+    excerpt: "街市上陈列着珍奇"
+  },
+  {
+    textRef: "mingshu-ms-588",
+    id: "ms-588",
+    title: "棠棣之花",
+    group: "中国现当代诗歌",
+    gradeGroup: "中国现当代诗歌",
+    dynasty: "近现代",
+    author: "郭沫若",
+    source: "《棠棣之花》",
+    excerpt: "一柄剑与一对姐弟"
+  },
+  {
+    textRef: "mingshu-ms-589",
+    id: "ms-589",
+    title: "红烛",
+    group: "中国现当代诗歌",
+    gradeGroup: "中国现当代诗歌",
+    dynasty: "近现代",
+    author: "闻一多",
+    source: "《红烛》",
+    excerpt: "蜡炬成灰泪始干"
+  },
+  {
+    textRef: "mingshu-ms-591",
+    id: "ms-591",
+    title: "七子之歌",
+    group: "中国现当代诗歌",
+    gradeGroup: "中国现当代诗歌",
+    dynasty: "近现代",
+    author: "闻一多",
+    source: "《七子之歌》",
+    excerpt: "澳门、香港与旅顺"
+  },
+  {
+    textRef: "mingshu-ms-592",
+    id: "ms-592",
+    title: "再别康桥",
+    group: "中国现当代诗歌",
+    gradeGroup: "中国现当代诗歌",
+    dynasty: "近现代",
+    author: "徐志摩",
+    source: "《再别康桥》",
+    excerpt: "轻轻的我走了"
+  },
+  {
+    textRef: "mingshu-ms-585",
+    id: "ms-585",
+    title: "女神",
+    group: "中国现当代诗歌",
+    gradeGroup: "中国现当代诗歌",
+    dynasty: "近现代",
+    author: "郭沫若",
+    source: "《女神》",
+    excerpt: "我是一条天狗"
+  },
+  {
+    textRef: "mingshu-ms-590",
+    id: "ms-590",
+    title: "死水",
+    group: "中国现当代诗歌",
+    gradeGroup: "中国现当代诗歌",
+    dynasty: "近现代",
+    author: "闻一多",
+    source: "《死水》",
+    excerpt: "这是一沟绝望的死水"
+  },
+  {
     textRef: "mingshu-ms-578",
     id: "ms-578",
     title: "大堰河——我的保姆",

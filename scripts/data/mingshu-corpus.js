@@ -138,6 +138,7 @@ add(require('./corpus/fill-contemporary-novels-26.js'));
 /* ── Issue #381 第十四轮（批次三·诗歌）· 中国现当代诗歌（整组补齐）────
    用户点的 1 2 3 4 里第 3 步的后半段：诗歌 68 部、戏剧 44 部。 */
 add(require('./corpus/fill-poems-1.js'));
+add(require('./corpus/fill-poems-2.js'));
 
 /* 中国当代小说 121 部整组补齐（batch 2 第一批） */
 
