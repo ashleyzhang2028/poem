@@ -87,8 +87,10 @@ const MS = book('名著导读', 'POEMS_MINGSHU', MINGSHU_GROUPS, '部');
 const MR_CN = book('历代名家「中国」', 'POEMS_MINGREN_CN', MINGREN_GROUPS, '家');
 const MR_FOREIGN = book('历代名家「外国」', 'POEMS_MINGREN_FOREIGN', MINGREN_GROUPS, '家', { sparse: true });
 const MR = MR_CN.concat(MR_FOREIGN);
-chk(MR_CN.length + MR_FOREIGN.length === 811,
-  '两卷合计仍是 811 位（中国 ' + MR_CN.length + ' · 外国 ' + MR_FOREIGN.length + '）');
+/* Issue #407（帝王归位）：本身即为君主 / 执政元首的那 6 位移到帝王两卷，
+   历代名家由 811 位减到 805 位。 */
+chk(MR_CN.length + MR_FOREIGN.length === 805,
+  '两卷合计 805 位（中国 ' + MR_CN.length + ' · 外国 ' + MR_FOREIGN.length + '）');
 
 /* ── 排序：Issue #381 第七、八轮 · 用户原话 ─────────────────────────────
    第七轮：「所有类别的名家按出生时间顺序排序。名著也按时间顺序排序。」
@@ -172,7 +174,7 @@ const MR_BY_GROUP = {};
 MR.forEach(p => { MR_BY_GROUP[p.group] = (MR_BY_GROUP[p.group] || 0) + 1; });
 /* Issue #381 第九轮：706 → 769 位（新收 67 位 + 合并掉同人两条 4 对）。
    守的是**这一段的口径**：新收的十一格各自都有人，且总数对得上。 */
-chk(MR.length === 811, '历代名家共 811 位（实际 ' + MR.length + '）');
+chk(MR.length === 805, '历代名家共 805 位（实际 ' + MR.length + '）');
 /* Issue #381 第六轮：新开「政治家」一组，军事家覆盖中外 */
 chk((MR_BY_GROUP['政治家'] || 0) >= 30,
   '政治家补到 30 位以上（实际 ' + (MR_BY_GROUP['政治家'] || 0) + '）');
@@ -477,7 +479,10 @@ chk(axisKeepMissing.length === 0,
 
 /* 别的国家的政治 / 军事人物照旧在册 —— 用户写的是「其他国家的政治，军事家
    **可以**添加」，是放开不是收口。 */
-const OTHER_POL_MIL = ['丘吉尔', '戴高乐', '华盛顿', '拿破仑', '俾斯麦',
+/* Issue #407：名单里凡是**本身即为君主 / 执政元首**的（俾斯麦、奥古斯都、
+   图拉真、腓特烈二世、梭伦、伯里克利）已移到帝王两卷 —— 这一条守的变成
+   「其余的臣子型政治 / 军事人物照旧在册」。 */
+const OTHER_POL_MIL = ['丘吉尔', '戴高乐', '华盛顿', '拿破仑',
   '艾森豪威尔', '朱可夫', '蒙哥马利'];
 const otherMissing = OTHER_POL_MIL.filter(n => !mrByName[n]);
 chk(otherMissing.length === 0,

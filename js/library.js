@@ -128,6 +128,25 @@
       page: "/mingren-waiguo/",
       unit: "家",
       desc: "外国历代名家一百八十一位，同样十七个行当组，本卷按出生时间先后排；每位写清是什么家"
+    },
+    /* Issue #407：帝王两卷 —— 中国卷自夏至清末，外国卷覆盖教科书点名的各国君主。 */
+    {
+      id: "dwang",
+      name: "帝王「中国」",
+      book: "DwangBook",
+      short: "帝王·中",
+      page: "/dwang/",
+      unit: "位",
+      desc: "自夏商周至清末的三百余位帝王，按二十五个时期分段、按在位先后排；每位给姓名 / 年号 / 在位 / 谥号 / 庙号 / 谱系，并按政治 / 经济 / 军事 / 文化 / 民族外交 / 个人六项评价"
+    },
+    {
+      id: "dwang-waiguo",
+      name: "帝王「外国」",
+      book: "DwangBook",
+      short: "帝王·外",
+      page: "/dwang-waiguo/",
+      unit: "位",
+      desc: "教科书小初高大学阶段点名的各国君主，分上古东方 / 希腊与罗马 / 中世纪与伊斯兰 / 近代欧洲 / 现代五个时期，按在位先后排；每位给姓名 / 在位 / 尊号 / 王统与六项评价"
     }
   ];
 
@@ -155,7 +174,9 @@
       changshi: "POEMS_CHANGSHI",
       mingshu: "POEMS_MINGSHU",
       mingren: "POEMS_MINGREN_CN",
-      "mingren-waiguo": "POEMS_MINGREN_FOREIGN"
+      "mingren-waiguo": "POEMS_MINGREN_FOREIGN",
+      dwang: "POEMS_EMPEROR_CN",
+      "dwang-waiguo": "POEMS_EMPEROR_FOREIGN"
     };
     var key = VARS[bookId];
     var list = key ? window[key] : null;

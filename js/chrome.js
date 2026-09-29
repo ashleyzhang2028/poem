@@ -86,6 +86,8 @@
     mingshu: "/mingshu/",
     mingren: "/mingren/",
     "mingren-waiguo": "/mingren-waiguo/",
+    dwang: "/dwang/",
+    "dwang-waiguo": "/dwang-waiguo/",
     search: "/search/",
     mine: "/mine/",
     settings: "/settings/",
@@ -131,6 +133,8 @@
     if (/^\/mingshu\/?$/.test(p) || /^\/mingshu\/index\.html$/.test(p)) return "mingshu";
     if (/^\/mingren\/?$/.test(p) || /^\/mingren\/index\.html$/.test(p)) return "mingren";
     if (/^\/mingren-waiguo\/?$/.test(p) || /^\/mingren-waiguo\/index\.html$/.test(p)) return "mingren-waiguo";
+    if (/^\/dwang\/?$/.test(p) || /^\/dwang\/index\.html$/.test(p)) return "dwang";
+    if (/^\/dwang-waiguo\/?$/.test(p) || /^\/dwang-waiguo\/index\.html$/.test(p)) return "dwang-waiguo";
     if (/^\/mine\/?$/.test(p) || /^\/mine\/index\.html$/.test(p)) return "mine";
     if (/^\/settings\/?$/.test(p) || /^\/settings\/index\.html$/.test(p)) return "settings";
     if (/^\/progress\/?$/.test(p) || /^\/progress\/index\.html$/.test(p)) return "progress";
@@ -298,6 +302,8 @@
     mingshu: routeHref("library"),
     mingren: routeHref("library"),
     "mingren-waiguo": routeHref("library"),
+    dwang: routeHref("library"),
+    "dwang-waiguo": routeHref("library"),
 
     settings: routeHref("mine"),
 
@@ -368,7 +374,8 @@
     if (key === "classic" || key === "yuefu" || key === "tangshi" || key === "songci" ||
         key === "guwen" || key === "zhaoming" || key === "yuanqu" ||
         key === "jinxiandai" || key === "chengyu" || key === "changshi" ||
-        key === "mingshu" || key === "mingren" || key === "mingren-waiguo") return "library";
+        key === "mingshu" || key === "mingren" || key === "mingren-waiguo" ||
+        key === "dwang" || key === "dwang-waiguo") return "library";
 
         if (key === "poems") return "library";
 

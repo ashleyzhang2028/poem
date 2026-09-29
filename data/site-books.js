@@ -16,7 +16,10 @@
     { id: "mingshu", name: "名著导读", page: "/mingshu/", varName: "POEMS_MINGSHU", unit: "部" },
     /* Issue #399：历代名家拆两部（中国 / 外国），两部都是独立集子。 */
     { id: "mingren", name: "历代名家「中国」", page: "/mingren/", varName: "POEMS_MINGREN_CN", unit: "家" },
-    { id: "mingren-waiguo", name: "历代名家「外国」", page: "/mingren-waiguo/", varName: "POEMS_MINGREN_FOREIGN", unit: "家", refPrefix: "mingren" }
+    { id: "mingren-waiguo", name: "历代名家「外国」", page: "/mingren-waiguo/", varName: "POEMS_MINGREN_FOREIGN", unit: "家", refPrefix: "mingren", file: "poems-mingren-foreign" },
+    /* Issue #407：帝王两卷 —— 中国卷自夏至清末，外国卷覆盖教科书点名的各国君主。 */
+    { id: "dwang", name: "帝王「中国」", page: "/dwang/", varName: "POEMS_EMPEROR_CN", unit: "位", file: "poems-emperor-cn" },
+    { id: "dwang-waiguo", name: "帝王「外国」", page: "/dwang-waiguo/", varName: "POEMS_EMPEROR_FOREIGN", unit: "位", refPrefix: "dwang", file: "poems-emperor-waiguo" }
   ];
 
   window.SITE_BOOKS_DEF = BOOKS;

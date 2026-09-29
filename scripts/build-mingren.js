@@ -75,6 +75,7 @@ const OLD      = require('./data/mingren-new.js');       // 第四轮：文学 /
 const AXIS     = require('./data/mingren-axis.js');      // 第七轮：德 / 意 政治与军事
 const R9       = require('./data/mingren-round9.js');    // 第九轮：补齐行当 + 归位
 const R10      = require('./data/mingren-round10.js');   // 第十轮：并组 + 补美术 / 音乐 / 经济
+const R11      = require('./data/mingren-round11.js');   // 第十一轮：帝王归位（Issue #407）
 
 /* ── 分组：十五个行当，不分中国 / 外国两类 ──────────────────────────────
    用户原话（Issue #381 · 本轮）：「将外国和中国的各个家合并，不区分中国
@@ -403,7 +404,10 @@ PLAN.forEach(function (plan) {
 });
 
 /* ── 删除：按名字从主表摘掉 ─────────────────────────────────────────── */
-const DROP = DROP_EARLY.slice().concat(DEDUPE_DROP)
+/* 第十一轮（Issue #407）：帝王归位 —— 本身即为君主 / 执政元首的那几位
+   从历代名家摘掉，正文由帝王两卷各出专条。名单见 mingren-round11.js。 */
+const DROP_RULERS = R11.DROP_RULERS || [];
+const DROP = DROP_EARLY.slice().concat(DEDUPE_DROP).concat(DROP_RULERS)
   .filter(function (t) { return (R10.REINSTATE || []).indexOf(t) < 0; });
 /* 要删的条目主表里没有 → **不算错**：上一轮已经删过，本次是重跑。
    名单本身就是「哪些人该在 / 不该在」的落点（不是差量），
