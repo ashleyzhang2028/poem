@@ -286,13 +286,24 @@ chk(Math.min.apply(null, MS_PEOPLE) >= 15,
      而不是只把数字报上去。这一批交了 5 部（透明的红萝卜 / 长恨歌 /
      尘埃落定 / 穆斯林的葬礼 / 推拿），当代小说组 14 → 19 部，列表页 152 → 157。
      点名的这 5 部必须都在列表页 —— 以后谁删掉其中任何一部，测试当场点名。 */
-  chk(BY('中国当代小说') >= 19,
-    '中国当代小说已填 19 部以上（实际 ' + BY('中国当代小说') + '）');
+  /* 上一批 5 部 + 本批 10 部，逐部点名守着 —— 以后谁删掉其中任何一部，
+     测试当场点名，不靠人记得。 */
   const CONTEMP_5 = ['透明的红萝卜', '长恨歌', '尘埃落定', '穆斯林的葬礼', '推拿'];
   chk(CONTEMP_5.every(t => modernInShell.has(t)),
     '这一批写的 5 部当代小说都进了列表页（缺：' +
     (CONTEMP_5.filter(t => !modernInShell.has(t)).join('、') || '无') + '）');
-  chk(MS.length >= 157, '名著导读已交付 157 部以上（实际 ' + MS.length + '）');
+  chk(BY('中国当代小说') >= 34,
+    '中国当代小说已填 34 部以上（实际 ' + BY('中国当代小说') + '）');
+  const CONTEMP_10 = ['受活', '玫瑰门', '哦，香雪', '大浴女', '芙蓉镇',
+    '将军吟', '冬天里的春天', '钟鼓楼', '抉择', '南渡北归'];
+  chk(CONTEMP_10.every(t => modernInShell.has(t)),
+    '本批写的 10 部当代小说都进了列表页（缺：' +
+    (CONTEMP_10.filter(t => !modernInShell.has(t)).join('、') || '无') + '）');
+  const CONTEMP_5B = ['亮剑', '狼图腾', '暗算', '解密', '风声'];
+  chk(CONTEMP_5B.every(t => modernInShell.has(t)),
+    '本批写的 5 部当代小说都进了列表页（缺：' +
+    (CONTEMP_5B.filter(t => !modernInShell.has(t)).join('、') || '无') + '）');
+  chk(MS.length >= 172, '名著导读已交付 172 部以上（实际 ' + MS.length + '）');
 
   /* 素材全覆盖：书目表里「有素材」的那些书，壳里一条不落 */
   const BOOKS = require('../scripts/data/mingshu-books.js');

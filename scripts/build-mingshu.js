@@ -248,7 +248,12 @@ items.sort(function (a, b) {
   if (ga !== gb) return (ga < 0 ? GROUP_ORDER.length : ga) - (gb < 0 ? GROUP_ORDER.length : gb);
   return a.year - b.year;
 });
-console.log('书目 ' + (LEGACY.length + nextAuto - LEGACY.length - 1) + ' 部；有素材 ' +
+/* ⚠️ 这里原先是 `LEGACY.length + nextAuto - LEGACY.length - 1`，恒等于
+   `nextAuto - 1` —— 那是**已发出的最大 id 号**，不是书目表的真实部数。
+   号段里删过条目会留空号、扩容过会跳号，于是这个数字会越报越大（曾报成
+   1118 部，实际书目只有 816 部）。改成把书目表逐组加一遍。 */
+const BOOK_TOTAL = BOOKS.reduce(function (n, pair) { return n + pair[1].length; }, 0);
+console.log('书目 ' + BOOK_TOTAL + ' 部；有素材 ' +
   items.length + ' 部；缺素材 ' + missing.length + ' 部');
 if (missing.length) {
   console.log('缺素材（前 20）：' + missing.slice(0, 20).join('、'));
