@@ -146,6 +146,14 @@ function newPinyinProposalId() {
   return "pf_" + crypto.randomBytes(8).toString("hex");
 }
 
+function newFeedbackId() {
+  return "fb_" + crypto.randomBytes(8).toString("hex");
+}
+
+function newFeedbackCommentId() {
+  return "fc_" + crypto.randomBytes(8).toString("hex");
+}
+
 function newSalt() {
   return crypto.randomBytes(8).toString("hex");
 }
@@ -162,6 +170,8 @@ module.exports = {
   newResetId: newResetId,
   newReportId: newReportId,
   newPinyinProposalId: newPinyinProposalId,
+  newFeedbackId: newFeedbackId,
+  newFeedbackCommentId: newFeedbackCommentId,
   normalizePhone: normalizePhone,
   isPhoneShape: isPhoneShape,
   maskPhone: maskPhone,

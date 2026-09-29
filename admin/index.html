@@ -66,6 +66,20 @@
         <p class="account-msg" id="msg-reports"></p>
       </section>
 
+      <section class="account-card" id="feedback-card" hidden>
+        <h2 class="account-card-title">需求 / 意见反馈</h2>
+        <p class="account-lead">用户在「我的 → 更多」提交的需求 / 使用问题（含未登录访客，按设备号认人）。回复会在用户那边看到；用户能删自己发的内容，但删不掉你回复的那些。</p>
+
+        <div class="admin-report-tools">
+          <div class="admin-report-counts" id="fb-admin-counts" role="group" aria-label="按状态筛选"></div>
+          <button class="account-btn ghost" id="btn-fb-admin-reload" type="button">刷新</button>
+        </div>
+
+        <ul class="report-list" id="fb-admin-list"></ul>
+        <p class="account-hint" id="fb-admin-empty" hidden></p>
+        <p class="account-msg" id="msg-fb-admin"></p>
+      </section>
+
       <section class="account-card" id="pinyin-card" hidden>
         <h2 class="account-card-title">注音勘误</h2>
         <p class="account-lead">多音字偶尔会被自动注音读错。找到篇目，点读错的字，选正确的读音，再提交给所有人。</p>
@@ -127,6 +141,7 @@
   <script src="/js/storage.js"></script>
   <script src="/js/avatar.js"></script>
   <script src="/js/report.js"></script>
+  <script src="/js/feedback.js"></script>
   <script src="/data/pinyin-table.js"></script>
   <script src="/data/common-chars.js"></script>
   <script src="/data/works-index.js"></script>

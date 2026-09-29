@@ -453,6 +453,75 @@ grant execute on function public.kb_upsert_progress(jsonb) to service_role;
 grant execute on function public.kb_purge_expired(bigint) to service_role;
 
 -- ==========================================================================
+-- 11. 需求 / 意见反馈（Issue #372 · 用户原话）
+-- ==========================================================================
+-- 用户原话（2026-09-29）：
+--
+--   「在我的页面 -> 更多 部分添加一个需求、意见反馈链接，用户点击后可以给
+--     管理提交 app 需求，功能，其他问题等等，管理员收到后可以进行回复，
+--     回复完用户也能看到，用户也能删除意见及后续跟进的评论。在管理员页面，
+--     管理员也能删除用户的反馈及后续跟进的评论。其他用户无法看到非自己
+--     提交的内容。未登录用户是否可以基于什么生成一个 ID，这台设备可以
+--     进行发表和跟进，以及删除，管理员也能回复。」
+--
+-- 这一张与第 7 节「用户报告」长得像，但**不是同一件事**：报告绑定在
+-- 某一篇的某一处（有 poem_id / quote / context），一次提交、一次状态流转；
+-- 这里是**不针对任何一篇**的产品建议 / 需求 / 问题，而且是一段**可以来回
+-- 跟帖的对话**（用户追问、管理员回复、用户再追问……），所以拆成两张表：
+-- 一张「串」（thread，一次反馈）、一张「楼层」（comment，串里的每一条跟帖，
+-- 含反馈正文本身在 `feedback_threads.content`、追加的都在 `feedback_comments`）。
+--
+-- **未登录用户怎么认**：这里没有 uid 可用，只能认 `device_id`——与限流用的
+-- 是**同一份**设备号（`js/auth-core.js` 里 `d_` 开头的 8 位十六进制，本机
+-- 随机生成、写进 localStorage，见 `state.deviceId`）。这一点在服务端要求
+-- **必须是这个形状**（`^d_[0-9a-f]{8}$`），不认「unknown」那个占位值——
+-- 否则所有「浏览器存不住数据」的访客会共用同一个占位设备号，彼此看得到
+-- 对方发的内容，是一处隐私漏洞。⚠️ 这份设备号本质是**客户端自证**（浏览器
+-- 发什么服务端就信什么），伪造成本不高，与限流用的那一份是同一处已知的
+-- 残余风险（见 §4.?? 限流器的说明），不是本节新引入的。
+--
+-- **谁看得到什么**：与报告同一条闸——每个用户 / 每台设备只看得到自己那些
+-- 串；管理员看全站。跟帖的删除权限**不对称**：普通用户只能删**自己写的**
+-- 楼层（含反馈正文本身），删不掉管理员回的那些（不许悄悄抹掉管理员的
+-- 处理记录）；管理员能删任何一条，含别人的整串。
+-- ==========================================================================
+
+create table if not exists public.feedback_threads (
+  tid          text primary key,
+  uid          text references public.accounts(uid) on delete set null,
+  device_id    text   not null default '',
+  email        text   not null default '',
+  nickname     text   not null default '',
+  kind         text   not null default 'other',
+  content      text   not null default '',
+  status       text   not null default 'open',
+  created_at   bigint not null,
+  updated_at   bigint not null
+);
+
+create index if not exists feedback_threads_uid_idx on public.feedback_threads (uid) where uid is not null;
+create index if not exists feedback_threads_device_idx on public.feedback_threads (device_id) where device_id <> '';
+-- 管理端默认按「新到旧 + 只看待处理」翻
+create index if not exists feedback_threads_status_idx on public.feedback_threads (status, updated_at);
+
+alter table public.feedback_threads enable row level security;
+
+create table if not exists public.feedback_comments (
+  cid          text primary key,
+  tid          text   not null references public.feedback_threads(tid) on delete cascade,
+  uid          text references public.accounts(uid) on delete set null,
+  device_id    text   not null default '',
+  author_role  text   not null default 'user',
+  nickname     text   not null default '',
+  content      text   not null default '',
+  created_at   bigint not null
+);
+
+create index if not exists feedback_comments_tid_idx on public.feedback_comments (tid, created_at);
+
+alter table public.feedback_comments enable row level security;
+
+-- ==========================================================================
 -- 10. 注音勘误 · 全站生效（Issue #348 · 用户原话）
 -- ==========================================================================
 -- 用户原话（2026-09-29）：

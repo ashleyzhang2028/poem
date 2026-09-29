@@ -58,7 +58,10 @@
         var dev = "";
         try {
           var A = D.A, b = D.backing;
-          if (A && A.makeStore && b) {
+          // AuthCore.deviceId() mints-and-persists on first call (unlike store.read().deviceId,
+          // which stays null until some other auth flow happened to run first).
+          if (A && typeof A.deviceId === "function" && b) dev = A.deviceId(b) || "";
+          else if (A && A.makeStore && b) {
             var st = A.makeStore(b);
             dev = (st && st.read() && st.read().deviceId) || "";
           }
@@ -510,6 +513,165 @@
       })["catch"](function () { return { ok: false, reason: REASON.UNAVAILABLE }; });
     }
 
+    // 反馈允许游客发（按设备号认人），所以这四个不拿 signedIn() 当门 ——
+    // 认不认得出「这是谁」是服务端的事（登录看会话，没登录看设备号）。
+    function feedbackCreate(input) {
+      var o = input || {};
+      var ch = usable(D.api) || (D.make ? safeCreate(D.make) : null);
+      if (!ch || typeof ch.feedbackCreate !== "function") {
+        return Promise.resolve({ ok: false, reason: REASON_NO_CHANNEL });
+      }
+      return ch.feedbackCreate(o).then(function (r) {
+        if (r && r.ok) return { ok: true, reason: REASON.OK, thread: r.thread, note: r.note };
+        var code = (r && r.code) || "E_OFFLINE";
+        if (code === "E_NOT_CONFIGURED") return { ok: false, reason: REASON.NOT_CONFIGURED };
+        if (code === "E_NO_IDENTITY" || code === "E_EMPTY" || code === "E_RATE_DEVICE") {
+          return { ok: false, reason: REASON.OK, code: code, message: r && r.message };
+        }
+        return { ok: false, reason: REASON.UNAVAILABLE };
+      })["catch"](function () { return { ok: false, reason: REASON.UNAVAILABLE }; });
+    }
+
+    function feedbackMine() {
+      var ch = usable(D.api) || (D.make ? safeCreate(D.make) : null);
+      if (!ch || typeof ch.feedbackMine !== "function") {
+        return Promise.resolve({ ok: false, reason: REASON_NO_CHANNEL });
+      }
+      return ch.feedbackMine().then(function (r) {
+        if (r && r.ok) return { ok: true, reason: REASON.OK, threads: r.threads || [], noIdentity: !!r.noIdentity };
+        var code = (r && r.code) || "E_OFFLINE";
+        if (code === "E_NOT_CONFIGURED") return { ok: false, reason: REASON.NOT_CONFIGURED };
+        return { ok: false, reason: REASON.UNAVAILABLE };
+      })["catch"](function () { return { ok: false, reason: REASON.UNAVAILABLE }; });
+    }
+
+    function feedbackComment(input) {
+      var o = input || {};
+      var ch = usable(D.api) || (D.make ? safeCreate(D.make) : null);
+      if (!ch || typeof ch.feedbackComment !== "function") {
+        return Promise.resolve({ ok: false, reason: REASON_NO_CHANNEL });
+      }
+      return ch.feedbackComment(o).then(function (r) {
+        if (r && r.ok) return { ok: true, reason: REASON.OK, comment: r.comment };
+        var code = (r && r.code) || "E_OFFLINE";
+        if (code === "E_NOT_CONFIGURED") return { ok: false, reason: REASON.NOT_CONFIGURED };
+        if (code === "E_NO_IDENTITY" || code === "E_EMPTY" || code === "E_NO_THREAD" || code === "E_RATE_DEVICE") {
+          return { ok: false, reason: REASON.OK, code: code, message: r && r.message };
+        }
+        return { ok: false, reason: REASON.UNAVAILABLE };
+      })["catch"](function () { return { ok: false, reason: REASON.UNAVAILABLE }; });
+    }
+
+    function feedbackDelete(input) {
+      var o = input || {};
+      var ch = usable(D.api) || (D.make ? safeCreate(D.make) : null);
+      if (!ch || typeof ch.feedbackDelete !== "function") {
+        return Promise.resolve({ ok: false, reason: REASON_NO_CHANNEL });
+      }
+      return ch.feedbackDelete(o).then(function (r) {
+        if (r && r.ok) return { ok: true, reason: REASON.OK, deleted: r.deleted };
+        var code = (r && r.code) || "E_OFFLINE";
+        if (code === "E_NOT_CONFIGURED") return { ok: false, reason: REASON.NOT_CONFIGURED };
+        if (code === "E_NO_IDENTITY" || code === "E_NO_THREAD" || code === "E_NO_COMMENT") {
+          return { ok: false, reason: REASON.OK, code: code, message: r && r.message };
+        }
+        return { ok: false, reason: REASON.UNAVAILABLE };
+      })["catch"](function () { return { ok: false, reason: REASON.UNAVAILABLE }; });
+    }
+
+    function adminFeedbackList(input) {
+      var o = input || {};
+      if (!signedIn()) return Promise.resolve({ ok: false, reason: REASON.GUEST });
+      var ch = usable(D.api) || (D.make ? safeCreate(D.make) : null);
+      if (!ch || typeof ch.adminFeedbackList !== "function") {
+        return Promise.resolve({ ok: false, reason: REASON_NO_CHANNEL });
+      }
+      return ch.adminFeedbackList(o).then(function (r) {
+        if (r && r.ok) return { ok: true, reason: REASON.OK, threads: r.threads || [], counts: r.counts || {} };
+        var code = (r && r.code) || "E_OFFLINE";
+        if (code === "E_NOT_CONFIGURED") return { ok: false, reason: REASON.NOT_CONFIGURED };
+        if (code === "E_NO_SESSION") return { ok: false, reason: REASON.GUEST };
+        if (code === "E_FORBIDDEN") return { ok: false, reason: REASON.OK, code: code, message: r && r.message };
+        return { ok: false, reason: REASON.UNAVAILABLE };
+      })["catch"](function () { return { ok: false, reason: REASON.UNAVAILABLE }; });
+    }
+
+    function adminFeedbackReply(input) {
+      var o = input || {};
+      if (!signedIn()) return Promise.resolve({ ok: false, reason: REASON.GUEST });
+      var ch = usable(D.api) || (D.make ? safeCreate(D.make) : null);
+      if (!ch || typeof ch.adminFeedbackReply !== "function") {
+        return Promise.resolve({ ok: false, reason: REASON_NO_CHANNEL });
+      }
+      return ch.adminFeedbackReply(o).then(function (r) {
+        if (r && r.ok) return { ok: true, reason: REASON.OK, comment: r.comment, status: r.status };
+        var code = (r && r.code) || "E_OFFLINE";
+        if (code === "E_NOT_CONFIGURED") return { ok: false, reason: REASON.NOT_CONFIGURED };
+        if (code === "E_NO_SESSION") return { ok: false, reason: REASON.GUEST };
+        if (code === "E_FORBIDDEN" || code === "E_NO_THREAD" || code === "E_EMPTY") {
+          return { ok: false, reason: REASON.OK, code: code, message: r && r.message };
+        }
+        return { ok: false, reason: REASON.UNAVAILABLE };
+      })["catch"](function () { return { ok: false, reason: REASON.UNAVAILABLE }; });
+    }
+
+    function adminFeedbackStatus(input) {
+      var o = input || {};
+      if (!signedIn()) return Promise.resolve({ ok: false, reason: REASON.GUEST });
+      var ch = usable(D.api) || (D.make ? safeCreate(D.make) : null);
+      if (!ch || typeof ch.adminFeedbackStatus !== "function") {
+        return Promise.resolve({ ok: false, reason: REASON_NO_CHANNEL });
+      }
+      return ch.adminFeedbackStatus(o).then(function (r) {
+        if (r && r.ok) return { ok: true, reason: REASON.OK, status: r.status };
+        var code = (r && r.code) || "E_OFFLINE";
+        if (code === "E_NOT_CONFIGURED") return { ok: false, reason: REASON.NOT_CONFIGURED };
+        if (code === "E_NO_SESSION") return { ok: false, reason: REASON.GUEST };
+        if (code === "E_FORBIDDEN" || code === "E_NO_THREAD") {
+          return { ok: false, reason: REASON.OK, code: code, message: r && r.message };
+        }
+        return { ok: false, reason: REASON.UNAVAILABLE };
+      })["catch"](function () { return { ok: false, reason: REASON.UNAVAILABLE }; });
+    }
+
+    function adminFeedbackDeleteThread(input) {
+      var o = input || {};
+      if (!signedIn()) return Promise.resolve({ ok: false, reason: REASON.GUEST });
+      var ch = usable(D.api) || (D.make ? safeCreate(D.make) : null);
+      if (!ch || typeof ch.adminFeedbackDeleteThread !== "function") {
+        return Promise.resolve({ ok: false, reason: REASON_NO_CHANNEL });
+      }
+      return ch.adminFeedbackDeleteThread(o).then(function (r) {
+        if (r && r.ok) return { ok: true, reason: REASON.OK };
+        var code = (r && r.code) || "E_OFFLINE";
+        if (code === "E_NOT_CONFIGURED") return { ok: false, reason: REASON.NOT_CONFIGURED };
+        if (code === "E_NO_SESSION") return { ok: false, reason: REASON.GUEST };
+        if (code === "E_FORBIDDEN" || code === "E_NO_THREAD") {
+          return { ok: false, reason: REASON.OK, code: code, message: r && r.message };
+        }
+        return { ok: false, reason: REASON.UNAVAILABLE };
+      })["catch"](function () { return { ok: false, reason: REASON.UNAVAILABLE }; });
+    }
+
+    function adminFeedbackDeleteComment(input) {
+      var o = input || {};
+      if (!signedIn()) return Promise.resolve({ ok: false, reason: REASON.GUEST });
+      var ch = usable(D.api) || (D.make ? safeCreate(D.make) : null);
+      if (!ch || typeof ch.adminFeedbackDeleteComment !== "function") {
+        return Promise.resolve({ ok: false, reason: REASON_NO_CHANNEL });
+      }
+      return ch.adminFeedbackDeleteComment(o).then(function (r) {
+        if (r && r.ok) return { ok: true, reason: REASON.OK };
+        var code = (r && r.code) || "E_OFFLINE";
+        if (code === "E_NOT_CONFIGURED") return { ok: false, reason: REASON.NOT_CONFIGURED };
+        if (code === "E_NO_SESSION") return { ok: false, reason: REASON.GUEST };
+        if (code === "E_FORBIDDEN" || code === "E_NO_COMMENT") {
+          return { ok: false, reason: REASON.OK, code: code, message: r && r.message };
+        }
+        return { ok: false, reason: REASON.UNAVAILABLE };
+      })["catch"](function () { return { ok: false, reason: REASON.UNAVAILABLE }; });
+    }
+
         function adminSetRole(input) {
       var o = input || {};
       if (!signedIn()) return Promise.resolve({ ok: false, reason: REASON.GUEST });
@@ -676,6 +838,16 @@
       adminPinyinList: adminPinyinList,
       adminPinyinReview: adminPinyinReview,
 
+      feedbackCreate: feedbackCreate,
+      feedbackMine: feedbackMine,
+      feedbackComment: feedbackComment,
+      feedbackDelete: feedbackDelete,
+      adminFeedbackList: adminFeedbackList,
+      adminFeedbackReply: adminFeedbackReply,
+      adminFeedbackStatus: adminFeedbackStatus,
+      adminFeedbackDeleteThread: adminFeedbackDeleteThread,
+      adminFeedbackDeleteComment: adminFeedbackDeleteComment,
+
       gameAnswer: gameAnswer
     };
   }
@@ -726,6 +898,16 @@
     adminPinyinPropose: function (o) { return boundOnce(o).adminPinyinPropose(o); },
     adminPinyinList: function (o) { return boundOnce(o).adminPinyinList(o); },
     adminPinyinReview: function (o) { return boundOnce(o).adminPinyinReview(o); },
+
+    feedbackCreate: function (o) { return boundOnce(o).feedbackCreate(o); },
+    feedbackMine: function (o) { return boundOnce(o).feedbackMine(o); },
+    feedbackComment: function (o) { return boundOnce(o).feedbackComment(o); },
+    feedbackDelete: function (o) { return boundOnce(o).feedbackDelete(o); },
+    adminFeedbackList: function (o) { return boundOnce(o).adminFeedbackList(o); },
+    adminFeedbackReply: function (o) { return boundOnce(o).adminFeedbackReply(o); },
+    adminFeedbackStatus: function (o) { return boundOnce(o).adminFeedbackStatus(o); },
+    adminFeedbackDeleteThread: function (o) { return boundOnce(o).adminFeedbackDeleteThread(o); },
+    adminFeedbackDeleteComment: function (o) { return boundOnce(o).adminFeedbackDeleteComment(o); },
 
     uploadAvatar: function (o) { return boundOnce(o).uploadAvatar(o); },
     deleteAvatar: function (o) { return boundOnce(o).deleteAvatar(o); },

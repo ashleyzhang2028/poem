@@ -3,7 +3,7 @@
 var upstream = require("./upstream");
 
 function memoryStore() {
-  var db = { accounts: {}, codes: {}, sessions: {}, progress: {}, verifications: {}, resets: {}, reports: {}, pinyinProposals: {} };
+  var db = { accounts: {}, codes: {}, sessions: {}, progress: {}, verifications: {}, resets: {}, reports: {}, pinyinProposals: {}, feedbackThreads: {}, feedbackComments: {} };
   var api = {
     kind: "memory",
     ready: function () { return true; },
@@ -197,6 +197,60 @@ function memoryStore() {
         counts[r.status || "pending"] = (counts[r.status || "pending"] || 0) + 1;
       });
       return Promise.resolve(counts);
+    },
+
+    putFeedbackThread: function (row) { db.feedbackThreads[row.tid] = row; return Promise.resolve({ tid: row.tid }); },
+    getFeedbackThread: function (tid) { return Promise.resolve(db.feedbackThreads[tid] || null); },
+    listFeedbackThreads: function (filter, limit) {
+      var f = filter || {};
+      var out = Object.keys(db.feedbackThreads).map(function (k) { return db.feedbackThreads[k]; });
+      if (f.uid) out = out.filter(function (r) { return r.uid === f.uid; });
+      if (f.deviceId) out = out.filter(function (r) { return r.device_id === f.deviceId; });
+      if (f.status) out = out.filter(function (r) { return r.status === f.status; });
+      out.sort(function (a, b) { return (b.updated_at || 0) - (a.updated_at || 0); });
+      return Promise.resolve(out.slice(0, limit || 200));
+    },
+    patchFeedbackThread: function (tid, patch) {
+      var r = db.feedbackThreads[tid];
+      if (!r) return Promise.resolve(null);
+      Object.keys(patch || {}).forEach(function (k) { r[k] = patch[k]; });
+      return Promise.resolve(r);
+    },
+    deleteFeedbackThread: function (tid) {
+      if (!db.feedbackThreads[tid]) return Promise.resolve(false);
+      delete db.feedbackThreads[tid];
+      Object.keys(db.feedbackComments).forEach(function (k) {
+        if (db.feedbackComments[k].tid === tid) delete db.feedbackComments[k];
+      });
+      return Promise.resolve(true);
+    },
+    countFeedbackThreads: function (filter) {
+      var f = filter || {};
+      var counts = { all: 0 };
+      Object.keys(db.feedbackThreads).forEach(function (k) {
+        var r = db.feedbackThreads[k];
+        if (f.uid && r.uid !== f.uid) return;
+        if (f.deviceId && r.device_id !== f.deviceId) return;
+        counts.all += 1;
+        counts[r.status || "open"] = (counts[r.status || "open"] || 0) + 1;
+      });
+      return Promise.resolve(counts);
+    },
+
+    putFeedbackComment: function (row) { db.feedbackComments[row.cid] = row; return Promise.resolve({ cid: row.cid }); },
+    getFeedbackComment: function (cid) { return Promise.resolve(db.feedbackComments[cid] || null); },
+    listFeedbackComments: function (filter, limit) {
+      var f = filter || {};
+      var out = Object.keys(db.feedbackComments).map(function (k) { return db.feedbackComments[k]; });
+      if (f.tid) out = out.filter(function (r) { return r.tid === f.tid; });
+      if (f.tids) out = out.filter(function (r) { return f.tids.indexOf(r.tid) >= 0; });
+      out.sort(function (a, b) { return (a.created_at || 0) - (b.created_at || 0); });
+      return Promise.resolve(out.slice(0, limit || 2000));
+    },
+    deleteFeedbackComment: function (cid) {
+      if (!db.feedbackComments[cid]) return Promise.resolve(false);
+      delete db.feedbackComments[cid];
+      return Promise.resolve(true);
     }
   };
   return api;
@@ -494,7 +548,7 @@ function supabaseStore(cfg) {
     }
   };
 
-  return attachPinyinProposalApi(attachReportApi(api, call), call);
+  return attachFeedbackApi(attachPinyinProposalApi(attachReportApi(api, call), call), call);
 }
 
 var REPORT_COLS = "rid,uid,email,nickname,kind,status,poem_id,poem_title,book," +
@@ -592,6 +646,78 @@ function attachPinyinProposalApi(api, call) {
       });
       return out;
     });
+  };
+  return api;
+}
+
+var FEEDBACK_THREAD_COLS = "tid,uid,device_id,email,nickname,kind,content,status,created_at,updated_at";
+var FEEDBACK_COMMENT_COLS = "cid,tid,uid,device_id,author_role,nickname,content,created_at";
+
+function feedbackThreadFilterQs(filter) {
+  var parts = [];
+  if (filter && filter.uid) parts.push("uid=eq." + q(filter.uid));
+  if (filter && filter.deviceId) parts.push("device_id=eq." + q(filter.deviceId));
+  if (filter && filter.status) parts.push("status=eq." + q(filter.status));
+  return parts.length ? "&" + parts.join("&") : "";
+}
+
+function attachFeedbackApi(api, call) {
+  api.putFeedbackThread = function (row) {
+    return call("/feedback_threads", { method: "POST", body: row, prefer: "return=minimal" }).then(function () {
+      return { tid: row.tid };
+    });
+  };
+  api.getFeedbackThread = function (tid) {
+    return call("/feedback_threads?tid=eq." + q(tid) + "&select=" + FEEDBACK_THREAD_COLS + "&limit=1")
+      .then(function (rows) { return rows && rows[0] ? rows[0] : null; });
+  };
+  api.listFeedbackThreads = function (filter, limit) {
+    var p = "/feedback_threads?select=" + FEEDBACK_THREAD_COLS + feedbackThreadFilterQs(filter) +
+      "&order=updated_at.desc&limit=" + encodeURIComponent(String(limit || 200));
+    return call(p).then(function (rows) { return rows || []; });
+  };
+  api.patchFeedbackThread = function (tid, patch) {
+    return call("/feedback_threads?tid=eq." + q(tid), {
+      method: "PATCH", body: patch, prefer: "return=representation"
+    }).then(function (rows) { return rows && rows[0] ? rows[0] : null; });
+  };
+  api.deleteFeedbackThread = function (tid) {
+    // Comments cascade at the DB level (feedback_comments.tid references ... on delete cascade).
+    return call("/feedback_threads?tid=eq." + q(tid), { method: "DELETE", prefer: "return=minimal" })
+      .then(function () { return true; });
+  };
+  api.countFeedbackThreads = function (filter) {
+    var base = "/feedback_threads?select=status" + feedbackThreadFilterQs(filter) + "&limit=5000";
+    return call(base).then(function (rows) {
+      var out = { all: 0 };
+      (rows || []).forEach(function (r) {
+        out.all += 1;
+        var st = String((r && r.status) || "open");
+        out[st] = (out[st] || 0) + 1;
+      });
+      return out;
+    });
+  };
+
+  api.putFeedbackComment = function (row) {
+    return call("/feedback_comments", { method: "POST", body: row, prefer: "return=minimal" }).then(function () {
+      return { cid: row.cid };
+    });
+  };
+  api.getFeedbackComment = function (cid) {
+    return call("/feedback_comments?cid=eq." + q(cid) + "&select=" + FEEDBACK_COMMENT_COLS + "&limit=1")
+      .then(function (rows) { return rows && rows[0] ? rows[0] : null; });
+  };
+  api.listFeedbackComments = function (filter, limit) {
+    var p = "/feedback_comments?select=" + FEEDBACK_COMMENT_COLS;
+    if (filter && filter.tid) p += "&tid=eq." + q(filter.tid);
+    else if (filter && filter.tids) p += "&tid=in.(" + filter.tids.map(q).join(",") + ")";
+    p += "&order=created_at.asc&limit=" + encodeURIComponent(String(limit || 2000));
+    return call(p).then(function (rows) { return rows || []; });
+  };
+  api.deleteFeedbackComment = function (cid) {
+    return call("/feedback_comments?cid=eq." + q(cid), { method: "DELETE", prefer: "return=minimal" })
+      .then(function () { return true; });
   };
   return api;
 }

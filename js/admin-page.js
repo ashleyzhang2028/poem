@@ -700,8 +700,8 @@
     Promise.resolve(A.adminPinyinReview({ fid: fid, decision: decision, note: note })).then(function (r) {
       b.disabled = false;
       if (r && r.ok) {
-        pfQueueMsg(r.note || "已保存。", "ok");
-        loadPinyinQueue().then(function () { if (pfWork) renderLines(); });
+        var noteText = r.note || "已保存。";
+        loadPinyinQueue().then(function () { pfQueueMsg(noteText, "ok"); if (pfWork) renderLines(); });
         return;
       }
       if (r && r.code === "E_STATE") { pfQueueMsg((r && r.message) || "这一条现在的状态不能这么操作。", "warn"); return; }
@@ -1134,6 +1134,177 @@
     patchReport(b.getAttribute("data-rid"), b.getAttribute("data-report-act"), b);
   }
 
+  // ---- 需求 / 意见反馈：管理端全站列表，回复 / 状态 / 删除 ----
+
+  var fbAdminThreads = [];
+  var fbAdminStatus = "open";
+  var fbAdminCounts = {};
+  var FB_STATUSES = ["open", "replied", "closed"];
+
+  function fdMod() { return window.Feedback || null; }
+  function fbStatusLabel(s) { var Fd = fdMod(); return Fd ? Fd.labelOfStatus(s) : s; }
+  function fbKindLabel(k) { var Fd = fdMod(); return Fd ? Fd.labelOfKind(k) : k; }
+  function fbMsg(text, level) { msg("msg-fb-admin", text, level); }
+
+  function loadFeedbackAdmin() {
+    var A = acct();
+    var box = $("fb-admin-list");
+    if (!box) return Promise.resolve();
+    if (!A || typeof A.adminFeedbackList !== "function") { fbMsg(STALE, "warn"); return Promise.resolve(); }
+    return Promise.resolve(A.adminFeedbackList({ status: "all", limit: 300 })).then(function (r) {
+      if (r && r.ok) {
+        fbAdminThreads = r.threads || [];
+        fbAdminCounts = r.counts || {};
+        renderFeedbackCounts(fbAdminCounts);
+        renderFeedbackList();
+        fbMsg("", "");
+        return;
+      }
+      if (r && r.reason === "guest") { fbMsg(EXPIRED, "warn"); return; }
+      if (r && r.reason === "not-configured") { fbMsg(NO_CLOUD, "warn"); return; }
+      if (r && r.code === "E_FORBIDDEN") { fbMsg("仅管理员可查看。", "warn"); return; }
+      fbMsg(OFFLINE, "warn");
+    })["catch"](function () { fbMsg(OFFLINE, "warn"); });
+  }
+
+  function renderFeedbackCounts(counts) {
+    var host = $("fb-admin-counts");
+    if (!host) return;
+    var total = 0;
+    FB_STATUSES.forEach(function (k) { total += Number(counts && counts[k]) || 0; });
+    host.innerHTML = FB_STATUSES.concat(["all"]).map(function (k) {
+      var n = k === "all" ? total : (Number(counts && counts[k]) || 0);
+      var label = k === "all" ? "全部" : fbStatusLabel(k);
+      return '<button type="button" class="' + (k === fbAdminStatus ? "active" : "") + '"' +
+        ' data-fb-status="' + k + '" aria-pressed="' + (k === fbAdminStatus ? "true" : "false") + '">' +
+        esc(label) + "<span>" + n + "</span></button>";
+    }).join("");
+  }
+
+  function onFeedbackCountsClick(e) {
+    var b = e.target.closest ? e.target.closest("button[data-fb-status]") : null;
+    if (!b) return;
+    fbAdminStatus = b.getAttribute("data-fb-status") || "open";
+    renderFeedbackCounts(fbAdminCounts);
+    renderFeedbackList();
+  }
+
+  function fbEmptyText(status) {
+    if (status === "open") return "没有待处理的反馈。";
+    if (status === "all") return "还没有人提交过反馈。";
+    return "没有「" + fbStatusLabel(status) + "」的反馈。";
+  }
+
+  function renderFeedbackList() {
+    var box = $("fb-admin-list");
+    var empty = $("fb-admin-empty");
+    if (!box) return;
+    var list = fbAdminThreads.filter(function (t) { return fbAdminStatus === "all" ? true : t.status === fbAdminStatus; });
+    if (empty) { empty.hidden = list.length > 0; empty.textContent = fbEmptyText(fbAdminStatus); }
+    box.innerHTML = list.map(feedbackRowHtml).join("");
+  }
+
+  function feedbackRowHtml(t) {
+    var whoName = t.email || (t.deviceId ? "访客设备 " + t.deviceId.slice(0, 6) + "…" : "访客");
+    var who = [t.nickname, whoName, timeText(t.createdAt)].filter(Boolean).join(" · ");
+    var brief = t.content.length > 60 ? t.content.slice(0, 60) + "…" : t.content;
+    var comments = (t.comments || []).map(feedbackCommentAdminHtml).join("");
+    return '<li class="report-row admin-report-row report-st-' + esc(t.status) + '" data-fb-tid="' + esc(t.tid) + '">' +
+      '<div class="report-row-head">' +
+      '<span class="report-kind">' + esc(fbKindLabel(t.kind)) + "</span>" +
+      '<span class="report-title">' + esc(brief) + "</span>" +
+      '<span class="report-status">' + esc(fbStatusLabel(t.status)) + "</span>" +
+      "</div>" +
+      '<div class="admin-report-who">' + esc(who) + "</div>" +
+      (comments ? '<ul class="fb-comments fb-admin-comments">' + comments + "</ul>" : "") +
+      '<div class="admin-report-reply">' +
+      '<label class="account-label" for="fbr-' + esc(t.tid) + '">回复用户</label>' +
+      '<div class="admin-report-reply-row">' +
+      '<input id="fbr-' + esc(t.tid) + '" class="account-input" type="text" maxlength="2000" autocomplete="off"' +
+      ' data-fb-reply-of="' + esc(t.tid) + '" placeholder="写点什么回复给用户" />' +
+      '<button type="button" class="account-btn ghost" data-fb-send-reply="' + esc(t.tid) + '">发送</button>' +
+      "</div></div>" +
+      '<div class="admin-report-acts" role="group" aria-label="处理进度">' +
+      FB_STATUSES.map(function (s) { return feedbackActBtn(t.tid, s, t.status); }).join("") +
+      '<button type="button" class="admin-report-jump" data-fb-del-thread="' + esc(t.tid) + '">删除整条</button>' +
+      "</div>" +
+      "</li>";
+  }
+
+  function feedbackActBtn(tid, status, current) {
+    var on = status === current;
+    return '<button type="button" data-fb-status-set="' + esc(status) + '" data-fb-tid="' + esc(tid) + '"' +
+      (on ? ' class="active" aria-pressed="true"' : ' aria-pressed="false"') + ">" + esc(fbStatusLabel(status)) + "</button>";
+  }
+
+  function feedbackCommentAdminHtml(c) {
+    var isAdmin = c.role === "admin";
+    return '<li class="fb-comment' + (isAdmin ? " is-admin" : " is-user") + '">' +
+      '<span class="fb-comment-who">' + esc(c.nickname || (isAdmin ? "管理员" : "用户")) + "</span>" +
+      '<span class="fb-comment-text">' + esc(c.content) + "</span>" +
+      '<span class="fb-comment-time">' + esc(timeText(c.createdAt)) + "</span>" +
+      '<button type="button" class="pf-link danger" data-fb-del-comment="' + esc(c.cid) + '">删除</button>' +
+      "</li>";
+  }
+
+  function onFeedbackListClick(e) {
+    if (!e.target.closest) return;
+
+    var delThread = e.target.closest("button[data-fb-del-thread]");
+    if (delThread) {
+      if (!window.confirm("删除这条反馈？连同下面的跟帖一起删掉，用户也会看不到，无法恢复。")) return;
+      var tid0 = delThread.getAttribute("data-fb-del-thread");
+      var A0 = acct();
+      Promise.resolve(A0.adminFeedbackDeleteThread({ tid: tid0 })).then(function (r) {
+        if (r && r.ok) { loadFeedbackAdmin().then(function () { fbMsg("已删除。", "ok"); }); }
+        else fbMsg((r && r.message) || "删除失败，请重试。", "warn");
+      });
+      return;
+    }
+
+    var delComment = e.target.closest("button[data-fb-del-comment]");
+    if (delComment) {
+      var cid0 = delComment.getAttribute("data-fb-del-comment");
+      var A1 = acct();
+      Promise.resolve(A1.adminFeedbackDeleteComment({ cid: cid0 })).then(function (r) {
+        if (r && r.ok) { loadFeedbackAdmin().then(function () { fbMsg("已删除。", "ok"); }); }
+        else fbMsg((r && r.message) || "删除失败，请重试。", "warn");
+      });
+      return;
+    }
+
+    var setStatus = e.target.closest("button[data-fb-status-set]");
+    if (setStatus) {
+      var tid1 = setStatus.getAttribute("data-fb-tid");
+      var status1 = setStatus.getAttribute("data-fb-status-set");
+      var A2 = acct();
+      setStatus.disabled = true;
+      Promise.resolve(A2.adminFeedbackStatus({ tid: tid1, status: status1 })).then(function (r) {
+        setStatus.disabled = false;
+        if (r && r.ok) {
+          loadFeedbackAdmin().then(function () { fbMsg("已更新为「" + fbStatusLabel(status1) + "」。", "ok"); });
+        } else fbMsg((r && r.message) || "保存失败，请稍后再试。", "warn");
+      });
+      return;
+    }
+
+    var send = e.target.closest("button[data-fb-send-reply]");
+    if (send) {
+      var tid2 = send.getAttribute("data-fb-send-reply");
+      var input = document.getElementById("fbr-" + tid2);
+      var content = ((input && input.value) || "").trim();
+      if (!content) { if (input && input.focus) input.focus(); return; }
+      var A3 = acct();
+      send.disabled = true;
+      fbMsg("正在发送……", "");
+      Promise.resolve(A3.adminFeedbackReply({ tid: tid2, content: content })).then(function (r) {
+        send.disabled = false;
+        if (r && r.ok) { loadFeedbackAdmin().then(function () { fbMsg("已回复，用户会看到。", "ok"); }); }
+        else fbMsg((r && r.message) || "没发出去，稍后再试。", "warn");
+      });
+    }
+  }
+
     var painted = false;
   var paintTimer = null;
 
@@ -1166,6 +1337,7 @@
     hide($("deny-card"));
     show($("grant-card"));
     show($("reports-card"));
+    show($("feedback-card"));
     show($("pinyin-card"));
     if (paintTimer) { clearTimeout(paintTimer); paintTimer = null; }
     if (paint.done) return;
@@ -1186,6 +1358,11 @@
     }
     loadAccounts();
     loadReports();
+
+    if ($("btn-fb-admin-reload")) $("btn-fb-admin-reload").addEventListener("click", loadFeedbackAdmin);
+    if ($("fb-admin-counts")) $("fb-admin-counts").addEventListener("click", onFeedbackCountsClick);
+    if ($("fb-admin-list")) $("fb-admin-list").addEventListener("click", onFeedbackListClick);
+    loadFeedbackAdmin();
 
     $("pf-q").addEventListener("input", onPinyinSearch);
     $("pf-results").addEventListener("click", onResultClick);

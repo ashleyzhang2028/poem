@@ -283,6 +283,15 @@
     return state;
   }
 
+  // Generate-and-persist entry point: unlike store.read().deviceId, this never
+  // returns null — first caller on a fresh browser mints and saves one.
+  function deviceId(backing) {
+    var store = makeStore(backing);
+    var state = ensureBase(store.read());
+    store.write(state);
+    return state.deviceId;
+  }
+
   function windowsFor(bucket) {
     if (bucket === "phone") return RATE_SMS.phone || [];
     return RATE[bucket] || [];
@@ -630,6 +639,7 @@
     rateCode: rateCode,
     SESSION_DAYS: SESSION_DAYS, TRUST_DAYS: TRUST_DAYS, RATE: RATE,
     makeStore: makeStore, emptyState: emptyState,
+    deviceId: deviceId,
     setClock: setClock, setRandom: setRandom,
     normalizeEmail: normalizeEmail, isEmailShape: isEmailShape, emailHint: emailHint,
     isDisposable: isDisposable, maskPhone: maskPhone,

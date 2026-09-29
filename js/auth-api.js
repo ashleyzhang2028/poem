@@ -371,6 +371,48 @@
         return post("/admin/pinyin", { op: "review", fid: input.fid, decision: input.decision, note: input.note });
       },
 
+      feedbackCreate: function (input) {
+        input = input || {};
+        return post("/feedback", { op: "create", kind: input.kind, content: input.content });
+      },
+
+      feedbackMine: function () { return call("/feedback", "GET"); },
+
+      feedbackComment: function (input) {
+        input = input || {};
+        return post("/feedback", { op: "comment", tid: input.tid, content: input.content });
+      },
+
+      feedbackDelete: function (input) {
+        input = input || {};
+        return post("/feedback", { op: "delete", tid: input.tid, cid: input.cid });
+      },
+
+      adminFeedbackList: function (input) {
+        input = input || {};
+        return post("/admin/feedback", { op: "list", status: input.status, limit: input.limit });
+      },
+
+      adminFeedbackReply: function (input) {
+        input = input || {};
+        return post("/admin/feedback", { op: "reply", tid: input.tid, content: input.content, status: input.status });
+      },
+
+      adminFeedbackStatus: function (input) {
+        input = input || {};
+        return post("/admin/feedback", { op: "status", tid: input.tid, status: input.status });
+      },
+
+      adminFeedbackDeleteThread: function (input) {
+        input = input || {};
+        return post("/admin/feedback", { op: "deleteThread", tid: input.tid });
+      },
+
+      adminFeedbackDeleteComment: function (input) {
+        input = input || {};
+        return post("/admin/feedback", { op: "deleteComment", cid: input.cid });
+      },
+
       me: function () { return call("/me", "GET"); },
 
       setNickname: function (input) {
