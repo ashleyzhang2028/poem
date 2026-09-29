@@ -100,6 +100,24 @@
       page: "/changshi/",
       unit: "条",
       desc: "文体 / 作家 / 流派 / 典籍 / 称谓 / 制度 / 典故 / 现当代文学史事件八组，高中及以前考点"
+    },
+    {
+      id: "mingshu",
+      name: "名著导读",
+      book: "MingshuBook",
+      short: "名著",
+      page: "/mingshu/",
+      unit: "部",
+      desc: "中外名著三十六部，每部给写作背景 / 情节 / 人物 / 主旨 / 名句"
+    },
+    {
+      id: "mingren",
+      name: "历代名家",
+      book: "MingrenBook",
+      short: "名家",
+      page: "/mingren/",
+      unit: "家",
+      desc: "历代名家九十九位，按文学 / 史学 / 思想 / 军事 / 科学 / 医学 / 音乐 / 建筑 / 戏曲分九组"
     }
   ];
 
@@ -124,7 +142,9 @@
       yuanqu: "POEMS_YUANQU",
       jinxiandai: "POEMS_JINXIANDAI",
       chengyu: "POEMS_CHENGYU",
-      changshi: "POEMS_CHANGSHI"
+      changshi: "POEMS_CHANGSHI",
+      mingshu: "POEMS_MINGSHU",
+      mingren: "POEMS_MINGREN"
     };
     var key = VARS[bookId];
     var list = key ? window[key] : null;

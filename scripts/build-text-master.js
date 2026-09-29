@@ -12,6 +12,7 @@ const LOAD = [
   'data/poems-songci.js', 'data/poems-guwen.js', 'data/poems-zhaoming.js', 'data/poems-yuanqu.js',
   'data/poems-yuefu.js', 'data/poems-jinxiandai.js', 'data/poems-chengyu.js',
   'data/poems-changshi.js',
+  'data/poems-mingshu.js', 'data/poems-mingren.js',
   'data/chengyu-support.js',
   'data/site-books.js', 'data/site-index.js', 'data/works-map.js', 'data/works-index.js'
 ];
@@ -25,7 +26,7 @@ LOAD.forEach(function (f) {
 
 const WI = sandbox.WorksIndex;
 
-const FULL_BOOKS = ['zhaoming', 'guwen', 'songci', 'tangshi', 'classic', 'yuanqu', 'yuefu', 'jinxiandai', 'chengyu', 'changshi'];
+const FULL_BOOKS = ['zhaoming', 'guwen', 'songci', 'tangshi', 'classic', 'yuanqu', 'yuefu', 'jinxiandai', 'chengyu', 'changshi', 'mingshu', 'mingren'];
 
 const prev = {};
 try {
@@ -74,6 +75,8 @@ var RAW_ENTRIES = {};
     { f: 'data/poems-jinxiandai.js', v: 'POEMS_JINXIANDAI' },
     { f: 'data/poems-chengyu.js', v: 'POEMS_CHENGYU' },
     { f: 'data/poems-changshi.js', v: 'POEMS_CHANGSHI' },
+    { f: 'data/poems-mingshu.js', v: 'POEMS_MINGSHU' },
+    { f: 'data/poems-mingren.js', v: 'POEMS_MINGREN' },
     { f: 'data/chengyu-support.js', v: 'CHENGYU_SUPPORT' }
   ];
   FILES.forEach(function (o) {

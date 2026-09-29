@@ -523,8 +523,27 @@
       body += "<tr>" + cellsHtml(cells, "td", annotate) + "</tr>";
     }
     if (!head) return null;
-    return '<div class="rd-scroll"><table class="rd-table"><thead>' + head +
+    var cls = "rd-table" + (widthLocked(lines, cols) ? " rd-width-locked" : "");
+    return '<div class="rd-scroll"><table class="' + cls + '"><thead>' + head +
       "</thead><tbody>" + body + "</tbody></table></div>";
+  }
+
+  // 表里有一格长过这个数（半角计）就不按比例分宽 —— 见 CSS 的 .rd-width-locked。
+  // 词条式的集子（名著导读 / 历代名家）里「写作背景」一类是一整段话，
+  // 按比例分到手机上就是一条竖线，读不成句。
+  var WIDTH_LOCK_CELL = 80;
+
+  function widthLocked(lines, cols) {
+    for (var i = 0; i < lines.length; i++) {
+      var cells = boxRow(lines[i]);
+      if (!cells) continue;
+      if (cells.length > 2) return true;
+      for (var k = 0; k < cells.length; k++) {
+        if (cells[k].length > WIDTH_LOCK_CELL) return true;
+      }
+    }
+    void cols;
+    return false;
   }
 
     function gridHtml(lines, cols, annotate) {
@@ -833,7 +852,13 @@
 
       var read = isRead(p.id);
 
-      var pending = !p.text || (!p.translation && !CFG.noTranslation);
+      // 词条式集子：正文即词条本身，本来就没有白话译文。
+      // CFG.noTranslation 是「这一整部都不带译文」（集子自己的页面上用）；
+      // CFG.noTranslationBooks 是「这几部不带译文」（搜索页这类混着多部的页面用）
+      // —— 不认后者，那几百条的列表行上会各挂一个「待补」，而它们什么都不缺
+      var noTrans = CFG.noTranslation ||
+        (CFG.noTranslationBooks || []).indexOf(p.book) >= 0;
+      var pending = !p.text || (!p.translation && !noTrans);
       var el = document.createElement("div");
       el.className = "item" + (read ? " done" : "") + (pending ? " pending" : "") +
         (p.gradeGroup === W.matchGroup ? "" : " in-book");

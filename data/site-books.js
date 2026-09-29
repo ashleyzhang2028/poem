@@ -12,7 +12,9 @@
     { id: "jinxiandai", name: "近现代诗词", page: "/jinxiandai/", varName: "POEMS_JINXIANDAI", unit: "首" },
     { id: "zhaoming", name: "昭明文选", page: "/zhaoming/", varName: "POEMS_ZHAOMING", unit: "篇" },
     { id: "chengyu", name: "中华成语故事", page: "/chengyu/", varName: "POEMS_CHENGYU", unit: "则" },
-    { id: "changshi", name: "文学常识", page: "/changshi/", varName: "POEMS_CHANGSHI", unit: "条" }
+    { id: "changshi", name: "文学常识", page: "/changshi/", varName: "POEMS_CHANGSHI", unit: "条" },
+    { id: "mingshu", name: "名著导读", page: "/mingshu/", varName: "POEMS_MINGSHU", unit: "部" },
+    { id: "mingren", name: "历代名家", page: "/mingren/", varName: "POEMS_MINGREN", unit: "家" }
   ];
 
   window.SITE_BOOKS_DEF = BOOKS;

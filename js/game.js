@@ -70,7 +70,9 @@
     { id: "yuefu",      file: "data/poems-yuefu.js",      v: "POEMS_YUEFU" },
     { id: "jinxiandai", file: "data/poems-jinxiandai.js", v: "POEMS_JINXIANDAI" },
     { id: "chengyu",    file: "data/poems-chengyu.js",    v: "POEMS_CHENGYU" },
-    { id: "changshi",   file: "data/poems-changshi.js",   v: "POEMS_CHANGSHI" }
+    { id: "changshi",   file: "data/poems-changshi.js",   v: "POEMS_CHANGSHI" },
+    { id: "mingshu",    file: "data/poems-mingshu.js",    v: "POEMS_MINGSHU" },
+    { id: "mingren",    file: "data/poems-mingren.js",    v: "POEMS_MINGREN" }
   ];
 
   var LOAD_TIMEOUT_MS = 8000;
