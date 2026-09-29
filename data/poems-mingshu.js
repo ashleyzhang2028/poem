@@ -3982,6 +3982,17 @@ window.POEMS_MINGSHU = [
     excerpt: "一个眷村的故事"
   },
   {
+    textRef: "mingshu-ms-28",
+    id: "ms-28",
+    title: "傲慢与偏见",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "英国",
+    author: "简·奥斯汀",
+    source: "《傲慢与偏见》",
+    excerpt: "第一印象常常是靠不住的"
+  },
+  {
     textRef: "mingshu-ms-916",
     id: "ms-916",
     title: "雾都孤儿",
@@ -4002,6 +4013,17 @@ window.POEMS_MINGSHU = [
     author: "夏洛蒂·勃朗特",
     source: "《简·爱》",
     excerpt: "我们的精神是平等的"
+  },
+  {
+    textRef: "mingshu-ms-922",
+    id: "ms-922",
+    title: "呼啸山庄",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "英国",
+    author: "艾米莉·勃朗特",
+    source: "《呼啸山庄》",
+    excerpt: "一场跨越两代的爱与复仇"
   },
   {
     textRef: "mingshu-ms-31",
