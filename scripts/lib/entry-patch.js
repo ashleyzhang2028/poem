@@ -89,6 +89,60 @@ function applyAll(patch, opt) {
   return { changed: changed, skipped: skipped, src: src };
 }
 
+/**
+ * 新增一条主表条目（这一条在文件里还不存在时用）。
+ * 插在「同一前缀的最后一个条目之后」，让 diff 落在该组末尾而不是文件开头。
+ *   id / title / entries / text / translation / translationSource 由调用方给定；
+ *   version 由内容算（与 scripts/build-text-master.js 同一算法，字面量直接搬过来）。
+ */
+function append(entry, opt) {
+  const o = opt || {};
+  const state = o.state || load();
+  let src = o.src == null ? fs.readFileSync(FILE, 'utf8') : o.src;
+  if (state.byId[entry.id]) throw new Error('主表里已经有 ' + entry.id + '，不该走 append');
+
+  const prefix = entry.id.replace(/\d+$/, '');
+  let at = -1;
+  Object.keys(state.byId).forEach(function (k) {
+    if (k.indexOf(prefix) !== 0) return;
+    at = Math.max(at, src.indexOf('    id: ' + JSON.stringify(k) + ','));
+  });
+  if (at < 0) throw new Error('找不到 ' + prefix + ' 那一组的任何条目，无法定位插入点');
+  const end = src.indexOf('\n  },', at) + 5;   // 指向原来那条收尾行 '  },' 的末尾
+  if (end < 0) throw new Error('定位到 ' + prefix + ' 那一条却找不到它的收尾');
+
+  let h = 5381;
+  const raw = [entry.text, entry.translation || '', entry.translationSource || ''].join('\u0001');
+  for (let i = 0; i < raw.length; i += 1) h = ((h * 33) ^ raw.charCodeAt(i)) >>> 0;
+  const version = h.toString(36);
+
+  const block = [
+    '',
+    '  {',
+    '    work: ' + JSON.stringify(entry.work || ('w-' + entry.id)) + ',',
+    '    id: ' + JSON.stringify(entry.id) + ',',
+    '    title: ' + JSON.stringify(entry.title) + ',',
+    '    entries: [' + (entry.entries || [entry.id]).map(function (e) { return JSON.stringify(e); }).join(', ') + '],',
+    '    text: ' + JSON.stringify(entry.text) + ',',
+    '    translation: ' + JSON.stringify(entry.translation || '') + ',',
+    '    translationSource: ' + JSON.stringify(entry.translationSource || '') + ',',
+    '    version: ' + JSON.stringify(version),
+    '  },'
+  ].join('\n');
+
+  /* end 指向原来那一条收尾行 '  },' 的末尾（'  },' 之后）。
+     新块首行是空行、末行是 '  },'，整个接在原来那条之后 ——
+     两条各自以 '  },' 收尾，与文件里其他条目同一写法。
+     再跑一次时 end 落到新块的收尾上，结果逐字相同（幂等）。 */
+  src = src.slice(0, end) + block + src.slice(end);
+  state.byId[entry.id] = {
+    id: entry.id, title: entry.title, entries: entry.entries || [entry.id],
+    text: entry.text, translation: entry.translation || '', version: version
+  };
+  return src;
+}
+
+
 function write(src) { fs.writeFileSync(FILE, src, 'utf8'); }
 
 
