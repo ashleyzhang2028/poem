@@ -1,14 +1,14 @@
 window.POEMS_MINGSHU = [
   {
-    textRef: "mingshu-ms-01",
-    id: "ms-01",
-    title: "西游记",
+    textRef: "mingshu-ms-03",
+    id: "ms-03",
+    title: "水浒传",
     group: "中国古典小说",
     gradeGroup: "中国古典小说",
-    dynasty: "明",
-    author: "吴承恩",
-    source: "《西游记》",
-    excerpt: "取经路上八十一难"
+    dynasty: "元末明初",
+    author: "施耐庵",
+    source: "《水浒传》",
+    excerpt: "官逼民反，逼上梁山"
   },
   {
     textRef: "mingshu-ms-02",
@@ -22,37 +22,15 @@ window.POEMS_MINGSHU = [
     excerpt: "天下大势，分久必合"
   },
   {
-    textRef: "mingshu-ms-03",
-    id: "ms-03",
-    title: "水浒传",
+    textRef: "mingshu-ms-01",
+    id: "ms-01",
+    title: "西游记",
     group: "中国古典小说",
     gradeGroup: "中国古典小说",
-    dynasty: "元末明初",
-    author: "施耐庵",
-    source: "《水浒传》",
-    excerpt: "官逼民反，逼上梁山"
-  },
-  {
-    textRef: "mingshu-ms-04",
-    id: "ms-04",
-    title: "红楼梦",
-    group: "中国古典小说",
-    gradeGroup: "中国古典小说",
-    dynasty: "清",
-    author: "曹雪芹",
-    source: "《红楼梦》",
-    excerpt: "满纸荒唐言，一把辛酸泪"
-  },
-  {
-    textRef: "mingshu-ms-05",
-    id: "ms-05",
-    title: "儒林外史",
-    group: "中国古典小说",
-    gradeGroup: "中国古典小说",
-    dynasty: "清",
-    author: "吴敬梓",
-    source: "《儒林外史》",
-    excerpt: "功名富贵无凭据"
+    dynasty: "明",
+    author: "吴承恩",
+    source: "《西游记》",
+    excerpt: "取经路上八十一难"
   },
   {
     textRef: "mingshu-ms-06",
@@ -66,26 +44,26 @@ window.POEMS_MINGSHU = [
     excerpt: "写鬼写妖，高人一等"
   },
   {
-    textRef: "mingshu-ms-07",
-    id: "ms-07",
-    title: "骆驼祥子",
-    group: "中国现代小说",
-    gradeGroup: "中国现代小说",
-    dynasty: "近现代",
-    author: "老舍",
-    source: "《骆驼祥子》",
-    excerpt: "一个车夫的堕落史"
+    textRef: "mingshu-ms-05",
+    id: "ms-05",
+    title: "儒林外史",
+    group: "中国古典小说",
+    gradeGroup: "中国古典小说",
+    dynasty: "清",
+    author: "吴敬梓",
+    source: "《儒林外史》",
+    excerpt: "功名富贵无凭据"
   },
   {
-    textRef: "mingshu-ms-08",
-    id: "ms-08",
-    title: "家",
-    group: "中国现代小说",
-    gradeGroup: "中国现代小说",
-    dynasty: "近现代",
-    author: "巴金",
-    source: "《家》",
-    excerpt: "四世同堂的牢笼"
+    textRef: "mingshu-ms-04",
+    id: "ms-04",
+    title: "红楼梦",
+    group: "中国古典小说",
+    gradeGroup: "中国古典小说",
+    dynasty: "清",
+    author: "曹雪芹",
+    source: "《红楼梦》",
+    excerpt: "满纸荒唐言，一把辛酸泪"
   },
   {
     textRef: "mingshu-ms-09",
@@ -99,37 +77,15 @@ window.POEMS_MINGSHU = [
     excerpt: "铁屋子里的喊声"
   },
   {
-    textRef: "mingshu-ms-10",
-    id: "ms-10",
-    title: "朝花夕拾",
-    group: "中国现代散文",
-    gradeGroup: "中国现代散文",
-    dynasty: "近现代",
-    author: "鲁迅",
-    source: "《朝花夕拾》",
-    excerpt: "从百草园到三味书屋"
-  },
-  {
-    textRef: "mingshu-ms-11",
-    id: "ms-11",
-    title: "雷雨",
-    group: "中国现代戏剧",
-    gradeGroup: "中国现代戏剧",
-    dynasty: "近现代",
-    author: "曹禺",
-    source: "《雷雨》",
-    excerpt: "一个雷雨之夜的崩坏"
-  },
-  {
-    textRef: "mingshu-ms-12",
-    id: "ms-12",
-    title: "围城",
+    textRef: "mingshu-ms-08",
+    id: "ms-08",
+    title: "家",
     group: "中国现代小说",
     gradeGroup: "中国现代小说",
     dynasty: "近现代",
-    author: "钱锺书",
-    source: "《围城》",
-    excerpt: "城里的人想逃出来"
+    author: "巴金",
+    source: "《家》",
+    excerpt: "四世同堂的牢笼"
   },
   {
     textRef: "mingshu-ms-13",
@@ -143,37 +99,26 @@ window.POEMS_MINGSHU = [
     excerpt: "等一个人，也许永远不回来"
   },
   {
-    textRef: "mingshu-ms-14",
-    id: "ms-14",
-    title: "城南旧事",
-    group: "中国当代小说",
-    gradeGroup: "中国当代小说",
+    textRef: "mingshu-ms-07",
+    id: "ms-07",
+    title: "骆驼祥子",
+    group: "中国现代小说",
+    gradeGroup: "中国现代小说",
     dynasty: "近现代",
-    author: "林海音",
-    source: "《城南旧事》",
-    excerpt: "城南的旧事，童年的远去"
+    author: "老舍",
+    source: "《骆驼祥子》",
+    excerpt: "一个车夫的堕落史"
   },
   {
-    textRef: "mingshu-ms-15",
-    id: "ms-15",
-    title: "活着",
-    group: "中国当代小说",
-    gradeGroup: "中国当代小说",
-    dynasty: "当代",
-    author: "余华",
-    source: "《活着》",
-    excerpt: "为了活着本身而活着"
-  },
-  {
-    textRef: "mingshu-ms-16",
-    id: "ms-16",
-    title: "平凡的世界",
-    group: "中国当代小说",
-    gradeGroup: "中国当代小说",
-    dynasty: "当代",
-    author: "路遥",
-    source: "《平凡的世界》",
-    excerpt: "普通人的奋斗"
+    textRef: "mingshu-ms-12",
+    id: "ms-12",
+    title: "围城",
+    group: "中国现代小说",
+    gradeGroup: "中国现代小说",
+    dynasty: "近现代",
+    author: "钱锺书",
+    source: "《围城》",
+    excerpt: "城里的人想逃出来"
   },
   {
     textRef: "mingshu-ms-17",
@@ -187,6 +132,50 @@ window.POEMS_MINGSHU = [
     excerpt: "在烈火中永生"
   },
   {
+    textRef: "mingshu-ms-14",
+    id: "ms-14",
+    title: "城南旧事",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "近现代",
+    author: "林海音",
+    source: "《城南旧事》",
+    excerpt: "城南的旧事，童年的远去"
+  },
+  {
+    textRef: "mingshu-ms-16",
+    id: "ms-16",
+    title: "平凡的世界",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "路遥",
+    source: "《平凡的世界》",
+    excerpt: "普通人的奋斗"
+  },
+  {
+    textRef: "mingshu-ms-15",
+    id: "ms-15",
+    title: "活着",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "余华",
+    source: "《活着》",
+    excerpt: "为了活着本身而活着"
+  },
+  {
+    textRef: "mingshu-ms-10",
+    id: "ms-10",
+    title: "朝花夕拾",
+    group: "中国现代散文",
+    gradeGroup: "中国现代散文",
+    dynasty: "近现代",
+    author: "鲁迅",
+    source: "《朝花夕拾》",
+    excerpt: "从百草园到三味书屋"
+  },
+  {
     textRef: "mingshu-ms-18",
     id: "ms-18",
     title: "艾青诗选",
@@ -196,6 +185,17 @@ window.POEMS_MINGSHU = [
     author: "艾青",
     source: "《艾青诗选》",
     excerpt: "为什么我的眼里常含泪水"
+  },
+  {
+    textRef: "mingshu-ms-11",
+    id: "ms-11",
+    title: "雷雨",
+    group: "中国现代戏剧",
+    gradeGroup: "中国现代戏剧",
+    dynasty: "近现代",
+    author: "曹禺",
+    source: "《雷雨》",
+    excerpt: "一个雷雨之夜的崩坏"
   },
   {
     textRef: "mingshu-ms-24",

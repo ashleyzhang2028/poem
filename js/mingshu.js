@@ -11,7 +11,7 @@
       id: "mingshu",
       groupOrder: GROUP_ORDER,
       pageTitle: "名著导读",
-      pageSub: "按中国古典 / 现代 / 当代 / 散文 / 诗歌 / 戏剧与外国文学分七组 · 每部给背景 / 情节 / 人物 / 主旨",
+      pageSub: "按中国古典 / 现代 / 当代 / 散文 / 诗歌 / 戏剧与外国文学分七组 · 组内按成书时间先后排 · 每部给背景 / 情节 / 人物 / 主旨",
       // 词条式：正文即导读，本来就没有白话译文
       noTranslation: true,
       words: {

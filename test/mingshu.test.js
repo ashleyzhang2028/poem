@@ -71,6 +71,56 @@ const MINGREN_GROUPS = [
 const MS = book('名著导读', 'POEMS_MINGSHU', MINGSHU_GROUPS, '部');
 const MR = book('历代名家', 'POEMS_MINGREN', MINGREN_GROUPS, '家');
 
+/* ── 排序：Issue #381 第七轮 · 用户原话 ────────────────────────────────
+   「所有类别的名家按出生时间顺序排序。名著也按时间顺序排序。」
+   两组守：历代名家**每组内**按生年升序；名著**每组内**按成书 / 出版年升序。
+   生年/年份都从壳里的 source 取不出时按 build 脚本同一套口径算，这里只
+   验「相邻两条不倒挂」——同一年的（如王翦与廉颇同记「约前 3 世纪」）放过。 */
+const LY = require('../scripts/lib/life-year.js');
+const MYEARS = require('../scripts/data/mingshu-years.js');
+
+function orderViolations(list, keyOf) {
+  const bad = [];
+  const byGroup = {};
+  list.forEach(p => { (byGroup[p.gradeGroup] = byGroup[p.gradeGroup] || []).push(p); });
+  Object.keys(byGroup).forEach(g => {
+    const arr = byGroup[g].map(keyOf);
+    for (let i = 1; i < arr.length; i++) {
+      if (arr[i - 1] == null || arr[i] == null) continue;
+      if (arr[i] < arr[i - 1]) { bad.push(g + ' ' + (i - 1) + '→' + i); break; }
+    }
+  });
+  return bad;
+}
+
+/* 历代名家：生年取自主表正文的「生卒」行（壳的 source 是《名》·生卒，
+   但对含「·」的名字会截断，所以以主表为准）。 */
+function lifeFromMaster(title) {
+  const e = sb.TEXT_MASTER_POEMS && sb.TEXT_MASTER_POEMS[title];
+  const t = e || '';
+  const m = String(t).match(/│ 生卒 *│([^│]*)│/);
+  return m ? m[1].trim() : '';
+}
+/* 主表在 loadData 里以 window.TEXT_MASTER 存放（按 id 或按 title，形状不一），
+   取不到就退回壳里的 source（对无「·」的名字是对的）。 */
+function mrLife(p) {
+  let t = '';
+  if (sb.TEXT_MASTER && Array.isArray(sb.TEXT_MASTER)) {
+    const e = sb.TEXT_MASTER.find(x => x.title === p.title && String(x.id).indexOf('mingren') >= 0);
+    if (e) t = e.text;
+  }
+  if (!t) return String(p.source || '').replace(/^《[^》]*》·/, '');
+  const m = String(t).match(/│ 生卒 *│([^│]*)│/);
+  return m ? m[1].trim() : '';
+}
+const mrBad = orderViolations(MR, p => LY.birthYearOf(mrLife(p)).year);
+chk(mrBad.length === 0,
+  '历代名家每组按出生时间排序（倒挂：' + (mrBad.join('、') || '无') + '）');
+
+const msBad = orderViolations(MS, p => MYEARS.yearOf(p.title, p.dynasty));
+chk(msBad.length === 0,
+  '名著导读每组按成书 / 出版时间排序（倒挂：' + (msBad.join('、') || '无') + '）');
+
 /* 数量：Issue #381 第二轮要求「国内名著 ×10、世界名著 ≥300 本」。
    书目表 data/mingshu-books.js 已经排到 1614 部；但正文素材是**分批**写的，
    data/poems-mingshu.js 只收「素材已就绪」的那一批。所以这里守两件事：
@@ -86,7 +136,7 @@ const MR_BY_GROUP = {};
 MR.forEach(p => { MR_BY_GROUP[p.group] = (MR_BY_GROUP[p.group] || 0) + 1; });
 const MR_CN = MR.filter(p => p.gradeGroup.indexOf('外国') !== 0);
 const MR_WORLD = MR.filter(p => p.gradeGroup.indexOf('外国') === 0);
-chk(MR.length === 693, '历代名家共 693 位（实际 ' + MR.length + '）');
+chk(MR.length === 706, '历代名家共 706 位（实际 ' + MR.length + '）');
 chk(MR_WORLD.length === 290,
   '外国名家 290 位（上一轮只有 14 位 —— 用户要求「扩充 10 倍」；实际 ' +
   MR_WORLD.length + '）');
@@ -228,12 +278,32 @@ chk(JP_ALL.length === 4 && JP_ALL.every(p => p.gradeGroup === '外国文学家')
   '三岛由纪夫）—— 作家不在「政治 / 军事人物」的尺子内（实际：' +
   (JP_ALL.map(p => p.title + '（' + p.gradeGroup + '）').join('、') || '无') + '）');
 
-/* 轴心国（德 / 意 / 日）的政治、军事首脑：一个都不收；
-   本职是学者的（爱因斯坦 / 普朗克 / 海森堡）照旧留着。 */
-const AXIS = ['希特勒', '墨索里尼', '戈培尔', '戈林', '东条英机', '山本五十六'];
-const axisIn = AXIS.filter(n => mrByName[n]);
-chk(axisIn.length === 0,
-  '轴心国的政治 / 军事首脑不在册（残留：' + (axisIn.join('、') || '无') + '）');
+/* Issue #381 第七轮：用户原话「轴心国除了日本的政治军事家，其他国家的政治，
+   军事家可以添加，但是要从雅尔塔会议，开罗宣言以及二战后的国际秩序角度进行
+   评价」。所以德国 / 意大利的政治、军事人物**收进来了**（希特勒 / 墨索里尼
+   作为这一秩序的反面也在册）；日本的政治 / 军事人物一位都不收。 */
+const JP_AXIS = ['东条英机', '山本五十六'];
+const jpAxisIn = JP_AXIS.filter(n => mrByName[n]);
+chk(jpAxisIn.length === 0,
+  '日本的政治 / 军事首脑不在册（残留：' + (jpAxisIn.join('、') || '无') + '）');
+const DE_IT = [
+  ['希特勒', '雅尔塔'], ['墨索里尼', '法西斯'], ['阿登纳', '欧洲煤钢共同体'],
+  ['艾哈德', '社会市场经济'], ['勃兰特', '新东方政策'], ['德加斯佩里', '北约'],
+  ['加富尔', '意大利'], ['马志尼', '青年意大利'],
+  ['加里波第', '红衫军'], ['隆美尔', '阿拉曼'], ['曼施坦因', '镰刀'],
+  ['邓尼茨', '投降书'], ['巴多格里奥', '停战'],
+];
+const deItMissing = DE_IT.filter(r => !mrByName[r[0]]).map(r => r[0]);
+chk(deItMissing.length === 0,
+  '德国 / 意大利的政治、军事人物在册（缺：' + (deItMissing.join('、') || '无') + '）');
+DE_IT.forEach(r => {
+  const p = mrByName[r[0]];
+  if (!p) return;
+  chk(String(p.text).indexOf(r[1]) >= 0, r[0] + ' 一条里写到了「' + r[1] + '」');
+});
+chk(/雅尔塔/.test(String(mrByName['希特勒'] && mrByName['希特勒'].text)) &&
+  /反法西斯/.test(String(mrByName['墨索里尼'] && mrByName['墨索里尼'].text)),
+  '德 / 意轴心一方的评价落在「雅尔塔 / 战后秩序」这个角度上');
 const AXIS_KEEP = ['爱因斯坦', '普朗克', '海森堡'];
 const axisKeepMissing = AXIS_KEEP.filter(n => !mrByName[n]);
 chk(axisKeepMissing.length === 0,

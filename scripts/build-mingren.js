@@ -39,6 +39,7 @@ const path = require('path');
 const vm = require('vm');
 const T = require('./lib/table.js');
 const P = require('./lib/entry-patch.js');
+const LY = require('./lib/life-year.js');
 const M = require('./data/mingren-corpus.js');
 const LEGACY_SHELL_ROWS = require('./data/mingren-legacy-shell.js').LEGACY_SHELL;
 
@@ -54,6 +55,7 @@ const ROUND5   = require('./data/mingren-round5.js');    // 第六轮：要删�
 const POL      = require('./data/mingren-politics.js');  // 第六轮：政治家 中外
 const MIL      = require('./data/mingren-military.js');  // 第六轮：军事家 中外
 const OLD      = require('./data/mingren-new.js');       // 第四轮：文学 / 思想 / 哲学
+const AXIS     = require('./data/mingren-axis.js');      // 第七轮：德 / 意 政治与军事
 
 /* ── 分组次序：与 js/mingren.js 的 MINGREN_GROUP_ORDER 一字不差 ─────────
    中国在前、外国在后，各自内部「文学与思想 → 艺术 → 专门之学」。 */
@@ -74,8 +76,10 @@ const GROUP_ORDER = [
 const PLAN = [
   { group: '政治家', rows: POL.TP_CN },
   { group: '政治家', rows: POL.TP_WORLD },
+  { group: '政治家', rows: AXIS.TP_AXIS },
   { group: '军事家', rows: MIL.TB_CN },
   { group: '军事家', rows: MIL.TB_WORLD },
+  { group: '军事家', rows: AXIS.TB_AXIS },
   /* 第四轮的名单仍要过一遍：它们大多已在册（按旧号排），少数几条
      （#388 之后新落的素材）会在这里第一次开条。 */
   { group: '文学家', rows: OLD.TY },
@@ -295,6 +299,28 @@ function bodyOf2(p) {
     p.bio, p.style, p.school, p.works, p.worth, p.tag];
   return bodyOf(r);
 }
+
+/* ── 按出生时间排（Issue #381 · 用户原话）────────────────────────────────
+   「所有类别的名家按出生时间顺序排序。」
+
+   组与组的先后照 GROUP_ORDER（中国在前、外国在后，各组内部再按生年）。
+   组内一律按**生年**升序；生年无从考的用 scripts/lib/life-year.js 的
+   粗估键（卒年回推 / 世纪折中），仍排不出的一律沉到该组末尾，且保持
+   原有相对次序（Array#sort 在现代 V8 上稳定）。
+   生年相同的（如王翦与廉颇同记「约前 3 世纪」）按现有次序，不动。 */
+(function sortByBirth() {
+  const birthOf = {};
+  ROSTER.forEach(function (rec) {
+    const life = rec.row ? rec.row[3] : lifeOf(rec.text);
+    birthOf[rec.title] = LY.birthYearOf(life);
+  });
+  ROSTER.sort(function (a, b) {
+    const ga = GROUP_ORDER.indexOf(a.group), gb = GROUP_ORDER.indexOf(b.group);
+    if (ga !== gb) return ga - gb;
+    const c = LY.compareBirth(birthOf[a.title], birthOf[b.title]);
+    return c;
+  });
+})();
 
 /* ── 四、守卫：条数 / 分组 / 字段 / 净字数 ─────────────────────────────── */
 const countOf = {};
