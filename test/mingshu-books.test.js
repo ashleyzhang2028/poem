@@ -68,7 +68,16 @@ const CORPUS = require('../scripts/data/mingshu-corpus.js').CORPUS;
 const bannedInCorpus = BANNED.filter(t => CORPUS[t]);
 chk(bannedInCorpus.length === 0,
   '禁书的素材也已剔除（还在：' + (bannedInCorpus.join('、') || '无') + '）');
-chk(BANNED.length === 9, '禁书名单是 9 部（实际 ' + BANNED.length + '）');
+chk(BANNED.length === 8, '禁书名单是 8 部（实际 ' + BANNED.length + ' 部）');
+
+/* 反过来的那一条：用户复核确认《古拉格群岛》不是禁书 —— 1982 年群众出版社
+   内部发行本，2015 年该社公开出版发行，正规出版物、可合法购买阅读。
+   书目表、素材库两处都要在册；谁再把它当禁书删掉，测试当场点名。 */
+const ALLOWED = require('../scripts/data/mingshu-corpus.js').ALLOWED || [];
+chk(ALLOWED.indexOf('古拉格群岛') >= 0 && seen['古拉格群岛'],
+  '《古拉格群岛》在书目表里（用户 2026-09-29 复核：不是禁书）');
+chk(!!CORPUS['古拉格群岛'],
+  '《古拉格群岛》的素材在库（两处一起守，不许再当禁书删）');
 
 chk(LEGACY.length === 36, '上一轮那 36 部的名单在册（实际 ' + LEGACY.length + ' 部）');
 const legacyMissing = LEGACY.filter(t => !seen[t]);
@@ -160,9 +169,9 @@ const moved = Object.keys(STICKY_IDS).filter(t => shellIdOf[t] && shellIdOf[t] !
 chk(moved.length === 0,
   '前几轮已发号的书，id 一个也没挪（挪了：' +
   (moved.map(t => t + ' ' + STICKY_IDS[t] + '→' + shellIdOf[t]).join('、') || '无') + '）');
-/* 书目表尺寸：上一轮精简到 816 部；Issue #381「禁书剔除」删去 9 部
-   （国内 8 + 国外 1，见 BANNED），故底数为 807。这一条只钉「不缩水」。 */
-chk(classicRows.length === 22 && rows.length >= 807,
+/* 书目表尺寸：上一轮精简到 816 部；Issue #381「禁书剔除」删去 8 部
+   （见 BANNED；《古拉格群岛》复核后放回），故底数为 808。这一条只钉「不缩水」。 */
+chk(classicRows.length === 22 && rows.length >= 808,
   '书目表规模不缩水（数量 ' + rows.length + '，底册 ' + Object.keys(STICKY_IDS).length + ' 条全部对得上）');
 
 /* 四部谴责小说与五部话本集都要在册点名：

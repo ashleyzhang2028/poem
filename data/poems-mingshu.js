@@ -3596,4 +3596,15 @@ window.POEMS_MINGSHU = [
     source: "《昆虫记》",
     excerpt: "荒石园里的观察者"
   },
+  {
+    textRef: "mingshu-ms-912",
+    id: "ms-912",
+    title: "古拉格群岛",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "苏联",
+    author: "索尔仁尼琴",
+    source: "《古拉格群岛》",
+    excerpt: "劳改营国的编年史"
+  },
 ];
