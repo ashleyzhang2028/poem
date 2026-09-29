@@ -273,6 +273,31 @@
     if (any) show(row); else hide(row);
   }
 
+  // 报告 / 反馈有进展：badge + 一次性 toast（点开对应那一页即视为看过）。
+  function checkProgressUpdates() {
+    var R = window.Report, F = window.Feedback;
+
+    var reportP = (R && typeof R.mine === "function")
+      ? R.mine().then(function (r) { return R.pendingUpdates((r && r.reports) || []); })["catch"](function () { return []; })
+      : Promise.resolve([]);
+    var feedbackP = (F && typeof F.mine === "function")
+      ? F.mine().then(function (r) { return F.pendingUpdates((r && r.threads) || []); })["catch"](function () { return []; })
+      : Promise.resolve([]);
+
+    Promise.all([reportP, feedbackP]).then(function (pair) {
+      var reportPend = pair[0] || [], feedbackPend = pair[1] || [];
+      var dotR = $("dot-reports");
+      if (dotR) dotR.hidden = !reportPend.length;
+      var dotF = $("dot-feedback");
+      if (dotF) dotF.hidden = !feedbackPend.length;
+
+      var notes = [];
+      if (reportPend.length) notes.push(reportPend.length + " 条报告有进展");
+      if (feedbackPend.length) notes.push(feedbackPend.length + " 条反馈有回复");
+      if (notes.length) showToast(notes.join("，") + "，点开看看");
+    });
+  }
+
   function renderDanger() {
     var id = identity();
     var on = !!(id && id.signedIn);
@@ -611,8 +636,9 @@
       }, { once: true });
     }
     paint(A.session(store));
+    checkProgressUpdates();
 
-        var M = acct();
+    var M = acct();
     if (M) {
       Promise.resolve(M.refreshMe({ backing: backing, A: A, E: Ent })).then(function (r) {
         if (!r || !r.ok) return;

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#2f6055" />
   <title>跬步 · 隐私条款</title>
-  <meta name="description" content="跬步隐私条款：不埋点、无统计；不注册也能用，进度默认只存本机；建账号时邮箱会保存到服务器，用于登录与找回密码；开启云端同步后才上传，可随时关闭，注销即删除。" />
+  <meta name="description" content="跬步隐私条款：不设埋点与统计；不注册即可使用全部核心功能；注册后邮箱用于登录与身份核验；开启云端同步后方上传学习数据，可随时关闭，注销账号即删除全部数据。" />
   <meta name="format-detection" content="telephone=no" />
   <meta name="robots" content="index, follow" />
 
@@ -22,72 +22,73 @@
   <div class="app">
 
     <header class="topbar"></header>
-    <p class="legal-updated">更新于 <time id="privacy-updated" datetime="2026-09-19">2026 年 9 月 19 日</time></p>
+    <p class="legal-updated">更新于 <time id="privacy-updated" datetime="2026-09-29">2026 年 9 月 29 日</time></p>
 
     <nav class="legal-toc">
-      <a href="#p1">一、收集什么</a>
-      <a href="#p2">二、数据存在哪</a>
-      <a href="#p3">三、儿童隐私</a>
-      <a href="#p4">四、你的权利</a>
-      <a href="#p5">五、网络与变更</a>
+      <a href="#p1">一、收集范围</a>
+      <a href="#p2">二、存储与同步</a>
+      <a href="#p3">三、未成年人保护</a>
+      <a href="#p4">四、您的权利</a>
+      <a href="#p5">五、其他事项</a>
     </nav>
 
     <article class="legal">
       <section id="p1">
-        <h2>一、收集什么</h2>
+        <h2>一、收集范围</h2>
         <ul class="legal-mini">
-          <li><span class="mini-k">不注册也能用</span><span class="mini-v">不建账号也能用全部功能；不建账号时一行数据都不外发。</span></li>
-          <li><span class="mini-k">几乎不收集</span><span class="mini-v">不收集手机号、姓名、学校、位置、设备标识。<strong>邮箱只在你自己主动注册或登录时收集</strong>：它<strong>会保存到服务器</strong>，用于登录、邮箱确认与找回密码；库里另存一份不可逆摘要用于登录比对。你可以在「我的」页点一下「我的邮箱」看到自己注册的那个邮箱（默认收着，点开才显示）。</span></li>
-          <li><span class="mini-k">密码</span><span class="mini-v">注册时设的密码<strong>不会保存明文</strong>——服务器上只有一段加盐的<strong>单向摘要</strong>（scrypt），它推不回原密码。忘记密码时用邮件里的链接重设，而不是把原密码发给你。</span></li>
-          <li><span class="mini-k">确认邮件</span><span class="mini-v">注册后我们会发一封确认邮件，用来证明这个邮箱确实是你本人能收到的。确认链接 24 小时内有效、只能用一次；重设密码的链接 1 小时内有效、也只用一次。没收到时我们会自动重试几次（网络抖动、发信商限流这类可能自愈的错才重试；密钥不对这类不会反复试）。</span></li>
-          <li><span class="mini-k">无埋点</span><span class="mini-v">无统计脚本、无用户画像、无广告联盟、无社交功能。</span></li>
-          <li><span class="mini-k">层级</span><span class="mini-v">层级（Free / Pro / Max）建账号后由服务器下发，不涉及任何支付信息 —— 本应用没有任何收款能力，层级不是付费凭据。</span></li>
-          <li><span class="mini-k">无权限</span><span class="mini-v">不读取通讯录、相册、麦克风与位置。</span></li>
+          <li><span class="mini-k">无需注册</span><span class="mini-v">全部背诵与阅读功能均可在不注册、不提供任何个人信息的情况下使用。</span></li>
+          <li><span class="mini-k">账号信息</span><span class="mini-v">仅在用户主动注册或登录时收集电子邮箱，用于登录验证、邮箱确认及密码找回。用户可在「我的」页面查看本人注册邮箱（默认隐藏，点击后显示）。不收集手机号、姓名、学校、地理位置或设备标识信息。</span></li>
+          <li><span class="mini-k">密码</span><span class="mini-v">密码不以明文形式存储，服务器仅保存经加盐单向哈希（scrypt）处理后的摘要，无法反向还原。密码遗忘时须通过邮件链接重新设置，服务方无法代为找回原密码。</span></li>
+          <li><span class="mini-k">邮件通知</span><span class="mini-v">注册后系统发送一封确认邮件，用于核实邮箱所有权。确认链接有效期 24 小时，重设密码链接有效期 1 小时，均为一次性使用。邮件发送异常时系统可能自动重试。</span></li>
+          <li><span class="mini-k">用户反馈</span><span class="mini-v">用户主动提交的错误报告或意见反馈，将随附提交时的邮箱、昵称（如已登录）用于处理与回复；未登录用户按设备生成的随机标识识别，该标识仅存储于本机浏览器，不用于跨站追踪。</span></li>
+          <li><span class="mini-k">不含追踪技术</span><span class="mini-v">不使用统计脚本、用户画像、广告网络或社交插件。</span></li>
+          <li><span class="mini-k">权益层级</span><span class="mini-v">账号的功能层级（Free / Pro / Max）由服务器下发，与任何支付信息无关；本产品不具备收款能力，层级标识不构成支付凭证。</span></li>
+          <li><span class="mini-k">设备权限</span><span class="mini-v">不请求通讯录、相册、麦克风或地理位置权限。</span></li>
         </ul>
       </section>
 
       <section id="p2">
-        <h2>二、数据存在哪</h2>
+        <h2>二、存储与同步</h2>
         <ul class="legal-mini">
-          <li><span class="mini-k">默认存本机</span><span class="mini-v">进度、排期与设置默认通过 localStorage 只存在你的设备上，<strong>本机这份始终完整可用</strong>：服务器连不上、同步关着、没登录，背诵照旧。</span></li>
-          <li><span class="mini-k">开启同步才上传</span><span class="mini-v">只有建了账号、<strong>并且自己打开云端同步</strong>（出厂关着），下面这些才会上传：背诵进度、账号设置（学段 / 年级 / 学期 / 范围 / 每日数量 / 复习算法）、自选集合、各集子的已读标记、今日加背、注音勘误（在管理后台给自己钉的读音更正）、头像。随时可在「设置 · 通用」关掉，关掉即退回只存本机。<strong>设备偏好不上云</strong>：字号、正文对齐、注音档、连读档只留在这台设备 —— 它们说的是「这台设备长什么样」，不是「这个账号学到哪」。头像图片本身（最大 1 MB）存在服务器的图片存储里，同步的只是它的地址。两台设备都改过同一篇进度、或同一份自选集合时，我们不自动合并，只列出两边篇数让你选；选「保留账号」前先在本机留一份快照。</span></li>
-          <li><span class="mini-k">谁在处理</span><span class="mini-v">服务器与数据库由 Supabase 提供，登录随机码、邮箱确认与重设密码这三类邮件由 Resend 发送。邮件只包含那一条链接或那一个随机码，不含你的进度与昵称。除此之外不向第三方提供任何数据。</span></li>
-          <li><span class="mini-k">改密码之后</span><span class="mini-v">用重设链接改完密码，你在<strong>其它设备上的登录会全部退出</strong>，需要拿新密码重新登录。这是刻意的：能改密码，说明原来那个可能已经泄露了。</span></li>
-          <li><span class="mini-k">删除方式</span><span class="mini-v">进度在设置里「清空进度」；账号在「个人中心 → 注销账号」<strong>注销即删除</strong>服务器上的账号与进度，并先把云端那份导给你（需联网；连不上会如实说明还没删掉）。也可清除浏览器站点数据。均为永久删除。</span></li>
-          <li><span class="mini-k">备份方式</span><span class="mini-v">设置里「导出备份」可把本机数据导出为 JSON。</span></li>
+          <li><span class="mini-k">默认本机存储</span><span class="mini-v">学习进度、复习计划与界面设置默认仅存储于用户设备本地（浏览器存储），无网络连接、未登录或未开启同步时功能不受影响。</span></li>
+          <li><span class="mini-k">云端同步（默认关闭）</span><span class="mini-v">仅在注册账号并主动开启云端同步后，以下数据方会上传至服务器：背诵进度、账号设置（学段、年级、学期、复习范围、每日数量、复习算法）、自选背诵集合、各集子的阅读记录、当日临时加背内容、个人注音勘误标记、头像。该设置可随时在「设置 · 通用」中关闭，关闭后数据仅保留于本机。设备相关的显示偏好（字号、对齐方式、注音显示档位、连读模式）不参与同步，仅对当前设备生效。头像图片文件存储于服务器图片存储服务，同步内容仅为其访问地址。多设备存在数据差异时，系统不做自动合并，将列出差异供用户选择保留哪一份；合并前会在本机保留一份快照备份。</span></li>
+          <li><span class="mini-k">数据处理方</span><span class="mini-v">服务器、数据库及邮件发送均由第三方云服务提供商提供技术支持。邮件内容仅包含验证链接或验证码，不包含学习数据。除履行上述必要服务外，不向第三方提供或出售用户数据。</span></li>
+          <li><span class="mini-k">密码变更后果</span><span class="mini-v">通过重设链接修改密码后，账号在其他设备上的登录状态将全部失效，须使用新密码重新登录，以防范密码泄露风险。</span></li>
+          <li><span class="mini-k">数据删除</span><span class="mini-v">用户可在设置中清空本机学习进度；可在「个人中心 → 注销账号」注销账号，服务器端账号信息与学习数据将被永久删除，系统会在删除前尝试导出云端数据供用户保存（需网络连接）。用户亦可通过清除浏览器网站数据的方式删除本机数据。上述删除均不可撤销。</span></li>
+          <li><span class="mini-k">数据导出</span><span class="mini-v">设置中的「导出备份」功能可将本机数据导出为 JSON 文件。</span></li>
         </ul>
       </section>
 
       <section id="p3">
-        <h2>三、儿童隐私</h2>
+        <h2>三、未成年人保护</h2>
         <ul class="legal-mini">
-          <li><span class="mini-k">不面向儿童建号</span><span class="mini-v">账号仅限监护人（成年人）用自己的邮箱创建；孩子名字只作本机昵称，不是独立账号。</span></li>
-          <li><span class="mini-k">头像</span><span class="mini-v">不传就是用户名首字，不上传；<strong>自己传的那张图会存到服务器</strong>，地址公开可访问 —— <strong>别用真人照片</strong>。</span></li>
-          <li><span class="mini-k">不外传</span><span class="mini-v">无社交、定位与相机麦克风权限；上传的只有昵称、头像与背诵档案，不含身份、位置、学校与联系方式。</span></li>
-          <li><span class="mini-k">昵称把关</span><span class="mini-v">「用户名」请只填小名，由监护人把关，不要填真实全名、学校、班级、电话。</span></li>
-          <li><span class="mini-k">无公开展示</span><span class="mini-v">不设排行榜，不做任何公开的个人信息展示。</span></li>
+          <li><span class="mini-k">账号主体</span><span class="mini-v">账号仅限监护人以本人邮箱注册；未成年人姓名仅作为本机显示昵称使用，不构成独立账号，不作为身份信息处理。</span></li>
+          <li><span class="mini-k">头像提示</span><span class="mini-v">未上传时默认显示昵称首字；用户上传的头像图片将存储于服务器且访问地址公开可及，建议不使用可识别未成年人身份的真实照片。</span></li>
+          <li><span class="mini-k">信息范围</span><span class="mini-v">不提供社交功能，不采集地理位置及设备标识；上传数据仅限昵称、头像与学习进度，不涉及身份证明、住址、学校、班级或联系方式。</span></li>
+          <li><span class="mini-k">填写建议</span><span class="mini-v">昵称字段建议仅填写非正式称呼，避免填写真实姓名、学校、班级或联系电话。</span></li>
+          <li><span class="mini-k">无公开展示</span><span class="mini-v">不设置排行榜或其他任何形式的公开个人信息展示。</span></li>
         </ul>
       </section>
 
       <section id="p4">
-        <h2>四、你的权利</h2>
+        <h2>四、您的权利</h2>
         <ul class="legal-mini">
-          <li><span class="mini-k">查询导出</span><span class="mini-v">随时用「导出备份」取走本机全部数据；注销时服务器那份也会导给你。</span></li>
-          <li><span class="mini-k">删除</span><span class="mini-v">「清空进度」即时清空背诵数据；账号在「个人中心 → 注销账号」删除（需二次确认并重输邮箱）—— 邮箱、密码摘要、确认记录与验证码记录一并删除。</span></li>
-          <li><span class="mini-k">同意与撤回</span><span class="mini-v">无需同意任何条款即可浏览与背诵（此时不产生上传）；上传只发生在你自己打开<strong>云端同步</strong>之后，随时可关掉撤回。</span></li>
+          <li><span class="mini-k">查询与导出</span><span class="mini-v">用户可随时通过「导出备份」获取本机全部数据；注销账号时系统将尝试导出服务器端数据。</span></li>
+          <li><span class="mini-k">删除</span><span class="mini-v">「清空进度」可即时清除本机学习数据；账号注销需二次确认并重新输入邮箱，注销后邮箱、密码摘要及验证记录将一并删除。</span></li>
+          <li><span class="mini-k">同意与撤回</span><span class="mini-v">浏览与背诵功能无需同意本条款即可使用，此时不产生任何数据上传；数据上传仅发生于用户主动开启云端同步之后，且可随时关闭以撤回同意。</span></li>
         </ul>
       </section>
 
       <section id="p5">
-        <h2>五、网络与变更</h2>
+        <h2>五、其他事项</h2>
         <ul class="legal-mini">
-          <li><span class="mini-k">朗读</span><span class="mini-v">朗读由设备系统自带的语音合成完成，不接收、不存储语音数据，不保存任何音频文件。</span></li>
-          <li><span class="mini-k">离线缓存</span><span class="mini-v">通过 Service Worker 把页面与诗词数据缓存在本机以便断网使用，可随时清除。</span></li>
-          <li><span class="mini-k">托管日志</span><span class="mini-v">站点与接口由 Vercel 托管，平台会生成常规访问日志（IP、时间、UA），本应用不读取、不分析。</span></li>
-          <li><span class="mini-k">验证码</span><span class="mini-v">验证码由服务器生成、储哈希后发出，10 分钟有效、只能用一次，不写进日志。</span></li>
-          <li><span class="mini-k">条款更新</span><span class="mini-v">条款以代码实际行为为准：代码改了条款跟着改，页首日期即最新版本日期。</span></li>
+          <li><span class="mini-k">语音朗读</span><span class="mini-v">朗读功能调用设备操作系统自带的语音合成能力，不采集、不存储、不上传任何语音或音频数据。</span></li>
+          <li><span class="mini-k">离线缓存</span><span class="mini-v">通过浏览器 Service Worker 技术在本机缓存页面与内容数据以支持离线使用，用户可随时清除该缓存。</span></li>
+          <li><span class="mini-k">访问日志</span><span class="mini-v">托管服务提供商可能按行业惯例生成常规访问日志（如访问时间、来源 IP、浏览器信息），本产品不读取、不分析该类日志。</span></li>
+          <li><span class="mini-k">验证码安全</span><span class="mini-v">登录验证码由服务器生成并以哈希形式存储，有效期 10 分钟且仅可使用一次，不计入任何日志记录。</span></li>
+          <li><span class="mini-k">条款更新</span><span class="mini-v">本条款内容以实际功能实现为准，功能变更时条款同步更新，页首日期即为最近更新日期。</span></li>
         </ul>
-        <p class="mail-line">隐私或儿童信息保护问题：<a class="mail-link" href="#" data-mail-slot="1" rel="nofollow">显示邮箱地址</a></p>
+        <p class="mail-line">隐私相关问题或未成年人信息保护咨询，请联系：<a class="mail-link" href="#" data-mail-slot="1" rel="nofollow">显示邮箱地址</a></p>
       </section>
     </article>
 

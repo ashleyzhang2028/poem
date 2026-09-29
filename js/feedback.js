@@ -9,6 +9,40 @@
 
   var LIMITS = { content: 2000, comment: 2000 };
 
+  var SEEN_KEY = "poem_feedback_seen_v1";
+
+  function backingStore() { try { return window.localStorage || null; } catch (e) { return null; } }
+
+  // 同一种水位线做法（见 js/report.js）：只记「看到过多新的那一刻」。
+  function seenAt() {
+    var b = backingStore();
+    if (!b) return 0;
+    try { return Number(b.getItem(SEEN_KEY)) || 0; } catch (e) { return 0; }
+  }
+
+  function markSeen(ts) {
+    var b = backingStore();
+    if (!b) return;
+    var next = Math.max(seenAt(), Number(ts) || Date.now());
+    try { b.setItem(SEEN_KEY, String(next)); } catch (e) { }
+  }
+
+  // 「有进展」= 管理员回复过或标了状态（不再是 open）。首次调用没有水位线，
+  // 直接把当前最新时刻当基线，不然一上线就把所有旧反馈当成新进展弹出来。
+  function pendingUpdates(list) {
+    var rows = list || [];
+    var seen = seenAt();
+    if (!seen) {
+      var maxTs = 0;
+      rows.forEach(function (t) { maxTs = Math.max(maxTs, Number(t.updatedAt) || 0); });
+      markSeen(maxTs);
+      return [];
+    }
+    return rows.filter(function (t) {
+      return String(t.status || "open") !== "open" && (Number(t.updatedAt) || 0) > seen;
+    });
+  }
+
   var STATUS_LABEL = { open: "待处理", replied: "已回复", closed: "已解决" };
 
   var STATUS_DESC = {
@@ -92,6 +126,7 @@
     LIMITS: LIMITS,
     STATUS_LABEL: STATUS_LABEL,
     STATUS_DESC: STATUS_DESC,
+    SEEN_KEY: SEEN_KEY,
     labelOfKind: labelOfKind,
     labelOfStatus: labelOfStatus,
     descOfStatus: descOfStatus,
@@ -99,6 +134,9 @@
     isSignedIn: signedIn,
     create: create,
     mine: mine,
+    seenAt: seenAt,
+    markSeen: markSeen,
+    pendingUpdates: pendingUpdates,
     addComment: addComment,
     remove: remove
   };

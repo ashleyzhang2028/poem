@@ -113,6 +113,10 @@
     F.mine().then(function (r) {
       threads = (r && r.threads) || [];
       renderThreads();
+      // Looking at the current state counts as acknowledging it.
+      var maxTs = 0;
+      threads.forEach(function (t) { maxTs = Math.max(maxTs, Number(t.updatedAt) || 0); });
+      if (maxTs) F.markSeen(maxTs);
     });
   }
 

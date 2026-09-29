@@ -2,6 +2,7 @@
   "use strict";
 
   var KEY = "poem_reports_v1";
+  var SEEN_KEY = "poem_reports_seen_v1";
   var LOCAL_MAX = 50;
 
   var LIMITS = {
@@ -680,12 +681,44 @@
     } catch (e) { return ""; }
   }
 
+  // 一条水位线（Issue #274 那把 poem_plan_seen_v1 同一种做法）：只记
+  // 「看到过多新的那一刻」，不必逐条记「这条报告看没看过」。
+  function seenAt() {
+    var b = backing();
+    if (!b) return 0;
+    try { return Number(b.getItem(SEEN_KEY)) || 0; } catch (e) { return 0; }
+  }
+
+  function markSeen(ts) {
+    var b = backing();
+    if (!b) return;
+    var next = Math.max(seenAt(), Number(ts) || now());
+    try { b.setItem(SEEN_KEY, String(next)); } catch (e) { }
+  }
+
+  // 「已处理」= 管理员动过手（不再是 new）。首次调用时没有水位线，
+  // 直接把当前最新时刻当基线——不然一上线就把所有旧报告当成新进展弹出来。
+  function pendingUpdates(list) {
+    var rows = list || [];
+    var seen = seenAt();
+    if (!seen) {
+      var maxTs = 0;
+      rows.forEach(function (r) { maxTs = Math.max(maxTs, Number(r.updatedAt) || 0); });
+      markSeen(maxTs);
+      return [];
+    }
+    return rows.filter(function (r) {
+      return String(r.status || "new") !== "new" && (Number(r.updatedAt) || 0) > seen;
+    });
+  }
+
   window.Report = {
     KINDS: KINDS,
     LIMITS: LIMITS,
     STATUS_LABEL: STATUS_LABEL,
     STATUS_DESC: STATUS_DESC,
     KEY: KEY,
+    SEEN_KEY: SEEN_KEY,
     labelOfKind: labelOfKind,
     labelOfStatus: labelOfStatus,
     descOfStatus: descOfStatus,
@@ -696,6 +729,9 @@
     close: close,
     create: create,
     mine: mine,
+    seenAt: seenAt,
+    markSeen: markSeen,
+    pendingUpdates: pendingUpdates,
     readLocal: readLocal,
     writeLocal: writeLocal,
     pendingLocal: pendingLocal,

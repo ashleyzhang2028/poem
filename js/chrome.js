@@ -534,13 +534,13 @@
       '<div class="modal-box small plan-notice-box" role="dialog" aria-modal="true"' +
       ' aria-labelledby="plan-notice-title" aria-describedby="plan-notice-text">' +
       '<span class="tier-badge tier-' + escapeHtml(n.to) + '">' + escapeHtml(label) + "</span>" +
-      '<h2 class="plan-notice-title" id="plan-notice-title">账号已升级为 ' + escapeHtml(label) + "</h2>" +
-      '<p class="plan-notice-text" id="plan-notice-text">恭喜！跬步管理员已将你的账号升级为 ' +
-      escapeHtml(label) + "，更多功能现已为你开放。</p>" +
+      '<h2 class="plan-notice-title" id="plan-notice-title">账号升级至 ' + escapeHtml(label) + "</h2>" +
+      '<p class="plan-notice-text" id="plan-notice-text">恭喜！您的账号已升级至 ' +
+      escapeHtml(label) + "，快来探索新功能吧！</p>" +
       (until ? '<p class="plan-notice-until">有效期至 ' + escapeHtml(until) + "</p>" : "") +
       '<div class="actions plan-notice-actions">' +
       '<a class="btn ghost-btn" href="' + routeHref("plans") + '" data-plan-close="1">查看权益</a>' +
-      '<button type="button" class="btn primary" id="plan-notice-ok" data-plan-close="1">知道了</button>' +
+      '<button type="button" class="btn primary" id="plan-notice-ok" data-plan-close="1">确认</button>' +
       "</div></div>";
     box.addEventListener("click", function (e) {
       var hit = e.target && e.target.closest ? e.target.closest("[data-plan-close]") : null;

@@ -291,6 +291,34 @@ console.log("一、服务端内核：创建 / 频控 / 每日上限 / 空内容�
 
   {
 
+    const vm = require("vm");
+    const fakeStore = { _d: {}, getItem(k) { return k in this._d ? this._d[k] : null; }, setItem(k, v) { this._d[k] = String(v); } };
+    const sb = { window: {}, document: { addEventListener() {} }, navigator: {}, console };
+    sb.window = sb;
+    sb.localStorage = fakeStore;
+    vm.createContext(sb);
+    vm.runInContext(read("js/report.js"), sb, { filename: "report.js" });
+    const R = sb.window.Report;
+
+    chk(R.seenAt() === 0, "还没检查过：水位线是 0");
+    let pend = R.pendingUpdates([{ rid: "r1", status: "fixed", updatedAt: 100 }]);
+    chk(pend.length === 0, "第一次调用只打基线，不当场弹旧报告（实际 " + pend.length + " 条）");
+    chk(R.seenAt() === 100, "基线设到当时最新的那个时刻（" + R.seenAt() + "）");
+
+    pend = R.pendingUpdates([
+      { rid: "r1", status: "fixed", updatedAt: 100 },
+      { rid: "r2", status: "new", updatedAt: 200 },
+      { rid: "r3", status: "accepted", updatedAt: 300 }
+    ]);
+    chk(pend.length === 1 && pend[0].rid === "r3", "只有「时间更新 + 状态不是 new」那一条算数（实际 " + pend.map(x => x.rid) + "）");
+
+    R.markSeen(300);
+    pend = R.pendingUpdates([{ rid: "r3", status: "accepted", updatedAt: 300 }]);
+    chk(pend.length === 0, "标记看过之后同一条不再算数");
+  }
+
+  {
+
     const sql = read("api/_lib/schema.sql");
     chk(/create table if not exists public\.reports/.test(sql), "schema.sql 建了 public.reports");
     chk(/alter table public\.reports enable row level security/.test(sql),

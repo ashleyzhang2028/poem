@@ -75,6 +75,10 @@
       var list = (r && r.reports) || [];
       R.renderList($("reports-panel"), list, { unreachable: !!(r && r.unreachable) });
       updateSend((r && r.serverOnly) || []);
+      // Looking at the current state counts as acknowledging it.
+      var maxTs = 0;
+      list.forEach(function (x) { maxTs = Math.max(maxTs, Number(x.updatedAt) || 0); });
+      if (maxTs) R.markSeen(maxTs);
     })["catch"](function () {
       setMsg("读取失败", "warn");
     });

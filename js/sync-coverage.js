@@ -230,6 +230,15 @@
       key: "poem_plan_notice_v1", sync: false, row: "", merge: "", cap: WHY.account,
       why: "待显示的「账号已升级」提醒（本机上一份服务端答案比这一份低时留下，看过即删）。" +
            "按设备记：每台设备各提醒一次，上云反而会让一台看过、别的设备都不再提醒。"
+    },
+    {
+      key: "poem_reports_seen_v1", sync: false, row: "", merge: "", cap: WHY.account,
+      why: "「我的报告」有进展提醒的水位线（时间戳，同 poem_plan_seen_v1 一种做法）：" +
+           "打开那一页即视为看过。按设备记，不上云——上云会让一台看过、别的设备都不再提醒。"
+    },
+    {
+      key: "poem_feedback_seen_v1", sync: false, row: "", merge: "", cap: WHY.account,
+      why: "「需求 / 意见反馈」有回复提醒的水位线，与上面那把键同一条理由。"
     }
   ];
 

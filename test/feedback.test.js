@@ -188,6 +188,36 @@ console.log("一、创建：登录用户 / 设备号访客 / 拒绝没身份的�
   }
 
   console.log("");
+  console.log("四之二、有进展提醒的水位线（与 report.js 同一种做法）");
+
+  {
+    const vm = require("vm");
+    const fakeStore = { _d: {}, getItem(k) { return k in this._d ? this._d[k] : null; }, setItem(k, v) { this._d[k] = String(v); } };
+    const sb = { window: {}, document: { addEventListener() {} }, navigator: {}, console };
+    sb.window = sb;
+    sb.localStorage = fakeStore;
+    vm.createContext(sb);
+    vm.runInContext(read("js/feedback.js"), sb, { filename: "feedback.js" });
+    const F = sb.window.Feedback;
+
+    chk(F.seenAt() === 0, "还没检查过：水位线是 0");
+    let pend = F.pendingUpdates([{ tid: "t1", status: "replied", updatedAt: 100 }]);
+    chk(pend.length === 0, "第一次调用只打基线，不当场弹旧反馈");
+    chk(F.seenAt() === 100, "基线设到当时最新的那个时刻（" + F.seenAt() + "）");
+
+    pend = F.pendingUpdates([
+      { tid: "t1", status: "replied", updatedAt: 100 },
+      { tid: "t2", status: "open", updatedAt: 200 },
+      { tid: "t3", status: "closed", updatedAt: 300 }
+    ]);
+    chk(pend.length === 1 && pend[0].tid === "t3", "只有「时间更新 + 状态不是 open」那一条算数（实际 " + pend.map(x => x.tid) + "）");
+
+    F.markSeen(300);
+    pend = F.pendingUpdates([{ tid: "t3", status: "closed", updatedAt: 300 }]);
+    chk(pend.length === 0, "标记看过之后同一条不再算数");
+  }
+
+  console.log("");
   console.log("五、管理端列表 / 状态机 / 权限闸");
 
   {

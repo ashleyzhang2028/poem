@@ -1478,6 +1478,17 @@ a.kv-row.nav-row:focus-visible { color: var(--green); }
 .nav-go { color: var(--ink-3); font-size: 18px; line-height: 1; }
 a.kv-row.nav-row:hover .nav-go { color: var(--green); }
 
+.nav-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-left: 6px;
+  border-radius: 50%;
+  background: var(--red);
+  vertical-align: middle;
+}
+.nav-dot[hidden] { display: none; }
+
 .identity-row a.tier-badge { text-decoration: none; cursor: pointer; }
 
 .nickname-input {
