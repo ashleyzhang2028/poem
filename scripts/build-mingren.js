@@ -56,6 +56,7 @@ const POL      = require('./data/mingren-politics.js');  // 第六轮：政治�
 const MIL      = require('./data/mingren-military.js');  // 第六轮：军事家 中外
 const OLD      = require('./data/mingren-new.js');       // 第四轮：文学 / 思想 / 哲学
 const AXIS     = require('./data/mingren-axis.js');      // 第七轮：德 / 意 政治与军事
+const R9       = require('./data/mingren-round9.js');    // 第九轮：补齐行当 + 归位
 
 /* ── 分组：十五个行当，不分中国 / 外国两类 ──────────────────────────────
    用户原话（Issue #381 · 本轮）：「将外国和中国的各个家合并，不区分中国
@@ -68,9 +69,15 @@ const AXIS     = require('./data/mingren-axis.js');      // 第七轮：德 / �
    组与组的先后只是**版面上**的次序（列表页一段一段摊开），一位归哪一组
    看的是「世所公认的第一身份」；**整个册子的次序是出生时间**，不是组。 */
 const GROUP_ORDER = [
+  /* 第九轮补进来的十一格。用户原话（Issue #381 · 本轮）那张单子就落在这几行：
+     「农学家、水利家、经济学家、翻译家 玄奘、茶学家、工艺家、法学家、纵横家、
+      教育家、语言文字学家、考古学家」—— 纵横家落「外交家」（可合并，
+     用户说了「可以合并，没关系」）。 */
   '政治家', '文学家', '史学家', '思想家', '哲学家', '军事家',
-  '书法家', '画家', '戏曲家', '音乐家',
-  '科学家', '医学家', '天文地理学家', '生物学家', '建筑家'
+  '科学家', '医学家', '农学家', '水利家', '天文地理学家', '生物学家',
+  '建筑家', '工艺家', '书法家', '画家', '戏曲家', '音乐家',
+  '法学家', '经济学家', '翻译家', '外交家', '茶学家',
+  '教育家', '语言文字学家', '考古学家'
 ];
 
 /* 组名映射：上一版的分组 → 本轮的分组（合并中外，去「外国」「（中国）」前缀）。
@@ -128,12 +135,21 @@ const PLAN = [
   { group: '思想家', rows: OLD.TZ },
   { group: '哲学家', rows: OLD.TW },
   { group: '外国名人', rows: OLD.TA }
-];
+].concat(R9.PLAN);
 
 /* 本轮要删的（先算出来，PLAN 校验与装配都要用） */
 const DROP_EARLY = ROUND5.DROP;
 const dropSetEarly = {};
 DROP_EARLY.forEach(function (t) { dropSetEarly[t] = true; });
+
+/* 第九轮：合并同人两条（DEDUPE）的「要删名单」。
+   上一轮收了两条的同一个人（塞内加 / 塞涅卡、阿奎那 / 托马斯·阿奎那、
+   笛卡尔 / 笛卡儿、吴趼人 / 吴沃尧），本轮把「次的那条」整条删掉，
+   正文留 keep 那一条。这份名单必须**在这里**算出来（PLAN 之前）：
+   前几轮的名单（mingren-new.js 的 PLAN）里还点着塞涅卡、笛卡儿、吴沃尧，
+   不先挡住，PLAN 会把他们再开一条。 */
+const DEDUPE_DROP = R9.DEDUPE.map(function (d) { return d.drop; });
+DEDUPE_DROP.forEach(function (t) { dropSetEarly[t] = true; });
 
 /* ── 不许进册的 · 明治维新以后的日本政治 / 军事人物 ─────────────────────
    用户原话（Issue #381）：「轴心国除了日本的政治军事家，其他国家的政治，
@@ -256,7 +272,7 @@ PLAN.forEach(function (plan) {
 });
 
 /* ── 删除：按名字从主表摘掉 ─────────────────────────────────────────── */
-const DROP = DROP_EARLY.slice();
+const DROP = DROP_EARLY.slice().concat(DEDUPE_DROP);
 /* 要删的条目主表里没有 → **不算错**：上一轮已经删过，本次是重跑。
    名单本身就是「哪些人该在 / 不该在」的落点（不是差量），
    所以每次运行都拿它当全集衡量，而不是拿「上次删了什么」。 */
@@ -266,6 +282,19 @@ if (dropGone.length) console.log('（其中 ' + dropGone.length + ' 位早已不
 const dropSet = {};
 DROP.forEach(function (t) { dropSet[t] = true; });
 
+/* ── 第九轮的归位（MOVE）──────────────────────────────────────────────
+   已在册的人**只改组**，正文一个字不动。挪组就是改 NAME_GROUP，
+   与 PLAN 那条路同一个出口 —— 所以「一人一处」的规矩不会被绕开。 */
+const R9_MOVE_NAMES = Object.keys(R9.MOVE);
+R9_MOVE_NAMES.forEach(function (n) {
+  if (!byTitle[n]) problems.push('第九轮要归位的 ' + n + ' 不在主表里');
+  const g = R9.MOVE[n];
+  if (GROUP_ORDER.indexOf(g) < 0) problems.push('第九轮归位组不在 GROUP_ORDER：' + n + ' → ' + g);
+});
+R9.DEDUPE.forEach(function (d) {
+  if (!byTitle[d.keep]) problems.push('第九轮要保留的 ' + d.keep + ' 不在主表里');
+});
+
 /* ── 组装最终名册 ───────────────────────────────────────────────────── */
 /* PLAN 里给过的行：按名字建 index（换组也走这里） */
 const REPLAN = {};
@@ -274,7 +303,14 @@ added.forEach(function (a) { REPLAN[a.row[0]] = a; });
 /* 一人一处：姓名 → PLAN 给的组，本轮的名单优先于壳里记的组 */
 const NAME_GROUP = {};
 Object.keys(SHELL_GROUP).forEach(function (t) { NAME_GROUP[t] = SHELL_GROUP[t]; });
+/* ① 本轮名单（PLAN）里给过的行：组以名单为准 */
 added.forEach(function (a) { NAME_GROUP[a.row[0]] = a.group; });
+/* ② 第九轮的归位**最后落** —— 它要压过两处旧口径：
+     壳里记的旧组（SHELL_GROUP），与前几轮 PLAN 里重新点过的组
+     （徐光启在 mingren-new.js 的 TZ 里、子产 / 商鞅在 politics 里、
+      韩非在 TZ 里、玄奘在 TZ 里）。用户这一轮点的就是「谁属于哪一家」，
+      所以归位的优先级最高。 */
+R9_MOVE_NAMES.forEach(function (n) { NAME_GROUP[n] = R9.MOVE[n]; });
 
 const ROSTER = [];
 /* ① 在册未删的：正文与 title 从主表来，分组从名单 / 壳来。
