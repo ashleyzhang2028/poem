@@ -135,6 +135,31 @@ add(require('./corpus/fill-contemporary-novels-24.js'));
 add(require('./corpus/fill-contemporary-novels-25.js'));
 add(require('./corpus/fill-contemporary-novels-26.js'));
 
+/* ── Issue #381 第十四轮（批次三·诗歌）· 中国现当代诗歌（整组补齐）────
+   用户点的 1 2 3 4 里第 3 步的后半段：诗歌 68 部、戏剧 44 部。 */
+add(require('./corpus/fill-poems-1.js'));
+add(require('./corpus/fill-poems-2.js'));
+add(require('./corpus/fill-poems-3.js'));
+add(require('./corpus/fill-poems-4.js'));
+add(require('./corpus/fill-poems-5.js'));
+add(require('./corpus/fill-poems-6.js'));
+add(require('./corpus/fill-poems-7.js'));
+add(require('./corpus/fill-poems-8.js'));
+add(require('./corpus/fill-poems-9.js'));
+add(require('./corpus/fill-poems-10.js'));
+
+/* ── Issue #381 第十四轮（批次四·戏剧）· 中国现代戏剧（整组补齐） */
+add(require('./corpus/fill-drama-1.js'));
+add(require('./corpus/fill-drama-2.js'));
+add(require('./corpus/fill-drama-3.js'));
+add(require('./corpus/fill-drama-4.js'));
+add(require('./corpus/fill-drama-5.js'));
+add(require('./corpus/fill-drama-6.js'));
+
+/* 中国现代戏剧 45 部至此整组补齐 */
+
+/* 中国现当代诗歌 69 部至此整组补齐 */
+
 /* 中国当代小说 121 部整组补齐（batch 2 第一批） */
 
 /* 中国当代小说至此整组补齐（书目表 121 部全部有素材） */

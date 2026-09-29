@@ -2992,17 +2992,6 @@ window.POEMS_MINGSHU = [
     excerpt: "这是一沟绝望的死水"
   },
   {
-    textRef: "mingshu-ms-18",
-    id: "ms-18",
-    title: "艾青诗选",
-    group: "中国现当代诗歌",
-    gradeGroup: "中国现当代诗歌",
-    dynasty: "现当代",
-    author: "艾青",
-    source: "《艾青诗选》",
-    excerpt: "为什么我的眼里常含泪水"
-  },
-  {
     textRef: "mingshu-ms-578",
     id: "ms-578",
     title: "大堰河——我的保姆",
@@ -3012,6 +3001,17 @@ window.POEMS_MINGSHU = [
     author: "艾青",
     source: "《大堰河——我的保姆》",
     excerpt: "大堰河，我的保姆"
+  },
+  {
+    textRef: "mingshu-ms-584",
+    id: "ms-584",
+    title: "雪落在中国的土地上",
+    group: "中国现当代诗歌",
+    gradeGroup: "中国现当代诗歌",
+    dynasty: "现当代",
+    author: "艾青",
+    source: "《雪落在中国的土地上》",
+    excerpt: "寒冷在封锁着中国"
   },
   {
     textRef: "mingshu-ms-579",
@@ -3025,6 +3025,17 @@ window.POEMS_MINGSHU = [
     excerpt: "太阳向我滚来"
   },
   {
+    textRef: "mingshu-ms-583",
+    id: "ms-583",
+    title: "北方",
+    group: "中国现当代诗歌",
+    gradeGroup: "中国现当代诗歌",
+    dynasty: "现当代",
+    author: "艾青",
+    source: "《北方》",
+    excerpt: "北方的雪与土地"
+  },
+  {
     textRef: "mingshu-ms-580",
     id: "ms-580",
     title: "黎明的通知",
@@ -3034,6 +3045,17 @@ window.POEMS_MINGSHU = [
     author: "艾青",
     source: "《黎明的通知》",
     excerpt: "请叫醒一切的人"
+  },
+  {
+    textRef: "mingshu-ms-18",
+    id: "ms-18",
+    title: "艾青诗选",
+    group: "中国现当代诗歌",
+    gradeGroup: "中国现当代诗歌",
+    dynasty: "现当代",
+    author: "艾青",
+    source: "《艾青诗选》",
+    excerpt: "为什么我的眼里常含泪水"
   },
   {
     textRef: "mingshu-ms-581",
@@ -3056,28 +3078,6 @@ window.POEMS_MINGSHU = [
     author: "艾青",
     source: "《归来的歌》",
     excerpt: "二十年后的重新歌唱"
-  },
-  {
-    textRef: "mingshu-ms-583",
-    id: "ms-583",
-    title: "北方",
-    group: "中国现当代诗歌",
-    gradeGroup: "中国现当代诗歌",
-    dynasty: "现当代",
-    author: "艾青",
-    source: "《北方》",
-    excerpt: "北方的雪与土地"
-  },
-  {
-    textRef: "mingshu-ms-584",
-    id: "ms-584",
-    title: "雪落在中国的土地上",
-    group: "中国现当代诗歌",
-    gradeGroup: "中国现当代诗歌",
-    dynasty: "现当代",
-    author: "艾青",
-    source: "《雪落在中国的土地上》",
-    excerpt: "寒冷在封锁着中国"
   },
   {
     textRef: "mingshu-ms-606",
@@ -3531,6 +3531,39 @@ window.POEMS_MINGSHU = [
     excerpt: "太阳升起来了，黑暗留在后面"
   },
   {
+    textRef: "mingshu-ms-657",
+    id: "ms-657",
+    title: "获虎之夜",
+    group: "中国现代戏剧",
+    gradeGroup: "中国现代戏剧",
+    dynasty: "近现代",
+    author: "田汉",
+    source: "《获虎之夜》",
+    excerpt: "一个猎户的女儿"
+  },
+  {
+    textRef: "mingshu-ms-661",
+    id: "ms-661",
+    title: "南归",
+    group: "中国现代戏剧",
+    gradeGroup: "中国现代戏剧",
+    dynasty: "近现代",
+    author: "田汉",
+    source: "《南归》",
+    excerpt: "一个归来的旅人"
+  },
+  {
+    textRef: "mingshu-ms-656",
+    id: "ms-656",
+    title: "名优之死",
+    group: "中国现代戏剧",
+    gradeGroup: "中国现代戏剧",
+    dynasty: "近现代",
+    author: "田汉",
+    source: "《名优之死》",
+    excerpt: "一位戏曲演员之死"
+  },
+  {
     textRef: "mingshu-ms-11",
     id: "ms-11",
     title: "雷雨",
@@ -3540,6 +3573,28 @@ window.POEMS_MINGSHU = [
     author: "曹禺",
     source: "《雷雨》",
     excerpt: "一个雷雨之夜的崩坏"
+  },
+  {
+    textRef: "mingshu-ms-664",
+    id: "ms-664",
+    title: "秋瑾传",
+    group: "中国现代戏剧",
+    gradeGroup: "中国现代戏剧",
+    dynasty: "近现代",
+    author: "夏衍",
+    source: "《秋瑾传》",
+    excerpt: "一位女革命者"
+  },
+  {
+    textRef: "mingshu-ms-666",
+    id: "ms-666",
+    title: "赛金花",
+    group: "中国现代戏剧",
+    gradeGroup: "中国现代戏剧",
+    dynasty: "近现代",
+    author: "夏衍",
+    source: "《赛金花》",
+    excerpt: "一位女子的身世"
   },
   {
     textRef: "mingshu-ms-647",
@@ -3553,6 +3608,17 @@ window.POEMS_MINGSHU = [
     excerpt: "复仇与荒原"
   },
   {
+    textRef: "mingshu-ms-662",
+    id: "ms-662",
+    title: "上海屋檐下",
+    group: "中国现代戏剧",
+    gradeGroup: "中国现代戏剧",
+    dynasty: "近现代",
+    author: "夏衍",
+    source: "《上海屋檐下》",
+    excerpt: "弄堂里的一天"
+  },
+  {
     textRef: "mingshu-ms-648",
     id: "ms-648",
     title: "北京人",
@@ -3562,6 +3628,149 @@ window.POEMS_MINGSHU = [
     author: "曹禺",
     source: "《北京人》",
     excerpt: "一个家庭的解体"
+  },
+  {
+    textRef: "mingshu-ms-663",
+    id: "ms-663",
+    title: "法西斯细菌",
+    group: "中国现代戏剧",
+    gradeGroup: "中国现代戏剧",
+    dynasty: "近现代",
+    author: "夏衍",
+    source: "《法西斯细菌》",
+    excerpt: "一位医生的觉醒"
+  },
+  {
+    textRef: "mingshu-ms-667",
+    id: "ms-667",
+    title: "屈原·郭沫若",
+    group: "中国现代戏剧",
+    gradeGroup: "中国现代戏剧",
+    dynasty: "近现代",
+    author: "郭沫若",
+    source: "《屈原·郭沫若》",
+    excerpt: "话剧版屈原"
+  },
+  {
+    textRef: "mingshu-ms-670",
+    id: "ms-670",
+    title: "兄妹开荒",
+    group: "中国现代戏剧",
+    gradeGroup: "中国现代戏剧",
+    dynasty: "当代",
+    author: "王大化",
+    source: "《兄妹开荒》",
+    excerpt: "一部秧歌剧"
+  },
+  {
+    textRef: "mingshu-ms-671",
+    id: "ms-671",
+    title: "小二黑结婚",
+    group: "中国现代戏剧",
+    gradeGroup: "中国现代戏剧",
+    dynasty: "近现代",
+    author: "赵树理",
+    source: "《小二黑结婚》",
+    excerpt: "一对青年的婚事"
+  },
+  {
+    textRef: "mingshu-ms-672",
+    id: "ms-672",
+    title: "李有才板话",
+    group: "中国现代戏剧",
+    gradeGroup: "中国现代戏剧",
+    dynasty: "近现代",
+    author: "赵树理",
+    source: "《李有才板话》",
+    excerpt: "快板里的一个村子"
+  },
+  {
+    textRef: "mingshu-ms-665",
+    id: "ms-665",
+    title: "芳草天涯",
+    group: "中国现代戏剧",
+    gradeGroup: "中国现代戏剧",
+    dynasty: "近现代",
+    author: "夏衍",
+    source: "《芳草天涯》",
+    excerpt: "一部剧作"
+  },
+  {
+    textRef: "mingshu-ms-669",
+    id: "ms-669",
+    title: "白毛女",
+    group: "中国现代戏剧",
+    gradeGroup: "中国现代戏剧",
+    dynasty: "当代",
+    author: "贺敬之 / 丁毅",
+    source: "《白毛女》",
+    excerpt: "旧社会把人变成鬼"
+  },
+  {
+    textRef: "mingshu-ms-674",
+    id: "ms-674",
+    title: "登记",
+    group: "中国现代戏剧",
+    gradeGroup: "中国现代戏剧",
+    dynasty: "当代",
+    author: "赵树理",
+    source: "《登记》",
+    excerpt: "一张结婚证"
+  },
+  {
+    textRef: "mingshu-ms-673",
+    id: "ms-673",
+    title: "三里湾",
+    group: "中国现代戏剧",
+    gradeGroup: "中国现代戏剧",
+    dynasty: "当代",
+    author: "赵树理",
+    source: "《三里湾》",
+    excerpt: "一个村的合作化"
+  },
+  {
+    textRef: "mingshu-ms-654",
+    id: "ms-654",
+    title: "西望长安",
+    group: "中国现代戏剧",
+    gradeGroup: "中国现代戏剧",
+    dynasty: "当代",
+    author: "老舍",
+    source: "《西望长安》",
+    excerpt: "一部讽刺喜剧"
+  },
+  {
+    textRef: "mingshu-ms-651",
+    id: "ms-651",
+    title: "茶馆",
+    group: "中国现代戏剧",
+    gradeGroup: "中国现代戏剧",
+    dynasty: "近现代",
+    author: "老舍",
+    source: "《茶馆》",
+    excerpt: "一个大茶馆，一个小社会"
+  },
+  {
+    textRef: "mingshu-ms-655",
+    id: "ms-655",
+    title: "全家福",
+    group: "中国现代戏剧",
+    gradeGroup: "中国现代戏剧",
+    dynasty: "当代",
+    author: "老舍",
+    source: "《全家福》",
+    excerpt: "一家人的团聚"
+  },
+  {
+    textRef: "mingshu-ms-668",
+    id: "ms-668",
+    title: "蔡文姬·郭沫若",
+    group: "中国现代戏剧",
+    gradeGroup: "中国现代戏剧",
+    dynasty: "近现代",
+    author: "郭沫若",
+    source: "《蔡文姬·郭沫若》",
+    excerpt: "文姬归汉"
   },
   {
     textRef: "mingshu-ms-649",
@@ -3584,6 +3793,193 @@ window.POEMS_MINGSHU = [
     author: "曹禺",
     source: "《王昭君》",
     excerpt: "一位和亲的宫女"
+  },
+  {
+    textRef: "mingshu-ms-652",
+    id: "ms-652",
+    title: "龙须沟",
+    group: "中国现代戏剧",
+    gradeGroup: "中国现代戏剧",
+    dynasty: "当代",
+    author: "老舍",
+    source: "《龙须沟》",
+    excerpt: "一条臭沟变清"
+  },
+  {
+    textRef: "mingshu-ms-653",
+    id: "ms-653",
+    title: "方珍珠",
+    group: "中国现代戏剧",
+    gradeGroup: "中国现代戏剧",
+    dynasty: "当代",
+    author: "老舍",
+    source: "《方珍珠》",
+    excerpt: "一个女艺人的翻身"
+  },
+  {
+    textRef: "mingshu-ms-658",
+    id: "ms-658",
+    title: "关汉卿·田汉剧作",
+    group: "中国现代戏剧",
+    gradeGroup: "中国现代戏剧",
+    dynasty: "当代",
+    author: "田汉",
+    source: "《关汉卿·田汉剧作》",
+    excerpt: "一位戏曲家的故事"
+  },
+  {
+    textRef: "mingshu-ms-659",
+    id: "ms-659",
+    title: "文成公主",
+    group: "中国现代戏剧",
+    gradeGroup: "中国现代戏剧",
+    dynasty: "当代",
+    author: "田汉",
+    source: "《文成公主》",
+    excerpt: "一位远嫁的公主"
+  },
+  {
+    textRef: "mingshu-ms-660",
+    id: "ms-660",
+    title: "丽人行",
+    group: "中国现代戏剧",
+    gradeGroup: "中国现代戏剧",
+    dynasty: "当代",
+    author: "田汉",
+    source: "《丽人行》",
+    excerpt: "三个女性的遭遇"
+  },
+  {
+    textRef: "mingshu-ms-675",
+    id: "ms-675",
+    title: "陈毅市长",
+    group: "中国现代戏剧",
+    gradeGroup: "中国现代戏剧",
+    dynasty: "当代",
+    author: "沙叶新",
+    source: "《陈毅市长》",
+    excerpt: "一位市长的胸怀"
+  },
+  {
+    textRef: "mingshu-ms-682",
+    id: "ms-682",
+    title: "小井胡同",
+    group: "中国现代戏剧",
+    gradeGroup: "中国现代戏剧",
+    dynasty: "当代",
+    author: "李龙云",
+    source: "《小井胡同》",
+    excerpt: "一条胡同的四十年"
+  },
+  {
+    textRef: "mingshu-ms-676",
+    id: "ms-676",
+    title: "寻找男子汉",
+    group: "中国现代戏剧",
+    gradeGroup: "中国现代戏剧",
+    dynasty: "当代",
+    author: "沙叶新",
+    source: "《寻找男子汉》",
+    excerpt: "一部话剧"
+  },
+  {
+    textRef: "mingshu-ms-680",
+    id: "ms-680",
+    title: "狗儿爷涅槃",
+    group: "中国现代戏剧",
+    gradeGroup: "中国现代戏剧",
+    dynasty: "当代",
+    author: "锦云",
+    source: "《狗儿爷涅槃》",
+    excerpt: "一位农民的执念"
+  },
+  {
+    textRef: "mingshu-ms-687",
+    id: "ms-687",
+    title: "暗恋桃花源",
+    group: "中国现代戏剧",
+    gradeGroup: "中国现代戏剧",
+    dynasty: "当代",
+    author: "赖声川",
+    source: "《暗恋桃花源》",
+    excerpt: "一场排戏的错位"
+  },
+  {
+    textRef: "mingshu-ms-681",
+    id: "ms-681",
+    title: "桑树坪纪事",
+    group: "中国现代戏剧",
+    gradeGroup: "中国现代戏剧",
+    dynasty: "当代",
+    author: "陈子度等",
+    source: "《桑树坪纪事》",
+    excerpt: "一个山村的故事"
+  },
+  {
+    textRef: "mingshu-ms-683",
+    id: "ms-683",
+    title: "天下第一楼",
+    group: "中国现代戏剧",
+    gradeGroup: "中国现代戏剧",
+    dynasty: "当代",
+    author: "何冀平",
+    source: "《天下第一楼》",
+    excerpt: "一家烤鸭店的兴衰"
+  },
+  {
+    textRef: "mingshu-ms-686",
+    id: "ms-686",
+    title: "哗变",
+    group: "中国现代戏剧",
+    gradeGroup: "中国现代戏剧",
+    dynasty: "当代",
+    author: "英若诚译",
+    source: "《哗变》",
+    excerpt: "一部法庭剧"
+  },
+  {
+    textRef: "mingshu-ms-685",
+    id: "ms-685",
+    title: "李白",
+    group: "中国现代戏剧",
+    gradeGroup: "中国现代戏剧",
+    dynasty: "当代",
+    author: "郭启宏",
+    source: "《李白》",
+    excerpt: "一位诗人的晚年"
+  },
+  {
+    textRef: "mingshu-ms-684",
+    id: "ms-684",
+    title: "商鞅",
+    group: "中国现代戏剧",
+    gradeGroup: "中国现代戏剧",
+    dynasty: "当代",
+    author: "姚远",
+    source: "《商鞅》",
+    excerpt: "一位改革者的下场"
+  },
+  {
+    textRef: "mingshu-ms-689",
+    id: "ms-689",
+    title: "如梦之梦",
+    group: "中国现代戏剧",
+    gradeGroup: "中国现代戏剧",
+    dynasty: "当代",
+    author: "赖声川",
+    source: "《如梦之梦》",
+    excerpt: "一场八小时的戏"
+  },
+  {
+    textRef: "mingshu-ms-688",
+    id: "ms-688",
+    title: "宝岛一村",
+    group: "中国现代戏剧",
+    gradeGroup: "中国现代戏剧",
+    dynasty: "当代",
+    author: "赖声川",
+    source: "《宝岛一村》",
+    excerpt: "一个眷村的故事"
   },
   {
     textRef: "mingshu-ms-24",
