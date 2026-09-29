@@ -96,6 +96,14 @@ add(require('./corpus/fill-essays-19.js'));
 add(require('./corpus/fill-essays-21.js'));
 add(require('./corpus/fill-essays-22.js'));
 
+/* ── 六、Issue #381 第十二轮（批次三）：中国当代小说（分批）────────────
+   用户原话「按 1 2 3 4 顺序来」的第 3 步是「中国当代小说 118 /
+   现当代诗歌 68 / 现代戏剧 44」。这一组量最大，分批往上填。 */
+add(require('./corpus/fill-contemporary-novels-1.js'));
+add(require('./corpus/fill-contemporary-novels-2.js'));
+add(require('./corpus/fill-contemporary-novels-3.js'));
+add(require('./corpus/fill-contemporary-novels-4.js'));
+
 /* ── 三、Issue #381 第十一轮：用户点名的中国古典小说 22 部 ─────────────
    用户原话先列了 22 部书名（《三国演义》到《孽海花》），再让「按你的计划
    继续补充」。前六部（四大名著 + 儒林外史 + 聊斋志异）上一轮已在，其余

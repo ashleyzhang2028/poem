@@ -924,6 +924,50 @@ window.POEMS_MINGSHU = [
     excerpt: "城南的旧事，童年的远去"
   },
   {
+    textRef: "mingshu-ms-434",
+    id: "ms-434",
+    title: "人生",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "路遥",
+    source: "《人生》",
+    excerpt: "高加林的两条路"
+  },
+  {
+    textRef: "mingshu-ms-435",
+    id: "ms-435",
+    title: "兄弟",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "余华",
+    source: "《兄弟》",
+    excerpt: "两个兄弟，两个时代"
+  },
+  {
+    textRef: "mingshu-ms-436",
+    id: "ms-436",
+    title: "在细雨中呼喊",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "余华",
+    source: "《在细雨中呼喊》",
+    excerpt: "一个孩子的记忆"
+  },
+  {
+    textRef: "mingshu-ms-439",
+    id: "ms-439",
+    title: "秦腔",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "贾平凹",
+    source: "《秦腔》",
+    excerpt: "为故乡立碑"
+  },
+  {
     textRef: "mingshu-ms-16",
     id: "ms-16",
     title: "平凡的世界",
@@ -935,6 +979,17 @@ window.POEMS_MINGSHU = [
     excerpt: "普通人的奋斗"
   },
   {
+    textRef: "mingshu-ms-440",
+    id: "ms-440",
+    title: "红高粱家族",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "莫言",
+    source: "《红高粱家族》",
+    excerpt: "高密东北乡的传奇"
+  },
+  {
     textRef: "mingshu-ms-15",
     id: "ms-15",
     title: "活着",
@@ -944,6 +999,50 @@ window.POEMS_MINGSHU = [
     author: "余华",
     source: "《活着》",
     excerpt: "为了活着本身而活着"
+  },
+  {
+    textRef: "mingshu-ms-437",
+    id: "ms-437",
+    title: "白鹿原",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "陈忠实",
+    source: "《白鹿原》",
+    excerpt: "一个原上的两家人"
+  },
+  {
+    textRef: "mingshu-ms-438",
+    id: "ms-438",
+    title: "废都",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "贾平凹",
+    source: "《废都》",
+    excerpt: "一座城的浮世"
+  },
+  {
+    textRef: "mingshu-ms-433",
+    id: "ms-433",
+    title: "许三观卖血记",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "近现代",
+    author: "余华",
+    source: "《许三观卖血记》",
+    excerpt: "靠卖血撑着的一家人"
+  },
+  {
+    textRef: "mingshu-ms-441",
+    id: "ms-441",
+    title: "丰乳肥臀",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "莫言",
+    source: "《丰乳肥臀》",
+    excerpt: "一位母亲的百年"
   },
   {
     textRef: "mingshu-ms-211",
