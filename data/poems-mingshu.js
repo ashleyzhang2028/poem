@@ -3982,6 +3982,28 @@ window.POEMS_MINGSHU = [
     excerpt: "一个眷村的故事"
   },
   {
+    textRef: "mingshu-ms-20",
+    id: "ms-20",
+    title: "鲁滨逊漂流记",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "英国",
+    author: "笛福",
+    source: "《鲁滨逊漂流记》",
+    excerpt: "一个人在岛上过二十八年"
+  },
+  {
+    textRef: "mingshu-ms-19",
+    id: "ms-19",
+    title: "格列佛游记",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "英国",
+    author: "斯威夫特",
+    source: "《格列佛游记》",
+    excerpt: "小人国、大人国与慧骃国"
+  },
+  {
     textRef: "mingshu-ms-28",
     id: "ms-28",
     title: "傲慢与偏见",
