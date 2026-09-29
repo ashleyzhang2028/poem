@@ -913,6 +913,28 @@ window.POEMS_MINGSHU = [
     excerpt: "吕梁山上的民兵"
   },
   {
+    textRef: "mingshu-ms-551",
+    id: "ms-551",
+    title: "青春万岁",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "王蒙",
+    source: "《青春万岁》",
+    excerpt: "一群青年的中学生活"
+  },
+  {
+    textRef: "mingshu-ms-552",
+    id: "ms-552",
+    title: "组织部新来的青年人",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "王蒙",
+    source: "《组织部新来的青年人》",
+    excerpt: "一个年轻人的困惑"
+  },
+  {
     textRef: "mingshu-ms-14",
     id: "ms-14",
     title: "城南旧事",
@@ -922,6 +944,50 @@ window.POEMS_MINGSHU = [
     author: "林海音",
     source: "《城南旧事》",
     excerpt: "城南的旧事，童年的远去"
+  },
+  {
+    textRef: "mingshu-ms-543",
+    id: "ms-543",
+    title: "李自成",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "姚雪垠",
+    source: "《李自成》",
+    excerpt: "一位闯王的一生"
+  },
+  {
+    textRef: "mingshu-ms-549",
+    id: "ms-549",
+    title: "胡雪岩",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "高阳",
+    source: "《胡雪岩》",
+    excerpt: "一个红顶商人"
+  },
+  {
+    textRef: "mingshu-ms-550",
+    id: "ms-550",
+    title: "慈禧全传",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "高阳",
+    source: "《慈禧全传》",
+    excerpt: "一位太后的身边"
+  },
+  {
+    textRef: "mingshu-ms-561",
+    id: "ms-561",
+    title: "人到中年",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "谌容",
+    source: "《人到中年》",
+    excerpt: "一位眼科大夫"
   },
   {
     textRef: "mingshu-ms-434",
@@ -1298,6 +1364,28 @@ window.POEMS_MINGSHU = [
     excerpt: "改革开放三十年"
   },
   {
+    textRef: "mingshu-ms-554",
+    id: "ms-554",
+    title: "蝴蝶",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "王蒙",
+    source: "《蝴蝶》",
+    excerpt: "一位老部长的回忆"
+  },
+  {
+    textRef: "mingshu-ms-569",
+    id: "ms-569",
+    title: "公开的情书",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "靳凡",
+    source: "《公开的情书》",
+    excerpt: "四封书信"
+  },
+  {
     textRef: "mingshu-ms-480",
     id: "ms-480",
     title: "芙蓉镇",
@@ -1320,6 +1408,50 @@ window.POEMS_MINGSHU = [
     excerpt: "一个人与一段历史"
   },
   {
+    textRef: "mingshu-ms-538",
+    id: "ms-538",
+    title: "干校六记",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "杨绛",
+    source: "《干校六记》",
+    excerpt: "下放的日子"
+  },
+  {
+    textRef: "mingshu-ms-568",
+    id: "ms-568",
+    title: "晚霞消失的时候",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "礼平",
+    source: "《晚霞消失的时候》",
+    excerpt: "一代人的对话"
+  },
+  {
+    textRef: "mingshu-ms-570",
+    id: "ms-570",
+    title: "波动",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "赵振开",
+    source: "《波动》",
+    excerpt: "一代青年的波动"
+  },
+  {
+    textRef: "mingshu-ms-573",
+    id: "ms-573",
+    title: "北极光",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "张抗抗",
+    source: "《北极光》",
+    excerpt: "一代人的求索"
+  },
+  {
     textRef: "mingshu-ms-478",
     id: "ms-478",
     title: "哦，香雪",
@@ -1329,6 +1461,61 @@ window.POEMS_MINGSHU = [
     author: "铁凝",
     source: "《哦，香雪》",
     excerpt: "大山里的一只文具盒"
+  },
+  {
+    textRef: "mingshu-ms-562",
+    id: "ms-562",
+    title: "黑骏马（张承志）",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "张承志",
+    source: "《黑骏马（张承志）》",
+    excerpt: "草原上的一段往事"
+  },
+  {
+    textRef: "mingshu-ms-564",
+    id: "ms-564",
+    title: "北方的河",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "张承志",
+    source: "《北方的河》",
+    excerpt: "四条河与一个青年"
+  },
+  {
+    textRef: "mingshu-ms-565",
+    id: "ms-565",
+    title: "棋王",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "阿城",
+    source: "《棋王》",
+    excerpt: "为棋不为生"
+  },
+  {
+    textRef: "mingshu-ms-566",
+    id: "ms-566",
+    title: "树王",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "阿城",
+    source: "《树王》",
+    excerpt: "一棵树的命运"
+  },
+  {
+    textRef: "mingshu-ms-567",
+    id: "ms-567",
+    title: "孩子王",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "阿城",
+    source: "《孩子王》",
+    excerpt: "一个知青老师的识字课"
   },
   {
     textRef: "mingshu-ms-444",
@@ -1375,6 +1562,28 @@ window.POEMS_MINGSHU = [
     excerpt: "普通人的奋斗"
   },
   {
+    textRef: "mingshu-ms-553",
+    id: "ms-553",
+    title: "活动变人形",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "王蒙",
+    source: "《活动变人形》",
+    excerpt: "一个家庭的内战"
+  },
+  {
+    textRef: "mingshu-ms-572",
+    id: "ms-572",
+    title: "隐形伴侣",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "张抗抗",
+    source: "《隐形伴侣》",
+    excerpt: "一个女知青的婚姻"
+  },
+  {
     textRef: "mingshu-ms-440",
     id: "ms-440",
     title: "红高粱家族",
@@ -1397,6 +1606,72 @@ window.POEMS_MINGSHU = [
     excerpt: "一个家族与一座玉城"
   },
   {
+    textRef: "mingshu-ms-534",
+    id: "ms-534",
+    title: "十八岁出门远行",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "余华",
+    source: "《十八岁出门远行》",
+    excerpt: "一个少年的第一次远行"
+  },
+  {
+    textRef: "mingshu-ms-555",
+    id: "ms-555",
+    title: "风景",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "方方",
+    source: "《风景》",
+    excerpt: "一条汉正街的七哥"
+  },
+  {
+    textRef: "mingshu-ms-559",
+    id: "ms-559",
+    title: "烦恼人生",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "池莉",
+    source: "《烦恼人生》",
+    excerpt: "印象厚的一天"
+  },
+  {
+    textRef: "mingshu-ms-571",
+    id: "ms-571",
+    title: "金牧场",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "张承志",
+    source: "《金牧场》",
+    excerpt: "红卫兵一代的回忆"
+  },
+  {
+    textRef: "mingshu-ms-535",
+    id: "ms-535",
+    title: "现实一种",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "余华",
+    source: "《现实一种》",
+    excerpt: "一家人的冷漠"
+  },
+  {
+    textRef: "mingshu-ms-537",
+    id: "ms-537",
+    title: "洗澡",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "杨绛",
+    source: "《洗澡》",
+    excerpt: "一个知识分子的改造"
+  },
+  {
     textRef: "mingshu-ms-477",
     id: "ms-477",
     title: "玫瑰门",
@@ -1406,6 +1681,72 @@ window.POEMS_MINGSHU = [
     author: "铁凝",
     source: "《玫瑰门》",
     excerpt: "三代女人的一门"
+  },
+  {
+    textRef: "mingshu-ms-529",
+    id: "ms-529",
+    title: "妻妾成群",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "苏童",
+    source: "《妻妾成群》",
+    excerpt: "大红灯笼与四房太太"
+  },
+  {
+    textRef: "mingshu-ms-532",
+    id: "ms-532",
+    title: "罂粟之家",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "苏童",
+    source: "《罂粟之家》",
+    excerpt: "一个家族的气味"
+  },
+  {
+    textRef: "mingshu-ms-546",
+    id: "ms-546",
+    title: "曾国藩",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "唐浩明",
+    source: "《曾国藩》",
+    excerpt: "一个读书人的事功"
+  },
+  {
+    textRef: "mingshu-ms-528",
+    id: "ms-528",
+    title: "红粉",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "苏童",
+    source: "《红粉》",
+    excerpt: "两个女人与一个新时代"
+  },
+  {
+    textRef: "mingshu-ms-544",
+    id: "ms-544",
+    title: "雍正皇帝",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "二月河",
+    source: "《雍正皇帝》",
+    excerpt: "九龙夺嫡"
+  },
+  {
+    textRef: "mingshu-ms-563",
+    id: "ms-563",
+    title: "心灵史",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "张承志",
+    source: "《心灵史》",
+    excerpt: "一部哲合忍耶的书写"
   },
   {
     textRef: "mingshu-ms-15",
@@ -1441,6 +1782,28 @@ window.POEMS_MINGSHU = [
     excerpt: "一座城的浮世"
   },
   {
+    textRef: "mingshu-ms-530",
+    id: "ms-530",
+    title: "米",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "苏童",
+    source: "《米》",
+    excerpt: "一个乡下人进城"
+  },
+  {
+    textRef: "mingshu-ms-531",
+    id: "ms-531",
+    title: "城北地带",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "苏童",
+    source: "《城北地带》",
+    excerpt: "一条街上的少年"
+  },
+  {
     textRef: "mingshu-ms-461",
     id: "ms-461",
     title: "尘埃落定",
@@ -1450,6 +1813,28 @@ window.POEMS_MINGSHU = [
     author: "阿来",
     source: "《尘埃落定》",
     excerpt: "一个土司的傻儿子"
+  },
+  {
+    textRef: "mingshu-ms-526",
+    id: "ms-526",
+    title: "一个人的战争",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "林白",
+    source: "《一个人的战争》",
+    excerpt: "一个女人的成长"
+  },
+  {
+    textRef: "mingshu-ms-545",
+    id: "ms-545",
+    title: "乾隆皇帝",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "二月河",
+    source: "《乾隆皇帝》",
+    excerpt: "盛世的黄昏"
   },
   {
     textRef: "mingshu-ms-433",
@@ -1485,6 +1870,28 @@ window.POEMS_MINGSHU = [
     excerpt: "上海小姐的一生"
   },
   {
+    textRef: "mingshu-ms-548",
+    id: "ms-548",
+    title: "杨度",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "唐浩明",
+    source: "《杨度》",
+    excerpt: "一个通才的迷途"
+  },
+  {
+    textRef: "mingshu-ms-527",
+    id: "ms-527",
+    title: "私人生活",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "陈染",
+    source: "《私人生活》",
+    excerpt: "一个人的日常"
+  },
+  {
     textRef: "mingshu-ms-484",
     id: "ms-484",
     title: "抉择",
@@ -1494,6 +1901,17 @@ window.POEMS_MINGSHU = [
     author: "张平",
     source: "《抉择》",
     excerpt: "一场国企改革"
+  },
+  {
+    textRef: "mingshu-ms-560",
+    id: "ms-560",
+    title: "来来往往",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "池莉",
+    source: "《来来往往》",
+    excerpt: "一段都市情感"
   },
   {
     textRef: "mingshu-ms-479",
@@ -1518,6 +1936,61 @@ window.POEMS_MINGSHU = [
     excerpt: "狭路相逢勇者胜"
   },
   {
+    textRef: "mingshu-ms-539",
+    id: "ms-539",
+    title: "野葫芦引",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "宗璞",
+    source: "《野葫芦引》",
+    excerpt: "南渡北归的大学"
+  },
+  {
+    textRef: "mingshu-ms-540",
+    id: "ms-540",
+    title: "东藏记",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "宗璞",
+    source: "《东藏记》",
+    excerpt: "抗战中的大学"
+  },
+  {
+    textRef: "mingshu-ms-558",
+    id: "ms-558",
+    title: "生活秀",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "池莉",
+    source: "《生活秀》",
+    excerpt: "吉庆街的来双扬"
+  },
+  {
+    textRef: "mingshu-ms-576",
+    id: "ms-576",
+    title: "流浪地球",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "中国",
+    author: "刘慈欣",
+    source: "《流浪地球》",
+    excerpt: "带着地球去流浪"
+  },
+  {
+    textRef: "mingshu-ms-547",
+    id: "ms-547",
+    title: "张之洞",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "唐浩明",
+    source: "《张之洞》",
+    excerpt: "一位洋务派重臣"
+  },
+  {
     textRef: "mingshu-ms-489",
     id: "ms-489",
     title: "解密",
@@ -1529,6 +2002,28 @@ window.POEMS_MINGSHU = [
     excerpt: "一个数学天才与密码"
   },
   {
+    textRef: "mingshu-ms-524",
+    id: "ms-524",
+    title: "花腔",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "李洱",
+    source: "《花腔》",
+    excerpt: "一个革命者的叙述"
+  },
+  {
+    textRef: "mingshu-ms-541",
+    id: "ms-541",
+    title: "张居正",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "熊召政",
+    source: "《张居正》",
+    excerpt: "一位首辅的改革"
+  },
+  {
     textRef: "mingshu-ms-488",
     id: "ms-488",
     title: "暗算",
@@ -1538,6 +2033,28 @@ window.POEMS_MINGSHU = [
     author: "麦家",
     source: "《暗算》",
     excerpt: "听风者"
+  },
+  {
+    textRef: "mingshu-ms-536",
+    id: "ms-536",
+    title: "我们仨",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "杨绛",
+    source: "《我们仨》",
+    excerpt: "一个家庭三人"
+  },
+  {
+    textRef: "mingshu-ms-577",
+    id: "ms-577",
+    title: "超新星纪元",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "中国",
+    author: "刘慈欣",
+    source: "《超新星纪元》",
+    excerpt: "一群孩子的世界"
   },
   {
     textRef: "mingshu-ms-476",
@@ -1562,6 +2079,17 @@ window.POEMS_MINGSHU = [
     excerpt: "草原与狼"
   },
   {
+    textRef: "mingshu-ms-575",
+    id: "ms-575",
+    title: "球状闪电",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "中国",
+    author: "刘慈欣",
+    source: "《球状闪电》",
+    excerpt: "一朵雷雨的球"
+  },
+  {
     textRef: "mingshu-ms-490",
     id: "ms-490",
     title: "风声",
@@ -1571,6 +2099,17 @@ window.POEMS_MINGSHU = [
     author: "麦家",
     source: "《风声》",
     excerpt: "谁是老鬼"
+  },
+  {
+    textRef: "mingshu-ms-556",
+    id: "ms-556",
+    title: "万箭穿心",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "方方",
+    source: "《万箭穿心》",
+    excerpt: "一个女人的武汉"
   },
   {
     textRef: "mingshu-ms-465",
@@ -1584,6 +2123,39 @@ window.POEMS_MINGSHU = [
     excerpt: "盲人推拿师的世界"
   },
   {
+    textRef: "mingshu-ms-542",
+    id: "ms-542",
+    title: "大秦帝国",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "孙皓晖",
+    source: "《大秦帝国》",
+    excerpt: "一部历史长篇"
+  },
+  {
+    textRef: "mingshu-ms-574",
+    id: "ms-574",
+    title: "三体",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "中国",
+    author: "刘慈欣",
+    source: "《三体》",
+    excerpt: "给岁月以文明"
+  },
+  {
+    textRef: "mingshu-ms-519",
+    id: "ms-519",
+    title: "欢乐颂",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "阿耐",
+    source: "《欢乐颂》",
+    excerpt: "五个女人的城市"
+  },
+  {
     textRef: "mingshu-ms-485",
     id: "ms-485",
     title: "南渡北归",
@@ -1593,6 +2165,83 @@ window.POEMS_MINGSHU = [
     author: "岳南",
     source: "《南渡北归》",
     excerpt: "一代知识分子的迁徙"
+  },
+  {
+    textRef: "mingshu-ms-521",
+    id: "ms-521",
+    title: "繁花",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "金宇澄",
+    source: "《繁花》",
+    excerpt: "上海的市井与腔调"
+  },
+  {
+    textRef: "mingshu-ms-525",
+    id: "ms-525",
+    title: "北去来辞",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "林白",
+    source: "《北去来辞》",
+    excerpt: "一个女人的迁徙"
+  },
+  {
+    textRef: "mingshu-ms-533",
+    id: "ms-533",
+    title: "黄雀记",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "苏童",
+    source: "《黄雀记》",
+    excerpt: "三个少年的错"
+  },
+  {
+    textRef: "mingshu-ms-557",
+    id: "ms-557",
+    title: "涂自强的个人悲伤",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "方方",
+    source: "《涂自强的个人悲伤》",
+    excerpt: "一个农村大学生的路"
+  },
+  {
+    textRef: "mingshu-ms-520",
+    id: "ms-520",
+    title: "都挺好",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "阿耐",
+    source: "《都挺好》",
+    excerpt: "一家人的账"
+  },
+  {
+    textRef: "mingshu-ms-523",
+    id: "ms-523",
+    title: "应物兄",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "李洱",
+    source: "《应物兄》",
+    excerpt: "一座大学里的众生"
+  },
+  {
+    textRef: "mingshu-ms-522",
+    id: "ms-522",
+    title: "心居",
+    group: "中国当代小说",
+    gradeGroup: "中国当代小说",
+    dynasty: "当代",
+    author: "滕肖澜",
+    source: "《心居》",
+    excerpt: "在上海买房"
   },
   {
     textRef: "mingshu-ms-211",

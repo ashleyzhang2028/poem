@@ -129,6 +129,15 @@ add(require('./corpus/fill-contemporary-novels-18.js'));
 add(require('./corpus/fill-contemporary-novels-19.js'));
 add(require('./corpus/fill-contemporary-novels-20.js'));
 add(require('./corpus/fill-contemporary-novels-21.js'));
+add(require('./corpus/fill-contemporary-novels-22.js'));
+add(require('./corpus/fill-contemporary-novels-23.js'));
+add(require('./corpus/fill-contemporary-novels-24.js'));
+add(require('./corpus/fill-contemporary-novels-25.js'));
+add(require('./corpus/fill-contemporary-novels-26.js'));
+
+/* 中国当代小说 121 部整组补齐（batch 2 第一批） */
+
+/* 中国当代小说至此整组补齐（书目表 121 部全部有素材） */
 
 /* ── 三、Issue #381 第十一轮：用户点名的中国古典小说 22 部 ─────────────
    用户原话先列了 22 部书名（《三国演义》到《孽海花》），再让「按你的计划
