@@ -220,7 +220,7 @@ function isPostMeijiJapanPolitical(group, dynasty, life) {
 }
 
 const FIELDS = ['姓名', '朝代', '字 / 号', '生卒', '籍贯', '家世亲属',
-  '生平', '作品风格', '流派', '主要作品 / 贡献', '特殊意义'];
+  '生平', '作品风格', '流派', '主要作品 / 作为', '特殊意义'];
 
 /* ── 身份：该是什么家写清是什么家（Issue #381 · 第十轮 用户原话）─────────
    正文「流派」一行，开头补一个具体身份词（数学家 / 物理学家 / 雕塑家 /
@@ -252,6 +252,15 @@ function withIdentity(text, group, name) {
       return pre + ' ' + role + ' ·' + val + post;
     });
 }
+/* 标签归一：第 11 个字段的旧名「主要作品 / 贡献」换成中性的「主要作品 / 作为」。
+   这一部里收着希特勒、墨索里尼这一类人，「贡献：第二次世界大战、犹太人大屠杀」
+   是荒谬的 —— 「贡献」预设了正面价值。「作为」只陈述一个人做过什么，好坏留给
+   「特殊意义」那一栏去评。两个标签的显示宽度都是 15，替换不动表格框线。
+   只改标签，不动任何条目的内容（axis 里那一条的措辞另作中性化处理）。 */
+function neutralizeLabel(t) {
+  return String(t || '').split('主要作品 / 贡献').join('主要作品 / 作为');
+}
+
 const MIN_TOTAL = 400;   // 正文净字数下限（表格线不计）
 
 const problems = [];     // 校验积攒下来的问题，有一条就不写盘
@@ -399,7 +408,7 @@ mrOf.forEach(function (m) {
     title: m.title, group: group, oldId: m.id,
     /* 名单里重给过的，正文一并换新（名单是更新的一份）；
        不论新旧，正文的「流派」一行都补上身份词（该是什么家写清是什么家）。 */
-    text: withIdentity(a ? bodyOf(a.row) : m.text, group, m.title),
+    text: withIdentity(neutralizeLabel(a ? bodyOf(a.row) : m.text), group, m.title),
     row: a ? a.row : null,
     replace: !!a,
     /* 原正文：用来判断这一条到底改没改（第十轮的身份词是原地改，不是换整条） */

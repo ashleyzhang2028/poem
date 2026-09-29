@@ -22,7 +22,7 @@
        bio       生平
        style     作品风格
        school    流派
-       works     主要作品 / 贡献
+       works     主要作品 / 作为
        worth     特殊意义
 
    ## 写作口径
