@@ -419,7 +419,7 @@
       extraFields: ["text", "translation", "bookName", "gradeGroup", "meaning", "gloss"],
       // 词条式集子（文学常识 / 名著导读 / 历代名家）：正文即词条，本就没有白话译文
       // —— 不这么说，那几百条的列表行上会各挂一个「待补」，而它们什么都不缺
-      noTranslationBooks: ["changshi", "mingshu", "mingren", "mingren-waiguo"],
+      noTranslationBooks: ["changshi", "mingshu", "mingren", "mingren-waiguo", "dwang", "dwang-waiguo"],
       words: {
         list: "篇目",
         unit: "篇",

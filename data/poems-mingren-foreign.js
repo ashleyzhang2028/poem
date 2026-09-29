@@ -1,21 +1,8 @@
 window.POEMS_MINGREN_FOREIGN = [
   {
     textRef: "mingren-mr-w-01",
-    masterRef: "mingren-mr-w-01",
-    id: "mr-w-01",
-    title: "梭伦",
-    group: "政治家",
-    gradeGroup: "政治家",
-    country: "外国",
-    dynasty: "古希腊雅典",
-    author: "梭伦",
-    source: "《梭伦》·约前 638—约前 558",
-    excerpt: "雅典民主的奠基者"
-  },
-  {
-    textRef: "mingren-mr-w-02",
     masterRef: "mingren-mr-w-02",
-    id: "mr-w-02",
+    id: "mr-w-01",
     title: "地米斯托克利",
     group: "军事家",
     gradeGroup: "军事家",
@@ -26,22 +13,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "萨拉米斯海战"
   },
   {
-    textRef: "mingren-mr-w-03",
-    masterRef: "mingren-mr-w-03",
-    id: "mr-w-03",
-    title: "伯里克利",
-    group: "政治家",
-    gradeGroup: "政治家",
-    country: "外国",
-    dynasty: "古希腊雅典",
-    author: "伯里克利",
-    source: "《伯里克利》·约前 495—前 429",
-    excerpt: "雅典民主的顶峰"
-  },
-  {
-    textRef: "mingren-mr-w-04",
+    textRef: "mingren-mr-w-02",
     masterRef: "mingren-mr-w-04",
-    id: "mr-w-04",
+    id: "mr-w-02",
     title: "芝诺",
     group: "哲学家",
     gradeGroup: "哲学家",
@@ -52,9 +26,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "悖论的发明者"
   },
   {
-    textRef: "mingren-mr-w-05",
+    textRef: "mingren-mr-w-03",
     masterRef: "mingren-mr-w-05",
-    id: "mr-w-05",
+    id: "mr-w-03",
     title: "苏格拉底",
     group: "哲学家",
     gradeGroup: "哲学家",
@@ -65,9 +39,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "西方哲学的奠基者"
   },
   {
-    textRef: "mingren-mr-w-06",
+    textRef: "mingren-mr-w-04",
     masterRef: "mingren-mr-w-06",
-    id: "mr-w-06",
+    id: "mr-w-04",
     title: "德谟克利特",
     group: "哲学家",
     gradeGroup: "哲学家",
@@ -78,9 +52,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "原子论的首倡者"
   },
   {
-    textRef: "mingren-mr-w-07",
+    textRef: "mingren-mr-w-05",
     masterRef: "mingren-mr-w-07",
-    id: "mr-w-07",
+    id: "mr-w-05",
     title: "希波克拉底",
     group: "哲学家",
     gradeGroup: "哲学家",
@@ -91,9 +65,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "医学之父"
   },
   {
-    textRef: "mingren-mr-w-08",
+    textRef: "mingren-mr-w-06",
     masterRef: "mingren-mr-w-08",
-    id: "mr-w-08",
+    id: "mr-w-06",
     title: "色诺芬",
     group: "军事家",
     gradeGroup: "军事家",
@@ -104,9 +78,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "万人远征 · 退军记"
   },
   {
-    textRef: "mingren-mr-w-09",
+    textRef: "mingren-mr-w-07",
     masterRef: "mingren-mr-w-09",
-    id: "mr-w-09",
+    id: "mr-w-07",
     title: "柏拉图",
     group: "哲学家",
     gradeGroup: "哲学家",
@@ -117,9 +91,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "理念论的创立者"
   },
   {
-    textRef: "mingren-mr-w-10",
+    textRef: "mingren-mr-w-08",
     masterRef: "mingren-mr-w-10",
-    id: "mr-w-10",
+    id: "mr-w-08",
     title: "亚里士多德",
     group: "哲学家",
     gradeGroup: "哲学家",
@@ -130,9 +104,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "百科全书式的哲学家"
   },
   {
-    textRef: "mingren-mr-w-11",
+    textRef: "mingren-mr-w-09",
     masterRef: "mingren-mr-w-11",
-    id: "mr-w-11",
+    id: "mr-w-09",
     title: "亚历山大",
     group: "军事家",
     gradeGroup: "军事家",
@@ -143,9 +117,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "十三年 · 希腊化世界"
   },
   {
-    textRef: "mingren-mr-w-12",
+    textRef: "mingren-mr-w-10",
     masterRef: "mingren-mr-w-12",
-    id: "mr-w-12",
+    id: "mr-w-10",
     title: "欧几里得",
     group: "科学家",
     gradeGroup: "科学家",
@@ -156,9 +130,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "公理化方法的开创者"
   },
   {
-    textRef: "mingren-mr-w-13",
+    textRef: "mingren-mr-w-11",
     masterRef: "mingren-mr-w-13",
-    id: "mr-w-13",
+    id: "mr-w-11",
     title: "阿基米德",
     group: "科学家",
     gradeGroup: "科学家",
@@ -169,9 +143,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "古代最伟大的科学家"
   },
   {
-    textRef: "mingren-mr-w-14",
+    textRef: "mingren-mr-w-12",
     masterRef: "mingren-mr-w-14",
-    id: "mr-w-14",
+    id: "mr-w-12",
     title: "汉尼拔",
     group: "军事家",
     gradeGroup: "军事家",
@@ -182,9 +156,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "坎尼 · 包围战的化身"
   },
   {
-    textRef: "mingren-mr-w-15",
+    textRef: "mingren-mr-w-13",
     masterRef: "mingren-mr-w-15",
-    id: "mr-w-15",
+    id: "mr-w-13",
     title: "大西庇阿",
     group: "军事家",
     gradeGroup: "军事家",
@@ -195,9 +169,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "扎马之战 · 击败汉尼拔"
   },
   {
-    textRef: "mingren-mr-w-16",
+    textRef: "mingren-mr-w-14",
     masterRef: "mingren-mr-w-16",
-    id: "mr-w-16",
+    id: "mr-w-14",
     title: "西塞罗",
     group: "政治家",
     gradeGroup: "政治家",
@@ -208,9 +182,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "拉丁散文的最高峰"
   },
   {
-    textRef: "mingren-mr-w-17",
+    textRef: "mingren-mr-w-15",
     masterRef: "mingren-mr-w-17",
-    id: "mr-w-17",
+    id: "mr-w-15",
     title: "恺撒",
     group: "政治家",
     gradeGroup: "政治家",
@@ -221,35 +195,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "我来我见我征服"
   },
   {
-    textRef: "mingren-mr-w-18",
-    masterRef: "mingren-mr-w-18",
-    id: "mr-w-18",
-    title: "奥古斯都",
-    group: "政治家",
-    gradeGroup: "政治家",
-    country: "外国",
-    dynasty: "古罗马",
-    author: "奥古斯都",
-    source: "《奥古斯都》·前 63—14",
-    excerpt: "罗马和平的缔造者"
-  },
-  {
-    textRef: "mingren-mr-w-19",
-    masterRef: "mingren-mr-w-19",
-    id: "mr-w-19",
-    title: "图拉真",
-    group: "军事家",
-    gradeGroup: "军事家",
-    country: "外国",
-    dynasty: "古罗马",
-    author: "图拉真",
-    source: "《图拉真》·53—117",
-    excerpt: "罗马帝国最大疆域"
-  },
-  {
-    textRef: "mingren-mr-w-20",
+    textRef: "mingren-mr-w-16",
     masterRef: "mingren-mr-w-20",
-    id: "mr-w-20",
+    id: "mr-w-16",
     title: "马可·奥勒留",
     group: "哲学家",
     gradeGroup: "哲学家",
@@ -260,9 +208,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "皇帝哲学家"
   },
   {
-    textRef: "mingren-mr-w-21",
+    textRef: "mingren-mr-w-17",
     masterRef: "mingren-mr-w-21",
-    id: "mr-w-21",
+    id: "mr-w-17",
     title: "盖伦",
     group: "科学家",
     gradeGroup: "科学家",
@@ -273,9 +221,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "古代医学的集大成者"
   },
   {
-    textRef: "mingren-mr-w-22",
+    textRef: "mingren-mr-w-18",
     masterRef: "mingren-mr-w-22",
-    id: "mr-w-22",
+    id: "mr-w-18",
     title: "奥古斯丁",
     group: "哲学家",
     gradeGroup: "哲学家",
@@ -286,9 +234,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "西方神学之父"
   },
   {
-    textRef: "mingren-mr-w-23",
+    textRef: "mingren-mr-w-19",
     masterRef: "mingren-mr-w-23",
-    id: "mr-w-23",
+    id: "mr-w-19",
     title: "查士丁尼",
     group: "政治家",
     gradeGroup: "政治家",
@@ -299,9 +247,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "罗马法的集大成者"
   },
   {
-    textRef: "mingren-mr-w-24",
+    textRef: "mingren-mr-w-20",
     masterRef: "mingren-mr-w-24",
-    id: "mr-w-24",
+    id: "mr-w-20",
     title: "贝利撒留",
     group: "军事家",
     gradeGroup: "军事家",
@@ -312,9 +260,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "最后一位罗马将军"
   },
   {
-    textRef: "mingren-mr-w-25",
+    textRef: "mingren-mr-w-21",
     masterRef: "mingren-mr-w-25",
-    id: "mr-w-25",
+    id: "mr-w-21",
     title: "萨拉丁",
     group: "军事家",
     gradeGroup: "军事家",
@@ -325,9 +273,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "哈丁角 · 收复耶路撒冷"
   },
   {
-    textRef: "mingren-mr-w-26",
+    textRef: "mingren-mr-w-22",
     masterRef: "mingren-mr-w-26",
-    id: "mr-w-26",
+    id: "mr-w-22",
     title: "成吉思汗",
     group: "军事家",
     gradeGroup: "军事家",
@@ -338,9 +286,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "千户制 · 欧亚通道"
   },
   {
-    textRef: "mingren-mr-w-27",
+    textRef: "mingren-mr-w-23",
     masterRef: "mingren-mr-w-27",
-    id: "mr-w-27",
+    id: "mr-w-23",
     title: "速不台",
     group: "军事家",
     gradeGroup: "军事家",
@@ -351,9 +299,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "长子西征 · 大纵深迂回"
   },
   {
-    textRef: "mingren-mr-w-28",
+    textRef: "mingren-mr-w-24",
     masterRef: "mingren-mr-w-28",
-    id: "mr-w-28",
+    id: "mr-w-24",
     title: "阿奎那",
     group: "哲学家",
     gradeGroup: "哲学家",
@@ -364,9 +312,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "经院哲学的顶峰"
   },
   {
-    textRef: "mingren-mr-w-29",
+    textRef: "mingren-mr-w-25",
     masterRef: "mingren-mr-w-29",
-    id: "mr-w-29",
+    id: "mr-w-25",
     title: "帖木儿",
     group: "军事家",
     gradeGroup: "军事家",
@@ -377,9 +325,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "安卡拉之战 · 未尝一败"
   },
   {
-    textRef: "mingren-mr-w-30",
+    textRef: "mingren-mr-w-26",
     masterRef: "mingren-mr-w-30",
-    id: "mr-w-30",
+    id: "mr-w-26",
     title: "马基雅维利",
     group: "政治家",
     gradeGroup: "政治家",
@@ -390,9 +338,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "近代政治学的开山"
   },
   {
-    textRef: "mingren-mr-w-31",
+    textRef: "mingren-mr-w-27",
     masterRef: "mingren-mr-w-31",
-    id: "mr-w-31",
+    id: "mr-w-27",
     title: "哥白尼",
     group: "天文地理学家",
     gradeGroup: "天文地理学家",
@@ -403,9 +351,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "日心说 · 《天体运行论》"
   },
   {
-    textRef: "mingren-mr-w-32",
+    textRef: "mingren-mr-w-28",
     masterRef: "mingren-mr-w-32",
-    id: "mr-w-32",
+    id: "mr-w-28",
     title: "伽利略",
     group: "科学家",
     gradeGroup: "科学家",
@@ -416,9 +364,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "近代科学之父 · 望远镜"
   },
   {
-    textRef: "mingren-mr-w-33",
+    textRef: "mingren-mr-w-29",
     masterRef: "mingren-mr-w-33",
-    id: "mr-w-33",
+    id: "mr-w-29",
     title: "蒙特威尔第",
     group: "音乐家",
     gradeGroup: "音乐家",
@@ -429,9 +377,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "歌剧之父"
   },
   {
-    textRef: "mingren-mr-w-34",
+    textRef: "mingren-mr-w-30",
     masterRef: "mingren-mr-w-34",
-    id: "mr-w-34",
+    id: "mr-w-30",
     title: "哈维",
     group: "科学家",
     gradeGroup: "科学家",
@@ -442,9 +390,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "血液循环的发现者"
   },
   {
-    textRef: "mingren-mr-w-35",
+    textRef: "mingren-mr-w-31",
     masterRef: "mingren-mr-w-35",
-    id: "mr-w-35",
+    id: "mr-w-31",
     title: "格劳秀斯",
     group: "政治家",
     gradeGroup: "政治家",
@@ -455,9 +403,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "国际法之父"
   },
   {
-    textRef: "mingren-mr-w-36",
+    textRef: "mingren-mr-w-32",
     masterRef: "mingren-mr-w-36",
-    id: "mr-w-36",
+    id: "mr-w-32",
     title: "黎塞留",
     group: "政治家",
     gradeGroup: "政治家",
@@ -468,9 +416,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "国家理由 · 均势外交"
   },
   {
-    textRef: "mingren-mr-w-37",
+    textRef: "mingren-mr-w-33",
     masterRef: "mingren-mr-w-37",
-    id: "mr-w-37",
+    id: "mr-w-33",
     title: "古斯塔夫二世",
     group: "军事家",
     gradeGroup: "军事家",
@@ -481,9 +429,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "北方雄狮 · 近代军制的起点"
   },
   {
-    textRef: "mingren-mr-w-38",
+    textRef: "mingren-mr-w-34",
     masterRef: "mingren-mr-w-38",
-    id: "mr-w-38",
+    id: "mr-w-34",
     title: "克伦威尔",
     group: "政治家",
     gradeGroup: "政治家",
@@ -494,9 +442,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "共和实验的执行者"
   },
   {
-    textRef: "mingren-mr-w-39",
+    textRef: "mingren-mr-w-35",
     masterRef: "mingren-mr-w-39",
-    id: "mr-w-39",
+    id: "mr-w-35",
     title: "配第",
     group: "经济学家",
     gradeGroup: "经济学家",
@@ -507,9 +455,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "《政治算术》"
   },
   {
-    textRef: "mingren-mr-w-40",
+    textRef: "mingren-mr-w-36",
     masterRef: "mingren-mr-w-40",
-    id: "mr-w-40",
+    id: "mr-w-36",
     title: "斯宾诺莎",
     group: "哲学家",
     gradeGroup: "哲学家",
@@ -520,9 +468,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "磨镜片的哲学家"
   },
   {
-    textRef: "mingren-mr-w-41",
+    textRef: "mingren-mr-w-37",
     masterRef: "mingren-mr-w-41",
-    id: "mr-w-41",
+    id: "mr-w-37",
     title: "牛顿",
     group: "科学家",
     gradeGroup: "科学家",
@@ -533,9 +481,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "经典力学的奠基者"
   },
   {
-    textRef: "mingren-mr-w-42",
+    textRef: "mingren-mr-w-38",
     masterRef: "mingren-mr-w-42",
-    id: "mr-w-42",
+    id: "mr-w-38",
     title: "莱布尼兹",
     group: "哲学家",
     gradeGroup: "哲学家",
@@ -546,9 +494,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "微积分与二进制的发明者"
   },
   {
-    textRef: "mingren-mr-w-43",
+    textRef: "mingren-mr-w-39",
     masterRef: "mingren-mr-w-43",
-    id: "mr-w-43",
+    id: "mr-w-39",
     title: "维瓦尔第",
     group: "音乐家",
     gradeGroup: "音乐家",
@@ -559,9 +507,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "《四季》"
   },
   {
-    textRef: "mingren-mr-w-44",
+    textRef: "mingren-mr-w-40",
     masterRef: "mingren-mr-w-44",
-    id: "mr-w-44",
+    id: "mr-w-40",
     title: "孟德斯鸠",
     group: "政治家",
     gradeGroup: "政治家",
@@ -572,9 +520,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "三权分立"
   },
   {
-    textRef: "mingren-mr-w-45",
+    textRef: "mingren-mr-w-41",
     masterRef: "mingren-mr-w-45",
-    id: "mr-w-45",
+    id: "mr-w-41",
     title: "魁奈",
     group: "经济学家",
     gradeGroup: "经济学家",
@@ -585,9 +533,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "《经济表》· 重农学派"
   },
   {
-    textRef: "mingren-mr-w-46",
+    textRef: "mingren-mr-w-42",
     masterRef: "mingren-mr-w-46",
-    id: "mr-w-46",
+    id: "mr-w-42",
     title: "富兰克林",
     group: "科学家",
     gradeGroup: "科学家",
@@ -598,9 +546,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "从风筝里取电的人"
   },
   {
-    textRef: "mingren-mr-w-47",
+    textRef: "mingren-mr-w-43",
     masterRef: "mingren-mr-w-47",
-    id: "mr-w-47",
+    id: "mr-w-43",
     title: "欧拉",
     group: "科学家",
     gradeGroup: "科学家",
@@ -611,9 +559,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "最多产的数学家"
   },
   {
-    textRef: "mingren-mr-w-48",
+    textRef: "mingren-mr-w-44",
     masterRef: "mingren-mr-w-48",
-    id: "mr-w-48",
+    id: "mr-w-44",
     title: "林奈",
     group: "科学家",
     gradeGroup: "科学家",
@@ -624,9 +572,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "生物命名法的创始者"
   },
   {
-    textRef: "mingren-mr-w-49",
+    textRef: "mingren-mr-w-45",
     masterRef: "mingren-mr-w-49",
-    id: "mr-w-49",
+    id: "mr-w-45",
     title: "休谟",
     group: "哲学家",
     gradeGroup: "哲学家",
@@ -637,22 +585,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "经验论的终点"
   },
   {
-    textRef: "mingren-mr-w-50",
-    masterRef: "mingren-mr-w-50",
-    id: "mr-w-50",
-    title: "腓特烈二世",
-    group: "军事家",
-    gradeGroup: "军事家",
-    country: "外国",
-    dynasty: "普鲁士",
-    author: "腓特烈二世",
-    source: "《腓特烈二世》·1712—1786",
-    excerpt: "斜线阵 · 七年战争"
-  },
-  {
-    textRef: "mingren-mr-w-51",
+    textRef: "mingren-mr-w-46",
     masterRef: "mingren-mr-w-51",
-    id: "mr-w-51",
+    id: "mr-w-46",
     title: "亚当·斯密",
     group: "经济学家",
     gradeGroup: "经济学家",
@@ -663,9 +598,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "古典经济学的奠基者"
   },
   {
-    textRef: "mingren-mr-w-52",
+    textRef: "mingren-mr-w-47",
     masterRef: "mingren-mr-w-52",
-    id: "mr-w-52",
+    id: "mr-w-47",
     title: "康德",
     group: "哲学家",
     gradeGroup: "哲学家",
@@ -676,9 +611,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "近代哲学的分水岭"
   },
   {
-    textRef: "mingren-mr-w-53",
+    textRef: "mingren-mr-w-48",
     masterRef: "mingren-mr-w-53",
-    id: "mr-w-53",
+    id: "mr-w-48",
     title: "苏沃洛夫",
     group: "军事家",
     gradeGroup: "军事家",
@@ -689,9 +624,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "制胜的科学"
   },
   {
-    textRef: "mingren-mr-w-54",
+    textRef: "mingren-mr-w-49",
     masterRef: "mingren-mr-w-54",
-    id: "mr-w-54",
+    id: "mr-w-49",
     title: "华盛顿",
     group: "政治家",
     gradeGroup: "政治家",
@@ -702,9 +637,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "主动交出权力的人"
   },
   {
-    textRef: "mingren-mr-w-55",
+    textRef: "mingren-mr-w-50",
     masterRef: "mingren-mr-w-55",
-    id: "mr-w-55",
+    id: "mr-w-50",
     title: "贝卡里亚",
     group: "政治家",
     gradeGroup: "政治家",
@@ -715,9 +650,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "《论犯罪与刑罚》"
   },
   {
-    textRef: "mingren-mr-w-56",
+    textRef: "mingren-mr-w-51",
     masterRef: "mingren-mr-w-56",
-    id: "mr-w-56",
+    id: "mr-w-51",
     title: "杰斐逊",
     group: "政治家",
     gradeGroup: "政治家",
@@ -728,9 +663,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "独立宣言的起草者"
   },
   {
-    textRef: "mingren-mr-w-57",
+    textRef: "mingren-mr-w-52",
     masterRef: "mingren-mr-w-57",
-    id: "mr-w-57",
+    id: "mr-w-52",
     title: "拉瓦锡",
     group: "科学家",
     gradeGroup: "科学家",
@@ -741,9 +676,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "近代化学之父"
   },
   {
-    textRef: "mingren-mr-w-58",
+    textRef: "mingren-mr-w-53",
     masterRef: "mingren-mr-w-58",
-    id: "mr-w-58",
+    id: "mr-w-53",
     title: "库图佐夫",
     group: "军事家",
     gradeGroup: "军事家",
@@ -754,9 +689,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "1812 卫国战争"
   },
   {
-    textRef: "mingren-mr-w-59",
+    textRef: "mingren-mr-w-54",
     masterRef: "mingren-mr-w-59",
-    id: "mr-w-59",
+    id: "mr-w-54",
     title: "纳尔逊",
     group: "军事家",
     gradeGroup: "军事家",
@@ -767,9 +702,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "特拉法加海战"
   },
   {
-    textRef: "mingren-mr-w-60",
+    textRef: "mingren-mr-w-55",
     masterRef: "mingren-mr-w-60",
-    id: "mr-w-60",
+    id: "mr-w-55",
     title: "道尔顿",
     group: "科学家",
     gradeGroup: "科学家",
@@ -780,9 +715,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "近代原子论的创立者"
   },
   {
-    textRef: "mingren-mr-w-61",
+    textRef: "mingren-mr-w-56",
     masterRef: "mingren-mr-w-61",
-    id: "mr-w-61",
+    id: "mr-w-56",
     title: "马尔萨斯",
     group: "经济学家",
     gradeGroup: "经济学家",
@@ -793,9 +728,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "《人口论》"
   },
   {
-    textRef: "mingren-mr-w-62",
+    textRef: "mingren-mr-w-57",
     masterRef: "mingren-mr-w-62",
-    id: "mr-w-62",
+    id: "mr-w-57",
     title: "萨伊",
     group: "经济学家",
     gradeGroup: "经济学家",
@@ -806,9 +741,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "萨伊定律"
   },
   {
-    textRef: "mingren-mr-w-63",
+    textRef: "mingren-mr-w-58",
     masterRef: "mingren-mr-w-63",
-    id: "mr-w-63",
+    id: "mr-w-58",
     title: "惠灵顿",
     group: "军事家",
     gradeGroup: "军事家",
@@ -819,9 +754,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "滑铁卢 · 半岛战争"
   },
   {
-    textRef: "mingren-mr-w-64",
+    textRef: "mingren-mr-w-59",
     masterRef: "mingren-mr-w-64",
-    id: "mr-w-64",
+    id: "mr-w-59",
     title: "拿破仑",
     group: "军事家",
     gradeGroup: "军事家",
@@ -832,9 +767,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "奥斯特里茨 · 军团体系"
   },
   {
-    textRef: "mingren-mr-w-65",
+    textRef: "mingren-mr-w-60",
     masterRef: "mingren-mr-w-65",
-    id: "mr-w-65",
+    id: "mr-w-60",
     title: "黑格尔",
     group: "哲学家",
     gradeGroup: "哲学家",
@@ -845,9 +780,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "辩证法的系统建构者"
   },
   {
-    textRef: "mingren-mr-w-66",
+    textRef: "mingren-mr-w-61",
     masterRef: "mingren-mr-w-66",
-    id: "mr-w-66",
+    id: "mr-w-61",
     title: "李嘉图",
     group: "经济学家",
     gradeGroup: "经济学家",
@@ -858,9 +793,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "比较优势 · 劳动价值论"
   },
   {
-    textRef: "mingren-mr-w-67",
+    textRef: "mingren-mr-w-62",
     masterRef: "mingren-mr-w-67",
-    id: "mr-w-67",
+    id: "mr-w-62",
     title: "高斯",
     group: "科学家",
     gradeGroup: "科学家",
@@ -871,9 +806,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "数学王子"
   },
   {
-    textRef: "mingren-mr-w-68",
+    textRef: "mingren-mr-w-63",
     masterRef: "mingren-mr-w-68",
-    id: "mr-w-68",
+    id: "mr-w-63",
     title: "帕格尼尼",
     group: "音乐家",
     gradeGroup: "音乐家",
@@ -884,9 +819,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "《二十四首随想曲》"
   },
   {
-    textRef: "mingren-mr-w-69",
+    textRef: "mingren-mr-w-64",
     masterRef: "mingren-mr-w-69",
-    id: "mr-w-69",
+    id: "mr-w-64",
     title: "叔本华",
     group: "哲学家",
     gradeGroup: "哲学家",
@@ -897,9 +832,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "唯意志论的开创者"
   },
   {
-    textRef: "mingren-mr-w-70",
+    textRef: "mingren-mr-w-65",
     masterRef: "mingren-mr-w-70",
-    id: "mr-w-70",
+    id: "mr-w-65",
     title: "法拉第",
     group: "科学家",
     gradeGroup: "科学家",
@@ -910,9 +845,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "电磁感应的发现者"
   },
   {
-    textRef: "mingren-mr-w-71",
+    textRef: "mingren-mr-w-66",
     masterRef: "mingren-mr-w-71",
-    id: "mr-w-71",
+    id: "mr-w-66",
     title: "莫尔斯",
     group: "科学家",
     gradeGroup: "科学家",
@@ -923,9 +858,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "电报与莫尔斯电码的发明者"
   },
   {
-    textRef: "mingren-mr-w-72",
+    textRef: "mingren-mr-w-67",
     masterRef: "mingren-mr-w-72",
-    id: "mr-w-72",
+    id: "mr-w-67",
     title: "罗西尼",
     group: "音乐家",
     gradeGroup: "音乐家",
@@ -936,9 +871,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "《塞维利亚的理发师》"
   },
   {
-    textRef: "mingren-mr-w-73",
+    textRef: "mingren-mr-w-68",
     masterRef: "mingren-mr-w-73",
-    id: "mr-w-73",
+    id: "mr-w-68",
     title: "多尼采蒂",
     group: "音乐家",
     gradeGroup: "音乐家",
@@ -949,9 +884,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "《拉美莫尔的露琪亚》"
   },
   {
-    textRef: "mingren-mr-w-74",
+    textRef: "mingren-mr-w-69",
     masterRef: "mingren-mr-w-74",
-    id: "mr-w-74",
+    id: "mr-w-69",
     title: "毛奇",
     group: "军事家",
     gradeGroup: "军事家",
@@ -962,9 +897,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "分进合击 · 参谋部之父"
   },
   {
-    textRef: "mingren-mr-w-75",
+    textRef: "mingren-mr-w-70",
     masterRef: "mingren-mr-w-75",
-    id: "mr-w-75",
+    id: "mr-w-70",
     title: "柏辽兹",
     group: "音乐家",
     gradeGroup: "音乐家",
@@ -975,9 +910,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "《幻想交响曲》"
   },
   {
-    textRef: "mingren-mr-w-76",
+    textRef: "mingren-mr-w-71",
     masterRef: "mingren-mr-w-76",
-    id: "mr-w-76",
+    id: "mr-w-71",
     title: "马志尼",
     group: "政治家",
     gradeGroup: "政治家",
@@ -988,9 +923,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "青年意大利"
   },
   {
-    textRef: "mingren-mr-w-77",
+    textRef: "mingren-mr-w-72",
     masterRef: "mingren-mr-w-77",
-    id: "mr-w-77",
+    id: "mr-w-72",
     title: "穆勒",
     group: "经济学家",
     gradeGroup: "经济学家",
@@ -1001,9 +936,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "《政治经济学原理》"
   },
   {
-    textRef: "mingren-mr-w-78",
+    textRef: "mingren-mr-w-73",
     masterRef: "mingren-mr-w-78",
-    id: "mr-w-78",
+    id: "mr-w-73",
     title: "加里波第",
     group: "军事家",
     gradeGroup: "军事家",
@@ -1014,9 +949,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "千人军 · 红衫军"
   },
   {
-    textRef: "mingren-mr-w-79",
+    textRef: "mingren-mr-w-74",
     masterRef: "mingren-mr-w-79",
-    id: "mr-w-79",
+    id: "mr-w-74",
     title: "林肯",
     group: "政治家",
     gradeGroup: "政治家",
@@ -1027,9 +962,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "葛底斯堡演说"
   },
   {
-    textRef: "mingren-mr-w-80",
+    textRef: "mingren-mr-w-75",
     masterRef: "mingren-mr-w-80",
-    id: "mr-w-80",
+    id: "mr-w-75",
     title: "达尔文",
     group: "科学家",
     gradeGroup: "科学家",
@@ -1040,9 +975,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "进化论的奠基者"
   },
   {
-    textRef: "mingren-mr-w-81",
+    textRef: "mingren-mr-w-76",
     masterRef: "mingren-mr-w-81",
-    id: "mr-w-81",
+    id: "mr-w-76",
     title: "门德尔松",
     group: "音乐家",
     gradeGroup: "音乐家",
@@ -1053,9 +988,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "《婚礼进行曲》"
   },
   {
-    textRef: "mingren-mr-w-82",
+    textRef: "mingren-mr-w-77",
     masterRef: "mingren-mr-w-82",
-    id: "mr-w-82",
+    id: "mr-w-77",
     title: "加富尔",
     group: "政治家",
     gradeGroup: "政治家",
@@ -1066,22 +1001,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "意大利统一的设计师"
   },
   {
-    textRef: "mingren-mr-w-83",
-    masterRef: "mingren-mr-w-83",
-    id: "mr-w-83",
-    title: "俾斯麦",
-    group: "政治家",
-    gradeGroup: "政治家",
-    country: "外国",
-    dynasty: "德国",
-    author: "俾斯麦",
-    source: "《俾斯麦》·1815—1898",
-    excerpt: "铁血宰相"
-  },
-  {
-    textRef: "mingren-mr-w-84",
+    textRef: "mingren-mr-w-78",
     masterRef: "mingren-mr-w-84",
-    id: "mr-w-84",
+    id: "mr-w-78",
     title: "焦耳",
     group: "科学家",
     gradeGroup: "科学家",
@@ -1092,9 +1014,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "热功当量的测定者"
   },
   {
-    textRef: "mingren-mr-w-85",
+    textRef: "mingren-mr-w-79",
     masterRef: "mingren-mr-w-85",
-    id: "mr-w-85",
+    id: "mr-w-79",
     title: "巴斯德",
     group: "科学家",
     gradeGroup: "科学家",
@@ -1105,9 +1027,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "微生物学的奠基者"
   },
   {
-    textRef: "mingren-mr-w-86",
+    textRef: "mingren-mr-w-80",
     masterRef: "mingren-mr-w-86",
-    id: "mr-w-86",
+    id: "mr-w-80",
     title: "孟德尔",
     group: "科学家",
     gradeGroup: "科学家",
@@ -1118,9 +1040,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "遗传学的奠基人"
   },
   {
-    textRef: "mingren-mr-w-87",
+    textRef: "mingren-mr-w-81",
     masterRef: "mingren-mr-w-87",
-    id: "mr-w-87",
+    id: "mr-w-81",
     title: "开尔文",
     group: "科学家",
     gradeGroup: "科学家",
@@ -1131,9 +1053,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "绝对温标的创立者"
   },
   {
-    textRef: "mingren-mr-w-88",
+    textRef: "mingren-mr-w-82",
     masterRef: "mingren-mr-w-88",
-    id: "mr-w-88",
+    id: "mr-w-82",
     title: "斯美塔那",
     group: "音乐家",
     gradeGroup: "音乐家",
@@ -1144,9 +1066,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "《伏尔塔瓦河》"
   },
   {
-    textRef: "mingren-mr-w-89",
+    textRef: "mingren-mr-w-83",
     masterRef: "mingren-mr-w-89",
-    id: "mr-w-89",
+    id: "mr-w-83",
     title: "麦克斯韦",
     group: "科学家",
     gradeGroup: "科学家",
@@ -1157,9 +1079,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "电磁理论的统一者"
   },
   {
-    textRef: "mingren-mr-w-90",
+    textRef: "mingren-mr-w-84",
     masterRef: "mingren-mr-w-90",
-    id: "mr-w-90",
+    id: "mr-w-84",
     title: "诺贝尔",
     group: "科学家",
     gradeGroup: "科学家",
@@ -1170,9 +1092,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "诺贝尔奖的设立者"
   },
   {
-    textRef: "mingren-mr-w-91",
+    textRef: "mingren-mr-w-85",
     masterRef: "mingren-mr-w-91",
-    id: "mr-w-91",
+    id: "mr-w-85",
     title: "勃拉姆斯",
     group: "音乐家",
     gradeGroup: "音乐家",
@@ -1183,9 +1105,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "《第一交响曲》·《匈牙利舞曲》"
   },
   {
-    textRef: "mingren-mr-w-92",
+    textRef: "mingren-mr-w-86",
     masterRef: "mingren-mr-w-92",
-    id: "mr-w-92",
+    id: "mr-w-86",
     title: "瓦尔拉斯",
     group: "经济学家",
     gradeGroup: "经济学家",
@@ -1196,9 +1118,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "一般均衡理论"
   },
   {
-    textRef: "mingren-mr-w-93",
+    textRef: "mingren-mr-w-87",
     masterRef: "mingren-mr-w-93",
-    id: "mr-w-93",
+    id: "mr-w-87",
     title: "门格尔",
     group: "经济学家",
     gradeGroup: "经济学家",
@@ -1209,9 +1131,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "《国民经济学原理》"
   },
   {
-    textRef: "mingren-mr-w-94",
+    textRef: "mingren-mr-w-88",
     masterRef: "mingren-mr-w-94",
-    id: "mr-w-94",
+    id: "mr-w-88",
     title: "马歇尔",
     group: "经济学家",
     gradeGroup: "经济学家",
@@ -1222,9 +1144,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "《经济学原理》· 供求曲线"
   },
   {
-    textRef: "mingren-mr-w-95",
+    textRef: "mingren-mr-w-89",
     masterRef: "mingren-mr-w-95",
-    id: "mr-w-95",
+    id: "mr-w-89",
     title: "格里格",
     group: "音乐家",
     gradeGroup: "音乐家",
@@ -1235,9 +1157,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "《培尔·金特》组曲"
   },
   {
-    textRef: "mingren-mr-w-96",
+    textRef: "mingren-mr-w-90",
     masterRef: "mingren-mr-w-96",
-    id: "mr-w-96",
+    id: "mr-w-90",
     title: "尼采",
     group: "哲学家",
     gradeGroup: "哲学家",
@@ -1248,9 +1170,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "重估一切价值的批判者"
   },
   {
-    textRef: "mingren-mr-w-97",
+    textRef: "mingren-mr-w-91",
     masterRef: "mingren-mr-w-97",
-    id: "mr-w-97",
+    id: "mr-w-91",
     title: "伦琴",
     group: "科学家",
     gradeGroup: "科学家",
@@ -1261,9 +1183,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "X 射线的发现者"
   },
   {
-    textRef: "mingren-mr-w-98",
+    textRef: "mingren-mr-w-92",
     masterRef: "mingren-mr-w-98",
-    id: "mr-w-98",
+    id: "mr-w-92",
     title: "贝尔",
     group: "科学家",
     gradeGroup: "科学家",
@@ -1274,9 +1196,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "电话的发明者"
   },
   {
-    textRef: "mingren-mr-w-99",
+    textRef: "mingren-mr-w-93",
     masterRef: "mingren-mr-w-99",
-    id: "mr-w-99",
+    id: "mr-w-93",
     title: "帕累托",
     group: "经济学家",
     gradeGroup: "经济学家",
@@ -1287,9 +1209,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "帕累托最优"
   },
   {
-    textRef: "mingren-mr-w-100",
+    textRef: "mingren-mr-w-94",
     masterRef: "mingren-mr-w-100",
-    id: "mr-w-100",
+    id: "mr-w-94",
     title: "弗洛伊德",
     group: "哲学家",
     gradeGroup: "哲学家",
@@ -1300,9 +1222,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "精神分析的开创者"
   },
   {
-    textRef: "mingren-mr-w-101",
+    textRef: "mingren-mr-w-95",
     masterRef: "mingren-mr-w-101",
-    id: "mr-w-101",
+    id: "mr-w-95",
     title: "凡勃伦",
     group: "经济学家",
     gradeGroup: "经济学家",
@@ -1313,9 +1235,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "《有闲阶级论》"
   },
   {
-    textRef: "mingren-mr-w-102",
+    textRef: "mingren-mr-w-96",
     masterRef: "mingren-mr-w-102",
-    id: "mr-w-102",
+    id: "mr-w-96",
     title: "普朗克",
     group: "科学家",
     gradeGroup: "科学家",
@@ -1326,9 +1248,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "量子论的开启者"
   },
   {
-    textRef: "mingren-mr-w-103",
+    textRef: "mingren-mr-w-97",
     masterRef: "mingren-mr-w-103",
-    id: "mr-w-103",
+    id: "mr-w-97",
     title: "波特",
     group: "科学家",
     gradeGroup: "科学家",
@@ -1339,9 +1261,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "科学与艺术双绝的植物学家"
   },
   {
-    textRef: "mingren-mr-w-104",
+    textRef: "mingren-mr-w-98",
     masterRef: "mingren-mr-w-104",
-    id: "mr-w-104",
+    id: "mr-w-98",
     title: "胡塞尔",
     group: "哲学家",
     gradeGroup: "哲学家",
@@ -1352,9 +1274,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "现象学的开创者"
   },
   {
-    textRef: "mingren-mr-w-105",
+    textRef: "mingren-mr-w-99",
     masterRef: "mingren-mr-w-105",
-    id: "mr-w-105",
+    id: "mr-w-99",
     title: "韦伯",
     group: "经济学家",
     gradeGroup: "经济学家",
@@ -1365,9 +1287,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "《新教伦理与资本主义精神》"
   },
   {
-    textRef: "mingren-mr-w-106",
+    textRef: "mingren-mr-w-100",
     masterRef: "mingren-mr-w-106",
-    id: "mr-w-106",
+    id: "mr-w-100",
     title: "西贝柳斯",
     group: "音乐家",
     gradeGroup: "音乐家",
@@ -1378,9 +1300,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "《芬兰颂》"
   },
   {
-    textRef: "mingren-mr-w-107",
+    textRef: "mingren-mr-w-101",
     masterRef: "mingren-mr-w-107",
-    id: "mr-w-107",
+    id: "mr-w-101",
     title: "居里夫人",
     group: "科学家",
     gradeGroup: "科学家",
@@ -1391,9 +1313,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "放射学的开创者"
   },
   {
-    textRef: "mingren-mr-w-108",
+    textRef: "mingren-mr-w-102",
     masterRef: "mingren-mr-w-108",
-    id: "mr-w-108",
+    id: "mr-w-102",
     title: "莱特兄弟",
     group: "科学家",
     gradeGroup: "科学家",
@@ -1404,9 +1326,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "第一架飞机的制造者"
   },
   {
-    textRef: "mingren-mr-w-109",
+    textRef: "mingren-mr-w-103",
     masterRef: "mingren-mr-w-109",
-    id: "mr-w-109",
+    id: "mr-w-103",
     title: "甘地",
     group: "政治家",
     gradeGroup: "政治家",
@@ -1417,9 +1339,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "非暴力不合作"
   },
   {
-    textRef: "mingren-mr-w-110",
+    textRef: "mingren-mr-w-104",
     masterRef: "mingren-mr-w-110",
-    id: "mr-w-110",
+    id: "mr-w-104",
     title: "巴多格里奥",
     group: "军事家",
     gradeGroup: "军事家",
@@ -1430,9 +1352,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "1943 年意大利退出轴心"
   },
   {
-    textRef: "mingren-mr-w-111",
+    textRef: "mingren-mr-w-105",
     masterRef: "mingren-mr-w-111",
-    id: "mr-w-111",
+    id: "mr-w-105",
     title: "罗素",
     group: "哲学家",
     gradeGroup: "哲学家",
@@ -1443,9 +1365,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "逻辑与公共写作的典范"
   },
   {
-    textRef: "mingren-mr-w-112",
+    textRef: "mingren-mr-w-106",
     masterRef: "mingren-mr-w-112",
-    id: "mr-w-112",
+    id: "mr-w-106",
     title: "丘吉尔",
     group: "政治家",
     gradeGroup: "政治家",
@@ -1456,9 +1378,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "绝不投降的战时首相"
   },
   {
-    textRef: "mingren-mr-w-113",
+    textRef: "mingren-mr-w-107",
     masterRef: "mingren-mr-w-113",
-    id: "mr-w-113",
+    id: "mr-w-107",
     title: "拉威尔",
     group: "音乐家",
     gradeGroup: "音乐家",
@@ -1469,9 +1391,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "《波莱罗》"
   },
   {
-    textRef: "mingren-mr-w-114",
+    textRef: "mingren-mr-w-108",
     masterRef: "mingren-mr-w-114",
-    id: "mr-w-114",
+    id: "mr-w-108",
     title: "阿登纳",
     group: "政治家",
     gradeGroup: "政治家",
@@ -1482,9 +1404,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "联邦德国的奠基者"
   },
   {
-    textRef: "mingren-mr-w-115",
+    textRef: "mingren-mr-w-109",
     masterRef: "mingren-mr-w-115",
-    id: "mr-w-115",
+    id: "mr-w-109",
     title: "爱因斯坦",
     group: "科学家",
     gradeGroup: "科学家",
@@ -1495,9 +1417,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "相对论的创立者"
   },
   {
-    textRef: "mingren-mr-w-116",
+    textRef: "mingren-mr-w-110",
     masterRef: "mingren-mr-w-116",
-    id: "mr-w-116",
+    id: "mr-w-110",
     title: "德加斯佩里",
     group: "政治家",
     gradeGroup: "政治家",
@@ -1508,9 +1430,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "战后意大利的定盘星"
   },
   {
-    textRef: "mingren-mr-w-117",
+    textRef: "mingren-mr-w-111",
     masterRef: "mingren-mr-w-117",
-    id: "mr-w-117",
+    id: "mr-w-111",
     title: "墨索里尼",
     group: "政治家",
     gradeGroup: "政治家",
@@ -1521,9 +1443,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "法西斯主义的创始者"
   },
   {
-    textRef: "mingren-mr-w-118",
+    textRef: "mingren-mr-w-112",
     masterRef: "mingren-mr-w-118",
-    id: "mr-w-118",
+    id: "mr-w-112",
     title: "凯恩斯",
     group: "经济学家",
     gradeGroup: "经济学家",
@@ -1534,9 +1456,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "《就业、利息和货币通论》"
   },
   {
-    textRef: "mingren-mr-w-119",
+    textRef: "mingren-mr-w-113",
     masterRef: "mingren-mr-w-119",
-    id: "mr-w-119",
+    id: "mr-w-113",
     title: "熊彼特",
     group: "经济学家",
     gradeGroup: "经济学家",
@@ -1547,9 +1469,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "创新 · 创造性破坏"
   },
   {
-    textRef: "mingren-mr-w-120",
+    textRef: "mingren-mr-w-114",
     masterRef: "mingren-mr-w-120",
-    id: "mr-w-120",
+    id: "mr-w-114",
     title: "玻尔",
     group: "科学家",
     gradeGroup: "科学家",
@@ -1560,9 +1482,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "哥本哈根学派的领袖"
   },
   {
-    textRef: "mingren-mr-w-121",
+    textRef: "mingren-mr-w-115",
     masterRef: "mingren-mr-w-121",
-    id: "mr-w-121",
+    id: "mr-w-115",
     title: "蒙哥马利",
     group: "军事家",
     gradeGroup: "军事家",
@@ -1573,9 +1495,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "阿拉曼 · 物资先行"
   },
   {
-    textRef: "mingren-mr-w-122",
+    textRef: "mingren-mr-w-116",
     masterRef: "mingren-mr-w-122",
-    id: "mr-w-122",
+    id: "mr-w-116",
     title: "曼施坦因",
     group: "军事家",
     gradeGroup: "军事家",
@@ -1586,9 +1508,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "镰刀计划"
   },
   {
-    textRef: "mingren-mr-w-123",
+    textRef: "mingren-mr-w-117",
     masterRef: "mingren-mr-w-123",
-    id: "mr-w-123",
+    id: "mr-w-117",
     title: "希特勒",
     group: "政治家",
     gradeGroup: "政治家",
@@ -1599,9 +1521,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "挑起二战的一方"
   },
   {
-    textRef: "mingren-mr-w-124",
+    textRef: "mingren-mr-w-118",
     masterRef: "mingren-mr-w-124",
-    id: "mr-w-124",
+    id: "mr-w-118",
     title: "海德格尔",
     group: "哲学家",
     gradeGroup: "哲学家",
@@ -1612,9 +1534,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "追问存在的哲学家"
   },
   {
-    textRef: "mingren-mr-w-125",
+    textRef: "mingren-mr-w-119",
     masterRef: "mingren-mr-w-125",
-    id: "mr-w-125",
+    id: "mr-w-119",
     title: "维特根斯坦",
     group: "哲学家",
     gradeGroup: "哲学家",
@@ -1625,9 +1547,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "语言哲学的枢纽"
   },
   {
-    textRef: "mingren-mr-w-126",
+    textRef: "mingren-mr-w-120",
     masterRef: "mingren-mr-w-126",
-    id: "mr-w-126",
+    id: "mr-w-120",
     title: "戴高乐",
     group: "政治家",
     gradeGroup: "政治家",
@@ -1638,9 +1560,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "自由法国 · 第五共和国"
   },
   {
-    textRef: "mingren-mr-w-127",
+    textRef: "mingren-mr-w-121",
     masterRef: "mingren-mr-w-127",
-    id: "mr-w-127",
+    id: "mr-w-121",
     title: "艾森豪威尔",
     group: "军事家",
     gradeGroup: "军事家",
@@ -1651,9 +1573,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "诺曼底登陆 · 盟军统帅"
   },
   {
-    textRef: "mingren-mr-w-128",
+    textRef: "mingren-mr-w-122",
     masterRef: "mingren-mr-w-128",
-    id: "mr-w-128",
+    id: "mr-w-122",
     title: "隆美尔",
     group: "军事家",
     gradeGroup: "军事家",
@@ -1664,9 +1586,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "沙漠之狐"
   },
   {
-    textRef: "mingren-mr-w-129",
+    textRef: "mingren-mr-w-123",
     masterRef: "mingren-mr-w-129",
-    id: "mr-w-129",
+    id: "mr-w-123",
     title: "邓尼茨",
     group: "军事家",
     gradeGroup: "军事家",
@@ -1677,9 +1599,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "代表德国签署投降书"
   },
   {
-    textRef: "mingren-mr-w-130",
+    textRef: "mingren-mr-w-124",
     masterRef: "mingren-mr-w-130",
-    id: "mr-w-130",
+    id: "mr-w-124",
     title: "朱可夫",
     group: "军事家",
     gradeGroup: "军事家",
@@ -1690,9 +1612,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "莫斯科 · 斯大林格勒 · 柏林"
   },
   {
-    textRef: "mingren-mr-w-131",
+    textRef: "mingren-mr-w-125",
     masterRef: "mingren-mr-w-131",
-    id: "mr-w-131",
+    id: "mr-w-125",
     title: "艾哈德",
     group: "政治家",
     gradeGroup: "政治家",
@@ -1703,9 +1625,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "社会市场经济的推手"
   },
   {
-    textRef: "mingren-mr-w-132",
+    textRef: "mingren-mr-w-126",
     masterRef: "mingren-mr-w-132",
-    id: "mr-w-132",
+    id: "mr-w-126",
     title: "哈耶克",
     group: "经济学家",
     gradeGroup: "经济学家",
@@ -1716,9 +1638,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "自发秩序的辩护者"
   },
   {
-    textRef: "mingren-mr-w-133",
+    textRef: "mingren-mr-w-127",
     masterRef: "mingren-mr-w-133",
-    id: "mr-w-133",
+    id: "mr-w-127",
     title: "海森堡",
     group: "科学家",
     gradeGroup: "科学家",
@@ -1729,9 +1651,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "矩阵力学与测不准原理，1932 年诺贝尔奖"
   },
   {
-    textRef: "mingren-mr-w-134",
+    textRef: "mingren-mr-w-128",
     masterRef: "mingren-mr-w-134",
-    id: "mr-w-134",
+    id: "mr-w-128",
     title: "鲍林",
     group: "科学家",
     gradeGroup: "科学家",
@@ -1742,9 +1664,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "化学键的本质，1954 年诺贝尔化学奖与 1962 年和平奖"
   },
   {
-    textRef: "mingren-mr-w-135",
+    textRef: "mingren-mr-w-129",
     masterRef: "mingren-mr-w-135",
-    id: "mr-w-135",
+    id: "mr-w-129",
     title: "费米",
     group: "科学家",
     gradeGroup: "科学家",
@@ -1755,9 +1677,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "核时代的开启者"
   },
   {
-    textRef: "mingren-mr-w-136",
+    textRef: "mingren-mr-w-130",
     masterRef: "mingren-mr-w-136",
-    id: "mr-w-136",
+    id: "mr-w-130",
     title: "斯坦贝克",
     group: "文学家",
     gradeGroup: "文学家",
@@ -1768,9 +1690,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "《愤怒的葡萄》，1939 年普利策奖"
   },
   {
-    textRef: "mingren-mr-w-137",
+    textRef: "mingren-mr-w-131",
     masterRef: "mingren-mr-w-137",
-    id: "mr-w-137",
+    id: "mr-w-131",
     title: "波普尔",
     group: "哲学家",
     gradeGroup: "哲学家",
@@ -1781,9 +1703,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "「可证伪性」作为科学的标准，《开放社会及其敌人》"
   },
   {
-    textRef: "mingren-mr-w-138",
+    textRef: "mingren-mr-w-132",
     masterRef: "mingren-mr-w-138",
-    id: "mr-w-138",
+    id: "mr-w-132",
     title: "狄拉克",
     group: "科学家",
     gradeGroup: "科学家",
@@ -1794,9 +1716,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "狄拉克方程，反物质的理论预言者"
   },
   {
-    textRef: "mingren-mr-w-139",
+    textRef: "mingren-mr-w-133",
     masterRef: "mingren-mr-w-139",
-    id: "mr-w-139",
+    id: "mr-w-133",
     title: "奥威尔",
     group: "文学家",
     gradeGroup: "文学家",
@@ -1807,9 +1729,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "《一九八四》《动物农场》，政治寓言的经典"
   },
   {
-    textRef: "mingren-mr-w-140",
+    textRef: "mingren-mr-w-134",
     masterRef: "mingren-mr-w-140",
-    id: "mr-w-140",
+    id: "mr-w-134",
     title: "冯·诺依曼",
     group: "科学家",
     gradeGroup: "科学家",
@@ -1820,9 +1742,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "现代计算机架构的设计者"
   },
   {
-    textRef: "mingren-mr-w-141",
+    textRef: "mingren-mr-w-135",
     masterRef: "mingren-mr-w-141",
-    id: "mr-w-141",
+    id: "mr-w-135",
     title: "聂鲁达",
     group: "文学家",
     gradeGroup: "文学家",
@@ -1833,9 +1755,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "《二十首情诗与一首绝望的歌》，1971 年诺贝尔文学奖"
   },
   {
-    textRef: "mingren-mr-w-142",
+    textRef: "mingren-mr-w-136",
     masterRef: "mingren-mr-w-142",
-    id: "mr-w-142",
+    id: "mr-w-136",
     title: "达利",
     group: "美术家",
     gradeGroup: "美术家",
@@ -1846,9 +1768,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "《记忆的永恒》，超现实主义的代言人"
   },
   {
-    textRef: "mingren-mr-w-143",
+    textRef: "mingren-mr-w-137",
     masterRef: "mingren-mr-w-143",
-    id: "mr-w-143",
+    id: "mr-w-137",
     title: "萨特",
     group: "哲学家",
     gradeGroup: "哲学家",
@@ -1859,9 +1781,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "存在主义的旗手"
   },
   {
-    textRef: "mingren-mr-w-144",
+    textRef: "mingren-mr-w-138",
     masterRef: "mingren-mr-w-144",
-    id: "mr-w-144",
+    id: "mr-w-138",
     title: "贝克特",
     group: "文学家",
     gradeGroup: "文学家",
@@ -1872,9 +1794,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "《等待戈多》，荒诞派戏剧的代表，1969 年诺贝尔奖"
   },
   {
-    textRef: "mingren-mr-w-145",
+    textRef: "mingren-mr-w-139",
     masterRef: "mingren-mr-w-145",
-    id: "mr-w-145",
+    id: "mr-w-139",
     title: "阿伦特",
     group: "哲学家",
     gradeGroup: "哲学家",
@@ -1885,9 +1807,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "《极权主义的起源》《人的境况》，政治哲学的重要声音"
   },
   {
-    textRef: "mingren-mr-w-146",
+    textRef: "mingren-mr-w-140",
     masterRef: "mingren-mr-w-146",
-    id: "mr-w-146",
+    id: "mr-w-140",
     title: "肖斯塔科维奇",
     group: "音乐家",
     gradeGroup: "音乐家",
@@ -1898,9 +1820,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "十五部交响曲，《第七交响曲》写于列宁格勒围城"
   },
   {
-    textRef: "mingren-mr-w-147",
+    textRef: "mingren-mr-w-141",
     masterRef: "mingren-mr-w-147",
-    id: "mr-w-147",
+    id: "mr-w-141",
     title: "波伏娃",
     group: "哲学家",
     gradeGroup: "哲学家",
@@ -1911,9 +1833,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "女性主义理论的奠基者"
   },
   {
-    textRef: "mingren-mr-w-148",
+    textRef: "mingren-mr-w-142",
     masterRef: "mingren-mr-w-148",
-    id: "mr-w-148",
+    id: "mr-w-142",
     title: "朗道",
     group: "科学家",
     gradeGroup: "科学家",
@@ -1924,9 +1846,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "理论物理学的最小值原理，1962 年诺贝尔奖"
   },
   {
-    textRef: "mingren-mr-w-149",
+    textRef: "mingren-mr-w-143",
     masterRef: "mingren-mr-w-149",
-    id: "mr-w-149",
+    id: "mr-w-143",
     title: "霍奇金",
     group: "科学家",
     gradeGroup: "科学家",
@@ -1937,9 +1859,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "青霉素与维生素 B12 的结构测定，1964 年诺贝尔化学奖"
   },
   {
-    textRef: "mingren-mr-w-150",
+    textRef: "mingren-mr-w-144",
     masterRef: "mingren-mr-w-150",
-    id: "mr-w-150",
+    id: "mr-w-144",
     title: "陈省身",
     group: "科学家",
     gradeGroup: "科学家",
@@ -1950,9 +1872,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "微分几何的奠基者，「陈示性类」"
   },
   {
-    textRef: "mingren-mr-w-151",
+    textRef: "mingren-mr-w-145",
     masterRef: "mingren-mr-w-151",
-    id: "mr-w-151",
+    id: "mr-w-145",
     title: "吴健雄",
     group: "科学家",
     gradeGroup: "科学家",
@@ -1963,9 +1885,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "宇称不守恒的实验验证者，「物理学第一夫人」"
   },
   {
-    textRef: "mingren-mr-w-152",
+    textRef: "mingren-mr-w-146",
     masterRef: "mingren-mr-w-152",
-    id: "mr-w-152",
+    id: "mr-w-146",
     title: "图灵",
     group: "科学家",
     gradeGroup: "科学家",
@@ -1976,9 +1898,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "计算机科学之父"
   },
   {
-    textRef: "mingren-mr-w-153",
+    textRef: "mingren-mr-w-147",
     masterRef: "mingren-mr-w-153",
-    id: "mr-w-153",
+    id: "mr-w-147",
     title: "波洛克",
     group: "美术家",
     gradeGroup: "美术家",
@@ -1989,9 +1911,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "《秋韵》，行动绘画与「滴画」的开创"
   },
   {
-    textRef: "mingren-mr-w-154",
+    textRef: "mingren-mr-w-148",
     masterRef: "mingren-mr-w-154",
-    id: "mr-w-154",
+    id: "mr-w-148",
     title: "弗里德曼",
     group: "经济学家",
     gradeGroup: "经济学家",
@@ -2002,9 +1924,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "货币主义 ·《资本主义与自由》"
   },
   {
-    textRef: "mingren-mr-w-155",
+    textRef: "mingren-mr-w-149",
     masterRef: "mingren-mr-w-155",
-    id: "mr-w-155",
+    id: "mr-w-149",
     title: "勃兰特",
     group: "政治家",
     gradeGroup: "政治家",
@@ -2015,9 +1937,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "新东方政策 · 华沙之跪"
   },
   {
-    textRef: "mingren-mr-w-156",
+    textRef: "mingren-mr-w-150",
     masterRef: "mingren-mr-w-156",
-    id: "mr-w-156",
+    id: "mr-w-150",
     title: "加缪",
     group: "哲学家",
     gradeGroup: "哲学家",
@@ -2028,9 +1950,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "荒诞哲学的代表"
   },
   {
-    textRef: "mingren-mr-w-157",
+    textRef: "mingren-mr-w-151",
     masterRef: "mingren-mr-w-157",
-    id: "mr-w-157",
+    id: "mr-w-151",
     title: "索尔克",
     group: "医学家",
     gradeGroup: "医学家",
@@ -2041,9 +1963,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "脊髓灰质炎疫苗的研制者，拒绝为其申请专利"
   },
   {
-    textRef: "mingren-mr-w-158",
+    textRef: "mingren-mr-w-152",
     masterRef: "mingren-mr-w-158",
-    id: "mr-w-158",
+    id: "mr-w-152",
     title: "克里克",
     group: "生物学家",
     gradeGroup: "生物学家",
@@ -2054,9 +1976,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "DNA 双螺旋的共同发现者，分子生物学的奠基"
   },
   {
-    textRef: "mingren-mr-w-159",
+    textRef: "mingren-mr-w-153",
     masterRef: "mingren-mr-w-159",
-    id: "mr-w-159",
+    id: "mr-w-153",
     title: "贝聿铭",
     group: "美术家",
     gradeGroup: "美术家",
@@ -2067,9 +1989,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "卢浮宫金字塔、苏州博物馆，1983 年普利兹克奖"
   },
   {
-    textRef: "mingren-mr-w-160",
+    textRef: "mingren-mr-w-154",
     masterRef: "mingren-mr-w-160",
-    id: "mr-w-160",
+    id: "mr-w-154",
     title: "曼德拉",
     group: "政治家",
     gradeGroup: "政治家",
@@ -2080,9 +2002,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "罗本岛二十七年"
   },
   {
-    textRef: "mingren-mr-w-161",
+    textRef: "mingren-mr-w-155",
     masterRef: "mingren-mr-w-161",
-    id: "mr-w-161",
+    id: "mr-w-155",
     title: "费曼",
     group: "科学家",
     gradeGroup: "科学家",
@@ -2093,9 +2015,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "量子电动力学与费曼图，1965 年诺贝尔奖"
   },
   {
-    textRef: "mingren-mr-w-162",
+    textRef: "mingren-mr-w-156",
     masterRef: "mingren-mr-w-162",
-    id: "mr-w-162",
+    id: "mr-w-156",
     title: "罗尔斯",
     group: "哲学家",
     gradeGroup: "哲学家",
@@ -2106,9 +2028,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "正义论的作者"
   },
   {
-    textRef: "mingren-mr-w-163",
+    textRef: "mingren-mr-w-157",
     masterRef: "mingren-mr-w-163",
-    id: "mr-w-163",
+    id: "mr-w-157",
     title: "杨振宁",
     group: "科学家",
     gradeGroup: "科学家",
@@ -2119,9 +2041,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "规范场论的创立者"
   },
   {
-    textRef: "mingren-mr-w-164",
+    textRef: "mingren-mr-w-158",
     masterRef: "mingren-mr-w-164",
-    id: "mr-w-164",
+    id: "mr-w-158",
     title: "三岛由纪夫",
     group: "文学家",
     gradeGroup: "文学家",
@@ -2132,9 +2054,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "《金阁寺》《潮骚》，1970 年剖腹自尽"
   },
   {
-    textRef: "mingren-mr-w-165",
+    textRef: "mingren-mr-w-159",
     masterRef: "mingren-mr-w-165",
-    id: "mr-w-165",
+    id: "mr-w-159",
     title: "福柯",
     group: "哲学家",
     gradeGroup: "哲学家",
@@ -2145,9 +2067,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "权力与话语的分析者"
   },
   {
-    textRef: "mingren-mr-w-166",
+    textRef: "mingren-mr-w-160",
     masterRef: "mingren-mr-w-166",
-    id: "mr-w-166",
+    id: "mr-w-160",
     title: "马尔克斯",
     group: "文学家",
     gradeGroup: "文学家",
@@ -2158,9 +2080,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "《百年孤独》，魔幻现实主义，1982 年诺贝尔文学奖"
   },
   {
-    textRef: "mingren-mr-w-167",
+    textRef: "mingren-mr-w-161",
     masterRef: "mingren-mr-w-167",
-    id: "mr-w-167",
+    id: "mr-w-161",
     title: "乔姆斯基",
     group: "哲学家",
     gradeGroup: "哲学家",
@@ -2171,9 +2093,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "转换生成语法与「普遍语法」，语言学的革命者"
   },
   {
-    textRef: "mingren-mr-w-168",
+    textRef: "mingren-mr-w-162",
     masterRef: "mingren-mr-w-168",
-    id: "mr-w-168",
+    id: "mr-w-162",
     title: "纳什",
     group: "科学家",
     gradeGroup: "科学家",
@@ -2184,9 +2106,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "博弈论「纳什均衡」，1994 年诺贝尔经济学奖"
   },
   {
-    textRef: "mingren-mr-w-169",
+    textRef: "mingren-mr-w-163",
     masterRef: "mingren-mr-w-169",
-    id: "mr-w-169",
+    id: "mr-w-163",
     title: "沃森",
     group: "生物学家",
     gradeGroup: "生物学家",
@@ -2197,9 +2119,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "DNA 双螺旋结构的发现者，1962 年诺贝尔奖"
   },
   {
-    textRef: "mingren-mr-w-170",
+    textRef: "mingren-mr-w-164",
     masterRef: "mingren-mr-w-170",
-    id: "mr-w-170",
+    id: "mr-w-164",
     title: "沃霍尔",
     group: "美术家",
     gradeGroup: "美术家",
@@ -2210,9 +2132,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "《玛丽莲双联画》《金宝汤罐头》，波普艺术的旗手"
   },
   {
-    textRef: "mingren-mr-w-171",
+    textRef: "mingren-mr-w-165",
     masterRef: "mingren-mr-w-171",
-    id: "mr-w-171",
+    id: "mr-w-165",
     title: "米兰·昆德拉",
     group: "文学家",
     gradeGroup: "文学家",
@@ -2223,9 +2145,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "《生命中不能承受之轻》《玩笑》"
   },
   {
-    textRef: "mingren-mr-w-172",
+    textRef: "mingren-mr-w-166",
     masterRef: "mingren-mr-w-172",
-    id: "mr-w-172",
+    id: "mr-w-166",
     title: "威尔逊",
     group: "生物学家",
     gradeGroup: "生物学家",
@@ -2236,9 +2158,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "社会生物学与「生物多样性」一词的推广"
   },
   {
-    textRef: "mingren-mr-w-173",
+    textRef: "mingren-mr-w-167",
     masterRef: "mingren-mr-w-173",
-    id: "mr-w-173",
+    id: "mr-w-167",
     title: "阿马蒂亚·森",
     group: "经济学家",
     gradeGroup: "经济学家",
@@ -2249,9 +2171,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "《以自由看待发展》"
   },
   {
-    textRef: "mingren-mr-w-174",
+    textRef: "mingren-mr-w-168",
     masterRef: "mingren-mr-w-174",
-    id: "mr-w-174",
+    id: "mr-w-168",
     title: "萨根",
     group: "天文地理学家",
     gradeGroup: "天文地理学家",
@@ -2262,9 +2184,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "《宇宙》与行星科学的普及者"
   },
   {
-    textRef: "mingren-mr-w-175",
+    textRef: "mingren-mr-w-169",
     masterRef: "mingren-mr-w-175",
-    id: "mr-w-175",
+    id: "mr-w-169",
     title: "略萨",
     group: "文学家",
     gradeGroup: "文学家",
@@ -2275,9 +2197,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "《绿房子》《城市与狗》，2010 年诺贝尔文学奖"
   },
   {
-    textRef: "mingren-mr-w-176",
+    textRef: "mingren-mr-w-170",
     masterRef: "mingren-mr-w-176",
-    id: "mr-w-176",
+    id: "mr-w-170",
     title: "丁肇中",
     group: "科学家",
     gradeGroup: "科学家",
@@ -2288,9 +2210,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "J 粒子的发现者，1976 年诺贝尔物理学奖"
   },
   {
-    textRef: "mingren-mr-w-177",
+    textRef: "mingren-mr-w-171",
     masterRef: "mingren-mr-w-177",
-    id: "mr-w-177",
+    id: "mr-w-171",
     title: "李远哲",
     group: "科学家",
     gradeGroup: "科学家",
@@ -2301,9 +2223,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "分子反应动力学的开创，1986 年诺贝尔化学奖"
   },
   {
-    textRef: "mingren-mr-w-178",
+    textRef: "mingren-mr-w-172",
     masterRef: "mingren-mr-w-178",
-    id: "mr-w-178",
+    id: "mr-w-172",
     title: "古尔德",
     group: "生物学家",
     gradeGroup: "生物学家",
@@ -2314,9 +2236,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "「间断平衡」理论，《奇妙的生命》"
   },
   {
-    textRef: "mingren-mr-w-179",
+    textRef: "mingren-mr-w-173",
     masterRef: "mingren-mr-w-179",
-    id: "mr-w-179",
+    id: "mr-w-173",
     title: "道金斯",
     group: "生物学家",
     gradeGroup: "生物学家",
@@ -2327,9 +2249,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "《自私的基因》，从基因视角看演化"
   },
   {
-    textRef: "mingren-mr-w-180",
+    textRef: "mingren-mr-w-174",
     masterRef: "mingren-mr-w-180",
-    id: "mr-w-180",
+    id: "mr-w-174",
     title: "霍金",
     group: "科学家",
     gradeGroup: "科学家",
@@ -2340,9 +2262,9 @@ window.POEMS_MINGREN_FOREIGN = [
     excerpt: "宇宙学的布道者"
   },
   {
-    textRef: "mingren-mr-w-181",
+    textRef: "mingren-mr-w-175",
     masterRef: "mingren-mr-w-181",
-    id: "mr-w-181",
+    id: "mr-w-175",
     title: "陶哲轩",
     group: "科学家",
     gradeGroup: "科学家",

@@ -22,6 +22,7 @@ loadData(sb, [
   'data/poems-yuefu.js', 'data/poems-tangshi.js', 'data/poems-songci.js', 'data/poems-guwen.js', 'data/poems-zhaoming.js', 'data/poems-yuanqu.js',
   'data/poems-jinxiandai.js', 'data/poems-chengyu.js', 'data/poems-changshi.js',
   'data/poems-mingshu.js', 'data/poems-mingren-cn.js', 'data/poems-mingren-foreign.js',
+  'data/poems-emperor-cn.js', 'data/poems-emperor-waiguo.js',
   'data/site-index.js', 'data/works-map.js', 'data/works-index.js',
   'data/canonical-texts.js'
 ]);
@@ -42,7 +43,7 @@ FULL_BOOKS.forEach(b => { FULL_BOOK_SET[b] = true; });
 // 词条式集子（文学常识一类）：正文即释义，本来就没有白话译文
 /* 词条式集子（正文即释义 / 词条，本来就没有白话译文）。
    Issue #399：历代名家拆两部，两卷同属这一族。 */
-const NO_TRANS = ['changshi', 'mingshu', 'mingren', 'mingren-waiguo'];
+const NO_TRANS = ['changshi', 'mingshu', 'mingren', 'mingren-waiguo', 'dwang', 'dwang-waiguo'];
 
 const multiEntries = MASTER.filter(m => m.entries.length >= 2);
 const singleEntries = MASTER.filter(m => m.entries.length === 1);
@@ -253,7 +254,10 @@ const BOOK_VARS = {
   changshi: ['data/poems-changshi.js'],
   mingshu: ['data/poems-mingshu.js'],
   mingren: ['data/poems-mingren-cn.js'],
-  'mingren-waiguo': ['data/poems-mingren-foreign.js']
+  'mingren-waiguo': ['data/poems-mingren-foreign.js'],
+  /* Issue #407：帝王两卷 —— 与历代名家同属「词条式」，两份壳各自一个号段。 */
+  dwang: ['data/poems-emperor-cn.js'],
+  'dwang-waiguo': ['data/poems-emperor-waiguo.js']
 };
 
 const stripped = [];

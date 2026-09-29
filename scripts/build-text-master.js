@@ -13,6 +13,7 @@ const LOAD = [
   'data/poems-yuefu.js', 'data/poems-jinxiandai.js', 'data/poems-chengyu.js',
   'data/poems-changshi.js',
   'data/poems-mingshu.js', 'data/poems-mingren-cn.js', 'data/poems-mingren-foreign.js',
+  'data/poems-emperor-cn.js', 'data/poems-emperor-waiguo.js',
   'data/chengyu-support.js',
   'data/site-books.js', 'data/site-index.js', 'data/works-map.js', 'data/works-index.js'
 ];
@@ -26,7 +27,7 @@ LOAD.forEach(function (f) {
 
 const WI = sandbox.WorksIndex;
 
-const FULL_BOOKS = ['zhaoming', 'guwen', 'songci', 'tangshi', 'classic', 'yuanqu', 'yuefu', 'jinxiandai', 'chengyu', 'changshi', 'mingshu', 'mingren', 'mingren-waiguo'];
+const FULL_BOOKS = ['zhaoming', 'guwen', 'songci', 'tangshi', 'classic', 'yuanqu', 'yuefu', 'jinxiandai', 'chengyu', 'changshi', 'mingshu', 'mingren', 'mingren-waiguo', 'dwang', 'dwang-waiguo'];
 
 const prev = {};
 try {
@@ -80,6 +81,9 @@ var RAW_ENTRIES = {};
        台账前缀都是 mingren（下面 byFile 显式给，不从文件名推）。 */
     { f: 'data/poems-mingren-cn.js', v: 'POEMS_MINGREN_CN', book: 'mingren' },
     { f: 'data/poems-mingren-foreign.js', v: 'POEMS_MINGREN_FOREIGN', book: 'mingren' },
+    /* Issue #407：帝王两卷 —— 与历代名家同属「词条式」，两份壳共用一个台账前缀。 */
+    { f: 'data/poems-emperor-cn.js', v: 'POEMS_EMPEROR_CN', book: 'dwang' },
+    { f: 'data/poems-emperor-waiguo.js', v: 'POEMS_EMPEROR_FOREIGN', book: 'dwang' },
     { f: 'data/chengyu-support.js', v: 'CHENGYU_SUPPORT' }
   ];
   FILES.forEach(function (o) {

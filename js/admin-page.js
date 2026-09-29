@@ -119,7 +119,8 @@
     loadBooks.p = Promise.all(want.map(function (b) {
       return new Promise(function (done) {
         var s = document.createElement("script");
-        s.src = "/data/poems-" + b.id + ".js";
+        // 集子的数据文件名未必等于 book id（历代名家外国 / 帝王两卷即是）
+        s.src = "/data/" + (b.file || ("poems-" + b.id)) + ".js";
         s.onload = s.onerror = function () { done(); };
         document.head.appendChild(s);
       });

@@ -129,6 +129,17 @@
       merge: "并集", cap: "每行 ≤ 2000 篇",
       why: "历代名家「外国」已读 —— Issue #399 拆两部后的外国卷。"
     },
+    /* Issue #407：帝王两卷 —— 与历代名家同一族，各有一把「已读」键。 */
+    {
+      key: "poem_dwang_cn_read_v1", sync: true, row: "reads:poem_dwang_cn_read_v1",
+      merge: "并集", cap: "每行 ≤ 2000 篇",
+      why: "帝王「中国」已读 —— Issue #407 新开的两卷之一。"
+    },
+    {
+      key: "poem_dwang_foreign_read_v1", sync: true, row: "reads:poem_dwang_foreign_read_v1",
+      merge: "并集", cap: "每行 ≤ 2000 篇",
+      why: "帝王「外国」已读 —— Issue #407 新开的两卷之一。"
+    },
     {
       key: "poem_pinyin_fix_v1", sync: true, row: "pinyin_fix:v1",
       merge: "谁最后改谁赢（整份一份表，按条并会得到一份「一半是本机编的」的表）",
