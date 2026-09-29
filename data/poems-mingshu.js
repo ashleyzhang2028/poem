@@ -4037,8 +4037,8 @@ window.POEMS_MINGSHU = [
     excerpt: "我们的精神是平等的"
   },
   {
-    textRef: "mingshu-ms-922",
-    id: "ms-922",
+    textRef: "mingshu-ms-939",
+    id: "ms-939",
     title: "呼啸山庄",
     group: "外国文学",
     gradeGroup: "外国文学",
@@ -4081,8 +4081,8 @@ window.POEMS_MINGSHU = [
     excerpt: "一场空欢喜的馈赠"
   },
   {
-    textRef: "mingshu-ms-913",
-    id: "ms-913",
+    textRef: "mingshu-ms-932",
+    id: "ms-932",
     title: "悲惨世界",
     group: "外国文学",
     gradeGroup: "外国文学",
@@ -4103,8 +4103,41 @@ window.POEMS_MINGSHU = [
     excerpt: "荒石园里的观察者"
   },
   {
-    textRef: "mingshu-ms-928",
-    id: "ms-928",
+    textRef: "mingshu-ms-935",
+    id: "ms-935",
+    title: "圣诞颂歌",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "英国",
+    author: "狄更斯",
+    source: "《圣诞颂歌》",
+    excerpt: "守财奴的一夜三梦"
+  },
+  {
+    textRef: "mingshu-ms-936",
+    id: "ms-936",
+    title: "理智与情感",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "英国",
+    author: "简·奥斯汀",
+    source: "《理智与情感》",
+    excerpt: "姐姐用脑子，妹妹用心"
+  },
+  {
+    textRef: "mingshu-ms-937",
+    id: "ms-937",
+    title: "爱玛",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "英国",
+    author: "简·奥斯汀",
+    source: "《爱玛》",
+    excerpt: "爱替人做媒的姑娘"
+  },
+  {
+    textRef: "mingshu-ms-938",
+    id: "ms-938",
     title: "金银岛",
     group: "外国文学",
     gradeGroup: "外国文学",
@@ -4114,8 +4147,8 @@ window.POEMS_MINGSHU = [
     excerpt: "一张藏宝图引出的远航"
   },
   {
-    textRef: "mingshu-ms-929",
-    id: "ms-929",
+    textRef: "mingshu-ms-934",
+    id: "ms-934",
     title: "化身博士",
     group: "外国文学",
     gradeGroup: "外国文学",
