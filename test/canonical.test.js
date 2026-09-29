@@ -21,7 +21,7 @@ loadData(sb, [
   'data/poems-11.js', 'data/poems-12.js', 'data/index.js', 'data/poems-classic.js',
   'data/poems-yuefu.js', 'data/poems-tangshi.js', 'data/poems-songci.js', 'data/poems-guwen.js', 'data/poems-zhaoming.js', 'data/poems-yuanqu.js',
   'data/poems-jinxiandai.js', 'data/poems-chengyu.js', 'data/poems-changshi.js',
-  'data/poems-mingshu.js', 'data/poems-mingren.js',
+  'data/poems-mingshu.js', 'data/poems-mingren-cn.js', 'data/poems-mingren-foreign.js',
   'data/site-index.js', 'data/works-map.js', 'data/works-index.js',
   'data/canonical-texts.js'
 ]);
@@ -40,7 +40,9 @@ const FULL_BOOK_SET = {};
 FULL_BOOKS.forEach(b => { FULL_BOOK_SET[b] = true; });
 
 // 词条式集子（文学常识一类）：正文即释义，本来就没有白话译文
-const NO_TRANS = ['changshi', 'mingshu', 'mingren'];
+/* 词条式集子（正文即释义 / 词条，本来就没有白话译文）。
+   Issue #399：历代名家拆两部，两卷同属这一族。 */
+const NO_TRANS = ['changshi', 'mingshu', 'mingren', 'mingren-waiguo'];
 
 const multiEntries = MASTER.filter(m => m.entries.length >= 2);
 const singleEntries = MASTER.filter(m => m.entries.length === 1);
@@ -145,7 +147,8 @@ chk(mismatch.length === 0,
 // 这里只核最要紧的一条：正文里那张表真的解得出来，不是一坨竖线。
 (function () {
   const TABLE_BOOKS = ['mingshu', 'mingren'];
-  const LISTS = { mingshu: sb.POEMS_MINGSHU, mingren: sb.POEMS_MINGREN };
+  /* Issue #399：历代名家拆两部 —— 两卷各是一份壳、各占一行台账。 */
+const LISTS = { mingshu: sb.POEMS_MINGSHU, mingren: sb.POEMS_MINGREN_CN, 'mingren-waiguo': sb.POEMS_MINGREN_FOREIGN };
   const bad = [];
   TABLE_BOOKS.forEach(book => {
     (LISTS[book] || []).forEach(p => {
@@ -249,11 +252,17 @@ const BOOK_VARS = {
   chengyu: ['data/poems-chengyu.js'],
   changshi: ['data/poems-changshi.js'],
   mingshu: ['data/poems-mingshu.js'],
-  mingren: ['data/poems-mingren.js']
+  mingren: ['data/poems-mingren-cn.js'],
+  'mingren-waiguo': ['data/poems-mingren-foreign.js']
 };
 
 const stripped = [];
 const leftover = [];
+/* ⚠️ Issue #399：历代名家拆两部 —— 两卷的主表 id 前缀都是 `mingren`
+   （mingren-mr-c-xx / mingren-mr-w-xx），而壳里的 id 是 mr-c-xx / mr-w-xx。
+   所以这里收一份「壳 id → 文件」的对照，按**壳里写着的 id** 认，而不是
+   按前缀切（切出来的是另一半，对不上）。 */
+const SHELL_IDS = {};
 Object.keys(BOOK_VARS).forEach(book => {
   BOOK_VARS[book].forEach(f => {
     const src = read(f);
@@ -267,6 +276,11 @@ Object.keys(BOOK_VARS).forEach(book => {
       if (!idM) return;
       const key = book + ':' + idM[1];
       stripped.push(key);
+      /* 主表那一条的 id：一般是 textRef（拆两部后的两卷即此）；
+         成语故事里还有「跨集判重」的条目，正文挂在**另一条**上 ——
+         那种情况主表 id 是 `<book>-<shell id>`，一并认。 */
+      SHELL_IDS[refM[1]] = key;
+      SHELL_IDS[book + '-' + idM[1]] = key;
       if (/^\s+text:\s*"/m.test(blk) || /^\s+translation:\s*"/m.test(blk)) {
         leftover.push(key);
       }
@@ -278,8 +292,8 @@ const expectStripped = masterFlat.length;
 const strippedSet = {};
 stripped.forEach(k => { strippedSet[k] = 1; });
 const notStripped = masterFlat.filter(id => {
-  const book = Object.keys(BOOK_VARS).filter(b => id.indexOf(b + '-') === 0)[0];
-  return !book || !strippedSet[book + ':' + id.slice(book.length + 1)];
+  const key = SHELL_IDS[id];
+  return !key || !strippedSet[key];
 });
 chk(stripped.length === expectStripped && notStripped.length === 0,
   '主表登记的 ' + expectStripped + ' 条非主条目都已退化成只存归属（textRef；实际 ' +

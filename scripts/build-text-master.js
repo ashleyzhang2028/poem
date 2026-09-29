@@ -12,7 +12,7 @@ const LOAD = [
   'data/poems-songci.js', 'data/poems-guwen.js', 'data/poems-zhaoming.js', 'data/poems-yuanqu.js',
   'data/poems-yuefu.js', 'data/poems-jinxiandai.js', 'data/poems-chengyu.js',
   'data/poems-changshi.js',
-  'data/poems-mingshu.js', 'data/poems-mingren.js',
+  'data/poems-mingshu.js', 'data/poems-mingren-cn.js', 'data/poems-mingren-foreign.js',
   'data/chengyu-support.js',
   'data/site-books.js', 'data/site-index.js', 'data/works-map.js', 'data/works-index.js'
 ];
@@ -26,7 +26,7 @@ LOAD.forEach(function (f) {
 
 const WI = sandbox.WorksIndex;
 
-const FULL_BOOKS = ['zhaoming', 'guwen', 'songci', 'tangshi', 'classic', 'yuanqu', 'yuefu', 'jinxiandai', 'chengyu', 'changshi', 'mingshu', 'mingren'];
+const FULL_BOOKS = ['zhaoming', 'guwen', 'songci', 'tangshi', 'classic', 'yuanqu', 'yuefu', 'jinxiandai', 'chengyu', 'changshi', 'mingshu', 'mingren', 'mingren-waiguo'];
 
 const prev = {};
 try {
@@ -76,12 +76,17 @@ var RAW_ENTRIES = {};
     { f: 'data/poems-chengyu.js', v: 'POEMS_CHENGYU' },
     { f: 'data/poems-changshi.js', v: 'POEMS_CHANGSHI' },
     { f: 'data/poems-mingshu.js', v: 'POEMS_MINGSHU' },
-    { f: 'data/poems-mingren.js', v: 'POEMS_MINGREN' },
+    /* Issue #399：历代名家拆两部 —— 两份壳同属「历代名家」这一族，
+       台账前缀都是 mingren（下面 byFile 显式给，不从文件名推）。 */
+    { f: 'data/poems-mingren-cn.js', v: 'POEMS_MINGREN_CN', book: 'mingren' },
+    { f: 'data/poems-mingren-foreign.js', v: 'POEMS_MINGREN_FOREIGN', book: 'mingren' },
     { f: 'data/chengyu-support.js', v: 'CHENGYU_SUPPORT' }
   ];
   FILES.forEach(function (o) {
     if (o.v === 'CHENGYU_SUPPORT') return;
-    var book = o.f.replace('data/poems-', '').replace('.js', '');
+    /* `book` 是从**文件名**推的台账前缀，一文件一部。历代名家那两份壳同属
+       一部（mingren），名字里却带 `-cn` / `-foreign` —— 所以允许显式给。 */
+    var book = o.book || o.f.replace('data/poems-', '').replace('.js', '');
     if (/^\d+$/.test(book)) book = 'poems';
     (sandbox[o.v] || []).forEach(function (p) {
       if (!p || !p.id) return;
@@ -105,7 +110,12 @@ Object.keys(RAW_ENTRIES).forEach(function (id) {
   }
 
   if (!t.text) {
-    var hit = prev[id] || (raw.textRef ? prev[raw.textRef] : null);
+    /* Issue #399（历代名家拆两部）：新 id（mingren-mr-c-xx）在主表里还没有
+       正文，但同一个人的正文接在**老 id**（mingren-mr-xx）上 —— 壳里的
+       `masterRef` 就是这条线，按它认回上一轮的正文，不重写、不丢。 */
+    var alias = raw.masterRef || (prev[id] ? id : null);
+    var hit = prev[id] || (raw.textRef ? prev[raw.textRef] : null)
+      || (alias ? prev[alias] : null);
     if (hit) t = { text: hit.text || '', translation: hit.translation || '',
       translationSource: hit.translationSource || '' };
   }
@@ -534,6 +544,24 @@ out += '      if (!m) return;\n';
 out += '      if (m.id) byId[m.id] = m;\n';
 out += '      (m.entries || []).forEach(function (e) { if (e && !byId[e]) byId[e] = m; });\n';
 out += '    });\n';
+out += '    /* Issue #399（历代名家真拆两部）：两卷各出一份壳，正文仍只有一份\n';
+out += '       （同一个人不抄两遍）。两份壳的主表 id 已各自落在主表上，平时一条\n';
+out += '       别名都不写；这一段是**兜底** —— 万一主表里只有上一轮的老 id\n';
+out += '       （mingren-mr-xx）、壳却是新的（mr-c-xx / mr-w-xx），就按壳里那条\n';
+out += '       明写的 masterRef 认回来。不靠「号段恰巧相等」去猜，也不靠名字\n';
+out += '       （名字会跟别的集子撞：141 个名字在两部以上都有，按名字会取错）。\n';
+out += '       ⚠️ 别名只在**查不到**时兜底，不覆盖任何实条目。 */\n';
+out += '    (function () {\n';
+out += '      var shells = [].concat(\n';
+out += '        window.POEMS_MINGREN_CN || [],\n';
+out += '        window.POEMS_MINGREN_FOREIGN || []\n';
+out += '      );\n';
+out += '      shells.forEach(function (sh) {\n';
+out += '        if (!sh || !sh.textRef || !sh.masterRef) return;\n';
+out += '        if (byId[sh.textRef]) return;\n';
+out += '        if (byId[sh.masterRef]) byId[sh.textRef] = byId[sh.masterRef];\n';
+out += '      });\n';
+out += '    })();\n';
 out += '    return byId;\n';
 out += '  }\n';
 out += '\n';

@@ -17,7 +17,9 @@
     "poem_chengyu_read_v1",
     "poem_changshi_read_v1",
     "poem_mingshu_read_v1",
-    "poem_mingren_read_v1"
+    "poem_mingren_read_v1",
+    "poem_mingren_cn_read_v1",
+    "poem_mingren_foreign_read_v1"
   ];
 
   function ps() {

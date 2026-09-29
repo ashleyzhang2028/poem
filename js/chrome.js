@@ -85,6 +85,7 @@
     changshi: "/changshi/",
     mingshu: "/mingshu/",
     mingren: "/mingren/",
+    "mingren-waiguo": "/mingren-waiguo/",
     search: "/search/",
     mine: "/mine/",
     settings: "/settings/",
@@ -129,6 +130,7 @@
     if (/^\/changshi\/?$/.test(p) || /^\/changshi\/index\.html$/.test(p)) return "changshi";
     if (/^\/mingshu\/?$/.test(p) || /^\/mingshu\/index\.html$/.test(p)) return "mingshu";
     if (/^\/mingren\/?$/.test(p) || /^\/mingren\/index\.html$/.test(p)) return "mingren";
+    if (/^\/mingren-waiguo\/?$/.test(p) || /^\/mingren-waiguo\/index\.html$/.test(p)) return "mingren-waiguo";
     if (/^\/mine\/?$/.test(p) || /^\/mine\/index\.html$/.test(p)) return "mine";
     if (/^\/settings\/?$/.test(p) || /^\/settings\/index\.html$/.test(p)) return "settings";
     if (/^\/progress\/?$/.test(p) || /^\/progress\/index\.html$/.test(p)) return "progress";
@@ -295,6 +297,7 @@
     changshi: routeHref("library"),
     mingshu: routeHref("library"),
     mingren: routeHref("library"),
+    "mingren-waiguo": routeHref("library"),
 
     settings: routeHref("mine"),
 
@@ -365,7 +368,7 @@
     if (key === "classic" || key === "yuefu" || key === "tangshi" || key === "songci" ||
         key === "guwen" || key === "zhaoming" || key === "yuanqu" ||
         key === "jinxiandai" || key === "chengyu" || key === "changshi" ||
-        key === "mingshu" || key === "mingren") return "library";
+        key === "mingshu" || key === "mingren" || key === "mingren-waiguo") return "library";
 
         if (key === "poems") return "library";
 
