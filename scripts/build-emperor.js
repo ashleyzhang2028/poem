@@ -44,11 +44,22 @@ const path = require('path');
 const T = require('./lib/table.js');
 const { DYNASTIES } = require('./data/emperor/emperor-dynasties-cn.js');
 const { NOTE } = require('./data/emperor/emperor-cn-note.js');
+/* ⚠️ 传说时代那 16 位写在源表**末尾**，不是开头。
+   id（em-c-01…）按源表次序生成，而主表 data/text-master.js 拿 id 当复用的
+   钥匙 —— 新段插在最前会把已有几百位的 id 整体挪位，一身正文全对不上号。
+   源表按「信史在前」写，段序另由 GROUP_ORDER_CN 排到最前（见 groupSort）。 */
+/* ⚠️ 源表里**新增一段，要写在末尾**（这里就是：传说时代在最后）。
+   缘由在 id：壳里的 em-c-01…是按这个数组的次序生成的，而主表
+   data/text-master.js 拿 id 当「同一人」的钥匙 ——
+   在数组中间插队，已有几百条的 id 会整体往后挪一位，正文全串了门
+   （名著导读那一卷的 440 / 441 两条就是这么埋下的：正文改了、version 没跟上）。
+   entry-patch.applyAll 现在会当场拦下这种挪位（见它的身份行校对）。 */
 const CN_ROWS = [].concat(
   require('./data/emperor/emperor-cn-1.js').CN_1,
   require('./data/emperor/emperor-cn-2.js').CN_2,
   require('./data/emperor/emperor-cn-3.js').CN_3,
-  require('./data/emperor/emperor-cn-4.js').CN_4
+  require('./data/emperor/emperor-cn-4.js').CN_4,
+  require('./data/emperor/emperor-legend.js').CN_LEGEND
 );
 const FOREIGN = require('./data/emperor/emperor-foreign.js');
 
@@ -154,10 +165,22 @@ if (problems.length) {
 }
 
 /* ── 出壳 ─────────────────────────────────────────────────────────────── */
+/* id 的号段：传说时代一段单独走 em-c-legend-NN。
+   缘由还是 id 与「同一人」的绑定 —— 这一段是 Issue #407 追问之后补的，
+   **排在卷首**（段序最前），若照样按位次编号，已有 340 位的 id 会整体
+   推后一位、主表里的正文全部错位（名著导读那一卷就吃过这个亏）。
+   另开一段号，老 id（em-c-01…）按原样不动，新段用新号。 */
 function shells(list, prefix, varName, bookId) {
   const lines = ['window.' + varName + ' = ['];
-  list.forEach(function (r, i) {
-    const id = (prefix === 'em-c' ? 'em-c-' : 'em-w-') + String(i + 1).padStart(2, '0');
+  let legend = 0;
+  let seq = 0;
+  list.forEach(function (r) {
+    /* 传说时代那一段另起号（见上），其余按位次 —— 老 id 一位不动。
+       ⚠️ 位次 **不数传说时代那几位**：它们排在卷首，却是后补的，
+          若把它们的位次算进去，老条目照样整体推后一位。 */
+    const id = (prefix === 'em-c' && r.period === '传说时代')
+      ? 'em-c-legend-' + String((legend += 1)).padStart(2, '0')
+      : (prefix === 'em-c' ? 'em-c' : 'em-w') + '-' + String((seq += 1)).padStart(2, '0');
     r.id = id;
     const sh = {
       textRef: 'dwang-' + id,
@@ -216,8 +239,23 @@ if (WANT_MASTER) {
   }
   const patch = {};
   all.forEach(function (it) { patch[it.id] = it.text; });
-  const res = P.applyAll(patch, { force: argv.indexOf('--force') >= 0 });
+  const res = P.applyAll(patch, { force: argv.indexOf('--force') >= 0, syncVersion: true });
   P.write(res.src);
   console.log('✓ data/text-master.js 改写 ' + res.changed.length + ' 条' +
     (res.skipped.length ? '（跳过 ' + res.skipped.length + '）' : ''));
+
+  /* 正文写完，**再校一遍 version**。
+     客户端的「这条是不是新的」认的是 version（内容摘要），
+     而 version 是 build-text-master.js 生成时算的。新写进去的条目
+     一路走过来没问题，但早先那几百条里若有过「正文被 service 改动、
+     version 没跟上」的，客户端会认不出 —— 这里按当前正文重算一遍，
+     只改 version 一行，不动文本一个字。 */
+  const ids = all.map(function (it) { return it.id; });
+  const again = P.rehashAll(ids);
+  if (again.missing.length) {
+    console.error('✗ 主表里缺 ' + again.missing.length + ' 条：' + again.missing.slice(0, 5).join('、'));
+    process.exit(1);
+  }
+  P.write(again.src);
+  console.log('✓ data/text-master.js 校版次：' + again.changed.length + ' 条 version 与正文不符，已按正文重算');
 }
