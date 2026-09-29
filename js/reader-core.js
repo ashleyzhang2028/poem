@@ -856,8 +856,17 @@
       // CFG.noTranslation 是「这一整部都不带译文」（集子自己的页面上用）；
       // CFG.noTranslationBooks 是「这几部不带译文」（搜索页这类混着多部的页面用）
       // —— 不认后者，那几百条的列表行上会各挂一个「待补」，而它们什么都不缺
-      var noTrans = CFG.noTranslation ||
-        (CFG.noTranslationBooks || []).indexOf(p.book) >= 0;
+      /* ⚠️ CFG.hasTranslation 是「这一条算不算『带译文的条目』」的可选谓词。
+         Issue #407 的帝王「中国」卷就是它的一位用者：整卷是词条式
+         （noTranslation: true），只有东周诸侯那一段有列传体的白话译文 ——
+         若整卷都按「不带译文」算，那 253 位的列表行上会各挂一个多余的
+         「待补」；若整卷都按「带译文」算，其余几位（没有译文）又会空着。
+         谓词给出的是**按条**的口径：能带译文的条目照常算，其余整段照旧。
+         没给这个谓词的集子，行为与从前一字不差。 */
+      var canTrans = typeof CFG.hasTranslation === "function"
+        ? !!CFG.hasTranslation(p)
+        : !CFG.noTranslation && (CFG.noTranslationBooks || []).indexOf(p.book) < 0;
+      var noTrans = !canTrans;
       var pending = !p.text || (!p.translation && !noTrans);
       var el = document.createElement("div");
       el.className = "item" + (read ? " done" : "") + (pending ? " pending" : "") +
@@ -1045,7 +1054,15 @@
     }
 
         var transBtn = rd("trans-toggle");
-    if (transBtn) transBtn.hidden = !!CFG.noTranslation;
+    /* 译文开关：整部不带译文的（CFG.noTranslation）藏起来；给了
+       CFG.hasTranslation 谓词的集子（见列表那一段的说明）按**当前这一条**
+       算 —— 这一条没有译文时开关也该藏起来，不让读者点开一个空框。 */
+    if (transBtn) {
+      var canTrans = typeof CFG.hasTranslation === "function"
+        ? !!CFG.hasTranslation(p)
+        : !CFG.noTranslation;
+      transBtn.hidden = !canTrans;
+    }
 
     showTransBox(false);
     speakingTarget = "原文";

@@ -57,6 +57,19 @@ rows.forEach(x => {
 });
 chk(dup.length === 0, '没有一部书被收两次（重复：' + (dup.slice(0, 5).join('、') || '无') + '）');
 
+/* 国内外禁书一律不收（Issue #381 · 用户原话「如果含有国内外禁书的，一律
+   删除」）。名单连同查禁来由记在 scripts/data/mingshu-corpus.js 的 BANNED；
+   这一条把「书目表」与「素材库」两处一起钉住：谁把它们加回来，当场点名。 */
+const BANNED = require('../scripts/data/mingshu-corpus.js').BANNED || [];
+const bannedInList = BANNED.filter(t => seen[t]);
+chk(bannedInList.length === 0,
+  '国内外禁书一部都不在书目表里（在册：' + (bannedInList.join('、') || '无') + '）');
+const CORPUS = require('../scripts/data/mingshu-corpus.js').CORPUS;
+const bannedInCorpus = BANNED.filter(t => CORPUS[t]);
+chk(bannedInCorpus.length === 0,
+  '禁书的素材也已剔除（还在：' + (bannedInCorpus.join('、') || '无') + '）');
+chk(BANNED.length === 9, '禁书名单是 9 部（实际 ' + BANNED.length + '）');
+
 chk(LEGACY.length === 36, '上一轮那 36 部的名单在册（实际 ' + LEGACY.length + ' 部）');
 const legacyMissing = LEGACY.filter(t => !seen[t]);
 chk(legacyMissing.length === 0,
@@ -147,8 +160,10 @@ const moved = Object.keys(STICKY_IDS).filter(t => shellIdOf[t] && shellIdOf[t] !
 chk(moved.length === 0,
   '前几轮已发号的书，id 一个也没挪（挪了：' +
   (moved.map(t => t + ' ' + STICKY_IDS[t] + '→' + shellIdOf[t]).join('、') || '无') + '）');
-chk(classicRows.length === 22 && rows.length >= 816,
-  '书目表插书没有改动已有 id 的排布（数量 ' + rows.length + '，底册 ' + Object.keys(STICKY_IDS).length + ' 条全部对得上）');
+/* 书目表尺寸：上一轮精简到 816 部；Issue #381「禁书剔除」删去 9 部
+   （国内 8 + 国外 1，见 BANNED），故底数为 807。这一条只钉「不缩水」。 */
+chk(classicRows.length === 22 && rows.length >= 807,
+  '书目表规模不缩水（数量 ' + rows.length + '，底册 ' + Object.keys(STICKY_IDS).length + ' 条全部对得上）');
 
 /* 四部谴责小说与五部话本集都要在册点名：
    《官场现形记》《二十年目睹之怪现状》《老残游记》《孽海花》是晚清四大
