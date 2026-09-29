@@ -47,8 +47,8 @@ window.POEMS_MINGREN = [
     textRef: "mingren-mr-05",
     id: "mr-05",
     title: "子产",
-    group: "法学家",
-    gradeGroup: "法学家",
+    group: "政治家",
+    gradeGroup: "政治家",
     dynasty: "春秋郑",
     author: "子产",
     source: "《子产》·约前 580—前 522",
@@ -58,8 +58,8 @@ window.POEMS_MINGREN = [
     textRef: "mingren-mr-06",
     id: "mr-06",
     title: "晏婴",
-    group: "外交家",
-    gradeGroup: "外交家",
+    group: "政治家",
+    gradeGroup: "政治家",
     dynasty: "春秋",
     author: "晏婴",
     source: "《晏婴》·约前 578—前 500",
@@ -102,8 +102,8 @@ window.POEMS_MINGREN = [
     textRef: "mingren-mr-10",
     id: "mr-10",
     title: "左丘明",
-    group: "史学家",
-    gradeGroup: "史学家",
+    group: "历史学家",
+    gradeGroup: "历史学家",
     dynasty: "春秋",
     author: "左丘明",
     source: "《左丘明》·约前 556—约前 451",
@@ -113,8 +113,8 @@ window.POEMS_MINGREN = [
     textRef: "mingren-mr-11",
     id: "mr-11",
     title: "孔子",
-    group: "教育家",
-    gradeGroup: "教育家",
+    group: "思想家",
+    gradeGroup: "思想家",
     dynasty: "春秋",
     author: "孔子",
     source: "《孔子》·前 551—前 479",
@@ -134,6 +134,17 @@ window.POEMS_MINGREN = [
   {
     textRef: "mingren-mr-13",
     id: "mr-13",
+    title: "邓析",
+    group: "政治家",
+    gradeGroup: "政治家",
+    dynasty: "春秋郑",
+    author: "邓析",
+    source: "《邓析》·约前 545—前 501",
+    excerpt: "《竹刑》· 最早的讼师"
+  },
+  {
+    textRef: "mingren-mr-14",
+    id: "mr-14",
     title: "孙武",
     group: "军事家",
     gradeGroup: "军事家",
@@ -141,17 +152,6 @@ window.POEMS_MINGREN = [
     author: "孙武",
     source: "《孙武》·约前 545—约前 470",
     excerpt: "兵圣 · 《孙子兵法》作者"
-  },
-  {
-    textRef: "mingren-mr-14",
-    id: "mr-14",
-    title: "邓析",
-    group: "法学家",
-    gradeGroup: "法学家",
-    dynasty: "春秋郑",
-    author: "邓析",
-    source: "《邓析》·约前 545—前 501",
-    excerpt: "《竹刑》· 最早的讼师"
   },
   {
     textRef: "mingren-mr-15",
@@ -201,8 +201,8 @@ window.POEMS_MINGREN = [
     textRef: "mingren-mr-19",
     id: "mr-19",
     title: "鲁班",
-    group: "工艺家",
-    gradeGroup: "工艺家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "春秋",
     author: "鲁班",
     source: "《鲁班》·约前 507—约前 444",
@@ -256,8 +256,8 @@ window.POEMS_MINGREN = [
     textRef: "mingren-mr-24",
     id: "mr-24",
     title: "米隆",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "古希腊",
     author: "米隆",
     source: "《米隆》·约前 480—约前 440",
@@ -267,8 +267,8 @@ window.POEMS_MINGREN = [
     textRef: "mingren-mr-25",
     id: "mr-25",
     title: "菲迪亚斯",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "古希腊",
     author: "菲迪亚斯",
     source: "《菲迪亚斯》·约前 480—前 430",
@@ -278,8 +278,8 @@ window.POEMS_MINGREN = [
     textRef: "mingren-mr-26",
     id: "mr-26",
     title: "波留克列特斯",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "古希腊",
     author: "波留克列特斯",
     source: "《波留克列特斯》·约前 480—约前 420",
@@ -333,8 +333,8 @@ window.POEMS_MINGREN = [
     textRef: "mingren-mr-31",
     id: "mr-31",
     title: "李悝",
-    group: "法学家",
-    gradeGroup: "法学家",
+    group: "政治家",
+    gradeGroup: "政治家",
     dynasty: "战国魏",
     author: "李悝",
     source: "《李悝》·约前 455—约前 395",
@@ -432,8 +432,8 @@ window.POEMS_MINGREN = [
     textRef: "mingren-mr-40",
     id: "mr-40",
     title: "慎到",
-    group: "法学家",
-    gradeGroup: "法学家",
+    group: "政治家",
+    gradeGroup: "政治家",
     dynasty: "战国赵",
     author: "慎到",
     source: "《慎到》·约前 395—约前 315",
@@ -443,8 +443,8 @@ window.POEMS_MINGREN = [
     textRef: "mingren-mr-41",
     id: "mr-41",
     title: "商鞅",
-    group: "法学家",
-    gradeGroup: "法学家",
+    group: "政治家",
+    gradeGroup: "政治家",
     dynasty: "战国秦",
     author: "商鞅",
     source: "《商鞅》·约前 390—前 338",
@@ -454,8 +454,8 @@ window.POEMS_MINGREN = [
     textRef: "mingren-mr-42",
     id: "mr-42",
     title: "申不害",
-    group: "法学家",
-    gradeGroup: "法学家",
+    group: "政治家",
+    gradeGroup: "政治家",
     dynasty: "战国韩",
     author: "申不害",
     source: "《申不害》·约前 385—前 337",
@@ -487,8 +487,8 @@ window.POEMS_MINGREN = [
     textRef: "mingren-mr-45",
     id: "mr-45",
     title: "孟子",
-    group: "教育家",
-    gradeGroup: "教育家",
+    group: "思想家",
+    gradeGroup: "思想家",
     dynasty: "战国",
     author: "孟子",
     source: "《孟子》·约前 372—前 289",
@@ -497,6 +497,17 @@ window.POEMS_MINGREN = [
   {
     textRef: "mingren-mr-46",
     id: "mr-46",
+    title: "张仪",
+    group: "政治家",
+    gradeGroup: "政治家",
+    dynasty: "战国",
+    author: "张仪",
+    source: "《张仪》·？—前 309",
+    excerpt: "连横 · 秦相"
+  },
+  {
+    textRef: "mingren-mr-47",
+    id: "mr-47",
     title: "庄子",
     group: "思想家",
     gradeGroup: "思想家",
@@ -504,17 +515,6 @@ window.POEMS_MINGREN = [
     author: "庄子",
     source: "《庄子》·约前 369—约前 286",
     excerpt: "道家的集大成者"
-  },
-  {
-    textRef: "mingren-mr-47",
-    id: "mr-47",
-    title: "张仪",
-    group: "外交家",
-    gradeGroup: "外交家",
-    dynasty: "战国",
-    author: "张仪",
-    source: "《张仪》·？—前 309",
-    excerpt: "连横 · 秦相"
   },
   {
     textRef: "mingren-mr-48",
@@ -542,8 +542,8 @@ window.POEMS_MINGREN = [
     textRef: "mingren-mr-50",
     id: "mr-50",
     title: "苏秦",
-    group: "外交家",
-    gradeGroup: "外交家",
+    group: "政治家",
+    gradeGroup: "政治家",
     dynasty: "战国",
     author: "苏秦",
     source: "《苏秦》·？—前 284",
@@ -597,8 +597,8 @@ window.POEMS_MINGREN = [
     textRef: "mingren-mr-55",
     id: "mr-55",
     title: "荀子",
-    group: "教育家",
-    gradeGroup: "教育家",
+    group: "思想家",
+    gradeGroup: "思想家",
     dynasty: "战国",
     author: "荀子",
     source: "《荀子》·约前 313—前 238",
@@ -608,8 +608,8 @@ window.POEMS_MINGREN = [
     textRef: "mingren-mr-56",
     id: "mr-56",
     title: "李冰",
-    group: "水利家",
-    gradeGroup: "水利家",
+    group: "农学家",
+    gradeGroup: "农学家",
     dynasty: "战国秦",
     author: "李冰",
     source: "《李冰》·约前 302—约前 235",
@@ -663,8 +663,8 @@ window.POEMS_MINGREN = [
     textRef: "mingren-mr-61",
     id: "mr-61",
     title: "韩非",
-    group: "法学家",
-    gradeGroup: "法学家",
+    group: "政治家",
+    gradeGroup: "政治家",
     dynasty: "战国",
     author: "韩非",
     source: "《韩非》·约前 280—前 233",
@@ -685,8 +685,8 @@ window.POEMS_MINGREN = [
     textRef: "mingren-mr-63",
     id: "mr-63",
     title: "张释之",
-    group: "法学家",
-    gradeGroup: "法学家",
+    group: "政治家",
+    gradeGroup: "政治家",
     dynasty: "西汉",
     author: "张释之",
     source: "《张释之》·约前 200—？",
@@ -729,8 +729,8 @@ window.POEMS_MINGREN = [
     textRef: "mingren-mr-67",
     id: "mr-67",
     title: "郑国",
-    group: "水利家",
-    gradeGroup: "水利家",
+    group: "农学家",
+    gradeGroup: "农学家",
     dynasty: "战国秦",
     author: "郑国",
     source: "《郑国》·约前 250—前 210 在世",
@@ -828,8 +828,8 @@ window.POEMS_MINGREN = [
     textRef: "mingren-mr-76",
     id: "mr-76",
     title: "董仲舒",
-    group: "教育家",
-    gradeGroup: "教育家",
+    group: "思想家",
+    gradeGroup: "思想家",
     dynasty: "西汉",
     author: "董仲舒",
     source: "《董仲舒》·前 179—前 104",
@@ -850,8 +850,8 @@ window.POEMS_MINGREN = [
     textRef: "mingren-mr-78",
     id: "mr-78",
     title: "张骞",
-    group: "外交家",
-    gradeGroup: "外交家",
+    group: "政治家",
+    gradeGroup: "政治家",
     dynasty: "西汉",
     author: "张骞",
     source: "《张骞》·约前 164—前 114",
@@ -1048,8 +1048,8 @@ window.POEMS_MINGREN = [
     textRef: "mingren-mr-96",
     id: "mr-96",
     title: "王景",
-    group: "水利家",
-    gradeGroup: "水利家",
+    group: "农学家",
+    gradeGroup: "农学家",
     dynasty: "东汉",
     author: "王景",
     source: "《王景》·约 30—约 85",
@@ -1103,8 +1103,8 @@ window.POEMS_MINGREN = [
     textRef: "mingren-mr-101",
     id: "mr-101",
     title: "蔡伦",
-    group: "工艺家",
-    gradeGroup: "工艺家",
+    group: "科学家",
+    gradeGroup: "科学家",
     dynasty: "东汉",
     author: "蔡伦",
     source: "《蔡伦》·约 63—121",
@@ -1158,8 +1158,8 @@ window.POEMS_MINGREN = [
     textRef: "mingren-mr-106",
     id: "mr-106",
     title: "盖伦",
-    group: "医学家",
-    gradeGroup: "医学家",
+    group: "科学家",
+    gradeGroup: "科学家",
     dynasty: "古希腊 / 古罗马",
     author: "盖伦",
     source: "《盖伦》·约 129—约 216",
@@ -1312,8 +1312,8 @@ window.POEMS_MINGREN = [
     textRef: "mingren-mr-120",
     id: "mr-120",
     title: "马钧",
-    group: "工艺家",
-    gradeGroup: "工艺家",
+    group: "科学家",
+    gradeGroup: "科学家",
     dynasty: "三国魏",
     author: "马钧",
     source: "《马钧》·约 200—约 270",
@@ -1345,8 +1345,8 @@ window.POEMS_MINGREN = [
     textRef: "mingren-mr-123",
     id: "mr-123",
     title: "陈寿",
-    group: "史学家",
-    gradeGroup: "史学家",
+    group: "历史学家",
+    gradeGroup: "历史学家",
     dynasty: "西晋",
     author: "陈寿",
     source: "《陈寿》·233—297",
@@ -1444,8 +1444,8 @@ window.POEMS_MINGREN = [
     textRef: "mingren-mr-132",
     id: "mr-132",
     title: "法显",
-    group: "翻译家",
-    gradeGroup: "翻译家",
+    group: "语言文字学家",
+    gradeGroup: "语言文字学家",
     dynasty: "东晋",
     author: "法显",
     source: "《法显》·337—约 422",
@@ -1477,8 +1477,8 @@ window.POEMS_MINGREN = [
     textRef: "mingren-mr-135",
     id: "mr-135",
     title: "鸠摩罗什",
-    group: "翻译家",
-    gradeGroup: "翻译家",
+    group: "语言文字学家",
+    gradeGroup: "语言文字学家",
     dynasty: "东晋十六国",
     author: "鸠摩罗什",
     source: "《鸠摩罗什》·344—413",
@@ -1488,8 +1488,8 @@ window.POEMS_MINGREN = [
     textRef: "mingren-mr-136",
     id: "mr-136",
     title: "顾恺之",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "两晋南北朝",
     author: "顾恺之",
     source: "《顾恺之》·约 348—409",
@@ -1543,8 +1543,8 @@ window.POEMS_MINGREN = [
     textRef: "mingren-mr-141",
     id: "mr-141",
     title: "范晔",
-    group: "史学家",
-    gradeGroup: "史学家",
+    group: "历史学家",
+    gradeGroup: "历史学家",
     dynasty: "南朝宋",
     author: "范晔",
     source: "《范晔》·398—446",
@@ -1576,8 +1576,8 @@ window.POEMS_MINGREN = [
     textRef: "mingren-mr-144",
     id: "mr-144",
     title: "陆探微",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "两晋南北朝",
     author: "陆探微",
     source: "《陆探微》·？—约 485",
@@ -1686,8 +1686,8 @@ window.POEMS_MINGREN = [
     textRef: "mingren-mr-154",
     id: "mr-154",
     title: "张僧繇",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "两晋南北朝",
     author: "张僧繇",
     source: "《张僧繇》·约 500—约 560",
@@ -1730,8 +1730,8 @@ window.POEMS_MINGREN = [
     textRef: "mingren-mr-158",
     id: "mr-158",
     title: "颜之推",
-    group: "教育家",
-    gradeGroup: "教育家",
+    group: "思想家",
+    gradeGroup: "思想家",
     dynasty: "两晋南北朝",
     author: "颜之推",
     source: "《颜之推》·531—约 591",
@@ -1741,8 +1741,8 @@ window.POEMS_MINGREN = [
     textRef: "mingren-mr-159",
     id: "mr-159",
     title: "展子虔",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "两晋南北朝",
     author: "展子虔",
     source: "《展子虔》·约 545—约 618",
@@ -1752,8 +1752,8 @@ window.POEMS_MINGREN = [
     textRef: "mingren-mr-160",
     id: "mr-160",
     title: "宇文恺",
-    group: "建筑家",
-    gradeGroup: "建筑家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "隋",
     author: "宇文恺",
     source: "《宇文恺》·555—612",
@@ -1818,8 +1818,8 @@ window.POEMS_MINGREN = [
     textRef: "mingren-mr-166",
     id: "mr-166",
     title: "戴胄",
-    group: "法学家",
-    gradeGroup: "法学家",
+    group: "政治家",
+    gradeGroup: "政治家",
     dynasty: "唐",
     author: "戴胄",
     source: "《戴胄》·约 580—633",
@@ -1862,8 +1862,8 @@ window.POEMS_MINGREN = [
     textRef: "mingren-mr-170",
     id: "mr-170",
     title: "李春",
-    group: "建筑家",
-    gradeGroup: "建筑家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "隋",
     author: "李春",
     source: "《李春》·生卒年不详，主要活动于隋开皇、大业年间（6 世纪末—7 世纪初）",
@@ -1873,8 +1873,8 @@ window.POEMS_MINGREN = [
     textRef: "mingren-mr-171",
     id: "mr-171",
     title: "长孙无忌",
-    group: "法学家",
-    gradeGroup: "法学家",
+    group: "政治家",
+    gradeGroup: "政治家",
     dynasty: "唐",
     author: "长孙无忌",
     source: "《长孙无忌》·约 594—659",
@@ -1895,8 +1895,8 @@ window.POEMS_MINGREN = [
     textRef: "mingren-mr-173",
     id: "mr-173",
     title: "阎立本",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "唐",
     author: "阎立本",
     source: "《阎立本》·约 601—673",
@@ -1906,8 +1906,8 @@ window.POEMS_MINGREN = [
     textRef: "mingren-mr-174",
     id: "mr-174",
     title: "玄奘",
-    group: "翻译家",
-    gradeGroup: "翻译家",
+    group: "语言文字学家",
+    gradeGroup: "语言文字学家",
     dynasty: "唐",
     author: "玄奘",
     source: "《玄奘》·602—664",
@@ -1939,8 +1939,8 @@ window.POEMS_MINGREN = [
     textRef: "mingren-mr-177",
     id: "mr-177",
     title: "义净",
-    group: "翻译家",
-    gradeGroup: "翻译家",
+    group: "语言文字学家",
+    gradeGroup: "语言文字学家",
     dynasty: "唐",
     author: "义净",
     source: "《义净》·635—713",
@@ -2005,8 +2005,8 @@ window.POEMS_MINGREN = [
     textRef: "mingren-mr-183",
     id: "mr-183",
     title: "李思训",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "唐",
     author: "李思训",
     source: "《李思训》·653—718",
@@ -2071,8 +2071,8 @@ window.POEMS_MINGREN = [
     textRef: "mingren-mr-189",
     id: "mr-189",
     title: "刘知几",
-    group: "史学家",
-    gradeGroup: "史学家",
+    group: "历史学家",
+    gradeGroup: "历史学家",
     dynasty: "唐",
     author: "刘知几",
     source: "《刘知几》·661—721",
@@ -2115,8 +2115,8 @@ window.POEMS_MINGREN = [
     textRef: "mingren-mr-193",
     id: "mr-193",
     title: "吴道子",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "唐",
     author: "吴道子",
     source: "《吴道子》·约 680—约 759",
@@ -2247,8 +2247,8 @@ window.POEMS_MINGREN = [
     textRef: "mingren-mr-205",
     id: "mr-205",
     title: "韩幹",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "唐",
     author: "韩幹",
     source: "《韩幹》·约 706—783",
@@ -2301,6 +2301,17 @@ window.POEMS_MINGREN = [
   {
     textRef: "mingren-mr-210",
     id: "mr-210",
+    title: "张萱",
+    group: "美术家",
+    gradeGroup: "美术家",
+    dynasty: "唐",
+    author: "张萱",
+    source: "《张萱》·约 713—约 755 在世",
+    excerpt: "《捣练图》"
+  },
+  {
+    textRef: "mingren-mr-211",
+    id: "mr-211",
     title: "岑参",
     group: "文学家",
     gradeGroup: "文学家",
@@ -2310,8 +2321,19 @@ window.POEMS_MINGREN = [
     excerpt: "边塞诗的奇笔"
   },
   {
-    textRef: "mingren-mr-211",
-    id: "mr-211",
+    textRef: "mingren-mr-212",
+    id: "mr-212",
+    title: "刘晏",
+    group: "经济学家",
+    gradeGroup: "经济学家",
+    dynasty: "唐",
+    author: "刘晏",
+    source: "《刘晏》·716—780",
+    excerpt: "漕运 · 榷盐法"
+  },
+  {
+    textRef: "mingren-mr-213",
+    id: "mr-213",
     title: "李阳冰",
     group: "书法家",
     gradeGroup: "书法家",
@@ -2321,52 +2343,52 @@ window.POEMS_MINGREN = [
     excerpt: "小篆的复兴者，李白族叔"
   },
   {
-    textRef: "mingren-mr-212",
-    id: "mr-212",
+    textRef: "mingren-mr-214",
+    id: "mr-214",
     title: "韩滉",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "唐",
     author: "韩滉",
     source: "《韩滉》·723—787",
     excerpt: "《五牛图》的作者，中国最早的纸本绘画之一"
   },
   {
-    textRef: "mingren-mr-213",
-    id: "mr-213",
+    textRef: "mingren-mr-215",
+    id: "mr-215",
     title: "周昉",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "唐",
     author: "周昉",
     source: "《周昉》·约 730—约 800",
     excerpt: "《簪花仕女图》的作者，绮罗人物画代表"
   },
   {
-    textRef: "mingren-mr-214",
-    id: "mr-214",
+    textRef: "mingren-mr-216",
+    id: "mr-216",
     title: "陆羽",
-    group: "茶学家",
-    gradeGroup: "茶学家",
+    group: "农学家",
+    gradeGroup: "农学家",
     dynasty: "唐",
     author: "陆羽",
     source: "《陆羽》·733—804",
     excerpt: "茶圣 · 茶经"
   },
   {
-    textRef: "mingren-mr-215",
-    id: "mr-215",
+    textRef: "mingren-mr-217",
+    id: "mr-217",
     title: "杜佑",
-    group: "史学家",
-    gradeGroup: "史学家",
+    group: "历史学家",
+    gradeGroup: "历史学家",
     dynasty: "唐",
     author: "杜佑",
     source: "《杜佑》·735—812",
     excerpt: "《通典》的作者，典章制度通史的开创者"
   },
   {
-    textRef: "mingren-mr-216",
-    id: "mr-216",
+    textRef: "mingren-mr-218",
+    id: "mr-218",
     title: "韦应物",
     group: "文学家",
     gradeGroup: "文学家",
@@ -2376,8 +2398,8 @@ window.POEMS_MINGREN = [
     excerpt: "山水田园的传人，「野渡无人舟自横」"
   },
   {
-    textRef: "mingren-mr-217",
-    id: "mr-217",
+    textRef: "mingren-mr-219",
+    id: "mr-219",
     title: "怀素",
     group: "书法家",
     gradeGroup: "书法家",
@@ -2387,8 +2409,8 @@ window.POEMS_MINGREN = [
     excerpt: "狂草的集大成者，《自叙帖》为草书绝品"
   },
   {
-    textRef: "mingren-mr-218",
-    id: "mr-218",
+    textRef: "mingren-mr-220",
+    id: "mr-220",
     title: "李益",
     group: "文学家",
     gradeGroup: "文学家",
@@ -2398,8 +2420,8 @@ window.POEMS_MINGREN = [
     excerpt: "中唐边塞诗的代表，七绝多入乐传唱"
   },
   {
-    textRef: "mingren-mr-219",
-    id: "mr-219",
+    textRef: "mingren-mr-221",
+    id: "mr-221",
     title: "孟郊",
     group: "文学家",
     gradeGroup: "文学家",
@@ -2409,8 +2431,8 @@ window.POEMS_MINGREN = [
     excerpt: "苦吟诗人的代表"
   },
   {
-    textRef: "mingren-mr-220",
-    id: "mr-220",
+    textRef: "mingren-mr-222",
+    id: "mr-222",
     title: "张籍",
     group: "文学家",
     gradeGroup: "文学家",
@@ -2420,8 +2442,8 @@ window.POEMS_MINGREN = [
     excerpt: "与王建并称「张王乐府」，写实一派"
   },
   {
-    textRef: "mingren-mr-221",
-    id: "mr-221",
+    textRef: "mingren-mr-223",
+    id: "mr-223",
     title: "王建",
     group: "文学家",
     gradeGroup: "文学家",
@@ -2431,8 +2453,8 @@ window.POEMS_MINGREN = [
     excerpt: "《宫词》百首与乐府诗的作者"
   },
   {
-    textRef: "mingren-mr-222",
-    id: "mr-222",
+    textRef: "mingren-mr-224",
+    id: "mr-224",
     title: "韩愈",
     group: "文学家",
     gradeGroup: "文学家",
@@ -2442,8 +2464,8 @@ window.POEMS_MINGREN = [
     excerpt: "文起八代之衰"
   },
   {
-    textRef: "mingren-mr-223",
-    id: "mr-223",
+    textRef: "mingren-mr-225",
+    id: "mr-225",
     title: "白居易",
     group: "文学家",
     gradeGroup: "文学家",
@@ -2453,8 +2475,8 @@ window.POEMS_MINGREN = [
     excerpt: "诗魔 · 新乐府运动主将"
   },
   {
-    textRef: "mingren-mr-224",
-    id: "mr-224",
+    textRef: "mingren-mr-226",
+    id: "mr-226",
     title: "刘禹锡",
     group: "文学家",
     gradeGroup: "文学家",
@@ -2464,8 +2486,8 @@ window.POEMS_MINGREN = [
     excerpt: "「诗豪」，《陋室铭》与《竹枝词》的作者"
   },
   {
-    textRef: "mingren-mr-225",
-    id: "mr-225",
+    textRef: "mingren-mr-227",
+    id: "mr-227",
     title: "柳宗元",
     group: "文学家",
     gradeGroup: "文学家",
@@ -2475,8 +2497,8 @@ window.POEMS_MINGREN = [
     excerpt: "唐宋八大家 · 山水游记之祖"
   },
   {
-    textRef: "mingren-mr-226",
-    id: "mr-226",
+    textRef: "mingren-mr-228",
+    id: "mr-228",
     title: "柳公权",
     group: "书法家",
     gradeGroup: "书法家",
@@ -2486,8 +2508,8 @@ window.POEMS_MINGREN = [
     excerpt: "柳体楷书的创立者，「颜筋柳骨」"
   },
   {
-    textRef: "mingren-mr-227",
-    id: "mr-227",
+    textRef: "mingren-mr-229",
+    id: "mr-229",
     title: "贾岛",
     group: "文学家",
     gradeGroup: "文学家",
@@ -2497,8 +2519,8 @@ window.POEMS_MINGREN = [
     excerpt: "推敲 · 郊寒岛瘦"
   },
   {
-    textRef: "mingren-mr-228",
-    id: "mr-228",
+    textRef: "mingren-mr-230",
+    id: "mr-230",
     title: "元稹",
     group: "文学家",
     gradeGroup: "文学家",
@@ -2508,8 +2530,8 @@ window.POEMS_MINGREN = [
     excerpt: "与白居易并称「元白」，新乐府运动的旗手"
   },
   {
-    textRef: "mingren-mr-229",
-    id: "mr-229",
+    textRef: "mingren-mr-231",
+    id: "mr-231",
     title: "李贺",
     group: "文学家",
     gradeGroup: "文学家",
@@ -2519,19 +2541,19 @@ window.POEMS_MINGREN = [
     excerpt: "诗鬼"
   },
   {
-    textRef: "mingren-mr-230",
-    id: "mr-230",
+    textRef: "mingren-mr-232",
+    id: "mr-232",
     title: "卢仝",
-    group: "茶学家",
-    gradeGroup: "茶学家",
+    group: "农学家",
+    gradeGroup: "农学家",
     dynasty: "唐",
     author: "卢仝",
     source: "《卢仝》·约 795—约 835",
     excerpt: "七碗茶歌"
   },
   {
-    textRef: "mingren-mr-231",
-    id: "mr-231",
+    textRef: "mingren-mr-233",
+    id: "mr-233",
     title: "杜牧",
     group: "文学家",
     gradeGroup: "文学家",
@@ -2541,8 +2563,8 @@ window.POEMS_MINGREN = [
     excerpt: "晚唐七绝第一家"
   },
   {
-    textRef: "mingren-mr-232",
-    id: "mr-232",
+    textRef: "mingren-mr-234",
+    id: "mr-234",
     title: "温庭筠",
     group: "文学家",
     gradeGroup: "文学家",
@@ -2552,8 +2574,8 @@ window.POEMS_MINGREN = [
     excerpt: "花间鼻祖"
   },
   {
-    textRef: "mingren-mr-233",
-    id: "mr-233",
+    textRef: "mingren-mr-235",
+    id: "mr-235",
     title: "李商隐",
     group: "文学家",
     gradeGroup: "文学家",
@@ -2563,8 +2585,8 @@ window.POEMS_MINGREN = [
     excerpt: "晚唐诗坛的殿军"
   },
   {
-    textRef: "mingren-mr-234",
-    id: "mr-234",
+    textRef: "mingren-mr-236",
+    id: "mr-236",
     title: "韦庄",
     group: "文学家",
     gradeGroup: "文学家",
@@ -2574,30 +2596,41 @@ window.POEMS_MINGREN = [
     excerpt: "《秦妇吟》长篇叙事诗的作者，花间派词人"
   },
   {
-    textRef: "mingren-mr-235",
-    id: "mr-235",
+    textRef: "mingren-mr-237",
+    id: "mr-237",
+    title: "黄筌",
+    group: "美术家",
+    gradeGroup: "美术家",
+    dynasty: "五代",
+    author: "黄筌",
+    source: "《黄筌》·约 903—965",
+    excerpt: "《写生珍禽图》· 黄家富贵"
+  },
+  {
+    textRef: "mingren-mr-238",
+    id: "mr-238",
     title: "顾闳中",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "五代",
     author: "顾闳中",
     source: "《顾闳中》·约 910—约 980",
     excerpt: "《韩熙载夜宴图》的作者"
   },
   {
-    textRef: "mingren-mr-236",
-    id: "mr-236",
+    textRef: "mingren-mr-239",
+    id: "mr-239",
     title: "郭忠恕",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "宋",
     author: "郭忠恕",
     source: "《郭忠恕》·约 910—977",
     excerpt: "界画第一，《雪霁江行图》的作者"
   },
   {
-    textRef: "mingren-mr-237",
-    id: "mr-237",
+    textRef: "mingren-mr-240",
+    id: "mr-240",
     title: "赵普",
     group: "政治家",
     gradeGroup: "政治家",
@@ -2607,8 +2640,8 @@ window.POEMS_MINGREN = [
     excerpt: "半部论语治天下"
   },
   {
-    textRef: "mingren-mr-238",
-    id: "mr-238",
+    textRef: "mingren-mr-241",
+    id: "mr-241",
     title: "李煜",
     group: "文学家",
     gradeGroup: "文学家",
@@ -2618,30 +2651,30 @@ window.POEMS_MINGREN = [
     excerpt: "词中之帝"
   },
   {
-    textRef: "mingren-mr-239",
-    id: "mr-239",
+    textRef: "mingren-mr-242",
+    id: "mr-242",
     title: "喻皓",
-    group: "建筑家",
-    gradeGroup: "建筑家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "北宋",
     author: "喻皓",
     source: "《喻皓》·生卒年不详，活动于五代末至北宋初（10 世纪）",
     excerpt: "《木经》作者"
   },
   {
-    textRef: "mingren-mr-240",
-    id: "mr-240",
+    textRef: "mingren-mr-243",
+    id: "mr-243",
     title: "范宽",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "宋",
     author: "范宽",
     source: "《范宽》·约 950—约 1032",
     excerpt: "《溪山行旅图》的作者，北宋山水三大家之一"
   },
   {
-    textRef: "mingren-mr-241",
-    id: "mr-241",
+    textRef: "mingren-mr-244",
+    id: "mr-244",
     title: "寇准",
     group: "政治家",
     gradeGroup: "政治家",
@@ -2651,19 +2684,19 @@ window.POEMS_MINGREN = [
     excerpt: "澶渊之盟的定者"
   },
   {
-    textRef: "mingren-mr-242",
-    id: "mr-242",
+    textRef: "mingren-mr-245",
+    id: "mr-245",
     title: "毕昇",
-    group: "工艺家",
-    gradeGroup: "工艺家",
+    group: "科学家",
+    gradeGroup: "科学家",
     dynasty: "北宋",
     author: "毕昇",
     source: "《毕昇》·约 970—1051",
     excerpt: "活字印刷术"
   },
   {
-    textRef: "mingren-mr-243",
-    id: "mr-243",
+    textRef: "mingren-mr-246",
+    id: "mr-246",
     title: "阿维森纳",
     group: "医学家",
     gradeGroup: "医学家",
@@ -2673,8 +2706,8 @@ window.POEMS_MINGREN = [
     excerpt: "《医典》的作者，阿拉伯医学的顶峰"
   },
   {
-    textRef: "mingren-mr-244",
-    id: "mr-244",
+    textRef: "mingren-mr-247",
+    id: "mr-247",
     title: "柳永",
     group: "文学家",
     gradeGroup: "文学家",
@@ -2684,8 +2717,8 @@ window.POEMS_MINGREN = [
     excerpt: "慢词的开山人"
   },
   {
-    textRef: "mingren-mr-245",
-    id: "mr-245",
+    textRef: "mingren-mr-248",
+    id: "mr-248",
     title: "范仲淹",
     group: "文学家",
     gradeGroup: "文学家",
@@ -2695,8 +2728,8 @@ window.POEMS_MINGREN = [
     excerpt: "北宋士大夫的样板"
   },
   {
-    textRef: "mingren-mr-246",
-    id: "mr-246",
+    textRef: "mingren-mr-249",
+    id: "mr-249",
     title: "晏殊",
     group: "文学家",
     gradeGroup: "文学家",
@@ -2706,30 +2739,30 @@ window.POEMS_MINGREN = [
     excerpt: "太平宰相词人"
   },
   {
-    textRef: "mingren-mr-247",
-    id: "mr-247",
+    textRef: "mingren-mr-250",
+    id: "mr-250",
     title: "胡瑗",
-    group: "教育家",
-    gradeGroup: "教育家",
+    group: "思想家",
+    gradeGroup: "思想家",
     dynasty: "北宋",
     author: "胡瑗",
     source: "《胡瑗》·993—1059",
     excerpt: "苏湖教法 · 明体达用"
   },
   {
-    textRef: "mingren-mr-248",
-    id: "mr-248",
+    textRef: "mingren-mr-251",
+    id: "mr-251",
     title: "郭熙",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "宋",
     author: "郭熙",
     source: "《郭熙》·约 1000—约 1090",
     excerpt: "《早春图》与《林泉高致》的作者"
   },
   {
-    textRef: "mingren-mr-249",
-    id: "mr-249",
+    textRef: "mingren-mr-252",
+    id: "mr-252",
     title: "欧阳修",
     group: "文学家",
     gradeGroup: "文学家",
@@ -2739,8 +2772,8 @@ window.POEMS_MINGREN = [
     excerpt: "北宋文坛盟主"
   },
   {
-    textRef: "mingren-mr-250",
-    id: "mr-250",
+    textRef: "mingren-mr-253",
+    id: "mr-253",
     title: "狄青",
     group: "军事家",
     gradeGroup: "军事家",
@@ -2750,8 +2783,8 @@ window.POEMS_MINGREN = [
     excerpt: "面涅将军 · 昆仑关"
   },
   {
-    textRef: "mingren-mr-251",
-    id: "mr-251",
+    textRef: "mingren-mr-254",
+    id: "mr-254",
     title: "苏洵",
     group: "文学家",
     gradeGroup: "文学家",
@@ -2761,8 +2794,8 @@ window.POEMS_MINGREN = [
     excerpt: "三苏之首"
   },
   {
-    textRef: "mingren-mr-252",
-    id: "mr-252",
+    textRef: "mingren-mr-255",
+    id: "mr-255",
     title: "蔡襄",
     group: "书法家",
     gradeGroup: "书法家",
@@ -2772,8 +2805,8 @@ window.POEMS_MINGREN = [
     excerpt: "宋四家之一，《万安桥记》书丹"
   },
   {
-    textRef: "mingren-mr-253",
-    id: "mr-253",
+    textRef: "mingren-mr-256",
+    id: "mr-256",
     title: "曾巩",
     group: "文学家",
     gradeGroup: "文学家",
@@ -2783,19 +2816,30 @@ window.POEMS_MINGREN = [
     excerpt: "唐宋八大家之一"
   },
   {
-    textRef: "mingren-mr-254",
-    id: "mr-254",
+    textRef: "mingren-mr-257",
+    id: "mr-257",
     title: "司马光",
-    group: "史学家",
-    gradeGroup: "史学家",
+    group: "历史学家",
+    gradeGroup: "历史学家",
     dynasty: "北宋",
     author: "司马光",
     source: "《司马光》·1019—1086",
     excerpt: "《资治通鉴》主编"
   },
   {
-    textRef: "mingren-mr-255",
-    id: "mr-255",
+    textRef: "mingren-mr-258",
+    id: "mr-258",
+    title: "张载",
+    group: "思想家",
+    gradeGroup: "思想家",
+    dynasty: "北宋",
+    author: "张载",
+    source: "《张载》·1020—1077",
+    excerpt: "横渠四句 · 关学"
+  },
+  {
+    textRef: "mingren-mr-259",
+    id: "mr-259",
     title: "苏颂",
     group: "天文地理学家",
     gradeGroup: "天文地理学家",
@@ -2805,19 +2849,8 @@ window.POEMS_MINGREN = [
     excerpt: "水运仪象台的建造者，世界最早的天文钟"
   },
   {
-    textRef: "mingren-mr-256",
-    id: "mr-256",
-    title: "张载",
-    group: "教育家",
-    gradeGroup: "教育家",
-    dynasty: "北宋",
-    author: "张载",
-    source: "《张载》·1020—1077",
-    excerpt: "横渠四句 · 关学"
-  },
-  {
-    textRef: "mingren-mr-257",
-    id: "mr-257",
+    textRef: "mingren-mr-260",
+    id: "mr-260",
     title: "王安石",
     group: "政治家",
     gradeGroup: "政治家",
@@ -2827,8 +2860,8 @@ window.POEMS_MINGREN = [
     excerpt: "北宋变法的主持者"
   },
   {
-    textRef: "mingren-mr-258",
-    id: "mr-258",
+    textRef: "mingren-mr-261",
+    id: "mr-261",
     title: "沈括",
     group: "科学家",
     gradeGroup: "科学家",
@@ -2838,30 +2871,30 @@ window.POEMS_MINGREN = [
     excerpt: "《梦溪笔谈》的作者"
   },
   {
-    textRef: "mingren-mr-259",
-    id: "mr-259",
+    textRef: "mingren-mr-262",
+    id: "mr-262",
     title: "程颢",
-    group: "教育家",
-    gradeGroup: "教育家",
+    group: "思想家",
+    gradeGroup: "思想家",
     dynasty: "北宋",
     author: "程颢",
     source: "《程颢》·1032—1085",
     excerpt: "二程之兄"
   },
   {
-    textRef: "mingren-mr-260",
-    id: "mr-260",
+    textRef: "mingren-mr-263",
+    id: "mr-263",
     title: "程颐",
-    group: "教育家",
-    gradeGroup: "教育家",
+    group: "思想家",
+    gradeGroup: "思想家",
     dynasty: "北宋",
     author: "程颐",
     source: "《程颐》·1033—1107",
     excerpt: "程朱理学的源头"
   },
   {
-    textRef: "mingren-mr-261",
-    id: "mr-261",
+    textRef: "mingren-mr-264",
+    id: "mr-264",
     title: "苏轼",
     group: "文学家",
     gradeGroup: "文学家",
@@ -2871,8 +2904,8 @@ window.POEMS_MINGREN = [
     excerpt: "全才文人 · 豪放词的开创者"
   },
   {
-    textRef: "mingren-mr-262",
-    id: "mr-262",
+    textRef: "mingren-mr-265",
+    id: "mr-265",
     title: "晏几道",
     group: "文学家",
     gradeGroup: "文学家",
@@ -2882,8 +2915,8 @@ window.POEMS_MINGREN = [
     excerpt: "《小山词》的作者，婉约词中最深情的一支"
   },
   {
-    textRef: "mingren-mr-263",
-    id: "mr-263",
+    textRef: "mingren-mr-266",
+    id: "mr-266",
     title: "苏辙",
     group: "文学家",
     gradeGroup: "文学家",
@@ -2893,8 +2926,8 @@ window.POEMS_MINGREN = [
     excerpt: "唐宋八大家之一，与父兄并称「三苏」"
   },
   {
-    textRef: "mingren-mr-264",
-    id: "mr-264",
+    textRef: "mingren-mr-267",
+    id: "mr-267",
     title: "黄庭坚",
     group: "文学家",
     gradeGroup: "文学家",
@@ -2904,8 +2937,8 @@ window.POEMS_MINGREN = [
     excerpt: "江西诗派的开山祖师，「点铁成金」"
   },
   {
-    textRef: "mingren-mr-265",
-    id: "mr-265",
+    textRef: "mingren-mr-268",
+    id: "mr-268",
     title: "秦观",
     group: "文学家",
     gradeGroup: "文学家",
@@ -2915,8 +2948,19 @@ window.POEMS_MINGREN = [
     excerpt: "婉约派的正宗，「两情若是久长时」"
   },
   {
-    textRef: "mingren-mr-266",
-    id: "mr-266",
+    textRef: "mingren-mr-269",
+    id: "mr-269",
+    title: "李公麟",
+    group: "美术家",
+    gradeGroup: "美术家",
+    dynasty: "北宋",
+    author: "李公麟",
+    source: "《李公麟》·1049—1106",
+    excerpt: "白描 ·《五马图》"
+  },
+  {
+    textRef: "mingren-mr-270",
+    id: "mr-270",
     title: "米芾",
     group: "书法家",
     gradeGroup: "书法家",
@@ -2926,8 +2970,8 @@ window.POEMS_MINGREN = [
     excerpt: "宋四家之一，刷字如风樯阵马"
   },
   {
-    textRef: "mingren-mr-267",
-    id: "mr-267",
+    textRef: "mingren-mr-271",
+    id: "mr-271",
     title: "贺铸",
     group: "文学家",
     gradeGroup: "文学家",
@@ -2937,8 +2981,8 @@ window.POEMS_MINGREN = [
     excerpt: "「贺梅子」，《青玉案》的作者"
   },
   {
-    textRef: "mingren-mr-268",
-    id: "mr-268",
+    textRef: "mingren-mr-272",
+    id: "mr-272",
     title: "周邦彦",
     group: "文学家",
     gradeGroup: "文学家",
@@ -2948,30 +2992,30 @@ window.POEMS_MINGREN = [
     excerpt: "词家之冠"
   },
   {
-    textRef: "mingren-mr-269",
-    id: "mr-269",
+    textRef: "mingren-mr-273",
+    id: "mr-273",
     title: "李诫",
-    group: "工艺家",
-    gradeGroup: "工艺家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "北宋",
     author: "李诫",
     source: "《李诫》·约 1065—1110",
     excerpt: "《营造法式》的编者"
   },
   {
-    textRef: "mingren-mr-270",
-    id: "mr-270",
+    textRef: "mingren-mr-274",
+    id: "mr-274",
     title: "李唐",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "宋",
     author: "李唐",
     source: "《李唐》·约 1066—约 1150",
     excerpt: "南宋四家的开创者，《万壑松风图》"
   },
   {
-    textRef: "mingren-mr-271",
-    id: "mr-271",
+    textRef: "mingren-mr-275",
+    id: "mr-275",
     title: "陈旉",
     group: "农学家",
     gradeGroup: "农学家",
@@ -2981,19 +3025,19 @@ window.POEMS_MINGREN = [
     excerpt: "地力常新壮"
   },
   {
-    textRef: "mingren-mr-272",
-    id: "mr-272",
+    textRef: "mingren-mr-276",
+    id: "mr-276",
     title: "赵佶",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "宋",
     author: "赵佶",
     source: "《赵佶》·1082—1135",
     excerpt: "宋徽宗，瘦金体与院体画的开创者"
   },
   {
-    textRef: "mingren-mr-273",
-    id: "mr-273",
+    textRef: "mingren-mr-277",
+    id: "mr-277",
     title: "李清照",
     group: "文学家",
     gradeGroup: "文学家",
@@ -3003,19 +3047,30 @@ window.POEMS_MINGREN = [
     excerpt: "婉约词宗 · 千古第一才女"
   },
   {
-    textRef: "mingren-mr-274",
-    id: "mr-274",
+    textRef: "mingren-mr-278",
+    id: "mr-278",
     title: "张择端",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "宋",
     author: "张择端",
     source: "《张择端》·约 1085—约 1145",
     excerpt: "《清明上河图》的作者"
   },
   {
-    textRef: "mingren-mr-275",
-    id: "mr-275",
+    textRef: "mingren-mr-279",
+    id: "mr-279",
+    title: "王希孟",
+    group: "美术家",
+    gradeGroup: "美术家",
+    dynasty: "北宋",
+    author: "王希孟",
+    source: "《王希孟》·约 1096—约 1120",
+    excerpt: "《千里江山图》"
+  },
+  {
+    textRef: "mingren-mr-280",
+    id: "mr-280",
     title: "岳飞",
     group: "军事家",
     gradeGroup: "军事家",
@@ -3025,19 +3080,19 @@ window.POEMS_MINGREN = [
     excerpt: "精忠报国的统帅"
   },
   {
-    textRef: "mingren-mr-276",
-    id: "mr-276",
+    textRef: "mingren-mr-281",
+    id: "mr-281",
     title: "郑樵",
-    group: "史学家",
-    gradeGroup: "史学家",
+    group: "历史学家",
+    gradeGroup: "历史学家",
     dynasty: "宋",
     author: "郑樵",
     source: "《郑樵》·1104—1162",
     excerpt: "《通志》二百卷的作者，会通思想的提倡者"
   },
   {
-    textRef: "mingren-mr-277",
-    id: "mr-277",
+    textRef: "mingren-mr-282",
+    id: "mr-282",
     title: "陆游",
     group: "文学家",
     gradeGroup: "文学家",
@@ -3047,8 +3102,8 @@ window.POEMS_MINGREN = [
     excerpt: "爱国诗人 · 存诗最多的诗人"
   },
   {
-    textRef: "mingren-mr-278",
-    id: "mr-278",
+    textRef: "mingren-mr-283",
+    id: "mr-283",
     title: "范成大",
     group: "文学家",
     gradeGroup: "文学家",
@@ -3058,8 +3113,8 @@ window.POEMS_MINGREN = [
     excerpt: "中兴四大诗人之一"
   },
   {
-    textRef: "mingren-mr-279",
-    id: "mr-279",
+    textRef: "mingren-mr-284",
+    id: "mr-284",
     title: "杨万里",
     group: "文学家",
     gradeGroup: "文学家",
@@ -3069,19 +3124,19 @@ window.POEMS_MINGREN = [
     excerpt: "中兴四大诗人之一"
   },
   {
-    textRef: "mingren-mr-280",
-    id: "mr-280",
+    textRef: "mingren-mr-285",
+    id: "mr-285",
     title: "朱熹",
-    group: "教育家",
-    gradeGroup: "教育家",
+    group: "思想家",
+    gradeGroup: "思想家",
     dynasty: "南宋",
     author: "朱熹",
     source: "《朱熹》·1130—1200",
     excerpt: "理学集大成者"
   },
   {
-    textRef: "mingren-mr-281",
-    id: "mr-281",
+    textRef: "mingren-mr-286",
+    id: "mr-286",
     title: "萨拉丁",
     group: "军事家",
     gradeGroup: "军事家",
@@ -3091,8 +3146,8 @@ window.POEMS_MINGREN = [
     excerpt: "哈丁角 · 收复耶路撒冷"
   },
   {
-    textRef: "mingren-mr-282",
-    id: "mr-282",
+    textRef: "mingren-mr-287",
+    id: "mr-287",
     title: "陆九渊",
     group: "思想家",
     gradeGroup: "思想家",
@@ -3102,8 +3157,8 @@ window.POEMS_MINGREN = [
     excerpt: "心学的开山"
   },
   {
-    textRef: "mingren-mr-283",
-    id: "mr-283",
+    textRef: "mingren-mr-288",
+    id: "mr-288",
     title: "辛弃疾",
     group: "文学家",
     gradeGroup: "文学家",
@@ -3113,19 +3168,19 @@ window.POEMS_MINGREN = [
     excerpt: "豪放词宗 · 词中之龙"
   },
   {
-    textRef: "mingren-mr-284",
-    id: "mr-284",
+    textRef: "mingren-mr-289",
+    id: "mr-289",
     title: "马远",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "宋",
     author: "马远",
     source: "《马远》·约 1140—约 1225",
     excerpt: "「马一角」，南宋四家之一，《踏歌图》"
   },
   {
-    textRef: "mingren-mr-285",
-    id: "mr-285",
+    textRef: "mingren-mr-290",
+    id: "mr-290",
     title: "姜夔",
     group: "文学家",
     gradeGroup: "文学家",
@@ -3135,8 +3190,8 @@ window.POEMS_MINGREN = [
     excerpt: "自度曲的词人"
   },
   {
-    textRef: "mingren-mr-286",
-    id: "mr-286",
+    textRef: "mingren-mr-291",
+    id: "mr-291",
     title: "成吉思汗",
     group: "军事家",
     gradeGroup: "军事家",
@@ -3146,8 +3201,8 @@ window.POEMS_MINGREN = [
     excerpt: "千户制 · 欧亚通道"
   },
   {
-    textRef: "mingren-mr-287",
-    id: "mr-287",
+    textRef: "mingren-mr-292",
+    id: "mr-292",
     title: "斐波那契",
     group: "科学家",
     gradeGroup: "科学家",
@@ -3157,8 +3212,8 @@ window.POEMS_MINGREN = [
     excerpt: "阿拉伯数字与斐波那契数列的传入者"
   },
   {
-    textRef: "mingren-mr-288",
-    id: "mr-288",
+    textRef: "mingren-mr-293",
+    id: "mr-293",
     title: "速不台",
     group: "军事家",
     gradeGroup: "军事家",
@@ -3168,30 +3223,30 @@ window.POEMS_MINGREN = [
     excerpt: "长子西征 · 大纵深迂回"
   },
   {
-    textRef: "mingren-mr-289",
-    id: "mr-289",
+    textRef: "mingren-mr-294",
+    id: "mr-294",
     title: "夏圭",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "宋",
     author: "夏圭",
     source: "《夏圭》·约 1180—约 1230",
     excerpt: "「夏半边」，南宋四家之一，《溪山清远图》"
   },
   {
-    textRef: "mingren-mr-290",
-    id: "mr-290",
+    textRef: "mingren-mr-295",
+    id: "mr-295",
     title: "宋慈",
-    group: "法学家",
-    gradeGroup: "法学家",
+    group: "政治家",
+    gradeGroup: "政治家",
     dynasty: "南宋",
     author: "宋慈",
     source: "《宋慈》·1186—1249",
     excerpt: "《洗冤集录》· 法医学之父"
   },
   {
-    textRef: "mingren-mr-291",
-    id: "mr-291",
+    textRef: "mingren-mr-296",
+    id: "mr-296",
     title: "元好问",
     group: "文学家",
     gradeGroup: "文学家",
@@ -3201,8 +3256,19 @@ window.POEMS_MINGREN = [
     excerpt: "金元之际的文宗"
   },
   {
-    textRef: "mingren-mr-292",
-    id: "mr-292",
+    textRef: "mingren-mr-297",
+    id: "mr-297",
+    title: "梁楷",
+    group: "美术家",
+    gradeGroup: "美术家",
+    dynasty: "南宋",
+    author: "梁楷",
+    source: "《梁楷》·约 1201—约 1264 在世",
+    excerpt: "《泼墨仙人图》· 减笔"
+  },
+  {
+    textRef: "mingren-mr-298",
+    id: "mr-298",
     title: "关汉卿",
     group: "文学家",
     gradeGroup: "文学家",
@@ -3212,8 +3278,8 @@ window.POEMS_MINGREN = [
     excerpt: "元杂剧奠基人 · 曲圣"
   },
   {
-    textRef: "mingren-mr-293",
-    id: "mr-293",
+    textRef: "mingren-mr-299",
+    id: "mr-299",
     title: "阿奎那",
     group: "哲学家",
     gradeGroup: "哲学家",
@@ -3223,8 +3289,8 @@ window.POEMS_MINGREN = [
     excerpt: "经院哲学的顶峰"
   },
   {
-    textRef: "mingren-mr-294",
-    id: "mr-294",
+    textRef: "mingren-mr-300",
+    id: "mr-300",
     title: "白朴",
     group: "文学家",
     gradeGroup: "文学家",
@@ -3234,8 +3300,8 @@ window.POEMS_MINGREN = [
     excerpt: "元曲四大家之一"
   },
   {
-    textRef: "mingren-mr-295",
-    id: "mr-295",
+    textRef: "mingren-mr-301",
+    id: "mr-301",
     title: "王恽",
     group: "农学家",
     gradeGroup: "农学家",
@@ -3245,19 +3311,19 @@ window.POEMS_MINGREN = [
     excerpt: "劝农与水利的谏臣"
   },
   {
-    textRef: "mingren-mr-296",
-    id: "mr-296",
+    textRef: "mingren-mr-302",
+    id: "mr-302",
     title: "郭守敬",
-    group: "水利家",
-    gradeGroup: "水利家",
+    group: "农学家",
+    gradeGroup: "农学家",
     dynasty: "元",
     author: "郭守敬",
     source: "《郭守敬》·1231—1316",
     excerpt: "授时历与水利工程"
   },
   {
-    textRef: "mingren-mr-297",
-    id: "mr-297",
+    textRef: "mingren-mr-303",
+    id: "mr-303",
     title: "文天祥",
     group: "文学家",
     gradeGroup: "文学家",
@@ -3267,19 +3333,19 @@ window.POEMS_MINGREN = [
     excerpt: "《正气歌》与《过零丁洋》的作者，宋末的脊梁"
   },
   {
-    textRef: "mingren-mr-298",
-    id: "mr-298",
+    textRef: "mingren-mr-304",
+    id: "mr-304",
     title: "黄道婆",
-    group: "工艺家",
-    gradeGroup: "工艺家",
+    group: "科学家",
+    gradeGroup: "科学家",
     dynasty: "元",
     author: "黄道婆",
     source: "《黄道婆》·约 1245—约 1330",
     excerpt: "棉纺织技术的推广者"
   },
   {
-    textRef: "mingren-mr-299",
-    id: "mr-299",
+    textRef: "mingren-mr-305",
+    id: "mr-305",
     title: "鲜于枢",
     group: "书法家",
     gradeGroup: "书法家",
@@ -3289,8 +3355,8 @@ window.POEMS_MINGREN = [
     excerpt: "元代书法与赵孟頫并称「二雄」"
   },
   {
-    textRef: "mingren-mr-300",
-    id: "mr-300",
+    textRef: "mingren-mr-306",
+    id: "mr-306",
     title: "马致远",
     group: "文学家",
     gradeGroup: "文学家",
@@ -3300,30 +3366,30 @@ window.POEMS_MINGREN = [
     excerpt: "秋思之祖"
   },
   {
-    textRef: "mingren-mr-301",
-    id: "mr-301",
+    textRef: "mingren-mr-307",
+    id: "mr-307",
     title: "马端临",
-    group: "史学家",
-    gradeGroup: "史学家",
+    group: "历史学家",
+    gradeGroup: "历史学家",
     dynasty: "元",
     author: "马端临",
     source: "《马端临》·约 1254—1323",
     excerpt: "《文献通考》的作者，二十四考的开山"
   },
   {
-    textRef: "mingren-mr-302",
-    id: "mr-302",
+    textRef: "mingren-mr-308",
+    id: "mr-308",
     title: "赵孟頫",
-    group: "书法家",
-    gradeGroup: "书法家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "元",
     author: "赵孟頫",
     source: "《赵孟頫》·1254—1322",
-    excerpt: "元人冠冕，复古书风的开创，赵体楷书的创立者"
+    excerpt: "赵体 ·《鹊华秋色图》"
   },
   {
-    textRef: "mingren-mr-303",
-    id: "mr-303",
+    textRef: "mingren-mr-309",
+    id: "mr-309",
     title: "睢景臣",
     group: "戏曲家",
     gradeGroup: "戏曲家",
@@ -3333,8 +3399,8 @@ window.POEMS_MINGREN = [
     excerpt: "《高祖还乡》套数，散曲讽刺的代表"
   },
   {
-    textRef: "mingren-mr-304",
-    id: "mr-304",
+    textRef: "mingren-mr-310",
+    id: "mr-310",
     title: "郑光祖",
     group: "戏曲家",
     gradeGroup: "戏曲家",
@@ -3344,8 +3410,8 @@ window.POEMS_MINGREN = [
     excerpt: "元曲四大家之一，《倩女离魂》的作者"
   },
   {
-    textRef: "mingren-mr-305",
-    id: "mr-305",
+    textRef: "mingren-mr-311",
+    id: "mr-311",
     title: "但丁",
     group: "文学家",
     gradeGroup: "文学家",
@@ -3355,30 +3421,30 @@ window.POEMS_MINGREN = [
     excerpt: "《神曲》，现代意大利语的奠基"
   },
   {
-    textRef: "mingren-mr-306",
-    id: "mr-306",
+    textRef: "mingren-mr-312",
+    id: "mr-312",
     title: "乔托",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "意大利",
     author: "乔托",
     source: "《乔托》·约 1267—1337",
     excerpt: "文艺复兴绘画的先声，壁画中的人情与透视"
   },
   {
-    textRef: "mingren-mr-307",
-    id: "mr-307",
+    textRef: "mingren-mr-313",
+    id: "mr-313",
     title: "黄公望",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "元",
     author: "黄公望",
     source: "《黄公望》·1269—1354",
     excerpt: "《富春山居图》的作者，元四家之首"
   },
   {
-    textRef: "mingren-mr-308",
-    id: "mr-308",
+    textRef: "mingren-mr-314",
+    id: "mr-314",
     title: "张养浩",
     group: "戏曲家",
     gradeGroup: "戏曲家",
@@ -3388,8 +3454,8 @@ window.POEMS_MINGREN = [
     excerpt: "《山坡羊·潼关怀古》的作者，以散曲写民生"
   },
   {
-    textRef: "mingren-mr-309",
-    id: "mr-309",
+    textRef: "mingren-mr-315",
+    id: "mr-315",
     title: "王祯",
     group: "农学家",
     gradeGroup: "农学家",
@@ -3399,19 +3465,19 @@ window.POEMS_MINGREN = [
     excerpt: "《农书》的作者，木活字印刷的实践者"
   },
   {
-    textRef: "mingren-mr-310",
-    id: "mr-310",
+    textRef: "mingren-mr-316",
+    id: "mr-316",
     title: "吴镇",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "元",
     author: "吴镇",
     source: "《吴镇》·1280—1354",
     excerpt: "元四家之一，渔父题材与墨竹的名家"
   },
   {
-    textRef: "mingren-mr-311",
-    id: "mr-311",
+    textRef: "mingren-mr-317",
+    id: "mr-317",
     title: "乔吉",
     group: "戏曲家",
     gradeGroup: "戏曲家",
@@ -3421,8 +3487,8 @@ window.POEMS_MINGREN = [
     excerpt: "元散曲的清丽一派，《两世姻缘》作者"
   },
   {
-    textRef: "mingren-mr-312",
-    id: "mr-312",
+    textRef: "mingren-mr-318",
+    id: "mr-318",
     title: "王实甫",
     group: "戏曲家",
     gradeGroup: "戏曲家",
@@ -3432,8 +3498,8 @@ window.POEMS_MINGREN = [
     excerpt: "《西厢记》作者"
   },
   {
-    textRef: "mingren-mr-313",
-    id: "mr-313",
+    textRef: "mingren-mr-319",
+    id: "mr-319",
     title: "施耐庵",
     group: "文学家",
     gradeGroup: "文学家",
@@ -3443,19 +3509,19 @@ window.POEMS_MINGREN = [
     excerpt: "《水浒传》的作者，白话长篇小说的开山"
   },
   {
-    textRef: "mingren-mr-314",
-    id: "mr-314",
+    textRef: "mingren-mr-320",
+    id: "mr-320",
     title: "倪瓒",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "元",
     author: "倪瓒",
     source: "《倪瓒》·1301—1374",
     excerpt: "元四家之一，简淡荒寒的逸品极致"
   },
   {
-    textRef: "mingren-mr-315",
-    id: "mr-315",
+    textRef: "mingren-mr-321",
+    id: "mr-321",
     title: "彼特拉克",
     group: "文学家",
     gradeGroup: "文学家",
@@ -3465,8 +3531,8 @@ window.POEMS_MINGREN = [
     excerpt: "「人文主义之父」，《歌集》与十四行诗"
   },
   {
-    textRef: "mingren-mr-316",
-    id: "mr-316",
+    textRef: "mingren-mr-322",
+    id: "mr-322",
     title: "高明",
     group: "戏曲家",
     gradeGroup: "戏曲家",
@@ -3476,8 +3542,8 @@ window.POEMS_MINGREN = [
     excerpt: "《琵琶记》的作者，「南戏之祖」"
   },
   {
-    textRef: "mingren-mr-317",
-    id: "mr-317",
+    textRef: "mingren-mr-323",
+    id: "mr-323",
     title: "薄伽丘",
     group: "文学家",
     gradeGroup: "文学家",
@@ -3487,8 +3553,8 @@ window.POEMS_MINGREN = [
     excerpt: "《十日谈》，欧洲近代小说的开端"
   },
   {
-    textRef: "mingren-mr-318",
-    id: "mr-318",
+    textRef: "mingren-mr-324",
+    id: "mr-324",
     title: "罗贯中",
     group: "文学家",
     gradeGroup: "文学家",
@@ -3498,8 +3564,8 @@ window.POEMS_MINGREN = [
     excerpt: "章回小说开创者"
   },
   {
-    textRef: "mingren-mr-319",
-    id: "mr-319",
+    textRef: "mingren-mr-325",
+    id: "mr-325",
     title: "徐达",
     group: "军事家",
     gradeGroup: "军事家",
@@ -3509,8 +3575,8 @@ window.POEMS_MINGREN = [
     excerpt: "明开国第一功臣"
   },
   {
-    textRef: "mingren-mr-320",
-    id: "mr-320",
+    textRef: "mingren-mr-326",
+    id: "mr-326",
     title: "帖木儿",
     group: "军事家",
     gradeGroup: "军事家",
@@ -3520,8 +3586,8 @@ window.POEMS_MINGREN = [
     excerpt: "安卡拉之战 · 未尝一败"
   },
   {
-    textRef: "mingren-mr-321",
-    id: "mr-321",
+    textRef: "mingren-mr-327",
+    id: "mr-327",
     title: "乔叟",
     group: "文学家",
     gradeGroup: "文学家",
@@ -3531,30 +3597,30 @@ window.POEMS_MINGREN = [
     excerpt: "《坎特伯雷故事集》，英语诗歌的奠基"
   },
   {
-    textRef: "mingren-mr-322",
-    id: "mr-322",
+    textRef: "mingren-mr-328",
+    id: "mr-328",
     title: "郑和",
-    group: "外交家",
-    gradeGroup: "外交家",
+    group: "政治家",
+    gradeGroup: "政治家",
     dynasty: "明",
     author: "郑和",
     source: "《郑和》·1371—1433",
     excerpt: "七下西洋"
   },
   {
-    textRef: "mingren-mr-323",
-    id: "mr-323",
+    textRef: "mingren-mr-329",
+    id: "mr-329",
     title: "布鲁内莱斯基",
-    group: "建筑家",
-    gradeGroup: "建筑家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "意大利",
     author: "布鲁内莱斯基",
     source: "《布鲁内莱斯基》·1377—1446",
     excerpt: "佛罗伦萨大教堂穹顶，文艺复兴建筑的奠基"
   },
   {
-    textRef: "mingren-mr-324",
-    id: "mr-324",
+    textRef: "mingren-mr-330",
+    id: "mr-330",
     title: "于谦",
     group: "军事家",
     gradeGroup: "军事家",
@@ -3564,74 +3630,85 @@ window.POEMS_MINGREN = [
     excerpt: "北京保卫战"
   },
   {
-    textRef: "mingren-mr-325",
-    id: "mr-325",
+    textRef: "mingren-mr-331",
+    id: "mr-331",
     title: "蒯祥",
-    group: "建筑家",
-    gradeGroup: "建筑家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "明",
     author: "蒯祥",
     source: "《蒯祥》·1398—1481",
     excerpt: "天安门的设计者"
   },
   {
-    textRef: "mingren-mr-326",
-    id: "mr-326",
+    textRef: "mingren-mr-332",
+    id: "mr-332",
     title: "阿尔伯蒂",
-    group: "建筑家",
-    gradeGroup: "建筑家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "意大利",
     author: "阿尔伯蒂",
     source: "《阿尔伯蒂》·1404—1472",
     excerpt: "《论建筑》，文艺复兴建筑理论的奠基"
   },
   {
-    textRef: "mingren-mr-327",
-    id: "mr-327",
+    textRef: "mingren-mr-333",
+    id: "mr-333",
+    title: "邱濬",
+    group: "经济学家",
+    gradeGroup: "经济学家",
+    dynasty: "明",
+    author: "邱濬",
+    source: "《邱濬》·1421—1495",
+    excerpt: "《大学衍义补》"
+  },
+  {
+    textRef: "mingren-mr-334",
+    id: "mr-334",
     title: "沈周",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "明",
     author: "沈周",
     source: "《沈周》·1427—1509",
     excerpt: "吴门画派的开创者，明四家之首"
   },
   {
-    textRef: "mingren-mr-328",
-    id: "mr-328",
+    textRef: "mingren-mr-335",
+    id: "mr-335",
     title: "波提切利",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "意大利",
     author: "波提切利",
     source: "《波提切利》·1445—1510",
     excerpt: "《维纳斯的诞生》《春》"
   },
   {
-    textRef: "mingren-mr-329",
-    id: "mr-329",
+    textRef: "mingren-mr-336",
+    id: "mr-336",
     title: "博斯",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "荷兰",
     author: "博斯",
     source: "《博斯》·约 1450—1516",
     excerpt: "《人间乐园》，超现实想象的五百年前身"
   },
   {
-    textRef: "mingren-mr-330",
-    id: "mr-330",
+    textRef: "mingren-mr-337",
+    id: "mr-337",
     title: "达·芬奇",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "意大利",
     author: "达·芬奇",
     source: "《达·芬奇》·1452—1519",
     excerpt: "《蒙娜丽莎》《最后的晚餐》，文艺复兴的万能之人"
   },
   {
-    textRef: "mingren-mr-331",
-    id: "mr-331",
+    textRef: "mingren-mr-338",
+    id: "mr-338",
     title: "马基雅维利",
     group: "政治家",
     gradeGroup: "政治家",
@@ -3641,41 +3718,41 @@ window.POEMS_MINGREN = [
     excerpt: "近代政治学的开山"
   },
   {
-    textRef: "mingren-mr-332",
-    id: "mr-332",
+    textRef: "mingren-mr-339",
+    id: "mr-339",
     title: "文徵明",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "明",
     author: "文徵明",
     source: "《文徵明》·1470—1559",
     excerpt: "明四家之一，诗文书画四绝"
   },
   {
-    textRef: "mingren-mr-333",
-    id: "mr-333",
+    textRef: "mingren-mr-340",
+    id: "mr-340",
     title: "唐寅",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "明",
     author: "唐寅",
     source: "《唐寅》·1470—1524",
     excerpt: "明四家之一，「江南第一风流才子」"
   },
   {
-    textRef: "mingren-mr-334",
-    id: "mr-334",
+    textRef: "mingren-mr-341",
+    id: "mr-341",
     title: "丢勒",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "德国",
     author: "丢勒",
     source: "《丢勒》·1471—1528",
     excerpt: "版画与油画的北方针尖，《忧郁 I》《祈祷之手》"
   },
   {
-    textRef: "mingren-mr-335",
-    id: "mr-335",
+    textRef: "mingren-mr-342",
+    id: "mr-342",
     title: "王守仁",
     group: "思想家",
     gradeGroup: "思想家",
@@ -3685,8 +3762,8 @@ window.POEMS_MINGREN = [
     excerpt: "心学集大成者"
   },
   {
-    textRef: "mingren-mr-336",
-    id: "mr-336",
+    textRef: "mingren-mr-343",
+    id: "mr-343",
     title: "哥白尼",
     group: "天文地理学家",
     gradeGroup: "天文地理学家",
@@ -3696,52 +3773,52 @@ window.POEMS_MINGREN = [
     excerpt: "日心说 · 《天体运行论》"
   },
   {
-    textRef: "mingren-mr-337",
-    id: "mr-337",
+    textRef: "mingren-mr-344",
+    id: "mr-344",
     title: "米开朗琪罗",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "意大利",
     author: "米开朗琪罗",
     source: "《米开朗琪罗》·1475—1564",
     excerpt: "《大卫》《创世记》天顶画，雕塑与绘画的双峰"
   },
   {
-    textRef: "mingren-mr-338",
-    id: "mr-338",
+    textRef: "mingren-mr-345",
+    id: "mr-345",
     title: "乔尔乔内",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "意大利",
     author: "乔尔乔内",
     source: "《乔尔乔内》·约 1477—1510",
     excerpt: "《暴风雨》《沉睡的维纳斯》，威尼斯画派的先驱"
   },
   {
-    textRef: "mingren-mr-339",
-    id: "mr-339",
+    textRef: "mingren-mr-346",
+    id: "mr-346",
     title: "拉斐尔",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "意大利",
     author: "拉斐尔",
     source: "《拉斐尔》·1483—1520",
     excerpt: "《雅典学院》，文艺复兴三杰中最优美的一位"
   },
   {
-    textRef: "mingren-mr-340",
-    id: "mr-340",
+    textRef: "mingren-mr-347",
+    id: "mr-347",
     title: "提香",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "意大利",
     author: "提香",
     source: "《提香》·约 1488—1576",
     excerpt: "威尼斯画派的领袖，色彩的大师"
   },
   {
-    textRef: "mingren-mr-341",
-    id: "mr-341",
+    textRef: "mingren-mr-348",
+    id: "mr-348",
     title: "帕拉塞尔苏斯",
     group: "医学家",
     gradeGroup: "医学家",
@@ -3751,8 +3828,8 @@ window.POEMS_MINGREN = [
     excerpt: "医药化学的开创，把化学引入治疗"
   },
   {
-    textRef: "mingren-mr-342",
-    id: "mr-342",
+    textRef: "mingren-mr-349",
+    id: "mr-349",
     title: "拉伯雷",
     group: "文学家",
     gradeGroup: "文学家",
@@ -3762,19 +3839,19 @@ window.POEMS_MINGREN = [
     excerpt: "《巨人传》，文艺复兴的狂欢精神"
   },
   {
-    textRef: "mingren-mr-343",
-    id: "mr-343",
+    textRef: "mingren-mr-350",
+    id: "mr-350",
     title: "仇英",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "明",
     author: "仇英",
     source: "《仇英》·约 1498—约 1552",
     excerpt: "明四家之一，以工笔重彩与界画见长"
   },
   {
-    textRef: "mingren-mr-344",
-    id: "mr-344",
+    textRef: "mingren-mr-351",
+    id: "mr-351",
     title: "吴承恩",
     group: "文学家",
     gradeGroup: "文学家",
@@ -3784,8 +3861,8 @@ window.POEMS_MINGREN = [
     excerpt: "《西游记》作者"
   },
   {
-    textRef: "mingren-mr-345",
-    id: "mr-345",
+    textRef: "mingren-mr-352",
+    id: "mr-352",
     title: "卡尔达诺",
     group: "科学家",
     gradeGroup: "科学家",
@@ -3795,8 +3872,8 @@ window.POEMS_MINGREN = [
     excerpt: "三次、四次方程解法的公布者，《大衍术》"
   },
   {
-    textRef: "mingren-mr-346",
-    id: "mr-346",
+    textRef: "mingren-mr-353",
+    id: "mr-353",
     title: "归有光",
     group: "文学家",
     gradeGroup: "文学家",
@@ -3806,19 +3883,19 @@ window.POEMS_MINGREN = [
     excerpt: "唐宋派古文大家，《项脊轩志》的作者"
   },
   {
-    textRef: "mingren-mr-347",
-    id: "mr-347",
+    textRef: "mingren-mr-354",
+    id: "mr-354",
     title: "帕拉第奥",
-    group: "建筑家",
-    gradeGroup: "建筑家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "意大利",
     author: "帕拉第奥",
     source: "《帕拉第奥》·1508—1580",
     excerpt: "《建筑四书》，「帕拉第奥式」影响欧美三百年"
   },
   {
-    textRef: "mingren-mr-348",
-    id: "mr-348",
+    textRef: "mingren-mr-355",
+    id: "mr-355",
     title: "维萨里",
     group: "生物学家",
     gradeGroup: "生物学家",
@@ -3828,8 +3905,8 @@ window.POEMS_MINGREN = [
     excerpt: "《人体的构造》，近代解剖学的奠基"
   },
   {
-    textRef: "mingren-mr-349",
-    id: "mr-349",
+    textRef: "mingren-mr-356",
+    id: "mr-356",
     title: "李时珍",
     group: "医学家",
     gradeGroup: "医学家",
@@ -3839,41 +3916,41 @@ window.POEMS_MINGREN = [
     excerpt: "《本草纲目》作者"
   },
   {
-    textRef: "mingren-mr-350",
-    id: "mr-350",
+    textRef: "mingren-mr-357",
+    id: "mr-357",
     title: "丁托列托",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "意大利",
     author: "丁托列托",
     source: "《丁托列托》·1518—1594",
     excerpt: "《最后的晚餐》，威尼斯画派的最后一位巨人"
   },
   {
-    textRef: "mingren-mr-351",
-    id: "mr-351",
-    title: "徐渭",
-    group: "文学家",
-    gradeGroup: "文学家",
-    dynasty: "明",
-    author: "徐渭",
-    source: "《徐渭》·1521—1593",
-    excerpt: "诗文书画俱绝的奇才，写意花鸟的开山"
-  },
-  {
-    textRef: "mingren-mr-352",
-    id: "mr-352",
+    textRef: "mingren-mr-358",
+    id: "mr-358",
     title: "潘季驯",
-    group: "水利家",
-    gradeGroup: "水利家",
+    group: "农学家",
+    gradeGroup: "农学家",
     dynasty: "明",
     author: "潘季驯",
     source: "《潘季驯》·1521—1595",
     excerpt: "束水攻沙"
   },
   {
-    textRef: "mingren-mr-353",
-    id: "mr-353",
+    textRef: "mingren-mr-359",
+    id: "mr-359",
+    title: "徐渭",
+    group: "美术家",
+    gradeGroup: "美术家",
+    dynasty: "明",
+    author: "徐渭",
+    source: "《徐渭》·1521—1593",
+    excerpt: "《墨葡萄图》· 大写意"
+  },
+  {
+    textRef: "mingren-mr-360",
+    id: "mr-360",
     title: "张居正",
     group: "政治家",
     gradeGroup: "政治家",
@@ -3883,19 +3960,19 @@ window.POEMS_MINGREN = [
     excerpt: "万历中兴的推手"
   },
   {
-    textRef: "mingren-mr-354",
-    id: "mr-354",
+    textRef: "mingren-mr-361",
+    id: "mr-361",
     title: "勃鲁盖尔",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "荷兰",
     author: "勃鲁盖尔",
     source: "《勃鲁盖尔》·约 1525—1569",
     excerpt: "《雪中猎人》《农民的婚礼》，风景与民俗画的巨匠"
   },
   {
-    textRef: "mingren-mr-355",
-    id: "mr-355",
+    textRef: "mingren-mr-362",
+    id: "mr-362",
     title: "李贽",
     group: "思想家",
     gradeGroup: "思想家",
@@ -3905,8 +3982,8 @@ window.POEMS_MINGREN = [
     excerpt: "被下狱自刎的思想者"
   },
   {
-    textRef: "mingren-mr-356",
-    id: "mr-356",
+    textRef: "mingren-mr-363",
+    id: "mr-363",
     title: "戚继光",
     group: "军事家",
     gradeGroup: "军事家",
@@ -3916,8 +3993,8 @@ window.POEMS_MINGREN = [
     excerpt: "抗倭名将 · 练兵大师"
   },
   {
-    textRef: "mingren-mr-357",
-    id: "mr-357",
+    textRef: "mingren-mr-364",
+    id: "mr-364",
     title: "蒙田",
     group: "文学家",
     gradeGroup: "文学家",
@@ -3927,8 +4004,19 @@ window.POEMS_MINGREN = [
     excerpt: "《随笔集》，「我知道什么呢？」"
   },
   {
-    textRef: "mingren-mr-358",
-    id: "mr-358",
+    textRef: "mingren-mr-365",
+    id: "mr-365",
+    title: "朱载堉",
+    group: "音乐家",
+    gradeGroup: "音乐家",
+    dynasty: "明",
+    author: "朱载堉",
+    source: "《朱载堉》·1536—1611",
+    excerpt: "十二平均律的创立者"
+  },
+  {
+    textRef: "mingren-mr-366",
+    id: "mr-366",
     title: "韦达",
     group: "科学家",
     gradeGroup: "科学家",
@@ -3938,19 +4026,19 @@ window.POEMS_MINGREN = [
     excerpt: "代数符号化的开创，「韦达定理」"
   },
   {
-    textRef: "mingren-mr-359",
-    id: "mr-359",
+    textRef: "mingren-mr-367",
+    id: "mr-367",
     title: "格列柯",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "希腊 / 西班牙",
     author: "格列柯",
     source: "《格列柯》·1541—1614",
     excerpt: "《奥尔加斯伯爵的葬礼》，扭曲拉长的人物与火焰般的色彩"
   },
   {
-    textRef: "mingren-mr-360",
-    id: "mr-360",
+    textRef: "mingren-mr-368",
+    id: "mr-368",
     title: "第谷·布拉赫",
     group: "天文地理学家",
     gradeGroup: "天文地理学家",
@@ -3960,8 +4048,8 @@ window.POEMS_MINGREN = [
     excerpt: "近代天文观测的最精确者，二十年的观测记录"
   },
   {
-    textRef: "mingren-mr-361",
-    id: "mr-361",
+    textRef: "mingren-mr-369",
+    id: "mr-369",
     title: "塞万提斯",
     group: "文学家",
     gradeGroup: "文学家",
@@ -3971,8 +4059,8 @@ window.POEMS_MINGREN = [
     excerpt: "《堂吉诃德》，反骑士小说的骑士小说"
   },
   {
-    textRef: "mingren-mr-362",
-    id: "mr-362",
+    textRef: "mingren-mr-370",
+    id: "mr-370",
     title: "汤显祖",
     group: "戏曲家",
     gradeGroup: "戏曲家",
@@ -3982,19 +4070,19 @@ window.POEMS_MINGREN = [
     excerpt: "《牡丹亭》作者 · 东方莎士比亚"
   },
   {
-    textRef: "mingren-mr-363",
-    id: "mr-363",
+    textRef: "mingren-mr-371",
+    id: "mr-371",
     title: "董其昌",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "明",
     author: "董其昌",
     source: "《董其昌》·1555—1636",
     excerpt: "松江画派的领袖，南北宗论的提出者"
   },
   {
-    textRef: "mingren-mr-364",
-    id: "mr-364",
+    textRef: "mingren-mr-372",
+    id: "mr-372",
     title: "培根",
     group: "哲学家",
     gradeGroup: "哲学家",
@@ -4004,8 +4092,8 @@ window.POEMS_MINGREN = [
     excerpt: "「知识就是力量」，近代归纳法的奠基"
   },
   {
-    textRef: "mingren-mr-365",
-    id: "mr-365",
+    textRef: "mingren-mr-373",
+    id: "mr-373",
     title: "徐光启",
     group: "农学家",
     gradeGroup: "农学家",
@@ -4015,8 +4103,8 @@ window.POEMS_MINGREN = [
     excerpt: "中西会通第一人"
   },
   {
-    textRef: "mingren-mr-366",
-    id: "mr-366",
+    textRef: "mingren-mr-374",
+    id: "mr-374",
     title: "莎士比亚",
     group: "文学家",
     gradeGroup: "文学家",
@@ -4026,8 +4114,8 @@ window.POEMS_MINGREN = [
     excerpt: "三十七部剧作与一百五十余首十四行诗"
   },
   {
-    textRef: "mingren-mr-367",
-    id: "mr-367",
+    textRef: "mingren-mr-375",
+    id: "mr-375",
     title: "伽利略",
     group: "科学家",
     gradeGroup: "科学家",
@@ -4037,8 +4125,19 @@ window.POEMS_MINGREN = [
     excerpt: "近代科学之父 · 望远镜"
   },
   {
-    textRef: "mingren-mr-368",
-    id: "mr-368",
+    textRef: "mingren-mr-376",
+    id: "mr-376",
+    title: "蒙特威尔第",
+    group: "音乐家",
+    gradeGroup: "音乐家",
+    dynasty: "意大利",
+    author: "蒙特威尔第",
+    source: "《蒙特威尔第》·1567—1643",
+    excerpt: "歌剧之父"
+  },
+  {
+    textRef: "mingren-mr-377",
+    id: "mr-377",
     title: "袁宏道",
     group: "文学家",
     gradeGroup: "文学家",
@@ -4048,8 +4147,8 @@ window.POEMS_MINGREN = [
     excerpt: "公安派的领袖，「独抒性灵，不拘格套」"
   },
   {
-    textRef: "mingren-mr-369",
-    id: "mr-369",
+    textRef: "mingren-mr-378",
+    id: "mr-378",
     title: "开普勒",
     group: "科学家",
     gradeGroup: "科学家",
@@ -4059,8 +4158,8 @@ window.POEMS_MINGREN = [
     excerpt: "行星运动三定律，《新天文学》"
   },
   {
-    textRef: "mingren-mr-370",
-    id: "mr-370",
+    textRef: "mingren-mr-379",
+    id: "mr-379",
     title: "冯梦龙",
     group: "文学家",
     gradeGroup: "文学家",
@@ -4070,30 +4169,30 @@ window.POEMS_MINGREN = [
     excerpt: "「三言」的编纂者，话本小说的总结人"
   },
   {
-    textRef: "mingren-mr-371",
-    id: "mr-371",
+    textRef: "mingren-mr-380",
+    id: "mr-380",
     title: "鲁本斯",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "比利时",
     author: "鲁本斯",
     source: "《鲁本斯》·1577—1640",
     excerpt: "巴洛克绘画的巨匠，《劫夺吕西普的女儿》"
   },
   {
-    textRef: "mingren-mr-372",
-    id: "mr-372",
+    textRef: "mingren-mr-381",
+    id: "mr-381",
     title: "哈维",
-    group: "生物学家",
-    gradeGroup: "生物学家",
+    group: "科学家",
+    gradeGroup: "科学家",
     dynasty: "英国",
     author: "哈维",
     source: "《哈维》·1578—1657",
     excerpt: "血液循环的发现者"
   },
   {
-    textRef: "mingren-mr-373",
-    id: "mr-373",
+    textRef: "mingren-mr-382",
+    id: "mr-382",
     title: "凌濛初",
     group: "文学家",
     gradeGroup: "文学家",
@@ -4103,19 +4202,19 @@ window.POEMS_MINGREN = [
     excerpt: "「二拍」的作者，拟话本的殿军"
   },
   {
-    textRef: "mingren-mr-374",
-    id: "mr-374",
+    textRef: "mingren-mr-383",
+    id: "mr-383",
     title: "格劳秀斯",
-    group: "法学家",
-    gradeGroup: "法学家",
+    group: "政治家",
+    gradeGroup: "政治家",
     dynasty: "荷兰",
     author: "格劳秀斯",
     source: "《格劳秀斯》·1583—1645",
     excerpt: "国际法之父"
   },
   {
-    textRef: "mingren-mr-375",
-    id: "mr-375",
+    textRef: "mingren-mr-384",
+    id: "mr-384",
     title: "袁崇焕",
     group: "军事家",
     gradeGroup: "军事家",
@@ -4125,8 +4224,8 @@ window.POEMS_MINGREN = [
     excerpt: "宁远大捷 · 自坏长城"
   },
   {
-    textRef: "mingren-mr-376",
-    id: "mr-376",
+    textRef: "mingren-mr-385",
+    id: "mr-385",
     title: "黎塞留",
     group: "政治家",
     gradeGroup: "政治家",
@@ -4136,8 +4235,8 @@ window.POEMS_MINGREN = [
     excerpt: "国家理由 · 均势外交"
   },
   {
-    textRef: "mingren-mr-377",
-    id: "mr-377",
+    textRef: "mingren-mr-386",
+    id: "mr-386",
     title: "宋应星",
     group: "农学家",
     gradeGroup: "农学家",
@@ -4147,8 +4246,8 @@ window.POEMS_MINGREN = [
     excerpt: "中国十七世纪的工艺百科全书"
   },
   {
-    textRef: "mingren-mr-378",
-    id: "mr-378",
+    textRef: "mingren-mr-387",
+    id: "mr-387",
     title: "徐霞客",
     group: "天文地理学家",
     gradeGroup: "天文地理学家",
@@ -4158,19 +4257,19 @@ window.POEMS_MINGREN = [
     excerpt: "《徐霞客游记》的作者，石灰岩地貌的最早系统记述"
   },
   {
-    textRef: "mingren-mr-379",
-    id: "mr-379",
+    textRef: "mingren-mr-388",
+    id: "mr-388",
     title: "谈迁",
-    group: "史学家",
-    gradeGroup: "史学家",
+    group: "历史学家",
+    gradeGroup: "历史学家",
     dynasty: "清",
     author: "谈迁",
     source: "《谈迁》·1594—1658",
     excerpt: "以三十年之力著《国榷》，稿失而复著"
   },
   {
-    textRef: "mingren-mr-380",
-    id: "mr-380",
+    textRef: "mingren-mr-389",
+    id: "mr-389",
     title: "古斯塔夫二世",
     group: "军事家",
     gradeGroup: "军事家",
@@ -4180,8 +4279,8 @@ window.POEMS_MINGREN = [
     excerpt: "北方雄狮 · 近代军制的起点"
   },
   {
-    textRef: "mingren-mr-381",
-    id: "mr-381",
+    textRef: "mingren-mr-390",
+    id: "mr-390",
     title: "笛卡尔",
     group: "哲学家",
     gradeGroup: "哲学家",
@@ -4191,19 +4290,19 @@ window.POEMS_MINGREN = [
     excerpt: "「我思故我在」，解析几何的创立者"
   },
   {
-    textRef: "mingren-mr-382",
-    id: "mr-382",
+    textRef: "mingren-mr-391",
+    id: "mr-391",
     title: "陈洪绶",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "明",
     author: "陈洪绶",
     source: "《陈洪绶》·1598—1652",
     excerpt: "人物画的高峰，《水浒叶子》与《西厢记》插图"
   },
   {
-    textRef: "mingren-mr-383",
-    id: "mr-383",
+    textRef: "mingren-mr-392",
+    id: "mr-392",
     title: "克伦威尔",
     group: "政治家",
     gradeGroup: "政治家",
@@ -4213,30 +4312,30 @@ window.POEMS_MINGREN = [
     excerpt: "共和实验的执行者"
   },
   {
-    textRef: "mingren-mr-384",
-    id: "mr-384",
+    textRef: "mingren-mr-393",
+    id: "mr-393",
     title: "凡·戴克",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "比利时",
     author: "凡·戴克",
     source: "《凡·戴克》·1599—1641",
     excerpt: "英国宫廷肖像画的奠基者"
   },
   {
-    textRef: "mingren-mr-385",
-    id: "mr-385",
+    textRef: "mingren-mr-394",
+    id: "mr-394",
     title: "委拉斯开兹",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "西班牙",
     author: "委拉斯开兹",
     source: "《委拉斯开兹》·1599—1660",
     excerpt: "《宫娥》《纺织女》，西班牙黄金时代的宫廷画家"
   },
   {
-    textRef: "mingren-mr-386",
-    id: "mr-386",
+    textRef: "mingren-mr-395",
+    id: "mr-395",
     title: "费马",
     group: "科学家",
     gradeGroup: "科学家",
@@ -4246,19 +4345,19 @@ window.POEMS_MINGREN = [
     excerpt: "「费马大定理」与解析几何的先驱，业余数学家之王"
   },
   {
-    textRef: "mingren-mr-387",
-    id: "mr-387",
+    textRef: "mingren-mr-396",
+    id: "mr-396",
     title: "伦勃朗",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "荷兰",
     author: "伦勃朗",
     source: "《伦勃朗》·1606—1669",
     excerpt: "《夜巡》《自画像》系列，光与影的心理肖像"
   },
   {
-    textRef: "mingren-mr-388",
-    id: "mr-388",
+    textRef: "mingren-mr-397",
+    id: "mr-397",
     title: "密尔顿",
     group: "文学家",
     gradeGroup: "文学家",
@@ -4268,8 +4367,8 @@ window.POEMS_MINGREN = [
     excerpt: "《失乐园》，失明后口述完成"
   },
   {
-    textRef: "mingren-mr-389",
-    id: "mr-389",
+    textRef: "mingren-mr-398",
+    id: "mr-398",
     title: "黄宗羲",
     group: "思想家",
     gradeGroup: "思想家",
@@ -4279,8 +4378,8 @@ window.POEMS_MINGREN = [
     excerpt: "中国思想启蒙的先驱"
   },
   {
-    textRef: "mingren-mr-390",
-    id: "mr-390",
+    textRef: "mingren-mr-399",
+    id: "mr-399",
     title: "李渔",
     group: "文学家",
     gradeGroup: "文学家",
@@ -4290,8 +4389,8 @@ window.POEMS_MINGREN = [
     excerpt: "《闲情偶寄》的作者，戏曲理论的集大成"
   },
   {
-    textRef: "mingren-mr-391",
-    id: "mr-391",
+    textRef: "mingren-mr-400",
+    id: "mr-400",
     title: "顾炎武",
     group: "思想家",
     gradeGroup: "思想家",
@@ -4301,8 +4400,8 @@ window.POEMS_MINGREN = [
     excerpt: "天下兴亡，匹夫有责"
   },
   {
-    textRef: "mingren-mr-392",
-    id: "mr-392",
+    textRef: "mingren-mr-401",
+    id: "mr-401",
     title: "王夫之",
     group: "思想家",
     gradeGroup: "思想家",
@@ -4312,8 +4411,8 @@ window.POEMS_MINGREN = [
     excerpt: "船山先生"
   },
   {
-    textRef: "mingren-mr-393",
-    id: "mr-393",
+    textRef: "mingren-mr-402",
+    id: "mr-402",
     title: "莫里哀",
     group: "文学家",
     gradeGroup: "文学家",
@@ -4323,8 +4422,8 @@ window.POEMS_MINGREN = [
     excerpt: "《伪君子》《悭吝人》，法国古典喜剧的创立"
   },
   {
-    textRef: "mingren-mr-394",
-    id: "mr-394",
+    textRef: "mingren-mr-403",
+    id: "mr-403",
     title: "帕斯卡",
     group: "科学家",
     gradeGroup: "科学家",
@@ -4334,19 +4433,30 @@ window.POEMS_MINGREN = [
     excerpt: "射影几何与概率论的奠基，《思想录》"
   },
   {
-    textRef: "mingren-mr-395",
-    id: "mr-395",
+    textRef: "mingren-mr-404",
+    id: "mr-404",
+    title: "配第",
+    group: "经济学家",
+    gradeGroup: "经济学家",
+    dynasty: "英国",
+    author: "配第",
+    source: "《配第》·1623—1687",
+    excerpt: "《政治算术》"
+  },
+  {
+    textRef: "mingren-mr-405",
+    id: "mr-405",
     title: "朱耷",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "清",
     author: "朱耷",
     source: "《朱耷》·1626—约 1705",
     excerpt: "「八大山人」，写意花鸟的孤高极致"
   },
   {
-    textRef: "mingren-mr-396",
-    id: "mr-396",
+    textRef: "mingren-mr-406",
+    id: "mr-406",
     title: "波义耳",
     group: "科学家",
     gradeGroup: "科学家",
@@ -4356,8 +4466,8 @@ window.POEMS_MINGREN = [
     excerpt: "近代化学的奠基，《怀疑派化学家》"
   },
   {
-    textRef: "mingren-mr-397",
-    id: "mr-397",
+    textRef: "mingren-mr-407",
+    id: "mr-407",
     title: "惠更斯",
     group: "科学家",
     gradeGroup: "科学家",
@@ -4367,8 +4477,8 @@ window.POEMS_MINGREN = [
     excerpt: "摆钟的发明者，光的波动说的早期提出者"
   },
   {
-    textRef: "mingren-mr-398",
-    id: "mr-398",
+    textRef: "mingren-mr-408",
+    id: "mr-408",
     title: "斯宾诺莎",
     group: "哲学家",
     gradeGroup: "哲学家",
@@ -4378,8 +4488,8 @@ window.POEMS_MINGREN = [
     excerpt: "磨镜片的哲学家"
   },
   {
-    textRef: "mingren-mr-399",
-    id: "mr-399",
+    textRef: "mingren-mr-409",
+    id: "mr-409",
     title: "洛克",
     group: "哲学家",
     gradeGroup: "哲学家",
@@ -4389,30 +4499,41 @@ window.POEMS_MINGREN = [
     excerpt: "「白板说」，经验主义与自由主义的源头"
   },
   {
-    textRef: "mingren-mr-400",
-    id: "mr-400",
+    textRef: "mingren-mr-410",
+    id: "mr-410",
     title: "维米尔",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "荷兰",
     author: "维米尔",
     source: "《维米尔》·1632—1675",
     excerpt: "《戴珍珠耳环的少女》《倒牛奶的女仆》"
   },
   {
-    textRef: "mingren-mr-401",
-    id: "mr-401",
+    textRef: "mingren-mr-411",
+    id: "mr-411",
     title: "靳辅",
-    group: "水利家",
-    gradeGroup: "水利家",
+    group: "农学家",
+    gradeGroup: "农学家",
     dynasty: "清",
     author: "靳辅",
     source: "《靳辅》·1633—1692",
     excerpt: "治河方略 · 中河"
   },
   {
-    textRef: "mingren-mr-402",
-    id: "mr-402",
+    textRef: "mingren-mr-412",
+    id: "mr-412",
+    title: "颜元",
+    group: "思想家",
+    gradeGroup: "思想家",
+    dynasty: "清",
+    author: "颜元",
+    source: "《颜元》·1635—1704",
+    excerpt: "习斋 · 实学教育家"
+  },
+  {
+    textRef: "mingren-mr-413",
+    id: "mr-413",
     title: "胡克",
     group: "科学家",
     gradeGroup: "科学家",
@@ -4422,19 +4543,8 @@ window.POEMS_MINGREN = [
     excerpt: "「胡克定律」与细胞的命名者"
   },
   {
-    textRef: "mingren-mr-403",
-    id: "mr-403",
-    title: "颜元",
-    group: "教育家",
-    gradeGroup: "教育家",
-    dynasty: "清",
-    author: "颜元",
-    source: "《颜元》·1635—1704",
-    excerpt: "习斋 · 实学教育家"
-  },
-  {
-    textRef: "mingren-mr-404",
-    id: "mr-404",
+    textRef: "mingren-mr-414",
+    id: "mr-414",
     title: "拉辛",
     group: "文学家",
     gradeGroup: "文学家",
@@ -4444,8 +4554,8 @@ window.POEMS_MINGREN = [
     excerpt: "《费德尔》《安德洛玛克》，古典悲剧的巅峰"
   },
   {
-    textRef: "mingren-mr-405",
-    id: "mr-405",
+    textRef: "mingren-mr-415",
+    id: "mr-415",
     title: "蒲松龄",
     group: "文学家",
     gradeGroup: "文学家",
@@ -4455,19 +4565,19 @@ window.POEMS_MINGREN = [
     excerpt: "文言短篇小说之王"
   },
   {
-    textRef: "mingren-mr-406",
-    id: "mr-406",
+    textRef: "mingren-mr-416",
+    id: "mr-416",
     title: "石涛",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "清",
     author: "石涛",
     source: "《石涛》·1642—约 1718",
     excerpt: "「搜尽奇峰打草稿」，《苦瓜和尚画语录》"
   },
   {
-    textRef: "mingren-mr-407",
-    id: "mr-407",
+    textRef: "mingren-mr-417",
+    id: "mr-417",
     title: "牛顿",
     group: "科学家",
     gradeGroup: "科学家",
@@ -4477,8 +4587,8 @@ window.POEMS_MINGREN = [
     excerpt: "经典力学的奠基者"
   },
   {
-    textRef: "mingren-mr-408",
-    id: "mr-408",
+    textRef: "mingren-mr-418",
+    id: "mr-418",
     title: "洪昇",
     group: "戏曲家",
     gradeGroup: "戏曲家",
@@ -4488,8 +4598,8 @@ window.POEMS_MINGREN = [
     excerpt: "《长生殿》作者"
   },
   {
-    textRef: "mingren-mr-409",
-    id: "mr-409",
+    textRef: "mingren-mr-419",
+    id: "mr-419",
     title: "莱布尼兹",
     group: "哲学家",
     gradeGroup: "哲学家",
@@ -4499,8 +4609,8 @@ window.POEMS_MINGREN = [
     excerpt: "微积分与二进制的发明者"
   },
   {
-    textRef: "mingren-mr-410",
-    id: "mr-410",
+    textRef: "mingren-mr-420",
+    id: "mr-420",
     title: "孔尚任",
     group: "戏曲家",
     gradeGroup: "戏曲家",
@@ -4510,8 +4620,8 @@ window.POEMS_MINGREN = [
     excerpt: "《桃花扇》作者"
   },
   {
-    textRef: "mingren-mr-411",
-    id: "mr-411",
+    textRef: "mingren-mr-421",
+    id: "mr-421",
     title: "纳兰性德",
     group: "文学家",
     gradeGroup: "文学家",
@@ -4521,8 +4631,8 @@ window.POEMS_MINGREN = [
     excerpt: "《饮水词》的作者，清代词坛的第一人"
   },
   {
-    textRef: "mingren-mr-412",
-    id: "mr-412",
+    textRef: "mingren-mr-422",
+    id: "mr-422",
     title: "哈雷",
     group: "天文地理学家",
     gradeGroup: "天文地理学家",
@@ -4532,8 +4642,8 @@ window.POEMS_MINGREN = [
     excerpt: "哈雷彗星回归的预言者"
   },
   {
-    textRef: "mingren-mr-413",
-    id: "mr-413",
+    textRef: "mingren-mr-423",
+    id: "mr-423",
     title: "笛福",
     group: "文学家",
     gradeGroup: "文学家",
@@ -4543,8 +4653,8 @@ window.POEMS_MINGREN = [
     excerpt: "《鲁滨逊漂流记》，英国小说的开端"
   },
   {
-    textRef: "mingren-mr-414",
-    id: "mr-414",
+    textRef: "mingren-mr-424",
+    id: "mr-424",
     title: "斯威夫特",
     group: "文学家",
     gradeGroup: "文学家",
@@ -4554,8 +4664,19 @@ window.POEMS_MINGREN = [
     excerpt: "《格列佛游记》，讽刺文学的经典"
   },
   {
-    textRef: "mingren-mr-415",
-    id: "mr-415",
+    textRef: "mingren-mr-425",
+    id: "mr-425",
+    title: "维瓦尔第",
+    group: "音乐家",
+    gradeGroup: "音乐家",
+    dynasty: "意大利",
+    author: "维瓦尔第",
+    source: "《维瓦尔第》·1678—1741",
+    excerpt: "《四季》"
+  },
+  {
+    textRef: "mingren-mr-426",
+    id: "mr-426",
     title: "江永",
     group: "语言文字学家",
     gradeGroup: "语言文字学家",
@@ -4565,74 +4686,85 @@ window.POEMS_MINGREN = [
     excerpt: "古韵标准 · 皖派前驱"
   },
   {
-    textRef: "mingren-mr-416",
-    id: "mr-416",
+    textRef: "mingren-mr-427",
+    id: "mr-427",
     title: "巴赫",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "音乐家",
+    gradeGroup: "音乐家",
     dynasty: "德国",
     author: "巴赫",
     source: "《巴赫》·1685—1750",
     excerpt: "「西方音乐之父」，《勃兰登堡协奏曲》《马太受难曲》"
   },
   {
-    textRef: "mingren-mr-417",
-    id: "mr-417",
+    textRef: "mingren-mr-428",
+    id: "mr-428",
     title: "亨德尔",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "音乐家",
+    gradeGroup: "音乐家",
     dynasty: "德国 / 英国",
     author: "亨德尔",
     source: "《亨德尔》·1685—1759",
     excerpt: "《弥赛亚》《水上音乐》，巴洛克的另一极"
   },
   {
-    textRef: "mingren-mr-418",
-    id: "mr-418",
+    textRef: "mingren-mr-429",
+    id: "mr-429",
     title: "金农",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "清",
     author: "金农",
     source: "《金农》·1687—1763",
     excerpt: "扬州八怪之一，漆书自成一格"
   },
   {
-    textRef: "mingren-mr-419",
-    id: "mr-419",
+    textRef: "mingren-mr-430",
+    id: "mr-430",
     title: "郎世宁",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "清",
     author: "郎世宁",
     source: "《郎世宁》·1688—1766",
     excerpt: "西洋画法的传入者，清宫院画的独特一支"
   },
   {
-    textRef: "mingren-mr-420",
-    id: "mr-420",
+    textRef: "mingren-mr-431",
+    id: "mr-431",
     title: "孟德斯鸠",
-    group: "法学家",
-    gradeGroup: "法学家",
+    group: "政治家",
+    gradeGroup: "政治家",
     dynasty: "法国",
     author: "孟德斯鸠",
     source: "《孟德斯鸠》·1689—1755",
     excerpt: "三权分立"
   },
   {
-    textRef: "mingren-mr-421",
-    id: "mr-421",
+    textRef: "mingren-mr-432",
+    id: "mr-432",
     title: "郑燮",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "清",
     author: "郑燮",
     source: "《郑燮》·1693—1766",
     excerpt: "「扬州八怪」之首，画竹与「难得糊涂」"
   },
   {
-    textRef: "mingren-mr-422",
-    id: "mr-422",
+    textRef: "mingren-mr-433",
+    id: "mr-433",
+    title: "魁奈",
+    group: "经济学家",
+    gradeGroup: "经济学家",
+    dynasty: "法国",
+    author: "魁奈",
+    source: "《魁奈》·1694—1774",
+    excerpt: "《经济表》· 重农学派"
+  },
+  {
+    textRef: "mingren-mr-434",
+    id: "mr-434",
     title: "吴敬梓",
     group: "文学家",
     gradeGroup: "文学家",
@@ -4642,8 +4774,8 @@ window.POEMS_MINGREN = [
     excerpt: "讽刺小说之祖"
   },
   {
-    textRef: "mingren-mr-423",
-    id: "mr-423",
+    textRef: "mingren-mr-435",
+    id: "mr-435",
     title: "富兰克林",
     group: "科学家",
     gradeGroup: "科学家",
@@ -4653,8 +4785,8 @@ window.POEMS_MINGREN = [
     excerpt: "从风筝里取电的人"
   },
   {
-    textRef: "mingren-mr-424",
-    id: "mr-424",
+    textRef: "mingren-mr-436",
+    id: "mr-436",
     title: "菲尔丁",
     group: "文学家",
     gradeGroup: "文学家",
@@ -4664,8 +4796,8 @@ window.POEMS_MINGREN = [
     excerpt: "《汤姆·琼斯》，「散文滑稽史诗」"
   },
   {
-    textRef: "mingren-mr-425",
-    id: "mr-425",
+    textRef: "mingren-mr-437",
+    id: "mr-437",
     title: "欧拉",
     group: "科学家",
     gradeGroup: "科学家",
@@ -4675,8 +4807,19 @@ window.POEMS_MINGREN = [
     excerpt: "最多产的数学家"
   },
   {
-    textRef: "mingren-mr-426",
-    id: "mr-426",
+    textRef: "mingren-mr-438",
+    id: "mr-438",
+    title: "林奈",
+    group: "科学家",
+    gradeGroup: "科学家",
+    dynasty: "瑞典",
+    author: "林奈",
+    source: "《林奈》·1707—1778",
+    excerpt: "生物命名法的创始者"
+  },
+  {
+    textRef: "mingren-mr-439",
+    id: "mr-439",
     title: "布丰",
     group: "生物学家",
     gradeGroup: "生物学家",
@@ -4686,19 +4829,8 @@ window.POEMS_MINGREN = [
     excerpt: "《自然史》三十六卷，进化思想的先声"
   },
   {
-    textRef: "mingren-mr-427",
-    id: "mr-427",
-    title: "林奈",
-    group: "生物学家",
-    gradeGroup: "生物学家",
-    dynasty: "瑞典",
-    author: "林奈",
-    source: "《林奈》·1707—1778",
-    excerpt: "生物命名法的创始者"
-  },
-  {
-    textRef: "mingren-mr-428",
-    id: "mr-428",
+    textRef: "mingren-mr-440",
+    id: "mr-440",
     title: "休谟",
     group: "哲学家",
     gradeGroup: "哲学家",
@@ -4708,8 +4840,8 @@ window.POEMS_MINGREN = [
     excerpt: "经验论的终点"
   },
   {
-    textRef: "mingren-mr-429",
-    id: "mr-429",
+    textRef: "mingren-mr-441",
+    id: "mr-441",
     title: "卢梭",
     group: "哲学家",
     gradeGroup: "哲学家",
@@ -4719,8 +4851,8 @@ window.POEMS_MINGREN = [
     excerpt: "《社会契约论》《爱弥儿》，浪漫主义的先驱"
   },
   {
-    textRef: "mingren-mr-430",
-    id: "mr-430",
+    textRef: "mingren-mr-442",
+    id: "mr-442",
     title: "腓特烈二世",
     group: "军事家",
     gradeGroup: "军事家",
@@ -4730,8 +4862,8 @@ window.POEMS_MINGREN = [
     excerpt: "斜线阵 · 七年战争"
   },
   {
-    textRef: "mingren-mr-431",
-    id: "mr-431",
+    textRef: "mingren-mr-443",
+    id: "mr-443",
     title: "狄德罗",
     group: "哲学家",
     gradeGroup: "哲学家",
@@ -4741,8 +4873,8 @@ window.POEMS_MINGREN = [
     excerpt: "《百科全书》的主编，启蒙运动的旗手"
   },
   {
-    textRef: "mingren-mr-432",
-    id: "mr-432",
+    textRef: "mingren-mr-444",
+    id: "mr-444",
     title: "曹雪芹",
     group: "文学家",
     gradeGroup: "文学家",
@@ -4752,8 +4884,8 @@ window.POEMS_MINGREN = [
     excerpt: "《红楼梦》作者"
   },
   {
-    textRef: "mingren-mr-433",
-    id: "mr-433",
+    textRef: "mingren-mr-445",
+    id: "mr-445",
     title: "袁枚",
     group: "文学家",
     gradeGroup: "文学家",
@@ -4763,30 +4895,30 @@ window.POEMS_MINGREN = [
     excerpt: "性灵说的倡导者，《随园诗话》的作者"
   },
   {
-    textRef: "mingren-mr-434",
-    id: "mr-434",
+    textRef: "mingren-mr-446",
+    id: "mr-446",
     title: "王鸣盛",
-    group: "史学家",
-    gradeGroup: "史学家",
+    group: "历史学家",
+    gradeGroup: "历史学家",
     dynasty: "清",
     author: "王鸣盛",
     source: "《王鸣盛》·1722—1797",
     excerpt: "《十七史商榷》的作者，考据史学的中坚"
   },
   {
-    textRef: "mingren-mr-435",
-    id: "mr-435",
+    textRef: "mingren-mr-447",
+    id: "mr-447",
     title: "亚当·斯密",
-    group: "哲学家",
-    gradeGroup: "哲学家",
+    group: "经济学家",
+    gradeGroup: "经济学家",
     dynasty: "英国（苏格兰）",
     author: "亚当·斯密",
     source: "《亚当·斯密》·1723—1790",
     excerpt: "古典经济学的奠基者"
   },
   {
-    textRef: "mingren-mr-436",
-    id: "mr-436",
+    textRef: "mingren-mr-448",
+    id: "mr-448",
     title: "康德",
     group: "哲学家",
     gradeGroup: "哲学家",
@@ -4796,8 +4928,8 @@ window.POEMS_MINGREN = [
     excerpt: "近代哲学的分水岭"
   },
   {
-    textRef: "mingren-mr-437",
-    id: "mr-437",
+    textRef: "mingren-mr-449",
+    id: "mr-449",
     title: "戴震",
     group: "语言文字学家",
     gradeGroup: "语言文字学家",
@@ -4807,30 +4939,30 @@ window.POEMS_MINGREN = [
     excerpt: "乾嘉皖派的领袖"
   },
   {
-    textRef: "mingren-mr-438",
-    id: "mr-438",
+    textRef: "mingren-mr-450",
+    id: "mr-450",
     title: "赵翼",
-    group: "史学家",
-    gradeGroup: "史学家",
+    group: "历史学家",
+    gradeGroup: "历史学家",
     dynasty: "清",
     author: "赵翼",
     source: "《赵翼》·1727—1814",
     excerpt: "《廿二史札记》的作者，「江山代有才人出」"
   },
   {
-    textRef: "mingren-mr-439",
-    id: "mr-439",
+    textRef: "mingren-mr-451",
+    id: "mr-451",
     title: "钱大昕",
-    group: "史学家",
-    gradeGroup: "史学家",
+    group: "历史学家",
+    gradeGroup: "历史学家",
     dynasty: "清",
     author: "钱大昕",
     source: "《钱大昕》·1728—1804",
     excerpt: "乾嘉史学的代表，《廿二史考异》的作者"
   },
   {
-    textRef: "mingren-mr-440",
-    id: "mr-440",
+    textRef: "mingren-mr-452",
+    id: "mr-452",
     title: "苏沃洛夫",
     group: "军事家",
     gradeGroup: "军事家",
@@ -4840,8 +4972,8 @@ window.POEMS_MINGREN = [
     excerpt: "制胜的科学"
   },
   {
-    textRef: "mingren-mr-441",
-    id: "mr-441",
+    textRef: "mingren-mr-453",
+    id: "mr-453",
     title: "华盛顿",
     group: "政治家",
     gradeGroup: "政治家",
@@ -4851,19 +4983,19 @@ window.POEMS_MINGREN = [
     excerpt: "主动交出权力的人"
   },
   {
-    textRef: "mingren-mr-442",
-    id: "mr-442",
+    textRef: "mingren-mr-454",
+    id: "mr-454",
     title: "海顿",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "音乐家",
+    gradeGroup: "音乐家",
     dynasty: "奥地利",
     author: "海顿",
     source: "《海顿》·1732—1809",
     excerpt: "「交响曲之父」，一百零四部交响曲"
   },
   {
-    textRef: "mingren-mr-443",
-    id: "mr-443",
+    textRef: "mingren-mr-455",
+    id: "mr-455",
     title: "段玉裁",
     group: "语言文字学家",
     gradeGroup: "语言文字学家",
@@ -4873,8 +5005,8 @@ window.POEMS_MINGREN = [
     excerpt: "《说文解字注》"
   },
   {
-    textRef: "mingren-mr-444",
-    id: "mr-444",
+    textRef: "mingren-mr-456",
+    id: "mr-456",
     title: "拉格朗日",
     group: "科学家",
     gradeGroup: "科学家",
@@ -4884,19 +5016,30 @@ window.POEMS_MINGREN = [
     excerpt: "分析力学与变分法的建立者"
   },
   {
-    textRef: "mingren-mr-445",
-    id: "mr-445",
+    textRef: "mingren-mr-457",
+    id: "mr-457",
+    title: "贝卡里亚",
+    group: "政治家",
+    gradeGroup: "政治家",
+    dynasty: "意大利",
+    author: "贝卡里亚",
+    source: "《贝卡里亚》·1738—1794",
+    excerpt: "《论犯罪与刑罚》"
+  },
+  {
+    textRef: "mingren-mr-458",
+    id: "mr-458",
     title: "章学诚",
-    group: "史学家",
-    gradeGroup: "史学家",
+    group: "历史学家",
+    gradeGroup: "历史学家",
     dynasty: "清",
     author: "章学诚",
     source: "《章学诚》·1738—1801",
     excerpt: "《文史通义》作者"
   },
   {
-    textRef: "mingren-mr-446",
-    id: "mr-446",
+    textRef: "mingren-mr-459",
+    id: "mr-459",
     title: "赫歇尔",
     group: "天文地理学家",
     gradeGroup: "天文地理学家",
@@ -4906,19 +5049,8 @@ window.POEMS_MINGREN = [
     excerpt: "天王星的发现者，恒星天文学的奠基"
   },
   {
-    textRef: "mingren-mr-447",
-    id: "mr-447",
-    title: "贝卡里亚",
-    group: "法学家",
-    gradeGroup: "法学家",
-    dynasty: "意大利",
-    author: "贝卡里亚",
-    source: "《贝卡里亚》·1738—1794",
-    excerpt: "《论犯罪与刑罚》"
-  },
-  {
-    textRef: "mingren-mr-448",
-    id: "mr-448",
+    textRef: "mingren-mr-460",
+    id: "mr-460",
     title: "舍勒",
     group: "科学家",
     gradeGroup: "科学家",
@@ -4928,8 +5060,8 @@ window.POEMS_MINGREN = [
     excerpt: "氧气的独立发现者，萤石与氯的研究"
   },
   {
-    textRef: "mingren-mr-449",
-    id: "mr-449",
+    textRef: "mingren-mr-461",
+    id: "mr-461",
     title: "杰斐逊",
     group: "政治家",
     gradeGroup: "政治家",
@@ -4939,8 +5071,8 @@ window.POEMS_MINGREN = [
     excerpt: "独立宣言的起草者"
   },
   {
-    textRef: "mingren-mr-450",
-    id: "mr-450",
+    textRef: "mingren-mr-462",
+    id: "mr-462",
     title: "拉瓦锡",
     group: "科学家",
     gradeGroup: "科学家",
@@ -4950,8 +5082,8 @@ window.POEMS_MINGREN = [
     excerpt: "近代化学之父"
   },
   {
-    textRef: "mingren-mr-451",
-    id: "mr-451",
+    textRef: "mingren-mr-463",
+    id: "mr-463",
     title: "拉马克",
     group: "生物学家",
     gradeGroup: "生物学家",
@@ -4961,8 +5093,8 @@ window.POEMS_MINGREN = [
     excerpt: "「用进废退」与获得性遗传的最早系统表述"
   },
   {
-    textRef: "mingren-mr-452",
-    id: "mr-452",
+    textRef: "mingren-mr-464",
+    id: "mr-464",
     title: "王念孙",
     group: "语言文字学家",
     gradeGroup: "语言文字学家",
@@ -4972,8 +5104,8 @@ window.POEMS_MINGREN = [
     excerpt: "高邮二王 · 广雅疏证"
   },
   {
-    textRef: "mingren-mr-453",
-    id: "mr-453",
+    textRef: "mingren-mr-465",
+    id: "mr-465",
     title: "库图佐夫",
     group: "军事家",
     gradeGroup: "军事家",
@@ -4983,30 +5115,30 @@ window.POEMS_MINGREN = [
     excerpt: "1812 卫国战争"
   },
   {
-    textRef: "mingren-mr-454",
-    id: "mr-454",
+    textRef: "mingren-mr-466",
+    id: "mr-466",
     title: "戈雅",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "西班牙",
     author: "戈雅",
     source: "《戈雅》·1746—1828",
     excerpt: "《1808 年 5 月 3 日》《狂想曲》，从宫廷到黑色的转变"
   },
   {
-    textRef: "mingren-mr-455",
-    id: "mr-455",
+    textRef: "mingren-mr-467",
+    id: "mr-467",
     title: "大卫",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "法国",
     author: "大卫",
     source: "《大卫》·1748—1825",
     excerpt: "《马拉之死》《拿破仑加冕》，新古典主义的领袖"
   },
   {
-    textRef: "mingren-mr-456",
-    id: "mr-456",
+    textRef: "mingren-mr-468",
+    id: "mr-468",
     title: "歌德",
     group: "文学家",
     gradeGroup: "文学家",
@@ -5016,8 +5148,8 @@ window.POEMS_MINGREN = [
     excerpt: "《浮士德》《少年维特之烦恼》"
   },
   {
-    textRef: "mingren-mr-457",
-    id: "mr-457",
+    textRef: "mingren-mr-469",
+    id: "mr-469",
     title: "拉普拉斯",
     group: "科学家",
     gradeGroup: "科学家",
@@ -5027,8 +5159,8 @@ window.POEMS_MINGREN = [
     excerpt: "《天体力学》，《概率分析理论》"
   },
   {
-    textRef: "mingren-mr-458",
-    id: "mr-458",
+    textRef: "mingren-mr-470",
+    id: "mr-470",
     title: "詹纳",
     group: "医学家",
     gradeGroup: "医学家",
@@ -5038,8 +5170,8 @@ window.POEMS_MINGREN = [
     excerpt: "牛痘接种法的发明者，疫苗学的开端"
   },
   {
-    textRef: "mingren-mr-459",
-    id: "mr-459",
+    textRef: "mingren-mr-471",
+    id: "mr-471",
     title: "勒让德",
     group: "科学家",
     gradeGroup: "科学家",
@@ -5049,19 +5181,19 @@ window.POEMS_MINGREN = [
     excerpt: "椭圆积分与数论的研究者，《几何学基础》"
   },
   {
-    textRef: "mingren-mr-460",
-    id: "mr-460",
+    textRef: "mingren-mr-472",
+    id: "mr-472",
     title: "莫扎特",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "音乐家",
+    gradeGroup: "音乐家",
     dynasty: "奥地利",
     author: "莫扎特",
     source: "《莫扎特》·1756—1791",
     excerpt: "《费加罗的婚礼》《安魂曲》，三十五岁早逝的神童"
   },
   {
-    textRef: "mingren-mr-461",
-    id: "mr-461",
+    textRef: "mingren-mr-473",
+    id: "mr-473",
     title: "纳尔逊",
     group: "军事家",
     gradeGroup: "军事家",
@@ -5071,8 +5203,8 @@ window.POEMS_MINGREN = [
     excerpt: "特拉法加海战"
   },
   {
-    textRef: "mingren-mr-462",
-    id: "mr-462",
+    textRef: "mingren-mr-474",
+    id: "mr-474",
     title: "席勒",
     group: "文学家",
     gradeGroup: "文学家",
@@ -5082,8 +5214,8 @@ window.POEMS_MINGREN = [
     excerpt: "《阴谋与爱情》《欢乐颂》，与歌德并称「德国古典文学」"
   },
   {
-    textRef: "mingren-mr-463",
-    id: "mr-463",
+    textRef: "mingren-mr-475",
+    id: "mr-475",
     title: "焦循",
     group: "思想家",
     gradeGroup: "思想家",
@@ -5093,8 +5225,8 @@ window.POEMS_MINGREN = [
     excerpt: "扬州学派的通人"
   },
   {
-    textRef: "mingren-mr-464",
-    id: "mr-464",
+    textRef: "mingren-mr-476",
+    id: "mr-476",
     title: "阮元",
     group: "思想家",
     gradeGroup: "思想家",
@@ -5104,8 +5236,8 @@ window.POEMS_MINGREN = [
     excerpt: "乾嘉学术的组织者"
   },
   {
-    textRef: "mingren-mr-465",
-    id: "mr-465",
+    textRef: "mingren-mr-477",
+    id: "mr-477",
     title: "道尔顿",
     group: "科学家",
     gradeGroup: "科学家",
@@ -5115,8 +5247,8 @@ window.POEMS_MINGREN = [
     excerpt: "近代原子论的创立者"
   },
   {
-    textRef: "mingren-mr-466",
-    id: "mr-466",
+    textRef: "mingren-mr-478",
+    id: "mr-478",
     title: "王引之",
     group: "语言文字学家",
     gradeGroup: "语言文字学家",
@@ -5126,8 +5258,30 @@ window.POEMS_MINGREN = [
     excerpt: "《经传释词》"
   },
   {
-    textRef: "mingren-mr-467",
-    id: "mr-467",
+    textRef: "mingren-mr-479",
+    id: "mr-479",
+    title: "马尔萨斯",
+    group: "经济学家",
+    gradeGroup: "经济学家",
+    dynasty: "英国",
+    author: "马尔萨斯",
+    source: "《马尔萨斯》·1766—1834",
+    excerpt: "《人口论》"
+  },
+  {
+    textRef: "mingren-mr-480",
+    id: "mr-480",
+    title: "萨伊",
+    group: "经济学家",
+    gradeGroup: "经济学家",
+    dynasty: "法国",
+    author: "萨伊",
+    source: "《萨伊》·1767—1832",
+    excerpt: "萨伊定律"
+  },
+  {
+    textRef: "mingren-mr-481",
+    id: "mr-481",
     title: "惠灵顿",
     group: "军事家",
     gradeGroup: "军事家",
@@ -5137,8 +5291,8 @@ window.POEMS_MINGREN = [
     excerpt: "滑铁卢 · 半岛战争"
   },
   {
-    textRef: "mingren-mr-468",
-    id: "mr-468",
+    textRef: "mingren-mr-482",
+    id: "mr-482",
     title: "拿破仑",
     group: "军事家",
     gradeGroup: "军事家",
@@ -5148,8 +5302,8 @@ window.POEMS_MINGREN = [
     excerpt: "奥斯特里茨 · 军团体系"
   },
   {
-    textRef: "mingren-mr-469",
-    id: "mr-469",
+    textRef: "mingren-mr-483",
+    id: "mr-483",
     title: "居维叶",
     group: "生物学家",
     gradeGroup: "生物学家",
@@ -5159,8 +5313,8 @@ window.POEMS_MINGREN = [
     excerpt: "比较解剖学与古脊椎动物学的奠基，「灾变论」"
   },
   {
-    textRef: "mingren-mr-470",
-    id: "mr-470",
+    textRef: "mingren-mr-484",
+    id: "mr-484",
     title: "华兹华斯",
     group: "文学家",
     gradeGroup: "文学家",
@@ -5170,8 +5324,8 @@ window.POEMS_MINGREN = [
     excerpt: "湖畔派领袖，《抒情歌谣集》序为浪漫主义宣言"
   },
   {
-    textRef: "mingren-mr-471",
-    id: "mr-471",
+    textRef: "mingren-mr-485",
+    id: "mr-485",
     title: "黑格尔",
     group: "哲学家",
     gradeGroup: "哲学家",
@@ -5181,19 +5335,19 @@ window.POEMS_MINGREN = [
     excerpt: "辩证法的系统建构者"
   },
   {
-    textRef: "mingren-mr-472",
-    id: "mr-472",
+    textRef: "mingren-mr-486",
+    id: "mr-486",
     title: "贝多芬",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "音乐家",
+    gradeGroup: "音乐家",
     dynasty: "德国",
     author: "贝多芬",
     source: "《贝多芬》·1770—1827",
     excerpt: "《命运交响曲》《第九交响曲》，古典到浪漫的桥梁"
   },
   {
-    textRef: "mingren-mr-473",
-    id: "mr-473",
+    textRef: "mingren-mr-487",
+    id: "mr-487",
     title: "柯勒律治",
     group: "文学家",
     gradeGroup: "文学家",
@@ -5203,8 +5357,19 @@ window.POEMS_MINGREN = [
     excerpt: "《古舟子咏》《忽必烈汗》，与华兹华斯合著《抒情歌谣集》"
   },
   {
-    textRef: "mingren-mr-474",
-    id: "mr-474",
+    textRef: "mingren-mr-488",
+    id: "mr-488",
+    title: "李嘉图",
+    group: "经济学家",
+    gradeGroup: "经济学家",
+    dynasty: "英国",
+    author: "李嘉图",
+    source: "《李嘉图》·1772—1823",
+    excerpt: "比较优势 · 劳动价值论"
+  },
+  {
+    textRef: "mingren-mr-489",
+    id: "mr-489",
     title: "简·奥斯汀",
     group: "文学家",
     gradeGroup: "文学家",
@@ -5214,8 +5379,19 @@ window.POEMS_MINGREN = [
     excerpt: "《傲慢与偏见》《爱玛》，英国家庭小说的巅峰"
   },
   {
-    textRef: "mingren-mr-475",
-    id: "mr-475",
+    textRef: "mingren-mr-490",
+    id: "mr-490",
+    title: "包世臣",
+    group: "经济学家",
+    gradeGroup: "经济学家",
+    dynasty: "清",
+    author: "包世臣",
+    source: "《包世臣》·1775—1855",
+    excerpt: "《安吴四种》"
+  },
+  {
+    textRef: "mingren-mr-491",
+    id: "mr-491",
     title: "阿伏伽德罗",
     group: "科学家",
     gradeGroup: "科学家",
@@ -5225,8 +5401,8 @@ window.POEMS_MINGREN = [
     excerpt: "分子假说的提出者，气体定律的补全"
   },
   {
-    textRef: "mingren-mr-476",
-    id: "mr-476",
+    textRef: "mingren-mr-492",
+    id: "mr-492",
     title: "高斯",
     group: "科学家",
     gradeGroup: "科学家",
@@ -5236,19 +5412,30 @@ window.POEMS_MINGREN = [
     excerpt: "数学王子"
   },
   {
-    textRef: "mingren-mr-477",
-    id: "mr-477",
+    textRef: "mingren-mr-493",
+    id: "mr-493",
     title: "安格尔",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "法国",
     author: "安格尔",
     source: "《安格尔》·1780—1867",
     excerpt: "《泉》《土耳其浴室》，古典素描的极致"
   },
   {
-    textRef: "mingren-mr-478",
-    id: "mr-478",
+    textRef: "mingren-mr-494",
+    id: "mr-494",
+    title: "帕格尼尼",
+    group: "音乐家",
+    gradeGroup: "音乐家",
+    dynasty: "意大利",
+    author: "帕格尼尼",
+    source: "《帕格尼尼》·1782—1840",
+    excerpt: "《二十四首随想曲》"
+  },
+  {
+    textRef: "mingren-mr-495",
+    id: "mr-495",
     title: "司汤达",
     group: "文学家",
     gradeGroup: "文学家",
@@ -5258,8 +5445,8 @@ window.POEMS_MINGREN = [
     excerpt: "《红与黑》《巴马修道院》，心理小说的开创"
   },
   {
-    textRef: "mingren-mr-479",
-    id: "mr-479",
+    textRef: "mingren-mr-496",
+    id: "mr-496",
     title: "拜伦",
     group: "文学家",
     gradeGroup: "文学家",
@@ -5269,8 +5456,8 @@ window.POEMS_MINGREN = [
     excerpt: "《唐璜》《恰尔德·哈罗尔德游记》，浪漫主义的叛逆者"
   },
   {
-    textRef: "mingren-mr-480",
-    id: "mr-480",
+    textRef: "mingren-mr-497",
+    id: "mr-497",
     title: "叔本华",
     group: "哲学家",
     gradeGroup: "哲学家",
@@ -5280,8 +5467,8 @@ window.POEMS_MINGREN = [
     excerpt: "唯意志论的开创者"
   },
   {
-    textRef: "mingren-mr-481",
-    id: "mr-481",
+    textRef: "mingren-mr-498",
+    id: "mr-498",
     title: "柯西",
     group: "科学家",
     gradeGroup: "科学家",
@@ -5291,8 +5478,8 @@ window.POEMS_MINGREN = [
     excerpt: "极限与连续性的严格化，《分析教程》"
   },
   {
-    textRef: "mingren-mr-482",
-    id: "mr-482",
+    textRef: "mingren-mr-499",
+    id: "mr-499",
     title: "法拉第",
     group: "科学家",
     gradeGroup: "科学家",
@@ -5302,8 +5489,8 @@ window.POEMS_MINGREN = [
     excerpt: "电磁感应的发现者"
   },
   {
-    textRef: "mingren-mr-483",
-    id: "mr-483",
+    textRef: "mingren-mr-500",
+    id: "mr-500",
     title: "莫尔斯",
     group: "科学家",
     gradeGroup: "科学家",
@@ -5313,8 +5500,8 @@ window.POEMS_MINGREN = [
     excerpt: "电报与莫尔斯电码的发明者"
   },
   {
-    textRef: "mingren-mr-484",
-    id: "mr-484",
+    textRef: "mingren-mr-501",
+    id: "mr-501",
     title: "龚自珍",
     group: "文学家",
     gradeGroup: "文学家",
@@ -5324,8 +5511,8 @@ window.POEMS_MINGREN = [
     excerpt: "近代思想启蒙的先声，「我劝天公重抖擞」"
   },
   {
-    textRef: "mingren-mr-485",
-    id: "mr-485",
+    textRef: "mingren-mr-502",
+    id: "mr-502",
     title: "雪莱",
     group: "文学家",
     gradeGroup: "文学家",
@@ -5335,8 +5522,19 @@ window.POEMS_MINGREN = [
     excerpt: "《西风颂》《解放了的普罗米修斯》"
   },
   {
-    textRef: "mingren-mr-486",
-    id: "mr-486",
+    textRef: "mingren-mr-503",
+    id: "mr-503",
+    title: "罗西尼",
+    group: "音乐家",
+    gradeGroup: "音乐家",
+    dynasty: "意大利",
+    author: "罗西尼",
+    source: "《罗西尼》·1792—1868",
+    excerpt: "《塞维利亚的理发师》"
+  },
+  {
+    textRef: "mingren-mr-504",
+    id: "mr-504",
     title: "魏源",
     group: "经济学家",
     gradeGroup: "经济学家",
@@ -5346,8 +5544,8 @@ window.POEMS_MINGREN = [
     excerpt: "睁眼看世界的先行者"
   },
   {
-    textRef: "mingren-mr-487",
-    id: "mr-487",
+    textRef: "mingren-mr-505",
+    id: "mr-505",
     title: "济慈",
     group: "文学家",
     gradeGroup: "文学家",
@@ -5357,30 +5555,41 @@ window.POEMS_MINGREN = [
     excerpt: "《夜莺颂》《希腊古瓮颂》，二十五岁病逝"
   },
   {
-    textRef: "mingren-mr-488",
-    id: "mr-488",
+    textRef: "mingren-mr-506",
+    id: "mr-506",
     title: "舒伯特",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "音乐家",
+    gradeGroup: "音乐家",
     dynasty: "奥地利",
     author: "舒伯特",
     source: "《舒伯特》·1797—1828",
     excerpt: "六百余首艺术歌曲，《魔王》《冬之旅》"
   },
   {
-    textRef: "mingren-mr-489",
-    id: "mr-489",
+    textRef: "mingren-mr-507",
+    id: "mr-507",
+    title: "多尼采蒂",
+    group: "音乐家",
+    gradeGroup: "音乐家",
+    dynasty: "意大利",
+    author: "多尼采蒂",
+    source: "《多尼采蒂》·1797—1848",
+    excerpt: "《拉美莫尔的露琪亚》"
+  },
+  {
+    textRef: "mingren-mr-508",
+    id: "mr-508",
     title: "德拉克洛瓦",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "法国",
     author: "德拉克洛瓦",
     source: "《德拉克洛瓦》·1798—1863",
     excerpt: "《自由引导人民》，浪漫主义绘画的旗帜"
   },
   {
-    textRef: "mingren-mr-490",
-    id: "mr-490",
+    textRef: "mingren-mr-509",
+    id: "mr-509",
     title: "巴尔扎克",
     group: "文学家",
     gradeGroup: "文学家",
@@ -5390,8 +5599,8 @@ window.POEMS_MINGREN = [
     excerpt: "《人间喜剧》九十余部，法国社会的书记官"
   },
   {
-    textRef: "mingren-mr-491",
-    id: "mr-491",
+    textRef: "mingren-mr-510",
+    id: "mr-510",
     title: "普希金",
     group: "文学家",
     gradeGroup: "文学家",
@@ -5401,8 +5610,8 @@ window.POEMS_MINGREN = [
     excerpt: "《叶甫盖尼·奥涅金》，俄罗斯文学语言的奠基"
   },
   {
-    textRef: "mingren-mr-492",
-    id: "mr-492",
+    textRef: "mingren-mr-511",
+    id: "mr-511",
     title: "毛奇",
     group: "军事家",
     gradeGroup: "军事家",
@@ -5412,8 +5621,8 @@ window.POEMS_MINGREN = [
     excerpt: "分进合击 · 参谋部之父"
   },
   {
-    textRef: "mingren-mr-493",
-    id: "mr-493",
+    textRef: "mingren-mr-512",
+    id: "mr-512",
     title: "雨果",
     group: "文学家",
     gradeGroup: "文学家",
@@ -5423,8 +5632,8 @@ window.POEMS_MINGREN = [
     excerpt: "《悲惨世界》《巴黎圣母院》，法国浪漫主义的领袖"
   },
   {
-    textRef: "mingren-mr-494",
-    id: "mr-494",
+    textRef: "mingren-mr-513",
+    id: "mr-513",
     title: "大仲马",
     group: "文学家",
     gradeGroup: "文学家",
@@ -5434,8 +5643,8 @@ window.POEMS_MINGREN = [
     excerpt: "《三个火枪手》《基度山伯爵》"
   },
   {
-    textRef: "mingren-mr-495",
-    id: "mr-495",
+    textRef: "mingren-mr-514",
+    id: "mr-514",
     title: "阿贝尔",
     group: "科学家",
     gradeGroup: "科学家",
@@ -5445,8 +5654,19 @@ window.POEMS_MINGREN = [
     excerpt: "五次方程无代数解的证明者，二十七岁病逝"
   },
   {
-    textRef: "mingren-mr-496",
-    id: "mr-496",
+    textRef: "mingren-mr-515",
+    id: "mr-515",
+    title: "柏辽兹",
+    group: "音乐家",
+    gradeGroup: "音乐家",
+    dynasty: "法国",
+    author: "柏辽兹",
+    source: "《柏辽兹》·1803—1869",
+    excerpt: "《幻想交响曲》"
+  },
+  {
+    textRef: "mingren-mr-516",
+    id: "mr-516",
     title: "乔治·桑",
     group: "文学家",
     gradeGroup: "文学家",
@@ -5456,8 +5676,8 @@ window.POEMS_MINGREN = [
     excerpt: "《安蒂亚娜》《魔沼》，浪漫主义的女性声音"
   },
   {
-    textRef: "mingren-mr-497",
-    id: "mr-497",
+    textRef: "mingren-mr-517",
+    id: "mr-517",
     title: "马志尼",
     group: "政治家",
     gradeGroup: "政治家",
@@ -5467,8 +5687,8 @@ window.POEMS_MINGREN = [
     excerpt: "青年意大利"
   },
   {
-    textRef: "mingren-mr-498",
-    id: "mr-498",
+    textRef: "mingren-mr-518",
+    id: "mr-518",
     title: "安徒生",
     group: "文学家",
     gradeGroup: "文学家",
@@ -5478,8 +5698,19 @@ window.POEMS_MINGREN = [
     excerpt: "《海的女儿》《丑小鸭》，童话的世界"
   },
   {
-    textRef: "mingren-mr-499",
-    id: "mr-499",
+    textRef: "mingren-mr-519",
+    id: "mr-519",
+    title: "穆勒",
+    group: "经济学家",
+    gradeGroup: "经济学家",
+    dynasty: "英国",
+    author: "穆勒",
+    source: "《穆勒》·1806—1873",
+    excerpt: "《政治经济学原理》"
+  },
+  {
+    textRef: "mingren-mr-520",
+    id: "mr-520",
     title: "加里波第",
     group: "军事家",
     gradeGroup: "军事家",
@@ -5489,8 +5720,8 @@ window.POEMS_MINGREN = [
     excerpt: "千人军 · 红衫军"
   },
   {
-    textRef: "mingren-mr-500",
-    id: "mr-500",
+    textRef: "mingren-mr-521",
+    id: "mr-521",
     title: "林肯",
     group: "政治家",
     gradeGroup: "政治家",
@@ -5500,8 +5731,8 @@ window.POEMS_MINGREN = [
     excerpt: "葛底斯堡演说"
   },
   {
-    textRef: "mingren-mr-501",
-    id: "mr-501",
+    textRef: "mingren-mr-522",
+    id: "mr-522",
     title: "果戈理",
     group: "文学家",
     gradeGroup: "文学家",
@@ -5511,8 +5742,8 @@ window.POEMS_MINGREN = [
     excerpt: "《死魂灵》《钦差大臣》，讽刺文学的开山"
   },
   {
-    textRef: "mingren-mr-502",
-    id: "mr-502",
+    textRef: "mingren-mr-523",
+    id: "mr-523",
     title: "爱伦·坡",
     group: "文学家",
     gradeGroup: "文学家",
@@ -5522,19 +5753,30 @@ window.POEMS_MINGREN = [
     excerpt: "《乌鸦》《厄舍府的倒塌》，侦探小说与恐怖小说的开创"
   },
   {
-    textRef: "mingren-mr-503",
-    id: "mr-503",
+    textRef: "mingren-mr-524",
+    id: "mr-524",
     title: "达尔文",
-    group: "生物学家",
-    gradeGroup: "生物学家",
+    group: "科学家",
+    gradeGroup: "科学家",
     dynasty: "英国",
     author: "达尔文",
     source: "《达尔文》·1809—1882",
     excerpt: "进化论的奠基者"
   },
   {
-    textRef: "mingren-mr-504",
-    id: "mr-504",
+    textRef: "mingren-mr-525",
+    id: "mr-525",
+    title: "门德尔松",
+    group: "音乐家",
+    gradeGroup: "音乐家",
+    dynasty: "德国",
+    author: "门德尔松",
+    source: "《门德尔松》·1809—1847",
+    excerpt: "《婚礼进行曲》"
+  },
+  {
+    textRef: "mingren-mr-526",
+    id: "mr-526",
     title: "加富尔",
     group: "政治家",
     gradeGroup: "政治家",
@@ -5544,30 +5786,30 @@ window.POEMS_MINGREN = [
     excerpt: "意大利统一的设计师"
   },
   {
-    textRef: "mingren-mr-505",
-    id: "mr-505",
+    textRef: "mingren-mr-527",
+    id: "mr-527",
     title: "肖邦",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "音乐家",
+    gradeGroup: "音乐家",
     dynasty: "波兰 / 法国",
     author: "肖邦",
     source: "《肖邦》·1810—1849",
     excerpt: "《夜曲》《练习曲》《波兰舞曲》，钢琴的诗人"
   },
   {
-    textRef: "mingren-mr-506",
-    id: "mr-506",
+    textRef: "mingren-mr-528",
+    id: "mr-528",
     title: "舒曼",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "音乐家",
+    gradeGroup: "音乐家",
     dynasty: "德国",
     author: "舒曼",
     source: "《舒曼》·1810—1856",
     excerpt: "《童年情景》《狂欢节》，浪漫主义音乐与乐评的双重代表"
   },
   {
-    textRef: "mingren-mr-507",
-    id: "mr-507",
+    textRef: "mingren-mr-529",
+    id: "mr-529",
     title: "曾国藩",
     group: "政治家",
     gradeGroup: "政治家",
@@ -5577,8 +5819,8 @@ window.POEMS_MINGREN = [
     excerpt: "晚清中兴名臣"
   },
   {
-    textRef: "mingren-mr-508",
-    id: "mr-508",
+    textRef: "mingren-mr-530",
+    id: "mr-530",
     title: "伽罗瓦",
     group: "科学家",
     gradeGroup: "科学家",
@@ -5588,8 +5830,8 @@ window.POEMS_MINGREN = [
     excerpt: "群论的创立者，二十岁死于决斗"
   },
   {
-    textRef: "mingren-mr-509",
-    id: "mr-509",
+    textRef: "mingren-mr-531",
+    id: "mr-531",
     title: "本生",
     group: "科学家",
     gradeGroup: "科学家",
@@ -5599,8 +5841,8 @@ window.POEMS_MINGREN = [
     excerpt: "光谱分析的创立者，本生灯的发明者"
   },
   {
-    textRef: "mingren-mr-510",
-    id: "mr-510",
+    textRef: "mingren-mr-532",
+    id: "mr-532",
     title: "勒维耶",
     group: "天文地理学家",
     gradeGroup: "天文地理学家",
@@ -5610,30 +5852,30 @@ window.POEMS_MINGREN = [
     excerpt: "海王星的预言与发现者"
   },
   {
-    textRef: "mingren-mr-511",
-    id: "mr-511",
+    textRef: "mingren-mr-533",
+    id: "mr-533",
     title: "李斯特",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "音乐家",
+    gradeGroup: "音乐家",
     dynasty: "匈牙利",
     author: "李斯特",
     source: "《李斯特》·1811—1886",
     excerpt: "「钢琴之王」，交响诗的开创"
   },
   {
-    textRef: "mingren-mr-512",
-    id: "mr-512",
+    textRef: "mingren-mr-534",
+    id: "mr-534",
     title: "李善兰",
-    group: "翻译家",
-    gradeGroup: "翻译家",
+    group: "语言文字学家",
+    gradeGroup: "语言文字学家",
     dynasty: "清",
     author: "李善兰",
     source: "《李善兰》·1811—1882",
     excerpt: "近代数学与天文学的译介者"
   },
   {
-    textRef: "mingren-mr-513",
-    id: "mr-513",
+    textRef: "mingren-mr-535",
+    id: "mr-535",
     title: "狄更斯",
     group: "文学家",
     gradeGroup: "文学家",
@@ -5643,8 +5885,8 @@ window.POEMS_MINGREN = [
     excerpt: "《雾都孤儿》《双城记》，维多利亚时代的社会良心"
   },
   {
-    textRef: "mingren-mr-514",
-    id: "mr-514",
+    textRef: "mingren-mr-536",
+    id: "mr-536",
     title: "左宗棠",
     group: "军事家",
     gradeGroup: "军事家",
@@ -5654,8 +5896,8 @@ window.POEMS_MINGREN = [
     excerpt: "收复新疆"
   },
   {
-    textRef: "mingren-mr-515",
-    id: "mr-515",
+    textRef: "mingren-mr-537",
+    id: "mr-537",
     title: "克尔凯郭尔",
     group: "哲学家",
     gradeGroup: "哲学家",
@@ -5665,30 +5907,30 @@ window.POEMS_MINGREN = [
     excerpt: "存在主义的先驱，《恐惧与颤栗》"
   },
   {
-    textRef: "mingren-mr-516",
-    id: "mr-516",
+    textRef: "mingren-mr-538",
+    id: "mr-538",
     title: "瓦格纳",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "音乐家",
+    gradeGroup: "音乐家",
     dynasty: "德国",
     author: "瓦格纳",
     source: "《瓦格纳》·1813—1883",
     excerpt: "《尼伯龙根的指环》《特里斯坦与伊索尔德》，乐剧的改革者"
   },
   {
-    textRef: "mingren-mr-517",
-    id: "mr-517",
+    textRef: "mingren-mr-539",
+    id: "mr-539",
     title: "威尔第",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "音乐家",
+    gradeGroup: "音乐家",
     dynasty: "意大利",
     author: "威尔第",
     source: "《威尔第》·1813—1901",
     excerpt: "《茶花女》《阿依达》《奥赛罗》，意大利歌剧的巅峰"
   },
   {
-    textRef: "mingren-mr-518",
-    id: "mr-518",
+    textRef: "mingren-mr-540",
+    id: "mr-540",
     title: "莱蒙托夫",
     group: "文学家",
     gradeGroup: "文学家",
@@ -5698,19 +5940,19 @@ window.POEMS_MINGREN = [
     excerpt: "《当代英雄》《帆》，二十七岁死于决斗"
   },
   {
-    textRef: "mingren-mr-519",
-    id: "mr-519",
+    textRef: "mingren-mr-541",
+    id: "mr-541",
     title: "米勒",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "法国",
     author: "米勒",
     source: "《米勒》·1814—1875",
     excerpt: "《拾穗者》《晚祷》，农民生活的虔诚书写"
   },
   {
-    textRef: "mingren-mr-520",
-    id: "mr-520",
+    textRef: "mingren-mr-542",
+    id: "mr-542",
     title: "俾斯麦",
     group: "政治家",
     gradeGroup: "政治家",
@@ -5720,8 +5962,8 @@ window.POEMS_MINGREN = [
     excerpt: "铁血宰相"
   },
   {
-    textRef: "mingren-mr-521",
-    id: "mr-521",
+    textRef: "mingren-mr-543",
+    id: "mr-543",
     title: "夏洛蒂·勃朗特",
     group: "文学家",
     gradeGroup: "文学家",
@@ -5731,8 +5973,8 @@ window.POEMS_MINGREN = [
     excerpt: "《简·爱》的作者，勃朗特三姐妹之长"
   },
   {
-    textRef: "mingren-mr-522",
-    id: "mr-522",
+    textRef: "mingren-mr-544",
+    id: "mr-544",
     title: "艾米莉·勃朗特",
     group: "文学家",
     gradeGroup: "文学家",
@@ -5742,8 +5984,8 @@ window.POEMS_MINGREN = [
     excerpt: "《呼啸山庄》，英国小说史上最激烈的一部"
   },
   {
-    textRef: "mingren-mr-523",
-    id: "mr-523",
+    textRef: "mingren-mr-545",
+    id: "mr-545",
     title: "屠格涅夫",
     group: "文学家",
     gradeGroup: "文学家",
@@ -5753,8 +5995,8 @@ window.POEMS_MINGREN = [
     excerpt: "《父与子》《猎人笔记》，俄国社会的观察者"
   },
   {
-    textRef: "mingren-mr-524",
-    id: "mr-524",
+    textRef: "mingren-mr-546",
+    id: "mr-546",
     title: "马克思",
     group: "哲学家",
     gradeGroup: "哲学家",
@@ -5764,8 +6006,8 @@ window.POEMS_MINGREN = [
     excerpt: "《资本论》《共产党宣言》，历史唯物主义的创立"
   },
   {
-    textRef: "mingren-mr-525",
-    id: "mr-525",
+    textRef: "mingren-mr-547",
+    id: "mr-547",
     title: "焦耳",
     group: "科学家",
     gradeGroup: "科学家",
@@ -5775,19 +6017,19 @@ window.POEMS_MINGREN = [
     excerpt: "热功当量的测定者"
   },
   {
-    textRef: "mingren-mr-526",
-    id: "mr-526",
+    textRef: "mingren-mr-548",
+    id: "mr-548",
     title: "徐寿",
-    group: "翻译家",
-    gradeGroup: "翻译家",
+    group: "语言文字学家",
+    gradeGroup: "语言文字学家",
     dynasty: "清",
     author: "徐寿",
     source: "《徐寿》·1818—1884",
     excerpt: "元素中译名的制定者"
   },
   {
-    textRef: "mingren-mr-527",
-    id: "mr-527",
+    textRef: "mingren-mr-549",
+    id: "mr-549",
     title: "艾略特",
     group: "文学家",
     gradeGroup: "文学家",
@@ -5797,8 +6039,8 @@ window.POEMS_MINGREN = [
     excerpt: "《米德尔马契》《弗洛斯河上的磨坊》，本名玛丽安·埃文斯"
   },
   {
-    textRef: "mingren-mr-528",
-    id: "mr-528",
+    textRef: "mingren-mr-550",
+    id: "mr-550",
     title: "惠特曼",
     group: "文学家",
     gradeGroup: "文学家",
@@ -5808,8 +6050,8 @@ window.POEMS_MINGREN = [
     excerpt: "《草叶集》，美国诗歌的自由之声"
   },
   {
-    textRef: "mingren-mr-529",
-    id: "mr-529",
+    textRef: "mingren-mr-551",
+    id: "mr-551",
     title: "梅尔维尔",
     group: "文学家",
     gradeGroup: "文学家",
@@ -5819,19 +6061,19 @@ window.POEMS_MINGREN = [
     excerpt: "《白鲸》，美国文学的海洋史诗"
   },
   {
-    textRef: "mingren-mr-530",
-    id: "mr-530",
+    textRef: "mingren-mr-552",
+    id: "mr-552",
     title: "库尔贝",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "法国",
     author: "库尔贝",
     source: "《库尔贝》·1819—1877",
     excerpt: "《奥尔南的葬礼》，现实主义的宣言"
   },
   {
-    textRef: "mingren-mr-531",
-    id: "mr-531",
+    textRef: "mingren-mr-553",
+    id: "mr-553",
     title: "南丁格尔",
     group: "医学家",
     gradeGroup: "医学家",
@@ -5841,19 +6083,19 @@ window.POEMS_MINGREN = [
     excerpt: "现代护理学的创始者，克里米亚战场的「提灯女神」"
   },
   {
-    textRef: "mingren-mr-532",
-    id: "mr-532",
+    textRef: "mingren-mr-554",
+    id: "mr-554",
     title: "丁宝桢",
-    group: "水利家",
-    gradeGroup: "水利家",
+    group: "农学家",
+    gradeGroup: "农学家",
     dynasty: "清",
     author: "丁宝桢",
     source: "《丁宝桢》·1820—1886",
     excerpt: "都江堰三次大修之一"
   },
   {
-    textRef: "mingren-mr-533",
-    id: "mr-533",
+    textRef: "mingren-mr-555",
+    id: "mr-555",
     title: "波德莱尔",
     group: "文学家",
     gradeGroup: "文学家",
@@ -5863,8 +6105,8 @@ window.POEMS_MINGREN = [
     excerpt: "《恶之花》，现代主义诗歌的开端"
   },
   {
-    textRef: "mingren-mr-534",
-    id: "mr-534",
+    textRef: "mingren-mr-556",
+    id: "mr-556",
     title: "福楼拜",
     group: "文学家",
     gradeGroup: "文学家",
@@ -5874,8 +6116,8 @@ window.POEMS_MINGREN = [
     excerpt: "《包法利夫人》，「完美的句子的殉道者」"
   },
   {
-    textRef: "mingren-mr-535",
-    id: "mr-535",
+    textRef: "mingren-mr-557",
+    id: "mr-557",
     title: "陀思妥耶夫斯基",
     group: "文学家",
     gradeGroup: "文学家",
@@ -5885,30 +6127,30 @@ window.POEMS_MINGREN = [
     excerpt: "《罪与罚》《卡拉马佐夫兄弟》，心理小说的深渊"
   },
   {
-    textRef: "mingren-mr-536",
-    id: "mr-536",
+    textRef: "mingren-mr-558",
+    id: "mr-558",
     title: "巴斯德",
-    group: "生物学家",
-    gradeGroup: "生物学家",
+    group: "科学家",
+    gradeGroup: "科学家",
     dynasty: "法国",
     author: "巴斯德",
     source: "《巴斯德》·1822—1895",
     excerpt: "微生物学的奠基者"
   },
   {
-    textRef: "mingren-mr-537",
-    id: "mr-537",
+    textRef: "mingren-mr-559",
+    id: "mr-559",
     title: "孟德尔",
-    group: "生物学家",
-    gradeGroup: "生物学家",
+    group: "科学家",
+    gradeGroup: "科学家",
     dynasty: "奥地利",
     author: "孟德尔",
     source: "《孟德尔》·1822—1884",
     excerpt: "遗传学的奠基人"
   },
   {
-    textRef: "mingren-mr-538",
-    id: "mr-538",
+    textRef: "mingren-mr-560",
+    id: "mr-560",
     title: "李鸿章",
     group: "政治家",
     gradeGroup: "政治家",
@@ -5918,8 +6160,8 @@ window.POEMS_MINGREN = [
     excerpt: "裱糊匠 · 洋务重臣"
   },
   {
-    textRef: "mingren-mr-539",
-    id: "mr-539",
+    textRef: "mingren-mr-561",
+    id: "mr-561",
     title: "裴多菲",
     group: "文学家",
     gradeGroup: "文学家",
@@ -5929,8 +6171,8 @@ window.POEMS_MINGREN = [
     excerpt: "《自由与爱情》「生命诚可贵」，二十六岁阵亡"
   },
   {
-    textRef: "mingren-mr-540",
-    id: "mr-540",
+    textRef: "mingren-mr-562",
+    id: "mr-562",
     title: "华莱士",
     group: "生物学家",
     gradeGroup: "生物学家",
@@ -5940,8 +6182,8 @@ window.POEMS_MINGREN = [
     excerpt: "自然选择的独立发现者，与达尔文同时"
   },
   {
-    textRef: "mingren-mr-541",
-    id: "mr-541",
+    textRef: "mingren-mr-563",
+    id: "mr-563",
     title: "基尔霍夫",
     group: "科学家",
     gradeGroup: "科学家",
@@ -5951,8 +6193,8 @@ window.POEMS_MINGREN = [
     excerpt: "光谱分析与电路定律的建立者"
   },
   {
-    textRef: "mingren-mr-542",
-    id: "mr-542",
+    textRef: "mingren-mr-564",
+    id: "mr-564",
     title: "开尔文",
     group: "科学家",
     gradeGroup: "科学家",
@@ -5962,19 +6204,30 @@ window.POEMS_MINGREN = [
     excerpt: "绝对温标的创立者"
   },
   {
-    textRef: "mingren-mr-543",
-    id: "mr-543",
+    textRef: "mingren-mr-565",
+    id: "mr-565",
     title: "布鲁克纳",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "音乐家",
+    gradeGroup: "音乐家",
     dynasty: "奥地利",
     author: "布鲁克纳",
     source: "《布鲁克纳》·1824—1896",
     excerpt: "九部交响曲，教堂管风琴师出身的交响大家"
   },
   {
-    textRef: "mingren-mr-544",
-    id: "mr-544",
+    textRef: "mingren-mr-566",
+    id: "mr-566",
+    title: "斯美塔那",
+    group: "音乐家",
+    gradeGroup: "音乐家",
+    dynasty: "捷克",
+    author: "斯美塔那",
+    source: "《斯美塔那》·1824—1884",
+    excerpt: "《伏尔塔瓦河》"
+  },
+  {
+    textRef: "mingren-mr-567",
+    id: "mr-567",
     title: "黎曼",
     group: "科学家",
     gradeGroup: "科学家",
@@ -5984,8 +6237,8 @@ window.POEMS_MINGREN = [
     excerpt: "黎曼几何与「黎曼猜想」，几何学的革命者"
   },
   {
-    textRef: "mingren-mr-545",
-    id: "mr-545",
+    textRef: "mingren-mr-568",
+    id: "mr-568",
     title: "托尔斯泰",
     group: "文学家",
     gradeGroup: "文学家",
@@ -5995,8 +6248,8 @@ window.POEMS_MINGREN = [
     excerpt: "《战争与和平》《安娜·卡列尼娜》《复活》"
   },
   {
-    textRef: "mingren-mr-546",
-    id: "mr-546",
+    textRef: "mingren-mr-569",
+    id: "mr-569",
     title: "易卜生",
     group: "文学家",
     gradeGroup: "文学家",
@@ -6006,8 +6259,8 @@ window.POEMS_MINGREN = [
     excerpt: "《玩偶之家》《人民公敌》，现代戏剧的奠基"
   },
   {
-    textRef: "mingren-mr-547",
-    id: "mr-547",
+    textRef: "mingren-mr-570",
+    id: "mr-570",
     title: "凯库勒",
     group: "科学家",
     gradeGroup: "科学家",
@@ -6017,8 +6270,8 @@ window.POEMS_MINGREN = [
     excerpt: "苯环结构的提出者，有机化学的奠基"
   },
   {
-    textRef: "mingren-mr-548",
-    id: "mr-548",
+    textRef: "mingren-mr-571",
+    id: "mr-571",
     title: "狄金森",
     group: "文学家",
     gradeGroup: "文学家",
@@ -6028,19 +6281,19 @@ window.POEMS_MINGREN = [
     excerpt: "一千八百首诗，生前只发表十首"
   },
   {
-    textRef: "mingren-mr-549",
-    id: "mr-549",
+    textRef: "mingren-mr-572",
+    id: "mr-572",
     title: "翁同龢",
-    group: "史学家",
-    gradeGroup: "史学家",
+    group: "历史学家",
+    gradeGroup: "历史学家",
     dynasty: "清",
     author: "翁同龢",
     source: "《翁同龢》·1830—1904",
     excerpt: "光绪帝师，晚清宫廷政治的亲历者与记录者"
   },
   {
-    textRef: "mingren-mr-550",
-    id: "mr-550",
+    textRef: "mingren-mr-573",
+    id: "mr-573",
     title: "麦克斯韦",
     group: "科学家",
     gradeGroup: "科学家",
@@ -6050,30 +6303,30 @@ window.POEMS_MINGREN = [
     excerpt: "电磁理论的统一者"
   },
   {
-    textRef: "mingren-mr-551",
-    id: "mr-551",
+    textRef: "mingren-mr-574",
+    id: "mr-574",
     title: "埃菲尔",
-    group: "建筑家",
-    gradeGroup: "建筑家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "法国",
     author: "埃菲尔",
     source: "《埃菲尔》·1832—1923",
     excerpt: "埃菲尔铁塔与纽约自由女神像内部结构"
   },
   {
-    textRef: "mingren-mr-552",
-    id: "mr-552",
+    textRef: "mingren-mr-575",
+    id: "mr-575",
     title: "马奈",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "法国",
     author: "马奈",
     source: "《马奈》·1832—1883",
     excerpt: "《草地上的午餐》《奥林匹亚》，印象派的引路人"
   },
   {
-    textRef: "mingren-mr-553",
-    id: "mr-553",
+    textRef: "mingren-mr-576",
+    id: "mr-576",
     title: "诺贝尔",
     group: "科学家",
     gradeGroup: "科学家",
@@ -6083,8 +6336,30 @@ window.POEMS_MINGREN = [
     excerpt: "诺贝尔奖的设立者"
   },
   {
-    textRef: "mingren-mr-554",
-    id: "mr-554",
+    textRef: "mingren-mr-577",
+    id: "mr-577",
+    title: "勃拉姆斯",
+    group: "音乐家",
+    gradeGroup: "音乐家",
+    dynasty: "德国",
+    author: "勃拉姆斯",
+    source: "《勃拉姆斯》·1833—1897",
+    excerpt: "《第一交响曲》·《匈牙利舞曲》"
+  },
+  {
+    textRef: "mingren-mr-578",
+    id: "mr-578",
+    title: "鲍罗丁",
+    group: "音乐家",
+    gradeGroup: "音乐家",
+    dynasty: "俄国",
+    author: "鲍罗丁",
+    source: "《鲍罗丁》·1833—1887",
+    excerpt: "《伊戈尔王子》"
+  },
+  {
+    textRef: "mingren-mr-579",
+    id: "mr-579",
     title: "门捷列夫",
     group: "科学家",
     gradeGroup: "科学家",
@@ -6094,19 +6369,30 @@ window.POEMS_MINGREN = [
     excerpt: "元素周期律的发现者"
   },
   {
-    textRef: "mingren-mr-555",
-    id: "mr-555",
+    textRef: "mingren-mr-580",
+    id: "mr-580",
     title: "德加",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "法国",
     author: "德加",
     source: "《德加》·1834—1917",
     excerpt: "《舞蹈课》《舞台上的舞女》，动态与构图的探索"
   },
   {
-    textRef: "mingren-mr-556",
-    id: "mr-556",
+    textRef: "mingren-mr-581",
+    id: "mr-581",
+    title: "瓦尔拉斯",
+    group: "经济学家",
+    gradeGroup: "经济学家",
+    dynasty: "法国",
+    author: "瓦尔拉斯",
+    source: "《瓦尔拉斯》·1834—1910",
+    excerpt: "一般均衡理论"
+  },
+  {
+    textRef: "mingren-mr-582",
+    id: "mr-582",
     title: "马克·吐温",
     group: "文学家",
     gradeGroup: "文学家",
@@ -6116,118 +6402,151 @@ window.POEMS_MINGREN = [
     excerpt: "《汤姆·索亚历险记》《哈克贝利·费恩历险记》"
   },
   {
-    textRef: "mingren-mr-557",
-    id: "mr-557",
+    textRef: "mingren-mr-583",
+    id: "mr-583",
     title: "吴大澂",
-    group: "考古学家",
-    gradeGroup: "考古学家",
+    group: "历史学家",
+    gradeGroup: "历史学家",
     dynasty: "清",
     author: "吴大澂",
     source: "《吴大澂》·1835—1902",
     excerpt: "《说文古籀补》"
   },
   {
-    textRef: "mingren-mr-558",
-    id: "mr-558",
+    textRef: "mingren-mr-584",
+    id: "mr-584",
     title: "张之洞",
-    group: "教育家",
-    gradeGroup: "教育家",
+    group: "思想家",
+    gradeGroup: "思想家",
     dynasty: "清",
     author: "张之洞",
     source: "《张之洞》·1837—1909",
     excerpt: "中体西用 · 癸卯学制"
   },
   {
-    textRef: "mingren-mr-559",
-    id: "mr-559",
+    textRef: "mingren-mr-585",
+    id: "mr-585",
     title: "塞尚",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "法国",
     author: "塞尚",
     source: "《塞尚》·1839—1906",
     excerpt: "《圣维克多山》《苹果与橘子》，「现代绘画之父」"
   },
   {
-    textRef: "mingren-mr-560",
-    id: "mr-560",
-    title: "任颐",
-    group: "画家",
-    gradeGroup: "画家",
-    dynasty: "清",
-    author: "任颐",
-    source: "《任颐》·1840—1895",
-    excerpt: "「海上四任」之首，海派人物与花鸟的领袖"
-  },
-  {
-    textRef: "mingren-mr-561",
-    id: "mr-561",
-    title: "莫奈",
-    group: "画家",
-    gradeGroup: "画家",
-    dynasty: "法国",
-    author: "莫奈",
-    source: "《莫奈》·1840—1926",
-    excerpt: "《日出·印象》《睡莲》，印象派的命名者"
-  },
-  {
-    textRef: "mingren-mr-562",
-    id: "mr-562",
-    title: "罗丹",
-    group: "画家",
-    gradeGroup: "画家",
-    dynasty: "法国",
-    author: "罗丹",
-    source: "《罗丹》·1840—1917",
-    excerpt: "《思想者》《加莱义民》《地狱之门》"
-  },
-  {
-    textRef: "mingren-mr-563",
-    id: "mr-563",
-    title: "柴可夫斯基",
-    group: "画家",
-    gradeGroup: "画家",
+    textRef: "mingren-mr-586",
+    id: "mr-586",
+    title: "穆索尔斯基",
+    group: "音乐家",
+    gradeGroup: "音乐家",
     dynasty: "俄国",
-    author: "柴可夫斯基",
-    source: "《柴可夫斯基》·1840—1893",
-    excerpt: "《天鹅湖》《胡桃夹子》《悲怆交响曲》"
+    author: "穆索尔斯基",
+    source: "《穆索尔斯基》·1839—1881",
+    excerpt: "《图画展览会》"
   },
   {
-    textRef: "mingren-mr-564",
-    id: "mr-564",
+    textRef: "mingren-mr-587",
+    id: "mr-587",
     title: "沈家本",
-    group: "法学家",
-    gradeGroup: "法学家",
+    group: "政治家",
+    gradeGroup: "政治家",
     dynasty: "清",
     author: "沈家本",
     source: "《沈家本》·1840—1913",
     excerpt: "清末修律大臣"
   },
   {
-    textRef: "mingren-mr-565",
-    id: "mr-565",
+    textRef: "mingren-mr-588",
+    id: "mr-588",
+    title: "任颐",
+    group: "美术家",
+    gradeGroup: "美术家",
+    dynasty: "清",
+    author: "任颐",
+    source: "《任颐》·1840—1895",
+    excerpt: "「海上四任」之首，海派人物与花鸟的领袖"
+  },
+  {
+    textRef: "mingren-mr-589",
+    id: "mr-589",
+    title: "莫奈",
+    group: "美术家",
+    gradeGroup: "美术家",
+    dynasty: "法国",
+    author: "莫奈",
+    source: "《莫奈》·1840—1926",
+    excerpt: "《日出·印象》《睡莲》，印象派的命名者"
+  },
+  {
+    textRef: "mingren-mr-590",
+    id: "mr-590",
+    title: "罗丹",
+    group: "美术家",
+    gradeGroup: "美术家",
+    dynasty: "法国",
+    author: "罗丹",
+    source: "《罗丹》·1840—1917",
+    excerpt: "《思想者》《加莱义民》《地狱之门》"
+  },
+  {
+    textRef: "mingren-mr-591",
+    id: "mr-591",
+    title: "柴可夫斯基",
+    group: "音乐家",
+    gradeGroup: "音乐家",
+    dynasty: "俄国",
+    author: "柴可夫斯基",
+    source: "《柴可夫斯基》·1840—1893",
+    excerpt: "《天鹅湖》《胡桃夹子》《悲怆交响曲》"
+  },
+  {
+    textRef: "mingren-mr-592",
+    id: "mr-592",
+    title: "门格尔",
+    group: "经济学家",
+    gradeGroup: "经济学家",
+    dynasty: "奥地利",
+    author: "门格尔",
+    source: "《门格尔》·1840—1921",
+    excerpt: "《国民经济学原理》"
+  },
+  {
+    textRef: "mingren-mr-593",
+    id: "mr-593",
     title: "雷诺阿",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "法国",
     author: "雷诺阿",
     source: "《雷诺阿》·1841—1919",
     excerpt: "《煎饼磨坊的舞会》，光与欢愉的画家"
   },
   {
-    textRef: "mingren-mr-566",
-    id: "mr-566",
+    textRef: "mingren-mr-594",
+    id: "mr-594",
     title: "德沃夏克",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "音乐家",
+    gradeGroup: "音乐家",
     dynasty: "捷克",
     author: "德沃夏克",
     source: "《德沃夏克》·1841—1904",
     excerpt: "《自新大陆交响曲》《斯拉夫舞曲》"
   },
   {
-    textRef: "mingren-mr-567",
-    id: "mr-567",
+    textRef: "mingren-mr-595",
+    id: "mr-595",
+    title: "马歇尔",
+    group: "经济学家",
+    gradeGroup: "经济学家",
+    dynasty: "英国",
+    author: "马歇尔",
+    source: "《马歇尔》·1842—1924",
+    excerpt: "《经济学原理》· 供求曲线"
+  },
+  {
+    textRef: "mingren-mr-596",
+    id: "mr-596",
     title: "詹姆斯",
     group: "文学家",
     gradeGroup: "文学家",
@@ -6237,8 +6556,8 @@ window.POEMS_MINGREN = [
     excerpt: "《一位女士的画像》《鸽翼》，心理现实主义的大师"
   },
   {
-    textRef: "mingren-mr-568",
-    id: "mr-568",
+    textRef: "mingren-mr-597",
+    id: "mr-597",
     title: "科赫",
     group: "医学家",
     gradeGroup: "医学家",
@@ -6248,8 +6567,19 @@ window.POEMS_MINGREN = [
     excerpt: "结核杆菌与霍乱弧菌的发现，1905 年诺贝尔奖"
   },
   {
-    textRef: "mingren-mr-569",
-    id: "mr-569",
+    textRef: "mingren-mr-598",
+    id: "mr-598",
+    title: "格里格",
+    group: "音乐家",
+    gradeGroup: "音乐家",
+    dynasty: "挪威",
+    author: "格里格",
+    source: "《格里格》·1843—1907",
+    excerpt: "《培尔·金特》组曲"
+  },
+  {
+    textRef: "mingren-mr-599",
+    id: "mr-599",
     title: "尼采",
     group: "哲学家",
     gradeGroup: "哲学家",
@@ -6259,19 +6589,41 @@ window.POEMS_MINGREN = [
     excerpt: "重估一切价值的批判者"
   },
   {
-    textRef: "mingren-mr-570",
-    id: "mr-570",
+    textRef: "mingren-mr-600",
+    id: "mr-600",
     title: "吴昌硕",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "近现代",
     author: "吴昌硕",
     source: "《吴昌硕》·1844—1927",
     excerpt: "「后海派」的领袖，诗书画印四绝"
   },
   {
-    textRef: "mingren-mr-571",
-    id: "mr-571",
+    textRef: "mingren-mr-601",
+    id: "mr-601",
+    title: "列宾",
+    group: "美术家",
+    gradeGroup: "美术家",
+    dynasty: "俄国",
+    author: "列宾",
+    source: "《列宾》·1844—1930",
+    excerpt: "《伏尔加河上的纤夫》"
+  },
+  {
+    textRef: "mingren-mr-602",
+    id: "mr-602",
+    title: "王懿荣",
+    group: "历史学家",
+    gradeGroup: "历史学家",
+    dynasty: "清",
+    author: "王懿荣",
+    source: "《王懿荣》·1845—1900",
+    excerpt: "甲骨文的第一位发现者"
+  },
+  {
+    textRef: "mingren-mr-603",
+    id: "mr-603",
     title: "康托尔",
     group: "科学家",
     gradeGroup: "科学家",
@@ -6281,8 +6633,8 @@ window.POEMS_MINGREN = [
     excerpt: "集合论的创立者，「无穷」被分出了等级"
   },
   {
-    textRef: "mingren-mr-572",
-    id: "mr-572",
+    textRef: "mingren-mr-604",
+    id: "mr-604",
     title: "伦琴",
     group: "科学家",
     gradeGroup: "科学家",
@@ -6292,19 +6644,8 @@ window.POEMS_MINGREN = [
     excerpt: "X 射线的发现者"
   },
   {
-    textRef: "mingren-mr-573",
-    id: "mr-573",
-    title: "王懿荣",
-    group: "考古学家",
-    gradeGroup: "考古学家",
-    dynasty: "清",
-    author: "王懿荣",
-    source: "《王懿荣》·1845—1900",
-    excerpt: "甲骨文的第一位发现者"
-  },
-  {
-    textRef: "mingren-mr-574",
-    id: "mr-574",
+    textRef: "mingren-mr-605",
+    id: "mr-605",
     title: "显克微支",
     group: "文学家",
     gradeGroup: "文学家",
@@ -6314,8 +6655,8 @@ window.POEMS_MINGREN = [
     excerpt: "《你往何处去》，1905 年诺贝尔文学奖"
   },
   {
-    textRef: "mingren-mr-575",
-    id: "mr-575",
+    textRef: "mingren-mr-606",
+    id: "mr-606",
     title: "贝尔",
     group: "科学家",
     gradeGroup: "科学家",
@@ -6325,8 +6666,8 @@ window.POEMS_MINGREN = [
     excerpt: "电话的发明者"
   },
   {
-    textRef: "mingren-mr-576",
-    id: "mr-576",
+    textRef: "mingren-mr-607",
+    id: "mr-607",
     title: "黄遵宪",
     group: "文学家",
     gradeGroup: "文学家",
@@ -6336,19 +6677,41 @@ window.POEMS_MINGREN = [
     excerpt: "「诗界革命」的旗帜，《人境庐诗草》"
   },
   {
-    textRef: "mingren-mr-577",
-    id: "mr-577",
+    textRef: "mingren-mr-608",
+    id: "mr-608",
     title: "高更",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "法国",
     author: "高更",
     source: "《高更》·1848—1903",
     excerpt: "《我们从哪里来？》，塔希提岛的原始色彩"
   },
   {
-    textRef: "mingren-mr-578",
-    id: "mr-578",
+    textRef: "mingren-mr-609",
+    id: "mr-609",
+    title: "苏里科夫",
+    group: "美术家",
+    gradeGroup: "美术家",
+    dynasty: "俄国",
+    author: "苏里科夫",
+    source: "《苏里科夫》·1848—1916",
+    excerpt: "《近卫军临刑的早晨》"
+  },
+  {
+    textRef: "mingren-mr-610",
+    id: "mr-610",
+    title: "帕累托",
+    group: "经济学家",
+    gradeGroup: "经济学家",
+    dynasty: "意大利",
+    author: "帕累托",
+    source: "《帕累托》·1848—1923",
+    excerpt: "帕累托最优"
+  },
+  {
+    textRef: "mingren-mr-611",
+    id: "mr-611",
     title: "斯特林堡",
     group: "文学家",
     gradeGroup: "文学家",
@@ -6358,8 +6721,8 @@ window.POEMS_MINGREN = [
     excerpt: "《朱丽小姐》《到大马士革去》，瑞典现代戏剧的开创"
   },
   {
-    textRef: "mingren-mr-579",
-    id: "mr-579",
+    textRef: "mingren-mr-612",
+    id: "mr-612",
     title: "巴甫洛夫",
     group: "生物学家",
     gradeGroup: "生物学家",
@@ -6369,8 +6732,8 @@ window.POEMS_MINGREN = [
     excerpt: "条件反射的研究，1904 年诺贝尔生理学或医学奖"
   },
   {
-    textRef: "mingren-mr-580",
-    id: "mr-580",
+    textRef: "mingren-mr-613",
+    id: "mr-613",
     title: "范特霍夫",
     group: "科学家",
     gradeGroup: "科学家",
@@ -6380,41 +6743,41 @@ window.POEMS_MINGREN = [
     excerpt: "立体化学的创立，首届诺贝尔化学奖"
   },
   {
-    textRef: "mingren-mr-581",
-    id: "mr-581",
+    textRef: "mingren-mr-614",
+    id: "mr-614",
     title: "高迪",
-    group: "建筑家",
-    gradeGroup: "建筑家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "西班牙",
     author: "高迪",
     source: "《高迪》·1852—1926",
     excerpt: "圣家堂、米拉公寓，加泰罗尼亚现代主义的巅峰"
   },
   {
-    textRef: "mingren-mr-582",
-    id: "mr-582",
+    textRef: "mingren-mr-615",
+    id: "mr-615",
     title: "林纾",
-    group: "翻译家",
-    gradeGroup: "翻译家",
+    group: "语言文字学家",
+    gradeGroup: "语言文字学家",
     dynasty: "清",
     author: "林纾",
     source: "《林纾》·1852—1924",
     excerpt: "林译小说"
   },
   {
-    textRef: "mingren-mr-583",
-    id: "mr-583",
+    textRef: "mingren-mr-616",
+    id: "mr-616",
     title: "梵高",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "荷兰",
     author: "梵高",
     source: "《梵高》·1853—1890",
     excerpt: "《向日葵》《星月夜》，三十七岁在麦田里开枪"
   },
   {
-    textRef: "mingren-mr-584",
-    id: "mr-584",
+    textRef: "mingren-mr-617",
+    id: "mr-617",
     title: "王尔德",
     group: "文学家",
     gradeGroup: "文学家",
@@ -6424,8 +6787,8 @@ window.POEMS_MINGREN = [
     excerpt: "《道林·格雷的画像》《不可儿戏》，唯美主义的代表"
   },
   {
-    textRef: "mingren-mr-585",
-    id: "mr-585",
+    textRef: "mingren-mr-618",
+    id: "mr-618",
     title: "庞加莱",
     group: "科学家",
     gradeGroup: "科学家",
@@ -6435,19 +6798,19 @@ window.POEMS_MINGREN = [
     excerpt: "拓扑学与混沌理论的奠基，「庞加莱猜想」"
   },
   {
-    textRef: "mingren-mr-586",
-    id: "mr-586",
+    textRef: "mingren-mr-619",
+    id: "mr-619",
     title: "严复",
-    group: "翻译家",
-    gradeGroup: "翻译家",
+    group: "语言文字学家",
+    gradeGroup: "语言文字学家",
     dynasty: "近现代",
     author: "严复",
     source: "《严复》·1854—1921",
     excerpt: "《天演论》译者"
   },
   {
-    textRef: "mingren-mr-587",
-    id: "mr-587",
+    textRef: "mingren-mr-620",
+    id: "mr-620",
     title: "肖伯纳",
     group: "文学家",
     gradeGroup: "文学家",
@@ -6457,8 +6820,8 @@ window.POEMS_MINGREN = [
     excerpt: "《华伦夫人的职业》《皮格马利翁》，1925 年诺贝尔文学奖"
   },
   {
-    textRef: "mingren-mr-588",
-    id: "mr-588",
+    textRef: "mingren-mr-621",
+    id: "mr-621",
     title: "弗洛伊德",
     group: "哲学家",
     gradeGroup: "哲学家",
@@ -6468,8 +6831,8 @@ window.POEMS_MINGREN = [
     excerpt: "精神分析的开创者"
   },
   {
-    textRef: "mingren-mr-589",
-    id: "mr-589",
+    textRef: "mingren-mr-622",
+    id: "mr-622",
     title: "刘鹗",
     group: "文学家",
     gradeGroup: "文学家",
@@ -6479,8 +6842,19 @@ window.POEMS_MINGREN = [
     excerpt: "《老残游记》的作者，甲骨文最早的收藏与著录者"
   },
   {
-    textRef: "mingren-mr-590",
-    id: "mr-590",
+    textRef: "mingren-mr-623",
+    id: "mr-623",
+    title: "凡勃伦",
+    group: "经济学家",
+    gradeGroup: "经济学家",
+    dynasty: "美国",
+    author: "凡勃伦",
+    source: "《凡勃伦》·1857—1929",
+    excerpt: "《有闲阶级论》"
+  },
+  {
+    textRef: "mingren-mr-624",
+    id: "mr-624",
     title: "拉格洛夫",
     group: "文学家",
     gradeGroup: "文学家",
@@ -6490,8 +6864,8 @@ window.POEMS_MINGREN = [
     excerpt: "《尼尔斯骑鹅旅行记》，首位获诺贝尔文学奖的女性"
   },
   {
-    textRef: "mingren-mr-591",
-    id: "mr-591",
+    textRef: "mingren-mr-625",
+    id: "mr-625",
     title: "康有为",
     group: "思想家",
     gradeGroup: "思想家",
@@ -6501,8 +6875,8 @@ window.POEMS_MINGREN = [
     excerpt: "戊戌变法的领袖"
   },
   {
-    textRef: "mingren-mr-592",
-    id: "mr-592",
+    textRef: "mingren-mr-626",
+    id: "mr-626",
     title: "普朗克",
     group: "科学家",
     gradeGroup: "科学家",
@@ -6512,19 +6886,19 @@ window.POEMS_MINGREN = [
     excerpt: "量子论的开启者"
   },
   {
-    textRef: "mingren-mr-593",
-    id: "mr-593",
+    textRef: "mingren-mr-627",
+    id: "mr-627",
     title: "波特",
-    group: "生物学家",
-    gradeGroup: "生物学家",
+    group: "科学家",
+    gradeGroup: "科学家",
     dynasty: "英国",
     author: "波特",
     source: "《波特》·1858—1932",
     excerpt: "科学与艺术双绝的植物学家"
   },
   {
-    textRef: "mingren-mr-594",
-    id: "mr-594",
+    textRef: "mingren-mr-628",
+    id: "mr-628",
     title: "胡塞尔",
     group: "哲学家",
     gradeGroup: "哲学家",
@@ -6534,8 +6908,8 @@ window.POEMS_MINGREN = [
     excerpt: "现象学的开创者"
   },
   {
-    textRef: "mingren-mr-595",
-    id: "mr-595",
+    textRef: "mingren-mr-629",
+    id: "mr-629",
     title: "阿伦尼乌斯",
     group: "科学家",
     gradeGroup: "科学家",
@@ -6545,19 +6919,19 @@ window.POEMS_MINGREN = [
     excerpt: "电离理论，1903 年诺贝尔化学奖"
   },
   {
-    textRef: "mingren-mr-596",
-    id: "mr-596",
+    textRef: "mingren-mr-630",
+    id: "mr-630",
     title: "修拉",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "法国",
     author: "修拉",
     source: "《修拉》·1859—1891",
     excerpt: "《大碗岛的星期天下午》，点彩法的创立"
   },
   {
-    textRef: "mingren-mr-597",
-    id: "mr-597",
+    textRef: "mingren-mr-631",
+    id: "mr-631",
     title: "契诃夫",
     group: "文学家",
     gradeGroup: "文学家",
@@ -6567,19 +6941,19 @@ window.POEMS_MINGREN = [
     excerpt: "短篇小说与《樱桃园》《海鸥》的剧作家"
   },
   {
-    textRef: "mingren-mr-598",
-    id: "mr-598",
+    textRef: "mingren-mr-632",
+    id: "mr-632",
     title: "马勒",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "音乐家",
+    gradeGroup: "音乐家",
     dynasty: "奥地利",
     author: "马勒",
     source: "《马勒》·1860—1911",
     excerpt: "《大地之歌》《第八交响曲》，交响曲世界的建造者"
   },
   {
-    textRef: "mingren-mr-599",
-    id: "mr-599",
+    textRef: "mingren-mr-633",
+    id: "mr-633",
     title: "泰戈尔",
     group: "文学家",
     gradeGroup: "文学家",
@@ -6589,19 +6963,19 @@ window.POEMS_MINGREN = [
     excerpt: "《吉檀迦利》，1913 年诺贝尔文学奖（亚洲首位）"
   },
   {
-    textRef: "mingren-mr-600",
-    id: "mr-600",
+    textRef: "mingren-mr-634",
+    id: "mr-634",
     title: "詹天佑",
-    group: "建筑家",
-    gradeGroup: "建筑家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "近现代",
     author: "詹天佑",
     source: "《詹天佑》·1861—1919",
     excerpt: "中国铁路之父"
   },
   {
-    textRef: "mingren-mr-601",
-    id: "mr-601",
+    textRef: "mingren-mr-635",
+    id: "mr-635",
     title: "希尔伯特",
     group: "科学家",
     gradeGroup: "科学家",
@@ -6611,52 +6985,63 @@ window.POEMS_MINGREN = [
     excerpt: "二十三个数学问题，二十世纪数学的领航"
   },
   {
-    textRef: "mingren-mr-602",
-    id: "mr-602",
+    textRef: "mingren-mr-636",
+    id: "mr-636",
     title: "克里姆特",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "奥地利",
     author: "克里姆特",
     source: "《克里姆特》·1862—1918",
     excerpt: "《吻》《金鱼》，维也纳分离派的领袖"
   },
   {
-    textRef: "mingren-mr-603",
-    id: "mr-603",
+    textRef: "mingren-mr-637",
+    id: "mr-637",
     title: "德彪西",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "音乐家",
+    gradeGroup: "音乐家",
     dynasty: "法国",
     author: "德彪西",
     source: "《德彪西》·1862—1918",
     excerpt: "《月光》《牧神午后前奏曲》，印象主义音乐的开创"
   },
   {
-    textRef: "mingren-mr-604",
-    id: "mr-604",
+    textRef: "mingren-mr-638",
+    id: "mr-638",
     title: "蒙克",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "挪威",
     author: "蒙克",
     source: "《蒙克》·1863—1944",
     excerpt: "《呐喊》，表现主义的先声"
   },
   {
-    textRef: "mingren-mr-605",
-    id: "mr-605",
+    textRef: "mingren-mr-639",
+    id: "mr-639",
     title: "齐白石",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "近现代",
     author: "齐白石",
     source: "《齐白石》·1864—1957",
     excerpt: "「人民艺术家」，虾与花鸟的现代高峰"
   },
   {
-    textRef: "mingren-mr-606",
-    id: "mr-606",
+    textRef: "mingren-mr-640",
+    id: "mr-640",
+    title: "韦伯",
+    group: "经济学家",
+    gradeGroup: "经济学家",
+    dynasty: "德国",
+    author: "韦伯",
+    source: "《韦伯》·1864—1920",
+    excerpt: "《新教伦理与资本主义精神》"
+  },
+  {
+    textRef: "mingren-mr-641",
+    id: "mr-641",
     title: "叶芝",
     group: "文学家",
     gradeGroup: "文学家",
@@ -6666,19 +7051,30 @@ window.POEMS_MINGREN = [
     excerpt: "《当你老了》，爱尔兰文艺复兴的领袖，1923 年诺贝尔文学奖"
   },
   {
-    textRef: "mingren-mr-607",
-    id: "mr-607",
+    textRef: "mingren-mr-642",
+    id: "mr-642",
     title: "黄宾虹",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "近现代",
     author: "黄宾虹",
     source: "《黄宾虹》·1865—1955",
     excerpt: "「五笔七墨」，山水画的集大成"
   },
   {
-    textRef: "mingren-mr-608",
-    id: "mr-608",
+    textRef: "mingren-mr-643",
+    id: "mr-643",
+    title: "西贝柳斯",
+    group: "音乐家",
+    gradeGroup: "音乐家",
+    dynasty: "芬兰",
+    author: "西贝柳斯",
+    source: "《西贝柳斯》·1865—1957",
+    excerpt: "《芬兰颂》"
+  },
+  {
+    textRef: "mingren-mr-644",
+    id: "mr-644",
     title: "吴趼人",
     group: "文学家",
     gradeGroup: "文学家",
@@ -6688,8 +7084,8 @@ window.POEMS_MINGREN = [
     excerpt: "《二十年目睹之怪现状》的作者"
   },
   {
-    textRef: "mingren-mr-609",
-    id: "mr-609",
+    textRef: "mingren-mr-645",
+    id: "mr-645",
     title: "摩尔根",
     group: "生物学家",
     gradeGroup: "生物学家",
@@ -6699,19 +7095,19 @@ window.POEMS_MINGREN = [
     excerpt: "果蝇实验与基因的染色体定位，1933 年诺贝尔奖"
   },
   {
-    textRef: "mingren-mr-610",
-    id: "mr-610",
+    textRef: "mingren-mr-646",
+    id: "mr-646",
     title: "康定斯基",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "俄国 / 德国",
     author: "康定斯基",
     source: "《康定斯基》·1866—1944",
     excerpt: "抽象绘画的开创，《论艺术的精神》"
   },
   {
-    textRef: "mingren-mr-611",
-    id: "mr-611",
+    textRef: "mingren-mr-647",
+    id: "mr-647",
     title: "李宝嘉",
     group: "文学家",
     gradeGroup: "文学家",
@@ -6721,8 +7117,8 @@ window.POEMS_MINGREN = [
     excerpt: "谴责小说四大家之一"
   },
   {
-    textRef: "mingren-mr-612",
-    id: "mr-612",
+    textRef: "mingren-mr-648",
+    id: "mr-648",
     title: "夏目漱石",
     group: "文学家",
     gradeGroup: "文学家",
@@ -6732,8 +7128,8 @@ window.POEMS_MINGREN = [
     excerpt: "《我是猫》《心》，日本近代文学的代表"
   },
   {
-    textRef: "mingren-mr-613",
-    id: "mr-613",
+    textRef: "mingren-mr-649",
+    id: "mr-649",
     title: "居里夫人",
     group: "科学家",
     gradeGroup: "科学家",
@@ -6743,8 +7139,8 @@ window.POEMS_MINGREN = [
     excerpt: "放射学的开创者"
   },
   {
-    textRef: "mingren-mr-614",
-    id: "mr-614",
+    textRef: "mingren-mr-650",
+    id: "mr-650",
     title: "莱特兄弟",
     group: "科学家",
     gradeGroup: "科学家",
@@ -6754,19 +7150,19 @@ window.POEMS_MINGREN = [
     excerpt: "第一架飞机的制造者"
   },
   {
-    textRef: "mingren-mr-615",
-    id: "mr-615",
+    textRef: "mingren-mr-651",
+    id: "mr-651",
     title: "赖特",
-    group: "建筑家",
-    gradeGroup: "建筑家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "美国",
     author: "赖特",
     source: "《赖特》·1867—1959",
     excerpt: "流水别墅、古根海姆美术馆，「有机建筑」的提倡者"
   },
   {
-    textRef: "mingren-mr-616",
-    id: "mr-616",
+    textRef: "mingren-mr-652",
+    id: "mr-652",
     title: "高尔基",
     group: "文学家",
     gradeGroup: "文学家",
@@ -6776,8 +7172,8 @@ window.POEMS_MINGREN = [
     excerpt: "《童年》《在人间》《我的大学》，自传三部曲"
   },
   {
-    textRef: "mingren-mr-617",
-    id: "mr-617",
+    textRef: "mingren-mr-653",
+    id: "mr-653",
     title: "蔡元培",
     group: "思想家",
     gradeGroup: "思想家",
@@ -6787,8 +7183,8 @@ window.POEMS_MINGREN = [
     excerpt: "北大精神的奠定者"
   },
   {
-    textRef: "mingren-mr-618",
-    id: "mr-618",
+    textRef: "mingren-mr-654",
+    id: "mr-654",
     title: "哈伯",
     group: "科学家",
     gradeGroup: "科学家",
@@ -6798,8 +7194,8 @@ window.POEMS_MINGREN = [
     excerpt: "合成氨的实现，「面包来自空气」"
   },
   {
-    textRef: "mingren-mr-619",
-    id: "mr-619",
+    textRef: "mingren-mr-655",
+    id: "mr-655",
     title: "甘地",
     group: "政治家",
     gradeGroup: "政治家",
@@ -6809,19 +7205,19 @@ window.POEMS_MINGREN = [
     excerpt: "非暴力不合作"
   },
   {
-    textRef: "mingren-mr-620",
-    id: "mr-620",
+    textRef: "mingren-mr-656",
+    id: "mr-656",
     title: "马蒂斯",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "法国",
     author: "马蒂斯",
     source: "《马蒂斯》·1869—1954",
     excerpt: "《舞蹈》《红色的和谐》，野兽派的领袖"
   },
   {
-    textRef: "mingren-mr-621",
-    id: "mr-621",
+    textRef: "mingren-mr-657",
+    id: "mr-657",
     title: "巴多格里奥",
     group: "军事家",
     gradeGroup: "军事家",
@@ -6831,8 +7227,8 @@ window.POEMS_MINGREN = [
     excerpt: "1943 年意大利退出轴心"
   },
   {
-    textRef: "mingren-mr-622",
-    id: "mr-622",
+    textRef: "mingren-mr-658",
+    id: "mr-658",
     title: "卢瑟福",
     group: "科学家",
     gradeGroup: "科学家",
@@ -6842,8 +7238,8 @@ window.POEMS_MINGREN = [
     excerpt: "原子核的发现者，「卢瑟福散射实验」"
   },
   {
-    textRef: "mingren-mr-623",
-    id: "mr-623",
+    textRef: "mingren-mr-659",
+    id: "mr-659",
     title: "曾朴",
     group: "文学家",
     gradeGroup: "文学家",
@@ -6853,8 +7249,8 @@ window.POEMS_MINGREN = [
     excerpt: "晚清四大家之一"
   },
   {
-    textRef: "mingren-mr-624",
-    id: "mr-624",
+    textRef: "mingren-mr-660",
+    id: "mr-660",
     title: "罗素",
     group: "哲学家",
     gradeGroup: "哲学家",
@@ -6864,19 +7260,19 @@ window.POEMS_MINGREN = [
     excerpt: "逻辑与公共写作的典范"
   },
   {
-    textRef: "mingren-mr-625",
-    id: "mr-625",
+    textRef: "mingren-mr-661",
+    id: "mr-661",
     title: "蒙德里安",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "荷兰",
     author: "蒙德里安",
     source: "《蒙德里安》·1872—1944",
     excerpt: "《红黄蓝的构成》，几何抽象的最高点"
   },
   {
-    textRef: "mingren-mr-626",
-    id: "mr-626",
+    textRef: "mingren-mr-662",
+    id: "mr-662",
     title: "梁启超",
     group: "思想家",
     gradeGroup: "思想家",
@@ -6886,19 +7282,19 @@ window.POEMS_MINGREN = [
     excerpt: "近代维新派代表"
   },
   {
-    textRef: "mingren-mr-627",
-    id: "mr-627",
+    textRef: "mingren-mr-663",
+    id: "mr-663",
     title: "拉赫玛尼诺夫",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "音乐家",
+    gradeGroup: "音乐家",
     dynasty: "俄国 / 美国",
     author: "拉赫玛尼诺夫",
     source: "《拉赫玛尼诺夫》·1873—1943",
     excerpt: "《第二钢琴协奏曲》《帕格尼尼主题狂想曲》"
   },
   {
-    textRef: "mingren-mr-628",
-    id: "mr-628",
+    textRef: "mingren-mr-664",
+    id: "mr-664",
     title: "丘吉尔",
     group: "政治家",
     gradeGroup: "政治家",
@@ -6908,30 +7304,30 @@ window.POEMS_MINGREN = [
     excerpt: "绝不投降的战时首相"
   },
   {
-    textRef: "mingren-mr-629",
-    id: "mr-629",
+    textRef: "mingren-mr-665",
+    id: "mr-665",
     title: "沈寿",
-    group: "工艺家",
-    gradeGroup: "工艺家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "近现代",
     author: "沈寿",
     source: "《沈寿》·1874—1921",
     excerpt: "仿真绣 ·《雪宦绣谱》"
   },
   {
-    textRef: "mingren-mr-630",
-    id: "mr-630",
+    textRef: "mingren-mr-666",
+    id: "mr-666",
     title: "勋伯格",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "音乐家",
+    gradeGroup: "音乐家",
     dynasty: "奥地利 / 美国",
     author: "勋伯格",
     source: "《勋伯格》·1874—1951",
     excerpt: "十二音体系的创立者，《月迷彼埃罗》"
   },
   {
-    textRef: "mingren-mr-631",
-    id: "mr-631",
+    textRef: "mingren-mr-667",
+    id: "mr-667",
     title: "里尔克",
     group: "文学家",
     gradeGroup: "文学家",
@@ -6941,8 +7337,8 @@ window.POEMS_MINGREN = [
     excerpt: "《杜伊诺哀歌》《给青年诗人的信》"
   },
   {
-    textRef: "mingren-mr-632",
-    id: "mr-632",
+    textRef: "mingren-mr-668",
+    id: "mr-668",
     title: "托马斯·曼",
     group: "文学家",
     gradeGroup: "文学家",
@@ -6952,8 +7348,19 @@ window.POEMS_MINGREN = [
     excerpt: "《布登勃洛克一家》《魔山》，1929 年诺贝尔文学奖"
   },
   {
-    textRef: "mingren-mr-633",
-    id: "mr-633",
+    textRef: "mingren-mr-669",
+    id: "mr-669",
+    title: "拉威尔",
+    group: "音乐家",
+    gradeGroup: "音乐家",
+    dynasty: "法国",
+    author: "拉威尔",
+    source: "《拉威尔》·1875—1937",
+    excerpt: "《波莱罗》"
+  },
+  {
+    textRef: "mingren-mr-670",
+    id: "mr-670",
     title: "阿登纳",
     group: "政治家",
     gradeGroup: "政治家",
@@ -6963,19 +7370,19 @@ window.POEMS_MINGREN = [
     excerpt: "联邦德国的奠基者"
   },
   {
-    textRef: "mingren-mr-634",
-    id: "mr-634",
+    textRef: "mingren-mr-671",
+    id: "mr-671",
     title: "布朗库西",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "罗马尼亚 / 法国",
     author: "布朗库西",
     source: "《布朗库西》·1876—1957",
     excerpt: "《吻》《空间中的鸟》，现代雕塑的极简开端"
   },
   {
-    textRef: "mingren-mr-635",
-    id: "mr-635",
+    textRef: "mingren-mr-672",
+    id: "mr-672",
     title: "哈代",
     group: "文学家",
     gradeGroup: "文学家",
@@ -6985,8 +7392,8 @@ window.POEMS_MINGREN = [
     excerpt: "《一个数学家的辩白》，解析数论与拉马努金的伯乐"
   },
   {
-    textRef: "mingren-mr-636",
-    id: "mr-636",
+    textRef: "mingren-mr-673",
+    id: "mr-673",
     title: "黑塞",
     group: "文学家",
     gradeGroup: "文学家",
@@ -6996,19 +7403,19 @@ window.POEMS_MINGREN = [
     excerpt: "《荒原狼》《玻璃球游戏》，1946 年诺贝尔文学奖"
   },
   {
-    textRef: "mingren-mr-637",
-    id: "mr-637",
+    textRef: "mingren-mr-674",
+    id: "mr-674",
     title: "王国维",
-    group: "考古学家",
-    gradeGroup: "考古学家",
+    group: "历史学家",
+    gradeGroup: "历史学家",
     dynasty: "近现代",
     author: "王国维",
     source: "《王国维》·1877—1927",
     excerpt: "《人间词话》与甲骨学「二重证据法」的开创"
   },
   {
-    textRef: "mingren-mr-638",
-    id: "mr-638",
+    textRef: "mingren-mr-675",
+    id: "mr-675",
     title: "陈独秀",
     group: "思想家",
     gradeGroup: "思想家",
@@ -7018,8 +7425,8 @@ window.POEMS_MINGREN = [
     excerpt: "新文化运动的总司令"
   },
   {
-    textRef: "mingren-mr-639",
-    id: "mr-639",
+    textRef: "mingren-mr-676",
+    id: "mr-676",
     title: "爱因斯坦",
     group: "科学家",
     gradeGroup: "科学家",
@@ -7029,30 +7436,30 @@ window.POEMS_MINGREN = [
     excerpt: "相对论的创立者"
   },
   {
-    textRef: "mingren-mr-640",
-    id: "mr-640",
+    textRef: "mingren-mr-677",
+    id: "mr-677",
     title: "马列维奇",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "俄国",
     author: "马列维奇",
     source: "《马列维奇》·1879—1935",
     excerpt: "《白底上的黑方块》，至上主义的宣言"
   },
   {
-    textRef: "mingren-mr-641",
-    id: "mr-641",
+    textRef: "mingren-mr-678",
+    id: "mr-678",
     title: "陈垣",
-    group: "史学家",
-    gradeGroup: "史学家",
+    group: "历史学家",
+    gradeGroup: "历史学家",
     dynasty: "近现代",
     author: "陈垣",
     source: "《陈垣》·1880—1971",
     excerpt: "《史源学》的创立者，元史与宗教史大家"
   },
   {
-    textRef: "mingren-mr-642",
-    id: "mr-642",
+    textRef: "mingren-mr-679",
+    id: "mr-679",
     title: "德加斯佩里",
     group: "政治家",
     gradeGroup: "政治家",
@@ -7062,8 +7469,8 @@ window.POEMS_MINGREN = [
     excerpt: "战后意大利的定盘星"
   },
   {
-    textRef: "mingren-mr-643",
-    id: "mr-643",
+    textRef: "mingren-mr-680",
+    id: "mr-680",
     title: "鲁迅",
     group: "文学家",
     gradeGroup: "文学家",
@@ -7073,8 +7480,8 @@ window.POEMS_MINGREN = [
     excerpt: "中国现代文学的奠基人"
   },
   {
-    textRef: "mingren-mr-644",
-    id: "mr-644",
+    textRef: "mingren-mr-681",
+    id: "mr-681",
     title: "茨威格",
     group: "文学家",
     gradeGroup: "文学家",
@@ -7084,8 +7491,8 @@ window.POEMS_MINGREN = [
     excerpt: "《一个陌生女人的来信》《昨日的世界》"
   },
   {
-    textRef: "mingren-mr-645",
-    id: "mr-645",
+    textRef: "mingren-mr-682",
+    id: "mr-682",
     title: "弗莱明",
     group: "生物学家",
     gradeGroup: "生物学家",
@@ -7095,19 +7502,19 @@ window.POEMS_MINGREN = [
     excerpt: "青霉素的发现者，1945 年诺贝尔奖"
   },
   {
-    textRef: "mingren-mr-646",
-    id: "mr-646",
+    textRef: "mingren-mr-683",
+    id: "mr-683",
     title: "毕加索",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "西班牙 / 法国",
     author: "毕加索",
     source: "《毕加索》·1881—1973",
     excerpt: "《格尔尼卡》《亚维农少女》，立体主义的创立"
   },
   {
-    textRef: "mingren-mr-647",
-    id: "mr-647",
+    textRef: "mingren-mr-684",
+    id: "mr-684",
     title: "乔伊斯",
     group: "文学家",
     gradeGroup: "文学家",
@@ -7117,8 +7524,8 @@ window.POEMS_MINGREN = [
     excerpt: "《尤利西斯》《都柏林人》，意识流小说的巅峰"
   },
   {
-    textRef: "mingren-mr-648",
-    id: "mr-648",
+    textRef: "mingren-mr-685",
+    id: "mr-685",
     title: "伍尔夫",
     group: "文学家",
     gradeGroup: "文学家",
@@ -7128,8 +7535,8 @@ window.POEMS_MINGREN = [
     excerpt: "《达洛维夫人》《到灯塔去》，意识流与女性主义文论"
   },
   {
-    textRef: "mingren-mr-649",
-    id: "mr-649",
+    textRef: "mingren-mr-686",
+    id: "mr-686",
     title: "诺特",
     group: "科学家",
     gradeGroup: "科学家",
@@ -7139,41 +7546,41 @@ window.POEMS_MINGREN = [
     excerpt: "抽象代数的奠基者，「诺特定理」"
   },
   {
-    textRef: "mingren-mr-650",
-    id: "mr-650",
+    textRef: "mingren-mr-687",
+    id: "mr-687",
     title: "布拉克",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "法国",
     author: "布拉克",
     source: "《布拉克》·1882—1963",
     excerpt: "立体主义的共同创立者，与毕加索并肩"
   },
   {
-    textRef: "mingren-mr-651",
-    id: "mr-651",
+    textRef: "mingren-mr-688",
+    id: "mr-688",
     title: "霍珀",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "美国",
     author: "霍珀",
     source: "《霍珀》·1882—1967",
     excerpt: "《夜游者》，都市孤独的画家"
   },
   {
-    textRef: "mingren-mr-652",
-    id: "mr-652",
+    textRef: "mingren-mr-689",
+    id: "mr-689",
     title: "斯特拉文斯基",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "音乐家",
+    gradeGroup: "音乐家",
     dynasty: "俄国 / 美国",
     author: "斯特拉文斯基",
     source: "《斯特拉文斯基》·1882—1971",
     excerpt: "《春之祭》，二十世纪音乐的分水岭"
   },
   {
-    textRef: "mingren-mr-653",
-    id: "mr-653",
+    textRef: "mingren-mr-690",
+    id: "mr-690",
     title: "墨索里尼",
     group: "政治家",
     gradeGroup: "政治家",
@@ -7183,8 +7590,8 @@ window.POEMS_MINGREN = [
     excerpt: "法西斯主义的创始者"
   },
   {
-    textRef: "mingren-mr-654",
-    id: "mr-654",
+    textRef: "mingren-mr-691",
+    id: "mr-691",
     title: "卡夫卡",
     group: "文学家",
     gradeGroup: "文学家",
@@ -7194,30 +7601,63 @@ window.POEMS_MINGREN = [
     excerpt: "《变形记》《城堡》《审判》，现代主义的预言者"
   },
   {
-    textRef: "mingren-mr-655",
-    id: "mr-655",
+    textRef: "mingren-mr-692",
+    id: "mr-692",
     title: "格罗皮乌斯",
-    group: "建筑家",
-    gradeGroup: "建筑家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "德国 / 美国",
     author: "格罗皮乌斯",
     source: "《格罗皮乌斯》·1883—1969",
     excerpt: "包豪斯的创办者，现代设计教育的奠基"
   },
   {
-    textRef: "mingren-mr-656",
-    id: "mr-656",
+    textRef: "mingren-mr-693",
+    id: "mr-693",
+    title: "凯恩斯",
+    group: "经济学家",
+    gradeGroup: "经济学家",
+    dynasty: "英国",
+    author: "凯恩斯",
+    source: "《凯恩斯》·1883—1946",
+    excerpt: "《就业、利息和货币通论》"
+  },
+  {
+    textRef: "mingren-mr-694",
+    id: "mr-694",
+    title: "熊彼特",
+    group: "经济学家",
+    gradeGroup: "经济学家",
+    dynasty: "奥地利 / 美国",
+    author: "熊彼特",
+    source: "《熊彼特》·1883—1950",
+    excerpt: "创新 · 创造性破坏"
+  },
+  {
+    textRef: "mingren-mr-695",
+    id: "mr-695",
     title: "吕思勉",
-    group: "史学家",
-    gradeGroup: "史学家",
+    group: "历史学家",
+    gradeGroup: "历史学家",
     dynasty: "近现代",
     author: "吕思勉",
     source: "《吕思勉》·1884—1957",
     excerpt: "通史四大家的代表，《吕著中国通史》"
   },
   {
-    textRef: "mingren-mr-657",
-    id: "mr-657",
+    textRef: "mingren-mr-696",
+    id: "mr-696",
+    title: "萧友梅",
+    group: "音乐家",
+    gradeGroup: "音乐家",
+    dynasty: "近现代",
+    author: "萧友梅",
+    source: "《萧友梅》·1884—1940",
+    excerpt: "中国专业音乐教育之父"
+  },
+  {
+    textRef: "mingren-mr-697",
+    id: "mr-697",
     title: "劳伦斯",
     group: "文学家",
     gradeGroup: "文学家",
@@ -7227,8 +7667,8 @@ window.POEMS_MINGREN = [
     excerpt: "《儿子与情人》《查泰莱夫人的情人》"
   },
   {
-    textRef: "mingren-mr-658",
-    id: "mr-658",
+    textRef: "mingren-mr-698",
+    id: "mr-698",
     title: "玻尔",
     group: "科学家",
     gradeGroup: "科学家",
@@ -7238,8 +7678,8 @@ window.POEMS_MINGREN = [
     excerpt: "哥本哈根学派的领袖"
   },
   {
-    textRef: "mingren-mr-659",
-    id: "mr-659",
+    textRef: "mingren-mr-699",
+    id: "mr-699",
     title: "秉志",
     group: "生物学家",
     gradeGroup: "生物学家",
@@ -7249,19 +7689,19 @@ window.POEMS_MINGREN = [
     excerpt: "中国近代生物学的奠基人，中国科学社发起人"
   },
   {
-    textRef: "mingren-mr-660",
-    id: "mr-660",
+    textRef: "mingren-mr-700",
+    id: "mr-700",
     title: "密斯·凡·德·罗",
-    group: "建筑家",
-    gradeGroup: "建筑家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "德国 / 美国",
     author: "密斯·凡·德·罗",
     source: "《密斯·凡·德·罗》·1886—1969",
     excerpt: "「少即是多」，巴塞罗那馆与西格拉姆大厦"
   },
   {
-    textRef: "mingren-mr-661",
-    id: "mr-661",
+    textRef: "mingren-mr-701",
+    id: "mr-701",
     title: "蒙哥马利",
     group: "军事家",
     gradeGroup: "军事家",
@@ -7271,8 +7711,8 @@ window.POEMS_MINGREN = [
     excerpt: "阿拉曼 · 物资先行"
   },
   {
-    textRef: "mingren-mr-662",
-    id: "mr-662",
+    textRef: "mingren-mr-702",
+    id: "mr-702",
     title: "曼施坦因",
     group: "军事家",
     gradeGroup: "军事家",
@@ -7282,8 +7722,8 @@ window.POEMS_MINGREN = [
     excerpt: "镰刀计划"
   },
   {
-    textRef: "mingren-mr-663",
-    id: "mr-663",
+    textRef: "mingren-mr-703",
+    id: "mr-703",
     title: "拉马努金",
     group: "科学家",
     gradeGroup: "科学家",
@@ -7293,8 +7733,8 @@ window.POEMS_MINGREN = [
     excerpt: "无师自通的天才，三千九百个公式"
   },
   {
-    textRef: "mingren-mr-664",
-    id: "mr-664",
+    textRef: "mingren-mr-704",
+    id: "mr-704",
     title: "薛定谔",
     group: "科学家",
     gradeGroup: "科学家",
@@ -7304,41 +7744,41 @@ window.POEMS_MINGREN = [
     excerpt: "波动力学方程，「薛定谔的猫」"
   },
   {
-    textRef: "mingren-mr-665",
-    id: "mr-665",
+    textRef: "mingren-mr-705",
+    id: "mr-705",
     title: "柯布西耶",
-    group: "建筑家",
-    gradeGroup: "建筑家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "瑞士 / 法国",
     author: "柯布西耶",
     source: "《柯布西耶》·1887—1965",
     excerpt: "《走向新建筑》，现代主义建筑的宣言者"
   },
   {
-    textRef: "mingren-mr-666",
-    id: "mr-666",
+    textRef: "mingren-mr-706",
+    id: "mr-706",
     title: "夏加尔",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "俄国 / 法国",
     author: "夏加尔",
     source: "《夏加尔》·1887—1985",
     excerpt: "《生日》《我与村庄》，梦与故乡的色彩"
   },
   {
-    textRef: "mingren-mr-667",
-    id: "mr-667",
+    textRef: "mingren-mr-707",
+    id: "mr-707",
     title: "欧姬芙",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "美国",
     author: "欧姬芙",
     source: "《欧姬芙》·1887—1986",
     excerpt: "《牛头骨与红布》《黑鸢尾》，美国现代主义的代表"
   },
   {
-    textRef: "mingren-mr-668",
-    id: "mr-668",
+    textRef: "mingren-mr-708",
+    id: "mr-708",
     title: "佩索阿",
     group: "文学家",
     gradeGroup: "文学家",
@@ -7348,8 +7788,8 @@ window.POEMS_MINGREN = [
     excerpt: "《惶然录》，以多个「异名者」写作的诗人"
   },
   {
-    textRef: "mingren-mr-669",
-    id: "mr-669",
+    textRef: "mingren-mr-709",
+    id: "mr-709",
     title: "塞尔曼·瓦克斯曼",
     group: "医学家",
     gradeGroup: "医学家",
@@ -7359,8 +7799,8 @@ window.POEMS_MINGREN = [
     excerpt: "链霉素的发现者，1948 年诺贝尔生理学或医学奖"
   },
   {
-    textRef: "mingren-mr-670",
-    id: "mr-670",
+    textRef: "mingren-mr-710",
+    id: "mr-710",
     title: "希特勒",
     group: "政治家",
     gradeGroup: "政治家",
@@ -7370,8 +7810,8 @@ window.POEMS_MINGREN = [
     excerpt: "挑起二战的一方"
   },
   {
-    textRef: "mingren-mr-671",
-    id: "mr-671",
+    textRef: "mingren-mr-711",
+    id: "mr-711",
     title: "阿赫玛托娃",
     group: "文学家",
     gradeGroup: "文学家",
@@ -7381,8 +7821,8 @@ window.POEMS_MINGREN = [
     excerpt: "《安魂曲》《reqiuem》，「俄罗斯诗歌的月亮」"
   },
   {
-    textRef: "mingren-mr-672",
-    id: "mr-672",
+    textRef: "mingren-mr-712",
+    id: "mr-712",
     title: "李大钊",
     group: "思想家",
     gradeGroup: "思想家",
@@ -7392,8 +7832,8 @@ window.POEMS_MINGREN = [
     excerpt: "中国最早的马克思主义者"
   },
   {
-    textRef: "mingren-mr-673",
-    id: "mr-673",
+    textRef: "mingren-mr-713",
+    id: "mr-713",
     title: "海德格尔",
     group: "哲学家",
     gradeGroup: "哲学家",
@@ -7403,8 +7843,8 @@ window.POEMS_MINGREN = [
     excerpt: "追问存在的哲学家"
   },
   {
-    textRef: "mingren-mr-674",
-    id: "mr-674",
+    textRef: "mingren-mr-714",
+    id: "mr-714",
     title: "维特根斯坦",
     group: "哲学家",
     gradeGroup: "哲学家",
@@ -7414,8 +7854,8 @@ window.POEMS_MINGREN = [
     excerpt: "语言哲学的枢纽"
   },
   {
-    textRef: "mingren-mr-675",
-    id: "mr-675",
+    textRef: "mingren-mr-715",
+    id: "mr-715",
     title: "哈勃",
     group: "天文地理学家",
     gradeGroup: "天文地理学家",
@@ -7425,8 +7865,8 @@ window.POEMS_MINGREN = [
     excerpt: "河外星系的发现，宇宙膨胀的证据"
   },
   {
-    textRef: "mingren-mr-676",
-    id: "mr-676",
+    textRef: "mingren-mr-716",
+    id: "mr-716",
     title: "戴高乐",
     group: "政治家",
     gradeGroup: "政治家",
@@ -7436,8 +7876,8 @@ window.POEMS_MINGREN = [
     excerpt: "自由法国 · 第五共和国"
   },
   {
-    textRef: "mingren-mr-677",
-    id: "mr-677",
+    textRef: "mingren-mr-717",
+    id: "mr-717",
     title: "帕斯捷尔纳克",
     group: "文学家",
     gradeGroup: "文学家",
@@ -7447,19 +7887,19 @@ window.POEMS_MINGREN = [
     excerpt: "《日瓦戈医生》，1958 年诺贝尔文学奖（被迫拒绝）"
   },
   {
-    textRef: "mingren-mr-678",
-    id: "mr-678",
+    textRef: "mingren-mr-718",
+    id: "mr-718",
     title: "陈寅恪",
-    group: "史学家",
-    gradeGroup: "史学家",
+    group: "历史学家",
+    gradeGroup: "历史学家",
     dynasty: "近现代",
     author: "陈寅恪",
     source: "《陈寅恪》·1890—1969",
     excerpt: "「独立之精神，自由之思想」，隋唐史大家"
   },
   {
-    textRef: "mingren-mr-679",
-    id: "mr-679",
+    textRef: "mingren-mr-719",
+    id: "mr-719",
     title: "艾森豪威尔",
     group: "军事家",
     gradeGroup: "军事家",
@@ -7469,8 +7909,8 @@ window.POEMS_MINGREN = [
     excerpt: "诺曼底登陆 · 盟军统帅"
   },
   {
-    textRef: "mingren-mr-680",
-    id: "mr-680",
+    textRef: "mingren-mr-720",
+    id: "mr-720",
     title: "竺可桢",
     group: "科学家",
     gradeGroup: "科学家",
@@ -7480,8 +7920,8 @@ window.POEMS_MINGREN = [
     excerpt: "中国近代气象学与地理学的奠基人"
   },
   {
-    textRef: "mingren-mr-681",
-    id: "mr-681",
+    textRef: "mingren-mr-721",
+    id: "mr-721",
     title: "侯德榜",
     group: "科学家",
     gradeGroup: "科学家",
@@ -7491,8 +7931,8 @@ window.POEMS_MINGREN = [
     excerpt: "「侯氏制碱法」，中国近代化学工业的奠基"
   },
   {
-    textRef: "mingren-mr-682",
-    id: "mr-682",
+    textRef: "mingren-mr-722",
+    id: "mr-722",
     title: "隆美尔",
     group: "军事家",
     gradeGroup: "军事家",
@@ -7502,8 +7942,8 @@ window.POEMS_MINGREN = [
     excerpt: "沙漠之狐"
   },
   {
-    textRef: "mingren-mr-683",
-    id: "mr-683",
+    textRef: "mingren-mr-723",
+    id: "mr-723",
     title: "邓尼茨",
     group: "军事家",
     gradeGroup: "军事家",
@@ -7513,8 +7953,8 @@ window.POEMS_MINGREN = [
     excerpt: "代表德国签署投降书"
   },
   {
-    textRef: "mingren-mr-684",
-    id: "mr-684",
+    textRef: "mingren-mr-724",
+    id: "mr-724",
     title: "班廷",
     group: "医学家",
     gradeGroup: "医学家",
@@ -7524,8 +7964,8 @@ window.POEMS_MINGREN = [
     excerpt: "胰岛素的发现者，1923 年诺贝尔奖"
   },
   {
-    textRef: "mingren-mr-685",
-    id: "mr-685",
+    textRef: "mingren-mr-725",
+    id: "mr-725",
     title: "芥川龙之介",
     group: "文学家",
     gradeGroup: "文学家",
@@ -7535,8 +7975,8 @@ window.POEMS_MINGREN = [
     excerpt: "《罗生门》《竹林中》，短篇小说的巨匠"
   },
   {
-    textRef: "mingren-mr-686",
-    id: "mr-686",
+    textRef: "mingren-mr-726",
+    id: "mr-726",
     title: "德布罗意",
     group: "科学家",
     gradeGroup: "科学家",
@@ -7546,8 +7986,8 @@ window.POEMS_MINGREN = [
     excerpt: "物质波假说，波粒二象性的推广者"
   },
   {
-    textRef: "mingren-mr-687",
-    id: "mr-687",
+    textRef: "mingren-mr-727",
+    id: "mr-727",
     title: "赵元任",
     group: "语言文字学家",
     gradeGroup: "语言文字学家",
@@ -7557,8 +7997,8 @@ window.POEMS_MINGREN = [
     excerpt: "中国现代语言学之父"
   },
   {
-    textRef: "mingren-mr-688",
-    id: "mr-688",
+    textRef: "mingren-mr-728",
+    id: "mr-728",
     title: "马雅可夫斯基",
     group: "文学家",
     gradeGroup: "文学家",
@@ -7568,19 +8008,30 @@ window.POEMS_MINGREN = [
     excerpt: "《穿裤子的云》，未来主义的旗手"
   },
   {
-    textRef: "mingren-mr-689",
-    id: "mr-689",
+    textRef: "mingren-mr-729",
+    id: "mr-729",
     title: "米罗",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "西班牙",
     author: "米罗",
     source: "《米罗》·1893—1983",
     excerpt: "《哈里昆的狂欢》，天真与符号的诗人"
   },
   {
-    textRef: "mingren-mr-690",
-    id: "mr-690",
+    textRef: "mingren-mr-730",
+    id: "mr-730",
+    title: "华彦钧",
+    group: "音乐家",
+    gradeGroup: "音乐家",
+    dynasty: "近现代",
+    author: "华彦钧",
+    source: "《华彦钧》·1893—1950",
+    excerpt: "《二泉映月》"
+  },
+  {
+    textRef: "mingren-mr-731",
+    id: "mr-731",
     title: "勒梅特",
     group: "天文地理学家",
     gradeGroup: "天文地理学家",
@@ -7590,8 +8041,8 @@ window.POEMS_MINGREN = [
     excerpt: "「大爆炸」理论的最早提出者"
   },
   {
-    textRef: "mingren-mr-691",
-    id: "mr-691",
+    textRef: "mingren-mr-732",
+    id: "mr-732",
     title: "胡先骕",
     group: "生物学家",
     gradeGroup: "生物学家",
@@ -7601,41 +8052,52 @@ window.POEMS_MINGREN = [
     excerpt: "中国植物分类学的奠基人，水杉的发现与命名者"
   },
   {
-    textRef: "mingren-mr-692",
-    id: "mr-692",
+    textRef: "mingren-mr-733",
+    id: "mr-733",
     title: "吕彦直",
-    group: "建筑家",
-    gradeGroup: "建筑家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "近现代",
     author: "吕彦直",
     source: "《吕彦直》·1894—1929",
     excerpt: "中山陵与广州中山纪念堂的设计者"
   },
   {
-    textRef: "mingren-mr-693",
-    id: "mr-693",
-    title: "徐悲鸿",
-    group: "画家",
-    gradeGroup: "画家",
-    dynasty: "近现代",
-    author: "徐悲鸿",
-    source: "《徐悲鸿》·1895—1953",
-    excerpt: "以素描改造中国画，画马名世"
-  },
-  {
-    textRef: "mingren-mr-694",
-    id: "mr-694",
+    textRef: "mingren-mr-734",
+    id: "mr-734",
     title: "董作宾",
-    group: "考古学家",
-    gradeGroup: "考古学家",
+    group: "历史学家",
+    gradeGroup: "历史学家",
     dynasty: "近现代",
     author: "董作宾",
     source: "《董作宾》·1895—1963",
     excerpt: "殷墟第一次发掘 · 断代"
   },
   {
-    textRef: "mingren-mr-695",
-    id: "mr-695",
+    textRef: "mingren-mr-735",
+    id: "mr-735",
+    title: "徐悲鸿",
+    group: "美术家",
+    gradeGroup: "美术家",
+    dynasty: "近现代",
+    author: "徐悲鸿",
+    source: "《徐悲鸿》·1895—1953",
+    excerpt: "以素描改造中国画，画马名世"
+  },
+  {
+    textRef: "mingren-mr-736",
+    id: "mr-736",
+    title: "刘天华",
+    group: "音乐家",
+    gradeGroup: "音乐家",
+    dynasty: "近现代",
+    author: "刘天华",
+    source: "《刘天华》·1895—1932",
+    excerpt: "《良宵》《空山鸟语》"
+  },
+  {
+    textRef: "mingren-mr-737",
+    id: "mr-737",
     title: "郁达夫",
     group: "文学家",
     gradeGroup: "文学家",
@@ -7645,8 +8107,8 @@ window.POEMS_MINGREN = [
     excerpt: "创造社的代表作家"
   },
   {
-    textRef: "mingren-mr-696",
-    id: "mr-696",
+    textRef: "mingren-mr-738",
+    id: "mr-738",
     title: "菲茨杰拉德",
     group: "文学家",
     gradeGroup: "文学家",
@@ -7656,8 +8118,19 @@ window.POEMS_MINGREN = [
     excerpt: "《了不起的盖茨比》，爵士时代的记录者"
   },
   {
-    textRef: "mingren-mr-697",
-    id: "mr-697",
+    textRef: "mingren-mr-739",
+    id: "mr-739",
+    title: "李济",
+    group: "历史学家",
+    gradeGroup: "历史学家",
+    dynasty: "近现代",
+    author: "李济",
+    source: "《李济》·1896—1979",
+    excerpt: "中国考古学之父"
+  },
+  {
+    textRef: "mingren-mr-740",
+    id: "mr-740",
     title: "朱可夫",
     group: "军事家",
     gradeGroup: "军事家",
@@ -7667,19 +8140,8 @@ window.POEMS_MINGREN = [
     excerpt: "莫斯科 · 斯大林格勒 · 柏林"
   },
   {
-    textRef: "mingren-mr-698",
-    id: "mr-698",
-    title: "李济",
-    group: "考古学家",
-    gradeGroup: "考古学家",
-    dynasty: "近现代",
-    author: "李济",
-    source: "《李济》·1896—1979",
-    excerpt: "中国考古学之父"
-  },
-  {
-    textRef: "mingren-mr-699",
-    id: "mr-699",
+    textRef: "mingren-mr-741",
+    id: "mr-741",
     title: "艾哈德",
     group: "政治家",
     gradeGroup: "政治家",
@@ -7689,8 +8151,8 @@ window.POEMS_MINGREN = [
     excerpt: "社会市场经济的推手"
   },
   {
-    textRef: "mingren-mr-700",
-    id: "mr-700",
+    textRef: "mingren-mr-742",
+    id: "mr-742",
     title: "徐志摩",
     group: "文学家",
     gradeGroup: "文学家",
@@ -7700,8 +8162,8 @@ window.POEMS_MINGREN = [
     excerpt: "新月派代表诗人"
   },
   {
-    textRef: "mingren-mr-701",
-    id: "mr-701",
+    textRef: "mingren-mr-743",
+    id: "mr-743",
     title: "福克纳",
     group: "文学家",
     gradeGroup: "文学家",
@@ -7711,8 +8173,8 @@ window.POEMS_MINGREN = [
     excerpt: "《喧哗与骚动》《我弥留之际》，1949 年诺贝尔文学奖"
   },
   {
-    textRef: "mingren-mr-702",
-    id: "mr-702",
+    textRef: "mingren-mr-744",
+    id: "mr-744",
     title: "居里奥·居里",
     group: "科学家",
     gradeGroup: "科学家",
@@ -7722,19 +8184,19 @@ window.POEMS_MINGREN = [
     excerpt: "人工放射性的发现，1935 年诺贝尔化学奖"
   },
   {
-    textRef: "mingren-mr-703",
-    id: "mr-703",
+    textRef: "mingren-mr-745",
+    id: "mr-745",
     title: "潘天寿",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "近现代",
     author: "潘天寿",
     source: "《潘天寿》·1897—1971",
     excerpt: "「一味霸悍」，指画与花鸟的现代变格"
   },
   {
-    textRef: "mingren-mr-704",
-    id: "mr-704",
+    textRef: "mingren-mr-746",
+    id: "mr-746",
     title: "朱自清",
     group: "文学家",
     gradeGroup: "文学家",
@@ -7744,8 +8206,8 @@ window.POEMS_MINGREN = [
     excerpt: "现代散文名家"
   },
   {
-    textRef: "mingren-mr-705",
-    id: "mr-705",
+    textRef: "mingren-mr-747",
+    id: "mr-747",
     title: "布莱希特",
     group: "文学家",
     gradeGroup: "文学家",
@@ -7755,8 +8217,8 @@ window.POEMS_MINGREN = [
     excerpt: "「史诗剧场」与「间离效果」的创立者"
   },
   {
-    textRef: "mingren-mr-706",
-    id: "mr-706",
+    textRef: "mingren-mr-748",
+    id: "mr-748",
     title: "洛尔迦",
     group: "文学家",
     gradeGroup: "文学家",
@@ -7766,41 +8228,41 @@ window.POEMS_MINGREN = [
     excerpt: "《吉普赛谣曲集》《血婚》，1936 年被枪杀"
   },
   {
-    textRef: "mingren-mr-707",
-    id: "mr-707",
+    textRef: "mingren-mr-749",
+    id: "mr-749",
     title: "翦伯赞",
-    group: "史学家",
-    gradeGroup: "史学家",
+    group: "历史学家",
+    gradeGroup: "历史学家",
     dynasty: "近现代",
     author: "翦伯赞",
     source: "《翦伯赞》·1898—1968",
     excerpt: "马克思主义史学的代表，《中国史纲》作者"
   },
   {
-    textRef: "mingren-mr-708",
-    id: "mr-708",
+    textRef: "mingren-mr-750",
+    id: "mr-750",
     title: "亨利·摩尔",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "英国",
     author: "亨利·摩尔",
     source: "《亨利·摩尔》·1898—1986",
     excerpt: "《母与子》《卧像》，现代雕塑的公共形象"
   },
   {
-    textRef: "mingren-mr-709",
-    id: "mr-709",
+    textRef: "mingren-mr-751",
+    id: "mr-751",
     title: "乔治·格什温",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "音乐家",
+    gradeGroup: "音乐家",
     dynasty: "美国",
     author: "乔治·格什温",
     source: "《乔治·格什温》·1898—1937",
     excerpt: "《蓝色狂想曲》《波吉与贝丝》，爵士与古典的交汇"
   },
   {
-    textRef: "mingren-mr-710",
-    id: "mr-710",
+    textRef: "mingren-mr-752",
+    id: "mr-752",
     title: "闻一多",
     group: "文学家",
     gradeGroup: "文学家",
@@ -7810,8 +8272,8 @@ window.POEMS_MINGREN = [
     excerpt: "新月派的理论旗手，《红烛》《死水》的作者"
   },
   {
-    textRef: "mingren-mr-711",
-    id: "mr-711",
+    textRef: "mingren-mr-753",
+    id: "mr-753",
     title: "海明威",
     group: "文学家",
     gradeGroup: "文学家",
@@ -7821,8 +8283,8 @@ window.POEMS_MINGREN = [
     excerpt: "《老人与海》《永别了，武器》，1954 年诺贝尔文学奖"
   },
   {
-    textRef: "mingren-mr-712",
-    id: "mr-712",
+    textRef: "mingren-mr-754",
+    id: "mr-754",
     title: "博尔赫斯",
     group: "文学家",
     gradeGroup: "文学家",
@@ -7832,8 +8294,8 @@ window.POEMS_MINGREN = [
     excerpt: "《小径分岔的花园》《阿莱夫》，迷宫与无限的图书馆"
   },
   {
-    textRef: "mingren-mr-713",
-    id: "mr-713",
+    textRef: "mingren-mr-755",
+    id: "mr-755",
     title: "川端康成",
     group: "文学家",
     gradeGroup: "文学家",
@@ -7843,41 +8305,41 @@ window.POEMS_MINGREN = [
     excerpt: "《雪国》《古都》，1968 年诺贝尔文学奖"
   },
   {
-    textRef: "mingren-mr-714",
-    id: "mr-714",
-    title: "哈耶克",
-    group: "哲学家",
-    gradeGroup: "哲学家",
-    dynasty: "奥地利 / 英国",
-    author: "哈耶克",
-    source: "《哈耶克》·1899—1992",
-    excerpt: "自发秩序的辩护者"
-  },
-  {
-    textRef: "mingren-mr-715",
-    id: "mr-715",
+    textRef: "mingren-mr-756",
+    id: "mr-756",
     title: "张大千",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "近现代",
     author: "张大千",
     source: "《张大千》·1899—1983",
     excerpt: "临摹敦煌与泼彩山水的大家"
   },
   {
-    textRef: "mingren-mr-716",
-    id: "mr-716",
+    textRef: "mingren-mr-757",
+    id: "mr-757",
+    title: "哈耶克",
+    group: "经济学家",
+    gradeGroup: "经济学家",
+    dynasty: "奥地利 / 英国",
+    author: "哈耶克",
+    source: "《哈耶克》·1899—1992",
+    excerpt: "自发秩序的辩护者"
+  },
+  {
+    textRef: "mingren-mr-758",
+    id: "mr-758",
     title: "林风眠",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "近现代",
     author: "林风眠",
     source: "《林风眠》·1900—1991",
     excerpt: "中西融合的先行者，国立艺术院首任院长"
   },
   {
-    textRef: "mingren-mr-717",
-    id: "mr-717",
+    textRef: "mingren-mr-759",
+    id: "mr-759",
     title: "王力",
     group: "语言文字学家",
     gradeGroup: "语言文字学家",
@@ -7887,8 +8349,8 @@ window.POEMS_MINGREN = [
     excerpt: "汉语史学科的建立者"
   },
   {
-    textRef: "mingren-mr-718",
-    id: "mr-718",
+    textRef: "mingren-mr-760",
+    id: "mr-760",
     title: "海森堡",
     group: "科学家",
     gradeGroup: "科学家",
@@ -7898,8 +8360,8 @@ window.POEMS_MINGREN = [
     excerpt: "矩阵力学与测不准原理，1932 年诺贝尔奖"
   },
   {
-    textRef: "mingren-mr-719",
-    id: "mr-719",
+    textRef: "mingren-mr-761",
+    id: "mr-761",
     title: "鲍林",
     group: "科学家",
     gradeGroup: "科学家",
@@ -7909,8 +8371,8 @@ window.POEMS_MINGREN = [
     excerpt: "化学键的本质，1954 年诺贝尔化学奖与 1962 年和平奖"
   },
   {
-    textRef: "mingren-mr-720",
-    id: "mr-720",
+    textRef: "mingren-mr-762",
+    id: "mr-762",
     title: "费米",
     group: "科学家",
     gradeGroup: "科学家",
@@ -7920,8 +8382,8 @@ window.POEMS_MINGREN = [
     excerpt: "核时代的开启者"
   },
   {
-    textRef: "mingren-mr-721",
-    id: "mr-721",
+    textRef: "mingren-mr-763",
+    id: "mr-763",
     title: "斯坦贝克",
     group: "文学家",
     gradeGroup: "文学家",
@@ -7931,8 +8393,8 @@ window.POEMS_MINGREN = [
     excerpt: "《愤怒的葡萄》，1939 年普利策奖"
   },
   {
-    textRef: "mingren-mr-722",
-    id: "mr-722",
+    textRef: "mingren-mr-764",
+    id: "mr-764",
     title: "波普尔",
     group: "哲学家",
     gradeGroup: "哲学家",
@@ -7942,8 +8404,8 @@ window.POEMS_MINGREN = [
     excerpt: "「可证伪性」作为科学的标准，《开放社会及其敌人》"
   },
   {
-    textRef: "mingren-mr-723",
-    id: "mr-723",
+    textRef: "mingren-mr-765",
+    id: "mr-765",
     title: "狄拉克",
     group: "科学家",
     gradeGroup: "科学家",
@@ -7953,8 +8415,8 @@ window.POEMS_MINGREN = [
     excerpt: "狄拉克方程，反物质的理论预言者"
   },
   {
-    textRef: "mingren-mr-724",
-    id: "mr-724",
+    textRef: "mingren-mr-766",
+    id: "mr-766",
     title: "奥威尔",
     group: "文学家",
     gradeGroup: "文学家",
@@ -7964,8 +8426,8 @@ window.POEMS_MINGREN = [
     excerpt: "《一九八四》《动物农场》，政治寓言的经典"
   },
   {
-    textRef: "mingren-mr-725",
-    id: "mr-725",
+    textRef: "mingren-mr-767",
+    id: "mr-767",
     title: "冯·诺依曼",
     group: "科学家",
     gradeGroup: "科学家",
@@ -7975,8 +8437,8 @@ window.POEMS_MINGREN = [
     excerpt: "现代计算机架构的设计者"
   },
   {
-    textRef: "mingren-mr-726",
-    id: "mr-726",
+    textRef: "mingren-mr-768",
+    id: "mr-768",
     title: "聂鲁达",
     group: "文学家",
     gradeGroup: "文学家",
@@ -7986,19 +8448,30 @@ window.POEMS_MINGREN = [
     excerpt: "《二十首情诗与一首绝望的歌》，1971 年诺贝尔文学奖"
   },
   {
-    textRef: "mingren-mr-727",
-    id: "mr-727",
+    textRef: "mingren-mr-769",
+    id: "mr-769",
     title: "达利",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "西班牙",
     author: "达利",
     source: "《达利》·1904—1989",
     excerpt: "《记忆的永恒》，超现实主义的代言人"
   },
   {
-    textRef: "mingren-mr-728",
-    id: "mr-728",
+    textRef: "mingren-mr-770",
+    id: "mr-770",
+    title: "黄自",
+    group: "音乐家",
+    gradeGroup: "音乐家",
+    dynasty: "近现代",
+    author: "黄自",
+    source: "《黄自》·1904—1938",
+    excerpt: "清唱剧《长恨歌》"
+  },
+  {
+    textRef: "mingren-mr-771",
+    id: "mr-771",
     title: "萨特",
     group: "哲学家",
     gradeGroup: "哲学家",
@@ -8008,8 +8481,19 @@ window.POEMS_MINGREN = [
     excerpt: "存在主义的旗手"
   },
   {
-    textRef: "mingren-mr-729",
-    id: "mr-729",
+    textRef: "mingren-mr-772",
+    id: "mr-772",
+    title: "冼星海",
+    group: "音乐家",
+    gradeGroup: "音乐家",
+    dynasty: "近现代",
+    author: "冼星海",
+    source: "《冼星海》·1905—1945",
+    excerpt: "《黄河大合唱》"
+  },
+  {
+    textRef: "mingren-mr-773",
+    id: "mr-773",
     title: "贝克特",
     group: "文学家",
     gradeGroup: "文学家",
@@ -8019,8 +8503,8 @@ window.POEMS_MINGREN = [
     excerpt: "《等待戈多》，荒诞派戏剧的代表，1969 年诺贝尔奖"
   },
   {
-    textRef: "mingren-mr-730",
-    id: "mr-730",
+    textRef: "mingren-mr-774",
+    id: "mr-774",
     title: "阿伦特",
     group: "哲学家",
     gradeGroup: "哲学家",
@@ -8030,19 +8514,19 @@ window.POEMS_MINGREN = [
     excerpt: "《极权主义的起源》《人的境况》，政治哲学的重要声音"
   },
   {
-    textRef: "mingren-mr-731",
-    id: "mr-731",
+    textRef: "mingren-mr-775",
+    id: "mr-775",
     title: "肖斯塔科维奇",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "音乐家",
+    gradeGroup: "音乐家",
     dynasty: "苏联",
     author: "肖斯塔科维奇",
     source: "《肖斯塔科维奇》·1906—1975",
     excerpt: "十五部交响曲，《第七交响曲》写于列宁格勒围城"
   },
   {
-    textRef: "mingren-mr-732",
-    id: "mr-732",
+    textRef: "mingren-mr-776",
+    id: "mr-776",
     title: "波伏娃",
     group: "哲学家",
     gradeGroup: "哲学家",
@@ -8052,8 +8536,8 @@ window.POEMS_MINGREN = [
     excerpt: "女性主义理论的奠基者"
   },
   {
-    textRef: "mingren-mr-733",
-    id: "mr-733",
+    textRef: "mingren-mr-777",
+    id: "mr-777",
     title: "朗道",
     group: "科学家",
     gradeGroup: "科学家",
@@ -8063,8 +8547,8 @@ window.POEMS_MINGREN = [
     excerpt: "理论物理学的最小值原理，1962 年诺贝尔奖"
   },
   {
-    textRef: "mingren-mr-734",
-    id: "mr-734",
+    textRef: "mingren-mr-778",
+    id: "mr-778",
     title: "霍奇金",
     group: "科学家",
     gradeGroup: "科学家",
@@ -8074,8 +8558,8 @@ window.POEMS_MINGREN = [
     excerpt: "青霉素与维生素 B12 的结构测定，1964 年诺贝尔化学奖"
   },
   {
-    textRef: "mingren-mr-735",
-    id: "mr-735",
+    textRef: "mingren-mr-779",
+    id: "mr-779",
     title: "陈省身",
     group: "科学家",
     gradeGroup: "科学家",
@@ -8085,8 +8569,8 @@ window.POEMS_MINGREN = [
     excerpt: "微分几何的奠基者，「陈示性类」"
   },
   {
-    textRef: "mingren-mr-736",
-    id: "mr-736",
+    textRef: "mingren-mr-780",
+    id: "mr-780",
     title: "吴健雄",
     group: "科学家",
     gradeGroup: "科学家",
@@ -8096,8 +8580,8 @@ window.POEMS_MINGREN = [
     excerpt: "宇称不守恒的实验验证者，「物理学第一夫人」"
   },
   {
-    textRef: "mingren-mr-737",
-    id: "mr-737",
+    textRef: "mingren-mr-781",
+    id: "mr-781",
     title: "图灵",
     group: "科学家",
     gradeGroup: "科学家",
@@ -8107,19 +8591,41 @@ window.POEMS_MINGREN = [
     excerpt: "计算机科学之父"
   },
   {
-    textRef: "mingren-mr-738",
-    id: "mr-738",
+    textRef: "mingren-mr-782",
+    id: "mr-782",
     title: "波洛克",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "美国",
     author: "波洛克",
     source: "《波洛克》·1912—1956",
     excerpt: "《秋韵》，行动绘画与「滴画」的开创"
   },
   {
-    textRef: "mingren-mr-739",
-    id: "mr-739",
+    textRef: "mingren-mr-783",
+    id: "mr-783",
+    title: "聂耳",
+    group: "音乐家",
+    gradeGroup: "音乐家",
+    dynasty: "近现代",
+    author: "聂耳",
+    source: "《聂耳》·1912—1935",
+    excerpt: "《义勇军进行曲》"
+  },
+  {
+    textRef: "mingren-mr-784",
+    id: "mr-784",
+    title: "弗里德曼",
+    group: "经济学家",
+    gradeGroup: "经济学家",
+    dynasty: "美国",
+    author: "弗里德曼",
+    source: "《弗里德曼》·1912—2006",
+    excerpt: "货币主义 ·《资本主义与自由》"
+  },
+  {
+    textRef: "mingren-mr-785",
+    id: "mr-785",
     title: "勃兰特",
     group: "政治家",
     gradeGroup: "政治家",
@@ -8129,8 +8635,8 @@ window.POEMS_MINGREN = [
     excerpt: "新东方政策 · 华沙之跪"
   },
   {
-    textRef: "mingren-mr-740",
-    id: "mr-740",
+    textRef: "mingren-mr-786",
+    id: "mr-786",
     title: "加缪",
     group: "哲学家",
     gradeGroup: "哲学家",
@@ -8140,8 +8646,8 @@ window.POEMS_MINGREN = [
     excerpt: "荒诞哲学的代表"
   },
   {
-    textRef: "mingren-mr-741",
-    id: "mr-741",
+    textRef: "mingren-mr-787",
+    id: "mr-787",
     title: "索尔克",
     group: "医学家",
     gradeGroup: "医学家",
@@ -8151,8 +8657,8 @@ window.POEMS_MINGREN = [
     excerpt: "脊髓灰质炎疫苗的研制者，拒绝为其申请专利"
   },
   {
-    textRef: "mingren-mr-742",
-    id: "mr-742",
+    textRef: "mingren-mr-788",
+    id: "mr-788",
     title: "克里克",
     group: "生物学家",
     gradeGroup: "生物学家",
@@ -8162,19 +8668,19 @@ window.POEMS_MINGREN = [
     excerpt: "DNA 双螺旋的共同发现者，分子生物学的奠基"
   },
   {
-    textRef: "mingren-mr-743",
-    id: "mr-743",
+    textRef: "mingren-mr-789",
+    id: "mr-789",
     title: "贝聿铭",
-    group: "建筑家",
-    gradeGroup: "建筑家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "中国 / 美国",
     author: "贝聿铭",
     source: "《贝聿铭》·1917—2019",
     excerpt: "卢浮宫金字塔、苏州博物馆，1983 年普利兹克奖"
   },
   {
-    textRef: "mingren-mr-744",
-    id: "mr-744",
+    textRef: "mingren-mr-790",
+    id: "mr-790",
     title: "曼德拉",
     group: "政治家",
     gradeGroup: "政治家",
@@ -8184,8 +8690,8 @@ window.POEMS_MINGREN = [
     excerpt: "罗本岛二十七年"
   },
   {
-    textRef: "mingren-mr-745",
-    id: "mr-745",
+    textRef: "mingren-mr-791",
+    id: "mr-791",
     title: "费曼",
     group: "科学家",
     gradeGroup: "科学家",
@@ -8195,8 +8701,8 @@ window.POEMS_MINGREN = [
     excerpt: "量子电动力学与费曼图，1965 年诺贝尔奖"
   },
   {
-    textRef: "mingren-mr-746",
-    id: "mr-746",
+    textRef: "mingren-mr-792",
+    id: "mr-792",
     title: "罗尔斯",
     group: "哲学家",
     gradeGroup: "哲学家",
@@ -8206,8 +8712,8 @@ window.POEMS_MINGREN = [
     excerpt: "正义论的作者"
   },
   {
-    textRef: "mingren-mr-747",
-    id: "mr-747",
+    textRef: "mingren-mr-793",
+    id: "mr-793",
     title: "杨振宁",
     group: "科学家",
     gradeGroup: "科学家",
@@ -8217,8 +8723,8 @@ window.POEMS_MINGREN = [
     excerpt: "规范场论的创立者"
   },
   {
-    textRef: "mingren-mr-748",
-    id: "mr-748",
+    textRef: "mingren-mr-794",
+    id: "mr-794",
     title: "三岛由纪夫",
     group: "文学家",
     gradeGroup: "文学家",
@@ -8228,8 +8734,8 @@ window.POEMS_MINGREN = [
     excerpt: "《金阁寺》《潮骚》，1970 年剖腹自尽"
   },
   {
-    textRef: "mingren-mr-749",
-    id: "mr-749",
+    textRef: "mingren-mr-795",
+    id: "mr-795",
     title: "福柯",
     group: "哲学家",
     gradeGroup: "哲学家",
@@ -8239,8 +8745,8 @@ window.POEMS_MINGREN = [
     excerpt: "权力与话语的分析者"
   },
   {
-    textRef: "mingren-mr-750",
-    id: "mr-750",
+    textRef: "mingren-mr-796",
+    id: "mr-796",
     title: "马尔克斯",
     group: "文学家",
     gradeGroup: "文学家",
@@ -8250,8 +8756,8 @@ window.POEMS_MINGREN = [
     excerpt: "《百年孤独》，魔幻现实主义，1982 年诺贝尔文学奖"
   },
   {
-    textRef: "mingren-mr-751",
-    id: "mr-751",
+    textRef: "mingren-mr-797",
+    id: "mr-797",
     title: "乔姆斯基",
     group: "哲学家",
     gradeGroup: "哲学家",
@@ -8261,8 +8767,8 @@ window.POEMS_MINGREN = [
     excerpt: "转换生成语法与「普遍语法」，语言学的革命者"
   },
   {
-    textRef: "mingren-mr-752",
-    id: "mr-752",
+    textRef: "mingren-mr-798",
+    id: "mr-798",
     title: "纳什",
     group: "科学家",
     gradeGroup: "科学家",
@@ -8272,8 +8778,8 @@ window.POEMS_MINGREN = [
     excerpt: "博弈论「纳什均衡」，1994 年诺贝尔经济学奖"
   },
   {
-    textRef: "mingren-mr-753",
-    id: "mr-753",
+    textRef: "mingren-mr-799",
+    id: "mr-799",
     title: "沃森",
     group: "生物学家",
     gradeGroup: "生物学家",
@@ -8283,19 +8789,19 @@ window.POEMS_MINGREN = [
     excerpt: "DNA 双螺旋结构的发现者，1962 年诺贝尔奖"
   },
   {
-    textRef: "mingren-mr-754",
-    id: "mr-754",
+    textRef: "mingren-mr-800",
+    id: "mr-800",
     title: "沃霍尔",
-    group: "画家",
-    gradeGroup: "画家",
+    group: "美术家",
+    gradeGroup: "美术家",
     dynasty: "美国",
     author: "沃霍尔",
     source: "《沃霍尔》·1928—1987",
     excerpt: "《玛丽莲双联画》《金宝汤罐头》，波普艺术的旗手"
   },
   {
-    textRef: "mingren-mr-755",
-    id: "mr-755",
+    textRef: "mingren-mr-801",
+    id: "mr-801",
     title: "米兰·昆德拉",
     group: "文学家",
     gradeGroup: "文学家",
@@ -8305,8 +8811,8 @@ window.POEMS_MINGREN = [
     excerpt: "《生命中不能承受之轻》《玩笑》"
   },
   {
-    textRef: "mingren-mr-756",
-    id: "mr-756",
+    textRef: "mingren-mr-802",
+    id: "mr-802",
     title: "威尔逊",
     group: "生物学家",
     gradeGroup: "生物学家",
@@ -8316,8 +8822,19 @@ window.POEMS_MINGREN = [
     excerpt: "社会生物学与「生物多样性」一词的推广"
   },
   {
-    textRef: "mingren-mr-757",
-    id: "mr-757",
+    textRef: "mingren-mr-803",
+    id: "mr-803",
+    title: "阿马蒂亚·森",
+    group: "经济学家",
+    gradeGroup: "经济学家",
+    dynasty: "印度",
+    author: "阿马蒂亚·森",
+    source: "《阿马蒂亚·森》·1933—",
+    excerpt: "《以自由看待发展》"
+  },
+  {
+    textRef: "mingren-mr-804",
+    id: "mr-804",
     title: "萨根",
     group: "天文地理学家",
     gradeGroup: "天文地理学家",
@@ -8327,8 +8844,8 @@ window.POEMS_MINGREN = [
     excerpt: "《宇宙》与行星科学的普及者"
   },
   {
-    textRef: "mingren-mr-758",
-    id: "mr-758",
+    textRef: "mingren-mr-805",
+    id: "mr-805",
     title: "略萨",
     group: "文学家",
     gradeGroup: "文学家",
@@ -8338,8 +8855,8 @@ window.POEMS_MINGREN = [
     excerpt: "《绿房子》《城市与狗》，2010 年诺贝尔文学奖"
   },
   {
-    textRef: "mingren-mr-759",
-    id: "mr-759",
+    textRef: "mingren-mr-806",
+    id: "mr-806",
     title: "丁肇中",
     group: "科学家",
     gradeGroup: "科学家",
@@ -8349,8 +8866,8 @@ window.POEMS_MINGREN = [
     excerpt: "J 粒子的发现者，1976 年诺贝尔物理学奖"
   },
   {
-    textRef: "mingren-mr-760",
-    id: "mr-760",
+    textRef: "mingren-mr-807",
+    id: "mr-807",
     title: "李远哲",
     group: "科学家",
     gradeGroup: "科学家",
@@ -8360,8 +8877,8 @@ window.POEMS_MINGREN = [
     excerpt: "分子反应动力学的开创，1986 年诺贝尔化学奖"
   },
   {
-    textRef: "mingren-mr-761",
-    id: "mr-761",
+    textRef: "mingren-mr-808",
+    id: "mr-808",
     title: "古尔德",
     group: "生物学家",
     gradeGroup: "生物学家",
@@ -8371,8 +8888,8 @@ window.POEMS_MINGREN = [
     excerpt: "「间断平衡」理论，《奇妙的生命》"
   },
   {
-    textRef: "mingren-mr-762",
-    id: "mr-762",
+    textRef: "mingren-mr-809",
+    id: "mr-809",
     title: "道金斯",
     group: "生物学家",
     gradeGroup: "生物学家",
@@ -8382,8 +8899,8 @@ window.POEMS_MINGREN = [
     excerpt: "《自私的基因》，从基因视角看演化"
   },
   {
-    textRef: "mingren-mr-763",
-    id: "mr-763",
+    textRef: "mingren-mr-810",
+    id: "mr-810",
     title: "霍金",
     group: "科学家",
     gradeGroup: "科学家",
@@ -8393,8 +8910,8 @@ window.POEMS_MINGREN = [
     excerpt: "宇宙学的布道者"
   },
   {
-    textRef: "mingren-mr-764",
-    id: "mr-764",
+    textRef: "mingren-mr-811",
+    id: "mr-811",
     title: "陶哲轩",
     group: "科学家",
     gradeGroup: "科学家",

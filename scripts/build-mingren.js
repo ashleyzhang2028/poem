@@ -57,6 +57,7 @@ const MIL      = require('./data/mingren-military.js');  // 第六轮：军事�
 const OLD      = require('./data/mingren-new.js');       // 第四轮：文学 / 思想 / 哲学
 const AXIS     = require('./data/mingren-axis.js');      // 第七轮：德 / 意 政治与军事
 const R9       = require('./data/mingren-round9.js');    // 第九轮：补齐行当 + 归位
+const R10      = require('./data/mingren-round10.js');   // 第十轮：并组 + 补美术 / 音乐 / 经济
 
 /* ── 分组：十五个行当，不分中国 / 外国两类 ──────────────────────────────
    用户原话（Issue #381 · 本轮）：「将外国和中国的各个家合并，不区分中国
@@ -69,15 +70,17 @@ const R9       = require('./data/mingren-round9.js');    // 第九轮：补齐�
    组与组的先后只是**版面上**的次序（列表页一段一段摊开），一位归哪一组
    看的是「世所公认的第一身份」；**整个册子的次序是出生时间**，不是组。 */
 const GROUP_ORDER = [
-  /* 第九轮补进来的十一格。用户原话（Issue #381 · 本轮）那张单子就落在这几行：
-     「农学家、水利家、经济学家、翻译家 玄奘、茶学家、工艺家、法学家、纵横家、
-      教育家、语言文字学家、考古学家」—— 纵横家落「外交家」（可合并，
-     用户说了「可以合并，没关系」）。 */
-  '政治家', '文学家', '史学家', '思想家', '哲学家', '军事家',
-  '科学家', '医学家', '农学家', '水利家', '天文地理学家', '生物学家',
-  '建筑家', '工艺家', '书法家', '画家', '戏曲家', '音乐家',
-  '法学家', '经济学家', '翻译家', '外交家', '茶学家',
-  '教育家', '语言文字学家', '考古学家'
+  /* 第十轮：把散格并回主干（用户原话「水利家和茶学家合并到农学家」「考古
+     合并到 历史学家」「法学家合并到政治家」「翻译家合并到语言文字学家」
+     「外交家合并到政治家」「画家要改成美术家」「建筑家合并到美术家」
+     「水利 / 农学 / 工艺 / 教育 / 考古按合适的类别合并」）。
+     二十六组 → 十七组：美术家（画家 + 建筑家）、历史学家（史学家 + 考古）、
+     农学家（+ 水利 / 茶学）、政治家（+ 法学 / 外交）、语言文字学家（+ 翻译）、
+     思想家（+ 教育）；工艺家按类拆（造器物 → 科学家、营造与工艺美术 → 美术家）。 */
+  '政治家', '文学家', '历史学家', '思想家', '哲学家', '军事家',
+  '科学家', '医学家', '农学家', '天文地理学家', '生物学家',
+  '美术家', '书法家', '戏曲家', '音乐家',
+  '语言文字学家', '经济学家'
 ];
 
 /* 组名映射：上一版的分组 → 本轮的分组（合并中外，去「外国」「（中国）」前缀）。
@@ -91,8 +94,21 @@ const GROUP_MERGE = {
   '外国天文学家': '天文地理学家',
   '外国医学家': '医学家',
   '外国文学家': '文学家',
-  '外国艺术家': '画家',
-  '外国建筑家': '建筑家'
+  '外国艺术家': '美术家',
+  '外国建筑家': '美术家',
+
+  /* 第十轮：组名归并（上一版 → 本版）。组不按人删，只按名字并 ——
+     一位归哪一组看的是「世所公认的第一身份」。 */
+  '画家': '美术家',          // 改名（不只是绘画，含雕塑等造型艺术）
+  '建筑家': '美术家',        // 用户：「建筑家合并到美术家」
+  '史学家': '历史学家',      // 改名（用户：「考古 合并到 历史学家」）
+  '考古学家': '历史学家',    // 用户：「考古 合并到 历史学家」
+  '水利家': '农学家',        // 用户：「水利家和茶学家合并到农学家」
+  '茶学家': '农学家',
+  '法学家': '政治家',        // 用户：「法学家合并到政治家」
+  '外交家': '政治家',        // 用户：「外交家合并到政治家」
+  '翻译家': '语言文字学家',  // 用户：「翻译家合并到语言文字学家」
+  '教育家': '思想家'         // 用户：「教育…按合适的类别合并」
 };
 
 /* 「外国名人」拆回各科：这一组是上一轮留下的筐（数学 / 物理 / 化学 / 生物 /
@@ -135,7 +151,12 @@ const PLAN = [
   { group: '思想家', rows: OLD.TZ },
   { group: '哲学家', rows: OLD.TW },
   { group: '外国名人', rows: OLD.TA }
-].concat(R9.PLAN);
+].concat(R9.PLAN, R10.PLAN).map(function (plan) {
+  /* 第九 / 第十轮的名单里还写着**上一版**的组名（工艺家、考古学家、
+     水利家……）。第十轮把那些格并掉了，所以这里统一过一次 groupOf，
+     让「并组」这件事对名单同样生效 —— 名单是入册的入口，不是例外。 */
+  return { group: groupOf(plan.group, plan.rows[0] && plan.rows[0][0]), rows: plan.rows };
+});
 
 /* 本轮要删的（先算出来，PLAN 校验与装配都要用） */
 const DROP_EARLY = ROUND5.DROP;
@@ -150,6 +171,10 @@ DROP_EARLY.forEach(function (t) { dropSetEarly[t] = true; });
    不先挡住，PLAN 会把他们再开一条。 */
 const DEDUPE_DROP = R9.DEDUPE.map(function (d) { return d.drop; });
 DEDUPE_DROP.forEach(function (t) { dropSetEarly[t] = true; });
+/* 第十轮：请回来的两位（聂耳 / 冼星海，见 mingren-round10.js 的 REINSTATE）——
+   上一轮把他们列进了要删名单，这一轮点名要收，所以从「要删」里撤出来，
+   随 PLAN 正常入册。 */
+(R10.REINSTATE || []).forEach(function (t) { delete dropSetEarly[t]; });
 
 /* ── 不许进册的 · 明治维新以后的日本政治 / 军事人物 ─────────────────────
    用户原话（Issue #381）：「轴心国除了日本的政治军事家，其他国家的政治，
@@ -196,6 +221,37 @@ function isPostMeijiJapanPolitical(group, dynasty, life) {
 
 const FIELDS = ['姓名', '朝代', '字 / 号', '生卒', '籍贯', '家世亲属',
   '生平', '作品风格', '流派', '主要作品 / 贡献', '特殊意义'];
+
+/* ── 身份：该是什么家写清是什么家（Issue #381 · 第十轮 用户原话）─────────
+   正文「流派」一行，开头补一个具体身份词（数学家 / 物理学家 / 雕塑家 /
+   建筑家 / 作曲家……），而不是笼统的组名。合并过的组尤其需要 ——
+   「科学家」里是数学 / 物理 / 化学各科，「美术家」里是画家 / 雕塑家 /
+   建筑家 / 工艺美术家。身份来源：R10.IDENTITY 按人给，取不到就用组名。 */
+const GROUP_ROLE = {
+  '政治家': '政治家', '文学家': '文学家', '历史学家': '历史学家',
+  '思想家': '思想家', '哲学家': '哲学家', '军事家': '军事家',
+  '科学家': '科学家', '医学家': '医学家', '农学家': '农学家',
+  '天文地理学家': '天文学家', '生物学家': '生物学家', '美术家': '美术家',
+  '书法家': '书法家', '戏曲家': '戏曲家', '音乐家': '音乐家',
+  '语言文字学家': '语言文字学家', '经济学家': '经济学家'
+};
+function roleOf(group, name) {
+  return (R10.IDENTITY && R10.IDENTITY[name]) || GROUP_ROLE[group] || group;
+}
+/* 把身份写进「流派」单元格：本来就写了的不重复（如「音乐家」条目、
+   或身份词已在前缀里的）。 */
+function withIdentity(text, group, name) {
+  if (!text) return text;
+  const role = roleOf(group, name);
+  const m = String(text).match(/^(│ 流派 *│)([^│]*)(│.*)$/m);
+  if (!m) return text;
+  const cell = m[2].trim();
+  if (cell.indexOf(role) >= 0) return text;
+  return String(text).replace(/^(│ 流派 *│)([^│]*)(│.*)$/m,
+    function (all, pre, val, post) {
+      return pre + ' ' + role + ' ·' + val + post;
+    });
+}
 const MIN_TOTAL = 400;   // 正文净字数下限（表格线不计）
 
 const problems = [];     // 校验积攒下来的问题，有一条就不写盘
@@ -272,7 +328,8 @@ PLAN.forEach(function (plan) {
 });
 
 /* ── 删除：按名字从主表摘掉 ─────────────────────────────────────────── */
-const DROP = DROP_EARLY.slice().concat(DEDUPE_DROP);
+const DROP = DROP_EARLY.slice().concat(DEDUPE_DROP)
+  .filter(function (t) { return (R10.REINSTATE || []).indexOf(t) < 0; });
 /* 要删的条目主表里没有 → **不算错**：上一轮已经删过，本次是重跑。
    名单本身就是「哪些人该在 / 不该在」的落点（不是差量），
    所以每次运行都拿它当全集衡量，而不是拿「上次删了什么」。 */
@@ -288,11 +345,24 @@ DROP.forEach(function (t) { dropSet[t] = true; });
 const R9_MOVE_NAMES = Object.keys(R9.MOVE);
 R9_MOVE_NAMES.forEach(function (n) {
   if (!byTitle[n]) problems.push('第九轮要归位的 ' + n + ' 不在主表里');
-  const g = R9.MOVE[n];
+  const g = groupOf(R9.MOVE[n], n);
   if (GROUP_ORDER.indexOf(g) < 0) problems.push('第九轮归位组不在 GROUP_ORDER：' + n + ' → ' + g);
 });
 R9.DEDUPE.forEach(function (d) {
   if (!byTitle[d.keep]) problems.push('第九轮要保留的 ' + d.keep + ' 不在主表里');
+});
+
+/* ── 第十轮的归位（MOVE）──────────────────────────────────────────────
+   与第九轮同一条路：已在册的人只改组，正文不动。这一轮它办两件事 ——
+     · 21 位西洋音乐家从「画家」挪回「音乐家」（上一轮并「外国艺术家」
+       时一并带进来的，见 mingren-round10.js 的说明）；
+     · 「工艺家」按类拆开：造器物的归「科学家」，营造与工艺美术的归
+       「美术家」。 */
+const R10_MOVE_NAMES = Object.keys(R10.MOVE);
+R10_MOVE_NAMES.forEach(function (n) {
+  if (!byTitle[n]) problems.push('第十轮要归位的 ' + n + ' 不在主表里');
+  const g = groupOf(R10.MOVE[n], n);
+  if (GROUP_ORDER.indexOf(g) < 0) problems.push('第十轮归位组不在 GROUP_ORDER：' + n + ' → ' + g);
 });
 
 /* ── 组装最终名册 ───────────────────────────────────────────────────── */
@@ -310,7 +380,10 @@ added.forEach(function (a) { NAME_GROUP[a.row[0]] = a.group; });
      （徐光启在 mingren-new.js 的 TZ 里、子产 / 商鞅在 politics 里、
       韩非在 TZ 里、玄奘在 TZ 里）。用户这一轮点的就是「谁属于哪一家」，
       所以归位的优先级最高。 */
-R9_MOVE_NAMES.forEach(function (n) { NAME_GROUP[n] = R9.MOVE[n]; });
+R9_MOVE_NAMES.forEach(function (n) { NAME_GROUP[n] = groupOf(R9.MOVE[n], n); });
+/* ③ 第十轮的归位 —— 也压过壳里记的旧组（音乐家原本写在「画家」里、
+     蔡伦们原本写在「工艺家」里）。 */
+R10_MOVE_NAMES.forEach(function (n) { NAME_GROUP[n] = groupOf(R10.MOVE[n], n); });
 
 const ROSTER = [];
 /* ① 在册未删的：正文与 title 从主表来，分组从名单 / 壳来。
@@ -324,10 +397,13 @@ mrOf.forEach(function (m) {
   if (isPostMeijiJapanPolitical(group, dynastyOf(m.text), lifeOf(m.text))) return;
   kept.push({
     title: m.title, group: group, oldId: m.id,
-    /* 名单里重给过的，正文一并换新（名单是更新的一份） */
-    text: a ? bodyOf(a.row) : m.text,
+    /* 名单里重给过的，正文一并换新（名单是更新的一份）；
+       不论新旧，正文的「流派」一行都补上身份词（该是什么家写清是什么家）。 */
+    text: withIdentity(a ? bodyOf(a.row) : m.text, group, m.title),
     row: a ? a.row : null,
-    replace: !!a
+    replace: !!a,
+    /* 原正文：用来判断这一条到底改没改（第十轮的身份词是原地改，不是换整条） */
+    origText: m.text
   });
 });
 kept.sort(function (a, b) {
@@ -348,6 +424,10 @@ function groupOf(g, name) {
      拆回各科要按人名一一认（认的是「第一身份是哪一科」），认不出的按「科学家」。
      表见上面的 SCIENCE_OF_NAME。 */
   if (g === '外国名人') return SCIENCE_OF_NAME[name] || '科学家';
+  /* 「工艺家」没有单一归处（用户：「工艺…按合适的类别合并」），按人名拆：
+     造器物的归「科学家」，营造与工艺美术的归「美术家」。名单里点到的
+     蔡伦 / 毕昇 / 马钧 / 黄道婆 / 沈寿 等，逐个在 R10.MOVE 里有落点。 */
+  if (g === '工艺家') return R10.MOVE[name] || '科学家';
   return g;
 }
 
@@ -357,7 +437,7 @@ added.forEach(function (a) {
   const n = a.row[0];
   if (byTitle[n]) return;                 // 已在册，上面处理过了（含换组与换正文）
   if (isPostMeijiJapanPolitical(a.group, a.row[1], a.row[3])) return;
-  const rec = { title: n, group: a.group, text: bodyOf(a.row), row: a.row, replace: false };
+  const rec = { title: n, group: a.group, text: withIdentity(bodyOf(a.row), a.group, n), row: a.row, replace: false };
   ROSTER.push(rec);
   FRESH.push(rec);
 });
@@ -376,7 +456,7 @@ PEOPLE.forEach(function (p) {
   if (isPostMeijiJapanPolitical(group, p.era, p.life)) return;
   const rec = {
     title: p.name, group: group,
-    text: bodyOf2(p), row: null, replace: false
+    text: withIdentity(bodyOf2(p), group, p.name), row: null, replace: false
   };
   ROSTER.push(rec);
   FRESH.push(rec);
@@ -476,7 +556,12 @@ if (process.argv.indexOf('--master') >= 0) {
   /* ② 已在册但正文要换新的：定点改写 text */
   let refreshed = 0;
   ROSTER.forEach(function (rec) {
-    if (!rec.replace || !rec.oldId) return;
+    /* 判据是「正文真的变了」—— 两种情况都算：
+       · 名单里重给过正文的（replace，正文换成新写的一份）；
+       · 第十轮在原地补「身份词」的（正文只多了一行身份）。
+       所以不再单看 `replace`，也不因为 `rec.row` 有值就跳过。 */
+    if (!rec.oldId) return;
+    if (rec.origText == null || rec.origText === rec.text) return;
     const id = rec.oldId;
     const at = SRC.indexOf('    id: ' + JSON.stringify(id) + ',');
     if (at < 0) throw new Error('找不到 ' + id);
