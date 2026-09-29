@@ -9,9 +9,9 @@ sb.window = sb;
 vm.createContext(sb);
 
 const { loadData, resolve } = require('./master-env');
-loadData(sb, ['data/poems-mingshu.js', 'data/poems-mingren.js']);
+loadData(sb, ['data/poems-mingshu.js', 'data/poems-mingren-cn.js', 'data/poems-mingren-foreign.js']);
 
-function book(name, varName, groups, unit) {
+function book(name, varName, groups, unit, opts) {
   const raw = sb[varName];
   const list = resolve(sb, raw, name);
   chk(Array.isArray(list) && list.length > 0,
@@ -32,10 +32,16 @@ function book(name, varName, groups, unit) {
   chk(list.every(p => (p.text || '').indexOf('│') >= 0),
     name + ' 每条正文都画了表格（摘掉内联正文后由主表按 textRef 取回）');
 
-  groups.forEach(g => {
-    const n = list.filter(p => p.gradeGroup === g).length;
-    chk(n > 0, name + ' 分组铺到：' + g + ' 有 ' + n + ' 条');
-  });
+  /* ⚠️ Issue #399：拆两部之后，**每一组都有人**这条只对「全册」成立 ——
+     外国卷里「历史学家 / 思想家 / 农学家 / 书法家 / 戏曲家 / 语言文字学家」
+     这几组本来就是空的（行当是中文语境里长出来的，外国那几卷里没有对应
+     的人）。所以这一条按 opts.sparse 放行空组，全册那一次仍然全查。 */
+  if (!(opts && opts.sparse)) {
+    groups.forEach(g => {
+      const n = list.filter(p => p.gradeGroup === g).length;
+      chk(n > 0, name + ' 分组铺到：' + g + ' 有 ' + n + ' 条');
+    });
+  }
 
   return list;
 }
@@ -75,7 +81,14 @@ const MINGREN_GROUPS = [
 ];
 
 const MS = book('名著导读', 'POEMS_MINGSHU', MINGSHU_GROUPS, '部');
-const MR = book('历代名家', 'POEMS_MINGREN', MINGREN_GROUPS, '家');
+/* Issue #399（历代名家真拆两部）：两卷各自是一份壳、一个号段。
+   `book()` 那份通用体检（id 不重、字段齐、gradeGroup 一致、画了表格）
+   两卷各跑一遍；下面凡是「全册」的口径把两卷拼起来 —— 拆的是册，不是人。 */
+const MR_CN = book('历代名家「中国」', 'POEMS_MINGREN_CN', MINGREN_GROUPS, '家');
+const MR_FOREIGN = book('历代名家「外国」', 'POEMS_MINGREN_FOREIGN', MINGREN_GROUPS, '家', { sparse: true });
+const MR = MR_CN.concat(MR_FOREIGN);
+chk(MR_CN.length + MR_FOREIGN.length === 811,
+  '两卷合计仍是 811 位（中国 ' + MR_CN.length + ' · 外国 ' + MR_FOREIGN.length + '）');
 
 /* ── 排序：Issue #381 第七、八轮 · 用户原话 ─────────────────────────────
    第七轮：「所有类别的名家按出生时间顺序排序。名著也按时间顺序排序。」
@@ -123,20 +136,22 @@ function mrLife(p) {
   const m = String(t).match(/│ 生卒 *│([^│]*)│/);
   return m ? m[1].trim() : '';
 }
-(function () {
+/* ⚠️ Issue #399：用户改主意了 —— 「真拆两部」。两卷各自是一条时间线
+   （卷内按出生时间排）；跨卷的那条线不再是**页面上的次序**，所以这里
+   守的是「每卷各排各的」，不再守「跨卷不倒挂」。 */
+[['历代名家「中国」', MR_CN], ['历代名家「外国」', MR_FOREIGN]].forEach(function (row) {
   const bad = [];
-  for (let i = 1; i < MR.length; i++) {
-    const a = LY.birthYearOf(mrLife(MR[i - 1])).year;
-    const b = LY.birthYearOf(mrLife(MR[i])).year;
+  for (let i = 1; i < row[1].length; i++) {
+    const a = LY.birthYearOf(mrLife(row[1][i - 1])).year;
+    const b = LY.birthYearOf(mrLife(row[1][i])).year;
     if (a == null || b == null) continue;
     if (b < a) {
-      bad.push(MR[i - 1].title + '（' + a + '）→ ' + MR[i].title + '（' + b + '）');
+      bad.push(row[1][i - 1].title + '（' + a + '）→ ' + row[1][i].title + '（' + b + '）');
     }
   }
-  chk(bad.length === 0,
-    '历代名家**整册**按出生时间排序，中外一位同一条时间线（倒挂：' +
+  chk(bad.length === 0, row[0] + '本卷按出生时间排序（倒挂：' +
     (bad.slice(0, 5).join('、') || '无') + '）');
-})();
+});
 
 const msBad = orderViolations(MS, p => MYEARS.yearOf(p.title, p.dynasty));
 chk(msBad.length === 0,

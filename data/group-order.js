@@ -37,7 +37,8 @@
 
     mingshu: window.MINGSHU_GROUP_ORDER || null,
 
-    mingren: window.MINGREN_GROUP_ORDER || null
+    mingren: window.MINGREN_GROUP_ORDER || null,
+    "mingren-waiguo": window.MINGREN_GROUP_ORDER || null
   };
 
   window.GROUP_ORDER = GROUPS;

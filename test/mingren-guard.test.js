@@ -34,9 +34,20 @@ const { loadData, resolve } = require('./master-env');
 const sb = { window: {}, console };
 sb.window = sb;
 vm.createContext(sb);
-loadData(sb, ['data/poems-mingren.js']);
+loadData(sb, ['data/poems-mingren-cn.js', 'data/poems-mingren-foreign.js']);
 
-const MR = resolve(sb, sb.POEMS_MINGREN, '历代名家');
+/* Issue #399（历代名家真拆两部）：这一份守卫从此守**两卷**。
+   两卷各有自己的壳与 id 段（中国 mr-c-xx / 外国 mr-w-xx），
+   下面凡是要「全册」的地方都把两卷拼起来看（BAN / 生卒 / 点名这些
+   口径一条都没变，只是收口从一册变两册）。 */
+const CN = resolve(sb, sb.POEMS_MINGREN_CN, '历代名家「中国」');
+const FOREIGN = resolve(sb, sb.POEMS_MINGREN_FOREIGN, '历代名家「外国」');
+const MR = CN.concat(FOREIGN);
+
+/* 两卷合起来还是那 811 位 —— 拆的是册子，不是人。 */
+chk(CN.length > 0 && FOREIGN.length > 0,
+  '历代名家拆两部：中国卷 ' + CN.length + ' 家 · 外国卷 ' + FOREIGN.length + ' 家');
+chk(MR.length === 811, '两卷合计仍是 811 位（实际 ' + MR.length + '）');
 /* Issue #381 第八轮：二十五组并成十五个行当组（中外合并）。 */
 /* Issue #381 第九轮：补上用户点名的那几格（农学家 / 水利家 / 经济学家 /
    法学家 / 翻译家 / 茶学家 / 工艺家 / 外交家 / 教育家 / 语言文字学家 /
@@ -113,7 +124,12 @@ const FOREIGN_NAME = [
   '肖斯塔科维奇', '贝聿铭'
 ];
 
+/* Issue #399 之后，中外的界限**已经落在国家字段与卷**上了 —— 原来那套
+   靠分组名 + 人名白名单 + 朝代栏国别词的猜测，现在只在 build 脚本里
+   落字段时用一次。这一份守边界时直接读字段（判据不再两处各说各话）。 */
 function isForeign(p) {
+  if (p.country === '外国') return true;
+  if (p.country === '中国') return false;
   /* ① 分组名以「外国」开头的（外国数学家 / 外国名人……）—— 最可靠的一路；
      ② 外国名字落进中国那几组的（苏格拉底、康德在「哲学家」）看朝代栏。 */
   if (String(p.gradeGroup || '').indexOf('外国') === 0) return true;
@@ -148,6 +164,8 @@ chk(BAN_HITS.length === 0,
    戴高乐、曼德拉、甘地、朱可夫这些若按卒年卡，整组都得撤 —— 那不是他说
    的意思。所以生卒边界只对中国条目生效；外国条目另有一条「不涉国共两党
    与中国内政」的检查（见上面 BAN 表）。 */
+/* 取一条的生卒栏：壳里没有正文，要从主表按 textRef 取回（与页面同一条路）。
+   拆两部只改了册与 id，正文没动，所以按 textRef 取回的老法子照旧灵。 */
 function lifeOf(text) {
   const m = String(text).match(/│ 生卒 *│([^│]*)│/);
   return m ? m[1].trim() : '';
@@ -162,10 +180,17 @@ function years(life) {
   }
   return nums;
 }
+/* ⚠️ Issue #399：拆两部后壳里不带正文（正文在主表，页面按 textRef 取回），
+   所以这里也要**按 textRef 从主表取回**那条正文 —— 与页面同一条路。
+   取不到就是真取不到（数据错位），不静默跳过。 */
+function bodyText(p) {
+  const m = (sb.masterTextOf ? sb.masterTextOf(p, 'mingren') : p);
+  return String((m && m.text) || p.text || '');
+}
 const BAD_LIFE = [];
 MR.forEach(p => {
   if (isForeign(p)) return;                 // 外国条目不按中国这条线卡
-  const text = String(p.text || '');
+  const text = bodyText(p);
   const life = lifeOf(text);
   if (!life) { BAD_LIFE.push(p.title + ' 没有生卒'); return; }
   const clean = life.replace(/约|不详|（[^）]*）/g, ' ').trim();
@@ -236,21 +261,55 @@ MR_GROUPS.forEach(g => {
 chk(MR.every(p => p.group.indexOf('外国') < 0 && p.group.indexOf('（中国）') < 0),
   '组名里不再带国别（「外国」「（中国）」）');
 chk(new Set(MR.map(p => p.group)).size === 17,
-  '历代名家分十七个行当组（实际 ' + new Set(MR.map(p => p.group)).size + '）');
+  '两卷合起来是十七个行当组（实际 ' + new Set(MR.map(p => p.group)).size + '）');
+/* Issue #399 新增：两卷互不相犯，且每条都有 country 字段 ——
+   「拆两部」这件事落在数据上就是这一个字段，页面与搜索以后都认它。 */
+(function () {
+  const cnSet = new Set(CN.map(p => p.title));
+  const fSet = new Set(FOREIGN.map(p => p.title));
+  const both = [...cnSet].filter(t => fSet.has(t));
+  chk(both.length === 0, '一人只在—卷里（两卷都有的：' + (both.slice(0, 5).join('、') || '无') + '）');
+  chk(CN.every(p => p.country === '中国'),
+    '中国卷每条的 country 都是「中国」（异类：' +
+    (CN.filter(p => p.country !== '中国').map(p => p.title).slice(0, 5).join('、') || '无') + '）');
+  chk(FOREIGN.every(p => p.country === '外国'),
+    '外国卷每条的 country 都是「外国」（异类：' +
+    (FOREIGN.filter(p => p.country !== '外国').map(p => p.title).slice(0, 5).join('、') || '无') + '）');
+  /* 卷内号段各自从 01 起、连续、不重复 */
+  const seq = (list, tag, re) => {
+    const bad = [];
+    list.forEach((p, i) => {
+      if (p.id !== tag + '-' + String(i + 1).padStart(2, '0')) bad.push(p.id);
+    });
+    chk(bad.length === 0, tag + ' 卷号段从 01 起连续（异常：' +
+      (bad.slice(0, 5).join('、') || '无') + '）');
+  };
+  seq(CN, 'mr-c');
+  seq(FOREIGN, 'mr-w');
+  /* 「名家收的是名家，不是小说人物」：跨两卷查一次（原来在全册查） */
+  const names = new Set(MR.map(p => p.title));
+  chk(!names.has('关羽') && !names.has('张飞'),
+    '历代名家收的是「名家」而不是小说人物（关羽 / 张飞不在两卷里）');
+})();
+
+/* 原「全册一条时间线」的断言，现在改成**每卷各一条**（拆两部之后两卷
+   各自按出生时间排；跨卷的那条线不再是页面的次序）。 */
 (function () {
   const LY = require('../scripts/lib/life-year.js');
   const lifeOf = p => ((String(p.text).match(/│ 生卒 *│([^│]*)│/) || ['', ''])[1]).trim();
-  const bad = [];
-  for (let i = 1; i < MR.length; i++) {
-    const a = LY.birthYearOf(lifeOf(MR[i - 1])).year;
-    const b = LY.birthYearOf(lifeOf(MR[i])).year;
-    if (a == null || b == null) continue;
-    if (b < a) bad.push(MR[i - 1].title + ' → ' + MR[i].title);
-  }
-  chk(bad.length === 0,
-    '历代名家整册按出生时间排序、中外同一条时间线（倒挂：' +
-    (bad.slice(0, 5).join('、') || '无') + '）');
+  [['中国', CN], ['外国', FOREIGN]].forEach(function (row) {
+    const bad = [];
+    for (let i = 1; i < row[1].length; i++) {
+      const a = LY.birthYearOf(lifeOf(row[1][i - 1])).year;
+      const b = LY.birthYearOf(lifeOf(row[1][i])).year;
+      if (a == null || b == null) continue;
+      if (b < a) bad.push(row[1][i - 1].title + ' → ' + row[1][i].title);
+    }
+    chk(bad.length === 0, row[0] + '卷按出生时间排序（倒挂：' +
+      (bad.slice(0, 5).join('、') || '无') + '）');
+  });
 })();
+
 chk(MR.length >= 280, '历代名家不少于 280 位（实际 ' + MR.length + '）');
 chk((MR.filter(p => p.gradeGroup === '政治家').length) >= 30,
   '政治家不少于 30 位（实际 ' + MR.filter(p => p.gradeGroup === '政治家').length + '）');

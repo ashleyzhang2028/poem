@@ -110,14 +110,24 @@
       unit: "部",
       desc: "中外名著八百部（国内三百七十 / 世界四百四十余），每部给写作背景 / 情节 / 人物 / 主旨 / 名句"
     },
+    /* Issue #399：历代名家拆两部 —— 中国卷 / 外国卷各是一个集子。 */
     {
       id: "mingren",
-      name: "历代名家",
+      name: "历代名家「中国」",
       book: "MingrenBook",
-      short: "名家",
+      short: "名家·中",
       page: "/mingren/",
       unit: "家",
-      desc: "中外八百余位，按十七个行当组收（政治 / 文学 / 历史 / 思想 / 哲学 / 军事 / 科学家 / 医学 / 农学 / 天文地理 / 生物 / 美术 / 书法 / 戏曲 / 音乐 / 语言文字学 / 经济学），一位中外同组，全册按出生时间先后排；每位写清是什么家"
+      desc: "中国历代名家六百三十位，按十七个行当组收（政治 / 文学 / 历史 / 思想 / 哲学 / 军事 / 科学家 / 医学 / 农学 / 天文地理 / 生物 / 美术 / 书法 / 戏曲 / 音乐 / 语言文字学 / 经济学），本卷按出生时间先后排；每位写清是什么家"
+    },
+    {
+      id: "mingren-waiguo",
+      name: "历代名家「外国」",
+      book: "MingrenBook",
+      short: "名家·外",
+      page: "/mingren-waiguo/",
+      unit: "家",
+      desc: "外国历代名家一百八十一位，同样十七个行当组，本卷按出生时间先后排；每位写清是什么家"
     }
   ];
 
@@ -144,7 +154,8 @@
       chengyu: "POEMS_CHENGYU",
       changshi: "POEMS_CHANGSHI",
       mingshu: "POEMS_MINGSHU",
-      mingren: "POEMS_MINGREN"
+      mingren: "POEMS_MINGREN_CN",
+      "mingren-waiguo": "POEMS_MINGREN_FOREIGN"
     };
     var key = VARS[bookId];
     var list = key ? window[key] : null;
@@ -195,7 +206,7 @@
 
   function itemsOf(entry) {
     var ns = engineOf(entry);
-    var list = ns ? ns.items() : null;
+    var list = ns ? ns.items(entry && entry.id) : null;
 
     if (list && list.length) return list;
     return (window.SITE_INDEX || []).filter(function (p) {
@@ -220,7 +231,7 @@
   function pageSubOf(bookId) {
     var e = entryOf(bookId);
     var ns = engineOf(e);
-    var cfg = ns ? ns.config() : null;
+    var cfg = ns ? ns.config(e && e.id) : null;
     return (cfg && cfg.pageSub) || "";
   }
 
@@ -248,7 +259,7 @@
     paintHeader(entry);
 
     var listEl = listHolder();
-    var cfg = ns.config();
+    var cfg = ns.config(entry.id);
     cfg.items = items;
     cfg.root = listEl;
     cfg.reader = "#lib-gw-reader";

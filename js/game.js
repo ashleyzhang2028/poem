@@ -72,7 +72,9 @@
     { id: "chengyu",    file: "data/poems-chengyu.js",    v: "POEMS_CHENGYU" },
     { id: "changshi",   file: "data/poems-changshi.js",   v: "POEMS_CHANGSHI" },
     { id: "mingshu",    file: "data/poems-mingshu.js",    v: "POEMS_MINGSHU" },
-    { id: "mingren",    file: "data/poems-mingren.js",    v: "POEMS_MINGREN" }
+    /* Issue #399：历代名家拆两部 */
+    { id: "mingren",    file: "data/poems-mingren-cn.js",      v: "POEMS_MINGREN_CN" },
+    { id: "mingren-waiguo", file: "data/poems-mingren-foreign.js", v: "POEMS_MINGREN_FOREIGN" }
   ];
 
   var LOAD_TIMEOUT_MS = 8000;

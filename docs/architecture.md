@@ -6897,3 +6897,81 @@ PLAN 会把他们的名字**再开一条**。做法与 `dropSetEarly` 合流：�
 书目表 816 部里还有 753 部没有素材。按批接着填，顺序照旧：
 中国现代小说余下 35 部 → 现代散文余下 43 部 → 当代小说 118 部 /
 诗歌 68 部 / 戏剧 44 部 → 外国文学 445 部。
+
+### 4.102 历代名家真拆两部：「中国」630 +「外国」181（2026-09-30 · 回答 Issue #399）
+
+上一轮（4.96—4.101）把中外名家的组并成十七个行当组、全册一条出生时间线。
+用户这一轮改主意了：
+
+> 「课外阅读历代名家还是重新拆分成 历代名家「中国」/ 历代名家「外国」两个集子。」
+
+#### 一、拆的落点是一个字段，不是一次重排
+
+上一轮反对拆册的三条理由（时间线断、分组塌、171 条已读记录要认领新号）
+这一轮都用**字段**解决了，而不是靠约定：
+
+- **国别落成字段**。判定沿用 `mingren-guard.test.js` 里那套
+  （人名白名单 + 朝代栏国别词），但**只在 build 时用一次**，结果写进每条壳的
+  `country`（`"中国"` / `"外国"`）。页面、搜索、断言从此读字段，不再各猜一次 ——
+  两处各猜就会各说各话。国别词表这一轮补齐（阿拉伯 / 奥斯曼 / 拜占庭 /
+  塞尔柱 / 东南亚 / 拉美 / 东欧 / 非洲各语种），漏一个词就会落错卷。
+- **两卷各自从 01 起**。中国卷 `mr-c-01…`、外国卷 `mr-w-01…` —— 拆成两部之后
+  两卷是两个独立集子，卷一第 3 位不必叫别的号。卷内次序不动（各自仍按全册
+  那条出生时间线走）。
+- **正文只有一份**。同一个人不抄两遍：两卷的条目仍共用主表里那一份正文。
+  壳里因此多一个 `masterRef` —— 它指向主表里那一条的 id。这是一条**明写的线**：
+  `text-master.js` 的 `masterTextOf()` 按它建别名兜底，不靠「号段恰巧相等」猜，
+  也不靠名字（名字会撞：141 个名字在两部以上都有，按名字会取到别的集子那条）。
+
+#### 二、号段换了，已读记录怎么搬
+
+上一轮拆册最大的顾虑就是 `poem_mingren_read_v1` 里那 171 条已读。
+这一轮的做法是**按人分流**，不是按号平移（两卷的号与老号不同位，
+`mr-c-01` 是中国卷第 1 位、不是主表第 1 位）：
+
+- 两卷各有一把新键：`poem_mingren_cn_read_v1` / `poem_mingren_foreign_read_v1`；
+- 老键留着，只作迁移源 —— `js/mingren.js` 的 `migrateReadStore()` 在 mount
+  之前跑：把老号（`mr-01`）去号段还原成新号（`mr-c-01`），落进本卷新键；
+- **迁移是幂等的**，且只在目标卷的键为空时铺 —— 用户自己后来点过的
+  「已读 / 未读」不被回灌覆盖。
+
+老键里的键形是**壳的 id**（`mr-01`），不是 textRef —— reader-core 的
+`setRead(current.id)` 存的就是它。这一点踩过一次：先写成 textRef 形状
+（`mingren-mr-c-01`），列表上一个「已读」标记都不出。
+
+#### 三、两个入口，两种认卷方式
+
+- **立在本卷页面上**（`/mingren/`、`/mingren-waiguo/`）：按 url 认卷。
+- **从 `/library/` 点卡片进**：课外阅读页两份壳都挂着，按「哪份壳先加载」
+  判会永远进同一卷 —— 所以 `library.js` 把卡片的 `data-book`
+  （`mingren` / `mingren-waiguo`）显式传给 `MingrenBook.config(bookId)` /
+  `items(bookId)`。
+
+#### 四、改动清单
+
+| 地方 | 改了什么 |
+| --- | --- |
+| `scripts/build-mingren.js` | 出**两份壳**（原来一份）；每条加 `country` + `masterRef`；号段分两卷；`rekeyMasterForVolumes()` 把主表那一段的 id / work / entries 也换成分卷号（**幂等**，正文逐字不动，保住 141 组判重） |
+| `data/poems-mingren-cn.js` / `-foreign.js` | 新的两份壳（`data/poems-mingren.js` 删除） |
+| `data/text-master.js` | `masterTextOf()` 加 `masterRef` 别名兜底（兜完还是查不到才原样返回 —— 不猜） |
+| `mingren/index.html`（中国）· `mingren-waiguo/index.html`（新页） | 两边各挂自己那份壳 |
+| `js/mingren.js` | 认卷（url / 显式 bookId）、两卷各自的 `readStore`、`migrateReadStore()` |
+| `data/site-books.js` | 拆成两条；外国卷带 `refPrefix: "mingren"`（两卷的台账 id 前缀同族） |
+| `data/site-index.js` / `group-order.js` / `js/library.js` / `js/search.js` / `js/game.js` / `js/chrome.js` / `js/read-sync.js` / `js/sync-coverage.js` / `sw.js` | 各挂一圈：加第二部、加两把新已读键、路由与 dock 高亮、预缓存 |
+| `scripts/remove-mingren*.js` | 这两个是一次性历史脚本（在已不存在的旧壳上动刀），加了明确的停用说明 |
+
+#### 五、验证
+
+- `bash test/run.sh` 全量零失败
+- `node scripts/build-mingren.js --check`：两卷 630 / 181，十七组齐
+- 连跑两遍 `--master` 输出逐字相同（幂等）；主表 811 条两卷号各就各位、
+  141 组判重一条不动
+- 守卫改守两卷：两卷合计仍 811、卷内号段从 01 起连续、`country` 字段
+  两卷各一色、**每卷各排各的时间线**（跨卷那条线不再是页面次序）
+- 真机点过（Chromium + 本地静态服务）：`/mingren/` 630 条 / `/mingren-waiguo/`
+  181 条，组卡计数与索引卡对得上；点开梭伦、姜尚，正文 11 行表 + 注音齐；
+  `/library/` 两张卡片各进各的卷（630 / 181）；
+  **迁移真跑过**：老键 `{mr-01, mr-02}` → 中国卷 `{mr-c-01, mr-c-02}`
+  （姜尚 / 管仲），列表出 2 个「已读」标记，「未读」筛选 630 → 628
+
+`sw.js` v296 → v297。

@@ -18,9 +18,12 @@
 
         var NEED_TRANS = ["guwen", "yuanqu", "zhaoming", "yuefu", "jinxiandai", "chengyu"];
         if (NEED_TRANS.indexOf(b.id) >= 0 && (!p.text || !p.translation)) return;
-                if ((b.id === "changshi" || b.id === "mingshu" || b.id === "mingren") && !p.text) return;
+                if ((b.id === "changshi" || b.id === "mingshu" || b.id === "mingren" || b.id === "mingren-waiguo") && !p.text) return;
         out.push({
-          id: b.id + "-" + p.id,
+          /* Issue #399：历代名家拆两部 —— 两卷是两部集子（book 不同），
+             但同属「历代名家」这一族，台账 id 前缀共用 `mingren`
+             （`refPrefix` 显式给；不给就用自己的 id）。 */
+          id: (b.refPrefix || b.id) + "-" + p.id,
           originId: p.id,
           title: p.title,
           author: p.author || "",

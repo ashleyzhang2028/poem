@@ -2,7 +2,7 @@
    历代名家 · 装机（脚本）
    --------------------------------------------------------------------------
    两件事：**改正文主表**（增 / 删 / 重编 id）与**出壳文件**
-   （data/poems-mingren.js）。壳文件不再是手改的 —— 它由主表生成。
+   （两份壳 data/poems-mingren-cn.js / -foreign.js）。壳文件不再是手改的 —— 由主表生成。
 
    ## 为什么这样改（Issue #381 第六轮的教训）
    前五轮这个脚本是「只增不改」的：它把新名单往主表末尾追加，再照着
@@ -27,6 +27,22 @@
    历史上这里还跑过一份 `CN_CATS / WORLD_CATS` 归类表 —— 那是 #388 那一支
    自己造号时用的，与本支的「重编号」叠着用会被覆盖掉，已删。
 
+   ## 第十三轮（Issue #399）：真拆两部
+   用户原话：「课外阅读历代名家还是重新拆分成 历代名家「中国」/ 历代名家
+   「外国」两个集子。」
+
+   于是本脚本从**一份壳**变成**两份壳**：
+     · 国别：每条的国别（中国 / 外国）由 `isForeignEntry()` 判出 ——
+       原来那套靠分组名 + 人名白名单 + 朝代栏国别词的猜测**保留但下沉**，
+       它现在只负责**落字段**；字段一旦落下，页面与断言都认字段，不再猜。
+     · 号段：两卷各自从 01 起（中国 mr-c-01…、外国 mr-w-01…）—— 「拆」之后
+       两卷是两个独立集子，卷一第 3 位不必叫「mr-03」以外的号。
+       ⚠️ 跨卷的**一人一处**仍是主表那一份（title 唯一），只是 id 各卷各排。
+     · 正文位置：两卷条目仍混排在主表同一段（主表按 title 索引，不分卷），
+       所以 `masterTextOf` 的查找不用改；**阅读进度**按 url 各自的
+       `poem_mingren_cn_read_v1` / `poem_mingren_foreign_read_v1` 分家，
+       老键 `poem_mingren_read_v1` 的 171 条已读记录由 js/mingren.js 迁移过去。
+
    用具：
      node scripts/build-mingren.js             # 只出壳（不动主表）
      node scripts/build-mingren.js --master    # 同时改写 data/text-master.js
@@ -45,7 +61,8 @@ const LEGACY_SHELL_ROWS = require('./data/mingren-legacy-shell.js').LEGACY_SHELL
 
 const ROOT = path.join(__dirname, '..');
 const MASTER_FILE = path.join(ROOT, 'data/text-master.js');
-const SHELL = path.join(ROOT, 'data/poems-mingren.js');
+const SHELL_CN = path.join(ROOT, 'data/poems-mingren-cn.js');
+const SHELL_FOREIGN = path.join(ROOT, 'data/poems-mingren-foreign.js');
 
 
 /* ── 名单来源 ────────────────────────────────────────────────────────── */
@@ -219,6 +236,43 @@ function isPostMeijiJapanPolitical(group, dynasty, life) {
   return parseInt(ys[ys.length - 1], 10) >= MEIJI;
 }
 
+/* ── 国别：拆两部的落点（Issue #399）────────────────────────────────────
+   判定与 test/mingren-guard.test.js 那套**同源**（那里本是唯一的一份），
+   这里搬过来做落字段用 —— 一份判据两处用，不能各说各话。 */
+const FOREIGN_MARK = ['古希腊', '古罗马', '古马其顿', '东罗马', '迦太基', '英国', '法国',
+  '美国', '南非', '印度', '意大利', '普鲁士', '德国', '瑞典', '俄罗斯', '苏联', '埃及',
+  '中亚', '蒙古', '波兰', '奥地利', '荷兰', '西班牙', '葡萄牙', '日本', '伊朗', '波斯',
+  '以色列', '土耳其', '捷克', '匈牙利', '丹麦', '挪威', '瑞士', '比利时', '希腊', '罗马',
+  /* 第十三轮：两部真拆之后，这一路要靠字段兜住，补上原先漏掉的国别词 ——
+     漏掉的会落错卷（这一条比「守边界」那一条更要紧）。 */
+  '阿拉伯', '伊拉克', '叙利亚', '黎巴嫩', '巴勒斯坦', '以色列', '阿富汗',
+  '朝鲜', '韩国', '越南', '泰国', '缅甸', '马来', '菲律宾', '印尼', '印度尼西亚',
+  '澳大利亚', '新西兰', '加拿大', '墨西哥', '巴西', '阿根廷', '智利', '秘鲁',
+  '爱尔兰', '苏格兰', '威尔士', '芬兰', '冰岛', '塞尔维亚', '克罗地亚', '斯洛文尼亚',
+  '保加利亚', '罗马尼亚', '乌克兰', '白俄罗斯', '格鲁吉亚', '亚美尼亚', '阿塞拜疆',
+  '乌兹别克', '哈萨克', '吉尔吉斯', '塔吉克', '巴基斯坦', '孟加拉', '斯里兰卡',
+  '尼泊尔', '不丹', '沙特', '约旦', '也门', '阿曼', '卡塔尔', '科威特', '摩洛哥',
+  '突尼斯', '利比亚', '苏丹', '埃塞俄比亚', '肯尼亚', '尼日利亚', '加纳', '刚果',
+  '安哥拉', '赞比亚', '津巴布韦', '坦桑尼亚', '乌干达', '塞内加尔', '马里',
+  '塞尔柱', '奥斯曼', '拜占庭', '安纳托利亚'];
+const FOREIGN_NAME = [
+  '波普尔', '阿伦特', '乔姆斯基', '纳什', '陈省身', '陶哲轩',
+  '海森堡', '狄拉克', '费曼', '朗道', '吴健雄', '丁肇中',
+  '鲍林', '霍奇金', '李远哲', '沃森', '克里克', '威尔逊', '古尔德', '道金斯',
+  '萨根', '索尔克', '贝克特', '米兰·昆德拉', '斯坦贝克', '奥威尔', '聂鲁达',
+  '马尔克斯', '略萨', '三岛由纪夫', '达利', '波洛克', '沃霍尔',
+  '肖斯塔科维奇', '贝聿铭'
+];
+
+/* 一位是外国还是中国：① 白名单点名；② 正文「朝代」那一栏里的国别词。
+   组名那一路（「外国 ××家」）已经并掉了，不再作为判据 —— 中外的界限
+   现在落在**字段**上，不再靠组名暗示。 */
+function isForeignEntry(title, text) {
+  if (FOREIGN_NAME.indexOf(title) >= 0) return true;
+  const dyn = (String(text || '').match(/│ 朝代 *│([^│]*)│/) || ['', ''])[1];
+  return FOREIGN_MARK.some(function (k) { return dyn.indexOf(k) >= 0; });
+}
+
 const FIELDS = ['姓名', '朝代', '字 / 号', '生卒', '籍贯', '家世亲属',
   '生平', '作品风格', '流派', '主要作品 / 作为', '特殊意义'];
 
@@ -285,7 +339,12 @@ const MASTER = (function () {
   vm.runInContext(SRC, s, { filename: MASTER_FILE });
   return s.TEXT_MASTER || [];
 })();
-const mrOf = MASTER.filter(function (m) { return /^mingren-mr-\d+$/.test(String(m.id)); });
+/* 主表里历代名家那一段。Issue #399 拆两部之后号是 mingren-mr-c-xx /
+   mingren-mr-w-xx；**重跑时也要认新号**，否则第二次跑会把两卷的条目
+   当成「不在主表里」（幂等性就断在这里）。 */
+const mrOf = MASTER.filter(function (m) {
+  return /^mingren-mr-(?:[cw]-)?\d+$/.test(String(m.id));
+});
 
 /* 在册条目的当前分组：从壳文件读回来。壳是上一轮的产物，但**分组信息只在它
    里面** —— 本轮名单里重给的行会覆盖它，这就是「换组」的入口。 */
@@ -293,9 +352,16 @@ const SHELL_GROUP = (function () {
   const s = { window: {}, console };
   s.window = s;
   vm.createContext(s);
-  vm.runInContext(fs.readFileSync(SHELL, 'utf8'), s, { filename: SHELL });
+  /* 读回**两份**壳（拆两部之后上一轮的产物；第一次跑时两份都还没有，
+     分组则全部由名单给出）—— 两卷合起来看，分组信息不分卷。 */
+  [SHELL_CN, SHELL_FOREIGN].forEach(function (f) {
+    if (!fs.existsSync(f)) return;
+    vm.runInContext(fs.readFileSync(f, 'utf8'), s, { filename: f });
+  });
   const map = {};
-  (s.POEMS_MINGREN || []).forEach(function (p) { map[p.title] = p.group; });
+  ['POEMS_MINGREN_CN', 'POEMS_MINGREN_FOREIGN'].forEach(function (v) {
+    (s[v] || []).forEach(function (p) { map[p.title] = p.group; });
+  });
   return map;
 })();
 
@@ -534,13 +600,26 @@ FRESH.forEach(function (rec) {
   bodySeen[rec.title] = true;
 });
 
-/* ── 号段 ────────────────────────────────────────────────────────────── */
+/* ── 号段：两卷各自从 01 起（Issue #399）─────────────────────────────────
+   拆成两部之后，两卷是两个独立集子 —— 中国卷 mr-c-01…、外国卷 mr-w-01…。
+   顺序**不动**：各自仍按全册那条出生时间线走（第 i 位在卷内还是第 i 位）。
+   ⚠️ 两卷的 textRef 不同（mingren-mr-c-01 / mingren-mr-w-01），所以
+      「一人在一册里只占一行」这条规矩由主表那一份管（title 唯一）；
+      两卷不会出现同一个人 —— 判国别是**二值**的，没有第三个去处。 */
 const RENUMBER = {};
-ROSTER.forEach(function (rec, i) {
-  const newId = 'mr-' + String(i + 1).padStart(2, '0');
+const counting = { cn: 0, foreign: 0 };
+ROSTER.forEach(function (rec) {
+  rec.foreign = isForeignEntry(rec.title, rec.text);
+  rec.volume = rec.foreign ? 'foreign' : 'cn';
+  counting[rec.volume] += 1;
+  const newId = (rec.foreign ? 'mr-w-' : 'mr-c-') + String(counting[rec.volume]).padStart(2, '0');
   if (rec.oldId) RENUMBER[rec.oldId] = newId;
   rec.newId = newId;
 });
+const CN_ROSTER = ROSTER.filter(function (r) { return !r.foreign; });
+const FOREIGN_ROSTER = ROSTER.filter(function (r) { return r.foreign; });
+console.log('拆两部：历代名家「中国」' + CN_ROSTER.length + ' 家 · 历代名家「外国」' +
+  FOREIGN_ROSTER.length + ' 家（全册仍按出生时间一条线）');
 
 if (problems.length) {
   console.error('✗ 有 ' + problems.length + ' 项不合规（前 20）：' +
@@ -593,44 +672,70 @@ if (process.argv.indexOf('--master') >= 0) {
        id / work / entries 一起换。 */
   SRC = rebuildBlock(SRC, ROSTER, tmpIds);
 
+  /* ⑤ Issue #399（真拆两部）：把 mingren 那一段的**主表 id** 也重编成两卷号
+        （mingren-mr-c-xx / mingren-mr-w-xx）。
+        ⚠️ 为什么必须动主表：主表按 id 索引，壳按 textRef 去查；两卷的号与
+           老号不同位（中国卷第 1 位不是主表第 1 位），不重编就得靠对应表
+           现算 —— 那等于把「哪一份正文是谁的」这件事藏在运行期里。
+           重编是**幂等**的：已是新号的条目按 title 认，再跑不重复改。 */
+  SRC = rekeyMasterForVolumes(SRC, ROSTER);
+
   fs.writeFileSync(MASTER_FILE, SRC, 'utf8');
   console.log('✓ data/text-master.js：删除 ' + removed + ' 条、改写 ' + refreshed +
     ' 条正文、新增 ' + FRESH.length + ' 条、全段已重编号');
 }
 
-/* ── 出壳：从主表生成 ────────────────────────────────────────────────── */
-const shells = ROSTER.map(function (rec) {
+/* ── 出壳：两部各出一份（Issue #399 真拆两部）────────────────────────────
+   两条壳的**形状完全一样**（textRef / id / title / group / gradeGroup /
+   dynasty / author / source / excerpt），只多一个 country 字段 —— 拆两部
+   这件事落在数据上就是这一个字段，页面、搜索、断言以后都认它，不再猜。 */
+function shellOf(rec) {
   const life = rec.row ? rec.row[3] : lifeOf(rec.text);
   const one = rec.row ? rec.row[rec.row.length - 1] : tailOf(rec.text);
   return {
     id: rec.newId,
+    /* 主表里这一条正文的 id（= 上一轮的老号）。两卷各出一份壳，正文仍只有
+       一份 —— 这条线就是「哪一份正文」的明写落点，不靠号段对齐去猜。 */
+    masterRef: rec.oldId || rec.newId,
     title: rec.title,
     group: rec.group,
+    country: rec.foreign ? '外国' : '中国',
     dynasty: rec.row ? rec.row[1] : (dynastyOf(rec.text) || '—'),
     source: '《' + rec.title + '》·' + (life || '生卒不详'),
     excerpt: one || ''
   };
-});
+}
 
-const lines = [];
-lines.push('window.POEMS_MINGREN = [');
-shells.forEach(function (s) {
-  lines.push('  {');
-  lines.push('    textRef: ' + JSON.stringify('mingren-' + s.id) + ',');
-  lines.push('    id: ' + JSON.stringify(s.id) + ',');
-  lines.push('    title: ' + JSON.stringify(s.title) + ',');
-  lines.push('    group: ' + JSON.stringify(s.group) + ',');
-  lines.push('    gradeGroup: ' + JSON.stringify(s.group) + ',');
-  lines.push('    dynasty: ' + JSON.stringify(s.dynasty) + ',');
-  lines.push('    author: ' + JSON.stringify(s.title) + ',');
-  lines.push('    source: ' + JSON.stringify(s.source) + ',');
-  lines.push('    excerpt: ' + JSON.stringify(s.excerpt));
-  lines.push('  },');
-});
-lines.push('];');
-lines.push('');
-fs.writeFileSync(SHELL, lines.join('\n'), 'utf8');
-console.log('✓ data/poems-mingren.js 已写出，共 ' + shells.length + ' 位');
+function writeShell(file, varName, roster, label) {
+  const lines = [];
+  lines.push('window.' + varName + ' = [');
+  roster.forEach(function (rec) {
+    const sh = shellOf(rec);
+    lines.push('  {');
+    /* masterRef 指向主表里那一份正文（拆两部后两卷 id 段不同，正文仍只有一份）。
+       页面按 textRef 去主表取；取不到时按 masterRef 兜底 —— 一条明写的线，
+       不靠「编号恰巧相等」。 */
+    lines.push('    textRef: ' + JSON.stringify('mingren-' + sh.id) + ',');
+    lines.push('    masterRef: ' + JSON.stringify(sh.masterRef) + ',');
+    lines.push('    id: ' + JSON.stringify(sh.id) + ',');
+    lines.push('    title: ' + JSON.stringify(sh.title) + ',');
+    lines.push('    group: ' + JSON.stringify(sh.group) + ',');
+    lines.push('    gradeGroup: ' + JSON.stringify(sh.group) + ',');
+    lines.push('    country: ' + JSON.stringify(sh.country) + ',');
+    lines.push('    dynasty: ' + JSON.stringify(sh.dynasty) + ',');
+    lines.push('    author: ' + JSON.stringify(sh.title) + ',');
+    lines.push('    source: ' + JSON.stringify(sh.source) + ',');
+    lines.push('    excerpt: ' + JSON.stringify(sh.excerpt));
+    lines.push('  },');
+  });
+  lines.push('];');
+  lines.push('');
+  fs.writeFileSync(file, lines.join('\n'), 'utf8');
+  console.log('✓ ' + path.relative(ROOT, file) + ' 已写出，' + label + ' ' + roster.length + ' 位');
+}
+
+writeShell(SHELL_CN, 'POEMS_MINGREN_CN', CN_ROSTER, '历代名家「中国」');
+writeShell(SHELL_FOREIGN, 'POEMS_MINGREN_FOREIGN', FOREIGN_ROSTER, '历代名家「外国」');
 
 /* ── 小工具 ──────────────────────────────────────────────────────────── */
 
@@ -680,6 +785,55 @@ function insertEntry(src, id, title, text) {
   const end = src.indexOf('\n  },', lastAt) + 5;
   return src.slice(0, end) + '\n' + block + src.slice(end);
 }
+/* ── 主表里的两卷号（Issue #399）──────────────────────────────────────
+   主表按 id 索引，壳的 textRef 要按新号查得到那一条。拆两部换号之后，
+   主表里 mingren 那一段的 id / work / entries 也得跟着换 —— 换的是**键**，
+   正文逐字不动。
+
+   幂等：先按 title 收齐主表里 mingren 那一段（不管它是老号还是新号），
+   再按 ROSTER 的次序（= 号段次序）重写每一块的 id / work / entries。 */
+function rekeyMasterForVolumes(src, roster) {
+  const firstAt = src.indexOf('    id: "mingren-');
+  if (firstAt < 0) return src;
+  const lastAt = src.lastIndexOf('    id: "mingren-');
+  const start = src.lastIndexOf('\n  {', firstAt);
+  const end = src.indexOf('\n  },', lastAt) + 5;
+
+  const parts = [];
+  let i = start;
+  while (true) {
+    const s0 = src.indexOf('\n  {', i);
+    if (s0 < 0 || s0 >= end) break;
+    const e0 = src.indexOf('\n  },', s0);
+    if (e0 < 0) break;
+    parts.push(src.slice(s0, e0 + 5));
+    i = e0 + 5;
+  }
+
+  const byTitle = {};
+  parts.forEach(function (b) {
+    const m = b.match(/^    title: "((?:[^"\\]|\\.)*)",$/m);
+    if (m) byTitle[JSON.parse('"' + m[1] + '"')] = b;
+  });
+
+  const out = [];
+  roster.forEach(function (rec) {
+    const b = byTitle[rec.title];
+    if (!b) throw new Error('主表里找不到 ' + rec.title + '（拆两部换号）');
+    const newRef = 'mingren-' + rec.newId;
+    out.push(b
+      .replace(/^    work: "w-[^"]*",$/m, '    work: "w-' + newRef + '",')
+      .replace(/^    id: "[^"]*",$/m, '    id: "' + newRef + '",')
+      .replace(/^    entries: \["[^"]*"\],$/m, '    entries: ["' + newRef + '"],'));
+  });
+  /* 主表里 mingren 那一段必须与名册条数相等 —— 不等说明有人漏在主表外 */
+  if (parts.length !== roster.length) {
+    throw new Error('主表 mingren 段 ' + parts.length + ' 条、名册 ' + roster.length +
+      ' 位 —— 不相等，不敢重编号');
+  }
+  return src.slice(0, start) + out.join('\n') + src.slice(end);
+}
+
 /* 重排 mingren-* 那一段：按 ROSTER 的次序、按新号换 id / work / entries */
 function rebuildBlock(src, roster, tmpIds) {
   const tmpMap = {};

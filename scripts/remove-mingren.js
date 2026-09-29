@@ -39,6 +39,18 @@
    ========================================================================== */
 'use strict';
 
+/* ⚠️ Issue #399（历代名家拆两部）之后，`data/poems-mingren.js` 这个文件
+   已不再存在 —— 壳改成两份（poems-mingren-cn.js / poems-mingren-foreign.js），
+   由 `scripts/build-mingren.js` 从主表生成。要删人请改名单来源
+   （scripts/data/mingren-round5.js 的 DROP 一类），再重跑 build 脚本，
+   不要在壳上手工动刀。本脚本不再可用，保留只为留下当时的判定口径。 */
+if (require('fs').existsSync(require('path').join(__dirname, '..', 'data/poems-mingren.js')) === false) {
+  console.error('✗ data/poems-mingren.js 已不存在（Issue #399 拆两部）。' +
+    '\n  用法改为：改 scripts/data/mingren-round5.js 的 DROP → node scripts/build-mingren.js --master');
+  process.exit(2);
+}
+
+
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');

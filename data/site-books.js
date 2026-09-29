@@ -14,7 +14,9 @@
     { id: "chengyu", name: "中华成语故事", page: "/chengyu/", varName: "POEMS_CHENGYU", unit: "则" },
     { id: "changshi", name: "文学常识", page: "/changshi/", varName: "POEMS_CHANGSHI", unit: "条" },
     { id: "mingshu", name: "名著导读", page: "/mingshu/", varName: "POEMS_MINGSHU", unit: "部" },
-    { id: "mingren", name: "历代名家", page: "/mingren/", varName: "POEMS_MINGREN", unit: "家" }
+    /* Issue #399：历代名家拆两部（中国 / 外国），两部都是独立集子。 */
+    { id: "mingren", name: "历代名家「中国」", page: "/mingren/", varName: "POEMS_MINGREN_CN", unit: "家" },
+    { id: "mingren-waiguo", name: "历代名家「外国」", page: "/mingren-waiguo/", varName: "POEMS_MINGREN_FOREIGN", unit: "家", refPrefix: "mingren" }
   ];
 
   window.SITE_BOOKS_DEF = BOOKS;

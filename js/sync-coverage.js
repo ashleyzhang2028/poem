@@ -112,10 +112,22 @@
       merge: "并集", cap: "每行 ≤ 2000 篇",
       why: "名著导读已读 —— 与其余各部同一族（Issue #381 新增第十二部）。"
     },
+    /* Issue #399：历代名家拆两部 —— 老键留一份（迁移用，见 js/mingren.js 的
+       migrateReadStore），两卷各自一把新键。三把都是「已读」那一族。 */
     {
       key: "poem_mingren_read_v1", sync: true, row: "reads:poem_mingren_read_v1",
       merge: "并集", cap: "每行 ≤ 2000 篇",
-      why: "历代名家已读 —— 与其余各部同一族（Issue #381 新增第十三部）。"
+      why: "历代名家已读（老键）—— 拆两部之前的那一把，现在只作迁移源。"
+    },
+    {
+      key: "poem_mingren_cn_read_v1", sync: true, row: "reads:poem_mingren_cn_read_v1",
+      merge: "并集", cap: "每行 ≤ 2000 篇",
+      why: "历代名家「中国」已读 —— Issue #399 拆两部后的中国卷。"
+    },
+    {
+      key: "poem_mingren_foreign_read_v1", sync: true, row: "reads:poem_mingren_foreign_read_v1",
+      merge: "并集", cap: "每行 ≤ 2000 篇",
+      why: "历代名家「外国」已读 —— Issue #399 拆两部后的外国卷。"
     },
     {
       key: "poem_pinyin_fix_v1", sync: true, row: "pinyin_fix:v1",
