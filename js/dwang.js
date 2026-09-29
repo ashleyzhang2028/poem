@@ -17,7 +17,12 @@
      另立一段，不混进「夏」（见 scripts/data/emperor/facts-legend.js 的抬头）。 */
   var GROUPS_CN = window.DWANG_GROUP_ORDER = [
     "传说时代",
-    "夏", "商", "西周", "东周（春秋）", "东周（战国）", "秦",
+    "夏", "商", "西周", "东周（春秋）", "东周（战国）",
+    /* Issue #407 第三次追问：东周后期的各主要诸侯国诸侯王 253 位 ——
+       与「东周（春秋）」「东周（战国）」两段并列（那两段是周天子，
+       这一段是诸侯），段内按国、一国之内按在位先后排。 */
+    "东周·诸侯（春秋战国）",
+    "秦",
     "西汉", "新", "东汉", "三国", "西晋", "东晋", "十六国", "南北朝",
     "隋", "唐", "五代十国", "辽", "北宋", "西夏", "金", "南宋",
     "元", "明", "清"
@@ -35,7 +40,7 @@
       page: "/dwang/",
       readStore: "poem_dwang_cn_read_v1",
       groupOrder: GROUPS_CN,
-      pageSub: "传说时代（三皇五帝）与夏商周至清末 · 按在位先后排 · 每位给姓名 / 年号 / 在位 / 谥号 / 庙号 / 谱系与六维评价"
+      pageSub: "传说时代（三皇五帝）与夏商周至清末 · 含东周诸侯 253 位（晋楚齐秦宋鲁郑吴越赵魏韩燕） · 按在位先后排 · 每位给姓名 / 年号 / 在位 / 谥号 / 庙号 / 谱系与六维评价"
     },
     foreign: {
       key: "foreign",
@@ -70,8 +75,19 @@
       groupOrder: v.groupOrder,
       pageTitle: v.title,
       pageSub: v.pageSub,
-      // 词条式：正文即词条表，本来就没有白话译文
+      // 词条式：正文即词条表。白话译文**只有东周诸侯那一段有**
+      // （列传体，见 scripts/build-emperor.js 的抬头）—— 别处没有译文，
+      // 而「待补」这个标记的语义是「这一条本该有却还缺着」（js/reader-core.js
+      // 里 pending = !text || (!translation && !noTrans)，而 noTranslation
+      // 整部都算「不带译文」）。所以这里不整部关掉译文，改用一个谓词：
+      // 有译文的条目照常显示，没有的那一整段仍然按「不带译文」处理。
       noTranslation: true,
+      hasTranslation: function (p) {
+        if (!p) return false;
+        /* 壳里标了 hasTranslation 的（东周诸侯那 253 位）算「带译文」；
+           已经取回主表正文的（p.translation 有值）更算。别的段两条都不满足。 */
+        return !!(p.translation || p.hasTranslation);
+      },
       words: {
         list: v.title,
         unit: "位",
