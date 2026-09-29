@@ -40,8 +40,8 @@ loadData(sb, ['data/poems-mingren-cn.js', 'data/poems-mingren-foreign.js']);
    两卷各有自己的壳与 id 段（中国 mr-c-xx / 外国 mr-w-xx），
    下面凡是要「全册」的地方都把两卷拼起来看（BAN / 生卒 / 点名这些
    口径一条都没变，只是收口从一册变两册）。 */
-const CN = resolve(sb, sb.POEMS_MINGREN_CN, '历代名家「中国」');
-const FOREIGN = resolve(sb, sb.POEMS_MINGREN_FOREIGN, '历代名家「外国」');
+const CN = resolve(sb, sb.POEMS_MINGREN_CN, '名家「中国」');
+const FOREIGN = resolve(sb, sb.POEMS_MINGREN_FOREIGN, '名家「外国」');
 const MR = CN.concat(FOREIGN);
 
 /* 两卷合起来 805 位 —— 拆的是册子，不是人；6 位君主移到了帝王两卷（#407）。 */

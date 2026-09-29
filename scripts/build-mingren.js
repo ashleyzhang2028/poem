@@ -633,7 +633,7 @@ ROSTER.forEach(function (rec) {
 });
 const CN_ROSTER = ROSTER.filter(function (r) { return !r.foreign; });
 const FOREIGN_ROSTER = ROSTER.filter(function (r) { return r.foreign; });
-console.log('拆两部：历代名家「中国」' + CN_ROSTER.length + ' 家 · 历代名家「外国」' +
+console.log('拆两部：名家「中国」' + CN_ROSTER.length + ' 家 · 名家「外国」' +
   FOREIGN_ROSTER.length + ' 家（全册仍按出生时间一条线）');
 
 if (problems.length) {
@@ -749,8 +749,8 @@ function writeShell(file, varName, roster, label) {
   console.log('✓ ' + path.relative(ROOT, file) + ' 已写出，' + label + ' ' + roster.length + ' 位');
 }
 
-writeShell(SHELL_CN, 'POEMS_MINGREN_CN', CN_ROSTER, '历代名家「中国」');
-writeShell(SHELL_FOREIGN, 'POEMS_MINGREN_FOREIGN', FOREIGN_ROSTER, '历代名家「外国」');
+writeShell(SHELL_CN, 'POEMS_MINGREN_CN', CN_ROSTER, '名家「中国」');
+writeShell(SHELL_FOREIGN, 'POEMS_MINGREN_FOREIGN', FOREIGN_ROSTER, '名家「外国」');
 
 /* ── 小工具 ──────────────────────────────────────────────────────────── */
 

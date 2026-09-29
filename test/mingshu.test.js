@@ -84,8 +84,8 @@ const MS = book('名著导读', 'POEMS_MINGSHU', MINGSHU_GROUPS, '部');
 /* Issue #399（历代名家真拆两部）：两卷各自是一份壳、一个号段。
    `book()` 那份通用体检（id 不重、字段齐、gradeGroup 一致、画了表格）
    两卷各跑一遍；下面凡是「全册」的口径把两卷拼起来 —— 拆的是册，不是人。 */
-const MR_CN = book('历代名家「中国」', 'POEMS_MINGREN_CN', MINGREN_GROUPS, '家');
-const MR_FOREIGN = book('历代名家「外国」', 'POEMS_MINGREN_FOREIGN', MINGREN_GROUPS, '家', { sparse: true });
+const MR_CN = book('名家「中国」', 'POEMS_MINGREN_CN', MINGREN_GROUPS, '家');
+const MR_FOREIGN = book('名家「外国」', 'POEMS_MINGREN_FOREIGN', MINGREN_GROUPS, '家', { sparse: true });
 const MR = MR_CN.concat(MR_FOREIGN);
 /* Issue #407（帝王归位）：本身即为君主 / 执政元首的那 6 位移到帝王两卷，
    历代名家由 811 位减到 805 位。 */
@@ -141,7 +141,7 @@ function mrLife(p) {
 /* ⚠️ Issue #399：用户改主意了 —— 「真拆两部」。两卷各自是一条时间线
    （卷内按出生时间排）；跨卷的那条线不再是**页面上的次序**，所以这里
    守的是「每卷各排各的」，不再守「跨卷不倒挂」。 */
-[['历代名家「中国」', MR_CN], ['历代名家「外国」', MR_FOREIGN]].forEach(function (row) {
+[['名家「中国」', MR_CN], ['名家「外国」', MR_FOREIGN]].forEach(function (row) {
   const bad = [];
   for (let i = 1; i < row[1].length; i++) {
     const a = LY.birthYearOf(mrLife(row[1][i - 1])).year;

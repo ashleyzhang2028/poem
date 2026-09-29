@@ -343,8 +343,8 @@ chk(W_SPOT.every(t => WT.has(t)),
 /* 帝王两卷与历代名家两卷之间：**同一个「一人一处」的账** —— 以帝王身份
    为主要身份的人只在帝王卷，不在名家卷（见 scripts/data/mingren-round11.js）。 */
 loadData(sb, ['data/poems-mingren-cn.js', 'data/poems-mingren-foreign.js']);
-const MR = resolve(sb, sb.POEMS_MINGREN_CN, '历代名家「中国」')
-  .concat(resolve(sb, sb.POEMS_MINGREN_FOREIGN, '历代名家「外国」'));
+const MR = resolve(sb, sb.POEMS_MINGREN_CN, '名家「中国」')
+  .concat(resolve(sb, sb.POEMS_MINGREN_FOREIGN, '名家「外国」'));
 const MRT = new Set(MR.map(p => p.title));
 const rulers = ['奥古斯都', '图拉真', '腓特烈二世', '梭伦', '伯里克利', '俾斯麦'];
 chk(rulers.every(t => WT.has(t) && !MRT.has(t)),
