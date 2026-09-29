@@ -144,6 +144,7 @@ add(require('./corpus/fill-poems-4.js'));
 add(require('./corpus/fill-poems-5.js'));
 add(require('./corpus/fill-poems-6.js'));
 add(require('./corpus/fill-poems-7.js'));
+add(require('./corpus/fill-poems-8.js'));
 
 /* 中国当代小说 121 部整组补齐（batch 2 第一批） */
 
