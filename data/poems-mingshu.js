@@ -3993,6 +3993,17 @@ window.POEMS_MINGSHU = [
     excerpt: "龟兔赛跑"
   },
   {
+    textRef: "mingshu-ms-1916",
+    id: "ms-1916",
+    title: "万叶集",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "日本",
+    author: "佚名",
+    source: "《万叶集》",
+    excerpt: "日本最早的和歌集"
+  },
+  {
     textRef: "mingshu-ms-1214",
     id: "ms-1214",
     title: "一千零一夜",
@@ -4002,6 +4013,50 @@ window.POEMS_MINGSHU = [
     author: "佚名",
     source: "《一千零一夜》",
     excerpt: "讲一夜，多活一天"
+  },
+  {
+    textRef: "mingshu-ms-1813",
+    id: "ms-1813",
+    title: "枕草子",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "日本",
+    author: "清少纳言",
+    source: "《枕草子》",
+    excerpt: "春是破晓，夏是夜晚"
+  },
+  {
+    textRef: "mingshu-ms-1812",
+    id: "ms-1812",
+    title: "源氏物语",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "日本",
+    author: "紫式部",
+    source: "《源氏物语》",
+    excerpt: "一位光源氏的浮世生涯"
+  },
+  {
+    textRef: "mingshu-ms-1814",
+    id: "ms-1814",
+    title: "平家物语",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "日本",
+    author: "佚名",
+    source: "《平家物语》",
+    excerpt: "祇园精舍钟声响"
+  },
+  {
+    textRef: "mingshu-ms-1815",
+    id: "ms-1815",
+    title: "徒然草",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "日本",
+    author: "吉田兼好",
+    source: "《徒然草》",
+    excerpt: "无事可做的一百段"
   },
   {
     textRef: "mingshu-ms-956",
@@ -4024,6 +4079,17 @@ window.POEMS_MINGSHU = [
     author: "塞万提斯",
     source: "《堂·吉诃德》",
     excerpt: "与风车作战的骑士"
+  },
+  {
+    textRef: "mingshu-ms-1816",
+    id: "ms-1816",
+    title: "奥州小道",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "日本",
+    author: "松尾芭蕉",
+    source: "《奥州小道》",
+    excerpt: "古池や蛙飛びこむ"
   },
   {
     textRef: "mingshu-ms-20",
@@ -4576,6 +4642,39 @@ window.POEMS_MINGSHU = [
     excerpt: "园子被卖掉了"
   },
   {
+    textRef: "mingshu-ms-1817",
+    id: "ms-1817",
+    title: "我是猫",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "日本",
+    author: "夏目漱石",
+    source: "《我是猫》",
+    excerpt: "一只猫看他的主人"
+  },
+  {
+    textRef: "mingshu-ms-1818",
+    id: "ms-1818",
+    title: "少爷",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "日本",
+    author: "夏目漱石",
+    source: "《少爷》",
+    excerpt: "一个莽撞的教师"
+  },
+  {
+    textRef: "mingshu-ms-1821",
+    id: "ms-1821",
+    title: "草枕",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "日本",
+    author: "夏目漱石",
+    source: "《草枕》",
+    excerpt: "山路上的闲情"
+  },
+  {
     textRef: "mingshu-ms-1562",
     id: "ms-1562",
     title: "母亲",
@@ -4607,6 +4706,28 @@ window.POEMS_MINGSHU = [
     author: "蒙哥马利",
     source: "《绿山墙的安妮》",
     excerpt: "红头发女孩被领回了家"
+  },
+  {
+    textRef: "mingshu-ms-1819",
+    id: "ms-1819",
+    title: "三四郎",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "日本",
+    author: "夏目漱石",
+    source: "《三四郎》",
+    excerpt: "一个乡下青年进了东京"
+  },
+  {
+    textRef: "mingshu-ms-1917",
+    id: "ms-1917",
+    title: "石川啄木短歌",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "日本",
+    author: "石川啄木",
+    source: "《石川啄木短歌》",
+    excerpt: "一握之砂"
   },
   {
     textRef: "mingshu-ms-1068",
@@ -4653,6 +4774,61 @@ window.POEMS_MINGSHU = [
     excerpt: "少年在人间讨生活"
   },
   {
+    textRef: "mingshu-ms-1820",
+    id: "ms-1820",
+    title: "心·夏目漱石",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "日本",
+    author: "夏目漱石",
+    source: "《心·夏目漱石》",
+    excerpt: "先生的遗嘱"
+  },
+  {
+    textRef: "mingshu-ms-1822",
+    id: "ms-1822",
+    title: "罗生门",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "日本",
+    author: "芥川龙之介",
+    source: "《罗生门》",
+    excerpt: "在雨里等一场恶"
+  },
+  {
+    textRef: "mingshu-ms-1824",
+    id: "ms-1824",
+    title: "鼻",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "日本",
+    author: "芥川龙之介",
+    source: "《鼻》",
+    excerpt: "长了鼻子的法师"
+  },
+  {
+    textRef: "mingshu-ms-1825",
+    id: "ms-1825",
+    title: "地狱变",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "日本",
+    author: "芥川龙之介",
+    source: "《地狱变》",
+    excerpt: "一位画师"
+  },
+  {
+    textRef: "mingshu-ms-1823",
+    id: "ms-1823",
+    title: "竹林中",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "日本",
+    author: "芥川龙之介",
+    source: "《竹林中》",
+    excerpt: "谁是真相"
+  },
+  {
     textRef: "mingshu-ms-1132",
     id: "ms-1132",
     title: "我的大学",
@@ -4662,6 +4838,28 @@ window.POEMS_MINGSHU = [
     author: "高尔基",
     source: "《我的大学》",
     excerpt: "喀山的一所社会大学"
+  },
+  {
+    textRef: "mingshu-ms-1918",
+    id: "ms-1918",
+    title: "宫泽贤治诗选",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "日本",
+    author: "宫泽贤治",
+    source: "《宫泽贤治诗选》",
+    excerpt: "不畏风雨"
+  },
+  {
+    textRef: "mingshu-ms-1828",
+    id: "ms-1828",
+    title: "伊豆的舞女",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "日本",
+    author: "川端康成",
+    source: "《伊豆的舞女》",
+    excerpt: "一段少年的旅途"
   },
   {
     textRef: "mingshu-ms-926",
@@ -4675,6 +4873,39 @@ window.POEMS_MINGSHU = [
     excerpt: "一年四季的森林日记"
   },
   {
+    textRef: "mingshu-ms-1826",
+    id: "ms-1826",
+    title: "蟹工船",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "日本",
+    author: "小林多喜二",
+    source: "《蟹工船》",
+    excerpt: "一艘船上的劳役"
+  },
+  {
+    textRef: "mingshu-ms-1838",
+    id: "ms-1838",
+    title: "春琴抄",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "日本",
+    author: "谷崎润一郎",
+    source: "《春琴抄》",
+    excerpt: "一个仆人对女主人的一生"
+  },
+  {
+    textRef: "mingshu-ms-1839",
+    id: "ms-1839",
+    title: "阴翳礼赞",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "日本",
+    author: "谷崎润一郎",
+    source: "《阴翳礼赞》",
+    excerpt: "美不在明亮处"
+  },
+  {
     textRef: "mingshu-ms-22",
     id: "ms-22",
     title: "钢铁是怎样炼成的",
@@ -4684,6 +4915,17 @@ window.POEMS_MINGSHU = [
     author: "奥斯特洛夫斯基",
     source: "《钢铁是怎样炼成的》",
     excerpt: "把整个生命献给人类"
+  },
+  {
+    textRef: "mingshu-ms-1827",
+    id: "ms-1827",
+    title: "雪国",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "日本",
+    author: "川端康成",
+    source: "《雪国》",
+    excerpt: "穿过县界长长的隧道"
   },
   {
     textRef: "mingshu-ms-1561",
@@ -4719,6 +4961,50 @@ window.POEMS_MINGSHU = [
     excerpt: "重要的东西用眼睛是看不见的"
   },
   {
+    textRef: "mingshu-ms-1837",
+    id: "ms-1837",
+    title: "细雪",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "日本",
+    author: "谷崎润一郎",
+    source: "《细雪》",
+    excerpt: "四姐妹的婚事"
+  },
+  {
+    textRef: "mingshu-ms-1835",
+    id: "ms-1835",
+    title: "斜阳",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "日本",
+    author: "太宰治",
+    source: "《斜阳》",
+    excerpt: "一个没落贵族之家"
+  },
+  {
+    textRef: "mingshu-ms-1836",
+    id: "ms-1836",
+    title: "人间失格",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "日本",
+    author: "太宰治",
+    source: "《人间失格》",
+    excerpt: "我这一生尽是可耻之事"
+  },
+  {
+    textRef: "mingshu-ms-1834",
+    id: "ms-1834",
+    title: "假面的告白",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "日本",
+    author: "三岛由纪夫",
+    source: "《假面的告白》",
+    excerpt: "一部自白"
+  },
+  {
     textRef: "mingshu-ms-995",
     id: "ms-995",
     title: "夏洛的网",
@@ -4741,6 +5027,83 @@ window.POEMS_MINGSHU = [
     excerpt: "一个人可以被毁灭，但不能被打败"
   },
   {
+    textRef: "mingshu-ms-1829",
+    id: "ms-1829",
+    title: "千只鹤",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "日本",
+    author: "川端康成",
+    source: "《千只鹤》",
+    excerpt: "一只鹤，一只茶碗"
+  },
+  {
+    textRef: "mingshu-ms-1832",
+    id: "ms-1832",
+    title: "潮骚",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "日本",
+    author: "三岛由纪夫",
+    source: "《潮骚》",
+    excerpt: "海边的渔村少年"
+  },
+  {
+    textRef: "mingshu-ms-1831",
+    id: "ms-1831",
+    title: "金阁寺",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "日本",
+    author: "三岛由纪夫",
+    source: "《金阁寺》",
+    excerpt: "美把人逼到绝路"
+  },
+  {
+    textRef: "mingshu-ms-1841",
+    id: "ms-1841",
+    title: "敦煌",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "日本",
+    author: "井上靖",
+    source: "《敦煌》",
+    excerpt: "一座城与一批经卷"
+  },
+  {
+    textRef: "mingshu-ms-1830",
+    id: "ms-1830",
+    title: "古都",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "日本",
+    author: "川端康成",
+    source: "《古都》",
+    excerpt: "两座城，两姐妹"
+  },
+  {
+    textRef: "mingshu-ms-1840",
+    id: "ms-1840",
+    title: "白色巨塔",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "日本",
+    author: "山崎丰子",
+    source: "《白色巨塔》",
+    excerpt: "医院里的权力"
+  },
+  {
+    textRef: "mingshu-ms-1833",
+    id: "ms-1833",
+    title: "春雪",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "日本",
+    author: "三岛由纪夫",
+    source: "《春雪》",
+    excerpt: "贵族少年的恋爱"
+  },
+  {
     textRef: "mingshu-ms-912",
     id: "ms-912",
     title: "古拉格群岛",
@@ -4750,5 +5113,60 @@ window.POEMS_MINGSHU = [
     author: "索尔仁尼琴",
     source: "《古拉格群岛》",
     excerpt: "劳改营国的编年史"
+  },
+  {
+    textRef: "mingshu-ms-1842",
+    id: "ms-1842",
+    title: "日本沉没",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "日本",
+    author: "小松左京",
+    source: "《日本沉没》",
+    excerpt: "一个国家的末日"
+  },
+  {
+    textRef: "mingshu-ms-1845",
+    id: "ms-1845",
+    title: "世界尽头与冷酷仙境",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "日本",
+    author: "村上春树",
+    source: "《世界尽头与冷酷仙境》",
+    excerpt: "两个世界一个我"
+  },
+  {
+    textRef: "mingshu-ms-1843",
+    id: "ms-1843",
+    title: "挪威的森林",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "日本",
+    author: "村上春树",
+    source: "《挪威的森林》",
+    excerpt: "直子与绿子"
+  },
+  {
+    textRef: "mingshu-ms-1844",
+    id: "ms-1844",
+    title: "海边的卡夫卡",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "日本",
+    author: "村上春树",
+    source: "《海边的卡夫卡》",
+    excerpt: "十五岁的出走"
+  },
+  {
+    textRef: "mingshu-ms-1846",
+    id: "ms-1846",
+    title: "1Q84",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "日本",
+    author: "村上春树",
+    source: "《1Q84》",
+    excerpt: "两个月亮的世界"
   },
 ];
