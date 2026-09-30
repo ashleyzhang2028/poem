@@ -74,5 +74,23 @@ chk(/\.game-history-row \.mini-btn\s*\{[\s\S]{0,200}?flex:\s*none/.test(css),
   '.game-history-row .mini-btn 固定宽度（flex: none），不被左边那条挤扁');
 
 console.log('');
+console.log('=== 三、清单是「列表形态」：无圆角、米白交替、去掉左右 padding ===');
+
+// 取 .game-history-list / .game-history-row 那一段出来判
+const listBody = css.slice(css.indexOf('.game-history-list {'), css.indexOf('.game-history-main'));
+chk(!/border-radius/.test(listBody),
+  '清单与行都不再有 border-radius（去掉圆角弧度）');
+chk(/\.game-history-row\s*\{[\s\S]{0,220}?background:\s*transparent/.test(css),
+  '行默认透明（卡片底色透出来就是白）');
+chk(/\.game-history-row:nth-child\(odd\)\s*\{\s*background:\s*var\(--bg\)/.test(css),
+  '奇数行铺 --bg 米色 —— 米 / 白 / 米 / 白 交替');
+chk(/\.game-history-list\s*\{[\s\S]{0,120}?margin:\s*0\s+-14px/.test(css),
+  '清单 margin: 0 -14px 反向吃回卡片左右内边距（条纹铺到卡边）');
+chk(!/\.game-history-list\s*\{[\s\S]{0,120}?gap:/.test(css),
+  '清单去掉了 gap —— 行靠交替底色分开，不再靠缝');
+chk(!/\.game-history-list\s*\{[\s\S]{0,120}?padding:/.test(css),
+  '清单本身没有 padding（尤其没有左右 padding）');
+
+console.log('');
 if (fails) { console.log('失败 ' + fails + ' 项'); process.exit(1); }
 console.log('全部通过');
