@@ -115,11 +115,24 @@ Object.keys(RAW_ENTRIES).forEach(function (id) {
 
   if (!t.text) {
     /* Issue #399（历代名家拆两部）：新 id（mingren-mr-c-xx）在主表里还没有
-       正文，但同一个人的正文接在**老 id**（mingren-mr-xx）上 —— 壳里的
-       `masterRef` 就是这条线，按它认回上一轮的正文，不重写、不丢。 */
-    var alias = raw.masterRef || (prev[id] ? id : null);
+       正文，但同一个人的正文接在**老号**上 —— 壳里的 `masterRef` 就是这条线。
+
+       ⚠️ 这条兜底**按姓名认，不按 masterRef 里的号去查**。原先写的是
+       `prev[raw.masterRef]`，两处都错：
+         · `masterRef` 的值是**主表的 id**（`mingren-mr-c-08`），不是别名键；
+         · 主表里恰好有一个**同号的别的条目**（`mingren-mr-11` 是恩培多克勒，
+           而 `masterRef: "mingren-mr-11"` 是苏格拉底的影子号）—— 一查就查到
+           别人头上，静默错、不落空。
+       `prev` 是按 id 建的，没有按姓名查的入口；而按姓名认正是这一步的本意：
+       壳里那一条的 title 就是主表里那一条的 title。 */
+    var byTitle = {};
+    Object.keys(prev).forEach(function (k) {
+      if (prev[k] && prev[k].title) byTitle[prev[k].title] = k;
+    });
+    var alias = raw.masterRef || null;
     var hit = prev[id] || (raw.textRef ? prev[raw.textRef] : null)
-      || (alias ? prev[alias] : null);
+      || (alias ? prev[alias] : null)
+      || (raw.title ? prev[byTitle[raw.title]] : null);
     if (hit) t = { text: hit.text || '', translation: hit.translation || '',
       translationSource: hit.translationSource || '' };
   }
@@ -551,19 +564,37 @@ out += '    });\n';
 out += '    /* Issue #399（历代名家真拆两部）：两卷各出一份壳，正文仍只有一份\n';
 out += '       （同一个人不抄两遍）。两份壳的主表 id 已各自落在主表上，平时一条\n';
 out += '       别名都不写；这一段是**兜底** —— 万一主表里只有上一轮的老 id\n';
-out += '       （mingren-mr-xx）、壳却是新的（mr-c-xx / mr-w-xx），就按壳里那条\n';
-out += '       明写的 masterRef 认回来。不靠「号段恰巧相等」去猜，也不靠名字\n';
-out += '       （名字会跟别的集子撞：141 个名字在两部以上都有，按名字会取错）。\n';
-out += '       ⚠️ 别名只在**查不到**时兜底，不覆盖任何实条目。 */\n';
+out += '       （mingren-mr-xx）、壳却是新的（mr-c-xx / mr-w-xx），就认回来。\n';
+out += '\n';
+out += '       ⚠️ 认法是**按姓名**，不是按 masterRef 里的号。原先写的是\n';
+out += '       `byId[sh.masterRef]`，那一步会走到**同号的另一个条目**上：\n';
+out += '       masterRef 的值是主表 id（mingren-mr-c-08），而主表里恰好有一个\n';
+out += '       id 相同的别的条目（mingren-mr-11 / mingren-mr-12 …）—— 一查就\n';
+out += '       查到了别人，静默错、不落空（#420 报的那次 413 条错位就是它）。\n';
+out += '       按姓名认则天然对齐：壳里那一条的 title 就是正文那一条的 title。\n';
+out += '\n';
+out += '       排序用「名 → 主表 id」的索引，**不进 byId 的键空间** —— 别名键与\n';
+out += '       真 id 同形（都是 mingren-*），混在一起迟早被人当成真条目。\n';
+out += '       ⚠️ 只在**查不到**时兜底，不覆盖任何实条目。 */\n';
 out += '    (function () {\n';
 out += '      var shells = [].concat(\n';
 out += '        window.POEMS_MINGREN_CN || [],\n';
 out += '        window.POEMS_MINGREN_FOREIGN || []\n';
 out += '      );\n';
+out += '      var pending = [];\n';
 out += '      shells.forEach(function (sh) {\n';
-out += '        if (!sh || !sh.textRef || !sh.masterRef) return;\n';
+out += '        if (!sh || !sh.textRef || !sh.title) return;\n';
 out += '        if (byId[sh.textRef]) return;\n';
-out += '        if (byId[sh.masterRef]) byId[sh.textRef] = byId[sh.masterRef];\n';
+out += '        pending.push(sh);\n';
+out += '      });\n';
+out += '      if (!pending.length) return;\n';
+out += '      var byTitle = {};\n';
+out += '      (window.TEXT_MASTER || []).forEach(function (m) {\n';
+out += '        if (m && m.title && !byTitle[m.title]) byTitle[m.title] = m;\n';
+out += '      });\n';
+out += '      pending.forEach(function (sh) {\n';
+out += '        var m = byTitle[sh.title];\n';
+out += '        if (m) byId[sh.textRef] = m;\n';
 out += '      });\n';
 out += '    })();\n';
 out += '    return byId;\n';

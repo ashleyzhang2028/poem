@@ -20,7 +20,7 @@
     cn: {
       key: "cn",
       bookId: "mingren",
-      title: "历代名家「中国」",
+      title: "名家「中国」",
       varName: "POEMS_MINGREN_CN",
       page: "/mingren/",
       readStore: "poem_mingren_cn_read_v1",
@@ -29,7 +29,7 @@
     foreign: {
       key: "foreign",
       bookId: "mingren-waiguo",
-      title: "历代名家「外国」",
+      title: "名家「外国」",
       varName: "POEMS_MINGREN_FOREIGN",
       page: "/mingren-waiguo/",
       readStore: "poem_mingren_foreign_read_v1",

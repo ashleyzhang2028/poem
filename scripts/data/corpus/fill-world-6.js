@@ -295,3 +295,5 @@ add('小王子', {
 });
 
 module.exports = out;
+
+module.exports = out;

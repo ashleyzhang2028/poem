@@ -255,3 +255,5 @@ add('森林报', {
 });
 
 module.exports = out;
+
+module.exports = out;

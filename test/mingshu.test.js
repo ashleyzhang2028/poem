@@ -84,8 +84,8 @@ const MS = book('名著导读', 'POEMS_MINGSHU', MINGSHU_GROUPS, '部');
 /* Issue #399（历代名家真拆两部）：两卷各自是一份壳、一个号段。
    `book()` 那份通用体检（id 不重、字段齐、gradeGroup 一致、画了表格）
    两卷各跑一遍；下面凡是「全册」的口径把两卷拼起来 —— 拆的是册，不是人。 */
-const MR_CN = book('历代名家「中国」', 'POEMS_MINGREN_CN', MINGREN_GROUPS, '家');
-const MR_FOREIGN = book('历代名家「外国」', 'POEMS_MINGREN_FOREIGN', MINGREN_GROUPS, '家', { sparse: true });
+const MR_CN = book('名家「中国」', 'POEMS_MINGREN_CN', MINGREN_GROUPS, '家');
+const MR_FOREIGN = book('名家「外国」', 'POEMS_MINGREN_FOREIGN', MINGREN_GROUPS, '家', { sparse: true });
 const MR = MR_CN.concat(MR_FOREIGN);
 /* Issue #407（帝王归位）：本身即为君主 / 执政元首的那 6 位移到帝王两卷，
    历代名家由 811 位减到 805 位。 */
@@ -141,7 +141,7 @@ function mrLife(p) {
 /* ⚠️ Issue #399：用户改主意了 —— 「真拆两部」。两卷各自是一条时间线
    （卷内按出生时间排）；跨卷的那条线不再是**页面上的次序**，所以这里
    守的是「每卷各排各的」，不再守「跨卷不倒挂」。 */
-[['历代名家「中国」', MR_CN], ['历代名家「外国」', MR_FOREIGN]].forEach(function (row) {
+[['名家「中国」', MR_CN], ['名家「外国」', MR_FOREIGN]].forEach(function (row) {
   const bad = [];
   for (let i = 1; i < row[1].length; i++) {
     const a = LY.birthYearOf(mrLife(row[1][i - 1])).year;
@@ -153,6 +153,34 @@ function mrLife(p) {
   }
   chk(bad.length === 0, row[0] + '本卷按出生时间排序（倒挂：' +
     (bad.slice(0, 5).join('、') || '无') + '）');
+});
+
+/* ⚠️ Issue #381 第二十轮：这一条是**补课**。
+   `mr-c-*` / `mr-w-*` 是两个各自独立的号段，主表 id 却按全册编 —— 生成壳时
+   曾「拿卷内序位去全册号段里取 id」当 `masterRef`，于是整段指错：苏格拉底
+   的正文指到了同号的别人。而**页面上看不出来**：列表读壳、正文读主表，
+   两边各自自洽，只有把「壳的 masterRef → 主表那一条 → 正文里的姓名」连起来
+   比一遍才看得见。原先没有这一条，所以错了整整两轮（413 位外国名家里 248 位）。
+   守的就是这条链：姓名必须一致，且两条引用都要查得到。 */
+[['历代名家「中国」', MR_CN], ['历代名家「外国」', MR_FOREIGN]].forEach(function (row) {
+  const mism = [], dangling = [];
+  row[1].forEach(function (p) {
+    const ref = p.masterRef;
+    const e = ref && sb.TEXT_MASTER
+      ? sb.TEXT_MASTER.find(x => String(x.id) === 'mingren-' + String(ref).replace(/^mingren-/, ''))
+      : null;
+    if (!e) { dangling.push(p.title + ' → ' + ref); return; }
+    const m = String(e.text || '').match(/│ *姓名 *│([^│]*)│/);
+    const name = m ? m[1].trim() : '';
+    if (name !== p.title) mism.push(p.title + '（' + ref + ' 里是「' + name + '」）');
+    /* textRef 也得指得到同一条 */
+    const t = sb.TEXT_MASTER.find(x => String(x.id) === 'mingren-' + p.id);
+    if (!t) dangling.push(p.title + ' → mingren-' + p.id);
+  });
+  chk(mism.length === 0, row[0] + '的 masterRef 指到的正文姓名与条目一致（错位：' +
+    (mism.slice(0, 5).join('、') || '无') + '）');
+  chk(dangling.length === 0, row[0] + '的 masterRef / textRef 都能在主表里查到（悬空：' +
+    (dangling.slice(0, 5).join('、') || '无') + '）');
 });
 
 const msBad = orderViolations(MS, p => MYEARS.yearOf(p.title, p.dynasty));
