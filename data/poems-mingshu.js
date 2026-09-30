@@ -4037,8 +4037,8 @@ window.POEMS_MINGSHU = [
     excerpt: "我们的精神是平等的"
   },
   {
-    textRef: "mingshu-ms-920",
-    id: "ms-920",
+    textRef: "mingshu-ms-939",
+    id: "ms-939",
     title: "呼啸山庄",
     group: "外国文学",
     gradeGroup: "外国文学",
@@ -4081,6 +4081,17 @@ window.POEMS_MINGSHU = [
     excerpt: "一场空欢喜的馈赠"
   },
   {
+    textRef: "mingshu-ms-932",
+    id: "ms-932",
+    title: "悲惨世界",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "法国",
+    author: "雨果",
+    source: "《悲惨世界》",
+    excerpt: "冉阿让与一块面包"
+  },
+  {
     textRef: "mingshu-ms-24",
     id: "ms-24",
     title: "昆虫记",
@@ -4092,8 +4103,8 @@ window.POEMS_MINGSHU = [
     excerpt: "荒石园里的观察者"
   },
   {
-    textRef: "mingshu-ms-919",
-    id: "ms-919",
+    textRef: "mingshu-ms-935",
+    id: "ms-935",
     title: "圣诞颂歌",
     group: "外国文学",
     gradeGroup: "外国文学",
@@ -4103,8 +4114,8 @@ window.POEMS_MINGSHU = [
     excerpt: "守财奴的一夜三梦"
   },
   {
-    textRef: "mingshu-ms-921",
-    id: "ms-921",
+    textRef: "mingshu-ms-936",
+    id: "ms-936",
     title: "理智与情感",
     group: "外国文学",
     gradeGroup: "外国文学",
@@ -4114,8 +4125,8 @@ window.POEMS_MINGSHU = [
     excerpt: "姐姐用脑子，妹妹用心"
   },
   {
-    textRef: "mingshu-ms-922",
-    id: "ms-922",
+    textRef: "mingshu-ms-937",
+    id: "ms-937",
     title: "爱玛",
     group: "外国文学",
     gradeGroup: "外国文学",
@@ -4125,8 +4136,8 @@ window.POEMS_MINGSHU = [
     excerpt: "爱替人做媒的姑娘"
   },
   {
-    textRef: "mingshu-ms-923",
-    id: "ms-923",
+    textRef: "mingshu-ms-938",
+    id: "ms-938",
     title: "金银岛",
     group: "外国文学",
     gradeGroup: "外国文学",
@@ -4136,8 +4147,8 @@ window.POEMS_MINGSHU = [
     excerpt: "一张藏宝图引出的远航"
   },
   {
-    textRef: "mingshu-ms-924",
-    id: "ms-924",
+    textRef: "mingshu-ms-934",
+    id: "ms-934",
     title: "化身博士",
     group: "外国文学",
     gradeGroup: "外国文学",

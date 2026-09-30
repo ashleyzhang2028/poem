@@ -359,6 +359,9 @@ if (WANT_MASTER) {
   items.forEach(function (it) { patch['mingshu-' + it.id] = it.text; });
   const res = P.applyAll(patch, {
     force: argv.indexOf('--force') >= 0,
+    // 这一支就是**整批重写正文**（每部的六段素材都重新装配过），
+    // 所以 version 要照新正文重算 —— 不传的话 entry-patch 会拦住。
+    syncVersion: true,
     alreadyTable: function (m) {
       // 上一轮那 36 部已经是表格；默认重写（这一轮就是要重写它们）
       return false;

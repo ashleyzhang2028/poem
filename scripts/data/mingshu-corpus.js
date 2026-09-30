@@ -204,6 +204,16 @@ add(require('./corpus/fill-poetry-18.js'));
 add(require('./corpus/fill-poetry-19.js'));
 add(require('./corpus/fill-poetry-20.js'));
 
+/* ── Issue #381 第十七轮（批次五）· 外国文学（开张）──────────────────
+   按计划「戏剧 → 外国文学」往下填，中小学必读那一批优先。这一组书目表
+   446 部，已交 2 部（昆虫记 / 古拉格群岛），本批交 10 部。 */
+add(require('./corpus/fill-world-1.js'));
+add(require('./corpus/fill-world-2.js'));
+add(require('./corpus/fill-world-3.js'));
+add(require('./corpus/fill-world-4.js'));
+add(require('./corpus/fill-world-5.js'));
+add(require('./corpus/fill-world-6.js'));
+
 /* 《古拉格群岛》单装一册 —— 用户 2026-09-29 复核：不是禁书，放回原处。
    与下面 BANNED 里那 8 部不同，它 2015 年起在大陆有正式出版物。 */
 add(require('./corpus/fill-gulag.js'));
