@@ -1336,19 +1336,35 @@
 
     painted = true;
     hide($("deny-card"));
-    show($("grant-card"));
-    show($("reports-card"));
-    show($("feedback-card"));
-    show($("pinyin-card"));
+    
+    // 根据当前页面显示对应的卡片
+    var path = window.location.pathname;
+    if (path.includes("/admin/accounts.html")) {
+      show($("grant-card"));
+    } else if (path.includes("/admin/reports.html")) {
+      show($("reports-card"));
+    } else if (path.includes("/admin/feedback.html")) {
+      show($("feedback-card"));
+    } else if (path.includes("/admin/pinyin.html")) {
+      show($("pinyin-card"));
+    } else {
+      // 默认首页显示导航卡片
+      show($("grant-card"));
+    }
+    
     if (paintTimer) { clearTimeout(paintTimer); paintTimer = null; }
     if (paint.done) return;
     paint.done = true;
 
+    // 账号管理
     var who = $("accounts-body");
     if (who) {
       who.addEventListener("change", onAccountsChange);
       who.addEventListener("change", onTierChange);
+      loadAccounts();
     }
+
+    // 用户报告
     if ($("btn-reports-reload")) $("btn-reports-reload").addEventListener("click", loadReports);
     if ($("report-counts")) $("report-counts").addEventListener("click", onCountsClick);
     var rl = $("reports-list");
@@ -1356,36 +1372,39 @@
       rl.addEventListener("click", onReportsClick);
       rl.addEventListener("input", onReplyInput);
       rl.addEventListener("keydown", onReplyKey);
+      loadReports();
     }
-    loadAccounts();
-    loadReports();
 
+    // 反馈管理
     if ($("btn-fb-admin-reload")) $("btn-fb-admin-reload").addEventListener("click", loadFeedbackAdmin);
     if ($("fb-admin-counts")) $("fb-admin-counts").addEventListener("click", onFeedbackCountsClick);
     if ($("fb-admin-list")) $("fb-admin-list").addEventListener("click", onFeedbackListClick);
-    loadFeedbackAdmin();
+    if ($("fb-admin-list")) loadFeedbackAdmin();
 
-    $("pf-q").addEventListener("input", onPinyinSearch);
-    $("pf-results").addEventListener("click", onResultClick);
-    $("pf-lines").addEventListener("click", onLinesClick);
-    $("pf-lines").addEventListener("keydown", onLinesKey);
-    $("btn-pf-change").addEventListener("click", closeWork);
-    $("pf-list").addEventListener("click", onFixListClick);
-    if ($("btn-pf-queue-reload")) $("btn-pf-queue-reload").addEventListener("click", loadPinyinQueue);
-    if ($("pf-queue-counts")) $("pf-queue-counts").addEventListener("click", onPinyinQueueCountsClick);
-    if ($("pf-queue-list")) $("pf-queue-list").addEventListener("click", onPinyinQueueClick);
-    window.addEventListener("pinyin-fix-change", function () {
+    // 注音勘误
+    if ($("pf-q")) {
+      $("pf-q").addEventListener("input", onPinyinSearch);
+      $("pf-results").addEventListener("click", onResultClick);
+      $("pf-lines").addEventListener("click", onLinesClick);
+      $("pf-lines").addEventListener("keydown", onLinesKey);
+      $("btn-pf-change").addEventListener("click", closeWork);
+      $("pf-list").addEventListener("click", onFixListClick);
+      if ($("btn-pf-queue-reload")) $("btn-pf-queue-reload").addEventListener("click", loadPinyinQueue);
+      if ($("pf-queue-counts")) $("pf-queue-counts").addEventListener("click", onPinyinQueueCountsClick);
+      if ($("pf-queue-list")) $("pf-queue-list").addEventListener("click", onPinyinQueueClick);
+      window.addEventListener("pinyin-fix-change", function () {
+        renderFixList();
+        if (pfWork) renderLines();
+      });
+      migrateLegacy();
       renderFixList();
-      if (pfWork) renderLines();
-    });
-    migrateLegacy();
-    renderFixList();
-    renderPinyinQueueCounts(pfQueueCounts);
-    loadPinyinQueue();
-    loadBooks().then(function () {
-      renderFixList();
-      if ((($("pf-q") || {}).value || "").trim()) onPinyinSearch();
-    });
+      renderPinyinQueueCounts(pfQueueCounts);
+      loadPinyinQueue();
+      loadBooks().then(function () {
+        renderFixList();
+        if ((($("pf-q") || {}).value || "").trim()) onPinyinSearch();
+      });
+    }
   }
 
   function init() {

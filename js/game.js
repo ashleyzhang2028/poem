@@ -289,7 +289,7 @@
     if (!id.signedIn) {
       html += '<button class="account-btn" type="button" data-game-go="/login/">登录</button>';
     } else {
-      html += '<button class="account-btn ghost" type="button" data-game-history="1">我的考试历史</button>';
+      html += '<button class="account-btn ghost" type="button" data-game-history="1">考试记录</button>';
     }
     return html;
   }
@@ -513,7 +513,7 @@
     var id = identifier();
     var html = '<section class="account-card game-head">' +
       '<button class="account-btn ghost game-back" type="button" data-game-back="1">返回</button>' +
-      '<h2 class="account-card-title">我的考试历史</h2>' +
+      '<h2 class="account-card-title">考试记录</h2>' +
       '<p class="account-hint">只记录「考试」这一种题型（不含模拟考试、题库复习），存在服务器上，可以查看与删除。</p>' +
       "</section>";
 
@@ -631,7 +631,7 @@
         ? '<p class="account-msg ok">' + esc(state.graded.text) + "</p>" +
           (state.graded.saved ? '<p class="account-hint">卷面记录已留在本机（不上云）。</p>' : "") +
           (state.mode === "formal" && state.graded.cloudSaved
-            ? '<p class="account-hint">已存到「我的考试历史」（服务器）。</p>' : "")
+            ? '<p class="account-hint">已存到「考试记录」（服务器）。</p>' : "")
         : '<p class="account-hint">已答 ' + answered + " / " + total + " 题。" +
           (v.judge === "after" ? "交卷后统一批改。" : "答完一题立刻说对错。") + "</p>") +
       "</section>";

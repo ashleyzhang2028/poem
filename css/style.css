@@ -8,7 +8,7 @@
 
   --green: #2f6055;
   --green-dark: #234b42;
-  --green-light: #dbe9e2;
+  --green-light: rgba(47, 96, 85, .09);
   --celadon: #4f7a6e;
 
   --amber: #a55c19;
@@ -3076,11 +3076,12 @@ html, body {
   flex-wrap: wrap;
   gap: 6px;
   margin: 0;
+  justify-content: center;
 }
 .report-kinds button {
   flex: none;
   white-space: nowrap;
-  padding: 6px 10px;
+  padding: 2px 12px;
   border: 1px solid var(--line);
   border-radius: 999px;
   background: var(--card);
@@ -3102,13 +3103,6 @@ html, body {
   .report-modal .modal-box { padding-left: 14px; padding-right: 14px; }
   .report-kinds { gap: 4px; }
   .report-kinds button { padding: 6px 7px; font-size: 12px; }
-}
-
-.report-kind-hint {
-  margin: 6px 0 0;
-  font-size: 12px;
-  line-height: 1.6;
-  color: var(--ink-3);
 }
 
 .report-guest {

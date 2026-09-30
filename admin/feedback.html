@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#2f6055" />
+  <title>需求 / 意见反馈 · 跬步</title>
+  <meta name="description" content="跬步管理后台：需求 / 意见反馈管理。全部以数据库为准。" />
+  <meta name="format-detection" content="telephone=no" />
+  <meta name="robots" content="noindex, nofollow" />
+
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="mobile-web-app-capable" content="yes" />
+
+  <base href="/" />
+  <link rel="icon" href="/icons/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="/css/account.css" />
+</head>
+<body data-nav="admin" data-dock="off" data-back="/admin/" data-page="需求 / 意见反馈" data-sub="管理后台">
+  <div class="app">
+    <header class="topbar"></header>
+
+    <main class="account-page" id="admin-page">
+
+      <section class="account-card" id="deny-card" hidden>
+        <h2 class="account-card-title danger-title">没有权限</h2>
+        <p class="account-lead" id="deny-lead"></p>
+        <button class="account-btn ghost" id="btn-back-profile" type="button">返回</button>
+      </section>
+
+      <section class="account-card" id="feedback-card" hidden>
+        <h2 class="account-card-title">需求 / 意见反馈</h2>
+        <p class="account-lead">用户在「我的 → 更多」提交的需求 / 使用问题（含未登录访客，按设备号认人）。回复会在用户那边看到；用户能删自己发的内容，但删不掉你回复的那些。</p>
+
+        <div class="admin-report-tools">
+          <div class="admin-report-counts" id="fb-admin-counts" role="group" aria-label="按状态筛选"></div>
+          <button class="account-btn ghost" id="btn-fb-admin-reload" type="button">刷新</button>
+        </div>
+
+        <ul class="report-list" id="fb-admin-list"></ul>
+        <p class="account-hint" id="fb-admin-empty" hidden></p>
+        <p class="account-msg" id="msg-fb-admin"></p>
+      </section>
+
+    </main>
+
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+
+  <script src="/js/auth-core.js"></script>
+  <script src="/js/entitlement.js"></script>
+  <script src="/js/auth-api.js"></script>
+  <script src="/js/account-api.js"></script>
+  <script src="/js/family.js"></script>
+  <script src="/js/progress-store.js"></script>
+  <script src="/js/storage.js"></script>
+  <script src="/js/avatar.js"></script>
+  <script src="/js/feedback.js"></script>
+  <script src="/js/admin-page.js"></script>
+  <script src="/js/chrome.js"></script>
+  <script src="/js/pwa.js"></script>
+</body>
+</html>

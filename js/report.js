@@ -343,27 +343,26 @@
       '<a class="report-login-link" id="report-login" href="/login/">去登录</a></p>' +
 
       '<div class="account-field">' +
-      '<span class="account-label" id="report-kinds-label">问题类型（选填）</span>' +
+      '<span class="account-label" id="report-kinds-label">类型（选填）</span>' +
       '<div class="report-kinds" id="report-kinds" role="group" aria-labelledby="report-kinds-label"></div>' +
-      '<p class="report-kind-hint" id="report-kind-hint"></p>' +
       "</div>" +
 
       '<div class="account-field">' +
-      '<label class="account-label" for="report-quote">出错的句子（选填）</label>' +
+      '<label class="account-label" for="report-quote">错句（选填）</label>' +
       '<input id="report-quote" class="account-input" type="text" autocomplete="off" ' +
       'maxlength="' + LIMITS.quote + '" placeholder="可复制粘贴原文里的那一句" />' +
       "</div>" +
 
       '<div class="account-field">' +
-      '<label class="account-label" for="report-note">哪里不对</label>' +
+      '<label class="account-label" for="report-note">更正</label>' +
       '<textarea id="report-note" class="account-input report-textarea" rows="2" ' +
       'maxlength="' + LIMITS.note + '"></textarea>' +
       "</div>" +
 
       '<div class="account-field">' +
       '<label class="account-label" for="report-suggestion">正确的应该是（选填）</label>' +
-      '<input id="report-suggestion" class="account-input" type="text" autocomplete="off" ' +
-      'maxlength="' + LIMITS.suggestion + '" />' +
+      '<textarea id="report-suggestion" class="account-input report-textarea" rows="2" ' +
+      'maxlength="' + LIMITS.suggestion + '"></textarea>' +
       "</div>" +
 
       '<p class="account-msg" id="report-msg"></p>' +
@@ -372,7 +371,6 @@
       '<button type="button" class="btn" id="report-cancel">取消</button>' +
       '<button type="button" class="btn good primary-btn" id="report-send">发送</button>' +
       "</div>" +
-      '<p class="report-foot">发送后可在「我的 → 我的报告」查看处理进度。</p>' +
       "</div>";
 
     document.body.appendChild(box);
@@ -410,8 +408,6 @@
     }).join("");
 
     var k = pickedKind ? kindOf(pickedKind) : null;
-    var hint = $("#report-kind-hint", box);
-    if (hint) hint.textContent = k ? k.hint : "选一类能帮管理员更快定位；拿不准就不选。";
     var note = $("#report-note", box);
     if (note) note.placeholder = k ? k.example : "简单写一句哪里不对";
     var sug = $("#report-suggestion", box);

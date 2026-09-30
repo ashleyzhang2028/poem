@@ -2133,3 +2133,74 @@ button.pf-ch.is-active rt { color: #fdfaf2; }
 
 #verify-row { margin-top: 12px; }
 
+/* 管理后台导航列表 */
+.admin-nav-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 16px 0 0;
+}
+
+.admin-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.admin-nav-item:hover {
+  border-color: var(--line-2);
+  background: var(--bg-soft);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.admin-nav-icon {
+  flex: none;
+  font-size: 28px;
+  line-height: 1;
+}
+
+.admin-nav-content {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.admin-nav-title {
+  margin: 0 0 4px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.admin-nav-desc {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink-3);
+}
+
+@media (max-width: 480px) {
+  .admin-nav-item {
+    padding: 12px 14px;
+    gap: 12px;
+  }
+
+  .admin-nav-icon {
+    font-size: 24px;
+  }
+
+  .admin-nav-title {
+    font-size: 13px;
+  }
+
+  .admin-nav-desc {
+    font-size: 11.5px;
+  }
+}
+

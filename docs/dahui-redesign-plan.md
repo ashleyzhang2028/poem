@@ -140,7 +140,7 @@ create index if not exists exam_records_account_idx on public.exam_records(accou
 ### 4. 落地顺序（这一大项本身再拆三小步）
 
 1. schema + 只读 API（写入 + 列表），先把「交卷后存一条、能拉出来看」跑通；
-2. 历史列表 UI（`/dahui/` 内新增「我的考试历史」入口）；
+2. 历史列表 UI（`/dahui/` 内新增「考试记录」入口）；
 3. 删除（单条 + 清空）+ 与本机 `poem_exam_v1` 的关系理清（云端为准，本机仅离线兜底）。
 
 ## 六、游戏感：飞花令 & 考试更「活」

@@ -174,9 +174,9 @@
     });
     var avg = learned ? Math.round(masterySum / learned) : 0;
     var rows = [
-      ["有记录的篇目", ids.length + " 篇"],
+      ["有记录篇目", ids.length + " 篇"],
       ["已开始记忆", learned + " 篇"],
-      ["今天到期", due + " 篇"]
+      ["今日到期", due + " 篇"]
     ];
     if (learned) rows.push(["平均掌握度", avg + "%"]);
     box.innerHTML = rows.map(function (r) {

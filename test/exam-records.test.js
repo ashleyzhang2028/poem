@@ -150,7 +150,7 @@ console.log("一、只有登录 + Max 才能写考试记录");
   const gameSrc = read("js/game.js");
   chk(/AccountApi\.examRecordCreate/.test(gameSrc), "submit() 里调用了 AccountApi.examRecordCreate");
   chk(/state\.mode === "formal" && window\.AccountApi/.test(gameSrc), "只在 state.mode === \"formal\"（考试）时才推，模拟考试不推");
-  chk(/data-game-history/.test(gameSrc), "首页有「我的考试历史」入口");
+  chk(/data-game-history/.test(gameSrc), "首页有「考试记录」入口");
   chk(/AccountApi\.examRecordDelete/.test(gameSrc), "历史页里能删除单条记录");
 
   const routesSrc = read("api/_lib/routes.js");
