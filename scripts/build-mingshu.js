@@ -45,6 +45,7 @@
 const fs = require('fs');
 const path = require('path');
 const T = require('./lib/table.js');
+const NORM = require('./lib/text-normalize.js');
 
 const ROOT = path.join(__dirname, '..');
 const BOOKS_DEF = require('./data/mingshu-books.js');
@@ -219,8 +220,11 @@ BOOKS.forEach(function (pair) {
       title: row[0], author: row[1], country: row[2], excerpt: row[3],
       dynasty: row[2], genre: row[2]
     };
-    const spec = CORPUS[row[0]];
-    if (!spec) { missing.push(group + ' · ' + row[0]); return; }
+    const raw = CORPUS[row[0]];
+    if (!raw) { missing.push(group + ' · ' + row[0]); return; }
+    /* 素材先洗一遍（Issue #381：重复句 / 字面 \n）—— 洗在装配前，
+       往后再添素材写歪了也会当场洗掉。 */
+    const spec = NORM.cleanSpec(raw);
 
     if (spec.plot) {
       const pl = nchars(plotText(spec));

@@ -453,4 +453,32 @@ BANNED.forEach(function (t) { delete CORPUS[t]; });
 /* 不是禁书 —— 与 BANNED 配着看：复核后确认在大陆有正式出版物，谁删谁错。 */
 const ALLOWED = ['古拉格群岛'];
 
+/* ── 末了：重复句 / 名句凑数的修补件（Issue #381）─────────────────────
+   有若干条当初为了凑「名句 ≥120 字 / 写作背景 ≥270 字」的门槛，把同一句
+   写两遍，或续几句与本书无关的通用话。本文件把受影响的字段换成真内容，
+   在这里最后 add 一遍覆盖上去 —— 与清洗（text-normalize.js）分工：
+   清洗去「紧挨着重复」，本文件换「为凑数而写的通用话」。
+   名单与来由见 scripts/data/corpus/fix-dup-and-lines.js。 */
+/* ⚠️ 这两册只带**要覆盖的字段**（lines / era），所以用 merge 而不是 add ——
+   add 是整条替换，会把同一部书的 era / plot / cast / theme / rank 一并抹掉。 */
+function mergePatch(patch) {
+  Object.keys(patch).forEach(function (k) {
+    if (!CORPUS[k]) return;
+    Object.keys(patch[k]).forEach(function (f) {
+      const v = patch[k][f];
+      /* plot 是一层嵌套（plot.start / plot.main …）：逐块并进去，
+         不然会把整块 plot 换掉、只留下一两个块。 */
+      if (f === 'plot' && v && typeof v === 'object') {
+        CORPUS[k].plot = CORPUS[k].plot || {};
+        Object.keys(v).forEach(function (seg) { CORPUS[k].plot[seg] = v[seg]; });
+      } else {
+        CORPUS[k][f] = v;
+      }
+    });
+  });
+}
+mergePatch(require('./corpus/fix-dup-and-lines.js').FIX);
+mergePatch(require('./corpus/fix-dup-and-lines-2.js').FIX2);
+mergePatch(require('./corpus/fix-dup-and-lines-3.js').FIX3);
+
 module.exports = { CORPUS: CORPUS, BANNED: BANNED, ALLOWED: ALLOWED };

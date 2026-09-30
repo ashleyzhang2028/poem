@@ -410,6 +410,88 @@ console.log('\n=== 七之二、备份：名册跟着走 ===');
   eq(F.list({ backing: b2 }).length, 2, '名册两条都在');
 }
 
+console.log('\n=== 七之三、昵称只有一个真相：名册那条（Issue #444）===');
+{
+  const { F, A, PS, b } = sandbox();
+  F.ensure({ backing: b });
+  const ming = F.list({ backing: b })[0].id;
+  F.rename(ming, '小明', { backing: b });
+
+  // 首页标题从前读的是 `settings.username`（老副本），改名只动名册 —— 于是「改了名，标题不跟」。
+  // 现在两条会对齐：改名时把副本一并写平，读的时候以名册为准。
+  eq(PS.settings().username, '小明',
+    '给子用户改名：**老副本（settings.username）一起写平**（标题的兜底才不是旧名）');
+  eq(A.nickname(b), '小明', '改名后 Avatar.nickname 立刻是新名（名册是权威）');
+
+  const hong = F.create('小红', { backing: b }).profile.id;
+  eq(PS.settings().username, '小明', '新建另一个孩子**不动**当前孩子的昵称副本');
+  F.rename(hong, '小红', { backing: b });
+  const keys = Object.keys(b.raw()).filter(k => /^poem_recite_settings_v1::/.test(k));
+  eq(keys.length, 2, '一个孩子一条副本键（谁都不许盖谁）');
+  chk(keys.indexOf('poem_recite_settings_v1::' + hong) > -1, '副本落在**被改的那个孩子**名下');
+
+  F.select(hong, { backing: b });
+  eq(A.nickname(b), '小红', '切过去：昵称跟着走');
+  eq(PS.settings().username, '小红', '切过去：副本也读的是小红那条（分家生效）');
+  F.select(ming, { backing: b });
+  eq(PS.settings().username, '小明', '切回来：副本回到小明那条');
+}
+
+console.log('\n=== 七之四、自己没传过头像的子用户，不许顶着别人的脸（Issue #444）===');
+{
+  const { F, A, b } = sandbox();
+  F.ensure({ backing: b });
+  const ming = F.list({ backing: b })[0].id;
+  F.rename(ming, '小明', { backing: b });
+  const Pro = { identity: () => ({ tier: 'pro' }) };
+  const hong = F.create('小红', { backing: b, E: Pro }).profile.id;
+
+  // 不分家的老键上留着一张图（老版本建的、或是建完名册后又往老键写过的那种形状）
+  b.setItem(A.LOCAL_NS, JSON.stringify({ v: 1, img: 'data:image/jpeg;base64,MING' }));
+  b.setItem(A.LOCAL_NS + '::' + ming, JSON.stringify({ v: 1, img: 'data:image/jpeg;base64,MING' }));
+
+  F.select(hong, { backing: b });
+  const dHong = A.display(b);
+  eq(dHong.source, 'nickname', '小红自己一张都没传：**回自己的首字印**，不是小明的脸');
+  chk(!/MING/.test(String(dHong.src)), '小红画出来的图**不含**小明那张字节（老键不再当公共那一张）');
+  // 老键还在、名册也在：`ensure()` 补一次认领，归当前选中的那个孩子，然后撤掉老键。
+  const b2 = mem();
+  const m2 = sandbox();
+  m2.F.ensure({ backing: b2 });
+  const c1 = m2.F.list({ backing: b2 })[0].id;
+  const Pro2 = { identity: () => ({ tier: 'pro' }) };
+  const c2 = m2.F.create('小红', { backing: b2, E: Pro2 }).profile.id;
+  b2.setItem(m2.A.LOCAL_NS, JSON.stringify({ v: 1, img: 'data:image/jpeg;base64,OLD' }));
+  m2.F.select(c2, { backing: b2 });
+  m2.F.ensure({ backing: b2 });
+  chk(!b2.raw()[m2.A.LOCAL_NS], '名册已在时的 `ensure()`：老键被认领走、撤掉（不再当公共那一张）');
+  eq(m2.A.display(b2).src, 'data:image/jpeg;base64,OLD', '认给**当前选中的**那一个（老用户那张图不丢）');
+  m2.F.select(c1, { backing: b2 });
+  chk(m2.A.display(b2).source !== 'image', '另一个孩子没自己那张：回自己的首字印（不串脸）');
+}
+
+console.log('\n=== 七之五、接线：标题与昵称都问「你是谁」，改名/换人当场重画（Issue #444）===');
+{
+  const strip = t => t.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/^\s*\/\/.*$/gm, ' ');
+  const app = strip(read('js/app.js'));
+  chk(/window\.Avatar/.test(app) && /A\.nickname\(/.test(app),
+    'js/app.js 的标题问 Avatar.nickname()（名册那条，不再只看 settings.username 那份老副本）');
+  chk(/addEventListener\("family-change"/.test(app) && /addEventListener\('family-change'/.test(app) === false,
+    'js/app.js 接了 family-change（切子用户 / 改名当场重画，不必等刷新）');
+
+  const reader = strip(read('js/reader-core.js'));
+  chk(/A\.nickname\(/.test(reader),
+    'js/reader-core.js 的 currentUsername 也先问 Avatar.nickname()（阅读器那一页跟着孩子走）');
+  chk(/A\.saveNickname\(/.test(reader),
+    'js/reader-core.js 的 saveUsername 走 Avatar.saveNickname()（写得进名册，不是只写老键）');
+
+  const fam = strip(read('js/family.js'));
+  chk(/syncSettingsUsername/.test(fam),
+    'js/family.js 改名时把老副本（settings.username）一起写平 —— 两份不再各说各的');
+  chk(/adoptLegacyAvatarBytes\(b, data\.at\)/.test(fam),
+    '名册已在时的 ensure() 补一次老键认领（老版本建的名册也要修到）');
+}
+
 console.log('');
 if (fails) { console.log('❌ 家庭子用户测试 ' + fails + ' 项失败'); process.exit(1); }
 console.log('🎉 家庭子用户测试全部通过');
