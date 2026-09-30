@@ -269,6 +269,27 @@ add(require('./corpus/fill-foreign-ru-5.js'));
 add(require('./corpus/fill-foreign-ru-6.js'));
 add(require('./corpus/fill-foreign-ru-7.js'));
 
+/* ── Issue #381 第三十二轮（批次十三·外国文学·俄苏片余部）───────────
+   这一批把**俄国片余下 31 部**一次交齐（陀思妥耶夫斯基 6 / 托尔斯泰 2 /
+   屠格涅夫 5 / 契诃夫 8 / 普希金 2 / 果戈理 1 / 莱蒙托夫 1 / 奥斯特洛夫斯基 1 /
+   涅克拉索夫 1 / 阿赫玛托娃 2 / 帕斯捷尔纳克 1 / 叶赛宁 1 / 马雅可夫斯基 1）。
+   分十五册装（一册 1—3 部），便于分批校读。 */
+add(require('./corpus/fill-foreign-ru-8.js'));
+add(require('./corpus/fill-foreign-ru-9.js'));
+add(require('./corpus/fill-foreign-ru-10.js'));
+add(require('./corpus/fill-foreign-ru-11.js'));
+add(require('./corpus/fill-foreign-ru-12.js'));
+add(require('./corpus/fill-foreign-ru-13.js'));
+add(require('./corpus/fill-foreign-ru-14.js'));
+add(require('./corpus/fill-foreign-ru-15.js'));
+add(require('./corpus/fill-foreign-ru-16.js'));
+add(require('./corpus/fill-foreign-ru-17.js'));
+add(require('./corpus/fill-foreign-ru-18.js'));
+add(require('./corpus/fill-foreign-ru-19.js'));
+add(require('./corpus/fill-foreign-ru-20.js'));
+add(require('./corpus/fill-foreign-ru-21.js'));
+add(require('./corpus/fill-foreign-ru-22.js'));
+
 /* ── Issue #381 第二十四轮（批次八·外国文学·其他语种·日本片）──────────
    用户原话「按中小学必读 → 英 → 法 → 俄苏 → 其他语种来吧」。英、法、俄苏
    各片已交，这一轮接**其他语种**里的日本片：书目表里日本共 38 部，此前
