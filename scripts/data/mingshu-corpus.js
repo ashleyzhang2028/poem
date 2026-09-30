@@ -272,6 +272,16 @@ add(require('./corpus/fill-foreign-jp-2.js'));
 add(require('./corpus/fill-foreign-jp-3.js'));
 add(require('./corpus/fill-foreign-jp-4.js'));
 
+/* ── Issue #381 第二十九轮（批次十一·外国文学·美国片）────────────────
+   英国片封口后接着美国片。美国书目表 73 部，此前已交 7 部，这一轮按册
+   往下填；目录见 scripts/data/corpus/fill-foreign-us-*.js。 */
+add(require('./corpus/fill-foreign-us-1.js'));
+add(require('./corpus/fill-foreign-us-2.js'));
+add(require('./corpus/fill-foreign-us-3.js'));
+add(require('./corpus/fill-foreign-us-4.js'));
+add(require('./corpus/fill-foreign-us-5.js'));
+add(require('./corpus/fill-foreign-us-6.js'));
+
 /* ── Issue #381 第二十五轮（批次九·外国文学·英国片·余部）──────────────
    用户原话「按你的计划，尽快完成吧 每次最少提交100」。英国片书目表 83 部，
    此前已交 18 部（fill-foreign-1 一批 + 中小学必读一批），余 65 部按册往下填。
