@@ -5192,6 +5192,17 @@ window.POEMS_MINGSHU = [
     excerpt: "贝多芬、米开朗琪罗、托尔斯泰"
   },
   {
+    textRef: "mingshu-ms-2299",
+    id: "ms-2299",
+    title: "警察与赞美诗",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "美国",
+    author: "欧·亨利",
+    source: "《警察与赞美诗》",
+    excerpt: "想进监狱的人"
+  },
+  {
     textRef: "mingshu-ms-2018",
     id: "ms-2018",
     title: "海狼",
@@ -5234,6 +5245,28 @@ window.POEMS_MINGSHU = [
     author: "欧·亨利",
     source: "《欧·亨利短篇小说选》",
     excerpt: "麦琪的礼物"
+  },
+  {
+    textRef: "mingshu-ms-2298",
+    id: "ms-2298",
+    title: "最后一片叶子",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "美国",
+    author: "欧·亨利",
+    source: "《最后一片叶子》",
+    excerpt: "画上去的叶子救了人"
+  },
+  {
+    textRef: "mingshu-ms-2314",
+    id: "ms-2314",
+    title: "屠场",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "美国",
+    author: "辛克莱",
+    source: "《屠场》",
+    excerpt: "芝加哥的肉联厂"
   },
   {
     textRef: "mingshu-ms-2020",
@@ -5522,6 +5555,17 @@ window.POEMS_MINGSHU = [
     excerpt: "绿灯在对岸一闪一闪"
   },
   {
+    textRef: "mingshu-ms-2062",
+    id: "ms-2062",
+    title: "太阳照常升起",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "美国",
+    author: "海明威",
+    source: "《太阳照常升起》",
+    excerpt: "迷惘的一代"
+  },
+  {
     textRef: "mingshu-ms-1828",
     id: "ms-1828",
     title: "伊豆的舞女",
@@ -5553,6 +5597,17 @@ window.POEMS_MINGSHU = [
     author: "福克纳",
     source: "《喧哗与骚动》",
     excerpt: "一个家族的败落回声"
+  },
+  {
+    textRef: "mingshu-ms-2063",
+    id: "ms-2063",
+    title: "永别了，武器",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "美国",
+    author: "海明威",
+    source: "《永别了，武器》",
+    excerpt: "一场告别的战争"
   },
   {
     textRef: "mingshu-ms-1826",
@@ -5643,6 +5698,17 @@ window.POEMS_MINGSHU = [
     excerpt: "把整个生命献给人类"
   },
   {
+    textRef: "mingshu-ms-2065",
+    id: "ms-2065",
+    title: "乞力马扎罗的雪",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "美国",
+    author: "海明威",
+    source: "《乞力马扎罗的雪》",
+    excerpt: "山顶上那只冻僵的豹子"
+  },
+  {
     textRef: "mingshu-ms-1976",
     id: "ms-1976",
     title: "人鼠之间",
@@ -5685,6 +5751,17 @@ window.POEMS_MINGSHU = [
     author: "斯坦贝克",
     source: "《愤怒的葡萄》",
     excerpt: "一辆装满家当的旧卡车"
+  },
+  {
+    textRef: "mingshu-ms-2064",
+    id: "ms-2064",
+    title: "丧钟为谁而鸣",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "美国",
+    author: "海明威",
+    source: "《丧钟为谁而鸣》",
+    excerpt: "桥要炸，人也要活"
   },
   {
     textRef: "mingshu-ms-1561",
@@ -5839,6 +5916,17 @@ window.POEMS_MINGSHU = [
     author: "塞林格",
     source: "《麦田里的守望者》",
     excerpt: "只想守住麦田边的孩子"
+  },
+  {
+    textRef: "mingshu-ms-2297",
+    id: "ms-2297",
+    title: "伊甸之东",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "美国",
+    author: "斯坦贝克",
+    source: "《伊甸之东》",
+    excerpt: "一对兄弟与一次选择"
   },
   {
     textRef: "mingshu-ms-995",
