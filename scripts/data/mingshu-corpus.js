@@ -313,6 +313,37 @@ add(require('./corpus/fill-foreign-uk-po3.js'));
 add(require('./corpus/fill-foreign-uk-po4.js'));
 add(require('./corpus/fill-foreign-uk-po5.js'));
 
+/* ── Issue #381 第三十一轮（批次十二·外国文学·法国片与德国片）──────────
+   用户原话「不要4部就提交pr 至少60部提交一个 pr, 请继续完成全部的内容和PR
+   最后更新 sw.js version」。英国 / 美国 / 日本 / 俄苏各片已交，这一轮接着把
+   法国片与德国片的余部按册一次交齐（每册 2—3 部，便于分批校读）。 */
+add(require('./corpus/fill-foreign-fr-1.js'));
+add(require('./corpus/fill-foreign-fr-2.js'));
+add(require('./corpus/fill-foreign-fr-3.js'));
+add(require('./corpus/fill-foreign-fr-4.js'));
+add(require('./corpus/fill-foreign-fr-5.js'));
+add(require('./corpus/fill-foreign-fr-6.js'));
+add(require('./corpus/fill-foreign-fr-7.js'));
+add(require('./corpus/fill-foreign-fr-8.js'));
+add(require('./corpus/fill-foreign-fr-9.js'));
+add(require('./corpus/fill-foreign-fr-10.js'));
+add(require('./corpus/fill-foreign-fr-11.js'));
+add(require('./corpus/fill-foreign-de-1.js'));
+add(require('./corpus/fill-foreign-de-2.js'));
+add(require('./corpus/fill-foreign-de-3.js'));
+add(require('./corpus/fill-foreign-de-4.js'));
+add(require('./corpus/fill-foreign-de-5.js'));
+add(require('./corpus/fill-foreign-de-6.js'));
+add(require('./corpus/fill-foreign-de-7.js'));
+add(require('./corpus/fill-foreign-de-8.js'));
+add(require('./corpus/fill-foreign-de-9.js'));
+add(require('./corpus/fill-foreign-de-10.js'));
+add(require('./corpus/fill-foreign-de-11.js'));
+add(require('./corpus/fill-foreign-de-12.js'));
+add(require('./corpus/fill-foreign-de-13.js'));
+add(require('./corpus/fill-foreign-de-14.js'));
+add(require('./corpus/fill-foreign-fr-de-15.js'));
+
 /* 余下的书按组分册，避免单文件过大 */
 add(require('./mingshu-corpus-stub.js'));
 
