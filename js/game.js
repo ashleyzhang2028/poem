@@ -569,7 +569,7 @@
     if (state.lvLeft > (LEVEL_SECONDS - LEVEL_HINT_AFTER) * 1000) return "";
     var n = state.lvPool.length;
     if (!n) return "卡住了？换个范围或换个难度试试。";
-    return "卡住了？这一关还有 " + n + " 句别的写法，换一句试试。";
+    return "卡住了？这一关还有 " + n + " 句能对上，再想想。";
   }
 
   function levelDoneRow(ok, why) {
@@ -703,9 +703,9 @@
 
     html += '<section class="account-card"><h2 class="account-card-title">你想起的那一句</h2>' +
       '<div class="account-field">' +
-      '<label class="account-label" for="game-lv-said">整句照抄，含「' + esc(at) + '」</label>' +
+      '<label class="account-label" for="game-lv-said">你想起来的那一句，含「' + esc(at) + '」</label>' +
       '<input class="account-input" id="game-lv-said" type="text" autocomplete="off" ' +
-      'placeholder="例如「' + esc(levelPlaceholder(at)) + '」" />' +
+      'placeholder="' + esc(LEVEL_PLACEHOLDER) + '" />' +
       "</div>" +
       '<button class="account-btn" type="button" data-game-lv-say="1">交这一句</button>' +
       '<p class="account-msg ' + (state.lvMsg ? (state.lvMsgOk ? "ok" : "warn") : "") +
@@ -727,16 +727,10 @@
     return html;
   }
 
-  // 输入框的示例句：拿这一关句库里最短的一句当样子（不是答案，是最短的那句 ——
-  // 用户第一眼就知道「照这个长度写就行」）。找不到就不给例子。
-  function levelPlaceholder(char) {
-    if (!state.lvPool.length) return char + "……";
-    var best = state.lvPool[0];
-    state.lvPool.forEach(function (r) {
-      if (String(r.text).length < String(best.text).length) best = r;
-    });
-    return best.text;
-  }
+  // 示例句与「作答」卡同一个（「云深不知处」）—— **不能拿这一关句库里的句子当例子**：
+  // 那是直接把答案摊给用户看，与「自己想一句」背道而驰（Issue #356 第五轮已把
+  // 「整句照抄，例如……」这种引导撤掉，闯关这边不该又造一个）。
+  var LEVEL_PLACEHOLDER = "云深不知处";
 
   // 页底那颗「看答案」：不套卡片（用户 2026-09-30「看答案按钮应该不需要卡片」），
   // 排在页面所有卡片**下面**，答案清单跟着它往下摊。

@@ -101,6 +101,14 @@ console.log("三、两种形态并存：查一查不动，闯关是并列的增�
   chk(/state\.flyKind !== "level"/.test(gameSrc),
     "闯关形态下不渲染「看答案」页底那块（摊开答案 = 把这一关答了）");
 
+  // 闯关这张卡的引导语要与「作答」卡同一条口径（Issue #356 第五轮：不要
+  // 「照抄」这种引导，要的是用户自己想起来的句子）。
+  const lvHtml = (gameSrc.match(/function renderFlyLevel\(\)[\s\S]*?\n  \}/) || [""])[0];
+  chk(!!lvHtml, "找得到闯关那一段的渲染片段（renderFlyLevel）");
+  chk(!/整句照抄/.test(lvHtml), "闯关里没有「整句照抄」这个引导（与作答卡同口径）");
+  chk(/LEVEL_PLACEHOLDER/.test(lvHtml),
+    "闯关的示例句是与作答卡同一个常量，不是从这一关句库里挑的（那是把答案摊给用户看）");
+
   chk(/function startFlyLevel\(/.test(gameSrc), "有闯关的发牌函数");
   chk(/LEVEL_SECONDS = 45/.test(gameSrc), "闯关有限时（45 秒一关）");
 
