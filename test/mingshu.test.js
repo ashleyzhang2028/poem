@@ -626,9 +626,9 @@ chk(Math.min.apply(null, MS_PEOPLE) >= 15,
   chk(DE_ALL.every(t => modernInShell.has(t)),
     '德国片 31 部全部进列表页（缺：' +
     (DE_ALL.filter(t => !modernInShell.has(t)).join('、') || '无') + '）');
-  chk(BY('外国文学') >= 270,
-    '外国文学已填 270 部以上（实际 ' + BY('外国文学') + '）');
-  chk(MS.length >= 632, '名著导读已交付 632 部以上（实际 ' + MS.length + '）');
+  chk(BY('外国文学') >= 273,
+    '外国文学已填 273 部以上（实际 ' + BY('外国文学') + '）');
+  chk(MS.length >= 635, '名著导读已交付 635 部以上（实际 ' + MS.length + '）');
 
   /* 素材全覆盖：书目表里「有素材」的那些书，壳里一条不落 */
   const BOOKS = require('../scripts/data/mingshu-books.js');

@@ -283,6 +283,7 @@ add(require('./corpus/fill-foreign-us-5.js'));
 add(require('./corpus/fill-foreign-us-6.js'));
 add(require('./corpus/fill-foreign-us-7.js'));
 add(require('./corpus/fill-foreign-us-8.js'));
+add(require('./corpus/fill-foreign-us-9.js'));
 
 /* ── Issue #381 第二十五轮（批次九·外国文学·英国片·余部）──────────────
    用户原话「按你的计划，尽快完成吧 每次最少提交100」。英国片书目表 83 部，

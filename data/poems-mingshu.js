@@ -5412,6 +5412,17 @@ window.POEMS_MINGSHU = [
     excerpt: "同一个人身上的两个人"
   },
   {
+    textRef: "mingshu-ms-2315",
+    id: "ms-2315",
+    title: "小公子",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "美国",
+    author: "伯内特",
+    source: "《小公子》",
+    excerpt: "一个孩子改变一个家"
+  },
+  {
     textRef: "mingshu-ms-2439",
     id: "ms-2439",
     title: "冰岛渔夫",
@@ -5674,6 +5685,17 @@ window.POEMS_MINGSHU = [
     author: "契诃夫",
     source: "《樱桃园》",
     excerpt: "园子被卖掉了"
+  },
+  {
+    textRef: "mingshu-ms-2316",
+    id: "ms-2316",
+    title: "小公主",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "美国",
+    author: "伯内特",
+    source: "《小公主》",
+    excerpt: "在阁楼上当公主"
   },
   {
     textRef: "mingshu-ms-1817",
@@ -6444,6 +6466,17 @@ window.POEMS_MINGSHU = [
     author: "奥威尔",
     source: "《动物农场》",
     excerpt: "所有的动物一律平等，但有些更平等"
+  },
+  {
+    textRef: "mingshu-ms-2317",
+    id: "ms-2317",
+    title: "精灵鼠小弟",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "美国",
+    author: "怀特",
+    source: "《精灵鼠小弟》",
+    excerpt: "小老鼠的出走"
   },
   {
     textRef: "mingshu-ms-2370",
