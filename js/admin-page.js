@@ -638,7 +638,7 @@
     });
     if (empty) {
       empty.hidden = list.length > 0;
-      empty.textContent = pfQueueStatus === "pending" ? "没有待审核的提议。" : "没有「" + pfStatusLabel(pfQueueStatus) + "」的记录。";
+      empty.textContent = pfQueueStatus === "pending" ? "无待审核提议" : "无「" + pfStatusLabel(pfQueueStatus) + "」记录";
     }
     box.innerHTML = list.map(function (p) {
       var title = p.poemTitle ? "《" + p.poemTitle + "》" : "（未知篇目）";
@@ -953,9 +953,9 @@
   }
 
   function emptyText(status) {
-    if (status === "new") return "没有待处理的报告。点上方「全部」可以查看处理过的。";
-    if (status === "all") return "还没有用户提交过报告。";
-    return "没有「" + statusLabel(status) + "」的报告。";
+    if (status === "new") return "无待处理的报告";
+    if (status === "all") return "无用户提交过报告。";
+    return "无「" + statusLabel(status) + "」的报告。";
   }
 
   function renderReports(list) {
@@ -1135,7 +1135,7 @@
     patchReport(b.getAttribute("data-rid"), b.getAttribute("data-report-act"), b);
   }
 
-  // ---- 需求 / 意见反馈：管理端全站列表，回复 / 状态 / 删除 ----
+  // ---- 意见反馈：管理端全站列表，回复 / 状态 / 删除 ----
 
   var fbAdminThreads = [];
   var fbAdminStatus = "open";
@@ -1191,9 +1191,9 @@
   }
 
   function fbEmptyText(status) {
-    if (status === "open") return "没有待处理的反馈。";
-    if (status === "all") return "还没有人提交过反馈。";
-    return "没有「" + fbStatusLabel(status) + "」的反馈。";
+    if (status === "open") return "无待处理反馈";
+    if (status === "all") return "无人提交过反馈";
+    return "无「" + fbStatusLabel(status) + "」的反馈";
   }
 
   function renderFeedbackList() {

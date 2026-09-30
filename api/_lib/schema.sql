@@ -353,7 +353,7 @@ create index if not exists pinyin_proposals_status_idx on public.pinyin_proposal
 alter table public.pinyin_proposals enable row level security;
 
 -- ==========================================================================
--- 11. 需求 / 意见反馈
+-- 11. 意见反馈
 -- ==========================================================================
 -- 与用户报告（第 7 节）不同：不针对某一篇，而是一段可来回跟帖的对话，
 -- 拆成两张表——一条反馈本身（thread）与其下每一层跟帖（comment，含

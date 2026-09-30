@@ -276,7 +276,7 @@
     },
     {
       key: "poem_feedback_seen_v1", sync: false, row: "", merge: "", cap: WHY.account,
-      why: "「需求 / 意见反馈」有回复提醒的水位线，与上面那把键同一条理由。"
+      why: "「意见反馈」有回复提醒的水位线，与上面那把键同一条理由。"
     }
   ];
 

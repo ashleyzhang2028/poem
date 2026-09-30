@@ -33,9 +33,6 @@
 
       <section class="account-card" id="pinyin-card" hidden>
         <h2 class="account-card-title">注音勘误</h2>
-        <p class="account-lead">多音字偶尔会被自动注音读错。找到篇目，点读错的字，选正确的读音，再提交给所有人。</p>
-        <p class="pf-scope">选好读音会先在<strong>你自己的屏幕</strong>上立即生效，方便核对；点「提交给所有人」后进入待审核，<strong>批准后全站读者才会看到</strong>（本机缓存至多几小时后自动刷新）。</p>
-
         <div class="account-field pf-step">
           <label class="account-label" for="pf-q"><span class="pf-no">1</span>找到篇目</label>
           <input id="pf-q" class="account-input" type="search" autocomplete="off" spellcheck="false"
@@ -59,14 +56,12 @@
 
         <div class="admin-sub">
           <h3 class="admin-sub-title">这台设备上的改动 <span class="admin-count" id="pf-count">0</span></h3>
-          <p class="account-hint">只在你自己屏幕上生效，用来核对读音；确认没问题后请在上面点「提交给所有人」。</p>
           <ul class="admin-fix-list" id="pf-list"></ul>
-          <p class="account-hint" id="pf-empty" hidden>还没有改过读音。</p>
+          <p class="account-hint" id="pf-empty" hidden>未改过读音</p>
         </div>
 
         <div class="admin-sub">
           <h3 class="admin-sub-title">全站生效审核</h3>
-          <p class="account-hint">批准后全站读者都会读到这个音；驳回或下线则恢复自动注音。</p>
           <div class="admin-report-tools">
             <div class="admin-report-counts" id="pf-queue-counts" role="group" aria-label="按状态筛选"></div>
             <button class="account-btn ghost" id="btn-pf-queue-reload" type="button">刷新</button>

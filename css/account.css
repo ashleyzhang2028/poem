@@ -134,7 +134,6 @@ body[data-nav="login"] .app {
   background: var(--card);
   color: var(--ink);
   font-family: inherit;
-  font-size: 15px;
   outline: none;
   transition: border-color .15s, background .15s, box-shadow .15s;
 }
@@ -2138,7 +2137,6 @@ button.pf-ch.is-active rt { color: #fdfaf2; }
   display: flex;
   flex-direction: column;
   gap: 10px;
-  margin: 16px 0 0;
 }
 
 .admin-nav-item {
@@ -2187,7 +2185,7 @@ button.pf-ch.is-active rt { color: #fdfaf2; }
 
 @media (max-width: 480px) {
   .admin-nav-item {
-    padding: 12px 14px;
+    padding: 12px 0px;
     gap: 12px;
   }
 

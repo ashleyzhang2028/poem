@@ -56,7 +56,7 @@
 - **自动朗读**：基于系统语音，零音频文件、断网可用。可读单篇、读当日全部、随机连读。
 - **古诗词大会**（自成一页 `/dahui/`，**就是飞花令与考试这一页，不是一部集子**）：**飞花令**（Max）、**题库复习**（Pro）、**模拟考试**（Max）、**考试**（Max）。每一张题型卡各算各的门槛，页面上没有「集子」这层概念 —— 集子归 `/library/`。卷面 = 范围（全部 / 单部集子 / 小学·初中·高中）× 形态 × 题量：模拟逐题给对错、考试交卷后统一批且限时 20 分钟。判分不花钱也不接 AI，用的是仓库里的同一个出题内核（`js/quiz.js`）；范围名单从全站集子自己算，加一部集子就多一个范围。
 - **报告错误 / 勘误**：篇目页那颗**小旗**能报错字 / 注音 / 译文 / 朗读 / 界面问题，报告送到服务端台账，管理员在 `/admin/` 处理，自己报过的在「关于 → 我的报告」里看进度。
-- **需求 / 意见反馈**：「我的 → 更多 → 需求 / 意见反馈」可提交产品建议或使用问题，未登录也能发（按设备号认人）；可来回跟帖，管理员回复后能看到，自己发的内容能删（含跟帖），删不掉管理员回的那些。
+- **意见反馈**：「我的 → 更多 → 意见反馈」可提交产品建议或使用问题，未登录也能发（按设备号认人）；可来回跟帖，管理员回复后能看到，自己发的内容能删（含跟帖），删不掉管理员回的那些。
 - **PWA 离线**：安装到桌面后可离线背诵，首次打开需联网加载一次。
 
 层级口径（用户 2026-09-17 的裁决）：**「现场考试和飞花令归 max 所有，题库归 pro.」** 设计与实现见 `docs/architecture.md` §4.15；考试层的卷面三要素（范围 × 形态 × 题量）与四级门槛见 §4.66。
@@ -232,7 +232,7 @@ bash test/run.sh   # 等价于 npm test
 
 Vercel Serverless，同源、无 CORS。**线上只有 1 个函数**：`api/handler.js` 按 `api/_lib/routes.js` 的路由表派给 `api/_routes/`（Hobby 档上限 12 个函数，故必须收口）；`vercel.json` 一条 rewrite 接外部地址。业务内核在 `api/_lib/core.js`。
 
-主要接口：`/api/me`（权益的唯一来源）、`/api/send-code` 与 `/api/verify-code`（随机码登录）、`/api/register` `/api/login` `/api/verify-email` `/api/reset-*`（完整登录流程）、`/api/sync/pull|push`（跨设备同步）、`/api/avatar`（头像）、`/api/report`（用户报告）、`/api/admin/grant|accounts|role|reports|pinyin|feedback`（管理后台）、`/api/pinyin-fixes`（全站生效的注音勘误，公开只读）、`/api/feedback`（需求 / 意见反馈，登录与设备号访客都能用）、`/api/diag`（自助排查，只回形状不回值）。完整台账见 `docs/architecture.md` §4.3。
+主要接口：`/api/me`（权益的唯一来源）、`/api/send-code` 与 `/api/verify-code`（随机码登录）、`/api/register` `/api/login` `/api/verify-email` `/api/reset-*`（完整登录流程）、`/api/sync/pull|push`（跨设备同步）、`/api/avatar`（头像）、`/api/report`（用户报告）、`/api/admin/grant|accounts|role|reports|pinyin|feedback`（管理后台）、`/api/pinyin-fixes`（全站生效的注音勘误，公开只读）、`/api/feedback`（意见反馈，登录与设备号访客都能用）、`/api/diag`（自助排查，只回形状不回值）。完整台账见 `docs/architecture.md` §4.3。
 
 **四条硬规矩**：明文验证码不进日志；权益只从 `/api/me` 来，请求体里的 `plan` 一律忽略；写接口都有频控；改别人数据的接口有服务端角色闸（`403`）。
 
