@@ -40,9 +40,10 @@
     said: [],
     graded: null,
     server: null,
-        setup: { scope: "all", size: 0, scopeChosen: false },
+        setup: { scope: "all", size: 0, scopeChosen: false },   // open() / applyDefaultScope() 里落到「小学」
         scopes: [],
     scopeOpen: true,
+    flyRound: 0,
     left: 0,
     timer: null,
     overlayId: "",
@@ -130,6 +131,32 @@
     Object.keys(p).forEach(function (k) { out[k] = p[k]; });
     if (!out.book) out.book = book;
     return out;
+  }
+
+  // 大会内所有题型的**默认范围是「小学」**，不是「全部」（用户 2026-09-30：
+  // 「古诗词大会内的所有题型，默认范围为小学，而不是全部」）。
+  // 只在这里写一次，飞花令的选字 / 看答案 / 自己写一句、三个题型的卷子
+  // 都从 state.setup.scope 走，所以「默认」只有这一个出处。
+  var DEFAULT_SCOPE = "poems:primary";
+
+  // 语料里有没有「小学」这一档 —— 课内诗词语料没加载出来时（例如大会页上
+  // 只预缓存了集子），照旧退回「全部」，免得一进来就是一份空卷子。
+  function defaultScope(cps) {
+    if (!Ex || !Ex.select) return "all";
+    try {
+      var hit = Ex.select(cps || corpus(), DEFAULT_SCOPE);
+      if (hit && hit.length) return DEFAULT_SCOPE;
+    } catch (e) {  }
+    return "all";
+  }
+
+  // 落到 state.scopes 上：首页那 15 行清单里「小学」那一格要是亮的，
+  // 否则说明行写着「小学（119 篇）」、格子上却是空的，同一件事两个说法。
+  function applyDefaultScope() {
+    var sc = defaultScope(corpus());
+    state.setup.scope = sc;
+    state.setup.scopeChosen = sc !== "all";
+    state.scopes = sc === "all" ? [] : [sc];
   }
 
   // 按当前范围过滤语料：飞花令的选字/看答案/自己写一句都要走同一份，
@@ -253,7 +280,11 @@
     try { return P.isPolyphone(ch) || !P.isCommon(ch); } catch (e) { return false; }
   }
 
-  function pickChars(cps, levelId) {
+  // 「换令」要真的换一副牌（用户 2026-09-30：「点击换令按钮好像没任何反应」）。
+  // 从前的种子是「候选自身」，同一个令字永远同一副牌 —— 于是按钮点下去
+  // 算出来的还是原来那两个字，看着就是坏的。种子改由 `state.flyRound`
+  // 参与，每点一次 +1，牌就换一副；同一个令字在同一轮里仍然可复现。
+  function pickChars(cps, levelId, round) {
     var lv = null;
     for (var i = 0; i < CHAR_LEVELS.length; i++) if (CHAR_LEVELS[i].id === levelId) lv = CHAR_LEVELS[i];
     if (!lv) lv = CHAR_LEVELS[1];
@@ -265,9 +296,9 @@
     // **一次给两个字**：单字太难「正好是那个字」，两个字才有「凑一凑」的余地。
     // （这句由 09804fc 写下，后来在一轮「去掉所有注释」的整理里丢了 ——
     // 用户 2026-09-30 因此问「为什么每次出两个令字」。丢了就要补回来。）
-    // 用候选自身当种子：同一个令字永远同一副牌，可复现。
-    var picked = Q.shuffle(pool, pool[0] + pool.length)[0] || pool[0];
-    var second = Q.shuffle(pool.filter(function (c) { return c !== picked; }), picked)[0];
+    var seed = pool[0] + "|" + pool.length + "|" + Number(round || 0);
+    var picked = Q.shuffle(pool, seed)[0] || pool[0];
+    var second = Q.shuffle(pool.filter(function (c) { return c !== picked; }), seed + "|b")[0];
     return second ? [picked, second] : [picked];
   }
 
@@ -392,13 +423,12 @@
       "</div>" +
       '<button class="account-btn" type="button" data-game-say="1">核一核</button>' +
       '<p class="account-msg" id="game-said-msg"></p>' +
-      '<p class="account-hint">判分是逐字比对：写出来的这一句要能在合集里一字不差地找到。</p>' +
       "</section>";
     return html;
   }
 
   // 页底那颗「看答案」：不套卡片（用户 2026-09-30「看答案按钮应该不需要卡片」），
-  // 排在页面所有卡片**下面**（含「回到卷面设置」那张），答案清单跟着它往下摊。
+  // 排在页面所有卡片**下面**，答案清单跟着它往下摊。
   function renderFlyReveal() {
     var cps = scopedCorpus();
     var ff = Q.flyFlower({ poems: cps, chars: state.chars });
@@ -413,7 +443,7 @@
               (r.source ? " · " + esc(bookName(r.source)) : "") + "</span>" +
               "</div>";
           }).join("") : '<p class="account-hint">这一份语料里没有带这些字的句子。</p>') + "</div>"
-        : '<p class="account-hint">先自己想，想完了再点开对一对。点开之后可以点任意一句跳到原文。</p>') +
+        : "") +
       "</div>";
   }
 
@@ -717,11 +747,6 @@
     else if (state.mode) body = renderPaper();
     else body = renderHome();
 
-    // 「回到卷面设置」只在答题卷面上出现（setup / history 两屏不摆）
-    if (state.mode && state.mode !== "setup" && state.mode !== "history") {
-      body += '<section class="account-card"><button class="account-btn ghost" type="button" ' +
-        'data-game-reset="1">回到卷面设置</button></section>';
-    }
     // 飞花令的「看答案」排在页底：所有卡片之后（用户 2026-09-30）
     if (state.mode === "fly") body += renderFlyReveal();
     host.innerHTML = body + (state.overlayId ? renderPoemOverlay(state.overlayId) : "");
@@ -730,12 +755,20 @@
     animateScoreBanner();
   }
 
-  function startFly(levelId) {
-    state.level = levelId || state.level;
+  // 换一个难度 = 重新开始一副牌，轮次归零；同一档里点「换令」才往前走一轮。
+  function startFly(levelId, keepRound) {
+    var nextLevel = levelId || state.level;
+    if (!keepRound || nextLevel !== state.level) state.flyRound = 0;
+    state.level = nextLevel;
     var cps = scopedCorpus();
-    state.chars = pickChars(cps, state.level);
+    state.chars = pickChars(cps, state.level, state.flyRound);
     state.revealed = false;
     render();
+  }
+
+  function nextFly() {
+    state.flyRound += 1;
+    startFly(state.level, true);
   }
 
   function probeServer() {
@@ -801,8 +834,10 @@
     if (!allowed(m, id).ok) { render(); return; }
 
     stopTimer();
-        var keepScope = state.setup && state.setup.scopeChosen ? state.setup.scope : "all";
-    state.setup = { scope: keepScope, size: 0, scopeChosen: !!(state.setup && state.setup.scopeChosen) };
+    var keepScope = state.setup && state.setup.scopeChosen ? state.setup.scope : "all";
+    var keepChosen = !!(state.setup && state.setup.scopeChosen);
+    state.setup = { scope: keepScope, size: 0, scopeChosen: keepChosen };
+    if (!keepChosen) applyDefaultScope();
     state.setupNotice = "";
 
     if (modeId === "fly") {
@@ -1013,9 +1048,7 @@
       var sub = hit("data-game-submit");
       if (sub) { submit(); return; }
       var rst = hit("data-game-restart");
-      if (rst) { startFly(); return; }
-      var rset = hit("data-game-reset");
-      if (rset) { stopTimer(); state.mode = "setup"; render(); return; }
+      if (rst) { nextFly(); return; }
     };
 
   }
@@ -1107,9 +1140,9 @@
     host.hidden = false;
     setDockNav("game");
     state.mode = "";
-        state.scopes = [];
-    state.scopeOpen = true;
+        state.scopeOpen = true;
     state.setup = { scope: "all", size: 0, scopeChosen: false };
+    applyDefaultScope();
     state.setupNotice = "";
     state.pending = "";
     state.overlayId = "";

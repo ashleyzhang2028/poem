@@ -1054,7 +1054,12 @@ thead .plans-th-cap {
 
 /* 飞花令：换令收进令字卡，看答案不套卡片、落在页底 */
 .game-fly-restart { margin-top: 10px; }
-.game-fly-reveal { display: flex; flex-direction: column; }
+.game-fly-reveal {
+  display: flex;
+  flex-direction: column;
+  /* 收起时这颗「看答案」和上面那张卡之间也要留缝（与整页的 12px 同档） */
+  margin-top: 12px;
+}
 /* 令字横排：**拼音在上、汉字在下**（用户 2026-09-30 裁决）。
  *
  * 从前是反的（汉字在上、拼音在下）；而且两字用 `flex-end` 底边对齐 ——
