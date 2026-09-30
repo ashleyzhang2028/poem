@@ -4048,6 +4048,17 @@ window.POEMS_MINGSHU = [
     excerpt: "一位光源氏的浮世生涯"
   },
   {
+    textRef: "mingshu-ms-2329",
+    id: "ms-2329",
+    title: "狐狸列那的故事",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "法国",
+    author: "佚名",
+    source: "《狐狸列那的故事》",
+    excerpt: "一只狡猾的狐狸"
+  },
+  {
     textRef: "mingshu-ms-1814",
     id: "ms-1814",
     title: "平家物语",
@@ -4079,6 +4090,28 @@ window.POEMS_MINGSHU = [
     author: "乔叟",
     source: "《坎特伯雷故事集》",
     excerpt: "去坎特伯雷路上的故事会"
+  },
+  {
+    textRef: "mingshu-ms-2344",
+    id: "ms-2344",
+    title: "巨人传",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "法国",
+    author: "拉伯雷",
+    source: "《巨人传》",
+    excerpt: "笑是人的本性"
+  },
+  {
+    textRef: "mingshu-ms-2352",
+    id: "ms-2352",
+    title: "蒙田随笔集",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "法国",
+    author: "蒙田",
+    source: "《蒙田随笔集》",
+    excerpt: "我知道什么呢"
   },
   {
     textRef: "mingshu-ms-1948",
@@ -4213,6 +4246,28 @@ window.POEMS_MINGSHU = [
     excerpt: "人的堕落与自由意志"
   },
   {
+    textRef: "mingshu-ms-2351",
+    id: "ms-2351",
+    title: "拉·封丹寓言",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "法国",
+    author: "拉·封丹",
+    source: "《拉·封丹寓言》",
+    excerpt: "知了与蚂蚁"
+  },
+  {
+    textRef: "mingshu-ms-2353",
+    id: "ms-2353",
+    title: "帕斯卡尔思想录",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "法国",
+    author: "帕斯卡尔",
+    source: "《帕斯卡尔思想录》",
+    excerpt: "人是会思想的苇草"
+  },
+  {
     textRef: "mingshu-ms-2036",
     id: "ms-2036",
     title: "天路历程",
@@ -4246,6 +4301,17 @@ window.POEMS_MINGSHU = [
     excerpt: "一个人在岛上过二十八年"
   },
   {
+    textRef: "mingshu-ms-2348",
+    id: "ms-2348",
+    title: "波斯人信札",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "法国",
+    author: "孟德斯鸠",
+    source: "《波斯人信札》",
+    excerpt: "两个波斯人在巴黎"
+  },
+  {
     textRef: "mingshu-ms-19",
     id: "ms-19",
     title: "格列佛游记",
@@ -4255,6 +4321,17 @@ window.POEMS_MINGSHU = [
     author: "斯威夫特",
     source: "《格列佛游记》",
     excerpt: "小人国、大人国与慧骃国"
+  },
+  {
+    textRef: "mingshu-ms-2349",
+    id: "ms-2349",
+    title: "论法的精神",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "法国",
+    author: "孟德斯鸠",
+    source: "《论法的精神》",
+    excerpt: "三权分立"
   },
   {
     textRef: "mingshu-ms-2034",
@@ -4277,6 +4354,50 @@ window.POEMS_MINGSHU = [
     author: "斯特恩",
     source: "《项狄传》",
     excerpt: "一部奇特的小说"
+  },
+  {
+    textRef: "mingshu-ms-2350",
+    id: "ms-2350",
+    title: "老实人",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "法国",
+    author: "伏尔泰",
+    source: "《老实人》",
+    excerpt: "还是要种我们的园地"
+  },
+  {
+    textRef: "mingshu-ms-2346",
+    id: "ms-2346",
+    title: "爱弥儿",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "法国",
+    author: "卢梭",
+    source: "《爱弥儿》",
+    excerpt: "顺其自然的教育"
+  },
+  {
+    textRef: "mingshu-ms-2347",
+    id: "ms-2347",
+    title: "社会契约论",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "法国",
+    author: "卢梭",
+    source: "《社会契约论》",
+    excerpt: "人生而自由"
+  },
+  {
+    textRef: "mingshu-ms-2345",
+    id: "ms-2345",
+    title: "忏悔录",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "法国",
+    author: "卢梭",
+    source: "《忏悔录》",
+    excerpt: "我要把一个人的真面目示人"
   },
   {
     textRef: "mingshu-ms-2296",
@@ -4431,6 +4552,17 @@ window.POEMS_MINGSHU = [
     author: "雪莱",
     source: "《致云雀》",
     excerpt: "云雀在天空里欢叫"
+  },
+  {
+    textRef: "mingshu-ms-2331",
+    id: "ms-2331",
+    title: "驴皮记",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "法国",
+    author: "巴尔扎克",
+    source: "《驴皮记》",
+    excerpt: "一张驴皮的愿望"
   },
   {
     textRef: "mingshu-ms-27",
@@ -4598,6 +4730,17 @@ window.POEMS_MINGSHU = [
     excerpt: "两个女人，两条路"
   },
   {
+    textRef: "mingshu-ms-2332",
+    id: "ms-2332",
+    title: "茶花女·小说与话剧",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "法国",
+    author: "小仲马",
+    source: "《茶花女·小说与话剧》",
+    excerpt: "两种体裁的茶花女"
+  },
+  {
     textRef: "mingshu-ms-31",
     id: "ms-31",
     title: "大卫·科波菲尔",
@@ -4673,6 +4816,50 @@ window.POEMS_MINGSHU = [
     author: "梭罗",
     source: "《瓦尔登湖》",
     excerpt: "在林中小屋住两年"
+  },
+  {
+    textRef: "mingshu-ms-2520",
+    id: "ms-2520",
+    title: "草叶集",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "美国",
+    author: "惠特曼",
+    source: "《草叶集》",
+    excerpt: "我歌唱带电的肉体"
+  },
+  {
+    textRef: "mingshu-ms-2521",
+    id: "ms-2521",
+    title: "自己之歌",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "美国",
+    author: "惠特曼",
+    source: "《自己之歌》",
+    excerpt: "我赞美我自己"
+  },
+  {
+    textRef: "mingshu-ms-2333",
+    id: "ms-2333",
+    title: "包法利夫人与情感教育",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "法国",
+    author: "福楼拜",
+    source: "《包法利夫人与情感教育》",
+    excerpt: "两部法国小说"
+  },
+  {
+    textRef: "mingshu-ms-2515",
+    id: "ms-2515",
+    title: "恶之花",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "法国",
+    author: "波德莱尔",
+    source: "《恶之花》",
+    excerpt: "巴黎的忧郁"
   },
   {
     textRef: "mingshu-ms-917",
@@ -4752,6 +4939,17 @@ window.POEMS_MINGSHU = [
     excerpt: "扫烟囱的孩子下了水"
   },
   {
+    textRef: "mingshu-ms-2343",
+    id: "ms-2343",
+    title: "气球上的五星期",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "法国",
+    author: "凡尔纳",
+    source: "《气球上的五星期》",
+    excerpt: "乘热气球横穿非洲"
+  },
+  {
     textRef: "mingshu-ms-1055",
     id: "ms-1055",
     title: "地心游记",
@@ -4772,6 +4970,17 @@ window.POEMS_MINGSHU = [
     author: "卡罗尔",
     source: "《爱丽丝漫游奇境》",
     excerpt: "掉进兔子洞以后"
+  },
+  {
+    textRef: "mingshu-ms-2342",
+    id: "ms-2342",
+    title: "从地球到月球",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "法国",
+    author: "凡尔纳",
+    source: "《从地球到月球》",
+    excerpt: "一门巨炮把人送上月球"
   },
   {
     textRef: "mingshu-ms-1370",
@@ -4840,6 +5049,17 @@ window.POEMS_MINGSHU = [
     excerpt: "四个家族与一场战争"
   },
   {
+    textRef: "mingshu-ms-2516",
+    id: "ms-2516",
+    title: "巴黎的忧郁",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "法国",
+    author: "波德莱尔",
+    source: "《巴黎的忧郁》",
+    excerpt: "散文诗"
+  },
+  {
     textRef: "mingshu-ms-23",
     id: "ms-23",
     title: "海底两万里",
@@ -4862,6 +5082,17 @@ window.POEMS_MINGSHU = [
     excerpt: "外省生活的双重奏"
   },
   {
+    textRef: "mingshu-ms-2517",
+    id: "ms-2517",
+    title: "醉舟",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "法国",
+    author: "兰波",
+    source: "《醉舟》",
+    excerpt: "我是一条在河上漂流的船"
+  },
+  {
     textRef: "mingshu-ms-1054",
     id: "ms-1054",
     title: "八十天环游地球",
@@ -4871,6 +5102,28 @@ window.POEMS_MINGSHU = [
     author: "凡尔纳",
     source: "《八十天环游地球》",
     excerpt: "一场打赌的旅程"
+  },
+  {
+    textRef: "mingshu-ms-2518",
+    id: "ms-2518",
+    title: "地狱一季",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "法国",
+    author: "兰波",
+    source: "《地狱一季》",
+    excerpt: "一种季节"
+  },
+  {
+    textRef: "mingshu-ms-2341",
+    id: "ms-2341",
+    title: "神秘岛",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "法国",
+    author: "凡尔纳",
+    source: "《神秘岛》",
+    excerpt: "荒岛上从零开始"
   },
   {
     textRef: "mingshu-ms-21",
@@ -4926,6 +5179,28 @@ window.POEMS_MINGSHU = [
     author: "法布尔",
     source: "《昆虫记》",
     excerpt: "荒石园里的观察者"
+  },
+  {
+    textRef: "mingshu-ms-2334",
+    id: "ms-2334",
+    title: "莫泊桑中短篇全集",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "法国",
+    author: "莫泊桑",
+    source: "《莫泊桑中短篇全集》",
+    excerpt: "三百篇短篇"
+  },
+  {
+    textRef: "mingshu-ms-2335",
+    id: "ms-2335",
+    title: "项链与羊脂球",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "法国",
+    author: "莫泊桑",
+    source: "《项链与羊脂球》",
+    excerpt: "两篇名作"
   },
   {
     textRef: "mingshu-ms-1373",
@@ -5016,6 +5291,17 @@ window.POEMS_MINGSHU = [
     excerpt: "一个孩子改变一个家"
   },
   {
+    textRef: "mingshu-ms-2439",
+    id: "ms-2439",
+    title: "冰岛渔夫",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "法国",
+    author: "洛蒂",
+    source: "《冰岛渔夫》",
+    excerpt: "布列塔尼的渔人"
+  },
+  {
     textRef: "mingshu-ms-1180",
     id: "ms-1180",
     title: "爱的教育",
@@ -5036,6 +5322,17 @@ window.POEMS_MINGSHU = [
     author: "柯南·道尔",
     source: "《福尔摩斯探案集》",
     excerpt: "基本演绎法"
+  },
+  {
+    textRef: "mingshu-ms-2522",
+    id: "ms-2522",
+    title: "狄金森诗选",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "美国",
+    author: "狄金森",
+    source: "《狄金森诗选》",
+    excerpt: "我是无名之辈"
   },
   {
     textRef: "mingshu-ms-1934",
@@ -5192,6 +5489,17 @@ window.POEMS_MINGSHU = [
     excerpt: "一条狗听见了祖先的呼唤"
   },
   {
+    textRef: "mingshu-ms-2337",
+    id: "ms-2337",
+    title: "贝多芬传",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "法国",
+    author: "罗曼·罗兰",
+    source: "《贝多芬传》",
+    excerpt: "一位音乐家的苦难"
+  },
+  {
     textRef: "mingshu-ms-34",
     id: "ms-34",
     title: "名人传",
@@ -5223,6 +5531,17 @@ window.POEMS_MINGSHU = [
     author: "杰克·伦敦",
     source: "《海狼》",
     excerpt: "一艘捕海豹船上的强弱法则"
+  },
+  {
+    textRef: "mingshu-ms-2336",
+    id: "ms-2336",
+    title: "约翰·克利斯朵夫·少年",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "法国",
+    author: "罗曼·罗兰",
+    source: "《约翰·克利斯朵夫·少年》",
+    excerpt: "一个天才的早岁"
   },
   {
     textRef: "mingshu-ms-1556",
@@ -5311,6 +5630,17 @@ window.POEMS_MINGSHU = [
     author: "杰克·伦敦",
     source: "《热爱生命》",
     excerpt: "病狼与断粮的人"
+  },
+  {
+    textRef: "mingshu-ms-2338",
+    id: "ms-2338",
+    title: "米开朗琪罗传",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "法国",
+    author: "罗曼·罗兰",
+    source: "《米开朗琪罗传》",
+    excerpt: "一位雕塑家的一生"
   },
   {
     textRef: "mingshu-ms-1818",
@@ -5423,6 +5753,17 @@ window.POEMS_MINGSHU = [
     excerpt: "一把钥匙开一座园子"
   },
   {
+    textRef: "mingshu-ms-2339",
+    id: "ms-2339",
+    title: "托尔斯泰传",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "法国",
+    author: "罗曼·罗兰",
+    source: "《托尔斯泰传》",
+    excerpt: "一位文豪的思想"
+  },
+  {
     textRef: "mingshu-ms-33",
     id: "ms-33",
     title: "童年",
@@ -5432,6 +5773,17 @@ window.POEMS_MINGSHU = [
     author: "高尔基",
     source: "《童年》",
     excerpt: "在外祖父家的日子"
+  },
+  {
+    textRef: "mingshu-ms-2548",
+    id: "ms-2548",
+    title: "庞德诗选",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "美国",
+    author: "庞德",
+    source: "《庞德诗选》",
+    excerpt: "在地铁站"
   },
   {
     textRef: "mingshu-ms-1131",
@@ -5489,6 +5841,28 @@ window.POEMS_MINGSHU = [
     excerpt: "长了鼻子的法师"
   },
   {
+    textRef: "mingshu-ms-2546",
+    id: "ms-2546",
+    title: "弗罗斯特诗选",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "美国",
+    author: "弗罗斯特",
+    source: "《弗罗斯特诗选》",
+    excerpt: "未选择的路"
+  },
+  {
+    textRef: "mingshu-ms-2547",
+    id: "ms-2547",
+    title: "未选择的路",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "美国",
+    author: "弗罗斯特",
+    source: "《未选择的路》",
+    excerpt: "一片黄树林里的岔路"
+  },
+  {
     textRef: "mingshu-ms-1825",
     id: "ms-1825",
     title: "地狱变",
@@ -5509,6 +5883,17 @@ window.POEMS_MINGSHU = [
     author: "毛姆",
     source: "《月亮与六便士》",
     excerpt: "满地都是六便士，他抬头看见了月亮"
+  },
+  {
+    textRef: "mingshu-ms-2519",
+    id: "ms-2519",
+    title: "海滨墓园",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "法国",
+    author: "瓦雷里",
+    source: "《海滨墓园》",
+    excerpt: "这平静的屋顶上"
   },
   {
     textRef: "mingshu-ms-1823",
@@ -5676,6 +6061,17 @@ window.POEMS_MINGSHU = [
     excerpt: "带着嫌疑出生的人"
   },
   {
+    textRef: "mingshu-ms-2328",
+    id: "ms-2328",
+    title: "大森林里的小木屋",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "美国",
+    author: "怀尔德",
+    source: "《大森林里的小木屋》",
+    excerpt: "威斯康星的童年"
+  },
+  {
     textRef: "mingshu-ms-1838",
     id: "ms-1838",
     title: "春琴抄",
@@ -5718,6 +6114,17 @@ window.POEMS_MINGSHU = [
     author: "奥斯特洛夫斯基",
     source: "《钢铁是怎样炼成的》",
     excerpt: "把整个生命献给人类"
+  },
+  {
+    textRef: "mingshu-ms-2327",
+    id: "ms-2327",
+    title: "草原上的小屋",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "美国",
+    author: "怀尔德",
+    source: "《草原上的小屋》",
+    excerpt: "拓荒的一家"
   },
   {
     textRef: "mingshu-ms-2065",
@@ -5797,6 +6204,17 @@ window.POEMS_MINGSHU = [
     excerpt: "一个哥萨克的一生"
   },
   {
+    textRef: "mingshu-ms-2326",
+    id: "ms-2326",
+    title: "小房子",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "美国",
+    author: "伯顿",
+    source: "《小房子》",
+    excerpt: "一座房子看着城市长大"
+  },
+  {
     textRef: "mingshu-ms-1050",
     id: "ms-1050",
     title: "局外人与鼠疫",
@@ -5850,6 +6268,17 @@ window.POEMS_MINGSHU = [
     author: "毛姆",
     source: "《刀锋》",
     excerpt: "剃刀边缘很难越过"
+  },
+  {
+    textRef: "mingshu-ms-2325",
+    id: "ms-2325",
+    title: "一百条裙子",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "美国",
+    author: "埃斯特斯",
+    source: "《一百条裙子》",
+    excerpt: "一个女孩的裙子"
   },
   {
     textRef: "mingshu-ms-1924",
@@ -5918,6 +6347,17 @@ window.POEMS_MINGSHU = [
     excerpt: "老大哥在看着你"
   },
   {
+    textRef: "mingshu-ms-2340",
+    id: "ms-2340",
+    title: "第二性",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "法国",
+    author: "波伏娃",
+    source: "《第二性》",
+    excerpt: "女人不是天生的"
+  },
+  {
     textRef: "mingshu-ms-1834",
     id: "ms-1834",
     title: "假面的告白",
@@ -5927,6 +6367,28 @@ window.POEMS_MINGSHU = [
     author: "三岛由纪夫",
     source: "《假面的告白》",
     excerpt: "一部自白"
+  },
+  {
+    textRef: "mingshu-ms-2506",
+    id: "ms-2506",
+    title: "我，机器人",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "美国",
+    author: "阿西莫夫",
+    source: "《我，机器人》",
+    excerpt: "机器人三定律"
+  },
+  {
+    textRef: "mingshu-ms-2509",
+    id: "ms-2509",
+    title: "火星编年史",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "美国",
+    author: "布雷德伯里",
+    source: "《火星编年史》",
+    excerpt: "火星上的小镇"
   },
   {
     textRef: "mingshu-ms-2257",
@@ -5949,6 +6411,17 @@ window.POEMS_MINGSHU = [
     author: "塞林格",
     source: "《麦田里的守望者》",
     excerpt: "只想守住麦田边的孩子"
+  },
+  {
+    textRef: "mingshu-ms-2505",
+    id: "ms-2505",
+    title: "银河帝国：基地",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "美国",
+    author: "阿西莫夫",
+    source: "《银河帝国：基地》",
+    excerpt: "银河帝国的衰亡"
   },
   {
     textRef: "mingshu-ms-2297",
@@ -5993,6 +6466,17 @@ window.POEMS_MINGSHU = [
     author: "川端康成",
     source: "《千只鹤》",
     excerpt: "一只鹤，一只茶碗"
+  },
+  {
+    textRef: "mingshu-ms-2508",
+    id: "ms-2508",
+    title: "华氏 451 度",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "美国",
+    author: "布雷德伯里",
+    source: "《华氏 451 度》",
+    excerpt: "纸的燃点"
   },
   {
     textRef: "mingshu-ms-1922",
@@ -6061,6 +6545,17 @@ window.POEMS_MINGSHU = [
     excerpt: "美把人逼到绝路"
   },
   {
+    textRef: "mingshu-ms-2549",
+    id: "ms-2549",
+    title: "嚎叫",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "美国",
+    author: "金斯堡",
+    source: "《嚎叫》",
+    excerpt: "我看见这一代最杰出的头脑"
+  },
+  {
     textRef: "mingshu-ms-1841",
     id: "ms-1841",
     title: "敦煌",
@@ -6070,6 +6565,39 @@ window.POEMS_MINGSHU = [
     author: "井上靖",
     source: "《敦煌》",
     excerpt: "一座城与一批经卷"
+  },
+  {
+    textRef: "mingshu-ms-2319",
+    id: "ms-2319",
+    title: "时代广场的蟋蟀",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "美国",
+    author: "塞尔登",
+    source: "《时代广场的蟋蟀》",
+    excerpt: "一只蟋蟀在纽约"
+  },
+  {
+    textRef: "mingshu-ms-2321",
+    id: "ms-2321",
+    title: "蓝色海豚岛",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "美国",
+    author: "奥台尔",
+    source: "《蓝色海豚岛》",
+    excerpt: "一个女孩独自活十八年"
+  },
+  {
+    textRef: "mingshu-ms-2330",
+    id: "ms-2330",
+    title: "小尼古拉",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "法国",
+    author: "戈西尼",
+    source: "《小尼古拉》",
+    excerpt: "一个法国小男孩的日常"
   },
   {
     textRef: "mingshu-ms-1980",
@@ -6105,6 +6633,17 @@ window.POEMS_MINGSHU = [
     excerpt: "自由意志的选择"
   },
   {
+    textRef: "mingshu-ms-2512",
+    id: "ms-2512",
+    title: "高堡奇人",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "美国",
+    author: "迪克",
+    source: "《高堡奇人》",
+    excerpt: "轴心国赢了的那个世界"
+  },
+  {
     textRef: "mingshu-ms-1840",
     id: "ms-1840",
     title: "白色巨塔",
@@ -6116,6 +6655,17 @@ window.POEMS_MINGSHU = [
     excerpt: "医院里的权力"
   },
   {
+    textRef: "mingshu-ms-2507",
+    id: "ms-2507",
+    title: "沙丘",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "美国",
+    author: "赫伯特",
+    source: "《沙丘》",
+    excerpt: "香料与沙虫"
+  },
+  {
     textRef: "mingshu-ms-2245",
     id: "ms-2245",
     title: "2001：太空漫游",
@@ -6125,6 +6675,17 @@ window.POEMS_MINGSHU = [
     author: "克拉克",
     source: "《2001：太空漫游》",
     excerpt: "黑石碑"
+  },
+  {
+    textRef: "mingshu-ms-2510",
+    id: "ms-2510",
+    title: "地海巫师",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "美国",
+    author: "勒古恩",
+    source: "《地海巫师》",
+    excerpt: "真名就是力量"
   },
   {
     textRef: "mingshu-ms-1981",
@@ -6147,6 +6708,39 @@ window.POEMS_MINGSHU = [
     author: "三岛由纪夫",
     source: "《春雪》",
     excerpt: "贵族少年的恋爱"
+  },
+  {
+    textRef: "mingshu-ms-2511",
+    id: "ms-2511",
+    title: "黑暗的左手",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "美国",
+    author: "勒古恩",
+    source: "《黑暗的左手》",
+    excerpt: "一个没有性别的世界"
+  },
+  {
+    textRef: "mingshu-ms-2318",
+    id: "ms-2318",
+    title: "吹小号的天鹅",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "美国",
+    author: "怀特",
+    source: "《吹小号的天鹅》",
+    excerpt: "一只不会叫的天鹅"
+  },
+  {
+    textRef: "mingshu-ms-2320",
+    id: "ms-2320",
+    title: "尼姆的老鼠",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "美国",
+    author: "奥布莱恩",
+    source: "《尼姆的老鼠》",
+    excerpt: "一群会读书的耗子"
   },
   {
     textRef: "mingshu-ms-912",
@@ -6204,6 +6798,17 @@ window.POEMS_MINGSHU = [
     excerpt: "两个世界一个我"
   },
   {
+    textRef: "mingshu-ms-2323",
+    id: "ms-2323",
+    title: "手斧男孩",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "美国",
+    author: "伯森",
+    source: "《手斧男孩》",
+    excerpt: "一把斧头活下来"
+  },
+  {
     textRef: "mingshu-ms-1843",
     id: "ms-1843",
     title: "挪威的森林",
@@ -6213,6 +6818,28 @@ window.POEMS_MINGSHU = [
     author: "村上春树",
     source: "《挪威的森林》",
     excerpt: "直子与绿子"
+  },
+  {
+    textRef: "mingshu-ms-2322",
+    id: "ms-2322",
+    title: "数星星的孩子",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "美国",
+    author: "劳里",
+    source: "《数星星的孩子》",
+    excerpt: "一个丹麦女孩的逃亡"
+  },
+  {
+    textRef: "mingshu-ms-2324",
+    id: "ms-2324",
+    title: "亲爱的汉修先生",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "美国",
+    author: "克莱瑞",
+    source: "《亲爱的汉修先生》",
+    excerpt: "给作家写的信"
   },
   {
     textRef: "mingshu-ms-2261",
