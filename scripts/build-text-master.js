@@ -21,6 +21,8 @@ const LOAD = [
   'scripts/data/ci-corpus-461b.js', 'scripts/data/qu-corpus-461.js',
   'scripts/data/classic-corpus-461b.js',
   'data/poems-songci.js', 'data/poems-guwen.js', 'data/poems-zhaoming.js', 'data/poems-yuanqu.js',
+  /* Issue #461：古文观止补篇（222 篇对齐）—— 正文语料表，供 textOfEntry 取正文。 */
+  'scripts/data/guwen-corpus-222.js',
   'data/poems-yuefu.js', 'data/poems-jinxiandai.js', 'data/poems-chengyu.js',
   'data/poems-changshi.js',
   'data/poems-mingshu.js', 'data/poems-mingren-cn.js', 'data/poems-mingren-foreign.js',
@@ -99,6 +101,10 @@ var RAW_ENTRIES = {};
     { f: 'scripts/data/ci-corpus-461b.js', v: 'CIWEN_CORPUS_461B', book: 'songci' },
     { f: 'scripts/data/ci-corpus-461c.js', v: 'CIWEN_CORPUS_461C', book: 'songci' },
     { f: 'data/poems-guwen.js', v: 'POEMS_GUWEN' },
+    /* Issue #461：古文观止补篇（222 篇对齐）—— 壳文件只存归属，
+       正文在 scripts/data/guwen-corpus-222.js。语料排在壳文件之后，
+       供 `textOfEntry` 从 RAW_ENTRIES 取正文。 */
+    { f: 'scripts/data/guwen-corpus-222.js', v: 'GUWEN_CORPUS_222', book: 'guwen' },
     { f: 'data/poems-zhaoming.js', v: 'POEMS_ZHAOMING' },
     { f: 'data/poems-yuanqu.js', v: 'POEMS_YUANQU' },
     { f: 'scripts/data/qu-corpus-461.js', v: 'QU_CORPUS_461', book: 'yuanqu' },

@@ -2,7 +2,7 @@
    同篇对照表（主表裁定规则的静态成果）
    --------------------------------------------------------------------------
    由 scripts/build-works-map.js 离线算出：**正文（去标点后）一致 = 同一篇作品**。
-   只登记「在两部及以上集子里重复出现」的那些作品（共 146 组），
+   只登记「在两部及以上集子里重复出现」的那些作品（共 156 组），
    单条的作品不必登记 —— 它本来就只出现一次，条目 id 自己就是作品 id。
 
    ⚠️ 这是**生成文件**，改动请改 scripts/build-works-map.js 后重跑，
@@ -67,18 +67,28 @@ window.WORKS_GROUPS = [
   { wid: "w-classic-gw-48", title: "卧薪尝胆", titles: ["卧薪尝胆"], entries: ["chengyu-cy-52","classic-gw-48"] },
   { wid: "w-tangshi-ts-281", title: "折戟沉沙", titles: ["赤壁","折戟沉沙"], entries: ["chengyu-cy-573","tangshi-ts-281"] },
 
+  { wid: "w-classic-gw-115", title: "师说", titles: ["师说"], entries: ["classic-gw-115","guwen-gwj-232"] },
+  { wid: "w-classic-gw-116", title: "六国论", titles: ["六国论"], entries: ["classic-gw-116","guwen-gwj-233"] },
+  { wid: "w-classic-gw-117", title: "游褒禅山记", titles: ["游褒禅山记"], entries: ["classic-gw-117","guwen-gwj-234"] },
   { wid: "w-poems-gz12-17", title: "子路、曾皙、冉有、公西华侍坐", titles: ["子路曾皙冉有公西华侍坐","子路、曾皙、冉有、公西华侍坐"], entries: ["classic-gw-124","poems-gz12-17"] },
+  { wid: "w-classic-gw-128", title: "上枢密韩太尉书", titles: ["上枢密韩太尉书"], entries: ["classic-gw-128","guwen-gwj-235"] },
+  { wid: "w-classic-gw-139", title: "大铁椎传", titles: ["大铁椎传"], entries: ["classic-gw-139","guwen-gwj-231"] },
   { wid: "w-poems-cz8-02", title: "答谢中书书", titles: ["答谢中书书"], entries: ["classic-gw-60","poems-cz8-02"] },
   { wid: "w-classic-gw-94", title: "子罕辞玉", titles: ["子罕辞玉","子罕弗受玉"], entries: ["classic-gw-94","classic-gw-152"] },
 
   { wid: "w-poems-cz9-05", title: "醉翁亭记", titles: ["醉翁亭记"], entries: ["guwen-gwj-127","poems-cz9-05"] },
   { wid: "w-poems-gz10-12", title: "前赤壁赋", titles: ["赤壁赋","前赤壁赋"], entries: ["guwen-gwj-139","poems-gz10-12"] },
+  { wid: "w-poems-cz9-06", title: "湖心亭看雪", titles: ["湖心亭看雪"], entries: ["guwen-gwj-221","poems-cz9-06"] },
   { wid: "w-poems-gz11-08", title: "屈原列传", titles: ["屈原列传"], entries: ["guwen-gwj-70","poems-gz11-08"] },
+  { wid: "w-guwen-gwj-77", title: "过秦论（上）", titles: ["过秦论（上）","过秦论上"], entries: ["guwen-gwj-77","guwen-gwj-167"] },
+  { wid: "w-guwen-gwj-78", title: "治安策", titles: ["治安策","治安策一"], entries: ["guwen-gwj-78","guwen-gwj-168"] },
+  { wid: "w-guwen-gwj-81", title: "司马相如上书谏猎", titles: ["司马相如上书谏猎","上书谏猎"], entries: ["guwen-gwj-81","guwen-gwj-169"] },
   { wid: "w-poems-gz11-15", title: "陈情表", titles: ["陈情表"], entries: ["guwen-gwj-85","poems-gz11-15"] },
   { wid: "w-poems-gz11-16", title: "归去来兮辞", titles: ["归去来兮辞"], entries: ["guwen-gwj-87","poems-gz11-16"] },
   { wid: "w-poems-cz8-14", title: "桃花源记", titles: ["桃花源记"], entries: ["guwen-gwj-88","poems-cz8-14"] },
   { wid: "w-poems-gz10-20", title: "谏太宗十思疏", titles: ["谏太宗十思疏"], entries: ["guwen-gwj-91","poems-gz10-20"] },
   { wid: "w-poems-gz12-15", title: "滕王阁序", titles: ["滕王阁序"], entries: ["guwen-gwj-93","poems-gz12-15"] },
+  { wid: "w-guwen-gwj-95", title: "春夜宴桃李园序", titles: ["春夜宴桃李园序","春夜宴从弟桃花园序"], entries: ["guwen-gwj-95","guwen-gwj-170"] },
   { wid: "w-poems-cz7-23", title: "陋室铭", titles: ["陋室铭"], entries: ["guwen-gwj-97","poems-cz7-23"] },
   { wid: "w-poems-gz10-19", title: "阿房宫赋", titles: ["阿房宫赋"], entries: ["guwen-gwj-98","poems-gz10-19"] },
 
