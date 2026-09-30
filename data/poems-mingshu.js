@@ -5445,6 +5445,17 @@ window.POEMS_MINGSHU = [
     excerpt: "回莫斯科去"
   },
   {
+    textRef: "mingshu-ms-2761",
+    id: "ms-2761",
+    title: "海燕",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "苏联",
+    author: "高尔基",
+    source: "《海燕》",
+    excerpt: "让暴风雨来得更猛烈些吧"
+  },
+  {
     textRef: "mingshu-ms-927",
     id: "ms-927",
     title: "假如给我三天光明",
@@ -5852,6 +5863,17 @@ window.POEMS_MINGSHU = [
     excerpt: "喀山的一所社会大学"
   },
   {
+    textRef: "mingshu-ms-2762",
+    id: "ms-2762",
+    title: "铁流",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "苏联",
+    author: "绥拉菲莫维奇",
+    source: "《铁流》",
+    excerpt: "一支突围的队伍"
+  },
+  {
     textRef: "mingshu-ms-1918",
     id: "ms-1918",
     title: "宫泽贤治诗选",
@@ -5916,6 +5938,17 @@ window.POEMS_MINGSHU = [
     author: "维·比安基",
     source: "《森林报》",
     excerpt: "一年四季的森林日记"
+  },
+  {
+    textRef: "mingshu-ms-2763",
+    id: "ms-2763",
+    title: "毁灭",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "苏联",
+    author: "法捷耶夫",
+    source: "《毁灭》",
+    excerpt: "一支游击队的溃败"
   },
   {
     textRef: "mingshu-ms-1972",
