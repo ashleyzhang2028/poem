@@ -261,6 +261,17 @@ add(require('./corpus/fill-foreign-ru-5.js'));
 add(require('./corpus/fill-foreign-ru-6.js'));
 add(require('./corpus/fill-foreign-ru-7.js'));
 
+/* ── Issue #381 第二十四轮（批次八·外国文学·其他语种·日本片）──────────
+   用户原话「按中小学必读 → 英 → 法 → 俄苏 → 其他语种来吧」。英、法、俄苏
+   各片已交，这一轮接**其他语种**里的日本片：书目表里日本共 38 部，此前
+   一部未收（书目里最早一批只有「万叶集」等书的条目、没有素材）。本批一次
+   交齐 38 部，一部只占一处，分四册装（古典与夏目漱石 10 + 芥川/川端等 9 +
+   三岛/太宰/谷崎等 12 + 村上春树与和歌 7）。 */
+add(require('./corpus/fill-foreign-jp-1.js'));
+add(require('./corpus/fill-foreign-jp-2.js'));
+add(require('./corpus/fill-foreign-jp-3.js'));
+add(require('./corpus/fill-foreign-jp-4.js'));
+
 /* 余下的书按组分册，避免单文件过大 */
 add(require('./mingshu-corpus-stub.js'));
 
