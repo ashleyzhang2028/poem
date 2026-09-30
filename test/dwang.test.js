@@ -350,6 +350,32 @@ const rulers = ['奥古斯都', '图拉真', '腓特烈二世', '梭伦', '伯�
 chk(rulers.every(t => WT.has(t) && !MRT.has(t)),
   '本身即为君主 / 执政元首的 6 位只在帝王卷、不在名家卷（越界：' + rulers.filter(t => MRT.has(t)).join('、') + '）');
 
+/* ── 五、外国帝王「姓名」一格放外文名（Issue #399）────────────────────
+   用户 2026-09-30 的话：「所有外国帝王和名人，请添加他们的英文，以及所在
+   国家语言的名字。如果能找到的话。」
+
+   帝王没有中文意义上的「字 / 号」，对应的一格是「姓名」。外国帝王那一格
+   先前只写汉译名，本轮起接上素材里的 `nameFull`（含外文名）。守两条：
+     · 外国卷**每一条**的「姓名」格里都得有西文字母；
+     · 中国卷的「姓名」（姒文命 / 刘彻）是真的姓名，一条都不许出现西文字母。 */
+const wNoLatin = W.filter(function (p) {
+  const m = String(p.text).match(/│ 姓名 *│([^│]*)│/);
+  const cell = m ? m[1].trim() : '';
+  return !/[A-Za-z\u00C0-\u024F\u0400-\u04FF]/.test(cell);
+});
+chk(wNoLatin.length === 0,
+  '帝王「外国」' + W.length + ' 位的「姓名」格都有外文名（无西文：' +
+  (wNoLatin.map(p => p.title).join('、') || '无') + '）');
+
+const cnLatin = CN.filter(function (p) {
+  const m = String(p.text).match(/│ 姓名 *│([^│]*)│/);
+  const cell = m ? m[1].trim() : '';
+  return /[A-Za-z\u00C0-\u024F\u0400-\u04FF]/.test(cell);
+});
+chk(cnLatin.length === 0,
+  '帝王「中国」' + CN.length + ' 位的「姓名」格不含西文（混入：' +
+  (cnLatin.map(p => p.title).join('、') || '无') + '）');
+
 console.log('');
 console.log(fails === 0 ? '✅ 帝王两卷语料与边界全部通过' : '❌ ' + fails + ' 项失败');
 process.exit(fails ? 1 : 0);
