@@ -139,28 +139,66 @@ console.log("三、两种形态并存：查一查不动，闯关是并列的增�
 }
 
 console.log("");
-console.log("四、两端同一个范围：判分语料跟着 scope 走");
+console.log("四、范围只管令字，不管作答（Issue #356 · 用户 2026-09-30 裁决）");
 
 {
-  chk(/function scoped\(scopeId\)/.test(serverGame), "服务端把语料按 scope 过滤收在一个出处");
-  chk(/scoped\(input\.scopeId\)/.test(serverGame), "checkFly() 用的是过滤后的语料");
+  // 用户原话：「令为风字，我回答了 春风不度玉门关，结果答案说不在范围内……
+  //   我的初始出题范围确实是目标范围内的令字，但我的回答可以超出当前范围吧，
+  //   否则没法回答了」。
+  //
+  // 范围收的是**题**（令字从哪一份语料里挑），不收**答**（你想起来的是哪一句）。
+  // 王之涣《凉州词》只在乐府集里，不在课内 251 首里 —— 从前判分跟着范围走，
+  // 于是「小学」范围里答它，一句真诗被判成「合集里没有」。
+
+  chk(/function scoped\(scopeId\)/.test(serverGame), "服务端把范围收在同一处（scoped）");
+  chk(/function answerCorpus\(/.test(gameSrc), "前端有一个「判作答用的语料」的出处（answerCorpus）");
+  chk(/poems: answerCorpus\(\)/.test(gameSrc),
+    "作答（查一查 checkSaid）扫整份语料，不按范围收窄");
+  chk(/judgeSetLine\(\{ poems: answerCorpus\(\)/.test(gameSrc),
+    "作答（闯关 checkLevelSaid）也扫整份语料，不按范围收窄");
+  chk(/scopedCorpus\(\)\.slice\(\)/.test(gameSrc) === false, "…（判分语料不再从 scopedCorpus 来）");
+  chk(/function scopedCorpus\(/.test(gameSrc) && /state\.chars = pickChars\(cps, state\.level, state\.flyRound\)/.test(gameSrc),
+    "令字仍按范围挑（题该收：选了小学就从小学挑令字）");
+  chk(/scopeId: state\.setup\.scope/.test(gameSrc), "请求里仍带 scopeId（判分扫全站、但范围这一痕留着）");
   chk(/require\(path\.join\(ROOT, "js", "exam\.js"\)\)/.test(serverGame),
     "服务端的范围过滤与前端同源（require js/exam.js 的 select，不另写一套）");
   chk(/scopeId: o\.scopeId/.test(read("js/account-api.js")), "前端把 scopeId 一起带到判分口");
-  chk(/scopeId: state\.setup\.scope/.test(gameSrc), "闯关判分时带的是当前选的范围");
 
-  // 服务端只有集子级语料（课内三学段它没有 grade），它**自己报** scopeExact=false。
-  // 这时不许拿它的「没找到」去否掉本机按范围判出来的「对上了」——
-  // 否则选了「小学」的用户，答对课内的一句反而被判错。
   try {
     const SG = require("../api/_lib/game.js");
-    const tan = SG.checkFly({ chars: ["黄"], said: "黄河远上白云间", scopeId: "book:tangshi" });
-    chk(tan.found === false && tan.scopeExact === true,
-      "集子级范围服务端收得动：唐诗三百首里没有这句 → 没对上（exact=true）");
-    const pri = SG.checkFly({ chars: ["黄"], said: "黄河远上白云间", scopeId: "poems:primary" });
-    chk(pri.scopeExact === false, "课内学段服务端收不动 → 自己报 exact=false（不假装按小学判的）");
-    const bad = SG.checkFly({ chars: ["黄"], said: "黄河远上白云间", scopeId: "nonsense" });
-    chk(bad.scopeExact === false, "认不出的范围也只退回全站，不抛");
+
+    // ⚠️ 这一条就是用户报的那件事本身。修前 found=false（被判「不在范围内」）。
+    const cross = SG.checkFly({ chars: ["风"], said: "春风不度玉门关", scopeId: "poems:primary" });
+    chk(cross.found === true,
+      "小学范围里答「春风不度玉门关」（乐府集里的句子）→ 算对（范围不收作答）");
+    eq(cross.title, "凉州词", "…并回带出处，让用户知道那句从哪来");
+    chk(cross.inScope === false, "…如实报 inScope=false（它在范围外，不假装在小学里）");
+
+    // 反过来：范围**内**的句子照旧算对，inScope=true。
+    const inside = SG.checkFly({ chars: ["黄"], said: "黄河入海流", scopeId: "poems:primary" });
+    chk(inside.found === true && inside.inScope === true, "课内那句：算对，inScope=true");
+
+    // 集子级范围也是同一条规矩：答别的集子的句子照样算对。
+    // 用「白毛浮绿水」（只在课内《咏鹅》里，唐诗三百首里没有）——
+    // 拿「黄河入海流」试不出来：它课内课外在都在，inScope 本来就是 true。
+    const tan = SG.checkFly({ chars: ["白"], said: "白毛浮绿水", scopeId: "book:tangshi" });
+    chk(tan.found === true && tan.inScope === false,
+      "选了唐诗三百首、答课内的一句 → 也算对，且如实报它不在这个集子里");
+
+    // 语料里根本没有的句子，照旧判「没找到」——宽是宽在「不按范围卡」，不是「什么都算对」。
+    const none = SG.checkFly({ chars: ["风"], said: "春风不度阳关道", scopeId: "poems:primary" });
+    chk(none.found === false, "语料里没有的句子照旧判没找到（不猜近似）");
+
+    // 服务端从前**收窄不了课内三学段**（语料里没带 grade，`scoped()` 一律退全站、
+    // 永远报 exact=false）。这一轮把 grade/term 补进了服务端语料，它现在收得动了：
+    // 小学 119 篇 / 初中 81 篇，与 README 的表对得上。
+    const pri = SG.checkFly({ chars: ["白"], said: "白毛浮绿水", scopeId: "poems:primary" });
+    chk(pri.scopeExact === true && pri.inScope === true,
+      "课内学段服务端也收得动（exact=true，不再一律退全站）");
+    eq(SG.scoped("poems:primary").corpus.length, 119, "服务端的小学范围 = 119 篇（与前端同一份）");
+    eq(SG.scoped("poems:middle").corpus.length, 81, "服务端的初中范围 = 81 篇");
+    const bad = SG.checkFly({ chars: ["黄"], said: "黄河入海流", scopeId: "nonsense" });
+    chk(bad.scopeExact === false, "认不出的范围也不抛（退回全站，如实报 exact=false）");
   } catch (e) {
     chk(false, "checkFly 能直接跑（" + e.message + "）");
   }
