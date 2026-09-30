@@ -2,10 +2,10 @@
   "use strict";
 
   var DEFAULT_WORDS = {
-    list: "小古文",
+    list: "古文",
     unit: "篇",
-    loadingFailed: "小古文数据加载失败",
-    empty: "没有匹配的小古文",
+    loadingFailed: "古文数据加载失败",
+    empty: "没有匹配的古文",
     filterAll: "全部",
     filterUnread: "未读",
     matchGroup: "课外必背",
