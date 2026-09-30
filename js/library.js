@@ -13,12 +13,12 @@
     },
     {
       id: "classic",
-      name: "小古文",
+      name: "古文",
       book: "ClassicBook",
-      short: "小古文",
+      short: "古文",
       page: "/classic/",
       unit: "篇",
-      desc: "蒙学识字、寓言故事到诸子论道，百字上下，最适合起步"
+      desc: "蒙学识字、寓言故事到诸子论道，短篇文言，最适合起步"
     },
     {
       id: "yuefu",

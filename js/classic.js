@@ -17,17 +17,17 @@
       id: "classic",
       groupOrder: GROUP_ORDER,
 
-      pageTitle: "小古文",
-      pageSub: "百字上下，最适合起步",
+      pageTitle: "古文",
+      pageSub: "短篇文言，最适合起步",
       words: {
-        list: "小古文",
+        list: "古文",
         unit: "篇",
-        loadingFailed: "小古文数据加载失败",
-        empty: "没有匹配的小古文",
+        loadingFailed: "古文数据加载失败",
+        empty: "没有匹配的古文",
         matchGroup: "课外必背",
-        backToList: "返回小古文列表",
+        backToList: "返回古文列表",
         readStore: "poem_classic_read_v1",
-        playerTitle: "小古文朗读"
+        playerTitle: "古文朗读"
       }
     };
   }
@@ -37,7 +37,7 @@
     var all = window.CLASSIC_ALL || window.POEMS_CLASSIC || [];
     if (!all.length) {
       var listEl = document.querySelector('[data-gw="list"]');
-      if (listEl) listEl.innerHTML = '<div class="empty">小古文数据加载失败</div>';
+      if (listEl) listEl.innerHTML = '<div class="empty">古文数据加载失败</div>';
       return;
     }
 

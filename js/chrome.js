@@ -341,7 +341,7 @@
     if (k === "poems") return "课内古诗词";
     if (k === "mine") return "我的";
     if (k === "search") return "搜索";
-    if (k === "classic") return "小古文";
+    if (k === "classic") return "古文";
     if (k === "yuefu") return "乐府集";
     if (k === "tangshi") return "唐诗";
     if (k === "gushi") return "古诗「非唐代」";
@@ -364,7 +364,7 @@
 
     var DOCK_ITEMS = [
     { key: "home", href: "/", icon: GLYPHS.tabPoem, label: "背诵", desc: "课内古诗词，按当前复习算法安排复习" },
-    { key: "library", href: "/library/", icon: GLYPHS.tabLibrary, label: "课外", desc: "课内诗词 / 小古文 / 乐府集 / 唐诗 / 古诗「非唐代」 / 词 / 曲 / 古文观止 / 近现代诗词 / 昭明文选 / 中华成语故事 / 文学常识 / 名著导读 / 历代名家" },
+    { key: "library", href: "/library/", icon: GLYPHS.tabLibrary, label: "课外", desc: "课内诗词 / 古文 / 乐府集 / 唐诗 / 古诗「非唐代」 / 词 / 曲 / 古文观止 / 近现代诗词 / 昭明文选 / 中华成语故事 / 文学常识 / 名著导读 / 历代名家" },
         { key: "game", href: "/dahui/", icon: GLYPHS.tabGame, label: "大会", desc: "古诗词大会：比拼与考试都在这一页" },
     { key: "search", href: "/search/", icon: GLYPHS.tabSearch, label: "搜索", desc: "全站篇目一次搜遍" },
     { key: "mine", href: "/mine/", icon: GLYPHS.tabMineImg, label: "我的", desc: "头像 / 昵称 / 账号 / 本机数据" }
