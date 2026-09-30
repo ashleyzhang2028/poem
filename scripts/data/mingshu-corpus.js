@@ -247,6 +247,14 @@ add(require('./corpus/fill-world-7.js'));
    16 部（fill-foreign-1），这一册接法国片 10 部。 */
 add(require('./corpus/fill-foreign-fr.js'));
 
+/* ── Issue #381 第三十六轮（批次十九·外国文学·法国片）────────────────
+   用户原话「加大每批的量（比如每批 40—50 部）尽快收口」。这一批法国片 31 部：
+   童话与小说 6（-2）、莫泊桑与凡尔纳与名人传与《第二性》6（-3）、
+   凡尔纳余部与启蒙思想与诗 19（-4）。 */
+add(require('./corpus/fill-foreign-fr-2.js'));
+add(require('./corpus/fill-foreign-fr-3.js'));
+add(require('./corpus/fill-foreign-fr-4.js'));
+
 /* ── Issue #381 第二十三轮（批次七·外国文学·俄苏片）──────────────────
    用户原话「按中小学必读 → 英 → 法 → 俄苏 → 其他语种来吧」。英国、美国、
    法国各片已交，这一册接**俄苏片**：俄国 47 + 苏联 23 部，已交 9 部
@@ -284,6 +292,18 @@ add(require('./corpus/fill-foreign-us-6.js'));
 add(require('./corpus/fill-foreign-us-7.js'));
 add(require('./corpus/fill-foreign-us-8.js'));
 add(require('./corpus/fill-foreign-us-9.js'));
+
+/* ── Issue #381 第三十六轮（批次十九·外国文学·美国片封口）────────────
+   用户原话「加大每批的量（比如每批 40—50 部）尽快收口；历史名家暂不补充」。
+   美国片余部这一次交齐（美国片 73/73 封口），另加法国片 31 部。
+   分五册装：儿童文学 5（-10）、儿童文学 5（-11）、拓荒 2 与科幻 6（-12）、
+   科幻 4（-13）、诗 7（-14）。小公子 / 小公主 / 精灵鼠小弟 三部已在
+   #436 交过（就装在本目录 us-9.js 里），本批不再重复。 */
+add(require('./corpus/fill-foreign-us-10.js'));
+add(require('./corpus/fill-foreign-us-11.js'));
+add(require('./corpus/fill-foreign-us-12.js'));
+add(require('./corpus/fill-foreign-us-13.js'));
+add(require('./corpus/fill-foreign-us-14.js'));
 
 /* ── Issue #381 第二十五轮（批次九·外国文学·英国片·余部）──────────────
    用户原话「按你的计划，尽快完成吧 每次最少提交100」。英国片书目表 83 部，
