@@ -65,17 +65,17 @@
     {
       key: "poem_tangshi_read_v1", sync: true, row: "reads:poem_tangshi_read_v1",
       merge: "并集", cap: "每行 ≤ 2000 篇",
-      why: "唐诗三百首已读 —— Issue #243 本次补上。"
+      why: "唐诗已读 —— Issue #243 本次补上（Issue #461 改名）。"
     },
     {
       key: "poem_gushi_read_v1", sync: true, row: "reads:poem_gushi_read_v1",
       merge: "并集", cap: "每行 ≤ 2000 篇",
-      why: "古诗集已读 —— Issue #461 新增集子。"
+      why: "古诗「非唐代」已读 —— Issue #461 新增集子。"
     },
     {
       key: "poem_songci_read_v1", sync: true, row: "reads:poem_songci_read_v1",
       merge: "并集", cap: "每行 ≤ 2000 篇",
-      why: "宋词三百首已读 —— Issue #243 本次补上。"
+      why: "词已读 —— Issue #243 本次补上（Issue #461 改名并扩口径）。"
     },
     {
       key: "poem_guwen_read_v1", sync: true, row: "reads:poem_guwen_read_v1",
@@ -90,7 +90,7 @@
     {
       key: "poem_yuanqu_read_v1", sync: true, row: "reads:poem_yuanqu_read_v1",
       merge: "并集", cap: "每行 ≤ 2000 篇",
-      why: "元曲三百首已读 —— 与其余各部同一族（Issue #243 本次补上整族）。"
+      why: "曲已读 —— 与其余各部同一族（Issue #243 本次补上整族；Issue #461 改名）。"
     },
     {
       key: "poem_yuefu_read_v1", sync: true, row: "reads:poem_yuefu_read_v1",

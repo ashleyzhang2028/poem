@@ -343,13 +343,13 @@
     if (k === "search") return "搜索";
     if (k === "classic") return "小古文";
     if (k === "yuefu") return "乐府集";
-    if (k === "tangshi") return "唐诗三百首";
-    if (k === "gushi") return "古诗集";
-    if (k === "songci") return "宋词三百首";
+    if (k === "tangshi") return "唐诗";
+    if (k === "gushi") return "古诗「非唐代」";
+    if (k === "songci") return "词";
     if (k === "guwen") return "古文观止";
     if (k === "zhaoming") return "昭明文选";
     if (k === "yuefu") return "乐府诗选";
-    if (k === "yuanqu") return "元曲三百首";
+    if (k === "yuanqu") return "曲";
     if (k === "jinxiandai") return "近现代诗词";
     if (k === "chengyu") return "中华成语故事";
     if (k === "changshi") return "文学常识";
@@ -364,7 +364,7 @@
 
     var DOCK_ITEMS = [
     { key: "home", href: "/", icon: GLYPHS.tabPoem, label: "背诵", desc: "课内古诗词，按当前复习算法安排复习" },
-    { key: "library", href: "/library/", icon: GLYPHS.tabLibrary, label: "课外", desc: "课内诗词 / 小古文 / 乐府集 / 唐诗 / 古诗集 / 宋词 / 元曲 / 古文观止 / 近现代诗词 / 昭明文选 / 中华成语故事 / 文学常识 / 名著导读 / 历代名家" },
+    { key: "library", href: "/library/", icon: GLYPHS.tabLibrary, label: "课外", desc: "课内诗词 / 小古文 / 乐府集 / 唐诗 / 古诗「非唐代」 / 词 / 曲 / 古文观止 / 近现代诗词 / 昭明文选 / 中华成语故事 / 文学常识 / 名著导读 / 历代名家" },
         { key: "game", href: "/dahui/", icon: GLYPHS.tabGame, label: "大会", desc: "古诗词大会：比拼与考试都在这一页" },
     { key: "search", href: "/search/", icon: GLYPHS.tabSearch, label: "搜索", desc: "全站篇目一次搜遍" },
     { key: "mine", href: "/mine/", icon: GLYPHS.tabMineImg, label: "我的", desc: "头像 / 昵称 / 账号 / 本机数据" }

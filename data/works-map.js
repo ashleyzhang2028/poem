@@ -2,7 +2,7 @@
    同篇对照表（主表裁定规则的静态成果）
    --------------------------------------------------------------------------
    由 scripts/build-works-map.js 离线算出：**正文（去标点后）一致 = 同一篇作品**。
-   只登记「在两部及以上集子里重复出现」的那些作品（共 141 组），
+   只登记「在两部及以上集子里重复出现」的那些作品（共 144 组），
    单条的作品不必登记 —— 它本来就只出现一次，条目 id 自己就是作品 id。
 
    ⚠️ 这是**生成文件**，改动请改 scripts/build-works-map.js 后重跑，
@@ -67,6 +67,7 @@ window.WORKS_GROUPS = [
   { wid: "w-classic-gw-48", title: "卧薪尝胆", titles: ["卧薪尝胆"], entries: ["chengyu-cy-52","classic-gw-48"] },
   { wid: "w-tangshi-ts-281", title: "折戟沉沙", titles: ["赤壁","折戟沉沙"], entries: ["chengyu-cy-573","tangshi-ts-281"] },
 
+  { wid: "w-poems-gz12-17", title: "子路、曾皙、冉有、公西华侍坐", titles: ["子路曾皙冉有公西华侍坐","子路、曾皙、冉有、公西华侍坐"], entries: ["classic-gw-124","poems-gz12-17"] },
   { wid: "w-poems-cz8-02", title: "答谢中书书", titles: ["答谢中书书"], entries: ["classic-gw-60","poems-cz8-02"] },
 
   { wid: "w-poems-cz9-05", title: "醉翁亭记", titles: ["醉翁亭记"], entries: ["guwen-gwj-127","poems-cz9-05"] },
@@ -159,6 +160,7 @@ window.WORKS_GROUPS = [
   { wid: "w-poems-xx4-23", title: "黄鹤楼送孟浩然之广陵", titles: ["黄鹤楼送孟浩然之广陵","送孟浩然之广陵"], entries: ["poems-xx4-23","tangshi-ts-259","yuefu-yf-68"] },
   { wid: "w-poems-xx5-06", title: "山居秋暝", titles: ["山居秋暝"], entries: ["poems-xx5-06","tangshi-ts-121"] },
   { wid: "w-poems-xx5-07", title: "枫桥夜泊", titles: ["枫桥夜泊"], entries: ["poems-xx5-07","tangshi-ts-264"] },
+  { wid: "w-poems-xx5-08", title: "长相思", titles: ["长相思","长相思·山一程"], entries: ["poems-xx5-08","songci-sc-296"] },
   { wid: "w-poems-xx5-14", title: "从军行", titles: ["从军行","从军行·其四","从军行七首·其四"], entries: ["poems-xx5-14","tangshi-ts-304","yuefu-yf-31"] },
   { wid: "w-poems-xx5-16", title: "闻官军收河南河北", titles: ["闻官军收河南河北"], entries: ["poems-xx5-16","tangshi-ts-189","yuefu-yf-80"] },
   { wid: "w-poems-xx5-17", title: "渔歌子", titles: ["渔歌子","渔歌子·西塞山前白鹭飞"], entries: ["poems-xx5-17","tangshi-ts-318"] },
@@ -173,6 +175,8 @@ window.WORKS_GROUPS = [
   { wid: "w-poems-xx6-17", title: "过故人庄", titles: ["过故人庄"], entries: ["poems-xx6-17","tangshi-ts-132"] },
   { wid: "w-poems-xx6-20", title: "天净沙·秋思", titles: ["天净沙·秋思"], entries: ["poems-xx6-20","yuanqu-yq-1"] },
   { wid: "w-poems-xx6-26", title: "江畔独步寻花（其六）", titles: ["江畔独步寻花（其六）","江畔独步寻花"], entries: ["poems-xx6-26","yuefu-yf-82"] },
+
+  { wid: "w-yuefu-yf-58", title: "相见欢·无言独上西楼", titles: ["相见欢","相见欢·无言独上西楼"], entries: ["songci-sc-290","yuefu-yf-58"] },
 
   { wid: "w-yuefu-yf-77", title: "春望", titles: ["春望"], entries: ["tangshi-ts-111","yuefu-yf-77"] },
   { wid: "w-yuefu-yf-97", title: "八阵图", titles: ["八阵图"], entries: ["tangshi-ts-233","yuefu-yf-97"] },

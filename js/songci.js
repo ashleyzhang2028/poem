@@ -30,24 +30,25 @@
     "词牌 · 祝英台近", "词牌 · 莺啼序", "词牌 · 惜黄花慢", "词牌 · 湘春夜月", "词牌 · 大有",
     "词牌 · 瑶华", "词牌 · 玉京秋", "词牌 · 曲游春", "词牌 · 眉妩", "词牌 · 声声慢",
     "词牌 · 一剪梅", "词牌 · 醉花阴", "词牌 · 凤凰台上忆吹箫", "词牌 · 武陵春", "词牌 · 长相思",
-    "词牌 · 鹊桥仙", "词牌 · 南柯子", "词牌 · 醉落魄", "词牌 · 忆秦娥", "词牌 · 孤雁儿", "词牌 · 如梦令", "词牌 · 西江月"
+    "词牌 · 鹊桥仙", "词牌 · 南柯子", "词牌 · 醉落魄", "词牌 · 忆秦娥", "词牌 · 孤雁儿", "词牌 · 如梦令", "词牌 · 西江月",
+    "词牌 · 相见欢", "词牌 · 乌夜啼"
   ];
 
   function bookConfig() {
     return {
       id: "songci",
       groupOrder: GROUP_ORDER,
-      pageTitle: "宋词三百首",
-      pageSub: "按词牌分组 · 一调之下诸家并列",
+      pageTitle: "词",
+      pageSub: "按词牌分组 · 宋及五代金清",
       words: {
-        list: "宋词",
+        list: "词",
         unit: "首",
-        loadingFailed: "宋词数据加载失败",
-        empty: "没有匹配的宋词",
-        matchGroup: "宋词三百首",
-        backToList: "返回宋词列表",
+        loadingFailed: "词数据加载失败",
+        empty: "没有匹配的词",
+        matchGroup: "词",
+        backToList: "返回词列表",
         readStore: "poem_songci_read_v1",
-        playerTitle: "宋词朗读",
+        playerTitle: "词朗读",
         searchPlaceholder: "搜索词牌 / 出处 / 作者"
       }
     };

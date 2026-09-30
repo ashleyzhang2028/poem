@@ -170,4 +170,23 @@ window.POEMS_GUSHI = [
     author: "郑燮",
     gradeGroup: "元明清诗",
   }
+,
+  {
+    textRef: "gushi-gs-26",
+    id: "gs-26",
+    title: "偶成",
+    source: "《朱子大全》",
+    dynasty: "宋",
+    author: "朱熹",
+    gradeGroup: "宋诗",
+  },
+  {
+    textRef: "gushi-gs-27",
+    id: "gs-27",
+    title: "登快阁",
+    source: "《山谷集》",
+    dynasty: "宋",
+    author: "黄庭坚",
+    gradeGroup: "宋诗",
+  }
 ];

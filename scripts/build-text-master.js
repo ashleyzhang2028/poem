@@ -10,6 +10,9 @@ const LOAD = [
   'data/poems-9.js', 'data/poems-10.js', 'data/poems-11.js', 'data/poems-12.js',
   'data/index.js', 'data/poems-classic.js', 'data/poems-tangshi.js', 'data/poems-gushi.js',
   'scripts/data/gushi-corpus.js',
+  /* Issue #461：本轮新补的正文语料 —— 唐诗 5 首、小古文 16 篇。 */
+  'scripts/data/tangshi-corpus-461.js', 'scripts/data/classic-corpus-461.js',
+  'scripts/data/ci-corpus-461.js',
   'data/poems-songci.js', 'data/poems-guwen.js', 'data/poems-zhaoming.js', 'data/poems-yuanqu.js',
   'data/poems-yuefu.js', 'data/poems-jinxiandai.js', 'data/poems-chengyu.js',
   'data/poems-changshi.js',
@@ -68,10 +71,18 @@ var RAW_ENTRIES = {};
     { f: 'data/poems-9.js', v: 'POEMS_9' }, { f: 'data/poems-10.js', v: 'POEMS_10' },
     { f: 'data/poems-11.js', v: 'POEMS_11' }, { f: 'data/poems-12.js', v: 'POEMS_12' },
     { f: 'data/poems-classic.js', v: 'POEMS_CLASSIC' },
+    /* Issue #461：语料表先于各自的壳文件登记 —— RAW_ENTRIES 后写覆盖前写，
+       而壳文件只存归属（无正文），若排在语料之后就会把正文盖掉。 */
     { f: 'data/poems-tangshi.js', v: 'POEMS_TANGSHI' },
-    /* Issue #461：《古诗集》—— 壳文件只存归属（textRef），正文来自语料表。 */
+    /* Issue #461：《古诗「非唐代」》—— 壳文件只存归属（textRef），正文来自语料表。 */
     { f: 'scripts/data/gushi-corpus.js', v: 'GUSHI_CORPUS', book: 'gushi' },
+    { f: 'scripts/data/classic-corpus-461.js', v: 'CLASSIC_CORPUS_461', book: 'classic' },
+    /* Issue #461：唐诗补充 5 首 —— 壳文件排在前面（已在主表索引里），
+       语料排在后面，供 `textOfEntry` 从 RAW_ENTRIES 取正文。 */
+    { f: 'scripts/data/tangshi-corpus-461.js', v: 'APPEND_461', book: 'tangshi' },
     { f: 'data/poems-songci.js', v: 'POEMS_SONGCI' },
+    /* Issue #461：「宋词三百首」改名「词」—— 补五代 / 金 / 清的词。 */
+    { f: 'scripts/data/ci-corpus-461.js', v: 'CIWEN_CORPUS_461', book: 'songci' },
     { f: 'data/poems-guwen.js', v: 'POEMS_GUWEN' },
     { f: 'data/poems-zhaoming.js', v: 'POEMS_ZHAOMING' },
     { f: 'data/poems-yuanqu.js', v: 'POEMS_YUANQU' },
@@ -295,6 +306,16 @@ sandbox.SITE_INDEX.forEach(function (p) {
 
   if (!FULL_BOOK_SET[p.book]) return;
   if (seen[p.id]) return;
+  /* Issue #461：新增的唐诗补充条目，壳里只挂 textRef、正文在语料表
+     （scripts/data/tangshi-corpus-461.js）—— 这里先从 RAW_ENTRIES 取一份
+     再判断，否则「有正文」的条目会被当成「空条目」漏掉。 */
+  if ((!p.text && !p.translation) && RAW_ENTRIES[p.id]
+      && (RAW_ENTRIES[p.id].text || RAW_ENTRIES[p.id].translation)) {
+    const raw = RAW_ENTRIES[p.id];
+    p.text = raw.text || '';
+    p.translation = raw.translation || '';
+    p.translationSource = raw.translationSource || '';
+  }
   if (!p.text && !p.translation) return;
   const t = textOfEntry(p, p.id);
   master.push({
