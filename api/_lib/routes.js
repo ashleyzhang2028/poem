@@ -16,6 +16,8 @@ var ROUTES = {
   "GET /family": "./../_routes/family/index.js",
   "POST /family": "./../_routes/family/index.js",
   "POST /game/answer": "./../_routes/game/answer.js",
+  "GET /exam/records": "./../_routes/exam/records.js",
+  "POST /exam/records": "./../_routes/exam/records.js",
   "POST /admin/grant": "./../_routes/admin/grant.js",
   "DELETE /admin/grant": "./../_routes/admin/grant.js",
   "POST /admin/grants": "./../_routes/admin/grants.js",

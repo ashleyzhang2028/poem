@@ -45,7 +45,9 @@
     scopeOpen: true,
     left: 0,
     timer: null,
-    overlayId: ""
+    overlayId: "",
+    historyRecords: null,
+    historyError: ""
   };
 
   var host = null;
@@ -236,6 +238,8 @@
 
     if (!id.signedIn) {
       html += '<button class="account-btn" type="button" data-game-go="/login/">登录</button>';
+    } else {
+      html += '<button class="account-btn ghost" type="button" data-game-history="1">我的考试历史</button>';
     }
     return html;
   }
@@ -455,6 +459,67 @@
     return html;
   }
 
+  function renderHistory() {
+    var id = identifier();
+    var html = '<section class="account-card game-head">' +
+      '<button class="account-btn ghost game-back" type="button" data-game-back="1">返回</button>' +
+      '<h2 class="account-card-title">我的考试历史</h2>' +
+      '<p class="account-hint">只记录「考试」这一种题型（不含模拟考试、题库复习），存在服务器上，可以查看与删除。</p>' +
+      "</section>";
+
+    if (!id.signedIn) {
+      html += '<section class="account-card"><p class="account-hint">登录后才能查看。</p>' +
+        '<button class="account-btn" type="button" data-game-go="/login/">登录</button></section>';
+      return html;
+    }
+    if (state.historyRecords === null) {
+      html += '<section class="account-card"><p class="account-hint">读取中……</p></section>';
+      return html;
+    }
+    if (state.historyError) {
+      html += '<section class="account-card"><p class="account-msg warn">' + esc(state.historyError) + "</p></section>";
+      return html;
+    }
+    if (!state.historyRecords.length) {
+      html += '<section class="account-card"><p class="account-hint">还没有「考试」记录 —— 考完一次，交卷后会自动存一条。</p></section>';
+      return html;
+    }
+
+    html += '<section class="account-card"><div class="game-history-list">' +
+      state.historyRecords.map(function (r) {
+        var d = new Date(r.createdAt || 0);
+        var when = isNaN(d.getTime()) ? "" : d.toLocaleString("zh-CN", { hour12: false });
+        return '<div class="game-history-row">' +
+          '<div class="game-history-main">' +
+          '<span class="game-history-score">' + esc(r.score) + " / " + esc(r.total) + "</span>" +
+          '<span class="game-history-meta">' + esc(r.scopeLabel || "全部") + " · " + esc(when) + "</span>" +
+          "</div>" +
+          '<button class="account-btn ghost" type="button" data-game-history-del="' + esc(r.eid) + '">删除</button>' +
+          "</div>";
+      }).join("") + "</div></section>";
+    return html;
+  }
+
+  function loadHistory() {
+    if (!window.AccountApi || typeof AccountApi.examRecordsMine !== "function") {
+      state.historyRecords = [];
+      state.historyError = "";
+      render();
+      return;
+    }
+    AccountApi.examRecordsMine().then(function (r) {
+      if (state.mode !== "history") return;
+      if (r && r.ok) {
+        state.historyRecords = r.records || [];
+        state.historyError = "";
+      } else {
+        state.historyRecords = [];
+        state.historyError = (r && r.message) || "读取失败，稍后再试。";
+      }
+      render();
+    });
+  }
+
   function renderPaper() {
     var m = modeOf(state.mode);
     var v = variantOf(state.mode) || {};
@@ -526,13 +591,14 @@
         var body;
     if (state.mode === "fly") body = renderFly();
     else if (state.mode === "setup") body = renderSetup();
+    else if (state.mode === "history") body = renderHistory();
     else if (state.mode) body = renderPaper();
     else body = renderHome();
 
     if (state.mode === "fly") {
       body += '<section class="account-card"><button class="account-btn ghost" type="button" ' +
         'data-game-restart="1">换一副令字</button></section>';
-    } else if (state.mode === "setup") {
+    } else if (state.mode === "setup" || state.mode === "history") {
           } else if (state.mode) {
             body += '<section class="account-card"><button class="account-btn ghost" type="button" ' +
         'data-game-reset="1">回到卷面设置</button></section>';
@@ -569,6 +635,7 @@
     state.checked = state.paper.map(function () { return false; });
     state.graded = null;
     state.left = (v.minutes || 0) * 60 * 1000;
+    state.startedAt = Date.now();
         state.setupNotice = plan.short
       ? "这个范围只凑得出 " + state.paper.length + " 题（本来要 " + plan.short + " 题）。"
       : "";
@@ -665,6 +732,23 @@
           right: graded.right, total: graded.total
         }).ok;
       }
+      // 只有「考试」上云（模拟考试 / 题库复习不上云，§4.66）
+      if (state.mode === "formal" && window.AccountApi && AccountApi.examRecordCreate) {
+        var items = graded.rows.map(function (r, i) {
+          var q = state.paper[i] || {};
+          return { stem: q.stem || "", picked: r.chosen || "", answer: r.answer || "", correct: !!r.ok };
+        });
+        AccountApi.examRecordCreate({
+          scopeId: state.setup.scope,
+          scopeLabel: scopePickLabel(state.setup.scope),
+          size: graded.total, score: graded.right, total: graded.total,
+          durationSec: Math.max(0, Math.round((Date.now() - (state.startedAt || Date.now())) / 1000)),
+          items: items
+        }).then(function (r) {
+          state.graded.cloudSaved = !!(r && r.ok);
+          render();
+        });
+      }
       render();
       loadCorpusIntoView();
     });
@@ -699,15 +783,40 @@
             var closeOverlay = hit("data-game-overlay-close");
       if (closeOverlay) { state.overlayId = ""; render(); return; }
 
+      var history = hit("data-game-history");
+      if (history) {
+        stopTimer();
+        state.mode = "history";
+        state.historyRecords = null;
+        state.historyError = "";
+        render();
+        loadHistory();
+        return;
+      }
+
+      var historyDel = hit("data-game-history-del");
+      if (historyDel) {
+        var eid = historyDel.getAttribute("data-game-history-del");
+        if (eid && window.confirm("删除这条考试记录？删掉之后找不回来。") && window.AccountApi && AccountApi.examRecordDelete) {
+          AccountApi.examRecordDelete({ eid: eid }).then(function (r) {
+            if (r && r.ok && Array.isArray(state.historyRecords)) {
+              state.historyRecords = state.historyRecords.filter(function (row) { return row.eid !== eid; });
+            }
+            render();
+          });
+        }
+        return;
+      }
+
       var go = hit("data-game-go");
       if (go) { location.href = go.getAttribute("data-game-go"); return; }
 
       var back = hit("data-game-back");
       if (back) {
         stopTimer();
-                // 飞花令没有「卷面设置」这一层，退回去只能是首页；
+                // 飞花令 / 考试历史没有「卷面设置」这一层，退回去只能是首页；
                 // 否则 state.pending 从未写过，落进 setup 会渲染出一片空白（发现于 2026-09-30）
-                if (state.mode === "setup" || state.mode === "fly") {
+                if (state.mode === "setup" || state.mode === "fly" || state.mode === "history") {
           state.mode = "";
           state.pending = "";
         } else {

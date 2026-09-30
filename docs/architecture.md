@@ -7609,3 +7609,32 @@ sw.js version」。法国片与德国片已封口（§4.113），这一轮接着
 **验证**：`test/entitlement.test.js` 等 26 层全绿；真机核过飞花令范围过滤
 （选「小学」→ 19 句，逐句核对全在 119 篇范围内）、原文卡原地弹出不跳页、
 「换一个题型」从飞花令屏正确回首页。`sw.js` v306 → **v307**（`js/` 改过）。
+
+#### P2：考试历史上服务器（只记「考试」，不含模拟考试）
+
+新表 `public.exam_records`（`eid/uid/scope_id/scope_label/size/score/total/
+duration_sec/items/created_at`，`items` 是 jsonb 存逐题对错），行级安全全开、
+无策略，走服务端 service key（与 `reports`/`feedback_*` 同一套规矩）。三个
+接口收在一条路由上：`GET /exam/records`（拉自己的历史）、
+`POST /exam/records`（`op:"create"` 交卷即写一条 / `op:"delete"` 删自己那条，
+删别人的 404，不是 403——不透露「这条属于谁」）。写入前查 `exam.formal`
+门槛（Max），题量为 0 拒收；`items` 截到 60 条、`scopeLabel` 截到 40 字，
+超限**截断不是拒绝**（卷子本身仍然存得下）。
+
+`js/game.js` 的 `submit()` 在 `state.mode === "formal"` 时，本机 `Ex.saveRecord()`
+之外**追加**一次 `AccountApi.examRecordCreate()`（异步、失败不挡渲染，只是
+`state.graded.cloudSaved` 拿不到 true）；`mock`/`practice` 两种形态不动，
+仍然只落本机 `poem_exam_v1`。首页新增「我的考试历史」入口（登录后可见），
+掀出的历史屏复用「飞花令没有卷面设置」那条返回逻辑（直接回首页，不经过
+`setup`），列表每行「分数 · 范围 · 时间」+ 一颗删除键（`window.confirm` 二次确认，
+与 `js/family-ui.js` 等处同一条纪律）。
+
+**验证**：新增 `test/exam-records.test.js`（21 条：门槛 / 写入 / 按账号隔离 /
+删除权限 / 字段截断 / 前端接线），`bash test/run.sh` 27 层全绿。
+`sw.js` v307 → **v308**。
+
+⚠️ **手动过服务端联调前先看这条**：本机 `node scripts/serve.js` 接的是
+`.env` 里的真 Supabase，不是 `memoryStore`；`exam_records` 这张新表要先在
+Supabase 控制台跑一遍 `api/_lib/schema.sql`（或至少这一节新增的那一段），
+否则浏览器手测会看到 404 "missing_table"——自动化测试用 `memoryStore`，
+不受这个影响，照样全绿。

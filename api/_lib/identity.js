@@ -154,6 +154,10 @@ function newFeedbackCommentId() {
   return "fc_" + crypto.randomBytes(8).toString("hex");
 }
 
+function newExamRecordId() {
+  return "er_" + crypto.randomBytes(8).toString("hex");
+}
+
 function newSalt() {
   return crypto.randomBytes(8).toString("hex");
 }
@@ -172,6 +176,7 @@ module.exports = {
   newPinyinProposalId: newPinyinProposalId,
   newFeedbackId: newFeedbackId,
   newFeedbackCommentId: newFeedbackCommentId,
+  newExamRecordId: newExamRecordId,
   normalizePhone: normalizePhone,
   isPhoneShape: isPhoneShape,
   maskPhone: maskPhone,

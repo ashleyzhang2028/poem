@@ -481,6 +481,23 @@
           charge: input.charge === true,
           deviceId: deviceId
         });
+      },
+
+      examRecordCreate: function (input) {
+        input = input || {};
+        return post("/exam/records", {
+          op: "create",
+          scopeId: input.scopeId, scopeLabel: input.scopeLabel,
+          size: input.size, score: input.score, total: input.total,
+          durationSec: input.durationSec, items: input.items
+        });
+      },
+
+      examRecordsMine: function () { return call("/exam/records", "GET"); },
+
+      examRecordDelete: function (input) {
+        input = input || {};
+        return post("/exam/records", { op: "delete", eid: input.eid });
       }
     };
   }

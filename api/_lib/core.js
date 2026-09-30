@@ -2680,6 +2680,105 @@ function gameAllowed(cfg, tier, cap) {
   return featuresFor(cfg, tier).indexOf(cap) >= 0;
 }
 
+var EXAM_RECORD_LIMITS = { scopeId: 64, scopeLabel: 40, stem: 120, answer: 60, items: 60 };
+
+function examRecordItemClip(it) {
+  return {
+    stem: clip(it && it.stem, EXAM_RECORD_LIMITS.stem),
+    picked: clip(it && it.picked, EXAM_RECORD_LIMITS.answer),
+    answer: clip(it && it.answer, EXAM_RECORD_LIMITS.answer),
+    correct: !!(it && it.correct)
+  };
+}
+
+function examRecordPublic(row) {
+  if (!row) return null;
+  return {
+    eid: row.eid,
+    scopeId: String(row.scope_id || ""),
+    scopeLabel: String(row.scope_label || ""),
+    size: Number(row.size || 0),
+    score: Number(row.score || 0),
+    total: Number(row.total || 0),
+    durationSec: Number(row.duration_sec || 0),
+    items: Array.isArray(row.items) ? row.items : [],
+    createdAt: Number(row.created_at || 0)
+  };
+}
+
+// 只记「考试」（exam.formal）这一种形态，模拟考试 / 题库复习不上云（§4.66）。
+function examRecordCreate(deps, input) {
+  var cfg = deps.cfg, store = deps.store, t = deps.now();
+  if (!cfg.hasSession()) {
+    return Promise.resolve(err(503, "E_NOT_CONFIGURED", "服务端还没配置好（缺 SESSION_SECRET）。当前仍可完全离线使用本站。"));
+  }
+  if (!deps.account) return Promise.resolve(err(401, "E_NO_SESSION", "这一项要登录后才能用"));
+
+  return Promise.resolve(store.getAccount(deps.account.uid)).then(function (me) {
+    if (!me || me.status === "deleted") return err(401, "E_NO_SESSION", "还没有登录");
+    var tier = planTier(me);
+    if (!gameAllowed(cfg, tier, "exam.formal")) {
+      return err(403, "E_TIER", "考试历史要 Max 才能用（当前：" + tier + "）", { cap: "exam.formal", tier: tier });
+    }
+
+    var total = Math.max(0, Math.min(999, Number(input && input.total) || 0));
+    if (!total) return err(400, "E_EMPTY", "这一卷没有题目，不存");
+    var score = Math.max(0, Math.min(total, Number(input && input.score) || 0));
+    var size = Math.max(0, Math.min(999, Number(input && input.size) || total));
+    var durationSec = Math.max(0, Math.min(24 * 3600, Number(input && input.durationSec) || 0));
+    var items = (Array.isArray(input && input.items) ? input.items : [])
+      .slice(0, EXAM_RECORD_LIMITS.items).map(examRecordItemClip);
+
+    var row = {
+      eid: id.newExamRecordId(),
+      uid: deps.account.uid,
+      scope_id: clip(input && input.scopeId, EXAM_RECORD_LIMITS.scopeId),
+      scope_label: clip(input && input.scopeLabel, EXAM_RECORD_LIMITS.scopeLabel),
+      size: size, score: score, total: total,
+      duration_sec: durationSec,
+      items: items,
+      created_at: t
+    };
+    return Promise.resolve(store.putExamRecord(row)).then(function () {
+      return ok({ record: examRecordPublic(row) });
+    });
+  });
+}
+
+function examRecordsMine(deps, input) {
+  var cfg = deps.cfg, store = deps.store;
+  if (!cfg.hasSession()) {
+    return Promise.resolve(err(503, "E_NOT_CONFIGURED", "服务端还没配置好（缺 SESSION_SECRET）。"));
+  }
+  if (!deps.account) return Promise.resolve(err(401, "E_NO_SESSION", "这一项要登录后才能用"));
+
+  return Promise.resolve(store.getAccount(deps.account.uid)).then(function (me) {
+    if (!me || me.status === "deleted") return err(401, "E_NO_SESSION", "还没有登录");
+    var limit = Math.max(1, Math.min(200, Number(input && input.limit) || 50));
+    return Promise.resolve(store.listExamRecords({ uid: deps.account.uid }, limit)).then(function (rows) {
+      return ok({ records: (rows || []).map(examRecordPublic) });
+    });
+  });
+}
+
+function examRecordDelete(deps, input) {
+  var cfg = deps.cfg, store = deps.store;
+  if (!cfg.hasSession()) {
+    return Promise.resolve(err(503, "E_NOT_CONFIGURED", "服务端还没配置好（缺 SESSION_SECRET）。"));
+  }
+  if (!deps.account) return Promise.resolve(err(401, "E_NO_SESSION", "这一项要登录后才能用"));
+
+  var eid = clip(input && input.eid, 64).trim();
+  if (!eid) return Promise.resolve(err(400, "E_BAD_TARGET", "没说清楚删哪一条"));
+
+  return Promise.resolve(store.getExamRecord(eid)).then(function (row) {
+    if (!row || row.uid !== deps.account.uid) return err(404, "E_NOT_FOUND", "没有这一条（可能已经删了）");
+    return Promise.resolve(store.deleteExamRecord(eid)).then(function () {
+      return ok({ deleted: eid });
+    });
+  });
+}
+
 function gameAnswer(deps, input, extra) {
   var cfg = deps.cfg, t = deps.now();
   var game = (extra && extra.game) || require("./game");
@@ -2912,6 +3011,11 @@ module.exports = {
   FEEDBACK_KINDS: FEEDBACK_KINDS,
   FEEDBACK_STATUSES: FEEDBACK_STATUSES,
   FEEDBACK_LIMITS: FEEDBACK_LIMITS,
+
+  examRecordCreate: examRecordCreate,
+  examRecordsMine: examRecordsMine,
+  examRecordDelete: examRecordDelete,
+  EXAM_RECORD_LIMITS: EXAM_RECORD_LIMITS,
 
   normGrantInput: normGrantInput,
   publicAccount: publicAccount,

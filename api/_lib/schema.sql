@@ -402,3 +402,27 @@ create table if not exists public.feedback_comments (
 create index if not exists feedback_comments_tid_idx on public.feedback_comments (tid, created_at);
 
 alter table public.feedback_comments enable row level security;
+
+-- ==========================================================================
+-- 12. 考试历史（只记「考试」这一种形态，不含模拟考试 / 题库复习）
+-- ==========================================================================
+-- 只有登录用户能考「考试」（exam.formal，Max 门槛），交卷即写一条；用户能看
+-- 自己的历史、能删自己的历史。这是个人记录，不是待复核的公共数据，不设
+-- 审核 / 管理员这一层。
+create table if not exists public.exam_records (
+  eid           text primary key,
+  uid           text   not null references public.accounts(uid) on delete cascade,
+  scope_id      text   not null default '',
+  scope_label   text   not null default '',
+  size          int    not null default 0,
+  score         int    not null default 0,
+  total         int    not null default 0,
+  duration_sec  int    not null default 0,
+  items         jsonb  not null default '[]'::jsonb,
+  created_at    bigint not null
+);
+
+create index if not exists exam_records_uid_idx on public.exam_records (uid, created_at desc);
+
+alter table public.exam_records enable row level security;
+
