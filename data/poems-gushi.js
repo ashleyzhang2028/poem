@@ -188,5 +188,52 @@ window.POEMS_GUSHI = [
     dynasty: "宋",
     author: "黄庭坚",
     gradeGroup: "宋诗",
-  }
+  },
+
+  /* ---- Issue #461：大会冷门拓展（先秦 / 五代 / 元） ---- */
+  {
+    textRef: "gushi-gs-28",
+    id: "gs-28",
+    title: "诗经·陈风·月出",
+    source: "《诗经》",
+    dynasty: "先秦",
+    author: "佚名",
+    gradeGroup: "先秦诗",
+  },
+  {
+    textRef: "gushi-gs-29",
+    id: "gs-29",
+    title: "诗经·郑风·山有扶苏",
+    source: "《诗经》",
+    dynasty: "先秦",
+    author: "佚名",
+    gradeGroup: "先秦诗",
+  },
+  {
+    textRef: "gushi-gs-30",
+    id: "gs-30",
+    title: "诗经·齐风·猗嗟",
+    source: "《诗经》",
+    dynasty: "先秦",
+    author: "佚名",
+    gradeGroup: "先秦诗",
+  },
+  {
+    textRef: "gushi-gs-31",
+    id: "gs-31",
+    title: "春残",
+    source: "《全唐诗》",
+    dynasty: "五代",
+    author: "翁宏",
+    gradeGroup: "元明清诗",
+  },
+  {
+    textRef: "gushi-gs-32",
+    id: "gs-32",
+    title: "题龙阳县青草湖",
+    source: "《全唐诗》",
+    dynasty: "元",
+    author: "唐温如",
+    gradeGroup: "元明清诗",
+  },
 ];

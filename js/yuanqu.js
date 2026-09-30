@@ -4,7 +4,7 @@
   var GROUP_ORDER = window.YUANQU_GROUP_ORDER = [
     "小令 · 黄钟", "小令 · 正宫", "小令 · 中吕", "小令 · 南吕",
     "小令 · 双调", "小令 · 越调",
-    "套数 · 中吕"
+    "套数 · 中吕", "套数 · 般涉调"
   ];
 
   function bookConfig() {

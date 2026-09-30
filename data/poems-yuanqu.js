@@ -299,6 +299,17 @@ window.POEMS_YUANQU = [
     gradeGroup: "小令 · 中吕",
     excerpt: "晚天长，秋水苍",
   },
+
+  /* ---- Issue #461：文汇历年真题（套数 · 般涉调） ---- */
+  {
+    textRef: "yuanqu-yq-31",
+    id: "yq-31",
+    title: "般涉调·哨遍·高祖还乡",
+    source: "《全元散曲》",
+    dynasty: "元",
+    author: "睢景臣",
+    gradeGroup: "套数 · 般涉调",
+  },
 ];
 
 (function () {
