@@ -4213,6 +4213,83 @@ window.POEMS_MINGSHU = [
     excerpt: "一个人变成了驴"
   },
   {
+    textRef: "mingshu-ms-2913",
+    id: "ms-2913",
+    title: "吉尔伽美什史诗",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "两河",
+    author: "佚名",
+    source: "《吉尔伽美什史诗》",
+    excerpt: "最早的史诗"
+  },
+  {
+    textRef: "mingshu-ms-2914",
+    id: "ms-2914",
+    title: "亡灵书",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "古埃及",
+    author: "佚名",
+    source: "《亡灵书》",
+    excerpt: "一部咒语集"
+  },
+  {
+    textRef: "mingshu-ms-2926",
+    id: "ms-2926",
+    title: "摩诃婆罗多",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "古印度",
+    author: "佚名",
+    source: "《摩诃婆罗多》",
+    excerpt: "般度族与俱卢族之战"
+  },
+  {
+    textRef: "mingshu-ms-2928",
+    id: "ms-2928",
+    title: "沙恭达罗",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "古印度",
+    author: "迦梨陀娑",
+    source: "《沙恭达罗》",
+    excerpt: "一朵花认出了一段姻缘"
+  },
+  {
+    textRef: "mingshu-ms-2929",
+    id: "ms-2929",
+    title: "五卷书",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "古印度",
+    author: "佚名",
+    source: "《五卷书》",
+    excerpt: "用寓言教人处事"
+  },
+  {
+    textRef: "mingshu-ms-2930",
+    id: "ms-2930",
+    title: "奥义书",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "古印度",
+    author: "佚名",
+    source: "《奥义书》",
+    excerpt: "一部哲学经典"
+  },
+  {
+    textRef: "mingshu-ms-2931",
+    id: "ms-2931",
+    title: "薄伽梵歌",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "古印度",
+    author: "佚名",
+    source: "《薄伽梵歌》",
+    excerpt: "一部宗教哲学诗"
+  },
+  {
     textRef: "mingshu-ms-2907",
     id: "ms-2907",
     title: "埃涅阿斯纪",
@@ -4235,6 +4312,17 @@ window.POEMS_MINGSHU = [
     excerpt: "一觉醒来变成大甲虫"
   },
   {
+    textRef: "mingshu-ms-2927",
+    id: "ms-2927",
+    title: "罗摩衍那",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "古印度",
+    author: "蚁垤",
+    source: "《罗摩衍那》",
+    excerpt: "罗摩与悉多的流放"
+  },
+  {
     textRef: "mingshu-ms-1916",
     id: "ms-1916",
     title: "万叶集",
@@ -4255,6 +4343,39 @@ window.POEMS_MINGSHU = [
     author: "佚名",
     source: "《一千零一夜》",
     excerpt: "讲一夜，多活一天"
+  },
+  {
+    textRef: "mingshu-ms-2915",
+    id: "ms-2915",
+    title: "阿里巴巴与四十大盗",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "阿拉伯",
+    author: "佚名",
+    source: "《阿里巴巴与四十大盗》",
+    excerpt: "芝麻，开门"
+  },
+  {
+    textRef: "mingshu-ms-2916",
+    id: "ms-2916",
+    title: "阿拉丁与神灯",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "阿拉伯",
+    author: "佚名",
+    source: "《阿拉丁与神灯》",
+    excerpt: "擦一擦神灯"
+  },
+  {
+    textRef: "mingshu-ms-2917",
+    id: "ms-2917",
+    title: "辛巴达航海记",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "阿拉伯",
+    author: "佚名",
+    source: "《辛巴达航海记》",
+    excerpt: "七次远航"
   },
   {
     textRef: "mingshu-ms-2038",
@@ -4642,6 +4763,17 @@ window.POEMS_MINGSHU = [
     excerpt: "古池や蛙飛びこむ"
   },
   {
+    textRef: "mingshu-ms-2919",
+    id: "ms-2919",
+    title: "九云梦",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "朝鲜",
+    author: "金万重",
+    source: "《九云梦》",
+    excerpt: "一场梦中的九个云"
+  },
+  {
     textRef: "mingshu-ms-20",
     id: "ms-20",
     title: "鲁滨逊漂流记",
@@ -4827,6 +4959,17 @@ window.POEMS_MINGSHU = [
     author: "华兹华斯",
     source: "《华兹华斯与湖畔派》",
     excerpt: "湖畔派的诗"
+  },
+  {
+    textRef: "mingshu-ms-2918",
+    id: "ms-2918",
+    title: "春香传",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "朝鲜",
+    author: "佚名",
+    source: "《春香传》",
+    excerpt: "艺妓之女与贵公子"
   },
   {
     textRef: "mingshu-ms-2358",
@@ -6204,6 +6347,17 @@ window.POEMS_MINGSHU = [
     excerpt: "一张钞票的魔力"
   },
   {
+    textRef: "mingshu-ms-2936",
+    id: "ms-2936",
+    title: "当你老了",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "爱尔兰",
+    author: "叶芝",
+    source: "《当你老了》",
+    excerpt: "炉火旁的一册诗"
+  },
+  {
     textRef: "mingshu-ms-1931",
     id: "ms-1931",
     title: "丛林故事",
@@ -6611,6 +6765,17 @@ window.POEMS_MINGSHU = [
     excerpt: "山路上的闲情"
   },
   {
+    textRef: "mingshu-ms-2924",
+    id: "ms-2924",
+    title: "沉船",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "印度",
+    author: "泰戈尔",
+    source: "《沉船》",
+    excerpt: "一场翻船后的相遇"
+  },
+  {
     textRef: "mingshu-ms-1562",
     id: "ms-1562",
     title: "母亲",
@@ -6664,6 +6829,28 @@ window.POEMS_MINGSHU = [
     author: "杰克·伦敦",
     source: "《马丁·伊登》",
     excerpt: "一个水手想当作家"
+  },
+  {
+    textRef: "mingshu-ms-2920",
+    id: "ms-2920",
+    title: "吉檀迦利",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "印度",
+    author: "泰戈尔",
+    source: "《吉檀迦利》",
+    excerpt: "你已经使我永生"
+  },
+  {
+    textRef: "mingshu-ms-2925",
+    id: "ms-2925",
+    title: "戈拉",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "印度",
+    author: "泰戈尔",
+    source: "《戈拉》",
+    excerpt: "我是印度人"
   },
   {
     textRef: "mingshu-ms-1917",
@@ -6741,6 +6928,28 @@ window.POEMS_MINGSHU = [
     author: "高尔基",
     source: "《童年》",
     excerpt: "在外祖父家的日子"
+  },
+  {
+    textRef: "mingshu-ms-2922",
+    id: "ms-2922",
+    title: "新月集",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "印度",
+    author: "泰戈尔",
+    source: "《新月集》",
+    excerpt: "孩子的世界"
+  },
+  {
+    textRef: "mingshu-ms-2923",
+    id: "ms-2923",
+    title: "园丁集",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "印度",
+    author: "泰戈尔",
+    source: "《园丁集》",
+    excerpt: "我的爱在我心里"
   },
   {
     textRef: "mingshu-ms-2822",
@@ -6831,6 +7040,17 @@ window.POEMS_MINGSHU = [
     excerpt: "长了鼻子的法师"
   },
   {
+    textRef: "mingshu-ms-2921",
+    id: "ms-2921",
+    title: "飞鸟集",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "印度",
+    author: "泰戈尔",
+    source: "《飞鸟集》",
+    excerpt: "生如夏花之绚烂"
+  },
+  {
     textRef: "mingshu-ms-2546",
     id: "ms-2546",
     title: "弗罗斯特诗选",
@@ -6895,6 +7115,17 @@ window.POEMS_MINGSHU = [
     author: "瓦雷里",
     source: "《海滨墓园》",
     excerpt: "这平静的屋顶上"
+  },
+  {
+    textRef: "mingshu-ms-2932",
+    id: "ms-2932",
+    title: "纪伯伦散文诗选",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "黎巴嫩",
+    author: "纪伯伦",
+    source: "《纪伯伦散文诗选》",
+    excerpt: "你们的孩子不是你们的孩子"
   },
   {
     textRef: "mingshu-ms-2364",
@@ -6963,6 +7194,17 @@ window.POEMS_MINGSHU = [
     excerpt: "等一艘红帆船"
   },
   {
+    textRef: "mingshu-ms-2933",
+    id: "ms-2933",
+    title: "先知",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "黎巴嫩",
+    author: "纪伯伦",
+    source: "《先知》",
+    excerpt: "关于爱、工作与死亡"
+  },
+  {
     textRef: "mingshu-ms-2361",
     id: "ms-2361",
     title: "魔山",
@@ -6994,6 +7236,17 @@ window.POEMS_MINGSHU = [
     author: "宫泽贤治",
     source: "《宫泽贤治诗选》",
     excerpt: "不畏风雨"
+  },
+  {
+    textRef: "mingshu-ms-2939",
+    id: "ms-2939",
+    title: "二十首情诗与一首绝望的歌",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "智利",
+    author: "聂鲁达",
+    source: "《二十首情诗与一首绝望的歌》",
+    excerpt: "爱情与绝望"
   },
   {
     textRef: "mingshu-ms-1969",
@@ -7073,6 +7326,17 @@ window.POEMS_MINGSHU = [
     excerpt: "一段少年的旅途"
   },
   {
+    textRef: "mingshu-ms-2934",
+    id: "ms-2934",
+    title: "沙与沫",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "黎巴嫩",
+    author: "纪伯伦",
+    source: "《沙与沫》",
+    excerpt: "一粒沙与一滴沫"
+  },
+  {
     textRef: "mingshu-ms-2535",
     id: "ms-2535",
     title: "马雅可夫斯基诗选",
@@ -7126,6 +7390,17 @@ window.POEMS_MINGSHU = [
     author: "法捷耶夫",
     source: "《毁灭》",
     excerpt: "一支游击队的溃败"
+  },
+  {
+    textRef: "mingshu-ms-2935",
+    id: "ms-2935",
+    title: "叶芝诗选",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "爱尔兰",
+    author: "叶芝",
+    source: "《叶芝诗选》",
+    excerpt: "当你老了"
   },
   {
     textRef: "mingshu-ms-1972",
@@ -7258,6 +7533,17 @@ window.POEMS_MINGSHU = [
     author: "谷崎润一郎",
     source: "《阴翳礼赞》",
     excerpt: "美不在明亮处"
+  },
+  {
+    textRef: "mingshu-ms-2937",
+    id: "ms-2937",
+    title: "洛尔迦诗选",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "西班牙",
+    author: "洛尔迦",
+    source: "《洛尔迦诗选》",
+    excerpt: "吉普赛谣曲集"
   },
   {
     textRef: "mingshu-ms-1971",
@@ -8151,6 +8437,17 @@ window.POEMS_MINGSHU = [
     excerpt: "魔鬼造访莫斯科"
   },
   {
+    textRef: "mingshu-ms-2944",
+    id: "ms-2944",
+    title: "塞弗尔特诗选",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "捷克",
+    author: "塞弗尔特",
+    source: "《塞弗尔特诗选》",
+    excerpt: "世界美如斯"
+  },
+  {
     textRef: "mingshu-ms-2245",
     id: "ms-2245",
     title: "2001：太空漫游",
@@ -8217,6 +8514,17 @@ window.POEMS_MINGSHU = [
     excerpt: "一个没有性别的世界"
   },
   {
+    textRef: "mingshu-ms-2940",
+    id: "ms-2940",
+    title: "博尔赫斯诗选",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "阿根廷",
+    author: "博尔赫斯",
+    source: "《博尔赫斯诗选》",
+    excerpt: "我用什么才能留住你"
+  },
+  {
     textRef: "mingshu-ms-2318",
     id: "ms-2318",
     title: "吹小号的天鹅",
@@ -8261,6 +8569,17 @@ window.POEMS_MINGSHU = [
     excerpt: "五十五座虚构的城"
   },
   {
+    textRef: "mingshu-ms-2938",
+    id: "ms-2938",
+    title: "聂鲁达诗选",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "智利",
+    author: "聂鲁达",
+    source: "《聂鲁达诗选》",
+    excerpt: "二十首情诗与一首绝望的歌"
+  },
+  {
     textRef: "mingshu-ms-912",
     id: "ms-912",
     title: "古拉格群岛",
@@ -8294,6 +8613,28 @@ window.POEMS_MINGSHU = [
     excerpt: "一个国家的末日"
   },
   {
+    textRef: "mingshu-ms-2945",
+    id: "ms-2945",
+    title: "特兰斯特罗默诗选",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "瑞典",
+    author: "特兰斯特罗默",
+    source: "《特兰斯特罗默诗选》",
+    excerpt: "十七首诗"
+  },
+  {
+    textRef: "mingshu-ms-2946",
+    id: "ms-2946",
+    title: "阿米亥诗选",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "以色列",
+    author: "阿米亥",
+    source: "《阿米亥诗选》",
+    excerpt: "耶路撒冷"
+  },
+  {
     textRef: "mingshu-ms-1982",
     id: "ms-1982",
     title: "根",
@@ -8303,6 +8644,28 @@ window.POEMS_MINGSHU = [
     author: "哈利",
     source: "《根》",
     excerpt: "从非洲村庄到美洲种植园"
+  },
+  {
+    textRef: "mingshu-ms-2941",
+    id: "ms-2941",
+    title: "辛波斯卡诗选",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "波兰",
+    author: "辛波斯卡",
+    source: "《辛波斯卡诗选》",
+    excerpt: "一见钟情"
+  },
+  {
+    textRef: "mingshu-ms-2943",
+    id: "ms-2943",
+    title: "米沃什诗选",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "波兰",
+    author: "米沃什",
+    source: "《米沃什诗选》",
+    excerpt: "诗的见证"
   },
   {
     textRef: "mingshu-ms-2889",
@@ -8512,5 +8875,16 @@ window.POEMS_MINGSHU = [
     author: "村上春树",
     source: "《1Q84》",
     excerpt: "两个月亮的世界"
+  },
+  {
+    textRef: "mingshu-ms-2942",
+    id: "ms-2942",
+    title: "万物静默如谜",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "波兰",
+    author: "辛波斯卡",
+    source: "《万物静默如谜》",
+    excerpt: "一册诗集"
   },
 ];
