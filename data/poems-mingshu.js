@@ -4059,6 +4059,39 @@ window.POEMS_MINGSHU = [
     excerpt: "无事可做的一百段"
   },
   {
+    textRef: "mingshu-ms-1948",
+    id: "ms-1948",
+    title: "仲夏夜之梦",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "英国",
+    author: "莎士比亚",
+    source: "《仲夏夜之梦》",
+    excerpt: "森林里的四角恋"
+  },
+  {
+    textRef: "mingshu-ms-1949",
+    id: "ms-1949",
+    title: "威尼斯商人",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "英国",
+    author: "莎士比亚",
+    source: "《威尼斯商人》",
+    excerpt: "一磅肉的官司"
+  },
+  {
+    textRef: "mingshu-ms-1944",
+    id: "ms-1944",
+    title: "罗密欧与朱丽叶",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "英国",
+    author: "莎士比亚",
+    source: "《罗密欧与朱丽叶》",
+    excerpt: "两个家族的仇与一对恋人"
+  },
+  {
     textRef: "mingshu-ms-956",
     id: "ms-956",
     title: "哈姆雷特",
@@ -4070,6 +4103,28 @@ window.POEMS_MINGSHU = [
     excerpt: "生存还是毁灭"
   },
   {
+    textRef: "mingshu-ms-1947",
+    id: "ms-1947",
+    title: "奥赛罗",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "英国",
+    author: "莎士比亚",
+    source: "《奥赛罗》",
+    excerpt: "一条手帕与一场嫉妒"
+  },
+  {
+    textRef: "mingshu-ms-1945",
+    id: "ms-1945",
+    title: "李尔王",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "英国",
+    author: "莎士比亚",
+    source: "《李尔王》",
+    excerpt: "一个父亲的醒悟"
+  },
+  {
     textRef: "mingshu-ms-1166",
     id: "ms-1166",
     title: "堂·吉诃德",
@@ -4079,6 +4134,17 @@ window.POEMS_MINGSHU = [
     author: "塞万提斯",
     source: "《堂·吉诃德》",
     excerpt: "与风车作战的骑士"
+  },
+  {
+    textRef: "mingshu-ms-1946",
+    id: "ms-1946",
+    title: "麦克白",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "英国",
+    author: "莎士比亚",
+    source: "《麦克白》",
+    excerpt: "野心家的下场"
   },
   {
     textRef: "mingshu-ms-1816",
@@ -4356,6 +4422,17 @@ window.POEMS_MINGSHU = [
     excerpt: "躺在沙发上的一生"
   },
   {
+    textRef: "mingshu-ms-1932",
+    id: "ms-1932",
+    title: "白衣女人",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "英国",
+    author: "柯林斯",
+    source: "《白衣女人》",
+    excerpt: "谁是那个穿白衣的女人"
+  },
+  {
     textRef: "mingshu-ms-918",
     id: "ms-918",
     title: "远大前程",
@@ -4387,6 +4464,17 @@ window.POEMS_MINGSHU = [
     author: "屠格涅夫",
     source: "《父与子》",
     excerpt: "两代人的交锋"
+  },
+  {
+    textRef: "mingshu-ms-1930",
+    id: "ms-1930",
+    title: "水孩子",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "英国",
+    author: "金斯利",
+    source: "《水孩子》",
+    excerpt: "扫烟囱的孩子下了水"
   },
   {
     textRef: "mingshu-ms-1055",
@@ -4431,6 +4519,17 @@ window.POEMS_MINGSHU = [
     author: "凡尔纳",
     source: "《格兰特船长的儿女》",
     excerpt: "顺着漂流瓶去找人"
+  },
+  {
+    textRef: "mingshu-ms-1933",
+    id: "ms-1933",
+    title: "月亮宝石",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "英国",
+    author: "柯林斯",
+    source: "《月亮宝石》",
+    excerpt: "一颗被诅咒的印度宝石"
   },
   {
     textRef: "mingshu-ms-990",
@@ -4574,6 +4673,72 @@ window.POEMS_MINGSHU = [
     author: "亚米契斯",
     source: "《爱的教育》",
     excerpt: "一个四年级孩子的日记"
+  },
+  {
+    textRef: "mingshu-ms-1929",
+    id: "ms-1929",
+    title: "福尔摩斯探案集",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "英国",
+    author: "柯南·道尔",
+    source: "《福尔摩斯探案集》",
+    excerpt: "基本演绎法"
+  },
+  {
+    textRef: "mingshu-ms-1934",
+    id: "ms-1934",
+    title: "德伯家的苔丝",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "英国",
+    author: "哈代",
+    source: "《德伯家的苔丝》",
+    excerpt: "一个纯洁的女人"
+  },
+  {
+    textRef: "mingshu-ms-1931",
+    id: "ms-1931",
+    title: "丛林故事",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "英国",
+    author: "吉卜林",
+    source: "《丛林故事》",
+    excerpt: "狼群里养大的孩子"
+  },
+  {
+    textRef: "mingshu-ms-1926",
+    id: "ms-1926",
+    title: "时间机器",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "英国",
+    author: "威尔斯",
+    source: "《时间机器》",
+    excerpt: "一直开到八十万年后"
+  },
+  {
+    textRef: "mingshu-ms-1927",
+    id: "ms-1927",
+    title: "隐身人",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "英国",
+    author: "威尔斯",
+    source: "《隐身人》",
+    excerpt: "看不见的人反而无处容身"
+  },
+  {
+    textRef: "mingshu-ms-1928",
+    id: "ms-1928",
+    title: "世界大战",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "英国",
+    author: "威尔斯",
+    source: "《世界大战》",
+    excerpt: "火星人从陨石坑里站起来"
   },
   {
     textRef: "mingshu-ms-1553",
@@ -4785,6 +4950,17 @@ window.POEMS_MINGSHU = [
     excerpt: "先生的遗嘱"
   },
   {
+    textRef: "mingshu-ms-1920",
+    id: "ms-1920",
+    title: "人生的枷锁",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "英国",
+    author: "毛姆",
+    source: "《人生的枷锁》",
+    excerpt: "挣脱一只脚，又套上另一只"
+  },
+  {
     textRef: "mingshu-ms-1822",
     id: "ms-1822",
     title: "罗生门",
@@ -4816,6 +4992,17 @@ window.POEMS_MINGSHU = [
     author: "芥川龙之介",
     source: "《地狱变》",
     excerpt: "一位画师"
+  },
+  {
+    textRef: "mingshu-ms-1919",
+    id: "ms-1919",
+    title: "月亮与六便士",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "英国",
+    author: "毛姆",
+    source: "《月亮与六便士》",
+    excerpt: "满地都是六便士，他抬头看见了月亮"
   },
   {
     textRef: "mingshu-ms-1823",
@@ -4882,6 +5069,17 @@ window.POEMS_MINGSHU = [
     author: "小林多喜二",
     source: "《蟹工船》",
     excerpt: "一艘船上的劳役"
+  },
+  {
+    textRef: "mingshu-ms-1925",
+    id: "ms-1925",
+    title: "美丽新世界",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "英国",
+    author: "赫胥黎",
+    source: "《美丽新世界》",
+    excerpt: "被安排好的幸福"
   },
   {
     textRef: "mingshu-ms-1838",
@@ -4972,6 +5170,28 @@ window.POEMS_MINGSHU = [
     excerpt: "四姐妹的婚事"
   },
   {
+    textRef: "mingshu-ms-1921",
+    id: "ms-1921",
+    title: "刀锋",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "英国",
+    author: "毛姆",
+    source: "《刀锋》",
+    excerpt: "剃刀边缘很难越过"
+  },
+  {
+    textRef: "mingshu-ms-1924",
+    id: "ms-1924",
+    title: "动物农场",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "英国",
+    author: "奥威尔",
+    source: "《动物农场》",
+    excerpt: "所有的动物一律平等，但有些更平等"
+  },
+  {
     textRef: "mingshu-ms-1835",
     id: "ms-1835",
     title: "斜阳",
@@ -4992,6 +5212,17 @@ window.POEMS_MINGSHU = [
     author: "太宰治",
     source: "《人间失格》",
     excerpt: "我这一生尽是可耻之事"
+  },
+  {
+    textRef: "mingshu-ms-1923",
+    id: "ms-1923",
+    title: "一九八四",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "英国",
+    author: "奥威尔",
+    source: "《一九八四》",
+    excerpt: "老大哥在看着你"
   },
   {
     textRef: "mingshu-ms-1834",
@@ -5036,6 +5267,17 @@ window.POEMS_MINGSHU = [
     author: "川端康成",
     source: "《千只鹤》",
     excerpt: "一只鹤，一只茶碗"
+  },
+  {
+    textRef: "mingshu-ms-1922",
+    id: "ms-1922",
+    title: "蝇王",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "英国",
+    author: "戈尔丁",
+    source: "《蝇王》",
+    excerpt: "荒岛上的孩子自己变成了野兽"
   },
   {
     textRef: "mingshu-ms-1832",
