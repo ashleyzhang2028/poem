@@ -389,8 +389,18 @@ duration_sec/items/created_at`，`items` 是 jsonb 存逐题对错），行级�
 `setup`），列表每行「分数 · 范围 · 时间」+ 一颗删除键（`window.confirm` 二次确认，
 与 `js/family-ui.js` 等处同一条纪律）。
 
+历史屏**只有一张卡**（用户 2026-09-30 裁决）。原先「考试记录」标题单独占一张
+`game-head` 卡、清单另起一张 —— 两张卡之间那道 12px 的缝里什么都没有，标题卡
+看着就是「一块被撑开的空行」。现在标题是清单那张卡的**第一行**，`renderHistory()`
+五种状态（游客 / 读取中 / 出错 / 空 / 有记录）**每种都只开一张 `.account-card`**。
+同轮把「删除」从天通栏的 `.account-btn`（44px 高 / 15px 字，跟「开始」「交卷」
+一个体量）换成 `.mini-btn`（32px / 13px，真机量过 220×44 → 64×32）—— 它是这一行
+里的**次要动作**，不该跟主操作抢视觉。
+
 **验证**：新增 `test/exam-records.test.js`（21 条：门槛 / 写入 / 按账号隔离 /
-删除权限 / 字段截断 / 前端接线），`bash test/run.sh` 27 层全绿。
+删除权限 / 字段截断 / 前端接线）；这一轮另加 `test/exam-history-ui.test.js`
+（静态判据：只要一张卡、删除键必须是 `.mini-btn`——界面测试层已按 Issue #278
+删除，所以不起浏览器，只读源码与 CSS），`bash test/run.sh` 全绿。
 `sw.js` v307 → **v308**。
 
 ⚠️ **手动过服务端联调前先看这条**：本机 `node scripts/serve.js` 接的是
