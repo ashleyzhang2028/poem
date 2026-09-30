@@ -709,6 +709,99 @@ D5 → G5 两句温柔的上行（蓝）。**三档没有一档是下行音** �
 
 ---
 
+### 4.120 加入背诵弹框那一行：提示语比输入的字还大、「新建」折成两行（2026-09-30 · 回答 Issue #370 第三轮）
+
+用户原话：
+
+> 「加入背诵的弹框 新建集合，例如：我要背的 这里的 placeholder 字号有点大，
+>   应该去掉变大的字号。右侧 新建按钮居然两行显示，极其丑陋」
+
+两处都不是「随手调个像素」，是两个**真回退**。
+
+#### 一、提示语比输入框自己的字还大：16px 那条规矩选错了对象
+
+`css/style.css` 里有一条 700px 以下的规矩，原先是为了治 iOS 上「小于 16px 的
+输入框一聚焦，页面自己放大」：
+
+```css
+@media screen and (max-width: 700px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+  select, textarea, .settings-input, .search-input { font-size: var(--input-font-narrow); }
+}
+```
+
+它选中的是 **input 本体**。于是窄屏上：
+
+| | 字号 |
+|---|---|
+| 输入框自己的字（`.settings-input`，`--ctl-font-md`） | 14px → **被顶成 16px** |
+| 提示语（`.settings-input::placeholder`，写死 14px） | **14px，没被顶** |
+
+数字上「提示语更小」，眼睛看到的是反过来的：一句「新建集合，例如：我要背的」
+比用户在同一个框里打出来的字又大又稀。用户说的「placeholder 字号有点大」，
+其实是**输入框的字变大了、提示语没跟上**——同一处界面，两个字号。
+
+改法是让 16px 只管**真实输入**：
+
+```css
+.recite-new .settings-input::placeholder { font-size: var(--ctl-font-md); }
+```
+
+两边现在同一个变量，谁也不会反超谁。600 多行外那条 700px 的规矩**留着不动** ——
+iOS 聚焦放大还得靠它。
+
+#### 二、「新建」两个字折成两行：`.btn` 是「一排通栏按钮」的料，被塞进了单行
+
+`.recite-new` 是一行 flex（输入框 `flex: 1` + 这颗键），键是 `.btn.ghost-btn`。
+`.btn` 的通身本领本来是给「一排等宽通栏按钮」用的：
+
+- `flex: 1` —— 在这行里跟输入框抢宽，**键被分到的只有 54px**；
+- `height: var(--ctl-h-lg)` 44px、`line-height: var(--ctl-leading-lg)` 20px ——
+  框比输入框高一档；
+- `padding: 0 var(--ctl-pad-x)`（14px），而 `.ghost-btn` 只给它 `border-radius` 与描边。
+
+390px 上量：键 54×44，里面要摆两个 15px 的字（约 30px），字就折了行 ——
+「新建」竖着排，一行里最丑的正是它。
+
+不给它换 class（`.btn.ghost-btn` 是全站同心的一颗「次一级动作」，换来换去会把
+别处的好看弄坏），只在**这一行里**按住它：
+
+```css
+.recite-new .ghost-btn {
+  flex: 0 0 auto;                       /* 不再吃 .btn 的 flex: 1 */
+  height: var(--ctl-h-md);              /* 38px，与旁边输入框同高 */
+  padding: 0 18px;                      /* 两个字不贴边 */
+  font-size: var(--ctl-font-md);        /* 14px，收到输入框那一档 */
+  line-height: var(--ctl-leading-md);   /* 是行高把它挤折的，必须一起收 */
+  white-space: nowrap;                  /* 兜底：再也不许折 */
+}
+```
+
+输入框补一条 `min-width: 0`：窄屏上先压输入框，不把键挤变形。
+
+#### 三、验证（真浏览器量到的数）
+
+Chromium 131 · CDP · `Emulation.setDeviceMetricsOverride`，三档宽度逐个量：
+
+| 视口 | 提示语 | 输入框的字 | 「新建」 | 同一行？ |
+|---|---|---|---|---|
+| 320px | 16px ❌ → **14px** | 16px | 54×44 ❌ → **66×38** | ✅ |
+| 360px | 16px → **14px** | 16px | 54×44 → **66×38** | ✅ |
+| 390px | 16px → **14px** | 16px | 54×44 → **66×38** | ✅ |
+| 430px | — → **14px** | 16px | — → **66×38** | ✅ |
+
+那一行的高度从 44px 收到 38px（与输入框齐平），横向不溢出
+（`scrollWidth == innerWidth`，四档都是）。截图逐张看过：提示语与键同档，
+「新建」两个字横着摆、不折行、不贴边。
+
+`bash test/run.sh` 全绿（5124 条，新增 `test/recite-picker-ui.test.js` 18 条钉住
+上面这两件）。界面测试层按 Issue #278 已删，这一层是**静态判据**：读
+`js/reader-core.js` 确认弹框骨架没动，读两张 CSS 确认两个回退都回不去。
+
+`sw.js` v335 → **v336**。
+
+---
+
 ### 4.59 切子用户：首页标题不跟、头像串脸（2026-09-29 · 回答 Issue #444）
 
 用户原话：

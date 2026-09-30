@@ -584,10 +584,25 @@ body.reader-open .dock { display: none; }
 }
 .recite-new {
   display: flex;
+  align-items: center;
   gap: 8px;
   margin: 14px 0 0;
 }
-.recite-new .settings-input { flex: 1 1 auto; }
+.recite-new .settings-input { flex: 1 1 auto; min-width: 0; }
+
+.recite-new .ghost-btn {
+  flex: 0 0 auto;
+  height: var(--ctl-h-md);
+  padding: 0 18px;
+  font-size: var(--ctl-font-md);
+  line-height: var(--ctl-leading-md);
+  white-space: nowrap;
+}
+
+.recite-new .settings-input::placeholder {
+  font-size: var(--ctl-font-md);
+  letter-spacing: 0;
+}
 
 .item-recite {
   display: inline-flex;
