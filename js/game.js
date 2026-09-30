@@ -354,7 +354,6 @@
     var sum = Q.charSummary(cps, state.chars);
 
     var html = '<section class="account-card game-head">' +
-      '<button class="account-btn ghost game-back" type="button" data-game-back="1">换一个题型</button>' +
       '<h2 class="account-card-title">' + esc(m.name) + "</h2>" +
       '<p class="account-hint">范围：' + esc(scopePickLabel(state.setup.scope)) + "</p>" +
       '<div class="game-chars">' + state.chars.map(function (c) {
@@ -481,15 +480,13 @@
     if (sizes.indexOf(state.setup.size) < 0) state.setup.size = v.size;
 
         var html = '<section class="account-card game-head">' +
-      '<button class="account-btn ghost game-back" type="button" data-game-back="1">换题型</button>' +
       '<h2 class="account-card-title">' + esc(m.name) + "</h2>" +
       '<p class="account-hint">' + esc(m.desc) +
       (v.timed ? " · 限时 " + v.minutes + " 分钟" : "") + "</p>" +
-      '<p class="account-hint">范围：' + esc(scopePickLabel(state.setup.scope)) +
-      "（点「换题型」回首页）</p>" +
+      '<p class="account-hint">范围：' + esc(scopePickLabel(state.setup.scope)) + "</p>" +
       "</section>";
 
-    html += '<section class="account-card"><h2 class="account-card-title">考多少题</h2>' +
+    html += '<section class="account-card"><h2 class="account-card-title">题量</h2>' +
       '<div class="seg mini" id="game-size" role="group" aria-label="题量">' +
       sizes.map(function (n) {
         return '<button type="button" data-game-size="' + n + '"' +
@@ -498,8 +495,8 @@
       }).join("") + "</div>" +
       '<p class="account-hint">' +
       (v.judge === "after"
-        ? "交卷后批改，中途退出不评分。"
-        : "答完立刻说对错。" + (v.record ? "卷面记录留在本地。" : "本地不留记录。")) +
+        ? "交卷后批改，退出不评分。"
+        : "答完出结果。" + (v.record ? "记录留本地。" : "本地不留记录。")) +
       "</p>" +
       '<button class="account-btn" type="button" data-game-begin="1">开始</button>' +
       (state.setupNotice
@@ -512,7 +509,6 @@
   function renderHistory() {
     var id = identifier();
     var html = '<section class="account-card game-head">' +
-      '<button class="account-btn ghost game-back" type="button" data-game-back="1">返回</button>' +
       '<h2 class="account-card-title">考试记录</h2>' +
       "</section>";
 
@@ -584,7 +580,6 @@
     var html = state.graded ? renderScoreBanner(state.graded) : "";
 
     html += '<section class="account-card game-head">' +
-      '<button class="account-btn ghost game-back" type="button" data-game-back="1">换题型</button>' +
       '<h2 class="account-card-title">' + esc(m.name) + "</h2>" +
       '<p class="account-hint">第 ' + (i + 1) + " / " + total + " 题 · " +
       esc(scopePickLabel(state.setup.scope)) +
@@ -919,20 +914,6 @@
 
       var go = hit("data-game-go");
       if (go) { location.href = go.getAttribute("data-game-go"); return; }
-
-      var back = hit("data-game-back");
-      if (back) {
-        stopTimer();
-                // 飞花令 / 考试历史没有「卷面设置」这一层，退回去只能是首页；
-                // 否则 state.pending 从未写过，落进 setup 会渲染出一片空白（发现于 2026-09-30）
-                if (state.mode === "setup" || state.mode === "fly" || state.mode === "history") {
-          state.mode = "";
-          state.pending = "";
-        } else {
-          state.mode = "setup";
-        }
-        render();
-        return;
       }
 
             var pick = hit("data-game-scope");

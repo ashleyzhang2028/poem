@@ -1038,14 +1038,7 @@ thead .plans-th-cap {
 .game-mode-tier[data-on="1"] { color: var(--green); }
 .game-mode[data-locked] .game-mode-tier { color: var(--ink-3); }
 
-.poems-game > .game-back {
-  width: auto;
-  min-width: 96px;
-  align-self: flex-start;
-}
-
 .game-head { position: relative; }
-.game-back { margin-bottom: 10px; }
 .game-chars { display: flex; align-items: flex-end; gap: 14px; margin: 2px 0 8px; }
 .game-char {
   display: flex;
@@ -1223,7 +1216,7 @@ thead .plans-th-cap {
   .seg, .settings-index,
   .print-actions, .print-opt, .print-blank-lines, .print-paper,
   .settings-groups > .settings-group > .settings-item > label,
-  .collections-panel, .poems-game-entry, .game-back, .reader-actions,
+  .collections-panel, .poems-game-entry, .reader-actions,
   .gw-play, .item-recite, .item-read, .item-remove {
     display: none !important;
   }
