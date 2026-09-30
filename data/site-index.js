@@ -16,7 +16,7 @@
         var p = (typeof window.masterTextOf === "function")
           ? window.masterTextOf(raw, b.id) : raw;
 
-        var NEED_TRANS = ["guwen", "yuanqu", "zhaoming", "yuefu", "jinxiandai", "chengyu"];
+        var NEED_TRANS = ["guwen", "yuanqu", "zhaoming", "yuefu", "jinxiandai", "chengyu", "gushi"];
         if (NEED_TRANS.indexOf(b.id) >= 0 && (!p.text || !p.translation)) return;
                 if ((b.id === "changshi" || b.id === "mingshu" || b.id === "mingren" || b.id === "mingren-waiguo" ||
                      b.id === "dwang" || b.id === "dwang-waiguo") && !p.text) return;

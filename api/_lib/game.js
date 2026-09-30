@@ -14,6 +14,7 @@ var BOOKS = [
   { id: "classic",  files: ["data/poems-classic.js"],  varName: "POEMS_CLASSIC" },
   { id: "yuefu",    files: ["data/poems-yuefu.js"],    varName: "POEMS_YUEFU" },
   { id: "tangshi",  files: ["data/poems-tangshi.js"],  varName: "POEMS_TANGSHI" },
+  { id: "gushi",    files: ["data/poems-gushi.js"],    varName: "POEMS_GUSHI" },
   { id: "songci",   files: ["data/poems-songci.js"],   varName: "POEMS_SONGCI" },
   { id: "guwen",    files: ["data/poems-guwen.js"],    varName: "POEMS_GUWEN" },
   { id: "zhaoming", files: ["data/poems-zhaoming.js"], varName: "POEMS_ZHAOMING" },

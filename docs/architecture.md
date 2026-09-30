@@ -224,7 +224,7 @@ jobs:
 │  浏览器（静态 PWA · kuibu.app · Vercel）                          │
 │                                                                  │
 │  ┌─ 视图层（14 个 index.html，不动）────────────────────────┐    │
-│  │  首页 /poems/ /library/ 八部集子 /search/ /progress/ /mine/      │
+│  │  首页 /poems/ /library/ 多部集子 /search/ /progress/ /mine/      │
 │  │  设置整页 /settings/，再拆二级页 /settings/{general,          │
 │  │  recite,lists,reader}/（入口是 /mine/ 右上角那颗齿轮）        │
 │  └────────────────────────┬───────────────────────────────┘    │

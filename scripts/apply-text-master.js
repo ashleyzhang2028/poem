@@ -55,6 +55,7 @@ const BOOKS = [
   { file: 'data/poems-classic.js', prefix: 'classic-' },
   { file: 'data/poems-yuefu.js', prefix: 'yuefu-' },
   { file: 'data/poems-tangshi.js', prefix: 'tangshi-' },
+  { file: 'data/poems-gushi.js', prefix: 'gushi-' },
   { file: 'data/poems-songci.js', prefix: 'songci-' },
   { file: 'data/poems-guwen.js', prefix: 'guwen-' },
   { file: 'data/poems-zhaoming.js', prefix: 'zhaoming-' },

@@ -98,7 +98,7 @@
     for (var i = 0; i < list.length; i += 1) {
       if (list[i] && list[i].id === id) return list[i];
     }
-    var books = ["POEMS_ALL", "POEMS_CLASSIC", "POEMS_TANGSHI", "POEMS_SONGCI",
+    var books = ["POEMS_ALL", "POEMS_CLASSIC", "POEMS_TANGSHI", "POEMS_GUSHI", "POEMS_SONGCI",
       "POEMS_GUWEN", "POEMS_ZHAOMING"];
     for (var b = 0; b < books.length; b += 1) {
       var l = window[books[b]] || [];
