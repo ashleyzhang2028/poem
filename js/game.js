@@ -135,7 +135,7 @@
 
   // 大会内所有题型的**默认范围是「小学」**，不是「全部」（用户 2026-09-30：
   // 「古诗词大会内的所有题型，默认范围为小学，而不是全部」）。
-  // 只在这里写一次，飞花令的选字 / 看答案 / 自己写一句、三个题型的卷子
+  // 只在这里写一次，飞花令的选字 / 看答案 / 作答、三个题型的卷子
   // 都从 state.setup.scope 走，所以「默认」只有这一个出处。
   var DEFAULT_SCOPE = "poems:primary";
 
@@ -159,7 +159,7 @@
     state.scopes = sc === "all" ? [] : [sc];
   }
 
-  // 按当前范围过滤语料：飞花令的选字/看答案/自己写一句都要走同一份，
+  // 按当前范围过滤语料：飞花令的选字/看答案/作答都要走同一份，
   // 否则「选了小学」只是摆设（选了但答案照样混全部范围）
   function scopedCorpus() {
     var cps = corpus();
@@ -384,7 +384,11 @@
   // 飞花令两段（用户 2026-09-30 裁决）：
   //   ① 令字卡：范围 / 令字 / 命中句数 / 难度（常见字·一般字·难字）**再加换令按钮**
   //      —— 「换令按钮应该在常见字，一般字按钮选项下面显示，一张卡片内」；
-  //   ② 「自己写一句试试」卡。
+  //   ② 「作答」卡（用户 2026-09-30 改名）：卡的标题收成两个字，按钮收成
+  //      「回答」，提示文字换成「云深不知处」—— **去掉「照抄」这个引导**：
+  //      原来那句在教用户抄一句现成的，而这一格要的是自己想起来的那一句。
+  //      （三处旧说法按用户要求不再出现在界面上，测试只扫**渲染模板**、不扫注释，
+  //      免得这段说明把测试扫红；要核对原文看 Issue #356 第五轮。）
   //   ③ 看答案**不在这两段里** —— 「看答案按钮应该不需要卡片，显示在页底（其他卡片下面）」。
   function renderFly() {
     var m = modeOf("fly");
@@ -405,7 +409,7 @@
           '<span class="game-char-han">' + esc(c) + "</span>" +
           "</span>";
       }).join("") + "</div>" +
-      '<p class="account-hint">' + esc(sum.text) + " —— 这是合集里实际能对上的句数。</p>" +
+      '<p class="account-hint">' + esc(sum.text) + "</p>" +
       '<div class="seg mini" id="game-level" role="group" aria-label="令字难度">' +
       CHAR_LEVELS.map(function (lv) {
         return '<button type="button" data-game-level="' + lv.id + '"' +
@@ -415,13 +419,13 @@
       '<button class="account-btn ghost game-fly-restart" type="button" data-game-restart="1">换令</button>' +
       "</section>";
 
-    html += '<section class="account-card"><h2 class="account-card-title">自己写一句试试</h2>' +
+    html += '<section class="account-card"><h2 class="account-card-title">作答</h2>' +
       '<div class="account-field">' +
       '<label class="account-label" for="game-said">你想起来的那一句</label>' +
       '<input class="account-input" id="game-said" type="text" autocomplete="off" ' +
-      'placeholder="整句照抄，例如「日月之行」" />' +
+      'placeholder="云深不知处" />' +
       "</div>" +
-      '<button class="account-btn" type="button" data-game-say="1">核一核</button>' +
+      '<button class="account-btn" type="button" data-game-say="1">回答</button>' +
       '<p class="account-msg" id="game-said-msg"></p>' +
       "</section>";
     return html;

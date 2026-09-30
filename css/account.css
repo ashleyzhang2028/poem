@@ -124,6 +124,10 @@ body[data-nav="login"] .app {
   border: 0;
 }
 
+/* 字号必须有**自己的一条**：从前这里不写 font-size，全站就只剩 style.css 末尾
+ * 那条 iOS 防缩放规则（≤700px 一律 16px）在管它 —— 桌面 16px（UA 默认）、
+ * 手机 16px（防缩放阈值），于是这一个框跟周围的 13/14px 格格不入。
+ * 现在钉在 14px，与 settings-input 同档（--ctl-font-md）。 */
 .account-input {
   width: 100%;
   height: var(--ctl-input-h);
@@ -134,6 +138,7 @@ body[data-nav="login"] .app {
   background: var(--card);
   color: var(--ink);
   font-family: inherit;
+  font-size: var(--ctl-font-md);
   outline: none;
   transition: border-color .15s, background .15s, box-shadow .15s;
 }
@@ -143,7 +148,21 @@ body[data-nav="login"] .app {
   outline: none;
   box-shadow: var(--ctl-focus);
 }
-.account-input::placeholder { color: #9c8d7b; }
+/* 提示字的字号**单独一条**，与输入框自身的字号解耦。
+ *
+ * 为什么不能直接改 `.account-input` 的 font-size：手机档下 ≤700px 那条
+ * iOS 防缩放规则（style.css 末尾）会按类名精确命中它、把它按回 16px ——
+ * 那是**故意**的，iPhone 上小于 16px 的输入框一聚焦就把整页放大。
+ *
+ * 而 iOS 那个判定看的是**输入框自身**的 computed font-size，**不是**占位文字的。
+ * 所以把 ::placeholder 调小既能让提示字回到与周围一致的层级，
+ * 又不会把防缩放那条线拉掉 —— `.search-input::placeholder` 早就是同一个写法。
+ *
+ * 这里比输入框小 2.5px，与搜索框提示字（--search-placeholder-font 13.5px）同档。 */
+.account-input::placeholder {
+  color: #9c8d7b;
+  font-size: var(--search-placeholder-font, 13.5px);
+}
 
 .account-input[type="email"] { letter-spacing: .2px; }
 
