@@ -578,6 +578,42 @@ chk(Math.min.apply(null, MS_PEOPLE) >= 15,
     '外国文学已填 173 部以上（实际 ' + BY('外国文学') + '）');
   chk(MS.length >= 533, '名著导读已交付 533 部以上（实际 ' + MS.length + '）');
 
+  /* Issue #381 第三十二轮（批次十三·俄国片余部 + 美国片续）：用户原话
+     「不要4部就提交pr 至少60部提交一个 pr」。法国片与德国片已封口，这一轮
+     接着**俄苏片余部**（俄国 31 部）与**美国片**的儿童、科幻、诗歌三批。
+     守三件事：① 俄国片这一批 31 部逐部点名进列表页；② 美国片这几批逐部点名；
+     ③ 俄国片 47 部、美国片书目表里剩下的每一部都有素材（按书目表逐部核）。 */
+  const RU_BATCH2 = ['彼得堡故事', '渔夫和金鱼的故事', '死屋手记', '群魔',
+    '被侮辱与被损害的', '穷人', '白夜', '赌徒', '伊凡·伊里奇之死', '克莱采奏鸣曲',
+    '罗亭', '贵族之家', '前夜', '初恋', '阿霞', '大雷雨',
+    '谁在俄罗斯能过好日子', '变色龙', '万卡', '第六病室', '海鸥', '三姊妹',
+    '带小狗的女人', '契诃夫短篇小说选', '假如生活欺骗了你', '诗人之死',
+    '阿赫玛托娃诗选', '安魂曲', '帕斯捷尔纳克诗选', '叶赛宁诗选', '马雅可夫斯基诗选'];
+  chk(RU_BATCH2.every(t => modernInShell.has(t)),
+    '俄国片这一批 ' + RU_BATCH2.length + ' 部都进了列表页（缺：' +
+    (RU_BATCH2.filter(t => !modernInShell.has(t)).join('、') || '无') + '）');
+  chk(RU_BATCH2.length === 31, '俄国片点名名单 31 部（实际 ' + RU_BATCH2.length + '）');
+
+  const US_BATCH2 = ['吹小号的天鹅', '时代广场的蟋蟀', '尼姆的老鼠', '蓝色海豚岛',
+    '数星星的孩子', '手斧男孩', '亲爱的汉修先生', '一百条裙子', '小房子',
+    '草原上的小屋', '大森林里的小木屋',
+    '银河帝国：基地', '我，机器人', '沙丘', '华氏 451 度', '火星编年史',
+    '地海巫师', '黑暗的左手', '高堡奇人',
+    '草叶集', '自己之歌', '狄金森诗选', '弗罗斯特诗选', '未选择的路', '庞德诗选', '嚎叫'];
+  chk(US_BATCH2.filter(t => modernInShell.has(t)).length >= 5,
+    '美国片这一批已经开了个头（已进列表页 ' +
+    US_BATCH2.filter(t => modernInShell.has(t)).length + ' 部 / 共 ' + US_BATCH2.length + ' 部）');
+
+  const RU_ALL = require('../scripts/data/mingshu-books.js').GROUPS
+    .find(g => g[0] === '外国文学')[1].filter(r => r[2] === '俄国').map(r => r[0]);
+  chk(RU_ALL.length === 47, '俄国片书目表共 47 部（实际 ' + RU_ALL.length + '）');
+  chk(RU_ALL.every(t => modernInShell.has(t)),
+    '俄国片 47 部全部进列表页（缺：' +
+    (RU_ALL.filter(t => !modernInShell.has(t)).join('、') || '无') + '）');
+  chk(BY('外国文学') >= 247,
+    '外国文学已填 247 部以上（实际 ' + BY('外国文学') + '）');
+  chk(MS.length >= 609, '名著导读已交付 609 部以上（实际 ' + MS.length + '）');
+
   /* 素材全覆盖：书目表里「有素材」的那些书，壳里一条不落 */
   const BOOKS = require('../scripts/data/mingshu-books.js');
   const CORPUS = require('../scripts/data/mingshu-corpus.js').CORPUS;
