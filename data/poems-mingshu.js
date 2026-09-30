@@ -5984,6 +5984,28 @@ window.POEMS_MINGSHU = [
     excerpt: "带着嫌疑出生的人"
   },
   {
+    textRef: "mingshu-ms-2542",
+    id: "ms-2542",
+    title: "草原上的小屋",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "美国",
+    author: "怀尔德",
+    source: "《草原上的小屋》",
+    excerpt: "拓荒的一家"
+  },
+  {
+    textRef: "mingshu-ms-2543",
+    id: "ms-2543",
+    title: "大森林里的小木屋",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "美国",
+    author: "怀尔德",
+    source: "《大森林里的小木屋》",
+    excerpt: "威斯康星的童年"
+  },
+  {
     textRef: "mingshu-ms-1838",
     id: "ms-1838",
     title: "春琴抄",
@@ -6116,6 +6138,17 @@ window.POEMS_MINGSHU = [
     excerpt: "一个哥萨克的一生"
   },
   {
+    textRef: "mingshu-ms-2541",
+    id: "ms-2541",
+    title: "小房子",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "美国",
+    author: "伯顿",
+    source: "《小房子》",
+    excerpt: "一座房子看着城市长大"
+  },
+  {
     textRef: "mingshu-ms-1050",
     id: "ms-1050",
     title: "局外人与鼠疫",
@@ -6169,6 +6202,17 @@ window.POEMS_MINGSHU = [
     author: "毛姆",
     source: "《刀锋》",
     excerpt: "剃刀边缘很难越过"
+  },
+  {
+    textRef: "mingshu-ms-2540",
+    id: "ms-2540",
+    title: "一百条裙子",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "美国",
+    author: "埃斯特斯",
+    source: "《一百条裙子》",
+    excerpt: "一个女孩的裙子"
   },
   {
     textRef: "mingshu-ms-1924",
@@ -6237,6 +6281,17 @@ window.POEMS_MINGSHU = [
     excerpt: "一部自白"
   },
   {
+    textRef: "mingshu-ms-2697",
+    id: "ms-2697",
+    title: "我，机器人",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "美国",
+    author: "阿西莫夫",
+    source: "《我，机器人》",
+    excerpt: "机器人三定律"
+  },
+  {
     textRef: "mingshu-ms-2257",
     id: "ms-2257",
     title: "纳尼亚传奇：狮子、女巫和魔衣橱",
@@ -6257,6 +6312,17 @@ window.POEMS_MINGSHU = [
     author: "塞林格",
     source: "《麦田里的守望者》",
     excerpt: "只想守住麦田边的孩子"
+  },
+  {
+    textRef: "mingshu-ms-2696",
+    id: "ms-2696",
+    title: "银河帝国：基地",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "美国",
+    author: "阿西莫夫",
+    source: "《银河帝国：基地》",
+    excerpt: "银河帝国的衰亡"
   },
   {
     textRef: "mingshu-ms-2297",
@@ -6543,6 +6609,17 @@ window.POEMS_MINGSHU = [
     author: "亚当斯",
     source: "《银河系漫游指南》",
     excerpt: "别忘了带毛巾"
+  },
+  {
+    textRef: "mingshu-ms-2539",
+    id: "ms-2539",
+    title: "亲爱的汉修先生",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "美国",
+    author: "克莱瑞",
+    source: "《亲爱的汉修先生》",
+    excerpt: "给作家写的信"
   },
   {
     textRef: "mingshu-ms-1845",

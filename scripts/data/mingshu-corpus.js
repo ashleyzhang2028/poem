@@ -307,6 +307,10 @@ add(require('./corpus/fill-foreign-us-8.js'));
 add(require('./corpus/fill-foreign-us-9.js'));
 add(require('./corpus/fill-foreign-us-10.js'));
 add(require('./corpus/fill-foreign-us-11.js'));
+add(require('./corpus/fill-foreign-us-12.js'));
+add(require('./corpus/fill-foreign-us-13.js'));
+add(require('./corpus/fill-foreign-us-14.js'));
+add(require('./corpus/fill-foreign-us-15.js'));
 add(require('./corpus/fill-foreign-us-9.js'));
 
 /* ── Issue #381 第二十五轮（批次九·外国文学·英国片·余部）──────────────

@@ -610,9 +610,9 @@ chk(Math.min.apply(null, MS_PEOPLE) >= 15,
   chk(RU_ALL.every(t => modernInShell.has(t)),
     '俄国片 47 部全部进列表页（缺：' +
     (RU_ALL.filter(t => !modernInShell.has(t)).join('、') || '无') + '）');
-  chk(BY('外国文学') >= 247,
-    '外国文学已填 247 部以上（实际 ' + BY('外国文学') + '）');
-  chk(MS.length >= 609, '名著导读已交付 609 部以上（实际 ' + MS.length + '）');
+  chk(BY('外国文学') >= 254,
+    '外国文学已填 254 部以上（实际 ' + BY('外国文学') + '）');
+  chk(MS.length >= 616, '名著导读已交付 616 部以上（实际 ' + MS.length + '）');
 
   /* 素材全覆盖：书目表里「有素材」的那些书，壳里一条不落 */
   const BOOKS = require('../scripts/data/mingshu-books.js');
