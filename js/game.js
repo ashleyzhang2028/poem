@@ -251,42 +251,37 @@
     })["catch"](function () { state.server = "off"; return null; });
   }
 
-  var SOUND_KEY = "poem_sound_v1";
+  // ——— 答题音效（Issue #356 第六轮：抽成 js/sfx.js 并补全发声点）———
+  //
+  // 第一版这套声音是写在这个文件里的，只有两种（答对 / 答错），而且只在
+  // 「逐题即时判分」的题库、模拟题与闯关里响过；考试（交卷后批）、飞花令的
+  // 核一核、交卷出分那一屏都一声不响——用户因此原话是「也没听到任何声音」。
+  // 现在四种声音与解锁时机都在 js/sfx.js 一处（设置页那颗「试听一声」也要用它，
+  // 声音的出处与开关的出处得是同一个），这里只剩「什么时候响」。
+  function sfx() { return window.Sfx || null; }
 
-  function soundOn() {
-    try {
-      var v = localStorage.getItem(SOUND_KEY);
-      return v == null ? true : v !== "0";
-    } catch (e) { return true; }
+  function playSound(ok) {
+    var S = sfx();
+    if (S) S.answer(!!ok);
   }
 
-  var audioCtx = null;
-  // Web Audio 合成，不带音频文件；答对是上扬双音，答错是低沉单音。
-  function playSound(ok) {
-    if (!soundOn()) return;
-    try {
-      var Ctx = window.AudioContext || window.webkitAudioContext;
-      if (!Ctx) return;
-      if (!audioCtx) audioCtx = new Ctx();
-      if (audioCtx.state === "suspended") audioCtx.resume();
-      var t0 = audioCtx.currentTime;
-      var o = audioCtx.createOscillator();
-      var g = audioCtx.createGain();
-      o.connect(g);
-      g.connect(audioCtx.destination);
-      o.type = "sine";
-      if (ok) {
-        o.frequency.setValueAtTime(880, t0);
-        o.frequency.setValueAtTime(1318.5, t0 + 0.09);
-      } else {
-        o.frequency.setValueAtTime(220, t0);
-      }
-      g.gain.setValueAtTime(0.0001, t0);
-      g.gain.exponentialRampToValueAtTime(0.16, t0 + 0.015);
-      g.gain.exponentialRampToValueAtTime(0.0001, t0 + (ok ? 0.24 : 0.28));
-      o.start(t0);
-      o.stop(t0 + (ok ? 0.26 : 0.3));
-    } catch (e) {  }
+  // 解锁音频：必须在用户手势里调（自动播放策略）。每个会发声的点击入口都先过它，
+  // 解出来那一层由 js/sfx.js 自己收着，后面每一声都稳。
+  function unlockSound() {
+    var S = sfx();
+    if (S) S.ready();
+  }
+
+  // 闯关答对：过关的那一串琶音，比普通答对更「过关」
+  function playPass() {
+    var S = sfx();
+    if (S) S.pass();
+  }
+
+  // 交卷出分：按百分制分档（90 / 60 两条边与成绩横幅同源）
+  function playRank(graded) {
+    var S = sfx();
+    if (S && graded) S.rank(graded.right, graded.total);
   }
 
   function flashOption(k, ok) {
@@ -619,7 +614,7 @@
     state.lvBest = Math.max(state.lvBest, state.lvStreak);
     state.lvMsg = "对上了" + (row && row.title ? "：" + row.title : "") + " —— 下一关。";
     state.lvMsgOk = true;
-    playSound(true);
+    playPass();
 
     // 还有下一个字：翻过去，倒计时重开；没有就停在最后一关数连对。
     // flashChars() 要放在 render() **之后** —— 闪的是刚渲染出来的那一格；
@@ -1046,6 +1041,11 @@
     var numEl = $(".game-score-num");
     if (!numEl) return;
     state.gradedAnimated = true;
+    // 数字开始滚的同时给一声 —— 交卷那一屏是最该有声的时刻（用户原话
+    // 「包括出结果也应该有音效」）。放在这里而不是 submit()：横幅是渲染成
+    // 功之后才有的，声音与动画同起同落才像一件事。state.gradedAnimated 那一挡
+    // 顺带把重复播放也挡住了（submit() 为了推服务器记录会再 render 一次）。
+    playRank(state.graded);
     var target = Number(numEl.getAttribute("data-game-score-target") || 0);
     var t0 = null;
     var dur = 650;
@@ -1263,6 +1263,10 @@
     // 《xxx》里」，让用户知道是从哪儿对上的。
     var local = Q.flyFlower({ poems: answerCorpus(), chars: state.chars }).rows
       .filter(function (r) { return r.text === said; })[0];
+    // 本地这一条**现在就**给一声（用户点了「回答」，耳边要立刻有答复）。
+    // 服务器那一趟只用来补一句「由服务器核对 / 服务端没接通」并覆盖判定，
+    // 声音不跟着它走 —— 等一个来回再响就晚了半拍，听着像反应迟钝。
+    playSound(!!local);
     judge({ kind: "fly", chars: state.chars, said: said }).then(function (r) {
       var body = r && r.body;
       var found = body ? !!body.found : !!local;
@@ -1383,7 +1387,7 @@
       if (lvRestart) { startFlyLevel(false); return; }
 
       var lvSay = hit("data-game-lv-say");
-      if (lvSay) { checkLevelSaid(); return; }
+      if (lvSay) { unlockSound(); checkLevelSaid(); return; }
 
       var sz = hit("data-game-size");
       if (sz) { state.setup.size = Number(sz.getAttribute("data-game-size")); render(); return; }
@@ -1398,7 +1402,7 @@
       if (line) { openPoem(line.getAttribute("data-id")); return; }
 
       var say = hit("data-game-say");
-      if (say) { checkSaid(); return; }
+      if (say) { unlockSound(); checkSaid(); return; }
 
       var opt = hit("data-game-opt");
       if (opt) {
@@ -1406,8 +1410,12 @@
         var q = state.paper[state.at];
         var v = variantOf(state.mode) || {};
         if (!q || state.graded) return;
+        // 解锁音频要**在用户这一下点击里**做（自动播放策略）。放在 render() 之前、
+        // 也在下面那一响之前：万一这一响是这台设备上的第一声，解出来的
+        // AudioContext 正好被它用上，不白响一次。
+        unlockSound();
         state.picks[state.at] = q.options[k];
-                var reveal = v.judge !== "after";
+        var reveal = v.judge !== "after";
         state.checked[state.at] = reveal;
         render();
         if (reveal) {
@@ -1422,8 +1430,10 @@
       if (prev) { state.at = Math.max(0, state.at - 1); render(); return; }
       var next = hit("data-game-next");
       if (next) { state.at = Math.min(state.paper.length - 1, state.at + 1); render(); return; }
+      // 交卷：判分要等服务端复核，出分那一屏（playRank）已经不在这次点击的
+      // 调用栈里了，所以必须在**这一刻**把音频解锁掉。
       var sub = hit("data-game-submit");
-      if (sub) { submit(); return; }
+      if (sub) { unlockSound(); submit(); return; }
       var rst = hit("data-game-restart");
       if (rst) { nextFly(); return; }
     };
