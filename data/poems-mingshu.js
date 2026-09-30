@@ -4015,6 +4015,17 @@ window.POEMS_MINGSHU = [
     excerpt: "第一印象常常是靠不住的"
   },
   {
+    textRef: "mingshu-ms-27",
+    id: "ms-27",
+    title: "巴黎圣母院",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "法国",
+    author: "雨果",
+    source: "《巴黎圣母院》",
+    excerpt: "钟楼上那个敲钟人"
+  },
+  {
     textRef: "mingshu-ms-916",
     id: "ms-916",
     title: "雾都孤儿",
@@ -4024,6 +4035,28 @@ window.POEMS_MINGSHU = [
     author: "狄更斯",
     source: "《雾都孤儿》",
     excerpt: "孤儿在雾都问路"
+  },
+  {
+    textRef: "mingshu-ms-1066",
+    id: "ms-1066",
+    title: "三剑客与火枪手",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "法国",
+    author: "大仲马",
+    source: "《三剑客与火枪手》",
+    excerpt: "法国历史小说"
+  },
+  {
+    textRef: "mingshu-ms-35",
+    id: "ms-35",
+    title: "基督山伯爵",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "法国",
+    author: "大仲马",
+    source: "《基督山伯爵》",
+    excerpt: "等待与希望"
   },
   {
     textRef: "mingshu-ms-25",
@@ -4092,6 +4125,50 @@ window.POEMS_MINGSHU = [
     excerpt: "冉阿让与一块面包"
   },
   {
+    textRef: "mingshu-ms-1055",
+    id: "ms-1055",
+    title: "地心游记",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "法国",
+    author: "凡尔纳",
+    source: "《地心游记》",
+    excerpt: "从火山口下去"
+  },
+  {
+    textRef: "mingshu-ms-1052",
+    id: "ms-1052",
+    title: "格兰特船长的儿女",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "法国",
+    author: "凡尔纳",
+    source: "《格兰特船长的儿女》",
+    excerpt: "顺着漂流瓶去找人"
+  },
+  {
+    textRef: "mingshu-ms-23",
+    id: "ms-23",
+    title: "海底两万里",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "法国",
+    author: "凡尔纳",
+    source: "《海底两万里》",
+    excerpt: "跟着鹦鹉螺号下潜"
+  },
+  {
+    textRef: "mingshu-ms-1054",
+    id: "ms-1054",
+    title: "八十天环游地球",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "法国",
+    author: "凡尔纳",
+    source: "《八十天环游地球》",
+    excerpt: "一场打赌的旅程"
+  },
+  {
     textRef: "mingshu-ms-24",
     id: "ms-24",
     title: "昆虫记",
@@ -4156,6 +4233,28 @@ window.POEMS_MINGSHU = [
     author: "史蒂文森",
     source: "《化身博士》",
     excerpt: "同一个人身上的两个人"
+  },
+  {
+    textRef: "mingshu-ms-34",
+    id: "ms-34",
+    title: "名人传",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "法国",
+    author: "罗曼·罗兰",
+    source: "《名人传》",
+    excerpt: "贝多芬、米开朗琪罗、托尔斯泰"
+  },
+  {
+    textRef: "mingshu-ms-1050",
+    id: "ms-1050",
+    title: "局外人与鼠疫",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "法国",
+    author: "加缪",
+    source: "《局外人与鼠疫》",
+    excerpt: "两部代表作"
   },
   {
     textRef: "mingshu-ms-912",

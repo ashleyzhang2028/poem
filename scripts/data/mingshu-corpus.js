@@ -223,6 +223,11 @@ add(require('./corpus/fill-gulag.js'));
    本册英国古典与必读一批 14 部。 */
 add(require('./corpus/fill-foreign-1.js'));
 
+/* ── Issue #381 第二十一轮（批次七·外国文学·法国片）──────────────────
+   用户原话「按中小学必读 → 英 → 法 → 俄苏 → 其他语种来吧」。英国那批已交
+   16 部（fill-foreign-1），这一册接法国片 10 部。 */
+add(require('./corpus/fill-foreign-fr.js'));
+
 /* 余下的书按组分册，避免单文件过大 */
 add(require('./mingshu-corpus-stub.js'));
 
