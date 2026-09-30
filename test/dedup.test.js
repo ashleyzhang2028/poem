@@ -310,10 +310,12 @@ MERGES.forEach(function (m) {
     (out.split('\n').filter(l => l.indexOf('·') === 0).length) + ' 行跳过提示）');
 }
 
-chk((sb.POEMS_SONGCI || []).length === 285,
-  '《宋词三百首》283 首 + 校外补充 2 首 = 285（实际 ' + (sb.POEMS_SONGCI || []).length + '）');
-chk((sb.POEMS_TANGSHI || []).length === 317,
-  '《唐诗三百首》301 首 + 校外补充 16 首 = 317（并进去的那三条仍在选本列表里；实际 ' +
+/* Issue #461：古诗文大会 / 阅读大赛两份清单去重后，宋代词作补进《宋词三百首》、
+   唐代诗作补进《唐诗三百首》（选本外补充，与既有先例一致）。 */
+chk((sb.POEMS_SONGCI || []).length === 288,
+  '《宋词三百首》283 首 + 校外补充 5 首 = 288（实际 ' + (sb.POEMS_SONGCI || []).length + '）');
+chk((sb.POEMS_TANGSHI || []).length === 339,
+  '《唐诗三百首》301 首 + 校外补充 38 首 = 339（并进去的那三条仍在选本列表里；实际 ' +
   (sb.POEMS_TANGSHI || []).length + '）');
 chk(ALL.length === 251, '课内仍 251 首（实际 ' + ALL.length + '）');
 
