@@ -407,6 +407,15 @@ add(require('./corpus/fill-foreign-gr-1.js'));
 add(require('./corpus/fill-foreign-gr-2.js'));
 add(require('./corpus/fill-foreign-rome-1.js'));
 
+/* 批二 34 部：古文明（两河 / 古埃及 / 阿拉伯 / 朝鲜）7、印度 12
+   （泰戈尔 6 + 古印度史诗与思想著作 6）、世界诗选集 15
+   （纪伯伦 3 / 叶芝 2 / 洛尔迦 / 聂鲁达 2 / 博尔赫斯 / 辛波斯卡 2 /
+     米沃什 / 塞弗尔特 / 特兰斯特罗默 / 阿米亥）。 */
+add(require('./corpus/fill-foreign-ancient-1.js'));
+add(require('./corpus/fill-foreign-in-1.js'));
+add(require('./corpus/fill-foreign-in-2.js'));
+add(require('./corpus/fill-foreign-po-world-1.js'));
+
 /* 余下的书按组分册，避免单文件过大 */
 add(require('./mingshu-corpus-stub.js'));
 

@@ -776,6 +776,42 @@ chk(Math.min.apply(null, MS_PEOPLE) >= 15,
     '外国文学已填 412 部以上（实际 ' + BY('外国文学') + '）');
   chk(MS.length >= 774, '名著导读已交付 774 部以上（实际 ' + MS.length + '）');
 
+  /* Issue #381 第三十九轮（批次二十一·外国文学·余下各片封口）── 用户原话
+     「继续剩余的添加」。这一批把最后 34 部交齐（外国文学 412 → 446、
+     列表页 774 → 808，书目表 800 部全部有素材）。守的是**这 34 部逐部
+     点名**，以及**「缺素材 0 部」这条封口断言**：谁再漏一部，测试当场点名。 */
+  const REMAIN2 = [
+    /* 古文明：两河 / 古埃及 / 阿拉伯 / 朝鲜 */
+    '吉尔伽美什史诗', '亡灵书', '阿里巴巴与四十大盗', '阿拉丁与神灯',
+    '辛巴达航海记', '春香传', '九云梦',
+    /* 印度：泰戈尔 6 + 古印度 6 */
+    '吉檀迦利', '飞鸟集', '新月集', '园丁集', '沉船', '戈拉',
+    '摩诃婆罗多', '罗摩衍那', '沙恭达罗', '五卷书', '奥义书', '薄伽梵歌',
+    /* 世界诗选集 15 */
+    '纪伯伦散文诗选', '先知', '沙与沫', '叶芝诗选', '当你老了',
+    '洛尔迦诗选', '聂鲁达诗选', '二十首情诗与一首绝望的歌', '博尔赫斯诗选',
+    '辛波斯卡诗选', '万物静默如谜', '米沃什诗选', '塞弗尔特诗选',
+    '特兰斯特罗默诗选', '阿米亥诗选',
+  ];
+  chk(REMAIN2.every(t => modernInShell.has(t)),
+    '外国文学余部最后一批 ' + REMAIN2.length + ' 部都进了列表页（缺：' +
+    (REMAIN2.filter(t => !modernInShell.has(t)).join('、') || '无') + '）');
+  /* 这一批各片的年份在兜底表里同样返回 1900（两河 / 古埃及 / 古印度有
+     古史兜底 −500，不在此列）。谁漏了当场点名。 */
+  const REMAIN2_NEED_YEAR = REMAIN2.filter(t => {
+    const p = MS.find(x => x.title === t);
+    if (!p) return false;
+    return ['古希腊', '古罗马', '两河', '古埃及', '古印度'].indexOf(p.dynasty) < 0;
+  }).filter(t => MYEARS.YEARS[t] == null);
+  chk(REMAIN2_NEED_YEAR.length === 0,
+    '这一批各片年份都真写进了年表（落兜底的：' +
+    (REMAIN2_NEED_YEAR.join('、') || '无') + '）');
+  /* 封口：书目表 800 部，素材一部不缺 —— 这条一红，就是有书掉了。 */
+  const BOOKS_DEF2 = require('../scripts/data/mingshu-books.js');
+  const TOTAL_BOOKS = BOOKS_DEF2.GROUPS.reduce((n, x) => n + x[1].length, 0);
+  chk(MS.length === TOTAL_BOOKS,
+    '书目表 ' + TOTAL_BOOKS + ' 部全部有素材、全部进列表页（实际 ' + MS.length + ' 部）');
+
   /* 素材全覆盖：书目表里「有素材」的那些书，壳里一条不落 */
   const BOOKS = require('../scripts/data/mingshu-books.js');
   const CORPUS = require('../scripts/data/mingshu-corpus.js').CORPUS;
