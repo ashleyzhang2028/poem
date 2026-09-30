@@ -44,6 +44,22 @@
         scopes: [],
     scopeOpen: true,
     flyRound: 0,
+    // 飞花令两种形态（用户 2026-09-30 P4）：
+    //   "look" 从前的「查一查」—— 选字 → 一次性看全部命中句，一个字都不改；
+    //   "level" 新的「闯关」—— 一个令字一关，自己写一句、写不出就断在那儿。
+    flyKind: "look",
+    lvPool: [],
+    lvChars: [],
+    lvAt: 0,
+    lvRound: 0,
+    lvDone: [],
+    lvLeft: 0,
+    lvTimer: null,
+    lvDeadline: 0,
+    lvMsg: "",
+    lvMsgOk: false,
+    lvStreak: 0,
+    lvBest: 0,
     left: 0,
     timer: null,
     overlayId: "",
@@ -391,6 +407,30 @@
   //      免得这段说明把测试扫红；要核对原文看 Issue #356 第五轮。）
   //   ③ 看答案**不在这两段里** —— 「看答案按钮应该不需要卡片，显示在页底（其他卡片下面）」。
   function renderFly() {
+    return '<div class="game-fly-kind">' + flyKindSeg() + "</div>" +
+      (state.flyKind === "level" ? renderFlyLevel() : renderFlyLook());
+  }
+
+  // 两种形态并列，旧的那一种照旧是默认（用户裁决：不删旧功能）。
+  // 说是「两种形态」而不是「难度」—— 它们答的是不一样的问题：
+  // 一个是「合集里有多少句」，一个是「你自己能想起几句」。
+  function flyKindSeg() {
+    var KINDS = [
+      { id: "look", name: "查一查" },
+      { id: "level", name: "闯关" }
+    ];
+    return '<div class="seg mini" id="game-fly-kind" role="group" aria-label="飞花令形态">' +
+      KINDS.map(function (k) {
+        return '<button type="button" data-game-fly-kind="' + k.id + '"' +
+          (k.id === state.flyKind ? ' class="active" aria-pressed="true"' : ' aria-pressed="false"') +
+          ">" + esc(k.name) + "</button>";
+      }).join("") + "</div>" +
+      '<p class="account-hint">' +
+      esc(state.flyKind === "level" ? "闯关：写对一句翻下一个字，卡住就断在这儿。" : "查一查：看合集的答案。") +
+      "</p>";
+  }
+
+  function renderFlyLook() {
     var m = modeOf("fly");
     var cps = scopedCorpus();
     var sum = Q.charSummary(cps, state.chars);
@@ -429,6 +469,273 @@
       '<p class="account-msg" id="game-said-msg"></p>' +
       "</section>";
     return html;
+  }
+
+  // ——— 飞花令「闯关」（Issue #356 P4）———————————————
+  //
+  // 与「查一查」并排，不动旧的那一条路。玩法借真飞花令的形：
+  //   一个字一关 → 限时内自己写一句 → 对了翻下一个字，连对累计；写不出就断。
+  // 两处「鼓励口吻」（与成绩横幅同一套：只说「再试试 / 先放着」，不出现
+  // 「失败」这类否定字眼）：倒计时到了不是判错，是「这一关先放着」；
+  // 卡住了给一句提示，不给答案。
+  var LEVEL_SECONDS = 45;
+  var LEVEL_HINT_AFTER = 20;
+
+  function levelLeftText() {
+    var n = Math.max(0, Math.ceil(state.lvLeft / 1000));
+    var mm = Math.floor(n / 60);
+    var ss = n % 60;
+    return mm + ":" + (ss < 10 ? "0" : "") + ss;
+  }
+
+  function levelAt() { return state.lvChars[state.lvAt] || ""; }
+
+  // 一关的句库：语料里带这一个字的所有句。
+  // 短到判不过的那几条（「水」「水长流」这种从长句里切出来的碎段）不要 ——
+  // 它们留着只会变成一句「照抄还判我太短」的坑（Q.passable 与判分门槛同一个数）。
+  function levelPool(char) {
+    var hit = Q.flyFlower({ poems: scopedCorpus(), chars: [char] });
+    return hit.rows.filter(function (r) { return Q.passable(r.text); })
+      .map(function (r) {
+        return { id: r.id, title: r.title, text: r.text };
+      });
+  }
+
+  // 发牌：一个令字一关。种子带 lvRound，所以「换一关」真的换一副牌 ——
+  // 与「换令」踩过的是同一个坑（Issue #356 第四轮）：种子若不含会变的东西，
+  // 按钮点下去算出来还是同一副牌，看着就是坏的。
+  // 所以 lvRound 只增不减：换一关 = 轮次 +1 换牌；「重来」只清零分数。
+  function startFlyLevel(keepRound) {
+    if (!keepRound) {
+      state.lvDone = [];
+      state.lvStreak = 0;
+      state.lvBest = 0;
+      state.lvMsg = "";
+      state.lvMsgOk = false;
+    }
+    state.lvRound += 1;
+    state.lvAt = 0;
+    state.lvLeft = LEVEL_SECONDS * 1000;
+    state.lvDeadline = Date.now() + state.lvLeft;
+    var cps = scopedCorpus();
+    state.chars = pickChars(cps, state.level, state.lvRound);
+    // 挑出来的令字，底下一条能作答的句子都没有 —— 那不是一关，是个死胡同。
+    // 往后找下一个字顶上（都不行就留一个空关，renderFlyLevel 会给出「换范围」那条路）。
+    var usable = state.chars.filter(function (c) { return levelPool(c).length; });
+    state.lvChars = usable.length ? usable : state.chars.slice();
+    state.lvPool = levelAt() ? levelPool(levelAt()) : [];
+    stopLevelTimer();
+    render();
+    startLevelTimer();
+  }
+
+  function startLevelTimer() {
+    if (!levelAt()) return;
+    state.lvTimer = setInterval(function () {
+      state.lvLeft = Math.max(0, state.lvDeadline - Date.now());
+      paintLevelTimer();
+      if (state.lvLeft <= 0) {
+        stopLevelTimer();
+        // 到点是「这一关先放着」，不是判错 —— 分档口吻与成绩横幅一致。
+        levelFail("timeout");
+      }
+    }, 250);
+  }
+
+  function stopLevelTimer() {
+    if (state.lvTimer) { clearInterval(state.lvTimer); state.lvTimer = null; }
+  }
+
+  // 只动倒计时那一条，不整页重画 —— 每秒重画会把输入框里的字抹掉。
+  function paintLevelTimer() {
+    var num = document.getElementById("game-lv-num");
+    if (num) num.textContent = levelLeftText();
+    var bar = document.getElementById("game-lv-fill");
+    if (bar) {
+      bar.style.width = Math.max(0, Math.min(100, Math.round(state.lvLeft / (LEVEL_SECONDS * 10)))) + "%";
+      bar.classList.toggle("warn", state.lvLeft <= 10000);
+    }
+    var hint = document.getElementById("game-lv-hint");
+    if (hint && !hint.textContent) {
+      var t = levelHintText();
+      if (t) hint.textContent = t;
+    }
+  }
+
+  // 卡住给的提示：不报答案，只说「这一关还有几句别的写法」（说个数，
+  // 让用户知道还有戏，而不是只剩「没有」两个字）。数是真的从这一关的句库里数的。
+  function levelHintText() {
+    if (!levelAt()) return "";
+    if (state.lvLeft > (LEVEL_SECONDS - LEVEL_HINT_AFTER) * 1000) return "";
+    var n = state.lvPool.length;
+    if (!n) return "卡住了？换个范围或换个难度试试。";
+    return "卡住了？这一关还有 " + n + " 句别的写法，换一句试试。";
+  }
+
+  function levelDoneRow(ok, why) {
+    var zh = {
+      ok: "对上了",
+      empty: "你写了空",
+      short: "太短，写整一点",
+      nochar: "这一句里没有「" + levelAt() + "」",
+      notfound: "合集里没这一句",
+      timeout: "这一关先放着"
+    };
+    return zh[why] || (ok ? "对上了" : "再想想");
+  }
+
+  function levelFail(why) {
+    state.lvStreak = 0;
+    state.lvMsgOk = false;
+    state.lvMsg = levelDoneRow(false, why);
+    stopLevelTimer();
+    render();
+    flashChars();
+    playSound(false);
+  }
+
+  function levelPass(said, row) {
+    state.lvDone.push({
+      char: levelAt(), text: said, title: (row && row.title) || "", ok: true
+    });
+    state.lvStreak += 1;
+    state.lvBest = Math.max(state.lvBest, state.lvStreak);
+    state.lvMsg = "对上了" + (row && row.title ? "：" + row.title : "") + " —— 下一关。";
+    state.lvMsgOk = true;
+    playSound(true);
+
+    // 还有下一个字：翻过去，倒计时重开；没有就停在最后一关数连对。
+    // flashChars() 要放在 render() **之后** —— 闪的是刚渲染出来的那一格；
+    // 放在前面闪的是马上要被换掉的旧节点，动画等于没放。
+    if (state.lvAt < state.lvChars.length - 1) {
+      state.lvAt += 1;
+      state.lvLeft = LEVEL_SECONDS * 1000;
+      state.lvDeadline = Date.now() + state.lvLeft;
+      state.lvPool = levelPool(levelAt());
+      render();
+      flashChars();
+      startLevelTimer();
+      return;
+    }
+    stopLevelTimer();
+    // 令字个数是可变的（池子小的时候 pickChars 可能只给一个），别写死「两个字」。
+    state.lvMsg = state.lvChars.length + " 个字都过完了，连对 " + state.lvStreak +
+      " 句 —— 换一副牌再来。";
+    render();
+    flashChars();
+  }
+
+  // 令字那一格闪一下（答对用 green、答错用 red），与选项的 flashOption 同一套做法。
+  function flashChars() {
+    var el = document.querySelector(".game-lv-char");
+    if (!el) return;
+    var cls = state.lvMsgOk ? "game-lv-char-ok" : "game-lv-char-bad";
+    el.classList.add(cls);
+    el.addEventListener("animationend", function handler() {
+      el.classList.remove(cls);
+      el.removeEventListener("animationend", handler);
+    });
+  }
+
+  function checkLevelSaid() {
+    var input = $("#game-lv-said");
+    if (!input) return;
+    var said = input.value.trim();
+    var local = Q.judgeSetLine({ poems: scopedCorpus(), chars: [levelAt()], said: said });
+    if (!local.ok) { levelFail(local.why); return; }
+
+    // 服务器核对优先（范围一起带上去，两边同一个范围才说同一件事）。
+    // 但服务端**只有集子级**的语料，课内三学段（小学/初中/高中）它没有 grade
+    // 数据 —— 这时它回的 scopeExact = false，说的是「我其实按全站判的」。
+    // 那就不能拿它去否掉本机那句按范围判出来的「对上了」：宁可认用户对，
+    // 也不要因为服务端收窄不了范围而误判。本机那一条本来就是同一个范围算的。
+    judge({
+      kind: "fly", chars: [levelAt()], said: said, scopeId: state.setup.scope
+    }).then(function (r) {
+      var body = r && r.body;
+      if (body && !body.found && body.scopeExact !== false) { levelFail("notfound"); return; }
+      var row = local.row;
+      if (body && body.title) row = { title: body.title };
+      levelPass(said, row);
+    });
+  }
+
+  function renderFlyLevel() {
+    var m = modeOf("fly");
+    var at = levelAt();
+    // 挑不出令字、或者挑出来的令字底下一条能作答的句子都没有 ——
+    // 两条都落到同一个「这个范围挑不出能闯的关」上（不给一个空关）。
+    if (at && !state.lvPool.length) at = "";
+    if (!at) {
+      return '<section class="account-card game-head">' +
+        '<h2 class="account-card-title">' + esc(m.name) + " · 闯关</h2>" +
+        '<p class="account-hint">这个范围里挑不出能闯的令字 —— 换一个大一点的范围再来。</p>' +
+        "</section>" +
+        // 这里从前挂的是 data-game-back —— 全场没有这个属性的处理函数，点了没反应。
+        // 改成走既有的「回大会首页」那条路（与顶部返回键同一个出口）。
+        '<button class="account-btn ghost" type="button" data-game-home="1">换一个题型</button>';
+    }
+
+    var html = '<section class="account-card game-head">' +
+      '<h2 class="account-card-title">' + esc(m.name) + " · 闯关</h2>" +
+      '<p class="account-hint">范围：' + esc(scopePickLabel(state.setup.scope)) +
+      " · 第 " + (state.lvAt + 1) + " / " + state.lvChars.length + " 关 · 连对 " + state.lvStreak +
+      "（最好 " + state.lvBest + "）</p>" +
+      '<div class="game-lv-char">' +
+      '<span class="game-char-py">' + esc(pinyinOf(at)) + "</span>" +
+      '<span class="game-char-han">' + esc(at) + "</span>" +
+      "</div>" +
+      '<p class="account-hint">写一句带「' + esc(at) + "」的诗词，对了翻下一个字。</p>" +
+      '<div class="game-lv-clock">' +
+      '<span class="game-lv-num" id="game-lv-num">' + levelLeftText() + "</span>" +
+      '<span class="game-lv-unit">秒</span>' +
+      "</div>" +
+      '<div class="game-timer-bar"><div class="game-timer-fill" id="game-lv-fill" style="width:' +
+      Math.max(0, Math.min(100, Math.round(state.lvLeft / (LEVEL_SECONDS * 10)))) + '%"></div></div>' +
+      '<div class="seg mini game-lv-easy" role="group" aria-label="令字难度">' +
+      CHAR_LEVELS.map(function (lv) {
+        return '<button type="button" data-game-level="' + lv.id + '"' +
+          (lv.id === state.level ? ' class="active" aria-pressed="true"' : ' aria-pressed="false"') +
+          ">" + esc(lv.name) + "</button>";
+      }).join("") + "</div>" +
+      '<button class="account-btn ghost game-fly-restart" type="button" data-game-lv-restart="1">换一关</button>' +
+      "</section>";
+
+    html += '<section class="account-card"><h2 class="account-card-title">你想起的那一句</h2>' +
+      '<div class="account-field">' +
+      '<label class="account-label" for="game-lv-said">整句照抄，含「' + esc(at) + '」</label>' +
+      '<input class="account-input" id="game-lv-said" type="text" autocomplete="off" ' +
+      'placeholder="例如「' + esc(levelPlaceholder(at)) + '」" />' +
+      "</div>" +
+      '<button class="account-btn" type="button" data-game-lv-say="1">交这一句</button>' +
+      '<p class="account-msg ' + (state.lvMsg ? (state.lvMsgOk ? "ok" : "warn") : "") +
+      '" id="game-lv-msg">' + esc(state.lvMsg) + "</p>" +
+      '<p class="account-hint" id="game-lv-hint">' + esc(levelHintText()) + "</p>" +
+      "</section>";
+
+    if (state.lvDone.length) {
+      html += '<section class="account-card"><h2 class="account-card-title">这一轮的连对</h2>' +
+        '<div class="game-lv-done">' + state.lvDone.map(function (d, i) {
+          return '<div class="game-lv-row"><span class="game-lv-row-char">' + esc(d.char) + "</span>" +
+            '<span class="game-lv-row-text">' + esc(d.text) + "</span>" +
+            (d.title ? '<span class="game-lv-row-src">' + esc(d.title) + "</span>" : "") +
+            "</div>";
+        }).join("") + "</div>" +
+        '<p class="account-hint">连对 ' + state.lvStreak + " 句，最好 " + state.lvBest + " 句。</p>" +
+        "</section>";
+    }
+    return html;
+  }
+
+  // 输入框的示例句：拿这一关句库里最短的一句当样子（不是答案，是最短的那句 ——
+  // 用户第一眼就知道「照这个长度写就行」）。找不到就不给例子。
+  function levelPlaceholder(char) {
+    if (!state.lvPool.length) return char + "……";
+    var best = state.lvPool[0];
+    state.lvPool.forEach(function (r) {
+      if (String(r.text).length < String(best.text).length) best = r;
+    });
+    return best.text;
   }
 
   // 页底那颗「看答案」：不套卡片（用户 2026-09-30「看答案按钮应该不需要卡片」），
@@ -753,8 +1060,9 @@
     else if (state.mode) body = renderPaper();
     else body = renderHome();
 
-    // 飞花令的「看答案」排在页底：所有卡片之后（用户 2026-09-30）
-    if (state.mode === "fly") body += renderFlyReveal();
+    // 飞花令的「看答案」排在页底：所有卡片之后（用户 2026-09-30）。
+    // 只在「查一查」形态里给 —— 闯关里把答案清单摊开，这一关就白闯了。
+    if (state.mode === "fly" && state.flyKind !== "level") body += renderFlyReveal();
     host.innerHTML = body + (state.overlayId ? renderPoemOverlay(state.overlayId) : "");
     bind();
         paintBack();
@@ -766,6 +1074,8 @@
     var nextLevel = levelId || state.level;
     if (!keepRound || nextLevel !== state.level) state.flyRound = 0;
     state.level = nextLevel;
+    if (state.flyKind === "level") { startFlyLevel(keepRound); return; }
+    stopLevelTimer();
     var cps = scopedCorpus();
     state.chars = pickChars(cps, state.level, state.flyRound);
     state.revealed = false;
@@ -840,6 +1150,7 @@
     if (!allowed(m, id).ok) { render(); return; }
 
     stopTimer();
+    stopLevelTimer();
     var keepScope = state.setup && state.setup.scopeChosen ? state.setup.scope : "all";
     var keepChosen = !!(state.setup && state.setup.scopeChosen);
     state.setup = { scope: keepScope, size: 0, scopeChosen: keepChosen };
@@ -1014,6 +1325,37 @@
       var lv = hit("data-game-level");
       if (lv) { startFly(lv.getAttribute("data-game-level")); return; }
 
+      // 飞花令：查一查 / 闯关 两种形态切换。切过去就重新发一副牌，
+      // 两边的「轮」各算各的（闯关的轮次在 startFlyLevel 里自己 +1）。
+      var kind = hit("data-game-fly-kind");
+      if (kind) {
+        var kid = kind.getAttribute("data-game-fly-kind");
+        if (kid !== state.flyKind) {
+          state.flyKind = kid;
+          state.flyRound = 0;
+          stopLevelTimer();
+          if (kid === "level") startFlyLevel(false);
+          else { startFly(state.level, false); }
+        }
+        return;
+      }
+
+      var home = hit("data-game-home");
+      if (home) {
+        stopTimer();
+        stopLevelTimer();
+        state.mode = "";
+        state.pending = "";
+        render();
+        return;
+      }
+
+      var lvRestart = hit("data-game-lv-restart");
+      if (lvRestart) { startFlyLevel(false); return; }
+
+      var lvSay = hit("data-game-lv-say");
+      if (lvSay) { checkLevelSaid(); return; }
+
       var sz = hit("data-game-size");
       if (sz) { state.setup.size = Number(sz.getAttribute("data-game-size")); render(); return; }
 
@@ -1094,6 +1436,7 @@
   function close() {
     if (!host) return;
     stopTimer();
+    stopLevelTimer();
     state.mode = "";
     state.overlayId = "";
 
@@ -1152,6 +1495,11 @@
     state.setupNotice = "";
     state.pending = "";
     state.overlayId = "";
+    state.flyKind = "look";
+    state.lvRound = 0;
+    state.lvDone = [];
+    state.lvStreak = 0;
+    state.lvBest = 0;
     render();
     paintHeader(true);
     paintBack();

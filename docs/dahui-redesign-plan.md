@@ -167,7 +167,8 @@ create index if not exists exam_records_account_idx on public.exam_records(accou
   说不出就输」的玩法有距离。建议加一个可选的「对战节奏」模式：出字后倒数
   几秒、要求用户主动在「自己写一句」框里作答，答对再翻下一个字，
   连对计数、断了给出提示——但**不改变现有「查一查」模式**，作为并列的
-  「闯关模式」增量，不删旧功能 | `js/game.js` 新增一个飞花令子模式 |
+  「闯关模式」增量，不删旧功能 | `js/game.js` 新增一个飞花令子模式
+  （P4 已落地，见 §七 第 5 条）|
 
 ⚠️ 这一大项建议放在**四个 bug 修完、术语统一完、服务器历史落地之后**再做，
 因为游戏化是体验增强，不阻塞前面几项的正确性问题；但飞花令的「闯关模式」
@@ -183,7 +184,11 @@ create index if not exists exam_records_account_idx on public.exam_records(accou
    详见 `docs/architecture.md` §4.117「P2：考试历史上服务器」。
 4. **P3（已完成）**：游戏化体验——倒计时可视化、音效开关、动画反馈、每次交卷都有
    的成绩横幅。详见 `docs/architecture.md` §4.117「P3：游戏感」。
-5. **P4**：飞花令「闯关模式」（可选增量，工作量最大，放最后）。
+5. **P4（已完成）**：飞花令「闯关模式」——与「查一查」并列的增量，旧路径一个字
+   没改。判分内核放 `js/quiz.js`（`judgeSetLine` / `levelChars` / `passable`），
+   一关一个令字、45 秒、写对翻下一个字、连对累计、卡住给提示不给答案；
+   服务器判分跟着用户选的范围走（`checkFly` 认 `scopeId`，收窄不了就如实报
+   `scopeExact: false`）。详见 `docs/architecture.md` §4.117「P4：飞花令闯关模式」。
 
 不做（本轮明确排除，避免范围蔓延）：不改错题回流复习排期（`scheduler.js` 是
 另一套纪律，历史记录只读不参与排期）；不给「模拟考试」上云；不引入 AI 判分。

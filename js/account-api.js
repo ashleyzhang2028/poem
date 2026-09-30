@@ -784,7 +784,11 @@
       }
       return ch.gameAnswer({
         kind: o.kind, bankId: o.bankId, poemId: o.poemId,
-        chosen: o.chosen, chars: o.chars, said: o.said, charge: o.charge === true
+        chosen: o.chosen, chars: o.chars, said: o.said,
+        // 飞花令的判分语料要跟用户选的范围一致（服务器照同一份 range 过滤），
+        // 否则两边同一句「黄河入海流」会各说一套「有 / 没有」。
+        scopeId: o.scopeId,
+        charge: o.charge === true
       }).then(function (r) {
         if (r && r.ok) return { ok: true, status: 200, body: r };
         var code = (r && r.code) || "E_OFFLINE";
