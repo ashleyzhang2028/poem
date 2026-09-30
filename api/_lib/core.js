@@ -2810,10 +2810,13 @@ function gameAnswer(deps, input, extra) {
         kind: "fly", ok: fly.found, found: fly.found,
         why: fly.found ? "ok" : "notfound",
         chars: fly.chars, said: fly.said, poemId: fly.poemId, title: fly.title,
+        inScope: fly.inScope, scopeId: fly.scopeId, scopeExact: fly.scopeExact,
         total: fly.total, tier: tier,
         counted: false,
         note: "这一句" + (fly.found ? "在合集里对上了" : "没在合集里找到") +
-          "；对上的共 " + fly.total + " 句。判分是逐字比对，不涉及 AI。"
+          "；对上的共 " + fly.total + " 句。" +
+          "范围只管令字，作答按全站合集判。" +
+          "判分是逐字比对，不涉及 AI。"
       });
     }
 

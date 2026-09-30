@@ -186,9 +186,13 @@ create index if not exists exam_records_account_idx on public.exam_records(accou
    的成绩横幅。详见 `docs/architecture.md` §4.117「P3：游戏感」。
 5. **P4（已完成）**：飞花令「闯关模式」——与「查一查」并列的增量，旧路径一个字
    没改。判分内核放 `js/quiz.js`（`judgeSetLine` / `levelChars` / `passable`），
-   一关一个令字、45 秒、写对翻下一个字、连对累计、卡住给提示不给答案；
-   服务器判分跟着用户选的范围走（`checkFly` 认 `scopeId`，收窄不了就如实报
-   `scopeExact: false`）。详见 `docs/architecture.md` §4.117「P4：飞花令闯关模式」。
+   一关一个令字、45 秒、写对翻下一个字、连对累计、卡住给提示不给答案。
+   详见 `docs/architecture.md` §4.117「P4：飞花令闯关模式」。
+6. **P5（已完成）**：**范围只管令字，不管作答**。用户报「令为风、答『春风不度
+   玉门关』被判不在范围内」——范围该收的是题（令字），不该收答（你想起来的那一
+   句）。`answerCorpus()` 与 `scopedCorpus()` 分家，两处判分改扫整份语料；顺带
+   补上服务端语料的 `grade` / `term`，服务端这才真能按学段收窄。
+   详见 `docs/architecture.md` §4.118「飞花令：范围只管令字」。
 
 不做（本轮明确排除，避免范围蔓延）：不改错题回流复习排期（`scheduler.js` 是
 另一套纪律，历史记录只读不参与排期）；不给「模拟考试」上云；不引入 AI 判分。
