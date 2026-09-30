@@ -4653,6 +4653,17 @@ window.POEMS_MINGSHU = [
     excerpt: "幸福的家庭都是相似的"
   },
   {
+    textRef: "mingshu-ms-2017",
+    id: "ms-2017",
+    title: "黛西·米勒",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "美国",
+    author: "亨利·詹姆斯",
+    source: "《黛西·米勒》",
+    excerpt: "一个美国姑娘在欧洲"
+  },
+  {
     textRef: "mingshu-ms-24",
     id: "ms-24",
     title: "昆虫记",
@@ -4675,6 +4686,28 @@ window.POEMS_MINGSHU = [
     excerpt: "谁杀了父亲"
   },
   {
+    textRef: "mingshu-ms-2016",
+    id: "ms-2016",
+    title: "一位女士的画像",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "美国",
+    author: "亨利·詹姆斯",
+    source: "《一位女士的画像》",
+    excerpt: "她以为自己在选择"
+  },
+  {
+    textRef: "mingshu-ms-2028",
+    id: "ms-2028",
+    title: "王子与贫儿",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "美国",
+    author: "马克·吐温",
+    source: "《王子与贫儿》",
+    excerpt: "换了衣服就换了身份"
+  },
+  {
     textRef: "mingshu-ms-938",
     id: "ms-938",
     title: "金银岛",
@@ -4695,6 +4728,17 @@ window.POEMS_MINGSHU = [
     author: "科洛迪",
     source: "《木偶奇遇记》",
     excerpt: "同一个木偶的另一译名"
+  },
+  {
+    textRef: "mingshu-ms-2027",
+    id: "ms-2027",
+    title: "哈克贝利·费恩历险记",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "美国",
+    author: "马克·吐温",
+    source: "《哈克贝利·费恩历险记》",
+    excerpt: "顺密西西比河漂下去"
   },
   {
     textRef: "mingshu-ms-934",
@@ -4739,6 +4783,17 @@ window.POEMS_MINGSHU = [
     author: "哈代",
     source: "《德伯家的苔丝》",
     excerpt: "一个纯洁的女人"
+  },
+  {
+    textRef: "mingshu-ms-2029",
+    id: "ms-2029",
+    title: "百万英镑",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "美国",
+    author: "马克·吐温",
+    source: "《百万英镑》",
+    excerpt: "一张钞票的魔力"
   },
   {
     textRef: "mingshu-ms-1931",
@@ -4840,6 +4895,17 @@ window.POEMS_MINGSHU = [
     excerpt: "在黑暗里看见光明"
   },
   {
+    textRef: "mingshu-ms-2019",
+    id: "ms-2019",
+    title: "野性的呼唤",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "美国",
+    author: "杰克·伦敦",
+    source: "《野性的呼唤》",
+    excerpt: "一条狗听见了祖先的呼唤"
+  },
+  {
     textRef: "mingshu-ms-34",
     id: "ms-34",
     title: "名人传",
@@ -4849,6 +4915,17 @@ window.POEMS_MINGSHU = [
     author: "罗曼·罗兰",
     source: "《名人传》",
     excerpt: "贝多芬、米开朗琪罗、托尔斯泰"
+  },
+  {
+    textRef: "mingshu-ms-2018",
+    id: "ms-2018",
+    title: "海狼",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "美国",
+    author: "杰克·伦敦",
+    source: "《海狼》",
+    excerpt: "一艘捕海豹船上的强弱法则"
   },
   {
     textRef: "mingshu-ms-1556",
@@ -4882,6 +4959,28 @@ window.POEMS_MINGSHU = [
     author: "欧·亨利",
     source: "《欧·亨利短篇小说选》",
     excerpt: "麦琪的礼物"
+  },
+  {
+    textRef: "mingshu-ms-2020",
+    id: "ms-2020",
+    title: "白牙",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "美国",
+    author: "杰克·伦敦",
+    source: "《白牙》",
+    excerpt: "一半是狗，一半是狼"
+  },
+  {
+    textRef: "mingshu-ms-2022",
+    id: "ms-2022",
+    title: "热爱生命",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "美国",
+    author: "杰克·伦敦",
+    source: "《热爱生命》",
+    excerpt: "病狼与断粮的人"
   },
   {
     textRef: "mingshu-ms-1818",
@@ -4948,6 +5047,17 @@ window.POEMS_MINGSHU = [
     author: "夏目漱石",
     source: "《三四郎》",
     excerpt: "一个乡下青年进了东京"
+  },
+  {
+    textRef: "mingshu-ms-2021",
+    id: "ms-2021",
+    title: "马丁·伊登",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "美国",
+    author: "杰克·伦敦",
+    source: "《马丁·伊登》",
+    excerpt: "一个水手想当作家"
   },
   {
     textRef: "mingshu-ms-1917",
