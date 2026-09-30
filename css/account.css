@@ -1144,6 +1144,15 @@ thead .plans-th-cap {
 .game-history-score { font-size: 16px; font-weight: 600; color: var(--green); }
 .game-history-meta { font-size: 11px; color: var(--ink-3); }
 
+/* 「删除」是这一行里的次要动作（用户 2026-09-30：「删除按钮用次一级的按钮 太大了」）。
+   它还是 .mini-btn（32px 高、13px 字），这里只做两件事：
+   ① `.mini-btn` 要 `display: inline-flex`，不这样会被 flex 行拉成整行高；
+   ② 右侧固定住，别被左边那条「分数 + 范围」挤扁。 */
+.game-history-row .mini-btn {
+  flex: none;
+  min-width: 64px;
+}
+
 .game-stem { font-size: 17px; line-height: 1.9; color: var(--ink); margin-bottom: 6px; }
 .game-opts { display: flex; flex-direction: column; gap: 8px; margin: 10px 0 4px; }
 .game-opt {

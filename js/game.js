@@ -567,31 +567,31 @@
     return html;
   }
 
+  // 考试记录：**一张卡**，标题是卡里第一行（用户 2026-09-30）。
+  // 从前标题单独占一张卡（`game-head`），下面另起一张装清单 —— 两张卡之间那道
+  // 12px 的缝里什么都没有，标题卡看着就是「一块被撑开的空行」。合成一张之后，
+  // 标题与清单共用一个 padding，缝自然没了。
   function renderHistory() {
     var id = identifier();
     var html = '<section class="account-card game-head">' +
-      '<h2 class="account-card-title">考试记录</h2>' +
-      "</section>";
+      '<h2 class="account-card-title">考试记录</h2>';
 
     if (!id.signedIn) {
-      html += '<section class="account-card"><p class="account-hint">登录后查看。</p>' +
-        '<button class="account-btn" type="button" data-game-go="/login/">登录</button></section>';
-      return html;
+      html += '<p class="account-hint">登录后查看。</p>' +
+        '<button class="account-btn" type="button" data-game-go="/login/">登录</button>';
+      return html + "</section>";
     }
     if (state.historyRecords === null) {
-      html += '<section class="account-card"><p class="account-hint">读取中……</p></section>';
-      return html;
+      return html + '<p class="account-hint">读取中……</p></section>';
     }
     if (state.historyError) {
-      html += '<section class="account-card"><p class="account-msg warn">' + esc(state.historyError) + "</p></section>";
-      return html;
+      return html + '<p class="account-msg warn">' + esc(state.historyError) + "</p></section>";
     }
     if (!state.historyRecords.length) {
-      html += '<section class="account-card"><p class="account-hint">暂无「考试」记录</p></section>';
-      return html;
+      return html + '<p class="account-hint">暂无「考试」记录</p></section>';
     }
 
-    html += '<section class="account-card"><div class="game-history-list">' +
+    html += '<div class="game-history-list">' +
       state.historyRecords.map(function (r) {
         var d = new Date(r.createdAt || 0);
         var when = isNaN(d.getTime()) ? "" : d.toLocaleString("zh-CN", { hour12: false });
@@ -600,7 +600,9 @@
           '<span class="game-history-score">' + esc(r.score) + " / " + esc(r.total) + "</span>" +
           '<span class="game-history-meta">' + esc(r.scopeLabel || "全部") + " · " + esc(when) + "</span>" +
           "</div>" +
-          '<button class="account-btn ghost" type="button" data-game-history-del="' + esc(r.eid) + '">删除</button>' +
+          // 「删除」是次要动作：用小一号的次一级按钮，不再跟「开始」「交卷」一个体量
+          // （用户 2026-09-30：「删除按钮用次一级的按钮 太大了」）。
+          '<button class="mini-btn" type="button" data-game-history-del="' + esc(r.eid) + '">删除</button>' +
           "</div>";
       }).join("") + "</div></section>";
     return html;
