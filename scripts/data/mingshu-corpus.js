@@ -283,7 +283,23 @@ add(require('./corpus/fill-foreign-uk-3.js'));
 add(require('./corpus/fill-foreign-uk-4.js'));
 add(require('./corpus/fill-foreign-uk-5.js'));
 add(require('./corpus/fill-foreign-uk-6.js'));
-add(require('./corpus/fill-foreign-uk-7.js'));
+add(require('./corpus/fill-foreign-uk-7.js'));add(require('./corpus/fill-foreign-uk-8.js'));
+add(require('./corpus/fill-foreign-uk-9.js'));
+add(require('./corpus/fill-foreign-uk-10.js'));
+add(require('./corpus/fill-foreign-uk-11.js'));
+add(require('./corpus/fill-foreign-uk-12.js'));add(require('./corpus/fill-foreign-uk-13.js'));
+add(require('./corpus/fill-foreign-uk-14.js'));
+add(require('./corpus/fill-foreign-uk-15.js'));
+add(require('./corpus/fill-foreign-uk-16.js'));
+add(require('./corpus/fill-foreign-uk-17.js'));
+add(require('./corpus/fill-foreign-uk-hp1.js'));
+add(require('./corpus/fill-foreign-uk-hp2.js'));
+add(require('./corpus/fill-foreign-uk-hp3.js'));
+add(require('./corpus/fill-foreign-uk-po1.js'));
+add(require('./corpus/fill-foreign-uk-po2.js'));
+add(require('./corpus/fill-foreign-uk-po3.js'));
+add(require('./corpus/fill-foreign-uk-po4.js'));
+add(require('./corpus/fill-foreign-uk-po5.js'));
 
 /* 余下的书按组分册，避免单文件过大 */
 add(require('./mingshu-corpus-stub.js'));

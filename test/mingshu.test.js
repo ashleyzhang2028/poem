@@ -543,6 +543,23 @@ chk(Math.min.apply(null, MS_PEOPLE) >= 15,
     '外国文学已填 126 部以上（实际 ' + BY('外国文学') + '）');
   chk(MS.length >= 488, '名著导读已交付 488 部以上（实际 ' + MS.length + '）');
 
+  /* Issue #381 第二十六轮（批次十·外国文学·英国片封口）：用户原话「按你的
+     计划，尽快完成吧 每次最少提交100」。英国片余下 43 部一次交齐——托尔金
+     三部曲与《霍比特人》、纳尼亚 1、哈利·波特 7、莎士比亚 3（无事生非 /
+     第十二夜 / 暴风雨）、威尔斯与柯南·道尔等已在前几批、近代诗歌 9
+     （艾略特 2 / 华兹华斯 / 柯勒律治 / 拜伦 / 雪莱 2 / 济慈 2）、湖畔派与
+     彭斯各 1。守三件事：① 这一批逐部点名进列表页；② 外国文学与列表页跟着
+     涨；③ 英国片 83 部一部不缺（按书目表逐部核）。 */
+  const UK_ALL = require('../scripts/data/mingshu-books.js').GROUPS
+    .find(g => g[0] === '外国文学')[1].filter(r => r[2] === '英国').map(r => r[0]);
+  chk(UK_ALL.length === 83, '英国片书目表共 83 部（实际 ' + UK_ALL.length + '）');
+  chk(UK_ALL.every(t => modernInShell.has(t)),
+    '英国片 83 部全部进列表页（缺：' +
+    (UK_ALL.filter(t => !modernInShell.has(t)).join('、') || '无') + '）');
+  chk(BY('外国文学') >= 173,
+    '外国文学已填 173 部以上（实际 ' + BY('外国文学') + '）');
+  chk(MS.length >= 533, '名著导读已交付 533 部以上（实际 ' + MS.length + '）');
+
   /* 素材全覆盖：书目表里「有素材」的那些书，壳里一条不落 */
   const BOOKS = require('../scripts/data/mingshu-books.js');
   const CORPUS = require('../scripts/data/mingshu-corpus.js').CORPUS;
