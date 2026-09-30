@@ -4015,6 +4015,17 @@ window.POEMS_MINGSHU = [
     excerpt: "生存还是毁灭"
   },
   {
+    textRef: "mingshu-ms-1166",
+    id: "ms-1166",
+    title: "堂·吉诃德",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "西班牙",
+    author: "塞万提斯",
+    source: "《堂·吉诃德》",
+    excerpt: "与风车作战的骑士"
+  },
+  {
     textRef: "mingshu-ms-20",
     id: "ms-20",
     title: "鲁滨逊漂流记",
@@ -4035,6 +4046,17 @@ window.POEMS_MINGSHU = [
     author: "斯威夫特",
     source: "《格列佛游记》",
     excerpt: "小人国、大人国与慧骃国"
+  },
+  {
+    textRef: "mingshu-ms-936",
+    id: "ms-936",
+    title: "理智与情感",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "英国",
+    author: "简·奥斯汀",
+    source: "《理智与情感》",
+    excerpt: "姐姐用脑子，妹妹用心"
   },
   {
     textRef: "mingshu-ms-1067",
@@ -4059,6 +4081,17 @@ window.POEMS_MINGSHU = [
     excerpt: "第一印象常常是靠不住的"
   },
   {
+    textRef: "mingshu-ms-937",
+    id: "ms-937",
+    title: "爱玛",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "英国",
+    author: "简·奥斯汀",
+    source: "《爱玛》",
+    excerpt: "爱替人做媒的姑娘"
+  },
+  {
     textRef: "mingshu-ms-27",
     id: "ms-27",
     title: "巴黎圣母院",
@@ -4068,6 +4101,17 @@ window.POEMS_MINGSHU = [
     author: "雨果",
     source: "《巴黎圣母院》",
     excerpt: "钟楼上那个敲钟人"
+  },
+  {
+    textRef: "mingshu-ms-1365",
+    id: "ms-1365",
+    title: "叶甫盖尼·奥涅金",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "俄国",
+    author: "普希金",
+    source: "《叶甫盖尼·奥涅金》",
+    excerpt: "多余人的样本"
   },
   {
     textRef: "mingshu-ms-1148",
@@ -4081,6 +4125,28 @@ window.POEMS_MINGSHU = [
     excerpt: "卖火柴的小女孩"
   },
   {
+    textRef: "mingshu-ms-1363",
+    id: "ms-1363",
+    title: "钦差大臣",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "俄国",
+    author: "果戈理",
+    source: "《钦差大臣》",
+    excerpt: "一个冒牌钦差"
+  },
+  {
+    textRef: "mingshu-ms-1366",
+    id: "ms-1366",
+    title: "上尉的女儿",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "俄国",
+    author: "普希金",
+    source: "《上尉的女儿》",
+    excerpt: "普加乔夫起义中的爱情"
+  },
+  {
     textRef: "mingshu-ms-916",
     id: "ms-916",
     title: "雾都孤儿",
@@ -4090,6 +4156,50 @@ window.POEMS_MINGSHU = [
     author: "狄更斯",
     source: "《雾都孤儿》",
     excerpt: "孤儿在雾都问路"
+  },
+  {
+    textRef: "mingshu-ms-1368",
+    id: "ms-1368",
+    title: "当代英雄",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "俄国",
+    author: "莱蒙托夫",
+    source: "《当代英雄》",
+    excerpt: "毕巧林的自白"
+  },
+  {
+    textRef: "mingshu-ms-1189",
+    id: "ms-1189",
+    title: "希腊神话故事",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "德国",
+    author: "施瓦布",
+    source: "《希腊神话故事》",
+    excerpt: "诸神与英雄的故事"
+  },
+  {
+    textRef: "mingshu-ms-1362",
+    id: "ms-1362",
+    title: "死魂灵",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "俄国",
+    author: "果戈理",
+    source: "《死魂灵》",
+    excerpt: "买死农奴的骗子"
+  },
+  {
+    textRef: "mingshu-ms-935",
+    id: "ms-935",
+    title: "圣诞颂歌",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "英国",
+    author: "狄更斯",
+    source: "《圣诞颂歌》",
+    excerpt: "守财奴的一夜三梦"
   },
   {
     textRef: "mingshu-ms-1066",
@@ -4147,6 +4257,17 @@ window.POEMS_MINGSHU = [
     excerpt: "他把自己写进了书里"
   },
   {
+    textRef: "mingshu-ms-1381",
+    id: "ms-1381",
+    title: "猎人笔记",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "俄国",
+    author: "屠格涅夫",
+    source: "《猎人笔记》",
+    excerpt: "在庄园里听见民间"
+  },
+  {
     textRef: "mingshu-ms-917",
     id: "ms-917",
     title: "双城记",
@@ -4156,6 +4277,17 @@ window.POEMS_MINGSHU = [
     author: "狄更斯",
     source: "《双城记》",
     excerpt: "这是最好的时代，也是最坏的时代"
+  },
+  {
+    textRef: "mingshu-ms-1387",
+    id: "ms-1387",
+    title: "奥勃洛摩夫",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "俄国",
+    author: "冈察洛夫",
+    source: "《奥勃洛摩夫》",
+    excerpt: "躺在沙发上的一生"
   },
   {
     textRef: "mingshu-ms-918",
@@ -4180,6 +4312,17 @@ window.POEMS_MINGSHU = [
     excerpt: "冉阿让与一块面包"
   },
   {
+    textRef: "mingshu-ms-1380",
+    id: "ms-1380",
+    title: "父与子",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "俄国",
+    author: "屠格涅夫",
+    source: "《父与子》",
+    excerpt: "两代人的交锋"
+  },
+  {
     textRef: "mingshu-ms-1055",
     id: "ms-1055",
     title: "地心游记",
@@ -4189,6 +4332,28 @@ window.POEMS_MINGSHU = [
     author: "凡尔纳",
     source: "《地心游记》",
     excerpt: "从火山口下去"
+  },
+  {
+    textRef: "mingshu-ms-941",
+    id: "ms-941",
+    title: "爱丽丝漫游奇境",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "英国",
+    author: "卡罗尔",
+    source: "《爱丽丝漫游奇境》",
+    excerpt: "掉进兔子洞以后"
+  },
+  {
+    textRef: "mingshu-ms-1370",
+    id: "ms-1370",
+    title: "罪与罚",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "俄国",
+    author: "陀思妥耶夫斯基",
+    source: "《罪与罚》",
+    excerpt: "一把斧头与一颗良心"
   },
   {
     textRef: "mingshu-ms-1052",
@@ -4211,6 +4376,17 @@ window.POEMS_MINGSHU = [
     author: "奥尔科特",
     source: "《小妇人》",
     excerpt: "四姐妹的成长"
+  },
+  {
+    textRef: "mingshu-ms-1371",
+    id: "ms-1371",
+    title: "白痴",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "俄国",
+    author: "陀思妥耶夫斯基",
+    source: "《白痴》",
+    excerpt: "一个太善良的人"
   },
   {
     textRef: "mingshu-ms-1109",
@@ -4279,81 +4455,15 @@ window.POEMS_MINGSHU = [
     excerpt: "荒石园里的观察者"
   },
   {
-    textRef: "mingshu-ms-1179",
-    id: "ms-1179",
-    title: "木偶奇遇记",
-    group: "外国文学",
-    gradeGroup: "外国文学",
-    dynasty: "意大利",
-    author: "科洛迪",
-    source: "《木偶奇遇记》",
-    excerpt: "同一个木偶的另一译名"
-  },
-  {
-    textRef: "mingshu-ms-29",
-    id: "ms-29",
-    title: "复活",
+    textRef: "mingshu-ms-1373",
+    id: "ms-1373",
+    title: "卡拉马佐夫兄弟",
     group: "外国文学",
     gradeGroup: "外国文学",
     dynasty: "俄国",
-    author: "托尔斯泰",
-    source: "《复活》",
-    excerpt: "一个人灵魂的醒来"
-  },
-  {
-    textRef: "mingshu-ms-926",
-    id: "ms-926",
-    title: "森林报",
-    group: "外国文学",
-    gradeGroup: "外国文学",
-    dynasty: "苏联",
-    author: "维·比安基",
-    source: "《森林报》",
-    excerpt: "一年四季的森林日记"
-  },
-  {
-    textRef: "mingshu-ms-927",
-    id: "ms-927",
-    title: "假如给我三天光明",
-    group: "外国文学",
-    gradeGroup: "外国文学",
-    dynasty: "美国",
-    author: "海伦·凯勒",
-    source: "《假如给我三天光明》",
-    excerpt: "在黑暗里看见光明"
-  },
-  {
-    textRef: "mingshu-ms-935",
-    id: "ms-935",
-    title: "圣诞颂歌",
-    group: "外国文学",
-    gradeGroup: "外国文学",
-    dynasty: "英国",
-    author: "狄更斯",
-    source: "《圣诞颂歌》",
-    excerpt: "守财奴的一夜三梦"
-  },
-  {
-    textRef: "mingshu-ms-936",
-    id: "ms-936",
-    title: "理智与情感",
-    group: "外国文学",
-    gradeGroup: "外国文学",
-    dynasty: "英国",
-    author: "简·奥斯汀",
-    source: "《理智与情感》",
-    excerpt: "姐姐用脑子，妹妹用心"
-  },
-  {
-    textRef: "mingshu-ms-937",
-    id: "ms-937",
-    title: "爱玛",
-    group: "外国文学",
-    gradeGroup: "外国文学",
-    dynasty: "英国",
-    author: "简·奥斯汀",
-    source: "《爱玛》",
-    excerpt: "爱替人做媒的姑娘"
+    author: "陀思妥耶夫斯基",
+    source: "《卡拉马佐夫兄弟》",
+    excerpt: "谁杀了父亲"
   },
   {
     textRef: "mingshu-ms-938",
@@ -4367,6 +4477,17 @@ window.POEMS_MINGSHU = [
     excerpt: "一张藏宝图引出的远航"
   },
   {
+    textRef: "mingshu-ms-1179",
+    id: "ms-1179",
+    title: "木偶奇遇记",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "意大利",
+    author: "科洛迪",
+    source: "《木偶奇遇记》",
+    excerpt: "同一个木偶的另一译名"
+  },
+  {
     textRef: "mingshu-ms-934",
     id: "ms-934",
     title: "化身博士",
@@ -4376,72 +4497,6 @@ window.POEMS_MINGSHU = [
     author: "史蒂文森",
     source: "《化身博士》",
     excerpt: "同一个人身上的两个人"
-  },
-  {
-    textRef: "mingshu-ms-941",
-    id: "ms-941",
-    title: "爱丽丝漫游奇境",
-    group: "外国文学",
-    gradeGroup: "外国文学",
-    dynasty: "英国",
-    author: "卡罗尔",
-    source: "《爱丽丝漫游奇境》",
-    excerpt: "掉进兔子洞以后"
-  },
-  {
-    textRef: "mingshu-ms-994",
-    id: "ms-994",
-    title: "绿野仙踪",
-    group: "外国文学",
-    gradeGroup: "外国文学",
-    dynasty: "美国",
-    author: "鲍姆",
-    source: "《绿野仙踪》",
-    excerpt: "多萝西的奥兹国"
-  },
-  {
-    textRef: "mingshu-ms-1024",
-    id: "ms-1024",
-    title: "小王子",
-    group: "外国文学",
-    gradeGroup: "外国文学",
-    dynasty: "法国",
-    author: "圣埃克苏佩里",
-    source: "《小王子》",
-    excerpt: "重要的东西用眼睛是看不见的"
-  },
-  {
-    textRef: "mingshu-ms-1131",
-    id: "ms-1131",
-    title: "在人间",
-    group: "外国文学",
-    gradeGroup: "外国文学",
-    dynasty: "苏联",
-    author: "高尔基",
-    source: "《在人间》",
-    excerpt: "少年在人间讨生活"
-  },
-  {
-    textRef: "mingshu-ms-1132",
-    id: "ms-1132",
-    title: "我的大学",
-    group: "外国文学",
-    gradeGroup: "外国文学",
-    dynasty: "苏联",
-    author: "高尔基",
-    source: "《我的大学》",
-    excerpt: "喀山的一所社会大学"
-  },
-  {
-    textRef: "mingshu-ms-1166",
-    id: "ms-1166",
-    title: "堂·吉诃德",
-    group: "外国文学",
-    gradeGroup: "外国文学",
-    dynasty: "西班牙",
-    author: "塞万提斯",
-    source: "《堂·吉诃德》",
-    excerpt: "与风车作战的骑士"
   },
   {
     textRef: "mingshu-ms-1180",
@@ -4455,15 +4510,48 @@ window.POEMS_MINGSHU = [
     excerpt: "一个四年级孩子的日记"
   },
   {
-    textRef: "mingshu-ms-1189",
-    id: "ms-1189",
-    title: "希腊神话故事",
+    textRef: "mingshu-ms-1553",
+    id: "ms-1553",
+    title: "套中人",
     group: "外国文学",
     gradeGroup: "外国文学",
-    dynasty: "德国",
-    author: "施瓦布",
-    source: "《希腊神话故事》",
-    excerpt: "诸神与英雄的故事"
+    dynasty: "俄国",
+    author: "契诃夫",
+    source: "《套中人》",
+    excerpt: "把自己装进一个套子"
+  },
+  {
+    textRef: "mingshu-ms-29",
+    id: "ms-29",
+    title: "复活",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "俄国",
+    author: "托尔斯泰",
+    source: "《复活》",
+    excerpt: "一个人灵魂的醒来"
+  },
+  {
+    textRef: "mingshu-ms-994",
+    id: "ms-994",
+    title: "绿野仙踪",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "美国",
+    author: "鲍姆",
+    source: "《绿野仙踪》",
+    excerpt: "多萝西的奥兹国"
+  },
+  {
+    textRef: "mingshu-ms-927",
+    id: "ms-927",
+    title: "假如给我三天光明",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "美国",
+    author: "海伦·凯勒",
+    source: "《假如给我三天光明》",
+    excerpt: "在黑暗里看见光明"
   },
   {
     textRef: "mingshu-ms-34",
@@ -4475,6 +4563,28 @@ window.POEMS_MINGSHU = [
     author: "罗曼·罗兰",
     source: "《名人传》",
     excerpt: "贝多芬、米开朗琪罗、托尔斯泰"
+  },
+  {
+    textRef: "mingshu-ms-1556",
+    id: "ms-1556",
+    title: "樱桃园",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "俄国",
+    author: "契诃夫",
+    source: "《樱桃园》",
+    excerpt: "园子被卖掉了"
+  },
+  {
+    textRef: "mingshu-ms-1562",
+    id: "ms-1562",
+    title: "母亲",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "苏联",
+    author: "高尔基",
+    source: "《母亲》",
+    excerpt: "一个母亲的觉悟"
   },
   {
     textRef: "mingshu-ms-940",
@@ -4532,6 +4642,39 @@ window.POEMS_MINGSHU = [
     excerpt: "在外祖父家的日子"
   },
   {
+    textRef: "mingshu-ms-1131",
+    id: "ms-1131",
+    title: "在人间",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "苏联",
+    author: "高尔基",
+    source: "《在人间》",
+    excerpt: "少年在人间讨生活"
+  },
+  {
+    textRef: "mingshu-ms-1132",
+    id: "ms-1132",
+    title: "我的大学",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "苏联",
+    author: "高尔基",
+    source: "《我的大学》",
+    excerpt: "喀山的一所社会大学"
+  },
+  {
+    textRef: "mingshu-ms-926",
+    id: "ms-926",
+    title: "森林报",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "苏联",
+    author: "维·比安基",
+    source: "《森林报》",
+    excerpt: "一年四季的森林日记"
+  },
+  {
     textRef: "mingshu-ms-22",
     id: "ms-22",
     title: "钢铁是怎样炼成的",
@@ -4543,6 +4686,17 @@ window.POEMS_MINGSHU = [
     excerpt: "把整个生命献给人类"
   },
   {
+    textRef: "mingshu-ms-1561",
+    id: "ms-1561",
+    title: "静静的顿河",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "苏联",
+    author: "肖洛霍夫",
+    source: "《静静的顿河》",
+    excerpt: "一个哥萨克的一生"
+  },
+  {
     textRef: "mingshu-ms-1050",
     id: "ms-1050",
     title: "局外人与鼠疫",
@@ -4552,6 +4706,17 @@ window.POEMS_MINGSHU = [
     author: "加缪",
     source: "《局外人与鼠疫》",
     excerpt: "两部代表作"
+  },
+  {
+    textRef: "mingshu-ms-1024",
+    id: "ms-1024",
+    title: "小王子",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "法国",
+    author: "圣埃克苏佩里",
+    source: "《小王子》",
+    excerpt: "重要的东西用眼睛是看不见的"
   },
   {
     textRef: "mingshu-ms-995",
