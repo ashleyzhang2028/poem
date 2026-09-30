@@ -359,6 +359,12 @@ if (WANT_MASTER) {
   items.forEach(function (it) { patch['mingshu-' + it.id] = it.text; });
   const res = P.applyAll(patch, {
     force: argv.indexOf('--force') >= 0,
+    /* 名著导读的正文一律由素材库（mingshu-corpus*.js）装配，主表里的那一份
+       只是它的副本。所以「同一条 id 的正文要换掉」在这里是**正常**的：
+       素材改了，正文就该跟着改。syncVersion 让这一条按新正文重算指纹，
+       不再当成「id 挪位」拦下来。
+       —— 2026-09-29 修：诗歌那一批（#416）改了《凤凰涅槃》的素材，主表
+       没有跟着重建，`--master` 从此每次都在 ms-586 上中止。这一步补上。 */
     // 这一支就是**整批重写正文**（每部的六段素材都重新装配过），
     // 所以 version 要照新正文重算 —— 不传的话 entry-patch 会拦住。
     syncVersion: true,
