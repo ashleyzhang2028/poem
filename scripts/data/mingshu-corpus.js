@@ -390,6 +390,23 @@ add(require('./corpus/fill-foreign-de-13.js'));
 add(require('./corpus/fill-foreign-de-14.js'));
 add(require('./corpus/fill-foreign-fr-de-15.js'));
 
+/* ── Issue #381 第三十八轮（批次二十·外国文学·余下各片）──────────────
+   用户原话「继续剩余的添加」。外国文学书目 446 部，此前已交 333 部，
+   余 113 部：奥地利 / 瑞士、苏联余部、北欧、南欧（伊比利亚）、意大利、
+   古希腊罗马、两河埃及、阿拉伯、朝韩、印度、黎巴嫩、爱尔兰、拉美与东欧。
+   本轮分两批交齐，批一 79 部（奥地利 10 + 苏联 17 + 北欧 16 +
+   伊比利亚 9 + 意大利 11 + 古希腊罗马 16）。 */
+add(require('./corpus/fill-foreign-at-1.js'));
+add(require('./corpus/fill-foreign-su-2.js'));
+add(require('./corpus/fill-foreign-su-3.js'));
+add(require('./corpus/fill-foreign-nordic-1.js'));
+add(require('./corpus/fill-foreign-nordic-2.js'));
+add(require('./corpus/fill-foreign-iberia-1.js'));
+add(require('./corpus/fill-foreign-it-1.js'));
+add(require('./corpus/fill-foreign-gr-1.js'));
+add(require('./corpus/fill-foreign-gr-2.js'));
+add(require('./corpus/fill-foreign-rome-1.js'));
+
 /* 余下的书按组分册，避免单文件过大 */
 add(require('./mingshu-corpus-stub.js'));
 
