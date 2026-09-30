@@ -262,6 +262,10 @@
     if (!pool.length) pool = all;
     if (!pool.length) return [];
 
+    // **一次给两个字**：单字太难「正好是那个字」，两个字才有「凑一凑」的余地。
+    // （这句由 09804fc 写下，后来在一轮「去掉所有注释」的整理里丢了 ——
+    // 用户 2026-09-30 因此问「为什么每次出两个令字」。丢了就要补回来。）
+    // 用候选自身当种子：同一个令字永远同一副牌，可复现。
     var picked = Q.shuffle(pool, pool[0] + pool.length)[0] || pool[0];
     var second = Q.shuffle(pool.filter(function (c) { return c !== picked; }), picked)[0];
     return second ? [picked, second] : [picked];
