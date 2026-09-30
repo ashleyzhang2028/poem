@@ -670,6 +670,7 @@
     classic: { file: "data/poems-classic.js", global: "POEMS_CLASSIC" },
     yuefu: { file: "data/poems-yuefu.js", global: "POEMS_YUEFU" },
     tangshi: { file: "data/poems-tangshi.js", global: "POEMS_TANGSHI" },
+    gushi: { file: "data/poems-gushi.js", global: "POEMS_GUSHI" },
     songci: { file: "data/poems-songci.js", global: "POEMS_SONGCI" },
     guwen: { file: "data/poems-guwen.js", global: "POEMS_GUWEN" },
     zhaoming: { file: "data/poems-zhaoming.js", global: "POEMS_ZHAOMING" },

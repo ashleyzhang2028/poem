@@ -83,6 +83,7 @@
     var WANTED = [
     { id: "classic",    file: "data/poems-classic.js",    v: "POEMS_CLASSIC" },
     { id: "tangshi",    file: "data/poems-tangshi.js",    v: "POEMS_TANGSHI" },
+    { id: "gushi",      file: "data/poems-gushi.js",     v: "POEMS_GUSHI" },
     { id: "songci",     file: "data/poems-songci.js",     v: "POEMS_SONGCI" },
     { id: "guwen",      file: "data/poems-guwen.js",      v: "POEMS_GUWEN" },
     { id: "zhaoming",   file: "data/poems-zhaoming.js",   v: "POEMS_ZHAOMING" },

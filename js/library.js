@@ -39,6 +39,15 @@
       desc: "八卷选本按体裁编排，唐代诗歌的入门选本"
     },
     {
+      id: "gushi",
+      name: "古诗集",
+      book: "GushiBook",
+      short: "古诗",
+      page: "/gushi/",
+      unit: "首",
+      desc: "唐代之外的古诗：先秦《诗经》《楚辞》、汉魏六朝、宋诗与元明清诗，按时代先后分五组"
+    },
+    {
       id: "songci",
       name: "宋词三百首",
       book: "SongciBook",
@@ -153,7 +162,7 @@
   /* Issue #407：入口页 16 张卡压成 4 张 —— 课内诗词单列，其余按「诗文典籍 /
      人物 / 文史常识」三组并进分组卡；分组卡里只列名字与条数，不写介绍。 */
   var GROUPS = [
-    { id: "wen", name: "诗文典籍", note: "蒙学古文 · 诗词曲选 · 历代总集", members: ["classic", "guwen", "yuefu", "tangshi", "songci", "yuanqu", "jinxiandai", "zhaoming"] },
+    { id: "wen", name: "诗文典籍", note: "蒙学古文 · 诗词曲选 · 历代总集", members: ["classic", "guwen", "yuefu", "tangshi", "gushi", "songci", "yuanqu", "jinxiandai", "zhaoming"] },
     { id: "renwu", name: "人物", note: "帝王与名家 · 中外各一卷", members: ["dwang", "dwang-waiguo", "mingren", "mingren-waiguo"] },
     { id: "changshi", name: "文史常识", note: "成语 · 文学常识 · 名著导读", members: ["chengyu", "changshi", "mingshu"] }
   ];
@@ -176,6 +185,7 @@
       classic: "POEMS_CLASSIC",
       yuefu: "POEMS_YUEFU",
       tangshi: "POEMS_TANGSHI",
+      gushi: "POEMS_GUSHI",
       songci: "POEMS_SONGCI",
       guwen: "POEMS_GUWEN",
       zhaoming: "POEMS_ZHAOMING",

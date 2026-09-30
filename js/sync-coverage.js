@@ -68,6 +68,11 @@
       why: "唐诗三百首已读 —— Issue #243 本次补上。"
     },
     {
+      key: "poem_gushi_read_v1", sync: true, row: "reads:poem_gushi_read_v1",
+      merge: "并集", cap: "每行 ≤ 2000 篇",
+      why: "古诗集已读 —— Issue #461 新增集子。"
+    },
+    {
       key: "poem_songci_read_v1", sync: true, row: "reads:poem_songci_read_v1",
       merge: "并集", cap: "每行 ≤ 2000 篇",
       why: "宋词三百首已读 —— Issue #243 本次补上。"

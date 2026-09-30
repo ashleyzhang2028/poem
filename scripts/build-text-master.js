@@ -8,7 +8,8 @@ const LOAD = [
   'data/poems-1.js', 'data/poems-2.js', 'data/poems-3.js', 'data/poems-4.js',
   'data/poems-5.js', 'data/poems-6.js', 'data/poems-7.js', 'data/poems-8.js',
   'data/poems-9.js', 'data/poems-10.js', 'data/poems-11.js', 'data/poems-12.js',
-  'data/index.js', 'data/poems-classic.js', 'data/poems-tangshi.js',
+  'data/index.js', 'data/poems-classic.js', 'data/poems-tangshi.js', 'data/poems-gushi.js',
+  'scripts/data/gushi-corpus.js',
   'data/poems-songci.js', 'data/poems-guwen.js', 'data/poems-zhaoming.js', 'data/poems-yuanqu.js',
   'data/poems-yuefu.js', 'data/poems-jinxiandai.js', 'data/poems-chengyu.js',
   'data/poems-changshi.js',
@@ -27,7 +28,7 @@ LOAD.forEach(function (f) {
 
 const WI = sandbox.WorksIndex;
 
-const FULL_BOOKS = ['zhaoming', 'guwen', 'songci', 'tangshi', 'classic', 'yuanqu', 'yuefu', 'jinxiandai', 'chengyu', 'changshi', 'mingshu', 'mingren', 'mingren-waiguo', 'dwang', 'dwang-waiguo'];
+const FULL_BOOKS = ['zhaoming', 'guwen', 'songci', 'tangshi', 'gushi', 'classic', 'yuanqu', 'yuefu', 'jinxiandai', 'chengyu', 'changshi', 'mingshu', 'mingren', 'mingren-waiguo', 'dwang', 'dwang-waiguo'];
 
 const prev = {};
 try {
@@ -68,6 +69,8 @@ var RAW_ENTRIES = {};
     { f: 'data/poems-11.js', v: 'POEMS_11' }, { f: 'data/poems-12.js', v: 'POEMS_12' },
     { f: 'data/poems-classic.js', v: 'POEMS_CLASSIC' },
     { f: 'data/poems-tangshi.js', v: 'POEMS_TANGSHI' },
+    /* Issue #461：《古诗集》—— 壳文件只存归属（textRef），正文来自语料表。 */
+    { f: 'scripts/data/gushi-corpus.js', v: 'GUSHI_CORPUS', book: 'gushi' },
     { f: 'data/poems-songci.js', v: 'POEMS_SONGCI' },
     { f: 'data/poems-guwen.js', v: 'POEMS_GUWEN' },
     { f: 'data/poems-zhaoming.js', v: 'POEMS_ZHAOMING' },
@@ -329,7 +332,7 @@ const BOOK_FILES = [
   'data/poems-1.js', 'data/poems-2.js', 'data/poems-3.js', 'data/poems-4.js',
   'data/poems-5.js', 'data/poems-6.js', 'data/poems-7.js', 'data/poems-8.js',
   'data/poems-9.js', 'data/poems-10.js', 'data/poems-11.js', 'data/poems-12.js',
-  'data/poems-classic.js', 'data/poems-tangshi.js', 'data/poems-songci.js',
+  'data/poems-classic.js', 'data/poems-tangshi.js', 'data/poems-gushi.js', 'data/poems-songci.js',
   'data/poems-guwen.js', 'data/poems-zhaoming.js', 'data/poems-yuanqu.js',
   'data/poems-yuefu.js', 'data/poems-jinxiandai.js', 'data/poems-chengyu.js',
   'data/poems-changshi.js'

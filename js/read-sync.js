@@ -8,6 +8,7 @@
     "poem_classic_read_v1",
     "poem_yuefu_read_v1",
     "poem_tangshi_read_v1",
+    "poem_gushi_read_v1",
     "poem_songci_read_v1",
     "poem_guwen_read_v1",
     "poem_zhaoming_read_v1",
