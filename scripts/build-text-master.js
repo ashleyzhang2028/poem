@@ -13,6 +13,9 @@ const LOAD = [
   /* Issue #461：本轮新补的正文语料 —— 唐诗 5 首、小古文 16 篇。 */
   'scripts/data/tangshi-corpus-461.js', 'scripts/data/classic-corpus-461.js',
   'scripts/data/ci-corpus-461.js',
+  /* Issue #461：决赛冷门篇目（第三轮）—— 唐诗 / 古诗 / 词 / 小古文各一份。 */
+  'scripts/data/tangshi-corpus-461c.js', 'scripts/data/gushi-corpus-461c.js',
+  'scripts/data/ci-corpus-461c.js', 'scripts/data/classic-corpus-461c.js',
   /* Issue #461：阅读大赛高中组 / 大会冷门拓展（第二轮）—— 唐诗 / 古诗 / 词 / 曲 / 小古文。 */
   'scripts/data/tangshi-corpus-461b.js', 'scripts/data/gushi-corpus-461b.js',
   'scripts/data/ci-corpus-461b.js', 'scripts/data/qu-corpus-461.js',
@@ -81,16 +84,20 @@ var RAW_ENTRIES = {};
     /* Issue #461：《古诗「非唐代」》—— 壳文件只存归属（textRef），正文来自语料表。 */
     { f: 'scripts/data/gushi-corpus.js', v: 'GUSHI_CORPUS', book: 'gushi' },
     { f: 'scripts/data/gushi-corpus-461b.js', v: 'GUSHI_CORPUS_461B', book: 'gushi' },
+    { f: 'scripts/data/gushi-corpus-461c.js', v: 'GUSHI_CORPUS_461C', book: 'gushi' },
     { f: 'scripts/data/classic-corpus-461.js', v: 'CLASSIC_CORPUS_461', book: 'classic' },
     { f: 'scripts/data/classic-corpus-461b.js', v: 'CLASSIC_CORPUS_461B', book: 'classic' },
+    { f: 'scripts/data/classic-corpus-461c.js', v: 'CLASSIC_CORPUS_461C', book: 'classic' },
     /* Issue #461：唐诗补充 5 首 —— 壳文件排在前面（已在主表索引里），
        语料排在后面，供 `textOfEntry` 从 RAW_ENTRIES 取正文。 */
     { f: 'scripts/data/tangshi-corpus-461.js', v: 'APPEND_461', book: 'tangshi' },
     { f: 'scripts/data/tangshi-corpus-461b.js', v: 'TANGSHI_CORPUS_461B', book: 'tangshi' },
+    { f: 'scripts/data/tangshi-corpus-461c.js', v: 'TANGSHI_CORPUS_461C', book: 'tangshi' },
     { f: 'data/poems-songci.js', v: 'POEMS_SONGCI' },
     /* Issue #461：「宋词三百首」改名「词」—— 补五代 / 金 / 清的词。 */
     { f: 'scripts/data/ci-corpus-461.js', v: 'CIWEN_CORPUS_461', book: 'songci' },
     { f: 'scripts/data/ci-corpus-461b.js', v: 'CIWEN_CORPUS_461B', book: 'songci' },
+    { f: 'scripts/data/ci-corpus-461c.js', v: 'CIWEN_CORPUS_461C', book: 'songci' },
     { f: 'data/poems-guwen.js', v: 'POEMS_GUWEN' },
     { f: 'data/poems-zhaoming.js', v: 'POEMS_ZHAOMING' },
     { f: 'data/poems-yuanqu.js', v: 'POEMS_YUANQU' },

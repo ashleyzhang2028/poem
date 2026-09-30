@@ -3080,6 +3080,24 @@ window.POEMS_SONGCI = [
     author: "纳兰性德",
     gradeGroup: "词牌 · 蝶恋花",
   },
+  {
+    textRef: "songci-sc-311",
+    id: "sc-311",
+    title: "乌夜啼·昨夜风兼雨",
+    source: "《南唐二主词》",
+    dynasty: "五代",
+    author: "李煜",
+    gradeGroup: "词牌 · 相见欢",
+  },
+  {
+    textRef: "songci-sc-312",
+    id: "sc-312",
+    title: "菩萨蛮·咏梅",
+    source: "《断肠集》",
+    dynasty: "宋",
+    author: "朱淑真",
+    gradeGroup: "词牌 · 菩萨蛮",
+  },
 ];
 
 (function () {
