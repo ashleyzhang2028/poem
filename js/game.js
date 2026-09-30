@@ -359,9 +359,15 @@
     var html = '<section class="account-card game-head">' +
       '<h2 class="account-card-title">' + esc(m.name) + "</h2>" +
       '<p class="account-hint">范围：' + esc(scopePickLabel(state.setup.scope)) + "</p>" +
+      // 令字与拼音：**拼音在上、汉字在下**（用户 2026-09-30 裁决）。
+      // DOM 次序就是「拼音 → 汉字」，不靠 CSS 的 order / column-reverse 去翻 ——
+      // 读屏念出来也是先音后字，与看到的顺序一致。
+      // 拼音空着（表里查不到那个字）也照旧渲染这一行：行高定在 CSS 里，
+      // 横排时两字的汉字基线才对得上。
       '<div class="game-chars">' + state.chars.map(function (c) {
-        return '<span class="game-char">' + esc(c) +
-          (pinyinOf(c) ? '<span class="game-char-py">' + esc(pinyinOf(c)) + "</span>" : "") +
+        return '<span class="game-char">' +
+          '<span class="game-char-py">' + esc(pinyinOf(c)) + "</span>" +
+          '<span class="game-char-han">' + esc(c) + "</span>" +
           "</span>";
       }).join("") + "</div>" +
       '<p class="account-hint">' + esc(sum.text) + " —— 这是合集里实际能对上的句数。</p>" +
