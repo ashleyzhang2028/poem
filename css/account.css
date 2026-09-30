@@ -1113,6 +1113,41 @@ thead .plans-th-cap {
 /* 汉字那一行 */
 .game-char-han { display: block; }
 
+/* 飞花令「闯关」（Issue #356 P4）：
+ * 「查一查 / 闯关」两种形态的分段，与令字难度段一样走 .seg，只是外面加一道缝。
+ * 倒计时复用考试那条 .game-timer-bar（同一种东西不该有两套样式），
+ * 另给一个数字钟 —— 汉字那一格已经很大，数字钟就用小一号的绿字压住视线。 */
+.game-fly-kind { margin-bottom: 4px; }
+.game-lv-char {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 44px;
+  line-height: 1.1;
+  color: var(--green);
+  margin: 6px 0 8px;
+}
+.game-lv-char .game-char-py { display: block; height: 16px; font-size: 12px; line-height: 16px; color: var(--ink-3); font-weight: 400; }
+.game-lv-char .game-char-han { display: block; }
+.game-lv-char-ok { animation: gameOptFlashOk .4s ease-out; }
+.game-lv-char-bad { animation: gameOptFlashBad .4s ease-in-out; }
+.game-lv-clock { display: flex; align-items: baseline; justify-content: center; gap: 4px; margin-top: 4px; }
+.game-lv-num { font-size: 22px; font-weight: 600; color: var(--green); font-variant-numeric: tabular-nums; }
+.game-lv-unit { font-size: 11px; color: var(--ink-3); }
+.game-lv-easy { margin-top: 10px; }
+.game-lv-done { display: flex; flex-direction: column; gap: 6px; }
+.game-lv-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 7px 9px;
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+}
+.game-lv-row-char { font-size: 15px; font-weight: 600; color: var(--green); }
+.game-lv-row-text { font-size: 13.5px; line-height: 1.6; color: var(--ink); }
+.game-lv-row-src { font-size: 11px; color: var(--ink-3); margin-left: auto; }
+
 .game-lines { margin-top: 10px; }
 .game-line {
   display: flex;

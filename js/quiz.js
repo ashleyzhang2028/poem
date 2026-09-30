@@ -306,6 +306,122 @@
     return { ok: pick === String(q.answer), why: pick === String(q.answer) ? "ok" : "wrong" };
   }
 
+  // ——— 飞花令「闯关」的判分内核（Issue #356 P4）———————————————
+  //
+  // 为什么判分放这里、不塞在 game.js 的渲染里：
+  //   · 闯关的「答对了」= 这一句**一字不差地存在语料里**，且**带着令字**；
+  //   · 句子本身与「拿掉了令字还认得出是同一句」这两件事都是语料问题，
+  //     与谁在屏幕上敲的字无关 —— 放纯逻辑层才能不起浏览器就测（界面测试层
+  //     已按 Issue #278 删掉）。
+  //
+  // 用户 2026-09-30 的原话是「要求用户主动在『自己写一句』框里作答」。
+  // 所以宽严都往「鼓励」那一边靠：整句照抄最稳，只写其中一段也算 ——
+  // 只要那一段是语料里真实存在、且含令字的一段。不认识的句子才判错。
+
+  // 取出一句里「连着的汉字」，标点与空白都丢掉 —— 用户敲字时不会把逗号也敲上。
+  function hanRuns(text) {
+    var runs = [];
+    var cur = "";
+    String(text == null ? "" : text).split("").forEach(function (ch) {
+      if (isHan(ch)) { cur += ch; return; }
+      if (cur) { runs.push(cur); cur = ""; }
+    });
+    if (cur) runs.push(cur);
+    return runs;
+  }
+
+  // 一句够不够「写过一句」：至少 4 个连着的汉字，免得「日」这种单字蒙对。
+  // 这个数是**门槛**也是**筛子** —— levelChars() 挑句库时要用同一个值把
+  // 「水」「水长流」这类短短的一段滤掉，否则句库里躺着一条永远判不过的句子，
+  // 用户照着它抄反而被判「太短，写整一点」。
+  var MIN_SAY_HAN = 4;
+
+  function saidRuns(said) {
+    return hanRuns(said).filter(function (r) { return r.length >= MIN_SAY_HAN; });
+  }
+
+  // 这一句本身够不够当一关里的例句：它自己得先过 saidRuns 那道门槛。
+  function passable(text) {
+    return saidRuns(text).length > 0;
+  }
+
+  // 判一条作答。返回 { ok, why, row }：
+  //   ok —— 算不算过关；why —— ok / empty / short / nochar / notfound
+  //   row —— 命中的那一条句（有的话，用来回显「在合集里对上了：……」）
+  function judgeSetLine(o) {
+    var opt = o || {};
+    var chars = (opt.chars || [opt.char]).filter(Boolean).map(String);
+    var said = String(opt.said == null ? "" : opt.said).trim();
+    if (!said) return { ok: false, why: "empty" };
+
+    var runs = saidRuns(said);
+    if (!runs.length) return { ok: false, why: "short" };
+
+    var scored = runs.filter(function (r) {
+      return chars.some(function (c) { return r.indexOf(c) >= 0; });
+    });
+    if (!scored.length) return { ok: false, why: "nochar" };
+
+    var rows = lines(opt.poems);
+    // 整句照抄优先：语料里那一句去掉标点后与作答完全一致，先认这一条。
+    var exact = null;
+    var partial = null;
+    rows.forEach(function (r) {
+      if (exact && partial) return;
+      var have = hanRuns(r.text);
+      var joined = have.join("");
+      if (joined === runs.join("")) exact = exact || r;
+      // 只写了一段：那一段必须是语料里**连着**的一段（不是跨句拼出来的）。
+      if (!partial) {
+        for (var i = 0; i < scored.length && !partial; i += 1) {
+          if (have.indexOf(scored[i]) >= 0) partial = r;
+        }
+      }
+    });
+
+    var row = exact || partial;
+    if (!row) return { ok: false, why: "notfound" };
+    return { ok: true, why: "ok", row: row };
+  }
+
+  // 关卡：一关 = 一个令字。每个令字给出「够写几行」的储备（语料里带它的句数），
+  // 取法完全照抄 pickChars 的种子写法（令字 + 池长 + 轮次），
+  // 所以同一个范围同一轮，前后端算出来的关卡是同一关。
+  function levelChars(poems, o) {
+    var opt = o || {};
+    var rows = lines(poems);
+    var chars = (opt.chars || []).filter(Boolean).map(String);
+    var per = Math.max(1, Number(opt.per == null ? 1 : opt.per));
+    var min = Math.max(1, Number(opt.min == null ? 3 : opt.min));
+    var seed = String(opt.seed == null ? "" : opt.seed);
+
+    var picks = [];
+    var level = 0;
+    chars.forEach(function (c, ci) {
+      if (picks.length >= per) return;
+      var hit = rows.filter(function (r) {
+        return r.text.indexOf(c) >= 0 && passable(r.text);
+      });
+      if (hit.length < min) return;
+      // 同一关内的句子也要有次序：按「句子短 → 长」摆，先短后长，
+      // 让用户一关比一关有底气，而不是一上来就撞上最长的两句。
+      var pool = hit.slice().sort(function (a, b) {
+        return a.text.length - b.text.length || (a.id < b.id ? -1 : 1);
+      });
+      // 逐关错开起点，免得每次进闯关第一关都是同一句。
+      var off = pool.length ? (ci + seed.length) % pool.length : 0;
+      pool = pool.slice(off).concat(pool.slice(0, off));
+      picks.push({ char: c, at: level, pool: pool.map(function (r) { return r.text; }) });
+      level += 1;
+    });
+    return {
+      levels: picks.map(function (p) {
+        return { char: p.char, at: p.at, pool: p.pool };
+      }),
+      chars: picks.map(function (p) { return p.char; })
+    };
+  }
+
   function charSummary(poems, chars) {
     var ff = flyFlower({ poems: poems, chars: chars });
     var parts = chars.map(function (c) {
@@ -328,6 +444,9 @@
     overlap: overlap,
     shuffle: shuffle,
     charSummary: charSummary,
+    judgeSetLine: judgeSetLine,
+    passable: passable,
+    levelChars: levelChars,
     sourceOf: sourceOf
   };
 });

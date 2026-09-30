@@ -123,10 +123,14 @@ chk(/game-said-msg/.test(game) && /function checkSaid/.test(game),
 // 用户原话：「删除 —— 这是合集里实际能对上的句数。」「自己写一句试试 修改为
 // 作答」「整句照抄，例如日月之行 修改为 云深不知处」「核一核 修改为 回答」。
 // 注意最后一项：用户要换的是**按钮上的字**，「核一核」这条判分逻辑一个字没动。
-// 只扫**渲染模板**（renderFly 那两段 HTML），不扫注释 —— 注释里复述旧说法
+// 只扫**渲染模板**（「查一查」那段 HTML），不扫注释 —— 注释里复述旧说法
 // 不该把测试扫红，而界面上真出现旧说法必须红。
-const flyHtml = (game.match(/function renderFly\(\)[\s\S]*?\n  \}/) || [''])[0];
-chk(!!flyHtml, '找得到 renderFly() 的渲染片段');
+//
+// Issue #356 P4 起 renderFly() 变成分派器（查一查 / 闯关），两段 HTML 各在
+// 自己的函数里；这一层守的是**「查一查」那一段**（用户第五轮改的就是它），
+// 所以扫 renderFlyLook() 的函数体。
+const flyHtml = (game.match(/function renderFlyLook\(\)[\s\S]*?\n  \}/) || [''])[0];
+chk(!!flyHtml, '找得到「查一查」那一段的渲染片段（renderFlyLook）');
 chk(!/这是合集里实际能对上的句数/.test(flyHtml),
   '句数后面那句「—— 这是合集里实际能对上的句数。」删了（用户：删除）');
 chk(/account-card-title">作答</.test(flyHtml),
