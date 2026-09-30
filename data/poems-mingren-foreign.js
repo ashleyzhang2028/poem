@@ -1,7 +1,7 @@
 window.POEMS_MINGREN_FOREIGN = [
   {
     textRef: "mingren-mr-w-01",
-    masterRef: "mingren-mr-c-08",
+    masterRef: "mingren-mr-w-01",
     id: "mr-w-01",
     title: "毕达哥拉斯",
     group: "科学家",
@@ -14,7 +14,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-02",
-    masterRef: "mingren-mr-c-15",
+    masterRef: "mingren-mr-w-02",
     id: "mr-w-02",
     title: "赫拉克利特",
     group: "哲学家",
@@ -27,7 +27,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-03",
-    masterRef: "mingren-mr-c-16",
+    masterRef: "mingren-mr-w-03",
     id: "mr-w-03",
     title: "埃斯库罗斯",
     group: "文学家",
@@ -40,7 +40,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-04",
-    masterRef: "mingren-mr-w-01",
+    masterRef: "mingren-mr-w-04",
     id: "mr-w-04",
     title: "地米斯托克利",
     group: "军事家",
@@ -53,7 +53,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-05",
-    masterRef: "mingren-mr-c-18",
+    masterRef: "mingren-mr-w-05",
     id: "mr-w-05",
     title: "索福克勒斯",
     group: "文学家",
@@ -66,7 +66,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-06",
-    masterRef: "mingren-mr-w-02",
+    masterRef: "mingren-mr-w-06",
     id: "mr-w-06",
     title: "芝诺",
     group: "哲学家",
@@ -79,7 +79,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-07",
-    masterRef: "mingren-mr-c-19",
+    masterRef: "mingren-mr-w-07",
     id: "mr-w-07",
     title: "欧里庇得斯",
     group: "文学家",
@@ -92,7 +92,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-08",
-    masterRef: "mingren-mr-c-20",
+    masterRef: "mingren-mr-w-08",
     id: "mr-w-08",
     title: "米隆",
     group: "美术家",
@@ -105,7 +105,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-09",
-    masterRef: "mingren-mr-c-21",
+    masterRef: "mingren-mr-w-09",
     id: "mr-w-09",
     title: "菲迪亚斯",
     group: "美术家",
@@ -118,7 +118,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-10",
-    masterRef: "mingren-mr-c-22",
+    masterRef: "mingren-mr-w-10",
     id: "mr-w-10",
     title: "波留克列特斯",
     group: "美术家",
@@ -131,7 +131,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-11",
-    masterRef: "mingren-mr-w-03",
+    masterRef: "mingren-mr-w-11",
     id: "mr-w-11",
     title: "苏格拉底",
     group: "哲学家",
@@ -144,7 +144,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-12",
-    masterRef: "mingren-mr-w-04",
+    masterRef: "mingren-mr-w-12",
     id: "mr-w-12",
     title: "德谟克利特",
     group: "哲学家",
@@ -157,7 +157,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-13",
-    masterRef: "mingren-mr-w-05",
+    masterRef: "mingren-mr-w-13",
     id: "mr-w-13",
     title: "希波克拉底",
     group: "哲学家",
@@ -170,7 +170,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-14",
-    masterRef: "mingren-mr-c-25",
+    masterRef: "mingren-mr-w-14",
     id: "mr-w-14",
     title: "阿里斯托芬",
     group: "文学家",
@@ -183,7 +183,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-15",
-    masterRef: "mingren-mr-w-06",
+    masterRef: "mingren-mr-w-15",
     id: "mr-w-15",
     title: "色诺芬",
     group: "军事家",
@@ -196,7 +196,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-16",
-    masterRef: "mingren-mr-w-07",
+    masterRef: "mingren-mr-w-16",
     id: "mr-w-16",
     title: "柏拉图",
     group: "哲学家",
@@ -209,7 +209,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-17",
-    masterRef: "mingren-mr-w-08",
+    masterRef: "mingren-mr-w-17",
     id: "mr-w-17",
     title: "亚里士多德",
     group: "哲学家",
@@ -222,7 +222,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-18",
-    masterRef: "mingren-mr-w-09",
+    masterRef: "mingren-mr-w-18",
     id: "mr-w-18",
     title: "亚历山大",
     group: "军事家",
@@ -235,7 +235,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-19",
-    masterRef: "mingren-mr-c-40",
+    masterRef: "mingren-mr-w-19",
     id: "mr-w-19",
     title: "伊壁鸠鲁",
     group: "哲学家",
@@ -248,7 +248,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-20",
-    masterRef: "mingren-mr-w-10",
+    masterRef: "mingren-mr-w-20",
     id: "mr-w-20",
     title: "欧几里得",
     group: "科学家",
@@ -261,7 +261,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-21",
-    masterRef: "mingren-mr-w-11",
+    masterRef: "mingren-mr-w-21",
     id: "mr-w-21",
     title: "阿基米德",
     group: "科学家",
@@ -274,7 +274,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-22",
-    masterRef: "mingren-mr-c-49",
+    masterRef: "mingren-mr-w-22",
     id: "mr-w-22",
     title: "阿波罗尼奥斯",
     group: "科学家",
@@ -287,7 +287,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-23",
-    masterRef: "mingren-mr-w-12",
+    masterRef: "mingren-mr-w-23",
     id: "mr-w-23",
     title: "汉尼拔",
     group: "军事家",
@@ -300,7 +300,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-24",
-    masterRef: "mingren-mr-w-13",
+    masterRef: "mingren-mr-w-24",
     id: "mr-w-24",
     title: "大西庇阿",
     group: "军事家",
@@ -313,7 +313,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-25",
-    masterRef: "mingren-mr-w-14",
+    masterRef: "mingren-mr-w-25",
     id: "mr-w-25",
     title: "西塞罗",
     group: "政治家",
@@ -326,7 +326,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-26",
-    masterRef: "mingren-mr-w-15",
+    masterRef: "mingren-mr-w-26",
     id: "mr-w-26",
     title: "恺撒",
     group: "政治家",
@@ -339,7 +339,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-27",
-    masterRef: "mingren-mr-c-71",
+    masterRef: "mingren-mr-w-27",
     id: "mr-w-27",
     title: "维吉尔",
     group: "文学家",
@@ -352,7 +352,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-28",
-    masterRef: "mingren-mr-c-72",
+    masterRef: "mingren-mr-w-28",
     id: "mr-w-28",
     title: "贺拉斯",
     group: "文学家",
@@ -365,7 +365,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-29",
-    masterRef: "mingren-mr-c-74",
+    masterRef: "mingren-mr-w-29",
     id: "mr-w-29",
     title: "奥维德",
     group: "文学家",
@@ -378,7 +378,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-30",
-    masterRef: "mingren-mr-c-75",
+    masterRef: "mingren-mr-w-30",
     id: "mr-w-30",
     title: "荷马",
     group: "文学家",
@@ -391,7 +391,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-31",
-    masterRef: "mingren-mr-c-76",
+    masterRef: "mingren-mr-w-31",
     id: "mr-w-31",
     title: "塞内加",
     group: "哲学家",
@@ -404,7 +404,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-32",
-    masterRef: "mingren-mr-c-84",
+    masterRef: "mingren-mr-w-32",
     id: "mr-w-32",
     title: "托勒密",
     group: "天文地理学家",
@@ -417,7 +417,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-33",
-    masterRef: "mingren-mr-w-16",
+    masterRef: "mingren-mr-w-33",
     id: "mr-w-33",
     title: "马可·奥勒留",
     group: "哲学家",
@@ -430,7 +430,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-34",
-    masterRef: "mingren-mr-w-17",
+    masterRef: "mingren-mr-w-34",
     id: "mr-w-34",
     title: "盖伦",
     group: "科学家",
@@ -443,7 +443,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-35",
-    masterRef: "mingren-mr-c-98",
+    masterRef: "mingren-mr-w-35",
     id: "mr-w-35",
     title: "丢番图",
     group: "科学家",
@@ -456,7 +456,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-36",
-    masterRef: "mingren-mr-w-18",
+    masterRef: "mingren-mr-w-36",
     id: "mr-w-36",
     title: "奥古斯丁",
     group: "哲学家",
@@ -469,7 +469,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-37",
-    masterRef: "mingren-mr-w-19",
+    masterRef: "mingren-mr-w-37",
     id: "mr-w-37",
     title: "查士丁尼",
     group: "政治家",
@@ -482,7 +482,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-38",
-    masterRef: "mingren-mr-w-20",
+    masterRef: "mingren-mr-w-38",
     id: "mr-w-38",
     title: "贝利撒留",
     group: "军事家",
@@ -495,7 +495,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-39",
-    masterRef: "mingren-mr-c-222",
+    masterRef: "mingren-mr-w-39",
     id: "mr-w-39",
     title: "阿维森纳",
     group: "医学家",
@@ -508,7 +508,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-40",
-    masterRef: "mingren-mr-w-21",
+    masterRef: "mingren-mr-w-40",
     id: "mr-w-40",
     title: "萨拉丁",
     group: "军事家",
@@ -521,7 +521,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-41",
-    masterRef: "mingren-mr-w-22",
+    masterRef: "mingren-mr-w-41",
     id: "mr-w-41",
     title: "成吉思汗",
     group: "军事家",
@@ -534,7 +534,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-42",
-    masterRef: "mingren-mr-c-266",
+    masterRef: "mingren-mr-w-42",
     id: "mr-w-42",
     title: "斐波那契",
     group: "科学家",
@@ -547,7 +547,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-43",
-    masterRef: "mingren-mr-w-23",
+    masterRef: "mingren-mr-w-43",
     id: "mr-w-43",
     title: "速不台",
     group: "军事家",
@@ -560,7 +560,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-44",
-    masterRef: "mingren-mr-w-24",
+    masterRef: "mingren-mr-w-44",
     id: "mr-w-44",
     title: "阿奎那",
     group: "哲学家",
@@ -573,7 +573,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-45",
-    masterRef: "mingren-mr-c-283",
+    masterRef: "mingren-mr-w-45",
     id: "mr-w-45",
     title: "但丁",
     group: "文学家",
@@ -586,7 +586,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-46",
-    masterRef: "mingren-mr-c-284",
+    masterRef: "mingren-mr-w-46",
     id: "mr-w-46",
     title: "乔托",
     group: "美术家",
@@ -599,7 +599,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-47",
-    masterRef: "mingren-mr-c-293",
+    masterRef: "mingren-mr-w-47",
     id: "mr-w-47",
     title: "彼特拉克",
     group: "文学家",
@@ -612,7 +612,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-48",
-    masterRef: "mingren-mr-c-295",
+    masterRef: "mingren-mr-w-48",
     id: "mr-w-48",
     title: "薄伽丘",
     group: "文学家",
@@ -625,7 +625,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-49",
-    masterRef: "mingren-mr-w-25",
+    masterRef: "mingren-mr-w-49",
     id: "mr-w-49",
     title: "帖木儿",
     group: "军事家",
@@ -638,7 +638,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-50",
-    masterRef: "mingren-mr-c-298",
+    masterRef: "mingren-mr-w-50",
     id: "mr-w-50",
     title: "乔叟",
     group: "文学家",
@@ -651,7 +651,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-51",
-    masterRef: "mingren-mr-c-300",
+    masterRef: "mingren-mr-w-51",
     id: "mr-w-51",
     title: "布鲁内莱斯基",
     group: "美术家",
@@ -664,7 +664,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-52",
-    masterRef: "mingren-mr-c-303",
+    masterRef: "mingren-mr-w-52",
     id: "mr-w-52",
     title: "阿尔伯蒂",
     group: "美术家",
@@ -677,7 +677,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-53",
-    masterRef: "mingren-mr-c-306",
+    masterRef: "mingren-mr-w-53",
     id: "mr-w-53",
     title: "波提切利",
     group: "美术家",
@@ -690,7 +690,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-54",
-    masterRef: "mingren-mr-c-307",
+    masterRef: "mingren-mr-w-54",
     id: "mr-w-54",
     title: "博斯",
     group: "美术家",
@@ -703,7 +703,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-55",
-    masterRef: "mingren-mr-c-308",
+    masterRef: "mingren-mr-w-55",
     id: "mr-w-55",
     title: "达·芬奇",
     group: "美术家",
@@ -716,7 +716,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-56",
-    masterRef: "mingren-mr-w-26",
+    masterRef: "mingren-mr-w-56",
     id: "mr-w-56",
     title: "马基雅维利",
     group: "政治家",
@@ -729,7 +729,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-57",
-    masterRef: "mingren-mr-c-311",
+    masterRef: "mingren-mr-w-57",
     id: "mr-w-57",
     title: "丢勒",
     group: "美术家",
@@ -742,7 +742,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-58",
-    masterRef: "mingren-mr-w-27",
+    masterRef: "mingren-mr-w-58",
     id: "mr-w-58",
     title: "哥白尼",
     group: "天文地理学家",
@@ -755,7 +755,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-59",
-    masterRef: "mingren-mr-c-313",
+    masterRef: "mingren-mr-w-59",
     id: "mr-w-59",
     title: "米开朗琪罗",
     group: "美术家",
@@ -768,7 +768,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-60",
-    masterRef: "mingren-mr-c-314",
+    masterRef: "mingren-mr-w-60",
     id: "mr-w-60",
     title: "乔尔乔内",
     group: "美术家",
@@ -781,7 +781,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-61",
-    masterRef: "mingren-mr-c-315",
+    masterRef: "mingren-mr-w-61",
     id: "mr-w-61",
     title: "拉斐尔",
     group: "美术家",
@@ -794,7 +794,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-62",
-    masterRef: "mingren-mr-c-316",
+    masterRef: "mingren-mr-w-62",
     id: "mr-w-62",
     title: "提香",
     group: "美术家",
@@ -807,7 +807,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-63",
-    masterRef: "mingren-mr-c-317",
+    masterRef: "mingren-mr-w-63",
     id: "mr-w-63",
     title: "帕拉塞尔苏斯",
     group: "医学家",
@@ -820,7 +820,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-64",
-    masterRef: "mingren-mr-c-318",
+    masterRef: "mingren-mr-w-64",
     id: "mr-w-64",
     title: "拉伯雷",
     group: "文学家",
@@ -833,7 +833,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-65",
-    masterRef: "mingren-mr-c-321",
+    masterRef: "mingren-mr-w-65",
     id: "mr-w-65",
     title: "卡尔达诺",
     group: "科学家",
@@ -846,7 +846,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-66",
-    masterRef: "mingren-mr-c-323",
+    masterRef: "mingren-mr-w-66",
     id: "mr-w-66",
     title: "帕拉第奥",
     group: "美术家",
@@ -859,7 +859,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-67",
-    masterRef: "mingren-mr-c-324",
+    masterRef: "mingren-mr-w-67",
     id: "mr-w-67",
     title: "维萨里",
     group: "生物学家",
@@ -872,7 +872,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-68",
-    masterRef: "mingren-mr-c-326",
+    masterRef: "mingren-mr-w-68",
     id: "mr-w-68",
     title: "丁托列托",
     group: "美术家",
@@ -885,7 +885,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-69",
-    masterRef: "mingren-mr-c-330",
+    masterRef: "mingren-mr-w-69",
     id: "mr-w-69",
     title: "勃鲁盖尔",
     group: "美术家",
@@ -898,7 +898,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-70",
-    masterRef: "mingren-mr-c-333",
+    masterRef: "mingren-mr-w-70",
     id: "mr-w-70",
     title: "蒙田",
     group: "文学家",
@@ -911,7 +911,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-71",
-    masterRef: "mingren-mr-c-335",
+    masterRef: "mingren-mr-w-71",
     id: "mr-w-71",
     title: "韦达",
     group: "科学家",
@@ -924,7 +924,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-72",
-    masterRef: "mingren-mr-c-336",
+    masterRef: "mingren-mr-w-72",
     id: "mr-w-72",
     title: "格列柯",
     group: "美术家",
@@ -937,7 +937,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-73",
-    masterRef: "mingren-mr-c-337",
+    masterRef: "mingren-mr-w-73",
     id: "mr-w-73",
     title: "第谷·布拉赫",
     group: "天文地理学家",
@@ -950,7 +950,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-74",
-    masterRef: "mingren-mr-c-338",
+    masterRef: "mingren-mr-w-74",
     id: "mr-w-74",
     title: "塞万提斯",
     group: "文学家",
@@ -963,7 +963,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-75",
-    masterRef: "mingren-mr-c-341",
+    masterRef: "mingren-mr-w-75",
     id: "mr-w-75",
     title: "培根",
     group: "哲学家",
@@ -976,7 +976,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-76",
-    masterRef: "mingren-mr-c-343",
+    masterRef: "mingren-mr-w-76",
     id: "mr-w-76",
     title: "莎士比亚",
     group: "文学家",
@@ -989,7 +989,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-77",
-    masterRef: "mingren-mr-w-28",
+    masterRef: "mingren-mr-w-77",
     id: "mr-w-77",
     title: "伽利略",
     group: "科学家",
@@ -1002,7 +1002,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-78",
-    masterRef: "mingren-mr-w-29",
+    masterRef: "mingren-mr-w-78",
     id: "mr-w-78",
     title: "蒙特威尔第",
     group: "音乐家",
@@ -1015,7 +1015,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-79",
-    masterRef: "mingren-mr-c-345",
+    masterRef: "mingren-mr-w-79",
     id: "mr-w-79",
     title: "开普勒",
     group: "科学家",
@@ -1028,7 +1028,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-80",
-    masterRef: "mingren-mr-c-347",
+    masterRef: "mingren-mr-w-80",
     id: "mr-w-80",
     title: "鲁本斯",
     group: "美术家",
@@ -1041,7 +1041,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-81",
-    masterRef: "mingren-mr-w-30",
+    masterRef: "mingren-mr-w-81",
     id: "mr-w-81",
     title: "哈维",
     group: "科学家",
@@ -1054,7 +1054,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-82",
-    masterRef: "mingren-mr-w-31",
+    masterRef: "mingren-mr-w-82",
     id: "mr-w-82",
     title: "格劳秀斯",
     group: "政治家",
@@ -1067,7 +1067,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-83",
-    masterRef: "mingren-mr-w-32",
+    masterRef: "mingren-mr-w-83",
     id: "mr-w-83",
     title: "黎塞留",
     group: "政治家",
@@ -1080,7 +1080,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-84",
-    masterRef: "mingren-mr-w-33",
+    masterRef: "mingren-mr-w-84",
     id: "mr-w-84",
     title: "古斯塔夫二世",
     group: "军事家",
@@ -1093,7 +1093,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-85",
-    masterRef: "mingren-mr-c-353",
+    masterRef: "mingren-mr-w-85",
     id: "mr-w-85",
     title: "笛卡尔",
     group: "哲学家",
@@ -1106,7 +1106,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-86",
-    masterRef: "mingren-mr-w-34",
+    masterRef: "mingren-mr-w-86",
     id: "mr-w-86",
     title: "克伦威尔",
     group: "政治家",
@@ -1119,7 +1119,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-87",
-    masterRef: "mingren-mr-c-355",
+    masterRef: "mingren-mr-w-87",
     id: "mr-w-87",
     title: "凡·戴克",
     group: "美术家",
@@ -1132,7 +1132,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-88",
-    masterRef: "mingren-mr-c-356",
+    masterRef: "mingren-mr-w-88",
     id: "mr-w-88",
     title: "委拉斯开兹",
     group: "美术家",
@@ -1145,7 +1145,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-89",
-    masterRef: "mingren-mr-c-357",
+    masterRef: "mingren-mr-w-89",
     id: "mr-w-89",
     title: "费马",
     group: "科学家",
@@ -1158,7 +1158,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-90",
-    masterRef: "mingren-mr-c-358",
+    masterRef: "mingren-mr-w-90",
     id: "mr-w-90",
     title: "伦勃朗",
     group: "美术家",
@@ -1171,7 +1171,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-91",
-    masterRef: "mingren-mr-c-359",
+    masterRef: "mingren-mr-w-91",
     id: "mr-w-91",
     title: "密尔顿",
     group: "文学家",
@@ -1184,7 +1184,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-92",
-    masterRef: "mingren-mr-c-364",
+    masterRef: "mingren-mr-w-92",
     id: "mr-w-92",
     title: "莫里哀",
     group: "文学家",
@@ -1197,7 +1197,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-93",
-    masterRef: "mingren-mr-c-365",
+    masterRef: "mingren-mr-w-93",
     id: "mr-w-93",
     title: "帕斯卡",
     group: "科学家",
@@ -1210,7 +1210,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-94",
-    masterRef: "mingren-mr-w-35",
+    masterRef: "mingren-mr-w-94",
     id: "mr-w-94",
     title: "配第",
     group: "经济学家",
@@ -1223,7 +1223,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-95",
-    masterRef: "mingren-mr-c-367",
+    masterRef: "mingren-mr-w-95",
     id: "mr-w-95",
     title: "波义耳",
     group: "科学家",
@@ -1236,7 +1236,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-96",
-    masterRef: "mingren-mr-c-368",
+    masterRef: "mingren-mr-w-96",
     id: "mr-w-96",
     title: "惠更斯",
     group: "科学家",
@@ -1249,7 +1249,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-97",
-    masterRef: "mingren-mr-c-369",
+    masterRef: "mingren-mr-w-97",
     id: "mr-w-97",
     title: "洛克",
     group: "哲学家",
@@ -1262,7 +1262,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-98",
-    masterRef: "mingren-mr-w-36",
+    masterRef: "mingren-mr-w-98",
     id: "mr-w-98",
     title: "斯宾诺莎",
     group: "哲学家",
@@ -1275,7 +1275,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-99",
-    masterRef: "mingren-mr-c-370",
+    masterRef: "mingren-mr-w-99",
     id: "mr-w-99",
     title: "维米尔",
     group: "美术家",
@@ -1288,7 +1288,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-100",
-    masterRef: "mingren-mr-c-373",
+    masterRef: "mingren-mr-w-100",
     id: "mr-w-100",
     title: "胡克",
     group: "科学家",
@@ -1301,7 +1301,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-101",
-    masterRef: "mingren-mr-c-374",
+    masterRef: "mingren-mr-w-101",
     id: "mr-w-101",
     title: "拉辛",
     group: "文学家",
@@ -1314,7 +1314,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-102",
-    masterRef: "mingren-mr-w-37",
+    masterRef: "mingren-mr-w-102",
     id: "mr-w-102",
     title: "牛顿",
     group: "科学家",
@@ -1327,7 +1327,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-103",
-    masterRef: "mingren-mr-w-38",
+    masterRef: "mingren-mr-w-103",
     id: "mr-w-103",
     title: "莱布尼兹",
     group: "哲学家",
@@ -1340,7 +1340,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-104",
-    masterRef: "mingren-mr-c-380",
+    masterRef: "mingren-mr-w-104",
     id: "mr-w-104",
     title: "哈雷",
     group: "天文地理学家",
@@ -1353,7 +1353,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-105",
-    masterRef: "mingren-mr-c-381",
+    masterRef: "mingren-mr-w-105",
     id: "mr-w-105",
     title: "笛福",
     group: "文学家",
@@ -1366,7 +1366,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-106",
-    masterRef: "mingren-mr-c-382",
+    masterRef: "mingren-mr-w-106",
     id: "mr-w-106",
     title: "斯威夫特",
     group: "文学家",
@@ -1379,7 +1379,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-107",
-    masterRef: "mingren-mr-w-39",
+    masterRef: "mingren-mr-w-107",
     id: "mr-w-107",
     title: "维瓦尔第",
     group: "音乐家",
@@ -1392,7 +1392,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-108",
-    masterRef: "mingren-mr-c-384",
+    masterRef: "mingren-mr-w-108",
     id: "mr-w-108",
     title: "巴赫",
     group: "音乐家",
@@ -1405,7 +1405,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-109",
-    masterRef: "mingren-mr-c-385",
+    masterRef: "mingren-mr-w-109",
     id: "mr-w-109",
     title: "亨德尔",
     group: "音乐家",
@@ -1418,7 +1418,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-110",
-    masterRef: "mingren-mr-w-40",
+    masterRef: "mingren-mr-w-110",
     id: "mr-w-110",
     title: "孟德斯鸠",
     group: "政治家",
@@ -1431,7 +1431,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-111",
-    masterRef: "mingren-mr-w-41",
+    masterRef: "mingren-mr-w-111",
     id: "mr-w-111",
     title: "魁奈",
     group: "经济学家",
@@ -1444,7 +1444,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-112",
-    masterRef: "mingren-mr-w-42",
+    masterRef: "mingren-mr-w-112",
     id: "mr-w-112",
     title: "富兰克林",
     group: "科学家",
@@ -1457,7 +1457,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-113",
-    masterRef: "mingren-mr-c-390",
+    masterRef: "mingren-mr-w-113",
     id: "mr-w-113",
     title: "菲尔丁",
     group: "文学家",
@@ -1470,7 +1470,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-114",
-    masterRef: "mingren-mr-w-43",
+    masterRef: "mingren-mr-w-114",
     id: "mr-w-114",
     title: "欧拉",
     group: "科学家",
@@ -1483,7 +1483,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-115",
-    masterRef: "mingren-mr-w-44",
+    masterRef: "mingren-mr-w-115",
     id: "mr-w-115",
     title: "林奈",
     group: "科学家",
@@ -1496,7 +1496,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-116",
-    masterRef: "mingren-mr-c-391",
+    masterRef: "mingren-mr-w-116",
     id: "mr-w-116",
     title: "布丰",
     group: "生物学家",
@@ -1509,7 +1509,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-117",
-    masterRef: "mingren-mr-w-45",
+    masterRef: "mingren-mr-w-117",
     id: "mr-w-117",
     title: "休谟",
     group: "哲学家",
@@ -1522,7 +1522,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-118",
-    masterRef: "mingren-mr-c-392",
+    masterRef: "mingren-mr-w-118",
     id: "mr-w-118",
     title: "卢梭",
     group: "哲学家",
@@ -1535,7 +1535,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-119",
-    masterRef: "mingren-mr-c-393",
+    masterRef: "mingren-mr-w-119",
     id: "mr-w-119",
     title: "狄德罗",
     group: "哲学家",
@@ -1548,7 +1548,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-120",
-    masterRef: "mingren-mr-w-46",
+    masterRef: "mingren-mr-w-120",
     id: "mr-w-120",
     title: "亚当·斯密",
     group: "经济学家",
@@ -1561,7 +1561,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-121",
-    masterRef: "mingren-mr-w-47",
+    masterRef: "mingren-mr-w-121",
     id: "mr-w-121",
     title: "康德",
     group: "哲学家",
@@ -1574,7 +1574,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-122",
-    masterRef: "mingren-mr-w-48",
+    masterRef: "mingren-mr-w-122",
     id: "mr-w-122",
     title: "苏沃洛夫",
     group: "军事家",
@@ -1587,7 +1587,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-123",
-    masterRef: "mingren-mr-w-49",
+    masterRef: "mingren-mr-w-123",
     id: "mr-w-123",
     title: "华盛顿",
     group: "政治家",
@@ -1600,7 +1600,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-124",
-    masterRef: "mingren-mr-c-400",
+    masterRef: "mingren-mr-w-124",
     id: "mr-w-124",
     title: "海顿",
     group: "音乐家",
@@ -1613,7 +1613,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-125",
-    masterRef: "mingren-mr-c-402",
+    masterRef: "mingren-mr-w-125",
     id: "mr-w-125",
     title: "拉格朗日",
     group: "科学家",
@@ -1626,7 +1626,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-126",
-    masterRef: "mingren-mr-w-50",
+    masterRef: "mingren-mr-w-126",
     id: "mr-w-126",
     title: "贝卡里亚",
     group: "政治家",
@@ -1639,7 +1639,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-127",
-    masterRef: "mingren-mr-c-404",
+    masterRef: "mingren-mr-w-127",
     id: "mr-w-127",
     title: "赫歇尔",
     group: "天文地理学家",
@@ -1652,7 +1652,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-128",
-    masterRef: "mingren-mr-c-405",
+    masterRef: "mingren-mr-w-128",
     id: "mr-w-128",
     title: "舍勒",
     group: "科学家",
@@ -1665,7 +1665,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-129",
-    masterRef: "mingren-mr-w-51",
+    masterRef: "mingren-mr-w-129",
     id: "mr-w-129",
     title: "杰斐逊",
     group: "政治家",
@@ -1678,7 +1678,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-130",
-    masterRef: "mingren-mr-w-52",
+    masterRef: "mingren-mr-w-130",
     id: "mr-w-130",
     title: "拉瓦锡",
     group: "科学家",
@@ -1691,7 +1691,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-131",
-    masterRef: "mingren-mr-c-406",
+    masterRef: "mingren-mr-w-131",
     id: "mr-w-131",
     title: "拉马克",
     group: "生物学家",
@@ -1704,7 +1704,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-132",
-    masterRef: "mingren-mr-w-53",
+    masterRef: "mingren-mr-w-132",
     id: "mr-w-132",
     title: "库图佐夫",
     group: "军事家",
@@ -1717,7 +1717,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-133",
-    masterRef: "mingren-mr-c-408",
+    masterRef: "mingren-mr-w-133",
     id: "mr-w-133",
     title: "戈雅",
     group: "美术家",
@@ -1730,7 +1730,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-134",
-    masterRef: "mingren-mr-c-409",
+    masterRef: "mingren-mr-w-134",
     id: "mr-w-134",
     title: "大卫",
     group: "美术家",
@@ -1743,7 +1743,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-135",
-    masterRef: "mingren-mr-c-410",
+    masterRef: "mingren-mr-w-135",
     id: "mr-w-135",
     title: "歌德",
     group: "文学家",
@@ -1756,7 +1756,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-136",
-    masterRef: "mingren-mr-c-411",
+    masterRef: "mingren-mr-w-136",
     id: "mr-w-136",
     title: "拉普拉斯",
     group: "科学家",
@@ -1769,7 +1769,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-137",
-    masterRef: "mingren-mr-c-412",
+    masterRef: "mingren-mr-w-137",
     id: "mr-w-137",
     title: "詹纳",
     group: "医学家",
@@ -1782,7 +1782,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-138",
-    masterRef: "mingren-mr-c-413",
+    masterRef: "mingren-mr-w-138",
     id: "mr-w-138",
     title: "勒让德",
     group: "科学家",
@@ -1795,7 +1795,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-139",
-    masterRef: "mingren-mr-c-414",
+    masterRef: "mingren-mr-w-139",
     id: "mr-w-139",
     title: "莫扎特",
     group: "音乐家",
@@ -1808,7 +1808,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-140",
-    masterRef: "mingren-mr-w-54",
+    masterRef: "mingren-mr-w-140",
     id: "mr-w-140",
     title: "纳尔逊",
     group: "军事家",
@@ -1821,7 +1821,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-141",
-    masterRef: "mingren-mr-c-415",
+    masterRef: "mingren-mr-w-141",
     id: "mr-w-141",
     title: "席勒",
     group: "文学家",
@@ -1834,7 +1834,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-142",
-    masterRef: "mingren-mr-w-55",
+    masterRef: "mingren-mr-w-142",
     id: "mr-w-142",
     title: "道尔顿",
     group: "科学家",
@@ -1847,7 +1847,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-143",
-    masterRef: "mingren-mr-w-56",
+    masterRef: "mingren-mr-w-143",
     id: "mr-w-143",
     title: "马尔萨斯",
     group: "经济学家",
@@ -1860,7 +1860,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-144",
-    masterRef: "mingren-mr-w-57",
+    masterRef: "mingren-mr-w-144",
     id: "mr-w-144",
     title: "萨伊",
     group: "经济学家",
@@ -1873,7 +1873,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-145",
-    masterRef: "mingren-mr-w-58",
+    masterRef: "mingren-mr-w-145",
     id: "mr-w-145",
     title: "惠灵顿",
     group: "军事家",
@@ -1886,7 +1886,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-146",
-    masterRef: "mingren-mr-w-59",
+    masterRef: "mingren-mr-w-146",
     id: "mr-w-146",
     title: "拿破仑",
     group: "军事家",
@@ -1899,7 +1899,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-147",
-    masterRef: "mingren-mr-c-419",
+    masterRef: "mingren-mr-w-147",
     id: "mr-w-147",
     title: "居维叶",
     group: "生物学家",
@@ -1912,7 +1912,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-148",
-    masterRef: "mingren-mr-c-420",
+    masterRef: "mingren-mr-w-148",
     id: "mr-w-148",
     title: "华兹华斯",
     group: "文学家",
@@ -1925,7 +1925,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-149",
-    masterRef: "mingren-mr-w-60",
+    masterRef: "mingren-mr-w-149",
     id: "mr-w-149",
     title: "黑格尔",
     group: "哲学家",
@@ -1938,7 +1938,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-150",
-    masterRef: "mingren-mr-c-421",
+    masterRef: "mingren-mr-w-150",
     id: "mr-w-150",
     title: "贝多芬",
     group: "音乐家",
@@ -1951,7 +1951,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-151",
-    masterRef: "mingren-mr-c-422",
+    masterRef: "mingren-mr-w-151",
     id: "mr-w-151",
     title: "柯勒律治",
     group: "文学家",
@@ -1964,7 +1964,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-152",
-    masterRef: "mingren-mr-w-61",
+    masterRef: "mingren-mr-w-152",
     id: "mr-w-152",
     title: "李嘉图",
     group: "经济学家",
@@ -1977,7 +1977,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-153",
-    masterRef: "mingren-mr-c-423",
+    masterRef: "mingren-mr-w-153",
     id: "mr-w-153",
     title: "简·奥斯汀",
     group: "文学家",
@@ -1990,7 +1990,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-154",
-    masterRef: "mingren-mr-c-425",
+    masterRef: "mingren-mr-w-154",
     id: "mr-w-154",
     title: "阿伏伽德罗",
     group: "科学家",
@@ -2003,7 +2003,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-155",
-    masterRef: "mingren-mr-w-62",
+    masterRef: "mingren-mr-w-155",
     id: "mr-w-155",
     title: "高斯",
     group: "科学家",
@@ -2016,7 +2016,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-156",
-    masterRef: "mingren-mr-c-426",
+    masterRef: "mingren-mr-w-156",
     id: "mr-w-156",
     title: "安格尔",
     group: "美术家",
@@ -2029,7 +2029,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-157",
-    masterRef: "mingren-mr-w-63",
+    masterRef: "mingren-mr-w-157",
     id: "mr-w-157",
     title: "帕格尼尼",
     group: "音乐家",
@@ -2042,7 +2042,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-158",
-    masterRef: "mingren-mr-c-427",
+    masterRef: "mingren-mr-w-158",
     id: "mr-w-158",
     title: "司汤达",
     group: "文学家",
@@ -2055,7 +2055,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-159",
-    masterRef: "mingren-mr-c-428",
+    masterRef: "mingren-mr-w-159",
     id: "mr-w-159",
     title: "拜伦",
     group: "文学家",
@@ -2068,7 +2068,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-160",
-    masterRef: "mingren-mr-w-64",
+    masterRef: "mingren-mr-w-160",
     id: "mr-w-160",
     title: "叔本华",
     group: "哲学家",
@@ -2081,7 +2081,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-161",
-    masterRef: "mingren-mr-c-429",
+    masterRef: "mingren-mr-w-161",
     id: "mr-w-161",
     title: "柯西",
     group: "科学家",
@@ -2094,7 +2094,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-162",
-    masterRef: "mingren-mr-w-65",
+    masterRef: "mingren-mr-w-162",
     id: "mr-w-162",
     title: "法拉第",
     group: "科学家",
@@ -2107,7 +2107,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-163",
-    masterRef: "mingren-mr-w-66",
+    masterRef: "mingren-mr-w-163",
     id: "mr-w-163",
     title: "莫尔斯",
     group: "科学家",
@@ -2120,7 +2120,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-164",
-    masterRef: "mingren-mr-c-431",
+    masterRef: "mingren-mr-w-164",
     id: "mr-w-164",
     title: "雪莱",
     group: "文学家",
@@ -2133,7 +2133,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-165",
-    masterRef: "mingren-mr-w-67",
+    masterRef: "mingren-mr-w-165",
     id: "mr-w-165",
     title: "罗西尼",
     group: "音乐家",
@@ -2146,7 +2146,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-166",
-    masterRef: "mingren-mr-c-433",
+    masterRef: "mingren-mr-w-166",
     id: "mr-w-166",
     title: "济慈",
     group: "文学家",
@@ -2159,7 +2159,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-167",
-    masterRef: "mingren-mr-c-434",
+    masterRef: "mingren-mr-w-167",
     id: "mr-w-167",
     title: "舒伯特",
     group: "音乐家",
@@ -2172,7 +2172,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-168",
-    masterRef: "mingren-mr-w-68",
+    masterRef: "mingren-mr-w-168",
     id: "mr-w-168",
     title: "多尼采蒂",
     group: "音乐家",
@@ -2185,7 +2185,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-169",
-    masterRef: "mingren-mr-c-435",
+    masterRef: "mingren-mr-w-169",
     id: "mr-w-169",
     title: "德拉克洛瓦",
     group: "美术家",
@@ -2198,7 +2198,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-170",
-    masterRef: "mingren-mr-c-436",
+    masterRef: "mingren-mr-w-170",
     id: "mr-w-170",
     title: "巴尔扎克",
     group: "文学家",
@@ -2211,7 +2211,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-171",
-    masterRef: "mingren-mr-c-437",
+    masterRef: "mingren-mr-w-171",
     id: "mr-w-171",
     title: "普希金",
     group: "文学家",
@@ -2224,7 +2224,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-172",
-    masterRef: "mingren-mr-w-69",
+    masterRef: "mingren-mr-w-172",
     id: "mr-w-172",
     title: "毛奇",
     group: "军事家",
@@ -2237,7 +2237,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-173",
-    masterRef: "mingren-mr-c-438",
+    masterRef: "mingren-mr-w-173",
     id: "mr-w-173",
     title: "雨果",
     group: "文学家",
@@ -2250,7 +2250,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-174",
-    masterRef: "mingren-mr-c-439",
+    masterRef: "mingren-mr-w-174",
     id: "mr-w-174",
     title: "大仲马",
     group: "文学家",
@@ -2263,7 +2263,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-175",
-    masterRef: "mingren-mr-c-440",
+    masterRef: "mingren-mr-w-175",
     id: "mr-w-175",
     title: "阿贝尔",
     group: "科学家",
@@ -2276,7 +2276,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-176",
-    masterRef: "mingren-mr-w-70",
+    masterRef: "mingren-mr-w-176",
     id: "mr-w-176",
     title: "柏辽兹",
     group: "音乐家",
@@ -2289,7 +2289,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-177",
-    masterRef: "mingren-mr-c-441",
+    masterRef: "mingren-mr-w-177",
     id: "mr-w-177",
     title: "乔治·桑",
     group: "文学家",
@@ -2302,7 +2302,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-178",
-    masterRef: "mingren-mr-w-71",
+    masterRef: "mingren-mr-w-178",
     id: "mr-w-178",
     title: "马志尼",
     group: "政治家",
@@ -2315,7 +2315,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-179",
-    masterRef: "mingren-mr-c-442",
+    masterRef: "mingren-mr-w-179",
     id: "mr-w-179",
     title: "安徒生",
     group: "文学家",
@@ -2328,7 +2328,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-180",
-    masterRef: "mingren-mr-w-72",
+    masterRef: "mingren-mr-w-180",
     id: "mr-w-180",
     title: "穆勒",
     group: "经济学家",
@@ -2341,7 +2341,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-181",
-    masterRef: "mingren-mr-w-73",
+    masterRef: "mingren-mr-w-181",
     id: "mr-w-181",
     title: "加里波第",
     group: "军事家",
@@ -2354,7 +2354,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-182",
-    masterRef: "mingren-mr-w-74",
+    masterRef: "mingren-mr-w-182",
     id: "mr-w-182",
     title: "林肯",
     group: "政治家",
@@ -2367,7 +2367,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-183",
-    masterRef: "mingren-mr-c-443",
+    masterRef: "mingren-mr-w-183",
     id: "mr-w-183",
     title: "果戈理",
     group: "文学家",
@@ -2380,7 +2380,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-184",
-    masterRef: "mingren-mr-c-444",
+    masterRef: "mingren-mr-w-184",
     id: "mr-w-184",
     title: "爱伦·坡",
     group: "文学家",
@@ -2393,7 +2393,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-185",
-    masterRef: "mingren-mr-w-75",
+    masterRef: "mingren-mr-w-185",
     id: "mr-w-185",
     title: "达尔文",
     group: "科学家",
@@ -2406,7 +2406,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-186",
-    masterRef: "mingren-mr-w-76",
+    masterRef: "mingren-mr-w-186",
     id: "mr-w-186",
     title: "门德尔松",
     group: "音乐家",
@@ -2419,7 +2419,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-187",
-    masterRef: "mingren-mr-w-77",
+    masterRef: "mingren-mr-w-187",
     id: "mr-w-187",
     title: "加富尔",
     group: "政治家",
@@ -2432,7 +2432,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-188",
-    masterRef: "mingren-mr-c-445",
+    masterRef: "mingren-mr-w-188",
     id: "mr-w-188",
     title: "肖邦",
     group: "音乐家",
@@ -2445,7 +2445,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-189",
-    masterRef: "mingren-mr-c-446",
+    masterRef: "mingren-mr-w-189",
     id: "mr-w-189",
     title: "舒曼",
     group: "音乐家",
@@ -2458,7 +2458,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-190",
-    masterRef: "mingren-mr-c-448",
+    masterRef: "mingren-mr-w-190",
     id: "mr-w-190",
     title: "伽罗瓦",
     group: "科学家",
@@ -2471,7 +2471,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-191",
-    masterRef: "mingren-mr-c-449",
+    masterRef: "mingren-mr-w-191",
     id: "mr-w-191",
     title: "本生",
     group: "科学家",
@@ -2484,7 +2484,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-192",
-    masterRef: "mingren-mr-c-450",
+    masterRef: "mingren-mr-w-192",
     id: "mr-w-192",
     title: "勒维耶",
     group: "天文地理学家",
@@ -2497,7 +2497,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-193",
-    masterRef: "mingren-mr-c-451",
+    masterRef: "mingren-mr-w-193",
     id: "mr-w-193",
     title: "李斯特",
     group: "音乐家",
@@ -2510,7 +2510,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-194",
-    masterRef: "mingren-mr-c-453",
+    masterRef: "mingren-mr-w-194",
     id: "mr-w-194",
     title: "狄更斯",
     group: "文学家",
@@ -2523,7 +2523,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-195",
-    masterRef: "mingren-mr-c-455",
+    masterRef: "mingren-mr-w-195",
     id: "mr-w-195",
     title: "克尔凯郭尔",
     group: "哲学家",
@@ -2536,7 +2536,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-196",
-    masterRef: "mingren-mr-c-456",
+    masterRef: "mingren-mr-w-196",
     id: "mr-w-196",
     title: "瓦格纳",
     group: "音乐家",
@@ -2549,7 +2549,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-197",
-    masterRef: "mingren-mr-c-457",
+    masterRef: "mingren-mr-w-197",
     id: "mr-w-197",
     title: "威尔第",
     group: "音乐家",
@@ -2562,7 +2562,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-198",
-    masterRef: "mingren-mr-c-458",
+    masterRef: "mingren-mr-w-198",
     id: "mr-w-198",
     title: "莱蒙托夫",
     group: "文学家",
@@ -2575,7 +2575,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-199",
-    masterRef: "mingren-mr-c-459",
+    masterRef: "mingren-mr-w-199",
     id: "mr-w-199",
     title: "米勒",
     group: "美术家",
@@ -2588,7 +2588,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-200",
-    masterRef: "mingren-mr-c-460",
+    masterRef: "mingren-mr-w-200",
     id: "mr-w-200",
     title: "夏洛蒂·勃朗特",
     group: "文学家",
@@ -2601,7 +2601,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-201",
-    masterRef: "mingren-mr-c-461",
+    masterRef: "mingren-mr-w-201",
     id: "mr-w-201",
     title: "艾米莉·勃朗特",
     group: "文学家",
@@ -2614,7 +2614,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-202",
-    masterRef: "mingren-mr-c-462",
+    masterRef: "mingren-mr-w-202",
     id: "mr-w-202",
     title: "屠格涅夫",
     group: "文学家",
@@ -2627,7 +2627,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-203",
-    masterRef: "mingren-mr-c-463",
+    masterRef: "mingren-mr-w-203",
     id: "mr-w-203",
     title: "马克思",
     group: "哲学家",
@@ -2640,7 +2640,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-204",
-    masterRef: "mingren-mr-w-78",
+    masterRef: "mingren-mr-w-204",
     id: "mr-w-204",
     title: "焦耳",
     group: "科学家",
@@ -2653,7 +2653,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-205",
-    masterRef: "mingren-mr-c-465",
+    masterRef: "mingren-mr-w-205",
     id: "mr-w-205",
     title: "艾略特",
     group: "文学家",
@@ -2666,7 +2666,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-206",
-    masterRef: "mingren-mr-c-466",
+    masterRef: "mingren-mr-w-206",
     id: "mr-w-206",
     title: "惠特曼",
     group: "文学家",
@@ -2679,7 +2679,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-207",
-    masterRef: "mingren-mr-c-467",
+    masterRef: "mingren-mr-w-207",
     id: "mr-w-207",
     title: "梅尔维尔",
     group: "文学家",
@@ -2692,7 +2692,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-208",
-    masterRef: "mingren-mr-c-468",
+    masterRef: "mingren-mr-w-208",
     id: "mr-w-208",
     title: "库尔贝",
     group: "美术家",
@@ -2705,7 +2705,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-209",
-    masterRef: "mingren-mr-c-469",
+    masterRef: "mingren-mr-w-209",
     id: "mr-w-209",
     title: "南丁格尔",
     group: "医学家",
@@ -2718,7 +2718,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-210",
-    masterRef: "mingren-mr-c-471",
+    masterRef: "mingren-mr-w-210",
     id: "mr-w-210",
     title: "波德莱尔",
     group: "文学家",
@@ -2731,7 +2731,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-211",
-    masterRef: "mingren-mr-c-472",
+    masterRef: "mingren-mr-w-211",
     id: "mr-w-211",
     title: "福楼拜",
     group: "文学家",
@@ -2744,7 +2744,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-212",
-    masterRef: "mingren-mr-c-473",
+    masterRef: "mingren-mr-w-212",
     id: "mr-w-212",
     title: "陀思妥耶夫斯基",
     group: "文学家",
@@ -2757,7 +2757,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-213",
-    masterRef: "mingren-mr-w-79",
+    masterRef: "mingren-mr-w-213",
     id: "mr-w-213",
     title: "巴斯德",
     group: "科学家",
@@ -2770,7 +2770,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-214",
-    masterRef: "mingren-mr-w-80",
+    masterRef: "mingren-mr-w-214",
     id: "mr-w-214",
     title: "孟德尔",
     group: "科学家",
@@ -2783,7 +2783,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-215",
-    masterRef: "mingren-mr-c-475",
+    masterRef: "mingren-mr-w-215",
     id: "mr-w-215",
     title: "裴多菲",
     group: "文学家",
@@ -2796,7 +2796,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-216",
-    masterRef: "mingren-mr-c-476",
+    masterRef: "mingren-mr-w-216",
     id: "mr-w-216",
     title: "华莱士",
     group: "生物学家",
@@ -2809,7 +2809,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-217",
-    masterRef: "mingren-mr-c-477",
+    masterRef: "mingren-mr-w-217",
     id: "mr-w-217",
     title: "基尔霍夫",
     group: "科学家",
@@ -2822,7 +2822,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-218",
-    masterRef: "mingren-mr-w-81",
+    masterRef: "mingren-mr-w-218",
     id: "mr-w-218",
     title: "开尔文",
     group: "科学家",
@@ -2835,7 +2835,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-219",
-    masterRef: "mingren-mr-c-478",
+    masterRef: "mingren-mr-w-219",
     id: "mr-w-219",
     title: "布鲁克纳",
     group: "音乐家",
@@ -2848,7 +2848,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-220",
-    masterRef: "mingren-mr-w-82",
+    masterRef: "mingren-mr-w-220",
     id: "mr-w-220",
     title: "斯美塔那",
     group: "音乐家",
@@ -2861,7 +2861,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-221",
-    masterRef: "mingren-mr-c-479",
+    masterRef: "mingren-mr-w-221",
     id: "mr-w-221",
     title: "黎曼",
     group: "科学家",
@@ -2874,7 +2874,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-222",
-    masterRef: "mingren-mr-c-480",
+    masterRef: "mingren-mr-w-222",
     id: "mr-w-222",
     title: "托尔斯泰",
     group: "文学家",
@@ -2887,7 +2887,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-223",
-    masterRef: "mingren-mr-c-481",
+    masterRef: "mingren-mr-w-223",
     id: "mr-w-223",
     title: "易卜生",
     group: "文学家",
@@ -2900,7 +2900,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-224",
-    masterRef: "mingren-mr-c-482",
+    masterRef: "mingren-mr-w-224",
     id: "mr-w-224",
     title: "凯库勒",
     group: "科学家",
@@ -2913,7 +2913,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-225",
-    masterRef: "mingren-mr-c-483",
+    masterRef: "mingren-mr-w-225",
     id: "mr-w-225",
     title: "狄金森",
     group: "文学家",
@@ -2926,7 +2926,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-226",
-    masterRef: "mingren-mr-w-83",
+    masterRef: "mingren-mr-w-226",
     id: "mr-w-226",
     title: "麦克斯韦",
     group: "科学家",
@@ -2939,7 +2939,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-227",
-    masterRef: "mingren-mr-c-485",
+    masterRef: "mingren-mr-w-227",
     id: "mr-w-227",
     title: "埃菲尔",
     group: "美术家",
@@ -2952,7 +2952,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-228",
-    masterRef: "mingren-mr-c-486",
+    masterRef: "mingren-mr-w-228",
     id: "mr-w-228",
     title: "马奈",
     group: "美术家",
@@ -2965,7 +2965,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-229",
-    masterRef: "mingren-mr-w-84",
+    masterRef: "mingren-mr-w-229",
     id: "mr-w-229",
     title: "诺贝尔",
     group: "科学家",
@@ -2978,7 +2978,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-230",
-    masterRef: "mingren-mr-c-487",
+    masterRef: "mingren-mr-w-230",
     id: "mr-w-230",
     title: "鲍罗丁",
     group: "音乐家",
@@ -2991,7 +2991,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-231",
-    masterRef: "mingren-mr-w-85",
+    masterRef: "mingren-mr-w-231",
     id: "mr-w-231",
     title: "勃拉姆斯",
     group: "音乐家",
@@ -3004,7 +3004,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-232",
-    masterRef: "mingren-mr-c-488",
+    masterRef: "mingren-mr-w-232",
     id: "mr-w-232",
     title: "门捷列夫",
     group: "科学家",
@@ -3017,7 +3017,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-233",
-    masterRef: "mingren-mr-c-489",
+    masterRef: "mingren-mr-w-233",
     id: "mr-w-233",
     title: "德加",
     group: "美术家",
@@ -3030,7 +3030,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-234",
-    masterRef: "mingren-mr-w-86",
+    masterRef: "mingren-mr-w-234",
     id: "mr-w-234",
     title: "瓦尔拉斯",
     group: "经济学家",
@@ -3043,7 +3043,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-235",
-    masterRef: "mingren-mr-c-490",
+    masterRef: "mingren-mr-w-235",
     id: "mr-w-235",
     title: "马克·吐温",
     group: "文学家",
@@ -3056,7 +3056,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-236",
-    masterRef: "mingren-mr-c-493",
+    masterRef: "mingren-mr-w-236",
     id: "mr-w-236",
     title: "塞尚",
     group: "美术家",
@@ -3069,7 +3069,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-237",
-    masterRef: "mingren-mr-c-494",
+    masterRef: "mingren-mr-w-237",
     id: "mr-w-237",
     title: "穆索尔斯基",
     group: "音乐家",
@@ -3082,7 +3082,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-238",
-    masterRef: "mingren-mr-c-497",
+    masterRef: "mingren-mr-w-238",
     id: "mr-w-238",
     title: "莫奈",
     group: "美术家",
@@ -3095,7 +3095,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-239",
-    masterRef: "mingren-mr-c-498",
+    masterRef: "mingren-mr-w-239",
     id: "mr-w-239",
     title: "罗丹",
     group: "美术家",
@@ -3108,7 +3108,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-240",
-    masterRef: "mingren-mr-c-499",
+    masterRef: "mingren-mr-w-240",
     id: "mr-w-240",
     title: "柴可夫斯基",
     group: "音乐家",
@@ -3121,7 +3121,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-241",
-    masterRef: "mingren-mr-w-87",
+    masterRef: "mingren-mr-w-241",
     id: "mr-w-241",
     title: "门格尔",
     group: "经济学家",
@@ -3134,7 +3134,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-242",
-    masterRef: "mingren-mr-c-500",
+    masterRef: "mingren-mr-w-242",
     id: "mr-w-242",
     title: "雷诺阿",
     group: "美术家",
@@ -3147,7 +3147,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-243",
-    masterRef: "mingren-mr-c-501",
+    masterRef: "mingren-mr-w-243",
     id: "mr-w-243",
     title: "德沃夏克",
     group: "音乐家",
@@ -3160,7 +3160,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-244",
-    masterRef: "mingren-mr-w-88",
+    masterRef: "mingren-mr-w-244",
     id: "mr-w-244",
     title: "马歇尔",
     group: "经济学家",
@@ -3173,7 +3173,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-245",
-    masterRef: "mingren-mr-c-502",
+    masterRef: "mingren-mr-w-245",
     id: "mr-w-245",
     title: "詹姆斯",
     group: "文学家",
@@ -3186,7 +3186,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-246",
-    masterRef: "mingren-mr-c-503",
+    masterRef: "mingren-mr-w-246",
     id: "mr-w-246",
     title: "科赫",
     group: "医学家",
@@ -3199,7 +3199,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-247",
-    masterRef: "mingren-mr-w-89",
+    masterRef: "mingren-mr-w-247",
     id: "mr-w-247",
     title: "格里格",
     group: "音乐家",
@@ -3212,7 +3212,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-248",
-    masterRef: "mingren-mr-w-90",
+    masterRef: "mingren-mr-w-248",
     id: "mr-w-248",
     title: "尼采",
     group: "哲学家",
@@ -3225,7 +3225,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-249",
-    masterRef: "mingren-mr-c-505",
+    masterRef: "mingren-mr-w-249",
     id: "mr-w-249",
     title: "列宾",
     group: "美术家",
@@ -3238,7 +3238,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-250",
-    masterRef: "mingren-mr-c-507",
+    masterRef: "mingren-mr-w-250",
     id: "mr-w-250",
     title: "康托尔",
     group: "科学家",
@@ -3251,7 +3251,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-251",
-    masterRef: "mingren-mr-w-91",
+    masterRef: "mingren-mr-w-251",
     id: "mr-w-251",
     title: "伦琴",
     group: "科学家",
@@ -3264,7 +3264,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-252",
-    masterRef: "mingren-mr-c-508",
+    masterRef: "mingren-mr-w-252",
     id: "mr-w-252",
     title: "显克微支",
     group: "文学家",
@@ -3277,7 +3277,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-253",
-    masterRef: "mingren-mr-w-92",
+    masterRef: "mingren-mr-w-253",
     id: "mr-w-253",
     title: "贝尔",
     group: "科学家",
@@ -3290,7 +3290,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-254",
-    masterRef: "mingren-mr-c-510",
+    masterRef: "mingren-mr-w-254",
     id: "mr-w-254",
     title: "高更",
     group: "美术家",
@@ -3303,7 +3303,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-255",
-    masterRef: "mingren-mr-c-511",
+    masterRef: "mingren-mr-w-255",
     id: "mr-w-255",
     title: "苏里科夫",
     group: "美术家",
@@ -3316,7 +3316,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-256",
-    masterRef: "mingren-mr-w-93",
+    masterRef: "mingren-mr-w-256",
     id: "mr-w-256",
     title: "帕累托",
     group: "经济学家",
@@ -3329,7 +3329,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-257",
-    masterRef: "mingren-mr-c-512",
+    masterRef: "mingren-mr-w-257",
     id: "mr-w-257",
     title: "斯特林堡",
     group: "文学家",
@@ -3342,7 +3342,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-258",
-    masterRef: "mingren-mr-c-513",
+    masterRef: "mingren-mr-w-258",
     id: "mr-w-258",
     title: "巴甫洛夫",
     group: "生物学家",
@@ -3355,7 +3355,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-259",
-    masterRef: "mingren-mr-c-514",
+    masterRef: "mingren-mr-w-259",
     id: "mr-w-259",
     title: "范特霍夫",
     group: "科学家",
@@ -3368,7 +3368,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-260",
-    masterRef: "mingren-mr-c-515",
+    masterRef: "mingren-mr-w-260",
     id: "mr-w-260",
     title: "高迪",
     group: "美术家",
@@ -3381,7 +3381,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-261",
-    masterRef: "mingren-mr-c-517",
+    masterRef: "mingren-mr-w-261",
     id: "mr-w-261",
     title: "梵高",
     group: "美术家",
@@ -3394,7 +3394,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-262",
-    masterRef: "mingren-mr-c-518",
+    masterRef: "mingren-mr-w-262",
     id: "mr-w-262",
     title: "王尔德",
     group: "文学家",
@@ -3407,7 +3407,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-263",
-    masterRef: "mingren-mr-c-519",
+    masterRef: "mingren-mr-w-263",
     id: "mr-w-263",
     title: "庞加莱",
     group: "科学家",
@@ -3420,7 +3420,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-264",
-    masterRef: "mingren-mr-c-521",
+    masterRef: "mingren-mr-w-264",
     id: "mr-w-264",
     title: "肖伯纳",
     group: "文学家",
@@ -3433,7 +3433,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-265",
-    masterRef: "mingren-mr-w-94",
+    masterRef: "mingren-mr-w-265",
     id: "mr-w-265",
     title: "弗洛伊德",
     group: "哲学家",
@@ -3446,7 +3446,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-266",
-    masterRef: "mingren-mr-w-95",
+    masterRef: "mingren-mr-w-266",
     id: "mr-w-266",
     title: "凡勃伦",
     group: "经济学家",
@@ -3459,7 +3459,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-267",
-    masterRef: "mingren-mr-c-523",
+    masterRef: "mingren-mr-w-267",
     id: "mr-w-267",
     title: "拉格洛夫",
     group: "文学家",
@@ -3472,7 +3472,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-268",
-    masterRef: "mingren-mr-w-96",
+    masterRef: "mingren-mr-w-268",
     id: "mr-w-268",
     title: "普朗克",
     group: "科学家",
@@ -3485,7 +3485,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-269",
-    masterRef: "mingren-mr-w-97",
+    masterRef: "mingren-mr-w-269",
     id: "mr-w-269",
     title: "波特",
     group: "科学家",
@@ -3498,7 +3498,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-270",
-    masterRef: "mingren-mr-w-98",
+    masterRef: "mingren-mr-w-270",
     id: "mr-w-270",
     title: "胡塞尔",
     group: "哲学家",
@@ -3511,7 +3511,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-271",
-    masterRef: "mingren-mr-c-525",
+    masterRef: "mingren-mr-w-271",
     id: "mr-w-271",
     title: "阿伦尼乌斯",
     group: "科学家",
@@ -3524,7 +3524,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-272",
-    masterRef: "mingren-mr-c-526",
+    masterRef: "mingren-mr-w-272",
     id: "mr-w-272",
     title: "修拉",
     group: "美术家",
@@ -3537,7 +3537,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-273",
-    masterRef: "mingren-mr-c-527",
+    masterRef: "mingren-mr-w-273",
     id: "mr-w-273",
     title: "契诃夫",
     group: "文学家",
@@ -3550,7 +3550,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-274",
-    masterRef: "mingren-mr-c-528",
+    masterRef: "mingren-mr-w-274",
     id: "mr-w-274",
     title: "马勒",
     group: "音乐家",
@@ -3563,7 +3563,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-275",
-    masterRef: "mingren-mr-c-529",
+    masterRef: "mingren-mr-w-275",
     id: "mr-w-275",
     title: "泰戈尔",
     group: "文学家",
@@ -3576,7 +3576,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-276",
-    masterRef: "mingren-mr-c-531",
+    masterRef: "mingren-mr-w-276",
     id: "mr-w-276",
     title: "希尔伯特",
     group: "科学家",
@@ -3589,7 +3589,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-277",
-    masterRef: "mingren-mr-c-532",
+    masterRef: "mingren-mr-w-277",
     id: "mr-w-277",
     title: "克里姆特",
     group: "美术家",
@@ -3602,7 +3602,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-278",
-    masterRef: "mingren-mr-c-533",
+    masterRef: "mingren-mr-w-278",
     id: "mr-w-278",
     title: "德彪西",
     group: "音乐家",
@@ -3615,7 +3615,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-279",
-    masterRef: "mingren-mr-c-534",
+    masterRef: "mingren-mr-w-279",
     id: "mr-w-279",
     title: "蒙克",
     group: "美术家",
@@ -3628,7 +3628,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-280",
-    masterRef: "mingren-mr-w-99",
+    masterRef: "mingren-mr-w-280",
     id: "mr-w-280",
     title: "韦伯",
     group: "经济学家",
@@ -3641,7 +3641,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-281",
-    masterRef: "mingren-mr-c-536",
+    masterRef: "mingren-mr-w-281",
     id: "mr-w-281",
     title: "叶芝",
     group: "文学家",
@@ -3654,7 +3654,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-282",
-    masterRef: "mingren-mr-w-100",
+    masterRef: "mingren-mr-w-282",
     id: "mr-w-282",
     title: "西贝柳斯",
     group: "音乐家",
@@ -3667,7 +3667,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-283",
-    masterRef: "mingren-mr-c-539",
+    masterRef: "mingren-mr-w-283",
     id: "mr-w-283",
     title: "摩尔根",
     group: "生物学家",
@@ -3680,7 +3680,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-284",
-    masterRef: "mingren-mr-c-540",
+    masterRef: "mingren-mr-w-284",
     id: "mr-w-284",
     title: "康定斯基",
     group: "美术家",
@@ -3693,7 +3693,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-285",
-    masterRef: "mingren-mr-c-542",
+    masterRef: "mingren-mr-w-285",
     id: "mr-w-285",
     title: "夏目漱石",
     group: "文学家",
@@ -3706,7 +3706,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-286",
-    masterRef: "mingren-mr-w-101",
+    masterRef: "mingren-mr-w-286",
     id: "mr-w-286",
     title: "居里夫人",
     group: "科学家",
@@ -3719,7 +3719,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-287",
-    masterRef: "mingren-mr-w-102",
+    masterRef: "mingren-mr-w-287",
     id: "mr-w-287",
     title: "莱特兄弟",
     group: "科学家",
@@ -3732,7 +3732,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-288",
-    masterRef: "mingren-mr-c-543",
+    masterRef: "mingren-mr-w-288",
     id: "mr-w-288",
     title: "赖特",
     group: "美术家",
@@ -3745,7 +3745,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-289",
-    masterRef: "mingren-mr-c-544",
+    masterRef: "mingren-mr-w-289",
     id: "mr-w-289",
     title: "高尔基",
     group: "文学家",
@@ -3758,7 +3758,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-290",
-    masterRef: "mingren-mr-c-546",
+    masterRef: "mingren-mr-w-290",
     id: "mr-w-290",
     title: "哈伯",
     group: "科学家",
@@ -3771,7 +3771,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-291",
-    masterRef: "mingren-mr-w-103",
+    masterRef: "mingren-mr-w-291",
     id: "mr-w-291",
     title: "甘地",
     group: "政治家",
@@ -3784,7 +3784,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-292",
-    masterRef: "mingren-mr-c-547",
+    masterRef: "mingren-mr-w-292",
     id: "mr-w-292",
     title: "马蒂斯",
     group: "美术家",
@@ -3797,7 +3797,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-293",
-    masterRef: "mingren-mr-w-104",
+    masterRef: "mingren-mr-w-293",
     id: "mr-w-293",
     title: "巴多格里奥",
     group: "军事家",
@@ -3810,7 +3810,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-294",
-    masterRef: "mingren-mr-c-548",
+    masterRef: "mingren-mr-w-294",
     id: "mr-w-294",
     title: "卢瑟福",
     group: "科学家",
@@ -3823,7 +3823,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-295",
-    masterRef: "mingren-mr-w-105",
+    masterRef: "mingren-mr-w-295",
     id: "mr-w-295",
     title: "罗素",
     group: "哲学家",
@@ -3836,7 +3836,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-296",
-    masterRef: "mingren-mr-c-550",
+    masterRef: "mingren-mr-w-296",
     id: "mr-w-296",
     title: "蒙德里安",
     group: "美术家",
@@ -3849,7 +3849,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-297",
-    masterRef: "mingren-mr-c-552",
+    masterRef: "mingren-mr-w-297",
     id: "mr-w-297",
     title: "拉赫玛尼诺夫",
     group: "音乐家",
@@ -3862,7 +3862,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-298",
-    masterRef: "mingren-mr-w-106",
+    masterRef: "mingren-mr-w-298",
     id: "mr-w-298",
     title: "丘吉尔",
     group: "政治家",
@@ -3875,7 +3875,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-299",
-    masterRef: "mingren-mr-c-554",
+    masterRef: "mingren-mr-w-299",
     id: "mr-w-299",
     title: "勋伯格",
     group: "音乐家",
@@ -3888,7 +3888,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-300",
-    masterRef: "mingren-mr-c-555",
+    masterRef: "mingren-mr-w-300",
     id: "mr-w-300",
     title: "里尔克",
     group: "文学家",
@@ -3901,7 +3901,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-301",
-    masterRef: "mingren-mr-c-556",
+    masterRef: "mingren-mr-w-301",
     id: "mr-w-301",
     title: "托马斯·曼",
     group: "文学家",
@@ -3914,7 +3914,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-302",
-    masterRef: "mingren-mr-w-107",
+    masterRef: "mingren-mr-w-302",
     id: "mr-w-302",
     title: "拉威尔",
     group: "音乐家",
@@ -3927,7 +3927,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-303",
-    masterRef: "mingren-mr-w-108",
+    masterRef: "mingren-mr-w-303",
     id: "mr-w-303",
     title: "阿登纳",
     group: "政治家",
@@ -3940,7 +3940,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-304",
-    masterRef: "mingren-mr-c-557",
+    masterRef: "mingren-mr-w-304",
     id: "mr-w-304",
     title: "布朗库西",
     group: "美术家",
@@ -3953,7 +3953,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-305",
-    masterRef: "mingren-mr-c-558",
+    masterRef: "mingren-mr-w-305",
     id: "mr-w-305",
     title: "哈代",
     group: "文学家",
@@ -3966,7 +3966,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-306",
-    masterRef: "mingren-mr-c-559",
+    masterRef: "mingren-mr-w-306",
     id: "mr-w-306",
     title: "黑塞",
     group: "文学家",
@@ -3979,7 +3979,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-307",
-    masterRef: "mingren-mr-w-109",
+    masterRef: "mingren-mr-w-307",
     id: "mr-w-307",
     title: "爱因斯坦",
     group: "科学家",
@@ -3992,7 +3992,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-308",
-    masterRef: "mingren-mr-c-562",
+    masterRef: "mingren-mr-w-308",
     id: "mr-w-308",
     title: "马列维奇",
     group: "美术家",
@@ -4005,7 +4005,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-309",
-    masterRef: "mingren-mr-w-110",
+    masterRef: "mingren-mr-w-309",
     id: "mr-w-309",
     title: "德加斯佩里",
     group: "政治家",
@@ -4018,7 +4018,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-310",
-    masterRef: "mingren-mr-c-565",
+    masterRef: "mingren-mr-w-310",
     id: "mr-w-310",
     title: "茨威格",
     group: "文学家",
@@ -4031,7 +4031,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-311",
-    masterRef: "mingren-mr-c-566",
+    masterRef: "mingren-mr-w-311",
     id: "mr-w-311",
     title: "弗莱明",
     group: "生物学家",
@@ -4044,7 +4044,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-312",
-    masterRef: "mingren-mr-c-567",
+    masterRef: "mingren-mr-w-312",
     id: "mr-w-312",
     title: "毕加索",
     group: "美术家",
@@ -4057,7 +4057,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-313",
-    masterRef: "mingren-mr-c-568",
+    masterRef: "mingren-mr-w-313",
     id: "mr-w-313",
     title: "乔伊斯",
     group: "文学家",
@@ -4070,7 +4070,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-314",
-    masterRef: "mingren-mr-c-569",
+    masterRef: "mingren-mr-w-314",
     id: "mr-w-314",
     title: "伍尔夫",
     group: "文学家",
@@ -4083,7 +4083,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-315",
-    masterRef: "mingren-mr-c-570",
+    masterRef: "mingren-mr-w-315",
     id: "mr-w-315",
     title: "诺特",
     group: "科学家",
@@ -4096,7 +4096,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-316",
-    masterRef: "mingren-mr-c-571",
+    masterRef: "mingren-mr-w-316",
     id: "mr-w-316",
     title: "布拉克",
     group: "美术家",
@@ -4109,7 +4109,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-317",
-    masterRef: "mingren-mr-c-572",
+    masterRef: "mingren-mr-w-317",
     id: "mr-w-317",
     title: "霍珀",
     group: "美术家",
@@ -4122,7 +4122,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-318",
-    masterRef: "mingren-mr-c-573",
+    masterRef: "mingren-mr-w-318",
     id: "mr-w-318",
     title: "斯特拉文斯基",
     group: "音乐家",
@@ -4135,7 +4135,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-319",
-    masterRef: "mingren-mr-w-111",
+    masterRef: "mingren-mr-w-319",
     id: "mr-w-319",
     title: "墨索里尼",
     group: "政治家",
@@ -4148,7 +4148,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-320",
-    masterRef: "mingren-mr-c-574",
+    masterRef: "mingren-mr-w-320",
     id: "mr-w-320",
     title: "卡夫卡",
     group: "文学家",
@@ -4161,7 +4161,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-321",
-    masterRef: "mingren-mr-c-575",
+    masterRef: "mingren-mr-w-321",
     id: "mr-w-321",
     title: "格罗皮乌斯",
     group: "美术家",
@@ -4174,7 +4174,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-322",
-    masterRef: "mingren-mr-w-112",
+    masterRef: "mingren-mr-w-322",
     id: "mr-w-322",
     title: "凯恩斯",
     group: "经济学家",
@@ -4187,7 +4187,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-323",
-    masterRef: "mingren-mr-w-113",
+    masterRef: "mingren-mr-w-323",
     id: "mr-w-323",
     title: "熊彼特",
     group: "经济学家",
@@ -4200,7 +4200,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-324",
-    masterRef: "mingren-mr-c-578",
+    masterRef: "mingren-mr-w-324",
     id: "mr-w-324",
     title: "劳伦斯",
     group: "文学家",
@@ -4213,7 +4213,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-325",
-    masterRef: "mingren-mr-w-114",
+    masterRef: "mingren-mr-w-325",
     id: "mr-w-325",
     title: "玻尔",
     group: "科学家",
@@ -4226,7 +4226,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-326",
-    masterRef: "mingren-mr-c-580",
+    masterRef: "mingren-mr-w-326",
     id: "mr-w-326",
     title: "密斯·凡·德·罗",
     group: "美术家",
@@ -4239,7 +4239,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-327",
-    masterRef: "mingren-mr-w-115",
+    masterRef: "mingren-mr-w-327",
     id: "mr-w-327",
     title: "蒙哥马利",
     group: "军事家",
@@ -4252,7 +4252,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-328",
-    masterRef: "mingren-mr-w-116",
+    masterRef: "mingren-mr-w-328",
     id: "mr-w-328",
     title: "曼施坦因",
     group: "军事家",
@@ -4265,7 +4265,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-329",
-    masterRef: "mingren-mr-c-581",
+    masterRef: "mingren-mr-w-329",
     id: "mr-w-329",
     title: "拉马努金",
     group: "科学家",
@@ -4278,7 +4278,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-330",
-    masterRef: "mingren-mr-c-582",
+    masterRef: "mingren-mr-w-330",
     id: "mr-w-330",
     title: "薛定谔",
     group: "科学家",
@@ -4291,7 +4291,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-331",
-    masterRef: "mingren-mr-c-583",
+    masterRef: "mingren-mr-w-331",
     id: "mr-w-331",
     title: "柯布西耶",
     group: "美术家",
@@ -4304,7 +4304,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-332",
-    masterRef: "mingren-mr-c-584",
+    masterRef: "mingren-mr-w-332",
     id: "mr-w-332",
     title: "夏加尔",
     group: "美术家",
@@ -4317,7 +4317,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-333",
-    masterRef: "mingren-mr-c-585",
+    masterRef: "mingren-mr-w-333",
     id: "mr-w-333",
     title: "欧姬芙",
     group: "美术家",
@@ -4330,7 +4330,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-334",
-    masterRef: "mingren-mr-c-586",
+    masterRef: "mingren-mr-w-334",
     id: "mr-w-334",
     title: "佩索阿",
     group: "文学家",
@@ -4343,7 +4343,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-335",
-    masterRef: "mingren-mr-c-587",
+    masterRef: "mingren-mr-w-335",
     id: "mr-w-335",
     title: "塞尔曼·瓦克斯曼",
     group: "医学家",
@@ -4356,7 +4356,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-336",
-    masterRef: "mingren-mr-w-117",
+    masterRef: "mingren-mr-w-336",
     id: "mr-w-336",
     title: "希特勒",
     group: "政治家",
@@ -4369,7 +4369,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-337",
-    masterRef: "mingren-mr-c-588",
+    masterRef: "mingren-mr-w-337",
     id: "mr-w-337",
     title: "阿赫玛托娃",
     group: "文学家",
@@ -4382,7 +4382,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-338",
-    masterRef: "mingren-mr-w-118",
+    masterRef: "mingren-mr-w-338",
     id: "mr-w-338",
     title: "海德格尔",
     group: "哲学家",
@@ -4395,7 +4395,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-339",
-    masterRef: "mingren-mr-w-119",
+    masterRef: "mingren-mr-w-339",
     id: "mr-w-339",
     title: "维特根斯坦",
     group: "哲学家",
@@ -4408,7 +4408,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-340",
-    masterRef: "mingren-mr-c-590",
+    masterRef: "mingren-mr-w-340",
     id: "mr-w-340",
     title: "哈勃",
     group: "天文地理学家",
@@ -4421,7 +4421,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-341",
-    masterRef: "mingren-mr-w-120",
+    masterRef: "mingren-mr-w-341",
     id: "mr-w-341",
     title: "戴高乐",
     group: "政治家",
@@ -4434,7 +4434,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-342",
-    masterRef: "mingren-mr-c-591",
+    masterRef: "mingren-mr-w-342",
     id: "mr-w-342",
     title: "帕斯捷尔纳克",
     group: "文学家",
@@ -4447,7 +4447,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-343",
-    masterRef: "mingren-mr-w-121",
+    masterRef: "mingren-mr-w-343",
     id: "mr-w-343",
     title: "艾森豪威尔",
     group: "军事家",
@@ -4460,7 +4460,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-344",
-    masterRef: "mingren-mr-w-122",
+    masterRef: "mingren-mr-w-344",
     id: "mr-w-344",
     title: "隆美尔",
     group: "军事家",
@@ -4473,7 +4473,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-345",
-    masterRef: "mingren-mr-w-123",
+    masterRef: "mingren-mr-w-345",
     id: "mr-w-345",
     title: "邓尼茨",
     group: "军事家",
@@ -4486,7 +4486,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-346",
-    masterRef: "mingren-mr-c-595",
+    masterRef: "mingren-mr-w-346",
     id: "mr-w-346",
     title: "班廷",
     group: "医学家",
@@ -4499,7 +4499,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-347",
-    masterRef: "mingren-mr-c-596",
+    masterRef: "mingren-mr-w-347",
     id: "mr-w-347",
     title: "芥川龙之介",
     group: "文学家",
@@ -4512,7 +4512,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-348",
-    masterRef: "mingren-mr-c-597",
+    masterRef: "mingren-mr-w-348",
     id: "mr-w-348",
     title: "德布罗意",
     group: "科学家",
@@ -4525,7 +4525,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-349",
-    masterRef: "mingren-mr-c-599",
+    masterRef: "mingren-mr-w-349",
     id: "mr-w-349",
     title: "马雅可夫斯基",
     group: "文学家",
@@ -4538,7 +4538,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-350",
-    masterRef: "mingren-mr-c-600",
+    masterRef: "mingren-mr-w-350",
     id: "mr-w-350",
     title: "米罗",
     group: "美术家",
@@ -4551,7 +4551,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-351",
-    masterRef: "mingren-mr-c-602",
+    masterRef: "mingren-mr-w-351",
     id: "mr-w-351",
     title: "勒梅特",
     group: "天文地理学家",
@@ -4564,7 +4564,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-352",
-    masterRef: "mingren-mr-c-609",
+    masterRef: "mingren-mr-w-352",
     id: "mr-w-352",
     title: "菲茨杰拉德",
     group: "文学家",
@@ -4577,7 +4577,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-353",
-    masterRef: "mingren-mr-w-124",
+    masterRef: "mingren-mr-w-353",
     id: "mr-w-353",
     title: "朱可夫",
     group: "军事家",
@@ -4590,7 +4590,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-354",
-    masterRef: "mingren-mr-w-125",
+    masterRef: "mingren-mr-w-354",
     id: "mr-w-354",
     title: "艾哈德",
     group: "政治家",
@@ -4603,7 +4603,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-355",
-    masterRef: "mingren-mr-c-612",
+    masterRef: "mingren-mr-w-355",
     id: "mr-w-355",
     title: "福克纳",
     group: "文学家",
@@ -4616,7 +4616,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-356",
-    masterRef: "mingren-mr-c-613",
+    masterRef: "mingren-mr-w-356",
     id: "mr-w-356",
     title: "居里奥·居里",
     group: "科学家",
@@ -4629,7 +4629,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-357",
-    masterRef: "mingren-mr-c-616",
+    masterRef: "mingren-mr-w-357",
     id: "mr-w-357",
     title: "布莱希特",
     group: "文学家",
@@ -4642,7 +4642,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-358",
-    masterRef: "mingren-mr-c-617",
+    masterRef: "mingren-mr-w-358",
     id: "mr-w-358",
     title: "洛尔迦",
     group: "文学家",
@@ -4655,7 +4655,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-359",
-    masterRef: "mingren-mr-c-619",
+    masterRef: "mingren-mr-w-359",
     id: "mr-w-359",
     title: "亨利·摩尔",
     group: "美术家",
@@ -4668,7 +4668,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-360",
-    masterRef: "mingren-mr-c-620",
+    masterRef: "mingren-mr-w-360",
     id: "mr-w-360",
     title: "乔治·格什温",
     group: "音乐家",
@@ -4681,7 +4681,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-361",
-    masterRef: "mingren-mr-c-622",
+    masterRef: "mingren-mr-w-361",
     id: "mr-w-361",
     title: "海明威",
     group: "文学家",
@@ -4694,7 +4694,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-362",
-    masterRef: "mingren-mr-c-623",
+    masterRef: "mingren-mr-w-362",
     id: "mr-w-362",
     title: "博尔赫斯",
     group: "文学家",
@@ -4707,7 +4707,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-363",
-    masterRef: "mingren-mr-c-624",
+    masterRef: "mingren-mr-w-363",
     id: "mr-w-363",
     title: "川端康成",
     group: "文学家",
@@ -4720,7 +4720,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-364",
-    masterRef: "mingren-mr-w-126",
+    masterRef: "mingren-mr-w-364",
     id: "mr-w-364",
     title: "哈耶克",
     group: "经济学家",
@@ -4733,7 +4733,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-365",
-    masterRef: "mingren-mr-w-127",
+    masterRef: "mingren-mr-w-365",
     id: "mr-w-365",
     title: "海森堡",
     group: "科学家",
@@ -4746,7 +4746,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-366",
-    masterRef: "mingren-mr-w-128",
+    masterRef: "mingren-mr-w-366",
     id: "mr-w-366",
     title: "鲍林",
     group: "科学家",
@@ -4759,7 +4759,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-367",
-    masterRef: "mingren-mr-w-129",
+    masterRef: "mingren-mr-w-367",
     id: "mr-w-367",
     title: "费米",
     group: "科学家",
@@ -4772,7 +4772,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-368",
-    masterRef: "mingren-mr-w-130",
+    masterRef: "mingren-mr-w-368",
     id: "mr-w-368",
     title: "斯坦贝克",
     group: "文学家",
@@ -4785,7 +4785,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-369",
-    masterRef: "mingren-mr-w-131",
+    masterRef: "mingren-mr-w-369",
     id: "mr-w-369",
     title: "波普尔",
     group: "哲学家",
@@ -4798,7 +4798,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-370",
-    masterRef: "mingren-mr-w-132",
+    masterRef: "mingren-mr-w-370",
     id: "mr-w-370",
     title: "狄拉克",
     group: "科学家",
@@ -4811,7 +4811,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-371",
-    masterRef: "mingren-mr-w-133",
+    masterRef: "mingren-mr-w-371",
     id: "mr-w-371",
     title: "奥威尔",
     group: "文学家",
@@ -4824,7 +4824,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-372",
-    masterRef: "mingren-mr-w-134",
+    masterRef: "mingren-mr-w-372",
     id: "mr-w-372",
     title: "冯·诺依曼",
     group: "科学家",
@@ -4837,7 +4837,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-373",
-    masterRef: "mingren-mr-w-135",
+    masterRef: "mingren-mr-w-373",
     id: "mr-w-373",
     title: "聂鲁达",
     group: "文学家",
@@ -4850,7 +4850,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-374",
-    masterRef: "mingren-mr-w-136",
+    masterRef: "mingren-mr-w-374",
     id: "mr-w-374",
     title: "达利",
     group: "美术家",
@@ -4863,7 +4863,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-375",
-    masterRef: "mingren-mr-w-137",
+    masterRef: "mingren-mr-w-375",
     id: "mr-w-375",
     title: "萨特",
     group: "哲学家",
@@ -4876,7 +4876,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-376",
-    masterRef: "mingren-mr-w-138",
+    masterRef: "mingren-mr-w-376",
     id: "mr-w-376",
     title: "贝克特",
     group: "文学家",
@@ -4889,7 +4889,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-377",
-    masterRef: "mingren-mr-w-139",
+    masterRef: "mingren-mr-w-377",
     id: "mr-w-377",
     title: "阿伦特",
     group: "哲学家",
@@ -4902,7 +4902,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-378",
-    masterRef: "mingren-mr-w-140",
+    masterRef: "mingren-mr-w-378",
     id: "mr-w-378",
     title: "肖斯塔科维奇",
     group: "音乐家",
@@ -4915,7 +4915,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-379",
-    masterRef: "mingren-mr-w-141",
+    masterRef: "mingren-mr-w-379",
     id: "mr-w-379",
     title: "波伏娃",
     group: "哲学家",
@@ -4928,7 +4928,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-380",
-    masterRef: "mingren-mr-w-142",
+    masterRef: "mingren-mr-w-380",
     id: "mr-w-380",
     title: "朗道",
     group: "科学家",
@@ -4941,7 +4941,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-381",
-    masterRef: "mingren-mr-w-143",
+    masterRef: "mingren-mr-w-381",
     id: "mr-w-381",
     title: "霍奇金",
     group: "科学家",
@@ -4954,7 +4954,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-382",
-    masterRef: "mingren-mr-w-144",
+    masterRef: "mingren-mr-w-382",
     id: "mr-w-382",
     title: "陈省身",
     group: "科学家",
@@ -4967,7 +4967,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-383",
-    masterRef: "mingren-mr-w-145",
+    masterRef: "mingren-mr-w-383",
     id: "mr-w-383",
     title: "吴健雄",
     group: "科学家",
@@ -4980,7 +4980,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-384",
-    masterRef: "mingren-mr-w-146",
+    masterRef: "mingren-mr-w-384",
     id: "mr-w-384",
     title: "图灵",
     group: "科学家",
@@ -4993,7 +4993,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-385",
-    masterRef: "mingren-mr-w-147",
+    masterRef: "mingren-mr-w-385",
     id: "mr-w-385",
     title: "波洛克",
     group: "美术家",
@@ -5006,7 +5006,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-386",
-    masterRef: "mingren-mr-w-148",
+    masterRef: "mingren-mr-w-386",
     id: "mr-w-386",
     title: "弗里德曼",
     group: "经济学家",
@@ -5019,7 +5019,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-387",
-    masterRef: "mingren-mr-w-149",
+    masterRef: "mingren-mr-w-387",
     id: "mr-w-387",
     title: "勃兰特",
     group: "政治家",
@@ -5032,7 +5032,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-388",
-    masterRef: "mingren-mr-w-150",
+    masterRef: "mingren-mr-w-388",
     id: "mr-w-388",
     title: "加缪",
     group: "哲学家",
@@ -5045,7 +5045,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-389",
-    masterRef: "mingren-mr-w-151",
+    masterRef: "mingren-mr-w-389",
     id: "mr-w-389",
     title: "索尔克",
     group: "医学家",
@@ -5058,7 +5058,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-390",
-    masterRef: "mingren-mr-w-152",
+    masterRef: "mingren-mr-w-390",
     id: "mr-w-390",
     title: "克里克",
     group: "生物学家",
@@ -5071,7 +5071,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-391",
-    masterRef: "mingren-mr-w-153",
+    masterRef: "mingren-mr-w-391",
     id: "mr-w-391",
     title: "贝聿铭",
     group: "美术家",
@@ -5084,7 +5084,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-392",
-    masterRef: "mingren-mr-w-154",
+    masterRef: "mingren-mr-w-392",
     id: "mr-w-392",
     title: "曼德拉",
     group: "政治家",
@@ -5097,7 +5097,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-393",
-    masterRef: "mingren-mr-w-155",
+    masterRef: "mingren-mr-w-393",
     id: "mr-w-393",
     title: "费曼",
     group: "科学家",
@@ -5110,7 +5110,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-394",
-    masterRef: "mingren-mr-w-156",
+    masterRef: "mingren-mr-w-394",
     id: "mr-w-394",
     title: "罗尔斯",
     group: "哲学家",
@@ -5123,7 +5123,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-395",
-    masterRef: "mingren-mr-w-157",
+    masterRef: "mingren-mr-w-395",
     id: "mr-w-395",
     title: "杨振宁",
     group: "科学家",
@@ -5136,7 +5136,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-396",
-    masterRef: "mingren-mr-w-158",
+    masterRef: "mingren-mr-w-396",
     id: "mr-w-396",
     title: "三岛由纪夫",
     group: "文学家",
@@ -5149,7 +5149,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-397",
-    masterRef: "mingren-mr-w-159",
+    masterRef: "mingren-mr-w-397",
     id: "mr-w-397",
     title: "福柯",
     group: "哲学家",
@@ -5162,7 +5162,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-398",
-    masterRef: "mingren-mr-w-160",
+    masterRef: "mingren-mr-w-398",
     id: "mr-w-398",
     title: "马尔克斯",
     group: "文学家",
@@ -5175,7 +5175,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-399",
-    masterRef: "mingren-mr-w-161",
+    masterRef: "mingren-mr-w-399",
     id: "mr-w-399",
     title: "乔姆斯基",
     group: "哲学家",
@@ -5188,7 +5188,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-400",
-    masterRef: "mingren-mr-w-162",
+    masterRef: "mingren-mr-w-400",
     id: "mr-w-400",
     title: "纳什",
     group: "科学家",
@@ -5201,7 +5201,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-401",
-    masterRef: "mingren-mr-w-163",
+    masterRef: "mingren-mr-w-401",
     id: "mr-w-401",
     title: "沃森",
     group: "生物学家",
@@ -5214,7 +5214,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-402",
-    masterRef: "mingren-mr-w-164",
+    masterRef: "mingren-mr-w-402",
     id: "mr-w-402",
     title: "沃霍尔",
     group: "美术家",
@@ -5227,7 +5227,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-403",
-    masterRef: "mingren-mr-w-165",
+    masterRef: "mingren-mr-w-403",
     id: "mr-w-403",
     title: "米兰·昆德拉",
     group: "文学家",
@@ -5240,7 +5240,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-404",
-    masterRef: "mingren-mr-w-166",
+    masterRef: "mingren-mr-w-404",
     id: "mr-w-404",
     title: "威尔逊",
     group: "生物学家",
@@ -5253,7 +5253,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-405",
-    masterRef: "mingren-mr-w-167",
+    masterRef: "mingren-mr-w-405",
     id: "mr-w-405",
     title: "阿马蒂亚·森",
     group: "经济学家",
@@ -5266,7 +5266,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-406",
-    masterRef: "mingren-mr-w-168",
+    masterRef: "mingren-mr-w-406",
     id: "mr-w-406",
     title: "萨根",
     group: "天文地理学家",
@@ -5279,7 +5279,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-407",
-    masterRef: "mingren-mr-w-169",
+    masterRef: "mingren-mr-w-407",
     id: "mr-w-407",
     title: "略萨",
     group: "文学家",
@@ -5292,7 +5292,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-408",
-    masterRef: "mingren-mr-w-170",
+    masterRef: "mingren-mr-w-408",
     id: "mr-w-408",
     title: "丁肇中",
     group: "科学家",
@@ -5305,7 +5305,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-409",
-    masterRef: "mingren-mr-w-171",
+    masterRef: "mingren-mr-w-409",
     id: "mr-w-409",
     title: "李远哲",
     group: "科学家",
@@ -5318,7 +5318,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-410",
-    masterRef: "mingren-mr-w-172",
+    masterRef: "mingren-mr-w-410",
     id: "mr-w-410",
     title: "古尔德",
     group: "生物学家",
@@ -5331,7 +5331,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-411",
-    masterRef: "mingren-mr-w-173",
+    masterRef: "mingren-mr-w-411",
     id: "mr-w-411",
     title: "道金斯",
     group: "生物学家",
@@ -5344,7 +5344,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-412",
-    masterRef: "mingren-mr-w-174",
+    masterRef: "mingren-mr-w-412",
     id: "mr-w-412",
     title: "霍金",
     group: "科学家",
@@ -5357,7 +5357,7 @@ window.POEMS_MINGREN_FOREIGN = [
   },
   {
     textRef: "mingren-mr-w-413",
-    masterRef: "mingren-mr-w-175",
+    masterRef: "mingren-mr-w-413",
     id: "mr-w-413",
     title: "陶哲轩",
     group: "科学家",

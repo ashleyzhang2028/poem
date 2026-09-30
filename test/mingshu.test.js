@@ -155,6 +155,34 @@ function mrLife(p) {
     (bad.slice(0, 5).join('、') || '无') + '）');
 });
 
+/* ⚠️ Issue #381 第二十轮：这一条是**补课**。
+   `mr-c-*` / `mr-w-*` 是两个各自独立的号段，主表 id 却按全册编 —— 生成壳时
+   曾「拿卷内序位去全册号段里取 id」当 `masterRef`，于是整段指错：苏格拉底
+   的正文指到了同号的别人。而**页面上看不出来**：列表读壳、正文读主表，
+   两边各自自洽，只有把「壳的 masterRef → 主表那一条 → 正文里的姓名」连起来
+   比一遍才看得见。原先没有这一条，所以错了整整两轮（413 位外国名家里 248 位）。
+   守的就是这条链：姓名必须一致，且两条引用都要查得到。 */
+[['历代名家「中国」', MR_CN], ['历代名家「外国」', MR_FOREIGN]].forEach(function (row) {
+  const mism = [], dangling = [];
+  row[1].forEach(function (p) {
+    const ref = p.masterRef;
+    const e = ref && sb.TEXT_MASTER
+      ? sb.TEXT_MASTER.find(x => String(x.id) === 'mingren-' + String(ref).replace(/^mingren-/, ''))
+      : null;
+    if (!e) { dangling.push(p.title + ' → ' + ref); return; }
+    const m = String(e.text || '').match(/│ *姓名 *│([^│]*)│/);
+    const name = m ? m[1].trim() : '';
+    if (name !== p.title) mism.push(p.title + '（' + ref + ' 里是「' + name + '」）');
+    /* textRef 也得指得到同一条 */
+    const t = sb.TEXT_MASTER.find(x => String(x.id) === 'mingren-' + p.id);
+    if (!t) dangling.push(p.title + ' → mingren-' + p.id);
+  });
+  chk(mism.length === 0, row[0] + '的 masterRef 指到的正文姓名与条目一致（错位：' +
+    (mism.slice(0, 5).join('、') || '无') + '）');
+  chk(dangling.length === 0, row[0] + '的 masterRef / textRef 都能在主表里查到（悬空：' +
+    (dangling.slice(0, 5).join('、') || '无') + '）');
+});
+
 const msBad = orderViolations(MS, p => MYEARS.yearOf(p.title, p.dynasty));
 chk(msBad.length === 0,
   '名著导读每组按成书 / 出版时间排序（倒挂：' + (msBad.join('、') || '无') + '）');
