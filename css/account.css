@@ -134,7 +134,6 @@ body[data-nav="login"] .app {
   background: var(--card);
   color: var(--ink);
   font-family: inherit;
-  font-size: 15px;
   outline: none;
   transition: border-color .15s, background .15s, box-shadow .15s;
 }
@@ -912,7 +911,7 @@ thead .plans-th-cap {
      （标题墨迹自己还留约 0.5px 边距）。绿条是内嵌阴影画的、不占位，
      这 20px **未选中也留着**，十几行左右对齐一条线；
      选中只是把绿条填进这段空里 —— 行不动、字不跳。 */
-  padding: 9px 2px 9px 7px;
+  padding: 9px 2px 9px 12px;
   background: transparent;
   font: inherit;
   color: var(--ink);
@@ -1039,14 +1038,7 @@ thead .plans-th-cap {
 .game-mode-tier[data-on="1"] { color: var(--green); }
 .game-mode[data-locked] .game-mode-tier { color: var(--ink-3); }
 
-.poems-game > .game-back {
-  width: auto;
-  min-width: 96px;
-  align-self: flex-start;
-}
-
 .game-head { position: relative; }
-.game-back { margin-bottom: 10px; }
 .game-chars { display: flex; align-items: flex-end; gap: 14px; margin: 2px 0 8px; }
 .game-char {
   display: flex;
@@ -1077,6 +1069,20 @@ thead .plans-th-cap {
 .game-line-src { font-size: 11px; color: var(--ink-3); }
 .game-hit { background: transparent; color: var(--red); font-weight: 600; }
 
+.game-history-list { display: flex; flex-direction: column; gap: 6px; }
+.game-history-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+}
+.game-history-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.game-history-score { font-size: 16px; font-weight: 600; color: var(--green); }
+.game-history-meta { font-size: 11px; color: var(--ink-3); }
+
 .game-stem { font-size: 17px; line-height: 1.9; color: var(--ink); margin-bottom: 6px; }
 .game-opts { display: flex; flex-direction: column; gap: 8px; margin: 10px 0 4px; }
 .game-opt {
@@ -1099,6 +1105,59 @@ thead .plans-th-cap {
 .game-opt[disabled] { cursor: default; opacity: 1; }
 .game-nav { display: flex; gap: 8px; }
 .game-nav .account-btn { flex: 1 1 0; margin-top: 0; }
+
+@keyframes gameOptFlashOk {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.03); box-shadow: 0 0 0 3px var(--green-light); }
+  100% { transform: scale(1); box-shadow: none; }
+}
+@keyframes gameOptFlashBad {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-4px); }
+  40% { transform: translateX(4px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(3px); }
+}
+.game-opt-flash-ok { animation: gameOptFlashOk .4s ease-out; }
+.game-opt-flash-bad { animation: gameOptFlashBad .4s ease-in-out; }
+
+.game-timer-bar {
+  height: 5px;
+  border-radius: 3px;
+  background: var(--line);
+  overflow: hidden;
+  margin-top: 8px;
+}
+.game-timer-fill {
+  height: 100%;
+  background: var(--green);
+  transition: width 1s linear;
+}
+.game-timer-fill.warn { background: var(--red); animation: gameTimerPulse 1s ease-in-out infinite; }
+@keyframes gameTimerPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .55; }
+}
+
+.game-score-banner {
+  text-align: center;
+  padding: 22px 16px 18px;
+  border-radius: var(--radius);
+  margin-bottom: 10px;
+  color: #fdfaf2;
+  animation: gameScorePop .4s cubic-bezier(.2, .8, .3, 1);
+}
+.game-score-banner.gold { background: linear-gradient(135deg, var(--gold), #cf9a4a); color: #4a3512; }
+.game-score-banner.green { background: linear-gradient(135deg, #4a8f75, var(--green-dark)); }
+.game-score-banner.blue { background: linear-gradient(135deg, #5b8aa6, var(--blue)); }
+.game-score-num { font-size: 52px; font-weight: 700; line-height: 1; letter-spacing: 1px; }
+.game-score-unit { font-size: 13px; opacity: .85; margin-top: -2px; }
+.game-score-title { font-size: 15px; font-weight: 600; margin-top: 6px; }
+.game-score-sub { font-size: 12px; opacity: .85; margin-top: 2px; }
+@keyframes gameScorePop {
+  0% { transform: scale(.85); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
 
 .print-sheet {
   margin-top: 10px;
@@ -1157,7 +1216,7 @@ thead .plans-th-cap {
   .seg, .settings-index,
   .print-actions, .print-opt, .print-blank-lines, .print-paper,
   .settings-groups > .settings-group > .settings-item > label,
-  .collections-panel, .poems-game-entry, .game-back, .reader-actions,
+  .collections-panel, .poems-game-entry, .reader-actions,
   .gw-play, .item-recite, .item-read, .item-remove {
     display: none !important;
   }
@@ -1461,7 +1520,7 @@ thead .plans-th-cap {
 }
 
 #sync-card .sync-row { margin-top: 0; padding-top: 0; border-top: 0; }
-#sync-card .switch-hint:empty { display: none; }
+
 
 .nav-list + .nav-list,
 .kv-list + .nav-list { margin-top: 2px; border-top: 1px solid var(--line-2); }
@@ -1639,7 +1698,6 @@ a.kv-row.nav-row:hover .nav-go { color: var(--green); }
 .admin-role-select {
   font: inherit;
   font-size: 13px;
-  min-height: var(--ctl-h-sm);
   padding: 0 8px;
   border: 1px solid var(--line);
   border-radius: var(--ctl-radius);
@@ -2066,4 +2124,84 @@ button.pf-ch.is-active rt { color: #fdfaf2; }
 }
 
 #verify-row { margin-top: 12px; }
+
+/* 管理后台导航列表 */
+.admin-nav-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.admin-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.admin-nav-item:hover {
+  border-color: var(--line-2);
+  background: var(--bg-soft);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.admin-nav-icon {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-2);
+}
+
+.admin-nav-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.admin-nav-content {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.admin-nav-title {
+  margin: 0 0 4px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.admin-nav-desc {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink-3);
+}
+
+@media (max-width: 480px) {
+  .admin-nav-item {
+    padding: 12px 0px;
+    gap: 12px;
+  }
+
+  .admin-nav-icon {
+    width: 24px;
+    height: 24px;
+  }
+
+  .admin-nav-title {
+    font-size: 13px;
+  }
+
+  .admin-nav-desc {
+    font-size: 11.5px;
+  }
+}
 

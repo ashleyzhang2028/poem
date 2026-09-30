@@ -3,7 +3,7 @@
 var upstream = require("./upstream");
 
 function memoryStore() {
-  var db = { accounts: {}, codes: {}, sessions: {}, progress: {}, verifications: {}, resets: {}, reports: {}, pinyinProposals: {}, feedbackThreads: {}, feedbackComments: {} };
+  var db = { accounts: {}, codes: {}, sessions: {}, progress: {}, verifications: {}, resets: {}, reports: {}, pinyinProposals: {}, feedbackThreads: {}, feedbackComments: {}, examRecords: {} };
   var api = {
     kind: "memory",
     ready: function () { return true; },
@@ -250,6 +250,21 @@ function memoryStore() {
     deleteFeedbackComment: function (cid) {
       if (!db.feedbackComments[cid]) return Promise.resolve(false);
       delete db.feedbackComments[cid];
+      return Promise.resolve(true);
+    },
+
+    putExamRecord: function (row) { db.examRecords[row.eid] = row; return Promise.resolve({ eid: row.eid }); },
+    getExamRecord: function (eid) { return Promise.resolve(db.examRecords[eid] || null); },
+    listExamRecords: function (filter, limit) {
+      var f = filter || {};
+      var out = Object.keys(db.examRecords).map(function (k) { return db.examRecords[k]; });
+      if (f.uid) out = out.filter(function (r) { return r.uid === f.uid; });
+      out.sort(function (a, b) { return (b.created_at || 0) - (a.created_at || 0); });
+      return Promise.resolve(out.slice(0, limit || 50));
+    },
+    deleteExamRecord: function (eid) {
+      if (!db.examRecords[eid]) return Promise.resolve(false);
+      delete db.examRecords[eid];
       return Promise.resolve(true);
     }
   };
@@ -548,7 +563,7 @@ function supabaseStore(cfg) {
     }
   };
 
-  return attachFeedbackApi(attachPinyinProposalApi(attachReportApi(api, call), call), call);
+  return attachExamRecordApi(attachFeedbackApi(attachPinyinProposalApi(attachReportApi(api, call), call), call), call);
 }
 
 var REPORT_COLS = "rid,uid,email,nickname,kind,status,poem_id,poem_title,book," +
@@ -717,6 +732,32 @@ function attachFeedbackApi(api, call) {
   };
   api.deleteFeedbackComment = function (cid) {
     return call("/feedback_comments?cid=eq." + q(cid), { method: "DELETE", prefer: "return=minimal" })
+      .then(function () { return true; });
+  };
+  return api;
+}
+
+var EXAM_RECORD_COLS = "eid,uid,scope_id,scope_label,size,score,total,duration_sec,items,created_at";
+
+function attachExamRecordApi(api, call) {
+  api.putExamRecord = function (row) {
+    return call("/exam_records", { method: "POST", body: row, prefer: "return=minimal" }).then(function () {
+      return { eid: row.eid };
+    });
+  };
+  api.getExamRecord = function (eid) {
+    return call("/exam_records?eid=eq." + q(eid) + "&select=" + EXAM_RECORD_COLS + "&limit=1")
+      .then(function (rows) { return rows && rows[0] ? rows[0] : null; });
+  };
+  api.listExamRecords = function (filter, limit) {
+    var f = filter || {};
+    var p = "/exam_records?select=" + EXAM_RECORD_COLS;
+    if (f.uid) p += "&uid=eq." + q(f.uid);
+    p += "&order=created_at.desc&limit=" + encodeURIComponent(String(limit || 50));
+    return call(p).then(function (rows) { return rows || []; });
+  };
+  api.deleteExamRecord = function (eid) {
+    return call("/exam_records?eid=eq." + q(eid), { method: "DELETE", prefer: "return=minimal" })
       .then(function () { return true; });
   };
   return api;

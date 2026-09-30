@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#2f6055" />
+  <title>注音勘误 · 跬步</title>
+  <meta name="description" content="跬步管理后台：注音勘误管理。全部以数据库为准。" />
+  <meta name="format-detection" content="telephone=no" />
+  <meta name="robots" content="noindex, nofollow" />
+
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="mobile-web-app-capable" content="yes" />
+
+  <base href="/" />
+  <link rel="icon" href="/icons/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="/css/account.css" />
+</head>
+<body data-nav="admin" data-dock="off" data-back="/admin/" data-page="注音勘误" data-sub="管理后台">
+  <div class="app">
+    <header class="topbar"></header>
+
+    <main class="account-page" id="admin-page">
+
+      <section class="account-card" id="deny-card" hidden>
+        <h2 class="account-card-title danger-title">没有权限</h2>
+        <p class="account-lead" id="deny-lead"></p>
+        <button class="account-btn ghost" id="btn-back-profile" type="button">返回</button>
+      </section>
+
+      <section class="account-card" id="pinyin-card" hidden>
+        <h2 class="account-card-title">注音勘误</h2>
+        <div class="account-field pf-step">
+          <label class="account-label" for="pf-q"><span class="pf-no">1</span>找到篇目</label>
+          <input id="pf-q" class="account-input" type="search" autocomplete="off" spellcheck="false"
+                 placeholder="输入篇名、作者或其中一句，如 滕王阁序" maxlength="40" />
+        </div>
+        <ul class="pf-results" id="pf-results" hidden></ul>
+        <p class="account-hint" id="pf-search-hint" hidden></p>
+
+        <div class="pf-work" id="pf-work" hidden>
+          <div class="pf-work-head">
+            <div class="pf-work-title" id="pf-work-title"></div>
+            <button class="account-btn ghost" id="btn-pf-change" type="button">换一篇</button>
+          </div>
+          <p class="account-label pf-step-label"><span class="pf-no">2</span>点读错的字</p>
+          <p class="account-hint pf-legend">
+            <span class="pf-ch is-poly">虚线</span>是多音字，可以点；<span class="pf-ch is-poly is-fixed">绿色</span>是已经改过的。其他字只有一个读音，不需要改。
+          </p>
+          <div class="pf-lines" id="pf-lines"></div>
+        </div>
+        <p class="account-msg" id="msg-pf"></p>
+
+        <div class="admin-sub">
+          <h3 class="admin-sub-title">这台设备上的改动 <span class="admin-count" id="pf-count">0</span></h3>
+          <ul class="admin-fix-list" id="pf-list"></ul>
+          <p class="account-hint" id="pf-empty" hidden>未改过读音</p>
+        </div>
+
+        <div class="admin-sub">
+          <h3 class="admin-sub-title">全站生效审核</h3>
+          <div class="admin-report-tools">
+            <div class="admin-report-counts" id="pf-queue-counts" role="group" aria-label="按状态筛选"></div>
+            <button class="account-btn ghost" id="btn-pf-queue-reload" type="button">刷新</button>
+          </div>
+          <ul class="report-list" id="pf-queue-list"></ul>
+          <p class="account-hint" id="pf-queue-empty" hidden></p>
+          <p class="account-msg" id="msg-pf-queue"></p>
+        </div>
+      </section>
+
+    </main>
+
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+
+  <script src="/js/auth-core.js"></script>
+  <script src="/js/entitlement.js"></script>
+  <script src="/js/auth-api.js"></script>
+  <script src="/js/account-api.js"></script>
+  <script src="/js/family.js"></script>
+  <script src="/js/progress-store.js"></script>
+  <script src="/js/storage.js"></script>
+  <script src="/js/avatar.js"></script>
+  <script src="/js/report.js"></script>
+  <script src="/js/feedback.js"></script>
+  <script src="/data/pinyin-table.js"></script>
+  <script src="/data/common-chars.js"></script>
+  <script src="/data/works-index.js"></script>
+  <script src="/data/text-master.js"></script>
+  <script src="/data/poems-1.js"></script>
+  <script src="/data/poems-2.js"></script>
+  <script src="/data/poems-3.js"></script>
+  <script src="/data/poems-4.js"></script>
+  <script src="/data/poems-5.js"></script>
+  <script src="/data/poems-6.js"></script>
+  <script src="/data/poems-7.js"></script>
+  <script src="/data/poems-8.js"></script>
+  <script src="/data/poems-9.js"></script>
+  <script src="/data/poems-10.js"></script>
+  <script src="/data/poems-11.js"></script>
+  <script src="/data/poems-12.js"></script>
+  <script src="/data/index.js"></script>
+  <script src="/data/site-books.js"></script>
+  <script src="/js/pinyin-edit.js"></script>
+  <script src="/js/pinyin.js"></script>
+  <script src="/js/admin-page.js"></script>
+  <script src="/js/chrome.js"></script>
+  <script src="/js/pwa.js"></script>
+</body>
+</html>

@@ -97,7 +97,7 @@ console.log('\n=== 三、pro / max 只加不减：层级越高能力单调不减
 
   chk(!E.can('feihualing', pro).ok && E.can('feihualing', max).ok, '飞花令：pro 不可、max 可用（用户指定）');
   chk(!E.can('exam.paper', pro).ok && E.can('exam.paper', max).ok, '模拟考试：pro 不可、max 可用（用户指定）');
-  chk(!E.can('exam.formal', pro).ok && E.can('exam.formal', max).ok, '正式考试：pro 不可、max 可用（§4.66 ⑩-②）');
+  chk(!E.can('exam.formal', pro).ok && E.can('exam.formal', max).ok, '考试：pro 不可、max 可用（§4.66 ⑩-②）');
   chk(!E.can('exam.changshi', free).ok && E.can('exam.changshi', pro).ok && E.can('exam.changshi', max).ok,
     '文学常识考试：free 不可、pro 起（用户点名「pro 及 max」，§4.66 ⑤）');
 
@@ -121,7 +121,7 @@ console.log('\n=== 三、pro / max 只加不减：层级越高能力单调不减
     });
   chk(E.compare({}).rows.filter(function (r) { return r.breaks; }).length === 3,
     'compare() 里正好三行带折行点（其余的名字都是单句）');
-  chk(!E.can('quiz.review', free).ok && E.can('quiz.review', pro).ok, '题库复习：free 不可、pro 起');
+  chk(!E.can('quiz.review', free).ok && E.can('quiz.review', pro).ok, '题库：free 不可、pro 起');
   chk(!E.can('sync.multiDevice', free).ok && E.can('sync.multiDevice', pro).ok, '跨设备云同步：pro 起');
 
   chk(!E.cap('ai.explain'), 'AI 讲解能力**已删除**（收 app 费用的功能不留）');
@@ -138,7 +138,7 @@ console.log('\n=== 三、pro / max 只加不减：层级越高能力单调不减
     'export.paper': 'PDF / 打印', 'profile.family': '子用户',
     'quiz.review': '题库', 'export.all': '课内诗词 导出',
     'exam.gathering': '古诗词 大会', 'exam.paper': '模拟考试',
-    'exam.formal': '正式考试', 'exam.changshi': '文学常识考试'
+    'exam.formal': '考试', 'exam.changshi': '文学常识考试'
   };
   Object.keys(renames).forEach(function (k) {
     eq(E.cap(k).name, renames[k], 'Issue #163 改名：' + k + ' → 「' + renames[k] + '」');
@@ -225,7 +225,7 @@ console.log('\n=== 七、身份合成：只认 AuthCore 会话，不认页面自
   eq(g.hint('feihualing'), '登录可用', '游客看付费功能：先提示登录（登录是硬条件）');
 
   eq(E.denyReason('feihualing', free), 'Max 起', '已登录的 free 看飞花令：提示 Max 起');
-  eq(E.denyReason('quiz.review', free), 'Pro 起', '已登录的 free 看题库复习：提示 Pro 起');
+  eq(E.denyReason('quiz.review', free), 'Pro 起', '已登录的 free 看题库：提示 Pro 起');
 
   const req = A.requestCode(authStore, { channel: 'email', value: 'zhangmin@163.com' }, 'login', { code: '246810' });
   const v = A.verifyCode(authStore, req.codeId, '246810', 'login');

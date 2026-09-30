@@ -802,6 +802,58 @@
       });
     }
 
+    // 只有「考试」上云；未登录 / 非 Max 直接给个能读懂的原因，不硬发请求。
+    function examRecordCreate(input) {
+      var o = input || {};
+      if (!signedIn()) return Promise.resolve({ ok: false, reason: REASON.GUEST });
+      var ch = usable(D.api) || (D.make ? safeCreate(D.make) : null);
+      if (!ch || typeof ch.examRecordCreate !== "function") {
+        return Promise.resolve({ ok: false, reason: REASON_NO_CHANNEL });
+      }
+      return ch.examRecordCreate(o).then(function (r) {
+        if (r && r.ok) return { ok: true, reason: REASON.OK, record: r.record };
+        var code = (r && r.code) || "E_OFFLINE";
+        if (code === "E_NOT_CONFIGURED") return { ok: false, reason: REASON.NOT_CONFIGURED };
+        if (code === "E_NO_SESSION") return { ok: false, reason: REASON.GUEST };
+        if (code === "E_TIER" || code === "E_EMPTY") {
+          return { ok: false, reason: REASON.OK, code: code, message: r && r.message };
+        }
+        return { ok: false, reason: REASON.UNAVAILABLE };
+      })["catch"](function () { return { ok: false, reason: REASON.UNAVAILABLE }; });
+    }
+
+    function examRecordsMine() {
+      if (!signedIn()) return Promise.resolve({ ok: false, reason: REASON.GUEST });
+      var ch = usable(D.api) || (D.make ? safeCreate(D.make) : null);
+      if (!ch || typeof ch.examRecordsMine !== "function") {
+        return Promise.resolve({ ok: false, reason: REASON_NO_CHANNEL });
+      }
+      return ch.examRecordsMine().then(function (r) {
+        if (r && r.ok) return { ok: true, reason: REASON.OK, records: r.records || [] };
+        var code = (r && r.code) || "E_OFFLINE";
+        if (code === "E_NOT_CONFIGURED") return { ok: false, reason: REASON.NOT_CONFIGURED };
+        if (code === "E_NO_SESSION") return { ok: false, reason: REASON.GUEST };
+        return { ok: false, reason: REASON.UNAVAILABLE };
+      })["catch"](function () { return { ok: false, reason: REASON.UNAVAILABLE }; });
+    }
+
+    function examRecordDelete(input) {
+      var o = input || {};
+      if (!signedIn()) return Promise.resolve({ ok: false, reason: REASON.GUEST });
+      var ch = usable(D.api) || (D.make ? safeCreate(D.make) : null);
+      if (!ch || typeof ch.examRecordDelete !== "function") {
+        return Promise.resolve({ ok: false, reason: REASON_NO_CHANNEL });
+      }
+      return ch.examRecordDelete(o).then(function (r) {
+        if (r && r.ok) return { ok: true, reason: REASON.OK, deleted: r.deleted };
+        var code = (r && r.code) || "E_OFFLINE";
+        if (code === "E_NOT_CONFIGURED") return { ok: false, reason: REASON.NOT_CONFIGURED };
+        if (code === "E_NO_SESSION") return { ok: false, reason: REASON.GUEST };
+        if (code === "E_NOT_FOUND") return { ok: false, reason: REASON.OK, code: code };
+        return { ok: false, reason: REASON.UNAVAILABLE };
+      })["catch"](function () { return { ok: false, reason: REASON.UNAVAILABLE }; });
+    }
+
     return {
 
       last: function () { return { reason: last.reason, at: last.at }; },
@@ -848,7 +900,10 @@
       adminFeedbackDeleteThread: adminFeedbackDeleteThread,
       adminFeedbackDeleteComment: adminFeedbackDeleteComment,
 
-      gameAnswer: gameAnswer
+      gameAnswer: gameAnswer,
+      examRecordCreate: examRecordCreate,
+      examRecordsMine: examRecordsMine,
+      examRecordDelete: examRecordDelete
     };
   }
 
@@ -915,6 +970,9 @@
     adminAccounts: function (o) { return boundOnce(o).adminAccounts(o); },
 
     gameAnswer: function (o) { return (globalBound || (globalBound = bind(o))).gameAnswer(o); },
+    examRecordCreate: function (o) { return (globalBound || (globalBound = bind(o))).examRecordCreate(o); },
+    examRecordsMine: function (o) { return (globalBound || (globalBound = bind(o))).examRecordsMine(o); },
+    examRecordDelete: function (o) { return (globalBound || (globalBound = bind(o))).examRecordDelete(o); },
     applyMe: function (o) { return boundOnce(o).applyMe(o); },
     clearServerTier: function (o) { return boundOnce(o).clearServerTier(o); },
     signedIn: function (o) { return boundOnce(o).signedIn(o); },

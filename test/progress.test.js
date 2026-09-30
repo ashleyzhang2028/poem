@@ -40,7 +40,7 @@ const o = S.overview(pool, id => recs[id] || null, { days: 14 });
 chk(o.total === 6 && o.learned === 5 && o.unlearned === 1,
   '总览账目：6 首里已学 5 首、未学过 1 首（实际 ' + o.learned + '/' + o.unlearned + '）');
 chk(o.calendar.length === 14, '日历 14 格（含今天）');
-chk(o.calendar[0].count === 2, '「今天」这一格 = 今天到期的 1 首 + 逾期 3 天那 1 首（实际 ' + o.calendar[0].count + '）');
+chk(o.calendar[0].count === 2, '「今天」这一格 = 今日到期的 1 首 + 逾期 3 天那 1 首（实际 ' + o.calendar[0].count + '）');
 chk(o.calendar[3].count === 1, '第 3 天那一格有 1 首（实际 ' + o.calendar[3].count + '）');
 chk(o.calendar.reduce((a, d) => a + d.count, 0) === 3,
   '超出 14 天窗口的（第 20 天）不进日历，未来更远的不占格');
@@ -73,7 +73,7 @@ chk(typeof S.dueList === 'function', 'Scheduler 暴露 dueList()');
 const L = S.dueList(pool, id => recs[id] || null, { days: 14 });
 chk(L.days.length === 14, '清单也是 14 档（与日历同长）');
 chk(L.days[0].items.map(x => x.id).sort().join(',') === 'due0,overdue3',
-  '今天那一档 = 今天到期的 + 逾期 3 天的（逾期一周以内的并进今天，实际 ' +
+  '今天那一档 = 今日到期的 + 逾期 3 天的（逾期一周以内的并进今天，实际 ' +
   L.days[0].items.map(x => x.id).join('、') + '）');
 chk(L.days[3].items.length === 1 && L.days[3].items[0].id === 'due3',
   '第 3 天那一档就是 due3 那一篇（日历上第 3 天那格的展开）');
@@ -151,7 +151,7 @@ chk(L7.days[0].items.length + L7.backlog.length === o7.dueToday,
   'dueToday = 今天那一档 + backlog（含「正好 7 天」这个边界；实际 ' +
   (L7.days[0].items.length + L7.backlog.length) + ' / ' + o7.dueToday + '）');
 chk(o7.overdue === 1 && o7.calendar[0].count === 3,
-  'overdue 只数「超过一周」的（1）；日历今天那一格含今天到期 + 逾期一周以内（3）');
+  'overdue 只数「超过一周」的（1）；日历今天那一格含今日到期 + 逾期一周以内（3）');
 
 const farL = S.dueList([{ id: 'a' }], () => ({
   level: 0, learned: true, nextReviewAt: today0 + 30 * DAY

@@ -6,22 +6,22 @@
 
   var VARIANTS = [
     {
-      id: "practice", cap: "quiz.review", tier: "pro", name: "题库复习",
+      id: "practice", cap: "quiz.review", tier: "pro", name: "题库",
       judge: "instant", timed: false, record: false,
       sizes: [5, 10, 20], size: 5,
-      desc: "给上句选下句，一道道过，答完立刻说对错"
+      desc: "给上句选下句"
     },
     {
-      id: "mock", cap: "exam.paper", tier: "max", name: "模拟考试",
+      id: "mock", cap: "exam.paper", tier: "max", name: "模拟题",
       judge: "instant", timed: false, record: true,
       sizes: [8, 10, 20], size: 8,
-      desc: "抽一套卷子当场做，答完立刻说对错"
+      desc: "模拟题测试"
     },
     {
-      id: "formal", cap: "exam.formal", tier: "max", name: "正式考试",
+      id: "formal", cap: "exam.formal", tier: "max", name: "考试",
       judge: "after", timed: true, record: true,
       sizes: [10, 20, 30], size: 10, minutes: 20,
-      desc: "交卷后统一批改，限时 20 分钟，到点自动交卷"
+      desc: "交卷后评分，限时 20 分"
     }
   ];
 

@@ -638,7 +638,7 @@
     });
     if (empty) {
       empty.hidden = list.length > 0;
-      empty.textContent = pfQueueStatus === "pending" ? "没有待审核的提议。" : "没有「" + pfStatusLabel(pfQueueStatus) + "」的记录。";
+      empty.textContent = pfQueueStatus === "pending" ? "无待审核提议" : "无「" + pfStatusLabel(pfQueueStatus) + "」记录";
     }
     box.innerHTML = list.map(function (p) {
       var title = p.poemTitle ? "《" + p.poemTitle + "》" : "（未知篇目）";
@@ -953,9 +953,9 @@
   }
 
   function emptyText(status) {
-    if (status === "new") return "没有待处理的报告。点上方「全部」可以查看处理过的。";
-    if (status === "all") return "还没有用户提交过报告。";
-    return "没有「" + statusLabel(status) + "」的报告。";
+    if (status === "new") return "无待处理的报告";
+    if (status === "all") return "无用户提交过报告。";
+    return "无「" + statusLabel(status) + "」的报告。";
   }
 
   function renderReports(list) {
@@ -1135,7 +1135,7 @@
     patchReport(b.getAttribute("data-rid"), b.getAttribute("data-report-act"), b);
   }
 
-  // ---- 需求 / 意见反馈：管理端全站列表，回复 / 状态 / 删除 ----
+  // ---- 意见反馈：管理端全站列表，回复 / 状态 / 删除 ----
 
   var fbAdminThreads = [];
   var fbAdminStatus = "open";
@@ -1191,9 +1191,9 @@
   }
 
   function fbEmptyText(status) {
-    if (status === "open") return "没有待处理的反馈。";
-    if (status === "all") return "还没有人提交过反馈。";
-    return "没有「" + fbStatusLabel(status) + "」的反馈。";
+    if (status === "open") return "无待处理反馈";
+    if (status === "all") return "无人提交过反馈";
+    return "无「" + fbStatusLabel(status) + "」的反馈";
   }
 
   function renderFeedbackList() {
@@ -1336,19 +1336,35 @@
 
     painted = true;
     hide($("deny-card"));
-    show($("grant-card"));
-    show($("reports-card"));
-    show($("feedback-card"));
-    show($("pinyin-card"));
+    
+    // 根据当前页面显示对应的卡片
+    var path = window.location.pathname;
+    if (path.includes("/admin/accounts.html")) {
+      show($("grant-card"));
+    } else if (path.includes("/admin/reports.html")) {
+      show($("reports-card"));
+    } else if (path.includes("/admin/feedback.html")) {
+      show($("feedback-card"));
+    } else if (path.includes("/admin/pinyin.html")) {
+      show($("pinyin-card"));
+    } else {
+      // 默认首页显示导航卡片
+      show($("grant-card"));
+    }
+    
     if (paintTimer) { clearTimeout(paintTimer); paintTimer = null; }
     if (paint.done) return;
     paint.done = true;
 
+    // 账号管理
     var who = $("accounts-body");
     if (who) {
       who.addEventListener("change", onAccountsChange);
       who.addEventListener("change", onTierChange);
+      loadAccounts();
     }
+
+    // 用户报告
     if ($("btn-reports-reload")) $("btn-reports-reload").addEventListener("click", loadReports);
     if ($("report-counts")) $("report-counts").addEventListener("click", onCountsClick);
     var rl = $("reports-list");
@@ -1356,36 +1372,39 @@
       rl.addEventListener("click", onReportsClick);
       rl.addEventListener("input", onReplyInput);
       rl.addEventListener("keydown", onReplyKey);
+      loadReports();
     }
-    loadAccounts();
-    loadReports();
 
+    // 反馈管理
     if ($("btn-fb-admin-reload")) $("btn-fb-admin-reload").addEventListener("click", loadFeedbackAdmin);
     if ($("fb-admin-counts")) $("fb-admin-counts").addEventListener("click", onFeedbackCountsClick);
     if ($("fb-admin-list")) $("fb-admin-list").addEventListener("click", onFeedbackListClick);
-    loadFeedbackAdmin();
+    if ($("fb-admin-list")) loadFeedbackAdmin();
 
-    $("pf-q").addEventListener("input", onPinyinSearch);
-    $("pf-results").addEventListener("click", onResultClick);
-    $("pf-lines").addEventListener("click", onLinesClick);
-    $("pf-lines").addEventListener("keydown", onLinesKey);
-    $("btn-pf-change").addEventListener("click", closeWork);
-    $("pf-list").addEventListener("click", onFixListClick);
-    if ($("btn-pf-queue-reload")) $("btn-pf-queue-reload").addEventListener("click", loadPinyinQueue);
-    if ($("pf-queue-counts")) $("pf-queue-counts").addEventListener("click", onPinyinQueueCountsClick);
-    if ($("pf-queue-list")) $("pf-queue-list").addEventListener("click", onPinyinQueueClick);
-    window.addEventListener("pinyin-fix-change", function () {
+    // 注音勘误
+    if ($("pf-q")) {
+      $("pf-q").addEventListener("input", onPinyinSearch);
+      $("pf-results").addEventListener("click", onResultClick);
+      $("pf-lines").addEventListener("click", onLinesClick);
+      $("pf-lines").addEventListener("keydown", onLinesKey);
+      $("btn-pf-change").addEventListener("click", closeWork);
+      $("pf-list").addEventListener("click", onFixListClick);
+      if ($("btn-pf-queue-reload")) $("btn-pf-queue-reload").addEventListener("click", loadPinyinQueue);
+      if ($("pf-queue-counts")) $("pf-queue-counts").addEventListener("click", onPinyinQueueCountsClick);
+      if ($("pf-queue-list")) $("pf-queue-list").addEventListener("click", onPinyinQueueClick);
+      window.addEventListener("pinyin-fix-change", function () {
+        renderFixList();
+        if (pfWork) renderLines();
+      });
+      migrateLegacy();
       renderFixList();
-      if (pfWork) renderLines();
-    });
-    migrateLegacy();
-    renderFixList();
-    renderPinyinQueueCounts(pfQueueCounts);
-    loadPinyinQueue();
-    loadBooks().then(function () {
-      renderFixList();
-      if ((($("pf-q") || {}).value || "").trim()) onPinyinSearch();
-    });
+      renderPinyinQueueCounts(pfQueueCounts);
+      loadPinyinQueue();
+      loadBooks().then(function () {
+        renderFixList();
+        if ((($("pf-q") || {}).value || "").trim()) onPinyinSearch();
+      });
+    }
   }
 
   function init() {

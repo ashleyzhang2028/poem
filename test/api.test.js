@@ -1581,8 +1581,8 @@ async function main() {
 
       eq(core.GAME_CAP.fly, "feihualing", "飞花令那一档的能力键与前端同源");
       eq(core.GAME_CAP.paper, "exam.paper", "试题模拟那一档的能力键与前端同源");
-      eq(core.GAME_CAP.review, "quiz.review", "题库复习那一档的能力键与前端同源");
-      chk(core.gameAllowed(cfg, "pro", "quiz.review"), "题库复习：Pro 放行");
+      eq(core.GAME_CAP.review, "quiz.review", "题库那一档的能力键与前端同源");
+      chk(core.gameAllowed(cfg, "pro", "quiz.review"), "题库：Pro 放行");
       chk(core.gameAllowed(cfg, "max", "feihualing"), "飞花令：Max 放行");
       chk(core.gameAllowed(cfg, "max", "exam.paper"), "试题模拟：Max 放行");
 
@@ -1623,7 +1623,7 @@ async function main() {
       me.plan = "pro";
 
       const pro1 = await POST("/api/game/answer", { kind: "review", poemId: "xx1-01", chosen: "鹅" }, cookie);
-      eq(pro1.status, 200, "Pro 打题库复习回 200");
+      eq(pro1.status, 200, "Pro 打题库回 200");
       eq(pro1.body.cap, "quiz.review", "回的是它自己那一档能力");
       eq(pro1.body.counted, false, "本站不收款、也没有计费：**如实回 counted:false**（不假装扣费）");
 

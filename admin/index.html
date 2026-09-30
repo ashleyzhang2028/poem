@@ -16,10 +16,10 @@
   <base href="/" />
   <link rel="icon" href="/icons/icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
-  <link rel="stylesheet" href="css/style.css" />
-  <link rel="stylesheet" href="css/account.css" />
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="/css/account.css" />
 </head>
-<body data-nav="admin" data-dock="off" data-back="/mine/" data-page="管理后台" data-sub="账号管理 · 用户报告 · 注音勘误">
+<body data-nav="admin" data-dock="off" data-back="/mine/" data-page="管理后台" data-sub="选择管理模块">
   <div class="app">
     <header class="topbar"></header>
 
@@ -32,98 +32,68 @@
       </section>
 
       <section class="account-card" id="grant-card" hidden>
-        <h2 class="account-card-title">账号管理</h2>
-        <p class="account-lead">修改角色或层级后立即保存，对方刷新页面后生效。</p>
-        <div class="admin-table-scroll">
-          <table class="admin-table">
-            <thead>
-              <tr>
-                <th scope="col">用户</th>
-                <th scope="col">角色</th>
-                <th scope="col">层级</th>
-              </tr>
-            </thead>
-            <tbody id="accounts-body"></tbody>
-          </table>
+        <h2 class="account-card-title">管理后台</h2>
+
+        <div class="admin-nav-list">
+          <a href="/admin/accounts.html" class="admin-nav-item">
+            <div class="admin-nav-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+              </svg>
+            </div>
+            <div class="admin-nav-content">
+              <h3 class="admin-nav-title">账号管理</h3>
+              <p class="admin-nav-desc">修改用户角色和层级（Free / Pro / Max）</p>
+            </div>
+          </a>
+
+          <a href="/admin/reports.html" class="admin-nav-item">
+            <div class="admin-nav-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10 9 9 9 8 9"></polyline>
+              </svg>
+            </div>
+            <div class="admin-nav-content">
+              <h3 class="admin-nav-title">用户报告</h3>
+              <p class="admin-nav-desc">查看和处理用户提交的报告</p>
+            </div>
+          </a>
+
+          <a href="/admin/feedback.html" class="admin-nav-item">
+            <div class="admin-nav-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+              </svg>
+            </div>
+            <div class="admin-nav-content">
+              <h3 class="admin-nav-title">意见反馈</h3>
+              <p class="admin-nav-desc">回复用户的需求和使用问题</p>
+            </div>
+          </a>
+
+          <a href="/admin/pinyin.html" class="admin-nav-item">
+            <div class="admin-nav-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 7V4h16v3"></path>
+                <path d="M9 20h6"></path>
+                <path d="M12 4v16"></path>
+              </svg>
+            </div>
+            <div class="admin-nav-content">
+              <h3 class="admin-nav-title">注音勘误</h3>
+              <p class="admin-nav-desc">修正多音字的自动注音错误</p>
+            </div>
+          </a>
         </div>
-        <p class="account-hint" id="accounts-empty" hidden>暂无账号。</p>
-        <p class="account-hint" id="accounts-note" hidden></p>
+
         <p class="account-msg" id="msg-accounts"></p>
-      </section>
-
-      <section class="account-card" id="reports-card" hidden>
-        <h2 class="account-card-title">用户报告</h2>
-        <p class="account-lead">用户在篇目页点小旗提交的问题。点下方按钮标记处理进度，可以附一句回复；用户会在「我的报告」里看到。</p>
-
-        <div class="admin-report-tools">
-          <div class="admin-report-counts" id="report-counts" role="group" aria-label="按状态筛选"></div>
-          <button class="account-btn ghost" id="btn-reports-reload" type="button">刷新</button>
-        </div>
-
-        <ul class="report-list" id="reports-list"></ul>
-        <p class="account-hint" id="reports-empty" hidden></p>
-        <p class="account-hint" id="reports-note" hidden></p>
-        <p class="account-msg" id="msg-reports"></p>
-      </section>
-
-      <section class="account-card" id="feedback-card" hidden>
-        <h2 class="account-card-title">需求 / 意见反馈</h2>
-        <p class="account-lead">用户在「我的 → 更多」提交的需求 / 使用问题（含未登录访客，按设备号认人）。回复会在用户那边看到；用户能删自己发的内容，但删不掉你回复的那些。</p>
-
-        <div class="admin-report-tools">
-          <div class="admin-report-counts" id="fb-admin-counts" role="group" aria-label="按状态筛选"></div>
-          <button class="account-btn ghost" id="btn-fb-admin-reload" type="button">刷新</button>
-        </div>
-
-        <ul class="report-list" id="fb-admin-list"></ul>
-        <p class="account-hint" id="fb-admin-empty" hidden></p>
-        <p class="account-msg" id="msg-fb-admin"></p>
-      </section>
-
-      <section class="account-card" id="pinyin-card" hidden>
-        <h2 class="account-card-title">注音勘误</h2>
-        <p class="account-lead">多音字偶尔会被自动注音读错。找到篇目，点读错的字，选正确的读音，再提交给所有人。</p>
-        <p class="pf-scope">选好读音会先在<strong>你自己的屏幕</strong>上立即生效，方便核对；点「提交给所有人」后进入待审核，<strong>批准后全站读者才会看到</strong>（本机缓存至多几小时后自动刷新）。</p>
-
-        <div class="account-field pf-step">
-          <label class="account-label" for="pf-q"><span class="pf-no">1</span>找到篇目</label>
-          <input id="pf-q" class="account-input" type="search" autocomplete="off" spellcheck="false"
-                 placeholder="输入篇名、作者或其中一句，如 滕王阁序" maxlength="40" />
-        </div>
-        <ul class="pf-results" id="pf-results" hidden></ul>
-        <p class="account-hint" id="pf-search-hint" hidden></p>
-
-        <div class="pf-work" id="pf-work" hidden>
-          <div class="pf-work-head">
-            <div class="pf-work-title" id="pf-work-title"></div>
-            <button class="account-btn ghost" id="btn-pf-change" type="button">换一篇</button>
-          </div>
-          <p class="account-label pf-step-label"><span class="pf-no">2</span>点读错的字</p>
-          <p class="account-hint pf-legend">
-            <span class="pf-ch is-poly">虚线</span>是多音字，可以点；<span class="pf-ch is-poly is-fixed">绿色</span>是已经改过的。其他字只有一个读音，不需要改。
-          </p>
-          <div class="pf-lines" id="pf-lines"></div>
-        </div>
-        <p class="account-msg" id="msg-pf"></p>
-
-        <div class="admin-sub">
-          <h3 class="admin-sub-title">这台设备上的改动 <span class="admin-count" id="pf-count">0</span></h3>
-          <p class="account-hint">只在你自己屏幕上生效，用来核对读音；确认没问题后请在上面点「提交给所有人」。</p>
-          <ul class="admin-fix-list" id="pf-list"></ul>
-          <p class="account-hint" id="pf-empty" hidden>还没有改过读音。</p>
-        </div>
-
-        <div class="admin-sub">
-          <h3 class="admin-sub-title">全站生效审核</h3>
-          <p class="account-hint">批准后全站读者都会读到这个音；驳回或下线则恢复自动注音。</p>
-          <div class="admin-report-tools">
-            <div class="admin-report-counts" id="pf-queue-counts" role="group" aria-label="按状态筛选"></div>
-            <button class="account-btn ghost" id="btn-pf-queue-reload" type="button">刷新</button>
-          </div>
-          <ul class="report-list" id="pf-queue-list"></ul>
-          <p class="account-hint" id="pf-queue-empty" hidden></p>
-          <p class="account-msg" id="msg-pf-queue"></p>
-        </div>
       </section>
 
     </main>
@@ -140,28 +110,6 @@
   <script src="/js/progress-store.js"></script>
   <script src="/js/storage.js"></script>
   <script src="/js/avatar.js"></script>
-  <script src="/js/report.js"></script>
-  <script src="/js/feedback.js"></script>
-  <script src="/data/pinyin-table.js"></script>
-  <script src="/data/common-chars.js"></script>
-  <script src="/data/works-index.js"></script>
-  <script src="/data/text-master.js"></script>
-  <script src="/data/poems-1.js"></script>
-  <script src="/data/poems-2.js"></script>
-  <script src="/data/poems-3.js"></script>
-  <script src="/data/poems-4.js"></script>
-  <script src="/data/poems-5.js"></script>
-  <script src="/data/poems-6.js"></script>
-  <script src="/data/poems-7.js"></script>
-  <script src="/data/poems-8.js"></script>
-  <script src="/data/poems-9.js"></script>
-  <script src="/data/poems-10.js"></script>
-  <script src="/data/poems-11.js"></script>
-  <script src="/data/poems-12.js"></script>
-  <script src="/data/index.js"></script>
-  <script src="/data/site-books.js"></script>
-  <script src="/js/pinyin-edit.js"></script>
-  <script src="/js/pinyin.js"></script>
   <script src="/js/admin-page.js"></script>
   <script src="/js/chrome.js"></script>
   <script src="/js/pwa.js"></script>

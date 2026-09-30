@@ -29,7 +29,7 @@
     }
   ];
 
-  var APP_VERSION = "0.1.283";
+  var APP_VERSION = "0.1.287";
   var APP_VERSION_NAME = "跬步 · 古诗词背诵";
 
   function esc(s) {
@@ -73,7 +73,7 @@
     var cached = "未缓存";
     try {
       var nav = (typeof navigator !== "undefined" && navigator) || null;
-      if (nav && nav.serviceWorker && nav.serviceWorker.controller) cached = "已缓存，可离线打开";
+      if (nav && nav.serviceWorker && nav.serviceWorker.controller) cached = "已缓存 · 可离线打开";
     } catch (e) { cached = "未缓存"; }
 
     box.innerHTML =
