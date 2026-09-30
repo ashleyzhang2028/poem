@@ -88,9 +88,11 @@ const MR_CN = book('名家「中国」', 'POEMS_MINGREN_CN', MINGREN_GROUPS, '�
 const MR_FOREIGN = book('名家「外国」', 'POEMS_MINGREN_FOREIGN', MINGREN_GROUPS, '家', { sparse: true });
 const MR = MR_CN.concat(MR_FOREIGN);
 /* Issue #407（帝王归位）：本身即为君主 / 执政元首的那 6 位移到帝王两卷，
-   历代名家由 811 位减到 805 位。 */
-chk(MR_CN.length + MR_FOREIGN.length === 805,
-  '两卷合计 805 位（中国 ' + MR_CN.length + ' · 外国 ' + MR_FOREIGN.length + '）');
+   历代名家由 811 位减到 805 位（#407）；#399 第十二 / 十三轮补维基两份
+   百人榜点名的人，外国卷再增 110 位（413 → 523），两卷合计 915 位
+   （中国卷 392 不动）。 */
+chk(MR_CN.length + MR_FOREIGN.length === 915,
+  '两卷合计 915 位（中国 ' + MR_CN.length + ' · 外国 ' + MR_FOREIGN.length + '）');
 
 /* ── 排序：Issue #381 第七、八轮 · 用户原话 ─────────────────────────────
    第七轮：「所有类别的名家按出生时间顺序排序。名著也按时间顺序排序。」
@@ -202,7 +204,7 @@ const MR_BY_GROUP = {};
 MR.forEach(p => { MR_BY_GROUP[p.group] = (MR_BY_GROUP[p.group] || 0) + 1; });
 /* Issue #381 第九轮：706 → 769 位（新收 67 位 + 合并掉同人两条 4 对）。
    守的是**这一段的口径**：新收的十一格各自都有人，且总数对得上。 */
-chk(MR.length === 805, '历代名家共 805 位（实际 ' + MR.length + '）');
+chk(MR.length === 915, '历代名家共 915 位（实际 ' + MR.length + '）');
 /* Issue #381 第六轮：新开「政治家」一组，军事家覆盖中外 */
 chk((MR_BY_GROUP['政治家'] || 0) >= 30,
   '政治家补到 30 位以上（实际 ' + (MR_BY_GROUP['政治家'] || 0) + '）');
@@ -604,9 +606,13 @@ chk(JP_POL_MIL.length === 0,
   (JP_POL_MIL.map(p => p.title).join('、') || '无') + '）');
 
 const JP_ALL = MR.filter(p => /日本/.test(p.dynasty || ''));
-chk(JP_ALL.length === 4 && JP_ALL.every(p => p.gradeGroup === '文学家'),
-  '在册的日本人物只剩 4 位文学家（川端康成 / 夏目漱石 / 芥川龙之介 / ' +
-  '三岛由纪夫）—— 作家不在「政治 / 军事人物」的尺子内（实际：' +
+/* Issue #399 第十二轮起，这一条不再只认「文学家」：维基两份百人榜点名的
+   盛田昭夫（索尼创始人）在册，他的行当是「经济学家」（企业家一组）。
+   尺子没变 —— 守的仍是「日本的政治 / 军事人物一位不收」，
+   所以这里改成：在册的日本人只可以是文学家或企业家，不得是政治 / 军事。 */
+chk(JP_ALL.length >= 4 && JP_ALL.every(p => p.gradeGroup === '文学家' || p.gradeGroup === '经济学家'),
+  '在册的日本人物只有文学家与企业家（川端康成 / 夏目漱石 / 芥川龙之介 / ' +
+  '三岛由纪夫 / 盛田昭夫）—— 都不在「政治 / 军事人物」的尺子内（实际：' +
   (JP_ALL.map(p => p.title + '（' + p.gradeGroup + '）').join('、') || '无') + '）');
 
 /* Issue #381 第七轮：用户原话「轴心国除了日本的政治军事家，其他国家的政治，
