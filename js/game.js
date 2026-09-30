@@ -495,7 +495,7 @@
       }).join("") + "</div>" +
       '<p class="account-hint">' +
       (v.judge === "after"
-        ? "交卷后批改，退出不评分。"
+        ? "交卷批改，退出不评分。"
         : "答完出结果。" + (v.record ? "记录留本地。" : "本地不留记录。")) +
       "</p>" +
       '<button class="account-btn" type="button" data-game-begin="1">开始</button>' +
