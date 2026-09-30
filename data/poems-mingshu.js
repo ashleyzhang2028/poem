@@ -5918,6 +5918,17 @@ window.POEMS_MINGSHU = [
     excerpt: "一册短篇集"
   },
   {
+    textRef: "mingshu-ms-2832",
+    id: "ms-2832",
+    title: "海燕",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "苏联",
+    author: "高尔基",
+    source: "《海燕》",
+    excerpt: "让暴风雨来得更猛烈些吧"
+  },
+  {
     textRef: "mingshu-ms-927",
     id: "ms-927",
     title: "假如给我三天光明",
@@ -6435,6 +6446,17 @@ window.POEMS_MINGSHU = [
     excerpt: "山上的疗养院"
   },
   {
+    textRef: "mingshu-ms-2833",
+    id: "ms-2833",
+    title: "铁流",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "苏联",
+    author: "绥拉菲莫维奇",
+    source: "《铁流》",
+    excerpt: "一支突围的队伍"
+  },
+  {
     textRef: "mingshu-ms-1918",
     id: "ms-1918",
     title: "宫泽贤治诗选",
@@ -6532,6 +6554,17 @@ window.POEMS_MINGSHU = [
     author: "黑塞",
     source: "《荒原狼》",
     excerpt: "一半是人，一半是狼"
+  },
+  {
+    textRef: "mingshu-ms-2834",
+    id: "ms-2834",
+    title: "毁灭",
+    group: "外国文学",
+    gradeGroup: "外国文学",
+    dynasty: "苏联",
+    author: "法捷耶夫",
+    source: "《毁灭》",
+    excerpt: "一支游击队的溃败"
   },
   {
     textRef: "mingshu-ms-1972",

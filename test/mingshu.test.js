@@ -709,6 +709,24 @@ chk(Math.min.apply(null, MS_PEOPLE) >= 15,
     '这一批 57 部的年份都真写进了年表（落兜底的：' +
     (YEAR_FALLBACK.join('、') || '无') + '）');
   chk(BATCH60.length === 57, '这一批点名名单 57 部（实际 ' + BATCH60.length + '）');
+  chk(BY('外国文学') >= 273,
+    '外国文学已填 273 部以上（实际 ' + BY('外国文学') + '）');
+  chk(MS.length >= 635, '名著导读已交付 635 部以上（实际 ' + MS.length + '）');
+
+  /* Issue #381 第三十四轮（批次十五·苏联片开张 3 部）：本 PR 与 main 的「美国片
+     封口」批次同在外国文学一组，解冲突时把两组守卫都留下 —— main 那两批
+     （法国 43 / 德国 31、美国 73 逐部核）在下面，本批（苏联片开张 3 部）在这里。 */
+  const SU_OPEN = ['海燕', '铁流', '毁灭'];
+  chk(SU_OPEN.every(t => modernInShell.has(t)),
+    '苏联片开张这一批 ' + SU_OPEN.length + ' 部都进了列表页（缺：' +
+    (SU_OPEN.filter(t => !modernInShell.has(t)).join('、') || '无') + '）');
+  const SU_OPEN_YEAR = SU_OPEN.filter(t => MYEARS.YEARS[t] == null);
+  chk(SU_OPEN_YEAR.length === 0,
+    '苏联片开张这一批的年份都真写进了年表（落兜底的：' +
+    (SU_OPEN_YEAR.join('、') || '无') + '）');
+  chk(BY('外国文学') >= 276,
+    '外国文学已填 276 部以上（实际 ' + BY('外国文学') + '）');
+  chk(MS.length >= 638, '名著导读已交付 638 部以上（实际 ' + MS.length + '）');
 
   /* 素材全覆盖：书目表里「有素材」的那些书，壳里一条不落 */
   const BOOKS = require('../scripts/data/mingshu-books.js');

@@ -326,6 +326,10 @@ add(require('./corpus/fill-foreign-us-12.js'));
 add(require('./corpus/fill-foreign-us-13.js'));
 add(require('./corpus/fill-foreign-us-14.js'));
 
+/* ── Issue #381 第三十四轮（批次十五·外国文学·苏联片）───────────────
+   苏联书目表 23 部，此前已交 8 部，这一轮把余下 15 部按册往下填。 */
+add(require('./corpus/fill-foreign-su-1.js'));
+
 /* ── Issue #381 第二十五轮（批次九·外国文学·英国片·余部）──────────────
    用户原话「按你的计划，尽快完成吧 每次最少提交100」。英国片书目表 83 部，
    此前已交 18 部（fill-foreign-1 一批 + 中小学必读一批），余 65 部按册往下填。
