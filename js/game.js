@@ -175,8 +175,13 @@
     state.scopes = sc === "all" ? [] : [sc];
   }
 
-  // 按当前范围过滤语料：飞花令的选字/看答案/作答都要走同一份，
-  // 否则「选了小学」只是摆设（选了但答案照样混全部范围）
+  // 按当前范围过滤语料：飞花令的**选字、看答案、以及「这一关有几句」**
+  // 都走这一份（否则「选了小学」只是摆设）。
+  //
+  // ⚠️ 判**作答**不在这里 —— 见 answerCorpus()。范围管的是「出什么题」，
+  // 不管「你能想起哪一句」：令字是风，你在小学范围里闯关，可你想起的是
+  // 「春风不度玉门关」（王之涣《凉州词》，只在乐府集里）。拿范围去卡作答，
+  // 就会把一句真诗判成「合集里没有」——那不是飞花令，那是背范围。
   function scopedCorpus() {
     var cps = corpus();
     if (!Ex || !Ex.select) return cps;
@@ -184,6 +189,18 @@
       var out = Ex.select(cps, state.setup.scope);
       return (out && out.length) ? out : cps;
     } catch (e) { return cps; }
+  }
+
+  // 判作答用的语料：**整份语料**，不分范围（用户 2026-09-30 裁决）。
+  // 「我的初始出题范围确实是目标范围内的令字，但我的回答可以超出当前范围
+  //   吧，否则没法回答了」——对。范围收的是令字（题），作答是用户背过的句子
+  //  （答）。真飞花令也是这个理：令字定死，答的那一句从你记得的诗词里来，
+  //  没人管你背的那首在不在课本里。
+  // 语料要是整份都为空（各集子脚本都没加载出来），退回 scopedCorpus() ——
+  // 至少还能按当前范围判，别判成「一句都不认得」。
+  function answerCorpus() {
+    var cps = corpus();
+    return (cps && cps.length) ? cps : scopedCorpus();
   }
 
   function poemById(id) {
@@ -641,14 +658,19 @@
     var input = $("#game-lv-said");
     if (!input) return;
     var said = input.value.trim();
-    var local = Q.judgeSetLine({ poems: scopedCorpus(), chars: [levelAt()], said: said });
+    // 判作答走 answerCorpus（整份语料），不是当前范围 —— 范围管的是**令字**，
+    // 不是你想起的那一句。令字是「风」、范围是小学，你答「春风不度玉门关」
+    // （王之涣《凉州词》，只在乐府集里），那是真句子，就得算对。
+    var local = Q.judgeSetLine({ poems: answerCorpus(), chars: [levelAt()], said: said });
     if (!local.ok) { levelFail(local.why); return; }
 
-    // 服务器核对优先（范围一起带上去，两边同一个范围才说同一件事）。
-    // 但服务端**只有集子级**的语料，课内三学段（小学/初中/高中）它没有 grade
-    // 数据 —— 这时它回的 scopeExact = false，说的是「我其实按全站判的」。
-    // 那就不能拿它去否掉本机那句按范围判出来的「对上了」：宁可认用户对，
-    // 也不要因为服务端收窄不了范围而误判。本机那一条本来就是同一个范围算的。
+    // 服务器核对优先。判分语料两端口径一致：两边都扫**整份语料**——
+    // 范围只用来收窄**令字**（题），不用来收窄**作答**（答）。
+    // 从前两端口径不一致：本机按范围判、服务端扫全站，于是「界面说没有、
+    // 服务器说对上」各说一套；上一轮是用「服务端 scopeExact=false 就别信它」
+    // 打的补丁。这一轮把口径本身統一了，那条补丁就不再是主角。
+    // 仍留 scopeExact 一道：服务端认不出这个范围时（scoped() 退全站）它如实
+    // 报 false，这时它的「没找到」不足为凭，本机仍按自己那句说话。
     judge({
       kind: "fly", chars: [levelAt()], said: said, scopeId: state.setup.scope
     }).then(function (r) {
@@ -1236,15 +1258,28 @@
     if (!input || !msg) return;
     var said = input.value.trim();
     if (!said) { msg.className = "account-msg warn"; msg.textContent = "先写一句。"; return; }
-    var local = Q.flyFlower({ poems: scopedCorpus(), chars: state.chars }).rows
+    // 判作答扫**整份语料**（answerCorpus），不是当前范围 —— 范围管令字，
+    // 不管你能想起哪一句。只是若命中落在范围外，顺带说一句「这一句在
+    // 《xxx》里」，让用户知道是从哪儿对上的。
+    var local = Q.flyFlower({ poems: answerCorpus(), chars: state.chars }).rows
       .filter(function (r) { return r.text === said; })[0];
     judge({ kind: "fly", chars: state.chars, said: said }).then(function (r) {
-      var found = r && r.body ? !!r.body.found : !!local;
-      var by = r && r.body ? "由服务器核对" : "本机核对（服务端没接通）";
+      var body = r && r.body;
+      var found = body ? !!body.found : !!local;
+      var by = body ? "由服务器核对" : "本机核对（服务端没接通）";
       msg.className = "account-msg " + (found ? "ok" : "warn");
-      msg.textContent = found
-        ? "在合集里对上了：" + (local ? local.title : said) + " —— " + by + "。"
-        : "合集里没有一字不差的一句「" + said + "」 —— " + by + "。";
+      if (!found) {
+        msg.textContent = "合集里没有一字不差的一句「" + said + "」 —— " + by + "。";
+        return;
+      }
+      // 对上了就说清是从哪儿对上的；命中在**当前范围之外**（服务端 inScope 明确
+      // 为 false）时补一句「不在本范围，但算对」—— 免得用户看见「对上了」
+      // 还以为这一句真在自己选的那一册里。
+      var title = (local && local.title) || (body && body.title) || said;
+      var tail = (body && body.inScope === false)
+        ? "（不在" + scopeName(state.setup.scope) + "里，但算对 —— 范围只管令字。）"
+        : "";
+      msg.textContent = "在合集里对上了：" + title + tail + " —— " + by + "。";
     });
   }
 
