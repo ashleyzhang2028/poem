@@ -258,9 +258,11 @@ console.log("一、创建：登录用户 / 设备号访客 / 拒绝没身份的�
     const pageHtml = read("settings/feedback/index.html");
     chk(/js\/feedback\.js/.test(pageHtml) && /js\/feedback-page\.js/.test(pageHtml), "反馈页带上了数据层与页面层两个脚本");
 
-    const adminHtml = read("admin/index.html");
-    chk(/id="feedback-card"/.test(adminHtml), "管理后台有反馈卡片");
-    chk(/js\/feedback\.js/.test(adminHtml), "管理后台也带上了 js/feedback.js（读标签用）");
+    const adminNav = read("admin/index.html");
+    chk(/href="\/admin\/feedback\.html"/.test(adminNav), "管理后台导航里有「意见反馈」这一条入口");
+    const adminHtml = read("admin/feedback.html");
+    chk(/id="feedback-card"/.test(adminHtml), "管理后台的意见反馈页有反馈卡片");
+    chk(/js\/feedback\.js/.test(adminHtml), "管理后台的意见反馈页也带上了 js/feedback.js（读标签用）");
 
     const swSrc = read("sw.js");
     chk(/\.\/js\/feedback\.js/.test(swSrc) && /\.\/js\/feedback-page\.js/.test(swSrc) && /\.\/settings\/feedback\//.test(swSrc),
