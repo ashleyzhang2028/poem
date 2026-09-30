@@ -628,7 +628,7 @@ html, body {
   width: 100%;
   max-width: 640px;
 
-  max-height: calc(88vh - var(--nav-h) - var(--safe-bottom));
+  max-height: calc(88vh - var(--safe-bottom));
   overflow-y: auto;
   border-radius: 22px 22px 0 0;
   padding: 22px 20px 26px;
@@ -639,7 +639,12 @@ html, body {
 
 @media (min-width: 700px) {
   .modal { align-items: center; }
-  .modal-box { border-radius: 22px; max-height: calc(86vh - var(--nav-h) - var(--safe-bottom)); }
+  .modal-box { border-radius: 22px; max-height: calc(86vh - var(--safe-bottom)); }
+}
+
+@media (min-width: 700px), (orientation: landscape) and (max-height: 560px) {
+  .modal:has(> .modal-box.small) { align-items: center; }
+  .modal > .modal-box.small { border-radius: 22px; }
 }
 
 body.no-dock .modal-box { max-height: 88vh; }
@@ -1440,15 +1445,13 @@ textarea:focus {
 }
 
 .modal-box {
-  padding-bottom: calc(26px + var(--nav-h) + var(--safe-bottom));
+  padding-bottom: calc(26px + var(--safe-bottom));
 }
-body.no-dock .modal-box { padding-bottom: calc(26px + var(--safe-bottom)); }
 
 .modal-box.small {
 
-  max-height: calc(86 * var(--app-vh) - var(--nav-h));
-  padding-bottom: calc(26px + var(--nav-h) + var(--safe-bottom));
-  margin-bottom: calc(12px + var(--nav-h) + var(--safe-bottom));
+  max-height: calc(86 * var(--app-vh));
+  padding-bottom: calc(26px + var(--safe-bottom));
 }
 
 .toast {
