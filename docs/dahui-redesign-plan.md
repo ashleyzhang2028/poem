@@ -184,6 +184,10 @@ create index if not exists exam_records_account_idx on public.exam_records(accou
    详见 `docs/architecture.md` §4.117「P2：考试历史上服务器」。
 4. **P3（已完成）**：游戏化体验——倒计时可视化、音效开关、动画反馈、每次交卷都有
    的成绩横幅。详见 `docs/architecture.md` §4.117「P3：游戏感」。
+   **第六轮返工（2026-09-30）**：音效第一版只在「逐题即时判分」那三行响过，
+   考试（交卷后批）与交卷出分那一屏一行都没有 —— 用户的原话是「也没听到任何
+   声音」。现在四种声音收在 `js/sfx.js` 一处、四个题型四个发声点、解锁改在用户
+   手势里做。详见 `docs/architecture.md` §4.119。
 5. **P4（已完成）**：飞花令「闯关模式」——与「查一查」并列的增量，旧路径一个字
    没改。判分内核放 `js/quiz.js`（`judgeSetLine` / `levelChars` / `passable`），
    一关一个令字、45 秒、写对翻下一个字、连对累计、卡住给提示不给答案。

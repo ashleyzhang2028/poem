@@ -18,6 +18,17 @@
   const SETTINGS_KEY = "poem_recite_settings_v1";
   const SOUND_KEY = "poem_sound_v1";
 
+  // 试听：声音的出处是 js/sfx.js（与大会那一页同一个），这里只借它响一声。
+  // 浏览器不支持 / 用户关着开关时，给一句实话，不装作响过了。
+  function trySound() {
+    const S = window.Sfx;
+    if (!S) { showToast("这台设备放不了提示音"); return; }
+    if (!S.on()) { showToast("先把「答题音效」打开"); return; }
+    S.ready();
+    const ok = S.answer(true);
+    if (!ok) showToast("这台设备放不了提示音");
+  }
+
   function readSoundPref() {
     try {
       var v = localStorage.getItem(SOUND_KEY);
@@ -946,8 +957,17 @@
     if (soundToggle) {
       soundToggle.addEventListener("change", function () {
         writeSoundPref(soundToggle.checked);
+        // 打开时立刻响一声 —— 这台设备上到底出不出声（静音键、没插耳机、
+        // 浏览器拦自动播放），点开开关就该知道，不用等下次考试才发现。
+        // 这一下本来就在用户手势里，顺手把 AudioContext 解了。
+        if (soundToggle.checked) trySound();
         showToast(soundToggle.checked ? "已开启答题音效" : "已关闭答题音效");
       });
+    }
+
+    const soundTry = $("#sound-try");
+    if (soundTry) {
+      soundTry.addEventListener("click", function () { trySound(); });
     }
 
     const playBox = $("#seg-play");
