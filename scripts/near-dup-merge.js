@@ -34,7 +34,7 @@ const MERGES = [
     keepWord: '苹', keepFromWord: '蘋',
     word: '蘋', fromWord: '苹',
     remove: true,
-    note: '两条同在《宋词三百首》（贺铸），没有教材可比；「苹」是简体写法，按简体字为准取「苹」'
+    note: '两条同在《词》（原《宋词三百首》）（贺铸），没有教材可比；「苹」是简体写法，按简体字为准取「苹」'
   }
 ];
 

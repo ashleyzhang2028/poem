@@ -31,7 +31,7 @@
     },
     {
       id: "tangshi",
-      name: "唐诗三百首",
+      name: "唐诗",
       book: "TangshiBook",
       short: "唐诗",
       page: "/tangshi/",
@@ -40,7 +40,7 @@
     },
     {
       id: "gushi",
-      name: "古诗集",
+      name: "古诗「非唐代」",
       book: "GushiBook",
       short: "古诗",
       page: "/gushi/",
@@ -49,7 +49,7 @@
     },
     {
       id: "songci",
-      name: "宋词三百首",
+      name: "词",
       book: "SongciBook",
       short: "宋词",
       page: "/songci/",
@@ -58,7 +58,7 @@
     },
     {
       id: "yuanqu",
-      name: "元曲三百首",
+      name: "曲",
       book: "YuanquBook",
       short: "元曲",
       page: "/yuanqu/",

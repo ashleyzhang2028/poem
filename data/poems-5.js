@@ -73,15 +73,13 @@ window.POEMS_5 = [
     term: 1,
   },
   {
+    textRef: "poems-xx5-08",
     id: "xx5-08",
     title: "长相思",
     author: "纳兰性德",
     dynasty: "清",
     grade: 5,
     term: 1,
-    text: "山一程，水一程，\n身向榆关那畔行，夜深千帐灯。\n风一更，雪一更，\n聒碎乡心梦不成，故园无此声。",
-    translation: "将士们跋山涉水向山海关那边行进，夜里成千上万的营帐都点起了灯。风一更，雪一更，嘈杂的声音打碎了思乡的梦，故乡并没有这样的风雪声。",
-    translationSource: "school",
   },
   {
     id: "xx5-09",

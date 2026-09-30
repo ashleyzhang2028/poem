@@ -11,14 +11,14 @@
     return {
       id: "yuanqu",
       groupOrder: GROUP_ORDER,
-      pageTitle: "元曲三百首",
+      pageTitle: "曲",
       pageSub: "想读哪首点哪首",
       words: {
         list: "元曲",
         unit: "首",
         loadingFailed: "元曲数据加载失败",
         empty: "没有匹配的元曲",
-        matchGroup: "元曲三百首",
+        matchGroup: "曲",
         backToList: "返回元曲列表",
         readStore: "poem_yuanqu_read_v1",
         playerTitle: "元曲朗读",

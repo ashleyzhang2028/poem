@@ -5,12 +5,14 @@
     { id: "poems", name: "课内诗词", page: "/", varName: "POEMS_ALL", unit: "首" },
     { id: "classic", name: "小古文", page: "/classic/", varName: "POEMS_CLASSIC", unit: "篇" },
     { id: "yuefu", name: "乐府集", page: "/yuefu/", varName: "POEMS_YUEFU", unit: "首" },
-    { id: "tangshi", name: "唐诗三百首", page: "/tangshi/", varName: "POEMS_TANGSHI", unit: "首" },
+    { id: "tangshi", name: "唐诗", page: "/tangshi/", varName: "POEMS_TANGSHI", unit: "首" },
     /* Issue #461：唐诗集只收唐（317 首 dynasty 全「唐」，保选本原貌）；
-       先秦 / 汉魏六朝 / 宋 / 元明清的「非唐古诗」另立一部《古诗集》。 */
-    { id: "gushi", name: "古诗集", page: "/gushi/", varName: "POEMS_GUSHI", unit: "首" },
-    { id: "songci", name: "宋词三百首", page: "/songci/", varName: "POEMS_SONGCI", unit: "首" },
-    { id: "yuanqu", name: "元曲三百首", page: "/yuanqu/", varName: "POEMS_YUANQU", unit: "首" },
+       先秦 / 汉魏六朝 / 宋 / 元明清的「非唐古诗」另立一部《古诗「非唐代」》。
+       同轮裁决：《唐诗三百首》→《唐诗》、《宋词三百首》→《词》、《元曲三百首》→《曲》，
+       id 一律不动（保全站引用与本地进度不断链）。 */
+    { id: "gushi", name: "古诗「非唐代」", page: "/gushi/", varName: "POEMS_GUSHI", unit: "首" },
+    { id: "songci", name: "词", page: "/songci/", varName: "POEMS_SONGCI", unit: "首" },
+    { id: "yuanqu", name: "曲", page: "/yuanqu/", varName: "POEMS_YUANQU", unit: "首" },
     { id: "guwen", name: "古文观止", page: "/guwen/", varName: "POEMS_GUWEN", unit: "篇" },
     { id: "jinxiandai", name: "近现代诗词", page: "/jinxiandai/", varName: "POEMS_JINXIANDAI", unit: "首" },
     { id: "zhaoming", name: "昭明文选", page: "/zhaoming/", varName: "POEMS_ZHAOMING", unit: "篇" },

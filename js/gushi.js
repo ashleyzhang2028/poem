@@ -13,14 +13,14 @@
     return {
       id: "gushi",
       groupOrder: GROUP_ORDER,
-      pageTitle: "古诗集",
+      pageTitle: "古诗「非唐代」",
       pageSub: "唐代之外 · 先秦至清",
       words: {
         list: "古诗",
         unit: "首",
         loadingFailed: "古诗数据加载失败",
         empty: "没有匹配的古诗",
-        matchGroup: "古诗集",
+        matchGroup: "古诗「非唐代」",
         backToList: "返回古诗列表",
         readStore: "poem_gushi_read_v1",
         playerTitle: "古诗朗读",

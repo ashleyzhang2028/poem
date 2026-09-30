@@ -155,7 +155,7 @@ function checkFly(input) {
   if (!said) return { bad: "E_BODY", message: "请把你想起来的那一句填上" };
 
   var hit = Q.flyFlower({ poems: cps, chars: chars });
-  // 同一句常出现在好几篇里（「黄河入海流」既是课内《登鹳雀楼》，也在唐诗三百首里）。
+  // 同一句常出现在好几篇里（「黄河入海流」既是课内《登鹳雀楼》，也在唐诗集里）。
   // 取第一条当出处，但「在不在范围里」要看**所有**对上的那几条 —— 有一条在范围里
   // 就算在，别因为语料拼接的先后把课内那句盖过去。
   var exactRows = hit.rows.filter(function (r) { return r.text === said; });
