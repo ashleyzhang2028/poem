@@ -914,7 +914,6 @@
 
       var go = hit("data-game-go");
       if (go) { location.href = go.getAttribute("data-game-go"); return; }
-      }
 
             var pick = hit("data-game-scope");
       if (pick) {
