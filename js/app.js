@@ -325,6 +325,35 @@
     return id;
   }
 
+  function todayDoneOf(p) {
+    const rec = getRecord(p.id);
+    return !!(rec && rec.lastReviewAt && sameDay(rec.lastReviewAt, Date.now()));
+  }
+
+  function pinTodayDone(plan) {
+    const list = (plan || []).slice();
+    const have = {};
+    list.forEach(function (it) {
+      if (it && it.poem) have[widOf(it.poem.id)] = true;
+    });
+
+    const keep = [];
+    (todayPlan || []).forEach(function (it) {
+      if (!it || !it.poem || it.reason === "pinned") return;
+      if (!todayDoneOf(it.poem)) return;
+      const wid = widOf(it.poem.id);
+      if (have[wid]) return;
+      have[wid] = true;
+      keep.push(it);
+    });
+    if (!keep.length) return list;
+
+    const pinned = list.filter(function (it) { return it.reason === "pinned"; });
+    const room = Math.max(0, settings.dailyCount - keep.length);
+    const base = list.filter(function (it) { return it.reason !== "pinned"; }).slice(0, room);
+    return base.concat(keep).concat(pinned);
+  }
+
   function buildTodayPlan() {
 
     const key = planCacheKey();
@@ -356,7 +385,7 @@
       }
     }
 
-    const plan = withTodayExtra(Scheduler.generateDailyPlan({
+    const plan = pinTodayDone(withTodayExtra(Scheduler.generateDailyPlan({
       grade: settings.grade,
       term: settings.term,
       count: settings.dailyCount,
@@ -364,7 +393,7 @@
       provider: provider,
       getRecord: getRecord,
       extraPoems: extraPoems()
-    }));
+    })));
 
     sessionStorage.setItem(
       key,

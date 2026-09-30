@@ -211,6 +211,17 @@ node test/run.sh                               # 测试
 2. **静态资源是「缓存优先」**：只要动了 `css/` 或 `js/` 里的文件，就必须把 `CACHE_NAME` 的版本号 +1，否则老用户会一直拿着旧副本。同时有几个 PR 在改时，每个 PR +5，避免撞号。
 3. **`/api/*` 一律早退**，不缓存也不由 SW 应答 —— 缓存它等于「换个人打开还是上一个人的会话」。
 
+缓存版本号不是随手写一个，**要压过当前 main 才算数**（`git fetch` 后照着来）：
+
+```bash
+highest=$(git grep -h -o -E 'poem-app-v[0-9]+' origin/main -- sw.js | grep -o -E '[0-9]+' | sort -n | tail -1)
+next=$((highest + 5))
+sed -i '' -E "s/poem-app-v[0-9]+/poem-app-v$next/" sw.js
+grep -n 'CACHE_NAME' sw.js
+```
+
+只肯猜一个数、又没落地的，合并时会与 main 上已发布的版本撞号（`sw.js` 那行必然冲突）。
+
 ## 测试
 
 ```bash
